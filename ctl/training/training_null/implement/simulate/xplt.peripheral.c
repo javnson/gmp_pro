@@ -66,7 +66,7 @@ void setup_peripheral(void)
         &simulink_rx_buffer.adc_result[ADC_RESULT_UIN],
         // ADC Channel settings.
         // iqn is valid only when ctrl_gt is a fixed point type.
-        CTRL_ADC_VOLTAGE_REF / CTRL_VOLTAGE_SENSOR_GAIN / CTRL_VOLTAGE_BASE,
+        CTRL_ADC_VOLTAGE_REF / CTRL_VOLTAGE_SENSOR_GAIN / CTRL_VOLTAGE_BASE ,
         CTRL_VOLTAGE_SENSOR_BIAS / CTRL_ADC_VOLTAGE_REF, 12, 24);
 
     ctl_init_ptr_adc_channel(
