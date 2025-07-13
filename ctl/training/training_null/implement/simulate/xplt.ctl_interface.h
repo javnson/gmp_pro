@@ -54,7 +54,7 @@ void ctl_output_callback(void)
     //simulink_tx_buffer.pwm_cmp[0] = ctl_calc_pwm_channel(&pwm_out, ctl_get_boost_ctrl_modulation(&boost_ctrl));
     //simulink_tx_buffer.pwm_cmp[1] = 1500 * (sin((float)gmp_base_get_system_tick() / 1000)+1);
 
-    simulink_tx_buffer.pwm_cmp[0] = 2100;
+    simulink_tx_buffer.pwm_cmp[0] = ctl_calc_pwm_channel(&pwm_out, float2ctrl(1)-voltage_loop.out);
 
     simulink_tx_buffer.enable = 1;
 

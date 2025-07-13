@@ -30,6 +30,8 @@ ctrl_gt pwm_out_pu;
 // Boost Controller Suite
 boost_ctrl_t boost_ctrl;
 
+pid_regular_t voltage_loop;
+
 //
 adc_bias_calibrator_t adc_calibrator;
 fast_gt flag_enable_adc_calibrator = 0;
@@ -41,6 +43,8 @@ volatile fast_gt flag_enable_system = 0;
 // CTL initialize routine
 void ctl_init()
 {
+    ctl_init_pid(&voltage_loop, 0.7, 0.01, 0, CONTROLLER_FREQUENCY);
+
     ctl_init_boost_ctrl(
         // Boost controller
         &boost_ctrl,
