@@ -1,0 +1,1 @@
+This is DIansai Training root project.
