@@ -14,8 +14,26 @@
 // PWM depth
 #define CONTROLLER_PWM_CMP_MAX (4200-1)
 
-// V reference
-#define CONTROLLER_VREF        (2.5)
+// Voltage per unit base value, 100 A
+#define CTRL_VOLTAGE_BASE 100
+
+// Current Per unit base value, 10A
+#define CTRL_CURRENT_BASE 10
+
+// Voltage reference, 2.5V
+#define CTRL_ADC_VOLTAGE_REF (2.5)
+
+// Voltage gain
+#define CTRL_VOLTAGE_SENSOR_GAIN (3.3/203.3)
+
+// Voltage Bias, V
+#define CTRL_VOLTAGE_SENSOR_BIAS (0.9966)
+
+// Current Gain
+#define CTRL_CURRENT_SENSOR_GAIN (0.005*20)
+
+// Current Bias, V
+#define CTRL_CURRENT_SENSOR_BIAS (0.9)
 
 // Speed controller Division
 #define SPD_CONTROLLER_PWM_DIVISION (5)

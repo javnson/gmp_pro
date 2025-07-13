@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{2890a777-d5cc-4e07-b1bc-af761cbeb711}</ProjectGuid>
+    <RootNamespace>motorcontrolsimulink</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>Digital_Power_simulink</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\..\csp\windows_simulink\GMPCorePropertySheet.props" />
+    <Import Project="..\..\..\..\..\tools\facilities_generator\GMPSrcGenPropertySheet.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\..\csp\windows_simulink\GMPCorePropertySheet.props" />
+    <Import Project="..\..\..\..\..\tools\facilities_generator\GMPSrcGenPropertySheet.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\..\csp\windows_simulink\GMPCorePropertySheet.props" />
+    <Import Project="..\..\..\..\..\tools\facilities_generator\GMPSrcGenPropertySheet.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\..\csp\windows_simulink\GMPCorePropertySheet.props" />
+    <Import Project="..\..\..\..\..\tools\facilities_generator\GMPSrcGenPropertySheet.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>$(ProjectDir)..\..\implement\common;$(ProjectDir)..\..\implement\simulate;$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_common;$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_simulink;$(ProjectDir);$(GMP_PRO_LOCATION);$(GMP_PRO_LOCATION)/third_party/asio/include;$(GMP_PRO_LOCATION)/third_party/eigen/Eigen;$(GMP_PRO_LOCATION)/csp/windows_simulink;$(GMP_PRO_LOCATION)/third_party/fmt/include/fmt;$(VC_IncludePath);$(WindowsSDK_IncludePath)</ExternalIncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>$(ProjectDir)..\..\implement\common;$(ProjectDir)..\..\implement\simulate;$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_common;$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_simulink;$(ProjectDir);$(GMP_PRO_LOCATION);$(GMP_PRO_LOCATION)/third_party/asio/include;$(GMP_PRO_LOCATION)/third_party/eigen/Eigen;$(GMP_PRO_LOCATION)/csp/windows_simulink;$(GMP_PRO_LOCATION)/third_party/fmt/include/fmt;$(VC_IncludePath);$(WindowsSDK_IncludePath)</ExternalIncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(ProjectDir)..\..\implement\common;$(ProjectDir)..\..\implement\simulate;$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_common;$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_simulink;$(ProjectDir);$(GMP_PRO_LOCATION);$(GMP_PRO_LOCATION)/third_party/asio/include;$(GMP_PRO_LOCATION)/third_party/eigen/Eigen;$(GMP_PRO_LOCATION)/csp/windows_simulink;$(GMP_PRO_LOCATION)/third_party/fmt/include/fmt;$(VC_IncludePath);$(WindowsSDK_IncludePath)</ExternalIncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(ProjectDir)..\..\implement\common;$(ProjectDir)..\..\implement\simulate;$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_common;$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_simulink;$(ProjectDir);$(GMP_PRO_LOCATION);$(GMP_PRO_LOCATION)/third_party/asio/include;$(GMP_PRO_LOCATION)/third_party/eigen/Eigen;$(GMP_PRO_LOCATION)/csp/windows_simulink;$(GMP_PRO_LOCATION)/third_party/fmt/include/fmt;$(VC_IncludePath);$(WindowsSDK_IncludePath)</ExternalIncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PreBuildEvent>
+      <Command>gmp_fac_generate_src.bat</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\implement\common\ctl_main.c" />
+    <ClCompile Include="..\..\implement\common\user_main.c" />
+    <ClCompile Include="..\..\implement\simulate\xplt.peripheral.c" />
+    <ClCompile Include="DigialPower_simulink.cpp" />
+    <ClCompile Include="gmp_src\ctl_component_advance.c" />
+    <ClCompile Include="gmp_src\ctl_component_continuous.c" />
+    <ClCompile Include="gmp_src\ctl_component_discrete.c" />
+    <ClCompile Include="gmp_src\ctl_component_interface.c" />
+    <ClCompile Include="gmp_src\ctl_component_lebesgue.c" />
+    <ClCompile Include="gmp_src\ctl_component_protection.c" />
+    <ClCompile Include="gmp_src\ctl_dp_basic.c" />
+    <ClCompile Include="gmp_src\ctl_dp_single_phase.c" />
+    <ClCompile Include="gmp_src\ctl_mc_basic.c" />
+    <ClCompile Include="gmp_src\ctl_mc_consultant.c" />
+    <ClCompile Include="gmp_src\ctl_mc_current_loop.c" />
+    <ClCompile Include="gmp_src\ctl_mc_motion.c" />
+    <ClCompile Include="gmp_src\ctl_mc_observer.c" />
+    <ClCompile Include="gmp_src\ctl_nano.c" />
+    <ClCompile Include="gmp_src\gmp_dev_util.c" />
+    <ClCompile Include="gmp_src\gmp_ds_list.c" />
+    <ClCompile Include="gmp_src\gmp_mm_block_memory.c" />
+    <ClCompile Include="gmp_src\gmp_std_error_code.c" />
+    <ClCompile Include="gmp_src\gmp_std_port.c" />
+    <ClCompile Include="gmp_src\windows_simulink_main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\implement\common\ctl_main.h" />
+    <ClInclude Include="..\..\implement\common\user_main.h" />
+    <ClInclude Include="..\..\implement\simulate\xplt.ctl_interface.h" />
+    <ClInclude Include="..\..\implement\simulate\ctrl_settings.h" />
+    <ClInclude Include="..\..\implement\simulate\xplt.peripheral.h" />
+    <ClInclude Include="..\..\implement\simulate\xplt.config.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -40,9 +40,9 @@ GMP_STATIC_INLINE
 void ctl_input_callback(void)
 {
     //// invoke ADC p.u. routine
-    simulink_tx_buffer.monitor[1] = ctl_step_ptr_adc_channel(&il);
-    simulink_tx_buffer.monitor[2] = ctl_step_ptr_adc_channel(&uin);
-    simulink_tx_buffer.monitor[3] = ctl_step_ptr_adc_channel(&uc);
+    ctl_step_ptr_adc_channel(&il);
+    ctl_step_ptr_adc_channel(&uin);
+    ctl_step_ptr_adc_channel(&uc);
 
 }
 
