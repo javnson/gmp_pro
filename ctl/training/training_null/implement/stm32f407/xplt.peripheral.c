@@ -131,7 +131,7 @@ void setup_peripheral(void)
 		&uin.control_port);
 
 	//
-	// STEP III: Starup PWM generator and ADC sampling
+	// STEP III: Startup PWM generator and ADC sampling
 	//
 
 	// Start Timer 3
@@ -236,11 +236,22 @@ void setup_peripheral(void)
 // interrupt functions and callback functions here
 
 // ADC interrupt
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+//void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+//{
+//	//if (hadc == &hadc2)
+//	{
+//		gmp_base_ctl_step();
+//	}
+//}
+
+// Timer Interrupt
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 {
 	//if (hadc == &hadc2)
+	if (htim == &htim1)
 	{
 		gmp_base_ctl_step();
 	}
 }
+
 
