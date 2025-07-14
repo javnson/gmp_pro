@@ -69,9 +69,12 @@ void ctl_output_callback(void)
     //
 
     // write to compare
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, ctl_calc_pwm_channel(&pwm_out, ctl_get_boost_ctrl_modulation(&boost_ctrl)));
+    //__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, ctl_calc_pwm_channel(&pwm_out, ctl_get_boost_ctrl_modulation(&boost_ctrl)));
+    //__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, ctl_calc_pwm_channel(&pwm_out, float2ctrl(1) - voltage_loop.out));
 
-    
+    // Openloop
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 2100);
+
 
 }
 

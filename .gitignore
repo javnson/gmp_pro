@@ -439,7 +439,8 @@ ctl/training/**/*.map
 ctl/training/**/*.dep
 ctl/training/**/*.uvguix.*
 ctl/training/**/MDK-ARM/**/*.htm
-
+ctl/training/**/*.__i
+ctl/training/**/*._ia
 
 # Disable generted GMP source file
 ctl/**/gmp_src/**

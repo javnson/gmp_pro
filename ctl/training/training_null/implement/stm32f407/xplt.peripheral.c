@@ -90,7 +90,8 @@ void setup_peripheral(void)
 		&adc_results[ADC_RESULT_IL],
 		// ADC Channel settings.
 		// iqn is valid only when ctrl_gt is a fixed point type.
-		2, 0.5, 12, 24);
+		CTRL_ADC_VOLTAGE_REF / CTRL_CURRENT_SENSOR_GAIN / CTRL_CURRENT_BASE,
+		CTRL_CURRENT_SENSOR_BIAS / CTRL_ADC_VOLTAGE_REF, 12, 24);
 
 	ctl_init_ptr_adc_channel(
 		// ptr_adc object
@@ -99,7 +100,8 @@ void setup_peripheral(void)
 		&adc_results[ADC_RESULT_UIN],
 		// ADC Channel settings.
 		// iqn is valid only when ctrl_gt is a fixed point type.
-		2, 0.5, 12, 24);
+		CTRL_ADC_VOLTAGE_REF / CTRL_VOLTAGE_SENSOR_GAIN / CTRL_VOLTAGE_BASE,
+		CTRL_VOLTAGE_SENSOR_BIAS / CTRL_ADC_VOLTAGE_REF, 12, 24);
 
 	ctl_init_ptr_adc_channel(
 		// ptr_adc object
@@ -108,7 +110,8 @@ void setup_peripheral(void)
 		&adc_results[ADC_RESULT_UOUT],
 		// ADC Channel settings.
 		// iqn is valid only when ctrl_gt is a fixed point type.
-		2, 0.5, 12, 24);
+		CTRL_ADC_VOLTAGE_REF / CTRL_VOLTAGE_SENSOR_GAIN / CTRL_VOLTAGE_BASE,
+		CTRL_VOLTAGE_SENSOR_BIAS / CTRL_ADC_VOLTAGE_REF, 12, 24);
 
 	ctl_init_pwm_channel(&pwm_out, 0, CONTROLLER_PWM_CMP_MAX);
 
