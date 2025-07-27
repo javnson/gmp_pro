@@ -22,7 +22,7 @@
 // 3: Sample 3 phase voltage
 // 2: Sample 2 phase voltage
 // 1: Sample 2 line voltage
-#define VOLTAGE_SAMPLE_PHASE_MODE (3)
+#define VOLTAGE_SAMPLE_PHASE_MODE (1)
 #endif // VOLTAGE_SAMPLE_PHASE_MODE
 
 typedef struct _tag_inv_ctrl_type
@@ -146,6 +146,9 @@ typedef struct _tag_inv_ctrl_type
     // RO, current phasor
     ctl_vector2_t phasor;
 
+    // RO, iClarke out
+    ctl_vector3_t abc_out;
+
     //
     // Controller object
     //
@@ -238,14 +241,14 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
 #if CURRENT_SAMPLE_PHASE_MODE == 3
 
     for (size_gt i = 0; i < 3; ++i)
-        ctrl->iabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_iabc[i], ctrl->adc_iabc[i]);
+        ctrl->iabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_iabc[i], ctrl->adc_iabc[i]->value);
 
     ctl_ct_clark(&ctrl->iabc, &ctrl->iab0);
 
 #elif CURRENT_SAMPLE_PHASE_MODE == 2
 
     for (size_gt i = 0; i < 2; ++i)
-        ctrl->iabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_iabc[i], ctrl->adc_iabc[i]);
+        ctrl->iabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_iabc[i], ctrl->adc_iabc[i]->value);
     ctrl->iabc.dat[phase_C] = 0;
 
     ctl_ct_clark_2ph((ctl_vector2_t *)&ctrl->iabc, (ctl_vector2_t *)&ctrl->iab0);
@@ -259,14 +262,14 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
 #if VOLTAGE_SAMPLE_PHASE_MODE == 3
 
     for (size_gt i = 0; i < 3; ++i)
-        ctrl->vabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_vabc[i], ctrl->adc_vabc[i]);
+        ctrl->vabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_vabc[i], ctrl->adc_vabc[i]->value);
 
     ctl_ct_clark(&ctrl->vabc, &ctrl->vab0);
 
 #elif VOLTAGE_SAMPLE_PHASE_MODE == 2
 
     for (size_gt i = 0; i < 2; ++i)
-        ctrl->vabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_vabc[i], ctrl->adc_vabc[i]);
+        ctrl->vabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_vabc[i], ctrl->adc_vabc[i]->value);
     ctrl->vabc.dat[phase_C] = 0;
 
     ctl_ct_clark_2ph((ctl_vector2_t *)&ctrl->vabc, (ctl_vector2_t *)&ctrl->vab0);
@@ -275,7 +278,7 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
 #elif VOLTAGE_SAMPLE_PHASE_MODE == 1
 
     for (size_gt i = 0; i < 2; ++i)
-        ctrl->vabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_vabc[i], ctrl->adc_vabc[i]);
+        ctrl->vabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_vabc[i], ctrl->adc_vabc[i]->value);
     ctrl->vabc.dat[phase_C] = 0;
 
     ctl_ct_clark_from_line((ctl_vector2_t *)&ctrl->vabc, (ctl_vector2_t *)&ctrl->vab0);
@@ -299,7 +302,7 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
         //
         // ramp generator
         //
-        ctl_set_ramp_freq(ctl_mul(ctrl->rg_slope_default, ctrl->rg_freq_pu));
+        ctl_set_ramp_freq(&ctrl->rg, ctl_mul(ctrl->rg_slope_default, ctrl->rg_freq_pu));
         ctrl->angle = ctl_step_ramp_gen(&ctrl->rg);
 
         //
@@ -307,7 +310,7 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
         //
         if (ctrl->flag_enable_freerun)
         {
-            ctl_set_phasor_via_angle(ctrl->angle, ctrl->phasor);
+            ctl_set_phasor_via_angle(ctrl->angle, &ctrl->phasor);
         }
         else
         {
@@ -318,8 +321,8 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
         //
         // park
         //
-        ctl_ct_park2(&ctrl->iab0, &phasor, &ctrl->idq);
-        ctl_ct_park2(&ctrl->vab0, &phasor, &ctrl->vdq);
+        ctl_ct_park2((ctl_vector2_t *)&ctrl->iab0, &ctrl->phasor, &ctrl->idq);
+        ctl_ct_park2((ctl_vector2_t *)&ctrl->vab0, &ctrl->phasor, &ctrl->vdq);
 
         //
         // droop control
@@ -345,11 +348,11 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
         //
         if (ctrl->flag_enable_voltage_ctrl)
         {
-            ctrl->idq_set[phase_d] =
-                ctl_step_pid_ser(&ctrl->voltage_ctrl[phase_d], ctrl->vdq_set[phase_d] - ctrl->vdq[phase_d]);
+            ctrl->idq_set.dat[phase_d] =
+                ctl_step_pid_ser(&ctrl->voltage_ctrl[phase_d], ctrl->vdq_set.dat[phase_d] - ctrl->vdq.dat[phase_d]);
 
-            ctrl->idq_set[phase_q] =
-                ctl_step_pid_ser(&ctrl->voltage_ctrl[phase_q], ctrl->vdq_set[phase_q] - ctrl->vdq[phase_q]);
+            ctrl->idq_set.dat[phase_q] =
+                ctl_step_pid_ser(&ctrl->voltage_ctrl[phase_q], ctrl->vdq_set.dat[phase_q] - ctrl->vdq.dat[phase_q]);
         }
 
         //
@@ -357,33 +360,35 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
         //
         if (ctrl->flag_enable_current_ctrl)
         {
-            ctrl->vdq_pos_out[phase_d] =
-                ctl_step_pid_ser(&ctrl->current_ctrl[phase_d], ctrl->idq_set[phase_d] - ctrl->idq[phase_d]);
-            ctrl->vdq_pos_out[phase_q] =
-                ctl_step_pid_ser(&ctrl->current_ctrl[phase_q], ctrl->idq_set[phase_q] - ctrl->idq[phase_q]);
+            ctrl->vdq_pos_out.dat[phase_d] =
+                ctl_step_pid_ser(&ctrl->current_ctrl[phase_d], ctrl->idq_set.dat[phase_d] - ctrl->idq.dat[phase_d]);
+            ctrl->vdq_pos_out.dat[phase_q] =
+                ctl_step_pid_ser(&ctrl->current_ctrl[phase_q], ctrl->idq_set.dat[phase_q] - ctrl->idq.dat[phase_q]);
 
             if (ctrl->flag_enable_current_ff)
             {
-                ctrl->vdq_pos_out[phase_d] -= ctl_mul(ctrl->omega_L, ctrl->idq.dat[phase_q]);
-                ctrl->vdq_pos_out[phase_q] += ctl_mul(ctrl->omega_L, ctrl->idq.dat[phase_q]);
+                ctrl->vdq_pos_out.dat[phase_d] -= ctl_mul(ctrl->omega_L, ctrl->idq.dat[phase_q]);
+                ctrl->vdq_pos_out.dat[phase_q] += ctl_mul(ctrl->omega_L, ctrl->idq.dat[phase_q]);
             }
         }
 
         //
         // modulation
         //
-        ctl_ct_ipark2(&ctrl->vdq_pos_out, &phasor, &ctrl->vab_pos);
+        ctl_ct_ipark2(&ctrl->vdq_pos_out, &ctrl->phasor, &ctrl->vab_pos);
 
         //
         // current negative loop
         //
         if (ctrl->flag_enable_negative_current_ctrl)
         {
-            ctl_ct_park2_neg(&ctrl->iab0, ctrl->phasor, &ctrl->idq_neg);
+            ctl_ct_park2_neg((ctl_vector2_t *)&ctrl->iab0, &ctrl->phasor, &ctrl->idq_neg);
 
-            // negative controller
-            ctrl->vab_neg[phase_d] = ctl_step_pid_ser(&ctrl->neg_current_ctrl[phase_d], -ctrl->idq_neg[phase_d]);
-            ctrl->vab_neg[phase_q] = ctl_step_pid_ser(&ctrl->neg_current_ctrl[phase_q], -ctrl->idq_neg[phase_q]);
+            // negative controller,这里没有反变换回去
+            ctrl->vab_neg.dat[phase_d] =
+                ctl_step_pid_ser(&ctrl->neg_current_ctrl[phase_d], -ctrl->idq_neg.dat[phase_d]);
+            ctrl->vab_neg.dat[phase_q] =
+                ctl_step_pid_ser(&ctrl->neg_current_ctrl[phase_q], -ctrl->idq_neg.dat[phase_q]);
         }
         else
         {
@@ -398,10 +403,10 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
             // for alpha & beta
             for (int i = 0; i < 2; ++i)
             {
-                ctrl->vab_harm[i] = ctl_step_qr_controller(&ctrl->harm_qr_3[i], -ctrl->iab0[i]);
-                ctrl->vab_harm[i] += ctl_step_qr_controller(&ctrl->harm_qr_5[i], -ctrl->iab0[i]);
-                ctrl->vab_harm[i] += ctl_step_qr_controller(&ctrl->harm_qr_7[i], -ctrl->iab0[i]);
-                ctrl->vab_harm[i] += ctl_step_qr_controller(&ctrl->harm_qr_9[i], -ctrl->iab0[i]);
+                ctrl->vab_harm.dat[i] = ctl_step_qr_controller(&ctrl->harm_qr_3[i], -ctrl->iab0.dat[i]);
+                ctrl->vab_harm.dat[i] += ctl_step_qr_controller(&ctrl->harm_qr_5[i], -ctrl->iab0.dat[i]);
+                ctrl->vab_harm.dat[i] += ctl_step_qr_controller(&ctrl->harm_qr_7[i], -ctrl->iab0.dat[i]);
+                ctrl->vab_harm.dat[i] += ctl_step_qr_controller(&ctrl->harm_qr_9[i], -ctrl->iab0.dat[i]);
             }
         }
         else
@@ -416,9 +421,16 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
         ctrl->vab_out.dat[1] = ctrl->vab_pos.dat[1] + ctrl->vab_neg.dat[1] + ctrl->vab_harm.dat[1];
 
         //
+        // iClarke
+        //
+        ctl_ct_iclark2(&ctrl->vab_out, &ctrl->abc_out);
+
+        //
         // modulation
         //
-        ctl_ct_iclark2(&ctrl->vab_out, ctrl->pwm_out_pu);
+        ctrl->pwm_out_pu.dat[phase_A] = ctl_div2(ctrl->abc_out.dat[phase_A] + float2ctrl(1));
+        ctrl->pwm_out_pu.dat[phase_B] = ctl_div2(ctrl->abc_out.dat[phase_B] + float2ctrl(1));
+        ctrl->pwm_out_pu.dat[phase_C] = ctl_div2(ctrl->abc_out.dat[phase_C] + float2ctrl(1));
     }
     else
     {
@@ -431,6 +443,7 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
 //////////////////////////////////////////////////////////////////////////
 // Voltage Open loop mode
 
+GMP_STATIC_INLINE
 void ctl_set_three_phase_inv_openloop_mode(inv_ctrl_t *inv)
 {
     // enable system
@@ -465,15 +478,16 @@ void ctl_set_three_phase_inv_openloop_mode(inv_ctrl_t *inv)
 }
 
 GMP_STATIC_INLINE
-void ctl_set_three_phase_inv_voltage_openloop(inv_ctrl_t *inv, ctrl_gt vd)
+void ctl_set_three_phase_inv_voltage_openloop(inv_ctrl_t *inv, ctrl_gt vd, ctrl_gt vq)
 {
     inv->vdq_pos_out.dat[phase_d] = vd;
-    inv->vdq_pos_out.dat[phase_q] = 0;
+    inv->vdq_pos_out.dat[phase_q] = vq;
 }
 
 //////////////////////////////////////////////////////////////////////////
 // Current mode
 
+GMP_STATIC_INLINE
 void ctl_set_three_phase_inv_current_mode(inv_ctrl_t *inv)
 {
     // enable system
@@ -517,8 +531,8 @@ void ctl_set_three_phase_inv_current(inv_ctrl_t *inv, ctrl_gt id, ctrl_gt iq)
 GMP_STATIC_INLINE
 void ctl_set_three_phase_inv_current_via_pf(inv_ctrl_t *inv, ctrl_gt is, ctrl_gt pf)
 {
-    inv->idq_set.dat[phase_d] = id * pf;
-    inv->idq_set.dat[phase_q] = iq * ctl_sqrt(float2ctrl(1) - pf * pf);
+    inv->idq_set.dat[phase_d] = ctl_mul(is, pf);
+    inv->idq_set.dat[phase_q] = ctl_mul(is, ctl_sqrt(float2ctrl(1) - pf * pf));
 }
 
 GMP_STATIC_INLINE
@@ -537,7 +551,8 @@ void ctl_disable_three_phase_inv_harm_control(inv_ctrl_t *inv)
 // Voltage mode
 // WARNING Voltage loop and droop mode is compatible
 
-void ctl_set_three_phase_inv_current_mode(inv_ctrl_t *inv)
+GMP_STATIC_INLINE
+void ctl_set_three_phase_inv_volotage_mode(inv_ctrl_t *inv)
 {
     // enable system
     inv->flag_enable_system = 0;
@@ -586,7 +601,8 @@ void ctl_set_three_phase_inv_rg_frequency(inv_ctrl_t *inv, ctrl_gt freq_pu)
 //////////////////////////////////////////////////////////////////////////
 // Droop mode
 
-void ctl_set_three_phase_inv_current_mode(inv_ctrl_t *inv)
+GMP_STATIC_INLINE
+void ctl_set_three_phase_inv_droop_mode(inv_ctrl_t *inv)
 {
     // enable system
     inv->flag_enable_system = 0;
@@ -622,13 +638,14 @@ void ctl_set_three_phase_inv_current_mode(inv_ctrl_t *inv)
 GMP_STATIC_INLINE
 void ctl_set_droop_reference_voltage(inv_ctrl_t *inv, ctrl_gt vref)
 {
-    ctrl->v_droop_ref = vref;
+    inv->v_droop_ref = vref;
 }
 
 //////////////////////////////////////////////////////////////////////////
 // Other utilities function
 
-GMP_STATIC_INLINE ctrl_gt ctl_get_three_phase_inv_Pout(inv_ctrl_t *inv)
+GMP_STATIC_INLINE
+ctrl_gt ctl_get_three_phase_inv_Pout(inv_ctrl_t *inv)
 {
     return ctl_mul(inv->vdq.dat[phase_d], inv->idq.dat[phase_d]) +
            ctl_mul(inv->vdq.dat[phase_q], inv->idq.dat[phase_q]);
@@ -641,7 +658,44 @@ ctrl_gt ctl_get_three_phase_inv_Qout(inv_ctrl_t *inv)
            ctl_mul(inv->vdq.dat[phase_d], inv->idq.dat[phase_q]);
 }
 
-GMP_STATIC_INLINE void ctl_enable_three_phase_inverter(inv_ctrl_t *inv)
+GMP_STATIC_INLINE
+void ctl_set_three_phase_inv_freerun(inv_ctrl_t *inv)
+{
+    inv->flag_enable_freerun = 1;
+}
+
+GMP_STATIC_INLINE
+void ctl_set_three_phase_inv_pll(inv_ctrl_t *inv)
+{
+    inv->flag_enable_freerun = 0;
+}
+
+GMP_STATIC_INLINE
+void ctl_enable_three_phase_harm_ctrl(inv_ctrl_t *inv)
+{
+    inv->flag_enable_harm_ctrl = 1;
+}
+
+GMP_STATIC_INLINE
+void ctl_disable_three_phase_harm_ctrl(inv_ctrl_t *inv)
+{
+    inv->flag_enable_harm_ctrl = 0;
+}
+
+GMP_STATIC_INLINE
+void ctl_enable_three_phase_negative_ctrl(inv_ctrl_t *inv)
+{
+    inv->flag_enable_negative_current_ctrl = 1;
+}
+
+GMP_STATIC_INLINE
+void ctl_disable_three_phase_negative_ctrl(inv_ctrl_t *inv)
+{
+    inv->flag_enable_negative_current_ctrl = 0;
+}
+
+GMP_STATIC_INLINE
+void ctl_enable_three_phase_inverter(inv_ctrl_t *inv)
 {
     inv->flag_enable_system = 1;
 }
@@ -650,6 +704,18 @@ GMP_STATIC_INLINE
 void ctl_disable_three_phase_inverter(inv_ctrl_t *inv)
 {
     inv->flag_enable_system = 0;
+}
+
+GMP_STATIC_INLINE
+ctrl_gt ctl_get_three_phase_pll_error(inv_ctrl_t *inv)
+{
+    return inv->pll.e_error;
+}
+
+GMP_STATIC_INLINE
+fast_gt ctl_is_three_phase_inverter_mode(inv_ctrl_t *inv)
+{
+    return inv->flag_enable_freerun;
 }
 
 GMP_STATIC_INLINE
@@ -784,6 +850,6 @@ void ctl_attach_three_phase_inv(
     // iabc
     adc_ift *adc_ia, adc_ift *adc_ib, adc_ift *adc_ic,
     // ubac
-    adc_ift *adc_ua, adc_ift *adc_ub, adc_ift adc_uc);
+    adc_ift *adc_ua, adc_ift *adc_ub, adc_ift *adc_uc);
 
 #endif // _FILE_THREE_PHASE_DC_AC_H_

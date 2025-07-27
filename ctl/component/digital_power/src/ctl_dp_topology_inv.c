@@ -26,7 +26,7 @@ void ctl_upgrade_three_phase_inv(inv_ctrl_t *inv, three_phase_inv_init_t *init)
     }
 
     ctl_init_pll_3ph(&inv->pll, init->freq_base, init->kp_pll_ctrl, init->Ti_pll_ctrl, 0, init->fs);
-    ctl_init_ramp_gen_via_amp_freq(&inv->rg, init->f_ctrl, init->base_freq, 1, 0);
+    ctl_init_ramp_gen_via_amp_freq(&inv->rg, init->fs, init->freq_base, 1, 0);
     inv->rg_slope_default = inv->rg.slope;
 
     ctl_init_pid_ser(&inv->voltage_ctrl[phase_d], init->kp_vd_ctrl, init->Ti_vd_ctrl, 0, init->fs);
@@ -44,13 +44,18 @@ void ctl_upgrade_three_phase_inv(inv_ctrl_t *inv, three_phase_inv_init_t *init)
 
     for (int i = 0; i < 2; ++i)
     {
-        ctl_init_qr_controller(&inv->harm_qr_3[i], init->harm_ctrl_kr_3, init->harm_ctrl_cut_freq_3, init->fs);
-        ctl_init_qr_controller(&inv->harm_qr_5[i], init->harm_ctrl_kr_5, init->harm_ctrl_cut_freq_5, init->fs);
-        ctl_init_qr_controller(&inv->harm_qr_7[i], init->harm_ctrl_kr_7, init->harm_ctrl_cut_freq_7, init->fs);
-        ctl_init_qr_controller(&inv->harm_qr_9[i], init->harm_ctrl_kr_9, init->harm_ctrl_cut_freq_9, init->fs);
+        ctl_init_qr_controller(&inv->harm_qr_3[i], init->harm_ctrl_kr_3, init->freq_base * 3,
+                               init->harm_ctrl_cut_freq_3, init->fs);
+        ctl_init_qr_controller(&inv->harm_qr_5[i], init->harm_ctrl_kr_5, init->freq_base * 5,
+                               init->harm_ctrl_cut_freq_5, init->fs);
+        ctl_init_qr_controller(&inv->harm_qr_7[i], init->harm_ctrl_kr_7, init->freq_base * 7,
+                               init->harm_ctrl_cut_freq_7, init->fs);
+        ctl_init_qr_controller(&inv->harm_qr_9[i], init->harm_ctrl_kr_9, init->freq_base * 9,
+                               init->harm_ctrl_cut_freq_9, init->fs);
     }
 
-    inv->omega_L = 2 * PI * init->freq_base * init->Lf * init->i_base / init->u_base;
+    inv->omega_L = float2ctrl(2.0 * PI * init->freq_base * init->Lf * init->i_base / init->v_base);
+    inv->rg_freq_pu = float2ctrl(1.0);
 }
 
 void ctl_attach_three_phase_inv(
@@ -61,7 +66,7 @@ void ctl_attach_three_phase_inv(
     // iabc
     adc_ift *adc_ia, adc_ift *adc_ib, adc_ift *adc_ic,
     // ubac
-    adc_ift *adc_ua, adc_ift *adc_ub, adc_ift adc_uc)
+    adc_ift *adc_ua, adc_ift *adc_ub, adc_ift *adc_uc)
 {
     inv->adc_udc = adc_udc;
     inv->adc_idc = adc_idc;

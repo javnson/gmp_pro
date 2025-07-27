@@ -169,6 +169,7 @@
     <ClCompile Include="gmp_src\ctl_dp_basic.c" />
     <ClCompile Include="gmp_src\ctl_dp_single_phase.c" />
     <ClCompile Include="gmp_src\ctl_dp_three_phase.c" />
+    <ClCompile Include="gmp_src\ctl_dp_topology_inv.c" />
     <ClCompile Include="gmp_src\ctl_dp_topology_sinv.c" />
     <ClCompile Include="gmp_src\ctl_mc_basic.c" />
     <ClCompile Include="gmp_src\ctl_mc_consultant.c" />

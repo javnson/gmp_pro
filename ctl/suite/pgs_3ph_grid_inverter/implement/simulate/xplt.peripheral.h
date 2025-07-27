@@ -23,25 +23,15 @@ extern "C"
 // select ADC PTR interface
 #include <ctl/component/interface/adc_ptr_channel.h>
 
-// select default encoder
-#include <ctl/component/motor_control/basic/encoder.h>
-
 // select SIL package
 #include <ctl/component/digital_power/basic/std_sil_dp_interface.h>
+
+// Three phase DC/AC
+#include <ctl/component/digital_power/topology_preset/three_phase_dc_ac.h>
 
 // buffer for rx & tx
 extern gmp_pc_simulink_rx_buffer_t simulink_rx_buffer;
 extern gmp_pc_simulink_tx_buffer_t simulink_tx_buffer;
-
-//extern tri_ptr_adc_channel_t uabc;
-//extern tri_ptr_adc_channel_t iabc;
-//
-//extern ptr_adc_channel_t udc;
-//extern ptr_adc_channel_t idc;
-//
-//extern pos_autoturn_encoder_t pos_enc;
-//
-//extern pwm_tri_channel_t pwm_out;
 
 #ifdef __cplusplus
 }

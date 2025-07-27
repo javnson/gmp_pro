@@ -40,17 +40,15 @@ extern volatile fast_gt flag_system_enable;
 extern volatile fast_gt flag_system_running;
 
 // controller objects
-extern sinv_ctrl_t sinv_ctrl;
-extern ctl_pid_t current_outer;
-extern ctrl_gt ig_rms_ref;
+extern inv_ctrl_t inv_ctrl;
+
 
 // periodic callback function things.
 GMP_STATIC_INLINE
 void ctl_dispatch(void)
 {
-    ctl_set_sinv_current_ref(&sinv_ctrl, ctl_step_pid_ser(&current_outer, ig_rms_ref - sinv_ctrl.ig_rms));
 
-    ctl_step_sinv(&sinv_ctrl);
+    ctl_step_inv_ctrl(&inv_ctrl);
 }
 
 #ifdef __cplusplus

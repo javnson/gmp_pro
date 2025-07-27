@@ -20,9 +20,9 @@
 // definitions of peripheral
 //
 
-ptr_adc_channel_t sinv_adc[SINV_ADC_SENSOR_NUMBER];
+ptr_adc_channel_t inv_adc[INV_ADC_SENSOR_NUMBER];
 
-pwm_channel_t sinv_pwm_out[2];
+pwm_channel_t inv_pwm_out[3];
 
 //////////////////////////////////////////////////////////////////////////
 // peripheral setup function
@@ -37,9 +37,9 @@ void setup_peripheral(void)
 
     ctl_init_ptr_adc_channel(
         // ptr_adc object
-        &sinv_adc[SINV_ADC_ID_IDC],
+        &inv_adc[INV_ADC_ID_IDC],
         // pointer to ADC raw data
-        &simulink_rx_buffer.adc_result[SINV_ADC_ID_IDC],
+        &simulink_rx_buffer.adc_result[INV_ADC_ID_IDC],
         // ADC Channel settings.
         ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_BIAS),
@@ -48,9 +48,9 @@ void setup_peripheral(void)
 
     ctl_init_ptr_adc_channel(
         // ptr_adc object
-        &sinv_adc[SINV_ADC_ID_VDC],
+        &inv_adc[INV_ADC_ID_VDC],
         // pointer to ADC raw data
-        &simulink_rx_buffer.adc_result[SINV_ADC_ID_VDC],
+        &simulink_rx_buffer.adc_result[INV_ADC_ID_VDC],
         // ADC Channel settings.
         ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_GAIN, CTRL_VOLTAGE_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_BIAS),
@@ -59,66 +59,79 @@ void setup_peripheral(void)
 
     ctl_init_ptr_adc_channel(
         // ptr_adc object
-        &sinv_adc[SINV_ADC_ID_IL],
+        &inv_adc[INV_ADC_ID_UAB],
         // pointer to ADC raw data
-        &simulink_rx_buffer.adc_result[SINV_ADC_ID_IL],
-        // ADC Channel settings.
-        ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_BIAS),
-        // iqn is valid only when ctrl_gt is a fixed point type.
-        CTRL_ADC_RESOLUTION, 24);
-
-    ctl_init_ptr_adc_channel(
-        // ptr_adc object
-        &sinv_adc[SINV_ADC_ID_IC],
-        // pointer to ADC raw data
-        &simulink_rx_buffer.adc_result[SINV_ADC_ID_IC],
-        // ADC Channel settings.
-        ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_BIAS),
-        // iqn is valid only when ctrl_gt is a fixed point type.
-        CTRL_ADC_RESOLUTION, 24);
-
-    ctl_init_ptr_adc_channel(
-        // ptr_adc object
-        &sinv_adc[SINV_ADC_ID_IG],
-        // pointer to ADC raw data
-        &simulink_rx_buffer.adc_result[SINV_ADC_ID_IG],
-        // ADC Channel settings.
-        ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_BIAS),
-        // iqn is valid only when ctrl_gt is a fixed point type.
-        CTRL_ADC_RESOLUTION, 24);
-
-    ctl_init_ptr_adc_channel(
-        // ptr_adc object
-        &sinv_adc[SINV_ADC_ID_VG],
-        // pointer to ADC raw data
-        &simulink_rx_buffer.adc_result[SINV_ADC_ID_VG],
+        &simulink_rx_buffer.adc_result[INV_ADC_ID_UAB],
         // ADC Channel settings.
         ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_GAIN, CTRL_VOLTAGE_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_BIAS),
+        // iqn is valid only when ctrl_gt is a fixed point type.
+        CTRL_ADC_RESOLUTION, 24);
+
+    ctl_init_ptr_adc_channel(
+        // ptr_adc object
+        &inv_adc[INV_ADC_ID_UBC],
+        // pointer to ADC raw data
+        &simulink_rx_buffer.adc_result[INV_ADC_ID_UBC],
+        // ADC Channel settings.
+        ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_GAIN, CTRL_VOLTAGE_BASE),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_BIAS),
+        // iqn is valid only when ctrl_gt is a fixed point type.
+        CTRL_ADC_RESOLUTION, 24);
+
+    ctl_init_ptr_adc_channel(
+        // ptr_adc object
+        &inv_adc[INV_ADC_ID_IA],
+        // pointer to ADC raw data
+        &simulink_rx_buffer.adc_result[INV_ADC_ID_IA],
+        // ADC Channel settings.
+        ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_BIAS),
+        // iqn is valid only when ctrl_gt is a fixed point type.
+        CTRL_ADC_RESOLUTION, 24);
+
+    ctl_init_ptr_adc_channel(
+        // ptr_adc object
+        &inv_adc[INV_ADC_ID_IB],
+        // pointer to ADC raw data
+        &simulink_rx_buffer.adc_result[INV_ADC_ID_IB],
+        // ADC Channel settings.
+        ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_BIAS),
+        // iqn is valid only when ctrl_gt is a fixed point type.
+        CTRL_ADC_RESOLUTION, 24);
+
+    ctl_init_ptr_adc_channel(
+        // ptr_adc object
+        &inv_adc[INV_ADC_ID_IC],
+        // pointer to ADC raw data
+        &simulink_rx_buffer.adc_result[INV_ADC_ID_IC],
+        // ADC Channel settings.
+        ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_BIAS),
         // iqn is valid only when ctrl_gt is a fixed point type.
         CTRL_ADC_RESOLUTION, 24);
 
     //
     // output channel
     //
-    ctl_init_pwm_channel(&sinv_pwm_out[0], 0, CONTROLLER_PWM_CMP_MAX);
-    ctl_init_pwm_channel(&sinv_pwm_out[1], 0, CONTROLLER_PWM_CMP_MAX);
+    ctl_init_pwm_channel(&inv_pwm_out[0], 0, CONTROLLER_PWM_CMP_MAX);
+    ctl_init_pwm_channel(&inv_pwm_out[1], 0, CONTROLLER_PWM_CMP_MAX);
+    ctl_init_pwm_channel(&inv_pwm_out[2], 0, CONTROLLER_PWM_CMP_MAX);
 
     //
     // attach
     //
-    ctl_attach_sinv_with_adc(
-        // sinv controller
-        &sinv_ctrl,
+    ctl_attach_three_phase_inv(
+        // inv controller
+        &inv_ctrl,
         // udc, idc
-        &sinv_adc[SINV_ADC_ID_VDC].control_port, &sinv_adc[SINV_ADC_ID_VDC].control_port,
-        // il
-        &sinv_adc[SINV_ADC_ID_IL].control_port,
-        // u grid, i grid
-        &sinv_adc[SINV_ADC_ID_VG].control_port, &sinv_adc[SINV_ADC_ID_IG].control_port);
+        &inv_adc[INV_ADC_ID_VDC].control_port, &inv_adc[INV_ADC_ID_IDC].control_port,
+        // iabc
+        &inv_adc[INV_ADC_ID_IA].control_port, &inv_adc[INV_ADC_ID_IB].control_port,
+        &inv_adc[INV_ADC_ID_IC].control_port,
+        // uabc
+        &inv_adc[INV_ADC_ID_UAB].control_port, &inv_adc[INV_ADC_ID_UBC].control_port, (void*)0);
 
     // open hardware switch
     // ctl_output_enable();
