@@ -42,7 +42,6 @@ extern volatile fast_gt flag_system_running;
 // controller objects
 extern inv_ctrl_t inv_ctrl;
 
-
 // periodic callback function things.
 GMP_STATIC_INLINE
 void ctl_dispatch(void)

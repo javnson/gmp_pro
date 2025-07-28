@@ -5,15 +5,11 @@
 
 // BUILD_LEVEL 1: inverter, voltage open loop
 // BUILD_LEVEL 2: inverter, current loop
-// BUILD_LEVEL 3: inverter, current loop, harmonic control
-// BUILD_LEVEL 4: rectifier, current loop
-// BUILD_LEVEL 5: rectifier, current loop, with harm control
-// BUILD_LEVEL 6: rectifier, voltage loop, without harm control
-// BUILD_LEVEL 7: rectifier, voltage loop, with harm control
-// BUILD_LEVEL 8: inverter voltage loop
-// BUILD_LEVEL 9: inverter voltage loop with harm control
-// BUILD_LEVEL 10: rectifier, current loop, with additional outer current loop
-#define BUILD_LEVEL (1)
+// BUILD_LEVEL 3: inverter, current loop, feed forward control
+// BUILD_LEVEL 4: inverter, current loop, feed forward control, negative current control
+// BUILD_LEVEL 5: inverter, current loop, ff, neg, harmonic control
+// BUILD_LEVEL 6: inverter, voltage loop, current loop, ff
+#define BUILD_LEVEL (6)
 
 // low voltage half bridge parameters
 #include <ctl/component/digital_power/hardware_preset/gmp_lvhb_v1.h>

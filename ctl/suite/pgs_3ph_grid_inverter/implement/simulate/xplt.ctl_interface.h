@@ -78,20 +78,88 @@ void ctl_output_callback(void)
     simulink_tx_buffer.monitor[1] = inv_adc[INV_ADC_ID_IDC].control_port.value;
 
     // Scope 2
-     simulink_tx_buffer.monitor[2] = inv_adc[INV_ADC_ID_UAB].control_port.value;
-     simulink_tx_buffer.monitor[3] = inv_adc[INV_ADC_ID_UBC].control_port.value;
+    simulink_tx_buffer.monitor[2] = inv_adc[INV_ADC_ID_UAB].control_port.value;
+    simulink_tx_buffer.monitor[3] = inv_adc[INV_ADC_ID_UBC].control_port.value;
 
     // Scope 3
-     simulink_tx_buffer.monitor[4] = inv_adc[INV_ADC_ID_IA].control_port.value;
-     simulink_tx_buffer.monitor[5] = inv_adc[INV_ADC_ID_IB].control_port.value;
+    simulink_tx_buffer.monitor[4] = inv_adc[INV_ADC_ID_IA].control_port.value;
+    simulink_tx_buffer.monitor[5] = inv_adc[INV_ADC_ID_IB].control_port.value;
 
     // Scope 4
-     simulink_tx_buffer.monitor[6] = inv_ctrl.pwm_out_pu.dat[phase_A];
-     simulink_tx_buffer.monitor[7] = inv_ctrl.pwm_out_pu.dat[phase_B];
+    simulink_tx_buffer.monitor[6] = inv_ctrl.pwm_out_pu.dat[phase_A];
+    simulink_tx_buffer.monitor[7] = inv_ctrl.pwm_out_pu.dat[phase_B];
 
     // Scope 5
-     simulink_tx_buffer.monitor[8] = inv_ctrl.pll.phasor.dat[phasor_sin];
-     simulink_tx_buffer.monitor[9] = inv_ctrl.pll.phasor.dat[phasor_cos];
+    simulink_tx_buffer.monitor[8] = inv_ctrl.pll.phasor.dat[phasor_sin];
+    simulink_tx_buffer.monitor[9] = inv_ctrl.pll.phasor.dat[phasor_cos];
+
+    // Scope 6
+    simulink_tx_buffer.monitor[10] = inv_ctrl.idq.dat[phase_d];
+    simulink_tx_buffer.monitor[11] = inv_ctrl.idq.dat[phase_q];
+
+    // Scope 7
+    simulink_tx_buffer.monitor[12] = inv_ctrl.vdq.dat[phase_d];
+    simulink_tx_buffer.monitor[13] = inv_ctrl.vdq.dat[phase_q];
+
+#elif BUILD_LEVEL == 2 || BUILD_LEVEL == 3 || BUILD_LEVEL == 4 || BUILD_LEVEL == 5
+
+    // Scope 1 d current control
+    simulink_tx_buffer.monitor[0] = inv_ctrl.idq_set.dat[phase_d];
+    simulink_tx_buffer.monitor[1] = inv_ctrl.idq.dat[phase_d];
+
+    // Scope 2 q current control
+    simulink_tx_buffer.monitor[2] = inv_ctrl.idq_set.dat[phase_q];
+    simulink_tx_buffer.monitor[3] = inv_ctrl.idq.dat[phase_q];
+
+    // Scope 3 output voltage dq
+    simulink_tx_buffer.monitor[4] = inv_ctrl.vdq.dat[phase_d];
+    simulink_tx_buffer.monitor[5] = inv_ctrl.vdq.dat[phase_q];
+
+    // Scope 4 output modulation
+    simulink_tx_buffer.monitor[6] = inv_ctrl.vab_out.dat[phase_d];
+    simulink_tx_buffer.monitor[7] = inv_ctrl.vab_out.dat[phase_q];
+
+    // Scope 5 PLL
+    simulink_tx_buffer.monitor[8] = inv_ctrl.pll.phasor.dat[phasor_sin];
+    simulink_tx_buffer.monitor[9] = inv_ctrl.pll.phasor.dat[phasor_cos];
+
+    // Scope 6
+    simulink_tx_buffer.monitor[10] = inv_ctrl.iab0.dat[phase_alpha];
+    simulink_tx_buffer.monitor[11] = inv_ctrl.iab0.dat[phase_beta];
+
+    // Scope 7
+    simulink_tx_buffer.monitor[12] = inv_ctrl.iabc.dat[phase_A];
+    simulink_tx_buffer.monitor[13] = inv_ctrl.iabc.dat[phase_B];
+
+#elif BUILD_LEVEL == 6
+
+    // Scope 1 d current control
+    simulink_tx_buffer.monitor[0] = inv_ctrl.idq_set.dat[phase_d];
+    simulink_tx_buffer.monitor[1] = inv_ctrl.idq.dat[phase_d];
+
+    // Scope 2 q current control
+    simulink_tx_buffer.monitor[2] = inv_ctrl.idq_set.dat[phase_q];
+    simulink_tx_buffer.monitor[3] = inv_ctrl.idq.dat[phase_q];
+
+    // Scope 3 output voltage dq
+    simulink_tx_buffer.monitor[4] = inv_ctrl.vdq.dat[phase_d];
+    simulink_tx_buffer.monitor[5] = inv_ctrl.vdq.dat[phase_q];
+
+    // Scope 4 voltage loop
+    simulink_tx_buffer.monitor[6] = inv_ctrl.vdq_set.dat[phase_d];
+    simulink_tx_buffer.monitor[7] = inv_ctrl.vdq.dat[phase_d];
+
+    // Scope 5 PLL
+    simulink_tx_buffer.monitor[8] = inv_ctrl.pll.phasor.dat[phasor_sin];
+    simulink_tx_buffer.monitor[9] = inv_ctrl.pll.phasor.dat[phasor_cos];
+
+    // Scope 6
+    simulink_tx_buffer.monitor[10] = inv_ctrl.iab0.dat[phase_alpha];
+    simulink_tx_buffer.monitor[11] = inv_ctrl.iab0.dat[phase_beta];
+
+    // Scope 7
+    simulink_tx_buffer.monitor[12] = inv_ctrl.iabc.dat[phase_A];
+    simulink_tx_buffer.monitor[13] = inv_ctrl.iabc.dat[phase_B];
 
 #endif // BUILD LEVEL
 }

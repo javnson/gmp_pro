@@ -293,6 +293,52 @@ void ctl_ct_ipark2(
         ctl_mul(dq->dat[phase_d], phasor->dat[phasor_sin]) + ctl_mul(dq->dat[phase_q], phasor->dat[phasor_cos]);
 }
 
+// ipark coordinate axes transform
+// DQ to alpha_beta
+GMP_STATIC_INLINE
+void ctl_ct_ipark_neg(
+    // dq0
+    ctl_vector3_t *dq0,
+    // phasor
+    ctl_vector2_t *phasor,
+    // alpha beta
+    GMP_CTL_OUTPUT_TAG ctl_vector3_t *ab)
+{
+    //tex:
+    // $$i_\alpha = i_d \times \cos\;(\theta) + i_q \times \sin\;(\theta) $$
+    ab->dat[phase_alpha] =
+        ctl_mul(dq0->dat[phase_d], phasor->dat[phasor_cos]) + ctl_mul(dq0->dat[phase_q], phasor->dat[phasor_sin]);
+    //tex:
+    // $$ i_\beta = -i_d \times \sin\;(\theta) + i_q \times \cos\;(\theta) $$
+    ab->dat[phase_beta] =
+        -ctl_mul(dq0->dat[phase_d], phasor->dat[phasor_sin]) + ctl_mul(dq0->dat[phase_q], phasor->dat[phasor_cos]);
+    //tex:
+    // $$i_0 = i_0$$
+    ab->dat[phase_0] = dq0->dat[phase_0];
+}
+
+// ipark coordinate axes transform
+// DQ to alpha_beta
+GMP_STATIC_INLINE
+void ctl_ct_ipark2_neg(
+    // dq0
+    ctl_vector2_t *dq,
+    // phasor
+    ctl_vector2_t *phasor,
+    // alpha beta
+    GMP_CTL_OUTPUT_TAG ctl_vector2_t *ab)
+{
+    //tex:
+    // $$i_\alpha = i_d \times \cos\;(\theta) + i_q \times \sin\;(\theta) $$
+    ab->dat[phase_alpha] =
+        ctl_mul(dq->dat[phase_d], phasor->dat[phasor_cos]) + ctl_mul(dq->dat[phase_q], phasor->dat[phasor_sin]);
+    //tex:
+    // $$ i_\beta = -i_d \times \sin\;(\theta) + i_q \times \cos\;(\theta) $$
+    ab->dat[phase_beta] =
+        -ctl_mul(dq->dat[phase_d], phasor->dat[phasor_sin]) + ctl_mul(dq->dat[phase_q], phasor->dat[phasor_cos]);
+}
+
+
 // iClarke coordinate axes transform
 GMP_STATIC_INLINE
 void ctl_ct_iclark(

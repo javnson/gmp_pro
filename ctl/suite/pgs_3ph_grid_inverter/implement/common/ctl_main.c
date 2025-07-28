@@ -49,25 +49,29 @@ void ctl_init()
     init.fs = CONTROLLER_FREQUENCY;
     init.adc_fc = 1e3f;
 
-    init.kp_id_ctrl = 0.7f;
-    init.Ti_id_ctrl = 0.01f;
-    init.kp_iq_ctrl = 0.7f;
-    init.Ti_iq_ctrl = 0.01f;
-    init.kp_vd_ctrl = 0.7f;
-    init.Ti_vd_ctrl = 0.01f;
-    init.kp_vq_ctrl = 0.7f;
-    init.Ti_vq_ctrl = 0.01f;
+    init.kp_id_ctrl = 1.8f;
+    init.Ti_id_ctrl = 0.002f;
+    init.kp_iq_ctrl = 1.8f;
+    init.Ti_iq_ctrl = 0.002f;
 
-    init.kp_idn_ctrl = 0.07f;
-    init.Ti_idn_ctrl = 0.1f;
-    init.kp_iqn_ctrl = 0.07f;
-    init.Ti_iqn_ctrl = 0.1f;
+    init.kp_vd_ctrl = 0.8f;
+    init.Ti_vd_ctrl = 0.005f;
+    init.kp_vq_ctrl = 0.8f;
+    init.Ti_vq_ctrl = 0.005f;
+
+    init.kp_idn_ctrl = 0.7f;
+    init.Ti_idn_ctrl = 0.01f;
+    init.kp_iqn_ctrl = 0.7f;
+    init.Ti_iqn_ctrl = 0.01f;
+
+    init.kp_pll_ctrl = 0.1f;
+    init.Ti_pll_ctrl = 0.001f;
 
     init.harm_ctrl_kr_3 = 1;
     init.harm_ctrl_cut_freq_3 = 1;
-    init.harm_ctrl_kr_5 = 1;
+    init.harm_ctrl_kr_5 = 5;
     init.harm_ctrl_cut_freq_5 = 1;
-    init.harm_ctrl_kr_7 = 1;
+    init.harm_ctrl_kr_7 = 5;
     init.harm_ctrl_cut_freq_7 = 1;
     init.harm_ctrl_kr_9 = 1;
     init.harm_ctrl_cut_freq_9 = 1;
@@ -85,29 +89,61 @@ void ctl_init()
 
     // Voltage open loop, inverter
     ctl_set_three_phase_inv_openloop_mode(&inv_ctrl);
-    ctl_set_three_phase_inv_voltage_openloop(&inv_ctrl, float2ctrl(0.1), float2ctrl(0.1));
+    ctl_set_three_phase_inv_voltage_openloop(&inv_ctrl, float2ctrl(0.6), float2ctrl(0));
     ctl_set_three_phase_inv_freerun(&inv_ctrl);
     ctl_disable_three_phase_harm_ctrl(&inv_ctrl);
     ctl_disable_three_phase_negative_ctrl(&inv_ctrl);
+    ctl_disable_three_phase_feedforware(&inv_ctrl);
 
 #elif BUILD_LEVEL == 2
+
     // current close loop, inverter
+    ctl_set_three_phase_inv_current_mode(&inv_ctrl);
+    ctl_set_three_phase_inv_current(&inv_ctrl, 0.025, 0.005);
+    ctl_set_three_phase_inv_freerun(&inv_ctrl);
+    ctl_disable_three_phase_harm_ctrl(&inv_ctrl);
+    ctl_disable_three_phase_negative_ctrl(&inv_ctrl);
+    ctl_disable_three_phase_feedforware(&inv_ctrl);
 
 #elif BUILD_LEVEL == 3
 
-    // current close loop, with harm control
+    // current close loop, with feed forward
+    ctl_set_three_phase_inv_current_mode(&inv_ctrl);
+    ctl_set_three_phase_inv_current(&inv_ctrl, 0.025, 0.005);
+    ctl_set_three_phase_inv_freerun(&inv_ctrl);
+    ctl_disable_three_phase_harm_ctrl(&inv_ctrl);
+    ctl_disable_three_phase_negative_ctrl(&inv_ctrl);
+    ctl_enable_three_phase_feedforware(&inv_ctrl);
 
 #elif BUILD_LEVEL == 4
 
-    // rectifier, current loop
+    // current close loop, with feed forward, negative control
+    ctl_set_three_phase_inv_current_mode(&inv_ctrl);
+    ctl_set_three_phase_inv_current(&inv_ctrl, 0.025, 0.005);
+    ctl_set_three_phase_inv_freerun(&inv_ctrl);
+    ctl_disable_three_phase_harm_ctrl(&inv_ctrl);
+    ctl_enable_three_phase_negative_ctrl(&inv_ctrl);
+    ctl_enable_three_phase_feedforware(&inv_ctrl);
 
 #elif BUILD_LEVEL == 5
 
-    // rectifier, current loop, with harm control
+    // current close loop, with feed forward, negative control, harm control
+    ctl_set_three_phase_inv_current_mode(&inv_ctrl);
+    ctl_set_three_phase_inv_current(&inv_ctrl, 0.025, 0.005);
+    ctl_set_three_phase_inv_freerun(&inv_ctrl);
+    ctl_enable_three_phase_harm_ctrl(&inv_ctrl);
+    ctl_enable_three_phase_negative_ctrl(&inv_ctrl);
+    ctl_enable_three_phase_feedforware(&inv_ctrl);
 
 #elif BUILD_LEVEL == 6
 
-    // rectifier voltage loop, without harm control
+    // voltage loop, inverter, voltage loop, current loop, ff
+    ctl_set_three_phase_inv_voltage_mode(&inv_ctrl);
+    ctl_set_three_phase_inv_voltage(&inv_ctrl, 0.12);
+    ctl_set_three_phase_inv_freerun(&inv_ctrl);
+    ctl_disable_three_phase_harm_ctrl(&inv_ctrl);
+    ctl_disable_three_phase_negative_ctrl(&inv_ctrl);
+    ctl_enable_three_phase_feedforware(&inv_ctrl);
 
 #elif BUILD_LEVEL == 7
     // rectifier voltage loop, with harm control
@@ -154,7 +190,7 @@ void ctl_mainloop(void)
         }
 
         // a delay of 500ms
-        if ((started_flag == 0) && ((gmp_base_get_system_tick() - tick_bias) > 500) && (startup_flag == 0))
+        if ((started_flag == 0) && ((gmp_base_get_system_tick() - tick_bias) > 100) && (startup_flag == 0))
         {
             startup_flag = 1;
         }

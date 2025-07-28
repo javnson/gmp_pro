@@ -3,6 +3,11 @@
 #ifndef _FILE_THREE_PHASE_DC_AC_H_
 #define _FILE_THREE_PHASE_DC_AC_H_
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif // __cplusplus
+
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 #include <ctl/component/intrinsic/continuous/saturation.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
@@ -384,11 +389,13 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
         {
             ctl_ct_park2_neg((ctl_vector2_t *)&ctrl->iab0, &ctrl->phasor, &ctrl->idq_neg);
 
-            // negative controller,这里没有反变换回去
-            ctrl->vab_neg.dat[phase_d] =
+            // negative controller
+            ctrl->vdq_neg_out.dat[phase_d] =
                 ctl_step_pid_ser(&ctrl->neg_current_ctrl[phase_d], -ctrl->idq_neg.dat[phase_d]);
-            ctrl->vab_neg.dat[phase_q] =
+            ctrl->vdq_neg_out.dat[phase_q] =
                 ctl_step_pid_ser(&ctrl->neg_current_ctrl[phase_q], -ctrl->idq_neg.dat[phase_q]);
+
+            ctl_ct_ipark2_neg(&ctrl->vdq_neg_out, &ctrl->phasor, &ctrl->vab_neg);
         }
         else
         {
@@ -552,7 +559,7 @@ void ctl_disable_three_phase_inv_harm_control(inv_ctrl_t *inv)
 // WARNING Voltage loop and droop mode is compatible
 
 GMP_STATIC_INLINE
-void ctl_set_three_phase_inv_volotage_mode(inv_ctrl_t *inv)
+void ctl_set_three_phase_inv_voltage_mode(inv_ctrl_t *inv)
 {
     // enable system
     inv->flag_enable_system = 0;
@@ -707,6 +714,18 @@ void ctl_disable_three_phase_inverter(inv_ctrl_t *inv)
 }
 
 GMP_STATIC_INLINE
+void ctl_enable_three_phase_feedforware(inv_ctrl_t *inv)
+{
+    inv->flag_enable_current_ff = 1;
+}
+
+GMP_STATIC_INLINE
+void ctl_disable_three_phase_feedforware(inv_ctrl_t *inv)
+{
+    inv->flag_enable_current_ff = 0;
+}
+
+GMP_STATIC_INLINE
 ctrl_gt ctl_get_three_phase_pll_error(inv_ctrl_t *inv)
 {
     return inv->pll.e_error;
@@ -851,5 +870,9 @@ void ctl_attach_three_phase_inv(
     adc_ift *adc_ia, adc_ift *adc_ib, adc_ift *adc_ic,
     // ubac
     adc_ift *adc_ua, adc_ift *adc_ub, adc_ift *adc_uc);
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif // _FILE_THREE_PHASE_DC_AC_H_
