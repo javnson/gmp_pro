@@ -767,15 +767,24 @@ void ctl_disable_three_phase_harm_ctrl(inv_ctrl_t *inv)
 }
 
 GMP_STATIC_INLINE
-void ctl_enable_three_phase_negative_ctrl(inv_ctrl_t *inv)
+void ctl_enable_three_phase_negative_current_ctrl(inv_ctrl_t *inv)
 {
     inv->flag_enable_negative_current_ctrl = 1;
+    inv->flag_enable_negative_voltage_ctrl = 0;
+}
+
+GMP_STATIC_INLINE
+void ctl_enable_three_phase_negative_voltage_ctrl(inv_ctrl_t *inv)
+{
+    inv->flag_enable_negative_current_ctrl = 1;
+    inv->flag_enable_negative_voltage_ctrl = 1;
 }
 
 GMP_STATIC_INLINE
 void ctl_disable_three_phase_negative_ctrl(inv_ctrl_t *inv)
 {
     inv->flag_enable_negative_current_ctrl = 0;
+    inv->flag_enable_negative_voltage_ctrl = 0;
 }
 
 GMP_STATIC_INLINE
