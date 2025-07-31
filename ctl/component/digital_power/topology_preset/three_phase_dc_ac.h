@@ -101,6 +101,10 @@ typedef struct _tag_inv_ctrl_type
     // writable only in current mode
     ctl_vector2_t idq_set;
 
+    // RW, current feed forward,
+    // for oscillation harnessing interface
+    ctl_vector2_t idq_ff;
+
     // RW, current controller result, dq
     // writable only when Voltage open loop
     ctl_vector2_t vdq_pos_out;
@@ -133,6 +137,12 @@ typedef struct _tag_inv_ctrl_type
     // RO, modulation total result, alpha-beta
     ctl_vector2_t vab_out;
 
+    // RO, idq negative set
+    ctl_vector2_t idq_net_set;
+
+    // RO, vdq negative
+    ctl_vector2_t vdq_neg;
+
     // RO, negative dq current
     ctl_vector2_t idq_neg;
 
@@ -150,6 +160,9 @@ typedef struct _tag_inv_ctrl_type
 
     // RO, current phasor
     ctl_vector2_t phasor;
+
+    // RO, zero-sequence voltage target
+    ctrl_gt v0_set;
 
     // RO, iClarke out
     ctl_vector3_t abc_out;
@@ -176,14 +189,14 @@ typedef struct _tag_inv_ctrl_type
     // current controller, dq
     ctl_pid_t current_ctrl[2];
 
+    // negative voltage controller, dq negative
+    ctl_pid_t neg_voltage_ctrl[2];
+
     // negative current controller, dq negative
     ctl_pid_t neg_current_ctrl[2];
 
     // droop output saturation
     ctl_saturation_t idq_droop_sat[2];
-
-    // QR controller for current 3th harmonic, alpha beta
-    qr_ctrl_t harm_qr_3[2];
 
     // QR controller for current 5th harmonic, alpha beta
     qr_ctrl_t harm_qr_5[2];
@@ -191,8 +204,14 @@ typedef struct _tag_inv_ctrl_type
     // QR controller for current 7th harmonic, alpha beta
     qr_ctrl_t harm_qr_7[2];
 
-    // QR controller for current 9th harmonic, alpha beta
-    qr_ctrl_t harm_qr_9[2];
+    // PI controller for zro-sequence
+    ctl_pid_t zero_pid;
+
+    // QR controller for current 3th harmonic, zero-sequence
+    qr_ctrl_t zero_qr_3;
+
+    // QR controller for current 9th harmonic, zero-sequence
+    qr_ctrl_t zero_qr_9;
 
     //
     // flag stack
@@ -211,14 +230,20 @@ typedef struct _tag_inv_ctrl_type
     // current controller
     fast_gt flag_enable_current_ctrl;
 
-    // current feed forward
-    fast_gt flag_enable_current_ff;
+    // current feed forward, decoupling Lf
+    fast_gt flag_enable_decouple_lf;
 
     // harmonic controller
     fast_gt flag_enable_harm_ctrl;
 
+    // negative voltage controller
+    fast_gt flag_enable_negative_voltage_ctrl;
+
     // negative current controller
     fast_gt flag_enable_negative_current_ctrl;
+
+    // zero sequence controller
+    fast_gt flag_enable_zero_current_ctrl;
 
     // PLL
     fast_gt flag_enable_pll;
@@ -366,11 +391,13 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
         if (ctrl->flag_enable_current_ctrl)
         {
             ctrl->vdq_pos_out.dat[phase_d] =
-                ctl_step_pid_ser(&ctrl->current_ctrl[phase_d], ctrl->idq_set.dat[phase_d] - ctrl->idq.dat[phase_d]);
+                ctl_step_pid_ser(&ctrl->current_ctrl[phase_d],
+                                 ctrl->idq_ff.dat[phase_d] + ctrl->idq_set.dat[phase_d] - ctrl->idq.dat[phase_d]);
             ctrl->vdq_pos_out.dat[phase_q] =
-                ctl_step_pid_ser(&ctrl->current_ctrl[phase_q], ctrl->idq_set.dat[phase_q] - ctrl->idq.dat[phase_q]);
+                ctl_step_pid_ser(&ctrl->current_ctrl[phase_q],
+                                 ctrl->idq_ff.dat[phase_q] + ctrl->idq_set.dat[phase_q] - ctrl->idq.dat[phase_q]);
 
-            if (ctrl->flag_enable_current_ff)
+            if (ctrl->flag_enable_decouple_lf)
             {
                 ctrl->vdq_pos_out.dat[phase_d] -= ctl_mul(ctrl->omega_L, ctrl->idq.dat[phase_q]);
                 ctrl->vdq_pos_out.dat[phase_q] += ctl_mul(ctrl->omega_L, ctrl->idq.dat[phase_q]);
@@ -378,9 +405,32 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
         }
 
         //
-        // modulation
+        // ipark
         //
         ctl_ct_ipark2(&ctrl->vdq_pos_out, &ctrl->phasor, &ctrl->vab_pos);
+
+        //
+        // Voltage negative loop
+        // if voltage negative controller is enabled,
+        // controller target is to suppress negative voltage.
+        //
+        if (ctrl->flag_enable_negative_voltage_ctrl)
+        {
+            ctl_ct_park2_neg((ctl_vector2_t *)&ctrl->iab0, ctrl->phasor, &ctrl->vdq_neg);
+
+            // negative controller
+            ctrl->idq_net_set.dat[phase_d] =
+                ctl_step_pid_ser(&ctrl->neg_voltage_ctrl[phase_d], -ctrl->vdq_neg[phase_d]);
+            ctrl->idq_net_set.dat[phase_q] =
+                ctl_step_pid_ser(&ctrl->neg_voltage_ctrl[phase_q], -ctrl->vdq_neg[phase_q]);
+        }
+        // if negative voltage controller is disabled,
+        // controller target is to suppress negative current
+        else
+        {
+            ctrl->idq_net_set.dat[phase_d] = 0;
+            ctrl->idq_net_set.dat[phase_q] = 0;
+        }
 
         //
         // current negative loop
@@ -390,10 +440,11 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
             ctl_ct_park2_neg((ctl_vector2_t *)&ctrl->iab0, &ctrl->phasor, &ctrl->idq_neg);
 
             // negative controller
-            ctrl->vdq_neg_out.dat[phase_d] =
-                ctl_step_pid_ser(&ctrl->neg_current_ctrl[phase_d], -ctrl->idq_neg.dat[phase_d]);
-            ctrl->vdq_neg_out.dat[phase_q] =
-                ctl_step_pid_ser(&ctrl->neg_current_ctrl[phase_q], -ctrl->idq_neg.dat[phase_q]);
+            ctrl->vdq_neg_out.dat[phase_d] = ctl_step_pid_ser(
+                &ctrl->neg_current_ctrl[phase_d], ctrl->idq_net_set.dat[phase_d] - ctrl->idq_neg.dat[phase_d]);
+
+            ctrl->vdq_neg_out.dat[phase_q] = ctl_step_pid_ser(
+                &ctrl->neg_current_ctrl[phase_q], ctrl->idq_net_set.dat[phase_q] - ctrl->idq_neg.dat[phase_q]);
 
             ctl_ct_ipark2_neg(&ctrl->vdq_neg_out, &ctrl->phasor, &ctrl->vab_neg);
         }
@@ -410,10 +461,8 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
             // for alpha & beta
             for (int i = 0; i < 2; ++i)
             {
-                ctrl->vab_harm.dat[i] = ctl_step_qr_controller(&ctrl->harm_qr_3[i], -ctrl->iab0.dat[i]);
-                ctrl->vab_harm.dat[i] += ctl_step_qr_controller(&ctrl->harm_qr_5[i], -ctrl->iab0.dat[i]);
+                ctrl->vab_harm.dat[i] = ctl_step_qr_controller(&ctrl->harm_qr_5[i], -ctrl->iab0.dat[i]);
                 ctrl->vab_harm.dat[i] += ctl_step_qr_controller(&ctrl->harm_qr_7[i], -ctrl->iab0.dat[i]);
-                ctrl->vab_harm.dat[i] += ctl_step_qr_controller(&ctrl->harm_qr_9[i], -ctrl->iab0.dat[i]);
             }
         }
         else
@@ -426,6 +475,22 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
         //
         ctrl->vab_out.dat[0] = ctrl->vab_pos.dat[0] + ctrl->vab_neg.dat[0] + ctrl->vab_harm.dat[0];
         ctrl->vab_out.dat[1] = ctrl->vab_pos.dat[1] + ctrl->vab_neg.dat[1] + ctrl->vab_harm.dat[1];
+
+        //
+        // zero sequence controller
+        //
+        if (flag_enable_zero_current_ctrl)
+        {
+            ctrl->v0_set = ctl_step_pid_ser(&ctrl->zero_pid, -ctrl->iab0.dat[phase_0]);
+            ctrl->v0_set += ctl_step_qr_controller(&ctrl->zero_qr_3[i], -ctrl->iab0.dat[phase_0]);
+            ctrl->v0_set += ctl_step_qr_controller(&ctrl->zero_qr_9[i], -ctrl->iab0.dat[phase_0]);
+        }
+        // if zero sequence controller is disabled,
+        // just output v0 = 0.
+        else
+        {
+            ctrl->v0_set = 0;
+        }
 
         //
         // iClarke
@@ -467,10 +532,13 @@ void ctl_set_three_phase_inv_openloop_mode(inv_ctrl_t *inv)
     inv->flag_enable_current_ctrl = 0;
 
     // current feed forward
-    inv->flag_enable_current_ff = 0;
+    inv->flag_enable_decouple_lf = 0;
 
     // harmonic controller
     inv->flag_enable_harm_ctrl = 0;
+
+    // negative voltage controller
+    inv->flag_enable_negative_voltage_ctrl = 0;
 
     // negative current controller
     inv->flag_enable_negative_current_ctrl = 0;
@@ -511,10 +579,13 @@ void ctl_set_three_phase_inv_current_mode(inv_ctrl_t *inv)
     inv->flag_enable_current_ctrl = 1;
 
     // current feed forward
-    inv->flag_enable_current_ff = 1;
+    inv->flag_enable_decouple_lf = 1;
 
     // harmonic controller
     inv->flag_enable_harm_ctrl = 0;
+
+    // negative voltage controller
+    inv->flag_enable_negative_voltage_ctrl = 0;
 
     // negative current controller
     inv->flag_enable_negative_current_ctrl = 0;
@@ -575,10 +646,13 @@ void ctl_set_three_phase_inv_voltage_mode(inv_ctrl_t *inv)
     inv->flag_enable_current_ctrl = 1;
 
     // current feed forward
-    inv->flag_enable_current_ff = 1;
+    inv->flag_enable_decouple_lf = 1;
 
     // harmonic controller
     inv->flag_enable_harm_ctrl = 0;
+
+    // negative voltage controller
+    inv->flag_enable_negative_voltage_ctrl = 0;
 
     // negative current controller
     inv->flag_enable_negative_current_ctrl = 0;
@@ -625,10 +699,13 @@ void ctl_set_three_phase_inv_droop_mode(inv_ctrl_t *inv)
     inv->flag_enable_current_ctrl = 1;
 
     // current feed forward
-    inv->flag_enable_current_ff = 1;
+    inv->flag_enable_decouple_lf = 1;
 
     // harmonic controller
     inv->flag_enable_harm_ctrl = 0;
+
+    // negative voltage controller
+    inv->flag_enable_negative_voltage_ctrl = 0;
 
     // negative current controller
     inv->flag_enable_negative_current_ctrl = 0;
@@ -716,13 +793,13 @@ void ctl_disable_three_phase_inverter(inv_ctrl_t *inv)
 GMP_STATIC_INLINE
 void ctl_enable_three_phase_feedforware(inv_ctrl_t *inv)
 {
-    inv->flag_enable_current_ff = 1;
+    inv->flag_enable_decouple_lf = 1;
 }
 
 GMP_STATIC_INLINE
 void ctl_disable_three_phase_feedforware(inv_ctrl_t *inv)
 {
-    inv->flag_enable_current_ff = 0;
+    inv->flag_enable_decouple_lf = 0;
 }
 
 GMP_STATIC_INLINE
@@ -753,16 +830,22 @@ void ctl_clear_three_phase_inv(inv_ctrl_t *inv)
     ctl_clear_pid(&inv->current_ctrl[phase_d]);
     ctl_clear_pid(&inv->current_ctrl[phase_q]);
 
+    ctl_clear_pid(&inv->neg_voltage_ctrl[phase_d]);
+    ctl_clear_pid(&inv->neg_voltage_ctrl[phase_q]);
     ctl_clear_pid(&inv->neg_current_ctrl[phase_d]);
     ctl_clear_pid(&inv->neg_current_ctrl[phase_q]);
 
     for (int i = 0; i < 2; ++i)
     {
-        ctl_clear_qr_controller(&inv->harm_qr_3[i]);
         ctl_clear_qr_controller(&inv->harm_qr_5[i]);
         ctl_clear_qr_controller(&inv->harm_qr_7[i]);
-        ctl_clear_qr_controller(&inv->harm_qr_9[i]);
     }
+
+    ctl_clear_pid(&inv->zero_pid);
+    ctl_clear_qr_controller(&inv->zero_qr_3);
+    ctl_clear_qr_controller(&inv->zero_qr_9);
+
+    ctl_vector2_clear(&inv->idq_ff);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -817,8 +900,16 @@ typedef struct _tag_three_phase_inv_init_type
     parameter_gt Ti_pll_ctrl;
 
     //
-    // negative current controller
+    // negative controller
     //
+
+    // negative vd controller
+    parameter_gt kp_vdn_ctrl;
+    parameter_gt Ti_vdn_ctrl;
+
+    // negative vq controller
+    parameter_gt kp_vqn_ctrl;
+    parameter_gt Ti_vqn_ctrl;
 
     // negative id controller
     parameter_gt kp_idn_ctrl;
@@ -832,14 +923,10 @@ typedef struct _tag_three_phase_inv_init_type
     // Harmonic controller
     //
 
-    parameter_gt harm_ctrl_kr_3;
-    parameter_gt harm_ctrl_cut_freq_3;
     parameter_gt harm_ctrl_kr_5;
     parameter_gt harm_ctrl_cut_freq_5;
     parameter_gt harm_ctrl_kr_7;
     parameter_gt harm_ctrl_cut_freq_7;
-    parameter_gt harm_ctrl_kr_9;
-    parameter_gt harm_ctrl_cut_freq_9;
 
     //
     // droop parameters
@@ -854,6 +941,20 @@ typedef struct _tag_three_phase_inv_init_type
     // droop control current range
     parameter_gt id_lim_droop;
     parameter_gt iq_lim_droop;
+
+    //
+    // Zero sequence controller
+    //
+
+    // Zero PI controller
+    parameter_gt zero_ctrl_kp;
+    parameter_gt zero_ctrl_Ti;
+
+    // zero harmonic controller
+    parameter_gt zero_ctrl_kr_3;
+    parameter_gt zero_ctrl_cut_freq_3;
+    parameter_gt zero_ctrl_kr_9;
+    parameter_gt zero_ctrl_cut_freq_9;
 
 } three_phase_inv_init_t;
 

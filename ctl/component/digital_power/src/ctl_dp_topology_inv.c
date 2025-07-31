@@ -34,6 +34,8 @@ void ctl_upgrade_three_phase_inv(inv_ctrl_t *inv, three_phase_inv_init_t *init)
     ctl_init_pid_ser(&inv->current_ctrl[phase_d], init->kp_id_ctrl, init->Ti_id_ctrl, 0, init->fs);
     ctl_init_pid_ser(&inv->current_ctrl[phase_q], init->kp_iq_ctrl, init->Ti_iq_ctrl, 0, init->fs);
 
+    ctl_init_pid_ser(&inv->neg_voltage_ctrl[phase_d], init->kp_vdn_ctrl, init->Ti_vdn_ctrl, 0, init->fs);
+    ctl_init_pid_ser(&inv->neg_voltage_ctrl[phase_q], init->kp_vqn_ctrl, init->Ti_vqn_ctrl, 0, init->fs);
     ctl_init_pid_ser(&inv->neg_current_ctrl[phase_d], init->kp_idn_ctrl, init->Ti_idn_ctrl, 0, init->fs);
     ctl_init_pid_ser(&inv->neg_current_ctrl[phase_q], init->kp_iqn_ctrl, init->Ti_iqn_ctrl, 0, init->fs);
 
@@ -44,15 +46,17 @@ void ctl_upgrade_three_phase_inv(inv_ctrl_t *inv, three_phase_inv_init_t *init)
 
     for (int i = 0; i < 2; ++i)
     {
-        ctl_init_qr_controller(&inv->harm_qr_3[i], init->harm_ctrl_kr_3, init->freq_base * 3,
-                               init->harm_ctrl_cut_freq_3, init->fs);
         ctl_init_qr_controller(&inv->harm_qr_5[i], init->harm_ctrl_kr_5, init->freq_base * 5,
                                init->harm_ctrl_cut_freq_5, init->fs);
         ctl_init_qr_controller(&inv->harm_qr_7[i], init->harm_ctrl_kr_7, init->freq_base * 7,
                                init->harm_ctrl_cut_freq_7, init->fs);
-        ctl_init_qr_controller(&inv->harm_qr_9[i], init->harm_ctrl_kr_9, init->freq_base * 9,
-                               init->harm_ctrl_cut_freq_9, init->fs);
     }
+
+    ctl_init_pid_ser(&inv->zero_pid, init->zero_ctrl_kp, init->zero_ctrl_Ti, 0, init->fs);
+    ctl_init_qr_controller(&inv->zero_qr_3, init->zero_ctrl_kr_3, init->freq_base * 3, init->zero_ctrl_cut_freq_3,
+                           init->fs);
+    ctl_init_qr_controller(&inv->zero_qr_9, init->zero_ctrl_kr_9, init->freq_base * 9, init->zero_ctrl_cut_freq_9,
+                           init->fs);
 
     inv->omega_L = float2ctrl(2.0 * PI * init->freq_base * init->Lf * init->i_base / init->v_base);
     inv->rg_freq_pu = float2ctrl(1.0);
