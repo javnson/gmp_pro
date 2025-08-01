@@ -416,13 +416,13 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
         //
         if (ctrl->flag_enable_negative_voltage_ctrl)
         {
-            ctl_ct_park2_neg((ctl_vector2_t *)&ctrl->iab0, ctrl->phasor, &ctrl->vdq_neg);
+            ctl_ct_park2_neg((ctl_vector2_t *)&ctrl->iab0, &ctrl->phasor, &ctrl->vdq_neg);
 
             // negative controller
             ctrl->idq_net_set.dat[phase_d] =
-                ctl_step_pid_ser(&ctrl->neg_voltage_ctrl[phase_d], -ctrl->vdq_neg[phase_d]);
+                ctl_step_pid_ser(&ctrl->neg_voltage_ctrl[phase_d], -ctrl->vdq_neg.dat[phase_d]);
             ctrl->idq_net_set.dat[phase_q] =
-                ctl_step_pid_ser(&ctrl->neg_voltage_ctrl[phase_q], -ctrl->vdq_neg[phase_q]);
+                ctl_step_pid_ser(&ctrl->neg_voltage_ctrl[phase_q], -ctrl->vdq_neg.dat[phase_q]);
         }
         // if negative voltage controller is disabled,
         // controller target is to suppress negative current
@@ -479,11 +479,11 @@ void ctl_step_inv_ctrl(inv_ctrl_t *ctrl)
         //
         // zero sequence controller
         //
-        if (flag_enable_zero_current_ctrl)
+        if (ctrl->flag_enable_zero_current_ctrl)
         {
             ctrl->v0_set = ctl_step_pid_ser(&ctrl->zero_pid, -ctrl->iab0.dat[phase_0]);
-            ctrl->v0_set += ctl_step_qr_controller(&ctrl->zero_qr_3[i], -ctrl->iab0.dat[phase_0]);
-            ctrl->v0_set += ctl_step_qr_controller(&ctrl->zero_qr_9[i], -ctrl->iab0.dat[phase_0]);
+            ctrl->v0_set += ctl_step_qr_controller(&ctrl->zero_qr_3, -ctrl->iab0.dat[phase_0]);
+            ctrl->v0_set += ctl_step_qr_controller(&ctrl->zero_qr_9, -ctrl->iab0.dat[phase_0]);
         }
         // if zero sequence controller is disabled,
         // just output v0 = 0.

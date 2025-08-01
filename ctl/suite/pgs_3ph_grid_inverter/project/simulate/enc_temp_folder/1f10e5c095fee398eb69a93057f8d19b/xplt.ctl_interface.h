@@ -131,7 +131,7 @@ void ctl_output_callback(void)
     simulink_tx_buffer.monitor[12] = inv_ctrl.iabc.dat[phase_A];
     simulink_tx_buffer.monitor[13] = inv_ctrl.iabc.dat[phase_B];
 
-#elif BUILD_LEVEL == 6 || BUILD_LEVEL == 7
+#elif BUILD_LEVEL == 6
 
     // Scope 1 d current control
     simulink_tx_buffer.monitor[0] = inv_ctrl.idq_set.dat[phase_d];

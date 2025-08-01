@@ -59,6 +59,11 @@ void ctl_init()
     init.kp_vq_ctrl = 0.8f;
     init.Ti_vq_ctrl = 0.005f;
 
+    init.kp_vdn_ctrl = 0.2f;
+    init.Ti_vdn_ctrl = 0.01f;
+    init.kp_vqn_ctrl = 0.2f;
+    init.Ti_vqn_ctrl = 0.01f;
+
     init.kp_idn_ctrl = 0.7f;
     init.Ti_idn_ctrl = 0.01f;
     init.kp_iqn_ctrl = 0.7f;
@@ -67,14 +72,17 @@ void ctl_init()
     init.kp_pll_ctrl = 0.1f;
     init.Ti_pll_ctrl = 0.001f;
 
-    init.harm_ctrl_kr_3 = 1;
-    init.harm_ctrl_cut_freq_3 = 1;
     init.harm_ctrl_kr_5 = 5;
     init.harm_ctrl_cut_freq_5 = 1;
     init.harm_ctrl_kr_7 = 5;
     init.harm_ctrl_cut_freq_7 = 1;
-    init.harm_ctrl_kr_9 = 1;
-    init.harm_ctrl_cut_freq_9 = 1;
+
+    init.zero_ctrl_kp = 0.001;
+    init.zero_ctrl_Ti = 0.01;
+    init.zero_ctrl_kr_3 = 1;
+    init.zero_ctrl_cut_freq_3 = 1;
+    init.zero_ctrl_kr_9 = 1;
+    init.zero_ctrl_cut_freq_9 = 1;
 
     init.kp_droop = 0.001f;
     init.kq_droop = 0.001f;
@@ -122,7 +130,7 @@ void ctl_init()
     ctl_set_three_phase_inv_current(&inv_ctrl, 0.025, 0.005);
     ctl_set_three_phase_inv_freerun(&inv_ctrl);
     ctl_disable_three_phase_harm_ctrl(&inv_ctrl);
-    ctl_enable_three_phase_negative_ctrl(&inv_ctrl);
+    ctl_enable_three_phase_negative_current_ctrl(&inv_ctrl);
     ctl_enable_three_phase_feedforware(&inv_ctrl);
 
 #elif BUILD_LEVEL == 5
@@ -132,7 +140,7 @@ void ctl_init()
     ctl_set_three_phase_inv_current(&inv_ctrl, 0.025, 0.005);
     ctl_set_three_phase_inv_freerun(&inv_ctrl);
     ctl_enable_three_phase_harm_ctrl(&inv_ctrl);
-    ctl_enable_three_phase_negative_ctrl(&inv_ctrl);
+    ctl_enable_three_phase_negative_current_ctrl(&inv_ctrl);
     ctl_enable_three_phase_feedforware(&inv_ctrl);
 
 #elif BUILD_LEVEL == 6
@@ -146,7 +154,13 @@ void ctl_init()
     ctl_enable_three_phase_feedforware(&inv_ctrl);
 
 #elif BUILD_LEVEL == 7
-    // rectifier voltage loop, with harm control
+    // inverter, voltage loop, current loop, ff, negative voltage control
+    ctl_set_three_phase_inv_voltage_mode(&inv_ctrl);
+    ctl_set_three_phase_inv_voltage(&inv_ctrl, 0.12);
+    ctl_set_three_phase_inv_freerun(&inv_ctrl);
+    ctl_disable_three_phase_harm_ctrl(&inv_ctrl);
+    ctl_enable_three_phase_negative_voltage_ctrl(&inv_ctrl);
+    ctl_enable_three_phase_feedforware(&inv_ctrl);
 
 #endif // BUILD_LEVEL
 
