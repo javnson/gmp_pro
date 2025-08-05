@@ -1,33 +1,38 @@
+# Based on the Microsoft style, with adjustments for Doxygen compatibility.
 BasedOnStyle: Microsoft
+Language: Cpp
+
+# --- General Formatting ---
 UseTab: Never
 IndentWidth: 4
+# Set to a specific value to enforce a line limit.
+# Set to 0 to prevent clang-format from re-wrapping lines, which is useful
+# for preserving manually formatted Doxygen comments.
+ColumnLimit: 120
 
-# Bracket
-# BracketAlignmentStyle: BAS_Align
+# --- Doxygen & Comment Control ---
+# This is the most important setting to protect special comment blocks.
+# It tells clang-format to treat lines starting with /**, *, */ (for Doxygen)
+# and //tex: (for LaTeX math blocks) as special pragmas that should not be
+# reformatted.
+CommentPragmas: '^/\*\*|^\*|^\*/|^//tex:'
 
-# Array
-# ArrayInitializerAlignmentStyle: AIAS_Left
+# Keep general block comments (like the file header) from being reflowed.
+ReflowComments: false
 
-# Macros
-# AlignConsecutiveMacros: AcrossEmptyLines
-
-AlignConsecutiveMacros:
-  Enabled: true
-  AcrossEmptyLines: true
-  AcrossComments: false
-#  EscapedNewlineAlignmentStyle: ENAS_LeftWithLastLine 
-
-
-
-# EOF with new line
-#InsertNewlineAtEOF: true
-
-# disable extern "C" Indent
-#IndentExternBlock: AfterExternBlock
-#BraceWrapping.AfterExternBlock: false
-
+# --- Indentation ---
+# Do not indent 'extern "C"' blocks.
 IndentExternBlock: NoIndent
 
-# math equations
-# CommentPragmas (//tex:)
+# --- Pointer Alignment ---
+# Align pointers to the type (e.g., 'char* p' instead of 'char *p').
+# Options: Left, Right, Middle
+PointerAlignment: Left
 
+# --- Macro Alignment ---
+# Align consecutive macro definitions for better readability.
+AlignConsecutiveMacros: true
+
+# --- Other ---
+# Always add a newline at the end of the file.
+InsertNewlineAtEOF: true

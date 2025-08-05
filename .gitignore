@@ -485,4 +485,7 @@ slib/install_path/R2022b/**
 # GMP pro zip file
 gmp_pro.zip
 
+# doxygen output files
+ctl/doc/**
+
 

@@ -10,9 +10,6 @@ extern "C"
 
 // Resonant Control
 
-// clang-format off
-// 
-
 // Resonant Control
 //tex:
 // $$
@@ -25,9 +22,6 @@ extern "C"
 // $$
 // G_{PR} =  k_r \frac{4f_s}{4f_s^2+\omega_r^2} \cdot \frac{1-z^{-2}}{1-2\frac{4f_s^2-\omega_r^2}{4f_s^2+\omega_r^2}z^{-1}+z^{-2}}
 // $$
-    
-//
-// clang-format on
 
 typedef struct _tag_ctl_resonant_controller
 {
@@ -65,7 +59,7 @@ typedef struct _tag_ctl_resonant_controller
 
 void ctl_init_resonant_controller(
     // handle of PR controller
-    resonant_ctrl_t *r,
+    resonant_ctrl_t* r,
     // gain of resonant frequency
     parameter_gt kr,
     // resonant frequency, unit Hz
@@ -76,7 +70,7 @@ void ctl_init_resonant_controller(
 GMP_STATIC_INLINE
 void ctl_clear_resonant_controller(
     // handle of PR controller
-    resonant_ctrl_t *r)
+    resonant_ctrl_t* r)
 {
     r->output = 0;
     r->output_2 = 0;
@@ -89,7 +83,7 @@ void ctl_clear_resonant_controller(
 GMP_STATIC_INLINE
 ctrl_gt ctl_step_resonant_controller(
     // handle of PR controller
-    resonant_ctrl_t *r,
+    resonant_ctrl_t* r,
     // input of PR controller
     ctrl_gt input)
 {
@@ -169,7 +163,7 @@ typedef struct _tag_ctl_pr_controller
 
 void ctl_init_pr_controller(
     // handle of PR controller
-    pr_ctrl_t *pr,
+    pr_ctrl_t* pr,
     // Kp
     parameter_gt kp,
     // gain of resonant frequency
@@ -182,7 +176,7 @@ void ctl_init_pr_controller(
 GMP_STATIC_INLINE
 void ctl_clear_pr_controller(
     // handle of PR controller
-    pr_ctrl_t *pr)
+    pr_ctrl_t* pr)
 {
     pr->output = 0;
     pr->output_2 = 0;
@@ -195,7 +189,7 @@ void ctl_clear_pr_controller(
 GMP_STATIC_INLINE
 ctrl_gt ctl_step_pr_controller(
     // handle of PR controller
-    pr_ctrl_t *pr,
+    pr_ctrl_t* pr,
     // input of PR controller
     ctrl_gt input)
 {
@@ -279,7 +273,7 @@ typedef struct _tag_ctl_qr_controller
 GMP_STATIC_INLINE
 void ctl_clear_qr_controller(
     // handle of QR controller
-    qr_ctrl_t *qr)
+    qr_ctrl_t* qr)
 {
     qr->output = 0;
     qr->output_2 = 0;
@@ -291,7 +285,7 @@ void ctl_clear_qr_controller(
 
 void ctl_init_qr_controller(
     // handle of QR controller
-    qr_ctrl_t *qr,
+    qr_ctrl_t* qr,
     // gain of resonant frequency
     parameter_gt kr,
     // resonant frequency, unit Hz
@@ -304,7 +298,7 @@ void ctl_init_qr_controller(
 GMP_STATIC_INLINE
 ctrl_gt ctl_step_qr_controller(
     // handle of QR controller
-    qr_ctrl_t *qr,
+    qr_ctrl_t* qr,
     // input
     ctrl_gt input)
 {
@@ -393,7 +387,7 @@ typedef struct _tag_ctl_qpr_controller
 GMP_STATIC_INLINE
 void ctl_clear_qpr_controller(
     // handle of QPR controller
-    qpr_ctrl_t *qpr)
+    qpr_ctrl_t* qpr)
 {
     qpr->output = 0;
     qpr->output_2 = 0;
@@ -405,7 +399,7 @@ void ctl_clear_qpr_controller(
 
 void ctl_init_qpr_controller(
     // handle of QPR controller
-    qpr_ctrl_t *qpr,
+    qpr_ctrl_t* qpr,
     // Kp
     parameter_gt kp,
     // gain of resonant frequency
@@ -420,7 +414,7 @@ void ctl_init_qpr_controller(
 GMP_STATIC_INLINE
 ctrl_gt ctl_step_qpr_controller(
     // handle of QPR controller
-    qpr_ctrl_t *qpr,
+    qpr_ctrl_t* qpr,
     // input
     ctrl_gt input)
 {
@@ -446,7 +440,6 @@ ctrl_gt ctl_step_qpr_controller(
 
     return output;
 }
-
 
 #ifdef __cplusplus
 }
