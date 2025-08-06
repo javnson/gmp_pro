@@ -11,6 +11,8 @@
  * the PMSM controller.
  */
 
+#include <gmp_core.h>
+
 #include <ctl/component/motor_control/pmsm_controller/pmsm_ctrl.h>
 
 /**
@@ -53,8 +55,9 @@ void ctl_init_pmsm_bare_controller(pmsm_bare_controller_t* ctrl, pmsm_bare_contr
     ctl_set_pid_limit(&ctrl->current_ctrl[phase_q], init->voltage_limit_max, init->voltage_limit_min);
 
     // Velocity controller
-    ctl_init_track_pid(&ctrl->spd_ctrl, init->spd_pid_gain, init->spd_Ti, init->spd_Td, init->current_limit_max,
-                       init->current_limit_min, init->acc_limit_max, init->acc_limit_min, init->spd_ctrl_div, init->fs);
+    ctl_init_tracking_continuous_pid(&ctrl->spd_ctrl, init->spd_pid_gain, init->spd_Ti, init->spd_Td,
+                                     init->current_limit_max, init->current_limit_min, init->acc_limit_max,
+                                     init->acc_limit_min, init->spd_ctrl_div, init->fs);
 #endif // PMSM_CTRL_USING_DISCRETE_CTRL
 
     // --- Clear intermediate variables ---

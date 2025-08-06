@@ -2,12 +2,12 @@
 
 #include <gmp_core.h>
 
-#include <ctl/suite/mcs_pmsm/pmsm_ctrl.h>
+#include <ctl/component/motor_control/pmsm_controller/pmsm_ctrl_smo.h>
 
 // #include "peripheral.h"
 
 // init pmsm_bare_controller struct
-void ctl_init_pmsm_smo_bare_controller(pmsm_smo_bare_controller_t *ctrl, pmsm_smo_bare_controller_init_t *init)
+void ctl_init_pmsm_smo_bare_controller(pmsm_smo_bare_controller_t* ctrl, pmsm_smo_bare_controller_init_t* init)
 {
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
     // controller implement
@@ -45,7 +45,7 @@ void ctl_init_pmsm_smo_bare_controller(pmsm_smo_bare_controller_t *ctrl, pmsm_sm
 
 #else // using continuous controller
 
-    ctl_init_pid(
+    ctl_init_pid_ser(
         // d axis current controller
         &ctrl->current_ctrl[phase_d],
         // parameters for current controller
@@ -54,7 +54,7 @@ void ctl_init_pmsm_smo_bare_controller(pmsm_smo_bare_controller_t *ctrl, pmsm_sm
         init->fs);
     ctl_set_pid_limit(&ctrl->current_ctrl[phase_d], init->voltage_limit_max, init->voltage_limit_min);
 
-    ctl_init_pid(
+    ctl_init_pid_ser(
         // d axis current controller
         &ctrl->current_ctrl[phase_q],
         // parameters for current controller
@@ -63,7 +63,7 @@ void ctl_init_pmsm_smo_bare_controller(pmsm_smo_bare_controller_t *ctrl, pmsm_sm
         init->fs);
     ctl_set_pid_limit(&ctrl->current_ctrl[phase_q], init->voltage_limit_max, init->voltage_limit_min);
 
-    ctl_init_track_pid(
+    ctl_init_tracking_continuous_pid(
         // speed controller
         &ctrl->spd_ctrl,
         // parameters for speed controller
@@ -138,7 +138,7 @@ void ctl_init_pmsm_smo_bare_controller(pmsm_smo_bare_controller_t *ctrl, pmsm_sm
     ctl_pmsm_smo_ctrl_valphabeta_mode(ctrl);
 }
 
-void ctl_attach_pmsm_smo_bare_output(pmsm_smo_bare_controller_t *ctrl, tri_pwm_ift *pwm_out)
+void ctl_attach_pmsm_smo_bare_output(pmsm_smo_bare_controller_t* ctrl, tri_pwm_ift* _pwm_out)
 {
-    ctrl->pwm_out = pwm_out;
+    ctrl->pwm_out = _pwm_out;
 }

@@ -128,10 +128,10 @@ typedef struct _tag_pmsm_smo_bare_controller
 #else // use continuous controller
 
     // current controller
-    pid_regular_t current_ctrl[2];
+    ctl_pid_t current_ctrl[2];
 
     // speed controller
-    track_pid_t spd_ctrl;
+    ctl_tracking_continuous_pid_t spd_ctrl;
 #endif
 
     // SMO Observer
@@ -284,7 +284,7 @@ void ctl_step_pmsm_smo_ctrl(pmsm_smo_bare_controller_t *ctrl)
                                          ctrl->idq_ff.dat[phase_q];
 #else  // using continuous controller
             ctrl->idq_set.dat[phase_q] =
-                ctl_step_track_pid(&ctrl->spd_ctrl, ctrl->speed_set, ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
+                ctl_step_tracking_continuous_pid(&ctrl->spd_ctrl, ctrl->speed_set, ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
                 ctrl->idq_ff.dat[phase_q];
 #endif // PMSM_CTRL_USING_DISCRETE_CTRL
 
@@ -315,11 +315,11 @@ void ctl_step_pmsm_smo_ctrl(pmsm_smo_bare_controller_t *ctrl)
                                          ctrl->vdq_ff.dat[phase_q];
 #else  //  using continuous controller
             ctrl->vdq_set.dat[phase_d] =
-                ctl_step_pid_par(&ctrl->current_ctrl[phase_d], ctrl->idq_set.dat[phase_d] - ctrl->idq0.dat[phase_d]) +
+                ctl_step_pid_ser(&ctrl->current_ctrl[phase_d], ctrl->idq_set.dat[phase_d] - ctrl->idq0.dat[phase_d]) +
                 ctrl->vdq_ff.dat[phase_d];
 
             ctrl->vdq_set.dat[phase_q] =
-                ctl_step_pid_par(&ctrl->current_ctrl[phase_q], ctrl->idq_set.dat[phase_q] - ctrl->idq0.dat[phase_q]) +
+                ctl_step_pid_ser(&ctrl->current_ctrl[phase_q], ctrl->idq_set.dat[phase_q] - ctrl->idq0.dat[phase_q]) +
                 ctrl->vdq_ff.dat[phase_q];
 #endif // PMSM_CTRL_USING_DISCRETE_CTRL
 
@@ -380,7 +380,7 @@ void ctl_clear_pmsm_smo_ctrl(pmsm_smo_bare_controller_t *ctrl)
     ctl_clear_pid(&ctrl->current_ctrl[phase_d]);
     ctl_clear_pid(&ctrl->current_ctrl[phase_q]);
 
-    ctl_clear_track_pid(&ctrl->spd_ctrl);
+    ctl_clear_tracking_continuous_pid(&ctrl->spd_ctrl);
 #endif // PMSM_CTRL_USING_DISCRETE_CTRL
 
     ctl_attach_mtr_position(&ctrl->mtr_interface, &ctrl->ramp_gen.enc);
@@ -539,7 +539,7 @@ void ctl_switch_pmsm_smo_ctrl_using_smo(pmsm_smo_bare_controller_t *ctrl)
         ctrl->current_ctrl[phase_q].output_1 = udq0.dat[phase_q];
 #else  // using continuous controller
         ctrl->idq_set.dat[phase_q] =
-            ctl_step_track_pid(&ctrl->spd_ctrl, ctrl->speed_set, ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
+            ctl_step_tracking_continuous_pid(&ctrl->spd_ctrl, ctrl->speed_set, ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
             ctrl->idq_ff.dat[phase_q];
 #endif // PMSM_CTRL_USING_DISCRETE_CTRL
 

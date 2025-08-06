@@ -97,6 +97,7 @@ void ctl_init_filter_iir2(ctl_filter_IIR2_t* obj, ctl_filter_IIR2_setup_t* setup
 
 #include <ctl/component/intrinsic/discrete/signal_generator.h>
 
+
 void ctl_init_sine_generator(ctl_sine_generator_t* sg,
                              parameter_gt init_angle, // pu
                              parameter_gt step_angle) // pu
@@ -108,7 +109,7 @@ void ctl_init_sine_generator(ctl_sine_generator_t* sg,
     sg->ph_cos_delta = float2ctrl(cos(step_angle));
 }
 
-void ctl_init_ramp_gen(ctl_ramp_generator_t* rg, ctrl_gt slope, parameter_gt amp_pos, parameter_gt amp_neg)
+void ctl_init_ramp_generator(ctl_ramp_generator_t* rg, ctrl_gt slope, parameter_gt amp_pos, parameter_gt amp_neg)
 {
     rg->current = float2ctrl(0);
 
@@ -118,7 +119,7 @@ void ctl_init_ramp_gen(ctl_ramp_generator_t* rg, ctrl_gt slope, parameter_gt amp
     rg->slope = slope;
 }
 
-void ctl_init_ramp_gen_via_amp_freq(
+void ctl_init_ramp_generator_via_freq(
     // pointer to ramp generator object
     ctl_ramp_generator_t* rg,
     // isr frequency, unit Hz

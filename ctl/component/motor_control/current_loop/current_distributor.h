@@ -70,7 +70,7 @@ void calc_interpolation_coefficients(idq_current_distributor_t *distributor)
 GMP_STATIC_INLINE
 ctrl_gt linear_interpolation(idq_current_distributor_t *distributor)
 {
-    int index = (distributor->im - CURRENT_DISTRIBUTION_LUT[0].im) / CURRENT_DISTRIBUTION_LUT_STEP;
+    int index = (int)((distributor->im - CURRENT_DISTRIBUTION_LUT[0].im) / CURRENT_DISTRIBUTION_LUT_STEP);
 
     // Prevent out-of-bound access
     if (index < 0)

@@ -154,7 +154,7 @@ void ctl_init_pid_aw_par(
 
 #include <ctl/component/intrinsic/continuous/track_pid.h>
 
-void ctl_init_track_pid(
+void ctl_init_tracking_continuous_pid(
     // handle of track pid
     ctl_tracking_continuous_pid_t* tp,
     // pid parameters

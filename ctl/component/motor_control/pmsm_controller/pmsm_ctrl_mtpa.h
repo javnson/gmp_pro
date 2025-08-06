@@ -51,6 +51,8 @@ extern "C"
 #define MTR_CTRL_FEEDFORWARD_STRATEGY (1)
 #endif // MTR_CTRL_FEEDFORWARD_STRATEGY
 
+#define PMSM_CTRL_USING_CURRENT_DISTRIBUTOR
+
 //
 // PMSM Bare controller is a x-platform PMSM controller.
 //
@@ -117,7 +119,7 @@ typedef struct _tag_pmsm_mtpa_bare_controller
     mtr_ift mtr_interface;
 
     // output interfaces
-    tri_pwm_ift *pwm_out;
+    tri_pwm_ift* pwm_out;
 
     // .....................................................................//
     // controller entity
@@ -132,10 +134,10 @@ typedef struct _tag_pmsm_mtpa_bare_controller
 #else // use continuous controller
 
     // current controller
-    pid_regular_t current_ctrl[2];
+    ctl_pid_t current_ctrl[2];
 
     // speed controller
-    track_pid_t spd_ctrl;
+    ctl_tracking_continuous_pid_t spd_ctrl;
 #endif
 
     // .....................................................................//
@@ -212,14 +214,13 @@ typedef struct _tag_pmsm_mtpa_bare_controller
     fast_gt flag_enable_position_ctrl;
 
 #ifdef PMSM_CTRL_USING_CURRENT_DISTRIBUTOR
-    idq_current_distributor_t *distributor;
+    idq_current_distributor_t* distributor;
 #endif
 
 } pmsm_mtpa_bare_controller_t;
 
 // Clear Controller
-GMP_STATIC_INLINE
-void ctl_clear_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_clear_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t* ctrl)
 {
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
     // clear controller intermediate variables
@@ -227,19 +228,18 @@ void ctl_clear_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t *ctrl)
     ctl_clear_discrete_pid(&ctrl->current_ctrl[phase_q]);
 
     ctl_clear_discrete_track_pid(&ctrl->spd_ctrl);
-#else  // continuous controller
+#else  // continuous controller                                                                                        \
        // clear controller intermediate variables
     ctl_clear_pid(&ctrl->current_ctrl[phase_d]);
     ctl_clear_pid(&ctrl->current_ctrl[phase_q]);
 
-    ctl_clear_track_pid(&ctrl->spd_ctrl);
+    ctl_clear_tracking_continuous_pid(&ctrl->spd_ctrl);
 #endif // PMSM_CTRL_USING_DISCRETE_CTRL
 }
 
 // This function should be called in MainISR.
 // This function implement a universal PMSM controller
-GMP_STATIC_INLINE
-void ctl_step_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_step_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctl_vector2_t phasor;
     ctrl_gt etheta;
@@ -327,7 +327,7 @@ void ctl_step_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t *ctrl)
 #else  // using continuous controller
 #ifdef PMSM_CTRL_USING_CURRENT_DISTRIBUTOR
             ctrl->distributor->im =
-                ctl_step_track_pid(&ctrl->spd_ctrl, ctrl->speed_set, ctl_get_mtr_velocity(&ctrl->mtr_interface));
+                ctl_step_tracking_continuous_pid(&ctrl->spd_ctrl, ctrl->speed_set, ctl_get_mtr_velocity(&ctrl->mtr_interface));
             ctl_step_idq_current_distributor(ctrl->distributor);
             ctrl->idq_set.dat[phase_q] = ctrl->distributor->iq + ctrl->idq_ff.dat[phase_q];
             ctrl->idq_set.dat[phase_d] = ctrl->distributor->id + ctrl->idq_ff.dat[phase_d];
@@ -431,29 +431,25 @@ void ctl_step_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t *ctrl)
 //
 
 // enable PMSM controller
-GMP_STATIC_INLINE
-void ctl_enable_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_enable_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_controller = 1;
 }
 
 // disable PMSM controller
-GMP_STATIC_INLINE
-void ctl_disable_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_disable_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_controller = 0;
 }
 
 // enable PMSM controller output
-GMP_STATIC_INLINE
-void ctl_enable_pmsm_mtpa_ctrl_output(pmsm_mtpa_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_enable_pmsm_mtpa_ctrl_output(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
 }
 
 // disable PMSM controller output
-GMP_STATIC_INLINE
-void ctl_disable_pmsm_mtpa_ctrl_output(pmsm_mtpa_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_disable_pmsm_mtpa_ctrl_output(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 0;
 }
@@ -464,8 +460,7 @@ void ctl_disable_pmsm_mtpa_ctrl_output(pmsm_mtpa_bare_controller_t *ctrl)
 
 // PMSM controller run in valpha vbeta mode,
 // user should specify valpha and vbeta by function ctl_set_pmsm_ctrl_valphabeta
-GMP_STATIC_INLINE
-void ctl_pmsm_mtpa_ctrl_valphabeta_mode(pmsm_mtpa_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_pmsm_mtpa_ctrl_valphabeta_mode(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
     ctrl->flag_enable_modulation = 0;
@@ -476,8 +471,8 @@ void ctl_pmsm_mtpa_ctrl_valphabeta_mode(pmsm_mtpa_bare_controller_t *ctrl)
 
 // Set motor target v alpha and v beta.
 // only in valphabeta mode this function counts.
-GMP_STATIC_INLINE
-void ctl_set_pmsm_mtpa_ctrl_valphabeta(pmsm_mtpa_bare_controller_t *ctrl, ctrl_gt valpha, ctrl_gt vbeta)
+GMP_STATIC_INLINE void ctl_set_pmsm_mtpa_ctrl_valphabeta(pmsm_mtpa_bare_controller_t* ctrl, ctrl_gt valpha,
+                                                         ctrl_gt vbeta)
 {
     ctrl->vab0_set.dat[phase_A] = valpha;
     ctrl->vab0_set.dat[phase_B] = vbeta;
@@ -490,8 +485,7 @@ void ctl_set_pmsm_mtpa_ctrl_valphabeta(pmsm_mtpa_bare_controller_t *ctrl, ctrl_g
 
 // PMSM controller run in valpha vbeta mode
 // user should specify udq0 by function ctl_set_pmsm_mtpa_ctrl_vdq
-GMP_STATIC_INLINE
-void ctl_pmsm_mtpa_ctrl_voltage_mode(pmsm_mtpa_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_pmsm_mtpa_ctrl_voltage_mode(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
     ctrl->flag_enable_modulation = 1;
@@ -502,8 +496,7 @@ void ctl_pmsm_mtpa_ctrl_voltage_mode(pmsm_mtpa_bare_controller_t *ctrl)
 
 // this function set vdq reference for vdq mode.
 // PMSM controller run in vdq mode this function counts.
-GMP_STATIC_INLINE
-void ctl_set_pmsm_mtpa_ctrl_vdq_ff(pmsm_mtpa_bare_controller_t *ctrl, ctrl_gt vd, ctrl_gt vq)
+GMP_STATIC_INLINE void ctl_set_pmsm_mtpa_ctrl_vdq_ff(pmsm_mtpa_bare_controller_t* ctrl, ctrl_gt vd, ctrl_gt vq)
 {
     ctrl->vdq_ff.dat[phase_d] = vd;
     ctrl->vdq_ff.dat[phase_q] = vq;
@@ -515,8 +508,7 @@ void ctl_set_pmsm_mtpa_ctrl_vdq_ff(pmsm_mtpa_bare_controller_t *ctrl, ctrl_gt vd
 //
 
 // this function set pmsm controller run in current mode.
-GMP_STATIC_INLINE
-void ctl_pmsm_mtpa_ctrl_current_mode(pmsm_mtpa_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_pmsm_mtpa_ctrl_current_mode(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
     ctrl->flag_enable_modulation = 1;
@@ -527,8 +519,7 @@ void ctl_pmsm_mtpa_ctrl_current_mode(pmsm_mtpa_bare_controller_t *ctrl)
 
 // this function set pmsm idq feed forward.
 // in current mode this value means idq reference.
-GMP_STATIC_INLINE
-void ctl_set_pmsm_mtpa_ctrl_idq_ff(pmsm_mtpa_bare_controller_t *ctrl, ctrl_gt id, ctrl_gt iq)
+GMP_STATIC_INLINE void ctl_set_pmsm_mtpa_ctrl_idq_ff(pmsm_mtpa_bare_controller_t* ctrl, ctrl_gt id, ctrl_gt iq)
 {
     ctrl->idq_ff.dat[phase_d] = id;
     ctrl->idq_ff.dat[phase_q] = iq;
@@ -540,8 +531,7 @@ void ctl_set_pmsm_mtpa_ctrl_idq_ff(pmsm_mtpa_bare_controller_t *ctrl, ctrl_gt id
 //
 
 // this function set pmsm controller run in speed mode.
-GMP_STATIC_INLINE
-void ctl_pmsm_mtpa_ctrl_velocity_mode(pmsm_mtpa_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_pmsm_mtpa_ctrl_velocity_mode(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
     ctrl->flag_enable_modulation = 1;
@@ -551,8 +541,7 @@ void ctl_pmsm_mtpa_ctrl_velocity_mode(pmsm_mtpa_bare_controller_t *ctrl)
 }
 
 // this fucntion set pmsm target speed.
-GMP_STATIC_INLINE
-void ctl_set_pmsm_mtpa_ctrl_speed(pmsm_mtpa_bare_controller_t *ctrl, ctrl_gt spd)
+GMP_STATIC_INLINE void ctl_set_pmsm_mtpa_ctrl_speed(pmsm_mtpa_bare_controller_t* ctrl, ctrl_gt spd)
 {
     ctrl->speed_set = spd;
 }
@@ -562,8 +551,7 @@ void ctl_set_pmsm_mtpa_ctrl_speed(pmsm_mtpa_bare_controller_t *ctrl, ctrl_gt spd
 //
 
 // this function set pmsm controller run in position mode.
-GMP_STATIC_INLINE
-void ctl_pmsm_mtpa_ctrl_position_mode(pmsm_mtpa_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_pmsm_mtpa_ctrl_position_mode(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
     ctrl->flag_enable_modulation = 1;
@@ -573,8 +561,7 @@ void ctl_pmsm_mtpa_ctrl_position_mode(pmsm_mtpa_bare_controller_t *ctrl)
 }
 
 // This function set pmsm target position
-GMP_STATIC_INLINE
-void set_pmsm_mtpa_ctrl_position(pmsm_mtpa_bare_controller_t *ctrl, int32_t revolution, ctrl_gt pos)
+GMP_STATIC_INLINE void set_pmsm_mtpa_ctrl_position(pmsm_mtpa_bare_controller_t* ctrl, int32_t revolution, ctrl_gt pos)
 {
     ctrl->revolution_set = revolution;
     ctrl->pos_set = pos;
@@ -641,12 +628,12 @@ typedef struct _tag_pmsm_mtpa_bare_controller_init
 } pmsm_mtpa_bare_controller_init_t;
 
 // init pmsm_mtpa_bare_controller struct
-void ctl_init_pmsm_mtpa_bare_controller(pmsm_mtpa_bare_controller_t *ctrl, pmsm_mtpa_bare_controller_init_t *init);
+void ctl_init_pmsm_mtpa_bare_controller(pmsm_mtpa_bare_controller_t* ctrl, pmsm_mtpa_bare_controller_init_t* init);
 
 // attach to output port
-void ctl_attach_pmsm_mtpa_bare_output(pmsm_mtpa_bare_controller_t *ctrl, tri_pwm_ift *pwm_out);
+void ctl_attach_pmsm_mtpa_bare_output(pmsm_mtpa_bare_controller_t* ctrl, tri_pwm_ift* pwm_out);
 
-void ctl_attach_idq_distributor(pmsm_mtpa_bare_controller_t *ctrl, idq_current_distributor_t *distributor);
+void ctl_attach_idq_distributor(pmsm_mtpa_bare_controller_t* ctrl, idq_current_distributor_t* distributor);
 
 #ifdef __cplusplus
 }

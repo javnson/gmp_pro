@@ -122,8 +122,8 @@ typedef struct _tag_pmsm_bare_controller
     discrete_pid_t current_ctrl[2]; /**< d/q-axis discrete PID current controllers. */
     track_discrete_pid_t spd_ctrl;  /**< Discrete PID velocity controller. */
 #else                               // use continuous controller
-    pid_regular_t current_ctrl[2]; /**< d/q-axis continuous PID current controllers. */
-    track_pid_t spd_ctrl;          /**< Continuous PID velocity controller. */
+    ctl_pid_t current_ctrl[2];              /**< d/q-axis continuous PID current controllers. */
+    ctl_tracking_continuous_pid_t spd_ctrl; /**< Continuous PID velocity controller. */
 #endif
 
     /*-- Controller Intermediate Variables --*/
@@ -197,8 +197,7 @@ typedef struct _tag_pmsm_bare_controller_init
  * @param[in,out] ctrl Pointer to the PMSM controller instance.
  * @note It is highly recommended to call this function before enabling the controller via @ref ctl_enable_pmsm_ctrl.
  */
-GMP_STATIC_INLINE
-void ctl_clear_pmsm_ctrl(pmsm_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_clear_pmsm_ctrl(pmsm_bare_controller_t* ctrl)
 {
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
     ctl_clear_discrete_pid(&ctrl->current_ctrl[phase_d]);
@@ -207,7 +206,7 @@ void ctl_clear_pmsm_ctrl(pmsm_bare_controller_t* ctrl)
 #else  // continuous controller
     ctl_clear_pid(&ctrl->current_ctrl[phase_d]);
     ctl_clear_pid(&ctrl->current_ctrl[phase_q]);
-    ctl_clear_track_pid(&ctrl->spd_ctrl);
+    ctl_clear_tracking_continuous_pid(&ctrl->spd_ctrl);
 #endif // PMSM_CTRL_USING_DISCRETE_CTRL
 }
 
@@ -222,8 +221,7 @@ void ctl_clear_pmsm_ctrl(pmsm_bare_controller_t* ctrl)
  * 5.  **SVPWM**: Generates PWM duty cycles from the ¦Á¦Â voltage vector.
  * @param[in,out] ctrl Pointer to the PMSM controller instance.
  */
-GMP_STATIC_INLINE
-void ctl_step_pmsm_ctrl(pmsm_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_step_pmsm_ctrl(pmsm_bare_controller_t* ctrl)
 {
     ctl_vector2_t phasor;
     ctrl_gt etheta;
@@ -278,9 +276,9 @@ void ctl_step_pmsm_ctrl(pmsm_bare_controller_t* ctrl)
                                                                      ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
                                          ctrl->idq_ff.dat[phase_q];
 #else
-            ctrl->idq_set.dat[phase_q] =
-                ctl_step_track_pid(&ctrl->spd_ctrl, ctrl->speed_set, ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
-                ctrl->idq_ff.dat[phase_q];
+            ctrl->idq_set.dat[phase_q] = ctl_step_tracking_continuous_pid(&ctrl->spd_ctrl, ctrl->speed_set,
+                                                                          ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
+                                         ctrl->idq_ff.dat[phase_q];
 #endif
 
 #if MTR_CTRL_FEEDFORWARD_STRATEGY == 1
