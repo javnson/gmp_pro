@@ -20,7 +20,7 @@
 
 void ctl_init_pid(
     // continuous pid handle
-    pid_regular_t *hpid,
+    pid_regular_t* hpid,
     // PID parameters
     parameter_gt kp, parameter_gt Ti, parameter_gt Td,
     // controller frequency
@@ -44,7 +44,7 @@ void ctl_init_pid(
 // Init a series PID object
 void ctl_init_pid_ser(
     // continuous pid handle
-    pid_regular_t *hpid,
+    pid_regular_t* hpid,
     // PID parameters
     parameter_gt kp, parameter_gt Ti, parameter_gt Td,
     // controller frequency
@@ -68,7 +68,7 @@ void ctl_init_pid_ser(
 // init a parallel PID object
 void ctl_init_pid_par(
     // continuous pid handle
-    pid_regular_t *hpid,
+    pid_regular_t* hpid,
     // PID parameters
     parameter_gt kp, parameter_gt Ti, parameter_gt Td,
     // controller frequency
@@ -92,7 +92,7 @@ void ctl_init_pid_par(
 // init a Series PID
 void ctl_init_pid_aw_ser(
     // continuous pid handle
-    pid_aw_t *hpid,
+    pid_aw_t* hpid,
     // PID parameters
     parameter_gt kp, parameter_gt Ti, parameter_gt Td,
     // controller frequency
@@ -121,7 +121,7 @@ void ctl_init_pid_aw_ser(
 // init a parallel PID
 void ctl_init_pid_aw_par(
     // continuous pid handle
-    pid_aw_t *hpid,
+    pid_aw_t* hpid,
     // PID parameters
     parameter_gt kp, parameter_gt Ti, parameter_gt Td,
     // controller frequency
@@ -153,7 +153,7 @@ void ctl_init_pid_aw_par(
 
 #include <ctl/component/intrinsic/continuous/saturation.h>
 
-void ctl_init_saturation(ctl_saturation_t *obj, ctrl_gt out_min, ctrl_gt out_max)
+void ctl_init_saturation(ctl_saturation_t* obj, ctrl_gt out_min, ctrl_gt out_max)
 {
     obj->out_min = out_min;
     obj->out_max = out_max;
@@ -167,7 +167,7 @@ void ctl_init_saturation(ctl_saturation_t *obj, ctrl_gt out_min, ctrl_gt out_max
 
 void ctl_init_track_pid(
     // handle of track pid
-    track_pid_t *tp,
+    track_pid_t* tp,
     // pid parameters
     ctrl_gt kp, ctrl_gt ki, ctrl_gt kd,
     // saturation limit
@@ -193,7 +193,7 @@ void ctl_init_track_pid(
 
 void ctl_init_sogi_controller(
     // controller handle
-    ctl_sogi_t *sogi,
+    ctl_sogi_t* sogi,
     // gain of this controller
     parameter_gt gain,
     // resonant frequency
@@ -214,7 +214,7 @@ void ctl_init_sogi_controller(
 
 void ctl_init_sogi_controller_with_damp(
     // controller handle
-    ctl_sogi_t *sogi,
+    ctl_sogi_t* sogi,
     // gain of this controller
     parameter_gt gain,
     // resonant frequency
@@ -231,4 +231,51 @@ void ctl_init_sogi_controller_with_damp(
     sogi->integrate_reference = 0;
     sogi->d_integrate = 0;
     sogi->q_integrate = 0;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// S function
+
+#include <ctl/component/intrinsic/continuous/s_transfer_function.h>
+
+void ctl_init_s_function(ctl_s_function_t* obj, parameter_gt gain, parameter_gt f_z1, parameter_gt f_z2,
+                         parameter_gt f_p1, parameter_gt f_p2, parameter_gt fs)
+{
+    // Convert frequencies (Hz) to angular frequencies (rad/s)
+    parameter_gt wz1 = 2.0f * PI * f_z1;
+    parameter_gt wz2 = 2.0f * PI * f_z2;
+    parameter_gt wp1 = 2.0f * PI * f_p1;
+    parameter_gt wp2 = 2.0f * PI * f_p2;
+
+    // From H(s) = K * [(s/wz1+1)(s/wz2+1)] / [(s/wp1+1)(s/wp2+1)],
+    // we get the polynomial form H(s) = K * (B2*s^2 + B1*s + B0) / (A2*s^2 + A1*s + A0)
+    // Note: This form is normalized so that the constant term is 1.
+    parameter_gt B2 = 1.0f / (wz1 * wz2);
+    parameter_gt B1 = (wz1 + wz2) / (wz1 * wz2);
+    parameter_gt B0 = 1.0f;
+
+    parameter_gt A2 = 1.0f / (wp1 * wp2);
+    parameter_gt A1 = (wp1 + wp2) / (wp1 * wp2);
+    parameter_gt A0 = 1.0f;
+
+    // Discretize using the Bilinear Transform: s = 2/T * (1-z^-1)/(1+z^-1)
+    parameter_gt T = 1.0f / fs;
+    parameter_gt T_sq = T * T;
+    parameter_gt two_over_T = 2.0f / T;
+    parameter_gt four_over_T_sq = 4.0f / T_sq;
+
+    // Common denominator for Z-domain coefficients
+    parameter_gt den = A2 * four_over_T_sq + A1 * two_over_T + A0;
+    parameter_gt inv_den = 1.0f / den;
+
+    // Calculate Z-domain coefficients for H(z) = (b0+b1*z^-1+b2*z^-2)/(1+a1*z^-1+a2*z^-2)
+    obj->b0 = float2ctrl(gain * (B2 * four_over_T_sq + B1 * two_over_T + B0) * inv_den);
+    obj->b1 = float2ctrl(gain * (-2.0f * B2 * four_over_T_sq + 2.0f * B0) * inv_den);
+    obj->b2 = float2ctrl(gain * (B2 * four_over_T_sq - B1 * two_over_T + B0) * inv_den);
+
+    obj->a1 = float2ctrl((-2.0f * A2 * four_over_T_sq + 2.0f * A0) * inv_den);
+    obj->a2 = float2ctrl((A2 * four_over_T_sq - A1 * two_over_T + A0) * inv_den);
+
+    // Clear initial states
+    ctl_clear_s_function(obj);
 }
