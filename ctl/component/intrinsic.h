@@ -147,9 +147,9 @@
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 
 /**
- * @defgroup continuous_pid_controllers Continuous-Form PID Controllers
+ * @defgroup tracking_continuous_pid Tracking Continuous PID Controller
  * @ingroup CTL_INTRINSIC_CONTINUOUS
- * @brief A library of discrete PID controllers based on the continuous-time formula.
+ * @brief A composite PID controller for smooth setpoint tracking using a continuous-form PID.
  */
 #include <ctl/component/intrinsic/continuous/track_pid.h>
 
