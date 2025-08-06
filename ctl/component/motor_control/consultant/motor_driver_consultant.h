@@ -1,12 +1,15 @@
 /**
  * @file motor_driver_consultant.h
  * @author Javnson (javnson@zju.edu.cn)
- * @brief
+ * @brief Defines hardware and control parameters for the motor driver.
  * @version 0.1
  * @date 2024-09-30
  *
  * @copyright Copyright GMP(c) 2024
  *
+ * This file provides a "consultant" structure and a set of build-time macros
+ * to configure the motor driver's hardware limits, control loop settings,
+ * and other operational parameters.
  */
 
 #ifndef _FILE_MOTOR_DRIVER_CONSULTANT_H_
@@ -17,137 +20,193 @@ extern "C"
 {
 #endif // __cplusplus
 
-//////////////////////////////////////////////////////////////////////////
-// Motor Driver parameters.
-// These parameters will be used to generate protect parameters
+/*---------------------------------------------------------------------------*/
+/* Motor Driver Build-time Parameters                                        */
+/*---------------------------------------------------------------------------*/
 
-// Motor Driver parameters, DC bus voltage
-// unit, SI V
+/**
+ * @defgroup MC_DRIVER_CONSULTANT Motor Driver Consultant
+ * @ingroup MC_DEFINES
+ * @brief Defines parameters and structures related to the motor driver hardware and software configuration.
+ */
+
+/**
+ * @defgroup MC_DRIVER_MACROS Motor Driver Build-time Parameters
+ * @ingroup MC_DRIVER_CONSULTANT
+ * @brief These macros define default hardware and control parameters.
+ *
+ * They can be overridden in a project configuration file to tailor the build
+ * for specific hardware without modifying the library source code.
+ * @{
+ */
+
+// --- System Power Ratings ---
 #ifndef MOTOR_DRIVER_RATED_DC_VOLTAGE
-#define MOTOR_DRIVER_RATED_DC_VOLTAGE ((300.0))
-#endif // MOTOR_DRIVER_RATED_DC_VOLTAGE
+#define MOTOR_DRIVER_RATED_DC_VOLTAGE ((300.0)) /**< @brief Rated DC bus voltage in Volts (V). */
+#endif
 
-// Motor Driver parameters, Current pu base
-// unit, SI A
+// NOTE: There is a typo in the macro name below (CURRNET should be CURRENT).
 #ifndef MOTOR_DRIVER_RATED_DC_CURRNET
-#define MOTOR_DRIVER_RATED_DC_CURRNET ((100.0))
-#endif // MOTOR_DRIVER_RATED_DC_CURRNET
+#define MOTOR_DRIVER_RATED_DC_CURRNET                                                                                  \
+    ((100.0)) /**< @brief Rated DC bus current in Amperes (A), used as the base for p.u. calculations. */
+#endif
 
-// Motor Driver parameters, maximum current
-// unit, SI A, transient value
 #ifndef MOTOR_DRIVER_MAX_BRIDGE_CURRENT
-#define MOTOR_DRIVER_MAX_BRIDGE_CURRENT ((100.0))
-#endif // MOTOR_DRIVER_MAX_BRIDGE_CURRENT
+#define MOTOR_DRIVER_MAX_BRIDGE_CURRENT                                                                                \
+    ((100.0)) /**< @brief Maximum transient phase current for the inverter bridge in Amperes (A). */
+#endif
 
-// Motor Driver parameters, maximum current
-// unit, SI A, transient value
 #ifndef MOTOR_DRIVER_MAX_DC_CURRENT
-#define MOTOR_DRIVER_MAX_DC_CURRENT ((100.0))
-#endif // MOTOR_DRIVER_MAX_DC_CURRENT
+#define MOTOR_DRIVER_MAX_DC_CURRENT ((100.0)) /**< @brief Maximum transient DC bus current in Amperes (A). */
+#endif
 
-// Motor Driver parameters, PWM frequency
-// unit, SI Hz
+// --- Control Frequencies & Timings ---
 #ifndef MOTOR_DRIVER_PWM_FREQUENCY
-#define MOTOR_DRIVER_PWM_FREQUENCY ((10e3))
-#endif // MOTOR_DRIVER_PWM_FREQUENCY
+#define MOTOR_DRIVER_PWM_FREQUENCY ((10e3)) /**< @brief PWM switching frequency in Hertz (Hz). */
+#endif
 
-// Motor Driver parameters, Control law frequency
-// unit, SI Hz
 #ifndef MOTOR_DRIVER_CONTROL_FREQUENCY
-#define MOTOR_DRIVER_CONTROL_FREQUENCY ((10e3))
-#endif // MOTOR_DRIVER_CONTROL_FREQUENCY
+#define MOTOR_DRIVER_CONTROL_FREQUENCY ((10e3)) /**< @brief Main control loop frequency in Hertz (Hz). */
+#endif
 
-// Motor Driver parameters, PWM generator half period
 #ifndef MOTOR_DRIVER_PWM_HALF_CYCLE
-#define MOTOR_DRIVER_PWM_HALF_CYCLE ((10000))
-#endif // MOTOR_DRIVER_PWM_HALF_CYCLE
+#define MOTOR_DRIVER_PWM_HALF_CYCLE ((10000)) /**< @brief PWM timer half-period in timer ticks (for symmetric PWM). */
+#endif
 
-// Current controller loop bandwidth
-// unit, Hz
+// --- Controller Bandwidths & Divisions ---
 #ifndef MOTOR_DRIVER_CURRENT_BW
-#define MOTOR_DRIVER_CURRENT_BW ((200))
-#endif // MOTOR_DRIVER_CURRENT_BW
+#define MOTOR_DRIVER_CURRENT_BW ((200)) /**< @brief Target bandwidth for the current control loop in Hertz (Hz). */
+#endif
 
-// Speed Controller loop bandwidth
-// unit, Hz
 #ifndef MOTOR_DRIVER_SPEED_BW
-#define MOTOR_DRIVER_SPEED_BW ((50))
-#endif // MOTOR_DRIVER_SPEED_BW
+#define MOTOR_DRIVER_SPEED_BW ((50)) /**< @brief Target bandwidth for the speed control loop in Hertz (Hz). */
+#endif
 
-// Speed controller division
-// unit, 1 (times)
 #ifndef MOTOR_DRIVER_SPEED_DIV
-#define MOTOR_DRIVER_SPEED_DIV ((10))
-#endif // MOTOR_DRIVER_SPEED_DIV
+#define MOTOR_DRIVER_SPEED_DIV                                                                                         \
+    ((10)) /**< @brief Division factor for the speed controller execution rate relative to the main control frequency. */
+#endif
 
-// Speed calculator division
-// unit 1 (times)
 #ifndef MOTOR_DRIVER_SPEED_CALC_DIV
-#define MOTOR_DRIVER_SPEED_CALC_DIV ((10))
+#define MOTOR_DRIVER_SPEED_CALC_DIV ((10)) /**< @brief Division factor for the speed calculation execution rate. */
 #endif
 
-// ADC performance resolution
+// --- ADC & Sensor Parameters ---
 #ifndef MOTOR_DRIVER_ADC_RESOLUTION
-#define MOTOR_DRIVER_ADC_RESOLUTION ((16))
+#define MOTOR_DRIVER_ADC_RESOLUTION ((16)) /**< @brief Resolution of the ADC in bits. */
 #endif
 
-// ADC Voltage Full scale Range
 #ifndef MOTOR_DRIVER_ADC_VOLTAGE_FULL_SCALE
-#define MOTOR_DRIVER_ADC_VOLTAGE_FULL_SCALE ((750.0))
-#endif // MOTOR_DRIVER_ADC_VOLTAGE_FULL_SCALE
+#define MOTOR_DRIVER_ADC_VOLTAGE_FULL_SCALE                                                                            \
+    ((750.0)) /**< @brief Full-scale measurement range for phase voltage sensing in Volts (V). */
+#endif
 
-// ADC Voltage Bias p.u.
 #ifndef MOTOR_DIRVER_ADC_VOLTAGE_BIAS_PU
-#define MOTOR_DIRVER_ADC_VOLTAGE_BIAS_PU (0.5)
-#endif // MOTOR_DIRVER_ADC_VOLTAGE_BIAS_PU
+#define MOTOR_DIRVER_ADC_VOLTAGE_BIAS_PU                                                                               \
+    (0.5) /**< @brief Bias of the phase voltage ADC in per-unit (e.g., 0.5 for mid-range). */
+#endif
 
-// ADC Current Full scale Range
 #ifndef MOTOR_DRIVER_ADC_CURRENT_FULL_SCALE
-#define MOTOR_DRIVER_ADC_CURRENT_FULL_SCALE ((300.0))
-#endif // MOTOR_DRIVER_ADC_CURRENT_FULL_SCALE
+#define MOTOR_DRIVER_ADC_CURRENT_FULL_SCALE                                                                            \
+    ((300.0)) /**< @brief Full-scale measurement range for phase current sensing in Amperes (A). */
+#endif
 
-// ADC Current Bias p.u.
 #ifndef MOTOR_DIRVER_ADC_CURRENT_BIAS_PU
-#define MOTOR_DIRVER_ADC_CURRENT_BIAS_PU (0.5)
-#endif // MOTOR_DIRVER_ADC_CURRENT_BIAS_PU
+#define MOTOR_DIRVER_ADC_CURRENT_BIAS_PU (0.5) /**< @brief Bias of the phase current ADC in per-unit. */
+#endif
 
-// ADC Voltage Full scale Range
 #ifndef MOTOR_DRIVER_ADC_VOLTAGE_DC_FULL_SCALE
-#define MOTOR_DRIVER_ADC_VOLTAGE_DC_FULL_SCALE ((450.0))
-#endif // MOTOR_DRIVER_ADC_VOLTAGE_DC_FULL_SCALE
+#define MOTOR_DRIVER_ADC_VOLTAGE_DC_FULL_SCALE                                                                         \
+    ((450.0)) /**< @brief Full-scale measurement range for DC bus voltage sensing in Volts (V). */
+#endif
 
-// ADC Voltage Bias p.u.
 #ifndef MOTOR_DIRVER_ADC_VOLTAGE_DC_BIAS_PU
-#define MOTOR_DIRVER_ADC_VOLTAGE_DC_BIAS_PU (0.15)
-#endif // MOTOR_DIRVER_ADC_VOLTAGE_DC_BIAS_PU
+#define MOTOR_DIRVER_ADC_VOLTAGE_DC_BIAS_PU (0.15) /**< @brief Bias of the DC bus voltage ADC in per-unit. */
+#endif
 
-// ADC Current Full scale Range
 #ifndef MOTOR_DRIVER_ADC_CURRENT_DC_FULL_SCALE
-#define MOTOR_DRIVER_ADC_CURRENT_DC_FULL_SCALE ((30.0))
-#endif // MOTOR_DRIVER_ADC_CURRENT_DC_FULL_SCALE
+#define MOTOR_DRIVER_ADC_CURRENT_DC_FULL_SCALE                                                                         \
+    ((30.0)) /**< @brief Full-scale measurement range for DC bus current sensing in Amperes (A). */
+#endif
 
-// ADC Current Bias p.u.
 #ifndef MOTOR_DIRVER_ADC_CURRENT_DC_BIAS_PU
-#define MOTOR_DIRVER_ADC_CURRENT_DC_BIAS_PU (0.15)
-#endif // MOTOR_DIRVER_ADC_CURRENT_DC_BIAS_PU
+#define MOTOR_DIRVER_ADC_CURRENT_DC_BIAS_PU (0.15) /**< @brief Bias of the DC bus current ADC in per-unit. */
+#endif
 
-// Encoder Base
+// --- Motion Profile Limits ---
 #ifndef MOTOR_DRIVER_ENCODER_BASE
-#define MOTOR_DRIVER_ENCODER_BASE ((1 << 17))
-#endif // MOTOR_DRIVER_ENCODER_BASE
+#define MOTOR_DRIVER_ENCODER_BASE                                                                                      \
+    ((1                                                                                                                \
+      << 17)) /**< @brief The base value for a full mechanical revolution of the position encoder (e.g., 2^17 for a 17-bit encoder). */
+#endif
 
-// rotor acceleration limit, unit rpm/s
 #ifndef MOTOR_DRIVER_ACCLERATION
-#define MOTOR_DRIVER_ACCLERATION ((3000))
-#endif // MOTOR_DRIVER_ACCLERATION
+#define MOTOR_DRIVER_ACCLERATION ((3000)) /**< @brief Maximum rotational acceleration limit in RPM/s. */
+#endif
 
-// jerk limit, p.u./ms
 #ifndef MOTOR_DRIVER_JERK
-#define MOTOR_DRIVER_JERK ((0.02))
-#endif // MOTOR_DRIVER_JERK
+#define MOTOR_DRIVER_JERK ((0.02)) /**< @brief Maximum jerk limit in p.u./ms. */
+#endif
 
-// Fast init wrapper
-// With this, it's no need to use init and setup function
+/** @} */ // end of MC_DRIVER_MACROS group
+
+/*---------------------------------------------------------------------------*/
+/* Motor Driver Configuration Structure                                      */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @defgroup MC_DRIVER_STRUCT Motor Driver Configuration Structure
+ * @ingroup MC_DRIVER_CONSULTANT
+ * @brief A structure to hold all runtime-configurable driver parameters.
+ * @{
+ */
+
+/**
+ * @brief Data structure for holding all motor driver parameters.
+ *
+ * This structure aggregates all the key hardware and software parameters
+ * for the motor driver, which can be configured at runtime.
+ */
+typedef struct _tag_motor_driver_consultant_t
+{
+    // Power and System Ratings
+    parameter_gt rated_dc_voltage;  /**< @brief Rated DC bus voltage (V), base for p.u. voltage. */
+    parameter_gt rated_dc_current;  /**< @brief Rated DC bus current (A), base for p.u. current. */
+    parameter_gt max_phase_current; /**< @brief Maximum transient phase current (A). */
+    parameter_gt max_dc_current;    /**< @brief Maximum transient DC bus current (A). */
+
+    // Frequencies and Timings
+    parameter_gt pwm_freq;         /**< @brief PWM switching frequency (Hz). */
+    parameter_gt control_law_freq; /**< @brief Main control loop frequency (Hz). */
+    uint32_t pwm_half_cycle;       /**< @brief PWM timer half-period in ticks. */
+
+    // Control Loop Parameters
+    parameter_gt current_closeloop_bw; /**< @brief Current control loop bandwidth (Hz). */
+    parameter_gt speed_closeloop_bw;   /**< @brief Speed control loop bandwidth (Hz). */
+    uint32_t speed_div_times;          /**< @brief Speed controller execution frequency division factor. */
+    uint32_t speed_calc_div_times;     /**< @brief Speed calculation frequency division factor. */
+
+    // ADC and Sensor Parameters
+    uint16_t adc_resolution_bit;            /**< @brief ADC resolution in bits. */
+    parameter_gt adc_voltage_full_scale;    /**< @brief Phase voltage ADC full-scale range (V). */
+    parameter_gt adc_voltage_bias;          /**< @brief Phase voltage ADC bias (p.u.). */
+    parameter_gt adc_current_full_scale;    /**< @brief Phase current ADC full-scale range (A). */
+    parameter_gt adc_current_bias;          /**< @brief Phase current ADC bias (p.u.). */
+    parameter_gt adc_dc_voltage_full_scale; /**< @brief DC bus voltage ADC full-scale range (V). */
+    parameter_gt adc_dc_voltage_bias;       /**< @brief DC bus voltage ADC bias (p.u.). */
+    parameter_gt adc_dc_current_full_scale; /**< @brief DC bus current ADC full-scale range (A). */
+    parameter_gt adc_dc_current_bias;       /**< @brief DC bus current ADC bias (p.u.). */
+
+    // Motion Parameters
+    uint32_t position_enc_base; /**< @brief Position encoder counts per revolution. */
+    parameter_gt acceleration;  /**< @brief Acceleration limit (RPM/s). */
+    parameter_gt jerk;          /**< @brief Jerk limit (p.u./ms). */
+
+} ctl_motor_driver_consultant_t;
+
+/**
+ * @brief A macro to initialize the `ctl_motor_driver_consultant_t` structure from the build-time macros.
+ */
 #define MOTOR_DRIVER_CONSULTANT_WRAPPER                                                                                \
     {                                                                                                                  \
         MOTOR_DRIVER_RATED_DC_VOLTAGE, MOTOR_DRIVER_RATED_DC_CURRNET, MOTOR_DRIVER_MAX_BRIDGE_CURRENT,                 \
@@ -160,94 +219,7 @@ extern "C"
             MOTOR_DRIVER_ACCLERATION, MOTOR_DRIVER_JERK                                                                \
     }
 
-typedef struct _tag_motor_driver_consultant_t
-{
-    // Motor Driver parameters, DC bus voltage
-    // unit, SI V
-    // voltage p.u. base value
-    parameter_gt rated_dc_voltage;
-
-    // Motor Driver parameters, DC bus current
-    // unit, SI A
-    // current p.u. base value
-    parameter_gt rated_dc_current;
-
-    // Motor Driver parameters, maximum current
-    // unit, SI A, transient value
-    parameter_gt max_phase_current;
-
-    // Motor Driver parameters, maximum current
-    // unit, SI A, transient value
-    parameter_gt max_dc_current;
-
-    // Motor Driver parameters, PWM frequency
-    // unit, SI Hz
-    parameter_gt pwm_freq;
-
-    // Motor Driver parameters, control law frequency
-    // unit, SI Hz
-    parameter_gt control_law_freq;
-
-    // Motor Driver parameters, PWM modulation subdivision
-    uint32_t pwm_half_cycle;
-
-    // Motor Current Close loop bandwidth
-    // unit, SI Hz
-    parameter_gt current_closeloop_bw;
-
-    // Motor Speed Close loop bandwidth
-    // unit, SI Hz
-    parameter_gt speed_closeloop_bw;
-
-    // Motor Speed Controller Division
-    // unit, Current Times
-    uint32_t speed_div_times;
-
-    // Motor Speed calculator division
-    // unit, current times
-    uint32_t speed_calc_div_times;
-
-    // ADC performance
-    uint16_t adc_resolution_bit;
-
-    // ADC full scale voltage value (phase)
-    parameter_gt adc_voltage_full_scale;
-
-    // ADC voltage bias p.u.(phase)
-    // such as 0.5
-    parameter_gt adc_voltage_bias;
-
-    // ADC full scale current value(phase)
-    parameter_gt adc_current_full_scale;
-
-    // ADC current bias p.u.(phase)
-    // such as 0.5
-    parameter_gt adc_current_bias;
-
-    // ADC full scale voltage value (DC BUS)
-    parameter_gt adc_dc_voltage_full_scale;
-
-    // ADC voltage bias p.u.(DC BUS)
-    // such as 0.5
-    parameter_gt adc_dc_voltage_bias;
-
-    // ADC full scale current value(DC BUS)
-    parameter_gt adc_dc_current_full_scale;
-
-    // ADC current bias p.u.(DC BUS)
-    // such as 0.5
-    parameter_gt adc_dc_current_bias;
-
-    // Position Encoder Base
-    uint32_t position_enc_base;
-
-    // acceleration, unit rpm / s
-    parameter_gt acceleration;
-
-    // jerk, unit p.u./ms
-    parameter_gt jerk;
-
-} ctl_motor_driver_consultant_t;
+/** @} */ // end of MC_DRIVER_STRUCT group
 
 #ifdef __cplusplus
 }
