@@ -6,37 +6,48 @@
 
 #include <ctl/component/intrinsic/advance/surf_search.h>
 
-void ctl_init_linear_lut(linear_lut_t *lut, ctrl_gt *content, size_gt lut_size)
+void ctl_init_lut1d(ctl_lut1d_t* lut, const ctrl_gt* axis, uint32_t size)
 {
-    lut->lut_content = content;
-    lut->lut_size = lut_size;
+    lut->axis = axis;
+    lut->size = size;
 }
 
-void ctl_init_surf_lut(surf_lut_t *lut, ctrl_gt *asix_x, size_gt size_x, ctrl_gt *asix_y, size_gt size_y,
-                        ctrl_gt **surface)
+void ctl_init_lut2d(ctl_lut2d_t* lut, const ctrl_gt* axis1, uint32_t size1, const ctrl_gt* axis2, uint32_t size2,
+                    const ctrl_gt** surface)
 {
-    ctl_init_linear_lut(&lut->dim1_lut, asix_x, size_x);
-    ctl_init_linear_lut(&lut->dim2_lut, asix_y, size_y);
-
+    ctl_init_lut1d(&lut->dim1_axis, axis1, size1);
+    ctl_init_lut1d(&lut->dim2_axis, axis2, size2);
     lut->surface = surface;
 }
 
-void ctl_init_uniform_surf_lut(uniform_surf_lut_t *lut, ctrl_gt x_inf, ctrl_gt x_sup, size_gt x_sub, ctrl_gt y_inf,
-                                ctrl_gt y_sup, size_gt y_sub, ctrl_gt **surface)
+void ctl_init_uniform_lut2d(ctl_uniform_lut2d_t* lut, ctrl_gt x_min, ctrl_gt x_max, uint32_t x_size, ctrl_gt y_min,
+                            ctrl_gt y_max, uint32_t y_size, const ctrl_gt** surface)
 {
-    lut->x_inf = x_inf;
-    lut->x_sup = x_sup;
-    lut->x_sub = x_sub;
+    lut->x_min = x_min;
+    lut->x_size = x_size;
 
-    lut->y_inf = y_inf;
-    lut->y_sup = y_sup;
-    lut->y_sub = y_sub;
+    parameter_gt x_delta = x_max - x_min;
+    if (fabsf(x_delta) < 1e-9f)
+    {
+        lut->x_step_inv = 0;
+    }
+    else
+    {
+        lut->x_step_inv = ((parameter_gt)x_size - 1.0f) / x_delta;
+    }
+
+    lut->y_min = y_min;
+    lut->y_size = y_size;
+
+    parameter_gt y_delta = y_max - y_min;
+    if (fabsf(y_delta) < 1e-9f)
+    {
+        lut->y_step_inv = 0;
+    }
+    else
+    {
+        lut->y_step_inv = ((parameter_gt)y_size - 1.0f) / y_delta;
+    }
 
     lut->surface = surface;
-
-    ctrl_gt x_diff_coef = ctl_div(float2ctrl(1.0f), (x_sup - x_inf));
-    lut->x_sub_coef = ctl_mul(x_diff_coef, lut->x_sub);
-
-    ctrl_gt y_diff_coef = ctl_div(float2ctrl(1.0f), (y_sup - y_inf));
-    lut->y_sub_coef = ctl_mul(y_diff_coef, lut->y_sub);
 }

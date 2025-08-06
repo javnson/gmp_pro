@@ -31,6 +31,43 @@
  * @brief Fundamental, reusable building Lebesgue blocks for control template library.
  */
 
+/**
+ * @defgroup CTL_INTRINSIC_ADVANCE Advance Components
+ * @ingroup CTL_INTRINSIC_LIB
+ * @brief Advance, reusable building blocks for control template library.
+ */
+
+/**
+ * @defgroup CTL_INTRINSIC_PROTECTION Protection Components
+ * @ingroup CTL_INTRINSIC_LIB
+ * @brief Fundamental, reusable building protection blocks for control template library.
+ */
+
+//
+// ----------------- Discrete Components -----------------
+//
+
+/**
+ * @defgroup frequency_divider Frequency Divider
+ * @ingroup CTL_INTRINSIC_BASIC
+ * @brief A simple counter-based module to divide a clock or event frequency.
+ */
+#include <ctl/component/intrinsic/basic/divider.h>
+
+/**
+ * @defgroup saturation_blocks Saturation (Limiter) Blocks
+ * @ingroup CTL_INTRINSIC_BASIC
+ * @brief A collection of signal limiting modules.
+ */
+#include <ctl/component/intrinsic/basic/saturation.h>
+
+/**
+ * @defgroup slope_limiter Slope Limiter
+ * @ingroup CTL_INTRINSIC_BASIC
+ * @brief A module to constrain the rate of change of a signal.
+ */
+#include <ctl/component/intrinsic/basic/slope_limiter.h>
+
 //
 // ----------------- Discrete Components -----------------
 //
@@ -102,81 +139,91 @@
 // ----------------- Continuous Components -----------------
 //
 
+/**
+ * @defgroup continuous_pid_controllers Continuous-Form PID Controllers
+ * @ingroup CTL_INTRINSIC_CONTINUOUS
+ * @brief A library of discrete PID controllers based on the continuous-time formula.
+ */
+#include <ctl/component/intrinsic/continuous/continuous_pid.h>
 
+/**
+ * @defgroup continuous_pid_controllers Continuous-Form PID Controllers
+ * @ingroup CTL_INTRINSIC_CONTINUOUS
+ * @brief A library of discrete PID controllers based on the continuous-time formula.
+ */
+#include <ctl/component/intrinsic/continuous/track_pid.h>
 
+/**
+ * @defgroup continuous_sogi Continuous-Form SOGI
+ * @ingroup CTL_INTRINSIC_CONTINUOUS
+ * @brief A SOGI implementation based on discretized continuous-time state equations.
+ */
+#include <ctl/component/intrinsic/continuous/sogi.h>
 
-// 把所有intrinsic的header全部引入进来
+/**
+ * @defgroup s_transfer_function Generic S-Domain Transfer Function
+ * @ingroup CTL_INTRINSIC_CONTINUOUS
+ * @brief An IIR filter module designed from S-domain pole-zero locations.
+ */
+#include <ctl/component/intrinsic/continuous/s_function.h>
 
-// TODO: 为每一个头文件(模块)补充一个简单的说明，方便用户可以快速在这个文件中找到需要的模块
+//
+// ----------------- Lebesgue Components -----------------
+//
 
-// basic includes
+/**
+ * @defgroup hysteresis_controller Hysteresis Controller
+ * @ingroup CTL_INTRINSIC_LEBESGUE
+ * @brief A nonlinear controller that switches output based on a hysteresis band.
+ */
+#include <ctl/component/intrinsic/lebesgue/hysteresis_controller.h>
 
-// #include <ctl/ctl_core.h>
+/**
+ * @defgroup sliding_mode_controller Sliding Mode Controller (SMC)
+ * @ingroup CTL_INTRINSIC_LEBESGUE
+ * @brief A nonlinear robust controller based on a sliding surface.
+ */
+#include <ctl/component/intrinsic/lebesgue/smc.h>
 
-#ifndef GMP_CTL_DISABLE_COM_INTRINSIC
+//
+// ----------------- Advance Components -----------------
+//
 
-//////////////////////////////////////////////////////////////////////////
-#ifndef GMP_CTL_DISABLE_COM_INTRINSIC_INTERFACE
-
-#include <ctl/component/intrinsic/interface/adc_channel.h>
-
-#include <ctl/component/intrinsic/interface/dac_channel.h>
-
-#include <ctl/component/intrinsic/interface/pwm_channel.h>
-
-#endif // GMP_CTL_DISABLE_COM_INTRINSIC_INTERFACE
-
-//////////////////////////////////////////////////////////////////////////
-#ifndef GMP_CTL_DISABLE_COM_INTRINSIC_DISCRETE
-
-#include <ctl/component/intrinsic/discrete/divider.h>
-
-#include <ctl/component/intrinsic/discrete/feed_forward.h>
-
-#include <ctl/component/intrinsic/discrete/discrete_filter.h>
-
-#include <ctl/component/intrinsic/discrete/hcc.h>
-
-#include <ctl/component/intrinsic/discrete/pid.h>
-
-#include <ctl/component/intrinsic/discrete/pll.h>
-
-#include <ctl/component/intrinsic/discrete/pole_zero.h>
-
-#include <ctl/component/intrinsic/discrete/saturation.h>
-
-#include <ctl/component/intrinsic/discrete/slope_lim.h>
-
-#include <ctl/component/intrinsic/discrete/stimulate.h>
-
-// #include <ctl/component/intrinsic/discrete/z_function.h>
-
-#endif // GMP_CTL_DISABLE_COM_INTRINSIC_DISCRETE
-
-//////////////////////////////////////////////////////////////////////////
-#ifndef GMP_CTL_DISABLE_COM_INTRINSIC_PROTECT
-
-#include <ctl/component/intrinsic/protection/fusing.h>
-
-#include <ctl/component/intrinsic/protection/protection.h>
-
-#endif // GMP_CTL_DISABLE_COM_INTRINSIC_PROTECT
-
-//////////////////////////////////////////////////////////////////////////
-#ifndef GMP_CTL_DISABLE_COM_INTRINSIC_ADVANCE
-
-#include <ctl/component/intrinsic/advance/fuzzy_pid.h>
-
+/**
+ * @defgroup lookup_tables Look-Up Tables (LUT)
+ * @ingroup CTL_INTRINSIC_ADVANCE
+ * @brief A library for 1D and 2D data searching and interpolation.
+ */
 #include <ctl/component/intrinsic/advance/surf_search.h>
 
-#endif // GMP_CTL_DISABLE_COM_INTRINSIC_ADVANCE
+/**
+ * @defgroup fuzzy_pid_controller Fuzzy PID Controller
+ * @ingroup CTL_INTRINSIC_ADVANCE
+ * @brief A self-tuning PID controller using fuzzy logic look-up tables.
+ */
+#include <ctl/component/intrinsic/advance/fuzzy_pid.h>
 
-//////////////////////////////////////////////////////////////////////////
-#ifndef GMP_CTL_DISABLE_COM_INTRINSIC_COMBO
+//
+// ----------------- Protection Components -----------------
+//
 
-#include <ctl/component/intrinsic/combo/track_pid.h>
+/**
+ * @defgroup protection_monitor Protection Monitor
+ * @ingroup CTL_INTRINSIC_PROTECTION
+ * @brief A module for checking multiple variables against their boundaries.
+ */
+#include <ctl/component/intrinsic/protection/protection.h>
 
-#endif // GMP_CTL_DISABLE_COM_INTRINSIC_COMBO
+/**
+ * @defgroup voltage_event_detector Voltage Sag/Swell Detector
+ * @ingroup CTL_INTRINSIC_PROTECTION
+ * @brief A module for detecting voltage sag and swell power quality events.
+ */
+#include <ctl/component/intrinsic/protection/sag_swell.h>
 
-#endif // GMP_CTL_DISABLE_COM_INTRINSIC
-
+/**
+ * @defgroup trip_protector Three-Stage Trip Protector
+ * @ingroup CTL_INTRINSIC_PROTECTION
+ * @brief An inverse-time overcurrent protection module.
+ */
+#include <ctl/component/intrinsic/protection/itoc_protection.h>

@@ -1,400 +1,267 @@
+/**
+ * @file lookup_table.h
+ * @author Javnson (javnson@zju.edu.cn)
+ * @brief Provides 1D and 2D look-up table (LUT) functionalities.
+ * @version 0.2
+ * @date 2024-09-30
+ *
+ * @copyright Copyright GMP(c) 2024
+ *
+ * @details This file implements algorithms for searching and interpolating values
+ * from pre-defined tables. It includes a 1D LUT with binary search and linear
+ * interpolation, a 2D LUT for non-uniform grids, and a 2D LUT for uniform grids,
+ * both using bilinear interpolation. These are essential for efficiently
+ * implementing complex, nonlinear functions in embedded systems.
+ */
 
-// This file implement a list of surface search algorithm.
+#ifndef _LOOKUP_TABLE_H_
+#define _LOOKUP_TABLE_H_
 
-#ifndef _FILE_SURF_SEARCH_H_
-#define _FILE_SURF_SEARCH_H_
+#include <ctl/math_block/gmp_math.h>
+#include <stdint.h> // For int32_t
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif // __cplusplus
 
-//////////////////////////////////////////////////////////////////////////
-// linear Look up table
-//
+/**
+ * @defgroup lookup_tables Look-Up Tables (LUT)
+ * @brief A library for 1D and 2D data searching and interpolation.
+ * @{
+ */
 
-// lut_content is a strictly monotonically increasing sequence
-typedef struct _tag_linear_lut_t
+/*---------------------------------------------------------------------------*/
+/* 1D Look-Up Table (LUT)                                                    */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief Data structure for a 1D Look-Up Table.
+ * @details The axis content must be a strictly monotonically increasing sequence.
+ */
+typedef struct _tag_lut1d_t
 {
-    // length of LUT size
-    size_gt lut_size;
+    uint32_t size;       //!< The number of elements in the LUT axis.
+    const ctrl_gt* axis; //!< Pointer to the array of axis values.
+} ctl_lut1d_t;
 
-    // LUT content
-    ctrl_gt *lut_content;
+/**
+ * @brief Initializes a 1D Look-Up Table.
+ * @param[out] lut Pointer to the 1D LUT instance.
+ * @param[in] axis Pointer to the array of axis data.
+ * @param[in] size The number of elements in the axis array.
+ */
+void ctl_init_lut1d(ctl_lut1d_t* lut, const ctrl_gt* axis, uint32_t size);
 
-} linear_lut_t;
-
-//// init a linear LUT object
-// void ctl_init_linear_lut(linear_lut_t *lut);
-
-//// setup a LUT object based on specified content.
-// void ctl_setup_linear_lut(linear_lut_t *lut, ctrl_gt *content, size_gt lut_size);
-
-// init a linear LUT object
-void ctl_init_linear_lut(linear_lut_t *lut, ctrl_gt *content, size_gt lut_size);
-
-// LUT content is
-//
-// | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | ... | last_index | lut_size     |
-// | a | b | c | d | e | f | g | h | i | j | ... | z          | out of range |
-//                       ^
-// return position = 5   |      when looking for target is equal to f
-// return position = -1         when target is less than `a`
-// return position = last_index when target is greater than 'z'
-// return position  = 5         when target is in [f, g) range.
-//
-// return position  = -2        when unknown error happened.
-GMP_STATIC_INLINE
-diff_gt ctl_get_lut_position_index(linear_lut_t *lut, ctrl_gt target)
+/**
+ * @brief Performs a binary search to find the index of the lower bound for a target value.
+ * @param[in] lut Pointer to the 1D LUT instance.
+ * @param[in] target The value to search for in the axis.
+ * @return int32_t The index of the grid point immediately to the left of (or equal to) the target.
+ * Returns -1 if the target is below the first element.
+ * Returns (size-2) if the target is at or above the last element.
+ */
+GMP_STATIC_INLINE int32_t ctl_search_lut1d_index(const ctl_lut1d_t* lut, ctrl_gt target)
 {
-    size_gt left = 0;
-    size_gt right = lut->lut_size - 1;
-    size_gt mid = right / 2;
-
-    // special case, leftest
-    if (target < lut->lut_content[0])
-        return -1;
-
-    // special case, rightest
-    if (target > lut->lut_content[right])
-        return right;
-
-    // binary search
-    do
+    // Handle out-of-bounds cases
+    if (target < lut->axis[0])
     {
+        return -1;
+    }
+    if (target >= lut->axis[lut->size - 1])
+    {
+        return lut->size - 2;
+    }
 
-        if (lut->lut_content[mid] > target)
+    // Binary search
+    uint32_t left = 0;
+    uint32_t right = lut->size - 1;
+    while (left <= right)
+    {
+        uint32_t mid = left + (right - left) / 2;
+        if (lut->axis[mid] > target)
         {
-            // right = mid;
-
-            // special case no left node exists
-            if (mid == 0)
-            {
-                return -1;
-            }
-
-            // judge if mid is a approximate solution
-            if (lut->lut_content[mid - 1] < target)
-            {
-                return mid - 1;
-            }
-            // accelerate the searching process
-            else
-            {
-                right = mid - 1;
-            }
+            right = mid - 1;
         }
-        else if (lut->lut_content[mid] < target)
-        {
-            // left = mid;
-
-            // special case no right node exists
-            // last node index
-            if (mid == lut->lut_size - 1)
-            {
-                return lut->lut_size - 1;
-            }
-
-            // judge if mid is a approximate solution
-            if (lut->lut_content[mid + 1] > target)
-            {
-                return mid;
-            }
-            else
-            {
-                left = mid + 1;
-            }
-        }
-        // find correct result
         else
         {
-            return mid;
+            left = mid + 1;
         }
-
-        // update mid new
-        mid = left + (right - left) / 2;
-
-    } while (left < right);
-
-    // this branch will not meet.
-    return -2;
+    }
+    return right;
 }
 
-// calculate weight to linear interpolate the result.
-// target & index is based on the get lut position function.
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_lut_position_weight(linear_lut_t *lut, ctrl_gt target, diff_gt index)
+/**
+ * @brief Performs 1D linear interpolation.
+ * @param[in] lut Pointer to the 1D LUT instance containing the x-axis data.
+ * @param[in] values Pointer to the array of y-axis values corresponding to the x-axis.
+ * @param[in] target The x-value at which to interpolate.
+ * @return ctrl_gt The interpolated y-value.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_interpolate_lut1d(const ctl_lut1d_t* lut, const ctrl_gt* values, ctrl_gt target)
 {
-    // special case leftest & rightest
-    // operator `<=` and `>=` is error tolerance expression
-    if (index <= -1)
-        return float2ctrl(1.0f);
+    int32_t index = ctl_search_lut1d_index(lut, target);
 
-    if ((size_gt)index >= lut->lut_size - 1)
-        return 0;
+    // Handle boundary conditions
+    if (index < 0)
+    {
+        return values[0]; // Target is below the range
+    }
+    if ((uint32_t)index >= lut->size - 1)
+    {
+        return values[lut->size - 1]; // Target is above the range
+    }
 
-    // get left node and right node
-    ctrl_gt left = lut->lut_content[index];
-    ctrl_gt right = lut->lut_content[index + 1];
+    // Linear interpolation
+    ctrl_gt x0 = lut->axis[index];
+    ctrl_gt y0 = values[index];
+    ctrl_gt x1 = lut->axis[index + 1];
+    ctrl_gt y1 = values[index + 1];
 
-    ctrl_gt weight = ctl_div(target - left, right - left);
-
-    return weight;
+    ctrl_gt weight = ctl_div(target - x0, x1 - x0);
+    return y0 + ctl_mul(weight, (y1 - y0));
 }
 
-//////////////////////////////////////////////////////////////////////////
-// Surface 2D look up table
-//
+/*---------------------------------------------------------------------------*/
+/* 2D Look-Up Table (Non-Uniform Grid)                                       */
+/*---------------------------------------------------------------------------*/
 
-// monotonous increasing surface 2D look up table.
-// user may provide two nonlinear monotonous increasing scale as x & y axises.
-// then user may give a point (x, y) than the output function may tells the
-// surface(x,y) is based on the nonlinear discrete scale.
-//
-// A motor may be controlled based on LUT 2d algorithm, reference
-// https://ww2.mathworks.cn/help/mcb/ug/pmsm-characteristics-constraint-curves.html
-// https://ww2.mathworks.cn/help/mcb/gs/fwc-with-mtpa-of-non-linear-pmsm-using-lut.html
-//
-typedef struct _tag_surf_lut_t
+/**
+ * @brief Data structure for a 2D LUT with non-uniformly spaced axes.
+ */
+typedef struct _tag_lut2d_t
 {
-    // monotonous increasing axis 1 - x
-    linear_lut_t dim1_lut;
-    // monotonous increasing axis 2 - y
-    linear_lut_t dim2_lut;
+    ctl_lut1d_t dim1_axis;   //!< 1D LUT for the first dimension (x-axis).
+    ctl_lut1d_t dim2_axis;   //!< 1D LUT for the second dimension (y-axis).
+    const ctrl_gt** surface; //!< Pointer to a 2D array of surface values.
+} ctl_lut2d_t;
 
-    // surface: s = surface(x, y);
-    ctrl_gt **surface;
+/**
+ * @brief Initializes a 2D Look-Up Table.
+ * @param[out] lut Pointer to the 2D LUT instance.
+ * @param[in] axis1 Pointer to the array for the 1st axis.
+ * @param[in] size1 Number of elements in the 1st axis.
+ * @param[in] axis2 Pointer to the array for the 2nd axis.
+ * @param[in] size2 Number of elements in the 2nd axis.
+ * @param[in] surface Pointer to the 2D array (size1 x size2) of surface data.
+ */
+void ctl_init_lut2d(ctl_lut2d_t* lut, const ctrl_gt* axis1, uint32_t size1, const ctrl_gt* axis2, uint32_t size2,
+                    const ctrl_gt** surface);
 
-} surf_lut_t;
-
-// void ctl_init_surf_lut(surf_lut_t *lut);
-
-// void ctl_setup_surf_lut(surf_lut_t *lut, ctrl_gt *asix_x, size_gt size_x, ctrl_gt *asix_y, size_gt size_y,
-//                         ctrl_gt **surface);
-
-void ctl_init_surf_lut(surf_lut_t *lut, ctrl_gt *asix_x, size_gt size_x, ctrl_gt *asix_y, size_gt size_y,
-                       ctrl_gt **surface);
-
-// Obtain the value of the bottom left corner closest to the target point
-GMP_STATIC_INLINE
-ctrl_gt ctl_surf_lut_get_result(surf_lut_t *lut, ctrl_gt dim1_target, ctrl_gt dim2_target)
+/**
+ * @brief Performs 2D bilinear interpolation on a non-uniform grid.
+ * @param[in] lut Pointer to the 2D LUT instance.
+ * @param[in] target1 The target value on the 1st axis.
+ * @param[in] target2 The target value on the 2nd axis.
+ * @return ctrl_gt The interpolated surface value.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_interpolate_lut2d(const ctl_lut2d_t* lut, ctrl_gt target1, ctrl_gt target2)
 {
-    // get target index and weight
-    diff_gt dim1_index = ctl_get_lut_position_index(&lut->dim1_lut, dim1_target);
-    diff_gt dim2_index = ctl_get_lut_position_index(&lut->dim2_lut, dim2_target);
+    // Find lower-bound indices for both axes
+    int32_t idx1 = ctl_search_lut1d_index(&lut->dim1_axis, target1);
+    int32_t idx2 = ctl_search_lut1d_index(&lut->dim2_axis, target2);
 
-    if (dim1_index < 0)
-        dim1_index = 0;
-    if ((size_gt)dim1_index > lut->dim1_lut.lut_size - 1)
-        dim1_index = lut->dim1_lut.lut_size - 1;
-    if (dim2_index <= 0)
-        dim2_index = 0;
-    if ((size_gt)dim2_index > lut->dim2_lut.lut_size - 1)
-        dim2_index = lut->dim2_lut.lut_size - 1;
+    // Clamp indices to valid range
+    idx1 = (idx1 < 0) ? 0 : idx1;
+    idx2 = (idx2 < 0) ? 0 : idx2;
+    idx1 = (idx1 > (int32_t)lut->dim1_axis.size - 2) ? (lut->dim1_axis.size - 2) : idx1;
+    idx2 = (idx2 > (int32_t)lut->dim2_axis.size - 2) ? (lut->dim2_axis.size - 2) : idx2;
 
-    return lut->surface[dim1_index][dim2_index];
+    // Get corner points of the interpolation cell
+    ctrl_gt p00 = lut->surface[idx1][idx2];
+    ctrl_gt p10 = lut->surface[idx1 + 1][idx2];
+    ctrl_gt p01 = lut->surface[idx1][idx2 + 1];
+    ctrl_gt p11 = lut->surface[idx1 + 1][idx2 + 1];
+
+    // Calculate interpolation weights
+    ctrl_gt w1 =
+        ctl_div(target1 - lut->dim1_axis.axis[idx1], lut->dim1_axis.axis[idx1 + 1] - lut->dim1_axis.axis[idx1]);
+    ctrl_gt w2 =
+        ctl_div(target2 - lut->dim2_axis.axis[idx2], lut->dim2_axis.axis[idx2 + 1] - lut->dim2_axis.axis[idx2]);
+
+    // Bilinear interpolation
+    ctrl_gt r1 = p00 + ctl_mul(w1, p10 - p00);
+    ctrl_gt r2 = p01 + ctl_mul(w1, p11 - p01);
+    return r1 + ctl_mul(w2, r2 - r1);
 }
 
-// get the target value based on surrounding 4 points interpolation algorithm
-// y^
-//  |
-//  + (12)          + (22)
-//
-//     .(target point)
-//
-//  + (O)          + (21) -> x
-//
-// tex:
-//$$ \mu_1 = \frac{x_t - x_0}{x_{21} - x_0} $$
-//$$ \mu_2 = \frac{y_t - y_0}{y_{12} - y_0} $$
-//$$ p_{target} = \mu_1\mu_2p_0 + (1-\mu_1)\mu_2 x_{21} + \mu_1(1-\mu_2)x_{12} + (1-\mu_1)(1-\mu_2)x_{22} $$
-//
+/*---------------------------------------------------------------------------*/
+/* 2D Look-Up Table (Uniform Grid)                                           */
+/*---------------------------------------------------------------------------*/
 
-GMP_STATIC_INLINE
-ctrl_gt ctl_surf_lut_interp2(surf_lut_t *lut, ctrl_gt dim1_target, ctrl_gt dim2_target)
+/**
+ * @brief Data structure for a 2D LUT with uniformly spaced axes.
+ */
+typedef struct _tag_uniform_lut2d_t
 {
-    // get target index and weight
-    diff_gt dim1_index = ctl_get_lut_position_index(&lut->dim1_lut, dim1_target);
-    diff_gt dim2_index = ctl_get_lut_position_index(&lut->dim2_lut, dim2_target);
+    ctrl_gt x_min;      //!< Minimum value of the x-axis.
+    ctrl_gt x_step_inv; //!< Inverse of the x-axis step size (1 / delta_x).
+    uint32_t x_size;    //!< Number of points on the x-axis.
 
-    ctrl_gt dim1_weight = ctl_get_lut_position_weight(&lut->dim1_lut, dim1_target, dim1_index);
-    ctrl_gt dim2_weight = ctl_get_lut_position_weight(&lut->dim2_lut, dim2_target, dim2_index);
+    ctrl_gt y_min;      //!< Minimum value of the y-axis.
+    ctrl_gt y_step_inv; //!< Inverse of the y-axis step size (1 / delta_y).
+    uint32_t y_size;    //!< Number of points on the y-axis.
 
-    // special cases, vertex condition
-    if (dim1_index == -1 && dim2_index == -1)
-    {
-        return lut->surface[0][0];
-    }
-    else if ((dim1_index == (diff_gt)(lut->dim1_lut.lut_size - 1)) && (dim2_index == -1))
-    {
-        return lut->surface[lut->dim1_lut.lut_size - 1][0];
-    }
-    else if ((dim1_index == -1) && (dim2_index == (diff_gt)(lut->dim2_lut.lut_size - 1)))
-    {
-        return lut->surface[0][lut->dim1_lut.lut_size - 1];
-    }
-    else if ((dim1_index == (diff_gt)(lut->dim1_lut.lut_size - 1)) &&
-             (dim2_index == (diff_gt)(lut->dim2_lut.lut_size - 1)))
-    {
-        return lut->surface[lut->dim1_lut.lut_size - 1][lut->dim2_lut.lut_size - 1];
-    }
+    const ctrl_gt** surface; //!< Pointer to a 2D array of surface values.
+} ctl_uniform_lut2d_t;
 
-    ctrl_gt original;
-    ctrl_gt dim1_next;
-    ctrl_gt dim2_next;
-    ctrl_gt dim12_next;
+/**
+ * @brief Initializes a 2D LUT with a uniform grid.
+ * @param[out] lut Pointer to the uniform 2D LUT instance.
+ * @param[in] x_min Minimum value of the x-axis.
+ * @param[in] x_max Maximum value of the x-axis.
+ * @param[in] x_size Number of points on the x-axis.
+ * @param[in] y_min Minimum value of the y-axis.
+ * @param[in] y_max Maximum value of the y-axis.
+ * @param[in] y_size Number of points on the y-axis.
+ * @param[in] surface Pointer to the 2D array (x_size x y_size) of surface data.
+ */
+void ctl_init_uniform_lut2d(ctl_uniform_lut2d_t* lut, ctrl_gt x_min, ctrl_gt x_max, uint32_t x_size, ctrl_gt y_min,
+                            ctrl_gt y_max, uint32_t y_size, const ctrl_gt** surface);
 
-    ctrl_gt output;
+/**
+ * @brief Performs 2D bilinear interpolation on a uniform grid.
+ * @param[in] lut Pointer to the uniform 2D LUT instance.
+ * @param[in] x The target value on the x-axis.
+ * @param[in] y The target value on the y-axis.
+ * @return ctrl_gt The interpolated surface value.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_interpolate_uniform_lut2d(const ctl_uniform_lut2d_t* lut, ctrl_gt x, ctrl_gt y)
+{
+    // Calculate floating point indices
+    ctrl_gt x_fidx = ctl_mul(x - lut->x_min, lut->x_step_inv);
+    ctrl_gt y_fidx = ctl_mul(y - lut->y_min, lut->y_step_inv);
 
-    // Marginal condition
-    if (dim1_index == -1)
-    {
-        original = lut->surface[0][dim2_index];
-        dim2_next = lut->surface[0][dim2_index + 1];
+    // Clamp indices
+    x_fidx = ctl_sat(x_fidx, (ctrl_gt)(lut->x_size - 1), 0);
+    y_fidx = ctl_sat(y_fidx, (ctrl_gt)(lut->y_size - 1), 0);
 
-        output = ctl_mul(original, dim2_weight) + ctl_mul(dim2_next, (float2ctrl(1.0) - dim2_weight));
-    }
-    else if (dim1_index == (diff_gt)(lut->dim1_lut.lut_size - 1))
-    {
-        original = lut->surface[lut->dim1_lut.lut_size - 1][dim2_index];
-        dim2_next = lut->surface[lut->dim1_lut.lut_size - 1][dim2_index + 1];
+    // Get integer indices (lower bound)
+    uint32_t x_idx = (uint32_t)x_fidx;
+    uint32_t y_idx = (uint32_t)y_fidx;
 
-        output = ctl_mul(original, dim2_weight) + ctl_mul(dim2_next, (float2ctrl(1.0) - dim2_weight));
-    }
-    else if (dim2_index == -1)
-    {
-        original = lut->surface[dim1_index][0];
-        dim1_next = lut->surface[dim1_index + 1][0];
+    // Get interpolation weights (fractional part)
+    ctrl_gt wx = x_fidx - (ctrl_gt)x_idx;
+    ctrl_gt wy = y_fidx - (ctrl_gt)y_idx;
 
-        output = ctl_mul(original, dim1_weight) + ctl_mul(dim1_next, (float2ctrl(1.0) - dim1_weight));
-    }
-    else if (dim2_index == (diff_gt)(lut->dim2_lut.lut_size - 1))
-    {
-        original = lut->surface[dim1_index][lut->dim2_lut.lut_size - 1];
-        dim1_next = lut->surface[dim1_index + 1][lut->dim2_lut.lut_size - 1];
+    // Get corner points
+    ctrl_gt p00 = lut->surface[x_idx][y_idx];
+    ctrl_gt p10 = lut->surface[x_idx + 1][y_idx];
+    ctrl_gt p01 = lut->surface[x_idx][y_idx + 1];
+    ctrl_gt p11 = lut->surface[x_idx + 1][y_idx + 1];
 
-        output = ctl_mul(original, dim1_weight) + ctl_mul(dim1_next, (float2ctrl(1.0) - dim1_weight));
-    }
-
-    // normal condition
-    else
-    {
-        original = lut->surface[dim1_index][dim2_index];
-        dim1_next = lut->surface[dim1_index + 1][dim2_index];
-        dim2_next = lut->surface[dim1_index][dim2_index + 1];
-        dim12_next = lut->surface[dim1_index + 1][dim2_index + 1];
-
-        // calculate interpolation based on weight
-        ctrl_gt weight_11 = ctl_mul(dim1_weight, dim2_weight);
-        ctrl_gt weight_21 = ctl_mul((float2ctrl(1.0) - dim1_weight), dim2_weight);
-        ctrl_gt weight_12 = ctl_mul(dim1_weight, (float2ctrl(1.0) - dim2_weight));
-        ctrl_gt weight_22 = ctl_mul((float2ctrl(1.0) - dim1_weight), (float2ctrl(1.0) - dim2_weight));
-
-        // get result
-        output = ctl_mul(original, weight_11);
-        output += ctl_mul(weight_21, dim1_next);
-        output += ctl_mul(weight_12, dim2_next);
-        output += ctl_mul(weight_22, dim12_next);
-    }
-
-    return output;
+    // Bilinear interpolation
+    ctrl_gt r1 = p00 + ctl_mul(wx, p10 - p00);
+    ctrl_gt r2 = p01 + ctl_mul(wx, p11 - p01);
+    return r1 + ctl_mul(wy, r2 - r1);
 }
 
-//////////////////////////////////////////////////////////////////////////
-// Uniformly divided surface
-//
-
-typedef struct _tag_uniform_surf_lut_t
-{
-    ctrl_gt x_inf;      // infimum
-    ctrl_gt x_sup;      // supremum
-    size_gt x_sub;      // sub-dividing number
-    ctrl_gt x_sub_coef; // sub-dividing coeffient
-
-    ctrl_gt y_inf;      // infimum
-    ctrl_gt y_sup;      // supremum
-    size_gt y_sub;      // sub-dividing number
-    ctrl_gt y_sub_coef; // sub-dividing coeffient
-
-    ctrl_gt **surface; // point to a `surface[x_sub+1][y_sub+1];` array
-} uniform_surf_lut_t;
-
-// void ctl_init_uniform_surf_lut(uniform_surf_lut_t *lut);
-
-// void ctl_setup_uniform_surf_lut(uniform_surf_lut_t *lut, ctrl_gt x_inf, ctrl_gt x_sup, size_gt x_sub, ctrl_gt y_inf,
-//                                 ctrl_gt y_sup, size_gt y_sub, ctrl_gt **surface);
-
-void ctl_init_uniform_surf_lut(uniform_surf_lut_t *lut, ctrl_gt x_inf, ctrl_gt x_sup, size_gt x_sub, ctrl_gt y_inf,
-                               ctrl_gt y_sup, size_gt y_sub, ctrl_gt **surface);
-
-// get uniform surface LUT result
-GMP_STATIC_INLINE
-ctrl_gt ctl_uniform_surf_lut_get_reuslt(uniform_surf_lut_t *lut, ctrl_gt coord_x, ctrl_gt coord_y)
-{
-    diff_gt index_x = (size_gt)ctl_mul(lut->x_sub_coef, (coord_x - lut->x_inf));
-    diff_gt index_y = (size_gt)ctl_mul(lut->y_sub_coef, (coord_y - lut->y_inf));
-
-    if ((size_gt)index_x > lut->x_sub)
-        index_x = lut->x_sub;
-    else if (index_x < 0)
-        index_x = 0;
-
-    if ((size_gt)index_y > lut->y_sub)
-        index_y = lut->y_sub;
-    else if (index_y < 0)
-        index_y = 0;
-
-    return lut->surface[index_x][index_y];
-}
-
-//// minimum requirement of surface mesh
-//// dim1 and dim2 is a strictly monotonically increasing sequence
-// typedef struct _tag_lut_2d_t
-//{
-//     // specfy the first dimension division
-//     size_gt dim1_div;
-//
-//     // speicfy the second dimension division
-//     size_gt dim2_div;
-//
-//     // point to the surface to be seached
-//     ctrl_gt **surface;
-//
-//     // point to the the first dimension mash points
-//     ctrl_gt *dim1;
-//
-//     // point to the second dimension mash points
-//     ctrl_gt *dim2;
-//
-//     // input target point
-//     ctrl_gt coor1;
-//     ctrl_gt coor2;
-//
-//     // output target point coordinate
-//     // means the index of the target point
-//     diff_gt lut_coor1;
-//     diff_gt lut_coor2;
-//
-//     // surface is described by
-//     // tex:
-//     // $$result = surface(dim1^{-1}(coor1), dim2^{-1}(coor2));$$
-//
-//     // return the result of the search process.
-//     ctrl_gt target_result;
-//
-// } ctl_lut_2d_t;
-//
-// GMP_STATIC_INLINE
-// ctrl_gt get_2d_lookup_table(ctl_lut_2d_t *lut)
-//{
-//     assert(!lut);
-//     assert(!lut->surface);
-//     assert(!lut->dim1);
-//     assert(!lut->dim2);
-// }
+/**
+ * @}
+ */ // end of lookup_tables group
 
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
-#endif // _FILE_SURF_SEARCH_H_
+#endif // _LOOKUP_TABLE_H_
