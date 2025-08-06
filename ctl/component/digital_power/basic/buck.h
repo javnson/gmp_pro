@@ -56,6 +56,7 @@ extern "C"
  * @defgroup buck_controller_api Buck Converter Controller API
  * @brief Contains all configurations, data structures, and functions for the Buck controller.
  * @{
+ * @ingroup CTL_DP_LIB
  */
 
 /*---------------------------------------------------------------------------*/

@@ -7,8 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @defgroup CTL_DP_THREE_PHASE_API Three-Phase Digital Power API
- * @{
  * @brief Initialization functions for three-phase digital power components,
  * including the Three-Phase PLL and bridge modulation modules.
  */
@@ -23,7 +21,7 @@
 
 /**
  * @brief Initializes the three-phase PLL controller.
- * @ingroup CTL_DP_THREE_PHASE_API
+ * @ingroup CTL_PLL_API
  *
  * @param[out] pll Pointer to the `three_phase_pll_t` structure to be initialized.
  * @param[in] f_base The nominal grid frequency (e.g., 50 or 60 Hz), used as the per-unit base.
@@ -52,7 +50,7 @@ void ctl_init_pll_3ph(three_phase_pll_t* pll, parameter_gt f_base, parameter_gt 
 
 /**
  * @brief Initializes the three-phase bridge modulation module.
- * @ingroup CTL_DP_THREE_PHASE_API
+ * @ingroup CTL_TP_MODULATION_API
  *
  * @param[out] bridge Pointer to the `three_phase_bridge_modulation_t` structure.
  * @param[in] pwm_full_scale The maximum value of the PWM counter.

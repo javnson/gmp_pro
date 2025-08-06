@@ -1,3 +1,8 @@
+/**
+ * @defgroup CTL_LIB  Control Template Library
+ * @brief The whole Digital Power Control Library
+ */
+
 // 把所有intrinsic的header全部引入进来
 
 // TODO: 为每一个头文件(模块)补充一个简单的说明，方便用户可以快速在这个文件中找到需要的模块

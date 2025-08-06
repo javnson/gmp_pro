@@ -1,14 +1,15 @@
 /**
- * @file buckboost_4ch.h
+ * @file buckboost.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Header-only library for a 4-switch non-inverting Buck-Boost duty cycle calculation.
  * @version 1.0
  * @date 2025-08-05
  *
  * @copyright Copyright GMP(c) 2025
- *
+ * 
  * @defgroup CTL_BUCKBOOST_API 4-Switch Buck-Boost API
  * @{
+ * @ingroup CTL_DP_LIB
  * @brief Provides a duty cycle calculation strategy for a 4-switch Buck-Boost converter,
  * covering four distinct operating regions for smooth transitions.
  */

@@ -25,6 +25,7 @@ extern "C"
  * @defgroup protection_strategy_api DC/DC Protection Strategy API
  * @brief Contains standard protection modules for power converters.
  * @{
+ * @ingroup CTL_DP_LIB
  */
 
 /*---------------------------------------------------------------------------*/

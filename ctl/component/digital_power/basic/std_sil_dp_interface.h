@@ -28,6 +28,7 @@ extern "C"
  * @defgroup sil_interface_api Software-in-the-Loop (SIL) Interface API
  * @brief Data structures for communication with a simulation environment.
  * @{
+ * @ingroup CTL_DP_LIB
  */
 
 /**

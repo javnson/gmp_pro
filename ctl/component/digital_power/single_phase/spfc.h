@@ -34,6 +34,7 @@ extern "C"
  * @defgroup spfc_api Single Phase PFC API
  * @brief Controller for single-phase Power Factor Correction.
  * @{
+ * @ingroup CTL_DP_LIB
  */
 
 /**
@@ -90,8 +91,7 @@ void ctl_attach_spfc_input(spfc_t* pfc, adc_ift* rect_u, adc_ift* rect_i, adc_if
  * @brief Clears the internal states of the PFC PID controllers.
  * @param[in,out] pfc Pointer to the PFC controller instance.
  */
-GMP_STATIC_INLINE
-void ctl_clear_pfc_ctrl(spfc_t* pfc)
+GMP_STATIC_INLINE void ctl_clear_pfc_ctrl(spfc_t* pfc)
 {
     ctl_clear_pid(&pfc->current_ctrl);
     ctl_clear_pid(&pfc->voltage_ctrl);
@@ -102,8 +102,7 @@ void ctl_clear_pfc_ctrl(spfc_t* pfc)
  * @param[in,out] pfc Handle of the PFC controller.
  * @return The calculated PWM duty cycle for the Boost converter.
  */
-GMP_STATIC_INLINE
-ctrl_gt ctl_step_spfc_ctrl(spfc_t* pfc)
+GMP_STATIC_INLINE ctrl_gt ctl_step_spfc_ctrl(spfc_t* pfc)
 {
     if (!pfc->flag_enable)
     {
@@ -134,8 +133,7 @@ ctrl_gt ctl_step_spfc_ctrl(spfc_t* pfc)
  * @param[in,out] pfc Pointer to the PFC controller instance.
  * @param[in] voltage_set The desired DC bus voltage.
  */
-GMP_STATIC_INLINE
-void ctl_set_spfc_voltage(spfc_t* pfc, ctrl_gt voltage_set)
+GMP_STATIC_INLINE void ctl_set_spfc_voltage(spfc_t* pfc, ctrl_gt voltage_set)
 {
     pfc->voltage_set = voltage_set;
 }
@@ -144,8 +142,7 @@ void ctl_set_spfc_voltage(spfc_t* pfc, ctrl_gt voltage_set)
  * @brief Enables the PFC controller.
  * @param[in,out] pfc Pointer to the PFC controller instance.
  */
-GMP_STATIC_INLINE
-void ctl_enable_spfc_ctrl(spfc_t* pfc)
+GMP_STATIC_INLINE void ctl_enable_spfc_ctrl(spfc_t* pfc)
 {
     pfc->flag_enable = 1;
 }
@@ -154,8 +151,7 @@ void ctl_enable_spfc_ctrl(spfc_t* pfc)
  * @brief Disables the PFC controller.
  * @param[in,out] pfc Pointer to the PFC controller instance.
  */
-GMP_STATIC_INLINE
-void ctl_disable_spfc_ctrl(spfc_t* pfc)
+GMP_STATIC_INLINE void ctl_disable_spfc_ctrl(spfc_t* pfc)
 {
     pfc->flag_enable = 0;
 }

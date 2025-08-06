@@ -33,6 +33,7 @@ extern "C"
  * @defgroup mppt_api MPPT Algorithms API
  * @brief Contains algorithms for Maximum Power Point Tracking.
  * @{
+ * @ingroup CTL_DP_LIB
  */
 
 /**

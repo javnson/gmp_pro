@@ -9,6 +9,7 @@
  *
  * @defgroup CTL_PLL_API Phase-Locked Loop (PLL) API
  * @{
+ * @ingroup CTL_DP_LIB
  * @brief A standard three-phase SRF-PLL for grid synchronization.
  */
 

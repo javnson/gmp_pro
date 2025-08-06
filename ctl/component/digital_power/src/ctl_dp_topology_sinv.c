@@ -7,8 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @defgroup CTL_TOPOLOGY_SINV_API Single-Phase Inverter Topology API
- * @{
  * @brief Functions for initializing and configuring a comprehensive single-phase inverter
  * controller, including advanced features like harmonic compensation.
  */
@@ -24,13 +22,13 @@
 
 /**
  * @brief Configures and upgrades the internal components of the single-phase inverter controller.
- * @ingroup CTL_TOPOLOGY_SINV_API
+ * @ingroup CTL_TOPOLOGY_SINV_H_API
  * @details This is the core initialization routine that sets up all sub-modules
  * based on the parameters provided in the init structure. It configures the PLL,
  * filters, the main QPR current controller, and multiple QR harmonic compensators.
  *
- * @param[out] sinv Pointer to the `sinv_ctrl_t` instance to be configured.
- * @param[in] init Pointer to the `sinv_init_t` structure containing all initialization parameters.
+ * @param[out] sinv Pointer to the @ref sinv_ctrl_t instance to be configured.
+ * @param[in] init Pointer to the @ref sinv_init_t structure containing all initialization parameters.
  */
 void ctl_upgrade_sinv_param(sinv_ctrl_t* sinv, sinv_init_t* init)
 {
@@ -70,7 +68,7 @@ void ctl_upgrade_sinv_param(sinv_ctrl_t* sinv, sinv_init_t* init)
 
 /**
  * @brief Initializes the complete single-phase inverter controller.
- * @ingroup CTL_TOPOLOGY_SINV_API
+ * @ingroup CTL_TOPOLOGY_SINV_H_API
  * @details This is the main entry point for initialization. It calls the upgrade
  * function to configure all parameters and then clears all runtime states.
  *
@@ -87,7 +85,7 @@ void ctl_init_sinv_ctrl(sinv_ctrl_t* sinv, sinv_init_t* init)
 
 /**
  * @brief Attaches physical ADC interfaces to the single-phase inverter controller.
- * @ingroup CTL_TOPOLOGY_SINV_API
+ * @ingroup CTL_TOPOLOGY_SINV_H_API
  *
  * @param[out] sinv Pointer to the `sinv_ctrl_t` instance.
  * @param[in] udc Pointer to the ADC interface for the DC bus voltage.

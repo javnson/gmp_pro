@@ -9,6 +9,7 @@
  *
  * @defgroup CTL_VIENNA_PFC_API Vienna Rectifier PFC API
  * @{
+ * @ingroup CTL_DP_LIB
  * @brief Control functions and data structures for a three-phase Vienna PFC.
  *
  * @todo

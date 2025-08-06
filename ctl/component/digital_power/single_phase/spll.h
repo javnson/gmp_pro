@@ -39,6 +39,7 @@ extern "C"
  * @defgroup spll_api Single Phase PLL API
  * @brief A Phase-Locked Loop for single-phase grid synchronization.
  * @{
+ * @ingroup CTL_DP_LIB
  */
 
 /**
@@ -82,8 +83,7 @@ void ctl_init_single_phase_pll(ctl_single_phase_pll* spll, parameter_gt gain, pa
  * @details Resets the SOGI, filters, and phase angle to a known initial state.
  * @param[in,out] spll Pointer to the Single-Phase PLL instance.
  */
-GMP_STATIC_INLINE
-void ctl_clear_single_phase_pll(ctl_single_phase_pll* spll)
+GMP_STATIC_INLINE void ctl_clear_single_phase_pll(ctl_single_phase_pll* spll)
 {
     ctl_clear_lowpass_filter(&spll->filter_uq);
     ctl_clear_discrete_sogi(&spll->sogi);
@@ -98,8 +98,7 @@ void ctl_clear_single_phase_pll(ctl_single_phase_pll* spll)
  * @param[in,out] spll Pointer to the Single-Phase PLL instance.
  * @param[in] ac_input The instantaneous value of the single-phase AC input signal.
  */
-GMP_STATIC_INLINE
-void ctl_step_single_phase_pll(ctl_single_phase_pll* spll, ctrl_gt ac_input)
+GMP_STATIC_INLINE void ctl_step_single_phase_pll(ctl_single_phase_pll* spll, ctrl_gt ac_input)
 {
     // 1. Orthogonal Signal Generation using SOGI
     ctl_step_discrete_sogi(&spll->sogi, ac_input);
@@ -130,8 +129,7 @@ void ctl_step_single_phase_pll(ctl_single_phase_pll* spll, ctrl_gt ac_input)
  * @param[in] spll Pointer to the Single-Phase PLL instance.
  * @return The filtered phase error signal (udq.q).
  */
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_spll_error_fbk(ctl_single_phase_pll* spll)
+GMP_STATIC_INLINE ctrl_gt ctl_get_spll_error_fbk(ctl_single_phase_pll* spll)
 {
     return ctl_get_lowpass_filter_result(&spll->filter_uq);
 }

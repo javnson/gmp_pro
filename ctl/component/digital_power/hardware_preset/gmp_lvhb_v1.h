@@ -6,7 +6,7 @@
  * @date 2025-05-28
  *
  * @copyright Copyright (c) 2025
- *
+ * 
  * @details This header file contains calibration constants for the voltage and
  * current sensors on the Diansai v1 hardware platform, dated 2025-07-20. These
  * macros are used to convert raw ADC values into physical units (Volts and Amperes).

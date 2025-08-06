@@ -30,6 +30,7 @@ extern "C"
  * @defgroup sp_modulation_api Single-Phase Modulation API
  * @brief Generates PWM signals for a single-phase H-bridge inverter.
  * @{
+ * @ingroup CTL_DP_LIB
  */
 
 /**

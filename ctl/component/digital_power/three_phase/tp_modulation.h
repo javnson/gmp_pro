@@ -9,6 +9,7 @@
  *
  * @defgroup CTL_TP_MODULATION_API Three-Phase Modulation API
  * @{
+ * @ingroup CTL_DP_LIB
  * @brief Provides functions for generating three-phase PWM signals from voltage commands,
  * including dead-time compensation based on current direction.
  */

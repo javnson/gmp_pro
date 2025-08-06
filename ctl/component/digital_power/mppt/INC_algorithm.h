@@ -35,6 +35,7 @@ extern "C"
 /**
  * @addtogroup mppt_api
  * @{
+ * @ingroup CTL_DP_LIB
  */
 
 /**

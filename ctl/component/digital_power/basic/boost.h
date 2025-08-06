@@ -6,7 +6,7 @@
  * @date 2025-05-28
  *
  * @copyright Copyright (c) 2025
- *
+ * 
  * @details
  * # Boost Controller Usage Guide
  *
@@ -56,6 +56,7 @@ extern "C"
  * @defgroup boost_controller_api Boost Converter Controller API
  * @brief Contains all configurations, data structures, and functions for the Boost controller.
  * @{
+ * @ingroup CTL_DP_LIB
  */
 
 /*---------------------------------------------------------------------------*/

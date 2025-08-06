@@ -9,6 +9,7 @@
  *
  * @defgroup CTL_TOPOLOGY_INV_H_API Three-Phase Inverter Topology API (Header)
  * @{
+ * @ingroup CTL_DP_LIB
  * @brief Defines the data structures, control flags, and function interfaces for a
  * comprehensive three-phase inverter, including harmonic compensation, droop control,
  * and multiple operating modes.

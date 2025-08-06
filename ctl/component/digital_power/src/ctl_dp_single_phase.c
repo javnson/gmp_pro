@@ -7,8 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @defgroup CTL_DP_SINGLE_PHASE_API Single-Phase Digital Power API
- * @{
  * @brief Initialization functions for single-phase digital power components,
  * including the Single-Phase PLL, H-Bridge Modulation, and PFC controllers.
  */
@@ -23,7 +21,7 @@
 
 /**
  * @brief Initializes a Single-Phase Phase-Locked Loop (SPLL) controller.
- * @ingroup CTL_DP_SINGLE_PHASE_API
+ * @ingroup spll_api
  * @details This function configures the components of the SPLL, including the
  * Second-Order Generalized Integrator (SOGI) for quadrature signal
  * generation, a low-pass filter for the q-axis component, and a PI
@@ -62,7 +60,7 @@ void ctl_init_single_phase_pll(ctl_single_phase_pll* spll, parameter_gt gain, pa
 
 /**
  * @brief Initializes a single-phase H-bridge modulation module.
- * @ingroup CTL_DP_SINGLE_PHASE_API
+ * @ingroup sp_modulation_api
  * @details This function sets up the parameters for generating PWM signals for a
  * single-phase H-bridge, including dead-time compensation parameters.
  *
@@ -90,7 +88,7 @@ void ctl_init_single_phase_H_modulation(single_phase_H_modulation_t* bridge, pwm
 
 /**
  * @brief Initializes a Single-Phase Power Factor Correction (SPFC) controller.
- * @ingroup CTL_DP_SINGLE_PHASE_API
+ * @ingroup spfc_api
  * @details This function configures the cascaded control structure for a single-phase PFC,
  * which consists of an outer voltage loop and an inner current loop.
  * Both controllers are implemented as series-form PID controllers.

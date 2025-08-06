@@ -9,6 +9,7 @@
  *
  * @defgroup CTL_TOPOLOGY_SINV_H_API Single-Phase Inverter Topology API (Header)
  * @{
+ * @ingroup CTL_DP_LIB
  * @brief Defines the data structures, control flags, and function interfaces for a
  * comprehensive single-phase inverter, including harmonic compensation and multiple
  * operating modes.

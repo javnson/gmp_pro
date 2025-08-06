@@ -7,8 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @defgroup CTL_TOPOLOGY_INV_API Three-Phase Inverter Topology API
- * @{
  * @brief Functions for initializing and configuring a comprehensive three-phase inverter
  * controller, including advanced features like harmonic compensation and droop control.
  */
@@ -24,7 +22,7 @@
 
 /**
  * @brief Configures and upgrades the internal components of the inverter controller.
- * @ingroup CTL_TOPOLOGY_INV_API
+ * @ingroup CTL_TOPOLOGY_INV_H_API
  * @details This is the core initialization routine that sets up all sub-modules
  * based on the parameters provided in the init structure. It configures filters,
  * PLL, main controllers, negative sequence controllers, harmonic compensators,
@@ -91,9 +89,9 @@ void ctl_upgrade_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
 
 /**
  * @brief Attaches physical ADC interfaces to the inverter controller.
- * @ingroup CTL_TOPOLOGY_INV_API
+ * @ingroup CTL_TOPOLOGY_INV_H_API
  *
- * @param[out] inv Pointer to the `inv_ctrl_t` instance.
+ * @param[out] inv Pointer to the @ref inv_ctrl_t instance.
  * @param[in] adc_udc Pointer to the ADC interface for the DC bus voltage.
  * @param[in] adc_idc Pointer to the ADC interface for the DC bus current.
  * @param[in] adc_ia Pointer to the ADC interface for Phase A current.
@@ -120,12 +118,13 @@ void ctl_attach_three_phase_inv(inv_ctrl_t* inv, adc_ift* adc_udc, adc_ift* adc_
 
 /**
  * @brief Initializes the complete three-phase inverter controller.
- * @ingroup CTL_TOPOLOGY_INV_API
+ * @ingroup CTL_TOPOLOGY_INV_H_API
+ * 
  * @details This is the main entry point for initialization. It calls the upgrade
  * function to configure all parameters and then clears all runtime states.
  *
- * @param[out] inv Pointer to the `inv_ctrl_t` instance to be initialized.
- * @param[in] init Pointer to the `three_phase_inv_init_t` structure with all configuration parameters.
+ * @param[out] inv Pointer to the @ref inv_ctrl_t instance to be initialized.
+ * @param[in] init Pointer to the @ref three_phase_inv_init_t structure with all configuration parameters.
  */
 void ctl_init_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
 {
