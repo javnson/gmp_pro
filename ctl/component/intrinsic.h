@@ -1,7 +1,105 @@
 /**
- * @defgroup CTL_LIB  Control Template Library
- * @brief The whole Digital Power Control Library
+ * @defgroup CTL_INTRINSIC_LIB  Control Template Library Intrinsic
+ * @brief The Basic modules in Control Template Library
  */
+
+//
+// ----------------- Second Level Groups -----------------
+//
+
+/**
+ * @defgroup CTL_INTRINSIC_BASIC Basic Components
+ * @ingroup CTL_INTRINSIC_LIB
+ * @brief Fundamental, reusable building blocks for control template library.
+ */
+
+/**
+ * @defgroup CTL_INTRINSIC_CONTINUOUS Continuous Components
+ * @ingroup CTL_INTRINSIC_LIB
+ * @brief Fundamental, reusable building continuous blocks for control template library.
+ */
+
+/**
+ * @defgroup CTL_INTRINSIC_DISCRETE Discrete Components
+ * @ingroup CTL_INTRINSIC_LIB
+ * @brief Fundamental, reusable building discrete blocks for control template library.
+ */
+
+/**
+ * @defgroup CTL_INTRINSIC_LEBESGUE Lebesgue Components
+ * @ingroup CTL_INTRINSIC_LIB
+ * @brief Fundamental, reusable building Lebesgue blocks for control template library.
+ */
+
+//
+// ----------------- Discrete Components -----------------
+//
+
+/**
+ * @defgroup discrete_filter_api Discrete Filter Library
+ * @ingroup CTL_INTRINSIC_DISCRETE
+ * @brief A collection of common discrete filters for signal processing.
+ */
+#include <ctl/component/intrinsic/discrete/discrete_filter.h>
+
+/**
+ * @defgroup discrete_pid_controller Discrete PID Controller
+ * @ingroup CTL_INTRINSIC_DISCRETE
+ * @brief A collection of common discrete filters for signal processing.
+ */
+#include <ctl/component/intrinsic/discrete/discrete_pid.h>
+
+/**
+ * @defgroup discrete_sogi SOGI-based Quadrature Signal Generator
+ * @ingroup CTL_INTRINSIC_DISCRETE
+ * @brief Implements a SOGI to generate in-phase and quadrature-phase signals.
+ */
+#include <ctl/component/intrinsic/discrete/discrete_sogi.h>
+
+/**
+ * @defgroup lead_lag_compensators Lead-Lag Compensators
+ * @ingroup CTL_INTRINSIC_DISCRETE
+ * @brief A library of discrete IIR filters for control loop compensation.
+ */
+#include <ctl/component/intrinsic/discrete/lead_lag.h>
+
+/**
+ * @defgroup pole_zero_compensators Pole-Zero Compensators
+ * @ingroup CTL_INTRINSIC_DISCRETE
+ * @brief A library of discrete IIR filters for control loop compensation.
+ */
+#include <ctl/component/intrinsic/discrete/pole_zero.h>
+
+/**
+ * @defgroup resonant_controllers Resonant Controllers
+ * @ingroup CTL_INTRINSIC_DISCRETE
+ * @brief A library of discrete resonant controllers for AC signal tracking.
+ */
+#include <ctl/component/intrinsic/discrete/proportional_resonant.h>
+
+/**
+ * @defgroup signal_generators Signal Generators
+ * @ingroup CTL_INTRINSIC_DISCRETE
+ * @brief A library of modules for generating standard test waveforms.
+ */
+#include <ctl/component/intrinsic/discrete/signal_generator.h>
+
+/**
+ * @defgroup tracking_pid Tracking PID Controller
+ * @ingroup CTL_INTRINSIC_DISCRETE
+ * @brief A composite PID controller for smooth setpoint tracking.
+ */
+#include <ctl/component/intrinsic/discrete/track_discrete_pid.h>
+
+/**
+ * @defgroup z_transfer_function Generic Z-Domain Transfer Function
+ * @ingroup CTL_INTRINSIC_DISCRETE
+ * @brief An IIR filter module to implement any given Z-domain transfer function.
+ */
+#include <ctl/component/intrinsic/discrete/z_function.h>
+
+
+
 
 // 把所有intrinsic的header全部引入进来
 
@@ -77,3 +175,4 @@
 #endif // GMP_CTL_DISABLE_COM_INTRINSIC_COMBO
 
 #endif // GMP_CTL_DISABLE_COM_INTRINSIC
+

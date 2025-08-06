@@ -16,7 +16,7 @@
 #ifndef _Z_TRANSFER_FUNCTION_H_
 #define _Z_TRANSFER_FUNCTION_H_
 
-#include <stdint.h>                  // For int32_t
+#include <stdint.h> 
 
 #ifdef __cplusplus
 extern "C"
