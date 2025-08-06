@@ -29,6 +29,13 @@ IndentExternBlock: NoIndent
 # Options: Left, Right, Middle
 PointerAlignment: Left
 
+# --- Macro Control ---
+# Treat GMP_STATIC_INLINE as a function attribute. This configuration ensures
+# that clang-format places it on its own line before the function definition,
+# preserving the desired code layout.
+AttributeMacros:
+  - GMP_STATIC_INLINE
+
 # --- Macro Alignment ---
 # Align consecutive macro definitions for better readability.
 AlignConsecutiveMacros: true
