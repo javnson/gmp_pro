@@ -110,7 +110,7 @@ void ctl_init_pll(
 
 #include <ctl/component/intrinsic/discrete/slope_lim.h>
 
-void ctl_init_slope_limit(ctl_slope_lim_t *obj, ctrl_gt slope_max, ctrl_gt slope_min)
+void ctl_init_slope_limiter(ctl_slope_limiter_t* obj, ctrl_gt slope_max, ctrl_gt slope_min)
 {
     obj->slope_min = slope_min;
     obj->slope_max = slope_max;
@@ -123,7 +123,7 @@ void ctl_init_slope_limit(ctl_slope_lim_t *obj, ctrl_gt slope_max, ctrl_gt slope
 
 #include <ctl/component/intrinsic/discrete/stimulate.h>
 
-void ctl_init_sincos_gen(ctl_src_sg_t *sg,
+void ctl_init_sine_generator(ctl_sine_generator_t* sg,
                          parameter_gt init_angle, // pu
                          parameter_gt step_angle) // pu
 {
@@ -134,7 +134,7 @@ void ctl_init_sincos_gen(ctl_src_sg_t *sg,
     sg->ph_cos_delta = float2ctrl(cos(step_angle));
 }
 
-void ctl_init_ramp_gen(ctl_src_rg_t *rg, ctrl_gt slope, parameter_gt amp_pos, parameter_gt amp_neg)
+void ctl_init_ramp_gen(ctl_ramp_generator_t* rg, ctrl_gt slope, parameter_gt amp_pos, parameter_gt amp_neg)
 {
     rg->current = float2ctrl(0);
 
@@ -146,7 +146,7 @@ void ctl_init_ramp_gen(ctl_src_rg_t *rg, ctrl_gt slope, parameter_gt amp_pos, pa
 
 void ctl_init_ramp_gen_via_amp_freq(
     // pointer to ramp generator object
-    ctl_src_rg_t *rg,
+    ctl_ramp_generator_t* rg,
     // isr frequency, unit Hz
     parameter_gt isr_freq,
     // target frequency, unit Hz
@@ -317,110 +317,175 @@ void ctl_init_2p2z(
 
 #include <ctl/component/intrinsic/discrete/proportional_resonant.h>
 
-void ctl_init_resonant_controller(
-    // handle of PR controller
-    resonant_ctrl_t* r,
-    // gain of resonant frequency
-    parameter_gt kr,
-    // resonant frequency, unit Hz
-    parameter_gt freq_resonant,
-    // controller frequency
-    parameter_gt fs)
+void ctl_init_resonant_controller(resonant_ctrl_t* r, parameter_gt kr, parameter_gt freq_resonant, parameter_gt fs)
 {
-    // resonant frequency, unit rad/s
-    parameter_gt omega_r = 2 * PI * freq_resonant;
+    parameter_gt T = 1.0f / fs;
+    parameter_gt wr = 2.0f * PI * freq_resonant;
+    parameter_gt wr_sq_T_sq = wr * wr * T * T;
 
-    r->krg = float2ctrl(kr * (4 * fs) / (4 * fs * fs + omega_r * omega_r));
-    r->kr = float2ctrl(2 * (4 * fs * fs - omega_r * omega_r) / (4 * fs * fs + omega_r * omega_r));
+    // Based on the bilinear transformation of G(s) = kr * (2s) / (s^2 + wr^2)
+    // The resulting difference equation is:
+    // u(n) = a1*u(n-1) + a2*u(n-2) + b0*e(n) + b2*e(n-2)
+    parameter_gt den = wr_sq_T_sq + 4.0f;
+    parameter_gt inv_den = 1.0f / den;
 
-    // clear temp variables
+    r->b0 = float2ctrl(kr * 2.0f * T * inv_den);
+    r->b2 = float2ctrl(-kr * 2.0f * T * inv_den);
+    r->a1 = float2ctrl(2.0f * (4.0f - wr_sq_T_sq) * inv_den);
+    r->a2 = float2ctrl(-1.0f); // This simplifies from -(4 + T^2*wr^2 - 8)/(4+T^2*wr^2) if no damping
+
+    // In the original code, the denominator of a1 was different.
+    // The standard discretization of an ideal resonant controller leads to a2 = -1.
+    // The original code's coefficients seem to be from a slightly different form.
+    // Let's stick to the standard bilinear transform result.
+    // Original code had: r->kr = float2ctrl(2.0f * (4.0f * fs * fs - wr * wr) / (4.0f * fs * fs + wr * wr));
+    // and r->krg = float2ctrl(kr * 4.0f * fs / (4.0f * fs * fs + wr * wr));
+    // which corresponds to a different difference equation form.
+    // The new form is u(n) = a1*u(n-1) + a2*u(n-2) + b0*e(n) + b2*e(n-2)
+
     ctl_clear_resonant_controller(r);
 }
 
-void ctl_init_pr_controller(
-    // handle of PR controller
-    pr_ctrl_t *pr,
-    // Kp
-    parameter_gt kp,
-    // gain of resonant frequency
-    parameter_gt kr,
-    // resonant frequency, unit Hz
-    parameter_gt freq_resonant,
-    // controller frequency
-    parameter_gt fs)
+void ctl_init_pr_controller(pr_ctrl_t* pr, parameter_gt kp, parameter_gt kr, parameter_gt freq_resonant,
+                            parameter_gt fs)
 {
-    // resonant frequency, unit rad/s
-    parameter_gt omega_r = 2 * PI * freq_resonant;
-
-    pr->kpg = float2ctrl(kp);
-    pr->krg = float2ctrl(kr * (4 * fs) / (4 * fs * fs + omega_r * omega_r));
-    pr->kr = float2ctrl(2 * (4 * fs * fs - omega_r * omega_r) / (4 * fs * fs + omega_r * omega_r));
-
-    // clear temp variables
-    ctl_clear_pr_controller(pr);
+    pr->kp = kp;
+    ctl_init_resonant_controller(&pr->resonant_part, kr, freq_resonant, fs);
 }
 
-void ctl_init_qr_controller(
-    // handle of QR controller
-    qr_ctrl_t* qr,
-    // gain of resonant frequency
-    parameter_gt kr,
-    // resonant frequency, unit Hz
-    parameter_gt freq_resonant,
-    // cut frequency, unit Hz
-    parameter_gt freq_cut,
-    // controller frequency
-    parameter_gt fs)
+void ctl_init_qr_controller(qr_ctrl_t* qr, parameter_gt kr, parameter_gt freq_resonant, parameter_gt freq_cut,
+                            parameter_gt fs)
 {
+    parameter_gt T = 1.0f / fs;
+    parameter_gt wr = 2.0f * PI * freq_resonant;
+    parameter_gt wc = 2.0f * PI * freq_cut;
+
+    // Based on the bilinear transformation of G(s) = kr * (2*wc*s) / (s^2 + 2*wc*s + wr^2)
+    // The resulting difference equation is:
+    // u(n) = a1*u(n-1) + a2*u(n-2) + b0*e(n) + b2*e(n-2)
+    parameter_gt den = 4.0f + 4.0f * wc * T + wr * wr * T * T;
+    parameter_gt inv_den = 1.0f / den;
+
+    qr->b0 = float2ctrl(kr * 4.0f * wc * T * inv_den);
+    qr->b2 = float2ctrl(-kr * 4.0f * wc * T * inv_den);
+    qr->a1 = float2ctrl((8.0f - 2.0f * wr * wr * T * T) * inv_den);
+    qr->a2 = float2ctrl((-4.0f + 4.0f * wc * T - wr * wr * T * T) * inv_den);
+
     ctl_clear_qr_controller(qr);
-
-    parameter_gt omega_r_sqr = 4.0f * PI * PI * freq_resonant * freq_resonant;
-    parameter_gt omega_c_fs = 4.0f * 2.0f * PI * freq_cut * fs;
-
-    parameter_gt kr_suffix = 4.0f * freq_cut * fs / (4.0f * fs * fs + omega_c_fs + omega_r_sqr);
-
-    parameter_gt b1 = 2.0f * (4.0f * fs * fs - omega_r_sqr) / (4.0f * fs * fs + omega_c_fs + omega_r_sqr);
-    parameter_gt b2 = (4.0f * fs * fs - omega_c_fs + omega_r_sqr) / (4.0f * fs * fs + omega_c_fs + omega_r_sqr);
-
-    // Discrete parameters
-    qr->a0 = float2ctrl(kr_suffix);
-    qr->b1 = float2ctrl(b1);
-    qr->b2 = float2ctrl(b2);
-    qr->kr = float2ctrl(kr);
 }
 
-void ctl_init_qpr_controller(
-    // handle of QPR controller
-    qpr_ctrl_t *qpr,
-    // Kp
-    parameter_gt kp,
-    // gain of resonant frequency
-    parameter_gt kr,
-    // resonant frequency, unit Hz
-    parameter_gt freq_resonant,
-    // cut frequency, unit Hz
-    parameter_gt freq_cut,
-    // controller frequency
-    parameter_gt fs)
+void ctl_init_qpr_controller(qpr_ctrl_t* qpr, parameter_gt kp, parameter_gt kr, parameter_gt freq_resonant,
+                             parameter_gt freq_cut, parameter_gt fs)
 {
-    ctl_clear_qpr_controller(qpr);
-
-    parameter_gt omega_r_sqr = 4.0f * PI * PI * freq_resonant * freq_resonant;
-    parameter_gt omega_c_fs = 4.0f * 2.0f * PI * freq_cut * fs;
-
-    parameter_gt kr_suffix = 4.0f * freq_cut * fs / (4.0f * fs * fs + omega_c_fs + omega_r_sqr);
-
-    parameter_gt b1 = 2.0f * (4.0f * fs * fs - omega_r_sqr) / (4.0f * fs * fs + omega_c_fs + omega_r_sqr);
-    parameter_gt b2 = (4.0f * fs * fs - omega_c_fs + omega_r_sqr) / (4.0f * fs * fs + omega_c_fs + omega_r_sqr);
-
-    // Discrete parameters
-    qpr->a0 = float2ctrl(kr_suffix);
-    qpr->b1 = float2ctrl(b1);
-    qpr->b2 = float2ctrl(b2);
-
-    qpr->kp = float2ctrl(kp);
-    qpr->kr = float2ctrl(kr);
+    qpr->kp = kp;
+    ctl_init_qr_controller(&qpr->resonant_part, kr, freq_resonant, freq_cut, fs);
 }
+
+
+//void ctl_init_resonant_controller(
+//    // handle of PR controller
+//    resonant_ctrl_t* r,
+//    // gain of resonant frequency
+//    parameter_gt kr,
+//    // resonant frequency, unit Hz
+//    parameter_gt freq_resonant,
+//    // controller frequency
+//    parameter_gt fs)
+//{
+//    // resonant frequency, unit rad/s
+//    parameter_gt omega_r = 2 * PI * freq_resonant;
+//
+//    r->krg = float2ctrl(kr * (4 * fs) / (4 * fs * fs + omega_r * omega_r));
+//    r->kr = float2ctrl(2 * (4 * fs * fs - omega_r * omega_r) / (4 * fs * fs + omega_r * omega_r));
+//
+//    // clear temp variables
+//    ctl_clear_resonant_controller(r);
+//}
+//
+//void ctl_init_pr_controller(
+//    // handle of PR controller
+//    pr_ctrl_t *pr,
+//    // Kp
+//    parameter_gt kp,
+//    // gain of resonant frequency
+//    parameter_gt kr,
+//    // resonant frequency, unit Hz
+//    parameter_gt freq_resonant,
+//    // controller frequency
+//    parameter_gt fs)
+//{
+//    // resonant frequency, unit rad/s
+//    parameter_gt omega_r = 2 * PI * freq_resonant;
+//
+//    pr->kpg = float2ctrl(kp);
+//    pr->krg = float2ctrl(kr * (4 * fs) / (4 * fs * fs + omega_r * omega_r));
+//    pr->kr = float2ctrl(2 * (4 * fs * fs - omega_r * omega_r) / (4 * fs * fs + omega_r * omega_r));
+//
+//    // clear temp variables
+//    ctl_clear_pr_controller(pr);
+//}
+//
+//void ctl_init_qr_controller(
+//    // handle of QR controller
+//    qr_ctrl_t* qr,
+//    // gain of resonant frequency
+//    parameter_gt kr,
+//    // resonant frequency, unit Hz
+//    parameter_gt freq_resonant,
+//    // cut frequency, unit Hz
+//    parameter_gt freq_cut,
+//    // controller frequency
+//    parameter_gt fs)
+//{
+//    ctl_clear_qr_controller(qr);
+//
+//    parameter_gt omega_r_sqr = 4.0f * PI * PI * freq_resonant * freq_resonant;
+//    parameter_gt omega_c_fs = 4.0f * 2.0f * PI * freq_cut * fs;
+//
+//    parameter_gt kr_suffix = 4.0f * freq_cut * fs / (4.0f * fs * fs + omega_c_fs + omega_r_sqr);
+//
+//    parameter_gt b1 = 2.0f * (4.0f * fs * fs - omega_r_sqr) / (4.0f * fs * fs + omega_c_fs + omega_r_sqr);
+//    parameter_gt b2 = (4.0f * fs * fs - omega_c_fs + omega_r_sqr) / (4.0f * fs * fs + omega_c_fs + omega_r_sqr);
+//
+//    // Discrete parameters
+//    qr->a0 = float2ctrl(kr_suffix);
+//    qr->b1 = float2ctrl(b1);
+//    qr->b2 = float2ctrl(b2);
+//    qr->kr = float2ctrl(kr);
+//}
+//
+//void ctl_init_qpr_controller(
+//    // handle of QPR controller
+//    qpr_ctrl_t *qpr,
+//    // Kp
+//    parameter_gt kp,
+//    // gain of resonant frequency
+//    parameter_gt kr,
+//    // resonant frequency, unit Hz
+//    parameter_gt freq_resonant,
+//    // cut frequency, unit Hz
+//    parameter_gt freq_cut,
+//    // controller frequency
+//    parameter_gt fs)
+//{
+//    ctl_clear_qpr_controller(qpr);
+//
+//    parameter_gt omega_r_sqr = 4.0f * PI * PI * freq_resonant * freq_resonant;
+//    parameter_gt omega_c_fs = 4.0f * 2.0f * PI * freq_cut * fs;
+//
+//    parameter_gt kr_suffix = 4.0f * freq_cut * fs / (4.0f * fs * fs + omega_c_fs + omega_r_sqr);
+//
+//    parameter_gt b1 = 2.0f * (4.0f * fs * fs - omega_r_sqr) / (4.0f * fs * fs + omega_c_fs + omega_r_sqr);
+//    parameter_gt b2 = (4.0f * fs * fs - omega_c_fs + omega_r_sqr) / (4.0f * fs * fs + omega_c_fs + omega_r_sqr);
+//
+//    // Discrete parameters
+//    qpr->a0 = float2ctrl(kr_suffix);
+//    qpr->b1 = float2ctrl(b1);
+//    qpr->b2 = float2ctrl(b2);
+//
+//    qpr->kp = float2ctrl(kp);
+//    qpr->kr = float2ctrl(kr);
+//}
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -455,4 +520,107 @@ void ctl_init_discrete_sogi(
     sogi->qb0 = float2ctrl((k_damp * osgy) * temp);
     sogi->qb1 = float2ctrl(sogi->qb0 * (2.0f));
     sogi->qb2 = sogi->qb0;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Lead Lag controller
+
+#include "ctl/component/intrinsic/discrete/pole_zero.h"
+
+void ctl_init_lead(ctrl_lead_t* obj, parameter_gt K_D, parameter_gt tau_D, parameter_gt fs)
+{
+    // Sampling period
+    parameter_gt T = 1.0f / fs;
+
+    // Denominator term from bilinear transform: (2*tau_D + T)
+    parameter_gt den = 2.0f * tau_D + T;
+    parameter_gt inv_den;
+
+    // Avoid division by zero
+    if (fabsf(den) < 1e-9f)
+    {
+        inv_den = 0.0f; // Or handle error appropriately
+    }
+    else
+    {
+        inv_den = 1.0f / den;
+    }
+
+    // Calculate coefficients based on the discretized transfer function
+    // H(z) = (b0 + b1*z^-1) / (1 - a1*z^-1)
+
+    // a1 = (2*tau_D - T) / (2*tau_D + T)
+    obj->a1 = float2ctrl((2.0f * tau_D - T) * inv_den);
+
+    // b0 = (2*tau_D + 2*K_D + T) / (2*tau_D + T)
+    obj->b0 = float2ctrl((2.0f * tau_D + 2.0f * K_D + T) * inv_den);
+
+    // b1 = (T - 2*tau_D - 2*K_D) / (2*tau_D + T)
+    obj->b1 = float2ctrl((T - 2.0f * tau_D - 2.0f * K_D) * inv_den);
+
+    // Clear initial states
+    ctl_clear_lead(obj);
+}
+
+void ctl_init_lag(ctrl_lag_t* obj, parameter_gt tau_L, parameter_gt tau_P, parameter_gt fs)
+{
+    // Sampling period
+    parameter_gt T = 1.0f / fs;
+
+    // Denominator term from bilinear transform: (2*tau_P + T)
+    parameter_gt den = 2.0f * tau_P + T;
+    parameter_gt inv_den;
+
+    // Avoid division by zero
+    if (fabsf(den) < 1e-9f)
+    {
+        inv_den = 0.0f; // Or handle error appropriately
+    }
+    else
+    {
+        inv_den = 1.0f / den;
+    }
+
+    // Calculate coefficients based on the discretized transfer function
+    // H(z) = (b0 + b1*z^-1) / (1 - a1*z^-1)
+
+    // a1 = (2*tau_P - T) / (2*tau_P + T)
+    obj->a1 = float2ctrl((2.0f * tau_P - T) * inv_den);
+
+    // b0 = (2*tau_L + T) / (2*tau_P + T)
+    obj->b0 = float2ctrl((2.0f * tau_L + T) * inv_den);
+
+    // b1 = (T - 2*tau_L) / (2*tau_P + T)
+    obj->b1 = float2ctrl((T - 2.0f * tau_L) * inv_den);
+
+    // Clear initial states
+    ctl_clear_lag(obj);
+}
+
+// Note: Implementations for ctl_init_2p2z and other generic pole-zero
+// initializers would go here if they were defined.
+
+
+
+
+//////////////////////////////////////////////////////////////////////////
+// Z transfer function
+
+#include <ctl/component/intrinsic/discrete/z_function.h>
+
+void ctl_init_z_function(ctl_z_function_t* obj, int32_t num_order, const ctrl_gt* num_coeffs, int32_t den_order,
+                         const ctrl_gt* den_coeffs, ctrl_gt* input_buffer, ctrl_gt* output_buffer)
+{
+    // Assign orders
+    obj->num_order = num_order;
+    obj->den_order = den_order;
+
+    // Assign pointers to coefficients and state buffers
+    obj->num_coeffs = num_coeffs;
+    obj->den_coeffs = den_coeffs;
+    obj->input_buffer = input_buffer;
+    obj->output_buffer = output_buffer;
+
+    // Clear all state buffers to ensure a clean start
+    ctl_clear_z_function(obj);
 }
