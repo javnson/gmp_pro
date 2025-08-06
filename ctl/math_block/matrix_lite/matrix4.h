@@ -29,7 +29,7 @@ extern "C"
 
 /**
  * @defgroup MC_MATRIX4 4x4 Matrix Math
- * @ingroup MC_DEFINES
+ * @ingroup MC_LINEAR_ALGEBRA
  * @brief A collection of types and functions for 4x4 matrix arithmetic.
  * @{
  */

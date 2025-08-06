@@ -19,7 +19,7 @@
 
 /**
  * @defgroup MC_IQMATH_MACROS IQmath Fixed-Point Math Macros
- * @ingroup MC_DEFINES
+ * @ingroup MC_CTRL_GT_IMPL
  * @brief A collection of macros for fixed-point arithmetic based on IQmath.
  *
  * This module defines the low-level math operations when the library is

@@ -20,7 +20,7 @@
 
 /**
  * @defgroup MC_PARAM_CONSTANTS Typed Mathematical Constants
- * @ingroup MC_DEFINES
+ * @ingroup MC_CONSTANTS
  * @brief A collection of common mathematical constants cast to the `parameter_gt` type.
  *
  * These constants are provided to ensure type consistency in floating-point

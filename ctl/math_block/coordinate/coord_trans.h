@@ -28,7 +28,7 @@ extern "C"
 
 /**
  * @defgroup MC_COORD_AXIS_DEFINES Coordinate Axis Definitions
- * @ingroup MC_INTERFACE
+ * @ingroup MC_COORDINATE
  * @brief Enumerations for indexing different coordinate system axes.
  * @{
  */
@@ -86,7 +86,7 @@ enum PHASOR_ENUM
 
 /**
  * @defgroup MC_COORD_TRANSFORMATIONS Coordinate Transformations
- * @ingroup MC_INTERFACE
+ * @ingroup MC_COORDINATE
  * @brief A collection of functions for coordinate system transformations.
  * @{
  */

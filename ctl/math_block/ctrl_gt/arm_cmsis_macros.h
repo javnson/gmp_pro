@@ -20,7 +20,7 @@
 
 /**
  * @defgroup MC_CMSIS_MACROS CMSIS-DSP Math Macros
- * @ingroup MC_DEFINES
+ * @ingroup MC_CTRL_GT_IMPL
  * @brief A collection of macros for hardware-accelerated arithmetic using CMSIS-DSP.
  *
  * This module defines the low-level math operations when the library is

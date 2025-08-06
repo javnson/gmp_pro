@@ -27,7 +27,7 @@ extern "C"
 
 /**
  * @defgroup MC_VECTOR2 2D Vector Math
- * @ingroup MC_DEFINES
+ * @ingroup MC_LINEAR_ALGEBRA
  * @brief A collection of types and functions for 2D vector arithmetic.
  * @{
  */

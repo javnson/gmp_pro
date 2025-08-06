@@ -28,7 +28,7 @@ extern "C"
 
 /**
  * @defgroup MC_COMPLEX Complex Number Math
- * @ingroup MC_DEFINES
+ * @ingroup MC_EXT_TYPES
  * @brief A collection of types and functions for complex number arithmetic.
  * @{
  */

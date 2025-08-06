@@ -28,7 +28,7 @@ extern "C"
 
 /**
  * @defgroup MC_QUATERNION Quaternion Number Math
- * @ingroup MC_DEFINES
+ * @ingroup MC_EXT_TYPES
  * @brief A collection of types and functions for quaternion arithmetic.
  * @{
  */

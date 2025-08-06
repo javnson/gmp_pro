@@ -30,7 +30,7 @@ extern "C"
 
 /**
  * @defgroup MC_MATRIX2 2x2 Matrix Math
- * @ingroup MC_DEFINES
+ * @ingroup MC_LINEAR_ALGEBRA
  * @brief A collection of types and functions for 2x2 matrix arithmetic.
  * @{
  */

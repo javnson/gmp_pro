@@ -30,7 +30,7 @@ extern "C"
 
 /**
  * @defgroup MC_MATRIX3 3x3 Matrix Math
- * @ingroup MC_DEFINES
+ * @ingroup MC_LINEAR_ALGEBRA
  * @brief A collection of types and functions for 3x3 matrix arithmetic.
  * @{
  */

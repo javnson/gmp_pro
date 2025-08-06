@@ -20,7 +20,7 @@
 
 /**
  * @defgroup MC_FLOAT_MACROS Floating-Point Math Macros
- * @ingroup MC_DEFINES
+ * @ingroup MC_CTRL_GT_IMPL
  * @brief A collection of macros and inline functions for floating-point arithmetic.
  *
  * This module defines the low-level math operations when the library is

@@ -29,7 +29,7 @@ extern "C"
 
 /**
  * @defgroup MC_VECTOR4 4D Vector Math
- * @ingroup MC_DEFINES
+ * @ingroup MC_LINEAR_ALGEBRA
  * @brief A collection of types and functions for 4D vector arithmetic.
  * @{
  */

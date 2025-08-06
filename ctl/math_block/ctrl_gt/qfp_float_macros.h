@@ -19,7 +19,7 @@
 
 /**
  * @defgroup MC_QFP_MACROS QFP Floating-Point Math Macros
- * @ingroup MC_DEFINES
+ * @ingroup MC_CTRL_GT_IMPL
  * @brief A collection of macros for floating-point arithmetic based on a QFP library.
  *
  * This module defines the low-level math operations when the library is

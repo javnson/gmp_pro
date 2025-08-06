@@ -20,7 +20,7 @@
 
 /**
  * @defgroup MC_DOUBLE_MACROS Double-Precision Math Macros
- * @ingroup MC_DEFINES
+ * @ingroup MC_CTRL_GT_IMPL
  * @brief A collection of macros and inline functions for double-precision arithmetic.
  *
  * This module defines the low-level math operations when the library is

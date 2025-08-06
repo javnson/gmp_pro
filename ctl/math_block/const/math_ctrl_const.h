@@ -20,7 +20,7 @@
 
 /**
  * @defgroup MC_MATH_CONSTANTS Mathematical Constants
- * @ingroup MC_DEFINES
+ * @ingroup MC_CONSTANTS
  * @brief A collection of common mathematical constants used in motor control.
  * @{
  */
