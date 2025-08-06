@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////////////
 // HCC regular
 
-#include <ctl/component/intrinsic/lebesgue/hcc.h>
+#include <ctl/component/intrinsic/lebesgue/hysteresis_controller.h>
 
 void ctl_init_hysteresis_controller(ctl_hysteresis_controller_t* hcc, fast_gt flag_polarity, ctrl_gt half_width)
 {

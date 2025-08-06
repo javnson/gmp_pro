@@ -20,7 +20,7 @@
 
 void ctl_init_pid(
     // continuous pid handle
-    pid_regular_t* hpid,
+    ctl_pid_t* hpid,
     // PID parameters
     parameter_gt kp, parameter_gt Ti, parameter_gt Td,
     // controller frequency
@@ -44,7 +44,7 @@ void ctl_init_pid(
 // Init a series PID object
 void ctl_init_pid_ser(
     // continuous pid handle
-    pid_regular_t* hpid,
+    ctl_pid_t* hpid,
     // PID parameters
     parameter_gt kp, parameter_gt Ti, parameter_gt Td,
     // controller frequency
@@ -68,7 +68,7 @@ void ctl_init_pid_ser(
 // init a parallel PID object
 void ctl_init_pid_par(
     // continuous pid handle
-    pid_regular_t* hpid,
+    ctl_pid_t* hpid,
     // PID parameters
     parameter_gt kp, parameter_gt Ti, parameter_gt Td,
     // controller frequency
@@ -92,7 +92,7 @@ void ctl_init_pid_par(
 // init a Series PID
 void ctl_init_pid_aw_ser(
     // continuous pid handle
-    pid_aw_t* hpid,
+    ctl_pid_aw_t* hpid,
     // PID parameters
     parameter_gt kp, parameter_gt Ti, parameter_gt Td,
     // controller frequency
@@ -121,7 +121,7 @@ void ctl_init_pid_aw_ser(
 // init a parallel PID
 void ctl_init_pid_aw_par(
     // continuous pid handle
-    pid_aw_t* hpid,
+    ctl_pid_aw_t* hpid,
     // PID parameters
     parameter_gt kp, parameter_gt Ti, parameter_gt Td,
     // controller frequency
@@ -149,17 +149,6 @@ void ctl_init_pid_aw_par(
 }
 
 //////////////////////////////////////////////////////////////////////////
-// Saturation
-
-#include <ctl/component/intrinsic/continuous/saturation.h>
-
-void ctl_init_saturation(ctl_saturation_t* obj, ctrl_gt out_min, ctrl_gt out_max)
-{
-    obj->out_min = out_min;
-    obj->out_max = out_max;
-}
-
-//////////////////////////////////////////////////////////////////////////
 // Track_PID.h
 //
 
@@ -167,7 +156,7 @@ void ctl_init_saturation(ctl_saturation_t* obj, ctrl_gt out_min, ctrl_gt out_max
 
 void ctl_init_track_pid(
     // handle of track pid
-    track_pid_t* tp,
+    ctl_tracking_continuous_pid_t* tp,
     // pid parameters
     ctrl_gt kp, ctrl_gt ki, ctrl_gt kd,
     // saturation limit
@@ -179,7 +168,7 @@ void ctl_init_track_pid(
     // controller frequency
     parameter_gt fs)
 {
-    ctl_init_slope_limit(&tp->traj, float2ctrl(slope_max / fs), float2ctrl(slope_min / fs));
+    ctl_init_slope_limiter(&tp->traj, slope_max, slope_min, fs);
     ctl_init_divider(&tp->div, division);
 
     ctl_init_pid(&tp->pid, kp, ki, kd, fs);
@@ -236,7 +225,7 @@ void ctl_init_sogi_controller_with_damp(
 //////////////////////////////////////////////////////////////////////////
 // S function
 
-#include <ctl/component/intrinsic/continuous/s_transfer_function.h>
+#include <ctl/component/intrinsic/continuous/s_function.h>
 
 void ctl_init_s_function(ctl_s_function_t* obj, parameter_gt gain, parameter_gt f_z1, parameter_gt f_z2,
                          parameter_gt f_p1, parameter_gt f_p2, parameter_gt fs)

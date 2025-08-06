@@ -22,7 +22,7 @@
 #define _FILE_PNO_ALGORITHM_H_
 
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
-#include <ctl/component/intrinsic/discrete/divider.h>
+#include <ctl/component/intrinsic/basic/divider.h>
 
 #ifdef __cplusplus
 extern "C"

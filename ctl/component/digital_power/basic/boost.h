@@ -46,6 +46,8 @@
 
 #include <ctl/component/interface/interface_base.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
+#include <ctl/component/intrinsic/basic/saturation.h>
+#include <ctl/component/intrinsic/discrete/discrete_filter.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -103,8 +105,8 @@ typedef struct _tag_boost_ctrl_type
     ctrl_gt pwm_out_pu; /**< Final calculated PWM duty cycle (per-unit). */
 
     /*-- Controller Objects --*/
-    pid_regular_t current_pid; /**< Inner PID controller for the inductor current loop. */
-    pid_regular_t voltage_pid; /**< Outer PID controller for the output voltage loop. */
+    ctl_pid_t current_pid; /**< Inner PID controller for the inductor current loop. */
+    ctl_pid_t voltage_pid; /**< Outer PID controller for the output voltage loop. */
 
     /*-- Input Signal Filters --*/
     ctl_low_pass_filter_t lpf_ui; /**< Low-pass filter for the input voltage measurement. */

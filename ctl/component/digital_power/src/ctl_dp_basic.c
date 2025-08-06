@@ -100,9 +100,8 @@ void ctl_init_boost_ctrl(boost_ctrl_t* boost, parameter_gt v_kp, parameter_gt v_
     ctl_disable_boost_ctrl(boost);
 
     // Initialize PID controllers with correct parameters
-    // CORRECTED: Swapped parameters to match correct loops
-    ctl_init_pid(&boost->current_pid, i_kp, i_Ti, i_Td, fs);
-    ctl_init_pid(&boost->voltage_pid, v_kp, v_Ti, v_Td, fs);
+    ctl_init_pid_ser(&boost->current_pid, i_kp, i_Ti, i_Td, fs);
+    ctl_init_pid_ser(&boost->voltage_pid, v_kp, v_Ti, v_Td, fs);
 
     // Initialize low-pass filters for all sensor inputs
     ctl_init_lp_filter(&boost->lpf_il, fs, fc);

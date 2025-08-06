@@ -14,7 +14,7 @@
 #include <gmp_core.h>
 #include <math.h>
 
-#include <ctl/component/digital_power/topology_preset/three_phase_dc_ac.h>
+#include <ctl/component/digital_power/three_phase/three_phase_dc_ac.h>
 
 //////////////////////////////////////////////////////////////////////////
 // Three-Phase Inverter Control
@@ -44,7 +44,7 @@ void ctl_upgrade_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
 
     // --- Initialize grid synchronization modules ---
     ctl_init_pll_3ph(&inv->pll, init->freq_base, init->kp_pll_ctrl, init->Ti_pll_ctrl, 0, init->fs);
-    ctl_init_ramp_gen_via_amp_freq(&inv->rg, init->fs, init->freq_base, 1, 0);
+    ctl_init_ramp_generator_via_freq(&inv->rg, init->fs, init->freq_base, 1, 0);
     inv->rg_slope_default = inv->rg.slope;
 
     // --- Initialize main d-q axis PI controllers (positive sequence) ---

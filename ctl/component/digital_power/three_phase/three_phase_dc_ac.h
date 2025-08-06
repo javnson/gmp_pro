@@ -23,15 +23,15 @@ extern "C"
 {
 #endif // __cplusplus
 
+#include <ctl/math_block/coordinate/coord_trans.h>
+
+#include <ctl/component/intrinsic/basic/saturation.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
-#include <ctl/component/intrinsic/continuous/saturation.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <ctl/component/intrinsic/discrete/proportional_resonant.h>
-#include <ctl/component/intrinsic/discrete/stimulate.h>
-#include <gmp_core.h>
+#include <ctl/component/intrinsic/discrete/signal_generator.h>
 
 #include <ctl/component/digital_power/three_phase/pll.h>
-#include <ctl/math_block/coordinate/coord_trans.h>
 
 // --- Compilation-time Configuration Macros ---
 
@@ -121,8 +121,8 @@ typedef struct _tag_inv_ctrl_type
     ctl_low_pass_filter_t lpf_iabc[3]; //!< LPFs for phase current measurements.
     ctl_low_pass_filter_t lpf_vabc[3]; //!< LPFs for phase voltage measurements.
 
-    three_phase_pll_t pll; //!< Three-phase PLL for grid synchronization.
-    ctl_src_rg_t rg;       //!< Ramp generator for open-loop/freerun operation.
+    three_phase_pll_t pll;   //!< Three-phase PLL for grid synchronization.
+    ctl_ramp_generator_t rg; //!< Ramp generator for open-loop/freerun operation.
 
     ctl_pid_t voltage_ctrl[2];     //!< PI controllers for d-q voltage loops.
     ctl_pid_t current_ctrl[2];     //!< PI controllers for d-q current loops.
@@ -272,9 +272,9 @@ GMP_STATIC_INLINE void ctl_step_inv_ctrl(inv_ctrl_t* ctrl)
         // --- 3a. Angle and Phasor Generation ---
         if (ctrl->flag_enable_freerun)
         {
-            // CORRECTED: Only step ramp generator when in freerun mode.
-            ctl_set_ramp_freq(&ctrl->rg, ctl_mul(ctrl->rg_slope_default, ctrl->rg_freq_pu));
-            ctrl->angle = ctl_step_ramp_gen(&ctrl->rg);
+            // CHECK HERE!
+            ctl_set_ramp_generator_slope(&ctrl->rg, ctl_mul(ctrl->rg_slope_default, ctrl->rg_freq_pu));
+            ctrl->angle = ctl_step_ramp_generator(&ctrl->rg);
             ctl_set_phasor_via_angle(ctrl->angle, &ctrl->phasor);
         }
         else

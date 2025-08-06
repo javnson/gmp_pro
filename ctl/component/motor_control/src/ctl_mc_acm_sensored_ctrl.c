@@ -2,14 +2,14 @@
 
 #include <gmp_core.h>
 
-#include <ctl/suite/mcs_acm/acm_sensored_ctrl.h>
+#include <ctl/component/motor_control/acm_controller/acm_sensored_ctrl.h>
 
 // init acm_sensored_bare_controller_t struct
 void ctl_init_acm_sensored_bare_controller(
     // ACM Controller handle
-    acm_sensored_bare_controller_t *ctrl,
+    acm_sensored_bare_controller_t* ctrl,
     // ACM initialize structure
-    acm_sensored_bare_controller_init_t *init)
+    acm_sensored_bare_controller_init_t* init)
 {
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
     // controller implement
@@ -47,7 +47,7 @@ void ctl_init_acm_sensored_bare_controller(
 
 #else // using continuous controller
 
-    ctl_init_pid(
+    ctl_init_pid_ser(
         // d axis current controller
         &ctrl->current_ctrl[phase_d],
         // parameters for current controller
@@ -56,7 +56,7 @@ void ctl_init_acm_sensored_bare_controller(
         init->fs);
     ctl_set_pid_limit(&ctrl->current_ctrl[phase_d], init->voltage_limit_max, init->voltage_limit_min);
 
-    ctl_init_pid(
+    ctl_init_pid_ser(
         // d axis current controller
         &ctrl->current_ctrl[phase_q],
         // parameters for current controller
@@ -65,7 +65,7 @@ void ctl_init_acm_sensored_bare_controller(
         init->fs);
     ctl_set_pid_limit(&ctrl->current_ctrl[phase_q], init->voltage_limit_max, init->voltage_limit_min);
 
-    ctl_init_track_pid(
+    ctl_init_tracking_continuous_pid(
         // speed controller
         &ctrl->spd_ctrl,
         // parameters for speed controller
@@ -159,9 +159,9 @@ void ctl_init_acm_sensored_bare_controller(
 // attach to output port
 void ctl_attach_acm_sensored_bare_output(
     // ACM Controller handle
-    acm_sensored_bare_controller_t *ctrl,
+    acm_sensored_bare_controller_t* ctrl,
     // PWM handle
-    tri_pwm_ift *pwm_out)
+    tri_pwm_ift* pwm_out)
 {
     ctrl->pwm_out = pwm_out;
 }
@@ -169,9 +169,9 @@ void ctl_attach_acm_sensored_bare_output(
 // attach to rotor speed encoder port
 void ctl_attach_acm_sensored_bare_rotor_postion(
     // ACM Controller handle
-    acm_sensored_bare_controller_t *ctrl,
+    acm_sensored_bare_controller_t* ctrl,
     // rotor position
-    rotation_ift *rotor_enc)
+    rotation_ift* rotor_enc)
 {
     ctrl->rotor_pos = rotor_enc;
 }

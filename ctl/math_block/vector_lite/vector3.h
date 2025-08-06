@@ -20,6 +20,13 @@ void ctl_vector3_clear(ctl_vector3_t *vec)
     vec->dat[2] = 0;
 }
 
+GMP_STATIC_INLINE void ctl_vector3_set(ctl_vector3_t* vec, ctrl_gt v)
+{
+    vec->dat[0] = v;
+    vec->dat[1] = v;
+    vec->dat[2] = v;
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -11,8 +11,7 @@
  * the PMSM controller.
  */
 
-#include <ctl/suite/mcs_pmsm/pmsm_ctrl.h>
-#include <gmp_core.h>
+#include <ctl/component/motor_control/pmsm_controller/pmsm_ctrl.h>
 
 /**
  * @ingroup pmsm_bare_controller_api
@@ -23,7 +22,7 @@
  * @param[out] ctrl Pointer to the PMSM controller instance to be initialized.
  * @param[in] init Pointer to the initialization structure containing all configuration parameters.
  */
-void ctl_init_pmsm_bare_controller(pmsm_bare_controller_t *ctrl, pmsm_bare_controller_init_t *init)
+void ctl_init_pmsm_bare_controller(pmsm_bare_controller_t* ctrl, pmsm_bare_controller_init_t* init)
 {
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
     // --- Initialize discrete PID controllers ---
@@ -44,11 +43,13 @@ void ctl_init_pmsm_bare_controller(pmsm_bare_controller_t *ctrl, pmsm_bare_contr
 #else  // using continuous controller
     // --- Initialize continuous PID controllers ---
     // d-axis current controller
-    ctl_init_pid(&ctrl->current_ctrl[phase_d], init->current_pid_gain, init->current_Ti, init->current_Td, init->fs);
+    ctl_init_pid_ser(&ctrl->current_ctrl[phase_d], init->current_pid_gain, init->current_Ti, init->current_Td,
+                     init->fs);
     ctl_set_pid_limit(&ctrl->current_ctrl[phase_d], init->voltage_limit_max, init->voltage_limit_min);
 
     // q-axis current controller
-    ctl_init_pid(&ctrl->current_ctrl[phase_q], init->current_pid_gain, init->current_Ti, init->current_Td, init->fs);
+    ctl_init_pid_ser(&ctrl->current_ctrl[phase_q], init->current_pid_gain, init->current_Ti, init->current_Td,
+                     init->fs);
     ctl_set_pid_limit(&ctrl->current_ctrl[phase_q], init->voltage_limit_max, init->voltage_limit_min);
 
     // Velocity controller
@@ -88,7 +89,7 @@ void ctl_init_pmsm_bare_controller(pmsm_bare_controller_t *ctrl, pmsm_bare_contr
  * @param[out] ctrl Pointer to the PMSM controller instance.
  * @param[in] pwm_out Pointer to the three-phase PWM interface instance.
  */
-void ctl_attach_pmsm_bare_output(pmsm_bare_controller_t *ctrl, tri_pwm_ift *pwm)
+void ctl_attach_pmsm_bare_output(pmsm_bare_controller_t* ctrl, tri_pwm_ift* pwm)
 {
     ctrl->pwm_out = pwm;
 }

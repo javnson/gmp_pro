@@ -13,31 +13,18 @@
 #include <math.h>
 
 //////////////////////////////////////////////////////////////////////////
-// Divider
-
-#include <ctl/component/intrinsic/discrete/divider.h>
-
-void ctl_init_divider(ctl_divider_t *obj, uint32_t counter_period)
-{
-    // Current counter
-    obj->counter = 0;
-
-    obj->target = counter_period;
-}
-
-//////////////////////////////////////////////////////////////////////////
 // Filter IIR2
 
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <math.h> // support for sinf and cosf
 
-void ctl_init_lp_filter(ctl_low_pass_filter_t *lpf, parameter_gt fs, parameter_gt fc)
+void ctl_init_lp_filter(ctl_low_pass_filter_t* lpf, parameter_gt fs, parameter_gt fc)
 {
     lpf->out = 0;
     lpf->a = ctl_helper_lp_filter(fs, fc);
 }
 
-void ctl_init_filter_iir2(ctl_filter_IIR2_t *obj, ctl_filter_IIR2_setup_t *setup_obj)
+void ctl_init_filter_iir2(ctl_filter_IIR2_t* obj, ctl_filter_IIR2_setup_t* setup_obj)
 {
     // center frequency
     // tex: $$ f_0 = f_c * 2Q$$
@@ -83,49 +70,36 @@ void ctl_init_filter_iir2(ctl_filter_IIR2_t *obj, ctl_filter_IIR2_setup_t *setup
     obj->out = 0;
 }
 
-//////////////////////////////////////////////////////////////////////////
-// PLL module
-
-#include <ctl/component/intrinsic/discrete/pll.h>
-
-void ctl_init_pll(
-    // PLL Controller Object
-    ctl_pll_t *pll,
-    // PID parameter
-    parameter_gt kp, parameter_gt Ti, parameter_gt Td,
-    // PID output limit
-    ctrl_gt out_min, ctrl_gt out_max,
-    // cutoff frequency
-    parameter_gt fc,
-    // Sample frequency
-    parameter_gt fs)
-{
-    ctl_init_pid(&pll->pid, kp, Ti, Td, fs);
-    ctl_set_pid_limit(&pll->pid, out_max, out_min);
-    ctl_init_lp_filter(&pll->filter, fs, fc);
-}
-
-//////////////////////////////////////////////////////////////////////////
-// Slope Limiter
-
-#include <ctl/component/intrinsic/discrete/slope_lim.h>
-
-void ctl_init_slope_limiter(ctl_slope_limiter_t* obj, ctrl_gt slope_max, ctrl_gt slope_min)
-{
-    obj->slope_min = slope_min;
-    obj->slope_max = slope_max;
-
-    obj->out = float2ctrl(0);
-}
+////////////////////////////////////////////////////////////////////////////
+//// PLL module
+//
+//#include <ctl/component/intrinsic/discrete/pll.h>
+//
+//void ctl_init_pll(
+//    // PLL Controller Object
+//    ctl_pll_t* pll,
+//    // PID parameter
+//    parameter_gt kp, parameter_gt Ti, parameter_gt Td,
+//    // PID output limit
+//    ctrl_gt out_min, ctrl_gt out_max,
+//    // cutoff frequency
+//    parameter_gt fc,
+//    // Sample frequency
+//    parameter_gt fs)
+//{
+//    ctl_init_pid(&pll->pid, kp, Ti, Td, fs);
+//    ctl_set_pid_limit(&pll->pid, out_max, out_min);
+//    ctl_init_lp_filter(&pll->filter, fs, fc);
+//}
 
 //////////////////////////////////////////////////////////////////////////
 // Signal Generator
 
-#include <ctl/component/intrinsic/discrete/stimulate.h>
+#include <ctl/component/intrinsic/discrete/signal_generator.h>
 
 void ctl_init_sine_generator(ctl_sine_generator_t* sg,
-                         parameter_gt init_angle, // pu
-                         parameter_gt step_angle) // pu
+                             parameter_gt init_angle, // pu
+                             parameter_gt step_angle) // pu
 {
     sg->ph_cos = float2ctrl(cos(init_angle));
     sg->ph_sin = float2ctrl(sin(init_angle));
@@ -173,7 +147,7 @@ void ctl_init_ramp_gen_via_amp_freq(
 #ifdef _USE_DEBUG_DISCRETE_PID
 void ctl_init_discrete_pid(
     // pointer to pid object
-    discrete_pid_t *pid,
+    discrete_pid_t* pid,
     // gain of the pid controller
     parameter_gt kp,
     // Time constant for integral and differential part, unit Hz
@@ -206,7 +180,7 @@ void ctl_init_discrete_pid(
 #else // _USE_DEBUG_DISCRETE_PID
 void ctl_init_discrete_pid(
     // pointer to pid object
-    discrete_pid_t *pid,
+    discrete_pid_t* pid,
     // gain of the pid controller
     parameter_gt kp,
     // Time constant for integral and differential part, unit Hz
@@ -244,7 +218,7 @@ void ctl_init_discrete_pid(
 
 void ctl_init_discrete_track_pid(
     // pointer to track pid object
-    track_discrete_pid_t *tp,
+    ctl_tracking_discrete_pid_t* tp,
     // pid parameters, unit sec
     parameter_gt kp, parameter_gt Ti, parameter_gt Td,
     // saturation limit
@@ -256,7 +230,7 @@ void ctl_init_discrete_track_pid(
     // controller frequency, unit Hz
     parameter_gt fs)
 {
-    ctl_init_slope_limit(&tp->traj, float2ctrl(slope_max / fs), float2ctrl(slope_min / fs));
+    ctl_init_slope_limiter(&tp->traj, slope_max, slope_min, fs);
     ctl_init_divider(&tp->div, division);
 
     ctl_init_discrete_pid(&tp->pid, kp, Ti, Td, fs);
@@ -271,7 +245,7 @@ void ctl_init_discrete_track_pid(
 // unit Hz
 void ctl_init_2p2z(
     // pointer to a 2p2z compensator
-    ctrl_2p2z_t *ctrl,
+    ctrl_2p2z_t* ctrl,
     // gain of 2P2Z compensator
     parameter_gt gain,
     // two zero frequency, unit Hz
@@ -380,7 +354,6 @@ void ctl_init_qpr_controller(qpr_ctrl_t* qpr, parameter_gt kp, parameter_gt kr, 
     qpr->kp = kp;
     ctl_init_qr_controller(&qpr->resonant_part, kr, freq_resonant, freq_cut, fs);
 }
-
 
 //void ctl_init_resonant_controller(
 //    // handle of PR controller
@@ -494,7 +467,7 @@ void ctl_init_qpr_controller(qpr_ctrl_t* qpr, parameter_gt kp, parameter_gt kr, 
 
 void ctl_init_discrete_sogi(
     // Handle of discrete SOGI object
-    discrete_sogi_t *sogi,
+    discrete_sogi_t* sogi,
     // damp coefficient, generally is 0.5
     parameter_gt k_damp,
     // center frequency, Hz
@@ -525,7 +498,7 @@ void ctl_init_discrete_sogi(
 //////////////////////////////////////////////////////////////////////////
 // Lead Lag controller
 
-#include "ctl/component/intrinsic/discrete/pole_zero.h"
+#include "ctl/component/intrinsic/discrete/lead_lag.h"
 
 void ctl_init_lead(ctrl_lead_t* obj, parameter_gt K_D, parameter_gt tau_D, parameter_gt fs)
 {
@@ -599,9 +572,6 @@ void ctl_init_lag(ctrl_lag_t* obj, parameter_gt tau_L, parameter_gt tau_P, param
 
 // Note: Implementations for ctl_init_2p2z and other generic pole-zero
 // initializers would go here if they were defined.
-
-
-
 
 //////////////////////////////////////////////////////////////////////////
 // Z transfer function

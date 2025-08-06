@@ -27,6 +27,7 @@ extern "C"
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <ctl/component/intrinsic/discrete/proportional_resonant.h>
+#include <ctl/component/intrinsic/discrete/signal_generator.h>
 
 // --- Compilation-time Configuration Macros ---
 
@@ -98,18 +99,18 @@ typedef struct _tag_sinv_ctrl_type
     ctl_low_pass_filter_t lpf_igrid; //!< LPF for grid current measurement.
 
     ctl_single_phase_pll spll; //!< Single-phase PLL for grid synchronization.
-    ctl_src_rg_t rg;           //!< Ramp generator for open-loop/freerun operation.
+    ctl_ramp_generator_t rg;   //!< Ramp generator for open-loop/freerun operation.
 
     // --- Core and Harmonic Controllers ---
-    pid_regular_t voltage_pid; //!< PID controller for the voltage loop.
-    qpr_ctrl_t sinv_qpr_base;  //!< QPR controller for the fundamental current loop.
-    qr_ctrl_t sinv_qr_3;       //!< QR controller for 3rd harmonic compensation.
-    qr_ctrl_t sinv_qr_5;       //!< QR controller for 5th harmonic compensation.
-    qr_ctrl_t sinv_qr_7;       //!< QR controller for 7th harmonic compensation.
-    qr_ctrl_t sinv_qr_9;       //!< QR controller for 9th harmonic compensation.
-    qr_ctrl_t sinv_qr_11;      //!< QR controller for 11th harmonic compensation.
-    qr_ctrl_t sinv_qr_13;      //!< QR controller for 13th harmonic compensation.
-    qr_ctrl_t sinv_qr_15;      //!< QR controller for 15th harmonic compensation.
+    ctl_pid_t voltage_pid;    //!< PID controller for the voltage loop.
+    qpr_ctrl_t sinv_qpr_base; //!< QPR controller for the fundamental current loop.
+    qr_ctrl_t sinv_qr_3;      //!< QR controller for 3rd harmonic compensation.
+    qr_ctrl_t sinv_qr_5;      //!< QR controller for 5th harmonic compensation.
+    qr_ctrl_t sinv_qr_7;      //!< QR controller for 7th harmonic compensation.
+    qr_ctrl_t sinv_qr_9;      //!< QR controller for 9th harmonic compensation.
+    qr_ctrl_t sinv_qr_11;     //!< QR controller for 11th harmonic compensation.
+    qr_ctrl_t sinv_qr_13;     //!< QR controller for 13th harmonic compensation.
+    qr_ctrl_t sinv_qr_15;     //!< QR controller for 15th harmonic compensation.
 
 #ifdef CTL_SINV_CTRL_ENABLE_SINE_ANALYZER
     sine_analyzer_t ac_current_measure; //!< Sine analyzer for grid current.
@@ -249,14 +250,23 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv(sinv_ctrl_t* sinv)
         // --- 4. Angle Reference Generation ---
         if (sinv->flag_enable_ramp)
         {
-            ctl_step_ramp_gen(&sinv->rg);
+            ctl_step_ramp_generator(&sinv->rg);
         }
 
-        ctrl_gt base_angle = sinv->flag_angle_freerun ? ctl_get_ramp_gen_output(&sinv->rg) : sinv->spll.theta;
-
-        // Calculate phase shift for power factor
-        ctrl_gt phi = ctl_acos(sinv->pf_set);
-        sinv->target_phase = ctl_sin(base_angle + phi);
+         // Select ramp generator as angle source
+        if (sinv->flag_angle_freerun)
+        {
+            sinv->target_phase = ctl_mul(ctl_sin(ctl_get_ramp_generator_output(&sinv->rg)), sinv->pf_set) +
+                                 ctl_mul(ctl_cos(ctl_get_ramp_generator_output(&sinv->rg)),
+                                         ctl_sqrt(float2ctrl(1) - ctl_mul(sinv->pf_set, sinv->pf_set)));
+        }
+        // Select SPLL as angle source
+        else
+        {
+            sinv->target_phase = ctl_mul(sinv->spll.phasor.dat[phasor_sin], sinv->pf_set) +
+                                 ctl_mul(sinv->spll.phasor.dat[phasor_cos],
+                                         ctl_sqrt(float2ctrl(1) - ctl_mul(sinv->pf_set, sinv->pf_set)));
+        }
 
         // --- 5. Outer Voltage Loop ---
         if (sinv->flag_enable_voltage_ctrl)

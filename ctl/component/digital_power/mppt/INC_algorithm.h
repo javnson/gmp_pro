@@ -75,32 +75,18 @@ typedef struct _tag_mppt_inc_algo
  * @param[in] max_voltage The absolute maximum voltage limit.
  * @param[in] min_voltage The absolute minimum voltage limit.
  */
-GMP_STATIC_INLINE
-void ctl_init_mppt_inc_algo(mppt_inc_algo_t* mppt, adc_ift* u_in, adc_ift* i_in, parameter_gt voltage_0,
-                            parameter_gt voltage_step, parameter_gt max_voltage, parameter_gt min_voltage)
-{
-    mppt->adc_u = u_in;
-    mppt->adc_i = i_in;
-    mppt->v_ref = voltage_0;
-    mppt->voltage_increment = voltage_step;
-    mppt->max_voltage_limit = max_voltage;
-    mppt->min_voltage_limit = min_voltage;
-    mppt->last_voltage = 0;
-    mppt->last_current = 0;
-    mppt->current_power = 0;
-    mppt->flag_enable_mppt = 0;
-}
+void ctl_init_mppt_inc_algo(mppt_inc_algo_t* _mppt, adc_ift* u_in, adc_ift* i_in, parameter_gt voltage_0,
+                            parameter_gt voltage_step, parameter_gt max_voltage, parameter_gt min_voltage);
 
 /**
  * @brief Clears the internal states of the INC MPPT algorithm.
  * @param[in,out] mppt Pointer to the MPPT algorithm instance.
  */
-GMP_STATIC_INLINE
-void ctl_clear_mppt_inc_algo(mppt_inc_algo_t* mppt)
+GMP_STATIC_INLINE void ctl_clear_mppt_inc_algo(mppt_inc_algo_t* _mppt)
 {
-    mppt->last_voltage = 0;
-    mppt->last_current = 0;
-    mppt->current_power = 0;
+    _mppt->last_voltage = 0;
+    _mppt->last_current = 0;
+    _mppt->current_power = 0;
 }
 
 /**
@@ -111,17 +97,16 @@ void ctl_clear_mppt_inc_algo(mppt_inc_algo_t* mppt)
  * @param[in,out] mppt Pointer to the MPPT algorithm instance.
  * @return The updated voltage reference (`v_ref`) to be used by the power converter.
  */
-GMP_STATIC_INLINE
-ctrl_gt ctl_step_mppt_inc_algo(mppt_inc_algo_t* mppt)
+GMP_STATIC_INLINE ctrl_gt ctl_step_mppt_inc_algo(mppt_inc_algo_t* _mppt_obj)
 {
-    ctrl_gt current_voltage = mppt->adc_u->value;
-    ctrl_gt current_current = mppt->adc_i->value;
+    ctrl_gt current_voltage = _mppt_obj->adc_u->value;
+    ctrl_gt current_current = _mppt_obj->adc_i->value;
 
     // MPPT algorithm logic
-    if (mppt->flag_enable_mppt)
+    if (_mppt_obj->flag_enable_mppt)
     {
-        ctrl_gt delta_voltage = current_voltage - mppt->last_voltage;
-        ctrl_gt delta_current = current_current - mppt->last_current;
+        ctrl_gt delta_voltage = current_voltage - _mppt_obj->last_voltage;
+        ctrl_gt delta_current = current_current - _mppt_obj->last_current;
 
         // Check for dV=0 edge case
         if (delta_voltage == 0)
@@ -129,12 +114,12 @@ ctrl_gt ctl_step_mppt_inc_algo(mppt_inc_algo_t* mppt)
             if (delta_current > 0)
             {
                 // Power increased, keep moving in the same direction (increase v_ref)
-                mppt->v_ref += mppt->voltage_increment;
+                _mppt_obj->v_ref += _mppt_obj->voltage_increment;
             }
             else if (delta_current < 0)
             {
                 // Power decreased, reverse direction (decrease v_ref)
-                mppt->v_ref -= mppt->voltage_increment;
+                _mppt_obj->v_ref -= _mppt_obj->voltage_increment;
             }
         }
         else // Standard INC logic for dV != 0
@@ -147,46 +132,44 @@ ctrl_gt ctl_step_mppt_inc_algo(mppt_inc_algo_t* mppt)
             if (inc_cond > 0)
             {
                 // dI/dV > -I/V, left of MPP, increase voltage
-                mppt->v_ref += mppt->voltage_increment;
+                _mppt_obj->v_ref += _mppt_obj->voltage_increment;
             }
             else if (inc_cond < 0)
             {
                 // dI/dV < -I/V, right of MPP, decrease voltage
-                mppt->v_ref -= mppt->voltage_increment;
+                _mppt_obj->v_ref -= _mppt_obj->voltage_increment;
             }
             // if inc_cond == 0, we are at MPP, do nothing.
         }
 
         // Apply voltage limits
-        mppt->v_ref = ctl_sat(mppt->v_ref, mppt->max_voltage_limit, mppt->min_voltage_limit);
+        _mppt_obj->v_ref = ctl_sat(_mppt_obj->v_ref, _mppt_obj->max_voltage_limit, _mppt_obj->min_voltage_limit);
     }
 
     // Update state for the next iteration
-    mppt->last_voltage = current_voltage;
-    mppt->last_current = current_current;
+    _mppt_obj->last_voltage = current_voltage;
+    _mppt_obj->last_current = current_current;
 
     // Return the calculated voltage reference
-    return mppt->v_ref;
+    return _mppt_obj->v_ref;
 }
 
 /**
  * @brief Enables the MPPT algorithm.
  * @param[in,out] mppt Pointer to the MPPT algorithm instance.
  */
-GMP_STATIC_INLINE
-void ctl_enable_mppt_inc_algo(mppt_inc_algo_t* mppt)
+GMP_STATIC_INLINE void ctl_enable_mppt_inc_algo(mppt_inc_algo_t* _mppt_obj)
 {
-    mppt->flag_enable_mppt = 1;
+    _mppt_obj->flag_enable_mppt = 1;
 }
 
 /**
  * @brief Disables the MPPT algorithm.
  * @param[in,out] mppt Pointer to the MPPT algorithm instance.
  */
-GMP_STATIC_INLINE
-void ctl_disable_mppt_inc_algo(mppt_inc_algo_t* mppt)
+GMP_STATIC_INLINE void ctl_disable_mppt_inc_algo(mppt_inc_algo_t* _mppt_obj)
 {
-    mppt->flag_enable_mppt = 0;
+    _mppt_obj->flag_enable_mppt = 0;
 }
 
 /** @} */ // end of mppt_api group

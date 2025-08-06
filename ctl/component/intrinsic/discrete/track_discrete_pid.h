@@ -20,9 +20,9 @@
 #ifndef _TRACKING_PID_H_
 #define _TRACKING_PID_H_
 
+#include <ctl/component/intrinsic/basic/divider.h>
+#include <ctl/component/intrinsic/basic/slope_limiter.h>
 #include <ctl/component/intrinsic/discrete/discrete_pid.h>
-#include <ctl/component/intrinsic/discrete/divider.h>
-#include <ctl/component/intrinsic/discrete/slope_limiter.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -47,7 +47,7 @@ typedef struct _tag_tracking_pid_t
     discrete_pid_t pid;       //!< The core discrete PID controller instance.
     ctl_divider_t div;        //!< The frequency divider instance.
     ctl_slope_limiter_t traj; //!< The slope limiter for trajectory generation.
-} ctl_tracking_pid_t;
+} ctl_tracking_discrete_pid_t;
 
 /**
  * @brief Initializes the tracking PID controller.
@@ -62,15 +62,15 @@ typedef struct _tag_tracking_pid_t
  * @param[in] division The factor by which to divide the execution frequency.
  * @param[in] fs The main sampling frequency (Hz) at which this module's step function is called.
  */
-void ctl_init_tracking_pid(ctl_tracking_pid_t* tp, parameter_gt kp, parameter_gt Ti, parameter_gt Td, ctrl_gt sat_max,
-                           ctrl_gt sat_min, parameter_gt slope_max, parameter_gt slope_min, uint32_t division,
-                           parameter_gt fs);
+void ctl_init_tracking_pid(ctl_tracking_discrete_pid_t* tp, parameter_gt kp, parameter_gt Ti, parameter_gt Td,
+                           ctrl_gt sat_max, ctrl_gt sat_min, parameter_gt slope_max, parameter_gt slope_min,
+                           uint32_t division, parameter_gt fs);
 
 /**
  * @brief Clears the internal states of the tracking PID controller.
  * @param[out] tp Pointer to the tracking PID instance.
  */
-GMP_STATIC_INLINE void ctl_clear_tracking_pid(ctl_tracking_pid_t* tp)
+GMP_STATIC_INLINE void ctl_clear_tracking_pid(ctl_tracking_discrete_pid_t* tp)
 {
     ctl_clear_discrete_pid(&tp->pid);
     ctl_clear_divider(&tp->div);
@@ -88,7 +88,7 @@ GMP_STATIC_INLINE void ctl_clear_tracking_pid(ctl_tracking_pid_t* tp)
  * @param[in] fbk The feedback value from the system.
  * @return ctrl_gt The latest control output.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_step_tracking_pid(ctl_tracking_pid_t* tp, ctrl_gt target, ctrl_gt fbk)
+GMP_STATIC_INLINE ctrl_gt ctl_step_tracking_pid(ctl_tracking_discrete_pid_t* tp, ctrl_gt target, ctrl_gt fbk)
 {
     // Check if it's time to execute the controller based on the division factor
     if (ctl_step_divider(&tp->div))

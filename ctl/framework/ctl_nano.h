@@ -10,7 +10,7 @@
  */
 
 // Basic headers
-#include <ctl/component/intrinsic/discrete/divider.h>
+#include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl_main.h>
 #include <gmp_core.h>
 

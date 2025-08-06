@@ -16,7 +16,7 @@
 // #include <ctl/component/common/pll.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
-#include <ctl/component/intrinsic/discrete/stimulate.h>
+#include <ctl/component/intrinsic/discrete/signal_generator.h>
 #include <ctl/component/motor_control/consultant/motor_driver_consultant.h>
 #include <ctl/component/motor_control/consultant/pmsm_consultant.h>
 
@@ -109,7 +109,7 @@ typedef struct _tag_ctl_pmsm_hfi_t
     // Controller Entity
     //
     // HFI modulation
-    ctl_src_sg_t hfi_sincos_gen;
+    ctl_sine_generator_t hfi_sincos_gen;
     ctrl_gt hfi_inj_amp;
 
     // HFI iq lowpass filter
@@ -117,7 +117,7 @@ typedef struct _tag_ctl_pmsm_hfi_t
 
     // PLL
     // pid controller
-    pid_regular_t pid_pll;
+    ctl_pid_t pid_pll;
     // speed scale factor
     // scale factor: rad/tick -> p.u.
     ctrl_gt spd_sf;
@@ -137,9 +137,9 @@ GMP_STATIC_INLINE
 ctrl_gt ctl_step_pmsm_hfi(pmsm_hfi_t *hfi)
 {
     // HFI modulation
-    hfi->ud_inj = ctl_mul(ctl_get_sg_cos(&hfi->hfi_sincos_gen), hfi->hfi_inj_amp);
-    hfi->iq_demodulate = ctl_mul(hfi->iq, ctl_get_sg_sin(&hfi->hfi_sincos_gen));
-    ctl_step_sincos_gen(&hfi->hfi_sincos_gen);
+    hfi->ud_inj = ctl_mul(ctl_get_sine_generator_cos(&hfi->hfi_sincos_gen), hfi->hfi_inj_amp);
+    hfi->iq_demodulate = ctl_mul(hfi->iq, ctl_get_sine_generator_sin(&hfi->hfi_sincos_gen));
+    ctl_step_sine_generator(&hfi->hfi_sincos_gen);
 
     // iq lowpass filter: iq_modulate->theta error
     hfi->theta_error = ctl_step_filter_iir2(&hfi->iq_lp_filter, hfi->iq_demodulate);

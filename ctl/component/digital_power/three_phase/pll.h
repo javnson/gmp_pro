@@ -22,6 +22,7 @@ extern "C"
 #endif // __cplusplus
 
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
+#include <ctl/math_block/coordinate/coord_trans.h>
 
 /**
  * @brief Data structure for the three-phase PLL controller.
@@ -54,7 +55,7 @@ typedef struct _tag_pll_3ph
     //
     // Internal Controller Objects
     //
-    pid_regular_t pid_pll; //!< PI controller for the phase-locking loop. Output is the frequency deviation.
+    ctl_pid_t pid_pll; //!< PI controller for the phase-locking loop. Output is the frequency deviation.
 
 } three_phase_pll_t;
 
@@ -72,24 +73,13 @@ GMP_STATIC_INLINE void ctl_clear_pll_3ph(three_phase_pll_t* pll);
  * @param[in] pid_Td Derivative time constant (typically 0 for a PI controller).
  * @param[in] f_ctrl The controller's execution frequency (sampling frequency) in Hz.
  */
-GMP_STATIC_INLINE void ctl_init_pll_3ph(three_phase_pll_t* pll, parameter_gt f_base, parameter_gt pid_kp,
-                                        parameter_gt pid_Ti, parameter_gt pid_Td, parameter_gt f_ctrl)
-{
-    // Clear all internal states before initialization.
-    ctl_clear_pll_3ph(pll);
-
-    // Calculate the frequency scaling factor. This converts the per-unit frequency
-    // into a per-unit angle increment for the given sampling time.
-    pll->freq_sf = float2ctrl(f_base / f_ctrl);
-
-    // Initialize the parallel-form PI controller for the loop.
-    ctl_init_pid(&pll->pid_pll, pid_kp, pid_Ti, pid_Td, f_ctrl);
-}
+void ctl_init_pll_3ph(three_phase_pll_t* pll, parameter_gt f_base, parameter_gt pid_kp, parameter_gt pid_Ti,
+                      parameter_gt pid_Td, parameter_gt f_ctrl);
 
 /**
  * @brief Clears the internal states of the three-phase PLL controller.
  * @ingroup CTL_PLL_API
- * @param[out] pll Pointer to the `three_phase_pll_t` structure.
+ * @param[out] pll Pointer to the @ref three_phase_pll_t structure.
  */
 GMP_STATIC_INLINE void ctl_clear_pll_3ph(three_phase_pll_t* pll)
 {
@@ -115,7 +105,7 @@ GMP_STATIC_INLINE void ctl_clear_pll_3ph(three_phase_pll_t* pll)
  * using the estimated angle, calculates the q-axis error, updates the PI controller,
  * and integrates the frequency to get the new angle.
  *
- * @param[out] pll Pointer to the `three_phase_pll_t` structure.
+ * @param[out] pll Pointer to the @ref three_phase_pll_t structure.
  * @param[in] alpha The measured alpha-axis voltage.
  * @param[in] beta The measured beta-axis voltage.
  * @return The newly estimated grid angle (theta) in per-unit format.

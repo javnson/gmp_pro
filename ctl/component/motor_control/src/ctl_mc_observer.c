@@ -10,9 +10,9 @@
 
 void ctl_init_pmsm_smo(
     // SMO handle
-    pmsm_smo_t *smo,
+    pmsm_smo_t* smo,
     // SMO Initialize object
-    ctl_smo_init_t *init)
+    ctl_smo_init_t* init)
 {
     smo->e_alpha_est = 0;
     smo->e_beta_est = 0;
@@ -44,7 +44,7 @@ void ctl_init_pmsm_smo(
     ctl_init_lp_filter(&smo->filter_e_beta, init->f_ctrl, init->fc_e);
     ctl_init_lp_filter(&smo->filter_spd, init->f_ctrl, init->fc_omega);
 
-    ctl_init_pid(&smo->pid_pll, init->pid_kp, init->pid_Ti, init->pid_Td, init->f_ctrl);
+    ctl_init_pid_ser(&smo->pid_pll, init->pid_kp, init->pid_Ti, init->pid_Td, init->f_ctrl);
     ctl_set_pid_limit(&smo->pid_pll, init->spd_max_limit, init->spd_min_limit);
 
     smo->spd_sf = float2ctrl((30.0f / PI) * init->f_ctrl / init->speed_base_rpm / init->pole_pairs);
@@ -151,7 +151,7 @@ void ctl_init_pmsm_smo(
 
 void ctl_init_im_spd_calc(
     // IM speed calculate object
-    ctl_im_spd_calc_t *calc,
+    ctl_im_spd_calc_t* calc,
     // rotor parameters, unit Ohm, H
     parameter_gt Rr, parameter_gt Lr,
     // ACM Rotor, per-unit Speed, unit rpm
@@ -192,9 +192,9 @@ void ctl_init_im_spd_calc(
 
 void ctl_init_pmsm_hfi(
     // HFI handle
-    pmsm_hfi_t *hfi,
+    pmsm_hfi_t* hfi,
     // HFI Initialize object
-    ctl_hfi_init_t *init)
+    ctl_hfi_init_t* init)
 {
 
     //
@@ -210,9 +210,9 @@ void ctl_init_pmsm_hfi(
     //
 
     // modulation
-    ctl_init_sincos_gen(&hfi->hfi_sincos_gen,
-                        0,                           // pu
-                        init->f_hfi / init->f_ctrl); // pu
+    ctl_init_sine_generator(&hfi->hfi_sincos_gen,
+                            0,                           // pu
+                            init->f_hfi / init->f_ctrl); // pu
     hfi->hfi_inj_amp = init->u_amp_hfi;
 
     // iq lowpass filter
@@ -226,7 +226,7 @@ void ctl_init_pmsm_hfi(
     ctl_init_filter_iir2(&hfi->iq_lp_filter, &iq_lp_setup);
 
     // PLL
-    ctl_init_pid(&hfi->pid_pll, init->pid_kp, init->pid_Ti, init->pid_Td, init->f_ctrl);
+    ctl_init_pid_ser(&hfi->pid_pll, init->pid_kp, init->pid_Ti, init->pid_Td, init->f_ctrl);
     ctl_set_pid_limit(&hfi->pid_pll, init->spd_max_limit, init->spd_min_limit);
 
     hfi->spd_sf = float2ctrl((30.0f / PI) * init->f_ctrl / init->speed_base_rpm);

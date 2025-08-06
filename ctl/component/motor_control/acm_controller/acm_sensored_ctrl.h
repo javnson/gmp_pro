@@ -125,10 +125,10 @@ typedef struct _tag_acm_sensored_bare_controller
 
     // input interface
     // rotor position encoder result
-    rotation_ift *rotor_pos;
+    rotation_ift* rotor_pos;
 
     // output interfaces
-    tri_pwm_ift *pwm_out;
+    tri_pwm_ift* pwm_out;
 
     // .....................................................................//
     // controller entity
@@ -143,10 +143,10 @@ typedef struct _tag_acm_sensored_bare_controller
 #else // use continuous controller
 
     // current controller
-    pid_regular_t current_ctrl[2];
+    ctl_pid_t current_ctrl[2];
 
     // speed controller
-    track_pid_t spd_ctrl;
+    ctl_tracking_continuous_pid_t spd_ctrl;
 #endif
 
     // rotor speed calculator
@@ -229,8 +229,7 @@ typedef struct _tag_acm_sensored_bare_controller
 } acm_sensored_bare_controller_t;
 
 // Clear Controller
-GMP_STATIC_INLINE
-void ctl_clear_acm_sensored_ctrl(acm_sensored_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_clear_acm_sensored_ctrl(acm_sensored_bare_controller_t* ctrl)
 {
 #ifdef ACM_CTRL_USING_DISCRETE_CTRL
     // clear controller intermediate variables
@@ -238,19 +237,18 @@ void ctl_clear_acm_sensored_ctrl(acm_sensored_bare_controller_t *ctrl)
     ctl_clear_discrete_pid(&ctrl->current_ctrl[phase_q]);
 
     ctl_clear_discrete_track_pid(&ctrl->spd_ctrl);
-#else  // continuous controller
+#else  // continuous controller                                                                                        \
        // clear controller intermediate variables
     ctl_clear_pid(&ctrl->current_ctrl[phase_d]);
     ctl_clear_pid(&ctrl->current_ctrl[phase_q]);
 
-    ctl_clear_track_pid(&ctrl->spd_ctrl);
+    ctl_clear_tracking_continuous_pid(&ctrl->spd_ctrl);
 #endif // ACM_CTRL_USING_DISCRETE_CTRL
 }
 
 // This function should be called in MainISR.
 // This function implement a universal PMSM controller
-GMP_STATIC_INLINE
-void ctl_step_acm_sensored_ctrl(acm_sensored_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_step_acm_sensored_ctrl(acm_sensored_bare_controller_t* ctrl)
 {
     ctl_vector2_t phasor;
     ctrl_gt etheta;
@@ -273,7 +271,8 @@ void ctl_step_acm_sensored_ctrl(acm_sensored_bare_controller_t *ctrl)
 #if MTR_CTRL_CURRENT_MEASUREMENT_PHASES == 3
     ctl_ct_clark(&ctrl->mtr_interface.iabc->value, &ctrl->iab0);
 #elif MTR_CTRL_CURRENT_MEASUREMENT_PHASES == 2
-    ctl_ct_clark_2ph(&ctrl->mtr_interface.iabc->value, &ctrl->iab0);
+    ctl_ct_clark_2ph((ctl_vector2_t*)&ctrl->mtr_interface.iabc->value, (ctl_vector2_t*)&ctrl->iab0);
+    ctrl->iab0.dat[phase_0] = 0;
 #else
 #error("Wrong parameter for macro MTR_CTRL_CURRENT_MEASUREMENT_PHASES, this parameter means how many current sensors have for each motor.")
 #endif // MTR_CTRL_CURRENT_MEASUREMENT_PHASES
@@ -282,7 +281,7 @@ void ctl_step_acm_sensored_ctrl(acm_sensored_bare_controller_t *ctrl)
 #if MTR_CTRL_VOLTAGE_MEASUREMENT_PHASES == 3
     ctl_ct_clark(&ctrl->mtr_interface.uabc->value, &ctrl->uab0);
 #elif MTR_CTRL_VOLTAGE_MEASUREMENT_PHASES == 2
-    ctl_ct_clark_2ph(&ctrl->mtr_interface.uabc->value, &ctrl->uab0);
+    ctl_ct_clark_2ph((ctl_vector2_t*)&ctrl->mtr_interface.uabc->value, &ctrl->uab0);
 #elif MTR_CTRL_VOLTAGE_MEASUREMENT_PHASES == 0
     ctl_vector3_clear(&ctrl->uab0);
 #else
@@ -332,7 +331,7 @@ void ctl_step_acm_sensored_ctrl(acm_sensored_bare_controller_t *ctrl)
         //
         // Set target speed
         //
-        if(ctrl->flag_enable_velocity_ctrl)
+        if (ctrl->flag_enable_velocity_ctrl)
         {
             ctrl->rg.target_frequency = ctl_mul(ctrl->flux_calc.omega_s, ctrl->speed_pu_rg_sf);
         }
@@ -353,8 +352,8 @@ void ctl_step_acm_sensored_ctrl(acm_sensored_bare_controller_t *ctrl)
                                                                      ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
                                          ctrl->idq_ff.dat[phase_q];
 #else  // using continuous controller
-            ctrl->idq_set.dat[phase_q] =
-                ctl_step_track_pid(&ctrl->spd_ctrl, ctrl->speed_set, ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
+            ctrl->idq_set.dat[phase_q] = ctl_step_tracking_continuous_pid(&ctrl->spd_ctrl, ctrl->speed_set,
+                                                                          ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
                 ctrl->idq_ff.dat[phase_q];
 #endif // ACM_CTRL_USING_DISCRETE_CTRL
 
@@ -390,8 +389,8 @@ void ctl_step_acm_sensored_ctrl(acm_sensored_bare_controller_t *ctrl)
                 ctl_step_pid_ser(&ctrl->current_ctrl[phase_d], ctrl->idq_set.dat[phase_d] - ctrl->idq0.dat[phase_d]) +
                 ctrl->vdq_ff.dat[phase_d];
 
-//            vq_limit = ctl_sqrt(float2ctrl(1.0) - ctl_mul(ctrl->vdq_set.dat[phase_d], ctrl->vdq_set.dat[phase_d]));
-//            ctl_set_pid_limit(&ctrl->current_ctrl[phase_q], vq_limit, -vq_limit);
+            //            vq_limit = ctl_sqrt(float2ctrl(1.0) - ctl_mul(ctrl->vdq_set.dat[phase_d], ctrl->vdq_set.dat[phase_d]));
+            //            ctl_set_pid_limit(&ctrl->current_ctrl[phase_q], vq_limit, -vq_limit);
 
             ctrl->vdq_set.dat[phase_q] =
                 ctl_step_pid_ser(&ctrl->current_ctrl[phase_q], ctrl->idq_set.dat[phase_q] - ctrl->idq0.dat[phase_q]) +
@@ -448,43 +447,37 @@ void ctl_step_acm_sensored_ctrl(acm_sensored_bare_controller_t *ctrl)
 //
 
 // enable sensored AC motor controller
-GMP_STATIC_INLINE
-void ctl_enable_acm_sensored_ctrl(acm_sensored_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_enable_acm_sensored_ctrl(acm_sensored_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_controller = 1;
 }
 
 // disable sensored AC motor controller
-GMP_STATIC_INLINE
-void ctl_disable_acm_sensored_ctrl(acm_sensored_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_disable_acm_sensored_ctrl(acm_sensored_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_controller = 0;
 }
 
 // enable sensored AC motor controller output
-GMP_STATIC_INLINE
-void ctl_enable_acm_sensored_ctrl_output(acm_sensored_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_enable_acm_sensored_ctrl_output(acm_sensored_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
 }
 
 // disable sensored AC motor controller output
-GMP_STATIC_INLINE
-void ctl_disable_acm_sensored_ctrl_output(acm_sensored_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_disable_acm_sensored_ctrl_output(acm_sensored_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 0;
 }
 
 // enable flux speed estimate
-GMP_STATIC_INLINE
-void ctl_enable_acm_sensored_ctrl_flux_est(acm_sensored_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_enable_acm_sensored_ctrl_flux_est(acm_sensored_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_flux_est = 1;
 }
 
 // disable flux speed estimate
-GMP_STATIC_INLINE
-void ctl_disable_acm_sensored_ctrl_flux_est(acm_sensored_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_disable_acm_sensored_ctrl_flux_est(acm_sensored_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_flux_est = 0;
 }
@@ -495,8 +488,7 @@ void ctl_disable_acm_sensored_ctrl_flux_est(acm_sensored_bare_controller_t *ctrl
 
 // ACM controller run in valpha vbeta mode,
 // user should specify valpha and vbeta by function ctl_set_acm_sensored_ctrl_valphabeta
-GMP_STATIC_INLINE
-void ctl_acm_sensored_ctrl_valphabeta_mode(acm_sensored_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_acm_sensored_ctrl_valphabeta_mode(acm_sensored_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
     ctrl->flag_enable_modulation = 0;
@@ -506,8 +498,8 @@ void ctl_acm_sensored_ctrl_valphabeta_mode(acm_sensored_bare_controller_t *ctrl)
 
 // Set motor target v alpha and v beta.
 // only in valphabeta mode this function counts.
-GMP_STATIC_INLINE
-void ctl_set_acm_sensored_ctrl_valphabeta(acm_sensored_bare_controller_t *ctrl, ctrl_gt valpha, ctrl_gt vbeta)
+GMP_STATIC_INLINE void ctl_set_acm_sensored_ctrl_valphabeta(acm_sensored_bare_controller_t* ctrl, ctrl_gt valpha,
+                                                            ctrl_gt vbeta)
 {
     ctrl->vab0_set.dat[phase_A] = valpha;
     ctrl->vab0_set.dat[phase_B] = vbeta;
@@ -520,8 +512,7 @@ void ctl_set_acm_sensored_ctrl_valphabeta(acm_sensored_bare_controller_t *ctrl, 
 
 // ACM controller run in valpha vbeta mode
 // user should specify udq0 by function ctl_set_acm_sensored_ctrl_vdq_ff
-GMP_STATIC_INLINE
-void ctl_acm_sensored_ctrl_voltage_mode(acm_sensored_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_acm_sensored_ctrl_voltage_mode(acm_sensored_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
     ctrl->flag_enable_modulation = 1;
@@ -531,8 +522,7 @@ void ctl_acm_sensored_ctrl_voltage_mode(acm_sensored_bare_controller_t *ctrl)
 
 // this function set vdq reference for vdq mode.
 // PMSM controller run in vdq mode this function counts.
-GMP_STATIC_INLINE
-void ctl_set_acm_sensored_ctrl_vdq_ff(acm_sensored_bare_controller_t *ctrl, ctrl_gt vd, ctrl_gt vq)
+GMP_STATIC_INLINE void ctl_set_acm_sensored_ctrl_vdq_ff(acm_sensored_bare_controller_t* ctrl, ctrl_gt vd, ctrl_gt vq)
 {
     ctrl->vdq_ff.dat[phase_d] = vd;
     ctrl->vdq_ff.dat[phase_q] = vq;
@@ -544,8 +534,7 @@ void ctl_set_acm_sensored_ctrl_vdq_ff(acm_sensored_bare_controller_t *ctrl, ctrl
 //
 
 // this function set ACM controller run in current mode.
-GMP_STATIC_INLINE
-void ctl_acm_sensored_ctrl_current_mode(acm_sensored_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_acm_sensored_ctrl_current_mode(acm_sensored_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
     ctrl->flag_enable_modulation = 1;
@@ -555,8 +544,7 @@ void ctl_acm_sensored_ctrl_current_mode(acm_sensored_bare_controller_t *ctrl)
 
 // this function set ACM idq feed forward.
 // in current mode this value means idq reference.
-GMP_STATIC_INLINE
-void ctl_set_acm_sensored_ctrl_idq_ff(acm_sensored_bare_controller_t *ctrl, ctrl_gt id, ctrl_gt iq)
+GMP_STATIC_INLINE void ctl_set_acm_sensored_ctrl_idq_ff(acm_sensored_bare_controller_t* ctrl, ctrl_gt id, ctrl_gt iq)
 {
     ctrl->idq_ff.dat[phase_d] = id;
     ctrl->idq_ff.dat[phase_q] = iq;
@@ -568,8 +556,7 @@ void ctl_set_acm_sensored_ctrl_idq_ff(acm_sensored_bare_controller_t *ctrl, ctrl
 //
 
 // this function set ACM controller run in speed mode.
-GMP_STATIC_INLINE
-void ctl_acm_sensored_ctrl_velocity_mode(acm_sensored_bare_controller_t *ctrl)
+GMP_STATIC_INLINE void ctl_acm_sensored_ctrl_velocity_mode(acm_sensored_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
     ctrl->flag_enable_modulation = 1;
@@ -578,8 +565,7 @@ void ctl_acm_sensored_ctrl_velocity_mode(acm_sensored_bare_controller_t *ctrl)
 }
 
 // this function set ACM target speed.
-GMP_STATIC_INLINE
-void ctl_set_acm_sensored_ctrl_speed(acm_sensored_bare_controller_t *ctrl, ctrl_gt spd)
+GMP_STATIC_INLINE void ctl_set_acm_sensored_ctrl_speed(acm_sensored_bare_controller_t* ctrl, ctrl_gt spd)
 {
     ctrl->speed_set = spd;
 }
@@ -667,23 +653,23 @@ typedef struct _tag_acm_sensored_bare_controller_init
 // init acm_sensored_bare_controller_t struct
 void ctl_init_acm_sensored_bare_controller(
     // ACM Controller handle
-    acm_sensored_bare_controller_t *ctrl,
+    acm_sensored_bare_controller_t* ctrl,
     // ACM initialize structure
-    acm_sensored_bare_controller_init_t *init);
+    acm_sensored_bare_controller_init_t* init);
 
 // attach to output port
 void ctl_attach_acm_sensored_bare_output(
     // ACM Controller handle
-    acm_sensored_bare_controller_t *ctrl,
+    acm_sensored_bare_controller_t* ctrl,
     // PWM handle
-    tri_pwm_ift *pwm_out);
+    tri_pwm_ift* pwm_out);
 
 // attach to rotor speed encoder port
 void ctl_attach_acm_sensored_bare_rotor_postion(
     // ACM Controller handle
-    acm_sensored_bare_controller_t *ctrl,
+    acm_sensored_bare_controller_t* ctrl,
     // rotor position
-    rotation_ift *rotor_enc);
+    rotation_ift* rotor_enc);
 
 #ifdef __cplusplus
 }

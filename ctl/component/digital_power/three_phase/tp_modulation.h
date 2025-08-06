@@ -61,15 +61,8 @@ GMP_STATIC_INLINE void ctl_clear_three_phase_bridge_modulation(three_phase_bridg
  * @param[in] pwm_deadband The total dead-time value in PWM timer counts.
  * @param[in] current_deadband The current threshold to enable dead-time compensation.
  */
-GMP_STATIC_INLINE void ctl_init_three_phase_bridge_modulation(three_phase_bridge_modulation_t* bridge,
-                                                              pwm_gt pwm_full_scale, pwm_gt pwm_deadband,
-                                                              ctrl_gt current_deadband)
-{
-    bridge->pwm_full_scale = pwm_full_scale;
-    bridge->pwm_deadband_half = pwm_deadband / 2; // Pre-calculate for efficiency.
-    bridge->current_deadband = current_deadband;
-    ctl_clear_three_phase_bridge_modulation(bridge);
-}
+void ctl_init_three_phase_bridge_modulation(three_phase_bridge_modulation_t* bridge, pwm_gt pwm_full_scale,
+                                            pwm_gt pwm_deadband, ctrl_gt current_deadband);
 
 /**
  * @brief Clears the internal states of the modulation module.
@@ -161,15 +154,14 @@ GMP_STATIC_INLINE void ctl_step_three_phase_bridge_modulation(three_phase_bridge
  * @param[in] index The phase to get the result from (0 for A, 1 for B, 2 for C).
  * @return The final PWM compare value for the selected phase.
  */
-GMP_STATIC_INLINE pwm_gt ctl_get_three_phase_modulation_result(three_phase_bridge_modulation_t* bridge,
-                                                               three_phase_index_t index)
+GMP_STATIC_INLINE pwm_gt ctl_get_three_phase_modulation_result(three_phase_bridge_modulation_t* bridge, size_gt index)
 {
     // CORRECTED: Compared index with integer/enum values instead of PWM values.
-    if (index == PHASE_A_INDEX)
+    if (index == 0) // phase A
     {
         return bridge->phase_A;
     }
-    else if (index == PHASE_B_INDEX)
+    else if (index == 1) // phase B
     {
         return bridge->phase_B;
     }

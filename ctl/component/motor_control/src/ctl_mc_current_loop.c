@@ -8,7 +8,7 @@
 
 void ctl_setup_motor_current_ctrl(
     // motor current controller
-    ctl_motor_current_ctrl_t *obj,
+    ctl_motor_current_ctrl_t* obj,
     // PID parameter for motor current controller
     ctrl_gt kp, ctrl_gt Ti, ctrl_gt Td,
     // PID saturation parameter for motor current controller
@@ -28,9 +28,9 @@ void ctl_setup_motor_current_ctrl(
     ctl_vector3_clear(&obj->vdq0);
     ctl_vector3_clear(&obj->vab0);
 
-    ctl_init_pid(&obj->idq_ctrl[phase_d], kp, Ti, Td,fs);
+    ctl_init_pid_ser(&obj->idq_ctrl[phase_d], kp, Ti, Td, fs);
     ctl_set_pid_limit(&obj->idq_ctrl[phase_d], out_min, out_max);
-    ctl_init_pid(&obj->idq_ctrl[phase_q], kp, Ti, Td,fs);
+    ctl_init_pid_ser(&obj->idq_ctrl[phase_q], kp, Ti, Td, fs);
     ctl_set_pid_limit(&obj->idq_ctrl[phase_q], out_min, out_max);
 
     obj->flag_enable_current_controller = 1;
@@ -41,7 +41,7 @@ void ctl_setup_motor_current_ctrl(
 
 #include <ctl/component/motor_control/current_loop/PMSM_DPCC.h>
 
-void ctl_init_PMSM_DPCC(PMSM_DPCC_t *ctrl, PMSM_DPCC_init_t* init)
+void ctl_init_PMSM_DPCC(PMSM_DPCC_t* ctrl, PMSM_DPCC_init_t* init)
 {
     //current control coefficient cal
     ctrl->coeff_d_current = float2ctrl(init->Ubase / init->fctrl / init->Ld / init->Ibase);
@@ -55,5 +55,4 @@ void ctl_init_PMSM_DPCC(PMSM_DPCC_t *ctrl, PMSM_DPCC_init_t* init)
     ctrl->Ld_pu = float2ctrl(init->Ld * 2 * PI * init->fbase * init->Ibase / init->Ubase);
     ctrl->Lq_pu = float2ctrl(init->Lq * 2 * PI * init->fbase * init->Ibase / init->Ubase);
     ctrl->Psi_f_pu = float2ctrl(2 * PI * init->Psi_f * init->fbase / init->Ubase);
-
 }

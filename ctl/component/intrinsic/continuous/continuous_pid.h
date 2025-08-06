@@ -141,6 +141,17 @@ GMP_STATIC_INLINE void ctl_clear_pid(ctl_pid_t* hpid)
     hpid->out = 0;
 }
 
+/**
+ * @brief Set PID controller PID limit
+ * @param[out] hpid Pointer to the PID controller instance.
+ */
+GMP_STATIC_INLINE void ctl_set_pid_limit(ctl_pid_t* pid, ctrl_gt limit_max, ctrl_gt limit_min)
+{
+    pid->out_max = limit_max;
+    pid->out_min = limit_min;
+
+}
+
 /*---------------------------------------------------------------------------*/
 /* PID Controller with Anti-Windup                                           */
 /*---------------------------------------------------------------------------*/

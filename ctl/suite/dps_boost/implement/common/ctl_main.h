@@ -9,15 +9,6 @@
  *
  */
 
-// const F & VF controller
-#include <ctl/component/motor_control/basic/vf_generator.h>
-
-// speed encoder
-#include <ctl\component\motor_control\basic\encoder.h>
-
-// motor controller
-#include <ctl/suite/mcs_pmsm/pmsm_ctrl.h>
-
 #include <ctl/component/interface/pwm_channel.h>
 
 #include <ctl/component/interface/adc_channel.h>
@@ -61,8 +52,7 @@ extern mppt_PnO_algo_t mppt;
 #endif // BUILD_LEVEL
 
 // periodic callback function things.
-GMP_STATIC_INLINE
-void ctl_dispatch(void)
+GMP_STATIC_INLINE void ctl_dispatch(void)
 {
 #if BUILD_LEVEL >= 4
     mppt_set = ctl_step_mppt_PnO_algo(&mppt, boost_ctrl.lpf_ui.out, boost_ctrl.lpf_il.out);

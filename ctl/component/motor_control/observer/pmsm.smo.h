@@ -147,7 +147,7 @@ typedef struct _tag_ctl_pmsm_smo_t
     ctl_low_pass_filter_t filter_spd;
 
     // PLL pid controller
-    pid_regular_t pid_pll;
+    ctl_pid_t pid_pll;
 
     // speed scale factor
     // scale factor: rad/tick -> p.u.

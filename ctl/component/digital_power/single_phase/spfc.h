@@ -56,8 +56,8 @@ typedef struct _tag_spfc_type
     ctrl_gt current_ref; /**< Instantaneous reference for the inner current loop. */
 
     /*-- Submodules --*/
-    pid_regular_t current_ctrl; /**< PID controller for the inner current loop. */
-    pid_regular_t voltage_ctrl; /**< PID controller for the outer voltage loop. */
+    ctl_pid_t current_ctrl;     /**< PID controller for the inner current loop. */
+    ctl_pid_t voltage_ctrl; /**< PID controller for the outer voltage loop. */
 
     /*-- Control Flags --*/
     fast_gt flag_enable; /**< Master enable flag for the PFC controller. */

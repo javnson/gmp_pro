@@ -33,14 +33,15 @@
 void ctl_init_pll_3ph(three_phase_pll_t* pll, parameter_gt f_base, parameter_gt pid_kp, parameter_gt pid_Ti,
                       parameter_gt pid_Td, parameter_gt f_ctrl)
 {
-    // It's good practice to clear the controller's state first.
+    // Clear all internal states before initialization.
     ctl_clear_pll_3ph(pll);
 
-    // Initialize the PI controller for the phase-locking loop.
-    ctl_init_pid(&pll->pid_pll, pid_kp, pid_Ti, pid_Td, f_ctrl);
-
-    // Calculate and set the frequency scaling factor.
+    // Calculate the frequency scaling factor. This converts the per-unit frequency
+    // into a per-unit angle increment for the given sampling time.
     pll->freq_sf = float2ctrl(f_base / f_ctrl);
+
+    // Initialize the parallel-form PI controller for the loop.
+    ctl_init_pid_ser(&pll->pid_pll, pid_kp, pid_Ti, pid_Td, f_ctrl);
 }
 
 //////////////////////////////////////////////////////////////////////////

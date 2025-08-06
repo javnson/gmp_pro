@@ -18,7 +18,7 @@
 // Single-Phase Inverter Control
 //////////////////////////////////////////////////////////////////////////
 
-#include <ctl/component/digital_power/topology_preset/single_phase_dc_ac.h>
+#include <ctl/component/digital_power/single_phase/single_phase_dc_ac.h>
 
 /**
  * @brief Configures and upgrades the internal components of the single-phase inverter controller.
@@ -35,7 +35,7 @@ void ctl_upgrade_sinv_param(sinv_ctrl_t* sinv, sinv_init_t* init)
     // --- Initialize grid synchronization modules ---
     ctl_init_single_phase_pll(&sinv->spll, init->pll_ctrl_kp, init->pll_ctrl_Ti, init->pll_ctrl_cut_freq,
                               init->base_freq, init->f_ctrl);
-    ctl_init_ramp_gen_via_amp_freq(&sinv->rg, init->f_ctrl, init->base_freq, 1, 0);
+    ctl_init_ramp_generator_via_freq(&sinv->rg, init->f_ctrl, init->base_freq, 1, 0);
 
     // --- Initialize sensor signal low-pass filters ---
     ctl_init_lp_filter(&sinv->lpf_idc, init->f_ctrl, init->adc_filter_fc);

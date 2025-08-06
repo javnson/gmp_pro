@@ -9,10 +9,10 @@
  *
  */
 
-#include <ctl/component/intrinsic/continuous/saturation.h>
-#include <ctl/component/intrinsic/discrete/divider.h>
-#include <ctl/component/intrinsic/discrete/slope_lim.h>
-#include <ctl/component/intrinsic/discrete/stimulate.h>
+#include <ctl/component/intrinsic/basic/saturation.h>
+#include <ctl/component/intrinsic/basic/divider.h>
+#include <ctl/component/intrinsic/basic/slope_limiter.h>
+#include <ctl/component/intrinsic/discrete/signal_generator.h>
 #include <ctl/component/motor_control/basic/motor_universal_interface.h>
 
 #ifndef _FILE_CONST_VF_H_
@@ -31,7 +31,7 @@ typedef struct _tag_const_f
     rotation_ift enc;
 
     // ramp generator
-    ctl_src_rg_t rg;
+    ctl_ramp_generator_t rg;
 
 } ctl_const_f_controller;
 
@@ -40,7 +40,7 @@ void ctl_init_const_f_controller(ctl_const_f_controller *ctrl, parameter_gt freq
 GMP_STATIC_INLINE
 void ctl_step_const_f_controller(ctl_const_f_controller *ctrl)
 {
-    ctrl->enc.elec_position = ctl_step_ramp_gen(&ctrl->rg);
+    ctrl->enc.elec_position = ctl_step_ramp_generator(&ctrl->rg);
     ctrl->enc.position = ctrl->enc.elec_position;
 }
 
@@ -63,10 +63,10 @@ typedef struct _tag_slope_f
     ctrl_gt current_freq;
 
     // ramp_generator
-    ctl_src_rg_t rg;
+    ctl_ramp_generator_t rg;
 
     // slope limit
-    ctl_slope_lim_t freq_slope;
+    ctl_slope_limiter_t freq_slope;
 } ctl_slope_f_controller;
 
 void ctl_init_const_slope_f_controller(
@@ -84,13 +84,13 @@ GMP_STATIC_INLINE
 ctrl_gt ctl_step_slope_f(ctl_slope_f_controller *ctrl)
 {
     // step to next frequency
-    ctrl->current_freq = ctl_step_slope_limit(&ctrl->freq_slope, ctrl->target_frequency);
+    ctrl->current_freq = ctl_step_slope_limiter(&ctrl->freq_slope, ctrl->target_frequency);
 
     // change ramp target
-    ctl_set_ramp_freq(&ctrl->rg, ctrl->current_freq);
+    ctl_set_ramp_generator_slope(&ctrl->rg, ctrl->current_freq);
 
     // move to next angle position
-    ctrl->enc.elec_position = ctl_step_ramp_gen(&ctrl->rg);
+    ctrl->enc.elec_position = ctl_step_ramp_generator(&ctrl->rg);
     ctrl->enc.position = ctrl->enc.elec_position;
 
     return ctrl->enc.elec_position;
@@ -99,7 +99,7 @@ ctrl_gt ctl_step_slope_f(ctl_slope_f_controller *ctrl)
 GMP_STATIC_INLINE
 void ctl_clear_slope_f(ctl_slope_f_controller *ctrl)
 {
-    ctl_clear_limit_slope(&ctrl->freq_slope);
+    ctl_clear_slope_limiter(&ctrl->freq_slope);
 }
 
 // change target frequency
@@ -145,10 +145,10 @@ typedef struct _tag_const_vf
     ctrl_gt v_bias;
 
     // ramp generator
-    ctl_src_rg_t rg;
+    ctl_ramp_generator_t rg;
 
     // slope limit
-    ctl_slope_lim_t freq_slope;
+    ctl_slope_limiter_t freq_slope;
 
     // saturation limit for Voltage
     // [-voltage_bound, volatage bound]
@@ -177,7 +177,7 @@ GMP_STATIC_INLINE
 ctrl_gt ctl_step_const_vf(ctl_const_vf_controller *ctrl)
 {
     // step to next frequency
-    ctrl->current_freq = ctl_step_slope_limit(&ctrl->freq_slope, ctrl->target_frequency);
+    ctrl->current_freq = ctl_step_slope_limiter(&ctrl->freq_slope, ctrl->target_frequency);
 
     // calculate target voltage
     if (ctrl->current_freq > ctrl->freq_deadband)
@@ -197,10 +197,10 @@ ctrl_gt ctl_step_const_vf(ctl_const_vf_controller *ctrl)
     }
 
     // change ramp target
-    ctl_set_ramp_freq(&ctrl->rg, ctrl->current_freq);
+    ctl_set_ramp_generator_slope(&ctrl->rg, ctrl->current_freq);
 
     // move to next angle position
-    ctrl->enc.elec_position = ctl_step_ramp_gen(&ctrl->rg);
+    ctrl->enc.elec_position = ctl_step_ramp_generator(&ctrl->rg);
     ctrl->enc.position = ctrl->enc.elec_position;
 
     return ctrl->enc.elec_position;
