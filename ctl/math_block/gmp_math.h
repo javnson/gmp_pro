@@ -139,14 +139,15 @@ typedef GMP_PORT_PARAMETER_T parameter_gt;
 #include <ctl/math_block/ctrl_gt/ctrl_gt_patch.h>
 
 // Linear algebra types
-#include <ctl/math_block/complex.h>
 #include <ctl/math_block/matrix_lite/matrix2.h>
 #include <ctl/math_block/matrix_lite/matrix3.h>
 #include <ctl/math_block/matrix_lite/matrix4.h>
-#include <ctl/math_block/quaternion.h>
 #include <ctl/math_block/vector_lite/vector2.h>
 #include <ctl/math_block/vector_lite/vector3.h>
 #include <ctl/math_block/vector_lite/vector4.h>
+
+#include <ctl/math_block/complex_lite/complex.h>
+#include <ctl/math_block/complex_lite/quaternion.h>
 
 // Coordinate transformations
 #include <ctl/math_block/coordinate/coord_trans.h>

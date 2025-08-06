@@ -15,8 +15,8 @@
 #ifndef _FILE_GMP_CTL_MATRIX2_H_
 #define _FILE_GMP_CTL_MATRIX2_H_
 
-#include "complex.h" // Depends on the complex number module
-#include "vector2.h" // Depends on the 2D vector module
+#include <ctl/math_block/complex_lite/complex.h> // Depends on the complex number module
+#include <ctl/math_block/vector_lite/vector2.h>  // Depends on the 2D vector module
 #include <math.h>
 
 #ifdef __cplusplus
@@ -283,7 +283,7 @@ GMP_STATIC_INLINE void ctl_matrix2_eigenvalues_complex(ctl_matrix2_t mat, ctl_co
     if (discriminant >= 0)
     {
         // Real eigenvalues
-        ctrl_gt sqrt_discriminant = sqrt(discriminant);
+        ctrl_gt sqrt_discriminant = ctl_sqrt(discriminant);
         eigenvalue1->real = (trace + sqrt_discriminant) / 2.0f;
         eigenvalue1->imag = 0.0f;
         eigenvalue2->real = (trace - sqrt_discriminant) / 2.0f;
@@ -292,7 +292,7 @@ GMP_STATIC_INLINE void ctl_matrix2_eigenvalues_complex(ctl_matrix2_t mat, ctl_co
     else
     {
         // Complex conjugate eigenvalues
-        ctrl_gt sqrt_abs_discriminant = sqrt(-discriminant);
+        ctrl_gt sqrt_abs_discriminant = ctl_sqrt(-discriminant);
         eigenvalue1->real = trace / 2.0f;
         eigenvalue1->imag = sqrt_abs_discriminant / 2.0f;
         eigenvalue2->real = trace / 2.0f;

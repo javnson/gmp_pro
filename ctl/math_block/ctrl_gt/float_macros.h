@@ -113,6 +113,9 @@ GMP_STATIC_INLINE float abs_static_inline(float A)
     saturation_static_inline((A), (Neg),                                                                               \
                              (Pos)) /**< @brief Saturates a `ctrl_gt` value between a positive and negative limit. */
 
+#define pwm_mul(A, B)        ((pwm_gt)((((float)(A)) * ((float)(B)))))
+#define pwm_sat(A, Pos, Neg) ((pwm_gt)saturation_static_inline(((float)(A)), ((float)(Pos)), ((float)(Neg))))
+
 /** @} */ // end of MC_ARITHMETIC_FLOAT group
 
 /*---------------------------------------------------------------------------*/
@@ -132,7 +135,7 @@ GMP_STATIC_INLINE float abs_static_inline(float A)
  * @param A The input angle in per-unit (0.0 to 1.0 represents 0 to 2¦Ð).
  * @return The sine of the angle.
  */
-#define ctl_sin(A) sinf(2.0f * PI * (A))
+#define ctl_sin(A) sinf(CTL_PARAM_CONST_2PI*(A))
 
 /**
  * @brief Computes the cosine of an angle given in per-unit.
@@ -140,7 +143,7 @@ GMP_STATIC_INLINE float abs_static_inline(float A)
  * @param A The input angle in per-unit (0.0 to 1.0 represents 0 to 2¦Ð).
  * @return The cosine of the angle.
  */
-#define ctl_cos(A) cosf(2.0f * PI * (A))
+#define ctl_cos(A) cosf(CTL_PARAM_CONST_2PI*(A))
 
 /**
  * @brief Computes the tangent of an angle given in per-unit.
@@ -148,7 +151,7 @@ GMP_STATIC_INLINE float abs_static_inline(float A)
  * @param A The input angle in per-unit (0.0 to 1.0 represents 0 to 2¦Ð).
  * @return The tangent of the angle.
  */
-#define ctl_tan(A) tanf(2.0f * PI * (A))
+#define ctl_tan(A) tanf(CTL_PARAM_CONST_2PI*(A))
 
 #define ctl_atan2(Y, X) atan2f((Y), (X))    /**< @brief Computes the arc-tangent of Y/X. */
 #define ctl_exp(A)      expf((A))           /**< @brief Computes the base-e exponential of A. */

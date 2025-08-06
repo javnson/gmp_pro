@@ -134,7 +134,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_qnorm_sq(ctl_quaternion_t q)
  */
 GMP_STATIC_INLINE ctrl_gt ctl_qnorm(ctl_quaternion_t q)
 {
-    return sqrt(ctl_qnorm_sq(q));
+    return ctl_sqrt(ctl_qnorm_sq(q));
 }
 
 /**

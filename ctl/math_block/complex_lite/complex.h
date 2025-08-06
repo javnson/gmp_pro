@@ -152,7 +152,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_cabs(ctl_complex_t a)
 {
     // Assuming a standard sqrt function is available.
     // Replace with a library-specific fast sqrt if available.
-    return sqrt(ctl_cabs_sq(a));
+    return ctl_sqrt(ctl_cabs_sq(a));
 }
 
 /** @} */ // end of MC_COMPLEX group

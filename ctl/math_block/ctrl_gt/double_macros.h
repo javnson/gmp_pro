@@ -113,6 +113,9 @@ GMP_STATIC_INLINE double abs_static_inline(double A)
     saturation_static_inline((A), (Neg),                                                                               \
                              (Pos)) /**< @brief Saturates a `ctrl_gt` value between a positive and negative limit. */
 
+#define pwm_mul(A, B)        ((pwm_gt)((double)(A) * (double)(B)))
+#define pwm_sat(A, Pos, Neg) ((pwm_gt)saturation_static_inline(((double)(A)), ((double)(Pos)), ((double)(Neg))))
+
 /** @} */ // end of MC_ARITHMETIC_DOUBLE group
 
 /*---------------------------------------------------------------------------*/

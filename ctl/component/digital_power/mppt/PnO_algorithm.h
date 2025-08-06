@@ -152,21 +152,21 @@ ctrl_gt ctl_step_mppt_PnO_algo(mppt_PnO_algo_t* mppt, ctrl_gt current_voltage, c
             if (((mppt->mppt_record & 0x07) == 2) || ((mppt->mppt_record & 0x07) == 5)) // Pattern 010 or 101
             {
                 mppt->voltage_increment = ctl_mul(mppt->searching_step_min, mppt->inc_attenuation) +
-                                          ctl_mul(mppt->voltage_increment, GMP_CONST_1 - mppt->inc_attenuation);
+                                          ctl_mul(mppt->voltage_increment, CTL_CTRL_CONST_1 - mppt->inc_attenuation);
             }
             // Advanced oscillation detection and correction
             else if (((mppt->mppt_record & 0x0F) == 12)) // Pattern 1100
             {
                 mppt->v_ref += mppt->voltage_increment; // Backtrack
                 mppt->voltage_increment = ctl_mul(mppt->searching_step_min, mppt->inc_attenuation) +
-                                          ctl_mul(mppt->voltage_increment, GMP_CONST_1 - mppt->inc_attenuation);
+                                          ctl_mul(mppt->voltage_increment, CTL_CTRL_CONST_1 - mppt->inc_attenuation);
                 mppt->v_ref -= mppt->voltage_increment; // Restore with smaller step
             }
             else if (((mppt->mppt_record & 0x0F) == 3)) // Pattern 0011
             {
                 mppt->v_ref -= mppt->voltage_increment; // Backtrack
                 mppt->voltage_increment = ctl_mul(mppt->searching_step_min, mppt->inc_attenuation) +
-                                          ctl_mul(mppt->voltage_increment, GMP_CONST_1 - mppt->inc_attenuation);
+                                          ctl_mul(mppt->voltage_increment, CTL_CTRL_CONST_1 - mppt->inc_attenuation);
                 mppt->v_ref += mppt->voltage_increment; // Restore with smaller step
             }
             // If moving consistently in one direction, increase step size for fast tracking

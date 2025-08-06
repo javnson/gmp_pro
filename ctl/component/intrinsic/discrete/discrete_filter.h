@@ -81,7 +81,7 @@ void ctl_init_lp_filter(ctl_low_pass_filter_t* lpf, parameter_gt fs, parameter_g
  */
 GMP_STATIC_INLINE ctrl_gt ctl_helper_lp_filter(parameter_gt fs, parameter_gt fc)
 {
-    return float2ctrl(fc * 2 * PI / fs);
+    return float2ctrl(fc * CTL_PARAM_CONST_2PI / fs);
 }
 
 /**
@@ -104,7 +104,7 @@ GMP_STATIC_INLINE parameter_gt ctl_helper_get_lp_filter_lag_phase(parameter_gt f
 GMP_STATIC_INLINE ctrl_gt ctl_step_lowpass_filter(ctl_low_pass_filter_t* lpf, ctrl_gt input)
 {
     // y[n] = a*x[n] + (1-a)*y[n-1]
-    lpf->out = ctl_mul(input, lpf->a) + ctl_mul(lpf->out, GMP_CONST_1 - lpf->a);
+    lpf->out = ctl_mul(input, lpf->a) + ctl_mul(lpf->out, CTL_CTRL_CONST_1 - lpf->a);
     return lpf->out;
 }
 

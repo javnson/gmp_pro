@@ -31,7 +31,7 @@ void ctl_init_filter_iir2(ctl_filter_IIR2_t* obj, ctl_filter_IIR2_setup_t* setup
     parameter_gt f0 = setup_obj->fc * 2 * setup_obj->q;
 
     // tex: $$ \theta = 2\pi \frac{f_c}{f_s}$$
-    parameter_gt theta = 2.0f * PI * f0 / setup_obj->fs;
+    parameter_gt theta = CTL_PARAM_CONST_2PI * f0 / setup_obj->fs;
 
     parameter_gt sin_theta = sinf(theta);
 
@@ -96,7 +96,6 @@ void ctl_init_filter_iir2(ctl_filter_IIR2_t* obj, ctl_filter_IIR2_setup_t* setup
 // Signal Generator
 
 #include <ctl/component/intrinsic/discrete/signal_generator.h>
-
 
 void ctl_init_sine_generator(ctl_sine_generator_t* sg,
                              parameter_gt init_angle, // pu
@@ -256,9 +255,9 @@ void ctl_init_2p2z(
     // sample frequency
     parameter_gt fs)
 {
-    parameter_gt z0 = f_z0 * 2 * PI;
-    parameter_gt z1 = f_z1 * 2 * PI;
-    parameter_gt p1 = f_p1 * 2 * PI;
+    parameter_gt z0 = f_z0 * CTL_PARAM_CONST_2PI;
+    parameter_gt z1 = f_z1 * CTL_PARAM_CONST_2PI;
+    parameter_gt p1 = f_p1 * CTL_PARAM_CONST_2PI;
 
     // discrete controller parameter
     parameter_gt gain_discrete = gain * (1.0f / 2.0f / fs / (p1 + 2.0f * fs));
@@ -295,7 +294,7 @@ void ctl_init_2p2z(
 void ctl_init_resonant_controller(resonant_ctrl_t* r, parameter_gt kr, parameter_gt freq_resonant, parameter_gt fs)
 {
     parameter_gt T = 1.0f / fs;
-    parameter_gt wr = 2.0f * PI * freq_resonant;
+    parameter_gt wr = CTL_PARAM_CONST_2PI * freq_resonant;
     parameter_gt wr_sq_T_sq = wr * wr * T * T;
 
     // Based on the bilinear transformation of G(s) = kr * (2s) / (s^2 + wr^2)
@@ -332,8 +331,8 @@ void ctl_init_qr_controller(qr_ctrl_t* qr, parameter_gt kr, parameter_gt freq_re
                             parameter_gt fs)
 {
     parameter_gt T = 1.0f / fs;
-    parameter_gt wr = 2.0f * PI * freq_resonant;
-    parameter_gt wc = 2.0f * PI * freq_cut;
+    parameter_gt wr = CTL_PARAM_CONST_2PI * freq_resonant;
+    parameter_gt wc = CTL_PARAM_CONST_2PI * freq_cut;
 
     // Based on the bilinear transformation of G(s) = kr * (2*wc*s) / (s^2 + 2*wc*s + wr^2)
     // The resulting difference equation is:
@@ -367,7 +366,7 @@ void ctl_init_qpr_controller(qpr_ctrl_t* qpr, parameter_gt kp, parameter_gt kr, 
 //    parameter_gt fs)
 //{
 //    // resonant frequency, unit rad/s
-//    parameter_gt omega_r = 2 * PI * freq_resonant;
+//    parameter_gt omega_r = CTL_PARAM_CONST_2PI * freq_resonant;
 //
 //    r->krg = float2ctrl(kr * (4 * fs) / (4 * fs * fs + omega_r * omega_r));
 //    r->kr = float2ctrl(2 * (4 * fs * fs - omega_r * omega_r) / (4 * fs * fs + omega_r * omega_r));
@@ -389,7 +388,7 @@ void ctl_init_qpr_controller(qpr_ctrl_t* qpr, parameter_gt kp, parameter_gt kr, 
 //    parameter_gt fs)
 //{
 //    // resonant frequency, unit rad/s
-//    parameter_gt omega_r = 2 * PI * freq_resonant;
+//    parameter_gt omega_r = CTL_PARAM_CONST_2PI * freq_resonant;
 //
 //    pr->kpg = float2ctrl(kp);
 //    pr->krg = float2ctrl(kr * (4 * fs) / (4 * fs * fs + omega_r * omega_r));
@@ -480,7 +479,7 @@ void ctl_init_discrete_sogi(
 
     parameter_gt osgx, osgy, temp, wn, delta_t;
     delta_t = 1.0f / fs;
-    wn = fn * 2.0f * 3.14159265f;
+    wn = fn * CTL_PARAM_CONST_2PI;
     // wn = fn * GMP_CONST_2_PI;
 
     osgx = (2.0f * k_damp * wn * delta_t);

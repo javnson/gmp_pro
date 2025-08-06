@@ -72,7 +72,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_pos_encoder(pos_encoder_t* enc, uint32_t raw)
     enc->raw = raw;
     enc->encif.position = ctl_div(raw, enc->position_base);
 
-    ctrl_gt elec_pos = enc->pole_pairs * (enc->encif.position + GMP_CONST_1 - enc->offset);
+    ctrl_gt elec_pos = enc->pole_pairs * (enc->encif.position + CTL_CTRL_CONST_1 - enc->offset);
     ctrl_gt elec_pos_pu = ctrl_mod_1(elec_pos);
 
     enc->encif.elec_position = elec_pos_pu;
@@ -135,7 +135,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_multiturn_pos_encoder(pos_multiturn_encoder_t
     enc->raw = raw;
     enc->encif.position = ctl_div(raw, enc->position_base);
 
-    ctrl_gt elec_pos = enc->pole_pairs * (enc->encif.position + GMP_CONST_1 - enc->offset);
+    ctrl_gt elec_pos = enc->pole_pairs * (enc->encif.position + CTL_CTRL_CONST_1 - enc->offset);
     ctrl_gt elec_pos_pu = ctrl_mod_1(elec_pos);
 
     enc->encif.elec_position = elec_pos_pu;
@@ -188,16 +188,16 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_autoturn_pos_encoder(pos_autoturn_encoder_t* 
     enc->raw = raw;
     enc->encif.position = ctl_div(raw, enc->position_base);
 
-    ctrl_gt elec_pos = (enc->encif.position + GMP_CONST_1 - enc->offset) * enc->pole_pairs;
+    ctrl_gt elec_pos = (enc->encif.position + CTL_CTRL_CONST_1 - enc->offset) * enc->pole_pairs;
     ctrl_gt elec_pos_pu = ctrl_mod_1(elec_pos);
     enc->encif.elec_position = elec_pos_pu;
 
     // Check for revolution crossing
-    if (enc->encif.position - enc->last_pos > GMP_CONST_1_OVER_2)
+    if (enc->encif.position - enc->last_pos > CTL_CTRL_CONST_1_OVER_2)
     {
         enc->encif.revolutions -= 1; // Negative direction rollover
     }
-    if (enc->last_pos - enc->encif.position > GMP_CONST_1_OVER_2)
+    if (enc->last_pos - enc->encif.position > CTL_CTRL_CONST_1_OVER_2)
     {
         enc->encif.revolutions += 1; // Positive direction rollover
     }
@@ -273,13 +273,13 @@ GMP_STATIC_INLINE void ctl_step_spd_calc(spd_calculator_t* sc)
         ctrl_gt delta = current_pos - sc->old_position;
 
         // Correct for position rollover
-        if (delta < -GMP_CONST_1_OVER_2)
+        if (delta < -CTL_CTRL_CONST_1_OVER_2)
         {
-            delta += GMP_CONST_1;
+            delta += CTL_CTRL_CONST_1;
         }
-        else if (delta > GMP_CONST_1_OVER_2)
+        else if (delta > CTL_CTRL_CONST_1_OVER_2)
         {
-            delta -= GMP_CONST_1;
+            delta -= CTL_CTRL_CONST_1;
         }
 
         ctrl_gt new_spd = ctl_mul(delta, sc->scale_factor);

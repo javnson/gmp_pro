@@ -46,7 +46,7 @@ parameter_gt ctl_helper_hp2power(parameter_gt hp);
 GMP_STATIC_INLINE
 parameter_gt ctl_helper_wye_line_voltage_to_phase(parameter_gt wye_value)
 {
-    return wye_value / SQRT_3;
+    return wye_value / CTL_PARAM_CONST_SQRT3;
 }
 
 // connected in delta, nominal voltage RMS line to line -> phase voltage

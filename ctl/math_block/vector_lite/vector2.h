@@ -135,7 +135,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_vector2_mag_sq(ctl_vector2_t vec)
  */
 GMP_STATIC_INLINE ctrl_gt ctl_vector2_mag(ctl_vector2_t vec)
 {
-    return sqrt(ctl_vector2_mag_sq(vec));
+    return ctl_sqrt(ctl_vector2_mag_sq(vec));
 }
 
 /**

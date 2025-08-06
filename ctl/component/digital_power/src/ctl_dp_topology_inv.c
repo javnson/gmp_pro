@@ -83,7 +83,7 @@ void ctl_upgrade_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
                            init->fs);
 
     // --- Set feed-forward and other parameters ---
-    inv->omega_L = float2ctrl(2.0 * PI * init->freq_base * init->Lf * init->i_base / init->v_base);
+    inv->omega_L = float2ctrl(CTL_PARAM_CONST_2PI * init->freq_base * init->Lf * init->i_base / init->v_base);
     inv->rg_freq_pu = float2ctrl(1.0);
 }
 

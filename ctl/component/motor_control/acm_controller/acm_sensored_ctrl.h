@@ -269,9 +269,9 @@ GMP_STATIC_INLINE void ctl_step_acm_sensored_ctrl(acm_sensored_bare_controller_t
 
     // iab = clark(iabc)
 #if MTR_CTRL_CURRENT_MEASUREMENT_PHASES == 3
-    ctl_ct_clark(&ctrl->mtr_interface.iabc->value, &ctrl->iab0);
+    ctl_ct_clarke(&ctrl->mtr_interface.iabc->value, &ctrl->iab0);
 #elif MTR_CTRL_CURRENT_MEASUREMENT_PHASES == 2
-    ctl_ct_clark_2ph((ctl_vector2_t*)&ctrl->mtr_interface.iabc->value, (ctl_vector2_t*)&ctrl->iab0);
+    ctl_ct_clarke_2ph((ctl_vector2_t*)&ctrl->mtr_interface.iabc->value, (ctl_vector2_t*)&ctrl->iab0);
     ctrl->iab0.dat[phase_0] = 0;
 #else
 #error("Wrong parameter for macro MTR_CTRL_CURRENT_MEASUREMENT_PHASES, this parameter means how many current sensors have for each motor.")
@@ -279,9 +279,9 @@ GMP_STATIC_INLINE void ctl_step_acm_sensored_ctrl(acm_sensored_bare_controller_t
 
     // uab = clark(uabc)
 #if MTR_CTRL_VOLTAGE_MEASUREMENT_PHASES == 3
-    ctl_ct_clark(&ctrl->mtr_interface.uabc->value, &ctrl->uab0);
+    ctl_ct_clarke(&ctrl->mtr_interface.uabc->value, &ctrl->uab0);
 #elif MTR_CTRL_VOLTAGE_MEASUREMENT_PHASES == 2
-    ctl_ct_clark_2ph((ctl_vector2_t*)&ctrl->mtr_interface.uabc->value, &ctrl->uab0);
+    ctl_ct_clarke_2ph((ctl_vector2_t*)&ctrl->mtr_interface.uabc->value, &ctrl->uab0);
 #elif MTR_CTRL_VOLTAGE_MEASUREMENT_PHASES == 0
     ctl_vector3_clear(&ctrl->uab0);
 #else

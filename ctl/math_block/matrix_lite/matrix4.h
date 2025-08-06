@@ -15,7 +15,7 @@
 #ifndef _FILE_GMP_CTL_MATRIX4_H_
 #define _FILE_GMP_CTL_MATRIX4_H_
 
-#include "vector4.h" // Depends on the 4D vector module
+#include <ctl/math_block/vector_lite/vector4.h> // Depends on the 4D vector module
 #include <math.h>
 
 #ifdef __cplusplus

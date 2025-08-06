@@ -92,6 +92,9 @@ GMP_STATIC_INLINE float32_t ctl_sat_inline(float32_t A, float32_t Pos, float32_t
 }
 #define ctl_sat(A, Pos, Neg) ctl_sat_inline((A), (Pos), (Neg))
 
+#define pwm_mul(A, B)        ((pwm_gt)((double)(A) * (double)(B)))
+#define pwm_sat(A, Pos, Neg) ((pwm_gt)ctl_sat_inline(((double)(A)), ((double)(Pos)), ((double)(Neg))))
+
 /** @} */ // end of MC_ARITHMETIC_CMSIS group
 
 /*---------------------------------------------------------------------------*/

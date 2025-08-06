@@ -16,7 +16,7 @@
 #ifndef _FILE_GMP_CTL_MATRIX3_H_
 #define _FILE_GMP_CTL_MATRIX3_H_
 
-#include "vector3.h" // Depends on the 3D vector module
+#include <ctl/math_block/vector_lite/vector3.h> // Depends on the 3D vector module
 #include <math.h>
 
 #ifdef __cplusplus

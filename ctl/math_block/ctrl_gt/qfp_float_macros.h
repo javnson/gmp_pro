@@ -100,6 +100,9 @@ GMP_STATIC_INLINE float abs_static_inline(float A)
     saturation_macro((A), (Neg),                                                                                       \
                      (Pos)) /**< @brief Saturates a `ctrl_gt` value between a positive and negative limit. */
 
+#define pwm_mul(A, B)        ((pwm_gt)((((float)(A)) * ((float)(B)))))
+#define pwm_sat(A, Pos, Neg) ((pwm_gt)saturation_macro(((float)(A)), ((float)(Pos)), ((float)(Neg))))
+
 /** @} */ // end of MC_ARITHMETIC_QFP group
 
 /*---------------------------------------------------------------------------*/

@@ -52,7 +52,7 @@ void ctl_init_PMSM_DPCC(PMSM_DPCC_t* ctrl, PMSM_DPCC_init_t* init)
 
     //motor parameter unify
     ctrl->Rs_pu = float2ctrl(init->Rs * init->Ibase / init->Ubase);
-    ctrl->Ld_pu = float2ctrl(init->Ld * 2 * PI * init->fbase * init->Ibase / init->Ubase);
-    ctrl->Lq_pu = float2ctrl(init->Lq * 2 * PI * init->fbase * init->Ibase / init->Ubase);
-    ctrl->Psi_f_pu = float2ctrl(2 * PI * init->Psi_f * init->fbase / init->Ubase);
+    ctrl->Ld_pu = float2ctrl(init->Ld * CTL_PARAM_CONST_2PI * init->fbase * init->Ibase / init->Ubase);
+    ctrl->Lq_pu = float2ctrl(init->Lq * CTL_PARAM_CONST_2PI * init->fbase * init->Ibase / init->Ubase);
+    ctrl->Psi_f_pu = float2ctrl(CTL_PARAM_CONST_2PI * init->Psi_f * init->fbase / init->Ubase);
 }

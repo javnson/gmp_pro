@@ -170,7 +170,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_vector3_mag_sq(ctl_vector3_t vec)
  */
 GMP_STATIC_INLINE ctrl_gt ctl_vector3_mag(ctl_vector3_t vec)
 {
-    return sqrt(ctl_vector3_mag_sq(vec));
+    return ctl_sqrt(ctl_vector3_mag_sq(vec));
 }
 
 /**

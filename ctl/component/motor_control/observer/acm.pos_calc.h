@@ -76,7 +76,7 @@ ctrl_gt ctl_step_im_spd_calc(ctl_im_spd_calc_t *calc, ctrl_gt isd, ctrl_gt isq, 
 
 //    calc->omega_e = calc->omega_s *
 
-    calc->enc.elec_position += ctl_mul(calc->ktheta, calc->omega_s) + GMP_CONST_1;
+    calc->enc.elec_position += ctl_mul(calc->ktheta, calc->omega_s) + CTL_CTRL_CONST_1;
 
     calc->enc.elec_position = ctrl_mod_1(calc->enc.elec_position);
 

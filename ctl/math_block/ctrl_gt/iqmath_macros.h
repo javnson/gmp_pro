@@ -92,6 +92,9 @@ GMP_STATIC_INLINE _iq abs_static_inline(_iq A)
 #define ctl_sat(A, Pos, Neg)                                                                                           \
     saturation_macro((A), (Neg), (Pos)) /**< @brief Saturates an `_iq` value between a positive and negative limit. */
 
+#define pwm_mul(A, B)        (_IQmpy(A, B))
+#define pwm_sat(A, Pos, Neg) saturation_macro((A), (Neg), (Pos))
+
 /** @} */ // end of MC_ARITHMETIC_IQ group
 
 /*---------------------------------------------------------------------------*/

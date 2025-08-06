@@ -47,7 +47,7 @@ void ctl_init_pmsm_smo(
     ctl_init_pid_ser(&smo->pid_pll, init->pid_kp, init->pid_Ti, init->pid_Td, init->f_ctrl);
     ctl_set_pid_limit(&smo->pid_pll, init->spd_max_limit, init->spd_min_limit);
 
-    smo->spd_sf = float2ctrl((30.0f / PI) * init->f_ctrl / init->speed_base_rpm / init->pole_pairs);
+    smo->spd_sf = float2ctrl((30.0f / CTL_PARAM_CONST_PI) * init->f_ctrl / init->speed_base_rpm / init->pole_pairs);
     smo->wr = 0;
 
     smo->theta_compensate = float2ctrl(init->speed_base_rpm / 60.0f / init->fc_e * init->pole_pairs);
@@ -172,7 +172,7 @@ void ctl_init_im_spd_calc(
     calc->kr = float2ctrl(1 / isr_freq + Tr);
 
     // calc->kt = float2ctrl(1 / (Tr * 2 * PI * freq_base));
-    calc->kt = float2ctrl(1 / (2 * PI * freq_base));
+    calc->kt = float2ctrl(1 / (CTL_PARAM_CONST_2PI * freq_base));
 
     calc->ktheta = float2ctrl(freq_base / isr_freq);
 
@@ -229,7 +229,7 @@ void ctl_init_pmsm_hfi(
     ctl_init_pid_ser(&hfi->pid_pll, init->pid_kp, init->pid_Ti, init->pid_Td, init->f_ctrl);
     ctl_set_pid_limit(&hfi->pid_pll, init->spd_max_limit, init->spd_min_limit);
 
-    hfi->spd_sf = float2ctrl((30.0f / PI) * init->f_ctrl / init->speed_base_rpm);
+    hfi->spd_sf = float2ctrl((30.0f / CTL_PARAM_CONST_PI) * init->f_ctrl / init->speed_base_rpm);
     hfi->pole_pairs = init->pole_pairs;
     hfi->theta_r_est = 0;
 }

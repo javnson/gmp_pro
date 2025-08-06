@@ -233,30 +233,30 @@ GMP_STATIC_INLINE void ctl_step_inv_ctrl(inv_ctrl_t* ctrl)
 #if CURRENT_SAMPLE_PHASE_MODE == 3
     for (size_gt i = 0; i < 3; ++i)
         ctrl->iabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_iabc[i], ctrl->adc_iabc[i]->value);
-    ctl_ct_clark(&ctrl->iabc, &ctrl->iab0);
+    ctl_ct_clarke(&ctrl->iabc, &ctrl->iab0);
 #elif CURRENT_SAMPLE_PHASE_MODE == 2
     for (size_gt i = 0; i < 2; ++i)
         ctrl->iabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_iabc[i], ctrl->adc_iabc[i]->value);
     ctrl->iabc.dat[phase_C] = 0;
-    ctl_ct_clark_2ph((ctl_vector2_t*)&ctrl->iabc, (ctl_vector2_t*)&ctrl->iab0);
+    ctl_ct_clarke_2ph((ctl_vector2_t*)&ctrl->iabc, (ctl_vector2_t*)&ctrl->iab0);
     ctrl->iab0.dat[phase_0] = 0;
 #endif
 
 #if VOLTAGE_SAMPLE_PHASE_MODE == 3
     for (size_gt i = 0; i < 3; ++i)
         ctrl->vabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_vabc[i], ctrl->adc_vabc[i]->value);
-    ctl_ct_clark(&ctrl->vabc, &ctrl->vab0);
+    ctl_ct_clarke(&ctrl->vabc, &ctrl->vab0);
 #elif VOLTAGE_SAMPLE_PHASE_MODE == 2
     for (size_gt i = 0; i < 2; ++i)
         ctrl->vabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_vabc[i], ctrl->adc_vabc[i]->value);
     ctrl->vabc.dat[phase_C] = 0;
-    ctl_ct_clark_2ph((ctl_vector2_t*)&ctrl->vabc, (ctl_vector2_t*)&ctrl->vab0);
+    ctl_ct_clarke_2ph((ctl_vector2_t*)&ctrl->vabc, (ctl_vector2_t*)&ctrl->vab0);
     ctrl->vab0.dat[phase_0] = 0;
 #elif VOLTAGE_SAMPLE_PHASE_MODE == 1
     for (size_gt i = 0; i < 2; ++i)
         ctrl->vabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_vabc[i], ctrl->adc_vabc[i]->value);
     ctrl->vabc.dat[phase_C] = 0;
-    ctl_ct_clark_from_line((ctl_vector2_t*)&ctrl->vabc, (ctl_vector2_t*)&ctrl->vab0);
+    ctl_ct_clarke_from_line((ctl_vector2_t*)&ctrl->vabc, (ctl_vector2_t*)&ctrl->vab0);
     ctrl->vab0.dat[phase_0] = 0;
 #endif
 
@@ -386,7 +386,7 @@ GMP_STATIC_INLINE void ctl_step_inv_ctrl(inv_ctrl_t* ctrl)
         // --- 3i. Final Modulation Signal Synthesis ---
         ctrl->vab_out.dat[0] = ctrl->vab_pos.dat[0] + ctrl->vab_neg.dat[0] + ctrl->vab_harm.dat[0];
         ctrl->vab_out.dat[1] = ctrl->vab_pos.dat[1] + ctrl->vab_neg.dat[1] + ctrl->vab_harm.dat[1];
-        ctl_ct_iclark2(&ctrl->vab_out, &ctrl->abc_out);
+        ctl_ct_iclarke2(&ctrl->vab_out, &ctrl->abc_out);
         ctrl->abc_out.dat[phase_A] += ctrl->v0_set;
         ctrl->abc_out.dat[phase_B] += ctrl->v0_set;
         ctrl->abc_out.dat[phase_C] += ctrl->v0_set;

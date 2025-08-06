@@ -148,7 +148,7 @@ ctrl_gt ctl_step_pmsm_hfi(pmsm_hfi_t *hfi)
     // 1. PI: theta_error->speed_rad/tick
     hfi->wr = ctl_step_pid_par(&hfi->pid_pll, hfi->theta_error);
     // 2. update mechanical theta, integral
-    hfi->theta_r_est += ctl_mul(hfi->wr, GMP_CONST_1_OVER_2PI);
+    hfi->theta_r_est += ctl_mul(hfi->wr, CTL_CTRL_CONST_1_OVER_2PI);
     hfi->theta_r_est = ctrl_mod_1(hfi->theta_r_est);
     // 3. update spdif: wr,rad/tick -> spd_sf
     hfi->spdif.speed = ctl_mul(hfi->wr, hfi->spd_sf);

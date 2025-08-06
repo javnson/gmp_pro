@@ -110,7 +110,7 @@ void ctl_step_motor_current_ctrl(ctl_motor_current_ctrl_t *obj, ctrl_gt theta)
     obj->theta = theta;
 
     // + iab = clark(iabc)
-    ctl_ct_clark(&obj->iabc, &obj->iab0);
+    ctl_ct_clarke(&obj->iabc, &obj->iab0);
 
     // + phasor = \angle(theta)
     ctl_set_phasor_via_angle(obj->theta, &phasor);

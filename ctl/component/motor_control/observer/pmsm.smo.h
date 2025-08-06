@@ -159,12 +159,12 @@ typedef struct _tag_ctl_pmsm_smo_t
 
 void ctl_init_pmsm_smo(
     // SMO handle
-    pmsm_smo_t *smo,
+    pmsm_smo_t* smo,
     // SMO Initialize object
-    ctl_smo_init_t *init);
+    ctl_smo_init_t* init);
 
-GMP_STATIC_INLINE
-void ctl_input_pmsm_smo(pmsm_smo_t *smo, ctrl_gt u_alpha, ctrl_gt u_beta, ctrl_gt i_alpha, ctrl_gt i_beta)
+GMP_STATIC_INLINE void ctl_input_pmsm_smo(pmsm_smo_t* smo, ctrl_gt u_alpha, ctrl_gt u_beta, ctrl_gt i_alpha,
+                                          ctrl_gt i_beta)
 {
     smo->i_alpha = i_alpha;
     smo->i_beta = i_beta;
@@ -172,8 +172,7 @@ void ctl_input_pmsm_smo(pmsm_smo_t *smo, ctrl_gt u_alpha, ctrl_gt u_beta, ctrl_g
     smo->u_beta = u_beta;
 }
 
-GMP_STATIC_INLINE
-void ctl_clear_pmsm_smo(pmsm_smo_t *smo)
+GMP_STATIC_INLINE void ctl_clear_pmsm_smo(pmsm_smo_t* smo)
 {
     smo->e_alpha_est = 0;
     smo->e_beta_est = 0;
@@ -198,16 +197,14 @@ void ctl_clear_pmsm_smo(pmsm_smo_t *smo)
     ctl_clear_lowpass_filter(&smo->filter_spd);
 }
 
-    GMP_STATIC_INLINE
-    ctrl_gt ctl_step_pmsm_smo(pmsm_smo_t *smo)
-    {
-        // PMSM Model
-        ctrl_gt delta_i_alpha = ctl_mul(smo->k1, smo->u_alpha - smo->z_alpha) -
-                                ctl_mul(smo->k2, smo->i_alpha_est) -
-                                ctl_mul(ctl_mul(smo->wr, smo->k3), smo->i_beta_est);
+GMP_STATIC_INLINE ctrl_gt ctl_step_pmsm_smo(pmsm_smo_t* smo)
+{
+    // PMSM Model
+    ctrl_gt delta_i_alpha = ctl_mul(smo->k1, smo->u_alpha - smo->z_alpha) - ctl_mul(smo->k2, smo->i_alpha_est) -
+                            ctl_mul(ctl_mul(smo->wr, smo->k3), smo->i_beta_est);
 
-        ctrl_gt delta_i_beta = ctl_mul(smo->k1, smo->u_beta - smo->z_beta) -
-                               ctl_mul(smo->k2, smo->i_beta_est) + ctl_mul(ctl_mul(smo->wr, smo->k3), smo->i_alpha_est);
+    ctrl_gt delta_i_beta = ctl_mul(smo->k1, smo->u_beta - smo->z_beta) - ctl_mul(smo->k2, smo->i_beta_est) +
+                           ctl_mul(ctl_mul(smo->wr, smo->k3), smo->i_alpha_est);
 
     // Step i est
     smo->i_alpha_est += delta_i_alpha;
@@ -235,7 +232,7 @@ void ctl_clear_pmsm_smo(pmsm_smo_t *smo)
     smo->wr = ctl_step_lowpass_filter(&smo->filter_spd, smo->pid_pll.out);
 
     // 4. update theta
-    smo->theta_est += ctl_mul(smo->wr, GMP_CONST_1_OVER_2PI);
+    smo->theta_est += ctl_mul(smo->wr, CTL_CTRL_CONST_1_OVER_2PI);
     smo->theta_est = ctrl_mod_1(smo->theta_est);
 
     // 5. update speed
@@ -243,8 +240,8 @@ void ctl_clear_pmsm_smo(pmsm_smo_t *smo)
 
     // 6. output phase, and phase compensate
     smo->encif.elec_position =
-        smo->theta_est +
-        ctl_mul(ctl_atan2(ctl_mul(smo->spdif.speed, smo->theta_compensate), GMP_CONST_1), GMP_CONST_1_OVER_2PI);
+        smo->theta_est + ctl_mul(ctl_atan2(ctl_mul(smo->spdif.speed, smo->theta_compensate), CTL_CTRL_CONST_1),
+                                 CTL_CTRL_CONST_1_OVER_2PI);
     smo->encif.elec_position = ctrl_mod_1(smo->encif.elec_position);
 
     return smo->encif.elec_position;

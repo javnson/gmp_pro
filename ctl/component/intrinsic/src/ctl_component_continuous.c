@@ -193,7 +193,7 @@ void ctl_init_sogi_controller(
     parameter_gt freq_ctrl)
 {
     sogi->k_damp = float2ctrl(2 * freq_c / freq_r);
-    sogi->k_r = float2ctrl(2 * PI * freq_r / freq_ctrl);
+    sogi->k_r = float2ctrl(CTL_PARAM_CONST_2PI * freq_r / freq_ctrl);
     sogi->gain = float2ctrl(gain);
 
     sogi->integrate_reference = 0;
@@ -214,7 +214,7 @@ void ctl_init_sogi_controller_with_damp(
     parameter_gt freq_ctrl)
 {
     sogi->k_damp = float2ctrl(damp);
-    sogi->k_r = float2ctrl(2 * PI * freq_r / freq_ctrl);
+    sogi->k_r = float2ctrl(CTL_PARAM_CONST_2PI * freq_r / freq_ctrl);
     sogi->gain = float2ctrl(gain);
 
     sogi->integrate_reference = 0;
@@ -231,10 +231,10 @@ void ctl_init_s_function(ctl_s_function_t* obj, parameter_gt gain, parameter_gt 
                          parameter_gt f_p1, parameter_gt f_p2, parameter_gt fs)
 {
     // Convert frequencies (Hz) to angular frequencies (rad/s)
-    parameter_gt wz1 = 2.0f * PI * f_z1;
-    parameter_gt wz2 = 2.0f * PI * f_z2;
-    parameter_gt wp1 = 2.0f * PI * f_p1;
-    parameter_gt wp2 = 2.0f * PI * f_p2;
+    parameter_gt wz1 = CTL_PARAM_CONST_2PI * f_z1;
+    parameter_gt wz2 = CTL_PARAM_CONST_2PI * f_z2;
+    parameter_gt wp1 = CTL_PARAM_CONST_2PI * f_p1;
+    parameter_gt wp2 = CTL_PARAM_CONST_2PI * f_p2;
 
     // From H(s) = K * [(s/wz1+1)(s/wz2+1)] / [(s/wp1+1)(s/wp2+1)],
     // we get the polynomial form H(s) = K * (B2*s^2 + B1*s + B0) / (A2*s^2 + A1*s + A0)
