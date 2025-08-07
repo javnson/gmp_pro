@@ -12,13 +12,7 @@
 #include <vector>
 // #include <gmp_math.h>
 
-#define GMP_PORT_CTRL_T float
-typedef GMP_PORT_CTRL_T ctrl_gt;
 
-// This area to define all infos, warnings or errors.
-#define GMP_EC_OK            ((0x00000000))
-#define GMP_EC_GENERAL_WARN  ((GMP_EC_WARN_BEGIN + 1))
-#define GMP_EC_GENERAL_ERROR ((GMP_EC_ERRO_BEGIN + 1))
 
 // typedef struct _tag_RLS
 // {

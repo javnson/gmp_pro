@@ -37,17 +37,6 @@ extern "C"
 // Type Defines & Enums
 //================================================================================
 
-#ifndef GMP_STATIC_INLINE
-#define GMP_STATIC_INLINE static inline
-#endif
-
-// Define the standard control data type if not already defined
-#ifndef CTRL_GT_DEFINED
-#define CTRL_GT_DEFINED
-typedef float ctrl_gt;
-typedef float parameter_gt;
-#endif
-
 /**
  * @brief Defines the operating modes for the current distributor.
  */

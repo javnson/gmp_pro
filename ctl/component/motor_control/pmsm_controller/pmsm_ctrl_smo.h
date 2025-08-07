@@ -21,7 +21,7 @@
 #include <ctl/component/interface/interface_base.h>
 #include <ctl/component/motor_control/basic/motor_universal_interface.h>
 #include <ctl/component/motor_control/basic/vf_generator.h>
-#include <ctl/component/motor_control/observer/pmsm_smo.h>
+#include <ctl/component/motor_control/observer/pmsm.smo.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
@@ -138,7 +138,7 @@ typedef struct _tag_pmsm_smo_bare_controller
     fast_gt flag_enable_smo;           ///< Flag to enable the SMO calculations.
     fast_gt flag_switch_cplt;          ///< Flag indicating the switch from open-loop to SMO is complete.
 
-} pmsm_smo_bare_controller_t;
+} pmsm_smo_controller_t;
 
 /**
  * @brief Initialization parameters for the PMSM SMO Controller.
@@ -183,7 +183,7 @@ typedef struct _tag_pmsm_smo_bare_controller_init
     parameter_gt ramp_target_freq;       ///< Target frequency for open-loop startup (Hz).
     parameter_gt ramp_target_freq_slope; ///< Ramp-up rate for open-loop startup (Hz/s).
 
-} pmsm_smo_bare_controller_init_t;
+} pmsm_smo_controller_init_t;
 
 //================================================================================
 // Function Prototypes
@@ -194,14 +194,14 @@ typedef struct _tag_pmsm_smo_bare_controller_init
  * @param[out] ctrl Pointer to the controller structure to initialize.
  * @param[in]  init Pointer to the structure containing initialization parameters.
  */
-void ctl_init_pmsm_smo_bare_controller(pmsm_smo_bare_controller_t* ctrl, pmsm_smo_bare_controller_init_t* init);
+void ctl_init_pmsm_smo_bare_controller(pmsm_smo_controller_t* ctrl, pmsm_smo_controller_init_t* init);
 
 /**
  * @brief Attaches the controller to a three-phase PWM output interface.
  * @param[out] ctrl    Pointer to the controller structure.
  * @param[in]  pwm_out Pointer to the PWM interface to attach.
  */
-void ctl_attach_pmsm_smo_bare_output(pmsm_smo_bare_controller_t* ctrl, tri_pwm_ift* pwm_out);
+void ctl_attach_pmsm_smo_bare_output(pmsm_smo_controller_t* ctrl, tri_pwm_ift* pwm_out);
 
 /**
  * @brief Resets the controller and SMO to their initial states for startup.
@@ -210,7 +210,7 @@ void ctl_attach_pmsm_smo_bare_output(pmsm_smo_bare_controller_t* ctrl, tri_pwm_i
  * open-loop angle for the next startup sequence.
  * @param[out] ctrl Pointer to the controller structure to clear.
  */
-GMP_STATIC_INLINE void ctl_clear_pmsm_smo_ctrl(pmsm_smo_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_clear_pmsm_smo_ctrl(pmsm_smo_controller_t* ctrl)
 {
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
     ctl_clear_discrete_pid(&ctrl->current_ctrl[phase_d]);
@@ -235,7 +235,7 @@ GMP_STATIC_INLINE void ctl_clear_pmsm_smo_ctrl(pmsm_smo_bare_controller_t* ctrl)
  * the FOC loops, and the SMO observer calculations in each step.
  * @param[out] ctrl Pointer to the controller structure.
  */
-GMP_STATIC_INLINE void ctl_step_pmsm_smo_ctrl(pmsm_smo_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_step_pmsm_smo_ctrl(pmsm_smo_controller_t* ctrl)
 {
     ctl_vector2_t phasor;
     ctrl_gt etheta;
@@ -257,9 +257,8 @@ GMP_STATIC_INLINE void ctl_step_pmsm_smo_ctrl(pmsm_smo_bare_controller_t* ctrl)
     // Note: Ramp generator and SMO are run unconditionally.
     // The active angle source is managed by ctl_attach_mtr_position.
     ctl_step_slope_f(&ctrl->ramp_gen); // Open-loop ramp for startup
-    ctl_input_pmsm_smo(&ctrl->smo, ctrl->vab0_set.dat[phase_alpha], ctrl->vab0_set.dat[phase_beta],
-                       ctrl->iab0.dat[phase_alpha], ctrl->iab0.dat[phase_beta]);
-    ctl_step_pmsm_smo(&ctrl->smo); // SMO for sensorless estimation
+    ctl_step_pmsm_smo(&ctrl->smo, ctrl->vab0_set.dat[phase_alpha], ctrl->vab0_set.dat[phase_beta],
+                      ctrl->iab0.dat[phase_alpha], ctrl->iab0.dat[phase_beta]); // SMO for sensorless estimation
 
     // --- FOC Transformations ---
     // Clark Transformation
@@ -363,25 +362,34 @@ GMP_STATIC_INLINE void ctl_step_pmsm_smo_ctrl(pmsm_smo_bare_controller_t* ctrl)
 //--------------------------------------------------------------------------
 
 /** @brief Enables the entire PMSM controller. */
-GMP_STATIC_INLINE void ctl_enable_pmsm_smo_ctrl(pmsm_smo_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_enable_pmsm_smo_ctrl(pmsm_smo_controller_t* ctrl)
 {
     ctrl->flag_enable_controller = 1;
 }
 
 /** @brief Disables the entire PMSM controller. */
-GMP_STATIC_INLINE void ctl_disable_pmsm_smo_ctrl(pmsm_smo_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_disable_pmsm_smo_ctrl(pmsm_smo_controller_t* ctrl)
 {
     ctrl->flag_enable_controller = 0;
 }
 
 /** @brief Enables the SMO observer calculations. */
-GMP_STATIC_INLINE void ctl_enable_pmsm_smo(pmsm_smo_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_enable_pmsm_smo(pmsm_smo_controller_t* ctrl)
 {
     ctrl->flag_enable_smo = 1;
 }
 
+/** @brief Sets the controller to V¦Á¦Â (voltage) mode. */
+GMP_STATIC_INLINE void ctl_pmsm_smo_ctrl_valphabeta_mode(pmsm_smo_controller_t* ctrl)
+{
+    ctrl->flag_enable_output = 1;
+    ctrl->flag_enable_modulation = 0;
+    ctrl->flag_enable_current_ctrl = 0;
+    ctrl->flag_enable_velocity_ctrl = 0;
+}
+
 /** @brief Sets the controller to Vdq (voltage) mode. */
-GMP_STATIC_INLINE void ctl_pmsm_smo_ctrl_voltage_mode(pmsm_smo_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_pmsm_smo_ctrl_voltage_mode(pmsm_smo_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
     ctrl->flag_enable_modulation = 1;
@@ -390,14 +398,14 @@ GMP_STATIC_INLINE void ctl_pmsm_smo_ctrl_voltage_mode(pmsm_smo_bare_controller_t
 }
 
 /** @brief Sets the d-q voltage feedforward (or reference) values. */
-GMP_STATIC_INLINE void ctl_set_pmsm_smo_ctrl_vdq_ff(pmsm_smo_bare_controller_t* ctrl, ctrl_gt vd, ctrl_gt vq)
+GMP_STATIC_INLINE void ctl_set_pmsm_smo_ctrl_vdq_ff(pmsm_smo_controller_t* ctrl, ctrl_gt vd, ctrl_gt vq)
 {
     ctrl->vdq_ff.dat[phase_d] = vd;
     ctrl->vdq_ff.dat[phase_q] = vq;
 }
 
 /** @brief Sets the controller to Idq (current) mode. */
-GMP_STATIC_INLINE void ctl_pmsm_smo_ctrl_current_mode(pmsm_smo_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_pmsm_smo_ctrl_current_mode(pmsm_smo_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
     ctrl->flag_enable_modulation = 1;
@@ -406,14 +414,14 @@ GMP_STATIC_INLINE void ctl_pmsm_smo_ctrl_current_mode(pmsm_smo_bare_controller_t
 }
 
 /** @brief Sets the d-q current feedforward (or reference) values. */
-GMP_STATIC_INLINE void ctl_set_pmsm_smo_ctrl_idq_ff(pmsm_smo_bare_controller_t* ctrl, ctrl_gt id, ctrl_gt iq)
+GMP_STATIC_INLINE void ctl_set_pmsm_smo_ctrl_idq_ff(pmsm_smo_controller_t* ctrl, ctrl_gt id, ctrl_gt iq)
 {
     ctrl->idq_ff.dat[phase_d] = id;
     ctrl->idq_ff.dat[phase_q] = iq;
 }
 
 /** @brief Sets the controller to velocity mode. */
-GMP_STATIC_INLINE void ctl_pmsm_smo_ctrl_velocity_mode(pmsm_smo_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_pmsm_smo_ctrl_velocity_mode(pmsm_smo_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
     ctrl->flag_enable_modulation = 1;
@@ -422,7 +430,7 @@ GMP_STATIC_INLINE void ctl_pmsm_smo_ctrl_velocity_mode(pmsm_smo_bare_controller_
 }
 
 /** @brief Sets the target speed for the velocity controller. */
-GMP_STATIC_INLINE void ctl_set_pmsm_smo_ctrl_speed(pmsm_smo_bare_controller_t* ctrl, ctrl_gt spd)
+GMP_STATIC_INLINE void ctl_set_pmsm_smo_ctrl_speed(pmsm_smo_controller_t* ctrl, ctrl_gt spd)
 {
     ctrl->speed_set = spd;
 }
@@ -440,7 +448,7 @@ GMP_STATIC_INLINE void ctl_set_pmsm_smo_ctrl_speed(pmsm_smo_bare_controller_t* c
  * the moment of switching, preventing torque jolts.
  * @param[out] ctrl Pointer to the controller structure.
  */
-GMP_STATIC_INLINE void ctl_switch_pmsm_smo_ctrl_using_smo(pmsm_smo_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_switch_pmsm_smo_ctrl_using_smo(pmsm_smo_controller_t* ctrl)
 {
     if ((ctrl->flag_enable_smo) && (!ctrl->flag_switch_cplt))
     {
@@ -470,7 +478,7 @@ GMP_STATIC_INLINE void ctl_switch_pmsm_smo_ctrl_using_smo(pmsm_smo_bare_controll
         ctrl->spd_ctrl.pid.output_1 = idq0_at_switch.dat[phase_q];
         ctrl->current_ctrl[phase_d].output_1 = udq0_at_switch.dat[phase_d];
         ctrl->current_ctrl[phase_q].output_1 = udq0_at_switch.dat[phase_q];
-#else  // using continuous controller                                                                                  \
+#else // using continuous controller                                                                                  \
        // Pre-load the integrator and output of the PID controllers
         ctl_set_pid_integrator(&ctrl->spd_ctrl.pid, idq0_at_switch.dat[phase_q]);
         ctl_set_pid_integrator(&ctrl->current_ctrl[phase_d], udq0_at_switch.dat[phase_d]);

@@ -92,11 +92,12 @@ typedef struct _tag_pmsm_smo
     velocity_ift spdif; ///< Standard velocity interface providing estimated speed.
 
     // --- Internal State Variables ---
-    ctl_vector2_t i_est; ///< Estimated stator current vector [i_alpha_est, i_beta_est]^T.
-    ctl_vector2_t e_est; ///< Estimated back-EMF vector [e_alpha_est, e_beta_est]^T.
-    ctl_vector2_t z;     ///< Sliding control law output vector [z_alpha, z_beta]^T.
-    ctrl_gt wr_est;      ///< Estimated electrical speed from the PLL (rad/tick).
-    ctrl_gt theta_est;   ///< Estimated electrical angle (p.u., 0 to 1.0).
+    ctl_vector2_t i_est;  ///< Estimated stator current vector [i_alpha_est, i_beta_est]^T.
+    ctl_vector2_t e_est;  ///< Estimated back-EMF vector [e_alpha_est, e_beta_est]^T.
+    ctl_vector2_t z;      ///< Sliding control law output vector [z_alpha, z_beta]^T.
+    ctrl_gt wr_est;       ///< Estimated electrical speed from the PLL (rad/tick).
+    ctrl_gt theta_est;    ///< Estimated electrical angle (p.u., 0 to 1.0).
+    ctl_vector2_t phasor; ///< Estimated phasor (sin, cos).
 
     // --- Controller Entities ---
     ctl_low_pass_filter_t filter_e[2]; ///< LPFs for back-EMF components (alpha, beta).
@@ -165,9 +166,8 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_pmsm_smo(pmsm_smo_t* smo, ctrl_gt u_alpha, ct
 
     // 4. Process the back-EMF through the PLL to track angle and speed.
     // 4a. Generate the PLL error signal (estimated q-axis component of back-EMF).
-    ctl_vector2_t phasor;
-    ctl_set_phasor_via_angle(smo->theta_est, &phasor);
-    ctrl_gt e_error = -ctl_mul(smo->e_est.dat[0], phasor.dat[1]) + ctl_mul(smo->e_est.dat[1], phasor.dat[0]);
+    ctl_set_phasor_via_angle(smo->theta_est, &smo->phasor);
+    ctrl_gt e_error = -ctl_mul(smo->e_est.dat[0], smo->phasor.dat[1]) + ctl_mul(smo->e_est.dat[1], smo->phasor.dat[0]);
 
     // 4b. PI controller generates the estimated speed command.
     ctrl_gt pid_out = ctl_step_pid_par(&smo->pid_pll, e_error);

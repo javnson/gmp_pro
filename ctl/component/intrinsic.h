@@ -203,6 +203,13 @@
  */
 #include <ctl/component/intrinsic/advance/fuzzy_pid.h>
 
+/**
+ * @defgroup repetitive_controller Repetitive Controller (RC)
+ * @ingroup CTL_INTRINSIC_ADVANCE
+ * @brief An internal model-based controller for eliminating periodic errors.
+ */
+#include <ctl/component/intrinsic/advance/repetitive_controller.h>
+
 //
 // ----------------- Protection Components -----------------
 //

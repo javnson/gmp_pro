@@ -150,110 +150,110 @@ void ctl_init_pmsm_dsn_consultant(ctl_pmsm_dsn_consultant_t* pmsm_dsn)
     pmsm_dsn->damp = 0;
 }
 
-void ctl_import_pmsm_dsn_default_param(ctl_pmsm_dsn_consultant_t* pmsm_dsn)
-{
-    pmsm_dsn->pole_pair = MOTOR_DSN_POLE_PAIR;
-
-    pmsm_dsn->Rs = (parameter_gt)MOTOR_DSN_STATOR_RES;
-
-    pmsm_dsn->Ld = (parameter_gt)MOTOR_DSN_LD;
-
-    pmsm_dsn->Lq = (parameter_gt)MOTOR_DSN_LQ;
-
-    pmsm_dsn->flux = (parameter_gt)MOTOR_DSN_FLUX_WB;
-
-    pmsm_dsn->inertia = (parameter_gt)MOTOR_DSN_INERTIA;
-
-    pmsm_dsn->damp = (parameter_gt)MOTOR_DSN_DAMP;
-}
-
-void ctl_setup_pmsm_dsn_consultant(ctl_pmsm_dsn_consultant_t* pmsm_dsn, uint16_t pole_pair, parameter_gt Rs,
-                                   parameter_gt Ld, parameter_gt Lq, parameter_gt flux, parameter_gt inertia,
-                                   parameter_gt damp)
-{
-    pmsm_dsn->pole_pair = pole_pair;
-
-    pmsm_dsn->Rs = Rs;
-
-    pmsm_dsn->Ld = Ld;
-
-    pmsm_dsn->Lq = Lq;
-
-    pmsm_dsn->flux = flux;
-
-    pmsm_dsn->inertia = inertia;
-
-    pmsm_dsn->damp = damp;
-}
-
-void ctl_dsn_pmsm_Rs_via_RsLL(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt Rll)
-{
-    pmsm_dsn->Rs = Rll / 2;
-}
-
-void ctl_dsn_pmsm_Ls_via_Lsll(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt Lll)
-{
-    pmsm_dsn->Ld = Lll / 2;
-    pmsm_dsn->Lq = Lll / 2;
-}
-
-void ctl_dsn_pmsm_load(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt inertia, parameter_gt damp)
-{
-    pmsm_dsn->inertia = inertia;
-    pmsm_dsn->damp = damp;
-}
-
-parameter_gt ctl_consult_pmsm_flux_Wb(ctl_pmsm_dsn_consultant_t* pmsm_dsn)
-{
-    return pmsm_dsn->flux;
-}
-
-parameter_gt ctl_consult_pmsm_Ke(ctl_pmsm_dsn_consultant_t* pmsm_dsn)
-{
-    return pmsm_dsn->flux * (parameter_gt)CTL_CONST_PARAM_2_SQRT_6;
-}
-
-parameter_gt ctl_consult_pmsm_Ke_Vp_krpm(ctl_pmsm_dsn_consultant_t* pmsm_dsn)
-{
-    return pmsm_dsn->flux * (parameter_gt)CTL_CONST_PARAM_2_SQRT_6 * (parameter_gt)CTL_CONST_PARAM_100PI_OVER_3 *
-           (parameter_gt)CTL_CONST_PARAM_SQRT2;
-}
-
-parameter_gt ctl_consult_pmsm_Ke_Vrms_krpm(ctl_pmsm_dsn_consultant_t* pmsm_dsn)
-{
-    return pmsm_dsn->flux * (parameter_gt)CTL_CONST_PARAM_2_SQRT_6 * (parameter_gt)CTL_CONST_PARAM_100PI_OVER_3;
-}
-
-parameter_gt ctl_consult_pmsm_Kt(ctl_pmsm_dsn_consultant_t* pmsm_dsn)
-{
-    return pmsm_dsn->flux * (parameter_gt)CTL_CONST_PARAM_3_OVER_2 * pmsm_dsn->pole_pair;
-}
-
-void ctl_set_pmsm_flux_Wb(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt flux)
-{
-    pmsm_dsn->flux = flux;
-}
-
-void ctl_dsn_pmsm_flux_via_Ke(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt Ke)
-{
-    pmsm_dsn->flux = Ke / (parameter_gt)CTL_CONST_PARAM_2_SQRT_6;
-}
-
-void ctl_dsn_pmsm_flux_via_Ke_Vp_krpm(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt Ke)
-{
-    pmsm_dsn->flux = Ke / (parameter_gt)CTL_CONST_PARAM_2_SQRT_6 /
-                     ((parameter_gt)CTL_CONST_PARAM_100PI_OVER_3 * (parameter_gt)CTL_CONST_PARAM_SQRT2);
-}
-
-void ctl_dsn_pmsm_flux_via_Ke_Vrms_krpm(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt Ke)
-{
-    pmsm_dsn->flux = Ke / (parameter_gt)CTL_CONST_PARAM_2_SQRT_6 / (parameter_gt)CTL_CONST_PARAM_100PI_OVER_3;
-}
-
-void ctl_dsn_pmsm_pmsm_flux_via_Kt(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt Kt)
-{
-    pmsm_dsn->flux = Kt / ((parameter_gt)CTL_CONST_PARAM_3_OVER_2 * pmsm_dsn->pole_pair);
-}
+//void ctl_import_pmsm_dsn_default_param(ctl_pmsm_dsn_consultant_t* pmsm_dsn)
+//{
+//    pmsm_dsn->pole_pair = MOTOR_DSN_POLE_PAIR;
+//
+//    pmsm_dsn->Rs = (parameter_gt)MOTOR_DSN_STATOR_RES;
+//
+//    pmsm_dsn->Ld = (parameter_gt)MOTOR_DSN_LD;
+//
+//    pmsm_dsn->Lq = (parameter_gt)MOTOR_DSN_LQ;
+//
+//    pmsm_dsn->flux = (parameter_gt)MOTOR_DSN_FLUX_WB;
+//
+//    pmsm_dsn->inertia = (parameter_gt)MOTOR_DSN_INERTIA;
+//
+//    pmsm_dsn->damp = (parameter_gt)MOTOR_DSN_DAMP;
+//}
+//
+//void ctl_setup_pmsm_dsn_consultant(ctl_pmsm_dsn_consultant_t* pmsm_dsn, uint16_t pole_pair, parameter_gt Rs,
+//                                   parameter_gt Ld, parameter_gt Lq, parameter_gt flux, parameter_gt inertia,
+//                                   parameter_gt damp)
+//{
+//    pmsm_dsn->pole_pair = pole_pair;
+//
+//    pmsm_dsn->Rs = Rs;
+//
+//    pmsm_dsn->Ld = Ld;
+//
+//    pmsm_dsn->Lq = Lq;
+//
+//    pmsm_dsn->flux = flux;
+//
+//    pmsm_dsn->inertia = inertia;
+//
+//    pmsm_dsn->damp = damp;
+//}
+//
+//void ctl_dsn_pmsm_Rs_via_RsLL(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt Rll)
+//{
+//    pmsm_dsn->Rs = Rll / 2;
+//}
+//
+//void ctl_dsn_pmsm_Ls_via_Lsll(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt Lll)
+//{
+//    pmsm_dsn->Ld = Lll / 2;
+//    pmsm_dsn->Lq = Lll / 2;
+//}
+//
+//void ctl_dsn_pmsm_load(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt inertia, parameter_gt damp)
+//{
+//    pmsm_dsn->inertia = inertia;
+//    pmsm_dsn->damp = damp;
+//}
+//
+//parameter_gt ctl_consult_pmsm_flux_Wb(ctl_pmsm_dsn_consultant_t* pmsm_dsn)
+//{
+//    return pmsm_dsn->flux;
+//}
+//
+//parameter_gt ctl_consult_pmsm_Ke(ctl_pmsm_dsn_consultant_t* pmsm_dsn)
+//{
+//    return pmsm_dsn->flux * (parameter_gt)CTL_CONST_PARAM_2_SQRT_6;
+//}
+//
+//parameter_gt ctl_consult_pmsm_Ke_Vp_krpm(ctl_pmsm_dsn_consultant_t* pmsm_dsn)
+//{
+//    return pmsm_dsn->flux * (parameter_gt)CTL_CONST_PARAM_2_SQRT_6 * (parameter_gt)CTL_CONST_PARAM_100PI_OVER_3 *
+//           (parameter_gt)CTL_CONST_PARAM_SQRT2;
+//}
+//
+//parameter_gt ctl_consult_pmsm_Ke_Vrms_krpm(ctl_pmsm_dsn_consultant_t* pmsm_dsn)
+//{
+//    return pmsm_dsn->flux * (parameter_gt)CTL_CONST_PARAM_2_SQRT_6 * (parameter_gt)CTL_CONST_PARAM_100PI_OVER_3;
+//}
+//
+//parameter_gt ctl_consult_pmsm_Kt(ctl_pmsm_dsn_consultant_t* pmsm_dsn)
+//{
+//    return pmsm_dsn->flux * (parameter_gt)CTL_CONST_PARAM_3_OVER_2 * pmsm_dsn->pole_pair;
+//}
+//
+//void ctl_set_pmsm_flux_Wb(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt flux)
+//{
+//    pmsm_dsn->flux = flux;
+//}
+//
+//void ctl_dsn_pmsm_flux_via_Ke(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt Ke)
+//{
+//    pmsm_dsn->flux = Ke / (parameter_gt)CTL_CONST_PARAM_2_SQRT_6;
+//}
+//
+//void ctl_dsn_pmsm_flux_via_Ke_Vp_krpm(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt Ke)
+//{
+//    pmsm_dsn->flux = Ke / (parameter_gt)CTL_CONST_PARAM_2_SQRT_6 /
+//                     ((parameter_gt)CTL_CONST_PARAM_100PI_OVER_3 * (parameter_gt)CTL_CONST_PARAM_SQRT2);
+//}
+//
+//void ctl_dsn_pmsm_flux_via_Ke_Vrms_krpm(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt Ke)
+//{
+//    pmsm_dsn->flux = Ke / (parameter_gt)CTL_CONST_PARAM_2_SQRT_6 / (parameter_gt)CTL_CONST_PARAM_100PI_OVER_3;
+//}
+//
+//void ctl_dsn_pmsm_pmsm_flux_via_Kt(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt Kt)
+//{
+//    pmsm_dsn->flux = Kt / ((parameter_gt)CTL_CONST_PARAM_3_OVER_2 * pmsm_dsn->pole_pair);
+//}
 
 //////////////////////////////////////////////////////////////////////////
 // const f module

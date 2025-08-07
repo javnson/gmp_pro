@@ -96,7 +96,7 @@ enum PHASOR_ENUM
  * @param[in] angle The input angle in per-unit (0 to 1 represents 0 to 2pi).
  * @param[out] phasor Pointer to the output 2D vector to store the phasor.
  */
-GMP_STATIC_INLINE void ctl_set_phasor_via_angle(ctrl_gt angle, GMP_CTL_OUTPUT_TAG ctl_vector2_t* phasor)
+GMP_STATIC_INLINE void ctl_set_phasor_via_angle(const ctrl_gt angle, GMP_CTL_OUTPUT_TAG ctl_vector2_t* phasor)
 {
     phasor->dat[phasor_sin] = ctl_sin(angle);
     phasor->dat[phasor_cos] = ctl_cos(angle);
@@ -110,7 +110,7 @@ GMP_STATIC_INLINE void ctl_set_phasor_via_angle(ctrl_gt angle, GMP_CTL_OUTPUT_TA
  * @param[in] abc Pointer to the input 3-phase vector.
  * @param[out] ab Pointer to the output alpha-beta-0 vector.
  */
-GMP_STATIC_INLINE void ctl_ct_clarke(ctl_vector3_t* abc, GMP_CTL_OUTPUT_TAG ctl_vector3_t* ab)
+GMP_STATIC_INLINE void ctl_ct_clarke(const ctl_vector3_t* abc, GMP_CTL_OUTPUT_TAG ctl_vector3_t* ab)
 {
     ab->dat[phase_alpha] =
         ctl_mul(CTL_CTRL_CONST_ABC2AB_ALPHA, abc->dat[phase_A] - ctl_div2(abc->dat[phase_B] + abc->dat[phase_C]));
@@ -125,7 +125,7 @@ GMP_STATIC_INLINE void ctl_ct_clarke(ctl_vector3_t* abc, GMP_CTL_OUTPUT_TAG ctl_
  * @param[in] ab0 Pointer to the input vector containing phase A and B currents.
  * @param[out] ab Pointer to the output alpha-beta vector.
  */
-GMP_STATIC_INLINE void ctl_ct_clarke_2ph(ctl_vector2_t* ab0, GMP_CTL_OUTPUT_TAG ctl_vector2_t* ab)
+GMP_STATIC_INLINE void ctl_ct_clarke_2ph(const ctl_vector2_t* ab0, GMP_CTL_OUTPUT_TAG ctl_vector2_t* ab)
 {
     ab->dat[phase_alpha] = ab0->dat[phase_A];
     ab->dat[phase_beta] = ctl_mul(CTL_CTRL_CONST_ABC2AB_BETA, (ab0->dat[phase_A] + ctl_mul2(ab0->dat[phase_B])));
@@ -138,9 +138,10 @@ GMP_STATIC_INLINE void ctl_ct_clarke_2ph(ctl_vector2_t* ab0, GMP_CTL_OUTPUT_TAG 
  * @param[in] u_line Pointer to the input vector containing line voltages Uab and Ubc.
  * @param[out] ab Pointer to the output alpha-beta vector.
  */
-GMP_STATIC_INLINE void ctl_ct_clarke_from_line(ctl_vector2_t* u_line, GMP_CTL_OUTPUT_TAG ctl_vector2_t* ab)
+GMP_STATIC_INLINE void ctl_ct_clarke_from_line(const ctl_vector2_t* u_line, GMP_CTL_OUTPUT_TAG ctl_vector2_t* ab)
 {
-    ab->dat[phase_alpha] = ctl_mul(CTL_CTRL_CONST_ABC2AB_GAMMA, ctl_mul2(u_line->dat[phase_UAB]) + u_line->dat[phase_UBC]);
+    ab->dat[phase_alpha] =
+        ctl_mul(CTL_CTRL_CONST_ABC2AB_GAMMA, ctl_mul2(u_line->dat[phase_UAB]) + u_line->dat[phase_UBC]);
     ab->dat[phase_beta] = ctl_mul(CTL_CTRL_CONST_ABC2AB_BETA, u_line->dat[phase_UBC]);
 }
 
@@ -153,7 +154,8 @@ GMP_STATIC_INLINE void ctl_ct_clarke_from_line(ctl_vector2_t* u_line, GMP_CTL_OU
  * @param[in] phasor Pointer to the phasor vector (sin, cos of the angle).
  * @param[out] dq0 Pointer to the output dq0 vector.
  */
-GMP_STATIC_INLINE void ctl_ct_park(ctl_vector3_t* ab, ctl_vector2_t* phasor, GMP_CTL_OUTPUT_TAG ctl_vector3_t* dq0)
+GMP_STATIC_INLINE void ctl_ct_park(const ctl_vector3_t* ab, const ctl_vector2_t* phasor,
+                                   GMP_CTL_OUTPUT_TAG ctl_vector3_t* dq0)
 {
     dq0->dat[phase_d] =
         ctl_mul(ab->dat[phase_alpha], phasor->dat[phasor_cos]) + ctl_mul(ab->dat[phase_beta], phasor->dat[phasor_sin]);
@@ -168,7 +170,8 @@ GMP_STATIC_INLINE void ctl_ct_park(ctl_vector3_t* ab, ctl_vector2_t* phasor, GMP
  * @param[in] phasor Pointer to the phasor vector (sin, cos of the angle).
  * @param[out] dq Pointer to the output dq vector.
  */
-GMP_STATIC_INLINE void ctl_ct_park2(ctl_vector2_t* ab, ctl_vector2_t* phasor, GMP_CTL_OUTPUT_TAG ctl_vector2_t* dq)
+GMP_STATIC_INLINE void ctl_ct_park2(const ctl_vector2_t* ab, const ctl_vector2_t* phasor,
+                                    GMP_CTL_OUTPUT_TAG ctl_vector2_t* dq)
 {
     dq->dat[phase_d] =
         ctl_mul(ab->dat[phase_alpha], phasor->dat[phasor_cos]) + ctl_mul(ab->dat[phase_beta], phasor->dat[phasor_sin]);
@@ -184,7 +187,7 @@ GMP_STATIC_INLINE void ctl_ct_park2(ctl_vector2_t* ab, ctl_vector2_t* phasor, GM
  * @param[in] phasor Pointer to the phasor vector (sin, cos of the angle).
  * @param[out] dq0_neg Pointer to the output negative sequence dq0 vector.
  */
-GMP_STATIC_INLINE void ctl_ct_park_neg(ctl_vector3_t* ab, ctl_vector2_t* phasor,
+GMP_STATIC_INLINE void ctl_ct_park_neg(const ctl_vector3_t* ab, const ctl_vector2_t* phasor,
                                        GMP_CTL_OUTPUT_TAG ctl_vector3_t* dq0_neg)
 {
     dq0_neg->dat[phase_d] =
@@ -200,7 +203,8 @@ GMP_STATIC_INLINE void ctl_ct_park_neg(ctl_vector3_t* ab, ctl_vector2_t* phasor,
  * @param[in] phasor Pointer to the phasor vector (sin, cos of the angle).
  * @param[out] dq0 Pointer to the output negative sequence dq vector.
  */
-GMP_STATIC_INLINE void ctl_ct_park2_neg(ctl_vector2_t* ab, ctl_vector2_t* phasor, GMP_CTL_OUTPUT_TAG ctl_vector2_t* dq0)
+GMP_STATIC_INLINE void ctl_ct_park2_neg(const ctl_vector2_t* ab, const ctl_vector2_t* phasor,
+                                        GMP_CTL_OUTPUT_TAG ctl_vector2_t* dq0)
 {
     dq0->dat[phase_d] =
         ctl_mul(ab->dat[phase_alpha], phasor->dat[phasor_cos]) - ctl_mul(ab->dat[phase_beta], phasor->dat[phasor_sin]);
@@ -217,7 +221,8 @@ GMP_STATIC_INLINE void ctl_ct_park2_neg(ctl_vector2_t* ab, ctl_vector2_t* phasor
  * @param[in] phasor Pointer to the phasor vector (sin, cos of the angle).
  * @param[out] ab Pointer to the output alpha-beta-0 vector.
  */
-GMP_STATIC_INLINE void ctl_ct_ipark(ctl_vector3_t* dq0, ctl_vector2_t* phasor, GMP_CTL_OUTPUT_TAG ctl_vector3_t* ab)
+GMP_STATIC_INLINE void ctl_ct_ipark(const ctl_vector3_t* dq0, const ctl_vector2_t* phasor,
+                                    GMP_CTL_OUTPUT_TAG ctl_vector3_t* ab)
 {
     ab->dat[phase_alpha] =
         ctl_mul(dq0->dat[phase_d], phasor->dat[phasor_cos]) - ctl_mul(dq0->dat[phase_q], phasor->dat[phasor_sin]);
@@ -232,7 +237,8 @@ GMP_STATIC_INLINE void ctl_ct_ipark(ctl_vector3_t* dq0, ctl_vector2_t* phasor, G
  * @param[in] phasor Pointer to the phasor vector (sin, cos of the angle).
  * @param[out] ab Pointer to the output alpha-beta vector.
  */
-GMP_STATIC_INLINE void ctl_ct_ipark2(ctl_vector2_t* dq, ctl_vector2_t* phasor, GMP_CTL_OUTPUT_TAG ctl_vector2_t* ab)
+GMP_STATIC_INLINE void ctl_ct_ipark2(const ctl_vector2_t* dq, const ctl_vector2_t* phasor,
+                                     GMP_CTL_OUTPUT_TAG ctl_vector2_t* ab)
 {
     ab->dat[phase_alpha] =
         ctl_mul(dq->dat[phase_d], phasor->dat[phasor_cos]) - ctl_mul(dq->dat[phase_q], phasor->dat[phasor_sin]);
@@ -248,7 +254,8 @@ GMP_STATIC_INLINE void ctl_ct_ipark2(ctl_vector2_t* dq, ctl_vector2_t* phasor, G
  * @param[in] phasor Pointer to the phasor vector (sin, cos of the angle).
  * @param[out] ab Pointer to the output alpha-beta-0 vector.
  */
-GMP_STATIC_INLINE void ctl_ct_ipark_neg(ctl_vector3_t* dq0, ctl_vector2_t* phasor, GMP_CTL_OUTPUT_TAG ctl_vector3_t* ab)
+GMP_STATIC_INLINE void ctl_ct_ipark_neg(const ctl_vector3_t* dq0, const ctl_vector2_t* phasor,
+                                        GMP_CTL_OUTPUT_TAG ctl_vector3_t* ab)
 {
     ab->dat[phase_alpha] =
         ctl_mul(dq0->dat[phase_d], phasor->dat[phasor_cos]) + ctl_mul(dq0->dat[phase_q], phasor->dat[phasor_sin]);
@@ -263,7 +270,8 @@ GMP_STATIC_INLINE void ctl_ct_ipark_neg(ctl_vector3_t* dq0, ctl_vector2_t* phaso
  * @param[in] phasor Pointer to the phasor vector (sin, cos of the angle).
  * @param[out] ab Pointer to the output alpha-beta vector.
  */
-GMP_STATIC_INLINE void ctl_ct_ipark2_neg(ctl_vector2_t* dq, ctl_vector2_t* phasor, GMP_CTL_OUTPUT_TAG ctl_vector2_t* ab)
+GMP_STATIC_INLINE void ctl_ct_ipark2_neg(const ctl_vector2_t* dq, const ctl_vector2_t* phasor,
+                                         GMP_CTL_OUTPUT_TAG ctl_vector2_t* ab)
 {
     ab->dat[phase_alpha] =
         ctl_mul(dq->dat[phase_d], phasor->dat[phasor_cos]) + ctl_mul(dq->dat[phase_q], phasor->dat[phasor_sin]);
@@ -279,7 +287,7 @@ GMP_STATIC_INLINE void ctl_ct_ipark2_neg(ctl_vector2_t* dq, ctl_vector2_t* phaso
  * @param[in] ab0 Pointer to the input alpha-beta-0 vector.
  * @param[out] abc Pointer to the output 3-phase vector.
  */
-GMP_STATIC_INLINE void ctl_ct_iclarke(ctl_vector3_t* ab0, GMP_CTL_OUTPUT_TAG ctl_vector3_t* abc)
+GMP_STATIC_INLINE void ctl_ct_iclarke(const ctl_vector3_t* ab0, GMP_CTL_OUTPUT_TAG ctl_vector3_t* abc)
 {
     ctrl_gt neg_half_alpha = -ctl_div2(ab0->dat[phase_alpha]);
     ctrl_gt beta_term = ctl_mul(CTL_CTRL_CONST_AB2ABC_ALPHA, ab0->dat[phase_beta]);
@@ -296,7 +304,7 @@ GMP_STATIC_INLINE void ctl_ct_iclarke(ctl_vector3_t* ab0, GMP_CTL_OUTPUT_TAG ctl
  * @param[in] ab Pointer to the input alpha-beta vector.
  * @param[out] abc Pointer to the output 3-phase vector.
  */
-GMP_STATIC_INLINE void ctl_ct_iclarke2(ctl_vector2_t* ab, GMP_CTL_OUTPUT_TAG ctl_vector3_t* abc)
+GMP_STATIC_INLINE void ctl_ct_iclarke2(const ctl_vector2_t* ab, GMP_CTL_OUTPUT_TAG ctl_vector3_t* abc)
 {
     ctrl_gt neg_half_alpha = -ctl_div2(ab->dat[phase_alpha]);
     ctrl_gt beta_term = ctl_mul(CTL_CTRL_CONST_AB2ABC_ALPHA, ab->dat[phase_beta]);
@@ -312,7 +320,7 @@ GMP_STATIC_INLINE void ctl_ct_iclarke2(ctl_vector2_t* ab, GMP_CTL_OUTPUT_TAG ctl
  * @param[in] ab Pointer to the input alpha-beta vector.
  * @param[out] u_line Pointer to the output vector containing line voltages.
  */
-GMP_STATIC_INLINE void ctl_ct_iclarke_to_line(ctl_vector3_t* ab, GMP_CTL_OUTPUT_TAG ctl_vector2_t* u_line)
+GMP_STATIC_INLINE void ctl_ct_iclarke_to_line(const ctl_vector3_t* ab, GMP_CTL_OUTPUT_TAG ctl_vector2_t* u_line)
 {
     u_line->dat[phase_UAB] = ab->dat[phase_alpha];
     u_line->dat[phase_UBC] = ctl_div2(-ab->dat[phase_alpha] + ctl_mul(CTL_CTRL_CONST_SQRT_3, ab->dat[phase_beta]));
@@ -326,7 +334,7 @@ GMP_STATIC_INLINE void ctl_ct_iclarke_to_line(ctl_vector3_t* ab, GMP_CTL_OUTPUT_
  * @param[in] ab0 Pointer to the input alpha-beta reference voltage vector.
  * @param[out] Tabc Pointer to the output vector containing the SVPWM duty cycles for phases A, B, and C.
  */
-GMP_STATIC_INLINE void ctl_ct_svpwm_calc(ctl_vector3_t* ab0, GMP_CTL_OUTPUT_TAG ctl_vector3_t* Tabc)
+GMP_STATIC_INLINE void ctl_ct_svpwm_calc(const ctl_vector3_t* ab0, GMP_CTL_OUTPUT_TAG ctl_vector3_t* Tabc)
 {
     ctrl_gt Ua, Ub, Uc, Umax, Umin, Ucom;
     ctrl_gt Ualpha_tmp = -ctl_div2(ab0->dat[phase_alpha]);
@@ -334,7 +342,7 @@ GMP_STATIC_INLINE void ctl_ct_svpwm_calc(ctl_vector3_t* ab0, GMP_CTL_OUTPUT_TAG 
 
     Ua = ab0->dat[phase_alpha];
     Ub = Ualpha_tmp + Ubeta_tmp;
-    Uc = Ualpha_tmp - Ubeta_tmp;
+    Uc = Ualpha_tmp - Ubeta_tmp; 
 
     if (Ua > Ub)
     {
@@ -362,7 +370,7 @@ GMP_STATIC_INLINE void ctl_ct_svpwm_calc(ctl_vector3_t* ab0, GMP_CTL_OUTPUT_TAG 
  * @param[in] ab0 Pointer to the input alpha-beta reference voltage vector.
  * @param[out] Tabc Pointer to the output vector containing the SVPWM duty cycles for phases A, B, and C.
  */
-GMP_STATIC_INLINE void ctl_ct_svpwm_calc_theorem(ctl_vector3_t* ab0, GMP_CTL_OUTPUT_TAG ctl_vector3_t* Tabc)
+GMP_STATIC_INLINE void ctl_ct_svpwm_calc_theorem(const ctl_vector3_t* ab0, GMP_CTL_OUTPUT_TAG ctl_vector3_t* Tabc)
 {
     ctrl_gt X, Y, Z, T1, T2, Ta, Tb, Tc;
     uint16_t N;
@@ -374,8 +382,10 @@ GMP_STATIC_INLINE void ctl_ct_svpwm_calc_theorem(ctl_vector3_t* ab0, GMP_CTL_OUT
 
     N = ((Uabc[0] > 0)) + ((Uabc[1] > 0) << 1) + ((Uabc[2] > 0) << 2);
     X = ctl_mul(CTL_CTRL_CONST_SQRT_3, ab0->dat[phase_beta]);
-    Y = ctl_mul(CTL_CTRL_CONST_3_OVER_2, ab0->dat[phase_alpha]) + ctl_mul(CTL_CTRL_CONST_SQRT_3_OVER_2, ab0->dat[phase_beta]);
-    Z = -ctl_mul(CTL_CTRL_CONST_3_OVER_2, ab0->dat[phase_alpha]) + ctl_mul(CTL_CTRL_CONST_SQRT_3_OVER_2, ab0->dat[phase_beta]);
+    Y = ctl_mul(CTL_CTRL_CONST_3_OVER_2, ab0->dat[phase_alpha]) +
+        ctl_mul(CTL_CTRL_CONST_SQRT_3_OVER_2, ab0->dat[phase_beta]);
+    Z = -ctl_mul(CTL_CTRL_CONST_3_OVER_2, ab0->dat[phase_alpha]) +
+        ctl_mul(CTL_CTRL_CONST_SQRT_3_OVER_2, ab0->dat[phase_beta]);
 
     switch (N)
     {

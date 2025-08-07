@@ -122,7 +122,7 @@ typedef struct _tag_pmsm_mtpa_bare_controller
 #endif
 
 #ifdef PMSM_CTRL_USING_CURRENT_DISTRIBUTOR
-    idq_current_distributor_t* distributor; ///< Pointer to the MTPA current distributor module.
+    ctl_current_distributor_t distributor; ///< Pointer to the MTPA current distributor module.
 #endif
 
     //--------------------------------------------------------------------------
@@ -145,6 +145,7 @@ typedef struct _tag_pmsm_mtpa_bare_controller
     int32_t revolution_set; ///< Target position (number of full revolutions).
     ctrl_gt pos_set;        ///< Target position within a single revolution (0.0 to 1.0).
     ctrl_gt speed_set;      ///< Target speed (p.u.).
+    ctrl_gt im_set;         ///< Target magnitude of current (p.u.).
     vector2_gt idq_set;     ///< Target d-q axis currents.
     vector3_gt vdq_set;     ///< Target d-q-zero axis voltages.
     vector3_gt vab0_set;    ///< Target alpha-beta-zero axis voltages.
@@ -214,7 +215,7 @@ void ctl_attach_pmsm_mtpa_bare_output(pmsm_mtpa_controller_t* ctrl, tri_pwm_ift*
  * @param[out] ctrl        Pointer to the controller structure.
  * @param[in]  distributor Pointer to the initialized current distributor module.
  */
-void ctl_attach_idq_distributor(pmsm_mtpa_controller_t* ctrl, idq_current_distributor_t* distributor);
+void ctl_attach_idq_distributor(pmsm_mtpa_controller_t* ctrl, ctl_current_distributor_t* distributor);
 
 /**
  * @brief Resets all internal states and integrators of the PID controllers.
@@ -289,16 +290,16 @@ GMP_STATIC_INLINE void ctl_step_pmsm_mtpa_ctrl(pmsm_mtpa_controller_t* ctrl)
 #if defined(PMSM_CTRL_USING_CURRENT_DISTRIBUTOR)
             // With MTPA, speed controller outputs total current magnitude
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
-            ctrl->distributor->im = ctl_step_discrete_track_pid(&ctrl->spd_ctrl, ctrl->speed_set,
+            ctrl->im_set = ctl_step_discrete_track_pid(&ctrl->spd_ctrl, ctrl->speed_set,
                                                                 ctl_get_mtr_velocity(&ctrl->mtr_interface));
 #else // using continuous controller
-            ctrl->distributor->im = ctl_step_tracking_continuous_pid(&ctrl->spd_ctrl, ctrl->speed_set,
+            ctrl->im_set = ctl_step_tracking_continuous_pid(&ctrl->spd_ctrl, ctrl->speed_set,
                                                                      ctl_get_mtr_velocity(&ctrl->mtr_interface));
 #endif
             // Distributor calculates optimal id and iq
-            ctl_step_idq_current_distributor(ctrl->distributor);
-            ctrl->idq_set.dat[phase_q] = ctrl->distributor->iq + ctrl->idq_ff.dat[phase_q];
-            ctrl->idq_set.dat[phase_d] = ctrl->distributor->id + ctrl->idq_ff.dat[phase_d];
+            ctl_step_current_distributor(&ctrl->distributor,ctrl->im_set);
+            ctrl->idq_set.dat[phase_q] = ctl_get_distributor_iq_ref(&ctrl->distributor) + ctrl->idq_ff.dat[phase_q];
+            ctrl->idq_set.dat[phase_d] = ctl_get_distributor_id_ref(&ctrl->distributor) + ctrl->idq_ff.dat[phase_d];
 #else
             // Without MTPA, speed controller outputs only iq
             ctrl->idq_set.dat[phase_d] = ctrl->idq_ff.dat[phase_d];
@@ -423,8 +424,7 @@ GMP_STATIC_INLINE void ctl_pmsm_mtpa_ctrl_valphabeta_mode(pmsm_mtpa_controller_t
 }
 
 /** @brief Sets the target alpha and beta voltage components. */
-GMP_STATIC_INLINE void ctl_set_pmsm_mtpa_ctrl_valphabeta(pmsm_mtpa_controller_t* ctrl, ctrl_gt valpha,
-                                                         ctrl_gt vbeta)
+GMP_STATIC_INLINE void ctl_set_pmsm_mtpa_ctrl_valphabeta(pmsm_mtpa_controller_t* ctrl, ctrl_gt valpha, ctrl_gt vbeta)
 {
     ctrl->vab0_set.dat[phase_A] = valpha;
     ctrl->vab0_set.dat[phase_B] = vbeta;
@@ -492,8 +492,7 @@ GMP_STATIC_INLINE void ctl_pmsm_mtpa_ctrl_position_mode(pmsm_mtpa_controller_t* 
 }
 
 /** @brief Sets the target position for the position controller. */
-GMP_STATIC_INLINE void ctl_set_pmsm_mtpa_ctrl_position(pmsm_mtpa_controller_t* ctrl, int32_t revolution,
-                                                       ctrl_gt pos)
+GMP_STATIC_INLINE void ctl_set_pmsm_mtpa_ctrl_position(pmsm_mtpa_controller_t* ctrl, int32_t revolution, ctrl_gt pos)
 {
     ctrl->revolution_set = revolution;
     ctrl->pos_set = pos;

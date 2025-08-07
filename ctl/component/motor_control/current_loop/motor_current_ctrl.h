@@ -75,7 +75,7 @@ typedef struct
  * @brief Initializes the current controller structure to safe defaults.
  * @param[out] cc Pointer to the current controller structure.
  */
-GMP_STATIC_INLINE void ctl_init_current_controller(ctl_current_controller_t* cc)
+GMP_STATIC_INLINE void ctl_clear_current_controller(ctl_current_controller_t* cc)
 {
     ctl_clear_pid(&cc->idq_ctrl[0]);
     ctl_clear_pid(&cc->idq_ctrl[1]);
@@ -85,7 +85,7 @@ GMP_STATIC_INLINE void ctl_init_current_controller(ctl_current_controller_t* cc)
     ctl_vector3_clear(&cc->idq0);
     ctl_vector3_clear(&cc->vdq0);
     ctl_vector3_clear(&cc->vab0);
-    cc->flag_enable_controller = 0;
+    
 }
 
 /**
@@ -98,25 +98,9 @@ GMP_STATIC_INLINE void ctl_init_current_controller(ctl_current_controller_t* cc)
  * @param[in]  out_min Minimum output limit (voltage).
  * @param[in]  fs Controller execution frequency (Hz).
  */
-GMP_STATIC_INLINE void ctl_setup_current_controller(ctl_current_controller_t* cc, ctrl_gt kp, ctrl_gt Ti, ctrl_gt Td,
-                                                    ctrl_gt out_max, ctrl_gt out_min, parameter_gt fs)
-{
-    // Setup the d-axis current controller
-    ctl_setup_pid_ser(&cc->idq_ctrl[0], kp, Ti, Td, out_max, out_min, fs);
-    // Setup the q-axis current controller
-    ctl_setup_pid_ser(&cc->idq_ctrl[1], kp, Ti, Td, out_max, out_min, fs);
-}
+void ctl_setup_current_controller(ctl_current_controller_t* cc, ctrl_gt kp, ctrl_gt Ti, ctrl_gt Td,
+                                                    ctrl_gt out_max, ctrl_gt out_min, parameter_gt fs);
 
-/**
- * @brief Resets the PI controllers and feedforward terms.
- * @param[out] cc Pointer to the current controller structure.
- */
-GMP_STATIC_INLINE void ctl_clear_current_controller(ctl_current_controller_t* cc)
-{
-    ctl_clear_pid(&cc->idq_ctrl[0]);
-    ctl_clear_pid(&cc->idq_ctrl[1]);
-    ctl_vector2_clear(&cc->vdq_ff);
-}
 
 /**
  * @brief Sets the d-q axis current reference (target).

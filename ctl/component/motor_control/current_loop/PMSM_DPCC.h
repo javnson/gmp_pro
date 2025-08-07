@@ -108,22 +108,8 @@ typedef struct
  * @param[out] dpcc Pointer to the DPCC structure.
  * @param[in]  init Pointer to the initialization parameters structure.
  */
-GMP_STATIC_INLINE void ctl_init_dpcc(ctl_dpcc_controller_t* dpcc, const ctl_dpcc_init_t* init)
+GMP_STATIC_INLINE void ctl_clear_dpcc(ctl_dpcc_controller_t* dpcc)
 {
-    parameter_gt Ts = 1.0f / init->f_ctrl;
-
-    // Store parameters
-    dpcc->rs = (ctrl_gt)init->Rs;
-    dpcc->ld = (ctrl_gt)init->Ld;
-    dpcc->lq = (ctrl_gt)init->Lq;
-    dpcc->psi_f = (ctrl_gt)init->psi_f;
-
-    // Pre-calculate coefficients for the step function
-    dpcc->ts_over_ld = (ctrl_gt)(Ts / init->Ld);
-    dpcc->ts_over_lq = (ctrl_gt)(Ts / init->Lq);
-    dpcc->ld_over_ts = (ctrl_gt)(init->Ld / Ts);
-    dpcc->lq_over_ts = (ctrl_gt)(init->Lq / Ts);
-
     // Clear state variables
     ctl_vector2_clear(&dpcc->udq_out);
     ctl_vector2_clear(&dpcc->udq_last);

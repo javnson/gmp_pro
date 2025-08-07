@@ -12,21 +12,12 @@ void ctl_init_pmsm_smo(
     // SMO handle
     pmsm_smo_t* smo,
     // SMO Initialize object
-    ctl_smo_init_t* init)
+    const ctl_smo_init_t* init)
 {
-    smo->e_alpha_est = 0;
-    smo->e_beta_est = 0;
 
-    smo->z_alpha = 0;
-    smo->z_beta = 0;
-
-    smo->i_alpha = 0;
-    smo->i_beta = 0;
-    smo->u_alpha = 0;
-    smo->u_beta = 0;
-
-    smo->i_alpha_est = 0;
-    smo->i_beta_est = 0;
+    ctl_vector2_clear(&smo->e_est);
+    ctl_vector2_clear(&smo->z);
+    ctl_vector2_clear(&smo->i_est);
 
     smo->theta_est = 0;
 
@@ -40,15 +31,15 @@ void ctl_init_pmsm_smo(
 
     smo->k_slide = float2ctrl(init->k_slide);
 
-    ctl_init_lp_filter(&smo->filter_e_alpha, init->f_ctrl, init->fc_e);
-    ctl_init_lp_filter(&smo->filter_e_beta, init->f_ctrl, init->fc_e);
+    ctl_init_lp_filter(&smo->filter_e[0], init->f_ctrl, init->fc_e);
+    ctl_init_lp_filter(&smo->filter_e[1], init->f_ctrl, init->fc_e);
     ctl_init_lp_filter(&smo->filter_spd, init->f_ctrl, init->fc_omega);
 
     ctl_init_pid_ser(&smo->pid_pll, init->pid_kp, init->pid_Ti, init->pid_Td, init->f_ctrl);
     ctl_set_pid_limit(&smo->pid_pll, init->spd_max_limit, init->spd_min_limit);
 
     smo->spd_sf = float2ctrl((30.0f / CTL_PARAM_CONST_PI) * init->f_ctrl / init->speed_base_rpm / init->pole_pairs);
-    smo->wr = 0;
+    smo->wr_est = 0;
 
     smo->theta_compensate = float2ctrl(init->speed_base_rpm / 60.0f / init->fc_e * init->pole_pairs);
 }
@@ -194,7 +185,7 @@ void ctl_init_pmsm_hfi(
     // HFI handle
     pmsm_hfi_t* hfi,
     // HFI Initialize object
-    ctl_hfi_init_t* init)
+    const ctl_hfi_init_t* init)
 {
 
     //
@@ -203,7 +194,7 @@ void ctl_init_pmsm_hfi(
     hfi->ud_inj = 0;
     hfi->iq_demodulate = 0;
     hfi->theta_error = 0;
-    hfi->wr = 0;
+    hfi->wr_est = 0;
 
     //
     // hfi control entity initiate

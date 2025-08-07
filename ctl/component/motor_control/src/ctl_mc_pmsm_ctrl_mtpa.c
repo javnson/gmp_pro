@@ -7,7 +7,7 @@
 // #include "peripheral.h"
 
 // init pmsm_mtpa_bare_controller struct
-void ctl_init_pmsm_mtpa_bare_controller(pmsm_mtpa_bare_controller_t* ctrl, pmsm_mtpa_bare_controller_init_t* init)
+void ctl_init_pmsm_mtpa_bare_controller(pmsm_mtpa_controller_t* ctrl, pmsm_mtpa_bare_controller_init_t* init)
 {
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
     // controller implement
@@ -102,12 +102,12 @@ void ctl_init_pmsm_mtpa_bare_controller(pmsm_mtpa_bare_controller_t* ctrl, pmsm_
     ctl_pmsm_mtpa_ctrl_valphabeta_mode(ctrl);
 }
 
-void ctl_attach_pmsm_mtpa_bare_output(pmsm_mtpa_bare_controller_t* ctrl, tri_pwm_ift* pwm)
+void ctl_attach_pmsm_mtpa_bare_output(pmsm_mtpa_controller_t* ctrl, tri_pwm_ift* pwm)
 {
     ctrl->pwm_out = pwm;
 }
 
-void ctl_attach_idq_distributor(pmsm_mtpa_bare_controller_t* ctrl, idq_current_distributor_t* distributor)
-{
-    ctrl->distributor = distributor;
-}
+//void ctl_attach_idq_distributor(pmsm_mtpa_controller_t* ctrl, ctl_current_distributor_t* distributor)
+//{
+//    ctrl->distributor = distributor;
+//}

@@ -149,7 +149,15 @@ GMP_STATIC_INLINE void ctl_set_pid_limit(ctl_pid_t* pid, ctrl_gt limit_max, ctrl
 {
     pid->out_max = limit_max;
     pid->out_min = limit_min;
+}
 
+/**
+ * @brief Set PID controller PID integrator item
+ * @param[out] hpid Pointer to the PID controller instance.
+ */
+GMP_STATIC_INLINE void ctl_set_pid_integrator(ctl_pid_t* pid, ctrl_gt integrator)
+{
+    pid->sn = integrator;
 }
 
 /*---------------------------------------------------------------------------*/

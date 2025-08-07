@@ -94,7 +94,8 @@
 /* Core Type Definitions                                                     */
 /*---------------------------------------------------------------------------*/
 
-/** @addtogroup MC_CORE_TYPES
+/** @addtogroup MC_CORE_TYPES GMP CTL Core Type definition
+ * @brief This section provide ctrl_gt and paramter_gt types definition.
  * @ingroup CTL_MATH
  * @{
  */
