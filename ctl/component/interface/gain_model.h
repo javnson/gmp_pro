@@ -22,6 +22,7 @@ extern "C"
 
 /**
  * @defgroup ADC_GAIN_MODELS ADC Gain Calculation Models
+ * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A collection of functions to determine the correct gain for sensor signal conditioning.
  *
  * These models calculate the gain required by the ADC channel modules to scale the

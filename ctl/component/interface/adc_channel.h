@@ -28,6 +28,7 @@ extern "C"
 
 /**
  * @defgroup ADC_SINGLE_CHANNEL Single ADC Channel
+ * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A module for processing a single ADC channel.
  *
  * This module converts raw ADC data into a calibrated control value using a specified gain and bias.
@@ -38,6 +39,7 @@ extern "C"
 
 /**
  * @defgroup ADC_DUAL_CHANNEL Dual ADC Channel
+ * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A module for processing two ADC channels.
  *
  * This module is typically used for sampling two independent analog inputs or a differential pair.
@@ -45,6 +47,7 @@ extern "C"
 
 /**
  * @defgroup ADC_TRI_CHANNEL Triple ADC Channel
+ * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A module for processing three ADC channels.
  *
  * This module is designed for three-phase systems, such as motor control or power grid applications.
@@ -52,6 +55,7 @@ extern "C"
 
 /**
  * @defgroup ADC_BIAS_CALIBRATOR ADC Bias Calibrator
+ * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A utility for calibrating the offset (bias) of an ADC channel.
  *
  * This module uses a low-pass filter to determine the DC bias from a series of ADC readings.

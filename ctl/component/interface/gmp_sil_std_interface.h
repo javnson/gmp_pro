@@ -24,6 +24,7 @@ extern "C"
 
 /**
  * @defgroup SIL_INTERFACE Software-in-the-Loop (SIL) Interface
+ * @ingroup GMP_CTL_INTERFACES
  * @brief Defines the standard data structure for SIL simulation environments.
  *
  * This module contains the data structures used to link the control algorithm

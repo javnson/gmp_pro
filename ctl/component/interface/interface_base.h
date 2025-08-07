@@ -25,7 +25,19 @@ extern "C"
 #endif // __cplusplus
 
 /**
+ * @defgroup GMP_CTL_INTERFACES GMP CTL interface
+ * @brief Basic data structures for interfacing with control peripherals.
+ */
+
+/**
+ * @defgroup GMP_CTL_COMMON_INTERFACES GMP CTL basic interface
+ * @ingroup GMP_CTL_INTERFACES
+ * @brief Basic data interface, DAC, ADC, PWM, CAP, for interfacing with control peripherals.
+ */
+
+/**
  * @defgroup PERIPHERAL_INTERFACES Peripheral Interface Base
+ * @ingroup GMP_CTL_INTERFACES
  * @brief Basic data structures for interfacing with control peripherals.
  *
  * This module defines the fundamental types used to pass data to and from

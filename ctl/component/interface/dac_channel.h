@@ -25,6 +25,7 @@ extern "C"
 
 /**
  * @defgroup DAC_CHANNEL Digital-to-Analog Converter (DAC) Channel
+ * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A module for handling a single DAC output channel.
  *
  * This module converts a logical control value into a raw digital value

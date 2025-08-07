@@ -29,6 +29,7 @@ extern "C"
 
 /**
  * @defgroup ADC_PTR_SINGLE_CHANNEL Single ADC Channel (Pointer based)
+ * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A module for processing a single ADC channel using a pointer to the raw data.
  *
  * This module converts a raw ADC value, accessed via a pointer, into a calibrated control value.
@@ -39,6 +40,7 @@ extern "C"
 
 /**
  * @defgroup ADC_PTR_DUAL_CHANNEL Dual ADC Channel (Pointer based)
+ * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A module for processing two ADC channels using a pointer to the raw data array.
  *
  * Used for sampling two independent analog inputs or a differential pair from a contiguous memory block.
@@ -46,6 +48,7 @@ extern "C"
 
 /**
  * @defgroup ADC_PTR_TRI_CHANNEL Triple ADC Channel (Pointer based)
+ * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A module for processing three ADC channels using a pointer to the raw data array.
  *
  * Designed for three-phase systems where current or voltage samples are stored in an array.

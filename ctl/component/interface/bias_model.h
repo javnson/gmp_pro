@@ -21,6 +21,7 @@ extern "C"
 
 /**
  * @defgroup ADC_BIAS_MODELS ADC Bias Calculation Models
+ * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A collection of functions to determine ADC bias values from circuit parameters.
  *
  * These models help in calculating the expected digital offset for various analog

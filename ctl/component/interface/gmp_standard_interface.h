@@ -24,6 +24,7 @@ extern "C"
 
 /**
  * @defgroup STD_INTERFACE Standard Controller Interface
+ * @ingroup GMP_CTL_INTERFACES
  * @brief Defines standard data structures for controller data exchange (Tx/Rx).
  *
  * This module contains the data structures for the main data pathways into and

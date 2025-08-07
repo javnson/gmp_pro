@@ -24,16 +24,19 @@ extern "C"
 
 /**
  * @defgroup PWM_CHANNEL_SINGLE Single PWM Channel
+ * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A module for processing a single PWM output channel.
  */
 
 /**
  * @defgroup PWM_CHANNEL_DUAL Dual PWM Channel
+ * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A module for processing a pair of PWM output channels.
  */
 
 /**
  * @defgroup PWM_CHANNEL_TRI Triple PWM Channel
+ * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A module for processing three PWM output channels, typically for motor control.
  */
 
