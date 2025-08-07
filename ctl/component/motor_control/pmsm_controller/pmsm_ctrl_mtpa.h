@@ -1,7 +1,28 @@
+/**
+ * @file pmsm_ctrl_mtpa.h
+ * @brief Provides a PMSM controller with Maximum Torque Per Ampere (MTPA) strategy.
+ * @details This file builds upon the basic FOC controller by incorporating an MTPA
+ * current distributor. The speed controller's output (total current magnitude)
+ * is optimally distributed into d-axis and q-axis current references to maximize
+ * torque for a given current, which is particularly useful for Interior PMSMs (IPMSM).
+ *
+ * The controller supports the same operating modes as the base controller but enhances
+ * the velocity control mode with the MTPA algorithm.
+ *
+ * //tex:
+ * // The MTPA condition for an IPMSM is given by:
+ * // i_d = \frac{-\psi_{pm} + \sqrt{\psi_{pm}^2 + 4(L_d - L_q)^2 i_q^2}}{2(L_d - L_q)}
+ *
+ */
+
+#ifndef _FILE_PMSM_CTRL_MTPA_H_
+#define _FILE_PMSM_CTRL_MTPA_H_
 
 // Necessary support
 #include <ctl/component/interface/interface_base.h>
 #include <ctl/component/motor_control/basic/motor_universal_interface.h>
+#include <ctl/component/motor_control/current_loop/current_distributor.h>
+#include <ctl/math_block/coordinate/coord_trans.h>
 
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
 #include <ctl/component/intrinsic/discrete/track_discrete_pid.h>
@@ -11,260 +32,230 @@
 
 #include <ctl/component/motor_control/basic/decouple.h>
 
-#include <ctl/math_block/coordinate/coord_trans.h>
-
-#include <ctl/component/motor_control/current_loop/current_distributor.h>
-
-#ifndef _FILE_PMSM_CTRL_BARE_H_
-#define _FILE_PMSM_CTRL_BARE_H_
-
 #ifdef __cplusplus
 extern "C"
 {
-#endif // __cplsuplus
+#endif // __cplusplus
 
-// .....................................................................//
-// Some config options here.
+/*---------------------------------------------------------------------------*/
+/* PMSM MTPA (Maximum Torque Per Ampere) Controller                          */
+/*---------------------------------------------------------------------------*/
 
-// Select 2phase current measurement or 3 phase current measurement
-// Default is 3, user may choose 2 in user config file
+/**
+ * @defgroup PMSM_MTPA_CONTROLLER PMSM MTPA Controller
+ * @brief A module for controlling a PMSM using FOC with an MTPA strategy.
+ * @details This module extends the standard FOC controller by adding a current
+ * distributor that calculates the optimal Id and Iq references from the
+ * speed controller's output to achieve maximum torque per ampere.
+ * @{
+ */
+
+//================================================================================
+// Pragma Defines
+//================================================================================
+
+/**
+ * @brief Configures the number of phase current sensors used for measurement.
+ * @details
+ * - **3**: Uses 3 phase current sensors (default).
+ * - **2**: Uses 2 phase current sensors.
+ */
 #ifndef MTR_CTRL_CURRENT_MEASUREMENT_PHASES
 #define MTR_CTRL_CURRENT_MEASUREMENT_PHASES ((3))
 #endif // MTR_CTRL_CURRENT_MEASUREMENT_PHASES
 
-// Select 2 phases voltage measurement or 3 phase voltage measurement or disable voltage measurement
-// Default is 3 channels, user may choose:
-// + 0 no voltage sensors
-// + 2 2 phases voltage sensors
-// + 3 3 phases voltage sensors
+/**
+ * @brief Configures the number of phase voltage sensors used for measurement.
+ * @details
+ * - **3**: Uses 3 phase voltage sensors.
+ * - **2**: Uses 2 phase voltage sensors.
+ * - **0**: Disables voltage measurement (default).
+ */
 #ifndef MTR_CTRL_VOLTAGE_MEASUREMENT_PHASES
 #define MTR_CTRL_VOLTAGE_MEASUREMENT_PHASES ((0))
 #endif // MTR_CTRL_VOLTAGE_MEASUREMENT_PHASES
 
-// Select feedforward strategy.
-// 0 user mode, feed forward is specified by user manually.
-// 1 decouple mode, feed forward item is counted.
-//   only the time velocity controller is working, this config is valid.
-//   or, the decouple module will bypass.
-//
+/**
+ * @brief Selects the feedforward strategy for the controller.
+ * @details
+ * - **1**: Decoupled mode. Feedforward terms are calculated automatically (default).
+ * - **0**: User mode. Feedforward values must be specified manually by the user.
+ */
 #ifndef MTR_CTRL_FEEDFORWARD_STRATEGY
 #define MTR_CTRL_FEEDFORWARD_STRATEGY (1)
 #endif // MTR_CTRL_FEEDFORWARD_STRATEGY
 
+/**
+ * @brief Enables the MTPA current distributor.
+ * @details When defined, the output of the speed controller is interpreted as a
+ * total current magnitude and is split into Id and Iq components by the
+ * MTPA algorithm.
+ */
 #define PMSM_CTRL_USING_CURRENT_DISTRIBUTOR
 
-//
-// PMSM Bare controller is a x-platform PMSM controller.
-//
-// PMSM Bare controller usage:
-// + Attach physical interface with pmsm_bare_controller
-//  This task should complete in a xPlatform file.
-//  @ctl_attach_pmsm_bare_output function is used to attach pwm interface.
-//  @ctl_attach_mtr_adc_channels function is used to attach adc interface.
-//  @ctl_attach_mtr_position function is used to attach position encoder.
-//  @ctl_attach_mtr_velocity function is used to attach velocity encoder.
-//  @ctl_attach_mtr_torque function is used to attach torque sensor.
-//
-// + init the controller structure entity
-//  fill struct @pmsm_bare_controller_init_t to specify motor controller parameters.
-//  call function @ctl_init_pmsm_bare_controller to initialize the controller entity, based on the parameters.
-//
-// + select a operating mode and provide a control target
-// PMSM bare controller support the PMSM controller running in the following mode:
-//   - $v_\alpha, v_\beta$ mode
-//   user may call function @ctl_pmsm_ctrl_valphabeta_mode to enter this mode.
-//   user may call function @ctl_set_pmsm_ctrl_valphabeta to provide control target
-//
-//   - Voltage mode (vdq mode)
-//   user may call function @ctl_pmsm_ctrl_voltage_mode to enter this mode.
-//   user may call function @ctl_set_pmsm_ctrl_vdq_ff to provide control target.
-//
-//   - Current mode (idq mode)
-//   user may call function @ctl_pmsm_ctrl_current_mode to enter current mode.
-//   current controller will active.
-//   user may call function @ctl_set_pmsm_ctrl_idq_ff to provide control target.
-//
-//   - Velocity mode (spd mode)
-//   user may call function @ctl_pmsm_ctrl_velocity_mode to enter velocity mode.
-//   current controller and speed controller will active.
-//   user may call function @ctl_set_pmsm_ctrl_speed to provide control target.
-//
-//   - Position mode (position mode)
-//   user may call function @ctl_pmsm_ctrl_position_mode to enter velocity mode.
-//   current controller and speed controller and position controller will active.
-//   user may call function @set_pmsm_ctrl_position to provide control target.
-//
-//   Note: These function is just a controller switch, when you need to change controller mode
-//   at time the controller is running you should implement a extra algorithm to ensure switch smoothly.
-//
-// + invoke this controller in Main ISR.
-//  User should call mtr_interface' step function firstly to get correct input.
-//  Then, call @ctl_step_pmsm_ctrl in MainISR function.
-//  Last, call PWM interface to output modulation result.
-//
-// + enable / disable the controller
-//  function @ctl_enable_pmsm_ctrl is to enable the controller or the whole controller will bypass.
-//  function @ctl_disable_pmsm_ctrl is to disable the controller.
-//  Note: you should call function @ctl_clear_pmsm_ctrl before controller is switch on.
-//
+//================================================================================
+// Type Defines
+//================================================================================
 
+/**
+ * @brief Main structure for the PMSM MTPA Controller.
+ * @details This structure holds all the state variables, interfaces, controller
+ * instances, and flags required for the MTPA FOC algorithm.
+ */
 typedef struct _tag_pmsm_mtpa_bare_controller
 {
+    //--------------------------------------------------------------------------
+    // Interfaces
+    //--------------------------------------------------------------------------
+    mtr_ift mtr_interface; ///< Input interface for motor signals.
+    tri_pwm_ift* pwm_out;  ///< Output interface for three-phase PWM.
 
-    // .....................................................................//
-    // interfaces
-    //
-
-    // input interfaces
-    mtr_ift mtr_interface;
-
-    // output interfaces
-    tri_pwm_ift* pwm_out;
-
-    // .....................................................................//
-    // controller entity
-    //
+    //--------------------------------------------------------------------------
+    // Controller Entities
+    //--------------------------------------------------------------------------
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
-
-    // current controller
-    discrete_pid_t current_ctrl[2];
-
-    // speed controller
-    track_discrete_pid_t spd_ctrl;
-#else // use continuous controller
-
-    // current controller
-    ctl_pid_t current_ctrl[2];
-
-    // speed controller
-    ctl_tracking_continuous_pid_t spd_ctrl;
+    discrete_pid_t current_ctrl[2]; ///< Discrete PID controllers for d-q axis currents.
+    track_discrete_pid_t spd_ctrl;  ///< Discrete tracking PID controller for speed.
+#else                               // use continuous controller
+    ctl_pid_t current_ctrl[2];              ///< Continuous PID controllers for d-q axis currents.
+    ctl_tracking_continuous_pid_t spd_ctrl; ///< Continuous tracking PID controller for speed.
 #endif
-
-    // .....................................................................//
-    // controller intermediate variable
-    //
-
-    // i_alpha, i_beta, i0
-    vector3_gt iab0;
-
-    // i_d, i_q, i0
-    vector3_gt idq0;
-
-    // v_alpha, v_beta, v0
-    vector3_gt uab0;
-
-    // v_d, v_q, v0
-    vector3_gt udq0;
-
-    // .....................................................................//
-    // controller feed forward parameters
-    //
-
-    // i_d_ff, i_q_ff
-    vector2_gt idq_ff;
-
-    // v_d_ff, v_q_ff
-    vector2_gt vdq_ff;
-
-    // .....................................................................//
-    // controller set parameters
-    //
-
-    // position target, turns and position in [0,1]
-    int32_t revolution_set;
-    ctrl_gt pos_set;
-
-    // speed target, p.u.
-    ctrl_gt speed_set;
-
-    // id, iq set
-    vector2_gt idq_set;
-
-    // vd, vq, v0 set
-    vector3_gt vdq_set;
-
-    // valpha, vbeta, v0 set
-    vector3_gt vab0_set;
-
-    // .....................................................................//
-    // flag stack
-    //
-    fast16_gt isr_tick;
-
-    // .....................................................................//
-    // flag stack
-    //
-
-    // enable whole controller
-    fast_gt flag_enable_controller;
-
-    // enable PWM output
-    fast_gt flag_enable_output;
-
-    // enable Modulation
-    fast_gt flag_enable_modulation;
-
-    // enable current controller
-    fast_gt flag_enable_current_ctrl;
-
-    // enable velocity controller
-    fast_gt flag_enable_velocity_ctrl;
-
-    // enable position controller
-    fast_gt flag_enable_position_ctrl;
 
 #ifdef PMSM_CTRL_USING_CURRENT_DISTRIBUTOR
-    idq_current_distributor_t* distributor;
+    idq_current_distributor_t* distributor; ///< Pointer to the MTPA current distributor module.
 #endif
+
+    //--------------------------------------------------------------------------
+    // Controller Intermediate Variables
+    //--------------------------------------------------------------------------
+    vector3_gt iab0; ///< Phase currents in the alpha-beta-zero stationary frame.
+    vector3_gt idq0; ///< Phase currents in the d-q-zero rotating frame.
+    vector3_gt uab0; ///< Phase voltages in the alpha-beta-zero stationary frame.
+    vector3_gt udq0; ///< Phase voltages in the d-q-zero rotating frame.
+
+    //--------------------------------------------------------------------------
+    // Controller Feedforward Parameters
+    //--------------------------------------------------------------------------
+    vector2_gt idq_ff; ///< Feedforward values for d-q axis currents.
+    vector2_gt vdq_ff; ///< Feedforward values for d-q axis voltages.
+
+    //--------------------------------------------------------------------------
+    // Controller Setpoints
+    //--------------------------------------------------------------------------
+    int32_t revolution_set; ///< Target position (number of full revolutions).
+    ctrl_gt pos_set;        ///< Target position within a single revolution (0.0 to 1.0).
+    ctrl_gt speed_set;      ///< Target speed (p.u.).
+    vector2_gt idq_set;     ///< Target d-q axis currents.
+    vector3_gt vdq_set;     ///< Target d-q-zero axis voltages.
+    vector3_gt vab0_set;    ///< Target alpha-beta-zero axis voltages.
+
+    //--------------------------------------------------------------------------
+    // State Flags & Counters
+    //--------------------------------------------------------------------------
+    fast16_gt isr_tick;                ///< Counter incremented in each ISR call.
+    fast_gt flag_enable_controller;    ///< Master flag to enable or disable the entire controller.
+    fast_gt flag_enable_output;        ///< Flag to enable or disable the PWM output.
+    fast_gt flag_enable_modulation;    ///< Flag to enable inverse Park transform and modulation.
+    fast_gt flag_enable_current_ctrl;  ///< Flag to enable the current control loop.
+    fast_gt flag_enable_velocity_ctrl; ///< Flag to enable the velocity control loop.
+    fast_gt flag_enable_position_ctrl; ///< Flag to enable the position control loop.
 
 } pmsm_mtpa_bare_controller_t;
 
-// Clear Controller
+/**
+ * @brief Initialization parameters for the PMSM MTPA Controller.
+ */
+typedef struct _tag_pmsm_mtpa_bare_controller_init
+{
+    parameter_gt fs; ///< Controller sampling frequency (Hz).
+
+    //--- Current Controller ---
+    parameter_gt current_d_pid_gain; ///< Proportional gain (Kp) for the d-axis current controller.
+    parameter_gt current_q_pid_gain; ///< Proportional gain (Kp) for the q-axis current controller.
+    parameter_gt current_d_Ti;       ///< Integral time constant (Ti) for the d-axis current controller.
+    parameter_gt current_q_Ti;       ///< Integral time constant (Ti) for the q-axis current controller.
+    parameter_gt current_d_Td;       ///< Derivative time constant (Td) for the d-axis current controller.
+    parameter_gt current_q_Td;       ///< Derivative time constant (Td) for the q-axis current controller.
+    parameter_gt voltage_limit_max;  ///< Maximum output limit for the current controllers (voltage).
+    parameter_gt voltage_limit_min;  ///< Minimum output limit for the current controllers (voltage).
+
+    //--- Speed Controller ---
+    parameter_gt spd_pid_gain;      ///< Proportional gain (Kp) for the speed controller.
+    parameter_gt spd_Ti;            ///< Integral time constant (Ti) for the speed controller.
+    parameter_gt spd_Td;            ///< Derivative time constant (Td) for the speed controller.
+    parameter_gt current_limit_max; ///< Maximum output limit for the speed controller (total current).
+    parameter_gt current_limit_min; ///< Minimum output limit for the speed controller (total current).
+    parameter_gt acc_limit_max;     ///< Maximum acceleration limit (p.u./s).
+    parameter_gt acc_limit_min;     ///< Minimum deceleration limit (p.u./s).
+    uint32_t spd_ctrl_div;          ///< Speed controller execution frequency divider.
+
+} pmsm_mtpa_bare_controller_init_t;
+
+//================================================================================
+// Function Prototypes
+//================================================================================
+
+/**
+ * @brief Initializes the PMSM MTPA Controller.
+ * @param[out] ctrl Pointer to the controller structure to initialize.
+ * @param[in]  init Pointer to the structure containing initialization parameters.
+ */
+void ctl_init_pmsm_mtpa_bare_controller(pmsm_mtpa_bare_controller_t* ctrl, pmsm_mtpa_bare_controller_init_t* init);
+
+/**
+ * @brief Attaches the controller to a three-phase PWM output interface.
+ * @param[out] ctrl    Pointer to the controller structure.
+ * @param[in]  pwm_out Pointer to the PWM interface to attach.
+ */
+void ctl_attach_pmsm_mtpa_bare_output(pmsm_mtpa_bare_controller_t* ctrl, tri_pwm_ift* pwm_out);
+
+/**
+ * @brief Attaches an MTPA current distributor module to the controller.
+ * @param[out] ctrl        Pointer to the controller structure.
+ * @param[in]  distributor Pointer to the initialized current distributor module.
+ */
+void ctl_attach_idq_distributor(pmsm_mtpa_bare_controller_t* ctrl, idq_current_distributor_t* distributor);
+
+/**
+ * @brief Resets all internal states and integrators of the PID controllers.
+ * @param[out] ctrl Pointer to the controller structure to clear.
+ */
 GMP_STATIC_INLINE void ctl_clear_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t* ctrl)
 {
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
-    // clear controller intermediate variables
     ctl_clear_discrete_pid(&ctrl->current_ctrl[phase_d]);
     ctl_clear_discrete_pid(&ctrl->current_ctrl[phase_q]);
-
     ctl_clear_discrete_track_pid(&ctrl->spd_ctrl);
-#else  // continuous controller                                                                                        \
-       // clear controller intermediate variables
+#else  // continuous controller
     ctl_clear_pid(&ctrl->current_ctrl[phase_d]);
     ctl_clear_pid(&ctrl->current_ctrl[phase_q]);
-
     ctl_clear_tracking_continuous_pid(&ctrl->spd_ctrl);
 #endif // PMSM_CTRL_USING_DISCRETE_CTRL
 }
 
-// This function should be called in MainISR.
-// This function implement a universal PMSM controller
+/**
+ * @brief Executes one step of the PMSM FOC control loop with MTPA.
+ * @param[out] ctrl Pointer to the controller structure.
+ */
 GMP_STATIC_INLINE void ctl_step_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctl_vector2_t phasor;
     ctrl_gt etheta;
-
     ctrl_gt vq_limit = float2ctrl(1.0);
 
-    // update controller ISR tick
     ctrl->isr_tick += 1;
 
     if (ctrl->flag_enable_controller)
     {
-        //
         // Clark Transformation
-        //
-
-        // iab = clark(iabc)
 #if MTR_CTRL_CURRENT_MEASUREMENT_PHASES == 3
         ctl_ct_clarke(&ctrl->mtr_interface.iabc->value, &ctrl->iab0);
 #elif MTR_CTRL_CURRENT_MEASUREMENT_PHASES == 2
         ctl_ct_clarke_2ph(&ctrl->mtr_interface.iabc->value, &ctrl->iab0);
 #else
-#error("Wrong parameter for macro MTR_CTRL_CURRENT_MEASUREMENT_PHASES, this parameter means how many current sensors have for each motor.")
-#endif // MTR_CTRL_CURRENT_MEASUREMENT_PHASES
+#error("Wrong parameter for macro MTR_CTRL_CURRENT_MEASUREMENT_PHASES")
+#endif
 
-        // uab = clark(uabc)
 #if MTR_CTRL_VOLTAGE_MEASUREMENT_PHASES == 3
         ctl_ct_clarke(&ctrl->mtr_interface.uabc->value, &ctrl->uab0);
 #elif MTR_CTRL_VOLTAGE_MEASUREMENT_PHASES == 2
@@ -272,76 +263,61 @@ GMP_STATIC_INLINE void ctl_step_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t* ctrl
 #elif MTR_CTRL_VOLTAGE_MEASUREMENT_PHASES == 0
         ctl_vector3_clear(&ctrl->uab0);
 #else
-#error("Wrong parameter for macro MTR_CTRL_VOLTAGE_MEASUREMENT_PHASES, this parameter means how many voltage sensors have for each motor.")
-#endif // MTR_CTRL_VOLTAGE_MEASUREMENT_PHASES
+#error("Wrong parameter for macro MTR_CTRL_VOLTAGE_MEASUREMENT_PHASES")
+#endif
 
-        //
         // Park Transformation
-        //
-
-        // current & voltage transformation
         etheta = ctl_get_mtr_elec_theta(&ctrl->mtr_interface);
-
-        // phasor = \angle(theta)
         ctl_set_phasor_via_angle(etheta, &phasor);
-
-        // idq = park(iab)
         ctl_ct_park(&ctrl->iab0, &phasor, &ctrl->idq0);
 
-        // vdq = park(vab)
 #if MTR_CTRL_VOLTAGE_MEASUREMENT_PHASES != 0
         ctl_ct_park(&ctrl->uab0, &phasor, &ctrl->udq0);
 #else
-        ctl_vector3_clear(&ctrl->uab0);
-#endif // MTR_CTRL_VOLTAGE_MEASUREMENT_PHASES
+        ctl_vector3_clear(&ctrl->udq0);
+#endif
 
-        //
-        // Position controller
-        //
-
+        // Position Controller
         if (ctrl->flag_enable_position_ctrl)
         {
-            // Do something here
+            // Position control logic is not yet implemented.
         }
 
-        //
         // Velocity Controller
-        //
-
         if (ctrl->flag_enable_velocity_ctrl)
         {
-            ctrl->idq_set.dat[phase_d] = ctrl->idq_ff.dat[phase_d];
+#if defined(PMSM_CTRL_USING_CURRENT_DISTRIBUTOR)
+            // With MTPA, speed controller outputs total current magnitude
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
-#ifdef PMSM_CTRL_USING_CURRENT_DISTRIBUTOR
             ctrl->distributor->im = ctl_step_discrete_track_pid(&ctrl->spd_ctrl, ctrl->speed_set,
                                                                 ctl_get_mtr_velocity(&ctrl->mtr_interface));
+#else // using continuous controller
+            ctrl->distributor->im = ctl_step_tracking_continuous_pid(&ctrl->spd_ctrl, ctrl->speed_set,
+                                                                     ctl_get_mtr_velocity(&ctrl->mtr_interface));
+#endif
+            // Distributor calculates optimal id and iq
             ctl_step_idq_current_distributor(ctrl->distributor);
             ctrl->idq_set.dat[phase_q] = ctrl->distributor->iq + ctrl->idq_ff.dat[phase_q];
             ctrl->idq_set.dat[phase_d] = ctrl->distributor->id + ctrl->idq_ff.dat[phase_d];
 #else
+            // Without MTPA, speed controller outputs only iq
+            ctrl->idq_set.dat[phase_d] = ctrl->idq_ff.dat[phase_d];
+#ifdef PMSM_CTRL_USING_DISCRETE_CTRL
             ctrl->idq_set.dat[phase_q] = ctl_step_discrete_track_pid(&ctrl->spd_ctrl, ctrl->speed_set,
                                                                      ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
                                          ctrl->idq_ff.dat[phase_q];
-
-#endif // PMSM_CTRL_USING_CURRENT_DISTRIBUTOR
 #else  // using continuous controller
-#ifdef PMSM_CTRL_USING_CURRENT_DISTRIBUTOR
-            ctrl->distributor->im =
-                ctl_step_tracking_continuous_pid(&ctrl->spd_ctrl, ctrl->speed_set, ctl_get_mtr_velocity(&ctrl->mtr_interface));
-            ctl_step_idq_current_distributor(ctrl->distributor);
-            ctrl->idq_set.dat[phase_q] = ctrl->distributor->iq + ctrl->idq_ff.dat[phase_q];
-            ctrl->idq_set.dat[phase_d] = ctrl->distributor->id + ctrl->idq_ff.dat[phase_d];
-#else
-            ctrl->idq_set.dat[phase_q] =
-                ctl_step_track_pid(&ctrl->spd_ctrl, ctrl->speed_set, ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
-                ctrl->idq_ff.dat[phase_q];
-#endif // PMSM_CTRL_USING_CURRENT_DISTRIBUTOR
+            ctrl->idq_set.dat[phase_q] = ctl_step_tracking_continuous_pid(&ctrl->spd_ctrl, ctrl->speed_set,
+                                                                          ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
+                                         ctrl->idq_ff.dat[phase_q];
 #endif // PMSM_CTRL_USING_DISCRETE_CTRL
+#endif // PMSM_CTRL_USING_CURRENT_DISTRIBUTOR
 
 #if MTR_CTRL_FEEDFORWARD_STRATEGY == 1
+            // Decoupling logic is commented out.
             // ctl_mtr_pmsm_decouple(&ctrl->vdq_set, &ctrl->idq_set, ctrl->Ld, ctrl->Lq,
             //                       ctl_get_mtr_velocity(ctrl->mtr_interface), ctrl->psi_e);
-#endif // MTR_CTRL_FEEDFORWARD_STRATEGY
+#endif
         }
         else
         {
@@ -349,24 +325,17 @@ GMP_STATIC_INLINE void ctl_step_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t* ctrl
             ctrl->idq_set.dat[phase_q] = ctrl->idq_ff.dat[phase_q];
         }
 
-        //
         // Current Controller
-        //
-
         if (ctrl->flag_enable_current_ctrl)
         {
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
             ctrl->vdq_set.dat[phase_d] = ctl_step_discrete_pid(&ctrl->current_ctrl[phase_d],
                                                                ctrl->idq_set.dat[phase_d] - ctrl->idq0.dat[phase_d]) +
                                          ctrl->vdq_ff.dat[phase_d];
-
-            // vq_limit = ctl_sqrt(float2ctrl(1.0) - ctl_mul(ctrl->vdq_set.dat[phase_d], ctrl->vdq_set.dat[phase_d]));
-            // ctl_set_discrete_pid_limit(&ctrl->current_ctrl[phase_q], vq_limit, -vq_limit);
-
             ctrl->vdq_set.dat[phase_q] = ctl_step_discrete_pid(&ctrl->current_ctrl[phase_q],
                                                                ctrl->idq_set.dat[phase_q] - ctrl->idq0.dat[phase_q]) +
                                          ctrl->vdq_ff.dat[phase_q];
-#else  //  using continuous controller
+#else //  using continuous controller
             ctrl->vdq_set.dat[phase_d] =
                 ctl_step_pid_ser(&ctrl->current_ctrl[phase_d], ctrl->idq_set.dat[phase_d] - ctrl->idq0.dat[phase_d]) +
                 ctrl->vdq_ff.dat[phase_d];
@@ -377,8 +346,7 @@ GMP_STATIC_INLINE void ctl_step_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t* ctrl
             ctrl->vdq_set.dat[phase_q] =
                 ctl_step_pid_ser(&ctrl->current_ctrl[phase_q], ctrl->idq_set.dat[phase_q] - ctrl->idq0.dat[phase_q]) +
                 ctrl->vdq_ff.dat[phase_q];
-#endif // PMSM_CTRL_USING_DISCRETE_CTRL
-
+#endif
             ctrl->vdq_set.dat[phase_0] = 0;
         }
         else
@@ -388,78 +356,63 @@ GMP_STATIC_INLINE void ctl_step_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t* ctrl
             ctrl->vdq_set.dat[phase_0] = 0;
         }
 
-        //
-        // ipark transformation
-        //
-
+        // Inverse Park Transformation & Modulation
         if (ctrl->flag_enable_modulation)
         {
             ctl_ct_ipark(&ctrl->vdq_set, &phasor, &ctrl->vab0_set);
         }
-        // else // vab0_set will be output.
 
-        //
-        // SVPWM modulation
-        //
-
+        // SVPWM Output Stage
         if (ctrl->flag_enable_output)
         {
             ctl_ct_svpwm_calc(&ctrl->vab0_set, &ctrl->pwm_out->value);
         }
         else
         {
-            // Stop PWM output
             ctrl->pwm_out->value.dat[phase_A] = float2ctrl(0.5);
             ctrl->pwm_out->value.dat[phase_B] = float2ctrl(0.5);
             ctrl->pwm_out->value.dat[phase_C] = float2ctrl(0.5);
         }
     }
-    // if this controller isn't enable clear the controller
-    else
+    else // Controller is disabled
     {
-        // Stop PWM output
         ctrl->pwm_out->value.dat[phase_A] = 0;
         ctrl->pwm_out->value.dat[phase_B] = 0;
         ctrl->pwm_out->value.dat[phase_C] = 0;
-
         ctl_clear_pmsm_mtpa_ctrl(ctrl);
     }
 }
 
-// .....................................................................//
-// enable and disable
-//
+//--------------------------------------------------------------------------
+// Enable / Disable and Mode Setting Functions
+// (These functions are identical in structure to the HFI controller)
+//--------------------------------------------------------------------------
 
-// enable PMSM controller
+/** @brief Enables the entire PMSM controller. */
 GMP_STATIC_INLINE void ctl_enable_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_controller = 1;
 }
 
-// disable PMSM controller
+/** @brief Disables the entire PMSM controller. */
 GMP_STATIC_INLINE void ctl_disable_pmsm_mtpa_ctrl(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_controller = 0;
 }
 
-// enable PMSM controller output
+/** @brief Enables PWM signal output. */
 GMP_STATIC_INLINE void ctl_enable_pmsm_mtpa_ctrl_output(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
 }
 
-// disable PMSM controller output
+/** @brief Disables PWM signal output. */
 GMP_STATIC_INLINE void ctl_disable_pmsm_mtpa_ctrl_output(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 0;
 }
 
-// .....................................................................//
-// v alpha & v beta mode
-//
-
-// PMSM controller run in valpha vbeta mode,
-// user should specify valpha and vbeta by function ctl_set_pmsm_ctrl_valphabeta
+/** @brief Sets the controller to V_alpha_beta mode. */
 GMP_STATIC_INLINE void ctl_pmsm_mtpa_ctrl_valphabeta_mode(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
@@ -469,8 +422,7 @@ GMP_STATIC_INLINE void ctl_pmsm_mtpa_ctrl_valphabeta_mode(pmsm_mtpa_bare_control
     ctrl->flag_enable_position_ctrl = 0;
 }
 
-// Set motor target v alpha and v beta.
-// only in valphabeta mode this function counts.
+/** @brief Sets the target alpha and beta voltage components. */
 GMP_STATIC_INLINE void ctl_set_pmsm_mtpa_ctrl_valphabeta(pmsm_mtpa_bare_controller_t* ctrl, ctrl_gt valpha,
                                                          ctrl_gt vbeta)
 {
@@ -479,12 +431,7 @@ GMP_STATIC_INLINE void ctl_set_pmsm_mtpa_ctrl_valphabeta(pmsm_mtpa_bare_controll
     ctrl->vab0_set.dat[phase_0] = 0;
 }
 
-// .....................................................................//
-// vdq mode
-//
-
-// PMSM controller run in valpha vbeta mode
-// user should specify udq0 by function ctl_set_pmsm_mtpa_ctrl_vdq
+/** @brief Sets the controller to Vdq (voltage) mode. */
 GMP_STATIC_INLINE void ctl_pmsm_mtpa_ctrl_voltage_mode(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
@@ -494,20 +441,14 @@ GMP_STATIC_INLINE void ctl_pmsm_mtpa_ctrl_voltage_mode(pmsm_mtpa_bare_controller
     ctrl->flag_enable_position_ctrl = 0;
 }
 
-// this function set vdq reference for vdq mode.
-// PMSM controller run in vdq mode this function counts.
+/** @brief Sets the d-q voltage feedforward (or reference) values. */
 GMP_STATIC_INLINE void ctl_set_pmsm_mtpa_ctrl_vdq_ff(pmsm_mtpa_bare_controller_t* ctrl, ctrl_gt vd, ctrl_gt vq)
 {
     ctrl->vdq_ff.dat[phase_d] = vd;
     ctrl->vdq_ff.dat[phase_q] = vq;
-    //        ctrl->vdq_ff.dat[phase_0] = 0;
 }
 
-// .....................................................................//
-// idq mode
-//
-
-// this function set pmsm controller run in current mode.
+/** @brief Sets the controller to Idq (current) mode. */
 GMP_STATIC_INLINE void ctl_pmsm_mtpa_ctrl_current_mode(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
@@ -517,20 +458,14 @@ GMP_STATIC_INLINE void ctl_pmsm_mtpa_ctrl_current_mode(pmsm_mtpa_bare_controller
     ctrl->flag_enable_position_ctrl = 0;
 }
 
-// this function set pmsm idq feed forward.
-// in current mode this value means idq reference.
+/** @brief Sets the d-q current feedforward (or reference) values. */
 GMP_STATIC_INLINE void ctl_set_pmsm_mtpa_ctrl_idq_ff(pmsm_mtpa_bare_controller_t* ctrl, ctrl_gt id, ctrl_gt iq)
 {
     ctrl->idq_ff.dat[phase_d] = id;
     ctrl->idq_ff.dat[phase_q] = iq;
-    //        ctrl->idq_ff.dat[phase_0] = 0;
 }
 
-// .....................................................................//
-// velocity mode
-//
-
-// this function set pmsm controller run in speed mode.
+/** @brief Sets the controller to velocity mode (with MTPA). */
 GMP_STATIC_INLINE void ctl_pmsm_mtpa_ctrl_velocity_mode(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
@@ -540,17 +475,13 @@ GMP_STATIC_INLINE void ctl_pmsm_mtpa_ctrl_velocity_mode(pmsm_mtpa_bare_controlle
     ctrl->flag_enable_position_ctrl = 0;
 }
 
-// this fucntion set pmsm target speed.
+/** @brief Sets the target speed for the velocity controller. */
 GMP_STATIC_INLINE void ctl_set_pmsm_mtpa_ctrl_speed(pmsm_mtpa_bare_controller_t* ctrl, ctrl_gt spd)
 {
     ctrl->speed_set = spd;
 }
 
-// .....................................................................//
-// position mode
-//
-
-// this function set pmsm controller run in position mode.
+/** @brief Sets the controller to position mode. */
 GMP_STATIC_INLINE void ctl_pmsm_mtpa_ctrl_position_mode(pmsm_mtpa_bare_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
@@ -560,83 +491,18 @@ GMP_STATIC_INLINE void ctl_pmsm_mtpa_ctrl_position_mode(pmsm_mtpa_bare_controlle
     ctrl->flag_enable_position_ctrl = 1;
 }
 
-// This function set pmsm target position
-GMP_STATIC_INLINE void set_pmsm_mtpa_ctrl_position(pmsm_mtpa_bare_controller_t* ctrl, int32_t revolution, ctrl_gt pos)
+/** @brief Sets the target position for the position controller. */
+GMP_STATIC_INLINE void ctl_set_pmsm_mtpa_ctrl_position(pmsm_mtpa_bare_controller_t* ctrl, int32_t revolution,
+                                                       ctrl_gt pos)
 {
     ctrl->revolution_set = revolution;
     ctrl->pos_set = pos;
 }
 
-// .....................................................................//
-// initial function
-//
-
-typedef struct _tag_pmsm_mtpa_bare_controller_init
-{
-    // controller frequency
-    parameter_gt fs;
-
-    // .....................................................................//
-    // Current controller
-    //
-
-    // Current Controller P param
-    parameter_gt current_d_pid_gain;
-    parameter_gt current_q_pid_gain;
-
-    // current controller integral time constant
-    parameter_gt current_d_Ti;
-    parameter_gt current_q_Ti;
-
-    // current controller differential time constant
-    parameter_gt current_d_Td;
-    parameter_gt current_q_Td;
-
-    // current output saturation
-    parameter_gt voltage_limit_max;
-    parameter_gt voltage_limit_min;
-
-    // .....................................................................//
-    // speed controller
-    //
-
-    // speed controller P item
-    parameter_gt spd_pid_gain;
-
-    // speed controller integral time constant
-    parameter_gt spd_Ti;
-
-    // speed controller differential time constant
-    parameter_gt spd_Td;
-
-    // speed controller output saturation
-    parameter_gt current_limit_max;
-    parameter_gt current_limit_min;
-
-    // acceleration saturation
-    // unit p.s./s
-    parameter_gt acc_limit_max;
-    parameter_gt acc_limit_min;
-
-    // speed controller divider
-    uint32_t spd_ctrl_div;
-
-    // .....................................................................//
-    // position controller
-    //
-
-} pmsm_mtpa_bare_controller_init_t;
-
-// init pmsm_mtpa_bare_controller struct
-void ctl_init_pmsm_mtpa_bare_controller(pmsm_mtpa_bare_controller_t* ctrl, pmsm_mtpa_bare_controller_init_t* init);
-
-// attach to output port
-void ctl_attach_pmsm_mtpa_bare_output(pmsm_mtpa_bare_controller_t* ctrl, tri_pwm_ift* pwm_out);
-
-void ctl_attach_idq_distributor(pmsm_mtpa_bare_controller_t* ctrl, idq_current_distributor_t* distributor);
+/** @} */ // end of PMSM_MTPA_CONTROLLER group
 
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
-#endif // _FILE_PMSM_CTRL_BARE_H_
+#endif // _FILE_PMSM_CTRL_MTPA_H_

@@ -1,73 +1,95 @@
+/**
+ * @file HBL48ZL400330K.h
+ * @brief Defines the parameters for the HBL48ZL400330K Brushless DC Motor (PMSM).
+ * @details This file contains the electrical, mechanical, and operational parameters
+ * for the specified Permanent Magnet Synchronous Motor. These macros are intended
+ * to be used throughout the motor control application to configure various
+ * algorithms and safety limits.
+ */
 
-#ifndef _FILE_HBL48ZL40030K_H_
-#define _FILE_HBL48ZL40030K_H_
+#ifndef _FILE_HBL48ZL400330K_H_
+#define _FILE_HBL48ZL400330K_H_
 
-// PMSM Motor Type
-#define MOTOR_TYPE PMSM_MOTOR
+#include <ctl/component/motor_control/basic/motor_unit_calculator.h>
 
-//////////////////////////////////////////////////////////////////////////
-// Basic parameters
-//
-// Number of pole pairs
-#define MOTOR_PARAM_POLE_PAIRS ((8))
+#ifdef __cplusplus
+extern "C"
+{
+#endif // __cplusplus
 
-// Stator Resistance, unit Ohm
-#define MOTOR_PARAM_RS ((0.4 / 2))
+/*---------------------------------------------------------------------------*/
+/* Parameter Definitions for PMSM (HBL48ZL400330K)                           */
+/*---------------------------------------------------------------------------*/
 
-// Stator Inductance, unit H
-#define MOTOR_PARAM_LS ((0.6e-3 / 2))
+/**
+ * @defgroup PMSM_HBL48ZL400330K_PARAMETERS Motor Parameters (HBL48ZL400330K)
+ * @brief Contains all parameter definitions for the specified PMSM.
+ * @{
+ */
 
-// Inertia, unit kg cm m2
-#define MOTOR_PARAM_INERTIA ((0.45))
+//================================================================================
+// Motor & System Identification
+//================================================================================
+#define MOTOR_TYPE                PMSM_MOTOR  ///< Specifies the motor type as a Permanent Magnet Synchronous Motor.
+#define MOTOR_ENCODER_TYPE        QEP_ENCODER ///< Specifies the type of encoder used with this motor.
+#define MOTOR_ENCODER_LINE_NUMBER ((2500))    ///< The number of lines (PPR) for the quadrature encoder.
 
-// Friction unit nNms
-#define MOTOR_PARAM_FRICTION ((0.55))
+//================================================================================
+// Electrical Parameters
+//================================================================================
+/**
+ * @brief Stator resistance per phase (Ohm).
+ * @note The datasheet value of 0.4 Ohm is likely line-to-line, so it is divided by 2
+ * to get the phase resistance for the star-connected model.
+ */
+#define MOTOR_PARAM_RS ((0.4 / 2.0))
 
-// constant velocity of a motor, unit rpm/V
-// #define MOTOR_PARAM_KV ((206.2))
+/**
+ * @brief Stator inductance per phase (H).
+ * @note The datasheet value of 0.6mH is likely line-to-line, so it is divided by 2
+ * to get the phase inductance for the star-connected model.
+ */
+#define MOTOR_PARAM_LS ((0.6e-3 / 2.0))
 
-// Flux linkage, unit Wb
-// #define MOTOR_PARAM_FLUX ((MOTOR_PARAM_CALCULATE_FLUX_BY_KV(MOTOR_PARAM_KV)))
+/**
+ * @brief Permanent magnet flux linkage (Wb).
+ * @note This value is calculated from the back-EMF constant.
+ */
+#define MOTOR_PARAM_FLUX ((MOTOR_PARAM_CALCULATE_FLUX_BY_EMF(MOTOR_PARAM_EMF)))
 
-// Back EMF Voltage, unit V/krpm
-#define MOTOR_PARAM_EMF           ((10.5))
+//================================================================================
+// Mechanical Parameters
+//================================================================================
+#define MOTOR_PARAM_POLE_PAIRS ((8))    ///< Number of pole pairs in the motor.
+#define MOTOR_PARAM_INERTIA    ((0.45)) ///< Total rotor inertia (kg*cm^2).
+#define MOTOR_PARAM_FRICTION   ((0.55)) ///< Viscous friction coefficient (mN*m*s/rad).
 
-#define MOTOR_ENCODER_TYPE        ((QEP_ENCODER))
+//================================================================================
+// Characteristic Constants
+//================================================================================
+#define MOTOR_PARAM_EMF ((10.5)) ///< Back-EMF constant (V_LN_RMS / kRPM).
 
-#define MOTOR_ENCODER_LINE_NUMBER ((2500))
+//================================================================================
+// Rated Operating Parameters
+//================================================================================
+#define MOTOR_PARAM_RATED_VOLTAGE   ((48.0)) ///< Rated operating voltage (V).
+#define MOTOR_PARAM_RATED_SPEED     ((3000)) ///< Rated operating speed (RPM).
+#define MOTOR_PARAM_RATED_CURRENT   ((11.0)) ///< Rated phase current (A, Peak).
+#define MOTOR_PARAM_RATED_TORQUE    ((1.27)) ///< Rated continuous torque (N*m).
+#define MOTOR_PARAM_NO_LOAD_CURRENT ((0.25)) ///< No-load phase current (A, Peak).
 
-//////////////////////////////////////////////////////////////////////////
-// Rated parameters
+//================================================================================
+// Absolute Maximum Ratings & Limits
+//================================================================================
+#define MOTOR_PARAM_MAX_SPEED      ((3500)) ///< Maximum allowable speed (RPM).
+#define MOTOR_PARAM_MAX_TORQUE     ((3.81)) ///< Maximum intermittent torque (N*m).
+#define MOTOR_PARAM_MAX_DC_VOLTAGE ((54.0)) ///< Maximum allowable DC bus voltage (V).
+#define MOTOR_PARAM_MAX_PH_CURRENT ((33.0)) ///< Maximum allowable phase current (A, Peak).
 
-// Rated voltage, unit V
-#define MOTOR_PARAM_RATED_VOLTAGE ((48))
+/** @} */ // end of PMSM_HBL48ZL400330K_PARAMETERS group
 
-// no load current, unit A
-#define MOTOR_PARAM_NO_LOAD_CURRENT ((0.25))
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
-// Rated speed rpm
-#define MOTOR_PARAM_RATED_SPEED ((3000))
-
-// Rated current
-#define MOTOR_PARAM_RATED_CURRENT ((11.0))
-
-// Rated torque, unit Nm
-#define MOTOR_PARAM_RATED_TORQUE ((1.27))
-
-//////////////////////////////////////////////////////////////////////////
-// Maximum parameters
-
-// Maximum Torque, unit Nm
-#define MOTOR_PARAM_MAX_TORQUE ((3.81))
-
-// Maximum Speed, unit rpm
-#define MOTOR_PARAM_MAX_SPEED ((3500))
-// #define MOTOR_PARAM_MAX_SPEED ((1000))
-
-// Maximum DC bus voltage, unit V
-#define MOTOR_PARAM_MAX_DC_VOLTAGE ((54))
-
-// Maximum Phase Current RMS, unit A
-#define MOTOR_PARAM_MAX_PH_CURRENT ((33.0))
-
-#endif // _FILE_HBL48ZL40030K_H_
+#endif // _FILE_HBL48ZL400330K_H_

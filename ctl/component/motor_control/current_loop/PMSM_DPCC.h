@@ -1,300 +1,197 @@
-// Dead-beat Prediction Current Control general framework;
-//
+/**
+ * @file pmsm_dpcc.h
+ * @brief Implements a Dead-beat Predictive Current Controller (DPCC) for PMSM.
+ * @details This module provides a model-based current controller that aims to
+ * eliminate current error in a single control step (dead-beat). It uses the
+ * discrete-time model of the PMSM to predict the current at the next time
+ * step based on the previously applied voltage. It then calculates the
+ * required voltage for the current step to make the predicted current match
+ * the reference current at the next step. This approach can offer faster
+ * dynamic response than traditional PI controllers.
+ *
+ * @version 0.1
+ * @date 2025-08-06
+ *
+ * //tex:
+ * // The controller is based on the discretized PMSM voltage equations:
+ * // i_d(k+1) = i_d(k)+\frac{T_s}{L_d}\left[u_d(k)-R_si_d (k)+ \omega_e L_qi_q(k)\right]
+ * // i_q(k+1) = i_q(k)+\frac{T_s}{L_q}\left[ u_q(k)-R_si_q (k)- \omega_e (L_di_d(k)+\Psi_f)\right]
+ * // By setting i_d(k+1) and i_q(k+1) to their reference values, we can solve for the required voltage u_d(k) and u_q(k).
+ * // To compensate for the one-step digital delay, a prediction step is used.
+ *
+ */
 
-// necessary headers
-// #include "gmp_core.h"
-// #include "ctl/ctl_core.h"
+#ifndef _FILE_PMSM_DPCC_H_
+#define _FILE_PMSM_DPCC_H_
 
-#ifndef _FILE_DPCC_H
-#define _FILE_DPCC_H
+#include <ctl/math_block/gmp_math.h>
+#include <ctl/math_block/vector_lite/vector2.h>
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif // __cplusplus
 
-#include <ctl/math_block/vector_lite/vector2.h>
+/*---------------------------------------------------------------------------*/
+/* Dead-beat Predictive Current Controller (DPCC)                            */
+/*---------------------------------------------------------------------------*/
 
-// clang-format off
-//tex:
-//$$
-//\left \{
-//\tag 3
-//\begin{align}
-// i_d(k+1) &=i_d(k)+\frac{T_s}{L_d}\left[u_d(k)-R_si_d (k)+ \omega L_qi_q(k)\right] \\ 
-// i_q(k+1) &=i_q(k)+\frac{T_s}{L_q}\left[ u_q(k)-R_si_q (k)- \omega (L_di_d(k)+\Psi_f)\right] \\
-// \end{align}
-//\right.
-//$$
+/**
+ * @defgroup DPCC_CONTROLLER Dead-beat Predictive Current Controller
+ * @brief A model-based current controller for fast dynamic response.
+ * @{
+ */
 
-//tex:
-//$$
-//\left \{
-//\tag 5
-//\begin{align}
-// u^{pre}_d(k) &=\frac{L_d}{T_s}\left[i^{ref}_d(k)-i^{pre}_d(k+1)\right]+R_si^{pre}_d(k+1)-\omega L_qi^{pre}_q(k+1) \\ 
-//u^{pre}_q(k) &=\frac{L_q}{T_s}\left[i^{ref}_q(k)-i^{pre}_q(k+1)\right]+R_si^{pre}_q(k+1)+ \omega (L_di^{pre}_d(k+1)+\Psi_f) \\
-// \end{align}
-//\right.
-//$$
+//================================================================================
+// Type Defines & Macros
+//================================================================================
 
-// clang-format on
-typedef struct _tag_PMSM_DPCC_t
+#ifndef GMP_STATIC_INLINE
+#define GMP_STATIC_INLINE static inline
+#endif
+
+// Define the standard control data type if not already defined
+#ifndef CTRL_GT_DEFINED
+#define CTRL_GT_DEFINED
+typedef float ctrl_gt;
+typedef float parameter_gt;
+#endif
+
+/**
+ * @brief Initialization parameters for the DPCC module.
+ */
+typedef struct
 {
-    //
-    // input section
-    //
-    vector2_gt Idq_set;
-    vector2_gt Idq_fbk;
-    ctrl_gt speed;
+    // --- Motor Parameters (SI units) ---
+    parameter_gt Rs;    ///< Stator Resistance (Ohm).
+    parameter_gt Ld;    ///< D-axis Inductance (H).
+    parameter_gt Lq;    ///< Q-axis Inductance (H).
+    parameter_gt psi_f; ///< Permanent magnet flux linkage (Wb).
 
-    //
-    // output section
-    //
-    vector2_gt Udq;
+    // --- System Parameters ---
+    parameter_gt f_ctrl; ///< Controller execution frequency (Hz).
 
-    //
-    // intermediate variable section
-    //
-    vector2_gt Udq_before;
-    vector2_gt Idq_next;
+} ctl_dpcc_init_t;
 
-    //
-    // Controller Entity
-    //
-    //current predict coefficient
-    ctrl_gt coeff_d_current;
-    ctrl_gt coeff_q_current;
-
-    //voltage predict coefficient
-    ctrl_gt coeff_d_voltage;
-    ctrl_gt coeff_q_voltage;
-
-    //motor parameter perunit
-    ctrl_gt Rs_pu;
-    ctrl_gt Ld_pu;
-    ctrl_gt Lq_pu;
-    ctrl_gt Psi_f_pu;
-
-} PMSM_DPCC_t;
-
-GMP_STATIC_INLINE
-void ctl_set_PMSM_DPCC_Current(PMSM_DPCC_t* ctrl,ctrl_gt Idref, ctrl_gt Iqref)
+/**
+ * @brief Main structure for the DPCC controller.
+ */
+typedef struct
 {
-    ctrl->Idq_set.dat[phase_d] = Idref;
-    ctrl->Idq_set.dat[phase_q] = Iqref;
+    // --- Outputs ---
+    ctl_vector2_t udq_out; ///< The calculated output voltage vector [ud, uq]^T.
+
+    // --- Internal State ---
+    ctl_vector2_t udq_last;      ///< The output voltage from the previous step, used for prediction.
+    ctl_vector2_t idq_predicted; ///< The predicted current for the next step [id_pred, iq_pred]^T.
+
+    // --- Pre-calculated Coefficients ---
+    ctrl_gt ts_over_ld; ///< Ts / Ld
+    ctrl_gt ts_over_lq; ///< Ts / Lq
+    ctrl_gt ld_over_ts; ///< Ld / Ts
+    ctrl_gt lq_over_ts; ///< Lq / Ts
+    ctrl_gt rs;         ///< Stator Resistance
+    ctrl_gt ld;         ///< D-axis Inductance
+    ctrl_gt lq;         ///< Q-axis Inductance
+    ctrl_gt psi_f;      ///< Flux Linkage
+
+} ctl_dpcc_controller_t;
+
+//================================================================================
+// Function Prototypes & Definitions
+//================================================================================
+
+/**
+ * @brief Initializes the DPCC module with motor and system parameters.
+ * @details This function pre-calculates all necessary coefficients from the
+ * motor parameters to optimize the real-time step function.
+ * @param[out] dpcc Pointer to the DPCC structure.
+ * @param[in]  init Pointer to the initialization parameters structure.
+ */
+GMP_STATIC_INLINE void ctl_init_dpcc(ctl_dpcc_controller_t* dpcc, const ctl_dpcc_init_t* init)
+{
+    parameter_gt Ts = 1.0f / init->f_ctrl;
+
+    // Store parameters
+    dpcc->rs = (ctrl_gt)init->Rs;
+    dpcc->ld = (ctrl_gt)init->Ld;
+    dpcc->lq = (ctrl_gt)init->Lq;
+    dpcc->psi_f = (ctrl_gt)init->psi_f;
+
+    // Pre-calculate coefficients for the step function
+    dpcc->ts_over_ld = (ctrl_gt)(Ts / init->Ld);
+    dpcc->ts_over_lq = (ctrl_gt)(Ts / init->Lq);
+    dpcc->ld_over_ts = (ctrl_gt)(init->Ld / Ts);
+    dpcc->lq_over_ts = (ctrl_gt)(init->Lq / Ts);
+
+    // Clear state variables
+    ctl_vector2_clear(&dpcc->udq_out);
+    ctl_vector2_clear(&dpcc->udq_last);
+    ctl_vector2_clear(&dpcc->idq_predicted);
 }
 
-GMP_STATIC_INLINE
-void ctl_input_PMSM_DPCC(PMSM_DPCC_t* ctrl, ctrl_gt Idfbk, ctrl_gt Iqfbk, ctrl_gt speed)
+/**
+ * @brief Executes one step of the Dead-beat Predictive Current Control algorithm.
+ * @param[out] dpcc     Pointer to the DPCC structure.
+ * @param[in]  idq_ref  The reference d-q current vector [id_ref, iq_ref]^T.
+ * @param[in]  idq_fbk  The feedback d-q current vector from the Park transform.
+ * @param[in]  omega_e  The current electrical speed (rad/s).
+ */
+GMP_STATIC_INLINE void ctl_step_dpcc(ctl_dpcc_controller_t* dpcc, const ctl_vector2_t* idq_ref,
+                                     const ctl_vector2_t* idq_fbk, ctrl_gt omega_e)
 {
-    ctrl->Idq_fbk.dat[phase_d] = Idfbk;
-    ctrl->Idq_fbk.dat[phase_q] = Iqfbk;
-    ctrl->speed = speed;
+    ctrl_gt id_k = idq_fbk->dat[0];
+    ctrl_gt iq_k = idq_fbk->dat[1];
+
+    // --- 1. One-step Current Prediction ---
+    // Predict the current at the end of this step, i(k+1), using the voltage applied in the previous step, u(k-1).
+    // This compensates for the one-step digital control delay.
+    ctrl_gt id_pred = id_k + ctl_mul(dpcc->ts_over_ld, dpcc->udq_last.dat[0] - ctl_mul(dpcc->rs, id_k) +
+                                                           ctl_mul(omega_e, ctl_mul(dpcc->lq, iq_k)));
+
+    ctrl_gt iq_pred = iq_k + ctl_mul(dpcc->ts_over_lq, dpcc->udq_last.dat[1] - ctl_mul(dpcc->rs, iq_k) -
+                                                           ctl_mul(omega_e, (ctl_mul(dpcc->ld, id_k) + dpcc->psi_f)));
+
+    dpcc->idq_predicted.dat[0] = id_pred;
+    dpcc->idq_predicted.dat[1] = iq_pred;
+
+    // --- 2. Dead-beat Voltage Calculation ---
+    // Calculate the voltage u(k) required to make the current at the next step, i(k+2), equal to the reference i_ref(k+1).
+    // We assume i_ref(k+1) is the same as the current i_ref(k).
+    dpcc->udq_out.dat[0] = ctl_mul(dpcc->ld_over_ts, (idq_ref->dat[0] - id_pred)) + ctl_mul(dpcc->rs, id_pred) -
+                           ctl_mul(omega_e, ctl_mul(dpcc->lq, iq_pred));
+
+    dpcc->udq_out.dat[1] = ctl_mul(dpcc->lq_over_ts, (idq_ref->dat[1] - iq_pred)) + ctl_mul(dpcc->rs, iq_pred) +
+                           ctl_mul(omega_e, (ctl_mul(dpcc->ld, id_pred) + dpcc->psi_f));
+
+    // --- 3. Store the calculated voltage for the next prediction step ---
+    ctl_vector2_copy(&dpcc->udq_last, &dpcc->udq_out);
 }
 
-
-GMP_STATIC_INLINE
-void ctl_step_PMSM_DPCC(PMSM_DPCC_t* ctrl)
+/**
+ * @brief Gets the calculated d-axis output voltage.
+ * @param[in] dpcc Pointer to the DPCC structure.
+ * @return The calculated d-axis voltage reference.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_dpcc_ud(const ctl_dpcc_controller_t* dpcc)
 {
-    // one-step current prediction to get Idq next
-    ctrl->Idq_next.dat[phase_d] = ctrl->Idq_fbk.dat[phase_d] + ctl_mul(ctrl->coeff_d_current, 
-                                                                ctrl->Udq_before.dat[phase_d] - ctl_mul(ctrl->Rs_pu, ctrl->Idq_fbk.dat[phase_d])
-                                                                        + ctl_mul(ctrl->speed,ctl_mul(ctrl->Lq_pu, ctrl->Idq_fbk.dat[phase_q])));
-    ctrl->Idq_next.dat[phase_q] = ctrl->Idq_fbk.dat[phase_q] + ctl_mul(ctrl->coeff_q_current, 
-                                                                ctrl->Udq_before.dat[phase_q] - ctl_mul(ctrl->Rs_pu, ctrl->Idq_fbk.dat[phase_q]) 
-                                                                        - ctl_mul(ctrl->speed, (ctl_mul(ctrl->Ld_pu, ctrl->Idq_fbk.dat[phase_q])) + ctrl->Psi_f_pu));
-
-    // to follow the Iref in no dead beat, predict the output Udq with the one-step predicted current calculated above
-    ctrl->Udq.dat[phase_d] =
-        ctl_mul(ctrl->coeff_d_voltage, (ctrl->Idq_set.dat[phase_d] - ctrl->Idq_next.dat[phase_d])) +
-        ctl_mul(ctrl->Rs_pu, ctrl->Idq_next.dat[phase_d]) -
-        ctl_mul(ctrl->speed, ctl_mul(ctrl->Lq_pu, ctrl->Idq_next.dat[phase_q]));
-    ctrl->Udq.dat[phase_q] =
-        ctl_mul(ctrl->coeff_q_voltage, (ctrl->Idq_set.dat[phase_q] - ctrl->Idq_next.dat[phase_q])) +
-        ctl_mul(ctrl->Rs_pu, ctrl->Idq_next.dat[phase_q]) + 
-        ctl_mul(ctrl->speed, (ctl_mul(ctrl->Ld_pu, ctrl->Idq_next.dat[phase_d])) + ctrl->Psi_f_pu);
-
-    // prepare the the next step Current prediction
-    ctl_vector2_copy(&ctrl->Udq_before, &ctrl->Udq);
-
-    //done
+    return dpcc->udq_out.dat[0];
 }
 
-// get Udq
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_PMSM_DPCC_Ud(PMSM_DPCC_t *ctrl)
+/**
+ * @brief Gets the calculated q-axis output voltage.
+ * @param[in] dpcc Pointer to the DPCC structure.
+ * @return The calculated q-axis voltage reference.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_dpcc_uq(const ctl_dpcc_controller_t* dpcc)
 {
-    return ctrl->Udq.dat[phase_d];
-}
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_PMSM_DPCC_Uq(PMSM_DPCC_t *ctrl)
-{
-    return ctrl->Udq.dat[phase_q];
+    return dpcc->udq_out.dat[1];
 }
 
-
-typedef struct _tag_PMSM_DPCC_init_t
-{
-    //
-    // motor parameters
-    //
-    parameter_gt Rs;
-    parameter_gt Ld;
-    parameter_gt Lq;
-    parameter_gt Psi_f;
-
-    //
-    // controller parameters
-    //
-
-    // current and voltace perunit base value;
-    parameter_gt Ibase;
-    parameter_gt Ubase;
-
-    // frequency perunit base value
-    parameter_gt fbase;
-
-    // control law frequency
-    parameter_gt fctrl;
-
-} PMSM_DPCC_init_t;
-
-void ctl_init_PMSM_DPCC(PMSM_DPCC_t *ctrl, PMSM_DPCC_init_t *init);
-
-
-//// #include "ctl/component/intrinsic/interface/adc_channel.h"
-//// #include "ctl/component/intrinsic/interface/pwm_channel.h"
-//// #include "ctl/component/motor_control/basic/encoder.h"
-//
-//// before DPC_current control the I,V,speed,theta etc.should be loaded
-//
-//typedef struct _tag_DPC_current_ctrl
-//{
-//    // input paramter
-//    // sensors channels
-//
-//    // current eletric status, should be loaded before control
-//    ctl_vector3_t Iabc_k;
-//    ctrl_gt Vdc;
-//    ctrl_gt Idc;
-//    ctl_vector2_t Idq_set;
-//
-//    // control variables
-//    ctl_vector2_t Iab_k;
-//    ctl_vector2_t Idq_k;
-//    ctl_vector2_t Vdq_k;
-//
-//    // current mechanical status, should be loaded before control
-//    ctrl_gt speed;
-//    ctrl_gt theta;
-//    ctl_vector2_t phasor;
-//
-//    // for prediction
-//    ctrl_gt control_law_freq;
-//    ctrl_gt control_law_period;
-//    // predict result
-//    ctl_vector2_t Vdq_pre;
-//    ctl_vector2_t Idq_pre;
-//
-//    // motor parameter
-//    ctrl_gt Motor_Ld;
-//    ctrl_gt Motor_Lq;
-//    ctrl_gt Motor_Rs;
-//    ctrl_gt Motor_PMFlux;
-//
-//    // output
-//    ctl_vector2_t Vdq_set;
-//
-//    // control the compensation mode:
-//    //  0 for default : no Compensation;
-//    //  1 for : one step Current Prediction Compensation
-//    //  2 for : robust Optimisation
-//    fast_gt flag_DPC_Compensation_mode;
-//
-//} ctl_DPC_current_ctrl_t;
-//
-////ec_gt ctl_init_DPC_current_ctrl(ctl_DPC_current_ctrl_t *obj);
-//ec_gt ctl_setup_DPC_current_ctrl(ctl_DPC_current_ctrl_t *obj, ctl_pmsm_dsn_consultant_t *dsn,
-//                                 ctl_motor_driver_consultant_t *drv);
-//
-//GMP_STATIC_INLINE
-//void ctl_input_DPC_current_ctrl(ctl_DPC_current_ctrl_t *obj, ctl_vector2_t *idq_ref, adc_tri_channel_t *adc_current,
-//                                adc_channel_t *adc_dc_current, adc_channel_t *adc_dc_voltage,
-//                                ctl_pos_encoder_t *motor_encoder, ctl_spd_calculator_t *spd_calc)
-//{
-//    ctl_get_adc_tri_channel_via_vector3(adc_current, &(obj->Iabc_k));
-//    obj->Idc = adc_dc_current->value;
-//    obj->Vdc = adc_dc_voltage->value;
-//    obj->theta = motor_encoder->encif.elec_position;
-//    obj->speed = spd_calc->encif.speed;
-//    ctl_set_phasor_via_angle(obj->theta, &(obj->phasor));
-//    obj->Idq_set.dat[phase_d] = idq_ref->dat[phase_d];
-//    obj->Idq_set.dat[phase_q] = idq_ref->dat[phase_q];
-//}
-//
-//// step call-back funciton.
-//// The function below should be called once every current control period
-//GMP_STATIC_INLINE
-//void ctl_step_DPC_current_ctrl(ctl_DPC_current_ctrl_t *obj)
-//{
-//    // temp value
-//    ctl_vector2_t edq, edq_pre;
-//
-//    // current clark, park
-//    // voltage is recorded every control period, no need to measure
-//    ctl_ct_clark(obj->Iabc_k, obj->Iab_k);
-//    ctl_ct_park(obj->Iab_k, &(obj->phasor), &(obj->Idq_k))
-//
-//        // temp edq cal
-//        edq.dat[phase_d] = ctl_mul(ctl_mul(obj->Motor_Lq, obj->Idq_k.dat[phase_q]), obj->speed);
-//    edq.dat[phase_q] = ctl_mul((ctl_mul(obj->Motor_Ld, obj->Idq_k.dat[phase_d]) + obj->Motor_PMFlux), obj->speed);
-//    // current prediction
-//    switch (obj->flag_DPC_Compensation_mode)
-//    {
-//    case 0:
-//        obj->Idq_pre.dat[phase_d] = obj->Idq_k.dat[phase_d];
-//        obj->Idq_pre.dat[phase_q] = obj->Idq_k.dat[phase_q];
-//        break;
-//    case 1:
-//        obj->Idq_pre.dat[phase_d] =
-//            obj->Idq_k.dat[phase_d] +
-//            ctl_mul((ctl_div(obj->control_law_period, obj->Motor_Ld)),
-//                    (obj->Vdq_k.dat[phase_d] - ctl_mul(obj->Motor_Rs, obj->Idq_k[phase_d]) + edq.dat[phase_d]));
-//        obj->Idq_pre.dat[phase_q] =
-//            obj->Idq_k.dat[phase_q] +
-//            ctl_mul((ctl_div(obj->control_law_period, obj->Motor_Lq)),
-//                    (obj->Vdq_k.dat[phase_q] - ctl_mul(obj->Motor_Rs, obj->Idq_k[phase_q]) - edq.dat[phase_q]));
-//        break;
-//    // case 2:
-//    default:
-//        obj->Idq_pre.dat[phase_d] = obj->Idq_set.dat[phase_d];
-//        obj->Idq_pre.dat[phase_q] = obj->Idq_set.dat[phase_q];
-//        break;
-//    }
-//    edq_pre.dat[phase_d] = ctl_mul(ctl_mul(obj->Motor_Lq, obj->Idq_pre.dat[phase_q]), obj->speed);
-//    edq_pre.dat[phase_q] = ctl_mul((ctl_mul(obj->Motor_Ld, obj->Idq_pre.dat[phase_d]) + obj->Motor_PMFlux), obj->speed);
-//
-//    // voltage prediction
-//    obj->Vdq_pre.dat[phase_d] = ctl_mul(ctl_mul(obj->Motor_Ld, obj->control_law_freq),
-//                                        (obj->Idq_set.dat[phase_d] - obj->Idq_pre.dat[phase_d])) +
-//                                ctl_mul(obj->Motor_Rs, obj->Idq_pre.dat[phase_d]) - edq_pre.dat[phase_d];
-//    obj->Vdq_pre.dat[phase_q] = ctl_mul(ctl_mul(obj->Motor_Lq, obj->control_law_freq),
-//                                        (obj->Idq_set.dat[phase_q] - obj->Idq_pre.dat[phase_q])) +
-//                                ctl_mul(obj->Motor_Rs, obj->Idq_pre.dat[phase_q]) + edq_pre.dat[phase_q];
-//
-//    // output voltage post-process
-//
-//    // set output voltage
-//    obj->Vdq_set.dat[phase_d] = obj->Vdq_pre.dat[phase_d];
-//    obj->Vdq_set.dat[phase_q] = obj->Vdq_pre.dat[phase_q];
-//
-//    // prepare for next period,
-//    obj->Vdq_k.dat[phase_d] = obj->Vdq_set.dat[phase_d];
-//    obj->Vdq_k.dat[phase_q] = obj->Vdq_set.dat[phase_q];
-//}
+/** @} */ // end of DPCC_CONTROLLER group
 
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
-#endif // !_FILE_DPCC_H
+#endif // _FILE_PMSM_DPCC_H_

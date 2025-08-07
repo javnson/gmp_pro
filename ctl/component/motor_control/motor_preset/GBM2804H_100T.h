@@ -1,86 +1,81 @@
-
-
-#include <ctl/component/motor_control/basic/motor_unit_calculator.h>
+/**
+ * @file GBM2804H_100T.h
+ * @brief Defines the parameters for the GBM2804H-100T Brushless Gimbal Motor (PMSM).
+ * @details This file contains the electrical, mechanical, and operational parameters
+ * for the specified Permanent Magnet Synchronous Motor. These macros are intended
+ * to be used throughout the motor control application to configure various
+ * algorithms and safety limits.
+ *
+ * @note Information Source: https://zhuanlan.zhihu.com/p/545688192
+ */
 
 #ifndef _FILE_MOTOR_PARAM_GBM2804H_100T_H_
 #define _FILE_MOTOR_PARAM_GBM2804H_100T_H_
 
-//
-// Information Source:
-// https://zhuanlan.zhihu.com/p/545688192
-//
+#include <ctl/component/motor_control/basic/motor_unit_calculator.h>
 
-//
-// Standard Encoder Interface
-// SPI Encoder
-// CS black
-// clk blue
-// MISO green
-// MOSI yellow
-// GND white
-// +5V red
-//
+#ifdef __cplusplus
+extern "C"
+{
+#endif // __cplusplus
 
+/*---------------------------------------------------------------------------*/
+/* Parameter Definitions for PMSM (GBM2804H-100T)                            */
+/*---------------------------------------------------------------------------*/
 
-// PMSM Motor Type
-#define MOTOR_TYPE PMSM_MOTOR
+/**
+ * @defgroup PMSM_GBM2804H_PARAMETERS Motor Parameters (GBM2804H-100T)
+ * @brief Contains all parameter definitions for the specified PMSM.
+ * @{
+ */
 
-//////////////////////////////////////////////////////////////////////////
-// Basic parameters
-//
-// Number of pole pairs
-#define MOTOR_PARAM_POLE_PAIRS ((7))
+//================================================================================
+// Motor & System Identification
+//================================================================================
+#define MOTOR_TYPE PMSM_MOTOR ///< Specifies the motor type as a Permanent Magnet Synchronous Motor.
 
-// Stator Resistance, unit Ohm
-#define MOTOR_PARAM_RS ((4.7))
+//================================================================================
+// Electrical Parameters
+//================================================================================
+#define MOTOR_PARAM_RS ((4.7))     ///< Stator resistance per phase (Ohm).
+#define MOTOR_PARAM_LS ((0.96e-3)) ///< Stator inductance per phase (H). Note: Ld = Lq = Ls for a non-salient PMSM.
+#define MOTOR_PARAM_FLUX                                                                                               \
+    ((MOTOR_PARAM_CALCULATE_FLUX_BY_KV(                                                                                \
+        MOTOR_PARAM_KV, MOTOR_PARAM_POLE_PAIRS))) ///< Permanent magnet flux linkage (Wb), calculated from Kv.
 
-// Stator Inductance, unit H
-#define MOTOR_PARAM_LS ((0.96e-3))
+//================================================================================
+// Mechanical Parameters
+//================================================================================
+#define MOTOR_PARAM_POLE_PAIRS ((7))     ///< Number of pole pairs in the motor.
+#define MOTOR_PARAM_INERTIA    ((497.0)) ///< Total rotor inertia (g*cm^2).
+#define MOTOR_PARAM_FRICTION   ((755.0)) ///< Viscous friction coefficient (uN*m*s/rad).
 
-// Inertia, unit nMms2
-#define MOTOR_PARAM_INERTIA ((497.0))
+//================================================================================
+// Characteristic Constants
+//================================================================================
+#define MOTOR_PARAM_KV  ((206.2)) ///< Motor velocity constant (RPM/V).
+#define MOTOR_PARAM_EMF ((4.85))  ///< Back-EMF constant (V/kRPM).
 
-// Friction unit nNms
-#define MOTOR_PARAM_FRICTION ((755.0))
+//================================================================================
+// Rated Operating Parameters
+//================================================================================
+#define MOTOR_PARAM_RATED_VOLTAGE   ((10.0))  ///< Rated operating voltage (V).
+#define MOTOR_PARAM_RATED_CURRENT   ((4.5))   ///< Rated phase current (A, Peak).
+#define MOTOR_PARAM_NO_LOAD_CURRENT ((0.01))  ///< No-load phase current (A, Peak).
+#define MOTOR_PARAM_RATED_FREQUENCY ((250.0)) ///< Rated operating frequency (Hz).
 
-// constant velocity of a motor, unit rpm/V
-#define MOTOR_PARAM_KV ((206.2))
+//================================================================================
+// Absolute Maximum Ratings & Limits
+//================================================================================
+#define MOTOR_PARAM_MAX_SPEED      ((2180))  ///< Maximum allowable speed (RPM).
+#define MOTOR_PARAM_MAX_TORQUE     ((0.981)) ///< Maximum intermittent torque (N*m).
+#define MOTOR_PARAM_MAX_DC_VOLTAGE ((14.2))  ///< Maximum allowable DC bus voltage (V).
+#define MOTOR_PARAM_MAX_PH_CURRENT ((5.0))   ///< Maximum allowable phase current (A, Peak).
 
-// Flux linkage, unit Wb
-#define MOTOR_PARAM_FLUX ((MOTOR_PARAM_CALCULATE_FLUX_BY_KV(MOTOR_PARAM_KV,MOTOR_PARAM_POLE_PAIRS)))
+/** @} */ // end of PMSM_GBM2804H_PARAMETERS group
 
-// Back EMF Voltage, unit V/krpm
-#define MOTOR_PARAM_EMF ((4.85))
-
-//////////////////////////////////////////////////////////////////////////
-// Rated parameters
-
-// Rated voltage, unit V
-#define MOTOR_PARAM_RATED_VOLTAGE ((10))
-
-// Rated Current, unit A
-#define MOTOR_PARAM_RATED_CURRENT ((4.5))
-
-// no load current, unit A
-#define MOTOR_PARAM_NO_LOAD_CURRENT ((0.01))
-
-// Rated Frequency, unit Hz
-#define MOTOR_PARAM_RATED_FREQUENCY ((250.0))
-
-//////////////////////////////////////////////////////////////////////////
-// Maximum parameters
-
-// Maximum Torque, unit Nm
-#define MOTOR_PARAM_MAX_TORQUE ((0.981))
-
-// Maximum Speed, unit rpm
-#define MOTOR_PARAM_MAX_SPEED ((2180))
-// #define MOTOR_PARAM_MAX_SPEED ((1000))
-
-// Maximum DC bus voltage, unit V
-#define MOTOR_PARAM_MAX_DC_VOLTAGE ((14.2))
-
-// Maximum Phase Current RMS, unit A
-#define MOTOR_PARAM_MAX_PH_CURRENT ((5.0))
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif // _FILE_MOTOR_PARAM_GBM2804H_100T_H_

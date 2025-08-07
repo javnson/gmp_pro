@@ -7,7 +7,7 @@
 // #include "peripheral.h"
 
 // init pmsm_bare_controller struct
-void ctl_init_pmsm_hfi_bare_controller(pmsm_bare_controller_t* ctrl, pmsm_bare_controller_init_t* init)
+void ctl_init_pmsm_hfi_controller(pmsm_hfi_controller_t* ctrl, pmsm_hfi_controller_init_t* init)
 {
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
     // controller implement
@@ -102,7 +102,7 @@ void ctl_init_pmsm_hfi_bare_controller(pmsm_bare_controller_t* ctrl, pmsm_bare_c
     ctl_pmsm_hfi_ctrl_valphabeta_mode(ctrl);
 }
 
-void ctl_attach_pmsm_hfi_bare_output(pmsm_bare_controller_t* ctrl, tri_pwm_ift* pwm)
+void ctl_attach_pmsm_hfi_output(pmsm_hfi_controller_t* ctrl, tri_pwm_ift* pwm)
 {
     ctrl->pwm_out = pwm;
 }
