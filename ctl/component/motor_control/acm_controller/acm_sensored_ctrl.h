@@ -27,7 +27,7 @@
 
 #include <ctl/component/motor_control/basic/decouple.h>
 #include <ctl/component/motor_control/basic/vf_generator.h>
-#include <ctl/component/motor_control/observer/acm_pos_calc.h>
+#include <ctl/component/motor_control/observer/acm.pos_calc.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 
 #ifdef __cplusplus

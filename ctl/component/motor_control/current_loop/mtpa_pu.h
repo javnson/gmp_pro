@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _FILE_PMSM_MTPA_H_
-#define _FILE_PMSM_MTPA_H_
+#ifndef _FILE_PMSM_MTPA_PU_H_
+#define _FILE_PMSM_MTPA_PU_H_
 
 #include <math.h> // For sqrtf and fabsf
 
@@ -34,7 +34,7 @@ extern "C"
 /*---------------------------------------------------------------------------*/
 
 /**
- * @defgroup MTPA_DISTRIBUTOR MTPA Current Distributor
+ * @defgroup MTPA_DISTRIBUTOR_PU MTPA Current Distributor (Per Unit)
  * @brief Calculates optimal Id and Iq references for salient-pole PMSMs.
  * @{
  */

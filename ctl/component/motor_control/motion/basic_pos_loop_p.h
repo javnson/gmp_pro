@@ -1,121 +1,195 @@
 /**
  * @file basic_pos_loop_p.h
  * @author Javnson (javnson@zju.edu.cn)
- * @brief
- * @version 0.1
- * @date 2024-09-30
+ * @brief Implements a basic proportional (P) position controller.
+ * @details This module provides a simple and effective position controller. It takes
+ * a target position (composed of full revolutions and an angle) and a feedback
+ * position, calculates the error, and multiplies it by a proportional gain (Kp)
+ * to produce a speed reference. The output is saturated to a defined limit.
+ * This controller forms the outermost loop in a cascaded position control system.
+ *
+ * @version 0.2
+ * @date 2025-08-06
  *
  * @copyright Copyright GMP(c) 2024
- *
  */
 
-// This is a position loop P controller
+#ifndef _FILE_BASIC_POS_LOOP_P_H_
+#define _FILE_BASIC_POS_LOOP_P_H_
 
 #include <ctl/component/intrinsic/discrete/divider.h>
-
-#ifndef _FILE_BASIC_SPEED_LOOP_P_H_
-#define _FILE_BASIC_SPEED_LOOP_P_H_
+#include <ctl/math_block/gmp_math.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif // __cplusplus
 
-typedef struct _tag_pos_loop_p_ctrl
+/*---------------------------------------------------------------------------*/
+/* Basic Proportional Position Controller                                    */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @defgroup POSITION_CONTROLLER Basic Position Controller
+ * @brief A simple P-controller for a position loop.
+ * @{
+ */
+
+//================================================================================
+// Type Defines & Macros
+//================================================================================
+
+/**
+ * @brief Main structure for the basic position P-controller.
+ */
+typedef struct
 {
-    // output speed ref
-    ctrl_gt speed_ref;
+    // --- Configuration ---
+    ctrl_gt kp;          ///< Proportional gain for the position controller.
+    ctrl_gt speed_limit; ///< Maximum output speed reference (saturation limit).
 
-    // divider
-    ctl_divider_t div;
+    // --- Target & Feedback ---
+    int32_t target_revs;  ///< The integer part of the target position (full revolutions).
+    ctrl_gt target_angle; ///< The fractional part of the target position (0.0 to 1.0).
+    int32_t actual_revs;  ///< The integer part of the feedback position.
+    ctrl_gt actual_angle; ///< The fractional part of the feedback position.
 
-    ctrl_gt kp;
+    // --- Output ---
+    ctrl_gt speed_ref; ///< The output speed reference fed to the velocity loop.
 
-    ctrl_gt speed_limit;
+    // --- Execution Control ---
+    ctl_divider_t div; ///< Divider to run the position loop at a lower frequency.
 
-    // target position
-    int32_t target_pos;
-    ctrl_gt target_ang;
+} ctl_pos_controller_t;
 
-    // actual feedback position
-    int32_t actual_pos;
-    ctrl_gt actual_ang;
+//================================================================================
+// Function Prototypes & Definitions
+//================================================================================
 
-} ctl_pos_loop_p_ctrl_t;
-
-void ctl_init_pos_loop_p_ctrl(ctl_pos_loop_p_ctrl_t *pos_ctrl);
-
-void ctl_setup_pos_loop_p_ctrl(ctl_pos_loop_p_ctrl_t *pos_ctrl, ctrl_gt kp, ctrl_gt speed_limit, uint32_t division);
-
-GMP_STATIC_INLINE
-void ctl_set_target_position_for_pos_loop_p_ctrl(ctl_pos_loop_p_ctrl_t *pos_ctrl, int32_t target_pos,
-                                                 ctrl_gt target_ang)
+/**
+ * @brief Initializes the position controller structure to safe defaults.
+ * @param[out] pc Pointer to the position controller structure.
+ */
+GMP_STATIC_INLINE void ctl_init_pos_controller(ctl_pos_controller_t* pc)
 {
-    pos_ctrl->target_pos = target_pos;
-    pos_ctrl->target_ang = target_ang;
+    pc->kp = 0.0f;
+    pc->speed_limit = 0.0f;
+    pc->target_revs = 0;
+    pc->target_angle = 0.0f;
+    pc->actual_revs = 0;
+    pc->actual_angle = 0.0f;
+    pc->speed_ref = 0.0f;
+    ctl_set_divider(&pc->div, 1);
 }
 
-GMP_STATIC_INLINE
-void ctl_step_pos_loop_p_ctrl(ctl_pos_loop_p_ctrl_t *pos_ctrl)
+/**
+ * @brief Sets up the parameters for the position controller.
+ * @param[out] pc Pointer to the position controller structure.
+ * @param[in]  kp Proportional gain.
+ * @param[in]  speed_limit Maximum output speed reference.
+ * @param[in]  division The frequency division factor for the controller execution.
+ */
+GMP_STATIC_INLINE void ctl_setup_pos_controller(ctl_pos_controller_t* pc, ctrl_gt kp, ctrl_gt speed_limit,
+                                                uint32_t division)
 {
-    int32_t delta_pos = pos_ctrl->target_pos - pos_ctrl->actual_pos;
-    ctrl_gt position_error;
+    pc->kp = kp;
+    pc->speed_limit = fabsf(speed_limit);
+    ctl_set_divider(&pc->div, division);
+}
 
-    if (ctl_step_divider(&pos_ctrl->div))
+/**
+ * @brief Sets the target position for the controller.
+ * @param[out] pc Pointer to the position controller structure.
+ * @param[in]  target_revs The target number of full revolutions.
+ * @param[in]  target_angle The fractional target angle (0.0 to 1.0).
+ */
+GMP_STATIC_INLINE void ctl_set_pos_target(ctl_pos_controller_t* pc, int32_t target_revs, ctrl_gt target_angle)
+{
+    pc->target_revs = target_revs;
+    pc->target_angle = target_angle;
+}
+
+/**
+ * @brief Provides the controller with the current motor position feedback.
+ * @param[out] pc Pointer to the position controller structure.
+ * @param[in]  actual_revs The current number of full revolutions.
+ * @param[in]  actual_angle The current angle within the revolution (0.0 to 1.0).
+ */
+GMP_STATIC_INLINE void ctl_input_pos_feedback(ctl_pos_controller_t* pc, int32_t actual_revs, ctrl_gt actual_angle)
+{
+    pc->actual_revs = actual_revs;
+    pc->actual_angle = actual_angle;
+}
+
+/**
+ * @brief Provides position feedback using only an angle, tracking revolutions internally.
+ * @param[out] pc Pointer to the position controller structure.
+ * @param[in]  actual_angle The current angle within the revolution (0.0 to 1.0).
+ */
+GMP_STATIC_INLINE void ctl_input_pos_feedback_angle_only(ctl_pos_controller_t* pc, ctrl_gt actual_angle)
+{
+    ctrl_gt delta_ang = actual_angle - pc->actual_angle;
+    pc->actual_angle = actual_angle;
+    if (delta_ang < -0.5f)
     {
-        if (delta_pos > 50)
-        {
-            pos_ctrl->speed_ref = pos_ctrl->speed_limit;
-        }
-        else if (delta_pos < -50)
-        {
-            pos_ctrl->speed_ref = -pos_ctrl->speed_limit;
-        }
-        else
-        {
-            position_error = GMP_CONST_2_PI * delta_pos + pos_ctrl->target_ang - pos_ctrl->actual_ang;
-
-            pos_ctrl->speed_ref = ctl_mul(position_error, pos_ctrl->kp);
-
-            pos_ctrl->speed_ref = ctl_sat(pos_ctrl->speed_ref, pos_ctrl->speed_limit, -pos_ctrl->speed_limit);
-        }
+        pc->actual_revs++;
+    }
+    else if (delta_ang > 0.5f)
+    {
+        pc->actual_revs--;
     }
 }
 
-// For multi-turn encoder
-GMP_STATIC_INLINE
-void ctl_input_pos_loop_p_ctrl(ctl_pos_loop_p_ctrl_t *pos_ctrl, int32_t actual_pos, ctrl_gt actual_ang)
+/**
+ * @brief Executes one step of the position control loop.
+ * @param[out] pc Pointer to the position controller structure.
+ */
+GMP_STATIC_INLINE void ctl_step_pos_controller(ctl_pos_controller_t* pc)
 {
-    pos_ctrl->actual_pos = actual_pos;
-    pos_ctrl->actual_ang = actual_ang;
-}
-
-// For single-turn encoder
-GMP_STATIC_INLINE
-void ctl_input_pos_loop_p_ctrl_via_only_ang(ctl_pos_loop_p_ctrl_t *pos_ctrl, ctrl_gt actual_ang)
-{
-    ctrl_gt delta_ang = actual_ang - pos_ctrl->actual_ang;
-    pos_ctrl->actual_ang = actual_ang;
-
-    // direction correction
-    if (delta_ang < -GMP_CONST_1_OVER_2)
+    if (ctl_step_divider(&pc->div))
     {
-        pos_ctrl->actual_pos += 1;
-    }
-    else if (delta_ang > GMP_CONST_1_OVER_2)
-    {
-        pos_ctrl->actual_pos -= 1;
+        // 1. Calculate the error in full revolutions.
+        int32_t rev_error = pc->target_revs - pc->actual_revs;
+
+        // 2. Calculate the error in the fractional angle.
+        ctrl_gt angle_error = pc->target_angle - pc->actual_angle;
+
+        // Correct for angle wrap-around to ensure the shortest path is taken.
+        if (angle_error > 0.5f)
+        {
+            angle_error -= 1.0f;
+        }
+        else if (angle_error < -0.5f)
+        {
+            angle_error += 1.0f;
+        }
+
+        // 3. Combine the errors into a single total position error.
+        // The revolution error is scaled by 1.0 (representing a full turn)
+        ctrl_gt total_error = (ctrl_gt)rev_error + angle_error;
+
+        // 4. Apply the proportional gain to get the speed reference.
+        pc->speed_ref = ctl_mul(pc->kp, total_error);
+
+        // 5. Saturate the output to the defined speed limit.
+        pc->speed_ref = ctl_sat(pc->speed_ref, pc->speed_limit, -pc->speed_limit);
     }
 }
 
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_pos_loop_p_ctrl_target_spd(ctl_pos_loop_p_ctrl_t *pos_ctrl)
+/**
+ * @brief Gets the calculated speed reference output.
+ * @param[in] pc Pointer to the position controller structure.
+ * @return The current speed reference to be sent to the velocity controller.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_pos_speed_ref(const ctl_pos_controller_t* pc)
 {
-    return pos_ctrl->speed_ref;
+    return pc->speed_ref;
 }
+
+/** @} */ // end of POSITION_CONTROLLER group
 
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
-#endif // _FILE_BASIC_SPEED_LOOP_P_H_
+#endif // _FILE_BASIC_POS_LOOP_P_H_

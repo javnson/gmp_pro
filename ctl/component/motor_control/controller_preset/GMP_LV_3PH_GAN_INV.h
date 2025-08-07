@@ -23,6 +23,7 @@ extern "C"
 
 /**
  * @defgroup HW_BOARD_PARAMETERS Inverter Hardware Parameters
+ * @ingroup CTL_MC_PRESET
  * @brief Contains definitions specific to the GMP LV 3-Phase GaN Inverter hardware.
  * @{
  */

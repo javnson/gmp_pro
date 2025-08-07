@@ -1,205 +1,189 @@
 /**
- * @file basic_pos_loop_p.h
+ * @file knob_pos_loop.h
  * @author Javnson (javnson@zju.edu.cn)
- * @brief Implements a basic proportional (P) position controller.
- * @details This module provides a simple and effective position controller. It takes
- * a target position (composed of full revolutions and an angle) and a feedback
- * position, calculates the error, and multiplies it by a proportional gain (Kp)
- * to produce a speed reference. The output is saturated to a defined limit.
- * This controller forms the outermost loop in a cascaded position control system.
- *
+ * @brief Implements a haptic knob position loop with discrete detents.
+ * @details This module creates a "knob" effect by defining a series of stable setpoints (detents).
+ * When the motor's actual position is near a detent, a proportional controller generates a
+ * speed reference to pull the motor towards the center of that detent, simulating the feel
+ * of a physical knob.
  * @version 0.2
- * @date 2025-08-06
+ * @date 2024-10-02
  *
  * @copyright Copyright GMP(c) 2024
+ *
  */
 
-#ifndef _FILE_BASIC_POS_LOOP_P_H_
-#define _FILE_BASIC_POS_LOOP_P_H_
+#ifndef _FILE_KNOB_POS_LOOP_H_
+#define _FILE_KNOB_POS_LOOP_H_
 
 #include <ctl/component/intrinsic/discrete/divider.h>
-#include <ctl/math_block/gmp_math.h>
+#include <ctl/component/motor_control/motion/basic_pos_loop_p.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif // __cplusplus
 
+/**
+ * @defgroup KNOB_POSITION_LOOP Haptic Knob Position Loop
+ * @brief A position controller that simulates discrete detents.
+ *
+ * This controller calculates a target position corresponding to the nearest "snap" point
+ * and uses a P-controller to generate a restoring force (as a speed command) towards it.
+ */
+
 /*---------------------------------------------------------------------------*/
-/* Basic Proportional Position Controller                                    */
+/* Haptic Knob Position Loop                                                 */
 /*---------------------------------------------------------------------------*/
 
 /**
- * @defgroup POSITION_CONTROLLER Basic Position Controller
- * @brief A simple P-controller for a position loop.
+ * @addtogroup KNOB_POSITION_LOOP
  * @{
  */
 
-//================================================================================
-// Type Defines & Macros
-//================================================================================
+/**
+ * @brief Data structure for the haptic knob position loop controller.
+ */
+typedef struct _tag_pmsm_knob_pos_loop
+{
+    //
+    // Outputs
+    //
+    int16_t output_pos; /**< The current detent index that the knob is snapped to. */
+    ctrl_gt speed_ref;  /**< The calculated speed reference output. */
 
-#ifndef GMP_STATIC_INLINE
-#define GMP_STATIC_INLINE static inline
-#endif
+    //
+    // Parameters
+    //
+    uint16_t knob_step;  /**< The number of detents (steps) in one full rotation. */
+    ctrl_gt kp;          /**< The proportional gain (Kp) for the restoring force. */
+    ctrl_gt speed_limit; /**< The maximum and minimum limit for the speed reference output. */
+    ctl_divider_t div;   /**< A divider to run the loop at a lower frequency than the main ISR. */
 
-// Define the standard control data type if not already defined
-#ifndef CTRL_GT_DEFINED
-#define CTRL_GT_DEFINED
-typedef float ctrl_gt;
-#endif
+    //
+    // State Variables
+    //
+    int32_t target_pos; /**< The target position (integer part, full rotations). */
+    ctrl_gt target_ang; /**< The target angle (fractional part), corresponding to the center of the current detent. */
+    int32_t actual_pos; /**< The actual feedback position (integer part). */
+    ctrl_gt actual_ang; /**< The actual feedback angle (fractional part). */
+
+} ctl_pmsm_knob_pos_loop;
+
+void ctl_init_knob_pos_loop(ctl_pmsm_knob_pos_loop* knob);
+void ctl_setup_knob_pos_loop(ctl_pmsm_knob_pos_loop* knob, ctrl_gt kp, ctrl_gt speed_limit, uint16_t knob_step,
+                             uint32_t division);
 
 /**
- * @brief Main structure for the basic position P-controller.
+ * @brief Executes one step of the haptic knob control logic.
+ * @details This function calculates the nearest detent position and computes a speed
+ * reference to move towards it.
+ * @param knob Pointer to the `ctl_pmsm_knob_pos_loop` object.
  */
-typedef struct
+GMP_STATIC_INLINE void ctl_step_knob_pos_loop(ctl_pmsm_knob_pos_loop* knob)
 {
-    // --- Configuration ---
-    ctrl_gt kp;          ///< Proportional gain for the position controller.
-    ctrl_gt speed_limit; ///< Maximum output speed reference (saturation limit).
-
-    // --- Target & Feedback ---
-    int32_t target_revs;  ///< The integer part of the target position (full revolutions).
-    ctrl_gt target_angle; ///< The fractional part of the target position (0.0 to 1.0).
-    int32_t actual_revs;  ///< The integer part of the feedback position.
-    ctrl_gt actual_angle; ///< The fractional part of the feedback position.
-
-    // --- Output ---
-    ctrl_gt speed_ref; ///< The output speed reference fed to the velocity loop.
-
-    // --- Execution Control ---
-    ctl_divider_t div; ///< Divider to run the position loop at a lower frequency.
-
-} ctl_pos_controller_t;
-
-//================================================================================
-// Function Prototypes & Definitions
-//================================================================================
-
-/**
- * @brief Initializes the position controller structure to safe defaults.
- * @param[out] pc Pointer to the position controller structure.
- */
-GMP_STATIC_INLINE void ctl_init_pos_controller(ctl_pos_controller_t* pc)
-{
-    pc->kp = 0.0f;
-    pc->speed_limit = 0.0f;
-    pc->target_revs = 0;
-    pc->target_angle = 0.0f;
-    pc->actual_revs = 0;
-    pc->actual_angle = 0.0f;
-    pc->speed_ref = 0.0f;
-    ctl_set_divider(&pc->div, 1);
-}
-
-/**
- * @brief Sets up the parameters for the position controller.
- * @param[out] pc Pointer to the position controller structure.
- * @param[in]  kp Proportional gain.
- * @param[in]  speed_limit Maximum output speed reference.
- * @param[in]  division The frequency division factor for the controller execution.
- */
-GMP_STATIC_INLINE void ctl_setup_pos_controller(ctl_pos_controller_t* pc, ctrl_gt kp, ctrl_gt speed_limit,
-                                                uint32_t division)
-{
-    pc->kp = kp;
-    pc->speed_limit = fabsf(speed_limit);
-    ctl_set_divider(&pc->div, division);
-}
-
-/**
- * @brief Sets the target position for the controller.
- * @param[out] pc Pointer to the position controller structure.
- * @param[in]  target_revs The target number of full revolutions.
- * @param[in]  target_angle The fractional target angle (0.0 to 1.0).
- */
-GMP_STATIC_INLINE void ctl_set_pos_target(ctl_pos_controller_t* pc, int32_t target_revs, ctrl_gt target_angle)
-{
-    pc->target_revs = target_revs;
-    pc->target_angle = target_angle;
-}
-
-/**
- * @brief Provides the controller with the current motor position feedback.
- * @param[out] pc Pointer to the position controller structure.
- * @param[in]  actual_revs The current number of full revolutions.
- * @param[in]  actual_angle The current angle within the revolution (0.0 to 1.0).
- */
-GMP_STATIC_INLINE void ctl_input_pos_feedback(ctl_pos_controller_t* pc, int32_t actual_revs, ctrl_gt actual_angle)
-{
-    pc->actual_revs = actual_revs;
-    pc->actual_angle = actual_angle;
-}
-
-/**
- * @brief Provides position feedback using only an angle, tracking revolutions internally.
- * @param[out] pc Pointer to the position controller structure.
- * @param[in]  actual_angle The current angle within the revolution (0.0 to 1.0).
- */
-GMP_STATIC_INLINE void ctl_input_pos_feedback_angle_only(ctl_pos_controller_t* pc, ctrl_gt actual_angle)
-{
-    ctrl_gt delta_ang = actual_angle - pc->actual_angle;
-    pc->actual_angle = actual_angle;
-    if (delta_ang < -0.5f)
+    if (ctl_step_divider(&knob->div))
     {
-        pc->actual_revs++;
-    }
-    else if (delta_ang > 0.5f)
-    {
-        pc->actual_revs--;
+        // Calculate the angular width of a single detent step.
+        ctrl_gt step_width = GMP_CONST_1 / knob->knob_step;
+        ctrl_gt half_step_width = step_width / 2;
+
+        // Determine the index of the current detent based on the actual angle.
+        knob->output_pos = (int16_t)(knob->actual_ang / step_width);
+
+        // Set the target angle to be the center of the current detent.
+        knob->target_ang = knob->output_pos * step_width + half_step_width;
+        knob->target_pos = knob->actual_pos;
+
+        // --- P-Controller Logic ---
+        // Calculate position error.
+        int32_t delta_pos = knob->target_pos - knob->actual_pos;
+
+        // Clamp the multi-turn error to prevent excessive speed when crossing many detents at once.
+        delta_pos = (delta_pos > 2) ? 2 : delta_pos;
+        delta_pos = (delta_pos < -2) ? -2 : delta_pos;
+
+        // Combine integer and fractional parts into a single error value.
+        ctrl_gt position_error = GMP_CONST_2_PI * (ctrl_gt)delta_pos + knob->target_ang - knob->actual_ang;
+
+        // Apply proportional gain.
+        knob->speed_ref = ctl_mul(knob->kp, position_error);
+
+        // Saturate the output to the speed limit.
+        knob->speed_ref = ctl_sat(knob->speed_ref, knob->speed_limit, -knob->speed_limit);
     }
 }
 
 /**
- * @brief Executes one step of the position control loop.
- * @param[out] pc Pointer to the position controller structure.
+ * @brief Inputs the feedback position from a multi-turn encoder.
+ * @param knob Pointer to the `ctl_pmsm_knob_pos_loop` object.
+ * @param actual_pos The actual position (number of full rotations).
+ * @param actual_ang The actual angle within a rotation (0.0 to 1.0 p.u.).
  */
-GMP_STATIC_INLINE void ctl_step_pos_controller(ctl_pos_controller_t* pc)
+GMP_STATIC_INLINE void ctl_input_knob_pos(ctl_pmsm_knob_pos_loop* knob, int32_t actual_pos, ctrl_gt actual_ang)
 {
-    if (ctl_step_divider(&pc->div))
+    knob->actual_pos = actual_pos;
+    knob->actual_ang = actual_ang;
+}
+
+/**
+ * @brief Inputs the feedback position from a single-turn encoder.
+ * @details Reconstructs the multi-turn count by detecting angle wrap-arounds.
+ * @param knob Pointer to the `ctl_pmsm_knob_pos_loop` object.
+ * @param actual_ang The actual angle from the single-turn encoder (0.0 to 1.0 p.u.).
+ */
+GMP_STATIC_INLINE void ctl_input_knob_pos_via_only_ang(ctl_pmsm_knob_pos_loop* knob, ctrl_gt actual_ang)
+{
+    ctrl_gt delta_ang = actual_ang - knob->actual_ang;
+    knob->actual_ang = actual_ang;
+
+    // Correct the multi-turn count based on angle wrap-around.
+    if (delta_ang < -GMP_CONST_1_OVER_2)
     {
-        // 1. Calculate the error in full revolutions.
-        int32_t rev_error = pc->target_revs - pc->actual_revs;
-
-        // 2. Calculate the error in the fractional angle.
-        ctrl_gt angle_error = pc->target_angle - pc->actual_angle;
-
-        // Correct for angle wrap-around to ensure the shortest path is taken.
-        if (angle_error > 0.5f)
-        {
-            angle_error -= 1.0f;
-        }
-        else if (angle_error < -0.5f)
-        {
-            angle_error += 1.0f;
-        }
-
-        // 3. Combine the errors into a single total position error.
-        // The revolution error is scaled by 1.0 (representing a full turn)
-        ctrl_gt total_error = (ctrl_gt)rev_error + angle_error;
-
-        // 4. Apply the proportional gain to get the speed reference.
-        pc->speed_ref = ctl_mul(pc->kp, total_error);
-
-        // 5. Saturate the output to the defined speed limit.
-        pc->speed_ref = ctl_sat(pc->speed_ref, pc->speed_limit, -pc->speed_limit);
+        knob->actual_pos += 1; // Forward wrap
+    }
+    else if (delta_ang > GMP_CONST_1_OVER_2)
+    {
+        knob->actual_pos -= 1; // Backward wrap
     }
 }
 
 /**
- * @brief Gets the calculated speed reference output.
- * @param[in] pc Pointer to the position controller structure.
- * @return The current speed reference to be sent to the velocity controller.
+ * @brief Gets the current detent index.
+ * @param knob Pointer to the `ctl_pmsm_knob_pos_loop` object.
+ * @return The index of the current detent.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_get_pos_speed_ref(const ctl_pos_controller_t* pc)
+GMP_STATIC_INLINE int16_t ctl_get_knob_index(ctl_pmsm_knob_pos_loop* knob)
 {
-    return pc->speed_ref;
+    return knob->output_pos;
 }
 
-/** @} */ // end of POSITION_CONTROLLER group
+/**
+ * @brief Gets the calculated target speed reference.
+ * @param knob Pointer to the `ctl_pmsm_knob_pos_loop` object.
+ * @return The speed reference output.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_knob_target_speed(ctl_pmsm_knob_pos_loop* knob)
+{
+    return knob->speed_ref;
+}
+
+/**
+ * @brief Gets the target angle (the center of the current detent).
+ * @param knob Pointer to the `ctl_pmsm_knob_pos_loop` object.
+ * @return The target angle in per-unit.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_knob_target_angle(ctl_pmsm_knob_pos_loop* knob)
+{
+    return knob->target_ang;
+}
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
-#endif // _FILE_BASIC_POS_LOOP_P_H_
+#endif // _FILE_KNOB_POS_LOOP_H_

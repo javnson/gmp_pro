@@ -21,6 +21,7 @@ extern "C"
 
 /**
  * @defgroup ACM_4P24V_PARAMETERS Motor Parameters (ACM 4-Pole 24V)
+ * @ingroup CTL_MC_PRESET
  * @brief Contains all parameter definitions for the specified AC Induction Motor.
  * @{
  */

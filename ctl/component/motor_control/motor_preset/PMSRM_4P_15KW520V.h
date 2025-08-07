@@ -25,6 +25,7 @@ extern "C"
 
 /**
  * @defgroup PMSRM_4P_15KW_PARAMETERS Motor Parameters (PMSRM 4-Pole 15kW)
+ * @ingroup CTL_MC_PRESET
  * @brief Contains all parameter definitions for the specified PMSRM.
  * @{
  */

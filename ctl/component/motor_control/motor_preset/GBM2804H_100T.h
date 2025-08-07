@@ -25,6 +25,7 @@ extern "C"
 
 /**
  * @defgroup PMSM_GBM2804H_PARAMETERS Motor Parameters (GBM2804H-100T)
+ * @ingroup CTL_MC_PRESET
  * @brief Contains all parameter definitions for the specified PMSM.
  * @{
  */

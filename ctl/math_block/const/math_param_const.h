@@ -33,12 +33,16 @@
 #endif
 
 #ifndef CTL_PARAM_CONST_2PI
-#define CTL_PARAM_CONST_2PI ((parameter_gt)(3.141592653589793*2.0)) /**< @brief The constant 2Pi (2¦Ð). */
+#define CTL_PARAM_CONST_2PI ((parameter_gt)(3.141592653589793 * 2.0)) /**< @brief The constant 2Pi (2¦Ð). */
 #endif
 
 #ifndef CTL_PARAM_CONST_E
 #define CTL_PARAM_CONST_E ((parameter_gt)(2.718281828459045)) /**< @brief Euler's number (e). */
 #endif
+
+#ifndef CTL_CONST_PARAM_3_OVER_2
+#define CTL_CONST_PARAM_3_OVER_2 ((parameter_gt)(1.5f))  /**< @brief 1.5. */
+#endif  
 
 #ifndef CTL_PARAM_CONST_SQRT2
 #define CTL_PARAM_CONST_SQRT2 ((parameter_gt)(1.414213562373095)) /**< @brief The square root of 2. */
@@ -46,6 +50,18 @@
 
 #ifndef CTL_PARAM_CONST_SQRT3
 #define CTL_PARAM_CONST_SQRT3 ((parameter_gt)(1.732050807568877)) /**< @brief The square root of 3. */
+#endif
+
+#ifndef CTL_PARAM_CONST_SQRT3_OVER_SQRT2
+#define CTL_PARAM_CONST_SQRT3_OVER_SQRT2 ((parameter_gt)(1.22474487139158905)) /**< @brief The square root of 3/2. */
+#endif
+
+#ifndef CTL_CONST_PARAM_2_SQRT_6
+#define CTL_CONST_PARAM_2_SQRT_6 ((parameter_gt)(4.8989794855663562)) /**< @brief 2 times the square root of 6. */
+#endif
+
+#ifndef CTL_CONST_PARAM_100PI_OVER_3
+#define CTL_CONST_PARAM_100PI_OVER_3 ((parameter_gt)(104.7197551196597746)) /**< @brief 2 times the square root of 6. */
 #endif
 
 #ifndef CTL_PARAM_CONST_1_OVER_SQRT2

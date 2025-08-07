@@ -23,6 +23,7 @@ extern "C"
 
 /**
  * @defgroup PMSM_TYI5010_PARAMETERS Motor Parameters (TYI-5010 KV360)
+ * @ingroup CTL_MC_PRESET
  * @brief Contains all parameter definitions for the specified PMSM.
  * @{
  */

@@ -1,12 +1,12 @@
 /**
-    * @file GMP_3PH_2136SINV_DUAL.h
-    * @brief Defines hardware-specific parameters for the GMP 3PH 2136SINV DUAL inverter board.
-    * @details This file contains pre-defined constants related to the analog-to-digital
-    * converter (ADC) scaling for current and voltage sensing on this specific hardware.
-    *
-    * @version 1.0
-    * @date 2025-08-06
-    */
+  * @file GMP_3PH_2136SINV_DUAL.h
+  * @brief Defines hardware-specific parameters for the GMP 3PH 2136SINV DUAL inverter board.
+  * @details This file contains pre-defined constants related to the analog-to-digital
+  * converter (ADC) scaling for current and voltage sensing on this specific hardware.
+  *
+  * @version 1.0
+  * @date 2025-08-06
+  */
 
 #ifndef _FILE_GMP_3PH_2136SINV_DUAL_H_
 #define _FILE_GMP_3PH_2136SINV_DUAL_H_
@@ -21,21 +21,22 @@ extern "C"
 /*---------------------------------------------------------------------------*/
 
 /**
-    * @defgroup HW_BOARD_PARAMETERS_2136SINV 2136SINV Inverter Hardware Parameters
-    * @brief Contains definitions specific to the GMP 3PH 2136SINV DUAL hardware.
-    * @{
-    */
+ * @defgroup HW_BOARD_PARAMETERS_2136SINV 2136SINV Inverter Hardware Parameters
+ * @ingroup CTL_MC_PRESET
+ * @brief Contains definitions specific to the GMP 3PH 2136SINV DUAL hardware.
+ * @{
+ */
 
 /*---------------------------------------------------------------------------*/
 /* ADC Scaling Parameters                                                    */
 /*---------------------------------------------------------------------------*/
 
 /**
-    * @defgroup HW_ADC_SCALING_2136SINV ADC Scaling and Reference Values
-    * @ingroup HW_BOARD_PARAMETERS_2136SINV
-    * @brief Defines the scaling factors and reference voltages for ADC conversion.
-    * @{
-    */
+ * @defgroup HW_ADC_SCALING_2136SINV ADC Scaling and Reference Values
+ * @ingroup HW_BOARD_PARAMETERS_2136SINV
+ * @brief Defines the scaling factors and reference voltages for ADC conversion.
+ * @{
+ */
 
 /**
     * @brief The reference voltage for the ADC peripheral.

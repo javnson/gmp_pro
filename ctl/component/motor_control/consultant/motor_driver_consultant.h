@@ -26,7 +26,7 @@ extern "C"
 
 /**
  * @defgroup MC_DRIVER_CONSULTANT Motor Driver Consultant
- * @ingroup MC_DEFINES
+ * @ingroup CTL_MC_COMPONENT
  * @brief Defines parameters and structures related to the motor driver hardware and software configuration.
  */
 

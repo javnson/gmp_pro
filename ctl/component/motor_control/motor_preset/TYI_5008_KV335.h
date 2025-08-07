@@ -23,6 +23,7 @@ extern "C"
 
 /**
  * @defgroup PMSM_TYI5008_PARAMETERS Motor Parameters (TYI-5008 KV335)
+ * @ingroup CTL_MC_PRESET
  * @brief Contains all parameter definitions for the specified PMSM.
  * @{
  */

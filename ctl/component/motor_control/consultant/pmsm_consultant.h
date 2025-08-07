@@ -15,8 +15,8 @@
 #ifndef _FILE_PMSM_CONSULTANT_H_
 #define _FILE_PMSM_CONSULTANT_H_
 
-#include "motor_per_unit_consultant.h" // Include for per-unit system base values
-#include "motor_unit_calculator.h"     // Include for physical constants and unit conversions
+#include <ctl/component/motor_control/consultant/motor_per_unit_consultant.h> // Include for per-unit system base values
+#include <ctl/component/motor_control/consultant/motor_unit_calculator.h> // Include for physical constants and unit conversions
 
 #ifdef __cplusplus
 extern "C"
@@ -33,7 +33,7 @@ struct _tag_pmsm_dsn_consultant_t;
 
 /**
  * @defgroup MC_PMSM_NAMEPLATE PMSM Nameplate Consultant
- * @ingroup MC_DEFINES
+ * @ingroup CTL_MC_COMPONENT
  * @brief Holds the rated (nameplate) parameters of a PMSM.
  * @{
  */
@@ -89,7 +89,7 @@ void ctl_setup_pmsm_nameplate_consultant(ctl_pmsm_nameplate_consultant_t* np, pa
 
 /**
  * @defgroup MC_PMSM_DESIGN PMSM Design Consultant
- * @ingroup MC_DEFINES
+ * @ingroup CTL_MC_COMPONENT
  * @brief Holds the design (model) parameters of a PMSM.
  * @{
  */
@@ -141,7 +141,7 @@ void ctl_setup_pmsm_dsn_consultant(ctl_pmsm_dsn_consultant_t* pmsm_dsn, uint16_t
 
 /**
  * @defgroup MC_PMSM_CALCULATORS PMSM Parameter Calculators
- * @ingroup MC_DEFINES
+ * @ingroup CTL_MC_COMPONENT
  * @brief A collection of functions to calculate derived parameters and tune controllers.
  * @{
  */
@@ -152,9 +152,9 @@ void ctl_setup_pmsm_dsn_consultant(ctl_pmsm_dsn_consultant_t* pmsm_dsn, uint16_t
  * @param[in] pmsm_dsn Pointer to the populated motor design consultant structure.
  * @return The torque constant in N·m / Amp_peak.
  */
-static inline parameter_gt ctl_pmsm_get_Kt(const ctl_pmsm_dsn_consultant_t* pmsm_dsn)
+GMP_STATIC_INLINE parameter_gt ctl_pmsm_get_Kt(const ctl_pmsm_dsn_consultant_t* pmsm_dsn)
 {
-    return (1.5 * pmsm_dsn->pole_pair * pmsm_dsn->flux);
+    return (1.5f * pmsm_dsn->pole_pair * pmsm_dsn->flux);
 }
 
 /**
@@ -164,7 +164,7 @@ static inline parameter_gt ctl_pmsm_get_Kt(const ctl_pmsm_dsn_consultant_t* pmsm
  * @param[in] pmsm_dsn Pointer to the populated motor design consultant structure.
  * @return The back-EMF constant in V_peak / (rad/s_elec).
  */
-static inline parameter_gt ctl_pmsm_get_Ke_Vpeak_per_rads(const ctl_pmsm_dsn_consultant_t* pmsm_dsn)
+GMP_STATIC_INLINE parameter_gt ctl_pmsm_get_Ke_Vpeak_per_rads(const ctl_pmsm_dsn_consultant_t* pmsm_dsn)
 {
     return (pmsm_dsn->pole_pair * pmsm_dsn->flux);
 }
@@ -176,11 +176,12 @@ static inline parameter_gt ctl_pmsm_get_Ke_Vpeak_per_rads(const ctl_pmsm_dsn_con
  * @param[in] pmsm_dsn Pointer to the populated motor design consultant structure.
  * @return The back-EMF constant in V_RMS_LL / kRPM.
  */
-static inline parameter_gt ctl_pmsm_get_Ke_Vrms_per_krpm(const ctl_pmsm_dsn_consultant_t* pmsm_dsn)
+GMP_STATIC_INLINE parameter_gt ctl_pmsm_get_Ke_Vrms_per_krpm(const ctl_pmsm_dsn_consultant_t* pmsm_dsn)
 {
     // Ke(Vp/rads) * (rads/s / RPM) * (RPM / kRPM) * Vrms/Vp
     // Ke(Vp/rads) * (2*pi/60) * 1000 * (1/sqrt(2)) * sqrt(3) for L-L
-    return ctl_pmsm_get_Ke_Vpeak_per_rads(pmsm_dsn) * (M_PI * 100.0 / 3.0) * M_SQRT3 / M_SQRT2;
+    return ctl_pmsm_get_Ke_Vpeak_per_rads(pmsm_dsn) * (CTL_PARAM_CONST_PI * 100.0f / 3.0f) *
+           CTL_PARAM_CONST_SQRT3_OVER_SQRT2;
 }
 
 /**
@@ -197,11 +198,11 @@ static inline parameter_gt ctl_pmsm_get_Ke_Vrms_per_krpm(const ctl_pmsm_dsn_cons
  * @param[out] kp_q Pointer to store the q-axis proportional gain.
  * @param[out] ki_q Pointer to store the q-axis integral gain.
  */
-static inline void ctl_pmsm_tune_current_pi_params(const ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt bandwidth_hz,
+GMP_STATIC_INLINE void ctl_pmsm_tune_current_pi_params(const ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt bandwidth_hz,
                                                    parameter_gt* kp_d, parameter_gt* ki_d, parameter_gt* kp_q,
                                                    parameter_gt* ki_q)
 {
-    parameter_gt alpha_c = M_2_PI * bandwidth_hz; // Convert Hz to rad/s
+    parameter_gt alpha_c = CTL_PARAM_CONST_2PI * bandwidth_hz; // Convert Hz to rad/s
 
     *kp_d = alpha_c * pmsm_dsn->Ld;
     *ki_d = alpha_c * pmsm_dsn->Rs;
@@ -221,7 +222,7 @@ static inline void ctl_pmsm_tune_current_pi_params(const ctl_pmsm_dsn_consultant
  * @param[out] kp Pointer to store the calculated proportional gain.
  * @param[out] ki Pointer to store the calculated integral gain.
  */
-static inline void ctl_pmsm_tune_speed_pi_params(const ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt bandwidth_hz,
+GMP_STATIC_INLINE void ctl_pmsm_tune_speed_pi_params(const ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt bandwidth_hz,
                                                  parameter_gt* kp, parameter_gt* ki)
 {
     parameter_gt kt = ctl_pmsm_get_Kt(pmsm_dsn);
@@ -232,7 +233,7 @@ static inline void ctl_pmsm_tune_speed_pi_params(const ctl_pmsm_dsn_consultant_t
         return;
     }
 
-    parameter_gt alpha_s = M_2_PI * bandwidth_hz; // Convert Hz to rad/s
+    parameter_gt alpha_s = CTL_PARAM_CONST_2PI * bandwidth_hz; // Convert Hz to rad/s
 
     *kp = (alpha_s * pmsm_dsn->inertia) / kt;
     // Note: Ki calculation depends on an accurate damping/friction parameter 'B'.
@@ -248,7 +249,7 @@ static inline void ctl_pmsm_tune_speed_pi_params(const ctl_pmsm_dsn_consultant_t
 
 /**
  * @defgroup MC_PMSM_PU_CONVERTERS Per-Unit System Converters
- * @ingroup MC_DEFINES
+ * @ingroup CTL_MC_COMPONENT
  * @brief A collection of functions to convert PI controller gains to the per-unit system.
  * @{
  */
@@ -265,7 +266,7 @@ static inline void ctl_pmsm_tune_speed_pi_params(const ctl_pmsm_dsn_consultant_t
  * @param[out] kp_pu Pointer to store the per-unit proportional gain.
  * @param[out] ki_pu Pointer to store the per-unit integral gain.
  */
-static inline void ctl_pmsm_convert_current_pi_to_pu(const ctl_per_unit_consultant_t* pu, parameter_gt kp_real,
+GMP_STATIC_INLINE void ctl_pmsm_convert_current_pi_to_pu(const ctl_per_unit_consultant_t* pu, parameter_gt kp_real,
                                                      parameter_gt ki_real, parameter_gt* kp_pu, parameter_gt* ki_pu)
 {
     if (pu->base_impedence < 1e-9 || pu->base_omega < 1e-9)
@@ -290,7 +291,7 @@ static inline void ctl_pmsm_convert_current_pi_to_pu(const ctl_per_unit_consulta
  * @param[out] kp_pu Pointer to store the per-unit proportional gain.
  * @param[out] ki_pu Pointer to store the per-unit integral gain.
  */
-static inline void ctl_pmsm_convert_speed_pi_to_pu(const ctl_per_unit_consultant_t* pu, parameter_gt kp_real,
+GMP_STATIC_INLINE void ctl_pmsm_convert_speed_pi_to_pu(const ctl_per_unit_consultant_t* pu, parameter_gt kp_real,
                                                    parameter_gt ki_real, parameter_gt* kp_pu, parameter_gt* ki_pu)
 {
     if (pu->base_current < 1e-9)

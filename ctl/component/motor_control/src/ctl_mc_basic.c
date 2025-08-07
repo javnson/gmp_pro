@@ -216,7 +216,7 @@ parameter_gt ctl_consult_pmsm_Ke(ctl_pmsm_dsn_consultant_t* pmsm_dsn)
 parameter_gt ctl_consult_pmsm_Ke_Vp_krpm(ctl_pmsm_dsn_consultant_t* pmsm_dsn)
 {
     return pmsm_dsn->flux * (parameter_gt)CTL_CONST_PARAM_2_SQRT_6 * (parameter_gt)CTL_CONST_PARAM_100PI_OVER_3 *
-           (parameter_gt)CTL_CONST_PARAM_SQRT_2;
+           (parameter_gt)CTL_CONST_PARAM_SQRT2;
 }
 
 parameter_gt ctl_consult_pmsm_Ke_Vrms_krpm(ctl_pmsm_dsn_consultant_t* pmsm_dsn)
@@ -242,7 +242,7 @@ void ctl_dsn_pmsm_flux_via_Ke(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt 
 void ctl_dsn_pmsm_flux_via_Ke_Vp_krpm(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt Ke)
 {
     pmsm_dsn->flux = Ke / (parameter_gt)CTL_CONST_PARAM_2_SQRT_6 /
-                     ((parameter_gt)CTL_CONST_PARAM_100PI_OVER_3 * (parameter_gt)CTL_CONST_PARAM_SQRT_2);
+                     ((parameter_gt)CTL_CONST_PARAM_100PI_OVER_3 * (parameter_gt)CTL_CONST_PARAM_SQRT2);
 }
 
 void ctl_dsn_pmsm_flux_via_Ke_Vrms_krpm(ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt Ke)

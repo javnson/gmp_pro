@@ -8,7 +8,7 @@
  * then transformed back to the stationary frame (Inverse Park) to be used by
  * a PWM modulator.
  *
- * @version 0.2
+ * @version 0.3
  * @date 2025-08-06
  *
  * //tex:
@@ -44,16 +44,6 @@ extern "C"
 // Type Defines & Macros
 //================================================================================
 
-#ifndef GMP_STATIC_INLINE
-#define GMP_STATIC_INLINE static inline
-#endif
-
-// Define the standard control data type if not already defined
-#ifndef CTRL_GT_DEFINED
-#define CTRL_GT_DEFINED
-typedef float ctrl_gt;
-#endif
-
 /**
  * @brief Main structure for the FOC current controller.
  */
@@ -73,7 +63,7 @@ typedef struct
     ctl_vector3_t vab0; ///< The final alpha-beta voltages to be sent to the modulator.
 
     // --- State ---
-    fast_gt is_enabled; ///< Flag to enable or disable the PI controller action.
+    fast_gt flag_enable_controller; ///< Flag to enable or disable the PI controller action.
 
 } ctl_current_controller_t;
 
@@ -95,7 +85,7 @@ GMP_STATIC_INLINE void ctl_init_current_controller(ctl_current_controller_t* cc)
     ctl_vector3_clear(&cc->idq0);
     ctl_vector3_clear(&cc->vdq0);
     ctl_vector3_clear(&cc->vab0);
-    cc->is_enabled = 0;
+    cc->flag_enable_controller = 0;
 }
 
 /**
@@ -108,8 +98,14 @@ GMP_STATIC_INLINE void ctl_init_current_controller(ctl_current_controller_t* cc)
  * @param[in]  out_min Minimum output limit (voltage).
  * @param[in]  fs Controller execution frequency (Hz).
  */
-void ctl_init_current_controller(ctl_current_controller_t* cc, ctrl_gt kp, ctrl_gt Ti, ctrl_gt Td, ctrl_gt out_max,
-                                  ctrl_gt out_min, parameter_gt fs);
+GMP_STATIC_INLINE void ctl_setup_current_controller(ctl_current_controller_t* cc, ctrl_gt kp, ctrl_gt Ti, ctrl_gt Td,
+                                                    ctrl_gt out_max, ctrl_gt out_min, parameter_gt fs)
+{
+    // Setup the d-axis current controller
+    ctl_setup_pid_ser(&cc->idq_ctrl[0], kp, Ti, Td, out_max, out_min, fs);
+    // Setup the q-axis current controller
+    ctl_setup_pid_ser(&cc->idq_ctrl[1], kp, Ti, Td, out_max, out_min, fs);
+}
 
 /**
  * @brief Resets the PI controllers and feedforward terms.
@@ -165,7 +161,7 @@ GMP_STATIC_INLINE void ctl_step_current_controller(ctl_current_controller_t* cc,
     ctl_ct_park(&cc->iab0, &phasor, &cc->idq0);
 
     // 3. Execute PI controllers if enabled.
-    if (cc->is_enabled)
+    if (cc->flag_enable_controller)
     {
         // Calculate error and step the PI controllers
         ctrl_gt err_d = cc->idq_ref.dat[0] - cc->idq0.dat[0];
@@ -194,7 +190,7 @@ GMP_STATIC_INLINE void ctl_step_current_controller(ctl_current_controller_t* cc,
  */
 GMP_STATIC_INLINE void ctl_enable_current_controller(ctl_current_controller_t* cc)
 {
-    cc->is_enabled = 1;
+    cc->flag_enable_controller = 1;
 }
 
 /**
@@ -204,7 +200,7 @@ GMP_STATIC_INLINE void ctl_enable_current_controller(ctl_current_controller_t* c
  */
 GMP_STATIC_INLINE void ctl_disable_current_controller(ctl_current_controller_t* cc)
 {
-    cc->is_enabled = 0;
+    cc->flag_enable_controller = 0;
 }
 
 /** @} */ // end of CURRENT_CONTROLLER group

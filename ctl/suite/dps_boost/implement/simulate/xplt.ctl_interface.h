@@ -47,7 +47,7 @@ void ctl_output_callback(void)
     //
     // PWM Channel
     //
-    simulink_tx_buffer.pwm_cmp[0] = ctl_calc_pwm_channel(&pwm_out, ctl_get_boost_ctrl_modulation(&boost_ctrl));
+    simulink_tx_buffer.pwm_cmp[0] = ctl_step_pwm_channel(&pwm_out, ctl_get_boost_ctrl_modulation(&boost_ctrl));
 
     //
     // Monitor

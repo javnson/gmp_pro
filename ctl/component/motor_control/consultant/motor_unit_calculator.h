@@ -17,6 +17,7 @@
 
 /**
  * @defgroup MC_DEFINES Motor Control Definitions
+ * @ingroup CTL_MC_COMPONENT
  * @brief A collection of common definitions, constants, and macros for motor control.
  */
 
@@ -50,11 +51,11 @@
  */
 
 // --- Mathematical and Physical Constants ---
-#define M_PI          (3.141592653589793) /**< @brief The constant PI. */
-#define M_2_PI        (6.283185307179586) /**< @brief The constant 2*PI. */
-#define M_1_DIV_SQRT3 (0.577350269189626) /**< @brief The constant 1/sqrt(3). */
-#define M_SQRT3       (1.732050807568877) /**< @brief The constant sqrt(3). */
-#define M_2_DIV_3     (0.666666666666667) /**< @brief The constant 2/3. */
+//#define M_PI          (3.141592653589793) /**< @brief The constant PI. */
+//#define M_2_PI        (6.283185307179586) /**< @brief The constant 2*PI. */
+//#define M_1_DIV_SQRT3 (0.577350269189626) /**< @brief The constant 1/sqrt(3). */
+//#define M_SQRT3       (1.732050807568877) /**< @brief The constant sqrt(3). */
+//#define M_2_DIV_3     (0.666666666666667) /**< @brief The constant 2/3. */
 
 // --- Angular Velocity Conversions ---
 

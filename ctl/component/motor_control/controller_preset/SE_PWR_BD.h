@@ -22,6 +22,7 @@ extern "C"
 
 /**
  * @defgroup HW_BOARD_PARAMETERS_SE_PWR SE Power Board Hardware Parameters
+ * @ingroup CTL_MC_PRESET
  * @brief Contains definitions specific to the SE Power Board hardware.
  * @{
  */

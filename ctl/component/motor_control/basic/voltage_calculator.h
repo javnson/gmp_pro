@@ -26,7 +26,6 @@ extern "C"
 
 /**
  * @defgroup MC_VOLTAGE_CALCULATOR Voltage Calculator
- * @ingroup MC_INTERFACE
  * @brief Calculates AC phase voltages from DC bus voltage and SVPWM signals.
  * @{
  */

@@ -85,6 +85,7 @@ GMP_STATIC_INLINE void ctl_mtr_pmsm_decouple_pu(ctl_vector2_t* vdq_ff_pu, const 
 
 /**
  * @defgroup MC_DECOUPLE_ACM Induction Motor / RL Filter Decoupling Control
+ * @ingroup CTL_MC_COMPONENT
  * @brief Decoupling voltage calculation for Induction Motors or generic RL loads.
  * @{
  */

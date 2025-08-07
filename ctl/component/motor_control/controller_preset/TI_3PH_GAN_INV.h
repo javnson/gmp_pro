@@ -22,6 +22,7 @@ extern "C"
 
 /**
  * @defgroup HW_BOARD_PARAMETERS_TI_GAN TI GaN Inverter Hardware Parameters
+ * @ingroup CTL_MC_PRESET
  * @brief Contains definitions specific to the TI 3-Phase GaN Inverter hardware.
  * @{
  */

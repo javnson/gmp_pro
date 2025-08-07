@@ -9,15 +9,14 @@
  * (triangular acceleration) profiles. All functions are defined as static
  * inline for performance.
  *
- * //tex:
- * // The S-Curve profile is defined by 7 distinct phases:
- * // 1. Constant positive jerk (acceleration increases linearly)
- * // 2. Constant maximum acceleration
- * // 3. Constant negative jerk (acceleration decreases linearly)
- * // 4. Constant velocity (not explicitly managed by this velocity planner)
- * // 5. Constant negative jerk (deceleration begins)
- * // 6. Constant maximum deceleration
- * // 7. Constant positive jerk (deceleration returns to zero)
+ *  The S-Curve profile is defined by 7 distinct phases:
+ *  1. Constant positive jerk (acceleration increases linearly)
+ *  2. Constant maximum acceleration
+ *  3. Constant negative jerk (acceleration decreases linearly)
+ *  4. Constant velocity (not explicitly managed by this velocity planner)
+ *  5. Constant negative jerk (deceleration begins)
+ *  6. Constant maximum deceleration
+ *  7. Constant positive jerk (deceleration returns to zero)
  *
  */
 

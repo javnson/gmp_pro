@@ -23,6 +23,7 @@ extern "C"
 
 /**
  * @defgroup PMSM_HBL48ZL400330K_PARAMETERS Motor Parameters (HBL48ZL400330K)
+ * @ingroup CTL_MC_PRESET
  * @brief Contains all parameter definitions for the specified PMSM.
  * @{
  */

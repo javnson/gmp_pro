@@ -80,6 +80,7 @@ GMP_STATIC_INLINE void ctl_step_const_f_controller(ctl_const_f_controller* ctrl)
 
 /**
  * @defgroup SlopeFGen Slope Frequency Generator
+ * @ingroup CTL_MC_COMPONENT
  * @brief A module that generates a frequency signal with a controlled slope.
  *
  * This module changes the output frequency from its current value to a
@@ -166,6 +167,7 @@ void ctl_set_slope_f_freq(ctl_slope_f_controller* ctrl, parameter_gt target_freq
 
 /**
  * @defgroup ConstVFGen Constant V/F Profile Generator
+ * @ingroup CTL_MC_COMPONENT
  * @brief A module to generate a constant Volts/Hertz (V/F) profile.
  *
  * This module is used for open-loop speed control of an AC motor. It generates

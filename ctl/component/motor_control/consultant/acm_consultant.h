@@ -32,9 +32,8 @@ struct _tag_im_dsn_consultant;
 
 /**
  * @defgroup MC_IM_CONSULTANT Induction Motor Design Consultant
- * @ingroup MC_DEFINES
+ * @ingroup CTL_MC_COMPONENT
  * @brief A structure to hold all design parameters for an induction motor.
- * @{
  */
 
 /**
@@ -85,7 +84,7 @@ void ctl_setup_im_dsn_consultant(im_dsn_consultant_t* im_dsn, uint16_t pole_pair
 
 /**
  * @defgroup MC_IM_CALCULATORS Induction Motor Parameter Calculators
- * @ingroup MC_DEFINES
+ * @ingroup CTL_MC_COMPONENT
  * @brief A collection of functions to calculate derived parameters from the base motor model.
  * @{
  */
@@ -214,7 +213,7 @@ static inline void ctl_acm_tune_speed_pi_params(const im_dsn_consultant_t* im_ds
 
 /**
  * @defgroup MC_ACM_PU_CONVERTERS Per-Unit System Converters for ACM
- * @ingroup MC_DEFINES
+ * @ingroup CTL_MC_COMPONENT
  * @brief A collection of functions to convert PI controller gains to the per-unit system for an ACM.
  * @{
  */

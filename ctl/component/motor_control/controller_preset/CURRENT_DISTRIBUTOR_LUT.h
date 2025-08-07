@@ -25,6 +25,7 @@ extern "C"
 
 /**
  * @defgroup CURRENT_DISTRIBUTOR_LUT Current Distributor LUT
+ * @ingroup CTL_MC_PRESET
  * @brief Provides a lookup table for mapping current magnitude to a control angle.
  * @{
  */
