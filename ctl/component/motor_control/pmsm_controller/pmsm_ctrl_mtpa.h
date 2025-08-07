@@ -114,9 +114,9 @@ typedef struct _tag_pmsm_mtpa_bare_controller
     // Controller Entities
     //--------------------------------------------------------------------------
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
-    discrete_pid_t current_ctrl[2]; ///< Discrete PID controllers for d-q axis currents.
-    track_discrete_pid_t spd_ctrl;  ///< Discrete tracking PID controller for speed.
-#else                               // use continuous controller
+    discrete_pid_t current_ctrl[2];       ///< Discrete PID controllers for d-q axis currents.
+    ctl_tracking_discrete_pid_t spd_ctrl; ///< Discrete tracking PID controller for speed.
+#else                                     // use continuous controller
     ctl_pid_t current_ctrl[2];              ///< Continuous PID controllers for d-q axis currents.
     ctl_tracking_continuous_pid_t spd_ctrl; ///< Continuous tracking PID controller for speed.
 #endif
@@ -190,7 +190,7 @@ typedef struct _tag_pmsm_mtpa_bare_controller_init
     parameter_gt acc_limit_min;     ///< Minimum deceleration limit (p.u./s).
     uint32_t spd_ctrl_div;          ///< Speed controller execution frequency divider.
 
-} pmsm_mtpa_bare_controller_init_t;
+} pmsm_mtpa_controller_init_t;
 
 //================================================================================
 // Function Prototypes
@@ -201,7 +201,7 @@ typedef struct _tag_pmsm_mtpa_bare_controller_init
  * @param[out] ctrl Pointer to the controller structure to initialize.
  * @param[in]  init Pointer to the structure containing initialization parameters.
  */
-void ctl_init_pmsm_mtpa_bare_controller(pmsm_mtpa_controller_t* ctrl, pmsm_mtpa_bare_controller_init_t* init);
+void ctl_init_pmsm_mtpa_bare_controller(pmsm_mtpa_controller_t* ctrl, pmsm_mtpa_controller_init_t* init);
 
 /**
  * @brief Attaches the controller to a three-phase PWM output interface.
@@ -226,7 +226,7 @@ GMP_STATIC_INLINE void ctl_clear_pmsm_mtpa_ctrl(pmsm_mtpa_controller_t* ctrl)
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
     ctl_clear_discrete_pid(&ctrl->current_ctrl[phase_d]);
     ctl_clear_discrete_pid(&ctrl->current_ctrl[phase_q]);
-    ctl_clear_discrete_track_pid(&ctrl->spd_ctrl);
+    ctl_clear_tracking_pid(&ctrl->spd_ctrl);
 #else  // continuous controller
     ctl_clear_pid(&ctrl->current_ctrl[phase_d]);
     ctl_clear_pid(&ctrl->current_ctrl[phase_q]);
@@ -290,14 +290,14 @@ GMP_STATIC_INLINE void ctl_step_pmsm_mtpa_ctrl(pmsm_mtpa_controller_t* ctrl)
 #if defined(PMSM_CTRL_USING_CURRENT_DISTRIBUTOR)
             // With MTPA, speed controller outputs total current magnitude
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
-            ctrl->im_set = ctl_step_discrete_track_pid(&ctrl->spd_ctrl, ctrl->speed_set,
-                                                                ctl_get_mtr_velocity(&ctrl->mtr_interface));
+            ctrl->im_set =
+                ctl_step_tracking_pid(&ctrl->spd_ctrl, ctrl->speed_set, ctl_get_mtr_velocity(&ctrl->mtr_interface));
 #else // using continuous controller
             ctrl->im_set = ctl_step_tracking_continuous_pid(&ctrl->spd_ctrl, ctrl->speed_set,
-                                                                     ctl_get_mtr_velocity(&ctrl->mtr_interface));
+                                                            ctl_get_mtr_velocity(&ctrl->mtr_interface));
 #endif
             // Distributor calculates optimal id and iq
-            ctl_step_current_distributor(&ctrl->distributor,ctrl->im_set);
+            ctl_step_current_distributor(&ctrl->distributor, ctrl->im_set);
             ctrl->idq_set.dat[phase_q] = ctl_get_distributor_iq_ref(&ctrl->distributor) + ctrl->idq_ff.dat[phase_q];
             ctrl->idq_set.dat[phase_d] = ctl_get_distributor_id_ref(&ctrl->distributor) + ctrl->idq_ff.dat[phase_d];
 #else

@@ -7,7 +7,7 @@
 // #include "peripheral.h"
 
 // init pmsm_mtpa_bare_controller struct
-void ctl_init_pmsm_mtpa_bare_controller(pmsm_mtpa_controller_t* ctrl, pmsm_mtpa_bare_controller_init_t* init)
+void ctl_init_pmsm_mtpa_bare_controller(pmsm_mtpa_controller_t* ctrl, pmsm_mtpa_controller_init_t* init)
 {
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
     // controller implement
@@ -15,7 +15,7 @@ void ctl_init_pmsm_mtpa_bare_controller(pmsm_mtpa_controller_t* ctrl, pmsm_mtpa_
         // d axis current controller
         &ctrl->current_ctrl[phase_d],
         // parameters for current controller
-        init->current_pid_gain, init->current_Ti, init->current_Td,
+        init->current_d_pid_gain, init->current_d_Ti, init->current_d_Td,
         // controller frequency
         init->fs);
     ctl_set_discrete_pid_limit(&ctrl->current_ctrl[phase_d], init->voltage_limit_max, init->voltage_limit_min);
@@ -24,12 +24,12 @@ void ctl_init_pmsm_mtpa_bare_controller(pmsm_mtpa_controller_t* ctrl, pmsm_mtpa_
         // d axis current controller
         &ctrl->current_ctrl[phase_q],
         // parameters for current controller
-        init->current_pid_gain, init->current_Ti, init->current_Td,
+        init->current_q_pid_gain, init->current_q_Ti, init->current_q_Td,
         // controller frequency
         init->fs);
     ctl_set_discrete_pid_limit(&ctrl->current_ctrl[phase_q], init->voltage_limit_max, init->voltage_limit_min);
 
-    ctl_init_discrete_track_pid(
+    ctl_init_tracking_pid(
         // speed controller
         &ctrl->spd_ctrl,
         // parameters for speed controller

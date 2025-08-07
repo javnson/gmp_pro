@@ -19,11 +19,11 @@
 #include <ctl/component/interface/interface_base.h>
 #include <ctl/component/motor_control/basic/motor_universal_interface.h>
 
-#ifdef ACM_CTRL_USING_DISCRETE_CTRL
+#ifdef PMSM_CTRL_USING_DISCRETE_CTRL
 #include <ctl/component/intrinsic/discrete/track_discrete_pid.h>
 #else
 #include <ctl/component/intrinsic/continuous/track_pid.h>
-#endif // ACM_CTRL_USING_DISCRETE_CTRL
+#endif // PMSM_CTRL_USING_DISCRETE_CTRL
 
 #include <ctl/component/motor_control/basic/decouple.h>
 #include <ctl/component/motor_control/basic/vf_generator.h>
@@ -142,9 +142,9 @@ typedef struct _tag_acm_sensored_bare_controller
     tri_pwm_ift* pwm_out;    /**< @brief Output interface for PWM signals. */
 
     // --- Controller Components ---
-#ifdef ACM_CTRL_USING_DISCRETE_CTRL
+#ifdef PMSM_CTRL_USING_DISCRETE_CTRL
     discrete_pid_t current_ctrl[2]; /**< @brief Discrete PID controllers for d and q axis currents. */
-    track_discrete_pid_t spd_ctrl;  /**< @brief Discrete tracking PID controller for speed. */
+    ctl_tracking_discrete_pid_t spd_ctrl;  /**< @brief Discrete tracking PID controller for speed. */
 #else
     ctl_pid_t current_ctrl[2];              /**< @brief Continuous PID controllers for d and q axis currents. */
     ctl_tracking_continuous_pid_t spd_ctrl; /**< @brief Continuous tracking PID controller for speed. */
@@ -261,10 +261,10 @@ void ctl_attach_acm_sensored_bare_rotor_postion(acm_sensored_bare_controller_t* 
  */
 GMP_STATIC_INLINE void ctl_clear_acm_sensored_ctrl(acm_sensored_bare_controller_t* ctrl)
 {
-#ifdef ACM_CTRL_USING_DISCRETE_CTRL
+#ifdef PMSM_CTRL_USING_DISCRETE_CTRL
     ctl_clear_discrete_pid(&ctrl->current_ctrl[phase_d]);
     ctl_clear_discrete_pid(&ctrl->current_ctrl[phase_q]);
-    ctl_clear_discrete_track_pid(&ctrl->spd_ctrl);
+    ctl_clear_tracking_pid(&ctrl->spd_ctrl);
 #else
     ctl_clear_pid(&ctrl->current_ctrl[phase_d]);
     ctl_clear_pid(&ctrl->current_ctrl[phase_q]);
@@ -326,8 +326,8 @@ GMP_STATIC_INLINE void ctl_step_acm_sensored_ctrl(acm_sensored_bare_controller_t
         if (ctrl->flag_enable_velocity_ctrl)
         {
             ctrl->idq_set.dat[phase_d] = ctrl->idq_ff.dat[phase_d];
-#ifdef ACM_CTRL_USING_DISCRETE_CTRL
-            ctrl->idq_set.dat[phase_q] = ctl_step_discrete_track_pid(&ctrl->spd_ctrl, ctrl->speed_set,
+#ifdef PMSM_CTRL_USING_DISCRETE_CTRL
+            ctrl->idq_set.dat[phase_q] = ctl_step_tracking_pid(&ctrl->spd_ctrl, ctrl->speed_set,
                                                                      ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
                                          ctrl->idq_ff.dat[phase_q];
 #else
@@ -344,7 +344,7 @@ GMP_STATIC_INLINE void ctl_step_acm_sensored_ctrl(acm_sensored_bare_controller_t
         // Current Controller
         if (ctrl->flag_enable_current_ctrl)
         {
-#ifdef ACM_CTRL_USING_DISCRETE_CTRL
+#ifdef PMSM_CTRL_USING_DISCRETE_CTRL
             ctrl->vdq_set.dat[phase_d] = ctl_step_discrete_pid(&ctrl->current_ctrl[phase_d],
                                                                ctrl->idq_set.dat[phase_d] - ctrl->idq0.dat[phase_d]) +
                                          ctrl->vdq_ff.dat[phase_d];

@@ -118,8 +118,8 @@ typedef struct _tag_pmsm_bare_controller
 
     // --- Controller Components ---
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
-    discrete_pid_t current_ctrl[2]; /**< @brief d/q-axis discrete PID current controllers. */
-    track_discrete_pid_t spd_ctrl;  /**< @brief Discrete PID velocity controller. */
+    discrete_pid_t current_ctrl[2];       /**< @brief d/q-axis discrete PID current controllers. */
+    ctl_tracking_discrete_pid_t spd_ctrl; /**< @brief Discrete PID velocity controller. */
 #else
     ctl_pid_t current_ctrl[2];              /**< @brief d/q-axis continuous PID current controllers. */
     ctl_tracking_continuous_pid_t spd_ctrl; /**< @brief Continuous PID velocity controller. */
@@ -206,7 +206,7 @@ GMP_STATIC_INLINE void ctl_clear_pmsm_ctrl(pmsm_bare_controller_t* ctrl)
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
     ctl_clear_discrete_pid(&ctrl->current_ctrl[phase_d]);
     ctl_clear_discrete_pid(&ctrl->current_ctrl[phase_q]);
-    ctl_clear_discrete_track_pid(&ctrl->spd_ctrl);
+    ctl_clear_tracking_pid(&ctrl->spd_ctrl);
 #else
     ctl_clear_pid(&ctrl->current_ctrl[phase_d]);
     ctl_clear_pid(&ctrl->current_ctrl[phase_q]);
@@ -250,9 +250,9 @@ GMP_STATIC_INLINE void ctl_step_pmsm_ctrl(pmsm_bare_controller_t* ctrl)
         {
             ctrl->idq_set.dat[phase_d] = ctrl->idq_ff.dat[phase_d];
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
-            ctrl->idq_set.dat[phase_q] = ctl_step_discrete_track_pid(&ctrl->spd_ctrl, ctrl->speed_set,
-                                                                     ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
-                                         ctrl->idq_ff.dat[phase_q];
+            ctrl->idq_set.dat[phase_q] =
+                ctl_step_tracking_pid(&ctrl->spd_ctrl, ctrl->speed_set, ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
+                ctrl->idq_ff.dat[phase_q];
 #else
             ctrl->idq_set.dat[phase_q] = ctl_step_tracking_continuous_pid(&ctrl->spd_ctrl, ctrl->speed_set,
                                                                           ctl_get_mtr_velocity(&ctrl->mtr_interface)) +

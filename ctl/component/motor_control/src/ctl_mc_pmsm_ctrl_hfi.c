@@ -29,7 +29,7 @@ void ctl_init_pmsm_hfi_controller(pmsm_hfi_controller_t* ctrl, pmsm_hfi_controll
         init->fs);
     ctl_set_discrete_pid_limit(&ctrl->current_ctrl[phase_q], init->voltage_limit_max, init->voltage_limit_min);
 
-    ctl_init_discrete_track_pid(
+    ctl_init_tracking_pid(
         // speed controller
         &ctrl->spd_ctrl,
         // parameters for speed controller

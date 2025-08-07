@@ -39,7 +39,7 @@ void ctl_init_pmsm_bare_controller(pmsm_bare_controller_t* ctrl, pmsm_bare_contr
     ctl_set_discrete_pid_limit(&ctrl->current_ctrl[phase_q], init->voltage_limit_max, init->voltage_limit_min);
 
     // Velocity controller
-    ctl_init_discrete_track_pid(&ctrl->spd_ctrl, init->spd_pid_gain, init->spd_Ti, init->spd_Td,
+    ctl_init_tracking_pid(&ctrl->spd_ctrl, init->spd_pid_gain, init->spd_Ti, init->spd_Td,
                                 init->current_limit_max, init->current_limit_min, init->acc_limit_max,
                                 init->acc_limit_min, init->spd_ctrl_div, init->fs);
 #else  // using continuous controller

@@ -216,7 +216,7 @@ void ctl_init_discrete_pid(
 
 #include <ctl/component/intrinsic/discrete/track_discrete_pid.h>
 
-void ctl_init_discrete_track_pid(
+void ctl_init_tracking_pid(
     // pointer to track pid object
     ctl_tracking_discrete_pid_t* tp,
     // pid parameters, unit sec

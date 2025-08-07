@@ -31,7 +31,7 @@ void ctl_init_acm_sensored_bare_controller(
         init->fs);
     ctl_set_discrete_pid_limit(&ctrl->current_ctrl[phase_q], init->voltage_limit_max, init->voltage_limit_min);
 
-    ctl_init_discrete_track_pid(
+    ctl_init_tracking_pid(
         // speed controller
         &ctrl->spd_ctrl,
         // parameters for speed controller
@@ -161,9 +161,9 @@ void ctl_attach_acm_sensored_bare_output(
     // ACM Controller handle
     acm_sensored_bare_controller_t* ctrl,
     // PWM handle
-    tri_pwm_ift* pwm_out)
+    tri_pwm_ift* _pwm_out)
 {
-    ctrl->pwm_out = pwm_out;
+    ctrl->pwm_out = _pwm_out;
 }
 
 // attach to rotor speed encoder port

@@ -108,9 +108,9 @@ typedef struct _tag_pmsm_hfi_hfi_controller
     // Controller Entities
     //--------------------------------------------------------------------------
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
-    discrete_pid_t current_ctrl[2]; ///< Discrete PID controllers for d-q axis currents.
-    track_discrete_pid_t spd_ctrl;  ///< Discrete tracking PID controller for speed.
-#else                               // use continuous controller
+    discrete_pid_t current_ctrl[2];       ///< Discrete PID controllers for d-q axis currents.
+    ctl_tracking_discrete_pid_t spd_ctrl; ///< Discrete tracking PID controller for speed.
+#else                                     // use continuous controller
     ctl_pid_t current_ctrl[2];              ///< Continuous PID controllers for d-q axis currents.
     ctl_tracking_continuous_pid_t spd_ctrl; ///< Continuous tracking PID controller for speed.
 #endif
@@ -207,7 +207,7 @@ GMP_STATIC_INLINE void ctl_clear_pmsm_hfi_ctrl(pmsm_hfi_controller_t* ctrl)
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
     ctl_clear_discrete_pid(&ctrl->current_ctrl[phase_d]);
     ctl_clear_discrete_pid(&ctrl->current_ctrl[phase_q]);
-    ctl_clear_discrete_track_pid(&ctrl->spd_ctrl);
+    ctl_clear_tracking_pid(&ctrl->spd_ctrl);
 #else  // continuous controller
     ctl_clear_pid(&ctrl->current_ctrl[phase_d]);
     ctl_clear_pid(&ctrl->current_ctrl[phase_q]);
@@ -274,9 +274,9 @@ GMP_STATIC_INLINE void ctl_step_pmsm_hfi_ctrl(pmsm_hfi_controller_t* ctrl)
         {
             ctrl->idq_set.dat[phase_d] = ctrl->idq_ff.dat[phase_d];
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
-            ctrl->idq_set.dat[phase_q] = ctl_step_discrete_track_pid(&ctrl->spd_ctrl, ctrl->speed_set,
-                                                                     ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
-                                         ctrl->idq_ff.dat[phase_q];
+            ctrl->idq_set.dat[phase_q] =
+                ctl_step_tracking_pid(&ctrl->spd_ctrl, ctrl->speed_set, ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
+                ctrl->idq_ff.dat[phase_q];
 #else // using continuous controller
             ctrl->idq_set.dat[phase_q] = ctl_step_tracking_continuous_pid(&ctrl->spd_ctrl, ctrl->speed_set,
                                                                           ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
