@@ -45,8 +45,8 @@
 #define _FILE_BOOST_CTRL_H_
 
 #include <ctl/component/interface/interface_base.h>
-#include <ctl/component/intrinsic/continuous/continuous_pid.h>
 #include <ctl/component/intrinsic/basic/saturation.h>
+#include <ctl/component/intrinsic/continuous/continuous_pid.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 
 #ifdef __cplusplus
@@ -65,7 +65,7 @@ extern "C"
 /* Configuration Macros                             */
 /*---------------------------------------------------------------------------*/
 
-// #define CTL_BOOST_CTRL_OUTPUT_WITHOUT_UOUT // You may enable this macro to enter debug mode where duty cycle is not divided by U_in.
+ //#define CTL_BOOST_CTRL_OUTPUT_WITHOUT_UOUT // You may enable this macro to enter debug mode where duty cycle is not divided by U_in.
 
 /**
  * @brief Defines the minimum input voltage to avoid division by zero during duty cycle calculation.
@@ -175,8 +175,7 @@ void ctl_attach_boost_ctrl_input(boost_ctrl_t* boost, adc_ift* uc, adc_ift* il, 
  * @param[in,out] boost Pointer to the Boost controller instance.
  * @return The calculated PWM duty cycle (per-unit).
  */
-GMP_STATIC_INLINE
-ctrl_gt ctl_step_boost_ctrl(boost_ctrl_t* boost)
+GMP_STATIC_INLINE ctrl_gt ctl_step_boost_ctrl(boost_ctrl_t* boost)
 {
     // Filter the raw ADC inputs
     ctl_step_lowpass_filter(&boost->lpf_il, boost->adc_il->value);
@@ -201,12 +200,12 @@ ctrl_gt ctl_step_boost_ctrl(boost_ctrl_t* boost)
 
 #ifdef CTL_BOOST_CTRL_OUTPUT_WITHOUT_UOUT
         // Duty cycle calculation without input voltage feedforward (for debugging)
-#if CTL_BOOST_CTRL_POSITION == LOWER_BRIDGE
+#if CTL_BOOST_CTRL_POSITION == UPPER_BRIDGE
         boost->pwm_out_pu = float2ctrl(1) - boost->voltage_out;
-#elif CTL_BOOST_CTRL_POSITION == UPPER_BRIDGE
+#elif CTL_BOOST_CTRL_POSITION == LOWER_BRIDGE
         boost->pwm_out_pu = boost->voltage_out;
 #endif // CTL_BOOST_CTRL_POSITION
-#else  // CTL_BOOST_CTRL_OUTPUT_WITHOUT_UOUT                                                                           \
+#else // CTL_BOOST_CTRL_OUTPUT_WITHOUT_UOUT                                                                           \
        // Standard duty cycle calculation with input voltage feedforward
         boost->vo_sat = ctl_step_saturation(&boost->modulation_saturation, boost->voltage_out);
 #if CTL_BOOST_CTRL_POSITION == UPPER_BRIDGE
@@ -221,7 +220,11 @@ ctrl_gt ctl_step_boost_ctrl(boost_ctrl_t* boost)
     else
     {
         // For safety, ensure the Boost switch is conductive by default when disabled.
+#if CTL_BOOST_CTRL_POSITION == UPPER_BRIDGE
         boost->pwm_out_pu = float2ctrl(1);
+#elif CTL_BOOST_CTRL_POSITION == LOWER_BRIDGE
+        boost->pwm_out_pu = float2ctrl(0);
+#endif // CTL_BOOST_CTRL_POSITION
     }
 
     return boost->pwm_out_pu;
@@ -232,8 +235,7 @@ ctrl_gt ctl_step_boost_ctrl(boost_ctrl_t* boost)
  * @param[in] boost Pointer to the Boost controller instance.
  * @return The last calculated PWM duty cycle (per-unit).
  */
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_boost_ctrl_modulation(boost_ctrl_t* boost)
+GMP_STATIC_INLINE ctrl_gt ctl_get_boost_ctrl_modulation(boost_ctrl_t* boost)
 {
     return boost->pwm_out_pu;
 }
@@ -242,8 +244,7 @@ ctrl_gt ctl_get_boost_ctrl_modulation(boost_ctrl_t* boost)
  * @brief Clears the internal states and integral terms of the PID controllers.
  * @param[in,out] boost Pointer to the Boost controller instance.
  */
-GMP_STATIC_INLINE
-void ctl_clear_boost_ctrl(boost_ctrl_t* boost)
+GMP_STATIC_INLINE void ctl_clear_boost_ctrl(boost_ctrl_t* boost)
 {
     ctl_clear_pid(&boost->voltage_pid);
     ctl_clear_pid(&boost->current_pid);
@@ -257,10 +258,9 @@ void ctl_clear_boost_ctrl(boost_ctrl_t* boost)
  * @details Both the inner current loop and outer voltage loop are enabled.
  * @param[in,out] boost Pointer to the Boost controller instance.
  */
-GMP_STATIC_INLINE
-void ctl_boost_ctrl_voltage_mode(boost_ctrl_t* boost)
+GMP_STATIC_INLINE void ctl_boost_ctrl_voltage_mode(boost_ctrl_t* boost)
 {
-    boost->flag_enable_system = 1;
+    //boost->flag_enable_system = 0;
     boost->flag_enable_current_ctrl = 1;
     boost->flag_enable_voltage_ctrl = 1;
 }
@@ -270,8 +270,7 @@ void ctl_boost_ctrl_voltage_mode(boost_ctrl_t* boost)
  * @param[in,out] boost Pointer to the Boost controller instance.
  * @param[in] v_set The target output voltage.
  */
-GMP_STATIC_INLINE
-void ctl_set_boost_ctrl_voltage(boost_ctrl_t* boost, ctrl_gt v_set)
+GMP_STATIC_INLINE void ctl_set_boost_ctrl_voltage(boost_ctrl_t* boost, ctrl_gt v_set)
 {
     boost->voltage_set = v_set;
 }
@@ -281,10 +280,9 @@ void ctl_set_boost_ctrl_voltage(boost_ctrl_t* boost, ctrl_gt v_set)
  * @details The outer voltage loop is disabled, and the inner current loop directly tracks the user-specified current setpoint.
  * @param[in,out] boost Pointer to the Boost controller instance.
  */
-GMP_STATIC_INLINE
-void ctl_boost_ctrl_current_mode(boost_ctrl_t* boost)
+GMP_STATIC_INLINE void ctl_boost_ctrl_current_mode(boost_ctrl_t* boost)
 {
-    boost->flag_enable_system = 1;
+    //boost->flag_enable_system = 0;
     boost->flag_enable_current_ctrl = 1;
     boost->flag_enable_voltage_ctrl = 0;
 }
@@ -294,8 +292,7 @@ void ctl_boost_ctrl_current_mode(boost_ctrl_t* boost)
  * @param[in,out] boost Pointer to the Boost controller instance.
  * @param[in] i_set The target inductor current.
  */
-GMP_STATIC_INLINE
-void ctl_set_boost_ctrl_current(boost_ctrl_t* boost, ctrl_gt i_set)
+GMP_STATIC_INLINE void ctl_set_boost_ctrl_current(boost_ctrl_t* boost, ctrl_gt i_set)
 {
     boost->current_set = i_set;
 }
@@ -305,10 +302,9 @@ void ctl_set_boost_ctrl_current(boost_ctrl_t* boost, ctrl_gt i_set)
  * @details Both PID loops are disabled. The output is determined directly by the value set with @ref ctl_set_boost_ctrl_voltage_openloop.
  * @param[in,out] boost Pointer to the Boost controller instance.
  */
-GMP_STATIC_INLINE
-void ctl_boost_ctrl_openloop_mode(boost_ctrl_t* boost)
+GMP_STATIC_INLINE void ctl_boost_ctrl_openloop_mode(boost_ctrl_t* boost)
 {
-    boost->flag_enable_system = 1;
+    //boost->flag_enable_system = 0;
     boost->flag_enable_current_ctrl = 0;
     boost->flag_enable_voltage_ctrl = 0;
 }
@@ -318,8 +314,7 @@ void ctl_boost_ctrl_openloop_mode(boost_ctrl_t* boost)
  * @param[in,out] boost Pointer to the Boost controller instance.
  * @param[in] v_set The desired intermediate voltage command.
  */
-GMP_STATIC_INLINE
-void ctl_set_boost_ctrl_voltage_openloop(boost_ctrl_t* boost, ctrl_gt v_set)
+GMP_STATIC_INLINE void ctl_set_boost_ctrl_voltage_openloop(boost_ctrl_t* boost, ctrl_gt v_set)
 {
     boost->voltage_out = v_set;
 }
@@ -328,8 +323,7 @@ void ctl_set_boost_ctrl_voltage_openloop(boost_ctrl_t* boost, ctrl_gt v_set)
  * @brief Disables the entire Boost controller system.
  * @param[in,out] boost Pointer to the Boost controller instance.
  */
-GMP_STATIC_INLINE
-void ctl_disable_boost_ctrl(boost_ctrl_t* boost)
+GMP_STATIC_INLINE void ctl_disable_boost_ctrl(boost_ctrl_t* boost)
 {
     boost->flag_enable_system = 0;
 }
@@ -338,10 +332,15 @@ void ctl_disable_boost_ctrl(boost_ctrl_t* boost)
  * @brief Enables the entire Boost controller system.
  * @param[in,out] boost Pointer to the Boost controller instance.
  */
-GMP_STATIC_INLINE
-void ctl_enable_boost_ctrl(boost_ctrl_t* boost)
+GMP_STATIC_INLINE void ctl_enable_boost_ctrl(boost_ctrl_t* boost)
 {
     boost->flag_enable_system = 1;
+
+    // Add external logic here,
+    // 当切换时需要让电流控制器的积分初值设置为当前电感电流
+    // 让电压环的输出为当前电流
+    //ctl_set_pid_integrator(&boost->voltage_pid, boost->lpf_il.out);
+    boost->current_ff = boost->lpf_il.out;
 }
 
 /** @} */ // end of boost_controller_api group

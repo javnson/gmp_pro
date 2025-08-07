@@ -156,7 +156,8 @@ void ctl_mainloop(void)
         }
 
         // a delay of 100ms
-        if ((started_flag == 0) && ((gmp_base_get_system_tick() - tick_bias) > 100) && (startup_flag == 0))
+        if ((started_flag == 0) && ((gmp_base_get_system_tick() - tick_bias) > CTRL_STARTUP_DELAY) &&
+            (startup_flag == 0))
         {
             startup_flag = 1;
         }

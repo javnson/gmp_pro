@@ -72,7 +72,11 @@ void ctl_init_pwm_channel(pwm_channel_t* pwm_obj, pwm_gt phase, pwm_gt full_scal
  */
 GMP_STATIC_INLINE pwm_gt ctl_step_pwm_channel(pwm_channel_t* pwm_obj, ctrl_gt raw)
 {
-    pwm_obj->raw.value = raw;
+    if (raw <= 0)
+        pwm_obj->raw.value = 0;
+    else
+        pwm_obj->raw.value = raw;
+
     pwm_obj->value = pwm_mul(pwm_obj->raw.value, pwm_obj->full_scale) + pwm_obj->phase;
     pwm_obj->value = pwm_sat(pwm_obj->value, pwm_obj->full_scale, 0);
     return pwm_obj->value;

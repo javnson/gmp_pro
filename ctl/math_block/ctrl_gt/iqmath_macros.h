@@ -32,7 +32,7 @@
 /*---------------------------------------------------------------------------*/
 
 #ifndef saturation_macro
-#define saturation_macro(_a, _min, _max) ((_a) <= (_min)) ? (_min) : (((_a) >= (_max)) ? (_max) : (_a))
+#define saturation_macro(_a, _max, _min) ((_a) <= (_min)) ? (_min) : (((_a) >= (_max)) ? (_max) : (_a))
 #endif
 
 /**
@@ -90,10 +90,10 @@ GMP_STATIC_INLINE _iq abs_static_inline(_iq A)
 
 #define ctl_abs(A) abs_static_inline(A) /**< @brief Computes the absolute value of an `_iq` value. */
 #define ctl_sat(A, Pos, Neg)                                                                                           \
-    saturation_macro((A), (Neg), (Pos)) /**< @brief Saturates an `_iq` value between a positive and negative limit. */
+    saturation_macro((A), (Pos), (Neg)) /**< @brief Saturates an `_iq` value between a positive and negative limit. */
 
 #define pwm_mul(A, B)        (_IQmpy(A, B))
-#define pwm_sat(A, Pos, Neg) saturation_macro((A), (Neg), (Pos))
+#define pwm_sat(A, Pos, Neg) saturation_macro((A), (Pos), (Neg))
 
 /** @} */ // end of MC_ARITHMETIC_IQ group
 

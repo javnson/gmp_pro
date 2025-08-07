@@ -6,10 +6,14 @@
 // BUILD_LEVEL 2: current close loop
 // BUILD_LEVEL 3: voltage close loop
 // BUILD_LEVEL 4: MPPT voltage open loop
-#define BUILD_LEVEL (4)
+#define BUILD_LEVEL (3)
 
 // low voltage half bridge parameters
 #include <ctl/component/digital_power/hardware_preset/gmp_lvhb_v1.h>
+
+// Startup delay, default is 100ms
+// Controller output would be enable after CTRL_STARTUP_DELAY ms
+#define CTRL_STARTUP_DELAY (100)
 
 // Controller Frequency
 #define CONTROLLER_FREQUENCY (20e3)
@@ -47,7 +51,7 @@
 
 // Use discrete PID controller
 // Discrete controller may bring more smooth response.
-#define PMSM_CTRL_USING_DISCRETE_CTRL
+//#define PMSM_CTRL_USING_DISCRETE_CTRL
 
 // Enable Discrete PID controller anti-saturation algorithm
 #define _USE_DEBUG_DISCRETE_PID

@@ -40,7 +40,7 @@
  * @param[in] max_val The maximum allowed value.
  * @return The saturated value.
  */
-GMP_STATIC_INLINE float32_t saturation_static_inline(float32_t in, float32_t min_val, float32_t max_val)
+GMP_STATIC_INLINE float32_t saturation_static_inline(float32_t in, float32_t max_val, float32_t min_val)
 {
     float32_t out = in;
     out = __fmax(out, min_val);
@@ -97,8 +97,8 @@ GMP_STATIC_INLINE float32_t saturation_static_inline(float32_t in, float32_t min
 
 #define ctl_abs(A) (fabsf(A)) /**< @brief Computes the absolute value of a `ctrl_gt` value. */
 #define ctl_sat(A, Pos, Neg)                                                                                           \
-    saturation_static_inline((A), (Neg),                                                                               \
-                             (Pos)) /**< @brief Saturates a `ctrl_gt` value between a positive and negative limit. */
+    saturation_static_inline((A), (Pos),                                                                               \
+                             (Neg)) /**< @brief Saturates a `ctrl_gt` value between a positive and negative limit. */
 
 #define pwm_mul(A, B)        ((pwm_gt)((double)(A) * (double)(B)))
 #define pwm_sat(A, Pos, Neg) ((pwm_gt)saturation_static_inline(((double)(A)), ((double)(Pos)), ((double)(Neg))))

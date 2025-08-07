@@ -113,6 +113,9 @@ void ctl_init_boost_ctrl(boost_ctrl_t* boost, parameter_gt v_kp, parameter_gt v_
 
     // Clear all internal states
     ctl_clear_boost_ctrl(boost);
+
+    // clear open state
+    boost->flag_enable_system = 0;
 }
 
 /**
