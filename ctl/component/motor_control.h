@@ -185,6 +185,20 @@
  */
 #include <ctl/component/motor_control/current_loop/PMSM_DPCC.h>
 
+/**
+ * @defgroup MPC_CONTROLLER FCS-MPC Current Controller
+ * @ingroup CTL_MC_COMPONENT
+ * @brief A model-predictive current controller for fast dynamic response.
+ */
+#include <ctl/component/motor_control/current_loop/pmsm_mpc.h>
+
+/**
+ * @defgroup MPC_CONTROLLER_ACM FCS-MPC Current & Flux Controller for ACM
+ * @ingroup CTL_MC_COMPONENT
+ * @brief A model-predictive controller for fast torque and flux response in ACMs.
+ */
+#include <ctl/component/motor_control/current_loop/acm_mpc.h>
+
 //
 // ----------------- Motion Controller -----------------
 //
@@ -249,6 +263,20 @@
  * @brief A module for estimating IM rotor flux and electromagnetic torque.
  */
 #include <ctl/component/motor_control/observer/acm.fo.h>
+
+/**
+ * @defgroup ACM_SMO ACM Sliding Mode Observer
+ * @ingroup CTL_MC_COMPONENT
+ * @brief A sensorless module for estimating speed and flux angle of an ACM.
+ */
+#include <ctl/component/motor_control/observer/acm.smo.h>
+
+/**
+ * @defgroup BLDC_HALL_ESTIMATOR BLDC Hall Sensor Estimator
+ * @ingroup CTL_MC_COMPONENT
+ * @brief A module for calculating smooth speed and position from Hall sensors.
+ */
+#include <ctl/component/motor_control/observer/bldc.hall.h>
 
 /**
  * @addtogroup PMSM_FLUX_OBSERVER PMSM Flux Observer
