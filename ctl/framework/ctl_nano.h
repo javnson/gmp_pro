@@ -137,6 +137,7 @@ typedef struct _tag_ctl_object_nano
 
 /**
  * @defgroup CTL_FMIF User Implementation Interface
+ * @ingroup CTL_NANO_FRAMEWORK_CORE
  * @brief A set of callback functions that the user must implement to integrate
  * the framework with their specific application and hardware.
  * @{
@@ -204,6 +205,7 @@ fast_gt ctl_fmif_sm_fault_routine(ctl_object_nano_t* pctl_obj);
 
 /**
  * @defgroup CTL_FRAMEWORK_API Framework API
+ * @ingroup CTL_NANO_FRAMEWORK_CORE
  * @brief Functions provided by the framework to be called by the user.
  * @{
  */
@@ -235,6 +237,7 @@ extern ctl_object_nano_t* ctl_nano_handle;
 
 /**
  * @defgroup CTL_FRAMEWORK_UTILITIES Framework Utilities
+ * @ingroup CTL_NANO_FRAMEWORK_CORE
  * @brief Helper functions for state management and debugging.
  * @{
  */
