@@ -1,255 +1,306 @@
 /**
  * @file ctl_nano.h
  * @author Javnson (javnson@zju.edu.cn)
- * @brief
- * @version 0.1
- * @date 2024-09-30
+ * @brief Defines the state machine and core object for the CTL-Nano framework.
+ * @details This file provides the top-level structure for managing the lifecycle
+ * of the motor controller. It includes a state machine to handle states like
+ * pending, calibration, ready, online, and fault. It also defines the main
+ * control object that holds all system-level state and parameters.
+ *
+ * @version 0.2
+ * @date 2025-08-07
  *
  * @copyright Copyright GMP(c) 2024
  *
  */
+
+#ifndef _FILE_CTL_NANO_H_
+#define _FILE_CTL_NANO_H_
 
 // Basic headers
 #include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl_main.h>
 #include <gmp_core.h>
 
-#ifndef _FILE_CTL_NANO_H_
-#define _FILE_CTL_NANO_H_
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif // __cplusplus
 
-// Controller basic State machine
+//// Enable GMP CTL Controller Framework Nano
+//#ifndef SPECIFY_ENABLE_CTL_FRAMEWORK_NANO
+//#define SPECIFY_ENABLE_CTL_FRAMEWORK_NANO
+//#endif // SPECIFY_ENABLE_CTL_FRAMEWORK_NANO
+
+/*---------------------------------------------------------------------------*/
+/* CTL-Nano Framework Definitions                                            */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @defgroup CTL_NANO_FRAMEWORK_CORE CTL-Nano Framework Core
+ * @ingroup CTL_FRAMEWORK_CORE
+ * @brief Core definitions for the Nano scheduling framework.
+ * @{
+ */
+
+/**
+ * @brief Defines the states for the main controller state machine.
+ */
 typedef enum _tag_ctl_nano_state_machine
 {
-    // State machine: system is pending
-    // in this stage, all the controller output is strictly prohibited,
-    // and the controller is bypassed.
-    // User should enable the system then the output may happen.
+    /**
+     * @brief System is pending and inactive.
+     * In this state, all controller outputs are strictly prohibited,
+     * and the control algorithm is bypassed. The user must explicitly
+     * enable the system to proceed.
+     */
     CTL_SM_PENDING = 0,
 
-    // State machine: system is initializing
-    // in this stage, PWM output with 0 output is permitted.
-    // ADC device is ready, and PWM device is ready.
-    // All the control law objects will initialize.
-    //	CTL_SM_INIT = 1,
-
-    // State machine: system is calibrating
-    // in this stage, ADC zero point should be calibrated,
-    // hardware security check is done in this stage
+    /**
+     * @brief System is in the calibration phase.
+     * In this state, routines like ADC offset calibration and other
+     * hardware security checks should be performed.
+     */
     CTL_SM_CALIBRATE = 2,
 
-    // State machine: Controller is ready to launch
-    // The state machine is ready for user to launch
+    /**
+     * @brief Controller is ready to be launched.
+     * The system has been initialized and calibrated, and is waiting for
+     * a command to start operation.
+     */
     CTL_SM_READY = 3,
 
-    // State machine: Controller is preparing
-    // Auto tuning, auto measurement, auto identify is done here.
-    // a set of switches will determine which routine may be invoke
+    /**
+     * @brief Controller is in the run-up or preparation phase.
+     * This state is intended for tasks like motor parameter identification,
+     * auto-tuning, or a controlled startup sequence.
+     */
     CTL_SM_RUNUP = 4,
 
-    // State machine: Controller is on-line
+    /**
+     * @brief Controller is online and fully operational.
+     * The main control loop is active, and the motor is under closed-loop control.
+     */
     CTL_SM_ONLINE = 5,
 
-    // State machine: Controller is in fault.
+    /**
+     * @brief Controller has entered a fault state.
+     * This state is entered upon detection of a critical error. All outputs
+     * should be disabled, and fault handling logic is executed.
+     */
     CTL_SM_FAULT = 6
 } ctl_nano_state_machine;
 
-// endorse for CTL
+/**
+ * @brief A security key to verify that the controller object has been initialized.
+ * @details This value corresponds to the ASCII characters for "GCTL".
+ */
 #define GMP_CTL_ENDORSE ((0x4743544C))
 
-// controller basic objects
+/**
+ * @brief The core data object for the CTL-Nano framework.
+ * @details This structure acts as the main handle for the entire controller,
+ * holding all top-level state information, timing data, and configuration flags.
+ */
 typedef struct _tag_ctl_object_nano
 {
-    // This number must equals to GMP_CTL_ENDORSE, that is 0x47_43_54_4C (GCTL)
-    // to ensure the controller is initialized correctly.
+    /**
+     * @brief Security endorse field. Must equal GMP_CTL_ENDORSE to be considered valid.
+     * This helps prevent the use of uninitialized controller objects.
+     */
     uint32_t security_endorse;
 
-    // ISR tick
-    uint_least32_t isr_tick;
+    // --- Timing and Profiling ---
+    uint_least32_t isr_tick;                   ///< Incremented on every control ISR call.
+    uint_least32_t mainloop_tick;              ///< Incremented on every main loop dispatch call.
+    uint_least32_t control_law_CPU_usage_tick; ///< Tick counter for profiling the core control law execution time.
+    uint_least32_t mainloop_CPU_usage_tick;    ///< Tick counter for profiling the main loop execution time.
 
-    // State Machine tick
-    uint_least32_t mainloop_tick;
+    // --- State and Configuration ---
+    ctl_nano_state_machine state_machine; ///< The current state of the controller.
+    ec_gt error_code;                     ///< Holds the last recorded error code.
+    uint32_t ctrl_freq;                   ///< The frequency of the control ISR in Hz.
+    ctl_divider_t div_monitor;            ///< A divider for scheduling the monitor routine.
 
-    // Calculating CPU usage for Control law
-    uint_least32_t control_law_CPU_usage_tick;
-
-    // Calculating CPU usage for Control Main loop
-    uint_least32_t mainloop_CPU_usage_tick;
-
-    // state machine of the controller
-    ctl_nano_state_machine state_machine;
-
-    // controller error code
-    ec_gt error_code;
-
-    // Control Period Counter
-    //		uint32_t period_count;
-
-    // Controller Frequency, Unit Hz
-    uint32_t ctrl_freq;
-
-    // Controller Monitor divider
-    ctl_divider_t div_monitor;
-
-    // Switch of calibrate stage
-    // Default is On
-    fast_gt switch_calibrate_stage;
-
-    // Switch of calibrate stage
-    // Default is Off
-    fast_gt switch_runup_stage;
-
-    // Switch of security module
-    fast_gt switch_security_routine;
+    // --- Feature Switches ---
+    fast_gt switch_calibrate_stage;  ///< Switch to enable/disable the CALIBRATE stage (Default: On).
+    fast_gt switch_runup_stage;      ///< Switch to enable/disable the RUNUP stage (Default: Off).
+    fast_gt switch_security_routine; ///< Switch to enable/disable the security monitoring routine.
 
 } ctl_object_nano_t;
 
-//////////////////////////////////////////////////////////////////////////
-// The following functions should implemented by user
-// All these function should not be a pending function.
+/** @} */ // end of CTL_NANO_FRAMEWORK_CORE group
+
+/*---------------------------------------------------------------------------*/
+/* User-Implemented Framework Interface (FMIF) Functions                     */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @defgroup CTL_FMIF User Implementation Interface
+ * @brief A set of callback functions that the user must implement to integrate
+ * the framework with their specific application and hardware.
+ * @{
+ */
 
 // ....................................................................//
-// The following functions may running in Main ISR
+// High-Frequency Routines (typically called from ISR)
+// ....................................................................//
 
-// deal with all the adc and other input messages
+/** @brief User-defined routine for the sensor input stage. */
 // void ctl_fmif_input_stage_routine(ctl_object_nano_t *pctl_obj);
 
-// implement all the controller routine
-// this is a inline function implemented by user.
+/** @brief User-defined routine for the core control algorithm. */
 // void ctl_fmif_core_stage_routine(ctl_object_nano_t *pctl_obj);
 
-// output all the PWM and other digital or analog signal
+/** @brief User-defined routine for the actuator output stage. */
 // void ctl_fmif_output_stage_routine(ctl_object_nano_t *pctl_obj);
 
-// request other information via peripheral, for instance SPI.
+/** @brief User-defined routine for real-time requests (e.g., SPI communication). */
 // void ctl_fmif_request_stage_routine(ctl_object_nano_t *pctl_obj);
 
 // ....................................................................//
-// The following functions may running in Main Loop
+// Low-Frequency Routines (typically called from main loop)
+// ....................................................................//
 
-// controller monitor routine
-void ctl_fmif_monitor_routine(ctl_object_nano_t *pctl_obj);
+/** @brief User-defined routine for monitoring and debugging. */
+void ctl_fmif_monitor_routine(ctl_object_nano_t* pctl_obj);
 
-// controller security routine.
-// This function would only be called when controller is online.
-fast_gt ctl_fmif_security_routine(ctl_object_nano_t *pctl_obj);
+/** @brief User-defined routine for safety checks during online operation. */
+fast_gt ctl_fmif_security_routine(ctl_object_nano_t* pctl_obj);
 
-// controller pending routine
-// When `CTL_SM_PENDING` state, this function would be called.
-fast_gt ctl_fmif_sm_pending_routine(ctl_object_nano_t *pctl_obj);
+/** @brief User-defined routine for the PENDING state. */
+fast_gt ctl_fmif_sm_pending_routine(ctl_object_nano_t* pctl_obj);
 
-// controller calibrate routine
-// When `CTL_SM_CALIBRATE` state, this function would be called.
-fast_gt ctl_fmif_sm_calibrate_routine(ctl_object_nano_t *pctl_obj);
+/** @brief User-defined routine for the CALIBRATE state. */
+fast_gt ctl_fmif_sm_calibrate_routine(ctl_object_nano_t* pctl_obj);
 
-// controller ready routine
-// When `CTL_SM_READY` state,this function would be called.
-fast_gt ctl_fmif_sm_ready_routine(ctl_object_nano_t *pctl_obj);
+/** @brief User-defined routine for the READY state. */
+fast_gt ctl_fmif_sm_ready_routine(ctl_object_nano_t* pctl_obj);
 
-// controller run-up routine
-// When `CTL_SM_RUNUP` state,this function would be called.
-fast_gt ctl_fmif_sm_runup_routine(ctl_object_nano_t *pctl_obj);
+/** @brief User-defined routine for the RUNUP state. */
+fast_gt ctl_fmif_sm_runup_routine(ctl_object_nano_t* pctl_obj);
 
-// controller online routine
-//  When `CTL_SM_ONLINE` state,this function would be called.
-fast_gt ctl_fmif_sm_online_routine(ctl_object_nano_t *pctl_obj);
+/** @brief User-defined routine for the ONLINE state. */
+fast_gt ctl_fmif_sm_online_routine(ctl_object_nano_t* pctl_obj);
 
-// controller fault routine
-//  When `CTL_SM_FAULT` state,this function would be called.
-fast_gt ctl_fmif_sm_fault_routine(ctl_object_nano_t *pctl_obj);
+/** @brief User-defined routine for the FAULT state. */
+fast_gt ctl_fmif_sm_fault_routine(ctl_object_nano_t* pctl_obj);
 
 // ....................................................................//
-// The following functions may called in Main ISR and Main Loop
+// Hardware Abstraction Callbacks
+// ....................................................................//
 
-// enable PWM output
+/** @brief User-defined function to enable PWM outputs. */
 // inline void ctl_fmif_output_enable(ctl_object_nano_t *pctl_obj);
 
-// disable PWM output
+/** @brief User-defined function to disable PWM outputs. */
 // inline void ctl_fmif_output_disable(ctl_object_nano_t *pctl_obj);
 
-//////////////////////////////////////////////////////////////////////////
-// The following function should be called by user on time.
+/** @} */ // end of CTL_FMIF group
 
-// In Main ISR
-// void ctl_fm_periodic_dispatch(ctl_object_nano_t *pctl_obj);
+/*---------------------------------------------------------------------------*/
+/* Framework API Functions                                                   */
+/*---------------------------------------------------------------------------*/
 
-// Controller core
-// This function should be called in your controller Main ISR.
-// This function may invoke all the other functions related to the controller.
-// GMP_STATIC_INLINE
-// void ctl_fm_periodic_dispatch(ctl_object_nano_t *pctl_obj);
+/**
+ * @defgroup CTL_FRAMEWORK_API Framework API
+ * @brief Functions provided by the framework to be called by the user.
+ * @{
+ */
 
-// In Main Loop
-void ctl_fm_state_dispatch(ctl_object_nano_t *pctl_obj);
+/** @brief Dispatches the main state machine; call this in the main loop. */
+void ctl_fm_state_dispatch(ctl_object_nano_t* pctl_obj);
 
-// In Initialize function
-uint32_t ctl_fm_controller_inspection(ctl_object_nano_t *pctl_obj);
+/** @brief Inspects the controller object for validity; call after initialization. */
+uint32_t ctl_fm_controller_inspection(ctl_object_nano_t* pctl_obj);
 
-//////////////////////////////////////////////////////////////////////////
-// Function Prototypes
+/**
+ * @brief Initializes the header of the nano control object.
+ * @param[out] ctl_obj Pointer to the nano control object.
+ * @param[in]  ctrl_freq The frequency of the control ISR in Hz.
+ */
+void ctl_fm_init_nano_header(ctl_object_nano_t* ctl_obj, uint32_t ctrl_freq);
 
-//// You should call this function to initialize the object
-// void ctl_fm_init_nano_header(ctl_object_nano_t *ctl_obj);
+/**
+ * @brief A global handle to the default nano control object.
+ * @details The user must define and initialize this pointer in their application code.
+ */
+extern ctl_object_nano_t* ctl_nano_handle;
 
-//// Then you may call this function to set the details of the objects
-// void ctl_fm_setup_nano_header(ctl_object_nano_t *ctl_obj,
-//                               uint32_t ctrl_freq // the frequency of the control law, unit Hz
-//);
+/** @} */ // end of CTL_FRAMEWORK_API group
 
-// You should call this function to initialize the object
-void ctl_fm_init_nano_header(
-    // controller nano object
-    ctl_object_nano_t *ctl_obj,
-    // the frequency of the control law, unit Hz
-    uint32_t ctrl_freq);
+/*---------------------------------------------------------------------------*/
+/* Framework Utility Functions                                               */
+/*---------------------------------------------------------------------------*/
 
-extern ctl_object_nano_t *ctl_nano_handle;
+/**
+ * @defgroup CTL_FRAMEWORK_UTILITIES Framework Utilities
+ * @brief Helper functions for state management and debugging.
+ * @{
+ */
 
-//////////////////////////////////////////////////////////////////////////
-// Utilities
+/**
+ * @brief DANGEROUS: Forces the controller into the ONLINE state.
+ * @warning This bypasses all safety checks and startup procedures.
+ * Only use for expert debugging purposes.
+ * @param[out] ctl_obj Pointer to the nano control object.
+ */
+void ctl_fm_force_online(ctl_object_nano_t* ctl_obj);
 
-// DANGEROUS:
-// This function may damage your controller.
-// Call it iff you are EXPERT.
-//
-void ctl_fm_force_online(ctl_object_nano_t *ctl_obj);
+/**
+ * @brief Forces the controller into the CALIBRATE state.
+ * @param[out] ctl_obj Pointer to the nano control object.
+ */
+void ctl_fm_force_calibrate(ctl_object_nano_t* ctl_obj);
 
-void ctl_fm_force_calibrate(ctl_object_nano_t *ctl_obj);
+/**
+ * @brief Sets up a default configuration for the nano control object.
+ * @param[out] ctl_obj Pointer to the nano control object.
+ * @return An error code if setup fails.
+ */
+ec_gt ctl_setup_default_ctl_nano_obj(ctl_object_nano_t* ctl_obj);
 
-// default ctl nano object
-ec_gt ctl_setup_default_ctl_nano_obj(ctl_object_nano_t *ctl_obj);
-
-// 1 means true
-GMP_STATIC_INLINE
-fast_gt ctl_fm_is_online(ctl_object_nano_t *ctl_obj)
+/**
+ * @brief Checks if the controller is currently in the ONLINE state.
+ * @param[in] ctl_obj Pointer to the nano control object.
+ * @return 1 if online, 0 otherwise.
+ */
+GMP_STATIC_INLINE fast_gt ctl_fm_is_online(ctl_object_nano_t* ctl_obj)
 {
     return ctl_obj->state_machine == CTL_SM_ONLINE;
 }
 
-// 1 means true
-GMP_STATIC_INLINE
-fast_gt ctl_fm_is_calibrate(ctl_object_nano_t *ctl_obj)
+/**
+ * @brief Checks if the controller is currently in the CALIBRATE state.
+ * @param[in] ctl_obj Pointer to the nano control object.
+ * @return 1 if in calibration, 0 otherwise.
+ */
+GMP_STATIC_INLINE fast_gt ctl_fm_is_calibrate(ctl_object_nano_t* ctl_obj)
 {
     return ctl_obj->state_machine == CTL_SM_CALIBRATE;
 }
 
-// 1 means true
-GMP_STATIC_INLINE
-fast_gt ctl_fm_is_runup(ctl_object_nano_t *ctl_obj)
+/**
+ * @brief Checks if the controller is currently in the RUNUP state.
+ * @param[in] ctl_obj Pointer to the nano control object.
+ * @return 1 if in run-up, 0 otherwise.
+ */
+GMP_STATIC_INLINE fast_gt ctl_fm_is_runup(ctl_object_nano_t* ctl_obj)
 {
     return ctl_obj->state_machine == CTL_SM_RUNUP;
 }
 
-// change state
-GMP_STATIC_INLINE
-void ctl_fm_change_state(ctl_object_nano_t *ctl_obj, ctl_nano_state_machine sm)
+/**
+ * @brief Changes the state of the controller's state machine.
+ * @param[out] ctl_obj Pointer to the nano control object.
+ * @param[in]  sm The new state to transition to.
+ */
+GMP_STATIC_INLINE void ctl_fm_change_state(ctl_object_nano_t* ctl_obj, ctl_nano_state_machine sm)
 {
     ctl_obj->state_machine = sm;
 }
+
+/** @} */ // end of CTL_FRAMEWORK_UTILITIES group
 
 #ifdef __cplusplus
 }
