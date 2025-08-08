@@ -210,6 +210,34 @@
  */
 #include <ctl/component/intrinsic/advance/repetitive_controller.h>
 
+/**
+ * @defgroup BACKSTEPPING_CONTROLLER Backstepping Controller
+ * @ingroup CTL_INTRINSIC_ADVANCE
+ * @brief A nonlinear controller based on systematic Lyapunov design.
+ */
+#include <ctl/component/intrinsic/advance/back_stepping.h>
+
+/**
+ * @defgroup ILC_CONTROLLER Iterative Learning Controller (ILC)
+ * @ingroup CTL_INTRINSIC_ADVANCE
+ * @brief A controller that improves performance on repetitive tasks by learning from past errors.
+ */
+#include <ctl/component/intrinsic/advance/ilc.h>
+
+/**
+ * @defgroup IMC_CONTROLLER Internal Model Controller (IMC)
+ * @ingroup CTL_INTRINSIC_ADVANCE
+ * @brief A robust model-based controller for SISO systems.
+ */
+#include <ctl/component/intrinsic/advance/imc.h>
+
+/**
+ * @defgroup ADAPTIVE_CONTROLLER Model Reference Adaptive Controller (MRAC)
+ * @ingroup CTL_INTRINSIC_ADVANCE
+ * @brief An adaptive controller for SISO systems with unknown or varying parameters.
+ */
+#include <ctl/component/intrinsic/advance/mrac.h>
+
 //
 // ----------------- Protection Components -----------------
 //
