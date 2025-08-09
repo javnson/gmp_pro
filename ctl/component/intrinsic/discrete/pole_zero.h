@@ -1,26 +1,25 @@
 /**
  * @file pole_zero.h
  * @author Javnson (javnson@zju.edu.cn)
- * @brief Provides discrete pole-zero compensators (1P1Z, 2P2Z, 3P3Z).
- * @version 0.2
- * @date 2025-03-19
+ * @brief Provides discrete pole-zero compensators (1P1Z, 2P2Z, 3P3Z) with frequency-based design.
+ * @version 2.0
+ * @date 2025-08-09
  *
  * @copyright Copyright GMP(c) 2024
  *
  * @details This file contains implementations for several discrete-time pole-zero
- * compensators, which are fundamental building blocks for digital controllers.
- * These are essentially IIR filters designed to shape the frequency response of a
- * control loop. Implementations for 1-pole-1-zero, 2-pole-2-zero, and
- * 3-pole-3-zero compensators are provided. Discretization from the s-domain to
- * the z-domain is typically achieved using the Bilinear Transform:
- * @f[
- * s = \frac{2}{T} \frac{1-z^{-1}}{1+z^{-1}}
- * @f]
+ * compensators. These are fundamental building blocks for digital controllers,
+ * designed to shape the frequency response of a control loop. This version
+ * provides initialization functions based on desired pole and zero frequencies,
+ * including support for complex-conjugate pairs. Discretization from the s-domain
+ * to the z-domain is achieved using the Bilinear Transform.
  */
 
 #ifndef _POLE_ZERO_H_
 #define _POLE_ZERO_H_
 
+#include <ctl/math_block/gmp_math.h>
+#include <math.h> // Required for tanf, atan2f, sqrtf, cosf, sinf
 
 #ifdef __cplusplus
 extern "C"
@@ -39,54 +38,69 @@ extern "C"
 
 /**
  * @brief Data structure for a 1-Pole-1-Zero compensator.
- * @details Implements a first-order IIR filter.
- *
- * The transfer function in the Z-domain is:
- * @f[
- * \frac{U(z)}{E(z)} = \frac{b_0 + b_1 z^{-1}}{1 - a_1 z^{-1}}
- * @f]
- *
- * This corresponds to the difference equation:
- * @f[
- * u(n) = a_1 u(n-1) + b_0 e(n) + b_1 e(n-1)
- * @f]
+ * @details Implements H(z) = (b0 + b1*z^-1) / (1 + a1*z^-1)
  */
 typedef struct _tag_ctrl_1p1z_t
 {
+    ctrl_gt coef_a[1]; //!< Pole coefficients: [a1].
+    ctrl_gt coef_b[2]; //!< Zero coefficients: [b0, b1].
+    ctrl_gt resp[1];   //!< Previous output states: [u(n-1)].
+    ctrl_gt exct[1];   //!< Previous input states: [e(n-1)].
     ctrl_gt output;    //!< The current output of the compensator, u(n).
-    ctrl_gt coef_a;    //!< The pole coefficient, a1.
-    ctrl_gt coef_b[2]; //!< The zero coefficients: coef_b[0] is b0, coef_b[1] is b1.
-    ctrl_gt resp;      //!< The previous output state, u(n-1).
-    ctrl_gt exct;      //!< The previous input state, e(n-1).
-
-    ctrl_gt out_max;     //!< The absolute maximum output value.
-    ctrl_gt out_sto_min; //!< The minimum value for storing the response state (anti-windup).
-    ctrl_gt out_min;     //!< The absolute minimum output value.
 } ctrl_1p1z_t;
 
 /**
+ * @brief Clears the internal states of the 1P1Z compensator.
+ * @param[out] c Pointer to the 1P1Z compensator instance.
+ */
+GMP_STATIC_INLINE void ctl_clear_1p1z(ctrl_1p1z_t* c)
+{
+    c->output = 0.0f;
+    c->resp[0] = 0.0f;
+    c->exct[0] = 0.0f;
+}
+
+/**
+ * @brief Initializes a 1P1Z compensator from a real pole and a real zero frequency.
+ * @param[out] c Pointer to the 1P1Z compensator instance.
+ * @param[in] gain The desired DC gain of the compensator.
+ * @param[in] f_z The frequency of the zero in Hz.
+ * @param[in] f_p The frequency of the pole in Hz.
+ * @param[in] fs The sampling frequency in Hz.
+ */
+void ctl_init_1p1z(ctrl_1p1z_t* c, parameter_gt gain, parameter_gt f_z, parameter_gt f_p, parameter_gt fs);
+
+/**
  * @brief Executes one step of the 1P1Z compensator.
- * @note An initialization function for this module is not defined in this header.
- * The user is responsible for setting the coefficients directly.
  * @param[in,out] c Pointer to the 1P1Z compensator instance.
  * @param[in] input The current input to the compensator, e(n).
  * @return ctrl_gt The calculated output, u(n).
  */
 GMP_STATIC_INLINE ctrl_gt ctl_step_1p1z(ctrl_1p1z_t* c, ctrl_gt input)
 {
-    // u(n) = a1*u(n-1) + b1*e(n-1) + b0*e(n)
-    c->output = ctl_mul(c->coef_a, c->resp) + ctl_mul(c->coef_b[1], c->exct) + ctl_mul(c->coef_b[0], input);
-
-    // Update states for the next iteration
-    c->exct = input;
-    // The response state is saturated for anti-windup before being stored
-    c->resp = ctl_sat(c->output, c->out_max, c->out_sto_min);
-
-    // The final output is saturated to its absolute limits
-    c->output = ctl_sat(c->output, c->out_max, c->out_min);
-
+    c->output = ctl_mul(c->coef_b[0], input) + ctl_mul(c->coef_b[1], c->exct[0]) - ctl_mul(c->coef_a[0], c->resp[0]);
+    c->exct[0] = input;
+    c->resp[0] = c->output;
     return c->output;
 }
+
+/**
+ * @brief Calculates the phase lag of the 1P1Z compensator at a specific frequency.
+ * @param[in] c Pointer to the 1P1Z compensator instance.
+ * @param[in] fs Sampling frequency (Hz).
+ * @param[in] f The frequency at which to calculate the phase lag (Hz).
+ * @return parameter_gt The phase lag in radians. A positive value indicates lag.
+ */
+parameter_gt ctl_get_1p1z_phase_lag(ctrl_1p1z_t* c, parameter_gt fs, parameter_gt f);
+
+/**
+ * @brief Calculates the linear gain of the 1P1Z compensator at a specific frequency.
+ * @param[in] c Pointer to the 1P1Z compensator instance.
+ * @param[in] fs Sampling frequency (Hz).
+ * @param[in] f The frequency at which to calculate the gain (Hz).
+ * @return parameter_gt The linear gain (magnitude).
+ */
+parameter_gt ctl_get_1p1z_gain(ctrl_1p1z_t* c, parameter_gt fs, parameter_gt f);
 
 /*---------------------------------------------------------------------------*/
 /* 2-Poles-2-Zeros (2P2Z) Compensator                                        */
@@ -94,92 +108,91 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_1p1z(ctrl_1p1z_t* c, ctrl_gt input)
 
 /**
  * @brief Data structure for a 2-Poles-2-Zeros compensator.
- * @details Implements a second-order IIR filter.
- *
- * The transfer function in the Z-domain is:
- * @f[
- * \frac{U(z)}{E(z)} = K \cdot \frac{b_0 + b_1 z^{-1} + b_2 z^{-2}}{1 - a_1 z^{-1} - a_2 z^{-2}}
- * @f]
- *
- * This corresponds to the difference equation:
- * @f[
- * u(n) = a_1 u(n-1) + a_2 u(n-2) + K \cdot (b_0 e(n) + b_1 e(n-1) + b_2 e(n-2))
- * @f]
  */
 typedef struct _tag_ctrl_2p2z_t
 {
-    // Coefficients
-    ctrl_gt b0, b1, b2; //!< Numerator (zero) coefficients.
-    ctrl_gt a1, a2;     //!< Denominator (pole) coefficients.
-    ctrl_gt gain;       //!< Overall gain K of the compensator.
-
-    // State variables
-    ctrl_gt input;    //!< Current input, e(n).
-    ctrl_gt output;   //!< Current output, u(n).
-    ctrl_gt input_1;  //!< Previous input, e(n-1).
-    ctrl_gt input_2;  //!< Input from two steps ago, e(n-2).
-    ctrl_gt output_1; //!< Previous output, u(n-1).
-    ctrl_gt output_2; //!< Output from two steps ago, u(n-2).
-
-    // Limits
-    ctrl_gt out_max; //!< Maximum output value.
-    ctrl_gt out_min; //!< Minimum output value.
+    ctrl_gt coef_a[2]; //!< Pole coefficients: [a1, a2].
+    ctrl_gt coef_b[3]; //!< Zero coefficients: [b0, b1, b2].
+    ctrl_gt resp[2];   //!< Previous output states: [u(n-1), u(n-2)].
+    ctrl_gt exct[2];   //!< Previous input states: [e(n-1), e(n-2)].
+    ctrl_gt output;    //!< The current output of the compensator, u(n).
 } ctrl_2p2z_t;
 
 /**
- * @brief Initializes a 2P2Z compensator from pole/zero frequencies.
- * @param[out] ctrl Pointer to the 2P2Z compensator instance.
- * @param[in] gain Overall gain K of the compensator.
- * @param[in] f_z0 Frequency of the first zero (Hz).
- * @param[in] f_z1 Frequency of the second zero (Hz).
- * @param[in] f_p1 Frequency of the first pole (Hz). The second pole is at the origin.
- * @param[in] fs Sampling frequency (Hz).
+ * @brief Clears the internal states of the 2P2Z compensator.
+ * @param[out] c Pointer to the 2P2Z compensator instance.
  */
-void ctl_init_2p2z(ctrl_2p2z_t* ctrl, parameter_gt gain, parameter_gt f_z0, parameter_gt f_z1, parameter_gt f_p1,
-                   parameter_gt fs);
+GMP_STATIC_INLINE void ctl_clear_2p2z(ctrl_2p2z_t* c)
+{
+    c->output = 0.0f;
+    c->resp[0] = 0.0f;
+    c->resp[1] = 0.0f;
+    c->exct[0] = 0.0f;
+    c->exct[1] = 0.0f;
+}
 
 /**
- * @brief Sets the output limits for the 2P2Z compensator.
- * @param[out] ctrl Pointer to the 2P2Z compensator instance.
- * @param[in] limit_max The maximum output value.
- * @param[in] limit_min The minimum output value.
+ * @brief Initializes a 2P2Z compensator with two real poles and two real zeros.
+ * @param[out] c Pointer to the 2P2Z compensator instance.
+ * @param[in] gain The desired DC gain.
+ * @param[in] f_z1 Frequency of the first zero (Hz).
+ * @param[in] f_z2 Frequency of the second zero (Hz).
+ * @param[in] f_p1 Frequency of the first pole (Hz).
+ * @param[in] f_p2 Frequency of the second pole (Hz).
+ * @param[in] fs Sampling frequency (Hz).
  */
-GMP_STATIC_INLINE void ctl_set_2p2z_limit(ctrl_2p2z_t* ctrl, ctrl_gt limit_max, ctrl_gt limit_min)
-{
-    ctrl->out_max = limit_max;
-    ctrl->out_min = limit_min;
-}
+void ctl_init_2p2z_real(ctrl_2p2z_t* c, parameter_gt gain, parameter_gt f_z1, parameter_gt f_z2, parameter_gt f_p1,
+                        parameter_gt f_p2, parameter_gt fs);
+
+/**
+ * @brief Initializes a 2P2Z compensator with two real poles and a pair of complex-conjugate zeros.
+ * @param[out] c Pointer to the 2P2Z compensator instance.
+ * @param[in] gain The desired DC gain.
+ * @param[in] f_czr Real part of the complex zero location in the s-plane (-sigma, in Hz).
+ * @param[in] f_czi Imaginary part of the complex zero location in the s-plane (wd, in Hz).
+ * @param[in] f_p1 Frequency of the first pole (Hz).
+ * @param[in] f_p2 Frequency of the second pole (Hz).
+ * @param[in] fs Sampling frequency (Hz).
+ */
+void ctl_init_2p2z_complex_zeros(ctrl_2p2z_t* c, parameter_gt gain, parameter_gt f_czr, parameter_gt f_czi,
+                                 parameter_gt f_p1, parameter_gt f_p2, parameter_gt fs);
 
 /**
  * @brief Executes one step of the 2P2Z compensator.
- * @param[in,out] ctrl Pointer to the 2P2Z compensator instance.
+ * @param[in,out] c Pointer to the 2P2Z compensator instance.
  * @param[in] input The current input to the compensator, e(n).
  * @return ctrl_gt The calculated output, u(n).
  */
-GMP_STATIC_INLINE ctrl_gt ctl_step_2p2z(ctrl_2p2z_t* ctrl, ctrl_gt input)
+GMP_STATIC_INLINE ctrl_gt ctl_step_2p2z(ctrl_2p2z_t* c, ctrl_gt input)
 {
-    ctrl->input = input;
+    c->output = ctl_mul(c->coef_b[0], input) + ctl_mul(c->coef_b[1], c->exct[0]) + ctl_mul(c->coef_b[2], c->exct[1]) -
+                (ctl_mul(c->coef_a[0], c->resp[0]) + ctl_mul(c->coef_a[1], c->resp[1]));
 
-    // Note: The original implementation applies gain partway through the calculation.
-    // A more standard approach would be to pre-scale the 'b' coefficients by the gain.
-    // The calculation has been reordered to match the standard difference equation.
-    ctrl_gt numerator_out =
-        ctl_mul(ctrl->b0, ctrl->input) + ctl_mul(ctrl->b1, ctrl->input_1) + ctl_mul(ctrl->b2, ctrl->input_2);
-    numerator_out = ctl_mul(numerator_out, ctrl->gain);
+    c->exct[1] = c->exct[0];
+    c->exct[0] = input;
+    c->resp[1] = c->resp[0];
+    c->resp[0] = c->output;
 
-    ctrl->output = numerator_out + ctl_mul(ctrl->a1, ctrl->output_1) + ctl_mul(ctrl->a2, ctrl->output_2);
-
-    // Saturation
-    ctrl->output = ctl_sat(ctrl->output, ctrl->out_max, ctrl->out_min);
-
-    // Update states for the next iteration
-    ctrl->input_2 = ctrl->input_1;
-    ctrl->input_1 = ctrl->input;
-    ctrl->output_2 = ctrl->output_1;
-    ctrl->output_1 = ctrl->output; // Use the saturated output for anti-windup
-
-    return ctrl->output;
+    return c->output;
 }
+
+/**
+ * @brief Calculates the phase lag of the 2P2Z compensator at a specific frequency.
+ * @param[in] c Pointer to the 2P2Z compensator instance.
+ * @param[in] fs Sampling frequency (Hz).
+ * @param[in] f The frequency at which to calculate the phase lag (Hz).
+ * @return parameter_gt The phase lag in radians.
+ */
+parameter_gt ctl_get_2p2z_phase_lag(ctrl_2p2z_t* c, parameter_gt fs, parameter_gt f);
+
+/**
+ * @brief Calculates the linear gain of the 2P2Z compensator at a specific frequency.
+ * @param[in] c Pointer to the 2P2Z compensator instance.
+ * @param[in] fs Sampling frequency (Hz).
+ * @param[in] f The frequency at which to calculate the gain (Hz).
+ * @return parameter_gt The linear gain (magnitude).
+ */
+parameter_gt ctl_get_2p2z_gain(ctrl_2p2z_t* c, parameter_gt fs, parameter_gt f);
 
 /*---------------------------------------------------------------------------*/
 /* 3-Poles-3-Zeros (3P3Z) Compensator                                        */
@@ -187,63 +200,121 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_2p2z(ctrl_2p2z_t* ctrl, ctrl_gt input)
 
 /**
  * @brief Data structure for a 3-Poles-3-Zeros compensator.
- * @details Implements a third-order IIR filter.
- *
- * The transfer function in the Z-domain is:
- * @f[
- * \frac{U(z)}{E(z)} = \frac{b_0 + b_1 z^{-1} + b_2 z^{-2} + b_3 z^{-3}}{1 - a_1 z^{-1} - a_2 z^{-2} - a_3 z^{-3}}
- * @f]
- *
- * This corresponds to the difference equation:
- * @f[
- * u(n) = a_1 u(n-1) + a_2 u(n-2) + a_3 u(n-3) + b_0 e(n) + b_1 e(n-1) + b_2 e(n-2) + b_3 e(n-3)
- * @f]
  */
 typedef struct _tag_ctrl_3p3z_t
 {
+    ctrl_gt coef_a[3]; //!< Pole coefficients: [a1, a2, a3].
+    ctrl_gt coef_b[4]; //!< Zero coefficients: [b0, b1, b2, b3].
+    ctrl_gt resp[3];   //!< Previous output states: [u(n-1), u(n-2), u(n-3)].
+    ctrl_gt exct[3];   //!< Previous input states: [e(n-1), e(n-2), e(n-3)].
     ctrl_gt output;    //!< The current output of the compensator, u(n).
-    ctrl_gt coef_a[3]; //!< Pole coefficients: a1, a2, a3.
-    ctrl_gt coef_b[4]; //!< Zero coefficients: b0, b1, b2, b3.
-    ctrl_gt resp[3];   //!< Previous output states: u(n-1), u(n-2), u(n-3).
-    ctrl_gt exct[3];   //!< Previous input states: e(n-1), e(n-2), e(n-3).
-
-    ctrl_gt out_max;     //!< The absolute maximum output value.
-    ctrl_gt out_sto_min; //!< The minimum value for storing the response state (anti-windup).
-    ctrl_gt out_min;     //!< The absolute minimum output value.
 } ctrl_3p3z_t;
 
 /**
+ * @brief Clears the internal states of the 3P3Z compensator.
+ * @param[out] c Pointer to the 3P3Z compensator instance.
+ */
+GMP_STATIC_INLINE void ctl_clear_3p3z(ctrl_3p3z_t* c)
+{
+    c->output = 0.0f;
+    for (int i = 0; i < 3; i++)
+    {
+        c->resp[i] = 0.0f;
+        c->exct[i] = 0.0f;
+    }
+}
+
+/**
+ * @brief Initializes a 3P3Z compensator with three real poles and three real zeros.
+ * @param[out] c Pointer to the 3P3Z compensator instance.
+ * @param[in] gain The desired overall DC gain.
+ * @param[in] f_z1, f_z2, f_z3 Frequencies of the three real zeros (Hz).
+ * @param[in] f_p1, f_p2, f_p3 Frequencies of the three real poles (Hz).
+ * @param[in] fs Sampling frequency (Hz).
+ */
+void ctl_init_3p3z_real(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt f_z1, parameter_gt f_z2, parameter_gt f_z3,
+                        parameter_gt f_p1, parameter_gt f_p2, parameter_gt f_p3, parameter_gt fs);
+
+/**
+ * @brief Initializes a 3P3Z compensator with one complex-conjugate zero pair and one real zero.
+ * @param[out] c Pointer to the 3P3Z compensator instance.
+ * @param[in] gain The desired overall DC gain.
+ * @param[in] f_czr, f_czi Real and imaginary parts of the complex zero (Hz).
+ * @param[in] f_z3 Frequency of the real zero (Hz).
+ * @param[in] f_p1, f_p2, f_p3 Frequencies of the three real poles (Hz).
+ * @param[in] fs Sampling frequency (Hz).
+ */
+void ctl_init_3p3z_complex_zeros(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt f_czr, parameter_gt f_czi,
+                                 parameter_gt f_z3, parameter_gt f_p1, parameter_gt f_p2, parameter_gt f_p3,
+                                 parameter_gt fs);
+
+/**
+ * @brief Initializes a 3P3Z compensator with one complex-conjugate pole pair and one real pole.
+ * @param[out] c Pointer to the 3P3Z compensator instance.
+ * @param[in] gain The desired overall DC gain.
+ * @param[in] f_z1, f_z2, f_z3 Frequencies of the three real zeros (Hz).
+ * @param[in] f_cpr, f_cpi Real and imaginary parts of the complex pole (Hz).
+ * @param[in] f_p3 Frequency of the real pole (Hz).
+ * @param[in] fs Sampling frequency (Hz).
+ */
+void ctl_init_3p3z_complex_poles(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt f_z1, parameter_gt f_z2,
+                                 parameter_gt f_z3, parameter_gt f_cpr, parameter_gt f_cpi, parameter_gt f_p3,
+                                 parameter_gt fs);
+
+/**
+ * @brief Initializes a 3P3Z compensator with one complex-conjugate pole pair and one complex-conjugate zero pair.
+ * @param[out] c Pointer to the 3P3Z compensator instance.
+ * @param[in] gain The desired overall DC gain.
+ * @param[in] f_czr, f_czi Real and imaginary parts of the complex zero (Hz).
+ * @param[in] f_z3 Frequency of the real zero (Hz).
+ * @param[in] f_cpr, f_cpi Real and imaginary parts of the complex pole (Hz).
+ * @param[in] f_p3 Frequency of the real pole (Hz).
+ * @param[in] fs Sampling frequency (Hz).
+ */
+void ctl_init_3p3z_complex_pair(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt f_czr, parameter_gt f_czi,
+                                parameter_gt f_z3, parameter_gt f_cpr, parameter_gt f_cpi, parameter_gt f_p3,
+                                parameter_gt fs);
+
+/**
  * @brief Executes one step of the 3P3Z compensator.
- * @note An initialization function for this module is not defined in this header.
- * The user is responsible for setting the coefficients directly.
  * @param[in,out] c Pointer to the 3P3Z compensator instance.
  * @param[in] input The current input to the compensator, e(n).
  * @return ctrl_gt The calculated output, u(n).
  */
 GMP_STATIC_INLINE ctrl_gt ctl_step_3p3z(ctrl_3p3z_t* c, ctrl_gt input)
 {
-    // u(n) = a1*u(n-1) + a2*u(n-2) + a3*u(n-3) + b0*e(n) + ...
     c->output =
-        ctl_mul(c->coef_a[0], c->resp[0]) + ctl_mul(c->coef_a[1], c->resp[1]) + ctl_mul(c->coef_a[2], c->resp[2]);
-    c->output +=
-        ctl_mul(c->coef_b[1], c->exct[0]) + ctl_mul(c->coef_b[2], c->exct[1]) + ctl_mul(c->coef_b[3], c->exct[2]);
-    c->output += ctl_mul(c->coef_b[0], input);
+        ctl_mul(c->coef_b[0], input) + ctl_mul(c->coef_b[1], c->exct[0]) + ctl_mul(c->coef_b[2], c->exct[1]) +
+        ctl_mul(c->coef_b[3], c->exct[2]) -
+        (ctl_mul(c->coef_a[0], c->resp[0]) + ctl_mul(c->coef_a[1], c->resp[1]) + ctl_mul(c->coef_a[2], c->resp[2]));
 
-    // Update input state buffer
     c->exct[2] = c->exct[1];
     c->exct[1] = c->exct[0];
     c->exct[0] = input;
-
-    // The final output is saturated to its absolute limits
-    c->output = ctl_sat(c->output, c->out_max, c->out_min);
-
-    // Update response state buffer with saturated output for anti-windup
     c->resp[2] = c->resp[1];
     c->resp[1] = c->resp[0];
     c->resp[0] = c->output;
 
     return c->output;
 }
+
+/**
+ * @brief Calculates the phase lag of the 3P3Z compensator at a specific frequency.
+ * @param[in] c Pointer to the 3P3Z compensator instance.
+ * @param[in] fs Sampling frequency (Hz).
+ * @param[in] f The frequency at which to calculate the phase lag (Hz).
+ * @return parameter_gt The phase lag in radians.
+ */
+parameter_gt ctl_get_3p3z_phase_lag(ctrl_3p3z_t* c, parameter_gt fs, parameter_gt f);
+
+/**
+ * @brief Calculates the linear gain of the 3P3Z compensator at a specific frequency.
+ * @param[in] c Pointer to the 3P3Z compensator instance.
+ * @param[in] fs Sampling frequency (Hz).
+ * @param[in] f The frequency at which to calculate the gain (Hz).
+ * @return parameter_gt The linear gain (magnitude).
+ */
+parameter_gt ctl_get_3p3z_gain(ctrl_3p3z_t* c, parameter_gt fs, parameter_gt f);
 
 /**
  * @}

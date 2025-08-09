@@ -409,6 +409,7 @@ GMP_STATIC_INLINE tri_adc_ift* ctl_get_tri_adc_channel_ctrl_port(tri_adc_channel
  * @{
  */
 
+#include <ctl/component/intrinsic/discrete/biquad_filter.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 
 /**
@@ -424,7 +425,7 @@ typedef struct _tag_adc_bias_calibrator_t
     fast_gt output_valid;     /**< Flag indicating that the calibration result is valid. */
 } adc_bias_calibrator_t;
 
-void ctl_init_adc_calibrator(adc_bias_calibrator_t* obj, ctl_filter_IIR2_setup_t* filter_parameter);
+void ctl_init_adc_calibrator(adc_bias_calibrator_t* obj, parameter_gt fc, parameter_gt Q, parameter_gt fs);
 
 /**
  * @brief Enables the ADC bias calibration process.
@@ -485,7 +486,7 @@ GMP_STATIC_INLINE void ctl_step_adc_calibrator(adc_bias_calibrator_t* obj, ctrl_
 
     if (obj->enable_filter)
     {
-        ctl_step_filter_iir2(&obj->filter, adc_value);
+        ctl_step_biquad_filter(&obj->filter, adc_value);
         obj->filter_tick += 1;
 
         if (ctl_is_adc_calibrator_cmpt(obj))
@@ -503,7 +504,7 @@ GMP_STATIC_INLINE void ctl_step_adc_calibrator(adc_bias_calibrator_t* obj, ctrl_
  */
 GMP_STATIC_INLINE ctrl_gt ctl_get_adc_calibrator_result(adc_bias_calibrator_t* obj)
 {
-    return ctl_get_filter_iir2_output(&obj->filter);
+    return ctl_get_biquad_filter_output(&obj->filter);
 }
 
 /**

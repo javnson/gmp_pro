@@ -16,7 +16,6 @@
 #ifndef _SIGNAL_GENERATOR_H_
 #define _SIGNAL_GENERATOR_H_
 
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -164,6 +163,113 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_ramp_generator_output(ctl_ramp_generator_t* rg
 GMP_STATIC_INLINE void ctl_set_ramp_generator_slope(ctl_ramp_generator_t* rg, ctrl_gt slope)
 {
     rg->slope = slope;
+}
+
+/*---------------------------------------------------------------------------*/
+/* Square Wave Generator                                                     */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief Data structure for the Square wave generator.
+ */
+typedef struct _tag_square_wave_generator_t
+{
+    ctrl_gt high_level; //!< The high output level (offset + amplitude).
+    ctrl_gt low_level;  //!< The low output level (offset - amplitude).
+    ctrl_gt phase;      //!< The internal phase accumulator (0 to 2*PI).
+    ctrl_gt phase_step; //!< The phase increment per step.
+    ctrl_gt output;     //!< The current output value.
+} ctl_square_wave_generator_t;
+
+/**
+ * @brief Initializes the square wave generator.
+ * @param[out] sq Pointer to the square wave generator instance.
+ * @param[in] fs Sampling frequency (Hz).
+ * @param[in] target_freq The desired frequency of the square wave (Hz).
+ * @param[in] amplitude The amplitude of the wave (half of peak-to-peak).
+ * @param[in] offset The DC offset of the wave.
+ */
+void ctl_init_square_wave_generator(ctl_square_wave_generator_t* sq, parameter_gt fs, parameter_gt target_freq,
+                                    parameter_gt amplitude, parameter_gt offset);
+
+/**
+ * @brief Executes one step of the square wave generator.
+ * @return ctrl_gt The new output value.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_step_square_wave_generator(ctl_square_wave_generator_t* sq)
+{
+    // Accumulate phase
+    sq->phase += sq->phase_step;
+
+    // Check for phase wrap-around
+    if (sq->phase >= (2.0f * PI))
+    {
+        sq->phase -= (2.0f * PI);
+    }
+
+    // Determine output based on phase
+    // Output is high for the first half of the cycle (0 to PI)
+    // and low for the second half (PI to 2*PI).
+    if (sq->phase < PI)
+    {
+        sq->output = sq->high_level;
+    }
+    else
+    {
+        sq->output = sq->low_level;
+    }
+
+    return sq->output;
+}
+
+/*---------------------------------------------------------------------------*/
+/* Triangle Wave Generator                                                   */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief Data structure for the Triangle wave generator.
+ */
+typedef struct _tag_triangle_wave_generator_t
+{
+    ctrl_gt pos_peak; //!< The positive peak value.
+    ctrl_gt neg_peak; //!< The negative peak value.
+    ctrl_gt slope;    //!< The current slope (can be positive or negative).
+    ctrl_gt output;   //!< The current output value.
+} ctl_triangle_wave_generator_t;
+
+/**
+ * @brief Initializes the triangle wave generator.
+ * @param[out] tri Pointer to the triangle wave generator instance.
+ * @param[in] fs Sampling frequency (Hz).
+ * @param[in] target_freq The desired frequency of the triangle wave (Hz).
+ * @param[in] pos_peak The positive peak value.
+ * @param[in] neg_peak The negative peak value.
+ */
+void ctl_init_triangle_wave_generator(ctl_triangle_wave_generator_t* tri, parameter_gt fs, parameter_gt target_freq,
+                                      parameter_gt pos_peak, parameter_gt neg_peak);
+
+/**
+ * @brief Executes one step of the triangle wave generator.
+ * @return ctrl_gt The new output value.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_step_triangle_wave_generator(ctl_triangle_wave_generator_t* tri)
+{
+    // Update output with the current slope
+    tri->output += tri->slope;
+
+    // Check for peak reversal
+    if (tri->output >= tri->pos_peak)
+    {
+        tri->output = tri->pos_peak; // Clamp to peak
+        tri->slope = -tri->slope;    // Reverse direction
+    }
+    else if (tri->output <= tri->neg_peak)
+    {
+        tri->output = tri->neg_peak; // Clamp to peak
+        tri->slope = -tri->slope;    // Reverse direction
+    }
+
+    return tri->output;
 }
 
 /**

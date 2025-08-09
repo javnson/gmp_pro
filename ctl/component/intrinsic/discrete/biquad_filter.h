@@ -14,8 +14,8 @@
  * Bilinear Transform with frequency pre-warping.
  */
 
-#ifndef _DISCRETE_FILTER_H_
-#define _DISCRETE_FILTER_H_
+#ifndef _BIQUAD_FILTER_H_
+#define _BIQUAD_FILTER_H_
 
 #include <ctl/math_block/gmp_math.h>
 #include <math.h> // Required for tanf, cosf, sinf, atan2f, powf, sqrtf
@@ -26,7 +26,7 @@ extern "C"
 #endif // __cplusplus
 
 /**
- * @defgroup discrete_filter_api Discrete Filter Library
+ * @defgroup BIQUAD_filter_api Discrete Filter Library
  * @brief A collection of common discrete filters for signal processing.
  * @{
  */
@@ -139,22 +139,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_biquad_filter_output(ctl_biquad_filter_t* obj)
  * @param[in] fc Cutoff frequency (Hz).
  * @param[in] Q Quality factor. Controls the resonance peak at the cutoff frequency. A value of 0.707 gives a Butterworth response.
  */
-void ctl_init_biquad_lpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q)
-{
-    parameter_gt omega = 2.0f * PI * fc / fs;
-    parameter_gt cos_w0 = cosf(omega);
-    parameter_gt alpha = sinf(omega) / (2.0f * Q);
-
-    parameter_gt a0_inv = 1.0f / (1.0f + alpha);
-
-    obj->b[0] = (1.0f - cos_w0) / 2.0f * a0_inv;
-    obj->b[1] = (1.0f - cos_w0) * a0_inv;
-    obj->b[2] = obj->b[0];
-    obj->a[0] = -2.0f * cos_w0 * a0_inv;
-    obj->a[1] = (1.0f - alpha) * a0_inv;
-
-    ctl_clear_biquad_filter(obj);
-}
+void ctl_init_biquad_lpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q);
 
 /**
  * @brief Initializes the biquad filter as a High-Pass Filter (HPF).
@@ -163,22 +148,7 @@ void ctl_init_biquad_lpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt
  * @param[in] fc Cutoff frequency (Hz).
  * @param[in] Q Quality factor.
  */
-void ctl_init_biquad_hpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q)
-{
-    parameter_gt omega = 2.0f * PI * fc / fs;
-    parameter_gt cos_w0 = cosf(omega);
-    parameter_gt alpha = sinf(omega) / (2.0f * Q);
-
-    parameter_gt a0_inv = 1.0f / (1.0f + alpha);
-
-    obj->b[0] = (1.0f + cos_w0) / 2.0f * a0_inv;
-    obj->b[1] = -(1.0f + cos_w0) * a0_inv;
-    obj->b[2] = obj->b[0];
-    obj->a[0] = -2.0f * cos_w0 * a0_inv;
-    obj->a[1] = (1.0f - alpha) * a0_inv;
-
-    ctl_clear_biquad_filter(obj);
-}
+void ctl_init_biquad_hpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q);
 
 /**
  * @brief Initializes the biquad filter as a Band-Pass Filter (BPF).
@@ -187,22 +157,7 @@ void ctl_init_biquad_hpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt
  * @param[in] fc Center frequency (Hz).
  * @param[in] Q Quality factor. Higher Q means a narrower bandwidth.
  */
-void ctl_init_biquad_bpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q)
-{
-    parameter_gt omega = 2.0f * PI * fc / fs;
-    parameter_gt cos_w0 = cosf(omega);
-    parameter_gt alpha = sinf(omega) / (2.0f * Q);
-
-    parameter_gt a0_inv = 1.0f / (1.0f + alpha);
-
-    obj->b[0] = alpha * a0_inv;
-    obj->b[1] = 0.0f;
-    obj->b[2] = -alpha * a0_inv;
-    obj->a[0] = -2.0f * cos_w0 * a0_inv;
-    obj->a[1] = (1.0f - alpha) * a0_inv;
-
-    ctl_clear_biquad_filter(obj);
-}
+void ctl_init_biquad_bpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q);
 
 /**
  * @brief Initializes the biquad filter as a Notch Filter.
@@ -211,22 +166,7 @@ void ctl_init_biquad_bpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt
  * @param[in] fc Center frequency to notch out (Hz).
  * @param[in] Q Quality factor. Higher Q means a narrower notch.
  */
-void ctl_init_biquad_notch(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q)
-{
-    parameter_gt omega = 2.0f * PI * fc / fs;
-    parameter_gt cos_w0 = cosf(omega);
-    parameter_gt alpha = sinf(omega) / (2.0f * Q);
-
-    parameter_gt a0_inv = 1.0f / (1.0f + alpha);
-
-    obj->b[0] = 1.0f * a0_inv;
-    obj->b[1] = -2.0f * cos_w0 * a0_inv;
-    obj->b[2] = 1.0f * a0_inv;
-    obj->a[0] = -2.0f * cos_w0 * a0_inv;
-    obj->a[1] = (1.0f - alpha) * a0_inv;
-
-    ctl_clear_biquad_filter(obj);
-}
+void ctl_init_biquad_notch(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q);
 
 /**
  * @brief Initializes the biquad filter as an All-Pass Filter.
@@ -235,22 +175,7 @@ void ctl_init_biquad_notch(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_
  * @param[in] fc Center frequency where phase shift is -180 degrees (Hz).
  * @param[in] Q Quality factor. Controls how quickly the phase changes around fc.
  */
-void ctl_init_biquad_allpass(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q)
-{
-    parameter_gt omega = 2.0f * PI * fc / fs;
-    parameter_gt cos_w0 = cosf(omega);
-    parameter_gt alpha = sinf(omega) / (2.0f * Q);
-
-    parameter_gt a0_inv = 1.0f / (1.0f + alpha);
-
-    obj->b[0] = (1.0f - alpha) * a0_inv;
-    obj->b[1] = -2.0f * cos_w0 * a0_inv;
-    obj->b[2] = (1.0f + alpha) * a0_inv;
-    obj->a[0] = -2.0f * cos_w0 * a0_inv;
-    obj->a[1] = (1.0f - alpha) * a0_inv;
-
-    ctl_clear_biquad_filter(obj);
-}
+void ctl_init_biquad_allpass(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q);
 
 /**
  * @brief Initializes the biquad filter as a Peaking EQ Filter.
@@ -261,23 +186,7 @@ void ctl_init_biquad_allpass(ctl_biquad_filter_t* obj, parameter_gt fs, paramete
  * @param[in] gain_db The desired gain or cut in decibels (dB). Positive for boost, negative for cut.
  */
 void ctl_init_biquad_peaking_eq(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q,
-                                parameter_gt gain_db)
-{
-    parameter_gt V0 = powf(10.0f, gain_db / 20.0f);
-    parameter_gt omega = 2.0f * PI * fc / fs;
-    parameter_gt cos_w0 = cosf(omega);
-    parameter_gt alpha = sinf(omega) / (2.0f * Q);
-
-    parameter_gt a0_inv = 1.0f / (1.0f + alpha / V0);
-
-    obj->b[0] = (1.0f + alpha * V0) * a0_inv;
-    obj->b[1] = -2.0f * cos_w0 * a0_inv;
-    obj->b[2] = (1.0f - alpha * V0) * a0_inv;
-    obj->a[0] = -2.0f * cos_w0 * a0_inv;
-    obj->a[1] = (1.0f - alpha / V0) * a0_inv;
-
-    ctl_clear_biquad_filter(obj);
-}
+                                parameter_gt gain_db);
 
 /**
  * @brief Initializes the biquad filter as a Low-Shelf Filter.
@@ -288,24 +197,7 @@ void ctl_init_biquad_peaking_eq(ctl_biquad_filter_t* obj, parameter_gt fs, param
  * @param[in] gain_db The desired gain or cut for the low frequencies in dB.
  */
 void ctl_init_biquad_lowshelf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q,
-                              parameter_gt gain_db)
-{
-    parameter_gt V0 = powf(10.0f, gain_db / 20.0f);
-    parameter_gt omega = 2.0f * PI * fc / fs;
-    parameter_gt cos_w0 = cosf(omega);
-    parameter_gt alpha = sinf(omega) / (2.0f * Q);
-    parameter_gt beta = 2.0f * sqrtf(V0) * alpha;
-
-    parameter_gt a0_inv = 1.0f / ((V0 + 1.0f) + (V0 - 1.0f) * cos_w0 + beta);
-
-    obj->b[0] = V0 * ((V0 + 1.0f) - (V0 - 1.0f) * cos_w0 + beta) * a0_inv;
-    obj->b[1] = 2.0f * V0 * ((V0 - 1.0f) - (V0 + 1.0f) * cos_w0) * a0_inv;
-    obj->b[2] = V0 * ((V0 + 1.0f) - (V0 - 1.0f) * cos_w0 - beta) * a0_inv;
-    obj->a[0] = -2.0f * ((V0 - 1.0f) + (V0 + 1.0f) * cos_w0) * a0_inv;
-    obj->a[1] = ((V0 + 1.0f) + (V0 - 1.0f) * cos_w0 - beta) * a0_inv;
-
-    ctl_clear_biquad_filter(obj);
-}
+                              parameter_gt gain_db);
 
 /**
  * @brief Initializes the biquad filter as a High-Shelf Filter.
@@ -316,24 +208,7 @@ void ctl_init_biquad_lowshelf(ctl_biquad_filter_t* obj, parameter_gt fs, paramet
  * @param[in] gain_db The desired gain or cut for the high frequencies in dB.
  */
 void ctl_init_biquad_highshelf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q,
-                               parameter_gt gain_db)
-{
-    parameter_gt V0 = powf(10.0f, gain_db / 20.0f);
-    parameter_gt omega = 2.0f * PI * fc / fs;
-    parameter_gt cos_w0 = cosf(omega);
-    parameter_gt alpha = sinf(omega) / (2.0f * Q);
-    parameter_gt beta = 2.0f * sqrtf(V0) * alpha;
-
-    parameter_gt a0_inv = 1.0f / ((V0 + 1.0f) - (V0 - 1.0f) * cos_w0 + beta);
-
-    obj->b[0] = V0 * ((V0 + 1.0f) + (V0 - 1.0f) * cos_w0 + beta) * a0_inv;
-    obj->b[1] = -2.0f * V0 * ((V0 - 1.0f) + (V0 + 1.0f) * cos_w0) * a0_inv;
-    obj->b[2] = V0 * ((V0 + 1.0f) + (V0 - 1.0f) * cos_w0 - beta) * a0_inv;
-    obj->a[0] = 2.0f * ((V0 - 1.0f) - (V0 + 1.0f) * cos_w0) * a0_inv;
-    obj->a[1] = ((V0 + 1.0f) - (V0 - 1.0f) * cos_w0 - beta) * a0_inv;
-
-    ctl_clear_biquad_filter(obj);
-}
+                               parameter_gt gain_db);
 
 /*---------------------------------------------------------------------------*/
 /* Biquad Filter Analysis                                                    */
@@ -356,37 +231,7 @@ void ctl_init_biquad_highshelf(ctl_biquad_filter_t* obj, parameter_gt fs, parame
  * @param[in] f The frequency at which to calculate the phase lag (Hz).
  * @return parameter_gt The phase lag in radians. A positive value indicates lag.
  */
-parameter_gt ctl_get_biquad_phase_lag(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt f)
-{
-    // 1. Calculate normalized angular frequency
-    parameter_gt w = 2.0f * PI * f / fs;
-
-    // Pre-calculate cosine and sine terms
-    parameter_gt cos_w = cosf(w);
-    parameter_gt sin_w = sinf(w);
-    parameter_gt cos_2w = cosf(2.0f * w);
-    parameter_gt sin_2w = sinf(2.0f * w);
-
-    // 2. Evaluate the complex numerator N(w)
-    parameter_gt num_real = obj->b[0] + obj->b[1] * cos_w + obj->b[2] * cos_2w;
-    parameter_gt num_imag = -obj->b[1] * sin_w - obj->b[2] * sin_2w;
-
-    // 3. Evaluate the complex denominator D(w)
-    // Note: The transfer function is 1 + a1*z^-1 + a2*z^-2, so we use +a1 and +a2 here.
-    // The step function uses -a1 and -a2, which is correct for the difference equation.
-    parameter_gt den_real = 1.0f + obj->a[0] * cos_w + obj->a[1] * cos_2w;
-    parameter_gt den_imag = -obj->a[0] * sin_w - obj->a[1] * sin_2w;
-
-    // 4. Calculate the phase of the numerator and denominator
-    parameter_gt phase_num = atan2f(num_imag, num_real);
-    parameter_gt phase_den = atan2f(den_imag, den_real);
-
-    // 5. Total phase = phase(N) - phase(D)
-    parameter_gt total_phase = phase_num - phase_den;
-
-    // 6. Phase lag = -Total phase
-    return -total_phase;
-}
+parameter_gt ctl_get_biquad_phase_lag(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt f);
 
 /**
  * @brief Calculates the linear gain (magnitude) of the biquad filter at a specific frequency.
@@ -405,38 +250,7 @@ parameter_gt ctl_get_biquad_phase_lag(ctl_biquad_filter_t* obj, parameter_gt fs,
  * @param[in] f The frequency at which to calculate the gain (Hz).
  * @return parameter_gt The linear gain (magnitude).
  */
-parameter_gt ctl_get_biquad_gain(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt f)
-{
-    // 1. Calculate normalized angular frequency
-    parameter_gt w = 2.0f * PI * f / fs;
-
-    // Pre-calculate cosine and sine terms
-    parameter_gt cos_w = cosf(w);
-    parameter_gt sin_w = sinf(w);
-    parameter_gt cos_2w = cosf(2.0f * w);
-    parameter_gt sin_2w = sinf(2.0f * w);
-
-    // 2. Evaluate the complex numerator and denominator
-    parameter_gt num_real = obj->b[0] + obj->b[1] * cos_w + obj->b[2] * cos_2w;
-    parameter_gt num_imag = -obj->b[1] * sin_w - obj->b[2] * sin_2w;
-    parameter_gt den_real = 1.0f + obj->a[0] * cos_w + obj->a[1] * cos_2w;
-    parameter_gt den_imag = -obj->a[0] * sin_w - obj->a[1] * sin_2w;
-
-    // 3. Calculate the magnitude of the numerator
-    parameter_gt mag_num = sqrtf(num_real * num_real + num_imag * num_imag);
-
-    // 4. Calculate the magnitude of the denominator
-    parameter_gt mag_den = sqrtf(den_real * den_real + den_imag * den_imag);
-
-    // Avoid division by zero
-    if (mag_den < 1e-9)
-    {
-        return 0.0f;
-    }
-
-    // 5. Total gain = |N(¦Ø)| / |D(¦Ø)|
-    return mag_num / mag_den;
-}
+parameter_gt ctl_get_biquad_gain(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt f);
 
 /**
  * @}

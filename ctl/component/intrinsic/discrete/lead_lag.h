@@ -19,8 +19,6 @@
 #ifndef _LEAD_LAG_H_
 #define _LEAD_LAG_H_
 
-#include <ctl/math_block/gmp_math.h> // Assuming this is needed for types like ctrl_gt and parameter_gt
-
 #ifdef __cplusplus
 extern "C"
 {

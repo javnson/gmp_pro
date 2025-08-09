@@ -145,7 +145,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_pmsm_hfi(pmsm_hfi_t* hfi, ctrl_gt iq)
     ctl_step_sine_generator(&hfi->hfi_sincos_gen);
 
     // 4. Low-pass filter the demodulated signal to extract the position error.
-    hfi->theta_error = ctl_step_filter_iir2(&hfi->iq_lp_filter, hfi->iq_demodulate);
+    hfi->theta_error = ctl_step_biquad_filter(&hfi->iq_lp_filter, hfi->iq_demodulate);
 
     // 5. Process the error signal through the PLL to track speed and position.
     // 5a. PI controller generates the estimated speed in rad/tick.

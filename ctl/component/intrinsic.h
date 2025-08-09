@@ -87,7 +87,14 @@
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 
 /**
- * @defgroup discrete_filter_api Discrete Filter Library
+ * @defgroup df_controllers Direct Form Controllers
+ * @ingroup CTL_INTRINSIC_DISCRETE
+ * @brief A library of standard direct form IIR filter implementations.
+ */
+#include <ctl/component/intrinsic/discrete/direct_form.h>
+
+/**
+ * @defgroup BIQUAD_filter_api Discrete Filter Library
  * @ingroup CTL_INTRINSIC_DISCRETE
  * @brief A collection of common discrete filters for signal processing.
  */

@@ -207,14 +207,7 @@ void ctl_init_pmsm_hfi(
     hfi->hfi_inj_amp = init->u_amp_hfi;
 
     // iq lowpass filter
-    ctl_filter_IIR2_setup_t iq_lp_setup;
-    iq_lp_setup.fc = init->iq_lp_fc;
-    iq_lp_setup.filter_type = FILTER_IIR2_TYPE_LOWPASS;
-    iq_lp_setup.fs = init->f_ctrl;
-    iq_lp_setup.gain = 1;
-    iq_lp_setup.q = 1 / init->iq_lp_damp / 2;
-
-    ctl_init_filter_iir2(&hfi->iq_lp_filter, &iq_lp_setup);
+    ctl_init_biquad_lpf(&hfi->iq_lp_filter, init->f_ctrl, init->iq_lp_fc, 1.0f / init->iq_lp_damp / 2);
 
     // PLL
     ctl_init_pid_ser(&hfi->pid_pll, init->pid_kp, init->pid_Ti, init->pid_Td, init->f_ctrl);

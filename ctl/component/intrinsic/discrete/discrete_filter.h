@@ -129,7 +129,6 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_lowpass_filter_result(ctl_low_pass_filter_t* l
     return lpf->out;
 }
 
-
 /*---------------------------------------------------------------------------*/
 /* 1st-Order IIR General Filter                                              */
 /*---------------------------------------------------------------------------*/
@@ -182,15 +181,7 @@ GMP_STATIC_INLINE void ctl_clear_filter_iir1(ctl_filter_IIR1_t* obj)
  * @param[in] fs Sampling frequency (Hz).
  * @param[in] fc Cutoff frequency (Hz).
  */
-void ctl_init_filter_iir1_lpf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt fc)
-{
-    parameter_gt K = tanf(PI * fc / fs);
-    parameter_gt norm = 1.0f / (K + 1.0f);
-    obj->b0 = K * norm;
-    obj->b1 = obj->b0;
-    obj->a1 = (K - 1.0f) * norm;
-    ctl_clear_filter_iir1(obj);
-}
+void ctl_init_filter_iir1_lpf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt fc);
 
 /**
  * @brief Initializes the filter as a 1st-order High-Pass Filter (HPF).
@@ -199,15 +190,7 @@ void ctl_init_filter_iir1_lpf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter
  * @param[in] fs Sampling frequency (Hz).
  * @param[in] fc Cutoff frequency (Hz).
  */
-void ctl_init_filter_iir1_hpf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt fc)
-{
-    parameter_gt K = tanf(PI * fc / fs);
-    parameter_gt norm = 1.0f / (K + 1.0f);
-    obj->b0 = 1.0f * norm;
-    obj->b1 = -obj->b0;
-    obj->a1 = (K - 1.0f) * norm;
-    ctl_clear_filter_iir1(obj);
-}
+void ctl_init_filter_iir1_hpf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt fc);
 
 /**
  * @brief Initializes the filter as a 1st-order All-Pass Filter.
@@ -216,15 +199,7 @@ void ctl_init_filter_iir1_hpf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter
  * @param[in] fs Sampling frequency (Hz).
  * @param[in] fc Center frequency (Hz).
  */
-void ctl_init_filter_iir1_apf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt fc)
-{
-    parameter_gt K = tanf(PI * fc / fs);
-    parameter_gt norm = 1.0f / (K + 1.0f);
-    obj->b0 = (1.0f - K) * norm; // Note: b0 is negative of a1
-    obj->b1 = 1.0f;
-    obj->a1 = (K - 1.0f) * norm;
-    ctl_clear_filter_iir1(obj);
-}
+void ctl_init_filter_iir1_apf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt fc);
 
 /**
  * @brief Calculates the phase lag of the 1st-order filter at a specific frequency.
@@ -233,22 +208,7 @@ void ctl_init_filter_iir1_apf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter
  * @param[in] f The frequency at which to calculate the phase lag (Hz).
  * @return parameter_gt The phase lag in radians. A positive value indicates lag.
  */
-parameter_gt ctl_get_filter_iir1_phase_lag(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt f)
-{
-    parameter_gt w = 2.0f * PI * f / fs;
-    parameter_gt cos_w = cosf(w);
-    parameter_gt sin_w = sinf(w);
-
-    parameter_gt num_real = obj->b0 + obj->b1 * cos_w;
-    parameter_gt num_imag = -obj->b1 * sin_w;
-    parameter_gt den_real = 1.0f + obj->a1 * cos_w;
-    parameter_gt den_imag = -obj->a1 * sin_w;
-
-    parameter_gt phase_num = atan2f(num_imag, num_real);
-    parameter_gt phase_den = atan2f(den_imag, den_real);
-
-    return -(phase_num - phase_den);
-}
+parameter_gt ctl_get_filter_iir1_phase_lag(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt f);
 
 /**
  * @brief Calculates the linear gain of the 1st-order filter at a specific frequency.
@@ -257,24 +217,7 @@ parameter_gt ctl_get_filter_iir1_phase_lag(ctl_filter_IIR1_t* obj, parameter_gt 
  * @param[in] f The frequency at which to calculate the gain (Hz).
  * @return parameter_gt The linear gain (magnitude).
  */
-parameter_gt ctl_get_filter_iir1_gain(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt f)
-{
-    parameter_gt w = 2.0f * PI * f / fs;
-    parameter_gt cos_w = cosf(w);
-    parameter_gt sin_w = sinf(w);
-
-    parameter_gt num_real = obj->b0 + obj->b1 * cos_w;
-    parameter_gt num_imag = -obj->b1 * sin_w;
-    parameter_gt den_real = 1.0f + obj->a1 * cos_w;
-    parameter_gt den_imag = -obj->a1 * sin_w;
-
-    parameter_gt mag_num = sqrtf(num_real * num_real + num_imag * num_imag);
-    parameter_gt mag_den = sqrtf(den_real * den_real + den_imag * den_imag);
-
-    if (mag_den < 1e-9)
-        return 0.0f;
-    return mag_num / mag_den;
-}
+parameter_gt ctl_get_filter_iir1_gain(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt f);
 
 /**
  * @}
@@ -285,4 +228,3 @@ parameter_gt ctl_get_filter_iir1_gain(ctl_filter_IIR1_t* obj, parameter_gt fs, p
 #endif //__cplusplus
 
 #endif // _DISCRETE_FILTER_H_
-
