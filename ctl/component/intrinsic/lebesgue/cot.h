@@ -1,2 +1,0 @@
-// Constant-on-time controller
-

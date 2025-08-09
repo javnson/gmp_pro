@@ -48,13 +48,17 @@ volatile fast_gt flag_enable_system = 0;
 // CTL initialize routine
 void ctl_init()
 {
+    // Stage I: Disable output
+    ctl_disable_output();
+
+    // Stage II: Init controller
     ctl_init_buck_ctrl(
         // Boost controller
         &buck_ctrl,
         // Voltage PID controller
         1.5f, 0.02f, 0,
         // Current PID controller
-        3.0f, 0.01f, 0,
+        1.5f, 0.01f, 0,
         // valid voltage output range
         0.1f, 1.0f,
         // input filter cut frequency
@@ -62,20 +66,21 @@ void ctl_init()
         // Controller frequency, Hz
         CONTROLLER_FREQUENCY);
 
+    // Stage III: Config operating mode
 #if (BUILD_LEVEL == 1)
     // Open loop
-    ctl_set_buck_openloop_mode(&buck_ctrl);
-    ctl_set_buck_uo_openloop(&buck_ctrl, float2ctrl(0.18));
+    ctl_buck_ctrl_openloop_mode(&buck_ctrl);
+    ctl_set_buck_ctrl_voltage_openloop(&buck_ctrl, float2ctrl(0.18));
 
 #elif (BUILD_LEVEL == 2)
     // Current Loop
-    ctl_boost_ctrl_current_mode(&boost_ctrl);
-    ctl_set_boost_ctrl_current(&boost_ctrl, float2ctrl(0.3));
+    ctl_buck_ctrl_current_mode(&buck_ctrl);
+    ctl_set_buck_ctrl_current(&buck_ctrl, float2ctrl(0.05));
 
 #elif (BUILD_LEVEL == 3)
     // Voltage loop
-    ctl_boost_ctrl_voltage_mode(&boost_ctrl);
-    ctl_set_boost_ctrl_voltage(&boost_ctrl, float2ctrl(0.5));
+    ctl_buck_ctrl_voltage_mode(&boost_ctrl);
+    ctl_set_buck_ctrl_voltage(&boost_ctrl, float2ctrl(0.1));
 
 #elif (BUILD_LEVEL == 4)
     // Current loop for DC bus
@@ -85,16 +90,6 @@ void ctl_init()
 
 #endif // BUILD_LEVEL
 
-    ctl_disable_output();
-
-    // if in simulation mode, enable system automatically
-#if !defined SPECIFY_PC_ENVIRONMENT
-
-    while (flag_system_enable == 0)
-    {
-    }
-
-#endif // SPECIFY_PC_ENVIRONMENT
 }
 
 //////////////////////////////////////////////////////////////////////////

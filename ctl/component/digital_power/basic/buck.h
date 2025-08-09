@@ -45,6 +45,7 @@
 #define _FILE_BUCK_CTRL_H_
 
 #include <ctl/component/interface/interface_base.h>
+#include <ctl/component/intrinsic/basic/saturation.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 
 #ifdef __cplusplus
@@ -63,7 +64,7 @@ extern "C"
 /* Configuration Macros                             */
 /*---------------------------------------------------------------------------*/
 
-// #define CTL_BUCK_CTRL_OUTPUT_WITHOUT_UIN // You may enable this macro to enter debug mode where duty cycle is not divided by U_in.
+#define CTL_BUCK_CTRL_OUTPUT_WITHOUT_UIN // You may enable this macro to enter debug mode where duty cycle is not divided by U_in.
 
 /*---------------------------------------------------------------------------*/
 /* Data Structures                              */
@@ -83,7 +84,7 @@ typedef struct _tag_buck_ctrl_type
     ctrl_gt pwm_out_pu; /**< Final calculated PWM duty cycle (per-unit). */
 
     /*-- Controller Objects --*/
-    ctl_pid_t current_pid;     /**< Inner PID controller for the inductor current loop. */
+    ctl_pid_t current_pid; /**< Inner PID controller for the inductor current loop. */
     ctl_pid_t voltage_pid; /**< Outer PID controller for the output voltage loop. */
 
     /*-- Input Signal Filters --*/
@@ -150,8 +151,7 @@ void ctl_attach_buck_ctrl_input(buck_ctrl_t* buck, adc_ift* uo, adc_ift* il, adc
  * @brief Clears the internal states and integral terms of the PID controllers.
  * @param[in,out] buck Pointer to the Buck controller instance.
  */
-GMP_STATIC_INLINE
-void ctl_clear_buck_ctrl(buck_ctrl_t* buck)
+GMP_STATIC_INLINE void ctl_clear_buck_ctrl(buck_ctrl_t* buck)
 {
     ctl_clear_pid(&buck->current_pid);
     ctl_clear_pid(&buck->voltage_pid);
@@ -167,8 +167,7 @@ void ctl_clear_buck_ctrl(buck_ctrl_t* buck)
  * @param[in,out] buck Pointer to the Buck controller instance.
  * @return The calculated PWM duty cycle (per-unit).
  */
-GMP_STATIC_INLINE
-ctrl_gt ctl_step_buck_ctrl(buck_ctrl_t* buck)
+GMP_STATIC_INLINE ctrl_gt ctl_step_buck_ctrl(buck_ctrl_t* buck)
 {
     // Filter the raw ADC inputs
     ctl_step_lowpass_filter(&buck->lpf_il, buck->adc_il->value);
@@ -215,10 +214,9 @@ ctrl_gt ctl_step_buck_ctrl(buck_ctrl_t* buck)
  * @details Both PID loops are disabled. The output is determined directly by the value set with @ref ctl_set_buck_ctrl_voltage_openloop.
  * @param[in,out] buck Pointer to the Buck controller instance.
  */
-GMP_STATIC_INLINE
-void ctl_buck_ctrl_openloop_mode(buck_ctrl_t* buck)
+GMP_STATIC_INLINE void ctl_buck_ctrl_openloop_mode(buck_ctrl_t* buck)
 {
-    buck->flag_enable_system = 1;
+    //buck->flag_enable_system = 1;
     buck->flag_enable_current_ctrl = 0;
     buck->flag_enable_voltage_ctrl = 0;
 }
@@ -228,8 +226,7 @@ void ctl_buck_ctrl_openloop_mode(buck_ctrl_t* buck)
  * @param[in,out] buck Pointer to the Buck controller instance.
  * @param[in] vo The desired intermediate voltage command.
  */
-GMP_STATIC_INLINE
-void ctl_set_buck_ctrl_voltage_openloop(buck_ctrl_t* buck, ctrl_gt vo)
+GMP_STATIC_INLINE void ctl_set_buck_ctrl_voltage_openloop(buck_ctrl_t* buck, ctrl_gt vo)
 {
     buck->voltage_out = vo;
 }
@@ -239,10 +236,9 @@ void ctl_set_buck_ctrl_voltage_openloop(buck_ctrl_t* buck, ctrl_gt vo)
  * @details The outer voltage loop is disabled, and the inner current loop directly tracks the user-specified current setpoint.
  * @param[in,out] buck Pointer to the Buck controller instance.
  */
-GMP_STATIC_INLINE
-void ctl_buck_ctrl_current_mode(buck_ctrl_t* buck)
+GMP_STATIC_INLINE void ctl_buck_ctrl_current_mode(buck_ctrl_t* buck)
 {
-    buck->flag_enable_system = 1;
+    //buck->flag_enable_system = 0;
     buck->flag_enable_current_ctrl = 1;
     buck->flag_enable_voltage_ctrl = 0;
 }
@@ -252,8 +248,7 @@ void ctl_buck_ctrl_current_mode(buck_ctrl_t* buck)
  * @param[in,out] buck Pointer to the Buck controller instance.
  * @param[in] il The target inductor current.
  */
-GMP_STATIC_INLINE
-void ctl_set_buck_ctrl_current(buck_ctrl_t* buck, ctrl_gt il)
+GMP_STATIC_INLINE void ctl_set_buck_ctrl_current(buck_ctrl_t* buck, ctrl_gt il)
 {
     buck->current_set = il;
 }
@@ -263,10 +258,9 @@ void ctl_set_buck_ctrl_current(buck_ctrl_t* buck, ctrl_gt il)
  * @details Both the inner current loop and outer voltage loop are enabled.
  * @param[in,out] buck Pointer to the Buck controller instance.
  */
-GMP_STATIC_INLINE
-void ctl_buck_ctrl_voltage_mode(buck_ctrl_t* buck)
+GMP_STATIC_INLINE void ctl_buck_ctrl_voltage_mode(buck_ctrl_t* buck)
 {
-    buck->flag_enable_system = 1;
+    //buck->flag_enable_system = 1;
     buck->flag_enable_current_ctrl = 1;
     buck->flag_enable_voltage_ctrl = 1;
 }
@@ -276,8 +270,7 @@ void ctl_buck_ctrl_voltage_mode(buck_ctrl_t* buck)
  * @param[in,out] buck Pointer to the Buck controller instance.
  * @param[in] uo The target output voltage.
  */
-GMP_STATIC_INLINE
-void ctl_set_buck_ctrl_voltage(buck_ctrl_t* buck, ctrl_gt uo)
+GMP_STATIC_INLINE void ctl_set_buck_ctrl_voltage(buck_ctrl_t* buck, ctrl_gt uo)
 {
     buck->voltage_set = uo;
 }
@@ -286,8 +279,7 @@ void ctl_set_buck_ctrl_voltage(buck_ctrl_t* buck, ctrl_gt uo)
  * @brief Enables the entire Buck controller system.
  * @param[in,out] buck Pointer to the Buck controller instance.
  */
-GMP_STATIC_INLINE
-void ctl_enable_buck_ctrl(buck_ctrl_t* buck)
+GMP_STATIC_INLINE void ctl_enable_buck_ctrl(buck_ctrl_t* buck)
 {
     buck->flag_enable_system = 1;
 }
@@ -296,8 +288,7 @@ void ctl_enable_buck_ctrl(buck_ctrl_t* buck)
  * @brief Disables the entire Buck controller system.
  * @param[in,out] buck Pointer to the Buck controller instance.
  */
-GMP_STATIC_INLINE
-void ctl_disable_buck_ctrl(buck_ctrl_t* buck)
+GMP_STATIC_INLINE void ctl_disable_buck_ctrl(buck_ctrl_t* buck)
 {
     buck->flag_enable_system = 0;
 }
@@ -307,8 +298,7 @@ void ctl_disable_buck_ctrl(buck_ctrl_t* buck)
  * @param[in] buck Pointer to the Buck controller instance.
  * @return The last calculated PWM duty cycle (per-unit).
  */
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_buck_ctrl_modulation(buck_ctrl_t* buck)
+GMP_STATIC_INLINE ctrl_gt ctl_get_buck_ctrl_modulation(buck_ctrl_t* buck)
 {
     return buck->pwm_out_pu;
 }

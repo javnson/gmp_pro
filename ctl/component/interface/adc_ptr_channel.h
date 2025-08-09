@@ -18,6 +18,10 @@
 // #include <gmp_core.h>
 #include <ctl/component/interface/interface_base.h>
 
+#include <ctl/component/interface/gain_model.h>
+#include <ctl/component/interface/bias_model.h>
+
+
 // It's good practice to include the header for any assertion macros used.
 // For example, if gmp_base_assert is based on the standard library assert.
 // #include <assert.h>

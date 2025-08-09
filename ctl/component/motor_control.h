@@ -225,6 +225,13 @@
 #include <ctl/component/motor_control/motion/ladrc_spd_ctrl.h>
 
 /**
+ * @defgroup nladrc_controller Nonlinear ADRC
+ * @ingroup CTL_MC_COMPONENT
+ * @brief An advanced controller for systems with uncertainties and disturbances.
+ */
+#include <ctl/component/motor_control/motion/nladrc_spd_ctrl.h>
+
+/**
  * @defgroup SINUSOIDAL_PLANNER Sinusoidal Trajectory Planner
  * @ingroup CTL_MC_COMPONENT
  * @brief Generates cycloidal profiles for extremely smooth motion.

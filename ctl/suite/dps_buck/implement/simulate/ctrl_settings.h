@@ -5,7 +5,7 @@
 // BUILD_LEVEL 1: Voltage open loop
 // BUILD_LEVEL 2: current close loop
 // BUILD_LEVEL 3: voltage close loop
-#define BUILD_LEVEL (1)
+#define BUILD_LEVEL (2)
 
 // low voltage half bridge parameters
 #include <ctl/component/digital_power/hardware_preset/gmp_lvhb_v1.h>

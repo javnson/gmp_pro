@@ -1,23 +1,24 @@
 /**
  * @file discrete_filter.h
  * @author Javnson (javnson@zju.edu.cn)
- * @brief Provides a library of common discrete filters.
- * @version 0.2
- * @date 2024-09-30
+ * @brief Provides a library of common discrete IIR and FIR filters.
+ * @version 1.0
+ * @date 2025-08-09
  *
  * @copyright Copyright GMP(c) 2024
  *
  * @details This file contains implementations for several standard discrete filters
- * used in digital control and signal processing. It includes a first-order
- * low-pass IIR filter, a generic second-order IIR filter configurable as
- * low-pass, high-pass, or band-pass, and a structure definition for a
- * general-purpose FIR filter.
+ * used in digital control and signal processing. It includes a generic first-order
+ * and second-order IIR filter, along with various initializers. It also includes
+ * a generic FIR filter module.
  */
 
 #ifndef _DISCRETE_FILTER_H_
 #define _DISCRETE_FILTER_H_
 
 #include <ctl/math_block/gmp_math.h>
+#include <math.h> // Required for tanf, cosf, sinf, atan2f, sqrtf
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -128,134 +129,152 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_lowpass_filter_result(ctl_low_pass_filter_t* l
     return lpf->out;
 }
 
+
 /*---------------------------------------------------------------------------*/
-/* 2nd-Order IIR General Filter                                              */
+/* 1st-Order IIR General Filter                                              */
 /*---------------------------------------------------------------------------*/
 
 /**
- * @brief A second-order infinite impulse response (IIR) general filter.
- * @details This module implements a standard biquad filter (Direct Form I).
- *
- * The Z-domain transfer function is:
- * @f[
- * H(z) = \frac{b_0 + b_1z^{-1} + b_2z^{-2}}{1 + a_1z^{-1} + a_2z^{-2}}
- * @f]
- *
- * The corresponding difference equation is:
- * @f[
- * y(n) = b_0x(n) + b_1x(n-1) + b_2x(n-2) - a_1y(n-1) - a_2y(n-2)
- * @f]
+ * @brief A first-order infinite impulse response (IIR) general filter.
+ * @details This module implements a standard first-order filter. The specific
+ * filter type is determined by the coefficients calculated in the initializers.
+ * The Z-domain transfer function is: H(z) = (b0 + b1*z^-1) / (1 + a1*z^-1)
  */
-typedef struct _tag_filter_IIR2_t
+typedef struct _tag_filter_IIR1_t
 {
-    // Historical inputs: x[0] stores x[n-1], x[1] stores x[n-2]
-    ctrl_gt x[2];
-    // Historical outputs: y[0] stores y[n-1], y[1] stores y[n-2]
-    ctrl_gt y[2];
-
-    // Denominator coefficients: a[0] stores a1, a[1] stores a2
-    ctrl_gt a[2];
-    // Numerator coefficients: b[0] stores b0, b[1] stores b1, b[2] stores b2
-    ctrl_gt b[3];
-
-    // Last calculated output
-    ctrl_gt out;
-} ctl_filter_IIR2_t;
+    ctrl_gt x1;  //!< Stores the previous input, x[n-1].
+    ctrl_gt y1;  //!< Stores the previous output, y[n-1].
+    ctrl_gt a1;  //!< Denominator coefficient.
+    ctrl_gt b0;  //!< Numerator coefficient.
+    ctrl_gt b1;  //!< Numerator coefficient.
+    ctrl_gt out; //!< Last calculated output.
+} ctl_filter_IIR1_t;
 
 /**
- * @brief Executes one step of the 2nd-order IIR filter.
+ * @brief Executes one step of the 1st-order IIR filter.
  * @param[in,out] obj Pointer to the IIR filter instance.
  * @param[in] input The current input sample, x[n].
  * @return ctrl_gt The calculated output sample, y[n].
  */
-GMP_STATIC_INLINE ctrl_gt ctl_step_filter_iir2(ctl_filter_IIR2_t* obj, ctrl_gt input)
+GMP_STATIC_INLINE ctrl_gt ctl_step_filter_iir1(ctl_filter_IIR1_t* obj, ctrl_gt input)
 {
-    obj->out = ctl_mul(obj->b[0], input) + ctl_mul(obj->b[1], obj->x[0]) + ctl_mul(obj->b[2], obj->x[1]) -
-               ctl_mul(obj->a[0], obj->y[0]) - ctl_mul(obj->a[1], obj->y[1]);
-
-    // Update historical inputs
-    obj->x[1] = obj->x[0];
-    obj->x[0] = input;
-
-    // Update historical outputs
-    obj->y[1] = obj->y[0];
-    obj->y[0] = obj->out;
-
+    obj->out = (obj->b0 * input) + (obj->b1 * obj->x1) - (obj->a1 * obj->y1);
+    obj->x1 = input;
+    obj->y1 = obj->out;
     return obj->out;
 }
 
 /**
- * @brief Clears all internal states of the 2nd-order IIR filter.
+ * @brief Clears all internal states of the 1st-order IIR filter.
  * @param[out] obj Pointer to the IIR filter instance.
  */
-GMP_STATIC_INLINE void ctl_clear_filter_iir2(ctl_filter_IIR2_t* obj)
+GMP_STATIC_INLINE void ctl_clear_filter_iir1(ctl_filter_IIR1_t* obj)
 {
     obj->out = 0;
-    obj->x[0] = 0;
-    obj->x[1] = 0;
-    obj->y[0] = 0;
-    obj->y[1] = 0;
+    obj->x1 = 0;
+    obj->y1 = 0;
 }
 
 /**
- * @brief Gets the last calculated output from the IIR filter.
+ * @brief Initializes the filter as a 1st-order Low-Pass Filter (LPF).
+ * @details Based on the Tustin (trapezoidal) transformation of H(s) = wc / (s + wc).
+ * @param[out] obj Pointer to the IIR filter instance.
+ * @param[in] fs Sampling frequency (Hz).
+ * @param[in] fc Cutoff frequency (Hz).
+ */
+void ctl_init_filter_iir1_lpf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt fc)
+{
+    parameter_gt K = tanf(PI * fc / fs);
+    parameter_gt norm = 1.0f / (K + 1.0f);
+    obj->b0 = K * norm;
+    obj->b1 = obj->b0;
+    obj->a1 = (K - 1.0f) * norm;
+    ctl_clear_filter_iir1(obj);
+}
+
+/**
+ * @brief Initializes the filter as a 1st-order High-Pass Filter (HPF).
+ * @details Based on the Tustin transformation of H(s) = s / (s + wc).
+ * @param[out] obj Pointer to the IIR filter instance.
+ * @param[in] fs Sampling frequency (Hz).
+ * @param[in] fc Cutoff frequency (Hz).
+ */
+void ctl_init_filter_iir1_hpf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt fc)
+{
+    parameter_gt K = tanf(PI * fc / fs);
+    parameter_gt norm = 1.0f / (K + 1.0f);
+    obj->b0 = 1.0f * norm;
+    obj->b1 = -obj->b0;
+    obj->a1 = (K - 1.0f) * norm;
+    ctl_clear_filter_iir1(obj);
+}
+
+/**
+ * @brief Initializes the filter as a 1st-order All-Pass Filter.
+ * @details Based on the Tustin transformation of H(s) = (s - wc) / (s + wc).
+ * @param[out] obj Pointer to the IIR filter instance.
+ * @param[in] fs Sampling frequency (Hz).
+ * @param[in] fc Center frequency (Hz).
+ */
+void ctl_init_filter_iir1_apf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt fc)
+{
+    parameter_gt K = tanf(PI * fc / fs);
+    parameter_gt norm = 1.0f / (K + 1.0f);
+    obj->b0 = (1.0f - K) * norm; // Note: b0 is negative of a1
+    obj->b1 = 1.0f;
+    obj->a1 = (K - 1.0f) * norm;
+    ctl_clear_filter_iir1(obj);
+}
+
+/**
+ * @brief Calculates the phase lag of the 1st-order filter at a specific frequency.
  * @param[in] obj Pointer to the IIR filter instance.
- * @return ctrl_gt The last output value.
+ * @param[in] fs Sampling frequency (Hz).
+ * @param[in] f The frequency at which to calculate the phase lag (Hz).
+ * @return parameter_gt The phase lag in radians. A positive value indicates lag.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_get_filter_iir2_output(ctl_filter_IIR2_t* obj)
+parameter_gt ctl_get_filter_iir1_phase_lag(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt f)
 {
-    return obj->out;
+    parameter_gt w = 2.0f * PI * f / fs;
+    parameter_gt cos_w = cosf(w);
+    parameter_gt sin_w = sinf(w);
+
+    parameter_gt num_real = obj->b0 + obj->b1 * cos_w;
+    parameter_gt num_imag = -obj->b1 * sin_w;
+    parameter_gt den_real = 1.0f + obj->a1 * cos_w;
+    parameter_gt den_imag = -obj->a1 * sin_w;
+
+    parameter_gt phase_num = atan2f(num_imag, num_real);
+    parameter_gt phase_den = atan2f(den_imag, den_real);
+
+    return -(phase_num - phase_den);
 }
 
 /**
- * @brief Enumeration for the supported 2nd-order IIR filter types.
+ * @brief Calculates the linear gain of the 1st-order filter at a specific frequency.
+ * @param[in] obj Pointer to the IIR filter instance.
+ * @param[in] fs Sampling frequency (Hz).
+ * @param[in] f The frequency at which to calculate the gain (Hz).
+ * @return parameter_gt The linear gain (magnitude).
  */
-typedef enum _tag_filter_IIR2_type_t
+parameter_gt ctl_get_filter_iir1_gain(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt f)
 {
-    FILTER_IIR2_TYPE_LOWPASS = 0,  //!< Low-pass filter.
-    FILTER_IIR2_TYPE_HIGHPASS = 1, //!< High-pass filter.
-    FILTER_IIR2_TYPE_BANDPASS = 2, //!< Band-pass filter.
-} filter_IIR2_type_t;
+    parameter_gt w = 2.0f * PI * f / fs;
+    parameter_gt cos_w = cosf(w);
+    parameter_gt sin_w = sinf(w);
 
-/**
- * @brief Setup structure for designing a 2nd-order IIR filter.
- */
-typedef struct _tag_filter_IIR2_setup_t
-{
-    filter_IIR2_type_t filter_type; //!< The type of filter to design.
-    parameter_gt fc;                //!< Center/cutoff frequency (Hz).
-    parameter_gt fs;                //!< Sampling frequency (Hz).
-    parameter_gt q;                 //!< Quality factor (determines bandwidth).
-    parameter_gt gain;              //!< Desired gain at the passband.
-} ctl_filter_IIR2_setup_t;
+    parameter_gt num_real = obj->b0 + obj->b1 * cos_w;
+    parameter_gt num_imag = -obj->b1 * sin_w;
+    parameter_gt den_real = 1.0f + obj->a1 * cos_w;
+    parameter_gt den_imag = -obj->a1 * sin_w;
 
-/**
- * @brief Designs and initializes a 2nd-order IIR filter based on design parameters.
- * @details This function calculates the 'a' and 'b' coefficients based on the
- * provided setup structure and populates the filter object.
- * @param[out] obj Pointer to the IIR filter instance to initialize.
- * @param[in] setup_obj Pointer to the setup structure with design parameters.
- */
-void ctl_init_filter_iir2(ctl_filter_IIR2_t* obj, ctl_filter_IIR2_setup_t* setup_obj);
+    parameter_gt mag_num = sqrtf(num_real * num_real + num_imag * num_imag);
+    parameter_gt mag_den = sqrtf(den_real * den_real + den_imag * den_imag);
 
-/*---------------------------------------------------------------------------*/
-/* FIR Filter                                                                */
-/*---------------------------------------------------------------------------*/
-
-/**
- * @brief Data structure for a Finite Impulse Response (FIR) filter.
- * @note This is a structure definition only. The associated functions for
- * initialization and stepping are not defined in this header.
- */
-typedef struct _tag_filter_FIR_t
-{
-    ctrl_gt* parameters;  //!< Pointer to the array of filter coefficients (taps).
-    ctrl_gt* data_buffer; //!< Pointer to the circular data buffer for input samples.
-    size_gt order;        //!< The order of the FIR filter (number of taps - 1).
-    size_gt cb_index;     //!< The current index for the circular buffer.
-    ctrl_gt input;        //!< The last input value.
-    ctrl_gt output;       //!< The last calculated output value.
-} filter_fir_t;
+    if (mag_den < 1e-9)
+        return 0.0f;
+    return mag_num / mag_den;
+}
 
 /**
  * @}
@@ -266,3 +285,4 @@ typedef struct _tag_filter_FIR_t
 #endif //__cplusplus
 
 #endif // _DISCRETE_FILTER_H_
+

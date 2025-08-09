@@ -44,7 +44,7 @@
  */
 
 //
-// ----------------- Discrete Components -----------------
+// ----------------- Basic Components -----------------
 //
 
 /**
@@ -68,6 +68,13 @@
  */
 #include <ctl/component/intrinsic/basic/slope_limiter.h>
 
+/**
+ * @defgroup hysteresis_controller Hysteresis Controller
+ * @ingroup CTL_INTRINSIC_BASIC
+ * @brief A nonlinear controller that switches output based on a hysteresis band.
+ */
+#include <ctl/component/intrinsic/basic/hysteresis_controller.h>
+
 //
 // ----------------- Discrete Components -----------------
 //
@@ -78,6 +85,20 @@
  * @brief A collection of common discrete filters for signal processing.
  */
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
+
+/**
+ * @defgroup discrete_filter_api Discrete Filter Library
+ * @ingroup CTL_INTRINSIC_DISCRETE
+ * @brief A collection of common discrete filters for signal processing.
+ */
+#include <ctl/component/intrinsic/discrete/biquad_filter.h>
+
+/**
+ * @defgroup fir_filter FIR Filter
+ * @ingroup CTL_INTRINSIC_DISCRETE
+ * @brief A generic FIR filter for custom coefficients.
+ */
+#include <ctl/component/intrinsic/discrete/fir_filter.h>
 
 /**
  * @defgroup discrete_pid_controller Discrete PID Controller
@@ -168,24 +189,6 @@
 #include <ctl/component/intrinsic/continuous/s_function.h>
 
 //
-// ----------------- Lebesgue Components -----------------
-//
-
-/**
- * @defgroup hysteresis_controller Hysteresis Controller
- * @ingroup CTL_INTRINSIC_LEBESGUE
- * @brief A nonlinear controller that switches output based on a hysteresis band.
- */
-#include <ctl/component/intrinsic/lebesgue/hysteresis_controller.h>
-
-/**
- * @defgroup sliding_mode_controller Sliding Mode Controller (SMC)
- * @ingroup CTL_INTRINSIC_LEBESGUE
- * @brief A nonlinear robust controller based on a sliding surface.
- */
-#include <ctl/component/intrinsic/lebesgue/smc.h>
-
-//
 // ----------------- Advance Components -----------------
 //
 
@@ -232,11 +235,32 @@
 #include <ctl/component/intrinsic/advance/imc.h>
 
 /**
+ * @defgroup lms_adaptive_filter LMS Adaptive Filter
+ * @ingroup CTL_INTRINSIC_ADVANCE
+ * @brief A self-tuning filter that minimizes the mean square error.
+ */
+#include <ctl/component/intrinsic/advance/lms_filter.h>
+
+/**
  * @defgroup ADAPTIVE_CONTROLLER Model Reference Adaptive Controller (MRAC)
  * @ingroup CTL_INTRINSIC_ADVANCE
  * @brief An adaptive controller for SISO systems with unknown or varying parameters.
  */
 #include <ctl/component/intrinsic/advance/mrac.h>
+
+/**
+ * @defgroup sinc_interpolator Sinc Interpolator
+ * @ingroup CTL_INTRINSIC_ADVANCE
+ * @brief A high-quality resampling and fractional delay module.
+ */
+#include <ctl/component/intrinsic/advance/sinc_interpolator.h>
+
+/**
+ * @defgroup sliding_mode_controller Sliding Mode Controller (SMC)
+ * @ingroup CTL_INTRINSIC_ADVANCE
+ * @brief A nonlinear robust controller based on a sliding surface.
+ */
+#include <ctl/component/intrinsic/advance/smc.h>
 
 //
 // ----------------- Protection Components -----------------
