@@ -18,8 +18,6 @@
 #ifndef _PROPORTIONAL_RESONANT_H_
 #define _PROPORTIONAL_RESONANT_H_
 
-#include <ctl/math_block/gmp_math.h> // Assuming this is needed for types like ctrl_gt
-
 #ifdef __cplusplus
 extern "C"
 {

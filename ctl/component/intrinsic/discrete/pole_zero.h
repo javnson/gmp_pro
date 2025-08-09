@@ -18,9 +18,6 @@
 #ifndef _POLE_ZERO_H_
 #define _POLE_ZERO_H_
 
-#include <ctl/math_block/gmp_math.h>
-#include <math.h> // Required for tanf, atan2f, sqrtf, cosf, sinf
-
 #ifdef __cplusplus
 extern "C"
 {
