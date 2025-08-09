@@ -79,7 +79,7 @@ typedef struct _tag_mppt_PnO_algo
 
 /**
  * @brief Initializes the P&O MPPT algorithm module.
- * @param[out] mppt Pointer to the MPPT algorithm instance.
+ * @param[out] _mppt_obj Pointer to the MPPT algorithm instance.
  * @param[in] voltage_0 The initial voltage reference output by the algorithm.
  * @param[in] searching_range_max The absolute maximum voltage limit.
  * @param[in] searching_range_min The absolute minimum voltage limit.
@@ -89,7 +89,7 @@ typedef struct _tag_mppt_PnO_algo
  * @param[in] freq_mppt The desired execution frequency of the MPPT algorithm (e.g., 50 Hz).
  * @param[in] freq_ctrl The frequency of the main control ISR that calls this function.
  */
-void ctl_init_mppt_PnO_algo(mppt_PnO_algo_t* mppt, parameter_gt voltage_0, parameter_gt searching_range_max,
+void ctl_init_mppt_PnO_algo(mppt_PnO_algo_t* _mppt_obj, parameter_gt voltage_0, parameter_gt searching_range_max,
                             parameter_gt searching_range_min, parameter_gt searching_step_max,
                             parameter_gt searching_step_min, parameter_gt attenuation_time, parameter_gt freq_mppt,
                             parameter_gt freq_ctrl);

@@ -28,34 +28,22 @@ void ctl_setup_current_controller(ctl_current_controller_t* cc, ctrl_gt kp, ctrl
 
 #include <ctl/component/motor_control/current_loop/PMSM_DPCC.h>
 
-void ctl_init_PMSM_DPCC(ctl_dpcc_controller_t* dpcc, ctl_dpcc_init_t* init)
+void ctl_init_dpcc(ctl_dpcc_controller_t* dpcc, const ctl_dpcc_init_t* init)
 {
-    ////current control coefficient cal
-    //ctrl->coeff_d_current = float2ctrl(init->Ubase / init->fctrl / init->Ld / init->Ibase);
-    //ctrl->coeff_q_current = float2ctrl(init->Ubase / init->fctrl / init->Lq / init->Ibase);
-    ////voltage control coefficient cal
-    //ctrl->coeff_d_voltage = float2ctrl(init->Ibase * init->fctrl * init->Ld / init->Ubase);
-    //ctrl->coeff_q_voltage = float2ctrl(init->Ibase * init->fctrl * init->Lq / init->Ubase);
-
-    ////motor parameter unify
-    //ctrl->Rs_pu = float2ctrl(init->Rs * init->Ibase / init->Ubase);
-    //ctrl->Ld_pu = float2ctrl(init->Ld * CTL_PARAM_CONST_2PI * init->fbase * init->Ibase / init->Ubase);
-    //ctrl->Lq_pu = float2ctrl(init->Lq * CTL_PARAM_CONST_2PI * init->fbase * init->Ibase / init->Ubase);
-    //ctrl->Psi_f_pu = float2ctrl(CTL_PARAM_CONST_2PI * init->Psi_f * init->fbase / init->Ubase);
-
     parameter_gt Ts = 1.0f / init->f_ctrl;
 
-    // Store parameters
-    dpcc->rs = (ctrl_gt)init->Rs;
-    dpcc->ld = (ctrl_gt)init->Ld;
-    dpcc->lq = (ctrl_gt)init->Lq;
-    dpcc->psi_f = (ctrl_gt)init->psi_f;
+    // Store base parameters
+    dpcc->rs = float2ctrl(init->Rs);
+    dpcc->ld = float2ctrl(init->Ld);
+    dpcc->lq = float2ctrl(init->Lq);
+    dpcc->psi_f = float2ctrl(init->psi_f);
 
-    // Pre-calculate coefficients for the step function
-    dpcc->ts_over_ld = (ctrl_gt)(Ts / init->Ld);
-    dpcc->ts_over_lq = (ctrl_gt)(Ts / init->Lq);
-    dpcc->ld_over_ts = (ctrl_gt)(init->Ld / Ts);
-    dpcc->lq_over_ts = (ctrl_gt)(init->Lq / Ts);
+    // Pre-calculate coefficients to avoid divisions in the control loop
+    dpcc->ts_over_ld = float2ctrl(Ts / init->Ld);
+    dpcc->ts_over_lq = float2ctrl(Ts / init->Lq);
+    dpcc->ld_over_ts = float2ctrl(init->Ld / Ts);
+    dpcc->lq_over_ts = float2ctrl(init->Lq / Ts);
 
+    // Initialize all state variables to zero
     ctl_clear_dpcc(dpcc);
 }

@@ -9,8 +9,8 @@
  * the reference current at the next step. This approach can offer faster
  * dynamic response than traditional PI controllers.
  *
- * @version 0.1
- * @date 2025-08-06
+ * @version 0.2
+ * @date 2025-08-09
  *
  * //tex:
  * // The controller is based on the discretized PMSM voltage equations:
@@ -45,17 +45,6 @@ extern "C"
 //================================================================================
 // Type Defines & Macros
 //================================================================================
-
-#ifndef GMP_STATIC_INLINE
-#define GMP_STATIC_INLINE static inline
-#endif
-
-// Define the standard control data type if not already defined
-#ifndef CTRL_GT_DEFINED
-#define CTRL_GT_DEFINED
-typedef float ctrl_gt;
-typedef float parameter_gt;
-#endif
 
 /**
  * @brief Initialization parameters for the DPCC module.
@@ -102,11 +91,8 @@ typedef struct
 //================================================================================
 
 /**
- * @brief Initializes the DPCC module with motor and system parameters.
- * @details This function pre-calculates all necessary coefficients from the
- * motor parameters to optimize the real-time step function.
+ * @brief Clears the internal state variables of the DPCC module.
  * @param[out] dpcc Pointer to the DPCC structure.
- * @param[in]  init Pointer to the initialization parameters structure.
  */
 GMP_STATIC_INLINE void ctl_clear_dpcc(ctl_dpcc_controller_t* dpcc)
 {
@@ -115,6 +101,15 @@ GMP_STATIC_INLINE void ctl_clear_dpcc(ctl_dpcc_controller_t* dpcc)
     ctl_vector2_clear(&dpcc->udq_last);
     ctl_vector2_clear(&dpcc->idq_predicted);
 }
+
+/**
+ * @brief Initializes the DPCC module with motor and system parameters.
+ * @details This function pre-calculates all necessary coefficients from the
+ * motor parameters to optimize the real-time step function.
+ * @param[out] dpcc Pointer to the DPCC structure.
+ * @param[in]  init Pointer to the initialization parameters structure.
+ */
+void ctl_init_dpcc(ctl_dpcc_controller_t* dpcc, const ctl_dpcc_init_t* init);
 
 /**
  * @brief Executes one step of the Dead-beat Predictive Current Control algorithm.

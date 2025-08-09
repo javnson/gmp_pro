@@ -34,11 +34,6 @@ extern "C"
 // Type Defines & Data
 //================================================================================
 
-#ifndef CTRL_GT_DEFINED
-#define CTRL_GT_DEFINED
-typedef float ctrl_gt;
-#endif
-
 /**
  * @brief Defines the structure for a single entry in the current distribution LUT.
  */

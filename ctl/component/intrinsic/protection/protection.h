@@ -1,5 +1,5 @@
 /**
- * @file protection_monitor.h
+ * @file protection.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Provides a generic boundary protection monitoring system.
  * @version 0.1

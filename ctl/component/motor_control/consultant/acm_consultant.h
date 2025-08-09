@@ -268,7 +268,9 @@ static inline void ctl_acm_convert_speed_pi_to_pu(const ctl_per_unit_consultant_
     *ki_pu = ki_real / pu->base_current;
 }
 
-/** @} */ // end of MC_ACM_PU_CONVERTERS group
+/**
+ * @}
+ */ // end of MC_ACM_PU_CONVERTERS group
 
 #ifdef __cplusplus
 }

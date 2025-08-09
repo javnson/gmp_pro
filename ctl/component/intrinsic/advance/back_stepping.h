@@ -10,18 +10,18 @@
  * @version 1.1
  * @date 2025-08-07
  *
- * //tex:
- * // The design is based on a generic first-order plant model: \tau_p \dot{y} = -y + K_p u + d
- * // where u is the control input, y is the output, and d is an external disturbance.
- * //
- * // Step 1: Define the tracking error: z_1 = y_{ref} - y
- * //
- * // Step 2: Define a Lyapunov function V = \frac{1}{2}z_1^2. Its derivative is
- * //         \dot{V} = z_1 \dot{z}_1 = z_1(\dot{y}_{ref} - \dot{y})
- * //
- * // Step 3: Substitute the system dynamics and design the control law for u
- * //         such that \dot{V} = -k_1 z_1^2 \le 0 to ensure stability. This yields:
- * //         u^* = \frac{1}{K_p} ( \tau_p(\dot{y}_{ref} + k_1 z_1) + y - d )
+ * tex:
+ *  The design is based on a generic first-order plant model: @f[ \tau_p \dot{y} = -y + K_p u + d @f]
+ *  where u is the control input, y is the output, and d is an external disturbance.
+ * 
+ *  Step 1: Define the tracking error: @f[ z_1 = y_{ref} - y @f]
+ * 
+ *  Step 2: Define a Lyapunov function @f[ V = \frac{1}{2}z_1^2 @f]. Its derivative is
+ *          @f[ \dot{V} = z_1 \dot{z}_1 = z_1(\dot{y}_{ref} - \dot{y}) @f]
+ * 
+ *  Step 3: Substitute the system dynamics and design the control law for u
+ *          such that @f[ \dot{V} = -k_1 z_1^2 \le 0 @f] to ensure stability. This yields:
+ *          @f[ u^* = \frac{1}{K_p} ( \tau_p(\dot{y}_{ref} + k_1 z_1) + y - d ) @f]
  *
  */
 
@@ -144,7 +144,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_backstepping(ctl_backstepping_controller_t* b
     return bc->u_out;
 }
 
-/** @} */ // end of BACKSTEPPING_CONTROLLER group
+/**
+ * @}
+ */ // end of BACKSTEPPING_CONTROLLER group
 
 #ifdef __cplusplus
 }

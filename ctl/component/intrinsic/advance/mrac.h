@@ -157,7 +157,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_mrac(ctl_mrac_controller_t* mrac, ctrl_gt r, 
     return mrac->u_out;
 }
 
-/** @} */ // end of ADAPTIVE_CONTROLLER group
+/**
+ * @}
+ */ // end of ADAPTIVE_CONTROLLER group
 
 #ifdef __cplusplus
 }

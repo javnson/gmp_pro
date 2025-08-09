@@ -19,17 +19,6 @@
 //////////////////////////////////////////////////////////////////////////
 #include <ctl/component/digital_power/three_phase/pll.h>
 
-/**
- * @brief Initializes the three-phase PLL controller.
- * @ingroup CTL_PLL_API
- *
- * @param[out] pll Pointer to the `three_phase_pll_t` structure to be initialized.
- * @param[in] f_base The nominal grid frequency (e.g., 50 or 60 Hz), used as the per-unit base.
- * @param[in] pid_kp Proportional gain for the phase-locking PI controller.
- * @param[in] pid_Ti Integral time constant for the phase-locking PI controller (in seconds).
- * @param[in] pid_Td Derivative time constant (typically 0 for a PI controller).
- * @param[in] f_ctrl The controller's execution frequency (sampling frequency) in Hz.
- */
 void ctl_init_pll_3ph(three_phase_pll_t* pll, parameter_gt f_base, parameter_gt pid_kp, parameter_gt pid_Ti,
                       parameter_gt pid_Td, parameter_gt f_ctrl)
 {
@@ -49,15 +38,6 @@ void ctl_init_pll_3ph(three_phase_pll_t* pll, parameter_gt f_base, parameter_gt 
 //////////////////////////////////////////////////////////////////////////
 #include <ctl/component/digital_power/three_phase/tp_modulation.h>
 
-/**
- * @brief Initializes the three-phase bridge modulation module.
- * @ingroup CTL_TP_MODULATION_API
- *
- * @param[out] bridge Pointer to the `three_phase_bridge_modulation_t` structure.
- * @param[in] pwm_full_scale The maximum value of the PWM counter.
- * @param[in] pwm_deadband The total dead-time value in PWM timer counts.
- * @param[in] current_deadband The current threshold to enable dead-time compensation.
- */
 void ctl_init_three_phase_bridge_modulation(three_phase_bridge_modulation_t* bridge, pwm_gt pwm_full_scale,
                                             pwm_gt pwm_deadband, ctrl_gt current_deadband)
 {
@@ -69,6 +49,3 @@ void ctl_init_three_phase_bridge_modulation(three_phase_bridge_modulation_t* bri
     ctl_clear_three_phase_bridge_modulation(bridge);
 }
 
-/**
- * @}
- */

@@ -59,9 +59,6 @@ typedef struct _tag_pll_3ph
 
 } three_phase_pll_t;
 
-// Forward declaration for the inline function
-GMP_STATIC_INLINE void ctl_clear_pll_3ph(three_phase_pll_t* pll);
-
 /**
  * @brief Initializes the three-phase PLL controller.
  * @ingroup CTL_PLL_API

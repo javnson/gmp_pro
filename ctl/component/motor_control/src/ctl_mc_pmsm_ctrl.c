@@ -16,7 +16,7 @@
 #include <ctl/component/motor_control/pmsm_controller/pmsm_ctrl.h>
 
 /**
- * @ingroup pmsm_bare_controller_api
+ * @ingroup MC_PMSM_FUNCTIONS
  * @brief Configures and initializes a PMSM controller instance based on provided parameters.
  * @details This function sets up the PID controllers and other internal parameters of the controller
  * instance according to the values specified in the `init` structure. It must be called before
@@ -85,7 +85,7 @@ void ctl_init_pmsm_bare_controller(pmsm_bare_controller_t* ctrl, pmsm_bare_contr
 }
 
 /**
- * @ingroup pmsm_bare_controller_api
+ * @ingroup MC_PMSM_FUNCTIONS
  * @brief Attaches the PMSM controller to a three-phase PWM output interface.
  * @details This function links the controller's output to a hardware-specific PWM interface,
  * establishing the path for the final control signal.

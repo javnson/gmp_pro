@@ -97,9 +97,9 @@ void ctl_setup_pmsm_nameplate_consultant(ctl_pmsm_nameplate_consultant_t* np, pa
 /**
  * @brief Data structure for holding PMSM design (model) parameters.
  * @details These parameters are used in the mathematical model of the motor for FOC.
- * //tex:
- * Pole pairs: $p$, Stator Resistance: $R_s$, d-axis Inductance: $L_d$,
- * q-axis Inductance: $L_q$, PM Flux: $\psi_f$, Inertia: $J$, Damping: $B$.
+ * 
+ * Pole pairs: @f[ p @f], Stator Resistance: @f[ R_s @f], d-axis Inductance: @f[ L_d @f],
+ * q-axis Inductance: @f[ L_q @f], PM Flux: @f[ \psi_f @f], Inertia: @f[ J @f], Damping: @f[ B @f].
  */
 typedef struct _tag_pmsm_dsn_consultant
 {

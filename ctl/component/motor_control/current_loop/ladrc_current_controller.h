@@ -172,7 +172,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_ladrc_output_pu(const ctl_ladrc_current_pu_t* 
     return ladrc->u_out_pu;
 }
 
-/** @} */ // end of LADRC_CURRENT_PU group
+/**
+ * @}
+ */ // end of LADRC_CURRENT_PU group
 
 #ifdef __cplusplus
 }

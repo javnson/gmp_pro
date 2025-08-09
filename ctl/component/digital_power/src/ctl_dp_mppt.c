@@ -18,19 +18,6 @@
 //////////////////////////////////////////////////////////////////////////
 #include <ctl/component/digital_power/mppt/PnO_algorithm.h>
 
-/**
- * @ingroup mppt_api
- * @brief Initializes the P&O MPPT algorithm module.
- * @param[out] mppt Pointer to the MPPT algorithm instance.
- * @param[in] voltage_0 The initial voltage reference output by the algorithm.
- * @param[in] searching_range_max The absolute maximum voltage limit.
- * @param[in] searching_range_min The absolute minimum voltage limit.
- * @param[in] searching_step_max The maximum perturbation step size, used for fast tracking.
- * @param[in] searching_step_min The minimum perturbation step size, used for steady-state fine-tuning.
- * @param[in] attenuation_time Time constant for the convergence of the adaptive step size.
- * @param[in] freq_mppt The desired execution frequency of the MPPT algorithm (e.g., 50 Hz).
- * @param[in] freq_ctrl The frequency of the main control ISR that calls this function.
- */
 void ctl_init_mppt_PnO_algo(mppt_PnO_algo_t* _mppt_obj, parameter_gt voltage_0, parameter_gt searching_range_max,
                             parameter_gt searching_range_min, parameter_gt searching_step_max,
                             parameter_gt searching_step_min, parameter_gt attenuation_time, parameter_gt freq_mppt,
@@ -66,17 +53,6 @@ void ctl_init_mppt_PnO_algo(mppt_PnO_algo_t* _mppt_obj, parameter_gt voltage_0, 
 //////////////////////////////////////////////////////////////////////////
 #include <ctl/component/digital_power/mppt/INC_algorithm.h>
 
-/**
- * @ingroup mppt_api
- * @brief Initializes the Incremental Conductance MPPT algorithm module.
- * @param[out] mppt Pointer to the MPPT algorithm instance.
- * @param[in] u_in Pointer to the voltage ADC interface.
- * @param[in] i_in Pointer to the current ADC interface.
- * @param[in] voltage_0 The initial voltage reference output by the algorithm.
- * @param[in] voltage_step The fixed perturbation step size.
- * @param[in] max_voltage The absolute maximum voltage limit.
- * @param[in] min_voltage The absolute minimum voltage limit.
- */
 void ctl_init_mppt_inc_algo(mppt_inc_algo_t* _mppt_obj, adc_ift* u_in, adc_ift* i_in, parameter_gt voltage_0,
                             parameter_gt voltage_step, parameter_gt max_voltage, parameter_gt min_voltage)
 {

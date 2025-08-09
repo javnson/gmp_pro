@@ -20,16 +20,6 @@
 
 #include <ctl/component/digital_power/single_phase/single_phase_dc_ac.h>
 
-/**
- * @brief Configures and upgrades the internal components of the single-phase inverter controller.
- * @ingroup CTL_TOPOLOGY_SINV_H_API
- * @details This is the core initialization routine that sets up all sub-modules
- * based on the parameters provided in the init structure. It configures the PLL,
- * filters, the main QPR current controller, and multiple QR harmonic compensators.
- *
- * @param[out] sinv Pointer to the @ref sinv_ctrl_t instance to be configured.
- * @param[in] init Pointer to the @ref sinv_init_t structure containing all initialization parameters.
- */
 void ctl_upgrade_sinv_param(sinv_ctrl_t* sinv, sinv_init_t* init)
 {
     // --- Initialize grid synchronization modules ---
@@ -66,15 +56,6 @@ void ctl_upgrade_sinv_param(sinv_ctrl_t* sinv, sinv_init_t* init)
                            init->base_freq, init->f_ctrl);
 }
 
-/**
- * @brief Initializes the complete single-phase inverter controller.
- * @ingroup CTL_TOPOLOGY_SINV_H_API
- * @details This is the main entry point for initialization. It calls the upgrade
- * function to configure all parameters and then clears all runtime states.
- *
- * @param[out] sinv Pointer to the `sinv_ctrl_t` instance to be initialized.
- * @param[in] init Pointer to the `sinv_init_t` structure with all configuration parameters.
- */
 void ctl_init_sinv_ctrl(sinv_ctrl_t* sinv, sinv_init_t* init)
 {
     ctl_upgrade_sinv_param(sinv, init);
@@ -83,17 +64,6 @@ void ctl_init_sinv_ctrl(sinv_ctrl_t* sinv, sinv_init_t* init)
     sinv->pf_set = 1;
 }
 
-/**
- * @brief Attaches physical ADC interfaces to the single-phase inverter controller.
- * @ingroup CTL_TOPOLOGY_SINV_H_API
- *
- * @param[out] sinv Pointer to the `sinv_ctrl_t` instance.
- * @param[in] udc Pointer to the ADC interface for the DC bus voltage.
- * @param[in] idc Pointer to the ADC interface for the DC bus current.
- * @param[in] il Pointer to the ADC interface for the inductor current.
- * @param[in] ugrid Pointer to the ADC interface for the grid voltage.
- * @param[in] igrid Pointer to the ADC interface for the grid current.
- */
 void ctl_attach_sinv_with_adc(sinv_ctrl_t* sinv, adc_ift* udc, adc_ift* idc, adc_ift* il, adc_ift* ugrid,
                               adc_ift* igrid)
 {
@@ -104,6 +74,3 @@ void ctl_attach_sinv_with_adc(sinv_ctrl_t* sinv, adc_ift* udc, adc_ift* idc, adc
     sinv->adc_ugrid = ugrid;
 }
 
-/**
- * @}
- */

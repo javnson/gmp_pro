@@ -67,7 +67,7 @@ typedef struct _tag_mppt_inc_algo
 
 /**
  * @brief Initializes the Incremental Conductance MPPT algorithm module.
- * @param[out] mppt Pointer to the MPPT algorithm instance.
+ * @param[out] _mppt Pointer to the MPPT algorithm instance.
  * @param[in] u_in Pointer to the voltage ADC interface.
  * @param[in] i_in Pointer to the current ADC interface.
  * @param[in] voltage_0 The initial voltage reference output by the algorithm.
@@ -94,7 +94,7 @@ GMP_STATIC_INLINE void ctl_clear_mppt_inc_algo(mppt_inc_algo_t* _mppt)
  * @details This function should be called periodically. It calculates the incremental
  * and instantaneous conductance to determine the direction of voltage change needed
  * to track the maximum power point.
- * @param[in,out] mppt Pointer to the MPPT algorithm instance.
+ * @param[in,out] _mppt_obj Pointer to the MPPT algorithm instance.
  * @return The updated voltage reference (`v_ref`) to be used by the power converter.
  */
 GMP_STATIC_INLINE ctrl_gt ctl_step_mppt_inc_algo(mppt_inc_algo_t* _mppt_obj)
@@ -156,7 +156,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_mppt_inc_algo(mppt_inc_algo_t* _mppt_obj)
 
 /**
  * @brief Enables the MPPT algorithm.
- * @param[in,out] mppt Pointer to the MPPT algorithm instance.
+ * @param[in,out] _mppt_obj Pointer to the MPPT algorithm instance.
  */
 GMP_STATIC_INLINE void ctl_enable_mppt_inc_algo(mppt_inc_algo_t* _mppt_obj)
 {
@@ -165,7 +165,7 @@ GMP_STATIC_INLINE void ctl_enable_mppt_inc_algo(mppt_inc_algo_t* _mppt_obj)
 
 /**
  * @brief Disables the MPPT algorithm.
- * @param[in,out] mppt Pointer to the MPPT algorithm instance.
+ * @param[in,out] _mppt_obj Pointer to the MPPT algorithm instance.
  */
 GMP_STATIC_INLINE void ctl_disable_mppt_inc_algo(mppt_inc_algo_t* _mppt_obj)
 {

@@ -20,17 +20,6 @@
 // Three-Phase Inverter Control
 //////////////////////////////////////////////////////////////////////////
 
-/**
- * @brief Configures and upgrades the internal components of the inverter controller.
- * @ingroup CTL_TOPOLOGY_INV_H_API
- * @details This is the core initialization routine that sets up all sub-modules
- * based on the parameters provided in the init structure. It configures filters,
- * PLL, main controllers, negative sequence controllers, harmonic compensators,
- * and droop control.
- *
- * @param[out] inv Pointer to the `inv_ctrl_t` instance to be configured.
- * @param[in] init Pointer to the `three_phase_inv_init_t` structure containing all initialization parameters.
- */
 void ctl_upgrade_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
 {
     // --- Initialize sensor signal low-pass filters ---
@@ -87,20 +76,6 @@ void ctl_upgrade_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
     inv->rg_freq_pu = float2ctrl(1.0);
 }
 
-/**
- * @brief Attaches physical ADC interfaces to the inverter controller.
- * @ingroup CTL_TOPOLOGY_INV_H_API
- *
- * @param[out] inv Pointer to the @ref inv_ctrl_t instance.
- * @param[in] adc_udc Pointer to the ADC interface for the DC bus voltage.
- * @param[in] adc_idc Pointer to the ADC interface for the DC bus current.
- * @param[in] adc_ia Pointer to the ADC interface for Phase A current.
- * @param[in] adc_ib Pointer to the ADC interface for Phase B current.
- * @param[in] adc_ic Pointer to the ADC interface for Phase C current.
- * @param[in] adc_ua Pointer to the ADC interface for Phase A voltage.
- * @param[in] adc_ub Pointer to the ADC interface for Phase B voltage.
- * @param[in] adc_uc Pointer to the ADC interface for Phase C voltage.
- */
 void ctl_attach_three_phase_inv(inv_ctrl_t* inv, adc_ift* adc_udc, adc_ift* adc_idc, adc_ift* adc_ia, adc_ift* adc_ib,
                                 adc_ift* adc_ic, adc_ift* adc_ua, adc_ift* adc_ub, adc_ift* adc_uc)
 {
@@ -116,22 +91,10 @@ void ctl_attach_three_phase_inv(inv_ctrl_t* inv, adc_ift* adc_udc, adc_ift* adc_
     inv->adc_vabc[phase_C] = adc_uc;
 }
 
-/**
- * @brief Initializes the complete three-phase inverter controller.
- * @ingroup CTL_TOPOLOGY_INV_H_API
- * 
- * @details This is the main entry point for initialization. It calls the upgrade
- * function to configure all parameters and then clears all runtime states.
- *
- * @param[out] inv Pointer to the @ref inv_ctrl_t instance to be initialized.
- * @param[in] init Pointer to the @ref three_phase_inv_init_t structure with all configuration parameters.
- */
 void ctl_init_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
 {
     ctl_upgrade_three_phase_inv(inv, init);
     ctl_clear_three_phase_inv(inv);
 }
 
-/**
- * @}
- */
+
