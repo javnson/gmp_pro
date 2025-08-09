@@ -60,9 +60,9 @@ typedef struct _tag_df11_controller_t
  */
 GMP_STATIC_INLINE void ctl_clear_df11(ctl_df11_t* df)
 {
-    df->d1 = 0.0f;
-    df->d2 = 0.0f;
-    df->output = 0.0f;
+    df->d1 = 0;
+    df->d2 = 0;
+    df->output = 0;
 }
 
 /**
@@ -93,6 +93,22 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_df11(ctl_df11_t* df, ctrl_gt input)
 
     return df->output;
 }
+
+/**
+ * @brief Calculate DF11 gain at specified frequency f
+ * @param[in] df Pointer to the DF11 controller instance.
+ * @param[in] fs controller sample frequency, unit Hz.
+ * @param[in] f target frequency, unit Hz.
+ */
+parameter_gt ctl_get_df11_gain(ctl_df11_t* df, parameter_gt fs, parameter_gt f);
+
+/**
+ * @brief Calculate DF11 phase lag at specified frequency f
+ * @param[in] df Pointer to the DF11 controller instance.
+ * @param[in] fs controller sample frequency, unit Hz.
+ * @param[in] f target frequency, unit Hz.
+ */
+parameter_gt ctl_get_df11_phase_lag(ctl_df11_t* df, parameter_gt fs, parameter_gt f);
 
 /*---------------------------------------------------------------------------*/
 /* Direct Form II, 2nd-Order (DF22) Controller                               */
@@ -127,9 +143,9 @@ typedef struct _tag_df22_controller_t
  */
 GMP_STATIC_INLINE void ctl_clear_df22(ctl_df22_t* df)
 {
-    df->x1d = 0.0f;
-    df->x2d = 0.0f;
-    df->output = 0.0f;
+    df->x1d = 0;
+    df->x2d = 0;
+    df->output = 0;
 }
 
 /**
@@ -163,6 +179,22 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_df22(ctl_df22_t* df, ctrl_gt input)
     return df->output;
 }
 
+/**
+ * @brief Calculate DF22 gain at specified frequency f
+ * @param[in] df Pointer to the DF22 controller instance.
+ * @param[in] fs controller sample frequency, unit Hz.
+ * @param[in] f target frequency, unit Hz.
+ */
+parameter_gt ctl_get_df22_gain(ctl_df22_t* df, parameter_gt fs, parameter_gt f);
+
+/**
+ * @brief Calculate DF22 phase lag at specified frequency f
+ * @param[in] df Pointer to the DF22 controller instance.
+ * @param[in] fs controller sample frequency, unit Hz.
+ * @param[in] f target frequency, unit Hz.
+ */
+parameter_gt ctl_get_df22_phase_lag(ctl_df22_t* df, parameter_gt fs, parameter_gt f);
+
 /*---------------------------------------------------------------------------*/
 /* Direct Form I, 3rd-Order (DF13) Controller                                */
 /*---------------------------------------------------------------------------*/
@@ -195,13 +227,13 @@ typedef struct _tag_df13_controller_t
  */
 GMP_STATIC_INLINE void ctl_clear_df13(ctl_df13_t* df)
 {
-    df->d1 = 0.0f;
-    df->d2 = 0.0f;
-    df->d3 = 0.0f;
-    df->d5 = 0.0f;
-    df->d6 = 0.0f;
-    df->d7 = 0.0f;
-    df->output = 0.0f;
+    df->d1 = 0;
+    df->d2 = 0;
+    df->d3 = 0;
+    df->d5 = 0;
+    df->d6 = 0;
+    df->d7 = 0;
+    df->output = 0;
 }
 
 /**
@@ -242,6 +274,22 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_df13(ctl_df13_t* df, ctrl_gt input)
     return df->output;
 }
 
+/**
+ * @brief Calculate DF13 gain at specified frequency f
+ * @param[in] df Pointer to the DF13 controller instance.
+ * @param[in] fs controller sample frequency, unit Hz.
+ * @param[in] f target frequency, unit Hz.
+ */
+parameter_gt ctl_get_df13_gain(ctl_df13_t* df, parameter_gt fs, parameter_gt f);
+
+/**
+ * @brief Calculate DF13 phase lag at specified frequency f
+ * @param[in] df Pointer to the DF13 controller instance.
+ * @param[in] fs controller sample frequency, unit Hz.
+ * @param[in] f target frequency, unit Hz.
+ */
+parameter_gt ctl_get_df13_phase_lag(ctl_df13_t* df, parameter_gt fs, parameter_gt f);
+
 /*---------------------------------------------------------------------------*/
 /* Direct Form II Transposed, 3rd-Order (DF23) Controller                    */
 /*---------------------------------------------------------------------------*/
@@ -274,10 +322,10 @@ typedef struct _tag_df23_controller_t
  */
 GMP_STATIC_INLINE void ctl_clear_df23(ctl_df23_t* df)
 {
-    df->d1 = 0.0f;
-    df->d2 = 0.0f;
-    df->d3 = 0.0f;
-    df->output = 0.0f;
+    df->d1 = 0;
+    df->d2 = 0;
+    df->d3 = 0;
+    df->output = 0;
 }
 
 /**
@@ -312,6 +360,22 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_df23(ctl_df23_t* df, ctrl_gt input)
 
     return df->output;
 }
+
+/**
+ * @brief Calculate DF23 gain at specified frequency f
+ * @param[in] df Pointer to the DF23 controller instance.
+ * @param[in] fs controller sample frequency, unit Hz.
+ * @param[in] f target frequency, unit Hz.
+ */
+parameter_gt ctl_get_df23_gain(ctl_df23_t* df, parameter_gt fs, parameter_gt f);
+
+/**
+ * @brief Calculate DF23 phase lag at specified frequency f
+ * @param[in] df Pointer to the DF23 controller instance.
+ * @param[in] fs controller sample frequency, unit Hz.
+ * @param[in] f target frequency, unit Hz.
+ */
+parameter_gt ctl_get_df23_phase_lag(ctl_df23_t* df, parameter_gt fs, parameter_gt f);
 
 /**
  * @}

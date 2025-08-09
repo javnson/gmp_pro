@@ -202,15 +202,15 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_square_wave_generator(ctl_square_wave_generat
     sq->phase += sq->phase_step;
 
     // Check for phase wrap-around
-    if (sq->phase >= (2.0f * PI))
+    if (sq->phase >= (2.0f * CTL_PARAM_CONST_PI))
     {
-        sq->phase -= (2.0f * PI);
+        sq->phase -= (2.0f * CTL_PARAM_CONST_PI);
     }
 
     // Determine output based on phase
     // Output is high for the first half of the cycle (0 to PI)
     // and low for the second half (PI to 2*PI).
-    if (sq->phase < PI)
+    if (sq->phase < CTL_PARAM_CONST_PI)
     {
         sq->output = sq->high_level;
     }
