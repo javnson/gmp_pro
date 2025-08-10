@@ -2,15 +2,17 @@ import symengine as se
 
 def parse_value(value_str):
     """
-    Helper function to parse a value from the netlist.
-    Handles scientific notation and standard SPICE unit suffixes (K, M, U, N, P, etc.).
-    Converts values to symengine.Rational for precision and performance.
-    If it's not a valid number (e.g., "SYMBOLIC"), returns a symengine.Symbol.
+    Helper function to parse a value from the netlist using explicit text processing.
+    This function first attempts to parse a number with a SPICE unit suffix.
+    If that fails, it tries to parse a plain number.
+    If all numeric parsing fails, it returns a symbolic variable.
     """
-    # Ensure the input is a string, then convert to uppercase for case-insensitive matching.
-    value_str = str(value_str).upper()
-    
-    # SPICE unit suffixes, following standard conventions (M=milli, MEG=Mega).
+    # 1. Sanitize input for consistent processing
+    value_str_upper = str(value_str).strip().upper()
+    if not value_str_upper:
+        return se.Symbol("EMPTY_VALUE") # Handle empty strings
+
+    # 2. Define SPICE unit suffixes and their multipliers
     units = {
         'T': 1e12,
         'G': 1e9,
@@ -23,52 +25,59 @@ def parse_value(value_str):
         'F': 1e-15,
     }
 
-    # Sort keys by length, longest first, to handle 'MEG' before 'M' or 'G'.
-    # This ensures the most specific suffix is matched first.
+    # Sort keys by length (longest first) to correctly handle 'MEG' before 'M'
     sorted_suffixes = sorted(units.keys(), key=len, reverse=True)
 
-    # Check for unit suffixes.
+    # 3. --- Text Processing Logic ---
+    # Attempt to parse the string as a number with a unit suffix.
     for suffix in sorted_suffixes:
-        if value_str.endswith(suffix):
-            numeric_part = value_str[:-len(suffix)]
+        if value_str_upper.endswith(suffix):
+            numeric_part = value_str_upper[:-len(suffix)]
             try:
-                # Attempt to convert the numeric part of the string to a float.
-                value = float(numeric_part) * units[suffix]
-                # Convert to symengine.Rational for maximum precision in symbolic calculations.
-                return se.Rational(str(value))
+                # Convert the numeric part of the string to a float
+                value = float(numeric_part)
+                # Multiply by the unit's value
+                final_value = value * units[suffix]
+                # Return the result as a symengine numeric type
+                return se.sympify(final_value)
             except (ValueError, TypeError):
-                # --- FIX ---
-                # If conversion fails, it means this suffix was not the correct one
-                # (e.g., matching 'G' in 'MEG'). Continue to the next suffix.
-                # Previously, this was a 'break', which prematurely exited the loop.
+                # If float() fails (e.g., "1K2" -> numeric_part="1K"), this suffix
+                # was incorrect. Continue to the next possible suffix.
                 continue
 
-    # If no suffix was matched or parsed successfully, try to convert the whole string.
+    # 4. --- Plain Number Fallback ---
+    # If no unit suffix was found or parsed successfully, try parsing the whole string as a number.
+    # This handles values without units, like "100" or "1.23e-4".
     try:
-        return se.Rational(value_str)
-    except (ValueError, TypeError, SyntaxError):
-        # If all parsing attempts fail, treat it as a symbolic variable.
-        return se.Symbol(value_str)
+        plain_value = float(value_str_upper)
+        return se.sympify(plain_value)
+    except (ValueError, TypeError):
+        # The string is not a plain number.
+        pass
+
+    # 5. --- Symbolic Fallback ---
+    # If all numeric parsing attempts fail, treat the entire string as a symbol.
+    return se.Symbol(value_str_upper)
 
 def format_as_poly(expr, s):
-    """Formats a rational expression as a ratio of polynomials in s."""
+    """
+    Formats a rational expression as a ratio of polynomials in s.
+    Uses robust API calls instead of string manipulation.
+    """
     try:
-        # Separate numerator and denominator
-        num, den = se.fraction(se.expand(expr))
+        # Cancel terms in the fraction first for simplification.
+        simplified_expr = se.cancel(expr)
+        num, den = se.fraction(simplified_expr)
         
-        # Collect terms for numerator and denominator
-        num_poly = se.Poly(num, s)
-        den_poly = se.Poly(den, s)
-        
-        # Format them nicely
-        num_str = str(num_poly.as_expr()).replace('Poly(', '').replace(', s, domain=ZZ)', '')
-        den_str = str(den_poly.as_expr()).replace('Poly(', '').replace(', s, domain=ZZ)', '')
+        # Use .as_expr() to reliably get the polynomial expression.
+        num_expr = se.Poly(num, s).as_expr()
+        den_expr = se.Poly(den, s).as_expr()
 
-        # Avoid showing '/ 1' for integer expressions
-        if den_str == "1":
-            return f"({num_str})"
+        # Avoid showing '/ 1' for expressions that are not fractions.
+        if den_expr == 1:
+            return f"({num_expr})"
         else:
-            return f"({num_str}) / ({den_str})"
+            return f"({num_expr}) / ({den_expr})"
     except Exception:
-        # Fallback for expressions that are not rational polynomials in s
+        # Fallback for expressions that are not rational polynomials in s.
         return str(expr)
