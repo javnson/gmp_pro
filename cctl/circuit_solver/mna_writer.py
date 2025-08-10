@@ -7,6 +7,46 @@ def write_results_to_json(output_path, solutions, state_vars, substitutions, phy
     print(f"\nWriting results to {output_path}...")
     v_in_source = se.Symbol(input_source_name)
     s = se.Symbol('s')
+
+    # --- HOTFIX STARTS HERE ---
+    # 补丁：修复在主分析器中可能发生的数值解析错误。
+    # 此代码块会检查代入字典，并尝试重新解析那些被错误识别为符号的数值。
+    if verbose: print("Applying hotfix to substitution values...")
+    fixed_substitutions = {}
+    
+    # 定义单位，特别注意 M 代表 Mega (1e6)
+    units = {
+        'T': 1e12, 'G': 1e9, 'MEG': 1e6, 'K': 1e3,
+        'M': 1e6,  # 关键修正：假定 M 代表 Mega (10^6)
+        'U': 1e-6, 'N': 1e-9, 'P': 1e-12, 'F': 1e-15,
+    }
+    sorted_suffixes = sorted(units.keys(), key=len, reverse=True)
+
+    for k, v in substitutions.items():
+        # 如果值是一个符号 (Symbol)，则尝试重新解析它
+        if v.is_Symbol:
+            val_str = str(v).upper()
+            parsed = False
+            for suffix in sorted_suffixes:
+                if val_str.endswith(suffix):
+                    numeric_part = val_str[:-len(suffix)]
+                    try:
+                        num_val = float(numeric_part) * units[suffix]
+                        fixed_substitutions[k] = se.Rational(str(num_val))
+                        parsed = True
+                        if verbose: print(f"  - Hotfix applied: Converted symbol '{val_str}' to {num_val}")
+                        break
+                    except (ValueError, TypeError):
+                        continue
+            if not parsed:
+                fixed_substitutions[k] = v # 如果无法解析，则保留原始符号
+        else:
+            # 如果值已经是数字，则直接保留
+            fixed_substitutions[k] = v
+    
+    # 使用修复后的字典进行后续所有计算
+    substitutions = fixed_substitutions
+    # --- HOTFIX ENDS HERE ---
     
     def process_expr(expr):
         """根据简化级别对表达式进行基础处理。"""
@@ -25,33 +65,19 @@ def write_results_to_json(output_path, solutions, state_vars, substitutions, phy
 
             def process_poly(p_expr):
                 """辅助函数：处理单个多项式，将其系数转为浮点数。"""
-                # 如果表达式本身就是0，直接返回
                 if p_expr == 0: return se.sympify(0)
-                
-                # 将表达式看作关于 s 的多项式
                 p = se.Poly(p_expr, s)
-                
-                # 准备用评估后的系数重建多项式
                 new_poly_expr = se.sympify(0)
-                
-                # 2. 遍历多项式的每一个系数
-                # p.as_dict() 返回一个类似 {(power,): coeff} 的字典
                 for (power,), coeff in p.as_dict().items():
                     evaluated_coeff = coeff
-                    # 3. 关键检查：如果系数中不包含任何自由符号，那么它就是一个纯数字（或数字表达式）
                     if not coeff.free_symbols:
                         try:
-                            # 使用 .n() 方法将其评估为浮点数
                             evaluated_coeff = coeff.n()
                         except RuntimeError:
-                            # 如果评估失败（非常罕见），则保持原样
                             pass
-                    
-                    # 4. 用新的浮点数系数重建多项式的这一项
                     new_poly_expr += se.sympify(evaluated_coeff) * (s**power)
                 return new_poly_expr
 
-            # 5. 分别处理分子和分母，并组合成最终的字符串
             num_str = str(process_poly(num))
             den_str = str(process_poly(den))
             
@@ -61,7 +87,6 @@ def write_results_to_json(output_path, solutions, state_vars, substitutions, phy
                 return f"({num_str}) / ({den_str})"
                 
         except Exception:
-            # 对于无法处理为s的有理多项式的表达式，进行回退
             return str(expr)
 
     json_substitutions = {}
@@ -84,7 +109,6 @@ def write_results_to_json(output_path, solutions, state_vars, substitutions, phy
     full_subs_dict.update(solutions)
     for key, expr in physical_quantities.items():
         numerical_expr = expr.subs(full_subs_dict)
-        # 如果表达式不依赖于s，则直接计算其浮点数值
         if not numerical_expr.free_symbols:
             try:
                 numerical_result = str(numerical_expr.n())
@@ -101,7 +125,6 @@ def write_results_to_json(output_path, solutions, state_vars, substitutions, phy
             symbolic_sol = str(solutions[var])
             
             numerical_expr = solutions[var].subs(substitutions)
-            # 如果解不依赖于s，则直接计算其浮点数值
             if not numerical_expr.free_symbols:
                 try:
                     numerical_sol = str(numerical_expr.n())
@@ -123,9 +146,7 @@ def write_results_to_json(output_path, solutions, state_vars, substitutions, phy
         H_numeric_simplified = se.cancel(H_numeric_substituted)
 
         tf_key = f"H({var}/{v_in_source})"
-        # 对符号结果使用标准格式化
         output_data["symbolicExpressions"]["transferFunctions"][tf_key] = format_as_poly(H_symbolic_simplified, s)
-        # 对数值结果使用新的、带浮点数转换的格式化
         output_data["numericalResults"]["transferFunctions"][tf_key] = format_as_poly_numerical(H_numeric_simplified, s)
 
     output_data["symbolicExpressions"]["count"] = len(output_data["symbolicExpressions"]["solutions"]) + len(output_data["symbolicExpressions"]["transferFunctions"])
