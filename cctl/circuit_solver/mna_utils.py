@@ -7,9 +7,10 @@ def parse_value(value_str):
     Converts values to symengine.Rational for precision and performance.
     If it's not a valid number (e.g., "SYMBOLIC"), returns a symengine.Symbol.
     """
-    value_str = value_str.upper()
+    # Ensure the input is a string, then convert to uppercase for case-insensitive matching.
+    value_str = str(value_str).upper()
     
-    # SPICE unit suffixes (case-insensitive)
+    # SPICE unit suffixes, following standard conventions (M=milli, MEG=Mega).
     units = {
         'T': 1e12,
         'G': 1e9,
@@ -22,24 +23,32 @@ def parse_value(value_str):
         'F': 1e-15,
     }
 
-    # Sort keys by length, longest first, to handle 'MEG' before 'M' or 'G'
+    # Sort keys by length, longest first, to handle 'MEG' before 'M' or 'G'.
+    # This ensures the most specific suffix is matched first.
     sorted_suffixes = sorted(units.keys(), key=len, reverse=True)
 
-    # Check for unit suffixes
+    # Check for unit suffixes.
     for suffix in sorted_suffixes:
-        multiplier = units[suffix]
         if value_str.endswith(suffix):
             numeric_part = value_str[:-len(suffix)]
             try:
-                value = float(numeric_part) * multiplier
-                return se.Rational(str(value)) # Convert to rational for precision
+                # Attempt to convert the numeric part of the string to a float.
+                value = float(numeric_part) * units[suffix]
+                # Convert to symengine.Rational for maximum precision in symbolic calculations.
+                return se.Rational(str(value))
             except (ValueError, TypeError):
-                break 
+                # --- FIX ---
+                # If conversion fails, it means this suffix was not the correct one
+                # (e.g., matching 'G' in 'MEG'). Continue to the next suffix.
+                # Previously, this was a 'break', which prematurely exited the loop.
+                continue
 
+    # If no suffix was matched or parsed successfully, try to convert the whole string.
     try:
         return se.Rational(value_str)
     except (ValueError, TypeError, SyntaxError):
-        return se.Symbol(str(value_str))
+        # If all parsing attempts fail, treat it as a symbolic variable.
+        return se.Symbol(value_str)
 
 def format_as_poly(expr, s):
     """Formats a rational expression as a ratio of polynomials in s."""

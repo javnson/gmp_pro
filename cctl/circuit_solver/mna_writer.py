@@ -14,10 +14,10 @@ def write_results_to_json(output_path, solutions, state_vars, substitutions, phy
     if verbose: print("Applying hotfix to substitution values...")
     fixed_substitutions = {}
     
-    # 定义单位，特别注意 M 代表 Mega (1e6)
+    # 定义单位，遵循 SPICE 标准惯例
     units = {
         'T': 1e12, 'G': 1e9, 'MEG': 1e6, 'K': 1e3,
-        'M': 1e6,  # 关键修正：假定 M 代表 Mega (10^6)
+        'M': 1e-3,  # 关键修正：根据 SPICE 惯例，M/m 代表 milli (10^-3)。
         'U': 1e-6, 'N': 1e-9, 'P': 1e-12, 'F': 1e-15,
     }
     sorted_suffixes = sorted(units.keys(), key=len, reverse=True)
