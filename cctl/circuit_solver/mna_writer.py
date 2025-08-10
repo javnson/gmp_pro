@@ -13,6 +13,46 @@ def write_results_to_json(output_path, solutions, state_vars, substitutions, phy
             return se.expand(expr)
         return expr
 
+    def format_as_poly_numerical(expr, s):
+        """
+        将有理表达式格式化为s的多项式之比，并将所有纯数字系数计算为浮点数。
+        """
+        try:
+            num, den = se.fraction(se.cancel(expr))
+
+            def process_poly(p_expr):
+                if p_expr == 0: return se.sympify(0)
+                
+                p = se.Poly(p_expr, s)
+                
+                # 使用评估后的系数重建多项式表达式
+                new_poly_expr = se.sympify(0)
+                # p.as_dict() 返回一个类似 {(power,): coeff} 的字典
+                for (power,), coeff in p.as_dict().items():
+                    evaluated_coeff = coeff
+                    # 如果系数没有自由符号，则它是纯数字
+                    if not coeff.free_symbols:
+                        try:
+                            # .n() 将其评估为浮点数
+                            evaluated_coeff = coeff.n()
+                        except RuntimeError:
+                            # 如果评估失败，则保持原样
+                            pass
+                    new_poly_expr += se.sympify(evaluated_coeff) * (s**power)
+                return new_poly_expr
+
+            num_str = str(process_poly(num))
+            den_str = str(process_poly(den))
+            
+            if den_str == "1":
+                return f"({num_str})"
+            else:
+                return f"({num_str}) / ({den_str})"
+                
+        except Exception:
+            # 对于无法处理为s的有理多项式的表达式，进行回退
+            return str(expr)
+
     # --- BUG FIX STARTS HERE ---
     # Create the substitutions dictionary for JSON output by converting values to floats
     json_substitutions = {}
@@ -106,8 +146,10 @@ def write_results_to_json(output_path, solutions, state_vars, substitutions, phy
         # --- END OF OPTIMIZATION ---
 
         tf_key = f"H({var}/{v_in_source})"
+        # --- EDIT: Use different formatters for symbolic and numerical results ---
         output_data["symbolicExpressions"]["transferFunctions"][tf_key] = format_as_poly(H_symbolic_simplified, s)
-        output_data["numericalResults"]["transferFunctions"][tf_key] = format_as_poly(H_numeric_simplified, s)
+        output_data["numericalResults"]["transferFunctions"][tf_key] = format_as_poly_numerical(H_numeric_simplified, s)
+        # --- END OF EDIT ---
 
     output_data["symbolicExpressions"]["count"] = len(output_data["symbolicExpressions"]["solutions"]) + len(output_data["symbolicExpressions"]["transferFunctions"])
     output_data["numericalResults"]["count"] = len(output_data["numericalResults"]["solutions"]) + len(output_data["numericalResults"]["transferFunctions"])
