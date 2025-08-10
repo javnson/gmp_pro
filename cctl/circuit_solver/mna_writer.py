@@ -1,52 +1,12 @@
 import symengine as se
 import json
-from mna_utils import format_as_poly
+from mna_utils import format_as_poly, parse_value
 
 def write_results_to_json(output_path, solutions, state_vars, substitutions, physical_quantities, input_source_name, verbose=False, simplify_level='full'):
     """将分析结果按照指定顺序写入JSON文件"""
     print(f"\nWriting results to {output_path}...")
     v_in_source = se.Symbol(input_source_name)
     s = se.Symbol('s')
-
-    # --- HOTFIX STARTS HERE ---
-    # 补丁：修复在主分析器中可能发生的数值解析错误。
-    # 此代码块会检查代入字典，并尝试重新解析那些被错误识别为符号的数值。
-    if verbose: print("Applying hotfix to substitution values...")
-    fixed_substitutions = {}
-    
-    # 定义单位，遵循 SPICE 标准惯例
-    units = {
-        'T': 1e12, 'G': 1e9, 'MEG': 1e6, 'K': 1e3,
-        'M': 1e-3,  # 关键修正：根据 SPICE 惯例，M/m 代表 milli (10^-3)。
-        'U': 1e-6, 'N': 1e-9, 'P': 1e-12, 'F': 1e-15,
-    }
-    sorted_suffixes = sorted(units.keys(), key=len, reverse=True)
-
-    for k, v in substitutions.items():
-        # 如果值是一个符号 (Symbol)，则尝试重新解析它
-        if v.is_Symbol:
-            val_str = str(v).upper()
-            parsed = False
-            for suffix in sorted_suffixes:
-                if val_str.endswith(suffix):
-                    numeric_part = val_str[:-len(suffix)]
-                    try:
-                        num_val = float(numeric_part) * units[suffix]
-                        fixed_substitutions[k] = se.Rational(str(num_val))
-                        parsed = True
-                        if verbose: print(f"  - Hotfix applied: Converted symbol '{val_str}' to {num_val}")
-                        break
-                    except (ValueError, TypeError):
-                        continue
-            if not parsed:
-                fixed_substitutions[k] = v # 如果无法解析，则保留原始符号
-        else:
-            # 如果值已经是数字，则直接保留
-            fixed_substitutions[k] = v
-    
-    # 使用修复后的字典进行后续所有计算
-    substitutions = fixed_substitutions
-    # --- HOTFIX ENDS HERE ---
     
     def process_expr(expr):
         """根据简化级别对表达式进行基础处理。"""
@@ -54,39 +14,87 @@ def write_results_to_json(output_path, solutions, state_vars, substitutions, phy
             return se.expand(expr)
         return expr
 
-    def format_as_poly_numerical(expr, s):
+    def format_solution_poly(expr, s):
         """
-        将有理表达式格式化为s的多项式之比，并将所有纯数字系数计算为浮点数。
-        这是为了让数值结果更清晰易读。
+        将一个有理表达式格式化为两个标准多项式的比值。
+        - s的每个幂次的系数都会被单独提取和化简。
+        - 纯数字系数将被计算为浮点数。
+        - 含符号的系数将被展开为最简形式。
         """
         try:
-            # 1. 分离分子和分母
-            num, den = se.fraction(se.cancel(expr))
+            # 1. 首先对整个表达式进行彻底化简，得到一个清晰的 N/D 形式
+            simplified_expr = se.cancel(se.expand(expr))
+            
+            # 2. 将表达式分离为分子 (num) 和分母 (den)
+            num, den = se.fraction(simplified_expr)
 
-            def process_poly(p_expr):
-                """辅助函数：处理单个多项式，将其系数转为浮点数。"""
-                if p_expr == 0: return se.sympify(0)
+            def process_poly_coeffs(p_expr):
+                """辅助函数，用于处理单个多项式并格式化其系数。"""
+                if p_expr == 0:
+                    return "0"
+                # 将表达式看作关于 s 的多项式
                 p = se.Poly(p_expr, s)
-                new_poly_expr = se.sympify(0)
-                for (power,), coeff in p.as_dict().items():
+                
+                terms = []
+                # 3. 遍历多项式的每一个系数 (从最高次幂开始)
+                # p.all_coeffs() 返回从高到低的系数列表
+                all_coeffs = p.all_coeffs()
+                degree = p.degree()
+
+                for i, coeff in enumerate(all_coeffs):
+                    power = degree - i
+                    if coeff == 0:
+                        continue
+
                     evaluated_coeff = coeff
+                    # 4. 检查系数是否为纯数字
                     if not coeff.free_symbols:
                         try:
+                            # 计算其浮点数值
                             evaluated_coeff = coeff.n()
                         except RuntimeError:
-                            pass
-                    new_poly_expr += se.sympify(evaluated_coeff) * (s**power)
-                return new_poly_expr
+                            pass # 如果评估失败则保持原样
+                    else:
+                        # 如果系数包含符号，则对其进行展开化简
+                        evaluated_coeff = se.expand(coeff)
 
-            num_str = str(process_poly(num))
-            den_str = str(process_poly(den))
-            
+                    # 5. 构建当前项的字符串表示
+                    if power == 0:
+                        term_str = f"{evaluated_coeff}"
+                    elif power == 1:
+                        # 对于s^1, 如果系数是1, 则省略
+                        if evaluated_coeff == 1:
+                            term_str = "s"
+                        elif evaluated_coeff == -1:
+                            term_str = "-s"
+                        else:
+                            term_str = f"({evaluated_coeff})*s"
+                    else:
+                        if evaluated_coeff == 1:
+                            term_str = f"s**{power}"
+                        elif evaluated_coeff == -1:
+                            term_str = f"-s**{power}"
+                        else:
+                            term_str = f"({evaluated_coeff})*s**{power}"
+                    terms.append(term_str)
+                
+                if not terms:
+                    return "0"
+                # 用 " + " 连接所有项，并处理负号
+                return " + ".join(terms).replace("+ -", "- ")
+
+            # 6. 分别处理分子和分母
+            num_str = process_poly_coeffs(num)
+            den_str = process_poly_coeffs(den)
+
+            # 7. 组合最终结果
             if den_str == "1" or den_str == "1.0":
-                return f"({num_str})"
+                return num_str
             else:
                 return f"({num_str}) / ({den_str})"
-                
+
         except Exception:
+            # 如果无法处理为多项式，则返回其字符串形式作为后备
             return str(expr)
 
     json_substitutions = {}
@@ -105,17 +113,16 @@ def write_results_to_json(output_path, solutions, state_vars, substitutions, phy
     }
 
     if verbose: print("Processing numerical physical quantities...")
-    full_subs_dict = substitutions.copy()
-    full_subs_dict.update(solutions)
+    full_subs_dict = {**substitutions, **solutions}
     for key, expr in physical_quantities.items():
         numerical_expr = expr.subs(full_subs_dict)
-        if not numerical_expr.free_symbols:
+        if s not in numerical_expr.free_symbols:
             try:
                 numerical_result = str(numerical_expr.n())
             except RuntimeError:
                 numerical_result = str(process_expr(numerical_expr))
         else:
-            numerical_result = str(process_expr(numerical_expr))
+            numerical_result = format_solution_poly(numerical_expr, s)
         output_data["physicalQuantitiesNumerical"]["results"][key] = numerical_result
 
     if verbose: print("Processing symbolic and numerical solutions...")
@@ -125,13 +132,17 @@ def write_results_to_json(output_path, solutions, state_vars, substitutions, phy
             symbolic_sol = str(solutions[var])
             
             numerical_expr = solutions[var].subs(substitutions)
-            if not numerical_expr.free_symbols:
+            # --- EDIT: Apply new formatting logic ---
+            if s not in numerical_expr.free_symbols:
+                # 如果解不依赖于频率s，直接计算其数值
                 try:
                     numerical_sol = str(numerical_expr.n())
                 except RuntimeError:
                     numerical_sol = str(process_expr(numerical_expr))
             else:
-                numerical_sol = str(process_expr(numerical_expr))
+                # 如果解依赖于频率s，使用新的多项式格式化函数
+                numerical_sol = format_solution_poly(numerical_expr, s)
+            # --- END OF EDIT ---
             
             output_data["symbolicExpressions"]["solutions"][var_str] = symbolic_sol
             output_data["numericalResults"]["solutions"][var_str] = numerical_sol
@@ -147,7 +158,8 @@ def write_results_to_json(output_path, solutions, state_vars, substitutions, phy
 
         tf_key = f"H({var}/{v_in_source})"
         output_data["symbolicExpressions"]["transferFunctions"][tf_key] = format_as_poly(H_symbolic_simplified, s)
-        output_data["numericalResults"]["transferFunctions"][tf_key] = format_as_poly_numerical(H_numeric_simplified, s)
+        # Use the same robust formatter for numerical transfer functions
+        output_data["numericalResults"]["transferFunctions"][tf_key] = format_solution_poly(H_numeric_simplified, s)
 
     output_data["symbolicExpressions"]["count"] = len(output_data["symbolicExpressions"]["solutions"]) + len(output_data["symbolicExpressions"]["transferFunctions"])
     output_data["numericalResults"]["count"] = len(output_data["numericalResults"]["solutions"]) + len(output_data["numericalResults"]["transferFunctions"])

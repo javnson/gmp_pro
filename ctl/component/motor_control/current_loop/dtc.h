@@ -24,7 +24,7 @@
 #ifndef _FILE_PMSM_DTC_H_
 #define _FILE_PMSM_DTC_H_
 
-#include <ctl/component/intrinsic/lebesgue/hysteresis_controller.h> // Dependency for flux and torque control
+#include <ctl/component/intrinsic/basic/hysteresis_controller.h> // Dependency for flux and torque control
 
 #ifdef __cplusplus
 extern "C"
@@ -45,47 +45,20 @@ extern "C"
 // Type Defines, Enums & Data
 //================================================================================
 
-#ifndef GMP_STATIC_INLINE
-#define GMP_STATIC_INLINE static inline
-#endif
-
-// Define the standard control data type if not already defined
-#ifndef CTRL_GT_DEFINED
-#define CTRL_GT_DEFINED
-typedef float ctrl_gt;
-typedef float parameter_gt;
-#endif
-
 /**
  * @brief The optimal voltage vector switching table for a 2-level DTC scheme.
  * @details Rows correspond to the flux vector sector (1-6).
  * Columns correspond to the combined hysteresis outputs [Flux, Torque]:
  * [0,0]->[Dec,Dec], [0,1]->[Dec,Inc], [1,0]->[Inc,Dec], [1,1]->[Inc,Inc]
  */
-static const uint8_t DTC_SWITCH_TABLE[6][4] = {
-    // S=1      S=2      S=3      S=4      S=5      S=6
-    {5, 6, 2, 3}, // Flux Sector 1
-    {6, 1, 3, 4}, // Flux Sector 2
-    {1, 2, 4, 5}, // Flux Sector 3
-    {2, 3, 5, 6}, // Flux Sector 4
-    {3, 4, 6, 1}, // Flux Sector 5
-    {4, 5, 1, 2}  // Flux Sector 6
-};
+extern uint8_t DTC_SWITCH_TABLE[6][4];
+;
 
 /**
  * @brief Table to convert voltage vector index (0-7) to alpha-beta voltages.
  * @details Assumes Vdc is the DC bus voltage. The values are scaled by 2/3.
  */
-static const ctrl_gt V_ALPHA_BETA_TABLE[8][2] = {
-    {0.0f, 0.0f},             // V0
-    {0.666667f, 0.0f},        // V1
-    {0.333333f, 0.577350f},   // V2
-    {-0.333333f, 0.577350f},  // V3
-    {-0.666667f, 0.0f},       // V4
-    {-0.333333f, -0.577350f}, // V5
-    {0.333333f, -0.577350f},  // V6
-    {0.0f, 0.0f}              // V7
-};
+extern ctrl_gt V_ALPHA_BETA_TABLE[8][2];
 
 /**
  * @brief Initialization parameters for the DTC module.
@@ -137,25 +110,7 @@ typedef struct
  * @param[out] dtc  Pointer to the DTC structure.
  * @param[in]  init Pointer to the initialization parameters structure.
  */
-GMP_STATIC_INLINE void ctl_init_dtc(ctl_dtc_controller_t* dtc, const ctl_dtc_init_t* init)
-{
-    dtc->ts = 1.0f / (ctrl_gt)init->f_ctrl;
-    dtc->rs = (ctrl_gt)init->Rs;
-    dtc->pole_pairs = (ctrl_gt)init->pole_pairs;
-
-    // Initialize hysteresis controllers
-    // Flux: Output 1 means INCREASE flux
-    ctl_init_hysteresis_controller(&dtc->flux_hcc, 1, init->flux_hyst_width);
-    // Torque: Output 1 means INCREASE torque
-    ctl_init_hysteresis_controller(&dtc->torque_hcc, 1, init->torque_hyst_width);
-
-    // Clear state variables
-    ctl_vector2_clear(&dtc->stator_flux);
-    dtc->flux_mag_est = 0.0f;
-    dtc->torque_est = 0.0f;
-    dtc->flux_sector = 1;
-    dtc->voltage_vector_index = 0; // Start with zero vector
-}
+void ctl_init_dtc(ctl_dtc_controller_t* dtc, const ctl_dtc_init_t* init);
 
 /**
  * @brief Sets the reference (target) values for the flux and torque controllers.
@@ -194,8 +149,8 @@ GMP_STATIC_INLINE void ctl_step_dtc(ctl_dtc_controller_t* dtc, ctrl_gt i_alpha, 
     // 4. Determine the Flux Vector Sector (1-6).
     ctrl_gt angle = ctl_atan2(dtc->stator_flux.dat[1], dtc->stator_flux.dat[0]); // Angle in radians
     if (angle < 0)
-        angle += 2.0f * M_PI;
-    dtc->flux_sector = (uint8_t)(angle / (M_PI / 3.0f)) + 1;
+        angle += 2.0f * CTL_CTRL_CONST_PI;
+    dtc->flux_sector = (uint8_t)(angle / (CTL_CTRL_CONST_PI / 3.0f)) + 1;
     if (dtc->flux_sector > 6)
         dtc->flux_sector = 6; // Clamp to sector 6
 
@@ -204,7 +159,7 @@ GMP_STATIC_INLINE void ctl_step_dtc(ctl_dtc_controller_t* dtc, ctrl_gt i_alpha, 
     fast_gt torque_status = ctl_step_hysteresis_controller(&dtc->torque_hcc, dtc->torque_est);
 
     // 6. Look up the Optimal Voltage Vector from the Switching Table.
-    uint8_t table_col = (flux_status << 1) | torque_status;
+    fast_gt table_col = (flux_status << 1) | torque_status;
     dtc->voltage_vector_index = DTC_SWITCH_TABLE[dtc->flux_sector - 1][table_col];
 }
 

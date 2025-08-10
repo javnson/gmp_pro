@@ -64,15 +64,9 @@ typedef struct _tag_svpwm_channel_t
 /**
  * @brief Initializes the SVPWM channel structure.
  * @param[in,out] svpwm Pointer to the SVPWM channel structure to initialize.
- */
-void ctl_init_svpwm(ctl_svpwm_channel_t* svpwm);
-
-/**
- * @brief Sets up the SVPWM channel with its operating parameters.
- * @param[in,out] svpwm Pointer to the SVPWM channel structure.
  * @param[in] pwm_period The PWM time base period.
  */
-void ctl_setup_svpwm(ctl_svpwm_channel_t* svpwm, pwm_gt pwm_period);
+void ctl_init_svpwm(ctl_svpwm_channel_t* svpwm, pwm_gt pwm_period);
 
 /**
  * @brief Sets the input voltages ($$U_\alpha$$, $$U_\beta$$) for the SVPWM calculation.

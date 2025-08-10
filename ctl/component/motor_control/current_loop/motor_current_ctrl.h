@@ -85,7 +85,6 @@ GMP_STATIC_INLINE void ctl_clear_current_controller(ctl_current_controller_t* cc
     ctl_vector3_clear(&cc->idq0);
     ctl_vector3_clear(&cc->vdq0);
     ctl_vector3_clear(&cc->vab0);
-    
 }
 
 /**
@@ -98,9 +97,8 @@ GMP_STATIC_INLINE void ctl_clear_current_controller(ctl_current_controller_t* cc
  * @param[in]  out_min Minimum output limit (voltage).
  * @param[in]  fs Controller execution frequency (Hz).
  */
-void ctl_setup_current_controller(ctl_current_controller_t* cc, ctrl_gt kp, ctrl_gt Ti, ctrl_gt Td,
-                                                    ctrl_gt out_max, ctrl_gt out_min, parameter_gt fs);
-
+void ctl_init_current_controller(ctl_current_controller_t* cc, ctrl_gt kp, ctrl_gt Ti, ctrl_gt Td, ctrl_gt out_max,
+                                 ctrl_gt out_min, parameter_gt fs);
 
 /**
  * @brief Sets the d-q axis current reference (target).

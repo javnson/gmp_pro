@@ -80,28 +80,8 @@ typedef struct
  * @param[in]  lut_size The number of elements in the LUT arrays.
  * @param[in]  const_alpha_rad The fixed angle (in radians) to be used in CONST_ALPHA mode.
  */
-GMP_STATIC_INLINE void ctl_init_current_distributor(ctl_current_distributor_t* dist, ctl_dist_mode_t mode,
-                                                    const ctrl_gt* im_axis, const ctrl_gt* alpha_values,
-                                                    uint32_t lut_size, ctrl_gt const_alpha_rad)
-{
-    dist->mode = mode;
-    dist->const_alpha = const_alpha_rad;
-    dist->id_ref = 0.0f;
-    dist->iq_ref = 0.0f;
-
-    if (mode == DIST_MODE_LUT_LINEAR && im_axis != NULL && alpha_values != NULL && lut_size > 1)
-    {
-        // Initialize the 1D LUT structure from surf_search.h
-        ctl_init_lut1d(&dist->im_axis_lut, im_axis, lut_size);
-        dist->alpha_values = alpha_values;
-    }
-    else
-    {
-        // If not using LUT mode or data is invalid, default to constant alpha
-        dist->mode = DIST_MODE_CONST_ALPHA;
-        dist->alpha_values = NULL;
-    }
-}
+void ctl_init_current_distributor(ctl_current_distributor_t* dist, ctl_dist_mode_t mode, const ctrl_gt* im_axis,
+                                  const ctrl_gt* alpha_values, uint32_t lut_size, ctrl_gt const_alpha_rad);
 
 /**
  * @brief Executes one step of the current distribution calculation.

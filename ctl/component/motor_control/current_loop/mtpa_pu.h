@@ -43,17 +43,6 @@ extern "C"
 // Type Defines & Macros
 //================================================================================
 
-#ifndef GMP_STATIC_INLINE
-#define GMP_STATIC_INLINE static inline
-#endif
-
-// Define the standard control data type if not already defined
-#ifndef CTRL_GT_DEFINED
-#define CTRL_GT_DEFINED
-typedef float ctrl_gt;
-typedef float parameter_gt;
-#endif
-
 #define MTPA_SALIENT_POLE_THRESHOLD (1e-9f)
 
 /**
@@ -97,26 +86,7 @@ typedef struct
  * @param[in]  Lq Q-axis inductance in Henrys (H).
  * @param[in]  psi_f Permanent magnet flux linkage in Webers (Wb).
  */
-GMP_STATIC_INLINE void ctl_init_mtpa_distributor_si(ctl_mtpa_distributor_t* mtpa, parameter_gt Ld, parameter_gt Lq,
-                                                    parameter_gt psi_f)
-{
-    mtpa->psi_f = (ctrl_gt)psi_f;
-    mtpa->dL = (ctrl_gt)(Ld - Lq);
-
-    if (fabsf(mtpa->dL) > MTPA_SALIENT_POLE_THRESHOLD)
-    {
-        mtpa->is_salient = 1;
-        mtpa->psi_f_sq = mtpa->psi_f * mtpa->psi_f;
-        mtpa->four_dL = 4.0f * mtpa->dL;
-        mtpa->eight_dL_sq = 8.0f * mtpa->dL * mtpa->dL;
-    }
-    else
-    {
-        mtpa->is_salient = 0;
-    }
-    mtpa->id_ref = 0.0f;
-    mtpa->iq_ref = 0.0f;
-}
+void ctl_init_mtpa_distributor_si(ctl_mtpa_distributor_t* mtpa, parameter_gt Ld, parameter_gt Lq, parameter_gt psi_f);
 
 /**
  * @brief Executes one step of the MTPA current distribution using SI units.
@@ -164,26 +134,8 @@ GMP_STATIC_INLINE void ctl_step_mtpa_distributor_si(ctl_mtpa_distributor_t* mtpa
  * @param[in]  Lq_pu Q-axis inductance (p.u.).
  * @param[in]  psi_f_pu Permanent magnet flux linkage (p.u.).
  */
-GMP_STATIC_INLINE void ctl_init_mtpa_distributor_pu(ctl_mtpa_distributor_t* mtpa, parameter_gt Ld_pu,
-                                                    parameter_gt Lq_pu, parameter_gt psi_f_pu)
-{
-    mtpa->psi_f = (ctrl_gt)psi_f_pu;
-    mtpa->dL = (ctrl_gt)(Ld_pu - Lq_pu);
-
-    if (fabsf(mtpa->dL) > MTPA_SALIENT_POLE_THRESHOLD)
-    {
-        mtpa->is_salient = 1;
-        mtpa->psi_f_sq = mtpa->psi_f * mtpa->psi_f;
-        mtpa->four_dL = 4.0f * mtpa->dL;
-        mtpa->eight_dL_sq = 8.0f * mtpa->dL * mtpa->dL;
-    }
-    else
-    {
-        mtpa->is_salient = 0;
-    }
-    mtpa->id_ref = 0.0f;
-    mtpa->iq_ref = 0.0f;
-}
+void ctl_init_mtpa_distributor_pu(ctl_mtpa_distributor_t* mtpa, parameter_gt Ld_pu, parameter_gt Lq_pu,
+                                  parameter_gt psi_f_pu);
 
 /**
  * @brief Executes one step of the MTPA current distribution using per-unit values.

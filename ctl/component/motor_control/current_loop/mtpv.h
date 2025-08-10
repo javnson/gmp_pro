@@ -42,17 +42,6 @@ extern "C"
 // Type Defines & Macros
 //================================================================================
 
-#ifndef GMP_STATIC_INLINE
-#define GMP_STATIC_INLINE static inline
-#endif
-
-// Define the standard control data type if not already defined
-#ifndef CTRL_GT_DEFINED
-#define CTRL_GT_DEFINED
-typedef float ctrl_gt;
-typedef float parameter_gt;
-#endif
-
 /**
  * @brief Initialization parameters for the MTPV module.
  */
@@ -95,21 +84,7 @@ typedef struct
  * @param[out] mtpv Pointer to the MTPV controller structure.
  * @param[in]  init Pointer to the initialization parameters structure.
  */
-GMP_STATIC_INLINE void ctl_init_mtpv(ctl_mtpv_controller_t* mtpv, const ctl_mtpv_init_t* init)
-{
-    mtpv->rs = (ctrl_gt)init->Rs;
-    mtpv->ld = (ctrl_gt)init->Ld;
-    mtpv->lq = (ctrl_gt)init->Lq;
-    mtpv->psi_f = (ctrl_gt)init->psi_f;
-
-    // Pre-calculate squared terms for efficiency
-    mtpv->rs_sq = mtpv->rs * mtpv->rs;
-    mtpv->ld_sq = mtpv->ld * mtpv->ld;
-    mtpv->lq_sq = mtpv->lq * mtpv->lq;
-
-    mtpv->id_ref = 0.0f;
-    mtpv->iq_ref = 0.0f;
-}
+void ctl_init_mtpv(ctl_mtpv_controller_t* mtpv, const ctl_mtpv_init_t* init);
 
 /**
  * @brief Executes one step of the MTPV (Field Weakening) calculation.

@@ -49,16 +49,6 @@ extern "C"
 // Type Defines & Macros
 //================================================================================
 
-#ifndef GMP_STATIC_INLINE
-#define GMP_STATIC_INLINE static inline
-#endif
-
-#ifndef CTRL_GT_DEFINED
-#define CTRL_GT_DEFINED
-typedef float ctrl_gt;
-typedef float parameter_gt;
-#endif
-
 /**
  * @brief Main structure for the LADRC per-unit current controller.
  */
@@ -92,29 +82,8 @@ typedef struct
  * @param[in]  omega_base The base electrical frequency of the per-unit system (rad/s).
  * @param[in]  sample_time_s The controller's sampling period in seconds.
  */
-GMP_STATIC_INLINE void ctl_init_ladrc_current_pu(ctl_ladrc_current_pu_t* ladrc, parameter_gt wc_rads,
-                                                 parameter_gt wo_rads, parameter_gt L_pu, parameter_gt omega_base,
-                                                 parameter_gt sample_time_s)
-{
-    ladrc->wc = wc_rads;
-    ladrc->wo = wo_rads;
-    ladrc->h = sample_time_s;
-
-    // Calculate the system gain b0
-    if (L_pu > 1e-9f)
-    {
-        ladrc->b0 = omega_base / L_pu;
-    }
-    else
-    {
-        ladrc->b0 = 0.0f; // Avoid division by zero
-    }
-
-    // Reset states
-    ladrc->z1 = 0.0f;
-    ladrc->z2 = 0.0f;
-    ladrc->u_out_pu = 0.0f;
-}
+void ctl_init_ladrc_current_pu(ctl_ladrc_current_pu_t* ladrc, parameter_gt wc_rads, parameter_gt wo_rads,
+                               parameter_gt L_pu, parameter_gt omega_base, parameter_gt sample_time_s);
 
 /**
  * @brief Resets the internal states of the LADRC controller.

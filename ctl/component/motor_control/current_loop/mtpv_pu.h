@@ -40,16 +40,6 @@ extern "C"
 // Type Defines & Macros
 //================================================================================
 
-#ifndef GMP_STATIC_INLINE
-#define GMP_STATIC_INLINE static inline
-#endif
-
-#ifndef CTRL_GT_DEFINED
-#define CTRL_GT_DEFINED
-typedef float ctrl_gt;
-typedef float parameter_gt;
-#endif
-
 /**
  * @brief Main structure for the MTPV per-unit controller.
  */
@@ -82,22 +72,8 @@ typedef struct
  * @param[in]  Lq_pu Q-axis Inductance (p.u.).
  * @param[in]  psi_f_pu Permanent magnet flux linkage (p.u.).
  */
-GMP_STATIC_INLINE void ctl_init_mtpv_pu(ctl_mtpv_pu_controller_t* mtpv, parameter_gt Rs_pu, parameter_gt Ld_pu,
-                                        parameter_gt Lq_pu, parameter_gt psi_f_pu)
-{
-    mtpv->rs_pu = (ctrl_gt)Rs_pu;
-    mtpv->ld_pu = (ctrl_gt)Ld_pu;
-    mtpv->lq_pu = (ctrl_gt)Lq_pu;
-    mtpv->psi_f_pu = (ctrl_gt)psi_f_pu;
-
-    // Pre-calculate squared terms for efficiency
-    mtpv->rs_sq_pu = mtpv->rs_pu * mtpv->rs_pu;
-    mtpv->ld_sq_pu = mtpv->ld_pu * mtpv->ld_pu;
-    mtpv->lq_sq_pu = mtpv->lq_pu * mtpv->lq_pu;
-
-    mtpv->id_ref_pu = 0.0f;
-    mtpv->iq_ref_pu = 0.0f;
-}
+void ctl_init_mtpv_pu(ctl_mtpv_pu_controller_t* mtpv, parameter_gt Rs_pu, parameter_gt Ld_pu, parameter_gt Lq_pu,
+                      parameter_gt psi_f_pu);
 
 /**
  * @brief Executes one step of the MTPV (Field Weakening) calculation in per-unit.

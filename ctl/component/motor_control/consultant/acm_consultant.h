@@ -95,7 +95,7 @@ void ctl_setup_im_dsn_consultant(im_dsn_consultant_t* im_dsn, uint16_t pole_pair
  * @param[in] im_dsn Pointer to the populated motor consultant structure.
  * @return The rotor time constant in seconds (s). Returns 0 if Rr is zero.
  */
-static inline parameter_gt ctl_acm_get_rotor_time_constant_s(const im_dsn_consultant_t* im_dsn)
+GMP_STATIC_INLINE parameter_gt ctl_acm_get_rotor_time_constant_s(const im_dsn_consultant_t* im_dsn)
 {
     return (im_dsn->Rr > 1e-9) ? (im_dsn->Lr / im_dsn->Rr) : 0.0;
 }
@@ -106,7 +106,7 @@ static inline parameter_gt ctl_acm_get_rotor_time_constant_s(const im_dsn_consul
  * @param[in] im_dsn Pointer to the populated motor consultant structure.
  * @return The stator time constant in seconds (s). Returns 0 if Rs is zero.
  */
-static inline parameter_gt ctl_acm_get_stator_time_constant_s(const im_dsn_consultant_t* im_dsn)
+GMP_STATIC_INLINE parameter_gt ctl_acm_get_stator_time_constant_s(const im_dsn_consultant_t* im_dsn)
 {
     return (im_dsn->Rs > 1e-9) ? (im_dsn->Ls / im_dsn->Rs) : 0.0;
 }
@@ -118,7 +118,7 @@ static inline parameter_gt ctl_acm_get_stator_time_constant_s(const im_dsn_consu
  * @param[in] im_dsn Pointer to the populated motor consultant structure.
  * @return The dimensionless leakage coefficient. Returns 1 if Ls or Lr is zero.
  */
-static inline parameter_gt ctl_acm_get_leakage_coefficient(const im_dsn_consultant_t* im_dsn)
+GMP_STATIC_INLINE parameter_gt ctl_acm_get_leakage_coefficient(const im_dsn_consultant_t* im_dsn)
 {
     parameter_gt LsLr = im_dsn->Ls * im_dsn->Lr;
     return (LsLr > 1e-9) ? (1.0 - (im_dsn->Lm * im_dsn->Lm) / LsLr) : 1.0;
@@ -134,7 +134,7 @@ static inline parameter_gt ctl_acm_get_leakage_coefficient(const im_dsn_consulta
  * @param[in] rotor_flux_mag The target rotor flux magnitude in Weber (Wb).
  * @return The estimated slip speed in electrical rad/s.
  */
-static inline parameter_gt ctl_acm_estimate_slip_speed_rads(const im_dsn_consultant_t* im_dsn, parameter_gt i_sq,
+GMP_STATIC_INLINE parameter_gt ctl_acm_estimate_slip_speed_rads(const im_dsn_consultant_t* im_dsn, parameter_gt i_sq,
                                                             parameter_gt rotor_flux_mag)
 {
     if (im_dsn->Lr < 1e-9 || rotor_flux_mag < 1e-9)
@@ -154,7 +154,7 @@ static inline parameter_gt ctl_acm_estimate_slip_speed_rads(const im_dsn_consult
  * @param[out] kp Pointer to store the calculated proportional gain.
  * @param[out] ki Pointer to store the calculated integral gain.
  */
-static inline void ctl_acm_tune_current_pi_params(const im_dsn_consultant_t* im_dsn, parameter_gt bandwidth_hz,
+GMP_STATIC_INLINE void ctl_acm_tune_current_pi_params(const im_dsn_consultant_t* im_dsn, parameter_gt bandwidth_hz,
                                                   parameter_gt* kp, parameter_gt* ki)
 {
     parameter_gt alpha_c = M_2_PI * bandwidth_hz; // Convert Hz to rad/s
@@ -179,7 +179,7 @@ static inline void ctl_acm_tune_current_pi_params(const im_dsn_consultant_t* im_
  * @param[out] kp Pointer to store the calculated proportional gain.
  * @param[out] ki Pointer to store the calculated integral gain.
  */
-static inline void ctl_acm_tune_speed_pi_params(const im_dsn_consultant_t* im_dsn, parameter_gt bandwidth_hz,
+GMP_STATIC_INLINE void ctl_acm_tune_speed_pi_params(const im_dsn_consultant_t* im_dsn, parameter_gt bandwidth_hz,
                                                 parameter_gt rotor_flux_mag, parameter_gt* kp, parameter_gt* ki)
 {
     if (im_dsn->Lr < 1e-9)
@@ -230,7 +230,7 @@ static inline void ctl_acm_tune_speed_pi_params(const im_dsn_consultant_t* im_ds
  * @param[out] kp_pu Pointer to store the per-unit proportional gain.
  * @param[out] ki_pu Pointer to store the per-unit integral gain.
  */
-static inline void ctl_acm_convert_current_pi_to_pu(const ctl_per_unit_consultant_t* pu, parameter_gt kp_real,
+GMP_STATIC_INLINE void ctl_acm_convert_current_pi_to_pu(const ctl_per_unit_consultant_t* pu, parameter_gt kp_real,
                                                     parameter_gt ki_real, parameter_gt* kp_pu, parameter_gt* ki_pu)
 {
     if (pu->base_impedence < 1e-9 || pu->base_omega < 1e-9)
@@ -255,7 +255,7 @@ static inline void ctl_acm_convert_current_pi_to_pu(const ctl_per_unit_consultan
  * @param[out] kp_pu Pointer to store the per-unit proportional gain.
  * @param[out] ki_pu Pointer to store the per-unit integral gain.
  */
-static inline void ctl_acm_convert_speed_pi_to_pu(const ctl_per_unit_consultant_t* pu, parameter_gt kp_real,
+GMP_STATIC_INLINE void ctl_acm_convert_speed_pi_to_pu(const ctl_per_unit_consultant_t* pu, parameter_gt kp_real,
                                                   parameter_gt ki_real, parameter_gt* kp_pu, parameter_gt* ki_pu)
 {
     if (pu->base_current < 1e-9)
