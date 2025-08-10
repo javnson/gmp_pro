@@ -63,57 +63,14 @@ typedef struct _tag_lms_filter_t
  * @param[in] mu The step-size (learning rate). Must be chosen carefully to ensure stability.
  * @return fast_gt Returns 1 on success (memory allocated), 0 on failure.
  */
-fast_gt ctl_init_lms_filter(ctl_lms_filter_t* lms, uint32_t order, parameter_gt mu)
-{
-    lms->order = order;
-    lms->mu = float2ctrl(mu);
-    lms->output = 0.0f;
-    lms->error = 0.0f;
-    lms->buffer_index = 0;
-
-    // --- Key Point Analysis 1: Dynamic Memory Allocation ---
-    // The filter's memory requirement depends on its order. Dynamic allocation
-    // provides flexibility. Ensure the MCU has enough heap space.
-    lms->weights = (ctrl_gt*)malloc(order * sizeof(ctrl_gt));
-    lms->buffer = (ctrl_gt*)malloc(order * sizeof(ctrl_gt));
-
-    if (lms->weights == NULL || lms->buffer == NULL)
-    {
-        // Free any partially allocated memory before returning
-        if (lms->weights)
-            free(lms->weights);
-        if (lms->buffer)
-            free(lms->buffer);
-        return 0; // Memory allocation failed
-    }
-
-    // Initialize weights and buffer to zero
-    for (uint32_t i = 0; i < order; ++i)
-    {
-        lms->weights[i] = 0.0f;
-        lms->buffer[i] = 0.0f;
-    }
-
-    return 1; // Success
-}
+fast_gt ctl_init_lms_filter(ctl_lms_filter_t* lms, uint32_t order, parameter_gt mu);
 
 /**
  * @brief Frees the memory allocated for the LMS filter.
  * @param[in,out] lms Pointer to the LMS filter instance.
  */
-GMP_STATIC_INLINE void ctl_destroy_lms_filter(ctl_lms_filter_t* lms)
-{
-    if (lms->weights != NULL)
-    {
-        free(lms->weights);
-        lms->weights = NULL;
-    }
-    if (lms->buffer != NULL)
-    {
-        free(lms->buffer);
-        lms->buffer = NULL;
-    }
-}
+void ctl_destroy_lms_filter(ctl_lms_filter_t* lms);
+
 
 /**
  * @brief Clears the internal states (weights and buffer) of the LMS filter.

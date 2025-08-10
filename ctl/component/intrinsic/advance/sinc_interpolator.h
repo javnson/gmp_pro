@@ -65,104 +65,13 @@ typedef struct _tag_sinc_interpolator_t
  * @param[in] table_size The resolution of the fractional delay (e.g., 256). Higher resolution gives smoother interpolation.
  * @return fast_gt Returns 1 on success, 0 on failure (memory allocation).
  */
-fast_gt ctl_init_sinc_interpolator(ctl_sinc_interpolator_t* sinc, uint32_t num_taps, uint32_t table_size)
-{
-    sinc->num_taps = num_taps;
-    sinc->table_size = table_size;
-    sinc->buffer_index = 0;
-    sinc->output = 0.0f;
-
-    // Allocate memory for the data buffer
-    sinc->buffer = (ctrl_gt*)malloc(num_taps * sizeof(ctrl_gt));
-    if (sinc->buffer == NULL)
-        return 0;
-
-    // Allocate memory for the look-up table (array of pointers)
-    sinc->sinc_table = (ctrl_gt**)malloc(table_size * sizeof(ctrl_gt*));
-    if (sinc->sinc_table == NULL)
-    {
-        free(sinc->buffer);
-        return 0;
-    }
-
-    // Allocate memory for each row of the table
-    for (uint32_t i = 0; i < table_size; i++)
-    {
-        sinc->sinc_table[i] = (ctrl_gt*)malloc(num_taps * sizeof(ctrl_gt));
-        if (sinc->sinc_table[i] == NULL)
-        {
-            // Clean up on failure
-            for (uint32_t j = 0; j < i; j++)
-                free(sinc->sinc_table[j]);
-            free(sinc->sinc_table);
-            free(sinc->buffer);
-            return 0;
-        }
-    }
-
-    // --- Key Point Analysis 1: Pre-calculate the Windowed-Sinc Coefficient Table ---
-    // This is the core of the module. By pre-calculating all potentially needed FIR
-    // filter coefficients at once, it avoids expensive sin/cos calculations in the real-time loop.
-    for (uint32_t i = 0; i < table_size; i++)
-    {
-        // 'fractional_offset' represents the sub-sample offset (0.0 to 1.0) for the filter currently being calculated.
-        float fractional_offset = (float)i / table_size;
-
-        for (uint32_t j = 0; j < num_taps; j++)
-        {
-            // 't' is the time-axis variable for the Sinc function, shifted and centered.
-            float t = (float)j - (float)(num_taps - 1) / 2.0f - fractional_offset;
-
-            // Calculate the Sinc function value: sin(pi*t) / (pi*t)
-            float sinc_val;
-            if (t == 0.0f)
-            {
-                sinc_val = 1.0f;
-            }
-            else
-            {
-                sinc_val = sinf(PI * t) / (PI * t);
-            }
-
-            // Calculate the Blackman window value to smooth the truncation effects of the Sinc function
-            // and reduce Gibbs phenomenon in the frequency domain.
-            float window_val =
-                0.42f - 0.5f * cosf(2.0f * PI * j / (num_taps - 1)) + 0.08f * cosf(4.0f * PI * j / (num_taps - 1));
-
-            // The final filter coefficient is the product of the Sinc value and the window value.
-            sinc->sinc_table[i][j] = (ctrl_gt)(sinc_val * window_val);
-        }
-    }
-
-    // Initialize the data buffer
-    ctl_clear_sinc_interpolator(sinc);
-    return 1;
-}
+fast_gt ctl_init_sinc_interpolator(ctl_sinc_interpolator_t* sinc, uint32_t num_taps, uint32_t table_size);
 
 /**
  * @brief Frees the memory allocated for the Sinc interpolator.
  * @param[in,out] sinc Pointer to the Sinc interpolator instance.
  */
-GMP_STATIC_INLINE void ctl_destroy_sinc_interpolator(ctl_sinc_interpolator_t* sinc)
-{
-    if (sinc->sinc_table != NULL)
-    {
-        for (uint32_t i = 0; i < sinc->table_size; i++)
-        {
-            if (sinc->sinc_table[i] != NULL)
-            {
-                free(sinc->sinc_table[i]);
-            }
-        }
-        free(sinc->sinc_table);
-        sinc->sinc_table = NULL;
-    }
-    if (sinc->buffer != NULL)
-    {
-        free(sinc->buffer);
-        sinc->buffer = NULL;
-    }
-}
+GMP_STATIC_INLINE void ctl_destroy_sinc_interpolator(ctl_sinc_interpolator_t* sinc);
 
 /**
  * @brief Clears the internal data buffer of the interpolator.

@@ -10,7 +10,6 @@
  * @version 1.1
  * @date 2025-08-07
  *
- * tex:
  *  The design is based on a generic first-order plant model: @f[ \tau_p \dot{y} = -y + K_p u + d @f]
  *  where u is the control input, y is the output, and d is an external disturbance.
  * 
@@ -88,13 +87,7 @@ typedef struct
  * @param[out] bc   Pointer to the Backstepping controller structure.
  * @param[in]  init Pointer to the initialization parameters.
  */
-GMP_STATIC_INLINE void ctl_init_backstepping(ctl_backstepping_controller_t* bc, const ctl_backstepping_init_t* init)
-{
-    bc->u_out = 0.0f;
-    bc->k1 = (ctrl_gt)init->k1;
-    bc->K_p = (ctrl_gt)init->K_p;
-    bc->tau_p = (ctrl_gt)init->tau_p;
-}
+void ctl_init_backstepping(ctl_backstepping_controller_t* bc, const ctl_backstepping_init_t* init);
 
 /**
  * @brief Resets the internal states of the Backstepping controller.

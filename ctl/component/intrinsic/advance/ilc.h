@@ -92,17 +92,7 @@ typedef struct
  * @param[out] ilc  Pointer to the ILC structure.
  * @param[in]  init Pointer to the initialization parameters.
  */
-GMP_STATIC_INLINE void ctl_init_ilc(ctl_ilc_controller_t* ilc, const ctl_ilc_init_t* init)
-{
-    ilc->u_k = init->u_k_buffer;
-    ilc->u_k_minus_1 = init->u_k_minus_1_buffer;
-    ilc->e_k_minus_1 = init->e_k_minus_1_buffer;
-
-    ilc->learning_gain = (ctrl_gt)init->learning_gain;
-    ilc->trajectory_length = init->trajectory_length;
-
-    ctl_clear_ilc(ilc);
-}
+void ctl_init_ilc(ctl_ilc_controller_t* ilc, const ctl_ilc_init_t* init);
 
 /**
  * @brief Resets the ILC controller to its initial state.

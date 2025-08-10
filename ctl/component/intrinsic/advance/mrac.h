@@ -97,24 +97,8 @@ typedef struct
  * @param[out] mrac Pointer to the MRAC structure.
  * @param[in]  init Pointer to the initialization parameters.
  */
-GMP_STATIC_INLINE void ctl_init_mrac(ctl_mrac_controller_t* mrac, const ctl_mrac_init_t* init)
-{
-    ctrl_gt Ts = 1.0f / (ctrl_gt)init->f_ctrl;
+void ctl_init_mrac(ctl_mrac_controller_t* mrac, const ctl_mrac_init_t* init);
 
-    // Discretize the reference model using Zero-Order Hold (ZOH)
-    mrac->a_m_d = expf(-(ctrl_gt)init->a_m * Ts);
-    mrac->b_m_d = (ctrl_gt)init->b_m / (ctrl_gt)init->a_m * (1.0f - mrac->a_m_d);
-
-    // Discretize the adaptation rates
-    mrac->gamma_r_d = (ctrl_gt)init->gamma_r * Ts;
-    mrac->gamma_y_d = (ctrl_gt)init->gamma_y * Ts;
-
-    // Reset states
-    mrac->u_out = 0.0f;
-    mrac->k_r = 0.0f;
-    mrac->k_y = 0.0f;
-    mrac->y_m = 0.0f;
-}
 
 /**
  * @brief Resets the internal states of the MRAC controller.

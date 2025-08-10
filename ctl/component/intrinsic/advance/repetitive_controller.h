@@ -70,41 +70,13 @@ typedef struct _tag_repetitive_controller_t
  * @return fast_gt Returns 1 on success (memory allocated), 0 on failure.
  */
 fast_gt ctl_init_repetitive_controller(ctl_repetitive_controller_t* rc, parameter_gt fs, parameter_gt f_fund,
-                                       parameter_gt q_filter_coeff)
-{
-    rc->period_samples = (uint32_t)(fs / f_fund);
-    rc->q_filter_coeff = float2ctrl(q_filter_coeff);
-    rc->output = 0;
-    rc->buffer_index = 0;
-
-    // Allocate memory for the state buffer
-    rc->state_buffer = (ctrl_gt*)malloc(rc->period_samples * sizeof(ctrl_gt));
-    if (rc->state_buffer == NULL)
-    {
-        return 0; // Memory allocation failed
-    }
-
-    // Initialize the buffer to zero
-    for (uint32_t i = 0; i < rc->period_samples; ++i)
-    {
-        rc->state_buffer[i] = 0;
-    }
-
-    return 1; // Success
-}
+                                       parameter_gt q_filter_coeff);
 
 /**
  * @brief Frees the memory allocated for the controller's buffer.
  * @param[in,out] rc Pointer to the repetitive controller instance.
  */
-GMP_STATIC_INLINE void ctl_destroy_repetitive_controller(ctl_repetitive_controller_t* rc)
-{
-    if (rc->state_buffer != NULL)
-    {
-        free(rc->state_buffer);
-        rc->state_buffer = NULL;
-    }
-}
+void ctl_destroy_repetitive_controller(ctl_repetitive_controller_t* rc);
 
 /**
  * @brief Clears the internal states of the repetitive controller.

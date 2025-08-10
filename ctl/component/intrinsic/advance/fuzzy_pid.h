@@ -18,7 +18,7 @@
 #ifndef _FUZZY_PID_H_
 #define _FUZZY_PID_H_
 
-#include <ctl/component/intrinsic/advance/lookup_table.h>
+#include <ctl/component/intrinsic/advance/surf_search.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 
 #ifdef __cplusplus
