@@ -41,7 +41,7 @@ def parse_value(value_str):
     except (ValueError, TypeError, SyntaxError):
         return se.Symbol(str(value_str))
 
-def analyze_circuit(netlist_path, tina_mode=False, verbose=False, no_simplify=False):
+def analyze_circuit(netlist_path, tina_mode=False, verbose=False, simplify_level='full'):
     """
     使用改进节点分析法(MNA)对电路进行符号分析。
     该函数读取一个网表文件，构建MNA方程组 (A*x = z)，
@@ -313,10 +313,10 @@ def analyze_circuit(netlist_path, tina_mode=False, verbose=False, no_simplify=Fa
         return None, None, None, None
 
     if verbose: print("Step 2: Expanding/Simplifying final expressions...")
-    if no_simplify:
+    if simplify_level == 'none':
         results = {var: expr for var, expr in zip(x_vars, solution_vec)}
         if verbose: print("Step 2: Simplification skipped.")
-    else:
+    else: # 'light' and 'full' both do an initial expansion
         results = {var: se.expand(expr) for var, expr in zip(x_vars, solution_vec)}
         if verbose: print("Step 2: Expansion complete.")
     
@@ -351,15 +351,16 @@ def analyze_circuit(netlist_path, tina_mode=False, verbose=False, no_simplify=Fa
 
     return results, x_vars, substitutions, physical_quantities
 
-def write_results_to_json(output_path, solutions, state_vars, substitutions, physical_quantities, input_source_name, verbose=False, no_simplify=False):
+def write_results_to_json(output_path, solutions, state_vars, substitutions, physical_quantities, input_source_name, verbose=False, simplify_level='full'):
     """将分析结果按照指定顺序写入JSON文件"""
     print(f"\nWriting results to {output_path}...")
     v_in_source = se.Symbol(input_source_name)
     
     def process_expr(expr):
-        if no_simplify:
-            return expr
-        return se.expand(expr)
+        # 'light' and 'none' modes skip the expensive re-expansion
+        if simplify_level == 'full':
+            return se.expand(expr)
+        return expr
 
     output_data = {
         "parameters": {
@@ -447,9 +448,14 @@ if __name__ == '__main__':
         help="Enable TINA mode: treats the first line of the netlist as a title to be skipped."
     )
     parser.add_argument(
-        "--no-simplify",
-        action="store_true",
-        help="Disable the final expression expansion/simplification step for performance."
+        "--simplify-level",
+        type=str,
+        choices=['full', 'light', 'none'],
+        default='full',
+        help="Set the expression simplification level:\n"
+             "  'full':  (Default) Thorough simplification. Slowest, but best results.\n"
+             "  'light': Basic simplification after solving. Good balance.\n"
+             "  'none':  No simplification. Fastest, but expressions are raw.\n"
     )
     args = parser.parse_args()
     
@@ -459,11 +465,11 @@ if __name__ == '__main__':
     if args.netlist_file.suffix.lower() != '.cir':
         print(f"Warning: Input file '{args.netlist_file.name}' does not have a .cir extension.")
 
-    analysis_results = analyze_circuit(args.netlist_file, args.tina, args.verbose, args.no_simplify)
+    analysis_results = analyze_circuit(args.netlist_file, args.tina, args.verbose, args.simplify_level)
     
     if analysis_results[0] is not None:
         solutions, state_variables, subs_dict, phys_quantities = analysis_results
         output_file_path = args.netlist_file.with_name(f"{args.netlist_file.stem}_results.json")
-        write_results_to_json(output_file_path, solutions, state_variables, subs_dict, phys_quantities, args.input_source, args.verbose, args.no_simplify)
+        write_results_to_json(output_file_path, solutions, state_variables, subs_dict, phys_quantities, args.input_source, args.verbose, args.simplify_level)
     else:
         print("\nAnalysis failed. No output file will be generated.")
