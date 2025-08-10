@@ -1,19 +1,10 @@
 /**
  * @file mtpv_pu.h
  * @brief Implements a per-unit MTPV (Field Weakening) controller for PMSM.
- * @details This module calculates the optimal d-q axis current references to achieve
- * the maximum possible torque when the motor operates above its base speed and
- * is limited by the available bus voltage. It injects a negative d-axis
- * current to counteract the back-EMF, allowing for higher speed operation.
- * All calculations are performed in the per-unit system.
- *
+ * 
  * @version 1.0
  * @date 2025-08-06
- *
- * //tex:
- * // The MTPV algorithm operates on the voltage limit circle defined by:
- * // U_{max,pu}^2 = (R_{s,pu} i_{d,pu} - \omega_{e,pu} L_{q,pu} i_{q,pu})^2 + (R_{s,pu} i_{q,pu} + \omega_{e,pu} L_{d,pu} i_{d,pu} + \omega_{e,pu} \psi_{f,pu})^2
- *
+ * 
  */
 
 #ifndef _FILE_PMSM_MTPV_PU_H_
@@ -33,6 +24,13 @@ extern "C"
 /**
  * @defgroup MTPV_CONTROLLER_PU MTPV / Field Weakening Controller (Per-Unit)
  * @brief Calculates optimal Id and Iq references for high-speed operation using per-unit values.
+ * @details This module calculates the optimal d-q axis current references to achieve
+ * the maximum possible torque when the motor operates above its base speed and
+ * is limited by the available bus voltage. It injects a negative d-axis
+ * current to counteract the back-EMF, allowing for higher speed operation.
+ * All calculations are performed in the per-unit system.
+ * The MTPV algorithm operates on the voltage limit circle defined by:
+ *  @f[ U_{max,pu}^2 = (R_{s,pu} i_{d,pu} - \omega_{e,pu} L_{q,pu} i_{q,pu})^2 + (R_{s,pu} i_{q,pu} + \omega_{e,pu} L_{d,pu} i_{d,pu} + \omega_{e,pu} \psi_{f,pu})^2 @f]
  * @{
  */
 
@@ -139,7 +137,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_mtpv_iq_ref_pu(const ctl_mtpv_pu_controller_t*
     return mtpv->iq_ref_pu;
 }
 
-/** @} */ // end of MTPV_CONTROLLER_PU group
+/** 
+ * @} 
+ */ // end of MTPV_CONTROLLER_PU group
 
 #ifdef __cplusplus
 }

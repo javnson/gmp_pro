@@ -152,6 +152,47 @@ void ctl_init_acm_smo(ctl_acm_smo_t* smo, const ctl_acm_smo_init_t* init)
 }
 
 //////////////////////////////////////////////////////////////////////////
+// ACM MPC
+
+#include <ctl/component/motor_control/current_loop/acm_mpc.h>
+
+// Table of the 8 standard voltage vectors in the alpha-beta frame.
+const ctl_vector2_t MPC_VOLTAGE_VECTORS_NORMALIZED_ACM[8] = {
+    {{float2ctrl(0.0f), float2ctrl(0.0f)}},        // V0
+    {{float2ctrl(1.0f), float2ctrl(0.0f)}},        // V1
+    {{float2ctrl(0.5f), float2ctrl(0.866025f)}},   // V2
+    {{float2ctrl(-0.5f),float2ctrl( 0.866025f)}},  // V3
+    {{float2ctrl(-1.0f),float2ctrl( 0.0f)}},       // V4
+    {{float2ctrl(-0.5f),float2ctrl( -0.866025f)}}, // V5
+    {{float2ctrl(0.5f), float2ctrl(-0.866025f)}},  // V6
+    {{float2ctrl(0.0f), float2ctrl(0.0f)}}         // V7
+};
+
+void ctl_init_acm_mpc(ctl_acm_mpc_controller_t* mpc, const ctl_acm_mpc_init_t* init)
+{
+    mpc->optimal_vector_index = 0;
+    ctl_vector2_clear(&mpc->psi_r_est);
+    mpc->flux_ref_sq = 0;
+    mpc->lambda_flux = float2ctrl(50.0f); // Default weighting factor, should be tuned.
+    mpc->Ts = float2ctrl(1.0f / (ctrl_gt)init->f_ctrl);
+    mpc->pole_pairs = (ctrl_gt)init->pole_pairs;
+
+    // Pre-calculate coefficients for the discrete-time model to optimize the step function.
+    // Based on Euler discretization of the continuous-time ACM model in the stationary frame.
+    parameter_gt sigma = 1.0f - (init->Lm * init->Lm) / (init->Ls * init->Lr);
+    parameter_gt Tr = init->Lr / init->Rr;
+    parameter_gt sigma_ls = sigma * init->Ls;
+
+    mpc->c_iss = float2ctrl(1.0f - mpc->Ts * (init->Rs / sigma_ls + (1.0f - sigma) / (sigma * Tr)));
+    mpc->c_is_u = float2ctrl(mpc->Ts / sigma_ls);
+    mpc->c_is_pr = float2ctrl(mpc->Ts * init->Lm / (sigma_ls * init->Lr * Tr));
+    mpc->c_is_pr_w = float2ctrl(mpc->Ts * init->Lm / (sigma_ls * init->Lr));
+    mpc->c_pr_is = float2ctrl(mpc->Ts * init->Lm / Tr);
+    mpc->c_pr_pr = float2ctrl(1.0f - mpc->Ts / Tr);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
 // BLDC Hall
 
 #include <ctl/component/motor_control/observer/bldc.hall.h>

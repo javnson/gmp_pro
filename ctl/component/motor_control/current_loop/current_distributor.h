@@ -1,13 +1,6 @@
 /**
  * @file current_distributor.h
  * @brief Implements a current distributor using a look-up table (LUT).
- * @details This module takes a total current magnitude command (Im) and distributes
- * it into d-axis (Id) and q-axis (Iq) components. The distribution is
- * determined by a current angle (alpha), which can either be a fixed constant
- * or interpolated from a 1D look-up table using the functions provided by
- * the surf_search module. This is typically used to implement strategies like
- * MTPA (Maximum Torque Per Ampere) where the optimal current angle varies
- * with the total current.
  *
  * @version 0.2
  * @date 2025-08-06
@@ -30,6 +23,13 @@ extern "C"
 /**
  * @defgroup CURRENT_DISTRIBUTOR LUT Current Distributor
  * @brief Distributes a total current command into Id and Iq components via a LUT.
+ * @details This module takes a total current magnitude command (Im) and distributes
+ * it into d-axis (Id) and q-axis (Iq) components. The distribution is
+ * determined by a current angle (alpha), which can either be a fixed constant
+ * or interpolated from a 1D look-up table using the functions provided by
+ * the surf_search module. This is typically used to implement strategies like
+ * MTPA (Maximum Torque Per Ampere) where the optimal current angle varies
+ * with the total current.
  * @{
  */
 
@@ -134,7 +134,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_distributor_iq_ref(const ctl_current_distribut
     return dist->iq_ref;
 }
 
-/** @} */ // end of CURRENT_DISTRIBUTOR group
+/** 
+ *@} 
+ */ // end of CURRENT_DISTRIBUTOR group
 
 #ifdef __cplusplus
 }

@@ -1,24 +1,8 @@
 /**
  * @file pmsm_mpc.h
  * @brief Implements a Finite Control Set Model Predictive Current Controller (FCS-MPC) for PMSM.
- * @details This module provides an advanced model-based current controller. Instead of
- * traditional PI loops, it uses a discrete-time model of the PMSM to predict the
- * current response for each of the 8 possible inverter voltage vectors. It then
- * selects the vector that minimizes a cost function, typically the squared error
- * between the predicted current and the reference current. This approach offers
- * very fast dynamic response and handles multivariable control and constraints
- * intuitively.
- *
  * @version 1.0
  * @date 2025-08-07
- *
- * //tex:
- * // The controller uses the discretized PMSM voltage equations to predict the
- * // current at the next time step k+1:
- * // \mathbf{i}(k+1) = \mathbf{A}(\omega_e) \mathbf{i}(k) + \mathbf{B} \mathbf{u}(k) + \mathbf{E}(\omega_e)
- * // A cost function is then evaluated for each possible voltage vector \mathbf{u}_j:
- * // J_j = || \mathbf{i}_{ref}(k+1) - \mathbf{i}_{pred, j}(k+1) ||^2
- * // The voltage vector \mathbf{u}_j that minimizes J is selected and applied.
  *
  */
 
@@ -41,6 +25,19 @@ extern "C"
 /**
  * @defgroup MPC_CONTROLLER FCS-MPC Current Controller
  * @brief A model-predictive current controller for fast dynamic response.
+ * @details This module provides an advanced model-based current controller. Instead of
+ * traditional PI loops, it uses a discrete-time model of the PMSM to predict the
+ * current response for each of the 8 possible inverter voltage vectors. It then
+ * selects the vector that minimizes a cost function, typically the squared error
+ * between the predicted current and the reference current. This approach offers
+ * very fast dynamic response and handles multivariable control and constraints
+ * intuitively.
+ * The controller uses the discretized PMSM voltage equations to predict the
+ * current at the next time step k+1:
+ * @f[ \mathbf{i}(k+1) = \mathbf{A}(\omega_e) \mathbf{i}(k) + \mathbf{B} \mathbf{u}(k) + \mathbf{E}(\omega_e) @f] 
+ * A cost function is then evaluated for each possible voltage vector @f( \mathbf{u}_j @f):
+ * @f[ J_j = || \mathbf{i}_{ref}(k+1) - \mathbf{i}_{pred, j}(k+1) ||^2 @f]
+ * The voltage vector @f( \mathbf{u}_j @f) that minimizes J is selected and applied.
  * @{
  */
 
@@ -173,7 +170,9 @@ GMP_STATIC_INLINE uint8_t ctl_get_mpc_optimal_vector_index(const ctl_mpc_control
     return mpc->optimal_vector_index;
 }
 
-/** @} */ // end of MPC_CONTROLLER group
+/** 
+ * @} 
+ */ // end of MPC_CONTROLLER group
 
 #ifdef __cplusplus
 }

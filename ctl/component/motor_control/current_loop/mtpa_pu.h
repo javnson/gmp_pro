@@ -1,21 +1,9 @@
 /**
  * @file mtpa.h
  * @brief Implements a Maximum Torque Per Ampere (MTPA) current distributor.
- * @details This module is designed for salient-pole Permanent Magnet Synchronous
- * Motors (Ld != Lq). It takes a total torque-producing current command (Is)
- * and calculates the optimal d-axis (Id) and q-axis (Iq) current references
- * that produce the maximum torque for a given current magnitude. This improves
- * motor efficiency. Functions are provided for both SI and per-unit systems.
- *
+ * 
  * @version 0.3
  * @date 2025-08-06
- *
- * //tex:
- * // The calculation is based on the analytical solution for MTPA, which gives
- * // the optimal d-axis current (id) as a function of the total current (is):
- * // i_{d} = \frac{\psi_{f} - \sqrt{\psi_{f}^{2}+8\left(L_{d}-L_{q}\right)^{2}i_{s}^{2}}}{4\left(L_{d}-L_{q}\right)}
- * // The q-axis current is then calculated to maintain the current magnitude:
- * // i_q = \sqrt{i_s^2 - i_d^2}
  *
  */
 
@@ -36,6 +24,16 @@ extern "C"
 /**
  * @defgroup MTPA_DISTRIBUTOR_PU MTPA Current Distributor (Per Unit)
  * @brief Calculates optimal Id and Iq references for salient-pole PMSMs.
+ * @details This module is designed for salient-pole Permanent Magnet Synchronous
+ * Motors (Ld != Lq). It takes a total torque-producing current command (Is)
+ * and calculates the optimal d-axis (Id) and q-axis (Iq) current references
+ * that produce the maximum torque for a given current magnitude. This improves
+ * motor efficiency. Functions are provided for both SI and per-unit systems.
+ * The calculation is based on the analytical solution for MTPA, which gives
+ * the optimal d-axis current (id) as a function of the total current (is):
+ * @f[ i_{d} = \frac{\psi_{f} - \sqrt{\psi_{f}^{2}+8\left(L_{d}-L_{q}\right)^{2}i_{s}^{2}}}{4\left(L_{d}-L_{q}\right)} @f]
+ * The q-axis current is then calculated to maintain the current magnitude:
+ * @f[ i_q = \sqrt{i_s^2 - i_d^2} @f] 
  * @{
  */
 
@@ -188,7 +186,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_mtpa_iq_ref(const ctl_mtpa_distributor_t* mtpa
     return mtpa->iq_ref;
 }
 
-/** @} */ // end of MTPA_DISTRIBUTOR group
+/** 
+ * @} 
+ */ // end of MTPA_DISTRIBUTOR group
 
 #ifdef __cplusplus
 }

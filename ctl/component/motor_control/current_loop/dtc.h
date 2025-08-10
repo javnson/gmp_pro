@@ -1,23 +1,9 @@
 /**
  * @file pmsm_dtc.h
  * @brief Implements a classic Direct Torque Control (DTC) scheme for PMSM.
- * @details This module provides a complete DTC controller. Unlike FOC, DTC does
- * not use inner current loops or a PWM modulator. Instead, it estimates the
- * stator flux and electromagnetic torque and uses two hysteresis controllers
- * to keep them within desired bands. Based on the outputs of the hysteresis
- * controllers and the current sector of the stator flux vector, an optimal
- * voltage vector is selected from a switching table and applied directly to
- * the motor for the entire control period.
  *
  * @version 1.0
  * @date 2025-08-06
- *
- * //tex:
- * // The controller is based on the following estimations:
- * // 1. Stator Flux Estimation (Voltage Model):
- * //    \vec{\psi_s} = \int (\vec{v_s} - R_s \vec{i_s}) dt
- * // 2. Electromagnetic Torque Estimation:
- * //    T_e = \frac{3}{2} p (\psi_{s\alpha} i_{s\beta} - \psi_{s\beta} i_{s\alpha})
  *
  */
 
@@ -38,6 +24,18 @@ extern "C"
 /**
  * @defgroup DTC_CONTROLLER Direct Torque Controller (DTC)
  * @brief A high-performance controller based on direct flux and torque regulation.
+ * @details This module provides a complete DTC controller. Unlike FOC, DTC does
+ * not use inner current loops or a PWM modulator. Instead, it estimates the
+ * stator flux and electromagnetic torque and uses two hysteresis controllers
+ * to keep them within desired bands. Based on the outputs of the hysteresis
+ * controllers and the current sector of the stator flux vector, an optimal
+ * voltage vector is selected from a switching table and applied directly to
+ * the motor for the entire control period.
+ * The controller is based on the following estimations:
+ * 1. Stator Flux Estimation (Voltage Model):
+ *    @f[ \vec{\psi_s} = \int (\vec{v_s} - R_s \vec{i_s}) dt @f]
+ * 2. Electromagnetic Torque Estimation:
+ *    @f[ T_e = \frac{3}{2} p (\psi_{s\alpha} i_{s\beta} - \psi_{s\beta} i_{s\alpha}) @f]
  * @{
  */
 
@@ -173,7 +171,9 @@ GMP_STATIC_INLINE uint8_t ctl_get_dtc_vector_index(const ctl_dtc_controller_t* d
     return dtc->voltage_vector_index;
 }
 
-/** @} */ // end of DTC_CONTROLLER group
+/** 
+ * @} 
+ */ // end of DTC_CONTROLLER group
 
 #ifdef __cplusplus
 }

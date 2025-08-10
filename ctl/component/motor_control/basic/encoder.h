@@ -7,14 +7,12 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * This module provides functionalities for processing data from absolute, multi-turn,
- * and auto-counting encoders, as well as calculating motor speed from position data.
  */
 
 #ifndef _FILE_ENCODER_H_
 #define _FILE_ENCODER_H_
 
-#include "core/std/gmp_cport.h"
+//#include <core/std/gmp_cport.h>
 #include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <ctl/component/motor_control/basic/motor_universal_interface.h>
@@ -37,6 +35,8 @@ extern "C"
  * @defgroup MC_POS_ENCODER Absolute Position Encoder
  * @ingroup MC_ENCODER
  * @brief Handles single-turn absolute position encoders.
+ * @details This module provides functionalities for processing data from absolute, multi-turn,
+ * and auto-counting encoders, as well as calculating motor speed from position data.
  * @{
  */
 

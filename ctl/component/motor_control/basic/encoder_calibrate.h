@@ -2,9 +2,6 @@
  * @file encoder_calibrate.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Provides an algorithm to calibrate the offset of an absolute position encoder.
- * @details This module implements a state machine to find the electrical zero position
- * of a motor by applying a DC current to the d-axis and aligning the rotor.
- * The measured position at alignment is then saved as the encoder offset.
  * @version 0.2
  * @date 2024-09-30
  *
@@ -31,8 +28,11 @@ extern "C"
 
 /**
  * @defgroup EncoderCalibrate Absolute Position Encoder Calibration
- * @brief A module to automatically calibrate the electrical offset of a position encoder.
- *
+ * @brief A module to automatically calibrate the electrical offset of a position encoder. 
+ * @details This module implements a state machine to find the electrical zero position
+ * of a motor by applying a DC current to the d-axis and aligning the rotor.
+ * The measured position at alignment is then saved as the encoder offset.
+ * 
  * This routine aligns the motor's rotor to a known electrical angle (d-axis, or zero degrees)
  * and records the encoder's reading at that position as the offset.
  * @{

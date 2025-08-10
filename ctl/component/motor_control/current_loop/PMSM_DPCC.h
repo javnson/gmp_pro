@@ -1,23 +1,9 @@
 /**
  * @file pmsm_dpcc.h
  * @brief Implements a Dead-beat Predictive Current Controller (DPCC) for PMSM.
- * @details This module provides a model-based current controller that aims to
- * eliminate current error in a single control step (dead-beat). It uses the
- * discrete-time model of the PMSM to predict the current at the next time
- * step based on the previously applied voltage. It then calculates the
- * required voltage for the current step to make the predicted current match
- * the reference current at the next step. This approach can offer faster
- * dynamic response than traditional PI controllers.
- *
+ * @author YH He
  * @version 0.2
  * @date 2025-08-09
- *
- * //tex:
- * // The controller is based on the discretized PMSM voltage equations:
- * // i_d(k+1) = i_d(k)+\frac{T_s}{L_d}\left[u_d(k)-R_si_d (k)+ \omega_e L_qi_q(k)\right]
- * // i_q(k+1) = i_q(k)+\frac{T_s}{L_q}\left[ u_q(k)-R_si_q (k)- \omega_e (L_di_d(k)+\Psi_f)\right]
- * // By setting i_d(k+1) and i_q(k+1) to their reference values, we can solve for the required voltage u_d(k) and u_q(k).
- * // To compensate for the one-step digital delay, a prediction step is used.
  *
  */
 
@@ -39,6 +25,20 @@ extern "C"
 /**
  * @defgroup DPCC_CONTROLLER Dead-beat Predictive Current Controller
  * @brief A model-based current controller for fast dynamic response.
+ * @details This module provides a model-based current controller that aims to
+ * eliminate current error in a single control step (dead-beat). It uses the
+ * discrete-time model of the PMSM to predict the current at the next time
+ * step based on the previously applied voltage. It then calculates the
+ * required voltage for the current step to make the predicted current match
+ * the reference current at the next step. This approach can offer faster
+ * dynamic response than traditional PI controllers.
+ *
+ * The controller is based on the discretized PMSM voltage equations:
+ * @f[ i_d(k+1) = i_d(k)+\frac{T_s}{L_d}\left[u_d(k)-R_si_d (k)+ \omega_e L_qi_q(k)\right] @f]
+ * @f[ i_q(k+1) = i_q(k)+\frac{T_s}{L_q}\left[ u_q(k)-R_si_q (k)- \omega_e (L_di_d(k)+\Psi_f)\right] @f]
+ * By setting i_d(k+1) and i_q(k+1) to their reference values, we can solve for the required voltage u_d(k) and u_q(k).
+ * To compensate for the one-step digital delay, a prediction step is used.
+ *
  * @{
  */
 
@@ -169,7 +169,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_dpcc_uq(const ctl_dpcc_controller_t* dpcc)
     return dpcc->udq_out.dat[1];
 }
 
-/** @} */ // end of DPCC_CONTROLLER group
+/** 
+ * @} 
+ */ // end of DPCC_CONTROLLER group
 
 #ifdef __cplusplus
 }

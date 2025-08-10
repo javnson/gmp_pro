@@ -1,29 +1,9 @@
 /**
  * @file ladrc_current_controller.h
  * @brief Implements a Per-Unit Linear Active Disturbance Rejection Controller (LADRC) for a motor current loop.
- * @details This module provides a robust current controller based on the LADRC
- * strategy. It uses a Linear Extended State Observer (LESO) to estimate and
- * actively compensate for total system disturbances, including parameter
- * variations (R, L), back-EMF, and other unmodeled dynamics. This makes the
- * controller highly robust and easy to tune.
- *
- * The controller is designed to operate entirely within the per-unit system.
  *
  * @version 1.0
  * @date 2025-08-06
- *
- * //tex:
- * // Plant Model: \frac{di_{pu}}{dt} = b_0 u_{pu} + f_{pu}
- * // Where f_{pu} is the total disturbance and b_0 = \frac{\omega_{base}}{L_{pu}}
- * //
- * // LESO (z1 -> i_pu, z2 -> f_pu):
- * // e = z_1 - i_{pu}
- * // \dot{z_1} = z_2 - 2\omega_o e + b_0 u_{pu}
- * // \dot{z_2} = -\omega_o^2 e
- * //
- * // Control Law:
- * // u_0 = \omega_c (r_{pu} - z_1)
- * // u_{pu} = \frac{u_0 - z_2}{b_0}
  *
  */
 
@@ -42,6 +22,29 @@ extern "C"
 /**
  * @defgroup LADRC_CURRENT_PU LADRC Current Controller (Per-Unit)
  * @brief A robust, per-unit current controller using Active Disturbance Rejection.
+ * @details This module provides a robust current controller based on the LADRC
+ * strategy. It uses a Linear Extended State Observer (LESO) to estimate and
+ * actively compensate for total system disturbances, including parameter
+ * variations (R, L), back-EMF, and other unmodeled dynamics. This makes the
+ * controller highly robust and easy to tune.
+ *
+ * The controller is designed to operate entirely within the per-unit system.
+ * 
+ * Plant Model: @f[ \frac{di_{pu}}{dt} = b_0 u_{pu} + f_{pu} @f]
+ * Where @f( f_{pu} @f) is the total disturbance and @f( b_0 = \frac{\omega_{base}}{L_{pu}} @f)
+ * 
+ * LESO (z1 -> i_pu, z2 -> f_pu):
+ * @f[ 
+ * e = z_1 - i_{pu} \\
+ * \dot{z_1} = z_2 - 2\omega_o e + b_0 u_{pu} \\ 
+ * \dot{z_2} = -\omega_o^2 e \\ 
+ * @f]
+ * 
+ * Control Law:
+ * @f[
+ * u_0 = \omega_c (r_{pu} - z_1)
+ * u_{pu} = \frac{u_0 - z_2}{b_0}
+ * @f]
  * @{
  */
 

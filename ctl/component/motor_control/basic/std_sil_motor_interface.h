@@ -7,10 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * This file specifies the data structures used for communication between the
- * embedded controller and a simulation environment like Simulink. The use of
- * `#pragma pack(1)` ensures that the memory layout of these structures is
- * consistent across different platforms, preventing data corruption issues.
  */
 
 #ifndef _FILE_STD_SIL_MOTOR_INTERFACE_H_

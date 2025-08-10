@@ -2,14 +2,15 @@
  * @file acm_sensored_ctrl.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Implements a complete sensored Field-Oriented Control (FOC) for AC Induction Motors (ACM).
+ * @details  This file provides a comprehensive controller for AC induction motors, including
+ * current and speed control loops, coordinate transformations, and flux estimation.
+ * It is designed to be highly configurable through preprocessor macros.
+
  * @version 0.2
  * @date 2024-09-30
  *
  * @copyright Copyright GMP(c) 2024
  *
- * This file provides a comprehensive controller for AC induction motors, including
- * current and speed control loops, coordinate transformations, and flux estimation.
- * It is designed to be highly configurable through preprocessor macros.
  */
 
 #ifndef _FILE_ACM_SENSORED_CTRL_BARE_H_
@@ -40,19 +41,19 @@ extern "C"
  * @brief A complete Field-Oriented Controller for AC Induction Motors.
  *
  * @details
- * ### ACM Bare Controller Usage:
+ * ACM sensored Controller Usage:
  *
  * 1.  **Attach physical interfaces:**
  * - This task should be completed in a platform-specific file.
- * - Use `ctl_attach_acm_sensored_bare_output()` to attach the PWM interface.
- * - Use `ctl_attach_acm_sensored_bare_rotor_postion()` to attach the rotor position interface.
+ * - Use `ctl_attach_acm_sensored_output()` to attach the PWM interface.
+ * - Use `ctl_attach_acm_sensored_rotor_postion()` to attach the rotor position interface.
  * - Use `ctl_attach_mtr_adc_channels()` to attach ADC interfaces.
  * - Use `ctl_attach_mtr_position()` to attach the flux position encoder.
  * - Use `ctl_attach_mtr_velocity()` to attach the velocity encoder.
  *
  * 2.  **Initialize the controller structure:**
- * - Fill the `acm_sensored_bare_controller_init_t` structure with motor and controller parameters.
- * - Call `ctl_init_acm_sensored_bare_controller()` to initialize the controller entity.
+ * - Fill the `acm_sensored_controller_init_t` structure with motor and controller parameters.
+ * - Call `ctl_init_acm_sensored_controller()` to initialize the controller entity.
  *
  * 3.  **Select an operating mode and provide a control target:**
  * The controller supports the following modes:
@@ -113,12 +114,15 @@ extern "C"
 
 /**
  * @brief Selects the feedforward strategy (0 for manual, 1 for decoupling).
+ * This macro will be replaced by flag.
  */
 #ifndef MTR_CTRL_FEEDFORWARD_STRATEGY
 #define MTR_CTRL_FEEDFORWARD_STRATEGY (0)
 #endif
 
-/** @} */ // end of MC_ACM_CONFIG group
+/** 
+ * @} 
+ */ // end of MC_ACM_CONFIG group
 
 /*---------------------------------------------------------------------------*/
 /* Data Structures                                                           */
@@ -143,8 +147,8 @@ typedef struct _tag_acm_sensored_bare_controller
 
     // --- Controller Components ---
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
-    discrete_pid_t current_ctrl[2]; /**< @brief Discrete PID controllers for d and q axis currents. */
-    ctl_tracking_discrete_pid_t spd_ctrl;  /**< @brief Discrete tracking PID controller for speed. */
+    discrete_pid_t current_ctrl[2];       /**< @brief Discrete PID controllers for d and q axis currents. */
+    ctl_tracking_discrete_pid_t spd_ctrl; /**< @brief Discrete tracking PID controller for speed. */
 #else
     ctl_pid_t current_ctrl[2];              /**< @brief Continuous PID controllers for d and q axis currents. */
     ctl_tracking_continuous_pid_t spd_ctrl; /**< @brief Continuous tracking PID controller for speed. */
@@ -216,7 +220,9 @@ typedef struct _tag_acm_sensored_bare_controller_init
 
 } acm_sensored_bare_controller_init_t;
 
-/** @} */ // end of MC_ACM_STRUCTS group
+/** 
+ * @} 
+ */ // end of MC_ACM_STRUCTS group
 
 /*---------------------------------------------------------------------------*/
 /* Function Prototypes and Inline Implementations                            */
@@ -327,9 +333,9 @@ GMP_STATIC_INLINE void ctl_step_acm_sensored_ctrl(acm_sensored_bare_controller_t
         {
             ctrl->idq_set.dat[phase_d] = ctrl->idq_ff.dat[phase_d];
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
-            ctrl->idq_set.dat[phase_q] = ctl_step_tracking_pid(&ctrl->spd_ctrl, ctrl->speed_set,
-                                                                     ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
-                                         ctrl->idq_ff.dat[phase_q];
+            ctrl->idq_set.dat[phase_q] =
+                ctl_step_tracking_pid(&ctrl->spd_ctrl, ctrl->speed_set, ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
+                ctrl->idq_ff.dat[phase_q];
 #else
             ctrl->idq_set.dat[phase_q] = ctl_step_tracking_continuous_pid(&ctrl->spd_ctrl, ctrl->speed_set,
                                                                           ctl_get_mtr_velocity(&ctrl->mtr_interface)) +
@@ -490,8 +496,13 @@ GMP_STATIC_INLINE void ctl_set_acm_sensored_ctrl_speed(acm_sensored_bare_control
     ctrl->speed_set = spd;
 }
 
-/** @} */ // end of MC_ACM_FUNCTIONS group
-/** @} */ // end of MC_ACM_SENSORED_CONTROLLER group
+/** 
+ * @} 
+ */ // end of MC_ACM_FUNCTIONS group
+
+/** 
+ * @} 
+ */ // end of MC_ACM_SENSORED_CONTROLLER group
 
 #ifdef __cplusplus
 }

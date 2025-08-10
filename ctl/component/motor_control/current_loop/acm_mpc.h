@@ -1,23 +1,9 @@
 /**
  * @file acm_mpc.h
  * @brief Implements a Finite Control Set Model Predictive Controller (FCS-MPC) for ACM.
- * @details This module provides an advanced model-based controller for AC Induction Motors.
- * It uses a discrete-time model of the ACM to predict the future state (stator currents
- * and rotor flux) for each of the 8 possible inverter voltage vectors. It then
- * selects the vector that minimizes a cost function, which penalizes both the
- * current tracking error and any deviation from the desired rotor flux magnitude.
- * This provides very fast torque and flux response.
  *
  * @version 1.0
  * @date 2025-08-07
- *
- * //tex:
- * // The controller uses a discretized ACM model to predict the next state:
- * // \mathbf{x}(k+1) = \mathbf{A}_d(\omega_r) \mathbf{x}(k) + \mathbf{B}_d \mathbf{u}(k)
- * // where the state vector is \mathbf{x} = [\mathbf{i}_s, \mathbf{\psi}_r]^T.
- * // A cost function is evaluated for each possible voltage vector \mathbf{u}_j:
- * // J_j = || \mathbf{i}_{s,ref}(k+1) - \mathbf{i}_{s,pred,j}(k+1) ||^2 + \lambda (\psi_{r,ref}^2 - ||\mathbf{\psi}_{r,pred,j}(k+1)||^2)^2
- * // The voltage vector \mathbf{u}_j that minimizes J is selected and applied.
  *
  */
 
@@ -38,6 +24,18 @@ extern "C"
 
 /**
  * @defgroup MPC_CONTROLLER_ACM FCS-MPC Current & Flux Controller for ACM
+ * @details This module provides an advanced model-based controller for AC Induction Motors.
+ * It uses a discrete-time model of the ACM to predict the future state (stator currents
+ * and rotor flux) for each of the 8 possible inverter voltage vectors. It then
+ * selects the vector that minimizes a cost function, which penalizes both the
+ * current tracking error and any deviation from the desired rotor flux magnitude.
+ * This provides very fast torque and flux response.
+ * The controller uses a discretized ACM model to predict the next state:
+ * @f[ \mathbf{x}(k+1) = \mathbf{A}_d(\omega_r) \mathbf{x}(k) + \mathbf{B}_d \mathbf{u}(k) @f]
+ * where the state vector is @f( \mathbf{x} = [\mathbf{i}_s, \mathbf{\psi}_r]^T @f).
+ * A cost function is evaluated for each possible voltage vector \mathbf{u}_j:
+ * @f[ J_j = || \mathbf{i}_{s,ref}(k+1) - \mathbf{i}_{s,pred,j}(k+1) ||^2 + \lambda (\psi_{r,ref}^2 - ||\mathbf{\psi}_{r,pred,j}(k+1)||^2)^2 @f]
+ * The voltage vector @f( \mathbf{u}_j @f) that minimizes J is selected and applied.
  * @brief A model-predictive controller for fast torque and flux response in ACMs.
  * @{
  */
@@ -50,16 +48,7 @@ extern "C"
  * @brief Table of the 8 standard voltage vectors in the alpha-beta frame.
  * @details The values are normalized and must be scaled by (2/3 * Udc).
  */
-static const ctl_vector2_t MPC_VOLTAGE_VECTORS_NORMALIZED_ACM[8] = {
-    {{0.0f, 0.0f}},        // V0
-    {{1.0f, 0.0f}},        // V1
-    {{0.5f, 0.866025f}},   // V2
-    {{-0.5f, 0.866025f}},  // V3
-    {{-1.0f, 0.0f}},       // V4
-    {{-0.5f, -0.866025f}}, // V5
-    {{0.5f, -0.866025f}},  // V6
-    {{0.0f, 0.0f}}         // V7
-};
+extern const ctl_vector2_t MPC_VOLTAGE_VECTORS_NORMALIZED_ACM[8];
 
 /**
  * @brief Initialization parameters for the ACM MPC module.
@@ -117,28 +106,7 @@ typedef struct
  * @param[out] mpc  Pointer to the MPC structure.
  * @param[in]  init Pointer to the initialization parameters structure.
  */
-GMP_STATIC_INLINE void ctl_init_acm_mpc(ctl_acm_mpc_controller_t* mpc, const ctl_acm_mpc_init_t* init)
-{
-    mpc->optimal_vector_index = 0;
-    ctl_vector2_clear(&mpc->psi_r_est);
-    mpc->flux_ref_sq = 0.0f;
-    mpc->lambda_flux = 50.0f; // Default weighting factor, should be tuned.
-    mpc->Ts = 1.0f / (ctrl_gt)init->f_ctrl;
-    mpc->pole_pairs = (ctrl_gt)init->pole_pairs;
-
-    // Pre-calculate coefficients for the discrete-time model to optimize the step function.
-    // Based on Euler discretization of the continuous-time ACM model in the stationary frame.
-    parameter_gt sigma = 1.0f - (init->Lm * init->Lm) / (init->Ls * init->Lr);
-    parameter_gt Tr = init->Lr / init->Rr;
-    parameter_gt sigma_ls = sigma * init->Ls;
-
-    mpc->c_iss = 1.0f - mpc->Ts * (init->Rs / sigma_ls + (1.0f - sigma) / (sigma * Tr));
-    mpc->c_is_u = mpc->Ts / sigma_ls;
-    mpc->c_is_pr = mpc->Ts * init->Lm / (sigma_ls * init->Lr * Tr);
-    mpc->c_is_pr_w = mpc->Ts * init->Lm / (sigma_ls * init->Lr);
-    mpc->c_pr_is = mpc->Ts * init->Lm / Tr;
-    mpc->c_pr_pr = 1.0f - mpc->Ts / Tr;
-}
+void ctl_init_acm_mpc(ctl_acm_mpc_controller_t* mpc, const ctl_acm_mpc_init_t* init);
 
 /**
  * @brief Sets the reference magnitude for the rotor flux.
@@ -171,7 +139,7 @@ GMP_STATIC_INLINE void ctl_step_acm_mpc(ctl_acm_mpc_controller_t* mpc, const ctl
     // 1. Transform current reference from d-q frame to stationary alpha-beta frame
     // The d-q frame is aligned with the estimated rotor flux from the previous step.
     ctl_vector2_t flux_phasor = ctl_vector2_normalize(mpc->psi_r_est);
-    ctl_ct_ipark_vec(idq_ref, &flux_phasor, &is_ab_ref);
+    ctl_ct_ipark2(idq_ref, &flux_phasor, &is_ab_ref);
 
     // 2. Iterate through all 8 possible voltage vectors
     for (uint8_t i = 0; i < 8; ++i)
@@ -224,7 +192,9 @@ GMP_STATIC_INLINE uint8_t ctl_get_acm_mpc_optimal_vector_index(const ctl_acm_mpc
     return mpc->optimal_vector_index;
 }
 
-/** @} */ // end of MPC_CONTROLLER_ACM group
+/** 
+ * @} 
+ */ // end of MPC_CONTROLLER_ACM group
 
 #ifdef __cplusplus
 }

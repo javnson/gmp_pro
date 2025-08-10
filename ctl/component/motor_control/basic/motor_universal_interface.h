@@ -304,6 +304,19 @@ GMP_STATIC_INLINE void ctl_attach_mtr_torque(mtr_ift* mtr, torque_ift* torque)
     mtr->torque = torque;
 }
 
+/*---------------------------------------------------------------------------*/
+/* Current Controller interface                                              */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief Universal motor current interface structure.
+ */
+typedef struct _tag_universal_mtr_current_if_t
+{
+    vector2_gt* idq;
+} mtr_current_ift;
+
+
 /** @} */ // end of MC_UNIVERSAL_IF group
 
 #ifdef __cplusplus

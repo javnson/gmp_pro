@@ -1,21 +1,9 @@
 /**
  * @file motor_current_ctrl.h
  * @brief Implements a generic FOC (Field-Oriented Control) current controller.
- * @details This module forms the core of an FOC system. It takes three-phase
- * current measurements, a rotor angle, and d-q axis current references,
- * then performs the necessary coordinate transformations (Clarke, Park) and
- * PI control to generate the required d-q axis voltages. These voltages are
- * then transformed back to the stationary frame (Inverse Park) to be used by
- * a PWM modulator.
  *
  * @version 0.3
  * @date 2025-08-06
- *
- * //tex:
- * // The controller implements the PMSM voltage equations in the d-q frame:
- * // v_d = R_s i_d + L_d \frac{di_d}{dt} - \omega_e L_q i_q
- * // v_q = R_s i_q + L_q \frac{di_q}{dt} + \omega_e L_d i_d + \omega_e \psi_f
- * // The PI controllers regulate i_d and i_q to their reference values.
  *
  */
 
@@ -37,6 +25,16 @@ extern "C"
 /**
  * @defgroup CURRENT_CONTROLLER FOC Current Controller
  * @brief The core current regulation loop for an FOC motor controller.
+ * @details This module forms the core of an FOC system. It takes three-phase
+ * current measurements, a rotor angle, and d-q axis current references,
+ * then performs the necessary coordinate transformations (Clarke, Park) and
+ * PI control to generate the required d-q axis voltages. These voltages are
+ * then transformed back to the stationary frame (Inverse Park) to be used by
+ * a PWM modulator.
+ * The controller implements the PMSM voltage equations in the d-q frame:
+ * @f[ v_d = R_s i_d + L_d \frac{di_d}{dt} - \omega_e L_q i_q @f]
+ * @f[ v_q = R_s i_q + L_q \frac{di_q}{dt} + \omega_e L_d i_d + \omega_e \psi_f @f]
+ * The PI controllers regulate i_d and i_q to their reference values.
  * @{
  */
 
@@ -185,7 +183,9 @@ GMP_STATIC_INLINE void ctl_disable_current_controller(ctl_current_controller_t* 
     cc->flag_enable_controller = 0;
 }
 
-/** @} */ // end of CURRENT_CONTROLLER group
+/** 
+ *@} 
+ */ // end of CURRENT_CONTROLLER group
 
 #ifdef __cplusplus
 }

@@ -27,6 +27,19 @@ extern "C"
 /**
  * @defgroup MC_VOLTAGE_CALCULATOR Voltage Calculator
  * @brief Calculates AC phase voltages from DC bus voltage and SVPWM signals.
+ * @details The phase voltages are calculated as:
+ * @f[
+ * U_x = \frac{U_{bus}}{\sqrt{3}} \cdot (2 \cdot T_x - T_y - T_z)
+ * @f]
+ * where $$T_x, T_y, T_z$$ are the SVPWM timings.
+ *
+ * The Clarke transformation is:
+ * @f[
+ * U_\alpha = U_a \\
+ * U_\beta = \frac{1}{\sqrt{3}} (U_a + 2 \cdot U_b)
+ * @f]
+ *
+
  * @{
  */
 
@@ -52,18 +65,6 @@ typedef struct _tag_voltage_calculator
  * This function reconstructs the applied phase voltages based on the SVPWM modulation
  * signals and the measured DC bus voltage. It then performs a Clarke transformation
  * to obtain the alpha and beta components.
- *
- * The phase voltages are calculated as:
- * @f[
- * U_x = \frac{U_{bus}}{\sqrt{3}} \cdot (2 \cdot T_x - T_y - T_z)
- * @f]
- * where $$T_x, T_y, T_z$$ are the SVPWM timings.
- *
- * The Clarke transformation is:
- * @f[
- * U_\alpha = U_a \\
- * U_\beta = \frac{1}{\sqrt{3}} (U_a + 2 \cdot U_b)
- * @f]
  *
  * @param[in,out] volt_calc Pointer to the voltage calculator structure. The function
  * reads `ubus` and `svpwm_uabc` and writes the results to `uabc`, `u_alpha`, and `u_beta`.

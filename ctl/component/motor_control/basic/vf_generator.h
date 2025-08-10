@@ -200,9 +200,9 @@ typedef struct _tag_const_vf
      * @brief The constant V/F ratio (Volts per Hertz).
      * @details This parameter defines the proportional relationship between voltage and frequency.
      * The underlying electromagnetic principle is:
-     * //tex:E = 4.44 \cdot N \cdot \Phi \cdot f = V_{ratio} \cdot f
-     * where @f$ E @f$ is the EMF, @f$ N @f$ is the number of turns, @f$ \Phi @f$ is the magnetic flux,
-     * and @f$ f @f$ is the frequency.
+     * @f[ E = 4.44 \cdot N \cdot \Phi \cdot f = V_{ratio} \cdot f @f]
+     * where @f( E @f) is the EMF, @f( N @f) is the number of turns, @f( \Phi @f) is the magnetic flux,
+     * and @f( f @f) is the frequency.
      */
     ctrl_gt v_over_f;
 
@@ -278,7 +278,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_const_vf(ctl_const_vf_controller* ctrl)
  */
 void ctl_set_const_vf_target_freq(ctl_const_vf_controller* ctrl, parameter_gt target_freq, parameter_gt isr_freq);
 
-/** @} */ // end of ConstVFGen group
+/** 
+ * @} 
+ */ // end of ConstVFGen group
 
 #ifdef __cplusplus
 }

@@ -1,20 +1,9 @@
 /**
  * @file pmsm_mtpv.h
  * @brief Implements a Maximum Torque Per Voltage (MTPV) / Field Weakening controller.
- * @details This module calculates the optimal d-q axis current references to achieve
- * the maximum possible torque when the motor operates above its base speed and
- * is limited by the available bus voltage. It injects a negative d-axis
- * current to counteract the back-EMF, thus "weakening" the field and allowing
- * for higher speed operation. This is commonly known as Field Weakening control.
  *
  * @version 0.1
  * @date 2025-08-06
- *
- * //tex:
- * // The MTPV algorithm operates on the voltage limit circle defined by:
- * // U_{max}^2 = v_d^2 + v_q^2 = (R_s i_d - \omega_e L_q i_q)^2 + (R_s i_q + \omega_e L_d i_d + \omega_e \psi_f)^2
- * // The optimal d-axis current (id) for field weakening is calculated as:
- * // i_d = \frac{\omega_e^2 L_d \psi_f - \sqrt{(\omega_e^2 L_d \psi_f)^2 - ((\omega_e L_d)^2 + R_s^2)((\omega_e \psi_f)^2 - U_{max}^2)}}{(\omega_e L_d)^2 + R_s^2}
  *
  */
 
@@ -35,6 +24,15 @@ extern "C"
 /**
  * @defgroup MTPV_CONTROLLER MTPV / Field Weakening Controller
  * @brief Calculates optimal Id and Iq references for high-speed operation.
+ * @details This module calculates the optimal d-q axis current references to achieve
+ * the maximum possible torque when the motor operates above its base speed and
+ * is limited by the available bus voltage. It injects a negative d-axis
+ * current to counteract the back-EMF, thus "weakening" the field and allowing
+ * for higher speed operation. This is commonly known as Field Weakening control.
+ * The MTPV algorithm operates on the voltage limit circle defined by:
+ * @f[ U_{max}^2 = v_d^2 + v_q^2 = (R_s i_d - \omega_e L_q i_q)^2 + (R_s i_q + \omega_e L_d i_d + \omega_e \psi_f)^2 @f]
+ * The optimal d-axis current (id) for field weakening is calculated as:
+ * @f[ i_d = \frac{\omega_e^2 L_d \psi_f - \sqrt{(\omega_e^2 L_d \psi_f)^2 - ((\omega_e L_d)^2 + R_s^2)((\omega_e \psi_f)^2 - U_{max}^2)}}{(\omega_e L_d)^2 + R_s^2} @f]
  * @{
  */
 
@@ -147,7 +145,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_mtpv_iq_ref(const ctl_mtpv_controller_t* mtpv)
     return mtpv->iq_ref;
 }
 
-/** @} */ // end of MTPV_CONTROLLER group
+/** 
+ * @} 
+ */ // end of MTPV_CONTROLLER group
 
 #ifdef __cplusplus
 }

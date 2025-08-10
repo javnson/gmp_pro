@@ -7,9 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * This module provides functions for calculating and generating SVPWM signals
- * based on stationary reference frame voltages ($$U_\alpha$$, $$U_\beta$$). It handles the
- * transformation from the alpha-beta frame to three-phase PWM duty cycles.
  */
 
 #ifndef _FILE_SVPWM_H_
@@ -29,9 +26,9 @@ extern "C"
  * @brief This module contains the structures and functions for SVPWM calculations.
  *
  * The SVPWM module converts a two-phase orthogonal stationary reference frame
- * vector ($$U_\alpha$$, $$U_\beta$$) into three-phase PWM signals.
+ * vector @f(U_\alpha, U_\beta)@f) into three-phase PWM signals.
  * The process is typically divided into two stages:
- * 1.  **Calculation Stage**: Transforms the ($$U_\alpha$$, $$U_\beta$$) vector into intermediate
+ * 1.  **Calculation Stage**: Transforms the @f(U_\alpha, U_\beta)@f) vector into intermediate
  * duty cycle timings (Ta, Tb, Tc).
  * 2.  **Modulation Stage**: Converts the intermediate timings into final PWM
  * compare values for the timer peripheral.
@@ -318,7 +315,9 @@ GMP_STATIC_INLINE void ctl_svpwm_inv_modulation(ctl_svpwm_channel_t* svpwm)
     }
 }
 
-/** @} */ // end of MC_SVPWM group
+/** 
+ * @} 
+ */ // end of MC_SVPWM group
 
 #ifdef __cplusplus
 }
