@@ -16,7 +16,7 @@
 #ifndef _FILE_KNOB_POS_LOOP_H_
 #define _FILE_KNOB_POS_LOOP_H_
 
-#include <ctl/component/intrinsic/discrete/divider.h>
+#include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl/component/motor_control/motion/basic_pos_loop_p.h>
 
 #ifdef __cplusplus
@@ -70,9 +70,8 @@ typedef struct _tag_pmsm_knob_pos_loop
 
 } ctl_pmsm_knob_pos_loop;
 
-void ctl_init_knob_pos_loop(ctl_pmsm_knob_pos_loop* knob);
-void ctl_setup_knob_pos_loop(ctl_pmsm_knob_pos_loop* knob, ctrl_gt kp, ctrl_gt speed_limit, uint16_t knob_step,
-                             uint32_t division);
+void ctl_init_knob_pos_loop(ctl_pmsm_knob_pos_loop* knob, ctrl_gt kp, ctrl_gt speed_limit, uint16_t knob_step,
+                            uint32_t division);
 
 /**
  * @brief Executes one step of the haptic knob control logic.
@@ -85,7 +84,7 @@ GMP_STATIC_INLINE void ctl_step_knob_pos_loop(ctl_pmsm_knob_pos_loop* knob)
     if (ctl_step_divider(&knob->div))
     {
         // Calculate the angular width of a single detent step.
-        ctrl_gt step_width = GMP_CONST_1 / knob->knob_step;
+        ctrl_gt step_width = CTL_CTRL_CONST_1 / knob->knob_step;
         ctrl_gt half_step_width = step_width / 2;
 
         // Determine the index of the current detent based on the actual angle.
@@ -104,7 +103,7 @@ GMP_STATIC_INLINE void ctl_step_knob_pos_loop(ctl_pmsm_knob_pos_loop* knob)
         delta_pos = (delta_pos < -2) ? -2 : delta_pos;
 
         // Combine integer and fractional parts into a single error value.
-        ctrl_gt position_error = GMP_CONST_2_PI * (ctrl_gt)delta_pos + knob->target_ang - knob->actual_ang;
+        ctrl_gt position_error = CTL_CTRL_CONST_2_PI * (ctrl_gt)delta_pos + knob->target_ang - knob->actual_ang;
 
         // Apply proportional gain.
         knob->speed_ref = ctl_mul(knob->kp, position_error);
@@ -138,11 +137,11 @@ GMP_STATIC_INLINE void ctl_input_knob_pos_via_only_ang(ctl_pmsm_knob_pos_loop* k
     knob->actual_ang = actual_ang;
 
     // Correct the multi-turn count based on angle wrap-around.
-    if (delta_ang < -GMP_CONST_1_OVER_2)
+    if (delta_ang < -CTL_CTRL_CONST_1_OVER_2)
     {
         knob->actual_pos += 1; // Forward wrap
     }
-    else if (delta_ang > GMP_CONST_1_OVER_2)
+    else if (delta_ang > CTL_CTRL_CONST_1_OVER_2)
     {
         knob->actual_pos -= 1; // Backward wrap
     }

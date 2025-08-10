@@ -30,17 +30,17 @@ extern "C"
  * This observer is based on the voltage model in the stationary (¦Á-¦Â) reference frame.
  *
  * **Stator Flux Estimation (using a Low-Pass Filter):**
- * //tex: \psi_{s(\alpha\beta)} = \frac{1}{s + \omega_c}(V_{s(\alpha\beta)} - R_s I_{s(\alpha\beta)})
- * @f$ \vec{\psi}_s = \frac{1}{s + \omega_c}(\vec{V}_s - R_s \vec{I}_s) @f$
+ * @f[ \psi_{s(\alpha\beta)} = \frac{1}{s + \omega_c}(V_{s(\alpha\beta)} - R_s I_{s(\alpha\beta)}) @f]
+ * @f[ \vec{\psi}_s = \frac{1}{s + \omega_c}(\vec{V}_s - R_s \vec{I}_s) @f]
  *
  * **Rotor Flux Calculation:**
- * //tex: \psi_{r(\alpha\beta)} = \frac{L_r}{L_m}(\psi_{s(\alpha\beta)} - \sigma L_s I_{s(\alpha\beta)})
- * @f$ \vec{\psi}_r = \frac{L_r}{L_m}(\vec{\psi}_s - \sigma L_s \vec{I}_s) @f$
- * where @f$ \sigma = 1 - \frac{L_m^2}{L_s L_r} @f$
+ * @f[ \psi_{r(\alpha\beta)} = \frac{L_r}{L_m}(\psi_{s(\alpha\beta)} - \sigma L_s I_{s(\alpha\beta)}) @f]
+ * @f[ \vec{\psi}_r = \frac{L_r}{L_m}(\vec{\psi}_s - \sigma L_s \vec{I}_s) @f]
+ * where @f[ \sigma = 1 - \frac{L_m^2}{L_s L_r} @f]
  *
  * **Torque Equation:**
- * //tex: T_e = \frac{3}{2}P \frac{L_m}{L_r} (\psi_{r\alpha} i_{s\beta} - \psi_{r\beta} i_{s\alpha})
- * @f$ T_e = \frac{3}{2}P \frac{L_m}{L_r} (\psi_{r\alpha} i_{s\beta} - \psi_{r\beta} i_{s\alpha}) @f$
+ * @f[ T_e = \frac{3}{2}P \frac{L_m}{L_r} (\psi_{r\alpha} i_{s\beta} - \psi_{r\beta} i_{s\alpha}) @f]
+ * @f[ T_e = \frac{3}{2}P \frac{L_m}{L_r} (\psi_{r\alpha} i_{s\beta} - \psi_{r\beta} i_{s\alpha}) @f]
  *
  */
 
@@ -85,26 +85,6 @@ typedef struct _tag_im_fo_t
 /**
  * @brief Initializes the IM flux observer object.
  * @param fo Pointer to the `im_fo_t` object.
- */
-GMP_STATIC_INLINE void ctl_init_im_fo(im_fo_t* fo)
-{
-    fo->psi_r.dat[0] = 0;
-    fo->psi_r.dat[1] = 0;
-    fo->psi_s.dat[0] = 0;
-    fo->psi_s.dat[1] = 0;
-    fo->psi_r_mag = 0;
-    fo->torque = 0;
-    fo->rs = 0;
-    fo->k_lpf = 0;
-    fo->k_ts = 0;
-    fo->k_rotor_flux = 0;
-    fo->k_sigma_ls = 0;
-    fo->k_torque = 0;
-}
-
-/**
- * @brief Sets up the parameters for the IM flux observer.
- * @param fo Pointer to the `im_fo_t` object.
  * @param rs_star Per-unit stator resistance.
  * @param ls_star Per-unit stator inductance.
  * @param lr_star Per-unit rotor inductance.
@@ -113,18 +93,8 @@ GMP_STATIC_INLINE void ctl_init_im_fo(im_fo_t* fo)
  * @param ts_s Controller sample time in seconds.
  * @param wc_rps Cutoff frequency for the low-pass filter integrator in rad/s.
  */
-GMP_STATIC_INLINE void ctl_setup_im_fo(im_fo_t* fo, ctrl_gt rs_star, ctrl_gt ls_star, ctrl_gt lr_star, ctrl_gt lm_star,
-                                       ctrl_gt pole_pairs, ctrl_gt ts_s, ctrl_gt wc_rps)
-{
-    fo->rs = rs_star;
-    fo->k_ts = ts_s;
-    fo->k_lpf = ctl_sub(GMP_CONST_1, ctl_mul(wc_rps, ts_s));
-
-    ctrl_gt sigma = ctl_sub(GMP_CONST_1, ctl_div(ctl_mul(lm_star, lm_star), ctl_mul(ls_star, lr_star)));
-    fo->k_sigma_ls = ctl_mul(sigma, ls_star);
-    fo->k_rotor_flux = ctl_div(lr_star, lm_star);
-    fo->k_torque = ctl_mul(ctl_mul(GMP_CONST_3_OVER_2, pole_pairs), ctl_div(lm_star, lr_star));
-}
+void ctl_init_im_fo(im_fo_t* fo, ctrl_gt rs_star, ctrl_gt ls_star, ctrl_gt lr_star, ctrl_gt lm_star, ctrl_gt pole_pairs,
+                    ctrl_gt ts_s, ctrl_gt wc_rps);
 
 /**
  * @brief Executes one step of the flux and torque observation for an IM.

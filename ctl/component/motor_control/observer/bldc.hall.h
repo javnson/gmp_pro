@@ -51,15 +51,7 @@ extern "C"
  * Index 0 is unused. The table maps Hall state [1, 2, 3, 4, 5, 6] to angles.
  * This corresponds to the standard 60-degree sector boundaries.
  */
-static const ctrl_gt HALL_STATE_TO_ANGLE_PU[7] = {
-    0.0f,        // Unused state 0
-    0.0f,        // State 1: 0 degrees
-    1.0f / 6.0f, // State 2: 60 degrees
-    2.0f / 6.0f, // State 3: 120 degrees
-    3.0f / 6.0f, // State 4: 180 degrees
-    4.0f / 6.0f, // State 5: 240 degrees
-    5.0f / 6.0f  // State 6: 300 degrees
-};
+extern const ctrl_gt HALL_STATE_TO_ANGLE_PU[7];
 
 /**
  * @brief Main structure for the BLDC Hall sensor estimator.
@@ -100,29 +92,7 @@ typedef struct
  */
 GMP_STATIC_INLINE void ctl_init_bldc_hall_estimator(ctl_bldc_hall_estimator_t* est, uint16_t pole_pairs,
                                                     parameter_gt timer_freq_hz, parameter_gt speed_base_rpm,
-                                                    parameter_gt speed_filter_fc_hz, parameter_gt isr_freq_hz)
-{
-    ctl_vector2_clear(&est->encif.position);
-    ctl_vector2_clear(&est->spdif.speed);
-    est->last_hall_state = 0;
-    est->last_capture_time = 0;
-    est->sector_time_delta = 0.0f;
-    est->estimated_speed_rad_per_tick = 0.0f;
-    est->coarse_angle_pu = 0.0f;
-
-    est->pole_pairs = (ctrl_gt)pole_pairs;
-    est->sector_rad = M_PI / 3.0f;
-
-    // Calculate speed filter coefficient
-    ctrl_gt wc = 2.0f * M_PI * (ctrl_gt)speed_filter_fc_hz;
-    ctrl_gt ts = 1.0f / (ctrl_gt)isr_freq_hz;
-    est->speed_filter_k = wc * ts / (1.0f + wc * ts);
-
-    // Calculate scale factor for converting rad/tick to p.u. speed
-    // p.u. speed = (rad/tick * timer_freq) / (base_rpm * 2*pi/60 * pole_pairs)
-    ctrl_gt base_speed_rad_s = (ctrl_gt)speed_base_rpm * M_2_PI / 60.0f;
-    est->ticks_to_pu_sf = (ctrl_gt)timer_freq_hz / (base_speed_rad_s * est->pole_pairs);
-}
+                                                    parameter_gt speed_filter_fc_hz, parameter_gt isr_freq_hz);
 
 /**
  * @brief Executes one step of the Hall sensor estimation.
@@ -170,7 +140,7 @@ GMP_STATIC_INLINE void ctl_step_bldc_hall_estimator(ctl_bldc_hall_estimator_t* e
 
     // Calculate the interpolated angle offset within the current sector
     ctrl_gt angle_offset_rad = (ctrl_gt)time_since_capture * est->estimated_speed_rad_per_tick;
-    ctrl_gt angle_offset_pu = angle_offset_rad / (2.0f * M_PI);
+    ctrl_gt angle_offset_pu = angle_offset_rad / (2.0f * CTL_CTRL_CONST_PI);
 
     // Add the offset to the coarse angle to get the fine angle
     ctrl_gt fine_elec_angle = est->coarse_angle_pu + angle_offset_pu;

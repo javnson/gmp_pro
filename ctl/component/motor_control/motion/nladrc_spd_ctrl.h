@@ -144,55 +144,9 @@ typedef struct _tag_nladrc_controller_t
  * @param[in] b0 Estimate of the control gain of the plant. This is a critical tuning parameter.
  * @param[in] alpha1 NLSEF nonlinear power for position error (typically 0.5-0.75).
  * @param[in] alpha2 NLSEF nonlinear power for velocity error (typically > 1, e.g., 1.5).
- * @param[in] delta NLSEF linear region width (e.g., 0.01).
  */
 void ctl_init_nladrc(ctl_nladrc_controller_t* adrc, parameter_gt fs, parameter_gt r, parameter_gt omega_o,
-                     parameter_gt omega_c, parameter_gt b0, parameter_gt alpha1, parameter_gt alpha2,
-                     parameter_gt delta)
-{
-    ctrl_gt h = 1.0f / fs;
-
-    // --- Key Point Analysis 1: Initialize Tracking Differentiator (TD) ---
-    // The role of the TD is to arrange a smooth transition for a given input v(t) while providing its differential signal.
-    // v1(k) -> tracks v(t)
-    // v2(k) -> tracks the derivative of v(t)
-    // 'r' is the speed factor that determines the tracking speed. A larger 'r' means faster tracking but may introduce overshoot.
-    adrc->td.x1 = 0.0f;
-    adrc->td.x2 = 0.0f;
-    adrc->td.h = h;
-    adrc->td.r = r;
-
-    // --- Key Point Analysis 2: Initialize Extended State Observer (ESO) ---
-    // The ESO is the core of ADRC. It treats the system as an integrator chain model.
-    // z1 -> tracks the system output y (e.g., motor speed)
-    // z2 -> tracks the derivative of y (e.g., motor acceleration)
-    // z3 -> tracks the "total disturbance" f, which includes all internal and external uncertainties like load, friction, parameter variations, etc.
-    // The observer bandwidth 'omega_o' determines the ESO's response speed and noise immunity. Higher bandwidth means faster tracking but more sensitivity to noise.
-    // The observer gains (beta) are typically configured based on the bandwidth omega_o.
-    adrc->eso.z1 = 0.0f;
-    adrc->eso.z2 = 0.0f;
-    adrc->eso.z3 = 0.0f;
-    adrc->eso.h = h;
-    adrc->eso.b0 = b0; // b0 is the estimate of the plant's control gain, a critical tuning parameter.
-    adrc->eso.beta01 = 3.0f * omega_o;
-    adrc->eso.beta02 = 3.0f * omega_o * omega_o;
-    adrc->eso.beta03 = omega_o * omega_o * omega_o;
-
-    // --- Key Point Analysis 3: Initialize Nonlinear State Error Feedback (NLSEF) ---
-    // NLSEF generates the control signal based on the error between the TD's output (target trajectory) and the ESO's estimates (actual states).
-    // The controller bandwidth 'omega_c' determines the closed-loop response speed.
-    // Kp and Kd are typically configured based on the bandwidth omega_c.
-    // alpha1, alpha2, and delta are parameters for the nonlinear fal() function, giving the controller the characteristic of "high gain for small errors, low gain for large errors".
-    adrc->nlsef.kp = omega_c * omega_c;
-    adrc->nlsef.kd = 2.0f * omega_c;
-    adrc->nlsef.alpha1 = alpha1;
-    adrc->nlsef.alpha2 = alpha2;
-    adrc->nlsef.delta = h * omega_c; // delta can also be configured automatically based on the controller bandwidth.
-
-    adrc->output = 0.0f;
-    adrc->out_max = 1.0f; // Default limits
-    adrc->out_min = -1.0f;
-}
+                     parameter_gt omega_c, parameter_gt b0, parameter_gt alpha1, parameter_gt alpha2);
 
 /**
  * @brief Sets the output limits for the NLADRC controller.

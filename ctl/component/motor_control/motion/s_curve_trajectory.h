@@ -45,13 +45,6 @@ extern "C"
 // Type Defines & Macros
 //================================================================================
 
-#ifndef GMP_STATIC_INLINE
-#define GMP_STATIC_INLINE static inline
-#endif
-
-// Define the standard control data type
-typedef float ctrl_gt;
-
 /**
  * @brief Defines the different states of the S-curve generation state machine.
  */
@@ -101,21 +94,7 @@ typedef struct
  * @param[in]  max_jerk The maximum jerk (rate of change of acceleration) desired.
  * @param[in]  initial_vel The initial output velocity of the planner.
  */
-GMP_STATIC_INLINE void ctl_init_s_curve(ctl_s_curve_planner_t* planner, ctrl_gt max_accel, ctrl_gt max_jerk,
-                                        ctrl_gt initial_vel)
-{
-    planner->max_accel = max_accel;
-    planner->max_jerk = max_jerk;
-    planner->state = SCURVE_STATE_IDLE;
-    planner->current_vel = initial_vel;
-    planner->current_accel = 0.0f;
-    planner->target_vel = initial_vel;
-    planner->last_target_vel = initial_vel;
-    planner->accel_target = 0.0f;
-    planner->accel_dir = 1.0f;
-    planner->const_accel_steps = 0;
-    planner->step_counter = 0;
-}
+void ctl_init_s_curve(ctl_s_curve_planner_t* planner, ctrl_gt max_accel, ctrl_gt max_jerk, ctrl_gt initial_vel);
 
 /**
  * @brief Resets the internal states of the planner to idle.

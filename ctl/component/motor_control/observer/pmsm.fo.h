@@ -29,16 +29,16 @@ extern "C"
  * This observer uses the following per-unit equations:
  *
  * **Flux Equations:**
- * //tex: \psi_\alpha^* = \omega_b L_s^* I_\alpha^* + \psi_{PM}^* \cos\theta
- * @f$ \psi_\alpha^* = \omega_b L_s^* I_\alpha^* + \psi_{PM}^* \cos\theta @f$
- * //tex: \psi_\beta^* = \omega_b L_s^* I_\beta^* + \psi_{PM}^* \sin\theta
- * @f$ \psi_\beta^* = \omega_b L_s^* I_\beta^* + \psi_{PM}^* \sin\theta @f$
- * //tex: \psi^* = (\psi_\alpha^{*\,2} + \psi_\beta^{*\,2})^{\frac{1}{2}}
- * @f$ \psi^* = \sqrt{(\psi_\alpha^*)^2 + (\psi_\beta^*)^2} @f$
+ * @f[ \psi_\alpha^* = \omega_b L_s^* I_\alpha^* + \psi_{PM}^* \cos\theta @f]
+ * @f[ \psi_\alpha^* = \omega_b L_s^* I_\alpha^* + \psi_{PM}^* \cos\theta @f]
+ * @f[ \psi_\beta^* = \omega_b L_s^* I_\beta^* + \psi_{PM}^* \sin\theta @f]
+ * @f[ \psi_\beta^* = \omega_b L_s^* I_\beta^* + \psi_{PM}^* \sin\theta @f]
+ * @f[ \psi^* = (\psi_\alpha^{*\,2} + \psi_\beta^{*\,2})^{\frac{1}{2}} @f]
+ * @f[ \psi^* = \sqrt{(\psi_\alpha^*)^2 + (\psi_\beta^*)^2} @f]
  *
  * **Torque Equation:**
- * //tex: T^* = \frac{1}{\psi_{PM}^*} (\psi_\alpha^* i_\beta^* - \psi_\beta^* i_\alpha^* )
- * @f$ T^* = \frac{1}{\psi_{PM}^*} (\psi_\alpha^* i_\beta^* - \psi_\beta^* i_\alpha^*) @f$
+ * @f[ T^* = \frac{1}{\psi_{PM}^*} (\psi_\alpha^* i_\beta^* - \psi_\beta^* i_\alpha^* ) @f]
+ * @f[ T^* = \frac{1}{\psi_{PM}^*} (\psi_\alpha^* i_\beta^* - \psi_\beta^* i_\alpha^*) @f]
  *
  */
 
@@ -76,39 +76,10 @@ typedef struct _tag_pmsm_fo_t
 /**
  * @brief Initializes the PMSM flux observer object.
  * @param fo Pointer to the `pmsm_fo_t` object.
- */
-GMP_STATIC_INLINE void ctl_init_pmsm_fo(pmsm_fo_t* fo)
-{
-    fo->flux.dat[0] = 0;
-    fo->flux.dat[1] = 0;
-    fo->flux_mag = 0;
-    fo->torque = 0;
-    fo->wb_ls = 0;
-    fo->psi_pm = 0;
-    fo->inv_psi_pm = 0;
-}
-
-/**
- * @brief Sets up the parameters for the PMSM flux observer.
- * @param fo Pointer to the `pmsm_fo_t` object.
  * @param wb_ls_star The per-unit stator inductance multiplied by the base electrical frequency (¦Øb * Ls*).
  * @param psi_pm_star The per-unit permanent magnet flux linkage (¦×_PM*).
  */
-GMP_STATIC_INLINE void ctl_setup_pmsm_fo(pmsm_fo_t* fo, ctrl_gt wb_ls_star, ctrl_gt psi_pm_star)
-{
-    fo->wb_ls = wb_ls_star;
-    fo->psi_pm = psi_pm_star;
-
-    // Pre-calculate the inverse for the torque calculation if psi_pm is not zero.
-    if (psi_pm_star != 0)
-    {
-        fo->inv_psi_pm = ctl_div(GMP_CONST_1, psi_pm_star);
-    }
-    else
-    {
-        fo->inv_psi_pm = 0;
-    }
-}
+void ctl_init_pmsm_fo(pmsm_fo_t* fo, ctrl_gt wb_ls_star, ctrl_gt psi_pm_star);
 
 /**
  * @brief Executes one step of the flux and torque observation.

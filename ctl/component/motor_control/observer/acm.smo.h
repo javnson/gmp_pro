@@ -111,40 +111,7 @@ typedef struct
  * @param[out] smo  Pointer to the SMO structure to initialize.
  * @param[in]  init Pointer to the structure containing initialization parameters.
  */
-GMP_STATIC_INLINE void ctl_init_acm_smo(ctl_acm_smo_t* smo, const ctl_acm_smo_init_t* init)
-{
-    // Clear all states
-    ctl_vector2_clear(&smo->encif.position);
-    smo->spdif.speed = 0.0f;
-    ctl_vector2_clear(&smo->i_s_est);
-    ctl_vector2_clear(&smo->psi_r_est);
-    ctl_vector2_clear(&smo->z);
-    smo->omega_e_est = 0.0f;
-    smo->theta_est = 0.0f;
-
-    // Initialize controllers
-    ctl_init_pid(&smo->pid_pll, init->pll_kp, init->pll_ki / init->f_ctrl, 0.0f);
-    ctl_init_lowpass_filter(&smo->filter_spd, init->speed_lpf_fc, 1.0f / init->f_ctrl);
-
-    // Store parameters
-    smo->k_slide = init->k_slide;
-    smo->pole_pairs = (ctrl_gt)init->pole_pairs;
-    smo->Ts = 1.0f / init->f_ctrl;
-
-    // Pre-calculate model coefficients for optimization
-    parameter_gt sigma = 1.0f - (init->Lm * init->Lm) / (init->Ls * init->Lr);
-    parameter_gt Tr = init->Lr / init->Rr;
-
-    smo->c1 = 1.0f / (sigma * init->Ls);
-    smo->c2 = (init->Rs / (sigma * init->Ls)) + ((1.0f - sigma) / (sigma * Tr));
-    smo->c3 = init->Lm / (sigma * init->Ls * Tr);
-    smo->c4 = init->Lm / (sigma * init->Ls);
-    smo->c5 = init->Lm / Tr;
-
-    // Calculate speed scaling factor
-    ctrl_gt base_speed_rad_s = (ctrl_gt)init->speed_base_rpm * M_2_PI / 60.0f;
-    smo->speed_pu_sf = 1.0f / base_speed_rad_s;
-}
+void ctl_init_acm_smo(ctl_acm_smo_t* smo, const ctl_acm_smo_init_t* init);
 
 /**
  * @brief Executes one step of the ACM SMO estimation.
@@ -181,14 +148,14 @@ GMP_STATIC_INLINE void ctl_step_acm_smo(ctl_acm_smo_t* smo, ctrl_gt u_alpha, ctr
     // 3. Process the estimated rotor flux through the PLL
     // 3a. Calculate the PLL error signal. This is the cross product of the estimated
     //     flux vector and a unit vector aligned with the estimated angle.
-    ctrl_gt pll_error =
-        -smo->psi_r_est.dat[0] * sinf(smo->theta_est * M_2_PI) + smo->psi_r_est.dat[1] * cosf(smo->theta_est * M_2_PI);
+    ctrl_gt pll_error = -smo->psi_r_est.dat[0] * sinf(smo->theta_est * CTL_CTRL_CONST_2_PI) +
+                        smo->psi_r_est.dat[1] * cosf(smo->theta_est * CTL_CTRL_CONST_2_PI);
 
     // 3b. PI controller generates the estimated electrical speed (rad/s).
     smo->omega_e_est = ctl_step_pid_ser(&smo->pid_pll, pll_error);
 
     // 3c. Integrate the speed to get the next estimated angle.
-    smo->theta_est += smo->omega_e_est * smo->Ts / M_2_PI;
+    smo->theta_est += smo->omega_e_est * smo->Ts / CTL_CTRL_CONST_2_PI;
     smo->theta_est = ctrl_mod_1(smo->theta_est); // Wrap angle to [0, 1.0)
 
     // 4. Update the output interfaces

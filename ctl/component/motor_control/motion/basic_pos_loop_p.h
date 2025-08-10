@@ -17,8 +17,7 @@
 #ifndef _FILE_BASIC_POS_LOOP_P_H_
 #define _FILE_BASIC_POS_LOOP_P_H_
 
-#include <ctl/component/intrinsic/discrete/divider.h>
-#include <ctl/math_block/gmp_math.h>
+#include <ctl/component/intrinsic/basic/divider.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -69,33 +68,11 @@ typedef struct
 /**
  * @brief Initializes the position controller structure to safe defaults.
  * @param[out] pc Pointer to the position controller structure.
- */
-GMP_STATIC_INLINE void ctl_init_pos_controller(ctl_pos_controller_t* pc)
-{
-    pc->kp = 0.0f;
-    pc->speed_limit = 0.0f;
-    pc->target_revs = 0;
-    pc->target_angle = 0.0f;
-    pc->actual_revs = 0;
-    pc->actual_angle = 0.0f;
-    pc->speed_ref = 0.0f;
-    ctl_set_divider(&pc->div, 1);
-}
-
-/**
- * @brief Sets up the parameters for the position controller.
- * @param[out] pc Pointer to the position controller structure.
  * @param[in]  kp Proportional gain.
  * @param[in]  speed_limit Maximum output speed reference.
  * @param[in]  division The frequency division factor for the controller execution.
  */
-GMP_STATIC_INLINE void ctl_setup_pos_controller(ctl_pos_controller_t* pc, ctrl_gt kp, ctrl_gt speed_limit,
-                                                uint32_t division)
-{
-    pc->kp = kp;
-    pc->speed_limit = fabsf(speed_limit);
-    ctl_set_divider(&pc->div, division);
-}
+void ctl_init_pos_controller(ctl_pos_controller_t* pc, parameter_gt kp, parameter_gt speed_limit, uint32_t division);
 
 /**
  * @brief Sets the target position for the controller.

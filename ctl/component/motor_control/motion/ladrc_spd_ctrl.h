@@ -50,16 +50,6 @@ extern "C"
 // Type Defines & Macros
 //================================================================================
 
-#ifndef GMP_STATIC_INLINE
-#define GMP_STATIC_INLINE static inline
-#endif
-
-#ifndef CTRL_GT_DEFINED
-#define CTRL_GT_DEFINED
-typedef float ctrl_gt;
-typedef float parameter_gt;
-#endif
-
 /**
  * @brief Main structure for the LADRC per-unit speed controller.
  */
@@ -93,34 +83,14 @@ typedef struct
  * @param[in]  H_s Inertia constant of the system (motor + load) in seconds.
  * @param[in]  sample_time_s The controller's sampling period in seconds.
  */
-GMP_STATIC_INLINE void ctl_init_ladrc_speed_pu(ctl_ladrc_speed_pu_t* ladrc, parameter_gt wc_rads, parameter_gt wo_rads,
-                                               parameter_gt Kt_pu, parameter_gt H_s, parameter_gt sample_time_s)
-{
-    ladrc->wc = wc_rads;
-    ladrc->wo = wo_rads;
-    ladrc->h = sample_time_s;
-
-    // Calculate the system gain b0
-    if (H_s > 1e-9f)
-    {
-        ladrc->b0 = Kt_pu / H_s;
-    }
-    else
-    {
-        ladrc->b0 = 0.0f; // Avoid division by zero
-    }
-
-    // Reset states
-    ladrc->z1 = 0.0f;
-    ladrc->z2 = 0.0f;
-    ladrc->u_out_pu = 0.0f;
-}
+void ctl_init_ladrc_speed_pu(ctl_ladrc_speed_pu_t* ladrc, parameter_gt wc_rads, parameter_gt wo_rads,
+                             parameter_gt Kt_pu, parameter_gt H_s, parameter_gt sample_time_s);
 
 /**
  * @brief Resets the internal states of the LADRC controller.
  * @param[out] ladrc Pointer to the LADRC controller structure.
  */
-GMP_STATIC_INLINE void ctl_reset_ladrc_speed_pu(ctl_ladrc_speed_pu_t* ladrc)
+GMP_STATIC_INLINE void ctl_clear_ladrc_speed_pu(ctl_ladrc_speed_pu_t* ladrc)
 {
     ladrc->z1 = 0.0f;
     ladrc->z2 = 0.0f;

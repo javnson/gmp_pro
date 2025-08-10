@@ -40,13 +40,6 @@ extern "C"
 // Type Defines & Macros
 //================================================================================
 
-#ifndef GMP_STATIC_INLINE
-#define GMP_STATIC_INLINE static inline
-#endif
-
-// Define the standard control data type
-typedef float ctrl_gt;
-
 /**
  * @brief Main structure for the trapezoidal trajectory planner.
  */
@@ -77,16 +70,7 @@ typedef struct
  * @param[in]  max_accel The maximum acceleration desired.
  * @param[in]  initial_pos The initial output position of the planner.
  */
-GMP_STATIC_INLINE void ctl_init_trap_planner(ctl_trap_planner_t* planner, ctrl_gt max_vel, ctrl_gt max_accel,
-                                             ctrl_gt initial_pos)
-{
-    planner->max_vel = fabsf(max_vel);
-    planner->max_accel = fabsf(max_accel);
-    planner->pos_deadband = 1e-4f; // Default deadband
-    planner->current_pos = initial_pos;
-    planner->current_vel = 0.0f;
-    planner->target_pos = initial_pos;
-}
+void ctl_init_trap_planner(ctl_trap_planner_t* planner, ctrl_gt max_vel, ctrl_gt max_accel, ctrl_gt initial_pos);
 
 /**
  * @brief Resets the internal states of the planner.

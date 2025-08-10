@@ -43,17 +43,6 @@ extern "C"
 // Type Defines & Macros
 //================================================================================
 
-#ifndef GMP_STATIC_INLINE
-#define GMP_STATIC_INLINE static inline
-#endif
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846f
-#endif
-
-// Define the standard control data type
-typedef float ctrl_gt;
-
 /**
  * @brief Main structure for the sinusoidal trajectory planner.
  */
@@ -80,15 +69,7 @@ typedef struct
  * @param[out] planner Pointer to the sinusoidal planner structure.
  * @param[in]  initial_pos The initial output position of the planner.
  */
-GMP_STATIC_INLINE void ctl_init_sin_planner(ctl_sin_planner_t* planner, ctrl_gt initial_pos)
-{
-    planner->current_pos = initial_pos;
-    planner->current_time = 0.0f;
-    planner->is_active = 0;
-    planner->start_pos = initial_pos;
-    planner->delta_pos = 0.0f;
-    planner->total_time = 0.0f;
-}
+void ctl_init_sin_planner(ctl_sin_planner_t* planner, ctrl_gt initial_pos);
 
 /**
  * @brief Resets the planner to an idle state at its current position.
@@ -150,8 +131,8 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sin_planner(ctl_sin_planner_t* planner, ctrl_
     {
         // Calculate position using the cycloidal formula
         ctrl_gt time_ratio = planner->current_time / planner->total_time;
-        ctrl_gt angle = 2.0f * M_PI * time_ratio;
-        ctrl_gt pos_fraction = time_ratio - (1.0f / (2.0f * M_PI)) * sinf(angle);
+        ctrl_gt angle = 2.0f * CTL_CTRL_CONST_PI * time_ratio;
+        ctrl_gt pos_fraction = time_ratio - (1.0f / (2.0f * CTL_CTRL_CONST_PI)) * sinf(angle);
 
         planner->current_pos = planner->start_pos + (planner->delta_pos * pos_fraction);
     }

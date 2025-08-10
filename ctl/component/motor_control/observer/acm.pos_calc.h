@@ -21,7 +21,6 @@
 #define _FILE_ACM_POS_CALC_H_
 
 #include <ctl/component/motor_control/basic/encoder.h>
-#include <ctl/math_block/gmp_math.h> // Assuming gmp_math provides ctl_mul, ctl_div etc.
 
 #ifdef __cplusplus
 extern "C"
