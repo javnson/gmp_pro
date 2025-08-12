@@ -2,15 +2,11 @@
  * @file saturation.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Provides standard and bipolar saturation (limiter) blocks.
- * @version 0.2
+ * @version 1,05
  * @date 2024-09-30
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements mathematical blocks for limiting signals.
- * It includes a standard saturation block that clamps a signal between an
- * upper and lower limit, and a bipolar saturation block that applies
- * different dead-zones or limits for positive and negative values.
  */
 #ifndef _SATURATION_H_
 #define _SATURATION_H_
@@ -25,6 +21,10 @@ extern "C"
 /**
  * @defgroup saturation_blocks Saturation (Limiter) Blocks
  * @brief A collection of signal limiting modules.
+ * @details This module implements mathematical blocks for limiting signals.
+ * It includes a standard saturation block that clamps a signal between an
+ * upper and lower limit, and a bipolar saturation block that applies
+ * different dead-zones or limits for positive and negative values.
  * @{
  */
 

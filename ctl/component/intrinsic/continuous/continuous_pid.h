@@ -2,15 +2,11 @@
  * @file continuous_pid.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Provides implementations for continuous-form discrete PID controllers.
- * @version 0.2
+ * @version 1.05
  * @date 2025-03-19
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file contains implementations for standard and anti-windup PID
- * controllers. The controllers are based on the continuous PID formula, discretized
- * using simple Euler methods. Both parallel and series forms are provided.
- * The anti-windup version uses a back-calculation method to prevent integrator windup.
  */
 
 #ifndef _CONTINUOUS_PID_H_
@@ -26,6 +22,11 @@ extern "C"
 /**
  * @defgroup continuous_pid_controllers Continuous-Form PID Controllers
  * @brief A library of discrete PID controllers based on the continuous-time formula.
+ * @details This module contains implementations for standard and anti-windup PID
+ * controllers. The controllers are based on the continuous PID formula, discretized
+ * using simple Euler methods. Both parallel and series forms are provided.
+ * The anti-windup version uses a back-calculation method to prevent integrator windup.
+ *
  * @{
  */
 

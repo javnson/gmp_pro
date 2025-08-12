@@ -8,7 +8,7 @@
 % input parameter
 % fis_file: provide the fis file path and name
 % dim input is a number tells the input variables dimention
-% range_input is a matrix tells the input variables' value range
+% range_input is a matrix tells the input variables value range
 % mash_input is a matrix tells how to segments these variables
 
 % warning output owns only one demension

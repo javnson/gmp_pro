@@ -2,16 +2,11 @@
  * @file slope_limiter.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Provides a discrete slope limiter (rate limiter).
- * @version 0.2
+ * @version 1,05
  * @date 2024-09-30
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements a slope limiter, also known as a rate limiter.
- * It constrains the rate of change of a signal, preventing abrupt jumps in the
- * output. This is commonly used for smooth setpoint changes or to protect
- * physical systems from excessive stress. The output value changes incrementally
- * towards the input value at a rate no greater than the configured maximum slope.
  */
 #ifndef _SLOPE_LIMITER_H_
 #define _SLOPE_LIMITER_H_
@@ -24,6 +19,11 @@ extern "C"
 /**
  * @defgroup slope_limiter Slope Limiter
  * @brief A module to constrain the rate of change of a signal.
+ * @details This module implements a slope limiter, also known as a rate limiter.
+ * It constrains the rate of change of a signal, preventing abrupt jumps in the
+ * output. This is commonly used for smooth setpoint changes or to protect
+ * physical systems from excessive stress. The output value changes incrementally
+ * towards the input value at a rate no greater than the configured maximum slope.
  * @{
  */
 

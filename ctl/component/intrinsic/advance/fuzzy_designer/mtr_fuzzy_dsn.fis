@@ -13,39 +13,39 @@ DefuzzMethod='centroid'
 
 [Input1]
 Name='Error'
-Range=[-0.5 0.5]
+Range=[-1 1]
 NumMFs=7
-MF1='LN':'gaussmf',[0.07078 -0.5]
-MF2='MN':'gaussmf',[0.07078 -0.3333]
-MF3='SN':'gaussmf',[0.07078 -0.1667]
-MF4='ZE':'gaussmf',[0.07078 0]
-MF5='SP':'gaussmf',[0.07078 0.1667]
-MF6='MP':'gaussmf',[0.07078 0.3333]
-MF7='LP':'gaussmf',[0.07078 0.5]
+MF1='LN':'gaussmf',[0.1416 -1]
+MF2='MN':'gaussmf',[0.1416 -0.6666]
+MF3='SN':'gaussmf',[0.1416 -0.3334]
+MF4='ZE':'gaussmf',[0.1416 0]
+MF5='SP':'gaussmf',[0.1416 0.3334]
+MF6='MP':'gaussmf',[0.1416 0.6666]
+MF7='LP':'gaussmf',[0.1416 1]
 
 [Input2]
 Name='ErrorRate'
-Range=[-0.5 0.5]
+Range=[-1 1]
 NumMFs=7
-MF1='LN':'gaussmf',[0.07078 -0.5]
-MF2='MN':'gaussmf',[0.07078 -0.3333]
-MF3='SN':'gaussmf',[0.07078 -0.1667]
-MF4='ZE':'gaussmf',[0.07078 0]
-MF5='SP':'gaussmf',[0.07078 0.1667]
-MF6='MP':'gaussmf',[0.07078 0.3333]
-MF7='LP':'gaussmf',[0.07078 0.5]
+MF1='LN':'gaussmf',[0.1416 -1]
+MF2='MN':'gaussmf',[0.1416 -0.6666]
+MF3='SN':'gaussmf',[0.1416 -0.3334]
+MF4='ZE':'gaussmf',[0.1416 0]
+MF5='SP':'gaussmf',[0.1416 0.3334]
+MF6='MP':'gaussmf',[0.1416 0.6666]
+MF7='LP':'gaussmf',[0.1416 1]
 
 [Output1]
 Name='U'
-Range=[-0.5 0.5]
+Range=[-1 1]
 NumMFs=7
-MF1='LN':'gaussmf',[0.07078 -0.5]
-MF2='MN':'gaussmf',[0.07078 -0.3333]
-MF3='SN':'gaussmf',[0.07078 -0.1667]
-MF4='ZE':'gaussmf',[0.07078 0]
-MF5='SP':'gaussmf',[0.07078 0.1667]
-MF6='MP':'gaussmf',[0.07078 0.3333]
-MF7='LP':'gaussmf',[0.07078 0.5]
+MF1='LN':'gaussmf',[0.1416 -1]
+MF2='MN':'gaussmf',[0.1416 -0.6666]
+MF3='SN':'gaussmf',[0.1416 -0.3334]
+MF4='ZE':'gaussmf',[0.1416 0]
+MF5='SP':'gaussmf',[0.1416 0.3334]
+MF6='MP':'gaussmf',[0.1416 0.6666]
+MF7='LP':'gaussmf',[0.1416 1]
 
 [Rules]
 1 7, 4 (1) : 1

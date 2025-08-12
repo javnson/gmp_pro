@@ -2,17 +2,11 @@
  * @file hysteresis_controller.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Provides a hysteresis (bang-bang) controller.
- * @version 0.2
+ * @version 1.05
  * @date 2024-09-30
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements a hysteresis controller, also known as a
- * bang-bang controller or comparator with hysteresis. It is a nonlinear
- * controller that switches its output between two states based on whether the
- * input signal crosses the upper or lower bounds of a hysteresis band. This
- * method is common in applications like current control for power converters
- * due to its fast transient response.
  */
 #ifndef _HYSTERESIS_CONTROLLER_H_
 #define _HYSTERESIS_CONTROLLER_H_
@@ -25,6 +19,12 @@ extern "C"
 /**
  * @defgroup hysteresis_controller Hysteresis Controller
  * @brief A nonlinear controller that switches output based on a hysteresis band.
+ * @details This module implements a hysteresis controller, also known as a
+ * bang-bang controller or comparator with hysteresis. It is a nonlinear
+ * controller that switches its output between two states based on whether the
+ * input signal crosses the upper or lower bounds of a hysteresis band. This
+ * method is common in applications like current control for power converters
+ * due to its fast transient response.
  * @{
  */
 

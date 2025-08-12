@@ -2,15 +2,11 @@
  * @file divider.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Provides a simple counter-based frequency divider.
- * @version 0.2
+ * @version 1.05
  * @date 2024-10-25
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements a basic frequency divider (or prescaler). It is
- * used to generate a periodic trigger or event at a frequency that is an integer
- * fraction of a higher input frequency. For example, it can be used to execute
- * a slow control loop every N calls of a faster main ISR.
  */
 
 #ifndef _DIVIDER_H_
@@ -24,6 +20,10 @@ extern "C"
 /**
  * @defgroup frequency_divider Frequency Divider
  * @brief A simple counter-based module to divide a clock or event frequency.
+ * @details This module implements a basic frequency divider (or prescaler). It is
+ * used to generate a periodic trigger or event at a frequency that is an integer
+ * fraction of a higher input frequency. For example, it can be used to execute
+ * a slow control loop every N calls of a faster main ISR.
  * @{
  */
 

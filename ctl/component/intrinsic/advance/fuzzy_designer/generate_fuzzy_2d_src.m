@@ -41,9 +41,9 @@ fprintf(fs, "%s %s [%d][%d] = {\r\n", ...
 for i = 1:fuzzy_mat_size(1)
     for j = 1:fuzzy_mat_size(2)
         if(j == 1)
-            fprintf(fs, "\t{%.6f",fuzzy_2d_mat(i,j));
+            fprintf(fs, "\t{float2ctrl(%.6f)",fuzzy_2d_mat(i,j));
         else
-            fprintf(fs, " ,%.6f",fuzzy_2d_mat(i,j));
+            fprintf(fs, " ,float2ctrl(%.6f)",fuzzy_2d_mat(i,j));
         end
     end
     fprintf(fs, "},\r\n");
@@ -57,9 +57,9 @@ fprintf(fs, "%s %s_segment1[%d] = \r\n", ...
     type_name, fuzzy_mat_name, fuzzy_mat_size(1));
 for i = 1:fuzzy_mat_size(1)
     if(i == 1)
-            fprintf(fs, "\t{%.6f", dim1_mesh(i));
+            fprintf(fs, "\t{float2ctrl(%.6f)", dim1_mesh(i));
     else
-            fprintf(fs, " ,%.6f", dim1_mesh(i));
+            fprintf(fs, " ,float2ctrl(%.6f)", dim1_mesh(i));
     end
 end
 fprintf(fs, "};\r\n\r\n");
@@ -70,9 +70,9 @@ fprintf(fs, "%s %s_segment2[%d] = \r\n", ...
     type_name,fuzzy_mat_name, fuzzy_mat_size(2));
 for i = 1:fuzzy_mat_size(2)
     if(i == 1)
-            fprintf(fs, "\t{%.6f", dim1_mesh(i));
+            fprintf(fs, "\t{float2ctrl(%.6f)", dim1_mesh(i));
     else
-            fprintf(fs, " ,%.6f", dim1_mesh(i));
+            fprintf(fs, " ,float2ctrl(%.6f)", dim1_mesh(i));
     end
 end
 fprintf(fs, "};\r\n\r\n");
