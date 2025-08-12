@@ -214,6 +214,13 @@
 #include <ctl/component/intrinsic/advance/fuzzy_pid.h>
 
 /**
+ * @defgroup fuzzy_logic_controller Fuzzy Logic Controller
+ * @ingroup CTL_INTRINSIC_ADVANCE
+ * @brief A complete FLC implementation based on a 2D look-up table.
+ */
+#include <ctl/component/intrinsic/advance/flc.h>
+
+/**
  * @defgroup repetitive_controller Repetitive Controller (RC)
  * @ingroup CTL_INTRINSIC_ADVANCE
  * @brief An internal model-based controller for eliminating periodic errors.

@@ -98,7 +98,7 @@ GMP_STATIC_INLINE int32_t ctl_search_lut1d_index(const ctl_lut1d_t* lut, ctrl_gt
  * @param[in] target The x-value at which to interpolate.
  * @return ctrl_gt The interpolated y-value.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_interpolate_lut1d(const ctl_lut1d_t* lut, const ctrl_gt* values, ctrl_gt target)
+GMP_STATIC_INLINE ctrl_gt ctl_step_interpolate_lut1d(const ctl_lut1d_t* lut, const ctrl_gt* values, ctrl_gt target)
 {
     int32_t index = ctl_search_lut1d_index(lut, target);
 
@@ -155,7 +155,7 @@ void ctl_init_lut2d(ctl_lut2d_t* lut, const ctrl_gt* axis1, uint32_t size1, cons
  * @param[in] target2 The target value on the 2nd axis.
  * @return ctrl_gt The interpolated surface value.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_interpolate_lut2d(const ctl_lut2d_t* lut, ctrl_gt target1, ctrl_gt target2)
+GMP_STATIC_INLINE ctrl_gt ctl_step_interpolate_lut2d(const ctl_lut2d_t* lut, ctrl_gt target1, ctrl_gt target2)
 {
     // Find lower-bound indices for both axes
     int32_t idx1 = ctl_search_lut1d_index(&lut->dim1_axis, target1);
@@ -226,7 +226,7 @@ void ctl_init_uniform_lut2d(ctl_uniform_lut2d_t* lut, ctrl_gt x_min, ctrl_gt x_m
  * @param[in] y The target value on the y-axis.
  * @return ctrl_gt The interpolated surface value.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_interpolate_uniform_lut2d(const ctl_uniform_lut2d_t* lut, ctrl_gt x, ctrl_gt y)
+GMP_STATIC_INLINE ctrl_gt ctl_step_interpolate_uniform_lut2d(const ctl_uniform_lut2d_t* lut, ctrl_gt x, ctrl_gt y)
 {
     // Calculate floating point indices
     ctrl_gt x_fidx = ctl_mul(x - lut->x_min, lut->x_step_inv);
