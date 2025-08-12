@@ -1,7 +1,7 @@
 /**
  * @file ctl_vienna_pfc.h
  * @author Your Name (your_email@example.com)
- * @brief Header-only library for a three-phase Vienna Rectifier PFC controller.
+ * @brief Three-phase Vienna Rectifier PFC controller.
  * @version 0.1
  * @date 2025-08-05
  *

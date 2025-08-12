@@ -2,9 +2,6 @@
  * @file gain_model.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Provides helper functions to calculate ADC gain values for common sensor configurations.
- * @details The gain is a crucial parameter for converting a per-unit ADC value back
- * into a physical quantity (e.g., Volts, Amperes). These models simplify the process
- * of determining the correct gain based on hardware components.
  * @version 0.2
  * @date 2025-03-21
  *
@@ -24,7 +21,9 @@ extern "C"
  * @defgroup ADC_GAIN_MODELS ADC Gain Calculation Models
  * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A collection of functions to determine the correct gain for sensor signal conditioning.
- *
+ * @details The gain is a crucial parameter for converting a per-unit ADC value back
+ * into a physical quantity (e.g., Volts, Amperes). These models simplify the process
+ * of determining the correct gain based on hardware components.
  * These models calculate the gain required by the ADC channel modules to scale the
  * normalized ADC output into a meaningful physical unit.
  */
@@ -43,10 +42,9 @@ extern "C"
  * @details This function calculates the gain needed to convert a per-unit ADC value
  * to a final value scaled by a physical base.
  * The formula is:
- * //tex: \text{gain} = \frac{V_{\text{ref}}}{G_{\text{sensor}} \cdot \text{Base}_{\text{physical}}}
- * @f$
+ * @f[
  * \text{gain} = \frac{V_{\text{ref}}}{G_{\text{sensor}} \cdot \text{Base}_{\text{physical}}}
- * @f$
+ * @f]
  * @param Vref The ADC reference voltage (e.g., 3.3V).
  * @param G_sensor The hardware gain of the analog front-end (e.g., the ratio of a voltage divider or the V/A sensitivity of a current sensor).
  * @param Base_physical The maximum physical value that corresponds to 1.0 p.u. in the control system (e.g., 400V or 50A).

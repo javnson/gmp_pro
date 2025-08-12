@@ -253,7 +253,7 @@ GMP_STATIC_INLINE fast_gt ctl_step_foldback_protection(std_foldback_protection_t
  */
 ctrl_gt ctl_get_foldback_protection_current_limit(std_foldback_protection_t* obj)
 {
-    return obj->current_limit_output
+    return obj->current_limit_output;
 }
 
 /** @} */ // end of protection_strategy_api group

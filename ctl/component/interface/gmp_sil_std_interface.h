@@ -2,9 +2,6 @@
  * @file gmp_sil_std_interface.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Defines a universal standard interface for GMP Software-in-the-Loop (SIL) simulations.
- * @details This file specifies a data structure intended to be the primary interface
- * between a control algorithm and a simulation environment (e.g., MATLAB/Simulink).
- * It provides channels for PWM outputs, data outputs, and monitoring internal variables.
  * @version 0.1
  * @date 2024-10-01
  *
@@ -26,7 +23,9 @@ extern "C"
  * @defgroup SIL_INTERFACE Software-in-the-Loop (SIL) Interface
  * @ingroup GMP_CTL_INTERFACES
  * @brief Defines the standard data structure for SIL simulation environments.
- *
+ * @details This file specifies a data structure intended to be the primary interface
+ * between a control algorithm and a simulation environment (e.g., MATLAB/Simulink).
+ * It provides channels for PWM outputs, data outputs, and monitoring internal variables.
  * This module contains the data structures used to link the control algorithm
  * with an external simulation platform.
  */

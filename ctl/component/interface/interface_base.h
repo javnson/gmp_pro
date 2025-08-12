@@ -2,9 +2,6 @@
  * @file interface_base.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Defines the basic data interface types for control peripherals like ADC, DAC, and PWM.
- * @details This file provides a hardware abstraction layer by defining universal
- * interface structures for single and multi-channel peripherals. Controller algorithms
- * should use these interfaces to remain independent of specific hardware implementations.
  * @version 0.2
  * @date 2024-10-01
  *
@@ -27,6 +24,9 @@ extern "C"
 /**
  * @defgroup GMP_CTL_INTERFACES GMP CTL interface
  * @brief Basic data structures for interfacing with control peripherals.
+ * @details This module provides a hardware abstraction layer by defining universal
+ * interface structures for single and multi-channel peripherals. Controller algorithms
+ * should use these interfaces to remain independent of specific hardware implementations.
  */
 
 /**

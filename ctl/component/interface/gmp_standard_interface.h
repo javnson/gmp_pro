@@ -2,9 +2,6 @@
  * @file gmp_standard_interface.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Defines a universal standard interface for GMP-based controllers.
- * @details This file specifies the data structures for transmitting (Tx) and
- * receiving (Rx) data between the controller and an external system. This is
- * essential for hardware integration, debugging, and communication.
  * @version 0.1
  * @date 2024-10-01
  *
@@ -26,7 +23,9 @@ extern "C"
  * @defgroup STD_INTERFACE Standard Controller Interface
  * @ingroup GMP_CTL_INTERFACES
  * @brief Defines standard data structures for controller data exchange (Tx/Rx).
- *
+ * @details This file specifies the data structures for transmitting (Tx) and
+ * receiving (Rx) data between the controller and an external system. This is
+ * essential for hardware integration, debugging, and communication.
  * This module contains the data structures for the main data pathways into and
  * out of the controller.
  */

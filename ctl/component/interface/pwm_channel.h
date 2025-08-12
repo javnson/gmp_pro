@@ -2,9 +2,6 @@
  * @file pwm_channel.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Provides modules for processing and scaling PWM channel outputs.
- * @details This file contains structures and functions to convert a logical control
- * value (typically a per-unit duty cycle) into a raw integer value suitable for
- * a hardware PWM timer's compare register.
  * @version 0.2
  * @date 2024-10-01
  *
@@ -26,6 +23,9 @@ extern "C"
  * @defgroup PWM_CHANNEL_SINGLE Single PWM Channel
  * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A module for processing a single PWM output channel.
+ * @details This file contains structures and functions to convert a logical control
+ * value (typically a per-unit duty cycle) into a raw integer value suitable for
+ * a hardware PWM timer's compare register.
  */
 
 /**

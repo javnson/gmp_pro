@@ -1,9 +1,6 @@
 /**
  * @file adc_channel.h
  * @author Javnson (javnson@zju.edu.cn)
- * @brief Provides structures and functions for handling single, dual, and triple ADC channels,
- * as well as a utility for ADC bias calibration. This module supports both fixed-point
- * and floating-point arithmetic.
  * @version 0.1
  * @date 2024-09-30
  *
@@ -31,10 +28,14 @@ extern "C"
  * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A module for processing a single ADC channel.
  *
+ * @brief Provides structures and functions for handling single, dual, and triple ADC channels,
+ * as well as a utility for ADC bias calibration. This module supports both fixed-point
+ * and floating-point arithmetic.
+ * 
  * This module converts raw ADC data into a calibrated control value using a specified gain and bias.
- * @f$
+ * @f[
  * \text{value} = \text{gain} \cdot (\text{raw}_{\text{scaled}} - \text{bias})
- * @f$
+ * @f]
  */
 
 /**

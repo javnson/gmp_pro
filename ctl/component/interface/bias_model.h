@@ -2,8 +2,6 @@
  * @file bias_model.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Provides helper functions to calculate ADC bias values for common sensor configurations.
- * @details The bias value is typically represented in a per-unit (p.u.) system,
- * where the value is normalized with respect to the ADC's reference voltage (Vref).
  * @version 0.2
  * @date 2025-03-21
  *
@@ -24,6 +22,8 @@ extern "C"
  * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A collection of functions to determine ADC bias values from circuit parameters.
  *
+ * @details The bias value is typically represented in a per-unit (p.u.) system,
+ * where the value is normalized with respect to the ADC's reference voltage (Vref).
  * These models help in calculating the expected digital offset for various analog
  * sensor front-end circuits. The calculated bias is essential for correctly
  * interpreting the ADC output.

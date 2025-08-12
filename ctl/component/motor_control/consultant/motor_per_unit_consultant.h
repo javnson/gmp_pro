@@ -104,7 +104,7 @@ void ctl_init_per_unit_consultant_acm(ctl_per_unit_consultant_t* pu, uint32_t po
  */
 GMP_STATIC_INLINE parameter_gt ctl_helper_horsepower2watt(parameter_gt hp)
 {
-    return (parameter_gt)746.0 * hp * 1000.0;
+    return (parameter_gt)746.0 * hp * 1000.0f;
 }
 
 /**

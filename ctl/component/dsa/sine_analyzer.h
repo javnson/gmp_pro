@@ -2,9 +2,6 @@
  * @file sine_analyzer.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Provides a module to analyze a sine wave signal, calculating its RMS, average value, and frequency.
- * @details This module operates by detecting zero-crossings to identify complete cycles of the input waveform.
- * It is recommended to use this module when the control data type (ctrl_gt) is floating-point
- * to avoid potential calculation errors with fixed-point arithmetic.
  * @version 0.1
  * @date 2024-10-02
  *
@@ -23,10 +20,15 @@ extern "C"
 /**
  * @defgroup SINE_ANALYZER Sine Wave Analyzer
  * @brief A module for real-time analysis of sinusoidal signals.
+ * @details This module operates by detecting zero-crossings to identify complete cycles of the input waveform.
+ * It is recommended to use this module when the control data type (ctrl_gt) is floating-point
+ * to avoid potential calculation errors with fixed-point arithmetic.
  *
  * This module calculates the following properties of an input sine wave:
- * - **RMS Value**: @f$ V_{rms} = \sqrt{\frac{1}{N} \sum_{i=1}^{N} v_i^2} @f$
- * - **Average Value** (of absolute signal): @f$ V_{avg} = \frac{1}{N} \sum_{i=1}^{N} |v_i|} @f$
+ * - **RMS Value**: 
+ *    @f[ V_{rms} = \sqrt{\frac{1}{N} \sum_{i=1}^{N} v_i^2} @f]
+ * - **Average Value** (of absolute signal): 
+ *    @f[ V_{avg} = \frac{1}{N} \sum_{i=1}^{N} |v_i|} @f]
  * - **Frequency**
  */
 

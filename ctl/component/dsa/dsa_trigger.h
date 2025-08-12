@@ -2,9 +2,7 @@
  * @file dsa_trigger.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Provides a basic data acquisition trigger for logging data based on a signal event.
- * @details This module implements a simple trigger mechanism that starts recording data
- * for a fixed duration when a monitored signal crosses zero from negative to positive.
- * It is useful for capturing transient events for debugging or analysis.
+
  * @version 0.1
  * @date 2024-10-02
  *
@@ -23,7 +21,10 @@ extern "C"
 /**
  * @defgroup DSA_TRIGGER Data Acquisition Trigger
  * @brief A module for event-based data logging.
- *
+ * @details This module implements a simple trigger mechanism that starts recording data
+ * for a fixed duration when a monitored signal crosses zero from negative to positive.
+ * It is useful for capturing transient events for debugging or analysis.
+ * 
  * @code
  * // Usage Demo:
  * #define MONITOR_BUFFER_SIZE 400

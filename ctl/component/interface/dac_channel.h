@@ -2,9 +2,6 @@
  * @file dac_channel.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Provides a module for processing and scaling a single DAC channel.
- * @details This module takes a control value, applies gain and bias, and scales
- * it to the appropriate raw integer format for a DAC peripheral.
- * It supports both fixed-point and floating-point data types.
  * @version 0.2
  * @date 2024-09-30
  *
@@ -28,13 +25,15 @@ extern "C"
  * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A module for handling a single DAC output channel.
  *
+ * @details This module takes a control value, applies gain and bias, and scales
+ * it to the appropriate raw integer format for a DAC peripheral.
+ * It supports both fixed-point and floating-point data types.
  * This module converts a logical control value into a raw digital value
  * suitable for being written to a DAC hardware register.
  * The conversion follows the formula:
- * //tex: \text{value}_{\text{final}} = (\text{value}_{\text{raw}} \cdot \text{gain}) + \text{bias}
- * @f$
+ * @f[
  * \text{value}_{\text{final}} = (\text{value}_{\text{raw}} \cdot \text{gain}) + \text{bias}
- * @f$
+ * @f]
  */
 
 /*---------------------------------------------------------------------------*/

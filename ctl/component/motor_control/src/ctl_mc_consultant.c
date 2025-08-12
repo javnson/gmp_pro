@@ -11,7 +11,7 @@ static void calculate_all_base_values(ctl_per_unit_consultant_t* pu)
         return;
     }
     // 1. elec base value
-    pu->base_omega = 2.0f * M_PI * pu->base_freq;
+    pu->base_omega = 2.0f * CTL_PARAM_CONST_PI * pu->base_freq;
     pu->base_current = pu->base_power / pu->base_voltage;
     pu->base_impedence = pu->base_voltage / pu->base_current;
     pu->base_inductance = pu->base_impedence / pu->base_omega;
@@ -24,7 +24,7 @@ static void calculate_all_base_values(ctl_per_unit_consultant_t* pu)
     pu->base_speed = pu->base_omega / pu->pole_pairs;
     parameter_gt total_base_power = pu->base_power * pu->phases;
     pu->base_torque = total_base_power / pu->base_speed;
-    parameter_gt base_rpm = pu->base_speed * (60.0f / (2.0f * M_PI));
+    parameter_gt base_rpm = pu->base_speed * (60.0f / (2.0f * CTL_PARAM_CONST_PI));
     pu->base_speed_krpm = base_rpm / 1000.0f;
 }
 
@@ -65,6 +65,7 @@ void ctl_init_per_unit_consultant_acm(ctl_per_unit_consultant_t* pu, uint32_t po
 
 //////////////////////////////////////////////////////////////////////////
 // PMSM consultant
+#include <ctl/component/motor_control/consultant/pmsm_consultant.h>
 
 void ctl_init_pmsm_dsn_consultant(ctl_pmsm_dsn_consultant_t* pmsm_dsn, uint16_t pole_pair, parameter_gt Rs,
                                   parameter_gt Ld, parameter_gt Lq, parameter_gt flux, parameter_gt inertia,

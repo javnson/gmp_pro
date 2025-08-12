@@ -2,9 +2,6 @@
  * @file adc_ptr_channel.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Provides ADC channel processing modules that access raw ADC data via pointers.
- * @details This implementation is an alternative to `adc_channel.h` and is useful
- * when raw ADC values are stored in a contiguous memory block (like a DMA buffer),
- * as it avoids copying data for each processing step.
  * @version 0.1
  * @date 2025-03-21
  *
@@ -22,10 +19,6 @@
 #include <ctl/component/interface/bias_model.h>
 
 
-// It's good practice to include the header for any assertion macros used.
-// For example, if gmp_base_assert is based on the standard library assert.
-// #include <assert.h>
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -36,10 +29,14 @@ extern "C"
  * @ingroup GMP_CTL_COMMON_INTERFACES
  * @brief A module for processing a single ADC channel using a pointer to the raw data.
  *
+ * @details This implementation is an alternative to `adc_channel.h` and is useful
+ * when raw ADC values are stored in a contiguous memory block (like a DMA buffer),
+ * as it avoids copying data for each processing step.
+ * 
  * This module converts a raw ADC value, accessed via a pointer, into a calibrated control value.
- * @f$
+ * @f[
  * \text{value} = \text{gain} \cdot (\text{raw}_{\text{scaled}} - \text{bias})
- * @f$
+ * @f]
  */
 
 /**
