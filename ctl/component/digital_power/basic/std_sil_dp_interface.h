@@ -7,11 +7,6 @@
  *
  * @copyright Copyright (c) 2025
  *
- * @details This file specifies the data structures used for communication between the
- * embedded controller code and a simulation environment like Simulink. The `#pragma pack(1)`
- * directive is used to ensure that the memory layout of these structures is identical
- * on both the controller and the simulation host, preventing data corruption due to
- * memory alignment differences.
  */
 
 #ifndef _FILE_GMP_SIL_STD_INTERFACE_H_
@@ -27,6 +22,11 @@ extern "C"
 /**
  * @defgroup sil_interface_api Software-in-the-Loop (SIL) Interface API
  * @brief Data structures for communication with a simulation environment.
+ * @details This file specifies the data structures used for communication between the
+ * embedded controller code and a simulation environment like Simulink. The `#pragma pack(1)`
+ * directive is used to ensure that the memory layout of these structures is identical
+ * on both the controller and the simulation host, preventing data corruption due to
+ * memory alignment differences.
  * @{
  * @ingroup CTL_DP_LIB
  */

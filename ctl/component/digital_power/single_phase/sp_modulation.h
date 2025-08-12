@@ -7,13 +7,6 @@
  *
  * @copyright Copyright (c) 2025
  *
- * @details This module generates two PWM compare values for a standard single-phase
- * H-bridge inverter using unipolar Sine Pulse Width Modulation (SPWM). It accepts a
- * modulation signal from -1.0 to 1.0.
- *
- * It also includes a dead-time compensation feature that adjusts the PWM duty cycles
- * based on the direction of the output current. This minimizes voltage distortion
- * caused by the blanking time inserted by the PWM hardware.
  */
 
 #ifndef _FILE_SINGLE_PHASE_MODULATION_H_
@@ -29,6 +22,14 @@ extern "C"
 /**
  * @defgroup sp_modulation_api Single-Phase Modulation API
  * @brief Generates PWM signals for a single-phase H-bridge inverter.
+ * @details This module generates two PWM compare values for a standard single-phase
+ * H-bridge inverter using unipolar Sine Pulse Width Modulation (SPWM). It accepts a
+ * modulation signal from -1.0 to 1.0.
+ *
+ * It also includes a dead-time compensation feature that adjusts the PWM duty cycles
+ * based on the direction of the output current. This minimizes voltage distortion
+ * caused by the blanking time inserted by the PWM hardware.
+
  * @{
  * @ingroup CTL_DP_LIB
  */

@@ -7,16 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements a complete second-order NLADRC, which is ideal
- * for applications like motor speed control. The controller consists of three main parts:
- * 1.  Tracking Differentiator (TD): Arranges a smooth transition for the setpoint
- * and provides its differential signal.
- * 2.  Extended State Observer (ESO): Estimates the system states (e.g., speed and acceleration)
- * and the "total disturbance" (including internal dynamics and external loads).
- * 3.  Nonlinear State Error Feedback (NLSEF): Calculates the control output based on
- * the errors between the setpoint trajectory and the estimated states.
- *
- * This implementation is based on the standard discrete-time formulas for NLADRC.
  */
 
 #ifndef _NLADRC_CONTROLLER_H_
@@ -33,6 +23,16 @@ extern "C"
 /**
  * @defgroup nladrc_controller Nonlinear ADRC
  * @brief An advanced controller for systems with uncertainties and disturbances.
+ * @details This file implements a complete second-order NLADRC, which is ideal
+ * for applications like motor speed control. The controller consists of three main parts:
+ * 1.  Tracking Differentiator (TD): Arranges a smooth transition for the setpoint
+ * and provides its differential signal.
+ * 2.  Extended State Observer (ESO): Estimates the system states (e.g., speed and acceleration)
+ * and the "total disturbance" (including internal dynamics and external loads).
+ * 3.  Nonlinear State Error Feedback (NLSEF): Calculates the control output based on
+ * the errors between the setpoint trajectory and the estimated states.
+ *
+ * This implementation is based on the standard discrete-time formulas for NLADRC.
  * @{
  */
 

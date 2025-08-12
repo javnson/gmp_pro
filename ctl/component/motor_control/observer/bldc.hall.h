@@ -1,22 +1,9 @@
 /**
  * @file bldc_hall_estimator.h
  * @brief Implements a speed and position estimator for BLDC motors using Hall sensors.
- * @details This module processes the discrete signals from 3-phase Hall sensors to
- * provide a continuous, high-resolution electrical angle and a smooth speed
- * estimate. It works by measuring the time between Hall state changes to
- * calculate speed, and then uses this speed to linearly interpolate the angle
- * within the 60-degree electrical sectors defined by the Hall states. This
- * allows for smooth sinusoidal control (FOC) instead of traditional six-step
- * trapezoidal control.
  *
  * @version 1.0
  * @date 2025-08-07
- *
- * //tex:
- * // The core principle is to measure the time \Delta t for the rotor to traverse
- * // a 60-degree electrical sector.
- * // The electrical speed is then calculated as: \omega_e = (\pi/3) / \Delta t
- * // The angle within a sector is interpolated as: \theta(t) = \theta_{start} + \omega_e \cdot t_{elapsed}
  *
  */
 
@@ -38,6 +25,20 @@ extern "C"
 /**
  * @defgroup BLDC_HALL_ESTIMATOR BLDC Hall Sensor Estimator
  * @brief A module for calculating smooth speed and position from Hall sensors.
+ * @details This module processes the discrete signals from 3-phase Hall sensors to
+ * provide a continuous, high-resolution electrical angle and a smooth speed
+ * estimate. It works by measuring the time between Hall state changes to
+ * calculate speed, and then uses this speed to linearly interpolate the angle
+ * within the 60-degree electrical sectors defined by the Hall states. This
+ * allows for smooth sinusoidal control (FOC) instead of traditional six-step
+ * trapezoidal control.
+ *
+ * The core principle is to measure the time @f(\Delta t @f) for the rotor to traverse
+ * a 60-degree electrical sector.
+ * The electrical speed is then calculated as: 
+ *  @f[ \omega_e = (\pi/3) / \Delta t @f]
+ * The angle within a sector is interpolated as: 
+ *  @f[ \theta(t) = \theta_{start} + \omega_e \cdot t_{elapsed} @f]
  * @{
  */
 

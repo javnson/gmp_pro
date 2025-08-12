@@ -23,66 +23,6 @@ extern "C"
 {
 #endif // __cplusplus
 
-// Forward declaration of structures
-struct _tag_pmsm_nameplate_consultant_t;
-struct _tag_pmsm_dsn_consultant_t;
-
-/*---------------------------------------------------------------------------*/
-/* PMSM Nameplate Parameter Definitions                                      */
-/*---------------------------------------------------------------------------*/
-
-/**
- * @defgroup MC_PMSM_NAMEPLATE PMSM Nameplate Consultant
- * @ingroup CTL_MC_COMPONENT
- * @brief Holds the rated (nameplate) parameters of a PMSM.
- * @{
- */
-
-/**
- * @brief Data structure for holding PMSM nameplate parameters.
- * @details These are the values typically found on the motor's label.
- * //tex:
- * Motor speed: $n_N$, motor power: $P_N$, Motor Voltage: $V_N$,
- * Motor Current: $I_N$, motor frequency: $f_N$, motor torque: $T_N$.
- */
-typedef struct _tag_pmsm_nameplate_consultant_t
-{
-    uint16_t pole_pairs;             /**< @brief Number of motor pole pairs. */
-    parameter_gt rated_output_power; /**< @brief Rated output power in Watts (W). */
-    parameter_gt rated_voltage;      /**< @brief Rated line-to-line voltage in Volts RMS. */
-    parameter_gt rated_current;      /**< @brief Rated line current in Amps RMS. */
-    parameter_gt power_factor;       /**< @brief Rated power factor (dimensionless). */
-    parameter_gt rated_freq;         /**< @brief Rated electrical frequency in Hertz (Hz). */
-    parameter_gt rated_speed_rpm;    /**< @brief Rated mechanical speed in RPM. */
-    parameter_gt rated_torque;       /**< @brief Rated torque in Newton-meters (N·m). */
-    parameter_gt eta;                /**< @brief Rated efficiency (dimensionless). */
-} ctl_pmsm_nameplate_consultant_t;
-
-/**
- * @brief Initializes the PMSM nameplate consultant structure.
- * @param[out] np Pointer to the nameplate consultant structure.
- */
-void ctl_init_pmsm_nameplate_consultant(ctl_pmsm_nameplate_consultant_t* np);
-
-/**
- * @brief Sets up the PMSM nameplate consultant structure with specified values.
- * @param[out] np Pointer to the nameplate consultant structure.
- * @param[in] rated_output_power Rated power in Watts (W).
- * @param[in] rated_voltage Rated line-to-line voltage (V RMS).
- * @param[in] rated_current Rated line current (A RMS).
- * @param[in] rated_freq Rated frequency (Hz).
- * @param[in] rated_speed Rated speed (RPM).
- * @param[in] rated_torque Rated torque (N·m).
- * @param[in] power_factor Rated power factor.
- * @param[in] efficiency Rated efficiency.
- */
-void ctl_setup_pmsm_nameplate_consultant(ctl_pmsm_nameplate_consultant_t* np, parameter_gt rated_output_power,
-                                         parameter_gt rated_voltage, parameter_gt rated_current,
-                                         parameter_gt rated_freq, parameter_gt rated_speed, parameter_gt rated_torque,
-                                         parameter_gt power_factor, parameter_gt efficiency);
-
-/** @} */ // end of MC_PMSM_NAMEPLATE group
-
 /*---------------------------------------------------------------------------*/
 /* PMSM Design Parameter Definitions                                         */
 /*---------------------------------------------------------------------------*/
@@ -98,40 +38,34 @@ void ctl_setup_pmsm_nameplate_consultant(ctl_pmsm_nameplate_consultant_t* np, pa
  * @brief Data structure for holding PMSM design (model) parameters.
  * @details These parameters are used in the mathematical model of the motor for FOC.
  * 
- * Pole pairs: @f[ p @f], Stator Resistance: @f[ R_s @f], d-axis Inductance: @f[ L_d @f],
- * q-axis Inductance: @f[ L_q @f], PM Flux: @f[ \psi_f @f], Inertia: @f[ J @f], Damping: @f[ B @f].
+ * Pole pairs: @f( p @f), Stator Resistance: @f( R_s @f), d-axis Inductance: @f( L_d @f),
+ * q-axis Inductance: @f( L_q @f), PM Flux: @f( \psi_f @f), Inertia: @f( J @f), Damping: @f( B @f).
  */
 typedef struct _tag_pmsm_dsn_consultant
 {
     uint16_t pole_pair;   /**< @brief Number of motor pole pairs. */
-    parameter_gt Rs;      /**< @brief Stator resistance per phase in Ohms (Ω). */
+    parameter_gt Rs;      /**< @brief Stator resistance per phase in Ohms (ohm). */
     parameter_gt Ld;      /**< @brief D-axis inductance in Henrys (H). */
     parameter_gt Lq;      /**< @brief Q-axis inductance in Henrys (H). */
     parameter_gt flux;    /**< @brief Permanent magnet flux linkage in Weber (Wb). */
-    parameter_gt inertia; /**< @brief Moment of inertia (J) in kg·m². */
-    parameter_gt damp;    /**< @brief Damping factor (B) in N·m·s. */
+    parameter_gt inertia; /**< @brief Moment of inertia (J) in kg m2. */
+    parameter_gt damp;    /**< @brief Damping factor (B) in N m s. */
 } ctl_pmsm_dsn_consultant_t;
 
 /**
  * @brief Initializes the PMSM design consultant structure.
  * @param[out] pmsm_dsn Pointer to the design consultant structure.
- */
-void ctl_init_pmsm_dsn_consultant(ctl_pmsm_dsn_consultant_t* pmsm_dsn);
-
-/**
- * @brief Sets up the PMSM design consultant structure with specified values.
- * @param[out] pmsm_dsn Pointer to the design consultant structure.
  * @param[in] pole_pair Number of motor pole pairs.
- * @param[in] Rs Stator resistance (Ω).
+ * @param[in] Rs Stator resistance (ohm).
  * @param[in] Ld D-axis inductance (H).
  * @param[in] Lq Q-axis inductance (H).
  * @param[in] flux PM flux linkage (Wb).
- * @param[in] inertia Moment of inertia (kg·m²).
- * @param[in] damp Damping factor (N·m·s).
+ * @param[in] inertia Moment of inertia (kg m2).
+ * @param[in] damp Damping factor (N m s).
  */
-void ctl_setup_pmsm_dsn_consultant(ctl_pmsm_dsn_consultant_t* pmsm_dsn, uint16_t pole_pair, parameter_gt Rs,
-                                   parameter_gt Ld, parameter_gt Lq, parameter_gt flux, parameter_gt inertia,
-                                   parameter_gt damp);
+void ctl_init_pmsm_dsn_consultant(ctl_pmsm_dsn_consultant_t* pmsm_dsn, uint16_t pole_pair, parameter_gt Rs,
+                                  parameter_gt Ld, parameter_gt Lq, parameter_gt flux, parameter_gt inertia,
+                                  parameter_gt damp);
 
 /** @} */ // end of MC_PMSM_DESIGN group
 
@@ -148,7 +82,7 @@ void ctl_setup_pmsm_dsn_consultant(ctl_pmsm_dsn_consultant_t* pmsm_dsn, uint16_t
 
 /**
  * @brief Calculates the PMSM torque constant (Kt).
- * @details Formula: //tex: K_t = 1.5 \cdot p \cdot \psi_f
+ * @details Formula: @f[ K_t = 1.5 \cdot p \cdot \psi_f
  * @param[in] pmsm_dsn Pointer to the populated motor design consultant structure.
  * @return The torque constant in N·m / Amp_peak.
  */
@@ -160,7 +94,7 @@ GMP_STATIC_INLINE parameter_gt ctl_pmsm_get_Kt(const ctl_pmsm_dsn_consultant_t* 
 /**
  * @brief Calculates the PMSM back-EMF constant (Ke).
  * @details This is the peak line-to-neutral voltage per electrical rad/s.
- * Formula: //tex: K_e = p \cdot \psi_f
+ * Formula: @f[ K_e = p \cdot \psi_f @f]
  * @param[in] pmsm_dsn Pointer to the populated motor design consultant structure.
  * @return The back-EMF constant in V_peak / (rad/s_elec).
  */
@@ -172,7 +106,7 @@ GMP_STATIC_INLINE parameter_gt ctl_pmsm_get_Ke_Vpeak_per_rads(const ctl_pmsm_dsn
 /**
  * @brief Calculates the PMSM back-EMF constant (Ke) in V_RMS / kRPM.
  * @details This is a common unit found on motor datasheets.
- * Formula: //tex: K_e [V_{RMS,L-L}/kRPM] = p \cdot \psi_f \cdot \frac{\pi \sqrt{3}}{3}
+ * Formula: @f[ K_e [V_{RMS,L-L}/kRPM] = p \cdot \psi_f \cdot \frac{\pi \sqrt{3}}{3} @f]
  * @param[in] pmsm_dsn Pointer to the populated motor design consultant structure.
  * @return The back-EMF constant in V_RMS_LL / kRPM.
  */
@@ -189,8 +123,8 @@ GMP_STATIC_INLINE parameter_gt ctl_pmsm_get_Ke_Vrms_per_krpm(const ctl_pmsm_dsn_
  * @details Uses the bandwidth method (pole placement) for tuning.
  * The plant is modeled as a first-order system.
  * Formulas:
- * //tex: K_p = \alpha_c L, \quad K_i = \alpha_c R_s
- * where //tex: \alpha_c is the desired bandwidth.
+ * @f[ K_p = \alpha_c L, \quad K_i = \alpha_c R_s @f]
+ * where @f( \alpha_c @f) is the desired bandwidth.
  * @param[in] pmsm_dsn Pointer to the populated motor design consultant structure.
  * @param[in] bandwidth_hz The desired closed-loop bandwidth in Hertz (Hz).
  * @param[out] kp_d Pointer to store the d-axis proportional gain.
@@ -198,9 +132,9 @@ GMP_STATIC_INLINE parameter_gt ctl_pmsm_get_Ke_Vrms_per_krpm(const ctl_pmsm_dsn_
  * @param[out] kp_q Pointer to store the q-axis proportional gain.
  * @param[out] ki_q Pointer to store the q-axis integral gain.
  */
-GMP_STATIC_INLINE void ctl_pmsm_tune_current_pi_params(const ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt bandwidth_hz,
-                                                   parameter_gt* kp_d, parameter_gt* ki_d, parameter_gt* kp_q,
-                                                   parameter_gt* ki_q)
+GMP_STATIC_INLINE void ctl_pmsm_tune_current_pi_params(const ctl_pmsm_dsn_consultant_t* pmsm_dsn,
+                                                       parameter_gt bandwidth_hz, parameter_gt* kp_d,
+                                                       parameter_gt* ki_d, parameter_gt* kp_q, parameter_gt* ki_q)
 {
     parameter_gt alpha_c = CTL_PARAM_CONST_2PI * bandwidth_hz; // Convert Hz to rad/s
 
@@ -215,15 +149,15 @@ GMP_STATIC_INLINE void ctl_pmsm_tune_current_pi_params(const ctl_pmsm_dsn_consul
  * @brief Estimates PI controller parameters for the speed loop.
  * @details Uses the bandwidth method. Assumes the current loop is significantly faster.
  * Formulas:
- * //tex: K_p = \frac{\alpha_s J}{K_t}, \quad K_i = \frac{\alpha_s B}{K_t}
- * where //tex: \alpha_s is the desired bandwidth.
+ * @f[ K_p = \frac{\alpha_s J}{K_t}, \quad K_i = \frac{\alpha_s B}{K_t} @f]
+ * where @f( \alpha_s @f) is the desired bandwidth.
  * @param[in] pmsm_dsn Pointer to the populated motor design consultant structure.
  * @param[in] bandwidth_hz The desired closed-loop bandwidth in Hertz (Hz).
  * @param[out] kp Pointer to store the calculated proportional gain.
  * @param[out] ki Pointer to store the calculated integral gain.
  */
-GMP_STATIC_INLINE void ctl_pmsm_tune_speed_pi_params(const ctl_pmsm_dsn_consultant_t* pmsm_dsn, parameter_gt bandwidth_hz,
-                                                 parameter_gt* kp, parameter_gt* ki)
+GMP_STATIC_INLINE void ctl_pmsm_tune_speed_pi_params(const ctl_pmsm_dsn_consultant_t* pmsm_dsn,
+                                                     parameter_gt bandwidth_hz, parameter_gt* kp, parameter_gt* ki)
 {
     parameter_gt kt = ctl_pmsm_get_Kt(pmsm_dsn);
     if (kt < 1e-9)
@@ -267,7 +201,7 @@ GMP_STATIC_INLINE void ctl_pmsm_tune_speed_pi_params(const ctl_pmsm_dsn_consulta
  * @param[out] ki_pu Pointer to store the per-unit integral gain.
  */
 GMP_STATIC_INLINE void ctl_pmsm_convert_current_pi_to_pu(const ctl_per_unit_consultant_t* pu, parameter_gt kp_real,
-                                                     parameter_gt ki_real, parameter_gt* kp_pu, parameter_gt* ki_pu)
+                                                         parameter_gt ki_real, parameter_gt* kp_pu, parameter_gt* ki_pu)
 {
     if (pu->base_impedence < 1e-9 || pu->base_omega < 1e-9)
     {
@@ -292,7 +226,7 @@ GMP_STATIC_INLINE void ctl_pmsm_convert_current_pi_to_pu(const ctl_per_unit_cons
  * @param[out] ki_pu Pointer to store the per-unit integral gain.
  */
 GMP_STATIC_INLINE void ctl_pmsm_convert_speed_pi_to_pu(const ctl_per_unit_consultant_t* pu, parameter_gt kp_real,
-                                                   parameter_gt ki_real, parameter_gt* kp_pu, parameter_gt* ki_pu)
+                                                       parameter_gt ki_real, parameter_gt* kp_pu, parameter_gt* ki_pu)
 {
     if (pu->base_current < 1e-9)
     {

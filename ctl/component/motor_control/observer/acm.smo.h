@@ -1,24 +1,9 @@
 /**
  * @file acm_smo.h
  * @brief Implements a sensorless speed and flux observer for ACM using a Sliding Mode Observer (SMO).
- * @details This module provides a sensorless estimator for AC Induction Motors. It uses a
- * full-order SMO to estimate both the stator currents and the rotor flux vector
- * in the stationary alpha-beta frame. A sliding control law, based on the stator
- * current error, generates a correction term. This correction term drives the
- * observer model, and the estimated rotor flux vector is then processed by a
- * Phase-Locked Loop (PLL) to extract the rotor flux angle, electrical speed,
- * and mechanical speed.
  *
  * @version 1.0
  * @date 2025-08-07
- *
- * //tex:
- * // The observer is based on the full-order discrete-time model of the ACM:
- * // \frac{d\mathbf{x}}{dt} = \mathbf{A}(\omega_r)\mathbf{x} + \mathbf{B}\mathbf{u}
- * // Where the state vector is \mathbf{x} = [\mathbf{i}_s, \mathbf{\psi}_r]^T.
- * // A sliding control law Z is applied to the current dynamics based on current error:
- * // \frac{d\hat{\mathbf{i}}_s}{dt} = ... - \mathbf{Z}
- * // The PLL then tracks the angle of the estimated rotor flux \hat{\mathbf{\psi}}_r.
  *
  */
 
@@ -41,6 +26,20 @@ extern "C"
 /**
  * @defgroup ACM_SMO ACM Sliding Mode Observer
  * @brief A sensorless module for estimating speed and flux angle of an ACM.
+ * @details This module provides a sensorless estimator for AC Induction Motors. It uses a
+ * full-order SMO to estimate both the stator currents and the rotor flux vector
+ * in the stationary alpha-beta frame. A sliding control law, based on the stator
+ * current error, generates a correction term. This correction term drives the
+ * observer model, and the estimated rotor flux vector is then processed by a
+ * Phase-Locked Loop (PLL) to extract the rotor flux angle, electrical speed,
+ * and mechanical speed.
+ * 
+ * The observer is based on the full-order discrete-time model of the ACM:
+ * @f[ \frac{d\mathbf{x}}{dt} = \mathbf{A}(\omega_r)\mathbf{x} + \mathbf{B}\mathbf{u} @f]
+ * Where the state vector is @f( \mathbf{x} = [\mathbf{i}_s, \mathbf{\psi}_r]^T @f).
+ * A sliding control law Z is applied to the current dynamics based on current error:
+ * @f( \frac{d\hat{\mathbf{i}}_s}{dt} = ... - \mathbf{Z} @f)
+ * The PLL then tracks the angle of the estimated rotor flux @f( \hat{\mathbf{\psi}}_r @f).
  * @{
  */
 

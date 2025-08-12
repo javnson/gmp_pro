@@ -2,24 +2,11 @@
  * @file pmsm.hfi.h
  * @author Javnson (javnson@zju.edu.cn); MY_Lin(lammanyee@zju.edu.cn)
  * @brief Provides a sensorless position estimator for PMSM using High-Frequency Injection (HFI).
- * @details This module implements an HFI-based position and speed estimator. It works by
- * injecting a high-frequency voltage signal into the estimated d-axis and then
- * demodulating the resulting q-axis current response. The demodulated signal,
- * which is proportional to the rotor position error, is fed into a Phase-Locked
- * Loop (PLL) to track the rotor's angle and speed. This method is particularly
- * effective for low and zero-speed sensorless control.
  *
  * @version 0.2
  * @date 2025-08-06
  *
  * @copyright Copyright GMP(c) 2025
- *
- * //tex:
- * // The core principle relies on the motor's saliency (Ld != Lq). A high-frequency
- * // voltage, v_{dqh} = [V_h \cos(\omega_h t), 0]^T, is injected. The resulting
- * // high-frequency current response contains information about the rotor position.
- * // The demodulated q-axis current is proportional to the position error:
- * // i_{q\_demod} \propto \sin(2(\theta_e - \hat{\theta}_e))
  *
  */
 
@@ -30,7 +17,6 @@
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <ctl/component/intrinsic/discrete/signal_generator.h>
 #include <ctl/component/motor_control/basic/encoder.h>
-#include <ctl/math_block/gmp_math.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -46,6 +32,18 @@ extern "C"
  * @brief A module for sensorless position and speed estimation using HFI.
  * @details Implements the signal injection, demodulation, filtering, and PLL
  * required to track the rotor angle of a salient PMSM at low speeds.
+ * 
+ * This module implements an HFI-based position and speed estimator. It works by
+ * injecting a high-frequency voltage signal into the estimated d-axis and then
+ * demodulating the resulting q-axis current response. The demodulated signal,
+ * which is proportional to the rotor position error, is fed into a Phase-Locked
+ * Loop (PLL) to track the rotor's angle and speed. This method is particularly
+ * effective for low and zero-speed sensorless control.
+ * The core principle relies on the motor's saliency @f( (Ld != Lq) @f). A high-frequency
+ * voltage, @f( v_{dqh} = [V_h \cos(\omega_h t), 0]^T @f), is injected. The resulting
+ * high-frequency current response contains information about the rotor position.
+ * The demodulated q-axis current is proportional to the position error:
+ * @f[ i_{q\_demod} \propto \sin(2(\theta_e - \hat{\theta}_e)) @f]
  * @{
  */
 

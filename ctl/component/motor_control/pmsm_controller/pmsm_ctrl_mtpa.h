@@ -1,17 +1,6 @@
 /**
  * @file pmsm_ctrl_mtpa.h
  * @brief Provides a PMSM controller with Maximum Torque Per Ampere (MTPA) strategy.
- * @details This file builds upon the basic FOC controller by incorporating an MTPA
- * current distributor. The speed controller's output (total current magnitude)
- * is optimally distributed into d-axis and q-axis current references to maximize
- * torque for a given current, which is particularly useful for Interior PMSMs (IPMSM).
- *
- * The controller supports the same operating modes as the base controller but enhances
- * the velocity control mode with the MTPA algorithm.
- *
- * //tex:
- * // The MTPA condition for an IPMSM is given by:
- * // i_d = \frac{-\psi_{pm} + \sqrt{\psi_{pm}^2 + 4(L_d - L_q)^2 i_q^2}}{2(L_d - L_q)}
  *
  */
 
@@ -47,6 +36,19 @@ extern "C"
  * @details This module extends the standard FOC controller by adding a current
  * distributor that calculates the optimal Id and Iq references from the
  * speed controller's output to achieve maximum torque per ampere.
+ * 
+ * This module builds upon the basic FOC controller by incorporating an MTPA
+ * current distributor. The speed controller's output (total current magnitude)
+ * is optimally distributed into d-axis and q-axis current references to maximize
+ * torque for a given current, which is particularly useful for Interior PMSMs (IPMSM).
+ *
+ * The controller supports the same operating modes as the base controller but enhances
+ * the velocity control mode with the MTPA algorithm.
+ *
+ * //tex:
+ * // The MTPA condition for an IPMSM is given by:
+ * // i_d = \frac{-\psi_{pm} + \sqrt{\psi_{pm}^2 + 4(L_d - L_q)^2 i_q^2}}{2(L_d - L_q)}
+
  * @{
  */
 

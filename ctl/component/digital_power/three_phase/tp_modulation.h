@@ -6,7 +6,9 @@
  * @date 2025-08-05
  *
  * @copyright Copyright GMP(c) 2025
- *
+ */
+
+/** 
  * @defgroup CTL_TP_MODULATION_API Three-Phase Modulation API
  * @{
  * @ingroup CTL_DP_LIB

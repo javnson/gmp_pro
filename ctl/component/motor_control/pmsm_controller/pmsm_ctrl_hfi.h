@@ -1,20 +1,6 @@
 /**
  * @file pmsm_ctrl_hfi.h
  * @brief Provides a universal PMSM controller interface based on Field-Oriented Control (FOC).
- * @details This file defines the data structures, functions, and control logic for a
- * generic Permanent Magnet Synchronous Motor (PMSM) controller. It supports
- * various control modes, including voltage, current, velocity, and position control.
- * The implementation can be configured for discrete or continuous PID controllers
- * and supports different hardware setups for current and voltage measurement.
- *
- * Usage involves these steps:
- * 1.  Attach hardware interfaces (ADC, PWM, encoders) using the provided functions.
- * 2.  Initialize the controller structure with motor and control parameters via
- * `ctl_init_pmsm_hfi_hfi_controller`.
- * 3.  Select an operating mode (e.g., `ctl_pmsm_hfi_ctrl_velocity_mode`).
- * 4.  Provide a setpoint for the chosen mode (e.g., `ctl_set_pmsm_hfi_ctrl_speed`).
- * 5.  Call `ctl_step_pmsm_hfi_ctrl` periodically within a main control ISR.
- * 6.  Enable the controller and its output using the enable/disable functions.
  */
 
 #ifndef _FILE_PMSM_CTRL_HFI_H_
@@ -48,6 +34,21 @@ extern "C"
  * @details This module contains the data structures and functions to implement a
  * full FOC controller with cascaded control loops for position, velocity,
  * and current.
+ * This file defines the data structures, functions, and control logic for a
+ * generic Permanent Magnet Synchronous Motor (PMSM) controller. It supports
+ * various control modes, including voltage, current, velocity, and position control.
+ * The implementation can be configured for discrete or continuous PID controllers
+ * and supports different hardware setups for current and voltage measurement.
+ *
+ * Usage involves these steps:
+ * 1.  Attach hardware interfaces (ADC, PWM, encoders) using the provided functions.
+ * 2.  Initialize the controller structure with motor and control parameters via
+ * `ctl_init_pmsm_hfi_hfi_controller`.
+ * 3.  Select an operating mode (e.g., `ctl_pmsm_hfi_ctrl_velocity_mode`).
+ * 4.  Provide a setpoint for the chosen mode (e.g., `ctl_set_pmsm_hfi_ctrl_speed`).
+ * 5.  Call `ctl_step_pmsm_hfi_ctrl` periodically within a main control ISR.
+ * 6.  Enable the controller and its output using the enable/disable functions.
+
  * @{
  */
 

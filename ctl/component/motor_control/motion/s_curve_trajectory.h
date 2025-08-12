@@ -1,22 +1,6 @@
 /**
  * @file s_curve_trajectory.h
  * @brief Implements a complete, header-only S-Curve trajectory planner.
- * @details This module generates a velocity profile with a trapezoidal acceleration
- * shape, resulting in an "S-shaped" velocity curve. This limits the rate
- * of change of acceleration (jerk), leading to smoother motion and reduced
- * mechanical stress. The planner supports dynamic re-targeting and can
- * generate both 7-segment (with a constant acceleration phase) and 5-segment
- * (triangular acceleration) profiles. All functions are defined as static
- * inline for performance.
- *
- *  The S-Curve profile is defined by 7 distinct phases:
- *  1. Constant positive jerk (acceleration increases linearly)
- *  2. Constant maximum acceleration
- *  3. Constant negative jerk (acceleration decreases linearly)
- *  4. Constant velocity (not explicitly managed by this velocity planner)
- *  5. Constant negative jerk (deceleration begins)
- *  6. Constant maximum deceleration
- *  7. Constant positive jerk (deceleration returns to zero)
  *
  */
 
@@ -38,6 +22,22 @@ extern "C"
 /**
  * @defgroup S_CURVE_PLANNER S-Curve Trajectory Planner
  * @brief Generates smooth S-shaped velocity profiles.
+ * @details This module generates a velocity profile with a trapezoidal acceleration
+ * shape, resulting in an "S-shaped" velocity curve. This limits the rate
+ * of change of acceleration (jerk), leading to smoother motion and reduced
+ * mechanical stress. The planner supports dynamic re-targeting and can
+ * generate both 7-segment (with a constant acceleration phase) and 5-segment
+ * (triangular acceleration) profiles. All functions are defined as static
+ * inline for performance.
+ *
+ *  The S-Curve profile is defined by 7 distinct phases:
+ *  1. Constant positive jerk (acceleration increases linearly)
+ *  2. Constant maximum acceleration
+ *  3. Constant negative jerk (acceleration decreases linearly)
+ *  4. Constant velocity (not explicitly managed by this velocity planner)
+ *  5. Constant negative jerk (deceleration begins)
+ *  6. Constant maximum deceleration
+ *  7. Constant positive jerk (deceleration returns to zero)
  * @{
  */
 

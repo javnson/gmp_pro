@@ -112,3 +112,36 @@ void ctl_init_vip_protection(std_vip_protection_t* obj, parameter_gt power_f_cut
     ctl_init_lp_filter(&obj->voltage_filter, fs, voltage_f_cut);
     ctl_init_lp_filter(&obj->current_filter, fs, current_f_cut);
 }
+
+void ctl_init_foldback_protection(std_foldback_protection_t* obj, parameter_gt voltage_f_cut,
+                                  parameter_gt current_f_cut, parameter_gt v_rated, parameter_gt i_max,
+                                  parameter_gt i_short, parameter_gt fs)
+{
+    // Initialize all members to a known state
+    memset(obj, 0, sizeof(std_foldback_protection_t));
+
+    // Store protection parameters
+    obj->voltage_rated = v_rated;
+    obj->current_max = i_max;
+    obj->current_short_circuit = i_short;
+
+    // The initial output should be the maximum allowed current
+    obj->current_limit_output = i_max;
+
+    // Pre-calculate the slope of the foldback line for efficiency.
+    // Slope = (delta_I) / (delta_V) = (i_max - i_short) / (v_rated - 0)
+    if (v_rated > 0)
+    {
+        obj->slope = ctl_div(obj->current_max - obj->current_short_circuit, obj->voltage_rated);
+    }
+
+    // Initialize the low-pass filters for input signal conditioning
+    ctl_init_lp_filter(&obj->voltage_filter, voltage_f_cut, fs);
+    ctl_init_lp_filter(&obj->current_filter, current_f_cut, fs);
+}
+
+void ctl_attach_foldback_protection(std_foldback_protection_t* obj, adc_ift* uo, adc_ift* io)
+{
+    obj->adc_uo = uo;
+    obj->adc_io = io;
+}

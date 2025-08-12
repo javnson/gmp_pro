@@ -42,7 +42,7 @@ extern "C"
  * 
  * Control Law:
  * @f[
- * u_0 = \omega_c (r_{pu} - z_1)
+ * u_0 = \omega_c (r_{pu} - z_1) \\
  * u_{pu} = \frac{u_0 - z_2}{b_0}
  * @f]
  * @{

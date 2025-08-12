@@ -2,9 +2,6 @@
  * @file pmsm_fo.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Implements a flux and torque observer for a Permanent Magnet Synchronous Motor (PMSM).
- * @details This module calculates the stator flux and electromagnetic torque based on the motor's
- * currents and rotor angle. It uses a sensored model, meaning it requires rotor position feedback.
- * The calculations are performed in the stationary ¦Á-¦Â reference frame using per-unit values.
  * @version 0.1
  * @date 2024-10-02
  *
@@ -26,6 +23,10 @@ extern "C"
  * @defgroup PMSM_FLUX_OBSERVER PMSM Flux and Torque Observer
  * @brief A module for estimating PMSM stator flux and electromagnetic torque.
  *
+ * @details This module calculates the stator flux and electromagnetic torque based on the motor's
+ * currents and rotor angle. It uses a sensored model, meaning it requires rotor position feedback.
+ * The calculations are performed in the stationary ¦Á-¦Â reference frame using per-unit values.
+
  * This observer uses the following per-unit equations:
  *
  * **Flux Equations:**

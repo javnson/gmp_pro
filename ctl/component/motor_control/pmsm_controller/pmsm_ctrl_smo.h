@@ -1,16 +1,6 @@
 /**
  * @file pmsm_ctrl_smo.h
  * @brief Provides a sensorless PMSM controller using a Sliding Mode Observer (SMO).
- * @details This file implements a full sensorless FOC solution. It includes an
- * open-loop ramp-up generator for starting the motor and a Sliding Mode
- * Observer (SMO) to estimate rotor position and speed for closed-loop control.
- * A key function, `ctl_switch_pmsm_smo_ctrl_using_smo`, handles the bumpless
- * transfer from open-loop startup to sensorless closed-loop operation.
- *
- * //tex:
- * // The SMO estimates the back-EMF based on the motor model:
- * // \frac{d\hat{i}_{\alpha\beta}}{dt} = \frac{1}{L_d} (v_{\alpha\beta} - R_s\hat{i}_{\alpha\beta} - E_{\alpha\beta} - Z_{\alpha\beta})
- * // Where Z is the sliding mode correction term.
  *
  */
 
@@ -48,6 +38,17 @@ extern "C"
  * - An open-loop V/f ramp generator for reliable motor startup.
  * - A Sliding Mode Observer (SMO) for estimating rotor position and speed.
  * - A bumpless transfer mechanism to switch from startup to closed-loop control.
+ * 
+ * This module implements a full sensorless FOC solution. It includes an
+ * open-loop ramp-up generator for starting the motor and a Sliding Mode
+ * Observer (SMO) to estimate rotor position and speed for closed-loop control.
+ * A key function, `ctl_switch_pmsm_smo_ctrl_using_smo`, handles the bumpless
+ * transfer from open-loop startup to sensorless closed-loop operation.
+ *
+ * The SMO estimates the back-EMF based on the motor model:
+ * @f[ \frac{d\hat{i}_{\alpha\beta}}{dt} = \frac{1}{L_d} (v_{\alpha\beta} - R_s\hat{i}_{\alpha\beta} - E_{\alpha\beta} - Z_{\alpha\beta}) @f]
+ * Where Z is the sliding mode correction term.
+
  * @{
  */
 

@@ -1,11 +1,6 @@
 /**
  * @file CURRENT_DISTRIBUTOR_LUT.h
  * @brief Defines a lookup table (LUT) for a custom current distribution strategy.
- * @details This module provides a pre-defined table that maps a total current
- * magnitude to a specific d-q axis current angle (alpha). This is often used
- * for control strategies like that of a Synchronous Reluctance Motor (SynRM)
- * or Interior Permanent Magnet (IPM) motor, where the optimal torque angle
- * changes with the current level.
  *
  * @version 1.0
  * @date 2025-08-06
@@ -27,6 +22,11 @@ extern "C"
  * @defgroup CURRENT_DISTRIBUTOR_LUT Current Distributor LUT
  * @ingroup CTL_MC_PRESET
  * @brief Provides a lookup table for mapping current magnitude to a control angle.
+ * @details This module provides a pre-defined table that maps a total current
+ * magnitude to a specific d-q axis current angle (alpha). This is often used
+ * for control strategies like that of a Synchronous Reluctance Motor (SynRM)
+ * or Interior Permanent Magnet (IPM) motor, where the optimal torque angle
+ * changes with the current level.
  * @{
  */
 

@@ -7,15 +7,6 @@
  *
  * @copyright Copyright (c) 2025
  *
- * @details This file provides a robust implementation of the P&O algorithm for
- * Maximum Power Point Tracking (MPPT) in photovoltaic systems. It includes an
- * adaptive step size mechanism to improve both dynamic tracking speed and
- * steady-state efficiency by reducing oscillations around the MPP.
- *
- * The algorithm works by periodically perturbing the operating voltage of the
- * solar panel and observing the resulting change in power.
- *
- * Reference: https://ww2.mathworks.cn/discovery/mppt-algorithm.html
  */
 
 #ifndef _FILE_PNO_ALGORITHM_H_
@@ -45,6 +36,15 @@ extern "C"
 
 /**
  * @brief Data structure for the Perturb and Observe (P&O) MPPT algorithm.
+ * @details This file provides a robust implementation of the P&O algorithm for
+ * Maximum Power Point Tracking (MPPT) in photovoltaic systems. It includes an
+ * adaptive step size mechanism to improve both dynamic tracking speed and
+ * steady-state efficiency by reducing oscillations around the MPP.
+ *
+ * The algorithm works by periodically perturbing the operating voltage of the
+ * solar panel and observing the resulting change in power.
+ *
+ * Reference: https://ww2.mathworks.cn/discovery/mppt-algorithm.html
  */
 typedef struct _tag_mppt_PnO_algo
 {

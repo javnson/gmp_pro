@@ -6,7 +6,9 @@
  * @date 2025-08-05
  *
  * @copyright Copyright GMP(c) 2025
- *
+ */
+
+/**
  * @defgroup CTL_PLL_API Phase-Locked Loop (PLL) API
  * @{
  * @ingroup CTL_DP_LIB

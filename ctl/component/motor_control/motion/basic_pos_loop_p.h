@@ -2,12 +2,6 @@
  * @file basic_pos_loop_p.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Implements a basic proportional (P) position controller.
- * @details This module provides a simple and effective position controller. It takes
- * a target position (composed of full revolutions and an angle) and a feedback
- * position, calculates the error, and multiplies it by a proportional gain (Kp)
- * to produce a speed reference. The output is saturated to a defined limit.
- * This controller forms the outermost loop in a cascaded position control system.
- *
  * @version 0.2
  * @date 2025-08-06
  *
@@ -31,6 +25,11 @@ extern "C"
 /**
  * @defgroup POSITION_CONTROLLER Basic Position Controller
  * @brief A simple P-controller for a position loop.
+ * @details This module provides a simple and effective position controller. It takes
+ * a target position (composed of full revolutions and an angle) and a feedback
+ * position, calculates the error, and multiplies it by a proportional gain (Kp)
+ * to produce a speed reference. The output is saturated to a defined limit.
+ * This controller forms the outermost loop in a cascaded position control system.
  * @{
  */
 

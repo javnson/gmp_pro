@@ -1,20 +1,6 @@
 /**
  * @file sinusoidal_trajectory.h
  * @brief Implements a complete, header-only Sinusoidal trajectory planner for position control.
- * @details This module generates a position profile based on a sinusoidal acceleration
- * profile (specifically, a cycloidal profile). This ensures that velocity and
- * acceleration are zero at both the start and end of the motion, providing
- * extremely smooth movement with continuous jerk. The planner generates a
- * trajectory to move from a starting point to a target point over a specified
- * duration.
- *
- * //tex:
- * // The trajectory is based on a cycloidal profile, where the position p(t) is given by:
- * // p(t) = p_{start} + \Delta p \left( \frac{t}{T} - \frac{1}{2\pi} \sin\left(\frac{2\pi t}{T}\right) \right)
- * // This results in a sinusoidal velocity profile:
- * // v(t) = \frac{\Delta p}{T} \left( 1 - \cos\left(\frac{2\pi t}{T}\right) \right)
- * // And a sinusoidal acceleration profile:
- * // a(t) = \frac{2\pi \Delta p}{T^2} \sin\left(\frac{2\pi t}{T}\right)
  *
  */
 
@@ -36,6 +22,19 @@ extern "C"
 /**
  * @defgroup SINUSOIDAL_PLANNER Sinusoidal Trajectory Planner
  * @brief Generates cycloidal profiles for extremely smooth motion.
+ * @details This module generates a position profile based on a sinusoidal acceleration
+ * profile (specifically, a cycloidal profile). This ensures that velocity and
+ * acceleration are zero at both the start and end of the motion, providing
+ * extremely smooth movement with continuous jerk. The planner generates a
+ * trajectory to move from a starting point to a target point over a specified
+ * duration.
+ *
+ * The trajectory is based on a cycloidal profile, where the position @f( p(t) @f) is given by:
+ * @f[ p(t) = p_{start} + \Delta p \left( \frac{t}{T} - \frac{1}{2\pi} \sin\left(\frac{2\pi t}{T}\right) \right) @f]
+ * This results in a sinusoidal velocity profile:
+ * @f[ v(t) = \frac{\Delta p}{T} \left( 1 - \cos\left(\frac{2\pi t}{T}\right) \right) @f]
+ * And a sinusoidal acceleration profile:
+ * @f[ a(t) = \frac{2\pi \Delta p}{T^2} \sin\left(\frac{2\pi t}{T}\right) @f]
  * @{
  */
 

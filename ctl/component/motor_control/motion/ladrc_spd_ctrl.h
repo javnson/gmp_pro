@@ -1,30 +1,9 @@
 /**
  * @file ladrc_speed_controller.h
  * @brief Implements a Per-Unit Linear Active Disturbance Rejection Controller (LADRC) for a motor speed loop.
- * @details This module provides a robust speed controller based on the LADRC
- * strategy. It uses a Linear Extended State Observer (LESO) to estimate and
- * actively compensate for total system disturbances, including load torque,
- * friction, and inertia variations. The controller's output is the reference
- * for the torque-producing current (Iq).
- *
- * The controller is designed to operate entirely within the per-unit system.
  *
  * @version 1.0
  * @date 2025-08-06
- *
- * //tex:
- * // Plant Model: \frac{d\omega_{m,pu}}{dt} = b_0 u_{pu} + f_{pu}
- * // Where u_{pu} is i_{q,pu}, f_{pu} is the total disturbance (load, friction, etc.),
- * // and b_0 = \frac{K_{t,pu}}{H}, with H being the inertia constant in seconds.
- * //
- * // LESO (z1 -> omega_m_pu, z2 -> f_pu):
- * // e = z_1 - \omega_{m,pu}
- * // \dot{z_1} = z_2 - 2\omega_o e + b_0 u_{pu}
- * // \dot{z_2} = -\omega_o^2 e
- * //
- * // Control Law:
- * // u_0 = \omega_c (r_{pu} - z_1)
- * // u_{pu} = \frac{u_0 - z_2}{b_0}
  *
  */
 
@@ -43,6 +22,29 @@ extern "C"
 /**
  * @defgroup LADRC_SPEED_PU LADRC Speed Controller (Per-Unit)
  * @brief A robust, per-unit speed controller using Active Disturbance Rejection.
+ * @details This module provides a robust speed controller based on the LADRC
+ * strategy. It uses a Linear Extended State Observer (LESO) to estimate and
+ * actively compensate for total system disturbances, including load torque,
+ * friction, and inertia variations. The controller's output is the reference
+ * for the torque-producing current (Iq).
+ *
+ * The controller is designed to operate entirely within the per-unit system.
+ * Plant Model: @f[\frac{d\omega_{m,pu}}{dt} = b_0 u_{pu} + f_{pu} @f]
+ * Where @f( u_{pu} @f) is @f( i_{q,pu}, f_{pu} @f) is the total disturbance (load, friction, etc.),
+ * and @f( b_0 = \frac{K_{t,pu}}{H} @f), with H being the inertia constant in seconds.
+ * 
+ * LESO (z1 -> omega_m_pu, z2 -> f_pu):
+ * @f[ 
+ * e = z_1 - \omega_{m,pu}  \\
+ * \dot{z_1} = z_2 - 2\omega_o e + b_0 u_{pu} \\ 
+ * \dot{z_2} = -\omega_o^2 e
+ * @f]
+ * 
+ * Control Law:
+ * @f[
+ * u_0 = \omega_c (r_{pu} - z_1)
+ * u_{pu} = \frac{u_0 - z_2}{b_0}
+ * @f]
  * @{
  */
 

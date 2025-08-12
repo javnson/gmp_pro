@@ -211,7 +211,7 @@ GMP_STATIC_INLINE parameter_gt ctl_acm_get_leakage_coefficient(const im_dsn_cons
  * @brief Estimates the required slip speed for a given torque-producing current (Isq).
  * @details This is used in indirect field-oriented control (IFOC) to calculate the slip.
  * Formula: @f( \omega_{sl} = \frac{R_r}{L_r} \frac{L_m i_{sq}}{\lambda_{dr}} @f)
- * Note: This simplified version assumes rotor flux is aligned with d-axis, so //tex:\lambda_r = \lambda_{dr}
+ * Note: This simplified version assumes rotor flux is aligned with d-axis, so @f( \lambda_r = \lambda_{dr} @f)
  * @param[in] im_dsn Pointer to the populated motor consultant structure.
  * @param[in] i_sq The target q-axis (torque-producing) current in Amperes (A).
  * @param[in] rotor_flux_mag The target rotor flux magnitude in Weber (Wb).

@@ -7,6 +7,23 @@
  *
  * @copyright Copyright (c) 2025
  *
+ */
+
+#ifndef _FILE_BUCK_CTRL_H_
+#define _FILE_BUCK_CTRL_H_
+
+#include <ctl/component/interface/interface_base.h>
+#include <ctl/component/intrinsic/basic/saturation.h>
+#include <ctl/component/intrinsic/continuous/continuous_pid.h>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif // __cplusplus
+
+/**
+ * @defgroup buck_controller_api Buck Converter Controller API
+ * @brief Contains all configurations, data structures, and functions for the Buck controller.
  * @details
  * # Buck Controller Usage Guide
  *
@@ -39,23 +56,6 @@
  * ## 4. Control
  * - Use @ref ctl_enable_buck_ctrl and @ref ctl_disable_buck_ctrl for master control.
  * - Use @ref ctl_clear_buck_ctrl to reset PID integrators before enabling.
- */
-
-#ifndef _FILE_BUCK_CTRL_H_
-#define _FILE_BUCK_CTRL_H_
-
-#include <ctl/component/interface/interface_base.h>
-#include <ctl/component/intrinsic/basic/saturation.h>
-#include <ctl/component/intrinsic/continuous/continuous_pid.h>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif // __cplusplus
-
-/**
- * @defgroup buck_controller_api Buck Converter Controller API
- * @brief Contains all configurations, data structures, and functions for the Buck controller.
  * @{
  * @ingroup CTL_DP_LIB
  */

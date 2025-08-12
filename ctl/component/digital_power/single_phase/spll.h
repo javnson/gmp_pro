@@ -7,19 +7,6 @@
  *
  * @copyright Copyright (c) 2025
  *
- * @details This file provides an implementation of a SOGI-based PLL, which is a robust method
- * for tracking the phase and frequency of a single-phase AC signal. It is commonly used
- * in grid-tied applications like PFC rectifiers and inverters.
- *
- * The PLL operates as follows:
- * 1.  A Second-Order Generalized Integrator (SOGI) takes the single-phase input and
- * generates a pair of orthogonal (¦Á-¦Â) signals.
- * 2.  A Park transform converts these ¦Á-¦Â signals into a rotating d-q frame using the
- * PLL's estimated phase angle.
- * 3.  A PI controller acts as a loop filter, driving the q-component of the transformed
- * signal to zero.
- * 4.  A Voltage-Controlled Oscillator (VCO) integrates the output of the loop filter to
- * generate the estimated frequency and phase, which closes the loop.
  */
 
 #ifndef _FILE_SINGLE_PHASE_PLL_H_
@@ -38,6 +25,19 @@ extern "C"
 /**
  * @defgroup spll_api Single Phase PLL API
  * @brief A Phase-Locked Loop for single-phase grid synchronization.
+ * @details This file provides an implementation of a SOGI-based PLL, which is a robust method
+ * for tracking the phase and frequency of a single-phase AC signal. It is commonly used
+ * in grid-tied applications like PFC rectifiers and inverters.
+ *
+ * The PLL operates as follows:
+ * 1.  A Second-Order Generalized Integrator (SOGI) takes the single-phase input and
+ * generates a pair of orthogonal @f((\alpha -\beta)@f) signals.
+ * 2.  A Park transform converts these @f((\alpha -\beta)@f) signals into a rotating d-q frame using the
+ * PLL's estimated phase angle.
+ * 3.  A PI controller acts as a loop filter, driving the q-component of the transformed
+ * signal to zero.
+ * 4.  A Voltage-Controlled Oscillator (VCO) integrates the output of the loop filter to
+ * generate the estimated frequency and phase, which closes the loop.
  * @{
  * @ingroup CTL_DP_LIB
  */

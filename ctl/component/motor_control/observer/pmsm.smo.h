@@ -2,25 +2,11 @@
  * @file pmsm.smo.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Provides a sensorless position estimator for PMSM using a Sliding Mode Observer (SMO).
- * @details This module implements an SMO to estimate the rotor position and speed of a
- * Permanent Magnet Synchronous Motor. It uses the motor's voltage and current
- * measurements to drive an observer model. A sliding control law generates a
- * correction term (z) that, when filtered, represents the motor's back-EMF.
- * A Phase-Locked Loop (PLL) then tracks the back-EMF signal to extract the
- * rotor angle and speed.
  *
  * @version 0.2
  * @date 2025-08-06
  *
  * @copyright Copyright GMP(c) 2025
- *
- * //tex:
- * // The SMO is based on the PMSM voltage model in the stationary \alpha-\beta frame.
- * // The observer estimates the stator currents:
- * // \frac{d\hat{i}_{\alpha\beta}}{dt} = \frac{1}{L_s}(v_{\alpha\beta} - R_s\hat{i}_{\alpha\beta} - z_{\alpha\beta})
- * // The sliding control law, z, forces the estimated current to track the measured current:
- * // z_{\alpha\beta} = k_{slide} \cdot \text{sign}(\hat{i}_{\alpha\beta} - i_{\alpha\beta})
- * // When in the sliding mode, the filtered value of z is equal to the back-EMF: E_{\alpha\beta} \approx \bar{z}_{\alpha\beta}
  *
  */
 
@@ -46,6 +32,21 @@ extern "C"
  * @brief A module for sensorless position and speed estimation using SMO.
  * @details Implements the observer model, sliding control law, filtering, and PLL
  * required to track the rotor angle of a PMSM.
+ * 
+ * This module implements an SMO to estimate the rotor position and speed of a
+ * Permanent Magnet Synchronous Motor. It uses the motor's voltage and current
+ * measurements to drive an observer model. A sliding control law generates a
+ * correction term (z) that, when filtered, represents the motor's back-EMF.
+ * A Phase-Locked Loop (PLL) then tracks the back-EMF signal to extract the
+ * rotor angle and speed.
+ *
+ * The SMO is based on the PMSM voltage model in the stationary @f(\alpha-\beta@f) frame.
+ * The observer estimates the stator currents:
+ * @f[ \frac{d\hat{i}_{\alpha\beta}}{dt} = \frac{1}{L_s}(v_{\alpha\beta} - R_s\hat{i}_{\alpha\beta} - z_{\alpha\beta}) @f]
+ * The sliding control law, z, forces the estimated current to track the measured current:
+ * @f[ z_{\alpha\beta} = k_{slide} \cdot \text{sign}(\hat{i}_{\alpha\beta} - i_{\alpha\beta}) @f]
+ * When in the sliding mode, the filtered value of z is equal to the back-EMF: 
+ * @f[ E_{\alpha\beta} \approx \bar{z}_{\alpha\beta} @f]
  * @{
  */
 

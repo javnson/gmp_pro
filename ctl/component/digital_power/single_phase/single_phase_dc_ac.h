@@ -6,7 +6,10 @@
  * @date 2025-08-05
  *
  * @copyright Copyright GMP(c) 2025
- *
+ */
+
+
+/**
  * @defgroup CTL_TOPOLOGY_SINV_H_API Single-Phase Inverter Topology API (Header)
  * @{
  * @ingroup CTL_DP_LIB

@@ -7,16 +7,6 @@
  *
  * @copyright Copyright (c) 2025
  *
- * @details This file provides a dual-loop controller for a single-phase boost-type
- * PFC converter. The control strategy aims to maintain a stable DC bus voltage
- * while forcing the input AC current to be sinusoidal and in phase with the
- * input voltage, thus achieving a high power factor.
- *
- * The controller consists of:
- * 1. An outer voltage loop that regulates the DC bus voltage. Its output sets the
- * amplitude for the current reference.
- * 2. An inner current loop that shapes the inductor current to follow a rectified
- * sinusoidal reference, which is synchronized with the input voltage.
  */
 
 #ifndef _FILE_GMP_CTL_SPFC_H_
@@ -33,6 +23,16 @@ extern "C"
 /**
  * @defgroup spfc_api Single Phase PFC API
  * @brief Controller for single-phase Power Factor Correction.
+ * @details This file provides a dual-loop controller for a single-phase boost-type
+ * PFC converter. The control strategy aims to maintain a stable DC bus voltage
+ * while forcing the input AC current to be sinusoidal and in phase with the
+ * input voltage, thus achieving a high power factor.
+ *
+ * The controller consists of:
+ * 1. An outer voltage loop that regulates the DC bus voltage. Its output sets the
+ * amplitude for the current reference.
+ * 2. An inner current loop that shapes the inductor current to follow a rectified
+ * sinusoidal reference, which is synchronized with the input voltage.
  * @{
  * @ingroup CTL_DP_LIB
  */

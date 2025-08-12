@@ -7,19 +7,6 @@
  *
  * @copyright Copyright (c) 2025
  *
- * @details This file provides an implementation of the Incremental Conductance algorithm
- * for Maximum Power Point Tracking (MPPT). The INC algorithm offers improved tracking
- * under rapidly changing atmospheric conditions compared to the P&O method.
- *
- * The core principle is that the derivative of power with respect to voltage (dP/dV)
- * is zero at the MPP. The algorithm checks the relationship between the incremental
- * conductance (dI/dV) and the instantaneous conductance (I/V) to determine the
- * direction in which to adjust the voltage.
- * - dI/dV > -I/V : Left of MPP, increase voltage.
- * - dI/dV < -I/V : Right of MPP, decrease voltage.
- * - dI/dV = -I/V : At MPP, keep voltage constant.
- *
- * Reference: https://ww2.mathworks.cn/discovery/mppt-algorithm.html
  */
 
 #ifndef _FILE_INC_ALGORITHM_H_
@@ -40,6 +27,20 @@ extern "C"
 
 /**
  * @brief Data structure for the Incremental Conductance (INC) MPPT algorithm.
+ * @details This file provides an implementation of the Incremental Conductance algorithm
+ * for Maximum Power Point Tracking (MPPT). The INC algorithm offers improved tracking
+ * under rapidly changing atmospheric conditions compared to the P&O method.
+ *
+ * The core principle is that the derivative of power with respect to voltage (dP/dV)
+ * is zero at the MPP. The algorithm checks the relationship between the incremental
+ * conductance (dI/dV) and the instantaneous conductance (I/V) to determine the
+ * direction in which to adjust the voltage.
+ * - dI/dV > -I/V : Left of MPP, increase voltage.
+ * - dI/dV < -I/V : Right of MPP, decrease voltage.
+ * - dI/dV = -I/V : At MPP, keep voltage constant.
+ *
+ * Reference: https://ww2.mathworks.cn/discovery/mppt-algorithm.html
+ *
  */
 typedef struct _tag_mppt_inc_algo
 {

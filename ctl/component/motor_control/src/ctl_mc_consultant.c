@@ -1,4 +1,4 @@
-#include <gmp_core.h>
+ï»¿#include <gmp_core.h>
 
 #include <ctl/math_block/const/math_param_const.h>
 
@@ -20,7 +20,7 @@ static void calculate_all_base_values(ctl_per_unit_consultant_t* pu)
     pu->base_inst_voltage = pu->base_voltage * sqrtf(2.0);
     pu->base_inst_current = pu->base_current * sqrtf(2.0);
 
-    // 2. »úÐµ»ùÖµ (»ùÓÚÍ¬²½ËÙ)
+    // 2. æœºæ¢°åŸºå€¼ (åŸºäºŽåŒæ­¥é€Ÿ)
     pu->base_speed = pu->base_omega / pu->pole_pairs;
     parameter_gt total_base_power = pu->base_power * pu->phases;
     pu->base_torque = total_base_power / pu->base_speed;
@@ -53,7 +53,7 @@ void ctl_init_per_unit_consultant_acm(ctl_per_unit_consultant_t* pu, uint32_t po
 
     pu->pole_pairs = pole_pairs;
     pu->phases = phases;
-    pu->base_power = rated_power / (parameter_gt)phases; // »ù×¼¹¦ÂÊÎªÃ¿Ïà¹¦ÂÊ
+    pu->base_power = rated_power / (parameter_gt)phases; // åŸºå‡†åŠŸçŽ‡ä¸ºæ¯ç›¸åŠŸçŽ‡
     pu->base_voltage = rated_voltage_phase_rms;
 
     pu->base_freq = synchronous_freq;
@@ -61,4 +61,23 @@ void ctl_init_per_unit_consultant_acm(ctl_per_unit_consultant_t* pu, uint32_t po
     calculate_all_base_values(pu);
 
     pu->base_speed_krpm = rated_spd_krpm;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// PMSM consultant
+
+void ctl_init_pmsm_dsn_consultant(ctl_pmsm_dsn_consultant_t* pmsm_dsn, uint16_t pole_pair, parameter_gt Rs,
+                                  parameter_gt Ld, parameter_gt Lq, parameter_gt flux, parameter_gt inertia,
+                                  parameter_gt damp)
+{
+    gmp_base_assert(pmsm_dsn != NULL);
+
+    // Assign each input parameter to its corresponding member in the structure.
+    pmsm_dsn->pole_pair = pole_pair;
+    pmsm_dsn->Rs = Rs;
+    pmsm_dsn->Ld = Ld;
+    pmsm_dsn->Lq = Lq;
+    pmsm_dsn->flux = flux;
+    pmsm_dsn->inertia = inertia;
+    pmsm_dsn->damp = damp;
 }

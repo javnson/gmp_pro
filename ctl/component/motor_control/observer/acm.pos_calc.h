@@ -1,19 +1,6 @@
 /**
  * @file acm.pos_calc.h
  * @brief Provides a rotor flux position estimator for AC Induction Motors (ACM).
- * @details This module implements the indirect field-oriented control (IFOC) method
- * for estimating the rotor flux angle. It uses the motor's d-q axis currents
- * and mechanical speed to calculate the slip speed and integrates the resulting
- * stator frequency to determine the electrical angle for sensorless FOC.
- *
- * //tex:
- * // The estimation is based on the following key equations:
- * // 1. Rotor flux linkage (first-order low-pass filter):
- * //    T_r \frac{d\psi_{dr}}{dt} + \psi_{dr} = L_m i_{ds}
- * // 2. Slip frequency calculation:
- * //    \omega_{slip} = \frac{L_m}{T_r \psi_{dr}} i_{qs} = \frac{R_r}{L_r} \frac{L_m}{\psi_{dr}} i_{qs}
- * // 3. Stator frequency (field angle velocity):
- * //    \omega_s = \omega_e = \omega_r + \omega_{slip}
  *
  */
 
@@ -35,6 +22,18 @@ extern "C"
  * @defgroup ACM_POS_CALC ACM Position Calculator
  * @brief A module for estimating rotor flux angle in an AC Induction Motor.
  * @details Implements the core calculations for indirect field-oriented control (IFOC).
+ * This module implements the indirect field-oriented control (IFOC) method
+ * for estimating the rotor flux angle. It uses the motor's d-q axis currents
+ * and mechanical speed to calculate the slip speed and integrates the resulting
+ * stator frequency to determine the electrical angle for sensorless FOC.
+ *
+ * The estimation is based on the following key equations:
+ * 1. Rotor flux linkage (first-order low-pass filter):
+ *    @f[ T_r \frac{d\psi_{dr}}{dt} + \psi_{dr} = L_m i_{ds} @f]
+ * 2. Slip frequency calculation:
+ *    @f[ \omega_{slip} = \frac{L_m}{T_r \psi_{dr}} i_{qs} = \frac{R_r}{L_r} \frac{L_m}{\psi_{dr}} i_{qs} @f]
+ * 3. Stator frequency (field angle velocity):
+ *    @f[ \omega_s = \omega_e = \omega_r + \omega_{slip} @f]
  * @{
  */
 

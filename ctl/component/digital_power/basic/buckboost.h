@@ -7,6 +7,10 @@
  *
  * @copyright Copyright GMP(c) 2025
  * 
+ */
+
+
+/** 
  * @defgroup CTL_BUCKBOOST_API 4-Switch Buck-Boost API
  * @{
  * @ingroup CTL_DP_LIB

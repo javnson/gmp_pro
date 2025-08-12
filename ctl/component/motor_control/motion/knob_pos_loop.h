@@ -2,10 +2,6 @@
  * @file knob_pos_loop.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Implements a haptic knob position loop with discrete detents.
- * @details This module creates a "knob" effect by defining a series of stable setpoints (detents).
- * When the motor's actual position is near a detent, a proportional controller generates a
- * speed reference to pull the motor towards the center of that detent, simulating the feel
- * of a physical knob.
  * @version 0.2
  * @date 2024-10-02
  *
@@ -30,6 +26,10 @@ extern "C"
  *
  * This controller calculates a target position corresponding to the nearest "snap" point
  * and uses a P-controller to generate a restoring force (as a speed command) towards it.
+ * @details This module creates a "knob" effect by defining a series of stable setpoints (detents).
+ * When the motor's actual position is near a detent, a proportional controller generates a
+ * speed reference to pull the motor towards the center of that detent, simulating the feel
+ * of a physical knob.
  */
 
 /*---------------------------------------------------------------------------*/

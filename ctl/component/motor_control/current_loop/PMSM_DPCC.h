@@ -36,7 +36,7 @@ extern "C"
  * The controller is based on the discretized PMSM voltage equations:
  * @f[ i_d(k+1) = i_d(k)+\frac{T_s}{L_d}\left[u_d(k)-R_si_d (k)+ \omega_e L_qi_q(k)\right] @f]
  * @f[ i_q(k+1) = i_q(k)+\frac{T_s}{L_q}\left[ u_q(k)-R_si_q (k)- \omega_e (L_di_d(k)+\Psi_f)\right] @f]
- * By setting i_d(k+1) and i_q(k+1) to their reference values, we can solve for the required voltage u_d(k) and u_q(k).
+ * By setting @f( i_d(k+1) @f) and @f( i_q(k+1) @f) to their reference values, we can solve for the required voltage @f( u_d(k) @f) and @f( u_q(k) @f).
  * To compensate for the one-step digital delay, a prediction step is used.
  *
  * @{

@@ -1,17 +1,6 @@
 /**
  * @file trapezoidal_trajectory.h
  * @brief Implements a complete, header-only Trapezoidal trajectory planner for position control.
- * @details This module generates a position profile based on a trapezoidal velocity
- * profile. It ensures that the motion from a start point to a target point
- * adheres to specified maximum velocity and acceleration limits. The planner
- * continuously calculates the required acceleration based on the distance to
- * the target and the braking distance required from the current velocity.
- *
- * //tex:
- * // The velocity profile is a trapezoid, consisting of three phases:
- * // 1. Constant acceleration: v(t) = a_{max} \cdot t
- * // 2. Constant velocity: v(t) = v_{max}
- * // 3. Constant deceleration: v(t) = v_{max} - a_{max} \cdot t
  *
  */
 
@@ -33,6 +22,16 @@ extern "C"
 /**
  * @defgroup TRAPEZOIDAL_PLANNER Trapezoidal Trajectory Planner
  * @brief Generates trapezoidal velocity profiles for position control.
+ * @details This module generates a position profile based on a trapezoidal velocity
+ * profile. It ensures that the motion from a start point to a target point
+ * adheres to specified maximum velocity and acceleration limits. The planner
+ * continuously calculates the required acceleration based on the distance to
+ * the target and the braking distance required from the current velocity.
+ *
+ * The velocity profile is a trapezoid, consisting of three phases:
+ * 1. Constant acceleration: @f[ v(t) = a_{max} \cdot t @f]
+ * 2. Constant velocity: @f[ v(t) = v_{max} @f]
+ * 3. Constant deceleration: @f[ v(t) = v_{max} - a_{max} \cdot t @f]
  * @{
  */
 

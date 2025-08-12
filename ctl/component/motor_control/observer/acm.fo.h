@@ -2,10 +2,6 @@
  * @file im.fo.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Implements a flux and torque observer for an Induction Motor (IM).
- * @details This module estimates the rotor flux and electromagnetic torque of an induction
- * motor using a voltage model. It integrates the stator back-EMF to find the stator flux,
- * then calculates the rotor flux and torque. A low-pass filter is used instead of a pure
- * integrator to mitigate DC drift issues at low speeds.
  * @version 0.1
  * @date 2024-10-02
  *
@@ -28,7 +24,11 @@ extern "C"
  * @brief A module for estimating IM rotor flux and electromagnetic torque.
  *
  * This observer is based on the voltage model in the stationary (¦Á-¦Â) reference frame.
- *
+ * @details This module estimates the rotor flux and electromagnetic torque of an induction
+ * motor using a voltage model. It integrates the stator back-EMF to find the stator flux,
+ * then calculates the rotor flux and torque. A low-pass filter is used instead of a pure
+ * integrator to mitigate DC drift issues at low speeds.
+ * 
  * **Stator Flux Estimation (using a Low-Pass Filter):**
  * @f[ \psi_{s(\alpha\beta)} = \frac{1}{s + \omega_c}(V_{s(\alpha\beta)} - R_s I_{s(\alpha\beta)}) @f]
  * @f[ \vec{\psi}_s = \frac{1}{s + \omega_c}(\vec{V}_s - R_s \vec{I}_s) @f]

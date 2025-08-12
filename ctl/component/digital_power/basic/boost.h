@@ -7,6 +7,24 @@
  *
  * @copyright Copyright (c) 2025
  * 
+ */
+
+#ifndef _FILE_BOOST_CTRL_H_
+#define _FILE_BOOST_CTRL_H_
+
+#include <ctl/component/interface/interface_base.h>
+#include <ctl/component/intrinsic/basic/saturation.h>
+#include <ctl/component/intrinsic/continuous/continuous_pid.h>
+#include <ctl/component/intrinsic/discrete/discrete_filter.h>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif // __cplusplus
+
+/**
+ * @defgroup boost_controller_api Boost Converter Controller API
+ * @brief Contains all configurations, data structures, and functions for the Boost controller.
  * @details
  * # Boost Controller Usage Guide
  *
@@ -39,24 +57,6 @@
  * ## 4. Control
  * - Use @ref ctl_enable_boost_ctrl and @ref ctl_disable_boost_ctrl for master control.
  * - Use @ref ctl_clear_boost_ctrl to reset PID integrators before enabling.
- */
-
-#ifndef _FILE_BOOST_CTRL_H_
-#define _FILE_BOOST_CTRL_H_
-
-#include <ctl/component/interface/interface_base.h>
-#include <ctl/component/intrinsic/basic/saturation.h>
-#include <ctl/component/intrinsic/continuous/continuous_pid.h>
-#include <ctl/component/intrinsic/discrete/discrete_filter.h>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif // __cplusplus
-
-/**
- * @defgroup boost_controller_api Boost Converter Controller API
- * @brief Contains all configurations, data structures, and functions for the Boost controller.
  * @{
  * @ingroup CTL_DP_LIB
  */
