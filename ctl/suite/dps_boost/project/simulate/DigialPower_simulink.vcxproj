@@ -164,7 +164,6 @@
     <ClCompile Include="gmp_src\ctl_component_continuous.c" />
     <ClCompile Include="gmp_src\ctl_component_discrete.c" />
     <ClCompile Include="gmp_src\ctl_component_interface.c" />
-    <ClCompile Include="gmp_src\ctl_component_lebesgue.c" />
     <ClCompile Include="gmp_src\ctl_component_protection.c" />
     <ClCompile Include="gmp_src\ctl_dp_basic.c" />
     <ClCompile Include="gmp_src\ctl_dp_mppt.c" />

@@ -55,13 +55,7 @@ volatile fast_gt flag_enable_system = 0;
 void ctl_init()
 {
     // setup ADC calibrate
-    ctl_filter_IIR2_setup_t adc_calibrator_filter;
-    adc_calibrator_filter.filter_type = FILTER_IIR2_TYPE_LOWPASS;
-    adc_calibrator_filter.fc = 20;
-    adc_calibrator_filter.fs = CONTROLLER_FREQUENCY;
-    adc_calibrator_filter.gain = 1;
-    adc_calibrator_filter.q = 0.707f;
-    ctl_init_adc_calibrator(&adc_calibrator, &adc_calibrator_filter);
+    ctl_init_adc_calibrator(&adc_calibrator, 20, 0.707f, CONTROLLER_FREQUENCY);
 
 #ifdef PMSM_CTRL_USING_QEP_ENCODER
     // init Auto - turn encoder
@@ -95,7 +89,7 @@ void ctl_init()
     pmsm_ctrl_init.fs = CONTROLLER_FREQUENCY;
 
     // current pid controller parameters
-    pmsm_ctrl_init.current_pid_gain = (parameter_gt)(MOTOR_PARAM_LS * MTR_CTRL_CURRENT_LOOP_BW * 2 * PI *
+    pmsm_ctrl_init.current_pid_gain = (parameter_gt)(MOTOR_PARAM_LS * MTR_CTRL_CURRENT_LOOP_BW * CTL_PARAM_CONST_2PI *
                                                      MTR_CTRL_VOLTAGE_BASE / MTR_CTRL_CURRENT_BASE);
     pmsm_ctrl_init.current_Ti = (parameter_gt)(MOTOR_PARAM_LS / MOTOR_PARAM_RS);
     pmsm_ctrl_init.current_Td = 0;
@@ -186,7 +180,6 @@ void ctl_mainloop(void)
 
     ctl_set_pmsm_ctrl_speed(&pmsm_ctrl, float2ctrl(0.1) * spd_target - float2ctrl(1.0));
 
-
     //
     // Judge if PWM is enabled
     //
@@ -217,8 +210,8 @@ void ctl_mainloop(void)
                 // enable pmsm controller
                 ctl_enable_pmsm_ctrl_output(&pmsm_ctrl);
             }
-            // index_adc_calibrator == 2 ~ 0, for Iabc 
-            else 
+            // index_adc_calibrator == 2 ~ 0, for Iabc
+            else
             {
                 // iabc get result
                 iabc.bias[index_adc_calibrator] =
@@ -240,13 +233,12 @@ void ctl_mainloop(void)
         }
     }
 
-
     return;
 }
 
 #ifdef SPECIFY_ENABLE_CTL_FRAMEWORK_NANO
 
-void ctl_fmif_monitor_routine(ctl_object_nano_t *pctl_obj)
+void ctl_fmif_monitor_routine(ctl_object_nano_t* pctl_obj)
 {
     // not implement
 }
@@ -254,7 +246,7 @@ void ctl_fmif_monitor_routine(ctl_object_nano_t *pctl_obj)
 // return value:
 // 1 change to next progress
 // 0 keep the same state
-fast_gt ctl_fmif_sm_pending_routine(ctl_object_nano_t *pctl_obj)
+fast_gt ctl_fmif_sm_pending_routine(ctl_object_nano_t* pctl_obj)
 {
     // not implement
     return 0;
@@ -263,31 +255,31 @@ fast_gt ctl_fmif_sm_pending_routine(ctl_object_nano_t *pctl_obj)
 // return value:
 // 1 change to next progress
 // 0 keep the same state
-fast_gt ctl_fmif_sm_calibrate_routine(ctl_object_nano_t *pctl_obj)
+fast_gt ctl_fmif_sm_calibrate_routine(ctl_object_nano_t* pctl_obj)
 {
     return ctl_cb_pmsm_servo_frmework_current_calibrate(&pmsm_servo);
 }
 
-fast_gt ctl_fmif_sm_ready_routine(ctl_object_nano_t *pctl_obj)
+fast_gt ctl_fmif_sm_ready_routine(ctl_object_nano_t* pctl_obj)
 {
     // not implement
     return 0;
 }
 
 // Main relay close, power on the main circuit
-fast_gt ctl_fmif_sm_runup_routine(ctl_object_nano_t *pctl_obj)
+fast_gt ctl_fmif_sm_runup_routine(ctl_object_nano_t* pctl_obj)
 {
     // not implement
     return 1;
 }
 
-fast_gt ctl_fmif_sm_online_routine(ctl_object_nano_t *pctl_obj)
+fast_gt ctl_fmif_sm_online_routine(ctl_object_nano_t* pctl_obj)
 {
     // not implement
     return 0;
 }
 
-fast_gt ctl_fmif_sm_fault_routine(ctl_object_nano_t *pctl_obj)
+fast_gt ctl_fmif_sm_fault_routine(ctl_object_nano_t* pctl_obj)
 {
     // not implement
     return 0;

@@ -12,7 +12,7 @@
 #ifndef _FILE_MOTOR_PARAM_GBM2804H_100T_H_
 #define _FILE_MOTOR_PARAM_GBM2804H_100T_H_
 
-#include <ctl/component/motor_control/basic/motor_unit_calculator.h>
+#include <ctl/component/motor_control/consultant/motor_unit_calculator.h>
 
 #ifdef __cplusplus
 extern "C"

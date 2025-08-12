@@ -27,7 +27,16 @@
     <ClCompile Include="..\..\implement\common\user_main.c">
       <Filter>implement_common</Filter>
     </ClCompile>
+    <ClCompile Include="gmp_src\windows_simulink_main.cpp">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\implement\simulate\xplt.peripheral.c">
+      <Filter>implement_interface</Filter>
+    </ClCompile>
     <ClCompile Include="gmp_src\ctl_component_advance.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_component_basic.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
     <ClCompile Include="gmp_src\ctl_component_continuous.c">
@@ -39,10 +48,10 @@
     <ClCompile Include="gmp_src\ctl_component_interface.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="gmp_src\ctl_component_lebesgue.c">
+    <ClCompile Include="gmp_src\ctl_component_protection.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="gmp_src\ctl_component_protection.c">
+    <ClCompile Include="gmp_src\ctl_mc_acm_sensored_ctrl.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
     <ClCompile Include="gmp_src\ctl_mc_basic.c">
@@ -60,19 +69,19 @@
     <ClCompile Include="gmp_src\ctl_mc_observer.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_pmsm_ctrl.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_pmsm_ctrl_hfi.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_pmsm_ctrl_mtpa.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_pmsm_ctrl_smo.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="gmp_src\ctl_nano.c">
-      <Filter>GMP Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="gmp_src\gmp_mm_block_memory.c">
-      <Filter>GMP Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="gmp_src\gmp_std_error_code.c">
-      <Filter>GMP Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="motor_control_simulink.cpp">
-      <Filter>implement_interface</Filter>
-    </ClCompile>
-    <ClCompile Include="gmp_src\windows_simulink_main.cpp">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
     <ClCompile Include="gmp_src\gmp_dev_util.c">
@@ -81,14 +90,17 @@
     <ClCompile Include="gmp_src\gmp_ds_list.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gmp_src\gmp_mm_block_memory.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\gmp_std_error_code.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="gmp_src\gmp_std_port.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\pmsm_ctrl.c">
-      <Filter>motor_driver_bare</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\implement\simulate\xplt.peripheral.c">
-      <Filter>implement_interface</Filter>
+    <ClCompile Include="motor_control_simulink.cpp">
+      <Filter>GMP Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -97,9 +109,6 @@
     </ClInclude>
     <ClInclude Include="..\..\implement\common\user_main.h">
       <Filter>implement_common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\pmsm_ctrl.h">
-      <Filter>motor_driver_bare</Filter>
     </ClInclude>
     <ClInclude Include="..\..\implement\simulate\ctrl_settings.h">
       <Filter>implement_interface</Filter>

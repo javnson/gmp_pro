@@ -36,9 +36,6 @@
     <ClCompile Include="gmp_src\ctl_component_interface.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="gmp_src\ctl_component_lebesgue.c">
-      <Filter>GMP Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="gmp_src\ctl_component_protection.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>

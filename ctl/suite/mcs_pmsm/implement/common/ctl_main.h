@@ -16,11 +16,13 @@
 #include <ctl\component\motor_control\basic\encoder.h>
 
 // motor controller
-#include <ctl/suite/mcs_pmsm/pmsm_ctrl.h>
+#include <ctl/component/motor_control/pmsm_controller/pmsm_ctrl.h>
 
 #include <ctl/component/interface/pwm_channel.h>
 
 #include <ctl/component/interface/adc_channel.h>
+
+#include <ctl/component/intrinsic/discrete/biquad_filter.h>
 
 #include <xplt.peripheral.h>
 

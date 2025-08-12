@@ -158,18 +158,22 @@
     <ClCompile Include="..\..\implement\common\ctl_main.c" />
     <ClCompile Include="..\..\implement\common\user_main.c" />
     <ClCompile Include="..\..\implement\simulate\xplt.peripheral.c" />
-    <ClCompile Include="..\..\src\pmsm_ctrl.c" />
     <ClCompile Include="gmp_src\ctl_component_advance.c" />
+    <ClCompile Include="gmp_src\ctl_component_basic.c" />
     <ClCompile Include="gmp_src\ctl_component_continuous.c" />
     <ClCompile Include="gmp_src\ctl_component_discrete.c" />
     <ClCompile Include="gmp_src\ctl_component_interface.c" />
-    <ClCompile Include="gmp_src\ctl_component_lebesgue.c" />
     <ClCompile Include="gmp_src\ctl_component_protection.c" />
+    <ClCompile Include="gmp_src\ctl_mc_acm_sensored_ctrl.c" />
     <ClCompile Include="gmp_src\ctl_mc_basic.c" />
     <ClCompile Include="gmp_src\ctl_mc_consultant.c" />
     <ClCompile Include="gmp_src\ctl_mc_current_loop.c" />
     <ClCompile Include="gmp_src\ctl_mc_motion.c" />
     <ClCompile Include="gmp_src\ctl_mc_observer.c" />
+    <ClCompile Include="gmp_src\ctl_mc_pmsm_ctrl.c" />
+    <ClCompile Include="gmp_src\ctl_mc_pmsm_ctrl_hfi.c" />
+    <ClCompile Include="gmp_src\ctl_mc_pmsm_ctrl_mtpa.c" />
+    <ClCompile Include="gmp_src\ctl_mc_pmsm_ctrl_smo.c" />
     <ClCompile Include="gmp_src\ctl_nano.c" />
     <ClCompile Include="gmp_src\gmp_dev_util.c" />
     <ClCompile Include="gmp_src\gmp_ds_list.c" />
@@ -186,7 +190,6 @@
     <ClInclude Include="..\..\implement\simulate\ctrl_settings.h" />
     <ClInclude Include="..\..\implement\simulate\xplt.peripheral.h" />
     <ClInclude Include="..\..\implement\simulate\xplt.config.h" />
-    <ClInclude Include="..\..\pmsm_ctrl.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
