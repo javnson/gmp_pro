@@ -97,7 +97,7 @@ GMP_STATIC_INLINE void ctl_step_current_distributor(ctl_current_distributor_t* d
     if (dist->mode == DIST_MODE_LUT_LINEAR)
     {
         // Use the generic 1D interpolation function from surf_search.h
-        alpha = ctl_interpolate_lut1d(&dist->im_axis_lut, dist->alpha_values, im_mag);
+        alpha = ctl_step_interpolate_lut1d(&dist->im_axis_lut, dist->alpha_values, im_mag);
     }
     else // DIST_MODE_CONST_ALPHA
     {
