@@ -2,9 +2,6 @@
  * @file vf_generator.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Provides open-loop V/F (Voltage/Frequency) profile generators for motor control.
- * @details This file includes modules for generating constant frequency, sloped frequency,
- * and a full constant V/F profile. These are typically used for simple open-loop
- * control of AC motors.
  * @version 0.2
  * @date 2024-09-30
  *
@@ -33,7 +30,9 @@ extern "C"
 /**
  * @defgroup ConstFGen Constant Frequency Generator
  * @brief A module to generate a constant frequency signal output.
- *
+ * @details This file includes modules for generating constant frequency, sloped frequency,
+ * and a full constant V/F profile. These are typically used for simple open-loop
+ * control of AC motors.
  * This module uses a ramp generator to produce a continuously incrementing
  * angle (position) at a fixed frequency.
  * @{

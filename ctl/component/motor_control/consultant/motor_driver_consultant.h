@@ -162,6 +162,16 @@ extern "C"
  */
 
 /**
+ * @brief Holds the measurement data from a motor test.
+ */
+typedef struct
+{
+    parameter_gt V_line;  /**< @brief Total line-to-line voltage [V]. */
+    parameter_gt I_line;  /**< @brief Average line current [A]. */
+    parameter_gt P_total; /**< @brief Total 3-phase input power [W]. */
+} motor_test_data_t;
+
+/**
  * @brief Data structure for holding all motor driver parameters.
  *
  * This structure aggregates all the key hardware and software parameters

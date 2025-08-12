@@ -7,9 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * This module reconstructs the three-phase AC voltages (Ua, Ub, Uc) and the
- * stationary reference frame voltages (Ualpha, Ubeta) from the measured DC bus
- * voltage and the commanded SVPWM duty cycle values.
  */
 
 #ifndef _FILE_VOLTAGE_CALCULATOR_H_
@@ -27,11 +24,15 @@ extern "C"
 /**
  * @defgroup MC_VOLTAGE_CALCULATOR Voltage Calculator
  * @brief Calculates AC phase voltages from DC bus voltage and SVPWM signals.
- * @details The phase voltages are calculated as:
+ * @details 
+ * This module reconstructs the three-phase AC voltages (Ua, Ub, Uc) and the
+ * stationary reference frame voltages (Ualpha, Ubeta) from the measured DC bus
+ * voltage and the commanded SVPWM duty cycle values.
+ * The phase voltages are calculated as:
  * @f[
  * U_x = \frac{U_{bus}}{\sqrt{3}} \cdot (2 \cdot T_x - T_y - T_z)
  * @f]
- * where $$T_x, T_y, T_z$$ are the SVPWM timings.
+ * where @f( T_x, T_y, T_z @f) are the SVPWM timings.
  *
  * The Clarke transformation is:
  * @f[
@@ -39,7 +40,6 @@ extern "C"
  * U_\beta = \frac{1}{\sqrt{3}} (U_a + 2 \cdot U_b)
  * @f]
  *
-
  * @{
  */
 

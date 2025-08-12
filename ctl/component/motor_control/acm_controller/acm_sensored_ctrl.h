@@ -5,7 +5,6 @@
  * @details  This file provides a comprehensive controller for AC induction motors, including
  * current and speed control loops, coordinate transformations, and flux estimation.
  * It is designed to be highly configurable through preprocessor macros.
-
  * @version 0.2
  * @date 2024-09-30
  *

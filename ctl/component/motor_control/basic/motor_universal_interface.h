@@ -7,9 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * This file implements a set of standardized, abstract interfaces for various
- * motor sensors (position, speed, torque, etc.) and a universal structure
- * to aggregate these interfaces for a single motor controller.
  */
 
 #ifndef _FILE_MOTOR_UNIVERSAL_INTERFACE_H_
@@ -25,6 +22,10 @@ extern "C"
 /**
  * @defgroup MC_INTERFACE Motor Control Interface
  * @brief Standardized interfaces for motor sensors and controllers.
+ * @details This file implements a set of standardized, abstract interfaces for various
+ * motor sensors (position, speed, torque, etc.) and a universal structure
+ * to aggregate these interfaces for a single motor controller.
+ * 
  */
 
 /*---------------------------------------------------------------------------*/
@@ -315,7 +316,6 @@ typedef struct _tag_universal_mtr_current_if_t
 {
     vector2_gt* idq;
 } mtr_current_ift;
-
 
 /** @} */ // end of MC_UNIVERSAL_IF group
 
