@@ -1,23 +1,11 @@
 /**
- * @file iterative_learning_ctrl.h
+ * @file ilc.h
  * @brief Implements an Iterative Learning Controller (ILC) for SISO systems.
- * @details This module provides a controller designed for systems that perform
- * repetitive tasks over a fixed duration. ILC improves tracking performance
- * by learning from the error of the previous iteration (or trial) and
- * updating the control signal for the next iteration. This allows the
- * controller to cancel out periodic disturbances and unmodeled dynamics,
- * achieving very high precision tracking.
  *
  * @version 1.0
  * @date 2025-08-07
  *
- * //tex:
- * // The controller implements a P-type ILC update law:
- * // u_k(t) = u_{k-1}(t) + L \cdot e_{k-1}(t)
- * // where k is the iteration number, t is the time step within the iteration,
- * // u is the control signal, e is the tracking error (r - y), and L is the
- * // learning gain. The output u_k(t) is typically used as a feedforward term
- * // in conjunction with a feedback controller (e.g., PI).
+
  *
  */
 
@@ -36,6 +24,18 @@ extern "C"
 /**
  * @defgroup ILC_CONTROLLER Iterative Learning Controller (ILC)
  * @brief A controller that improves performance on repetitive tasks by learning from past errors.
+ * @details This module provides a controller designed for systems that perform
+ * repetitive tasks over a fixed duration. ILC improves tracking performance
+ * by learning from the error of the previous iteration (or trial) and
+ * updating the control signal for the next iteration. This allows the
+ * controller to cancel out periodic disturbances and unmodeled dynamics,
+ * achieving very high precision tracking.
+ * The controller implements a P-type ILC update law:
+ * @f[ u_k(t) = u_{k-1}(t) + L \cdot e_{k-1}(t) @f]
+ * where k is the iteration number, t is the time step within the iteration,
+ * u is the control signal, e is the tracking error @f( (r - y) @f), and L is the
+ * learning gain. The output @f( u_k(t) @f) is typically used as a feed forward term
+ * in conjunction with a feedback controller (e.g., PI).
  * @{
  */
 

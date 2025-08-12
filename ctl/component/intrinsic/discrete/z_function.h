@@ -7,10 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements a generic, discrete-time transfer function (IIR filter)
- * based on its Z-domain representation. It can be used to realize arbitrary
- * linear time-invariant controllers or filters by specifying their numerator and
- * denominator coefficients.
  */
 
 #ifndef _Z_TRANSFER_FUNCTION_H_
@@ -26,6 +22,14 @@ extern "C"
 /**
  * @defgroup z_transfer_function Generic Z-Domain Transfer Function
  * @brief An IIR filter module to implement any given Z-domain transfer function.
+ * @details This file implements a generic, discrete-time transfer function (IIR filter)
+ * based on its Z-domain representation. It can be used to realize arbitrary
+ * linear time-invariant controllers or filters by specifying their numerator and
+ * denominator coefficients.
+ * This structure implements the general difference equation for a transfer function:
+ * @f[ H(z) = \frac{Y(z)}{X(z)} = \frac{b_0 + b_1z^{-1} + \dots + b_Mz^{-M}}{1 + a_1z^{-1} + \dots + a_Nz^{-N}} @f]
+ * which corresponds to the difference equation:
+ * @f[ y(n) = b_0x(n) + \sum_{i=1}^{M} b_i x(n-i) - \sum_{j=1}^{N} a_j y(n-j) @f]
  * @{
  */
 
@@ -36,13 +40,9 @@ extern "C"
 /**
  * @brief Data structure for a generic Z-domain transfer function.
  * @details This structure implements the general difference equation for a transfer function:
- * @f[
- * H(z) = \frac{Y(z)}{X(z)} = \frac{b_0 + b_1z^{-1} + \dots + b_Mz^{-M}}{1 + a_1z^{-1} + \dots + a_Nz^{-N}}
- * @f]
+ * @f[ H(z) = \frac{Y(z)}{X(z)} = \frac{b_0 + b_1z^{-1} + \dots + b_Mz^{-M}}{1 + a_1z^{-1} + \dots + a_Nz^{-N}} @f]
  * which corresponds to the difference equation:
- * @f[
- * y(n) = b_0x(n) + \sum_{i=1}^{M} b_i x(n-i) - \sum_{j=1}^{N} a_j y(n-j)
- * @f]
+ * @f[ y(n) = b_0x(n) + \sum_{i=1}^{M} b_i x(n-i) - \sum_{j=1}^{N} a_j y(n-j) @f]
  */
 typedef struct _tag_z_function_t
 {

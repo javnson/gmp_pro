@@ -249,6 +249,7 @@ void ctl_init_mrac(ctl_mrac_controller_t* mrac, const ctl_mrac_init_t* init)
 //////////////////////////////////////////////////////////////////////////
 // repetitive controller
 #include <ctl/component/intrinsic/advance/repetitive_controller.h>
+#include <stdlib.h> // Required for malloc and free
 
 fast_gt ctl_init_repetitive_controller(ctl_repetitive_controller_t* rc, parameter_gt fs, parameter_gt f_fund,
                                        parameter_gt q_filter_coeff)
@@ -286,6 +287,8 @@ void ctl_destroy_repetitive_controller(ctl_repetitive_controller_t* rc)
 //////////////////////////////////////////////////////////////////////////
 // sinc interpolator
 #include <ctl/component/intrinsic/advance/sinc_interpolator.h>
+#include <stdlib.h> // Required for malloc and free
+
 
 fast_gt ctl_init_sinc_interpolator(ctl_sinc_interpolator_t* sinc, uint32_t num_taps, uint32_t table_size)
 {

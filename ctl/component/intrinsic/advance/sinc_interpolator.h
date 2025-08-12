@@ -7,23 +7,10 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements a Sinc interpolator, which is theoretically the
- * ideal method for reconstructing a band-limited signal between its discrete samples.
- * To make it practical, this implementation uses a finite-length, windowed version
- * of the Sinc function (specifically, a Blackman window) to create an FIR filter.
- * The filter coefficients are pre-calculated and stored in a look-up table to
- * achieve high performance on embedded systems. This module is ideal for high-precision
- * resampling and fractional delay applications.
- * reference: https://zhuanlan.zhihu.com/p/453094282
  */
 
 #ifndef _SINC_INTERPOLATOR_H_
 #define _SINC_INTERPOLATOR_H_
-
-#include <ctl/math_block/gmp_math.h>
-#include <math.h> // Required for sinf and cosf
-#include <stdint.h>
-#include <stdlib.h> // Required for malloc and free
 
 #ifdef __cplusplus
 extern "C"
@@ -33,6 +20,14 @@ extern "C"
 /**
  * @defgroup sinc_interpolator Sinc Interpolator
  * @brief A high-quality resampling and fractional delay module.
+ * @details This file implements a Sinc interpolator, which is theoretically the
+ * ideal method for reconstructing a band-limited signal between its discrete samples.
+ * To make it practical, this implementation uses a finite-length, windowed version
+ * of the Sinc function (specifically, a Blackman window) to create an FIR filter.
+ * The filter coefficients are pre-calculated and stored in a look-up table to
+ * achieve high performance on embedded systems. This module is ideal for high-precision
+ * resampling and fractional delay applications.
+ * reference: https://zhuanlan.zhihu.com/p/453094282
  * @{
  */
 

@@ -7,13 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file contains implementations for discrete-time lead and lag
- * compensators. These are first-order IIR filters used to improve the stability
- * (phase margin) and steady-state performance of a control loop. The continuous-time
- * transfer functions are discretized using the Bilinear Transform:
- * @f[
- * s = \frac{2}{T} \frac{1-z^{-1}}{1+z^{-1}}
- * @f]
  */
 
 #ifndef _LEAD_LAG_H_
@@ -27,6 +20,15 @@ extern "C"
 /**
  * @defgroup lead_lag_compensators Lead-Lag Compensators
  * @brief A library of discrete IIR filters for control loop compensation.
+ * @details This file contains implementations for discrete-time lead and lag
+ * compensators. These are first-order IIR filters used to improve the stability
+ * (phase margin) and steady-state performance of a control loop. The continuous-time
+ * transfer functions are discretized using the Bilinear Transform:
+ * @f[ s = \frac{2}{T} \frac{1-z^{-1}}{1+z^{-1}} @f]
+ *  The continuous-time transfer function is:
+ * @f[ H(s) = \frac{(\tau_D + K_D)s + 1}{\tau_D s + 1} @f]
+ * After discretization, it becomes a 1-Pole-1-Zero (1P1Z) filter.
+ * 
  * @{
  */
 
@@ -38,9 +40,7 @@ extern "C"
  * @brief Data structure for a Lead compensator.
  * @details Implements a lead network, which adds phase margin to a system,
  * improving its transient response. The continuous-time transfer function is:
- * @f[
- * H(s) = \frac{(\tau_D + K_D)s + 1}{\tau_D s + 1}
- * @f]
+ * @f[ H(s) = \frac{(\tau_D + K_D)s + 1}{\tau_D s + 1} @f]
  * After discretization, it becomes a 1-Pole-1-Zero (1P1Z) filter.
  */
 typedef struct _tag_ctrl_lead_t

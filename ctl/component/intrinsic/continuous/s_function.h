@@ -7,11 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements a generic second-order continuous-time (S-domain)
- * transfer function. The user specifies the desired locations of poles and zeros
- * in the S-plane (as frequencies in Hz), and the module automatically discretizes
- * the system into a Z-domain difference equation using the Bilinear Transform.
- * This allows for intuitive design of controllers based on continuous-time methods.
  */
 
 #ifndef _S_TRANSFER_FUNCTION_H_
@@ -28,6 +23,17 @@ extern "C"
 /**
  * @defgroup s_transfer_function Generic S-Domain Transfer Function
  * @brief An IIR filter module designed from S-domain pole-zero locations.
+ * @details This file implements a generic second-order continuous-time (S-domain)
+ * transfer function. The user specifies the desired locations of poles and zeros
+ * in the S-plane (as frequencies in Hz), and the module automatically discretizes
+ * the system into a Z-domain difference equation using the Bilinear Transform.
+ * This allows for intuitive design of controllers based on continuous-time methods.
+ * This structure holds the discretized Z-domain coefficients and the
+ * state variables needed to implement the difference equation. The underlying
+ * continuous-time transfer function is of the form:
+ * @f[ H(s) = K \frac{(s/\omega_{z1}+1)(s/\omega_{z2}+1)}{(s/\omega_{p1}+1)(s/\omega_{p2}+1)} @f]
+ * This is converted to a Z-domain transfer function:
+ * @f[ H(z) = \frac{b_0 + b_1z^{-1} + b_2z^{-2}}{1 + a_1z^{-1} + a_2z^{-2}} @f]
  * @{
  */
 
@@ -40,13 +46,9 @@ extern "C"
  * @details This structure holds the discretized Z-domain coefficients and the
  * state variables needed to implement the difference equation. The underlying
  * continuous-time transfer function is of the form:
- * @f[
- * H(s) = K \frac{(s/\omega_{z1}+1)(s/\omega_{z2}+1)}{(s/\omega_{p1}+1)(s/\omega_{p2}+1)}
- * @f]
+ * @f[ H(s) = K \frac{(s/\omega_{z1}+1)(s/\omega_{z2}+1)}{(s/\omega_{p1}+1)(s/\omega_{p2}+1)} @f]
  * This is converted to a Z-domain transfer function:
- * @f[
- * H(z) = \frac{b_0 + b_1z^{-1} + b_2z^{-2}}{1 + a_1z^{-1} + a_2z^{-2}}
- * @f]
+ * @f[ H(z) = \frac{b_0 + b_1z^{-1} + b_2z^{-2}}{1 + a_1z^{-1} + a_2z^{-2}} @f]
  */
 typedef struct _tag_s_function_t
 {

@@ -7,10 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file contains implementations for several standard discrete filters
- * used in digital control and signal processing. It includes a generic first-order
- * and second-order IIR filter, along with various initializers. It also includes
- * a generic FIR filter module.
  */
 
 #ifndef _DISCRETE_FILTER_H_
@@ -28,6 +24,11 @@ extern "C"
 /**
  * @defgroup discrete_filter_api Discrete Filter Library
  * @brief A collection of common discrete filters for signal processing.
+ * @details This file contains implementations for several standard discrete filters
+ * used in digital control and signal processing. It includes a generic first-order
+ * and second-order IIR filter, along with various initializers. It also includes
+ * a generic FIR filter module.
+
  * @{
  */
 
@@ -41,19 +42,13 @@ extern "C"
  * which is derived from the Z-transform of the continuous-time transfer function.
  *
  * Continuous-time transfer function:
- * @f[
- * H(s) = \frac{\omega_c}{s+\omega_c}
- * @f]
+ * @f[ H(s) = \frac{\omega_c}{s+\omega_c} @f]
  *
  * After discretization using a Zero-Order Hold (ZOH) equivalent, the Z-domain transfer function is:
- * @f[
- * H(z) = \frac{1-e^{-\omega_c T_s}}{1-e^{-\omega_c T_s} z^{-1}}
- * @f]
+ * @f[ H(z) = \frac{1-e^{-\omega_c T_s}}{1-e^{-\omega_c T_s} z^{-1}} @f]
  *
  * This leads to the difference equation:
- * @f[
- * y(n) = a \cdot x(n) + (1-a) \cdot y(n-1)
- * @f]
+ * @f[ y(n) = a \cdot x(n) + (1-a) \cdot y(n-1) @f]
  * where @f$ a = 1 - e^{-\omega_c T_s} @f$. For small @f$ \omega_c T_s @f$, this can be approximated as @f$ a \approx \omega_c T_s @f$.
  */
 typedef struct _tag_low_pass_filter_t
@@ -137,7 +132,8 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_lowpass_filter_result(ctl_low_pass_filter_t* l
  * @brief A first-order infinite impulse response (IIR) general filter.
  * @details This module implements a standard first-order filter. The specific
  * filter type is determined by the coefficients calculated in the initializers.
- * The Z-domain transfer function is: H(z) = (b0 + b1*z^-1) / (1 + a1*z^-1)
+ * The Z-domain transfer function is: 
+ * @f[ H(z) = (b0 + b1*z^-1) / (1 + a1*z^-1) @f]
  */
 typedef struct _tag_filter_IIR1_t
 {

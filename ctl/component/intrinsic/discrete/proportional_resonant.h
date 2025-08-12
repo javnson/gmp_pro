@@ -7,12 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements several variations of resonant controllers, which are
- * essential for AC signal tracking, particularly in applications like grid-tied
- * inverters. They provide infinite gain at a specific resonant frequency,
- * allowing for zero steady-state error when tracking a sinusoidal reference.
- * Implementations include pure Resonant (R), Proportional-Resonant (PR),
- * Quasi-Resonant (QR), and Quasi-Proportional-Resonant (QPR) controllers.
  */
 
 #ifndef _PROPORTIONAL_RESONANT_H_
@@ -26,6 +20,13 @@ extern "C"
 /**
  * @defgroup resonant_controllers Resonant Controllers
  * @brief A library of discrete resonant controllers for AC signal tracking.
+ * @details This file implements several variations of resonant controllers, which are
+ * essential for AC signal tracking, particularly in applications like grid-tied
+ * inverters. They provide infinite gain at a specific resonant frequency,
+ * allowing for zero steady-state error when tracking a sinusoidal reference.
+ * Implementations include pure Resonant (R), Proportional-Resonant (PR),
+ * Quasi-Resonant (QR), and Quasi-Proportional-Resonant (QPR) controllers.
+
  * @{
  */
 
@@ -39,14 +40,10 @@ extern "C"
  * at the resonant frequency.
  *
  * Continuous-time transfer function:
- * @f[
- * G(s) = k_r \frac{2s}{s^2 + \omega_r^2}
- * @f]
+ * @f[ G(s) = k_r \frac{2s}{s^2 + \omega_r^2} @f]
  *
  * After discretization using the Bilinear Transform, the transfer function is:
- * @f[
- * G(z) = k_r \frac{2T(1-z^{-2})}{(T^2\omega_r^2+4) - 2(T^2\omega_r^2-4)z^{-1} + (T^2\omega_r^2+4)z^{-2}}
- * @f]
+ * @f[ G(z) = k_r \frac{2T(1-z^{-2})}{(T^2\omega_r^2+4) - 2(T^2\omega_r^2-4)z^{-1} + (T^2\omega_r^2+4)z^{-2}} @f]
  */
 typedef struct _tag_ctl_resonant_controller
 {
@@ -116,9 +113,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_resonant_controller(resonant_ctrl_t* r, ctrl_
  * @details Combines a proportional gain with a resonant controller.
  *
  * Continuous-time transfer function:
- * @f[
- * G(s) = k_p + k_r \frac{2s}{s^2 + \omega_r^2}
- * @f]
+ * @f[ G(s) = k_p + k_r \frac{2s}{s^2 + \omega_r^2} @f]
  */
 typedef struct _tag_ctl_pr_controller
 {
@@ -170,9 +165,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_pr_controller(pr_ctrl_t* pr, ctrl_gt input)
  * frequency, which improves stability and robustness to frequency variations.
  *
  * Continuous-time transfer function:
- * @f[
- * G(s) = k_r \frac{2\omega_c s}{s^2 + 2\omega_c s + \omega_r^2}
- * @f]
+ * @f[ G(s) = k_r \frac{2\omega_c s}{s^2 + 2\omega_c s + \omega_r^2} @f]
  */
 typedef struct _tag_ctl_qr_controller
 {
@@ -244,9 +237,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_qr_controller(qr_ctrl_t* qr, ctrl_gt input)
  * @details Combines a proportional gain with a quasi-resonant controller.
  *
  * Continuous-time transfer function:
- * @f[
- * G(s) = K_p + K_r \frac{2\omega_c s}{s^2 + 2\omega_c s + \omega_r^2}
- * @f]
+ * @f[ G(s) = K_p + K_r \frac{2\omega_c s}{s^2 + 2\omega_c s + \omega_r^2} @f]
  */
 typedef struct _tag_ctl_qpr_controller
 {

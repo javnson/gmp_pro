@@ -6,11 +6,6 @@
  *
  * @copyright Copyright (c) 2024
  *
- * @details This module integrates a pre-generated fuzzy control surface
- * (from fuzzy_2d.c) with a 2D uniform grid interpolation algorithm
- * (from surf_search.h) to create a complete FLC. It includes scaling
- * factors (gains) for inputs and output, which is essential for tuning
- * the controller's performance in a real-world application.
  */
 
 #ifndef _FLC_CONTROLLER_H_
@@ -30,6 +25,11 @@ extern "C"
 /**
  * @defgroup fuzzy_logic_controller Fuzzy Logic Controller
  * @brief A complete FLC implementation based on a 2D look-up table.
+ * @details This module integrates a pre-generated fuzzy control surface
+ * (from fuzzy_2d.c) with a 2D uniform grid interpolation algorithm
+ * (from surf_search.h) to create a complete FLC. It includes scaling
+ * factors (gains) for inputs and output, which is essential for tuning
+ * the controller's performance in a real-world application.
  * @{
  */
 

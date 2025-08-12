@@ -1,22 +1,8 @@
 /**
  * @file internal_model_ctrl.h
  * @brief Implements an Internal Model Controller (IMC) for SISO systems.
- * @details This module provides a robust controller based on the IMC principle.
- * It is designed for systems that can be approximated by a First-Order Plus
- * Dead-Time (FOPDT) model. The controller uses an internal model of the plant
- * to predict its response. The difference between the actual plant output and
- * the model's output (the disturbance) is used to generate a corrective
- * control action. This structure provides excellent setpoint tracking and
- * disturbance rejection.
- *
  * @version 1.0
  * @date 2025-08-07
- *
- * //tex:
- * // Plant Model (FOPDT): G_p(s) = \frac{K_p e^{-\theta_p s}}{\tau_p s + 1}
- * // IMC Controller: Q(s) = \frac{1}{K_p} \frac{\tau_p s + 1}{\lambda s + 1}
- * // The overall control law is: u(s) = Q(s) (r(s) - d(s))
- * // where d(s) is the estimated disturbance: d(s) = y_p(s) - y_m(s)
  *
  */
 
@@ -35,6 +21,22 @@ extern "C"
 /**
  * @defgroup IMC_CONTROLLER Internal Model Controller (IMC)
  * @brief A robust model-based controller for SISO systems.
+ * @details This module provides a robust controller based on the IMC principle.
+ * It is designed for systems that can be approximated by a First-Order Plus
+ * Dead-Time (FOPDT) model. The controller uses an internal model of the plant
+ * to predict its response. The difference between the actual plant output and
+ * the model's output (the disturbance) is used to generate a corrective
+ * control action. This structure provides excellent setpoint tracking and
+ * disturbance rejection.
+ * 
+ * Plant Model (FOPDT): 
+ * @f[ G_p(s) = \frac{K_p e^{-\theta_p s}}{\tau_p s + 1} @f]
+ * IMC Controller: 
+ * @f[ Q(s) = \frac{1}{K_p} \frac{\tau_p s + 1}{\lambda s + 1} @f]
+ * The overall control law is: 
+ * @f[ u(s) = Q(s) (r(s) - d(s)) @f]
+ * where d(s) is the estimated disturbance: @f[ d(s) = y_p(s) - y_m(s) @f]
+ *
  * @{
  */
 

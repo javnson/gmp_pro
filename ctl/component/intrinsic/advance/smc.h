@@ -7,11 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements a Sliding Mode Controller (SMC), a type of
- * nonlinear controller known for its robustness to parameter uncertainties and
- * external disturbances. The control law is designed to drive the system's
- * state trajectory onto a user-defined sliding surface and maintain it there.
- * This implementation uses a state-dependent gain structure.
  */
 #ifndef _SLIDING_MODE_CONTROLLER_H_
 #define _SLIDING_MODE_CONTROLLER_H_
@@ -24,6 +19,26 @@ extern "C"
 /**
  * @defgroup sliding_mode_controller Sliding Mode Controller (SMC)
  * @brief A nonlinear robust controller based on a sliding surface.
+ * @details This file implements a Sliding Mode Controller (SMC), a type of
+ * nonlinear controller known for its robustness to parameter uncertainties and
+ * external disturbances. The control law is designed to drive the system's
+ * state trajectory onto a user-defined sliding surface and maintain it there.
+ * This implementation uses a state-dependent gain structure.
+ * 
+ * The controller takes two state variables as input: x1 (the controlled
+ * variable) and x2 (its derivative).
+ *
+ * The sliding surface is defined as:
+ * @f[
+ * s = \lambda x_1 + x_2
+ * @f]
+ *
+ * The control law is a form of reaching law:
+ * @f[
+ * u = u_{eq} + u_{sw} = (\eta_1 x_1 + \eta_2 x_2) + \rho \cdot \text{sgn}(s)
+ * @f]
+ * where the gains @f$ \eta_1 @f$ and @f$ \eta_2 @f$ are switched based on the
+ * signs of the sliding surface and the state variables.
  * @{
  */
 

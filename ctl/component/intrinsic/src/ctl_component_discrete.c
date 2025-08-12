@@ -307,6 +307,8 @@ parameter_gt ctl_get_biquad_gain(ctl_biquad_filter_t* obj, parameter_gt fs, para
 //////////////////////////////////////////////////////////////////////////
 // FIR Filter
 #include <ctl/component/intrinsic/discrete/fir_filter.h>
+#include <stdlib.h> // Required for malloc and free
+
 
 fast_gt ctl_init_fir_filter(ctl_fir_filter_t* fir, uint32_t order, const ctrl_gt* coeffs)
 {

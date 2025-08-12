@@ -7,13 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements an LMS adaptive filter. The filter continuously
- * adjusts its internal coefficients (weights) to minimize the mean square error
- * between its output and a desired reference signal. It is widely used for
- * applications like active noise cancellation, system identification, and echo
- * cancellation. The core of the algorithm is the update rule:
- * W(n+1) = W(n) + mu * e(n) * X(n)
- * reference: https://zhuanlan.zhihu.com/p/358236441
  */
 
 #ifndef _LMS_FILTER_H_
@@ -31,6 +24,13 @@ extern "C"
 /**
  * @defgroup lms_adaptive_filter LMS Adaptive Filter
  * @brief A self-tuning filter that minimizes the mean square error.
+ * @details This file implements an LMS adaptive filter. The filter continuously
+ * adjusts its internal coefficients (weights) to minimize the mean square error
+ * between its output and a desired reference signal. It is widely used for
+ * applications like active noise cancellation, system identification, and echo
+ * cancellation. The core of the algorithm is the update rule:
+ * @f[ W(n+1) = W(n) + mu * e(n) * X(n) @f]
+ * reference: https://zhuanlan.zhihu.com/p/358236441
  * @{
  */
 

@@ -7,12 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements a fuzzy self-tuning PID controller. The controller
- * uses two inputs: the error (E) and the change in error (EC). These inputs
- * are used to look up tuning adjustments for the PID parameters (delta_Kp,
- * delta_Ki, delta_Kd) from three separate 2D look-up tables (surfaces).
- * These adjustments are then added to the base PID parameters, allowing the
- * controller to adapt to changing system dynamics in real-time.
  */
 
 #ifndef _FUZZY_PID_H_
@@ -29,6 +23,12 @@ extern "C"
 /**
  * @defgroup fuzzy_pid_controller Fuzzy PID Controller
  * @brief A self-tuning PID controller using fuzzy logic look-up tables.
+ * @details This file implements a fuzzy self-tuning PID controller. The controller
+ * uses two inputs: the error (E) and the change in error (EC). These inputs
+ * are used to look up tuning adjustments for the PID parameters (delta_Kp,
+ * delta_Ki, delta_Kd) from three separate 2D look-up tables (surfaces).
+ * These adjustments are then added to the base PID parameters, allowing the
+ * controller to adapt to changing system dynamics in real-time.
  * @{
  */
 

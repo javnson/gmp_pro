@@ -7,20 +7,14 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements a tracking PID controller based on the continuous-form
- * PID implementation. It combines three intrinsic modules:
- * 1.  A Frequency Divider: To execute the controller at a lower rate.
- * 2.  A Slope Limiter: To generate a smooth trajectory (ramp) for the setpoint.
- * 3.  A Continuous-Form PID: To calculate the control output.
- * This is ideal for setpoint tracking where smooth transitions are needed.
  */
 
 #ifndef _TRACKING_CONTINUOUS_PID_H_
 #define _TRACKING_CONTINUOUS_PID_H_
 
-#include <ctl/component/intrinsic/continuous/continuous_pid.h>
 #include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl/component/intrinsic/basic/slope_limiter.h>
+#include <ctl/component/intrinsic/continuous/continuous_pid.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -30,6 +24,12 @@ extern "C"
 /**
  * @defgroup tracking_continuous_pid Tracking Continuous PID Controller
  * @brief A composite PID controller for smooth setpoint tracking using a continuous-form PID.
+ * @details This file implements a tracking PID controller based on the continuous-form
+ * PID implementation. It combines three intrinsic modules:
+ * 1.  A Frequency Divider: To execute the controller at a lower rate.
+ * 2.  A Slope Limiter: To generate a smooth trajectory (ramp) for the setpoint.
+ * 3.  A Continuous-Form PID: To calculate the control output.
+ * This is ideal for setpoint tracking where smooth transitions are needed.
  * @{
  */
 
@@ -60,9 +60,19 @@ typedef struct _tag_tracking_continuous_pid_t
  * @param[in] division The factor by which to divide the execution frequency.
  * @param[in] fs The main sampling frequency (Hz) at which this module's step function is called.
  */
-void ctl_init_tracking_continuous_pid(ctl_tracking_continuous_pid_t* tp, parameter_gt kp, parameter_gt Ti,
-                                      parameter_gt Td, ctrl_gt sat_max, ctrl_gt sat_min, parameter_gt slope_max,
-                                      parameter_gt slope_min, uint32_t division, parameter_gt fs);
+void ctl_init_tracking_continuous_pid(
+    // handle of track pid
+    ctl_tracking_continuous_pid_t* tp,
+    // pid parameters
+    ctrl_gt kp, ctrl_gt ki, ctrl_gt kd,
+    // saturation limit
+    ctrl_gt sat_max, ctrl_gt sat_min,
+    // slope limit
+    ctrl_gt slope_max, ctrl_gt slope_min,
+    // division factor
+    uint32_t division,
+    // controller frequency
+    parameter_gt fs);
 
 /**
  * @brief Clears the internal states of the tracking continuous PID controller.

@@ -1,26 +1,9 @@
 /**
  * @file backstepping_ctrl.h
  * @brief Implements a Backstepping controller for Single-Input Single-Output (SISO) systems.
- * @details This module provides a nonlinear controller based on the backstepping
- * design methodology. It is designed for systems that can be approximated by a
- * first-order model. The controller systematically constructs a control law
- * using a Lyapunov function to guarantee stability and tracking performance,
- * offering a robust alternative to traditional linear controllers like PI.
  *
  * @version 1.1
  * @date 2025-08-07
- *
- *  The design is based on a generic first-order plant model: @f[ \tau_p \dot{y} = -y + K_p u + d @f]
- *  where u is the control input, y is the output, and d is an external disturbance.
- * 
- *  Step 1: Define the tracking error: @f[ z_1 = y_{ref} - y @f]
- * 
- *  Step 2: Define a Lyapunov function @f[ V = \frac{1}{2}z_1^2 @f]. Its derivative is
- *          @f[ \dot{V} = z_1 \dot{z}_1 = z_1(\dot{y}_{ref} - \dot{y}) @f]
- * 
- *  Step 3: Substitute the system dynamics and design the control law for u
- *          such that @f[ \dot{V} = -k_1 z_1^2 \le 0 @f] to ensure stability. This yields:
- *          @f[ u^* = \frac{1}{K_p} ( \tau_p(\dot{y}_{ref} + k_1 z_1) + y - d ) @f]
  *
  */
 
@@ -39,6 +22,25 @@ extern "C"
 /**
  * @defgroup BACKSTEPPING_CONTROLLER Backstepping Controller
  * @brief A nonlinear controller based on systematic Lyapunov design.
+ * @details This module provides a nonlinear controller based on the backstepping
+ * design methodology. It is designed for systems that can be approximated by a
+ * first-order model. The controller systematically constructs a control law
+ * using a Lyapunov function to guarantee stability and tracking performance,
+ * offering a robust alternative to traditional linear controllers like PI.
+ * 
+ *  The design is based on a generic first-order plant model: 
+ *          @f[ \tau_p \dot{y} = -y + K_p u + d @f]
+ *  where u is the control input, y is the output, and d is an external disturbance.
+ * 
+ *  Step 1: Define the tracking error: @f[ z_1 = y_{ref} - y @f]
+ * 
+ *  Step 2: Define a Lyapunov function @f[ V = \frac{1}{2}z_1^2 @f]. Its derivative is
+ *          @f[ \dot{V} = z_1 \dot{z}_1 = z_1(\dot{y}_{ref} - \dot{y}) @f]
+ * 
+ *  Step 3: Substitute the system dynamics and design the control law for u
+ *          such that @f[ \dot{V} = -k_1 z_1^2 \le 0 @f] to ensure stability. This yields:
+ *          @f[ u^* = \frac{1}{K_p} ( \tau_p(\dot{y}_{ref} + k_1 z_1) + y - d ) @f]
+ *
  * @{
  */
 

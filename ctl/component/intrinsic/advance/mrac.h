@@ -1,25 +1,9 @@
 /**
  * @file adaptive_ctrl.h
  * @brief Implements a Model Reference Adaptive Controller (MRAC) for SISO systems.
- * @details This module provides an adaptive controller designed to make a plant's
- * output track the output of a stable reference model, even when the plant's
- * parameters are unknown or time-varying. It is suitable for applications like
- * a motor speed loop where inertia and friction can change.
- *
- * The controller continuously adjusts its gains based on the tracking error
- * to ensure the system behaves as desired.
  *
  * @version 1.0
  * @date 2025-08-07
- *
- * //tex:
- * // Reference Model: \dot{y}_m = -a_m y_m + b_m r
- * // Plant Model: \dot{y}_p = -a_p y_p + b_p u
- * // Control Law: u = k_r r - k_y y_p
- * // Adaptation Law (MIT Rule):
- * // \dot{k}_r = -\gamma_r e r
- * // \dot{k}_y = \gamma_y e y_p
- * // where e = y_p - y_m is the tracking error.
  *
  */
 
@@ -38,6 +22,21 @@ extern "C"
 /**
  * @defgroup ADAPTIVE_CONTROLLER Model Reference Adaptive Controller (MRAC)
  * @brief An adaptive controller for SISO systems with unknown or varying parameters.
+ * @details This module provides an adaptive controller designed to make a plant's
+ * output track the output of a stable reference model, even when the plant's
+ * parameters are unknown or time-varying. It is suitable for applications like
+ * a motor speed loop where inertia and friction can change.
+ *
+ * The controller continuously adjusts its gains based on the tracking error
+ * to ensure the system behaves as desired.
+ *
+ * Reference Model: @f[ \dot{y}_m = -a_m y_m + b_m r @f]
+ * Plant Model: @f[ \dot{y}_p = -a_p y_p + b_p u @f]
+ * Control Law: @f[ u = k_r r - k_y y_p @f]
+ * Adaptation Law (MIT Rule):
+ * @f[ \dot{k}_r = -\gamma_r e r @f]
+ * @f[ \dot{k}_y = \gamma_y e y_p @f]
+ * where @f( e = y_p - y_m @f) is the tracking error.
  * @{
  */
 

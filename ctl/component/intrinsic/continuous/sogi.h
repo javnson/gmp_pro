@@ -7,10 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements a SOGI based on the state-space representation
- * of the continuous-time transfer function, discretized using Forward Euler.
- * A SOGI is a frequency-adaptive filter that generates in-phase and quadrature
- * sinusoidal signals from a given input, making it ideal for PLLs and filtering.
  */
 
 #ifndef _CONTINUOUS_SOGI_H_
@@ -24,6 +20,21 @@ extern "C"
 /**
  * @defgroup continuous_sogi Continuous-Form SOGI
  * @brief A SOGI implementation based on discretized continuous-time state equations.
+ * @details This file implements a SOGI based on the state-space representation
+ * of the continuous-time transfer function, discretized using Forward Euler.
+ * A SOGI is a frequency-adaptive filter that generates in-phase and quadrature
+ * sinusoidal signals from a given input, making it ideal for PLLs and filtering.
+ * Implements a SOGI based on the state-space equations:
+ * @f[ \frac{d(y_d)}{dt} = \omega_r (k(u - y_d) - y_q) @f]
+ * @f[ \frac{d(y_q)}{dt} = \omega_r y_d @f]
+ * where @f$ y_d @f$ is the direct (in-phase) output and @f( y_q @f) is the
+ * quadrature output.
+ *
+ * The corresponding transfer functions are:
+ * Direct (Band-Pass) Output:
+ * @f[ \frac{Y_d(s)}{U(s)} = \frac{k \omega_r s}{s^2 + k \omega_r s + \omega_r^2} @f]
+ * Quadrature (Low-Pass) Output:
+ * @f[ \frac{Y_q(s)}{U(s)} = \frac{k \omega_r^2}{s^2 + k \omega_r s + \omega_r^2} @f]
  * @{
  */
 
@@ -34,24 +45,16 @@ extern "C"
 /**
  * @brief Data structure for a continuous-form SOGI.
  * @details Implements a SOGI based on the state-space equations:
- * @f[
- * \frac{d(y_d)}{dt} = \omega_r (k(u - y_d) - y_q)
- * @f]
- * @f[
- * \frac{d(y_q)}{dt} = \omega_r y_d
- * @f]
+ * @f[ \frac{d(y_d)}{dt} = \omega_r (k(u - y_d) - y_q) @f]
+ * @f[ \frac{d(y_q)}{dt} = \omega_r y_d @f]
  * where @f$ y_d @f$ is the direct (in-phase) output and @f$ y_q @f$ is the
  * quadrature output.
  *
  * The corresponding transfer functions are:
  * Direct (Band-Pass) Output:
- * @f[
- * \frac{Y_d(s)}{U(s)} = \frac{k \omega_r s}{s^2 + k \omega_r s + \omega_r^2}
- * @f]
+ * @f[ \frac{Y_d(s)}{U(s)} = \frac{k \omega_r s}{s^2 + k \omega_r s + \omega_r^2} @f]
  * Quadrature (Low-Pass) Output:
- * @f[
- * \frac{Y_q(s)}{U(s)} = \frac{k \omega_r^2}{s^2 + k \omega_r s + \omega_r^2}
- * @f]
+ * @f[ \frac{Y_q(s)}{U(s)} = \frac{k \omega_r^2}{s^2 + k \omega_r s + \omega_r^2} @f]
  */
 typedef struct _tag_sogi_t
 {

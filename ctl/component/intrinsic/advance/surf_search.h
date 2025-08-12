@@ -7,11 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements algorithms for searching and interpolating values
- * from pre-defined tables. It includes a 1D LUT with binary search and linear
- * interpolation, a 2D LUT for non-uniform grids, and a 2D LUT for uniform grids,
- * both using bilinear interpolation. These are essential for efficiently
- * implementing complex, nonlinear functions in embedded systems.
  */
 
 #ifndef _LOOKUP_TABLE_H_
@@ -28,6 +23,12 @@ extern "C"
 /**
  * @defgroup lookup_tables Look-Up Tables (LUT)
  * @brief A library for 1D and 2D data searching and interpolation.
+ * @details This module implements algorithms for searching and interpolating values
+ * from pre-defined tables. It includes a 1D LUT with binary search and linear
+ * interpolation, a 2D LUT for non-uniform grids, and a 2D LUT for uniform grids,
+ * both using bilinear interpolation. These are essential for efficiently
+ * implementing complex, nonlinear functions in embedded systems.
+
  * @{
  */
 

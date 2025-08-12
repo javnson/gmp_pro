@@ -7,10 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file contains implementations for various standard Direct Form
- * IIR filter structures, commonly used in digital control systems. This module
- * includes DF11, DF22, DF13 and DF23 structures.
- * reference TI DF controller
  */
 
 #ifndef _DF_CONTROLLER_H_
@@ -24,6 +20,11 @@ extern "C"
 /**
  * @defgroup df_controllers Direct Form Controllers
  * @brief A library of standard direct form IIR filter implementations.
+ * @details This module contains implementations for various standard Direct Form
+ * IIR filter structures, commonly used in digital control systems. This module
+ * includes DF11, DF22, DF13 and DF23 structures.
+ * reference TI DF controller
+
  * @{
  */
 

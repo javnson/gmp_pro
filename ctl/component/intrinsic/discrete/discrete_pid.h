@@ -7,12 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file provides a standard discrete Proportional-Integral-Derivative
- * (PID) controller. The implementation is based on a difference equation derived
- * from the continuous-time PID formula using a combination of Tustin and
- * Backward Euler transformations for robust performance. It includes functions
- * for initialization, state clearing, setting output limits, and executing a
- * single control step.
  */
 
 #ifndef _DISCRETE_PID_H_
@@ -28,6 +22,13 @@ extern "C"
 /**
  * @defgroup discrete_pid_controller Discrete PID Controller
  * @brief This module implements a standard discrete PID controller.
+ * @details This module provides a standard discrete Proportional-Integral-Derivative
+ * (PID) controller. The implementation is based on a difference equation derived
+ * from the continuous-time PID formula using a combination of Tustin and
+ * Backward Euler transformations for robust performance. It includes functions
+ * for initialization, state clearing, setting output limits, and executing a
+ * single control step.
+
  * @{
  */
 
@@ -39,19 +40,13 @@ extern "C"
  * @brief Controller theory and discretization formulas.
  *
  * The ideal PID controller transfer function in the continuous domain is:
- * @f[
- * G(s) = k_p + \frac{k_i}{s} + k_d s
- * @f]
+ * @f[ G(s) = k_p + \frac{k_i}{s} + k_d s @f]
  * Where the integral time constant is @f$ T_i = \frac{k_p}{k_i} @f$ and the derivative time constant is @f$ T_d = \frac{k_d}{k_p} @f$.
  *
  * The derivative term is discretized using the Tustin (Bilinear) transform:
- * @f[
- * s = 2f_s\frac{1-z^{-1}}{1+z^{-1}}
- * @f]
+ * @f[ s = 2f_s\frac{1-z^{-1}}{1+z^{-1}} @f]
  * The integral term is discretized using the Backward Euler method:
- * @f[
- * s = f_s (1-z^{-1})
- * @f]
+ * @f[ s = f_s (1-z^{-1}) @f]
  */
 
 /**

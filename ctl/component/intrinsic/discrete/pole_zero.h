@@ -7,12 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file contains implementations for several discrete-time pole-zero
- * compensators. These are fundamental building blocks for digital controllers,
- * designed to shape the frequency response of a control loop. This version
- * provides initialization functions based on desired pole and zero frequencies,
- * including support for complex-conjugate pairs. Discretization from the s-domain
- * to the z-domain is achieved using the Bilinear Transform.
  */
 
 #ifndef _POLE_ZERO_H_
@@ -26,6 +20,12 @@ extern "C"
 /**
  * @defgroup pole_zero_compensators Pole-Zero Compensators
  * @brief A library of discrete IIR filters for control loop compensation.
+ * @details This file contains implementations for several discrete-time pole-zero
+ * compensators. These are fundamental building blocks for digital controllers,
+ * designed to shape the frequency response of a control loop. This version
+ * provides initialization functions based on desired pole and zero frequencies,
+ * including support for complex-conjugate pairs. Discretization from the s-domain
+ * to the z-domain is achieved using the Bilinear Transform.
  * @{
  */
 

@@ -7,22 +7,12 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements the core generator of a repetitive control system,
- * based on the Internal Model Principle. The module itself acts as a periodic
- * signal generator whose memory is updated by an external, compensated error
- * signal. It is designed to be combined with other controllers (like P or PR)
- * and a user-defined compensator to build a full high-performance repetitive
- * control system for tracking or rejecting periodic signals.
- *
- * The core transfer function implemented is:
- * G_gen(z) = 1 / (1 - q * z^-N)
  */
 
 #ifndef _REPETITIVE_CONTROLLER_H_
 #define _REPETITIVE_CONTROLLER_H_
 
 #include <stdint.h>
-#include <stdlib.h> // Required for malloc and free
 
 #ifdef __cplusplus
 extern "C"
@@ -32,6 +22,16 @@ extern "C"
 /**
  * @defgroup repetitive_controller Repetitive Controller (RC)
  * @brief An internal model-based controller for eliminating periodic errors.
+ * @details This file implements the core generator of a repetitive control system,
+ * based on the Internal Model Principle. The module itself acts as a periodic
+ * signal generator whose memory is updated by an external, compensated error
+ * signal. It is designed to be combined with other controllers (like P or PR)
+ * and a user-defined compensator to build a full high-performance repetitive
+ * control system for tracking or rejecting periodic signals.
+ *
+ * The core transfer function implemented is:
+ * @f[ G_gen(z) = 1 / (1 - q * z^-N) @f]
+ * 
  * @{
  */
 

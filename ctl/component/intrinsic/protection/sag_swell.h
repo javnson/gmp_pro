@@ -7,11 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This module monitors a sinusoidal input voltage to detect power quality
- * events such as sags (undervoltage) and swells (overvoltage). It uses a
- * Second-Order Generalized Integrator (SOGI) to extract the fundamental
- * amplitude of the signal. A fault is flagged if the amplitude remains outside
- * the configured thresholds for a specified duration.
  */
 
 #ifndef _VOLTAGE_EVENT_DETECTOR_H_
@@ -28,6 +23,11 @@ extern "C"
 /**
  * @defgroup voltage_event_detector Voltage Sag/Swell Detector
  * @brief A module for detecting voltage sag and swell power quality events.
+ * @details This module monitors a sinusoidal input voltage to detect power quality
+ * events such as sags (undervoltage) and swells (overvoltage). It uses a
+ * Second-Order Generalized Integrator (SOGI) to extract the fundamental
+ * amplitude of the signal. A fault is flagged if the amplitude remains outside
+ * the configured thresholds for a specified duration.
  * @{
  */
 

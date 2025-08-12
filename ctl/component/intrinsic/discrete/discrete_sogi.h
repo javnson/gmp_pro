@@ -7,12 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements a discrete Second-Order Generalized Integrator (SOGI),
- * which is a versatile filter commonly used in power electronics and grid-tied
- * applications. Its primary function is to act as a frequency-adaptive band-pass
- * filter that can isolate the fundamental component of an input signal while
- * simultaneously generating a quadrature (90-degree phase-shifted) version of it.
- * This makes it essential for algorithms like Phase-Locked Loops (PLLs).
  */
 
 #ifndef _DISCRETE_SOGI_H_
@@ -28,6 +22,23 @@ extern "C"
 /**
  * @defgroup discrete_sogi SOGI-based Quadrature Signal Generator
  * @brief Implements a SOGI to generate in-phase and quadrature-phase signals.
+ * @details This module implements a discrete Second-Order Generalized Integrator (SOGI),
+ * which is a versatile filter commonly used in power electronics and grid-tied
+ * applications. Its primary function is to act as a frequency-adaptive band-pass
+ * filter that can isolate the fundamental component of an input signal while
+ * simultaneously generating a quadrature (90-degree phase-shifted) version of it.
+ * This makes it essential for algorithms like Phase-Locked Loops (PLLs).
+ * A SOGI provides two outputs from a single input R(s). The direct
+ * output D(s) is in-phase with the input's fundamental component and acts as a
+ * band-pass filter. The quadrature output Q(s) lags the direct output by 90
+ * degrees and acts as a low-pass filter.
+ *
+ * Band-Pass Filter Transfer Function (Direct Output D(s)):
+ * @f[ \frac{D(s)}{R(s)} = \frac{k \omega_0 s}{s^2 + k \omega_0 s + \omega_0^2} @f]
+ *
+ * Low-Pass Filter Transfer Function (Quadrature Output Q(s)):
+ * @f[ \frac{Q(s)}{R(s)} = \frac{k \omega_0^2}{s^2 + k \omega_0 s + \omega_0^2} @f]
+ * where @f$ \omega_0 @f$ is the center frequency and @f$ k @f$ is the damping coefficient.
  * @{
  */
 
@@ -43,14 +54,10 @@ extern "C"
  * degrees and acts as a low-pass filter.
  *
  * Band-Pass Filter Transfer Function (Direct Output D(s)):
- * @f[
- * \frac{D(s)}{R(s)} = \frac{k \omega_0 s}{s^2 + k \omega_0 s + \omega_0^2}
- * @f]
+ * @f[ \frac{D(s)}{R(s)} = \frac{k \omega_0 s}{s^2 + k \omega_0 s + \omega_0^2} @f]
  *
  * Low-Pass Filter Transfer Function (Quadrature Output Q(s)):
- * @f[
- * \frac{Q(s)}{R(s)} = \frac{k \omega_0^2}{s^2 + k \omega_0 s + \omega_0^2}
- * @f]
+ * @f[ \frac{Q(s)}{R(s)} = \frac{k \omega_0^2}{s^2 + k \omega_0 s + \omega_0^2} @f]
  * where @f$ \omega_0 @f$ is the center frequency and @f$ k @f$ is the damping coefficient.
  */
 typedef struct _tag_discrete_sogi

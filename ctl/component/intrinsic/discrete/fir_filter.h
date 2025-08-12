@@ -7,9 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements a generic FIR filter, suitable for use with
- * coefficients designed in external tools like MATLAB. The filter is implemented
- * using a circular buffer for efficient real-time processing.
  */
 
 #ifndef _FIR_FILTER_H_
@@ -17,7 +14,6 @@
 
 #include <ctl/math_block/gmp_math.h>
 #include <stdint.h>
-#include <stdlib.h> // Required for malloc and free
 
 #ifdef __cplusplus
 extern "C"
@@ -27,7 +23,13 @@ extern "C"
 /**
  * @defgroup fir_filter FIR Filter
  * @brief A generic FIR filter for custom coefficients.
- * @{
+ * @details This file implements a generic FIR filter, suitable for use with
+ * coefficients designed in external tools like MATLAB. The filter is implemented
+ * using a circular buffer for efficient real-time processing.
+ * The difference equation is:
+ * @f[ y(n) = \sum_{k=0}^{N-1} b_k x(n-k) @f]
+ * where N is the number of taps (order), b_k are the filter coefficients,
+ * and x are the input samples. * @{
  */
 
 /*---------------------------------------------------------------------------*/
@@ -39,9 +41,7 @@ extern "C"
  * @details This structure holds the configuration and state for a direct-form
  * FIR filter.
  * The difference equation is:
- * @f[
- * y(n) = \sum_{k=0}^{N-1} b_k x(n-k)
- * @f]
+ * @f[ y(n) = \sum_{k=0}^{N-1} b_k x(n-k) @f]
  * where N is the number of taps (order), b_k are the filter coefficients,
  * and x are the input samples.
  */

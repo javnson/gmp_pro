@@ -7,10 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file contains implementations for common signal generators used
- * for simulation, testing, and control system stimulation. It includes a
- * sine/cosine wave generator based on an iterative phasor rotation and a
- * ramp wave generator.
  */
 
 #ifndef _SIGNAL_GENERATOR_H_
@@ -24,6 +20,11 @@ extern "C"
 /**
  * @defgroup signal_generators Signal Generators
  * @brief A library of modules for generating standard test waveforms.
+ * @details This file contains implementations for common signal generators used
+ * for simulation, testing, and control system stimulation. It includes a
+ * sine/cosine wave generator based on an iterative phasor rotation and a
+ * ramp wave generator.
+
  * @{
  */
 

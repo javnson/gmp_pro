@@ -7,12 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements a three-stage overcurrent protection module that
- * mimics the behavior of a circuit breaker with an inverse-time trip curve.
- * It monitors a signal (e.g., current) and triggers a fault based on three levels:
- * 1.  **Instantaneous (INST):** Immediate trip for very high currents.
- * 2.  **Short-Time Delay (STD):** A fast, delayed trip for moderate fault currents.
- * 3.  **Long-Time Delay (LTD):** A slow, delayed trip for minor overload conditions.
  */
 
 #ifndef _TRIP_PROTECTOR_H_
@@ -29,6 +23,12 @@ extern "C"
 /**
  * @defgroup trip_protector Three-Stage Trip Protector
  * @brief An inverse-time overcurrent protection module.
+ * @details This file implements a three-stage overcurrent protection module that
+ * mimics the behavior of a circuit breaker with an inverse-time trip curve.
+ * It monitors a signal (e.g., current) and triggers a fault based on three levels:
+ * 1.  **Instantaneous (INST):** Immediate trip for very high currents.
+ * 2.  **Short-Time Delay (STD):** A fast, delayed trip for moderate fault currents.
+ * 3.  **Long-Time Delay (LTD):** A slow, delayed trip for minor overload conditions.
  * @{
  */
 

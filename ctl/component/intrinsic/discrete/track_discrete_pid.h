@@ -7,14 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements a tracking PID controller. It is a higher-level
- * control block that combines three intrinsic modules:
- * 1.  A Frequency Divider: To execute the controller at a lower rate than the main ISR.
- * 2.  A Slope Limiter: To generate a smooth trajectory (ramp) for the setpoint.
- * 3.  A Discrete PID: To calculate the control output based on the error between
- * the trajectory and the feedback signal.
- * This structure is ideal for reference tracking applications where smooth transitions
- * and different control rates are required.
  */
 
 #ifndef _TRACKING_PID_H_
@@ -32,6 +24,14 @@ extern "C"
 /**
  * @defgroup tracking_pid Tracking PID Controller
  * @brief A composite PID controller for smooth setpoint tracking.
+ * @details This file implements a tracking PID controller. It is a higher-level
+ * control block that combines three intrinsic modules:
+ * 1.  A Frequency Divider: To execute the controller at a lower rate than the main ISR.
+ * 2.  A Slope Limiter: To generate a smooth trajectory (ramp) for the setpoint.
+ * 3.  A Discrete PID: To calculate the control output based on the error between
+ * the trajectory and the feedback signal.
+ * This structure is ideal for reference tracking applications where smooth transitions
+ * and different control rates are required.
  * @{
  */
 

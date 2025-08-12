@@ -7,11 +7,6 @@
  *
  * @copyright Copyright GMP(c) 2024
  *
- * @details This file implements a configurable protection monitor. It is designed
- * to check a set of variables against their predefined upper (supremum) and
- * lower (infimum) limits. If any variable goes out of bounds, the monitor
- * flags a fault and records which variable caused it. This is a fundamental
- * component for ensuring safe operation in any control system.
  */
 
 #ifndef _PROTECTION_MONITOR_H_
@@ -27,6 +22,11 @@ extern "C"
 /**
  * @defgroup protection_monitor Protection Monitor
  * @brief A module for checking multiple variables against their boundaries.
+ * @details This file implements a configurable protection monitor. It is designed
+ * to check a set of variables against their predefined upper (supremum) and
+ * lower (infimum) limits. If any variable goes out of bounds, the monitor
+ * flags a fault and records which variable caused it. This is a fundamental
+ * component for ensuring safe operation in any control system.
  * @{
  */
 
