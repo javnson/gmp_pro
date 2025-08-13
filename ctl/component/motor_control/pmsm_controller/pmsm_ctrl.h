@@ -308,8 +308,8 @@ GMP_STATIC_INLINE void ctl_step_pmsm_ctrl(pmsm_controller_t* ctrl)
     }
     else
     {
-        ctl_vector3_clear(&ctrl->pwm_out->value);
-        ctl_clear_pmsm_ctrl(ctrl);
+        ctl_vector3_set(&ctrl->pwm_out->value, float2ctrl(0.5));
+        //ctl_clear_pmsm_ctrl(ctrl);
     }
 }
 
