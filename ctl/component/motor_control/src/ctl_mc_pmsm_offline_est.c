@@ -54,7 +54,7 @@ static void est_loop_handle_rs(ctl_offline_est_t* est)
             est->sub_state = OFFLINE_SUB_STATE_EXEC;
         }
 
-        est->task_start_time = gmp_core_get_systemtick();
+        est->task_start_time = gmp_base_get_system_tick();
         break;
     }
 
@@ -134,7 +134,7 @@ static void est_loop_handle_rs(ctl_offline_est_t* est)
             est->Pos_sum = 0;
             est->V_sq_sum = 0;
             est->I_sq_sum = 0;
-            est->task_start_time = gmp_core_get_systemtick();
+            est->task_start_time = gmp_base_get_system_tick();
         }
         break;
     }
@@ -242,7 +242,7 @@ void est_loop_handle_l_rotating_hfi(ctl_offline_est_t* est)
         est->hfi_theta_q = 0.0f;
 
         // 5. 记录开始时间并切换状态
-        est->task_start_time = gmp_core_get_systemtick();
+        est->task_start_time = gmp_base_get_system_tick();
         est->sub_state = OFFLINE_SUB_STATE_EXEC;
         break;
     }
@@ -366,7 +366,7 @@ static void est_loop_handle_l_dcbias_hfi(ctl_offline_est_t* est)
 
         // 5. 进入执行状态
         est->sub_state = OFFLINE_SUB_STATE_EXEC;
-        est->task_start_time = gmp_core_get_systemtick();
+        est->task_start_time = gmp_base_get_system_tick();
         break;
     }
 
@@ -421,7 +421,7 @@ static void est_loop_handle_l_dcbias_hfi(ctl_offline_est_t* est)
         else
         {                                                     // 准备测量下一个轴
             est->sub_state = OFFLINE_SUB_STATE_EXEC;          // 保持在EXEC状态
-            est->task_start_time = gmp_core_get_systemtick(); // 重置计时器
+            est->task_start_time = gmp_base_get_system_tick(); // 重置计时器
             est->sample_count = 0;
             est->sum_x2 = 0;
             est->sum_y2 = 0;
@@ -502,7 +502,7 @@ void est_loop_handle_flux(ctl_offline_est_t* est)
 
         // 4. 进入执行状态
         est->sub_state = OFFLINE_SUB_STATE_EXEC;
-        est->task_start_time = gmp_core_get_systemtick();
+        est->task_start_time = gmp_base_get_system_tick();
         break;
     }
 
@@ -555,7 +555,7 @@ void est_loop_handle_flux(ctl_offline_est_t* est)
         else
         {
             // 重置计时器，进入下一个速度点的测试
-            est->task_start_time = gmp_core_get_systemtick();
+            est->task_start_time = gmp_base_get_system_tick();
         }
         break;
     }
@@ -628,7 +628,7 @@ void est_loop_handle_j(ctl_offline_est_t* est)
 
         // 5. 进入执行状态
         est->sub_state = OFFLINE_SUB_STATE_EXEC;
-        est->task_start_time = gmp_core_get_systemtick();
+        est->task_start_time = gmp_base_get_system_tick();
         break;
     }
 
@@ -652,7 +652,7 @@ void est_loop_handle_j(ctl_offline_est_t* est)
             parameter_gt iq_measured = ctl_step_lowpass_filter(&est->measure_flt[1], est->current_ctrl.idq0.dat[1]);
 
             // 获取当前时间 (秒)
-            parameter_gt time_s = (gmp_core_get_systemtick() - (est->task_start_time + J_STABILIZE_TIME_MS)) / 1000.0f;
+            parameter_gt time_s = (gmp_base_get_system_tick() - (est->task_start_time + J_STABILIZE_TIME_MS)) / 1000.0f;
 
             // 累加用于线性回归和平均转矩计算
             est->sum_x += time_s;               // Σt

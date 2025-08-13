@@ -25,7 +25,7 @@
 // 假设的系统核心头文件
 // #include "gmp_core.h"
 // typedef uint32_t time_gt;
-// time_gt gmp_core_get_systemtick(void);
+// time_gt gmp_base_get_system_tick(void);
 // #define GMP_STATIC_INLINE static inline
 
 #ifdef __cplusplus
@@ -142,7 +142,7 @@ static void est_loop_handle_j(ctl_offline_est_t* est);
 
 GMP_STATIC_INLINE fast_gt est_is_delay_elapsed_ms(time_gt start_tick, uint32_t delay_ms)
 {
-    time_gt current_tick = gmp_core_get_systemtick();
+    time_gt current_tick = gmp_base_get_system_tick();
     return ((current_tick - start_tick) >= delay_ms);
 }
 

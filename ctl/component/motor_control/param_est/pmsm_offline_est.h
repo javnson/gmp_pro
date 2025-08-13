@@ -78,11 +78,15 @@ typedef struct ctl_offline_est_s
     /*-------------------- 配置 (Configuration) --------------------*/
     ctl_encoder_type_e encoder_type; /**< 用户指定的编码器类型 */
     parameter_gt isr_freq_hz;        /**< 控制中断的频率 (Hz) */
-    parameter_gt rs_test_current_pu; /**< Rs测试中使用的电流标幺值 */
     uint16_t qep_search_elec_cycles; /**< QEP index搜索时旋转的电周期数 */
-    parameter_gt l_hfi_v_pu;         /**< L辨识时注入的高频电压标幺值 */
-    parameter_gt l_hfi_freq_hz;      /**< L辨识时注入的高频电压频率 (Hz) */
-    parameter_gt l_hfi_rot_freq_hz;  /**< L辨识时高频矢量的旋转频率 (Hz) */
+
+    // Rs configuration
+    parameter_gt rs_test_current_pu; /**< Rs测试中使用的电流标幺值 */
+
+    // Ldq configuration
+    parameter_gt l_hfi_v_pu;        /**< Ldq辨识时注入的高频电压标幺值 */
+    parameter_gt l_hfi_freq_hz;     /**< Ldq辨识时注入的高频电压频率 (Hz) */
+    parameter_gt l_hfi_rot_freq_hz; /**< Ldq辨识时高频矢量的旋转频率 (Hz) */
 
     /*-------------------- 模块接口 (Module Interfaces) --------------------*/
     mtr_ift* mtr_interface;                   /**< 指向通用电机传感器接口的指针 */
@@ -90,18 +94,28 @@ typedef struct ctl_offline_est_s
     ctl_vector3_t vab_command;                /**< 输出给PWM模块的alpha-beta电压指令 */
 
     /*-------------------- 控制模块 (Control Modules) --------------------*/
-    ctl_current_controller_t current_ctrl;
-    ctl_slope_f_controller speed_profile_gen;
-    ctl_sine_generator_t hfi_signal_gen;
-    ctl_low_pass_filter_t measure_flt[4]; /**< 0:Vd, 1:Id, 2:Pos, 3:I_hfi_mag */
+    ctl_current_controller_t current_ctrl;    /**< motor current controller */
+    ctl_slope_f_controller speed_profile_gen; /**< rotor angle generator */
+    ctl_sine_generator_t hfi_signal_gen;      /**< HFI sine generator */
+    ctl_low_pass_filter_t measure_flt[4];     /**< 0:Vd, 1:Id, 2:Pos, 3:I_hfi_mag */
 
     /*-------------------- 状态与标志位 (State & Flags) --------------------*/
-    ctl_offline_est_main_state_e main_state;
-    ctl_offline_est_sub_state_e sub_state;
-    fast_gt flag_start_estimation;
-    fast_gt flag_estimation_done;
-    fast_gt flag_error_detected;
-    time_gt task_start_time;
+    ctl_offline_est_main_state_e main_state; /**< main state machine. */
+    ctl_offline_est_sub_state_e sub_state;   /**< sub state machine. */
+    fast_gt flag_start_estimation;           /**< controller flag start estimation. */
+    fast_gt flag_estimation_done;            /**< output flag complete estimation, the @ref ctl_offline_est_t::pmsm_params is valid. */
+    fast_gt flag_error_detected;             /**< output flag error */
+    fast_gt flag_enable_rs;                  /**< Rs and encoder off-line estimate is enabled */
+    /**
+     * @brief Ldq off-line estimate method choose and switch.
+     * 0: disable Ldq estimate, 
+     * 1: enable Ldq estimate and use DC bias offset
+     * 2: enable Ldq estimate and use High frequency rotation vector injection method
+     */
+    fast_gt flag_enable_ldq;                
+    fast_gt flag_enable_psif;                /**< @f( \psi_f @f) off-line is enabled */
+    fast_gt flag_enable_inertia;             /**< inertia J estimate is enabled */
+    time_gt task_start_time;                 /**< a variable to log the start time*/
 
     /*-------------------- 中间变量 (Intermediate Variables) --------------------*/
     // Rs & Encoder 辨识变量
@@ -117,11 +131,11 @@ typedef struct ctl_offline_est_s
     parameter_gt hfi_theta_d, hfi_theta_q;
 
     /*-------------------- 最终辨识结果 (Final Identified Parameters) --------------------*/
-    ctl_pmsm_dsn_consultant_t pmsm_params;
-    ctl_vector3_t Rs_line_to_line;
-    parameter_gt encoder_offset;
-    parameter_gt current_noise_std_dev;
-    parameter_gt position_consistency_std_dev;
+    ctl_pmsm_dsn_consultant_t pmsm_params; /**< output: PMSM parameters */
+    ctl_vector3_t Rs_line_to_line;         /**< output: PMSM Rs (3phase), judging if motor is connected correctly. */
+    parameter_gt encoder_offset;           /**< output: encoder offset */
+    parameter_gt current_noise_std_dev;    /**< output: standard deviation of current */
+    parameter_gt position_consistency_std_dev; /**< output: standard deviation of encoder */
 
 } ctl_offline_est_t;
 
@@ -130,14 +144,14 @@ typedef struct ctl_offline_est_s
 //================================================================================
 
 // --- 前向声明状态处理函数 ---
-static void est_loop_handle_rs(ctl_offline_est_t* est);
-static void est_loop_handle_l(ctl_offline_est_t* est);
-static void est_loop_handle_flux(ctl_offline_est_t* est);
-static void est_loop_handle_j(ctl_offline_est_t* est);
+void est_loop_handle_rs(ctl_offline_est_t* est);
+void est_loop_handle_l(ctl_offline_est_t* est);
+void est_loop_handle_flux(ctl_offline_est_t* est);
+void est_loop_handle_j(ctl_offline_est_t* est);
 
 GMP_STATIC_INLINE fast_gt est_is_delay_elapsed_ms(time_gt start_tick, uint32_t delay_ms)
 {
-    time_gt current_tick = gmp_core_get_systemtick();
+    time_gt current_tick = gmp_base_get_system_tick();
     return ((current_tick - start_tick) >= delay_ms);
 }
 
