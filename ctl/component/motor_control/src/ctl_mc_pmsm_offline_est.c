@@ -196,9 +196,28 @@ static void est_loop_handle_rs(ctl_offline_est_t* est)
 }
 
 /**
+ * @brief 电感辨识的主分发函数.
+ * @note  为了支持此功能, 需要在 ctl_offline_est_t 中增加一个枚举成员
+ * `ctl_l_est_method_e l_est_method;` 并在初始化时由用户指定.
+ */
+void est_loop_handle_l(ctl_offline_est_t* est)
+{
+    // // 假设默认使用直流偏置法，实际应用中应由配置决定
+    // if (est->l_est_method == L_EST_METHOD_DC_BIAS_HFI) {
+    //     est_loop_handle_l_dcbias_hfi(est);
+    // } else {
+    //     est_loop_handle_l_rotating_hfi(est);
+    // }
+
+    // 当前直接调用直流偏置HFI法
+    est_loop_handle_l_dcbias_hfi(est);
+}
+
+
+/**
  * @brief 电感辨识的主循环处理函数.
  */
-static void est_loop_handle_l(ctl_offline_est_t* est)
+void est_loop_handle_l_rotating_hfi(ctl_offline_est_t* est)
 {
     switch (est->sub_state)
     {
@@ -309,6 +328,143 @@ static void est_loop_handle_l(ctl_offline_est_t* est)
     }
 }
 
+
+/**
+ * @brief [方法二] 使用直流偏置HFI法辨识电感.
+ * @note  为了支持此功能, 需要在 ctl_offline_est_t 中增加以下成员:
+ * `ctl_filter_IIR1_t hpf_v, hpf_i;`
+ * `parameter_gt hfi_v_rms[2], hfi_i_rms[2];`
+ * 并在 ctl_step_offline_est 中增加逻辑以在L辨识期间将theta固定为0.
+ */
+static void est_loop_handle_l_dcbias_hfi(ctl_offline_est_t* est)
+{
+    ctl_per_unit_consultant_t* pu = est->pu_consultant;
+
+    switch (est->sub_state)
+    {
+    case OFFLINE_SUB_STATE_INIT: {
+        // 1. 初始化高通滤波器用于提取交流分量
+        parameter_gt hpf_fc = est->l_hfi_freq_hz / 10.0f; // e.g., 1/10 of HFI frequency
+        // ctl_init_filter_iir1_hpf(&est->hpf_v, est->isr_freq_hz, hpf_fc);
+        // ctl_init_filter_iir1_hpf(&est->hpf_i, est->isr_freq_hz, hpf_fc);
+
+        // 2. 初始化高频注入信号发生器
+        parameter_gt step_angle = est->l_hfi_freq_hz / est->isr_freq_hz;
+        ctl_init_sine_generator(&est->hfi_signal_gen, 0.0f, step_angle);
+
+        // 3. 配置电流控制器以施加直流偏置，锁定转子d轴到alpha轴
+        parameter_gt id_ref = ctl_consult_Ipeak_to_phy(pu, est->rs_test_current_pu);
+        ctl_set_current_ref(&est->current_ctrl, id_ref, 0.0f);
+        ctl_enable_current_controller(&est->current_ctrl);
+        // **重要**: 此时需确保 ctl_step_offline_est 中传入Park变换的theta固定为0
+
+        // 4. 初始化变量
+        est->step_index = 0; // 0 for d-axis, 1 for q-axis
+        est->sum_x2 = 0;     // V_ac^2
+        est->sum_y2 = 0;     // I_ac^2
+        est->sample_count = 0;
+
+        // 5. 进入执行状态
+        est->sub_state = OFFLINE_SUB_STATE_EXEC;
+        est->task_start_time = gmp_core_get_systemtick();
+        break;
+    }
+
+    case OFFLINE_SUB_STATE_EXEC: {
+        // --- 1. 等待转子对齐并稳定 ---
+        if (!est_is_delay_elapsed_ms(est->task_start_time, L_DCBIAS_ALIGN_TIME_MS))
+        {
+            return;
+        }
+
+        // --- 2. 注入高频信号并持续测量 ---
+        if (!est_is_delay_elapsed_ms(est->task_start_time, L_DCBIAS_ALIGN_TIME_MS + L_DCBIAS_MEASURE_TIME_MS))
+        {
+            // 产生高频电压信号
+            ctl_step_sine_generator(&est->hfi_signal_gen);
+            parameter_gt v_hfi_peak = ctl_consult_Vpeak_to_phy(pu, est->l_hfi_v_pu);
+            parameter_gt v_hfi_inst = ctl_get_sine_generator_sin(&est->hfi_signal_gen) * v_hfi_peak;
+
+            parameter_gt V_ac = 0, I_ac = 0;
+            if (est->step_index == 0)
+            { // 测量 d 轴
+                ctl_set_voltage_ff(&est->current_ctrl, v_hfi_inst, 0.0f);
+                // V_ac = ctl_step_filter_iir1(&est->hpf_v, est->current_ctrl.vdq0.dat[0]);
+                // I_ac = ctl_step_filter_iir1(&est->hpf_i, est->current_ctrl.idq0.dat[0]);
+            }
+            else
+            { // 测量 q 轴
+                ctl_set_voltage_ff(&est->current_ctrl, 0.0f, v_hfi_inst);
+                // V_ac = ctl_step_filter_iir1(&est->hpf_v, est->current_ctrl.vdq0.dat[1]);
+                // I_ac = ctl_step_filter_iir1(&est->hpf_i, est->current_ctrl.idq0.dat[1]);
+            }
+
+            // 累加平方和以计算RMS
+            est->sum_x2 += V_ac * V_ac;
+            est->sum_y2 += I_ac * I_ac;
+            est->sample_count++;
+            return;
+        }
+
+        // --- 3. 测量结束，保存结果并准备下一步 ---
+        if (est->sample_count > 0)
+        {
+            // est->hfi_v_rms[est->step_index] = ctl_sqrt(est->sum_x2 / est->sample_count);
+            // est->hfi_i_rms[est->step_index] = ctl_sqrt(est->sum_y2 / est->sample_count);
+        }
+
+        est->step_index++;
+        if (est->step_index >= 2)
+        { // d 和 q 轴都测量完毕
+            est->sub_state = OFFLINE_SUB_STATE_CALC;
+        }
+        else
+        {                                                     // 准备测量下一个轴
+            est->sub_state = OFFLINE_SUB_STATE_EXEC;          // 保持在EXEC状态
+            est->task_start_time = gmp_core_get_systemtick(); // 重置计时器
+            est->sample_count = 0;
+            est->sum_x2 = 0;
+            est->sum_y2 = 0;
+            // ctl_clear_filter_iir1(&est->hpf_v);
+            // ctl_clear_filter_iir1(&est->hpf_i);
+        }
+        break;
+    }
+
+    case OFFLINE_SUB_STATE_CALC: {
+        // 1. 计算阻抗
+        // parameter_gt z_d = (est->hfi_i_rms[0] > 1e-6) ? (est->hfi_v_rms[0] / est->hfi_i_rms[0]) : 0.0f;
+        // parameter_gt z_q = (est->hfi_i_rms[1] > 1e-6) ? (est->hfi_v_rms[1] / est->hfi_i_rms[1]) : 0.0f;
+        parameter_gt z_d = 0, z_q = 0; // 占位符
+
+        // 2. 计算电感 (更精确的方法应考虑电阻: Z^2 = R^2 + (ωL)^2)
+        parameter_gt omega_hfi = CTL_PARAM_CONST_2PI * est->l_hfi_freq_hz;
+        if (omega_hfi > 1e-3)
+        {
+            parameter_gt Rs = est->pmsm_params.Rs;
+            // est->pmsm_params.Ld = ctl_sqrt(fmaxf(0.0f, z_d*z_d - Rs*Rs)) / omega_hfi;
+            // est->pmsm_params.Lq = ctl_sqrt(fmaxf(0.0f, z_q*z_q - Rs*Rs)) / omega_hfi;
+        }
+
+        est->sub_state = OFFLINE_SUB_STATE_DONE;
+        break;
+    }
+
+    case OFFLINE_SUB_STATE_DONE: {
+        // 1. 停止电机
+        ctl_set_voltage_ff(&est->current_ctrl, 0.0f, 0.0f);
+        ctl_set_current_ref(&est->current_ctrl, 0.0f, 0.0f);
+
+        // 2. 切换到下一个主状态
+        est->main_state = OFFLINE_MAIN_STATE_FLUX;
+        est->sub_state = OFFLINE_SUB_STATE_INIT;
+        break;
+    }
+    }
+}
+
+
+
 // 定义参数
 #define FLUX_RAMP_UP_TIME_S    (2.0f) // 斜坡升速时间 (秒)
 #define FLUX_STABILIZE_TIME_MS (1000) // 每个速度点的稳定时间
@@ -321,7 +477,7 @@ static const float FLUX_TEST_SPEED_PU[FLUX_TEST_POINTS] = {0.25f, 0.5f, 0.75f, 1
 /**
  * @brief 磁链辨识的主循环处理函数.
  */
-static void est_loop_handle_flux(ctl_offline_est_t* est)
+void est_loop_handle_flux(ctl_offline_est_t* est)
 {
     ctl_per_unit_consultant_t* pu = est->pu_consultant;
 
@@ -440,7 +596,127 @@ static void est_loop_handle_flux(ctl_offline_est_t* est)
 /**
  * @brief 惯量辨识的主循环处理函数.
  */
-static void est_loop_handle_j(ctl_offline_est_t* est)
+void est_loop_handle_j(ctl_offline_est_t* est)
 {
-    // ... 此处将实现惯量辨识的子状态机逻辑 ...
+    ctl_per_unit_consultant_t* pu = est->pu_consultant;
+
+    switch (est->sub_state)
+    {
+    case OFFLINE_SUB_STATE_INIT: {
+        // 1. 检查磁链是否已辨识
+        if (est->pmsm_params.flux < 1e-6)
+        {
+            est->main_state = OFFLINE_MAIN_STATE_ERROR; // 无法计算转矩
+            return;
+        }
+
+        // 2. 配置电流控制器为 Id=0, Iq=0
+        ctl_set_current_ref(&est->current_ctrl, 0.0f, 0.0f);
+        ctl_enable_current_controller(&est->current_ctrl);
+
+        // 3. 配置滤波器
+        ctl_init_lp_filter(&est->measure_flt[0], est->isr_freq_hz, 50.0f); // Speed
+        ctl_init_lp_filter(&est->measure_flt[1], est->isr_freq_hz, 50.0f); // Iq
+
+        // 4. 初始化变量
+        est->sum_x = 0;
+        est->sum_y = 0;
+        est->sum_xy = 0;
+        est->sum_x2 = 0;
+        est->avg_torque = 0;
+        est->sample_count = 0;
+
+        // 5. 进入执行状态
+        est->sub_state = OFFLINE_SUB_STATE_EXEC;
+        est->task_start_time = gmp_core_get_systemtick();
+        break;
+    }
+
+    case OFFLINE_SUB_STATE_EXEC: {
+        // --- 1. 等待一小段时间以确保电机静止 ---
+        if (!est_is_delay_elapsed_ms(est->task_start_time, J_STABILIZE_TIME_MS))
+        {
+            return;
+        }
+
+        // --- 2. 施加转矩阶跃并持续测量 ---
+        if (!est_is_delay_elapsed_ms(est->task_start_time, J_STABILIZE_TIME_MS + J_TORQUE_STEP_TIME_MS))
+        {
+            // 设置目标Iq
+            parameter_gt iq_ref = ctl_consult_Ipeak_to_phy(pu, est->j_test_iq_pu);
+            ctl_set_current_ref(&est->current_ctrl, 0.0f, iq_ref);
+
+            // 获取并滤波测量值
+            parameter_gt speed_rps = ctl_get_mtr_velocity(est->mtr_interface); // 假设单位为 rps
+            parameter_gt speed_rads = ctl_step_lowpass_filter(&est->measure_flt[0], speed_rps * CTL_PARAM_CONST_2PI);
+            parameter_gt iq_measured = ctl_step_lowpass_filter(&est->measure_flt[1], est->current_ctrl.idq0.dat[1]);
+
+            // 获取当前时间 (秒)
+            parameter_gt time_s = (gmp_core_get_systemtick() - (est->task_start_time + J_STABILIZE_TIME_MS)) / 1000.0f;
+
+            // 累加用于线性回归和平均转矩计算
+            est->sum_x += time_s;               // Σt
+            est->sum_y += speed_rads;           // Σω
+            est->sum_xy += time_s * speed_rads; // Σ(t*ω)
+            est->sum_x2 += time_s * time_s;     // Σ(t^2)
+            est->avg_torque += 1.5f * est->pmsm_params.pole_pair * est->pmsm_params.flux * iq_measured;
+            est->sample_count++;
+
+            return;
+        }
+
+        // --- 3. 测量时间结束，进入计算状态 ---
+        est->sub_state = OFFLINE_SUB_STATE_CALC;
+        break;
+    }
+
+    case OFFLINE_SUB_STATE_CALC: {
+        if (est->sample_count > 10)
+        { // 确保有足够的数据点
+            // 1. 计算平均转矩
+            est->avg_torque /= est->sample_count;
+
+            // 2. 计算角加速度 (线性回归斜率)
+            // alpha = (N*Σ(tω) - Σt*Σω) / (N*Σ(t^2) - (Σt)^2)
+            parameter_gt N = est->sample_count;
+            parameter_gt numerator = N * est->sum_xy - est->sum_x * est->sum_y;
+            parameter_gt denominator = N * est->sum_x2 - est->sum_x * est->sum_x;
+
+            if (fabsf(denominator) > 1e-9)
+            {
+                parameter_gt alpha = numerator / denominator;
+                // 3. 计算惯量 J = Te / alpha
+                if (fabsf(alpha) > 1e-3)
+                {
+                    est->pmsm_params.inertia = est->avg_torque / alpha;
+                }
+                else
+                {
+                    est->main_state = OFFLINE_MAIN_STATE_ERROR; // 加速度过小
+                }
+            }
+            else
+            {
+                est->main_state = OFFLINE_MAIN_STATE_ERROR; // 数据错误
+            }
+        }
+        else
+        {
+            est->main_state = OFFLINE_MAIN_STATE_ERROR; // 采样点不足
+        }
+
+        est->sub_state = OFFLINE_SUB_STATE_DONE;
+        break;
+    }
+
+    case OFFLINE_SUB_STATE_DONE: {
+        // 1. 停止电机
+        ctl_set_current_ref(&est->current_ctrl, 0.0f, 0.0f);
+
+        // 2. 切换到最终完成状态
+        est->main_state = OFFLINE_MAIN_STATE_DONE;
+        est->sub_state = OFFLINE_SUB_STATE_INIT; // 重置子状态
+        break;
+    }
+    }
 }
