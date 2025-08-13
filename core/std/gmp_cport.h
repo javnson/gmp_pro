@@ -63,7 +63,6 @@ void ctl_init(void);
 //
 void ctl_mainloop(void);
 
-
 // This function is a standard interface for testing if the controller meets online criterion.
 // 1 means reached criterion.
 // 0 means don't reached.
@@ -85,6 +84,23 @@ fast_gt ctl_ready_mainloop(void);
 time_gt gmp_base_get_system_tick(void);
 #endif // gmp_base_get_system_tick
 
+// Derived function for system tick
+// Calculate the time difference from the specified time
+//
+GMP_STATIC_INLINE time_gt gmp_base_get_diff_system_tick(time_gt t0)
+{
+    time_gt current_tick = gmp_base_get_system_tick();
+    return current_tick - t0;
+}
+
+// judge if current time meets elapse conditions
+// return 1 if delay elapsed.
+GMP_STATIC_INLINE time_gt gmp_base_is_delay_elapsed(time_gt t0, uint32_t delay_t)
+{
+    time_gt current_tick = gmp_base_get_system_tick();
+    return ((current_tick - t0) >= delay_t);
+}
+
 // The function should be called by user or system when fatal error happened.
 // So the function must own the ability of stop the program.
 //
@@ -95,7 +111,7 @@ void gmp_base_system_stuck(void);
 // This function has a basic version in gmp_std_port.c
 
 #if defined USE_GMP_SELF_BASE_ASSERT
-void gmp_base_assert(void *condition);
+void gmp_base_assert(void* condition);
 
 #elif defined DISABLE_GMP_BASE_ASSERT
 #define gmp_base_assert(assert_condition) (void)(assert_condition)
@@ -105,7 +121,7 @@ void gmp_base_assert(void *condition);
 #endif // USE_GMP_BASE_ASSERT
 // When a function is unimplemented, the function would be invoke.
 //
-void gmp_base_not_impl(const char *file, uint32_t line);
+void gmp_base_not_impl(const char* file, uint32_t line);
 
 // System debug print function
 //
@@ -131,8 +147,8 @@ void gmp_base_show_label(void);
 
 // The memory controller functions
 //
-void *gmp_base_malloc(size_gt size);
-void gmp_base_free(void *ptr);
+void* gmp_base_malloc(size_gt size);
+void gmp_base_free(void* ptr);
 
 // This function would be called by user in entry function.
 // And this function would not return.
@@ -144,7 +160,7 @@ void gmp_base_free(void *ptr);
 #ifdef SPECIFY_ENABLE_GMP_CTL
 #ifdef SPECIFY_ENABLE_CTL_FRAMEWORK_NANO
 // extern controller nano object
-extern ctl_object_nano_t *ctl_nano_handle;
+extern ctl_object_nano_t* ctl_nano_handle;
 
 #endif // SPECIFY_ENABLE_CTL_FRAMEWORK_NANO
 #endif // SPECIFY_ENABLE_GMP_CTL
@@ -227,7 +243,7 @@ extern size_gt g_delay_ms;
 
 // Default print device handle
 //
-extern GMP_BASE_PRINT_DEFAULT_HANDLE_TYPE *default_debug_dev;
+extern GMP_BASE_PRINT_DEFAULT_HANDLE_TYPE* default_debug_dev;
 
 #ifdef __cplusplus
 }

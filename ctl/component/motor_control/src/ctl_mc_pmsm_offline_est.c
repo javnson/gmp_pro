@@ -72,13 +72,13 @@ static void est_loop_handle_rs(ctl_offline_est_t* est)
         // 这是一个简化的占位符，实际应用中可能需要 est->current_ctrl.theta_override = target_angle_pu;
 
         // --- 2. 等待电流稳定 ---
-        if (!est_is_delay_elapsed_ms(est->task_start_time, RS_STABILIZE_TIME_MS))
+        if (!gmp_base_is_delay_elapsed(est->task_start_time, RS_STABILIZE_TIME_MS))
         {
             return;
         }
 
         // --- 3. 稳定后，在指定时间内进行测量和累加 ---
-        if (!est_is_delay_elapsed_ms(est->task_start_time, RS_STABILIZE_TIME_MS + RS_MEASURE_TIME_MS))
+        if (!gmp_base_is_delay_elapsed(est->task_start_time, RS_STABILIZE_TIME_MS + RS_MEASURE_TIME_MS))
         {
             parameter_gt Vd = est->current_ctrl.vdq0.dat[0];
             parameter_gt Id = est->current_ctrl.idq0.dat[0];
@@ -278,7 +278,7 @@ void est_loop_handle_l_rotating_hfi(ctl_offline_est_t* est)
 
         // 检查是否旋转了足够长的时间 (例如，旋转1.5圈以确保稳定)
         uint32_t rotation_time_ms = (uint32_t)(1.5f / est->l_hfi_rot_freq_hz * 1000.0f);
-        if (est_is_delay_elapsed_ms(est->task_start_time, rotation_time_ms))
+        if (gmp_base_is_delay_elapsed(est->task_start_time, rotation_time_ms))
         {
             est->sub_state = OFFLINE_SUB_STATE_CALC;
         }
@@ -372,13 +372,13 @@ static void est_loop_handle_l_dcbias_hfi(ctl_offline_est_t* est)
 
     case OFFLINE_SUB_STATE_EXEC: {
         // --- 1. 等待转子对齐并稳定 ---
-        if (!est_is_delay_elapsed_ms(est->task_start_time, L_DCBIAS_ALIGN_TIME_MS))
+        if (!gmp_base_is_delay_elapsed(est->task_start_time, L_DCBIAS_ALIGN_TIME_MS))
         {
             return;
         }
 
         // --- 2. 注入高频信号并持续测量 ---
-        if (!est_is_delay_elapsed_ms(est->task_start_time, L_DCBIAS_ALIGN_TIME_MS + L_DCBIAS_MEASURE_TIME_MS))
+        if (!gmp_base_is_delay_elapsed(est->task_start_time, L_DCBIAS_ALIGN_TIME_MS + L_DCBIAS_MEASURE_TIME_MS))
         {
             // 产生高频电压信号
             ctl_step_sine_generator(&est->hfi_signal_gen);
@@ -518,7 +518,7 @@ void est_loop_handle_flux(ctl_offline_est_t* est)
 
         // --- 2. 等待电机达到目标速度并稳定 ---
         uint32_t wait_time_ms = (uint32_t)(ramp_time_s * 1000) + FLUX_STABILIZE_TIME_MS;
-        if (!est_is_delay_elapsed_ms(est->task_start_time, wait_time_ms))
+        if (!gmp_base_is_delay_elapsed(est->task_start_time, wait_time_ms))
         {
             // 在ISR中，FOC会跟随 speed_profile_gen 的输出角度旋转
             ctl_step_slope_f(&est->speed_profile_gen);
@@ -526,7 +526,7 @@ void est_loop_handle_flux(ctl_offline_est_t* est)
         }
 
         // --- 3. 在稳定状态下测量指定时间 ---
-        if (!est_is_delay_elapsed_ms(est->task_start_time, wait_time_ms + FLUX_MEASURE_TIME_MS))
+        if (!gmp_base_is_delay_elapsed(est->task_start_time, wait_time_ms + FLUX_MEASURE_TIME_MS))
         {
             // 获取q轴电压和电角速度
             parameter_gt Uq = est->current_ctrl.vdq0.dat[1];
@@ -634,13 +634,13 @@ void est_loop_handle_j(ctl_offline_est_t* est)
 
     case OFFLINE_SUB_STATE_EXEC: {
         // --- 1. 等待一小段时间以确保电机静止 ---
-        if (!est_is_delay_elapsed_ms(est->task_start_time, J_STABILIZE_TIME_MS))
+        if (!gmp_base_is_delay_elapsed(est->task_start_time, J_STABILIZE_TIME_MS))
         {
             return;
         }
 
         // --- 2. 施加转矩阶跃并持续测量 ---
-        if (!est_is_delay_elapsed_ms(est->task_start_time, J_STABILIZE_TIME_MS + J_TORQUE_STEP_TIME_MS))
+        if (!gmp_base_is_delay_elapsed(est->task_start_time, J_STABILIZE_TIME_MS + J_TORQUE_STEP_TIME_MS))
         {
             // 设置目标Iq
             parameter_gt iq_ref = ctl_consult_Ipeak_to_phy(pu, est->j_test_iq_pu);

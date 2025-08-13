@@ -149,11 +149,11 @@ void est_loop_handle_l(ctl_offline_est_t* est);
 void est_loop_handle_flux(ctl_offline_est_t* est);
 void est_loop_handle_j(ctl_offline_est_t* est);
 
-GMP_STATIC_INLINE fast_gt est_is_delay_elapsed_ms(time_gt start_tick, uint32_t delay_ms)
-{
-    time_gt current_tick = gmp_base_get_system_tick();
-    return ((current_tick - start_tick) >= delay_ms);
-}
+//GMP_STATIC_INLINE fast_gt est_is_delay_elapsed_ms(time_gt start_tick, uint32_t delay_ms)
+//{
+//    time_gt current_tick = gmp_base_get_system_tick();
+//    return ((current_tick - start_tick) >= delay_ms);
+//}
 
 /**
  * @brief 初始化离线参数辨识模块.
