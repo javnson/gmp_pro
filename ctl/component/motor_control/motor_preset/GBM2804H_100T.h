@@ -38,8 +38,8 @@ extern "C"
 //================================================================================
 // Electrical Parameters
 //================================================================================
-#define MOTOR_PARAM_RS ((4.7))     ///< Stator resistance per phase (Ohm).
-#define MOTOR_PARAM_LS ((0.96e-3)) ///< Stator inductance per phase (H). Note: Ld = Lq = Ls for a non-salient PMSM.
+#define MOTOR_PARAM_RS ((4.7f))     ///< Stator resistance per phase (Ohm).
+#define MOTOR_PARAM_LS ((0.96e-3f)) ///< Stator inductance per phase (H). Note: Ld = Lq = Ls for a non-salient PMSM.
 #define MOTOR_PARAM_FLUX                                                                                               \
     ((MOTOR_PARAM_CALCULATE_FLUX_BY_KV(                                                                                \
         MOTOR_PARAM_KV, MOTOR_PARAM_POLE_PAIRS))) ///< Permanent magnet flux linkage (Wb), calculated from Kv.
@@ -48,30 +48,30 @@ extern "C"
 // Mechanical Parameters
 //================================================================================
 #define MOTOR_PARAM_POLE_PAIRS ((7))     ///< Number of pole pairs in the motor.
-#define MOTOR_PARAM_INERTIA    ((497.0)) ///< Total rotor inertia (g*cm^2).
-#define MOTOR_PARAM_FRICTION   ((755.0)) ///< Viscous friction coefficient (uN*m*s/rad).
+#define MOTOR_PARAM_INERTIA    ((497.0f)) ///< Total rotor inertia (g*cm^2).
+#define MOTOR_PARAM_FRICTION   ((755.0f)) ///< Viscous friction coefficient (uN*m*s/rad).
 
 //================================================================================
 // Characteristic Constants
 //================================================================================
-#define MOTOR_PARAM_KV  ((206.2)) ///< Motor velocity constant (RPM/V).
-#define MOTOR_PARAM_EMF ((4.85))  ///< Back-EMF constant (V/kRPM).
+#define MOTOR_PARAM_KV  ((206.2f)) ///< Motor velocity constant (RPM/V).
+#define MOTOR_PARAM_EMF ((4.85f))  ///< Back-EMF constant (V/kRPM).
 
 //================================================================================
 // Rated Operating Parameters
 //================================================================================
-#define MOTOR_PARAM_RATED_VOLTAGE   ((10.0))  ///< Rated operating voltage (V).
-#define MOTOR_PARAM_RATED_CURRENT   ((4.5))   ///< Rated phase current (A, Peak).
-#define MOTOR_PARAM_NO_LOAD_CURRENT ((0.01))  ///< No-load phase current (A, Peak).
-#define MOTOR_PARAM_RATED_FREQUENCY ((250.0)) ///< Rated operating frequency (Hz).
+#define MOTOR_PARAM_RATED_VOLTAGE   ((10.0f))  ///< Rated operating voltage (V).
+#define MOTOR_PARAM_RATED_CURRENT   ((4.5f))   ///< Rated phase current (A, Peak).
+#define MOTOR_PARAM_NO_LOAD_CURRENT ((0.01f))  ///< No-load phase current (A, Peak).
+#define MOTOR_PARAM_RATED_FREQUENCY ((250.0f)) ///< Rated operating frequency (Hz).
 
 //================================================================================
 // Absolute Maximum Ratings & Limits
 //================================================================================
-#define MOTOR_PARAM_MAX_SPEED      ((2180))  ///< Maximum allowable speed (RPM).
-#define MOTOR_PARAM_MAX_TORQUE     ((0.981)) ///< Maximum intermittent torque (N*m).
-#define MOTOR_PARAM_MAX_DC_VOLTAGE ((14.2))  ///< Maximum allowable DC bus voltage (V).
-#define MOTOR_PARAM_MAX_PH_CURRENT ((5.0))   ///< Maximum allowable phase current (A, Peak).
+#define MOTOR_PARAM_MAX_SPEED      ((2180.0f))  ///< Maximum allowable speed (RPM).
+#define MOTOR_PARAM_MAX_TORQUE     ((0.981f)) ///< Maximum intermittent torque (N*m).
+#define MOTOR_PARAM_MAX_DC_VOLTAGE ((14.2f))  ///< Maximum allowable DC bus voltage (V).
+#define MOTOR_PARAM_MAX_PH_CURRENT ((5.0f))   ///< Maximum allowable phase current (A, Peak).
 
 /** @} */ // end of PMSM_GBM2804H_PARAMETERS group
 

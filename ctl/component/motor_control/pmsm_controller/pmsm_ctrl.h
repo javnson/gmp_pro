@@ -110,7 +110,7 @@ extern "C"
 /**
  * @brief Core data structure for the PMSM bare-metal controller.
  */
-typedef struct _tag_pmsm_bare_controller
+typedef struct _tag_pmsm_controller
 {
     // --- Interfaces ---
     mtr_ift mtr_interface; /**< @brief Universal motor input interface (ADC, encoder, etc.). */
@@ -139,7 +139,7 @@ typedef struct _tag_pmsm_bare_controller
     ctrl_gt speed_set;      /**< @brief Target velocity (per-unit). */
     vector2_gt idq_set;     /**< @brief d/q-axis current target values. */
     vector3_gt vdq_set;     /**< @brief d/q-axis voltage target values. */
-    vector3_gt vab0_set;    /**< @brief ¦Á/¦Â-axis voltage target values. */
+    vector3_gt vab0_set;    /**< @brief @f( \alpha-\beta@f) -axis voltage target values. */
 
     // --- State & Flags ---
     fast16_gt isr_tick;                /**< @brief Interrupt counter for frequency division. */
@@ -150,12 +150,12 @@ typedef struct _tag_pmsm_bare_controller
     fast_gt flag_enable_velocity_ctrl; /**< @brief Velocity loop enable flag. */
     fast_gt flag_enable_position_ctrl; /**< @brief Position loop enable flag. */
 
-} pmsm_bare_controller_t;
+} pmsm_controller_t;
 
 /**
  * @brief Initialization parameters structure for the PMSM bare-metal controller.
  */
-typedef struct _tag_pmsm_bare_controller_init
+typedef struct _tag_pmsm_controller_init
 {
     parameter_gt fs; /**< @brief Controller operating frequency (Hz). */
 
@@ -176,7 +176,7 @@ typedef struct _tag_pmsm_bare_controller_init
     parameter_gt acc_limit_min;     /**< @brief Minimum acceleration (max deceleration) limit (p.u./s). */
     uint32_t spd_ctrl_div;          /**< @brief Velocity loop execution frequency divider (relative to the main ISR). */
 
-} pmsm_bare_controller_init_t;
+} pmsm_controller_init_t;
 
 /** @} */ // end of MC_PMSM_STRUCTS group
 
@@ -192,8 +192,8 @@ typedef struct _tag_pmsm_bare_controller_init
  */
 
 // --- Initialization and Attachment ---
-void ctl_init_pmsm_bare_controller(pmsm_bare_controller_t* ctrl, pmsm_bare_controller_init_t* init);
-void ctl_attach_pmsm_bare_output(pmsm_bare_controller_t* ctrl, tri_pwm_ift* pwm_out);
+void ctl_init_pmsm_controller(pmsm_controller_t* ctrl, pmsm_controller_init_t* init);
+void ctl_attach_pmsm_output(pmsm_controller_t* ctrl, tri_pwm_ift* pwm_out);
 
 // --- Core Controller Logic ---
 
@@ -201,7 +201,7 @@ void ctl_attach_pmsm_bare_output(pmsm_bare_controller_t* ctrl, tri_pwm_ift* pwm_
  * @brief Clears the internal states and integral terms of all PID controllers.
  * @param[in,out] ctrl Pointer to the PMSM controller instance.
  */
-GMP_STATIC_INLINE void ctl_clear_pmsm_ctrl(pmsm_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_clear_pmsm_ctrl(pmsm_controller_t* ctrl)
 {
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
     ctl_clear_discrete_pid(&ctrl->current_ctrl[phase_d]);
@@ -218,7 +218,7 @@ GMP_STATIC_INLINE void ctl_clear_pmsm_ctrl(pmsm_bare_controller_t* ctrl)
  * @brief Executes one step of the PMSM controller calculation.
  * @param[in,out] ctrl Pointer to the PMSM controller instance.
  */
-GMP_STATIC_INLINE void ctl_step_pmsm_ctrl(pmsm_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_step_pmsm_ctrl(pmsm_controller_t* ctrl)
 {
     ctl_vector2_t phasor;
     ctrl_gt etheta;
@@ -316,22 +316,22 @@ GMP_STATIC_INLINE void ctl_step_pmsm_ctrl(pmsm_bare_controller_t* ctrl)
 // --- Enable / Disable Functions ---
 
 /** @brief Enables the master switch for the controller. */
-GMP_STATIC_INLINE void ctl_enable_pmsm_ctrl(pmsm_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_enable_pmsm_ctrl(pmsm_controller_t* ctrl)
 {
     ctrl->flag_enable_controller = 1;
 }
 /** @brief Disables the master switch for the controller. */
-GMP_STATIC_INLINE void ctl_disable_pmsm_ctrl(pmsm_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_disable_pmsm_ctrl(pmsm_controller_t* ctrl)
 {
     ctrl->flag_enable_controller = 0;
 }
 /** @brief Enables the PWM output stage. */
-GMP_STATIC_INLINE void ctl_enable_pmsm_ctrl_output(pmsm_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_enable_pmsm_ctrl_output(pmsm_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
 }
 /** @brief Disables the PWM output stage. */
-GMP_STATIC_INLINE void ctl_disable_pmsm_ctrl_output(pmsm_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_disable_pmsm_ctrl_output(pmsm_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 0;
 }
@@ -339,7 +339,7 @@ GMP_STATIC_INLINE void ctl_disable_pmsm_ctrl_output(pmsm_bare_controller_t* ctrl
 // --- Mode Control and Setpoint Functions ---
 
 /** @brief Switches to V¦Á¦Â open-loop mode. */
-GMP_STATIC_INLINE void ctl_pmsm_ctrl_valphabeta_mode(pmsm_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_pmsm_ctrl_valphabeta_mode(pmsm_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
     ctrl->flag_enable_modulation = 0;
@@ -349,7 +349,7 @@ GMP_STATIC_INLINE void ctl_pmsm_ctrl_valphabeta_mode(pmsm_bare_controller_t* ctr
 }
 
 /** @brief Sets the target V¦Á and V¦Â voltages. */
-GMP_STATIC_INLINE void ctl_set_pmsm_ctrl_valphabeta(pmsm_bare_controller_t* ctrl, ctrl_gt valpha, ctrl_gt vbeta)
+GMP_STATIC_INLINE void ctl_set_pmsm_ctrl_valphabeta(pmsm_controller_t* ctrl, ctrl_gt valpha, ctrl_gt vbeta)
 {
     ctrl->vab0_set.dat[phase_alpha] = valpha;
     ctrl->vab0_set.dat[phase_beta] = vbeta;
@@ -357,7 +357,7 @@ GMP_STATIC_INLINE void ctl_set_pmsm_ctrl_valphabeta(pmsm_bare_controller_t* ctrl
 }
 
 /** @brief Switches to Vdq open-loop voltage mode. */
-GMP_STATIC_INLINE void ctl_pmsm_ctrl_voltage_mode(pmsm_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_pmsm_ctrl_voltage_mode(pmsm_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
     ctrl->flag_enable_modulation = 1;
@@ -367,14 +367,14 @@ GMP_STATIC_INLINE void ctl_pmsm_ctrl_voltage_mode(pmsm_bare_controller_t* ctrl)
 }
 
 /** @brief Sets the target Vd and Vq voltages. */
-GMP_STATIC_INLINE void ctl_set_pmsm_ctrl_vdq_ff(pmsm_bare_controller_t* ctrl, ctrl_gt vd, ctrl_gt vq)
+GMP_STATIC_INLINE void ctl_set_pmsm_ctrl_vdq_ff(pmsm_controller_t* ctrl, ctrl_gt vd, ctrl_gt vq)
 {
     ctrl->vdq_ff.dat[phase_d] = vd;
     ctrl->vdq_ff.dat[phase_q] = vq;
 }
 
 /** @brief Switches to Idq closed-loop current mode. */
-GMP_STATIC_INLINE void ctl_pmsm_ctrl_current_mode(pmsm_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_pmsm_ctrl_current_mode(pmsm_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
     ctrl->flag_enable_modulation = 1;
@@ -384,14 +384,14 @@ GMP_STATIC_INLINE void ctl_pmsm_ctrl_current_mode(pmsm_bare_controller_t* ctrl)
 }
 
 /** @brief Sets the target Id and Iq currents. */
-GMP_STATIC_INLINE void ctl_set_pmsm_ctrl_idq_ff(pmsm_bare_controller_t* ctrl, ctrl_gt id, ctrl_gt iq)
+GMP_STATIC_INLINE void ctl_set_pmsm_ctrl_idq_ff(pmsm_controller_t* ctrl, ctrl_gt id, ctrl_gt iq)
 {
     ctrl->idq_ff.dat[phase_d] = id;
     ctrl->idq_ff.dat[phase_q] = iq;
 }
 
 /** @brief Switches to closed-loop velocity mode. */
-GMP_STATIC_INLINE void ctl_pmsm_ctrl_velocity_mode(pmsm_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_pmsm_ctrl_velocity_mode(pmsm_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
     ctrl->flag_enable_modulation = 1;
@@ -401,13 +401,13 @@ GMP_STATIC_INLINE void ctl_pmsm_ctrl_velocity_mode(pmsm_bare_controller_t* ctrl)
 }
 
 /** @brief Sets the target velocity. */
-GMP_STATIC_INLINE void ctl_set_pmsm_ctrl_speed(pmsm_bare_controller_t* ctrl, ctrl_gt spd)
+GMP_STATIC_INLINE void ctl_set_pmsm_ctrl_speed(pmsm_controller_t* ctrl, ctrl_gt spd)
 {
     ctrl->speed_set = spd;
 }
 
 /** @brief Switches to closed-loop position mode. */
-GMP_STATIC_INLINE void ctl_pmsm_ctrl_position_mode(pmsm_bare_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_pmsm_ctrl_position_mode(pmsm_controller_t* ctrl)
 {
     ctrl->flag_enable_output = 1;
     ctrl->flag_enable_modulation = 1;
@@ -417,7 +417,7 @@ GMP_STATIC_INLINE void ctl_pmsm_ctrl_position_mode(pmsm_bare_controller_t* ctrl)
 }
 
 /** @brief Sets the target position. */
-GMP_STATIC_INLINE void set_pmsm_ctrl_position(pmsm_bare_controller_t* ctrl, int32_t revolution, ctrl_gt pos)
+GMP_STATIC_INLINE void set_pmsm_ctrl_position(pmsm_controller_t* ctrl, int32_t revolution, ctrl_gt pos)
 {
     ctrl->revolution_set = revolution;
     ctrl->pos_set = pos;

@@ -266,6 +266,18 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_mtr_torque(mtr_ift* mtr)
 // --- Attachment Functions ---
 
 /**
+ * @brief Attaches all interfaces to universal motor interface.
+ */
+GMP_STATIC_INLINE void ctl_attach_mtr_adc_channels(mtr_ift* mtr, tri_adc_ift* iabc, tri_adc_ift* uabc, adc_ift* idc,
+    adc_ift* udc)
+{
+    mtr->iabc = iabc;
+    mtr->uabc = uabc;
+    mtr->idc = idc;
+    mtr->udc = udc;
+}
+    
+/**
  * @brief Attaches a three-phase current sensor interface to the universal motor interface.
  * @param mtr Pointer to the universal motor interface.
  * @param iabc Pointer to the three-phase ADC interface for current sensing.
@@ -274,6 +286,7 @@ GMP_STATIC_INLINE void ctl_attach_mtr_current(mtr_ift* mtr, tri_adc_ift* iabc)
 {
     mtr->iabc = iabc;
 }
+
 
 /**
  * @brief Attaches a position encoder interface to the universal motor interface.

@@ -6,13 +6,16 @@
 #include <ctl/component/motor_control/motor_preset/GBM2804H_100T.h>
 
 // invoke motor controller parameters
-#include <ctl/component/motor_control/controller_preset/TI_3PH_GAN_INV.h>
+#include <ctl/component/motor_control/controller_preset/TI_BOOSTXL_3PhGaNInv.h>
 
 // Controller Frequency
-#define CONTROLLER_FREQUENCY (10000)
+#define CTRL_FS (10000)
 
 // PWM depth
-#define CONTROLLER_PWM_CMP_MAX (6000)
+#define CTRL_PWM_CMP_MAX (6000)
+
+// ADC Voltae Reference
+#define CTRL_ADC_VOLTAGE_REF (3.3f)
 
 // Speed controller Division
 #define SPD_CONTROLLER_PWM_DIVISION (5)
@@ -20,15 +23,6 @@
 // Controller Base Voltage and Base Current
 #define MTR_CTRL_VOLTAGE_BASE ((MOTOR_PARAM_MAX_DC_VOLTAGE))
 #define MTR_CTRL_CURRENT_BASE ((MOTOR_PARAM_RATED_CURRENT))
-
-// Current ADC module default per unit parameter
-#define MTR_CTRL_CURRENT_GAIN (ADC_FULLSCALE_CURRENT * 2 / MTR_CTRL_CURRENT_BASE)
-#define MTR_CTRL_CURRENT_BIAS (ADC_CURRENT_REFERENCE_VOLTAGE / ADC_REFERENCE)
-
-
-// Voltage ADC module default per unit parameter
-#define MTR_CTRL_VOLTAGE_GAIN ((ADC_FULLSCALE_VOLTAGE / MTR_CTRL_VOLTAGE_BASE))
-#define MTR_CTRL_VOLTAGE_BIAS ((0.0))
 
 // Current Bandwidth
 #define MTR_CTRL_CURRENT_LOOP_BW ((50))

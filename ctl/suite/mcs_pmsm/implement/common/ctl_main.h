@@ -58,7 +58,7 @@ extern pos_autoturn_encoder_t pos_enc;
 #endif // PMSM_CTRL_USING_QEP_ENCODER
 
 // PMSM controller
-extern pmsm_bare_controller_t pmsm_ctrl;
+extern pmsm_controller_t pmsm_ctrl;
 
 extern adc_bias_calibrator_t adc_calibrator;
 extern fast_gt flag_enable_adc_calibrator;

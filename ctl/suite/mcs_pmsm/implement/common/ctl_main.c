@@ -21,7 +21,7 @@
 #include <xplt.peripheral.h>
 
 // PMSM controller
-pmsm_bare_controller_t pmsm_ctrl;
+pmsm_controller_t pmsm_ctrl;
 
 #ifdef PMSM_CTRL_USING_QEP_ENCODER
 // Auto - turn encoder
@@ -55,7 +55,7 @@ volatile fast_gt flag_enable_system = 0;
 void ctl_init()
 {
     // setup ADC calibrate
-    ctl_init_adc_calibrator(&adc_calibrator, 20, 0.707f, CONTROLLER_FREQUENCY);
+    ctl_init_adc_calibrator(&adc_calibrator, 20, 0.707f, CTRL_FS);
 
 #ifdef PMSM_CTRL_USING_QEP_ENCODER
     // init Auto - turn encoder
@@ -71,22 +71,22 @@ void ctl_init()
         // attach position with speed encoder
         &spd_enc, pmsm_ctrl.mtr_interface.position,
         // set spd calculator parameters
-        CONTROLLER_FREQUENCY, 5, MOTOR_PARAM_MAX_SPEED, 1, 150);
+        CTRL_FS, 5, MOTOR_PARAM_MAX_SPEED, 1, 150);
 
 #if defined OPENLOOP_CONST_FREQUENCY
-    ctl_init_const_f_controller(&const_f, 20, CONTROLLER_FREQUENCY);
+    ctl_init_const_f_controller(&const_f, 20, CTRL_FS);
 #else  // OPENLOOP_CONST_FREQUENCY
     // frequency target 20 Hz, frequency slope 40 Hz/s
-    ctl_init_const_slope_f_controller(&slope_f, 20.0f, 40.0f, CONTROLLER_FREQUENCY);
+    ctl_init_const_slope_f_controller(&slope_f, 20.0f, 40.0f, CTRL_FS);
 #endif // OPENLOOP_CONST_FREQUENCY
 
     // attach a speed encoder object with motor controller
     ctl_attach_mtr_velocity(&pmsm_ctrl.mtr_interface, &spd_enc.encif);
 
     // set pmsm_ctrl parameters
-    pmsm_bare_controller_init_t pmsm_ctrl_init;
+    pmsm_controller_init_t pmsm_ctrl_init;
 
-    pmsm_ctrl_init.fs = CONTROLLER_FREQUENCY;
+    pmsm_ctrl_init.fs = CTRL_FS;
 
     // current pid controller parameters
     pmsm_ctrl_init.current_pid_gain = (parameter_gt)(MOTOR_PARAM_LS * MTR_CTRL_CURRENT_LOOP_BW * CTL_PARAM_CONST_2PI *
@@ -109,7 +109,7 @@ void ctl_init()
     pmsm_ctrl_init.acc_limit_max = 150.0f;
 
     // init the PMSM controller
-    ctl_init_pmsm_bare_controller(&pmsm_ctrl, &pmsm_ctrl_init);
+    ctl_init_pmsm_controller(&pmsm_ctrl, &pmsm_ctrl_init);
 
     // BUG TI cannot print out sizeof() result if no type is specified.
     gmp_base_print(TEXT_STRING("PMSM SERVO struct has been inited, size :%d\r\n"), (int)sizeof(pmsm_ctrl_init));

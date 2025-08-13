@@ -109,9 +109,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_fuzzy_pid(ctl_fuzzy_pid_t* fp, ctrl_gt error)
     ctrl_gt ec_quantized = ctl_mul(error_change, float2ctrl(fp->ec_q_factor));
 
     // 3. Look up PID parameter adjustments from fuzzy rule tables
-    ctrl_gt delta_kp = ctl_interpolate_lut2d(&fp->d_kp_lut, e_quantized, ec_quantized);
-    ctrl_gt delta_ki = ctl_interpolate_lut2d(&fp->d_ki_lut, e_quantized, ec_quantized);
-    ctrl_gt delta_kd = ctl_interpolate_lut2d(&fp->d_kd_lut, e_quantized, ec_quantized);
+    ctrl_gt delta_kp = ctl_step_interpolate_lut2d(&fp->d_kp_lut, e_quantized, ec_quantized);
+    ctrl_gt delta_ki = ctl_step_interpolate_lut2d(&fp->d_ki_lut, e_quantized, ec_quantized);
+    ctrl_gt delta_kd = ctl_step_interpolate_lut2d(&fp->d_kd_lut, e_quantized, ec_quantized);
 
     // 4. Calculate the new, tuned PID parameters
     parameter_gt tuned_kp = fp->base_kp + ctrl2float(delta_kp);

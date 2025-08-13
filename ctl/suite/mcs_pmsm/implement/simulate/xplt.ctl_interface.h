@@ -31,8 +31,7 @@ extern "C"
 #ifndef SPECIFY_ENABLE_CTL_FRAMEWORK_NANO
 
 // Input Callback
-GMP_STATIC_INLINE
-void ctl_input_callback(void)
+GMP_STATIC_INLINE void ctl_input_callback(void)
 {
     // invoke ADC p.u. routine
     ctl_step_tri_ptr_adc_channel(&iabc);
@@ -52,8 +51,7 @@ void ctl_input_callback(void)
 }
 
 // Output Callback
-GMP_STATIC_INLINE
-void ctl_output_callback(void)
+GMP_STATIC_INLINE void ctl_output_callback(void)
 {
     ctl_calc_pwm_tri_channel(&pwm_out);
 
@@ -85,15 +83,13 @@ void ctl_output_callback(void)
 
 // Enable Motor Controller
 // Enable Output
-GMP_STATIC_INLINE
-void ctl_enable_output()
+GMP_STATIC_INLINE void ctl_enable_output()
 {
     csp_sl_enable_output();
 }
 
 // Disable Output
-GMP_STATIC_INLINE
-void ctl_disable_output()
+GMP_STATIC_INLINE void ctl_disable_output()
 {
     csp_sl_disable_output();
 }
@@ -105,8 +101,7 @@ void ctl_disable_output()
 #ifdef SPECIFY_ENABLE_CTL_FRAMEWORK_NANO
 
 // Controller Nano input stage routine
-GMP_STATIC_INLINE
-void ctl_fmif_input_stage_routine(ctl_object_nano_t *pctl_obj)
+GMP_STATIC_INLINE void ctl_fmif_input_stage_routine(ctl_object_nano_t* pctl_obj)
 {
     // invoke ADC p.u. routine
     ctl_step_tri_ptr_adc_channel(&iabc);
@@ -119,8 +114,7 @@ void ctl_fmif_input_stage_routine(ctl_object_nano_t *pctl_obj)
 }
 
 // Controller Nano output stage routine
-GMP_STATIC_INLINE
-void ctl_fmif_output_stage_routine(ctl_object_nano_t *pctl_obj)
+GMP_STATIC_INLINE void ctl_fmif_output_stage_routine(ctl_object_nano_t* pctl_obj)
 {
     ctl_calc_pwm_tri_channel(&pwm_out);
 
@@ -140,21 +134,18 @@ void ctl_fmif_output_stage_routine(ctl_object_nano_t *pctl_obj)
 }
 
 // Controller Request stage
-GMP_STATIC_INLINE
-void ctl_fmif_request_stage_routine(ctl_object_nano_t *pctl_obj)
+GMP_STATIC_INLINE void ctl_fmif_request_stage_routine(ctl_object_nano_t* pctl_obj)
 {
 }
 
 // Enable Output
-GMP_STATIC_INLINE
-void ctl_fmif_output_enable(ctl_object_nano_t *pctl_obj)
+GMP_STATIC_INLINE void ctl_fmif_output_enable(ctl_object_nano_t* pctl_obj)
 {
     csp_sl_enable_output();
 }
 
 // Disable Output
-GMP_STATIC_INLINE
-void ctl_fmif_output_disable(ctl_object_nano_t *pctl_obj)
+GMP_STATIC_INLINE void ctl_fmif_output_disable(ctl_object_nano_t* pctl_obj)
 {
     csp_sl_disable_output();
 }

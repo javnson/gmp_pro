@@ -230,6 +230,18 @@ typedef struct _tag_pwm_tri_channel
 void ctl_init_pwm_tri_channel(pwm_tri_channel_t* pwm_obj, pwm_gt phase, pwm_gt full_scale);
 
 /**
+ * @brief Calculates the compare values for a three-phase PWM channel, without input raw.
+ */
+GMP_STATIC_INLINE void ctl_calc_pwm_tri_channel(pwm_tri_channel_t* pwm_obj)
+{
+    for (int i = 0; i < 3; ++i)
+    {
+        pwm_obj->value[i] = pwm_mul(pwm_obj->raw.value.dat[i], pwm_obj->full_scale) + pwm_obj->phase;
+        pwm_obj->value[i] = pwm_sat(pwm_obj->value[i], pwm_obj->full_scale, 0);
+    }
+}
+
+/**
  * @brief Calculates the compare values for a three-phase PWM channel.
  * @param pwm_obj Pointer to the triple PWM channel object.
  * @param raw Pointer to a 3D vector containing the raw per-unit duty cycles.

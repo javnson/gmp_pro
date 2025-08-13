@@ -24,7 +24,7 @@
  * @param[out] ctrl Pointer to the PMSM controller instance to be initialized.
  * @param[in] init Pointer to the initialization structure containing all configuration parameters.
  */
-void ctl_init_pmsm_bare_controller(pmsm_bare_controller_t* ctrl, pmsm_bare_controller_init_t* init)
+void ctl_init_pmsm_controller(pmsm_controller_t* ctrl, pmsm_controller_init_t* init)
 {
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
     // --- Initialize discrete PID controllers ---
@@ -92,7 +92,7 @@ void ctl_init_pmsm_bare_controller(pmsm_bare_controller_t* ctrl, pmsm_bare_contr
  * @param[out] ctrl Pointer to the PMSM controller instance.
  * @param[in] pwm_out Pointer to the three-phase PWM interface instance.
  */
-void ctl_attach_pmsm_bare_output(pmsm_bare_controller_t* ctrl, tri_pwm_ift* pwm)
+void ctl_attach_pmsm_output(pmsm_controller_t* ctrl, tri_pwm_ift* pwm)
 {
     ctrl->pwm_out = pwm;
 }
