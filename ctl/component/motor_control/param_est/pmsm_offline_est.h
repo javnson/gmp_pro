@@ -1,8 +1,8 @@
 /**
  * @file offline_motor_param_est.h
  * @author Javnson & Gemini
- * @brief Top-level framework for offline PMSM parameter identification. (Parameterized)
- * @version 0.6
+ * @brief Top-level framework for offline PMSM parameter identification. (Ld/Lq Interface)
+ * @version 0.7
  * @date 2025-08-13
  *
  * @copyright Copyright GMP(c) 2025
@@ -80,6 +80,9 @@ typedef struct ctl_offline_est_s
     parameter_gt isr_freq_hz;        /**< 控制中断的频率 (Hz) */
     parameter_gt rs_test_current_pu; /**< Rs测试中使用的电流标幺值 */
     uint16_t qep_search_elec_cycles; /**< QEP index搜索时旋转的电周期数 */
+    parameter_gt l_hfi_v_pu;         /**< L辨识时注入的高频电压标幺值 */
+    parameter_gt l_hfi_freq_hz;      /**< L辨识时注入的高频电压频率 (Hz) */
+    parameter_gt l_hfi_rot_freq_hz;  /**< L辨识时高频矢量的旋转频率 (Hz) */
 
     /*-------------------- 模块接口 (Module Interfaces) --------------------*/
     mtr_ift* mtr_interface;                   /**< 指向通用电机传感器接口的指针 */
@@ -90,7 +93,7 @@ typedef struct ctl_offline_est_s
     ctl_current_controller_t current_ctrl;
     ctl_slope_f_controller speed_profile_gen;
     ctl_sine_generator_t hfi_signal_gen;
-    ctl_low_pass_filter_t measure_flt[3]; /**< 0: Vd, 1: Id, 2: Encoder Pos */
+    ctl_low_pass_filter_t measure_flt[4]; /**< 0:Vd, 1:Id, 2:Pos, 3:I_hfi_mag */
 
     /*-------------------- 状态与标志位 (State & Flags) --------------------*/
     ctl_offline_est_main_state_e main_state;
@@ -102,19 +105,23 @@ typedef struct ctl_offline_est_s
 
     /*-------------------- 中间变量 (Intermediate Variables) --------------------*/
     // Rs & Encoder 辨识变量
-    uint16_t sample_count;                       /**< 用于计算均值和标准差的采样计数 */
-    parameter_gt V_sum, I_sum, Pos_sum;          /**< 测量值的累加和 */
-    parameter_gt V_sq_sum, I_sq_sum, Pos_sq_sum; /**< 测量值平方的累加和 */
-    parameter_gt rs_line_results[3];             /**< 存储三相线电阻的测量结果 */
-    parameter_gt enc_offset_results[3];          /**< 存储三步定位的编码器位置 */
-    uint16_t step_index;                         /**< 当前在定位的第几步 */
+    uint16_t sample_count;
+    parameter_gt V_sum, I_sum, Pos_sum;
+    parameter_gt V_sq_sum, I_sq_sum;
+    parameter_gt rs_line_results[3];
+    parameter_gt enc_offset_results[3];
+    uint16_t step_index;
+
+    // Ld/Lq 辨识变量
+    parameter_gt hfi_i_max, hfi_i_min;
+    parameter_gt hfi_theta_d, hfi_theta_q;
 
     /*-------------------- 最终辨识结果 (Final Identified Parameters) --------------------*/
-    ctl_pmsm_dsn_consultant_t pmsm_params;     /**< 注意: pmsm_params.Rs 现在是平均相电阻 */
-    ctl_vector3_t Rs_line_to_line;             /**< 存储测量的三相线电阻 (U-V, V-W, W-U) */
-    parameter_gt encoder_offset;               /**< 编码器零点偏置 (电角度, 0-1.0) */
-    parameter_gt current_noise_std_dev;        /**< 评估出的电流信号标准差 (A) */
-    parameter_gt position_consistency_std_dev; /**< 评估出的位置传感器步进一致性标准差 (rad_mech) */
+    ctl_pmsm_dsn_consultant_t pmsm_params;
+    ctl_vector3_t Rs_line_to_line;
+    parameter_gt encoder_offset;
+    parameter_gt current_noise_std_dev;
+    parameter_gt position_consistency_std_dev;
 
 } ctl_offline_est_t;
 
@@ -139,7 +146,8 @@ GMP_STATIC_INLINE fast_gt est_is_delay_elapsed_ms(time_gt start_tick, uint32_t d
  */
 GMP_STATIC_INLINE void ctl_init_offline_est(ctl_offline_est_t* est, mtr_ift* mtr_if, ctl_per_unit_consultant_t* pu_cons,
                                             ctl_encoder_type_e enc_type, parameter_gt isr_freq, parameter_gt current_kp,
-                                            parameter_gt current_ki, parameter_gt rs_curr_pu, uint16_t qep_cycles)
+                                            parameter_gt current_ki, parameter_gt rs_curr_pu, uint16_t qep_cycles,
+                                            parameter_gt l_v_pu, parameter_gt l_freq_hz, parameter_gt l_rot_freq_hz)
 {
     est->mtr_interface = mtr_if;
     est->pu_consultant = pu_cons;
@@ -149,11 +157,14 @@ GMP_STATIC_INLINE void ctl_init_offline_est(ctl_offline_est_t* est, mtr_ift* mtr
     est->isr_freq_hz = isr_freq;
     est->rs_test_current_pu = rs_curr_pu;
     est->qep_search_elec_cycles = qep_cycles;
+    est->l_hfi_v_pu = l_v_pu;
+    est->l_hfi_freq_hz = l_freq_hz;
+    est->l_hfi_rot_freq_hz = l_rot_freq_hz;
 
     // 初始化模块
     ctl_init_current_controller(&est->current_ctrl, current_kp, current_ki, 0, ctl_consult_base_peak_voltage(pu_cons),
                                 -ctl_consult_base_peak_voltage(pu_cons), isr_freq);
-    for (int i = 0; i < 3; ++i)
+    for (int i = 0; i < 4; ++i)
         ctl_clear_lowpass_filter(&est->measure_flt[i]);
 
     // 初始化状态
@@ -180,7 +191,21 @@ GMP_STATIC_INLINE void ctl_step_offline_est(ctl_offline_est_t* est)
     if (est->main_state > OFFLINE_MAIN_STATE_IDLE && est->main_state < OFFLINE_MAIN_STATE_DONE)
     {
         const ctl_vector3_t* iabc = ctl_get_mtr_current(est->mtr_interface);
-        ctrl_gt theta = ctl_get_mtr_elec_theta(est->mtr_interface);
+
+        // L辨识时，FOC的theta是慢速旋转的注入角；其他时候是电机转子角
+        ctrl_gt theta = (est->main_state == OFFLINE_MAIN_STATE_L)
+                            ? ctl_get_ramp_generator_output(&est->speed_profile_gen.rg)
+                            : ctl_get_mtr_elec_theta(est->mtr_interface);
+
+        // HFI注入时，电压由前馈产生
+        if (est->main_state == OFFLINE_MAIN_STATE_L && est->sub_state == OFFLINE_SUB_STATE_EXEC)
+        {
+            ctl_step_sine_generator(&est->hfi_signal_gen);
+            parameter_gt v_hfi_peak = ctl_consult_Vpeak_to_phy(est->pu_consultant, est->l_hfi_v_pu);
+            parameter_gt v_hfi_inst = ctl_get_sine_generator_sin(&est->hfi_signal_gen) * v_hfi_peak;
+            ctl_set_voltage_ff(&est->current_ctrl, v_hfi_inst, 0.0f);
+        }
+
         ctl_step_current_controller(&est->current_ctrl, iabc, theta);
         ctl_vector3_copy(&est->vab_command, &est->current_ctrl.vab0);
     }

@@ -2,7 +2,7 @@
  * @file offline_motor_param_est_handlers.c
  * @author Javnson & Gemini
  * @brief State machine handler implementations for the offline parameter estimator.
- * @version 0.3
+ * @version 0.4
  * @date 2025-08-13
  *
  * @copyright Copyright GMP(c) 2025
@@ -14,7 +14,6 @@
 #include <stdlib.h> // For fabsf
 
 // 定义三步法注入磁场的电角度 (U->V, V->W, W->U)
-// 分别对应 30, 150, 270 度
 static const float THREE_STEP_ANGLES_DEG[3] = {30.0f, 150.0f, 270.0f};
 
 // 定义参数
@@ -191,7 +190,113 @@ static void est_loop_handle_rs(ctl_offline_est_t* est)
  */
 static void est_loop_handle_l(ctl_offline_est_t* est)
 {
-    // ... 此处将实现电感辨识的子状态机逻辑 ...
+    switch (est->sub_state)
+    {
+    case OFFLINE_SUB_STATE_INIT: {
+        // 1. 初始化高频注入信号发生器
+        parameter_gt step_angle = est->l_hfi_freq_hz / est->isr_freq_hz;
+        ctl_init_sine_generator(&est->hfi_signal_gen, 0.0f, step_angle);
+
+        // 2. 初始化慢速旋转发生器
+        ctl_init_const_slope_f_controller(&est->speed_profile_gen, est->l_hfi_rot_freq_hz,
+                                          est->l_hfi_rot_freq_hz * 2.0f, // 0.5s 加速时间
+                                          est->isr_freq_hz);
+
+        // 3. 配置电流控制器为开环电压模式
+        ctl_disable_current_controller(&est->current_ctrl);
+
+        // 4. 初始化滤波器和测量变量
+        ctl_init_lp_filter(&est->measure_flt[3], est->isr_freq_hz, est->l_hfi_rot_freq_hz * 5.0f); // 滤波HFI电流响应
+        est->hfi_i_max = -1.0f;
+        est->hfi_i_min = 1e9; // 一个很大的初始值
+        est->hfi_theta_d = 0.0f;
+        est->hfi_theta_q = 0.0f;
+
+        // 5. 记录开始时间并切换状态
+        est->task_start_time = gmp_core_get_systemtick();
+        est->sub_state = OFFLINE_SUB_STATE_EXEC;
+        break;
+    }
+
+    case OFFLINE_SUB_STATE_EXEC: {
+        // 慢速旋转注入矢量
+        ctl_step_slope_f(&est->speed_profile_gen);
+
+        // 获取电流环计算出的alpha-beta电流 (这是对实际电流的反馈)
+        parameter_gt i_alpha = est->current_ctrl.iab0.dat[0];
+        parameter_gt i_beta = est->current_ctrl.iab0.dat[1];
+
+        // 计算高频电流响应的幅值
+        parameter_gt i_hfi_mag = ctl_sqrt(i_alpha * i_alpha + i_beta * i_beta);
+
+        // 对幅值进行低通滤波，得到其包络
+        i_hfi_mag = ctl_step_lowpass_filter(&est->measure_flt[3], i_hfi_mag);
+
+        // 获取当前的注入角度
+        parameter_gt current_theta = ctl_get_ramp_generator_output(&est->speed_profile_gen.rg);
+
+        // 寻找电流响应的极大值和极小值
+        if (i_hfi_mag > est->hfi_i_max)
+        {
+            est->hfi_i_max = i_hfi_mag;
+            est->hfi_theta_d = current_theta;
+        }
+        if (i_hfi_mag < est->hfi_i_min)
+        {
+            est->hfi_i_min = i_hfi_mag;
+            est->hfi_theta_q = current_theta;
+        }
+
+        // 检查是否旋转了足够长的时间 (例如，旋转1.5圈以确保稳定)
+        uint32_t rotation_time_ms = (uint32_t)(1.5f / est->l_hfi_rot_freq_hz * 1000.0f);
+        if (est_is_delay_elapsed_ms(est->task_start_time, rotation_time_ms))
+        {
+            est->sub_state = OFFLINE_SUB_STATE_CALC;
+        }
+        break;
+    }
+
+    case OFFLINE_SUB_STATE_CALC: {
+        // 1. 计算阻抗
+        parameter_gt v_hfi_peak = ctl_consult_Vpeak_to_phy(est->pu_consultant, est->l_hfi_v_pu);
+        parameter_gt z_d = (est->hfi_i_max > 1e-3) ? (v_hfi_peak / est->hfi_i_max) : 0.0f;
+        parameter_gt z_q = (est->hfi_i_min > 1e-3) ? (v_hfi_peak / est->hfi_i_min) : 0.0f;
+
+        // 2. 计算电感 (忽略电阻, Z ≈ ωL)
+        parameter_gt omega_hfi = CTL_PARAM_CONST_2PI * est->l_hfi_freq_hz;
+        if (omega_hfi > 1e-3)
+        {
+            est->pmsm_params.Ld = z_d / omega_hfi;
+            est->pmsm_params.Lq = z_q / omega_hfi;
+        }
+
+        // 3. 如果有编码器，可以进一步校准编码器零偏
+        if (est->encoder_type != ENCODER_TYPE_NONE)
+        {
+            // d轴方向是 hfi_theta_d，此时转子的真实d轴应该对齐这个方向
+            // 读取此时编码器的真实位置
+            parameter_gt actual_pos = ctl_get_mtr_elec_theta(est->mtr_interface);
+            // 新的零偏 = 理论d轴角 - 实际d轴角
+            est->encoder_offset = est->hfi_theta_d - actual_pos;
+            if (est->encoder_offset < 0.0f)
+                est->encoder_offset += 1.0f;
+        }
+
+        est->sub_state = OFFLINE_SUB_STATE_DONE;
+        break;
+    }
+
+    case OFFLINE_SUB_STATE_DONE: {
+        // 1. 关闭电机励磁
+        ctl_set_voltage_ff(&est->current_ctrl, 0.0f, 0.0f);
+        ctl_enable_current_controller(&est->current_ctrl); // 恢复闭环模式
+
+        // 2. 切换到下一个主状态
+        est->main_state = OFFLINE_MAIN_STATE_FLUX;
+        est->sub_state = OFFLINE_SUB_STATE_INIT;
+        break;
+    }
+    }
 }
 
 /**
