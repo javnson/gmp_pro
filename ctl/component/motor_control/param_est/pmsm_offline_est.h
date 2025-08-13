@@ -108,8 +108,8 @@ typedef struct ctl_offline_est_s
     uint16_t sample_count;
     parameter_gt V_sum, I_sum, Pos_sum;
     parameter_gt V_sq_sum, I_sq_sum;
-    parameter_gt rs_line_results[3];
-    parameter_gt enc_offset_results[3];
+    parameter_gt rs_step_results[6];    /**< 存储六步法每一步的线电阻测量结果 */
+    parameter_gt enc_offset_results[6]; /**< 存储六步法每一步的编码器位置 */
     uint16_t step_index;
 
     // Ld/Lq 辨识变量

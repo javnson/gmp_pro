@@ -2,7 +2,7 @@
  * @file offline_motor_param_est_handlers.c
  * @author Javnson & Gemini
  * @brief State machine handler implementations for the offline parameter estimator.
- * @version 0.4
+ * @version 0.5
  * @date 2025-08-13
  *
  * @copyright Copyright GMP(c) 2025
@@ -13,8 +13,9 @@
 #include <math.h>   // For sqrtf
 #include <stdlib.h> // For fabsf
 
-// 定义三步法注入磁场的电角度 (U->V, V->W, W->U)
-static const float THREE_STEP_ANGLES_DEG[3] = {30.0f, 150.0f, 270.0f};
+// 定义六步法注入磁场的电角度 (U->V, W->V, W->U, V->U, V->W, U->W)
+// 对应于 30, 90, 150, 210, 270, 330 度
+static const float SIX_STEP_ANGLES_DEG[6] = {30.0f, 90.0f, 150.0f, 210.0f, 270.0f, 330.0f};
 
 // 定义参数
 #define RS_STABILIZE_TIME_MS (1000) // 每步稳定1000ms
@@ -30,7 +31,7 @@ static void est_loop_handle_rs(ctl_offline_est_t* est)
     switch (est->sub_state)
     {
     case OFFLINE_SUB_STATE_INIT: {
-        // 1. 配置低通滤波器 (例如，5Hz截止频率)
+        // 1. 配置低通滤波器
         ctl_init_lp_filter(&est->measure_flt[0], est->isr_freq_hz, 5.0f); // Vd
         ctl_init_lp_filter(&est->measure_flt[1], est->isr_freq_hz, 5.0f); // Id
         ctl_init_lp_filter(&est->measure_flt[2], est->isr_freq_hz, 5.0f); // Position
@@ -59,24 +60,21 @@ static void est_loop_handle_rs(ctl_offline_est_t* est)
 
     case OFFLINE_SUB_STATE_QEP_INDEX_SEARCH: {
         // TODO: 实现寻找QEP index的逻辑
-        // 1. 使用 vf_generator 低速旋转电机 est->qep_search_elec_cycles 圈
-        // 2. 硬件应在此过程中捕获到index信号
-        // 3. 旋转完成后，切换到 EXEC 状态
         est->sub_state = OFFLINE_SUB_STATE_EXEC;
         break;
     }
 
     case OFFLINE_SUB_STATE_EXEC: {
         // --- 1. 注入特定方向的电流 ---
-        float target_angle_pu = THREE_STEP_ANGLES_DEG[est->step_index] / 360.0f;
-        // 通过设置Park变换的角度来旋转物理磁场
-        // TODO: 需配合顶层应用设置FOC的参考角度theta
+        float target_angle_pu = SIX_STEP_ANGLES_DEG[est->step_index] / 360.0f;
+        // TODO: 此处需要一个机制来设置FOC的参考角度theta
         // 假设 ctl_step_current_controller 的 theta 输入由外部更新为 target_angle_pu
+        // 这是一个简化的占位符，实际应用中可能需要 est->current_ctrl.theta_override = target_angle_pu;
 
         // --- 2. 等待电流稳定 ---
         if (!est_is_delay_elapsed_ms(est->task_start_time, RS_STABILIZE_TIME_MS))
         {
-            return; // 等待
+            return;
         }
 
         // --- 3. 稳定后，在指定时间内进行测量和累加 ---
@@ -111,7 +109,7 @@ static void est_loop_handle_rs(ctl_offline_est_t* est)
             parameter_gt V_mean = est->V_sum / est->sample_count;
             parameter_gt I_mean = est->I_sum / est->sample_count;
 
-            est->rs_line_results[est->step_index] = (I_mean > 1e-3) ? (V_mean / I_mean) : 0.0f;
+            est->rs_step_results[est->step_index] = (I_mean > 1e-3) ? (V_mean / I_mean) : 0.0f;
 
             if (est->encoder_type != ENCODER_TYPE_NONE)
             {
@@ -124,7 +122,7 @@ static void est_loop_handle_rs(ctl_offline_est_t* est)
 
         // --- 5. 准备进入下一步 ---
         est->step_index++;
-        if (est->step_index >= 3)
+        if (est->step_index >= 6)
         {
             est->sub_state = OFFLINE_SUB_STATE_CALC;
         }
@@ -142,33 +140,45 @@ static void est_loop_handle_rs(ctl_offline_est_t* est)
     }
 
     case OFFLINE_SUB_STATE_CALC: {
-        // 1. 计算最终电阻值
-        est->Rs_line_to_line.dat[0] = est->rs_line_results[0]; // R_uv
-        est->Rs_line_to_line.dat[1] = est->rs_line_results[1]; // R_vw
-        est->Rs_line_to_line.dat[2] = est->rs_line_results[2]; // R_wu
-        // 平均相电阻 = 平均线电阻 / 2
-        est->pmsm_params.Rs = (est->rs_line_results[0] + est->rs_line_results[1] + est->rs_line_results[2]) / 6.0f;
+        // 1. 计算三组线电阻的平均值
+        // R_uv (30 deg) vs R_vu (210 deg)
+        est->Rs_line_to_line.dat[0] = (est->rs_step_results[0] + est->rs_step_results[3]) / 2.0f;
+        // R_wv (90 deg) vs R_vw (270 deg) - 注意W在V前面
+        est->Rs_line_to_line.dat[1] = (est->rs_step_results[1] + est->rs_step_results[4]) / 2.0f;
+        // R_wu (150 deg) vs R_uw (330 deg)
+        est->Rs_line_to_line.dat[2] = (est->rs_step_results[2] + est->rs_step_results[5]) / 2.0f;
 
-        // 2. 计算平均电流噪声
-        est->current_noise_std_dev /= 3.0f;
+        // 2. 计算最终的平均相电阻 R_phase = R_line / 2
+        est->pmsm_params.Rs =
+            (est->Rs_line_to_line.dat[0] + est->Rs_line_to_line.dat[1] + est->Rs_line_to_line.dat[2]) / 6.0f;
 
-        // 3. 计算编码器偏置和健康度
+        // 3. 计算平均电流噪声
+        est->current_noise_std_dev /= 6.0f;
+
+        // 4. 计算编码器偏置和健康度
         if (est->encoder_type != ENCODER_TYPE_NONE)
         {
             // 以第一步(U->V)为基准，理论电气角度为30度
-            parameter_gt base_angle_pu = THREE_STEP_ANGLES_DEG[0] / 360.0f;
+            parameter_gt base_angle_pu = SIX_STEP_ANGLES_DEG[0] / 360.0f;
             est->encoder_offset = base_angle_pu - est->enc_offset_results[0];
             if (est->encoder_offset < 0.0f)
                 est->encoder_offset += 1.0f;
 
-            // 检查步进一致性
-            parameter_gt diff1 = fabsf(est->enc_offset_results[1] - est->enc_offset_results[0]);
-            parameter_gt diff2 = fabsf(est->enc_offset_results[2] - est->enc_offset_results[1]);
-            // 理论电气角度差120度 (0.333 pu)
-            parameter_gt err1 = fabsf(diff1 - 120.0f / 360.0f);
-            parameter_gt err2 = fabsf(diff2 - 120.0f / 360.0f);
-            // 此处可以计算标准差，或用一个更简单的误差平均值
-            est->position_consistency_std_dev = (err1 + err2) / 2.0f;
+            // 检查步进一致性 (理论步进60度)
+            parameter_gt step_diff_sum = 0;
+            parameter_gt step_diff_sq_sum = 0;
+            parameter_gt sixty_deg_pu = 60.0f / 360.0f;
+            for (int i = 0; i < 5; ++i)
+            {
+                parameter_gt diff = est->enc_offset_results[i + 1] - est->enc_offset_results[i];
+                if (diff < 0)
+                    diff += 1.0f; // 处理回绕
+                parameter_gt error = diff - sixty_deg_pu;
+                step_diff_sum += error;
+                step_diff_sq_sum += error * error;
+            }
+            parameter_gt mean_error = step_diff_sum / 5.0f;
+            est->position_consistency_std_dev = sqrtf(fabsf(step_diff_sq_sum / 5.0f - mean_error * mean_error));
         }
 
         est->sub_state = OFFLINE_SUB_STATE_DONE;
@@ -299,12 +309,132 @@ static void est_loop_handle_l(ctl_offline_est_t* est)
     }
 }
 
+// 定义参数
+#define FLUX_RAMP_UP_TIME_S    (2.0f) // 斜坡升速时间 (秒)
+#define FLUX_STABILIZE_TIME_MS (1000) // 每个速度点的稳定时间
+#define FLUX_MEASURE_TIME_MS   (1000) // 每个速度点的测量时间
+#define FLUX_TEST_POINTS       (4)    // 磁链测试的速度点数量
+
+// 定义测试速度点 (以额定速度的百分比表示)
+static const float FLUX_TEST_SPEED_PU[FLUX_TEST_POINTS] = {0.25f, 0.5f, 0.75f, 1.0f};
+
 /**
  * @brief 磁链辨识的主循环处理函数.
  */
 static void est_loop_handle_flux(ctl_offline_est_t* est)
 {
-    // ... 此处将实现磁链辨识的子状态机逻辑 ...
+    ctl_per_unit_consultant_t* pu = est->pu_consultant;
+
+    switch (est->sub_state)
+    {
+    case OFFLINE_SUB_STATE_INIT: {
+        // 1. 配置电流控制器为 Id=0 模式
+        ctl_set_current_ref(&est->current_ctrl, 0.0f, 0.0f);
+        ctl_enable_current_controller(&est->current_ctrl);
+
+        // 2. 配置滤波器
+        ctl_init_lp_filter(&est->measure_flt[0], est->isr_freq_hz, 20.0f); // Uq
+        ctl_init_lp_filter(&est->measure_flt[1], est->isr_freq_hz, 20.0f); // Omega_e
+
+        // 3. 初始化变量
+        est->step_index = 0; // 用于遍历速度点
+        est->V_sum = 0;      // 用作 Uq*Omega_e 的累加和
+        est->I_sum = 0;      // 用作 Omega_e^2 的累加和
+        est->Pos_sum = 0;    // 用作 Uq 的累加和
+        est->V_sq_sum = 0;   // 用作 Omega_e 的累加和
+        est->sample_count = 0;
+
+        // 4. 进入执行状态
+        est->sub_state = OFFLINE_SUB_STATE_EXEC;
+        est->task_start_time = gmp_core_get_systemtick();
+        break;
+    }
+
+    case OFFLINE_SUB_STATE_EXEC: {
+        // --- 1. 设置当前目标速度并斜坡升速 ---
+        parameter_gt target_speed_pu = FLUX_TEST_SPEED_PU[est->step_index];
+        parameter_gt target_freq_hz = target_speed_pu * ctl_consult_base_frequency(pu);
+        parameter_gt ramp_time_s = FLUX_RAMP_UP_TIME_S;
+
+        // 配置速度发生器
+        ctl_init_const_slope_f_controller(&est->speed_profile_gen, target_freq_hz, target_freq_hz / ramp_time_s,
+                                          est->isr_freq_hz);
+
+        // --- 2. 等待电机达到目标速度并稳定 ---
+        uint32_t wait_time_ms = (uint32_t)(ramp_time_s * 1000) + FLUX_STABILIZE_TIME_MS;
+        if (!est_is_delay_elapsed_ms(est->task_start_time, wait_time_ms))
+        {
+            // 在ISR中，FOC会跟随 speed_profile_gen 的输出角度旋转
+            ctl_step_slope_f(&est->speed_profile_gen);
+            return;
+        }
+
+        // --- 3. 在稳定状态下测量指定时间 ---
+        if (!est_is_delay_elapsed_ms(est->task_start_time, wait_time_ms + FLUX_MEASURE_TIME_MS))
+        {
+            // 获取q轴电压和电角速度
+            parameter_gt Uq = est->current_ctrl.vdq0.dat[1];
+            parameter_gt Omega_e = ctl_get_mtr_velocity(est->mtr_interface) * ctl_consult_pole_pairs(pu) *
+                                   CTL_PARAM_CONST_2PI; // 假设速度单位为 rps
+
+            // 滤波
+            Uq = ctl_step_lowpass_filter(&est->measure_flt[0], Uq);
+            Omega_e = ctl_step_lowpass_filter(&est->measure_flt[1], Omega_e);
+
+            // 累加用于线性回归计算 (最小二乘法)
+            // ψf = Σ(Uq*ωe) / Σ(ωe^2)
+            est->V_sum += Uq * Omega_e;
+            est->I_sum += Omega_e * Omega_e;
+            est->sample_count++;
+            return;
+        }
+
+        // --- 4. 准备下一个速度点 ---
+        est->step_index++;
+        if (est->step_index >= FLUX_TEST_POINTS)
+        {
+            // 所有速度点测试完成
+            est->sub_state = OFFLINE_SUB_STATE_CALC;
+        }
+        else
+        {
+            // 重置计时器，进入下一个速度点的测试
+            est->task_start_time = gmp_core_get_systemtick();
+        }
+        break;
+    }
+
+    case OFFLINE_SUB_STATE_CALC: {
+        // 使用最小二乘法计算斜率，即磁链
+        // Formula: slope = Σ(xy) / Σ(x^2), where x=ωe, y=Uq
+        if (est->I_sum > 1e-3)
+        { // 确保分母不为零
+            est->pmsm_params.flux = est->V_sum / est->I_sum;
+        }
+        else
+        {
+            est->pmsm_params.flux = 0.0f; // 错误情况
+            est->main_state = OFFLINE_MAIN_STATE_ERROR;
+        }
+
+        est->sub_state = OFFLINE_SUB_STATE_DONE;
+        break;
+    }
+
+    case OFFLINE_SUB_STATE_DONE: {
+        // 1. 让电机停下来
+        ctl_init_const_slope_f_controller(&est->speed_profile_gen, 0.0f,
+                                          FLUX_TEST_SPEED_PU[FLUX_TEST_POINTS - 1] * ctl_consult_base_frequency(pu) /
+                                              FLUX_RAMP_UP_TIME_S,
+                                          est->isr_freq_hz);
+        // TODO: 此处应有一个等待电机停止的延时
+
+        // 2. 切换到下一个主状态
+        est->main_state = OFFLINE_MAIN_STATE_J;
+        est->sub_state = OFFLINE_SUB_STATE_INIT;
+        break;
+    }
+    }
 }
 
 /**
