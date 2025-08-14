@@ -147,7 +147,7 @@ typedef struct ctl_offline_est_s
         fast_gt flag_enable;
 
         // Ldq configurations
-        parameter_gt hfi_v_pu;        /**< Ldq辨识时注入的高频电压标幺值 */
+        ctrl_gt hfi_v_pu;             /**< Ldq辨识时注入的高频电压标幺值 */
         parameter_gt hfi_freq_hz;     /**< Ldq辨识时注入的高频电压频率 (Hz) */
         parameter_gt hfi_rot_freq_hz; /**< Ldq辨识时高频矢量的旋转频率 (Hz) */
 
@@ -192,6 +192,7 @@ typedef struct ctl_offline_est_s
     /*-------------------- 最终辨识结果 (Final Identified Parameters) --------------------*/
     ctl_pmsm_dsn_consultant_t pmsm_params; /**< output: PMSM parameters */
     parameter_gt encoder_offset;           /**< output: encoder offset */
+    parameter_gt encoder_offset_ldq;       /**< output: encoder offset measured by Ldq period. */
 
 } ctl_offline_est_t;
 
@@ -305,6 +306,33 @@ GMP_STATIC_INLINE void ctl_config_offline_est_Rs(
 }
 
 /**
+ * @brief This function will config and enable Ldq measurement.
+ */
+GMP_STATIC_INLINE void ctl_config_offline_est_Ldq_rotate(
+    // handle of est
+    ctl_offline_est_t* est,
+    // time settings,stabilize period should greater than 200ms, 100ms is acceleration time and deceleration time
+    time_gt stabilize_time, time_gt measure_time,
+    // inject voltage p.u., inject freq[Hz], ratate freq[Hz]
+    parameter_gt v_inj, parameter_gt freq_inj, parameter_gt freq_ratate)
+{
+    est->ldq_est.flag_enable = 1;
+
+    est->ldq_est.hfi_v_pu = float2ctrl(v_inj);
+    est->ldq_est.hfi_freq_hz = freq_inj;
+    est->ldq_est.hfi_rot_freq_hz = freq_ratate;
+
+    est->ldq_est.hfi_i_max = -1.0f;
+    est->ldq_est.hfi_i_min = 1e9; // 一个很大的初始值
+    est->ldq_est.hfi_theta_d = 0.0f;
+    est->ldq_est.hfi_theta_q = 0.0f;
+
+    est->ldq_est.stabilize_time = stabilize_time;
+    est->ldq_est.measure_time = measure_time;
+    est->ldq_est.ending_time = 1000;
+}
+
+/**
  * @brief 离线参数辨识模块的实时步进函数 (在ISR中调用).
  * @note FIX: 完全重写了此函数的逻辑, 以确保在不同辨识阶段使用正确的电角度theta.
  * 这是整个修复方案的核心部分.
@@ -330,7 +358,7 @@ GMP_STATIC_INLINE void ctl_step_offline_est(ctl_offline_est_t* est)
                 if (est->rs_est.flag_idling_cmpt == 0)
                 {
                     theta = est->speed_profile_gen.rg.current;
-                    return;
+                    break;
                 }
 
                 // Rs measurement period the target angle is fixed.
@@ -363,23 +391,23 @@ GMP_STATIC_INLINE void ctl_step_offline_est(ctl_offline_est_t* est)
 
             case OFFLINE_MAIN_STATE_L:
                 // L辨识时, 根据具体方法确定角度来源
-                if (est->flag_enable_ldq == 2)
+                if (est->ldq_est.flag_enable == 2)
                 { // 方法2: 旋转HFI法
 
-                    // 角度由慢速旋转的斜坡发生器提供
+                    // motor theta is provided by slope generator
                     theta = ctl_get_ramp_generator_output(&est->speed_profile_gen.rg);
 
                     ctrl_gt v_hfi_inst;
 
                     // 当在测量和收敛阶段时，控制器正常运行
                     if (gmp_base_get_diff_system_tick(est->task_start_time) <
-                        LDQ_STABILIZE_TIME_MS + LDQ_MEASUREMENT_TIME_MS)
+                        est->ldq_est.stabilize_time + est->ldq_est.measure_time)
                     {
                         // 发生信号
                         ctl_step_sine_generator(&est->hfi_signal_gen);
                         // 在d轴上注入高频电压, q轴前馈为0,
                         // 为什么这里是乘法而不是加法？
-                        v_hfi_inst = ctl_mul(ctl_get_sine_generator_sin(&est->hfi_signal_gen), est->l_hfi_v_pu);
+                        v_hfi_inst = ctl_mul(ctl_get_sine_generator_sin(&est->hfi_signal_gen), est->ldq_est.hfi_v_pu);
 
                         // 获取电流环计算出的alpha-beta电流 (这是对实际电流的反馈)
                         ctrl_gt i_alpha = est->current_ctrl.iab0.dat[0];
@@ -390,28 +418,28 @@ GMP_STATIC_INLINE void ctl_step_offline_est(ctl_offline_est_t* est)
                             ctl_step_lowpass_filter(&est->measure_flt[3], ctl_vector2_mag_sq(est->current_ctrl.iab0));
 
                         // 先等待一段时间，等到稳定（控制器收敛、滤波器收敛）之后再读取电流的最大最小值，只是在一段时间内执行
-                        if (gmp_base_get_diff_system_tick(est->task_start_time) > LDQ_STABILIZE_TIME_MS)
+                        if (gmp_base_get_diff_system_tick(est->task_start_time) > est->ldq_est.stabilize_time)
                         {
                             // 寻找电流响应的极大值(对应q轴)和极小值(对应d轴)
-                            if (i_hfi_mag > est->hfi_i_max)
+                            if (i_hfi_mag > est->ldq_est.hfi_i_max)
                             {
-                                est->hfi_i_max = i_hfi_mag;
-                                est->hfi_theta_q =
+                                est->ldq_est.hfi_i_max = i_hfi_mag;
+                                est->ldq_est.hfi_theta_q =
                                     ctl_get_ramp_generator_output(&est->speed_profile_gen.rg); // 电流最大处是q轴
                             }
-                            if (i_hfi_mag < est->hfi_i_min)
+                            if (i_hfi_mag < est->ldq_est.hfi_i_min)
                             {
-                                est->hfi_i_min = i_hfi_mag;
-                                est->hfi_theta_d =
+                                est->ldq_est.hfi_i_min = i_hfi_mag;
+                                est->ldq_est.hfi_theta_d =
                                     ctl_get_ramp_generator_output(&est->speed_profile_gen.rg); // 电流最小处是d轴
                             }
                         }
                     }
                     // 在减速阶段，电压给定要给小
                     else if (gmp_base_get_diff_system_tick(est->task_start_time) <
-                             LDQ_STABILIZE_TIME_MS + LDQ_MEASUREMENT_TIME_MS + LDQ_DECELERATE_TIME_MS)
+                             (est->ldq_est.stabilize_time + est->ldq_est.measure_time + est->ldq_est.ending_time))
                     {
-                        v_hfi_inst = est->l_hfi_v_pu;
+                        v_hfi_inst = est->ldq_est.hfi_v_pu;
                     }
                     // 停止后，关闭电压给定
                     else

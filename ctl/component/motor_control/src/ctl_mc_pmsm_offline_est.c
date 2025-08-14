@@ -279,19 +279,21 @@ static void est_loop_handle_l_rotating_hfi(ctl_offline_est_t* est)
         ctl_init_sine_generator(&est->hfi_signal_gen, 0.0f, step_angle);
 
         // 2. 初始化慢速旋转发生器
-        ctl_init_const_slope_f_controller(&est->speed_profile_gen, est->l_hfi_rot_freq_hz,
-                                          est->l_hfi_rot_freq_hz * 2.0f, // 0.5s 加速时间
-                                          est->isr_freq_hz);
+        ctl_init_const_slope_f_controller(&est->speed_profile_gen, est->ldq_est.hfi_rot_freq_hz,
+                                          est->ldq_est.hfi_rot_freq_hz * 10.0f, // 0.1s 加速时间
+                                          est->fs);
 
         // 3. 配置电流控制器为开环电压模式 (通过在ISR中设置前馈电压实现)
         ctl_disable_current_controller(&est->current_ctrl);
 
         // 4. 初始化滤波器和测量变量
-        ctl_init_lp_filter(&est->measure_flt[3], est->isr_freq_hz, est->l_hfi_rot_freq_hz * 5.0f); // 滤波HFI电流响应
-        est->hfi_i_max = -1.0f;
-        est->hfi_i_min = 1e9; // 一个很大的初始值
-        est->hfi_theta_d = 0.0f;
-        est->hfi_theta_q = 0.0f;
+        ctl_init_lp_filter(&est->measure_flt[3], est->fs,
+                           est->ldq_est.hfi_rot_freq_hz * 5.0f); // 滤波HFI电流响应
+
+        est->ldq_est.hfi_i_max = -1.0f;
+        est->ldq_est.hfi_i_min = 1e9; // 一个很大的初始值
+        est->ldq_est.hfi_theta_d = 0.0f;
+        est->ldq_est.hfi_theta_q = 0.0f;
 
         // 5. 记录开始时间并切换状态
         est->task_start_time = gmp_base_get_system_tick();
@@ -303,18 +305,16 @@ static void est_loop_handle_l_rotating_hfi(ctl_offline_est_t* est)
 
         // 在减速阶段完成后，切换到下一个状态
         if (gmp_base_get_diff_system_tick(est->task_start_time) >
-            LDQ_STABILIZE_TIME_MS + LDQ_MEASUREMENT_TIME_MS + LDQ_DECELERATE_TIME_MS)
+            (est->ldq_est.stabilize_time + est->ldq_est.measure_time + est->ldq_est.ending_time))
         {
             est->sub_state = OFFLINE_SUB_STATE_CALC;
         }
         // 在完成测量之后，需要将目标转速设置为0
-        else if (gmp_base_get_diff_system_tick(est->task_start_time) > LDQ_STABILIZE_TIME_MS + LDQ_MEASUREMENT_TIME_MS)
+        else if (gmp_base_get_diff_system_tick(est->task_start_time) >
+                 (est->ldq_est.stabilize_time + est->ldq_est.measure_time))
         {
-            // 将注入电流设置为0
-
             // 将目标转速设置为0即可。
-            ctl_set_slope_f_freq(est->speed_profile_gen, 0, est->fs);
-            //est->speed_profile_gen.target_frequency = 0;
+            ctl_set_slope_f_freq(&est->speed_profile_gen, 0, est->fs);
         }
 
         break;
@@ -322,13 +322,16 @@ static void est_loop_handle_l_rotating_hfi(ctl_offline_est_t* est)
 
     case OFFLINE_SUB_STATE_CALC: {
         // 1. 计算阻抗
-        parameter_gt v_hfi_peak = ctl_consult_Vpeak_to_phy(est->pu_consultant, est->l_hfi_v_pu);
-        // Z_d = V_hfi / I_hfi_min, Z_q = V_hfi / I_hfi_max
-        parameter_gt z_d = (est->hfi_i_min > 1e-3) ? (v_hfi_peak / est->hfi_i_min) : 0.0f;
-        parameter_gt z_q = (est->hfi_i_max > 1e-3) ? (v_hfi_peak / est->hfi_i_max) : 0.0f;
+        parameter_gt v_hfi_peak = ctl_consult_Vpeak_to_phy(est->pu_consultant, ctrl2float(est->ldq_est.hfi_v_pu));
 
-        // 2. 计算电感 (忽略电阻, Z ≈ ωL)
-        parameter_gt omega_hfi = CTL_PARAM_CONST_2PI * est->l_hfi_freq_hz;
+        // Z_d = V_hfi / I_hfi_min, Z_q = V_hfi / I_hfi_max
+        parameter_gt z_d = (est->ldq_est.hfi_i_min > 1e-3) ? (v_hfi_peak / est->ldq_est.hfi_i_min) : 0.0f;
+        parameter_gt z_q = (est->ldq_est.hfi_i_max > 1e-3) ? (v_hfi_peak / est->ldq_est.hfi_i_max) : 0.0f;
+
+        // 2. 计算电感 (忽略电阻)
+        //tex:
+        //$$ Z \approx \omega L $$
+        parameter_gt omega_hfi = CTL_PARAM_CONST_2PI * est->ldq_est.hfi_freq_hz;
         if (omega_hfi > 1e-3)
         {
             est->pmsm_params.Ld = z_d / omega_hfi;
@@ -342,11 +345,11 @@ static void est_loop_handle_l_rotating_hfi(ctl_offline_est_t* est)
             // 读取此时编码器的真实位置
             parameter_gt actual_pos = ctl_get_mtr_elec_theta(est->mtr_interface);
             // 新的零偏 = 理论d轴角 - 实际d轴角
-            est->encoder_offset = est->hfi_theta_d - actual_pos;
-            if (est->encoder_offset < 0.0f)
-                est->encoder_offset += 1.0f;
-            if (est->encoder_offset >= 1.0f)
-                est->encoder_offset -= 1.0f;
+            est->encoder_offset_ldq = est->ldq_est.hfi_theta_d - actual_pos;
+            if (est->encoder_offset_ldq < 0.0f)
+                est->encoder_offset_ldq += 1.0f;
+            if (est->encoder_offset_ldq >= 1.0f)
+                est->encoder_offset_ldq -= 1.0f;
         }
 
         est->sub_state = OFFLINE_SUB_STATE_DONE;
@@ -359,11 +362,11 @@ static void est_loop_handle_l_rotating_hfi(ctl_offline_est_t* est)
         ctl_enable_current_controller(&est->current_ctrl); // 恢复闭环模式
 
         // 2. 切换到下一个主状态
-        if (est->flag_enable_psif)
+        if (est->psif_est.flag_enable)
         {
             est->main_state = OFFLINE_MAIN_STATE_FLUX;
         }
-        else if (est->flag_enable_inertia)
+        else if (est->inertia_est.flag_enable)
         {
             est->main_state = OFFLINE_MAIN_STATE_J;
         }
