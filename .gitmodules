@@ -26,15 +26,6 @@
 	url = https://github.com/littlefs-project/littlefs.git
 
 # Debugger
-[submodule "third_party/openocd"]
-	path = third_party/openocd
-	url = https://github.com/openocd-org/openocd.git
-
-# parser submodule
-[submodule "third_party/DAPLink"]
-	path = third_party/DAPLink
-	url = https://github.com/ARMmbed/DAPLink.git
-
 [submodule "third_party/tinyxml2"]
 	path = third_party/tinyxml2
 	url = https://github.com/leethomason/tinyxml2
