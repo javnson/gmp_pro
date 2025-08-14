@@ -102,6 +102,9 @@
     <ClCompile Include="motor_control_simulink.cpp">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_pmsm_offline_est.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\implement\common\ctl_main.h">
