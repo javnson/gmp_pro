@@ -13,13 +13,13 @@
 #define _FILE_OFFLINE_MOTOR_PARAM_EST_H_
 
 // 包含所有必需的底层模块头文件
-#include <ctl/component/intrinsic/discrete/signal_generator.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
+#include <ctl/component/intrinsic/discrete/signal_generator.h>
+#include <ctl/component/motor_control/basic/motor_universal_interface.h>
 #include <ctl/component/motor_control/basic/vf_generator.h>
 #include <ctl/component/motor_control/consultant/motor_per_unit_consultant.h>
 #include <ctl/component/motor_control/consultant/pmsm_consultant.h>
 #include <ctl/component/motor_control/current_loop/motor_current_ctrl.h>
-#include <ctl/component/motor_control/basic/motor_universal_interface.h>
 #include <ctl/math_block/vector_lite/vector3.h>
 
 #ifdef __cplusplus
@@ -70,78 +70,128 @@ typedef enum
 
 typedef struct ctl_offline_est_s
 {
-    /*-------------------- 配置 (Configuration) --------------------*/
-    ctl_encoder_type_e encoder_type; /**< 用户指定的编码器类型 */
-    parameter_gt isr_freq_hz;        /**< 控制中断的频率 (Hz) */
-    uint16_t qep_search_elec_cycles; /**< QEP index搜索时旋转的电周期数 */
-
-    // Rs configuration
-    parameter_gt rs_test_current_pu; /**< Rs测试中使用的电流标幺值 */
-
-    // Ldq configuration
-    parameter_gt l_hfi_v_pu;        /**< Ldq辨识时注入的高频电压标幺值 */
-    parameter_gt l_hfi_freq_hz;     /**< Ldq辨识时注入的高频电压频率 (Hz) */
-    parameter_gt l_hfi_rot_freq_hz; /**< Ldq辨识时高频矢量的旋转频率 (Hz) */
-
-    // FIX: 增加磁链和惯量测试所需的配置参数
-    parameter_gt flux_test_iq_pu; /**< Flux测试中用于产生转矩的Iq标幺值 */
-    parameter_gt j_test_iq_pu;    /**< 惯量J测试中使用的Iq标幺值 */
-
-    /*-------------------- 模块接口 (Module Interfaces) --------------------*/
+    // input ports
     mtr_ift* mtr_interface;                   /**< 指向通用电机传感器接口的指针 */
     ctl_per_unit_consultant_t* pu_consultant; /**< 指向标幺值系统顾问的指针 */
-    ctl_vector3_t vab_command;                /**< 输出给PWM模块的alpha-beta电压指令 */
 
-    /*-------------------- 控制模块 (Control Modules) --------------------*/
+    // output ports
+    ctl_vector3_t vab_command; /**< 输出给PWM模块的alpha-beta电压指令 */
+
+    // key configuration
+    ctl_encoder_type_e encoder_type; /**< 用户指定的编码器类型 */
+    parameter_gt fs;                 /**< 控制中断的频率 (Hz) */
+    uint16_t qep_search_elec_cycles; /**< QEP index搜索时旋转的电周期数 */
+
+    // inner controller
     ctl_current_controller_t current_ctrl;    /**< motor current controller */
     ctl_slope_f_controller speed_profile_gen; /**< rotor angle generator */
     ctl_sine_generator_t hfi_signal_gen;      /**< HFI sine generator */
     ctl_low_pass_filter_t measure_flt[4];     /**< 0:Vd, 1:Id, 2:Pos, 3:I_hfi_mag */
 
-    /*-------------------- 状态与标志位 (State & Flags) --------------------*/
+    // system state machine
     ctl_offline_est_main_state_e main_state; /**< main state machine. */
     ctl_offline_est_sub_state_e sub_state;   /**< sub state machine. */
-    fast_gt flag_start_estimation;           /**< controller flag start estimation. */
-    fast_gt
-        flag_estimation_done; /**< output flag complete estimation, the @ref ctl_offline_est_t::pmsm_params is valid. */
-    fast_gt flag_error_detected; /**< output flag error */
-    fast_gt flag_enable_rs;      /**< Rs and encoder off-line estimate is enabled */
-    /**
-     * @brief Ldq off-line estimate method choose and switch.
-     * 0: disable Ldq estimate, 
-     * 1: enable Ldq estimate and use DC bias offset (FIXME: NOT IMPLEMENTED)
-     * 2: enable Ldq estimate and use High frequency rotation vector injection method
-     */
-    fast_gt flag_enable_ldq;
-    fast_gt flag_enable_psif;    /**< @f( \psi_f @f) off-line is enabled */
-    fast_gt flag_enable_inertia; /**< inertia J estimate is enabled */
-    time_gt task_start_time;     /**< a variable to log the start time*/
 
-    /*-------------------- 中间变量 (Intermediate Variables) --------------------*/
-    // Rs & Encoder 辨识变量
+    fast_gt flag_start;      /**< controller flag start estimation. */
+    fast_gt flag_complete;   /**< output flag complete estimation, the @ref ctl_offline_est_t::pmsm_params is valid. */
+    fast_gt flag_error;      /**< output flag error */
+    time_gt task_start_time; /**< a variable to log the start time*/
+
+    // intermediate variables
     uint16_t sample_count;
     parameter_gt V_sum, I_sum, Pos_sum; /**< SI单位 */
     parameter_gt V_sq_sum, I_sq_sum;    /**< SI单位 */
-    parameter_gt rs_step_results[6];    /**< 存储六步法每一步的线电阻测量结果,SI单位 */
-    parameter_gt enc_offset_results[6]; /**< 存储六步法每一步的编码器位置 */
     uint16_t step_index;
-    // FIX: 增加一个变量, 用于在后台任务和ISR之间传递Rs辨识所需的目标角度
-    parameter_gt rs_test_angle_pu; /**< Rs辨识中, 用于锁定转子的目标电角度 (单位: PU) */
 
-    // Ld/Lq 辨识变量
-    parameter_gt hfi_i_max, hfi_i_min;
-    parameter_gt hfi_theta_d, hfi_theta_q;
-
-    // J 辨识变量 (部分变量复用自Rs辨识)
     parameter_gt sum_x, sum_y, sum_xy, sum_x2;
     parameter_gt avg_torque;
 
+    struct
+    {
+        // Enable flag
+        fast_gt flag_enable; /**< Rs and encoder off-line estimate is enabled */
+
+        // Rs configuration
+        ctrl_gt test_current_pu;    /**< Rs测试中使用的电流标幺值 */
+        ctrl_gt idel_current_pu;    /**< idling period motor current set p.u. */
+        parameter_gt idel_speed_hz; /**< idling period motor elec-speed in Hz */
+
+        // Rs measurement time constant
+        time_gt idling_time;    /**< idling time, during this period, the rotor will be drive for several turns*/
+        time_gt stabilize_time; /**< Rs稳定时间 */
+        time_gt measure_time;   /**< Rs测量时间*/
+
+        fast_gt flag_idling_cmpt; /**< the flag of completing idling period. */
+
+        // intermediate variables
+        parameter_gt step_results[6];       /**< 存储六步法每一步的线电阻测量结果,SI单位 */
+        parameter_gt enc_offset_results[6]; /**< 存储六步法每一步的编码器位置 */
+        ctrl_gt test_angle_pu;              /**< angle of current test*/
+
+        // output variables
+        ctl_vector3_t Rs_line_to_line;      /**< output: PMSM Rs (3phase), judging if motor is connected correctly. */
+        parameter_gt current_noise_std_dev; /**< output: standard deviation of current, in SI unit */
+        parameter_gt position_consistency_std_dev; /**< output: standard deviation of encoder */
+
+    } rs_est;
+
+    struct
+    {
+        // Enable flag
+        /**
+         * @brief Ldq off-line estimate method choose and switch.
+         * 0: disable Ldq estimate, 
+         * 1: enable Ldq estimate and use DC bias offset (FIXME: NOT IMPLEMENTED)
+         * 2: enable Ldq estimate and use High frequency rotation vector injection method
+         */
+        fast_gt flag_enable;
+
+        // Ldq configurations
+        parameter_gt hfi_v_pu;        /**< Ldq辨识时注入的高频电压标幺值 */
+        parameter_gt hfi_freq_hz;     /**< Ldq辨识时注入的高频电压频率 (Hz) */
+        parameter_gt hfi_rot_freq_hz; /**< Ldq辨识时高频矢量的旋转频率 (Hz) */
+
+        // Ldq measurement intermediate variables
+        parameter_gt hfi_i_max, hfi_i_min;
+        parameter_gt hfi_theta_d, hfi_theta_q;
+
+        // Ldq measurement time constant
+        time_gt stabilize_time; /**< Ldq测量稳定时间 */
+        time_gt measure_time;   /**< Ldq测量时间 */
+        time_gt ending_time;    /**< Ldq收尾时间*/
+    } ldq_est;
+
+    struct
+    {
+        // Enable flag
+        fast_gt flag_enable; /**< @f( \psi_f @f) off-line is enabled */
+
+        // psi_f configurations
+        parameter_gt flux_test_iq_pu; /**< Flux测试中用于产生转矩的Iq标幺值 */
+
+        // psi_f measurement intermediate variables
+
+        // psi_f measurement time constant
+
+    } psif_est;
+
+    struct
+    {
+        // Enable flag
+        fast_gt flag_enable; /**< @f( \psi_f @f) off-line is enabled */
+
+        // J estimate configurations
+        parameter_gt test_iq_pu; /**< 惯量J测试中使用的Iq标幺值 */
+
+        // J measurement intermediate variables
+
+        // J measurement time constant
+
+    } inertia_est;
+
     /*-------------------- 最终辨识结果 (Final Identified Parameters) --------------------*/
     ctl_pmsm_dsn_consultant_t pmsm_params; /**< output: PMSM parameters */
-    ctl_vector3_t Rs_line_to_line;         /**< output: PMSM Rs (3phase), judging if motor is connected correctly. */
     parameter_gt encoder_offset;           /**< output: encoder offset */
-    parameter_gt current_noise_std_dev;    /**< output: standard deviation of current，SI单位 */
-    parameter_gt position_consistency_std_dev; /**< output: standard deviation of encoder */
 
 } ctl_offline_est_t;
 
@@ -154,54 +204,104 @@ void est_loop_handle_rs(ctl_offline_est_t* est);
 void est_loop_handle_l(ctl_offline_est_t* est);
 void est_loop_handle_flux(ctl_offline_est_t* est);
 void est_loop_handle_j(ctl_offline_est_t* est);
-static void est_loop_handle_l_rotating_hfi(ctl_offline_est_t* est);
-static void est_loop_handle_l_dcbias_hfi(ctl_offline_est_t* est);
+void est_loop_handle_l_rotating_hfi(ctl_offline_est_t* est);
+void est_loop_handle_l_dcbias_hfi(ctl_offline_est_t* est);
 
 /**
  * @brief 初始化离线参数辨识模块.
  * @note FIX: 合并了原头文件中重复的两个初始化函数, 包含所有配置参数.
  */
-GMP_STATIC_INLINE void ctl_init_offline_est(ctl_offline_est_t* est, mtr_ift* mtr_if, ctl_per_unit_consultant_t* pu_cons,
-                                            ctl_encoder_type_e enc_type, parameter_gt isr_freq, parameter_gt current_kp,
-                                            parameter_gt current_ki, parameter_gt rs_curr_pu, uint16_t qep_cycles,
-                                            parameter_gt l_v_pu, parameter_gt l_freq_hz, parameter_gt l_rot_freq_hz,
-                                            parameter_gt flux_iq_pu, parameter_gt j_iq_pu)
+GMP_STATIC_INLINE void ctl_init_offline_est(
+    // est object
+    ctl_offline_est_t* est,
+    // input interface
+    mtr_ift* mtr_if, ctl_per_unit_consultant_t* pu_cons,
+    // encoder type
+    ctl_encoder_type_e enc_type,
+    // controller frequency
+    parameter_gt isr_freq,
+    // current PID controller
+    parameter_gt current_kp, parameter_gt current_Ti, parameter_gt out_max_pu)
 {
+    // input ports
     est->mtr_interface = mtr_if;
     est->pu_consultant = pu_cons;
 
-    // 保存配置
-    est->encoder_type = enc_type;
-    est->isr_freq_hz = isr_freq;
-    est->rs_test_current_pu = rs_curr_pu;
-    est->qep_search_elec_cycles = qep_cycles;
-    est->l_hfi_v_pu = l_v_pu;
-    est->l_hfi_freq_hz = l_freq_hz;
-    est->l_hfi_rot_freq_hz = l_rot_freq_hz;
-    est->flux_test_iq_pu = flux_iq_pu;
-    est->j_test_iq_pu = j_iq_pu;
+    // output ports
+    ctl_vector3_clear(&est->vab_command);
 
-    // 初始化模块
-    ctl_init_current_controller(&est->current_ctrl, current_kp, current_ki, 0, ctl_consult_base_peak_voltage(pu_cons),
-                                -ctl_consult_base_peak_voltage(pu_cons), isr_freq);
+    // key config
+    est->encoder_type = enc_type;
+    est->fs = isr_freq;
+    est->qep_search_elec_cycles = 20;
+
+    // inner controller
+    ctl_init_current_controller(
+        // current controller
+        &est->current_ctrl,
+        // pi param
+        current_kp, current_Ti, 0, out_max_pu, -out_max_pu,
+        // fs
+        isr_freq);
+
     for (int i = 0; i < 4; ++i)
         ctl_clear_lowpass_filter(&est->measure_flt[i]);
 
-    // 初始化状态
+    // disable all the measurements
+    est->rs_est.flag_enable = 0;
+    est->ldq_est.flag_enable = 0;
+    est->psif_est.flag_enable = 0;
+    est->inertia_est.flag_enable = 0;
+
+    // system state machines
     est->main_state = OFFLINE_MAIN_STATE_IDLE;
     est->sub_state = OFFLINE_SUB_STATE_INIT;
-    est->flag_start_estimation = 0;
-    est->flag_estimation_done = 0;
-    est->flag_error_detected = 0;
+    est->flag_start = 0;
+    est->flag_complete = 0;
+    est->flag_error = 0;
 
-    // 清空结果
+    // clear intermediate variables
+
+    // clear results
     ctl_init_pmsm_dsn_consultant(&est->pmsm_params, 0, 0, 0, 0, 0, 0, 0);
-    ctl_vector3_clear(&est->vab_command);
-    ctl_vector3_clear(&est->Rs_line_to_line);
     est->encoder_offset = 0.0f;
-    est->current_noise_std_dev = 0.0f;
-    est->position_consistency_std_dev = 0.0f;
-    est->rs_test_angle_pu = 0.0f;
+}
+
+/**
+ * @brief This function will config and enable Rs measurement.
+ * @param stabilize_time the time of stabilize, unit Tick.
+ * @param measure_time the time of measurement, unit Tick.
+ * @param encoder_type encoder type, 0 no encoder is installed, 1 absolute encoder is installed, 2 QEP encoder is installed.
+ */
+GMP_STATIC_INLINE void ctl_config_offline_est_Rs(
+    // handle of est
+    ctl_offline_est_t* est,
+    // time settings,idling period should greater than 200ms, 100ms is acceleration time and deceleration time
+    time_gt idling_time, time_gt stabilize_time, time_gt measure_time,
+    // config for idling period
+    fast_gt enable_idling,
+    // test current set
+    parameter_gt idel_speed_hz, parameter_gt idel_current_pu, parameter_gt test_current_pu)
+{
+    est->rs_est.flag_enable = 1;
+
+    est->rs_est.test_current_pu = float2ctrl(test_current_pu);
+    est->rs_est.idel_speed_hz = idel_speed_hz;
+    est->rs_est.idel_current_pu = float2ctrl(idel_current_pu);
+
+    est->rs_est.idling_time = idling_time;
+    est->rs_est.stabilize_time = stabilize_time;
+    est->rs_est.measure_time = measure_time;
+
+    for (int i = 0; i < 6; ++i)
+    {
+        est->rs_est.step_results[i] = 0;
+        est->rs_est.enc_offset_results[i] = 0;
+    }
+
+    ctl_vector3_clear(&est->rs_est.Rs_line_to_line);
+    est->rs_est.current_noise_std_dev = 0;
+    est->rs_est.position_consistency_std_dev = 0;
 }
 
 /**
@@ -212,7 +312,7 @@ GMP_STATIC_INLINE void ctl_init_offline_est(ctl_offline_est_t* est, mtr_ift* mtr
 GMP_STATIC_INLINE void ctl_step_offline_est(ctl_offline_est_t* est)
 {
     ctl_vector3_t* iabc = ctl_get_mtr_current(est->mtr_interface);
-    ctrl_gt theta = 0.0f;
+    ctrl_gt theta = 0;
 
     // 只在辨识进行时执行
     if (est->main_state > OFFLINE_MAIN_STATE_IDLE && est->main_state < OFFLINE_MAIN_STATE_DONE)
@@ -225,21 +325,29 @@ GMP_STATIC_INLINE void ctl_step_offline_est(ctl_offline_est_t* est)
             switch (est->main_state)
             {
             case OFFLINE_MAIN_STATE_RS:
-                // Rs辨识时, 使用后台循环中设定的固定角度来锁定转子.
-                theta = est->rs_test_angle_pu;
 
-                //
-                if (gmp_base_get_diff_system_tick(est->task_start_time) > RS_STABILIZE_TIME_MS)
+                // idling period for QEP first index signal is coming.
+                if (est->rs_est.flag_idling_cmpt == 0)
                 {
-                    // get current measurement result
-                    ctrl_gt Id = ctl_step_lowpass_filter(&est->measure_flt[1], est->current_ctrl.idq0.dat[0]);
-                    est->I_sum += ctrl2float(Id);
-                    est->I_sq_sum += ctrl2float(ctl_mul(Id, Id));
+                    theta = est->speed_profile_gen.rg.current;
+                    return;
+                }
 
+                // Rs measurement period the target angle is fixed.
+                theta = est->rs_est.test_angle_pu;
+
+                // after stabilize time
+                if (gmp_base_get_diff_system_tick(est->task_start_time) > est->rs_est.stabilize_time)
+                {
                     // get voltage measurement result
                     ctrl_gt Vd = ctl_step_lowpass_filter(&est->measure_flt[0], est->current_ctrl.vdq0.dat[0]);
                     est->V_sum += ctrl2float(Vd);
                     est->V_sq_sum += ctrl2float(ctl_mul(Vd, Vd));
+
+                    // get current measurement result
+                    ctrl_gt Id = ctl_step_lowpass_filter(&est->measure_flt[1], est->current_ctrl.idq0.dat[0]);
+                    est->I_sum += ctrl2float(Id);
+                    est->I_sq_sum += ctrl2float(ctl_mul(Id, Id));
 
                     // if encoder is existed, get encoder result
                     if (est->encoder_type != ENCODER_TYPE_NONE)
@@ -439,6 +547,8 @@ GMP_STATIC_INLINE fast_gt ctl_loop_offline_est(ctl_offline_est_t* est)
     default:
         break;
     }
+
+    // ERROR 这里需要增加过流保护模块，当电机电流过大需要进入错误模式。
 
     return est->flag_estimation_done;
 }

@@ -42,6 +42,9 @@ static const float SIX_STEP_ANGLES_DEG[6] = {30.0f, 90.0f, 150.0f, 210.0f, 270.0
 
 // 上面这些宏需要作为参数写在类中，只不过这些参数在初始化时都给出默认值。
 
+// offline estimate module for PMSM, idling accelerate time, in [ms] unit.
+#define CTL_MC_OFFLINE_EST_IDLING_ACCELERATE_TIME (100)
+
 /**
  * @brief Rs和编码器偏置辨识的主循环处理函数.
  */
@@ -52,13 +55,17 @@ static void est_loop_handle_rs(ctl_offline_est_t* est)
     switch (est->sub_state)
     {
     case OFFLINE_SUB_STATE_INIT: {
-        // 1. 配置低通滤波器
-        ctl_init_lp_filter(&est->measure_flt[0], est->isr_freq_hz, 5.0f); // Vd
-        ctl_init_lp_filter(&est->measure_flt[1], est->isr_freq_hz, 5.0f); // Id
-        ctl_init_lp_filter(&est->measure_flt[2], est->isr_freq_hz, 5.0f); // Position
+        // 1. 配置低通滤波器和斜坡发生器
+        ctl_init_const_slope_f_controller(
+            &est->speed_profile_gen, est->rs_est.idel_speed_hz,
+            est->rs_est.idel_speed_hz * 1000.0f / CTL_MC_OFFLINE_EST_IDLING_ACCELERATE_TIME, est->fs);
 
-        // 2. 配置电流控制器注入目标电流 (Id > 0, Iq = 0)
-        ctl_set_current_ref(&est->current_ctrl, est->rs_test_current_pu, 0.0f);
+        ctl_init_lp_filter(&est->measure_flt[0], est->fs, 5.0f); // Vd
+        ctl_init_lp_filter(&est->measure_flt[1], est->fs, 5.0f); // Id
+        ctl_init_lp_filter(&est->measure_flt[2], est->fs, 5.0f); // Position
+
+        // 2. provide a zero current (Id = 0, Iq = 0)
+        ctl_set_current_ref(&est->current_ctrl, 0, 0);
         ctl_clear_current_controller(&est->current_ctrl);
         ctl_enable_current_controller(&est->current_ctrl);
 
@@ -87,49 +94,61 @@ static void est_loop_handle_rs(ctl_offline_est_t* est)
     }
 
     case OFFLINE_SUB_STATE_EXEC: {
-        // --- 1. 注入特定方向的电流 ---
-        // FIX: 设置目标角度, ISR中的FOC将使用此角度进行Park变换, 从而将转子锁定在期望位置.
-        //      这是Rs辨识成功的关键.
-        est->rs_test_angle_pu = SIX_STEP_ANGLES_DEG[est->step_index] / 360.0f;
+        // Step I idling period
+        if (est->rs_est.flag_idling_cmpt == 0)
+        {
+            // after idling period set complete flag
+            if (gmp_base_get_diff_system_tick(est->task_start_time) > est->rs_est.idling_time)
+            {
+                est->rs_est.flag_idling_cmpt = 1;
+                // clear task_start_time
+                est->task_start_time = gmp_base_get_system_tick();
+                ctl_set_current_ref(&est->current_ctrl, 0, 0);
+            }
+            // decelerate period
+            else if (gmp_base_get_diff_system_tick(est->task_start_time) >
+                     (est->rs_est.idling_time - CTL_MC_OFFLINE_EST_IDLING_ACCELERATE_TIME))
+            {
+                ctl_set_slope_f_freq(&est->speed_profile_gen, 0, est->fs);
+                ctl_set_current_ref(&est->current_ctrl, 0, 0);
+            }
+            // accelerate period
+            else
+            {
+                ctl_set_slope_f_freq(&est->speed_profile_gen, est->rs_est.idel_speed_hz, est->fs);
+                ctl_set_current_ref(&est->current_ctrl, est->rs_est.idel_current_pu, 0);
+            }
+        }
 
-        //// --- 2. 等待电流稳定 ---
-        //if (!gmp_base_is_delay_elapsed(est->task_start_time, RS_STABILIZE_TIME_MS))
-        //{
-        //    return;
-        //}
+        // Step II during measuring period, provide a fixed angle and a fixed current
+        est->rs_est.test_angle_pu = float2ctrl(SIX_STEP_ANGLES_DEG[est->step_index] / 360.0f);
+        ctl_set_current_ref(&est->current_ctrl, est->rs_est.test_current_pu, 0.0f);
 
-        // --- 3. 等待电流稳定和测量完成 ---
-        if (!gmp_base_is_delay_elapsed(est->task_start_time, RS_STABILIZE_TIME_MS + RS_MEASURE_TIME_MS))
+        // Step III waiting for measurement is complete
+        if (!gmp_base_is_delay_elapsed(est->task_start_time, est->rs_est.stabilize_time + est->rs_est.measure_time))
         {
             return;
         }
 
-        // --- 4. 测量时间结束，计算本次结果并进入下一步 ---
+        // Step IV complete period
         if (est->sample_count > 0)
         {
             parameter_gt V_mean = est->V_sum / est->sample_count;
             parameter_gt I_mean = est->I_sum / est->sample_count;
 
             if (fabsf(I_mean) > 1e-3)
-            {
-                est->rs_step_results[est->step_index] = V_mean / I_mean * ctl_consult_base_impedance(pu);
-            }
+                est->rs_est.step_results[est->step_index] = V_mean / I_mean * ctl_consult_base_impedance(pu);
             else
-            {
-                est->rs_step_results[est->step_index] = 0.0f;
-            }
+                est->rs_est.step_results[est->step_index] = 0.0f;
 
             if (est->encoder_type != ENCODER_TYPE_NONE)
-            {
-                est->enc_offset_results[est->step_index] = est->Pos_sum / est->sample_count;
-            }
+                est->rs_est.enc_offset_results[est->step_index] = est->Pos_sum / est->sample_count;
 
-            parameter_gt I_std_dev =
+            est->rs_est.current_noise_std_dev +=
                 sqrtf(fabsf((est->I_sq_sum / est->sample_count) - (I_mean * I_mean))) * ctl_consult_base_current(pu);
-            est->current_noise_std_dev += I_std_dev;
         }
 
-        // --- 5. 准备进入下一步 ---
+        // Step V step to next position
         est->step_index++;
         if (est->step_index >= 6)
         {
@@ -151,23 +170,28 @@ static void est_loop_handle_rs(ctl_offline_est_t* est)
 
     case OFFLINE_SUB_STATE_CALC: {
         // 1. 计算三组线电阻的平均值
-        est->Rs_line_to_line.dat[0] = (est->rs_step_results[0] + est->rs_step_results[3]) / 2.0f; // U-V vs V-U
-        est->Rs_line_to_line.dat[1] = (est->rs_step_results[1] + est->rs_step_results[4]) / 2.0f; // W-V vs V-W
-        est->Rs_line_to_line.dat[2] = (est->rs_step_results[2] + est->rs_step_results[5]) / 2.0f; // W-U vs U-W
+        est->rs_est.Rs_line_to_line.dat[0] =
+            (est->rs_est.step_results[0] + est->rs_est.step_results[3]) / 2.0f; // U-V vs V-U
+        est->rs_est.Rs_line_to_line.dat[1] =
+            (est->rs_est.step_results[1] + est->rs_est.step_results[4]) / 2.0f; // W-V vs V-W
+        est->rs_est.Rs_line_to_line.dat[2] =
+            (est->rs_est.step_results[2] + est->rs_est.step_results[5]) / 2.0f; // W-U vs U-W
 
         // 2. 计算最终的平均相电阻 R_phase = R_line_avg / 2
-        est->pmsm_params.Rs =
-            (est->Rs_line_to_line.dat[0] + est->Rs_line_to_line.dat[1] + est->Rs_line_to_line.dat[2]) / 6.0f;
+        est->pmsm_params.Rs = (est->rs_est.Rs_line_to_line.dat[0] + est->rs_est.Rs_line_to_line.dat[1] +
+                               est->rs_est.Rs_line_to_line.dat[2]) /
+                              6.0f;
 
         // 3. 计算平均电流噪声
-        est->current_noise_std_dev /= 6.0f;
+        est->rs_est.current_noise_std_dev /= 6.0f;
 
         // 4. 计算编码器偏置和健康度（标准差）
         if (est->encoder_type != ENCODER_TYPE_NONE)
         {
             // 以第一步(U->V)为基准，理论电气角度为30度 (0.0833 PU)
+            // TODO 理论上应该使用平均值来实现
             parameter_gt base_angle_pu = SIX_STEP_ANGLES_DEG[0] / 360.0f;
-            est->encoder_offset = base_angle_pu - est->enc_offset_results[0];
+            est->encoder_offset = base_angle_pu - est->rs_est.enc_offset_results[0];
 
             // 归一化到 [0, 1.0)
             if (est->encoder_offset < 0.0f)
@@ -181,7 +205,7 @@ static void est_loop_handle_rs(ctl_offline_est_t* est)
             parameter_gt sixty_deg_pu = 60.0f / 360.0f;
             for (int i = 0; i < 5; ++i)
             {
-                parameter_gt diff = est->enc_offset_results[i + 1] - est->enc_offset_results[i];
+                parameter_gt diff = est->rs_est.enc_offset_results[i + 1] - est->rs_est.enc_offset_results[i];
                 if (diff < -0.5f)
                     diff += 1.0f; // 处理负向回绕
                 if (diff > 0.5f)
@@ -191,7 +215,7 @@ static void est_loop_handle_rs(ctl_offline_est_t* est)
                 step_diff_sq_sum += error * error;
             }
             parameter_gt mean_error = step_diff_sum / 5.0f;
-            est->position_consistency_std_dev = sqrtf(fabsf(step_diff_sq_sum / 5.0f - mean_error * mean_error));
+            est->rs_est.position_consistency_std_dev = sqrtf(fabsf(step_diff_sq_sum / 5.0f - mean_error * mean_error));
         }
 
         est->sub_state = OFFLINE_SUB_STATE_DONE;
@@ -203,11 +227,11 @@ static void est_loop_handle_rs(ctl_offline_est_t* est)
         ctl_set_current_ref(&est->current_ctrl, 0.0f, 0.0f);
 
         // 切换到下一个主状态
-        if (est->flag_enable_ldq)
+        if (est->ldq_est.flag_enable)
             est->main_state = OFFLINE_MAIN_STATE_L;
-        else if (est->flag_enable_psif)
+        else if (est->psif_est.flag_enable)
             est->main_state = OFFLINE_MAIN_STATE_FLUX;
-        else if (est->flag_enable_inertia)
+        else if (est->inertia_est.flag_enable)
             est->main_state = OFFLINE_MAIN_STATE_J;
         else
             est->main_state = OFFLINE_MAIN_STATE_DONE;
@@ -231,7 +255,7 @@ void est_loop_handle_l(ctl_offline_est_t* est)
     //      在修复前不应使用.
     // 方法2 (flag_enable_ldq=2): 旋转矢量HFI法 (est_loop_handle_l_rotating_hfi)
     //      此方法已正确实现.
-    if (est->flag_enable_ldq == 1)
+    if (est->ldq_est.flag_enable == 1)
     {
         // est_loop_handle_l_dcbias_hfi(est); // 不调用未完成的函数
         est->main_state = OFFLINE_MAIN_STATE_ERROR; // 直接标记错误
@@ -251,7 +275,7 @@ static void est_loop_handle_l_rotating_hfi(ctl_offline_est_t* est)
     {
     case OFFLINE_SUB_STATE_INIT: {
         // 1. 初始化高频注入正弦信号发生器
-        parameter_gt step_angle = est->l_hfi_freq_hz / est->isr_freq_hz;
+        parameter_gt step_angle = est->ldq_est.hfi_freq_hz / est->fs;
         ctl_init_sine_generator(&est->hfi_signal_gen, 0.0f, step_angle);
 
         // 2. 初始化慢速旋转发生器
