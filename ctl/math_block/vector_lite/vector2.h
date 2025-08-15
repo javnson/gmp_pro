@@ -14,8 +14,6 @@
 #ifndef _FILE_CTL_VECTOR2_H_
 #define _FILE_CTL_VECTOR2_H_
 
-#include <math.h> // Required for sqrt in ctl_vector2_mag
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -65,42 +63,36 @@ GMP_STATIC_INLINE void ctl_vector2_copy(ctl_vector2_t* dup, ctl_vector2_t* vec)
  * @brief Adds two 2D vectors.
  * @param a The first vector.
  * @param b The second vector.
- * @return The resulting vector (a + b).
+ * @param[out] result return the result of vector (a + b).
  */
-GMP_STATIC_INLINE ctl_vector2_t ctl_vector2_add(ctl_vector2_t a, ctl_vector2_t b)
+GMP_STATIC_INLINE void ctl_vector2_add(ctl_vector2_t* result, ctl_vector2_t* a, ctl_vector2_t* b)
 {
-    ctl_vector2_t result;
-    result.dat[0] = a.dat[0] + b.dat[0];
-    result.dat[1] = a.dat[1] + b.dat[1];
-    return result;
+    result->dat[0] = a->dat[0] + b->dat[0];
+    result->dat[1] = a->dat[1] + b->dat[1];
 }
 
 /**
  * @brief Subtracts one 2D vector from another.
  * @param a The minuend vector.
  * @param b The subtrahend vector.
- * @return The resulting vector (a - b).
+ * @param[out] result return the result of vector (a - b).
  */
-GMP_STATIC_INLINE ctl_vector2_t ctl_vector2_sub(ctl_vector2_t a, ctl_vector2_t b)
+GMP_STATIC_INLINE void ctl_vector2_sub(ctl_vector2_t* result, ctl_vector2_t a, ctl_vector2_t b)
 {
-    ctl_vector2_t result;
-    result.dat[0] = a.dat[0] - b.dat[0];
-    result.dat[1] = a.dat[1] - b.dat[1];
-    return result;
+    result->dat[0] = a->dat[0] - b->dat[0];
+    result->dat[1] = a->dat[1] - b->dat[1];
 }
 
 /**
  * @brief Multiplies a 2D vector by a scalar value.
  * @param vec The vector to be scaled.
  * @param scalar The scalar value.
- * @return The resulting scaled vector.
+ * @param[out] result return the result of vector (scalar * vec).
  */
-GMP_STATIC_INLINE ctl_vector2_t ctl_vector2_scale(ctl_vector2_t vec, ctrl_gt scalar)
+GMP_STATIC_INLINE void ctl_vector2_scale(ctl_vector2_t* result, ctl_vector2_t vec, ctrl_gt scalar)
 {
-    ctl_vector2_t result;
-    result.dat[0] = vec.dat[0] * scalar;
-    result.dat[1] = vec.dat[1] * scalar;
-    return result;
+    result->dat[0] = ctl_mul(vec->dat[0], scalar);
+    result->dat[1] = ctl_mul(vec->dat[1], scalar);
 }
 
 /**
@@ -114,7 +106,7 @@ GMP_STATIC_INLINE ctl_vector2_t ctl_vector2_scale(ctl_vector2_t vec, ctrl_gt sca
  */
 GMP_STATIC_INLINE ctrl_gt ctl_vector2_dot(ctl_vector2_t a, ctl_vector2_t b)
 {
-    return a.dat[0] * b.dat[0] + a.dat[1] * b.dat[1];
+    return ctl_mul(a->dat[0], b->dat[0]) + ctl_mul(a->dat[1], b->dat[1]);
 }
 
 /**
@@ -141,21 +133,26 @@ GMP_STATIC_INLINE ctrl_gt ctl_vector2_mag(ctl_vector2_t* vec)
 /**
  * @brief Normalizes a 2D vector to produce a unit vector (a vector with length 1).
  * @param vec The vector to be normalized.
- * @return The normalized (unit) vector. Returns a zero vector if the magnitude is zero.
+ * @param[out] result The normalized (unit) vector. Returns a zero vector if the magnitude is zero.
  */
-GMP_STATIC_INLINE ctl_vector2_t ctl_vector2_normalize(ctl_vector2_t *vec)
+GMP_STATIC_INLINE void ctl_vector2_normalize(ctl_vector2_t* result, ctl_vector2_t* vec)
 {
-    ctl_vector2_t result = {{0, 0}};
     ctrl_gt mag = ctl_vector2_mag(vec);
     if (mag > 1e-9) // Use a small epsilon to avoid division by zero
     {
-        result.dat[0] = vec->dat[0] / mag;
-        result.dat[1] = vec->dat[1] / mag;
+        result->dat[0] = ctl_div(vec->dat[0], mag);
+        result->dat[1] = ctl_div(vec->dat[1], mag);
     }
-    return result;
+    else
+    {
+        result->dat[0] = 0;
+        result->dat[1] = 0;
+    }
 }
 
-/** @} */ // end of MC_VECTOR2 group
+/** 
+ * @} 
+ */ // end of MC_VECTOR2 group
 
 #ifdef __cplusplus
 }

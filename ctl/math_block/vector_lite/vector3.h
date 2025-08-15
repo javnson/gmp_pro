@@ -79,45 +79,39 @@ GMP_STATIC_INLINE void ctl_vector3_copy(ctl_vector3_t* dup, ctl_vector3_t* vec)
  * @brief Adds two 3D vectors.
  * @param a The first vector.
  * @param b The second vector.
- * @return The resulting vector (a + b).
+ * @param[out] result The resulting vector (a + b).
  */
-GMP_STATIC_INLINE ctl_vector3_t ctl_vector3_add(ctl_vector3_t a, ctl_vector3_t b)
+GMP_STATIC_INLINE void ctl_vector3_add(ctl_vector3_t* result, ctl_vector3_t* a, ctl_vector3_t* b)
 {
-    ctl_vector3_t result;
-    result.dat[0] = a.dat[0] + b.dat[0];
-    result.dat[1] = a.dat[1] + b.dat[1];
-    result.dat[2] = a.dat[2] + b.dat[2];
-    return result;
+    result->dat[0] = a->dat[0] + b->dat[0];
+    result->dat[1] = a->dat[1] + b->dat[1];
+    result->dat[2] = a->dat[2] + b->dat[2];
 }
 
 /**
  * @brief Subtracts one 3D vector from another.
  * @param a The minuend vector.
  * @param b The subtrahend vector.
- * @return The resulting vector (a - b).
+ * @param[out] result The resulting vector (a - b).
  */
-GMP_STATIC_INLINE ctl_vector3_t ctl_vector3_sub(ctl_vector3_t a, ctl_vector3_t b)
+GMP_STATIC_INLINE void ctl_vector3_sub(ctl_vector3_t* result, ctl_vector3_t* a, ctl_vector3_t* b)
 {
-    ctl_vector3_t result;
-    result.dat[0] = a.dat[0] - b.dat[0];
-    result.dat[1] = a.dat[1] - b.dat[1];
-    result.dat[2] = a.dat[2] - b.dat[2];
-    return result;
+    result->dat[0] = a->dat[0] - b->dat[0];
+    result->dat[1] = a->dat[1] - b->dat[1];
+    result->dat[2] = a->dat[2] - b->dat[2];
 }
 
 /**
  * @brief Multiplies a 3D vector by a scalar value.
  * @param vec The vector to be scaled.
  * @param scalar The scalar value.
- * @return The resulting scaled vector.
+ * @param[out] result The resulting scaled vector.
  */
-GMP_STATIC_INLINE ctl_vector3_t ctl_vector3_scale(ctl_vector3_t vec, ctrl_gt scalar)
+GMP_STATIC_INLINE void ctl_vector3_scale(ctl_vector3_t* result, ctl_vector3_t vec, ctrl_gt scalar)
 {
-    ctl_vector3_t result;
-    result.dat[0] = vec.dat[0] * scalar;
-    result.dat[1] = vec.dat[1] * scalar;
-    result.dat[2] = vec.dat[2] * scalar;
-    return result;
+    result->dat[0] = ctl_mul(vec.dat[0], scalar);
+    result->dat[1] = ctl_mul(vec.dat[1], scalar);
+    result->dat[2] = ctl_mul(vec.dat[2], scalar);
 }
 
 /**
@@ -131,7 +125,7 @@ GMP_STATIC_INLINE ctl_vector3_t ctl_vector3_scale(ctl_vector3_t vec, ctrl_gt sca
  */
 GMP_STATIC_INLINE ctrl_gt ctl_vector3_dot(ctl_vector3_t a, ctl_vector3_t b)
 {
-    return a.dat[0] * b.dat[0] + a.dat[1] * b.dat[1] + a.dat[2] * b.dat[2];
+    return ctl_mul(a.dat[0], b.dat[0]) + ctl_mul(a.dat[1], b.dat[1]) + ctl_mul(a.dat[2], b.dat[2]);
 }
 
 /**
@@ -141,15 +135,13 @@ GMP_STATIC_INLINE ctrl_gt ctl_vector3_dot(ctl_vector3_t a, ctl_vector3_t b)
  * @f]
  * @param a The first vector.
  * @param b The second vector.
- * @return The resulting vector from the cross product.
+ * @param result The resulting vector from the cross product.
  */
-GMP_STATIC_INLINE ctl_vector3_t ctl_vector3_cross(ctl_vector3_t a, ctl_vector3_t b)
+GMP_STATIC_INLINE void ctl_vector3_cross(ctl_vector3_t* result, ctl_vector3_t a, ctl_vector3_t b)
 {
-    ctl_vector3_t result;
-    result.dat[0] = a.dat[1] * b.dat[2] - a.dat[2] * b.dat[1];
-    result.dat[1] = a.dat[2] * b.dat[0] - a.dat[0] * b.dat[2];
-    result.dat[2] = a.dat[0] * b.dat[1] - a.dat[1] * b.dat[0];
-    return result;
+    result->dat[0] = ctl_mul(a->dat[1], b.dat[2]) - ctl_mul(a.dat[2], b.dat[1]);
+    result->dat[1] = ctl_mul(a->dat[2], b.dat[0]) - ctl_mul(a.dat[0], b.dat[2]);
+    result->dat[2] = ctl_mul(a->dat[0], b.dat[1]) - ctl_mul(a.dat[1], b.dat[0]);
 }
 
 /**
@@ -158,9 +150,9 @@ GMP_STATIC_INLINE ctl_vector3_t ctl_vector3_cross(ctl_vector3_t a, ctl_vector3_t
  * @param vec The input vector.
  * @return The squared magnitude of the vector.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_vector3_mag_sq(ctl_vector3_t vec)
+GMP_STATIC_INLINE ctrl_gt ctl_vector3_mag_sq(ctl_vector3_t* vec)
 {
-    return vec.dat[0] * vec.dat[0] + vec.dat[1] * vec.dat[1] + vec.dat[2] * vec.dat[2];
+    return ctl_mul(vec->dat[0], vec->dat[0]) + ctl_mul(vec->dat[1], vec->dat[1]) + ctl_mul(vec->dat[2], vec->dat[2]);
 }
 
 /**
@@ -168,7 +160,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_vector3_mag_sq(ctl_vector3_t vec)
  * @param vec The input vector.
  * @return The magnitude of the vector.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_vector3_mag(ctl_vector3_t vec)
+GMP_STATIC_INLINE ctrl_gt ctl_vector3_mag(ctl_vector3_t* vec)
 {
     return ctl_sqrt(ctl_vector3_mag_sq(vec));
 }
@@ -176,19 +168,19 @@ GMP_STATIC_INLINE ctrl_gt ctl_vector3_mag(ctl_vector3_t vec)
 /**
  * @brief Normalizes a 3D vector to produce a unit vector (a vector with length 1).
  * @param vec The vector to be normalized.
- * @return The normalized (unit) vector. Returns a zero vector if the magnitude is zero.
+ * @param[out] result The normalized (unit) vector. Returns a zero vector if the magnitude is zero.
  */
-GMP_STATIC_INLINE ctl_vector3_t ctl_vector3_normalize(ctl_vector3_t vec)
+GMP_STATIC_INLINE void ctl_vector3_normalize(ctl_vector3_t* result, ctl_vector3_t* vec)
 {
-    ctl_vector3_t result = {{0, 0, 0}};
     ctrl_gt mag = ctl_vector3_mag(vec);
     if (mag > 1e-9) // Use a small epsilon to avoid division by zero
     {
-        result.dat[0] = vec.dat[0] / mag;
-        result.dat[1] = vec.dat[1] / mag;
-        result.dat[2] = vec.dat[2] / mag;
+        result->dat[0] = ctl_div(vec->dat[0], mag);
+        result->dat[1] = ctl_div(vec->dat[1], mag);
+        result->dat[2] = ctl_div(vec->dat[2], mag);
     }
-    return result;
+    else
+        ctl_vector3_clear(vec);
 }
 
 /** @} */ // end of MC_VECTOR3 group

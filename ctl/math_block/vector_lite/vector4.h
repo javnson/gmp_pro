@@ -84,48 +84,42 @@ GMP_STATIC_INLINE void ctl_vector4_copy(ctl_vector4_t* dup, ctl_vector4_t* vec)
  * @brief Adds two 4D vectors.
  * @param a The first vector.
  * @param b The second vector.
- * @return The resulting vector (a + b).
+ * @param[out] result The resulting vector (a + b).
  */
-GMP_STATIC_INLINE ctl_vector4_t ctl_vector4_add(ctl_vector4_t a, ctl_vector4_t b)
+GMP_STATIC_INLINE void ctl_vector4_add(ctl_vector4_t* result, ctl_vector4_t* a, ctl_vector4_t* b)
 {
-    ctl_vector4_t result;
-    result.dat[0] = a.dat[0] + b.dat[0];
-    result.dat[1] = a.dat[1] + b.dat[1];
-    result.dat[2] = a.dat[2] + b.dat[2];
-    result.dat[3] = a.dat[3] + b.dat[3];
-    return result;
+    result->dat[0] = a->dat[0] + b->dat[0];
+    result->dat[1] = a->dat[1] + b->dat[1];
+    result->dat[2] = a->dat[2] + b->dat[2];
+    result->dat[3] = a->dat[3] + b->dat[3];
 }
 
 /**
  * @brief Subtracts one 4D vector from another.
  * @param a The minuend vector.
  * @param b The subtrahend vector.
- * @return The resulting vector (a - b).
+ * @param[out] result The resulting vector (a - b).
  */
-GMP_STATIC_INLINE ctl_vector4_t ctl_vector4_sub(ctl_vector4_t a, ctl_vector4_t b)
+GMP_STATIC_INLINE void ctl_vector4_sub(ctl_vector4_t* result, ctl_vector4_t a, ctl_vector4_t b)
 {
-    ctl_vector4_t result;
-    result.dat[0] = a.dat[0] - b.dat[0];
-    result.dat[1] = a.dat[1] - b.dat[1];
-    result.dat[2] = a.dat[2] - b.dat[2];
-    result.dat[3] = a.dat[3] - b.dat[3];
-    return result;
+    result->dat[0] = a->dat[0] - b->dat[0];
+    result->dat[1] = a->dat[1] - b->dat[1];
+    result->dat[2] = a->dat[2] - b->dat[2];
+    result->dat[3] = a->dat[3] - b->dat[3];
 }
 
 /**
  * @brief Multiplies a 4D vector by a scalar value.
  * @param vec The vector to be scaled.
  * @param scalar The scalar value.
- * @return The resulting scaled vector.
+ * @param[out] result The resulting scaled vector.
  */
-GMP_STATIC_INLINE ctl_vector4_t ctl_vector4_scale(ctl_vector4_t vec, ctrl_gt scalar)
+GMP_STATIC_INLINE ctl_vector4_t ctl_vector4_scale(ctl_vector4_t* result, ctl_vector4_t vec, ctrl_gt scalar)
 {
-    ctl_vector4_t result;
-    result.dat[0] = vec.dat[0] * scalar;
-    result.dat[1] = vec.dat[1] * scalar;
-    result.dat[2] = vec.dat[2] * scalar;
-    result.dat[3] = vec.dat[3] * scalar;
-    return result;
+    result->dat[0] = ctl_mul(vec->dat[0], scalar);
+    result->dat[1] = ctl_mul(vec->dat[1], scalar);
+    result->dat[2] = ctl_mul(vec->dat[2], scalar);
+    result->dat[3] = ctl_mul(vec->dat[3], scalar);
 }
 
 /**
@@ -137,9 +131,10 @@ GMP_STATIC_INLINE ctl_vector4_t ctl_vector4_scale(ctl_vector4_t vec, ctrl_gt sca
  * @param b The second vector.
  * @return The dot product.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_vector4_dot(ctl_vector4_t a, ctl_vector4_t b)
+GMP_STATIC_INLINE ctrl_gt ctl_vector4_dot(ctl_vector4_t* a, ctl_vector4_t* b)
 {
-    return a.dat[0] * b.dat[0] + a.dat[1] * b.dat[1] + a.dat[2] * b.dat[2] + a.dat[3] * b.dat[3];
+    return ctl_mul(a->dat[0], b.dat[0]) + ctl_mul(a->dat[1], b->dat[1]) + ctl_mul(a->dat[2], b->dat[2]) +
+           ctl_mul(a->dat[3], b.dat[3]);
 }
 
 /**
@@ -148,9 +143,10 @@ GMP_STATIC_INLINE ctrl_gt ctl_vector4_dot(ctl_vector4_t a, ctl_vector4_t b)
  * @param vec The input vector.
  * @return The squared magnitude of the vector.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_vector4_mag_sq(ctl_vector4_t vec)
+GMP_STATIC_INLINE ctrl_gt ctl_vector4_mag_sq(ctl_vector4_t* vec)
 {
-    return vec.dat[0] * vec.dat[0] + vec.dat[1] * vec.dat[1] + vec.dat[2] * vec.dat[2] + vec.dat[3] * vec.dat[3];
+    return ctl_mul(vec->dat[0], vec->dat[0]) + ctl_mul(vec->dat[1], vec->dat[1]) + ctl_mul(vec->dat[2], vec.dat[2]) +
+           ctl_mul(vec->dat[3], vec.dat[3]);
 }
 
 /**
@@ -158,7 +154,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_vector4_mag_sq(ctl_vector4_t vec)
  * @param vec The input vector.
  * @return The magnitude of the vector.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_vector4_mag(ctl_vector4_t vec)
+GMP_STATIC_INLINE ctrl_gt ctl_vector4_mag(ctl_vector4_t* vec)
 {
     return ctl_sqrt(ctl_vector4_mag_sq(vec));
 }
@@ -166,23 +162,25 @@ GMP_STATIC_INLINE ctrl_gt ctl_vector4_mag(ctl_vector4_t vec)
 /**
  * @brief Normalizes a 4D vector to produce a unit vector (a vector with length 1).
  * @param vec The vector to be normalized.
- * @return The normalized (unit) vector. Returns a zero vector if the magnitude is zero.
+ * @param[out] result The normalized (unit) vector. Returns a zero vector if the magnitude is zero.
  */
-GMP_STATIC_INLINE ctl_vector4_t ctl_vector4_normalize(ctl_vector4_t vec)
+GMP_STATIC_INLINE void ctl_vector4_normalize(ctl_vector4_t* result, ctl_vector4_t* vec)
 {
-    ctl_vector4_t result = {{0, 0, 0, 0}};
     ctrl_gt mag = ctl_vector4_mag(vec);
     if (mag > 1e-9) // Use a small epsilon to avoid division by zero
     {
-        result.dat[0] = vec.dat[0] / mag;
-        result.dat[1] = vec.dat[1] / mag;
-        result.dat[2] = vec.dat[2] / mag;
-        result.dat[3] = vec.dat[3] / mag;
+        result->dat[0] = ctl_div(vec.dat[0], mag);
+        result->dat[1] = ctl_div(vec.dat[1], mag);
+        result->dat[2] = ctl_div(vec.dat[2], mag);
+        result->dat[3] = ctl_div(vec.dat[3], mag);
     }
-    return result;
+    else
+        ctl_vector4_clear(result);
 }
 
-/** @} */ // end of MC_VECTOR4 group
+/** 
+ * @} 
+ */ // end of MC_VECTOR4 group
 
 #ifdef __cplusplus
 }
