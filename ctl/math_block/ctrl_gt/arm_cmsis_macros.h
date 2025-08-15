@@ -154,9 +154,10 @@ GMP_STATIC_INLINE float32_t ctl_isqrt_inline(float32_t A)
 // We fall back to the standard C math library.
 #define ctl_tan(A)                                                                                                     \
     (tanf(2.0f * PI * (A))) /**< @brief Computes tangent from a per-unit angle. Uses standard math lib. */
-#define ctl_atan2(Y, X) (atan2f((Y), (X))) /**< @brief Computes the arc-tangent. Uses standard math lib. */
-#define ctl_exp(A)      (expf((A)))        /**< @brief Computes the base-e exponential. Uses standard math lib. */
-#define ctl_ln(A)       (logf((A)))        /**< @brief Computes the natural logarithm. Uses standard math lib. */
+#define ctl_atan2(Y, X)   (atan2f((Y), (X))) /**< @brief Computes the arc-tangent. Uses standard math lib. */
+#define ctl_exp(A)        (expf((A)))        /**< @brief Computes the base-e exponential. Uses standard math lib. */
+#define ctl_ln(A)         (logf((A)))        /**< @brief Computes the natural logarithm. Uses standard math lib. */
+#define ctl_pow(B, Index) (expf(logf(Index) * B)) /**< @brief Compute the B^Index power of B */
 
 /** @} */ // end of MC_NONLINEAR_CMSIS group
 

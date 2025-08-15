@@ -128,14 +128,14 @@ GMP_STATIC_INLINE void ctl_set_voltage_ff(ctl_current_controller_t* cc, ctrl_gt 
  * @param[in]  iabc    Pointer to the measured 3-phase currents.
  * @param[in]  theta   The current electrical angle of the rotor (0.0 to 1.0).
  */
-GMP_STATIC_INLINE void ctl_step_current_controller(ctl_current_controller_t* cc, const ctl_vector3_t* iabc,
+GMP_STATIC_INLINE void ctl_step_current_controller(ctl_current_controller_t* cc, const ctl_vector3_t* _iabc,
                                                    ctrl_gt theta)
 {
     ctl_vector2_t phasor;
     ctl_set_phasor_via_angle(theta, &phasor);
 
     // 1. Clarke Transform: 3-phase currents to alpha-beta stationary frame.
-    ctl_ct_clarke(iabc, &cc->iab0);
+    ctl_ct_clarke(_iabc, &cc->iab0);
 
     // 2. Park Transform: Stationary frame currents to d-q rotating frame.
     ctl_ct_park(&cc->iab0, &phasor, &cc->idq0);

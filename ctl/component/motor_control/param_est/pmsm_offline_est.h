@@ -293,11 +293,11 @@ GMP_STATIC_INLINE void ctl_config_offline_est_Rs(
     est->rs_est.idling_time = idling_time;
     est->rs_est.stabilize_time = stabilize_time;
     est->rs_est.measure_time = measure_time;
-    
+
     if (enable_idling == 1)
-        est->rs_est.flag_idling_cmpt == 0;
+        est->rs_est.flag_idling_cmpt = 0;
     else
-        est->rs_est.flag_idling_cmpt == 1;
+        est->rs_est.flag_idling_cmpt = 1;
 
     for (int i = 0; i < 6; ++i)
     {
@@ -415,12 +415,12 @@ GMP_STATIC_INLINE void ctl_step_offline_est(ctl_offline_est_t* est)
                         v_hfi_inst = ctl_mul(ctl_get_sine_generator_sin(&est->hfi_signal_gen), est->ldq_est.hfi_v_pu);
 
                         // 获取电流环计算出的alpha-beta电流 (这是对实际电流的反馈)
-                        ctrl_gt i_alpha = est->current_ctrl.iab0.dat[0];
-                        ctrl_gt i_beta = est->current_ctrl.iab0.dat[1];
+                        //ctrl_gt i_alpha = est->current_ctrl.iab0.dat[0];
+                        //ctrl_gt i_beta = est->current_ctrl.iab0.dat[1];
 
                         // 计算高频电流响应的幅值，对幅值进行低通滤波，得到其包络
                         ctrl_gt i_hfi_mag = ctl_step_lowpass_filter(
-                            &est->measure_flt[3], ctl_vector2_mag_sq((ctl_vector2_t*)&est->current_ctrl.iab0));
+                            &est->measure_flt[3], ctl_vector2_mag((ctl_vector2_t*)&est->current_ctrl.iab0));
 
                         // 先等待一段时间，等到稳定（控制器收敛、滤波器收敛）之后再读取电流的最大最小值，只是在一段时间内执行
                         if (gmp_base_get_diff_system_tick(est->task_start_time) > est->ldq_est.stabilize_time)

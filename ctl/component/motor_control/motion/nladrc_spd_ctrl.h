@@ -54,7 +54,7 @@ GMP_STATIC_INLINE ctrl_gt _nladrc_sign(ctrl_gt val)
 
 /**
  * @brief The core nonlinear function 'fal' used in NLADRC.
- * @details Implements fal(e, alpha, delta) = |e|^alpha * sign(e) for |e| > delta,
+ * @details Implements @f( fal(e, alpha, delta) = |e|^alpha * sign(e) @f) for @f( |e| > delta @f),
  * and e / delta^(1-alpha) for |e| <= delta. This function provides high gain
  * for small errors and smaller gain for large errors, improving performance.
  * @param e The error input.

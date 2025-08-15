@@ -96,25 +96,30 @@ GMP_STATIC_INLINE void ctl_step_pmsm_fo(pmsm_fo_t* fo, const vector2_gt* i_ab_st
     ctrl_gt cos_theta = sin_cos_theta->dat[1];
 
     // Calculate stator flux components (psi_alpha, psi_beta)
-    // ¦×_¦Á* = ¦Øb*Ls* * I_¦Á* + ¦×_PM* * cos(¦È)
-    fo->flux.dat[0] = ctl_mac(ctl_mul(fo->wb_ls, i_alpha), fo->psi_pm, cos_theta);
+    //tex:
+    // $$\psi_\alpha^* = \omega_b L_s^* I_\alpha^* + \psi_{PM}^* \cos(\theta) $$
+    fo->flux.dat[0] = ctl_mul(fo->wb_ls, i_alpha);
+    fo->flux.dat[0] += ctl_mul(fo->psi_pm, cos_theta);
 
-    // ¦×_¦Â* = ¦Øb*Ls* * I_¦Â* + ¦×_PM* * sin(¦È)
-    fo->flux.dat[1] = ctl_mac(ctl_mul(fo->wb_ls, i_beta), fo->psi_pm, sin_theta);
+    //tex:
+    // $$ \psi_\beta^* = \omega_b L_s^*I_\beta^* + \psi_{PM}^* \sin(\theta)  $$
+    fo->flux.dat[1] = ctl_mul(fo->wb_ls, i_beta);
+    fo->flux.dat[1] += ctl_mul(fo->psi_pm, sin_theta);
 
     // Calculate flux magnitude
-    // ¦×* = sqrt( (¦×_¦Á*)^2 + (¦×_¦Â*)^2 )
-    fo->flux_mag =
-        ctl_sqrt(ctl_add(ctl_mul(fo->flux.dat[0], fo->flux.dat[0]), ctl_mul(fo->flux.dat[1], fo->flux.dat[1])));
+    //tex:
+    // $$ \psi^* = \sqrt{\psi_\alpha^{*2} + \psi_\beta^{*2}}$$
+    fo->flux_mag = ctl_vector2_mag(&fo->flux);
 
     // Calculate electromagnetic torque
-    // T* = (1/¦×_PM*) * (¦×_¦Á* * i_¦Â* - ¦×_¦Â* * i_¦Á*)
+    //tex:
+    // $$ T^* = \frac{\psi_\alpha^* i_\beta^* - \psi_\beta^* i_\alpha^*}{\psi_{PM}} $$
     ctrl_gt torque_term = ctl_sub(ctl_mul(fo->flux.dat[0], i_beta), ctl_mul(fo->flux.dat[1], i_alpha));
     fo->torque = ctl_mul(fo->inv_psi_pm, torque_term);
 }
 
 /**
- * @brief Gets the estimated stator flux vector (¦Á, ¦Â).
+ * @brief Gets the estimated stator flux vector @f((\alpha, \beta)@f).
  * @param fo Pointer to the `pmsm_fo_t` object.
  * @return A pointer to the `vector2_gt` containing the flux components.
  */

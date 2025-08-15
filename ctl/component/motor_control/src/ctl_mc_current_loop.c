@@ -240,7 +240,7 @@ void ctl_init_mtpv_pu(ctl_mtpv_pu_controller_t* mtpv, parameter_gt Rs_pu, parame
 #include <ctl/component/motor_control/current_loop/pmsm_mpc.h>
 
 // Table of the 8 standard voltage vectors in the alpha-beta frame.
-const ctl_vector2_t MPC_VOLTAGE_VECTORS_NORMALIZED[8] = {
+ctl_vector2_t MPC_VOLTAGE_VECTORS_NORMALIZED[8] = {
     {{float2ctrl(0.0f), float2ctrl(0.0f)}},        // V0
     {{float2ctrl(1.0f), float2ctrl(0.0f)}},        // V1
     {{float2ctrl(0.5f), float2ctrl(0.866025f)}},   // V2

@@ -116,16 +116,19 @@ GMP_STATIC_INLINE float abs_static_inline(float A)
  * @{
  */
 
-#define ctl_sin(A)      (qfp_fsin(A))      /**< @brief Computes sine. Maps to `qfp_fsin()`. */
-#define ctl_cos(A)      (qfp_fcos(A))      /**< @brief Computes cosine. Maps to `qfp_fcos()`. */
-#define ctl_tan(A)      (qfp_ftan(A))      /**< @brief Computes tangent. Maps to `qfp_ftan()`. */
-#define ctl_atan2(Y, X) (qfp_fatan2(Y, X)) /**< @brief Computes the arc-tangent. Maps to `qfp_fatan2()`. */
-#define ctl_exp(A)      (qfp_fexp(A))      /**< @brief Computes the base-e exponential. Maps to `qfp_fexp()`. */
-#define ctl_ln(A)       (qfp_fln(A))       /**< @brief Computes the natural logarithm. Maps to `qfp_fln()`. */
-#define ctl_sqrt(A)     (qfp_fsqrt(A))     /**< @brief Computes the square root. Maps to `qfp_fsqrt()`. */
-#define ctl_isqrt(A)    (qfp_fdiv(1.0f, qfp_fsqrt(A))) /**< @brief Computes the inverse square root. */
+#define ctl_sin(A)        (qfp_fsin(A))      /**< @brief Computes sine. Maps to `qfp_fsin()`. */
+#define ctl_cos(A)        (qfp_fcos(A))      /**< @brief Computes cosine. Maps to `qfp_fcos()`. */
+#define ctl_tan(A)        (qfp_ftan(A))      /**< @brief Computes tangent. Maps to `qfp_ftan()`. */
+#define ctl_atan2(Y, X)   (qfp_fatan2(Y, X)) /**< @brief Computes the arc-tangent. Maps to `qfp_fatan2()`. */
+#define ctl_exp(A)        (qfp_fexp(A))      /**< @brief Computes the base-e exponential. Maps to `qfp_fexp()`. */
+#define ctl_ln(A)         (qfp_fln(A))       /**< @brief Computes the natural logarithm. Maps to `qfp_fln()`. */
+#define ctl_pow(B, Index) (qfp_fexp(ctl_mul(qfp_fln(Index), B))) /**< @brief Compute the B^Index power of B */
+#define ctl_sqrt(A)       (qfp_fsqrt(A))                 /**< @brief Computes the square root. Maps to `qfp_fsqrt()`. */
+#define ctl_isqrt(A)      (qfp_fdiv(1.0f, qfp_fsqrt(A))) /**< @brief Computes the inverse square root. */
 
-/** @} */ // end of MC_NONLINEAR_QFP group
+/** 
+ * @} 
+ */ // end of MC_NONLINEAR_QFP group
 
 /**
  * @brief A macro to indicate that `ctrl_gt` is defined as a QFP-compatible float type.
@@ -133,6 +136,8 @@ GMP_STATIC_INLINE float abs_static_inline(float A)
  */
 #define CTRL_GT_IS_QFP_FLOAT
 
-/** @} */ // end of MC_QFP_MACROS group
+/**  
+ * @} 
+ */ // end of MC_QFP_MACROS group
 
 #endif // _FILE_QPF_FLOAT_MACROS_H_

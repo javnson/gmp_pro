@@ -157,13 +157,13 @@ void ctl_init_acm_smo(ctl_acm_smo_t* smo, const ctl_acm_smo_init_t* init)
 #include <ctl/component/motor_control/current_loop/acm_mpc.h>
 
 // Table of the 8 standard voltage vectors in the alpha-beta frame.
-const ctl_vector2_t MPC_VOLTAGE_VECTORS_NORMALIZED_ACM[8] = {
+ctl_vector2_t MPC_VOLTAGE_VECTORS_NORMALIZED_ACM[8] = {
     {{float2ctrl(0.0f), float2ctrl(0.0f)}},        // V0
     {{float2ctrl(1.0f), float2ctrl(0.0f)}},        // V1
     {{float2ctrl(0.5f), float2ctrl(0.866025f)}},   // V2
-    {{float2ctrl(-0.5f),float2ctrl( 0.866025f)}},  // V3
-    {{float2ctrl(-1.0f),float2ctrl( 0.0f)}},       // V4
-    {{float2ctrl(-0.5f),float2ctrl( -0.866025f)}}, // V5
+    {{float2ctrl(-0.5f), float2ctrl(0.866025f)}},  // V3
+    {{float2ctrl(-1.0f), float2ctrl(0.0f)}},       // V4
+    {{float2ctrl(-0.5f), float2ctrl(-0.866025f)}}, // V5
     {{float2ctrl(0.5f), float2ctrl(-0.866025f)}},  // V6
     {{float2ctrl(0.0f), float2ctrl(0.0f)}}         // V7
 };
@@ -190,7 +190,6 @@ void ctl_init_acm_mpc(ctl_acm_mpc_controller_t* mpc, const ctl_acm_mpc_init_t* i
     mpc->c_pr_is = float2ctrl(mpc->Ts * init->Lm / Tr);
     mpc->c_pr_pr = float2ctrl(1.0f - mpc->Ts / Tr);
 }
-
 
 //////////////////////////////////////////////////////////////////////////
 // BLDC Hall

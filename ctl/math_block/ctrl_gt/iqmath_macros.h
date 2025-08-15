@@ -108,14 +108,15 @@ GMP_STATIC_INLINE _iq abs_static_inline(_iq A)
  * @{
  */
 
-#define ctl_sin(A)      (_IQsinPU(A)) /**< @brief Computes sine from a per-unit angle. Maps to `_IQsinPU()`. */
-#define ctl_cos(A)      (_IQcosPU(A)) /**< @brief Computes cosine from a per-unit angle. Maps to `_IQcosPU()`. */
-#define ctl_tan(A)      (_IQdiv(_IQsinPU(A), _IQcosPU(A))) /**< @brief Computes tangent from a per-unit angle. */
-#define ctl_atan2(Y, X) (_IQatan2PU((Y), (X))) /**< @brief Computes the per-unit arc-tangent. Maps to `_IQatan2PU()`. */
-#define ctl_exp(A)      (_IQexp(A))            /**< @brief Computes the base-e exponential. Maps to `_IQexp()`. */
-#define ctl_ln(A)       (_IQlog(A))            /**< @brief Computes the natural logarithm. Maps to `_IQlog()`. */
-#define ctl_sqrt(A)     (_IQsqrt(A))           /**< @brief Computes the square root. Maps to `_IQsqrt()`. */
-#define ctl_isqrt(A)    (_IQisqrt(A))          /**< @brief Computes the inverse square root. Maps to `_IQisqrt()`. */
+#define ctl_sin(A)        (_IQsinPU(A)) /**< @brief Computes sine from a per-unit angle. Maps to `_IQsinPU()`. */
+#define ctl_cos(A)        (_IQcosPU(A)) /**< @brief Computes cosine from a per-unit angle. Maps to `_IQcosPU()`. */
+#define ctl_tan(A)        (_IQdiv(_IQsinPU(A), _IQcosPU(A))) /**< @brief Computes tangent from a per-unit angle. */
+#define ctl_atan2(Y, X)   (_IQatan2PU((Y), (X))) /**< @brief Computes the per-unit arc-tangent. Maps to `_IQatan2PU()`. */
+#define ctl_exp(A)        (_IQexp(A))            /**< @brief Computes the base-e exponential. Maps to `_IQexp()`. */
+#define ctl_ln(A)         (_IQlog(A))            /**< @brief Computes the natural logarithm. Maps to `_IQlog()`. */
+#define ctl_pow(B, Index) (_IQexp(ctl_mul(_IQlog(Index), B))) /**< @brief Compute the B^Index power of B */
+#define ctl_sqrt(A)       (_IQsqrt(A))  /**< @brief Computes the square root. Maps to `_IQsqrt()`. */
+#define ctl_isqrt(A)      (_IQisqrt(A)) /**< @brief Computes the inverse square root. Maps to `_IQisqrt()`. */
 
 /** @} */ // end of MC_NONLINEAR_IQ group
 

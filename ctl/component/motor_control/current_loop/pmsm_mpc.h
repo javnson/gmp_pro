@@ -50,7 +50,7 @@ extern "C"
  * @details The values are normalized and must be scaled by (2/3 * Udc).
  * V0 and V7 are zero vectors.
  */
-extern const ctl_vector2_t MPC_VOLTAGE_VECTORS_NORMALIZED[8];
+extern ctl_vector2_t MPC_VOLTAGE_VECTORS_NORMALIZED[8];
 
 /**
  * @brief Initialization parameters for the MPC module.
@@ -110,16 +110,15 @@ void ctl_init_mpc(ctl_mpc_controller_t* mpc, const ctl_mpc_init_t* init);
  * @param[in]  omega_e  The current electrical speed (rad/s).
  * @param[in]  udc      The measured DC bus voltage (V).
  */
-GMP_STATIC_INLINE void ctl_step_mpc(ctl_mpc_controller_t* mpc, const ctl_vector2_t* idq_ref,
-                                    const ctl_vector2_t* idq_fbk, const ctl_vector2_t* phasor, ctrl_gt omega_e,
-                                    ctrl_gt udc)
+GMP_STATIC_INLINE void ctl_step_mpc(ctl_mpc_controller_t* mpc, ctl_vector2_t* idq_ref, ctl_vector2_t* idq_fbk,
+                                    ctl_vector2_t* phasor, ctrl_gt omega_e, ctrl_gt _udc)
 {
     ctl_matrix2_t A_full;
     ctl_vector2_t E;
     ctl_vector2_t i_pred;
     ctrl_gt min_cost = 1e12f; // Initialize with a very large number
     uint8_t best_vector_idx = 0;
-    ctrl_gt voltage_scale = (2.0f / 3.0f) * udc;
+    ctrl_gt voltage_scale = (2.0f / 3.0f) * _udc;
 
     // 1. Construct the speed-dependent parts of the model matrices
     A_full = mpc->A_const;
@@ -133,7 +132,8 @@ GMP_STATIC_INLINE void ctl_step_mpc(ctl_mpc_controller_t* mpc, const ctl_vector2
     for (uint8_t i = 0; i < 8; ++i)
     {
         // Get the test voltage vector in the alpha-beta frame
-        ctl_vector2_t u_ab = ctl_vector2_scale(MPC_VOLTAGE_VECTORS_NORMALIZED[i], voltage_scale);
+        ctl_vector2_t u_ab;
+        ctl_vector2_scale(&u_ab, &MPC_VOLTAGE_VECTORS_NORMALIZED[i], voltage_scale);
 
         // Transform the test voltage to the d-q frame
         ctl_vector2_t u_dq;
@@ -142,10 +142,15 @@ GMP_STATIC_INLINE void ctl_step_mpc(ctl_mpc_controller_t* mpc, const ctl_vector2
         // 3. Predict the next state: i(k+1) = A*i(k) + B*u(k) + E
         ctl_vector2_t Ax = ctl_matrix2_mul_vector(A_full, *idq_fbk);
         ctl_vector2_t Bu = ctl_matrix2_mul_vector(mpc->B, u_dq);
-        i_pred = ctl_vector2_add(ctl_vector2_add(Ax, Bu), E);
+        ctl_vector2_t sumup;
+        ctl_vector2_add(&sumup, &Ax, &Bu);
+        ctl_vector2_add(&i_pred, &sumup, &E);
 
-        // 4. Calculate the cost function: J = (id_ref - id_pred)^2 + (iq_ref - iq_pred)^2
-        ctl_vector2_t error_vec = ctl_vector2_sub(*idq_ref, i_pred);
+        // 4. Calculate the cost function:
+        //tex:
+        // $$ J = (id_ref - id_pred)^2 + (iq_ref - iq_pred)^2 $$
+        ctl_vector2_t error_vec;
+        ctl_vector2_sub(&error_vec, idq_ref, &i_pred);
         ctrl_gt cost = ctl_vector2_mag_sq(&error_vec);
 
         // 5. Find the vector that minimizes the cost

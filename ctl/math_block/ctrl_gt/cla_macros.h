@@ -122,10 +122,11 @@ GMP_STATIC_INLINE float32_t saturation_static_inline(float32_t in, float32_t max
     (__cospuf32((A))) /**< @brief Computes cosine from a per-unit angle. Maps to CLA intrinsic `__cospuf32()`. */
 #define ctl_tan(A)                                                                                                     \
     (tanf(2.0f * PI * (A))) /**< @brief Computes tangent from a per-unit angle. Uses standard math lib. */
-#define ctl_atan2(Y, X) (__atan2((Y), (X))) /**< @brief Computes the arc-tangent. Maps to CLA intrinsic `__atan2()`. */
-#define ctl_exp(A)      (expf((A)))         /**< @brief Computes the base-e exponential. Uses standard math lib. */
-#define ctl_ln(A)       (logf((A)))         /**< @brief Computes the natural logarithm. Uses standard math lib. */
-#define ctl_sqrt(A)     (CLAsqrt((A)))      /**< @brief Computes the square root. Maps to `CLAsqrt()`. */
+#define ctl_atan2(Y, X)   (__atan2((Y), (X))) /**< @brief Computes the arc-tangent. Maps to CLA intrinsic `__atan2()`. */
+#define ctl_exp(A)        (expf((A)))         /**< @brief Computes the base-e exponential. Uses standard math lib. */
+#define ctl_ln(A)         (logf((A)))         /**< @brief Computes the natural logarithm. Uses standard math lib. */
+#define ctl_pow(B, Index) expf(logf(Index) * B) /**< @brief Compute the B^Index power of B */
+#define ctl_sqrt(A)       (CLAsqrt((A)))        /**< @brief Computes the square root. Maps to `CLAsqrt()`. */
 #define ctl_isqrt(A)                                                                                                   \
     (__eisqrtf32((A))) /**< @brief Computes the inverse square root. Maps to CLA intrinsic `__eisqrtf32()`. */
 

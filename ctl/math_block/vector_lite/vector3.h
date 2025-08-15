@@ -137,11 +137,11 @@ GMP_STATIC_INLINE ctrl_gt ctl_vector3_dot(ctl_vector3_t a, ctl_vector3_t b)
  * @param b The second vector.
  * @param result The resulting vector from the cross product.
  */
-GMP_STATIC_INLINE void ctl_vector3_cross(ctl_vector3_t* result, ctl_vector3_t a, ctl_vector3_t b)
+GMP_STATIC_INLINE void ctl_vector3_cross(ctl_vector3_t* result, ctl_vector3_t* a, ctl_vector3_t* b)
 {
-    result->dat[0] = ctl_mul(a->dat[1], b.dat[2]) - ctl_mul(a.dat[2], b.dat[1]);
-    result->dat[1] = ctl_mul(a->dat[2], b.dat[0]) - ctl_mul(a.dat[0], b.dat[2]);
-    result->dat[2] = ctl_mul(a->dat[0], b.dat[1]) - ctl_mul(a.dat[1], b.dat[0]);
+    result->dat[0] = ctl_mul(a->dat[1], b->dat[2]) - ctl_mul(a->dat[2], b->dat[1]);
+    result->dat[1] = ctl_mul(a->dat[2], b->dat[0]) - ctl_mul(a->dat[0], b->dat[2]);
+    result->dat[2] = ctl_mul(a->dat[0], b->dat[1]) - ctl_mul(a->dat[1], b->dat[0]);
 }
 
 /**

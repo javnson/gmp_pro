@@ -129,11 +129,11 @@ GMP_STATIC_INLINE void ctl_set_dtc_references(ctl_dtc_controller_t* dtc, ctrl_gt
  * @param[in]  i_beta   The measured beta-axis current.
  * @param[in]  udc      The measured DC bus voltage.
  */
-GMP_STATIC_INLINE void ctl_step_dtc(ctl_dtc_controller_t* dtc, ctrl_gt i_alpha, ctrl_gt i_beta, ctrl_gt udc)
+GMP_STATIC_INLINE void ctl_step_dtc(ctl_dtc_controller_t* dtc, ctrl_gt i_alpha, ctrl_gt i_beta, ctrl_gt _udc)
 {
     // 1. Determine the applied alpha-beta voltages from the PREVIOUS cycle's vector.
-    ctrl_gt u_alpha = V_ALPHA_BETA_TABLE[dtc->voltage_vector_index][0] * udc;
-    ctrl_gt u_beta = V_ALPHA_BETA_TABLE[dtc->voltage_vector_index][1] * udc;
+    ctrl_gt u_alpha = V_ALPHA_BETA_TABLE[dtc->voltage_vector_index][0] * _udc;
+    ctrl_gt u_beta = V_ALPHA_BETA_TABLE[dtc->voltage_vector_index][1] * _udc;
 
     // 2. Estimate Stator Flux (Voltage Model Integration).
     dtc->stator_flux.dat[0] += dtc->ts * (u_alpha - dtc->rs * i_alpha);

@@ -17,7 +17,6 @@
 
 #include <ctl/math_block/complex_lite/complex.h> // Depends on the complex number module
 #include <ctl/math_block/vector_lite/vector2.h>  // Depends on the 2D vector module
-#include <math.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -351,8 +350,8 @@ GMP_STATIC_INLINE void ctl_matrix2_eigenvectors_real(ctl_matrix2_t mat, ctl_vect
     }
 
     // Normalize the eigenvectors
-    *eigenvector1 = ctl_vector2_normalize(eigenvector1);
-    *eigenvector2 = ctl_vector2_normalize(eigenvector2);
+    ctl_vector2_normalize(eigenvector1, eigenvector1);
+    ctl_vector2_normalize(eigenvector2, eigenvector2);
 }
 
 /** @} */ // end of MC_MATRIX2 group

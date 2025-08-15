@@ -100,7 +100,7 @@ GMP_STATIC_INLINE void ctl_vector4_add(ctl_vector4_t* result, ctl_vector4_t* a, 
  * @param b The subtrahend vector.
  * @param[out] result The resulting vector (a - b).
  */
-GMP_STATIC_INLINE void ctl_vector4_sub(ctl_vector4_t* result, ctl_vector4_t a, ctl_vector4_t b)
+GMP_STATIC_INLINE void ctl_vector4_sub(ctl_vector4_t* result, ctl_vector4_t *a, ctl_vector4_t *b)
 {
     result->dat[0] = a->dat[0] - b->dat[0];
     result->dat[1] = a->dat[1] - b->dat[1];
@@ -114,7 +114,7 @@ GMP_STATIC_INLINE void ctl_vector4_sub(ctl_vector4_t* result, ctl_vector4_t a, c
  * @param scalar The scalar value.
  * @param[out] result The resulting scaled vector.
  */
-GMP_STATIC_INLINE ctl_vector4_t ctl_vector4_scale(ctl_vector4_t* result, ctl_vector4_t vec, ctrl_gt scalar)
+GMP_STATIC_INLINE ctl_vector4_t ctl_vector4_scale(ctl_vector4_t* result, ctl_vector4_t *vec, ctrl_gt scalar)
 {
     result->dat[0] = ctl_mul(vec->dat[0], scalar);
     result->dat[1] = ctl_mul(vec->dat[1], scalar);
@@ -133,8 +133,8 @@ GMP_STATIC_INLINE ctl_vector4_t ctl_vector4_scale(ctl_vector4_t* result, ctl_vec
  */
 GMP_STATIC_INLINE ctrl_gt ctl_vector4_dot(ctl_vector4_t* a, ctl_vector4_t* b)
 {
-    return ctl_mul(a->dat[0], b.dat[0]) + ctl_mul(a->dat[1], b->dat[1]) + ctl_mul(a->dat[2], b->dat[2]) +
-           ctl_mul(a->dat[3], b.dat[3]);
+    return ctl_mul(a->dat[0], b->dat[0]) + ctl_mul(a->dat[1], b->dat[1]) + ctl_mul(a->dat[2], b->dat[2]) +
+           ctl_mul(a->dat[3], b->dat[3]);
 }
 
 /**
@@ -145,8 +145,8 @@ GMP_STATIC_INLINE ctrl_gt ctl_vector4_dot(ctl_vector4_t* a, ctl_vector4_t* b)
  */
 GMP_STATIC_INLINE ctrl_gt ctl_vector4_mag_sq(ctl_vector4_t* vec)
 {
-    return ctl_mul(vec->dat[0], vec->dat[0]) + ctl_mul(vec->dat[1], vec->dat[1]) + ctl_mul(vec->dat[2], vec.dat[2]) +
-           ctl_mul(vec->dat[3], vec.dat[3]);
+    return ctl_mul(vec->dat[0], vec->dat[0]) + ctl_mul(vec->dat[1], vec->dat[1]) + ctl_mul(vec->dat[2], vec->dat[2]) +
+           ctl_mul(vec->dat[3], vec->dat[3]);
 }
 
 /**
@@ -169,10 +169,10 @@ GMP_STATIC_INLINE void ctl_vector4_normalize(ctl_vector4_t* result, ctl_vector4_
     ctrl_gt mag = ctl_vector4_mag(vec);
     if (mag > 1e-9) // Use a small epsilon to avoid division by zero
     {
-        result->dat[0] = ctl_div(vec.dat[0], mag);
-        result->dat[1] = ctl_div(vec.dat[1], mag);
-        result->dat[2] = ctl_div(vec.dat[2], mag);
-        result->dat[3] = ctl_div(vec.dat[3], mag);
+        result->dat[0] = ctl_div(vec->dat[0], mag);
+        result->dat[1] = ctl_div(vec->dat[1], mag);
+        result->dat[2] = ctl_div(vec->dat[2], mag);
+        result->dat[3] = ctl_div(vec->dat[3], mag);
     }
     else
         ctl_vector4_clear(result);

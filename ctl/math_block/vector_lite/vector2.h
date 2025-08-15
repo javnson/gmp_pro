@@ -77,7 +77,7 @@ GMP_STATIC_INLINE void ctl_vector2_add(ctl_vector2_t* result, ctl_vector2_t* a, 
  * @param b The subtrahend vector.
  * @param[out] result return the result of vector (a - b).
  */
-GMP_STATIC_INLINE void ctl_vector2_sub(ctl_vector2_t* result, ctl_vector2_t a, ctl_vector2_t b)
+GMP_STATIC_INLINE void ctl_vector2_sub(ctl_vector2_t* result, ctl_vector2_t *a, ctl_vector2_t *b)
 {
     result->dat[0] = a->dat[0] - b->dat[0];
     result->dat[1] = a->dat[1] - b->dat[1];
@@ -89,7 +89,7 @@ GMP_STATIC_INLINE void ctl_vector2_sub(ctl_vector2_t* result, ctl_vector2_t a, c
  * @param scalar The scalar value.
  * @param[out] result return the result of vector (scalar * vec).
  */
-GMP_STATIC_INLINE void ctl_vector2_scale(ctl_vector2_t* result, ctl_vector2_t vec, ctrl_gt scalar)
+GMP_STATIC_INLINE void ctl_vector2_scale(ctl_vector2_t* result, ctl_vector2_t *vec, ctrl_gt scalar)
 {
     result->dat[0] = ctl_mul(vec->dat[0], scalar);
     result->dat[1] = ctl_mul(vec->dat[1], scalar);
@@ -104,7 +104,7 @@ GMP_STATIC_INLINE void ctl_vector2_scale(ctl_vector2_t* result, ctl_vector2_t ve
  * @param b The second vector.
  * @return The dot product.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_vector2_dot(ctl_vector2_t a, ctl_vector2_t b)
+GMP_STATIC_INLINE ctrl_gt ctl_vector2_dot(ctl_vector2_t *a, ctl_vector2_t *b)
 {
     return ctl_mul(a->dat[0], b->dat[0]) + ctl_mul(a->dat[1], b->dat[1]);
 }

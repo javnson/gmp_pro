@@ -153,11 +153,12 @@ GMP_STATIC_INLINE double abs_static_inline(double A)
  */
 #define ctl_tan(A) tan(2.0 * PI * (A))
 
-#define ctl_atan2(Y, X) atan2((Y), (X))   /**< @brief Computes the arc-tangent of Y/X. */
-#define ctl_exp(A)      exp((A))          /**< @brief Computes the base-e exponential of A. */
-#define ctl_ln(A)       log((A))          /**< @brief Computes the natural logarithm of A. */
-#define ctl_sqrt(A)     sqrt((A))         /**< @brief Computes the square root of A. */
-#define ctl_isqrt(A)    (1.0 / sqrt((A))) /**< @brief Computes the inverse square root of A. */
+#define ctl_atan2(Y, X)   atan2((Y), (X))     /**< @brief Computes the arc-tangent of Y/X. */
+#define ctl_exp(A)        exp((A))            /**< @brief Computes the base-e exponential of A. */
+#define ctl_pow(B, Index) exp(log(Index) * B) /**< @brief Compute the B^Index power of B */
+#define ctl_ln(A)         log((A))            /**< @brief Computes the natural logarithm of A. */
+#define ctl_sqrt(A)       sqrt((A))           /**< @brief Computes the square root of A. */
+#define ctl_isqrt(A)      (1.0 / sqrt((A)))   /**< @brief Computes the inverse square root of A. */
 
 /** @} */ // end of MC_NONLINEAR_DOUBLE group
 

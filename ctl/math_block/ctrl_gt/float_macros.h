@@ -153,11 +153,12 @@ GMP_STATIC_INLINE float abs_static_inline(float A)
  */
 #define ctl_tan(A) tanf(CTL_PARAM_CONST_2PI*(A))
 
-#define ctl_atan2(Y, X) atan2f((Y), (X))    /**< @brief Computes the arc-tangent of Y/X. */
-#define ctl_exp(A)      expf((A))           /**< @brief Computes the base-e exponential of A. */
-#define ctl_ln(A)       logf((A))           /**< @brief Computes the natural logarithm of A. */
-#define ctl_sqrt(A)     sqrtf((A))          /**< @brief Computes the square root of A. */
-#define ctl_isqrt(A)    (1.0f / sqrtf((A))) /**< @brief Computes the inverse square root of A. */
+#define ctl_atan2(Y, X)   atan2f((Y), (X))      /**< @brief Computes the arc-tangent of Y/X. */
+#define ctl_exp(A)        expf((A))             /**< @brief Computes the base-e exponential of A. */
+#define ctl_pow(B, Index) expf(logf(Index) * B) /**< @brief Compute the B^Index power of B */
+#define ctl_ln(A)         logf((A))             /**< @brief Computes the natural logarithm of A. */
+#define ctl_sqrt(A)       sqrtf((A))            /**< @brief Computes the square root of A. */
+#define ctl_isqrt(A)      (1.0f / sqrtf((A)))   /**< @brief Computes the inverse square root of A. */
 
 /** @} */ // end of MC_NONLINEAR_FLOAT group
 
