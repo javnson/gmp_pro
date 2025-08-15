@@ -160,7 +160,7 @@ void ctl_init()
     ctl_set_three_phase_inv_freerun(&inv_ctrl);
     ctl_disable_three_phase_harm_ctrl(&inv_ctrl);
     ctl_enable_three_phase_negative_voltage_ctrl(&inv_ctrl);
-    ctl_enable_three_phase_feedforware(&inv_ctrl);
+    //ctl_enable_three_phase_feedforware(&inv_ctrl);
 
 #endif // BUILD_LEVEL
 

@@ -602,6 +602,15 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_three_phase_pll_error(inv_ctrl_t* inv)
     return inv->pll.e_error;
 }
 
+/**
+ * @brief Judge if the converter is inverter mode.ctl_is_three_phase_inverter_mode
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_is_three_phase_inverter_mode(inv_ctrl_t* inv)
+{
+    (void)inv;
+    return 1;
+}
+
 /** @brief Checks if the controller is in freerun mode. */
 GMP_STATIC_INLINE fast_gt ctl_is_three_phase_inverter_freerun_mode(inv_ctrl_t* inv)
 {
