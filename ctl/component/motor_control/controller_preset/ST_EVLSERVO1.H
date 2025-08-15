@@ -23,6 +23,7 @@ extern "C"
 
 /**
  * @defgroup hal_evlservo1 EVLSERVO1 Hardware Abstraction Layer
+ * @ingroup CTL_MC_PRESET
  * @brief Parameters for the ST EVLSERVO1 servo motor driver board.
  * @{
  */

@@ -29,6 +29,7 @@ extern "C"
 
 /**
  * @defgroup OFFLINE_ESTIMATION Offline Parameter Estimation
+ * 
  * @brief A module to automatically identify key PMSM parameters.
  * @{
  */

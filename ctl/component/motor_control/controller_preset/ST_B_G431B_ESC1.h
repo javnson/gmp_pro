@@ -23,6 +23,7 @@ extern "C"
 
 /**
  * @defgroup hal_b_g431b_esc1 B-G431B-ESC1 Discovery Hardware Abstraction Layer
+ * @ingroup CTL_MC_PRESET
  * @brief Parameters for the ST B-G431B-ESC1 motor driver board.
  * @details reference https://www.st.com/en/evaluation-tools/b-g431b-esc1.html
  * @{

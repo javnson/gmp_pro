@@ -14,6 +14,12 @@
  */
 
 /**
+ * @defgroup CTL_MC_OBSERVER Motor Controller Observer & Estimate
+ * @ingroup CTL_MC_LIB
+ * @brief Fundamental, reusable building blocks for motor control template library.
+ */
+
+/**
  * @defgroup CTL_MC_SUITE Motor Controller Suite
  * @ingroup CTL_MC_LIB
  * @brief Pre-configured controllers for motor control.
@@ -258,7 +264,7 @@
 
 /**
  * @defgroup ACM_POS_CALC ACM Position Calculator
- * @ingroup CTL_MC_COMPONENT
+ * @ingroup CTL_MC_OBSERVER
  * @brief A module for estimating rotor flux angle in an AC Induction Motor.
  * @details Implements the core calculations for indirect field-oriented control (IFOC).
  */
@@ -266,35 +272,35 @@
 
 /**
  * @defgroup IM_FLUX_OBSERVER Induction Motor Flux and Torque Observer
- * @ingroup CTL_MC_COMPONENT
+ * @ingroup CTL_MC_OBSERVER
  * @brief A module for estimating IM rotor flux and electromagnetic torque.
  */
 #include <ctl/component/motor_control/observer/acm.fo.h>
 
 /**
  * @defgroup ACM_SMO ACM Sliding Mode Observer
- * @ingroup CTL_MC_COMPONENT
+ * @ingroup CTL_MC_OBSERVER
  * @brief A sensorless module for estimating speed and flux angle of an ACM.
  */
 #include <ctl/component/motor_control/observer/acm.smo.h>
 
 /**
  * @defgroup BLDC_HALL_ESTIMATOR BLDC Hall Sensor Estimator
- * @ingroup CTL_MC_COMPONENT
+ * @ingroup CTL_MC_OBSERVER
  * @brief A module for calculating smooth speed and position from Hall sensors.
  */
 #include <ctl/component/motor_control/observer/bldc.hall.h>
 
 /**
  * @addtogroup PMSM_FLUX_OBSERVER PMSM Flux Observer
- * @ingroup CTL_MC_COMPONENT
+ * @ingroup CTL_MC_OBSERVER
  * @brief PMSM Observer of Flux.
  */
 #include <ctl/component/motor_control/observer/pmsm.fo.h>
 
 /**
  * @defgroup PMSM_HFI PMSM HFI Estimator
- * @ingroup CTL_MC_COMPONENT
+ * @ingroup CTL_MC_OBSERVER
  * @brief A module for sensorless position and speed estimation using HFI.
  * @details Implements the signal injection, demodulation, filtering, and PLL
  * required to track the rotor angle of a salient PMSM at low speeds.
@@ -303,12 +309,34 @@
 
 /**
  * @defgroup PMSM_SMO PMSM SMO Estimator
- * @ingroup CTL_MC_COMPONENT
+ * @ingroup CTL_MC_OBSERVER
  * @brief A module for sensorless position and speed estimation using SMO.
  * @details Implements the observer model, sliding control law, filtering, and PLL
  * required to track the rotor angle of a PMSM.
  */
 #include <ctl/component/motor_control/observer/pmsm.smo.h>
+
+//
+// ----------------- Motor Estimate -----------------
+//
+
+/**
+ * @defgroup ONLINE_RS_ESTIMATOR Online Rs Estimator (MRAS)
+ * @ingroup CTL_MC_OBSERVER
+ * @brief An online estimator for stator resistance based on the Model Reference Adaptive System principle.
+ * @details This module continuously updates the estimated stator resistance (Rs) to track changes
+ * due to temperature variations during motor operation. It uses the d-axis voltage equation
+ * as the reference model and a PI controller as the adaptation mechanism.
+ */
+#include <ctl/component/motor_control/param_est/pmsm.online_est_Rs.h>
+
+/**
+ * @defgroup OFFLINE_ESTIMATION Offline Parameter Estimation
+ * @ingroup CTL_MC_OBSERVER
+ * @brief A module to automatically identify key PMSM parameters.
+ */
+#include <ctl/component/motor_control/param_est/pmsm_offline_est.h>
+
 
 //
 // ----------------- PMSM Controller Suite -----------------

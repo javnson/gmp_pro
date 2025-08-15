@@ -23,6 +23,7 @@ extern "C"
 
 /**
  * @defgroup hal_steval_ipmng8q STEVAL-IPMNG8Q Hardware Abstraction Layer
+ * @ingroup CTL_MC_PRESET
  * @brief Parameters for the ST STEVAL-IPMNG8Q motor driver board.
  * @details reference https://www.st.com/en/evaluation-tools/steval-ipmng8q.html
  * @{

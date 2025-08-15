@@ -23,6 +23,7 @@ extern "C"
 
 /**
  * @defgroup hal_steval_ipm20b STEVAL-IPM20B Hardware Abstraction Layer
+ * @ingroup CTL_MC_PRESET
  * @brief Parameters for the ST STEVAL-IPM20B motor driver board.
  * @details reference https://www.st.com/en/evaluation-tools/steval-ipm20b.html
  * @{

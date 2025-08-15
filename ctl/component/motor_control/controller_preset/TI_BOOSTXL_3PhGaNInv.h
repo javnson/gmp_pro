@@ -23,6 +23,7 @@ extern "C"
 
 /**
  * @defgroup hal_boostxl_3phganinv BOOSTXL-3PhGaNInv Hardware Abstraction Layer
+ * @ingroup CTL_MC_PRESET
  * @brief Parameters for the TI BOOSTXL-3PhGaNInv motor driver board.
  * @details reference https://www.ti.com/tool/BOOSTXL-3PHGANINV
  * @{

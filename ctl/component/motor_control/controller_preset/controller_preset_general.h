@@ -8,16 +8,17 @@
 
 /**
  * @defgroup SENSOR_ENUMS Sensor Configuration Enumerations
+ * @ingroup CTL_MC_PRESET
  * @brief These enumerations are defined for documentation purposes only and are not compiled.
  * Use their integer values for configuration.
  * @{
  */
 
 /**
-     * @defgroup SENSOR_CAPABILITY General Sensing Capability
-     * @ingroup SENSOR_ENUMS
-     * @{
-     */
+ * @defgroup SENSOR_CAPABILITY General Sensing Capability
+ * @ingroup SENSOR_ENUMS
+ * @{
+ */
 enum
 {
     SENSOR_NONE = 0, ///< Indicates that this sensing capability is not available.
@@ -25,10 +26,10 @@ enum
 /** @} */
 
 /**
-     * @defgroup SENSOR_TYPES Current Sensing Types
-     * @ingroup SENSOR_ENUMS
-     * @{
-     */
+ * @defgroup SENSOR_TYPES Current Sensing Types
+ * @ingroup SENSOR_ENUMS
+ * @{
+ */
 enum
 {
     SENSOR_TYPE_SHUNT = 1,  ///< Shunt resistor-based sensing (requires resistance, gain, bias).
@@ -38,10 +39,10 @@ enum
 /** @} */
 
 /**
-     * @defgroup CS_TOPOLOGIES Current Sensing Topologies
-     * @ingroup SENSOR_ENUMS
-     * @{
-     */
+ * @defgroup CS_TOPOLOGIES Current Sensing Topologies
+ * @ingroup SENSOR_ENUMS
+ * @{
+ */
 enum
 {
     CS_TOPOLOGY_LOW_SIDE = 1,  ///< Low-side sensing on inverter legs.
@@ -51,10 +52,10 @@ enum
 /** @} */
 
 /**
-     * @defgroup VS_TYPES Voltage Sensing Types
-     * @ingroup SENSOR_ENUMS
-     * @{
-     */
+ * @defgroup VS_TYPES Voltage Sensing Types
+ * @ingroup SENSOR_ENUMS
+ * @{
+ */
 enum
 {
     VS_TYPE_PHASE_GND = 1, ///< "Phase voltage" relative to inverter ground (GND).
@@ -63,10 +64,10 @@ enum
 /** @} */
 
 /**
-     * @defgroup THERMAL_TYPES Thermal Sensing Types
-     * @ingroup SENSOR_ENUMS
-     * @{
-     */
+ * @defgroup THERMAL_TYPES Thermal Sensing Types
+ * @ingroup SENSOR_ENUMS
+ * @{
+ */
 enum
 {
     THERMAL_SENSOR_NTC = 1, ///< NTC thermistor (requires B-value, nominal resistance, etc.).

@@ -23,6 +23,7 @@ extern "C"
 
 /**
  * @defgroup hal_gmp_inn_lv3phgan GMP INN-LV3PHGAN Hardware Abstraction Layer
+ * @ingroup CTL_MC_PRESET
  * @brief Parameters for the GMP INN-LV3PHGAN motor driver board.
  * @{
  */

@@ -23,6 +23,7 @@ extern "C"
 
 /**
  * @defgroup hal_steval_ihm032v1 STEVAL-IHM032V1 Hardware Abstraction Layer
+ * @ingroup CTL_MC_PRESET
  * @brief Parameters for the ST STEVAL-IHM032V1 motor driver board.
  * @details https://www.st.com/en/evaluation-tools/steval-ihm032v1.html
  * @{

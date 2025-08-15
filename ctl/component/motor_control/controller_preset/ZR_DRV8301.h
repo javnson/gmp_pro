@@ -22,6 +22,7 @@ extern "C"
 
 /**
  * @defgroup hal_zonri_drv8301 ZonRi DRV8301 Module Hardware Abstraction Layer
+ * @ingroup CTL_MC_PRESET
  * @brief Parameters for the ZonRi DRV8301 motor driver module.
  * @{
  */

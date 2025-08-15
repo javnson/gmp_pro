@@ -23,6 +23,7 @@ extern "C"
 
 /**
  * @defgroup hal_boostxl_drv8323rx BOOSTXL-DRV8323Rx Hardware Abstraction Layer
+ * @ingroup CTL_MC_PRESET
  * @brief Parameters for the TI BOOSTXL-DRV8323Rx motor driver board.
  * @details reference https://www.ti.com.cn/tool/cn/BOOSTXL-DRV8323RS
  * @{

@@ -23,6 +23,7 @@ extern "C"
 
 /**
  * @defgroup hal_x_nucleo_ihm08m1 X-NUCLEO-IHM08M1 Hardware Abstraction Layer
+ * @ingroup CTL_MC_PRESET
  * @brief Parameters for the ST X-NUCLEO-IHM08M1 motor driver board.
  * @details reference https://www.st.com.cn/zh/ecosystems/x-nucleo-ihm08m1.html
  * @{

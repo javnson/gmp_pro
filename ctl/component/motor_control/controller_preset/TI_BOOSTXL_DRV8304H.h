@@ -23,6 +23,7 @@ extern "C"
 
 /**
  * @defgroup hal_boostxl_drv8304h BOOSTXL-DRV8304H Hardware Abstraction Layer
+ * @ingroup CTL_MC_PRESET
  * @brief Parameters for the TI BOOSTXL-DRV8304H motor driver board.
  * @details reference: https://www.ti.com.cn/tool/cn/BOOSTXL-DRV8304H
  * @{
