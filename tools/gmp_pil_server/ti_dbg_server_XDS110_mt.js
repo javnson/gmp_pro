@@ -31,9 +31,13 @@ importPackage(Packages.java.lang);
 //   WR <REG Nmae> <content> -> WR <REG Nmae> <content>
 // + Read Flash
 //   RF <address> <length>
+//   RF <address> <length> -> RF <address> <content>
+// + Reset chiP
+//   RST -> RST
+//
 
 // --- USER CONFIGURATION ---
-var PORT = 19990;
+var PORT = 9990;
 var HOST = "127.0.0.1";
 
 // [IMPORTANT!] You must fill this in with the exact, full session name
