@@ -48,7 +48,7 @@ static const float SIX_STEP_ANGLES_DEG[6] = {30.0f, 90.0f, 150.0f, 210.0f, 270.0
 /**
  * @brief Rs和编码器偏置辨识的主循环处理函数.
  */
-static void est_loop_handle_rs(ctl_offline_est_t* est)
+void est_loop_handle_rs(ctl_offline_est_t* est)
 {
     ctl_per_unit_consultant_t* pu = est->pu_consultant;
 
@@ -269,7 +269,7 @@ void est_loop_handle_l(ctl_offline_est_t* est)
 /**
  * @brief [方法一] 使用旋转HFI法辨识电感.
  */
-static void est_loop_handle_l_rotating_hfi(ctl_offline_est_t* est)
+void est_loop_handle_l_rotating_hfi(ctl_offline_est_t* est)
 {
     switch (est->sub_state)
     {
@@ -391,7 +391,7 @@ static void est_loop_handle_l_rotating_hfi(ctl_offline_est_t* est)
  * 2. 核心的RMS值计算和阻抗/电感计算逻辑被注释掉了.
  * 在完成上述修复前, 请勿使用此方法.
  */
-static void est_loop_handle_l_dcbias_hfi(ctl_offline_est_t* est)
+void est_loop_handle_l_dcbias_hfi(ctl_offline_est_t* est)
 {
     // 由于此方法未完成，保留原代码结构但添加警告
     // 实际项目中应实现IIR滤波器和相关计算
@@ -402,7 +402,7 @@ static void est_loop_handle_l_dcbias_hfi(ctl_offline_est_t* est)
 
 // 定义磁链测试的速度点 (以额定频率的百分比表示)
 #define FLUX_TEST_POINTS (4)
-static const float FLUX_TEST_SPEED_PU[FLUX_TEST_POINTS] = {0.25f, 0.5f, 0.75f, 1.0f};
+const float FLUX_TEST_SPEED_PU[FLUX_TEST_POINTS] = {0.25f, 0.5f, 0.75f, 1.0f};
 
 /**
  * @brief 磁链辨识的主循环处理函数.
@@ -417,19 +417,23 @@ void est_loop_handle_flux(ctl_offline_est_t* est)
 
         // 1. FIX: 配置电流控制器为Id=0, Iq=一个小的正值以产生转矩驱动电机旋转.
         //    原代码Iq=0, 电机没有转矩, 将无法跟随速度曲线旋转.
-        parameter_gt iq_ref = ctl_consult_Ipeak_to_phy(pu, est->flux_test_iq_pu);
+        parameter_gt iq_ref = ctl_consult_Ipeak_to_phy(pu, est->psif_est.flux_test_iq_pu);
         ctl_set_current_ref(&est->current_ctrl, 0.0f, iq_ref);
         ctl_enable_current_controller(&est->current_ctrl);
 
         // 2. 配置滤波器
-        ctl_init_lp_filter(&est->measure_flt[0], est->isr_freq_hz, 20.0f); // Uq
-        ctl_init_lp_filter(&est->measure_flt[1], est->isr_freq_hz, 20.0f); // Omega_e
+        ctl_init_lp_filter(&est->measure_flt[0], est->fs, 20.0f); // Uq
+        ctl_init_lp_filter(&est->measure_flt[1], est->fs, 20.0f); // Omega_e
 
         // 3. 初始化变量
         est->step_index = 0; // 用于遍历速度点
-        // 复用变量用于最小二乘法: y = Uq, x = Omega_e
-        est->V_sum = 0; // 用作 Σ(Uq*Omega_e)
-        est->I_sum = 0; // 用作 Σ(Omega_e^2)
+        // 复用变量用于最小二乘法:
+        //tex:
+        // $$ y = U_q,  x = \omega_e $$
+        // $$ \text{V_sum} = \Sigma{U_q \omega _e} $$
+        // $$ \text{I_sum} = \Sigma{\omega_e^2} $$
+        est->V_sum = 0;
+        est->I_sum = 0;
         est->sample_count = 0;
 
         // 4. 进入执行状态, 并立即配置第一个速度点
@@ -440,7 +444,7 @@ void est_loop_handle_flux(ctl_offline_est_t* est)
         parameter_gt target_speed_pu = FLUX_TEST_SPEED_PU[est->step_index];
         parameter_gt target_freq_hz = target_speed_pu * ctl_consult_base_frequency(pu);
         ctl_init_const_slope_f_controller(&est->speed_profile_gen, target_freq_hz, target_freq_hz / FLUX_RAMP_UP_TIME_S,
-                                          est->isr_freq_hz);
+                                          est->fs);
         break;
     }
 
@@ -502,7 +506,7 @@ void est_loop_handle_flux(ctl_offline_est_t* est)
             parameter_gt target_speed_pu = FLUX_TEST_SPEED_PU[est->step_index];
             parameter_gt target_freq_hz = target_speed_pu * ctl_consult_base_frequency(pu);
             ctl_init_const_slope_f_controller(&est->speed_profile_gen, target_freq_hz,
-                                              target_freq_hz / FLUX_RAMP_UP_TIME_S, est->isr_freq_hz);
+                                              target_freq_hz / FLUX_RAMP_UP_TIME_S, est->fs);
         }
         break;
     }
@@ -528,7 +532,7 @@ void est_loop_handle_flux(ctl_offline_est_t* est)
     case OFFLINE_SUB_STATE_DONE: {
 
         // 2. 切换到下一个主状态
-        if (est->flag_enable_inertia)
+        if (est->inertia_est.flag_enable)
         {
             est->main_state = OFFLINE_MAIN_STATE_J;
         }
@@ -569,14 +573,19 @@ void est_loop_handle_j(ctl_offline_est_t* est)
         ctl_enable_current_controller(&est->current_ctrl);
 
         // 3. 配置滤波器
-        ctl_init_lp_filter(&est->measure_flt[0], est->isr_freq_hz, 50.0f); // Speed
-        ctl_init_lp_filter(&est->measure_flt[1], est->isr_freq_hz, 50.0f); // Iq
+        ctl_init_lp_filter(&est->measure_flt[0], est->fs, 50.0f); // Speed
+        ctl_init_lp_filter(&est->measure_flt[1], est->fs, 50.0f); // Iq
 
         // 4. 初始化变量 (用于线性回归: y=speed, x=time)
-        est->sum_x = 0;  // Σt
-        est->sum_y = 0;  // Σω
-        est->sum_xy = 0; // Σ(t*ω)
-        est->sum_x2 = 0; // Σ(t^2)
+        //tex:
+        // $$ \text{sum_x} = \Sigma t$$
+        // $$ \text{sum_y} = \Sigma \omega $$
+        // $$ \text{sum_xy} = \Sigma (t\omega) $$
+        // $$ \text{sum_x^2} = \Sigma (t^2) $$
+        est->sum_x = 0;
+        est->sum_y = 0;
+        est->sum_xy = 0;
+        est->sum_x2 = 0;
         est->avg_torque = 0;
         est->sample_count = 0;
 
@@ -597,7 +606,7 @@ void est_loop_handle_j(ctl_offline_est_t* est)
         if (!gmp_base_is_delay_elapsed(est->task_start_time, J_STABILIZE_TIME_MS + J_TORQUE_STEP_TIME_MS))
         {
             // 设置目标Iq以产生转矩
-            parameter_gt iq_ref = ctl_consult_Ipeak_to_phy(pu, est->j_test_iq_pu);
+            parameter_gt iq_ref = ctl_consult_Ipeak_to_phy(pu, est->inertia_est.test_iq_pu);
             ctl_set_current_ref(&est->current_ctrl, 0.0f, iq_ref);
 
             // 获取并滤波测量值
@@ -633,7 +642,8 @@ void est_loop_handle_j(ctl_offline_est_t* est)
             est->avg_torque /= est->sample_count;
 
             // 2. 计算角加速度 (线性回归斜率: alpha)
-            // alpha = (N*Σ(tω) - Σt*Σω) / (N*Σ(t^2) - (Σt)^2)
+            //tex:
+            // $$ \alpha = \frac{N\Sigma(t\omega) - \Sigma t \Sigma \omega}{N\Sigma(t^2) - (\Sigma t)^2} $$
             parameter_gt N = est->sample_count;
             parameter_gt numerator = N * est->sum_xy - est->sum_x * est->sum_y;
             parameter_gt denominator = N * est->sum_x2 - est->sum_x * est->sum_x;

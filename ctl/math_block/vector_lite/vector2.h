@@ -123,9 +123,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_vector2_dot(ctl_vector2_t a, ctl_vector2_t b)
  * @param vec The input vector.
  * @return The squared magnitude of the vector.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_vector2_mag_sq(ctl_vector2_t vec)
+GMP_STATIC_INLINE ctrl_gt ctl_vector2_mag_sq(ctl_vector2_t* vec)
 {
-    return vec.dat[0] * vec.dat[0] + vec.dat[1] * vec.dat[1];
+    return ctl_mul(vec->dat[0], vec->dat[0]) + ctl_mul(vec->dat[1], vec->dat[1]);
 }
 
 /**
@@ -133,7 +133,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_vector2_mag_sq(ctl_vector2_t vec)
  * @param vec The input vector.
  * @return The magnitude of the vector.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_vector2_mag(ctl_vector2_t vec)
+GMP_STATIC_INLINE ctrl_gt ctl_vector2_mag(ctl_vector2_t* vec)
 {
     return ctl_sqrt(ctl_vector2_mag_sq(vec));
 }
@@ -143,14 +143,14 @@ GMP_STATIC_INLINE ctrl_gt ctl_vector2_mag(ctl_vector2_t vec)
  * @param vec The vector to be normalized.
  * @return The normalized (unit) vector. Returns a zero vector if the magnitude is zero.
  */
-GMP_STATIC_INLINE ctl_vector2_t ctl_vector2_normalize(ctl_vector2_t vec)
+GMP_STATIC_INLINE ctl_vector2_t ctl_vector2_normalize(ctl_vector2_t *vec)
 {
     ctl_vector2_t result = {{0, 0}};
     ctrl_gt mag = ctl_vector2_mag(vec);
     if (mag > 1e-9) // Use a small epsilon to avoid division by zero
     {
-        result.dat[0] = vec.dat[0] / mag;
-        result.dat[1] = vec.dat[1] / mag;
+        result.dat[0] = vec->dat[0] / mag;
+        result.dat[1] = vec->dat[1] / mag;
     }
     return result;
 }

@@ -138,7 +138,7 @@ GMP_STATIC_INLINE void ctl_step_acm_mpc(ctl_acm_mpc_controller_t* mpc, const ctl
 
     // 1. Transform current reference from d-q frame to stationary alpha-beta frame
     // The d-q frame is aligned with the estimated rotor flux from the previous step.
-    ctl_vector2_t flux_phasor = ctl_vector2_normalize(mpc->psi_r_est);
+    ctl_vector2_t flux_phasor = ctl_vector2_normalize(&mpc->psi_r_est);
     ctl_ct_ipark2(idq_ref, &flux_phasor, &is_ab_ref);
 
     // 2. Iterate through all 8 possible voltage vectors
@@ -160,8 +160,8 @@ GMP_STATIC_INLINE void ctl_step_acm_mpc(ctl_acm_mpc_controller_t* mpc, const ctl
 
         // 4. Calculate cost function
         ctl_vector2_t current_error = ctl_vector2_sub(is_ab_ref, is_pred);
-        ctrl_gt flux_error = mpc->flux_ref_sq - ctl_vector2_mag_sq(psi_r_pred);
-        ctrl_gt cost = ctl_vector2_mag_sq(current_error) + mpc->lambda_flux * (flux_error * flux_error);
+        ctrl_gt flux_error = mpc->flux_ref_sq - ctl_vector2_mag_sq(&psi_r_pred);
+        ctrl_gt cost = ctl_vector2_mag_sq(&current_error) + mpc->lambda_flux * (flux_error * flux_error);
 
         // 5. Find the vector that minimizes the cost
         if (cost < min_cost)

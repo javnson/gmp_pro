@@ -146,7 +146,7 @@ GMP_STATIC_INLINE void ctl_step_mpc(ctl_mpc_controller_t* mpc, const ctl_vector2
 
         // 4. Calculate the cost function: J = (id_ref - id_pred)^2 + (iq_ref - iq_pred)^2
         ctl_vector2_t error_vec = ctl_vector2_sub(*idq_ref, i_pred);
-        ctrl_gt cost = ctl_vector2_mag_sq(error_vec);
+        ctrl_gt cost = ctl_vector2_mag_sq(&error_vec);
 
         // 5. Find the vector that minimizes the cost
         if (cost < min_cost)

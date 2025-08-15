@@ -351,8 +351,8 @@ GMP_STATIC_INLINE void ctl_matrix2_eigenvectors_real(ctl_matrix2_t mat, ctl_vect
     }
 
     // Normalize the eigenvectors
-    *eigenvector1 = ctl_vector2_normalize(*eigenvector1);
-    *eigenvector2 = ctl_vector2_normalize(*eigenvector2);
+    *eigenvector1 = ctl_vector2_normalize(eigenvector1);
+    *eigenvector2 = ctl_vector2_normalize(eigenvector2);
 }
 
 /** @} */ // end of MC_MATRIX2 group

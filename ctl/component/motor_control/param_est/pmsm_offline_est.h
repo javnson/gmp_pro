@@ -293,6 +293,11 @@ GMP_STATIC_INLINE void ctl_config_offline_est_Rs(
     est->rs_est.idling_time = idling_time;
     est->rs_est.stabilize_time = stabilize_time;
     est->rs_est.measure_time = measure_time;
+    
+    if (enable_idling == 1)
+        est->rs_est.flag_idling_cmpt == 0;
+    else
+        est->rs_est.flag_idling_cmpt == 1;
 
     for (int i = 0; i < 6; ++i)
     {
@@ -414,8 +419,8 @@ GMP_STATIC_INLINE void ctl_step_offline_est(ctl_offline_est_t* est)
                         ctrl_gt i_beta = est->current_ctrl.iab0.dat[1];
 
                         // 计算高频电流响应的幅值，对幅值进行低通滤波，得到其包络
-                        ctrl_gt i_hfi_mag =
-                            ctl_step_lowpass_filter(&est->measure_flt[3], ctl_vector2_mag_sq(est->current_ctrl.iab0));
+                        ctrl_gt i_hfi_mag = ctl_step_lowpass_filter(
+                            &est->measure_flt[3], ctl_vector2_mag_sq((ctl_vector2_t*)&est->current_ctrl.iab0));
 
                         // 先等待一段时间，等到稳定（控制器收敛、滤波器收敛）之后再读取电流的最大最小值，只是在一段时间内执行
                         if (gmp_base_get_diff_system_tick(est->task_start_time) > est->ldq_est.stabilize_time)
@@ -501,35 +506,35 @@ GMP_STATIC_INLINE void ctl_step_offline_est(ctl_offline_est_t* est)
  */
 GMP_STATIC_INLINE fast_gt ctl_loop_offline_est(ctl_offline_est_t* est)
 {
-    if (est->flag_start_estimation && est->main_state == OFFLINE_MAIN_STATE_IDLE)
+    if (est->flag_start && est->main_state == OFFLINE_MAIN_STATE_IDLE)
     {
         // FIX: 根据使能标志位决定起始状态
-        if (est->flag_enable_rs)
+        if (est->rs_est.flag_enable)
         {
             est->main_state = OFFLINE_MAIN_STATE_RS;
         }
-        else if (est->flag_enable_ldq)
+        else if (est->ldq_est.flag_enable)
         {
             est->main_state = OFFLINE_MAIN_STATE_L;
         }
-        else if (est->flag_enable_psif)
+        else if (est->psif_est.flag_enable)
         {
             est->main_state = OFFLINE_MAIN_STATE_FLUX;
         }
-        else if (est->flag_enable_inertia)
+        else if (est->inertia_est.flag_enable)
         {
             est->main_state = OFFLINE_MAIN_STATE_J;
         }
 
         est->sub_state = OFFLINE_SUB_STATE_INIT;
-        est->flag_start_estimation = 0;
+        est->flag_start = 0;
     }
 
     // 需要为每一个if条件增加一个else，当没有使能时状态机切换到下一个状态。
     switch (est->main_state)
     {
     case OFFLINE_MAIN_STATE_RS:
-        if (est->flag_enable_rs)
+        if (est->rs_est.flag_enable)
             est_loop_handle_rs(est);
         else
         {
@@ -538,7 +543,7 @@ GMP_STATIC_INLINE fast_gt ctl_loop_offline_est(ctl_offline_est_t* est)
         }
         break;
     case OFFLINE_MAIN_STATE_L:
-        if (est->flag_enable_ldq)
+        if (est->ldq_est.flag_enable)
             est_loop_handle_l(est);
         else
         {
@@ -547,7 +552,7 @@ GMP_STATIC_INLINE fast_gt ctl_loop_offline_est(ctl_offline_est_t* est)
         }
         break;
     case OFFLINE_MAIN_STATE_FLUX:
-        if (est->flag_enable_psif)
+        if (est->psif_est.flag_enable)
             est_loop_handle_flux(est);
         else
         {
@@ -556,7 +561,7 @@ GMP_STATIC_INLINE fast_gt ctl_loop_offline_est(ctl_offline_est_t* est)
         }
         break;
     case OFFLINE_MAIN_STATE_J:
-        if (est->flag_enable_inertia)
+        if (est->inertia_est.flag_enable)
             est_loop_handle_j(est);
         else
         {
@@ -565,10 +570,10 @@ GMP_STATIC_INLINE fast_gt ctl_loop_offline_est(ctl_offline_est_t* est)
         }
         break;
     case OFFLINE_MAIN_STATE_DONE:
-        est->flag_estimation_done = 1;
+        est->flag_complete = 1;
         break;
     case OFFLINE_MAIN_STATE_ERROR:
-        est->flag_error_detected = 1;
+        est->flag_error = 1;
         // 遇到错误时可以停止辨识,并保持当前的状态为ERROR
         break;
     case OFFLINE_MAIN_STATE_IDLE:
@@ -578,7 +583,7 @@ GMP_STATIC_INLINE fast_gt ctl_loop_offline_est(ctl_offline_est_t* est)
 
     // ERROR 这里需要增加过流保护模块，当电机电流过大需要进入错误模式。
 
-    return est->flag_estimation_done;
+    return est->flag_complete;
 }
 
 /** 
