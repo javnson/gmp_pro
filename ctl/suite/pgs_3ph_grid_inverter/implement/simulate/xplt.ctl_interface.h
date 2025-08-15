@@ -63,9 +63,9 @@ void ctl_output_callback(void)
     //
     // PWM channel
     //
-    simulink_tx_buffer.pwm_cmp[0] = ctl_calc_pwm_channel(&inv_pwm_out[0], inv_ctrl.pwm_out_pu.dat[0]);
-    simulink_tx_buffer.pwm_cmp[1] = ctl_calc_pwm_channel(&inv_pwm_out[1], inv_ctrl.pwm_out_pu.dat[1]);
-    simulink_tx_buffer.pwm_cmp[2] = ctl_calc_pwm_channel(&inv_pwm_out[2], inv_ctrl.pwm_out_pu.dat[2]);
+    simulink_tx_buffer.pwm_cmp[0] = ctl_step_pwm_channel(&inv_pwm_out[0], inv_ctrl.pwm_out_pu.dat[0]);
+    simulink_tx_buffer.pwm_cmp[1] = ctl_step_pwm_channel(&inv_pwm_out[1], inv_ctrl.pwm_out_pu.dat[1]);
+    simulink_tx_buffer.pwm_cmp[2] = ctl_step_pwm_channel(&inv_pwm_out[2], inv_ctrl.pwm_out_pu.dat[2]);
 
     //
     // monitor

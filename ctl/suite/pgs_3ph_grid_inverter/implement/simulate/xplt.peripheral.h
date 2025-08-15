@@ -27,7 +27,7 @@ extern "C"
 #include <ctl/component/digital_power/basic/std_sil_dp_interface.h>
 
 // Three phase DC/AC
-#include <ctl/component/digital_power/topology_preset/three_phase_dc_ac.h>
+#include <ctl/component/digital_power/three_phase/three_phase_dc_ac.h>
 
 // buffer for rx & tx
 extern gmp_pc_simulink_rx_buffer_t simulink_rx_buffer;

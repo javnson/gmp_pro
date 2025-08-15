@@ -116,11 +116,11 @@ void setup_peripheral(void)
     //
     // output channel
     //
-    ctl_init_pwm_tri_channel(&pwm_out, 0, CTRL_PWM_CMP_MAX)
+    ctl_init_pwm_tri_channel(&pwm_out, 0, CTRL_PWM_CMP_MAX);
 
-    ctl_init_pwm_channel(&inv_pwm_out[0], 0, CONTROLLER_PWM_CMP_MAX);
-    ctl_init_pwm_channel(&inv_pwm_out[1], 0, CONTROLLER_PWM_CMP_MAX);
-    ctl_init_pwm_channel(&inv_pwm_out[2], 0, CONTROLLER_PWM_CMP_MAX);
+    ctl_init_pwm_channel(&inv_pwm_out[0], 0, CTRL_PWM_CMP_MAX);
+    ctl_init_pwm_channel(&inv_pwm_out[1], 0, CTRL_PWM_CMP_MAX);
+    ctl_init_pwm_channel(&inv_pwm_out[2], 0, CTRL_PWM_CMP_MAX);
 
     //
     // attach

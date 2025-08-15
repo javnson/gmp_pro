@@ -20,7 +20,7 @@
 
 #include <xplt.peripheral.h>
 
-#include <ctl/component/digital_power/topology_preset/three_phase_dc_ac.h>
+#include <ctl/component/digital_power/three_phase/three_phase_dc_ac.h>
 
 inv_ctrl_t inv_ctrl;
 
