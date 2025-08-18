@@ -20,7 +20,7 @@
 
 #include <xplt.peripheral.h>
 
-#include <ctl/component/digital_power/topology_preset/single_phase_dc_ac.h>
+#include <ctl/component/digital_power/single_phase/single_phase_dc_ac.h>
 
 #include<ctl/component/digital_power/basic/buck.h>
 
@@ -140,7 +140,7 @@ void ctl_init()
         // Current PID controller parameters
         0.7f, 10.0f, 0,
         // valid uin range
-        0.1, 1,
+        0.1f, 1,
         // Controller frequency, Hz
         1000,
         CONTROLLER_FREQUENCY);
@@ -219,7 +219,8 @@ void ctl_init()
 
     
     // buck controller settings
-    ctl_set_buck_voltage_loop_mode(&buck_ctrl);
+    
+    ctl_buck_ctrl_voltage_mode(&buck_ctrl);
    // ctl_set_buck_uo(&buck_ctrl, float2ctrl(0.2f));
     
     ctl_disable_output();

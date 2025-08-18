@@ -6,7 +6,7 @@
 #include <ctl/component/motor_control/motor_preset/GBM2804H_100T.h>
 
 // invoke motor controller parameters
-#include <ctl/component/motor_control/controller_preset/TI_3PH_GAN_INV.h>
+#include <ctl/component/motor_control/controller_preset/TI_BOOSTXL_3PhGaNInv.h>
 
 // Controller Frequency
 #define CONTROLLER_FREQUENCY (10000)

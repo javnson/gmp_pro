@@ -39,9 +39,6 @@
     <ClCompile Include="gmp_src\ctl_component_interface.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="gmp_src\ctl_component_lebesgue.c">
-      <Filter>GMP Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="gmp_src\ctl_component_protection.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
@@ -100,6 +97,33 @@
       <Filter>GMP Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\component\dsa\src\dsa_trigger.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_component_basic.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_dp_mppt.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_dp_topology_inv.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_acm_sensored_ctrl.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_pmsm_ctrl.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_pmsm_ctrl_hfi.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_pmsm_ctrl_mtpa.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_pmsm_ctrl_smo.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_pmsm_offline_est.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -41,7 +41,7 @@ void setup_peripheral(void)
         // pointer to ADC raw data
         &simulink_rx_buffer.adc_result[SINV_ADC_ID_IDC],
         // ADC Channel settings.
-        ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_BIAS),
         // iqn is valid only when ctrl_gt is a fixed point type.
         CTRL_ADC_RESOLUTION, 24);
@@ -52,7 +52,7 @@ void setup_peripheral(void)
         // pointer to ADC raw data
         &simulink_rx_buffer.adc_result[SINV_ADC_ID_VDC],
         // ADC Channel settings.
-        ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_GAIN, CTRL_VOLTAGE_BASE),
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_GAIN, CTRL_VOLTAGE_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_BIAS),
         // iqn is valid only when ctrl_gt is a fixed point type.
         CTRL_ADC_RESOLUTION, 24);
@@ -63,7 +63,7 @@ void setup_peripheral(void)
         // pointer to ADC raw data
         &simulink_rx_buffer.adc_result[SINV_ADC_ID_IL],
         // ADC Channel settings.
-        ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_BIAS),
         // iqn is valid only when ctrl_gt is a fixed point type.
         CTRL_ADC_RESOLUTION, 24);
@@ -74,7 +74,7 @@ void setup_peripheral(void)
         // pointer to ADC raw data
         &simulink_rx_buffer.adc_result[SINV_ADC_ID_IC],
         // ADC Channel settings.
-        ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_BIAS),
         // iqn is valid only when ctrl_gt is a fixed point type.
         CTRL_ADC_RESOLUTION, 24);
@@ -85,7 +85,7 @@ void setup_peripheral(void)
         // pointer to ADC raw data
         &simulink_rx_buffer.adc_result[SINV_ADC_ID_IG],
         // ADC Channel settings.
-        ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_BIAS),
         // iqn is valid only when ctrl_gt is a fixed point type.
         CTRL_ADC_RESOLUTION, 24);
@@ -96,7 +96,7 @@ void setup_peripheral(void)
         // pointer to ADC raw data
         &simulink_rx_buffer.adc_result[SINV_ADC_ID_VG],
         // ADC Channel settings.
-        ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_GAIN, CTRL_VOLTAGE_BASE),
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_GAIN, CTRL_VOLTAGE_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_BIAS),
         // iqn is valid only when ctrl_gt is a fixed point type.
         CTRL_ADC_RESOLUTION, 24);
@@ -107,7 +107,7 @@ void setup_peripheral(void)
         // pointer to ADC raw data
         &simulink_rx_buffer.adc_result[SINV_ADC_ID_BUCK_IL],
         // ADC Channel settings.
-        ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_BIAS),
         // iqn is valid only when ctrl_gt is a fixed point type.
         CTRL_ADC_RESOLUTION, 24);
@@ -118,7 +118,7 @@ void setup_peripheral(void)
         // pointer to ADC raw data
             &simulink_rx_buffer.adc_result[SINV_ADC_ID_BUCK_VIN],
         // ADC Channel settings.
-        ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_GAIN, CTRL_VOLTAGE_BASE),
+            ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_GAIN, CTRL_VOLTAGE_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_BIAS),
         // iqn is valid only when ctrl_gt is a fixed point type.
         CTRL_ADC_RESOLUTION, 24);
@@ -129,7 +129,7 @@ void setup_peripheral(void)
         // pointer to ADC raw data
         &simulink_rx_buffer.adc_result[SINV_ADC_ID_BUCK_VOUT],
         // ADC Channel settings.
-        ctl_gain_calc_via_gain(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_GAIN, CTRL_VOLTAGE_BASE),
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_GAIN, CTRL_VOLTAGE_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_BIAS),
         // iqn is valid only when ctrl_gt is a fixed point type.
         CTRL_ADC_RESOLUTION, 24);
