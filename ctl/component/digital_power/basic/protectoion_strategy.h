@@ -224,7 +224,8 @@ GMP_STATIC_INLINE fast_gt ctl_step_foldback_protection(std_foldback_protection_t
     {
         // Foldback region: linearly decrease the current limit as voltage drops.
         // Equation of the line: I_limit = slope * V_out + I_short_circuit
-        obj->current_limit_output = ctl_mac(obj->slope, obj->uout, obj->current_short_circuit);
+        obj->current_limit_output = ctl_mul(obj->slope, obj->uout);
+        obj->current_limit_output += obj->current_short_circuit;
     }
     else
     {
@@ -245,7 +246,7 @@ GMP_STATIC_INLINE fast_gt ctl_step_foldback_protection(std_foldback_protection_t
     }
 
     // The primary output of this function is the dynamic limit itself.
-    return obj->current_limit_output;
+    return obj->flag_overcurrent;
 }
 
 /**

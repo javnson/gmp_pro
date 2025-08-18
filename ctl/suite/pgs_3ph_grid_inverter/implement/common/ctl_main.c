@@ -77,8 +77,8 @@ void ctl_init()
     init.harm_ctrl_kr_7 = 5;
     init.harm_ctrl_cut_freq_7 = 1;
 
-    init.zero_ctrl_kp = 0.001;
-    init.zero_ctrl_Ti = 0.01;
+    init.zero_ctrl_kp = 0.001f;
+    init.zero_ctrl_Ti = 0.01f;
     init.zero_ctrl_kr_3 = 1;
     init.zero_ctrl_cut_freq_3 = 1;
     init.zero_ctrl_kr_9 = 1;
@@ -156,7 +156,7 @@ void ctl_init()
 #elif BUILD_LEVEL == 7
     // inverter, voltage loop, current loop, ff, negative voltage control
     ctl_set_three_phase_inv_voltage_mode(&inv_ctrl);
-    ctl_set_three_phase_inv_voltage(&inv_ctrl, 0.12);
+    ctl_set_three_phase_inv_voltage(&inv_ctrl, 0.12f);
     ctl_set_three_phase_inv_freerun(&inv_ctrl);
     ctl_disable_three_phase_harm_ctrl(&inv_ctrl);
     ctl_enable_three_phase_negative_voltage_ctrl(&inv_ctrl);

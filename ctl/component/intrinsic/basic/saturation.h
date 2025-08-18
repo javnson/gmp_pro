@@ -120,6 +120,42 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_bipolar_saturation(ctl_bipolar_saturation_t* 
     return obj->out;
 }
 
+/*---------------------------------------------------------------------------*/
+/* atan soft Saturation                                                      */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief Data structure for a atan soft saturation block.
+ * @details This block defined a soft saturation block.
+ * @f[ out = gain\times tan^{-1} (sf \times x) @f]
+ * output will clamp to [-gain, gain].
+ */
+typedef struct _tag_atan_saturation_t
+{
+    ctrl_gt out;  //!< The last calculated output.
+    ctrl_gt gain; //!< The output gain, output limit (magnitude). Should be positive.
+    ctrl_gt sf;   //!< The input scale factor
+} ctl_atan_saturation_t;
+
+/**
+ * @brief initialize a atan soft saturation module.
+ * @param[out] sat handle of saturation
+ * @param[in] gain gain of saturatioin output.
+ * @param[in] scale_factor scale factor of input
+ */
+void ctl_init_tanh_saturation(ctl_atan_saturation_t* sat, ctrl_gt gain, ctrl_gt scale_factor);
+
+/**
+ * @brief step the soft atan saturation module.
+ * @param[in] sat handle of saturation.
+ * @param[in] input input to saturation.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_step_tanh_saturation(ctl_atan_saturation_t* sat, ctrl_gt input)
+{
+    sat->out = ctl_mul(sat->gain, ctl_atan2(ctl_mul(input, sat->sf), CTL_CTRL_CONST_1));
+    return sat->out;
+}
+
 /**
  * @}
  */ // end of saturation_blocks group
