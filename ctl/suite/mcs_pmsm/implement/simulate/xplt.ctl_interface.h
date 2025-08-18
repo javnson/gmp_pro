@@ -63,29 +63,42 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     // Monitor Port, 8 channels
 #if BUILD_LEVEL == 1
 
+    // angle set
     simulink_tx_buffer.monitor_port[0] = slope_f.rg.current;
     simulink_tx_buffer.monitor_port[1] = slope_f.current_freq;
+
+    // current feedback
+    simulink_tx_buffer.monitor_port[2] = pmsm_ctrl.idq0.dat[phase_d];
+    simulink_tx_buffer.monitor_port[3] = pmsm_ctrl.idq0.dat[phase_q];
+
+    // voltage feedback
+    simulink_tx_buffer.monitor_port[4] = pmsm_ctrl.mtr_interface.iabc->value.dat[phase_A];
+    simulink_tx_buffer.monitor_port[5] = pmsm_ctrl.mtr_interface.iabc->value.dat[phase_B];
+
+    // encoder feedback
+    simulink_tx_buffer.monitor_port[6] = pmsm_ctrl.mtr_interface.position->elec_position;
+    simulink_tx_buffer.monitor_port[7] = pmsm_ctrl.mtr_interface.velocity->speed;
 
 #endif // BUILD_LEVEL
 
     //simulink_tx_buffer.monitor_port[0] = pmsm_ctrl.idq_set.dat[phase_q];
     //simulink_tx_buffer.monitor_port[1] = pmsm_ctrl.idq0.dat[phase_q];
 
-#if BUILD_LEVEL <= 3
-    simulink_tx_buffer.monitor_port[2] = pmsm_ctrl.idq_set.dat[phase_d];
-    simulink_tx_buffer.monitor_port[3] = pmsm_ctrl.idq0.dat[phase_d];
-#elif BUILD_LEVEL == 4
-    simulink_tx_buffer.monitor_port[2] = pmsm_ctrl.speed_set;
-    simulink_tx_buffer.monitor_port[3] = pmsm_ctrl.mtr_interface.velocity->speed;
-#endif
+//#if BUILD_LEVEL <= 3
+//    simulink_tx_buffer.monitor_port[2] = pmsm_ctrl.idq_set.dat[phase_d];
+//    simulink_tx_buffer.monitor_port[3] = pmsm_ctrl.idq0.dat[phase_d];
+//#elif BUILD_LEVEL == 4
+//    simulink_tx_buffer.monitor_port[2] = pmsm_ctrl.speed_set;
+//    simulink_tx_buffer.monitor_port[3] = pmsm_ctrl.mtr_interface.velocity->speed;
+//#endif
 
-    simulink_tx_buffer.monitor_port[4] = pmsm_ctrl.vdq_set.dat[phase_d];
-    simulink_tx_buffer.monitor_port[5] = pmsm_ctrl.vdq_set.dat[phase_q];
-
-    simulink_tx_buffer.monitor_port[6] = pmsm_ctrl.mtr_interface.velocity->speed;
-    //simulink_tx_buffer.monitor_port[7] = pmsm_ctrl.mtr_interface.position->elec_position;
-    simulink_tx_buffer.monitor_port[7] = slope_f.current_freq;
-    //simulink_tx_buffer.monitor_port[7] = simulink_rx_buffer.encoder;
+//    simulink_tx_buffer.monitor_port[4] = pmsm_ctrl.vdq_set.dat[phase_d];
+//    simulink_tx_buffer.monitor_port[5] = pmsm_ctrl.vdq_set.dat[phase_q];
+//
+//    simulink_tx_buffer.monitor_port[6] = pmsm_ctrl.mtr_interface.velocity->speed;
+//    //simulink_tx_buffer.monitor_port[7] = pmsm_ctrl.mtr_interface.position->elec_position;
+//    simulink_tx_buffer.monitor_port[7] = slope_f.current_freq;
+//    //simulink_tx_buffer.monitor_port[7] = simulink_rx_buffer.encoder;
 }
 
 // Enable Motor Controller
