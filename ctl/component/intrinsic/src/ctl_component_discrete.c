@@ -309,7 +309,6 @@ parameter_gt ctl_get_biquad_gain(ctl_biquad_filter_t* obj, parameter_gt fs, para
 #include <ctl/component/intrinsic/discrete/fir_filter.h>
 #include <stdlib.h> // Required for malloc and free
 
-
 fast_gt ctl_init_fir_filter(ctl_fir_filter_t* fir, uint32_t order, const ctrl_gt* coeffs)
 {
     fir->order = order;
@@ -572,19 +571,19 @@ void ctl_init_sine_generator(ctl_sine_generator_t* sg,
     sg->ph_cos_delta = float2ctrl(cos(step_angle));
 }
 
-void ctl_init_ramp_generator(ctl_ramp_generator_t* rg, ctrl_gt slope, parameter_gt amp_pos, parameter_gt amp_neg)
+void ctl_init_ramp_generator(ctl_ramp_generator_t* _rg, ctrl_gt slope, parameter_gt amp_pos, parameter_gt amp_neg)
 {
-    rg->current = float2ctrl(0);
+    _rg->current = float2ctrl(0);
 
-    rg->maximum = float2ctrl(amp_pos);
-    rg->minimum = float2ctrl(amp_neg);
+    _rg->maximum = float2ctrl(amp_pos);
+    _rg->minimum = float2ctrl(amp_neg);
 
-    rg->slope = slope;
+    _rg->slope = slope;
 }
 
 void ctl_init_ramp_generator_via_freq(
     // pointer to ramp generator object
-    ctl_ramp_generator_t* rg,
+    ctl_ramp_generator_t* _rg,
     // isr frequency, unit Hz
     parameter_gt isr_freq,
     // target frequency, unit Hz
@@ -592,16 +591,16 @@ void ctl_init_ramp_generator_via_freq(
     // ramp range
     parameter_gt amp_pos, parameter_gt amp_neg)
 {
-    rg->current = float2ctrl(0);
+    _rg->current = float2ctrl(0);
 
-    rg->maximum = float2ctrl(amp_pos);
-    rg->minimum = float2ctrl(amp_neg);
+    _rg->maximum = float2ctrl(amp_pos);
+    _rg->minimum = float2ctrl(amp_neg);
 
     float a = isr_freq / target_freq;
     float b = amp_pos - amp_neg;
 
-    // rg->slope = float2ctrl((amp_pos - amp_neg) / (isr_freq / target_freq));
-    rg->slope = float2ctrl(b / a);
+    // _rg->slope = float2ctrl((amp_pos - amp_neg) / (isr_freq / target_freq));
+    _rg->slope = float2ctrl(b / a);
 }
 
 void ctl_init_square_wave_generator(ctl_square_wave_generator_t* sq, parameter_gt fs, parameter_gt target_freq,

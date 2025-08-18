@@ -31,29 +31,26 @@ pos_autoturn_encoder_t pos_enc;
 // speed encoder
 spd_calculator_t spd_enc;
 
+// Open loop angle generator
 #if defined OPENLOOP_CONST_FREQUENCY
-
 // PMSM const frequency controller
-ctl_const_f_controller const_f;
-
-#else // OPENLOOP_CONST_FREQUENCY
-
+ctl_const_f_controller rg;
+#else  // OPENLOOP_CONST_FREQUENCY
 // PMSM const frequency slope controller
-ctl_slope_f_controller slope_f;
-
+ctl_slope_f_controller rg;
 #endif // OPENLOOP_CONST_FREQUENCY
-
-// adc calibrator flags
-adc_bias_calibrator_t adc_calibrator;
-fast_gt flag_enable_adc_calibrator = 0;
-fast_gt index_adc_calibrator = 0;
 
 // enable motor running
 #if defined SPECIFY_PC_ENVIRONMENT
 volatile fast_gt flag_system_enable = 1;
-#else // SPECIFY_PC_ENVIRONMENT
+#else  // SPECIFY_PC_ENVIRONMENT
 volatile fast_gt flag_system_enable = 0;
 #endif // SPECIFY_PC_ENVIRONMENT
+
+// adc calibrator flags
+adc_bias_calibrator_t adc_calibrator;
+fast_gt flag_enable_adc_calibrator = 1;
+fast_gt index_adc_calibrator = 0;
 
 // enable motor auto identify
 fast_gt flag_enable_motor_identify = 0;
@@ -63,7 +60,6 @@ void ctl_init()
 {
     // Step 1 Security
     ctl_disable_output();
-    //flag_system_enable = 0;
 
     // Step 2 Init utilities
 
@@ -86,10 +82,10 @@ void ctl_init()
         CTRL_FS, 5, MOTOR_PARAM_MAX_SPEED, 1, 150);
 
 #if defined OPENLOOP_CONST_FREQUENCY
-    ctl_init_const_f_controller(&const_f, 20, CTRL_FS);
+    ctl_init_const_f_controller(&rg, 20, CTRL_FS);
 #else  // OPENLOOP_CONST_FREQUENCY
     // frequency target 20 Hz, frequency slope 40 Hz/s
-    ctl_init_const_slope_f_controller(&slope_f, 20.0f, 40.0f, CTRL_FS);
+    ctl_init_const_slope_f_controller(&rg, 20.0f, 40.0f, CTRL_FS);
 #endif // OPENLOOP_CONST_FREQUENCY
 
     // attach a speed encoder object with motor controller
@@ -132,9 +128,9 @@ void ctl_init()
 
 #if (BUILD_LEVEL == 1)
 #if defined OPENLOOP_CONST_FREQUENCY
-    ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &const_f.enc);
+    ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &rg.enc);
 #else  // OPENLOOP_CONST_FREQUENCY
-    ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &slope_f.enc);
+    ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &rg.enc);
 #endif // OPENLOOP_CONST_FREQUENCY
 
     ctl_pmsm_ctrl_voltage_mode(&pmsm_ctrl);
@@ -142,9 +138,9 @@ void ctl_init()
 
 #elif (BUILD_LEVEL == 2)
 #if defined OPENLOOP_CONST_FREQUENCY
-    ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &const_f.enc);
+    ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &rg.enc);
 #else  // OPENLOOP_CONST_FREQUENCY
-    ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &slope_f.enc);
+    ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &rg.enc);
 #endif // OPENLOOP_CONST_FREQUENCY
     ctl_pmsm_ctrl_current_mode(&pmsm_ctrl);
     ctl_set_pmsm_ctrl_idq_ff(&pmsm_ctrl, float2ctrl(0.1), float2ctrl(0.1));
@@ -160,28 +156,13 @@ void ctl_init()
     ctl_set_pmsm_ctrl_speed(&pmsm_ctrl, float2ctrl(0.25));
 #endif // BUILD_LEVEL
 
-//    // if in simulation mode, enable system
-//#if !defined SPECIFY_PC_ENVIRONMENT
-//    // stop here and wait for user start the motor controller
-//    while (flag_enable_system == 0)
-//    {
-//    }
-//
-//#endif // SPECIFY_PC_ENVIRONMENT
-
-    //ctl_enable_output();
-
-    //// Debug mode online the controller
-    //ctl_enable_pmsm_ctrl(&pmsm_ctrl);
-
 #if defined SPECIFY_ENABLE_ADC_CALIBRATE
-    // Enable ADC calibrate
-    //flag_enable_adc_calibrator = 1;
-    index_adc_calibrator = 0;
-
-    // Select ADC calibrate
-    ctl_disable_pmsm_ctrl_output(&pmsm_ctrl);
-    ctl_enable_adc_calibrator(&adc_calibrator);
+    if (flag_enable_adc_calibrator)
+    {
+        // Select ADC calibrate
+        ctl_disable_pmsm_ctrl_output(&pmsm_ctrl);
+        ctl_enable_adc_calibrator(&adc_calibrator);
+    }
 #endif // SPECIFY_ENABLE_ADC_CALIBRATE
 }
 
@@ -210,7 +191,7 @@ void ctl_mainloop(void)
         }
 
         // a delay of 100ms
-        if ((started_flag == 0) && ((gmp_base_get_system_tick() - tick_bias) > 100) && (startup_flag == 0))
+        if ((started_flag == 0) && ((gmp_base_get_system_tick() - tick_bias) > 150) && (startup_flag == 0))
         {
             startup_flag = 1;
         }
@@ -218,7 +199,7 @@ void ctl_mainloop(void)
         // judge if PLL is close to target
         if ((started_flag == 0) && (startup_flag == 1) && ctl_ready_mainloop())
         {
-            ctl_clear_slope_f(&slope_f);
+            ctl_clear_slope_f(&rg);
 
             ctl_clear_pmsm_ctrl(&pmsm_ctrl);
             ctl_enable_pmsm_ctrl(&pmsm_ctrl);
@@ -251,45 +232,46 @@ fast_gt ctl_adc_calibrate(void)
     //
     if (flag_enable_adc_calibrator)
     {
-        if (pmsm_ctrl.flag_enable_controller)
+        //if (pmsm_ctrl.flag_enable_controller)
+        //{
+        if (ctl_is_adc_calibrator_cmpt(&adc_calibrator) && ctl_is_adc_calibrator_result_valid(&adc_calibrator))
+        {
+            // set_adc_bias_via_channel(index_adc_calibrator, ctl_get_adc_calibrator_result(&adc_calibrator));
 
-            if (ctl_is_adc_calibrator_cmpt(&adc_calibrator) && ctl_is_adc_calibrator_result_valid(&adc_calibrator))
+            if (index_adc_calibrator == 3) // dc bus calibrate
             {
-                // set_adc_bias_via_channel(index_adc_calibrator, ctl_get_adc_calibrator_result(&adc_calibrator));
+                idc.bias = idc.bias + ctl_div(ctl_get_adc_calibrator_result(&adc_calibrator), idc.gain);
 
-                if (index_adc_calibrator == 3) // dc bus calibrate
-                {
-                    idc.bias = idc.bias + ctl_div(ctl_get_adc_calibrator_result(&adc_calibrator), idc.gain);
+                flag_enable_adc_calibrator = 0;
 
-                    flag_enable_adc_calibrator = 0;
+                // clear PMSM controller
+                ctl_clear_pmsm_ctrl(&pmsm_ctrl);
 
-                    // clear PMSM controller
-                    ctl_clear_pmsm_ctrl(&pmsm_ctrl);
-
-                    // enable pmsm controller
-                    ctl_enable_pmsm_ctrl_output(&pmsm_ctrl);
-                }
-                // index_adc_calibrator == 2 ~ 0, for Iabc
-                else
-                {
-                    // iabc get result
-                    iabc.bias[index_adc_calibrator] =
-                        iabc.bias[index_adc_calibrator] +
-                        ctl_div(ctl_get_adc_calibrator_result(&adc_calibrator), iabc.gain[index_adc_calibrator]);
-
-                    // move to next position
-                    index_adc_calibrator += 1;
-
-                    // clear calibrator
-                    ctl_clear_adc_calibrator(&adc_calibrator);
-
-                    // enable calibrator to next position
-                    ctl_enable_adc_calibrator(&adc_calibrator);
-                }
-
-                if (index_adc_calibrator > MTR_ADC_IDC)
-                    flag_enable_adc_calibrator = 0;
+                // enable pmsm controller
+                ctl_enable_pmsm_ctrl_output(&pmsm_ctrl);
             }
+            // index_adc_calibrator == 2 ~ 0, for Iabc
+            else
+            {
+                // iabc get result
+                iabc.bias[index_adc_calibrator] =
+                    iabc.bias[index_adc_calibrator] +
+                    ctl_div(ctl_get_adc_calibrator_result(&adc_calibrator), iabc.gain[index_adc_calibrator]);
+
+                // move to next position
+                index_adc_calibrator += 1;
+
+                // clear calibrator
+                ctl_clear_adc_calibrator(&adc_calibrator);
+
+                // enable calibrator to next position
+                ctl_enable_adc_calibrator(&adc_calibrator);
+            }
+
+            if (index_adc_calibrator > MTR_ADC_IDC)
+                flag_enable_adc_calibrator = 0;
+        }
+        //        }
 
         // ADC calibrate is not complete
         return 0;

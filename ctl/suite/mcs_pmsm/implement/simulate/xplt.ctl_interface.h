@@ -64,8 +64,8 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
 #if BUILD_LEVEL == 1
 
     // angle set
-    simulink_tx_buffer.monitor_port[0] = slope_f.rg.current;
-    simulink_tx_buffer.monitor_port[1] = slope_f.current_freq;
+    simulink_tx_buffer.monitor_port[0] = rg.rg.current;
+    simulink_tx_buffer.monitor_port[1] = rg.current_freq;
 
     // current feedback
     simulink_tx_buffer.monitor_port[2] = pmsm_ctrl.idq0.dat[phase_d];
