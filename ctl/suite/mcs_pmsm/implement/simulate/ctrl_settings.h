@@ -8,6 +8,9 @@
 // invoke motor controller parameters
 #include <ctl/component/motor_control/controller_preset/TI_BOOSTXL_3PhGaNInv.h>
 
+// Startup Delay, ms
+#define CTRL_STARTUP_DELAY (100)
+
 // Controller Frequency
 #define CTRL_FS (10000)
 

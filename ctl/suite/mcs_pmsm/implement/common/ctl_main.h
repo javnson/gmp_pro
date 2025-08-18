@@ -41,15 +41,11 @@ extern spd_calculator_t spd_enc;
 // extern pmsm_fm_t pmsm;
 
 #if defined OPENLOOP_CONST_FREQUENCY
-
 // PMSM const frequency controller
 extern ctl_const_f_controller rg;
-
 #else // OPENLOOP_CONST_FREQUENCY
-
 // PMSM const frequency slope controller
 extern ctl_slope_f_controller rg;
-
 #endif // OPENLOOP_CONST_FREQUENCY
 
 #ifdef PMSM_CTRL_USING_QEP_ENCODER
