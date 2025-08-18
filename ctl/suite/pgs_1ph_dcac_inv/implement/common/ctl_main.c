@@ -20,7 +20,7 @@
 
 #include <xplt.peripheral.h>
 
-#include <ctl/component/digital_power/topology_preset/single_phase_dc_ac.h>
+#include <ctl/component/digital_power/single_phase/single_phase_dc_ac.h>
 
 sinv_ctrl_t sinv_ctrl;
 

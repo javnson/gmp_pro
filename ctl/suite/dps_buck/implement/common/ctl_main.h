@@ -9,15 +9,6 @@
  *
  */
 
-// const F & VF controller
-#include <ctl/component/motor_control/basic/vf_generator.h>
-
-// speed encoder
-#include <ctl\component\motor_control\basic\encoder.h>
-
-// motor controller
-#include <ctl/suite/mcs_pmsm/pmsm_ctrl.h>
-
 #include <ctl/component/interface/pwm_channel.h>
 
 #include <ctl/component/interface/adc_channel.h>

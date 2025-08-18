@@ -1,49 +1,77 @@
+/**
+ * @file dsa_trigger.h
+ * @author Javnson (javnson@zju.edu.cn)
+ * @brief Provides a basic data acquisition trigger for logging data based on a signal event.
 
+ * @version 0.1
+ * @date 2024-10-02
+ *
+ * @copyright Copyright GMP(c) 2024
+ *
+ */
 
-#ifndef _FILE_TRIGGER_MEMORY_H_
-#define _FILE_TRIGGER_MEMORY_H_
+#ifndef _FILE_DSA_TRIGGER_H_
+#define _FILE_DSA_TRIGGER_H_
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif // __cplusplus
 
-// usage demo:
+/**
+ * @defgroup DSA_TRIGGER Data Acquisition Trigger
+ * @brief A module for event-based data logging.
+ * @details This module implements a simple trigger mechanism that starts recording data
+ * for a fixed duration when a monitored signal crosses zero from negative to positive.
+ * It is useful for capturing transient events for debugging or analysis.
+ * 
+ * @code
+ * // Usage Demo:
+ * #define MONITOR_BUFFER_SIZE 400
+ * ctrl_gt monitor_buffer[MONITOR_BUFFER_SIZE];
+ *
+ * basic_trigger_t trigger;
+ *
+ * // Initialization
+ * memset(monitor_buffer, 0, MONITOR_BUFFER_SIZE * sizeof(ctrl_gt));
+ * dsa_init_basic_trigger(&trigger, MONITOR_BUFFER_SIZE);
+ *
+ * // In main ISR function
+ * if (dsa_step_trigger(&trigger, channel1_data))
+ * {
+ * monitor_buffer[dsa_get_trigger_index(&trigger)] = channel1_data;
+ * // other channels can be logged here...
+ * // monitor_buffer2[dsa_get_trigger_index(&trigger)] = channel2_data;
+ * }
+ * @endcode
+ */
 
-// #define MONITOR_BUFFER_SIZE 400
-// ctrl_gt monitor_buffer[MONITOR_BUFFER_SIZE];
+/*---------------------------------------------------------------------------*/
+/* Basic Data Acquisition Trigger                                            */
+/*---------------------------------------------------------------------------*/
 
-// basic_trigger_t trigger;
+/**
+ * @addtogroup DSA_TRIGGER
+ * @{
+ */
 
-// memset(monitor_buffer, MONITOR_BUFFER_SIZE * sizeof(ctrl_gt), 0);
-// dsa_init_basic_trigger(&trigger, MONITOR_BUFFER_SIZE);
-
-//// in main ISR function
-// if (dsa_step_trigger(&trigger, channel1_data))
-//{
-//     monitor_buffer[dsa_get_trigger_index(&trigger)] = channel1_data;
-
-//    // other channel here
-//    monitor_buffer2[dsa_get_trigger_index(&trigger)] = channel2_data;
-//}
-
+/**
+ * @brief Data structure for the basic data acquisition trigger.
+ */
 typedef struct _tag_basic_trigger
 {
-    // target index
-    addr32_gt target_index;
-
-    // total memory size
-    addr32_gt cell_size;
-
-    // last information
-    ctrl_gt last_data;
-
-    // flag if this object has triggered.
-    fast_gt flag_triggered;
+    addr32_gt target_index; /**< The current index for writing into the data buffer. */
+    addr32_gt cell_size;    /**< The total size of the data buffer. */
+    ctrl_gt last_data;      /**< The value of the monitored signal from the previous step. */
+    fast_gt flag_triggered; /**< A flag indicating if the trigger is currently active (recording). */
 } basic_trigger_t;
 
-GMP_STATIC_INLINE
-void dsa_init_basic_trigger(basic_trigger_t *trigger, addr32_gt cell_size)
+/**
+ * @brief Initializes the basic trigger object.
+ * @param trigger Pointer to the `basic_trigger_t` object.
+ * @param cell_size The size of the buffer that will be used for logging.
+ */
+GMP_STATIC_INLINE void dsa_init_basic_trigger(basic_trigger_t* trigger, addr32_gt cell_size)
 {
     trigger->target_index = 0;
     trigger->cell_size = cell_size;
@@ -51,30 +79,34 @@ void dsa_init_basic_trigger(basic_trigger_t *trigger, addr32_gt cell_size)
     trigger->flag_triggered = 0;
 }
 
-// return if current position is triggered.
-GMP_STATIC_INLINE
-fast_gt dsa_step_trigger(basic_trigger_t *trigger, ctrl_gt monitor)
+/**
+ * @brief Executes one step of the trigger logic.
+ * @details This function should be called in every control cycle. It checks for the
+ * trigger condition (negative-to-positive zero crossing) and manages the recording process.
+ * @param trigger Pointer to the `basic_trigger_t` object.
+ * @param monitor The current value of the signal to be monitored.
+ * @return 1 if the trigger is active (i.e., data should be recorded), 0 otherwise.
+ */
+GMP_STATIC_INLINE fast_gt dsa_step_trigger(basic_trigger_t* trigger, ctrl_gt monitor)
 {
-    // judge if has triggered
+    // If already triggered, continue recording.
     if (trigger->flag_triggered)
     {
         trigger->target_index += 1;
 
-        // if a series of trigger sequence is complete.
+        // Check if the recording sequence is complete.
         if (trigger->target_index > trigger->cell_size)
         {
-            // clear trigger flag
+            // Reset the trigger
             trigger->flag_triggered = 0;
             trigger->target_index = 0;
-
-            // restart last data
             trigger->last_data = monitor;
         }
     }
-    // judge if should trigger
+    // If not triggered, check for the trigger condition.
     else
     {
-        // trigger condition
+        // Trigger condition: negative-to-positive zero crossing.
         if (trigger->last_data < 0 && monitor >= 0)
         {
             trigger->flag_triggered = 1;
@@ -86,16 +118,30 @@ fast_gt dsa_step_trigger(basic_trigger_t *trigger, ctrl_gt monitor)
     return trigger->flag_triggered;
 }
 
-GMP_STATIC_INLINE
-addr32_gt dsa_get_trigger_index(basic_trigger_t *trigger)
+/**
+ * @brief Gets the current array index for data logging.
+ * @warning This function has a side effect: it may reset the `target_index` if it
+ * has overrun the buffer size. This is generally not good practice for a 'get' function.
+ * @param trigger Pointer to the `basic_trigger_t` object.
+ * @return The 0-based index for the logging buffer.
+ */
+GMP_STATIC_INLINE addr32_gt dsa_get_trigger_index(basic_trigger_t* trigger)
 {
     if (trigger->target_index > trigger->cell_size)
+    {
         trigger->target_index = 1;
+    }
     else if (trigger->target_index <= 0)
+    {
         return 0;
+    }
 
     return trigger->target_index - 1;
 }
+
+/**
+ * @}
+ */
 
 // typedef struct tag_trigger_memory_2ch
 //{
@@ -150,7 +196,7 @@ addr32_gt dsa_get_trigger_index(basic_trigger_t *trigger)
 // void dsa_step_trigger_memory_target(
 //     // log object
 //     trigger_memory_log_t *log)
-//{
+// {
 //     if (log->flag_trigger || (log->last_target1 < 0 && (*log->monitor_target_ch1) > 0))
 //     {
 //         log->flag_trigger = 1;
@@ -175,4 +221,4 @@ addr32_gt dsa_get_trigger_index(basic_trigger_t *trigger)
 }
 #endif // __cplusplus
 
-#endif // _FILE_TRIGGER_MEMORY_H_
+#endif // _FILE_DSA_TRIGGER_H_

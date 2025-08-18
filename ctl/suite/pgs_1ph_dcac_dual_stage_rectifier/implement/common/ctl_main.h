@@ -15,18 +15,15 @@
 // speed encoder
 #include <ctl\component\motor_control\basic\encoder.h>
 
-// motor controller
-#include <ctl/suite/mcs_pmsm/pmsm_ctrl.h>
-
 #include <ctl/component/interface/pwm_channel.h>
 
 #include <ctl/component/interface/adc_channel.h>
 
 #include <xplt.peripheral.h>
 
-#include <ctl/component/intrinsic/discrete/stimulate.h>
+#include <ctl/component/intrinsic/discrete/signal_generator.h>
 
-#include <ctl/component/digital_power/topology_preset/single_phase_dc_ac.h>
+#include <ctl/component/digital_power/single_phase/single_phase_dc_ac.h>
 
 #include <ctl/component/digital_power/basic/buck.h>
 
@@ -54,7 +51,7 @@ void ctl_dispatch(void)
 {
    // ctl_set_sinv_current_ref(&sinv_ctrl, ctl_step_pid_ser(&current_outer, ig_rms_ref - sinv_ctrl.ig_rms));
     // Step the sinv controller
-    ctl_set_buck_uo(&buck_ctrl, V_set);
+    ctl_set_buck_ctrl_voltage(&buck_ctrl, V_set);
    
     ctl_step_sinv(&sinv_ctrl);
     ctl_step_buck_ctrl(&buck_ctrl);

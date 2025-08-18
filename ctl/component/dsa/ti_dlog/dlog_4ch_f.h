@@ -31,50 +31,67 @@
 //  $
 // #############################################################################
 
-//----------------------------------------------------------------------------------
-//	FILE:			dlog_4ch_f.h
-//
-//	Description:header file for data logging module
-//
-//	Version: 		1.0
-//
-//  Target:  		TMS320F28377D,
-//
-//----------------------------------------------------------------------------------
-//  Copyright Texas Instruments 锟� 2004-2017
-//----------------------------------------------------------------------------------
-//  Revision History:
-//----------------------------------------------------------------------------------
-//  Date	  | Description / Status
-//----------------------------------------------------------------------------------
-// Feb 2017  - Example project for FLC Library Usage
-//----------------------------------------------------------------------------------
+/**
+ * @file dlog_4ch_f.h
+ * @brief Header file for a 4-channel data logging module (floating-point).
+ * @details This module provides functionality to log data from four different
+ * sources into separate buffers based on a trigger condition. The trigger is
+ * a rising edge on the first input channel crossing a specified threshold.
+ * The data logging can be down-sampled using a prescaler.
+ * @version 1.0
+ * @author Texas Instruments
+ *
+ */
 
 #ifndef DLOG_4CH_F_H
 #define DLOG_4CH_F_H
 
-//*********** Structure Definition ********//
+#ifdef __cplusplus
+extern "C"
+{
+#endif // __cplusplus
+
+/**
+ * @defgroup DATA_LOGGER_4CH 4-Channel Data Logger
+ * @brief A module for triggered, multi-channel data acquisition.
+ */
+
+/*---------------------------------------------------------------------------*/
+/* 4-Channel Data Logger                                                     */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @addtogroup DATA_LOGGER_4CH
+ * @{
+ */
+
+/**
+ * @brief Data structure for the 4-channel data logger.
+ */
 typedef struct
 {
-    float32_t *input_ptr1;
-    float32_t *input_ptr2;
-    float32_t *input_ptr3;
-    float32_t *input_ptr4;
-    float32_t *output_ptr1;
-    float32_t *output_ptr2;
-    float32_t *output_ptr3;
-    float32_t *output_ptr4;
-    float32_t prev_value;
-    float32_t trig_value;
-    int16_t status;
-    int16_t pre_scalar;
-    int16_t skip_count;
-    int16_t size;
-    int16_t count;
+    float32_t* input_ptr1;  /**< Pointer to the first data source (also the trigger source). */
+    float32_t* input_ptr2;  /**< Pointer to the second data source. */
+    float32_t* input_ptr3;  /**< Pointer to the third data source. */
+    float32_t* input_ptr4;  /**< Pointer to the fourth data source. */
+    float32_t* output_ptr1; /**< Pointer to the output buffer for channel 1. */
+    float32_t* output_ptr2; /**< Pointer to the output buffer for channel 2. */
+    float32_t* output_ptr3; /**< Pointer to the output buffer for channel 3. */
+    float32_t* output_ptr4; /**< Pointer to the output buffer for channel 4. */
+    float32_t prev_value;   /**< The previous value of the trigger source (input_ptr1). */
+    float32_t trig_value;   /**< The threshold value for the rising-edge trigger. */
+    int16_t status;         /**< The current state of the logger (0: Idle, 1: Armed/Waiting for trigger, 2: Logging). */
+    int16_t pre_scalar;     /**< The prescaler for data logging (logs one sample every `pre_scalar` calls). */
+    int16_t skip_count;     /**< Internal counter for the prescaler. */
+    int16_t size;           /**< The size of the output buffers. */
+    int16_t count;          /**< The current index for writing into the output buffers. */
 } DLOG_4CH_F;
 
-//*********** Function Declarations *******//
-static inline void DLOG_4CH_F_init(DLOG_4CH_F *v)
+/**
+ * @brief Initializes the 4-channel data logger object.
+ * @param v Pointer to the `DLOG_4CH_F` object.
+ */
+static inline void DLOG_4CH_F_init(DLOG_4CH_F* v)
 {
     v->input_ptr1 = 0;
     v->input_ptr2 = 0;
@@ -91,23 +108,28 @@ static inline void DLOG_4CH_F_init(DLOG_4CH_F *v)
     v->skip_count = 0;
     v->size = 0;
     v->count = 0;
-};
+}
 
-static inline void DLOG_4CH_F_FUNC(DLOG_4CH_F *v)
+/**
+ * @brief Executes one step of the data logging logic (inline function version).
+ * @details This function checks for the trigger condition and logs data if the trigger is active.
+ * It should be called periodically at the desired sampling rate.
+ * @param v Pointer to the `DLOG_4CH_F` object.
+ */
+static inline void DLOG_4CH_F_FUNC(DLOG_4CH_F* v)
 {
     switch (v->status)
     {
-    case 1: /* wait for trigger*/
+    case 1: // Wait for trigger
         if (((*v->input_ptr1) > v->trig_value) && (v->prev_value < v->trig_value))
         {
-            /* rising edge detected start logging data*/
+            // Rising edge detected, start logging data.
             v->status = 2;
         }
         break;
 
-    case 2:
+    case 2: // Logging active
         v->skip_count++;
-
         if (v->skip_count == v->pre_scalar)
         {
             v->skip_count = 0;
@@ -119,6 +141,7 @@ static inline void DLOG_4CH_F_FUNC(DLOG_4CH_F *v)
 
             if (v->count == v->size)
             {
+                // Buffer is full, reset and wait for the next trigger.
                 v->count = 0;
                 v->status = 1;
             }
@@ -129,7 +152,12 @@ static inline void DLOG_4CH_F_FUNC(DLOG_4CH_F *v)
     v->prev_value = *v->input_ptr1;
 }
 
-//*********** Macro Definition ***********//
+/**
+ * @brief Macro version of the data logging logic for higher performance.
+ * @details This macro implements the same functionality as `DLOG_4CH_F_FUNC` but avoids
+ * the function call overhead, potentially leading to faster execution.
+ * @param v A `DLOG_4CH_F` object (not a pointer).
+ */
 #define DLOG_4CH_F_MACRO(v)                                                                                            \
     switch (v.status)                                                                                                  \
     {                                                                                                                  \
@@ -161,5 +189,13 @@ static inline void DLOG_4CH_F_FUNC(DLOG_4CH_F *v)
         v.status = 0;                                                                                                  \
     }                                                                                                                  \
     v.prev_value = *v.input_ptr1;
+
+/**
+ * @}
+ */
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif /* DLOG_4CH_F_H_ */

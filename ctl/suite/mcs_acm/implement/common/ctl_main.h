@@ -16,7 +16,7 @@
 #include <ctl/component/motor_control/basic/encoder.h>
 
 // motor controller
-#include <ctl/suite/mcs_acm/acm_sensored_ctrl.h>
+#include <ctl/component/motor_control/acm_controller/acm_sensored_ctrl.h>
 
 #include <ctl/component/interface/pwm_channel.h>
 

@@ -1,186 +1,191 @@
-// FOC Motor Controller general framework
-// This module would be implemented by FPGA.
-
-// necessary headers
-#include <ctl/component/interface/adc_channel.h>
-#include <ctl/component/interface/pwm_channel.h>
-#include <ctl/component/intrinsic/continuous/continuous_pid.h>
-
-#include <ctl/math_block/coordinate/coord_trans.h>
+/**
+ * @file motor_current_ctrl.h
+ * @brief Implements a generic FOC (Field-Oriented Control) current controller.
+ *
+ * @version 0.3
+ * @date 2025-08-06
+ *
+ */
 
 #ifndef _FILE_MOTOR_CURRENT_CTRL_H_
 #define _FILE_MOTOR_CURRENT_CTRL_H_
+
+#include <ctl/component/intrinsic/continuous/continuous_pid.h>
+#include <ctl/math_block/coordinate/coord_trans.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif // __cplusplus
 
-// INPUT:
-//  + ctrl_gt: udc
-//  + vector3: iabc
-//  + vector2: idq_ref
-//  + vector2: vdq_ff
-//  + ctrl_gt: theta
+/*---------------------------------------------------------------------------*/
+/* FOC Current Controller                                                    */
+/*---------------------------------------------------------------------------*/
 
-// OUTPUT:
-// + vector3: Tabc
-// + vector3: idq0
-// + vector3: iab0
-// + vector2: udq0
-// + vector2: uab0
+/**
+ * @defgroup CURRENT_CONTROLLER FOC Current Controller
+ * @brief The core current regulation loop for an FOC motor controller.
+ * @details This module forms the core of an FOC system. It takes three-phase
+ * current measurements, a rotor angle, and d-q axis current references,
+ * then performs the necessary coordinate transformations (Clarke, Park) and
+ * PI control to generate the required d-q axis voltages. These voltages are
+ * then transformed back to the stationary frame (Inverse Park) to be used by
+ * a PWM modulator.
+ * The controller implements the PMSM voltage equations in the d-q frame:
+ * @f[ v_d = R_s i_d + L_d \frac{di_d}{dt} - \omega_e L_q i_q @f]
+ * @f[ v_q = R_s i_q + L_q \frac{di_q}{dt} + \omega_e L_d i_d + \omega_e \psi_f @f]
+ * The PI controllers regulate i_d and i_q to their reference values.
+ * @{
+ */
 
-// Structure:
-// iab = clark(iabc)
-// idq = park(iab)
-// pi_iq: PI(iq - iq_ref) = vq_ctrl;
-// pi_id: PI(id - id_ref) = vd_crrl;
-// vq = vq_ctrl + vq_ff;
-// vd = vd_ctrl + vd_ff;
-// vab = inv_park(vdq);
-// Tabc = svpwm(vab) / udc;
+//================================================================================
+// Type Defines & Macros
+//================================================================================
 
-typedef struct _tag_motor_current_ctrl
+/**
+ * @brief Main structure for the FOC current controller.
+ */
+typedef struct
 {
-    // input parameters
-    ctrl_gt udc;
-    ctl_vector3_t iabc;
-    ctl_vector2_t idq_ref;
-    ctl_vector2_t vdq_ff;
-    ctrl_gt theta;
+    // --- Controller Entities ---
+    ctl_pid_t idq_ctrl[2]; ///< PI controllers for d-axis and q-axis currents.
 
-    // output parameters
-    //    ctl_vector3_t Tabc;
-    ctl_vector3_t idq0;
-    ctl_vector3_t iab0;
-    ctl_vector3_t vdq0;
-    ctl_vector3_t vab0;
+    // --- Inputs (updated each cycle) ---
+    ctl_vector2_t idq_ref; ///< The d-q axis current reference vector [id_ref, iq_ref]^T.
+    ctl_vector2_t vdq_ff;  ///< The d-q axis voltage feedforward vector [vd_ff, vq_ff]^T.
 
-    // controller objects
-    ctl_pid_t idq_ctrl[2];
+    // --- Outputs & Intermediate Variables ---
+    ctl_vector3_t iab0; ///< The 3-phase currents in the alpha-beta stationary frame.
+    ctl_vector3_t idq0; ///< The 3-phase currents in the d-q rotating frame.
+    ctl_vector3_t vdq0; ///< The calculated d-q axis output voltages.
+    ctl_vector3_t vab0; ///< The final alpha-beta voltages to be sent to the modulator.
 
-    // flags
-    fast_gt flag_enable_current_controller;
+    // --- State ---
+    fast_gt flag_enable_controller; ///< Flag to enable or disable the PI controller action.
 
-    // fast_gt flag_enable_svpwm;
-} ctl_motor_current_ctrl_t;
+} ctl_current_controller_t;
 
-void ctl_setup_motor_current_ctrl(
-    // motor current controller
-    ctl_motor_current_ctrl_t *obj,
-    // PID parameter for motor current controller
-    ctrl_gt kp, ctrl_gt Ti, ctrl_gt Td,
-    // PID saturation parameter for motor current controller
-    ctrl_gt out_min, ctrl_gt out_max,
-    // controller rate, Hz
-    parameter_gt fs);
+//================================================================================
+// Function Prototypes & Definitions
+//================================================================================
 
-// Clear all the residual informations
-// void ctl_clear_motor_current_ctrl(ctl_motor_current_ctrl_t *obj);
-
-GMP_STATIC_INLINE
-void ctl_input_motor_current_ctrl(ctl_motor_current_ctrl_t *obj, tri_adc_channel_t *adc_channel)
+/**
+ * @brief Initializes the current controller structure to safe defaults.
+ * @param[out] cc Pointer to the current controller structure.
+ */
+GMP_STATIC_INLINE void ctl_clear_current_controller(ctl_current_controller_t* cc)
 {
-    ctl_get_tri_adc_channel_via_vector3(adc_channel, &obj->iabc);
+    ctl_clear_pid(&cc->idq_ctrl[0]);
+    ctl_clear_pid(&cc->idq_ctrl[1]);
+    ctl_vector2_clear(&cc->idq_ref);
+    ctl_vector2_clear(&cc->vdq_ff);
+    ctl_vector3_clear(&cc->iab0);
+    ctl_vector3_clear(&cc->idq0);
+    ctl_vector3_clear(&cc->vdq0);
+    ctl_vector3_clear(&cc->vab0);
 }
 
-GMP_STATIC_INLINE
-void ctl_set_motor_current_ctrl_idq_ref(ctl_motor_current_ctrl_t *obj, ctrl_gt id_ref, ctrl_gt iq_ref)
+/**
+ * @brief Sets up the parameters for the d-q axis PI controllers.
+ * @param[out] cc Pointer to the current controller structure.
+ * @param[in]  kp Proportional gain.
+ * @param[in]  Ti Integral time constant.
+ * @param[in]  Td Derivative time constant (usually 0 for a PI controller).
+ * @param[in]  out_max Maximum output limit (voltage).
+ * @param[in]  out_min Minimum output limit (voltage).
+ * @param[in]  fs Controller execution frequency (Hz).
+ */
+void ctl_init_current_controller(ctl_current_controller_t* cc, ctrl_gt kp, ctrl_gt Ti, ctrl_gt Td, ctrl_gt out_max,
+                                 ctrl_gt out_min, parameter_gt fs);
+
+/**
+ * @brief Sets the d-q axis current reference (target).
+ * @param[out] cc Pointer to the current controller structure.
+ * @param[in]  id_ref The target d-axis current.
+ * @param[in]  iq_ref The target q-axis current.
+ */
+GMP_STATIC_INLINE void ctl_set_current_ref(ctl_current_controller_t* cc, ctrl_gt id_ref, ctrl_gt iq_ref)
 {
-    obj->idq_ref.dat[phase_d] = id_ref;
-    obj->idq_ref.dat[phase_q] = iq_ref;
+    cc->idq_ref.dat[0] = id_ref;
+    cc->idq_ref.dat[1] = iq_ref;
 }
 
-GMP_STATIC_INLINE
-void ctl_set_motor_current_ctrl_vdq_ff(ctl_motor_current_ctrl_t *obj, ctrl_gt vd_ff, ctrl_gt vq_ff)
+/**
+ * @brief Sets the d-q axis voltage feedforward terms.
+ * @param[out] cc Pointer to the current controller structure.
+ * @param[in]  vd_ff The d-axis voltage feedforward term.
+ * @param[in]  vq_ff The q-axis voltage feedforward term.
+ */
+GMP_STATIC_INLINE void ctl_set_voltage_ff(ctl_current_controller_t* cc, ctrl_gt vd_ff, ctrl_gt vq_ff)
 {
-    obj->vdq_ff.dat[phase_d] = vd_ff;
-    obj->vdq_ff.dat[phase_q] = vq_ff;
+    cc->vdq_ff.dat[0] = vd_ff;
+    cc->vdq_ff.dat[1] = vq_ff;
 }
 
-// This is the debug variable
-// ctl_vector2_t phasor;
-
-GMP_STATIC_INLINE
-void ctl_step_motor_current_ctrl(ctl_motor_current_ctrl_t *obj, ctrl_gt theta)
+/**
+ * @brief Executes one step of the FOC current control loop.
+ * @param[out] cc      Pointer to the current controller structure.
+ * @param[in]  iabc    Pointer to the measured 3-phase currents.
+ * @param[in]  theta   The current electrical angle of the rotor (0.0 to 1.0).
+ */
+GMP_STATIC_INLINE void ctl_step_current_controller(ctl_current_controller_t* cc, const ctl_vector3_t* _iabc,
+                                                   ctrl_gt theta)
 {
     ctl_vector2_t phasor;
+    ctl_set_phasor_via_angle(theta, &phasor);
 
-    // Save theta
-    obj->theta = theta;
+    // 1. Clarke Transform: 3-phase currents to alpha-beta stationary frame.
+    ctl_ct_clarke(_iabc, &cc->iab0);
 
-    // + iab = clark(iabc)
-    ctl_ct_clark(&obj->iabc, &obj->iab0);
+    // 2. Park Transform: Stationary frame currents to d-q rotating frame.
+    ctl_ct_park(&cc->iab0, &phasor, &cc->idq0);
 
-    // + phasor = \angle(theta)
-    ctl_set_phasor_via_angle(obj->theta, &phasor);
-    // idq = park(iab)
-    ctl_ct_park(&obj->iab0, &phasor, &obj->idq0);
-
-    // enable current controller
-    if (obj->flag_enable_current_controller)
+    // 3. Execute PI controllers if enabled.
+    if (cc->flag_enable_controller)
     {
-        // pi_iq: PI(iq - iq_ref) = vq_ctrl;
-        obj->vdq0.dat[phase_d] =
-            ctl_step_pid_ser(&obj->idq_ctrl[phase_d], obj->idq_ref.dat[phase_d] - obj->idq0.dat[phase_d]);
-
-        // pi_id: PI(id - id_ref) = vd_crrl;
-        obj->vdq0.dat[phase_q] =
-            ctl_step_pid_ser(&obj->idq_ctrl[phase_q], obj->idq_ref.dat[phase_q] - obj->idq0.dat[phase_q]);
+        // Calculate error and step the PI controllers
+        ctrl_gt err_d = cc->idq_ref.dat[0] - cc->idq0.dat[0];
+        ctrl_gt err_q = cc->idq_ref.dat[1] - cc->idq0.dat[1];
+        cc->vdq0.dat[0] = ctl_step_pid_ser(&cc->idq_ctrl[0], err_d);
+        cc->vdq0.dat[1] = ctl_step_pid_ser(&cc->idq_ctrl[1], err_q);
     }
     else
     {
-        obj->vdq0.dat[phase_d] = 0;
-        obj->vdq0.dat[phase_q] = 0;
+        cc->vdq0.dat[0] = 0.0f;
+        cc->vdq0.dat[1] = 0.0f;
     }
 
-    // vq = vq_ctrl + vq_ff;
-    obj->vdq0.dat[phase_d] += obj->vdq_ff.dat[phase_d];
+    // 4. Add feedforward voltages.
+    cc->vdq0.dat[0] += cc->vdq_ff.dat[0];
+    cc->vdq0.dat[1] += cc->vdq_ff.dat[1];
+    cc->vdq0.dat[2] = 0.0f; // Zero-sequence component is always zero.
 
-    // vd = vd_ctrl + vd_ff;
-    obj->vdq0.dat[phase_q] += obj->vdq_ff.dat[phase_q];
-
-    obj->vdq0.dat[phase_0] = 0;
-
-    // vab = inv_park(vdq);
-    ctl_ct_ipark(&obj->vdq0, &phasor, &obj->vab0);
+    // 5. Inverse Park Transform: d-q voltages back to alpha-beta stationary frame.
+    ctl_ct_ipark(&cc->vdq0, &phasor, &cc->vab0);
 }
 
-GMP_STATIC_INLINE
-void ctl_enable_motor_current_controller(ctl_motor_current_ctrl_t *obj)
+/**
+ * @brief Enables the PI controller action.
+ * @param[out] cc Pointer to the current controller structure.
+ */
+GMP_STATIC_INLINE void ctl_enable_current_controller(ctl_current_controller_t* cc)
 {
-    obj->flag_enable_current_controller = 1;
+    cc->flag_enable_controller = 1;
 }
 
-GMP_STATIC_INLINE
-void ctl_disable_motor_current_controller(ctl_motor_current_ctrl_t *obj)
+/**
+ * @brief Disables the PI controller action.
+ * @details When disabled, the controller output will be zero, but feedforward terms will still be applied.
+ * @param[out] cc Pointer to the current controller structure.
+ */
+GMP_STATIC_INLINE void ctl_disable_current_controller(ctl_current_controller_t* cc)
 {
-    obj->flag_enable_current_controller = 0;
+    cc->flag_enable_controller = 0;
 }
 
-GMP_STATIC_INLINE
-void ctl_clear_motor_current_ctrl(ctl_motor_current_ctrl_t *obj)
-{
-    // clear PID controller
-    ctl_clear_pid(&obj->idq_ctrl[0]);
-    ctl_clear_pid(&obj->idq_ctrl[1]);
-
-    // clear Feed forward controller
-    obj->vdq_ff.dat[0] = 0;
-    obj->vdq_ff.dat[1] = 0;
-}
-
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_motor_current_controller_id(ctl_motor_current_ctrl_t *obj)
-{
-    return obj->idq0.dat[phase_d];
-}
-
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_motor_current_controller_iq(ctl_motor_current_ctrl_t *obj)
-{
-    return obj->idq0.dat[phase_q];
-}
+/** 
+ *@} 
+ */ // end of CURRENT_CONTROLLER group
 
 #ifdef __cplusplus
 }

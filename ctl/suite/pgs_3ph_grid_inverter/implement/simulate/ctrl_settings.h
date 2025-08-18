@@ -19,7 +19,7 @@
 #define CONTROLLER_FREQUENCY (20e3)
 
 // PWM depth
-#define CONTROLLER_PWM_CMP_MAX (4200 - 1)
+#define CTRL_PWM_CMP_MAX (4200 - 1)
 
 // Voltage per unit base value, 100 V
 #define CTRL_VOLTAGE_BASE (100.0)

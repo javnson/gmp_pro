@@ -1,0 +1,108 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="test.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="gmp_src\ctl_component_advance.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_component_basic.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_component_continuous.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_component_discrete.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_component_interface.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_component_protection.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_dp_basic.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_dp_mppt.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_dp_single_phase.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_dp_three_phase.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_dp_topology_inv.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_dp_topology_sinv.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_acm_sensored_ctrl.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_basic.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_consultant.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_current_loop.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_motion.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_observer.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_pmsm_ctrl.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_pmsm_ctrl_hfi.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_pmsm_ctrl_mtpa.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_mc_pmsm_ctrl_smo.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_nano.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\dsa_trigger.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\gmp_dev_util.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\gmp_ds_list.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\gmp_mm_block_memory.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\gmp_std_error_code.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\gmp_std_port.c">
+      <Filter>gmp_src</Filter>
+    </ClCompile>
+    <ClCompile Include="continuous_pid_test.cpp">
+      <Filter>continuous</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="gmp_src">
+      <UniqueIdentifier>{e0dc495c-05a0-42d0-8a06-267b1fc18f53}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="continuous">
+      <UniqueIdentifier>{b9bf3691-89b4-43db-800e-623b9a9efaca}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,2 +1,0 @@
-// discrete PMSM position SMO
-

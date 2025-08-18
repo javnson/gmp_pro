@@ -1,32 +1,69 @@
+/**
+ * @file math_ctrl_const.h
+ * @author Javnson (javnson@zju.edu.cn)
+ * @brief Defines a set of common mathematical constants for motor control algorithms.
+ * @version 0.1
+ * @date 2024-09-30
+ *
+ * @copyright Copyright GMP(c) 2024
+ *
+ * This file centralizes frequently used mathematical and physical constants
+ * to ensure consistency and precision across the control library.
+ */
 
 #ifndef _FILE_FIXED_CONST_PARAM_H_
 #define _FILE_FIXED_CONST_PARAM_H_
 
-//////////////////////////////////////////////////////////////////////////
-// Math Constant Stack
+/*---------------------------------------------------------------------------*/
+/* Mathematical Constants                                                    */
+/*---------------------------------------------------------------------------*/
 
-// Here're some constants for coordinate transform.
-#define GMP_CONST_ABC2AB_ALPHA (float2ctrl(0.666666666666667)) // 2/3
-#define GMP_CONST_ABC2AB_BETA  (float2ctrl(0.577350269189626)) // 1/sqrt(3)
-#define GMP_CONST_ABC2AB_GAMMA (float2ctrl(0.333333333333334)) // 1/3
+/**
+ * @defgroup MC_MATH_CONSTANTS Mathematical Constants
+ * @ingroup MC_CONSTANTS
+ * @brief A collection of common mathematical constants used in motor control.
+ * @{
+ */
 
-#define GMP_CONST_AB2ABC_ALPHA (float2ctrl(0.8660254)) // sqrt(3)/2
+// --- General Purpose Constants ---
 
-#define GMP_CONST_AB02AB_ALPHA (float2ctrl(1.154700538379252)) // 2/sqrt(3)
+#define CTL_CTRL_CONST_PI            (float2ctrl(3.1415926535897932))     /**< @brief The constant Pi (¦Ð). */
+#define CTL_CTRL_CONST_2_PI          (float2ctrl(6.2831853071795865))     /**< @brief The constant 2*Pi (2¦Ð). */
+#define CTL_CTRL_CONST_1_OVER_2PI    (float2ctrl(1 / 6.2831853071795865)) /**< @brief The constant 1/(2*Pi). */
+#define CTL_CTRL_CONST_SQRT_3        (float2ctrl(1.73205080756888))       /**< @brief The constant sqrt(3). */
+#define CTL_CTRL_CONST_1_OVER_SQRT3  (float2ctrl(0.5773502691896))        /**< @brief The constant 1/sqrt(3). */
+#define CTL_CTRL_CONST_SQRT_3_OVER_2 (float2ctrl(0.8660254038))           /**< @brief The constant sqrt(3)/2. */
+#define CTL_CTRL_CONST_1             (float2ctrl(1.0))                    /**< @brief The constant 1.0. */
+#define CTL_CTRL_CONST_1_OVER_2      (float2ctrl(0.5))                    /**< @brief The constant 0.5. */
+#define CTL_CTRL_CONST_3_OVER_2      (float2ctrl(1.5))                    /**< @brief The constant 1.5. */
 
-// Here're some constants for SVPWM
-#define GMP_CONST_SQRT_3_OVER_2 (float2ctrl(0.8660254038f)) // SQRT(3)/2
-#define GMP_CONST_3_OVER_2      (float2ctrl(1.5f))
-#define GMP_CONST_SQRT_3        (float2ctrl(1.73205080756888f))
-#define GMP_CONST_1             (float2ctrl(1.0f))
-#define GMP_CONST_1_OVER_2      (float2ctrl(0.5f))
+// --- Clarke/Park Transformation Constants ---
 
-// Here're some constants for Voltage calculator
-#define GMP_CONST_1_OVER_SQRT3 ((float2ctrl(0.5773502691896f))) // 1/sqrt(3)
+/**
+ * @brief Constant for Clarke transform (ABC to Alpha): 2/3.
+ */
+#define CTL_CTRL_CONST_ABC2AB_ALPHA (float2ctrl(0.666666666666667))
 
-// Here're some constants for encoder and filter
-#define GMP_CONST_PI         (float2ctrl(3.1415926535897932))
-#define GMP_CONST_2_PI       (float2ctrl(6.2831853071795865))
-#define GMP_CONST_1_OVER_2PI (float2ctrl(1 / 6.2831853071795865))
+/**
+ * @brief Constant for Clarke transform (ABC to Beta): 1/sqrt(3).
+ */
+#define CTL_CTRL_CONST_ABC2AB_BETA (float2ctrl(0.577350269189626))
+
+/**
+ * @brief Constant for Clarke transform (zero sequence): 1/3.
+ */
+#define CTL_CTRL_CONST_ABC2AB_GAMMA (float2ctrl(0.333333333333334))
+
+/**
+ * @brief Constant for inverse Clarke transform (Alpha/Beta to ABC): sqrt(3)/2.
+ */
+#define CTL_CTRL_CONST_AB2ABC_ALPHA (float2ctrl(0.8660254))
+
+/**
+ * @brief Constant for power-invariant Clarke transform: 2/sqrt(3).
+ */
+#define CTL_CTRL_CONST_AB02AB_ALPHA (float2ctrl(1.154700538379252))
+
+/** @} */ // end of MC_MATH_CONSTANTS group
 
 #endif // _FILE_FIXED_CONST_PARAM_H_

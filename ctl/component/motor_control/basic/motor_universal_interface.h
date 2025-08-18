@@ -1,292 +1,336 @@
-
-
-// This file implement a universal motor controller interface
-
-#include <ctl/component/interface/interface_base.h>
+/**
+ * @file motor_universal_interface.h
+ * @author Javnson (javnson@zju.edu.cn)
+ * @brief Defines a universal interface for motor controllers and sensors.
+ * @version 0.1
+ * @date 2024-09-30
+ *
+ * @copyright Copyright GMP(c) 2024
+ *
+ */
 
 #ifndef _FILE_MOTOR_UNIVERSAL_INTERFACE_H_
 #define _FILE_MOTOR_UNIVERSAL_INTERFACE_H_
+
+#include <ctl/component/interface/interface_base.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif // __cplusplus
 
-//////////////////////////////////////////////////////////////////////////
-// Motor position encoder interface
-//
+/**
+ * @defgroup MC_INTERFACE Motor Control Interface
+ * @brief Standardized interfaces for motor sensors and controllers.
+ * @details This file implements a set of standardized, abstract interfaces for various
+ * motor sensors (position, speed, torque, etc.) and a universal structure
+ * to aggregate these interfaces for a single motor controller.
+ * 
+ */
 
+/*---------------------------------------------------------------------------*/
+/* Rotation Sensor Interface                                                 */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @defgroup MC_ROTATION_IF Rotation Sensor Interface
+ * @ingroup MC_INTERFACE
+ * @brief Defines the standard interface for a rotation/position sensor.
+ * @{
+ */
+
+/**
+ * @brief Standard data structure for a rotation encoder interface.
+ *
+ * Any structure representing a position sensor should have these members
+ * at its beginning to allow for generic casting and access.
+ */
 typedef struct _tag_rotation_encoder_t
 {
-    // All the rotation encoder should start with the following 3 items
-
-    // output: mechanical position of the encoder, unit, p.u.
-    ctrl_gt position;
-
-    // output: electrical position output, unit p.u.
-    ctrl_gt elec_position;
-
-    // output: mechanical revolutions of the motor
-    int32_t revolutions;
-
+    ctrl_gt position;      /**< @brief Mechanical position of the encoder, in per-unit (p.u.). */
+    ctrl_gt elec_position; /**< @brief Electrical position of the motor, in per-unit (p.u.). */
+    int32_t revolutions;   /**< @brief Mechanical revolution count of the motor. */
 } rotation_ift;
 
-// Get encoder position
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_encoder_position(rotation_ift *enc)
+/**
+ * @brief Gets the mechanical position from a rotation interface.
+ * @param enc Pointer to the rotation interface structure.
+ * @return Mechanical position in per-unit.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_encoder_position(rotation_ift* enc)
 {
     return enc->position;
 }
 
-// Get encoder position of electric
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_encoder_elec_postion(rotation_ift *enc)
+/**
+ * @brief Gets the electrical position from a rotation interface.
+ * @note There is a typo in the original function name (`postion` instead of `position`).
+ * @param enc Pointer to the rotation interface structure.
+ * @return Electrical position in per-unit.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_encoder_elec_postion(rotation_ift* enc)
 {
     return enc->elec_position;
 }
 
-//////////////////////////////////////////////////////////////////////////
-// Motor speed encoder interface
-//
+/** @} */ // end of MC_ROTATION_IF group
 
-// speed encoder
+/*---------------------------------------------------------------------------*/
+/* Velocity Sensor Interface                                                 */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @defgroup MC_VELOCITY_IF Velocity Sensor Interface
+ * @ingroup MC_INTERFACE
+ * @brief Defines the standard interface for a velocity/speed sensor.
+ * @{
+ */
+
+/**
+ * @brief Standard data structure for a speed encoder interface.
+ */
 typedef struct _tag_speed_encoder_t
 {
-    // All the speed encoder should start with the following 1 item(s).
-
-    // output: mechanical speed output, unit p.u.
-    ctrl_gt speed;
-
+    ctrl_gt speed; /**< @brief Mechanical speed output, in per-unit (p.u.). */
 } velocity_ift;
 
-// Get encoder speed
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_encoder_speed(velocity_ift *enc)
+/**
+ * @brief Gets the speed from a velocity interface.
+ * @param enc Pointer to the velocity interface structure.
+ * @return Mechanical speed in per-unit.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_encoder_speed(velocity_ift* enc)
 {
     return enc->speed;
 }
 
-//////////////////////////////////////////////////////////////////////////
-// Torque encoder interface
+/** @} */ // end of MC_VELOCITY_IF group
 
-// torque measurement
+/*---------------------------------------------------------------------------*/
+/* Torque Sensor Interface                                                   */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @defgroup MC_TORQUE_IF Torque Sensor Interface
+ * @ingroup MC_INTERFACE
+ * @brief Defines the standard interface for a torque sensor.
+ * @{
+ */
+
+/**
+ * @brief Standard data structure for a torque sensor interface.
+ */
 typedef struct _tag_torque_sensor_interface_t
 {
-    // All torque encoder should start with the following 1 item(s).
-
-    // output mechanical torque output, unit p.u.
-    ctrl_gt torque;
+    ctrl_gt torque; /**< @brief Mechanical torque output, in per-unit (p.u.). */
 } torque_ift;
 
-// Type transfer
+/** @} */ // end of MC_TORQUE_IF group
 
-// position encoder
-#define CTL_POSITION_IF(X) ((rotation_ift *)X)
+/*---------------------------------------------------------------------------*/
+/* Interface Type Casting Macros                                             */
+/*---------------------------------------------------------------------------*/
 
-// velocity encoder
-#define CTL_SPEED_IF(X) ((velocity_ift *)X)
+/**
+ * @defgroup MC_INTERFACE_CASTING Interface Casting Macros
+ * @ingroup MC_INTERFACE
+ * @brief Macros for safely casting generic pointers to specific interface types.
+ * @{
+ */
 
-//////////////////////////////////////////////////////////////////////////4
-// universal single motor controller interface type
+#define CTL_POSITION_IF(X) ((rotation_ift*)X) /**< @brief Casts a void pointer to a position interface pointer. */
+#define CTL_SPEED_IF(X)    ((velocity_ift*)X) /**< @brief Casts a void pointer to a velocity interface pointer. */
 
-// This struct only contain all the motor input sensor.
+/** @} */ // end of MC_INTERFACE_CASTING group
+
+/*---------------------------------------------------------------------------*/
+/* Universal Motor Interface                                                 */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @defgroup MC_UNIVERSAL_IF Universal Motor Interface
+ * @ingroup MC_INTERFACE
+ * @brief An aggregator structure that holds pointers to all sensor interfaces for a motor.
+ * @{
+ */
+
+/**
+ * @brief Universal motor interface structure.
+ *
+ * This structure contains pointers to all sensor inputs for a single motor,
+ * providing a unified access point for control algorithms.
+ */
 typedef struct _tag_universal_mtr_if_t
 {
-    // voltage sensor
-    tri_adc_ift *uabc;
-
-    // current sensor
-    tri_adc_ift *iabc;
-
-    // DC bus voltage sensor
-    adc_ift *udc;
-
-    // DC bus current sensor
-    adc_ift *idc;
-
-    // position encoder
-    rotation_ift *position;
-
-    // speed encoder
-    velocity_ift *velocity;
-
-    // torque sensor
-    torque_ift *torque;
-
-    //// PWM output / GPIO output
-    //// for modulation output the three variables is duty of three channel.
-    //// for directly output the three variables is switch state of three channel.
-    // tri_pwm_ift *uabc_target;
-
+    tri_adc_ift* uabc;      /**< @brief Pointer to the three-phase voltage sensor interface. */
+    tri_adc_ift* iabc;      /**< @brief Pointer to the three-phase current sensor interface. */
+    adc_ift* udc;           /**< @brief Pointer to the DC bus voltage sensor interface. */
+    adc_ift* idc;           /**< @brief Pointer to the DC bus current sensor interface. */
+    rotation_ift* position; /**< @brief Pointer to the position encoder interface. */
+    velocity_ift* velocity; /**< @brief Pointer to the speed encoder interface. */
+    torque_ift* torque;     /**< @brief Pointer to the torque sensor interface. */
 } mtr_ift;
 
-// controller should communicate with motor controller via the following function.
-// interface function
+// --- Accessor Functions ---
 
-// current access function
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_mtr_current_single(mtr_ift *mtr, uint32_t phase)
+/**
+ * @brief Gets a single-phase current value.
+ * @param mtr Pointer to the universal motor interface.
+ * @param phase The phase index (0 for U, 1 for V, 2 for W).
+ * @return The current value for the specified phase.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_mtr_current_single(mtr_ift* mtr, uint32_t phase)
 {
     gmp_base_assert(mtr->iabc);
-
-    gmp_base_assert(phase < 4);
-
+    gmp_base_assert(phase < 3); // Corrected from 4 to 3 for 3-phase systems
     return mtr->iabc->value.dat[phase];
 }
 
-GMP_STATIC_INLINE
-vector3_gt *ctl_get_mtr_current(mtr_ift *mtr)
+/**
+ * @brief Gets a pointer to the three-phase current vector.
+ * @param mtr Pointer to the universal motor interface.
+ * @return Pointer to the vector3_gt structure containing phase currents.
+ */
+GMP_STATIC_INLINE vector3_gt* ctl_get_mtr_current(mtr_ift* mtr)
 {
     gmp_base_assert(mtr->iabc);
-
     return &mtr->iabc->value;
 }
 
-// voltage access function
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_mtr_voltage_single(mtr_ift *mtr, uint32_t phase)
-{
-    gmp_base_assert(mtr->iabc);
-    gmp_base_assert(phase < 4);
-
-    return mtr->uabc->value.dat[phase];
-}
-
-GMP_STATIC_INLINE
-vector3_gt *ctl_get_mtr_voltage(mtr_ift *mtr)
-{
-    gmp_base_assert(mtr->uabc);
-
-    return &mtr->uabc->value;
-}
-
-// dc bus access function
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_mtr_dc_voltage(mtr_ift *mtr)
+/**
+ * @brief Gets the DC bus voltage.
+ * @param mtr Pointer to the universal motor interface.
+ * @return The DC bus voltage value.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_mtr_dc_voltage(mtr_ift* mtr)
 {
     gmp_base_assert(mtr->udc);
-
     return mtr->udc->value;
 }
 
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_mtr_dc_current(mtr_ift *mtr)
-{
-    gmp_base_assert(mtr->idc);
-
-    return mtr->idc->value;
-}
-
-// position access
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_mtr_elec_theta(mtr_ift *mtr)
+/**
+ * @brief Gets the motor's electrical angle (theta).
+ * @param mtr Pointer to the universal motor interface.
+ * @return The electrical angle in per-unit.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_mtr_elec_theta(mtr_ift* mtr)
 {
     gmp_base_assert(mtr->position);
-
     return mtr->position->elec_position;
 }
 
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_mtr_theta(mtr_ift *mtr)
+/**
+ * @brief Gets the motor's mechanical angle (theta).
+ * @param mtr Pointer to the universal motor interface.
+ * @return The mechanical angle in per-unit.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_mtr_theta(mtr_ift* mtr)
 {
     gmp_base_assert(mtr->position);
-
     return mtr->position->position;
 }
 
-GMP_STATIC_INLINE
-int32_t ctl_get_mtr_revolution(mtr_ift *mtr)
+/**
+ * @brief Gets the motor's revolution count.
+ * @param mtr Pointer to the universal motor interface.
+ * @return The total number of full revolutions.
+ */
+GMP_STATIC_INLINE int32_t ctl_get_mtr_revolution(mtr_ift* mtr)
 {
     gmp_base_assert(mtr->position);
-
     return mtr->position->revolutions;
 }
 
-// speed access
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_mtr_velocity(mtr_ift *mtr)
+/**
+ * @brief Gets the motor's velocity.
+ * @param mtr Pointer to the universal motor interface.
+ * @return The mechanical velocity in per-unit.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_mtr_velocity(mtr_ift* mtr)
 {
     gmp_base_assert(mtr->velocity);
-
     return mtr->velocity->speed;
 }
 
-// torque access
-GMP_STATIC_INLINE
-ctrl_gt ctl_get_mtr_torque(mtr_ift *mtr)
+/**
+ * @brief Gets the motor's torque.
+ * @param mtr Pointer to the universal motor interface.
+ * @return The measured torque in per-unit.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_mtr_torque(mtr_ift* mtr)
 {
     gmp_base_assert(mtr->torque);
-
     return mtr->torque->torque;
 }
 
-//// pwm output access
-//// when the controller is working in PWM mode, three parameter is (-0.5, 0.5) means duty cycle of output PWM.
-//// when the controller is working in GPIO mode, three parameter has special meanings
-////  + 0 close whole output,
-////  + 1 open the upper bridge
-////  + -1 open the lower bridge
-// void ctl_set_mtr_out_duty(mtr_ift* mtr, ctrl_gt phase_u, ctrl_gt phase_v, ctrl_gt phase_w)
-//{
-//     gmp_base_assert(mtr->uabc_target);
+// --- Attachment Functions ---
 
-//    mtr->uabc_target->value.dat[phase_U] = phase_u;
-//    mtr->uabc_target->value.dat[phase_V] = phase_v;
-//    mtr->uabc_target->value.dat[phase_W] = phase_w;
-//}
-
-// User should call the following function to attach interface to motor universal interface
-
-GMP_STATIC_INLINE
-void ctl_attach_mtr_current(mtr_ift *mtr, tri_adc_ift *iabc)
-{
-    mtr->iabc = iabc;
-}
-
-GMP_STATIC_INLINE
-void ctl_attach_mtr_voltage(mtr_ift *mtr, tri_adc_ift *uabc)
-{
-    mtr->uabc = uabc;
-}
-
-GMP_STATIC_INLINE
-void ctl_attach_mtr_dc_current(mtr_ift *mtr, adc_ift *idc)
-{
-    mtr->idc = idc;
-}
-
-GMP_STATIC_INLINE
-void ctl_attach_mtr_dc_voltage(mtr_ift *mtr, adc_ift *udc)
-{
-    mtr->udc = udc;
-}
-
-GMP_STATIC_INLINE
-void ctl_attach_mtr_adc_channels(mtr_ift *mtr, tri_adc_ift *iabc, tri_adc_ift *uabc, adc_ift *idc, adc_ift *udc)
+/**
+ * @brief Attaches all interfaces to universal motor interface.
+ */
+GMP_STATIC_INLINE void ctl_attach_mtr_adc_channels(mtr_ift* mtr, tri_adc_ift* iabc, tri_adc_ift* uabc, adc_ift* idc,
+    adc_ift* udc)
 {
     mtr->iabc = iabc;
     mtr->uabc = uabc;
     mtr->idc = idc;
     mtr->udc = udc;
 }
+    
+/**
+ * @brief Attaches a three-phase current sensor interface to the universal motor interface.
+ * @param mtr Pointer to the universal motor interface.
+ * @param iabc Pointer to the three-phase ADC interface for current sensing.
+ */
+GMP_STATIC_INLINE void ctl_attach_mtr_current(mtr_ift* mtr, tri_adc_ift* iabc)
+{
+    mtr->iabc = iabc;
+}
 
-GMP_STATIC_INLINE
-void ctl_attach_mtr_position(mtr_ift *mtr, rotation_ift *pos)
+
+/**
+ * @brief Attaches a position encoder interface to the universal motor interface.
+ * @param mtr Pointer to the universal motor interface.
+ * @param pos Pointer to the rotation interface.
+ */
+GMP_STATIC_INLINE void ctl_attach_mtr_position(mtr_ift* mtr, rotation_ift* pos)
 {
     mtr->position = pos;
 }
 
-GMP_STATIC_INLINE
-void ctl_attach_mtr_velocity(mtr_ift *mtr, velocity_ift *vel)
+/**
+ * @brief Attaches a velocity sensor interface to the universal motor interface.
+ * @param mtr Pointer to the universal motor interface.
+ * @param vel Pointer to the velocity interface.
+ */
+GMP_STATIC_INLINE void ctl_attach_mtr_velocity(mtr_ift* mtr, velocity_ift* vel)
 {
     mtr->velocity = vel;
 }
 
-GMP_STATIC_INLINE
-void ctl_attach_mtr_torque(mtr_ift *mtr, torque_ift *torque)
+/**
+ * @brief Attaches a torque sensor interface to the universal motor interface.
+ * @param mtr Pointer to the universal motor interface.
+ * @param torque Pointer to the torque interface.
+ */
+GMP_STATIC_INLINE void ctl_attach_mtr_torque(mtr_ift* mtr, torque_ift* torque)
 {
     mtr->torque = torque;
 }
+
+/*---------------------------------------------------------------------------*/
+/* Current Controller interface                                              */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief Universal motor current interface structure.
+ */
+typedef struct _tag_universal_mtr_current_if_t
+{
+    vector2_gt* idq;
+} mtr_current_ift;
+
+/** @} */ // end of MC_UNIVERSAL_IF group
 
 #ifdef __cplusplus
 }
