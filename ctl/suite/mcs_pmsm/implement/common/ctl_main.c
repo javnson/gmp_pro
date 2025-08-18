@@ -49,7 +49,11 @@ fast_gt flag_enable_adc_calibrator = 0;
 fast_gt index_adc_calibrator = 0;
 
 // enable motor running
+#if defined SPECIFY_PC_ENVIRONMENT
+volatile fast_gt flag_system_enable = 1;
+#else // SPECIFY_PC_ENVIRONMENT
 volatile fast_gt flag_system_enable = 0;
+#endif // SPECIFY_PC_ENVIRONMENT
 
 // enable motor auto identify
 fast_gt flag_enable_motor_identify = 0;
@@ -59,7 +63,7 @@ void ctl_init()
 {
     // Step 1 Security
     ctl_disable_output();
-    flag_system_enable = 0;
+    //flag_system_enable = 0;
 
     // Step 2 Init utilities
 
@@ -156,23 +160,23 @@ void ctl_init()
     ctl_set_pmsm_ctrl_speed(&pmsm_ctrl, float2ctrl(0.25));
 #endif // BUILD_LEVEL
 
-    // if in simulation mode, enable system
-#if !defined SPECIFY_PC_ENVIRONMENT
-    // stop here and wait for user start the motor controller
-    while (flag_enable_system == 0)
-    {
-    }
+//    // if in simulation mode, enable system
+//#if !defined SPECIFY_PC_ENVIRONMENT
+//    // stop here and wait for user start the motor controller
+//    while (flag_enable_system == 0)
+//    {
+//    }
+//
+//#endif // SPECIFY_PC_ENVIRONMENT
 
-#endif // SPECIFY_PC_ENVIRONMENT
+    //ctl_enable_output();
 
-    ctl_enable_output();
-
-    // Debug mode online the controller
-    ctl_enable_pmsm_ctrl(&pmsm_ctrl);
+    //// Debug mode online the controller
+    //ctl_enable_pmsm_ctrl(&pmsm_ctrl);
 
 #if defined SPECIFY_ENABLE_ADC_CALIBRATE
     // Enable ADC calibrate
-    flag_enable_adc_calibrator = 1;
+    //flag_enable_adc_calibrator = 1;
     index_adc_calibrator = 0;
 
     // Select ADC calibrate
@@ -205,7 +209,7 @@ void ctl_mainloop(void)
             firsttime_flag = 1;
         }
 
-        // a delay of 500ms
+        // a delay of 100ms
         if ((started_flag == 0) && ((gmp_base_get_system_tick() - tick_bias) > 100) && (startup_flag == 0))
         {
             startup_flag = 1;
@@ -214,6 +218,11 @@ void ctl_mainloop(void)
         // judge if PLL is close to target
         if ((started_flag == 0) && (startup_flag == 1) && ctl_ready_mainloop())
         {
+            ctl_clear_slope_f(&slope_f);
+
+            ctl_clear_pmsm_ctrl(&pmsm_ctrl);
+            ctl_enable_pmsm_ctrl(&pmsm_ctrl);
+
             ctl_enable_output();
             started_flag = 1;
         }

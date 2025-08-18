@@ -297,6 +297,7 @@ GMP_STATIC_INLINE void ctl_step_pmsm_ctrl(pmsm_controller_t* ctrl)
         {
             ctl_ct_ipark(&ctrl->vdq_set, &phasor, &ctrl->vab0_set);
         }
+
         if (ctrl->flag_enable_output)
         {
             ctl_ct_svpwm_calc(&ctrl->vab0_set, &ctrl->pwm_out->value);

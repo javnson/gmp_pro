@@ -95,6 +95,4 @@ void setup_peripheral(void)
     // output channel
     ctl_init_pwm_tri_channel(&pwm_out, 0, CTRL_PWM_CMP_MAX);
 
-    // open hardware switch
-    // ctl_output_enable();
 }

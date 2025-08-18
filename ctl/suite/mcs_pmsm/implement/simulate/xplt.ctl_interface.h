@@ -61,8 +61,15 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     simulink_tx_buffer.tabc[phase_C] = pwm_out.value[phase_C];
 
     // Monitor Port, 8 channels
-    simulink_tx_buffer.monitor_port[0] = pmsm_ctrl.idq_set.dat[phase_q];
-    simulink_tx_buffer.monitor_port[1] = pmsm_ctrl.idq0.dat[phase_q];
+#if BUILD_LEVEL == 1
+
+    simulink_tx_buffer.monitor_port[0] = slope_f.rg.current;
+    simulink_tx_buffer.monitor_port[1] = slope_f.current_freq;
+
+#endif // BUILD_LEVEL
+
+    //simulink_tx_buffer.monitor_port[0] = pmsm_ctrl.idq_set.dat[phase_q];
+    //simulink_tx_buffer.monitor_port[1] = pmsm_ctrl.idq0.dat[phase_q];
 
 #if BUILD_LEVEL <= 3
     simulink_tx_buffer.monitor_port[2] = pmsm_ctrl.idq_set.dat[phase_d];
@@ -76,15 +83,17 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     simulink_tx_buffer.monitor_port[5] = pmsm_ctrl.vdq_set.dat[phase_q];
 
     simulink_tx_buffer.monitor_port[6] = pmsm_ctrl.mtr_interface.velocity->speed;
-    simulink_tx_buffer.monitor_port[7] = pmsm_ctrl.mtr_interface.position->elec_position;
+    //simulink_tx_buffer.monitor_port[7] = pmsm_ctrl.mtr_interface.position->elec_position;
     simulink_tx_buffer.monitor_port[7] = slope_f.current_freq;
-    simulink_tx_buffer.monitor_port[7] = simulink_rx_buffer.encoder;
+    //simulink_tx_buffer.monitor_port[7] = simulink_rx_buffer.encoder;
 }
 
 // Enable Motor Controller
 // Enable Output
 GMP_STATIC_INLINE void ctl_enable_output()
 {
+    ctl_enable_pmsm_ctrl_output(&pmsm_ctrl);
+
     csp_sl_enable_output();
 }
 
