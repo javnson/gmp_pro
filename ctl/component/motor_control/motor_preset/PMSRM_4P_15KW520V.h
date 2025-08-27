@@ -72,7 +72,7 @@
 
 
 // Maximum DC bus voltage, unit V
-#define MOTOR_PARAM_MAX_DC_VOLTAGE ((150))
+#define MOTOR_PARAM_MAX_DC_VOLTAGE ((537))  // 3-Phase
 
 // Maximum Phase Current RMS, unit A
 #define MOTOR_PARAM_MAX_PH_CURRENT ((20))

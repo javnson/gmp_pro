@@ -34,7 +34,7 @@ typedef struct _tag_idq_current_distributor
 
     // Configuration for current distribution
     distribution_mode_t mode;             // Mode for alpha calculation
-    ctrl_gt *alpha_coef;                  // Alpha interpolation coefficients
+    ctrl_gt alpha_coef[CURRENT_DISTRIBUTION_LUT_SIZE - 1];        // Alpha interpolation coefficients
 
 } idq_current_distributor_t;
 
@@ -49,20 +49,21 @@ typedef struct _tag_idq_current_distributor
 GMP_STATIC_INLINE
 void calc_interpolation_coefficients(idq_current_distributor_t *distributor)
 {
-    distributor->alpha_coef = (ctrl_gt *)malloc(sizeof(ctrl_gt) * (CURRENT_DISTRIBUTION_LUT_SIZE - 1));
-
-    for (uint32_t i = 0; i < CURRENT_DISTRIBUTION_LUT_SIZE - 1; i++)
-    {
-        // Calculate interpolation coefficients for each interval
-        // alpha_coef = (alpha_upper - alpha_lower) / (im_upper - im_lower)
+    for (uint32_t i = 0; i < CURRENT_DISTRIBUTION_LUT_SIZE - 1; i++) {
         ctrl_gt im_lower = CURRENT_DISTRIBUTION_LUT[i].im;
         ctrl_gt im_upper = CURRENT_DISTRIBUTION_LUT[i + 1].im;
         ctrl_gt alpha_lower = CURRENT_DISTRIBUTION_LUT[i].alpha;
         ctrl_gt alpha_upper = CURRENT_DISTRIBUTION_LUT[i + 1].alpha;
 
-        distributor->alpha_coef[i] = (alpha_upper - alpha_lower) / (im_upper - im_lower);
+        // ·ÀÖ¹³ýÁã£¬È·±£ im_upper != im_lower
+        if (im_upper != im_lower) {
+            distributor->alpha_coef[i] = (alpha_upper - alpha_lower) / (im_upper - im_lower);
+        } else {
+            distributor->alpha_coef[i] = (alpha_upper - alpha_lower) / 2.0;
+        }
     }
 }
+
 
 
 
@@ -78,13 +79,21 @@ ctrl_gt linear_interpolation(idq_current_distributor_t *distributor)
     if (index >= CURRENT_DISTRIBUTION_LUT_SIZE - 1)
         index = CURRENT_DISTRIBUTION_LUT_SIZE - 2;
 
+    if (distributor->im < CURRENT_DISTRIBUTION_LUT[0].im)
+        distributor->im = CURRENT_DISTRIBUTION_LUT[0].im;
+    if (distributor->im > CURRENT_DISTRIBUTION_LUT[CURRENT_DISTRIBUTION_LUT_SIZE - 1].im)
+        distributor->im = CURRENT_DISTRIBUTION_LUT[CURRENT_DISTRIBUTION_LUT_SIZE - 1].im;
+
     ctrl_gt im_lower = CURRENT_DISTRIBUTION_LUT[index].im;
     ctrl_gt im_upper = CURRENT_DISTRIBUTION_LUT[index + 1].im;
     ctrl_gt alpha_lower = CURRENT_DISTRIBUTION_LUT[index].alpha;
     ctrl_gt alpha_upper = CURRENT_DISTRIBUTION_LUT[index + 1].alpha;
 
     // Perform linear interpolation: alpha = alpha_lower + (input_im - im_lower) * alpha_coef
-    return (alpha_lower + (distributor->im - im_lower) * (distributor->alpha_coef[index]));
+//    return (alpha_lower + (distributor->im - im_lower) * (distributor->alpha_coef[index]));
+    ctrl_gt scale = distributor->alpha_coef[index];
+    ctrl_gt inc = (distributor->im - im_lower) * scale;
+    return (alpha_lower + inc);
 }
 
 
@@ -136,6 +145,8 @@ void distributor_set_im(idq_current_distributor_t *distributor, ctrl_gt im)
 {
     distributor->im = im;
 }
+
+
 
 #ifdef __cplusplus
 }
