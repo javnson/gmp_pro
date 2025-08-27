@@ -134,7 +134,7 @@ void ctl_init()
 
     // init current distributor
 #ifdef PMSM_CTRL_USING_CURRENT_DISTRIBUTOR
-    ctl_init_idq_current_distributor(&pmsm_mtpa_ctrl.distributor, CONST_ALPHA);
+    ctl_init_idq_current_distributor(pmsm_mtpa_ctrl.distributor, CONST_ALPHA);
 #endif // PMSM_CTRL_USING_CURRENT_DISTRIBUTOR
 
     // BUG TI cannot print out sizeof() result if no type is specified.
