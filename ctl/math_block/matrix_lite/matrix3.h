@@ -77,7 +77,9 @@ GMP_STATIC_INLINE void ctl_matrix3_set(ctl_matrix3_t* mat, int row, int col, ctr
  */
 GMP_STATIC_INLINE void ctl_matrix3_clear(ctl_matrix3_t* matrix)
 {
-    for (int i = 0; i < 9; ++i)
+    int i;
+
+    for (i = 0; i < 9; ++i)
     {
         matrix->dat[i] = 0;
     }
@@ -102,7 +104,9 @@ GMP_STATIC_INLINE void ctl_matrix3_set_identity(ctl_matrix3_t* matrix)
  */
 GMP_STATIC_INLINE void ctl_matrix3_copy(ctl_matrix3_t* dup, const ctl_matrix3_t* src)
 {
-    for (int i = 0; i < 9; ++i)
+    int i;
+
+    for (i = 0; i < 9; ++i)
     {
         dup->dat[i] = src->dat[i];
     }
@@ -117,7 +121,9 @@ GMP_STATIC_INLINE void ctl_matrix3_copy(ctl_matrix3_t* dup, const ctl_matrix3_t*
 GMP_STATIC_INLINE ctl_matrix3_t ctl_matrix3_add(ctl_matrix3_t a, ctl_matrix3_t b)
 {
     ctl_matrix3_t result;
-    for (int i = 0; i < 9; ++i)
+    int i;
+
+    for (i = 0; i < 9; ++i)
     {
         result.dat[i] = a.dat[i] + b.dat[i];
     }
@@ -133,7 +139,9 @@ GMP_STATIC_INLINE ctl_matrix3_t ctl_matrix3_add(ctl_matrix3_t a, ctl_matrix3_t b
 GMP_STATIC_INLINE ctl_matrix3_t ctl_matrix3_sub(ctl_matrix3_t a, ctl_matrix3_t b)
 {
     ctl_matrix3_t result;
-    for (int i = 0; i < 9; ++i)
+    int i;
+
+    for (i = 0; i < 9; ++i)
     {
         result.dat[i] = a.dat[i] - b.dat[i];
     }
@@ -149,7 +157,9 @@ GMP_STATIC_INLINE ctl_matrix3_t ctl_matrix3_sub(ctl_matrix3_t a, ctl_matrix3_t b
 GMP_STATIC_INLINE ctl_matrix3_t ctl_matrix3_scale(ctl_matrix3_t mat, ctrl_gt scalar)
 {
     ctl_matrix3_t result;
-    for (int i = 0; i < 9; ++i)
+    int i;
+
+    for (i = 0; i < 9; ++i)
     {
         result.dat[i] = mat.dat[i] * scalar;
     }

@@ -74,9 +74,11 @@ GMP_STATIC_INLINE void ctl_destroy_sinc_interpolator(ctl_sinc_interpolator_t* si
  */
 GMP_STATIC_INLINE void ctl_clear_sinc_interpolator(ctl_sinc_interpolator_t* sinc)
 {
+    uint32_t i;
+
     if (sinc->buffer != NULL)
     {
-        for (uint32_t i = 0; i < sinc->num_taps; i++)
+        for (i = 0; i < sinc->num_taps; i++)
         {
             sinc->buffer[i] = 0.0f;
         }
@@ -95,6 +97,8 @@ GMP_STATIC_INLINE void ctl_clear_sinc_interpolator(ctl_sinc_interpolator_t* sinc
 GMP_STATIC_INLINE ctrl_gt ctl_step_sinc_interpolator(ctl_sinc_interpolator_t* sinc, ctrl_gt input,
                                                      parameter_gt fractional_delay)
 {
+    uint32_t i;
+
     // --- Key Point Analysis 2: Update the Circular Buffer for Input Samples ---
     sinc->buffer[sinc->buffer_index] = input;
 
@@ -113,7 +117,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinc_interpolator(ctl_sinc_interpolator_t* si
     // (FIR coefficients) with the samples in the input buffer.
     sinc->output = 0.0f;
     uint32_t j = sinc->buffer_index;
-    for (uint32_t i = 0; i < sinc->num_taps; i++)
+    for (i = 0; i < sinc->num_taps; i++)
     {
         sinc->output += kernel[i] * sinc->buffer[j];
         if (j == 0)

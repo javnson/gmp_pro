@@ -198,11 +198,12 @@ GMP_STATIC_INLINE void ctl_step_dual_adc_channel(dual_adc_channel_t* adc_obj, ad
 {
     ctrl_gt raw_data;
     ctrl_gt raw_without_bias;
+    int i;
 
     adc_obj->raw[0] = raw1;
     adc_obj->raw[1] = raw2;
 
-    for (int i = 0; i < 2; ++i)
+    for (i = 0; i < 2; ++i)
     {
 #if defined CTRL_GT_IS_FIXED
         raw_data = adc_obj->raw[i] << (adc_obj->iqn - adc_obj->resolution);
@@ -333,12 +334,13 @@ GMP_STATIC_INLINE void ctl_step_adc_tri_channel(tri_adc_channel_t* adc_obj, adc_
 {
     ctrl_gt raw_data;
     ctrl_gt raw_without_bias;
+    int i;
 
     adc_obj->raw[0] = raw1;
     adc_obj->raw[1] = raw2;
     adc_obj->raw[2] = raw3;
 
-    for (int i = 0; i < 3; ++i)
+    for (i = 0; i < 3; ++i)
     {
 #if defined CTRL_GT_IS_FIXED
         raw_data = adc_obj->raw[i] << (adc_obj->iqn - adc_obj->resolution);

@@ -51,6 +51,7 @@ static const float SIX_STEP_ANGLES_DEG[6] = {30.0f, 90.0f, 150.0f, 210.0f, 270.0
 void est_loop_handle_rs(ctl_offline_est_t* est)
 {
     ctl_per_unit_consultant_t* pu = est->pu_consultant;
+    int i;
 
     switch (est->sub_state)
     {
@@ -203,7 +204,7 @@ void est_loop_handle_rs(ctl_offline_est_t* est)
             parameter_gt step_diff_sum = 0;
             parameter_gt step_diff_sq_sum = 0;
             parameter_gt sixty_deg_pu = 60.0f / 360.0f;
-            for (int i = 0; i < 5; ++i)
+            for (i = 0; i < 5; ++i)
             {
                 parameter_gt diff = est->rs_est.enc_offset_results[i + 1] - est->rs_est.enc_offset_results[i];
                 if (diff < -0.5f)

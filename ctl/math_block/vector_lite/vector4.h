@@ -114,7 +114,7 @@ GMP_STATIC_INLINE void ctl_vector4_sub(ctl_vector4_t* result, ctl_vector4_t *a, 
  * @param scalar The scalar value.
  * @param[out] result The resulting scaled vector.
  */
-GMP_STATIC_INLINE ctl_vector4_t ctl_vector4_scale(ctl_vector4_t* result, ctl_vector4_t *vec, ctrl_gt scalar)
+GMP_STATIC_INLINE void ctl_vector4_scale(ctl_vector4_t* result, ctl_vector4_t *vec, ctrl_gt scalar)
 {
     result->dat[0] = ctl_mul(vec->dat[0], scalar);
     result->dat[1] = ctl_mul(vec->dat[1], scalar);

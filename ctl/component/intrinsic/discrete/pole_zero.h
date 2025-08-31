@@ -213,8 +213,10 @@ typedef struct _tag_ctrl_3p3z_t
  */
 GMP_STATIC_INLINE void ctl_clear_3p3z(ctrl_3p3z_t* c)
 {
+    int i;
+
     c->output = 0.0f;
-    for (int i = 0; i < 3; i++)
+    for (i = 0; i < 3; i++)
     {
         c->resp[i] = 0.0f;
         c->exct[i] = 0.0f;

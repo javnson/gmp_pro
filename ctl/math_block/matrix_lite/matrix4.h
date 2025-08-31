@@ -73,10 +73,10 @@ GMP_STATIC_INLINE void ctl_matrix4_set(ctl_matrix4_t* mat, int row, int col, ctr
  */
 GMP_STATIC_INLINE void ctl_matrix4_clear(ctl_matrix4_t* matrix)
 {
-    for (int i = 0; i < 16; ++i)
-    {
+    int i;
+
+    for (i = 0; i < 16; ++i)
         matrix->dat[i] = 0;
-    }
 }
 
 /**
@@ -99,7 +99,9 @@ GMP_STATIC_INLINE void ctl_matrix4_set_identity(ctl_matrix4_t* matrix)
  */
 GMP_STATIC_INLINE void ctl_matrix4_copy(ctl_matrix4_t* dup, const ctl_matrix4_t* src)
 {
-    for (int i = 0; i < 16; ++i)
+    int i;
+
+    for (i = 0; i < 16; ++i)
     {
         dup->dat[i] = src->dat[i];
     }
@@ -114,7 +116,9 @@ GMP_STATIC_INLINE void ctl_matrix4_copy(ctl_matrix4_t* dup, const ctl_matrix4_t*
 GMP_STATIC_INLINE ctl_matrix4_t ctl_matrix4_add(ctl_matrix4_t a, ctl_matrix4_t b)
 {
     ctl_matrix4_t result;
-    for (int i = 0; i < 16; ++i)
+    int i;
+
+    for (i = 0; i < 16; ++i)
     {
         result.dat[i] = a.dat[i] + b.dat[i];
     }
@@ -130,7 +134,9 @@ GMP_STATIC_INLINE ctl_matrix4_t ctl_matrix4_add(ctl_matrix4_t a, ctl_matrix4_t b
 GMP_STATIC_INLINE ctl_matrix4_t ctl_matrix4_sub(ctl_matrix4_t a, ctl_matrix4_t b)
 {
     ctl_matrix4_t result;
-    for (int i = 0; i < 16; ++i)
+    int i;
+
+    for (i = 0; i < 16; ++i)
     {
         result.dat[i] = a.dat[i] - b.dat[i];
     }
@@ -146,7 +152,9 @@ GMP_STATIC_INLINE ctl_matrix4_t ctl_matrix4_sub(ctl_matrix4_t a, ctl_matrix4_t b
 GMP_STATIC_INLINE ctl_matrix4_t ctl_matrix4_scale(ctl_matrix4_t mat, ctrl_gt scalar)
 {
     ctl_matrix4_t result;
-    for (int i = 0; i < 16; ++i)
+    int i;
+
+    for (i = 0; i < 16; ++i)
     {
         result.dat[i] = mat.dat[i] * scalar;
     }
@@ -162,12 +170,14 @@ GMP_STATIC_INLINE ctl_matrix4_t ctl_matrix4_scale(ctl_matrix4_t mat, ctrl_gt sca
 GMP_STATIC_INLINE ctl_matrix4_t ctl_matrix4_mul(ctl_matrix4_t a, ctl_matrix4_t b)
 {
     ctl_matrix4_t result;
-    for (int i = 0; i < 4; ++i)
+    int i, j, k;
+
+    for (i = 0; i < 4; ++i)
     {
-        for (int j = 0; j < 4; ++j)
+        for (j = 0; j < 4; ++j)
         {
             ctrl_gt sum = 0;
-            for (int k = 0; k < 4; ++k)
+            for (k = 0; k < 4; ++k)
             {
                 sum += ctl_matrix4_get(&a, i, k) * ctl_matrix4_get(&b, k, j);
             }
@@ -186,10 +196,12 @@ GMP_STATIC_INLINE ctl_matrix4_t ctl_matrix4_mul(ctl_matrix4_t a, ctl_matrix4_t b
 GMP_STATIC_INLINE ctl_vector4_t ctl_matrix4_mul_vector(ctl_matrix4_t mat, ctl_vector4_t vec)
 {
     ctl_vector4_t result;
-    for (int i = 0; i < 4; ++i)
+    int i, j;
+
+    for (i = 0; i < 4; ++i)
     {
         ctrl_gt sum = 0;
-        for (int j = 0; j < 4; ++j)
+        for (j = 0; j < 4; ++j)
         {
             sum += ctl_matrix4_get(&mat, i, j) * vec.dat[j];
         }
@@ -315,9 +327,11 @@ GMP_STATIC_INLINE ctl_matrix4_t ctl_matrix4_inv(ctl_matrix4_t mat)
 GMP_STATIC_INLINE ctl_matrix4_t ctl_matrix4_trans(ctl_matrix4_t mat)
 {
     ctl_matrix4_t result;
-    for (int i = 0; i < 4; ++i)
+    int i, j;
+
+    for (i = 0; i < 4; ++i)
     {
-        for (int j = 0; j < 4; ++j)
+        for (j = 0; j < 4; ++j)
         {
             ctl_matrix4_set(&result, i, j, ctl_matrix4_get(&mat, j, i));
         }

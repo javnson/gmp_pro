@@ -201,9 +201,11 @@ void ctl_init_dual_ptr_adc_channel(dual_ptr_adc_channel_t* adc, adc_gt* adc_targ
  */
 GMP_STATIC_INLINE void ctl_step_dual_ptr_adc_channel(dual_ptr_adc_channel_t* adc_obj)
 {
+    int i;
+
     gmp_base_assert(adc_obj->raw);
 
-    for (int i = 0; i < 2; ++i)
+    for (i = 0; i < 2; ++i)
     {
         ctrl_gt raw_data;
 #if defined CTRL_GT_IS_FIXED
@@ -337,9 +339,11 @@ void ctl_init_tri_ptr_adc_channel(tri_ptr_adc_channel_t* adc, adc_gt* adc_target
  */
 GMP_STATIC_INLINE void ctl_step_tri_ptr_adc_channel(tri_ptr_adc_channel_t* adc_obj)
 {
+    int i;
+
     gmp_base_assert(adc_obj->raw);
 
-    for (int i = 0; i < 3; ++i)
+    for (i = 0; i < 3; ++i)
     {
         ctrl_gt raw_data;
 #if defined CTRL_GT_IS_FIXED

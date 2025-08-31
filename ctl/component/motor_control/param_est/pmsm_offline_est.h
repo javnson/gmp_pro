@@ -225,6 +225,8 @@ GMP_STATIC_INLINE void ctl_init_offline_est(
     // current PID controller
     parameter_gt current_kp, parameter_gt current_Ti, parameter_gt out_max_pu)
 {
+    int i;
+
     // input ports
     est->mtr_interface = mtr_if;
     est->pu_consultant = pu_cons;
@@ -246,7 +248,7 @@ GMP_STATIC_INLINE void ctl_init_offline_est(
         // fs
         isr_freq);
 
-    for (int i = 0; i < 4; ++i)
+    for (i = 0; i < 4; ++i)
         ctl_clear_lowpass_filter(&est->measure_flt[i]);
 
     // disable all the measurements
@@ -285,6 +287,8 @@ GMP_STATIC_INLINE void ctl_config_offline_est_Rs(
     // test current set
     parameter_gt idel_speed_hz, parameter_gt idel_current_pu, parameter_gt test_current_pu)
 {
+    int i;
+
     est->rs_est.flag_enable = 1;
 
     est->rs_est.test_current_pu = float2ctrl(test_current_pu);
@@ -300,7 +304,7 @@ GMP_STATIC_INLINE void ctl_config_offline_est_Rs(
     else
         est->rs_est.flag_idling_cmpt = 1;
 
-    for (int i = 0; i < 6; ++i)
+    for (i = 0; i < 6; ++i)
     {
         est->rs_est.step_results[i] = 0;
         est->rs_est.enc_offset_results[i] = 0;

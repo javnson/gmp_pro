@@ -74,13 +74,15 @@ void ctl_init_protection_monitor(ctl_protection_monitor_t* mon, const ctl_protec
  */
 GMP_STATIC_INLINE fast_gt ctl_step_protection_monitor(ctl_protection_monitor_t* mon)
 {
+    uint32_t i;
+
     // Do not check if a fault is already latched
     if (mon->fault_index != -1)
     {
         return 0; // No *new* fault
     }
 
-    for (uint32_t i = 0; i < mon->num_items; ++i)
+    for (i = 0; i < mon->num_items; ++i)
     {
         const ctl_protection_item_t* item = &mon->item_set[i];
         if ((*item->source > item->supremum) || (*item->source < item->infimum))

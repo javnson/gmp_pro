@@ -889,8 +889,11 @@ void ctl_init_2p2z_complex_zeros(ctrl_2p2z_t* c, parameter_gt gain, parameter_gt
 void ctl_init_3p3z_real(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt f_z1, parameter_gt f_z2, parameter_gt f_z3,
                         parameter_gt f_p1, parameter_gt f_p2, parameter_gt f_p3, parameter_gt fs)
 {
+    int i;
+
     ctrl_2p2z_t sec1;
     ctrl_1p1z_t sec2;
+
     ctl_init_2p2z_real(&sec1, 1.0, f_z1, f_z2, f_p1, f_p2, fs);
     ctl_init_1p1z(&sec2, 1.0, f_z3, f_p3, fs);
 
@@ -909,9 +912,9 @@ void ctl_init_3p3z_real(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt f_z1, pa
         dc_gain_comp = 1.0f;
     parameter_gt final_gain = gain / dc_gain_comp;
 
-    for (int i = 0; i < 4; ++i)
+    for (i = 0; i < 4; ++i)
         c->coef_b[i] = float2ctrl(b3[i] * final_gain);
-    for (int i = 0; i < 3; ++i)
+    for (i = 0; i < 3; ++i)
         c->coef_a[i] = float2ctrl(a3[i]);
     ctl_clear_3p3z(c);
 }
@@ -920,6 +923,8 @@ void ctl_init_3p3z_complex_zeros(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt
                                  parameter_gt f_z3, parameter_gt f_p1, parameter_gt f_p2, parameter_gt f_p3,
                                  parameter_gt fs)
 {
+    int i;
+
     ctrl_2p2z_t sec1;
     ctrl_1p1z_t sec2;
     ctl_init_2p2z_complex_zeros(&sec1, 1.0, f_czr, f_czi, f_p1, f_p2, fs);
@@ -940,9 +945,9 @@ void ctl_init_3p3z_complex_zeros(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt
         dc_gain_comp = 1.0f;
     parameter_gt final_gain = gain / dc_gain_comp;
 
-    for (int i = 0; i < 4; ++i)
+    for (i = 0; i < 4; ++i)
         c->coef_b[i] = float2ctrl(b3[i] * final_gain);
-    for (int i = 0; i < 3; ++i)
+    for (i = 0; i < 3; ++i)
         c->coef_a[i] = float2ctrl(a3[i]);
     ctl_clear_3p3z(c);
 }
@@ -951,6 +956,8 @@ void ctl_init_3p3z_complex_poles(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt
                                  parameter_gt f_z3, parameter_gt f_cpr, parameter_gt f_cpi, parameter_gt f_p3,
                                  parameter_gt fs)
 {
+    int i;
+
     ctrl_2p2z_t sec1;
     ctrl_1p1z_t sec2;
 
@@ -985,9 +992,9 @@ void ctl_init_3p3z_complex_poles(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt
         dc_gain_comp = 1.0f;
     parameter_gt final_gain = gain / dc_gain_comp;
 
-    for (int i = 0; i < 4; ++i)
+    for (i = 0; i < 4; ++i)
         c->coef_b[i] = float2ctrl(b3[i] * final_gain);
-    for (int i = 0; i < 3; ++i)
+    for (i = 0; i < 3; ++i)
         c->coef_a[i] = float2ctrl(a3[i]);
     ctl_clear_3p3z(c);
 }
@@ -996,6 +1003,8 @@ void ctl_init_3p3z_complex_pair(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt 
                                 parameter_gt f_z3, parameter_gt f_cpr, parameter_gt f_cpi, parameter_gt f_p3,
                                 parameter_gt fs)
 {
+    int i;
+
     ctrl_2p2z_t complex_sec;
     ctrl_1p1z_t real_sec;
 
@@ -1031,9 +1040,9 @@ void ctl_init_3p3z_complex_pair(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt 
         dc_gain_comp_r = 1.0f;
     parameter_gt final_gain = gain / (dc_gain_comp_c * dc_gain_comp_r);
 
-    for (int i = 0; i < 4; ++i)
+    for (i = 0; i < 4; ++i)
         c->coef_b[i] = float2ctrl(b3[i] * final_gain);
-    for (int i = 0; i < 3; ++i)
+    for (i = 0; i < 3; ++i)
         c->coef_a[i] = float2ctrl(a3[i]);
     ctl_clear_3p3z(c);
 }
