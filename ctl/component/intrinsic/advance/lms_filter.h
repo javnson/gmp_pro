@@ -78,9 +78,11 @@ void ctl_destroy_lms_filter(ctl_lms_filter_t* lms);
  */
 GMP_STATIC_INLINE void ctl_clear_lms_filter(ctl_lms_filter_t* lms)
 {
+    uint32_t i;
+
     if (lms->weights != NULL && lms->buffer != NULL)
     {
-        for (uint32_t i = 0; i < lms->order; i++)
+        for (i = 0; i < lms->order; i++)
         {
             lms->weights[i] = 0.0f;
             lms->buffer[i] = 0.0f;
@@ -100,6 +102,8 @@ GMP_STATIC_INLINE void ctl_clear_lms_filter(ctl_lms_filter_t* lms)
  */
 GMP_STATIC_INLINE ctrl_gt ctl_step_lms_filter(ctl_lms_filter_t* lms, ctrl_gt input, ctrl_gt desired)
 {
+    uint32_t i;
+
     // --- Key Point Analysis 2: Update Input Buffer ---
     // A circular buffer is used to efficiently store the most recent 'order' input samples.
     // This avoids large memory shifts in every step.
@@ -110,7 +114,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_lms_filter(ctl_lms_filter_t* lms, ctrl_gt inp
     // y(n) = W^T * X(n)
     lms->output = 0.0f;
     uint32_t j = lms->buffer_index;
-    for (uint32_t i = 0; i < lms->order; i++)
+    for (i = 0; i < lms->order; i++)
     {
         lms->output += lms->weights[i] * lms->buffer[j];
         if (j == 0)
@@ -135,7 +139,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_lms_filter(ctl_lms_filter_t* lms, ctrl_gt inp
     // of this convergence. A larger mu leads to faster adaptation but can cause instability.
     // W(n+1) = W(n) + mu * e(n) * X(n)
     j = lms->buffer_index;
-    for (uint32_t i = 0; i < lms->order; i++)
+    for (i = 0; i < lms->order; i++)
     {
         lms->weights[i] += lms->mu * lms->error * lms->buffer[j];
         if (j == 0)

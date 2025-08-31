@@ -88,9 +88,11 @@ GMP_STATIC_INLINE void ctl_destroy_fir_filter(ctl_fir_filter_t* fir)
  */
 GMP_STATIC_INLINE void ctl_clear_fir_filter(ctl_fir_filter_t* fir)
 {
+    uint32_t i;
+
     if (fir->buffer != NULL)
     {
-        for (uint32_t i = 0; i < fir->order; i++)
+        for (i = 0; i < fir->order; i++)
         {
             fir->buffer[i] = 0.0f;
         }
@@ -107,6 +109,8 @@ GMP_STATIC_INLINE void ctl_clear_fir_filter(ctl_fir_filter_t* fir)
  */
 GMP_STATIC_INLINE ctrl_gt ctl_step_fir_filter(ctl_fir_filter_t* fir, ctrl_gt input)
 {
+    uint32_t i;
+
     // 更新循环缓冲区
     // 将最新的输入样本存入循环缓冲区的当前位置。
     // 这种方法避免了在每个采样周期都移动整个数组，效率极高。
@@ -117,7 +121,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_fir_filter(ctl_fir_filter_t* fir, ctrl_gt inp
     // 遍历系数，并从循环缓冲区中以正确的顺序取出对应的历史输入样本进行乘加运算。
     fir->output = 0.0f;
     uint32_t j = fir->buffer_index;
-    for (uint32_t i = 0; i < fir->order; i++)
+    for (i = 0; i < fir->order; i++)
     {
         // fir->coeffs[i] 对应 b_i
         // fir->buffer[j] 对应 x(n-i)

@@ -111,12 +111,14 @@ int ctl_init_imc(ctl_imc_controller_t* imc, const ctl_imc_init_t* init);
  */
 GMP_STATIC_INLINE void ctl_clear_imc(ctl_imc_controller_t* imc)
 {
+    int i;
+
     imc->u_out = 0.0f;
     imc->y_m = 0.0f;
     imc->q_in_1 = 0.0f;
     imc->q_out_1 = 0.0f;
     imc->delay_buffer_idx = 0;
-    for (int i = 0; i < IMC_MAX_DEAD_TIME_SAMPLES; ++i)
+    for (i = 0; i < IMC_MAX_DEAD_TIME_SAMPLES; ++i)
     {
         imc->u_delay_buffer[i] = 0.0f;
     }

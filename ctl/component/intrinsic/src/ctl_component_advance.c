@@ -181,6 +181,8 @@ int ctl_init_imc(ctl_imc_controller_t* imc, const ctl_imc_init_t* init)
 
 fast_gt ctl_init_lms_filter(ctl_lms_filter_t* lms, uint32_t order, parameter_gt mu)
 {
+    uint32_t i;
+
     lms->order = order;
     lms->mu = float2ctrl(mu);
     lms->output = 0.0f;
@@ -204,7 +206,7 @@ fast_gt ctl_init_lms_filter(ctl_lms_filter_t* lms, uint32_t order, parameter_gt 
     }
 
     // Initialize weights and buffer to zero
-    for (uint32_t i = 0; i < order; ++i)
+    for (i = 0; i < order; ++i)
     {
         lms->weights[i] = 0.0f;
         lms->buffer[i] = 0.0f;
@@ -254,6 +256,8 @@ void ctl_init_mrac(ctl_mrac_controller_t* mrac, const ctl_mrac_init_t* init)
 fast_gt ctl_init_repetitive_controller(ctl_repetitive_controller_t* rc, parameter_gt fs, parameter_gt f_fund,
                                        parameter_gt q_filter_coeff)
 {
+    uint32_t i;
+
     rc->period_samples = (uint32_t)(fs / f_fund);
     rc->q_filter_coeff = float2ctrl(q_filter_coeff);
     rc->output = 0;
@@ -267,7 +271,7 @@ fast_gt ctl_init_repetitive_controller(ctl_repetitive_controller_t* rc, paramete
     }
 
     // Initialize the buffer to zero
-    for (uint32_t i = 0; i < rc->period_samples; ++i)
+    for (i = 0; i < rc->period_samples; ++i)
     {
         rc->state_buffer[i] = 0;
     }
@@ -289,9 +293,10 @@ void ctl_destroy_repetitive_controller(ctl_repetitive_controller_t* rc)
 #include <ctl/component/intrinsic/advance/sinc_interpolator.h>
 #include <stdlib.h> // Required for malloc and free
 
-
 fast_gt ctl_init_sinc_interpolator(ctl_sinc_interpolator_t* sinc, uint32_t num_taps, uint32_t table_size)
 {
+    uint32_t i, j;
+
     sinc->num_taps = num_taps;
     sinc->table_size = table_size;
     sinc->buffer_index = 0;
@@ -311,13 +316,13 @@ fast_gt ctl_init_sinc_interpolator(ctl_sinc_interpolator_t* sinc, uint32_t num_t
     }
 
     // Allocate memory for each row of the table
-    for (uint32_t i = 0; i < table_size; i++)
+    for (i = 0; i < table_size; i++)
     {
         sinc->sinc_table[i] = (ctrl_gt*)malloc(num_taps * sizeof(ctrl_gt));
         if (sinc->sinc_table[i] == NULL)
         {
             // Clean up on failure
-            for (uint32_t j = 0; j < i; j++)
+            for (j = 0; j < i; j++)
                 free(sinc->sinc_table[j]);
             free(sinc->sinc_table);
             free(sinc->buffer);
@@ -328,12 +333,12 @@ fast_gt ctl_init_sinc_interpolator(ctl_sinc_interpolator_t* sinc, uint32_t num_t
     // --- Key Point Analysis 1: Pre-calculate the Windowed-Sinc Coefficient Table ---
     // This is the core of the module. By pre-calculating all potentially needed FIR
     // filter coefficients at once, it avoids expensive sin/cos calculations in the real-time loop.
-    for (uint32_t i = 0; i < table_size; i++)
+    for (i = 0; i < table_size; i++)
     {
         // 'fractional_offset' represents the sub-sample offset (0.0 to 1.0) for the filter currently being calculated.
         float fractional_offset = (float)i / table_size;
 
-        for (uint32_t j = 0; j < num_taps; j++)
+        for (j = 0; j < num_taps; j++)
         {
             // 't' is the time-axis variable for the Sinc function, shifted and centered.
             float t = (float)j - (float)(num_taps - 1) / 2.0f - fractional_offset;
@@ -366,9 +371,11 @@ fast_gt ctl_init_sinc_interpolator(ctl_sinc_interpolator_t* sinc, uint32_t num_t
 
 void ctl_destroy_sinc_interpolator(ctl_sinc_interpolator_t* sinc)
 {
+    uint32_t i;
+
     if (sinc->sinc_table != NULL)
     {
-        for (uint32_t i = 0; i < sinc->table_size; i++)
+        for (i = 0; i < sinc->table_size; i++)
         {
             if (sinc->sinc_table[i] != NULL)
             {

@@ -79,11 +79,13 @@ void ctl_init_z_function(ctl_z_function_t* obj, int32_t num_order, const ctrl_gt
  */
 GMP_STATIC_INLINE void ctl_clear_z_function(ctl_z_function_t* obj)
 {
-    for (int32_t i = 0; i < obj->num_order; ++i)
+    int32_t i;
+
+    for (i = 0; i < obj->num_order; ++i)
     {
         obj->input_buffer[i] = 0;
     }
-    for (int32_t i = 0; i < obj->den_order; ++i)
+    for (i = 0; i < obj->den_order; ++i)
     {
         obj->output_buffer[i] = 0;
     }
@@ -97,24 +99,25 @@ GMP_STATIC_INLINE void ctl_clear_z_function(ctl_z_function_t* obj)
  */
 GMP_STATIC_INLINE ctrl_gt ctl_step_z_function(ctl_z_function_t* obj, ctrl_gt input)
 {
+    int32_t i;
     ctrl_gt output = 0;
 
     // Calculate numerator part: b0*x(n) + b1*x(n-1) + ...
     output = ctl_mul(obj->num_coeffs[0], input);
-    for (int32_t i = 0; i < obj->num_order; ++i)
+    for (i = 0; i < obj->num_order; ++i)
     {
         output += ctl_mul(obj->num_coeffs[i + 1], obj->input_buffer[i]);
     }
 
     // Calculate denominator part: -a1*y(n-1) - a2*y(n-2) - ...
-    for (int32_t i = 0; i < obj->den_order; ++i)
+    for (i = 0; i < obj->den_order; ++i)
     {
         output -= ctl_mul(obj->den_coeffs[i], obj->output_buffer[i]);
     }
 
     // Update state buffers for the next iteration
     // Shift past outputs
-    for (int32_t i = obj->den_order - 1; i > 0; --i)
+    for (i = obj->den_order - 1; i > 0; --i)
     {
         obj->output_buffer[i] = obj->output_buffer[i - 1];
     }
@@ -124,7 +127,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_z_function(ctl_z_function_t* obj, ctrl_gt inp
     }
 
     // Shift past inputs
-    for (int32_t i = obj->num_order - 1; i > 0; --i)
+    for (i = obj->num_order - 1; i > 0; --i)
     {
         obj->input_buffer[i] = obj->input_buffer[i - 1];
     }

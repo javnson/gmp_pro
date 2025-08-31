@@ -119,6 +119,7 @@ GMP_STATIC_INLINE void ctl_step_mpc(ctl_mpc_controller_t* mpc, ctl_vector2_t* id
     ctrl_gt min_cost = 1e12f; // Initialize with a very large number
     uint8_t best_vector_idx = 0;
     ctrl_gt voltage_scale = (2.0f / 3.0f) * _udc;
+    int i;
 
     // 1. Construct the speed-dependent parts of the model matrices
     A_full = mpc->A_const;
@@ -129,7 +130,7 @@ GMP_STATIC_INLINE void ctl_step_mpc(ctl_mpc_controller_t* mpc, ctl_vector2_t* id
     E.dat[1] = -mpc->Ts * omega_e * mpc->psi_f / mpc->Lq;
 
     // 2. Iterate through all 8 possible voltage vectors
-    for (uint8_t i = 0; i < 8; ++i)
+    for (i = 0; i < 8; ++i)
     {
         // Get the test voltage vector in the alpha-beta frame
         ctl_vector2_t u_ab;

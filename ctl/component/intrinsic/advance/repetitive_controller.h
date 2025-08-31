@@ -85,9 +85,11 @@ void ctl_destroy_repetitive_controller(ctl_repetitive_controller_t* rc);
  */
 GMP_STATIC_INLINE void ctl_clear_repetitive_controller(ctl_repetitive_controller_t* rc)
 {
+    uint32_t i;
+
     if (rc->state_buffer != NULL)
     {
-        for (uint32_t i = 0; i < rc->period_samples; i++)
+        for (i = 0; i < rc->period_samples; i++)
         {
             rc->state_buffer[i] = 0;
         }

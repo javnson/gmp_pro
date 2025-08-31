@@ -155,7 +155,9 @@ void ctl_init_pwm_dual_channel(pwm_dual_channel_t* pwm_obj, pwm_gt phase, pwm_gt
  */
 GMP_STATIC_INLINE void ctl_step_pwm_dual_channel(pwm_dual_channel_t* pwm_obj, ctl_vector2_t* raw)
 {
-    for (int i = 0; i < 2; ++i)
+    int i;
+
+    for (i = 0; i < 2; ++i)
     {
         pwm_obj->raw.value.dat[i] = raw->dat[i];
         pwm_obj->value[i] = pwm_mul(pwm_obj->raw.value.dat[i], pwm_obj->full_scale) + pwm_obj->phase;
@@ -170,7 +172,9 @@ GMP_STATIC_INLINE void ctl_step_pwm_dual_channel(pwm_dual_channel_t* pwm_obj, ct
  */
 GMP_STATIC_INLINE void ctl_step_pwm_dual_channel_warp(pwm_dual_channel_t* pwm_obj, ctl_vector2_t* raw)
 {
-    for (int i = 0; i < 2; ++i)
+    int i;
+
+    for (i = 0; i < 2; ++i)
     {
         pwm_obj->raw.value.dat[i] = raw->dat[i];
         pwm_obj->value[i] = pwm_mul(pwm_obj->raw.value.dat[i], pwm_obj->full_scale) + pwm_obj->phase;
@@ -185,7 +189,9 @@ GMP_STATIC_INLINE void ctl_step_pwm_dual_channel_warp(pwm_dual_channel_t* pwm_ob
  */
 GMP_STATIC_INLINE void ctl_step_pwm_dual_channel_inv(pwm_dual_channel_t* pwm_obj, ctl_vector2_t* raw)
 {
-    for (int i = 0; i < 2; ++i)
+    int i;
+
+    for (i = 0; i < 2; ++i)
     {
         pwm_obj->raw.value.dat[i] = raw->dat[i];
         pwm_obj->value[i] = pwm_obj->full_scale - pwm_mul(pwm_obj->raw.value.dat[i], pwm_obj->full_scale);
@@ -234,7 +240,9 @@ void ctl_init_pwm_tri_channel(pwm_tri_channel_t* pwm_obj, pwm_gt phase, pwm_gt f
  */
 GMP_STATIC_INLINE void ctl_calc_pwm_tri_channel(pwm_tri_channel_t* pwm_obj)
 {
-    for (int i = 0; i < 3; ++i)
+    int i;
+
+    for (i = 0; i < 3; ++i)
     {
         pwm_obj->value[i] = pwm_mul(pwm_obj->raw.value.dat[i], pwm_obj->full_scale) + pwm_obj->phase;
         pwm_obj->value[i] = pwm_sat(pwm_obj->value[i], pwm_obj->full_scale, 0);
@@ -248,7 +256,9 @@ GMP_STATIC_INLINE void ctl_calc_pwm_tri_channel(pwm_tri_channel_t* pwm_obj)
  */
 GMP_STATIC_INLINE void ctl_step_pwm_tri_channel(pwm_tri_channel_t* pwm_obj, ctl_vector3_t* raw)
 {
-    for (int i = 0; i < 3; ++i)
+    int i;
+
+    for (i = 0; i < 3; ++i)
     {
         pwm_obj->raw.value.dat[i] = raw->dat[i];
         pwm_obj->value[i] = pwm_mul(pwm_obj->raw.value.dat[i], pwm_obj->full_scale) + pwm_obj->phase;
@@ -263,7 +273,9 @@ GMP_STATIC_INLINE void ctl_step_pwm_tri_channel(pwm_tri_channel_t* pwm_obj, ctl_
  */
 GMP_STATIC_INLINE void ctl_step_pwm_tri_channel_warp(pwm_tri_channel_t* pwm_obj, ctl_vector3_t* raw)
 {
-    for (int i = 0; i < 3; ++i)
+    int i;
+
+    for (i = 0; i < 3; ++i)
     {
         pwm_obj->raw.value.dat[i] = raw->dat[i];
         pwm_obj->value[i] = pwm_mul(pwm_obj->raw.value.dat[i], pwm_obj->full_scale) + pwm_obj->phase;
@@ -278,7 +290,9 @@ GMP_STATIC_INLINE void ctl_step_pwm_tri_channel_warp(pwm_tri_channel_t* pwm_obj,
  */
 GMP_STATIC_INLINE void ctl_step_pwm_tri_channel_inv(pwm_tri_channel_t* pwm_obj, ctl_vector3_t* raw)
 {
-    for (int i = 0; i < 3; ++i)
+    int i;
+
+    for (i = 0; i < 3; ++i)
     {
         pwm_obj->raw.value.dat[i] = raw->dat[i];
         pwm_obj->value[i] = pwm_obj->full_scale - pwm_mul(pwm_obj->raw.value.dat[i], pwm_obj->full_scale);

@@ -102,11 +102,13 @@ void ctl_init_ilc(ctl_ilc_controller_t* ilc, const ctl_ilc_init_t* init);
  */
 GMP_STATIC_INLINE void ctl_clear_ilc(ctl_ilc_controller_t* ilc)
 {
+    uint32_t i;
+
     ilc->u_out = 0.0f;
     ilc->time_step = 0;
     ilc->is_learning = 0; // Learning is disabled by default
 
-    for (uint32_t i = 0; i < ilc->trajectory_length; ++i)
+    for (i = 0; i < ilc->trajectory_length; ++i)
     {
         ilc->u_k[i] = 0.0f;
         ilc->u_k_minus_1[i] = 0.0f;
@@ -122,9 +124,11 @@ GMP_STATIC_INLINE void ctl_clear_ilc(ctl_ilc_controller_t* ilc)
  */
 GMP_STATIC_INLINE void ctl_start_new_iteration(ctl_ilc_controller_t* ilc)
 {
+    uint32_t i;
+
     // The control signal from the completed iteration becomes the base for the next one.
     // The error from the completed iteration is now the error from the "previous" run.
-    for (uint32_t i = 0; i < ilc->trajectory_length; ++i)
+    for (i = 0; i < ilc->trajectory_length; ++i)
     {
         ilc->u_k_minus_1[i] = ilc->u_k[i];
         // The error buffer e_k_minus_1 is now ready to be used for the new iteration.
