@@ -22,6 +22,16 @@ extern "C"
 {
 #endif // __cplusplus
 
+
+//! Trip Zones all interrupt
+//!
+#define HAL_TZ_INTERRUPT_ALL     ( EPWM_TZ_INTERRUPT_DCBEVT2 \
+                                 + EPWM_TZ_INTERRUPT_DCBEVT1 \
+                                 + EPWM_TZ_INTERRUPT_DCAEVT2 \
+                                 + EPWM_TZ_INTERRUPT_DCAEVT1 \
+                                 + EPWM_TZ_INTERRUPT_OST \
+                                 + EPWM_TZ_INTERRUPT_CBC )
+
 //////////////////////////////////////////////////////////////////////////
 // device related functions
 // Controller interface
@@ -52,6 +62,10 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
 {
     ctl_calc_pwm_tri_channel(&pwm_out);
 
+    EPWM_setCounterCompareValue(IRIS_EPWM1_BASE ,EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_A]);
+    EPWM_setCounterCompareValue(IRIS_EPWM2_BASE ,EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_B]);
+    EPWM_setCounterCompareValue(IRIS_EPWM3_BASE ,EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_C]);
+
 //    // PWM output
 //    simulink_tx_buffer.tabc[phase_A] = pwm_out.value[phase_A];
 //    simulink_tx_buffer.tabc[phase_B] = pwm_out.value[phase_B];
@@ -59,6 +73,11 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
 
     // Monitor Port, 8 channels
 #if BUILD_LEVEL == 1
+
+    // output DAC
+    DAC_setShadowValue(IRIS_DACA_BASE, 1000);
+    DAC_setShadowValue(IRIS_DACB_BASE, 1000);
+
 
 //    // angle set
 //    simulink_tx_buffer.monitor_port[0] = rg.rg.current;
@@ -85,13 +104,20 @@ GMP_STATIC_INLINE void ctl_enable_output()
 {
     //ctl_enable_pmsm_ctrl_output(&pmsm_ctrl);
 
-//    csp_sl_enable_output();
+    // Clear any Trip Zone flag
+    EPWM_clearTripZoneFlag(IRIS_EPWM1_BASE, HAL_TZ_INTERRUPT_ALL);
+    EPWM_clearTripZoneFlag(IRIS_EPWM2_BASE, HAL_TZ_INTERRUPT_ALL);
+    EPWM_clearTripZoneFlag(IRIS_EPWM3_BASE, HAL_TZ_INTERRUPT_ALL);
+
 }
 
 // Disable Output
 GMP_STATIC_INLINE void ctl_disable_output()
 {
-//    csp_sl_disable_output();
+    // Disables the PWM device
+    EPWM_forceTripZoneEvent(IRIS_EPWM1_BASE, EPWM_TZ_FORCE_EVENT_OST);
+    EPWM_forceTripZoneEvent(IRIS_EPWM2_BASE, EPWM_TZ_FORCE_EVENT_OST);
+    EPWM_forceTripZoneEvent(IRIS_EPWM3_BASE, EPWM_TZ_FORCE_EVENT_OST);
 }
 
 #ifdef __cplusplus

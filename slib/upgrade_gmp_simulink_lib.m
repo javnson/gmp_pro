@@ -69,6 +69,8 @@ close_system('gmp_sil_core_pack.slx', 0);
 close_system('gmp_sil_core_pack_src.slx', 0);
 close_system('gmp_std_model_pck.slx', 0);
 close_system('gmp_std_model_pck_src.slx', 0);
+close_system('gmp_component_model.slx', 0);
+close_system('gmp_component_model_src.slx', 0);
 
 
 generate_single_slx_lib('gmp_simulink_utilities');
@@ -76,7 +78,8 @@ generate_single_slx_lib('gmp_fp_utilities');
 generate_single_slx_lib('gmp_peripheral_utilities');
 generate_single_slx_lib('gmp_sil_core_pack');
 generate_single_slx_lib('gmp_std_model_pck');
-
+generate_single_slx_lib('gmp_component_model');
+ 
 % load_system('simulink_lib_src/gmp_simulink_utilities_src.slx');
 % target_file = append('install_path/',matlab_version.Release,'/gmp_simulink_utilities.slx');
 % %set_param('gmp_simulink_utilities_src','Lock','off')
