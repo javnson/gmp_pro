@@ -116,7 +116,7 @@
  */
 typedef GMP_PORT_CTRL_T ctrl_gt;
 
-#if (SPECIFY_CTRL_GT_TYPE == USING_DOUBLE_FPU)
+#if (SPECIFY_PARAMETER_GT_TYPE == USING_DOUBLE_FPU)
 #define GMP_PORT_PARAMETER_T double
 #else // Default to float for all other types
 #define GMP_PORT_PARAMETER_T float

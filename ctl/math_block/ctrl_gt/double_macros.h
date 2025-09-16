@@ -135,7 +135,7 @@ GMP_STATIC_INLINE double abs_static_inline(double A)
  * @param A The input angle in per-unit (0.0 to 1.0 represents 0 to 2¦Ð).
  * @return The sine of the angle.
  */
-#define ctl_sin(A) sin(2.0 * PI * (A))
+#define ctl_sin(A) sin(CTL_PARAM_CONST_2PI*(A))
 
 /**
  * @brief Computes the cosine of an angle given in per-unit.
@@ -143,7 +143,7 @@ GMP_STATIC_INLINE double abs_static_inline(double A)
  * @param A The input angle in per-unit (0.0 to 1.0 represents 0 to 2¦Ð).
  * @return The cosine of the angle.
  */
-#define ctl_cos(A) cos(2.0 * PI * (A))
+#define ctl_cos(A) cos(CTL_PARAM_CONST_2PI*(A))
 
 /**
  * @brief Computes the tangent of an angle given in per-unit.
@@ -151,7 +151,7 @@ GMP_STATIC_INLINE double abs_static_inline(double A)
  * @param A The input angle in per-unit (0.0 to 1.0 represents 0 to 2¦Ð).
  * @return The tangent of the angle.
  */
-#define ctl_tan(A) tan(2.0 * PI * (A))
+#define ctl_tan(A) tan(CTL_PARAM_CONST_2PI*(A))
 
 #define ctl_atan2(Y, X)   atan2((Y), (X))     /**< @brief Computes the arc-tangent of Y/X. */
 #define ctl_exp(A)        exp((A))            /**< @brief Computes the base-e exponential of A. */
