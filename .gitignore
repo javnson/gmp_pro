@@ -488,4 +488,15 @@ gmp_pro.zip
 # doxygen output files
 ctl/doc/**
 
+###################################################################################
+# HARDWARE Driver Section
 
+tools/hvhb40040_Antaioz/**/Drivers
+tools/hvhb40040_Antaioz/**/*.crf
+tools/hvhb40040_Antaioz/**/*.o
+tools/hvhb40040_Antaioz/**/*.d
+tools/hvhb40040_Antaioz/**/*.lnp
+tools/hvhb40040_Antaioz/**/*.map
+tools/hvhb40040_Antaioz/**/*.dep
+tools/hvhb40040_Antaioz/**/*.uvguix.*
+tools/hvhb40040_Antaioz/**/MDK-ARM/**/*.htm
