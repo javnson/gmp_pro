@@ -491,6 +491,7 @@ ctl/doc/**
 ###################################################################################
 # HARDWARE Driver Section
 
+# HVHB40040 Antaioz
 tools/hvhb40040_Antaioz/**/Drivers
 tools/hvhb40040_Antaioz/**/*.crf
 tools/hvhb40040_Antaioz/**/*.o
@@ -500,3 +501,6 @@ tools/hvhb40040_Antaioz/**/*.map
 tools/hvhb40040_Antaioz/**/*.dep
 tools/hvhb40040_Antaioz/**/*.uvguix.*
 tools/hvhb40040_Antaioz/**/MDK-ARM/**/*.htm
+
+tools/hvhb40040_Antaioz/**/HVHB_Guardian_tcr.dir
+tools/hvhb40040_Antaioz/**/impl_1

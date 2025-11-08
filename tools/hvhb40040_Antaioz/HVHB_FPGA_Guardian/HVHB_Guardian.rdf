@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RadiantProject version="4.2" radiant="2025.1.0.39.0" title="HVHB_Guardian" device="iCE40UP5K-SG48I" performance_grade="High-Performance_1.2V" family_int="ice40tp" device_int="itpa08" package_int="SG48" operation_int="IND" speed_int="6" default_implementation="impl_1">
+    <Options/>
+    <Implementation title="impl_1" dir="impl_1" description="impl_1" synthesis="synplify" default_strategy="Strategy1">
+        <Options def_top="rgb_breathing_led" top="hvhb_top"/>
+        <Source name="source/impl_1/hvhb_top.v" type="Verilog" type_short="Verilog">
+            <Options top_module="hvhb_top"/>
+        </Source>
+        <Source name="source/impl_1/pwm_shoot_through.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="source/impl_1/rgb_led.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="source/impl_1/qualified_fault_latch.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="source/impl_1/TMCS1133_decoder.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="source/impl_1/safe_reset_sequence.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="source/impl_1/RGB_LED_ip.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="hvhb_std.pdc" type="Physical Constraints File" type_short="PDC">
+            <Options/>
+        </Source>
+        <Source name="source/impl_1.xcf" type="Programming Project File" type_short="Programming">
+            <Options/>
+        </Source>
+    </Implementation>
+    <Strategy name="Strategy1" file="HVHB_Guardian1.sty"/>
+</RadiantProject>
