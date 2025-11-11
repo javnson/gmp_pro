@@ -15,8 +15,6 @@
 // speed encoder
 #include <ctl\component\motor_control\basic\encoder.h>
 
-// motor controller
-#include <ctl/suite/mcs_pmsm/pmsm_ctrl.h>
 
 #include <ctl/component/interface/pwm_channel.h>
 
@@ -24,9 +22,9 @@
 
 #include <xplt.peripheral.h>
 
-#include <ctl/component/intrinsic/discrete/stimulate.h>
+#include <ctl/component/intrinsic/discrete/signal_generator.h>
 
-#include <ctl/component/digital_power/topology_preset/single_phase_dc_ac.h>
+#include <ctl/component/digital_power/single_phase/single_phase_dc_ac.h>
 
 #ifndef _FILE_CTL_MAIN_H_
 #define _FILE_CTL_MAIN_H_
@@ -41,11 +39,15 @@ extern volatile fast_gt flag_system_running;
 
 // controller objects
 extern sinv_ctrl_t sinv_ctrl;
+extern ctl_pid_t current_outer;
+extern ctrl_gt ig_rms_ref;
 
 // periodic callback function things.
 GMP_STATIC_INLINE
 void ctl_dispatch(void)
 {
+    ctl_set_sinv_current_ref(&sinv_ctrl, ctl_step_pid_ser(&current_outer, ig_rms_ref - sinv_ctrl.ig_rms));
+
     ctl_step_sinv(&sinv_ctrl);
 }
 

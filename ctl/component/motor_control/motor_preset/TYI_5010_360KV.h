@@ -1,61 +1,84 @@
+/**
+ * @file TYI_5010_360KV.h
+ * @brief Defines the parameters for the TYI-5010 KV360 Brushless Motor (PMSM).
+ * @details This file contains the electrical, mechanical, and operational parameters
+ * for the specified Permanent Magnet Synchronous Motor, commonly used in UAVs
+ * and gimbals. These macros are intended to be used throughout the motor
+ * control application to configure various algorithms and safety limits.
+ */
+
+#ifndef _FILE_MOTOR_PARAM_TYI5010_KV360_H_
+#define _FILE_MOTOR_PARAM_TYI5010_KV360_H_
 
 #include <ctl/component/motor_control/basic/motor_unit_calculator.h>
 
-#ifndef _FILE_MOTOR_PARAM_TYI5008_KV335_H_
-#define _FILE_MOTOR_PARAM_TYI5008_KV335_H_
+#ifdef __cplusplus
+extern "C"
+{
+#endif // __cplusplus
 
-// PMSM Motor Type
-#define MOTOR_TYPE PMSM_MOTOR
+/*---------------------------------------------------------------------------*/
+/* Parameter Definitions for PMSM (TYI-5010 KV360)                           */
+/*---------------------------------------------------------------------------*/
 
-//////////////////////////////////////////////////////////////////////////
-// Basic parameters
-//
-// Number of pole pairs
-#define MOTOR_PARAM_POLE_PAIRS ((7))
+/**
+ * @defgroup PMSM_TYI5010_PARAMETERS Motor Parameters (TYI-5010 KV360)
+ * @ingroup CTL_MC_PRESET
+ * @brief Contains all parameter definitions for the specified PMSM.
+ * @{
+ */
 
-// Stator Resistance, unit Ohm
-#define MOTOR_PARAM_RS ((0.12))
+//================================================================================
+// Motor & System Identification
+//================================================================================
+#define MOTOR_TYPE PMSM_MOTOR ///< Specifies the motor type as a Permanent Magnet Synchronous Motor.
 
-// Stator Inductance, unit H
-#define MOTOR_PARAM_LS ((50.0e-6))
+//================================================================================
+// Electrical Parameters
+//================================================================================
+#define MOTOR_PARAM_RS   ((0.12))    ///< Stator resistance per phase (Ohm).
+#define MOTOR_PARAM_LS   ((50.0e-6)) ///< Stator inductance per phase (H). Assumes Ld = Lq.
+#define MOTOR_PARAM_FLUX ((0.0021))  ///< Permanent magnet flux linkage (Wb).
 
-// Inertia, unit nMms2
-// #define MOTOR_PARAM_INERTIA ((497.0))
+//================================================================================
+// Mechanical Parameters
+//================================================================================
+#define MOTOR_PARAM_POLE_PAIRS ((7)) ///< Number of pole pairs in the motor.
 
-// Friction unit nNms
-// #define MOTOR_PARAM_FRICTION ((755.0))
+//================================================================================
+// Characteristic Constants
+//================================================================================
+/**
+ * @brief Motor velocity constant (RPM/V).
+ * @note This value may not be perfectly consistent with the provided flux linkage
+ * under all measurement conditions.
+ */
+#define MOTOR_PARAM_KV ((360.0))
 
-// Flux linkage, unit Wb
-#define MOTOR_PARAM_FLUX ((0.0021))
+/**
+ * @brief Back-EMF constant (V/kRPM).
+ * @note This value may not be perfectly consistent with the provided flux linkage.
+ */
+#define MOTOR_PARAM_EMF ((4.85))
 
-// constant velocity of a motor, unit rpm/V
-#define MOTOR_PARAM_KV ((360))
+//================================================================================
+// Rated Operating Parameters
+//================================================================================
+#define MOTOR_PARAM_RATED_VOLTAGE   ((24.0)) ///< Rated operating voltage (V).
+#define MOTOR_PARAM_NO_LOAD_CURRENT ((0.5))  ///< No-load phase current (A, Peak).
 
-// Back EMF Voltage, unit V/krpm
-#define MOTOR_PARAM_EMF((4.85))
+//================================================================================
+// Absolute Maximum Ratings & Limits
+//================================================================================
+#define MOTOR_PARAM_MAX_SPEED      ((8600)) ///< Maximum allowable speed (RPM).
+#define MOTOR_PARAM_MAX_TORQUE     ((0.25)) ///< Maximum intermittent torque (N*m).
+#define MOTOR_PARAM_MAX_DC_VOLTAGE ((25.2)) ///< Maximum allowable DC bus voltage (V), likely for a 6S LiPo battery.
+#define MOTOR_PARAM_MAX_PH_CURRENT ((23.0)) ///< Maximum allowable phase current (A, Peak).
 
-//////////////////////////////////////////////////////////////////////////
-// Rated parameters
+/** @} */ // end of PMSM_TYI5010_PARAMETERS group
 
-// Rated voltage, unit V
-#define MOTOR_PARAM_RATED_VOLTAGE ((24.0))
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
-// no load current, unit A
-#define MOTOR_PARAM_NO_LOAD_CURRENT ((0.5))
-
-//////////////////////////////////////////////////////////////////////////
-// Maximum parameters
-
-// Maximum Torque, unit Nm
-#define MOTOR_PARAM_MAX_TORQUE ((0.25))
-
-// Maximum Speed, unit rpm
-#define MOTOR_PARAM_MAX_SPEED ((8600))
-
-// Maximum DC bus voltage, unit V
-#define MOTOR_PARAM_MAX_DC_VOLTAGE ((25.2))
-
-// Maximum Phase Current RMS, unit A
-#define MOTOR_PARAM_MAX_PH_CURRENT((23.0))
-
-#endif //_FILE_MOTOR_PARAM_TYI5008_KV335_H_
+#endif //_FILE_MOTOR_PARAM_TYI5010_KV360_H_

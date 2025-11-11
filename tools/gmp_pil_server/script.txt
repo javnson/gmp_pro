@@ -1,0 +1,1 @@
+loadJSFile(java.lang.System.getenv("GMP_PRO_LOCATION") + "/tools/gmp_pil_server/ti_dbg_server_XDS110_mt.js") 

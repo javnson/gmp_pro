@@ -1,0 +1,40 @@
+CASE8 (PSpice format)
+**************************************
+**  This file was created by TINA   **
+**         www.tina.com             ** 
+**      (c) DesignSoft, Inc.        **          
+**     www.designsoftware.com       **
+**************************************
+.LIB "C:\ti\Tina 9 - TI\EXAMPLES\SPICE\TSPICE.LIB"
+.LIB "C:\ti\Tina 9 - TI\SPICELIB\Operational Amplifiers.LIB"
+.LIB
+.TEMP 27
+.AC DEC 20 10 1MEG
+.TRAN 2N 1U
+
+.OPTIONS ABSTOL=1P ITL1=150 ITL2=20 ITL4=10 TRTOL=7 
+
+VS1         4 0 5
+R6          1 2 0.05 
+R5          3 0 0.09 
+R4          1 3 10000
+R3          4 5 10000 
+R2          5 0 0.09 
+D1          0 6  D_1N1183_1 
+R1          1 0 50 
+L1          6 2 0.00022 IC=0 
+C2          1 3 0.00001 
+C1          4 5 0.00001 
+MT1         6 7 4 4  ME_2N6755_N_1 NRD=0 NRS=0 
+
+.MODEL D_1N1183_1 D( IS=36N N=1.6 BV=50 IBV=5M RS=2M 
++      CJO=460P VJ=550M M=440M FC=500M TT=434.7N 
++      EG=1.11 XTI=3 KF=0 AF=1 )
+.MODEL ME_2N6755_N_1 NMOS( LEVEL=3 VTO=3.128 KP=21.14U PHI=600M GAMMA=0 TOX=100N 
++      UO=600 VMAX=0 DELTA=0 THETA=0 ETA=0 
++      L=2U W=1.1 RD=64.68M RS=120.7M RG=5.839 
++      RB=0 RDS=600K IS=44.14F N=1 PB=800M 
++      CBD=1.261N CBS=0 MJ=500M TT=370N CGSO=725.6P 
++      CGDO=310.6P CGBO=0 KF=0 AF=1 )
+
+.END

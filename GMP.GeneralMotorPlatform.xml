@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package schemaVersion="1.7.7" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-Pack.xsd">
+  <vendor>GMP</vendor>
+  <name>General Motor Platform v1.0.5</name>
+  <description>General Controller Solution for Free.</description>
+  <url>https://github.com/javnson/gmp_pro</url>
+  
+  <releases>
+    <release version="1.0.5" date="2025-08-24">
+      Initial release of GMP library.
+    </release>
+  </releases>
+
+  <keywords>
+	<keyword>STM32</keyword>
+    <keyword>Controller</keyword>
+    <keyword>Utility</keyword>
+  </keywords>
+
+  <apis>
+      </apis>
+
+  <components>
+    <component Cclass="Controller Template Library" Cgroup="Intrinsic Basic" Cversion="1.0.5">
+      <description>Controller Template Library</description>
+      <RTE_Components_h>
+        #define RTE_GMP_CTL_CORE
+      </RTE_Components_h>
+      <files>
+        <file category="header" name="ctl/component/intrinsic/basic/divider.h"/>
+        <file category="header" name="ctl/component/intrinsic/basic/hysteresis_controller.h"/>
+        <file category="header" name="ctl/component/intrinsic/basic/saturation.h"/>
+        <file category="header" name="ctl/component/intrinsic/basic/slope_limiter.h"/>
+
+        <file category="source" name="ctl/component/intrinsic/src/ctl_component_basic.c"/>
+      </files>
+    </component>
+  </components>
+</package>

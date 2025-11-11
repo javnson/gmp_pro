@@ -20,11 +20,14 @@
 
 #include <xplt.peripheral.h>
 
-#include <ctl/component/digital_power/topology_preset/single_phase_dc_ac.h>
+#include <ctl/component/digital_power/single_phase/single_phase_dc_ac.h>
 
 sinv_ctrl_t sinv_ctrl;
 
-// enable motor running
+ctl_pid_t current_outer;
+ctrl_gt ig_rms_ref = float2ctrl(0.1);
+
+// enable controller
 #if !defined SPECIFY_PC_ENVIRONMENT
 volatile fast_gt flag_system_enable = 0;
 #else
@@ -32,7 +35,6 @@ volatile fast_gt flag_system_enable = 1;
 #endif // SPECIFY_PC_ENVIRONMENT
 
 volatile fast_gt flag_system_running = 0;
-
 volatile fast_gt flag_error = 0;
 
 // CTL initialize routine
@@ -45,28 +47,67 @@ void ctl_init()
 
     init.base_freq = 50.0f;
 
-    // voltage controller parameters
-    init.v_ctrl_kp = 0.4f;
-    init.v_ctrl_Ti = 0.2f;
+#if BUILD_LEVEL >= 8
+    // AC Voltage PID
+    init.v_ctrl_kp = 0.7f;
+    init.v_ctrl_Ti = 0.01f;
     init.v_ctrl_Td = 0;
+
+#else
+    // voltage controller parameters
+    init.v_ctrl_kp = 0.8f;
+    init.v_ctrl_Ti = 0.02f;
+    init.v_ctrl_Td = 0;
+#endif // BUILD_LEVEL
 
     // PLL parameters
     init.pll_ctrl_kp = 0.75f / 20;
     init.pll_ctrl_Ti = 1000.0f;
     init.pll_ctrl_cut_freq = 9.0f;
 
+#if BUILD_LEVEL <= 3
     // current controller parameters
-    init.i_ctrl_kp = 0.00000001f;
-    init.i_ctrl_kr = 20.0f;
+    init.i_ctrl_kp = 0.02f;
+    init.i_ctrl_kr = 340.0f;
+    init.i_ctrl_cut_freq = 8.0f;
+#elif BUILD_LEVEL <= 5
+    // current controller parameters
+    init.i_ctrl_kp = 1.0e-5f;
+    init.i_ctrl_kr = 80.0f;
+    init.i_ctrl_cut_freq = 8.0f;
+#elif BUILD_LEVEL <= 7
+    // current controller parameters
+    init.i_ctrl_kp = 1.0e-5f;
+    init.i_ctrl_kr = 80.0f;
+    init.i_ctrl_cut_freq = 8.0f;
+#elif BUILD_LEVEL <= 9
+    // current controller parameters
+    init.i_ctrl_kp = 1.0e-5f;
+    init.i_ctrl_kr = 80.0f;
+    init.i_ctrl_cut_freq = 8.0f;
+#elif BUILD_LEVEL == 10
+    // current controller parameters
+    init.i_ctrl_kp = 1.0e-5f;
+    init.i_ctrl_kr = 80.0f;
     init.i_ctrl_cut_freq = 8.0f;
 
+#endif // BUILD_LEVEL
+
     // harmonic controller parameters
-    init.harm_ctrl_kr_3 = 1.0f;
-    init.harm_ctrl_cut_freq_3 = 5.0f;
-    init.harm_ctrl_kr_5 = 1.0f;
-    init.harm_ctrl_cut_freq_5 = 5.0f;
-    init.harm_ctrl_kr_7 = 1.0f;
-    init.harm_ctrl_cut_freq_7 = 5.0f;
+    init.harm_ctrl_kr_3 = 40;
+    init.harm_ctrl_cut_freq_3 = 1.0f;
+    init.harm_ctrl_kr_5 = 10;
+    init.harm_ctrl_cut_freq_5 = 1.0f;
+    init.harm_ctrl_kr_7 = 30;
+    init.harm_ctrl_cut_freq_7 = 1.0f;
+    init.harm_ctrl_kr_9 = 10;
+    init.harm_ctrl_cut_freq_9 = 1.0f;
+    init.harm_ctrl_kr_11 = 15;
+    init.harm_ctrl_cut_freq_11 = 1.0f;
+    init.harm_ctrl_kr_13 = 20;
+    init.harm_ctrl_cut_freq_13 = 1.0f;
+    init.harm_ctrl_kr_15 = -3;
+    init.harm_ctrl_cut_freq_15 = 1.0f;
 
     // adc input filter cut frequency
     init.adc_filter_fc = 1000.0;
@@ -77,15 +118,19 @@ void ctl_init()
     // init sinv Controller
     ctl_init_sinv_ctrl(&sinv_ctrl, &init);
 
+#if BUILD_LEVEL == 10
+    ctl_init_pid_ser(&current_outer, 0.7, 0.1, 0, CONTROLLER_FREQUENCY);
+#endif // BUILD_LEVEL
+
 #if BUILD_LEVEL == 1
-    // Voltage open loop
+    // Voltage open loop, inverter
     ctl_set_sinv_openloop_inverter(&sinv_ctrl);
-    ctl_set_sinv_current_ref(&sinv_ctrl, float2ctrl(0.1));
+    ctl_set_sinv_current_ref(&sinv_ctrl, float2ctrl(0.6));
     ctl_set_sinv_freerun(&sinv_ctrl);
     ctl_disable_sinv_harm_ctrl(&sinv_ctrl);
 
 #elif BUILD_LEVEL == 2
-    // current close loop
+    // current close loop, inverter
     ctl_set_sinv_current_closeloop_inverter(&sinv_ctrl);
     ctl_set_sinv_current_ref(&sinv_ctrl, float2ctrl(0.1));
     ctl_set_sinv_freerun(&sinv_ctrl);
@@ -100,32 +145,51 @@ void ctl_init()
     ctl_enable_sinv_harm_ctrl(&sinv_ctrl);
 
 #elif BUILD_LEVEL == 4
+
+    // rectifier, current loop
+    ctl_set_sinv_current_closeloop_inverter(&sinv_ctrl);
+    ctl_set_sinv_current_ref(&sinv_ctrl, float2ctrl(-0.1));
+    ctl_set_sinv_pll(&sinv_ctrl);
+    ctl_disable_sinv_harm_ctrl(&sinv_ctrl);
+
+#elif BUILD_LEVEL == 5
+
+    // rectifier, current loop, with harm control
+    ctl_set_sinv_current_closeloop_inverter(&sinv_ctrl);
+    ctl_set_sinv_current_ref(&sinv_ctrl, float2ctrl(-0.1));
+    ctl_set_sinv_pll(&sinv_ctrl);
+    ctl_enable_sinv_harm_ctrl(&sinv_ctrl);
+
+#elif BUILD_LEVEL == 6
+
     // rectifier voltage loop, without harm control
     ctl_set_sinv_voltage_closeloop_rectifier(&sinv_ctrl);
     ctl_set_sinv_voltage_ref(&sinv_ctrl, float2ctrl(0.4));
     ctl_disable_sinv_harm_ctrl(&sinv_ctrl);
     ctl_set_sinv_pll(&sinv_ctrl);
 
-#elif BUILD_LEVEL == 5
+#elif BUILD_LEVEL == 7
     // rectifier voltage loop, with harm control
     ctl_set_sinv_voltage_closeloop_rectifier(&sinv_ctrl);
     ctl_set_sinv_voltage_ref(&sinv_ctrl, float2ctrl(0.4));
     ctl_enable_sinv_harm_ctrl(&sinv_ctrl);
     ctl_set_sinv_pll(&sinv_ctrl);
 
-#elif BUILD_LEVEL == 6
+#elif BUILD_LEVEL == 8
     // inverter voltage loop, without harm control
     ctl_set_sinv_voltage_closeloop_inverter(&sinv_ctrl);
-    ctl_set_sinv_voltage_ref(&sinv_ctrl, float2ctrl(0.4));
+    ctl_set_sinv_voltage_ref(&sinv_ctrl, float2ctrl(0.1));
     ctl_disable_sinv_harm_ctrl(&sinv_ctrl);
-    ctl_set_sinv_pll(&sinv_ctrl);
+    ctl_set_sinv_freerun(&sinv_ctrl);
 
-#elif BUILD_LEVEL == 7
+#elif BUILD_LEVEL == 9
     // inverter voltage loop, with harm control
     ctl_set_sinv_voltage_closeloop_inverter(&sinv_ctrl);
     ctl_set_sinv_voltage_ref(&sinv_ctrl, float2ctrl(0.4));
     ctl_enable_sinv_harm_ctrl(&sinv_ctrl);
-    ctl_set_sinv_pll(&sinv_ctrl);
+    ctl_set_sinv_freerun(&sinv_ctrl);
+
+#elif BUILD_LEVEL == 10
 
 #endif // BUILD_LEVEL
 
@@ -161,6 +225,7 @@ void ctl_mainloop(void)
     {
 
         // first time flag
+        // log the first time enable the system
         if (firsttime_flag == 0)
         {
             tick_bias = gmp_base_get_system_tick();
@@ -204,5 +269,9 @@ fast_gt ctl_ready_mainloop(void)
 
     ctl_clear_sinv(&sinv_ctrl);
 
-    return ctl_get_spll_error_fbk(&sinv_ctrl.spll) < CTRL_SPLL_EPSILON;
+    if (ctl_is_sinv_inverter_mode(&sinv_ctrl))
+        return 1;
+    else
+
+        return (ctl_abs(ctl_get_spll_error_fbk(&sinv_ctrl.spll)) < CTRL_SPLL_EPSILON);
 }

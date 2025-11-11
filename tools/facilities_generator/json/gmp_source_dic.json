@@ -46,6 +46,17 @@
         "description": "GMP CTL Digital Power SDK module."
     },
     {
+        "name": "gmp_ctl_dynamic_signal_analysis",
+        "tag": "GMP CTL",
+        "source_path": [
+            "ctl/component/dsa"
+        ],
+        "include_path": [
+            "."
+        ],
+        "description": "GMP CTL Dynamic signal analysis SDK module."
+    },
+    {
         "name": "gmp_csp_windows",
         "tag": "GMP CSP",
         "source_path": [

@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35327.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GMP_CTL_Intrinsic_UT", "GMP_CTL_Intrinsic_UT\GMP_CTL_Intrinsic_UT.vcxproj", "{454B8E12-32BA-4679-AE91-C89A683CE085}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{454B8E12-32BA-4679-AE91-C89A683CE085}.Debug|x64.ActiveCfg = Debug|x64
+		{454B8E12-32BA-4679-AE91-C89A683CE085}.Debug|x64.Build.0 = Debug|x64
+		{454B8E12-32BA-4679-AE91-C89A683CE085}.Debug|x86.ActiveCfg = Debug|Win32
+		{454B8E12-32BA-4679-AE91-C89A683CE085}.Debug|x86.Build.0 = Debug|Win32
+		{454B8E12-32BA-4679-AE91-C89A683CE085}.Release|x64.ActiveCfg = Release|x64
+		{454B8E12-32BA-4679-AE91-C89A683CE085}.Release|x64.Build.0 = Release|x64
+		{454B8E12-32BA-4679-AE91-C89A683CE085}.Release|x86.ActiveCfg = Release|Win32
+		{454B8E12-32BA-4679-AE91-C89A683CE085}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CBC704A7-0728-4CF5-A4F8-3DDAE8627B26}
+	EndGlobalSection
+EndGlobal

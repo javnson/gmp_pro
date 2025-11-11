@@ -1,0 +1,113 @@
+
+
+#include <gmp_core.h>
+
+#include <ctl/component/motor_control/pmsm_controller/pmsm_ctrl_mtpa.h>
+
+// #include "peripheral.h"
+
+// init pmsm_mtpa_bare_controller struct
+void ctl_init_pmsm_mtpa_bare_controller(pmsm_mtpa_controller_t* ctrl, pmsm_mtpa_controller_init_t* init)
+{
+#ifdef PMSM_CTRL_USING_DISCRETE_CTRL
+    // controller implement
+    ctl_init_discrete_pid(
+        // d axis current controller
+        &ctrl->current_ctrl[phase_d],
+        // parameters for current controller
+        init->current_d_pid_gain, init->current_d_Ti, init->current_d_Td,
+        // controller frequency
+        init->fs);
+    ctl_set_discrete_pid_limit(&ctrl->current_ctrl[phase_d], init->voltage_limit_max, init->voltage_limit_min);
+
+    ctl_init_discrete_pid(
+        // d axis current controller
+        &ctrl->current_ctrl[phase_q],
+        // parameters for current controller
+        init->current_q_pid_gain, init->current_q_Ti, init->current_q_Td,
+        // controller frequency
+        init->fs);
+    ctl_set_discrete_pid_limit(&ctrl->current_ctrl[phase_q], init->voltage_limit_max, init->voltage_limit_min);
+
+    ctl_init_tracking_pid(
+        // speed controller
+        &ctrl->spd_ctrl,
+        // parameters for speed controller
+        init->spd_pid_gain, init->spd_Ti, init->spd_Td,
+        // saturation
+        init->current_limit_max, init->current_limit_min,
+        // acceleration
+        init->acc_limit_max, init->acc_limit_min,
+        // speed controller divider
+        init->spd_ctrl_div,
+        // controller frequency
+        init->fs);
+
+#else // using continuous controller
+
+    ctl_init_pid_ser(
+        // d axis current controller
+        &ctrl->current_ctrl[phase_d],
+        // parameters for current controller
+        init->current_d_pid_gain, init->current_d_Ti, init->current_d_Td,
+        // controller frequency
+        init->fs);
+    ctl_set_pid_limit(&ctrl->current_ctrl[phase_d], init->voltage_limit_max, init->voltage_limit_min);
+
+    ctl_init_pid_ser(
+        // d axis current controller
+        &ctrl->current_ctrl[phase_q],
+        // parameters for current controller
+        init->current_q_pid_gain, init->current_q_Ti, init->current_q_Td,
+        // controller frequency
+        init->fs);
+    ctl_set_pid_limit(&ctrl->current_ctrl[phase_q], init->voltage_limit_max, init->voltage_limit_min);
+
+    ctl_init_tracking_continuous_pid(
+        // speed controller
+        &ctrl->spd_ctrl,
+        // parameters for speed controller
+        init->spd_pid_gain, init->spd_Ti, init->spd_Td,
+        // saturation
+        init->current_limit_max, init->current_limit_min,
+        // acceleration
+        init->acc_limit_max, init->acc_limit_min,
+        // speed controller divider
+        init->spd_ctrl_div,
+        // controller frequency
+        init->fs);
+
+#endif // PMSM_CTRL_USING_DISCRETE_CTRL
+
+    // controller intermediate variable
+    ctl_vector3_clear(&ctrl->iab0);
+    ctl_vector3_clear(&ctrl->uab0);
+    ctl_vector3_clear(&ctrl->idq0);
+    ctl_vector3_clear(&ctrl->udq0);
+
+    // controller feed forward parameters
+    ctl_vector2_clear(&ctrl->idq_ff);
+    ctl_vector2_clear(&ctrl->vdq_ff);
+
+    // controller set parameters
+    ctl_vector3_clear(&ctrl->vab0_set);
+    ctl_vector3_clear(&ctrl->vdq_set);
+    ctl_vector2_clear(&ctrl->idq_set);
+    ctrl->speed_set = 0;
+    ctrl->pos_set = 0;
+    ctrl->revolution_set = 0;
+
+    // flag stack
+    ctl_disable_pmsm_mtpa_ctrl(ctrl);
+    ctl_pmsm_mtpa_ctrl_valphabeta_mode(ctrl);
+}
+
+void ctl_attach_pmsm_mtpa_bare_output(pmsm_mtpa_controller_t* ctrl, tri_pwm_ift* pwm)
+{
+    ctrl->pwm_out = pwm;
+}
+
+//void ctl_attach_idq_distributor(pmsm_mtpa_controller_t* ctrl, ctl_current_distributor_t* distributor)
+//{
+//    ctrl->distributor = distributor;
+//}

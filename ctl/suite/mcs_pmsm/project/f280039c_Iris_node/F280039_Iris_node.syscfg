@@ -1,0 +1,227 @@
+/**
+ * These arguments were used when this file was generated. They will be automatically applied on subsequent loads
+ * via the GUI or CLI. Run CLI with '--help' for additional information on how to override these arguments.
+ * @cliArgs --device "F28003x" --part "F28003x_100PZ" --package "100PZ" --context "system" --product "C2000WARE@5.03.00.00"
+ * @v2CliArgs --device "TMS320F280039C" --package "100PZ" --context "system" --product "C2000WARE@5.03.00.00"
+ * @versions {"tool":"1.24.1+4189"}
+ */
+
+/**
+ * Import the modules used in this configuration.
+ */
+const adc            = scripting.addModule("/driverlib/adc.js", {}, false);
+const adc1           = adc.addInstance();
+const adc2           = adc.addInstance();
+const adc3           = adc.addInstance();
+const analog         = scripting.addModule("/driverlib/analog.js", {}, false);
+const analog1        = analog.addInstance();
+const can            = scripting.addModule("/driverlib/can.js", {}, false);
+const can1           = can.addInstance();
+const dac            = scripting.addModule("/driverlib/dac.js", {}, false);
+const dac1           = dac.addInstance();
+const dac2           = dac.addInstance();
+const device_support = scripting.addModule("/driverlib/device_support.js");
+const epwm           = scripting.addModule("/driverlib/epwm.js", {}, false);
+const epwm1          = epwm.addInstance();
+const epwm2          = epwm.addInstance();
+const epwm3          = epwm.addInstance();
+const epwm4          = epwm.addInstance();
+const epwm5          = epwm.addInstance();
+const epwm6          = epwm.addInstance();
+const eqep           = scripting.addModule("/driverlib/eqep.js", {}, false);
+const eqep1          = eqep.addInstance();
+const eqep2          = eqep.addInstance();
+const gpio           = scripting.addModule("/driverlib/gpio.js", {}, false);
+const gpio1          = gpio.addInstance();
+const gpio2          = gpio.addInstance();
+const gpio3          = gpio.addInstance();
+const gpio4          = gpio.addInstance();
+const gpio5          = gpio.addInstance();
+const gpio6          = gpio.addInstance();
+const gpio7          = gpio.addInstance();
+const gpio8          = gpio.addInstance();
+const i2c            = scripting.addModule("/driverlib/i2c.js", {}, false);
+const i2c1           = i2c.addInstance();
+const other          = scripting.addModule("/driverlib/other.js", {}, false);
+const other1         = other.addInstance();
+const sci            = scripting.addModule("/driverlib/sci.js", {}, false);
+const sci1           = sci.addInstance();
+const sci2           = sci.addInstance();
+const spi            = scripting.addModule("/driverlib/spi.js", {}, false);
+const spi1           = spi.addInstance();
+
+/**
+ * Write custom configuration values to the imported modules.
+ */
+adc1.$name             = "IRIS_ADCA";
+adc1.adcClockPrescaler = "ADC_CLK_DIV_2_0";
+
+adc2.$name             = "IRIS_ADCB";
+adc2.adcBase           = "ADCB_BASE";
+adc2.adcClockPrescaler = "ADC_CLK_DIV_2_0";
+adc2.enabledSOCs       = ["ADC_SOC_NUMBER0"];
+adc2.soc0SampleWindow  = 9;
+adc2.soc0Channel       = "ADC_CH_ADCIN5";
+
+adc3.$name             = "IRIS_ADCC";
+adc3.adcBase           = "ADCC_BASE";
+adc3.adcClockPrescaler = "ADC_CLK_DIV_2_0";
+
+can1.$name                 = "IRIS_CAN";
+can1.can.$assign           = "CANA";
+can1.can.can_rxPin.$assign = "GPIO30";
+can1.can.can_txPin.$assign = "GPIO31";
+
+const pinFunction3     = system.clockTree["XTAL"];
+pinFunction3.XTAL_Freq = 12;
+
+dac1.$name = "IRIS_DACA";
+
+dac2.$name   = "IRIS_DACB";
+dac2.dacBase = "DACB_BASE";
+
+dac1.analog                                      = analog1;
+dac2.analog                                      = analog1;
+analog1.useCase                                  = "CUSTOM";
+adc1.analog                                      = analog1;
+adc2.analog                                      = analog1;
+adc3.analog                                      = analog1;
+analog1.useInterfacePins                         = ["A0/B15/C15/DACA_OUT","A1/B7/DACB_OUT","A10/B1/C10","A11/B10/C0","A12, C5","A14/B14/C4","A2/B6/C9","A3, C7/B9","A4/B8","A5","A6","A8","A9","B0/C11","B11","B2/C6","B3/VDAC","B4/C8","B5","C1","C14","C2/B12","C3/A7"];
+analog1.$name                                    = "IRIS_ANALOG_PinMux";
+analog1.analog.$assign                           = "ANALOG";
+analog1.analog["a0/b15/c15/daca_outPin"].$assign = "A0/B15/C15/DACA_OUT";
+analog1.analog["a1/b7/dacb_outPin"].$assign      = "A1/B7/DACB_OUT";
+analog1.analog["a10/b1/c10Pin"].$assign          = "A10/B1/C10";
+analog1.analog["a11/b10/c0Pin"].$assign          = "A11/B10/C0";
+analog1.analog["a12, c5Pin"].$assign             = "A12, C5";
+analog1.analog["a14/b14/c4Pin"].$assign          = "A14/B14/C4";
+analog1.analog["a2/b6/c9Pin"].$assign            = "A2/B6/C9";
+analog1.analog["a3, c7/b9Pin"].$assign           = "A3, C7/B9";
+analog1.analog["a4/b8Pin"].$assign               = "A4/B8";
+analog1.analog.a5Pin.$assign                     = "A5";
+analog1.analog.a6Pin.$assign                     = "A6";
+analog1.analog.a8Pin.$assign                     = "A8";
+analog1.analog.a9Pin.$assign                     = "A9";
+analog1.analog["b0/c11Pin"].$assign              = "B0/C11";
+analog1.analog.b11Pin.$assign                    = "B11";
+analog1.analog["b2/c6Pin"].$assign               = "B2/C6";
+analog1.analog["b3/vdacPin"].$assign             = "B3/VDAC";
+analog1.analog["b4/c8Pin"].$assign               = "B4/C8";
+analog1.analog.b5Pin.$assign                     = "B5";
+analog1.analog.c1Pin.$assign                     = "C1";
+analog1.analog.c14Pin.$assign                    = "C14";
+analog1.analog["c2/b12Pin"].$assign              = "C2/B12";
+analog1.analog["c3/a7Pin"].$assign               = "C3/A7";
+
+epwm1.$name                  = "IRIS_EPWM1";
+epwm1.epwm.$assign           = "EPWM2";
+epwm1.epwm.epwm_aPin.$assign = "GPIO2";
+epwm1.epwm.epwm_bPin.$assign = "GPIO3";
+
+epwm2.$name                  = "IRIS_EPWM2";
+epwm2.epwm.$assign           = "EPWM1";
+epwm2.epwm.epwm_aPin.$assign = "GPIO0";
+epwm2.epwm.epwm_bPin.$assign = "GPIO1";
+
+epwm3.$name                  = "IRIS_EPWM3";
+epwm3.epwm.$assign           = "EPWM4";
+epwm3.epwm.epwm_aPin.$assign = "GPIO22";
+epwm3.epwm.epwm_bPin.$assign = "GPIO7";
+
+epwm4.$name                  = "IRIS_EPWM4";
+epwm4.epwm.$assign           = "EPWM3";
+epwm4.epwm.epwm_aPin.$assign = "GPIO4";
+epwm4.epwm.epwm_bPin.$assign = "GPIO5";
+
+epwm5.$name                  = "IRIS_EPWM5";
+epwm5.epwm.$assign           = "EPWM8";
+epwm5.epwm.epwm_aPin.$assign = "GPIO14";
+epwm5.epwm.epwm_bPin.$assign = "GPIO15";
+
+epwm6.$name                  = "IRIS_EPWM6";
+epwm6.epwm.$assign           = "EPWM7";
+epwm6.epwm.epwm_aPin.$assign = "GPIO28";
+epwm6.epwm.epwm_bPin.$assign = "GPIO29";
+
+eqep1.$name                      = "IRIS_EQEP1";
+eqep1.useCase                    = "CUSTOM";
+eqep1.useInterfacePins           = ["EQEP#_A","EQEP#_B","EQEP#_INDEX"];
+eqep1.eqep.$assign               = "EQEP1";
+eqep1.eqep.eqep_aPin.$assign     = "B5, GPIO20";
+eqep1.eqep.eqep_bPin.$assign     = "B11, GPIO21";
+eqep1.eqep.eqep_indexPin.$assign = "GPIO13";
+
+eqep2.$name                      = "IRIS_EQEP2";
+eqep2.useCase                    = "CUSTOM";
+eqep2.useInterfacePins           = ["EQEP#_A","EQEP#_B","EQEP#_INDEX"];
+eqep2.eqep.$assign               = "EQEP2";
+eqep2.eqep.eqep_aPin.$assign     = "GPIO24";
+eqep2.eqep.eqep_bPin.$assign     = "GPIO33";
+eqep2.eqep.eqep_indexPin.$assign = "GPIO26";
+
+gpio1.$name           = "IRIS_GPIO1";
+gpio1.gpioPin.$assign = "GPIO58";
+
+gpio2.$name           = "IRIS_GPIO2";
+gpio2.gpioPin.$assign = "GPIO23";
+
+gpio3.$name           = "IRIS_GPIO3";
+gpio3.gpioPin.$assign = "GPIO40";
+
+gpio4.$name           = "IRIS_GPIO4";
+gpio4.gpioPin.$assign = "GPIO44";
+
+gpio5.$name           = "IRIS_GPIO5";
+gpio5.gpioPin.$assign = "GPIO34";
+
+gpio6.$name           = "IRIS_GPIO6";
+gpio6.gpioPin.$assign = "GPIO47";
+
+gpio7.$name           = "IRIS_LED1";
+gpio7.direction       = "GPIO_DIR_MODE_OUT";
+gpio7.gpioPin.$assign = "GPIO61";
+
+gpio8.$name           = "IRIS_LED2";
+gpio8.gpioPin.$assign = "GPIO59";
+
+i2c1.$name                  = "IRIS_IIC";
+i2c1.i2c.$assign            = "I2CA";
+i2c1.i2c.i2c_sdaPin.$assign = "GPIO56";
+i2c1.i2c.i2c_sclPin.$assign = "GPIO57";
+
+other1.useCase                   = "CUSTOM";
+other1.useInterfacePins          = ["ADCSOCAO","SYNCOUT","TDI","TDO","X1","XCLKOUT","XRSn"];
+other1.$name                     = "OTHER_PIN_DEFINITION";
+other1.other.$assign             = "OTHER";
+other1.other.adcsocaoPin.$assign = "GPIO8";
+other1.other.syncoutPin.$assign  = "GPIO6";
+other1.other.xclkoutPin.$assign  = "GPIO18, X2";
+other1.other.tdoPin.$assign      = "GPIO37/TDO";
+other1.other.tdiPin.$assign      = "GPIO35/TDI";
+other1.other.x1Pin.$assign       = "GPIO19, X1";
+
+sci1.$name                 = "IRIS_UART_USB";
+sci1.sci.$assign           = "SCIA";
+sci1.sci.sci_rxPin.$assign = "GPIO9";
+sci1.sci.sci_txPin.$assign = "GPIO48";
+sci1.rxQual.$name          = "myGPIOQUAL0";
+sci1.txQual.$name          = "myGPIOQUAL1";
+
+sci2.$name                 = "IRIS_UART_RS232";
+sci2.sci.$assign           = "SCIB";
+sci2.sci.sci_rxPin.$assign = "GPIO41";
+sci2.sci.sci_txPin.$assign = "GPIO10";
+sci2.rxQual.$name          = "myGPIOQUAL6";
+sci2.txQual.$name          = "myGPIOQUAL7";
+
+spi1.$name                   = "IRIS_SPI_FPGA_BRIDGE";
+spi1.bitRate                 = 10000000;
+spi1.spi.$assign             = "SPIA";
+spi1.spi.spi_picoPin.$assign = "GPIO16";
+spi1.spi.spi_pociPin.$assign = "GPIO17";
+spi1.spi.spi_clkPin.$assign  = "GPIO12";
+spi1.spi.spi_ptePin.$assign  = "GPIO11";
+spi1.picoQual.$name          = "myGPIOQUAL2";
+spi1.pociQual.$name          = "myGPIOQUAL3";
+spi1.clkQual.$name           = "myGPIOQUAL4";
+spi1.pteQual.$name           = "myGPIOQUAL5";

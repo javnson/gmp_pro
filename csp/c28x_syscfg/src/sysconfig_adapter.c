@@ -15,8 +15,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <ctl/component/intrinsic/discrete/divider.h>
 #include <c28x_peripheral_driver.h>
+#include <ctl/component/intrinsic/basic/divider.h>
 
 // System Tick
 time_gt DSPC2000_SystemTick = 0;
@@ -136,7 +136,7 @@ void gmp_csp_post_process()
 uart_halt debug_uart;
 
 // implement the gmp_debug_print routine.
-size_gt gmp_base_print_c28xsyscfg(const char *p_fmt, ...)
+size_gt gmp_base_print_c28xsyscfg(const char* p_fmt, ...)
 {
     // if no one was specified to output, just ignore the request.
     if (debug_uart == NULL)
@@ -151,10 +151,10 @@ size_gt gmp_base_print_c28xsyscfg(const char *p_fmt, ...)
 
     va_list vArgs;
     va_start(vArgs, p_fmt);
-    vsprintf((char *)str, (char const *)p_fmt, vArgs);
+    vsprintf((char*)str, (char const*)p_fmt, vArgs);
     va_end(vArgs);
 
-    size_gt length = (size_gt)strlen((char *)str);
+    size_gt length = (size_gt)strlen((char*)str);
 
     gmp_hal_uart_write(debug_uart, str, length);
 
