@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<userSetting name="E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian/promote.xml" version="Diamond (64-bit) 2025.1.0.39.0" date="Wed Oct 08 11:16:26 2025" vendor="Lattice Semiconductor Corporation" >
+<userSetting name="E:/lib/gmp_pro/tools/hvhb40040_Antaioz/HVHB_FPGA_Guardian/promote.xml" version="Diamond (64-bit) 2025.1.0.39.0" date="Sun Nov 09 15:19:28 2025" vendor="Lattice Semiconductor Corporation" >
+  <msg mid="2043137" type="Error" internal="true" />
+  <msg mid="2043128" type="Error" internal="true" />
   <msg mid="2043116" type="Error" internal="true" />
   <msg mid="2043010" type="Error" internal="true" />
-  <msg mid="2043128" type="Error" internal="true" />
-  <msg mid="2043137" type="Error" internal="true" />
+  <msg mid="2043329" type="Warning" internal="true" />
   <msg mid="2043138" type="Error" internal="true" />
-  <msg mid="2043556" type="Error" internal="true" />
   <msg mid="35901328" type="Info" internal="true" />
+  <msg mid="2043556" type="Error" internal="true" />
   <msg mid="2043072" type="Error" internal="true" />
   <msg mid="35921504" type="Info" internal="true" />
   <msg mid="2043018" type="Info" internal="true" />
   <msg mid="2044344" type="Error" internal="true" />
   <msg mid="2043967" type="Info" internal="true" />
   <msg mid="2044561" type="Info" internal="true" />
-  <msg mid="2043329" type="Warning" internal="true" />
   <msg mid="2043214" type="Warning" internal="true" />
   <msg mid="2044170" type="Warning" internal="true" />
+  <msg mid="2043096" type="Error" internal="true" />
   <msg mid="2044523" type="Error" internal="true" />
   <msg mid="2043362" type="Warning" internal="true" />
   <msg mid="2043328" type="Info" internal="true" />
@@ -25,4 +26,16 @@
   <msg mid="2043330" type="Warning" internal="true" />
   <msg mid="2044607" type="Error" internal="true" />
   <msg mid="2043162" type="Error" internal="true" />
+  <msg mid="2043229" type="Warning" internal="true" />
+  <msg mid="35901229" type="Warning" internal="true" />
+  <msg mid="2043245" type="Error" internal="true" />
+  <msg mid="35901245" type="Warning" internal="true" />
+  <msg mid="2012475" type="Warning" internal="true" />
+  <msg mid="35901209" type="Warning" internal="true" />
+  <msg mid="35931002" type="Warning" internal="true" />
+  <msg mid="2043002" type="Error" internal="true" />
+  <msg mid="35901002" type="Warning" internal="true" />
+  <msg mid="35901349" type="Warning" internal="true" />
+  <msg mid="35901556" type="Warning" internal="true" />
+  <msg mid="35901281" type="Warning" internal="true" />
 </userSetting>

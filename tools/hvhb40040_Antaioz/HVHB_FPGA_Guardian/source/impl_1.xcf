@@ -17,9 +17,9 @@
 				<BScanLen>1</BScanLen>
 				<BScanVal>0</BScanVal>
 			</Bypass>
-			<File>../../impl_1/HVHB_Guardian_impl_1.bin</File>
-			<FileTime>10/08/25 11:16:26</FileTime>
-			<JedecChecksum>0x69E2</JedecChecksum>
+			<File>../../../../../../../FPGA/ICE40UP5K/cube_project/led_test/led_test_Implmnt/sbt/outputs/bitmap/top_bitmap.hex</File>
+			<FileTime>11/09/25 16:14:06</FileTime>
+			<JedecChecksum>0x493C</JedecChecksum>
 			<MemoryType>External SPI Flash Memory (SPI FLASH)</MemoryType>
 			<Operation>Erase,Program,Verify</Operation>
 			<Option>
@@ -60,11 +60,11 @@
 					<IDCode>0x13</IDCode>
 					<Package>8-pin SOIC</Package>
 					<Operation>Erase,Program,Verify</Operation>
-					<File>../../impl_1/HVHB_Guardian_impl_1.bin</File>
+					<File>../../../../../../../FPGA/ICE40UP5K/cube_project/led_test/led_test_Implmnt/sbt/outputs/bitmap/top_bitmap.hex</File>
 					<AddressBase>0x00000000</AddressBase>
 					<EndAddress>0x00010000</EndAddress>
 					<DeviceSize>8</DeviceSize>
-					<DataSize>104156</DataSize>
+					<DataSize>104155</DataSize>
 					<NumberOfDevices>1</NumberOfDevices>
 					<ReInitialize value="FALSE"/>
 				</Device>
@@ -73,11 +73,11 @@
 				<Device>
 					<Pos>1</Pos>
 					<Name></Name>
-					<File>E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian/impl_1/HVHB_Guardian_impl_1.bin</File>
+					<File>E:/FPGA/ICE40UP5K/cube_project/led_test/led_test_Implmnt/sbt/outputs/bitmap/top_bitmap.hex</File>
 					<LocalChainList>
 						<LocalDevice index="-99"
 							name="Unknown"
-							file="E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian/impl_1/HVHB_Guardian_impl_1.bin"/>
+							file="E:/FPGA/ICE40UP5K/cube_project/led_test/led_test_Implmnt/sbt/outputs/bitmap/top_bitmap.hex"/>
 					</LocalChainList>
 					<Option>
 						<SVFVendor>JTAG STANDARD</SVFVendor>
@@ -95,10 +95,11 @@
 		<EndTAP>TLR</EndTAP>
 		<DisableCheckBoard value="TRUE"/>
 		<VerifyUsercode value="FALSE"/>
-		<TCKDelay>1</TCKDelay>
+		<TCKDelay>3</TCKDelay>
 	</ProjectOptions>
 	<CableOptions>
 		<CableName>USB</CableName>
 		<PortAdd>EzUSB-0</PortAdd>
+		<USBID>\\?\usb#vid_1134&amp;amp;pid_8001#a&amp;amp;10a9f275&amp;amp;0&amp;amp;2#</USBID>
 	</CableOptions>
 </ispXCF>

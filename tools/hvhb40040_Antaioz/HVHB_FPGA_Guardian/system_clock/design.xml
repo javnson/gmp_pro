@@ -1,0 +1,157 @@
+<?xml version="1.0" ?>
+<ipxact:design xmlns:ipxact="http://www.accellera.org/XMLSchema/IPXACT/1685-2014" xmlns:lattice="http://www.latticesemi.com/lattice" xmlns:lsccip="http://www.latticesemi.com/XMLSchema/Radiant/ip">
+    <ipxact:vendor>latticesemi.com</ipxact:vendor>
+    <ipxact:library>module</ipxact:library>
+    <ipxact:name>system_clock</ipxact:name>
+    <ipxact:version>1.0.1</ipxact:version>
+    <ipxact:componentInstances>
+        <ipxact:componentInstance>
+            <ipxact:instanceName>lscc_pll_inst</ipxact:instanceName>
+            <ipxact:componentRef library="module" name="pll" vendor="latticesemi.com" version="1.0.1">
+                <ipxact:configurableElementValues>
+                    <ipxact:configurableElementValue referenceId="num_outputs">1</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="msg">Configuration Successful</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="in_clk">24.0</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="DIVR">1</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="FILTER_RANGE">1</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="FREQUENCY_PIN_REFERENCECLK">24.0</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="FEEDBACK_PATH">SIMPLE</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="extdiv_en">False</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="extdiv_port_sel">Port A</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="extdiv">1</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="extdiv_add">1</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="extdiv_total">1</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="EXTERNAL_DIVIDE_FACTOR">NONE</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="DIVF">66</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="VCO">804.0</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="DELAY_ADJUSTMENT_MODE_FEEDBACK">FIXED</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="FDA_FEEDBACK">0</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="DELAY_PORT_WIDTH">4</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="SHIFTREG_DIV_MODE">0</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="PLLOUT_SELECT_PORTA">GENCLK</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="PLLOUT_SELECT_PORTB">GENCLK</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="out_clk">50.0</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="fclkopA">50.25</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="fclkopB">50.25</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="fclkop_actual">50.25</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="fclkop_tolerance">5.0</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="fclkop_actual_deviation">0.5</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="DELAY_ADJUSTMENT_MODE_RELATIVE">FIXED</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="FDA_RELATIVE">0</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="DIVQ">4</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="enable_lock">False</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="enable_bypass">False</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="ENABLE_ICEGATE_PORTA">False</ipxact:configurableElementValue>
+                    <ipxact:configurableElementValue referenceId="ENABLE_ICEGATE_PORTB">False</ipxact:configurableElementValue>
+                </ipxact:configurableElementValues>
+            </ipxact:componentRef>
+        </ipxact:componentInstance>
+    </ipxact:componentInstances>
+    <ipxact:adHocConnections>
+        <ipxact:adHocConnection>
+            <ipxact:name>system_clock.ref_clk_i</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="system_clock" portRef="ref_clk_i"/>
+                <ipxact:externalPortReference portRef="ref_clk_i"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>system_clock.rst_n_i</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="system_clock" portRef="rst_n_i"/>
+                <ipxact:externalPortReference portRef="rst_n_i"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>system_clock.feedback_i</ipxact:name>
+            <ipxact:tiedValue>1'b0</ipxact:tiedValue>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="system_clock" portRef="feedback_i"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>system_clock.dynamic_delay_i.3:0</ipxact:name>
+            <ipxact:tiedValue>4'b0000</ipxact:tiedValue>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="system_clock" portRef="dynamic_delay_i">
+                    <ipxact:partSelect>
+                        <ipxact:range>
+                            <ipxact:left>3</ipxact:left>
+                            <ipxact:right>0</ipxact:right>
+                        </ipxact:range>
+                    </ipxact:partSelect>
+                </ipxact:internalPortReference>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>system_clock.bypass_i</ipxact:name>
+            <ipxact:tiedValue>1'b0</ipxact:tiedValue>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="system_clock" portRef="bypass_i"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>system_clock.latch_i</ipxact:name>
+            <ipxact:tiedValue>1'b0</ipxact:tiedValue>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="system_clock" portRef="latch_i"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>system_clock.lock_o</ipxact:name>
+            <ipxact:tiedValue>open</ipxact:tiedValue>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="system_clock" portRef="lock_o"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>system_clock.outcore_o</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="system_clock" portRef="outcore_o"/>
+                <ipxact:externalPortReference portRef="outcore_o"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>system_clock.outglobal_o</ipxact:name>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="system_clock" portRef="outglobal_o"/>
+                <ipxact:externalPortReference portRef="outglobal_o"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>system_clock.outcoreb_o</ipxact:name>
+            <ipxact:tiedValue>open</ipxact:tiedValue>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="system_clock" portRef="outcoreb_o"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>system_clock.outglobalb_o</ipxact:name>
+            <ipxact:tiedValue>open</ipxact:tiedValue>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="system_clock" portRef="outglobalb_o"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>system_clock.sclk_i</ipxact:name>
+            <ipxact:tiedValue>open</ipxact:tiedValue>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="system_clock" portRef="sclk_i"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>system_clock.sdi_i</ipxact:name>
+            <ipxact:tiedValue>open</ipxact:tiedValue>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="system_clock" portRef="sdi_i"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+        <ipxact:adHocConnection>
+            <ipxact:name>system_clock.sdo_o</ipxact:name>
+            <ipxact:tiedValue>open</ipxact:tiedValue>
+            <ipxact:portReferences>
+                <ipxact:internalPortReference componentRef="system_clock" portRef="sdo_o"/>
+            </ipxact:portReferences>
+        </ipxact:adHocConnection>
+    </ipxact:adHocConnections>
+</ipxact:design>

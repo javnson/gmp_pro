@@ -111,6 +111,7 @@ typedef enum _enum_ADC_channels
 volatile uint16_t adc_dma_buffer[5];
 
 // Error Registers
+// 1 = error occurred, 0 = no error.
 uint32_t flag_error_over_cuurent;
 uint32_t flag_error_over_voltage;
 uint32_t flag_error_psup_not_ready;
@@ -328,7 +329,18 @@ printf("EEPROM Test Passed.\r\n");
 	  // calculate fan speed
 		fan_spd_fbk_krpm = update_fan_speed();
 		
+		// PSUP judge
+		// PSUP_Monitor_12V = 0x83E
+    // PSUP_Monitor_5V  = 0x830
+		
     // feed watchdog here
+		
+		
+		// for now no error will be detected
+		  flag_error_over_cuurent = 0;
+      flag_error_over_voltage = 0;
+      flag_error_psup_not_ready = 0;
+      flag_error_fan_not_ready = 0;
 
 		
 
@@ -1034,22 +1046,22 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 
 void update_fault_state(void)
 {
-  if (flag_error_over_cuurent)
+  if (!flag_error_over_cuurent)
     HAL_GPIO_WritePin(GPIO_OUT_OVER_CURRENT_GPIO_Port, GPIO_OUT_OVER_CURRENT_Pin, 0);
   else
     HAL_GPIO_WritePin(GPIO_OUT_OVER_CURRENT_GPIO_Port, GPIO_OUT_OVER_CURRENT_Pin, 1);
 
-  if (flag_error_over_voltage)
+  if (!flag_error_over_voltage)
     HAL_GPIO_WritePin(GPIO_OUT_FAN_NOT_READY_GPIO_Port, GPIO_OUT_FAN_NOT_READY_Pin, 0);
   else
     HAL_GPIO_WritePin(GPIO_OUT_FAN_NOT_READY_GPIO_Port, GPIO_OUT_FAN_NOT_READY_Pin, 1);
 
-  if (flag_error_psup_not_ready)
+  if (!flag_error_psup_not_ready)
     HAL_GPIO_WritePin(GPIO_OUT_PSUP_NOT_READY_GPIO_Port, GPIO_OUT_PSUP_NOT_READY_Pin, 0);
   else
     HAL_GPIO_WritePin(GPIO_OUT_PSUP_NOT_READY_GPIO_Port, GPIO_OUT_PSUP_NOT_READY_Pin, 1);
 
-  if (flag_error_fan_not_ready)
+  if (!flag_error_fan_not_ready)
     HAL_GPIO_WritePin(GPIO_OUT_OVER_VOLTAGE_GPIO_Port, GPIO_OUT_OVER_VOLTAGE_Pin, 0);
   else
     HAL_GPIO_WritePin(GPIO_OUT_OVER_VOLTAGE_GPIO_Port, GPIO_OUT_OVER_VOLTAGE_Pin, 1);
