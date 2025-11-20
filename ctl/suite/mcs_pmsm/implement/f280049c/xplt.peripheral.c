@@ -106,7 +106,7 @@ void setup_peripheral(void)
 
     ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &pos_enc.encif);
 
-    ctl_attach_pmsm_bare_output(&pmsm_ctrl, &pwm_out.raw);
+    ctl_attach_pmsm_output(&pmsm_ctrl, &pwm_out.raw);
 
     // output channel
     ctl_init_pwm_tri_channel(&pwm_out, 0, CONTROLLER_PWM_CMP_MAX);
