@@ -1,9 +1,9 @@
 /**
  * These arguments were used when this file was generated. They will be automatically applied on subsequent loads
  * via the GUI or CLI. Run CLI with '--help' for additional information on how to override these arguments.
- * @cliArgs --device "F28004x" --part "F28004x_100PZ" --package "F28004x_100PZ" --context "system" --product "gmp_pro@1.00.00.05" --product "C2000WARE@5.03.00.00"
- * @v2CliArgs --device "TMS320F280041C" --package "100PZ" --context "system" --product "gmp_pro@1.00.00.05" --product "C2000WARE@5.03.00.00"
- * @versions {"tool":"1.21.0+3721"}
+ * @cliArgs --device "F28004x" --part "F28004x_100PZ" --package "F28004x_100PZ" --context "system" --product "gmp_pro@1.00.00.05" --product "C2000WARE@5.04.00.00"
+ * @v2CliArgs --device "TMS320F280041C" --package "100PZ" --context "system" --product "gmp_pro@1.00.00.05" --product "C2000WARE@5.04.00.00"
+ * @versions {"tool":"1.22.0+3893"}
  */
 
 /**
@@ -108,11 +108,8 @@ epwm1.epwmTimebase_counterModeAfterSync                          = "EPWM_COUNT_M
 epwm1.epwmTimebase_phaseEnable                                   = true;
 epwm1.epwmCounterCompare_cmpA                                    = 2500;
 epwm1.epwmCounterCompare_cmpAGld                                 = true;
-epwm1.epwmDeadband_polarityFED                                   = "EPWM_DB_POLARITY_ACTIVE_LOW";
 epwm1.epwmDeadband_enableRED                                     = true;
 epwm1.epwmDeadband_enableFED                                     = true;
-epwm1.epwmDeadband_delayFED                                      = 20;
-epwm1.epwmDeadband_delayRED                                      = 20;
 epwm1.epwmTimebase_syncOutPulseMode                              = "EPWM_SYNC_OUT_PULSE_ON_COUNTER_ZERO";
 epwm1.epwmCounterCompare_shadowLoadModeCMPA                      = "EPWM_COMP_LOAD_ON_CNTR_ZERO_PERIOD";
 epwm1.epwmActionQualifier_EPWM_AQ_OUTPUT_A_ON_TIMEBASE_UP_CMPA   = "EPWM_AQ_OUTPUT_LOW";
@@ -123,6 +120,10 @@ epwm1.epwmEventTrigger_EPWM_SOC_A_triggerEnable                  = true;
 epwm1.epwmEventTrigger_EPWM_SOC_A_triggerSource                  = "EPWM_SOC_TBCTR_PERIOD";
 epwm1.epwmEventTrigger_EPWM_SOC_A_triggerEventPrescalar          = "1";
 epwm1.$name                                                      = "PHASE_U";
+epwm1.epwmEventTrigger_interruptSource                           = "EPWM_INT_TBCTR_ZERO";
+epwm1.epwmDeadband_polarityRED                                   = "EPWM_DB_POLARITY_ACTIVE_LOW";
+epwm1.epwmDeadband_delayRED                                      = 100;
+epwm1.epwmDeadband_delayFED                                      = 100;
 epwm1.epwm.$assign                                               = "EPWM1";
 epwm1.epwm.epwm_aPin.$assign                                     = "GPIO0";
 epwm1.epwm.epwm_bPin.$assign                                     = "GPIO1";
@@ -139,14 +140,14 @@ epwm2.epwmCounterCompare_cmpAGld                                 = true;
 epwm2.epwmCounterCompare_shadowLoadModeCMPA                      = "EPWM_COMP_LOAD_ON_CNTR_ZERO_PERIOD";
 epwm2.epwmActionQualifier_EPWM_AQ_OUTPUT_A_ON_TIMEBASE_UP_CMPA   = "EPWM_AQ_OUTPUT_LOW";
 epwm2.epwmActionQualifier_EPWM_AQ_OUTPUT_A_ON_TIMEBASE_DOWN_CMPA = "EPWM_AQ_OUTPUT_HIGH";
-epwm2.epwmDeadband_polarityFED                                   = "EPWM_DB_POLARITY_ACTIVE_LOW";
 epwm2.epwmDeadband_enableRED                                     = true;
-epwm2.epwmDeadband_delayRED                                      = 20;
 epwm2.epwmDeadband_enableFED                                     = true;
-epwm2.epwmDeadband_delayFED                                      = 20;
 epwm2.epwmEventTrigger_enableInterrupt                           = true;
 epwm2.epwmEventTrigger_interruptEventCount                       = "1";
 epwm2.$name                                                      = "PHASE_V";
+epwm2.epwmDeadband_polarityRED                                   = "EPWM_DB_POLARITY_ACTIVE_LOW";
+epwm2.epwmDeadband_delayRED                                      = 100;
+epwm2.epwmDeadband_delayFED                                      = 100;
 epwm2.epwm.$assign                                               = "EPWM4";
 epwm2.epwm.epwm_aPin.$assign                                     = "GPIO6";
 epwm2.epwm.epwm_bPin.$assign                                     = "GPIO7";
@@ -163,14 +164,14 @@ epwm3.epwmCounterCompare_cmpAGld                                 = true;
 epwm3.epwmCounterCompare_shadowLoadModeCMPA                      = "EPWM_COMP_LOAD_ON_CNTR_ZERO_PERIOD";
 epwm3.epwmActionQualifier_EPWM_AQ_OUTPUT_A_ON_TIMEBASE_UP_CMPA   = "EPWM_AQ_OUTPUT_LOW";
 epwm3.epwmActionQualifier_EPWM_AQ_OUTPUT_A_ON_TIMEBASE_DOWN_CMPA = "EPWM_AQ_OUTPUT_HIGH";
-epwm3.epwmDeadband_polarityFED                                   = "EPWM_DB_POLARITY_ACTIVE_LOW";
 epwm3.epwmDeadband_enableRED                                     = true;
-epwm3.epwmDeadband_delayRED                                      = 20;
 epwm3.epwmDeadband_enableFED                                     = true;
-epwm3.epwmDeadband_delayFED                                      = 20;
 epwm3.epwmEventTrigger_enableInterrupt                           = true;
 epwm3.epwmEventTrigger_interruptEventCount                       = "1";
 epwm3.$name                                                      = "PHASE_W";
+epwm3.epwmDeadband_polarityRED                                   = "EPWM_DB_POLARITY_ACTIVE_LOW";
+epwm3.epwmDeadband_delayRED                                      = 100;
+epwm3.epwmDeadband_delayFED                                      = 100;
 epwm3.epwm.$assign                                               = "EPWM2";
 epwm3.epwm.epwm_aPin.$assign                                     = "GPIO2";
 epwm3.epwm.epwm_bPin.$assign                                     = "GPIO3";
