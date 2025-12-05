@@ -32,7 +32,7 @@ extern "C"
 #include <ctl/component/motor_control/basic/std_sil_motor_interface.h>
 
 // encoder
-#include <ext/encoder/as5048/as5048a.h>
+// #include <ext/encoder/as5048/as5048a.h>
 
 // ADC Sequence
 enum ADC1_ITEMS
@@ -73,7 +73,7 @@ extern adc_gt udc_raw;
 extern adc_gt idc_raw;
 
 // Encoder Interface
-extern ext_as5048a_encoder_t pos_enc;
+// extern ext_as5048a_encoder_t pos_enc;
 
 #ifdef __cplusplus
 }

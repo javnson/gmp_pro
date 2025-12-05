@@ -38,6 +38,8 @@
 #include "stm32f4xx_hal.h"
 #elif defined STM32F411xE
 #include "stm32f4xx_hal.h"
+#elif defined STM32F405xx
+#include "stm32f4xx_hal.h"
 #elif defined STM32U083xx
 #include "stm32u0xx_hal.h"
 
@@ -89,9 +91,13 @@ typedef struct _tag_gpio_model_stm32_t
 #define GMP_PORT_GPIO_T gpio_model_stm32_t *
 
 // specify the UART model
+#ifdef HAL_UART_MODULE_ENABLED
 #define GMP_PORT_UART_T UART_HandleTypeDef *
+#endif // HAL_UART_MODULE_ENABLED
 
 // SPI interface
+#ifdef HAL_SPI_MODULE_ENABLED
 #define GMP_PORT_SPI_T SPI_HandleTypeDef *
+#endif // HAL_SPI_MODULE_ENABLED
 
 #endif

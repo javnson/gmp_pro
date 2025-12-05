@@ -14,7 +14,7 @@
 
 #include <xplt.peripheral.h>
 
-#include <ext/encoder/as5048/as5048a.h>
+// #include <ext/encoder/as5048/as5048a.h>
 
 #ifndef _FILE_CTL_INTERFACE_H_
 #define _FILE_CTL_INTERFACE_H_
@@ -32,11 +32,11 @@ extern "C"
 // peripheral handles
 
 extern ADC_HandleTypeDef hadc1;
-extern ADC_HandleTypeDef hadc2;
-extern DMA_HandleTypeDef hdma_adc1;
-extern DMA_HandleTypeDef hdma_adc2;
+// extern ADC_HandleTypeDef hadc2;
+// extern DMA_HandleTypeDef hdma_adc1;
+// extern DMA_HandleTypeDef hdma_adc2;
 
-extern SPI_HandleTypeDef hspi2;
+// extern SPI_HandleTypeDef hspi2;
 
 extern TIM_HandleTypeDef htim1;
 
@@ -73,7 +73,7 @@ void ctl_input_callback(void)
 
     // invoke position encoder routine.
     //        ctl_step_autoturn_pos_encoder(&pos_enc, simulink_rx_buffer.encoder);
-    ctl_step_as5048a_pos_encoder(&pos_enc);
+    // ctl_step_as5048a_pos_encoder(&pos_enc);
 }
 
 // Output Callback

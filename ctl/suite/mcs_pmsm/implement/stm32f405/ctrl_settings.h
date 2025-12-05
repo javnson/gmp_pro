@@ -9,7 +9,7 @@
 #define ADC_REFERENCE ((3.3))
 
 // Controller Frequency
-#define CONTROLLER_FREQUENCY (10000)
+#define CTRL_FS (10000)
 
 // PWM depth
 #define CONTROLLER_PWM_CMP_MAX (8500)
@@ -24,6 +24,19 @@
 // Voltage sensor
 #define MTR_CTRL_VOLTAGE_GAIN (0.1)
 #define MTR_CTRL_VOLTAGE_BIAS (0.0)
+
+// Current Bandwidth
+#define MTR_CTRL_CURRENT_LOOP_BW ((50))
+
+// Speed Bandwidth
+#define MTR_CTRL_SPEED_LOOP_BW ((10))
+
+// Controller Base Voltage and Base Current
+#define MTR_CTRL_VOLTAGE_BASE ((MOTOR_PARAM_MAX_DC_VOLTAGE))
+#define MTR_CTRL_CURRENT_BASE ((MOTOR_PARAM_RATED_CURRENT))
+
+// Startup Delay, ms
+#define CTRL_STARTUP_DELAY (100)
 
 // BUILD_LEVEL 1: Voltage Open loop
 // BUILD_LEVEL 2: Current Open loop
