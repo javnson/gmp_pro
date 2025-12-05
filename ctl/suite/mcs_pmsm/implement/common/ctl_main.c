@@ -64,7 +64,7 @@ void ctl_init()
     // Step 2 Init utilities
 
     // Step 2.1 ADC Calibrator
-    ctl_init_adc_calibrator(&adc_calibrator, 20, 0.707f, CONTROLLER_FREQUENCY);
+    ctl_init_adc_calibrator(&adc_calibrator, 20, 0.707f, CTRL_FS);
 
     // Step 2.2 Motor Encoder
 #ifdef PMSM_CTRL_USING_QEP_ENCODER
@@ -79,13 +79,13 @@ void ctl_init()
         // attach position with speed encoder
         &spd_enc, pmsm_ctrl.mtr_interface.position,
         // set spd calculator parameters
-        CONTROLLER_FREQUENCY, 5, MOTOR_PARAM_MAX_SPEED, 1, 150);
+        CTRL_FS, 5, MOTOR_PARAM_MAX_SPEED, 1, 150);
 
 #if defined OPENLOOP_CONST_FREQUENCY
-    ctl_init_const_f_controller(&rg, 20, CONTROLLER_FREQUENCY);
+    ctl_init_const_f_controller(&rg, 20, CTRL_FS);
 #else  // OPENLOOP_CONST_FREQUENCY
     // frequency target 20 Hz, frequency slope 40 Hz/s
-    ctl_init_const_slope_f_controller(&rg, 20.0f, 40.0f, CONTROLLER_FREQUENCY);
+    ctl_init_const_slope_f_controller(&rg, 20.0f, 40.0f, CTRL_FS);
 #endif // OPENLOOP_CONST_FREQUENCY
 
     // attach a speed encoder object with motor controller
@@ -98,7 +98,7 @@ void ctl_init()
     // set pmsm_ctrl parameters
     pmsm_controller_init_t pmsm_ctrl_init;
 
-    pmsm_ctrl_init.fs = CONTROLLER_FREQUENCY;
+    pmsm_ctrl_init.fs = CTRL_FS;
 
     // current pid controller parameters
     pmsm_ctrl_init.current_pid_gain = (parameter_gt)(MOTOR_PARAM_LS * MTR_CTRL_CURRENT_LOOP_BW * CTL_PARAM_CONST_2PI *
