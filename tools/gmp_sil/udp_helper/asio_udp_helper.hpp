@@ -21,18 +21,22 @@ using json = nlohmann::json;
 #include <SDKDDKVer.h>
 #endif
 
-// ASIO library
-#if defined __linux__
-#define ASIO_STANDALONE
-#endif // __linux__
 
-#if defined(ASIO_STANDALONE)
+
 #include <asio.hpp>
 using namespace asio;
-#else
-#include <boost/asio.hpp>
-using namespace boost::asio;
-#endif
+
+// ASIO library
+//#if defined __linux__
+//#define ASIO_STANDALONE
+//#endif // __linux__
+//#if defined(ASIO_STANDALONE)
+//#include <asio.hpp>
+//using namespace asio;
+//#else
+//#include <boost/asio.hpp>
+//using namespace boost::asio;
+//#endif
 
 using udp = ip::udp;
 
@@ -238,7 +242,11 @@ class asio_udp_helper
                         // Stop the whole process
                         std::cout << "[ASIO-UDP Helper] Simulation Stop Command is received, and connection would be "
                                      "released.\r\n";
+#if defined __linux__
                         sleep(1);
+#else // Windows platform
+                        Sleep(1);
+#endif // platform selection
                         this->release_connect();
                     }
                     // judge if this is a Start Command

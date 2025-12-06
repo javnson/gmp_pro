@@ -507,3 +507,9 @@ tools/hvhb40040_Antaioz/**/MDK-ARM/**/*.htm
 
 tools/hvhb40040_Antaioz/**/HVHB_Guardian_tcr.dir
 tools/hvhb40040_Antaioz/**/impl_1
+
+
+###################################################################################
+# Disable vcpkg cache
+
+**/vcpkg_installed/**
