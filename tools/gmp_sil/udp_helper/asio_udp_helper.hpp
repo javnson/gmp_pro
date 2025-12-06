@@ -21,8 +21,6 @@ using json = nlohmann::json;
 #include <SDKDDKVer.h>
 #endif
 
-
-
 #include <asio.hpp>
 using namespace asio;
 
