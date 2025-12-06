@@ -42,34 +42,25 @@ else()
 endif()
 string(REPLACE "\\" "/" GMP_PRO_LOCATION_CLEAN ${GMP_PRO_LOCATION})
 
-# 手动列出所有源文件
+# 使用通配符获取所有源文件
+file(GLOB GMP_C_FILES 
+    ${GMP_SRC_DIR}/*.cpp
+    ${GMP_SRC_DIR}/*.c
+    )
+
+# 根据平台选择不同的C++文件
+#if(WIN32)
+#    set(PLATFORM_SPECIFIC_FILE ${GMP_SRC_DIR}/windows_simulink_main.cpp)
+#else()
+#    set(PLATFORM_SPECIFIC_FILE ${GMP_SRC_DIR}/linux_simulink_main.cpp)
+#endif()
+
 set(C_SOURCE_FILES
     ${IMPLEMENT_DIR}/common/ctl_main.c
     ${IMPLEMENT_DIR}/common/user_main.c
     ${IMPLEMENT_DIR}/simulate/xplt.peripheral.c
-    ${GMP_SRC_DIR}/ctl_component_advance.c
-    ${GMP_SRC_DIR}/ctl_component_basic.c
-    ${GMP_SRC_DIR}/ctl_component_continuous.c
-    ${GMP_SRC_DIR}/ctl_component_discrete.c
-    ${GMP_SRC_DIR}/ctl_component_interface.c
-    ${GMP_SRC_DIR}/ctl_component_protection.c
-    ${GMP_SRC_DIR}/ctl_mc_acm_sensored_ctrl.c
-    ${GMP_SRC_DIR}/ctl_mc_basic.c
-    ${GMP_SRC_DIR}/ctl_mc_consultant.c
-    ${GMP_SRC_DIR}/ctl_mc_current_loop.c
-    ${GMP_SRC_DIR}/ctl_mc_motion.c
-    ${GMP_SRC_DIR}/ctl_mc_observer.c
-    ${GMP_SRC_DIR}/ctl_mc_pmsm_ctrl.c
-    ${GMP_SRC_DIR}/ctl_mc_pmsm_ctrl_hfi.c
-    ${GMP_SRC_DIR}/ctl_mc_pmsm_ctrl_mtpa.c
-    ${GMP_SRC_DIR}/ctl_mc_pmsm_ctrl_smo.c
-    ${GMP_SRC_DIR}/ctl_mc_pmsm_offline_est.c
-    ${GMP_SRC_DIR}/ctl_nano.c
-    ${GMP_SRC_DIR}/gmp_dev_util.c
-    ${GMP_SRC_DIR}/gmp_ds_list.c
-    ${GMP_SRC_DIR}/gmp_mm_block_memory.c
-    ${GMP_SRC_DIR}/gmp_std_error_code.c
-    ${GMP_SRC_DIR}/gmp_std_port.c
+    ${GMP_C_FILES}
+#    ${PLATFORM_SPECIFIC_FILE}
 )
 
 # 条件性地添加平台特定文件
@@ -77,19 +68,7 @@ set(CPP_SOURCE_FILES
     ${SOURCE_DIR}/motor_control_simulink.cpp
 )
 
-if(OS_WINDOWS)
-    # 使用简化版的Windows Simulink主文件，避免Boost和nlohmann/json依赖
-    list(APPEND CPP_SOURCE_FILES ${GMP_SRC_DIR}/windows_simulink_main_simple.cpp)
-elseif(OS_LINUX)
-    # 在Linux上，我们可能需要一个替代的main实现
-    if(EXISTS ${GMP_SRC_DIR}/linux_simulink_main.cpp)
-        list(APPEND CPP_SOURCE_FILES ${GMP_SRC_DIR}/linux_simulink_main.cpp)
-    else()
-        # 如果没有Linux特定版本，则仍然使用windows版本并通过条件编译处理
-        list(APPEND CPP_SOURCE_FILES ${GMP_SRC_DIR}/windows_simulink_main.cpp)
-        add_definitions(-DGMP_LINUX_PORT)
-    endif()
-endif()
+
 
 # 合并所有源文件
 set(SOURCE_FILES
@@ -107,9 +86,9 @@ include_directories(
     # 第三方库路径
     ${GMP_PRO_LOCATION}/ctl/suite/motor_control/pmsm/implement/user_common
     ${GMP_PRO_LOCATION}/ctl/suite/motor_control/pmsm/implement/user_simulink
-    ${GMP_PRO_LOCATION}/third_party/asio/include
-    ${GMP_PRO_LOCATION}/third_party/eigen/Eigen
     ${GMP_PRO_LOCATION}/csp/windows_simulink
+    ${GMP_PRO_LOCATION}/third_party/eigen/Eigen
+    ${GMP_PRO_LOCATION}/third_party/json/include
     ${GMP_PRO_LOCATION}/third_party/fmt/include/fmt
 )
 
@@ -121,8 +100,9 @@ if(OS_WINDOWS)
 elseif(OS_LINUX)
     # Linux特定的包含目录
     include_directories(
-        ${GMP_PRO_LOCATION}/csp/linux_simulink  # 假设有这个目录，实际可能需要调整
+        ${GMP_PRO_LOCATION}/csp/windows_simulink  # 假设有这个目录，实际可能需要调整
     )
+
 endif()
 
 # 添加预处理器定义
@@ -213,12 +193,25 @@ if(OS_WINDOWS)
         )
     endif()
 elseif(OS_LINUX)
-    # Linux特定库
+
+
+    # 1. 查找 Boost 库 (只需查找 system 组件，asio 是头文件会自动被找到)
+    find_package(Boost REQUIRED COMPONENTS system)
+    
+    if(Boost_FOUND)
+        message(STATUS "Boost found: ${Boost_INCLUDE_DIRS}")
+        # 引入头文件路径 (/usr/include)
+        include_directories(${Boost_INCLUDE_DIRS})
+    endif()
+
+    # 2. 链接库
     target_link_libraries(${EXECUTABLE_NAME} 
         pthread
-        stdc++fs  # 确保C++文件系统库可用
-        dl        # 动态加载库
+        stdc++fs 
+        dl 
+        ${Boost_LIBRARIES}  # 这里会链接 libboost_system
     )
+
     # 确保二进制文件可执行权限
     set_target_properties(${EXECUTABLE_NAME} PROPERTIES
         LINK_FLAGS "-Xlinker -rpath=$ORIGIN"

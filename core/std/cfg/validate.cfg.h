@@ -11,9 +11,17 @@ extern "C"
 
 //////////////////////////////////////////////////////////////////////////
 // validate parameters
+// Note: In C++ environments, some compilers automatically define BIG_ENDIAN/LITTLE_ENDIAN
+// So we only check if these macros are defined by user (before including system headers)
+#if defined(__cplusplus)
+// In C++ mode, we ignore automatically defined endian macros
+// and use GMP's own endian configuration instead
+#else
+// In C mode, check if both endian macros are defined
 #if defined BIG_ENDIAN && defined LITTLE_ENDIAN
 #error "You should chose big-endian or little-endian."
 #endif // BIG_ENDIAN && LITTLE_ENDIAN
+#endif // __cplusplus
 
 #if SPECIFY_GMP_DEFAULT_ALLOC == USING_MANUAL_SPECIFY_FUNCTION
 #if !((defined SPECIFY_GMP_USER_ALLOC) && (defined SPECIFY_GMP_USER_FREE))
