@@ -13,6 +13,7 @@
 
 // Controller Frequency
 #define CONTROLLER_FREQUENCY (10000)
+#define CTRL_FS (10000)
 
 // PWM depth
 #define CTRL_PWM_CMP_MAX (6000)
