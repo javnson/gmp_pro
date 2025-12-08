@@ -15,11 +15,10 @@
 #include <ctl/component/interface/interface_base.h>
 #include <ctl/component/motor_control/basic/motor_universal_interface.h>
 
-#ifdef PMSM_CTRL_USING_DISCRETE_CTRL
+//#define PMSM_CTRL_USING_DISCRETE_CTRL
 #include <ctl/component/intrinsic/discrete/track_discrete_pid.h>
-#else
 #include <ctl/component/intrinsic/continuous/track_pid.h>
-#endif // PMSM_CTRL_USING_DISCRETE_CTRL
+
 
 #include <ctl/component/motor_control/basic/decouple.h>
 #include <ctl/math_block/coordinate/coord_trans.h>

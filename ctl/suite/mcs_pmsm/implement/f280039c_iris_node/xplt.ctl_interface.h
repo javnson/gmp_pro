@@ -41,10 +41,10 @@ extern "C"
 GMP_STATIC_INLINE void ctl_input_callback(void)
 {
     // invoke ADC p.u. routine
-    ctl_step_tri_ptr_adc_channel(&iabc);
-    ctl_step_tri_ptr_adc_channel(&uabc);
-    ctl_step_ptr_adc_channel(&idc);
-    ctl_step_ptr_adc_channel(&udc);
+//    ctl_step_tri_ptr_adc_channel(&iabc);
+//    ctl_step_tri_ptr_adc_channel(&uabc);
+//    ctl_step_ptr_adc_channel(&idc);
+//    ctl_step_ptr_adc_channel(&udc);
 
     // invoke position encoder routine.
 //    ctl_step_autoturn_pos_encoder(&pos_enc, simulink_rx_buffer.encoder);
@@ -57,14 +57,19 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
 #endif // BUILD_LEVEL
 }
 
+extern uint32_t output_voltage_compare;
+
 // Output Callback
 GMP_STATIC_INLINE void ctl_output_callback(void)
 {
     ctl_calc_pwm_tri_channel(&pwm_out);
 
-    EPWM_setCounterCompareValue(IRIS_EPWM1_BASE ,EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_A]);
+//    EPWM_setCounterCompareValue(IRIS_EPWM1_BASE ,EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_A]);
     EPWM_setCounterCompareValue(IRIS_EPWM2_BASE ,EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_B]);
     EPWM_setCounterCompareValue(IRIS_EPWM3_BASE ,EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_C]);
+
+    EPWM_setCounterCompareValue(IRIS_EPWM1_BASE ,EPWM_COUNTER_COMPARE_A, output_voltage_compare);
+
 
 //    // PWM output
 //    simulink_tx_buffer.tabc[phase_A] = pwm_out.value[phase_A];

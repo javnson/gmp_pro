@@ -1,0 +1,6 @@
+# Reading pref.tcl
+# ** License Issue: License request for latticeqsim feature failed
+# ** License Issue: Invalid (inconsistent) license key. (D:\softwares\SiemensEDA\license.dat)
+# ** License Issue: Invalid (inconsistent) license key. (D:\softwares\SiemensEDA\license.dat)
+# ** Error: Failure to checkout 'latticeqsim' license feature.
+# Unable to checkout a viewer license necessary for use of the Questa Lattice graphical user interface.  Vsim is closing.

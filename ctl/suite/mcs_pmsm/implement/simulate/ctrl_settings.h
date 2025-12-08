@@ -12,6 +12,7 @@
 #define CTRL_STARTUP_DELAY (100)
 
 // Controller Frequency
+#define CONTROLLER_FREQUENCY (10000)
 #define CTRL_FS (10000)
 
 // PWM depth

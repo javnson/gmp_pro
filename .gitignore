@@ -428,6 +428,8 @@ ctl/suite/**/*.map
 ctl/suite/**/*.dep
 ctl/suite/**/*.uvguix.*
 ctl/suite/**/MDK-ARM/**/*.htm
+ctl/suite/**/build
+ctl/suite/**/RTE/**
 
 # Disable all the STM32 CubeMX generated files, and compiled results
 ctl/training/**/Drivers
@@ -439,7 +441,8 @@ ctl/training/**/*.map
 ctl/training/**/*.dep
 ctl/training/**/*.uvguix.*
 ctl/training/**/MDK-ARM/**/*.htm
-
+ctl/training/**/build
+ctl/training/**/RTE/*
 
 # Disable generted GMP source file
 ctl/**/gmp_src/**
@@ -488,4 +491,25 @@ gmp_pro.zip
 # doxygen output files
 ctl/doc/**
 
+###################################################################################
+# HARDWARE Driver Section
 
+# HVHB40040 Antaioz
+tools/hvhb40040_Antaioz/**/Drivers
+tools/hvhb40040_Antaioz/**/*.crf
+tools/hvhb40040_Antaioz/**/*.o
+tools/hvhb40040_Antaioz/**/*.d
+tools/hvhb40040_Antaioz/**/*.lnp
+tools/hvhb40040_Antaioz/**/*.map
+tools/hvhb40040_Antaioz/**/*.dep
+tools/hvhb40040_Antaioz/**/*.uvguix.*
+tools/hvhb40040_Antaioz/**/MDK-ARM/**/*.htm
+
+tools/hvhb40040_Antaioz/**/HVHB_Guardian_tcr.dir
+tools/hvhb40040_Antaioz/**/impl_1
+
+
+###################################################################################
+# Disable vcpkg cache
+
+**/vcpkg_installed/**

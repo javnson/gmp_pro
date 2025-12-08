@@ -1,0 +1,81 @@
+# Network Submodule
+[submodule "third_party/asio"]
+	path = third_party/asio
+	url = https://github.com/boostorg/asio.git
+
+[submodule "third_party/lwip"]
+	path = third_party/lwip
+	url = https://github.com/lwip-tcpip/lwip.git
+	
+# Math Submodule
+[submodule "third_party/eigen"]
+	path = third_party/eigen
+	url = https://github.com/PX4/eigen.git
+	
+[submodule "third_party/TinyMPC"]
+	path = third_party/TinyMPC
+	url = https://github.com/TinyMPC/TinyMPC.git
+
+# File system submodule
+[submodule "third_party/fatfs"]
+	path = third_party/fatfs
+	url = https://github.com/abbrev/fatfs.git
+
+[submodule "third_party/littlefs"]
+	path = third_party/littlefs
+	url = https://github.com/littlefs-project/littlefs.git
+
+# Debugger
+[submodule "third_party/tinyxml2"]
+	path = third_party/tinyxml2
+	url = https://github.com/leethomason/tinyxml2
+
+# utilities
+[submodule "third_party/fmt"]
+	path = third_party/fmt
+	url = https://github.com/fmtlib/fmt.git
+[submodule "third_party/json"]
+	path = third_party/json
+	url = https://github.com/nlohmann/json.git
+[submodule "third_party/system"]
+	path = third_party/system
+	url = https://github.com/boostorg/system
+[submodule "third_party/config"]
+	path = third_party/config
+	url = https://github.com/boostorg/config
+[submodule "third_party/winapi"]
+	path = third_party/winapi
+	url = https://github.com/boostorg/winapi.git
+[submodule "third_party/predef"]
+	path = third_party/predef
+	url = https://github.com/boostorg/predef.git
+[submodule "third_party/assert"]
+	path = third_party/assert
+	url = https://github.com/boostorg/assert.git
+[submodule "third_party/throw_exception"]
+	path = third_party/throw_exception
+	url = https://github.com/boostorg/throw_exception
+[submodule "third_party/align"]
+	path = third_party/align
+	url = https://github.com/boostorg/align
+[submodule "third_party/date_time"]
+	path = third_party/date_time
+	url = https://github.com/boostorg/date_time
+[submodule "third_party/smart_ptr"]
+	path = third_party/smart_ptr
+	url = https://github.com/boostorg/smart_ptr
+[submodule "third_party/core"]
+	path = third_party/core
+	url = https://github.com/boostorg/core
+[submodule "third_party/utility"]
+	path = third_party/utility
+	url = https://github.com/boostorg/utility
+[submodule "third_party/static_assert"]
+	path = third_party/static_assert
+	url = https://github.com/boostorg/static_assert
+[submodule "third_party/gsl"]
+	path = third_party/gsl
+	url = https://github.com/ampl/gsl
+[submodule "ext"]
+	path = ext
+	url = https://github.com/javnson/GMP_EXT

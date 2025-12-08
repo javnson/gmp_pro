@@ -16,32 +16,47 @@
 
 using json = nlohmann::json;
 
+#if !defined __linux__
 // Need to define WIN32 because each version of windows has slightly different ways of handling networking
 #include <SDKDDKVer.h>
+#endif
+
+#include <asio.hpp>
+using namespace asio;
 
 // ASIO library
-// #define ASIO_STANDALONE
-#include <boost/asio.hpp>
+//#if defined __linux__
+//#define ASIO_STANDALONE
+//#endif // __linux__
+//#if defined(ASIO_STANDALONE)
+//#include <asio.hpp>
+//using namespace asio;
+//#else
+//#include <boost/asio.hpp>
+//using namespace boost::asio;
+//#endif
 
-// using asio = boost::asio;
+using udp = ip::udp;
 
-using udp = boost::asio::ip::udp;
-
+#if !defined __linux__
 // Other Windows functions
 #include <Windows.h>
+#endif 
 
 #include <time.h>
+
+//using boost::asio;
 
 class asio_udp_helper
 {
   public:
-    // boost::asio::error_code ecVAR;
+    // error_code ecVAR;
     udp::endpoint recv_terminal;
     udp::endpoint tran_terminal;
     udp::endpoint cmd_recv_terminal;
     udp::endpoint cmd_tran_terminal;
-    boost::asio::io_context recv_context, tran_context;
-    boost::asio::io_context cmd_recv_context, cmd_tran_context;
+    io_context recv_context, tran_context;
+    io_context cmd_recv_context, cmd_tran_context;
     udp::socket recv_socket, tran_socket;
     udp::socket cmd_recv_socket, cmd_tran_socket;
     uint32_t recv_port;
@@ -62,13 +77,13 @@ class asio_udp_helper
   public:
     asio_udp_helper(const std::string ip_addr, uint32_t recv_port, uint32_t trans_port, uint32_t cmd_recv_port,
                     uint32_t cmd_trans_port)
-        : /*ecVAR(),*/ recv_terminal(boost::asio::ip::make_address(ip_addr),
-                                     static_cast<boost::asio::ip::port_type>(recv_port)),
-          tran_terminal(boost::asio::ip::make_address(ip_addr), static_cast<boost::asio::ip::port_type>(trans_port)),
-          cmd_recv_terminal(boost::asio::ip::make_address(ip_addr),
-                            static_cast<boost::asio::ip::port_type>(cmd_recv_port)),
-          cmd_tran_terminal(boost::asio::ip::make_address(ip_addr),
-                            static_cast<boost::asio::ip::port_type>(cmd_trans_port)),
+        : /*ecVAR(),*/ recv_terminal(ip::make_address(ip_addr),
+                                     static_cast<ip::port_type>(recv_port)),
+          tran_terminal(ip::make_address(ip_addr), static_cast<ip::port_type>(trans_port)),
+          cmd_recv_terminal(ip::make_address(ip_addr),
+                            static_cast<ip::port_type>(cmd_recv_port)),
+          cmd_tran_terminal(ip::make_address(ip_addr),
+                            static_cast<ip::port_type>(cmd_trans_port)),
           recv_context(), tran_context(), cmd_recv_context(), cmd_tran_context(), recv_socket(recv_context),
           tran_socket(tran_context), cmd_recv_socket(cmd_recv_context), cmd_tran_socket(cmd_tran_context),
           recv_port(recv_port), trans_port(trans_port), cmd_recv_port(cmd_recv_port), cmd_trans_port(cmd_trans_port),
@@ -82,12 +97,12 @@ class asio_udp_helper
     {
         tran_socket.connect(tran_terminal);
 
-        recv_socket.open(boost::asio::ip::udp::v4());
+        recv_socket.open(ip::udp::v4());
         recv_socket.bind(recv_terminal);
 
         cmd_tran_socket.connect(cmd_tran_terminal);
 
-        cmd_recv_socket.open(boost::asio::ip::udp::v4());
+        cmd_recv_socket.open(ip::udp::v4());
         cmd_recv_socket.bind(cmd_recv_terminal);
 
         stop_cmd_received = 0;
@@ -118,7 +133,7 @@ class asio_udp_helper
         try
         {
 
-            tran_socket.send(boost::asio::buffer(msg, len));
+            tran_socket.send(buffer(msg, len));
 
             tran_counter += len;
         }
@@ -133,7 +148,7 @@ class asio_udp_helper
     {
         tran_counter += len;
 
-        cmd_tran_socket.send(boost::asio::buffer(msg, len));
+        cmd_tran_socket.send(buffer(msg, len));
     }
 
     int recv_msg(char *msg, uint32_t len)
@@ -149,7 +164,7 @@ class asio_udp_helper
             //typedef boost::asio::detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO> rcv_timeout_option;
             //recv_socket.set_option(rcv_timeout_option{2000});
 
-            typedef boost::asio::detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO> rcv_timeout_option;
+            typedef detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO> rcv_timeout_option;
             recv_socket.set_option(rcv_timeout_option{GMP_ASIO_UDP_LINK_TIMEOUT});
 
 #else
@@ -161,7 +176,7 @@ class asio_udp_helper
             if (this->recv_counter > 100)
             {
                 // somewhere in your headers to be used everywhere you need it
-                typedef boost::asio::detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO> rcv_timeout_option;
+                typedef detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO> rcv_timeout_option;
                 recv_socket.set_option(rcv_timeout_option{GMP_ASIO_UDP_LINK_TIMEOUT}); // 2000 s \approx 33 min
             }
 #else
@@ -171,13 +186,13 @@ class asio_udp_helper
             if (this->recv_counter > 100)
             {
                 // somewhere in your headers to be used everywhere you need it
-                typedef boost::asio::detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO> rcv_timeout_option;
+                typedef detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO> rcv_timeout_option;
                 recv_socket.set_option(rcv_timeout_option{2000000}); // 2000 s \approx 33 min
             }
             else
             {
                 // somewhere in your headers to be used everywhere you need it
-                typedef boost::asio::detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO> rcv_timeout_option;
+                typedef detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO> rcv_timeout_option;
                 recv_socket.set_option(rcv_timeout_option{GMP_ASIO_UDP_LINK_TIMEOUT});
             }
 
@@ -190,7 +205,7 @@ class asio_udp_helper
 #endif // DISABLE_ASIO_HELPER_TIMEOUT_OPTION
 
             // recv_socket.receive(boost::asio::buffer((char *)&data_t, sizeof(double)));
-            recv_socket.receive_from(boost::asio::buffer(msg, len), recv_terminal);
+            recv_socket.receive_from(buffer(msg, len), recv_terminal);
 
             recv_counter += len;
         }
@@ -210,7 +225,7 @@ class asio_udp_helper
         // Bug fix this function may trigger exception
 
         cmd_recv_socket.async_receive_from(
-            boost::asio::buffer(cmd_recv_buf), cmd_recv_terminal, [this](std::error_code ec, std::size_t bytes_recvd) {
+            asio::buffer(cmd_recv_buf), cmd_recv_terminal, [this](std::error_code ec, std::size_t bytes_recvd) {
                 // std::cout << "this function is reached, byte received:" << bytes_recvd << ".\r\n";
                 // std::cout << "content:" << cmd_recv_buf << std::endl;
                 // std::cout << "error code:" << ec.message() << std::endl;
@@ -225,7 +240,11 @@ class asio_udp_helper
                         // Stop the whole process
                         std::cout << "[ASIO-UDP Helper] Simulation Stop Command is received, and connection would be "
                                      "released.\r\n";
+#if defined __linux__
+                        sleep(1);
+#else // Windows platform
                         Sleep(1);
+#endif // platform selection
                         this->release_connect();
                     }
                     // judge if this is a Start Command

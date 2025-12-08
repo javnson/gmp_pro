@@ -32,6 +32,8 @@ pos_autoturn_encoder_t pos_enc;
 
 pwm_tri_channel_t pwm_out;
 
+uint32_t output_voltage_compare = 3000;
+
 //////////////////////////////////////////////////////////////////////////
 // peripheral setup function
 //
@@ -96,3 +98,47 @@ void setup_peripheral(void)
     ctl_init_pwm_tri_channel(&pwm_out, 0, CTRL_PWM_CMP_MAX);
 
 }
+
+//////////////////////////////////////////////////////////////////////////
+// interrupt functions and callback functions here
+
+// ADC interrupt
+interrupt void MainISR(void)
+{
+    //
+    // call GMP ISR  Controller operation callback function
+    //
+    gmp_base_ctl_step();
+
+    //
+    // Call GMP Timer
+    //
+    gmp_step_system_tick();
+
+    //
+    // Clear the interrupt flag
+    //
+    ADC_clearInterruptStatus(IRIS_ADCA_BASE, ADC_INT_NUMBER1);
+
+    //
+    // Check if overflow has occurred
+    //
+    if (true == ADC_getInterruptOverflowStatus(IRIS_ADCA_BASE, ADC_INT_NUMBER1))
+    {
+        ADC_clearInterruptOverflowStatus(IRIS_ADCA_BASE, ADC_INT_NUMBER1);
+        ADC_clearInterruptStatus(IRIS_ADCA_BASE, ADC_INT_NUMBER1);
+    }
+
+    //
+    // Acknowledge the interrupt
+    //
+    Interrupt_clearACKGroup(INT_IRIS_ADCA_1_INTERRUPT_ACK_GROUP);
+}
+
+// EQEP index interrupt
+//interrupt void INT_EQEP_Encoder_ISR(void)
+//{
+//
+//    Interrupt_clearACKGroup(INT_EQEP_Encoder_INTERRUPT_ACK_GROUP);
+//}
+

@@ -16,10 +16,17 @@
 // #define SPECIFY_BASE_PRINT_NOT_IMPL
 
 // using user specified default log print function
+#if defined _MSC_VER 
 #define USER_SPECIFIED_PRINT_FUNCTION printf_s
+#else // other compiler
+#define USER_SPECIFIED_PRINT_FUNCTION printf
+#endif // 
 
 // Disable GMP startup screen
 // #define SPECIFY_DISABLE_GMP_LOGO
+
+// Specify little endian byte order
+#define SPECIFY_LITTLE_ENDIAN
 
 //////////////////////////////////////////////////////////////////////////
 // CTL config module

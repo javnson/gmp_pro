@@ -1,0 +1,97 @@
+ldc_set_vcc -core 1.2
+ldc_set_vcc -bank 0 3.3
+ldc_set_vcc -bank 1 3.3
+ldc_set_vcc -bank 2 3.3
+ldc_set_location -site {37} [get_ports clk]
+ldc_set_location -site {36} [get_ports nrst]
+# ldc_set_location -site {35} [get_ports enable]
+ldc_set_location -site {34} [get_ports rmt_error_out]
+ldc_set_location -site {13} [get_ports rmt_error_in]
+ldc_set_location -site {32} [get_ports gateh_driver_inp]
+ldc_set_location -site {31} [get_ports gateh_driver_inn]
+ldc_set_location -site {28} [get_ports gateh_driver_rdy]
+ldc_set_location -site {27} [get_ports gateh_driver_nflt]
+ldc_set_location -site {25} [get_ports gatel_driver_inp]
+ldc_set_location -site {23} [get_ports gatel_driver_inn]
+ldc_set_location -site {21} [get_ports gatel_driver_rdy]
+ldc_set_location -site {20} [get_ports gatel_driver_nflt]
+ldc_set_location -site {26} [get_ports gate_drv_nrst]
+ldc_set_location -site {19} [get_ports current_alert]
+ldc_set_location -site {18} [get_ports current_oc_protect]
+ldc_set_location -site {4} [get_ports spi_clk]
+ldc_set_location -site {12} [get_ports spi_mosi]
+ldc_set_location -site {3} [get_ports spi_miso]
+ldc_set_location -site {11} [get_ports spi_ncs]
+ldc_set_location -site {10} [get_ports mcu_fan_not_ready]
+ldc_set_location -site {9} [get_ports mcu_psup_not_ready]
+ldc_set_location -site {6} [get_ports mcu_over_voltage]
+ldc_set_location -site {2} [get_ports mcu_over_current]
+ldc_set_location -site {47} [get_ports led_curr]
+ldc_set_location -site {48} [get_ports led_volt]
+ldc_set_location -site {46} [get_ports led_desat]
+ldc_set_location -site {45} [get_ports led_psup]
+ldc_set_location -site {44} [get_ports led_tfan]
+ldc_set_location -site {43} [get_ports led_rmt]
+ldc_set_location -site {42} [get_ports {board_id[0]}]
+ldc_set_location -site {38} [get_ports {board_id[1]}]
+ldc_set_location -site {39} [get_ports {rgb_led[0]}]
+ldc_set_location -site {40} [get_ports {rgb_led[1]}]
+ldc_set_location -site {41} [get_ports {rgb_led[2]}]
+
+# -----------------------------------------------------------------------------
+# 1. 娑撶粯妞傞柦鐔风暰娑旓拷 (Primary Clock Definition)
+# -----------------------------------------------------------------------------
+# input clock
+create_clock -period 41.67 -name {clk_input} [get_ports {clk}]
+
+# Main clock is 50MHz, 20ns
+create_clock -period 20 -name {clk_main} [get_ports {sys_clk}]
+
+
+# -----------------------------------------------------------------------------
+# 2. I/O 閹恒儱褰涢弮璺虹碍缁撅附娼� (Input/Output Timing Constraints)
+# -----------------------------------------------------------------------------
+# --- 鏉堟挸鍙嗗鎯扮箿 ---
+# 鐠囬攱鐗撮幑顔藉亶閻ㄥ嚜CU/婢舵牠鍎撮柅鏄忕帆閻ㄥ嫭鏆熼幑顔藉閸愬苯鎷癙CB鐠ф壆鍤庨梹鍨閺夈儳鈥樼€规艾鐤勯梽鍛鏉╃喎鈧拷
+set_input_delay -clock {clk_main} 6.5 [get_ports {enable}]
+set_input_delay -clock {clk_main} 6.5 [get_ports {gateh_driver_inp}]
+set_input_delay -clock {clk_main} 6.5 [get_ports {gatel_driver_inp}]
+set_input_delay -clock {clk_main} 6.5 [get_ports {mcu_fan_not_ready}]
+set_input_delay -clock {clk_main} 6.5 [get_ports {mcu_psup_not_ready}]
+set_input_delay -clock {clk_main} 6.5 [get_ports {mcu_over_voltage}]
+set_input_delay -clock {clk_main} 6.5 [get_ports {mcu_over_current}]
+set_input_delay -clock {clk_main} 6.5 [get_ports {rmt_error_in}]
+
+# --- 鏉堟挸鍤鎯扮箿 ---
+# 鐠囬攱鐗撮幑顔藉亶閻ㄥ嫰妫痪褔鈹嶉崝銊ユ珤/婢舵牠鍎撮柅鏄忕帆閻ㄥ嫭鏆熼幑顔藉閸愬苯鎷癙CB鐠ф壆鍤庨梹鍨閺夈儳鈥樼€规艾鐤勯梽鍛鏉╃喎鈧拷
+set_output_delay -clock {clk_main} 5.5 [get_ports {gateh_driver_inn}]
+set_output_delay -clock {clk_main} 5.5 [get_ports {gatel_driver_inn}]
+set_output_delay -clock {clk_main} 5.5 [get_ports {gate_drv_nrst}]
+set_output_delay -clock {clk_main} 5.5 [get_ports {rmt_error_out}]
+# LED闁艾鐖剁€佃妞傛惔蹇庣瑝閺佸繑鍔呴敍灞藉讲娴犮儴顔曠純顔荤娑擃亣绶濈€硅姤婢楅惃鍕閺夌喐鍨ㄦ稉宥堫啎缂冿拷
+set_output_delay -clock {clk_main} 10.0 [get_ports {led_*}]
+set_output_delay -clock {clk_main} 10.0 [get_ports {rgb_led[*]}]
+
+
+# -----------------------------------------------------------------------------
+# 3. 瀵倹顒炴穱鈥冲娇娑撳氦娉曢弮鍫曟寭閸╃喎顦╅悶锟� (Asynchronous & CDC Path Handling)
+# -----------------------------------------------------------------------------
+# 鐎规矮绠烻PI閺冨爼鎸� (閸嬪洩顔曢張鈧箛锟�10MHz, 100ns)
+create_clock -period 100.0 -name {spi_clk_in} [get_ports {spi_clk}]
+
+# 婢圭増妲戞稉缁樻闁界喎鐓欓崪瀛睵I閺冨爼鎸撻崺鐔风磽濮濓拷
+set_clock_groups -asynchronous -group {clk_main} -group {spi_clk_in}
+
+# 鐏忓棗鍑￠崷銊啎鐠佲€茶厬闁俺绻冮崥灞绢劄閸ｃ劌顦╅悶鍡欐畱瀵倹顒炴潏鎾冲弳缁旑垰褰涚拋鍓х枂娑撹桨鍚夌捄顖氱窞
+set_false_path -from [get_ports {gateh_driver_rdy}]
+set_false_path -from [get_ports {gateh_driver_nflt}]
+set_false_path -from [get_ports {gatel_driver_rdy}]
+set_false_path -from [get_ports {gatel_driver_nflt}]
+set_false_path -from [get_ports {current_alert}]
+set_false_path -from [get_ports {current_oc_protect}]
+
+
+# -----------------------------------------------------------------------------
+# 4. 閸忋劌鐪鍌涱劄婢跺秳缍� (Global Asynchronous Reset)
+# -----------------------------------------------------------------------------
+set_false_path -from [get_ports {nrst}]
