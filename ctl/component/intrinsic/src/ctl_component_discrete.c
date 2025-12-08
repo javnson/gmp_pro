@@ -85,7 +85,7 @@ parameter_gt ctl_get_filter_iir1_gain(ctl_filter_IIR1_t* obj, parameter_gt fs, p
     parameter_gt mag_num = sqrtf(num_real * num_real + num_imag * num_imag);
     parameter_gt mag_den = sqrtf(den_real * den_real + den_imag * den_imag);
 
-    if (mag_den < 1e-9)
+    if (mag_den < float2ctrl(0.000001))
         return 0.0f;
     return mag_num / mag_den;
 }
@@ -295,7 +295,7 @@ parameter_gt ctl_get_biquad_gain(ctl_biquad_filter_t* obj, parameter_gt fs, para
     parameter_gt mag_den = sqrtf(den_real * den_real + den_imag * den_imag);
 
     // Avoid division by zero
-    if (mag_den < 1e-9)
+    if (mag_den < 1e-9f)
     {
         return 0.0f;
     }
