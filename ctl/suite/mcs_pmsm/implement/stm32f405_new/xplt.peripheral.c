@@ -43,7 +43,7 @@ adc_gt idc_raw;
 
 // Encoder Interface
 // ext_as5048a_encoder_t pos_enc;
-
+extern uint32_t counter;
 
 /////////////////////////////////////////////////////////////////////////
 // peripheral setup function
@@ -104,7 +104,7 @@ void setup_peripheral(void)
 
     //ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &pos_enc.encif);
 
-    //ctl_attach_pmsm_bare_output(&pmsm_ctrl, &pwm_out.raw);
+    ctl_attach_pmsm_output(&pmsm_ctrl, &pwm_out.raw);
 
     // output channel
     ctl_init_pwm_tri_channel(&pwm_out, 0, CONTROLLER_PWM_CMP_MAX);
@@ -112,6 +112,8 @@ void setup_peripheral(void)
     // Enabel ADC DMA
     HAL_ADC_Start_DMA(&hadc1, adc1_res, ADC1_SEQ_SIZE);
     //HAL_ADC_Start_DMA(&hadc2, adc2_res, ADC2_SEQ_SIZE);
+
+    HAL_ADCEx_InjectedStart_IT(&hadc1);
 
     // Enable PWM peripheral
     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
@@ -121,19 +123,21 @@ void setup_peripheral(void)
     HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
     HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
 
+
+
 }
 
 //////////////////////////////////////////////////////////////////////////
 // interrupt functions and callback functions here
 
 // ADC interrupt
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
-{
-    if (hadc == &hadc1)
-    {
-        gmp_base_ctl_step();
-    }
-}
+// void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+// {
+//     if (hadc == &hadc1)
+//     {
+//         gmp_base_ctl_step();
+//     }
+// }
 
 /**
   * @brief  Injected conversion complete callback in non blocking mode
@@ -143,9 +147,15 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
   */
 void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
-	    if (hadc == &hadc1)
+	if (hadc == &hadc1)
     {
         gmp_base_ctl_step();
+        counter++;
+        if(counter >= 1000)   
+        {
+            HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+            counter = 0;
+        }
     }
 }
 

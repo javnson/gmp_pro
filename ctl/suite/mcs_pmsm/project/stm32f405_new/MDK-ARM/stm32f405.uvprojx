@@ -10,7 +10,7 @@
       <TargetName>stm32f405</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>5060750::V5.06 update 6 (build 750)::.\ARMCCV5</pCCUsed>
+      <pCCUsed>5060750::V5.06 update 6 (build 750)::ARMCC</pCCUsed>
       <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -18,7 +18,7 @@
           <Vendor>STMicroelectronics</Vendor>
           <PackID>Keil.STM32F4xx_DFP.2.17.1</PackID>
           <PackURL>https://www.keil.com/pack/</PackURL>
-          <Cpu>IRAM(0x20000000-0x2001BFFF) IRAM2(0x2001C000-0x2001FFFF) IROM(0x8000000-0x80FFFFF) CLOCK(25000000) FPU2 CPUTYPE("Cortex-M4") TZ</Cpu>
+          <Cpu>IRAM(0x20000000-0x2001BFFF) IRAM2(0x2001C000-0x2001FFFF) IROM(0x8000000-0x80FFFFF)  CLOCK(25000000) FPU2 CPUTYPE("Cortex-M4") TZ</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
           <FlashDriverDll></FlashDriverDll>
@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F405xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\..\..\..\..\..\..\gmp_pro;..\..\..\..\..\..\csp\stm32;..\..\..\implement\common;..\..\..\implement\stm32f405</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../../../../../../../gmp_pro;../../../../../../csp/stm32;..\..\..\implement\stm32f405_new;..\..\..\implement\common</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -499,6 +499,11 @@
               <FileType>1</FileType>
               <FilePath>../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c</FilePath>
             </File>
+            <File>
+              <FileName>stm32f4xx_hal_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -512,7 +517,62 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>gmp_src</GroupName>
+          <GroupName>GMP_SRC</GroupName>
+          <Files>
+            <File>
+              <FileName>xplt.peripheral.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\implement\stm32f405_new\xplt.peripheral.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctrl_settings.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\implement\stm32f405_new\ctrl_settings.h</FilePath>
+            </File>
+            <File>
+              <FileName>xplt.config.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\implement\stm32f405_new\xplt.config.h</FilePath>
+            </File>
+            <File>
+              <FileName>xplt.ctl_interface.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\implement\stm32f405_new\xplt.ctl_interface.h</FilePath>
+            </File>
+            <File>
+              <FileName>xplt.peripheral.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\implement\stm32f405_new\xplt.peripheral.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>GMP_COMMON</GroupName>
+          <Files>
+            <File>
+              <FileName>ctl_main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\implement\common\ctl_main.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_main.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\implement\common\ctl_main.h</FilePath>
+            </File>
+            <File>
+              <FileName>user_main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\implement\common\user_main.c</FilePath>
+            </File>
+            <File>
+              <FileName>user_main.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\implement\common\user_main.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>GMP_CORESRC</GroupName>
           <Files>
             <File>
               <FileName>ctl_component_advance.c</FileName>
@@ -633,26 +693,6 @@
               <FileName>stm32_chip_common.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\gmp_src\stm32_chip_common.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>gmp_implement</GroupName>
-          <Files>
-            <File>
-              <FileName>xplt.peripheral.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\implement\stm32f405\xplt.peripheral.c</FilePath>
-            </File>
-            <File>
-              <FileName>ctl_main.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\implement\common\ctl_main.c</FilePath>
-            </File>
-            <File>
-              <FileName>user_main.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\implement\common\user_main.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -55,6 +55,8 @@ fast_gt index_adc_calibrator = 0;
 // enable motor auto identify
 fast_gt flag_enable_motor_identify = 0;
 
+uint32_t counter;
+
 // CTL initialize routine
 void ctl_init()
 {
@@ -293,6 +295,7 @@ fast_gt ctl_motor_identify(void)
 // if return 0 the system is not ready to enable
 fast_gt ctl_ready_mainloop(void)
 {
+    return 1;//test
     if (
         // step I ADC calibrate
         ctl_adc_calibrate() &&
@@ -302,4 +305,5 @@ fast_gt ctl_ready_mainloop(void)
         return 1;
     else
         return 0;
+    
 }
