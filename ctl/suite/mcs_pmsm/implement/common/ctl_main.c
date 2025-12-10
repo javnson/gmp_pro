@@ -140,7 +140,7 @@ void ctl_init()
 #endif // OPENLOOP_CONST_FREQUENCY
 
     ctl_pmsm_ctrl_voltage_mode(&pmsm_ctrl);
-    ctl_set_pmsm_ctrl_vdq_ff(&pmsm_ctrl, float2ctrl(0.15), float2ctrl(0.15));
+    ctl_set_pmsm_ctrl_vdq_ff(&pmsm_ctrl, float2ctrl(0.0), float2ctrl(0.12));
 
 #elif (BUILD_LEVEL == 2)
 #if defined OPENLOOP_CONST_FREQUENCY

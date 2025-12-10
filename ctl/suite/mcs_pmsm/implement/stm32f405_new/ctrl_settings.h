@@ -17,6 +17,9 @@
 // Speed controller Division
 #define SPD_CONTROLLER_PWM_DIVISION (5)
 
+
+#define MTR_CTRL_CURRENT_MEASUREMENT_PHASES (2)
+
 // Current sensor
 #define MTR_CTRL_CURRENT_GAIN (10.0)
 #define MTR_CTRL_CURRENT_BIAS (1.65 / ADC_REFERENCE)
@@ -51,6 +54,9 @@
 #define MTR_ENCODER_OFFSET (0)
 
 #endif // PMSM_CTRL_USING_QEP_ENCODER
+
+// 2 phase current Clarke
+#define MTR_CTRL_CURRENT_MEASUREMENT_PHASES (2)
 
 // BUILD_LEVEL 1: Voltage Open loop
 // BUILD_LEVEL 2: Current Open loop

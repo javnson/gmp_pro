@@ -99,11 +99,11 @@ void ctl_output_callback(void)
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, pwm_out.value[phase_V]);
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, pwm_out.value[phase_W]);
 		
-//		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2048 + 2048.0f * pmsm_ctrl.iab0.dat[phase_A]);
-//		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 2048 + 2048.0f * pmsm_ctrl.uab0.dat[phase_A]);
+		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2048 + 2048.0f * pmsm_ctrl.iab0.dat[phase_A]);
+		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 2048 + 2048.0f * pmsm_ctrl.vab0_set.dat[phase_A]);
 		
-		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2048);
-		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 2048 + 2048.0f * rg.enc.elec_position);
+//		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2048);
+//		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 2048 + 2048.0f * rg.enc.elec_position);
 }
 
 // Compare output enable reg mask CCER (CH1/CH1N, CH2/CH2N, CH3/CH3N)
