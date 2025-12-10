@@ -59,6 +59,7 @@ void setup_peripheral(void)
 
 		HAL_Delay(1);
 	
+
     // Init ADC channel
     ctl_init_ptr_adc_channel(
         // bind idc channel with idc address

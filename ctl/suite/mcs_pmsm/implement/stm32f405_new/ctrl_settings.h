@@ -38,6 +38,20 @@
 // Startup Delay, ms
 #define CTRL_STARTUP_DELAY (100)
 
+// enable QEP encoder 
+#define PMSM_CTRL_USING_QEP_ENCODER
+
+// QEP Encoder Configuration
+#ifdef PMSM_CTRL_USING_QEP_ENCODER
+
+// Encoer Lines
+#define MTR_ENCODER_LINES (8000)
+
+// Encoder Offsets
+#define MTR_ENCODER_OFFSET (0)
+
+#endif // PMSM_CTRL_USING_QEP_ENCODER
+
 // BUILD_LEVEL 1: Voltage Open loop
 // BUILD_LEVEL 2: Current Open loop
 // BUILD_LEVEL 3: Current Open loop with actual position

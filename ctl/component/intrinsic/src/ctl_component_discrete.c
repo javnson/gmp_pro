@@ -728,21 +728,21 @@ void ctl_init_tracking_pid(
 #include <ctl/component/intrinsic/discrete/pole_zero.h>
 
 // Helper function to multiply two first-order polynomials: (b0 + b1*z^-1) * (c0 + c1*z^-1) -> out[0] + out[1]*z^-1 + out[2]*z^-2
-static void _multiply_poly1_poly1(const parameter_gt b[2], const parameter_gt c[2], parameter_gt out[3])
-{
-    out[0] = b[0] * c[0];
-    out[1] = b[0] * c[1] + b[1] * c[0];
-    out[2] = b[1] * c[1];
-}
+//static void _multiply_poly1_poly1(const parameter_gt b[2], const parameter_gt c[2], parameter_gt out[3])
+//{
+//    out[0] = b[0] * c[0];
+//    out[1] = b[0] * c[1] + b[1] * c[0];
+//    out[2] = b[1] * c[1];
+//}
 
 // Helper function to multiply a second-order and a first-order polynomial
-static void _multiply_poly2_poly1(const parameter_gt b[3], const parameter_gt c[2], parameter_gt out[4])
-{
-    out[0] = b[0] * c[0];
-    out[1] = b[0] * c[1] + b[1] * c[0];
-    out[2] = b[1] * c[1] + b[2] * c[0];
-    out[3] = b[2] * c[1];
-}
+//static void _multiply_poly2_poly1(const parameter_gt b[3], const parameter_gt c[2], parameter_gt out[4])
+//{
+//    out[0] = b[0] * c[0];
+//    out[1] = b[0] * c[1] + b[1] * c[0];
+//    out[2] = b[1] * c[1] + b[2] * c[0];
+//    out[3] = b[2] * c[1];
+//}
 
 // Helper function to multiply a second-order numerator and a first-order numerator polynomial
 static void _multiply_num_poly2_poly1(const parameter_gt b[3], const parameter_gt c[2], parameter_gt out[4])

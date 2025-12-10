@@ -464,7 +464,8 @@ GMP_STATIC_INLINE void ctl_step_offline_est(ctl_offline_est_t* est)
                     ctl_step_slope_f(&est->speed_profile_gen);
                 }
                 else
-                { // 方法1: 直流偏置HFI法
+                { 
+                    // 方法1: 直流偏置HFI法
                     // 角度固定为0, 使d轴对齐alpha轴
                     theta = 0.0f;
                 }

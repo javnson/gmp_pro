@@ -55,15 +55,22 @@ void ctl_input_callback(void)
 {
 
     // copy ADC data to raw buffer
-    udc_raw = adc2_res[MOTOR_UDC];
+//    udc_raw = adc2_res[MOTOR_UDC];
 
-    uabc_raw[phase_U] = adc2_res[MOTOR_UA];
-    uabc_raw[phase_V] = adc1_res[MOTOR_UB];
-    uabc_raw[phase_W] = adc1_res[MOTOR_UC];
+//    uabc_raw[phase_U] = adc2_res[MOTOR_UA];
+//    uabc_raw[phase_V] = adc1_res[MOTOR_UB];
+//    uabc_raw[phase_W] = adc1_res[MOTOR_UC];
 
-    iabc_raw[phase_U] = adc2_res[MOTOR_UA];
-    iabc_raw[phase_V] = adc1_res[MOTOR_UB];
-    iabc_raw[phase_W] = adc1_res[MOTOR_UC];
+//    iabc_raw[phase_U] = adc2_res[MOTOR_UA];
+//    iabc_raw[phase_V] = adc1_res[MOTOR_UB];
+//    iabc_raw[phase_W] = adc1_res[MOTOR_UC];
+		
+		// copy ADC injected data to raw buffer
+		iabc_raw[phase_A] = HAL_ADCEx_InjectedGetValue(&hadc1,ADC_INJECTED_RANK_1);
+		iabc_raw[phase_B] = HAL_ADCEx_InjectedGetValue(&hadc1,ADC_INJECTED_RANK_2);
+		iabc_raw[phase_C] = HAL_ADCEx_InjectedGetValue(&hadc1,ADC_INJECTED_RANK_3);
+		udc_raw = HAL_ADCEx_InjectedGetValue(&hadc1,ADC_INJECTED_RANK_4);
+	
 
     // invoke ADC p.u. routine
     ctl_step_tri_ptr_adc_channel(&iabc);

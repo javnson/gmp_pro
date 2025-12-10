@@ -92,6 +92,11 @@ void ctl_init()
 
     // attach a speed encoder object with motor controller
     ctl_attach_mtr_velocity(&pmsm_ctrl.mtr_interface, &spd_enc.encif);
+		
+#ifdef PMSM_CTRL_USING_QEP_ENCODER
+		// attach a QEP encoder object
+		ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &pos_enc.encif);
+#endif // PMSM_CTRL_USING_QEP_ENCODER
 
     // Step 2.3 Motor Identifier
 
@@ -136,7 +141,7 @@ void ctl_init()
 #endif // OPENLOOP_CONST_FREQUENCY
 
     ctl_pmsm_ctrl_voltage_mode(&pmsm_ctrl);
-    ctl_set_pmsm_ctrl_vdq_ff(&pmsm_ctrl, float2ctrl(0.2), float2ctrl(0.2));
+    ctl_set_pmsm_ctrl_vdq_ff(&pmsm_ctrl, float2ctrl(0.15), float2ctrl(0.15));
 
 #elif (BUILD_LEVEL == 2)
 #if defined OPENLOOP_CONST_FREQUENCY
@@ -295,7 +300,9 @@ fast_gt ctl_motor_identify(void)
 // if return 0 the system is not ready to enable
 fast_gt ctl_ready_mainloop(void)
 {
-    return 1;//test
+    // test
+    return 1;
+
     if (
         // step I ADC calibrate
         ctl_adc_calibrate() &&

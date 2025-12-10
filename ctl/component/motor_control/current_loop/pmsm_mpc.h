@@ -119,7 +119,7 @@ GMP_STATIC_INLINE void ctl_step_mpc(ctl_mpc_controller_t* mpc, ctl_vector2_t* id
     ctrl_gt min_cost = 1e12f; // Initialize with a very large number
     uint8_t best_vector_idx = 0;
     ctrl_gt voltage_scale = (2.0f / 3.0f) * _udc;
-    int i;
+    fast_gt i;
 
     // 1. Construct the speed-dependent parts of the model matrices
     A_full = mpc->A_const;
@@ -158,7 +158,7 @@ GMP_STATIC_INLINE void ctl_step_mpc(ctl_mpc_controller_t* mpc, ctl_vector2_t* id
         if (cost < min_cost)
         {
             min_cost = cost;
-            best_vector_idx = i;
+            best_vector_idx = (uint8_t)i;
         }
     }
 
