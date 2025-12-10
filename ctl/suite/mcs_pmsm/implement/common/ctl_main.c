@@ -49,7 +49,7 @@ volatile fast_gt flag_system_enable = 0;
 
 // adc calibrator flags
 adc_bias_calibrator_t adc_calibrator;
-fast_gt flag_enable_adc_calibrator = 1;
+fast_gt flag_enable_adc_calibrator = 0;
 fast_gt index_adc_calibrator = 0;
 
 // enable motor auto identify
@@ -74,6 +74,8 @@ void ctl_init()
     ctl_init_autoturn_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, MTR_ENCODER_LINES);
     // Set encoder offset
     ctl_set_autoturn_pos_encoder_offset(&pos_enc, MTR_ENCODER_OFFSET);
+	  // attach a QEP encoder object
+		ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &pos_enc.encif);
 #endif // PMSM_CTRL_USING_QEP_ENCODER
 
     // create a speed observer by position encoder
@@ -93,10 +95,7 @@ void ctl_init()
     // attach a speed encoder object with motor controller
     ctl_attach_mtr_velocity(&pmsm_ctrl.mtr_interface, &spd_enc.encif);
 		
-#ifdef PMSM_CTRL_USING_QEP_ENCODER
-		// attach a QEP encoder object
-		ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &pos_enc.encif);
-#endif // PMSM_CTRL_USING_QEP_ENCODER
+
 
     // Step 2.3 Motor Identifier
 
@@ -301,7 +300,7 @@ fast_gt ctl_motor_identify(void)
 fast_gt ctl_ready_mainloop(void)
 {
     // test
-    return 1;
+    //return 1;
 
     if (
         // step I ADC calibrate

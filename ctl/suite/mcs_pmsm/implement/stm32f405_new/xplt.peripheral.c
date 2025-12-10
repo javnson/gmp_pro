@@ -96,6 +96,9 @@ void setup_peripheral(void)
     //ctl_init_autoturn_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, ((uint32_t)1 << 14) - 1);
 //    ctl_init_as5048a_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, SPI_ENCODER_BASE, SPI_ENCODER_NCS);
 
+		// init TIM3 for QEP encoder
+		HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
+
     // bind peripheral to motor controller
     ctl_attach_mtr_adc_channels(&pmsm_ctrl.mtr_interface,
                                 // phase voltage & phase current
@@ -120,6 +123,7 @@ void setup_peripheral(void)
     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+		
     HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
     HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
     HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);

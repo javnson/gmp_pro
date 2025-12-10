@@ -40,6 +40,9 @@ extern ADC_HandleTypeDef hadc1;
 
 extern TIM_HandleTypeDef htim1;
 
+extern TIM_HandleTypeDef htim3;
+
+
 // raw data
 extern adc_gt uabc_raw[3];
 extern adc_gt iabc_raw[3];
@@ -79,7 +82,7 @@ void ctl_input_callback(void)
     ctl_step_ptr_adc_channel(&udc);
 
     // invoke position encoder routine.
-    //        ctl_step_autoturn_pos_encoder(&pos_enc, simulink_rx_buffer.encoder);
+    ctl_step_autoturn_pos_encoder(&pos_enc, __HAL_TIM_GET_COUNTER(&htim3));
     // ctl_step_as5048a_pos_encoder(&pos_enc);
 }
 
@@ -101,6 +104,14 @@ GMP_STATIC_INLINE
 void ctl_enable_output()
 {
     //        csp_sl_enable_output();
+		
+		HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
+    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
+    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
+		
 }
 
 // Disable Output
@@ -108,6 +119,17 @@ GMP_STATIC_INLINE
 void ctl_disable_output()
 {
     //        csp_sl_disable_output();
+		
+		HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
+    HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_3);
+		
+    HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_1);
+    HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_2);
+    HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_3);
+		
+		HAL_TIM_Base_Start(&htim1);
+		
 }
 
 #endif // SPECIFY_ENABLE_CTL_FRAMEWORK_NANO

@@ -12,7 +12,7 @@
 #define CTRL_FS (10000)
 
 // PWM depth
-#define CONTROLLER_PWM_CMP_MAX (8500)
+#define CONTROLLER_PWM_CMP_MAX (8399)
 
 // Speed controller Division
 #define SPD_CONTROLLER_PWM_DIVISION (5)
