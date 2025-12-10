@@ -42,6 +42,8 @@ extern TIM_HandleTypeDef htim1;
 
 extern TIM_HandleTypeDef htim3;
 
+extern DAC_HandleTypeDef hdac;
+
 
 // raw data
 extern adc_gt uabc_raw[3];
@@ -96,21 +98,36 @@ void ctl_output_callback(void)
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, pwm_out.value[phase_U]);
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, pwm_out.value[phase_V]);
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, pwm_out.value[phase_W]);
+		
+//		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2048 + 2048.0f * pmsm_ctrl.iab0.dat[phase_A]);
+//		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 2048 + 2048.0f * pmsm_ctrl.uab0.dat[phase_A]);
+		
+		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2048);
+		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 2048 + 2048.0f * rg.enc.elec_position);
 }
+
+// Compare output enable reg mask CCER (CH1/CH1N, CH2/CH2N, CH3/CH3N)
+#define TIM_CCER_MASK  (TIM_CCER_CC1E | TIM_CCER_CC1NE | \
+                        TIM_CCER_CC2E | TIM_CCER_CC2NE | \
+                        TIM_CCER_CC3E | TIM_CCER_CC3NE)
 
 // Enable Motor Controller
 // Enable Output
 GMP_STATIC_INLINE
 void ctl_enable_output()
 {
-    //        csp_sl_enable_output();
-		
+
 		HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
     HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
     HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
     HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
+		
+		htim1.Instance->CCER |= TIM_CCER_MASK;
+		
+		// Enable Gate driver
+		HAL_GPIO_WritePin(PWM_DISABLE_GPIO_Port, PWM_DISABLE_Pin, GPIO_PIN_SET);
 		
 }
 
@@ -120,15 +137,21 @@ void ctl_disable_output()
 {
     //        csp_sl_disable_output();
 		
-		HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
-    HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
-    HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_3);
+//		HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
+//    HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
+//    HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_3);
+//		
+//    HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_1);
+//    HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_2);
+//    HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_3);
 		
-    HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_1);
-    HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_2);
-    HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_3);
+		htim1.Instance->CCER &= ~TIM_CCER_MASK;
 		
-		HAL_TIM_Base_Start(&htim1);
+	  // Recover Timer
+//		__HAL_TIM_ENABLE(&htim1);
+		
+		// Disable Gate Driver
+		HAL_GPIO_WritePin(PWM_DISABLE_GPIO_Port, PWM_DISABLE_Pin, GPIO_PIN_RESET);
 		
 }
 
