@@ -18,10 +18,9 @@
 #define SPD_CONTROLLER_PWM_DIVISION (5)
 
 
-#define MTR_CTRL_CURRENT_MEASUREMENT_PHASES (2)
 
 // Current sensor
-#define MTR_CTRL_CURRENT_GAIN (10.0)
+#define MTR_CTRL_CURRENT_GAIN (2.0)
 #define MTR_CTRL_CURRENT_BIAS (1.65 / ADC_REFERENCE)
 
 // Voltage sensor
@@ -67,6 +66,9 @@
 //
 // Controller Settings
 //
+
+// Enable ADC Calibrator
+#define SPECIFY_ENABLE_ADC_CALIBRATE
 
 // Use discrete PID controller
 // Discrete controller may bring more smooth response.

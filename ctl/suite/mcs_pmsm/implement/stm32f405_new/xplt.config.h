@@ -44,3 +44,5 @@
 // DSP C28x Simulate platform config
 
 
+#define MTR_CTRL_CURRENT_MEASUREMENT_PHASES (2)
+

@@ -49,11 +49,11 @@ volatile fast_gt flag_system_enable = 0;
 
 // adc calibrator flags
 adc_bias_calibrator_t adc_calibrator;
-fast_gt flag_enable_adc_calibrator = 0;
-fast_gt index_adc_calibrator = 0;
+volatile fast_gt flag_enable_adc_calibrator = 1;
+volatile fast_gt index_adc_calibrator = 0;
 
 // enable motor auto identify
-fast_gt flag_enable_motor_identify = 0;
+volatile fast_gt flag_enable_motor_identify = 0;
 
 uint32_t counter;
 
@@ -303,8 +303,10 @@ fast_gt ctl_ready_mainloop(void)
     //return 1;
 
     if (
+#if defined SPECIFY_ENABLE_ADC_CALIBRATE
         // step I ADC calibrate
         ctl_adc_calibrate() &&
+#endif // SPECIFY_ENABLE_ADC_CALIBRATE
 
         // step II motor identify
         ctl_motor_identify())
