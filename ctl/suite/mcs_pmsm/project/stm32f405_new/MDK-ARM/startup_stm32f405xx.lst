@@ -827,11 +827,11 @@ ARM Macro Assembler    Page 13
               00000000 
 Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp.sp --apcs=
 interwork --depend=stm32f405\startup_stm32f405xx.d -ostm32f405\startup_stm32f40
-5xx.o -I.\RTE\_stm32f405 -IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.9.0\CMSIS\Core\Inclu
-de -IC:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.13.0\Drivers\CMSIS\Device\ST\STM3
-2F4xx\Include --predefine="__UVISION_VERSION SETA 537" --predefine="_RTE_ SETA 
-1" --predefine="STM32F405xx SETA 1" --predefine="_RTE_ SETA 1" --list=startup_s
-tm32f405xx.lst startup_stm32f405xx.s
+5xx.o -I.\RTE\_stm32f405 -IC:\Users\wimme\AppData\Local\Arm\Packs\ARM\CMSIS\5.9
+.0\CMSIS\Core\Include -IC:\Users\wimme\AppData\Local\Arm\Packs\Keil\STM32F4xx_D
+FP\2.17.1\Drivers\CMSIS\Device\ST\STM32F4xx\Include --predefine="__UVISION_VERS
+ION SETA 538" --predefine="_RTE_ SETA 1" --predefine="STM32F405xx SETA 1" --pre
+define="_RTE_ SETA 1" --list=startup_stm32f405xx.lst startup_stm32f405xx.s
 
 
 

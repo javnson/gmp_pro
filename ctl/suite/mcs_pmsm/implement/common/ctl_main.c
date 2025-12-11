@@ -124,8 +124,8 @@ void ctl_init()
     pmsm_ctrl_init.current_limit_max = float2ctrl(0.45);
 
     // accelerator parameters
-    pmsm_ctrl_init.acc_limit_min = -150.0f;
-    pmsm_ctrl_init.acc_limit_max = 150.0f;
+    pmsm_ctrl_init.acc_limit_min = -1.5f;
+    pmsm_ctrl_init.acc_limit_max = 1.5f;
 
     // init the PMSM controller
     ctl_init_pmsm_controller(&pmsm_ctrl, &pmsm_ctrl_init);
