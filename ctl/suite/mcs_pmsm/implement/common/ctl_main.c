@@ -149,7 +149,7 @@ void ctl_init()
     ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &rg.enc);
 #endif // OPENLOOP_CONST_FREQUENCY
     ctl_pmsm_ctrl_current_mode(&pmsm_ctrl);
-    ctl_set_pmsm_ctrl_idq_ff(&pmsm_ctrl, float2ctrl(0.1), float2ctrl(0.1));
+    ctl_set_pmsm_ctrl_idq_ff(&pmsm_ctrl, float2ctrl(0.0), float2ctrl(0.12));
 
 #elif (BUILD_LEVEL == 3)
 
@@ -166,6 +166,8 @@ void ctl_init()
     if (flag_enable_adc_calibrator)
     {
         // Select ADC calibrate
+				// NOTE: if ADC clibrator variable is enable but not init
+				// The system enable logic will stuck.
         ctl_disable_pmsm_ctrl_output(&pmsm_ctrl);
         ctl_enable_adc_calibrator(&adc_calibrator);
     }
