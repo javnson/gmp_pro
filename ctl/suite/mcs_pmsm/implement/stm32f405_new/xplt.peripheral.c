@@ -169,3 +169,18 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
     }
 }
 
+/**
+  * @brief  EXTI line detection callbacks.
+  * @param  GPIO_Pin Specifies the pins connected EXTI line
+  * @retval None
+  */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+		// Index
+    if(GPIO_Pin == GPIO_PIN_9)
+    {
+        __HAL_TIM_SET_COUNTER(&htim3, 0);
+        
+    }
+}
+

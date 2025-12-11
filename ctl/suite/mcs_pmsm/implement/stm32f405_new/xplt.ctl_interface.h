@@ -99,8 +99,12 @@ void ctl_output_callback(void)
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, pwm_out.value[phase_V]);
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, pwm_out.value[phase_W]);
 		
-		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2048 + 2048.0f * pmsm_ctrl.iab0.dat[phase_A]);
-		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 2048 + 2048.0f * pmsm_ctrl.vab0_set.dat[phase_A]);
+		//HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2048 + 2048.0f * pmsm_ctrl.iab0.dat[phase_A]);
+		//HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 2048 + 2048.0f * pmsm_ctrl.vab0_set.dat[phase_A]);
+	
+		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2048 + 2048.0f * ctl_get_mtr_elec_theta(&pmsm_ctrl.mtr_interface));
+		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 2048 + 2048.0f * pos_enc.encif.elec_position);
+	
 		
 //		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2048);
 //		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 2048 + 2048.0f * rg.enc.elec_position);

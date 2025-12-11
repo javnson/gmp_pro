@@ -3,7 +3,7 @@
 #define _FILE_CTRL_SETTINGS_H_
 
 // invoke motor parameters
-#include <ctl/component/motor_control/motor_preset/GBM2804H_100T.h>
+#include <ctl/component/motor_control/motor_preset/SM060R20B30MNAD.h>
 
 // Given 3.3V voltage reference
 #define ADC_REFERENCE ((3.3))
@@ -47,10 +47,10 @@
 #ifdef PMSM_CTRL_USING_QEP_ENCODER
 
 // Encoer Lines
-#define MTR_ENCODER_LINES (8000)
+#define MTR_ENCODER_LINES (10000)
 
 // Encoder Offsets
-#define MTR_ENCODER_OFFSET (0)
+#define MTR_ENCODER_OFFSET (0.0226000007)
 
 #endif // PMSM_CTRL_USING_QEP_ENCODER
 
