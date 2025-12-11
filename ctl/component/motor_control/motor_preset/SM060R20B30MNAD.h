@@ -63,12 +63,12 @@ extern "C"
 #define MOTOR_PARAM_RATED_VOLTAGE   ((10.0f))  ///< Rated operating voltage (V).
 #define MOTOR_PARAM_RATED_CURRENT   ((4.5f))   ///< Rated phase current (A, Peak).
 #define MOTOR_PARAM_NO_LOAD_CURRENT ((0.01f))  ///< No-load phase current (A, Peak).
-#define MOTOR_PARAM_RATED_FREQUENCY ((250.0f)) ///< Rated operating frequency (Hz).
+#define MOTOR_PARAM_RATED_FREQUENCY ((200.0f)) ///< Rated operating frequency (Hz).
 
 //================================================================================
 // Absolute Maximum Ratings & Limits
 //================================================================================
-#define MOTOR_PARAM_MAX_SPEED      ((2180.0f))  ///< Maximum allowable speed (RPM).
+#define MOTOR_PARAM_MAX_SPEED      ((3000.0f))  ///< Maximum allowable speed (RPM).
 #define MOTOR_PARAM_MAX_TORQUE     ((0.981f)) ///< Maximum intermittent torque (N*m).
 #define MOTOR_PARAM_MAX_DC_VOLTAGE ((14.2f))  ///< Maximum allowable DC bus voltage (V).
 #define MOTOR_PARAM_MAX_PH_CURRENT ((5.0f))   ///< Maximum allowable phase current (A, Peak).

@@ -116,8 +116,9 @@ void ctl_init()
 
     // speed pid controller parameters
     pmsm_ctrl_init.spd_ctrl_div = SPD_CONTROLLER_PWM_DIVISION;
-    pmsm_ctrl_init.spd_pid_gain = (parameter_gt)(0.2);
+    pmsm_ctrl_init.spd_pid_gain = (parameter_gt)(0.5);
     pmsm_ctrl_init.spd_Ti = (parameter_gt)(4.0f / MTR_CTRL_SPEED_LOOP_BW);
+//		pmsm_ctrl_init.spd_Ti = 0.0005f;
     pmsm_ctrl_init.spd_Td = 0;
     pmsm_ctrl_init.current_limit_min = float2ctrl(-0.45);
     pmsm_ctrl_init.current_limit_max = float2ctrl(0.45);

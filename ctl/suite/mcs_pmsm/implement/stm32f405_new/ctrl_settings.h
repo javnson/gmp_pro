@@ -31,7 +31,7 @@
 #define MTR_CTRL_CURRENT_LOOP_BW ((50))
 
 // Speed Bandwidth
-#define MTR_CTRL_SPEED_LOOP_BW ((10))
+#define MTR_CTRL_SPEED_LOOP_BW ((20))
 
 // Controller Base Voltage and Base Current
 #define MTR_CTRL_VOLTAGE_BASE ((MOTOR_PARAM_MAX_DC_VOLTAGE))
@@ -61,7 +61,7 @@
 // BUILD_LEVEL 2: Current Open loop
 // BUILD_LEVEL 3: Current Open loop with actual position
 // BUILD_LEVEL 4: Speed Close loop
-#define BUILD_LEVEL (2)
+#define BUILD_LEVEL (4)
 
 //
 // Controller Settings
