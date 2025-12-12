@@ -14,7 +14,7 @@
 
 #include <xplt.peripheral.h>
 
-#include <ext/encoder/as5048/as5048a.h>
+//#include <ext/encoder/as5048/as5048a.h>
 
 #ifndef _FILE_CTL_INTERFACE_H_
 #define _FILE_CTL_INTERFACE_H_
