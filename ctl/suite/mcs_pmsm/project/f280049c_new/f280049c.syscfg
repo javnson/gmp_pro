@@ -1,9 +1,9 @@
 /**
  * These arguments were used when this file was generated. They will be automatically applied on subsequent loads
  * via the GUI or CLI. Run CLI with '--help' for additional information on how to override these arguments.
- * @cliArgs --device "F28004x" --part "F28004x_100PZ" --package "F28004x_100PZ" --context "system" --product "gmp_pro@1.00.00.05" --product "C2000WARE@5.04.00.00"
- * @v2CliArgs --device "TMS320F280041C" --package "100PZ" --context "system" --product "gmp_pro@1.00.00.05" --product "C2000WARE@5.04.00.00"
- * @versions {"tool":"1.22.0+3893"}
+ * @cliArgs --device "F28004x" --part "F28004x_100PZ" --package "F28004x_100PZ" --context "system" --product "C2000WARE@5.04.00.00" --product "gmp_pro@1.00.00.05"
+ * @v2CliArgs --device "TMS320F280041C" --package "100PZ" --context "system" --product "C2000WARE@5.04.00.00" --product "gmp_pro@1.00.00.05"
+ * @versions {"tool":"1.21.0+3721"}
  */
 
 /**
@@ -205,12 +205,10 @@ gpio3.$name           = "SPI_ENCODER_NCS";
 gpio3.direction       = "GPIO_DIR_MODE_OUT";
 gpio3.gpioPin.$assign = "GPIO33";
 
-sci1.$name                 = "debug_uart";
-sci1.sci.$assign           = "SCIA";
-sci1.sci.sci_rxPin.$assign = "GPIO28";
-sci1.sci.sci_txPin.$assign = "GPIO29";
-sci1.rxQual.$name          = "myGPIOQUAL4";
-sci1.txQual.$name          = "myGPIOQUAL5";
+sci1.$name        = "debug_uart";
+sci1.sci.$assign  = "SCIA";
+sci1.rxQual.$name = "myGPIOQUAL4";
+sci1.txQual.$name = "myGPIOQUAL5";
 
 spi1.$name                   = "SPI_ENCODER";
 spi1.bitRate                 = 1500000;
@@ -230,4 +228,6 @@ spi1.pociQual.$name          = "myGPIOQUAL1";
  * version of the tool will not impact the pinmux you originally saw.  These lines can be completely deleted in order to
  * re-solve from scratch.
  */
-spi1.spi.$suggestSolution = "SPIB";
+sci1.sci.sci_rxPin.$suggestSolution = "GPIO17";
+sci1.sci.sci_txPin.$suggestSolution = "GPIO16";
+spi1.spi.$suggestSolution           = "SPIB";
