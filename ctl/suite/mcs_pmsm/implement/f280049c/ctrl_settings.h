@@ -44,12 +44,6 @@
 // ADC reference Voltage
 #define ADC_REFERENCE (3.3)
 
-// Encoder lines
-#define MTR_ENCODER_LINES  ((10000))
-
-// Encoder Offset
-#define MTR_ENCODER_OFFSET ((1000))
-
 // Speed controller Division
 #define SPD_CONTROLLER_PWM_DIVISION (5)
 
@@ -92,14 +86,11 @@
 
 
 
-// 2 phase current Clarke
-#define MTR_CTRL_CURRENT_MEASUREMENT_PHASES (2)
-
 // BUILD_LEVEL 1: Voltage Open loop
 // BUILD_LEVEL 2: Current Open loop
 // BUILD_LEVEL 3: Actual Current loop
 // BUILD_LEVEL 4: Speed Close loop
-#define BUILD_LEVEL (1)
+#define BUILD_LEVEL (4)
 
 //
 // Controller Settings

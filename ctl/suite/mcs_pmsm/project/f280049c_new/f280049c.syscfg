@@ -205,10 +205,12 @@ gpio3.$name           = "SPI_ENCODER_NCS";
 gpio3.direction       = "GPIO_DIR_MODE_OUT";
 gpio3.gpioPin.$assign = "GPIO33";
 
-sci1.$name        = "debug_uart";
-sci1.sci.$assign  = "SCIA";
-sci1.rxQual.$name = "myGPIOQUAL4";
-sci1.txQual.$name = "myGPIOQUAL5";
+sci1.$name                 = "debug_uart";
+sci1.sci.$assign           = "SCIA";
+sci1.sci.sci_rxPin.$assign = "GPIO28";
+sci1.sci.sci_txPin.$assign = "GPIO29";
+sci1.rxQual.$name          = "myGPIOQUAL4";
+sci1.txQual.$name          = "myGPIOQUAL5";
 
 spi1.$name                   = "SPI_ENCODER";
 spi1.bitRate                 = 1500000;
@@ -228,6 +230,4 @@ spi1.pociQual.$name          = "myGPIOQUAL1";
  * version of the tool will not impact the pinmux you originally saw.  These lines can be completely deleted in order to
  * re-solve from scratch.
  */
-sci1.sci.sci_rxPin.$suggestSolution = "GPIO17";
-sci1.sci.sci_txPin.$suggestSolution = "GPIO16";
-spi1.spi.$suggestSolution           = "SPIB";
+spi1.spi.$suggestSolution = "SPIB";
