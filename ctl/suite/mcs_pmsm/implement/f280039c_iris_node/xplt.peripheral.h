@@ -29,8 +29,9 @@ extern "C"
 // select SIL package
 #include <ctl/component/motor_control/basic/motor_universal_interface.h>
 
-#include <ctl/component/motor_control/basic/std_sil_motor_interface.h>
+//#include <ctl/component/motor_control/basic/std_sil_motor_interface.h>
 
+#include "board.h"
 
 extern tri_ptr_adc_channel_t uabc;
 extern tri_ptr_adc_channel_t iabc;

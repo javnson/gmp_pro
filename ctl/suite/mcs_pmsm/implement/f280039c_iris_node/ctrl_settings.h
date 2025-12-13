@@ -33,6 +33,31 @@
 // Speed Bandwidth
 #define MTR_CTRL_SPEED_LOOP_BW ((10))
 
+// enable QEP encoder
+#define PMSM_CTRL_USING_QEP_ENCODER
+
+// QEP Encoder Configuration
+#ifdef PMSM_CTRL_USING_QEP_ENCODER
+
+// Encoer Lines
+#define MTR_ENCODER_LINES (10000)
+
+// Encoder Offsets
+#define MTR_ENCODER_OFFSET (0.0226000007)
+
+#endif // PMSM_CTRL_USING_QEP_ENCODER
+
+// Current sensor
+#define MTR_CTRL_CURRENT_GAIN (8.0)
+#define MTR_CTRL_CURRENT_BIAS (1.65 / ADC_REFERENCE)
+
+// Voltage sensor
+#define MTR_CTRL_VOLTAGE_GAIN (4.3889)
+#define MTR_CTRL_VOLTAGE_BIAS (0.0)
+
+// ADC reference Voltage
+#define ADC_REFERENCE (3.3)
+
 // BUILD_LEVEL 1: Voltage Open loop
 // BUILD_LEVEL 2: Current Open loop
 // BUILD_LEVEL 3: Actual Current loop
