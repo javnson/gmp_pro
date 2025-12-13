@@ -58,7 +58,7 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     simulink_tx_buffer.tabc[phase_C] = pwm_out.value[phase_C];
 
     // Monitor Port, 8 channels
-#if BUILD_LEVEL == 1
+//#if BUILD_LEVEL == 1
 
     // angle set
     simulink_tx_buffer.monitor_port[0] = rg.rg.current;
@@ -76,7 +76,7 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     simulink_tx_buffer.monitor_port[6] = pmsm_ctrl.mtr_interface.position->elec_position;
     simulink_tx_buffer.monitor_port[7] = pmsm_ctrl.mtr_interface.velocity->speed;
 
-#endif // BUILD_LEVEL
+//#endif // BUILD_LEVEL
 }
 
 // Enable Motor Controller

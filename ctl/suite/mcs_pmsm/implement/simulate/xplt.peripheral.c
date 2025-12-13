@@ -43,9 +43,11 @@ void setup_peripheral(void)
         // bind idc channel with idc address
         &idc, &simulink_rx_buffer.idc,
         // ADC gain, ADC bias
+        /*
         ctl_gain_calc_shunt_amp(CTRL_ADC_VOLTAGE_REF, MTR_CTRL_CURRENT_BASE, BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM,
                                 BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_CSA_BIAS_V),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_CSA_BIAS_V),*/
+        float2ctrl(MTR_CTRL_CURRENT_GAIN), float2ctrl(MTR_CTRL_CURRENT_BIAS),
         // ADC resolution, IQN
         12, 24);
 
@@ -53,9 +55,12 @@ void setup_peripheral(void)
         // bind ibac channel with iabc address
         &iabc, simulink_rx_buffer.iabc,
         // ADC gain, ADC bias
+        /*
         ctl_gain_calc_shunt_amp(CTRL_ADC_VOLTAGE_REF, MTR_CTRL_CURRENT_BASE, BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM,
                                 BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_CSA_BIAS_V),
+        */
+        float2ctrl(MTR_CTRL_CURRENT_GAIN), float2ctrl(MTR_CTRL_CURRENT_BIAS),
         // ADC resolution, IQN
         12, 24);
 
@@ -63,8 +68,11 @@ void setup_peripheral(void)
         // bind udc channel with udc address
         &udc, &simulink_rx_buffer.udc,
         // ADC gain, ADC bias
+        /*
         ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN, MTR_CTRL_VOLTAGE_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V),
+        */
+        float2ctrl(MTR_CTRL_VOLTAGE_GAIN), float2ctrl(MTR_CTRL_VOLTAGE_BIAS),
         // ADC resolution, IQN
         12, 24);
 
@@ -72,8 +80,11 @@ void setup_peripheral(void)
         // bind vbac channel with vabc address
         &uabc, simulink_rx_buffer.uabc,
         // ADC gain, ADC bias
+        /*
         ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN, MTR_CTRL_VOLTAGE_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V),
+        */
+        float2ctrl(MTR_CTRL_VOLTAGE_GAIN), float2ctrl(MTR_CTRL_VOLTAGE_BIAS),
         // ADC resolution, IQN
         12, 24);
 

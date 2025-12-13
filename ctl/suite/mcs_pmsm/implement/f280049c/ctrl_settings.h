@@ -39,7 +39,7 @@
 
 
 // PWM depth
-#define CONTROLLER_PWM_CMP_MAX (6000)
+#define CONTROLLER_PWM_CMP_MAX (5000)
 
 // ADC reference Voltage
 #define ADC_REFERENCE (3.3)
