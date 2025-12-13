@@ -55,10 +55,10 @@
 #define MTR_CTRL_VOLTAGE_BIAS (0.0)
 
 // Current Bandwidth
-#define MTR_CTRL_CURRENT_LOOP_BW ((200))
+#define MTR_CTRL_CURRENT_LOOP_BW ((500))
 
 // Speed Bandwidth
-#define MTR_CTRL_SPEED_LOOP_BW ((100))
+#define MTR_CTRL_SPEED_LOOP_BW ((200))
 
 // Controller Base Voltage and Base Current
 #define MTR_CTRL_VOLTAGE_BASE ((MOTOR_PARAM_MAX_DC_VOLTAGE))
