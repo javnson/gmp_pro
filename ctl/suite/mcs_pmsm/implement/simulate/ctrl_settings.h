@@ -47,15 +47,15 @@
 #define SPD_CONTROLLER_PWM_DIVISION (5)
 
 // Current sensor
-#define MTR_CTRL_CURRENT_GAIN (2.0)
+#define MTR_CTRL_CURRENT_GAIN (8.0)
 #define MTR_CTRL_CURRENT_BIAS (1.65 / ADC_REFERENCE)
 
 // Voltage sensor
-#define MTR_CTRL_VOLTAGE_GAIN (0.1)
+#define MTR_CTRL_VOLTAGE_GAIN (4.3889)
 #define MTR_CTRL_VOLTAGE_BIAS (0.0)
 
 // Current Bandwidth
-#define MTR_CTRL_CURRENT_LOOP_BW ((500))
+#define MTR_CTRL_CURRENT_LOOP_BW ((200))
 
 // Speed Bandwidth
 #define MTR_CTRL_SPEED_LOOP_BW ((100))

@@ -25,8 +25,8 @@
 								<listOptionValue builtIn="false" value="LINKER_COMMAND_FILE=280049C_RAM_lnk.cmd"/>
 								<listOptionValue builtIn="false" value="RUNTIME_SUPPORT_LIBRARY=libc.a"/>
 								<listOptionValue builtIn="false" value="CCS_MBS_VERSION=6.1.3"/>
-								<listOptionValue builtIn="false" value="PRODUCTS=C2000WARE:5.3.0.00;GMP-Core-C28x:1.0.0.05;"/>
-								<listOptionValue builtIn="false" value="PRODUCT_MACRO_IMPORTS={&quot;C2000WARE&quot;:[&quot;${COM_TI_C2000WARE_INCLUDE_PATH}&quot;,&quot;${COM_TI_C2000WARE_LIBRARY_PATH}&quot;,&quot;${COM_TI_C2000WARE_LIBRARIES}&quot;,&quot;${COM_TI_C2000WARE_SYMBOLS}&quot;,&quot;${COM_TI_C2000WARE_SYSCONFIG_MANIFEST}&quot;],&quot;GMP-Core-C28x&quot;:[&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_INCLUDE_PATH}&quot;,&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_LIBRARY_PATH}&quot;,&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_LIBRARIES}&quot;,&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_SYMBOLS}&quot;,&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_SYSCONFIG_MANIFEST}&quot;]}"/>
+								<listOptionValue builtIn="false" value="PRODUCTS=C2000WARE:5.4.0.00;GMP-Core-C28x:1.0.0.05;"/>
+								<listOptionValue builtIn="false" value="PRODUCT_MACRO_IMPORTS={&quot;GMP-Core-C28x&quot;:[&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_INCLUDE_PATH}&quot;,&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_LIBRARY_PATH}&quot;,&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_LIBRARIES}&quot;,&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_SYMBOLS}&quot;,&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_SYSCONFIG_MANIFEST}&quot;],&quot;C2000WARE&quot;:[&quot;${COM_TI_C2000WARE_INCLUDE_PATH}&quot;,&quot;${COM_TI_C2000WARE_LIBRARY_PATH}&quot;,&quot;${COM_TI_C2000WARE_LIBRARIES}&quot;,&quot;${COM_TI_C2000WARE_SYMBOLS}&quot;,&quot;${COM_TI_C2000WARE_SYSCONFIG_MANIFEST}&quot;]}"/>
 								<listOptionValue builtIn="false" value="OUTPUT_TYPE=executable"/>
 							</option>
 							<option id="com.ti.ccstudio.buildDefinitions.core.OPT_CODEGEN_VERSION.880721280" name="Compiler version" superClass="com.ti.ccstudio.buildDefinitions.core.OPT_CODEGEN_VERSION" value="22.6.1.LTS" valueType="string"/>

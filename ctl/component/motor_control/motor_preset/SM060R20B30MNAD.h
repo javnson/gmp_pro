@@ -60,8 +60,8 @@ extern "C"
 //================================================================================
 // Rated Operating Parameters
 //================================================================================
-#define MOTOR_PARAM_RATED_VOLTAGE   ((10.0f))  ///< Rated operating voltage (V).
-#define MOTOR_PARAM_RATED_CURRENT   ((4.5f))   ///< Rated phase current (A, Peak).
+#define MOTOR_PARAM_RATED_VOLTAGE   ((36.0f))  ///< Rated operating voltage (V).
+#define MOTOR_PARAM_RATED_CURRENT   ((7.5f))   ///< Rated phase current (A, Peak).
 #define MOTOR_PARAM_NO_LOAD_CURRENT ((0.01f))  ///< No-load phase current (A, Peak).
 #define MOTOR_PARAM_RATED_FREQUENCY ((200.0f)) ///< Rated operating frequency (Hz).
 
