@@ -30,9 +30,9 @@ extern "C"
 #define BOARD_PIN_MAPPING
 
 // PWM Channels
-#define PHASE_U_BASE IRIS_EPWM2_BASE
-#define PHASE_V_BASE IRIS_EPWM1_BASE
-#define PHASE_W_BASE IRIS_EPWM4_BASE
+#define PHASE_U_BASE IRIS_EPWM1_BASE
+#define PHASE_V_BASE IRIS_EPWM2_BASE
+#define PHASE_W_BASE IRIS_EPWM3_BASE
 
 // PWM Enable
 #define PWM_ENABLE_PORT IRIS_GPIO1
@@ -110,10 +110,13 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     // invoke PWM p.u. routine
     ctl_calc_pwm_tri_channel(&pwm_out);
 
-    // PWM output
-    EPWM_setCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_U]);
-    EPWM_setCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_V]);
-    EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_W]);
+    // PWM output,EPWM1_BASE
+    EPWM_setCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[0]);
+    EPWM_setCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[1]);
+
+    EPWM_setCounterCompareValue(EPWM2_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[0]);
+    EPWM_setCounterCompareValue(EPWM1_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[1]);
+    EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[2]);
 
     // Monitor Port, 8 channels
 #if BUILD_LEVEL == 1
@@ -121,8 +124,20 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
 //    DAC_setShadowValue(IRIS_DACB_BASE, inv_ctrl.angle * 2048 + 2048);
 //    DAC_setShadowValue(IRIS_DACA_BASE, inv_ctrl.abc_out.dat[phase_B]  * 2048 + 2048);
 
-    DAC_setShadowValue(IRIS_DACB_BASE, iuvw.control_port.value.dat[phase_A] * 2048*2 + 2048);
-    DAC_setShadowValue(IRIS_DACA_BASE, iabc.control_port.value.dat[phase_A] * 2048*2 + 2048);
+    // grid current and inverter current
+//    DAC_setShadowValue(IRIS_DACB_BASE, iuvw.control_port.value.dat[phase_A] * 2048 + 2048);
+//    DAC_setShadowValue(IRIS_DACA_BASE, iabc.control_port.value.dat[phase_A] * 2048 + 2048);
+
+    // grid voltage and inverter voltage
+    DAC_setShadowValue(IRIS_DACB_BASE, uuvw.control_port.value.dat[phase_A] * 2048 + 2048);
+    DAC_setShadowValue(IRIS_DACA_BASE, vabc.control_port.value.dat[phase_A] * 2048 + 2048);
+
+//    DAC_setShadowValue(IRIS_DACB_BASE, EPWM_getCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A)/2);
+//    DAC_setShadowValue(IRIS_DACA_BASE, EPWM_getCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A)/2);
+
+//    DAC_setShadowValue(IRIS_DACB_BASE, pwm_out.value[2]/2);
+//    DAC_setShadowValue(IRIS_DACA_BASE, pwm_out.value[1]/2);
+//    inv_ctrl.
 
 #endif // BUILD_LEVEL
 }

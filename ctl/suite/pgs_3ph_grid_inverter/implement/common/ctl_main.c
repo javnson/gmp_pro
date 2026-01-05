@@ -276,7 +276,7 @@ fast_gt ctl_adc_calibrate(void)
             else if (index_adc_calibrator == 12)
             {
                 // vbus get result
-                udc.bias = udc.bias + ctl_div(ctl_get_adc_calibrator_result(&adc_calibrator), udc.gain);
+                //udc.bias = udc.bias + ctl_div(ctl_get_adc_calibrator_result(&adc_calibrator), udc.gain);
 
                 // move to next position
                 index_adc_calibrator += 1;

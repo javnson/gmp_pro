@@ -20,7 +20,7 @@
 // DC bus voltage, voltage base
 #define CTRL_VOLTAGE_BASE (60.0f)
 
-// Current base
+// Current base, 10 A
 #define CTRL_CURRENT_BASE (10.0f)
 
 ///////////////////////////////////////////////////////////
