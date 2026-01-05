@@ -20,16 +20,23 @@
 // definitions of peripheral
 //
 
-// SIL standard port for Motor control
+// inverter side voltage feedback
+tri_ptr_adc_channel_t uuvw;
 
-tri_ptr_adc_channel_t uabc;
+// inverter side current feedback
+tri_ptr_adc_channel_t iuvw;
+
+// grid side voltage feedback
+tri_ptr_adc_channel_t vabc;
+
+// grid side current feedback
 tri_ptr_adc_channel_t iabc;
 
+// DC bus current & voltage feedback
 ptr_adc_channel_t udc;
 ptr_adc_channel_t idc;
 
-pos_autoturn_encoder_t pos_enc;
-
+// PWM output channel
 pwm_tri_channel_t pwm_out;
 
 //////////////////////////////////////////////////////////////////////////

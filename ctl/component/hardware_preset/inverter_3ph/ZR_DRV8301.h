@@ -10,7 +10,7 @@
  * mapped to the generic 'MY_BOARD_' macros for general use.
  */
 
-#include <ctl/component/motor_control/controller_preset/controller_preset_general.h>
+#include <ctl/component/hardware_preset/inverter_3ph/inverter_3ph_general.h>
 
 #ifndef MOTOR_DRIVER_HAL_ZONRI_DRV8301_MODULE_H
 #define MOTOR_DRIVER_HAL_ZONRI_DRV8301_MODULE_H

@@ -3,7 +3,7 @@
 #define _FILE_CTRL_SETTINGS_H_
 
 // invoke motor parameters
-#include <ctl/component/motor_control/motor_preset/SM060R20B30MNAD.h>
+#include <ctl/component/hardware_preset/pmsm_motor/SM060R20B30MNAD.h>
 
 // Given 3.3V voltage reference
 #define ADC_REFERENCE ((3.3))
