@@ -121,8 +121,8 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
 //    DAC_setShadowValue(IRIS_DACB_BASE, inv_ctrl.angle * 2048 + 2048);
 //    DAC_setShadowValue(IRIS_DACA_BASE, inv_ctrl.abc_out.dat[phase_B]  * 2048 + 2048);
 
-    DAC_setShadowValue(IRIS_DACB_BASE, iuvw.control_port.value.dat[phase_A] * 2048*5 + 2048);
-    DAC_setShadowValue(IRIS_DACA_BASE, iabc.control_port.value.dat[phase_A] * 2048*5 + 2048);
+    DAC_setShadowValue(IRIS_DACB_BASE, iuvw.control_port.value.dat[phase_A] * 2048*2 + 2048);
+    DAC_setShadowValue(IRIS_DACA_BASE, iabc.control_port.value.dat[phase_A] * 2048*2 + 2048);
 
 #endif // BUILD_LEVEL
 }
