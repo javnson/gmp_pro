@@ -37,6 +37,10 @@ extern "C"
 extern volatile fast_gt flag_system_enable;
 extern volatile fast_gt flag_system_running;
 
+extern adc_bias_calibrator_t adc_calibrator;
+extern volatile fast_gt flag_enable_adc_calibrator;
+extern volatile fast_gt index_adc_calibrator;
+
 // controller objects
 extern inv_ctrl_t inv_ctrl;
 
@@ -45,7 +49,33 @@ GMP_STATIC_INLINE
 void ctl_dispatch(void)
 {
 
+#if defined SPECIFY_ENABLE_ADC_CALIBRATE
+    if (flag_enable_adc_calibrator)
+    {
+        if (index_adc_calibrator == 13)
+            ctl_step_adc_calibrator(&adc_calibrator,idc.control_port.value);
+        else if (index_adc_calibrator == 12)
+            ctl_step_adc_calibrator(&adc_calibrator,udc.control_port.value);
+        else if (index_adc_calibrator <= 11 && index_adc_calibrator >= 9)
+            ctl_step_adc_calibrator(&adc_calibrator,uuvw.control_port.value.dat[index_adc_calibrator - 9]);
+        else if (index_adc_calibrator <= 8 && index_adc_calibrator >= 6)
+            ctl_step_adc_calibrator(&adc_calibrator,vabc.control_port.value.dat[index_adc_calibrator - 6]);
+        else if (index_adc_calibrator <= 5 && index_adc_calibrator >= 3)
+            ctl_step_adc_calibrator(&adc_calibrator,iabc.control_port.value.dat[index_adc_calibrator - 3]);
+        else if (index_adc_calibrator <= 2)
+            ctl_step_adc_calibrator(&adc_calibrator,iuvw.control_port.value.dat[index_adc_calibrator]);
+    }
+    else
+    {
+#endif // SPECIFY_ENABLE_ADC_CALIBRATE
+
+
     ctl_step_inv_ctrl(&inv_ctrl);
+
+
+#if defined SPECIFY_ENABLE_ADC_CALIBRATE
+    }
+#endif //SPECIFY_ENABLE_ADC_CALIBRATE
 }
 
 #ifdef __cplusplus

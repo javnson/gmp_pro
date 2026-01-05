@@ -13,7 +13,7 @@
 
 
 // invoke motor parameters
-#include <ctl/component/motor_control/motor_preset/SM060R20B30MNAD.h>
+#include <ctl/component/hardware_preset/pmsm_motor/SM060R20B30MNAD.h>
 
 
 // Controller Frequency

@@ -22,19 +22,25 @@
 
 // inverter side voltage feedback
 tri_ptr_adc_channel_t uuvw;
+adc_gt uuvw_src[3];
 
 // inverter side current feedback
 tri_ptr_adc_channel_t iuvw;
+adc_gt iuvw_src[3];
 
 // grid side voltage feedback
 tri_ptr_adc_channel_t vabc;
+adc_gt vabc_src[3];
 
 // grid side current feedback
 tri_ptr_adc_channel_t iabc;
+adc_gt iabc_src[3];
 
 // DC bus current & voltage feedback
 ptr_adc_channel_t udc;
+adc_gt udc_src;
 ptr_adc_channel_t idc;
+adc_gt idc_src;
 
 // PWM output channel
 pwm_tri_channel_t pwm_out;
@@ -46,67 +52,83 @@ pwm_tri_channel_t pwm_out;
 // User should setup all the peripheral in this function.
 void setup_peripheral(void)
 {
-//    ctl_init_ptr_adc_channel(
-//        // bind idc channel with idc address
-//        &idc, &simulink_rx_buffer.idc,
-//        // ADC gain, ADC bias
-//        ctl_gain_calc_shunt_amp(CTRL_ADC_VOLTAGE_REF, MTR_CTRL_CURRENT_BASE, BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM,
-//                                BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V),
-//        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_CSA_BIAS_V),
-//        // ADC resolution, IQN
-//        12, 24);
-//
-//    ctl_init_tri_ptr_adc_channel(
-//        // bind ibac channel with iabc address
-//        &iabc, simulink_rx_buffer.iabc,
-//        // ADC gain, ADC bias
-//        ctl_gain_calc_shunt_amp(CTRL_ADC_VOLTAGE_REF, MTR_CTRL_CURRENT_BASE, BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM,
-//                                BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V),
-//        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_CSA_BIAS_V),
-//        // ADC resolution, IQN
-//        12, 24);
-//
-//    ctl_init_ptr_adc_channel(
-//        // bind udc channel with udc address
-//        &udc, &simulink_rx_buffer.udc,
-//        // ADC gain, ADC bias
-//        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN, MTR_CTRL_VOLTAGE_BASE),
-//        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V),
-//        // ADC resolution, IQN
-//        12, 24);
-//
-//    ctl_init_tri_ptr_adc_channel(
-//        // bind vbac channel with vabc address
-//        &uabc, simulink_rx_buffer.uabc,
-//        // ADC gain, ADC bias
-//        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN, MTR_CTRL_VOLTAGE_BASE),
-//        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V),
-//        // ADC resolution, IQN
-//        12, 24);
 
-//    ctl_init_autoturn_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, ((uint32_t)1 << 14) - 1);
+    // Setup Debug Uart
+    debug_uart = IRIS_UART_USB_BASE;
 
-    ctl_init_pwm_tri_channel(&pwm_out, 0, CTRL_PWM_CMP_MAX);
+    gmp_base_print(TEXT_STRING("Hello World!\r\n"));
 
-    // bind peripheral to motor controller
-//    ctl_attach_mtr_adc_channels(&pmsm_ctrl.mtr_interface,
-//                                // phase voltage & phase current
-//                                &iabc.control_port, &uabc.control_port,
-//                                // dc bus voltage & dc bus current
-//                                &idc.control_port, &udc.control_port);
+    asm(" RPT #255 || NOP");
 
-//    ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &pos_enc.encif);
-//
-//    ctl_attach_pmsm_output(&pmsm_ctrl, &pwm_out.raw);
+    // inverter side ADC
+    ctl_init_tri_ptr_adc_channel(
+        &uuvw, uuvw_src,
+        // ADC gain, ADC bias
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_VOLTAGE_BIAS),
+        // ADC resolution, IQN
+        12, 24);
+
+    ctl_init_tri_ptr_adc_channel(
+        &iuvw, iuvw_src,
+        // ADC gain, ADC bias
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_CURRENT_BIAS),
+        // ADC resolution, IQN
+        12, 24);
+
+    // grid side ADC
+    ctl_init_tri_ptr_adc_channel(
+        &vabc, vabc_src,
+        // ADC gain, ADC bias
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_VOLTAGE_BIAS),
+        // ADC resolution, IQN
+        12, 24);
+
+    ctl_init_tri_ptr_adc_channel(
+        &iabc, iabc_src,
+        // ADC gain, ADC bias
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_CURRENT_BIAS),
+        // ADC resolution, IQN
+        12, 24);
+
+    ctl_init_ptr_adc_channel(
+        &udc, &udc_src,
+        // ADC gain, ADC bias
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_DC_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_DC_VOLTAGE_BIAS),
+        // ADC resolution, IQN
+        12, 24);
+
+    ctl_init_ptr_adc_channel(
+        &idc, &idc_src,
+        // ADC gain, ADC bias
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_DC_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_DC_CURRENT_BIAS),
+        // ADC resolution, IQN
+        12, 24);
 
     // output channel
     ctl_init_pwm_tri_channel(&pwm_out, 0, CTRL_PWM_CMP_MAX);
 
+    //
+    // attach
+    //
+    ctl_attach_three_phase_inv(
+        // inv controller
+        &inv_ctrl,
+        // udc, idc
+        &udc.control_port, &idc.control_port,
+        // iabc
+        &iabc.control_port, &iabc.control_port, &iabc.control_port,
+        // uabc
+        &vabc.control_port, &vabc.control_port, &vabc.control_port);
 }
 
 //////////////////////////////////////////////////////////////////////////
 // interrupt functions and callback functions here
-
 
 // ADC interrupt
 interrupt void MainISR(void)
@@ -124,7 +146,7 @@ interrupt void MainISR(void)
     //
     // Blink LED
     //
-    if(gmp_base_get_system_tick() % 10000 < 5000)
+    if (gmp_base_get_system_tick() % 10000 < 5000)
         GPIO_WritePin(IRIS_LED1, 0);
     else
         GPIO_WritePin(IRIS_LED1, 1);
@@ -148,7 +170,3 @@ interrupt void MainISR(void)
     //
     Interrupt_clearACKGroup(INT_IRIS_ADCA_1_INTERRUPT_ACK_GROUP);
 }
-
-
-
-

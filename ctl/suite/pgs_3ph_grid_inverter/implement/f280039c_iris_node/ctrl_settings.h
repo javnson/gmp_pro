@@ -3,7 +3,7 @@
 #define _FILE_CTRL_SETTINGS_H_
 
 // invoke motor controller parameters
-#include <ctl/component/motor_control/controller_preset/TI_BOOSTXL_3PhGaNInv.h>
+//#include <ctl/component/motor_control/controller_preset/TI_BOOSTXL_3PhGaNInv.h>
 
 // Startup Delay, ms
 #define CTRL_STARTUP_DELAY (100)
@@ -23,15 +23,56 @@
 // Current base
 #define CTRL_CURRENT_BASE (10.0f)
 
-// Speed controller Division
-#define SPD_CONTROLLER_PWM_DIVISION (5)
+///////////////////////////////////////////////////////////
+// Grid side sensor
 
-// Controller Base Voltage and Base Current
-#define MTR_CTRL_VOLTAGE_BASE ((MOTOR_PARAM_MAX_DC_VOLTAGE))
-#define MTR_CTRL_CURRENT_BASE ((MOTOR_PARAM_RATED_CURRENT))
+// Current sensor sensitivity, V/A
+#define CTRL_GRID_CURRENT_SENSITIVITY (48e-3f)
+
+// Current sensor bias, V
+#define CTRL_GRID_CURRENT_BIAS (1.65f)
+
+// Voltage sensor sensitivity, V/V
+#define CTRL_GRID_VOLTAGE_SENSITIVITY (0.0106f)
+
+// Voltage sensor bias, V
+#define CTRL_GRID_VOLTAGE_BIAS (0.0f)
+
+///////////////////////////////////////////////////////////
+// inverter side sensor
+
+// Current sensor sensitivity, V/A
+#define CTRL_INVERTER_CURRENT_SENSITIVITY (50e-3f)
+
+// Current sensor bias, V
+#define CTRL_INVERTER_CURRENT_BIAS (1.65f)
+
+// Voltage sensor sensitivity, V/V
+#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (0.02738589f)
+
+// Voltage sensor bias, V
+#define CTRL_INVERTER_VOLTAGE_BIAS (0.0f)
+
+///////////////////////////////////////////////////////////
+// DC Bus side sensor
+
+// Current sensor sensitivity, V/A
+#define CTRL_DC_CURRENT_SENSITIVITY (24.75e-3f)
+
+// Current sensor bias, V
+#define CTRL_DC_CURRENT_BIAS (1.65f)
+
+// Voltage sensor sensitivity, V/V
+#define CTRL_DC_VOLTAGE_SENSITIVITY (0.02738589f)
+
+// Voltage sensor bias, V
+#define CTRL_DC_VOLTAGE_BIAS (0.0f)
+
+///////////////////////////////////////////////////////////
+// Bandwidth configuration
 
 // Current Bandwidth
-#define MTR_CTRL_CURRENT_LOOP_BW ((50))
+#define CTRL_CURRENT_LOOP_BW ((50))
 
 // SPLL Close loop criteria
 #define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
