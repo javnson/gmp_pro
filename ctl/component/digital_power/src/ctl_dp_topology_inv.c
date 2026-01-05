@@ -22,10 +22,13 @@
 
 void ctl_upgrade_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
 {
+    // loop variables
+    size_gt i;
+
     // --- Initialize sensor signal low-pass filters ---
     ctl_init_lp_filter(&inv->lpf_udc, init->fs, init->adc_fc);
     ctl_init_lp_filter(&inv->lpf_idc, init->fs, init->adc_fc);
-    for (int i = 0; i < 3; ++i)
+    for (i = 0; i < 3; ++i)
     {
         ctl_init_lp_filter(&inv->lpf_vabc[i], init->fs, init->adc_fc);
         ctl_init_lp_filter(&inv->lpf_iabc[i], init->fs, init->adc_fc);
@@ -56,7 +59,7 @@ void ctl_upgrade_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
     ctl_init_saturation(&inv->idq_droop_sat[phase_q], -init->iq_lim_droop, init->iq_lim_droop);
 
     // --- Initialize harmonic compensation (Quasi-Resonant controllers) for 5th and 7th harmonics ---
-    for (int i = 0; i < 2; ++i)
+    for (i = 0; i < 2; ++i)
     {
         ctl_init_qr_controller(&inv->harm_qr_5[i], init->harm_ctrl_kr_5, init->freq_base * 5,
                                init->harm_ctrl_cut_freq_5, init->fs);

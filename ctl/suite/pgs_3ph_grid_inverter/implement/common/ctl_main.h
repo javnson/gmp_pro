@@ -24,7 +24,7 @@
 
 #include <ctl/component/intrinsic/discrete/signal_generator.h>
 
-#include <ctl/component/digital_power/single_phase/single_phase_dc_ac.h>
+#include <ctl/component/digital_power/three_phase/three_phase_dc_ac.h>
 
 #ifndef _FILE_CTL_MAIN_H_
 #define _FILE_CTL_MAIN_H_

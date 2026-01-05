@@ -15,6 +15,9 @@
 // low voltage half bridge parameters
 #include <ctl/component/digital_power/hardware_preset/gmp_lvhb_v1.h>
 
+// Startup Delay, ms
+#define CTRL_STARTUP_DELAY (100)
+
 // Controller Frequency
 #define CONTROLLER_FREQUENCY (20e3)
 

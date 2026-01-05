@@ -228,16 +228,19 @@ void ctl_attach_three_phase_inv(inv_ctrl_t* inv, adc_ift* adc_udc, adc_ift* adc_
  */
 GMP_STATIC_INLINE void ctl_step_inv_ctrl(inv_ctrl_t* ctrl)
 {
+    // loop variables
+    size_gt i;
+
     // --- 1. Input Filtering and Coordinate Transformation ---
     ctl_step_lowpass_filter(&ctrl->lpf_udc, ctrl->adc_udc->value);
     ctl_step_lowpass_filter(&ctrl->lpf_idc, ctrl->adc_idc->value);
 
 #if CURRENT_SAMPLE_PHASE_MODE == 3
-    for (size_gt i = 0; i < 3; ++i)
+    for (i = 0; i < 3; ++i)
         ctrl->iabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_iabc[i], ctrl->adc_iabc[i]->value);
     ctl_ct_clarke(&ctrl->iabc, &ctrl->iab0);
 #elif CURRENT_SAMPLE_PHASE_MODE == 2
-    for (size_gt i = 0; i < 2; ++i)
+    for (i = 0; i < 2; ++i)
         ctrl->iabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_iabc[i], ctrl->adc_iabc[i]->value);
     ctrl->iabc.dat[phase_C] = 0;
     ctl_ct_clarke_2ph((ctl_vector2_t*)&ctrl->iabc, (ctl_vector2_t*)&ctrl->iab0);
@@ -255,7 +258,7 @@ GMP_STATIC_INLINE void ctl_step_inv_ctrl(inv_ctrl_t* ctrl)
     ctl_ct_clarke_2ph((ctl_vector2_t*)&ctrl->vabc, (ctl_vector2_t*)&ctrl->vab0);
     ctrl->vab0.dat[phase_0] = 0;
 #elif VOLTAGE_SAMPLE_PHASE_MODE == 1
-    for (size_gt i = 0; i < 2; ++i)
+    for (i = 0; i < 2; ++i)
         ctrl->vabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_vabc[i], ctrl->adc_vabc[i]->value);
     ctrl->vabc.dat[phase_C] = 0;
     ctl_ct_clarke_from_line((ctl_vector2_t*)&ctrl->vabc, (ctl_vector2_t*)&ctrl->vab0);
@@ -362,7 +365,7 @@ GMP_STATIC_INLINE void ctl_step_inv_ctrl(inv_ctrl_t* ctrl)
         // --- 3g. Harmonic Compensation ---
         if (ctrl->flag_enable_harm_ctrl)
         {
-            for (int i = 0; i < 2; ++i)
+            for (i = 0; i < 2; ++i)
             {
                 ctrl->vab_harm.dat[i] = ctl_step_qr_controller(&ctrl->harm_qr_5[i], -ctrl->iab0.dat[i]);
                 ctrl->vab_harm.dat[i] += ctl_step_qr_controller(&ctrl->harm_qr_7[i], -ctrl->iab0.dat[i]);
@@ -620,10 +623,13 @@ GMP_STATIC_INLINE fast_gt ctl_is_three_phase_inverter_freerun_mode(inv_ctrl_t* i
 /** @brief Clears all runtime states of the inverter controller. */
 GMP_STATIC_INLINE void ctl_clear_three_phase_inv(inv_ctrl_t* inv)
 {
+    // loop variable
+    size_gt i;
+
     ctl_clear_lowpass_filter(&inv->lpf_udc);
     ctl_clear_lowpass_filter(&inv->lpf_idc);
 
-    for (int i = 0; i < 3; ++i)
+    for (i = 0; i < 3; ++i)
     {
         ctl_clear_lowpass_filter(&inv->lpf_iabc[i]);
         ctl_clear_lowpass_filter(&inv->lpf_vabc[i]);
@@ -638,7 +644,7 @@ GMP_STATIC_INLINE void ctl_clear_three_phase_inv(inv_ctrl_t* inv)
     ctl_clear_pid(&inv->neg_current_ctrl[phase_d]);
     ctl_clear_pid(&inv->neg_current_ctrl[phase_q]);
 
-    for (int i = 0; i < 2; ++i)
+    for (i = 0; i < 2; ++i)
     {
         ctl_clear_qr_controller(&inv->harm_qr_5[i]);
         ctl_clear_qr_controller(&inv->harm_qr_7[i]);

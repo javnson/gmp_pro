@@ -101,7 +101,7 @@ void ctl_init()
     ctl_set_three_phase_inv_freerun(&inv_ctrl);
     ctl_disable_three_phase_harm_ctrl(&inv_ctrl);
     ctl_disable_three_phase_negative_ctrl(&inv_ctrl);
-    ctl_disable_three_phase_feedforware(&inv_ctrl);
+    ctl_disable_three_phase_feedforward(&inv_ctrl);
 
 #elif BUILD_LEVEL == 2
 

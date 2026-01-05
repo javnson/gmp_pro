@@ -77,22 +77,71 @@ void setup_peripheral(void)
 //        // ADC resolution, IQN
 //        12, 24);
 
-    ctl_init_autoturn_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, ((uint32_t)1 << 14) - 1);
+//    ctl_init_autoturn_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, ((uint32_t)1 << 14) - 1);
 
     ctl_init_pwm_tri_channel(&pwm_out, 0, CTRL_PWM_CMP_MAX);
 
     // bind peripheral to motor controller
-    ctl_attach_mtr_adc_channels(&pmsm_ctrl.mtr_interface,
-                                // phase voltage & phase current
-                                &iabc.control_port, &uabc.control_port,
-                                // dc bus voltage & dc bus current
-                                &idc.control_port, &udc.control_port);
+//    ctl_attach_mtr_adc_channels(&pmsm_ctrl.mtr_interface,
+//                                // phase voltage & phase current
+//                                &iabc.control_port, &uabc.control_port,
+//                                // dc bus voltage & dc bus current
+//                                &idc.control_port, &udc.control_port);
 
-    ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &pos_enc.encif);
-
-    ctl_attach_pmsm_output(&pmsm_ctrl, &pwm_out.raw);
+//    ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &pos_enc.encif);
+//
+//    ctl_attach_pmsm_output(&pmsm_ctrl, &pwm_out.raw);
 
     // output channel
     ctl_init_pwm_tri_channel(&pwm_out, 0, CTRL_PWM_CMP_MAX);
 
 }
+
+//////////////////////////////////////////////////////////////////////////
+// interrupt functions and callback functions here
+
+
+// ADC interrupt
+interrupt void MainISR(void)
+{
+    //
+    // call GMP ISR  Controller operation callback function
+    //
+    gmp_base_ctl_step();
+
+    //
+    // Call GMP Timer
+    //
+    gmp_step_system_tick();
+
+    //
+    // Blink LED
+    //
+    if(gmp_base_get_system_tick() % 10000 < 5000)
+        GPIO_WritePin(IRIS_LED1, 0);
+    else
+        GPIO_WritePin(IRIS_LED1, 1);
+
+    //
+    // Clear the interrupt flag
+    //
+    ADC_clearInterruptStatus(IRIS_ADCA_BASE, ADC_INT_NUMBER1);
+
+    //
+    // Check if overflow has occurred
+    //
+    if (true == ADC_getInterruptOverflowStatus(IRIS_ADCA_BASE, ADC_INT_NUMBER1))
+    {
+        ADC_clearInterruptOverflowStatus(IRIS_ADCA_BASE, ADC_INT_NUMBER1);
+        ADC_clearInterruptStatus(IRIS_ADCA_BASE, ADC_INT_NUMBER1);
+    }
+
+    //
+    // Acknowledge the interrupt
+    //
+    Interrupt_clearACKGroup(INT_IRIS_ADCA_1_INTERRUPT_ACK_GROUP);
+}
+
+
+
+
