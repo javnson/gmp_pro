@@ -173,3 +173,94 @@ interrupt void MainISR(void)
     //
     Interrupt_clearACKGroup(INT_IRIS_ADCA_1_INTERRUPT_ACK_GROUP);
 }
+
+// 10000 -> 1.0
+#define CAN_SCALE_FACTOR 10000
+
+// 32位数据转换联合体
+typedef union {
+    int32_t  i32;
+    uint16_t u16[2]; // C2000中uint16_t占1个word，32位占用2个word
+} can_data_t;
+
+// CAN interrupt
+interrupt void INT_IRIS_CAN_0_ISR(void)
+{
+    uint32_t status = CAN_getInterruptCause(IRIS_CAN_BASE);
+
+    uint16_t rx_data[4];
+    can_data_t recv_content[2];
+
+
+    if(status == 1)
+    {
+        CAN_readMessage(IRIS_CAN_BASE, 1, rx_data);
+        CAN_clearInterruptStatus(CANA_BASE, 1);
+
+        // Control Flag, Enable System
+        flag_system_enable = rx_data[0];
+    }
+    else if(status == 2)
+    {
+        CAN_readMessage(IRIS_CAN_BASE, 2, (uint16_t*)recv_content);
+        CAN_clearInterruptStatus(CANA_BASE, 2);
+
+        // set target value
+#if BUILD_LEVEL == 1
+        // For level 1 Set target voltage
+        ctl_set_three_phase_inv_voltage_openloop(&inv_ctrl, float2ctrl((float)recv_content[0].i32 / CAN_SCALE_FACTOR), float2ctrl((float)recv_content[1].i32 / CAN_SCALE_FACTOR));
+
+#endif // BUILD_LEVEL
+
+    }
+
+    //
+    // Clear the interrupt flag
+    //
+    CAN_clearGlobalInterruptStatus(IRIS_CAN_BASE, CAN_GLOBAL_INT_CANINT0);
+
+    //
+    // Acknowledge the interrupt
+    //
+    Interrupt_clearACKGroup(INT_IRIS_CAN_0_INTERRUPT_ACK_GROUP);
+
+}
+
+interrupt void INT_IRIS_CAN_1_ISR(void)
+{
+    // Nothing here
+
+    //
+    // Clear the interrupt flag
+    //
+    CAN_clearGlobalInterruptStatus(IRIS_CAN_BASE, CAN_GLOBAL_INT_CANINT1);
+
+    //
+    // Acknowledge the interrupt
+    //
+    Interrupt_clearACKGroup(INT_IRIS_CAN_1_INTERRUPT_ACK_GROUP);
+}
+
+void send_monitor_data(void)
+{
+    uint16_t rx_raw[4];
+    can_data_t tran_content[2];
+
+    static time_gt last_time_tick;
+    static time_gt current_time_tick;
+
+    current_time_tick = gmp_base_get_system_tick();
+
+    // skip current frame
+    if(last_time_tick == current_time_tick)
+        return;
+    else
+    {
+        tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
+        tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
+
+        CAN_sendMessage(IRIS_CAN_BASE, 6, 8, (uint16_t*)tran_content);
+    }
+}
+
+
