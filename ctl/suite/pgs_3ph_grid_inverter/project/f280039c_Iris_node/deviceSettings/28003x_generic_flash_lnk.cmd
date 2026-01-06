@@ -109,7 +109,7 @@ SECTIONS
    .bss:cio         : > RAMLS0
    .data            : >> RAMLS5 | RAMLS6 | RAMLS7
    .sysmem          : > RAMLS5 /* heap */
-   .const           : > FLASH_BANK0_SEC4,  ALIGN(8)
+   .const           : >> FLASH_BANK0_SEC4 | FLASH_BANK0_SEC5,  ALIGN(8)
 #else
    .pinit           : > FLASH_BANK0_SEC3,  ALIGN(8)
    .ebss            : > RAMLS5

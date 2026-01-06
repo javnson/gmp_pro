@@ -79,19 +79,16 @@ void ctl_upgrade_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
     inv->rg_freq_pu = float2ctrl(1.0);
 }
 
-void ctl_attach_three_phase_inv(inv_ctrl_t* inv, adc_ift* adc_udc, adc_ift* adc_idc, adc_ift* adc_ia, adc_ift* adc_ib,
-                                adc_ift* adc_ic, adc_ift* adc_ua, adc_ift* adc_ub, adc_ift* adc_uc)
+void ctl_attach_three_phase_inv(inv_ctrl_t* inv, adc_ift* adc_udc, adc_ift* adc_idc, tri_adc_ift* adc_iabc,
+                                tri_adc_ift* adc_vabc, tri_adc_ift* adc_iuvw, tri_adc_ift* adc_vuvw)
 {
     inv->adc_udc = adc_udc;
     inv->adc_idc = adc_idc;
 
-    inv->adc_iabc[phase_A] = adc_ia;
-    inv->adc_iabc[phase_B] = adc_ib;
-    inv->adc_iabc[phase_C] = adc_ic;
-
-    inv->adc_vabc[phase_A] = adc_ua;
-    inv->adc_vabc[phase_B] = adc_ub;
-    inv->adc_vabc[phase_C] = adc_uc;
+    inv->adc_iabc = adc_iabc;
+    inv->adc_iuvw = adc_iuvw;
+    inv->adc_vabc = adc_vabc;
+    inv->adc_vuvw = adc_vuvw;
 }
 
 void ctl_init_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
@@ -99,5 +96,3 @@ void ctl_init_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
     ctl_upgrade_three_phase_inv(inv, init);
     ctl_clear_three_phase_inv(inv);
 }
-
-

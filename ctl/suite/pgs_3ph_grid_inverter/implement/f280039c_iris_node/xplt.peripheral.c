@@ -119,12 +119,15 @@ void setup_peripheral(void)
     ctl_attach_three_phase_inv(
         // inv controller
         &inv_ctrl,
+        // output PWM wave
+        &pwm_out,
         // udc, idc
         &udc.control_port, &idc.control_port,
-        // iabc
-        &iabc.control_port, &iabc.control_port, &iabc.control_port,
-        // uabc
-        &vabc.control_port, &vabc.control_port, &vabc.control_port);
+        // grid side iabc, vabc
+        &iabc.control_port, &vabc.control_port,
+        // inverter siede iuvw, uuvw
+        &iuvw.control_port, &uuvw.control_port);
+
 }
 
 //////////////////////////////////////////////////////////////////////////

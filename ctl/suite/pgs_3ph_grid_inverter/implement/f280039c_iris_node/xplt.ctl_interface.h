@@ -10,7 +10,7 @@
 // WARNING: This file must be kept in the include search path during compilation.
 //
 
-#include <ctl/component/motor_control/basic/std_sil_motor_interface.h>
+//#include <ctl/component/motor_control/basic/std_sil_motor_interface.h>
 
 #include <xplt.peripheral.h>
 
@@ -103,9 +103,9 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
 GMP_STATIC_INLINE void ctl_output_callback(void)
 {
     // copy source pwm data
-    pwm_out.raw.value.dat[phase_U] = inv_ctrl.pwm_out_pu.dat[phase_U];
-    pwm_out.raw.value.dat[phase_V] = inv_ctrl.pwm_out_pu.dat[phase_V];
-    pwm_out.raw.value.dat[phase_W] = inv_ctrl.pwm_out_pu.dat[phase_W];
+//    pwm_out.raw.value.dat[phase_U] = inv_ctrl.pwm_ou.dat[phase_U];
+//    pwm_out.raw.value.dat[phase_V] = inv_ctrl.pwm_out_pu.dat[phase_V];
+//    pwm_out.raw.value.dat[phase_W] = inv_ctrl.pwm_out_pu.dat[phase_W];
 
     // invoke PWM p.u. routine
     ctl_calc_pwm_tri_channel(&pwm_out);
