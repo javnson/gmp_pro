@@ -79,14 +79,18 @@ void ctl_upgrade_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
     inv->rg_freq_pu = float2ctrl(1.0);
 }
 
-void ctl_attach_three_phase_inv(inv_ctrl_t* inv, adc_ift* adc_udc, adc_ift* adc_idc, tri_adc_ift* adc_iabc,
-                                tri_adc_ift* adc_vabc, tri_adc_ift* adc_iuvw, tri_adc_ift* adc_vuvw)
+void ctl_attach_three_phase_inv(inv_ctrl_t* inv, tri_pwm_ift* pwm_out, adc_ift* adc_udc, adc_ift* adc_idc,
+                                tri_adc_ift* adc_iabc, tri_adc_ift* adc_vabc, tri_adc_ift* adc_iuvw,
+                                tri_adc_ift* adc_vuvw)
 {
     inv->adc_udc = adc_udc;
     inv->adc_idc = adc_idc;
 
+    inv->pwm_out = pwm_out;
+
     inv->adc_iabc = adc_iabc;
     inv->adc_iuvw = adc_iuvw;
+
     inv->adc_vabc = adc_vabc;
     inv->adc_vuvw = adc_vuvw;
 }

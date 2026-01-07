@@ -19,8 +19,11 @@ void init(void) GMP_NO_OPT_SUFFIX
 {
 }
 
+void send_monitor_data(void);
+
 //////////////////////////////////////////////////////////////////////////
 // endless loop function here
 void mainloop(void)
 {
+    send_monitor_data();
 }
