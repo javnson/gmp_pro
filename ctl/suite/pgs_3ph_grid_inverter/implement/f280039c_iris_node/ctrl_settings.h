@@ -14,14 +14,23 @@
 // PWM depth
 #define CTRL_PWM_CMP_MAX (6000)
 
+// System tick
+#define DSP_C2000_DSP_TIME_DIV (120000/CTRL_PWM_CMP_MAX/2)
+
 // ADC Voltae Reference
 #define CTRL_ADC_VOLTAGE_REF (3.3f)
 
+//// DC bus voltage, voltage base
+//#define CTRL_VOLTAGE_BASE (60.0f)
+//
+//// Current base, 10 A
+//#define CTRL_CURRENT_BASE (10.0f)
+
 // DC bus voltage, voltage base
-#define CTRL_VOLTAGE_BASE (60.0f)
+#define CTRL_VOLTAGE_BASE (100.0f)
 
 // Current base, 10 A
-#define CTRL_CURRENT_BASE (10.0f)
+#define CTRL_CURRENT_BASE (30.0f)
 
 ///////////////////////////////////////////////////////////
 // Grid side sensor

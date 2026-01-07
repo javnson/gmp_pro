@@ -105,7 +105,7 @@ void ctl_init()
 
     // Voltage open loop, inverter
     ctl_set_three_phase_inv_openloop_mode(&inv_ctrl);
-    ctl_set_three_phase_inv_voltage_openloop(&inv_ctrl, float2ctrl(0.6), float2ctrl(0));
+    ctl_set_three_phase_inv_voltage_openloop(&inv_ctrl, float2ctrl(0.8), float2ctrl(0));
     ctl_set_three_phase_inv_freerun(&inv_ctrl);
     ctl_disable_three_phase_harm_ctrl(&inv_ctrl);
     ctl_disable_three_phase_negative_ctrl(&inv_ctrl);
