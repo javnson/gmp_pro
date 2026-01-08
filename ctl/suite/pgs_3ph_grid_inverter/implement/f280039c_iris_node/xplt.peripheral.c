@@ -120,7 +120,7 @@ void setup_peripheral(void)
         // inv controller
         &inv_ctrl,
         // output PWM wave
-        &pwm_out,
+        &pwm_out.raw,
         // udc, idc
         &udc.control_port, &idc.control_port,
         // grid side iabc, vabc
@@ -256,11 +256,52 @@ void send_monitor_data(void)
         return;
     else
     {
+        // 0x201: Monitor Grid Voltage
+        tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
+        tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
+
+        CAN_sendMessage(IRIS_CAN_BASE, 4, 8, (uint16_t*)tran_content);
+
+        //0x202: Monitor inverter voltage
+        tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
+        tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
+
+        CAN_sendMessage(IRIS_CAN_BASE, 5, 8, (uint16_t*)tran_content);
+
+        // 0x203: Monitor grid current
         tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
         tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
 
         CAN_sendMessage(IRIS_CAN_BASE, 6, 8, (uint16_t*)tran_content);
+
+        // 0x204: TODO Monitor inverter current
+        tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
+        tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
+
+        CAN_sendMessage(IRIS_CAN_BASE, 7, 8, (uint16_t*)tran_content);
+
+        // 0x205: TODO Monitor DC Voltage / Current
+        tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
+        tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
+
+        CAN_sendMessage(IRIS_CAN_BASE, 8, 8, (uint16_t*)tran_content);
+
+        // 0x206: Monitor Grid Voltage A and PLL output angle
+        tran_content[0].i32 = (int32_t)(inv_ctrl.vabc.dat[phase_A] * CAN_SCALE_FACTOR);
+        tran_content[1].i32 = (int32_t)(inv_ctrl.pll.theta * CAN_SCALE_FACTOR);
+
+        CAN_sendMessage(IRIS_CAN_BASE, 9, 8, (uint16_t*)tran_content);
+
+        // 0x207: Monitor reserved
+        tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
+        tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
+
+        CAN_sendMessage(IRIS_CAN_BASE, 10, 8, (uint16_t*)tran_content);
+
+        last_time_tick = current_time_tick;
     }
+
+
 }
 
 
