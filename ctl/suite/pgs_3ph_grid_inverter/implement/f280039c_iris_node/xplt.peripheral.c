@@ -149,7 +149,7 @@ interrupt void MainISR(void)
     //
     // Blink LED
     //
-    if (gmp_base_get_system_tick() % 10000 < 5000)
+    if (gmp_base_get_system_tick() % 1000 < 500)
         GPIO_WritePin(IRIS_LED1, 0);
     else
         GPIO_WritePin(IRIS_LED1, 1);
@@ -263,4 +263,22 @@ void send_monitor_data(void)
     }
 }
 
+
+interrupt void INT_IRIS_UART_RS232_RX_ISR(void)
+{
+
+    // Nothing here
+
+    //
+    // Clear the interrupt flag
+    //
+    //SCI_clearGlobalInterruptStatus(IRIS_UART_USB_BASE, )
+    // CAN_clearGlobalInterruptStatus(IRIS_CAN_BASE, CAN_GLOBAL_INT_CANINT1);
+
+    //
+    // Acknowledge the interrupt
+    //
+    Interrupt_clearACKGroup(INT_IRIS_UART_RS232_RX_INTERRUPT_ACK_GROUP);
+
+}
 
