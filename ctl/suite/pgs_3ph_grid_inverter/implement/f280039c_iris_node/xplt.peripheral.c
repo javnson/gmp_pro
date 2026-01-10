@@ -246,62 +246,47 @@ void send_monitor_data(void)
     uint16_t rx_raw[4];
     can_data_t tran_content[2];
 
-    static time_gt last_time_tick;
-    static time_gt current_time_tick;
+    // 0x201: Monitor Grid Voltage
+    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
 
-    current_time_tick = gmp_base_get_system_tick();
+    CAN_sendMessage(IRIS_CAN_BASE, 4, 8, (uint16_t*)tran_content);
 
-    // skip current frame
-    if(last_time_tick == current_time_tick)
-        return;
-    else
-    {
-        // 0x201: Monitor Grid Voltage
-        tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-        tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
+    //0x202: Monitor inverter voltage
+    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
 
-        CAN_sendMessage(IRIS_CAN_BASE, 4, 8, (uint16_t*)tran_content);
+    CAN_sendMessage(IRIS_CAN_BASE, 5, 8, (uint16_t*)tran_content);
 
-        //0x202: Monitor inverter voltage
-        tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-        tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
+    // 0x203: Monitor grid current
+    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
 
-        CAN_sendMessage(IRIS_CAN_BASE, 5, 8, (uint16_t*)tran_content);
+    CAN_sendMessage(IRIS_CAN_BASE, 6, 8, (uint16_t*)tran_content);
 
-        // 0x203: Monitor grid current
-        tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-        tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
+    // 0x204: TODO Monitor inverter current
+    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
 
-        CAN_sendMessage(IRIS_CAN_BASE, 6, 8, (uint16_t*)tran_content);
+    CAN_sendMessage(IRIS_CAN_BASE, 7, 8, (uint16_t*)tran_content);
 
-        // 0x204: TODO Monitor inverter current
-        tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-        tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
+    // 0x205: TODO Monitor DC Voltage / Current
+    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
 
-        CAN_sendMessage(IRIS_CAN_BASE, 7, 8, (uint16_t*)tran_content);
+    CAN_sendMessage(IRIS_CAN_BASE, 8, 8, (uint16_t*)tran_content);
 
-        // 0x205: TODO Monitor DC Voltage / Current
-        tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-        tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
+    // 0x206: Monitor Grid Voltage A and PLL output angle
+    tran_content[0].i32 = (int32_t)(inv_ctrl.vabc.dat[phase_A] * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(inv_ctrl.pll.theta * CAN_SCALE_FACTOR);
 
-        CAN_sendMessage(IRIS_CAN_BASE, 8, 8, (uint16_t*)tran_content);
+    CAN_sendMessage(IRIS_CAN_BASE, 9, 8, (uint16_t*)tran_content);
 
-        // 0x206: Monitor Grid Voltage A and PLL output angle
-        tran_content[0].i32 = (int32_t)(inv_ctrl.vabc.dat[phase_A] * CAN_SCALE_FACTOR);
-        tran_content[1].i32 = (int32_t)(inv_ctrl.pll.theta * CAN_SCALE_FACTOR);
+    // 0x207: Monitor reserved
+    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
 
-        CAN_sendMessage(IRIS_CAN_BASE, 9, 8, (uint16_t*)tran_content);
-
-        // 0x207: Monitor reserved
-        tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-        tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
-        CAN_sendMessage(IRIS_CAN_BASE, 10, 8, (uint16_t*)tran_content);
-
-        last_time_tick = current_time_tick;
-    }
-
-
+    CAN_sendMessage(IRIS_CAN_BASE, 10, 8, (uint16_t*)tran_content);
 }
 
 
@@ -388,8 +373,6 @@ void at_device_flush_rx_buffer()
 
 interrupt void INT_IRIS_UART_USB_RX_ISR(void)
 {
-    uint16_t rxBuf[ISR_LOCAL_BUF_SIZE];
-    uint16_t fifoLevel;
     uint32_t rxStatus;
 
     // ---------------------------------------------------------

@@ -11,3 +11,9 @@
 | 9       | 0x206 | TX      | Monitor        | 0-3: Monitor Voltage from Grid A axis<br />4-7: Monitor Voltage from PLL angle output |                           |
 | 10      | 0x206 | TX      | Debug          | reserved for debug                                           |                           |
 
+
+NOTE for SCI interface
+
+921600 bps for gmp_base_print() function and AT command input.
+
+

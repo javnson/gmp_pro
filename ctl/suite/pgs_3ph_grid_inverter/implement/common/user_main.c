@@ -15,6 +15,8 @@
 
 at_device_entity_t at_dev;
 time_gt uart_last_tick;
+gmp_scheduler_t sched;
+
 
 //////////////////////////////////////////////////////////////////////////
 // AT command list
@@ -66,21 +68,57 @@ at_device_cmd_t at_cmds[] = {
     {"RST",     3,        0,    rst_handler,  "Reset Sys"}
 };
 
+//////////////////////////////////////////////////////////////////////////
+// task manager
 
+gmp_task_status_t tsk_blink(gmp_task_t* tsk)
+{
+    gmp_base_print(TEXT_STRING("Hello World!\r\n"));
+
+    return GMP_TASK_DONE;
+}
+
+void at_device_flush_rx_buffer();
+gmp_task_status_t tsk_at_device(gmp_task_t* tsk)
+{
+    // AT device dispatch function
+    at_device_flush_rx_buffer();
+    at_device_dispatch(&at_dev);
+
+    return GMP_TASK_DONE;
+}
+
+void send_monitor_data(void);
+
+gmp_task_status_t tsk_monitor(gmp_task_t* tsk)
+{
+    send_monitor_data();
+
+    return GMP_TASK_DONE;
+}
+
+gmp_task_t tasks[] = {
+   // name,     task,      period(ms),  init_phase, is_enabled, pParam
+   { "blink_led", tsk_blink, 1000, 0, 1, NULL},
+   { "at_device", tsk_at_device, 5, 1, 1, NULL},
+   { "monitor_data", tsk_monitor, 2, 0, 1, NULL}
+};
 
 //////////////////////////////////////////////////////////////////////////
 // initialize routine here
 GMP_NO_OPT_PREFIX
 void init(void) GMP_NO_OPT_SUFFIX
 {
+    int i;
+
     at_device_init(&at_dev, at_cmds, sizeof(at_cmds)/sizeof(at_device_cmd_t), at_device_error_handler);
 
+    gmp_scheduler_init(&sched);
+
+    for(i = 0; i<sizeof(tasks)/sizeof(gmp_task_t); ++i)
+        gmp_scheduler_add_task(&sched, &tasks[i]);
+
 }
-
-void send_monitor_data(void);
-
-
-
 
 //////////////////////////////////////////////////////////////////////////
 // endless loop function here
@@ -89,21 +127,7 @@ void at_device_clear_rx_buf();
 
 void mainloop(void)
 {
-    // Section 1: Send monitor data
-    send_monitor_data();
-
-    time_gt current_sec = gmp_base_get_system_tick() / 1000;
-
-    if(current_sec != uart_last_tick)
-    {
-        gmp_base_print(TEXT_STRING("Hello World!\r\n"));
-
-        uart_last_tick = current_sec;
-    }
-
-    // AT device dispatch function
-    at_device_flush_rx_buffer();
-    at_device_dispatch(&at_dev);
-
+    // run task scheduler
+    gmp_scheduler_dispatch(&sched);
 }
 

@@ -200,6 +200,27 @@ can1.msgObj10.msgType        = "CAN_MSG_OBJ_TYPE_TX";
 can1.msgObj10.msgLen         = 8;
 can1.msgObj10.intLine        = "1";
 
+const divider2       = system.clockTree["LOSPCP"];
+divider2.divideValue = 1;
+
+const divider4       = system.clockTree["PLL_ODIV"];
+divider4.divideValue = 2;
+
+const divider5       = system.clockTree["PLL_REFDIV"];
+divider5.divideValue = 4;
+
+const multiplier1         = system.clockTree["PLL_IMULT"];
+multiplier1.multiplyValue = 80;
+
+const mux3       = system.clockTree["OSCCLKSRCSEL"];
+mux3.inputSelect = "X1_XTAL";
+
+const mux5       = system.clockTree["XTAL_OR_X1"];
+mux5.inputSelect = "X1";
+
+const pinFunction2     = system.clockTree["X1"];
+pinFunction2.XTAL_Freq = 12;
+
 const pinFunction3     = system.clockTree["XTAL"];
 pinFunction3.XTAL_Freq = 12;
 
