@@ -11,7 +11,7 @@
 //#include <ctl/component/motor_control/controller_preset/TI_BOOSTXL_3PhGaNInv.h>
 
 // invoke motor parameters
-#include <ctl/component/motor_control/motor_preset/SM060R20B30MNAD.h>
+#include <ctl/component/hardware_preset/pmsm_motor/SM060R20B30MNAD.h>
 
 // Startup Delay, ms
 #define CTRL_STARTUP_DELAY (100)
