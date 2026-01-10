@@ -5,6 +5,11 @@
 #ifndef _FILE_AT_DEVICE_H_
 #define _FILE_AT_DEVICE_H_
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif // __cplusplus
+
 // AT command type enum
 typedef enum
 {
@@ -14,10 +19,10 @@ typedef enum
     AT_CMD_TYPE_SETUP  // AT+CMD=... setting
 } at_cmd_type_t;
 
-// Command State 
+// Command State
 typedef enum
 {
-    AT_STATUS_OK = 0, // Command execute successfully 
+    AT_STATUS_OK = 0, // Command execute successfully
     AT_STATUS_ERROR,  // Command execute complete with errors.
     AT_STATUS_PENDING // Command pending and waiting for next call
 } at_status_t;
@@ -35,7 +40,7 @@ typedef enum
 struct _tag_at_device_entity;
 
 /* 错误回调函数定义 */
-typedef void (*at_error_handler_t)(struct _tag_at_device_entity *dev, at_error_code_t err);
+typedef void (*at_error_handler_t)(struct _tag_at_device_entity* dev, at_error_code_t err);
 
 // AT device command object
 typedef struct _tag_at_device_cmd
@@ -104,5 +109,9 @@ typedef struct _tag_at_device_entity
 void at_device_init(at_device_entity_t* dev, at_device_cmd_t* table, uint16_t table_size, at_error_handler_t err_cb);
 void at_device_rx_isr(at_device_entity_t* dev, char* content, size_gt len);
 void at_device_dispatch(at_device_entity_t* dev);
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif // _FILE_AT_DEVICE_H_

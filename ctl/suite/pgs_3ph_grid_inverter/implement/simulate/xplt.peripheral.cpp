@@ -9,16 +9,23 @@
 //
 
 // GMP basic core header
-#include <gmp_core.h>
+#include <gmp_core.hpp>
 
 // user main header
 #include "user_main.h"
 
 #include <xplt.peripheral.h>
 
+#include <ctrl_rt_trace.h>
 
-// console 
+// console
 #include <conio.h>
+
+extern "C"
+{
+
+// /d1 reportSingleClassLayoutinv_ctrl_t
+//#pragma reportSingleClassLayout(inv_ctrl_t)
 
 //////////////////////////////////////////////////////////////////////////
 // definitions of peripheral
@@ -53,6 +60,15 @@ pwm_tri_channel_t pwm_out;
 //pwm_tri_channel_t pwm_out;
 //
 //pwm_channel_t inv_pwm_out[3];
+
+// Trace RT objects
+typedef enum _tag_trace_rt_nodes
+{
+    TRT_TEST = 0,
+    TRT_NODE_NUMBER
+} trace_rt_nodes;
+
+trace_rt_node_t* trt_node[TRT_NODE_NUMBER];
 
 //////////////////////////////////////////////////////////////////////////
 // peripheral setup function
@@ -132,6 +148,11 @@ void setup_peripheral(void)
         &iabc.control_port, &vabc.control_port,
         // inverter siede iuvw, uuvw
         &iuvw.control_port, &uuvw.control_port);
+
+    //
+    // Trace RT ports
+    //
+    trt_node[TRT_TEST] = trace_rt_register_node(&trace_rt_context, "pwm_out_A", TRT_TYPE_DOUBLE);
 }
 
 // ---------------- ºËÐÄÒÆÖ²´úÂë ----------------
@@ -173,8 +194,10 @@ void at_device_flush_rx_buffer()
     }
 }
 
-// do nothing here
+// Execute RT monitor
 void send_monitor_data(void)
 {
-
+    gmp_trace_rt_log_double(trt_node[TRT_TEST], inv_ctrl.isr_tick, inv_ctrl.pwm_out->value.dat[phase_A]);
 }
+
+} // extern "C"

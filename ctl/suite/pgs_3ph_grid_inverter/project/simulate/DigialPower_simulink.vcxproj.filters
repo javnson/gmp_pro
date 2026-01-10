@@ -78,7 +78,7 @@
     <ClCompile Include="gmp_src\gmp_std_port.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\implement\simulate\xplt.peripheral.c">
+    <ClCompile Include="..\..\implement\simulate\xplt.peripheral.cpp">
       <Filter>implement_interface</Filter>
     </ClCompile>
     <ClCompile Include="gmp_src\ctl_dp_basic.c">
@@ -130,6 +130,9 @@
       <Filter>GMP Source Files</Filter>
     </ClCompile>
     <ClCompile Include="gmp_src\gmp_process_mgr.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\windows_rt_tracer.cpp">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
   </ItemGroup>

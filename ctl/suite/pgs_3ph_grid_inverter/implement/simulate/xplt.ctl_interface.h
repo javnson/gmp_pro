@@ -101,20 +101,20 @@ void ctl_output_callback(void)
 #if BUILD_LEVEL == 1
 
     // Scope 1
-    simulink_tx_buffer.monitor[0] = inv_adc[INV_ADC_ID_VDC].control_port.value;
-    simulink_tx_buffer.monitor[1] = inv_adc[INV_ADC_ID_IDC].control_port.value;
+    //simulink_tx_buffer.monitor[0] = inv_adc[INV_ADC_ID_VDC].control_port.value;
+    //simulink_tx_buffer.monitor[1] = inv_adc[INV_ADC_ID_IDC].control_port.value;
 
     // Scope 2
-    simulink_tx_buffer.monitor[2] = inv_adc[INV_ADC_ID_UAB].control_port.value;
-    simulink_tx_buffer.monitor[3] = inv_adc[INV_ADC_ID_UBC].control_port.value;
+    //simulink_tx_buffer.monitor[2] = inv_adc[INV_ADC_ID_UAB].control_port.value;
+    //simulink_tx_buffer.monitor[3] = inv_adc[INV_ADC_ID_UBC].control_port.value;
 
     // Scope 3
-    simulink_tx_buffer.monitor[4] = inv_adc[INV_ADC_ID_IA].control_port.value;
-    simulink_tx_buffer.monitor[5] = inv_adc[INV_ADC_ID_IB].control_port.value;
+    //simulink_tx_buffer.monitor[4] = inv_adc[INV_ADC_ID_IA].control_port.value;
+    //simulink_tx_buffer.monitor[5] = inv_adc[INV_ADC_ID_IB].control_port.value;
 
     // Scope 4
-    simulink_tx_buffer.monitor[6] = inv_ctrl.pwm_out_pu.dat[phase_A];
-    simulink_tx_buffer.monitor[7] = inv_ctrl.pwm_out_pu.dat[phase_B];
+    simulink_tx_buffer.monitor[6] = inv_ctrl.pwm_out->value.dat[phase_A];
+    simulink_tx_buffer.monitor[7] = inv_ctrl.pwm_out->value.dat[phase_B];
 
     // Scope 5
     simulink_tx_buffer.monitor[8] = inv_ctrl.pll.phasor.dat[phasor_sin];

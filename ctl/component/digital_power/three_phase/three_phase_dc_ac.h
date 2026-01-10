@@ -61,26 +61,30 @@ extern "C"
  */
 typedef struct _tag_inv_ctrl_type
 {
+
+    uint32_t isr_tick; /**< @brief Main ISR tick */
+
     //
     // --- Input Ports (ADC Interfaces) ---
     //
-    adc_ift* adc_udc;     //!< DC Bus voltage.
-    adc_ift* adc_idc;     //!< DC Bus current.
-//    adc_ift* adc_iabc[3]; //!< Array of pointers to phase current ADCs {Ia, Ib, Ic}.
-//    adc_ift* adc_vabc[3]; //!< Array of pointers to phase voltage ADCs {Va, Vb, Vc}.
+    adc_ift* adc_udc; //!< DC Bus voltage.
+    adc_ift* adc_idc; //!< DC Bus current.
+                      //    adc_ift* adc_iabc[3]; //!< Array of pointers to phase current ADCs {Ia, Ib, Ic}.
+                      //    adc_ift* adc_vabc[3]; //!< Array of pointers to phase voltage ADCs {Va, Vb, Vc}.
 
     // Grid side feedback
-    tri_adc_ift *adc_vabc; //!< grid phase voltage ADCs {Va, Vb, Vc}, this voltage will use as pll input.
-    tri_adc_ift *adc_iabc; //!< grid phase current ADCs {Ia, Ib, Ic}, this current will use as current control port.
+    tri_adc_ift* adc_vabc; //!< grid phase voltage ADCs {Va, Vb, Vc}, this voltage will use as pll input.
+    tri_adc_ift* adc_iabc; //!< grid phase current ADCs {Ia, Ib, Ic}, this current will use as current control port.
 
     // inverter side feedback
-    tri_adc_ift *adc_vuvw; //!< inverter phase voltage ADCs {Vu, Vv, Vw}, this voltage will use as observer input.
-    tri_adc_ift *adc_iuvw; //!< inverter phase current ADCs {Iu, Iv, Iw}, this current will use as active damping.
+    tri_adc_ift* adc_vuvw; //!< inverter phase voltage ADCs {Vu, Vv, Vw}, this voltage will use as observer input.
+    tri_adc_ift* adc_iuvw; //!< inverter phase current ADCs {Iu, Iv, Iw}, this current will use as active damping.
 
     //
     // --- Output Ports ---
     //
-    tri_pwm_ift* pwm_out;  /**< @brief Final PWM duty cycles {A, B, C} in per-unit format. Three-phase PWM output interface. */
+    tri_pwm_ift*
+        pwm_out; /**< @brief Final PWM duty cycles {A, B, C} in per-unit format. Three-phase PWM output interface. */
 
     //
     // --- Feed-forward & Parameters ---
@@ -226,8 +230,9 @@ typedef struct _tag_three_phase_inv_init_type
 // Forward declarations for functions defined in the corresponding .c file
 void ctl_upgrade_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init);
 void ctl_init_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init);
-void ctl_attach_three_phase_inv(inv_ctrl_t* inv, tri_pwm_ift* pwm_out, adc_ift* adc_udc, adc_ift* adc_idc, tri_adc_ift* adc_iabc,
-                                tri_adc_ift* adc_vabc, tri_adc_ift* adc_iuvw, tri_adc_ift* adc_vuvw);
+void ctl_attach_three_phase_inv(inv_ctrl_t* inv, tri_pwm_ift* pwm_out, adc_ift* adc_udc, adc_ift* adc_idc,
+                                tri_adc_ift* adc_iabc, tri_adc_ift* adc_vabc, tri_adc_ift* adc_iuvw,
+                                tri_adc_ift* adc_vuvw);
 
 /**
  * @brief Executes one step of the three-phase inverter control algorithm.
@@ -247,6 +252,7 @@ GMP_STATIC_INLINE void ctl_step_inv_ctrl(inv_ctrl_t* ctrl)
     gmp_base_assert(ctrl->adc_iuvw);
     gmp_base_assert(ctrl->adc_vuvw);
 
+    ctrl->isr_tick += 1;
 
     // --- 1. Input Filtering and Coordinate Transformation ---
     ctl_step_lowpass_filter(&ctrl->lpf_udc, ctrl->adc_udc->value);

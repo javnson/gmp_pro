@@ -97,6 +97,7 @@ void ctl_attach_three_phase_inv(inv_ctrl_t* inv, tri_pwm_ift* pwm_out, adc_ift* 
 
 void ctl_init_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
 {
+    inv->isr_tick = 0;
     ctl_upgrade_three_phase_inv(inv, init);
     ctl_clear_three_phase_inv(inv);
 }
