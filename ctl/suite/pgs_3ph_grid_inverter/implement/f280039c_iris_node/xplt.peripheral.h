@@ -23,15 +23,6 @@ extern "C"
 // select ADC PTR interface
 #include <ctl/component/interface/adc_ptr_channel.h>
 
-// select default encoder
-//#include <ctl/component/motor_control/basic/encoder.h>
-
-//// select SIL package
-//#include <ctl/component/motor_control/basic/motor_universal_interface.h>
-//
-//#include <ctl/component/motor_control/basic/std_sil_motor_interface.h>
-
-
 // inverter side voltage feedback
 extern tri_ptr_adc_channel_t uuvw;
 extern adc_gt uuvw_src[3];

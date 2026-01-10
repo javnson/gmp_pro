@@ -30,7 +30,7 @@
 #define CTRL_VOLTAGE_BASE (100.0f)
 
 // Current base, 10 A
-#define CTRL_CURRENT_BASE (30.0f)
+#define CTRL_CURRENT_BASE (10.0f)
 
 ///////////////////////////////////////////////////////////
 // Grid side sensor

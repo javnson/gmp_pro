@@ -13,7 +13,7 @@
 #define BUILD_LEVEL (7)
 
 // low voltage half bridge parameters
-#include <ctl/component/digital_power/hardware_preset/gmp_lvhb_v1.h>
+//#include <ctl/component/digital_power/hardware_preset/gmp_lvhb_v1.h>
 
 // Startup Delay, ms
 #define CTRL_STARTUP_DELAY (100)
@@ -24,11 +24,11 @@
 // PWM depth
 #define CTRL_PWM_CMP_MAX (4200 - 1)
 
-// Voltage per unit base value, 100 V
-#define CTRL_VOLTAGE_BASE (100.0)
+// DC bus voltage, voltage base
+#define CTRL_VOLTAGE_BASE (100.0f)
 
-// Current Per unit base value, 10 A
-#define CTRL_CURRENT_BASE (10.0)
+// Current base, 10 A
+#define CTRL_CURRENT_BASE (10.0f)
 
 // Voltage reference, 2.5V
 #define CTRL_ADC_VOLTAGE_REF (2.5)
@@ -36,18 +36,51 @@
 // ADC resolution
 #define CTRL_ADC_RESOLUTION (12)
 
-// Current BIAS 
-#define CTRL_CURRENT_ADC_BIAS (DSV1_CURRENT_SENSOR_BIAS)
+///////////////////////////////////////////////////////////
+// Grid side sensor
 
-// Current Gain
-#define CTRL_CURRENT_ADC_GAIN (DSV1_CURRENT_SENSOR_GAIN)
+// Current sensor sensitivity, V/A
+#define CTRL_GRID_CURRENT_SENSITIVITY (48e-3f)
 
-// Voltage BIAS
-#define CTRL_VOLTAGE_ADC_BIAS (DSV1_VOLTAGE_SENSOR_BIAS)
+// Current sensor bias, V
+#define CTRL_GRID_CURRENT_BIAS (1.65f)
 
-// Voltage Gain
-#define CTRL_VOLTAGE_ADC_GAIN (DSV1_VOLTAGE_SENSOR_GAIN)
- 
+// Voltage sensor sensitivity, V/V
+#define CTRL_GRID_VOLTAGE_SENSITIVITY (0.0106f)
+
+// Voltage sensor bias, V
+#define CTRL_GRID_VOLTAGE_BIAS (0.0f)
+
+///////////////////////////////////////////////////////////
+// inverter side sensor
+
+// Current sensor sensitivity, V/A
+#define CTRL_INVERTER_CURRENT_SENSITIVITY (50e-3f)
+
+// Current sensor bias, V
+#define CTRL_INVERTER_CURRENT_BIAS (1.65f)
+
+// Voltage sensor sensitivity, V/V
+#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (0.02738589f)
+
+// Voltage sensor bias, V
+#define CTRL_INVERTER_VOLTAGE_BIAS (0.0f)
+
+///////////////////////////////////////////////////////////
+// DC Bus side sensor
+
+// Current sensor sensitivity, V/A
+#define CTRL_DC_CURRENT_SENSITIVITY (24.75e-3f)
+
+// Current sensor bias, V
+#define CTRL_DC_CURRENT_BIAS (1.65f)
+
+// Voltage sensor sensitivity, V/V
+#define CTRL_DC_VOLTAGE_SENSITIVITY (0.02738589f)
+
+// Voltage sensor bias, V
+#define CTRL_DC_VOLTAGE_BIAS (0.0f)
+
 // SPLL Close loop criteria
 #define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
 

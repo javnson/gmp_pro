@@ -114,13 +114,13 @@ void at_device_init(at_device_entity_t* dev, at_device_cmd_t* table, uint16_t ta
 }
 
 /* 中断接收函数 (ISR) */
-void at_device_rx_isr(at_device_entity_t* dev, char* content, int len)
+void at_device_rx_isr(at_device_entity_t* dev, char* content, size_gt len)
 {
     gmp_base_assert(dev);
     if (len <= 0)
         return;
 
-    size_t free = ringbuf_get_free(&dev->buffer);
+    size_gt free = ringbuf_get_free(&dev->buffer);
 
     if (len > free)
     {
@@ -149,7 +149,7 @@ static void process_line(at_device_entity_t* dev)
 
     // --- 1. 增强型帧头校验与噪声过滤 ---
     uint16_t start_idx = 0;
-    bool found_header = false;
+    uint16_t found_header = 0;
 
     // 遍历 buffer，寻找连续的 'A' 和 'T'
     // 注意：循环条件必须是 len - 1，防止检查 line[i+1] 时越界
@@ -159,7 +159,7 @@ static void process_line(at_device_entity_t* dev)
         if (line[start_idx] == 'A' && line[start_idx + 1] == 'T')
         {
             // 找到了，start_idx 现在指向 'A'
-            found_header = true;
+            found_header = 1;
             break;
         }
     }

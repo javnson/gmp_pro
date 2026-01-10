@@ -16,14 +16,43 @@
 
 #include <xplt.peripheral.h>
 
+
+// console 
+#include <conio.h>
+
 //////////////////////////////////////////////////////////////////////////
 // definitions of peripheral
 //
 
-ptr_adc_channel_t inv_adc[INV_ADC_SENSOR_NUMBER];
+// inverter side voltage feedback
+tri_ptr_adc_channel_t uuvw;
+adc_gt uuvw_src[3];
+
+// inverter side current feedback
+tri_ptr_adc_channel_t iuvw;
+adc_gt iuvw_src[3];
+
+// grid side voltage feedback
+tri_ptr_adc_channel_t vabc;
+adc_gt vabc_src[3];
+
+// grid side current feedback
+tri_ptr_adc_channel_t iabc;
+adc_gt iabc_src[3];
+
+// DC bus current & voltage feedback
+ptr_adc_channel_t udc;
+adc_gt udc_src;
+ptr_adc_channel_t idc;
+adc_gt idc_src;
+
+// PWM output channel
 pwm_tri_channel_t pwm_out;
 
-pwm_channel_t inv_pwm_out[3];
+//ptr_adc_channel_t inv_adc[INV_ADC_SENSOR_NUMBER];
+//pwm_tri_channel_t pwm_out;
+//
+//pwm_channel_t inv_pwm_out[3];
 
 //////////////////////////////////////////////////////////////////////////
 // peripheral setup function
@@ -36,91 +65,58 @@ void setup_peripheral(void)
     // input channel
     //
 
-    ctl_init_ptr_adc_channel(
-        // ptr_adc object
-        &inv_adc[INV_ADC_ID_IDC],
-        // pointer to ADC raw data
-        &simulink_rx_buffer.adc_result[INV_ADC_ID_IDC],
-        // ADC Channel settings.
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_BIAS),
-        // iqn is valid only when ctrl_gt is a fixed point type.
-        CTRL_ADC_RESOLUTION, 24);
+    // inverter side ADC
+    ctl_init_tri_ptr_adc_channel(
+        &uuvw, uuvw_src,
+        // ADC gain, ADC bias
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_VOLTAGE_BIAS),
+        // ADC resolution, IQN
+        12, 24);
+
+    ctl_init_tri_ptr_adc_channel(
+        &iuvw, iuvw_src,
+        // ADC gain, ADC bias
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_CURRENT_BIAS),
+        // ADC resolution, IQN
+        12, 24);
+
+    // grid side ADC
+    ctl_init_tri_ptr_adc_channel(
+        &vabc, vabc_src,
+        // ADC gain, ADC bias
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_VOLTAGE_BIAS),
+        // ADC resolution, IQN
+        12, 24);
+
+    ctl_init_tri_ptr_adc_channel(
+        &iabc, iabc_src,
+        // ADC gain, ADC bias
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_CURRENT_BIAS),
+        // ADC resolution, IQN
+        12, 24);
 
     ctl_init_ptr_adc_channel(
-        // ptr_adc object
-        &inv_adc[INV_ADC_ID_VDC],
-        // pointer to ADC raw data
-        &simulink_rx_buffer.adc_result[INV_ADC_ID_VDC],
-        // ADC Channel settings.
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_GAIN, CTRL_VOLTAGE_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_BIAS),
-        // iqn is valid only when ctrl_gt is a fixed point type.
-        CTRL_ADC_RESOLUTION, 24);
+        &udc, &udc_src,
+        // ADC gain, ADC bias
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_DC_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_DC_VOLTAGE_BIAS),
+        // ADC resolution, IQN
+        12, 24);
 
     ctl_init_ptr_adc_channel(
-        // ptr_adc object
-        &inv_adc[INV_ADC_ID_UAB],
-        // pointer to ADC raw data
-        &simulink_rx_buffer.adc_result[INV_ADC_ID_UAB],
-        // ADC Channel settings.
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_GAIN, CTRL_VOLTAGE_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_BIAS),
-        // iqn is valid only when ctrl_gt is a fixed point type.
-        CTRL_ADC_RESOLUTION, 24);
+        &idc, &idc_src,
+        // ADC gain, ADC bias
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_DC_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_DC_CURRENT_BIAS),
+        // ADC resolution, IQN
+        12, 24);
 
-    ctl_init_ptr_adc_channel(
-        // ptr_adc object
-        &inv_adc[INV_ADC_ID_UBC],
-        // pointer to ADC raw data
-        &simulink_rx_buffer.adc_result[INV_ADC_ID_UBC],
-        // ADC Channel settings.
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_GAIN, CTRL_VOLTAGE_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_VOLTAGE_ADC_BIAS),
-        // iqn is valid only when ctrl_gt is a fixed point type.
-        CTRL_ADC_RESOLUTION, 24);
-
-    ctl_init_ptr_adc_channel(
-        // ptr_adc object
-        &inv_adc[INV_ADC_ID_IA],
-        // pointer to ADC raw data
-        &simulink_rx_buffer.adc_result[INV_ADC_ID_IA],
-        // ADC Channel settings.
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_BIAS),
-        // iqn is valid only when ctrl_gt is a fixed point type.
-        CTRL_ADC_RESOLUTION, 24);
-
-    ctl_init_ptr_adc_channel(
-        // ptr_adc object
-        &inv_adc[INV_ADC_ID_IB],
-        // pointer to ADC raw data
-        &simulink_rx_buffer.adc_result[INV_ADC_ID_IB],
-        // ADC Channel settings.
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_BIAS),
-        // iqn is valid only when ctrl_gt is a fixed point type.
-        CTRL_ADC_RESOLUTION, 24);
-
-    ctl_init_ptr_adc_channel(
-        // ptr_adc object
-        &inv_adc[INV_ADC_ID_IC],
-        // pointer to ADC raw data
-        &simulink_rx_buffer.adc_result[INV_ADC_ID_IC],
-        // ADC Channel settings.
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_GAIN, CTRL_CURRENT_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_CURRENT_ADC_BIAS),
-        // iqn is valid only when ctrl_gt is a fixed point type.
-        CTRL_ADC_RESOLUTION, 24);
-
-    //
     // output channel
-    //
     ctl_init_pwm_tri_channel(&pwm_out, 0, CTRL_PWM_CMP_MAX);
-
-    ctl_init_pwm_channel(&inv_pwm_out[0], 0, CTRL_PWM_CMP_MAX);
-    ctl_init_pwm_channel(&inv_pwm_out[1], 0, CTRL_PWM_CMP_MAX);
-    ctl_init_pwm_channel(&inv_pwm_out[2], 0, CTRL_PWM_CMP_MAX);
 
     //
     // attach
@@ -128,14 +124,57 @@ void setup_peripheral(void)
     ctl_attach_three_phase_inv(
         // inv controller
         &inv_ctrl,
+        // output PWM wave
+        &pwm_out.raw,
         // udc, idc
-        &inv_adc[INV_ADC_ID_VDC].control_port, &inv_adc[INV_ADC_ID_IDC].control_port,
-        // iabc
-        &inv_adc[INV_ADC_ID_IA].control_port, &inv_adc[INV_ADC_ID_IB].control_port,
-        &inv_adc[INV_ADC_ID_IC].control_port,
-        // uabc
-        &inv_adc[INV_ADC_ID_UAB].control_port, &inv_adc[INV_ADC_ID_UBC].control_port, (void*)0);
+        &udc.control_port, &idc.control_port,
+        // grid side iabc, vabc
+        &iabc.control_port, &vabc.control_port,
+        // inverter siede iuvw, uuvw
+        &iuvw.control_port, &uuvw.control_port);
+}
 
-    // open hardware switch
-    // ctl_output_enable();
+// ---------------- 核心移植代码 ----------------
+
+// 为了防止卡住，在Windows平台上的buffer留大一些
+#define ISR_LOCAL_BUF_SIZE 1024
+
+// Using Windows console to simulate UART
+void at_device_flush_rx_buffer()
+{
+    uint16_t fifoLevel = 0;
+    uint16_t rxBuf[ISR_LOCAL_BUF_SIZE];
+
+    // 使用while一次性读取FIFO中的所有内容
+    while (_kbhit())
+    {
+        //_getch() 读取字符但不回显，也不等待回车
+        int ch = _getch();
+
+        // 处理特殊键 (例如方向键会产生两个码: 0/0xE0 和 键码)
+        // 这里我们简单处理，只接收普通 ASCII
+        if (ch == 0 || ch == 0xE0)
+        {
+            _getch(); // 读走无效部分
+            continue;
+        }
+
+        // 【重要】Windows控制台输入不自动回显，手动回显以便用户看到自己打的字
+        putchar(ch);
+
+        // 读取数据
+        rxBuf[fifoLevel++] = (uint16_t)ch;
+    }
+
+    // 推送给设备
+    if (fifoLevel > 0)
+    {
+        at_device_rx_isr(&at_dev, (char*)rxBuf, fifoLevel);
+    }
+}
+
+// do nothing here
+void send_monitor_data(void)
+{
+
 }

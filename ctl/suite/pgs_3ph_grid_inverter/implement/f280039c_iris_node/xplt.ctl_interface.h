@@ -102,21 +102,13 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
 // Output Callback
 GMP_STATIC_INLINE void ctl_output_callback(void)
 {
-    // copy source pwm data
-//    pwm_out.raw.value.dat[phase_U] = inv_ctrl.pwm_ou.dat[phase_U];
-//    pwm_out.raw.value.dat[phase_V] = inv_ctrl.pwm_out_pu.dat[phase_V];
-//    pwm_out.raw.value.dat[phase_W] = inv_ctrl.pwm_out_pu.dat[phase_W];
-
     // invoke PWM p.u. routine
     ctl_calc_pwm_tri_channel(&pwm_out);
 
     // PWM output,EPWM1_BASE
-    EPWM_setCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[0]);
-    EPWM_setCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[1]);
-
-    EPWM_setCounterCompareValue(EPWM2_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[0]);
-    EPWM_setCounterCompareValue(EPWM1_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[1]);
-    EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[2]);
+    EPWM_setCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_U]);
+    EPWM_setCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_V]);
+    EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_W]);
 
     // Monitor Port, 8 channels
 #if BUILD_LEVEL == 1

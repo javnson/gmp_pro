@@ -187,9 +187,11 @@
     <ClCompile Include="gmp_src\ctl_mc_pmsm_offline_est.c" />
     <ClCompile Include="gmp_src\ctl_nano.c" />
     <ClCompile Include="gmp_src\dsa_trigger.c" />
+    <ClCompile Include="gmp_src\gmp_at_device.c" />
     <ClCompile Include="gmp_src\gmp_dev_util.c" />
     <ClCompile Include="gmp_src\gmp_ds_list.c" />
     <ClCompile Include="gmp_src\gmp_mm_block_memory.c" />
+    <ClCompile Include="gmp_src\gmp_process_mgr.c" />
     <ClCompile Include="gmp_src\gmp_std_error_code.c" />
     <ClCompile Include="gmp_src\gmp_std_port.c" />
     <ClCompile Include="gmp_src\windows_simulink_main.cpp" />

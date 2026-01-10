@@ -89,6 +89,7 @@ gmp_task_status_t tsk_at_device(gmp_task_t* tsk)
 }
 
 void send_monitor_data(void);
+
 gmp_task_status_t tsk_monitor(gmp_task_t* tsk)
 {
     send_monitor_data();
@@ -121,6 +122,8 @@ void init(void) GMP_NO_OPT_SUFFIX
 
 //////////////////////////////////////////////////////////////////////////
 // endless loop function here
+
+void at_device_clear_rx_buf();
 
 void mainloop(void)
 {

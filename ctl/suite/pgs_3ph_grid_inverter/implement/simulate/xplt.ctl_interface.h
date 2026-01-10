@@ -41,9 +41,9 @@ typedef enum _tag_sinv_adc_index_items
 
 } inv_adc_index_items;
 
-extern ptr_adc_channel_t inv_adc[INV_ADC_SENSOR_NUMBER];
+//extern ptr_adc_channel_t inv_adc[INV_ADC_SENSOR_NUMBER];
 
-extern pwm_channel_t inv_pwm_out[3];
+//extern pwm_channel_t inv_pwm_out[3];
 
 extern inv_ctrl_t inv_ctrl;
 
@@ -51,21 +51,48 @@ extern inv_ctrl_t inv_ctrl;
 GMP_STATIC_INLINE
 void ctl_input_callback(void)
 {
-    //// invoke ADC p.u. routine
-    for (size_gt i = 0; i < INV_ADC_SENSOR_NUMBER; ++i)
-        ctl_step_ptr_adc_channel(&inv_adc[i]);
+    // copy source ADC data
+    vabc_src[phase_A] = simulink_rx_buffer.adc_result[INV_ADC_ID_UAB];
+    vabc_src[phase_B] = simulink_rx_buffer.adc_result[INV_ADC_ID_UBC];
+    vabc_src[phase_C] = 0;
+                        
+    iabc_src[phase_A] = simulink_rx_buffer.adc_result[INV_ADC_ID_IA];
+    iabc_src[phase_B] = simulink_rx_buffer.adc_result[INV_ADC_ID_IB];
+    iabc_src[phase_C] = simulink_rx_buffer.adc_result[INV_ADC_ID_IC];
+                        
+    uuvw_src[phase_U] = 0;
+    uuvw_src[phase_V] = 0;
+    uuvw_src[phase_W] = 0;
+                        
+    iuvw_src[phase_U] = 0;
+    iuvw_src[phase_V] = 0;
+    iuvw_src[phase_W] = 0;
+
+    udc_src = simulink_rx_buffer.adc_result[INV_ADC_ID_IDC];
+    idc_src = simulink_rx_buffer.adc_result[INV_ADC_ID_VDC];
+
+    // invoke ADC p.u. routine
+    ctl_step_tri_ptr_adc_channel(&iabc);
+    ctl_step_tri_ptr_adc_channel(&vabc);
+    ctl_step_tri_ptr_adc_channel(&iuvw);
+    ctl_step_tri_ptr_adc_channel(&uuvw);
+    ctl_step_ptr_adc_channel(&idc);
+    ctl_step_ptr_adc_channel(&udc);
 }
 
 // Output Callback
 GMP_STATIC_INLINE
 void ctl_output_callback(void)
 {
+    // invoke PWM p.u. routine
+    ctl_calc_pwm_tri_channel(&pwm_out);
+
     //
     // PWM channel
     //
-    simulink_tx_buffer.pwm_cmp[0] = ctl_step_pwm_channel(&inv_pwm_out[0], inv_ctrl.pwm_out_pu.dat[0]);
-    simulink_tx_buffer.pwm_cmp[1] = ctl_step_pwm_channel(&inv_pwm_out[1], inv_ctrl.pwm_out_pu.dat[1]);
-    simulink_tx_buffer.pwm_cmp[2] = ctl_step_pwm_channel(&inv_pwm_out[2], inv_ctrl.pwm_out_pu.dat[2]);
+    simulink_tx_buffer.pwm_cmp[0] = pwm_out.value[phase_U];
+    simulink_tx_buffer.pwm_cmp[1] = pwm_out.value[phase_V];
+    simulink_tx_buffer.pwm_cmp[2] = pwm_out.value[phase_W];
 
     //
     // monitor
