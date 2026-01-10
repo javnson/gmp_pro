@@ -96,6 +96,7 @@ gmp_task_status_t tsk_monitor(gmp_task_t* tsk)
     return GMP_TASK_DONE;
 }
 
+// All tasks must be non blocking tasks 
 gmp_task_t tasks[] = {
    // name,     task,      period(ms),  init_phase, is_enabled, pParam
    { "blink_led", tsk_blink, 1000, 0, 1, NULL},
