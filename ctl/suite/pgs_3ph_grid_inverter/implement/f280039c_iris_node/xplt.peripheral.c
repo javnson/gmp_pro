@@ -323,3 +323,133 @@ interrupt void INT_IRIS_UART_RS232_RX_ISR(void)
 
 }
 
+// 假设定义一个本地的小缓存大小，能够覆盖硬件 FIFO 的深度（通常是 16 字节）
+#define ISR_LOCAL_BUF_SIZE  16
+
+//interrupt void INT_IRIS_UART_USB_RX_ISR(void)
+//{
+//    uint16_t rxBuf[ISR_LOCAL_BUF_SIZE];
+//        uint16_t fifoLevel;
+//
+//        // 1. 获取当前 FIFO 中有多少数据 (关键步骤！)
+//        // SCI_getRxFIFOStatus 返回的是枚举或数值，代表当前 FIFO 里的字数
+//        fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE);
+//
+//        // 2. 只有当 FIFO 里有数据时才读取
+////        if(fifoLevel == 1)
+////        {
+////            rxBuf = SCI_readCharNonBlocking()
+////        }
+//        if(fifoLevel > 0)
+//        {
+//            // 3. 使用 DriverLib 函数读取
+//            // 因为我们已经确认了 fifoLevel <= 实际存在的数据
+//            // 所以这个函数内部的 while 等待循环不会生效，它会立即读完返回
+//            SCI_readCharArray(IRIS_UART_USB_BASE, rxBuf, fifoLevel);
+//
+//            // 4. 推送数据到 AT 核心
+//            // 注意：C2000 上 char 是 16-bit，可以直接转换
+//            // 如果是其他架构可能需要压缩数据，但在 SCI 上通常低8位有效
+//            at_device_rx_isr(&at_dev, (char*)rxBuf, fifoLevel);
+//        }
+//
+//        // 5. 错误处理：检查溢出 (Overrun)
+//        // DriverLib 通常提供获取状态的函数
+//        uint32_t rxStatus = SCI_getRxStatus(IRIS_UART_USB_BASE);
+//        if((rxStatus & SCI_RXSTATUS_ERROR) || (rxStatus & SCI_RXSTATUS_OVERRUN))
+//        {
+//            // 发生溢出，复位 FIFO
+//            SCI_resetRxFIFO(IRIS_UART_USB_BASE);
+//        }
+//
+//        // 6. 清除中断标志
+//        SCI_clearInterruptStatus(IRIS_UART_USB_BASE, SCI_INT_RXFF | SCI_INT_RXERR);
+//
+//        // 7. PIE ACK (如果在 C2000 上)
+//        Interrupt_clearACKGroup(INT_IRIS_UART_USB_RX_INTERRUPT_ACK_GROUP);
+//}
+
+void at_device_flush_rx_buffer()
+{
+    uint16_t fifoLevel;
+    uint16_t rxBuf[ISR_LOCAL_BUF_SIZE];
+
+    // 使用while一次性读取FIFO中的所有内容
+    while((fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE)) > 0)
+    {
+        // 读取数据
+        SCI_readCharArray(IRIS_UART_USB_BASE, rxBuf, fifoLevel);
+
+        // 推送给设备
+        at_device_rx_isr(&at_dev, (char*)rxBuf, fifoLevel);
+    }
+}
+
+
+interrupt void INT_IRIS_UART_USB_RX_ISR(void)
+{
+    uint16_t rxBuf[ISR_LOCAL_BUF_SIZE];
+    uint16_t fifoLevel;
+    uint32_t rxStatus;
+
+    // ---------------------------------------------------------
+    // 策略优化：使用 while 循环一次性抽干 FIFO
+    // ---------------------------------------------------------
+    // 原因：设置为 1/16 触发虽然保证了响应度，但为了减少中断频率，
+    // 我们应该在一次中断里尽可能把 FIFO 里堆积的数据全读完，
+    // 而不是读几个字节就退出去等下一次中断。
+
+//    while((fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE)) > 0)
+//    {
+////        // 限制单次读取长度，防止越界
+////        if(fifoLevel > ISR_LOCAL_BUF_SIZE) {
+////            fifoLevel = ISR_LOCAL_BUF_SIZE;
+////        }
+//
+//        // 读取数据
+//        SCI_readCharArray(IRIS_UART_USB_BASE, rxBuf, fifoLevel);
+//
+//        // 推送数据到 AT 核心
+//        at_device_rx_isr(&at_dev, (char*)rxBuf, fifoLevel);
+//
+//        // 如果 FIFO 此时已经空了，while 循环会自动结束
+//    }
+    at_device_flush_rx_buffer();
+
+    // ---------------------------------------------------------
+    // 错误处理优化：不要盲目复位 FIFO
+    // ---------------------------------------------------------
+    rxStatus = SCI_getRxStatus(IRIS_UART_USB_BASE);
+
+    if(rxStatus & SCI_RXSTATUS_OVERRUN)
+    {
+        // 仅处理溢出错误：清除溢出标志位，而不是复位整个 FIFO
+        // C2000 DriverLib 通常通过写入 RXFFOVRCLR 位来清除
+        // 如果没有直接API，可以使用 HWREG 操作，或者保持 resetRxFIFO 但仅针对 Overrun
+
+        // 修正建议：只在确实溢出卡死时才 Reset，普通 Error 不要 Reset
+        SCI_clearOverflowStatus(IRIS_UART_USB_BASE); // 假设有此函数，或者手动操作寄存器
+
+        // 如果必须使用 resetRxFIFO，请确保仅在严重故障下使用
+        // SCI_resetRxFIFO(IRIS_UART_USB_BASE);
+    }
+
+    if(rxStatus & SCI_RXSTATUS_ERROR)
+    {
+        // 对于 Frame Error / Parity Error (比如噪声 0xFF)
+        // 读取数据寄存器通常会自动清除这些错误标志
+        // 这里只需要做一个软件复位给 SCI 状态机（不清除 FIFO），或者单纯清除标志
+        // 绝对不要调用 SCI_resetRxFIFO() !!!
+    }
+
+    // ---------------------------------------------------------
+    // 清除中断标志 (关键)
+    // ---------------------------------------------------------
+    // 必须清除 RXFF (FIFO中断) 和 RXERR (错误中断) 标志，否则中断会卡死
+    SCI_clearInterruptStatus(IRIS_UART_USB_BASE, SCI_INT_RXFF | SCI_INT_RXERR);
+
+    // PIE ACK
+    Interrupt_clearACKGroup(INT_IRIS_UART_USB_RX_INTERRUPT_ACK_GROUP);
+}
+
+

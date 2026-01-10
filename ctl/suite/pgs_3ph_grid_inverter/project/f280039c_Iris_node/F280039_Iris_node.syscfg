@@ -452,13 +452,18 @@ sci1.sci.sci_txPin.$assign      = "GPIO48";
 sci1.rxQual.$name               = "myGPIOQUAL0";
 sci1.txQual.$name               = "myGPIOQUAL1";
 
-sci2.$name                 = "IRIS_UART_USB";
-sci2.baudRates             = 921600;
-sci2.sci.$assign           = "SCIB";
-sci2.sci.sci_rxPin.$assign = "GPIO41";
-sci2.sci.sci_txPin.$assign = "GPIO10";
-sci2.rxQual.$name          = "myGPIOQUAL6";
-sci2.txQual.$name          = "myGPIOQUAL7";
+sci2.$name                      = "IRIS_UART_USB";
+sci2.enabledFIFOInterrupts      = ["SCI_INT_RXFF"];
+sci2.selectRegisteredInterrupts = ["registerRxInt"];
+sci2.enabledErrorInterrupts     = ["SCI_INT_FE","SCI_INT_OE"];
+sci2.rxFifo                     = "SCI_FIFO_RX12";
+sci2.baudRates                  = 921600;
+sci2.sci.$assign                = "SCIB";
+sci2.sci.sci_rxPin.$assign      = "GPIO41";
+sci2.sci.sci_txPin.$assign      = "GPIO10";
+sci2.rxQual.$name               = "myGPIOQUAL6";
+sci2.txQual.$name               = "myGPIOQUAL7";
+sci2.sciRXInt.enableInterrupt   = true;
 
 spi1.$name          = "IRIS_SPI_FPGA_BRIDGE";
 spi1.emulationMode  = "SPI_EMULATION_FREE_RUN";
