@@ -146,7 +146,7 @@ GMP_STATIC_INLINE void ctl_enable_output()
     EPWM_clearTripZoneFlag(PHASE_V_BASE, EPWM_TZ_FORCE_EVENT_OST);
     EPWM_clearTripZoneFlag(PHASE_W_BASE, EPWM_TZ_FORCE_EVENT_OST);
 
-    ctl_enable_three_phase_inverter(&inv_ctrl);
+    ctl_enable_gfl_inv(&inv_ctrl);
 
     // PWM enable
     GPIO_WritePin(PWM_ENABLE_PORT, 1);
@@ -164,7 +164,7 @@ GMP_STATIC_INLINE void ctl_disable_output()
     EPWM_forceTripZoneEvent(PHASE_V_BASE, EPWM_TZ_FORCE_EVENT_OST);
     EPWM_forceTripZoneEvent(PHASE_W_BASE, EPWM_TZ_FORCE_EVENT_OST);
 
-    ctl_disable_three_phase_inverter(&inv_ctrl);
+    ctl_disable_gfl_inv(&inv_ctrl);
 
     // PWM disable
     GPIO_WritePin(PWM_ENABLE_PORT, 0);

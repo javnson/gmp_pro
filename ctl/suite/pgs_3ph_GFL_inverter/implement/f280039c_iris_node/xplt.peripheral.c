@@ -116,17 +116,15 @@ void setup_peripheral(void)
     //
     // attach
     //
-    ctl_attach_three_phase_inv(
+    ctl_attach_gfl_inv(
         // inv controller
         &inv_ctrl,
         // output PWM wave
         &pwm_out.raw,
-        // udc, idc
-        &udc.control_port, &idc.control_port,
+        // idc, udc
+        &idc.control_port, &udc.control_port,
         // grid side iabc, vabc
-        &iabc.control_port, &vabc.control_port,
-        // inverter siede iuvw, uuvw
-        &iuvw.control_port, &uuvw.control_port);
+        &iabc.control_port, &vabc.control_port);
 
 }
 
@@ -208,7 +206,7 @@ interrupt void INT_IRIS_CAN_0_ISR(void)
         // set target value
 #if BUILD_LEVEL == 1
         // For level 1 Set target voltage
-        ctl_set_three_phase_inv_voltage_openloop(&inv_ctrl, float2ctrl((float)recv_content[0].i32 / CAN_SCALE_FACTOR), float2ctrl((float)recv_content[1].i32 / CAN_SCALE_FACTOR));
+        ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl((float)recv_content[0].i32 / CAN_SCALE_FACTOR), float2ctrl((float)recv_content[1].i32 / CAN_SCALE_FACTOR));
 
 #endif // BUILD_LEVEL
 

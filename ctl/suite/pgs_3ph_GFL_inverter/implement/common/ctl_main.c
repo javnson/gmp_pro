@@ -64,8 +64,6 @@ void ctl_init()
 
     ctl_init_gfl_inv(&inv_ctrl, &gfl_init);
 
-    three_phase_inv_init_t init;
-
 #if BUILD_LEVEL == 1
 
     // Voltage open loop, inverter
@@ -182,10 +180,10 @@ fast_gt ctl_adc_calibrate(void)
                 flag_enable_adc_calibrator = 0;
 
                 // clear INV controller
-                ctl_clear_three_phase_inv(&inv_ctrl);
+                ctl_clear_gfl_inv_with_PLL(&inv_ctrl);
 
                 // ADC Calibrator complete here.
-                ctl_enable_three_phase_inverter(&inv_ctrl);
+                ctl_enable_gfl_inv(&inv_ctrl);
             }
 
             // index_adc_calibrator == 12, for Vbus
@@ -295,7 +293,7 @@ fast_gt ctl_adc_calibrate(void)
 // if return 0 the system is not ready to enable
 fast_gt ctl_ready_mainloop(void)
 {
-    ctl_clear_three_phase_inv(&inv_ctrl);
+    ctl_clear_gfl_inv(&inv_ctrl);
 
 #if defined SPECIFY_ENABLE_ADC_CALIBRATE
     if (ctl_adc_calibrate())
