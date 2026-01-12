@@ -24,7 +24,10 @@
 
 #include <ctl/component/digital_power/three_phase/three_phase_GFL.h>
 
+gfl_inv_ctrl_init_t gfl_init;
 inv_ctrl_t inv_ctrl;
+
+gfl_inv_ctrl_t inv;
 
 // enable controller
 #if !defined SPECIFY_PC_ENVIRONMENT
@@ -50,8 +53,7 @@ void ctl_init()
     // init ADC Calibrator
     ctl_init_adc_calibrator(&adc_calibrator, 20, 0.707f, CONTROLLER_FREQUENCY);
 
-    // inverter init objects
-    gfl_inv_ctrl_init_t gfl_init;
+    // GFL inverter init objects
     gfl_init.fs = CONTROLLER_FREQUENCY;
     gfl_init.v_base = CTRL_VOLTAGE_BASE;
     gfl_init.i_base = CTRL_CURRENT_BASE;
@@ -61,6 +63,8 @@ void ctl_init()
     gfl_init.grid_filter_C = 5.0e-6f;
 
     ctl_auto_tuning_gfl_inv(&gfl_init);
+
+    ctl_init_gfl_inv(&inv, &gfl_init);
 
     three_phase_inv_init_t init;
 

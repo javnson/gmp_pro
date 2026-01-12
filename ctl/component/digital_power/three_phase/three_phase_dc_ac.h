@@ -308,7 +308,8 @@ GMP_STATIC_INLINE void ctl_step_inv_ctrl(inv_ctrl_t* ctrl)
         else
         {
             ctrl->angle = ctrl->pll.theta;
-            ctrl->phasor = ctrl->pll.phasor;
+            //ctrl->phasor = ctrl->pll.phasor;
+            ctl_vector2_copy(&ctrl->phasor, &ctrl->pll.phasor);
         }
 
         // --- 3b. Park Transformation ---
