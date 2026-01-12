@@ -24,7 +24,9 @@
 
 #include <ctl/component/intrinsic/discrete/signal_generator.h>
 
-#include <ctl/component/digital_power/three_phase/three_phase_dc_ac.h>
+#include <ctl/component/digital_power/three_phase/three_phase_GFL.h>
+
+
 
 #ifndef _FILE_CTL_MAIN_H_
 #define _FILE_CTL_MAIN_H_
@@ -42,7 +44,8 @@ extern volatile fast_gt flag_enable_adc_calibrator;
 extern volatile fast_gt index_adc_calibrator;
 
 // controller objects
-extern inv_ctrl_t inv_ctrl;
+extern gfl_inv_ctrl_init_t gfl_init;
+extern gfl_inv_ctrl_t inv_ctrl;
 
 // periodic callback function things.
 GMP_STATIC_INLINE
@@ -70,7 +73,7 @@ void ctl_dispatch(void)
 #endif // SPECIFY_ENABLE_ADC_CALIBRATE
 
 
-    ctl_step_inv_ctrl(&inv_ctrl);
+    ctl_step_gfl_inv_ctrl(&inv_ctrl);
 
 
 #if defined SPECIFY_ENABLE_ADC_CALIBRATE

@@ -5,11 +5,8 @@
 
 // BUILD_LEVEL 1: inverter, voltage open loop
 // BUILD_LEVEL 2: inverter, current loop
-// BUILD_LEVEL 3: inverter, current loop, feed forward control
-// BUILD_LEVEL 4: inverter, current loop, feed forward control, negative current control
-// BUILD_LEVEL 5: inverter, current loop, ff, neg, harmonic control
-// BUILD_LEVEL 6: inverter, voltage loop, current loop, ff
-// BUILD_LEVEL 7: inverter, voltage loop, current loop, ff, negative voltage control
+// BUILD_LEVEL 3: inverter, current loop, grid connected
+// BUILD_LEVEL 4: inverter, current loop, grid connected, all feed forward on.
 #define BUILD_LEVEL (1)
 
 // low voltage half bridge parameters

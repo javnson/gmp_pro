@@ -71,7 +71,7 @@ typedef struct _tag_gmp_scheduler_t
 
 // API
 void gmp_scheduler_init(gmp_scheduler_t* sched);
-int gmp_scheduler_add_task(gmp_scheduler_t* sched, gmp_task_t* task);
+fast_gt gmp_scheduler_add_task(gmp_scheduler_t* sched, gmp_task_t* task);
 void gmp_scheduler_dispatch(gmp_scheduler_t* sched);
 
 #endif // GMP_SCHEDULER_H

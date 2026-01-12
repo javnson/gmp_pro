@@ -41,11 +41,8 @@ typedef enum _tag_sinv_adc_index_items
 
 } inv_adc_index_items;
 
-//extern ptr_adc_channel_t inv_adc[INV_ADC_SENSOR_NUMBER];
-
-//extern pwm_channel_t inv_pwm_out[3];
-
-extern inv_ctrl_t inv_ctrl;
+extern gfl_inv_ctrl_init_t gfl_init;
+extern gfl_inv_ctrl_t inv_ctrl;
 
 // Input Callback
 GMP_STATIC_INLINE
@@ -128,65 +125,6 @@ void ctl_output_callback(void)
     simulink_tx_buffer.monitor[12] = inv_ctrl.vdq.dat[phase_d];
     simulink_tx_buffer.monitor[13] = inv_ctrl.vdq.dat[phase_q];
 
-#elif BUILD_LEVEL == 2 || BUILD_LEVEL == 3 || BUILD_LEVEL == 4 || BUILD_LEVEL == 5
-
-    // Scope 1 d current control
-    simulink_tx_buffer.monitor[0] = inv_ctrl.idq_set.dat[phase_d];
-    simulink_tx_buffer.monitor[1] = inv_ctrl.idq.dat[phase_d];
-
-    // Scope 2 q current control
-    simulink_tx_buffer.monitor[2] = inv_ctrl.idq_set.dat[phase_q];
-    simulink_tx_buffer.monitor[3] = inv_ctrl.idq.dat[phase_q];
-
-    // Scope 3 output voltage dq
-    simulink_tx_buffer.monitor[4] = inv_ctrl.vdq.dat[phase_d];
-    simulink_tx_buffer.monitor[5] = inv_ctrl.vdq.dat[phase_q];
-
-    // Scope 4 output modulation
-    simulink_tx_buffer.monitor[6] = inv_ctrl.vab_out.dat[phase_d];
-    simulink_tx_buffer.monitor[7] = inv_ctrl.vab_out.dat[phase_q];
-
-    // Scope 5 PLL
-    simulink_tx_buffer.monitor[8] = inv_ctrl.pll.phasor.dat[phasor_sin];
-    simulink_tx_buffer.monitor[9] = inv_ctrl.pll.phasor.dat[phasor_cos];
-
-    // Scope 6
-    simulink_tx_buffer.monitor[10] = inv_ctrl.iab0.dat[phase_alpha];
-    simulink_tx_buffer.monitor[11] = inv_ctrl.iab0.dat[phase_beta];
-
-    // Scope 7
-    simulink_tx_buffer.monitor[12] = inv_ctrl.iabc.dat[phase_A];
-    simulink_tx_buffer.monitor[13] = inv_ctrl.iabc.dat[phase_B];
-
-#elif BUILD_LEVEL == 6 || BUILD_LEVEL == 7
-
-    // Scope 1 d current control
-    simulink_tx_buffer.monitor[0] = inv_ctrl.idq_set.dat[phase_d];
-    simulink_tx_buffer.monitor[1] = inv_ctrl.idq.dat[phase_d];
-
-    // Scope 2 q current control
-    simulink_tx_buffer.monitor[2] = inv_ctrl.idq_set.dat[phase_q];
-    simulink_tx_buffer.monitor[3] = inv_ctrl.idq.dat[phase_q];
-
-    // Scope 3 output voltage dq
-    simulink_tx_buffer.monitor[4] = inv_ctrl.vdq.dat[phase_d];
-    simulink_tx_buffer.monitor[5] = inv_ctrl.vdq.dat[phase_q];
-
-    // Scope 4 voltage loop
-    simulink_tx_buffer.monitor[6] = inv_ctrl.vdq_set.dat[phase_d];
-    simulink_tx_buffer.monitor[7] = inv_ctrl.vdq.dat[phase_d];
-
-    // Scope 5 PLL
-    simulink_tx_buffer.monitor[8] = inv_ctrl.pll.phasor.dat[phasor_sin];
-    simulink_tx_buffer.monitor[9] = inv_ctrl.pll.phasor.dat[phasor_cos];
-
-    // Scope 6
-    simulink_tx_buffer.monitor[10] = inv_ctrl.iab0.dat[phase_alpha];
-    simulink_tx_buffer.monitor[11] = inv_ctrl.iab0.dat[phase_beta];
-
-    // Scope 7
-    simulink_tx_buffer.monitor[12] = inv_ctrl.iabc.dat[phase_A];
-    simulink_tx_buffer.monitor[13] = inv_ctrl.iabc.dat[phase_B];
 
 #endif // BUILD LEVEL
 }
@@ -196,7 +134,7 @@ void ctl_output_callback(void)
 GMP_STATIC_INLINE
 void ctl_enable_output()
 {
-    ctl_enable_three_phase_inverter(&inv_ctrl);
+    ctl_enable_gfl_inv(&inv_ctrl);
 
     csp_sl_enable_output();
 
