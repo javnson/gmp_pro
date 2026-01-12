@@ -107,7 +107,7 @@ typedef struct _tag_at_device_entity
 
 /* API */
 void at_device_init(at_device_entity_t* dev, at_device_cmd_t* table, uint16_t table_size, at_error_handler_t err_cb);
-void at_device_rx_isr(at_device_entity_t* dev, char* content, int len);
+void at_device_rx_isr(at_device_entity_t* dev, char* content, size_gt len);
 void at_device_dispatch(at_device_entity_t* dev);
 
 #ifdef __cplusplus

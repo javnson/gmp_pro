@@ -35,7 +35,7 @@ void ctl_upgrade_sinv_param(sinv_ctrl_t* sinv, sinv_init_t* init)
     ctl_init_lp_filter(&sinv->lpf_ugrid, init->f_ctrl, init->adc_filter_fc);
 
     // --- Initialize main controllers ---
-    ctl_init_pid_ser(&sinv->voltage_pid, init->v_ctrl_kp, init->v_ctrl_Ti, init->v_ctrl_Td, init->f_ctrl);
+    ctl_init_pid_Tmode(&sinv->voltage_pid, init->v_ctrl_kp, init->v_ctrl_Ti, init->v_ctrl_Td, init->f_ctrl);
     ctl_init_qpr_controller(&sinv->sinv_qpr_base, init->i_ctrl_kp, init->i_ctrl_kr, init->base_freq,
                             init->i_ctrl_cut_freq, init->f_ctrl);
 

@@ -1369,6 +1369,50 @@ void ctl_init_lead(ctrl_lead_t* obj, parameter_gt K_D, parameter_gt tau_D, param
     ctl_clear_lead(obj);
 }
 
+void ctl_init_lead_form2(ctrl_lead_t* obj, parameter_gt alpha, parameter_gt T, parameter_gt fs)
+{
+    // Sampling period
+    parameter_gt Ts = 1.0f / fs;
+
+    // Denominator term from bilinear transform: (2*tau_D + T)
+    parameter_gt den = 2.0f * T + Ts;
+    parameter_gt inv_den;
+
+    // Avoid division by zero
+    if (fabsf(den) < 1e-9f)
+    {
+        inv_den = 0.0f; // Or handle error appropriately
+    }
+    else
+    {
+        inv_den = 1.0f / den;
+    }
+
+    // Calculate coefficients based on the discretized transfer function
+    // H(z) = (b0 + b1*z^-1) / (1 - a1*z^-1)
+
+    // a1 = (2*T - Ts) / (2*T + Ts)
+    obj->a1 = float2ctrl((2.0f * T - Ts) * inv_den);
+
+    // b0 = (2*alpha*T + T) / (2*T + Ts)
+    obj->b0 = float2ctrl((2.0f * alpha * T + Ts) * inv_den);
+
+    // b1 = (T - 2*alpha*T) / (2*T + Ts)
+    obj->b1 = float2ctrl((Ts - 2.0f * alpha * T) * inv_den);
+
+    // Clear initial states
+    ctl_clear_lead(obj);
+}
+
+void ctl_init_lead_form3(ctrl_lead_t* obj, parameter_gt angle, parameter_gt fc, parameter_gt fs)
+{
+    parameter_gt alpha;
+
+    alpha = (1 + sinf(angle)) / (1 - sinf(angle));
+
+    ctl_init_lead_form2(obj, alpha, 1 / fc, fs);
+}
+
 void ctl_init_lag(ctrl_lag_t* obj, parameter_gt tau_L, parameter_gt tau_P, parameter_gt fs)
 {
     // Sampling period

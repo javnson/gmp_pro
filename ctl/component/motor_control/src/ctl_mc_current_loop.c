@@ -13,11 +13,11 @@ void ctl_init_current_controller(ctl_current_controller_t* cc, ctrl_gt kp, ctrl_
     ctl_clear_current_controller(cc);
 
     // Setup the d-axis current controller
-    ctl_init_pid_ser(&cc->idq_ctrl[0], kp, Ti, Td, fs);
+    ctl_init_pid_Tmode(&cc->idq_ctrl[0], kp, Ti, Td, fs);
     ctl_set_pid_limit(&cc->idq_ctrl[0], out_max, out_min);
 
     // Setup the q-axis current controller
-    ctl_init_pid_ser(&cc->idq_ctrl[1], kp, Ti, Td, fs);
+    ctl_init_pid_Tmode(&cc->idq_ctrl[1], kp, Ti, Td, fs);
     ctl_set_pid_limit(&cc->idq_ctrl[1], out_max, out_min);
 
     cc->flag_enable_controller = 0;

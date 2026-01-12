@@ -40,16 +40,16 @@ void ctl_upgrade_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
     inv->rg_slope_default = inv->rg.slope;
 
     // --- Initialize main d-q axis PI controllers (positive sequence) ---
-    ctl_init_pid_ser(&inv->voltage_ctrl[phase_d], init->kp_vd_ctrl, init->Ti_vd_ctrl, 0, init->fs);
-    ctl_init_pid_ser(&inv->voltage_ctrl[phase_q], init->kp_vq_ctrl, init->Ti_vq_ctrl, 0, init->fs);
-    ctl_init_pid_ser(&inv->current_ctrl[phase_d], init->kp_id_ctrl, init->Ti_id_ctrl, 0, init->fs);
-    ctl_init_pid_ser(&inv->current_ctrl[phase_q], init->kp_iq_ctrl, init->Ti_iq_ctrl, 0, init->fs);
+    ctl_init_pid_Tmode(&inv->voltage_ctrl[phase_d], init->kp_vd_ctrl, init->Ti_vd_ctrl, 0, init->fs);
+    ctl_init_pid_Tmode(&inv->voltage_ctrl[phase_q], init->kp_vq_ctrl, init->Ti_vq_ctrl, 0, init->fs);
+    ctl_init_pid_Tmode(&inv->current_ctrl[phase_d], init->kp_id_ctrl, init->Ti_id_ctrl, 0, init->fs);
+    ctl_init_pid_Tmode(&inv->current_ctrl[phase_q], init->kp_iq_ctrl, init->Ti_iq_ctrl, 0, init->fs);
 
     // --- Initialize negative sequence d-q axis PI controllers ---
-    ctl_init_pid_ser(&inv->neg_voltage_ctrl[phase_d], init->kp_vdn_ctrl, init->Ti_vdn_ctrl, 0, init->fs);
-    ctl_init_pid_ser(&inv->neg_voltage_ctrl[phase_q], init->kp_vqn_ctrl, init->Ti_vqn_ctrl, 0, init->fs);
-    ctl_init_pid_ser(&inv->neg_current_ctrl[phase_d], init->kp_idn_ctrl, init->Ti_idn_ctrl, 0, init->fs);
-    ctl_init_pid_ser(&inv->neg_current_ctrl[phase_q], init->kp_iqn_ctrl, init->Ti_iqn_ctrl, 0, init->fs);
+    ctl_init_pid_Tmode(&inv->neg_voltage_ctrl[phase_d], init->kp_vdn_ctrl, init->Ti_vdn_ctrl, 0, init->fs);
+    ctl_init_pid_Tmode(&inv->neg_voltage_ctrl[phase_q], init->kp_vqn_ctrl, init->Ti_vqn_ctrl, 0, init->fs);
+    ctl_init_pid_Tmode(&inv->neg_current_ctrl[phase_d], init->kp_idn_ctrl, init->Ti_idn_ctrl, 0, init->fs);
+    ctl_init_pid_Tmode(&inv->neg_current_ctrl[phase_q], init->kp_iqn_ctrl, init->Ti_iqn_ctrl, 0, init->fs);
 
     // --- Initialize droop control parameters ---
     // CORRECTED: Droop parameters should be sourced from the 'init' struct.
@@ -68,7 +68,7 @@ void ctl_upgrade_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
     }
 
     // --- Initialize zero-sequence harmonic compensation (3rd and 9th) ---
-    ctl_init_pid_ser(&inv->zero_pid, init->zero_ctrl_kp, init->zero_ctrl_Ti, 0, init->fs);
+    ctl_init_pid_Tmode(&inv->zero_pid, init->zero_ctrl_kp, init->zero_ctrl_Ti, 0, init->fs);
     ctl_init_qr_controller(&inv->zero_qr_3, init->zero_ctrl_kr_3, init->freq_base * 3, init->zero_ctrl_cut_freq_3,
                            init->fs);
     ctl_init_qr_controller(&inv->zero_qr_9, init->zero_ctrl_kr_9, init->freq_base * 9, init->zero_ctrl_cut_freq_9,

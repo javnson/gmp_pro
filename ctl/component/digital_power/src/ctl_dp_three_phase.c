@@ -30,7 +30,7 @@ void ctl_init_pll_3ph(three_phase_pll_t* pll, parameter_gt f_base, parameter_gt 
     pll->freq_sf = float2ctrl(f_base / f_ctrl);
 
     // Initialize the parallel-form PI controller for the loop.
-    ctl_init_pid_ser(&pll->pid_pll, pid_kp, pid_Ti, pid_Td, f_ctrl);
+    ctl_init_pid_Tmode(&pll->pid_pll, pid_kp, pid_Ti, pid_Td, f_ctrl);
 }
 
 //////////////////////////////////////////////////////////////////////////

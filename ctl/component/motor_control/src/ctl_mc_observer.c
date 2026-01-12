@@ -78,7 +78,7 @@ void ctl_init_pmsm_hfi(
     ctl_init_biquad_lpf(&hfi->iq_lp_filter, init->f_ctrl, init->iq_lp_fc, 1.0f / init->iq_lp_damp / 2);
 
     // PLL
-    ctl_init_pid_ser(&hfi->pid_pll, init->pid_kp, init->pid_Ti, init->pid_Td, init->f_ctrl);
+    ctl_init_pid_Tmode(&hfi->pid_pll, init->pid_kp, init->pid_Ti, init->pid_Td, init->f_ctrl);
     ctl_set_pid_limit(&hfi->pid_pll, init->spd_max_limit, init->spd_min_limit);
 
     hfi->spd_sf = float2ctrl((30.0f / CTL_PARAM_CONST_PI) * init->f_ctrl / init->speed_base_rpm);
@@ -128,7 +128,7 @@ void ctl_init_acm_smo(ctl_acm_smo_t* smo, const ctl_acm_smo_init_t* init)
     smo->theta_est = 0.0f;
 
     // Initialize controllers
-    ctl_init_pid_ser(&smo->pid_pll, init->pll_kp, init->pll_ki, 0, init->f_ctrl);
+    ctl_init_pid_Tmode(&smo->pid_pll, init->pll_kp, init->pll_ki, 0, init->f_ctrl);
     ctl_init_lp_filter(&smo->filter_spd, init->f_ctrl, init->speed_lpf_fc);
 
     // Store parameters
@@ -297,7 +297,7 @@ void ctl_init_pmsm_smo(
     ctl_init_lp_filter(&smo->filter_e[1], init->f_ctrl, init->fc_e);
     ctl_init_lp_filter(&smo->filter_spd, init->f_ctrl, init->fc_omega);
 
-    ctl_init_pid_ser(&smo->pid_pll, init->pid_kp, init->pid_Ti, init->pid_Td, init->f_ctrl);
+    ctl_init_pid_Tmode(&smo->pid_pll, init->pid_kp, init->pid_Ti, init->pid_Td, init->f_ctrl);
     ctl_set_pid_limit(&smo->pid_pll, init->spd_max_limit, init->spd_min_limit);
 
     smo->spd_sf = float2ctrl((30.0f / CTL_PARAM_CONST_PI) * init->f_ctrl / init->speed_base_rpm / init->pole_pairs);
