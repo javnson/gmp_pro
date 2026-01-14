@@ -168,6 +168,8 @@
     <ClCompile Include="..\..\implement\common\user_main.c" />
     <ClCompile Include="..\..\implement\simulate\xplt.peripheral.cpp" />
     <ClCompile Include="DigialPower_simulink.cpp" />
+    <ClCompile Include="gmp_src\ctl_cia402_callback_fn.c" />
+    <ClCompile Include="gmp_src\ctl_cia402_state_machine.c" />
     <ClCompile Include="gmp_src\ctl_component_advance.c" />
     <ClCompile Include="gmp_src\ctl_component_basic.c" />
     <ClCompile Include="gmp_src\ctl_component_continuous.c" />

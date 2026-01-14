@@ -1,77 +1,17 @@
+/**
+ * @file cia402_state_machine.c
+ * @author Javnson (javnson@zju.edu.cn)
+ * @brief
+ * @version 0.1
+ * @date 2026-01-14
+ *
+ * @copyright Copyright GMP(c) 2024
+ *
+ */
 
-#ifndef _FILE_CIA402_STATE_MACHINE_H_
-#define _FILE_CIA402_STATE_MACHINE_H_
+#include <gmp_core.h>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif // __cplusplus
-
-// 在CiA 402 标准，从 Switch On Disabled 必须收到 Shutdown (0x06) 才能进入 Ready to Switch On 。
-// 直接发 0x0F 或 0x07 通常是被忽略的。
-// 这个宏允许连续切换状态，直接进入0x0F状态，方便调试。
-#define CIA402_CONFIG_ENABLE_SEQUENCE_SWITCH
-
-//////////////////////////////////////////////////////////////////////////
-// Control word definition
-// Control Word 6040h: "State Transition Commands" Bits
-//
-
-// 1: 允许切换到 Switched On 状态
-#define CIA402_CONTROLWORD_SWITCHON (0x0001)
-
-// 1: 允许直流母线/高压存在 (硬件使能)
-#define CIA402_CONTROLWORD_ENABLE_VOLTAGE (0x0002)
-
-// 0: 触发急停 (注意是低电平有效)；1: 正常工作
-#define CIA402_CONTROLWORD_QUICKSTOP (0x0004)
-
-// 1: 允许发波/运行；0: 封波/禁止运行
-#define CIA402_CONTROLWORD_ENABLE_OPERATION (0x0008)
-
-// 0 $\to$ 1 (上升沿): 复位故障
-#define CIA402_CONTROLWORD_FAULT_RESET (0x0080)
-
-// 1: 暂停运行 (但不退出 Operation Enabled)
-#define CIA402_CONTROLWORD_HALT (0x0100)
-
-typedef union tag_cia402_ctrl_word {
-    uint16_t all;
-
-    struct
-    {
-        // --- 字节 0 (低8位) ---
-        uint16_t switch_on : 1;        // Bit 0: 开启 (Switch On)
-        uint16_t enable_voltage : 1;   // Bit 1: 允许电压 (Enable Voltage)
-        uint16_t quick_stop : 1;       // Bit 2: 快速停机 (Quick Stop) - 注意: 1表示正常，0表示急停
-        uint16_t enable_operation : 1; // Bit 3: 允许运行 (Enable Operation)
-
-        uint16_t oms_4 : 1; // Bit 4: 模式相关 (Operation mode specific)
-        uint16_t oms_5 : 1; // Bit 5: 模式相关
-        uint16_t oms_6 : 1; // Bit 6: 模式相关
-
-        uint16_t fault_reset : 1; // Bit 7: 故障复位 (Fault Reset) - 上升沿有效
-
-        // --- 字节 1 (高8位) ---
-        uint16_t halt : 1;         // Bit 8: 暂停 (Halt)
-        uint16_t oms_9 : 1;        // Bit 9: 模式相关 (Operation mode specific)
-        uint16_t reserved : 1;     // Bit 10: 保留
-        uint16_t manufacturer : 5; // Bits 11-15: 厂商自定义 (Manufacturer specific)
-    } bits;
-} cia402_ctrl_word_t;
-
-typedef enum tag_cia402_cmd
-{
-    CIA402_CMD_NULL = 0,
-    CIA402_CMD_DISABLE_VOLTAGE = 1,
-    CIA402_CMD_SHUTDOWN,
-    CIA402_CMD_SWITCHON,
-    CIA402_CMD_ENABLE_OPERATION,
-    CIA402_CMD_QUICK_STOP,
-    CIA402_CMD_FAULT_RESET
-} cia402_cmd_t;
-
-#define CIA402_CMD_DISABLE_OPERATION CIA402_CMD_SWITCHON
+#include <ctl/framework/cia402_state_machine.h>
 
 /**
  * @brief 解析控制字 (0x6040) 并返回对应的命令枚举
@@ -138,152 +78,6 @@ cia402_cmd_t get_cia402_control_cmd(uint16_t control_word)
     // 如果都不匹配，返回 NULL 或者 KEEP
     return CIA402_CMD_NULL;
 }
-
-//////////////////////////////////////////////////////////////////////////
-// Status Word definition
-
-// 1: 系统已预充完成，准备好合闸
-#define CIA402_STATEWORD_READY_TO_SWITCH_ON (0x0001)
-
-// 1: 强电回路已接通 (Relay Closed)
-#define CIA402_STATEWORD_SWITCHED_ON (0x0002)
-
-// 1: PWM 正在发波，系统正在运行
-#define CIA402_STATEWORD_OPERATION_ENABLED (0x0004)
-
-// 1: 发生故障
-#define CIA402_STATEWORD_FAULT (0x0008)
-
-// 1: 直流母线电压正常
-#define CIA402_STATEWORD_VOLTAGE_ENABLED (0x0010)
-
-// 0: 正在急停中；1: 正常 (注意逻辑反向)
-#define CIA402_STATEWORD_QUICKSTOP (0x0020)
-
-// 1: 系统处于禁止合闸状态 (通常是刚上电或故障复位后)
-#define CIA402_STATEWORD_SWICH_ON_DISABLED (0X0040)
-
-// 1: 允许远程控制
-#define CIA402_STATEWORD_REMOTE (0x0200)
-
-// 1: 目标值已达到 (速度/位置/电流稳定)
-#define CIA402_STATEWORD_TARGET_REACHED (0x0400)
-
-typedef union tag_cia402_state_word {
-    uint16_t all;
-
-    struct
-    {
-        // --- 低 8 位 (Byte 0) ---
-
-        // Bit 0: 准备好合闸 (Ready to Switch On)
-        // 1 = 系统已完成预充，无故障，等待 Switch On 命令
-        uint16_t ready_to_switch_on : 1;
-
-        // Bit 1: 已合闸 (Switched On)
-        // 1 = 强电电路已接通 (继电器闭合)
-        uint16_t switched_on : 1;
-
-        // Bit 2: 运行允许 (Operation Enabled)
-        // 1 = PWM 已输出，闭环控制正在运行
-        uint16_t operation_enabled : 1;
-
-        // Bit 3: 故障 (Fault)
-        // 1 = 发生故障
-        uint16_t fault : 1;
-
-        // Bit 4: 电压允许 (Voltage Enabled)
-        // 1 = 直流母线电压/主电源已施加
-        uint16_t voltage_enabled : 1;
-
-        // Bit 5: 快速停机 (Quick Stop)
-        // 注意逻辑反向:
-        // 1 = 正常 (Drive is NOT performing quick stop)
-        // 0 = 正在急停 (Drive is reacting to a Quick Stop request)
-        uint16_t quick_stop : 1;
-
-        // Bit 6: 合闸禁止 (Switch On Disabled)
-        // 1 = 系统处于初始化完成或故障复位后的待机状态，禁止直接合闸
-        uint16_t switch_on_disabled : 1;
-
-        // Bit 7: 警告 (Warning)
-        // 1 = 有警告参数超限，但不需要停机
-        uint16_t warning : 1;
-
-        // --- 高 8 位 (Byte 1) ---
-
-        // Bit 8: 厂商自定义 (Manufacturer specific)
-        uint16_t manufacturer_8 : 1;
-
-        // Bit 9: 远程控制 (Remote)
-        // 1 = 控制权在 CANopen/EtherCAT 总线 (响应 0x6040)
-        // 0 = 本地控制 (忽略总线控制字)
-        uint16_t remote : 1;
-
-        // Bit 10: 目标到达 (Target Reached)
-        // 1 = 轴已停止或到达目标位置/速度
-        // 在 Homing 模式下表示回零完成
-        uint16_t target_reached : 1;
-
-        // Bit 11: 内部限制有效 (Internal limit active)
-        // 1 = 内部电流、速度或位置软限位已被触发
-        uint16_t internal_limit_active : 1;
-
-        // Bits 12-13: 模式相关 (Operation mode specific)
-        // 例如在 CSP 模式下通常为 0，在 Homing 模式下指示状态
-        uint16_t oms_12 : 1;
-        uint16_t oms_13 : 1;
-
-        // Bit 14: 厂商自定义 (这里您定义为回零完成标志)
-        // 1 = Home has completed
-        uint16_t mfg_home_completed : 1;
-
-        // Bit 15: 厂商自定义
-        uint16_t manufacturer_15 : 1;
-
-    } bits;
-} cia402_state_word_t;
-
-// Not ready to switch on: Reset - self-test/initialization
-// Switch on Disabled: Successfully initialization - Activate Communication
-//
-
-typedef enum tag_cia402_state
-{
-    // @brief Driver “HV” Power Disabled - if there is a provision to switch drive power.
-    // Processor power on, drive initialization in progress, BRAKE on in this state, if present.
-    // Reset - self-test/initialization
-    CIA402_SM_NOT_READY_TO_SWITCH_ON = 0,
-
-    // Driver “HV” Power Disabled - if there is a provision to switch drive power.
-    // Processor power on, Initialization complete, drive parameters set up, drive disabled.
-    // Successfully initialization - Activate Communication
-    CIA402_SM_SWITCH_ON_DISABLED,
-
-    // Ready to have High Voltage power applied.
-    // Shutdown command has received.
-    CIA402_SM_READY_TO_SWITCH_ON,
-
-    // High Voltage enabled to driver, power amp ready, drive function disabled
-    // Switch on command has received.
-    CIA402_SM_SWITCHED_ON,
-
-    // Power enabled to driver, no faults have been detected, drive function is enabled and there is power to motor. The servo is active.
-    // Enable operation command has received.
-    CIA402_SM_OPERATION_ENABLED,
-
-    // Power enabled to driver, Quick stop function is being executed, drive function is enabled, and power is applied to motor.
-    // Quick Stop command has received, execute Quick Stop function or transit to Switch On Disabled.
-    CIA402_SM_QUICK_STOP_ACTIVE,
-
-    // A fault has occurred in drive, quick stop being executed. Drive enabled and power are applied to drive while reacting.
-    CIA402_SM_FAULT_REACTION,
-
-    // A fault has occurred, high voltage MAY be switched off, and drive function is disabled.
-    CIA402_SM_FAULT,
-
-    CIA402_SM_UNKNOWN = 0xFF
-} cia402_state_t;
 
 /**
  * @brief 根据 StatusWord 解析当前 CiA 402 状态
@@ -363,93 +157,6 @@ cia402_state_t get_cia402_state(uint16_t status_word)
     return CIA402_SM_UNKNOWN; // 或者 return CIA402_SM_NOT_READY_TO_SWITCH_ON;
 }
 
-struct _tag_cia402_state_machine;
-
-typedef enum cia402_sm_error_code
-{
-    // Not ready
-    CIA402_EC_KEEP = 0,
-
-    // This state is ready if user request, it may change to next state
-    // Hardware is ready, next is
-    CIA402_EC_NEXT_STATE = 1,
-
-    // fatal error happened, must skip to fault.
-    CIA402_EC_ERROR = -1
-} cia402_sm_error_code_t;
-
-typedef cia402_sm_error_code_t (*cia402_cb_fn_t)(_tag_cia402_state_machine* sm);
-
-typedef struct _tag_cia402_state_machine
-{
-    // WR Control Word 6040h
-    cia402_ctrl_word_t control_word;
-
-    // RO Status Word 6041h
-    cia402_state_word_t state_word;
-
-    // RO current state
-    cia402_state_t current_state;
-
-    // RO current command
-    cia402_cmd_t current_cmd;
-
-    // RO request target status
-    cia402_state_t request_state;
-
-    //
-    // function handle
-    //
-
-    // when current state is switched on, the callback function would be called.
-    cia402_cb_fn_t switch_on_disabled;
-
-    cia402_cb_fn_t ready_to_switch_on;
-
-    cia402_cb_fn_t switched_on;
-
-    cia402_cb_fn_t operation_enabled;
-
-    cia402_cb_fn_t quick_stop_active;
-
-    cia402_cb_fn_t fault_reaction;
-
-    cia402_cb_fn_t fault;
-
-    //
-    // Configuration
-    //
-
-    cia402_sm_error_code_t last_cb_result;
-
-    // this flag would be cleared after reset process
-    fast_gt flag_fault_reset_request;
-
-    // if control word is enable
-    fast_gt flag_enable_control_word;
-
-    // entry delay stage
-    fast_gt flag_delay_stage;
-
-    // 分别对应前4个正常状态切换的最小延迟，用于保证接触器正确接触、母线电压稳定等
-    // 当切换条件满足时需要最少达到下面的延时要求才可以切换到下一个状态
-    // [0] CIA402_SM_NOT_READY_TO_SWITCH_ON 状态至少要保持的时间
-    // [1] CIA402_STATEWORD_SWITCHED_ON 状态至少要保持的时间
-    // [2] CIA402_SM_READY_TO_SWITCH_ON 状态至少要保持的时间
-    // [3] CIA402_SM_SWITCHED_ON 状态至少要保持的时间
-    // 其他状态不存在至少保持时间，在满足切换条件时马上切换
-    time_gt minimum_transit_delay[4];
-
-    // 当前状态建立后的时间
-    time_gt state_ready_tick;
-
-    time_gt current_tick;
-
-    // 用于辅助判断是否收到错误复位的上升边沿
-    fast_gt last_fault_reset_bit;
-
-} cia402_sm_t;
-
 // init cia402 state machine structure, state machine will switch to Not ready to switch on.
 void init_cia402_state_machine(cia402_sm_t* sm)
 {
@@ -473,9 +180,18 @@ void init_cia402_state_machine(cia402_sm_t* sm)
     sm->quick_stop_active = 0;
     sm->fault_reaction = 0;
     sm->fault = 0;
+
+    // init default callback function
+    sm->switch_on_disabled = default_cb_fn_switch_on_disabled;
+    sm->ready_to_switch_on = default_cb_fn_ready_to_switch_on;
+    sm->switched_on = default_cb_fn_switched_on;
+    sm->operation_enabled = default_cb_fn_switched_on;
+    sm->quick_stop_active = default_cb_fn_quick_stop_active;
+    sm->fault_reaction = default_cb_fn_fault_reaction;
+    sm->fault = default_cb_fn_fault;
 }
 
-static void cia402_update_status_word(cia402_sm_t* sm)
+void cia402_update_status_word(cia402_sm_t* sm)
 {
     gmp_base_assert(sm);
 
@@ -550,25 +266,7 @@ static void cia402_update_status_word(cia402_sm_t* sm)
     sm->state_word.all = s.all;
 }
 
-void cia402_fault_request(cia402_sm_t* sm)
-{
-    // 必须在正式进入错误状态之前清除之前设置的复位标志，防止系统错误恢复
-    sm->flag_fault_reset_request = 0;
-
-    // 标志进入新的一轮delay
-    sm->flag_delay_stage = 0;
-
-    // 切换
-    sm->current_state = CIA402_SM_FAULT_REACTION;
-
-    // 在这个函数中将会立即切换到CIA402_SM_FAULT_REACTION并立即执行一次fault_reaction函数。
-    _fault_reaction_routine();
-
-    // update state word here
-    //...
-}
-
-// Fault condition cannot release by this function
+// Fault condition cannot escape by this function
 void cia402_transit(cia402_sm_t* sm, cia402_state_t next_state)
 {
     if (sm->current_state != next_state && sm->current_state != CIA402_SM_FAULT &&
@@ -579,14 +277,15 @@ void cia402_transit(cia402_sm_t* sm, cia402_state_t next_state)
 
         // start a new delay stage
         sm->flag_delay_stage = 0;
-        //sm->state_entry_tick = gmp_base_get_system_tick();
+        sm->entry_state_tick = gmp_base_get_system_tick();
+        sm->current_state_counter = 0;
 
         // update state word here
         cia402_update_status_word(sm);
     }
 }
 
-static void _switch_on_disable_routine(cia402_state_t* sm)
+static void _switch_on_disable_routine(cia402_sm_t* sm)
 {
     gmp_base_assert(sm->switch_on_disabled);
 
@@ -617,7 +316,7 @@ static void _switch_on_disable_routine(cia402_state_t* sm)
             }
 
             // judge if delay condition is meet.
-            if (sm->current_tick - sm->state_ready_tick >= sm->minimum_transit_delay[0])
+            if (sm->current_tick - sm->state_ready_tick >= sm->minimum_transit_delay[1])
                 cia402_transit(sm, CIA402_SM_READY_TO_SWITCH_ON);
         }
         return;
@@ -647,7 +346,7 @@ static void _ready_to_switch_on_routine(cia402_sm_t* sm)
     }
 
     // request back state
-    if (sm->current_cmd == CIA402_CMD_DISABLE_VOLTAGE || sm->current_cmd == CIA402_CMD_ENABLE_OPERATION)
+    if (sm->current_cmd == CIA402_CMD_DISABLE_VOLTAGE)
     {
         cia402_transit(sm, CIA402_SM_SWITCH_ON_DISABLED);
         return;
@@ -670,7 +369,7 @@ static void _ready_to_switch_on_routine(cia402_sm_t* sm)
             }
 
             // judge if delay condition is meet.
-            if (sm->current_tick - sm->state_ready_tick >= sm->minimum_transit_delay[0])
+            if (sm->current_tick - sm->state_ready_tick >= sm->minimum_transit_delay[2])
                 cia402_transit(sm, CIA402_SM_SWITCHED_ON);
         }
 
@@ -722,7 +421,7 @@ static void _switched_on_routine(cia402_sm_t* sm)
             }
 
             // judge if delay condition is meet.
-            if (sm->current_tick - sm->state_ready_tick >= sm->minimum_transit_delay[0])
+            if (sm->current_tick - sm->state_ready_tick >= sm->minimum_transit_delay[3])
                 cia402_transit(sm, CIA402_SM_OPERATION_ENABLED);
         }
 
@@ -819,8 +518,35 @@ static void _fault_routine(cia402_sm_t* sm)
     if (sm->flag_fault_reset_request)
     {
         sm->current_state = CIA402_SM_SWITCH_ON_DISABLED;
+
+        // start a new delay stage
+        sm->flag_delay_stage = 0;
+        sm->entry_state_tick = gmp_base_get_system_tick();
+        sm->current_state_counter = 0;
+
+        // update state word here
+        cia402_update_status_word(sm);
+
         sm->flag_fault_reset_request = 0;
     }
+}
+
+void cia402_fault_request(cia402_sm_t* sm)
+{
+    // 必须在正式进入错误状态之前清除之前设置的复位标志，防止系统错误恢复
+    sm->flag_fault_reset_request = 0;
+
+    // 标志进入新的一轮delay
+    sm->flag_delay_stage = 0;
+
+    // 切换
+    sm->current_state = CIA402_SM_FAULT_REACTION;
+
+    // 在这个函数中将会立即切换到CIA402_SM_FAULT_REACTION并立即执行一次fault_reaction函数。
+    _fault_reaction_routine(sm);
+
+    // update state word here
+    cia402_update_status_word(sm);
 }
 
 // dispatch routine in mainloop
@@ -900,8 +626,286 @@ void dispatch_cia402_state_machine(cia402_sm_t* sm)
     cia402_update_status_word(sm);
 }
 
-#ifdef __cplusplus
-}
-#endif // __cplusplus
+// default callback function
 
-#endif // _FILE_CIA402_STATE_MACHINE_H_
+//cia402_sm_error_code_t default_cb_fn_switch_on_disabled(cia402_sm_t* sm)
+//{
+//    (void)sm;
+//
+//    return CIA402_EC_NEXT_STATE;
+//}
+//
+//cia402_sm_error_code_t default_cb_fn_ready_to_switch_on(cia402_sm_t* sm)
+//{
+//    (void)sm;
+//
+//    return CIA402_EC_NEXT_STATE;
+//}
+//
+//cia402_sm_error_code_t default_cb_fn_switched_on(cia402_sm_t* sm)
+//{
+//    (void)sm;
+//
+//    return CIA402_EC_NEXT_STATE;
+//}
+//
+//cia402_sm_error_code_t default_cb_fn_operation_enabled(cia402_sm_t* sm)
+//{
+//    (void)sm;
+//
+//    return CIA402_EC_KEEP;
+//}
+//
+//cia402_sm_error_code_t default_cb_fn_quick_stop_active(cia402_sm_t* sm)
+//{
+//    (void)sm;
+//
+//    return CIA402_EC_NEXT_STATE;
+//}
+//
+//cia402_sm_error_code_t default_cb_fn_fault_reaction(cia402_sm_t* sm)
+//{
+//    (void)sm;
+//
+//    return CIA402_EC_NEXT_STATE;
+//}
+//
+//cia402_sm_error_code_t default_cb_fn_fault(cia402_sm_t* sm)
+//{
+//    (void)sm;
+//
+//    return CIA402_EC_KEEP;
+//}
+
+// 定义一些超时阈值 (单位 ms，根据实际情况调整)
+#define TIMEOUT_PRECHARGE_MS 3000
+#define TIMEOUT_ADC_CALIB_MS 1000
+#define TIMEOUT_ALIGNMENT_MS 5000
+
+// =========================================================================
+// 1. Switch On Disabled (初始化与待机)
+// =========================================================================
+cia402_sm_error_code_t default_cb_fn_switch_on_disabled(cia402_sm_t* sm)
+{
+    // [Entry Action] 进入状态的第一拍执行
+    if (sm->current_state_counter == 0)
+    {
+        // output_disable & power_off
+        ctl_disable_pwm();
+        cel_disable_main_contactor();
+        ctl_disable_grid_relay();
+        ctl_disable_precharge_relay();
+        ctl_restore_brake(); // 抱闸
+    }
+
+    // [Do Action] ctl_if_adc_calibrate
+    // 执行 ADC 校准 (非阻塞)
+    if (ctl_exec_adc_calibration() == 0)
+    {
+        // 检查是否超时 (利用 entry_state_tick)
+        if ((sm->current_tick - sm->entry_state_tick) > TIMEOUT_ADC_CALIB_MS)
+        {
+            return CIA402_EC_ERROR; // 校准超时，报错
+        }
+        return CIA402_EC_KEEP; // 等待校准完成
+    }
+
+    // 检查编码器/传感器状态
+    if (ctl_check_encoder() == 0)
+    {
+        return CIA402_EC_KEEP; // 传感器未就绪
+    }
+
+    // 硬件准备就绪
+    return CIA402_EC_NEXT_STATE;
+}
+
+// =========================================================================
+// 2. Ready to Switch On (预充电与高压建立)
+// =========================================================================
+cia402_sm_error_code_t default_cb_fn_ready_to_switch_on(cia402_sm_t* sm)
+{
+    // [Entry Action] power_on (Start Precharge)
+    if (sm->current_state_counter == 0)
+    {
+        // 确保主接触器断开
+        cel_disable_main_contactor();
+        // 闭合预充继电器
+        ctl_enable_precharge_relay();
+
+        // 重置内部阶段标志
+        sm->flag_delay_stage = 0;
+    }
+
+    // [Do Action] 分阶段执行高压建立流程
+
+    // Stage 0: 等待母线电压建立
+    if (sm->flag_delay_stage == 0)
+    {
+        if (ctl_exec_dc_voltage_ready() == 1)
+        {
+            sm->flag_delay_stage = 1; // 电压OK，进入下一阶段
+        }
+        else
+        {
+            // 超时检测
+            if ((sm->current_tick - sm->entry_state_tick) > TIMEOUT_PRECHARGE_MS)
+            {
+                return CIA402_EC_ERROR; // 预充超时
+            }
+            return CIA402_EC_KEEP;
+        }
+    }
+
+    // Stage 1: 闭合主接触器 & 检查 PLL
+    if (sm->flag_delay_stage == 1)
+    {
+        cel_enable_main_contactor();
+        ctl_disable_precharge_relay(); // 切除预充
+
+        // 如果是并网设备，检查 PLL
+        if (ctl_check_pll_locked() == 1)
+        {
+            sm->flag_delay_stage = 2;
+        }
+        else
+        {
+            // 可以在这里加一个 PLL 锁定超时判断
+            return CIA402_EC_KEEP;
+        }
+    }
+
+    // output_disable (再次确认)
+    ctl_disable_pwm();
+
+    // 检查最小保持时间 (Minimum Dwell Time)
+    // 注意：此处检查的是 minimum_transit_delay[2] (对应 ReadyToSwitchOn)
+    if ((sm->current_tick - sm->state_ready_tick) < sm->minimum_transit_delay[2])
+    {
+        return CIA402_EC_KEEP;
+    }
+
+    return CIA402_EC_NEXT_STATE;
+}
+
+// =========================================================================
+// 3. Switched On (物理连接与参数辨识)
+// =========================================================================
+cia402_sm_error_code_t default_cb_fn_switched_on(cia402_sm_t* sm)
+{
+    // [Entry Action] ctl_online_ready (Grid Relay or Alignment)
+    if (sm->current_state_counter == 0)
+    {
+        // power_on: 保持高压在线
+        cel_enable_main_contactor();
+
+        // 闭合交流并网继电器
+        ctl_enable_grid_relay();
+    }
+
+    // [Do Action] 转子定位 / 对齐
+    // 注意：output_disable 在此阶段通常意味着 PWM 不发波，或者仅发定位直流向量
+    // 如果 ctl_exec_rotor_alignment 内部会操作 PWM，则这里不需要显式 disable
+
+    if (ctl_exec_rotor_alignment() == 0)
+    {
+        if ((sm->current_tick - sm->entry_state_tick) > TIMEOUT_ALIGNMENT_MS)
+        {
+            return CIA402_EC_ERROR;
+        }
+        return CIA402_EC_KEEP;
+    }
+
+    // 检查最小保持时间
+    if ((sm->current_tick - sm->state_ready_tick) < sm->minimum_transit_delay[3])
+    {
+        return CIA402_EC_KEEP;
+    }
+
+    return CIA402_EC_NEXT_STATE;
+}
+
+// =========================================================================
+// 4. Operation Enabled (闭环运行)
+// =========================================================================
+cia402_sm_error_code_t default_cb_fn_operation_enabled(cia402_sm_t* sm)
+{
+    // [Entry Action] output_enable
+    if (sm->current_state_counter == 0)
+    {
+        ctl_enable_pwm();    // 开启 PWM
+        ctl_release_brake(); // 松开抱闸
+    }
+
+    // [Do Action] 实时安规检查
+    if (ctl_check_compliance() == 0)
+    {
+        // 运行中发生安规故障（电网掉电、过流等）
+        return CIA402_EC_ERROR;
+    }
+
+    // 正常运行，保持状态
+    return CIA402_EC_KEEP;
+}
+
+// =========================================================================
+// 5. Quick Stop Active (快速停机)
+// =========================================================================
+cia402_sm_error_code_t default_cb_fn_quick_stop_active(cia402_sm_t* sm)
+{
+    // [Entry Action] power_off sequence start
+    if (sm->current_state_counter == 0)
+    {
+        // output_disable: 立即封波或开始减速
+        // 这里默认实现为立即封波
+        ctl_disable_pwm();
+        ctl_restore_brake();
+    }
+
+    // [Do Action] 等待停机完成 (如果是有减速过程的)
+    // 这里简化为立即完成
+
+    // power_off: 停机完成后，逻辑上已经 Power Off 了
+
+    return CIA402_EC_NEXT_STATE; // 跳转到 Switch On Disabled
+}
+
+// =========================================================================
+// 6. Fault Reaction (故障反应)
+// =========================================================================
+cia402_sm_error_code_t default_cb_fn_fault_reaction(cia402_sm_t* sm)
+{
+    // [Entry Action] 安全第一
+    if (sm->current_state_counter == 0)
+    {
+        // output_disable
+        ctl_disable_pwm();
+        ctl_restore_brake();
+
+        // power_off: 切断外部连接
+        ctl_disable_grid_relay();
+    }
+
+    // [Do Action] 可以在这里记录故障日志，或者等待电流衰减
+
+    return CIA402_EC_NEXT_STATE; // 跳转到 Fault
+}
+
+// =========================================================================
+// 7. Fault (故障停机态)
+// =========================================================================
+cia402_sm_error_code_t default_cb_fn_fault(cia402_sm_t* sm)
+{
+    // [Entry Action] 冗余安全切断
+    if (sm->current_state_counter == 0)
+    {
+        ctl_disable_pwm();
+        cel_disable_main_contactor(); // 彻底断高压
+        ctl_disable_grid_relay();
+        ctl_disable_precharge_relay();
+    }
+
+    // nothing happened. 等待 Reset 信号
+    return CIA402_EC_KEEP;
+}
+

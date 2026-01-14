@@ -135,6 +135,12 @@
     <ClCompile Include="gmp_src\windows_rt_tracer.cpp">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gmp_src\ctl_cia402_state_machine.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src\ctl_cia402_callback_fn.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\implement\common\ctl_main.h">
