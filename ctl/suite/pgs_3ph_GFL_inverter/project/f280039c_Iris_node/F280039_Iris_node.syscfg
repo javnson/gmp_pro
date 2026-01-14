@@ -17,6 +17,8 @@ const analog         = scripting.addModule("/driverlib/analog.js", {}, false);
 const analog1        = analog.addInstance();
 const can            = scripting.addModule("/driverlib/can.js", {}, false);
 const can1           = can.addInstance();
+const cputimer       = scripting.addModule("/driverlib/cputimer.js", {}, false);
+const cputimer1      = cputimer.addInstance();
 const dac            = scripting.addModule("/driverlib/dac.js", {}, false);
 const dac1           = dac.addInstance();
 const dac2           = dac.addInstance();
@@ -223,6 +225,8 @@ pinFunction2.XTAL_Freq = 12;
 
 const pinFunction3     = system.clockTree["XTAL"];
 pinFunction3.XTAL_Freq = 12;
+
+cputimer1.$name = "myCPUTIMER0";
 
 dac1.$name            = "IRIS_DACA";
 dac1.enableOutput     = true;
