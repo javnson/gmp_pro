@@ -164,28 +164,33 @@ void init_cia402_state_machine(cia402_sm_t* sm)
 
     // init state
     sm->current_state = CIA402_SM_NOT_READY_TO_SWITCH_ON;
+    sm->current_cmd = CIA402_CMD_DISABLE_VOLTAGE;
+    sm->current_state_counter = 0;
+    sm->current_tick = 0;
     sm->control_word.all = 0;
     sm->state_word.all = 0;
 
     sm->flag_fault_reset_request = 0;
+
+#if defined CIA402_CONFIG_DISABLE_CONTROL_WORD_DEFAULT
+    sm->flag_enable_control_word = 0; // 默认禁用控制字
+#else                                 // CIA402_CONFIG_DISABLE_CONTROL_WORD_DEFAULT
     sm->flag_enable_control_word = 1; // 默认使能控制字
+#endif                                // CIA402_CONFIG_DISABLE_CONTROL_WORD_DEFAULT
     sm->last_cb_result = CIA402_EC_KEEP;
     sm->last_fault_reset_bit = 0;
 
-    // 初始化 Function Pointers 为 NULL (用户后续需要手动赋值)
-    sm->switch_on_disabled = 0;
-    sm->ready_to_switch_on = 0;
-    sm->switched_on = 0;
-    sm->operation_enabled = 0;
-    sm->quick_stop_active = 0;
-    sm->fault_reaction = 0;
-    sm->fault = 0;
+    // default delay config
+    sm->minimum_transit_delay[0] = CIA402_CONFIG_MIN_DELAY_READY;
+    sm->minimum_transit_delay[1] = CIA402_CONFIG_MIN_DELAY_SHUTDOWN;
+    sm->minimum_transit_delay[2] = CIA402_CONFIG_MIN_DELAY_SWITCHON;
+    sm->minimum_transit_delay[3] = CIA402_CONFIG_MIN_DELAY_OPERATION_EN;
 
     // init default callback function
     sm->switch_on_disabled = default_cb_fn_switch_on_disabled;
     sm->ready_to_switch_on = default_cb_fn_ready_to_switch_on;
     sm->switched_on = default_cb_fn_switched_on;
-    sm->operation_enabled = default_cb_fn_switched_on;
+    sm->operation_enabled = default_cb_fn_operation_enabled;
     sm->quick_stop_active = default_cb_fn_quick_stop_active;
     sm->fault_reaction = default_cb_fn_fault_reaction;
     sm->fault = default_cb_fn_fault;
@@ -624,6 +629,9 @@ void dispatch_cia402_state_machine(cia402_sm_t* sm)
 
     // 4. update status word
     cia402_update_status_word(sm);
+
+    // update counter
+    sm->current_state_counter += 1;
 }
 
 // default callback function
@@ -688,7 +696,7 @@ void dispatch_cia402_state_machine(cia402_sm_t* sm)
 cia402_sm_error_code_t default_cb_fn_switch_on_disabled(cia402_sm_t* sm)
 {
     // [Entry Action] 进入状态的第一拍执行
-    if (sm->current_state_counter == 0)
+    if (sm->current_state_counter <= 1)
     {
         // output_disable & power_off
         ctl_disable_pwm();
@@ -725,8 +733,8 @@ cia402_sm_error_code_t default_cb_fn_switch_on_disabled(cia402_sm_t* sm)
 // =========================================================================
 cia402_sm_error_code_t default_cb_fn_ready_to_switch_on(cia402_sm_t* sm)
 {
-    // [Entry Action] power_on (Start Precharge)
-    if (sm->current_state_counter == 0)
+    // [Entry Action] power_on (Start Pre-charge)
+    if (sm->current_state_counter <= 1)
     {
         // 确保主接触器断开
         cel_disable_main_contactor();
@@ -737,36 +745,23 @@ cia402_sm_error_code_t default_cb_fn_ready_to_switch_on(cia402_sm_t* sm)
         sm->flag_delay_stage = 0;
     }
 
+    // output_disable (再次确认)
+    ctl_disable_pwm();
+
     // [Do Action] 分阶段执行高压建立流程
 
     // Stage 0: 等待母线电压建立
-    if (sm->flag_delay_stage == 0)
-    {
-        if (ctl_exec_dc_voltage_ready() == 1)
-        {
-            sm->flag_delay_stage = 1; // 电压OK，进入下一阶段
-        }
-        else
-        {
-            // 超时检测
-            if ((sm->current_tick - sm->entry_state_tick) > TIMEOUT_PRECHARGE_MS)
-            {
-                return CIA402_EC_ERROR; // 预充超时
-            }
-            return CIA402_EC_KEEP;
-        }
-    }
 
-    // Stage 1: 闭合主接触器 & 检查 PLL
-    if (sm->flag_delay_stage == 1)
+    if (ctl_exec_dc_voltage_ready() == 1)
     {
+        // 电压OK，进入下一阶段
         cel_enable_main_contactor();
         ctl_disable_precharge_relay(); // 切除预充
 
         // 如果是并网设备，检查 PLL
         if (ctl_check_pll_locked() == 1)
         {
-            sm->flag_delay_stage = 2;
+            return CIA402_EC_NEXT_STATE;
         }
         else
         {
@@ -774,13 +769,7 @@ cia402_sm_error_code_t default_cb_fn_ready_to_switch_on(cia402_sm_t* sm)
             return CIA402_EC_KEEP;
         }
     }
-
-    // output_disable (再次确认)
-    ctl_disable_pwm();
-
-    // 检查最小保持时间 (Minimum Dwell Time)
-    // 注意：此处检查的是 minimum_transit_delay[2] (对应 ReadyToSwitchOn)
-    if ((sm->current_tick - sm->state_ready_tick) < sm->minimum_transit_delay[2])
+    else
     {
         return CIA402_EC_KEEP;
     }
@@ -794,7 +783,7 @@ cia402_sm_error_code_t default_cb_fn_ready_to_switch_on(cia402_sm_t* sm)
 cia402_sm_error_code_t default_cb_fn_switched_on(cia402_sm_t* sm)
 {
     // [Entry Action] ctl_online_ready (Grid Relay or Alignment)
-    if (sm->current_state_counter == 0)
+    if (sm->current_state_counter <= 1)
     {
         // power_on: 保持高压在线
         cel_enable_main_contactor();
@@ -816,12 +805,6 @@ cia402_sm_error_code_t default_cb_fn_switched_on(cia402_sm_t* sm)
         return CIA402_EC_KEEP;
     }
 
-    // 检查最小保持时间
-    if ((sm->current_tick - sm->state_ready_tick) < sm->minimum_transit_delay[3])
-    {
-        return CIA402_EC_KEEP;
-    }
-
     return CIA402_EC_NEXT_STATE;
 }
 
@@ -831,7 +814,7 @@ cia402_sm_error_code_t default_cb_fn_switched_on(cia402_sm_t* sm)
 cia402_sm_error_code_t default_cb_fn_operation_enabled(cia402_sm_t* sm)
 {
     // [Entry Action] output_enable
-    if (sm->current_state_counter == 0)
+    if (sm->current_state_counter <= 1)
     {
         ctl_enable_pwm();    // 开启 PWM
         ctl_release_brake(); // 松开抱闸
@@ -854,7 +837,7 @@ cia402_sm_error_code_t default_cb_fn_operation_enabled(cia402_sm_t* sm)
 cia402_sm_error_code_t default_cb_fn_quick_stop_active(cia402_sm_t* sm)
 {
     // [Entry Action] power_off sequence start
-    if (sm->current_state_counter == 0)
+    if (sm->current_state_counter <= 1)
     {
         // output_disable: 立即封波或开始减速
         // 这里默认实现为立即封波
@@ -876,7 +859,7 @@ cia402_sm_error_code_t default_cb_fn_quick_stop_active(cia402_sm_t* sm)
 cia402_sm_error_code_t default_cb_fn_fault_reaction(cia402_sm_t* sm)
 {
     // [Entry Action] 安全第一
-    if (sm->current_state_counter == 0)
+    if (sm->current_state_counter <= 1)
     {
         // output_disable
         ctl_disable_pwm();
@@ -897,7 +880,7 @@ cia402_sm_error_code_t default_cb_fn_fault_reaction(cia402_sm_t* sm)
 cia402_sm_error_code_t default_cb_fn_fault(cia402_sm_t* sm)
 {
     // [Entry Action] 冗余安全切断
-    if (sm->current_state_counter == 0)
+    if (sm->current_state_counter <= 1)
     {
         ctl_disable_pwm();
         cel_disable_main_contactor(); // 彻底断高压
@@ -908,4 +891,3 @@ cia402_sm_error_code_t default_cb_fn_fault(cia402_sm_t* sm)
     // nothing happened. 等待 Reset 信号
     return CIA402_EC_KEEP;
 }
-

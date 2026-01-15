@@ -12,6 +12,30 @@ extern "C"
 // 这个宏允许连续切换状态，直接进入0x0F状态，方便调试。
 #define CIA402_CONFIG_ENABLE_SEQUENCE_SWITCH
 
+// 在初始化过程中暂时禁用控制字解析，可以直接施加命令
+#define CIA402_CONFIG_DISABLE_CONTROL_WORD_DEFAULT
+
+// 从Not ready to switch on -> ready to switch on的最小延时
+// 这一个设计已经被禁用，不会真的有延时发生
+#ifndef CIA402_CONFIG_MIN_DELAY_READY
+#define CIA402_CONFIG_MIN_DELAY_READY (100)
+#endif // CIA402_CONFIG_MIN_DELAY_READY
+
+// 从Switched on disabled -> ready to switch on 的最小延时
+#ifndef CIA402_CONFIG_MIN_DELAY_SHUTDOWN
+#define CIA402_CONFIG_MIN_DELAY_SHUTDOWN (1000)
+#endif // CIA402_CONFIG_MIN_DELAY_SHUTDOWN
+
+// 从Ready to switch on -> Switch on 的最小延时
+#ifndef CIA402_CONFIG_MIN_DELAY_SWITCHON
+#define CIA402_CONFIG_MIN_DELAY_SWITCHON (1000)
+#endif // CIA402_CONFIG_MIN_DELAY_SHUTDOWN
+
+// 从Switch on -> Operation Enable的最小延时
+#ifndef CIA402_CONFIG_MIN_DELAY_OPERATION_EN
+#define CIA402_CONFIG_MIN_DELAY_OPERATION_EN (1000)
+#endif // CIA402_CONFIG_MIN_DELAY_OPERATION_EN
+
 //////////////////////////////////////////////////////////////////////////
 // Control word definition
 // Control Word 6040h: "State Transition Commands" Bits
@@ -266,7 +290,7 @@ typedef struct _tag_cia402_state_machine
     cia402_cmd_t current_cmd;
 
     // RO request target status
-    cia402_state_t request_state;
+    //cia402_state_t request_state;
 
     //
     // function handle
@@ -402,8 +426,7 @@ cia402_sm_error_code_t default_cb_fn_fault(cia402_sm_t* sm);
 
 void ctl_enable_pwm();
 
-
-void ctl_disable_pwm() ;
+void ctl_disable_pwm();
 /**
  * @brief 主接触器/直流继电器控制
  * @note 通常在 Ready to Switch On 阶段闭合

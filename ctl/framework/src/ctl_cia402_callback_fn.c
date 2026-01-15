@@ -15,21 +15,7 @@
 
 #ifndef _MSC_VER
 
-void ctl_enable_pwm();
-void ctl_disable_pwm();
-void cel_enable_main_contactor();
-void cel_disable_main_contactor();
-void ctl_enable_precharge_relay();
-void ctl_disable_precharge_relay();
-fast_gt ctl_exec_adc_calibration(void);
-fast_gt ctl_exec_dc_voltage_ready(void);
-void ctl_release_brake();
-void ctl_restore_brake();
-fast_gt ctl_check_encoder(void);
-fast_gt ctl_exec_rotor_alignment(void);
-fast_gt ctl_check_pll_locked(void);
-
-    // =============================================================
+// =============================================================
 // 1. 功率级执行 (Power Stage & Actuators)
 // =============================================================
 
@@ -42,12 +28,14 @@ GMP_WEAK_FUNC_PREFIX
 void ctl_enable_pwm() GMP_WEAK_FUNC_SUFFIX
 {
     // Default: Do nothing
+    gmp_base_print("enable_pwm()\r\n");
 }
 
 GMP_WEAK_FUNC_PREFIX
 void ctl_disable_pwm() GMP_WEAK_FUNC_SUFFIX
 {
     // Default: Do nothing
+    gmp_base_print("disable_pwm()\r\n");
 }
 
 /**
@@ -58,11 +46,13 @@ void ctl_disable_pwm() GMP_WEAK_FUNC_SUFFIX
 GMP_WEAK_FUNC_PREFIX
 void cel_enable_main_contactor() GMP_WEAK_FUNC_SUFFIX
 {
+    gmp_base_print("enable_contactor()\r\n");
 }
 
 GMP_WEAK_FUNC_PREFIX
 void cel_disable_main_contactor() GMP_WEAK_FUNC_SUFFIX
 {
+    gmp_base_print("disable_contactor()\r\n");
 }
 
 /**
@@ -72,11 +62,13 @@ void cel_disable_main_contactor() GMP_WEAK_FUNC_SUFFIX
 GMP_WEAK_FUNC_PREFIX
 void ctl_enable_precharge_relay() GMP_WEAK_FUNC_SUFFIX
 {
+    gmp_base_print("enable_precharge()\r\n");
 }
 
 GMP_WEAK_FUNC_PREFIX
 void ctl_disable_precharge_relay() GMP_WEAK_FUNC_SUFFIX
 {
+    gmp_base_print("disable_precharge()\r\n");
 }
 
 // =============================================================
@@ -91,6 +83,7 @@ void ctl_disable_precharge_relay() GMP_WEAK_FUNC_SUFFIX
 GMP_WEAK_FUNC_PREFIX
 fast_gt ctl_exec_adc_calibration(void) GMP_WEAK_FUNC_SUFFIX
 {
+    gmp_base_print("calibrate_ok\r\n");
     return 1; // 默认直接返回成功
 }
 
@@ -101,6 +94,7 @@ fast_gt ctl_exec_adc_calibration(void) GMP_WEAK_FUNC_SUFFIX
 GMP_WEAK_FUNC_PREFIX
 fast_gt ctl_exec_dc_voltage_ready(void) GMP_WEAK_FUNC_SUFFIX
 {
+    gmp_base_print("dc_voltage_ok\r\n");
     return 1;
 }
 
@@ -116,11 +110,13 @@ fast_gt ctl_exec_dc_voltage_ready(void) GMP_WEAK_FUNC_SUFFIX
 GMP_WEAK_FUNC_PREFIX
 void ctl_release_brake() GMP_WEAK_FUNC_SUFFIX
 {
+    gmp_base_print("release_brake()\r\n");
 }
 
 GMP_WEAK_FUNC_PREFIX
 void ctl_restore_brake() GMP_WEAK_FUNC_SUFFIX
 {
+    gmp_base_print("restore_brake()\r\n");
 }
 
 // =============================================================
@@ -134,6 +130,7 @@ void ctl_restore_brake() GMP_WEAK_FUNC_SUFFIX
 GMP_WEAK_FUNC_PREFIX
 fast_gt ctl_check_encoder(void) GMP_WEAK_FUNC_SUFFIX
 {
+    gmp_base_print("encoder_ok\r\n");
     return 1;
 }
 
@@ -144,6 +141,7 @@ fast_gt ctl_check_encoder(void) GMP_WEAK_FUNC_SUFFIX
 GMP_WEAK_FUNC_PREFIX
 fast_gt ctl_exec_rotor_alignment(void) GMP_WEAK_FUNC_SUFFIX
 {
+    gmp_base_print("rotor_align_ok\r\n");
     return 1;
 }
 
@@ -158,6 +156,7 @@ fast_gt ctl_exec_rotor_alignment(void) GMP_WEAK_FUNC_SUFFIX
 GMP_WEAK_FUNC_PREFIX
 fast_gt ctl_check_pll_locked(void) GMP_WEAK_FUNC_SUFFIX
 {
+    gmp_base_print("pll_locked_ok\r\n");
     return 1;
 }
 
@@ -168,6 +167,7 @@ fast_gt ctl_check_pll_locked(void) GMP_WEAK_FUNC_SUFFIX
 GMP_WEAK_FUNC_PREFIX
 fast_gt ctl_check_compliance(void) GMP_WEAK_FUNC_SUFFIX
 {
+    gmp_base_print("compliance_ok\r\n");
     return 1;
 }
 
@@ -183,11 +183,13 @@ fast_gt ctl_check_compliance(void) GMP_WEAK_FUNC_SUFFIX
 GMP_WEAK_FUNC_PREFIX
 void ctl_enable_grid_relay() GMP_WEAK_FUNC_SUFFIX
 {
+    gmp_base_print("enable_grid_connect()\r\n");
 }
 
 GMP_WEAK_FUNC_PREFIX
 void ctl_disable_grid_relay() GMP_WEAK_FUNC_SUFFIX
 {
+    gmp_base_print("disable_grid_connect()\r\n");
 }
 
 #else // in MSVC environment

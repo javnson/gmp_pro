@@ -56,11 +56,6 @@
 			<locationURI>PARENT-2-PROJECT_LOC/implement/f280039c_iris_node/ctrl_settings.h</locationURI>
 		</link>
 		<link>
-			<name>xplt/pc_simulate_buffer.h</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/implement/f280039c_iris_node/pc_simulate_buffer.h</locationURI>
-		</link>
-		<link>
 			<name>xplt/xplt.config.h</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/implement/f280039c_iris_node/xplt.config.h</locationURI>

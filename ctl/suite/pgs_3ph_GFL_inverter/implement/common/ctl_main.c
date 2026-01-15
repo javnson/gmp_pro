@@ -20,9 +20,14 @@
 
 #include <xplt.peripheral.h>
 
+#include <ctl/framework/cia402_state_machine.h>
+
 #include <ctl/component/digital_power/three_phase/three_phase_dc_ac.h>
 
 #include <ctl/component/digital_power/three_phase/three_phase_GFL.h>
+
+// state machine
+cia402_sm_t cia402_sm;
 
 gfl_inv_ctrl_init_t gfl_init;
 gfl_inv_ctrl_t inv_ctrl;
@@ -47,6 +52,8 @@ void ctl_init()
 {
     // stop here and wait for user start the motor controller
     ctl_disable_output();
+
+    init_cia402_state_machine(&cia402_sm);
 
     // init ADC Calibrator
     ctl_init_adc_calibrator(&adc_calibrator, 20, 0.707f, CONTROLLER_FREQUENCY);
@@ -109,6 +116,8 @@ time_gt tick_bias = 0;
 
 void ctl_mainloop(void)
 {
+    dispatch_cia402_state_machine(&cia402_sm);
+
     // When the program is reach here, the following things will happen:
     // 1. software non-block delay 500ms
     // 2. judge if spll theta error convergence has occurred
