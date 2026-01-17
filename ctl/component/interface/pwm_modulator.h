@@ -208,7 +208,7 @@ GMP_STATIC_INLINE void ctl_step_spwm_modulator(spwm_modulator_t* mod)
  * @ingroup CTL_TP_MODULATION_API
  * @details Converts per-unit voltage commands (-1.0 to 1.0) to PWM compare values,
  * and applies dead-time compensation based on the direction of phase currents.
- * ����ƽSPWM���ƺ�SVPWM���ƹ���ͬһ�����ݽṹ��ֻ��Ҫ�������ƺ������ɡ�
+ * SPWM和SVPWM使用同一个结构体。
  *
  * @param[in,out] mod Pointer to the @ref spwm_modulator_t structure.
  */
