@@ -62,18 +62,14 @@ volatile fast_gt index_adc_calibrator = 0;
 // CTL initialize routine
 void ctl_init()
 {
+    //
     // stop here and wait for user start the motor controller
+    //
     ctl_fast_disable_output();
 
-#if defined SPECIFY_PC_ENVIRONMENT
-    cia402_sm.flag_enable_control_word = 0;
-    cia402_sm.current_cmd = CIA402_CMD_ENABLE_OPERATION;
-#endif // SPECIFY_PC_ENVIRONMENT
-
-    // init ADC Calibrator
-    ctl_init_adc_calibrator(&adc_calibrator, 20, 0.707f, CONTROLLER_FREQUENCY);
-
+    //
     // GFL inverter init objects
+    //
     gfl_init.fs = CONTROLLER_FREQUENCY;
     gfl_init.v_base = CTRL_VOLTAGE_BASE;
     gfl_init.i_base = CTRL_CURRENT_BASE;
@@ -83,10 +79,11 @@ void ctl_init()
     gfl_init.grid_filter_C = 5.0e-6f;
 
     ctl_auto_tuning_gfl_inv(&gfl_init);
-
     ctl_init_gfl_inv(&inv_ctrl, &gfl_init);
 
+    //
     // init SPWM modulator
+    //
     ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &inv_ctrl.adc_iabc->value, float2ctrl(0.02), float2ctrl(0.005));
 
 #if BUILD_LEVEL == 1
@@ -110,20 +107,27 @@ void ctl_init()
 
 #endif // BUILD_LEVEL
 
-
+    //
     // init and config CiA402 stdandard state machine
+    //
     init_cia402_state_machine(&cia402_sm);
-
     cia402_sm.minimum_transit_delay[3] = 100;
 
+#if defined SPECIFY_PC_ENVIRONMENT
+    cia402_sm.flag_enable_control_word = 0;
+    cia402_sm.current_cmd = CIA402_CMD_ENABLE_OPERATION;
+#endif // SPECIFY_PC_ENVIRONMENT
+
+    //
+    // init ADC Calibrator
+    //
+    ctl_init_adc_calibrator(&adc_calibrator, 20, 0.707f, CONTROLLER_FREQUENCY);
 
 #if defined SPECIFY_ENABLE_ADC_CALIBRATE
-
     if (flag_enable_adc_calibrator)
     {
         ctl_enable_adc_calibrator(&adc_calibrator);
     }
-
 #endif // SPECIFY_ENABLE_ADC_CALIBRATE
 }
 
@@ -279,7 +283,7 @@ fast_gt ctl_exec_adc_calibration(void)
                 ctl_enable_adc_calibrator(&adc_calibrator);
             }
 
-            // overrange protection
+            // over-range protection
             if (index_adc_calibrator > 13)
                 flag_enable_adc_calibrator = 0;
         }
