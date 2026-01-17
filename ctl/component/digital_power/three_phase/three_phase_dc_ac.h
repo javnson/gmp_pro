@@ -135,7 +135,7 @@ typedef struct _tag_inv_ctrl_type
     ctl_low_pass_filter_t lpf_iabc[3]; //!< LPFs for phase current measurements.
     ctl_low_pass_filter_t lpf_vabc[3]; //!< LPFs for phase voltage measurements.
 
-    three_phase_pll_t pll;   //!< Three-phase PLL for grid synchronization.
+    srf_pll_t pll;   //!< Three-phase PLL for grid synchronization.
     ctl_ramp_generator_t rg; //!< Ramp generator for open-loop/freerun operation.
 
     ctl_pid_t voltage_ctrl[2];     //!< PI controllers for d-q voltage loops.

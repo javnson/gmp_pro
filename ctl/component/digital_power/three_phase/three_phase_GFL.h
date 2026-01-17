@@ -155,7 +155,7 @@ typedef struct _tag_gfl_inv_ctrl_type
     ctrl_lead_t lead_compensator;
 
     // PLL & RG
-    three_phase_pll_t pll;   //!< Three-phase PLL for grid synchronization.
+    srf_pll_t pll;   //!< Three-phase PLL for grid synchronization.
     ctl_ramp_generator_t rg; //!< Ramp generator for open-loop/free-run operation.
 
     //
