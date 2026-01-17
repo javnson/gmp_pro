@@ -274,11 +274,27 @@ void cia402_update_status_word(cia402_sm_t* sm)
 // Fault condition cannot escape by this function
 void cia402_transit(cia402_sm_t* sm, cia402_state_t next_state)
 {
+    // Common transit
     if (sm->current_state != next_state && sm->current_state != CIA402_SM_FAULT &&
         sm->current_state != CIA402_SM_FAULT_REACTION)
     {
         // change to next state
         sm->current_state = next_state;
+
+        // start a new delay stage
+        sm->flag_delay_stage = 0;
+        sm->entry_state_tick = gmp_base_get_system_tick();
+        sm->current_state_counter = 0;
+
+        // update state word here
+        cia402_update_status_word(sm);
+    }
+
+    // fault reaction transit
+    else if (sm->current_state == CIA402_SM_FAULT_REACTION && next_state != CIA402_SM_FAULT_REACTION)
+    {
+        // change to next state
+        sm->current_state = CIA402_SM_FAULT;
 
         // start a new delay stage
         sm->flag_delay_stage = 0;
@@ -687,7 +703,7 @@ void dispatch_cia402_state_machine(cia402_sm_t* sm)
 
 // 定义一些超时阈值 (单位 ms，根据实际情况调整)
 #define TIMEOUT_PRECHARGE_MS 3000
-#define TIMEOUT_ADC_CALIB_MS 1000
+#define TIMEOUT_ADC_CALIB_MS 3000
 #define TIMEOUT_ALIGNMENT_MS 5000
 
 // =========================================================================
@@ -700,7 +716,7 @@ cia402_sm_error_code_t default_cb_fn_switch_on_disabled(cia402_sm_t* sm)
     {
         // output_disable & power_off
         ctl_disable_pwm();
-        cel_disable_main_contactor();
+        ctl_disable_main_contactor();
         ctl_disable_grid_relay();
         ctl_disable_precharge_relay();
         ctl_restore_brake(); // 抱闸
@@ -737,7 +753,7 @@ cia402_sm_error_code_t default_cb_fn_ready_to_switch_on(cia402_sm_t* sm)
     if (sm->current_state_counter <= 1)
     {
         // 确保主接触器断开
-        cel_disable_main_contactor();
+        ctl_disable_main_contactor();
         // 闭合预充继电器
         ctl_enable_precharge_relay();
 
@@ -755,7 +771,7 @@ cia402_sm_error_code_t default_cb_fn_ready_to_switch_on(cia402_sm_t* sm)
     if (ctl_exec_dc_voltage_ready() == 1)
     {
         // 电压OK，进入下一阶段
-        cel_enable_main_contactor();
+        ctl_enable_main_contactor();
         ctl_disable_precharge_relay(); // 切除预充
 
         // 如果是并网设备，检查 PLL
@@ -774,7 +790,7 @@ cia402_sm_error_code_t default_cb_fn_ready_to_switch_on(cia402_sm_t* sm)
         return CIA402_EC_KEEP;
     }
 
-    return CIA402_EC_NEXT_STATE;
+    //return CIA402_EC_NEXT_STATE;
 }
 
 // =========================================================================
@@ -786,7 +802,7 @@ cia402_sm_error_code_t default_cb_fn_switched_on(cia402_sm_t* sm)
     if (sm->current_state_counter <= 1)
     {
         // power_on: 保持高压在线
-        cel_enable_main_contactor();
+        ctl_enable_main_contactor();
 
         // 闭合交流并网继电器
         ctl_enable_grid_relay();
@@ -883,7 +899,7 @@ cia402_sm_error_code_t default_cb_fn_fault(cia402_sm_t* sm)
     if (sm->current_state_counter <= 1)
     {
         ctl_disable_pwm();
-        cel_disable_main_contactor(); // 彻底断高压
+        ctl_disable_main_contactor(); // 彻底断高压
         ctl_disable_grid_relay();
         ctl_disable_precharge_relay();
     }

@@ -95,8 +95,7 @@ typedef struct _tag_gfl_inv_ctrl_type
     //
     // --- Output Ports ---
     //
-    tri_pwm_ift*
-        pwm_out; /**< @brief Final PWM duty cycles {A, B, C} in per-unit format. Three-phase PWM output interface. */
+    ctl_vector3_t vab0_out; //!< RO: Total modulation voltage in alpha-beta frame.
 
     //
     // --- Feed-forward & Parameters ---
@@ -132,8 +131,6 @@ typedef struct _tag_gfl_inv_ctrl_type
 
     ctl_vector2_t vdq_out_comp; //!< RO: output result after output compensator.
     ctl_vector2_t vab_pos;      //!< RO: Positive-sequence modulation voltage in alpha-beta frame.
-    ctl_vector3_t vab0_out;     //!< RO: Total modulation voltage in alpha-beta frame.
-    //ctl_vector3_t abc_out;      //!< RO: Final three-phase modulation signals before scaling.
 
     //
     // --- Controller Objects ---
@@ -158,7 +155,7 @@ typedef struct _tag_gfl_inv_ctrl_type
     ctrl_lead_t lead_compensator;
 
     // PLL & RG
-    three_phase_pll_t pll;   //!< Three-phase PLL for grid synchronization.
+    srf_pll_t pll;   //!< Three-phase PLL for grid synchronization.
     ctl_ramp_generator_t rg; //!< Ramp generator for open-loop/free-run operation.
 
     //
@@ -279,13 +276,12 @@ void ctl_init_gfl_inv(gfl_inv_ctrl_t* inv, gfl_inv_ctrl_init_t* init);
  * @brief Attach GFL inverter with input/output interface.
  * @ingroup CTL_TOPOLOGY_GFL_INV_H_API
  * @param[in,out] inv Pointer to the gfl_inv_ctrl_t structure.
- * @param[in] pwm_out Pointer to the tri-channel PWM interface structure.
  * @param[in] adc_udc Pointer to the udc ADC interface structure.
  * @param[in] adc_idc Pointer to the idc ADC interface structure.
  * @param[in] adc_iabc Pointer to the tri-channel ADC current interface structure.
  * @param[in] adc_vabc Pointer to the tri-channel ADC voltage interface structure.
  */
-void ctl_attach_gfl_inv(gfl_inv_ctrl_t* inv, tri_pwm_ift* pwm_out, adc_ift* adc_idc, adc_ift* adc_udc,
+void ctl_attach_gfl_inv(gfl_inv_ctrl_t* inv,  adc_ift* adc_idc, adc_ift* adc_udc,
                         tri_adc_ift* adc_iabc, tri_adc_ift* adc_vabc);
 
 /**
@@ -297,7 +293,6 @@ GMP_STATIC_INLINE void ctl_step_gfl_inv_ctrl(gfl_inv_ctrl_t* gfl)
 {
     // assert critical pointer
     gmp_base_assert(gfl);
-    gmp_base_assert(gfl->pwm_out);
     gmp_base_assert(gfl->adc_iabc);
     gmp_base_assert(gfl->adc_vabc);
 
@@ -439,9 +434,6 @@ GMP_STATIC_INLINE void ctl_step_gfl_inv_ctrl(gfl_inv_ctrl_t* gfl)
         gfl->vab0_out.dat[phase_beta] = 0;
         gfl->vab0_out.dat[phase_0] = 0;
     }
-
-    // --- 3f. iClarke and output ---
-    ctl_ct_iclarke(&gfl->vab0_out, &gfl->pwm_out->value);
 }
 
 //////////////////////////////////////////////////////////////////////////

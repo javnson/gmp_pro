@@ -53,11 +53,11 @@
 // ....................................................................//
 // basic container of PWM results
 //
-#ifndef GMP_PORT_PWM_T
-#define GMP_PORT_PWM_T              uint16_t
-#define GMP_PORT_PWM_SIZE_PER_BITS  (16)
-#define GMP_PORT_PWM_SIZE_PER_BYTES (2)
-#endif // GMP_PORT_PWM_T
+//#ifndef GMP_PORT_PWM_T
+//#define GMP_PORT_PWM_T              int16_t
+//#define GMP_PORT_PWM_SIZE_PER_BITS  (16)
+//#define GMP_PORT_PWM_SIZE_PER_BYTES (2)
+//#endif // GMP_PORT_PWM_T
 
 // C28x device peripheral
 #ifndef GMP_PORT_UART_T

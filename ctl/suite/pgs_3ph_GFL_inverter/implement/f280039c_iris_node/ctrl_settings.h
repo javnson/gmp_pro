@@ -14,6 +14,9 @@
 // PWM depth
 #define CTRL_PWM_CMP_MAX (6000)
 
+// PWM deadband
+#define CTRL_PWM_DEADBAND_CMP (100)
+
 // System tick
 #define DSP_C2000_DSP_TIME_DIV (120000/CTRL_PWM_CMP_MAX/2)
 

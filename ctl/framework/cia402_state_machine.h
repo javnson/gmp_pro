@@ -23,17 +23,17 @@ extern "C"
 
 // 从Switched on disabled -> ready to switch on 的最小延时
 #ifndef CIA402_CONFIG_MIN_DELAY_SHUTDOWN
-#define CIA402_CONFIG_MIN_DELAY_SHUTDOWN (1000)
+#define CIA402_CONFIG_MIN_DELAY_SHUTDOWN (100)
 #endif // CIA402_CONFIG_MIN_DELAY_SHUTDOWN
 
 // 从Ready to switch on -> Switch on 的最小延时
 #ifndef CIA402_CONFIG_MIN_DELAY_SWITCHON
-#define CIA402_CONFIG_MIN_DELAY_SWITCHON (1000)
+#define CIA402_CONFIG_MIN_DELAY_SWITCHON (100)
 #endif // CIA402_CONFIG_MIN_DELAY_SHUTDOWN
 
 // 从Switch on -> Operation Enable的最小延时
 #ifndef CIA402_CONFIG_MIN_DELAY_OPERATION_EN
-#define CIA402_CONFIG_MIN_DELAY_OPERATION_EN (1000)
+#define CIA402_CONFIG_MIN_DELAY_OPERATION_EN (100)
 #endif // CIA402_CONFIG_MIN_DELAY_OPERATION_EN
 
 //////////////////////////////////////////////////////////////////////////
@@ -286,7 +286,7 @@ typedef struct _tag_cia402_state_machine
     // RO current state
     cia402_state_t current_state;
 
-    // RO current command
+    // RO current command, WR if control word is disabled.
     cia402_cmd_t current_cmd;
 
     // RO request target status
@@ -327,6 +327,7 @@ typedef struct _tag_cia402_state_machine
     cia402_sm_error_code_t last_cb_result;
 
     // this flag would be cleared after reset process
+    // user may set this member to 1, in order reset from fault, if control word is disabled.
     fast_gt flag_fault_reset_request;
 
     // if control word is enable
@@ -343,7 +344,7 @@ typedef struct _tag_cia402_state_machine
 
     // 分别对应前4个正常状态切换的最小延迟，用于保证接触器正确接触、母线电压稳定等
     // 当切换条件满足时需要最少达到下面的延时要求才可以切换到下一个状态
-    // [0] CIA402_SM_NOT_READY_TO_SWITCH_ON 状态至少要保持的时间
+    // [0] CIA402_SM_NOT_READY_TO_SWITCH_ON 状态至少要保持的时间(disabled)
     // [1] CIA402_STATEWORD_SWITCHED_ON 状态至少要保持的时间
     // [2] CIA402_SM_READY_TO_SWITCH_ON 状态至少要保持的时间
     // [3] CIA402_SM_SWITCHED_ON 状态至少要保持的时间
@@ -433,9 +434,9 @@ void ctl_disable_pwm();
  * @param close true: 吸合; false: 断开
  */
 
-void cel_enable_main_contactor();
+void ctl_enable_main_contactor();
 
-void cel_disable_main_contactor();
+void ctl_disable_main_contactor();
 
 /**
  * @brief 预充电继电器控制
