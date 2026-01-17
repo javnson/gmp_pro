@@ -360,6 +360,42 @@ typedef struct _tag_npc_modulator
 } npc_modulator_t;
 
 /**
+ * @brief Clears the internal states of the modulation module.
+ * @ingroup CTL_TP_MODULATION_API
+ * @param[out] mod Pointer to the @ref npc_modulator_t structure.
+ */
+GMP_STATIC_INLINE void ctl_clear_npc_modulator(npc_modulator_t* mod)
+{
+    mod->pwm_out[NPC_IDX_PHASE_A_OUTER] = 0;
+    mod->pwm_out[NPC_IDX_PHASE_A_INNER] = 0;
+    mod->pwm_out[NPC_IDX_PHASE_B_OUTER] = 0;
+    mod->pwm_out[NPC_IDX_PHASE_B_INNER] = 0;
+    mod->pwm_out[NPC_IDX_PHASE_C_OUTER] = 0;
+    mod->pwm_out[NPC_IDX_PHASE_C_INNER] = 0;
+
+    ctl_vector3_clear(&mod->vabc_out);
+
+    mod->last_current_dir[phase_A] = 0;
+    mod->last_current_dir[phase_B] = 0;
+    mod->last_current_dir[phase_C] = 0;
+}
+
+/**
+ * @brief Initializes the three-phase NPC bridge modulation module.
+ * @ingroup CTL_TP_MODULATION_API
+ *
+ * @param[out] bridge Pointer to the `three_phase_bridge_modulation_t` structure.
+ * @param[in] pwm_full_scale The maximum value of the PWM counter.
+ * @param[in] pwm_deadband The total dead-time value in PWM timer counts.
+ * @param[in] iuvw a pointer to inverter output current, point to ADC module or main controller.
+ * @param[in] current_deadband The current threshold to enable dead-time compensation.
+ * @param[in] current_hysteresis The current hysteresis to enable dead-time compensation.
+ */
+void ctl_init_npc_modulator(npc_modulator_t* mod, pwm_gt pwm_full_scale, pwm_gt pwm_deadband_comp_val,
+                             ctl_vector3_t* iuvw, ctrl_gt current_deadband, ctrl_gt current_hysteresis);
+
+
+/**
  * @brief Get the computed PWM compare value for a specific switch.
  * @param mod Pointer to the modulator.
  * @param phase Phase index (0=A, 1=B, 2=C).
