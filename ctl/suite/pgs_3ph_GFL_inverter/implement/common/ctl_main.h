@@ -57,6 +57,7 @@ extern spwm_modulator_t spwm;
 // controller body: Current controller, Power controller / Voltage controller
 extern gfl_inv_ctrl_init_t gfl_init;
 extern gfl_inv_ctrl_t inv_ctrl;
+extern gfl_pq_ctrl_t pq_ctrl;
 
 // Observer: PLL
 
@@ -94,6 +95,12 @@ void ctl_dispatch(void)
 
     // run controller body
     ctl_step_gfl_inv_ctrl(&inv_ctrl);
+
+    ctl_step_gfl_pq(&pq_ctrl);
+    if(pq_ctrl.flag_enable)
+    {
+        ctl_set_gfl_inv_current(&inv_ctrl, pq_ctrl.idq_set_out.dat[phase_d],pq_ctrl.idq_set_out.dat[phase_q] );
+    }
 
     // mix all output
     spwm.vab0_out.dat[phase_U] = inv_ctrl.vab0_out.dat[phase_U];

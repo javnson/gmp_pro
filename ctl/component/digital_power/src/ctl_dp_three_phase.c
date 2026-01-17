@@ -274,3 +274,58 @@ void ctl_attach_gfl_inv(gfl_inv_ctrl_t* inv, adc_ift* adc_idc, adc_ift* adc_udc,
     inv->adc_iabc = adc_iabc;
     inv->adc_vabc = adc_vabc;
 }
+
+//////////////////////////////////////////////////////////////////////////
+// Three Phase GFL Converter
+//////////////////////////////////////////////////////////////////////////
+
+#include <ctl/component/digital_power/three_phase/three_phase_GFL.h>
+
+void ctl_init_gfl_pq(gfl_pq_ctrl_t* pq, parameter_gt p_kp, parameter_gt p_ki, parameter_gt q_kp, parameter_gt q_ki,
+                     parameter_gt i_out_max, parameter_gt fs)
+{
+    pq->flag_enable = 0;
+    ctl_init_pid(&pq->pid_p, p_kp, p_ki, 0, fs);
+    ctl_init_pid(&pq->pid_q, q_kp, q_ki, 0, fs);
+    pq->max_i2_mag = float2ctrl(i_out_max * i_out_max);
+}
+
+/**
+ * @brief Reset the PQ controller (clear integrators).
+ * @param[in,out] pq Pointer to the PQ controller instance.
+ */
+void ctl_clear_gfl_pq(gfl_pq_ctrl_t* pq)
+{
+    ctl_clear_pid(&pq->pid_p);
+    ctl_clear_pid(&pq->pid_q);
+
+    pq->idq_set_out.dat[phase_d] = 0;
+    pq->idq_set_out.dat[phase_q] = 0;
+}
+
+/**
+ * @brief Attach feedback pointers to the PQ controller.
+ * @param[in,out] pq Pointer to the PQ controller instance.
+ * @param[in] vdq Pointer to the inner loop's Vdq measurement.
+ * @param[in] idq Pointer to the inner loop's Idq measurement.
+ */
+void ctl_attach_gfl_pq(gfl_pq_ctrl_t* pq, ctl_vector2_t* vdq, ctl_vector2_t* idq)
+{
+    pq->vdq_meas = vdq;
+    pq->idq_meas = idq;
+}
+
+/**
+ * @brief Attach feedback pointers to the PQ controller.
+ * @param[in,out] pq Pointer to the PQ controller instance.
+ * @param[in] vdq Pointer to the inner loop's Vdq measurement.
+ * @param[in] idq Pointer to the inner loop's Idq measurement.
+ */
+void ctl_attach_gfl_pq_to_core(gfl_pq_ctrl_t* pq, gfl_inv_ctrl_t* core)
+{
+    gmp_base_assert(core);
+    gmp_base_assert(pq);
+
+    pq->vdq_meas = &core->vdq;
+    pq->idq_meas = &core->idq;
+}

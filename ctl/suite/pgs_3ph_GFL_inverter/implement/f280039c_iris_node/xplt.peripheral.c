@@ -110,9 +110,6 @@ void setup_peripheral(void)
         // ADC resolution, IQN
         12, 24);
 
-    // output channel
-//    ctl_init_pwm_tri_channel(&pwm_out, 0, CTRL_PWM_CMP_MAX);
-
     //
     // attach
     //
@@ -123,9 +120,6 @@ void setup_peripheral(void)
         &idc.control_port, &udc.control_port,
         // grid side iabc, vabc
         &iabc.control_port, &vabc.control_port);
-
-    // output PWM wave
-    //&pwm_out.raw,
 
 }
 

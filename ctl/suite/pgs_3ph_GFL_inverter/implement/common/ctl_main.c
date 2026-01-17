@@ -33,6 +33,7 @@ cia402_sm_t cia402_sm;
 spwm_modulator_t spwm;
 
 // controller body: Current controller, Power controller / Voltage controller
+gfl_pq_ctrl_t pq_ctrl;
 gfl_inv_ctrl_init_t gfl_init;
 gfl_inv_ctrl_t inv_ctrl;
 
@@ -85,6 +86,12 @@ void ctl_init()
     // init SPWM modulator
     //
     ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &inv_ctrl.adc_iabc->value, float2ctrl(0.02), float2ctrl(0.005));
+
+    //
+    // Power controller
+    //
+    ctl_init_gfl_pq(&pq_ctrl, 0.75, 0.001, 0.75, 0.001, 1.0, CONTROLLER_FREQUENCY);
+    ctl_attach_gfl_pq_to_core(&pq_ctrl, &inv_ctrl);
 
 #if BUILD_LEVEL == 1
     // Voltage open loop, inverter

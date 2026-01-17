@@ -81,27 +81,17 @@ typedef struct _tag_gfl_inv_ctrl_type
     //
     adc_ift* adc_udc; //!< DC Bus voltage.
     adc_ift* adc_idc; //!< DC Bus current.
-                      //    adc_ift* adc_iabc[3]; //!< Array of pointers to phase current ADCs {Ia, Ib, Ic}.
-                      //    adc_ift* adc_vabc[3]; //!< Array of pointers to phase voltage ADCs {Va, Vb, Vc}.
+
+    ctl_vector2_t* phasor_ext; //!< input a phasor for park and ipark
 
     // Grid side feedback
     tri_adc_ift* adc_vabc; //!< grid phase voltage ADCs {Va, Vb, Vc}, this voltage will use as pll input.
     tri_adc_ift* adc_iabc; //!< grid phase current ADCs {Ia, Ib, Ic}, this current will use as current control port.
 
-    // inverter side feedback
-    //tri_adc_ift* adc_vuvw; //!< inverter phase voltage ADCs {Vu, Vv, Vw}, this voltage will use as observer input.
-    //tri_adc_ift* adc_iuvw; //!< inverter phase current ADCs {Iu, Iv, Iw}, this current will use as active damping.
-
     //
     // --- Output Ports ---
     //
     ctl_vector3_t vab0_out; //!< RO: Total modulation voltage in alpha-beta frame.
-
-    //
-    // --- Feed-forward & Parameters ---
-    //
-    //ctrl_gt omega_L;        //!< Feed-forward decoupling term: `2*pi*f*L` in per-unit.
-    //ctrl_gt free_run_slope; //!< Default slope for the ramp generator.
 
     //
     // --- Setpoints & Intermediate Variables (Read/Write) ---
@@ -155,7 +145,7 @@ typedef struct _tag_gfl_inv_ctrl_type
     ctrl_lead_t lead_compensator;
 
     // PLL & RG
-    srf_pll_t pll;   //!< Three-phase PLL for grid synchronization.
+    srf_pll_t pll;           //!< Three-phase PLL for grid synchronization.
     ctl_ramp_generator_t rg; //!< Ramp generator for open-loop/free-run operation.
 
     //
@@ -168,6 +158,7 @@ typedef struct _tag_gfl_inv_ctrl_type
     fast_gt flag_enable_decouple;         //!< Enables inductor decoupling feed-forward.
     fast_gt flag_enable_active_damping;   //!< Enables the virtual resistance of capacitor.
     fast_gt flag_enable_lead_compensator; //!< Enables the output lead compensator.
+    fast_gt flag_enable_external_phasor;  //!< Enables the external phasor input.
 
 } gfl_inv_ctrl_t;
 
@@ -281,8 +272,8 @@ void ctl_init_gfl_inv(gfl_inv_ctrl_t* inv, gfl_inv_ctrl_init_t* init);
  * @param[in] adc_iabc Pointer to the tri-channel ADC current interface structure.
  * @param[in] adc_vabc Pointer to the tri-channel ADC voltage interface structure.
  */
-void ctl_attach_gfl_inv(gfl_inv_ctrl_t* inv,  adc_ift* adc_idc, adc_ift* adc_udc,
-                        tri_adc_ift* adc_iabc, tri_adc_ift* adc_vabc);
+void ctl_attach_gfl_inv(gfl_inv_ctrl_t* inv, adc_ift* adc_idc, adc_ift* adc_udc, tri_adc_ift* adc_iabc,
+                        tri_adc_ift* adc_vabc);
 
 /**
  * @brief Executes one step of the  GFL three-phase inverter control algorithm.
@@ -358,6 +349,13 @@ GMP_STATIC_INLINE void ctl_step_gfl_inv_ctrl(gfl_inv_ctrl_t* gfl)
             gfl->angle = ctl_step_ramp_generator(&gfl->rg);
             ctl_set_phasor_via_angle(gfl->angle, &gfl->phasor);
         }
+        // using external phasor
+        else if (gfl->flag_enable_external_phasor)
+        {
+            gmp_base_assert(gfl->phasor_ext);
+            ctl_vector2_copy(&gfl->phasor, gfl->phasor_ext);
+        }
+        // using PLL phasor
         else
         {
             gfl->angle = gfl->pll.theta;
@@ -542,6 +540,174 @@ GMP_STATIC_INLINE void ctl_enable_gfl_inv(gfl_inv_ctrl_t* inv)
 GMP_STATIC_INLINE void ctl_disable_gfl_inv(gfl_inv_ctrl_t* inv)
 {
     inv->flag_enable_system = 0;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// PQ controller
+//
+
+/**
+ * @brief P-Q Grid-Following Power Controller.
+ * * This controller sits on top of the Current Controller.
+ * It regulates Active Power (P) and Reactive Power (Q) by adjusting 
+ * the d-axis and q-axis current references.
+ * * Topology:
+ * P_ref ---(-)--> [PID_P] ----> Id_ref
+ * Q_ref ---(-)--> [PID_Q] ----> Iq_ref
+ */
+typedef struct _tag_gfl_pq_ctrl
+{
+    //
+    // --- Input Interfaces (Pointers) ---
+    //
+    ctl_vector2_t* vdq_meas; //!< PTR: Feedback grid voltage vector (d,q), output voltage is positive.
+    ctl_vector2_t* idq_meas; //!< PTR: Feedback grid current vector (d,q), output current is positive.
+
+    //
+    // --- Output Interface ---
+    //
+    ctl_vector2_t idq_set_out; //!< RO: Calculated current command {Id*, Iq*} to be sent to inner loop.
+
+    //
+    // --- Setpoints (User Settings) ---
+    //
+    ctl_vector2_t pq_set; //!< WR: Power Setpoints {P_ref, Q_ref} in pu.
+
+    //
+    // --- Measurement & State (Read-Only) ---
+    //
+    ctl_vector2_t pq_meas; //!< RO: Calculated instantaneous Active/Reactive Power.
+    ctrl_gt s_mag_sq;      //!< RO: Magnitude squared of apparent power (debugging).
+
+    //
+    // --- Controllers & Limits ---
+    //
+    ctl_pid_t pid_p; //!< CTRL: PID for Active Power. Output is Id_ref.
+    ctl_pid_t pid_q; //!< CTRL: PID for Reactive Power. Output is Iq_ref.
+
+    ctrl_gt max_i2_mag; //!< PARAM: Maximum allowable current magnitude square (current limit protection).
+
+    //
+    // --- Control Flags ---
+    //
+    fast_gt flag_enable; //!< 1: Enable PQ control (Closed Loop), 0: Disable (Output 0 or Hold).
+
+} gfl_pq_ctrl_t;
+
+/**
+ * @brief Initialize the PQ controller with parameters.
+ * @param[out] pq Pointer to the PQ controller instance.
+ * @param[in] init Initialization parameters.
+ */
+void ctl_init_gfl_pq(gfl_pq_ctrl_t* pq, parameter_gt p_kp, parameter_gt p_ki, parameter_gt q_kp, parameter_gt q_ki,
+                     parameter_gt i_out_max, parameter_gt fs);
+
+/**
+ * @brief Reset the PQ controller (clear integrators).
+ * @param[in,out] pq Pointer to the PQ controller instance.
+ */
+void ctl_clear_gfl_pq(gfl_pq_ctrl_t* pq);
+
+/**
+ * @brief Attach feedback pointers to the PQ controller.
+ * @param[in,out] pq Pointer to the PQ controller instance.
+ * @param[in] vdq Pointer to the inner loop's Vdq measurement.
+ * @param[in] idq Pointer to the inner loop's Idq measurement.
+ */
+void ctl_attach_gfl_pq(gfl_pq_ctrl_t* pq, ctl_vector2_t* vdq, ctl_vector2_t* idq);
+
+/**
+ * @brief Attach feedback pointers to the PQ controller.
+ * @param[in,out] pq Pointer to the PQ controller instance.
+ * @param[in] vdq Pointer to the inner loop's Vdq measurement.
+ * @param[in] idq Pointer to the inner loop's Idq measurement.
+ */
+void ctl_attach_gfl_pq_to_core(gfl_pq_ctrl_t* pq, gfl_inv_ctrl_t* core);
+
+/**
+ * @brief Execute one step of the PQ control loop.
+ * @param[in,out] pq Pointer to the PQ controller instance.
+ * @note This should run at a slower rate than the current loop (e.g., 1kHz - 5kHz).
+ */
+GMP_STATIC_INLINE void ctl_step_gfl_pq(gfl_pq_ctrl_t* pq)
+{
+    // Safety check for pointers
+    if (!pq->vdq_meas || !pq->idq_meas)
+        return;
+
+    // Local variables for readability
+    ctrl_gt vd = pq->vdq_meas->dat[phase_d];
+    ctrl_gt vq = pq->vdq_meas->dat[phase_q];
+    ctrl_gt id = pq->idq_meas->dat[phase_d];
+    ctrl_gt iq = pq->idq_meas->dat[phase_q];
+
+    // -----------------------------------------------------------
+    // 1. Calculate Instantaneous Power (Per-Unit assumption)
+    //    P = vd*id + vq*iq
+    //    Q = vq*id - vd*iq  (Standard convention, verify with your grid standard)
+    // -----------------------------------------------------------
+    // Note: If Vq is strictly regulated to 0 by PLL, P ~= Vd*Id, Q ~= -Vd*Iq
+
+    pq->pq_meas.dat[0] = ctl_mul(vd, id) + ctl_mul(vq, iq); // Active Power P
+    pq->pq_meas.dat[1] = ctl_mul(vq, id) - ctl_mul(vd, iq); // Reactive Power Q
+
+    // -----------------------------------------------------------
+    // 2. Main Control Loop
+    // -----------------------------------------------------------
+    if (pq->flag_enable)
+    {
+        // --- Active Power Control (P -> Id) ---
+        // Error = Setpoint - Measure
+        ctrl_gt p_err = pq->pq_set.dat[0] - pq->pq_meas.dat[0];
+
+        // PID Output is Id reference
+        // Source convention: P>0 means discharging to grid.
+        pq->idq_set_out.dat[phase_d] = ctl_step_pid_ser(&pq->pid_p, p_err);
+
+        // --- Reactive Power Control (Q -> Iq) ---
+        // Error = Setpoint - Measure
+        ctrl_gt q_err = pq->pq_set.dat[1] - pq->pq_meas.dat[1];
+
+        // PID Output is Iq reference
+        // Source convention Q>0 means discharging inductive reactive power to grid.
+        pq->idq_set_out.dat[phase_q] = ctl_step_pid_ser(&pq->pid_q, q_err);
+
+        // -----------------------------------------------------------
+        // 3. Current Limiting (Circular Saturation)
+        //    Prevent the reference from exceeding converter capability.
+        // -----------------------------------------------------------
+        ctrl_gt id_ref = pq->idq_set_out.dat[phase_d];
+        ctrl_gt iq_ref = pq->idq_set_out.dat[phase_q];
+
+        ctrl_gt i_mag_sq = ctl_mul(id_ref, id_ref) + ctl_mul(iq_ref, iq_ref);
+        ctrl_gt i2_limit = pq->max_i2_mag;
+
+        if (i_mag_sq > i2_limit)
+        {
+            // Simple scaling to keep vector direction but limit magnitude
+            ctrl_gt scaler = ctl_sqrt(ctl_div(i2_limit, i_mag_sq));
+            pq->idq_set_out.dat[phase_d] *= ctl_mul(scaler, pq->idq_set_out.dat[phase_d]);
+            pq->idq_set_out.dat[phase_q] *= ctl_mul(scaler, pq->idq_set_out.dat[phase_q]);
+        }
+    }
+    else
+    {
+        // If disabled, reset integrators and zero output
+        pq->idq_set_out.dat[phase_d] = 0;
+        pq->idq_set_out.dat[phase_q] = 0;
+    }
+}
+
+/** @brief Enable PQ controller */
+GMP_STATIC_INLINE void ctl_enable_gfl_pq_ctrl(gfl_pq_ctrl_t* pq)
+{
+    pq->flag_enable = 1;
+}
+
+/** @brief Disable PQ controller */
+GMP_STATIC_INLINE void ctl_disable_gfl_pq_ctrl(gfl_pq_ctrl_t* pq)
+{
+    pq->flag_enable = 0;
 }
 
 #ifdef __cplusplus
