@@ -11,7 +11,7 @@
 
 #include <gmp_core.h>
 
-#include <core/pm/function_player.h>
+#include <core/pm/function_scheduler.h>
 
 void gmp_scheduler_init(gmp_scheduler_t* sched)
 {

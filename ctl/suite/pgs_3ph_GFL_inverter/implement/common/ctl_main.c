@@ -65,12 +65,6 @@ void ctl_init()
     // stop here and wait for user start the motor controller
     ctl_fast_disable_output();
 
-    // init and config CiA402 stdandard state machine
-    init_cia402_state_machine(&cia402_sm);
-
-    cia402_sm.minimum_transit_delay[3] = 100;
-
-
 #if defined SPECIFY_PC_ENVIRONMENT
     cia402_sm.flag_enable_control_word = 0;
     cia402_sm.current_cmd = CIA402_CMD_ENABLE_OPERATION;
@@ -115,6 +109,13 @@ void ctl_init()
     ctl_enable_gfl_inv_lead_compensator(&inv_ctrl);
 
 #endif // BUILD_LEVEL
+
+
+    // init and config CiA402 stdandard state machine
+    init_cia402_state_machine(&cia402_sm);
+
+    cia402_sm.minimum_transit_delay[3] = 100;
+
 
 #if defined SPECIFY_ENABLE_ADC_CALIBRATE
 
