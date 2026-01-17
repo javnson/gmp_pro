@@ -434,9 +434,9 @@ void ctl_disable_pwm();
  * @param close true: 吸合; false: 断开
  */
 
-void cel_enable_main_contactor();
+void ctl_enable_main_contactor();
 
-void cel_disable_main_contactor();
+void ctl_disable_main_contactor();
 
 /**
  * @brief 预充电继电器控制

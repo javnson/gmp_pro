@@ -50,7 +50,7 @@ void ctl_disable_pwm() GMP_WEAK_FUNC_SUFFIX
  * @param close true: ÎüºÏ; false: ¶Ï¿ª
  */
 GMP_WEAK_FUNC_PREFIX
-void cel_enable_main_contactor() GMP_WEAK_FUNC_SUFFIX
+void ctl_enable_main_contactor() GMP_WEAK_FUNC_SUFFIX
 {
 #ifdef GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
     gmp_base_print("enable_contactor()\r\n");
@@ -58,7 +58,7 @@ void cel_enable_main_contactor() GMP_WEAK_FUNC_SUFFIX
 }
 
 GMP_WEAK_FUNC_PREFIX
-void cel_disable_main_contactor() GMP_WEAK_FUNC_SUFFIX
+void ctl_disable_main_contactor() GMP_WEAK_FUNC_SUFFIX
 {
 #ifdef GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
     gmp_base_print("disable_contactor()\r\n");
@@ -231,8 +231,8 @@ void ctl_disable_grid_relay() GMP_WEAK_FUNC_SUFFIX
 #pragma comment(linker, "/alternatename:ctl_enable_pwm=default_ctl_void_void_func")
 #pragma comment(linker, "/alternatename:ctl_disable_pwm=default_ctl_void_void_func")
 
-#pragma comment(linker, "/alternatename:cel_enable_main_contactor=default_ctl_void_void_func")
-#pragma comment(linker, "/alternatename:cel_disable_main_contactor=default_ctl_void_void_func")
+#pragma comment(linker, "/alternatename:ctl_enable_main_contactor=default_ctl_void_void_func")
+#pragma comment(linker, "/alternatename:ctl_disable_main_contactor=default_ctl_void_void_func")
 
 #pragma comment(linker, "/alternatename:ctl_enable_precharge_relay=default_ctl_void_void_func")
 #pragma comment(linker, "/alternatename:ctl_disable_precharge_relay=default_ctl_void_void_func")
