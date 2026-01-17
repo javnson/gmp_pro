@@ -191,7 +191,7 @@ typedef GMP_PORT_ADC_T adc_gt;
 // basic container of ADC results
 //
 #ifndef GMP_PORT_DAC_T
-#define GMP_PORT_DAC_T              uint32_t
+#define GMP_PORT_DAC_T              int32_t
 #define GMP_PORT_DAC_SIZE_PER_BITS  (32)
 #define GMP_PORT_DAC_SIZE_PER_BYTES (4)
 #endif // GMP_PORT_DAC_T
@@ -200,9 +200,10 @@ typedef GMP_PORT_DAC_T dac_gt;
 
 // ....................................................................//
 // basic container of PWM results
+// output type must be signed type
 //
 #ifndef GMP_PORT_PWM_T
-#define GMP_PORT_PWM_T              uint32_t
+#define GMP_PORT_PWM_T              int32_t
 #define GMP_PORT_PWM_SIZE_PER_BITS  (32)
 #define GMP_PORT_PWM_SIZE_PER_BYTES (4)
 #endif // GMP_PORT_PWM_T

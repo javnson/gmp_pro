@@ -20,24 +20,36 @@
 
 #include <xplt.peripheral.h>
 
-#include <ctl/framework/cia402_state_machine.h>
 
 #include <ctl/component/digital_power/three_phase/three_phase_dc_ac.h>
 
 #include <ctl/component/digital_power/three_phase/three_phase_GFL.h>
 
+
 // state machine
 cia402_sm_t cia402_sm;
 
+// modulator: SPWM modulator / SVPWM modulator / NPC modulator
+spwm_modulator_t spwm;
+
+// controller body: Current controller, Power controller / Voltage controller
 gfl_inv_ctrl_init_t gfl_init;
 gfl_inv_ctrl_t inv_ctrl;
 
+// Observer: PLL
+
+
+// additional controller: harmonic management, negative current controller
+
+//
+
+
+
 // enable controller
-#if !defined SPECIFY_PC_ENVIRONMENT
-volatile fast_gt flag_system_enable = 0;
-#else
-volatile fast_gt flag_system_enable = 1;
-#endif // SPECIFY_PC_ENVIRONMENT
+//#if !defined SPECIFY_PC_ENVIRONMENT
+//#else
+//volatile fast_gt flag_system_enable = 1;
+//#endif // SPECIFY_PC_ENVIRONMENT
 
 volatile fast_gt flag_system_running = 0;
 volatile fast_gt flag_error = 0;
@@ -51,9 +63,18 @@ volatile fast_gt index_adc_calibrator = 0;
 void ctl_init()
 {
     // stop here and wait for user start the motor controller
-    ctl_disable_output();
+    ctl_fast_disable_output();
 
+    // init and config CiA402 stdandard state machine
     init_cia402_state_machine(&cia402_sm);
+
+    cia402_sm.minimum_transit_delay[3] = 100;
+
+
+#if defined SPECIFY_PC_ENVIRONMENT
+    cia402_sm.flag_enable_control_word = 0;
+    cia402_sm.current_cmd = CIA402_CMD_ENABLE_OPERATION;
+#endif // SPECIFY_PC_ENVIRONMENT
 
     // init ADC Calibrator
     ctl_init_adc_calibrator(&adc_calibrator, 20, 0.707f, CONTROLLER_FREQUENCY);
@@ -71,20 +92,20 @@ void ctl_init()
 
     ctl_init_gfl_inv(&inv_ctrl, &gfl_init);
 
-#if BUILD_LEVEL == 1
+    // init SPWM modulator
+    ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &inv_ctrl.adc_iabc->value, float2ctrl(0.02), float2ctrl(0.005));
 
+#if BUILD_LEVEL == 1
     // Voltage open loop, inverter
     ctl_set_gfl_inv_openloop_mode(&inv_ctrl);
     ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl(0.6), float2ctrl(0.6));
 
 #elif BUILD_LEVEL == 2 || BUILD_LEVEL == 3
-
     // Basic current close loop, inverter
     ctl_set_gfl_inv_current_mode(&inv_ctrl);
     ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(0.6), float2ctrl(0.6));
 
 #elif BUILD_LEVEL == 4
-
     // current close loop with feed forward, inverter
     ctl_set_gfl_inv_current_mode(&inv_ctrl);
     ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(0.6), float2ctrl(0.6));
@@ -107,62 +128,35 @@ void ctl_init()
 
 //////////////////////////////////////////////////////////////////////////
 // endless loop function here
-
-uint16_t sgen_out = 0;
-fast_gt firsttime_flag = 0;
-fast_gt startup_flag = 0;
-fast_gt started_flag = 0;
-time_gt tick_bias = 0;
+//
 
 void ctl_mainloop(void)
 {
     dispatch_cia402_state_machine(&cia402_sm);
 
-    // When the program is reach here, the following things will happen:
-    // 1. software non-block delay 500ms
-    // 2. judge if spll theta error convergence has occurred
-    // 3. then enable system
-
-    if (flag_system_enable)
-    {
-
-        // first time flag
-        // log the first time enable the system
-        if (firsttime_flag == 0)
-        {
-            tick_bias = gmp_base_get_system_tick();
-            firsttime_flag = 1;
-        }
-
-        // a delay of 500ms
-        if ((started_flag == 0) && ((gmp_base_get_system_tick() - tick_bias) > 100) && (startup_flag == 0))
-        {
-            startup_flag = 1;
-        }
-
-        // judge if PLL is close to target
-        if ((started_flag == 0) && (startup_flag == 1) && ctl_ready_mainloop())
-        {
-            ctl_enable_output();
-            started_flag = 1;
-        }
-    }
-    // if system is disabled
-    else // (flag_system_enable == 0)
-    {
-        ctl_disable_output();
-
-        // clear all flags
-        firsttime_flag = 0;
-        startup_flag = 0;
-        started_flag = 0;
-        tick_bias = 0;
-    }
-
     return;
 }
 
-fast_gt ctl_adc_calibrate(void)
+//////////////////////////////////////////////////////////////////////////
+// CiA402 default callback function here.
+//
+
+void ctl_enable_pwm()
+{
+    ctl_fast_enable_output();
+}
+
+void ctl_disable_pwm()
+{
+    ctl_fast_disable_output();
+}
+
+fast_gt ctl_check_pll_locked(void)
+{
+    return (ctl_abs(ctl_get_gfl_pll_error(&inv_ctrl)) < CTRL_SPLL_EPSILON);
+}
+
+fast_gt ctl_exec_adc_calibration(void)
 {
     //
     // Auto process
@@ -296,28 +290,4 @@ fast_gt ctl_adc_calibrate(void)
     return 1;
 }
 
-// This mainloop will run again and again to judge if system meets online condition,
-// when flag_system_enable is set.
-// if return 1 the system is ready to enable.
-// if return 0 the system is not ready to enable
-fast_gt ctl_ready_mainloop(void)
-{
-    ctl_clear_gfl_inv(&inv_ctrl);
 
-#if defined SPECIFY_ENABLE_ADC_CALIBRATE
-    if (ctl_adc_calibrate())
-    {
-#endif // SPECIFY_ENABLE_ADC_CALIBRATE
-
-#if BUILD_LEVEL <= 2
-        return 1;
-#else
-        return (ctl_abs(ctl_get_gfl_pll_error(&inv_ctrl)) < CTRL_SPLL_EPSILON);
-#endif // BUILD_LEVEL
-
-#if defined SPECIFY_ENABLE_ADC_CALIBRATE
-    }
-    else
-        return 0;
-#endif // SPECIFY_ENABLE_ADC_CALIBRATE
-}

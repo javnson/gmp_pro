@@ -36,18 +36,18 @@ void ctl_init_pll_3ph(three_phase_pll_t* pll, parameter_gt f_base, parameter_gt 
 //////////////////////////////////////////////////////////////////////////
 // Three Phase Modulation
 //////////////////////////////////////////////////////////////////////////
-#include <ctl/component/digital_power/three_phase/tp_modulation.h>
-
-void ctl_init_three_phase_bridge_modulation(three_phase_bridge_modulation_t* bridge, pwm_gt pwm_full_scale,
-                                            pwm_gt pwm_deadband, ctrl_gt current_deadband)
-{
-    bridge->pwm_full_scale = pwm_full_scale;
-    // Pre-calculate and store half of the deadband for runtime efficiency.
-    bridge->pwm_deadband_half = pwm_deadband / 2;
-    bridge->current_deadband = current_deadband;
-
-    ctl_clear_three_phase_bridge_modulation(bridge);
-}
+//#include <ctl/component/digital_power/three_phase/tp_modulation.h>
+//
+//void ctl_init_three_phase_bridge_modulation(three_phase_bridge_modulation_t* bridge, pwm_gt pwm_full_scale,
+//                                            pwm_gt pwm_deadband, ctrl_gt current_deadband)
+//{
+//    bridge->pwm_full_scale = pwm_full_scale;
+//    // Pre-calculate and store half of the deadband for runtime efficiency.
+//    bridge->pwm_deadband_half = pwm_deadband / 2;
+//    bridge->current_deadband = current_deadband;
+//
+//    ctl_clear_three_phase_bridge_modulation(bridge);
+//}
 
 //////////////////////////////////////////////////////////////////////////
 // Three Phase GFL Converter
@@ -200,10 +200,9 @@ void ctl_init_gfl_inv(gfl_inv_ctrl_t* inv, gfl_inv_ctrl_init_t* init)
  * @param[in] adc_iabc Pointer to the tri-channel ADC current interface structure.
  * @param[in] adc_vabc Pointer to the tri-channel ADC voltage interface structure.
  */
-void ctl_attach_gfl_inv(gfl_inv_ctrl_t* inv, tri_pwm_ift* pwm_out, adc_ift* adc_idc, adc_ift* adc_udc,
+void ctl_attach_gfl_inv(gfl_inv_ctrl_t* inv, adc_ift* adc_idc, adc_ift* adc_udc,
                         tri_adc_ift* adc_iabc, tri_adc_ift* adc_vabc)
 {
-    inv->pwm_out = pwm_out;
     inv->adc_idc = adc_idc;
     inv->adc_udc = adc_udc;
     inv->adc_iabc = adc_iabc;

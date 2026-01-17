@@ -103,12 +103,16 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
 GMP_STATIC_INLINE void ctl_output_callback(void)
 {
     // invoke PWM p.u. routine
-    ctl_calc_pwm_tri_channel(&pwm_out);
+//    ctl_calc_pwm_tri_channel(&pwm_out);
 
     // PWM output,EPWM1_BASE
-    EPWM_setCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_U]);
-    EPWM_setCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_V]);
-    EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_W]);
+//    EPWM_setCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_U]);
+//    EPWM_setCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_V]);
+//    EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_W]);
+
+    EPWM_setCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_U]);
+    EPWM_setCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_V]);
+    EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_W]);
 
     // Monitor Port, 8 channels
 #if BUILD_LEVEL == 1
@@ -139,7 +143,7 @@ void GPIO_WritePin(uint16_t gpioNumber, uint16_t outVal);
 
 // Enable Motor Controller
 // Enable Output
-GMP_STATIC_INLINE void ctl_enable_output()
+GMP_STATIC_INLINE void ctl_fast_enable_output()
 {
     // Clear any Trip Zone flag
     EPWM_clearTripZoneFlag(PHASE_U_BASE, EPWM_TZ_FORCE_EVENT_OST);
@@ -157,7 +161,7 @@ GMP_STATIC_INLINE void ctl_enable_output()
 }
 
 // Disable Output
-GMP_STATIC_INLINE void ctl_disable_output()
+GMP_STATIC_INLINE void ctl_fast_disable_output()
 {
     // Disables the PWM device
     EPWM_forceTripZoneEvent(PHASE_U_BASE, EPWM_TZ_FORCE_EVENT_OST);

@@ -46,7 +46,7 @@ extern ptr_adc_channel_t idc;
 extern adc_gt idc_src;
 
 // PWM output channel
-extern pwm_tri_channel_t pwm_out;
+//extern pwm_tri_channel_t pwm_out;
 
 #ifdef __cplusplus
 }

@@ -274,11 +274,27 @@ void cia402_update_status_word(cia402_sm_t* sm)
 // Fault condition cannot escape by this function
 void cia402_transit(cia402_sm_t* sm, cia402_state_t next_state)
 {
+    // Common transit
     if (sm->current_state != next_state && sm->current_state != CIA402_SM_FAULT &&
         sm->current_state != CIA402_SM_FAULT_REACTION)
     {
         // change to next state
         sm->current_state = next_state;
+
+        // start a new delay stage
+        sm->flag_delay_stage = 0;
+        sm->entry_state_tick = gmp_base_get_system_tick();
+        sm->current_state_counter = 0;
+
+        // update state word here
+        cia402_update_status_word(sm);
+    }
+
+    // fault reaction transit
+    else if (sm->current_state == CIA402_SM_FAULT_REACTION && next_state != CIA402_SM_FAULT_REACTION)
+    {
+        // change to next state
+        sm->current_state = CIA402_SM_FAULT;
 
         // start a new delay stage
         sm->flag_delay_stage = 0;
@@ -687,7 +703,7 @@ void dispatch_cia402_state_machine(cia402_sm_t* sm)
 
 // 定义一些超时阈值 (单位 ms，根据实际情况调整)
 #define TIMEOUT_PRECHARGE_MS 3000
-#define TIMEOUT_ADC_CALIB_MS 1000
+#define TIMEOUT_ADC_CALIB_MS 3000
 #define TIMEOUT_ALIGNMENT_MS 5000
 
 // =========================================================================
@@ -774,7 +790,7 @@ cia402_sm_error_code_t default_cb_fn_ready_to_switch_on(cia402_sm_t* sm)
         return CIA402_EC_KEEP;
     }
 
-    return CIA402_EC_NEXT_STATE;
+    //return CIA402_EC_NEXT_STATE;
 }
 
 // =========================================================================

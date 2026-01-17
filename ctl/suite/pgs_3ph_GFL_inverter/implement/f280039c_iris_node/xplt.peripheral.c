@@ -43,7 +43,7 @@ ptr_adc_channel_t idc;
 adc_gt idc_src;
 
 // PWM output channel
-pwm_tri_channel_t pwm_out;
+//pwm_tri_channel_t pwm_out;
 
 //////////////////////////////////////////////////////////////////////////
 // peripheral setup function
@@ -111,7 +111,7 @@ void setup_peripheral(void)
         12, 24);
 
     // output channel
-    ctl_init_pwm_tri_channel(&pwm_out, 0, CTRL_PWM_CMP_MAX);
+//    ctl_init_pwm_tri_channel(&pwm_out, 0, CTRL_PWM_CMP_MAX);
 
     //
     // attach
@@ -119,12 +119,13 @@ void setup_peripheral(void)
     ctl_attach_gfl_inv(
         // inv controller
         &inv_ctrl,
-        // output PWM wave
-        &pwm_out.raw,
         // idc, udc
         &idc.control_port, &udc.control_port,
         // grid side iabc, vabc
         &iabc.control_port, &vabc.control_port);
+
+    // output PWM wave
+    //&pwm_out.raw,
 
 }
 
@@ -172,6 +173,10 @@ interrupt void MainISR(void)
     Interrupt_clearACKGroup(INT_IRIS_ADCA_1_INTERRUPT_ACK_GROUP);
 }
 
+
+//////////////////////////////////////////////////////////////////////////
+// communication functions and interrupt functions here
+
 // 10000 -> 1.0
 #define CAN_SCALE_FACTOR 10000
 
@@ -196,7 +201,7 @@ interrupt void INT_IRIS_CAN_0_ISR(void)
         CAN_clearInterruptStatus(CANA_BASE, 1);
 
         // Control Flag, Enable System
-        flag_system_enable = rx_data[0];
+        //flag_system_enable = rx_data[0];
     }
     else if(status == 2)
     {
