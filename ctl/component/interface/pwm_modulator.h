@@ -199,6 +199,122 @@ GMP_STATIC_INLINE void ctl_step_spwm_modulator(spwm_modulator_t* mod)
     }
 }
 
+//////////////////////////////////////////////////////////////////////////
+// SVPWM modulator
+//
+
+/**
+ * @brief Executes one step of the three-phase modulation algorithm.
+ * @ingroup CTL_TP_MODULATION_API
+ * @details Converts per-unit voltage commands (-1.0 to 1.0) to PWM compare values,
+ * and applies dead-time compensation based on the direction of phase currents.
+ * 两电平SPWM调制和SVPWM调制公用同一套数据结构，只需要更换调制函数即可。
+ *
+ * @param[in,out] mod Pointer to the @ref spwm_modulator_t structure.
+ */
+GMP_STATIC_INLINE void ctl_step_svpwm_modulator(spwm_modulator_t* mod)
+{
+    gmp_base_assert(mod);
+    gmp_base_assert(mod->iuvw);
+    gmp_base_assert(mod->pwm_out);
+
+    // Temp variable to handle signed calculations safely
+    pwm_gt pwm_value;
+    int i;
+
+    // Modulation, SPWM
+    //ctl_ct_iclarke(&mod->vab0_out, &mod->vabc_out);
+    ctl_ct_svpwm_calc(&mod->vab0_out, &mod->vabc_out);
+
+    // --- Calculate Raw PWM Values ---
+    // Convert voltage command (-1.0 to 1.0) to duty cycle (0 to 1.0), then to raw PWM value.
+    for (i = 0; i < 3; ++i)
+    {
+        // Convert voltage command (-1.0 to 1.0) to duty cycle (0 to 1.0), then to raw PWM value.
+        pwm_value = pwm_mul(ctl_div2(ctl_add(float2ctrl(1.0f), mod->vabc_out.dat[i])), mod->pwm_full_scale);
+
+        //
+        // NOTE: pwm_gt must be a signed int number.
+        // Or dead-time compensator would get a wrong result, when low modulation ratio.
+        //
+
+        // dead-time compensation
+        if (mod->flag_enable_deadband_compensator)
+        {
+            // ---------------------------------------------------------
+            // ZONE 1: Strong Positive Current -> Apply Positive Comp
+            // ---------------------------------------------------------
+            if (mod->iuvw->dat[i] > mod->current_deadband + mod->current_hysteresis_band)
+            {
+                pwm_value += mod->pwm_deadband_comp_val;
+                mod->last_current_dir[i] = 1;
+            }
+
+            // ---------------------------------------------------------
+            // ZONE 2: Strong Negative Current -> Apply Negative Comp
+            // ---------------------------------------------------------
+            else if (mod->iuvw->dat[i] < (-mod->current_deadband - mod->current_hysteresis_band))
+            {
+                if (pwm_value >= mod->pwm_deadband_comp_val)
+                {
+                    pwm_value -= mod->pwm_deadband_comp_val;
+                }
+                else
+                {
+                    pwm_value = 0; // avoid unsigned number underflow.
+                }
+
+                mod->last_current_dir[i] = -1;
+            }
+
+            // ---------------------------------------------------------
+            // ZONE 3: Inside Deadband (Parasitic Cap Zone) -> No Comp
+            // ---------------------------------------------------------
+            else if ((mod->iuvw->dat[i] > -mod->current_deadband) && (mod->iuvw->dat[i] < mod->current_deadband))
+            {
+                mod->last_current_dir[i] = 0;
+            }
+
+            // ---------------------------------------------------------
+            // ZONE 4: Hysteresis Band -> Keep Last State
+            // ---------------------------------------------------------
+            else
+            {
+                // Current is in the gray area:
+                // [Deadband, Deadband + Hysteresis] OR [-Deadband - Hysteresis, -Deadband]
+
+                if (mod->last_current_dir[i] == 1)
+                {
+                    pwm_value += mod->pwm_deadband_comp_val;
+                }
+                else if (mod->last_current_dir[i] == -1)
+                {
+                    if (pwm_value >= mod->pwm_deadband_comp_val)
+                    {
+                        pwm_value -= mod->pwm_deadband_comp_val;
+                    }
+                    else
+                    {
+                        pwm_value = 0; // avoid unsigned number underflow.
+                    }
+                }
+                else
+                {
+                    // last_current_dir == 0
+                    // We came from the dead band zone, so we stay 0 (no comp)
+                    // until we cross the outer hysteresis limit.
+                }
+            }
+        }
+
+        // Saturate final PWM values to ensure they are within valid range.
+        pwm_value = pwm_sat(pwm_value, mod->pwm_full_scale, 0);
+
+        // write back correct number
+        mod->pwm_out[i] = pwm_value;
+    }
+}
+
 
 
 
