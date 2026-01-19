@@ -336,8 +336,11 @@ static void _switch_on_disable_routine(cia402_sm_t* sm)
                 sm->flag_delay_stage = 1;
             }
 
+            // time_diff = current_tick - state_ready_tick;
+            time_gt time_diff = gmp_base_time_sub(sm->current_tick, sm->state_ready_tick);
+
             // judge if delay condition is meet.
-            if (sm->current_tick - sm->state_ready_tick >= sm->minimum_transit_delay[1])
+            if (time_diff >= sm->minimum_transit_delay[1])
                 cia402_transit(sm, CIA402_SM_READY_TO_SWITCH_ON);
         }
         return;
@@ -389,8 +392,11 @@ static void _ready_to_switch_on_routine(cia402_sm_t* sm)
                 sm->flag_delay_stage = 1;
             }
 
+            // time_diff = current_tick - state_ready_tick;
+            time_gt time_diff = gmp_base_time_sub(sm->current_tick, sm->state_ready_tick);
+
             // judge if delay condition is meet.
-            if (sm->current_tick - sm->state_ready_tick >= sm->minimum_transit_delay[2])
+            if (time_diff >= sm->minimum_transit_delay[2])
                 cia402_transit(sm, CIA402_SM_SWITCHED_ON);
         }
 
@@ -441,8 +447,11 @@ static void _switched_on_routine(cia402_sm_t* sm)
                 sm->flag_delay_stage = 1;
             }
 
+            // time_diff = current_tick - state_ready_tick;
+            time_gt time_diff = gmp_base_time_sub(sm->current_tick, sm->state_ready_tick);
+
             // judge if delay condition is meet.
-            if (sm->current_tick - sm->state_ready_tick >= sm->minimum_transit_delay[3])
+            if (time_diff >= sm->minimum_transit_delay[3])
                 cia402_transit(sm, CIA402_SM_OPERATION_ENABLED);
         }
 

@@ -100,8 +100,10 @@ void gmp_scheduler_dispatch(gmp_scheduler_t* sched)
 
         if (task && task->is_enabled)
         {
+            time_gt tick_diff = gmp_base_time_sub(current_tick, task->last_run);
+
             // trigger condition judge
-            if ((current_tick - task->last_run) >= task->period)
+            if (tick_diff >= task->period)
             {
                 target_task = task;
 
