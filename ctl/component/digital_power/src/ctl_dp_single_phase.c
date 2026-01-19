@@ -32,7 +32,7 @@ void ctl_init_single_phase_pll(ctl_single_phase_pll* spll, parameter_gt gain, pa
     ctl_init_lp_filter(&spll->filter_uq, fs, fc);
 
     // Initialize the PI controller for the phase-locking loop.
-    ctl_init_pid_ser(&spll->spll_ctrl, gain, Ti, 0, fs);
+    ctl_init_pid_Tmode(&spll->spll_ctrl, gain, Ti, 0, fs);
 
     // Pre-calculate the normalized grid frequency as a feed-forward term for the VCO.
     spll->frequency_sf = float2ctrl(fg / fs);
@@ -63,8 +63,8 @@ void ctl_init_spfc_ctrl(spfc_t* pfc, parameter_gt voltage_kp, parameter_gt volta
                         parameter_gt current_kp, parameter_gt current_Ti, parameter_gt current_Td, parameter_gt fs)
 {
     // Initialize the series-form PID for the outer voltage control loop.
-    ctl_init_pid_ser(&pfc->voltage_ctrl, voltage_kp, voltage_Ti, voltage_Td, fs);
+    ctl_init_pid_Tmode(&pfc->voltage_ctrl, voltage_kp, voltage_Ti, voltage_Td, fs);
     // Initialize the series-form PID for the inner current control loop.
-    ctl_init_pid_ser(&pfc->current_ctrl, current_kp, current_Ti, current_Td, fs);
+    ctl_init_pid_Tmode(&pfc->current_ctrl, current_kp, current_Ti, current_Td, fs);
 }
 

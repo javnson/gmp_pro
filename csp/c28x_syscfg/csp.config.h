@@ -34,7 +34,7 @@
 #define SPECIFY_DISABLE_CSP_EXIT
 
 // TI String will not add a '\0' automatically, so use the following macro.
-#define TEXT_STRING(str) str##"\0"
+//#define TEXT_STRING(str) str##"\0"
 
 // Specify print function
 #define USER_SPECIFIED_PRINT_FUNCTION(A, ...) gmp_base_print_c28xsyscfg(A, ##__VA_ARGS__)

@@ -85,7 +85,7 @@ parameter_gt ctl_get_filter_iir1_gain(ctl_filter_IIR1_t* obj, parameter_gt fs, p
     parameter_gt mag_num = sqrtf(num_real * num_real + num_imag * num_imag);
     parameter_gt mag_den = sqrtf(den_real * den_real + den_imag * den_imag);
 
-    if (mag_den < 1e-9)
+    if (mag_den < float2ctrl(0.000001))
         return 0.0f;
     return mag_num / mag_den;
 }
@@ -295,7 +295,7 @@ parameter_gt ctl_get_biquad_gain(ctl_biquad_filter_t* obj, parameter_gt fs, para
     parameter_gt mag_den = sqrtf(den_real * den_real + den_imag * den_imag);
 
     // Avoid division by zero
-    if (mag_den < 1e-9)
+    if (mag_den < 1e-9f)
     {
         return 0.0f;
     }
@@ -728,21 +728,21 @@ void ctl_init_tracking_pid(
 #include <ctl/component/intrinsic/discrete/pole_zero.h>
 
 // Helper function to multiply two first-order polynomials: (b0 + b1*z^-1) * (c0 + c1*z^-1) -> out[0] + out[1]*z^-1 + out[2]*z^-2
-static void _multiply_poly1_poly1(const parameter_gt b[2], const parameter_gt c[2], parameter_gt out[3])
-{
-    out[0] = b[0] * c[0];
-    out[1] = b[0] * c[1] + b[1] * c[0];
-    out[2] = b[1] * c[1];
-}
+//static void _multiply_poly1_poly1(const parameter_gt b[2], const parameter_gt c[2], parameter_gt out[3])
+//{
+//    out[0] = b[0] * c[0];
+//    out[1] = b[0] * c[1] + b[1] * c[0];
+//    out[2] = b[1] * c[1];
+//}
 
 // Helper function to multiply a second-order and a first-order polynomial
-static void _multiply_poly2_poly1(const parameter_gt b[3], const parameter_gt c[2], parameter_gt out[4])
-{
-    out[0] = b[0] * c[0];
-    out[1] = b[0] * c[1] + b[1] * c[0];
-    out[2] = b[1] * c[1] + b[2] * c[0];
-    out[3] = b[2] * c[1];
-}
+//static void _multiply_poly2_poly1(const parameter_gt b[3], const parameter_gt c[2], parameter_gt out[4])
+//{
+//    out[0] = b[0] * c[0];
+//    out[1] = b[0] * c[1] + b[1] * c[0];
+//    out[2] = b[1] * c[1] + b[2] * c[0];
+//    out[3] = b[2] * c[1];
+//}
 
 // Helper function to multiply a second-order numerator and a first-order numerator polynomial
 static void _multiply_num_poly2_poly1(const parameter_gt b[3], const parameter_gt c[2], parameter_gt out[4])
@@ -1367,6 +1367,50 @@ void ctl_init_lead(ctrl_lead_t* obj, parameter_gt K_D, parameter_gt tau_D, param
 
     // Clear initial states
     ctl_clear_lead(obj);
+}
+
+void ctl_init_lead_form2(ctrl_lead_t* obj, parameter_gt alpha, parameter_gt T, parameter_gt fs)
+{
+    // Sampling period
+    parameter_gt Ts = 1.0f / fs;
+
+    // Denominator term from bilinear transform: (2*tau_D + T)
+    parameter_gt den = 2.0f * T + Ts;
+    parameter_gt inv_den;
+
+    // Avoid division by zero
+    if (fabsf(den) < 1e-9f)
+    {
+        inv_den = 0.0f; // Or handle error appropriately
+    }
+    else
+    {
+        inv_den = 1.0f / den;
+    }
+
+    // Calculate coefficients based on the discretized transfer function
+    // H(z) = (b0 + b1*z^-1) / (1 - a1*z^-1)
+
+    // a1 = (2*T - Ts) / (2*T + Ts)
+    obj->a1 = float2ctrl((2.0f * T - Ts) * inv_den);
+
+    // b0 = (2*alpha*T + T) / (2*T + Ts)
+    obj->b0 = float2ctrl((2.0f * alpha * T + Ts) * inv_den);
+
+    // b1 = (T - 2*alpha*T) / (2*T + Ts)
+    obj->b1 = float2ctrl((Ts - 2.0f * alpha * T) * inv_den);
+
+    // Clear initial states
+    ctl_clear_lead(obj);
+}
+
+void ctl_init_lead_form3(ctrl_lead_t* obj, parameter_gt angle, parameter_gt fc, parameter_gt fs)
+{
+    parameter_gt alpha;
+
+    alpha = (1 + sinf(angle)) / (1 - sinf(angle));
+
+    ctl_init_lead_form2(obj, alpha, 1 / fc, fs);
 }
 
 void ctl_init_lag(ctrl_lag_t* obj, parameter_gt tau_L, parameter_gt tau_P, parameter_gt fs)

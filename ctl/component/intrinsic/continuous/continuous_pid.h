@@ -56,16 +56,27 @@ typedef struct _tag_pid_regular_t
     ctrl_gt dn;  //!< The previous input value for the derivative term.
 } ctl_pid_t;
 
-/**
- * @brief Initializes a parallel-form PID controller.
- * @details Calculates ki = Kp * T/Ti and kd = Kp * Td/T.
- * @param[out] hpid Pointer to the PID controller instance.
- * @param[in] kp Proportional gain.
- * @param[in] Ti Integral time constant (seconds).
- * @param[in] Td Derivative time constant (seconds).
- * @param[in] fs Sampling frequency (Hz).
- */
-void ctl_init_pid_par(ctl_pid_t* hpid, parameter_gt kp, parameter_gt Ti, parameter_gt Td, parameter_gt fs);
+///**
+// * @brief Initializes a parallel-form PID controller.
+// * @details Calculates ki = T/Ti and kd = Td/T.
+// * @param[out] hpid Pointer to the PID controller instance.
+// * @param[in] kp Proportional gain.
+// * @param[in] Ti Integral time constant (seconds).
+// * @param[in] Td Derivative time constant (seconds).
+// * @param[in] fs Sampling frequency (Hz).
+// */
+//void ctl_init_pid_par(ctl_pid_t* hpid, parameter_gt kp, parameter_gt Ti, parameter_gt Td, parameter_gt fs);
+//
+///**
+// * @brief Initializes a parallel-form PID controller.
+// * @details Calculates ki = Ki * T and kd = Td/T.
+// * @param[out] hpid Pointer to the PID controller instance.
+// * @param[in] kp Proportional gain.
+// * @param[in] Ti Integral gain (Hz).
+// * @param[in] Td Derivative gain (seconds).
+// * @param[in] fs Sampling frequency (Hz).
+// */
+//void ctl_init_pid_par_kpid(ctl_pid_t* hpid, parameter_gt kp, parameter_gt ki, parameter_gt kd, parameter_gt fs);
 
 /**
  * @brief Initializes a series-form PID controller.
@@ -76,7 +87,18 @@ void ctl_init_pid_par(ctl_pid_t* hpid, parameter_gt kp, parameter_gt Ti, paramet
  * @param[in] Td Derivative time constant (seconds).
  * @param[in] fs Sampling frequency (Hz).
  */
-void ctl_init_pid_ser(ctl_pid_t* hpid, parameter_gt kp, parameter_gt Ti, parameter_gt Td, parameter_gt fs);
+void ctl_init_pid_Tmode(ctl_pid_t* hpid, parameter_gt kp, parameter_gt Ti, parameter_gt Td, parameter_gt fs);
+
+/**
+ * @brief Initializes a parallel-form PID controller.
+ * @details Calculates ki = Kp * Ki * T and kd = Kp * Kd/T.
+ * @param[out] hpid Pointer to the PID controller instance.
+ * @param[in] kp Proportional gain.
+ * @param[in] Ti Integral gain (Hz).
+ * @param[in] Td Derivative gain (seconds).
+ * @param[in] fs Sampling frequency (Hz).
+ */
+void ctl_init_pid(ctl_pid_t* hpid, parameter_gt kp, parameter_gt ki, parameter_gt kd, parameter_gt fs);
 
 /**
  * @brief Executes one step of the parallel-form PID controller.

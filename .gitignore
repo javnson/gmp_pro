@@ -513,3 +513,7 @@ tools/hvhb40040_Antaioz/**/impl_1
 # Disable vcpkg cache
 
 **/vcpkg_installed/**
+
+# cache of rt_trace module
+*.crt_bin
+

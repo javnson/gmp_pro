@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>CTL_PG_3phinv_Iris_node_solution</name>
+	<name>CTL_PG_3PH_Inverter_Iris_node_solution</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -33,7 +33,7 @@
 		<link>
 			<name>common/ctl_main.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/implement/common/ctl_main.h</locationURI>
+			<locationURI>PARENT-2-PROJECT_LOC/implement/common/ctl_main.c</locationURI>
 		</link>
 		<link>
 			<name>common/ctl_main.h</name>
@@ -80,6 +80,10 @@
 		<variable>
 			<name>copy_PARENT</name>
 			<value>$%7BPARENT-3-PROJECT_LOC%7D/lib/gmp_pro/ctl/suite/pgs_3ph_grid_inverter</value>
+		</variable>
+		<variable>
+			<name>copy_PARENT1</name>
+			<value>$%7BPARENT-1-copy_PARENT%7D/mcs_pmsm</value>
 		</variable>
 	</variableList>
 </projectDescription>

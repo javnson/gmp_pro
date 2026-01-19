@@ -49,11 +49,13 @@ volatile fast_gt flag_system_enable = 0;
 
 // adc calibrator flags
 adc_bias_calibrator_t adc_calibrator;
-fast_gt flag_enable_adc_calibrator = 1;
-fast_gt index_adc_calibrator = 0;
+volatile fast_gt flag_enable_adc_calibrator = 1;
+volatile fast_gt index_adc_calibrator = 0;
 
 // enable motor auto identify
-fast_gt flag_enable_motor_identify = 0;
+volatile fast_gt flag_enable_motor_identify = 0;
+
+uint32_t counter;
 
 // CTL initialize routine
 void ctl_init()
@@ -72,6 +74,8 @@ void ctl_init()
     ctl_init_autoturn_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, MTR_ENCODER_LINES);
     // Set encoder offset
     ctl_set_autoturn_pos_encoder_offset(&pos_enc, MTR_ENCODER_OFFSET);
+	  // attach a QEP encoder object
+		ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &pos_enc.encif);
 #endif // PMSM_CTRL_USING_QEP_ENCODER
 
     // create a speed observer by position encoder
@@ -90,6 +94,8 @@ void ctl_init()
 
     // attach a speed encoder object with motor controller
     ctl_attach_mtr_velocity(&pmsm_ctrl.mtr_interface, &spd_enc.encif);
+		
+
 
     // Step 2.3 Motor Identifier
 
@@ -110,15 +116,16 @@ void ctl_init()
 
     // speed pid controller parameters
     pmsm_ctrl_init.spd_ctrl_div = SPD_CONTROLLER_PWM_DIVISION;
-    pmsm_ctrl_init.spd_pid_gain = (parameter_gt)(0.2);
+    pmsm_ctrl_init.spd_pid_gain = (parameter_gt)(0.5);
     pmsm_ctrl_init.spd_Ti = (parameter_gt)(4.0f / MTR_CTRL_SPEED_LOOP_BW);
+//		pmsm_ctrl_init.spd_Ti = 0.0005f;
     pmsm_ctrl_init.spd_Td = 0;
     pmsm_ctrl_init.current_limit_min = float2ctrl(-0.45);
     pmsm_ctrl_init.current_limit_max = float2ctrl(0.45);
 
     // accelerator parameters
-    pmsm_ctrl_init.acc_limit_min = -150.0f;
-    pmsm_ctrl_init.acc_limit_max = 150.0f;
+    pmsm_ctrl_init.acc_limit_min = -1.5f;
+    pmsm_ctrl_init.acc_limit_max = 1.5f;
 
     // init the PMSM controller
     ctl_init_pmsm_controller(&pmsm_ctrl, &pmsm_ctrl_init);
@@ -134,7 +141,7 @@ void ctl_init()
 #endif // OPENLOOP_CONST_FREQUENCY
 
     ctl_pmsm_ctrl_voltage_mode(&pmsm_ctrl);
-    ctl_set_pmsm_ctrl_vdq_ff(&pmsm_ctrl, float2ctrl(0.2), float2ctrl(0.2));
+    ctl_set_pmsm_ctrl_vdq_ff(&pmsm_ctrl, float2ctrl(0.0), float2ctrl(0.12));
 
 #elif (BUILD_LEVEL == 2)
 #if defined OPENLOOP_CONST_FREQUENCY
@@ -143,7 +150,7 @@ void ctl_init()
     ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &rg.enc);
 #endif // OPENLOOP_CONST_FREQUENCY
     ctl_pmsm_ctrl_current_mode(&pmsm_ctrl);
-    ctl_set_pmsm_ctrl_idq_ff(&pmsm_ctrl, float2ctrl(0.1), float2ctrl(0.1));
+    ctl_set_pmsm_ctrl_idq_ff(&pmsm_ctrl, float2ctrl(0.0), float2ctrl(0.12));
 
 #elif (BUILD_LEVEL == 3)
 
@@ -160,6 +167,8 @@ void ctl_init()
     if (flag_enable_adc_calibrator)
     {
         // Select ADC calibrate
+				// NOTE: if ADC clibrator variable is enable but not init
+				// The system enable logic will stuck.
         ctl_disable_pmsm_ctrl_output(&pmsm_ctrl);
         ctl_enable_adc_calibrator(&adc_calibrator);
     }
@@ -293,13 +302,19 @@ fast_gt ctl_motor_identify(void)
 // if return 0 the system is not ready to enable
 fast_gt ctl_ready_mainloop(void)
 {
+    // test
+    //return 1;
+
     if (
+#if defined SPECIFY_ENABLE_ADC_CALIBRATE
         // step I ADC calibrate
         ctl_adc_calibrate() &&
+#endif // SPECIFY_ENABLE_ADC_CALIBRATE
 
         // step II motor identify
         ctl_motor_identify())
         return 1;
     else
         return 0;
+    
 }

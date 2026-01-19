@@ -1,215 +1,215 @@
-# GMP ͨ�õ���װ��ƽ̨
+﻿# GMP 通用电气装备平台
 
-GMP��Ŀ��Ϊ��ƽ̨֧��ģ�顢������ģ��⡢����⡢�����ڻ�����ģ�顣
+GMP项目分为跨平台支持模块、控制器模板库、外设库、软件在环仿真模块。
 
-��ƽ̨֧��ģ�����`core`Ŀ¼��`csp`Ŀ¼������Ŀ¼�ֱ����ƽ̨������Ը�����һЩ�����Ժ�����ʵ�֡��Լ���ƽ̨�Ļ������塣`core/mm/`Ŀ¼���ṩ���ڴ�����Ĺ��ߡ�`core/pm`Ŀ¼���ṩ�˽���/״̬�������Ĺ��ߡ�`core/ds`Ŀ¼���ṩ�˳��õ����ݽṹ��`core/ec`Ŀ¼���ṩ�˴����������Ĺ��ߡ�`core/std`Ŀ¼���ṩ�˱�׼����ƽ̨�ӿڵ�������ݡ�
+跨平台支持模块包括`core`目录和`csp`目录，两个目录分别从与平台的相关性给出了一些功能性函数的实现、以及跨平台的基本定义。`core/mm/`目录中提供了内存管理的工具。`core/pm`目录中提供了进程/状态机管理的工具。`core/ds`目录中提供了常用的数据结构。`core/ec`目录中提供了错误代码管理的工具。`core/std`目录中提供了标准化跨平台接口的相关内容。
 
-������ģ����ṩ��һϵ�п��������õ���ģ�飨Ԫ������`ctl/components/`Ŀ¼�¡��ṩ�˳��׵Ŀ�����ģ����`ctl/suite/`Ŀ¼�¡��ṩ�˻�������ѧ����֧����`ctl/math_block/`Ŀ¼�¡�
+控制器模板库提供了一系列控制器常用的子模块（元件）在`ctl/components/`目录下。提供了成套的控制器模板在`ctl/suite/`目录下。提供了基本的数学运算支持在`ctl/math_block/`目录下。
 
-����Ᵽ����`ext`Ŀ¼�£�������������ͷ��࣬������һϵ�������ģ�飬���е�������ʻ���`core/std`�ж��������ӿڡ�
+外设库保存在`ext`目录下，根据外设的类型分类，保存了一系列外设的模块，所有的外设访问基于`core/std`中定义的外设接口。
 
-�����ڻ�����ģ����Ҫ��������֧�ְ�`csp/windows_simulink`�ṩͬ����ķ���Simulink�ӿڵĻ��ƣ�`slib`�ṩ��Simulink��֧�ֿ�Ͱ�װ����
+软件在环仿真模块主要由软件层支持包`csp/windows_simulink`提供同代码的访问Simulink接口的机制，`slib`提供了Simulink的支持库和安装程序。
 
-## ��װGMP����
+## 安装GMP软件
 
-ǰ��������
+前置软件：
 
 + Git
 
-+ Visual Studio(��Ҫ��װ��Windowsƽ̨�����İ�)
++ Visual Studio(需要安装带Windows平台开发的包)
 
 + Python
 
-+ MATLAB(����Ϊ2022b�汾�������Ҫʹ��SIL���湦�ܣ�
++ MATLAB(最少为2022b版本，如果需要使用SIL仿真功能）
 
-+ CCS���׵�Sysconfig��C2000ware�������Ҫ����DSP����
++ CCS配套的Sysconfig和C2000ware（如果需要调试DSP程序）
 
-��GMP����������ѹ��һ��û�����ġ��ո���������ձ�ʶ�����������ĵط�������һЩ������������ȷ�ҵ�·�������ܱ�����������λ�ڸ�Ŀ¼�µİ�װ����`install_gmp.bat`����ȷ���������һ���򽫻ᴴ��һ����������`GMP_PRO_LOCATION`���ڱ���GMP��Ŀ¼�������Ҫж��GMP �������ֶ�ɾ��`GMP_PRO_LOCATION`����������
+将GMP的软件包解压到一个没有中文、空格等命名按照标识符规则命名的地方（否则一些编译器不能正确找到路径、可能报错），运行位于根目录下的安装程序`install_gmp.bat`，正确的情况下这一程序将会创建一个环境变量`GMP_PRO_LOCATION`用于保存GMP的目录。如果需要卸载GMP ，可以手动删除`GMP_PRO_LOCATION`环境变量。
 
-> ע�⣬��Ҫ��ȷ������һ����Ҫ������ȷ��װ��Python3������һϵ�д������ɹ��߽��ᱨ����
+> 注意，需要正确运行这一程序要本地正确安装了Python3，否则一系列代码生成工具将会报错。
 
-�����Ҫ��װSimulink��֧�ֿ⣬�����л�����·����`slib`�У�����`install_gmp_simulink_lib.m`�ű�����ҪMATLAB�汾����Ϊ2022b�����������ϴ��ڶ���汾��MATLAB�����ڲ�ͬ��MATLAB������������һ��װ�ű�����������֮�䲻���ͻ�����к���Դ�Simulink����һ���°�װ��GMP Utilities�⡣
+如果需要安装Simulink的支持库，可以切换运行路径到`slib`中，运行`install_gmp_simulink_lib.m`脚本，需要MATLAB版本至少为2022b，如果计算机上存在多个版本的MATLAB可以在不同的MATLAB环境中运行这一安装脚本，各个环境之间不会冲突。运行后可以打开Simulink看到一个新安装的GMP Utilities库。
 
-���ˣ�GMP�����Ͱ�װ����ˡ�
+至此，GMP软件就安装完成了。
 
-�Դ�������������ͬ�����Ϊ�����������SIL�����ķ��棬���Դ�`ctl/suite/mcs_pmsm/project/motor_control_simulink/motor_control_simulink.sln`��������һӦ�ó������GMP��ȷ��װ��Visual Studio 2022��ȷ��װ�ˣ���ô���������ȷ�������С�
+以带传感器的永磁同步电机为例，如果运行SIL环境的仿真，可以打开`ctl/suite/mcs_pmsm/project/motor_control_simulink/motor_control_simulink.sln`，运行这一应用程序。如果GMP正确安装，Visual Studio 2022正确安装了，那么程序可以正确编译运行。
 
-������ʹ��MATLAB��`gmp_pmsm_sensored_sil_mdl.slx`SILͬ�������ģ�ͣ������ڿ��������е������������һ����ģ�ͣ�������������������Simulinkģ�ͽ������Ϸ��档Simulink������ɺ���������񽫻��Զ���������
+接下来使用MATLAB打开`gmp_pmsm_sensored_sil_mdl.slx`SIL同代码仿真模型，可以在控制器运行的情况下启动这一仿真模型，控制器服务器将会与Simulink模型进行联合仿真。Simulink仿真完成后控制器服务将会自动结束程序。
 
-�����Ҫ����280049C��ʵ����򣬿�����CCS�е���`ctl/suite/mcs_pmsm/project/f280049c`�ļ����еĹ��̡�
+如果需要部署280049C的实物程序，可以在CCS中导入`ctl/suite/mcs_pmsm/project/f280049c`文件夹中的工程。
 
-> �����ʾû�а�װC2000ware  5.3�汾���ϻ���Sysconfig��Ҫ��ȷ��װ��
+> 如果提示没有安装C2000ware  5.3版本以上或者Sysconfig需要正确安装。
 >
-> �����ʾ�Ҳ���GMP��Product��Ҫ�������µĲ������У�
+> 如果提示找不到GMP的Product需要按照如下的操作进行：
 >
-> �ڲ˵���Windows�˵��µ�Preferences�˵�ѡ���Ԥ�贰�ڡ��ڴ�����ѡ��`CCS-Products`ҳ�棬���ҳ���Ҳ��Add��ѡ��GMP������Ŀ¼��ѡ��ȷ������ʶ��`GMP Core for C28x series devices`��һ��Ʒ�������������롣
+> 在菜单栏Windows菜单下的Preferences菜单选项，打开预设窗口。在窗口中选择`CCS-Products`页面，点击页面右侧的Add，选择GMP的所在目录，选择确定，会识别到`GMP Core for C28x series devices`这一产品。即可正常编译。
 
-���Բο�Sysconfig�ļ��е����ý������ߣ������޸�Sysconfig�ļ��������������Լ���Ӳ����
+可以参考Sysconfig文件中的设置进行连线，或者修改Sysconfig文件的设置以适配自己的硬件。
 
-## �ṩ�Ļ�������
+## 提供的基础服务
 
-GMP�ṩ�Ļ���������ƽ̨�޹ص�coreģ���ƽ̨��ص�cspģ�����������ṩ����Ҫ�������¼������棺
+GMP提供的基础服务由平台无关的core模块和平台相关的csp模块两个部分提供，主要包含以下几个方面：
 
-### ���ݽṹ����
+### 数据结构服务
 
-Ϊ����Ӧ��ͬƽ̨�����ֿ��������/��ҵ��������ƣ��ṩ�����µ����ݽṹ�����û�ѡ�á���Щ����������`_gt`��β����Ϊ general type ��ʾƽ̨�޹����͡�������Щ���͵�Ĭ�϶������ļ�`core/std/types.cfg.h`�и�����Ϊ����Ӧ��ͬƽ̨�Ļ�ӭ��������CSP�ж���Щ���ͽ������¶��壬��Щ��Ӧƽ̨�Ķ��������`csp/<platform>/csp.typedef.h`�ļ����ҵ���
+为了适应不同平台的数字控制器设计/工业控制器设计，提供了以下的数据结构，供用户选用。这些数据类型以`_gt`结尾，意为 general type 表示平台无关类型。以下这些类型的默认定义在文件`core/std/types.cfg.h`中给出，为了适应不同平台的欢迎，允许在CSP中对这些类型进行重新定义，这些适应平台的定义可以在`csp/<platform>/csp.typedef.h`文件中找到。
 
-+ ����Ԫ��`data_gt`
++ 基本元素`data_gt`
 
-����Ԫ�ص�������`data_gt`����ʾ�����ڱ�ʾ���оƬ�е���С�洢��Ԫ����DSP C28x������������ƽ̨�������ԵĲ��졣�ú�`GMP_PORT_DATA_SIZE_PER_BYTES`��`GMP_PORT_DATA_SIZE_PER_BITS`��������һ��С��Ԫ�����ݿ��ȡ�
+基本元素的数据用`data_gt`来表示，用于表示这款芯片中的最小存储单元。在DSP C28x环境中与其他平台存在明显的差异。用宏`GMP_PORT_DATA_SIZE_PER_BYTES`和`GMP_PORT_DATA_SIZE_PER_BITS`来描述这一最小单元的数据宽度。
 
-+ ��������`fast_gt`
++ 快速类型`fast_gt`
 
-��ִ��Ч�ʿ��Ƕ����һ���������ͣ���������ݿ���������ƽ̨�ļܹ���ء�����C28xϵ���ں˵Ĵ���������16bit������Ч�ʸ��ߣ�STM32ϵ���ں˵Ĵ���������32bit������Ч�ʸ��ߡ���`fast_gt`Ϊ������ͨ������£���һ���ݽṹ���ڶ����ʵ�ֱ�־λ����ʹ��ʱӦ����֤��ֵ��Χ���ܳ���char��8bit�з��ţ��ķ�Χ������������ƽ̨�������ⶨ����������ú�`GMP_PORT_FAST_SIZE_PER_BYTES`��`GMP_PORT_FAST_SIZE_PER_BITS`��������һ���ݽṹ�ڵ�ǰ���л����µ�ʵ�ʴ�С��
+从执行效率考虑定义的一组数据类型，具体的数据宽度与运行平台的架构相关。比如C28x系列内核的处理器访问16bit的数据效率更高，STM32系列内核的处理器访问32bit的数据效率更高。以`fast_gt`为代表，通常情况下，这一数据结构用于定义和实现标志位。在使用时应当保证数值范围不能超过char（8bit有符号）的范围，以免在特殊平台或者特殊定义下溢出。用宏`GMP_PORT_FAST_SIZE_PER_BYTES`和`GMP_PORT_FAST_SIZE_PER_BITS`来描述这一数据结构在当前运行环境下的实际大小。
 
-��Ӧ�أ���һ���������ݽṹ�����������Ҫ������������һ�����ȵ��������ͣ�������������������`fast16_gt`��ʾ��������Ϊ16bit�Ŀ��ٷ������͡�`fast32_t` ��ʾ��������Ϊ32bit�Ŀ��ٷ������͡�
+相应地，有一组衍生数据结构。如果我们需要访问至少满足一个宽度的数据类型，可以用衍生数据类型`fast16_gt`表示宽度至少为16bit的快速访问类型。`fast32_t` 表示宽度至少为32bit的快速访问类型。
 
-+ ʱ������`time_gt`
++ 时间类型`time_gt`
 
-ʱ��������GMP����������Ļ�������tickΪ��λ������ǰ��ʱ����ʱ��Σ��ڲ�ͬ�����л����У�������ͬһ���л����Ĳ�ͬ��������tick�ĵ�λ���Ȳ����̶���`time_gt`Ҫ�������ܹ�����32λ���޷����������ڲ��ֵ�64λϵͳ��֧�ֱ���64λ���޷������������л����е����ݴ�С�ú�`GMP_PORT_TIME_SIZE_PER_BYTES`��`GMP_PORT_TIME_SIZE_PER_BITS`ָʾ��
+时间类型是GMP调度器服务的基础，以tick为单位表征当前的时间点和时间段，在不同的运行环境中，甚至是同一运行环境的不同功能区中tick的单位长度并不固定。`time_gt`要求至少能够保存32位的无符号整数，在部分的64位系统中支持保存64位的无符号整数。运行环境中的数据大小用宏`GMP_PORT_TIME_SIZE_PER_BYTES`和`GMP_PORT_TIME_SIZE_PER_BITS`指示。
 
-+ �ڴ������������
++ 内存宽度数据类型
 
-GMP�����ڱ����ڴ���ȵ��������±�����Щ��������ѭ���Ĺ����ͺ������βΡ�ָ��ı��档
+GMP中用于表征内存宽度的类型如下表。这些类型用于循环的构建和函数的形参、指针的保存。
 
-| ����        | ˵��                                                         |
+| 类型        | 说明                                                         |
 | ----------- | ------------------------------------------------------------ |
-| `size_gt`   | ������Ϊ���������ͣ��ܹ�ͨ����һ���ͱ���ȫ�ڴ淶Χ           |
-| `addr_gt`   | ���ڱ���ָ������ݽṹ����һ���͵Ĵ�СӦ���뵱ǰ������ָ�����͵Ĵ�С��ͬ |
-| `addr32_gt` | ���ڱ���ָ��/��ַ�����ݽṹ����������һ�������͵���С����Ϊ32bit��ͨ��Ӧ����ͨ�ų����У����ڱ������ߵ�ַ/�����ַ�� |
-| `addr16_gt` | ���ڱ���ָ��/��ַ�����ݽṹ����������һ�������͵���С����Ϊ16bit��ͨ��Ӧ����ͨ�ų����У����ڱ������ߵ�ַ/�����ַ�� |
-| `diff_gt`   | ���ڼ�¼ָ���ƫ���������͡����з������ͣ�����ͨ����`size_gt`����һ�¡� |
+| `size_gt`   | 用于作为遍历的类型，能够通过这一类型遍历全内存范围           |
+| `addr_gt`   | 用于保存指针的数据结构，这一类型的大小应当与当前环境的指针类型的大小相同 |
+| `addr32_gt` | 用于保存指针/地址的数据结构，限制了这一数据类型的最小宽度为32bit，通常应用在通信场合中，用于表征总线地址/外设地址等 |
+| `addr16_gt` | 用于保存指针/地址的数据结构，限制了这一数据类型的最小宽度为16bit，通常应用在通信场合中，用于表征总线地址/外设地址等 |
+| `diff_gt`   | 用于记录指针的偏移量的类型。是有符号类型，宽度通常与`size_gt`保持一致。 |
 
-+ Ĭ���β���������`param_gt`
++ 默认形参数据类型`param_gt`
 
-GMP�����ڱ���Ĭ���β����͵����ݽṹ��ͨ��Ĭ��Ϊ`int32_t`��Ҫ��Ϊ�з��ŵ����͡����ҿ��ȴ��ڵ���32bit��
+GMP中用于表征默认形参类型的数据结构，通常默认为`int32_t`，要求为有符号的类型、并且宽度大于等于32bit。
 
-+ ģ��/���ֽӿڻ�������
++ 模拟/数字接口基本类型
 
-ģ�����ֽӿڵ�ֵ�����α��ͨ�������¼��֡�
+模拟数字接口的值用整形表达，通常有以下几种。
 
-| ����     | ˵��                                                         |
+| 类型     | 说明                                                         |
 | -------- | ------------------------------------------------------------ |
-| `adc_gt` | ADC���������ͣ���СӦ���ܹ�����ADC��ת�����������12bit��ADC����Ӧ������Ϊ16bit���޷������ͣ�����24bit��ADC����Ӧ������Ϊ32bit���޷������͡� |
-| `dac_gt` | DAC���������ͣ���СӦ���ܹ�����DAC������ֵ������12bit��DACӦ������Ϊ����16bit���޷������ͣ�����24bit��DACӦ������Ϊ����32bit���޷������͡� |
-| `pwm_gt` | PWM���������ͣ���СӦ���ܹ�����PWM�������ıȽ���ֵ��С��ͨ�������Ϊ32bit������һЩ�߾��ȳ�����Ҫ�ﵽ64bit�� |
+| `adc_gt` | ADC的数据类型，大小应当能够保存ADC的转换结果，比如12bit的ADC环境应当至少为16bit的无符号类型，对于24bit的ADC环境应当至少为32bit的无符号类型。 |
+| `dac_gt` | DAC的数据类型，大小应当能够保存DAC的送入值。对于12bit的DAC应当定义为至少16bit的无符号类型，对于24bit的DAC应当定义为至少32bit的无符号类型。 |
+| `pwm_gt` | PWM的数据类型，大小应当能够承载PWM发生器的比较器值大小，通常情况下为32bit，对于一些高精度场合需要达到64bit。 |
 
-+ ������/��ֵ����Ļ�������
++ 控制器/数值计算的基本类型
 
-��GMP�в�����������е���ֵ�������������֣�`ctrl_gt`��`parameter_gt`���������ͷֱ����ڱ���������в����������ͺͿ�������ʼ�������в����������͡�
+在GMP中参与控制器运行的数值计算类型有两种，`ctrl_gt`和`parameter_gt`，两种类型分别用于保存控制器中参与计算的类型和控制器初始化过程中参与计算的类型。
 
-`ctrl_gt`�ǵ�ǰ���оƬ���ʺ����ڿ��Ƶ��������ͣ����ܹ���������ֵ/�����������Ч�����ݽṹ�����ڵͶ�оƬ����һ���ݽṹ��ͨ��Ϊ16bit��Q15���������ͣ������ṩ�˶�����������ٵ�оƬ����һ���ݽṹͨ��Ϊ32bit��Q24���������ͣ�������FPU��оƬ����һ���ݽṹͨ��Ϊ32bit��float���ͣ�����48bit��float���ͣ���ʵ���ṩ��FPU���Ͷ�������������Double FPU��оƬ����һ���ݿ���Ϊ64bit��double���͡�Ӧ��ע��`ctrl_gt`�����Ƕ���������ʱ�˷��Ķ�����ͨ���Ķ��岻ͬ������ֱ��ʹ��C�������õĳ˷�������Ӧ��ʹ�������ṩ��һ��ר�ú�����ʵ�ָ�Ч�ļ��㡣
+`ctrl_gt`是当前这款芯片最适合用于控制的数据类型，即能够表征标幺值/控制量的最高效的数据结构。对于低端芯片，这一数据结构结通常为16bit的Q15定点数类型；对于提供了定点数计算加速的芯片，这一数据结构通常为32bit的Q24定点数类型；对于有FPU的芯片，这一数据结构通常为32bit的float类型，或者48bit的float类型（视实际提供的FPU类型而定）；对于有Double FPU的芯片，这一数据可能为64bit的double类型。应当注意`ctrl_gt`可能是定点数，此时乘法的定义与通常的定义不同，不能直接使用C语言内置的乘法函数。应当使用下面提供的一组专用函数来实现高效的计算。
 
-| ������       | ����     | ������                       | ˵��                         |
+| 函数名       | 分类     | 功能名                       | 说明                         |
 | ------------ | -------- | ---------------------------- | ---------------------------- |
-| `float2ctrl` | ����ת�� | ����ת��Ϊ��������           | float����ת��Ϊ`ctrl_gt`���� |
-| `int2ctrl`   | ����ת�� | ����ת��Ϊ��������           | int����ת��Ϊctrl_gt����     |
-| `ctrl2int`   | ����ת�� | ��������ת��Ϊ����           | ctrl_gtת��Ϊint����         |
-| `ctrl_mod_1` | ��ֵ���� | ���ڵ�λ1ȡģ                | $[x]$                        |
-| `ctl_mul`    | ��ֵ���� | �˷�                         | $x\times y$                  |
-| `ctl_mul2`   | ��ֵ���� | ����2                        | $2x$                         |
-| `ctl_mul4`   | ��ֵ���� | ����4                        | $4x$                         |
-| `ctl_div`    | ��ֵ���� | ����                         | $x\div y$                    |
-| `ctl_div2`   | ��ֵ���� | ����2                        | $x/2$                        |
-| `ctl_div4`   | ��ֵ���� | ����4                        | $x/4$                        |
-| `ctl_sat`    | ����     | ����ֵ���������һ���ķ�Χ�� |                              |
-| `ctl_sin`    | ������   | ����                         | $\sin (x)$                   |
-| `ctl_cos`    | ������   | ����                         | $\cos (x)$                   |
-| `ctl_tan`    | ������   | ����                         | $\tan (x)$                   |
-| `ctl_atan2`  | ������   | ������                       | $atan(\frac{y}{x})$          |
-| `ctl_exp`    | ������   | ��eΪ�׵�ָ������            | $e^x$                        |
-| `ctl_ln`     | ������   | ��eΪ�׵Ķ�������            | $\ln x$                      |
-| `ctl_sqrt`   | ������   | ����                         | $\sqrt{x}$                   |
-| `ctl_isqrt`  | ������   | �����ĵ���                   | $1/\sqrt{x}$                 |
-| `pwm_mul`    | ���轻�� | PWM���۳˷�                  | $(pwm\_gt)(x\times y)$       |
-| `pwm_sat`    | ���轻�� | PWM����                      |                              |
+| `float2ctrl` | 类型转换 | 浮点转换为控制类型           | float类型转换为`ctrl_gt`类型 |
+| `int2ctrl`   | 类型转换 | 整数转换为控制类型           | int类型转换为ctrl_gt类型     |
+| `ctrl2int`   | 类型转换 | 控制类型转换为整数           | ctrl_gt转换为int类型         |
+| `ctrl_mod_1` | 数值计算 | 关于单位1取模                | $[x]$                        |
+| `ctl_mul`    | 数值计算 | 乘法                         | $x\times y$                  |
+| `ctl_mul2`   | 数值计算 | 乘以2                        | $2x$                         |
+| `ctl_mul4`   | 数值计算 | 乘以4                        | $4x$                         |
+| `ctl_div`    | 数值计算 | 除法                         | $x\div y$                    |
+| `ctl_div2`   | 数值计算 | 除以2                        | $x/2$                        |
+| `ctl_div4`   | 数值计算 | 除以4                        | $x/4$                        |
+| `ctl_sat`    | 饱和     | 将数值结果限制在一定的范围内 |                              |
+| `ctl_sin`    | 非线性   | 正弦                         | $\sin (x)$                   |
+| `ctl_cos`    | 非线性   | 余弦                         | $\cos (x)$                   |
+| `ctl_tan`    | 非线性   | 正切                         | $\tan (x)$                   |
+| `ctl_atan2`  | 非线性   | 反正切                       | $atan(\frac{y}{x})$          |
+| `ctl_exp`    | 非线性   | 以e为底的指数计算            | $e^x$                        |
+| `ctl_ln`     | 非线性   | 以e为底的对数计算            | $\ln x$                      |
+| `ctl_sqrt`   | 非线性   | 开根                         | $\sqrt{x}$                   |
+| `ctl_isqrt`  | 非线性   | 开根的倒数                   | $1/\sqrt{x}$                 |
+| `pwm_mul`    | 外设交互 | PWM标幺乘法                  | $(pwm\_gt)(x\times y)$       |
+| `pwm_sat`    | 外设交互 | PWM饱和                      |                              |
 
-`parameter_gt`�������ڱ����������ԭʼ������δ���۲���������Ҫ�ܿ��ı�ʾ��Χ����һ����������һ��float���ͣ�����ֱ�ӽ��мӼ��˳����㡣��һ����Ӧ�������ڿ������ж��г��֣�������mainloop������һЩչʾ�Ե����ݣ�Ҳ������init�г�ʼ��������������
+`parameter_gt`类型用于保存控制器的原始参数（未标幺参数），需要很宽的表示范围。这一类型至少是一个float类型，可以直接进行加减乘除运算。这一类型应当避免在控制器中断中出现，可以在mainloop中生成一些展示性的数据，也可以在init中初始化控制器参数。
 
-��Щ������`ctl/math_block/gmp_math.h`�ļ��и�������Զ��塣
+这些内容在`ctl/math_block/gmp_math.h`文件中给出框架性定义。
 
-+ ��������ֵ����
++ 衍生的数值类型
 
-Ϊ�˷���������ı�д��ʵ�֡����ԣ�GMPƽ̨�ṩ��`ctrl_gt`���͵������;������͡���Щ���ݶ�����`ctl/math_block/matrix_lite`��`ctl/math_block/vector_lite`�С������ṩ�˾���Ӽ�����Ȼ��������ĺ�����
+为了方便控制器的编写、实现、调试，GMP平台提供了`ctrl_gt`类型的向量和矩阵类型。这些内容定义在`ctl/math_block/matrix_lite`和`ctl/math_block/vector_lite`中。其中提供了矩阵加减乘逆等基本操作的函数。
 
-+ �������ӿ����ͣ�`<peripheral>_ift`��
++ 控制器接口类型（`<peripheral>_ift`）
 
-��һ��ӿ�������`_ift`��Ϊ��β����Ϊinterface type�����ڱ�����һ�������������������������ADC�ĺ�������ΪADC����ƫ�õ��������ۺ�Ľ��������PWM�ĺ�������Ϊ����ı���ֵ������������ĺ�������Ϊ����ĽǶȡ�Ȧ������Ƕȡ�
+这一类接口类型以`_ift`作为结尾，意为interface type，用于表征出一个传感器的最核心特征。比如ADC的核心特征为ADC经过偏置调整、标幺后的结果。比如PWM的核心特征为输出的标幺值。比如编码器的核心特征为输出的角度、圈数、电角度。
 
-���У�ADC/DAC/PWM�Ľӿ����Ͷ�����`ctl/component/interface/`�ļ����У��������Ľӿ����Ͷ�����`ctl/component/motor_control/basic/encoder.h`��
+其中，ADC/DAC/PWM的接口类型定义在`ctl/component/interface/`文件夹中，编码器的接口类型定义在`ctl/component/motor_control/basic/encoder.h`。
 
-�Ա�����Ϊ������������ζ��һ����Ϣ��Դ���κ��ܹ��ṩ�Ƕ���Ϣ��ģ��/EXT/���趼��Ϊ���������ڴ˸�����б���źŷ�����Ҳ�Ǳ��������Ƕȹ۲���Ҳ��һ��������������ֵ������/�ű�Ҳ�Ǳ���������Щģ��ĵ������������ж�������һ��`rotation_ift`���͵Ľṹ�壬��Ҫʹ��λ����Ϣ��ģ�飬ͨ���ṩһ��ָ��`rotation_ift`���͵�ָ�����ҵ���Ϣ��Դ����һϵ�еĺ�����`ctl_attach_`��Ϊǰ׺������ǵ����Ϣ���ݵĻ����߼���
+以编码器为例，编码器意味着一个信息来源，任何能够提供角度信息的模块/EXT/外设都称为编码器，在此概念下斜坡信号发生器也是编码器，角度观测器也是一个编码器，绝对值编码器/磁编也是编码器。这些模块的典型特征是其中都包含了一个`rotation_ift`类型的结构体，需要使用位置信息的模块，通过提供一个指向`rotation_ift`类型的指针来找到信息来源，这一系列的函数以`ctl_attach_`作为前缀，这就是电机信息传递的基本逻辑。
 
-+ ͨ������Ŀ������
++ 通信外设目标类型
 
-����Ŀ���������ڱ����ض������裬��������ʽ�б�š�ָ�롢�ṹ��ȷ������Դ˿���ͳһ������ӿڡ���ЩĬ��������`core/std/cfg/peripheral.cfg.h`�ļ��и��������е��������Ͷ�Ĭ��дΪvoid*���͡���Щ�������͵ľ�������Ҳ������CSP�и��ǡ�GMP���ṩ���������Ͱ���UART��IIC��SPI��IIS��CAN��GPIO��
+外设目标类型用于表征特定的外设，常见的形式有编号、指针、结构体等方法，以此可以统一化外设接口。这些默认类型在`core/std/cfg/peripheral.cfg.h`文件中给出，所有的外设类型都默认写为void*类型。这些外设类型的具体类型也可以在CSP中覆盖。GMP中提供的外设类型包括UART，IIC，SPI，IIS，CAN，GPIO。
 
-### ����������
+### 基本服务函数
 
-GMP �ṩ��һЩ�����ķ���������Щ�����Ľӿ�ԭ����`core/std/gmp_cport.h`�ļ��������й����轻���ĺ���ԭ�����ļ�`core/std/cfg/csp.cfg.h`�и�������CSP�и��������ʵ�֡��±�������һЩ�������޹صĻ�����������
+GMP 提供了一些基础的服务函数，这些函数的接口原型由`core/std/gmp_cport.h`文件给出，有关外设交互的函数原型由文件`core/std/cfg/csp.cfg.h`中给出，在CSP中给出具体的实现。下表给出了一些与外设无关的基本服务函数。
 
-| ����ԭ��                                  | ˵��                         |
+| 函数原型                                  | 说明                         |
 | ----------------------------------------- | ---------------------------- |
-| `time_gt gmp_base_get_system_tick(void);` | ��õ�ǰ��ϵͳʱ�䣬��λtick |
-| `gmp_base_assert(condition)`              | ����                         |
-| `gmp_base_print(str,...)`                 | ��ӡ������Ϣ                 |
+| `time_gt gmp_base_get_system_tick(void);` | 获得当前的系统时间，单位tick |
+| `gmp_base_assert(condition)`              | 断言                         |
+| `gmp_base_print(str,...)`                 | 打印调试信息                 |
 
 
 
-### ���̺�״̬������δ��ȫʵ��`core/pm`��
+### 进程和状态机服务（未完全实现`core/pm`）
 
 
 
-### �ڴ��������δ��ȫʵ��`core/mm`��
+### 内存管理服务（未完全实现`core/mm`）
 
 
 
-### ���ù���
+### 配置管理
 
-���ù����Ļ���ԭ���ǣ��û�������������CSP�����ã�CSP������������GMP��ͨ�����á���.c�ļ���ֻ��Ҫ����`gmp_core.h`��������ȫ�����á�
-
-
-
-## �����������Ļ����ṹ
+配置管理的基本原则是，用户的设置优先于CSP的设置，CSP的设置优先于GMP的通用设置。在.c文件中只需要包含`gmp_core.h`即可引入全部设置。
 
 
 
-### ������ģ��Ļ������
+## 控制器软件的基本结构
 
-������ģ�����ļ���`ctl/components/`���ṩ��ÿһ���ļ��о���һ�����߰��������Ҫ���ܸ������߰�
 
-| ���߰���      | ˵��                                                         |
+
+### 控制器模块的基本设计
+
+控制器模块在文件夹`ctl/components/`中提供。每一个文件夹就是一个工具包，下面简要介绍各个工具包
+
+| 工具包名      | 说明                                                         |
 | ------------- | ------------------------------------------------------------ |
-| intrinsic     | GMP CTL�ṩ�Ļ���Ԫ�����������õ���������������ɢ�������ȵȡ� |
-| interface     | GMP CTL�ṩ�Ļ����������ӿڣ���ΪPWM��ADC��DAC���֡�         |
-| dsa           | GMP CTL DSA (dynamic system/signal analysis assistant)��̬ϵͳ���źŷ�������ģ�飬����ģ�ⳣ�õĵ����������ܣ������ڿ������ж�̬�������������ܡ� |
-| motor contro  | ���������ģ�飬����������Ƴ��õ�ģ���Ԥ�衣�����������ӿڣ����õĵ���������ģ�飬�������͵��ģ��Ԥ�裬�۲�����ģ�顣 |
-| digital power | ���ֵ�Դ������ģ�飬�������ֵ�Դ���������õ�ģ���Ԥ�衣����MPPT�ȡ� |
+| intrinsic     | GMP CTL提供的基本元件，包含常用的连续控制器、离散控制器等等。 |
+| interface     | GMP CTL提供的基本控制器接口，分为PWM，ADC和DAC三种。         |
+| dsa           | GMP CTL DSA (dynamic system/signal analysis assistant)动态系统、信号分析处理模块，用于模拟常用的调试仪器功能，用来在控制器中动态评估控制器性能。 |
+| motor contro  | 电机控制器模块，包含电机控制常用的模块和预设。包括编码器接口，常用的电机控制相关模块，控制器和电机模型预设，观测器等模块。 |
+| digital power | 数字电源控制器模块，包含数字电源控制器常用的模块和预设。包括MPPT等。 |
 
-### ������ģ�����ƹ���
+### 控制器模块的设计规则
 
-���ݹ��ܻ��ֲ�ͬ�Ŀ�����ģ�鱣���ļ���ͬһ���ļ��п����ж��ģ�顣
+根据功能划分不同的控制器模块保存文件，同一个文件中可能有多个模块。
 
-������ģ���������Ӣ��ȫ�ƻ��߳��õļ�д����`_t`��Ϊ��β����ʾ������ģ����һ�����͡�
+控制器模块的名称是英文全称或者常用的简写。用`_t`作为结尾，表示控制器模块是一个类型。
 
-������ģ��Ĺ��ܺ�����`ctl_`��Ϊ��ͷ����������һ�����ʱ�ʾ��Ҫ�Ķ�������ӿ���ģ�������ټӶ����������Ϊ������ʽ�����õĶ������±�
+控制器模块的功能函数以`ctl_`作为开头，接下来接一个动词表示主要的动作，后接控制模块名，再加额外的修饰作为命名方式。常用的动词如下表
 
-| ����           | ����                                                   |
+| 动词           | 解释                                                   |
 | -------------- | ------------------------------------------------------ |
-| enable/disable | �������߹رտ�����                                     |
-| is             | �ж�ĳһ����־λ�Ƿ�ְλ�����߿������Ƿ����ض�״̬   |
-| get/set        | ���ڵõ�/���ÿ�������״̬/�������                     |
-| init           | ʵ�ֿ������ĳ�ʼ������                                 |
-| step           | ���ڶ�������������ж�/�����ж��е���Ϊ                |
-| clear          | �����������״̬����һЩ��������Ϊ��״̬               |
-| helper         | ���ڼ���һЩ���õ��м���̵ĺ����������˲���ϵ����     |
-| attach         | ���ڽ�һ��ָ�뱣���ڿ��ƽṹ���У�����ָ����ģ������� |
+| enable/disable | 启动或者关闭控制器                                     |
+| is             | 判定某一个标志位是否职位，或者控制器是否处于特定状态   |
+| get/set        | 用于得到/设置控制器的状态/或者输出                     |
+| init           | 实现控制器的初始化函数                                 |
+| step           | 用于定义控制器在主中断/周期中断中的行为                |
+| clear          | 清除控制器的状态或者一些记忆性行为或状态               |
+| helper         | 用于计算一些常用的中间过程的函数，比如滤波器系数等     |
+| attach         | 用于将一个指针保存在控制结构体中，创建指针向模块的输入 |
 
 
 
 
 
-### ������ģ���ʹ�÷���
+### 控制器模块的使用方法
 
-��`ctl/components/`Ŀ¼�м�����Ҫʹ�õ�ģ�顣����������PIDģ����`ctl/component/intrinsic/continuous/continuous_pid.h`�ļ����ṩ�����Լ����ļ��ж���`ctl_pid_t`���͵ı��������ڱ�ʾ��������ʵ�塣�������׵ĳ�ʼ������`ctl_init_pid`��ʼ��PID�����������������ж��е���ѡ��`ctl_step_xx`ϵ�еĺ���ִ�п�������Ϊ��ͨ��step����������Ҫ�û��������롣����������Ҫʹ�ô����ṹ��PID�����������ʹ��`ctl_step_pid_ser`�������������������Ҫ��������ʱ����Ҫ����������ڲ��ļ�����������ͨ��`ctl_clear_pid`��������������ļ������������Ҫ�ڳ����е�����������PID��������PID�޷�ֵ����ͨ������`ctl_set_pid_parameter`�ͺ���`ctl_set_pid_limit`��
+在`ctl/components/`目录中检索需要使用的模块。比如连续的PID模块在`ctl/component/intrinsic/continuous/continuous_pid.h`文件中提供。在自己的文件中定义`ctl_pid_t`类型的变量，用于表示控制器的实体。调用配套的初始化函数`ctl_init_pid`初始化PID控制器。在整周期中断中调用选择`ctl_step_xx`系列的函数执行控制器行为，通常step函数都会需要用户传入输入。比如我们需要使用串联结构的PID控制器则可以使用`ctl_step_pid_ser`函数。当控制器因故需要重新启动时，需要清除控制器内部的记忆量，可以通过`ctl_clear_pid`函数清除控制器的记忆量。如果需要在程序中调整控制器的PID参数或者PID限幅值可以通过函数`ctl_set_pid_parameter`和函数`ctl_set_pid_limit`。
 

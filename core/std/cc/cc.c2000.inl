@@ -44,16 +44,20 @@
 // Step III library support macro
 
 // + weak function Modifier
-// #define GMP_WEAK_FUNC_PREFIX __attribute__((weak))
-#define GMP_WEAK_FUNC_PREFIX __attribute((weak))
+ #define GMP_WEAK_FUNC_PREFIX __attribute__((weak))
+//#define GMP_WEAK_FUNC_PREFIX __attribute((weak))
 // #define GMP_WEAK_FUNC_PREFIX _weak
 // #define GMP_WEAK_FUNC_PREFIX //_Pragma("weak")
 #define GMP_WEAK_FUNC_SUFFIX //__attribute__((weak))
 
 // + disable optimization
-// #define GMP_NO_OPT_PREFIX _Pragma("FUNCTION_OPTIONS(\"--opt_level=0\")")
-#define GMP_NO_OPT_PREFIX _Pragma("FUNC_OPTIMIZE_OPTLEVEL(\"0\")")
-#define GMP_NO_OPT_SUFFIX
+ #define GMP_NO_OPT_PREFIX 
+ //#define GMP_NO_OPT_PREFIX _Pragma("FUNCTION_OPTIONS(\"--opt_level=0\")")
+//#define GMP_NO_OPT_PREFIX _Pragma("FUNC_OPTIMIZE_OPTLEVEL(\"0\")")
+//#define GMP_NO_OPT_PREFIX _Pragma("OPTIMIZE(\" off \")")
+//#define GMP_NO_OPT_PREFIX __attribute__((optimize("O0")))
+//#define GMP_NO_OPT_PREFIX __attribute__((optimize("off")));
+#define GMP_NO_OPT_SUFFIX 
 
 // + variables aligned
 #define GMP_MEM_ALIGN _Pragma("DATA_ALIGN(4)")

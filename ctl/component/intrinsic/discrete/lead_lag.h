@@ -42,6 +42,11 @@ extern "C"
  * improving its transient response. The continuous-time transfer function is:
  * @f[ H(s) = \frac{(\tau_D + K_D)s + 1}{\tau_D s + 1} @f]
  * After discretization, it becomes a 1-Pole-1-Zero (1P1Z) filter.
+ * Another continuous-time transfer function (init using form2) is:
+ * @f[ H(s) = \frac{1 + \alpha Ts}{1 + Ts} @f]
+ * where @f[ \alpha = \frac{1 + sin(\theta_d)}{1 - sin(\theta_d)} @f]
+ * user may use form3 to init the lead compensator by target freq and lead angle.
+ * After discretization, it becomes a 1P1Z filter.
  */
 typedef struct _tag_ctrl_lead_t
 {
@@ -59,6 +64,24 @@ typedef struct _tag_ctrl_lead_t
  * @param[in] fs Sampling frequency (Hz).
  */
 void ctl_init_lead(ctrl_lead_t* obj, parameter_gt K_D, parameter_gt tau_D, parameter_gt fs);
+
+/**
+ * @brief Initializes a lead compensator from its continuous-time parameters.
+ * @param[out] obj Pointer to the lead compensator instance.
+ * @param[in] alpha compensator coefficient.
+ * @param[in] T Time constant of the derivative term's pole.
+ * @param[in] fs Sampling frequency (Hz).
+ */
+void ctl_init_lead_form2(ctrl_lead_t* obj, parameter_gt alpha, parameter_gt T, parameter_gt fs);
+
+/**
+ * @brief Initializes a lead compensator from its continuous-time parameters.
+ * @param[out] obj Pointer to the lead compensator instance.
+ * @param[in] angle compensator angle at the frequency.
+ * @param[in] fc compensator frequency.
+ * @param[in] fs Sampling frequency (Hz).
+ */
+void ctl_init_lead_form3(ctrl_lead_t* obj, parameter_gt angle, parameter_gt fc, parameter_gt fs);
 
 /**
  * @brief Clears the internal states of the lead compensator.

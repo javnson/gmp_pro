@@ -104,7 +104,7 @@ void setup_peripheral(void)
 
     //ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &pos_enc.encif);
 
-    ctl_attach_pmsm_bare_output(&pmsm_ctrl, &pwm_out.raw);
+    //ctl_attach_pmsm_bare_output(&pmsm_ctrl, &pwm_out.raw);
 
     // output channel
     ctl_init_pwm_tri_channel(&pwm_out, 0, CONTROLLER_PWM_CMP_MAX);
@@ -130,6 +130,20 @@ void setup_peripheral(void)
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
     if (hadc == &hadc1)
+    {
+        gmp_base_ctl_step();
+    }
+}
+
+/**
+  * @brief  Injected conversion complete callback in non blocking mode
+  * @param  hadc pointer to a ADC_HandleTypeDef structure that contains
+  *         the configuration information for the specified ADC.
+  * @retval None
+  */
+void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+	    if (hadc == &hadc1)
     {
         gmp_base_ctl_step();
     }

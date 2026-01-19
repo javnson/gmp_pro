@@ -36,8 +36,8 @@ extern "C"
  * LESO (z1 -> i_pu, z2 -> f_pu):
  * @f[ 
  * e = z_1 - i_{pu} \\
- * \dot{z_1} = z_2 - 2\omega_o e + b_0 u_{pu} \\ 
- * \dot{z_2} = -\omega_o^2 e \\ 
+ * \dot{z_1} = z_2 - 2\omega_o e + b_0 u_{pu} \\
+ * \dot{z_2} = -\omega_o^2 e \\
  * @f]
  * 
  * Control Law:

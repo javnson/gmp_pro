@@ -57,8 +57,8 @@ extern pos_autoturn_encoder_t pos_enc;
 extern pmsm_controller_t pmsm_ctrl;
 
 extern adc_bias_calibrator_t adc_calibrator;
-extern fast_gt flag_enable_adc_calibrator;
-extern fast_gt index_adc_calibrator;
+extern volatile fast_gt flag_enable_adc_calibrator;
+extern volatile fast_gt index_adc_calibrator;
 
 typedef enum _tag_adc_index
 {
@@ -76,6 +76,7 @@ typedef enum _tag_adc_index
 GMP_STATIC_INLINE
 void ctl_dispatch(void)
 {
+#if defined SPECIFY_ENABLE_ADC_CALIBRATE
     if (flag_enable_adc_calibrator)
     {
         if (index_adc_calibrator == 3)
@@ -85,12 +86,17 @@ void ctl_dispatch(void)
     }
     else
     {
+#endif // SPECIFY_ENABLE_ADC_CALIBRATE
+		
 #if defined OPENLOOP_CONST_FREQUENCY
         ctl_step_const_f_controller(&rg);
 #else  // OPENLOOP_CONST_FREQUENCY
         ctl_step_slope_f(&rg);
 #endif // OPENLOOP_CONST_FREQUENCY
+
+#if defined SPECIFY_ENABLE_ADC_CALIBRATE
     }
+#endif //SPECIFY_ENABLE_ADC_CALIBRATE
 
     ctl_step_spd_calc(&spd_enc);
 

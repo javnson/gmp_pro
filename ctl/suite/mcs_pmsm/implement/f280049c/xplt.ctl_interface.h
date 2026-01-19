@@ -14,7 +14,7 @@
 
 #include <xplt.peripheral.h>
 
-#include <ext/encoder/as5048/as5048a.h>
+//#include <ext/encoder/as5048/as5048a.h>
 
 #ifndef _FILE_CTL_INTERFACE_H_
 #define _FILE_CTL_INTERFACE_H_
@@ -34,6 +34,7 @@ extern adc_gt uabc_raw[3];
 extern adc_gt iabc_raw[3];
 extern adc_gt udc_raw;
 extern adc_gt idc_raw;
+extern pmsm_controller_t pmsm_ctrl;
 
 // Functions without controller nano framework.
 #ifndef SPECIFY_ENABLE_CTL_FRAMEWORK_NANO
@@ -80,8 +81,8 @@ void ctl_output_callback(void)
 {
     ctl_calc_pwm_tri_channel(&pwm_out);
 
-    DAC_setShadowValue(DAC_A_BASE, pwm_out.value[phase_A] / 2);
-    DAC_setShadowValue(DAC_B_BASE, pwm_out.value[phase_B] / 2);
+    DAC_setShadowValue(DAC_A_BASE, pmsm_ctrl.iab0.dat[phase_A] * 2048 + 2048);
+    DAC_setShadowValue(DAC_B_BASE, pmsm_ctrl.vab0_set.dat[phase_A] * 2048 + 2048);
 
     //        EPWM_setCounterCompareValue(PHASE_U_PWM_BASE, EPWM_COUNTER_COMPARE_A,
     //                            (uint16_t)((INV_PWM_HALF_TBPRD * pwm1.Vabc_pu[0]) +
@@ -91,6 +92,9 @@ void ctl_output_callback(void)
     EPWM_setCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_V]);
     EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_W]);
 }
+
+void ctl_disable_output(void);
+void ctl_enable_output(void);
 
 #endif // SPECIFY_ENABLE_CTL_FRAMEWORK_NANO
 

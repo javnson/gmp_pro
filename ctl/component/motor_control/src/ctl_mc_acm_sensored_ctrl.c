@@ -47,7 +47,7 @@ void ctl_init_acm_sensored_bare_controller(
 
 #else // using continuous controller
 
-    ctl_init_pid_ser(
+    ctl_init_pid_Tmode(
         // d axis current controller
         &ctrl->current_ctrl[phase_d],
         // parameters for current controller
@@ -56,7 +56,7 @@ void ctl_init_acm_sensored_bare_controller(
         init->fs);
     ctl_set_pid_limit(&ctrl->current_ctrl[phase_d], init->voltage_limit_max, init->voltage_limit_min);
 
-    ctl_init_pid_ser(
+    ctl_init_pid_Tmode(
         // d axis current controller
         &ctrl->current_ctrl[phase_q],
         // parameters for current controller
@@ -79,7 +79,7 @@ void ctl_init_acm_sensored_bare_controller(
         // controller frequency
         init->fs);
 
-#endif // PMSM_CTRL_USING_DISCRETE_CTRL
+#endif // ctl_init_pid_Tmode
 
     // flux estimate
     ctl_init_im_spd_calc(
@@ -113,7 +113,7 @@ void ctl_init_acm_sensored_bare_controller(
     ctrl->speed_set = 0;
 
     // scale factor for per-unit to RG frequency
-    ctrl->speed_pu_rg_sf = float2ctrl(init->base_spd * init->pole_pairs / 60.0 / init->fs);
+    ctrl->speed_pu_rg_sf = float2ctrl(init->base_spd * init->pole_pairs / 60.0f / init->fs);
 
     // connect flux Position encoder with angle generator
     ctl_attach_mtr_position(&ctrl->mtr_interface, &ctrl->rg.enc);

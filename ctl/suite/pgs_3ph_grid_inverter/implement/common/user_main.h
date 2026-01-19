@@ -6,6 +6,11 @@
 // WARNING: This file must be kept in the include search path during compilation.
 //
 
+
+#include <core/dev/at_device.h>
+
+#include <core/pm/function_player.h>
+
 #ifndef _FILE_USER_MAIN_H_
 #define _FILE_USER_MAIN_H_
 
@@ -37,6 +42,9 @@ void setup_peripheral(void);
 void ctl_init(void);
 void ctl_mainloop(void);
 fast_gt ctl_ready_mainloop(void);
+
+extern at_device_entity_t at_dev;
+extern at_device_cmd_t at_cmds[];
 
 //////////////////////////////////////////////////////////////////////////
 // Additionally functions prototypes

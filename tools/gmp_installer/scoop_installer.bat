@@ -86,6 +86,47 @@ if exist "%SCOOP_HOME%\apps\vcpkg" (
 
 echo.
 echo ========================================================
+echo [2.5/3] Installing Build Tools (Ninja, Doxygen, Graphviz)
+echo ========================================================
+
+:: --- Install Ninja ---
+:: Ninja is a small build system with a focus on speed
+if exist "%SCOOP_HOME%\apps\ninja" (
+    echo [INFO] Ninja is already installed.
+) else (
+    echo [ACTION] Installing Ninja...
+    call "%SCOOP_CMD%" install ninja
+    if !errorlevel! NEQ 0 (
+        echo [WARN] Failed to install Ninja. Check network.
+    )
+)
+
+:: --- Install Doxygen ---
+:: Doxygen is the standard tool for generating documentation from annotated C++ sources
+if exist "%SCOOP_HOME%\apps\doxygen" (
+    echo [INFO] Doxygen is already installed.
+) else (
+    echo [ACTION] Installing Doxygen...
+    call "%SCOOP_CMD%" install doxygen
+    if !errorlevel! NEQ 0 (
+        echo [WARN] Failed to install Doxygen.
+    )
+)
+
+:: --- Install Graphviz (Dot) ---
+:: Graphviz provides the 'dot' tool required by Doxygen to draw dependency graphs
+if exist "%SCOOP_HOME%\apps\graphviz" (
+    echo [INFO] Graphviz is already installed.
+) else (
+    echo [ACTION] Installing Graphviz...
+    call "%SCOOP_CMD%" install graphviz
+    if !errorlevel! NEQ 0 (
+        echo [WARN] Failed to install Graphviz. Doxygen graphs may not work.
+    )
+)
+
+echo.
+echo ========================================================
 echo [3/3] Integrating with Visual Studio
 echo ========================================================
 

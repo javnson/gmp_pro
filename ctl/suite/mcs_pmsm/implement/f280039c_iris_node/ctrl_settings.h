@@ -3,10 +3,10 @@
 #define _FILE_CTRL_SETTINGS_H_
 
 // invoke motor parameters
-#include <ctl/component/motor_control/motor_preset/GBM2804H_100T.h>
+#include <ctl/component/hardware_preset/pmsm_motor/GBM2804H_100T.h>
 
 // invoke motor controller parameters
-#include <ctl/component/motor_control/controller_preset/TI_BOOSTXL_3PhGaNInv.h>
+#include <ctl/component/hardware_preset/inverter_3ph/TI_BOOSTXL_3PhGaNInv.h>
 
 // Startup Delay, ms
 #define CTRL_STARTUP_DELAY (100)
@@ -32,6 +32,31 @@
 
 // Speed Bandwidth
 #define MTR_CTRL_SPEED_LOOP_BW ((10))
+
+// enable QEP encoder
+#define PMSM_CTRL_USING_QEP_ENCODER
+
+// QEP Encoder Configuration
+#ifdef PMSM_CTRL_USING_QEP_ENCODER
+
+// Encoer Lines
+#define MTR_ENCODER_LINES (10000)
+
+// Encoder Offsets
+#define MTR_ENCODER_OFFSET (0.0226000007)
+
+#endif // PMSM_CTRL_USING_QEP_ENCODER
+
+// Current sensor
+#define MTR_CTRL_CURRENT_GAIN (8.0)
+#define MTR_CTRL_CURRENT_BIAS (1.65 / ADC_REFERENCE)
+
+// Voltage sensor
+#define MTR_CTRL_VOLTAGE_GAIN (4.3889)
+#define MTR_CTRL_VOLTAGE_BIAS (0.0)
+
+// ADC reference Voltage
+#define ADC_REFERENCE (3.3)
 
 // BUILD_LEVEL 1: Voltage Open loop
 // BUILD_LEVEL 2: Current Open loop

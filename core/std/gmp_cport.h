@@ -101,6 +101,15 @@ GMP_STATIC_INLINE time_gt gmp_base_is_delay_elapsed(time_gt t0, uint32_t delay_t
     return ((current_tick - t0) >= delay_t);
 }
 
+// calculate time gap between t1 - t0
+GMP_STATIC_INLINE time_gt gmp_base_time_sub(time_gt t1, time_gt t0)
+{
+    if (t0 > t1)
+        return GMP_PORT_TIME_MAXIMUM + t1 - t0;
+    else
+        return t0 - t1;
+}
+
 // The function should be called by user or system when fatal error happened.
 // So the function must own the ability of stop the program.
 //

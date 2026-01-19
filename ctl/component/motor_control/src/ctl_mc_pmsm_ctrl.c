@@ -45,12 +45,12 @@ void ctl_init_pmsm_controller(pmsm_controller_t* ctrl, pmsm_controller_init_t* i
 #else  // using continuous controller
     // --- Initialize continuous PID controllers ---
     // d-axis current controller
-    ctl_init_pid_ser(&ctrl->current_ctrl[phase_d], init->current_pid_gain, init->current_Ti, init->current_Td,
+    ctl_init_pid_Tmode(&ctrl->current_ctrl[phase_d], init->current_pid_gain, init->current_Ti, init->current_Td,
                      init->fs);
     ctl_set_pid_limit(&ctrl->current_ctrl[phase_d], init->voltage_limit_max, init->voltage_limit_min);
 
     // q-axis current controller
-    ctl_init_pid_ser(&ctrl->current_ctrl[phase_q], init->current_pid_gain, init->current_Ti, init->current_Td,
+    ctl_init_pid_Tmode(&ctrl->current_ctrl[phase_q], init->current_pid_gain, init->current_Ti, init->current_Td,
                      init->fs);
     ctl_set_pid_limit(&ctrl->current_ctrl[phase_q], init->voltage_limit_max, init->voltage_limit_min);
 

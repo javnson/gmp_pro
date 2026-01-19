@@ -6,21 +6,71 @@
 
 #include <ctl/component/motor_control/current_loop/motor_current_ctrl.h>
 
-void ctl_init_current_controller(ctl_current_controller_t* cc, ctrl_gt kp, ctrl_gt Ti, ctrl_gt Td, ctrl_gt out_max,
-                                 ctrl_gt out_min, parameter_gt fs)
+void ctl_auto_tuning_mtr_current_ctrl(mtr_current_init_t* init)
 {
-    // clear the controller
-    ctl_clear_current_controller(cc);
+    init->current_adc_fc = init->fs / 3;
+    init->voltage_adc_fc = init->fs / 3;
 
-    // Setup the d-axis current controller
-    ctl_init_pid_ser(&cc->idq_ctrl[0], kp, Ti, Td, fs);
-    ctl_set_pid_limit(&cc->idq_ctrl[0], out_max, out_min);
+    parameter_gt tau = 1.5f / init->fs;
+    // 3 ~ 5 is available
+    init->current_loop_bw = 1.0f / (3.0f * tau * CTL_PARAM_CONST_2PI);
 
-    // Setup the q-axis current controller
-    ctl_init_pid_ser(&cc->idq_ctrl[1], kp, Ti, Td, fs);
-    ctl_set_pid_limit(&cc->idq_ctrl[1], out_max, out_min);
+    // controller delay
+    parameter_gt control_delay = CTL_PARAM_CONST_2PI * init->current_loop_bw * tau;
 
-    cc->flag_enable_controller = 0;
+    // input filter delay
+    // Create a LPF object and calculate phase lag
+    ctl_filter_IIR1_t temp_filter;
+    ctl_init_filter_iir1_lpf(&temp_filter, init->fs, init->current_adc_fc);
+    parameter_gt filter_delay = ctl_get_filter_iir1_phase_lag(&temp_filter, init->fs, init->current_loop_bw);
+
+    // current controller phase lag
+    init->current_phase_lag = control_delay + filter_delay;
+
+    // calculate PI parameter based on band-width
+    parameter_gt lambda = 1.0f / init->current_loop_bw;
+
+    parameter_gt Td = init->mtr_Ld / init->mtr_Rs;
+    //    parameter_gt Kd = 1.0f / init->mtr_Rs;
+
+    parameter_gt Tq = init->mtr_Lq / init->mtr_Rs;
+    //    parameter_gt Kq = 1.0f / init->mtr_Rs;
+
+    // per unit gain: I_base / V_base
+    parameter_gt kp_scale = init->i_base / init->v_base;
+
+    // kp = Ldq * BW
+    init->kpd = init->mtr_Ld / (lambda + tau) * kp_scale;
+    init->kpq = init->mtr_Lq / (lambda + tau) * kp_scale;
+
+    init->kid = 1 / Td;
+    init->kiq = 1 / Tq;
+}
+
+void ctl_init_mtr_current_ctrl(mtr_current_ctrl_t* mc, mtr_current_init_t* init)
+{
+    int i;
+
+    for (i = 0; i < 3; ++i)
+    {
+        ctl_init_filter_iir1_lpf(&mc->filter_iabc[i], init->fs, init->current_adc_fc);
+    }
+
+    ctl_init_filter_iir1_lpf(&mc->filter_udc, init->fs, init->voltage_adc_fc);
+
+    ctl_init_pid(&mc->idq_ctrl[phase_d], init->kpd, init->kid, 0, init->fs);
+    ctl_init_pid(&mc->idq_ctrl[phase_q], init->kpq, init->kiq, 0, init->fs);
+
+    ctl_init_lead_form3(&mc->lead_compensator[phase_d], init->current_phase_lag, init->current_loop_bw, init->fs);
+    ctl_init_lead_form3(&mc->lead_compensator[phase_q], init->current_phase_lag, init->current_loop_bw, init->fs);
+
+    // krpm, A, V
+    parameter_gt omega_base_elec = (init->spd_base * 1000.0f) * CTL_PARAM_CONST_PI / 30.0f * init->pole_pairs;
+    parameter_gt scale_fac = omega_base_elec * init->i_base / init->v_base;
+    mc->coef_ff_decouple[phase_d] = init->mtr_Lq * scale_fac;
+    mc->coef_ff_decouple[phase_q] = init->mtr_Ld * scale_fac;
+
+    ctl_clear_mtr_current_ctrl(mc);
 }
 
 //////////////////////////////////////////////////////////////////////////

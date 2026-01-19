@@ -1,5 +1,5 @@
 /**
- * @file example.c
+ * @file  windows_simulink_main.c
  * @author Javnson (javnson@zju.edu.cn)
  * @brief
  * @version 0.1
@@ -12,23 +12,31 @@
 // This file provide a set of function that CSP must defined.
 
 #include <gmp_core.h>
+
+// MATLAB UDP Helper
 #include <tools/gmp_sil/udp_helper/asio_udp_helper.hpp>
+
+// Trace RT module
+#include <ctrl_rt_trace.h>
 
 #include <iostream>
 #include <stdlib.h>
 
 // ASIO helper object
-asio_udp_helper *helper = nullptr;
+asio_udp_helper* helper = nullptr;
 
 // ASIO helper will send or receive message via this structure.
 half_duplex_ift simulink_rx;
 half_duplex_ift simulink_tx;
 
+// trace rt module context
+trace_rt_context_t trace_rt_context;
+
 // buffer for rx & tx
 extern "C"
 {
-    gmp_pc_simulink_rx_buffer_t simulink_rx_buffer;
-    gmp_pc_simulink_tx_buffer_t simulink_tx_buffer;
+gmp_pc_simulink_rx_buffer_t simulink_rx_buffer;
+gmp_pc_simulink_tx_buffer_t simulink_tx_buffer;
 }
 
 // Simulink Enable signal
@@ -88,30 +96,42 @@ void gmp_csp_startup(void)
     gmp_base_print("[INFO] Simulink TX buffer size: %llu\r\n", sizeof(simulink_tx_buffer));
 
     // Config send & recv buffer
-    gmp_dev_init_half_duplex_channel(&simulink_rx, (data_gt *)&simulink_rx_buffer, sizeof(simulink_rx_buffer),
+    gmp_dev_init_half_duplex_channel(&simulink_rx, (data_gt*)&simulink_rx_buffer, sizeof(simulink_rx_buffer),
                                      sizeof(simulink_rx_buffer));
     // simulink_rx.buf = (data_gt *)&simulink_rx_buffer;
     // simulink_rx.length = sizeof(simulink_rx_buffer);
     // simulink_rx.capacity = sizeof(simulink_rx_buffer);
 
-    gmp_dev_init_half_duplex_channel(&simulink_tx, (data_gt *)&simulink_tx_buffer, sizeof(simulink_tx_buffer),
+    gmp_dev_init_half_duplex_channel(&simulink_tx, (data_gt*)&simulink_tx_buffer, sizeof(simulink_tx_buffer),
                                      sizeof(simulink_tx_buffer));
     // simulink_tx.buf = (data_gt *)&simulink_tx_buffer;
     // simulink_tx.length = sizeof(simulink_tx_buffer);
     // simulink_tx.capacity = sizeof(simulink_tx_buffer);
+
+    // init trace rt objects
+#ifdef CTRL_FS
+    trace_rt_entity_init(&trace_rt_context, 1000.0 / CTRL_FS);
+#else
+    trace_rt_entity_init(&trace_rt_context, 1.0);
+#endif // CTRL_FS
 }
 
 // This function may be called and used to initialize all the peripheral.
 void gmp_csp_post_process(void)
 {
     // Send the first message to enable the Simulink model.
-    helper->send_msg((char *)simulink_tx.buf, simulink_tx.length);
+    helper->send_msg((char*)simulink_tx.buf, simulink_tx.length);
+
+    // create & save tracert file
+    gmp_trace_rt_generate_layout(&trace_rt_context);
 }
 
 // This function is unreachable.
 void gmp_csp_exit(void)
 {
     delete helper;
+
+    gmp_trace_rt_release(&trace_rt_context);
 
     printf("[GMP EXIT FUNCTION] GMP will leave.\r\n");
 }
@@ -148,7 +168,7 @@ void gmp_csp_loop(void)
         }
 
         // Receive message from Simulink
-        if (helper->recv_msg((char *)simulink_rx.buf, simulink_rx.length))
+        if (helper->recv_msg((char*)simulink_rx.buf, simulink_rx.length))
         {
             std::cout << "receive complete." << std::endl;
 
@@ -167,7 +187,7 @@ void gmp_csp_loop(void)
         gmp_base_ctl_step();
 
         // Send message to Simulink
-        helper->send_msg((char *)simulink_tx.buf, simulink_tx.length);
+        helper->send_msg((char*)simulink_tx.buf, simulink_tx.length);
     }
 }
 
@@ -183,7 +203,7 @@ void gmp_port_system_stuck(void)
 }
 
 // Windows print function
-ec_gt windows_print_function(uint32_t *handle, half_duplex_ift *port)
+ec_gt windows_print_function(uint32_t* handle, half_duplex_ift* port)
 {
     // allow handle not be referenced.
     UNUSED_PARAMETER(handle);

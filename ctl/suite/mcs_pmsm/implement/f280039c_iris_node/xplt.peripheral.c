@@ -28,11 +28,21 @@ tri_ptr_adc_channel_t iabc;
 ptr_adc_channel_t udc;
 ptr_adc_channel_t idc;
 
-pos_autoturn_encoder_t pos_enc;
+// pos_autoturn_encoder_t pos_enc;
 
 pwm_tri_channel_t pwm_out;
 
-uint32_t output_voltage_compare = 3000;
+// raw data
+adc_gt uabc_raw[3];
+adc_gt iabc_raw[3];
+adc_gt udc_raw;
+adc_gt idc_raw;
+
+#if !defined PMSM_CTRL_USING_QEP_ENCODER
+// Encoder Interface
+ext_as5048a_encoder_t pos_enc;
+#endif // PMSM_CTRL_USING_QEP_ENCODER
+
 
 //////////////////////////////////////////////////////////////////////////
 // peripheral setup function
@@ -41,66 +51,73 @@ uint32_t output_voltage_compare = 3000;
 // User should setup all the peripheral in this function.
 void setup_peripheral(void)
 {
-//    ctl_init_ptr_adc_channel(
-//        // bind idc channel with idc address
-//        &idc, &simulink_rx_buffer.idc,
-//        // ADC gain, ADC bias
-//        ctl_gain_calc_shunt_amp(CTRL_ADC_VOLTAGE_REF, MTR_CTRL_CURRENT_BASE, BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM,
-//                                BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V),
-//        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_CSA_BIAS_V),
-//        // ADC resolution, IQN
-//        12, 24);
-//
-//    ctl_init_tri_ptr_adc_channel(
-//        // bind ibac channel with iabc address
-//        &iabc, simulink_rx_buffer.iabc,
-//        // ADC gain, ADC bias
-//        ctl_gain_calc_shunt_amp(CTRL_ADC_VOLTAGE_REF, MTR_CTRL_CURRENT_BASE, BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM,
-//                                BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V),
-//        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_CSA_BIAS_V),
-//        // ADC resolution, IQN
-//        12, 24);
-//
-//    ctl_init_ptr_adc_channel(
-//        // bind udc channel with udc address
-//        &udc, &simulink_rx_buffer.udc,
-//        // ADC gain, ADC bias
-//        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN, MTR_CTRL_VOLTAGE_BASE),
-//        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V),
-//        // ADC resolution, IQN
-//        12, 24);
-//
-//    ctl_init_tri_ptr_adc_channel(
-//        // bind vbac channel with vabc address
-//        &uabc, simulink_rx_buffer.uabc,
-//        // ADC gain, ADC bias
-//        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN, MTR_CTRL_VOLTAGE_BASE),
-//        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V),
-//        // ADC resolution, IQN
-//        12, 24);
 
-    ctl_init_autoturn_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, ((uint32_t)1 << 14) - 1);
+    // Setup Debug Uart
+        debug_uart = IRIS_UART_USB_BASE;
 
-    ctl_init_pwm_tri_channel(&pwm_out, 0, CTRL_PWM_CMP_MAX);
+        gmp_base_print(TEXT_STRING("Hello World!\r\n"));
 
-    // bind peripheral to motor controller
-    ctl_attach_mtr_adc_channels(&pmsm_ctrl.mtr_interface,
-                                // phase voltage & phase current
-                                &iabc.control_port, &uabc.control_port,
-                                // dc bus voltage & dc bus current
-                                &idc.control_port, &udc.control_port);
+        asm(" RPT #255 || NOP");
 
-    ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &pos_enc.encif);
+        // Init ADC channel
+        ctl_init_ptr_adc_channel(
+            // bind idc channel with idc address
+            &idc, &idc_raw,
+            // ADC gain, ADC bias
+            float2ctrl(MTR_CTRL_CURRENT_GAIN), float2ctrl(MTR_CTRL_CURRENT_BIAS),
+            // ADC resolution, IQN
+            12, 24);
 
-    ctl_attach_pmsm_output(&pmsm_ctrl, &pwm_out.raw);
+        ctl_init_tri_ptr_adc_channel(
+            // bind ibac channel with iabc address
+            &iabc, iabc_raw,
+            // ADC gain, ADC bias
+            float2ctrl(MTR_CTRL_CURRENT_GAIN), float2ctrl(MTR_CTRL_CURRENT_BIAS),
+            // ADC resolution, IQN
+            12, 24);
 
-    // output channel
-    ctl_init_pwm_tri_channel(&pwm_out, 0, CTRL_PWM_CMP_MAX);
+        ctl_init_ptr_adc_channel(
+            // bind udc channel with udc address
+            &udc, &udc_raw,
+            // ADC gain, ADC bias
+            float2ctrl(MTR_CTRL_VOLTAGE_GAIN), float2ctrl(MTR_CTRL_VOLTAGE_BIAS),
+            // ADC resolution, IQN
+            12, 24);
+
+        ctl_init_tri_ptr_adc_channel(
+            // bind vbac channel with vabc address
+            &uabc, uabc_raw,
+            // ADC gain, ADC bias
+            float2ctrl(MTR_CTRL_VOLTAGE_GAIN), float2ctrl(MTR_CTRL_VOLTAGE_BIAS),
+            // ADC resolution, IQN
+            12, 24);
+
+    #if !defined PMSM_CTRL_USING_QEP_ENCODER
+        // init AS5048 encoder
+        ctl_init_as5048a_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, SPI_ENCODER_BASE, SPI_ENCODER_NCS);
+        // Set encoder offset
+        ctl_set_as5048a_pos_encoder_offset(&pos_enc, MTR_ENCODER_OFFSET);
+    #endif // PMSM_CTRL_USING_QEP_ENCODER
+
+        // bind peripheral to motor controller
+        ctl_attach_mtr_adc_channels(&pmsm_ctrl.mtr_interface,
+                                    // phase voltage & phase current
+                                    &iabc.control_port, &uabc.control_port,
+                                    // dc bus voltage & dc bus current
+                                    &idc.control_port, &udc.control_port);
+
+        ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &pos_enc.encif);
+
+        ctl_attach_pmsm_output(&pmsm_ctrl, &pwm_out.raw);
+
+        // output channel
+        ctl_init_pwm_tri_channel(&pwm_out, 0, CTRL_PWM_CMP_MAX);
 
 }
 
 //////////////////////////////////////////////////////////////////////////
 // interrupt functions and callback functions here
+
 
 // ADC interrupt
 interrupt void MainISR(void)
@@ -114,6 +131,14 @@ interrupt void MainISR(void)
     // Call GMP Timer
     //
     gmp_step_system_tick();
+
+    //
+    // Blink LED
+    //
+    if(gmp_base_get_system_tick() % 10000 < 5000)
+        GPIO_WritePin(IRIS_LED1, 0);
+    else
+        GPIO_WritePin(IRIS_LED1, 1);
 
     //
     // Clear the interrupt flag

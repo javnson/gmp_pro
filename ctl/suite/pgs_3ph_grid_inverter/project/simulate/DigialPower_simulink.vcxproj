@@ -132,10 +132,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <Version>
+      </Version>
     </Link>
     <PreBuildEvent>
       <Command>gmp_fac_generate_src.bat</Command>
@@ -149,18 +152,21 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <Version>
+      </Version>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\implement\common\ctl_main.c" />
     <ClCompile Include="..\..\implement\common\user_main.c" />
-    <ClCompile Include="..\..\implement\simulate\xplt.peripheral.c" />
+    <ClCompile Include="..\..\implement\simulate\xplt.peripheral.cpp" />
     <ClCompile Include="DigialPower_simulink.cpp" />
     <ClCompile Include="gmp_src\ctl_component_advance.c" />
     <ClCompile Include="gmp_src\ctl_component_basic.c" />
@@ -187,11 +193,14 @@
     <ClCompile Include="gmp_src\ctl_mc_pmsm_offline_est.c" />
     <ClCompile Include="gmp_src\ctl_nano.c" />
     <ClCompile Include="gmp_src\dsa_trigger.c" />
+    <ClCompile Include="gmp_src\gmp_at_device.c" />
     <ClCompile Include="gmp_src\gmp_dev_util.c" />
     <ClCompile Include="gmp_src\gmp_ds_list.c" />
     <ClCompile Include="gmp_src\gmp_mm_block_memory.c" />
+    <ClCompile Include="gmp_src\gmp_process_mgr.c" />
     <ClCompile Include="gmp_src\gmp_std_error_code.c" />
     <ClCompile Include="gmp_src\gmp_std_port.c" />
+    <ClCompile Include="gmp_src\windows_rt_tracer.cpp" />
     <ClCompile Include="gmp_src\windows_simulink_main.cpp" />
   </ItemGroup>
   <ItemGroup>
