@@ -160,3 +160,40 @@ void ctl_init_trap_planner(ctl_trap_planner_t* planner, ctrl_gt max_vel, ctrl_gt
     planner->current_vel = 0.0f;
     planner->target_pos = initial_pos;
 }
+
+//////////////////////////////////////////////////////////////////////////
+// velocity and position loop
+
+#include <ctl/component/motor_control/motion/vel_pos_loop.h>
+
+void ctl_init_pos_controller(ctl_vel_pos_controller_t* ctrl, parameter_gt vel_kp, parameter_gt pos_kp, 
+    parameter_gt vel_ki, parameter_gt pos_ki, 
+    parameter_gt speed_limit, parameter_gt cur_limit, uint32_t vel_division, uint32_t pos_division, parameter_gt fs)
+{
+    // Initialize velocity controller
+    ctl_init_pid(&ctrl->vel_ctrl, vel_kp, vel_ki, 0, fs);
+
+    // Initialize position controller
+    ctl_init_pid(&ctrl->pos_ctrl, pos_kp, pos_ki, 0, fs);
+
+    // Initialize dividers
+    ctl_init_divider(&ctrl->div_velocity, vel_division);
+    ctl_init_divider(&ctrl->div_position, pos_division);
+
+    // Set other parameters
+    ctrl->speed_limit = speed_limit;
+    ctl_set_pid_limit(&ctrl->pos_ctrl, speed_limit, -speed_limit);
+    ctrl->cur_limit = cur_limit;
+    ctl_set_pid_limit(&ctrl->vel_ctrl, cur_limit, -cur_limit);
+    ctrl->cur_output = 0;
+    ctrl->target_revs = 0;
+    ctrl->target_angle = 0;
+    ctrl->target_velocity = 0;
+
+
+    // Enable controllers by default
+    ctrl->flag_enable_velocity_ctrl = 1;
+    ctrl->flag_enable_position_ctrl = 1;
+
+    ctl_clear_vel_pos_ctrl(ctrl);
+}

@@ -1,4 +1,4 @@
-/**
+ï»¿/**
  * @file gmp_process_mgr.c
  * @author Javnson (javnson@zju.edu.cn)
  * @brief
@@ -19,7 +19,7 @@ void gmp_scheduler_init(gmp_scheduler_t* sched)
 
     gmp_base_assert(sched);
 
-    // Çå¿ÕËùÓĞ×´Ì¬
+    // æ¸…ç©ºæ‰€æœ‰çŠ¶æ€
     sched->task_count = 0;
     sched->blocking_task = NULL;
     sched->current_task = NULL;
@@ -44,7 +44,7 @@ fast_gt gmp_scheduler_add_task(gmp_scheduler_t* sched, gmp_task_t* task)
         return 1;
     }
 
-    // ³õÊ¼»¯ÈÎÎñÄ¬ÈÏ²ÎÊı
+    // åˆå§‹åŒ–ä»»åŠ¡é»˜è®¤å‚æ•°
     //task->last_run = gmp_base_get_system_tick();
     task->run_state = 0;
 
@@ -58,7 +58,7 @@ void gmp_scheduler_dispatch(gmp_scheduler_t* sched)
 
     gmp_base_assert(sched);
 
-    // 1. Í³¼Æµ÷¶È´ÎÊı (¿ÉÓÃÓÚÆÀ¹ÀÖ÷Ñ­»·¸ºÔØ)
+    // 1. ç»Ÿè®¡è°ƒåº¦æ¬¡æ•° (å¯ç”¨äºè¯„ä¼°ä¸»å¾ªç¯è´Ÿè½½)
     sched->dispatch_cnt++;
 
     time_gt current_tick = gmp_base_get_system_tick();
@@ -85,14 +85,14 @@ void gmp_scheduler_dispatch(gmp_scheduler_t* sched)
             target_task->last_run = current_tick; // update time stape
             sched->blocking_task = NULL;          // clear pending
         }
-        // if retval is BUSY£¬blocking_task will keep
+        // if retval is BUSYï¼Œblocking_task will keep
 
         sched->current_task = NULL; // clear context
         return;                     // one task per loop
     }
 
     // ---------------------------------------------------------
-    // Phase 2: ÂÖÑ¯Ñ°ÕÒÏÂÒ»¸öµ½ÆÚµÄÈÎÎñ
+    // Phase 2: è½®è¯¢å¯»æ‰¾ä¸‹ä¸€ä¸ªåˆ°æœŸçš„ä»»åŠ¡
     // ---------------------------------------------------------
     for (i = 0; i < sched->task_count; i++)
     {

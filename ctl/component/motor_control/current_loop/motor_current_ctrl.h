@@ -1,4 +1,4 @@
-/**
+ï»¿/**
  * @file motor_current_ctrl.h
  * @brief Implements a generic FOC (Field-Oriented Control) current controller.
  *
@@ -139,8 +139,8 @@ GMP_STATIC_INLINE void ctl_clear_mtr_current_ctrl(mtr_current_ctrl_t* mc)
     ctl_vector3_clear(&mc->vab0);
 }
 
-// ×¢ÒâµçÑ¹»ùÖµÓ¦µ±°´ÕÕ±äÁ÷Æ÷Êä³ö×î´óµçÑ¹¼´Udc/SQRT(3)À´¼ÆËã
-// µçÁ÷»ùÖµÓ¦µ±°´ÕÕ±äÁ÷Æ÷×î´óÔÊÐíÊä³öµçÁ÷À´¼ÆËã£¬ÕâÑù×îºÏÀí
+// æ³¨æ„ç”µåŽ‹åŸºå€¼åº”å½“æŒ‰ç…§å˜æµå™¨è¾“å‡ºæœ€å¤§ç”µåŽ‹å³Udc/SQRT(3)æ¥è®¡ç®—
+// ç”µæµåŸºå€¼åº”å½“æŒ‰ç…§å˜æµå™¨æœ€å¤§å…è®¸è¾“å‡ºç”µæµæ¥è®¡ç®—ï¼Œè¿™æ ·æœ€åˆç†
 
 typedef struct _tag_mtr_current_ctrl
 {

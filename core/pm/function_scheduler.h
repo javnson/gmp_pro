@@ -1,4 +1,4 @@
-/**
+ï»¿/**
  * @file timing_manager.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief
@@ -15,38 +15,38 @@
 //#include <stdbool.h>
 //#include <stdint.h>
 //
-//// ÒÀÀµµÄ»ù´¡Ê±¼äÀàĞÍ
+//// ä¾èµ–çš„åŸºç¡€æ—¶é—´ç±»å‹
 //typedef uint32_t time_gt;
 
-// Íâ²¿±ØĞëÊµÏÖµÄ»ñÈ¡Ê±¼äº¯Êı
+// å¤–éƒ¨å¿…é¡»å®ç°çš„è·å–æ—¶é—´å‡½æ•°
 //extern time_gt gmp_base_get_system_tick(void);
 
 // TASK Status
 typedef enum
 {
-    GMP_TASK_DONE, // ÈÎÎñ±¾´ÎÖ´ĞĞÍê±Ï£¬½øÈëĞİÃßµÈ´ıÏÂÒ»ÖÜÆÚ
-    GMP_TASK_BUSY, // ÈÎÎñÎ´Íê³É£¨×èÈû/³¤ÈÎÎñ£©£¬ÏÂÒ»´Î dispatch Á¢¼´ÔÙ´Îµ÷ÓÃ
+    GMP_TASK_DONE, // ä»»åŠ¡æœ¬æ¬¡æ‰§è¡Œå®Œæ¯•ï¼Œè¿›å…¥ä¼‘çœ ç­‰å¾…ä¸‹ä¸€å‘¨æœŸ
+    GMP_TASK_BUSY, // ä»»åŠ¡æœªå®Œæˆï¼ˆé˜»å¡/é•¿ä»»åŠ¡ï¼‰ï¼Œä¸‹ä¸€æ¬¡ dispatch ç«‹å³å†æ¬¡è°ƒç”¨
 } gmp_task_status_t;
 
 struct _tag_gmp_scheduler_t;
 struct _tag_gmp_task_t;
 
 // task routine callback
-// ²ÎÊı self: ÔÊĞíÈÎÎñÔÚº¯ÊıÄÚ²¿ĞŞ¸Ä×Ô¼ºµÄÊôĞÔ£¨ÈçĞŞ¸ÄÖÜÆÚÊµÏÖ±äÆµÉÁË¸£©
+// å‚æ•° self: å…è®¸ä»»åŠ¡åœ¨å‡½æ•°å†…éƒ¨ä¿®æ”¹è‡ªå·±çš„å±æ€§ï¼ˆå¦‚ä¿®æ”¹å‘¨æœŸå®ç°å˜é¢‘é—ªçƒï¼‰
 typedef gmp_task_status_t (*gmp_task_handler_t)(struct _tag_gmp_task_t* tsk);
 
 // Task Control Block
 typedef struct _tag_gmp_task_t
 {
-    const char* name;           // ÈÎÎñÃû³Æ£¨µ÷ÊÔÓÃ£©
-    gmp_task_handler_t handler; // ÈÎÎñº¯ÊıÖ¸Õë
-    time_gt period;             // Ö´ĞĞÖÜÆÚ (ms)£¬0 ±íÊ¾µ¥´ÎÔËĞĞ»òÓÉÂß¼­¿ØÖÆ
-    time_gt last_run;           // ÉÏ´ÎÔËĞĞµÄÊ±¼ä´Á
-    fast_gt is_enabled;         // ÈÎÎñÊ¹ÄÜ¿ª¹Ø
-    void* user_data;            // Ë½ÓĞÊı¾İÖ¸Õë
+    const char* name;           // ä»»åŠ¡åç§°ï¼ˆè°ƒè¯•ç”¨ï¼‰
+    gmp_task_handler_t handler; // ä»»åŠ¡å‡½æ•°æŒ‡é’ˆ
+    time_gt period;             // æ‰§è¡Œå‘¨æœŸ (ms)ï¼Œ0 è¡¨ç¤ºå•æ¬¡è¿è¡Œæˆ–ç”±é€»è¾‘æ§åˆ¶
+    time_gt last_run;           // ä¸Šæ¬¡è¿è¡Œçš„æ—¶é—´æˆ³
+    fast_gt is_enabled;         // ä»»åŠ¡ä½¿èƒ½å¼€å…³
+    void* user_data;            // ç§æœ‰æ•°æ®æŒ‡é’ˆ
 
-    // ÔËĞĞÊ±×´Ì¬
-    fast_gt run_state; // ÄÚ²¿×´Ì¬»ú²½½ø (ÓÃÓÚ³¤ÈÎÎñ·Ö²½Ö´ĞĞ)
+    // è¿è¡Œæ—¶çŠ¶æ€
+    fast_gt run_state; // å†…éƒ¨çŠ¶æ€æœºæ­¥è¿› (ç”¨äºé•¿ä»»åŠ¡åˆ†æ­¥æ‰§è¡Œ)
 } gmp_task_t;
 
 #ifndef GMP_SCHEDULER_MAX_TASKS
@@ -56,17 +56,17 @@ typedef struct _tag_gmp_task_t
 // Scheduler Entity
 typedef struct _tag_gmp_scheduler_t
 {
-    // --- ÅäÖÃÓëÈİÆ÷ ---
-    gmp_task_t* task_list[GMP_SCHEDULER_MAX_TASKS]; // ÈÎÎñÖ¸ÕëÊı×é
-    uint16_t task_count;                            // µ±Ç°×¢²áÈÎÎñÊı
+    // --- é…ç½®ä¸å®¹å™¨ ---
+    gmp_task_t* task_list[GMP_SCHEDULER_MAX_TASKS]; // ä»»åŠ¡æŒ‡é’ˆæ•°ç»„
+    uint16_t task_count;                            // å½“å‰æ³¨å†Œä»»åŠ¡æ•°
 
-    // --- ÔËĞĞÊ±ÉÏÏÂÎÄ ---
-    gmp_task_t* blocking_task; // µ±Ç°´¦ÓÚ BUSY ×´Ì¬µÄÈÎÎñ (¶Ïµã)
-    gmp_task_t* current_task;  // µ±Ç°ÕıÔÚÖ´ĞĞµÄÈÎÎñ (µ÷ÊÔ/¼à¿ØÓÃ)
+    // --- è¿è¡Œæ—¶ä¸Šä¸‹æ–‡ ---
+    gmp_task_t* blocking_task; // å½“å‰å¤„äº BUSY çŠ¶æ€çš„ä»»åŠ¡ (æ–­ç‚¹)
+    gmp_task_t* current_task;  // å½“å‰æ­£åœ¨æ‰§è¡Œçš„ä»»åŠ¡ (è°ƒè¯•/ç›‘æ§ç”¨)
 
-    // --- Í³¼ÆĞÅÏ¢ ---
-    uint32_t dispatch_cnt; // µ÷¶ÈÆ÷±»µ÷ÓÃµÄ×Ü´ÎÊı (ĞÄÌø¼ÆÊı)
-    uint32_t busy_cnt;     // ·¢Éú×èÈûÖØÈëµÄ´ÎÊı
+    // --- ç»Ÿè®¡ä¿¡æ¯ ---
+    uint32_t dispatch_cnt; // è°ƒåº¦å™¨è¢«è°ƒç”¨çš„æ€»æ¬¡æ•° (å¿ƒè·³è®¡æ•°)
+    uint32_t busy_cnt;     // å‘ç”Ÿé˜»å¡é‡å…¥çš„æ¬¡æ•°
 } gmp_scheduler_t;
 
 // API
@@ -77,9 +77,9 @@ void gmp_scheduler_dispatch(gmp_scheduler_t* sched);
 #endif // GMP_SCHEDULER_H
 
 
-//// Ë¼Â·¼ò¼Ç
+//// æ€è·¯ç®€è®°
 //
-//// EXT Ä£¿éµÄÉè¼Æ¿ÉÒÔ»ùÓÚÕâÒ»Ààfunctional½øĞĞÅÉÉú¡£
+//// EXT æ¨¡å—çš„è®¾è®¡å¯ä»¥åŸºäºè¿™ä¸€ç±»functionalè¿›è¡Œæ´¾ç”Ÿã€‚
 //
 //typedef(time_gt) (*tick_fn)(void);
 //
@@ -87,22 +87,22 @@ void gmp_scheduler_dispatch(gmp_scheduler_t* sched);
 //
 //typedef struct _tag_gmp_fp_functional
 //{
-//    // Õâ¸öº¯ÊıÒ»¶¨ÊÇ·Ç×èÈûµÄ
+//    // è¿™ä¸ªå‡½æ•°ä¸€å®šæ˜¯éé˜»å¡çš„
 //    // Non-blocking function
 //    functional_gt callback;
 //
 //    // parameter for callback
-//    // ¿ÉÒÔÍ¨¹ı¼Ì³Ğ¹ØÏµ»ñµÃÁé»îĞÔ
+//    // å¯ä»¥é€šè¿‡ç»§æ‰¿å…³ç³»è·å¾—çµæ´»æ€§
 //    // void *param;
 //
 //    // last invoke time
 //    // for time counting and delta-time mode programming
 //    time_gt last_tick;
 //
-//    // ¸¸½Úµã
+//    // çˆ¶èŠ‚ç‚¹
 //    gmp_function_player *parent;
 //
-//    // ĞÎ³ÉÁ´±í£¬¾ßÌåÁ´±íÓ¦µ±ÊÇÊ²Ã´ĞÎÊ½£¬Î´Öª£¬Ä¿µÄÔÚÓÚ×öµ÷¶È
+//    // å½¢æˆé“¾è¡¨ï¼Œå…·ä½“é“¾è¡¨åº”å½“æ˜¯ä»€ä¹ˆå½¢å¼ï¼ŒæœªçŸ¥ï¼Œç›®çš„åœ¨äºåšè°ƒåº¦
 //    gmp_fp_functional *next;
 //
 //} gmp_fp_functional;
@@ -110,12 +110,12 @@ void gmp_scheduler_dispatch(gmp_scheduler_t* sched);
 //// utilities for fp_functional type
 ////
 //
-//// Õâ¸öº¯Êı½«»á±»playerµÄÏìÓ¦º¯Êıµ÷ÓÃ
+//// è¿™ä¸ªå‡½æ•°å°†ä¼šè¢«playerçš„å“åº”å‡½æ•°è°ƒç”¨
 //ec_gt invoke_fp_functional(gmp_fp_functional *fp_obj)
 //{
 //    fp_obj->callback();
 //
-//    // ¸üĞÂ½á¹¹ÌåÖĞÆäËûÊı¾İÏî
+//    // æ›´æ–°ç»“æ„ä½“ä¸­å…¶ä»–æ•°æ®é¡¹
 //}
 //
 //typedef struct _tag_function_player
@@ -131,4 +131,4 @@ void gmp_scheduler_dispatch(gmp_scheduler_t* sched);
 //
 //} gmp_function_player;
 //
-//// ×¢²áÒ»¸öĞÂµÄfunctional
+//// æ³¨å†Œä¸€ä¸ªæ–°çš„functional

@@ -1,4 +1,4 @@
-/**
+ï»¿/**
  * @file cia402_state_machine.c
  * @author Javnson (javnson@zju.edu.cn)
  * @brief
@@ -14,16 +14,16 @@
 #include <ctl/framework/cia402_state_machine.h>
 
 /**
- * @brief ½âÎö¿ØÖÆ×Ö (0x6040) ²¢·µ»Ø¶ÔÓ¦µÄÃüÁîÃ¶¾Ù
- * »ùÓÚ CiA 402 State Transition Âß¼­±í
- * * @param control_word 16Î»¿ØÖÆ×Ö
- * @return cia402_cmd ½âÎö³öµÄÃüÁî
+ * @brief è§£ææ§åˆ¶å­— (0x6040) å¹¶è¿”å›å¯¹åº”çš„å‘½ä»¤æšä¸¾
+ * åŸºäº CiA 402 State Transition é€»è¾‘è¡¨
+ * * @param control_word 16ä½æ§åˆ¶å­—
+ * @return cia402_cmd è§£æå‡ºçš„å‘½ä»¤
  */
 cia402_cmd_t get_cia402_control_cmd(uint16_t control_word)
 {
     // 1. Fault Reset (Bit 7)
-    // ÕâÊÇÒ»¸öÌØÊâµÄ¶¯×÷Î»£¬Í¨³£¼ì²âÉÏÉıÑØ¡£
-    // µ«Èç¹û×÷Îª¾²Ì¬ÃüÁî½âÎö£¬Ö»ÒªÖÃÎ»¼´ÊÓÎª¸´Î»ÇëÇó¡£
+    // è¿™æ˜¯ä¸€ä¸ªç‰¹æ®Šçš„åŠ¨ä½œä½ï¼Œé€šå¸¸æ£€æµ‹ä¸Šå‡æ²¿ã€‚
+    // ä½†å¦‚æœä½œä¸ºé™æ€å‘½ä»¤è§£æï¼Œåªè¦ç½®ä½å³è§†ä¸ºå¤ä½è¯·æ±‚ã€‚
     // target state is CIA402_SM_FAULT_REACTIVE and then FAULT
     if ((control_word & 0x0080) != 0)
     {
@@ -31,9 +31,9 @@ cia402_cmd_t get_cia402_control_cmd(uint16_t control_word)
     }
 
     // 2. Disable Voltage (Bit 1 = 0)
-    // ÑÚÂë: xxxx xxxx xxxx xx0x
-    // ±í¸ñÂß¼­: Ö»Òª Bit 1 Îª 0£¬¾ÍÊÇ Disable Voltage (Transition 7,9,10,12)
-    // ÕâÊÇ×î¸ßÓÅÏÈ¼¶µÄÍ£»úÃüÁî¡£
+    // æ©ç : xxxx xxxx xxxx xx0x
+    // è¡¨æ ¼é€»è¾‘: åªè¦ Bit 1 ä¸º 0ï¼Œå°±æ˜¯ Disable Voltage (Transition 7,9,10,12)
+    // è¿™æ˜¯æœ€é«˜ä¼˜å…ˆçº§çš„åœæœºå‘½ä»¤ã€‚
     // target state is Switch On Disabled
     if ((control_word & 0x0002) == 0)
     {
@@ -41,9 +41,9 @@ cia402_cmd_t get_cia402_control_cmd(uint16_t control_word)
     }
 
     // 3. Quick Stop (Bit 2 = 0)
-    // ÑÚÂë: xxxx xxxx xxxx x01x
-    // Ç°Ìá: Bit 1 ±ØĞëÎª 1 (ÉÏÃæÒÑ¾­ÅĞ¶Ï¹ıÁË)
-    // ±í¸ñÂß¼­: Bit 2 Îª 0£¬Bit 1 Îª 1 => Quick Stop (Transition 7,10,11)
+    // æ©ç : xxxx xxxx xxxx x01x
+    // å‰æ: Bit 1 å¿…é¡»ä¸º 1 (ä¸Šé¢å·²ç»åˆ¤æ–­è¿‡äº†)
+    // è¡¨æ ¼é€»è¾‘: Bit 2 ä¸º 0ï¼ŒBit 1 ä¸º 1 => Quick Stop (Transition 7,10,11)
     // target state is CIA402_SM_QUICK_STOP_ACTIVE and then Switch On Disabled
     if ((control_word & 0x0004) == 0)
     {
@@ -51,9 +51,9 @@ cia402_cmd_t get_cia402_control_cmd(uint16_t control_word)
     }
 
     // 4. Shutdown (Bit 0 = 0)
-    // ÑÚÂë: xxxx xxxx xxxx x110
-    // Ç°Ìá: Bit 1=1, Bit 2=1
-    // ±í¸ñÂß¼­: Bit 0 Îª 0 => Shutdown (Transition 2,6,8)
+    // æ©ç : xxxx xxxx xxxx x110
+    // å‰æ: Bit 1=1, Bit 2=1
+    // è¡¨æ ¼é€»è¾‘: Bit 0 ä¸º 0 => Shutdown (Transition 2,6,8)
     // target state is Ready to Switch On
     if ((control_word & 0x0001) == 0)
     {
@@ -61,47 +61,47 @@ cia402_cmd_t get_cia402_control_cmd(uint16_t control_word)
     }
 
     // 5. Enable Operation (Bit 3 = 1)
-    // ÑÚÂë: 0000 0000 0000 1111 (0xF) -> Öµ±ØĞëÎª 0xF (1111)
+    // æ©ç : 0000 0000 0000 1111 (0xF) -> å€¼å¿…é¡»ä¸º 0xF (1111)
     if ((control_word & 0x000F) == 0x000F)
     {
         return CIA402_CMD_ENABLE_OPERATION;
     }
 
     // 6. Switch On (Bit 3 = 0)
-    // ÑÚÂë: 0000 0000 0000 1111 (0xF) -> Öµ±ØĞëÎª 0x7 (0111)
+    // æ©ç : 0000 0000 0000 1111 (0xF) -> å€¼å¿…é¡»ä¸º 0x7 (0111)
     if ((control_word & 0x000F) == 0x0007)
     {
         return CIA402_CMD_SWITCHON;
     }
 
-    // 7. Disable Operation (Í¨³£Ò²ÊÇ 0x7, µ«ÔÚ Operation Enabled ×´Ì¬ÏÂ´¦Àí)
-    // Èç¹û¶¼²»Æ¥Åä£¬·µ»Ø NULL »òÕß KEEP
+    // 7. Disable Operation (é€šå¸¸ä¹Ÿæ˜¯ 0x7, ä½†åœ¨ Operation Enabled çŠ¶æ€ä¸‹å¤„ç†)
+    // å¦‚æœéƒ½ä¸åŒ¹é…ï¼Œè¿”å› NULL æˆ–è€… KEEP
     return CIA402_CMD_NULL;
 }
 
 /**
- * @brief ¸ù¾İ StatusWord ½âÎöµ±Ç° CiA 402 ×´Ì¬
- * * @param status_word 16Î»µÄÔ­Ê¼×´Ì¬×Ö (0x6041)
- * @return cia402_state_t ¶ÔÓ¦µÄÃ¶¾Ù×´Ì¬
+ * @brief æ ¹æ® StatusWord è§£æå½“å‰ CiA 402 çŠ¶æ€
+ * * @param status_word 16ä½çš„åŸå§‹çŠ¶æ€å­— (0x6041)
+ * @return cia402_state_t å¯¹åº”çš„æšä¸¾çŠ¶æ€
  */
 cia402_state_t get_cia402_state(uint16_t status_word)
 {
     // ---------------------------------------------------------
-    // ÑÚÂë¶¨Òå (»ùÓÚ±í¸ñÖĞµÄ x Î»)
+    // æ©ç å®šä¹‰ (åŸºäºè¡¨æ ¼ä¸­çš„ x ä½)
     // ---------------------------------------------------------
 
-    // MASK_FULL: ¹Ø×¢ Bit 0, 1, 2, 3, 5, 6
-    // ¶ş½øÖÆ: 0000 0000 0110 1111 -> 0x006F
-    // ÓÃÓÚÅĞ¶Ï: Ready, Switched On, Op Enabled, Quick Stop
+    // MASK_FULL: å…³æ³¨ Bit 0, 1, 2, 3, 5, 6
+    // äºŒè¿›åˆ¶: 0000 0000 0110 1111 -> 0x006F
+    // ç”¨äºåˆ¤æ–­: Ready, Switched On, Op Enabled, Quick Stop
     const uint16_t MASK_FULL = 0x006F;
 
-    // MASK_PARTIAL: ¹Ø×¢ Bit 0, 1, 2, 3, 6 (ºöÂÔ Bit 5)
-    // ¶ş½øÖÆ: 0000 0000 0100 1111 -> 0x004F
-    // ÓÃÓÚÅĞ¶Ï: Fault, Fault Reactive, Switch On Disabled, Not Ready
+    // MASK_PARTIAL: å…³æ³¨ Bit 0, 1, 2, 3, 6 (å¿½ç•¥ Bit 5)
+    // äºŒè¿›åˆ¶: 0000 0000 0100 1111 -> 0x004F
+    // ç”¨äºåˆ¤æ–­: Fault, Fault Reactive, Switch On Disabled, Not Ready
     const uint16_t MASK_PARTIAL = 0x004F;
 
     // ---------------------------------------------------------
-    // ×´Ì¬ÅĞ¶¨ (ÓÅÏÈ¼¶Ë³ĞòÍ¨³£²»Ó°Ïì½á¹û£¬ÒòÎªÌØÕ÷ÖµÊÇ»¥³âµÄ)
+    // çŠ¶æ€åˆ¤å®š (ä¼˜å…ˆçº§é¡ºåºé€šå¸¸ä¸å½±å“ç»“æœï¼Œå› ä¸ºç‰¹å¾å€¼æ˜¯äº’æ–¥çš„)
     // ---------------------------------------------------------
 
     // 1. (7) Fault Reactive: x0xx 1111 (Bit 6=0, Bit 5=x, Bits 0-3=1)
@@ -135,7 +135,7 @@ cia402_state_t get_cia402_state(uint16_t status_word)
     }
 
     // 6. (6) Quick Stop Active: x00x 0111 (Bit 6=0, Bit 5=0, Bit 3=0, Bit 2=1, Bit 1=1, Bit 0=1)
-    // ×¢Òâ: ÕâÀï Bit 5 (Quick Stop) Îª 0£¬±íÊ¾ÕıÔÚ¼±Í£ÖĞ
+    // æ³¨æ„: è¿™é‡Œ Bit 5 (Quick Stop) ä¸º 0ï¼Œè¡¨ç¤ºæ­£åœ¨æ€¥åœä¸­
     if ((status_word & MASK_FULL) == 0x0007)
     {
         return CIA402_SM_QUICK_STOP_ACTIVE;
@@ -153,8 +153,8 @@ cia402_state_t get_cia402_state(uint16_t status_word)
         return CIA402_SM_NOT_READY_TO_SWITCH_ON;
     }
 
-    // Èç¹û¶¼²»Æ¥Åä (¿ÉÄÜ´¦ÓÚÖĞ¼ä¹ı¶ÉÌ¬£¬Í¨³£¹éÀàÎª Not Ready »ò Unknown)
-    return CIA402_SM_UNKNOWN; // »òÕß return CIA402_SM_NOT_READY_TO_SWITCH_ON;
+    // å¦‚æœéƒ½ä¸åŒ¹é… (å¯èƒ½å¤„äºä¸­é—´è¿‡æ¸¡æ€ï¼Œé€šå¸¸å½’ç±»ä¸º Not Ready æˆ– Unknown)
+    return CIA402_SM_UNKNOWN; // æˆ–è€… return CIA402_SM_NOT_READY_TO_SWITCH_ON;
 }
 
 // init cia402 state machine structure, state machine will switch to Not ready to switch on.
@@ -173,9 +173,9 @@ void init_cia402_state_machine(cia402_sm_t* sm)
     sm->flag_fault_reset_request = 0;
 
 #if defined CIA402_CONFIG_DISABLE_CONTROL_WORD_DEFAULT
-    sm->flag_enable_control_word = 0; // Ä¬ÈÏ½ûÓÃ¿ØÖÆ×Ö
+    sm->flag_enable_control_word = 0; // é»˜è®¤ç¦ç”¨æ§åˆ¶å­—
 #else                                 // CIA402_CONFIG_DISABLE_CONTROL_WORD_DEFAULT
-    sm->flag_enable_control_word = 1; // Ä¬ÈÏÊ¹ÄÜ¿ØÖÆ×Ö
+    sm->flag_enable_control_word = 1; // é»˜è®¤ä½¿èƒ½æ§åˆ¶å­—
 #endif                                // CIA402_CONFIG_DISABLE_CONTROL_WORD_DEFAULT
     sm->last_cb_result = CIA402_EC_KEEP;
     sm->last_fault_reset_bit = 0;
@@ -200,21 +200,21 @@ void cia402_update_status_word(cia402_sm_t* sm)
 {
     gmp_base_assert(sm);
 
-    // Çå³ıÓë×´Ì¬Ïà¹ØµÄºËĞÄÎ»: Bit 0,1,2,3,5,6
-    // ±£Áô Bit 4 (Voltage), Bit 7 (Warning) µÈ£¬ÒòÎªÕâĞ©¿ÉÄÜÓÉÍâ²¿Âß¼­ÉèÖÃ
-    // ÕâÀïÎªÁË¼ò»¯£¬ÎÒÃÇÖØĞ´ºËĞÄ×´Ì¬Î»
+    // æ¸…é™¤ä¸çŠ¶æ€ç›¸å…³çš„æ ¸å¿ƒä½: Bit 0,1,2,3,5,6
+    // ä¿ç•™ Bit 4 (Voltage), Bit 7 (Warning) ç­‰ï¼Œå› ä¸ºè¿™äº›å¯èƒ½ç”±å¤–éƒ¨é€»è¾‘è®¾ç½®
+    // è¿™é‡Œä¸ºäº†ç®€åŒ–ï¼Œæˆ‘ä»¬é‡å†™æ ¸å¿ƒçŠ¶æ€ä½
 
     cia402_state_word_t s = sm->state_word;
 
-    // Ä¬ÈÏÖµ£ºQuickStop=1 (Õı³£), Fault=0, SwitchOnDisabled=0
-    s.all &= ~0x006F;                    // Çå³ı Bit 0,1,2,3,5,6
-    s.all |= CIA402_STATEWORD_QUICKSTOP; // Bit 5 Ä¬ÈÏÎª 1 (Not Active)
+    // é»˜è®¤å€¼ï¼šQuickStop=1 (æ­£å¸¸), Fault=0, SwitchOnDisabled=0
+    s.all &= ~0x006F;                    // æ¸…é™¤ Bit 0,1,2,3,5,6
+    s.all |= CIA402_STATEWORD_QUICKSTOP; // Bit 5 é»˜è®¤ä¸º 1 (Not Active)
 
     switch (sm->current_state)
     {
     case CIA402_SM_NOT_READY_TO_SWITCH_ON:
         // x0xx 0000
-        // Í¨³£³õÊ¼»¯Ê± QuickStop Î»Ò²Îª 0
+        // é€šå¸¸åˆå§‹åŒ–æ—¶ QuickStop ä½ä¹Ÿä¸º 0
         s.bits.quick_stop = 0;
         break;
 
@@ -250,8 +250,8 @@ void cia402_update_status_word(cia402_sm_t* sm)
         break;
 
     case CIA402_SM_FAULT_REACTION:
-        // x0xx 1111 (Fault µ«²»¸Ä±äµ±Ç°ÏµÍ³×´Ì¬)
-        // Fault Reaction ÆÚ¼ä£¬Bit 0-2 Í¨³£±£³ÖÎª 1 (¿´ÆğÀ´Ïñ Op Enabled)£¬Í¬Ê± Bit 3 (Fault) ÖÃÎ»
+        // x0xx 1111 (Fault ä½†ä¸æ”¹å˜å½“å‰ç³»ç»ŸçŠ¶æ€)
+        // Fault Reaction æœŸé—´ï¼ŒBit 0-2 é€šå¸¸ä¿æŒä¸º 1 (çœ‹èµ·æ¥åƒ Op Enabled)ï¼ŒåŒæ—¶ Bit 3 (Fault) ç½®ä½
         s.bits.fault = 1;
         s.bits.ready_to_switch_on = 1;
         s.bits.switched_on = 1;
@@ -267,7 +267,7 @@ void cia402_update_status_word(cia402_sm_t* sm)
         break;
     }
 
-    // ¸üĞÂ»Ø½á¹¹Ìå
+    // æ›´æ–°å›ç»“æ„ä½“
     sm->state_word.all = s.all;
 }
 
@@ -483,7 +483,7 @@ static void _operation_enabled_routine(cia402_sm_t* sm)
 
     if (sm->current_cmd == CIA402_CMD_SWITCHON)
     {
-        // ÕâÀï Switch On Ö¸ÁîµÈÍ¬ÓÚ Disable Operation
+        // è¿™é‡Œ Switch On æŒ‡ä»¤ç­‰åŒäº Disable Operation
         cia402_transit(sm, CIA402_SM_SWITCHED_ON);
     }
 
@@ -535,7 +535,7 @@ static void _fault_routine(cia402_sm_t* sm)
 
     sm->last_cb_result = sm->fault(sm);
 
-    // ±ØĞëÇÒÖ»ÄÜÍ¨¹ıÕâÒ»±êÖ¾Î»ÇëÇó¸´Î»£¬µ¥ÎÈÌ¬
+    // å¿…é¡»ä¸”åªèƒ½é€šè¿‡è¿™ä¸€æ ‡å¿—ä½è¯·æ±‚å¤ä½ï¼Œå•ç¨³æ€
     if (sm->flag_fault_reset_request)
     {
         sm->current_state = CIA402_SM_SWITCH_ON_DISABLED;
@@ -554,16 +554,16 @@ static void _fault_routine(cia402_sm_t* sm)
 
 void cia402_fault_request(cia402_sm_t* sm)
 {
-    // ±ØĞëÔÚÕıÊ½½øÈë´íÎó×´Ì¬Ö®Ç°Çå³ıÖ®Ç°ÉèÖÃµÄ¸´Î»±êÖ¾£¬·ÀÖ¹ÏµÍ³´íÎó»Ö¸´
+    // å¿…é¡»åœ¨æ­£å¼è¿›å…¥é”™è¯¯çŠ¶æ€ä¹‹å‰æ¸…é™¤ä¹‹å‰è®¾ç½®çš„å¤ä½æ ‡å¿—ï¼Œé˜²æ­¢ç³»ç»Ÿé”™è¯¯æ¢å¤
     sm->flag_fault_reset_request = 0;
 
-    // ±êÖ¾½øÈëĞÂµÄÒ»ÂÖdelay
+    // æ ‡å¿—è¿›å…¥æ–°çš„ä¸€è½®delay
     sm->flag_delay_stage = 0;
 
-    // ÇĞ»»
+    // åˆ‡æ¢
     sm->current_state = CIA402_SM_FAULT_REACTION;
 
-    // ÔÚÕâ¸öº¯ÊıÖĞ½«»áÁ¢¼´ÇĞ»»µ½CIA402_SM_FAULT_REACTION²¢Á¢¼´Ö´ĞĞÒ»´Îfault_reactionº¯Êı¡£
+    // åœ¨è¿™ä¸ªå‡½æ•°ä¸­å°†ä¼šç«‹å³åˆ‡æ¢åˆ°CIA402_SM_FAULT_REACTIONå¹¶ç«‹å³æ‰§è¡Œä¸€æ¬¡fault_reactionå‡½æ•°ã€‚
     _fault_reaction_routine(sm);
 
     // update state word here
@@ -589,7 +589,7 @@ void dispatch_cia402_state_machine(cia402_sm_t* sm)
     }
 
     // 2. judge if fault reset is request
-    // Ö»ÓĞÔÚfalut×´Ì¬ÏÂreset²ÅÊÇ»Ö¸´µ½CIA402_SM_SWITCH_ON_DISABLED£¬ÆäËûµÄ¶¼Í¨¹ırequest_state»Ö¸´¡£
+    // åªæœ‰åœ¨falutçŠ¶æ€ä¸‹resetæ‰æ˜¯æ¢å¤åˆ°CIA402_SM_SWITCH_ON_DISABLEDï¼Œå…¶ä»–çš„éƒ½é€šè¿‡request_stateæ¢å¤ã€‚
 
     // Detection of Fault Reset Edge (0 -> 1)
     if (sm->flag_enable_control_word)
@@ -701,17 +701,17 @@ void dispatch_cia402_state_machine(cia402_sm_t* sm)
 //    return CIA402_EC_KEEP;
 //}
 
-// ¶¨ÒåÒ»Ğ©³¬Ê±ãĞÖµ (µ¥Î» ms£¬¸ù¾İÊµ¼ÊÇé¿öµ÷Õû)
+// å®šä¹‰ä¸€äº›è¶…æ—¶é˜ˆå€¼ (å•ä½ msï¼Œæ ¹æ®å®é™…æƒ…å†µè°ƒæ•´)
 #define TIMEOUT_PRECHARGE_MS 3000
 #define TIMEOUT_ADC_CALIB_MS 3000
 #define TIMEOUT_ALIGNMENT_MS 5000
 
 // =========================================================================
-// 1. Switch On Disabled (³õÊ¼»¯Óë´ı»ú)
+// 1. Switch On Disabled (åˆå§‹åŒ–ä¸å¾…æœº)
 // =========================================================================
 cia402_sm_error_code_t default_cb_fn_switch_on_disabled(cia402_sm_t* sm)
 {
-    // [Entry Action] ½øÈë×´Ì¬µÄµÚÒ»ÅÄÖ´ĞĞ
+    // [Entry Action] è¿›å…¥çŠ¶æ€çš„ç¬¬ä¸€æ‹æ‰§è¡Œ
     if (sm->current_state_counter <= 1)
     {
         // output_disable & power_off
@@ -719,69 +719,69 @@ cia402_sm_error_code_t default_cb_fn_switch_on_disabled(cia402_sm_t* sm)
         ctl_disable_main_contactor();
         ctl_disable_grid_relay();
         ctl_disable_precharge_relay();
-        ctl_restore_brake(); // ±§Õ¢
+        ctl_restore_brake(); // æŠ±é—¸
     }
 
     // [Do Action] ctl_if_adc_calibrate
-    // Ö´ĞĞ ADC Ğ£×¼ (·Ç×èÈû)
+    // æ‰§è¡Œ ADC æ ¡å‡† (éé˜»å¡)
     if (ctl_exec_adc_calibration() == 0)
     {
-        // ¼ì²éÊÇ·ñ³¬Ê± (ÀûÓÃ entry_state_tick)
+        // æ£€æŸ¥æ˜¯å¦è¶…æ—¶ (åˆ©ç”¨ entry_state_tick)
         if ((sm->current_tick - sm->entry_state_tick) > TIMEOUT_ADC_CALIB_MS)
         {
-            return CIA402_EC_ERROR; // Ğ£×¼³¬Ê±£¬±¨´í
+            return CIA402_EC_ERROR; // æ ¡å‡†è¶…æ—¶ï¼ŒæŠ¥é”™
         }
-        return CIA402_EC_KEEP; // µÈ´ıĞ£×¼Íê³É
+        return CIA402_EC_KEEP; // ç­‰å¾…æ ¡å‡†å®Œæˆ
     }
 
-    // ¼ì²é±àÂëÆ÷/´«¸ĞÆ÷×´Ì¬
+    // æ£€æŸ¥ç¼–ç å™¨/ä¼ æ„Ÿå™¨çŠ¶æ€
     if (ctl_check_encoder() == 0)
     {
-        return CIA402_EC_KEEP; // ´«¸ĞÆ÷Î´¾ÍĞ÷
+        return CIA402_EC_KEEP; // ä¼ æ„Ÿå™¨æœªå°±ç»ª
     }
 
-    // Ó²¼ş×¼±¸¾ÍĞ÷
+    // ç¡¬ä»¶å‡†å¤‡å°±ç»ª
     return CIA402_EC_NEXT_STATE;
 }
 
 // =========================================================================
-// 2. Ready to Switch On (Ô¤³äµçÓë¸ßÑ¹½¨Á¢)
+// 2. Ready to Switch On (é¢„å……ç”µä¸é«˜å‹å»ºç«‹)
 // =========================================================================
 cia402_sm_error_code_t default_cb_fn_ready_to_switch_on(cia402_sm_t* sm)
 {
     // [Entry Action] power_on (Start Pre-charge)
     if (sm->current_state_counter <= 1)
     {
-        // È·±£Ö÷½Ó´¥Æ÷¶Ï¿ª
+        // ç¡®ä¿ä¸»æ¥è§¦å™¨æ–­å¼€
         ctl_disable_main_contactor();
-        // ±ÕºÏÔ¤³ä¼ÌµçÆ÷
+        // é—­åˆé¢„å……ç»§ç”µå™¨
         ctl_enable_precharge_relay();
 
-        // ÖØÖÃÄÚ²¿½×¶Î±êÖ¾
+        // é‡ç½®å†…éƒ¨é˜¶æ®µæ ‡å¿—
         sm->flag_delay_stage = 0;
     }
 
-    // output_disable (ÔÙ´ÎÈ·ÈÏ)
+    // output_disable (å†æ¬¡ç¡®è®¤)
     ctl_disable_pwm();
 
-    // [Do Action] ·Ö½×¶ÎÖ´ĞĞ¸ßÑ¹½¨Á¢Á÷³Ì
+    // [Do Action] åˆ†é˜¶æ®µæ‰§è¡Œé«˜å‹å»ºç«‹æµç¨‹
 
-    // Stage 0: µÈ´ıÄ¸ÏßµçÑ¹½¨Á¢
+    // Stage 0: ç­‰å¾…æ¯çº¿ç”µå‹å»ºç«‹
 
     if (ctl_exec_dc_voltage_ready() == 1)
     {
-        // µçÑ¹OK£¬½øÈëÏÂÒ»½×¶Î
+        // ç”µå‹OKï¼Œè¿›å…¥ä¸‹ä¸€é˜¶æ®µ
         ctl_enable_main_contactor();
-        ctl_disable_precharge_relay(); // ÇĞ³ıÔ¤³ä
+        ctl_disable_precharge_relay(); // åˆ‡é™¤é¢„å……
 
-        // Èç¹ûÊÇ²¢ÍøÉè±¸£¬¼ì²é PLL
+        // å¦‚æœæ˜¯å¹¶ç½‘è®¾å¤‡ï¼Œæ£€æŸ¥ PLL
         if (ctl_check_pll_locked() == 1)
         {
             return CIA402_EC_NEXT_STATE;
         }
         else
         {
-            // ¿ÉÒÔÔÚÕâÀï¼ÓÒ»¸ö PLL Ëø¶¨³¬Ê±ÅĞ¶Ï
+            // å¯ä»¥åœ¨è¿™é‡ŒåŠ ä¸€ä¸ª PLL é”å®šè¶…æ—¶åˆ¤æ–­
             return CIA402_EC_KEEP;
         }
     }
@@ -794,23 +794,23 @@ cia402_sm_error_code_t default_cb_fn_ready_to_switch_on(cia402_sm_t* sm)
 }
 
 // =========================================================================
-// 3. Switched On (ÎïÀíÁ¬½ÓÓë²ÎÊı±æÊ¶)
+// 3. Switched On (ç‰©ç†è¿æ¥ä¸å‚æ•°è¾¨è¯†)
 // =========================================================================
 cia402_sm_error_code_t default_cb_fn_switched_on(cia402_sm_t* sm)
 {
     // [Entry Action] ctl_online_ready (Grid Relay or Alignment)
     if (sm->current_state_counter <= 1)
     {
-        // power_on: ±£³Ö¸ßÑ¹ÔÚÏß
+        // power_on: ä¿æŒé«˜å‹åœ¨çº¿
         ctl_enable_main_contactor();
 
-        // ±ÕºÏ½»Á÷²¢Íø¼ÌµçÆ÷
+        // é—­åˆäº¤æµå¹¶ç½‘ç»§ç”µå™¨
         ctl_enable_grid_relay();
     }
 
-    // [Do Action] ×ª×Ó¶¨Î» / ¶ÔÆë
-    // ×¢Òâ£ºoutput_disable ÔÚ´Ë½×¶ÎÍ¨³£ÒâÎ¶×Å PWM ²»·¢²¨£¬»òÕß½ö·¢¶¨Î»Ö±Á÷ÏòÁ¿
-    // Èç¹û ctl_exec_rotor_alignment ÄÚ²¿»á²Ù×÷ PWM£¬ÔòÕâÀï²»ĞèÒªÏÔÊ½ disable
+    // [Do Action] è½¬å­å®šä½ / å¯¹é½
+    // æ³¨æ„ï¼šoutput_disable åœ¨æ­¤é˜¶æ®µé€šå¸¸æ„å‘³ç€ PWM ä¸å‘æ³¢ï¼Œæˆ–è€…ä»…å‘å®šä½ç›´æµå‘é‡
+    // å¦‚æœ ctl_exec_rotor_alignment å†…éƒ¨ä¼šæ“ä½œ PWMï¼Œåˆ™è¿™é‡Œä¸éœ€è¦æ˜¾å¼ disable
 
     if (ctl_exec_rotor_alignment() == 0)
     {
@@ -825,85 +825,85 @@ cia402_sm_error_code_t default_cb_fn_switched_on(cia402_sm_t* sm)
 }
 
 // =========================================================================
-// 4. Operation Enabled (±Õ»·ÔËĞĞ)
+// 4. Operation Enabled (é—­ç¯è¿è¡Œ)
 // =========================================================================
 cia402_sm_error_code_t default_cb_fn_operation_enabled(cia402_sm_t* sm)
 {
     // [Entry Action] output_enable
     if (sm->current_state_counter <= 1)
     {
-        ctl_enable_pwm();    // ¿ªÆô PWM
-        ctl_release_brake(); // ËÉ¿ª±§Õ¢
+        ctl_enable_pwm();    // å¼€å¯ PWM
+        ctl_release_brake(); // æ¾å¼€æŠ±é—¸
     }
 
-    // [Do Action] ÊµÊ±°²¹æ¼ì²é
+    // [Do Action] å®æ—¶å®‰è§„æ£€æŸ¥
     if (ctl_check_compliance() == 0)
     {
-        // ÔËĞĞÖĞ·¢Éú°²¹æ¹ÊÕÏ£¨µçÍøµôµç¡¢¹ıÁ÷µÈ£©
+        // è¿è¡Œä¸­å‘ç”Ÿå®‰è§„æ•…éšœï¼ˆç”µç½‘æ‰ç”µã€è¿‡æµç­‰ï¼‰
         return CIA402_EC_ERROR;
     }
 
-    // Õı³£ÔËĞĞ£¬±£³Ö×´Ì¬
+    // æ­£å¸¸è¿è¡Œï¼Œä¿æŒçŠ¶æ€
     return CIA402_EC_KEEP;
 }
 
 // =========================================================================
-// 5. Quick Stop Active (¿ìËÙÍ£»ú)
+// 5. Quick Stop Active (å¿«é€Ÿåœæœº)
 // =========================================================================
 cia402_sm_error_code_t default_cb_fn_quick_stop_active(cia402_sm_t* sm)
 {
     // [Entry Action] power_off sequence start
     if (sm->current_state_counter <= 1)
     {
-        // output_disable: Á¢¼´·â²¨»ò¿ªÊ¼¼õËÙ
-        // ÕâÀïÄ¬ÈÏÊµÏÖÎªÁ¢¼´·â²¨
+        // output_disable: ç«‹å³å°æ³¢æˆ–å¼€å§‹å‡é€Ÿ
+        // è¿™é‡Œé»˜è®¤å®ç°ä¸ºç«‹å³å°æ³¢
         ctl_disable_pwm();
         ctl_restore_brake();
     }
 
-    // [Do Action] µÈ´ıÍ£»úÍê³É (Èç¹ûÊÇÓĞ¼õËÙ¹ı³ÌµÄ)
-    // ÕâÀï¼ò»¯ÎªÁ¢¼´Íê³É
+    // [Do Action] ç­‰å¾…åœæœºå®Œæˆ (å¦‚æœæ˜¯æœ‰å‡é€Ÿè¿‡ç¨‹çš„)
+    // è¿™é‡Œç®€åŒ–ä¸ºç«‹å³å®Œæˆ
 
-    // power_off: Í£»úÍê³Éºó£¬Âß¼­ÉÏÒÑ¾­ Power Off ÁË
+    // power_off: åœæœºå®Œæˆåï¼Œé€»è¾‘ä¸Šå·²ç» Power Off äº†
 
-    return CIA402_EC_NEXT_STATE; // Ìø×ªµ½ Switch On Disabled
+    return CIA402_EC_NEXT_STATE; // è·³è½¬åˆ° Switch On Disabled
 }
 
 // =========================================================================
-// 6. Fault Reaction (¹ÊÕÏ·´Ó¦)
+// 6. Fault Reaction (æ•…éšœååº”)
 // =========================================================================
 cia402_sm_error_code_t default_cb_fn_fault_reaction(cia402_sm_t* sm)
 {
-    // [Entry Action] °²È«µÚÒ»
+    // [Entry Action] å®‰å…¨ç¬¬ä¸€
     if (sm->current_state_counter <= 1)
     {
         // output_disable
         ctl_disable_pwm();
         ctl_restore_brake();
 
-        // power_off: ÇĞ¶ÏÍâ²¿Á¬½Ó
+        // power_off: åˆ‡æ–­å¤–éƒ¨è¿æ¥
         ctl_disable_grid_relay();
     }
 
-    // [Do Action] ¿ÉÒÔÔÚÕâÀï¼ÇÂ¼¹ÊÕÏÈÕÖ¾£¬»òÕßµÈ´ıµçÁ÷Ë¥¼õ
+    // [Do Action] å¯ä»¥åœ¨è¿™é‡Œè®°å½•æ•…éšœæ—¥å¿—ï¼Œæˆ–è€…ç­‰å¾…ç”µæµè¡°å‡
 
-    return CIA402_EC_NEXT_STATE; // Ìø×ªµ½ Fault
+    return CIA402_EC_NEXT_STATE; // è·³è½¬åˆ° Fault
 }
 
 // =========================================================================
-// 7. Fault (¹ÊÕÏÍ£»úÌ¬)
+// 7. Fault (æ•…éšœåœæœºæ€)
 // =========================================================================
 cia402_sm_error_code_t default_cb_fn_fault(cia402_sm_t* sm)
 {
-    // [Entry Action] ÈßÓà°²È«ÇĞ¶Ï
+    // [Entry Action] å†—ä½™å®‰å…¨åˆ‡æ–­
     if (sm->current_state_counter <= 1)
     {
         ctl_disable_pwm();
-        ctl_disable_main_contactor(); // ³¹µ×¶Ï¸ßÑ¹
+        ctl_disable_main_contactor(); // å½»åº•æ–­é«˜å‹
         ctl_disable_grid_relay();
         ctl_disable_precharge_relay();
     }
 
-    // nothing happened. µÈ´ı Reset ĞÅºÅ
+    // nothing happened. ç­‰å¾… Reset ä¿¡å·
     return CIA402_EC_KEEP;
 }

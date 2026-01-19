@@ -1,4 +1,4 @@
-
+ï»¿
 #ifndef _FILE_CIA402_STATE_MACHINE_H_
 #define _FILE_CIA402_STATE_MACHINE_H_
 
@@ -7,31 +7,31 @@ extern "C"
 {
 #endif // __cplusplus
 
-// ÔÚCiA 402 ±ê×¼£¬´Ó Switch On Disabled ±ØĞëÊÕµ½ Shutdown (0x06) ²ÅÄÜ½øÈë Ready to Switch On ¡£
-// Ö±½Ó·¢ 0x0F »ò 0x07 Í¨³£ÊÇ±»ºöÂÔµÄ¡£
-// Õâ¸öºêÔÊĞíÁ¬ĞøÇĞ»»×´Ì¬£¬Ö±½Ó½øÈë0x0F×´Ì¬£¬·½±ãµ÷ÊÔ¡£
+// åœ¨CiA 402 æ ‡å‡†ï¼Œä» Switch On Disabled å¿…é¡»æ”¶åˆ° Shutdown (0x06) æ‰èƒ½è¿›å…¥ Ready to Switch On ã€‚
+// ç›´æ¥å‘ 0x0F æˆ– 0x07 é€šå¸¸æ˜¯è¢«å¿½ç•¥çš„ã€‚
+// è¿™ä¸ªå®å…è®¸è¿ç»­åˆ‡æ¢çŠ¶æ€ï¼Œç›´æ¥è¿›å…¥0x0FçŠ¶æ€ï¼Œæ–¹ä¾¿è°ƒè¯•ã€‚
 #define CIA402_CONFIG_ENABLE_SEQUENCE_SWITCH
 
-// ÔÚ³õÊ¼»¯¹ı³ÌÖĞÔİÊ±½ûÓÃ¿ØÖÆ×Ö½âÎö£¬¿ÉÒÔÖ±½ÓÊ©¼ÓÃüÁî
+// åœ¨åˆå§‹åŒ–è¿‡ç¨‹ä¸­æš‚æ—¶ç¦ç”¨æ§åˆ¶å­—è§£æï¼Œå¯ä»¥ç›´æ¥æ–½åŠ å‘½ä»¤
 #define CIA402_CONFIG_DISABLE_CONTROL_WORD_DEFAULT
 
-// ´ÓNot ready to switch on -> ready to switch onµÄ×îĞ¡ÑÓÊ±
-// ÕâÒ»¸öÉè¼ÆÒÑ¾­±»½ûÓÃ£¬²»»áÕæµÄÓĞÑÓÊ±·¢Éú
+// ä»Not ready to switch on -> ready to switch onçš„æœ€å°å»¶æ—¶
+// è¿™ä¸€ä¸ªè®¾è®¡å·²ç»è¢«ç¦ç”¨ï¼Œä¸ä¼šçœŸçš„æœ‰å»¶æ—¶å‘ç”Ÿ
 #ifndef CIA402_CONFIG_MIN_DELAY_READY
 #define CIA402_CONFIG_MIN_DELAY_READY (100)
 #endif // CIA402_CONFIG_MIN_DELAY_READY
 
-// ´ÓSwitched on disabled -> ready to switch on µÄ×îĞ¡ÑÓÊ±
+// ä»Switched on disabled -> ready to switch on çš„æœ€å°å»¶æ—¶
 #ifndef CIA402_CONFIG_MIN_DELAY_SHUTDOWN
 #define CIA402_CONFIG_MIN_DELAY_SHUTDOWN (100)
 #endif // CIA402_CONFIG_MIN_DELAY_SHUTDOWN
 
-// ´ÓReady to switch on -> Switch on µÄ×îĞ¡ÑÓÊ±
+// ä»Ready to switch on -> Switch on çš„æœ€å°å»¶æ—¶
 #ifndef CIA402_CONFIG_MIN_DELAY_SWITCHON
 #define CIA402_CONFIG_MIN_DELAY_SWITCHON (100)
 #endif // CIA402_CONFIG_MIN_DELAY_SHUTDOWN
 
-// ´ÓSwitch on -> Operation EnableµÄ×îĞ¡ÑÓÊ±
+// ä»Switch on -> Operation Enableçš„æœ€å°å»¶æ—¶
 #ifndef CIA402_CONFIG_MIN_DELAY_OPERATION_EN
 #define CIA402_CONFIG_MIN_DELAY_OPERATION_EN (100)
 #endif // CIA402_CONFIG_MIN_DELAY_OPERATION_EN
@@ -41,22 +41,22 @@ extern "C"
 // Control Word 6040h: "State Transition Commands" Bits
 //
 
-// 1: ÔÊĞíÇĞ»»µ½ Switched On ×´Ì¬
+// 1: å…è®¸åˆ‡æ¢åˆ° Switched On çŠ¶æ€
 #define CIA402_CONTROLWORD_SWITCHON (0x0001)
 
-// 1: ÔÊĞíÖ±Á÷Ä¸Ïß/¸ßÑ¹´æÔÚ (Ó²¼şÊ¹ÄÜ)
+// 1: å…è®¸ç›´æµæ¯çº¿/é«˜å‹å­˜åœ¨ (ç¡¬ä»¶ä½¿èƒ½)
 #define CIA402_CONTROLWORD_ENABLE_VOLTAGE (0x0002)
 
-// 0: ´¥·¢¼±Í£ (×¢ÒâÊÇµÍµçÆ½ÓĞĞ§)£»1: Õı³£¹¤×÷
+// 0: è§¦å‘æ€¥åœ (æ³¨æ„æ˜¯ä½ç”µå¹³æœ‰æ•ˆ)ï¼›1: æ­£å¸¸å·¥ä½œ
 #define CIA402_CONTROLWORD_QUICKSTOP (0x0004)
 
-// 1: ÔÊĞí·¢²¨/ÔËĞĞ£»0: ·â²¨/½ûÖ¹ÔËĞĞ
+// 1: å…è®¸å‘æ³¢/è¿è¡Œï¼›0: å°æ³¢/ç¦æ­¢è¿è¡Œ
 #define CIA402_CONTROLWORD_ENABLE_OPERATION (0x0008)
 
-// 0 $\to$ 1 (ÉÏÉıÑØ): ¸´Î»¹ÊÕÏ
+// 0 $\to$ 1 (ä¸Šå‡æ²¿): å¤ä½æ•…éšœ
 #define CIA402_CONTROLWORD_FAULT_RESET (0x0080)
 
-// 1: ÔİÍ£ÔËĞĞ (µ«²»ÍË³ö Operation Enabled)
+// 1: æš‚åœè¿è¡Œ (ä½†ä¸é€€å‡º Operation Enabled)
 #define CIA402_CONTROLWORD_HALT (0x0100)
 
 typedef union tag_cia402_ctrl_word {
@@ -64,23 +64,23 @@ typedef union tag_cia402_ctrl_word {
 
     struct
     {
-        // --- ×Ö½Ú 0 (µÍ8Î») ---
-        uint16_t switch_on : 1;        // Bit 0: ¿ªÆô (Switch On)
-        uint16_t enable_voltage : 1;   // Bit 1: ÔÊĞíµçÑ¹ (Enable Voltage)
-        uint16_t quick_stop : 1;       // Bit 2: ¿ìËÙÍ£»ú (Quick Stop) - ×¢Òâ: 1±íÊ¾Õı³££¬0±íÊ¾¼±Í£
-        uint16_t enable_operation : 1; // Bit 3: ÔÊĞíÔËĞĞ (Enable Operation)
+        // --- å­—èŠ‚ 0 (ä½8ä½) ---
+        uint16_t switch_on : 1;        // Bit 0: å¼€å¯ (Switch On)
+        uint16_t enable_voltage : 1;   // Bit 1: å…è®¸ç”µå‹ (Enable Voltage)
+        uint16_t quick_stop : 1;       // Bit 2: å¿«é€Ÿåœæœº (Quick Stop) - æ³¨æ„: 1è¡¨ç¤ºæ­£å¸¸ï¼Œ0è¡¨ç¤ºæ€¥åœ
+        uint16_t enable_operation : 1; // Bit 3: å…è®¸è¿è¡Œ (Enable Operation)
 
-        uint16_t oms_4 : 1; // Bit 4: Ä£Ê½Ïà¹Ø (Operation mode specific)
-        uint16_t oms_5 : 1; // Bit 5: Ä£Ê½Ïà¹Ø
-        uint16_t oms_6 : 1; // Bit 6: Ä£Ê½Ïà¹Ø
+        uint16_t oms_4 : 1; // Bit 4: æ¨¡å¼ç›¸å…³ (Operation mode specific)
+        uint16_t oms_5 : 1; // Bit 5: æ¨¡å¼ç›¸å…³
+        uint16_t oms_6 : 1; // Bit 6: æ¨¡å¼ç›¸å…³
 
-        uint16_t fault_reset : 1; // Bit 7: ¹ÊÕÏ¸´Î» (Fault Reset) - ÉÏÉıÑØÓĞĞ§
+        uint16_t fault_reset : 1; // Bit 7: æ•…éšœå¤ä½ (Fault Reset) - ä¸Šå‡æ²¿æœ‰æ•ˆ
 
-        // --- ×Ö½Ú 1 (¸ß8Î») ---
-        uint16_t halt : 1;         // Bit 8: ÔİÍ£ (Halt)
-        uint16_t oms_9 : 1;        // Bit 9: Ä£Ê½Ïà¹Ø (Operation mode specific)
-        uint16_t reserved : 1;     // Bit 10: ±£Áô
-        uint16_t manufacturer : 5; // Bits 11-15: ³§ÉÌ×Ô¶¨Òå (Manufacturer specific)
+        // --- å­—èŠ‚ 1 (é«˜8ä½) ---
+        uint16_t halt : 1;         // Bit 8: æš‚åœ (Halt)
+        uint16_t oms_9 : 1;        // Bit 9: æ¨¡å¼ç›¸å…³ (Operation mode specific)
+        uint16_t reserved : 1;     // Bit 10: ä¿ç•™
+        uint16_t manufacturer : 5; // Bits 11-15: å‚å•†è‡ªå®šä¹‰ (Manufacturer specific)
     } bits;
 } cia402_ctrl_word_t;
 
@@ -98,41 +98,41 @@ typedef enum tag_cia402_cmd
 #define CIA402_CMD_DISABLE_OPERATION CIA402_CMD_SWITCHON
 
 /**
- * @brief ½âÎö¿ØÖÆ×Ö (0x6040) ²¢·µ»Ø¶ÔÓ¦µÄÃüÁîÃ¶¾Ù
- * »ùÓÚ CiA 402 State Transition Âß¼­±í
- * * @param control_word 16Î»¿ØÖÆ×Ö
- * @return cia402_cmd ½âÎö³öµÄÃüÁî
+ * @brief è§£ææ§åˆ¶å­— (0x6040) å¹¶è¿”å›å¯¹åº”çš„å‘½ä»¤æšä¸¾
+ * åŸºäº CiA 402 State Transition é€»è¾‘è¡¨
+ * * @param control_word 16ä½æ§åˆ¶å­—
+ * @return cia402_cmd è§£æå‡ºçš„å‘½ä»¤
  */
 cia402_cmd_t get_cia402_control_cmd(uint16_t control_word);
 
 //////////////////////////////////////////////////////////////////////////
 // Status Word definition
 
-// 1: ÏµÍ³ÒÑÔ¤³äÍê³É£¬×¼±¸ºÃºÏÕ¢
+// 1: ç³»ç»Ÿå·²é¢„å……å®Œæˆï¼Œå‡†å¤‡å¥½åˆé—¸
 #define CIA402_STATEWORD_READY_TO_SWITCH_ON (0x0001)
 
-// 1: Ç¿µç»ØÂ·ÒÑ½ÓÍ¨ (Relay Closed)
+// 1: å¼ºç”µå›è·¯å·²æ¥é€š (Relay Closed)
 #define CIA402_STATEWORD_SWITCHED_ON (0x0002)
 
-// 1: PWM ÕıÔÚ·¢²¨£¬ÏµÍ³ÕıÔÚÔËĞĞ
+// 1: PWM æ­£åœ¨å‘æ³¢ï¼Œç³»ç»Ÿæ­£åœ¨è¿è¡Œ
 #define CIA402_STATEWORD_OPERATION_ENABLED (0x0004)
 
-// 1: ·¢Éú¹ÊÕÏ
+// 1: å‘ç”Ÿæ•…éšœ
 #define CIA402_STATEWORD_FAULT (0x0008)
 
-// 1: Ö±Á÷Ä¸ÏßµçÑ¹Õı³£
+// 1: ç›´æµæ¯çº¿ç”µå‹æ­£å¸¸
 #define CIA402_STATEWORD_VOLTAGE_ENABLED (0x0010)
 
-// 0: ÕıÔÚ¼±Í£ÖĞ£»1: Õı³£ (×¢ÒâÂß¼­·´Ïò)
+// 0: æ­£åœ¨æ€¥åœä¸­ï¼›1: æ­£å¸¸ (æ³¨æ„é€»è¾‘åå‘)
 #define CIA402_STATEWORD_QUICKSTOP (0x0020)
 
-// 1: ÏµÍ³´¦ÓÚ½ûÖ¹ºÏÕ¢×´Ì¬ (Í¨³£ÊÇ¸ÕÉÏµç»ò¹ÊÕÏ¸´Î»ºó)
+// 1: ç³»ç»Ÿå¤„äºç¦æ­¢åˆé—¸çŠ¶æ€ (é€šå¸¸æ˜¯åˆšä¸Šç”µæˆ–æ•…éšœå¤ä½å)
 #define CIA402_STATEWORD_SWICH_ON_DISABLED (0X0040)
 
-// 1: ÔÊĞíÔ¶³Ì¿ØÖÆ
+// 1: å…è®¸è¿œç¨‹æ§åˆ¶
 #define CIA402_STATEWORD_REMOTE (0x0200)
 
-// 1: Ä¿±êÖµÒÑ´ïµ½ (ËÙ¶È/Î»ÖÃ/µçÁ÷ÎÈ¶¨)
+// 1: ç›®æ ‡å€¼å·²è¾¾åˆ° (é€Ÿåº¦/ä½ç½®/ç”µæµç¨³å®š)
 #define CIA402_STATEWORD_TARGET_REACHED (0x0400)
 
 typedef union tag_cia402_state_word {
@@ -140,71 +140,71 @@ typedef union tag_cia402_state_word {
 
     struct
     {
-        // --- µÍ 8 Î» (Byte 0) ---
+        // --- ä½ 8 ä½ (Byte 0) ---
 
-        // Bit 0: ×¼±¸ºÃºÏÕ¢ (Ready to Switch On)
-        // 1 = ÏµÍ³ÒÑÍê³ÉÔ¤³ä£¬ÎŞ¹ÊÕÏ£¬µÈ´ı Switch On ÃüÁî
+        // Bit 0: å‡†å¤‡å¥½åˆé—¸ (Ready to Switch On)
+        // 1 = ç³»ç»Ÿå·²å®Œæˆé¢„å……ï¼Œæ— æ•…éšœï¼Œç­‰å¾… Switch On å‘½ä»¤
         uint16_t ready_to_switch_on : 1;
 
-        // Bit 1: ÒÑºÏÕ¢ (Switched On)
-        // 1 = Ç¿µçµçÂ·ÒÑ½ÓÍ¨ (¼ÌµçÆ÷±ÕºÏ)
+        // Bit 1: å·²åˆé—¸ (Switched On)
+        // 1 = å¼ºç”µç”µè·¯å·²æ¥é€š (ç»§ç”µå™¨é—­åˆ)
         uint16_t switched_on : 1;
 
-        // Bit 2: ÔËĞĞÔÊĞí (Operation Enabled)
-        // 1 = PWM ÒÑÊä³ö£¬±Õ»·¿ØÖÆÕıÔÚÔËĞĞ
+        // Bit 2: è¿è¡Œå…è®¸ (Operation Enabled)
+        // 1 = PWM å·²è¾“å‡ºï¼Œé—­ç¯æ§åˆ¶æ­£åœ¨è¿è¡Œ
         uint16_t operation_enabled : 1;
 
-        // Bit 3: ¹ÊÕÏ (Fault)
-        // 1 = ·¢Éú¹ÊÕÏ
+        // Bit 3: æ•…éšœ (Fault)
+        // 1 = å‘ç”Ÿæ•…éšœ
         uint16_t fault : 1;
 
-        // Bit 4: µçÑ¹ÔÊĞí (Voltage Enabled)
-        // 1 = Ö±Á÷Ä¸ÏßµçÑ¹/Ö÷µçÔ´ÒÑÊ©¼Ó
+        // Bit 4: ç”µå‹å…è®¸ (Voltage Enabled)
+        // 1 = ç›´æµæ¯çº¿ç”µå‹/ä¸»ç”µæºå·²æ–½åŠ 
         uint16_t voltage_enabled : 1;
 
-        // Bit 5: ¿ìËÙÍ£»ú (Quick Stop)
-        // ×¢ÒâÂß¼­·´Ïò:
-        // 1 = Õı³£ (Drive is NOT performing quick stop)
-        // 0 = ÕıÔÚ¼±Í£ (Drive is reacting to a Quick Stop request)
+        // Bit 5: å¿«é€Ÿåœæœº (Quick Stop)
+        // æ³¨æ„é€»è¾‘åå‘:
+        // 1 = æ­£å¸¸ (Drive is NOT performing quick stop)
+        // 0 = æ­£åœ¨æ€¥åœ (Drive is reacting to a Quick Stop request)
         uint16_t quick_stop : 1;
 
-        // Bit 6: ºÏÕ¢½ûÖ¹ (Switch On Disabled)
-        // 1 = ÏµÍ³´¦ÓÚ³õÊ¼»¯Íê³É»ò¹ÊÕÏ¸´Î»ºóµÄ´ı»ú×´Ì¬£¬½ûÖ¹Ö±½ÓºÏÕ¢
+        // Bit 6: åˆé—¸ç¦æ­¢ (Switch On Disabled)
+        // 1 = ç³»ç»Ÿå¤„äºåˆå§‹åŒ–å®Œæˆæˆ–æ•…éšœå¤ä½åçš„å¾…æœºçŠ¶æ€ï¼Œç¦æ­¢ç›´æ¥åˆé—¸
         uint16_t switch_on_disabled : 1;
 
-        // Bit 7: ¾¯¸æ (Warning)
-        // 1 = ÓĞ¾¯¸æ²ÎÊı³¬ÏŞ£¬µ«²»ĞèÒªÍ£»ú
+        // Bit 7: è­¦å‘Š (Warning)
+        // 1 = æœ‰è­¦å‘Šå‚æ•°è¶…é™ï¼Œä½†ä¸éœ€è¦åœæœº
         uint16_t warning : 1;
 
-        // --- ¸ß 8 Î» (Byte 1) ---
+        // --- é«˜ 8 ä½ (Byte 1) ---
 
-        // Bit 8: ³§ÉÌ×Ô¶¨Òå (Manufacturer specific)
+        // Bit 8: å‚å•†è‡ªå®šä¹‰ (Manufacturer specific)
         uint16_t manufacturer_8 : 1;
 
-        // Bit 9: Ô¶³Ì¿ØÖÆ (Remote)
-        // 1 = ¿ØÖÆÈ¨ÔÚ CANopen/EtherCAT ×ÜÏß (ÏìÓ¦ 0x6040)
-        // 0 = ±¾µØ¿ØÖÆ (ºöÂÔ×ÜÏß¿ØÖÆ×Ö)
+        // Bit 9: è¿œç¨‹æ§åˆ¶ (Remote)
+        // 1 = æ§åˆ¶æƒåœ¨ CANopen/EtherCAT æ€»çº¿ (å“åº” 0x6040)
+        // 0 = æœ¬åœ°æ§åˆ¶ (å¿½ç•¥æ€»çº¿æ§åˆ¶å­—)
         uint16_t remote : 1;
 
-        // Bit 10: Ä¿±êµ½´ï (Target Reached)
-        // 1 = ÖáÒÑÍ£Ö¹»òµ½´ïÄ¿±êÎ»ÖÃ/ËÙ¶È
-        // ÔÚ Homing Ä£Ê½ÏÂ±íÊ¾»ØÁãÍê³É
+        // Bit 10: ç›®æ ‡åˆ°è¾¾ (Target Reached)
+        // 1 = è½´å·²åœæ­¢æˆ–åˆ°è¾¾ç›®æ ‡ä½ç½®/é€Ÿåº¦
+        // åœ¨ Homing æ¨¡å¼ä¸‹è¡¨ç¤ºå›é›¶å®Œæˆ
         uint16_t target_reached : 1;
 
-        // Bit 11: ÄÚ²¿ÏŞÖÆÓĞĞ§ (Internal limit active)
-        // 1 = ÄÚ²¿µçÁ÷¡¢ËÙ¶È»òÎ»ÖÃÈíÏŞÎ»ÒÑ±»´¥·¢
+        // Bit 11: å†…éƒ¨é™åˆ¶æœ‰æ•ˆ (Internal limit active)
+        // 1 = å†…éƒ¨ç”µæµã€é€Ÿåº¦æˆ–ä½ç½®è½¯é™ä½å·²è¢«è§¦å‘
         uint16_t internal_limit_active : 1;
 
-        // Bits 12-13: Ä£Ê½Ïà¹Ø (Operation mode specific)
-        // ÀıÈçÔÚ CSP Ä£Ê½ÏÂÍ¨³£Îª 0£¬ÔÚ Homing Ä£Ê½ÏÂÖ¸Ê¾×´Ì¬
+        // Bits 12-13: æ¨¡å¼ç›¸å…³ (Operation mode specific)
+        // ä¾‹å¦‚åœ¨ CSP æ¨¡å¼ä¸‹é€šå¸¸ä¸º 0ï¼Œåœ¨ Homing æ¨¡å¼ä¸‹æŒ‡ç¤ºçŠ¶æ€
         uint16_t oms_12 : 1;
         uint16_t oms_13 : 1;
 
-        // Bit 14: ³§ÉÌ×Ô¶¨Òå (ÕâÀïÄú¶¨ÒåÎª»ØÁãÍê³É±êÖ¾)
+        // Bit 14: å‚å•†è‡ªå®šä¹‰ (è¿™é‡Œæ‚¨å®šä¹‰ä¸ºå›é›¶å®Œæˆæ ‡å¿—)
         // 1 = Home has completed
         uint16_t mfg_home_completed : 1;
 
-        // Bit 15: ³§ÉÌ×Ô¶¨Òå
+        // Bit 15: å‚å•†è‡ªå®šä¹‰
         uint16_t manufacturer_15 : 1;
 
     } bits;
@@ -216,12 +216,12 @@ typedef union tag_cia402_state_word {
 
 typedef enum tag_cia402_state
 {
-    // @brief Driver ¡°HV¡± Power Disabled - if there is a provision to switch drive power.
+    // @brief Driver â€œHVâ€ Power Disabled - if there is a provision to switch drive power.
     // Processor power on, drive initialization in progress, BRAKE on in this state, if present.
     // Reset - self-test/initialization
     CIA402_SM_NOT_READY_TO_SWITCH_ON = 0,
 
-    // Driver ¡°HV¡± Power Disabled - if there is a provision to switch drive power.
+    // Driver â€œHVâ€ Power Disabled - if there is a provision to switch drive power.
     // Processor power on, Initialization complete, drive parameters set up, drive disabled.
     // Successfully initialization - Activate Communication
     CIA402_SM_SWITCH_ON_DISABLED,
@@ -252,9 +252,9 @@ typedef enum tag_cia402_state
 } cia402_state_t;
 
 /**
- * @brief ¸ù¾İ StatusWord ½âÎöµ±Ç° CiA 402 ×´Ì¬
- * * @param status_word 16Î»µÄÔ­Ê¼×´Ì¬×Ö (0x6041)
- * @return cia402_state_t ¶ÔÓ¦µÄÃ¶¾Ù×´Ì¬
+ * @brief æ ¹æ® StatusWord è§£æå½“å‰ CiA 402 çŠ¶æ€
+ * * @param status_word 16ä½çš„åŸå§‹çŠ¶æ€å­— (0x6041)
+ * @return cia402_state_t å¯¹åº”çš„æšä¸¾çŠ¶æ€
  */
 cia402_state_t get_cia402_state(uint16_t status_word);
 
@@ -339,24 +339,24 @@ typedef struct _tag_cia402_state_machine
     // tick when enter current state
     time_gt entry_state_tick;
 
-    // ±íÊ¾µ±Ç°×´Ì¬ÒÑ¾­ÔËĞĞÁË¶àÉÙ¸öÖÜÆÚ
+    // è¡¨ç¤ºå½“å‰çŠ¶æ€å·²ç»è¿è¡Œäº†å¤šå°‘ä¸ªå‘¨æœŸ
     uint32_t current_state_counter;
 
-    // ·Ö±ğ¶ÔÓ¦Ç°4¸öÕı³£×´Ì¬ÇĞ»»µÄ×îĞ¡ÑÓ³Ù£¬ÓÃÓÚ±£Ö¤½Ó´¥Æ÷ÕıÈ·½Ó´¥¡¢Ä¸ÏßµçÑ¹ÎÈ¶¨µÈ
-    // µ±ÇĞ»»Ìõ¼şÂú×ãÊ±ĞèÒª×îÉÙ´ïµ½ÏÂÃæµÄÑÓÊ±ÒªÇó²Å¿ÉÒÔÇĞ»»µ½ÏÂÒ»¸ö×´Ì¬
-    // [0] CIA402_SM_NOT_READY_TO_SWITCH_ON ×´Ì¬ÖÁÉÙÒª±£³ÖµÄÊ±¼ä(disabled)
-    // [1] CIA402_STATEWORD_SWITCHED_ON ×´Ì¬ÖÁÉÙÒª±£³ÖµÄÊ±¼ä
-    // [2] CIA402_SM_READY_TO_SWITCH_ON ×´Ì¬ÖÁÉÙÒª±£³ÖµÄÊ±¼ä
-    // [3] CIA402_SM_SWITCHED_ON ×´Ì¬ÖÁÉÙÒª±£³ÖµÄÊ±¼ä
-    // ÆäËû×´Ì¬²»´æÔÚÖÁÉÙ±£³ÖÊ±¼ä£¬ÔÚÂú×ãÇĞ»»Ìõ¼şÊ±ÂíÉÏÇĞ»»
+    // åˆ†åˆ«å¯¹åº”å‰4ä¸ªæ­£å¸¸çŠ¶æ€åˆ‡æ¢çš„æœ€å°å»¶è¿Ÿï¼Œç”¨äºä¿è¯æ¥è§¦å™¨æ­£ç¡®æ¥è§¦ã€æ¯çº¿ç”µå‹ç¨³å®šç­‰
+    // å½“åˆ‡æ¢æ¡ä»¶æ»¡è¶³æ—¶éœ€è¦æœ€å°‘è¾¾åˆ°ä¸‹é¢çš„å»¶æ—¶è¦æ±‚æ‰å¯ä»¥åˆ‡æ¢åˆ°ä¸‹ä¸€ä¸ªçŠ¶æ€
+    // [0] CIA402_SM_NOT_READY_TO_SWITCH_ON çŠ¶æ€è‡³å°‘è¦ä¿æŒçš„æ—¶é—´(disabled)
+    // [1] CIA402_STATEWORD_SWITCHED_ON çŠ¶æ€è‡³å°‘è¦ä¿æŒçš„æ—¶é—´
+    // [2] CIA402_SM_READY_TO_SWITCH_ON çŠ¶æ€è‡³å°‘è¦ä¿æŒçš„æ—¶é—´
+    // [3] CIA402_SM_SWITCHED_ON çŠ¶æ€è‡³å°‘è¦ä¿æŒçš„æ—¶é—´
+    // å…¶ä»–çŠ¶æ€ä¸å­˜åœ¨è‡³å°‘ä¿æŒæ—¶é—´ï¼Œåœ¨æ»¡è¶³åˆ‡æ¢æ¡ä»¶æ—¶é©¬ä¸Šåˆ‡æ¢
     time_gt minimum_transit_delay[4];
 
-    // µ±Ç°×´Ì¬½¨Á¢ºóµÄÊ±¼ä
+    // å½“å‰çŠ¶æ€å»ºç«‹åçš„æ—¶é—´
     time_gt state_ready_tick;
 
     time_gt current_tick;
 
-    // ÓÃÓÚ¸¨ÖúÅĞ¶ÏÊÇ·ñÊÕµ½´íÎó¸´Î»µÄÉÏÉı±ßÑØ
+    // ç”¨äºè¾…åŠ©åˆ¤æ–­æ˜¯å¦æ”¶åˆ°é”™è¯¯å¤ä½çš„ä¸Šå‡è¾¹æ²¿
     fast_gt last_fault_reset_bit;
 
 } cia402_sm_t;
@@ -416,22 +416,22 @@ cia402_sm_error_code_t default_cb_fn_fault(cia402_sm_t* sm);
 //
 
 // =============================================================
-// 1. ¹¦ÂÊ¼¶Ö´ĞĞ (Power Stage & Actuators)
+// 1. åŠŸç‡çº§æ‰§è¡Œ (Power Stage & Actuators)
 // =============================================================
 
 /**
- * @brief Ó²¼şPWMÊä³öÊ¹ÄÜ/½ûÖ¹
- * @note ÔÚ Operation Enabled ×´Ì¬ÏÂÎª true£¬ÆäËû×´Ì¬Îª false
- * @param enable true: ¿ªÆôPWMÇı¶¯; false: ·âËøPWM£¨¸ß×èÌ¬»òÌØ¶¨µçÆ½£©
+ * @brief ç¡¬ä»¶PWMè¾“å‡ºä½¿èƒ½/ç¦æ­¢
+ * @note åœ¨ Operation Enabled çŠ¶æ€ä¸‹ä¸º trueï¼Œå…¶ä»–çŠ¶æ€ä¸º false
+ * @param enable true: å¼€å¯PWMé©±åŠ¨; false: å°é”PWMï¼ˆé«˜é˜»æ€æˆ–ç‰¹å®šç”µå¹³ï¼‰
  */
 
 void ctl_enable_pwm();
 
 void ctl_disable_pwm();
 /**
- * @brief Ö÷½Ó´¥Æ÷/Ö±Á÷¼ÌµçÆ÷¿ØÖÆ
- * @note Í¨³£ÔÚ Ready to Switch On ½×¶Î±ÕºÏ
- * @param close true: ÎüºÏ; false: ¶Ï¿ª
+ * @brief ä¸»æ¥è§¦å™¨/ç›´æµç»§ç”µå™¨æ§åˆ¶
+ * @note é€šå¸¸åœ¨ Ready to Switch On é˜¶æ®µé—­åˆ
+ * @param close true: å¸åˆ; false: æ–­å¼€
  */
 
 void ctl_enable_main_contactor();
@@ -439,8 +439,8 @@ void ctl_enable_main_contactor();
 void ctl_disable_main_contactor();
 
 /**
- * @brief Ô¤³äµç¼ÌµçÆ÷¿ØÖÆ
- * @note ÔÚ Switch On Disabled -> Ready to Switch On ¹ı¶ÉÆÚ¼äÊ¹ÓÃ
+ * @brief é¢„å……ç”µç»§ç”µå™¨æ§åˆ¶
+ * @note åœ¨ Switch On Disabled -> Ready to Switch On è¿‡æ¸¡æœŸé—´ä½¿ç”¨
  */
 
 void ctl_enable_precharge_relay();
@@ -448,75 +448,75 @@ void ctl_enable_precharge_relay();
 void ctl_disable_precharge_relay();
 
 // =============================================================
-// 2. ²ÉÑùÓëĞ£×¼ (Sensing & Calibration)
+// 2. é‡‡æ ·ä¸æ ¡å‡† (Sensing & Calibration)
 // =============================================================
 
 /**
- * @brief Ö´ĞĞADCÆ«ÖÃĞ£×¼
- * @note Í¨³£ÔÚ Not Ready »ò Switch On Disabled ×´Ì¬ÏÂµ÷ÓÃ
- * @return true: Ğ£×¼Íê³ÉÇÒ³É¹¦; false: Ê§°Ü»òÕıÔÚ½øĞĞÖĞ
+ * @brief æ‰§è¡ŒADCåç½®æ ¡å‡†
+ * @note é€šå¸¸åœ¨ Not Ready æˆ– Switch On Disabled çŠ¶æ€ä¸‹è°ƒç”¨
+ * @return true: æ ¡å‡†å®Œæˆä¸”æˆåŠŸ; false: å¤±è´¥æˆ–æ­£åœ¨è¿›è¡Œä¸­
  */
 fast_gt ctl_exec_adc_calibration(void);
 
 /**
- * @brief ¼ì²éÖ±Á÷Ä¸ÏßµçÑ¹ÊÇ·ñÔÚÔÊĞí·¶Î§ÄÚ
- * @note ÓÃÓÚ Ready to Switch On µÄ×¼ÈëÌõ¼ş
+ * @brief æ£€æŸ¥ç›´æµæ¯çº¿ç”µå‹æ˜¯å¦åœ¨å…è®¸èŒƒå›´å†…
+ * @note ç”¨äº Ready to Switch On çš„å‡†å…¥æ¡ä»¶
  */
 fast_gt ctl_exec_dc_voltage_ready(void);
 
 // =============================================================
-// 3. »úĞµÖÆ¶¯ (Mechanical Brake)
+// 3. æœºæ¢°åˆ¶åŠ¨ (Mechanical Brake)
 // =============================================================
 
 /**
- * @brief »úĞµ±§Õ¢¿ØÖÆ (Holding Brake)
- * @note µç»ú³¡¾°ÌØÓĞ¡£Í¨³£ Operation Enabled Ê± release (true)£¬·ñÔò engage (false)
- * @param release true: ËÉ¿ª±§Õ¢(ÔÊĞí×ª¶¯); false: ±§ËÀ(ÖÆ¶¯)
+ * @brief æœºæ¢°æŠ±é—¸æ§åˆ¶ (Holding Brake)
+ * @note ç”µæœºåœºæ™¯ç‰¹æœ‰ã€‚é€šå¸¸ Operation Enabled æ—¶ release (true)ï¼Œå¦åˆ™ engage (false)
+ * @param release true: æ¾å¼€æŠ±é—¸(å…è®¸è½¬åŠ¨); false: æŠ±æ­»(åˆ¶åŠ¨)
  */
 void ctl_release_brake();
 
 void ctl_restore_brake();
 
 // =============================================================
-// 4. ±àÂëÆ÷Óë¶ÔÆë (Position & Alignment)
+// 4. ç¼–ç å™¨ä¸å¯¹é½ (Position & Alignment)
 // =============================================================
 
 /**
- * @brief ¼ì²é±àÂëÆ÷/Î»ÖÃ´«¸ĞÆ÷×´Ì¬
- * @note ÔÚ Ready to Switch On Ö®Ç°±ØĞëÍ¨¹ı
+ * @brief æ£€æŸ¥ç¼–ç å™¨/ä½ç½®ä¼ æ„Ÿå™¨çŠ¶æ€
+ * @note åœ¨ Ready to Switch On ä¹‹å‰å¿…é¡»é€šè¿‡
  */
 fast_gt ctl_check_encoder(void);
 
 /**
- * @brief Æô¶¯×ª×Ó³õÊ¼Î»ÖÃ¼ì²â (IPD / Alignment)
- * @note Õë¶ÔÍ¬²½µç»ú¡£Í¨³£ÔÚ Switched On -> Operation Enabled Ë²¼ä´¥·¢
+ * @brief å¯åŠ¨è½¬å­åˆå§‹ä½ç½®æ£€æµ‹ (IPD / Alignment)
+ * @note é’ˆå¯¹åŒæ­¥ç”µæœºã€‚é€šå¸¸åœ¨ Switched On -> Operation Enabled ç¬é—´è§¦å‘
  */
 fast_gt ctl_exec_rotor_alignment(void);
 
 // =============================================================
-// 5. µçÍøÍ¬²½ (Grid Synchronization)
+// 5. ç”µç½‘åŒæ­¥ (Grid Synchronization)
 // =============================================================
 
 /**
- * @brief Æô¶¯/¸´Î»ËøÏà»· (PLL)
- * @note ÔÚ Ready to Switch On ×´Ì¬ÏÂ±ØĞëÆô¶¯ PLL
+ * @brief å¯åŠ¨/å¤ä½é”ç›¸ç¯ (PLL)
+ * @note åœ¨ Ready to Switch On çŠ¶æ€ä¸‹å¿…é¡»å¯åŠ¨ PLL
  */
 fast_gt ctl_check_pll_locked(void);
 
 /**
- * @brief ¼ì²éµçÍøµçÑ¹/ÆµÂÊÊÇ·ñ·ûºÏ°²¹æ (Grid Code)
- * @note Õû¸öÔËĞĞÖÜÆÚ¶¼ĞèÒª¼ì²é
+ * @brief æ£€æŸ¥ç”µç½‘ç”µå‹/é¢‘ç‡æ˜¯å¦ç¬¦åˆå®‰è§„ (Grid Code)
+ * @note æ•´ä¸ªè¿è¡Œå‘¨æœŸéƒ½éœ€è¦æ£€æŸ¥
  */
 fast_gt ctl_check_compliance(void);
 
 // =============================================================
-// 6. ½»Á÷²à²Ù×÷ (AC Side Operations)
+// 6. äº¤æµä¾§æ“ä½œ (AC Side Operations)
 // =============================================================
 
 /**
- * @brief ½»Á÷²¢Íø¼ÌµçÆ÷/¶ÏÂ·Æ÷¿ØÖÆ
- * @note ÔÚ Ready -> Switched On Ìø×ªÊ±±ÕºÏ
- * @param close true: ²¢Íø; false: ½âÁĞ
+ * @brief äº¤æµå¹¶ç½‘ç»§ç”µå™¨/æ–­è·¯å™¨æ§åˆ¶
+ * @note åœ¨ Ready -> Switched On è·³è½¬æ—¶é—­åˆ
+ * @param close true: å¹¶ç½‘; false: è§£åˆ—
  */
 void ctl_enable_grid_relay();
 

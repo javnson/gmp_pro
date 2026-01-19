@@ -1,4 +1,4 @@
-// This is the example of user main.
+ï»¿// This is the example of user main.
 
 //////////////////////////////////////////////////////////////////////////
 // headers here
@@ -22,7 +22,7 @@ gmp_scheduler_t sched;
 // AT command list
 //
 
-/* 2. Òì²½ Handler Ê¾Àı */
+/* 2. å¼‚æ­¥ Handler ç¤ºä¾‹ */
 at_status_t wifi_handler(at_device_entity_t *dev, at_cmd_type_t type, char* args, uint16_t len)
 {
     gmp_base_print(TEXT_STRING("[WOW] wifi_handle!\r\n"));
@@ -30,7 +30,7 @@ at_status_t wifi_handler(at_device_entity_t *dev, at_cmd_type_t type, char* args
     return AT_STATUS_OK;
 }
 
-/* 2. Òì²½ Handler Ê¾Àı */
+/* 2. å¼‚æ­¥ Handler ç¤ºä¾‹ */
 at_status_t mqtt_handler(at_device_entity_t *dev, at_cmd_type_t type, char* args, uint16_t len)
 {
     gmp_base_print(TEXT_STRING("[WOW] mqtt_handle!\r\n"));
@@ -38,7 +38,7 @@ at_status_t mqtt_handler(at_device_entity_t *dev, at_cmd_type_t type, char* args
     return AT_STATUS_OK;
 }
 
-/* 2. Òì²½ Handler Ê¾Àı */
+/* 2. å¼‚æ­¥ Handler ç¤ºä¾‹ */
 at_status_t rst_handler(at_device_entity_t *dev, at_cmd_type_t type, char* args, uint16_t len)
 {
     gmp_base_print(TEXT_STRING("[WOW] rst_handler, with arg: %s!\r\n"), args);
@@ -47,7 +47,7 @@ at_status_t rst_handler(at_device_entity_t *dev, at_cmd_type_t type, char* args,
 }
 
 
-/* 3. ´íÎó´¦Àí */
+/* 3. é”™è¯¯å¤„ç† */
 void at_device_error_handler(at_device_entity_t *dev, at_error_code_t code) {
     if (code == AT_ERR_RX_OVERFLOW)
     {
@@ -60,7 +60,7 @@ void at_device_error_handler(at_device_entity_t *dev, at_error_code_t code) {
 }
 
 
-/* 1. ¶¨ÒåÃüÁî±í (±ØĞë·Ç const£¬»òÕßÎ»ÓÚ RAM) */
+/* 1. å®šä¹‰å‘½ä»¤è¡¨ (å¿…é¡»é constï¼Œæˆ–è€…ä½äº RAM) */
 at_device_cmd_t at_cmds[] = {
     // name,    name_len, attr, handler,      help_info
     {"MQTT",    4,        0,    mqtt_handler, "MQTT Pub"},

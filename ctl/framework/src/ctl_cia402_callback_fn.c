@@ -1,4 +1,4 @@
-/**
+ï»¿/**
  * @file cia402_state_machine.c
  * @author Javnson (javnson@zju.edu.cn)
  * @brief
@@ -18,13 +18,13 @@
 #ifndef _MSC_VER
 
 // =============================================================
-// 1. ¹¦ÂÊ¼¶Ö´ĞĞ (Power Stage & Actuators)
+// 1. åŠŸç‡çº§æ‰§è¡Œ (Power Stage & Actuators)
 // =============================================================
 
 /**
- * @brief Ó²¼şPWMÊä³öÊ¹ÄÜ/½ûÖ¹
- * @note ÔÚ Operation Enabled ×´Ì¬ÏÂÎª true£¬ÆäËû×´Ì¬Îª false
- * @param enable true: ¿ªÆôPWMÇı¶¯; false: ·âËøPWM£¨¸ß×èÌ¬»òÌØ¶¨µçÆ½£©
+ * @brief ç¡¬ä»¶PWMè¾“å‡ºä½¿èƒ½/ç¦æ­¢
+ * @note åœ¨ Operation Enabled çŠ¶æ€ä¸‹ä¸º trueï¼Œå…¶ä»–çŠ¶æ€ä¸º false
+ * @param enable true: å¼€å¯PWMé©±åŠ¨; false: å°é”PWMï¼ˆé«˜é˜»æ€æˆ–ç‰¹å®šç”µå¹³ï¼‰
  */
 GMP_WEAK_FUNC_PREFIX
 void ctl_enable_pwm() GMP_WEAK_FUNC_SUFFIX
@@ -45,9 +45,9 @@ void ctl_disable_pwm() GMP_WEAK_FUNC_SUFFIX
 }
 
 /**
- * @brief Ö÷½Ó´¥Æ÷/Ö±Á÷¼ÌµçÆ÷¿ØÖÆ
- * @note Í¨³£ÔÚ Ready to Switch On ½×¶Î±ÕºÏ
- * @param close true: ÎüºÏ; false: ¶Ï¿ª
+ * @brief ä¸»æ¥è§¦å™¨/ç›´æµç»§ç”µå™¨æ§åˆ¶
+ * @note é€šå¸¸åœ¨ Ready to Switch On é˜¶æ®µé—­åˆ
+ * @param close true: å¸åˆ; false: æ–­å¼€
  */
 GMP_WEAK_FUNC_PREFIX
 void ctl_enable_main_contactor() GMP_WEAK_FUNC_SUFFIX
@@ -66,8 +66,8 @@ void ctl_disable_main_contactor() GMP_WEAK_FUNC_SUFFIX
 }
 
 /**
- * @brief Ô¤³äµç¼ÌµçÆ÷¿ØÖÆ
- * @note ÔÚ Switch On Disabled -> Ready to Switch On ¹ı¶ÉÆÚ¼äÊ¹ÓÃ
+ * @brief é¢„å……ç”µç»§ç”µå™¨æ§åˆ¶
+ * @note åœ¨ Switch On Disabled -> Ready to Switch On è¿‡æ¸¡æœŸé—´ä½¿ç”¨
  */
 GMP_WEAK_FUNC_PREFIX
 void ctl_enable_precharge_relay() GMP_WEAK_FUNC_SUFFIX
@@ -86,13 +86,13 @@ void ctl_disable_precharge_relay() GMP_WEAK_FUNC_SUFFIX
 }
 
 // =============================================================
-// 2. ²ÉÑùÓëĞ£×¼ (Sensing & Calibration)
+// 2. é‡‡æ ·ä¸æ ¡å‡† (Sensing & Calibration)
 // =============================================================
 
 /**
- * @brief Ö´ĞĞADCÆ«ÖÃĞ£×¼
- * @note Í¨³£ÔÚ Not Ready »ò Switch On Disabled ×´Ì¬ÏÂµ÷ÓÃ
- * @return true: Ğ£×¼Íê³ÉÇÒ³É¹¦; false: Ê§°Ü»òÕıÔÚ½øĞĞÖĞ
+ * @brief æ‰§è¡ŒADCåç½®æ ¡å‡†
+ * @note é€šå¸¸åœ¨ Not Ready æˆ– Switch On Disabled çŠ¶æ€ä¸‹è°ƒç”¨
+ * @return true: æ ¡å‡†å®Œæˆä¸”æˆåŠŸ; false: å¤±è´¥æˆ–æ­£åœ¨è¿›è¡Œä¸­
  */
 GMP_WEAK_FUNC_PREFIX
 fast_gt ctl_exec_adc_calibration(void) GMP_WEAK_FUNC_SUFFIX
@@ -100,12 +100,12 @@ fast_gt ctl_exec_adc_calibration(void) GMP_WEAK_FUNC_SUFFIX
 #ifdef GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
     gmp_base_print("calibrate_ok\r\n");
 #endif        // GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
-    return 1; // Ä¬ÈÏÖ±½Ó·µ»Ø³É¹¦
+    return 1; // é»˜è®¤ç›´æ¥è¿”å›æˆåŠŸ
 }
 
 /**
- * @brief ¼ì²éÖ±Á÷Ä¸ÏßµçÑ¹ÊÇ·ñÔÚÔÊĞí·¶Î§ÄÚ
- * @note ÓÃÓÚ Ready to Switch On µÄ×¼ÈëÌõ¼ş
+ * @brief æ£€æŸ¥ç›´æµæ¯çº¿ç”µå‹æ˜¯å¦åœ¨å…è®¸èŒƒå›´å†…
+ * @note ç”¨äº Ready to Switch On çš„å‡†å…¥æ¡ä»¶
  */
 GMP_WEAK_FUNC_PREFIX
 fast_gt ctl_exec_dc_voltage_ready(void) GMP_WEAK_FUNC_SUFFIX
@@ -117,13 +117,13 @@ fast_gt ctl_exec_dc_voltage_ready(void) GMP_WEAK_FUNC_SUFFIX
 }
 
 // =============================================================
-// 3. »úĞµÖÆ¶¯ (Mechanical Brake)
+// 3. æœºæ¢°åˆ¶åŠ¨ (Mechanical Brake)
 // =============================================================
 
 /**
- * @brief »úĞµ±§Õ¢¿ØÖÆ (Holding Brake)
- * @note µç»ú³¡¾°ÌØÓĞ¡£Í¨³£ Operation Enabled Ê± release (true)£¬·ñÔò engage (false)
- * @param release true: ËÉ¿ª±§Õ¢(ÔÊĞí×ª¶¯); false: ±§ËÀ(ÖÆ¶¯)
+ * @brief æœºæ¢°æŠ±é—¸æ§åˆ¶ (Holding Brake)
+ * @note ç”µæœºåœºæ™¯ç‰¹æœ‰ã€‚é€šå¸¸ Operation Enabled æ—¶ release (true)ï¼Œå¦åˆ™ engage (false)
+ * @param release true: æ¾å¼€æŠ±é—¸(å…è®¸è½¬åŠ¨); false: æŠ±æ­»(åˆ¶åŠ¨)
  */
 GMP_WEAK_FUNC_PREFIX
 void ctl_release_brake() GMP_WEAK_FUNC_SUFFIX
@@ -142,12 +142,12 @@ void ctl_restore_brake() GMP_WEAK_FUNC_SUFFIX
 }
 
 // =============================================================
-// 4. ±àÂëÆ÷Óë¶ÔÆë (Position & Alignment)
+// 4. ç¼–ç å™¨ä¸å¯¹é½ (Position & Alignment)
 // =============================================================
 
 /**
- * @brief ¼ì²é±àÂëÆ÷/Î»ÖÃ´«¸ĞÆ÷×´Ì¬
- * @note ÔÚ Ready to Switch On Ö®Ç°±ØĞëÍ¨¹ı
+ * @brief æ£€æŸ¥ç¼–ç å™¨/ä½ç½®ä¼ æ„Ÿå™¨çŠ¶æ€
+ * @note åœ¨ Ready to Switch On ä¹‹å‰å¿…é¡»é€šè¿‡
  */
 GMP_WEAK_FUNC_PREFIX
 fast_gt ctl_check_encoder(void) GMP_WEAK_FUNC_SUFFIX
@@ -159,8 +159,8 @@ fast_gt ctl_check_encoder(void) GMP_WEAK_FUNC_SUFFIX
 }
 
 /**
- * @brief Æô¶¯×ª×Ó³õÊ¼Î»ÖÃ¼ì²â (IPD / Alignment)
- * @note Õë¶ÔÍ¬²½µç»ú¡£Í¨³£ÔÚ Switched On -> Operation Enabled Ë²¼ä´¥·¢
+ * @brief å¯åŠ¨è½¬å­åˆå§‹ä½ç½®æ£€æµ‹ (IPD / Alignment)
+ * @note é’ˆå¯¹åŒæ­¥ç”µæœºã€‚é€šå¸¸åœ¨ Switched On -> Operation Enabled ç¬é—´è§¦å‘
  */
 GMP_WEAK_FUNC_PREFIX
 fast_gt ctl_exec_rotor_alignment(void) GMP_WEAK_FUNC_SUFFIX
@@ -172,12 +172,12 @@ fast_gt ctl_exec_rotor_alignment(void) GMP_WEAK_FUNC_SUFFIX
 }
 
 // =============================================================
-// 5. µçÍøÍ¬²½ (Grid Synchronization)
+// 5. ç”µç½‘åŒæ­¥ (Grid Synchronization)
 // =============================================================
 
 /**
- * @brief Æô¶¯/¸´Î»ËøÏà»· (PLL)
- * @note ÔÚ Ready to Switch On ×´Ì¬ÏÂ±ØĞëÆô¶¯ PLL
+ * @brief å¯åŠ¨/å¤ä½é”ç›¸ç¯ (PLL)
+ * @note åœ¨ Ready to Switch On çŠ¶æ€ä¸‹å¿…é¡»å¯åŠ¨ PLL
  */
 GMP_WEAK_FUNC_PREFIX
 fast_gt ctl_check_pll_locked(void) GMP_WEAK_FUNC_SUFFIX
@@ -189,8 +189,8 @@ fast_gt ctl_check_pll_locked(void) GMP_WEAK_FUNC_SUFFIX
 }
 
 /**
- * @brief ¼ì²éµçÍøµçÑ¹/ÆµÂÊÊÇ·ñ·ûºÏ°²¹æ (Grid Code)
- * @note Õû¸öÔËĞĞÖÜÆÚ¶¼ĞèÒª¼ì²é
+ * @brief æ£€æŸ¥ç”µç½‘ç”µå‹/é¢‘ç‡æ˜¯å¦ç¬¦åˆå®‰è§„ (Grid Code)
+ * @note æ•´ä¸ªè¿è¡Œå‘¨æœŸéƒ½éœ€è¦æ£€æŸ¥
  */
 GMP_WEAK_FUNC_PREFIX
 fast_gt ctl_check_compliance(void) GMP_WEAK_FUNC_SUFFIX
@@ -202,13 +202,13 @@ fast_gt ctl_check_compliance(void) GMP_WEAK_FUNC_SUFFIX
 }
 
 // =============================================================
-// 6. ½»Á÷²à²Ù×÷ (AC Side Operations)
+// 6. äº¤æµä¾§æ“ä½œ (AC Side Operations)
 // =============================================================
 
 /**
- * @brief ½»Á÷²¢Íø¼ÌµçÆ÷/¶ÏÂ·Æ÷¿ØÖÆ
- * @note ÔÚ Ready -> Switched On Ìø×ªÊ±±ÕºÏ
- * @param close true: ²¢Íø; false: ½âÁĞ
+ * @brief äº¤æµå¹¶ç½‘ç»§ç”µå™¨/æ–­è·¯å™¨æ§åˆ¶
+ * @note åœ¨ Ready -> Switched On è·³è½¬æ—¶é—­åˆ
+ * @param close true: å¹¶ç½‘; false: è§£åˆ—
  */
 GMP_WEAK_FUNC_PREFIX
 void ctl_enable_grid_relay() GMP_WEAK_FUNC_SUFFIX
@@ -259,7 +259,7 @@ void default_ctl_void_void_func(void)
 
 fast_gt default_ctl_fast_gt_void_func_with1_ret(void)
 {
-    return 1; // Ä¬ÈÏÖ±½Ó·µ»Ø³É¹¦
+    return 1; // é»˜è®¤ç›´æ¥è¿”å›æˆåŠŸ
 }
 
 #endif // _MSC_VER
