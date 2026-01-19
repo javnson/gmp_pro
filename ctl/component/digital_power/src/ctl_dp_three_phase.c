@@ -20,7 +20,7 @@
 #include <ctl/component/digital_power/three_phase/pll.h>
 
 void ctl_init_sfr_pll_T(srf_pll_t* pll, parameter_gt f_base, parameter_gt pid_kp, parameter_gt pid_Ti,
-                      parameter_gt pid_Td, parameter_gt f_ctrl)
+                        parameter_gt pid_Td, parameter_gt f_ctrl)
 {
     // Clear all internal states before initialization.
     ctl_clear_pll_3ph(pll);
@@ -178,7 +178,7 @@ void ctl_auto_tuning_gfl_inv(gfl_inv_ctrl_init_t* init)
     // Create a LPF object and calculate phase lag
     ctl_filter_IIR1_t temp_filter;
     ctl_init_filter_iir1_lpf(&temp_filter, init->fs, init->current_adc_fc);
-    filter_delay = ctl_get_filter_iir1_phase_lag(&temp_filter, init->fs, init->current_loop_zero);
+    filter_delay = ctl_get_filter_iir1_phase_lag(&temp_filter, init->fs, init->current_loop_bw);
 
     init->current_phase_lag = control_delay + filter_delay;
 
@@ -210,7 +210,8 @@ void ctl_update_gfl_inv_coeff(gfl_inv_ctrl_t* inv, gfl_inv_ctrl_init_t* init)
     ctl_init_pid(&inv->pid_idq[phase_d], kp_dq, ki_dq, 0, init->fs);
     ctl_init_pid(&inv->pid_idq[phase_q], kp_dq, ki_dq, 0, init->fs);
 
-    ctl_init_lead_form3(&inv->lead_compensator, init->current_phase_lag, init->current_loop_bw, init->fs);
+    ctl_init_lead_form3(&inv->lead_compensator[phase_d], init->current_phase_lag, init->current_loop_bw, init->fs);
+    ctl_init_lead_form3(&inv->lead_compensator[phase_q], init->current_phase_lag, init->current_loop_bw, init->fs);
 
     ctl_init_sfr_pll(&inv->pll, init->freq_base, init->kp_pll, init->ki_pll, 0, init->fs);
 
@@ -266,8 +267,8 @@ void ctl_init_gfl_inv(gfl_inv_ctrl_t* inv, gfl_inv_ctrl_init_t* init)
  * @param[in] adc_iabc Pointer to the tri-channel ADC current interface structure.
  * @param[in] adc_vabc Pointer to the tri-channel ADC voltage interface structure.
  */
-void ctl_attach_gfl_inv(gfl_inv_ctrl_t* inv, adc_ift* adc_idc, adc_ift* adc_udc,
-                        tri_adc_ift* adc_iabc, tri_adc_ift* adc_vabc)
+void ctl_attach_gfl_inv(gfl_inv_ctrl_t* inv, adc_ift* adc_idc, adc_ift* adc_udc, tri_adc_ift* adc_iabc,
+                        tri_adc_ift* adc_vabc)
 {
     inv->adc_idc = adc_idc;
     inv->adc_udc = adc_udc;

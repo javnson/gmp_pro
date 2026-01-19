@@ -142,7 +142,7 @@ typedef struct _tag_gfl_inv_ctrl_type
     vector2_gt vdq_last;              //!< (vdq - vdq_last) to calculate differential
 
     // output lead compensator
-    ctrl_lead_t lead_compensator;
+    ctrl_lead_t lead_compensator[2];
 
     // PLL & RG
     srf_pll_t pll;           //!< Three-phase PLL for grid synchronization.
@@ -186,7 +186,8 @@ GMP_STATIC_INLINE void ctl_clear_gfl_inv(gfl_inv_ctrl_t* inv)
     ctl_clear_biquad_filter(&inv->filter_damping);
     ctl_vector2_clear(&inv->vdq_last);
 
-    ctl_clear_lead(&inv->lead_compensator);
+    ctl_clear_lead(&inv->lead_compensator[phase_d]);
+    ctl_clear_lead(&inv->lead_compensator[phase_q]);
 
     // TODO: clear intermediate variables
     ctl_vector2_clear(&inv->vdq_ff_external);
@@ -411,8 +412,8 @@ GMP_STATIC_INLINE void ctl_step_gfl_inv_ctrl(gfl_inv_ctrl_t* gfl)
         // --- 3d. lead compensator ---
         if (gfl->flag_enable_lead_compensator)
         {
-            gfl->vdq_out_comp.dat[phase_d] = ctl_step_lead(&gfl->lead_compensator, gfl->vdq_out.dat[phase_d]);
-            gfl->vdq_out_comp.dat[phase_q] = ctl_step_lead(&gfl->lead_compensator, gfl->vdq_out.dat[phase_q]);
+            gfl->vdq_out_comp.dat[phase_d] = ctl_step_lead(&gfl->lead_compensator[phase_d], gfl->vdq_out.dat[phase_d]);
+            gfl->vdq_out_comp.dat[phase_q] = ctl_step_lead(&gfl->lead_compensator[phase_q], gfl->vdq_out.dat[phase_q]);
         }
         else
         {
