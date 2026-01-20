@@ -581,7 +581,7 @@ void cia402_fault_request(cia402_sm_t* sm)
 
 // dispatch routine in mainloop
 // This function would be called in mainloop
-void dispatch_cia402_state_machine(cia402_sm_t* sm)
+void cia402_dispatch(cia402_sm_t* sm)
 {
     gmp_base_assert(sm);
 

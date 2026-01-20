@@ -144,7 +144,7 @@ void ctl_init()
 
 void ctl_mainloop(void)
 {
-    dispatch_cia402_state_machine(&cia402_sm);
+    cia402_dispatch(&cia402_sm);
 
     return;
 }

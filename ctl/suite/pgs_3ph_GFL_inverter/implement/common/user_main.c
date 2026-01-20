@@ -17,37 +17,44 @@ at_device_entity_t at_dev;
 time_gt uart_last_tick;
 gmp_scheduler_t sched;
 
+extern cia402_sm_t cia402_sm;
 
 //////////////////////////////////////////////////////////////////////////
 // AT command list
 //
 
-/* 2. 异步 Handler 示例 */
-at_status_t wifi_handler(at_device_entity_t *dev, at_cmd_type_t type, char* args, uint16_t len)
+/* 2.1 Enable asynchronous Handler */
+at_status_t enable_handler(at_device_entity_t *dev, at_cmd_type_t type, char* args, uint16_t len)
 {
-    gmp_base_print(TEXT_STRING("[WOW] wifi_handle!\r\n"));
+    gmp_base_print(TEXT_STRING("[WOW] enable handle was called!\r\n"));
+
+    cia402_send_cmd(&cia402_sm, CIA402_CMD_ENABLE_OPERATION);
 
     return AT_STATUS_OK;
 }
 
-/* 2. 异步 Handler 示例 */
-at_status_t mqtt_handler(at_device_entity_t *dev, at_cmd_type_t type, char* args, uint16_t len)
+/* 2.2 Disable asynchronous Handler */
+at_status_t poweroff_handler(at_device_entity_t *dev, at_cmd_type_t type, char* args, uint16_t len)
 {
-    gmp_base_print(TEXT_STRING("[WOW] mqtt_handle!\r\n"));
+    gmp_base_print(TEXT_STRING("[WOW] Power OFF handle was called!\r\n"));
+
+    cia402_send_cmd(&cia402_sm, CIA402_CMD_DISABLE_VOLTAGE);
 
     return AT_STATUS_OK;
 }
 
-/* 2. 异步 Handler 示例 */
+/* 2.3 Reset asynchronous Handler */
 at_status_t rst_handler(at_device_entity_t *dev, at_cmd_type_t type, char* args, uint16_t len)
 {
     gmp_base_print(TEXT_STRING("[WOW] rst_handler, with arg: %s!\r\n"), args);
 
+    cia402_fault_reset(&cia402_sm);
+
     return AT_STATUS_OK;
 }
 
 
-/* 3. 错误处理 */
+/* 3. Error Handle */
 void at_device_error_handler(at_device_entity_t *dev, at_error_code_t code) {
     if (code == AT_ERR_RX_OVERFLOW)
     {
@@ -60,12 +67,12 @@ void at_device_error_handler(at_device_entity_t *dev, at_error_code_t code) {
 }
 
 
-/* 1. 定义命令表 (必须非 const，或者位于 RAM) */
+/*  Command List for AT device (non-const is necessary) */
 at_device_cmd_t at_cmds[] = {
     // name,    name_len, attr, handler,      help_info
-    {"MQTT",    4,        0,    mqtt_handler, "MQTT Pub"},
-    {"WIFI",    4,        0,    wifi_handler, "WiFi Conn"},
-    {"RST",     3,        0,    rst_handler,  "Reset Sys"}
+    {"PWMON",    4,        0,    enable_handler, "Enable Controller Operation."},
+    {"PWROFF",   4,        0,    poweroff_handler, "Power off"},
+    {"RST",      3,        0,    rst_handler,  "Reset Sys"}
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -106,6 +113,7 @@ gmp_task_t tasks[] = {
 
 //////////////////////////////////////////////////////////////////////////
 // initialize routine here
+
 GMP_NO_OPT_PREFIX
 void init(void) GMP_NO_OPT_SUFFIX
 {
@@ -123,7 +131,8 @@ void init(void) GMP_NO_OPT_SUFFIX
 //////////////////////////////////////////////////////////////////////////
 // endless loop function here
 
-void mainloop(void)
+GMP_NO_OPT_PREFIX
+void mainloop(void) GMP_NO_OPT_SUFFIX
 {
     // run task scheduler
     gmp_scheduler_dispatch(&sched);
