@@ -166,9 +166,9 @@ void ctl_init_trap_planner(ctl_trap_planner_t* planner, ctrl_gt max_vel, ctrl_gt
 
 #include <ctl/component/motor_control/motion/vel_pos_loop.h>
 
-void ctl_init_pos_controller(ctl_vel_pos_controller_t* ctrl, parameter_gt vel_kp, parameter_gt pos_kp, 
-    parameter_gt vel_ki, parameter_gt pos_ki, 
-    parameter_gt speed_limit, parameter_gt cur_limit, uint32_t vel_division, uint32_t pos_division, parameter_gt fs)
+void ctl_init_vec_pos_controller(ctl_vel_pos_controller_t* ctrl, parameter_gt vel_kp, parameter_gt pos_kp,
+                                 parameter_gt vel_ki, parameter_gt pos_ki, parameter_gt speed_limit,
+                                 parameter_gt cur_limit, uint32_t vel_division, uint32_t pos_division, parameter_gt fs)
 {
     // Initialize velocity controller
     ctl_init_pid(&ctrl->vel_ctrl, vel_kp, vel_ki, 0, fs);
@@ -189,7 +189,6 @@ void ctl_init_pos_controller(ctl_vel_pos_controller_t* ctrl, parameter_gt vel_kp
     ctrl->target_revs = 0;
     ctrl->target_angle = 0;
     ctrl->target_velocity = 0;
-
 
     // Enable controllers by default
     ctrl->flag_enable_velocity_ctrl = 1;
