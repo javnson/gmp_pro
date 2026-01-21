@@ -135,9 +135,9 @@ interrupt void MainISR(void)
     // Blink LED
     //
     if (gmp_base_get_system_tick() % 1000 < 500)
-        GPIO_WritePin(IRIS_LED1, 0);
+        GPIO_WritePin(SYSTEM_LED, 0);
     else
-        GPIO_WritePin(IRIS_LED1, 1);
+        GPIO_WritePin(SYSTEM_LED, 1);
 
     //
     // Clear the interrupt flag
@@ -282,6 +282,8 @@ void send_monitor_data(void)
     CAN_sendMessage(IRIS_CAN_BASE, 10, 8, (uint16_t*)tran_content);
 }
 
+#if BOARD_SELECTION == GMP_IRIS
+
 interrupt void INT_IRIS_UART_RS232_RX_ISR(void)
 {
     // Nothing here
@@ -291,6 +293,8 @@ interrupt void INT_IRIS_UART_RS232_RX_ISR(void)
     //
     Interrupt_clearACKGroup(INT_IRIS_UART_RS232_RX_INTERRUPT_ACK_GROUP);
 }
+
+#endif // BOARD_SELECTION == GMP_IRIS
 
 // a local small cache size, capable of covering the depth of the hardware FIFO (typically 16 bytes)
 #define ISR_LOCAL_BUF_SIZE 16

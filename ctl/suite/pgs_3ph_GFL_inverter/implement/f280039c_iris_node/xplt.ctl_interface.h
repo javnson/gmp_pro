@@ -20,44 +20,7 @@ extern "C"
 {
 #endif // __cplusplus
 
-//=================================================================================================
-// Board peripheral mapping
 
-#ifndef BOARD_PIN_MAPPING
-#define BOARD_PIN_MAPPING
-
-// PWM Channels
-#define PHASE_U_BASE IRIS_EPWM1_BASE
-#define PHASE_V_BASE IRIS_EPWM2_BASE
-#define PHASE_W_BASE IRIS_EPWM3_BASE
-
-// PWM Enable
-#define PWM_ENABLE_PORT IRIS_GPIO1
-#define PWM_RESET_PORT  IRIS_GPIO3
-
-// Vbus Voltage Channels
-//#define MOTOR_VBUS_RESULT_BASE IRIS_ADCA_RESULT_BASE
-//#define MOTOR_VBUS
-
-// ADC Voltage Channels
-//#define MOTOR_VU_RESULT_BASE IRIS_ADCA_RESULT_BASE
-//#define MOTOR_VV_RESULT_BASE IRIS_ADCB_RESULT_BASE
-//#define MOTOR_VW_RESULT_BASE IRIS_ADCC_RESULT_BASE
-
-//#define MOTOR_VU
-//#define MOTOR_VV
-//#define MOTOR_VW
-
-// ADC Current Channels
-//#define MOTOR_IU_RESULT_BASE IRIS_ADCA_RESULT_BASE
-//#define MOTOR_IV_RESULT_BASE IRIS_ADCB_RESULT_BASE
-//#define MOTOR_IW_RESULT_BASE IRIS_ADCC_RESULT_BASE
-
-//#define MOTOR_IU
-//#define MOTOR_IV
-//#define MOTOR_IW
-
-#endif //BOARD_PIN_MAPPING
 
 //=================================================================================================
 // Controller interface
@@ -83,7 +46,7 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
     iuvw_src[phase_W] = ADC_readResult(INV_IW_RESULT_BASE, INV_IW);
 
     udc_src = ADC_readResult(INV_VBUS_RESULT_BASE, INV_VBUS);
-    idc_src = ADC_readResult(INV_VBUS_RESULT_BASE, INV_VBUS);
+    idc_src = ADC_readResult(INV_IBUS_RESULT_BASE, INV_IBUS);
 
     // invoke ADC p.u. routine
     ctl_step_tri_ptr_adc_channel(&iabc);
@@ -101,6 +64,7 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     EPWM_setCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_U]);
     EPWM_setCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_V]);
     EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_W]);
+
 
     // Monitor Port
 #if BUILD_LEVEL == 1
@@ -145,7 +109,7 @@ GMP_STATIC_INLINE void ctl_fast_enable_output()
 
     GPIO_WritePin(PWM_RESET_PORT, 0);
 
-    GPIO_WritePin(IRIS_LED2, 0);
+    GPIO_WritePin(CONTROLLER_LED, 0);
 }
 
 // Disable Output
@@ -161,7 +125,7 @@ GMP_STATIC_INLINE void ctl_fast_disable_output()
     // PWM disable
     GPIO_WritePin(PWM_ENABLE_PORT, 0);
 
-    GPIO_WritePin(IRIS_LED2, 1);
+    GPIO_WritePin(CONTROLLER_LED, 1);
 }
 
 #ifdef __cplusplus

@@ -12,6 +12,13 @@
 #define BUILD_LEVEL (1)
 
 //=================================================================================================
+// Select Board Pin definition
+#define LAUNCHPAD 0
+#define GMP_IRIS  1
+
+#define BOARD_SELECTION GMP_IRIS
+
+//=================================================================================================
 // Controller basic parameters
 
 // Startup Delay, ms
@@ -113,6 +120,115 @@
 
 // SPLL Close loop criteria
 #define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
+
+//=================================================================================================
+// Board peripheral mapping
+
+
+// Launchpad Board Pin Mapping
+#if BOARD_SELECTION == LAUNCHPAD
+#ifndef BOARD_PIN_MAPPING
+#define BOARD_PIN_MAPPING
+
+// PWM Channels
+#define PHASE_U_BASE EPWM_J4_PHASE_U_BASE
+#define PHASE_V_BASE EPWM_J4_PHASE_V_BASE
+#define PHASE_W_BASE EPWM_J4_PHASE_W_BASE
+
+// PWM Enable
+#define PWM_ENABLE_PORT ENABLE_GATE
+#define PWM_RESET_PORT  RESET_GATE
+
+// DC Bus Voltage & Current
+#define INV_VBUS_RESULT_BASE J3_VDC_RESULT_BASE
+#define INV_IBUS_RESULT_BASE J7_VDC_RESULT_BASE
+
+#define INV_VBUS J3_VDC
+#define INV_IBUS J7_VDC
+
+// Grid side Voltage & Current
+#define INV_UA_RESULT_BASE J7_VU_RESULT_BASE
+#define INV_UB_RESULT_BASE J7_VV_RESULT_BASE
+#define INV_UC_RESULT_BASE J7_VW_RESULT_BASE
+
+#define INV_UA J7_VU
+#define INV_UB J7_VV
+#define INV_UC J7_VW
+
+#define INV_IA_RESULT_BASE J7_IU_RESULT_BASE
+#define INV_IB_RESULT_BASE J7_IV_RESULT_BASE
+#define INV_IC_RESULT_BASE J7_IW_RESULT_BASE
+
+#define INV_IA J7_IU
+#define INV_IB J7_IV
+#define INV_IC J7_IW
+
+// Converter side Voltage & Current
+#define INV_UU_RESULT_BASE J3_VU_RESULT_BASE
+#define INV_UV_RESULT_BASE J3_VV_RESULT_BASE
+#define INV_UW_RESULT_BASE J3_VW_RESULT_BASE
+
+#define INV_UU J3_VU
+#define INV_UV J3_VV
+#define INV_UW J3_VW
+
+#define INV_IU_RESULT_BASE J3_IU_RESULT_BASE
+#define INV_IV_RESULT_BASE J3_IV_RESULT_BASE
+#define INV_IW_RESULT_BASE J3_IW_RESULT_BASE
+
+#define INV_IU J3_IU
+#define INV_IV J3_IV
+#define INV_IW J3_IW
+
+// System LED
+#define SYSTEM_LED LED_R
+#define CONTROLLER_LED LED_G
+
+#endif //BOARD_PIN_MAPPING
+
+#else // BOARD_SELECTION == GMP_IRIS
+
+#ifndef BOARD_PIN_MAPPING
+#define BOARD_PIN_MAPPING
+
+// PWM Channels
+#define PHASE_U_BASE IRIS_EPWM1_BASE
+#define PHASE_V_BASE IRIS_EPWM2_BASE
+#define PHASE_W_BASE IRIS_EPWM3_BASE
+
+// PWM Enable
+#define PWM_ENABLE_PORT IRIS_GPIO1
+#define PWM_RESET_PORT  IRIS_GPIO3
+
+// Vbus Voltage Channels
+//#define MOTOR_VBUS_RESULT_BASE IRIS_ADCA_RESULT_BASE
+//#define MOTOR_VBUS
+
+// ADC Voltage Channels
+//#define MOTOR_VU_RESULT_BASE IRIS_ADCA_RESULT_BASE
+//#define MOTOR_VV_RESULT_BASE IRIS_ADCB_RESULT_BASE
+//#define MOTOR_VW_RESULT_BASE IRIS_ADCC_RESULT_BASE
+
+//#define MOTOR_VU
+//#define MOTOR_VV
+//#define MOTOR_VW
+
+// ADC Current Channels
+//#define MOTOR_IU_RESULT_BASE IRIS_ADCA_RESULT_BASE
+//#define MOTOR_IV_RESULT_BASE IRIS_ADCB_RESULT_BASE
+//#define MOTOR_IW_RESULT_BASE IRIS_ADCC_RESULT_BASE
+
+//#define MOTOR_IU
+//#define MOTOR_IV
+//#define MOTOR_IW
+
+// System LED
+#define SYSTEM_LED     IRIS_LED1
+#define CONTROLLER_LED IRIS_LED2
+
+#endif //BOARD_PIN_MAPPING
+
+#endif // BOARD_PIN_MAPPING
 
 
 #endif // _FILE_CTRL_SETTINGS_H_
