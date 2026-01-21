@@ -16,7 +16,8 @@
         "source_path": [
             "ctl/framework/",
             "ctl/component/intrinsic/",
-            "ctl/component/interface/"
+            "ctl/component/interface/",
+            "ctl/component/dsa"
         ],
         "include_path": [
             "."

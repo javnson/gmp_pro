@@ -1,0 +1,10 @@
+{
+    "gmp_core": true,
+    "gmp_ctl_core": true,
+    "gmp_ctl_motor_control": true,
+    "gmp_ctl_digital_power": true,
+    "gmp_csp_windows": false,
+    "gmp_csp_c28x": false,
+    "gmp_csp_stm32": true,
+    "gmp_source_dic_file": "gmp_source_dic.json"
+}

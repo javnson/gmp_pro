@@ -1,4 +1,4 @@
-﻿
+
 #ifndef _FILE_CIA402_STATE_MACHINE_H_
 #define _FILE_CIA402_STATE_MACHINE_H_
 
@@ -439,23 +439,23 @@ cia402_sm_error_code_t default_cb_fn_fault(cia402_sm_t* sm);
  * @note 在 Operation Enabled 状态下为 true，其他状态为 false
  * @param enable true: 开启PWM驱动; false: 封锁PWM（高阻态或特定电平）
  */
-void ctl_enable_pwm();
-void ctl_disable_pwm();
+void ctl_enable_pwm(void);
+void ctl_disable_pwm(void);
 
 /**
  * @brief 主接触器/直流继电器控制
  * @note 通常在 Ready to Switch On 阶段闭合
  * @param close true: 吸合; false: 断开
  */
-void ctl_enable_main_contactor();
-void ctl_disable_main_contactor();
+void ctl_enable_main_contactor(void);
+void ctl_disable_main_contactor(void);
 
 /**
  * @brief 预充电继电器控制
  * @note 在 Switch On Disabled -> Ready to Switch On 过渡期间使用
  */
-void ctl_enable_precharge_relay();
-void ctl_disable_precharge_relay();
+void ctl_enable_precharge_relay(void);
+void ctl_disable_precharge_relay(void);
 
 // =============================================================
 // 2. 采样与校准 (Sensing & Calibration)
@@ -483,8 +483,8 @@ fast_gt ctl_exec_dc_voltage_ready(void);
  * @note 电机场景特有。通常 Operation Enabled 时 release (true)，否则 engage (false)
  * @param release true: 松开抱闸(允许转动); false: 抱死(制动)
  */
-void ctl_release_brake();
-void ctl_restore_brake();
+void ctl_release_brake(void);
+void ctl_restore_brake(void);
 
 // =============================================================
 // 4. 编码器与对齐 (Position & Alignment)
@@ -527,8 +527,8 @@ fast_gt ctl_check_compliance(void);
  * @note 在 Ready -> Switched On 跳转时闭合
  * @param close true: 并网; false: 解列
  */
-void ctl_enable_grid_relay();
-void ctl_disable_grid_relay();
+void ctl_enable_grid_relay(void);
+void ctl_disable_grid_relay(void);
 
 #ifdef __cplusplus
 }

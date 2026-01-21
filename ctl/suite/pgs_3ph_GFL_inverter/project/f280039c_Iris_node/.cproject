@@ -119,7 +119,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="F280039_LaunchPad.syscfg|driverlib.lib|F280039_flash_lnk.cmd|F280039_ram_lnk.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="F280039_flash_lnk.cmd|F280039_ram_lnk.cmd|F280039_LaunchPad.syscfg|driverlib.lib" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

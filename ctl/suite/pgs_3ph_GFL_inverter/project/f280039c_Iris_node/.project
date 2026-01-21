@@ -31,22 +31,22 @@
 			<locationURI>PARENT-1-COM_TI_C2000WARE_INSTALL_DIR/C2000Ware_MotorControl_SDK_5_04_00_00/c2000ware/driverlib/f28003x/driverlib/ccs/Debug/driverlib.lib</locationURI>
 		</link>
 		<link>
-			<name>common/ctl_main.c</name>
+			<name>user/ctl_main.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/implement/common/ctl_main.c</locationURI>
 		</link>
 		<link>
-			<name>common/ctl_main.h</name>
+			<name>user/ctl_main.h</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/implement/common/ctl_main.h</locationURI>
 		</link>
 		<link>
-			<name>common/user_main.c</name>
+			<name>user/user_main.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/implement/common/user_main.c</locationURI>
 		</link>
 		<link>
-			<name>common/user_main.h</name>
+			<name>user/user_main.h</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/implement/common/user_main.h</locationURI>
 		</link>
