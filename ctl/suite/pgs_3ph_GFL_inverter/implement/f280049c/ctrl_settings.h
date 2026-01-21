@@ -12,13 +12,6 @@
 #define BUILD_LEVEL (1)
 
 //=================================================================================================
-// Select Board Pin definition
-#define LAUNCHPAD 0
-#define GMP_IRIS  1
-
-#define BOARD_SELECTION GMP_IRIS
-
-//=================================================================================================
 // Controller basic parameters
 
 // Startup Delay, ms
@@ -36,7 +29,7 @@
 // System tick
 #define DSP_C2000_DSP_TIME_DIV (120000/CTRL_PWM_CMP_MAX/2)
 
-// ADC Voltage Reference
+// ADC Voltae Reference
 #define CTRL_ADC_VOLTAGE_REF (3.3f)
 
 //=================================================================================================
@@ -124,11 +117,7 @@
 //=================================================================================================
 // Board peripheral mapping
 
-
 // Launchpad Board Pin Mapping
-#if BOARD_SELECTION == LAUNCHPAD
-#ifndef BOARD_PIN_MAPPING
-#define BOARD_PIN_MAPPING
 
 // PWM Channels
 #define PHASE_U_BASE EPWM_J4_PHASE_U_BASE
@@ -183,53 +172,6 @@
 // System LED
 #define SYSTEM_LED LED_R
 #define CONTROLLER_LED LED_G
-
-#endif //BOARD_PIN_MAPPING
-
-#else // BOARD_SELECTION == GMP_IRIS
-
-#ifndef BOARD_PIN_MAPPING
-#define BOARD_PIN_MAPPING
-
-// PWM Channels
-#define PHASE_U_BASE IRIS_EPWM1_BASE
-#define PHASE_V_BASE IRIS_EPWM2_BASE
-#define PHASE_W_BASE IRIS_EPWM3_BASE
-
-// PWM Enable
-#define PWM_ENABLE_PORT IRIS_GPIO1
-#define PWM_RESET_PORT  IRIS_GPIO3
-
-// Vbus Voltage Channels
-//#define MOTOR_VBUS_RESULT_BASE IRIS_ADCA_RESULT_BASE
-//#define MOTOR_VBUS
-
-// ADC Voltage Channels
-//#define MOTOR_VU_RESULT_BASE IRIS_ADCA_RESULT_BASE
-//#define MOTOR_VV_RESULT_BASE IRIS_ADCB_RESULT_BASE
-//#define MOTOR_VW_RESULT_BASE IRIS_ADCC_RESULT_BASE
-
-//#define MOTOR_VU
-//#define MOTOR_VV
-//#define MOTOR_VW
-
-// ADC Current Channels
-//#define MOTOR_IU_RESULT_BASE IRIS_ADCA_RESULT_BASE
-//#define MOTOR_IV_RESULT_BASE IRIS_ADCB_RESULT_BASE
-//#define MOTOR_IW_RESULT_BASE IRIS_ADCC_RESULT_BASE
-
-//#define MOTOR_IU
-//#define MOTOR_IV
-//#define MOTOR_IW
-
-// System LED
-#define SYSTEM_LED     IRIS_LED1
-#define CONTROLLER_LED IRIS_LED2
-
-#endif //BOARD_PIN_MAPPING
-
-#endif // BOARD_PIN_MAPPING
-
 
 #endif // _FILE_CTRL_SETTINGS_H_
  
