@@ -10,8 +10,6 @@
 // WARNING: This file must be kept in the include search path during compilation.
 //
 
-//#include <ctl/component/motor_control/basic/std_sil_motor_interface.h>
-
 #include <xplt.peripheral.h>
 
 #ifndef _FILE_CTL_INTERFACE_H_
@@ -22,9 +20,8 @@ extern "C"
 {
 #endif // __cplusplus
 
-//////////////////////////////////////////////////////////////////////////
-// IRIS Board Pin mapping
-//
+//=================================================================================================
+// Board peripheral mapping
 
 #ifndef BOARD_PIN_MAPPING
 #define BOARD_PIN_MAPPING
@@ -36,7 +33,7 @@ extern "C"
 
 // PWM Enable
 #define PWM_ENABLE_PORT IRIS_GPIO1
-#define PWM_RESET_PORT IRIS_GPIO3
+#define PWM_RESET_PORT  IRIS_GPIO3
 
 // Vbus Voltage Channels
 //#define MOTOR_VBUS_RESULT_BASE IRIS_ADCA_RESULT_BASE
@@ -62,10 +59,8 @@ extern "C"
 
 #endif //BOARD_PIN_MAPPING
 
-//////////////////////////////////////////////////////////////////////////
-// device related functions
+//=================================================================================================
 // Controller interface
-//
 
 // Input Callback
 GMP_STATIC_INLINE void ctl_input_callback(void)
@@ -102,38 +97,31 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
 // Output Callback
 GMP_STATIC_INLINE void ctl_output_callback(void)
 {
-    // invoke PWM p.u. routine
-//    ctl_calc_pwm_tri_channel(&pwm_out);
-
-    // PWM output,EPWM1_BASE
-//    EPWM_setCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_U]);
-//    EPWM_setCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_V]);
-//    EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, pwm_out.value[phase_W]);
-
+    // Write ePWM peripheral CMP
     EPWM_setCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_U]);
     EPWM_setCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_V]);
     EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_W]);
 
-    // Monitor Port, 8 channels
+    // Monitor Port
 #if BUILD_LEVEL == 1
 
-//    DAC_setShadowValue(IRIS_DACB_BASE, inv_ctrl.angle * 2048 + 2048);
-//    DAC_setShadowValue(IRIS_DACA_BASE, inv_ctrl.abc_out.dat[phase_B]  * 2048 + 2048);
+    //    DAC_setShadowValue(IRIS_DACB_BASE, inv_ctrl.angle * 2048 + 2048);
+    //    DAC_setShadowValue(IRIS_DACA_BASE, inv_ctrl.abc_out.dat[phase_B]  * 2048 + 2048);
 
     // grid current and inverter current
-    DAC_setShadowValue(IRIS_DACB_BASE, iuvw.control_port.value.dat[phase_C] * 2048 + 2048);
     DAC_setShadowValue(IRIS_DACA_BASE, iabc.control_port.value.dat[phase_C] * 2048 + 2048);
+    DAC_setShadowValue(IRIS_DACB_BASE, iuvw.control_port.value.dat[phase_C] * 2048 + 2048);
 
     // grid voltage and inverter voltage
-//    DAC_setShadowValue(IRIS_DACB_BASE, uuvw.control_port.value.dat[phase_C] * 2048 + 2048);
-//    DAC_setShadowValue(IRIS_DACA_BASE, vabc.control_port.value.dat[phase_C] * 2048 + 2048);
+    //    DAC_setShadowValue(IRIS_DACB_BASE, uuvw.control_port.value.dat[phase_C] * 2048 + 2048);
+    //    DAC_setShadowValue(IRIS_DACA_BASE, vabc.control_port.value.dat[phase_C] * 2048 + 2048);
 
-//    DAC_setShadowValue(IRIS_DACB_BASE, EPWM_getCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A)/2);
-//    DAC_setShadowValue(IRIS_DACA_BASE, EPWM_getCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A)/2);
+    //    DAC_setShadowValue(IRIS_DACB_BASE, EPWM_getCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A)/2);
+    //    DAC_setShadowValue(IRIS_DACA_BASE, EPWM_getCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A)/2);
 
-//    DAC_setShadowValue(IRIS_DACB_BASE, pwm_out.value[2]/2);
-//    DAC_setShadowValue(IRIS_DACA_BASE, pwm_out.value[1]/2);
-//    inv_ctrl.
+    //    DAC_setShadowValue(IRIS_DACB_BASE, pwm_out.value[2]/2);
+    //    DAC_setShadowValue(IRIS_DACA_BASE, pwm_out.value[1]/2);
+    //    inv_ctrl.
 
 #endif // BUILD_LEVEL
 }

@@ -57,7 +57,7 @@ extern "C"
 
 #define HARMONIA_3PH_LC_FILTER_VBUS_MIN_V        (0.0f)    // Passive device, no minimum voltage.
 #define HARMONIA_3PH_LC_FILTER_VBUS_MAX_V        (1000.0f) // Maximum voltage (V), limited by Banana Connectors.
-#define HARMONIA_3PH_LC_FILTER_CURRENT_MAX_RMS_A (24.0f) // Maximum continuous current (RMS, A), limited by connectors.
+#define HARMONIA_3PH_LC_FILTER_CURRENT_MAX_RMS_A (40.0f) // Maximum continuous current (RMS, A), limited by connectors.
 #define HARMONIA_3PH_LC_FILTER_CURRENT_MAX_PEAK_A                                                                      \
     (25.0f)                                       // Maximum allowed peak current (Peak, A), limited by Sensor Range.
 #define HARMONIA_3PH_LC_FILTER_TEMP_MAX_C (85.0f) // Recommended maximum PCB operating temperature (°„C).
@@ -110,7 +110,7 @@ extern "C"
 // Resistor Configuration for Gain Calculation
 // Stage 1: High Voltage Divider (7x 560k Top, 42k Bottom)
 #define HARMONIA_3PH_LC_FILTER_VS_R_TOP_TOTAL_OHM (3920000.0f) // 7 * 560k Ohm
-#define HARMONIA_3PH_LC_FILTER_VS_R_BOT_OHM       (42000.0f)   // 42k Ohm
+#define HARMONIA_3PH_LC_FILTER_VS_R_BOT_OHM       (560000.0f)   // 560k Ohm
 
 // Stage 2: Isolation Amplifier (AMC1350)
 #define HARMONIA_3PH_LC_FILTER_VS_ISO_GAIN_V_V (0.4f) // Fixed gain of AMC1350.

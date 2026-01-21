@@ -6,7 +6,6 @@
 // WARNING: This file must be kept in the include search path during compilation.
 //
 
-
 #include <core/dev/at_device.h>
 
 #include <core/pm/function_scheduler.h>
@@ -19,35 +18,33 @@ extern "C"
 {
 #endif
 
-//////////////////////////////////////////////////////////////////////////
-// Handle Type definition, copy from <main.c>
-//
-//
+//=================================================================================================
+// global variables
+
+extern at_device_entity_t at_dev;
+extern at_device_cmd_t at_cmds[];
+
+extern cia402_sm_t cia402_sm;
 
 #ifndef SPECIFY_PC_TEST_ENV
 
 #endif // SPECIFY_PC_TEST_ENV
 
-//////////////////////////////////////////////////////////////////////////
-// functions
+//=================================================================================================
+// global functions
 
+//
 // User should implement this 3 functions at least
 //
 void init(void);
 void mainloop(void);
 void setup_peripheral(void);
 
+//
 // For Controller projects user should implement the following functions
 //
 void ctl_init(void);
 void ctl_mainloop(void);
-fast_gt ctl_ready_mainloop(void);
-
-extern at_device_entity_t at_dev;
-extern at_device_cmd_t at_cmds[];
-
-//////////////////////////////////////////////////////////////////////////
-// Additionally functions prototypes
 
 #ifdef __cplusplus
 }

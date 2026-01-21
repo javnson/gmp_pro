@@ -11,6 +11,8 @@
 #ifndef _FILE_VEC_POS_LOOP_P_H_
 #define _FILE_VEC_POS_LOOP_P_H_
 
+#include <ctl/component/motor_control/basic/motor_universal_interface.h>
+
 #include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 

@@ -23,6 +23,9 @@ extern "C"
 // select ADC PTR interface
 #include <ctl/component/interface/adc_ptr_channel.h>
 
+//=================================================================================================
+// definitions of peripheral
+
 // inverter side voltage feedback
 extern tri_ptr_adc_channel_t uuvw;
 extern adc_gt uuvw_src[3];
@@ -44,9 +47,6 @@ extern ptr_adc_channel_t udc;
 extern adc_gt udc_src;
 extern ptr_adc_channel_t idc;
 extern adc_gt idc_src;
-
-// PWM output channel
-//extern pwm_tri_channel_t pwm_out;
 
 #ifdef __cplusplus
 }

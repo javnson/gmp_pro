@@ -20,11 +20,8 @@
 
 #include <xplt.peripheral.h>
 
-
-#include <ctl/component/digital_power/three_phase/three_phase_dc_ac.h>
-
-#include <ctl/component/digital_power/three_phase/three_phase_GFL.h>
-
+//=================================================================================================
+// global controller variables
 
 // state machine
 cia402_sm_t cia402_sm;
@@ -39,19 +36,9 @@ gfl_inv_ctrl_t inv_ctrl;
 
 // Observer: PLL
 
-
 // additional controller: harmonic management, negative current controller
 
 //
-
-
-
-// enable controller
-//#if !defined SPECIFY_PC_ENVIRONMENT
-//#else
-//volatile fast_gt flag_system_enable = 1;
-//#endif // SPECIFY_PC_ENVIRONMENT
-
 volatile fast_gt flag_system_running = 0;
 volatile fast_gt flag_error = 0;
 
@@ -60,7 +47,9 @@ adc_bias_calibrator_t adc_calibrator;
 volatile fast_gt flag_enable_adc_calibrator = 1;
 volatile fast_gt index_adc_calibrator = 0;
 
+//=================================================================================================
 // CTL initialize routine
+
 void ctl_init()
 {
     //
@@ -85,7 +74,8 @@ void ctl_init()
     //
     // init SPWM modulator
     //
-    ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &inv_ctrl.adc_iabc->value, float2ctrl(0.02), float2ctrl(0.005));
+    ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &inv_ctrl.adc_iabc->value, float2ctrl(0.02),
+                            float2ctrl(0.005));
 
     //
     // Power controller
@@ -130,17 +120,14 @@ void ctl_init()
     //
     ctl_init_adc_calibrator(&adc_calibrator, 20, 0.707f, CONTROLLER_FREQUENCY);
 
-#if defined SPECIFY_ENABLE_ADC_CALIBRATE
     if (flag_enable_adc_calibrator)
     {
         ctl_enable_adc_calibrator(&adc_calibrator);
     }
-#endif // SPECIFY_ENABLE_ADC_CALIBRATE
 }
 
-//////////////////////////////////////////////////////////////////////////
-// endless loop function here
-//
+//=================================================================================================
+// CTL endless loop routine
 
 void ctl_mainloop(void)
 {
@@ -149,9 +136,8 @@ void ctl_mainloop(void)
     return;
 }
 
-//////////////////////////////////////////////////////////////////////////
-// CiA402 default callback function here.
-//
+//=================================================================================================
+// CiA402 default callback routine
 
 void ctl_enable_pwm()
 {
@@ -171,14 +157,10 @@ fast_gt ctl_check_pll_locked(void)
 fast_gt ctl_exec_adc_calibration(void)
 {
     //
-    // Auto process
-    //
     // 1. ADC Auto calibrate
     //
     if (flag_enable_adc_calibrator)
     {
-        //if (pmsm_ctrl.flag_enable_controller)
-        //{
         if (ctl_is_adc_calibrator_cmpt(&adc_calibrator) && ctl_is_adc_calibrator_result_valid(&adc_calibrator))
         {
 
@@ -294,12 +276,11 @@ fast_gt ctl_exec_adc_calibration(void)
             if (index_adc_calibrator > 13)
                 flag_enable_adc_calibrator = 0;
         }
-        //        }
 
         // ADC calibrate is not complete
         return 0;
     }
+
+    // skip calibrate routine
     return 1;
 }
-
-

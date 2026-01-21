@@ -2,8 +2,17 @@
 #ifndef _FILE_CTRL_SETTINGS_H_
 #define _FILE_CTRL_SETTINGS_H_
 
-// invoke motor controller parameters
-//#include <ctl/component/motor_control/controller_preset/TI_BOOSTXL_3PhGaNInv.h>
+//=================================================================================================
+// Incremental Debug Options
+
+// BUILD_LEVEL 1: inverter, voltage open loop
+// BUILD_LEVEL 2: inverter, current loop
+// BUILD_LEVEL 3: inverter, current loop, feed forward control
+// BUILD_LEVEL 4: inverter, current loop, feed forward control, negative current control
+#define BUILD_LEVEL (1)
+
+//=================================================================================================
+// Controller basic parameters
 
 // Startup Delay, ms
 #define CTRL_STARTUP_DELAY (100)
@@ -23,14 +32,23 @@
 // ADC Voltae Reference
 #define CTRL_ADC_VOLTAGE_REF (3.3f)
 
-//// DC bus voltage, voltage base
-//#define CTRL_VOLTAGE_BASE (60.0f)
-//
-//// Current base, 10 A
-//#define CTRL_CURRENT_BASE (10.0f)
+//=================================================================================================
+// Hardware parameters
 
-// DC bus voltage, voltage base
-#define CTRL_VOLTAGE_BASE (100.0f)
+#include <ctl/component/hardware_preset/inverter_3ph/GMP_Helios_3PhGaNInv_LV.h>
+#include <ctl/component/hardware_preset/grid_LC_filter/GMP_Harmonia_3ph_LC_filter.h>
+
+///////////////////////////////////////////////////////////
+// Controller Base value
+
+// DC bus voltage
+#define CTRL_DCBUS_VOLTAGE  (80.0f)
+
+// phase voltage base, SVPWM modulation
+#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE/1.73205081f)
+
+// voltage base, SPWM modulation
+//#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE/2.0f)
 
 // Current base, 10 A
 #define CTRL_CURRENT_BASE (10.0f)
@@ -39,21 +57,21 @@
 // Grid side sensor
 
 // Current sensor sensitivity, V/A
-#define CTRL_GRID_CURRENT_SENSITIVITY (48e-3f)
+#define CTRL_GRID_CURRENT_SENSITIVITY (HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSITIVITY_MV_A*0.001f)
 
 // Current sensor bias, V
-#define CTRL_GRID_CURRENT_BIAS (1.65f)
+#define CTRL_GRID_CURRENT_BIAS (HARMONIA_3PH_LC_FILTER_PH_CURRENT_ZERO_BIAS_V)
 
 // Voltage sensor sensitivity, V/V
-#define CTRL_GRID_VOLTAGE_SENSITIVITY (0.0106f)
+#define CTRL_GRID_VOLTAGE_SENSITIVITY (HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_GAIN)
 
 // Voltage sensor bias, V
-#define CTRL_GRID_VOLTAGE_BIAS (0.0f)
+#define CTRL_GRID_VOLTAGE_BIAS (HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_BIAS_V)
 
 ///////////////////////////////////////////////////////////
 // inverter side sensor
 
-// Current sensor sensitivity, V/A
+// Current sensor sensitivity, TMCS1133A2B, V/A
 #define CTRL_INVERTER_CURRENT_SENSITIVITY (50e-3f)
 
 // Current sensor bias, V
@@ -74,33 +92,15 @@
 // Current sensor bias, V
 #define CTRL_DC_CURRENT_BIAS (1.65f)
 
-// Voltage sensor sensitivity, V/V
+// Voltage sensor sensitivity, maximum 120V, V/V
 #define CTRL_DC_VOLTAGE_SENSITIVITY (0.02738589f)
 
 // Voltage sensor bias, V
 #define CTRL_DC_VOLTAGE_BIAS (0.0f)
 
-///////////////////////////////////////////////////////////
-// Bandwidth configuration
 
-// Current Bandwidth
-#define CTRL_CURRENT_LOOP_BW ((50))
-
-// SPLL Close loop criteria
-#define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
-
-// BUILD_LEVEL 1: inverter, voltage open loop
-// BUILD_LEVEL 2: inverter, current loop
-// BUILD_LEVEL 3: inverter, current loop, feed forward control
-// BUILD_LEVEL 4: inverter, current loop, feed forward control, negative current control
-// BUILD_LEVEL 5: inverter, current loop, ff, neg, harmonic control
-// BUILD_LEVEL 6: inverter, voltage loop, current loop, ff
-// BUILD_LEVEL 7: inverter, voltage loop, current loop, ff, negative voltage control
-#define BUILD_LEVEL (1)
-
-// 
+//=================================================================================================
 // Controller Settings
-//
 
 // Use discrete PID controller
 // Discrete controller may bring more smooth response.
@@ -111,6 +111,10 @@
 
 // Enable ADC Calibrate
 #define SPECIFY_ENABLE_ADC_CALIBRATE
+
+
+// SPLL Close loop criteria
+#define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
 
 
 #endif // _FILE_CTRL_SETTINGS_H_
