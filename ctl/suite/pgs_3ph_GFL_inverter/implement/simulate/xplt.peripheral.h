@@ -29,6 +29,9 @@ extern "C"
 // Three phase DC/AC
 #include <ctl/component/digital_power/three_phase/three_phase_dc_ac.h>
 
+//=================================================================================================
+// definitions of peripheral
+
 // buffer for rx & tx
 extern gmp_pc_simulink_rx_buffer_t simulink_rx_buffer;
 extern gmp_pc_simulink_tx_buffer_t simulink_tx_buffer;
@@ -55,8 +58,6 @@ extern adc_gt udc_src;
 extern ptr_adc_channel_t idc;
 extern adc_gt idc_src;
 
-// PWM output channel
-extern pwm_tri_channel_t pwm_out;
 
 #ifdef __cplusplus
 }

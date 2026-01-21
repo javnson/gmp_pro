@@ -53,5 +53,8 @@
 // + variables aligned
 #define GMP_MEM_ALIGN __attribute__((aligned(4)))
 
+// + unused variable or function
+#define GMP_UNUSED_VAR(x) (void)(x)
+
 // + NOP
 #define GMP_INSTRUCTION_NOP asm("nop")

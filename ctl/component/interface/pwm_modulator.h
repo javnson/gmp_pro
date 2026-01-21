@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file pwm_modulator.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Header-only library for three-phase bridge modulation with dead-time compensation.
@@ -30,7 +30,7 @@ extern "C"
 
 /**
  * @brief Data structure for the three-phase bridge SPWM modulation module.
- * @note Recommended Value for Current Deadband:
+ * @note Recommended Value for Current Dead band: 
  * - Theoretical Minimum: I_min = 2 * Coss * Vdc / T_dt
  * - Practical Setting: Typically 1% to 3% of the rated current.
  * - Tuning Guide: Set higher if zero-crossing oscillation occurs; set lower if crossover distortion is observed.
@@ -208,7 +208,7 @@ GMP_STATIC_INLINE void ctl_step_spwm_modulator(spwm_modulator_t* mod)
  * @ingroup CTL_TP_MODULATION_API
  * @details Converts per-unit voltage commands (-1.0 to 1.0) to PWM compare values,
  * and applies dead-time compensation based on the direction of phase currents.
- * SPWM和SVPWM使用同一个结构体。
+ * SPWM and SVPWM are using the same data structure.
  *
  * @param[in,out] mod Pointer to the @ref spwm_modulator_t structure.
  */
@@ -392,8 +392,7 @@ GMP_STATIC_INLINE void ctl_clear_npc_modulator(npc_modulator_t* mod)
  * @param[in] current_hysteresis The current hysteresis to enable dead-time compensation.
  */
 void ctl_init_npc_modulator(npc_modulator_t* mod, pwm_gt pwm_full_scale, pwm_gt pwm_deadband_comp_val,
-                             ctl_vector3_t* iuvw, ctrl_gt current_deadband, ctrl_gt current_hysteresis);
-
+                            ctl_vector3_t* iuvw, ctrl_gt current_deadband, ctrl_gt current_hysteresis);
 
 /**
  * @brief Get the computed PWM compare value for a specific switch.
@@ -453,13 +452,13 @@ GMP_STATIC_INLINE int get_current_zone(ctrl_gt i_sample, ctrl_gt deadband, ctrl_
         // If we were 1, stay 1 until we drop below deadband.
         // If we were -1, stay -1 until we rise above -deadband.
         // If we were 0, stay 0 until we cross trip points (handled by Zone1/2 checks).
-        
+
         // This 'else' block implicitly maintains 'last_dir' value
         // which implements the hysteresis hold.
     }
 
     // Update state memory
-    *last_dir = current_dir;
+    *last_dir = (signed short)current_dir;
     return current_dir;
 }
 
@@ -516,22 +515,24 @@ GMP_STATIC_INLINE void ctl_step_npc_modulator(npc_modulator_t* mod)
         if (mod->flag_enable_deadband_compensator)
         {
             // 调用封装好的函数，传入当前相电流、参数和状态记忆
-            int dir = get_current_zone(mod->iuvw->dat[i], 
-                                       mod->current_deadband, 
-                                       mod->current_hysteresis_band, 
+            int dir = get_current_zone(mod->iuvw->dat[i], mod->current_deadband, mod->current_hysteresis_band,
                                        &mod->last_current_dir[i]);
 
             if (dir == 1) // Strong Positive (Out)
             {
                 // Current flowing out -> Device drop reduces voltage -> Compensate by adding duty
-                if (v_ref >= 0) cmp_outer += mod->pwm_deadband_comp_val;
-                else            cmp_inner += mod->pwm_deadband_comp_val;
+                if (v_ref >= 0)
+                    cmp_outer += mod->pwm_deadband_comp_val;
+                else
+                    cmp_inner += mod->pwm_deadband_comp_val;
             }
             else if (dir == -1) // Strong Negative (In)
             {
                 // Current flowing in -> Device drop increases voltage -> Compensate by reducing duty
-                if (v_ref >= 0) cmp_outer -= mod->pwm_deadband_comp_val;
-                else            cmp_inner -= mod->pwm_deadband_comp_val;
+                if (v_ref >= 0)
+                    cmp_outer -= mod->pwm_deadband_comp_val;
+                else
+                    cmp_inner -= mod->pwm_deadband_comp_val;
             }
             // dir == 0: Inside Deadband -> No compensation
         }
@@ -569,7 +570,6 @@ GMP_STATIC_INLINE void ctl_step_npc_modulator(npc_modulator_t* mod)
         mod->pwm_out[NPC_INNER_IDX(i)] = pwm_sat(cmp_inner, mod->pwm_full_scale, 0);
     }
 }
-
 
 /**
  * @brief Step to execute the modulator.
@@ -625,22 +625,24 @@ GMP_STATIC_INLINE void ctl_step_npc_svpwm_modulator(npc_modulator_t* mod)
         if (mod->flag_enable_deadband_compensator)
         {
             // 调用封装好的函数，传入当前相电流、参数和状态记忆
-            int dir = get_current_zone(mod->iuvw->dat[i], 
-                                       mod->current_deadband, 
-                                       mod->current_hysteresis_band, 
+            int dir = get_current_zone(mod->iuvw->dat[i], mod->current_deadband, mod->current_hysteresis_band,
                                        &mod->last_current_dir[i]);
 
             if (dir == 1) // Strong Positive (Out)
             {
                 // Current flowing out -> Device drop reduces voltage -> Compensate by adding duty
-                if (v_ref >= 0) cmp_outer += mod->pwm_deadband_comp_val;
-                else            cmp_inner += mod->pwm_deadband_comp_val;
+                if (v_ref >= 0)
+                    cmp_outer += mod->pwm_deadband_comp_val;
+                else
+                    cmp_inner += mod->pwm_deadband_comp_val;
             }
             else if (dir == -1) // Strong Negative (In)
             {
                 // Current flowing in -> Device drop increases voltage -> Compensate by reducing duty
-                if (v_ref >= 0) cmp_outer -= mod->pwm_deadband_comp_val;
-                else            cmp_inner -= mod->pwm_deadband_comp_val;
+                if (v_ref >= 0)
+                    cmp_outer -= mod->pwm_deadband_comp_val;
+                else
+                    cmp_inner -= mod->pwm_deadband_comp_val;
             }
             // dir == 0: Inside Deadband -> No compensation
         }
@@ -678,8 +680,6 @@ GMP_STATIC_INLINE void ctl_step_npc_svpwm_modulator(npc_modulator_t* mod)
         mod->pwm_out[NPC_INNER_IDX(i)] = pwm_sat(cmp_inner, mod->pwm_full_scale, 0);
     }
 }
-
-
 
 #ifdef __cplusplus
 }

@@ -7,8 +7,8 @@
 
 // BUILD_LEVEL 1: inverter, voltage open loop
 // BUILD_LEVEL 2: inverter, current loop
-// BUILD_LEVEL 3: inverter, current loop, feed forward control
-// BUILD_LEVEL 4: inverter, current loop, feed forward control, negative current control
+// BUILD_LEVEL 3: inverter, current loop, grid connected
+// BUILD_LEVEL 4: inverter, current loop, grid connected, all feed forward on.
 #define BUILD_LEVEL (1)
 
 //=================================================================================================
@@ -98,7 +98,6 @@
 // Voltage sensor bias, V
 #define CTRL_DC_VOLTAGE_BIAS (0.0f)
 
-
 //=================================================================================================
 // Controller Settings
 
@@ -111,7 +110,6 @@
 
 // Enable ADC Calibrate
 #define SPECIFY_ENABLE_ADC_CALIBRATE
-
 
 // SPLL Close loop criteria
 #define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))

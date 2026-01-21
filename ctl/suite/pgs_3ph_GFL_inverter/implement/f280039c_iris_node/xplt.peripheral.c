@@ -185,7 +185,14 @@ interrupt void INT_IRIS_CAN_0_ISR(void)
         CAN_clearInterruptStatus(CANA_BASE, 1);
 
         // Control Flag, Enable System
-        //flag_system_enable = rx_data[0];
+        if (rx_data[0] == 1)
+        {
+            cia402_send_cmd(&cia402_sm, CIA402_CMD_ENABLE_OPERATION);
+        }
+        if (rx_data[0] == 0)
+        {
+            cia402_send_cmd(&cia402_sm, CIA402_CMD_DISABLE_VOLTAGE);
+        }
     }
     else if (status == 2)
     {
@@ -285,7 +292,7 @@ interrupt void INT_IRIS_UART_RS232_RX_ISR(void)
     Interrupt_clearACKGroup(INT_IRIS_UART_RS232_RX_INTERRUPT_ACK_GROUP);
 }
 
-// 假设定义一个本地的小缓存大小，能够覆盖硬件 FIFO 的深度（通常是 16 字节）
+// a local small cache size, capable of covering the depth of the hardware FIFO (typically 16 bytes)
 #define ISR_LOCAL_BUF_SIZE 16
 
 void at_device_flush_rx_buffer()
@@ -293,13 +300,13 @@ void at_device_flush_rx_buffer()
     uint16_t fifoLevel;
     uint16_t rxBuf[ISR_LOCAL_BUF_SIZE];
 
-    // 使用while一次性读取FIFO中的所有内容
+    // Read all FIFO content
     while ((fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE)) > 0)
     {
-        // 读取数据
+        // Get data
         SCI_readCharArray(IRIS_UART_USB_BASE, rxBuf, fifoLevel);
 
-        // 推送给设备
+        // send to AT device
         at_device_rx_isr(&at_dev, (char*)rxBuf, fifoLevel);
     }
 }

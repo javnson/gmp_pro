@@ -13,7 +13,6 @@
 
 // user main header
 #include "user_main.h"
-
 #include <xplt.peripheral.h>
 
 #include <ctrl_rt_trace.h>
@@ -21,15 +20,13 @@
 // console
 #include <conio.h>
 
+#ifdef __cplusplus
 extern "C"
 {
+#endif // __cplusplus
 
-// /d1 reportSingleClassLayoutinv_ctrl_t
-//#pragma reportSingleClassLayout(inv_ctrl_t)
-
-//////////////////////////////////////////////////////////////////////////
+//=================================================================================================
 // definitions of peripheral
-//
 
 // inverter side voltage feedback
 tri_ptr_adc_channel_t uuvw;
@@ -53,14 +50,6 @@ adc_gt udc_src;
 ptr_adc_channel_t idc;
 adc_gt idc_src;
 
-// PWM output channel
-pwm_tri_channel_t pwm_out;
-
-//ptr_adc_channel_t inv_adc[INV_ADC_SENSOR_NUMBER];
-//pwm_tri_channel_t pwm_out;
-//
-//pwm_channel_t inv_pwm_out[3];
-
 // Trace RT objects
 typedef enum _tag_trace_rt_nodes
 {
@@ -70,9 +59,8 @@ typedef enum _tag_trace_rt_nodes
 
 trace_rt_node_t* trt_node[TRT_NODE_NUMBER];
 
-//////////////////////////////////////////////////////////////////////////
+//=================================================================================================
 // peripheral setup function
-//
 
 // User should setup all the peripheral in this function.
 void setup_peripheral(void)
@@ -131,17 +119,12 @@ void setup_peripheral(void)
         // ADC resolution, IQN
         12, 24);
 
-    // output channel
-    ctl_init_pwm_tri_channel(&pwm_out, 0, CTRL_PWM_CMP_MAX);
-
     //
     // attach
     //
     ctl_attach_gfl_inv(
         // inv controller
         &inv_ctrl,
-        // output PWM wave
-        &pwm_out.raw,
         // idc, udc
         &idc.control_port, &udc.control_port,
         // grid side iabc, vabc
@@ -153,7 +136,8 @@ void setup_peripheral(void)
     trt_node[TRT_TEST] = trace_rt_register_node(&trace_rt_context, "pwm_out_A", TRT_TYPE_DOUBLE);
 }
 
-// ---------------- 核心移植代码 ----------------
+//=================================================================================================
+// communication functions and interrupt functions here
 
 // 为了防止卡住，在Windows平台上的buffer留大一些
 #define ISR_LOCAL_BUF_SIZE 1024
@@ -195,7 +179,9 @@ void at_device_flush_rx_buffer()
 // Execute RT monitor
 void send_monitor_data(void)
 {
-    gmp_trace_rt_log_double(trt_node[TRT_TEST], inv_ctrl.isr_tick, inv_ctrl.pwm_out->value.dat[phase_A]);
+    gmp_trace_rt_log_double(trt_node[TRT_TEST], inv_ctrl.isr_tick, inv_ctrl.vab0.dat[phase_A]);
 }
 
+#ifdef __cplusplus
 } // extern "C"
+#endif // __cplusplus

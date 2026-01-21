@@ -80,7 +80,7 @@ void ctl_init()
     //
     // Power controller
     //
-    ctl_init_gfl_pq(&pq_ctrl, 0.75, 0.001, 0.75, 0.001, 1.0, CONTROLLER_FREQUENCY);
+    ctl_init_gfl_pq(&pq_ctrl, 0.75f, 0.001f, 0.75f, 0.001f, 1.0f, CONTROLLER_FREQUENCY);
     ctl_attach_gfl_pq_to_core(&pq_ctrl, &inv_ctrl);
 
 #if BUILD_LEVEL == 1

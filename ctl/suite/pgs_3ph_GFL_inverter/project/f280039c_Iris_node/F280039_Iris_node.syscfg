@@ -15,6 +15,8 @@ const adc2           = adc.addInstance();
 const adc3           = adc.addInstance();
 const analog         = scripting.addModule("/driverlib/analog.js", {}, false);
 const analog1        = analog.addInstance();
+const fsi            = scripting.addModule("/driverlib/board_components/fsi", {}, false);
+const fsi1           = fsi.addInstance();
 const can            = scripting.addModule("/driverlib/can.js", {}, false);
 const can1           = can.addInstance();
 const cputimer       = scripting.addModule("/driverlib/cputimer.js", {}, false);
@@ -42,6 +44,7 @@ const gpio5          = gpio.addInstance();
 const gpio6          = gpio.addInstance();
 const gpio7          = gpio.addInstance();
 const gpio8          = gpio.addInstance();
+const gpio9          = gpio.addInstance();
 const i2c            = scripting.addModule("/driverlib/i2c.js", {}, false);
 const i2c1           = i2c.addInstance();
 const other          = scripting.addModule("/driverlib/other.js", {}, false);
@@ -51,6 +54,7 @@ const sci1           = sci.addInstance();
 const sci2           = sci.addInstance();
 const spi            = scripting.addModule("/driverlib/spi.js", {}, false);
 const spi1           = spi.addInstance();
+const spi2           = spi.addInstance();
 
 /**
  * Write custom configuration values to the imported modules.
@@ -144,6 +148,15 @@ adc3.soc2Channel             = "ADC_CH_ADCIN14";
 adc3.soc3Channel             = "ADC_CH_ADCIN6";
 adc3.soc0Name                = "INV_IW";
 
+fsi1.$name               = "myBoardFSI0";
+fsi1.fsiRx.d0Qual.$name  = "myGPIOQUAL12";
+fsi1.fsiRx.d1Qual.$name  = "myGPIOQUAL13";
+fsi1.fsiRx.clkQual.$name = "myGPIOQUAL14";
+fsi1.fsiTx.useCase       = "FSI TX Dual Dataline";
+fsi1.fsiTx.d0Qual.$name  = "myGPIOQUAL15";
+fsi1.fsiTx.d1Qual.$name  = "myGPIOQUAL16";
+fsi1.fsiTx.clkQual.$name = "myGPIOQUAL17";
+
 can1.$name                   = "IRIS_CAN";
 can1.bitRate                 = "1000000";
 can1.enableInterrupt         = true;
@@ -226,7 +239,8 @@ pinFunction2.XTAL_Freq = 12;
 const pinFunction3     = system.clockTree["XTAL"];
 pinFunction3.XTAL_Freq = 12;
 
-cputimer1.$name = "myCPUTIMER0";
+cputimer1.$name       = "myCPUTIMER0";
+cputimer1.timerPeriod = 1000;
 
 dac1.$name            = "IRIS_DACA";
 dac1.enableOutput     = true;
@@ -452,6 +466,10 @@ gpio8.$name           = "IRIS_LED2";
 gpio8.direction       = "GPIO_DIR_MODE_OUT";
 gpio8.gpioPin.$assign = "GPIO59";
 
+gpio9.$name           = "IRIS_GPIO_SPI_RST";
+gpio9.direction       = "GPIO_DIR_MODE_OUT";
+gpio9.gpioPin.$assign = "GPIO55";
+
 i2c1.$name                  = "IRIS_IIC";
 i2c1.i2c.$assign            = "I2CA";
 i2c1.i2c.i2c_sdaPin.$assign = "GPIO56";
@@ -502,15 +520,34 @@ spi1.pociQual.$name = "myGPIOQUAL3";
 spi1.clkQual.$name  = "myGPIOQUAL4";
 spi1.pteQual.$name  = "myGPIOQUAL5";
 
+spi2.$name                   = "IRIS_SPI_OUT";
+spi2.spi.spi_picoPin.$assign = "GPIO60";
+spi2.spi.spi_pociPin.$assign = "GPIO25";
+spi2.spi.spi_clkPin.$assign  = "GPIO32";
+spi2.spi.spi_ptePin.$assign  = "GPIO27";
+spi2.picoQual.$name          = "myGPIOQUAL8";
+spi2.pociQual.$name          = "myGPIOQUAL9";
+spi2.clkQual.$name           = "myGPIOQUAL10";
+spi2.pteQual.$name           = "myGPIOQUAL11";
+
 /**
  * Pinmux solution for unlocked pins/peripherals. This ensures that minor changes to the automatic solver in a future
  * version of the tool will not impact the pinmux you originally saw.  These lines can be completely deleted in order to
  * re-solve from scratch.
  */
-epwm1.epwm.$suggestSolution           = "EPWM2";
-epwm1.epwm.epwm_aPin.$suggestSolution = "GPIO2";
-epwm1.epwm.epwm_bPin.$suggestSolution = "GPIO3";
-spi1.spi.spi_picoPin.$suggestSolution = "GPIO16";
-spi1.spi.spi_pociPin.$suggestSolution = "GPIO17";
-spi1.spi.spi_clkPin.$suggestSolution  = "GPIO12";
-spi1.spi.spi_ptePin.$suggestSolution  = "GPIO11";
+fsi1.fsiRx.fsirx.$suggestSolution              = "FSIRXA";
+fsi1.fsiRx.fsirx.fsirx_d0Pin.$suggestSolution  = "GPIO52";
+fsi1.fsiRx.fsirx.fsirx_d1Pin.$suggestSolution  = "GPIO53";
+fsi1.fsiRx.fsirx.fsirx_clkPin.$suggestSolution = "GPIO54";
+fsi1.fsiTx.fsitx.$suggestSolution              = "FSITXA";
+fsi1.fsiTx.fsitx.fsitx_d0Pin.$suggestSolution  = "GPIO49";
+fsi1.fsiTx.fsitx.fsitx_d1Pin.$suggestSolution  = "GPIO50";
+fsi1.fsiTx.fsitx.fsitx_clkPin.$suggestSolution = "GPIO51";
+epwm1.epwm.$suggestSolution                    = "EPWM2";
+epwm1.epwm.epwm_aPin.$suggestSolution          = "GPIO2";
+epwm1.epwm.epwm_bPin.$suggestSolution          = "GPIO3";
+spi1.spi.spi_picoPin.$suggestSolution          = "GPIO16";
+spi1.spi.spi_pociPin.$suggestSolution          = "GPIO17";
+spi1.spi.spi_clkPin.$suggestSolution           = "GPIO12";
+spi1.spi.spi_ptePin.$suggestSolution           = "GPIO11";
+spi2.spi.$suggestSolution                      = "SPIB";

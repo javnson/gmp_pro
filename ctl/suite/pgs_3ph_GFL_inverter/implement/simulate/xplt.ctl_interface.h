@@ -22,11 +22,8 @@ extern "C"
 {
 #endif // __cplusplus
 
-//////////////////////////////////////////////////////////////////////////
-// device related functions
-// Controller interface
-//
-//
+//=================================================================================================
+// Board peripheral mapping
 
 typedef enum _tag_sinv_adc_index_items
 {
@@ -41,26 +38,25 @@ typedef enum _tag_sinv_adc_index_items
 
 } inv_adc_index_items;
 
-extern gfl_inv_ctrl_init_t gfl_init;
-extern gfl_inv_ctrl_t inv_ctrl;
+//=================================================================================================
+// Controller interface
 
 // Input Callback
-GMP_STATIC_INLINE
-void ctl_input_callback(void)
+GMP_STATIC_INLINE void ctl_input_callback(void)
 {
     // copy source ADC data
     vabc_src[phase_A] = simulink_rx_buffer.adc_result[INV_ADC_ID_UAB];
     vabc_src[phase_B] = simulink_rx_buffer.adc_result[INV_ADC_ID_UBC];
     vabc_src[phase_C] = 0;
-                        
+
     iabc_src[phase_A] = simulink_rx_buffer.adc_result[INV_ADC_ID_IA];
     iabc_src[phase_B] = simulink_rx_buffer.adc_result[INV_ADC_ID_IB];
     iabc_src[phase_C] = simulink_rx_buffer.adc_result[INV_ADC_ID_IC];
-                        
+
     uuvw_src[phase_U] = 0;
     uuvw_src[phase_V] = 0;
     uuvw_src[phase_W] = 0;
-                        
+
     iuvw_src[phase_U] = 0;
     iuvw_src[phase_V] = 0;
     iuvw_src[phase_W] = 0;
@@ -78,23 +74,18 @@ void ctl_input_callback(void)
 }
 
 // Output Callback
-GMP_STATIC_INLINE
-void ctl_output_callback(void)
+GMP_STATIC_INLINE void ctl_output_callback(void)
 {
-    // invoke PWM p.u. routine
-    ctl_calc_pwm_tri_channel(&pwm_out);
-
     //
     // PWM channel
     //
-    simulink_tx_buffer.pwm_cmp[0] = pwm_out.value[phase_U];
-    simulink_tx_buffer.pwm_cmp[1] = pwm_out.value[phase_V];
-    simulink_tx_buffer.pwm_cmp[2] = pwm_out.value[phase_W];
+    simulink_tx_buffer.pwm_cmp[0] = spwm.pwm_out[phase_U];
+    simulink_tx_buffer.pwm_cmp[1] = spwm.pwm_out[phase_V];
+    simulink_tx_buffer.pwm_cmp[2] = spwm.pwm_out[phase_W];
 
     //
     // monitor
     //
-
 #if BUILD_LEVEL == 1
 
     // Scope 1
@@ -110,8 +101,8 @@ void ctl_output_callback(void)
     //simulink_tx_buffer.monitor[5] = inv_adc[INV_ADC_ID_IB].control_port.value;
 
     // Scope 4
-    simulink_tx_buffer.monitor[6] = inv_ctrl.pwm_out->value.dat[phase_A];
-    simulink_tx_buffer.monitor[7] = inv_ctrl.pwm_out->value.dat[phase_B];
+    //simulink_tx_buffer.monitor[6] = inv_ctrl.pwm_out->value.dat[phase_A];
+    //simulink_tx_buffer.monitor[7] = inv_ctrl.pwm_out->value.dat[phase_B];
 
     // Scope 5
     simulink_tx_buffer.monitor[8] = inv_ctrl.pll.phasor.dat[phasor_sin];
@@ -125,14 +116,12 @@ void ctl_output_callback(void)
     simulink_tx_buffer.monitor[12] = inv_ctrl.vdq.dat[phase_d];
     simulink_tx_buffer.monitor[13] = inv_ctrl.vdq.dat[phase_q];
 
-
 #endif // BUILD LEVEL
 }
 
 // Enable Motor Controller
 // Enable Output
-GMP_STATIC_INLINE
-void ctl_enable_output()
+GMP_STATIC_INLINE void ctl_fast_enable_output()
 {
     ctl_enable_gfl_inv(&inv_ctrl);
 
@@ -142,8 +131,7 @@ void ctl_enable_output()
 }
 
 // Disable Output
-GMP_STATIC_INLINE
-void ctl_disable_output()
+GMP_STATIC_INLINE void ctl_fast_disable_output()
 {
     flag_system_running = 0;
     csp_sl_disable_output();

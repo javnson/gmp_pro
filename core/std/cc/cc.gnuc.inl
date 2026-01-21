@@ -51,3 +51,6 @@
 
 // + NOP
 #define GMP_INSTRUCTION_NOP asm("nop")
+
+// + unused variable or function
+#define GMP_UNUSED_VAR(x) (void)(x)

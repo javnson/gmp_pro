@@ -64,13 +64,12 @@ void ctl_init_sinv_ctrl(sinv_ctrl_t* sinv, sinv_init_t* init)
     sinv->pf_set = 1;
 }
 
-void ctl_attach_sinv_with_adc(sinv_ctrl_t* sinv, adc_ift* udc, adc_ift* idc, adc_ift* il, adc_ift* ugrid,
+void ctl_attach_sinv_with_adc(sinv_ctrl_t* sinv, adc_ift* _udc, adc_ift* _idc, adc_ift* il, adc_ift* ugrid,
                               adc_ift* igrid)
 {
-    sinv->adc_idc = idc;
-    sinv->adc_udc = udc;
+    sinv->adc_idc = _idc;
+    sinv->adc_udc = _udc;
     sinv->adc_il = il;
     sinv->adc_igrid = igrid;
     sinv->adc_ugrid = ugrid;
 }
-

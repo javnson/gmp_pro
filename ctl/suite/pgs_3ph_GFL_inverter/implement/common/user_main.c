@@ -19,6 +19,11 @@ gmp_scheduler_t sched;
 /* 2.1 Enable asynchronous Handler */
 at_status_t enable_handler(at_device_entity_t* dev, at_cmd_type_t type, char* args, uint16_t len)
 {
+    GMP_UNUSED_VAR(dev);
+    GMP_UNUSED_VAR(type);
+    GMP_UNUSED_VAR(args);
+    GMP_UNUSED_VAR(len);
+
     gmp_base_print(TEXT_STRING("[WOW] enable handle was called!\r\n"));
 
     cia402_send_cmd(&cia402_sm, CIA402_CMD_ENABLE_OPERATION);
@@ -29,6 +34,11 @@ at_status_t enable_handler(at_device_entity_t* dev, at_cmd_type_t type, char* ar
 /* 2.2 Disable asynchronous Handler */
 at_status_t poweroff_handler(at_device_entity_t* dev, at_cmd_type_t type, char* args, uint16_t len)
 {
+    GMP_UNUSED_VAR(dev);
+    GMP_UNUSED_VAR(type);
+    GMP_UNUSED_VAR(args);
+    GMP_UNUSED_VAR(len);
+
     gmp_base_print(TEXT_STRING("[WOW] Power OFF handle was called!\r\n"));
 
     cia402_send_cmd(&cia402_sm, CIA402_CMD_DISABLE_VOLTAGE);
@@ -39,6 +49,11 @@ at_status_t poweroff_handler(at_device_entity_t* dev, at_cmd_type_t type, char* 
 /* 2.3 Reset asynchronous Handler */
 at_status_t rst_handler(at_device_entity_t* dev, at_cmd_type_t type, char* args, uint16_t len)
 {
+    GMP_UNUSED_VAR(dev);
+    GMP_UNUSED_VAR(type);
+    GMP_UNUSED_VAR(args);
+    GMP_UNUSED_VAR(len);
+
     gmp_base_print(TEXT_STRING("[WOW] rst_handler, with arg: %s!\r\n"), args);
 
     cia402_fault_reset(&cia402_sm);
@@ -49,6 +64,8 @@ at_status_t rst_handler(at_device_entity_t* dev, at_cmd_type_t type, char* args,
 /* 3. AT device Error Handle */
 void at_device_error_handler(at_device_entity_t* dev, at_error_code_t code)
 {
+    GMP_UNUSED_VAR(dev);
+
     if (code == AT_ERR_RX_OVERFLOW)
     {
         gmp_base_print("[WOW] System Overload!\r\n");
@@ -71,6 +88,8 @@ at_device_cmd_t at_cmds[] = {
 
 gmp_task_status_t tsk_blink(gmp_task_t* tsk)
 {
+    GMP_UNUSED_VAR(tsk);
+
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
 
     return GMP_TASK_DONE;
@@ -79,6 +98,8 @@ gmp_task_status_t tsk_blink(gmp_task_t* tsk)
 void at_device_flush_rx_buffer();
 gmp_task_status_t tsk_at_device(gmp_task_t* tsk)
 {
+    GMP_UNUSED_VAR(tsk);
+
     // AT device dispatch function
     at_device_flush_rx_buffer();
     at_device_dispatch(&at_dev);
@@ -89,6 +110,8 @@ gmp_task_status_t tsk_at_device(gmp_task_t* tsk)
 void send_monitor_data(void);
 gmp_task_status_t tsk_monitor(gmp_task_t* tsk)
 {
+    GMP_UNUSED_VAR(tsk);
+
     send_monitor_data();
 
     return GMP_TASK_DONE;
