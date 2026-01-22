@@ -477,7 +477,8 @@ GMP_STATIC_INLINE void ctl_step_npc_modulator(npc_modulator_t* mod)
 
     for (i = 0; i < 3; ++i)
     {
-        ctrl_gt v_ref = mod->vabc_out.dat[i];
+        // 注意，这里为了保证符号统一，如果不取反输入正电压测量得到的是负电压。
+        ctrl_gt v_ref = -mod->vabc_out.dat[i];
         pwm_gt cmp_outer = 0;
         pwm_gt cmp_inner = 0;
 
@@ -505,8 +506,8 @@ GMP_STATIC_INLINE void ctl_step_npc_modulator(npc_modulator_t* mod)
             cmp_outer = 0;
 
             // Calculate S2 Duty ( 1.0 - |v_ref| )
-            ctrl_gt v_abs = ctl_abs(v_ref);
-            cmp_inner = pwm_mul(ctl_sub(float2ctrl(1.0f), v_abs), mod->pwm_full_scale);
+            //ctrl_gt v_abs = ctl_abs(v_ref);
+            cmp_inner = pwm_mul(float2ctrl(1.0f) + v_ref, mod->pwm_full_scale);
         }
 
         // ============================================================

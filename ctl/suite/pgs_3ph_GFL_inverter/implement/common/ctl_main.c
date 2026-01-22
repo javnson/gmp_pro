@@ -101,7 +101,7 @@ void ctl_init()
 #elif BUILD_LEVEL == 2 || BUILD_LEVEL == 3
     // Basic current close loop, inverter
     ctl_set_gfl_inv_current_mode(&inv_ctrl);
-    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(0.6), float2ctrl(0.6));
+    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(0.1), float2ctrl(0.1));
 
 #elif BUILD_LEVEL == 4
     // current close loop with feed forward, inverter

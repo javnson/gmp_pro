@@ -70,12 +70,12 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     EPWM_setCounterCompareValue(EPWM_J8_PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_INNER]);
 
 #elif BOARD_SELECTION == GMP_IRIS
-    EPWM_setCounterCompareValue(IRIS_EPWM1_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_A_OUTER]);
-    EPWM_setCounterCompareValue(IRIS_EPWM2_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_B_OUTER]);
-    EPWM_setCounterCompareValue(IRIS_EPWM3_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_OUTER]);
-    EPWM_setCounterCompareValue(IRIS_EPWM4_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_A_INNER]);
-    EPWM_setCounterCompareValue(IRIS_EPWM5_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_B_INNER]);
-    EPWM_setCounterCompareValue(IRIS_EPWM6_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_INNER]);
+    EPWM_setCounterCompareValue(IRIS_EPWM1_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_A_INNER]);
+    EPWM_setCounterCompareValue(IRIS_EPWM2_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_A_OUTER]);
+    EPWM_setCounterCompareValue(IRIS_EPWM3_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_B_INNER]);
+    EPWM_setCounterCompareValue(IRIS_EPWM4_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_B_OUTER]);
+    EPWM_setCounterCompareValue(IRIS_EPWM5_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_INNER]);
+    EPWM_setCounterCompareValue(IRIS_EPWM6_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_OUTER]);
 
 #endif // BOARD_SELECTION
 
@@ -94,6 +94,9 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     //    DAC_setShadowValue(IRIS_DACA_BASE, inv_ctrl.abc_out.dat[phase_B]  * 2048 + 2048);
 
     // grid current and inverter current
+//    DAC_setShadowValue(IRIS_DACA_BASE, iabc.control_port.value.dat[phase_C] * 2048 + 2048);
+//    DAC_setShadowValue(IRIS_DACB_BASE, iuvw.control_port.value.dat[phase_C] * 2048 + 2048);
+
     DAC_setShadowValue(IRIS_DACA_BASE, iabc.control_port.value.dat[phase_C] * 2048 + 2048);
     DAC_setShadowValue(IRIS_DACB_BASE, iuvw.control_port.value.dat[phase_C] * 2048 + 2048);
 
@@ -126,7 +129,7 @@ GMP_STATIC_INLINE void ctl_fast_enable_output()
     ctl_enable_gfl_inv(&inv_ctrl);
 
     // PWM enable
-    GPIO_WritePin(PWM_ENABLE_PORT, 1);
+    GPIO_WritePin(PWM_ENABLE_PORT, 0);
 
     GPIO_WritePin(PWM_RESET_PORT, 0);
 
@@ -144,7 +147,7 @@ GMP_STATIC_INLINE void ctl_fast_disable_output()
     ctl_disable_gfl_inv(&inv_ctrl);
 
     // PWM disable
-    GPIO_WritePin(PWM_ENABLE_PORT, 0);
+    GPIO_WritePin(PWM_ENABLE_PORT, 1);
 
     GPIO_WritePin(CONTROLLER_LED, 1);
 }

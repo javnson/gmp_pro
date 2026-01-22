@@ -9,7 +9,7 @@
 // BUILD_LEVEL 2: inverter, current loop
 // BUILD_LEVEL 3: inverter, current loop, grid connected
 // BUILD_LEVEL 4: inverter, current loop, grid connected, all feed forward on.
-#define BUILD_LEVEL (1)
+#define BUILD_LEVEL (2)
 
 //=================================================================================================
 // Select Board Pin definition
@@ -28,7 +28,7 @@
 #define CONTROLLER_FREQUENCY (10e3)
 
 // PWM depth
-#define CTRL_PWM_CMP_MAX (6000)
+#define CTRL_PWM_CMP_MAX (6000-1)
 
 // PWM deadband
 #define CTRL_PWM_DEADBAND_CMP (100)
