@@ -20,8 +20,6 @@ extern "C"
 {
 #endif // __cplusplus
 
-
-
 //=================================================================================================
 // Controller interface
 
@@ -61,10 +59,33 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
 GMP_STATIC_INLINE void ctl_output_callback(void)
 {
     // Write ePWM peripheral CMP
+#if defined USING_NPC_MODULATOR
+
+#if BOARD_SELECTION == LAUNCHPAD
+    EPWM_setCounterCompareValue(EPWM_J4_PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_A_OUTER]);
+    EPWM_setCounterCompareValue(EPWM_J4_PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_B_OUTER]);
+    EPWM_setCounterCompareValue(EPWM_J4_PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_OUTER]);
+    EPWM_setCounterCompareValue(EPWM_J8_PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_A_INNER]);
+    EPWM_setCounterCompareValue(EPWM_J8_PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_B_INNER]);
+    EPWM_setCounterCompareValue(EPWM_J8_PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_INNER]);
+
+#elif BOARD_SELECTION == GMP_IRIS
+    EPWM_setCounterCompareValue(IRIS_EPWM1_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_A_OUTER]);
+    EPWM_setCounterCompareValue(IRIS_EPWM2_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_B_OUTER]);
+    EPWM_setCounterCompareValue(IRIS_EPWM3_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_OUTER]);
+    EPWM_setCounterCompareValue(IRIS_EPWM4_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_A_INNER]);
+    EPWM_setCounterCompareValue(IRIS_EPWM5_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_B_INNER]);
+    EPWM_setCounterCompareValue(IRIS_EPWM6_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_INNER]);
+
+#endif // BOARD_SELECTION
+
+#else // USING_NPC_MODULATOR
+
     EPWM_setCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_U]);
     EPWM_setCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_V]);
     EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_W]);
 
+#endif // USING_NPC_MODULATOR
 
     // Monitor Port
 #if BUILD_LEVEL == 1

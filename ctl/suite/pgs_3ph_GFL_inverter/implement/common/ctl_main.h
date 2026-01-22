@@ -44,7 +44,11 @@ extern volatile fast_gt index_adc_calibrator;
 extern cia402_sm_t cia402_sm;
 
 // modulator: SPWM modulator / SVPWM modulator / NPC modulator
+#if defined USING_NPC_MODULATOR
+extern npc_modulator_t spwm;
+#else
 extern spwm_modulator_t spwm;
+#endif // USING_NPC_MODULATOR
 
 // controller body: Current controller, Power controller / Voltage controller
 extern gfl_inv_ctrl_init_t gfl_init;
@@ -100,7 +104,12 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         spwm.vab0_out.dat[phase_W] = inv_ctrl.vab0_out.dat[phase_W];
 
         // modulation
+#if defined USING_NPC_MODULATOR
+        ctl_step_npc_modulator(&spwm);
+#else
         ctl_step_spwm_modulator(&spwm);
+#endif // USING_NPC_MODULATOR
+
     }
 }
 

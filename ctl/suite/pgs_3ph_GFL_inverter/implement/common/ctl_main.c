@@ -27,7 +27,12 @@
 cia402_sm_t cia402_sm;
 
 // modulator: SPWM modulator / SVPWM modulator / NPC modulator
+#if defined USING_NPC_MODULATOR
+npc_modulator_t spwm;
+#else
 spwm_modulator_t spwm;
+#endif // USING_NPC_MODULATOR
+
 
 // controller body: Current controller, Power controller / Voltage controller
 gfl_pq_ctrl_t pq_ctrl;
@@ -74,8 +79,13 @@ void ctl_init()
     //
     // init SPWM modulator
     //
+#if defined USING_NPC_MODULATOR
+    ctl_init_npc_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &inv_ctrl.adc_iabc->value, float2ctrl(0.02),
+                           float2ctrl(0.005));
+#else
     ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &inv_ctrl.adc_iabc->value, float2ctrl(0.02),
                             float2ctrl(0.005));
+#endif // USING_NPC_MODULATOR
 
     //
     // Power controller

@@ -114,6 +114,9 @@
 // SPLL Close loop criteria
 #define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
 
+// Using three level modulator or two level modulator
+//#define USING_NPC_MODULATOR
+
 //=================================================================================================
 // Board peripheral mapping
 
