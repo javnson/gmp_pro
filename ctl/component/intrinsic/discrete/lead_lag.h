@@ -77,8 +77,8 @@ void ctl_init_lead_form2(ctrl_lead_t* obj, parameter_gt alpha, parameter_gt T, p
 /**
  * @brief Initializes a lead compensator from its continuous-time parameters.
  * @param[out] obj Pointer to the lead compensator instance.
- * @param[in] angle compensator angle at the frequency.
- * @param[in] fc compensator frequency.
+ * @param[in] angle compensator angle at the frequency, rad.
+ * @param[in] fc compensator frequency Hz.
  * @param[in] fs Sampling frequency (Hz).
  */
 void ctl_init_lead_form3(ctrl_lead_t* obj, parameter_gt angle, parameter_gt fc, parameter_gt fs);

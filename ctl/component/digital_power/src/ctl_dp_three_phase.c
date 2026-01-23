@@ -159,10 +159,13 @@ void ctl_auto_tuning_gfl_inv(gfl_inv_ctrl_init_t* init)
         // select current loop BW
         freq1 = LC_res_Hz / 3;
         freq2 = init->fs / 10;
-        init->current_loop_bw = fminf(freq1, freq2);
+
+        // Auto tuning conservative design
+        init->current_loop_bw = fminf(freq1, freq2) / 2;
 
         // Calculate LC filter characteristic impedance, damping ratio is 0.5
-        init->active_damping_resister = sqrtf(init->grid_filter_L / init->grid_filter_C);
+        parameter_gt k_damping_filter = 0.2f;
+        init->active_damping_resister = k_damping_filter * sqrtf(init->grid_filter_L / init->grid_filter_C);
 
         // calculate active_damping_center_freq and active_damping_Q
         init->active_damping_center_freq = LC_res_Hz;
@@ -237,12 +240,14 @@ void ctl_update_gfl_inv_coeff(gfl_inv_ctrl_t* inv, gfl_inv_ctrl_init_t* init)
         // TODO FIX HERE
 #endif // GFL_CAPACITOR_CURRENT_CALCULATE_MODE
 
-        ctl_init_biquad_bpf(&inv->filter_damping, init->fs, init->active_damping_center_freq,
+        ctl_init_biquad_bpf(&inv->filter_damping[phase_d], init->fs, init->active_damping_center_freq,
+                            init->active_damping_filter_q);
+        ctl_init_biquad_bpf(&inv->filter_damping[phase_q], init->fs, init->active_damping_center_freq,
                             init->active_damping_filter_q);
     }
 
     // decoupling feed-forward
-    inv->coef_ff_decouple = CTL_PARAM_CONST_2PI * init->freq_base * init->i_base / init->v_base;
+    inv->coef_ff_decouple = CTL_PARAM_CONST_2PI * init->grid_filter_L * init->freq_base * init->i_base / init->v_base;
 }
 
 /**

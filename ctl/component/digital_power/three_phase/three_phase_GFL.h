@@ -137,7 +137,7 @@ typedef struct _tag_gfl_inv_ctrl_type
     ctrl_gt coef_ff_decouple; //!< CTRL: current feed-foreword
 
     // active damping
-    ctl_filter_IIR2_t filter_damping; //!< CTRL: active capacitor damping
+    ctl_filter_IIR2_t filter_damping[2]; //!< CTRL: active capacitor damping
     ctrl_gt coef_ff_damping;          //!< damping gain
     vector2_gt vdq_last;              //!< (vdq - vdq_last) to calculate differential
 
@@ -183,7 +183,9 @@ GMP_STATIC_INLINE void ctl_clear_gfl_inv(gfl_inv_ctrl_t* inv)
     ctl_clear_pid(&inv->pid_idq[phase_d]);
     ctl_clear_pid(&inv->pid_idq[phase_q]);
 
-    ctl_clear_biquad_filter(&inv->filter_damping);
+    ctl_clear_biquad_filter(&inv->filter_damping[phase_d]);
+    ctl_clear_biquad_filter(&inv->filter_damping[phase_q]);
+
     ctl_vector2_clear(&inv->vdq_last);
 
     ctl_clear_lead(&inv->lead_compensator[phase_d]);
@@ -391,10 +393,17 @@ GMP_STATIC_INLINE void ctl_step_gfl_inv_ctrl(gfl_inv_ctrl_t* gfl)
             // active damping
             if (gfl->flag_enable_active_damping)
             {
+                // 计算微分量 (代表电容电流 trend)
+                    ctrl_gt diff_d = gfl->vdq.dat[phase_d] - gfl->vdq_last.dat[phase_d];
+                    ctrl_gt diff_q = gfl->vdq.dat[phase_q] - gfl->vdq_last.dat[phase_q];
+
+                // damping filter
                 gfl->vdq_ff_damping.dat[phase_d] =
-                    gfl->coef_ff_damping * (gfl->vdq.dat[phase_d] - gfl->vdq_last.dat[phase_d]);
+                        ctl_step_biquad_filter(&gfl->filter_damping[phase_d],
+                                               gfl->coef_ff_damping * diff_d);
                 gfl->vdq_ff_damping.dat[phase_q] =
-                    gfl->coef_ff_damping * (gfl->vdq.dat[phase_q] - gfl->vdq_last.dat[phase_q]);
+                        ctl_step_biquad_filter(&gfl->filter_damping[phase_q],
+                                               gfl->coef_ff_damping * diff_q);
 
                 ctl_vector2_copy(&gfl->vdq_last, &gfl->vdq);
             }

@@ -1404,14 +1404,32 @@ void ctl_init_lead_form2(ctrl_lead_t* obj, parameter_gt alpha, parameter_gt T, p
     ctl_clear_lead(obj);
 }
 
-void ctl_init_lead_form3(ctrl_lead_t* obj, parameter_gt angle, parameter_gt fc, parameter_gt fs)
+void ctl_init_lead_form3(ctrl_lead_t* obj, parameter_gt theta_rad, parameter_gt fc, parameter_gt fs)
 {
     parameter_gt alpha;
+    //parameter_gt theta_rad = angle_deg * (CTL_PARAM_CONST_PI / 180.0f); // 确保输入是弧度或进行转换
 
-    alpha = (1 + sinf(angle)) / (1 - sinf(angle));
+    // 1. 计算 Alpha (分频比)
+    parameter_gt sin_val = sinf(theta_rad);
+    alpha = (1.0f + sin_val) / (1.0f - sin_val);
 
-    ctl_init_lead_form2(obj, alpha, 1 / fc, fs);
+    // 2. 正确计算时间常数 T
+    // T = 1 / (omega_c * sqrt(alpha))
+    parameter_gt omega_c = 2.0f * CTL_PARAM_CONST_PI * fc;
+    parameter_gt T = 1.0f / (omega_c * sqrtf(alpha));
+
+    // 3. 调用 Form2 进行离散化
+    ctl_init_lead_form2(obj, alpha, T, fs);
 }
+
+//void ctl_init_lead_form3(ctrl_lead_t* obj, parameter_gt angle, parameter_gt fc, parameter_gt fs)
+//{
+//    parameter_gt alpha;
+//
+//    alpha = (1 + sinf(angle)) / (1 - sinf(angle));
+//
+//    ctl_init_lead_form2(obj, alpha, 1 / fc, fs);
+//}
 
 void ctl_init_lag(ctrl_lag_t* obj, parameter_gt tau_L, parameter_gt tau_P, parameter_gt fs)
 {
