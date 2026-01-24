@@ -141,13 +141,13 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_pll_3ph(srf_pll_t* pll, ctrl_gt alpha, ctrl_g
     pll->e_alpha = alpha;
     pll->e_beta = beta;
 
-    // 1. Generate the phasor {cos(theta), sin(theta)} from the current angle estimate.
+    // 1. Generate the phasor {sin(theta), cos(theta)} from the current angle estimate.
     ctl_set_phasor_via_angle(pll->theta, &pll->phasor);
 
     // 2. Perform Park transform to get the q-axis voltage (error signal).
     // Vq = -Valpha * sin(theta) + Vbeta * cos(theta)
     // CORRECTED: The sign of the second term was wrong, leading to positive feedback.
-    pll->e_error = ctl_mul(pll->e_beta, pll->phasor.dat[0]) - ctl_mul(pll->e_alpha, pll->phasor.dat[1]);
+    pll->e_error = ctl_mul(pll->e_beta, pll->phasor.dat[1]) - ctl_mul(pll->e_alpha, pll->phasor.dat[0]);
 
     // 3. Step the PI controller with the error signal to get the frequency deviation.
     ctl_step_pid_par(&pll->pid_pll, pll->e_error);

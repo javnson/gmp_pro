@@ -67,6 +67,7 @@ void ctl_init()
     //
     gfl_init.fs = CONTROLLER_FREQUENCY;
     gfl_init.v_base = CTRL_VOLTAGE_BASE;
+    gfl_init.v_grid = 0.33f;
     gfl_init.i_base = CTRL_CURRENT_BASE;
     gfl_init.freq_base = 50.0f;
 

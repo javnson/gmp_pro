@@ -191,6 +191,8 @@ GMP_STATIC_INLINE void ctl_clear_gfl_inv(gfl_inv_ctrl_t* inv)
     ctl_clear_lead(&inv->lead_compensator[phase_d]);
     ctl_clear_lead(&inv->lead_compensator[phase_q]);
 
+    inv->rg.current = 0;
+
     // TODO: clear intermediate variables
     ctl_vector2_clear(&inv->vdq_ff_external);
     ctl_vector3_clear(&inv->vab0_ff_external);
@@ -219,6 +221,7 @@ typedef struct _tag_gfl_inv_ctrl_init
     parameter_gt v_base;    //!< Base voltage for per-unit conversion (V).
     parameter_gt i_base;    //!< Base current for per-unit conversion (A).
     parameter_gt freq_base; //!< Nominal grid frequency (e.g., 50 or 60 Hz).
+    parameter_gt v_grid;    //!< output voltage/ grid voltage p.u.
 
     // [fatal] the following information is key parameter for auto-tuning.
     parameter_gt grid_filter_L; //!< Grid filter inductor parameters
