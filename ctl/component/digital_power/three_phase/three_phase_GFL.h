@@ -138,8 +138,8 @@ typedef struct _tag_gfl_inv_ctrl_type
 
     // active damping
     ctl_filter_IIR2_t filter_damping[2]; //!< CTRL: active capacitor damping
-    ctrl_gt coef_ff_damping;          //!< damping gain
-    vector2_gt vdq_last;              //!< (vdq - vdq_last) to calculate differential
+    ctrl_gt coef_ff_damping;             //!< damping gain
+    vector2_gt vdq_last;                 //!< (vdq - vdq_last) to calculate differential
 
     // output lead compensator
     ctrl_lead_t lead_compensator[2];
@@ -397,16 +397,14 @@ GMP_STATIC_INLINE void ctl_step_gfl_inv_ctrl(gfl_inv_ctrl_t* gfl)
             if (gfl->flag_enable_active_damping)
             {
                 // 计算微分量 (代表电容电流 trend)
-                    ctrl_gt diff_d = gfl->vdq.dat[phase_d] - gfl->vdq_last.dat[phase_d];
-                    ctrl_gt diff_q = gfl->vdq.dat[phase_q] - gfl->vdq_last.dat[phase_q];
+                ctrl_gt diff_d = gfl->vdq.dat[phase_d] - gfl->vdq_last.dat[phase_d];
+                ctrl_gt diff_q = gfl->vdq.dat[phase_q] - gfl->vdq_last.dat[phase_q];
 
                 // damping filter
                 gfl->vdq_ff_damping.dat[phase_d] =
-                        ctl_step_biquad_filter(&gfl->filter_damping[phase_d],
-                                               gfl->coef_ff_damping * diff_d);
+                    ctl_step_biquad_filter(&gfl->filter_damping[phase_d], gfl->coef_ff_damping * diff_d);
                 gfl->vdq_ff_damping.dat[phase_q] =
-                        ctl_step_biquad_filter(&gfl->filter_damping[phase_q],
-                                               gfl->coef_ff_damping * diff_q);
+                    ctl_step_biquad_filter(&gfl->filter_damping[phase_q], gfl->coef_ff_damping * diff_q);
 
                 ctl_vector2_copy(&gfl->vdq_last, &gfl->vdq);
             }
@@ -541,6 +539,27 @@ GMP_STATIC_INLINE void ctl_enable_gfl_inv_lead_compensator(gfl_inv_ctrl_t* inv)
 GMP_STATIC_INLINE ctrl_gt ctl_get_gfl_pll_error(gfl_inv_ctrl_t* inv)
 {
     return inv->pll.e_error;
+}
+
+/** @brief Enable PLL module */
+GMP_STATIC_INLINE void ctl_enable_gfl_inv_pll(gfl_inv_ctrl_t* inv)
+{
+    inv->flag_enable_pll = 1;
+}
+
+/** @brief Disable PLL module */
+GMP_STATIC_INLINE void ctl_disable_gfl_inv_pll(gfl_inv_ctrl_t* inv)
+{
+    inv->flag_enable_pll = 0;
+}
+
+/** @brief GFL preparing to connect to grid */
+GMP_STATIC_INLINE fast_gt ctl_is_gfl_grid_connected(gfl_inv_ctrl_t* inv)
+{
+    if (inv->flag_enable_offgrid)
+        return 0;
+    else
+        return 1;
 }
 
 /** @brief Enable GFL controller */

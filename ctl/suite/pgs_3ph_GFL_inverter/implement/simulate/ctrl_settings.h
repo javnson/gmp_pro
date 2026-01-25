@@ -9,7 +9,7 @@
 // BUILD_LEVEL 2: inverter, current loop
 // BUILD_LEVEL 3: inverter, current loop, grid connected
 // BUILD_LEVEL 4: inverter, current loop, grid connected, all feed forward on.
-#define BUILD_LEVEL (1)
+#define BUILD_LEVEL (3)
 
 // low voltage half bridge parameters
 //#include <ctl/component/digital_power/hardware_preset/gmp_lvhb_v1.h>

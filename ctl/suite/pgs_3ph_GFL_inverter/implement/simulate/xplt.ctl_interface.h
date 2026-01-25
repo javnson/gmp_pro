@@ -96,12 +96,12 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     simulink_tx_buffer.monitor[3] = inv_ctrl.idq.dat[phase_q];
 
     // Scope 3
-    //simulink_tx_buffer.monitor[4] = inv_adc[INV_ADC_ID_IA].control_port.value;
-    //simulink_tx_buffer.monitor[5] = inv_adc[INV_ADC_ID_IB].control_port.value;
+    simulink_tx_buffer.monitor[4] = inv_ctrl.vab0.dat[phase_alpha];
+    simulink_tx_buffer.monitor[5] = inv_ctrl.vab0.dat[phase_beta];
 
     // Scope 4
-    //simulink_tx_buffer.monitor[6] = inv_ctrl.pwm_out->value.dat[phase_A];
-    //simulink_tx_buffer.monitor[7] = inv_ctrl.pwm_out->value.dat[phase_B];
+    simulink_tx_buffer.monitor[6] = ctl_get_gfl_pll_error(&inv_ctrl);
+    simulink_tx_buffer.monitor[7] = inv_ctrl.angle;
 
     // Scope 5
     simulink_tx_buffer.monitor[8] = inv_ctrl.pll.phasor.dat[phasor_sin];
