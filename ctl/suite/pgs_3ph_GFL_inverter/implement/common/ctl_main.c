@@ -191,7 +191,7 @@ fast_gt ctl_exec_adc_calibration(void)
                 ctl_clear_gfl_inv_with_PLL(&inv_ctrl);
 
                 // ADC Calibrator complete here.
-                ctl_enable_gfl_inv(&inv_ctrl);
+                //ctl_enable_gfl_inv(&inv_ctrl);
             }
 
             // index_adc_calibrator == 12, for Vbus
