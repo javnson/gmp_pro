@@ -116,7 +116,7 @@ void ctl_init()
 #endif // BUILD_LEVEL
 
     //
-    // init and config CiA402 standard state machine
+    // init and config CiA402 stdandard state machine
     //
     init_cia402_state_machine(&cia402_sm);
     cia402_sm.minimum_transit_delay[3] = 100;

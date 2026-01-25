@@ -48,6 +48,8 @@ extern adc_gt udc_src;
 extern ptr_adc_channel_t idc;
 extern adc_gt idc_src;
 
+void reset_controller(void);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

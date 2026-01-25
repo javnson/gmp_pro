@@ -326,16 +326,16 @@ GMP_STATIC_INLINE void ctl_step_gfl_inv_ctrl(gfl_inv_ctrl_t* gfl)
     ctl_ct_clarke(&gfl->vabc, &gfl->vab0);
 
 #elif GFL_VOLTAGE_SAMPLE_PHASE_MODE == 2
-    gfl->vabc.dat[phase_A] = ctl_step_filter_iir1(&gfl->lpf_vabc[phase_A], gfl->adc_vabc->value.dat[phase_A]);
-    gfl->vabc.dat[phase_B] = ctl_step_filter_iir1(&gfl->lpf_vabc[phase_B], gfl->adc_vabc->value.dat[phase_B]);
+    gfl->vabc.dat[phase_A] = ctl_step_filter_iir1(&gfl->filter_uabc[phase_A], gfl->adc_vabc->value.dat[phase_A]);
+    gfl->vabc.dat[phase_B] = ctl_step_filter_iir1(&gfl->filter_uabc[phase_B], gfl->adc_vabc->value.dat[phase_B]);
     gfl->vabc.dat[phase_C] = 0;
 
     ctl_ct_clarke_2ph((ctl_vector2_t*)&gfl->vabc, (ctl_vector2_t*)&gfl->vab0);
     gfl->vab0.dat[phase_0] = 0;
 
 #elif GFL_VOLTAGE_SAMPLE_PHASE_MODE == 1
-    gfl->vabc.dat[phase_UAB] = ctl_step_filter_iir1(&gfl->lpf_vabc[phase_UAB], gfl->adc_vabc->value.dat[phase_UAB]);
-    gfl->vabc.dat[phase_UBC] = ctl_step_filter_iir1(&gfl->lpf_vabc[phase_UBC], gfl->adc_vabc->value.dat[phase_UBC]);
+    gfl->vabc.dat[phase_UAB] = ctl_step_filter_iir1(&gfl->filter_uabc[phase_UAB], gfl->adc_vabc->value.dat[phase_UAB]);
+    gfl->vabc.dat[phase_UBC] = ctl_step_filter_iir1(&gfl->filter_uabc[phase_UBC], gfl->adc_vabc->value.dat[phase_UBC]);
     gfl->vabc.dat[phase_0] = 0;
     ctl_ct_clarke_from_line((ctl_vector2_t*)&gfl->vabc, (ctl_vector2_t*)&gfl->vab0);
     gfl->vab0.dat[phase_0] = 0;

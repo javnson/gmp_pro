@@ -86,15 +86,14 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     //
     // monitor
     //
-#if BUILD_LEVEL == 1
 
     // Scope 1
-    //simulink_tx_buffer.monitor[0] = inv_adc[INV_ADC_ID_VDC].control_port.value;
-    //simulink_tx_buffer.monitor[1] = inv_adc[INV_ADC_ID_IDC].control_port.value;
+    simulink_tx_buffer.monitor[0] = inv_ctrl.iabc.dat[phase_A];
+    simulink_tx_buffer.monitor[1] = inv_ctrl.iabc.dat[phase_B];
 
     // Scope 2
-    //simulink_tx_buffer.monitor[2] = inv_adc[INV_ADC_ID_UAB].control_port.value;
-    //simulink_tx_buffer.monitor[3] = inv_adc[INV_ADC_ID_UBC].control_port.value;
+    simulink_tx_buffer.monitor[2] = inv_ctrl.idq.dat[phase_d];
+    simulink_tx_buffer.monitor[3] = inv_ctrl.idq.dat[phase_q];
 
     // Scope 3
     //simulink_tx_buffer.monitor[4] = inv_adc[INV_ADC_ID_IA].control_port.value;
@@ -116,7 +115,6 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     simulink_tx_buffer.monitor[12] = inv_ctrl.vdq.dat[phase_d];
     simulink_tx_buffer.monitor[13] = inv_ctrl.vdq.dat[phase_q];
 
-#endif // BUILD LEVEL
 }
 
 // Enable Motor Controller

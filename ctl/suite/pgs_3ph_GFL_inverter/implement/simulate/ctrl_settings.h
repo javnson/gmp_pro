@@ -9,7 +9,7 @@
 // BUILD_LEVEL 2: inverter, current loop
 // BUILD_LEVEL 3: inverter, current loop, grid connected
 // BUILD_LEVEL 4: inverter, current loop, grid connected, all feed forward on.
-#define BUILD_LEVEL (1)
+#define BUILD_LEVEL (2)
 
 // low voltage half bridge parameters
 //#include <ctl/component/digital_power/hardware_preset/gmp_lvhb_v1.h>
@@ -18,16 +18,16 @@
 // Controller basic parameters
 
 // Startup Delay, ms
-#define CTRL_STARTUP_DELAY (100)
+#define CTRL_STARTUP_DELAY (50)
 
 // Controller Frequency
-#define CONTROLLER_FREQUENCY (10e3)
+#define CONTROLLER_FREQUENCY (20e3)
 
 // PWM depth
-#define CTRL_PWM_CMP_MAX (6000)
+#define CTRL_PWM_CMP_MAX (3000)
 
 // PWM deadband
-#define CTRL_PWM_DEADBAND_CMP (100)
+#define CTRL_PWM_DEADBAND_CMP (50)
 
 // ADC Voltae Reference
 #define CTRL_ADC_VOLTAGE_REF (3.3f)
@@ -117,5 +117,8 @@
 
 // SPLL Close loop criteria
 #define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
+
+// Voltage Sampling mode
+#define GFL_VOLTAGE_SAMPLE_PHASE_MODE (2)
 
 #endif // _FILE_CTRL_SETTINGS_H_
