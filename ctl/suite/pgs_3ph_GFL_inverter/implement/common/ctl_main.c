@@ -52,6 +52,9 @@ adc_bias_calibrator_t adc_calibrator;
 volatile fast_gt flag_enable_adc_calibrator = 0;
 volatile fast_gt index_adc_calibrator = 0;
 
+ctl_triangle_wave_generator_t tri_wave;
+
+
 //=================================================================================================
 // CTL initialize routine
 
@@ -144,6 +147,26 @@ void ctl_init()
 
 #endif // BUILD_LEVEL
 
+#if 1
+
+    ctl_init_triangle_wave_generator(&tri_wave, CONTROLLER_FREQUENCY, 0.5, 0.8, 0.1);
+
+
+    //
+    // 下面这一组参数大概0.7pu开始振荡
+    //
+
+    inv_ctrl.pid_idq[phase_d].kp /= 4;
+    inv_ctrl.pid_idq[phase_q].kp /= 4;
+
+    inv_ctrl.pll.pid_pll.kp = 1;
+    inv_ctrl.pll.pid_pll.ki /= 10;
+
+    iabc.bias[phase_A] += 0.001f;
+    iabc.bias[phase_B] += 0.001f;
+    iabc.bias[phase_C] += 0.001f;
+#endif
+
     //
     // init ADC Calibrator
     //
@@ -173,7 +196,7 @@ void ctl_enable_pwm()
     ctl_fast_enable_output();
 }
 
-void ctl_disable_pwm()
+void ctl_disable_pwm() 
 {
     ctl_fast_disable_output();
 }
