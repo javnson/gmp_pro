@@ -25,13 +25,15 @@
 #define CTRL_STARTUP_DELAY (100)
 
 // Controller Frequency
-#define CONTROLLER_FREQUENCY (10e3)
+//#define CONTROLLER_FREQUENCY (10e3)
+#define CONTROLLER_FREQUENCY (20e3)
 
 // PWM depth
-#define CTRL_PWM_CMP_MAX (6000-1)
+//#define CTRL_PWM_CMP_MAX (6000-1)
+#define CTRL_PWM_CMP_MAX (3000-1)
 
 // PWM deadband
-#define CTRL_PWM_DEADBAND_CMP (100)
+#define CTRL_PWM_DEADBAND_CMP (50)
 
 // System tick
 #define DSP_C2000_DSP_TIME_DIV (120000/CTRL_PWM_CMP_MAX/2)
