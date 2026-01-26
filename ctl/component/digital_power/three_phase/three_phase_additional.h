@@ -17,8 +17,8 @@
  * and multiple operating modes.
  */
 
-#ifndef _FILE_THREE_PHASE_GFL_
-#define _FILE_THREE_PHASE_GFL_
+#ifndef _FILE_THREE_PHASE_ADDITIONAL_
+#define _FILE_THREE_PHASE_ADDITIONAL_
 
 #ifdef __cplusplus
 extern "C"
@@ -428,7 +428,7 @@ GMP_STATIC_INLINE void ctl_attach_neg_inv(inv_neg_ctrl_t* neg, ctl_vector2_t* ia
 }
 #endif // __cplusplus
 
-#endif // _FILE_THREE_PHASE_DC_AC_H_
+#endif // _FILE_THREE_PHASE_ADDITIONAL_
 
 /**
  * @}
