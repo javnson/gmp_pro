@@ -310,18 +310,15 @@ void ctl_auto_tuning_neg_inv(inv_neg_ctrl_init_t* neg_init, const gfl_inv_ctrl_i
  * @details Calculates Kp, Ki and initializes filters/PIDs based on the init structure.
  * @param[out] neg Pointer to the negative controller object.
  * @param[in] neg_init Pointer to the negative controller init structure.
- * @param[in] gfl_init Pointer to the GFL init structure (needed for L, C, Base values during calculation).
  */
-void ctl_update_neg_inv_coeff(inv_neg_ctrl_t* neg, const inv_neg_ctrl_init_t* neg_init,
-                              const gfl_inv_ctrl_init_t* gfl_init);
+void ctl_update_neg_inv_coeff(inv_neg_ctrl_t* neg, const inv_neg_ctrl_init_t* neg_init);
 
 /**
  * @brief Initialize Negative Sequence Controller.
  * @param[out] neg Pointer to the negative controller object.
  * @param[in] neg_init Pointer to the negative controller init structure.
- * @param[in] gfl_init Pointer to the GFL init structure.
  */
-void ctl_init_neg_inv(inv_neg_ctrl_t* neg, const inv_neg_ctrl_init_t* neg_init, const gfl_inv_ctrl_init_t* gfl_init);
+void ctl_init_neg_inv(inv_neg_ctrl_t* neg, const inv_neg_ctrl_init_t* neg_init);
 
 /**
  * @brief Executes one step of the Negative Sequence Controller.

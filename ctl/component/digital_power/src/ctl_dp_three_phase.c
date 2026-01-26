@@ -99,6 +99,51 @@ void ctl_init_srf_pll_auto_tune(srf_pll_t* pll, parameter_gt f_base, parameter_g
     ctl_init_sfr_pll(pll, f_base, calculated_kp, calculated_ki, calculated_kd, f_ctrl);
 }
 
+void ctl_init_ddsrf_pll(ddsrf_pll_t* pll, parameter_gt f_base, parameter_gt pid_kp, parameter_gt pid_ki,
+                        parameter_gt f_ctrl, parameter_gt decoupling_fc)
+{
+    // Clear State
+    ctl_clear_ddsrf_pll(pll);
+
+    // Init Frequency Scaling Factor
+    pll->freq_sf = float2ctrl(f_base / f_ctrl);
+
+    // Init PID
+    ctl_init_pid(&pll->pid_pll, pid_kp, pid_ki, 0, f_ctrl);
+
+    // Init Decoupling LPFs
+    ctl_init_filter_iir1_lpf(&pll->lpf_pos_d, f_ctrl, decoupling_fc);
+    ctl_init_filter_iir1_lpf(&pll->lpf_pos_q, f_ctrl, decoupling_fc);
+    ctl_init_filter_iir1_lpf(&pll->lpf_neg_d, f_ctrl, decoupling_fc);
+    ctl_init_filter_iir1_lpf(&pll->lpf_neg_q, f_ctrl, decoupling_fc);
+}
+
+/**
+ * @brief Auto-tune and initialize the DDSRF-PLL.
+ * @details Bandwidth usually 20-30Hz. Decoupling FC usually f_base/sqrt(2).
+ */
+void ctl_init_ddsrf_pll_auto_tune(ddsrf_pll_t* pll, parameter_gt f_base, parameter_gt f_ctrl, parameter_gt voltage_mag,
+                                  parameter_gt bandwidth_hz)
+{
+    // 1. Calculate Loop Gains (Same as SRF-PLL)
+    parameter_gt omega_n = CTL_PARAM_CONST_2PI * bandwidth_hz;
+    parameter_gt loop_gain_constant = CTL_PARAM_CONST_2PI * voltage_mag * f_base;
+
+    if (loop_gain_constant < 0.0001f)
+        loop_gain_constant = 0.0001f;
+
+    parameter_gt damping = 0.707f;
+    parameter_gt kp = (2.0f * damping * omega_n) / loop_gain_constant;
+    parameter_gt ki = (omega_n * omega_n) / loop_gain_constant;
+
+    // 2. Set Decoupling Bandwidth
+    // Optimal is usually freq_grid / sqrt(2)
+    parameter_gt decoupling_fc = f_base / 1.414f;
+
+    // 3. Initialize
+    ctl_init_ddsrf_pll(pll, f_base, kp, ki, f_ctrl, decoupling_fc);
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Three Phase Modulation
 //////////////////////////////////////////////////////////////////////////
@@ -347,20 +392,20 @@ void ctl_attach_gfl_pq_to_core(gfl_pq_ctrl_t* pq, gfl_inv_ctrl_t* core)
 /**
  * @brief Auto-tuning Negative Sequence Controller parameters.
  */
-void ctl_auto_tuning_neg_inv(inv_neg_ctrl_init_t* neg_init, const gfl_inv_ctrl_init_t* gfl_init)
+void ctl_auto_tuning_neg_inv(inv_neg_ctrl_init_t* neg_init, const gfl_inv_ctrl_init_t* _gfl_init)
 {
     gmp_base_assert(neg_init);
-    gmp_base_assert(gfl_init);
+    gmp_base_assert(_gfl_init);
 
     // 1. Copy Basic System Parameters
-    neg_init->fs = gfl_init->fs;
-    neg_init->freq_base = gfl_init->freq_base;
+    neg_init->fs = _gfl_init->fs;
+    neg_init->freq_base = _gfl_init->freq_base;
 
     // 2. Tuning Separation Filter (Biquad LPF)
     // Goal: Attenuate 2*freq_base (100Hz) ripple significantly.
     // Strategy: Set fc at approx freq_base / 2.5 (e.g., 20Hz for 50Hz grid).
     // This offers a trade-off between ripple attenuation and delay.
-    neg_init->seq_filter_fc = gfl_init->freq_base / 2.5f;
+    neg_init->seq_filter_fc = _gfl_init->freq_base / 2.5f;
     neg_init->seq_filter_q = 0.707f; // Butterworth response
 
     // 3. Tuning Current Loop (Inner Loop)
@@ -378,11 +423,11 @@ void ctl_auto_tuning_neg_inv(inv_neg_ctrl_init_t* neg_init, const gfl_inv_ctrl_i
     // expects raw Kp/Ki. However, looking at ctl_update_gfl_inv_coeff, it calculates Kp inside.
     // BUT inv_neg_ctrl_init_t stores raw Kp/Ki. So we calculate them here.
 
-    parameter_gt L_val = gfl_init->grid_filter_L;
+    parameter_gt L_val = _gfl_init->grid_filter_L;
     parameter_gt kp_c_si = CTL_PARAM_CONST_2PI * neg_current_bw * L_val;
 
     // Convert to P.U.
-    neg_init->kp_current = kp_c_si * gfl_init->i_base / gfl_init->v_base;
+    neg_init->kp_current = kp_c_si * _gfl_init->i_base / _gfl_init->v_base;
 
     // Ki: Place zero at low frequency (e.g., BW / 10) to eliminate steady state error
     // Ki = Kp * 2*pi * f_zero
@@ -398,13 +443,13 @@ void ctl_auto_tuning_neg_inv(inv_neg_ctrl_init_t* neg_init, const gfl_inv_ctrl_i
 
     // Plant Model: I = C * dv/dt (Capacitor dominates)
     // If no C (L filter), voltage control is invalid, but we calculate anyway.
-    parameter_gt C_val = (gfl_init->grid_filter_C > 1e-9f) ? gfl_init->grid_filter_C : 1e-5f; // prevent zero
+    parameter_gt C_val = (_gfl_init->grid_filter_C > 1e-9f) ? _gfl_init->grid_filter_C : 1e-5f; // prevent zero
 
     parameter_gt kp_v_si = CTL_PARAM_CONST_2PI * neg_voltage_bw * C_val;
 
     // Convert to P.U. (Note: Output is Current Ref, Input is Voltage)
     // Gain units: A/V. P.U. conversion factor is V_base / I_base.
-    neg_init->kp_voltage = kp_v_si * gfl_init->v_base / gfl_init->i_base;
+    neg_init->kp_voltage = kp_v_si * _gfl_init->v_base / _gfl_init->i_base;
 
     // Ki
     neg_init->ki_voltage = neg_init->kp_voltage * CTL_PARAM_CONST_2PI * (neg_voltage_bw / 5.0f);
@@ -415,12 +460,11 @@ void ctl_auto_tuning_neg_inv(inv_neg_ctrl_init_t* neg_init, const gfl_inv_ctrl_i
 /**
  * @brief Update Negative Sequence Controller coefficients.
  */
-void ctl_update_neg_inv_coeff(inv_neg_ctrl_t* neg, const inv_neg_ctrl_init_t* neg_init,
-                              const gfl_inv_ctrl_init_t* gfl_init)
+void ctl_update_neg_inv_coeff(inv_neg_ctrl_t* neg, const inv_neg_ctrl_init_t* neg_init)
 {
     gmp_base_assert(neg);
     gmp_base_assert(neg_init);
-    // gfl_init is used here if we needed L/C again, but since neg_init already
+    // _gfl_init is used here if we needed L/C again, but since neg_init already
     // contains the calculated Kp/Ki, we rely on neg_init.
 
     // 1. Init Separation Filters (Biquad LPF)
@@ -450,10 +494,10 @@ void ctl_update_neg_inv_coeff(inv_neg_ctrl_t* neg, const inv_neg_ctrl_init_t* ne
 /**
  * @brief Initialize Negative Sequence Controller.
  */
-void ctl_init_neg_inv(inv_neg_ctrl_t* neg, const inv_neg_ctrl_init_t* neg_init, const gfl_inv_ctrl_init_t* gfl_init)
+void ctl_init_neg_inv(inv_neg_ctrl_t* neg, const inv_neg_ctrl_init_t* neg_init)
 {
     // Apply coefficients
-    ctl_update_neg_inv_coeff(neg, neg_init, gfl_init);
+    ctl_update_neg_inv_coeff(neg, neg_init);
 
     // Clear states
     ctl_clear_neg_inv(neg);
