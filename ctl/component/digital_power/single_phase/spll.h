@@ -51,13 +51,15 @@ typedef struct _tag_single_phase_pll
     ctrl_gt frequency; /**< Estimated grid frequency in per-unit (1.0 = nominal frequency). */
     ctrl_gt theta;     /**< Estimated grid phase angle in per-unit (0 to 1.0 represents 0 to 2*pi). */
     vector2_gt phasor; /**< Output phasor containing sin(theta) and cos(theta). */
+    ctrl_gt v_mag;     /**< Estimated Grid Voltage Amplitude (Peak Value). */
 
     /*-- Internal Variables --*/
+    vector2_gt uab;     /**< Alpha-Beta voltage (SOGI output) */
     vector2_gt udq;     /**< The input voltage transformed into the d-q rotating frame. */
     ctrl_gt freq_error; /**< The frequency error term from the loop filter (PI controller output). */
 
     /*-- Parameters --*/
-    ctrl_gt frequency_sf; /**< Scaling factor to convert per-unit frequency to per-step phase increment. */
+    ctrl_gt freq_sf; /**< Scaling factor to convert per-unit frequency to per-step phase increment. */
 
     /*-- Submodules --*/
     discrete_sogi_t sogi;            /**< The SOGI-based orthogonal signal generator. */
@@ -70,13 +72,25 @@ typedef struct _tag_single_phase_pll
  * @brief Initializes the Single-Phase PLL module.
  * @param[out] spll Pointer to the Single-Phase PLL instance.
  * @param[in] gain Proportional gain (Kp) for the PLL's PI loop filter.
+ * @param[in] ki Integral time constant (s) for the PLL's PI loop filter.
+ * @param[in] fc Cutoff frequency (Hz) for the q-axis low-pass filter.
+ * @param[in] fg Nominal grid frequency (e.g., 50 or 60 Hz).
+ * @param[in] fs Controller execution frequency (Hz).
+ */
+void ctl_init_single_phase_pll(ctl_single_phase_pll* spll, parameter_gt gain, parameter_gt ki, parameter_gt fc,
+                               parameter_gt fg, parameter_gt fs);
+
+/**
+ * @brief Initializes the Single-Phase PLL module.
+ * @param[out] spll Pointer to the Single-Phase PLL instance.
+ * @param[in] gain Proportional gain (Kp) for the PLL's PI loop filter.
  * @param[in] Ti Integral time constant (s) for the PLL's PI loop filter.
  * @param[in] fc Cutoff frequency (Hz) for the q-axis low-pass filter.
  * @param[in] fg Nominal grid frequency (e.g., 50 or 60 Hz).
  * @param[in] fs Controller execution frequency (Hz).
  */
-void ctl_init_single_phase_pll(ctl_single_phase_pll* spll, parameter_gt gain, parameter_gt Ti, parameter_gt fc,
-                               parameter_gt fg, parameter_gt fs);
+void ctl_init_single_phase_pll_T(ctl_single_phase_pll* spll, parameter_gt gain, parameter_gt Ti, parameter_gt fc,
+                                 parameter_gt fg, parameter_gt fs);
 
 /**
  * @brief Clears the internal states of the PLL.
@@ -101,27 +115,38 @@ GMP_STATIC_INLINE void ctl_clear_single_phase_pll(ctl_single_phase_pll* spll)
 GMP_STATIC_INLINE void ctl_step_single_phase_pll(ctl_single_phase_pll* spll, ctrl_gt ac_input)
 {
     // 1. Orthogonal Signal Generation using SOGI
+    // SOGI generates v_alpha (in-phase) and v_beta (quadrature, 90 deg lag)
     ctl_step_discrete_sogi(&spll->sogi, ac_input);
 
-    // 2. Park Transform from stationary ¦Á-¦Â to rotating d-q frame
-    vector2_gt uab;
+    // 2. Park Transform from stationary \alpha - \beta to rotating d-q frame
     // The SOGI outputs are assigned to alpha and beta components.
     // The negative sign is a convention to align the final locked phase.
-    uab.dat[phase_alpha] = -ctl_get_discrete_sogi_ds(&spll->sogi);
-    uab.dat[phase_beta] = ctl_get_discrete_sogi_qs(&spll->sogi);
-    ctl_ct_park2(&uab, &spll->phasor, &spll->udq);
+    spll->uab.dat[phase_alpha] = -ctl_get_discrete_sogi_ds(&spll->sogi);
+    spll->uab.dat[phase_beta] = ctl_get_discrete_sogi_qs(&spll->sogi);
 
-    // 3. Loop Filter: PI controller drives the q-axis component (phase error) to zero.
+    // 3. Update the phasor (sin/cos) for the next iteration's Park transform.
+    ctl_set_phasor_via_angle(spll->theta, &spll->phasor);
+
+    // 4. Park Transform (AlphaBeta -> DQ)
+    // We want to lock to the Alpha axis (Input Voltage Vector).
+    // In a locked system:
+    // Vd = Valpha*cos + Vbeta*sin  --> Magnitude
+    // Vq = -Valpha*sin + Vbeta*cos --> Error (to be driven to 0)
+    ctl_ct_park2(&spll->uab, &spll->phasor, &spll->udq);
+
+    // When Vq is regulated to 0, Vd represents the full vector magnitude.
+    spll->v_mag = spll->udq.dat[phase_d];
+
+    // 5. Loop Filter: PI controller drives the q-axis component (phase error) to zero.
     ctl_step_lowpass_filter(&spll->filter_uq, spll->udq.dat[phase_q]);
     spll->freq_error = ctl_step_pid_ser(&spll->spll_ctrl, ctl_get_lowpass_filter_result(&spll->filter_uq));
 
-    // 4. Voltage-Controlled Oscillator (VCO)
+    // 6. Voltage-Controlled Oscillator (VCO)
     // The nominal frequency (1.0 p.u.) is adjusted by the error from the loop filter.
-    spll->frequency = 1 + spll->freq_error;
-    // Integrate the frequency to get the new phase angle.
-    spll->theta = ctrl_mod_1(spll->theta + ctl_mul(spll->frequency, spll->frequency_sf));
-    // Update the phasor (sin/cos) for the next iteration's Park transform.
-    ctl_set_phasor_via_angle(spll->theta, &spll->phasor);
+    spll->frequency = float2ctrl(1) + spll->freq_error;
+
+    // Integrate the frequency to get the new phase angle, and warp.
+    spll->theta = ctrl_mod_1(spll->theta + ctl_mul(spll->frequency, spll->freq_sf));
 }
 
 /**
