@@ -184,12 +184,12 @@ static void _ctl_init_biquad_differentiator(ctl_biquad_filter_t* obj, parameter_
     ctl_clear_biquad_filter(obj);
 }
 
-void ctl_init_vir_imp(vir_imp_t* imp, const parameter_gt R_vir, const parameter_gt L_vir, parameter_gt fs);
+void ctl_init_vir_imp(vir_imp_t* imp, const parameter_gt R_vir, const parameter_gt L_vir, parameter_gt fs)
 {
     gmp_base_assert(imp);
 
     // 1. Resistive Gain
-    imp->gain_R = > R_vir;
+    imp->gain_R = R_vir;
 
     // 2. Inductive Differentiator
     if (fabsf(L_vir) > 1e-12f) // If L is non-zero

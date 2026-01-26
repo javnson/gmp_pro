@@ -342,6 +342,8 @@ void ctl_attach_gfl_pq_to_core(gfl_pq_ctrl_t* pq, gfl_inv_ctrl_t* core)
 // Three Phase Converter negative sequence controller
 //////////////////////////////////////////////////////////////////////////
 
+#include <ctl/component/digital_power/three_phase/three_phase_additional.h>
+
 /**
  * @brief Auto-tuning Negative Sequence Controller parameters.
  */
