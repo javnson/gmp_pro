@@ -49,6 +49,8 @@ void setup_peripheral(void)
     // Setup Debug Uart
     debug_uart = IRIS_UART_USB_BASE;
 
+    reset_controller();
+
     // Test print function
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
     asm(" RPT #255 || NOP");
@@ -157,6 +159,18 @@ interrupt void MainISR(void)
     // Acknowledge the interrupt
     //
     Interrupt_clearACKGroup(INT_IRIS_ADCA_1_INTERRUPT_ACK_GROUP);
+}
+
+void reset_controller(void)
+{
+    int i = 0;
+
+    GPIO_WritePin(PWM_RESET_PORT, 0);
+
+    for(i=0;i<10000;++i);
+
+    GPIO_WritePin(PWM_RESET_PORT, 1);
+
 }
 
 //=================================================================================================

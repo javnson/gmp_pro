@@ -33,7 +33,6 @@ npc_modulator_t spwm;
 spwm_modulator_t spwm;
 #endif // USING_NPC_MODULATOR
 
-
 // controller body: Current controller, Power controller / Voltage controller
 gfl_pq_ctrl_t pq_ctrl;
 gfl_inv_ctrl_init_t gfl_init;
@@ -49,7 +48,8 @@ volatile fast_gt flag_error = 0;
 
 // adc calibrator flags
 adc_bias_calibrator_t adc_calibrator;
-volatile fast_gt flag_enable_adc_calibrator = 1;
+//volatile fast_gt flag_enable_adc_calibrator = 1;
+volatile fast_gt flag_enable_adc_calibrator = 0;
 volatile fast_gt index_adc_calibrator = 0;
 
 //=================================================================================================
@@ -67,6 +67,7 @@ void ctl_init()
     //
     gfl_init.fs = CONTROLLER_FREQUENCY;
     gfl_init.v_base = CTRL_VOLTAGE_BASE;
+    gfl_init.v_grid = 0.33f;
     gfl_init.i_base = CTRL_CURRENT_BASE;
     gfl_init.freq_base = 50.0f;
 
@@ -98,10 +99,18 @@ void ctl_init()
     ctl_set_gfl_inv_openloop_mode(&inv_ctrl);
     ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl(0.6), float2ctrl(0.6));
 
-#elif BUILD_LEVEL == 2 || BUILD_LEVEL == 3
+#elif BUILD_LEVEL == 2
     // Basic current close loop, inverter
     ctl_set_gfl_inv_current_mode(&inv_ctrl);
     ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(0.1), float2ctrl(0.1));
+
+#elif BUILD_LEVEL == 3
+    // Basic current close loop, inverter
+    ctl_set_gfl_inv_current_mode(&inv_ctrl);
+    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(0.1), float2ctrl(0));
+
+    ctl_enable_gfl_inv_pll(&inv_ctrl);
+    ctl_set_gfl_inv_grid_connect(&inv_ctrl);
 
 #elif BUILD_LEVEL == 4
     // current close loop with feed forward, inverter
@@ -115,7 +124,7 @@ void ctl_init()
 #endif // BUILD_LEVEL
 
     //
-    // init and config CiA402 stdandard state machine
+    // init and config CiA402 standard state machine
     //
     init_cia402_state_machine(&cia402_sm);
     cia402_sm.minimum_transit_delay[3] = 100;
@@ -124,6 +133,16 @@ void ctl_init()
     cia402_sm.flag_enable_control_word = 0;
     cia402_sm.current_cmd = CIA402_CMD_ENABLE_OPERATION;
 #endif // SPECIFY_PC_ENVIRONMENT
+
+#if BUILD_LEVEL >= 3
+
+    // NOTICE:
+    // if grid connect is request disable switch delay from CIA402_SM_SWITCH_ON_DISABLED to CIA402_SM_SWITCHED_ON
+    // or a longer judgment time can lead to failure to connect to the grid.
+    cia402_sm.minimum_transit_delay[CIA402_SM_READY_TO_SWITCH_ON] = 0;
+    cia402_sm.minimum_transit_delay[CIA402_SM_SWITCHED_ON] = 0;
+
+#endif // BUILD_LEVEL
 
     //
     // init ADC Calibrator
@@ -161,7 +180,20 @@ void ctl_disable_pwm()
 
 fast_gt ctl_check_pll_locked(void)
 {
-    return (ctl_abs(ctl_get_gfl_pll_error(&inv_ctrl)) < CTRL_SPLL_EPSILON);
+    ctrl_gt pll_erro = ctl_abs(ctl_get_gfl_pll_error(&inv_ctrl));
+
+    // grid connected, judge if PLL is ready.
+    if (ctl_is_gfl_grid_connected(&inv_ctrl))
+    {
+        if (pll_erro < CTRL_SPLL_EPSILON)
+            return 1;
+        else
+            return 0;
+    }
+
+    // not connect to gird
+    else
+        return 1;
 }
 
 fast_gt ctl_exec_adc_calibration(void)
@@ -190,7 +222,7 @@ fast_gt ctl_exec_adc_calibration(void)
                 ctl_clear_gfl_inv_with_PLL(&inv_ctrl);
 
                 // ADC Calibrator complete here.
-                ctl_enable_gfl_inv(&inv_ctrl);
+                //ctl_enable_gfl_inv(&inv_ctrl);
             }
 
             // index_adc_calibrator == 12, for Vbus

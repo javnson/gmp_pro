@@ -25,16 +25,18 @@
 #define CTRL_STARTUP_DELAY (100)
 
 // Controller Frequency
-#define CONTROLLER_FREQUENCY (10e3)
+//#define CONTROLLER_FREQUENCY (10e3)
+#define CONTROLLER_FREQUENCY (20e3)
 
 // PWM depth
-#define CTRL_PWM_CMP_MAX (6000-1)
+//#define CTRL_PWM_CMP_MAX (6000-1)
+#define CTRL_PWM_CMP_MAX (3000 - 1)
 
 // PWM deadband
-#define CTRL_PWM_DEADBAND_CMP (100)
+#define CTRL_PWM_DEADBAND_CMP (50)
 
 // System tick
-#define DSP_C2000_DSP_TIME_DIV (120000/CTRL_PWM_CMP_MAX/2)
+#define DSP_C2000_DSP_TIME_DIV (120000 / CTRL_PWM_CMP_MAX / 2)
 
 // ADC Voltage Reference
 #define CTRL_ADC_VOLTAGE_REF (3.3f)
@@ -42,17 +44,17 @@
 //=================================================================================================
 // Hardware parameters
 
-#include <ctl/component/hardware_preset/inverter_3ph/GMP_Helios_3PhGaNInv_LV.h>
 #include <ctl/component/hardware_preset/grid_LC_filter/GMP_Harmonia_3ph_LC_filter.h>
+#include <ctl/component/hardware_preset/inverter_3ph/GMP_Helios_3PhGaNInv_LV.h>
 
 ///////////////////////////////////////////////////////////
 // Controller Base value
 
 // DC bus voltage
-#define CTRL_DCBUS_VOLTAGE  (80.0f)
+#define CTRL_DCBUS_VOLTAGE (80.0f)
 
 // phase voltage base, SVPWM modulation
-#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE/1.73205081f)
+#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE / 1.73205081f)
 
 // voltage base, SPWM modulation
 //#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE/2.0f)
@@ -64,7 +66,7 @@
 // Grid side sensor
 
 // Current sensor sensitivity, V/A
-#define CTRL_GRID_CURRENT_SENSITIVITY (HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSITIVITY_MV_A*0.001f)
+#define CTRL_GRID_CURRENT_SENSITIVITY (HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSITIVITY_MV_A * 0.001f)
 
 // Current sensor bias, V
 #define CTRL_GRID_CURRENT_BIAS (HARMONIA_3PH_LC_FILTER_PH_CURRENT_ZERO_BIAS_V)
@@ -121,12 +123,14 @@
 // SPLL Close loop criteria
 #define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
 
+// Using negative modulator logic
+#define PWM_MODULATOR_USING_NEGATIVE_LOGIC (1)
+
 // Using three level modulator or two level modulator
-#define USING_NPC_MODULATOR
+//#define USING_NPC_MODULATOR
 
 //=================================================================================================
 // Board peripheral mapping
-
 
 // Launchpad Board Pin Mapping
 #if BOARD_SELECTION == LAUNCHPAD
@@ -184,7 +188,7 @@
 #define INV_IW J3_IW
 
 // System LED
-#define SYSTEM_LED LED_R
+#define SYSTEM_LED     LED_R
 #define CONTROLLER_LED LED_G
 
 #endif //BOARD_PIN_MAPPING
@@ -195,9 +199,9 @@
 #define BOARD_PIN_MAPPING
 
 // PWM Channels
-#define PHASE_U_BASE IRIS_EPWM1_BASE
-#define PHASE_V_BASE IRIS_EPWM2_BASE
-#define PHASE_W_BASE IRIS_EPWM3_BASE
+#define PHASE_U_BASE    IRIS_EPWM1_BASE
+#define PHASE_V_BASE    IRIS_EPWM2_BASE
+#define PHASE_W_BASE    IRIS_EPWM3_BASE
 
 // PWM Enable
 #define PWM_ENABLE_PORT IRIS_GPIO1
@@ -226,13 +230,11 @@
 //#define MOTOR_IW
 
 // System LED
-#define SYSTEM_LED     IRIS_LED1
-#define CONTROLLER_LED IRIS_LED2
+#define SYSTEM_LED      IRIS_LED1
+#define CONTROLLER_LED  IRIS_LED2
 
 #endif //BOARD_PIN_MAPPING
 
 #endif // BOARD_PIN_MAPPING
 
-
 #endif // _FILE_CTRL_SETTINGS_H_
- 

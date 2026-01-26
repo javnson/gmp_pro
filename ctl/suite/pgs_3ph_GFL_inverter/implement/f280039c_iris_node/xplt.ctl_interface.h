@@ -129,7 +129,7 @@ GMP_STATIC_INLINE void ctl_fast_enable_output()
     ctl_enable_gfl_inv(&inv_ctrl);
 
     // PWM enable
-    GPIO_WritePin(PWM_ENABLE_PORT, 0);
+    GPIO_WritePin(PWM_ENABLE_PORT, 1);
 
     GPIO_WritePin(PWM_RESET_PORT, 0);
 
@@ -147,7 +147,7 @@ GMP_STATIC_INLINE void ctl_fast_disable_output()
     ctl_disable_gfl_inv(&inv_ctrl);
 
     // PWM disable
-    GPIO_WritePin(PWM_ENABLE_PORT, 1);
+    GPIO_WritePin(PWM_ENABLE_PORT, 0);
 
     GPIO_WritePin(CONTROLLER_LED, 1);
 }

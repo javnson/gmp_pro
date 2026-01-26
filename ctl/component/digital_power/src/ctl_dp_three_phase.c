@@ -163,6 +163,8 @@ void ctl_auto_tuning_gfl_inv(gfl_inv_ctrl_init_t* init)
         // Auto tuning conservative design
         init->current_loop_bw = fminf(freq1, freq2) / 2;
 
+        //        init->current_loop_bw = fminf(freq1, freq2);
+
         // Calculate LC filter characteristic impedance, damping ratio is 0.5
         parameter_gt k_damping_filter = 0.2f;
         init->active_damping_resister = k_damping_filter * sqrtf(init->grid_filter_L / init->grid_filter_C);

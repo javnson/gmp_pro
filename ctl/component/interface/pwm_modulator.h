@@ -24,6 +24,13 @@ extern "C"
 {
 #endif // __cplusplus
 
+/**
+ * @brief This macro notice that using negative logic.
+ */
+#ifndef PWM_MODULATOR_USING_NEGATIVE_LOGIC
+#define PWM_MODULATOR_USING_NEGATIVE_LOGIC (0)
+#endif // PWM_MODULATOR_USING_NEGATIVE_LOGIC
+
 //////////////////////////////////////////////////////////////////////////
 // SPWM modulator
 //
@@ -114,8 +121,14 @@ GMP_STATIC_INLINE void ctl_step_spwm_modulator(spwm_modulator_t* mod)
     // Convert voltage command (-1.0 to 1.0) to duty cycle (0 to 1.0), then to raw PWM value.
     for (i = 0; i < 3; ++i)
     {
+#if PWM_MODULATOR_USING_NEGATIVE_LOGIC == 1
+        ctrl_gt pwm_pu = ctl_div2(ctl_add(float2ctrl(1.0f), -mod->vabc_out.dat[i]));
+#else  // Positive logic
+        ctrl_gt pwm_pu = ctl_div2(ctl_add(float2ctrl(1.0f), mod->vabc_out.dat[i]));
+#endif // PWM_MODULATOR_USING_NEGATIVE_LOGIC
+
         // Convert voltage command (-1.0 to 1.0) to duty cycle (0 to 1.0), then to raw PWM value.
-        pwm_value = pwm_mul(ctl_div2(ctl_add(float2ctrl(1.0f), mod->vabc_out.dat[i])), mod->pwm_full_scale);
+        pwm_value = pwm_mul(pwm_pu, mod->pwm_full_scale);
 
         //
         // NOTE: pwm_gt must be a signed int number.
@@ -230,8 +243,14 @@ GMP_STATIC_INLINE void ctl_step_svpwm_modulator(spwm_modulator_t* mod)
     // Convert voltage command (-1.0 to 1.0) to duty cycle (0 to 1.0), then to raw PWM value.
     for (i = 0; i < 3; ++i)
     {
+#if PWM_MODULATOR_USING_NEGATIVE_LOGIC == 1
+        ctrl_gt pwm_pu = ctl_div2(ctl_add(float2ctrl(1.0f), -mod->vabc_out.dat[i]));
+#else  // Positive logic
+        ctrl_gt pwm_pu = ctl_div2(ctl_add(float2ctrl(1.0f), mod->vabc_out.dat[i]));
+#endif // PWM_MODULATOR_USING_NEGATIVE_LOGIC
+
         // Convert voltage command (-1.0 to 1.0) to duty cycle (0 to 1.0), then to raw PWM value.
-        pwm_value = pwm_mul(ctl_div2(ctl_add(float2ctrl(1.0f), mod->vabc_out.dat[i])), mod->pwm_full_scale);
+        pwm_value = pwm_mul(pwm_pu, mod->pwm_full_scale);
 
         //
         // NOTE: pwm_gt must be a signed int number.
@@ -477,8 +496,14 @@ GMP_STATIC_INLINE void ctl_step_npc_modulator(npc_modulator_t* mod)
 
     for (i = 0; i < 3; ++i)
     {
-        // 注意，这里为了保证符号统一，如果不取反输入正电压测量得到的是负电压。
+        // 注意，在DSP中，如果A接上桥，B接下桥，以变流器输出方向为正
+        // 如果不取反输入正电压测量得到的是负电压，为了保证符号统一，需要使用负调制。
+#if PWM_MODULATOR_USING_NEGATIVE_LOGIC == 1
         ctrl_gt v_ref = -mod->vabc_out.dat[i];
+#else
+        ctrl_gt v_ref = mod->vabc_out.dat[i];
+#endif // PWM_MODULATOR_USING_NEGATIVE_LOGIC
+
         pwm_gt cmp_outer = 0;
         pwm_gt cmp_inner = 0;
 
@@ -588,7 +613,12 @@ GMP_STATIC_INLINE void ctl_step_npc_svpwm_modulator(npc_modulator_t* mod)
 
     for (i = 0; i < 3; ++i)
     {
+#if PWM_MODULATOR_USING_NEGATIVE_LOGIC == 1
+        ctrl_gt v_ref = -mod->vabc_out.dat[i];
+#else
         ctrl_gt v_ref = mod->vabc_out.dat[i];
+#endif // PWM_MODULATOR_USING_NEGATIVE_LOGIC
+
         pwm_gt cmp_outer = 0;
         pwm_gt cmp_inner = 0;
 

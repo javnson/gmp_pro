@@ -1,4 +1,4 @@
-
+﻿
 #ifndef _FILE_CIA402_STATE_MACHINE_H_
 #define _FILE_CIA402_STATE_MACHINE_H_
 
