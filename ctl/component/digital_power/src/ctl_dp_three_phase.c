@@ -462,6 +462,8 @@ void ctl_auto_tuning_neg_inv(inv_neg_ctrl_init_t* neg_init, const gfl_inv_ctrl_i
  */
 void ctl_update_neg_inv_coeff(inv_neg_ctrl_t* neg, const inv_neg_ctrl_init_t* neg_init)
 {
+    int i;
+
     gmp_base_assert(neg);
     gmp_base_assert(neg_init);
     // _gfl_init is used here if we needed L/C again, but since neg_init already
@@ -469,7 +471,7 @@ void ctl_update_neg_inv_coeff(inv_neg_ctrl_t* neg, const inv_neg_ctrl_init_t* ne
 
     // 1. Init Separation Filters (Biquad LPF)
     // These filter the raw dq currents/voltages to extract DC negative sequence.
-    for (int i = 0; i < 2; ++i)
+    for (i = 0; i < 2; ++i)
     {
         ctl_init_biquad_lpf(&neg->filter_idqn[i], neg_init->fs, neg_init->seq_filter_fc, neg_init->seq_filter_q);
         ctl_init_biquad_lpf(&neg->filter_vdqn[i], neg_init->fs, neg_init->seq_filter_fc, neg_init->seq_filter_q);

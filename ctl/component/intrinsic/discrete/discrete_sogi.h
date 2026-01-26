@@ -162,6 +162,136 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_discrete_sogi_qs(discrete_sogi_t* sogi)
 }
 
 /**
+ * @defgroup discrete_sogi_dc SOGI-based Quadrature Signal Generator with DC Rejection
+ * @brief Implements a SOGI with an additional loop to reject DC offset.
+ * @details This module extends the standard SOGI by adding a DC estimation loop.
+ * Ideally, the alpha channel of a standard SOGI rejects DC (gain=0 at 0Hz). 
+ * However, any DC offset in the input passes through to the beta channel (integrator),
+ * causing low-frequency oscillation in the DQ frame (50/60Hz ripple).
+ *
+ * This module estimates the DC component and subtracts it from the input before
+ * feeding it to the SOGI core, ensuring pure AC signals for alpha and beta outputs.
+ *
+ * Transfer Functions (Simplified structural view):
+ *
+ * Direct Output (Alpha) D(s):
+ * @f[ \frac{D(s)}{R(s)} = \frac{k \omega_0 s^2}{s^3 + (k + k_{dc})\omega_0 s^2 + \omega_0^2 s + k_{dc}\omega_0^3} @f]
+ *
+ * Quadrature Output (Beta) Q(s):
+ * @f[ \frac{Q(s)}{R(s)} = \frac{k \omega_0^2 s}{s^3 + (k + k_{dc})\omega_0 s^2 + \omega_0^2 s + k_{dc}\omega_0^3} @f]
+ *
+ * DC Estimation Output DC(s):
+ * @f[ \frac{DC(s)}{R(s)} = \frac{k_{dc} \omega_0 (s^2 + \omega_0^2)}{s^3 + (k + k_{dc})\omega_0 s^2 + \omega_0^2 s + k_{dc}\omega_0^3} @f]
+ *
+ * where @f$ k_{dc} @f$ is the DC rejection gain.
+ * @{
+ */
+
+/*---------------------------------------------------------------------------*/
+/* Discrete SOGI with DC Rejection (SOGI-DC)                                 */
+/*---------------------------------------------------------------------------*/
+
+typedef struct _tag_discrete_sogi_dc
+{
+    // --- Sub-modules ---
+    discrete_sogi_t core; //!< The standard SOGI core handling the AC dynamics.
+
+    // --- Internal States ---
+    ctrl_gt v_dc_est;   //!< Estimated DC offset voltage.
+    ctrl_gt input_prev; //!< Previous input value (for loop calculation).
+
+    // --- Parameters ---
+    ctrl_gt dc_integ_gain; //!< Pre-calculated gain for DC integrator: Ts * omega0 * k_dc.
+
+} discrete_sogi_dc_t;
+
+/**
+ * @brief Initializes the SOGI-DC module.
+ * @param[out] sogi_dc Pointer to the SOGI-DC instance.
+ * @param[in] k_damp SOGI damping coefficient (typically 1.414).
+ * @param[in] k_dc DC rejection gain (typically 0.5 to 1.0). Lower is slower but more stable.
+ * @param[in] fn Center frequency in Hz.
+ * @param[in] fs Sampling frequency in Hz.
+ */
+void ctl_init_discrete_sogi_dc(discrete_sogi_dc_t* sogi_dc, parameter_gt k_damp, parameter_gt k_dc, parameter_gt fn,
+                               parameter_gt fs);
+
+/**
+ * @brief Clears the internal states of the SOGI-DC module.
+ */
+GMP_STATIC_INLINE void ctl_clear_discrete_sogi_dc(discrete_sogi_dc_t* sogi_dc)
+{
+    // Clear Core
+    ctl_clear_discrete_sogi(&sogi_dc->core);
+
+    // Clear DC States
+    sogi_dc->v_dc_est = 0;
+    sogi_dc->input_prev = 0;
+}
+
+/**
+ * @brief Executes one step of the SOGI-DC calculation.
+ * @details
+ * 1. Update DC estimate based on previous error.
+ * 2. Subtract DC from current Input.
+ * 3. Step standard SOGI.
+ * @param[in,out] sogi_dc Pointer to the instance.
+ * @param[in] u The current raw input sample (containing AC + DC).
+ */
+GMP_STATIC_INLINE void ctl_step_discrete_sogi_dc(discrete_sogi_dc_t* sogi_dc, ctrl_gt u)
+{
+    // 1. DC Estimation Loop (Integrator)
+    // Error = (Input_clean) - Alpha
+    // Input_clean was (Input_raw - v_dc_est)
+    // So Error = Input_raw - v_dc_est - Alpha
+    // Note: We use previous values to avoid algebraic loop in simplest implementation.
+
+    ctrl_gt alpha_prev = ctl_get_discrete_sogi_ds(&sogi_dc->core);
+
+    // Calculate the "leakage" that the SOGI core didn't catch (which is DC)
+    // Error signal driving the DC integrator
+    ctrl_gt dc_loop_err = (sogi_dc->input_prev - sogi_dc->v_dc_est) - alpha_prev;
+
+    // Update DC estimate: v_dc[k] = v_dc[k-1] + Gain * Error
+    sogi_dc->v_dc_est += ctl_mul(dc_loop_err, sogi_dc->dc_integ_gain);
+
+    // 2. Clean Input (Remove DC)
+    ctrl_gt u_clean = u - sogi_dc->v_dc_est;
+
+    // 3. Step SOGI Core
+    ctl_step_discrete_sogi(&sogi_dc->core, u_clean);
+
+    // Store current input for next step
+    sogi_dc->input_prev = u;
+}
+
+/**
+ * @brief Gets the latest direct (alpha) output (DC-free).
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_discrete_sogi_dc_alpha(discrete_sogi_dc_t* sogi_dc)
+{
+    return ctl_get_discrete_sogi_ds(&sogi_dc->core);
+}
+
+/**
+ * @brief Gets the latest quadrature (beta) output (DC-free).
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_discrete_sogi_dc_beta(discrete_sogi_dc_t* sogi_dc)
+{
+    return ctl_get_discrete_sogi_qs(&sogi_dc->core);
+}
+
+/**
+ * @brief Gets the estimated DC offset.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_discrete_sogi_dc_offset(discrete_sogi_dc_t* sogi_dc)
+{
+    return sogi_dc->v_dc_est;
+}
+
+
+
+/**
  * @}
  */ // end of discrete_sogi group
 
