@@ -57,6 +57,28 @@ void ctl_init_single_phase_pll_T(ctl_single_phase_pll* spll, parameter_gt gain, 
     spll->freq_sf = float2ctrl(fg / fs);
 }
 
+void ctl_init_single_phase_dc_pll(ctl_single_phase_dc_pll* spll, parameter_gt loop_kp, parameter_gt loop_ki,
+                                  parameter_gt k_sogi, parameter_gt k_dc, parameter_gt fc_uq, parameter_gt fg,
+                                  parameter_gt fs)
+{
+    // Clear states
+    ctl_clear_single_phase_dc_pll(spll);
+
+    // 1. Init SOGI-DC
+    // Note: k_damp is usually 1.414. k_dc is usually 0.5 to 1.0.
+    ctl_init_discrete_sogi_dc(&spll->sogi_dc, k_sogi, k_dc, fg, fs);
+
+    // 2. Init Loop Filter (PI)
+    ctl_init_pid(&spll->spll_ctrl, loop_kp, loop_ki, 0, fs);
+
+    // 3. Init Q-axis LPF
+    ctl_init_lp_filter(&spll->filter_uq, fs, fc_uq);
+
+    // 4. Init Scaling Factor
+    // Step = Fg / Fs
+    spll->freq_sf = float2ctrl(fg / fs);
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Single Phase Modulation

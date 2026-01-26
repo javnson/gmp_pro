@@ -171,6 +171,8 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_discrete_sogi_qs(discrete_sogi_t* sogi)
  *
  * This module estimates the DC component and subtracts it from the input before
  * feeding it to the SOGI core, ensuring pure AC signals for alpha and beta outputs.
+ * 
+ * generally, @f[ k_{dc} \approx 0.5 ~ 1.0 @f]
  *
  * Transfer Functions (Simplified structural view):
  *
@@ -288,8 +290,6 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_discrete_sogi_dc_offset(discrete_sogi_dc_t* so
 {
     return sogi_dc->v_dc_est;
 }
-
-
 
 /**
  * @}
