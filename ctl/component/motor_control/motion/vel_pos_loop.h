@@ -8,8 +8,8 @@
  * @copyright Copyright GMP(c) 2024
  */
 
-#ifndef _FILE_VEC_POS_LOOP_P_H_
-#define _FILE_VEC_POS_LOOP_P_H_
+#ifndef _FILE_VEL_POS_LOOP_P_H_
+#define _FILE_VEL_POS_LOOP_P_H_
 
 #include <ctl/component/motor_control/basic/motor_universal_interface.h>
 
@@ -97,7 +97,7 @@ GMP_STATIC_INLINE void ctl_clear_vel_pos_ctrl(ctl_vel_pos_controller_t* ctrl)
  * @param[in]  pos_division The frequency division factor for the position controller execution.
  * @param[in]  fs Controller execution frequency (Hz).
  */
-void ctl_init_vec_pos_controller(ctl_vel_pos_controller_t* ctrl, parameter_gt vel_kp, parameter_gt pos_kp,
+void ctl_init_vel_pos_controller(ctl_vel_pos_controller_t* ctrl, parameter_gt vel_kp, parameter_gt pos_kp,
     parameter_gt vel_ki, parameter_gt pos_ki, 
     parameter_gt speed_limit, parameter_gt cur_limit, uint32_t vel_division, uint32_t pos_division, parameter_gt fs);
 
@@ -146,4 +146,4 @@ GMP_STATIC_INLINE void ctl_step_vel_pos_controller(ctl_vel_pos_controller_t* ctr
 }
 #endif // __cplusplus
 
-#endif // _FILE_VEC_POS_LOOP_P_H_
+#endif // _FILE_VEL_POS_LOOP_P_H_
