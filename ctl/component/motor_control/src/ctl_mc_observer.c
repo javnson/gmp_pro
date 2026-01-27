@@ -28,10 +28,10 @@ void ctl_init_im_spd_calc(
 
     // constant using in magnetizing current calculation
     // calc->kr = float2ctrl(1 / isr_freq * Tr);
-    calc->kr = float2ctrl(1 / isr_freq + Tr);
+    calc->kr = float2ctrl(1.0f / isr_freq + Tr);
 
     // calc->kt = float2ctrl(1 / (Tr * 2 * PI * freq_base));
-    calc->kt = float2ctrl(1 / (CTL_PARAM_CONST_2PI * freq_base));
+    calc->kt = float2ctrl(1.0f / (CTL_PARAM_CONST_2PI * freq_base));
 
     calc->ktheta = float2ctrl(freq_base / isr_freq);
 
@@ -216,9 +216,9 @@ void ctl_init_bldc_hall_estimator(ctl_bldc_hall_estimator_t* est, uint16_t pole_
     est->spdif.speed = 0;
     est->last_hall_state = 0;
     est->last_capture_time = 0;
-    est->sector_time_delta = 0.0f;
-    est->estimated_speed_rad_per_tick = 0.0f;
-    est->coarse_angle_pu = 0.0f;
+    est->sector_time_delta = 0;
+    est->estimated_speed_rad_per_tick = 0;
+    est->coarse_angle_pu = 0;
 
     est->pole_pairs = (ctrl_gt)pole_pairs;
     est->sector_rad = CTL_PARAM_CONST_PI / 3.0f;
