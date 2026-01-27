@@ -68,7 +68,7 @@ typedef struct _tag_current_controller
     ctl_vector2_t* phasor_input; //!< input rotor phasor
 
     // --- Outputs & Intermediate Variables ---
-    ctl_vector3_t iab0; //!< The 3-phase currents in the alpha-beta stationary frame.
+    ctl_vector3_t vab0;     //!< The final alpha-beta voltages to be sent to the modulator.
 
     //
     // --- Feed-forward & Parameters ---
@@ -88,8 +88,8 @@ typedef struct _tag_current_controller
     ctrl_gt udc;            //!< Udc after filter.
     ctl_vector3_t iuvw;     //!< sampled current after filter.
     ctl_vector3_t idq0;     //!< The 3-phase currents in the d-q rotating frame.
-    ctl_vector3_t vdq0;     //!< The calculated d-q axis output voltages.
-    ctl_vector3_t vab0;     //!< The final alpha-beta voltages to be sent to the modulator.
+    ctl_vector3_t vdq0;     //!< The calculated d-q axis output voltages.    
+    ctl_vector3_t iab0; //!< The 3-phase currents in the alpha-beta stationary frame.
     ctl_vector2_t v_dec;    //!< Decoupling
     ctl_vector3_t vdq_comp; //!< vdq after compensator
     ctl_vector3_t vdq_out;  //!< vdq after compensator

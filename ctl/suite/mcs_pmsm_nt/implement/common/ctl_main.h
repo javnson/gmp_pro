@@ -113,7 +113,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 #if defined USING_NPC_MODULATOR
         ctl_step_npc_modulator(&spwm);
 #else
-        ctl_step_spwm_modulator(&spwm);
+        ctl_step_svpwm_modulator(&spwm);
 #endif // USING_NPC_MODULATOR
 
     }

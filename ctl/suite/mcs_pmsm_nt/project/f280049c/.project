@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>CTL_PG_3PH_GFL_280049C</name>
+	<name>CTL_PMSM_NT_280049C_Sensored</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -28,47 +28,53 @@
 		<link>
 			<name>user/ctl_main.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/implement/common/ctl_main.c</locationURI>
+			<locationURI>copy_PARENT/implement/common/ctl_main.c</locationURI>
 		</link>
 		<link>
 			<name>user/ctl_main.h</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/implement/common/ctl_main.h</locationURI>
+			<locationURI>copy_PARENT/implement/common/ctl_main.h</locationURI>
 		</link>
 		<link>
 			<name>user/user_main.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/implement/common/user_main.c</locationURI>
+			<locationURI>copy_PARENT/implement/common/user_main.c</locationURI>
 		</link>
 		<link>
 			<name>user/user_main.h</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/implement/common/user_main.h</locationURI>
+			<locationURI>copy_PARENT/implement/common/user_main.h</locationURI>
 		</link>
 		<link>
 			<name>xplt/ctrl_settings.h</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/implement/f280049c/ctrl_settings.h</locationURI>
+			<locationURI>copy_PARENT/implement/f280049c/ctrl_settings.h</locationURI>
 		</link>
 		<link>
 			<name>xplt/xplt.config.h</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/implement/f280049c/xplt.config.h</locationURI>
+			<locationURI>copy_PARENT/implement/f280049c/xplt.config.h</locationURI>
 		</link>
 		<link>
 			<name>xplt/xplt.ctl_interface.h</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/implement/f280049c/xplt.ctl_interface.h</locationURI>
+			<locationURI>copy_PARENT/implement/f280049c/xplt.ctl_interface.h</locationURI>
 		</link>
 		<link>
 			<name>xplt/xplt.peripheral.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/implement/f280049c/xplt.peripheral.c</locationURI>
+			<locationURI>copy_PARENT/implement/f280049c/xplt.peripheral.c</locationURI>
 		</link>
 		<link>
 			<name>xplt/xplt.peripheral.h</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/implement/f280049c/xplt.peripheral.h</locationURI>
+			<locationURI>copy_PARENT/implement/f280049c/xplt.peripheral.h</locationURI>
 		</link>
 	</linkedResources>
+	<variableList>
+		<variable>
+			<name>copy_PARENT</name>
+			<value>file:/D:/Code/GMP/gmp_pro/ctl/suite/mcs_pmsm_nt</value>
+		</variable>
+	</variableList>
 </projectDescription>

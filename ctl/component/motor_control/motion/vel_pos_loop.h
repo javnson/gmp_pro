@@ -1,6 +1,6 @@
 /**
  * @file vel_pos_loop.h
- * @author Javnson (javnson@zju.edu.cn)
+ * @author WuMin  (wumin325@zju.edu.cn)
  * @brief Implements a velocity and position controller.
  * @version 0.2
  * @date 2026-01-19

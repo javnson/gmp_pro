@@ -1,4 +1,4 @@
-# processing management
+ï»¿# processing management
 
 This foldder provide a set of processing management tool kits, including timing manager (not for realtime control),
 workflow (high level transfer flow manager), state machine and scheduling.
@@ -19,7 +19,7 @@ In this section, here's a one-section workflow, which is shown in the following 
 
 <img src="../manual/img/fig1-basic workflow model.jpg" style="zoom: 50%;" />
 
-°ÑstartºÍend×ö³ÉÊµÌå·ÅÔÚÈ«¾Ö
+æŠŠstartå’Œendåšæˆå®ä½“æ”¾åœ¨å…¨å±€
 
 
 + The General Structure of Section 
