@@ -224,6 +224,9 @@ divider4.divideValue = 2;
 const divider5       = system.clockTree["PLL_REFDIV"];
 divider5.divideValue = 4;
 
+const divider6       = system.clockTree["SYSCLKDIVSEL"];
+divider6.divideValue = 1;
+
 const multiplier1         = system.clockTree["PLL_IMULT"];
 multiplier1.multiplyValue = 80;
 

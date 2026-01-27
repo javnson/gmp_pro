@@ -48,8 +48,8 @@ volatile fast_gt flag_error = 0;
 
 // adc calibrator flags
 adc_bias_calibrator_t adc_calibrator;
-//volatile fast_gt flag_enable_adc_calibrator = 1;
-volatile fast_gt flag_enable_adc_calibrator = 0;
+volatile fast_gt flag_enable_adc_calibrator = 1;
+//volatile fast_gt flag_enable_adc_calibrator = 0;
 volatile fast_gt index_adc_calibrator = 0;
 
 //=================================================================================================

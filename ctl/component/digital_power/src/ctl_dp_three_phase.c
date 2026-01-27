@@ -1,4 +1,4 @@
-/**
+ï»¿/**
  * @file ctl_dp_three_phase.c
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Implementation for three-phase digital power controller modules.
@@ -59,43 +59,43 @@ void ctl_init_sfr_pll(srf_pll_t* pll, parameter_gt f_base, parameter_gt pid_kp, 
 }
 
 /**
- * @brief ¸ù¾İ´ø¿íºÍ×èÄá±È×Ô¶¯¼ÆËã PI ²ÎÊı²¢³õÊ¼»¯ SRF-PLL
- * @param[out] pll            PLL ¶ÔÏóÖ¸Õë
- * @param[in]  f_base         µçÍø»ù×¼ÆµÂÊ (e.g., 50.0)
- * @param[in]  f_ctrl         ¿ØÖÆÑ­»·ÆµÂÊ/²ÉÑùÆµÂÊ (e.g., 10000.0)
- * @param[in]  voltage_mag    ÊäÈëµÄµçÑ¹Ê¸Á¿Ä£³¤ (sqrt(alpha^2 + beta^2))¡£Èç¹ûÊäÈëÒÑ¾­±êçÛ»¯£¬ÔòÌî 1.0¡£
- * @param[in]  bandwidth_hz   ÆÚÍûµÄ PLL ´ø¿í (Hz)¡£ÍÆ¼öÖµ: 10.0 ~ 30.0 Hz
- * @param[in]  damping_factor ×èÄá±È¡£ÍÆ¼öÖµ: 0.707
+ * @brief æ ¹æ®å¸¦å®½å’Œé˜»å°¼æ¯”è‡ªåŠ¨è®¡ç®— PI å‚æ•°å¹¶åˆå§‹åŒ– SRF-PLL
+ * @param[out] pll            PLL å¯¹è±¡æŒ‡é’ˆ
+ * @param[in]  f_base         ç”µç½‘åŸºå‡†é¢‘ç‡ (e.g., 50.0)
+ * @param[in]  f_ctrl         æ§åˆ¶å¾ªç¯é¢‘ç‡/é‡‡æ ·é¢‘ç‡ (e.g., 10000.0)
+ * @param[in]  voltage_mag    è¾“å…¥çš„ç”µå‹çŸ¢é‡æ¨¡é•¿ (sqrt(alpha^2 + beta^2))ã€‚å¦‚æœè¾“å…¥å·²ç»æ ‡å¹ºåŒ–ï¼Œåˆ™å¡« 1.0ã€‚
+ * @param[in]  bandwidth_hz   æœŸæœ›çš„ PLL å¸¦å®½ (Hz)ã€‚æ¨èå€¼: 10.0 ~ 30.0 Hz
+ * @param[in]  damping_factor é˜»å°¼æ¯”ã€‚æ¨èå€¼: 0.707
  */
 void ctl_init_srf_pll_auto_tune(srf_pll_t* pll, parameter_gt f_base, parameter_gt f_ctrl, parameter_gt voltage_mag,
                                 parameter_gt bandwidth_hz, parameter_gt damping_factor)
 {
-    // 1. ½«´ø¿í Hz ×ª»»Îª×ÔÈ»½ÇÆµÂÊ rad/s
+    // 1. å°†å¸¦å®½ Hz è½¬æ¢ä¸ºè‡ªç„¶è§’é¢‘ç‡ rad/s
     parameter_gt omega_n = CTL_PARAM_CONST_2PI * bandwidth_hz;
 
-    // 2. ¼ÆËã»·Â·ÖĞµÄ¹Ì¶¨ÔöÒæ²¿·Ö K_loop = 2 * pi * Vm * f_base
-    //    ÍÆµ¼À´Ô´£º
-    //    - ¼øÏàÆ÷ÔöÒæ (rad -> Vq): K_pd = 2 * pi * Vm (ÒòÎª theta ÊÇ 0~1.0)
-    //    - VCO ÔöÒæ (freq_pu -> d_theta/dt): K_vco = f_base
+    // 2. è®¡ç®—ç¯è·¯ä¸­çš„å›ºå®šå¢ç›Šéƒ¨åˆ† K_loop = 2 * pi * Vm * f_base
+    //    æ¨å¯¼æ¥æºï¼š
+    //    - é‰´ç›¸å™¨å¢ç›Š (rad -> Vq): K_pd = 2 * pi * Vm (å› ä¸º theta æ˜¯ 0~1.0)
+    //    - VCO å¢ç›Š (freq_pu -> d_theta/dt): K_vco = f_base
     parameter_gt loop_gain_constant = CTL_PARAM_CONST_2PI * voltage_mag * f_base;
 
-    // ·À³ıÁã±£»¤
+    // é˜²é™¤é›¶ä¿æŠ¤
     if (loop_gain_constant < 0.0001f)
     {
         loop_gain_constant = 0.0001f;
     }
 
-    // 3. ¸ù¾İ¶ş½×ÏµÍ³¹«Ê½·´½â Kp ºÍ Ki
+    // 3. æ ¹æ®äºŒé˜¶ç³»ç»Ÿå…¬å¼åè§£ Kp å’Œ Ki
     //    Kp = (2 * zeta * omega_n) / K_loop
     //    Ki = (omega_n^2) / K_loop
 
     parameter_gt calculated_kp = (2.0f * damping_factor * omega_n) / loop_gain_constant;
     parameter_gt calculated_ki = (omega_n * omega_n) / loop_gain_constant;
 
-    // ¶ÔÓÚ PI ¿ØÖÆÆ÷£¬Kd Í¨³£Îª 0
+    // å¯¹äº PI æ§åˆ¶å™¨ï¼ŒKd é€šå¸¸ä¸º 0
     parameter_gt calculated_kd = 0.0f;
 
-    // 4. µ÷ÓÃÔ­ÓĞµÄ³õÊ¼»¯º¯Êı
+    // 4. è°ƒç”¨åŸæœ‰çš„åˆå§‹åŒ–å‡½æ•°
     ctl_init_sfr_pll(pll, f_base, calculated_kp, calculated_ki, calculated_kd, f_ctrl);
 }
 
@@ -233,8 +233,25 @@ void ctl_auto_tuning_gfl_inv(gfl_inv_ctrl_init_t* init)
     init->current_phase_lag = control_delay + filter_delay;
 
     // select PLL bandwidth is freq_base / 3
-    init->kp_pll = 2.0f * 0.707f * init->freq_base / 3.0f * CTL_PARAM_CONST_2PI;
-    init->ki_pll = init->freq_base / 3.0f * init->freq_base / 3.0f * CTL_PARAM_CONST_2PI * CTL_PARAM_CONST_2PI;
+    // 1. å®šä¹‰ç‰©ç†å¸¸æ•°
+    // ç³»ç»Ÿå›ºæœ‰çš„ç¯è·¯å¢ç›Šï¼š2 * PI * f_base (çº¦ 314.159)
+    parameter_gt system_gain = CTL_PARAM_CONST_2PI * init->freq_base;
+
+    // 2. å®šä¹‰è®¾è®¡ç›®æ ‡
+    // è®¾å®šå¸¦å®½ä¸ºåŸºé¢‘çš„ 1/3 (çº¦ 16.7Hz)
+    parameter_gt bandwidth_hz = init->freq_base / 3.0f;
+    parameter_gt omega_n = bandwidth_hz * CTL_PARAM_CONST_2PI;
+    parameter_gt damping = 0.707f;
+
+    // 3. è®¡ç®—ä¿®æ­£åçš„ PI å‚æ•° (é™¤ä»¥ system_gain)
+    // Kp = (2 * zeta * wn) / system_gain
+    init->kp_pll = (2.0f * damping * omega_n) / system_gain;
+
+    // Ki = (wn^2) / system_gain
+    init->ki_pll = (omega_n * omega_n) / system_gain;
+
+    //    init->kp_pll = 2.0f * 0.707f * init->freq_base / 3.0f * CTL_PARAM_CONST_2PI;
+    //    init->ki_pll = init->freq_base / 3.0f * init->freq_base / 3.0f * CTL_PARAM_CONST_2PI * CTL_PARAM_CONST_2PI;
 }
 
 /**
