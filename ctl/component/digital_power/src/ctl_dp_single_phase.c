@@ -35,8 +35,50 @@ void ctl_init_single_phase_pll(ctl_single_phase_pll* spll, parameter_gt gain, pa
     ctl_init_pid_Tmode(&spll->spll_ctrl, gain, Ti, 0, fs);
 
     // Pre-calculate the normalized grid frequency as a feed-forward term for the VCO.
-    spll->frequency_sf = float2ctrl(fg / fs);
+    spll->freq_sf = float2ctrl(fg / fs);
 }
+
+void ctl_init_single_phase_pll_T(ctl_single_phase_pll* spll, parameter_gt gain, parameter_gt ki, parameter_gt fc,
+                               parameter_gt fg, parameter_gt fs)
+{
+    // Clear the SPLL structure to ensure a clean state.
+    ctl_clear_single_phase_pll(spll);
+
+    // Initialize a discrete SOGI for generating alpha-beta orthogonal signals.
+    ctl_init_discrete_sogi(&spll->sogi, 0.5, fg, fs);
+
+    // Initialize a low-pass filter for the q-axis component (Uq) of the SOGI output.
+    ctl_init_lp_filter(&spll->filter_uq, fs, fc);
+
+    // Initialize the PI controller for the phase-locking loop.
+    ctl_init_pid(&spll->spll_ctrl, gain, ki, 0, fs);
+
+    // Pre-calculate the normalized grid frequency as a feed-forward term for the VCO.
+    spll->freq_sf = float2ctrl(fg / fs);
+}
+
+void ctl_init_single_phase_dc_pll(ctl_single_phase_dc_pll* spll, parameter_gt loop_kp, parameter_gt loop_ki,
+                                  parameter_gt k_sogi, parameter_gt k_dc, parameter_gt fc_uq, parameter_gt fg,
+                                  parameter_gt fs)
+{
+    // Clear states
+    ctl_clear_single_phase_dc_pll(spll);
+
+    // 1. Init SOGI-DC
+    // Note: k_damp is usually 1.414. k_dc is usually 0.5 to 1.0.
+    ctl_init_discrete_sogi_dc(&spll->sogi_dc, k_sogi, k_dc, fg, fs);
+
+    // 2. Init Loop Filter (PI)
+    ctl_init_pid(&spll->spll_ctrl, loop_kp, loop_ki, 0, fs);
+
+    // 3. Init Q-axis LPF
+    ctl_init_lp_filter(&spll->filter_uq, fs, fc_uq);
+
+    // 4. Init Scaling Factor
+    // Step = Fg / Fs
+    spll->freq_sf = float2ctrl(fg / fs);
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Single Phase Modulation

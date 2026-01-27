@@ -137,15 +137,15 @@ typedef struct _tag_gfl_inv_ctrl_type
     ctrl_gt coef_ff_decouple; //!< CTRL: current feed-foreword
 
     // active damping
-    ctl_filter_IIR2_t filter_damping; //!< CTRL: active capacitor damping
-    ctrl_gt coef_ff_damping;          //!< damping gain
-    vector2_gt vdq_last;              //!< (vdq - vdq_last) to calculate differential
+    ctl_filter_IIR2_t filter_damping[2]; //!< CTRL: active capacitor damping
+    ctrl_gt coef_ff_damping;             //!< damping gain
+    vector2_gt vdq_last;                 //!< (vdq - vdq_last) to calculate differential
 
     // output lead compensator
     ctrl_lead_t lead_compensator[2];
 
     // PLL & RG
-    srf_pll_t pll;           //!< Three-phase PLL for grid synchronization.
+    dsogi_pll_t pll;         //!< Three-phase PLL for grid synchronization.
     ctl_ramp_generator_t rg; //!< Ramp generator for open-loop/free-run operation.
 
     //
@@ -183,11 +183,15 @@ GMP_STATIC_INLINE void ctl_clear_gfl_inv(gfl_inv_ctrl_t* inv)
     ctl_clear_pid(&inv->pid_idq[phase_d]);
     ctl_clear_pid(&inv->pid_idq[phase_q]);
 
-    ctl_clear_biquad_filter(&inv->filter_damping);
+    ctl_clear_biquad_filter(&inv->filter_damping[phase_d]);
+    ctl_clear_biquad_filter(&inv->filter_damping[phase_q]);
+
     ctl_vector2_clear(&inv->vdq_last);
 
     ctl_clear_lead(&inv->lead_compensator[phase_d]);
     ctl_clear_lead(&inv->lead_compensator[phase_q]);
+
+    inv->rg.current = 0;
 
     // TODO: clear intermediate variables
     ctl_vector2_clear(&inv->vdq_ff_external);
@@ -202,7 +206,7 @@ GMP_STATIC_INLINE void ctl_clear_gfl_inv(gfl_inv_ctrl_t* inv)
 GMP_STATIC_INLINE void ctl_clear_gfl_inv_with_PLL(gfl_inv_ctrl_t* inv)
 {
     ctl_clear_gfl_inv(inv);
-    ctl_clear_pll_3ph(&inv->pll);
+    ctl_clear_dsogi_pll(&inv->pll);
 
     inv->flag_enable_system = 0;
 }
@@ -217,6 +221,7 @@ typedef struct _tag_gfl_inv_ctrl_init
     parameter_gt v_base;    //!< Base voltage for per-unit conversion (V).
     parameter_gt i_base;    //!< Base current for per-unit conversion (A).
     parameter_gt freq_base; //!< Nominal grid frequency (e.g., 50 or 60 Hz).
+    parameter_gt v_grid;    //!< output voltage/ grid voltage p.u.
 
     // [fatal] the following information is key parameter for auto-tuning.
     parameter_gt grid_filter_L; //!< Grid filter inductor parameters
@@ -236,8 +241,8 @@ typedef struct _tag_gfl_inv_ctrl_init
     parameter_gt active_damping_center_freq; //!< active damping center frequency, Hz.
     parameter_gt active_damping_filter_q;    //!< active damping filter Q
 
-    parameter_gt kp_pll; //!< PLL controller parameters
-    parameter_gt ki_pll; //!< PLL controller parameters
+    parameter_gt k_pll_sogi; //!< SOGI damping factor
+    parameter_gt pll_bw;     //!< PLL Bandwidth
 
 } gfl_inv_ctrl_init_t;
 
@@ -321,16 +326,16 @@ GMP_STATIC_INLINE void ctl_step_gfl_inv_ctrl(gfl_inv_ctrl_t* gfl)
     ctl_ct_clarke(&gfl->vabc, &gfl->vab0);
 
 #elif GFL_VOLTAGE_SAMPLE_PHASE_MODE == 2
-    gfl->vabc.dat[phase_A] = ctl_step_filter_iir1(&gfl->lpf_vabc[phase_A], gfl->adc_vabc->value.dat[phase_A]);
-    gfl->vabc.dat[phase_B] = ctl_step_filter_iir1(&gfl->lpf_vabc[phase_B], gfl->adc_vabc->value.dat[phase_B]);
+    gfl->vabc.dat[phase_A] = ctl_step_filter_iir1(&gfl->filter_uabc[phase_A], gfl->adc_vabc->value.dat[phase_A]);
+    gfl->vabc.dat[phase_B] = ctl_step_filter_iir1(&gfl->filter_uabc[phase_B], gfl->adc_vabc->value.dat[phase_B]);
     gfl->vabc.dat[phase_C] = 0;
 
     ctl_ct_clarke_2ph((ctl_vector2_t*)&gfl->vabc, (ctl_vector2_t*)&gfl->vab0);
     gfl->vab0.dat[phase_0] = 0;
 
 #elif GFL_VOLTAGE_SAMPLE_PHASE_MODE == 1
-    gfl->vabc.dat[phase_UAB] = ctl_step_filter_iir1(&gfl->lpf_vabc[phase_UAB], gfl->adc_vabc->value.dat[phase_UAB]);
-    gfl->vabc.dat[phase_UBC] = ctl_step_filter_iir1(&gfl->lpf_vabc[phase_UBC], gfl->adc_vabc->value.dat[phase_UBC]);
+    gfl->vabc.dat[phase_UAB] = ctl_step_filter_iir1(&gfl->filter_uabc[phase_UAB], gfl->adc_vabc->value.dat[phase_UAB]);
+    gfl->vabc.dat[phase_UBC] = ctl_step_filter_iir1(&gfl->filter_uabc[phase_UBC], gfl->adc_vabc->value.dat[phase_UBC]);
     gfl->vabc.dat[phase_0] = 0;
     ctl_ct_clarke_from_line((ctl_vector2_t*)&gfl->vabc, (ctl_vector2_t*)&gfl->vab0);
     gfl->vab0.dat[phase_0] = 0;
@@ -339,7 +344,7 @@ GMP_STATIC_INLINE void ctl_step_gfl_inv_ctrl(gfl_inv_ctrl_t* gfl)
 
     // --- 2. Grid Synchronization (PLL) ---
     if (gfl->flag_enable_pll)
-        ctl_step_pll_3ph(&gfl->pll, gfl->vab0.dat[phase_alpha], gfl->vab0.dat[phase_beta]);
+        ctl_step_dsogi_pll(&gfl->pll, gfl->vab0.dat[phase_alpha], gfl->vab0.dat[phase_beta]);
 
     // --- 3. Main Control Logic ---
     if (gfl->flag_enable_system)
@@ -359,8 +364,8 @@ GMP_STATIC_INLINE void ctl_step_gfl_inv_ctrl(gfl_inv_ctrl_t* gfl)
         // using PLL phasor
         else
         {
-            gfl->angle = gfl->pll.theta;
-            ctl_vector2_copy(&gfl->phasor, &gfl->pll.phasor);
+            gfl->angle = gfl->pll.srf_pll.theta;
+            ctl_vector2_copy(&gfl->phasor, &gfl->pll.srf_pll.phasor);
         }
 
         // --- 3b. Park Transformation ---
@@ -391,10 +396,15 @@ GMP_STATIC_INLINE void ctl_step_gfl_inv_ctrl(gfl_inv_ctrl_t* gfl)
             // active damping
             if (gfl->flag_enable_active_damping)
             {
+                // 计算微分量 (代表电容电流 trend)
+                ctrl_gt diff_d = gfl->vdq.dat[phase_d] - gfl->vdq_last.dat[phase_d];
+                ctrl_gt diff_q = gfl->vdq.dat[phase_q] - gfl->vdq_last.dat[phase_q];
+
+                // damping filter
                 gfl->vdq_ff_damping.dat[phase_d] =
-                    gfl->coef_ff_damping * (gfl->vdq.dat[phase_d] - gfl->vdq_last.dat[phase_d]);
+                    ctl_step_biquad_filter(&gfl->filter_damping[phase_d], gfl->coef_ff_damping * diff_d);
                 gfl->vdq_ff_damping.dat[phase_q] =
-                    gfl->coef_ff_damping * (gfl->vdq.dat[phase_q] - gfl->vdq_last.dat[phase_q]);
+                    ctl_step_biquad_filter(&gfl->filter_damping[phase_q], gfl->coef_ff_damping * diff_q);
 
                 ctl_vector2_copy(&gfl->vdq_last, &gfl->vdq);
             }
@@ -528,7 +538,28 @@ GMP_STATIC_INLINE void ctl_enable_gfl_inv_lead_compensator(gfl_inv_ctrl_t* inv)
 /** @brief Get PLL error */
 GMP_STATIC_INLINE ctrl_gt ctl_get_gfl_pll_error(gfl_inv_ctrl_t* inv)
 {
-    return inv->pll.e_error;
+    return inv->pll.srf_pll.e_error;
+}
+
+/** @brief Enable PLL module */
+GMP_STATIC_INLINE void ctl_enable_gfl_inv_pll(gfl_inv_ctrl_t* inv)
+{
+    inv->flag_enable_pll = 1;
+}
+
+/** @brief Disable PLL module */
+GMP_STATIC_INLINE void ctl_disable_gfl_inv_pll(gfl_inv_ctrl_t* inv)
+{
+    inv->flag_enable_pll = 0;
+}
+
+/** @brief GFL preparing to connect to grid */
+GMP_STATIC_INLINE fast_gt ctl_is_gfl_grid_connected(gfl_inv_ctrl_t* inv)
+{
+    if (inv->flag_enable_offgrid)
+        return 0;
+    else
+        return 1;
 }
 
 /** @brief Enable GFL controller */
@@ -607,7 +638,14 @@ void ctl_init_gfl_pq(gfl_pq_ctrl_t* pq, parameter_gt p_kp, parameter_gt p_ki, pa
  * @brief Reset the PQ controller (clear integrators).
  * @param[in,out] pq Pointer to the PQ controller instance.
  */
-void ctl_clear_gfl_pq(gfl_pq_ctrl_t* pq);
+GMP_STATIC_INLINE void ctl_clear_gfl_pq(gfl_pq_ctrl_t* pq)
+{
+    ctl_clear_pid(&pq->pid_p);
+    ctl_clear_pid(&pq->pid_q);
+
+    pq->idq_set_out.dat[phase_d] = 0;
+    pq->idq_set_out.dat[phase_q] = 0;
+}
 
 /**
  * @brief Attach feedback pointers to the PQ controller.

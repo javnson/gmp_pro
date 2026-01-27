@@ -7,6 +7,7 @@
     <stringAttribute key="com.ti.ccstudio.debug.debugModel.ATTR_PROJECT.TMS320F280039C.ccxml.Texas Instruments XDS100v3 USB Debug Probe/C28xx_CPU1" value="CTL_PG_3PH_GFL_Iris_node_solution"/>
     <stringAttribute key="com.ti.ccstudio.debug.debugModel.ATTR_PROJECT.TMS320F280039C_LP.ccxml.Texas Instruments XDS110 USB Debug Probe_0/C28xx_CPU1" value="CTL_PG_3PH_GFL_Iris_node_solution"/>
     <stringAttribute key="com.ti.ccstudio.debug.debugModel.ATTR_TARGET_CONFIG" value="${target_config_active_default:CTL_PG_3PH_GFL_Iris_node_solution}"/>
+    <stringAttribute key="com.ti.ccstudio.debug.debugModel.MRU_PROGRAM.TMS320F280039C.ccxml.Texas Instruments XDS100v3 USB Debug Probe/C28xx_CPU1" value="${build_artifact:CTL_PG_3PH_GFL_Iris_node_solution}"/>
     <stringAttribute key="com.ti.ccstudio.debug.debugModel.MRU_PROGRAM.TMS320F280039C_LP.ccxml.Texas Instruments XDS110 USB Debug Probe_0/C28xx_CPU1" value="${build_artifact:CTL_PG_3PH_GFL_Iris_node_solution}"/>
     <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
         <listEntry value="/CTL_PG_3PH_GFL_Iris_node_solution"/>

@@ -10,6 +10,8 @@
 #ifndef _FILE_MOTOR_CURRENT_CTRL_H_
 #define _FILE_MOTOR_CURRENT_CTRL_H_
 
+#include <ctl/component/motor_control/basic/motor_universal_interface.h>
+
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 
@@ -66,7 +68,7 @@ typedef struct _tag_current_controller
     ctl_vector2_t* phasor_input; //!< input rotor phasor
 
     // --- Outputs & Intermediate Variables ---
-    ctl_vector3_t iab0; //!< The 3-phase currents in the alpha-beta stationary frame.
+    ctl_vector3_t vab0;     //!< The final alpha-beta voltages to be sent to the modulator.
 
     //
     // --- Feed-forward & Parameters ---
@@ -82,15 +84,15 @@ typedef struct _tag_current_controller
     //
     // --- Measurement & Internal State Variables (Read-Only) ---
     //
-    ctl_vector2_t phasor;       //!< phasor to park/ipark transform
-    ctrl_gt udc;                //!< Udc after filter.
-    ctl_vector3_t iuvw;         //!< sampled current after filter.
-    ctl_vector3_t idq0;         //!< The 3-phase currents in the d-q rotating frame.
-    ctl_vector3_t vdq0;         //!< The calculated d-q axis output voltages.
-    ctl_vector3_t vab0;         //!< The final alpha-beta voltages to be sent to the modulator.
-    ctl_vector2_t v_dec;        //!< Decoupling
+    ctl_vector2_t phasor;   //!< phasor to park/ipark transform
+    ctrl_gt udc;            //!< Udc after filter.
+    ctl_vector3_t iuvw;     //!< sampled current after filter.
+    ctl_vector3_t idq0;     //!< The 3-phase currents in the d-q rotating frame.
+    ctl_vector3_t vdq0;     //!< The calculated d-q axis output voltages.    
+    ctl_vector3_t iab0; //!< The 3-phase currents in the alpha-beta stationary frame.
+    ctl_vector2_t v_dec;    //!< Decoupling
     ctl_vector3_t vdq_comp; //!< vdq after compensator
-    ctl_vector3_t vdq_out; //!< vdq after compensator
+    ctl_vector3_t vdq_out;  //!< vdq after compensator
 
     //
     // --- Controller Entities ---
@@ -261,10 +263,10 @@ GMP_STATIC_INLINE void ctl_step_current_controller(mtr_current_ctrl_t* mc)
         ctl_vector3_copy(&mc->vdq_comp, &mc->vdq_out);
     }
 
-//    // 4. Add feed forward voltages.
-//    mc->vdq_out_comp.dat[0] += mc->vdq_ff.dat[0];
-//    mc->vdq_out_comp.dat[1] += mc->vdq_ff.dat[1];
-//    mc->vdq_out_comp.dat[2] = 0.0f; // Zero-sequence component is always zero.
+    //    // 4. Add feed forward voltages.
+    //    mc->vdq_out_comp.dat[0] += mc->vdq_ff.dat[0];
+    //    mc->vdq_out_comp.dat[1] += mc->vdq_ff.dat[1];
+    //    mc->vdq_out_comp.dat[2] = 0.0f; // Zero-sequence component is always zero.
 
     // D. Bus Voltage Compensation
     if (mc->flag_enable_bus_compensation)
@@ -291,7 +293,7 @@ GMP_STATIC_INLINE void ctl_step_current_controller(mtr_current_ctrl_t* mc)
  * @brief Enables the PI controller action.
  * @param[out] cc Pointer to the current controller structure.
  */
-GMP_STATIC_INLINE void ctl_enable_current_controller(mtr_current_ctrl_t* mc)
+GMP_STATIC_INLINE void ctl_enable_mtr_current_ctrl(mtr_current_ctrl_t* mc)
 {
     mc->flag_enable_current_ctrl = 1;
 }
@@ -302,7 +304,7 @@ GMP_STATIC_INLINE void ctl_enable_current_controller(mtr_current_ctrl_t* mc)
  * @param[in]  id_ref The target d-axis current.
  * @param[in]  iq_ref The target q-axis current.
  */
-GMP_STATIC_INLINE void ctl_set_mtr_current_ref(mtr_current_ctrl_t* mc, ctrl_gt id_ref, ctrl_gt iq_ref)
+GMP_STATIC_INLINE void ctl_set_mtr_current_ctrl_ref(mtr_current_ctrl_t* mc, ctrl_gt id_ref, ctrl_gt iq_ref)
 {
     mc->idq_ref.dat[0] = id_ref;
     mc->idq_ref.dat[1] = iq_ref;
@@ -314,7 +316,7 @@ GMP_STATIC_INLINE void ctl_set_mtr_current_ref(mtr_current_ctrl_t* mc, ctrl_gt i
  * @param[in]  vd_ff The d-axis voltage feed forward term.
  * @param[in]  vq_ff The q-axis voltage feed forward term.
  */
-GMP_STATIC_INLINE void ctl_set_mtr_current_vdq_ff(mtr_current_ctrl_t* mc, ctrl_gt vd_ff, ctrl_gt vq_ff)
+GMP_STATIC_INLINE void ctl_set_mtr_current_ctrl_vdq_ff(mtr_current_ctrl_t* mc, ctrl_gt vd_ff, ctrl_gt vq_ff)
 {
     mc->vdq_ff.dat[0] = vd_ff;
     mc->vdq_ff.dat[1] = vq_ff;
@@ -325,9 +327,23 @@ GMP_STATIC_INLINE void ctl_set_mtr_current_vdq_ff(mtr_current_ctrl_t* mc, ctrl_g
  * @details When disabled, the controller output will be zero, but feedforward terms will still be applied.
  * @param[out] cc Pointer to the current controller structure.
  */
-GMP_STATIC_INLINE void ctl_disable_current_controller(mtr_current_ctrl_t* mc)
+GMP_STATIC_INLINE void ctl_disable_mtr_current_ctrl(mtr_current_ctrl_t* mc)
 {
     mc->flag_enable_current_ctrl = 0;
+}
+
+GMP_STATIC_INLINE void ctl_attach_mtr_current_ctrl_port(mtr_current_ctrl_t* mc, tri_adc_ift* _iabc, adc_ift* _udc,
+                                                        rotation_ift* _pos_if, velocity_ift* _vec_if)
+{
+    mc->adc_iuvw = _iabc;
+    mc->adc_udc = _udc;
+    mc->pos_if = _pos_if;
+    mc->spd_if = _vec_if;
+}
+
+GMP_STATIC_INLINE void ctl_attach_mtr_current_ctrl_phasor(mtr_current_ctrl_t* mc, ctl_vector2_t* _phasor)
+{
+    mc->phasor_input = _phasor;
 }
 
 /** 

@@ -243,9 +243,9 @@ void ctl_init_tri_ptr_adc_channel(
 #include <ctl/component/interface/pwm_modulator.h>
 
 void ctl_init_spwm_modulator(spwm_modulator_t* mod, pwm_gt pwm_full_scale, pwm_gt pwm_deadband_comp_val,
-                             ctl_vector3_t* iuvw, ctrl_gt current_deadband, ctrl_gt current_hysteresis)
+                             ctl_vector3_t* _iuvw, ctrl_gt current_deadband, ctrl_gt current_hysteresis)
 {
-    mod->iuvw = iuvw;
+    mod->iuvw = _iuvw;
     mod->pwm_full_scale = pwm_full_scale;
     mod->pwm_deadband_comp_val = pwm_deadband_comp_val;
 
@@ -256,9 +256,9 @@ void ctl_init_spwm_modulator(spwm_modulator_t* mod, pwm_gt pwm_full_scale, pwm_g
 }
 
 void ctl_init_npc_modulator(npc_modulator_t* mod, pwm_gt pwm_full_scale, pwm_gt pwm_deadband_comp_val,
-    ctl_vector3_t* iuvw, ctrl_gt current_deadband, ctrl_gt current_hysteresis)
+    ctl_vector3_t* _iuvw, ctrl_gt current_deadband, ctrl_gt current_hysteresis)
 {
-    mod->iuvw = iuvw;
+    mod->iuvw = _iuvw;
     mod->pwm_full_scale = pwm_full_scale;
     mod->pwm_deadband_comp_val = pwm_deadband_comp_val;
 

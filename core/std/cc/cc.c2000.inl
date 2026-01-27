@@ -68,5 +68,8 @@
 // + static inline modifier
 #define GMP_FORCE_INLINE _Pragma("FORCEINLINE")
 
+// + unused variable or function
+#define GMP_UNUSED_VAR(x) (void)(x)
+
 // + NOP
 #define GMP_INSTRUCTION_NOP asm("nop")

@@ -20,47 +20,43 @@
 
 #include <xplt.peripheral.h>
 
-
-#include <ctl/component/digital_power/three_phase/three_phase_dc_ac.h>
-
-#include <ctl/component/digital_power/three_phase/three_phase_GFL.h>
-
+//=================================================================================================
+// global controller variables
 
 // state machine
 cia402_sm_t cia402_sm;
 
 // modulator: SPWM modulator / SVPWM modulator / NPC modulator
+#if defined USING_NPC_MODULATOR
+npc_modulator_t spwm;
+#else
 spwm_modulator_t spwm;
+#endif // USING_NPC_MODULATOR
 
 // controller body: Current controller, Power controller / Voltage controller
 gfl_pq_ctrl_t pq_ctrl;
+inv_neg_ctrl_init_t gfl_neg_init;
+inv_neg_ctrl_t neg_current_ctrl;
 gfl_inv_ctrl_init_t gfl_init;
 gfl_inv_ctrl_t inv_ctrl;
 
 // Observer: PLL
 
-
 // additional controller: harmonic management, negative current controller
 
 //
-
-
-
-// enable controller
-//#if !defined SPECIFY_PC_ENVIRONMENT
-//#else
-//volatile fast_gt flag_system_enable = 1;
-//#endif // SPECIFY_PC_ENVIRONMENT
-
 volatile fast_gt flag_system_running = 0;
 volatile fast_gt flag_error = 0;
 
 // adc calibrator flags
 adc_bias_calibrator_t adc_calibrator;
 volatile fast_gt flag_enable_adc_calibrator = 1;
+//volatile fast_gt flag_enable_adc_calibrator = 0;
 volatile fast_gt index_adc_calibrator = 0;
 
+//=================================================================================================
 // CTL initialize routine
+
 void ctl_init()
 {
     //
@@ -73,6 +69,7 @@ void ctl_init()
     //
     gfl_init.fs = CONTROLLER_FREQUENCY;
     gfl_init.v_base = CTRL_VOLTAGE_BASE;
+    gfl_init.v_grid = 0.33f;
     gfl_init.i_base = CTRL_CURRENT_BASE;
     gfl_init.freq_base = 50.0f;
 
@@ -82,15 +79,25 @@ void ctl_init()
     ctl_auto_tuning_gfl_inv(&gfl_init);
     ctl_init_gfl_inv(&inv_ctrl, &gfl_init);
 
+    ctl_auto_tuning_neg_inv(&gfl_neg_init, &gfl_init);
+    ctl_init_neg_inv(&neg_current_ctrl, &gfl_neg_init);
+    ctl_attach_neg_inv_to_gfl(&neg_current_ctrl, &inv_ctrl);
+
     //
     // init SPWM modulator
     //
-    ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &inv_ctrl.adc_iabc->value, float2ctrl(0.02), float2ctrl(0.005));
+#if defined USING_NPC_MODULATOR
+    ctl_init_npc_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &inv_ctrl.adc_iabc->value, float2ctrl(0.02),
+                           float2ctrl(0.005));
+#else
+    ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &inv_ctrl.adc_iabc->value, float2ctrl(0.02),
+                            float2ctrl(0.005));
+#endif // USING_NPC_MODULATOR
 
     //
     // Power controller
     //
-    ctl_init_gfl_pq(&pq_ctrl, 0.75, 0.001, 0.75, 0.001, 1.0, CONTROLLER_FREQUENCY);
+    ctl_init_gfl_pq(&pq_ctrl, 0.75f, 0.001f, 0.75f, 0.001f, 1.0f, CONTROLLER_FREQUENCY);
     ctl_attach_gfl_pq_to_core(&pq_ctrl, &inv_ctrl);
 
 #if BUILD_LEVEL == 1
@@ -98,10 +105,20 @@ void ctl_init()
     ctl_set_gfl_inv_openloop_mode(&inv_ctrl);
     ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl(0.6), float2ctrl(0.6));
 
-#elif BUILD_LEVEL == 2 || BUILD_LEVEL == 3
+#elif BUILD_LEVEL == 2
     // Basic current close loop, inverter
     ctl_set_gfl_inv_current_mode(&inv_ctrl);
-    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(0.6), float2ctrl(0.6));
+    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(0.1), float2ctrl(0.1));
+
+#elif BUILD_LEVEL == 3
+    // Basic current close loop, inverter
+    ctl_set_gfl_inv_current_mode(&inv_ctrl);
+    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(0.1), float2ctrl(0));
+
+    ctl_enable_neg_current_inv(&neg_current_ctrl);
+
+    ctl_enable_gfl_inv_pll(&inv_ctrl);
+    ctl_set_gfl_inv_grid_connect(&inv_ctrl);
 
 #elif BUILD_LEVEL == 4
     // current close loop with feed forward, inverter
@@ -115,7 +132,7 @@ void ctl_init()
 #endif // BUILD_LEVEL
 
     //
-    // init and config CiA402 stdandard state machine
+    // init and config CiA402 standard state machine
     //
     init_cia402_state_machine(&cia402_sm);
     cia402_sm.minimum_transit_delay[3] = 100;
@@ -125,33 +142,39 @@ void ctl_init()
     cia402_sm.current_cmd = CIA402_CMD_ENABLE_OPERATION;
 #endif // SPECIFY_PC_ENVIRONMENT
 
+#if BUILD_LEVEL >= 3
+
+    // NOTICE:
+    // if grid connect is request disable switch delay from CIA402_SM_SWITCH_ON_DISABLED to CIA402_SM_SWITCHED_ON
+    // or a longer judgment time can lead to failure to connect to the grid.
+    cia402_sm.minimum_transit_delay[CIA402_SM_READY_TO_SWITCH_ON] = 0;
+    cia402_sm.minimum_transit_delay[CIA402_SM_SWITCHED_ON] = 0;
+
+#endif // BUILD_LEVEL
+
     //
     // init ADC Calibrator
     //
     ctl_init_adc_calibrator(&adc_calibrator, 20, 0.707f, CONTROLLER_FREQUENCY);
 
-#if defined SPECIFY_ENABLE_ADC_CALIBRATE
     if (flag_enable_adc_calibrator)
     {
         ctl_enable_adc_calibrator(&adc_calibrator);
     }
-#endif // SPECIFY_ENABLE_ADC_CALIBRATE
 }
 
-//////////////////////////////////////////////////////////////////////////
-// endless loop function here
-//
+//=================================================================================================
+// CTL endless loop routine
 
 void ctl_mainloop(void)
 {
-    dispatch_cia402_state_machine(&cia402_sm);
+    cia402_dispatch(&cia402_sm);
 
     return;
 }
 
-//////////////////////////////////////////////////////////////////////////
-// CiA402 default callback function here.
-//
+//=================================================================================================
+// CiA402 default callback routine
 
 void ctl_enable_pwm()
 {
@@ -161,24 +184,39 @@ void ctl_enable_pwm()
 void ctl_disable_pwm()
 {
     ctl_fast_disable_output();
+
+    // clear controller here
+    ctl_clear_gfl_inv(&inv_ctrl);
+    ctl_clear_neg_inv(&neg_current_ctrl);
+    ctl_clear_gfl_pq(&pq_ctrl);
+
 }
 
 fast_gt ctl_check_pll_locked(void)
 {
-    return (ctl_abs(ctl_get_gfl_pll_error(&inv_ctrl)) < CTRL_SPLL_EPSILON);
+    ctrl_gt pll_erro = ctl_abs(ctl_get_gfl_pll_error(&inv_ctrl));
+
+    // grid connected, judge if PLL is ready.
+    if (ctl_is_gfl_grid_connected(&inv_ctrl))
+    {
+        if (pll_erro < CTRL_SPLL_EPSILON)
+            return 1;
+        else
+            return 0;
+    }
+
+    // not connect to gird
+    else
+        return 1;
 }
 
 fast_gt ctl_exec_adc_calibration(void)
 {
     //
-    // Auto process
-    //
     // 1. ADC Auto calibrate
     //
     if (flag_enable_adc_calibrator)
     {
-        //if (pmsm_ctrl.flag_enable_controller)
-        //{
         if (ctl_is_adc_calibrator_cmpt(&adc_calibrator) && ctl_is_adc_calibrator_result_valid(&adc_calibrator))
         {
 
@@ -198,7 +236,7 @@ fast_gt ctl_exec_adc_calibration(void)
                 ctl_clear_gfl_inv_with_PLL(&inv_ctrl);
 
                 // ADC Calibrator complete here.
-                ctl_enable_gfl_inv(&inv_ctrl);
+                //ctl_enable_gfl_inv(&inv_ctrl);
             }
 
             // index_adc_calibrator == 12, for Vbus
@@ -294,12 +332,11 @@ fast_gt ctl_exec_adc_calibration(void)
             if (index_adc_calibrator > 13)
                 flag_enable_adc_calibrator = 0;
         }
-        //        }
 
         // ADC calibrate is not complete
         return 0;
     }
+
+    // skip calibrate routine
     return 1;
 }
-
-
