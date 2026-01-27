@@ -716,6 +716,10 @@ void ctl_init_tracking_pid(
     // controller frequency, unit Hz
     parameter_gt fs)
 {
+    // Error prevention engineering
+    gmp_base_assert(slope_min < slope_max);
+    gmp_base_assert(sat_min < sat_max);
+
     ctl_init_slope_limiter(&tp->traj, slope_max, slope_min, fs);
     ctl_init_divider(&tp->div, division);
 
@@ -1292,7 +1296,7 @@ void ctl_init_qpr_controller(qpr_ctrl_t* qpr, parameter_gt kp, parameter_gt kr, 
 }
 
 void ctl_init_qpr_controller_prewarped(qpr_ctrl_t* qpr, parameter_gt kp, parameter_gt kr, parameter_gt freq_resonant,
-                             parameter_gt freq_cut, parameter_gt fs)
+                                       parameter_gt freq_cut, parameter_gt fs)
 {
     qpr->kp = kp;
     ctl_init_qr_controller_prewarped(&qpr->resonant_part, kr, freq_resonant, freq_cut, fs);
@@ -1437,7 +1441,6 @@ void ctl_init_discrete_sogi(
     sogi->qb1 = float2ctrl(sogi->qb0 * (2.0f));
     sogi->qb2 = sogi->qb0;
 }
-
 
 void ctl_init_discrete_sogi_dc(discrete_sogi_dc_t* sogi_dc, parameter_gt k_damp, parameter_gt k_dc, parameter_gt fn,
                                parameter_gt fs)
