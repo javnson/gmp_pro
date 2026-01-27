@@ -19,6 +19,8 @@
 
 #include <ctl/component/motor_control/basic/encoder.h>
 
+#include <ctl/component/motor_control/basic/vf_generator.h>
+
 #include <ctl/component/motor_control/current_loop/motor_current_ctrl.h>
 
 #include <ctl/component/motor_control/motion/vel_pos_loop.h>
@@ -97,7 +99,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         ctl_step_vel_pos_ctrl(&motion_ctrl);
 
         // current command dispatch
-        ctl_set_mtr_current_ref(&mtr_ctrl, 0, ctl_get_vel_pos_cmd(&motion_ctrl));
+        ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, 0, ctl_get_vel_pos_cmd(&motion_ctrl));
         
         // motor current controller
         ctl_step_current_controller(&mtr_ctrl);

@@ -87,33 +87,33 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     // monitor
     //
 
-    // Scope 1
-    simulink_tx_buffer.monitor[0] = inv_ctrl.iabc.dat[phase_A];
-    simulink_tx_buffer.monitor[1] = inv_ctrl.iabc.dat[phase_B];
+    //// Scope 1
+    //simulink_tx_buffer.monitor[0] = inv_ctrl.iabc.dat[phase_A];
+    //simulink_tx_buffer.monitor[1] = inv_ctrl.iabc.dat[phase_B];
 
-    // Scope 2
-    simulink_tx_buffer.monitor[2] = inv_ctrl.idq.dat[phase_d];
-    simulink_tx_buffer.monitor[3] = inv_ctrl.idq.dat[phase_q];
+    //// Scope 2
+    //simulink_tx_buffer.monitor[2] = inv_ctrl.idq.dat[phase_d];
+    //simulink_tx_buffer.monitor[3] = inv_ctrl.idq.dat[phase_q];
 
-    // Scope 3
-    simulink_tx_buffer.monitor[4] = inv_ctrl.vab0.dat[phase_alpha];
-    simulink_tx_buffer.monitor[5] = inv_ctrl.vab0.dat[phase_beta];
+    //// Scope 3
+    //simulink_tx_buffer.monitor[4] = inv_ctrl.vab0.dat[phase_alpha];
+    //simulink_tx_buffer.monitor[5] = inv_ctrl.vab0.dat[phase_beta];
 
-    // Scope 4
-    simulink_tx_buffer.monitor[6] = ctl_get_gfl_pll_error(&inv_ctrl);
-    simulink_tx_buffer.monitor[7] = inv_ctrl.angle;
+    //// Scope 4
+    //simulink_tx_buffer.monitor[6] = ctl_get_gfl_pll_error(&inv_ctrl);
+    //simulink_tx_buffer.monitor[7] = inv_ctrl.angle;
 
-    // Scope 5
-    simulink_tx_buffer.monitor[8] = inv_ctrl.pll.phasor.dat[phasor_sin];
-    simulink_tx_buffer.monitor[9] = inv_ctrl.pll.phasor.dat[phasor_cos];
+    //// Scope 5
+    //simulink_tx_buffer.monitor[8] = inv_ctrl.pll.phasor.dat[phasor_sin];
+    //simulink_tx_buffer.monitor[9] = inv_ctrl.pll.phasor.dat[phasor_cos];
 
-    // Scope 6
-    simulink_tx_buffer.monitor[10] = inv_ctrl.idq.dat[phase_d];
-    simulink_tx_buffer.monitor[11] = inv_ctrl.idq.dat[phase_q];
+    //// Scope 6
+    //simulink_tx_buffer.monitor[10] = inv_ctrl.idq.dat[phase_d];
+    //simulink_tx_buffer.monitor[11] = inv_ctrl.idq.dat[phase_q];
 
-    // Scope 7
-    simulink_tx_buffer.monitor[12] = inv_ctrl.vdq.dat[phase_d];
-    simulink_tx_buffer.monitor[13] = inv_ctrl.vdq.dat[phase_q];
+    //// Scope 7
+    //simulink_tx_buffer.monitor[12] = inv_ctrl.vdq.dat[phase_d];
+    //simulink_tx_buffer.monitor[13] = inv_ctrl.vdq.dat[phase_q];
 
 }
 
@@ -121,7 +121,7 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
 // Enable Output
 GMP_STATIC_INLINE void ctl_fast_enable_output()
 {
-    ctl_enable_gfl_inv(&inv_ctrl);
+    //ctl_enable_gfl_inv(&inv_ctrl);
 
     csp_sl_enable_output();
 

@@ -29,14 +29,26 @@
 // PWM deadband
 #define CTRL_PWM_DEADBAND_CMP (50)
 
-// ADC Voltae Reference
+// ADC Voltage Reference
 #define CTRL_ADC_VOLTAGE_REF (3.3f)
 
 //=================================================================================================
 // Hardware parameters
 
-#include <ctl/component/hardware_preset/grid_LC_filter/GMP_Harmonia_3ph_LC_filter.h>
 #include <ctl/component/hardware_preset/inverter_3ph/GMP_Helios_3PhGaNInv_LV.h>
+#include <ctl/component/hardware_preset/pmsm_motor/TYI_5008_KV335.h>
+
+///////////////////////////////////////////////////////////
+// Encoder Propeties
+
+// Encoder Full scale
+#define CTRL_POS_ENC_FS (8000)
+
+// Speed division
+#define CTRL_SPD_DIV (5)
+
+// Position division
+#define CTRL_POS_DIV (5)
 
 ///////////////////////////////////////////////////////////
 // Controller Base value
