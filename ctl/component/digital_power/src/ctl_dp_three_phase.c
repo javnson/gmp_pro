@@ -260,22 +260,25 @@ void ctl_auto_tuning_gfl_inv(gfl_inv_ctrl_init_t* init)
     init->current_phase_lag = control_delay + filter_delay;
 
     // select PLL bandwidth is freq_base / 3
-    // 1. 定义物理常数
-    // 系统固有的环路增益：2 * PI * f_base (约 314.159)
-    parameter_gt system_gain = CTL_PARAM_CONST_2PI * init->freq_base;
+    init->pll_bw = init->freq_base / 3;
+    init->k_pll_sogi = 1.414f;
 
-    // 2. 定义设计目标
-    // 设定带宽为基频的 1/3 (约 16.7Hz)
-    parameter_gt bandwidth_hz = init->freq_base / 3.0f;
-    parameter_gt omega_n = bandwidth_hz * CTL_PARAM_CONST_2PI;
-    parameter_gt damping = 0.707f;
+    //// 1. 定义物理常数
+    //// 系统固有的环路增益：2 * PI * f_base (约 314.159)
+    //parameter_gt system_gain = CTL_PARAM_CONST_2PI * init->freq_base;
 
-    // 3. 计算修正后的 PI 参数 (除以 system_gain)
-    // Kp = (2 * zeta * wn) / system_gain
-    init->kp_pll = (2.0f * damping * omega_n) / system_gain;
+    //// 2. 定义设计目标
+    //// 设定带宽为基频的 1/3 (约 16.7Hz)
+    //parameter_gt bandwidth_hz = init->freq_base / 3.0f;
+    //parameter_gt omega_n = bandwidth_hz * CTL_PARAM_CONST_2PI;
+    //parameter_gt damping = 0.707f;
 
-    // Ki = (wn^2) / system_gain
-    init->ki_pll = (omega_n * omega_n) / system_gain;
+    //// 3. 计算修正后的 PI 参数 (除以 system_gain)
+    //// Kp = (2 * zeta * wn) / system_gain
+    //init->kp_pll = (2.0f * damping * omega_n) / system_gain;
+
+    //// Ki = (wn^2) / system_gain
+    //init->ki_pll = (omega_n * omega_n) / system_gain;
 
     //    init->kp_pll = 2.0f * 0.707f * init->freq_base / 3.0f * CTL_PARAM_CONST_2PI;
     //    init->ki_pll = init->freq_base / 3.0f * init->freq_base / 3.0f * CTL_PARAM_CONST_2PI * CTL_PARAM_CONST_2PI;
@@ -307,7 +310,8 @@ void ctl_update_gfl_inv_coeff(gfl_inv_ctrl_t* inv, gfl_inv_ctrl_init_t* init)
     ctl_init_lead_form3(&inv->lead_compensator[phase_d], init->current_phase_lag, init->current_loop_bw, init->fs);
     ctl_init_lead_form3(&inv->lead_compensator[phase_q], init->current_phase_lag, init->current_loop_bw, init->fs);
 
-    ctl_init_sfr_pll(&inv->pll, init->freq_base, init->kp_pll, init->ki_pll, 0, init->fs);
+    //ctl_init_sfr_pll(&inv->pll, init->freq_base, init->kp_pll, init->ki_pll, 0, init->fs);
+    ctl_init_dsogi_pll(&inv->pll, init->freq_base, init->fs, init->v_grid, init->pll_bw, init->k_pll_sogi);
 
     ctl_init_ramp_generator_via_freq(&inv->rg, init->fs, init->freq_base, 1, 0);
 

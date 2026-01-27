@@ -104,8 +104,8 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     simulink_tx_buffer.monitor[7] = inv_ctrl.angle;
 
     // Scope 5
-    simulink_tx_buffer.monitor[8] = inv_ctrl.pll.phasor.dat[phasor_sin];
-    simulink_tx_buffer.monitor[9] = inv_ctrl.pll.phasor.dat[phasor_cos];
+    simulink_tx_buffer.monitor[8] = inv_ctrl.pll.srf_pll.phasor.dat[phasor_sin];
+    simulink_tx_buffer.monitor[9] = inv_ctrl.pll.srf_pll.phasor.dat[phasor_cos];
 
     // Scope 6
     simulink_tx_buffer.monitor[10] = inv_ctrl.idq.dat[phase_d];

@@ -145,7 +145,7 @@ typedef struct _tag_gfl_inv_ctrl_type
     ctrl_lead_t lead_compensator[2];
 
     // PLL & RG
-    srf_pll_t pll;           //!< Three-phase PLL for grid synchronization.
+    dsogi_pll_t pll;         //!< Three-phase PLL for grid synchronization.
     ctl_ramp_generator_t rg; //!< Ramp generator for open-loop/free-run operation.
 
     //
@@ -206,7 +206,7 @@ GMP_STATIC_INLINE void ctl_clear_gfl_inv(gfl_inv_ctrl_t* inv)
 GMP_STATIC_INLINE void ctl_clear_gfl_inv_with_PLL(gfl_inv_ctrl_t* inv)
 {
     ctl_clear_gfl_inv(inv);
-    ctl_clear_pll_3ph(&inv->pll);
+    ctl_clear_dsogi_pll(&inv->pll);
 
     inv->flag_enable_system = 0;
 }
@@ -241,8 +241,8 @@ typedef struct _tag_gfl_inv_ctrl_init
     parameter_gt active_damping_center_freq; //!< active damping center frequency, Hz.
     parameter_gt active_damping_filter_q;    //!< active damping filter Q
 
-    parameter_gt kp_pll; //!< PLL controller parameters
-    parameter_gt ki_pll; //!< PLL controller parameters
+    parameter_gt k_pll_sogi; //!< SOGI damping factor
+    parameter_gt pll_bw;     //!< PLL Bandwidth
 
 } gfl_inv_ctrl_init_t;
 
@@ -344,7 +344,7 @@ GMP_STATIC_INLINE void ctl_step_gfl_inv_ctrl(gfl_inv_ctrl_t* gfl)
 
     // --- 2. Grid Synchronization (PLL) ---
     if (gfl->flag_enable_pll)
-        ctl_step_pll_3ph(&gfl->pll, gfl->vab0.dat[phase_alpha], gfl->vab0.dat[phase_beta]);
+        ctl_step_dsogi_pll(&gfl->pll, gfl->vab0.dat[phase_alpha], gfl->vab0.dat[phase_beta]);
 
     // --- 3. Main Control Logic ---
     if (gfl->flag_enable_system)
@@ -364,8 +364,8 @@ GMP_STATIC_INLINE void ctl_step_gfl_inv_ctrl(gfl_inv_ctrl_t* gfl)
         // using PLL phasor
         else
         {
-            gfl->angle = gfl->pll.theta;
-            ctl_vector2_copy(&gfl->phasor, &gfl->pll.phasor);
+            gfl->angle = gfl->pll.srf_pll.theta;
+            ctl_vector2_copy(&gfl->phasor, &gfl->pll.srf_pll.phasor);
         }
 
         // --- 3b. Park Transformation ---
@@ -538,7 +538,7 @@ GMP_STATIC_INLINE void ctl_enable_gfl_inv_lead_compensator(gfl_inv_ctrl_t* inv)
 /** @brief Get PLL error */
 GMP_STATIC_INLINE ctrl_gt ctl_get_gfl_pll_error(gfl_inv_ctrl_t* inv)
 {
-    return inv->pll.e_error;
+    return inv->pll.srf_pll.e_error;
 }
 
 /** @brief Enable PLL module */

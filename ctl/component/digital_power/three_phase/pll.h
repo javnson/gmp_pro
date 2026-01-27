@@ -24,6 +24,7 @@ extern "C"
 #endif // __cplusplus
 
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
+#include <ctl/component/intrinsic/discrete/discrete_sogi.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 
 /**
