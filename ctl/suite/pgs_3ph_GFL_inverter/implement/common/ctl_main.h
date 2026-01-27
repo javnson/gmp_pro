@@ -18,6 +18,7 @@
 #include <ctl/component/interface/pwm_channel.h>
 
 #include <ctl/component/digital_power/three_phase/three_phase_GFL.h>
+#include <ctl/component/digital_power/three_phase/three_phase_additional.h>
 
 #include <ctl/component/interface/pwm_modulator.h>
 
@@ -54,6 +55,8 @@ extern spwm_modulator_t spwm;
 extern gfl_inv_ctrl_init_t gfl_init;
 extern gfl_inv_ctrl_t inv_ctrl;
 extern gfl_pq_ctrl_t pq_ctrl;
+extern inv_neg_ctrl_init_t gfl_neg_init;
+extern inv_neg_ctrl_t neg_current_ctrl;
 
 // Observer: PLL
 
@@ -90,6 +93,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 
         // run controller body
         ctl_step_gfl_inv_ctrl(&inv_ctrl);
+        ctl_step_neg_inv_ctrl(&neg_current_ctrl);
 
         ctl_step_gfl_pq(&pq_ctrl);
 
@@ -99,9 +103,9 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         }
 
         // mix all output
-        spwm.vab0_out.dat[phase_U] = inv_ctrl.vab0_out.dat[phase_U];
-        spwm.vab0_out.dat[phase_V] = inv_ctrl.vab0_out.dat[phase_V];
-        spwm.vab0_out.dat[phase_W] = inv_ctrl.vab0_out.dat[phase_W];
+        spwm.vab0_out.dat[phase_A] = inv_ctrl.vab0_out.dat[phase_A] + neg_current_ctrl.vab_out.dat[phase_A];
+        spwm.vab0_out.dat[phase_B] = inv_ctrl.vab0_out.dat[phase_B] + neg_current_ctrl.vab_out.dat[phase_B];
+        spwm.vab0_out.dat[phase_0] = inv_ctrl.vab0_out.dat[phase_0];
 
         // modulation
 #if defined USING_NPC_MODULATOR
@@ -109,7 +113,6 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 #else
         ctl_step_spwm_modulator(&spwm);
 #endif // USING_NPC_MODULATOR
-
     }
 }
 

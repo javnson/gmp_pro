@@ -419,7 +419,23 @@ GMP_STATIC_INLINE void ctl_attach_neg_inv(inv_neg_ctrl_t* neg, ctl_vector2_t* ia
     neg->phasor = phasor;
 }
 
+GMP_STATIC_INLINE void ctl_enable_neg_current_inv(inv_neg_ctrl_t* neg)
+{
+    neg->flag_enable_negative_current_ctrl = 1;
+    neg->flag_enable_negative_voltage_ctrl = 0;
+}
 
+GMP_STATIC_INLINE void ctl_enable_neg_voltage_inv(inv_neg_ctrl_t* neg)
+{
+    neg->flag_enable_negative_current_ctrl = 1;
+    neg->flag_enable_negative_voltage_ctrl = 1;
+}
+
+GMP_STATIC_INLINE void ctl_disable_neg_inv(inv_neg_ctrl_t* neg)
+{
+    neg->flag_enable_negative_current_ctrl = 0;
+    neg->flag_enable_negative_voltage_ctrl = 0;
+}
 
 #ifdef __cplusplus
 }

@@ -638,7 +638,14 @@ void ctl_init_gfl_pq(gfl_pq_ctrl_t* pq, parameter_gt p_kp, parameter_gt p_ki, pa
  * @brief Reset the PQ controller (clear integrators).
  * @param[in,out] pq Pointer to the PQ controller instance.
  */
-void ctl_clear_gfl_pq(gfl_pq_ctrl_t* pq);
+GMP_STATIC_INLINE void ctl_clear_gfl_pq(gfl_pq_ctrl_t* pq)
+{
+    ctl_clear_pid(&pq->pid_p);
+    ctl_clear_pid(&pq->pid_q);
+
+    pq->idq_set_out.dat[phase_d] = 0;
+    pq->idq_set_out.dat[phase_q] = 0;
+}
 
 /**
  * @brief Attach feedback pointers to the PQ controller.

@@ -392,19 +392,6 @@ void ctl_init_gfl_pq(gfl_pq_ctrl_t* pq, parameter_gt p_kp, parameter_gt p_ki, pa
 }
 
 /**
- * @brief Reset the PQ controller (clear integrators).
- * @param[in,out] pq Pointer to the PQ controller instance.
- */
-void ctl_clear_gfl_pq(gfl_pq_ctrl_t* pq)
-{
-    ctl_clear_pid(&pq->pid_p);
-    ctl_clear_pid(&pq->pid_q);
-
-    pq->idq_set_out.dat[phase_d] = 0;
-    pq->idq_set_out.dat[phase_q] = 0;
-}
-
-/**
  * @brief Attach feedback pointers to the PQ controller.
  * @param[in,out] pq Pointer to the PQ controller instance.
  * @param[in] vdq Pointer to the inner loop's Vdq measurement.
@@ -454,12 +441,16 @@ void ctl_auto_tuning_neg_inv(inv_neg_ctrl_init_t* neg_init, const gfl_inv_ctrl_i
     // Strategy: Set fc at approx freq_base / 2.5 (e.g., 20Hz for 50Hz grid).
     // This offers a trade-off between ripple attenuation and delay.
     neg_init->seq_filter_fc = _gfl_init->freq_base / 2.5f;
-    neg_init->seq_filter_q = 0.707f; // Butterworth response
+    //neg_init->seq_filter_q = 0.707f; // Butterworth response
+    neg_init->seq_filter_q = 5.0f; // Butterworth response
 
     // 3. Tuning Current Loop (Inner Loop)
     // Constraint: Bandwidth must be lower than filter fc to maintain stability margin.
-    // Strategy: Set BW at filter_fc / 2.
-    parameter_gt neg_current_bw = neg_init->seq_filter_fc / 2.0f;
+    // Strategy: Set BW at filter_fc / 2, it's too small.
+    //parameter_gt neg_current_bw = neg_init->seq_filter_fc / 2.0f;
+
+    // Set BW at fs/50
+    parameter_gt neg_current_bw = neg_init->fs / 50.0f;
 
     // Calculate PI gains based on Plant Model: V = L * di/dt
     // Kp_pu = (2*pi*BW * L) * (I_base / V_base)
@@ -479,7 +470,7 @@ void ctl_auto_tuning_neg_inv(inv_neg_ctrl_init_t* neg_init, const gfl_inv_ctrl_i
 
     // Ki: Place zero at low frequency (e.g., BW / 10) to eliminate steady state error
     // Ki = Kp * 2*pi * f_zero
-    neg_init->ki_current = neg_init->kp_current * CTL_PARAM_CONST_2PI * (neg_current_bw / 10.0f);
+    neg_init->ki_current = CTL_PARAM_CONST_2PI * (neg_current_bw / 10.0f);
 
     // Default Limits
     neg_init->limit_current_out = 0.8f; // 0.8 p.u. voltage compensation limit
@@ -500,7 +491,7 @@ void ctl_auto_tuning_neg_inv(inv_neg_ctrl_init_t* neg_init, const gfl_inv_ctrl_i
     neg_init->kp_voltage = kp_v_si * _gfl_init->v_base / _gfl_init->i_base;
 
     // Ki
-    neg_init->ki_voltage = neg_init->kp_voltage * CTL_PARAM_CONST_2PI * (neg_voltage_bw / 5.0f);
+    neg_init->ki_voltage = CTL_PARAM_CONST_2PI * (neg_voltage_bw / 5.0f);
 
     neg_init->limit_voltage_out = 0.5f; // 0.5 p.u. current injection limit
 }
@@ -521,8 +512,10 @@ void ctl_update_neg_inv_coeff(inv_neg_ctrl_t* neg, const inv_neg_ctrl_init_t* ne
     // These filter the raw dq currents/voltages to extract DC negative sequence.
     for (i = 0; i < 2; ++i)
     {
-        ctl_init_biquad_lpf(&neg->filter_idqn[i], neg_init->fs, neg_init->seq_filter_fc, neg_init->seq_filter_q);
-        ctl_init_biquad_lpf(&neg->filter_vdqn[i], neg_init->fs, neg_init->seq_filter_fc, neg_init->seq_filter_q);
+        //ctl_init_biquad_lpf(&neg->filter_idqn[i], neg_init->fs, neg_init->seq_filter_fc, neg_init->seq_filter_q);
+        //ctl_init_biquad_lpf(&neg->filter_vdqn[i], neg_init->fs, neg_init->seq_filter_fc, neg_init->seq_filter_q);
+        ctl_init_biquad_notch(&neg->filter_idqn[i], neg_init->fs, neg_init->freq_base * 2, neg_init->seq_filter_q);
+        ctl_init_biquad_notch(&neg->filter_vdqn[i], neg_init->fs, neg_init->freq_base * 2, neg_init->seq_filter_q);
     }
 
     // 2. Init Current Loop PIDs
@@ -530,15 +523,15 @@ void ctl_update_neg_inv_coeff(inv_neg_ctrl_t* neg, const inv_neg_ctrl_init_t* ne
     ctl_init_pid(&neg->pid_idqn[phase_d], neg_init->kp_current, neg_init->ki_current, 0, neg_init->fs);
     ctl_init_pid(&neg->pid_idqn[phase_q], neg_init->kp_current, neg_init->ki_current, 0, neg_init->fs);
 
-    ctl_set_pid_limit(&neg->pid_idqn[phase_d], -neg_init->limit_current_out, neg_init->limit_current_out);
-    ctl_set_pid_limit(&neg->pid_idqn[phase_q], -neg_init->limit_current_out, neg_init->limit_current_out);
+    ctl_set_pid_limit(&neg->pid_idqn[phase_d], neg_init->limit_current_out, -neg_init->limit_current_out);
+    ctl_set_pid_limit(&neg->pid_idqn[phase_q], neg_init->limit_current_out, -neg_init->limit_current_out);
 
     // 3. Init Voltage Loop PIDs
     ctl_init_pid(&neg->pid_vdqn[phase_d], neg_init->kp_voltage, neg_init->ki_voltage, 0, neg_init->fs);
     ctl_init_pid(&neg->pid_vdqn[phase_q], neg_init->kp_voltage, neg_init->ki_voltage, 0, neg_init->fs);
 
-    ctl_set_pid_limit(&neg->pid_vdqn[phase_d], -neg_init->limit_voltage_out, neg_init->limit_voltage_out);
-    ctl_set_pid_limit(&neg->pid_vdqn[phase_q], -neg_init->limit_voltage_out, neg_init->limit_voltage_out);
+    ctl_set_pid_limit(&neg->pid_vdqn[phase_d], neg_init->limit_voltage_out, -neg_init->limit_voltage_out);
+    ctl_set_pid_limit(&neg->pid_vdqn[phase_q], neg_init->limit_voltage_out, -neg_init->limit_voltage_out);
 }
 
 /**
