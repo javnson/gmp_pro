@@ -184,15 +184,29 @@ typedef struct _tag_ctl_qr_controller
 } qr_ctrl_t;
 
 /**
- * @brief Initializes a quasi-resonant controller.
+ * @brief Initializes a quasi-resonant controller using Standard Tustin.
  * @param[out] qr Pointer to the QR controller instance.
  * @param[in] kr Gain of the resonant term.
  * @param[in] freq_resonant Resonant frequency in Hz.
  * @param[in] freq_cut Cutoff frequency in Hz, which sets the controller's bandwidth.
  * @param[in] fs Sampling frequency in Hz.
+ * @note  Use this only for low frequency resonances relative to Fs.
  */
 void ctl_init_qr_controller(qr_ctrl_t* qr, parameter_gt kr, parameter_gt freq_resonant, parameter_gt freq_cut,
                             parameter_gt fs);
+
+/**
+ * @brief Initializes a quasi-resonant controller with Frequency Pre-warping.
+ * @details Corrects the frequency warping effect of bilinear transformation at the resonant frequency.
+ * Essential for harmonic control (e.g., 6th, 12th harmonics).
+ * @param[out] qr Pointer to the QR controller instance.
+ * @param[in] kr Gain of the resonant term.
+ * @param[in] freq_resonant Resonant frequency in Hz (Center Frequency).
+ * @param[in] freq_cut Cutoff frequency in Hz (Bandwidth/2).
+ * @param[in] fs Sampling frequency in Hz.
+ */
+void ctl_init_qr_controller_prewarped(qr_ctrl_t* qr, parameter_gt kr, parameter_gt freq_resonant, parameter_gt freq_cut,
+                                      parameter_gt fs);
 
 /**
  * @brief Clears the internal states of the QR controller.
@@ -246,7 +260,7 @@ typedef struct _tag_ctl_qpr_controller
 } qpr_ctrl_t;
 
 /**
- * @brief Initializes a QPR controller.
+ * @brief Initializes a QPR controller using Standard Tustin.
  * @param[out] qpr Pointer to the QPR controller instance.
  * @param[in] kp Proportional gain.
  * @param[in] kr Gain of the resonant term.
@@ -256,6 +270,18 @@ typedef struct _tag_ctl_qpr_controller
  */
 void ctl_init_qpr_controller(qpr_ctrl_t* qpr, parameter_gt kp, parameter_gt kr, parameter_gt freq_resonant,
                              parameter_gt freq_cut, parameter_gt fs);
+
+/**
+ * @brief Initializes a QPR controller with Frequency Pre-warping.
+ * @param[out] qpr Pointer to the QPR controller instance.
+ * @param[in] kp Proportional gain.
+ * @param[in] kr Gain of the resonant term.
+ * @param[in] freq_resonant Resonant frequency in Hz.
+ * @param[in] freq_cut Cutoff frequency in Hz.
+ * @param[in] fs Sampling frequency in Hz.
+ */
+void ctl_init_qpr_controller_prewarped(qpr_ctrl_t* qpr, parameter_gt kp, parameter_gt kr, parameter_gt freq_resonant,
+                                       parameter_gt freq_cut, parameter_gt fs);
 
 /**
  * @brief Clears the internal states of the QPR controller.

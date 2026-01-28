@@ -1,6 +1,6 @@
 /**
  * @file vel_pos_loop.h
- * @author Javnson (javnson@zju.edu.cn)
+ * @author WuMin  (wumin325@zju.edu.cn)
  * @brief Implements a velocity and position controller.
  * @version 0.2
  * @date 2026-01-19
@@ -67,6 +67,8 @@ typedef struct tag_vel_pos_controller
     fast_gt flag_enable_position_ctrl; ///< Flag to enable/disable position control.
 } ctl_vel_pos_controller_t;
 
+typedef ctl_vel_pos_controller_t vel_pos_ctrl_t;
+
 //================================================================================
 // Function Prototypes & Definitions
 //================================================================================
@@ -97,7 +99,7 @@ GMP_STATIC_INLINE void ctl_clear_vel_pos_ctrl(ctl_vel_pos_controller_t* ctrl)
  * @param[in]  pos_division The frequency division factor for the position controller execution.
  * @param[in]  fs Controller execution frequency (Hz).
  */
-void ctl_init_vel_pos_controller(ctl_vel_pos_controller_t* ctrl, parameter_gt vel_kp, parameter_gt pos_kp,
+void ctl_init_vel_pos_ctrl(ctl_vel_pos_controller_t* ctrl, parameter_gt vel_kp, parameter_gt pos_kp,
     parameter_gt vel_ki, parameter_gt pos_ki, 
     parameter_gt speed_limit, parameter_gt cur_limit, uint32_t vel_division, uint32_t pos_division, parameter_gt fs);
 
@@ -106,7 +108,7 @@ void ctl_init_vel_pos_controller(ctl_vel_pos_controller_t* ctrl, parameter_gt ve
  * @param[out] ctrl      Pointer to the velocity and position controller structure.
  */
 
-GMP_STATIC_INLINE void ctl_step_vel_pos_controller(ctl_vel_pos_controller_t* ctrl)
+GMP_STATIC_INLINE void ctl_step_vel_pos_ctrl(ctl_vel_pos_controller_t* ctrl)
 {
     // Position Control Loop
     if (ctrl->flag_enable_position_ctrl)
@@ -138,6 +140,11 @@ GMP_STATIC_INLINE void ctl_step_vel_pos_controller(ctl_vel_pos_controller_t* ctr
             ctrl->cur_output = ctl_step_pid_par(&ctrl->vel_ctrl, spd_error);
         }
     }
+}
+
+GMP_STATIC_INLINE ctrl_gt ctl_get_vel_pos_cmd(ctl_vel_pos_controller_t* ctrl)
+{
+    return ctrl->cur_output;
 }
 
 /** @} */ // end of VELOCITY_POSITION_CONTROLLER group

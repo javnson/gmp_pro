@@ -35,6 +35,8 @@ spwm_modulator_t spwm;
 
 // controller body: Current controller, Power controller / Voltage controller
 gfl_pq_ctrl_t pq_ctrl;
+inv_neg_ctrl_init_t gfl_neg_init;
+inv_neg_ctrl_t neg_current_ctrl;
 gfl_inv_ctrl_init_t gfl_init;
 gfl_inv_ctrl_t inv_ctrl;
 
@@ -48,8 +50,8 @@ volatile fast_gt flag_error = 0;
 
 // adc calibrator flags
 adc_bias_calibrator_t adc_calibrator;
-//volatile fast_gt flag_enable_adc_calibrator = 1;
-volatile fast_gt flag_enable_adc_calibrator = 0;
+volatile fast_gt flag_enable_adc_calibrator = 1;
+//volatile fast_gt flag_enable_adc_calibrator = 0;
 volatile fast_gt index_adc_calibrator = 0;
 
 //=================================================================================================
@@ -76,6 +78,10 @@ void ctl_init()
 
     ctl_auto_tuning_gfl_inv(&gfl_init);
     ctl_init_gfl_inv(&inv_ctrl, &gfl_init);
+
+    ctl_auto_tuning_neg_inv(&gfl_neg_init, &gfl_init);
+    ctl_init_neg_inv(&neg_current_ctrl, &gfl_neg_init);
+    ctl_attach_neg_inv_to_gfl(&neg_current_ctrl, &inv_ctrl);
 
     //
     // init SPWM modulator
@@ -108,6 +114,8 @@ void ctl_init()
     // Basic current close loop, inverter
     ctl_set_gfl_inv_current_mode(&inv_ctrl);
     ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(0.1), float2ctrl(0));
+
+    ctl_enable_neg_current_inv(&neg_current_ctrl);
 
     ctl_enable_gfl_inv_pll(&inv_ctrl);
     ctl_set_gfl_inv_grid_connect(&inv_ctrl);
@@ -176,6 +184,12 @@ void ctl_enable_pwm()
 void ctl_disable_pwm()
 {
     ctl_fast_disable_output();
+
+    // clear controller here
+    ctl_clear_gfl_inv(&inv_ctrl);
+    ctl_clear_neg_inv(&neg_current_ctrl);
+    ctl_clear_gfl_pq(&pq_ctrl);
+
 }
 
 fast_gt ctl_check_pll_locked(void)

@@ -9,7 +9,7 @@
 // BUILD_LEVEL 2: inverter, current loop
 // BUILD_LEVEL 3: inverter, current loop, grid connected
 // BUILD_LEVEL 4: inverter, current loop, grid connected, all feed forward on.
-#define BUILD_LEVEL (2)
+#define BUILD_LEVEL (3)
 
 //=================================================================================================
 // Select Board Pin definition

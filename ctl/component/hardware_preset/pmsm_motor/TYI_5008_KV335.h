@@ -10,8 +10,6 @@
 #ifndef _FILE_MOTOR_PARAM_TYI5008_KV335_H_
 #define _FILE_MOTOR_PARAM_TYI5008_KV335_H_
 
-#include <ctl/component/motor_control/basic/motor_unit_calculator.h>
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -36,9 +34,9 @@ extern "C"
 //================================================================================
 // Electrical Parameters
 //================================================================================
-#define MOTOR_PARAM_RS   ((65.0e-3)) ///< Stator resistance per phase (Ohm).
-#define MOTOR_PARAM_LS   ((25.0e-6)) ///< Stator inductance per phase (H). Assumes Ld = Lq.
-#define MOTOR_PARAM_FLUX ((0.0023))  ///< Permanent magnet flux linkage (Wb).
+#define MOTOR_PARAM_RS   ((65.0e-3f)) ///< Stator resistance per phase (Ohm).
+#define MOTOR_PARAM_LS   ((25.0e-6f)) ///< Stator inductance per phase (H). Assumes Ld = Lq.
+#define MOTOR_PARAM_FLUX ((0.0023f))  ///< Permanent magnet flux linkage (Wb).
 
 //================================================================================
 // Mechanical Parameters
@@ -53,19 +51,20 @@ extern "C"
  * @note This value may not be perfectly consistent with the provided flux linkage
  * under all measurement conditions.
  */
-#define MOTOR_PARAM_KV ((335.0))
+#define MOTOR_PARAM_KV ((335.0f))
 
 /**
  * @brief Back-EMF constant (V/kRPM).
  * @note This value may not be perfectly consistent with the provided flux linkage.
  */
-#define MOTOR_PARAM_EMF ((4.85))
+#define MOTOR_PARAM_EMF ((4.85f))
 
 //================================================================================
 // Rated Operating Parameters
 //================================================================================
-#define MOTOR_PARAM_RATED_VOLTAGE   ((24.0)) ///< Rated operating voltage (V).
-#define MOTOR_PARAM_NO_LOAD_CURRENT ((0.5))  ///< No-load phase current (A, Peak).
+#define MOTOR_PARAM_RATED_VOLTAGE   ((24.0f)) ///< Rated operating voltage (V).
+#define MOTOR_PARAM_NO_LOAD_CURRENT ((0.5f))  ///< No-load phase current (A, Peak).
+#define MOTOR_PARAM_RATED_FREQUENCY ((933..33333f))
 
 //================================================================================
 // Absolute Maximum Ratings & Limits

@@ -1,4 +1,4 @@
-/**
+ï»¿/**
  * @file ctl_dp_three_phase.c
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Implementation for three-phase digital power controller modules.
@@ -59,44 +59,116 @@ void ctl_init_sfr_pll(srf_pll_t* pll, parameter_gt f_base, parameter_gt pid_kp, 
 }
 
 /**
- * @brief ¸ù¾İ´ø¿íºÍ×èÄá±È×Ô¶¯¼ÆËã PI ²ÎÊı²¢³õÊ¼»¯ SRF-PLL
- * @param[out] pll            PLL ¶ÔÏóÖ¸Õë
- * @param[in]  f_base         µçÍø»ù×¼ÆµÂÊ (e.g., 50.0)
- * @param[in]  f_ctrl         ¿ØÖÆÑ­»·ÆµÂÊ/²ÉÑùÆµÂÊ (e.g., 10000.0)
- * @param[in]  voltage_mag    ÊäÈëµÄµçÑ¹Ê¸Á¿Ä£³¤ (sqrt(alpha^2 + beta^2))¡£Èç¹ûÊäÈëÒÑ¾­±êçÛ»¯£¬ÔòÌî 1.0¡£
- * @param[in]  bandwidth_hz   ÆÚÍûµÄ PLL ´ø¿í (Hz)¡£ÍÆ¼öÖµ: 10.0 ~ 30.0 Hz
- * @param[in]  damping_factor ×èÄá±È¡£ÍÆ¼öÖµ: 0.707
+ * @brief æ ¹æ®å¸¦å®½å’Œé˜»å°¼æ¯”è‡ªåŠ¨è®¡ç®— PI å‚æ•°å¹¶åˆå§‹åŒ– SRF-PLL
+ * @param[out] pll            PLL å¯¹è±¡æŒ‡é’ˆ
+ * @param[in]  f_base         ç”µç½‘åŸºå‡†é¢‘ç‡ (e.g., 50.0)
+ * @param[in]  f_ctrl         æ§åˆ¶å¾ªç¯é¢‘ç‡/é‡‡æ ·é¢‘ç‡ (e.g., 10000.0)
+ * @param[in]  voltage_mag    è¾“å…¥çš„ç”µå‹çŸ¢é‡æ¨¡é•¿ (sqrt(alpha^2 + beta^2))ã€‚å¦‚æœè¾“å…¥å·²ç»æ ‡å¹ºåŒ–ï¼Œåˆ™å¡« 1.0ã€‚
+ * @param[in]  bandwidth_hz   æœŸæœ›çš„ PLL å¸¦å®½ (Hz)ã€‚æ¨èå€¼: 10.0 ~ 30.0 Hz
+ * @param[in]  damping_factor é˜»å°¼æ¯”ã€‚æ¨èå€¼: 0.707
  */
 void ctl_init_srf_pll_auto_tune(srf_pll_t* pll, parameter_gt f_base, parameter_gt f_ctrl, parameter_gt voltage_mag,
                                 parameter_gt bandwidth_hz, parameter_gt damping_factor)
 {
-    // 1. ½«´ø¿í Hz ×ª»»Îª×ÔÈ»½ÇÆµÂÊ rad/s
+    // 1. å°†å¸¦å®½ Hz è½¬æ¢ä¸ºè‡ªç„¶è§’é¢‘ç‡ rad/s
     parameter_gt omega_n = CTL_PARAM_CONST_2PI * bandwidth_hz;
 
-    // 2. ¼ÆËã»·Â·ÖĞµÄ¹Ì¶¨ÔöÒæ²¿·Ö K_loop = 2 * pi * Vm * f_base
-    //    ÍÆµ¼À´Ô´£º
-    //    - ¼øÏàÆ÷ÔöÒæ (rad -> Vq): K_pd = 2 * pi * Vm (ÒòÎª theta ÊÇ 0~1.0)
-    //    - VCO ÔöÒæ (freq_pu -> d_theta/dt): K_vco = f_base
+    // 2. è®¡ç®—ç¯è·¯ä¸­çš„å›ºå®šå¢ç›Šéƒ¨åˆ† K_loop = 2 * pi * Vm * f_base
+    //    æ¨å¯¼æ¥æºï¼š
+    //    - é‰´ç›¸å™¨å¢ç›Š (rad -> Vq): K_pd = 2 * pi * Vm (å› ä¸º theta æ˜¯ 0~1.0)
+    //    - VCO å¢ç›Š (freq_pu -> d_theta/dt): K_vco = f_base
     parameter_gt loop_gain_constant = CTL_PARAM_CONST_2PI * voltage_mag * f_base;
 
-    // ·À³ıÁã±£»¤
+    // é˜²é™¤é›¶ä¿æŠ¤
     if (loop_gain_constant < 0.0001f)
     {
         loop_gain_constant = 0.0001f;
     }
 
-    // 3. ¸ù¾İ¶ş½×ÏµÍ³¹«Ê½·´½â Kp ºÍ Ki
+    // 3. æ ¹æ®äºŒé˜¶ç³»ç»Ÿå…¬å¼åè§£ Kp å’Œ Ki
     //    Kp = (2 * zeta * omega_n) / K_loop
     //    Ki = (omega_n^2) / K_loop
 
     parameter_gt calculated_kp = (2.0f * damping_factor * omega_n) / loop_gain_constant;
     parameter_gt calculated_ki = (omega_n * omega_n) / loop_gain_constant;
 
-    // ¶ÔÓÚ PI ¿ØÖÆÆ÷£¬Kd Í¨³£Îª 0
+    // å¯¹äº PI æ§åˆ¶å™¨ï¼ŒKd é€šå¸¸ä¸º 0
     parameter_gt calculated_kd = 0.0f;
 
-    // 4. µ÷ÓÃÔ­ÓĞµÄ³õÊ¼»¯º¯Êı
+    // 4. è°ƒç”¨åŸæœ‰çš„åˆå§‹åŒ–å‡½æ•°
     ctl_init_sfr_pll(pll, f_base, calculated_kp, calculated_ki, calculated_kd, f_ctrl);
+}
+
+void ctl_init_ddsrf_pll(ddsrf_pll_t* pll, parameter_gt f_base, parameter_gt pid_kp, parameter_gt pid_ki,
+                        parameter_gt f_ctrl, parameter_gt decoupling_fc)
+{
+    // Clear State
+    ctl_clear_ddsrf_pll(pll);
+
+    // Init Frequency Scaling Factor
+    pll->freq_sf = float2ctrl(f_base / f_ctrl);
+
+    // Init PID
+    ctl_init_pid(&pll->pid_pll, pid_kp, pid_ki, 0, f_ctrl);
+
+    // Init Decoupling LPFs
+    ctl_init_filter_iir1_lpf(&pll->lpf_pos_d, f_ctrl, decoupling_fc);
+    ctl_init_filter_iir1_lpf(&pll->lpf_pos_q, f_ctrl, decoupling_fc);
+    ctl_init_filter_iir1_lpf(&pll->lpf_neg_d, f_ctrl, decoupling_fc);
+    ctl_init_filter_iir1_lpf(&pll->lpf_neg_q, f_ctrl, decoupling_fc);
+}
+
+/**
+ * @brief Auto-tune and initialize the DDSRF-PLL.
+ * @details Bandwidth usually 20-30Hz. Decoupling FC usually f_base/sqrt(2).
+ */
+void ctl_init_ddsrf_pll_auto_tune(ddsrf_pll_t* pll, parameter_gt f_base, parameter_gt f_ctrl, parameter_gt voltage_mag,
+                                  parameter_gt bandwidth_hz)
+{
+    // 1. Calculate Loop Gains (Same as SRF-PLL)
+    parameter_gt omega_n = CTL_PARAM_CONST_2PI * bandwidth_hz;
+    parameter_gt loop_gain_constant = CTL_PARAM_CONST_2PI * voltage_mag * f_base;
+
+    if (loop_gain_constant < 0.0001f)
+        loop_gain_constant = 0.0001f;
+
+    parameter_gt damping = 0.707f;
+    parameter_gt kp = (2.0f * damping * omega_n) / loop_gain_constant;
+    parameter_gt ki = (omega_n * omega_n) / loop_gain_constant;
+
+    // 2. Set Decoupling Bandwidth
+    // Optimal is usually freq_grid / sqrt(2)
+    parameter_gt decoupling_fc = f_base / 1.414f;
+
+    // 3. Initialize
+    ctl_init_ddsrf_pll(pll, f_base, kp, ki, f_ctrl, decoupling_fc);
+}
+
+/**
+ * @brief Initializes the DSOGI-PLL controller.
+ * @ingroup CTL_PLL_API
+ *
+ * @param[out] dsogi    Pointer to the @ref dsogi_pll_t structure.
+ * @param[in]  f_base   Nominal grid frequency (e.g., 50.0).
+ * @param[in]  f_ctrl   Control loop frequency (e.g., 10000.0).
+ * @param[in]  v_mag    Nominal voltage magnitude (usually 1.0 for per-unit).
+ * @param[in]  bw_pll   Desired PLL bandwidth in Hz (e.g., 20.0).
+ * @param[in]  k_sogi   SOGI damping factor (typically 1.414 or 1.0).
+ */
+void ctl_init_dsogi_pll(dsogi_pll_t* dsogi, parameter_gt f_base, parameter_gt f_ctrl, parameter_gt v_mag,
+                        parameter_gt bw_pll, parameter_gt k_sogi)
+{
+    // 1. Initialize the two SOGI blocks
+    // Note: They are initialized at the nominal grid frequency (f_base).
+    ctl_init_discrete_sogi(&dsogi->sogi_alpha, k_sogi, f_base, f_ctrl);
+    ctl_init_discrete_sogi(&dsogi->sogi_beta, k_sogi, f_base, f_ctrl);
+
+    // 2. Initialize the internal SRF-PLL using Auto-Tune
+    // Damping ratio for PLL is typically fixed at 0.707
+    ctl_init_srf_pll_auto_tune(&dsogi->srf_pll, f_base, f_ctrl, v_mag, bw_pll, 0.707f);
+
+    // 3. Clear internal states
+    ctl_vector2_clear(&dsogi->v_pos_seq);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -188,8 +260,28 @@ void ctl_auto_tuning_gfl_inv(gfl_inv_ctrl_init_t* init)
     init->current_phase_lag = control_delay + filter_delay;
 
     // select PLL bandwidth is freq_base / 3
-    init->kp_pll = 2.0f * 0.707f * init->freq_base / 3.0f * CTL_PARAM_CONST_2PI;
-    init->ki_pll = init->freq_base / 3.0f * init->freq_base / 3.0f * CTL_PARAM_CONST_2PI * CTL_PARAM_CONST_2PI;
+    init->pll_bw = init->freq_base / 3;
+    init->k_pll_sogi = 1.414f;
+
+    //// 1. å®šä¹‰ç‰©ç†å¸¸æ•°
+    //// ç³»ç»Ÿå›ºæœ‰çš„ç¯è·¯å¢ç›Šï¼š2 * PI * f_base (çº¦ 314.159)
+    //parameter_gt system_gain = CTL_PARAM_CONST_2PI * init->freq_base;
+
+    //// 2. å®šä¹‰è®¾è®¡ç›®æ ‡
+    //// è®¾å®šå¸¦å®½ä¸ºåŸºé¢‘çš„ 1/3 (çº¦ 16.7Hz)
+    //parameter_gt bandwidth_hz = init->freq_base / 3.0f;
+    //parameter_gt omega_n = bandwidth_hz * CTL_PARAM_CONST_2PI;
+    //parameter_gt damping = 0.707f;
+
+    //// 3. è®¡ç®—ä¿®æ­£åçš„ PI å‚æ•° (é™¤ä»¥ system_gain)
+    //// Kp = (2 * zeta * wn) / system_gain
+    //init->kp_pll = (2.0f * damping * omega_n) / system_gain;
+
+    //// Ki = (wn^2) / system_gain
+    //init->ki_pll = (omega_n * omega_n) / system_gain;
+
+    //    init->kp_pll = 2.0f * 0.707f * init->freq_base / 3.0f * CTL_PARAM_CONST_2PI;
+    //    init->ki_pll = init->freq_base / 3.0f * init->freq_base / 3.0f * CTL_PARAM_CONST_2PI * CTL_PARAM_CONST_2PI;
 }
 
 /**
@@ -218,7 +310,8 @@ void ctl_update_gfl_inv_coeff(gfl_inv_ctrl_t* inv, gfl_inv_ctrl_init_t* init)
     ctl_init_lead_form3(&inv->lead_compensator[phase_d], init->current_phase_lag, init->current_loop_bw, init->fs);
     ctl_init_lead_form3(&inv->lead_compensator[phase_q], init->current_phase_lag, init->current_loop_bw, init->fs);
 
-    ctl_init_sfr_pll(&inv->pll, init->freq_base, init->kp_pll, init->ki_pll, 0, init->fs);
+    //ctl_init_sfr_pll(&inv->pll, init->freq_base, init->kp_pll, init->ki_pll, 0, init->fs);
+    ctl_init_dsogi_pll(&inv->pll, init->freq_base, init->fs, init->v_grid, init->pll_bw, init->k_pll_sogi);
 
     ctl_init_ramp_generator_via_freq(&inv->rg, init->fs, init->freq_base, 1, 0);
 
@@ -299,19 +392,6 @@ void ctl_init_gfl_pq(gfl_pq_ctrl_t* pq, parameter_gt p_kp, parameter_gt p_ki, pa
 }
 
 /**
- * @brief Reset the PQ controller (clear integrators).
- * @param[in,out] pq Pointer to the PQ controller instance.
- */
-void ctl_clear_gfl_pq(gfl_pq_ctrl_t* pq)
-{
-    ctl_clear_pid(&pq->pid_p);
-    ctl_clear_pid(&pq->pid_q);
-
-    pq->idq_set_out.dat[phase_d] = 0;
-    pq->idq_set_out.dat[phase_q] = 0;
-}
-
-/**
  * @brief Attach feedback pointers to the PQ controller.
  * @param[in,out] pq Pointer to the PQ controller instance.
  * @param[in] vdq Pointer to the inner loop's Vdq measurement.
@@ -336,4 +416,178 @@ void ctl_attach_gfl_pq_to_core(gfl_pq_ctrl_t* pq, gfl_inv_ctrl_t* core)
 
     pq->vdq_meas = &core->vdq;
     pq->idq_meas = &core->idq;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Three Phase Converter negative sequence controller
+//////////////////////////////////////////////////////////////////////////
+
+#include <ctl/component/digital_power/three_phase/three_phase_additional.h>
+
+/**
+ * @brief Auto-tuning Negative Sequence Controller parameters.
+ */
+void ctl_auto_tuning_neg_inv(inv_neg_ctrl_init_t* neg_init, const gfl_inv_ctrl_init_t* _gfl_init)
+{
+    gmp_base_assert(neg_init);
+    gmp_base_assert(_gfl_init);
+
+    // 1. Copy Basic System Parameters
+    neg_init->fs = _gfl_init->fs;
+    neg_init->freq_base = _gfl_init->freq_base;
+
+    // 2. Tuning Separation Filter (Biquad LPF)
+    // Goal: Attenuate 2*freq_base (100Hz) ripple significantly.
+    // Strategy: Set fc at approx freq_base / 2.5 (e.g., 20Hz for 50Hz grid).
+    // This offers a trade-off between ripple attenuation and delay.
+    neg_init->seq_filter_fc = _gfl_init->freq_base / 2.5f;
+    //neg_init->seq_filter_q = 0.707f; // Butterworth response
+    neg_init->seq_filter_q = 5.0f; // Butterworth response
+
+    // 3. Tuning Current Loop (Inner Loop)
+    // Constraint: Bandwidth must be lower than filter fc to maintain stability margin.
+    // Strategy: Set BW at filter_fc / 2, it's too small.
+    //parameter_gt neg_current_bw = neg_init->seq_filter_fc / 2.0f;
+
+    // Set BW at fs/50
+    parameter_gt neg_current_bw = neg_init->fs / 50.0f;
+
+    // Calculate PI gains based on Plant Model: V = L * di/dt
+    // Kp_pu = (2*pi*BW * L) * (I_base / V_base)
+    // Note: This Kp is calculated conceptually here, but physically in update_coeff.
+    // We store the tuning target implicitly via the update function logic,
+    // but here we define the limits and integration speeds.
+
+    // For auto-tuning function, we usually just set reasonable defaults if the struct
+    // expects raw Kp/Ki. However, looking at ctl_update_gfl_inv_coeff, it calculates Kp inside.
+    // BUT inv_neg_ctrl_init_t stores raw Kp/Ki. So we calculate them here.
+
+    parameter_gt L_val = _gfl_init->grid_filter_L;
+    parameter_gt kp_c_si = CTL_PARAM_CONST_2PI * neg_current_bw * L_val;
+
+    // Convert to P.U.
+    neg_init->kp_current = kp_c_si * _gfl_init->i_base / _gfl_init->v_base;
+
+    // Ki: Place zero at low frequency (e.g., BW / 10) to eliminate steady state error
+    // Ki = Kp * 2*pi * f_zero
+    neg_init->ki_current = CTL_PARAM_CONST_2PI * (neg_current_bw / 10.0f);
+
+    // Default Limits
+    neg_init->limit_current_out = 0.8f; // 0.8 p.u. voltage compensation limit
+
+    // 4. Tuning Voltage Loop (Outer Loop) - Optional
+    // Constraint: Must be significantly slower than current loop.
+    // Strategy: Set BW at Current_BW / 5.
+    parameter_gt neg_voltage_bw = neg_current_bw / 5.0f;
+
+    // Plant Model: I = C * dv/dt (Capacitor dominates)
+    // If no C (L filter), voltage control is invalid, but we calculate anyway.
+    parameter_gt C_val = (_gfl_init->grid_filter_C > 1e-9f) ? _gfl_init->grid_filter_C : 1e-5f; // prevent zero
+
+    parameter_gt kp_v_si = CTL_PARAM_CONST_2PI * neg_voltage_bw * C_val;
+
+    // Convert to P.U. (Note: Output is Current Ref, Input is Voltage)
+    // Gain units: A/V. P.U. conversion factor is V_base / I_base.
+    neg_init->kp_voltage = kp_v_si * _gfl_init->v_base / _gfl_init->i_base;
+
+    // Ki
+    neg_init->ki_voltage = CTL_PARAM_CONST_2PI * (neg_voltage_bw / 5.0f);
+
+    neg_init->limit_voltage_out = 0.5f; // 0.5 p.u. current injection limit
+}
+
+/**
+ * @brief Update Negative Sequence Controller coefficients.
+ */
+void ctl_update_neg_inv_coeff(inv_neg_ctrl_t* neg, const inv_neg_ctrl_init_t* neg_init)
+{
+    int i;
+
+    gmp_base_assert(neg);
+    gmp_base_assert(neg_init);
+    // _gfl_init is used here if we needed L/C again, but since neg_init already
+    // contains the calculated Kp/Ki, we rely on neg_init.
+
+    // 1. Init Separation Filters (Biquad LPF)
+    // These filter the raw dq currents/voltages to extract DC negative sequence.
+    for (i = 0; i < 2; ++i)
+    {
+        //ctl_init_biquad_lpf(&neg->filter_idqn[i], neg_init->fs, neg_init->seq_filter_fc, neg_init->seq_filter_q);
+        //ctl_init_biquad_lpf(&neg->filter_vdqn[i], neg_init->fs, neg_init->seq_filter_fc, neg_init->seq_filter_q);
+        ctl_init_biquad_notch(&neg->filter_idqn[i], neg_init->fs, neg_init->freq_base * 2, neg_init->seq_filter_q);
+        ctl_init_biquad_notch(&neg->filter_vdqn[i], neg_init->fs, neg_init->freq_base * 2, neg_init->seq_filter_q);
+    }
+
+    // 2. Init Current Loop PIDs
+    // D-axis and Q-axis share the same parameters
+    ctl_init_pid(&neg->pid_idqn[phase_d], neg_init->kp_current, neg_init->ki_current, 0, neg_init->fs);
+    ctl_init_pid(&neg->pid_idqn[phase_q], neg_init->kp_current, neg_init->ki_current, 0, neg_init->fs);
+
+    ctl_set_pid_limit(&neg->pid_idqn[phase_d], neg_init->limit_current_out, -neg_init->limit_current_out);
+    ctl_set_pid_limit(&neg->pid_idqn[phase_q], neg_init->limit_current_out, -neg_init->limit_current_out);
+
+    // 3. Init Voltage Loop PIDs
+    ctl_init_pid(&neg->pid_vdqn[phase_d], neg_init->kp_voltage, neg_init->ki_voltage, 0, neg_init->fs);
+    ctl_init_pid(&neg->pid_vdqn[phase_q], neg_init->kp_voltage, neg_init->ki_voltage, 0, neg_init->fs);
+
+    ctl_set_pid_limit(&neg->pid_vdqn[phase_d], neg_init->limit_voltage_out, -neg_init->limit_voltage_out);
+    ctl_set_pid_limit(&neg->pid_vdqn[phase_q], neg_init->limit_voltage_out, -neg_init->limit_voltage_out);
+}
+
+/**
+ * @brief Initialize Negative Sequence Controller.
+ */
+void ctl_init_neg_inv(inv_neg_ctrl_t* neg, const inv_neg_ctrl_init_t* neg_init)
+{
+    // Apply coefficients
+    ctl_update_neg_inv_coeff(neg, neg_init);
+
+    // Clear states
+    ctl_clear_neg_inv(neg);
+
+    // Default disable flags (Safety first)
+    neg->flag_enable_negative_current_ctrl = 0;
+    neg->flag_enable_negative_voltage_ctrl = 0;
+
+    // Default setpoints
+    ctl_vector2_clear(&neg->idqn_set);
+    ctl_vector2_clear(&neg->vdqn_set);
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Three Phase Converter negative sequence controller
+//////////////////////////////////////////////////////////////////////////
+
+void ctl_init_dq_hcm(inv_dq_hcm_t* hcm, const inv_dq_hcm_init_t* init)
+{
+    gmp_base_assert(hcm);
+    gmp_base_assert(init);
+
+    // update controller parameters
+    ctl_update_dq_hcm_freq(hcm, init);
+
+    // 4. Reset & Defaults
+    ctl_clear_dq_hcm(hcm);
+    hcm->flag_enable_6th = 0;
+    hcm->flag_enable_12th = 0;
+}
+
+void ctl_update_dq_hcm_freq(inv_dq_hcm_t* hcm, const inv_dq_hcm_init_t* init)
+{
+    // 1. Calculate Resonant Frequencies
+    parameter_gt f_6th = init->freq_base * 6.0f;
+    parameter_gt f_12th = init->freq_base * 12.0f;
+
+    // 2. Init QR Controllers (Using Pre-warping!)
+    // D-Axis
+    ctl_init_qr_controller_prewarped(&hcm->qr_d_6th, init->kr_6th, f_6th, init->bw_6th, init->fs);
+    ctl_init_qr_controller_prewarped(&hcm->qr_d_12th, init->kr_12th, f_12th, init->bw_12th, init->fs);
+
+    // Q-Axis (Same parameters)
+    ctl_init_qr_controller_prewarped(&hcm->qr_q_6th, init->kr_6th, f_6th, init->bw_6th, init->fs);
+    ctl_init_qr_controller_prewarped(&hcm->qr_q_12th, init->kr_12th, f_12th, init->bw_12th, init->fs);
+
+    // 3. Init Saturation
+    ctl_init_saturation(&hcm->sat_d, -init->out_limit, init->out_limit);
+    ctl_init_saturation(&hcm->sat_q, -init->out_limit, init->out_limit);
 }
