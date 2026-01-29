@@ -49,8 +49,11 @@
 #include <string>
 #include <vector>
 
+#if !defined __linux__
+
 // Need to define WIN32 because each version of windows has slightly different ways of handling networking
 #include <SDKDDKVer.h>
+#endif // __linux__
 
 // ASIO library
 #define ASIO_STANDALONE
