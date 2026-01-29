@@ -83,8 +83,8 @@ class asio_udp_helper
           // 2. 构造本地监听地址 (绑定 0.0.0.0 以支持所有网卡接收)
           recv_terminal(udp::v4(), static_cast<ip::port_type>(t_port)),
           cmd_recv_terminal(udp::v4(), static_cast<ip::port_type>(ct_port)),
-#else  // client mode
-          // 1. 构造远程目标地址 (Target Device IP)
+#else  // client mode                                                                                                  \
+       // 1. 构造远程目标地址 (Target Device IP)
           tran_terminal(ip::make_address(ip_addr), static_cast<ip::port_type>(t_port)),
           cmd_tran_terminal(ip::make_address(ip_addr), static_cast<ip::port_type>(ct_port)),
 
@@ -239,15 +239,15 @@ class asio_udp_helper
 #if defined __linux__
 
 #if !defined(DISABLE_ASIO_HELPER_TIMEOUT_OPTION)
-    // Linux 下推荐使用 native_handle 直接设置，以确保兼容性
-    struct timeval tv;
-    tv.tv_sec = GMP_ASIO_UDP_LINK_TIMEOUT / 1000;         // 秒
-    tv.tv_usec = (GMP_ASIO_UDP_LINK_TIMEOUT % 1000) * 1000; // 微秒
+        // Linux 下推荐使用 native_handle 直接设置，以确保兼容性
+        struct timeval tv;
+        tv.tv_sec = GMP_ASIO_UDP_LINK_TIMEOUT / 1000;           // 秒
+        tv.tv_usec = (GMP_ASIO_UDP_LINK_TIMEOUT % 1000) * 1000; // 微秒
 
-    if (setsockopt(recv_socket.native_handle(), SOL_SOCKET, SO_RCVTIMEO, 
-                   (const char*)&tv, sizeof(tv)) < 0) {
-        perror("setsockopt SO_RCVTIMEO failed");
-    }
+        if (setsockopt(recv_socket.native_handle(), SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv)) < 0)
+        {
+            std::cerr << "setsockopt SO_RCVTIMEO failed\r\n";
+        }
 #endif
 
 #else // Windows 平台
