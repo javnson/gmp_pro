@@ -93,7 +93,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
     else
     {
         ctl_step_triangle_wave_generator(&tri_wave);
-        inv_ctrl.idq_set.dat[phase_d] = tri_wave.output;
+        //inv_ctrl.idq_set.dat[phase_d] = tri_wave.output;
 
         // run controller body
         ctl_step_gfl_inv_ctrl(&inv_ctrl);
