@@ -310,8 +310,11 @@ void ctl_update_gfl_inv_coeff(gfl_inv_ctrl_t* inv, gfl_inv_ctrl_init_t* init)
     ctl_init_lead_form3(&inv->lead_compensator[phase_d], init->current_phase_lag, init->current_loop_bw, init->fs);
     ctl_init_lead_form3(&inv->lead_compensator[phase_q], init->current_phase_lag, init->current_loop_bw, init->fs);
 
-    //ctl_init_sfr_pll(&inv->pll, init->freq_base, init->kp_pll, init->ki_pll, 0, init->fs);
+#ifdef USING_DSOGI_PLL
     ctl_init_dsogi_pll(&inv->pll, init->freq_base, init->fs, init->v_grid, init->pll_bw, init->k_pll_sogi);
+#else
+    ctl_init_srf_pll_auto_tune(&inv->pll, init->freq_base, init->fs, init->v_grid, init->pll_bw, 0.707f);
+#endif // USING_DSOGI_PLL
 
     ctl_init_ramp_generator_via_freq(&inv->rg, init->fs, init->freq_base, 1, 0);
 
@@ -450,7 +453,10 @@ void ctl_auto_tuning_neg_inv(inv_neg_ctrl_init_t* neg_init, const gfl_inv_ctrl_i
     //parameter_gt neg_current_bw = neg_init->seq_filter_fc / 2.0f;
 
     // Set BW at fs/50
-    parameter_gt neg_current_bw = neg_init->fs / 50.0f;
+    parameter_gt neg_current_bw = neg_init->fs / 200.0f;
+
+    // Set BW at 50Hz
+    //parameter_gt neg_current_bw = 50.0f;
 
     // Calculate PI gains based on Plant Model: V = L * di/dt
     // Kp_pu = (2*pi*BW * L) * (I_base / V_base)

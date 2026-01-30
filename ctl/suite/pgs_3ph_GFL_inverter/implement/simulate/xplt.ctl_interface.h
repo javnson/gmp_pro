@@ -92,8 +92,8 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     simulink_tx_buffer.monitor[1] = inv_ctrl.iabc.dat[phase_B];
 
     // Scope 2
-    simulink_tx_buffer.monitor[2] = inv_ctrl.idq.dat[phase_d];
-    simulink_tx_buffer.monitor[3] = inv_ctrl.idq.dat[phase_q];
+    simulink_tx_buffer.monitor[2] = inv_ctrl.iabc.dat[phase_A];
+    simulink_tx_buffer.monitor[3] = tri_wave.output;
 
     // Scope 3
     simulink_tx_buffer.monitor[4] = inv_ctrl.vab0.dat[phase_alpha];
@@ -104,8 +104,13 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     simulink_tx_buffer.monitor[7] = inv_ctrl.angle;
 
     // Scope 5
+#ifdef USING_DSOGI_PLL
     simulink_tx_buffer.monitor[8] = inv_ctrl.pll.srf_pll.phasor.dat[phasor_sin];
     simulink_tx_buffer.monitor[9] = inv_ctrl.pll.srf_pll.phasor.dat[phasor_cos];
+#else
+    simulink_tx_buffer.monitor[8] = inv_ctrl.pll.phasor.dat[phasor_sin];
+    simulink_tx_buffer.monitor[9] = inv_ctrl.pll.phasor.dat[phasor_cos];
+#endif // USING_DSOGI_PLL
 
     // Scope 6
     simulink_tx_buffer.monitor[10] = inv_ctrl.idq.dat[phase_d];
@@ -114,7 +119,6 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     // Scope 7
     simulink_tx_buffer.monitor[12] = inv_ctrl.vdq.dat[phase_d];
     simulink_tx_buffer.monitor[13] = inv_ctrl.vdq.dat[phase_q];
-
 }
 
 // Enable Motor Controller
