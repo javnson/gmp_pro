@@ -130,8 +130,6 @@ void ctl_init_acm_sensored_bare_controller(
         init->spd_ctrl_div,
         // Speed per unit base value, unit rpm
         init->base_spd,
-        // pole pairs, if you pass a elec-angle,
-        1,
         // just set this value to 1.
         // generally, speed_filter_fc approx to speed_calc freq divided by 5
         150);

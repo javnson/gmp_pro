@@ -25,14 +25,6 @@ adc_gt uuvw_src[3];
 tri_ptr_adc_channel_t iuvw;
 adc_gt iuvw_src[3];
 
-// grid side voltage feedback
-tri_ptr_adc_channel_t vabc;
-adc_gt vabc_src[3];
-
-// grid side current feedback
-tri_ptr_adc_channel_t iabc;
-adc_gt iabc_src[3];
-
 // DC bus current & voltage feedback
 ptr_adc_channel_t udc;
 adc_gt udc_src;
@@ -70,23 +62,6 @@ void setup_peripheral(void)
         // ADC resolution, IQN
         12, 24);
 
-    // grid side ADC
-    ctl_init_tri_ptr_adc_channel(
-        &vabc, vabc_src,
-        // ADC gain, ADC bias
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_VOLTAGE_BIAS),
-        // ADC resolution, IQN
-        12, 24);
-
-    ctl_init_tri_ptr_adc_channel(
-        &iabc, iabc_src,
-        // ADC gain, ADC bias
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_CURRENT_BIAS),
-        // ADC resolution, IQN
-        12, 24);
-
     ctl_init_ptr_adc_channel(
         &udc, &udc_src,
         // ADC gain, ADC bias
@@ -106,13 +81,13 @@ void setup_peripheral(void)
     //
     // attach
     //
-    ctl_attach_gfl_inv(
-        // inv controller
-        &inv_ctrl,
-        // idc, udc
-        &idc.control_port, &udc.control_port,
-        // grid side iabc, vabc
-        &iabc.control_port, &vabc.control_port);
+//    ctl_attach_gfl_inv(
+//        // inv controller
+//        &inv_ctrl,
+//        // idc, udc
+//        &idc.control_port, &udc.control_port,
+//        // grid side iabc, vabc
+//        &iabc.control_port, &vabc.control_port);
 }
 
 //=================================================================================================
@@ -199,13 +174,13 @@ interrupt void INT_IRIS_CAN_0_ISR(void)
         CAN_readMessage(IRIS_CAN_BASE, 2, (uint16_t*)recv_content);
         CAN_clearInterruptStatus(CANA_BASE, 2);
 
-        // set target value
-#if BUILD_LEVEL == 1
-        // For level 1 Set target voltage
-        ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl((float)recv_content[0].i32 / CAN_SCALE_FACTOR),
-                                         float2ctrl((float)recv_content[1].i32 / CAN_SCALE_FACTOR));
-
-#endif // BUILD_LEVEL
+//        // set target value
+//#if BUILD_LEVEL == 1
+//        // For level 1 Set target voltage
+//        ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl((float)recv_content[0].i32 / CAN_SCALE_FACTOR),
+//                                         float2ctrl((float)recv_content[1].i32 / CAN_SCALE_FACTOR));
+//
+//#endif // BUILD_LEVEL
     }
 
     //
@@ -240,44 +215,44 @@ void send_monitor_data(void)
     can_data_t tran_content[2];
 
     // 0x201: Monitor Grid Voltage
-    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
+//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
+//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
 
     CAN_sendMessage(IRIS_CAN_BASE, 4, 8, (uint16_t*)tran_content);
 
     //0x202: Monitor inverter voltage
-    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
+//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
+//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
 
     CAN_sendMessage(IRIS_CAN_BASE, 5, 8, (uint16_t*)tran_content);
 
     // 0x203: Monitor grid current
-    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
+//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
+//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
 
     CAN_sendMessage(IRIS_CAN_BASE, 6, 8, (uint16_t*)tran_content);
 
     // 0x204: TODO Monitor inverter current
-    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
+//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
+//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
 
     CAN_sendMessage(IRIS_CAN_BASE, 7, 8, (uint16_t*)tran_content);
 
     // 0x205: TODO Monitor DC Voltage / Current
-    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
+//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
+//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
 
     CAN_sendMessage(IRIS_CAN_BASE, 8, 8, (uint16_t*)tran_content);
 
     // 0x206: Monitor Grid Voltage A and PLL output angle
-    tran_content[0].i32 = (int32_t)(inv_ctrl.vabc.dat[phase_A] * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(inv_ctrl.pll.theta * CAN_SCALE_FACTOR);
+//    tran_content[0].i32 = (int32_t)(inv_ctrl.vabc.dat[phase_A] * CAN_SCALE_FACTOR);
+//    tran_content[1].i32 = (int32_t)(inv_ctrl.pll.theta * CAN_SCALE_FACTOR);
 
     CAN_sendMessage(IRIS_CAN_BASE, 9, 8, (uint16_t*)tran_content);
 
     // 0x207: Monitor reserved
-    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
+//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
+//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
 
     CAN_sendMessage(IRIS_CAN_BASE, 10, 8, (uint16_t*)tran_content);
 }

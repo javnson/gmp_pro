@@ -75,21 +75,6 @@
 #define CTRL_CURRENT_BASE (10.0f)
 
 ///////////////////////////////////////////////////////////
-// Grid side sensor
-
-// Current sensor sensitivity, V/A
-#define CTRL_GRID_CURRENT_SENSITIVITY (HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSITIVITY_MV_A * 0.001f)
-
-// Current sensor bias, V
-#define CTRL_GRID_CURRENT_BIAS (HARMONIA_3PH_LC_FILTER_PH_CURRENT_ZERO_BIAS_V)
-
-// Voltage sensor sensitivity, V/V
-#define CTRL_GRID_VOLTAGE_SENSITIVITY (HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_GAIN)
-
-// Voltage sensor bias, V
-#define CTRL_GRID_VOLTAGE_BIAS (HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_BIAS_V)
-
-///////////////////////////////////////////////////////////
 // inverter side sensor
 
 // Current sensor sensitivity, TMCS1133A2B, V/A

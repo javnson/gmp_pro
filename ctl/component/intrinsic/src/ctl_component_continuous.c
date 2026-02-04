@@ -191,6 +191,10 @@ void ctl_init_tracking_continuous_pid(
     // controller frequency
     parameter_gt fs)
 {
+    // Error prevention engineering
+    gmp_base_assert(slope_min < slope_max);
+    gmp_base_assert(sat_min < sat_max);
+
     ctl_init_slope_limiter(&tp->traj, slope_max, slope_min, fs);
     ctl_init_divider(&tp->div, division);
 

@@ -121,4 +121,7 @@
 // Voltage Sampling mode
 #define GFL_VOLTAGE_SAMPLE_PHASE_MODE (2)
 
+// Using DSOGI PLL
+//#define USING_DSOGI_PLL
+
 #endif // _FILE_CTRL_SETTINGS_H_

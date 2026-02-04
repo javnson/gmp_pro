@@ -517,3 +517,6 @@ tools/hvhb40040_Antaioz/**/impl_1
 # cache of rt_trace module
 *.crt_bin
 
+tools/gmp_sil/udp_helper_v2/mdl_asio_helper_linux/build/**
+
+

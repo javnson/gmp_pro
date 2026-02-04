@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35327.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mdl_asio_helper", "mdl_asio_helper.vcxproj", "{3CF2A3EE-3CC6-49BD-ABA0-0813A4A4842F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3CF2A3EE-3CC6-49BD-ABA0-0813A4A4842F}.Debug|x64.ActiveCfg = Debug|x64
+		{3CF2A3EE-3CC6-49BD-ABA0-0813A4A4842F}.Debug|x64.Build.0 = Debug|x64
+		{3CF2A3EE-3CC6-49BD-ABA0-0813A4A4842F}.Release|x64.ActiveCfg = Release|x64
+		{3CF2A3EE-3CC6-49BD-ABA0-0813A4A4842F}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E3508850-61DF-428C-A671-D37012264292}
+	EndGlobalSection
+EndGlobal

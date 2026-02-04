@@ -64,12 +64,12 @@ extern "C"
 //================================================================================
 #define MOTOR_PARAM_RATED_VOLTAGE   ((24.0f)) ///< Rated operating voltage (V).
 #define MOTOR_PARAM_NO_LOAD_CURRENT ((0.5f))  ///< No-load phase current (A, Peak).
-#define MOTOR_PARAM_RATED_FREQUENCY ((933..33333f))
+#define MOTOR_PARAM_RATED_FREQUENCY ((933.33333f))
 
 //================================================================================
 // Absolute Maximum Ratings & Limits
 //================================================================================
-#define MOTOR_PARAM_MAX_SPEED      ((8000)) ///< Maximum allowable speed (RPM).
+#define MOTOR_PARAM_MAX_SPEED      ((6000)) ///< Maximum allowable speed (RPM).
 #define MOTOR_PARAM_MAX_TORQUE     ((0.4))  ///< Maximum intermittent torque (N*m).
 #define MOTOR_PARAM_MAX_DC_VOLTAGE ((25.2)) ///< Maximum allowable DC bus voltage (V), likely for a 6S LiPo battery.
 #define MOTOR_PARAM_MAX_PH_CURRENT ((27.0)) ///< Maximum allowable phase current (A, Peak).

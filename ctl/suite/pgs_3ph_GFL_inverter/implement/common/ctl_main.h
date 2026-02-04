@@ -60,6 +60,8 @@ extern inv_neg_ctrl_t neg_current_ctrl;
 
 // Observer: PLL
 
+extern ctl_triangle_wave_generator_t tri_wave;
+
 // additional controller: harmonic management, negative current controller
 
 //
@@ -90,6 +92,8 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
     // normal controller routine
     else
     {
+        ctl_step_triangle_wave_generator(&tri_wave);
+        inv_ctrl.idq_set.dat[phase_d] = tri_wave.output;
 
         // run controller body
         ctl_step_gfl_inv_ctrl(&inv_ctrl);

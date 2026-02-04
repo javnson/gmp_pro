@@ -144,8 +144,13 @@ typedef struct _tag_gfl_inv_ctrl_type
     // output lead compensator
     ctrl_lead_t lead_compensator[2];
 
-    // PLL & RG
-    dsogi_pll_t pll;         //!< Three-phase PLL for grid synchronization.
+// PLL & RG
+#ifdef USING_DSOGI_PLL
+    dsogi_pll_t pll; //!< Three-phase PLL for grid synchronization.
+#else
+    srf_pll_t pll; //!< Three-phase PLL for grid synchronization.
+#endif // USING_DSOGI_PLL
+
     ctl_ramp_generator_t rg; //!< Ramp generator for open-loop/free-run operation.
 
     //
@@ -206,7 +211,12 @@ GMP_STATIC_INLINE void ctl_clear_gfl_inv(gfl_inv_ctrl_t* inv)
 GMP_STATIC_INLINE void ctl_clear_gfl_inv_with_PLL(gfl_inv_ctrl_t* inv)
 {
     ctl_clear_gfl_inv(inv);
+
+#ifdef USING_DSOGI_PLL
     ctl_clear_dsogi_pll(&inv->pll);
+#else
+    ctl_clear_pll_3ph(&inv->pll);
+#endif // USING_DSOGI_PLL
 
     inv->flag_enable_system = 0;
 }
@@ -344,7 +354,13 @@ GMP_STATIC_INLINE void ctl_step_gfl_inv_ctrl(gfl_inv_ctrl_t* gfl)
 
     // --- 2. Grid Synchronization (PLL) ---
     if (gfl->flag_enable_pll)
+    {
+#ifdef USING_DSOGI_PLL
         ctl_step_dsogi_pll(&gfl->pll, gfl->vab0.dat[phase_alpha], gfl->vab0.dat[phase_beta]);
+#else
+        ctl_step_pll_3ph(&gfl->pll, gfl->vab0.dat[phase_alpha], gfl->vab0.dat[phase_beta]);
+#endif // USING_DSOGI_PLL
+    }
 
     // --- 3. Main Control Logic ---
     if (gfl->flag_enable_system)
@@ -364,8 +380,13 @@ GMP_STATIC_INLINE void ctl_step_gfl_inv_ctrl(gfl_inv_ctrl_t* gfl)
         // using PLL phasor
         else
         {
+#ifdef USING_DSOGI_PLL
             gfl->angle = gfl->pll.srf_pll.theta;
             ctl_vector2_copy(&gfl->phasor, &gfl->pll.srf_pll.phasor);
+#else
+            gfl->angle = gfl->pll.theta;
+            ctl_vector2_copy(&gfl->phasor, &gfl->pll.phasor);
+#endif // USING_DSOGI_PLL
         }
 
         // --- 3b. Park Transformation ---
@@ -538,7 +559,11 @@ GMP_STATIC_INLINE void ctl_enable_gfl_inv_lead_compensator(gfl_inv_ctrl_t* inv)
 /** @brief Get PLL error */
 GMP_STATIC_INLINE ctrl_gt ctl_get_gfl_pll_error(gfl_inv_ctrl_t* inv)
 {
+#ifdef USING_DSOGI_PLL
     return inv->pll.srf_pll.e_error;
+#else
+    return inv->pll.e_error;
+#endif // USING_DSOGI_PLL
 }
 
 /** @brief Enable PLL module */
@@ -572,6 +597,24 @@ GMP_STATIC_INLINE void ctl_enable_gfl_inv(gfl_inv_ctrl_t* inv)
 GMP_STATIC_INLINE void ctl_disable_gfl_inv(gfl_inv_ctrl_t* inv)
 {
     inv->flag_enable_system = 0;
+}
+
+GMP_STATIC_INLINE ctrl_gt ctl_get_gfl_inv_pll_theta(gfl_inv_ctrl_t* inv)
+{
+#ifdef USING_DSOGI_PLL
+    return inv->pll.srf_pll.theta;
+#else
+    return inv->pll.theta;
+#endif // USING_DSOGI_PLL
+}
+
+GMP_STATIC_INLINE void ctl_get_gfl_inv_pll_phasor(gfl_inv_ctrl_t* inv, vector2_gt* phasor)
+{
+#ifdef USING_DSOGI_PLL
+    ctl_vector2_copy(phasor, &inv->pll.srf_pll.phasor);
+#else
+    ctl_vector2_copy(phasor, &inv->pll.phasor);
+#endif // USING_DSOGI_PLL
 }
 
 //////////////////////////////////////////////////////////////////////////

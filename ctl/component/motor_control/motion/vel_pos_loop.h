@@ -147,6 +147,29 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_vel_pos_cmd(ctl_vel_pos_controller_t* ctrl)
     return ctrl->cur_output;
 }
 
+GMP_STATIC_INLINE void ctl_enable_velocity_ctrl(ctl_vel_pos_controller_t* ctrl)
+{
+    ctrl->flag_enable_velocity_ctrl = 1;
+    ctrl->flag_enable_position_ctrl = 0;
+}
+
+GMP_STATIC_INLINE void ctl_enable_position_ctrl(ctl_vel_pos_controller_t* ctrl)
+{
+    ctrl->flag_enable_velocity_ctrl = 1;
+    ctrl->flag_enable_position_ctrl = 1;
+}
+
+GMP_STATIC_INLINE void ctl_set_target_velocity(ctl_vel_pos_controller_t* ctrl, ctrl_gt spd)
+{
+    ctrl->target_velocity = spd;
+}
+
+GMP_STATIC_INLINE void ctl_attach_vel_pos_ctrl(ctl_vel_pos_controller_t* ctrl, rotation_ift* pos_if, velocity_ift* spd_if)
+{
+    ctrl->pos_if = pos_if;
+    ctrl->spd_if = spd_if;
+}
+
 /** @} */ // end of VELOCITY_POSITION_CONTROLLER group
 
 #ifdef __cplusplus

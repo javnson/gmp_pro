@@ -14,7 +14,7 @@
 #include <gmp_core.h>
 
 // MATLAB UDP Helper
-#include <tools/gmp_sil/udp_helper/asio_udp_helper.hpp>
+#include <tools/gmp_sil/udp_helper_v2/asio_udp_helper.hpp>
 
 // Trace RT module
 #include <ctrl_rt_trace.h>

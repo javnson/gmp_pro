@@ -68,7 +68,7 @@ typedef struct _tag_current_controller
     ctl_vector2_t* phasor_input; //!< input rotor phasor
 
     // --- Outputs & Intermediate Variables ---
-    ctl_vector3_t vab0;     //!< The final alpha-beta voltages to be sent to the modulator.
+    ctl_vector3_t vab0; //!< The final alpha-beta voltages to be sent to the modulator.
 
     //
     // --- Feed-forward & Parameters ---
@@ -88,8 +88,8 @@ typedef struct _tag_current_controller
     ctrl_gt udc;            //!< Udc after filter.
     ctl_vector3_t iuvw;     //!< sampled current after filter.
     ctl_vector3_t idq0;     //!< The 3-phase currents in the d-q rotating frame.
-    ctl_vector3_t vdq0;     //!< The calculated d-q axis output voltages.    
-    ctl_vector3_t iab0; //!< The 3-phase currents in the alpha-beta stationary frame.
+    ctl_vector3_t vdq0;     //!< The calculated d-q axis output voltages.
+    ctl_vector3_t iab0;     //!< The 3-phase currents in the alpha-beta stationary frame.
     ctl_vector2_t v_dec;    //!< Decoupling
     ctl_vector3_t vdq_comp; //!< vdq after compensator
     ctl_vector3_t vdq_out;  //!< vdq after compensator
@@ -195,11 +195,19 @@ void ctl_init_mtr_current_ctrl(mtr_current_ctrl_t* mc, mtr_current_init_t* init)
  */
 GMP_STATIC_INLINE void ctl_step_current_controller(mtr_current_ctrl_t* mc)
 {
+    mc->isr_tick += 1;
+
     // enable theta input or phasor input
     if (mc->flag_enable_theta_calc)
+    {
         ctl_set_phasor_via_angle(mc->pos_if->elec_position, &mc->phasor);
+    }
     else
+    {
+        gmp_base_assert(mc->phasor_input);
+
         ctl_vector2_copy(&mc->phasor, mc->phasor_input);
+    }
 
         // input current filter
 #if MC_CURRENT_SAMPLE_PHASE_MODE == 3
@@ -236,12 +244,12 @@ GMP_STATIC_INLINE void ctl_step_current_controller(mtr_current_ctrl_t* mc)
         mc->vdq0.dat[phase_d] = ctl_step_pid_ser(&mc->idq_ctrl[phase_d], err_d);
         mc->vdq0.dat[phase_q] = ctl_step_pid_ser(&mc->idq_ctrl[phase_q], err_q);
 
-        // decoupling
-        mc->v_dec.dat[phase_d] = -mc->spd_if->speed * mc->coef_ff_decouple[phase_d] * mc->idq0.dat[phase_q];
-        mc->v_dec.dat[phase_q] = mc->spd_if->speed * mc->coef_ff_decouple[phase_q] * mc->idq0.dat[phase_d];
-
         if (mc->flag_enable_decouple)
         {
+            // decoupling
+            mc->v_dec.dat[phase_d] = -mc->spd_if->speed * mc->coef_ff_decouple[phase_d] * mc->idq0.dat[phase_q];
+            mc->v_dec.dat[phase_q] = mc->spd_if->speed * mc->coef_ff_decouple[phase_q] * mc->idq0.dat[phase_d];
+
             mc->vdq0.dat[phase_d] += mc->v_dec.dat[phase_d];
             mc->vdq0.dat[phase_q] += mc->v_dec.dat[phase_q];
         }
@@ -260,13 +268,13 @@ GMP_STATIC_INLINE void ctl_step_current_controller(mtr_current_ctrl_t* mc)
     }
     else
     {
-        ctl_vector3_copy(&mc->vdq_comp, &mc->vdq_out);
+        ctl_vector3_copy(&mc->vdq_comp, &mc->vdq0);
     }
 
-    //    // 4. Add feed forward voltages.
-    //    mc->vdq_out_comp.dat[0] += mc->vdq_ff.dat[0];
-    //    mc->vdq_out_comp.dat[1] += mc->vdq_ff.dat[1];
-    //    mc->vdq_out_comp.dat[2] = 0.0f; // Zero-sequence component is always zero.
+    // 4. Add feed forward voltages.
+    //mc->vdq_out_comp.dat[phase_d] += mc->vdq_ff.dat[phase_d];
+    //mc->vdq_out_comp.dat[phase_q] += mc->vdq_ff.dat[phase_q];
+    //mc->vdq_out_comp.dat[phase_0] = 0.0f; // Zero-sequence component is always zero.
 
     // D. Bus Voltage Compensation
     if (mc->flag_enable_bus_compensation)
@@ -277,13 +285,17 @@ GMP_STATIC_INLINE void ctl_step_current_controller(mtr_current_ctrl_t* mc)
         else
             v_scale = 1.732f;
 
-        mc->vdq_out.dat[0] = (mc->vdq_comp.dat[0] + mc->vdq_ff.dat[0]) * v_scale;
-        mc->vdq_out.dat[1] = (mc->vdq_comp.dat[1] + mc->vdq_ff.dat[1]) * v_scale;
+        mc->vdq_out.dat[phase_d] = (mc->vdq_comp.dat[phase_d]) * v_scale;
+        mc->vdq_out.dat[phase_q] = (mc->vdq_comp.dat[phase_q]) * v_scale;
+    }
+    else
+    {
+        ctl_vector3_copy(&mc->vdq_out, &mc->vdq_comp);
     }
 
     // saturation
-    mc->vdq_out.dat[0] = ctl_sat(mc->vdq_comp.dat[0], 1.0f, -1.0f);
-    mc->vdq_out.dat[1] = ctl_sat(mc->vdq_comp.dat[1], 1.0f, -1.0f);
+    mc->vdq_out.dat[phase_d] = ctl_sat(mc->vdq_out.dat[phase_d] + mc->vdq_ff.dat[phase_d], 1.0f, -1.0f);
+    mc->vdq_out.dat[phase_q] = ctl_sat(mc->vdq_out.dat[phase_q] + mc->vdq_ff.dat[phase_q], 1.0f, -1.0f);
 
     // 5. IPark: d-q -> alpha-beta
     ctl_ct_ipark(&mc->vdq_out, &mc->phasor, &mc->vab0);

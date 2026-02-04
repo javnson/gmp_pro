@@ -70,6 +70,9 @@ void ctl_init_mtr_current_ctrl(mtr_current_ctrl_t* mc, mtr_current_init_t* init)
     mc->coef_ff_decouple[phase_d] = init->mtr_Lq * scale_fac;
     mc->coef_ff_decouple[phase_q] = init->mtr_Ld * scale_fac;
 
+    // enable phasor calculate
+    mc->flag_enable_theta_calc = 1;
+
     ctl_clear_mtr_current_ctrl(mc);
 }
 

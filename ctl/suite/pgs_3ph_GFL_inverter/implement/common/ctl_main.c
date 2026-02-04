@@ -50,9 +50,12 @@ volatile fast_gt flag_error = 0;
 
 // adc calibrator flags
 adc_bias_calibrator_t adc_calibrator;
-volatile fast_gt flag_enable_adc_calibrator = 1;
-//volatile fast_gt flag_enable_adc_calibrator = 0;
+//volatile fast_gt flag_enable_adc_calibrator = 1;
+volatile fast_gt flag_enable_adc_calibrator = 0;
 volatile fast_gt index_adc_calibrator = 0;
+
+ctl_triangle_wave_generator_t tri_wave;
+
 
 //=================================================================================================
 // CTL initialize routine
@@ -161,6 +164,25 @@ void ctl_init()
     {
         ctl_enable_adc_calibrator(&adc_calibrator);
     }
+    
+#if 1
+
+    ctl_init_triangle_wave_generator(&tri_wave, CONTROLLER_FREQUENCY, 0.2f, 0.8f, 0.1f);  
+
+    //
+    // 下面这一组参数大概0.7pu开始振荡
+    //
+
+    inv_ctrl.pid_idq[phase_d].kp /= 4.0f;
+    inv_ctrl.pid_idq[phase_q].kp /= 4.0f; 
+
+    inv_ctrl.pll.pid_pll.kp *= 2.0f; 
+    inv_ctrl.pll.pid_pll.ki *= 0.2;
+
+    iabc.bias[phase_A] += 0.001f;
+    iabc.bias[phase_B] += 0.001f;
+    iabc.bias[phase_C] += 0.001f;
+#endif
 }
 
 //=================================================================================================
