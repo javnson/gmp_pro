@@ -5,11 +5,13 @@
 //=================================================================================================
 // Incremental Debug Options
 
-// BUILD_LEVEL 1: inverter, voltage open loop
-// BUILD_LEVEL 2: inverter, current loop
-// BUILD_LEVEL 3: inverter, current loop, grid connected
-// BUILD_LEVEL 4: inverter, current loop, grid connected, all feed forward on.
-#define BUILD_LEVEL (1)
+// BUILD_LEVEL 1: hardware validate, VF, voltage open loop
+// BUILD_LEVEL 2: IF, current close loop
+// BUILD_LEVEL 3: current loop with actual angle
+// BUILD_LEVEL 4: speed loop
+// BUILD_LEVEL 5: position loop
+// BUILD_LEVEL 6: communication mode
+#define BUILD_LEVEL (4)
 
 //=================================================================================================
 // Controller basic parameters
@@ -18,13 +20,13 @@
 #define CTRL_STARTUP_DELAY (100)
 
 // Controller Frequency
-#define CONTROLLER_FREQUENCY (10e3)
+#define CONTROLLER_FREQUENCY (20e3)
 
 // PWM depth
-#define CTRL_PWM_CMP_MAX (6000)
+#define CTRL_PWM_CMP_MAX (2500 - 1)
 
 // PWM deadband
-#define CTRL_PWM_DEADBAND_CMP (100)
+#define CTRL_PWM_DEADBAND_CMP (50)
 
 // System tick
 #define DSP_C2000_DSP_TIME_DIV (100000/CTRL_PWM_CMP_MAX/2)
@@ -35,8 +37,26 @@
 //=================================================================================================
 // Hardware parameters
 
-#include <ctl/component/hardware_preset/inverter_3ph/GMP_Helios_3PhGaNInv_LV.h>
-#include <ctl/component/hardware_preset/grid_LC_filter/GMP_Harmonia_3ph_LC_filter.h>
+// invoke motor parameters
+#include <ctl/component/hardware_preset/pmsm_motor/TYI_5008_KV335.h>
+
+// invoke motor controller parameters
+#include <ctl/component/hardware_preset/inverter_3ph/TI_BOOSTXL_3PhGaNInv.h>
+
+///////////////////////////////////////////////////////////
+// Encoder Propeties
+
+// Encoder Full scale
+#define CTRL_POS_ENC_FS (16384)
+
+// Encoder Bias
+#define CTRL_POS_ENC_BIAS (0.0286865234f)
+
+// Speed division
+#define CTRL_SPD_DIV (5)
+
+// Position division
+#define CTRL_POS_DIV (5)
 
 ///////////////////////////////////////////////////////////
 // Controller Base value
@@ -52,21 +72,6 @@
 
 // Current base, 10 A
 #define CTRL_CURRENT_BASE (10.0f)
-
-///////////////////////////////////////////////////////////
-// Grid side sensor
-
-// Current sensor sensitivity, V/A
-#define CTRL_GRID_CURRENT_SENSITIVITY (HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSITIVITY_MV_A*0.001f)
-
-// Current sensor bias, V
-#define CTRL_GRID_CURRENT_BIAS (HARMONIA_3PH_LC_FILTER_PH_CURRENT_ZERO_BIAS_V)
-
-// Voltage sensor sensitivity, V/V
-#define CTRL_GRID_VOLTAGE_SENSITIVITY (HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_GAIN)
-
-// Voltage sensor bias, V
-#define CTRL_GRID_VOLTAGE_BIAS (HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_BIAS_V)
 
 ///////////////////////////////////////////////////////////
 // inverter side sensor
@@ -111,16 +116,26 @@
 // Enable ADC Calibrate
 #define SPECIFY_ENABLE_ADC_CALIBRATE
 
-// SPLL Close loop criteria
-#define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
+// Using negative modulator logic
+//#define PWM_MODULATOR_USING_NEGATIVE_LOGIC (1)
 
 // Using three level modulator or two level modulator
 //#define USING_NPC_MODULATOR
+
+// ADC Calibrate time ms
+#define TIMEOUT_ADC_CALIB_MS 10000
 
 //=================================================================================================
 // Board peripheral mapping
 
 // Launchpad Board Pin Mapping
+
+// QEP encoder channel
+#define EQEP_Encoder_BASE EQEP2_J13_BASE
+
+// System LED
+#define SYSTEM_LED LED_R
+#define CONTROLLER_LED LED_G
 
 // PWM Channels
 #define PHASE_U_BASE EPWM_J4_PHASE_U_BASE
@@ -132,49 +147,29 @@
 #define PWM_RESET_PORT  RESET_GATE
 
 // DC Bus Voltage & Current
-#define INV_VBUS_RESULT_BASE J3_VDC_RESULT_BASE
-#define INV_IBUS_RESULT_BASE J7_VDC_RESULT_BASE
-
 #define INV_VBUS J3_VDC
-#define INV_IBUS J7_VDC
+#define INV_IBUS
 
-// Grid side Voltage & Current
-#define INV_UA_RESULT_BASE J7_VU_RESULT_BASE
-#define INV_UB_RESULT_BASE J7_VV_RESULT_BASE
-#define INV_UC_RESULT_BASE J7_VW_RESULT_BASE
+#define INV_VBUS_RESULT_BASE J3_VDC_RESULT_BASE
+#define INV_IBUS_RESULT_BASE
 
-#define INV_UA J7_VU
-#define INV_UB J7_VV
-#define INV_UC J7_VW
-
-#define INV_IA_RESULT_BASE J7_IU_RESULT_BASE
-#define INV_IB_RESULT_BASE J7_IV_RESULT_BASE
-#define INV_IC_RESULT_BASE J7_IW_RESULT_BASE
-
-#define INV_IA J7_IU
-#define INV_IB J7_IV
-#define INV_IC J7_IW
-
-// Converter side Voltage & Current
-#define INV_UU_RESULT_BASE J3_VU_RESULT_BASE
-#define INV_UV_RESULT_BASE J3_VV_RESULT_BASE
-#define INV_UW_RESULT_BASE J3_VW_RESULT_BASE
-
-#define INV_UU J3_VU
-#define INV_UV J3_VV
-#define INV_UW J3_VW
+// Inverter side Voltage & Current
+#define INV_IU J3_IU
+#define INV_IV J3_IV
+#define INV_IW J3_IW
 
 #define INV_IU_RESULT_BASE J3_IU_RESULT_BASE
 #define INV_IV_RESULT_BASE J3_IV_RESULT_BASE
 #define INV_IW_RESULT_BASE J3_IW_RESULT_BASE
 
-#define INV_IU J3_IU
-#define INV_IV J3_IV
-#define INV_IW J3_IW
+#define INV_UU J3_VU
+#define INV_UV J3_VV
+#define INV_UW J3_VW
 
-// System LED
-#define SYSTEM_LED LED_R
-#define CONTROLLER_LED LED_G
+#define INV_UU_RESULT_BASE J3_VU_RESULT_BASE
+#define INV_UV_RESULT_BASE J3_VV_RESULT_BASE
+#define INV_UW_RESULT_BASE J3_VW_RESULT_BASE
+
 
 #endif // _FILE_CTRL_SETTINGS_H_
  

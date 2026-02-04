@@ -29,14 +29,6 @@ extern "C"
 GMP_STATIC_INLINE void ctl_input_callback(void)
 {
     // copy source ADC data
-    vabc_src[phase_A] = ADC_readResult(INV_UA_RESULT_BASE, INV_UA);
-    vabc_src[phase_B] = ADC_readResult(INV_UB_RESULT_BASE, INV_UB);
-    vabc_src[phase_C] = ADC_readResult(INV_UC_RESULT_BASE, INV_UC);
-
-    iabc_src[phase_A] = ADC_readResult(INV_IA_RESULT_BASE, INV_IA);
-    iabc_src[phase_B] = ADC_readResult(INV_IB_RESULT_BASE, INV_IB);
-    iabc_src[phase_C] = ADC_readResult(INV_IC_RESULT_BASE, INV_IC);
-
     uuvw_src[phase_U] = ADC_readResult(INV_UU_RESULT_BASE, INV_UU);
     uuvw_src[phase_V] = ADC_readResult(INV_UV_RESULT_BASE, INV_UV);
     uuvw_src[phase_W] = ADC_readResult(INV_UW_RESULT_BASE, INV_UW);
@@ -46,11 +38,12 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
     iuvw_src[phase_W] = ADC_readResult(INV_IW_RESULT_BASE, INV_IW);
 
     udc_src = ADC_readResult(INV_VBUS_RESULT_BASE, INV_VBUS);
-    idc_src = ADC_readResult(INV_IBUS_RESULT_BASE, INV_IBUS);
+//    idc_src = ADC_readResult(INV_IBUS_RESULT_BASE, INV_IBUS);
+
+    // Step auto turn pos encoder
+    ctl_step_autoturn_pos_encoder(&pos_enc, EQEP_getPosition(EQEP_Encoder_BASE));
 
     // invoke ADC p.u. routine
-    ctl_step_tri_ptr_adc_channel(&iabc);
-    ctl_step_tri_ptr_adc_channel(&vabc);
     ctl_step_tri_ptr_adc_channel(&iuvw);
     ctl_step_tri_ptr_adc_channel(&uuvw);
     ctl_step_ptr_adc_channel(&idc);
@@ -61,23 +54,9 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
 GMP_STATIC_INLINE void ctl_output_callback(void)
 {
     // Write ePWM peripheral CMP
-#if defined USING_NPC_MODULATOR
-
-    EPWM_setCounterCompareValue(EPWM_J4_PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_A_OUTER]);
-    EPWM_setCounterCompareValue(EPWM_J4_PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_B_OUTER]);
-    EPWM_setCounterCompareValue(EPWM_J4_PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_OUTER]);
-    EPWM_setCounterCompareValue(EPWM_J8_PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_A_INNER]);
-    EPWM_setCounterCompareValue(EPWM_J8_PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_B_INNER]);
-    EPWM_setCounterCompareValue(EPWM_J8_PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_INNER]);
-
-#else
-
     EPWM_setCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_U]);
     EPWM_setCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_V]);
     EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_W]);
-
-#endif // USING_NPC_MODULATOR
-
 
 
     // Monitor Port
@@ -87,7 +66,7 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     //    DAC_setShadowValue(IRIS_DACA_BASE, inv_ctrl.abc_out.dat[phase_B]  * 2048 + 2048);
 
     // grid current and inverter current
-    DAC_setShadowValue(IRIS_DACA_BASE, iabc.control_port.value.dat[phase_C] * 2048 + 2048);
+//    DAC_setShadowValue(IRIS_DACA_BASE, iabc.control_port.value.dat[phase_C] * 2048 + 2048);
     DAC_setShadowValue(IRIS_DACB_BASE, iuvw.control_port.value.dat[phase_C] * 2048 + 2048);
 
     // grid voltage and inverter voltage
@@ -116,12 +95,10 @@ GMP_STATIC_INLINE void ctl_fast_enable_output()
     EPWM_clearTripZoneFlag(PHASE_V_BASE, EPWM_TZ_FORCE_EVENT_OST);
     EPWM_clearTripZoneFlag(PHASE_W_BASE, EPWM_TZ_FORCE_EVENT_OST);
 
-    ctl_enable_gfl_inv(&inv_ctrl);
+    clear_all_controllers();
 
     // PWM enable
-    GPIO_WritePin(PWM_ENABLE_PORT, 1);
-
-    GPIO_WritePin(PWM_RESET_PORT, 0);
+    GPIO_WritePin(PWM_ENABLE_PORT, 0);
 
     GPIO_WritePin(CONTROLLER_LED, 0);
 }
@@ -134,10 +111,10 @@ GMP_STATIC_INLINE void ctl_fast_disable_output()
     EPWM_forceTripZoneEvent(PHASE_V_BASE, EPWM_TZ_FORCE_EVENT_OST);
     EPWM_forceTripZoneEvent(PHASE_W_BASE, EPWM_TZ_FORCE_EVENT_OST);
 
-    ctl_disable_gfl_inv(&inv_ctrl);
+//    clear_all_controllers();
 
     // PWM disable
-    GPIO_WritePin(PWM_ENABLE_PORT, 0);
+    GPIO_WritePin(PWM_ENABLE_PORT, 1);
 
     GPIO_WritePin(CONTROLLER_LED, 1);
 }

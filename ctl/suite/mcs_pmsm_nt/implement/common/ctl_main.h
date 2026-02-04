@@ -70,6 +70,10 @@ extern spd_calculator_t spd_enc;
 // additional controller: harmonic management
 
 //=================================================================================================
+// function prototype
+void clear_all_controllers();
+
+//=================================================================================================
 // controller process
 
 // periodic callback function things.
@@ -78,16 +82,12 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
     // ADC calibrator routine
     if (flag_enable_adc_calibrator)
     {
-        if (index_adc_calibrator == 13)
+        if (index_adc_calibrator == 7)
             ctl_step_adc_calibrator(&adc_calibrator, idc.control_port.value);
-        else if (index_adc_calibrator == 12)
+        else if (index_adc_calibrator == 6)
             ctl_step_adc_calibrator(&adc_calibrator, udc.control_port.value);
-        else if (index_adc_calibrator <= 11 && index_adc_calibrator >= 9)
-            ctl_step_adc_calibrator(&adc_calibrator, uuvw.control_port.value.dat[index_adc_calibrator - 9]);
-        else if (index_adc_calibrator <= 8 && index_adc_calibrator >= 6)
-            ctl_step_adc_calibrator(&adc_calibrator, vabc.control_port.value.dat[index_adc_calibrator - 6]);
         else if (index_adc_calibrator <= 5 && index_adc_calibrator >= 3)
-            ctl_step_adc_calibrator(&adc_calibrator, iabc.control_port.value.dat[index_adc_calibrator - 3]);
+            ctl_step_adc_calibrator(&adc_calibrator, uuvw.control_port.value.dat[index_adc_calibrator - 3]);
         else if (index_adc_calibrator <= 2)
             ctl_step_adc_calibrator(&adc_calibrator, iuvw.control_port.value.dat[index_adc_calibrator]);
     }
@@ -95,12 +95,23 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
     // normal controller routine
     else
     {        
+        // ramp generator
+        ctl_step_slope_f(&rg);
+
+        // Step auto turn pos encoder
+        ctl_step_autoturn_pos_encoder(&pos_enc, EQEP_getPosition(EQEP_Encoder_BASE));
+
+        ctl_step_spd_calc(&spd_enc);
+
+#if BUILD_LEVEL > 3
         // motion controller
         ctl_step_vel_pos_ctrl(&motion_ctrl);
 
         // current command dispatch
         ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, 0, ctl_get_vel_pos_cmd(&motion_ctrl));
         
+#endif
+
         // motor current controller
         ctl_step_current_controller(&mtr_ctrl);
 
@@ -113,7 +124,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 #if defined USING_NPC_MODULATOR
         ctl_step_npc_modulator(&spwm);
 #else
-        ctl_step_svpwm_modulator(&spwm);
+        ctl_step_spwm_modulator(&spwm);
 #endif // USING_NPC_MODULATOR
 
     }

@@ -366,6 +366,45 @@ GMP_STATIC_INLINE void ctl_ct_svpwm_calc(const ctl_vector3_t* ab0, GMP_CTL_OUTPU
 }
 
 /**
+ * @brief Calculates SVPWM duty cycles from alpha-beta reference voltages using the common-mode injection method, without bias.
+ * @f[ U_a = U_\alpha @f]
+ * @f[ U_b = -U_\alpha /2 + \sqrt{3}/2 U_\beta @f]
+ * @f[ U_c = -U_\alpha /2 - \sqrt{3}/2 U_\beta @f]
+ * @param[in] ab0 Pointer to the input alpha-beta reference voltage vector.
+ * @param[out] Tabc Pointer to the output vector containing the SVPWM duty cycles for phases A, B, and C.
+ */
+GMP_STATIC_INLINE void ctl_ct_svpwm(const ctl_vector3_t* ab0, GMP_CTL_OUTPUT_TAG ctl_vector3_t* Tabc)
+{
+    ctrl_gt Ua, Ub, Uc, Umax, Umin, Ucom;
+    ctrl_gt Ualpha_tmp = -ctl_div2(ab0->dat[phase_alpha]);
+    ctrl_gt Ubeta_tmp = ctl_mul(ab0->dat[phase_beta], CTL_CTRL_CONST_SQRT_3_OVER_2);
+
+    Ua = ab0->dat[phase_alpha];
+    Ub = Ualpha_tmp + Ubeta_tmp;
+    Uc = Ualpha_tmp - Ubeta_tmp;
+
+    if (Ua > Ub)
+    {
+        Umax = Ua;
+        Umin = Ub;
+    }
+    else
+    {
+        Umax = Ub;
+        Umin = Ua;
+    }
+    if (Uc > Umax)
+        Umax = Uc;
+    else if (Uc < Umin)
+        Umin = Uc;
+
+    Ucom = ctl_div2(Umax + Umin);
+    Tabc->dat[phase_A] = Ua - Ucom;
+    Tabc->dat[phase_B] = Ub - Ucom;
+    Tabc->dat[phase_C] = Uc - Ucom;
+}
+
+/**
  * @brief Calculates SVPWM duty cycles from alpha-beta reference voltages using a sector-based algorithm.
  * @param[in] ab0 Pointer to the input alpha-beta reference voltage vector.
  * @param[out] Tabc Pointer to the output vector containing the SVPWM duty cycles for phases A, B, and C.

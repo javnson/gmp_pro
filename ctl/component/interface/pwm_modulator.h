@@ -237,7 +237,7 @@ GMP_STATIC_INLINE void ctl_step_svpwm_modulator(spwm_modulator_t* mod)
 
     // Modulation, SVPWM
     //ctl_ct_iclarke(&mod->vab0_out, &mod->vabc_out);
-    ctl_ct_svpwm_calc(&mod->vab0_out, &mod->vabc_out);
+    ctl_ct_svpwm(&mod->vab0_out, &mod->vabc_out);
 
     // --- Calculate Raw PWM Values ---
     // Convert voltage command (-1.0 to 1.0) to duty cycle (0 to 1.0), then to raw PWM value.

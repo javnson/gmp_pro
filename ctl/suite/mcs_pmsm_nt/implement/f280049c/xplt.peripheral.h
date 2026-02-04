@@ -34,13 +34,13 @@ extern adc_gt uuvw_src[3];
 extern tri_ptr_adc_channel_t iuvw;
 extern adc_gt iuvw_src[3];
 
-// grid side voltage feedback
-extern tri_ptr_adc_channel_t vabc;
-extern adc_gt vabc_src[3];
-
-// grid side current feedback
-extern tri_ptr_adc_channel_t iabc;
-extern adc_gt iabc_src[3];
+//// grid side voltage feedback
+//extern tri_ptr_adc_channel_t vabc;
+//extern adc_gt vabc_src[3];
+//
+//// grid side current feedback
+//extern tri_ptr_adc_channel_t iabc;
+//extern adc_gt iabc_src[3];
 
 // DC bus current & voltage feedback
 extern ptr_adc_channel_t udc;

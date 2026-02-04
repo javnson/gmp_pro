@@ -285,7 +285,8 @@ void send_monitor_data(void)
 
     // 0x206: Monitor Grid Voltage A and PLL output angle
     tran_content[0].i32 = (int32_t)(inv_ctrl.vabc.dat[phase_A] * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(inv_ctrl.pll.srf_pll.theta * CAN_SCALE_FACTOR);
+//    tran_content[1].i32 = (int32_t)(inv_ctrl.pll.srf_pll.theta * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(inv_ctrl.pll.theta * CAN_SCALE_FACTOR);
 
     CAN_sendMessage(IRIS_CAN_BASE, 9, 8, (uint16_t*)tran_content);
 

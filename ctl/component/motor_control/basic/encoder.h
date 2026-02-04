@@ -216,6 +216,17 @@ GMP_STATIC_INLINE void ctl_set_autoturn_pos_encoder_offset(pos_autoturn_encoder_
     enc->offset = float2ctrl((ctrl_gt)raw / enc->position_base);
 }
 
+/**
+ * @brief Sets the mechanical offset for the auto-turn encoder from a raw value.
+ * @param[in,out] enc Pointer to the auto-turn encoder structure.
+ * @param[in] raw The raw encoder value that corresponds to the zero position.
+ */
+GMP_STATIC_INLINE void ctl_set_autoturn_pos_encoder_mech_offset(pos_autoturn_encoder_t* enc, ctrl_gt _offset)
+{
+    enc->offset = _offset;
+}
+
+
 /** @} */ // end of MC_AUTOTURN_ENCODER group
 
 /*---------------------------------------------------------------------------*/
@@ -253,6 +264,20 @@ typedef struct _tag_speed_calculator_t
  * @param[in] speed_filter_fc Cutoff frequency for the speed low-pass filter in Hz.
  */
 void ctl_init_spd_calculator(spd_calculator_t* sc, rotation_ift* pos_encif, parameter_gt control_law_freq,
+                             uint32_t speed_calc_div, parameter_gt rated_speed_rpm,
+                             parameter_gt speed_filter_fc);
+
+/**
+ * @brief Initializes the speed calculator.
+ * @param[out] sc Pointer to the speed calculator structure.
+ * @param[in] pos_encif Pointer to the source position encoder interface, if pos = elec_pos.
+ * @param[in] control_law_freq Frequency of the main control loop in Hz.
+ * @param[in] speed_calc_div Division factor for the speed calculation frequency (relative to control_law_freq).
+ * @param[in] rated_speed_rpm The rated speed of the motor in RPM, used as the base for per-unit speed.
+ * @param[in] pole_pairs Number of motor pole pairs.
+ * @param[in] speed_filter_fc Cutoff frequency for the speed low-pass filter in Hz.
+ */
+void ctl_init_spd_calculator_elecpos(spd_calculator_t* sc, rotation_ift* pos_encif, parameter_gt control_law_freq,
                              uint32_t speed_calc_div, parameter_gt rated_speed_rpm, uint16_t pole_pairs,
                              parameter_gt speed_filter_fc);
 

@@ -167,17 +167,17 @@ void ctl_init()
     
 #if 1
 
-    ctl_init_triangle_wave_generator(&tri_wave, CONTROLLER_FREQUENCY, 0.25f, 0.8f, 0.1f);
+    ctl_init_triangle_wave_generator(&tri_wave, CONTROLLER_FREQUENCY, 0.2f, 0.8f, 0.1f);  
 
     //
     // 下面这一组参数大概0.7pu开始振荡
     //
 
-    inv_ctrl.pid_idq[phase_d].kp /= 4;
-    inv_ctrl.pid_idq[phase_q].kp /= 4;
+    inv_ctrl.pid_idq[phase_d].kp /= 4.0f;
+    inv_ctrl.pid_idq[phase_q].kp /= 4.0f; 
 
-    //inv_ctrl.pll.pid_pll.kp *= 1;
-    //inv_ctrl.pll.pid_pll.ki *= 0.2;
+    inv_ctrl.pll.pid_pll.kp *= 2.0f; 
+    inv_ctrl.pll.pid_pll.ki *= 0.2;
 
     iabc.bias[phase_A] += 0.001f;
     iabc.bias[phase_B] += 0.001f;
