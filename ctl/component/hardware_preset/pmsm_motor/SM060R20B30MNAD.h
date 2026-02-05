@@ -1,6 +1,6 @@
 /**
- * @file GBM2804H_100T.h
- * @brief Defines the parameters for the GBM2804H-100T Brushless Gimbal Motor (PMSM).
+ * @file SM060R20B30MNAD.h
+ * @brief Defines the parameters for the SM060R20B30MNAD Brushless Gimbal Motor (PMSM).
  * @details This file contains the electrical, mechanical, and operational parameters
  * for the specified Permanent Magnet Synchronous Motor. These macros are intended
  * to be used throughout the motor control application to configure various
@@ -9,8 +9,8 @@
  * @note Information Source: https://zhuanlan.zhihu.com/p/545688192
  */
 
-#ifndef _FILE_MOTOR_PARAM_GBM2804H_100T_H_
-#define _FILE_MOTOR_PARAM_GBM2804H_100T_H_
+#ifndef _FILE_MOTOR_PARAM_SM060R20B30MNAD_H_
+#define _FILE_MOTOR_PARAM_SM060R20B30MNAD_H_
 
 #include <ctl/component/motor_control/consultant/motor_unit_calculator.h>
 
@@ -20,11 +20,11 @@ extern "C"
 #endif // __cplusplus
 
 /*---------------------------------------------------------------------------*/
-/* Parameter Definitions for PMSM (GBM2804H-100T)                            */
+/* Parameter Definitions for PMSM (SM060R20B30MNAD)                            */
 /*---------------------------------------------------------------------------*/
 
 /**
- * @defgroup PMSM_GBM2804H_PARAMETERS Motor Parameters (GBM2804H-100T)
+ * @defgroup PMSM_SM060R20B30MNAD_PARAMETERS Motor Parameters (SM060R20B30MNAD)
  * @ingroup CTL_MC_PRESET
  * @brief Contains all parameter definitions for the specified PMSM.
  * @{
@@ -73,10 +73,10 @@ extern "C"
 #define MOTOR_PARAM_MAX_DC_VOLTAGE ((14.2f))  ///< Maximum allowable DC bus voltage (V).
 #define MOTOR_PARAM_MAX_PH_CURRENT ((5.0f))   ///< Maximum allowable phase current (A, Peak).
 
-/** @} */ // end of PMSM_GBM2804H_PARAMETERS group
+/** @} */ // end of PMSM_SM060R20B30MNAD_PARAMETERS group
 
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
-#endif // _FILE_MOTOR_PARAM_GBM2804H_100T_H_
+#endif // _FILE_MOTOR_PARAM_SM060R20B30MNAD_H_
