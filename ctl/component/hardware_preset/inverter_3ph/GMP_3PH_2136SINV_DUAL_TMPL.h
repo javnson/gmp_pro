@@ -56,13 +56,12 @@ extern "C"
 //--- 3.1: Select Topology Configuration for Your Board ---
 // Description: Choose and define the correct topology for your board below.
 //              Use the integer values. The corresponding names are for documentation.
-#define MY_BOARD_PH_CURRENT_SENSE_TYPE     (1) // SENSOR_TYPE_SHUNT
-#define MY_BOARD_PH_CURRENT_SENSE_TOPOLOGY (1) // CS_TOPOLOGY_LOW_SIDE
-#define MY_BOARD_PH_VOLTAGE_SENSE_TYPE     (1) // VS_TYPE_PHASE_GND
-#define MY_BOARD_DCBUS_VOLTAGE_SENSE_TYPE  (1) // VS_TYPE_PHASE_GND
-#define MY_BOARD_DCBUS_CURRENT_SENSE_TYPE  (0) // SENSOR_NONE
-#define MY_BOARD_THERMAL_SENSE_TYPE        (1) // THERMAL_SENSOR_NTC
-
+#define MY_BOARD_PH_CURRENT_SENSE_TYPE     (SENSOR_TYPE_SHUNT) // SENSOR_TYPE_SHUNT
+#define MY_BOARD_PH_CURRENT_SENSE_TOPOLOGY (CS_TOPOLOGY_LOW_SIDE) // CS_TOPOLOGY_LOW_SIDE
+#define MY_BOARD_PH_VOLTAGE_SENSE_TYPE     (VS_TYPE_PHASE_GND) // VS_TYPE_PHASE_GND
+#define MY_BOARD_DCBUS_VOLTAGE_SENSE_TYPE  (VS_TYPE_PHASE_GND) // VS_TYPE_PHASE_GND
+#define MY_BOARD_DCBUS_CURRENT_SENSE_TYPE  (SENSOR_NONE) // SENSOR_NONE
+#define MY_BOARD_THERMAL_SENSE_TYPE        (THERMAL_SENSOR_NTC) // THERMAL_SENSOR_NTC
 //=================================================================================================
 // Section 4: Sensing Circuit Parameters
 // Description: This section defines the detailed electrical parameters of all sensing circuits.
