@@ -12,7 +12,7 @@
  * and then fill in all macro definitions according to your board's hardware manual.
  */
 
- #include <ctl/component/motor_control/controller_preset/controller_preset_general.h>
+#include <ctl/component/hardware_preset/inverter_3ph/inverter_3ph_general.h>
 
 #ifndef GMP_3PH_2136SINV_DUAL_TMPL_H
 #define GMP_3PH_2136SINV_DUAL_TMPL_H
