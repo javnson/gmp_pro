@@ -81,7 +81,7 @@ void ctl_init_mtr_current_ctrl(mtr_current_ctrl_t* mc, mtr_current_init_t* init)
     // 5. Voltage Limits Initialization
     // 设定最大输出电压模值 (SVPWM 内切圆半径 或 过调制半径)
     // 假设 v_base 定义为物理电压值，v_phase_limit 为物理限幅值
-    mc->max_vs_mag = init->v_phase_limit / init->v_base;
+    mc->max_vs_mag = (init->v_phase_limit * 1.4142f) / init->v_base;
 
     // 设定母线电压补偿基准
     // 用于 step 函数中的: v_scale = max_dcbus_voltage / mc->udc;

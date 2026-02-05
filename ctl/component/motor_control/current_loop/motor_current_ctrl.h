@@ -185,7 +185,7 @@ typedef struct _tag_mtr_current_ctrl
     // [fatal] the following information is key parameter for auto-tuning.
     parameter_gt fs;            //!< Controller execution frequency (Hz).
     parameter_gt v_bus;         //!< DC Bus voltage for V bus compensator (V).
-    parameter_gt v_phase_limit; //!< Phase current limitation(V).
+    parameter_gt v_phase_limit; //!< Phase voltage limitation(Vrms).
     parameter_gt v_base;        //!< Base voltage for per-unit conversion (V).
     parameter_gt i_base;        //!< Base current for per-unit conversion (A).
     parameter_gt freq_base;     //!< Nominal motor elec-frequency (e.g., 50 or 100 Hz).
@@ -342,7 +342,7 @@ GMP_STATIC_INLINE void ctl_step_current_controller(mtr_current_ctrl_t* mc)
     if (mc->flag_enable_bus_compensation)
     {
         ctrl_gt v_scale;
-        if (mc->udc > float2ctrl(0.1f))            // prevent div 0
+        if (mc->udc > float2ctrl(0.5f))                // prevent div 0
             v_scale = mc->max_dcbus_voltage / mc->udc; // udc is per unit value
         else
             v_scale = mc->max_dcbus_voltage;
@@ -384,7 +384,7 @@ GMP_STATIC_INLINE void ctl_step_current_controller(mtr_current_ctrl_t* mc)
         // 逻辑：PID real output = vdq_out_sat - all feed forward items
 
         // --- D Axis Correction ---
-        ctrl_gt v_pid_d_real = mc->vdq_out.dat[phase_d];
+        ctrl_gt v_pid_d_real = mc->vdq_out_sat.dat[phase_d];
         if (mc->flag_enable_decouple)
             v_pid_d_real -= mc->vdq_decouple.dat[phase_d];
         if (mc->flag_enable_vdq_feedforward)
@@ -393,7 +393,7 @@ GMP_STATIC_INLINE void ctl_step_current_controller(mtr_current_ctrl_t* mc)
         ctl_pid_clamping_correction_using_real_output(&mc->idq_ctrl[phase_d], v_pid_d_real);
 
         // --- Q Axis Correction ---
-        ctrl_gt v_pid_q_real = mc->vdq_out.dat[phase_q];
+        ctrl_gt v_pid_q_real = mc->vdq_out_sat.dat[phase_q];
         if (mc->flag_enable_decouple)
             v_pid_q_real -= mc->vdq_decouple.dat[phase_q];
         if (mc->flag_enable_vdq_feedforward)

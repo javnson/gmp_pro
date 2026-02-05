@@ -95,10 +95,10 @@ typedef struct _tag_slope_f
     /** @brief Encoder output interface, provides position information. */
     rotation_ift enc;
 
-    /** @brief Input: The target frequency for the generator in Hz. */
+    /** @brief Input: The target frequency for the generator in pu, base value is isr_freq. */
     ctrl_gt target_frequency;
 
-    /** @brief Output: The current instantaneous frequency in Hz. */
+    /** @brief Output: The current instantaneous frequency in pu, base value is isr_freq. */
     ctrl_gt current_freq;
 
     /** @brief Ramp generator to produce the angle signal. */

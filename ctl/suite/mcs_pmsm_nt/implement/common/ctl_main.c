@@ -72,6 +72,9 @@ void ctl_init()
     mtr_ctrl_init.v_base = CTRL_VOLTAGE_BASE;
     mtr_ctrl_init.i_base = CTRL_CURRENT_BASE;
 
+    mtr_ctrl_init.v_bus = CTRL_VOLTAGE_BASE;
+    mtr_ctrl_init.v_phase_limit = MOTOR_PARAM_RATED_VOLTAGE;
+
     mtr_ctrl_init.freq_base = MOTOR_PARAM_RATED_FREQUENCY;
     mtr_ctrl_init.spd_base = MOTOR_PARAM_MAX_SPEED / 1000;
     mtr_ctrl_init.pole_pairs = MOTOR_PARAM_POLE_PAIRS;
