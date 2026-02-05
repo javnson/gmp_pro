@@ -84,9 +84,7 @@ void ctl_init_pid_Tmode(
     hpid->integral_min = float2ctrl(-0.8f);
     hpid->integral_max = float2ctrl(0.8f);
 
-    hpid->out = 0;
-    hpid->dn = 0;
-    hpid->sn = 0;
+    ctl_clear_pid(hpid);
 }
 
 void ctl_init_pid(
@@ -107,9 +105,7 @@ void ctl_init_pid(
     hpid->integral_min = float2ctrl(-0.8f);
     hpid->integral_max = float2ctrl(0.8f);
 
-    hpid->out = 0;
-    hpid->dn = 0;
-    hpid->sn = 0;
+    ctl_clear_pid(hpid);
 }
 
 // init a Series PID
