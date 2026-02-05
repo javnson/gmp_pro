@@ -26,7 +26,7 @@
 #define CTRL_PWM_CMP_MAX (2500 - 1)
 
 // PWM deadband
-#define CTRL_PWM_DEADBAND_CMP (50)
+#define CTRL_PWM_DEADBAND_CMP (100)
 
 // System tick
 #define DSP_C2000_DSP_TIME_DIV (100000/CTRL_PWM_CMP_MAX/2)
@@ -50,7 +50,7 @@
 #define CTRL_POS_ENC_FS (16384)
 
 // Encoder Bias
-#define CTRL_POS_ENC_BIAS (0.0286865234f)
+#define CTRL_POS_ENC_BIAS (0.0999145508f)
 
 // Speed division
 #define CTRL_SPD_DIV (5)
@@ -117,13 +117,15 @@
 #define SPECIFY_ENABLE_ADC_CALIBRATE
 
 // Using negative modulator logic
-//#define PWM_MODULATOR_USING_NEGATIVE_LOGIC (1)
+#define PWM_MODULATOR_USING_NEGATIVE_LOGIC (1)
 
 // Using three level modulator or two level modulator
 //#define USING_NPC_MODULATOR
 
 // ADC Calibrate time ms
 #define TIMEOUT_ADC_CALIB_MS 10000
+
+#define MC_CURRENT_SAMPLE_PHASE_MODE (2)
 
 //=================================================================================================
 // Board peripheral mapping

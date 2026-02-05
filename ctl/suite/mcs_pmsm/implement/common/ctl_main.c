@@ -83,7 +83,7 @@ void ctl_init()
         // attach position with speed encoder
         &spd_enc, pmsm_ctrl.mtr_interface.position,
         // set spd calculator parameters
-        CTRL_FS, 5, MOTOR_PARAM_MAX_SPEED, 1, 150);
+        CTRL_FS, 5, MOTOR_PARAM_MAX_SPEED, 150);
 
 #if defined OPENLOOP_CONST_FREQUENCY
     ctl_init_const_f_controller(&rg, 20, CTRL_FS);

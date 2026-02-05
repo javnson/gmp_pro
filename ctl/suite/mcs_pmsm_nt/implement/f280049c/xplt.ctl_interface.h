@@ -58,7 +58,8 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     EPWM_setCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_V]);
     EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_W]);
 
-
+    DAC_setShadowValue(IRIS_DACA_BASE, pos_enc.encif.position * 2048);
+    DAC_setShadowValue(IRIS_DACB_BASE, iuvw.control_port.value.dat[phase_B] * 2048 + 2048);
     // Monitor Port
 #if BUILD_LEVEL == 1
 
@@ -66,8 +67,8 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     //    DAC_setShadowValue(IRIS_DACA_BASE, inv_ctrl.abc_out.dat[phase_B]  * 2048 + 2048);
 
     // grid current and inverter current
-//    DAC_setShadowValue(IRIS_DACA_BASE, iabc.control_port.value.dat[phase_C] * 2048 + 2048);
-    DAC_setShadowValue(IRIS_DACB_BASE, iuvw.control_port.value.dat[phase_C] * 2048 + 2048);
+//    DAC_setShadowValue(IRIS_DACA_BASE, iuvw.control_port.value.dat[phase_A] * 2048 + 2048);
+//    DAC_setShadowValue(IRIS_DACB_BASE, iuvw.control_port.value.dat[phase_B] * 2048 + 2048);
 
     // grid voltage and inverter voltage
     //    DAC_setShadowValue(IRIS_DACB_BASE, uuvw.control_port.value.dat[phase_C] * 2048 + 2048);
@@ -98,7 +99,7 @@ GMP_STATIC_INLINE void ctl_fast_enable_output()
     clear_all_controllers();
 
     // PWM enable
-    GPIO_WritePin(PWM_ENABLE_PORT, 0);
+    GPIO_WritePin(PWM_ENABLE_PORT, 1);
 
     GPIO_WritePin(CONTROLLER_LED, 0);
 }
@@ -114,7 +115,7 @@ GMP_STATIC_INLINE void ctl_fast_disable_output()
 //    clear_all_controllers();
 
     // PWM disable
-    GPIO_WritePin(PWM_ENABLE_PORT, 1);
+    GPIO_WritePin(PWM_ENABLE_PORT, 0);
 
     GPIO_WritePin(CONTROLLER_LED, 1);
 }
