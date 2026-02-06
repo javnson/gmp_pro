@@ -39,7 +39,7 @@ mtr_current_init_t mtr_ctrl_init;
 vel_pos_ctrl_t motion_ctrl;
 
 // Observer: SMO, FO, Speed measurement.
-ctl_slope_f_controller rg;
+ctl_slope_f_pu_controller rg;
 pos_autoturn_encoder_t pos_enc;
 spd_calculator_t spd_enc;
 
@@ -100,11 +100,15 @@ void ctl_init()
     //
     // angle signal generator
     //
-    ctl_init_const_slope_f_controller(
+    ctl_init_const_slope_f_pu_controller(
         // ramp angle generator
         &rg,
         // target frequency (Hz), target frequency slope (Hz/s)
-        20.0f, 20.0f, CONTROLLER_FREQUENCY);
+        20.0f, 20.0f,
+        // rated krpm, pole pairs
+        MOTOR_PARAM_MAX_SPEED, mtr_ctrl_init.pole_pairs,
+        // ISR frequency
+        CONTROLLER_FREQUENCY);
 
     //
     // motion controller
@@ -215,7 +219,7 @@ void clear_all_controllers()
 {
     ctl_clear_mtr_current_ctrl(&mtr_ctrl);
     ctl_clear_vel_pos_ctrl(&motion_ctrl);
-    ctl_clear_slope_f(&rg);
+    ctl_clear_slope_f_pu(&rg);
 
 #if defined USING_NPC_MODULATOR
     ctl_clear_npc_modulator(&spwm);

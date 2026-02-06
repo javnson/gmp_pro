@@ -63,7 +63,7 @@ extern mtr_current_ctrl_t mtr_ctrl;
 extern vel_pos_ctrl_t motion_ctrl;
 
 // Observer: SMO, FO, Speed measurement.
-extern ctl_slope_f_controller rg;
+extern ctl_slope_f_pu_controller rg;
 extern pos_autoturn_encoder_t pos_enc;
 extern spd_calculator_t spd_enc;
 
@@ -96,7 +96,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
     else
     {        
         // ramp generator
-        ctl_step_slope_f(&rg);
+        ctl_step_slope_f_pu(&rg);
 
         // Step auto turn pos encoder
         ctl_step_autoturn_pos_encoder(&pos_enc, EQEP_getPosition(EQEP_Encoder_BASE));
