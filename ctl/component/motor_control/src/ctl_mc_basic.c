@@ -181,6 +181,61 @@ void ctl_set_slope_f_freq(
     ctrl->target_frequency = float2ctrl(target_freq / isr_freq);
 }
 
+/**
+ * @brief Initializes the Constant Slope Frequency Controller (PU).
+ * @param[out] ctrl Pointer to the ctl_slope_f_pu_controller object.
+ * @param[in] frequency The initial target frequency in Hz.
+ * @param[in] freq_slope The maximum rate of frequency change in Hz/s.
+ * @param[in] rated_krpm The motor rated speed in krpm (Base value source).
+ * @param[in] pole_pairs The motor pole pairs (Base value source).
+ * @param[in] isr_freq The frequency of the interrupt service routine (ISR) in Hz.
+ */
+void ctl_init_const_slope_f_pu_controller(ctl_slope_f_pu_controller* ctrl, parameter_gt frequency,
+                                          parameter_gt freq_slope, parameter_gt rated_krpm, parameter_gt pole_pairs,
+                                          parameter_gt isr_freq)
+{
+    // 1. Calculate Base Frequency (Rated Electrical Hz)
+    // f_base = (RPM * Poles) / 60
+    // rated_krpm is in 1000 RPM
+    parameter_gt base_freq_hz = (rated_krpm * 1000.0f * pole_pairs) / 60.0f;
+
+    // Prevent divide by zero if user inputs bad data
+    if (base_freq_hz < 0.1f)
+        base_freq_hz = 1.0f;
+
+    // 2. Clear Positions
+    ctrl->enc.elec_position = 0;
+    ctrl->enc.position = 0;
+
+    // 3. Init Ramp Generator
+    // The slope will be updated in the step function, init with 0.
+    // Range is [0, 1) for electrical angle.
+    ctl_init_ramp_generator_via_freq(&ctrl->rg, isr_freq, 0, 1, 0);
+
+    // 4. Calculate Conversion Ratio
+    // This ratio converts "1.0 pu frequency" into "step size per ISR tick"
+    // step = (f_base / f_isr)
+    ctrl->ratio_freq_pu_to_step = float2ctrl(base_freq_hz / isr_freq);
+
+    // 5. Initialize Target Frequency in PU
+    // target_pu = target_hz / base_hz
+    ctrl->target_freq_pu = float2ctrl(frequency / base_freq_hz);
+
+    // 6. Initialize Slope Limiter
+    // The limiter needs to limit the change of PU per Tick.
+    // Max Change (Hz/s) = freq_slope
+    // Max Change (PU/s) = freq_slope / base_freq_hz
+    // Max Change (PU/Tick) = (freq_slope / base_freq_hz) / isr_freq
+    ctrl_gt slope_limit_per_tick = float2ctrl((freq_slope / base_freq_hz) / isr_freq);
+
+    ctl_init_slope_limiter(&ctrl->freq_slope, slope_limit_per_tick, -slope_limit_per_tick, isr_freq);
+
+    // Set initial output of limiter to current target (assuming instant start if needed, or 0)
+    // Usually start from 0 for soft start
+    ctrl->freq_slope.out = 0;
+    ctrl->current_freq_pu = 0;
+}
+
 // VF controller
 
 void ctl_init_const_vf_controller(
