@@ -169,11 +169,13 @@ can1.msgObj10.msgType      = "CAN_MSG_OBJ_TYPE_TX";
 dac1.$name            = "IRIS_DACA";
 dac1.referenceVoltage = "DAC_REF_ADC_VREFHI";
 dac1.shadowValue      = 500;
+dac1.enableOutput     = true;
 
 dac2.dacBase          = "DACB_BASE";
 dac2.$name            = "IRIS_DACB";
 dac2.referenceVoltage = "DAC_REF_ADC_VREFHI";
 dac2.shadowValue      = 500;
+dac2.enableOutput     = true;
 
 epwm1.$name                                                      = "EPWM_J8_PHASE_U";
 epwm1.epwmTimebase_hsClockDiv                                    = "EPWM_HSCLOCK_DIVIDER_1";
