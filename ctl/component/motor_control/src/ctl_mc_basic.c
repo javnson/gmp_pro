@@ -225,8 +225,7 @@ void ctl_init_const_slope_f_pu_controller(ctl_slope_f_pu_controller* ctrl, param
     // The limiter needs to limit the change of PU per Tick.
     // Max Change (Hz/s) = freq_slope
     // Max Change (PU/s) = freq_slope / base_freq_hz
-    // Max Change (PU/Tick) = (freq_slope / base_freq_hz) / isr_freq
-    ctrl_gt slope_limit_per_tick = float2ctrl((freq_slope / base_freq_hz) / isr_freq);
+    ctrl_gt slope_limit_per_tick = float2ctrl(freq_slope / base_freq_hz);
 
     ctl_init_slope_limiter(&ctrl->freq_slope, slope_limit_per_tick, -slope_limit_per_tick, isr_freq);
 

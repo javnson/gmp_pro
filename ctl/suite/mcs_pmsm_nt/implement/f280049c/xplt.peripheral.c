@@ -96,6 +96,7 @@ void setup_peripheral(void)
 // ADC interrupt
 interrupt void MainISR(void)
 {
+    GPIO_WritePin(MONITOR_IO, 0);
     //
     // call GMP ISR  Controller operation callback function
     //
@@ -113,6 +114,8 @@ interrupt void MainISR(void)
         GPIO_WritePin(SYSTEM_LED, 0);
     else
         GPIO_WritePin(SYSTEM_LED, 1);
+
+    GPIO_WritePin(MONITOR_IO, 1);
 
     //
     // Clear the interrupt flag
@@ -143,7 +146,7 @@ interrupt void MainISR(void)
 // 32 bit union
 typedef union {
     int32_t i32;
-    uint16_t u16[2]; // C2000ÖÐuint16_tÕ¼1¸öword£¬32Î»Õ¼ÓÃ2¸öword
+    uint16_t u16[2]; // C2000ï¿½ï¿½uint16_tÕ¼1ï¿½ï¿½wordï¿½ï¿½32Î»Õ¼ï¿½ï¿½2ï¿½ï¿½word
 } can_data_t;
 
 // CAN interrupt
@@ -288,23 +291,23 @@ interrupt void INT_IRIS_UART_USB_RX_ISR(void)
 
     if (rxStatus & SCI_RXSTATUS_OVERRUN)
     {
-        // ½ö´¦ÀíÒç³ö´íÎó£ºÇå³ýÒç³ö±êÖ¾Î»£¬¶ø²»ÊÇ¸´Î»Õû¸ö FIFO
-        // C2000 DriverLib Í¨³£Í¨¹ýÐ´Èë RXFFOVRCLR Î»À´Çå³ý
-        // Èç¹ûÃ»ÓÐÖ±½ÓAPI£¬¿ÉÒÔÊ¹ÓÃ HWREG ²Ù×÷£¬»òÕß±£³Ö resetRxFIFO µ«½öÕë¶Ô Overrun
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¾Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¸ï¿½Î»ï¿½ï¿½ï¿½ï¿½ FIFO
+        // C2000 DriverLib Í¨ï¿½ï¿½Í¨ï¿½ï¿½Ð´ï¿½ï¿½ RXFFOVRCLR Î»ï¿½ï¿½ï¿½ï¿½ï¿½
+        // ï¿½ï¿½ï¿½Ã»ï¿½ï¿½Ö±ï¿½ï¿½APIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½ HWREG ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß±ï¿½ï¿½ï¿½ resetRxFIFO ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Overrun
 
-        // ÐÞÕý½¨Òé£ºÖ»ÔÚÈ·ÊµÒç³ö¿¨ËÀÊ±²Å Reset£¬ÆÕÍ¨ Error ²»Òª Reset
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½é£ºÖ»ï¿½ï¿½È·Êµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ Resetï¿½ï¿½ï¿½ï¿½Í¨ Error ï¿½ï¿½Òª Reset
         SCI_clearOverflowStatus(IRIS_UART_USB_BASE);
 
-        // Èç¹û±ØÐëÊ¹ÓÃ resetRxFIFO£¬ÇëÈ·±£½öÔÚÑÏÖØ¹ÊÕÏÏÂÊ¹ÓÃ
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½ resetRxFIFOï¿½ï¿½ï¿½ï¿½È·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ø¹ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½
         // SCI_resetRxFIFO(IRIS_UART_USB_BASE);
     }
 
     if (rxStatus & SCI_RXSTATUS_ERROR)
     {
-        // ¶ÔÓÚ Frame Error / Parity Error (±ÈÈçÔëÉù 0xFF)
-        // ¶ÁÈ¡Êý¾Ý¼Ä´æÆ÷Í¨³£»á×Ô¶¯Çå³ýÕâÐ©´íÎó±êÖ¾
-        // ÕâÀïÖ»ÐèÒª×öÒ»¸öÈí¼þ¸´Î»¸ø SCI ×´Ì¬»ú£¨²»Çå³ý FIFO£©£¬»òÕßµ¥´¿Çå³ý±êÖ¾
-        // ¾ø¶Ô²»Òªµ÷ÓÃ SCI_resetRxFIFO() !!!
+        // ï¿½ï¿½ï¿½ï¿½ Frame Error / Parity Error (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 0xFF)
+        // ï¿½ï¿½È¡ï¿½ï¿½ï¿½Ý¼Ä´ï¿½ï¿½ï¿½Í¨ï¿½ï¿½ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð©ï¿½ï¿½ï¿½ï¿½ï¿½Ö¾
+        // ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½Òªï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ SCI ×´Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ FIFOï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ßµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¾
+        // ï¿½ï¿½ï¿½Ô²ï¿½Òªï¿½ï¿½ï¿½ï¿½ SCI_resetRxFIFO() !!!
     }
 
     //

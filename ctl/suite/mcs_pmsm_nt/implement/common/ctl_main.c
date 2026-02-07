@@ -163,7 +163,7 @@ void ctl_init()
 #if BUILD_LEVEL == 1
     // Voltage open loop
     ctl_disable_mtr_current_ctrl(&mtr_ctrl);
-    ctl_set_mtr_current_ctrl_vdq_ref(&mtr_ctrl, 0.2, 0.2);
+    ctl_set_mtr_current_ctrl_vdq_ref(&mtr_ctrl, 0.0, 0.0);
 
 #elif BUILD_LEVEL == 2
     // Basic current close loop, IF
