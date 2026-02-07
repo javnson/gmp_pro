@@ -59,7 +59,7 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_W]);
 
     DAC_setShadowValue(IRIS_DACA_BASE, pos_enc.encif.position * 2048);
-    DAC_setShadowValue(IRIS_DACB_BASE, iuvw.control_port.value.dat[phase_B] * 2048 + 2048);
+    DAC_setShadowValue(IRIS_DACB_BASE, rg.rg.current * 2048);
     // Monitor Port
 #if BUILD_LEVEL == 1
 
