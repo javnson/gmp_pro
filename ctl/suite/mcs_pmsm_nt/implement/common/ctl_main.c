@@ -20,11 +20,14 @@
 
 #include <xplt.peripheral.h>
 
+#include <core/pm/function_scheduler.h>
+
 //=================================================================================================
 // global controller variables
 
 // state machine
 cia402_sm_t cia402_sm;
+ctl_mtr_protect_t protection;
 
 // modulator: SPWM modulator / SVPWM modulator / NPC modulator
 #if defined USING_NPC_MODULATOR
@@ -123,6 +126,9 @@ void ctl_init()
         // spd_div, pos_div, controller freq
         CTRL_SPD_DIV, CTRL_POS_DIV, CONTROLLER_FREQUENCY);
 
+    //
+    // Encoder Init
+    //
     ctl_init_autoturn_pos_encoder(&pos_enc, mtr_ctrl_init.pole_pairs, CTRL_POS_ENC_FS);
     ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, float2ctrl(CTRL_POS_ENC_BIAS));
 
@@ -171,15 +177,24 @@ void ctl_init()
     cia402_sm.current_cmd = CIA402_CMD_ENABLE_OPERATION;
 #endif // SPECIFY_PC_ENVIRONMENT
 
-#if BUILD_LEVEL >= 3
+    //
+    // init and config Motor Protection module
+    //
+    ctl_init_mtr_protect(&protection, CONTROLLER_FREQUENCY);
+    ctl_attach_mtr_protect_port(&protection, &mtr_ctrl.udc, (ctl_vector2_t*)&mtr_ctrl.idq0, &mtr_ctrl.idq_ref, NULL, NULL);
 
-    // NOTICE:
-    // if grid connect is request disable switch delay from CIA402_SM_SWITCH_ON_DISABLED to CIA402_SM_SWITCHED_ON
-    // or a longer judgment time can lead to failure to connect to the grid.
-    cia402_sm.minimum_transit_delay[CIA402_SM_READY_TO_SWITCH_ON] = 0;
-    cia402_sm.minimum_transit_delay[CIA402_SM_SWITCHED_ON] = 0;
 
-#endif // BUILD_LEVEL
+
+
+//#if BUILD_LEVEL >= 3
+//
+//    // NOTICE:
+//    // if grid connect is request disable switch delay from CIA402_SM_SWITCH_ON_DISABLED to CIA402_SM_SWITCHED_ON
+//    // or a longer judgment time can lead to failure to connect to the grid.
+//    cia402_sm.minimum_transit_delay[CIA402_SM_READY_TO_SWITCH_ON] = 0;
+//    cia402_sm.minimum_transit_delay[CIA402_SM_SWITCHED_ON] = 0;
+//
+//#endif // BUILD_LEVEL
 
     //
     // init ADC Calibrator
@@ -204,6 +219,18 @@ void ctl_mainloop(void)
 
 //=================================================================================================
 // CiA402 default callback routine
+
+gmp_task_status_t tsk_protect(gmp_task_t* tsk)
+{
+    GMP_UNUSED_VAR(tsk);
+
+    if(ctl_dispatch_mtr_protect_slow(&protection))
+    {
+        cia402_fault_request(&cia402_sm);
+    }
+
+    return GMP_TASK_DONE;
+}
 
 void ctl_enable_pwm()
 {

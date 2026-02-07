@@ -25,11 +25,11 @@
 
 #include <ctl/component/motor_control/motion/vel_pos_loop.h>
 
-//#include <ctl/component/digital_power/three_phase/three_phase_GFL.h>
-
 #include <ctl/component/interface/pwm_modulator.h>
 
 #include <ctl/framework/cia402_state_machine.h>
+
+#include <ctl/component/motor_control/basic/mtr_protection.h>
 
 #ifndef _FILE_CTL_MAIN_H_
 #define _FILE_CTL_MAIN_H_
@@ -50,6 +50,7 @@ extern volatile fast_gt index_adc_calibrator;
 
 // state machine
 extern cia402_sm_t cia402_sm;
+extern ctl_mtr_protect_t protection;
 
 // modulator: SPWM modulator / SVPWM modulator / NPC modulator
 #if defined USING_NPC_MODULATOR
@@ -114,6 +115,12 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 
         // motor current controller
         ctl_step_current_controller(&mtr_ctrl);
+
+        // Motor protection callback, fast task
+        if(ctl_step_mtr_protect_fast(&protection))
+        {
+            cia402_fault_request(&cia402_sm);
+        }
 
         // mix all output
         spwm.vab0_out.dat[phase_U] = mtr_ctrl.vab0.dat[phase_U];
