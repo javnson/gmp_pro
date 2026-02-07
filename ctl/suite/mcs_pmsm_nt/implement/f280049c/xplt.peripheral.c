@@ -1,4 +1,4 @@
-//
+﻿//
 // THIS IS A DEMO SOURCE CODE FOR GMP LIBRARY.
 //
 // User should add all definitions of peripheral objects in this file.
@@ -146,7 +146,7 @@ interrupt void MainISR(void)
 // 32 bit union
 typedef union {
     int32_t i32;
-    uint16_t u16[2]; // C2000��uint16_tռ1��word��32λռ��2��word
+    uint16_t u16[2];
 } can_data_t;
 
 // CAN interrupt
@@ -289,25 +289,28 @@ interrupt void INT_IRIS_UART_USB_RX_ISR(void)
     // Fault reaction
     rxStatus = SCI_getRxStatus(IRIS_UART_USB_BASE);
 
-    if (rxStatus & SCI_RXSTATUS_OVERRUN)
+if (rxStatus & SCI_RXSTATUS_OVERRUN)
     {
-        // ���������������������־λ�������Ǹ�λ���� FIFO
-        // C2000 DriverLib ͨ��ͨ��д�� RXFFOVRCLR λ�����
-        // ���û��ֱ��API������ʹ�� HWREG ���������߱��� resetRxFIFO ������� Overrun
+        // The Overrun flag indicates that the RX FIFO is full and data was lost.
+        // C2000 DriverLib typically clears this by writing to the RXFFOVRCLR bit.
+        // If there is no direct API, use HWREG or check if resetRxFIFO clears the Overrun.
 
-        // �������飺ֻ��ȷʵ�������ʱ�� Reset����ͨ Error ��Ҫ Reset
+        // Suggestion: Only perform a Reset if an actual Overflow occurs.
+        // Ordinary errors do not require a FIFO reset.
         SCI_clearOverflowStatus(IRIS_UART_USB_BASE);
 
-        // �������ʹ�� resetRxFIFO����ȷ���������ع�����ʹ��
+        // Resetting the FIFO is an option to ensure a clean state after an overflow.
         // SCI_resetRxFIFO(IRIS_UART_USB_BASE);
     }
 
     if (rxStatus & SCI_RXSTATUS_ERROR)
     {
-        // ���� Frame Error / Parity Error (�������� 0xFF)
-        // ��ȡ���ݼĴ���ͨ�����Զ������Щ�����־
-        // ����ֻ��Ҫ��һ�������λ�� SCI ״̬��������� FIFO�������ߵ��������־
-        // ���Բ�Ҫ���� SCI_resetRxFIFO() !!!
+        // Handle Frame Error / Parity Error (e.g., receiving 0xFF or Break signal).
+        // Reading the data register usually automatically clears these error flags.
+        // We only need to ensure the SCI status flags are cleared.
+        // It is NOT necessary to reset the FIFO for these errors, doing so would lose valid data.
+        
+        // Therefore, DO NOT call SCI_resetRxFIFO() here !!!
     }
 
     //
