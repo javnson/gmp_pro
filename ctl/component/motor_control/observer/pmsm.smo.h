@@ -16,6 +16,7 @@
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <ctl/component/motor_control/basic/encoder.h>
+#include <ctl/component/motor_control/current_loop/motor_current_ctrl.h>
 #include <ctl/math_block/gmp_math.h>
 
 #ifdef __cplusplus
@@ -82,9 +83,6 @@ typedef struct _tag_ctl_smo_init
     ctrl_gt k_slide;       ///< The sliding gain for the observer.
 
 } ctl_smo_init_t;
-
-// Need to implement this function
-void ctl_auto_tuning_pmsm_smo(ctl_smo_init_t* init, const mtr_current_init_t* ker_init);
 
 /**
  * @brief Holds the state and parameters for the SMO estimator.
