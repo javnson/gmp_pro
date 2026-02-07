@@ -164,6 +164,16 @@ GMP_STATIC_INLINE fast_gt ctl_is_less_ot(adc_gt temp, adc_gt limit_temp)
     return limit_temp < temp;
 }
 
+GMP_STATIC_INLINE void ctl_set_mtr_protect_mask(ctl_mtr_protect_t* prot, uint32_t mask)
+{
+    prot->error_mask.all = mask;
+}
+
+GMP_STATIC_INLINE uint32_t ctl_get_mtr_protect_mask(ctl_mtr_protect_t *prot)
+{
+    return prot->error_mask.all;
+}
+
 /**
  * @brief ISR Level Protection Step
  * @return 1 if fault active, 0 if safe
