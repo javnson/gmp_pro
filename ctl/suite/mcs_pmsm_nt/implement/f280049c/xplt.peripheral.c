@@ -218,7 +218,7 @@ void send_monitor_data(void)
 
     // 0x203: Monitor Velocity following
     tran_content[0].i32 = (int32_t)(motion_ctrl.spd_if->speed * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(motion_ctrl.target_velocity] * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(motion_ctrl.target_velocity * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 6, 8, (uint16_t*)tran_content);
 
     // 0x204: TODO Monitor elec-position following
@@ -238,7 +238,7 @@ void send_monitor_data(void)
 
     // 0x207: ualpha, ubeta
     tran_content[0].i32 = (int32_t)(mtr_ctrl.vab0.dat[phase_alpha] * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(inv_ctrl.vab0.dat[phase_beta] * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(mtr_ctrl.vab0.dat[phase_beta] * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 10, 8, (uint16_t*)tran_content);
 }
 

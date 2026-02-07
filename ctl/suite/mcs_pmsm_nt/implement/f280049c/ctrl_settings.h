@@ -29,13 +29,15 @@
 #define CTRL_PWM_DEADBAND_CMP (100)
 
 // System tick
-#define DSP_C2000_DSP_TIME_DIV (100000/CTRL_PWM_CMP_MAX/2)
+#define DSP_C2000_DSP_TIME_DIV (100000 / CTRL_PWM_CMP_MAX / 2)
 
 // ADC Voltae Reference
 #define CTRL_ADC_VOLTAGE_REF (3.3f)
 
 //=================================================================================================
 // Hardware parameters
+
+#define BOOSTXL_3PHGANINV_IS_DEFAULT_PARAM
 
 // invoke motor parameters
 #include <ctl/component/hardware_preset/pmsm_motor/TYI_5008_KV335.h>
@@ -62,10 +64,10 @@
 // Controller Base value
 
 // DC bus voltage
-#define CTRL_DCBUS_VOLTAGE  (80.0f)
+#define CTRL_DCBUS_VOLTAGE (80.0f)
 
 // phase voltage base, SVPWM modulation
-#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE/1.73205081f)
+#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE / 1.73205081f)
 
 // voltage base, SPWM modulation
 //#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE/2.0f)
@@ -77,31 +79,31 @@
 // inverter side sensor
 
 // Current sensor sensitivity, TMCS1133A2B, V/A
-#define CTRL_INVERTER_CURRENT_SENSITIVITY (50e-3f)
+#define CTRL_INVERTER_CURRENT_SENSITIVITY (MY_BOARD_PH_SHUNT_RESISTANCE_OHM * MY_BOARD_PH_CSA_GAIN_V_V)
 
 // Current sensor bias, V
-#define CTRL_INVERTER_CURRENT_BIAS (1.65f)
+#define CTRL_INVERTER_CURRENT_BIAS (MY_BOARD_PH_CSA_BIAS_V)
 
 // Voltage sensor sensitivity, V/V
-#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (0.02738589f)
+#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (MY_BOARD_PH_VOLTAGE_SENSE_GAIN)
 
 // Voltage sensor bias, V
-#define CTRL_INVERTER_VOLTAGE_BIAS (0.0f)
+#define CTRL_INVERTER_VOLTAGE_BIAS (MY_BOARD_PH_VOLTAGE_SENSE_BIAS_V)
 
 ///////////////////////////////////////////////////////////
 // DC Bus side sensor
 
 // Current sensor sensitivity, V/A
-#define CTRL_DC_CURRENT_SENSITIVITY (24.75e-3f)
+#define CTRL_DC_CURRENT_SENSITIVITY (MY_BOARD_DCBUS_CURRENT_SENSE_GAIN)
 
 // Current sensor bias, V
-#define CTRL_DC_CURRENT_BIAS (1.65f)
+#define CTRL_DC_CURRENT_BIAS (MY_BOARD_DCBUS_CURRENT_SENSE_BIAS_V)
 
 // Voltage sensor sensitivity, maximum 120V, V/V
-#define CTRL_DC_VOLTAGE_SENSITIVITY (0.02738589f)
+#define CTRL_DC_VOLTAGE_SENSITIVITY (MY_BOARD_DCBUS_VOLTAGE_SENSE_GAIN)
 
 // Voltage sensor bias, V
-#define CTRL_DC_VOLTAGE_BIAS (0.0f)
+#define CTRL_DC_VOLTAGE_BIAS (MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)
 
 //=================================================================================================
 // Controller Settings
@@ -143,7 +145,7 @@
 #define EQEP_Encoder_BASE EQEP2_J13_BASE
 
 // System LED
-#define SYSTEM_LED LED_R
+#define SYSTEM_LED     LED_R
 #define CONTROLLER_LED LED_G
 
 // PWM Channels
@@ -179,6 +181,4 @@
 #define INV_UV_RESULT_BASE J3_VV_RESULT_BASE
 #define INV_UW_RESULT_BASE J3_VW_RESULT_BASE
 
-
 #endif // _FILE_CTRL_SETTINGS_H_
- 
