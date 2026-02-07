@@ -77,17 +77,6 @@ void setup_peripheral(void)
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_DC_CURRENT_BIAS),
         // ADC resolution, IQN
         12, 24);
-
-    //
-    // attach
-    //
-//    ctl_attach_gfl_inv(
-//        // inv controller
-//        &inv_ctrl,
-//        // idc, udc
-//        &idc.control_port, &udc.control_port,
-//        // grid side iabc, vabc
-//        &iabc.control_port, &vabc.control_port);
 }
 
 //=================================================================================================
@@ -177,13 +166,13 @@ interrupt void INT_IRIS_CAN_0_ISR(void)
         CAN_readMessage(IRIS_CAN_BASE, 2, (uint16_t*)recv_content);
         CAN_clearInterruptStatus(CANA_BASE, 2);
 
-//        // set target value
-//#if BUILD_LEVEL == 1
-//        // For level 1 Set target voltage
-//        ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl((float)recv_content[0].i32 / CAN_SCALE_FACTOR),
-//                                         float2ctrl((float)recv_content[1].i32 / CAN_SCALE_FACTOR));
-//
-//#endif // BUILD_LEVEL
+        //        // set target value
+        //#if BUILD_LEVEL == 1
+        //        // For level 1 Set target voltage
+        //        ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl((float)recv_content[0].i32 / CAN_SCALE_FACTOR),
+        //                                         float2ctrl((float)recv_content[1].i32 / CAN_SCALE_FACTOR));
+        //
+        //#endif // BUILD_LEVEL
     }
 
     //
@@ -217,46 +206,39 @@ void send_monitor_data(void)
     uint16_t rx_raw[4];
     can_data_t tran_content[2];
 
-    // 0x201: Monitor Grid Voltage
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
+    // 0x201: Monitor Motor Current
+    tran_content[0].i32 = (int32_t)(mtr_ctrl.idq0.dat[phase_d] * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(mtr_ctrl.idq0.dat[phase_q] * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 4, 8, (uint16_t*)tran_content);
 
     //0x202: Monitor inverter voltage
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
+    tran_content[0].i32 = (int32_t)(mtr_ctrl.vdq0.dat[phase_d] * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(mtr_ctrl.vdq0.dat[phase_q] * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 5, 8, (uint16_t*)tran_content);
 
-    // 0x203: Monitor grid current
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
+    // 0x203: Monitor Velocity following
+    tran_content[0].i32 = (int32_t)(motion_ctrl.spd_if->speed * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(motion_ctrl.target_velocity] * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 6, 8, (uint16_t*)tran_content);
 
-    // 0x204: TODO Monitor inverter current
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
+    // 0x204: TODO Monitor elec-position following
+    tran_content[0].i32 = (int32_t)(motion_ctrl.pos_if->position * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(motion_ctrl.target_angle * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 7, 8, (uint16_t*)tran_content);
 
-    // 0x205: TODO Monitor DC Voltage / Current
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
+    // 0x205: Monitor DC Voltage / ISR tick
+    tran_content[0].i32 = (int32_t)(mtr_ctrl.udc * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(mtr_ctrl.isr_tick);
     CAN_sendMessage(IRIS_CAN_BASE, 8, 8, (uint16_t*)tran_content);
 
-    // 0x206: Monitor Grid Voltage A and PLL output angle
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.vabc.dat[phase_A] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.pll.theta * CAN_SCALE_FACTOR);
-
+    // 0x206: ia,ib
+    tran_content[0].i32 = (int32_t)(mtr_ctrl.iuvw.dat[phase_U] * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(mtr_ctrl.iuvw.dat[phase_V] * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 9, 8, (uint16_t*)tran_content);
 
-    // 0x207: Monitor reserved
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
+    // 0x207: ualpha, ubeta
+    tran_content[0].i32 = (int32_t)(mtr_ctrl.vab0.dat[phase_alpha] * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(inv_ctrl.vab0.dat[phase_beta] * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 10, 8, (uint16_t*)tran_content);
 }
 
@@ -289,7 +271,7 @@ interrupt void INT_IRIS_UART_USB_RX_ISR(void)
     // Fault reaction
     rxStatus = SCI_getRxStatus(IRIS_UART_USB_BASE);
 
-if (rxStatus & SCI_RXSTATUS_OVERRUN)
+    if (rxStatus & SCI_RXSTATUS_OVERRUN)
     {
         // The Overrun flag indicates that the RX FIFO is full and data was lost.
         // C2000 DriverLib typically clears this by writing to the RXFFOVRCLR bit.
@@ -309,7 +291,7 @@ if (rxStatus & SCI_RXSTATUS_OVERRUN)
         // Reading the data register usually automatically clears these error flags.
         // We only need to ensure the SCI status flags are cleared.
         // It is NOT necessary to reset the FIFO for these errors, doing so would lose valid data.
-        
+
         // Therefore, DO NOT call SCI_resetRxFIFO() here !!!
     }
 
