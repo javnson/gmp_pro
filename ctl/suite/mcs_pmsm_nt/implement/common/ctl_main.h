@@ -119,13 +119,16 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         ctl_step_current_controller(&mtr_ctrl);
 
 #ifdef ENABLE_SMO
+        ctrl_gt udc = ctl_mul(GMP_CONST_1_OVER_SQRT3, mtr_ctrl.udc);
+        ctrl_gt v_alpha = ctl_mul(udc, mtr_ctrl.vab0.dat[phase_alpha]);
+        ctrl_gt v_beta = ctl_mul(udc, mtr_ctrl.vab0.dat[phase_beta]);
         ctl_step_pmsm_smo(
             // SMO object
             &smo,
             // uab
-            mtr_ctrl.iab0.dat[phase_alpha], mtr_ctrl.iab0.dat[phase_beta],
+            v_alpha, v_beta,
             // iab
-            mtr_ctrl.vab0.dat[phase_alpha], mtr_ctrl.vab0.dat[phase_beta]);
+            mtr_ctrl.iab0.dat[phase_alpha], mtr_ctrl.iab0.dat[phase_beta]);
 #endif // ENABLE_SMO
 
 #ifdef ENABLE_MOTOR_FAULT_PROTECTION
