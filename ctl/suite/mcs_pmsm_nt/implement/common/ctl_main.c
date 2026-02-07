@@ -50,7 +50,6 @@ spd_calculator_t spd_enc;
 
 ctl_smo_init_t smo_init;
 pmsm_smo_t smo;
-spd_calculator_t smo_spd_enc;
 
 #endif // ENABLE_SMO
 
@@ -117,7 +116,7 @@ void ctl_init()
         // target frequency (Hz), target frequency slope (Hz/s)
         20.0f, 20.0f,
         // rated krpm, pole pairs
-        MOTOR_PARAM_MAX_SPEED, mtr_ctrl_init.pole_pairs,
+        MOTOR_PARAM_MAX_SPEED/1000.0f, mtr_ctrl_init.pole_pairs,
         // ISR frequency
         CONTROLLER_FREQUENCY);
 
@@ -149,11 +148,6 @@ void ctl_init()
     //
     ctl_auto_tuning_pmsm_smo(&smo_init, &mtr_ctrl_init);
     ctl_init_pmsm_smo(&smo, &smo_init);
-    ctl_init_spd_calculator_elecpos(
-            // smo pseed calculate
-            &smo_spd_enc, &smo.encif,
-            // controller parameters
-            CONTROLLER_FREQUENCY, CTRL_SPD_DIV, MOTOR_PARAM_MAX_SPEED, mtr_ctrl_init.pole_pairs, 20.0f);
 
 #endif // ENABLE_SMO
 
@@ -204,7 +198,8 @@ void ctl_init()
     // init and config Motor Protection module
     //
     ctl_init_mtr_protect(&protection, CONTROLLER_FREQUENCY);
-    ctl_attach_mtr_protect_port(&protection, &mtr_ctrl.udc, (ctl_vector2_t*)&mtr_ctrl.idq0, &mtr_ctrl.idq_ref, NULL, NULL);
+    ctl_attach_mtr_protect_port(&protection, &mtr_ctrl.udc, (ctl_vector2_t*)&mtr_ctrl.idq0, &mtr_ctrl.idq_ref, NULL,
+                                NULL);
 
     //
     // init ADC Calibrator
@@ -235,7 +230,7 @@ gmp_task_status_t tsk_protect(gmp_task_t* tsk)
     GMP_UNUSED_VAR(tsk);
 
 #ifdef ENABLE_MOTOR_FAULT_PROTECTION
-    if(ctl_dispatch_mtr_protect_slow(&protection))
+    if (ctl_dispatch_mtr_protect_slow(&protection))
     {
         cia402_fault_request(&cia402_sm);
     }
