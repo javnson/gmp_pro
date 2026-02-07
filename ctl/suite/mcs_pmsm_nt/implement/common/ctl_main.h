@@ -116,11 +116,13 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         // motor current controller
         ctl_step_current_controller(&mtr_ctrl);
 
+#ifdef ENABLE_MOTOR_FAULT_PROTECTION
         // Motor protection callback, fast task
         if(ctl_step_mtr_protect_fast(&protection))
         {
             cia402_fault_request(&cia402_sm);
         }
+#endif // ENABLE_MOTOR_FAULT_PROTECTION
 
         // mix all output
         spwm.vab0_out.dat[phase_U] = mtr_ctrl.vab0.dat[phase_U];

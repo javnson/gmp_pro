@@ -183,19 +183,6 @@ void ctl_init()
     ctl_init_mtr_protect(&protection, CONTROLLER_FREQUENCY);
     ctl_attach_mtr_protect_port(&protection, &mtr_ctrl.udc, (ctl_vector2_t*)&mtr_ctrl.idq0, &mtr_ctrl.idq_ref, NULL, NULL);
 
-
-
-
-//#if BUILD_LEVEL >= 3
-//
-//    // NOTICE:
-//    // if grid connect is request disable switch delay from CIA402_SM_SWITCH_ON_DISABLED to CIA402_SM_SWITCHED_ON
-//    // or a longer judgment time can lead to failure to connect to the grid.
-//    cia402_sm.minimum_transit_delay[CIA402_SM_READY_TO_SWITCH_ON] = 0;
-//    cia402_sm.minimum_transit_delay[CIA402_SM_SWITCHED_ON] = 0;
-//
-//#endif // BUILD_LEVEL
-
     //
     // init ADC Calibrator
     //
@@ -224,10 +211,12 @@ gmp_task_status_t tsk_protect(gmp_task_t* tsk)
 {
     GMP_UNUSED_VAR(tsk);
 
+#ifdef ENABLE_MOTOR_FAULT_PROTECTION
     if(ctl_dispatch_mtr_protect_slow(&protection))
     {
         cia402_fault_request(&cia402_sm);
     }
+#endif // ENABLE_MOTOR_FAULT_PROTECTION
 
     return GMP_TASK_DONE;
 }
