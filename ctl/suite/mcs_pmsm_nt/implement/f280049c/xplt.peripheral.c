@@ -14,6 +14,8 @@
 #include "user_main.h"
 #include <xplt.peripheral.h>
 
+#include <ctl/component/dsa/dsa_trigger.h>
+
 //=================================================================================================
 // definitions of peripheral
 
@@ -31,13 +33,20 @@ adc_gt udc_src;
 ptr_adc_channel_t idc;
 adc_gt idc_src;
 
+// dlog DSA objects
+basic_trigger_t trigger;
+#define DLOG_MEM_LENGTH 100
+
+// dlog variables
+ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];
+ctrl_gt dlog_mem2[DLOG_MEM_LENGTH];
+
 //=================================================================================================
 // peripheral setup function
 
 // User should setup all the peripheral in this function.
 void setup_peripheral(void)
 {
-
     // Setup Debug Uart
     debug_uart = IRIS_UART_USB_BASE;
 
@@ -77,6 +86,9 @@ void setup_peripheral(void)
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_DC_CURRENT_BIAS),
         // ADC resolution, IQN
         12, 24);
+
+    // dlog module
+    dsa_init_basic_trigger(&trigger, DLOG_MEM_LENGTH);
 }
 
 //=================================================================================================
@@ -86,6 +98,7 @@ void setup_peripheral(void)
 interrupt void MainISR(void)
 {
     GPIO_WritePin(MONITOR_IO, 0);
+
     //
     // call GMP ISR  Controller operation callback function
     //
@@ -95,6 +108,19 @@ interrupt void MainISR(void)
     // Call GMP Timer
     //
     gmp_step_system_tick();
+
+    //
+    // Call dlog module
+    //
+
+    // pass trigger source here
+    if (dsa_step_trigger(&trigger, mtr_ctrl.iab0.dat[phase_alpha]))
+    {
+        uint32_t index = dsa_get_trigger_index(&trigger);
+
+        dlog_mem1[index] = mtr_ctrl.iab0.dat[phase_alpha];
+        dlog_mem2[index] = mtr_ctrl.iab0.dat[phase_beta];
+    }
 
     //
     // Blink LED

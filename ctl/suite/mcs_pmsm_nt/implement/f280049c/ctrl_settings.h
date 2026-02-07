@@ -25,13 +25,13 @@
 // PWM depth
 #define CTRL_PWM_CMP_MAX (2500 - 1)
 
-// PWM deadband
+// PWM dead band
 #define CTRL_PWM_DEADBAND_CMP (100)
 
 // System tick
 #define DSP_C2000_DSP_TIME_DIV (100000 / CTRL_PWM_CMP_MAX / 2)
 
-// ADC Voltae Reference
+// ADC Voltage Reference
 #define CTRL_ADC_VOLTAGE_REF (3.3f)
 
 //=================================================================================================
@@ -46,7 +46,7 @@
 #include <ctl/component/hardware_preset/inverter_3ph/TI_BOOSTXL_3PhGaNInv.h>
 
 ///////////////////////////////////////////////////////////
-// Encoder Propeties
+// Encoder Properties
 
 // Encoder Full scale
 #define CTRL_POS_ENC_FS (16384)
@@ -70,7 +70,7 @@
 #define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE / 1.73205081f)
 
 // voltage base, SPWM modulation
-//#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE/2.0f)
+//#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE / 2.0f)
 
 // Current base, 10 A
 #define CTRL_CURRENT_BASE (10.0f)
