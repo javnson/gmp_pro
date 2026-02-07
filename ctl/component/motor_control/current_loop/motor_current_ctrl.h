@@ -96,7 +96,7 @@ typedef struct _tag_current_controller
     ctl_vector2_t vdq_ctrl_out; //!< PID Controller result
     ctl_vector2_t vdq_decouple; //!< Decoupling
 
-    ctl_vector2_t vdq_out;                 //!< vdq output = vdq_ref + vdq_ff
+    ctl_vector3_t vdq_out;                 //!< vdq output = vdq_ref + vdq_ff
     ctl_vector2_t vdq_out_bus_compensator; //!< vdq after Udc compensator
     ctl_vector2_t vdq_out_sat;             //!< vdq output after saturation
 
@@ -166,7 +166,7 @@ GMP_STATIC_INLINE void ctl_clear_mtr_current_ctrl(mtr_current_ctrl_t* mc)
 
     ctl_vector2_clear(&mc->vdq_ctrl_out);
     ctl_vector2_clear(&mc->vdq_decouple);
-    ctl_vector2_clear(&mc->vdq_out);
+    ctl_vector3_clear(&mc->vdq_out);
     ctl_vector2_clear(&mc->vdq_out_bus_compensator);
     ctl_vector2_clear(&mc->vdq_out_sat);
 
@@ -329,11 +329,11 @@ GMP_STATIC_INLINE void ctl_step_current_controller(mtr_current_ctrl_t* mc)
     //
     if (mc->flag_enable_vdq_feedforward)
     {
-        ctl_vector2_add(&mc->vdq_out, &mc->vdq_ref, &mc->vdq_ff);
+        ctl_vector2_add((ctl_vector2_t*)&mc->vdq_out, &mc->vdq_ref, &mc->vdq_ff);
     }
     else
     {
-        ctl_vector2_copy(&mc->vdq_out, &mc->vdq_ref);
+        ctl_vector2_copy((ctl_vector2_t*)&mc->vdq_out, &mc->vdq_ref);
     }
 
     //
@@ -352,7 +352,7 @@ GMP_STATIC_INLINE void ctl_step_current_controller(mtr_current_ctrl_t* mc)
     }
     else
     {
-        ctl_vector2_copy(&mc->vdq_out_bus_compensator, &mc->vdq_out);
+        ctl_vector2_copy(&mc->vdq_out_bus_compensator, (ctl_vector2_t*)&mc->vdq_out);
     }
 
     //
@@ -401,6 +401,8 @@ GMP_STATIC_INLINE void ctl_step_current_controller(mtr_current_ctrl_t* mc)
 
         ctl_pid_clamping_correction_using_real_output(&mc->idq_ctrl[phase_q], v_pid_q_real);
     }
+
+    mc->vdq_out.dat[phase_0] = 0;
 
     // 7. iPark: d-q -> alpha-beta
     ctl_ct_ipark(&mc->vdq_out, &mc->phasor, &mc->vab0);

@@ -230,7 +230,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_slope_f_pu(ctl_slope_f_pu_controller* ctrl)
  * @brief Resets the internal state of the frequency slope limiter.
  * @param[in,out] ctrl Pointer to the ctl_slope_f_controller object.
  */
-GMP_STATIC_INLINE void ctl_clear_slope_f_pu(ctl_slope_f_controller* ctrl)
+GMP_STATIC_INLINE void ctl_clear_slope_f_pu(ctl_slope_f_pu_controller* ctrl)
 {
     ctl_clear_slope_limiter(&ctrl->freq_slope);
 }
