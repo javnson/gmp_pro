@@ -20,11 +20,14 @@
 
 #include <xplt.peripheral.h>
 
+#include <core/pm/function_scheduler.h>
+
 //=================================================================================================
 // global controller variables
 
 // state machine
 cia402_sm_t cia402_sm;
+ctl_mtr_protect_t protection;
 
 // modulator: SPWM modulator / SVPWM modulator / NPC modulator
 #if defined USING_NPC_MODULATOR
@@ -42,6 +45,13 @@ vel_pos_ctrl_t motion_ctrl;
 ctl_slope_f_pu_controller rg;
 pos_autoturn_encoder_t pos_enc;
 spd_calculator_t spd_enc;
+
+#ifdef ENABLE_SMO
+
+ctl_smo_init_t smo_init;
+pmsm_smo_t smo;
+
+#endif // ENABLE_SMO
 
 // additional controller: harmonic management
 
@@ -106,7 +116,7 @@ void ctl_init()
         // target frequency (Hz), target frequency slope (Hz/s)
         20.0f, 20.0f,
         // rated krpm, pole pairs
-        MOTOR_PARAM_MAX_SPEED, mtr_ctrl_init.pole_pairs,
+        MOTOR_PARAM_MAX_SPEED/1000.0f, mtr_ctrl_init.pole_pairs,
         // ISR frequency
         CONTROLLER_FREQUENCY);
 
@@ -123,10 +133,23 @@ void ctl_init()
         // spd_div, pos_div, controller freq
         CTRL_SPD_DIV, CTRL_POS_DIV, CONTROLLER_FREQUENCY);
 
+    //
+    // Encoder Init
+    //
     ctl_init_autoturn_pos_encoder(&pos_enc, mtr_ctrl_init.pole_pairs, CTRL_POS_ENC_FS);
     ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, float2ctrl(CTRL_POS_ENC_BIAS));
 
     ctl_init_spd_calculator(&spd_enc, &pos_enc.encif, CONTROLLER_FREQUENCY, CTRL_SPD_DIV, MOTOR_PARAM_MAX_SPEED, 20.0f);
+
+#ifdef ENABLE_SMO
+
+    //
+    // Observer Init
+    //
+    ctl_auto_tuning_pmsm_smo(&smo_init, &mtr_ctrl_init);
+    ctl_init_pmsm_smo(&smo, &smo_init);
+
+#endif // ENABLE_SMO
 
 // attach motor current controller with input port
 #if BUILD_LEVEL <= 2
@@ -171,15 +194,12 @@ void ctl_init()
     cia402_sm.current_cmd = CIA402_CMD_ENABLE_OPERATION;
 #endif // SPECIFY_PC_ENVIRONMENT
 
-#if BUILD_LEVEL >= 3
-
-    // NOTICE:
-    // if grid connect is request disable switch delay from CIA402_SM_SWITCH_ON_DISABLED to CIA402_SM_SWITCHED_ON
-    // or a longer judgment time can lead to failure to connect to the grid.
-    cia402_sm.minimum_transit_delay[CIA402_SM_READY_TO_SWITCH_ON] = 0;
-    cia402_sm.minimum_transit_delay[CIA402_SM_SWITCHED_ON] = 0;
-
-#endif // BUILD_LEVEL
+    //
+    // init and config Motor Protection module
+    //
+    ctl_init_mtr_protect(&protection, CONTROLLER_FREQUENCY);
+    ctl_attach_mtr_protect_port(&protection, &mtr_ctrl.udc, (ctl_vector2_t*)&mtr_ctrl.idq0, &mtr_ctrl.idq_ref, NULL,
+                                NULL);
 
     //
     // init ADC Calibrator
@@ -204,6 +224,20 @@ void ctl_mainloop(void)
 
 //=================================================================================================
 // CiA402 default callback routine
+
+gmp_task_status_t tsk_protect(gmp_task_t* tsk)
+{
+    GMP_UNUSED_VAR(tsk);
+
+#ifdef ENABLE_MOTOR_FAULT_PROTECTION
+    if (ctl_dispatch_mtr_protect_slow(&protection))
+    {
+        cia402_fault_request(&cia402_sm);
+    }
+#endif // ENABLE_MOTOR_FAULT_PROTECTION
+
+    return GMP_TASK_DONE;
+}
 
 void ctl_enable_pwm()
 {

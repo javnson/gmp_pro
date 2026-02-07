@@ -26,11 +26,32 @@ extern "C"
 // ==========================================
 // Protection Error Codes (Bitmask)
 // ==========================================
-#define MTR_PROT_NONE       (0x0000)
-#define MTR_PROT_OVER_VOLT  (0x0001) // 母线过压
-#define MTR_PROT_UNDER_VOLT (0x0002) // 母线欠压
-#define MTR_PROT_OVER_CURR  (0x0004) // 软件过流
-#define MTR_PROT_DEVIATION  (0x0008) // 控制偏差(失控)
+// Using generic uint32_t for error codes is standard and efficient.
+#define MTR_PROT_NONE          (0x00000000)
+#define MTR_PROT_OVER_VOLT     (0x00000001) // Bus Over Voltage
+#define MTR_PROT_UNDER_VOLT    (0x00000002) // Bus Under Voltage
+#define MTR_PROT_OVER_CURR     (0x00000004) // Software Over Current
+#define MTR_PROT_DEVIATION     (0x00000008) // Control Deviation (Runaway)
+#define MTR_PROT_MTR_OVER_TEMP (0x00000010) // Motor Over Temp
+#define MTR_PROT_INV_OVER_TEMP (0x00000020) // Inverter Over Temp
+
+/**
+ * @brief Error Code Union
+ * Allows accessing individual flags or the whole word efficiently.
+ */
+typedef union _tag_mtr_protect_error {
+    uint32_t all;
+    struct
+    {
+        uint32_t over_voltage : 1;
+        uint32_t under_voltage : 1;
+        uint32_t over_current : 1;
+        uint32_t deviation : 1;
+        uint32_t mtr_over_temp : 1;
+        uint32_t inv_over_temp : 1;
+        uint32_t reserved : 26;
+    } bit;
+} mtr_protect_error_t;
 
 /**
  * @brief Motor Protection Module Structure
@@ -38,215 +59,179 @@ extern "C"
 typedef struct _tag_mtr_protect
 {
     // --- 1. Input Interfaces (Bind by Pointer) ---
-    // Use const to ensure safety
-    const ctrl_gt* ptr_udc;       //!< DC bus voltage (PU)
-    const ctl_vector2_t* ptr_idq; //!< Real Idq current (PU)
-    const ctl_vector2_t* ptr_ref; //!< Ref Idq current (PU)
+    // Inputs are const to prevent accidental modification
+    ctrl_gt* ptr_udc;       //!< DC bus voltage (PU)
+    ctl_vector2_t* ptr_idq; //!< Real Idq current (PU)
+    ctl_vector2_t* ptr_ref; //!< Ref Idq current (PU)
+
+    adc_ift* ptr_mtr_temp; //!< Motor Temp Input
+    adc_ift* ptr_inv_temp; //!< Inverter Temp Input
 
     // --- 2. Output State ---
-    uint32_t error_code; //!< Cumulative error flags
+    mtr_protect_error_t error_code; //!< Active Faults
+    mtr_protect_error_t error_mask; //!< Mask bits (1 = Disable protection)
 
     // --- 3. Threshold Parameters (Config) ---
-    ctrl_gt limit_ov_pu;     //!< Over Voltage Limit
-    ctrl_gt limit_uv_pu;     //!< Under Voltage Limit
-    ctrl_gt limit_oc_sq_pu;  //!< Over Current Limit (Squared)
-    ctrl_gt limit_dev_sq_pu; //!< Deviation Limit (Squared)
+    ctrl_gt limit_ov_pu;     //!< OV Limit
+    ctrl_gt limit_uv_pu;     //!< UV Limit
+    ctrl_gt limit_oc_sq_pu;  //!< OC Limit (Squared)
+    ctrl_gt limit_dev_sq_pu; //!< Deviation Limit (Squared error vector)
+    adc_gt limit_mtr_ot;     //!< Motor OT Limit
+    adc_gt limit_inv_ot;     //!< Inverter OT Limit
 
     // --- 4. Counter Limits (Config) ---
-    // Small value for fast response, Large value for slow filter
-    uint16_t limit_cnt_ov;  //!< Limit for OV counter (e.g., 5)
-    uint16_t limit_cnt_uv;  //!< Limit for UV counter (e.g., 100)
-    uint16_t limit_cnt_oc;  //!< Limit for OC counter (e.g., 5)
-    uint16_t limit_cnt_dev; //!< Limit for Deviation counter (e.g., 1000)
+    uint16_t limit_cnt_ov;
+    uint16_t limit_cnt_uv;
+    uint16_t limit_cnt_oc;
+    uint16_t limit_cnt_dev;
+    uint16_t limit_cnt_mtr_ot;
+    uint16_t limit_cnt_inv_ot;
 
     // --- 5. Internal Counters (State) ---
-    uint16_t cnt_ov;  //!< Counter for Over Voltage
-    uint16_t cnt_uv;  //!< Counter for Under Voltage
-    uint16_t cnt_oc;  //!< Counter for Over Current
-    uint16_t cnt_dev; //!< Counter for Deviation
+    uint16_t cnt_ov;
+    uint16_t cnt_uv;
+    uint16_t cnt_oc;
+    uint16_t cnt_dev;
+    uint16_t cnt_mtr_ot;
+    uint16_t cnt_inv_ot;
 
 } ctl_mtr_protect_t;
 
-void ctl_init_mtr_protect(ctl_mtr_protect_t* prot, const ctrl_gt* u_dc, const ctl_vector2_t* i_meas,
-                          const ctl_vector2_t* i_ref)
+// ==========================================
+// Core Functions
+// ==========================================
+
+GMP_STATIC_INLINE void ctl_clear_mtr_protect(ctl_mtr_protect_t* prot)
 {
-    // 1. 绑定指针
-    prot->ptr_udc = u_dc;
-    prot->ptr_idq = i_meas;
-    prot->ptr_ref = i_ref;
+    prot->error_code.all = MTR_PROT_NONE;
 
-    // 2. 清除状态
-    prot->error_code = PROT_ERR_NONE;
-    prot->integrator_val = 0;
-    prot->fast_runaway_cnt = 0;
-
-    // 3. 配置默认阈值 (示例值，需根据实际调整)
-    // 假设在外部设置，或者这里给默认值
-    prot->integ_dec_step = float2ctrl(0.001f);  // 衰减慢
-    prot->integ_inc_step = float2ctrl(0.01f);   // 积累快
-    prot->limit_error_integ = float2ctrl(1.0f); // 积分上限
+    prot->cnt_ov = 0;
+    prot->cnt_uv = 0;
+    prot->cnt_oc = 0;
+    prot->cnt_dev = 0;
+    prot->cnt_mtr_ot = 0;
+    prot->cnt_inv_ot = 0;
 }
 
+void ctl_init_mtr_protect(ctl_mtr_protect_t* prot, parameter_gt fs);
 
+void ctl_attach_mtr_protect_port(ctl_mtr_protect_t* prot, ctrl_gt* u_dc, ctl_vector2_t* i_meas, ctl_vector2_t* i_ref,
+                                 adc_ift* mtr_temp, adc_ift* inv_temp);
 
-// return 1 if over sup
-GMP_STATIC_INLINE fast_gt ctl_mtr_protect_ov(ctrl_gt dc_bus_voltage, ctrl_gt limit_ov_pu)
+// ==========================================
+// Helper Functions (Static Inline)
+// ==========================================
+
+/**
+ * @brief Counter-based Debounce Logic
+ * @return 1 if confirmed fault, 0 otherwise
+ */
+GMP_STATIC_INLINE fast_gt ctl_mtr_protect_debounce(fast_gt condition, uint16_t* counter, uint16_t limit)
 {
-    return (limit_ov_pu < dc_bus_voltage);
-}
-
-// return 1 if over sup
-GMP_STATIC_INLINE fast_gt ctl_mtr_protect_oc(ctrl_gt is_sq, ctrl_gt limit_oc_sq_pu)
-{
-    //ctrl_gt is_sq = ctl_mul(idq->dat[phase_d], idq->dat[phase_d]) + ctl_mul(idq->dat[phase_q], idq->dat[phase_q]);
-    return limit_oc_sq_pu < is_sq;
-}
-
-// return 1 if under inf
-GMP_STATIC_INLINE fast_gt ctl_mtr_protect_uv(ctrl_gt dc_bus_voltage, ctrl_gt limit_uv_pu)
-{
-    return limit_uv_pu > dc_bus_voltage;
-}
-
-// return 1 if over
-GMP_STATIC_INLINE fast_gt ctl_mtr_protect_deviation(ctl_vector2_t* idq_ref, ctl_vector2_t* idq, ctrl_gt limit_deviation)
-{
-    ctrl_gt id_err = idq_ref->dat[phase_d] - idq->dat[phase_d];
-    ctrl_gt iq_err = idq_ref->dat[phase_q] - idq->dat[phase_q];
-
-    ctrl_gt is_err_sq = ctl_mul(id_err, id_err) + ctl_mul(iq_err, iq_err);
-
-    return limit_deviation < is_err_sq;
-}
-
-GMP_STATIC_INLINE fast_gt ctl_mtr_protect_inc(fast_gt condition, uint16_t* counter, uint16_t cnt_limit)
-{
-    if (*condition)
-        *counter += 1;
+    if (condition)
+    {
+        // Increment (Saturate at limit + 1 to prevent overflow)
+        if (*counter <= limit)
+            (*counter)++;
+    }
     else
     {
-        if (*counter >= 1)
-            *counter -= 1;
-        else
-            *counter = 0;
+        // Decrement
+        if (*counter > 0)
+            (*counter)--;
     }
 
-    if (*counter > cnt_limit)
-        return 1;
-    else
-        return 0;
+    return (*counter > limit);
+}
+
+// Comparison Helpers
+GMP_STATIC_INLINE fast_gt ctl_is_greater(ctrl_gt val, ctrl_gt limit)
+{
+    return val > limit;
+}
+GMP_STATIC_INLINE fast_gt ctl_is_less(ctrl_gt val, ctrl_gt limit)
+{
+    return val < limit;
+}
+
+GMP_STATIC_INLINE fast_gt ctl_is_greater_ot(adc_gt temp, adc_gt limit_temp)
+{
+    return limit_temp > temp;
+}
+
+GMP_STATIC_INLINE fast_gt ctl_is_less_ot(adc_gt temp, adc_gt limit_temp)
+{
+    return limit_temp < temp;
 }
 
 /**
  * @brief ISR Level Protection Step
- * Focus: Hardware Safety (OC, OV) and Fast Runaway
+ * @return 1 if fault active, 0 if safe
  */
-GMP_STATIC_INLINE int ctl_step_mtr_protect(ctl_mtr_protect_t* prot)
+GMP_STATIC_INLINE fast_gt ctl_step_mtr_protect_fast(ctl_mtr_protect_t* prot)
 {
-    // 如果已有故障，保持 (Latch)
-    if (prot->error_code != PROT_ERR_NONE)
+    // 1. Latch Check
+    if ((prot->error_code.all & (~prot->error_mask.all)) != MTR_PROT_NONE)
         return 1;
 
-    // 1. 获取值 (通过指针解引用)
+    // 2. Load Inputs
     ctrl_gt u_dc = *(prot->ptr_udc);
     ctrl_gt id = prot->ptr_idq->dat[0];
     ctrl_gt iq = prot->ptr_idq->dat[1];
 
-    // 2. 过压保护 (Over Voltage) - 最优先
-    if (u_dc > prot->limit_ov_pu)
+    // 3. Check Over Voltage (Critical)
+    // Condition: u_dc > limit
+    if (ctl_mtr_protect_debounce(ctl_is_greater(u_dc, prot->limit_ov_pu), &prot->cnt_ov, prot->limit_cnt_ov))
     {
-        prot->error_code |= PROT_ERR_OVER_VOLT;
-        return 1;
+        prot->error_code.bit.over_voltage = 1;
+
+        if (!prot->error_mask.bit.over_voltage)
+        {
+            return 1; // Trip if not masked
+        }
     }
 
-    // 3. 软件过流 (Software Over Current) - 使用平方比较
+    // 4. Check Software Over Current
+    // Condition: (id^2 + iq^2) > limit^2
     ctrl_gt i_sq = ctl_mul(id, id) + ctl_mul(iq, iq);
-    if (i_sq > prot->limit_oc_sq_pu)
+    if (ctl_mtr_protect_debounce(ctl_is_greater(i_sq, prot->limit_oc_sq_pu), &prot->cnt_oc, prot->limit_cnt_oc))
     {
-        // 这里可以加一个极短的滤波(比如连续3次)防止ADC噪声
-        // 为简化代码直接判
-        prot->error_code |= PROT_ERR_SW_OC;
-        return 1;
-    }
+        prot->error_code.bit.over_current = 1;
 
-    // 4. 快速失控检测 (Fast Runaway) - 针对 FOC 算法发散
-    // 逻辑：如果 Id 偏差极大 (例如 > 1.0pu)，说明完全失控
-    ctrl_gt id_ref = prot->ptr_ref->dat[0];
-    ctrl_gt id_err = ctl_abs(id_ref - id);
-
-    if (id_err > float2ctrl(0.8f))
-    { // 0.8pu 巨大偏差
-        prot->fast_runaway_cnt++;
-        if (prot->fast_runaway_cnt > 20)
-        { // 2ms (10kHz)
-            prot->error_code |= PROT_ERR_RUNAWAY_FAST;
+        if (!prot->error_mask.bit.over_current)
+        {
             return 1;
         }
     }
-    else
+
+    // 5. Check Control Deviation (Runaway)
+    // Condition: |I_ref - I_meas|^2 > limit
+    ctrl_gt id_ref = prot->ptr_ref->dat[0];
+    ctrl_gt iq_ref = prot->ptr_ref->dat[1];
+
+    ctrl_gt err_d = id_ref - id;
+    ctrl_gt err_q = iq_ref - iq;
+    ctrl_gt err_sq = ctl_mul(err_d, err_d) + ctl_mul(err_q, err_q);
+
+    if (ctl_mtr_protect_debounce(ctl_is_greater(err_sq, prot->limit_dev_sq_pu), &prot->cnt_dev, prot->limit_cnt_dev))
     {
-        if (prot->fast_runaway_cnt > 0)
-            prot->fast_runaway_cnt--;
+        prot->error_code.bit.deviation = 1;
+
+        if (!prot->error_mask.bit.deviation)
+        {
+            return 1;
+        }
     }
 
     return 0; // Safe
 }
 
 /**
- * @brief Main Loop Protection Dispatch
- * Focus: Slow dynamics, Integration logic (Stall/Overload), UV
+ * @brief Main Loop Protection Dispatch. 
+ * This calling frequency of this function should be less than 1kHz.
+ * @return 1 if fault active, 0 if safe
  */
-void ctl_dispatch_mtr_protect(ctl_mtr_protect_t* prot)
-{
-    if (prot->error_code != PROT_ERR_NONE)
-        return;
-
-    // 1. 欠压保护 (Under Voltage)
-    // 放在主循环是因为电池电压变化慢，且瞬间跌落可能不需要立即停机
-    if (*(prot->ptr_udc) < prot->limit_uv_pu)
-    {
-        prot->error_code |= PROT_ERR_UNDER_VOLT;
-        return;
-    }
-
-    // 2. 跟随误差积分保护 (Integrator Method) - 你的核心需求
-    // 计算总电流误差: |I_ref - I_meas|
-    // 为节省算力，可用曼哈顿距离 (|dx|+|dy|) 近似欧几里得距离，或只看 Q 轴
-    ctrl_gt id_err = prot->ptr_ref->dat[0] - prot->ptr_idq->dat[0];
-    ctrl_gt iq_err = prot->ptr_ref->dat[1] - prot->ptr_idq->dat[1];
-
-    // 误差模值平方 (更能反映能量差异)
-    ctrl_gt err_sq = ctl_mul(id_err, id_err) + ctl_mul(iq_err, iq_err);
-
-    // 设定一个“正常偏差阈值”，例如 0.2pu 的电流波动是允许的
-    ctrl_gt allowed_err_sq = float2ctrl(0.04f); // 0.2 * 0.2
-
-    if (err_sq > allowed_err_sq)
-    {
-        // 误差过大 -> 积分器增加 (充水)
-        prot->integrator_val += prot->integ_inc_step;
-    }
-    else
-    {
-        // 误差正常 -> 积分器衰减 (漏水)
-        if (prot->integrator_val > prot->integ_dec_step)
-            prot->integrator_val -= prot->integ_dec_step;
-        else
-            prot->integrator_val = 0;
-    }
-
-    // 3. 判断积分器是否溢出
-    if (prot->integrator_val > prot->limit_error_integ)
-    {
-        prot->error_code |= PROT_ERR_STALL_INT;
-    }
-
-    // 限制积分器最大值防止溢出 (Anti-windup for protection integrator)
-    if (prot->integrator_val > ctl_mul(prot->limit_error_integ, float2ctrl(1.5f)))
-    {
-        prot->integrator_val = ctl_mul(prot->limit_error_integ, float2ctrl(1.5f));
-    }
-}
+fast_gt ctl_dispatch_mtr_protect_slow(ctl_mtr_protect_t* prot);
 
 /** @} */ // end of POSITION_CONTROLLER group
 

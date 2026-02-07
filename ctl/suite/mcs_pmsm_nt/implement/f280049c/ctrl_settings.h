@@ -125,7 +125,14 @@
 // ADC Calibrate time ms
 #define TIMEOUT_ADC_CALIB_MS 10000
 
+// Motor Current Sample phases
 #define MC_CURRENT_SAMPLE_PHASE_MODE (2)
+
+// Enable Motor Fault protection
+#define ENABLE_MOTOR_FAULT_PROTECTION
+
+// Enable SMO
+#define ENABLE_SMO
 
 //=================================================================================================
 // Board peripheral mapping

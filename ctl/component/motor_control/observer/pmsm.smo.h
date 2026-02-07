@@ -83,6 +83,9 @@ typedef struct _tag_ctl_smo_init
 
 } ctl_smo_init_t;
 
+// Need to implement this function
+void ctl_auto_tuning_pmsm_smo(ctl_smo_init_t* init, const mtr_current_init_t* ker_init);
+
 /**
  * @brief Holds the state and parameters for the SMO estimator.
  */
@@ -130,7 +133,22 @@ void ctl_init_pmsm_smo(pmsm_smo_t* smo, const ctl_smo_init_t* init);
  * @brief Clears the internal states of the SMO estimator.
  * @param[out] smo Pointer to the SMO structure.
  */
-void ctl_clear_pmsm_smo(pmsm_smo_t* smo);
+GMP_STATIC_INLINE void ctl_clear_pmsm_smo(pmsm_smo_t* smo)
+{
+    ctl_vector2_clear(&smo->e_est);
+    ctl_vector2_clear(&smo->i_est);
+    ctl_vector2_clear(&smo->z);
+
+    smo->wr_est = 0;
+    smo->theta_est = 0;
+
+    ctl_set_phasor_via_angle(smo->theta_est, &smo->phasor);
+
+    ctl_clear_lowpass_filter(&smo->filter_e[phase_alpha]);
+    ctl_clear_lowpass_filter(&smo->filter_e[phase_beta]);
+    ctl_clear_lowpass_filter(&smo->filter_spd);
+    ctl_clear_pid(&smo->pid_pll);
+}
 
 /**
  * @brief Executes one step of the SMO position and speed estimation.
