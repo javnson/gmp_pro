@@ -84,7 +84,7 @@ typedef struct _tag_ctl_smo_init
 } ctl_smo_init_t;
 
 // Need to implement this function
-void ctl_auto_tuning_pmsm_smo(ctl_smo_init_t* init, mtr_current_init_t* ker_init);
+void ctl_auto_tuning_pmsm_smo(ctl_smo_init_t* init, const mtr_current_init_t* ker_init);
 
 /**
  * @brief Holds the state and parameters for the SMO estimator.
