@@ -16,20 +16,18 @@
 
 #include <ctl/component/interface/adc_channel.h>
 #include <ctl/component/interface/pwm_channel.h>
+#include <ctl/component/interface/pwm_modulator.h>
 
 #include <ctl/component/motor_control/basic/encoder.h>
-
 #include <ctl/component/motor_control/basic/vf_generator.h>
+#include <ctl/component/motor_control/basic/mtr_protection.h>
 
 #include <ctl/component/motor_control/current_loop/motor_current_ctrl.h>
-
 #include <ctl/component/motor_control/motion/vel_pos_loop.h>
-
-#include <ctl/component/interface/pwm_modulator.h>
+#include <ctl/component/motor_control/observer/pmsm.smo.h>
 
 #include <ctl/framework/cia402_state_machine.h>
 
-#include <ctl/component/motor_control/basic/mtr_protection.h>
 
 #ifndef _FILE_CTL_MAIN_H_
 #define _FILE_CTL_MAIN_H_
@@ -67,6 +65,11 @@ extern vel_pos_ctrl_t motion_ctrl;
 extern ctl_slope_f_pu_controller rg;
 extern pos_autoturn_encoder_t pos_enc;
 extern spd_calculator_t spd_enc;
+
+#ifdef ENABLE_SMO
+extern ctl_smo_init_t smo_init;
+extern pmsm_smo_t smo;
+#endif // ENABLE_SMO
 
 // additional controller: harmonic management
 

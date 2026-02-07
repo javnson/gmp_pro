@@ -46,6 +46,14 @@ ctl_slope_f_pu_controller rg;
 pos_autoturn_encoder_t pos_enc;
 spd_calculator_t spd_enc;
 
+#ifdef ENABLE_SMO
+
+ctl_smo_init_t smo_init;
+pmsm_smo_t smo;
+spd_calculator_t smo_spd_enc;
+
+#endif // ENABLE_SMO
+
 // additional controller: harmonic management
 
 //
@@ -133,6 +141,21 @@ void ctl_init()
     ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, float2ctrl(CTRL_POS_ENC_BIAS));
 
     ctl_init_spd_calculator(&spd_enc, &pos_enc.encif, CONTROLLER_FREQUENCY, CTRL_SPD_DIV, MOTOR_PARAM_MAX_SPEED, 20.0f);
+
+#ifdef ENABLE_SMO
+
+    //
+    // Observer Init
+    //
+    ctl_auto_tuning_pmsm_smo(&smo_init, &mtr_ctrl_init);
+    ctl_init_pmsm_smo(&smo, &smo_init);
+    ctl_init_spd_calculator_elecpos(
+            // smo pseed calculate
+            &smo_spd_enc, &smo.encif,
+            // controller parameters
+            CONTROLLER_FREQUENCY, CTRL_SPD_DIV, MOTOR_PARAM_MAX_SPEED, mtr_ctrl_init.pole_pairs, 20.0f);
+
+#endif // ENABLE_SMO
 
 // attach motor current controller with input port
 #if BUILD_LEVEL <= 2

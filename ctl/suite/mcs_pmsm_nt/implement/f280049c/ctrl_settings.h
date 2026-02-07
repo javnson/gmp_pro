@@ -131,6 +131,9 @@
 // Enable Motor Fault protection
 #define ENABLE_MOTOR_FAULT_PROTECTION
 
+// Enable SMO
+#define ENABLE_SMO
+
 //=================================================================================================
 // Board peripheral mapping
 
