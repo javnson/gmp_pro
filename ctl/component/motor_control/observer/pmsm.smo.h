@@ -84,7 +84,15 @@ typedef struct _tag_ctl_smo_init
 
 } ctl_smo_init_t;
 
+
 /**
+ * @brief Auto-calculates SMO parameters based on motor physics.
+ * * @param[out] init The SMO initialization structure to be filled.
+ * @param[in] ker_init The motor physical parameters (Resistance, Inductance, etc.).
+ */
+void ctl_auto_tuning_pmsm_smo(ctl_smo_init_t* init, const mtr_current_init_t* ker_init);
+
+    /**
  * @brief Holds the state and parameters for the SMO estimator.
  */
 typedef struct _tag_pmsm_smo
