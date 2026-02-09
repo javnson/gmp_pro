@@ -49,6 +49,8 @@ const gpio16         = gpio.addInstance();
 const gpio17         = gpio.addInstance();
 const gpio18         = gpio.addInstance();
 const gpio19         = gpio.addInstance();
+const gpio20         = gpio.addInstance();
+const gpio21         = gpio.addInstance();
 const other          = scripting.addModule("/driverlib/other.js", {}, false);
 const other1         = other.addInstance();
 const sci            = scripting.addModule("/driverlib/sci.js", {}, false);
@@ -354,6 +356,14 @@ gpio18.gpioPin.$assign = "C8, GPIO202";
 gpio19.$name           = "D_IN2";
 gpio19.qualMode        = "GPIO_QUAL_3SAMPLE";
 gpio19.gpioPin.$assign = "C9, GPIO201";
+
+gpio20.$name           = "LED_STS";
+gpio20.direction       = "GPIO_DIR_MODE_OUT";
+gpio20.gpioPin.$assign = "GPIO23";
+
+gpio21.$name           = "LED_ERR";
+gpio21.direction       = "GPIO_DIR_MODE_OUT";
+gpio21.gpioPin.$assign = "GPIO24";
 
 other1.$name            = "myOTHER0";
 other1.useCase          = "CUSTOM";

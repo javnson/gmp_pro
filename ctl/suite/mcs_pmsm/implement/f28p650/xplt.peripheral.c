@@ -122,6 +122,7 @@ void setup_peripheral(void)
 // ADC interrupt
 interrupt void MainISR(void)
 {
+    GPIO_WritePin(LED_STS, 0);
 
     //
     // call GMP ISR  Controller operation callback function
@@ -141,6 +142,7 @@ interrupt void MainISR(void)
         ADC_clearInterruptOverflowStatus(ADC_A_BASE, ADC_INT_NUMBER1);
         ADC_clearInterruptStatus(ADC_A_BASE, ADC_INT_NUMBER1);
     }
+    GPIO_WritePin(LED_STS, 1);
 
     //
     // Acknowledge the interrupt
