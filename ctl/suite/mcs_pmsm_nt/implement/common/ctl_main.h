@@ -16,18 +16,15 @@
 
 #include <ctl/component/interface/adc_channel.h>
 #include <ctl/component/interface/pwm_channel.h>
+#include <ctl/component/interface/pwm_modulator.h>
 
 #include <ctl/component/motor_control/basic/encoder.h>
-
+#include <ctl/component/motor_control/basic/mtr_protection.h>
 #include <ctl/component/motor_control/basic/vf_generator.h>
 
 #include <ctl/component/motor_control/current_loop/motor_current_ctrl.h>
-
 #include <ctl/component/motor_control/motion/vel_pos_loop.h>
-
-//#include <ctl/component/digital_power/three_phase/three_phase_GFL.h>
-
-#include <ctl/component/interface/pwm_modulator.h>
+#include <ctl/component/motor_control/observer/pmsm.smo.h>
 
 #include <ctl/framework/cia402_state_machine.h>
 
@@ -50,6 +47,7 @@ extern volatile fast_gt index_adc_calibrator;
 
 // state machine
 extern cia402_sm_t cia402_sm;
+extern ctl_mtr_protect_t protection;
 
 // modulator: SPWM modulator / SVPWM modulator / NPC modulator
 #if defined USING_NPC_MODULATOR
@@ -63,9 +61,14 @@ extern mtr_current_ctrl_t mtr_ctrl;
 extern vel_pos_ctrl_t motion_ctrl;
 
 // Observer: SMO, FO, Speed measurement.
-extern ctl_slope_f_controller rg;
+extern ctl_slope_f_pu_controller rg;
 extern pos_autoturn_encoder_t pos_enc;
 extern spd_calculator_t spd_enc;
+
+#ifdef ENABLE_SMO
+extern ctl_smo_init_t smo_init;
+extern pmsm_smo_t smo;
+#endif // ENABLE_SMO
 
 // additional controller: harmonic management
 
@@ -94,9 +97,9 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 
     // normal controller routine
     else
-    {        
+    {
         // ramp generator
-        ctl_step_slope_f(&rg);
+        ctl_step_slope_f_pu(&rg);
 
         // Step auto turn pos encoder
         ctl_step_autoturn_pos_encoder(&pos_enc, EQEP_getPosition(EQEP_Encoder_BASE));
@@ -109,24 +112,50 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 
         // current command dispatch
         ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, 0, ctl_get_vel_pos_cmd(&motion_ctrl));
-        
+
 #endif
 
         // motor current controller
         ctl_step_current_controller(&mtr_ctrl);
 
+#ifdef ENABLE_SMO
+        ctrl_gt udc_for_smo = ctl_mul(CTL_CTRL_CONST_1_OVER_SQRT3, mtr_ctrl.udc);
+
+#if (PWM_MODULATOR_USING_NEGATIVE_LOGIC == 1)
+        ctrl_gt v_alpha = ctl_mul(udc_for_smo, - mtr_ctrl.vab0.dat[phase_alpha]);
+        ctrl_gt v_beta = ctl_mul(udc_for_smo, - mtr_ctrl.vab0.dat[phase_beta]);
+#else
+        ctrl_gt v_alpha = ctl_mul(udc_for_smo, mtr_ctrl.vab0.dat[phase_alpha]);
+        ctrl_gt v_beta = ctl_mul(udc_for_smo, mtr_ctrl.vab0.dat[phase_beta]);
+#endif
+        ctl_step_pmsm_smo(
+            // SMO object
+            &smo,
+            // uab
+            v_alpha, v_beta,
+            // iab
+            mtr_ctrl.iab0.dat[phase_alpha], mtr_ctrl.iab0.dat[phase_beta]);
+#endif // ENABLE_SMO
+
+#ifdef ENABLE_MOTOR_FAULT_PROTECTION
+        // Motor protection callback, fast task
+        if (ctl_step_mtr_protect_fast(&protection))
+        {
+            cia402_fault_request(&cia402_sm);
+        }
+#endif // ENABLE_MOTOR_FAULT_PROTECTION
+
         // mix all output
-        spwm.vab0_out.dat[phase_U] = mtr_ctrl.vab0.dat[phase_U];
-        spwm.vab0_out.dat[phase_V] = mtr_ctrl.vab0.dat[phase_V];
-        spwm.vab0_out.dat[phase_W] = mtr_ctrl.vab0.dat[phase_W];
+        spwm.vab0_out.dat[phase_alpha] = mtr_ctrl.vab0.dat[phase_alpha];
+        spwm.vab0_out.dat[phase_beta] = mtr_ctrl.vab0.dat[phase_beta];
+        spwm.vab0_out.dat[phase_0] = mtr_ctrl.vab0.dat[phase_0];
 
         // modulation
 #if defined USING_NPC_MODULATOR
         ctl_step_npc_modulator(&spwm);
 #else
-        ctl_step_spwm_modulator(&spwm);
+        ctl_step_svpwm_modulator(&spwm);
 #endif // USING_NPC_MODULATOR
-
     }
 }
 

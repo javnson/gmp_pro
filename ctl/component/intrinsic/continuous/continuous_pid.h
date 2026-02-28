@@ -51,9 +51,13 @@ typedef struct _tag_pid_regular_t
     ctrl_gt integral_min; //!< Minimum integrator limit.
 
     // State variables
+    ctrl_gt p_term; //!< Current P term for anti-windup
+    ctrl_gt i_term; //!< Current I term.
+    ctrl_gt d_term; //!< Current d term for anti_windup
+
     ctrl_gt out; //!< The current controller output.
-    ctrl_gt sn;  //!< The integrator sum.
-    ctrl_gt dn;  //!< The previous input value for the derivative term.
+    //ctrl_gt sn;     //!< The integrator sum.
+    ctrl_gt dn; //!< The previous input value for the derivative term.
 } ctl_pid_t;
 
 ///**
@@ -109,11 +113,17 @@ void ctl_init_pid(ctl_pid_t* hpid, parameter_gt kp, parameter_gt ki, parameter_g
  */
 GMP_STATIC_INLINE ctrl_gt ctl_step_pid_par(ctl_pid_t* hpid, ctrl_gt input)
 {
+    // update p term
+    hpid->p_term = ctl_mul(input, hpid->kp);
+
     // Update integrator sum with anti-windup
-    hpid->sn = ctl_sat(hpid->sn + ctl_mul(input, hpid->ki), hpid->integral_max, hpid->integral_min);
+    hpid->i_term = ctl_sat(hpid->i_term + ctl_mul(input, hpid->ki), hpid->integral_max, hpid->integral_min);
+
+    // update d term
+    hpid->d_term = ctl_mul((input - hpid->dn), hpid->kd);
 
     // Output = P_term + I_term + D_term
-    hpid->out = ctl_mul(input, hpid->kp) + hpid->sn + ctl_mul((input - hpid->dn), hpid->kd);
+    hpid->out = hpid->p_term + hpid->i_term + hpid->d_term;
 
     // Saturate final output
     hpid->out = ctl_sat(hpid->out, hpid->out_max, hpid->out_min);
@@ -134,15 +144,18 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_pid_par(ctl_pid_t* hpid, ctrl_gt input)
  */
 GMP_STATIC_INLINE ctrl_gt ctl_step_pid_ser(ctl_pid_t* hpid, ctrl_gt input)
 {
-    // Proportional term is calculated first
-    ctrl_gt p_out = ctl_mul(input, hpid->kp);
+    // update p term
+    hpid->p_term = ctl_mul(input, hpid->kp);
 
     // Update integrator sum based on the proportional output
-    hpid->sn = ctl_sat(hpid->sn + ctl_mul(p_out, hpid->ki), hpid->integral_max, hpid->integral_min);
+    hpid->i_term = ctl_sat(hpid->i_term + ctl_mul(hpid->p_term, hpid->ki), hpid->integral_max, hpid->integral_min);
+
+    // update d term
+    hpid->d_term = ctl_mul((input - hpid->dn), hpid->kd);
 
     // Output = P_term + I_term + D_term
     // Note: In a true series form, Kd would also be scaled by Kp.
-    hpid->out = p_out + hpid->sn + ctl_mul((input - hpid->dn), hpid->kd);
+    hpid->out = hpid->p_term + hpid->i_term + hpid->d_term;
 
     // Saturate final output
     hpid->out = ctl_sat(hpid->out, hpid->out_max, hpid->out_min);
@@ -160,7 +173,11 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_pid_ser(ctl_pid_t* hpid, ctrl_gt input)
 GMP_STATIC_INLINE void ctl_clear_pid(ctl_pid_t* hpid)
 {
     hpid->dn = 0;
-    hpid->sn = 0;
+
+    hpid->p_term = 0;
+    hpid->i_term = 0;
+    hpid->d_term = 0;
+
     hpid->out = 0;
 }
 
@@ -177,13 +194,65 @@ GMP_STATIC_INLINE void ctl_set_pid_limit(ctl_pid_t* hpid, ctrl_gt limit_max, ctr
 }
 
 /**
+ * @brief Set PID controller PID integral limit
+ * @param[out] hpid Pointer to the PID controller instance.
+ * @param[in] limit_min PID integral minimum.
+ * @param[in] limit_max PID integral maximum.
+ */
+GMP_STATIC_INLINE void ctl_set_pid_int_limit(ctl_pid_t* hpid, ctrl_gt limit_max, ctrl_gt limit_min)
+{
+    hpid->integral_max = limit_max;
+    hpid->integral_min = limit_min;
+}
+
+/**
  * @brief Set PID controller PID integrator item
  * @param[out] hpid Pointer to the PID controller instance.
  * @param[in] integrator target integrator current value.
  */
 GMP_STATIC_INLINE void ctl_set_pid_integrator(ctl_pid_t* hpid, ctrl_gt integrator)
 {
-    hpid->sn = integrator;
+    hpid->i_term = integrator;
+}
+
+/**
+ * @brief Get PID controller PID output item
+ * @param[in] hpid Pointer to the PID controller instance.
+ * @return ctrl_gt The calculated controller output.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_pid_output(ctl_pid_t* hpid)
+{
+    return hpid->out;
+}
+
+/**
+ * @brief Corrects the PID integrator state based on the actual limited output.
+ * Used for anti-windup when the output is limited by external logic (e.g., circular limitation).
+ * @param[out] hpid Pointer to the PID controller instance.
+ */
+GMP_STATIC_INLINE void ctl_pid_clamping_correction(ctl_pid_t* hpid)
+{
+    // Back-calculate what the integrator SHOULD be to match the actual_out
+    ctrl_gt sn_corrected = hpid->out - hpid->p_term - hpid->d_term;
+
+    // Apply the correction to the integrator state
+    // We also respect the integrator's own limits
+    hpid->i_term = ctl_sat(sn_corrected, hpid->integral_max, hpid->integral_min);
+}
+
+/**
+ * @brief Corrects the PID integrator state based on the actual limited output.
+ * Used for anti-windup when the output is limited by external logic (e.g., circular limitation).
+ * @param[out] hpid Pointer to the PID controller instance.
+ */
+GMP_STATIC_INLINE void ctl_pid_clamping_correction_using_real_output(ctl_pid_t* hpid, ctrl_gt real_out)
+{
+    // Back-calculate what the integrator SHOULD be to match the actual_out
+    ctrl_gt sn_corrected = real_out - hpid->p_term - hpid->d_term;
+
+    // Apply the correction to the integrator state
+    // We also respect the integrator's own limits
+    hpid->i_term = ctl_sat(sn_corrected, hpid->integral_max, hpid->integral_min);
 }
 
 /*---------------------------------------------------------------------------*/

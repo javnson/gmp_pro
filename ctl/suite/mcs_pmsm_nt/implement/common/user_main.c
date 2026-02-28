@@ -117,10 +117,14 @@ gmp_task_status_t tsk_monitor(gmp_task_t* tsk)
     return GMP_TASK_DONE;
 }
 
+// protect task this function would be implemented in ctl_main.c
+gmp_task_status_t tsk_protect(gmp_task_t* tsk);
+
 // All tasks must be non blocking tasks
 gmp_task_t tasks[] = {
     // name,     task,      period(ms),  init_phase, is_enabled, pParam
-    {"blink_led", tsk_blink, 1000, 0, 1, NULL},
+    {"protect", tsk_protect, 1000, 0, 1, NULL},
+    {"blink_led", tsk_blink, 1000, 100, 1, NULL},
     {"at_device", tsk_at_device, 5, 1, 1, NULL},
     {"monitor_data", tsk_monitor, 2, 0, 1, NULL}};
 

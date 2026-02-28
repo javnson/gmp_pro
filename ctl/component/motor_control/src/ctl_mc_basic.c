@@ -181,6 +181,60 @@ void ctl_set_slope_f_freq(
     ctrl->target_frequency = float2ctrl(target_freq / isr_freq);
 }
 
+/**
+ * @brief Initializes the Constant Slope Frequency Controller (PU).
+ * @param[out] ctrl Pointer to the ctl_slope_f_pu_controller object.
+ * @param[in] frequency The initial target frequency in Hz.
+ * @param[in] freq_slope The maximum rate of frequency change in Hz/s.
+ * @param[in] rated_krpm The motor rated speed in krpm (Base value source).
+ * @param[in] pole_pairs The motor pole pairs (Base value source).
+ * @param[in] isr_freq The frequency of the interrupt service routine (ISR) in Hz.
+ */
+void ctl_init_const_slope_f_pu_controller(ctl_slope_f_pu_controller* ctrl, parameter_gt frequency,
+                                          parameter_gt freq_slope, parameter_gt rated_krpm, parameter_gt pole_pairs,
+                                          parameter_gt isr_freq)
+{
+    // 1. Calculate Base Frequency (Rated Electrical Hz)
+    // f_base = (RPM * Poles) / 60
+    // rated_krpm is in 1000 RPM
+    parameter_gt base_freq_hz = (rated_krpm * 1000.0f * pole_pairs) / 60.0f;
+
+    // Prevent divide by zero if user inputs bad data
+    if (base_freq_hz < 0.1f)
+        base_freq_hz = 1.0f;
+
+    // 2. Clear Positions
+    ctrl->enc.elec_position = 0;
+    ctrl->enc.position = 0;
+
+    // 3. Init Ramp Generator
+    // The slope will be updated in the step function, init with 0.
+    // Range is [0, 1) for electrical angle.
+    ctl_init_ramp_generator_via_freq(&ctrl->rg, isr_freq, 0, 1, 0);
+
+    // 4. Calculate Conversion Ratio
+    // This ratio converts "1.0 pu frequency" into "step size per ISR tick"
+    // step = (f_base / f_isr)
+    ctrl->ratio_freq_pu_to_step = float2ctrl(base_freq_hz / isr_freq);
+
+    // 5. Initialize Target Frequency in PU
+    // target_pu = target_hz / base_hz
+    ctrl->target_freq_pu = float2ctrl(frequency / base_freq_hz);
+
+    // 6. Initialize Slope Limiter
+    // The limiter needs to limit the change of PU per Tick.
+    // Max Change (Hz/s) = freq_slope
+    // Max Change (PU/s) = freq_slope / base_freq_hz
+    ctrl_gt slope_limit_per_tick = float2ctrl(freq_slope / base_freq_hz);
+
+    ctl_init_slope_limiter(&ctrl->freq_slope, slope_limit_per_tick, -slope_limit_per_tick, isr_freq);
+
+    // Set initial output of limiter to current target (assuming instant start if needed, or 0)
+    // Usually start from 0 for soft start
+    ctrl->freq_slope.out = 0;
+    ctrl->current_freq_pu = 0;
+}
+
 // VF controller
 
 void ctl_init_const_vf_controller(
@@ -232,4 +286,110 @@ void ctl_set_const_vf_target_freq(
     parameter_gt isr_freq)
 {
     ctrl->target_frequency = float2ctrl(target_freq / isr_freq);
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Motor protection module
+
+#include <ctl/component/motor_control/basic/mtr_protection.h>
+
+void ctl_init_mtr_protect(ctl_mtr_protect_t* prot, parameter_gt fs)
+{
+    // Default safe values (User should overwrite these)
+    prot->limit_ov_pu = float2ctrl(1.2f);
+    prot->limit_uv_pu = float2ctrl(0.5f);
+    prot->limit_oc_sq_pu = float2ctrl(1.5f * 1.5f);  // 1.5x Overload
+    prot->limit_dev_sq_pu = float2ctrl(0.5f * 0.5f); // 0.5pu Deviation
+    prot->limit_mtr_ot = 1000;                       // Raw ADC value
+    prot->limit_inv_ot = 1000;
+
+    // Default Filtering
+    prot->limit_cnt_ov = (uint32_t)(fs / 2000); // Very Fast
+    prot->limit_cnt_oc = (uint32_t)(fs / 2000); // Very Fast
+    prot->limit_cnt_dev = (uint32_t)(fs / 5);   // Very Slow (e.g., 200ms @ 10kHz)
+
+    prot->limit_cnt_uv = (uint32_t)(fs / 10); // Slow
+    prot->limit_cnt_mtr_ot = (uint32_t)fs;
+    prot->limit_cnt_inv_ot = (uint32_t)fs;
+
+    // Ensure minimum count is 5 to prevent false triggering on noise
+    if (prot->limit_cnt_ov <= 5)
+        prot->limit_cnt_ov = 5;
+    if (prot->limit_cnt_oc <= 5)
+        prot->limit_cnt_oc = 5;
+
+    // Enable all protections by default (Mask = 0)
+    prot->error_mask.all = 0;
+
+    ctl_clear_mtr_protect(prot);
+}
+
+void ctl_attach_mtr_protect_port(ctl_mtr_protect_t* prot, ctrl_gt* u_dc, ctl_vector2_t* i_meas, ctl_vector2_t* i_ref,
+                                 adc_ift* mtr_temp, adc_ift* inv_temp)
+{
+    prot->ptr_udc = u_dc;
+    prot->ptr_idq = i_meas;
+    prot->ptr_ref = i_ref;
+    prot->ptr_mtr_temp = mtr_temp;
+    prot->ptr_inv_temp = inv_temp;
+}
+
+
+/**
+ * @brief Main Loop Protection Dispatch. 
+ * This calling frequency of this function should be less than 1kHz.
+ * @return 1 if fault active, 0 if safe
+ */
+fast_gt ctl_dispatch_mtr_protect_slow(ctl_mtr_protect_t* prot)
+{
+    // 1. Latch Check
+    if ((prot->error_code.all & (~prot->error_mask.all)) != MTR_PROT_NONE)
+        return 1;
+
+    // 2. Check Under Voltage
+    ctrl_gt u_dc = *(prot->ptr_udc);
+    if (ctl_mtr_protect_debounce(ctl_is_less(u_dc, prot->limit_uv_pu), &prot->cnt_uv, prot->limit_cnt_uv))
+    {
+        prot->error_code.bit.under_voltage = 1;
+
+        if (!prot->error_mask.bit.under_voltage)
+        {
+            return 1;
+        }
+    }
+
+    // 3. Check Motor Over Temp
+    if (prot->ptr_mtr_temp)
+    {
+        // Assuming ptr_mtr_temp->value holds the data
+        adc_gt temp = prot->ptr_mtr_temp->value;
+        if (ctl_mtr_protect_debounce(ctl_is_greater_ot(temp, prot->limit_mtr_ot), &prot->cnt_mtr_ot,
+                                     prot->limit_cnt_mtr_ot))
+        {
+            prot->error_code.bit.mtr_over_temp = 1;
+
+            if (!prot->error_mask.bit.mtr_over_temp)
+            {
+                return 1;
+            }
+        }
+    }
+
+    // 4. Check Inverter Over Temp
+    if (prot->ptr_inv_temp)
+    {
+        adc_gt temp = prot->ptr_inv_temp->value; // Fixed: was reading mtr_temp
+        if (ctl_mtr_protect_debounce(ctl_is_greater_ot(temp, prot->limit_inv_ot), &prot->cnt_inv_ot,
+                                     prot->limit_cnt_inv_ot))
+        {
+            prot->error_code.bit.inv_over_temp = 1;
+
+            if (!prot->error_mask.bit.inv_over_temp)
+            {
+                return 1;
+            }
+        }
+    }
+
+    return 0;
 }

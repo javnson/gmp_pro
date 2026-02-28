@@ -14,6 +14,7 @@
 #include <ctl/component/motor_control/basic/motor_universal_interface.h>
 
 #include <ctl/component/intrinsic/basic/divider.h>
+#include <ctl/component/intrinsic/basic/slope_limiter.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 
 #ifdef __cplusplus
@@ -43,17 +44,18 @@ typedef struct tag_vel_pos_controller
     velocity_ift* spd_if; //!< @brief Standard velocity input interface.
 
     // --- Controller ---
-    ctl_pid_t vel_ctrl;  ///< Velocity PI controller.
-    ctl_pid_t pos_ctrl;  ///< Position PI controller.
+    ctl_pid_t vel_ctrl;           ///< Velocity PI controller.
+    ctl_slope_limiter_t vel_traj; ///< Velocity Trajectory
+    ctl_pid_t pos_ctrl;           ///< Position PI controller.
 
     // --- Target & Feedback ---
-    int32_t target_revs;  ///< The integer part of the target position (full revolutions).
-    ctrl_gt target_angle; ///< The fractional part of the target position (0.0 to 1.0).
+    int32_t target_revs;     ///< The integer part of the target position (full revolutions).
+    ctrl_gt target_angle;    ///< The fractional part of the target position (0.0 to 1.0).
     ctrl_gt target_velocity; ///< The target velocity.
 
     // --- Parameters ---
     ctrl_gt speed_limit; ///< Maximum output speed reference (saturation limit).
-    ctrl_gt cur_limit;    ///< Maximum output current limit.
+    ctrl_gt cur_limit;   ///< Maximum output current limit.
 
     // --- Output ---
     ctrl_gt cur_output; ///< The output current to current controller.
@@ -94,14 +96,16 @@ GMP_STATIC_INLINE void ctl_clear_vel_pos_ctrl(ctl_vel_pos_controller_t* ctrl)
  * @param[in]  vel_ki Integral gain.
  * @param[in]  pos_ki Integral gain.
  * @param[in]  speed_limit Maximum output speed reference.
+ * @param[in]  speed_slope_limit Maximum slope limit in pu/s.
  * @param[in]  cur_limit Maximum output current limit.
  * @param[in]  vel_division The frequency division factor for the velocity controller execution.
  * @param[in]  pos_division The frequency division factor for the position controller execution.
  * @param[in]  fs Controller execution frequency (Hz).
  */
 void ctl_init_vel_pos_ctrl(ctl_vel_pos_controller_t* ctrl, parameter_gt vel_kp, parameter_gt pos_kp,
-    parameter_gt vel_ki, parameter_gt pos_ki, 
-    parameter_gt speed_limit, parameter_gt cur_limit, uint32_t vel_division, uint32_t pos_division, parameter_gt fs);
+                           parameter_gt vel_ki, parameter_gt pos_ki, parameter_gt speed_limit,
+                           parameter_gt speed_slope_limit, parameter_gt cur_limit, uint32_t vel_division,
+                           uint32_t pos_division, parameter_gt fs);
 
 /**
  * @brief Executes one step of the velocity and position control loop.
@@ -123,7 +127,7 @@ GMP_STATIC_INLINE void ctl_step_vel_pos_ctrl(ctl_vel_pos_controller_t* ctrl)
             ctrl_gt pos_error = (ctrl_gt)rev_error + ang_error;
 
             // Update position controller
-            ctrl->target_velocity = ctl_step_pid_par(&ctrl->pos_ctrl,pos_error);
+            ctrl->target_velocity = ctl_step_pid_par(&ctrl->pos_ctrl, pos_error);
         }
     }
 
@@ -164,7 +168,8 @@ GMP_STATIC_INLINE void ctl_set_target_velocity(ctl_vel_pos_controller_t* ctrl, c
     ctrl->target_velocity = spd;
 }
 
-GMP_STATIC_INLINE void ctl_attach_vel_pos_ctrl(ctl_vel_pos_controller_t* ctrl, rotation_ift* pos_if, velocity_ift* spd_if)
+GMP_STATIC_INLINE void ctl_attach_vel_pos_ctrl(ctl_vel_pos_controller_t* ctrl, rotation_ift* pos_if,
+                                               velocity_ift* spd_if)
 {
     ctrl->pos_if = pos_if;
     ctrl->spd_if = spd_if;
