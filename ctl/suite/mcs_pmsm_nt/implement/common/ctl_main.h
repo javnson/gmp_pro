@@ -119,9 +119,15 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         ctl_step_current_controller(&mtr_ctrl);
 
 #ifdef ENABLE_SMO
-        ctrl_gt udc = ctl_mul(CTL_CTRL_CONST_1_OVER_SQRT3, mtr_ctrl.udc);
-        ctrl_gt v_alpha = ctl_mul(udc, mtr_ctrl.vab0.dat[phase_alpha]);
-        ctrl_gt v_beta = ctl_mul(udc, mtr_ctrl.vab0.dat[phase_beta]);
+        ctrl_gt udc_for_smo = ctl_mul(CTL_CTRL_CONST_1_OVER_SQRT3, mtr_ctrl.udc);
+
+#if (PWM_MODULATOR_USING_NEGATIVE_LOGIC == 1)
+        ctrl_gt v_alpha = ctl_mul(udc_for_smo, - mtr_ctrl.vab0.dat[phase_alpha]);
+        ctrl_gt v_beta = ctl_mul(udc_for_smo, - mtr_ctrl.vab0.dat[phase_beta]);
+#else
+        ctrl_gt v_alpha = ctl_mul(udc_for_smo, mtr_ctrl.vab0.dat[phase_alpha]);
+        ctrl_gt v_beta = ctl_mul(udc_for_smo, mtr_ctrl.vab0.dat[phase_beta]);
+#endif
         ctl_step_pmsm_smo(
             // SMO object
             &smo,

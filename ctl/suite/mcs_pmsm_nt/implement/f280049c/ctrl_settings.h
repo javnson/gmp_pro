@@ -11,7 +11,7 @@
 // BUILD_LEVEL 4: speed loop
 // BUILD_LEVEL 5: position loop
 // BUILD_LEVEL 6: communication mode
-#define BUILD_LEVEL (4)
+#define BUILD_LEVEL (2)
 
 //=================================================================================================
 // Controller basic parameters
