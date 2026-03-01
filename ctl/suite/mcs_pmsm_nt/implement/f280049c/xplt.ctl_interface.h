@@ -66,21 +66,6 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     //    DAC_setShadowValue(IRIS_DACB_BASE, inv_ctrl.angle * 2048 + 2048);
     //    DAC_setShadowValue(IRIS_DACA_BASE, inv_ctrl.abc_out.dat[phase_B]  * 2048 + 2048);
 
-    // grid current and inverter current
-//    DAC_setShadowValue(IRIS_DACA_BASE, iuvw.control_port.value.dat[phase_A] * 2048 + 2048);
-//    DAC_setShadowValue(IRIS_DACB_BASE, iuvw.control_port.value.dat[phase_B] * 2048 + 2048);
-
-    // grid voltage and inverter voltage
-    //    DAC_setShadowValue(IRIS_DACB_BASE, uuvw.control_port.value.dat[phase_C] * 2048 + 2048);
-    //    DAC_setShadowValue(IRIS_DACA_BASE, vabc.control_port.value.dat[phase_C] * 2048 + 2048);
-
-    //    DAC_setShadowValue(IRIS_DACB_BASE, EPWM_getCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A)/2);
-    //    DAC_setShadowValue(IRIS_DACA_BASE, EPWM_getCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A)/2);
-
-    //    DAC_setShadowValue(IRIS_DACB_BASE, pwm_out.value[2]/2);
-    //    DAC_setShadowValue(IRIS_DACA_BASE, pwm_out.value[1]/2);
-    //    inv_ctrl.
-
 #endif // BUILD_LEVEL
 }
 

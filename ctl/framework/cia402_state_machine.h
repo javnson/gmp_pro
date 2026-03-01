@@ -430,6 +430,20 @@ cia402_sm_error_code_t default_cb_fn_fault(cia402_sm_t* sm);
 // user should implement the following function in your own project
 //
 
+    
+// 定义一些超时阈值 (单位 ms，根据实际情况调整)
+#ifndef TIMEOUT_PRECHARGE_MS
+#define TIMEOUT_PRECHARGE_MS 3000
+#endif // TIMEOUT_PRECHARGE_MS
+
+#ifndef TIMEOUT_ADC_CALIB_MS
+#define TIMEOUT_ADC_CALIB_MS 3000
+#endif // TIMEOUT_ADC_CALIB_MS
+
+#ifndef TIMEOUT_ALIGNMENT_MS
+#define TIMEOUT_ALIGNMENT_MS 5000
+#endif // TIMEOUT_ALIGNMENT_MS
+
 // =============================================================
 // 1. 功率级执行 (Power Stage & Actuators)
 // =============================================================

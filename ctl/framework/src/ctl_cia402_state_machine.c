@@ -710,11 +710,6 @@ void cia402_dispatch(cia402_sm_t* sm)
 //    return CIA402_EC_KEEP;
 //}
 
-// 定义一些超时阈值 (单位 ms，根据实际情况调整)
-#define TIMEOUT_PRECHARGE_MS 3000
-#define TIMEOUT_ADC_CALIB_MS 3000
-#define TIMEOUT_ALIGNMENT_MS 5000
-
 // =========================================================================
 // 1. Switch On Disabled (初始化与待机)
 // =========================================================================

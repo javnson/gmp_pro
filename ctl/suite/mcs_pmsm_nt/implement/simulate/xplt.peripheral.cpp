@@ -36,14 +36,6 @@ adc_gt uuvw_src[3];
 tri_ptr_adc_channel_t iuvw;
 adc_gt iuvw_src[3];
 
-// grid side voltage feedback
-tri_ptr_adc_channel_t vabc;
-adc_gt vabc_src[3];
-
-// grid side current feedback
-tri_ptr_adc_channel_t iabc;
-adc_gt iabc_src[3];
-
 // DC bus current & voltage feedback
 ptr_adc_channel_t udc;
 adc_gt udc_src;
@@ -69,7 +61,7 @@ void setup_peripheral(void)
     // input channel
     //
 
-    // inverter side ADC
+     // inverter side ADC
     ctl_init_tri_ptr_adc_channel(
         &uuvw, uuvw_src,
         // ADC gain, ADC bias
@@ -83,23 +75,6 @@ void setup_peripheral(void)
         // ADC gain, ADC bias
         ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_CURRENT_BIAS),
-        // ADC resolution, IQN
-        12, 24);
-
-    // grid side ADC
-    ctl_init_tri_ptr_adc_channel(
-        &vabc, vabc_src,
-        // ADC gain, ADC bias
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_VOLTAGE_BIAS),
-        // ADC resolution, IQN
-        12, 24);
-
-    ctl_init_tri_ptr_adc_channel(
-        &iabc, iabc_src,
-        // ADC gain, ADC bias
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_CURRENT_BIAS),
         // ADC resolution, IQN
         12, 24);
 
@@ -122,13 +97,11 @@ void setup_peripheral(void)
     //
     // attach
     //
-    ctl_attach_gfl_inv(
-        // inv controller
-        &inv_ctrl,
-        // idc, udc
-        &idc.control_port, &udc.control_port,
-        // grid side iabc, vabc
-        &iabc.control_port, &vabc.control_port);
+#if BUILD_LEVEL <= 2
+    ctl_attach_mtr_current_ctrl_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &rg.enc, &spd_enc.encif);
+#else  // BUILD_LEVEL
+    ctl_attach_mtr_current_ctrl_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &pos_enc.encif, &spd_enc.encif);
+#endif // BUILD_LEVEL
 
     //
     // Trace RT ports
@@ -179,7 +152,7 @@ void at_device_flush_rx_buffer()
 // Execute RT monitor
 void send_monitor_data(void)
 {
-    gmp_trace_rt_log_double(trt_node[TRT_TEST], inv_ctrl.isr_tick, inv_ctrl.vab0.dat[phase_A]);
+    //gmp_trace_rt_log_double(trt_node[TRT_TEST], inv_ctrl.isr_tick, inv_ctrl.vab0.dat[phase_A]);
 }
 
 #ifdef __cplusplus
