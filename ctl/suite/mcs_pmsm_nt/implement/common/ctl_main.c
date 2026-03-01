@@ -325,9 +325,9 @@ fast_gt ctl_exec_adc_calibration(void)
             else if (index_adc_calibrator <= 5 && index_adc_calibrator >= 3)
             {
                 // vuvw get result
-                uuvw.bias[index_adc_calibrator - 9] =
-                    uuvw.bias[index_adc_calibrator - 9] +
-                    ctl_div(ctl_get_adc_calibrator_result(&adc_calibrator), uuvw.gain[index_adc_calibrator - 9]);
+                uuvw.bias[index_adc_calibrator - 3] =
+                    uuvw.bias[index_adc_calibrator - 3] +
+                    ctl_div(ctl_get_adc_calibrator_result(&adc_calibrator), uuvw.gain[index_adc_calibrator - 3]);
 
                 // move to next position
                 index_adc_calibrator += 1;
@@ -369,3 +369,4 @@ fast_gt ctl_exec_adc_calibration(void)
     // skip calibrate routine
     return 1;
 }
+

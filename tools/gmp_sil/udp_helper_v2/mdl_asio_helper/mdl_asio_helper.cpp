@@ -1009,6 +1009,9 @@ static void mdlOutputs(SimStruct* S, int_T tid)
 
     try
     {
+        // Set Overtime
+        udp_helper->set_overtime();
+
         if (udp_helper->recv_msg((char*)recvBuffer, desired_unpacked_width))
         {
             sprintf(msg, "%s: ASIO helper, Receive timeout, please start SIL Controller first!", DRIVER);

@@ -266,18 +266,8 @@ class asio_udp_helper
 
 #else
 
-#ifdef PC_SIMULATE_STOP_CONDITION
+#ifdef ASIO_UDP_HELPER_SERVER_MODE
         // Server mode
-
-        // if receive has setup, start timeout
-        if (this->recv_counter > 100)
-        {
-            // somewhere in your headers to be used everywhere you need it
-            typedef detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO> rcv_timeout_option;
-            recv_socket.set_option(rcv_timeout_option{GMP_ASIO_UDP_LINK_TIMEOUT}); // 2000 s \approx 33 min
-        }
-#else
-        // Default Mode: client mode
 
         // if receive has setup, stop timeout
         if (this->recv_counter > 100)
@@ -291,6 +281,16 @@ class asio_udp_helper
             // somewhere in your headers to be used everywhere you need it
             typedef detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO> rcv_timeout_option;
             recv_socket.set_option(rcv_timeout_option{GMP_ASIO_UDP_LINK_TIMEOUT});
+        }
+#else
+        // Default Mode: client mode
+
+        // if receive has setup, start timeout
+        if (this->recv_counter > 100)
+        {
+            // somewhere in your headers to be used everywhere you need it
+            typedef detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO> rcv_timeout_option;
+            recv_socket.set_option(rcv_timeout_option{GMP_ASIO_UDP_LINK_TIMEOUT}); // 2000 s \approx 33 min
         }
 
 #endif // PC_SIMULATE_STOP_CONDITION

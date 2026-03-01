@@ -48,7 +48,7 @@ typedef enum _tag_digital_index_items
     DIGITAL_INDEX_NUMBER = 2
 } digital_index_items;
 
-    //=================================================================================================
+//=================================================================================================
 // Controller interface
 
 // Input Callback
@@ -92,8 +92,6 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     // Scope 1
     simulink_tx_buffer.monitor[0] = mtr_ctrl.iuvw.dat[phase_A];
     simulink_tx_buffer.monitor[1] = mtr_ctrl.iuvw.dat[phase_B];
-
-
 }
 
 // Enable Motor Controller
