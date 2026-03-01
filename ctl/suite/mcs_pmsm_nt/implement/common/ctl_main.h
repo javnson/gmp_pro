@@ -101,9 +101,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         // ramp generator
         ctl_step_slope_f_pu(&rg);
 
-        // Step auto turn pos encoder
-        ctl_step_autoturn_pos_encoder(&pos_enc, EQEP_getPosition(EQEP_Encoder_BASE));
-
+        // Calculate Motor Speed
         ctl_step_spd_calc(&spd_enc);
 
 #if BUILD_LEVEL > 3
