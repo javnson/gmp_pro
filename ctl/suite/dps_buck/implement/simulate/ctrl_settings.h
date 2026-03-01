@@ -8,7 +8,7 @@
 #define BUILD_LEVEL (2)
 
 // low voltage half bridge parameters
-#include <ctl/component/digital_power/hardware_preset/gmp_lvhb_v1.h>
+#include <ctl/component/hardware_preset/inverter_HB/gmp_lvhb_v1.h>
 
 // Controller Frequency
 #define CONTROLLER_FREQUENCY (20e3)

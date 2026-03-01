@@ -304,13 +304,13 @@ void ctl_init_mtr_protect(ctl_mtr_protect_t* prot, parameter_gt fs)
     prot->limit_inv_ot = 1000;
 
     // Default Filtering
-    prot->limit_cnt_ov = (uint32_t)(fs / 2000); // Very Fast
-    prot->limit_cnt_oc = (uint32_t)(fs / 2000); // Very Fast
-    prot->limit_cnt_dev = (uint32_t)(fs / 5);   // Very Slow (e.g., 200ms @ 10kHz)
+    prot->limit_cnt_ov = (uint16_t)(fs / 2000); // Very Fast
+    prot->limit_cnt_oc = (uint16_t)(fs / 2000); // Very Fast
+    prot->limit_cnt_dev = (uint16_t)(fs / 5);   // Very Slow (e.g., 200ms @ 10kHz)
 
-    prot->limit_cnt_uv = (uint32_t)(fs / 10); // Slow
-    prot->limit_cnt_mtr_ot = (uint32_t)fs;
-    prot->limit_cnt_inv_ot = (uint32_t)fs;
+    prot->limit_cnt_uv = (uint16_t)(fs / 10); // Slow
+    prot->limit_cnt_mtr_ot = (uint16_t)fs;
+    prot->limit_cnt_inv_ot = (uint16_t)fs;
 
     // Ensure minimum count is 5 to prevent false triggering on noise
     if (prot->limit_cnt_ov <= 5)
@@ -333,7 +333,6 @@ void ctl_attach_mtr_protect_port(ctl_mtr_protect_t* prot, ctrl_gt* u_dc, ctl_vec
     prot->ptr_mtr_temp = mtr_temp;
     prot->ptr_inv_temp = inv_temp;
 }
-
 
 /**
  * @brief Main Loop Protection Dispatch. 
@@ -362,7 +361,7 @@ fast_gt ctl_dispatch_mtr_protect_slow(ctl_mtr_protect_t* prot)
     if (prot->ptr_mtr_temp)
     {
         // Assuming ptr_mtr_temp->value holds the data
-        adc_gt temp = prot->ptr_mtr_temp->value;
+        ctrl_gt temp = prot->ptr_mtr_temp->value;
         if (ctl_mtr_protect_debounce(ctl_is_greater_ot(temp, prot->limit_mtr_ot), &prot->cnt_mtr_ot,
                                      prot->limit_cnt_mtr_ot))
         {
@@ -378,7 +377,7 @@ fast_gt ctl_dispatch_mtr_protect_slow(ctl_mtr_protect_t* prot)
     // 4. Check Inverter Over Temp
     if (prot->ptr_inv_temp)
     {
-        adc_gt temp = prot->ptr_inv_temp->value; // Fixed: was reading mtr_temp
+        ctrl_gt temp = prot->ptr_inv_temp->value; // Fixed: was reading mtr_temp
         if (ctl_mtr_protect_debounce(ctl_is_greater_ot(temp, prot->limit_inv_ot), &prot->cnt_inv_ot,
                                      prot->limit_cnt_inv_ot))
         {
