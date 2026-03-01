@@ -21,7 +21,7 @@
 
 // Connection Timeout
 #ifndef GMP_ASIO_UDP_LINK_TIMEOUT
-#define GMP_ASIO_UDP_LINK_TIMEOUT ((10000))
+#define GMP_ASIO_UDP_LINK_TIMEOUT ((2000))
 #endif // GMP_ASIO_UDP_LINK_TIMEOUT
 
 // Controller tick per main loop tick

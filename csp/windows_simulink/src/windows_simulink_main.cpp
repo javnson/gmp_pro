@@ -167,6 +167,9 @@ void gmp_csp_loop(void)
             return;
         }
 
+        // Sync Over time configuration
+        helper->set_overtime();
+
         // Receive message from Simulink
         if (helper->recv_msg((char*)simulink_rx.buf, simulink_rx.length))
         {
