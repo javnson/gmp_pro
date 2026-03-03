@@ -58,8 +58,9 @@ enum
  */
 enum
 {
+    VS_TYPE_NONE = 0,
     VS_TYPE_PHASE_GND = 1, ///< "Phase voltage" relative to inverter ground (GND).
-    VS_TYPE_LINE_LINE = 2, ///< Line-to-line voltage (e.g., V_ab, V_bc).
+    VS_TYPE_LINE_LINE = 2, ///< Line-to-line voltage (e.g., V_ab, V_bc).    
 };
 /** @} */
 

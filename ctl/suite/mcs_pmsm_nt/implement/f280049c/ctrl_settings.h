@@ -11,7 +11,7 @@
 // BUILD_LEVEL 4: speed loop
 // BUILD_LEVEL 5: position loop
 // BUILD_LEVEL 6: communication mode
-#define BUILD_LEVEL (2)
+#define BUILD_LEVEL (4)
 
 //=================================================================================================
 // Controller basic parameters
@@ -40,19 +40,19 @@
 #define BOOSTXL_3PHGANINV_IS_DEFAULT_PARAM
 
 // invoke motor parameters
-#include <ctl/component/hardware_preset/pmsm_motor/TYI_5008_KV335.h>
+#include <ctl/component/hardware_preset/pmsm_motor/SM060R20B30MNAD.h>
 
 // invoke motor controller parameters
-#include <ctl/component/hardware_preset/inverter_3ph/TI_BOOSTXL_3PhGaNInv.h>
+#include <ctl/component/hardware_preset/inverter_3ph/GMP_3PH_2136SINV_DUAL_TMPL.h>
 
 ///////////////////////////////////////////////////////////
 // Encoder Properties
 
 // Encoder Full scale
-#define CTRL_POS_ENC_FS (16384)
+#define CTRL_POS_ENC_FS (10000)
 
 // Encoder Bias
-#define CTRL_POS_ENC_BIAS (0.0999145508f)
+#define CTRL_POS_ENC_BIAS (0.0207000002f)
 
 // Speed division
 #define CTRL_SPD_DIV (5)

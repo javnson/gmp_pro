@@ -58,8 +58,8 @@ extern "C"
 //              Use the integer values. The corresponding names are for documentation.
 #define MY_BOARD_PH_CURRENT_SENSE_TYPE     (SENSOR_TYPE_SHUNT) // SENSOR_TYPE_SHUNT
 #define MY_BOARD_PH_CURRENT_SENSE_TOPOLOGY (CS_TOPOLOGY_LOW_SIDE) // CS_TOPOLOGY_LOW_SIDE
-#define MY_BOARD_PH_VOLTAGE_SENSE_TYPE     (VS_TYPE_PHASE_GND) // VS_TYPE_PHASE_GND
-#define MY_BOARD_DCBUS_VOLTAGE_SENSE_TYPE  (VS_TYPE_PHASE_GND) // VS_TYPE_PHASE_GND
+#define MY_BOARD_PH_VOLTAGE_SENSE_TYPE     (1) // VS_TYPE_PHASE_GND
+#define MY_BOARD_DCBUS_VOLTAGE_SENSE_TYPE  (1) // VS_TYPE_PHASE_GND
 #define MY_BOARD_DCBUS_CURRENT_SENSE_TYPE  (SENSOR_NONE) // SENSOR_NONE
 #define MY_BOARD_THERMAL_SENSE_TYPE        (THERMAL_SENSOR_NTC) // THERMAL_SENSOR_NTC
 //=================================================================================================
@@ -68,7 +68,7 @@ extern "C"
 //-------------------------------------------------------------------------------------------------
 
 //--- 4.1: Phase Current Sensing ---
-#if (MY_BOARD_PH_CURRENT_SENSE_TYPE == 1) // SENSOR_TYPE_SHUNT
+#if (MY_BOARD_PH_CURRENT_SENSE_TYPE == SENSOR_TYPE_SHUNT) // SENSOR_TYPE_SHUNT
 // If using a shunt resistor, define the following parameters:
 #define MY_BOARD_PH_SHUNT_RESISTANCE_OHM (0.005f) // Resistance of the shunt resistor (Ohm)
 #define MY_BOARD_PH_CSA_GAIN_V_V         (15.0f)  // Gain of the Current Sense Amplifier (CSA) (V/V)
@@ -107,6 +107,9 @@ extern "C"
 #define MY_BOARD_DCBUS_CURRENT_SENSITIVITY_MV_A (100.0f)
 #define MY_BOARD_DCBUS_CURRENT_ZERO_BIAS_V      (2.5f)
 #define MY_BOARD_DCBUS_CURRENT_SENSE_POLE_HZ    (150.0e3f)
+#else
+#define MY_BOARD_DCBUS_CURRENT_SENSE_GAIN    (1)
+#define MY_BOARD_DCBUS_CURRENT_SENSE_BIAS_V  (0)
 #endif
 
 //--- 4.5: Thermal Sensing ---
