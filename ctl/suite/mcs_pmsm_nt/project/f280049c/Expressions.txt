@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExportImportMemento.1>
+<VarMeta IMemento.internal.id="cia402_sm.current_cmd"/>
+<VarMeta IMemento.internal.id="cia402_sm.current_state"/>
+<VarMeta IMemento.internal.id="mtr_ctrl.isr_tick"/>
+<VarMeta IMemento.internal.id="udc.control_port.value"/>
+<VarMeta IMemento.internal.id="rg"/>
+<VarMeta IMemento.internal.id="pos_enc.encif.position"/>
+<VarMeta IMemento.internal.id="mtr_ctrl.idq0.dat"/>
+<VarMeta IMemento.internal.id="mtr_ctrl.vdq0"/>
+<VarMeta IMemento.internal.id="mtr_ctrl.idq_ref.dat"/>
+<VarMeta IMemento.internal.id="mtr_ctrl.pos_if-&gt;elec_position"/>
+<VarMeta IMemento.internal.id="spd_enc.encif.speed"/>
+<VarMeta IMemento.internal.id="motion_ctrl.target_velocity"/>
+<VarMeta IMemento.internal.id="iuvw"/>
+<VarMeta IMemento.internal.id="pos_enc.encif"/>
+<VarMeta IMemento.internal.id="protection.error_code"/>
+<VarMeta IMemento.internal.id="cia402_sm.flag_fault_reset_request"/>
+<VarMeta IMemento.internal.id="motion_ctrl.vel_ctrl"/>
+<VarMeta IMemento.internal.id="udc"/>
+</ExportImportMemento.1>

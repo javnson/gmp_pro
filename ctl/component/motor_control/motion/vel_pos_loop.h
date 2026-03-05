@@ -165,7 +165,10 @@ GMP_STATIC_INLINE void ctl_enable_position_ctrl(ctl_vel_pos_controller_t* ctrl)
 
 GMP_STATIC_INLINE void ctl_set_target_velocity(ctl_vel_pos_controller_t* ctrl, ctrl_gt spd)
 {
-    ctrl->target_velocity = spd;
+    if(spd <= ctrl->speed_limit && spd >= -ctrl->speed_limit)
+    {
+        ctrl->target_velocity = spd;
+    }
 }
 
 GMP_STATIC_INLINE void ctl_attach_vel_pos_ctrl(ctl_vel_pos_controller_t* ctrl, rotation_ift* pos_if,
