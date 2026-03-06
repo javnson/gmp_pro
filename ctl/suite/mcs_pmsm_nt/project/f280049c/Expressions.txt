@@ -18,4 +18,5 @@
 <VarMeta IMemento.internal.id="cia402_sm.flag_fault_reset_request"/>
 <VarMeta IMemento.internal.id="motion_ctrl.vel_ctrl"/>
 <VarMeta IMemento.internal.id="udc"/>
+<VarMeta IMemento.internal.id="protection.error_code.bit"/>
 </ExportImportMemento.1>
