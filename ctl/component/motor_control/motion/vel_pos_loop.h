@@ -56,6 +56,7 @@ typedef struct tag_vel_pos_controller
     // --- Parameters ---
     ctrl_gt speed_limit; ///< Maximum output speed reference (saturation limit).
     ctrl_gt cur_limit;   ///< Maximum output current limit.
+    ctrl_gt current_spd_set; ///< Traj output current speed command.
 
     // --- Output ---
     ctrl_gt cur_output; ///< The output current to current controller.
@@ -131,14 +132,20 @@ GMP_STATIC_INLINE void ctl_step_vel_pos_ctrl(ctl_vel_pos_controller_t* ctrl)
         }
     }
 
+
+
     // Velocity Control Loop
     if (ctrl->flag_enable_velocity_ctrl)
     {
         if (ctl_step_divider(&ctrl->div_velocity))
         {
+
+            // Step traj
+            ctrl->current_spd_set = ctl_step_slope_limiter(&ctrl->vel_traj, ctrl->target_velocity);
+
             // Calculate velocity error
             ctrl_gt spd_feedback = ctrl->spd_if->speed;
-            ctrl_gt spd_error = ctrl->target_velocity - spd_feedback;
+            ctrl_gt spd_error = ctrl->current_spd_set - spd_feedback;
 
             // Update velocity controller
             ctrl->cur_output = ctl_step_pid_par(&ctrl->vel_ctrl, spd_error);

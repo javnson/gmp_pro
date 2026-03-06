@@ -192,7 +192,7 @@ void ctl_init_vel_pos_ctrl(ctl_vel_pos_controller_t* ctrl, parameter_gt vel_kp, 
     ctl_init_pid(&ctrl->pos_ctrl, pos_kp, pos_ki, 0, fs);
 
     // Initialize velocity slope controller
-    ctl_init_slope_limiter(&ctrl->vel_traj, speed_slope_limit, -speed_slope_limit, fs);
+    ctl_init_slope_limiter(&ctrl->vel_traj, speed_slope_limit, -speed_slope_limit, fs / vel_division);
 
     // Initialize dividers
     ctl_init_divider(&ctrl->div_velocity, vel_division);
@@ -207,6 +207,7 @@ void ctl_init_vel_pos_ctrl(ctl_vel_pos_controller_t* ctrl, parameter_gt vel_kp, 
     ctrl->target_revs = 0;
     ctrl->target_angle = 0;
     ctrl->target_velocity = 0;
+    ctrl->current_spd_set = 0;
 
     // Enable controllers by default
     ctrl->flag_enable_velocity_ctrl = 1;
