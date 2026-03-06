@@ -127,7 +127,7 @@ void ctl_init()
         // controller object
         &motion_ctrl,
         // spd_kp, pos_kp, spd_ki, pos_ki
-        1.0f, 1.0f, 1.0f, 1.0f,
+        5.0f, 1.0f, 1.0f, 1.0f,
         // spd_lim, spd_slope_lim, cur_lim
         1.0f, 0.2f, 0.3f,
         // spd_div, pos_div, controller freq

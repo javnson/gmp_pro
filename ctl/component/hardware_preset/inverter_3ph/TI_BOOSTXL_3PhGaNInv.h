@@ -1,5 +1,5 @@
 /**
- * @file    3phganinv_boosterpack.h
+ * @file    TI_BOOSTXL_3PhGaNInv.h
  * @brief   Hardware Abstraction Layer (HAL) for the BOOSTXL-3PhGaNInv motor driver board.
  * @version 1.0
  * @date    2025-08-12
@@ -61,7 +61,7 @@ extern "C"
 #define BOOSTXL_3PHGANINV_CURRENT_MAX_RMS_A (7.0f)  // Maximum continuous phase current (RMS, A), derived from peak
 #define BOOSTXL_3PHGANINV_CURRENT_MAX_PEAK_A                                                                           \
     (10.0f)                                  // Maximum allowed peak phase current (Peak, A), per manual section 1.1
-#define BOOSTXL_3PHGANINV_TEMP_MAX_C (85.0f) // Recommended maximum PCB operating temperature (¡ãC), safe default
+#define BOOSTXL_3PHGANINV_TEMP_MAX_C (85.0f) // Recommended maximum PCB operating temperature (ï¿½ï¿½C), safe default
 
 /** @} */ // end of hal_3phganinv_limits
 //=================================================================================================

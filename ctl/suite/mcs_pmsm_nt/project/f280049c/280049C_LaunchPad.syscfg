@@ -389,16 +389,18 @@ eqep1.eqep.eqep_indexPin.$assign = "GPIO59";
 eqep2.$name                      = "EQEP2_J13";
 eqep2.useCase                    = "NO STROBE";
 eqep2.enableModule               = true;
-eqep2.positionCounterMax         = 16384;
+eqep2.positionCounterMax         = 10000;
 eqep2.eqep.$assign               = "EQEP2";
 eqep2.eqep.eqep_aPin.$assign     = "GPIO14";
 eqep2.eqep.eqep_bPin.$assign     = "GPIO15";
 eqep2.eqep.eqep_indexPin.$assign = "GPIO26";
 
 gpio1.$name           = "LED_R";
+gpio1.direction       = "GPIO_DIR_MODE_OUT";
 gpio1.gpioPin.$assign = "GPIO23_VSW";
 
 gpio2.$name           = "LED_G";
+gpio2.direction       = "GPIO_DIR_MODE_OUT";
 gpio2.gpioPin.$assign = "GPIO34";
 
 gpio3.$name           = "ENABLE_GATE";
