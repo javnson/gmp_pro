@@ -544,6 +544,9 @@ static void _fault_routine(cia402_sm_t* sm)
 
     sm->last_cb_result = sm->fault(sm);
 
+    // clear current command
+    sm->current_cmd = CIA402_CMD_NULL;
+
     // 必须且只能通过这一标志位请求复位，单稳态
     if (sm->flag_fault_reset_request)
     {
@@ -654,6 +657,9 @@ void cia402_dispatch(cia402_sm_t* sm)
 
     // 4. update status word
     cia402_update_status_word(sm);
+
+    // 5. finally, clear the command
+//    sm->current_cmd = CIA402_CMD_NULL;
 
     // update counter
     sm->current_state_counter += 1;
