@@ -304,50 +304,6 @@ void HT16K33_Init(uint32_t i2cBase)
 }
 
 
-//
-// Function to configure I2C A in FIFO mode.
-//
-void initI2C()
-{
-    //
-    // Must put I2C into reset before configuring it
-    //
-    I2C_disableModule(I2CA_BASE);
-
-    //
-    // I2C configuration. Use a 400kHz I2CCLK with a 33% duty cycle.
-    //
-    I2C_initController(I2CA_BASE, DEVICE_SYSCLK_FREQ, 400000, I2C_DUTYCYCLE_33);
-    I2C_setBitCount(I2CA_BASE, I2C_BITCOUNT_8);
-    I2C_setTargetAddress(I2CA_BASE, 0x70);
-    I2C_setEmulationMode(I2CA_BASE, I2C_EMULATION_FREE_RUN);
-
-    //
-    // Enable stop condition and register-access-ready interrupts
-    I2C_enableInterrupt(I2CA_BASE, I2C_INT_STOP_CONDITION |
-                                   I2C_INT_REG_ACCESS_RDY);
-
-    //
-    // FIFO configuration
-    //
-    I2C_enableFIFO(I2CA_BASE);
-    I2C_clearInterruptStatus(I2CA_BASE, I2C_INT_RXFF | I2C_INT_TXFF);
-
-    //
-    // Configuration complete. Enable the module.
-    //
-    I2C_enableModule(I2CA_BASE);
-}
-
-
-//
-// I2C
-//
-#define DEVICE_GPIO_PIN_SDAA        56U  // GPIO number for I2C SDAA
-#define DEVICE_GPIO_PIN_SCLA        57U  // GPIO number for I2C SCLA
-#define DEVICE_GPIO_CFG_SDAA        GPIO_56_I2CA_SDA  // "pinConfig" for I2C SDAA
-#define DEVICE_GPIO_CFG_SCLA        GPIO_57_I2CA_SCL  // "pinConfig" for I2C SCLA
-
 
 //*****************************************************************************
 //
@@ -636,6 +592,43 @@ void PCA9555_WritePort1(uint8_t data)
     PCA9555_WriteReg(PCA9555_REG_OUT_1, data);
 }
 
+
+//
+// Function to configure I2C A in FIFO mode.
+//
+void initI2C()
+{
+    //
+    // Must put I2C into reset before configuring it
+    //
+    I2C_disableModule(I2CA_BASE);
+
+    //
+    // I2C configuration. Use a 400kHz I2CCLK with a 33% duty cycle.
+    //
+    I2C_initController(I2CA_BASE, DEVICE_SYSCLK_FREQ, 400000, I2C_DUTYCYCLE_33);
+    I2C_setBitCount(I2CA_BASE, I2C_BITCOUNT_8);
+    I2C_setTargetAddress(I2CA_BASE, 0x70);
+    I2C_setEmulationMode(I2CA_BASE, I2C_EMULATION_FREE_RUN);
+
+    //
+    // Enable stop condition and register-access-ready interrupts
+    I2C_enableInterrupt(I2CA_BASE, I2C_INT_STOP_CONDITION |
+                                   I2C_INT_REG_ACCESS_RDY);
+
+    //
+    // FIFO configuration
+    //
+    I2C_enableFIFO(I2CA_BASE);
+    I2C_clearInterruptStatus(I2CA_BASE, I2C_INT_RXFF | I2C_INT_TXFF);
+
+    //
+    // Configuration complete. Enable the module.
+    //
+    I2C_enableModule(I2CA_BASE);
+}
+
+
 uint8_t currentKey = 0;
 uint8_t joystickStatus = 0;
 
@@ -706,16 +699,17 @@ void setup_peripheral(void)
         12, 24);
 
 
+
     //
     // Initialize GPIOs for use as SDA A and SCL A respectively
     //
-    GPIO_setPinConfig(DEVICE_GPIO_CFG_SDAA);
-    GPIO_setPadConfig(DEVICE_GPIO_PIN_SDAA, GPIO_PIN_TYPE_PULLUP);
-    GPIO_setQualificationMode(DEVICE_GPIO_PIN_SDAA, GPIO_QUAL_ASYNC);
+    // GPIO_setPinConfig(DEVICE_GPIO_CFG_SDAA);
+    GPIO_setPadConfig(IRIS_IIC_I2CSDA_GPIO, GPIO_PIN_TYPE_PULLUP);
+    // GPIO_setQualificationMode(DEVICE_GPIO_PIN_SDAA, GPIO_QUAL_ASYNC);
 
-    GPIO_setPinConfig(DEVICE_GPIO_CFG_SCLA);
-    GPIO_setPadConfig(DEVICE_GPIO_PIN_SCLA, GPIO_PIN_TYPE_PULLUP);
-    GPIO_setQualificationMode(DEVICE_GPIO_PIN_SCLA, GPIO_QUAL_ASYNC);
+    // GPIO_setPinConfig(DEVICE_GPIO_CFG_SCLA);
+    GPIO_setPadConfig(IRIS_IIC_I2CSCL_GPIO, GPIO_PIN_TYPE_PULLUP);
+    // GPIO_setQualificationMode(DEVICE_GPIO_PIN_SCLA, GPIO_QUAL_ASYNC);
 
     //
     // Set I2C use, initializing it for FIFO mode
