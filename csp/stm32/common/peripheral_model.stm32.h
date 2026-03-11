@@ -179,7 +179,7 @@ extern "C"
 //     * @param hspi handle of STM32 SPI device
 //     * @param ncs  Chip Select GPIO
 //     */
-//    void gmp_hal_spi_setup(stm32_spi_t *spi, 
+//    void gmp_hal_spi_setup(stm32_spi_t *spi,
 //        SPI_HandleTypeDef *hspi, gpio_model_stm32_t *ncs);
 
 //    /**
@@ -203,27 +203,36 @@ extern "C"
 //     * @param data duplex data interface
 //     */
 //    stat_gt gmp_hal_spi_send_recv(stm32_spi_t *spi, duplex_ift *data);
-size_gt gmp_hal_spi_read_write(spi_halt spi, data_gt *data_in, data_gt *data_out, size_gt length); 
+size_gt gmp_hal_spi_read_write(spi_halt spi, data_gt* data_in, data_gt* data_out, size_gt length);
 
 //#endif // HAL_SPI_MODULE_ENABLED
 
-//// ....................................................................//
-//// IIC
-////
-//// kernel functions:
-//// + Write
-//// + Read
-////
-//#ifdef HAL_I2C_MODULE_ENABLED
+// ....................................................................//
+// IIC
+//
+// kernel functions:
+// + Write
+// + Read
+//
+#ifdef HAL_I2C_MODULE_ENABLED
 
-//    typedef struct _tag_stm32_iic_handle
-//    {
-//        // IIC handle
-//        I2C_HandleTypeDef *iic;
+typedef I2C_HandleTypeDef* stm32_iic_t;
 
-//    } stm32_iic_t;
+#define GMP_PORT_I2C_T stm32_iic_t
 
-//#define GMP_PORT_I2C_T stm32_iic_t
+void gmp_hal_iic_write_cmd(stm32_iic_t* h, addr16_gt dev_addr, uint32_t cmd, size_gt cmd_len);
+
+void gmp_hal_iic_write_reg(stm32_iic_t* h, addr16_gt dev_addr, addr32_gt reg_addr, size_gt addr_len, uint32_t reg_data,
+                           size_gt reg_len);
+
+void gmp_hal_iic_write_mem(stm32_iic_t* h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, data_gt* mem,
+                           size_gt mem_len);
+
+uint32_t gmp_hal_iic_read_reg(stm32_iic_t* h, addr16_gt dev_addr, addr32_gt reg_addr, size_gt addr_len,
+                              size_gt reg_len);
+
+void gmp_hal_iic_read_mem(stm32_iic_t* h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, data_gt* mem,
+                          size_gt mem_len);
 
 //    /**
 //     * @brief GMP IIC peripheral interface

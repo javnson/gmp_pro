@@ -90,6 +90,8 @@ fast_gt gmp_hal_uart_is_busy(uart_halt uart);
 //////////////////////////////////////////////////////////////////////////
 // IIC interface
 
+void gmp_hal_iic_write_cmd(iic_halt* h, addr16_gt dev_addr, uint32_t cmd, size_gt cmd_len);
+
 void gmp_hal_iic_write(iic_halt iic, fast16_gt dev_addr, const data_gt *data, size_gt length);
 
 void gmp_hal_iic_write_async(iic_halt iic, fast16_gt dev_addr, const data_gt *data, size_gt length);
