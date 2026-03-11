@@ -14,6 +14,14 @@ extern "C"
 #endif
 
 /* ========================================================================= */
+/* ==================== CONFIGURATION MACROS =============================== */
+/* ========================================================================= */
+
+#ifndef DAC8563_CFG_TIMEOUT
+#define DAC8563_CFG_TIMEOUT (10U) /**< Default SPI timeout in milliseconds */
+#endif
+
+/* ========================================================================= */
 /* ==================== REGISTERS & COMMANDS =============================== */
 /* ========================================================================= */
 
@@ -64,16 +72,16 @@ typedef struct
  */
 typedef struct
 {
-    spi_halt bus;
-    float lsb_voltage_V; /**< Cached LSB resolution in Volts to accelerate FPU math */
-    float max_voltage_V; /**< Maximum allowed output voltage */
+    spi_device_halt spi_node; /**< Layer 2 Logical SPI Device Handle (Includes CS info) */
+    float lsb_voltage_V;      /**< Cached LSB resolution in Volts to accelerate FPU math */
+    float max_voltage_V;      /**< Maximum allowed output voltage */
 } dac8563_dev_t;
 
 /* ========================================================================= */
 /* ==================== API FUNCTIONS ====================================== */
 /* ========================================================================= */
 
-ec_gt dac8563_init(dac8563_dev_t* dev, spi_halt bus, const dac8563_init_t* init_cfg);
+ec_gt dac8563_init(dac8563_dev_t* dev, spi_device_halt spi_node, const dac8563_init_t* init_cfg);
 
 /**
  * @brief  Raw write function to send a 16-bit code directly to the DAC.

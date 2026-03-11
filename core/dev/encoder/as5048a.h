@@ -34,89 +34,188 @@ ctl_step_pos_encoder(&pos_enc, 0x3FFF - (gmp_l2b16(enc_res) & 0x3FFF));
 
 #include <ctl/component/motor_control/basic/encoder.h>
 
-
 #ifndef _FILE_AS5048A_H_
 #define _FILE_AS5048A_H_
 
-// User should input revolution of motor
-typedef struct _tag_ext_as5048a_encoder_t
+/* ========================================================================= */
+/* ==================== CONFIGURATION MACROS =============================== */
+/* ========================================================================= */
+
+#ifndef AS5048A_CFG_TIMEOUT
+#define AS5048A_CFG_TIMEOUT (5U) /**< @brief Timeout for SPI transfers in ms */
+#endif
+
+/* AS5048A Register Addresses (14-bit) */
+#define AS5048A_REG_NOP           0x0000 /**< @brief No Operation / Dummy Read */
+#define AS5048A_REG_CLEAR_ERROR   0x0001 /**< @brief Clear Error Flag Register */
+#define AS5048A_REG_PROGRAM_CTRL  0x0003 /**< @brief Programming Control Register */
+#define AS5048A_REG_OTP_ZERO_HIGH 0x0015 /**< @brief OTP Zero Position MSB */
+#define AS5048A_REG_OTP_ZERO_LOW  0x0016 /**< @brief OTP Zero Position LSB */
+#define AS5048A_REG_DIAGNOSTICS   0x3FFD /**< @brief Diagnostics and AGC Register */
+#define AS5048A_REG_MAGNITUDE     0x3FFE /**< @brief Magnitude Register */
+#define AS5048A_REG_ANGLE         0x3FFF /**< @brief Angle Register (14-bit) */
+
+#define AS5048A_CMD_READ  (1 << 14) /**< @brief Read Command Bit */
+#define AS5048A_CMD_WRITE (0 << 14) /**< @brief Write Command Bit */
+
+/* ========================================================================= */
+/* ==================== DEVICE STRUCTURE =================================== */
+/* ========================================================================= */
+
+/* ========================================================================= */
+/* ==================== DEVICE STRUCTURE =================================== */
+/* ========================================================================= */
+
+/**
+ * @brief Data structure for the AS5048A magnetic position encoder.
+ * @note  The encif member must remain at the beginning of the struct to allow 
+ * safe pointer casting to rotation_ift*.
+ */
+typedef struct _tag_as5048a_dev_t
 {
-    // output interface, encoder output interface
-    rotation_ift encif;
+    /* --- Standard Control Interface (Must be first!) --- */
+    rotation_ift encif; /**< @brief Standard rotation interface for output. */
 
-    // input raw encoder data
-    uint32_t raw;
+    /* --- Internal Tracking Variables --- */
+    uint32_t raw;           /**< @brief Raw data from the AS5048A (14-bit, 0-16383). */
+    ctrl_gt offset;         /**< @brief Position offset in per-unit (p.u.). */
+    uint16_t pole_pairs;    /**< @brief Number of motor pole pairs. */
+    ctrl_gt last_pos;       /**< @brief Last recorded mechanical position (p.u.) for turn counting. */
+    uint32_t position_base; /**< @brief Base value for a full mechanical revolution (16384 for AS5048A). */
 
-    // offset,
-    // position - offset means the true position
-    ctrl_gt offset;
+    /* --- Hardware Interface & Diagnostics --- */
+    spi_device_halt spi_node; /**< @brief Layer 2 Logical SPI Device Handle. */
+    uint16_t diag_flags;      /**< @brief Cached diagnostics flags (OCF, COF, COMP). */
+    bool err_flag;            /**< @brief SPI communication parity/framing error flag. */
 
-    // pole_pairs
-    // poles*(position - offset) = Electrical position
-    uint16_t pole_pairs;
+} as5048a_dev_t;
 
-    // uint32_t p.u. base value
-    uint32_t position_base;
+/* ========================================================================= */
+/* ==================== API FUNCTIONS ====================================== */
+/* ========================================================================= */
 
-    // record last position to calculate revolutions.
-    ctrl_gt last_pos;
+/**
+ * @brief Initializes the AS5048A encoder structure and checks hardware connection.
+ * @param[out] dev       Pointer to the AS5048A encoder structure.
+ * @param[in]  spi_node  Layer 2 SPI Logical Device handle.
+ * @param[in]  poles     Number of motor pole pairs.
+ * @return ec_gt         Error code (GMP_EC_OK on success).
+ */
+ec_gt as5048a_init(as5048a_dev_t* dev, spi_device_halt spi_node, uint16_t poles);
 
-    // physical interface
-    spi_halt spi;
-    gpio_halt ncs;
+/**
+ * @brief  Updates the diagnostics status from the AS5048A hardware.
+ * @param[in,out] dev    Pointer to the AS5048A encoder structure.
+ * @return ec_gt         Error code (GMP_EC_OK on success).
+ */
+ec_gt as5048a_update_diagnostics(as5048a_dev_t* dev);
 
-} ext_as5048a_encoder_t;
+/**
+ * @brief  Clears the internal error flag register of the AS5048A.
+ * @param[in,out] dev    Pointer to the AS5048A encoder structure.
+ * @return ec_gt         Error code (GMP_EC_OK on success).
+ */
+ec_gt as5048a_clear_error_flag(as5048a_dev_t* dev);
 
-void ctl_init_as5048a_pos_encoder(ext_as5048a_encoder_t *enc, uint16_t poles, spi_halt spi, gpio_halt ncs);
+/* ========================================================================= */
+/* ==================== INLINE CRITICAL CONTROL FUNCTIONS ================== */
+/* ========================================================================= */
 
-// This function may calculate and get angle from encoder source data
-GMP_STATIC_INLINE
-ctrl_gt ctl_step_as5048a_pos_encoder(ext_as5048a_encoder_t *enc)
+/**
+ * @brief Sets the mechanical offset for the encoder from a raw hardware value.
+ * @param[in,out] dev    Pointer to the AS5048A encoder structure.
+ * @param[in]     raw    The raw encoder value (14-bit) that corresponds to electrical zero.
+ */
+GMP_STATIC_INLINE void as5048a_set_offset_raw(as5048a_dev_t* dev, uint32_t raw)
 {
-    uint8_t enc_req[2] = {0xFF, 0xFF};
-    uint16_t enc_res = 0;
-
-    gmp_hal_gpio_write(enc->ncs, 0);
-    gmp_hal_spi_read_write(enc->spi, (data_gt *)enc_req, (data_gt *)&enc_res, 2);
-    gmp_hal_gpio_write(enc->ncs, 1);
-
-    // record raw data
-    enc->raw = 0x3FFF - (gmp_l2b16(enc_res) & 0x3FFF);
-
-    // calculate absolute mechanical position
-    enc->encif.position = ctl_div(enc->raw, enc->position_base);
-
-    // calculate electrical position
-    ctrl_gt elec_pos = enc->pole_pairs * (enc->encif.position + GMP_CONST_1 - enc->offset);
-    ctrl_gt elec_pos_pu = ctrl_mod_1(elec_pos);
-
-    // record electrical position data
-    enc->encif.elec_position = elec_pos_pu;
-
-    // judge if multi turn count event has occurred.
-    if (enc->encif.position - enc->last_pos > GMP_CONST_1_OVER_2)
-    {
-        // position has a negative step
-        enc->encif.revolutions -= 1;
-    }
-    if (enc->last_pos - enc->encif.position > GMP_CONST_1_OVER_2)
-    {
-        // position has a positive step
-        enc->encif.revolutions += 1;
-    }
-
-    // record last position
-    enc->last_pos = enc->encif.position;
-
-    return enc->encif.elec_position;
+    dev->offset = float2ctrl((ctrl_gt)raw / dev->position_base);
 }
 
-// Set offset of encoder
-GMP_STATIC_INLINE
-void ctl_set_as5048a_pos_encoder_offset(ext_as5048a_encoder_t *enc, uint32_t raw)
+/**
+ * @brief Sets the mechanical offset for the encoder directly in per-unit (p.u.).
+ * @param[in,out] dev    Pointer to the AS5048A encoder structure.
+ * @param[in]    _offset The offset value in per-unit (0.0 to 1.0).
+ */
+GMP_STATIC_INLINE void as5048a_set_mech_offset(as5048a_dev_t* dev, ctrl_gt _offset)
 {
-    enc->offset = float2ctrl(raw / enc->position_base);
+    dev->offset = _offset;
 }
 
+/**
+ * @brief Calculates the even parity bit for a 16-bit word.
+ * @note  Required by AS5048A hardware communication protocol.
+ * @param[in] val        The 16-bit value to check.
+ * @return uint16_t      1 if parity is odd (requires padding), 0 if even.
+ */
+GMP_STATIC_INLINE uint16_t as5048a_calc_parity(uint16_t val)
+{
+    val ^= val >> 8;
+    val ^= val >> 4;
+    val ^= val >> 2;
+    val ^= val >> 1;
+    return val & 1;
+}
 
+/**
+ * @brief Processes a new reading from AS5048A and updates the auto-turn revolution count.
+ * @note  This function performs the SPI transfer, checks parity, calculates p.u. 
+ * position, tracks revolution rollovers, and computes the electrical angle.
+ * Designed for high-frequency execution in the FOC control loop.
+ * * @param[in,out] dev    Pointer to the AS5048A encoder structure.
+ * @return ctrl_gt       The calculated electrical position in per-unit (0.0 to 1.0).
+ */
+GMP_STATIC_INLINE ctrl_gt as5048a_step(as5048a_dev_t* dev)
+{
+    /* 1. Assemble the Read Angle Command: (0x3FFF | Read(1<<14)) = 0x7FFF */
+    uint16_t cmd = 0x7FFF;
+    if (as5048a_calc_parity(cmd))
+    {
+        cmd |= 0x8000; /* Pad MSB to ensure Even Parity */
+    }
+
+    /* 2. Execute SPI Transfer (Layer 2 API handles CS automatically) */
+    data_gt tx_buf[2], rx_buf[2];
+    tx_buf[0] = (data_gt)(cmd >> 8);
+    tx_buf[1] = (data_gt)(cmd & 0xFF);
+
+    gmp_hal_spi_dev_transfer(dev->spi_node, tx_buf, rx_buf, 2, AS5048A_CFG_TIMEOUT);
+
+    uint16_t raw_res = ((uint16_t)rx_buf[0] << 8) | rx_buf[1];
+
+    /* 3. Hardware Error & Parity Verification */
+    dev->err_flag = false;
+    if (as5048a_calc_parity(raw_res & 0x7FFF) != (raw_res >> 15))
+    {
+        dev->err_flag = true; /* Parity Mismatch */
+    }
+    if (raw_res & 0x4000)
+    {
+        dev->err_flag = true; /* AS5048A Internal Error Flag (Bit 14) */
+    }
+
+    /* 4. Extract Raw Data (Lower 14 bits) */
+    dev->raw = (uint32_t)(raw_res & 0x3FFF);
+
+    /* 5. Calculate Mechanical Position (p.u.) */
+    dev->encif.position = ctl_div(dev->raw, dev->position_base);
+
+    /* 6. Calculate Electrical Position (p.u.) */
+    ctrl_gt elec_pos = (dev->encif.position + CTL_CTRL_CONST_1 - dev->offset) * dev->pole_pairs;
+    dev->encif.elec_position = ctrl_mod_1(elec_pos);
+
+    /* 7. Auto-Turn Counting Logic (Detect Rollovers) */
+    if (dev->encif.position - dev->last_pos > CTL_CTRL_CONST_1_OVER_2)
+    {
+        dev->encif.revolutions -= 1; /* Negative direction rollover */
+    }
+    if (dev->last_pos - dev->encif.position > CTL_CTRL_CONST_1_OVER_2)
+    {
+        dev->encif.revolutions += 1; /* Positive direction rollover */
+    }
+
+    /* 8. Record position for next iteration */
+    dev->last_pos = dev->encif.position;
+
+    return dev->encif.elec_position;
+}
 #endif // _FILE_AS5048A_H_

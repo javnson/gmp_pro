@@ -13,8 +13,10 @@ extern "C"
 {
 #endif
 
-/* Assume a generic SPI HAL header exists with similar philosophies to IIC */
-#include "gmp_hal_spi.h"
+
+#ifndef AD9833_CFG_TIMEOUT
+#define AD9833_CFG_TIMEOUT (10U) /**< Default SPI timeout in milliseconds */
+#endif
 
 /* ========================================================================= */
 /* ==================== CONFIGURATION MACROS =============================== */
@@ -98,7 +100,7 @@ typedef union {
  */
 typedef struct
 {
-    spi_halt bus;                  /**< SPI Hardware Handle (abstracted) */
+    spi_device_halt spi_node;      /**< Layer 2 Logical SPI Device Handle (Includes CS info) */
     float mclk_hz;                 /**< Master Clock frequency in Hz (e.g., 25000000.0f) */
     ad9833_ctrl_reg_t shadow_ctrl; /**< Cached control register for read-modify-write */
 } ad9833_dev_t;
@@ -110,7 +112,7 @@ typedef struct
 /**
  * @brief Initializes the AD9833 (puts it in reset state temporarily).
  */
-ec_gt ad9833_init(ad9833_dev_t* dev, spi_halt bus, float mclk_hz);
+ec_gt ad9833_init(ad9833_dev_t* dev, spi_device_halt spi_node, float mclk_hz);
 
 /**
  * @brief Sets the frequency of a specified register.

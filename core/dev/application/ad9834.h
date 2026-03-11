@@ -12,6 +12,9 @@ extern "C"
 {
 #endif
 
+#ifndef AD9834_CFG_TIMEOUT
+#define AD9834_CFG_TIMEOUT (10U) /**< Default SPI timeout in milliseconds */
+#endif
 
 /* ========================================================================= */
 /* ==================== CONFIGURATION MACROS =============================== */
@@ -102,7 +105,7 @@ typedef union {
  */
 typedef struct
 {
-    spi_halt bus;
+    spi_device_halt spi_node;      /**< Layer 2 Logical SPI Device Handle (Includes CS info) */
     float mclk_hz;                 /**< Master Clock frequency in Hz (Max 75MHz) */
     ad9834_ctrl_reg_t shadow_ctrl; /**< Cached control register for read-modify-write */
 } ad9834_dev_t;
@@ -111,7 +114,7 @@ typedef struct
 /* ==================== API FUNCTIONS ====================================== */
 /* ========================================================================= */
 
-ec_gt ad9834_init(ad9834_dev_t* dev, spi_halt bus, float mclk_hz);
+ec_gt ad9834_init(ad9834_dev_t* dev, spi_device_halt spi_node, float mclk_hz);
 
 ec_gt ad9834_set_frequency(ad9834_dev_t* dev, ad9834_reg_sel_et reg_sel, float freq_hz);
 ec_gt ad9834_set_phase(ad9834_dev_t* dev, ad9834_reg_sel_et reg_sel, float phase_deg);
@@ -150,7 +153,6 @@ ad9834_set_reset(&my_dds, false);
 // -------------------------------------------------------------
 
 */
-
 
 #ifdef __cplusplus
 }
