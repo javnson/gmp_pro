@@ -150,6 +150,43 @@ ec_gt ina219_read_shunt_voltage(ina219_dev_t* dev, float* voltage_mV_ret);
 ec_gt ina219_read_current(ina219_dev_t* dev, float* current_mA_ret);
 ec_gt ina219_read_power(ina219_dev_t* dev, float* power_mW_ret);
 
+
+/*
+example:
+
+ina219_dev_t my_power_monitor;
+ina219_config_reg_t ina_cfg = {0};
+
+//  1. 配置采样参数
+ina_cfg.bits.brng = INA219_BRNG_16V;      // 总线电压 < 16V
+ina_cfg.bits.pg = INA219_PGA_8_320MV;     // 分流器最大压降 320mV
+ina_cfg.bits.badc = INA219_ADC_12BIT_16S; // 总线电压 16 次平滑平均
+ina_cfg.bits.sadc = INA219_ADC_12BIT_16S; // 分流电压 16 次平滑平均
+ina_cfg.bits.mode = INA219_MODE_SHUNT_BUS_CONT;
+
+// 假设您的电路设计： A0 接 GND, A1 接 VS (3.3V) 
+addr16_gt my_addr = INA219_CALC_ADDR(INA219_PIN_VS, INA219_PIN_GND); // 自动算出 0x44
+
+// 2. 初始化寄存器 
+ina219_init(&my_power_monitor, I2CA_BASE, my_addr, ina_cfg);
+
+// 3. 校准 (非常关键)
+// 假设分流电阻 = 0.1 欧姆，最高测 3.2A
+// Current_LSB = 0.1 mA (0.0001 A)
+// Cal_Val = trunc(0.04096 / (Current_LSB * R_shunt)) 
+// = trunc(0.04096 / (0.0001 * 0.1)) = 4096 (即 0x1000)
+//
+ina219_calibrate(&my_power_monitor, 0x1000, 0.1f);
+
+// 4. 读取所有数据 
+float bus_V, shunt_mV, current_mA, power_mW;
+ina219_read_bus_voltage(&my_power_monitor, &bus_V);
+ina219_read_shunt_voltage(&my_power_monitor, &shunt_mV);
+ina219_read_current(&my_power_monitor, &current_mA);
+ina219_read_power(&my_power_monitor, &power_mW);
+
+*/
+
 #ifdef __cplusplus
 }
 #endif
