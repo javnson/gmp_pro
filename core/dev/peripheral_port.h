@@ -90,29 +90,73 @@ fast_gt gmp_hal_uart_is_busy(uart_halt uart);
 //////////////////////////////////////////////////////////////////////////
 // IIC interface
 
-void gmp_hal_iic_write_cmd(iic_halt* h, addr16_gt dev_addr, uint32_t cmd, size_gt cmd_len);
+/**
+ * @brief   Write a command to the I2C device without register address.
+ * * @param[in] h         I2C hardware handle.
+ * @param[in] dev_addr  7-bit right-aligned device address.
+ * @param[in] cmd       The command value to be sent.
+ * @param[in] cmd_len   Length of the command in bytes.
+ * @param[in] timeout   Maximum timeout in milliseconds.
+ * * @return  ec_gt       Error code (GMP_EC_OK on success).
+ */
+ec_gt gmp_hal_iic_write_cmd(iic_halt h, addr16_gt dev_addr, uint32_t cmd, size_gt cmd_len, time_gt timeout);
 
-void gmp_hal_iic_write(iic_halt iic, fast16_gt dev_addr, const data_gt *data, size_gt length);
+/**
+ * @brief   Write a single value to a specific register of the I2C device.
+ * * @param[in] h         I2C hardware handle.
+ * @param[in] dev_addr  7-bit right-aligned device address.
+ * @param[in] reg_addr  Register address.
+ * @param[in] addr_len  Length of the register address in bytes (e.g., 1 or 2).
+ * @param[in] reg_data  Data to write into the register.
+ * @param[in] reg_len   Length of the data in bytes.
+ * @param[in] timeout   Maximum timeout in milliseconds.
+ * * @return  ec_gt       Error code.
+ */
+ec_gt gmp_hal_iic_write_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, size_gt addr_len, uint32_t reg_data,
+                            size_gt reg_len, time_gt timeout);
 
-void gmp_hal_iic_write_async(iic_halt iic, fast16_gt dev_addr, const data_gt *data, size_gt length);
+/**
+ * @brief   Write a continuous memory block to the I2C device.
+ * * @param[in] h         I2C hardware handle.
+ * @param[in] dev_addr  7-bit right-aligned device address.
+ * @param[in] mem_addr  Starting memory/register address.
+ * @param[in] addr_len  Length of the memory address in bytes.
+ * @param[in] mem       Pointer to the data buffer.
+ * @param[in] mem_len   Number of data_gt elements to write.
+ * @param[in] timeout   Maximum timeout in milliseconds.
+ * * @return  ec_gt       Error code.
+ */
+ec_gt gmp_hal_iic_write_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, const data_gt* mem,
+                            size_gt mem_len, time_gt timeout);
 
-void gmp_hal_iic_write_mem(iic_halt iic, fast16_gt dev_addr, fast32_gt mem_addr, const data_gt *data, size_gt length);
+/**
+ * @brief   Read a single value from a specific register of the I2C device.
+ * * @param[in]  h            I2C hardware handle.
+ * @param[in]  dev_addr     7-bit right-aligned device address.
+ * @param[in]  reg_addr     Register address.
+ * @param[in]  addr_len     Length of the register address in bytes.
+ * @param[out] reg_data_ret Pointer to store the read data.
+ * @param[in]  reg_len      Length of the data to read in bytes.
+ * @param[in]  timeout      Maximum timeout in milliseconds.
+ * * @return  ec_gt           Error code.
+ */
+ec_gt gmp_hal_iic_read_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, size_gt addr_len, uint32_t* reg_data_ret,
+                           size_gt reg_len, time_gt timeout);
 
-void gmp_hal_iic_write_mem_async(iic_halt iic, fast16_gt dev_addr, fast32_gt mem_addr, fast_gt mem_length,
-                                 const data_gt *data, size_gt length);
+/**
+ * @brief   Read a continuous memory block from the I2C device.
+ * * @param[in]  h         I2C hardware handle.
+ * @param[in]  dev_addr  7-bit right-aligned device address.
+ * @param[in]  mem_addr  Starting memory/register address.
+ * @param[in]  addr_len  Length of the memory address in bytes.
+ * @param[out] mem       Pointer to the data buffer to store results.
+ * @param[in]  mem_len   Number of data_gt elements to read.
+ * @param[in]  timeout   Maximum timeout in milliseconds.
+ * * @return  ec_gt        Error code.
+ */
+ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, data_gt* mem,
+                           size_gt mem_len, time_gt timeout);
 
-size_gt gmp_hal_iic_read(iic_halt iic, fast16_gt dev_addr, data_gt *data, size_gt length);
-
-// size_gt gmp_hal_iic_read_async(iic_halt iic, fast16_gt dev_addr, data_gt *data, size_gt length);
-
-size_gt gmp_hal_iic_read_mem(iic_halt iic, fast16_gt dev_addr, fast32_gt mem_addr, fast_gt mem_length, data_gt *data,
-                             size_gt length);
-
-// ssize_gt gmp_hal_iic_read_mem_async(iic_halt iic, fast16_gt dev_addr, fast32_gt mem_addr, fast_gt mem_length,
-//                                    data_gt *data, size_gt length);
-
-// wait till transmit/receive complete
-fast_gt gmp_hal_iic_is_busy(iic_halt iic);
 
 //////////////////////////////////////////////////////////////////////////
 // CAN interface
