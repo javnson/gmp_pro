@@ -137,6 +137,43 @@ ec_gt ds1337_enable_alarms(ds1337_dev_t* dev, bool enable_a1, bool enable_a2);
 ec_gt ds1337_get_status(ds1337_dev_t* dev, uint8_t* status_ret);
 ec_gt ds1337_clear_status(ds1337_dev_t* dev, uint8_t status_mask_to_clear);
 
+
+/* example
+ds1337_dev_t my_rtc;
+ds1337_init_t rtc_cfg = {
+    .int_mode = DS1337_INTCN_ALARM,   // 将外部中断引脚配置为响应闹钟
+    .enable_oscillator = true         // 启动晶振开始计时
+};
+
+// 1. 初始化
+ds1337_init(&my_rtc, I2CA_BASE, &rtc_cfg);
+
+// 2. 设置当前时间 (比如: 2026年3月11日 04:56:00, 星期三)
+ds1337_time_t current_time = {
+    .year = 26, .month = 3, .date = 11, .day = 3, 
+    .hours = 4, .minutes = 56, .seconds = 0
+};
+ds1337_set_time(&my_rtc, &current_time);
+
+// 3. 设置闹钟1：每天的 08:30:00 准时触发
+ds1337_time_t alarm_time = { .hours = 8, .minutes = 30, .seconds = 0 };
+ds1337_set_alarm1(&my_rtc, &alarm_time, DS1337_A1_MATCH_HR_MIN_SEC);
+
+// 4. 开启闹钟中断输出
+ds1337_enable_alarms(&my_rtc, true, false);
+
+// 5. 在主循环或中断中检测：
+uint8_t status = 0;
+ds1337_get_status(&my_rtc, &status);
+if (status & DS1337_STATUS_A1F) {
+    // 闹钟触发了！执行相关操作...
+    
+    // 别忘了清除标志位，否则 INT 引脚会一直保持低电平
+    ds1337_clear_status(&my_rtc, DS1337_STATUS_A1F); 
+}
+
+*/
+
 #ifdef __cplusplus
 }
 #endif
