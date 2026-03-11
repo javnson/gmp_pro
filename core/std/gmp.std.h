@@ -119,6 +119,10 @@ extern "C"
 //
 #include <core/std/cfg/csp.cfg.h>
 
+// GMP Peripheral port function
+//
+#include <core/dev/peripheral_port.h>
+
 // ....................................................................//
 // controller
 #if defined SPECIFY_ENABLE_GMP_CTL

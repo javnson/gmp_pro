@@ -40,7 +40,7 @@
 // MM module unable to find the specified memory block
 #define GMP_EC_MM_NO_SPECIFIED_BLOCK ((GMP_EC_ERRO_BEGIN + 10))
 // Timeout
-#define GMP_EC_RESPONSE_TIMEOUT ((GMP_EC_WARN_BEGIN + 11))
+#define GMP_EC_TIMEOUT ((GMP_EC_WARN_BEGIN + 11))
 // data struct overflow
 #define GMP_EC_OVERFLOW ((GMP_EC_WARN_BEGIN + 12))
 // This function is disabled
@@ -63,3 +63,7 @@
 #define GMP_EC_WF_NO_RESET ((GMP_EC_ERRO_BEGIN + 21))
 // Operation was refused
 #define GMP_EC_REFUSED ((GMP_EC_ERRO_BEGIN + 22))
+// I2C Communication NACK
+#define GMP_EC_NACK ((GMP_EC_ERRO_BEGIN + 23))
+
+

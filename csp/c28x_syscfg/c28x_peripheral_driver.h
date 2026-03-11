@@ -101,36 +101,6 @@ fast_gt gmp_hal_uart_is_busy(uart_halt uart)
     return SCI_isTransmitterBusy(uart);
 }
 
-//////////////////////////////////////////////////////////////////////////
-// IIC interface
-GMP_STATIC_INLINE
-void gmp_hal_iic_write(iic_halt iic, fast16_gt dev_addr, const data_gt *data, size_gt length)
-{
-}
-
-void gmp_hal_iic_write_async(iic_halt iic, fast16_gt dev_addr, const data_gt *data, size_gt length);
-
-void gmp_hal_iic_write_mem(iic_halt iic, fast16_gt dev_addr, fast32_gt mem_addr, const data_gt *data, size_gt length);
-
-void gmp_hal_iic_write_mem_async(iic_halt iic, fast16_gt dev_addr, fast32_gt mem_addr, fast_gt mem_length,
-                                 const data_gt *data, size_gt length);
-
-size_gt gmp_hal_iic_read(iic_halt iic, fast16_gt dev_addr, data_gt *data, size_gt length);
-
-// size_gt gmp_hal_iic_read_async(iic_halt iic, fast16_gt dev_addr, data_gt *data, size_gt length);
-
-size_gt gmp_hal_iic_read_mem(iic_halt iic, fast16_gt dev_addr, fast32_gt mem_addr, fast_gt mem_length, data_gt *data,
-                             size_gt length);
-
-// ssize_gt gmp_hal_iic_read_mem_async(iic_halt iic, fast16_gt dev_addr, fast32_gt mem_addr, fast_gt mem_length,
-//                                    data_gt *data, size_gt length);
-
-// wait till transmit/receive complete
-GMP_STATIC_INLINE
-fast_gt gmp_hal_iic_is_busy(iic_halt iic)
-{
-    return I2C_isBusBusy(iic);
-}
 
 #ifdef __cplusplus
 }

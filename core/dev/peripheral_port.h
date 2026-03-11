@@ -34,23 +34,23 @@ extern "C"
 // Async Port
 
 // Write data to the ring buffer
-GMP_STATIC_INLINE
-void gmp_hal_buffer_write(ringbuf_t *ring, const data_gt *data, size_gt length)
-{
-    ringbuf_put_array(ring, data, length);
-}
-
-// Read data from the ring buffer
-GMP_STATIC_INLINE
-size_gt gmp_hal_buffer_read(ringbuf_t *ring, data_gt *data, size_gt length)
-{
-    size_gt max_length = ringbuf_get_valid_size(ring);
-    if (max_length == 0)
-        return 0;
-
-    ringbuf_get_array(ring, data, max_length);
-    return max_length
-}
+//GMP_STATIC_INLINE
+//void gmp_hal_buffer_write(ringbuf_t *ring, const data_gt *data, size_gt length)
+//{
+//    ringbuf_put_array(ring, data, length);
+//}
+//
+//// Read data from the ring buffer
+//GMP_STATIC_INLINE
+//size_gt gmp_hal_buffer_read(ringbuf_t *ring, data_gt *data, size_gt length)
+//{
+//    size_gt max_length = ringbuf_get_valid_size(ring);
+//    if (max_length == 0)
+//        return 0;
+//
+//    ringbuf_get_array(ring, data, max_length);
+//    return max_length
+//}
 
 // General Peripheral Prototype functions
 // These functions may implement by CSP.

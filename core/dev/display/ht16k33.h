@@ -1,19 +1,56 @@
 /**
  * @file    ht16k33.h
- * @brief   Driver layer for HT16K33 LED matrix / Key scan controller.
+ * @brief   High-performance, Hardware-agnostic driver for HT16K33.
  */
 
- #include <gmp_core.h>
-
-#ifndef _GMP_DEV_HT16K33_H
-#define _GMP_DEV_HT16K33_H
+#ifndef HT16K33_H
+#define HT16K33_H
 
 #ifdef __cplusplus
 extern "C"
 {
-#endif // __cplusplus
+#endif
 
-/* Registers Definitions (Ref: Linux ht16k33.c) */
+/* ========================================================================= */
+/* ==================== CONFIGURATION MACROS =============================== */
+/* ========================================================================= */
+
+/** * @brief Default I2C timeout in milliseconds. 
+ * Note: 16 bytes at 100kHz takes ~1.8ms. 5ms is a safe default.
+ */
+#ifndef HT16K33_CFG_TIMEOUT
+#define HT16K33_CFG_TIMEOUT (5U)
+#endif
+
+/** * @brief Number of bytes used for display RAM.
+ * Reduce this value if your hardware uses fewer digits to save I2C bandwidth.
+ * Maximum: 16 (for 16x8 matrix).
+ */
+#ifndef HT16K33_CFG_DISP_RAM_SIZE
+#define HT16K33_CFG_DISP_RAM_SIZE (16U)
+#endif
+
+/** * @brief Number of bytes used for key scanning RAM.
+ * Reduce this value if your hardware uses fewer key rows.
+ * Maximum: 6 (for 13x3 matrix, KS0~KS2).
+ */
+#ifndef HT16K33_CFG_KEY_RAM_SIZE
+#define HT16K33_CFG_KEY_RAM_SIZE (6U)
+#endif
+
+/* Compile-time bounds checking for configurations */
+#if (HT16K33_CFG_DISP_RAM_SIZE == 0) || (HT16K33_CFG_DISP_RAM_SIZE > 16)
+#error "HT16K33_CFG_DISP_RAM_SIZE must be between 1 and 16."
+#endif
+
+#if (HT16K33_CFG_KEY_RAM_SIZE == 0) || (HT16K33_CFG_KEY_RAM_SIZE > 6)
+#error "HT16K33_CFG_KEY_RAM_SIZE must be between 1 and 6."
+#endif
+
+/* ========================================================================= */
+/* ==================== REGISTERS & COMMANDS =============================== */
+/* ========================================================================= */
+
 #define HT16K33_REG_SYSTEM_SETUP  0x20
 #define HT16K33_REG_DISPLAY_SETUP 0x80
 #define HT16K33_REG_ROWINT_SET    0xA0
@@ -23,9 +60,12 @@ extern "C"
 #define HT16K33_CMD_OSC_ON     (HT16K33_REG_SYSTEM_SETUP | 0x01)
 #define HT16K33_CMD_DISPLAY_ON (HT16K33_REG_DISPLAY_SETUP | 0x01)
 
+/* ========================================================================= */
+/* ==================== DATA STRUCTURES ==================================== */
+/* ========================================================================= */
+
 /**
  * @brief Initialization parameters for HT16K33.
- * Used only during the initialization phase.
  */
 typedef struct
 {
@@ -37,56 +77,27 @@ typedef struct
 
 /**
  * @brief Runtime Device Object for HT16K33.
+ * Automatically scaled down by the CFG_DISP_RAM_SIZE macro to save memory.
  */
 typedef struct
 {
-    iic_halt bus;            /**< I2C hardware handle */
-    addr16_gt dev_addr;      /**< 7-bit device address */
-    data_gt display_ram[16]; /**< Local cache for display memory (16x8 matrix) */
-    bool is_dirty;           /**< Flag indicating if display_ram was modified */
+    iic_halt bus;
+    addr16_gt dev_addr;
+    data_gt display_ram[HT16K33_CFG_DISP_RAM_SIZE];
+    bool is_dirty;
 } ht16k33_dev_t;
 
-/**
- * @brief   Initialize the HT16K33 device.
- * Probes the device, starts the oscillator, and applies init settings.
- * * @param[in,out] dev       Pointer to the device object.
- * @param[in]     bus       I2C hardware handle to attach.
- * @param[in]     dev_addr  7-bit device address.
- * @param[in]     init_cfg  Pointer to the initialization parameters.
- * @param[in]     timeout   Timeout for I2C operations.
- * * @return  ec_gt           Error code.
- */
-ec_gt ht16k33_init(ht16k33_dev_t* dev, iic_halt bus, addr16_gt dev_addr, const ht16k33_init_t* init_cfg,
-                   time_gt timeout);
+/* ========================================================================= */
+/* ==================== API FUNCTIONS ====================================== */
+/* ========================================================================= */
 
-/**
- * @brief   Flush the local display RAM to the HT16K33 if is_dirty flag is set.
- * Automatically clears the is_dirty flag upon success.
- * * @param[in,out] dev       Pointer to the device object.
- * @param[in]     timeout   Timeout for I2C operations.
- * * @return  ec_gt           Error code.
- */
-ec_gt ht16k33_update_display(ht16k33_dev_t* dev, time_gt timeout);
-
-/**
- * @brief   Scan and return the current pressed key ID.
- * * @param[in]  dev          Pointer to the device object.
- * @param[out] key_id_ret   Pointer to store the pressed key ID (0 if no key).
- * @param[in]  timeout      Timeout for I2C operations.
- * * @return  ec_gt           Error code.
- */
-ec_gt ht16k33_read_keys(ht16k33_dev_t* dev, uint8_t* key_id_ret, time_gt timeout);
-
-/**
- * @brief   Perform a full-screen display test (Turns on all LEDs).
- * * @param[in,out] dev       Pointer to the device object.
- * @param[in]     timeout   Timeout for I2C operations.
- * * @return  ec_gt           Error code.
- */
-ec_gt ht16k33_test_all_leds_on(ht16k33_dev_t* dev, time_gt timeout);
+ec_gt ht16k33_init(ht16k33_dev_t* dev, iic_halt bus, addr16_gt dev_addr, const ht16k33_init_t* init_cfg);
+ec_gt ht16k33_update_display(ht16k33_dev_t* dev);
+ec_gt ht16k33_read_keys(ht16k33_dev_t* dev, uint8_t* key_id_ret);
+ec_gt ht16k33_test_all_leds_on(ht16k33_dev_t* dev);
 
 #ifdef __cplusplus
 }
-#endif // __cplusplus
+#endif
 
-#endif /* _GMP_DEV_HT16K33_H */
+#endif /* HT16K33_H */
