@@ -20,51 +20,16 @@ extern "C"
 #ifdef HAL_GPIO_MODULE_ENABLED
 
 
-
-    /**
-     * @brief Setup GPIO port and pin.
-     * @param hgpio handle of GPIO
-     * @param gpio_port GPIO port of STM32
-     * @param gpio_pin GPIO pin of STM32    
-     */
-    void gmp_hal_gpio_init(gpio_model_stm32_t *hgpio, GPIO_TypeDef *gpio_port, uint32_t gpio_pin);
-
-    /**
-     * @brief Set mode of gpio port, mode 0: input, mode 1: output.
-     * @param hgpio handle of gpio. Type of GPIO handle is given by CSP.
-     * @param mode target mode of GPIO. mode 0 is input mode, 1 is output mode.
-     */
-    ec_gt gmp_hal_gpio_set_mode(gpio_model_stm32_t *hgpio, fast_gt mode);
-
-    /**
-     * @brief Write GPIO port. This port must be an output port.
-     * Or, undefined things may happen.
-     * @param hgpio handle of GPIO
-     * @param level target electrical level of GPIO port.
-     */
-    ec_gt gmp_hal_gpio_write(gpio_model_stm32_t *hgpio, fast_gt level);
-
-    /**
-     * @brief Read GPIO port, This port should be an input port.
-     * Or the return value is undefined.
-     * @param hgpio handle of GPIO
-     * @return fast_gt return GPIO electrical level
-     */
-    fast_gt gmp_hal_gpio_read(gpio_model_stm32_t *hgpio);
-
-    /**
-     * @brief Set GPIO electrical level to high.
-     * if GPIO mode is not output mode, the result is undefined.
-     * @param hgpio handle of GPIO
-     */
-    ec_gt gmp_hal_gpio_set(gpio_model_stm32_t *hgpio);
-
-    /**
-     * @brief Set GPIO electrical level to low.
-     * if GPIO mode is not output mode, the result is undefined.
-     * @param hgpio handle of GPIO
-     */
-    ec_gt gmp_hal_gpio_clear(gpio_model_stm32_t *hgpio);
+/**
+ * @brief STM32 specific GPIO handle structure.
+ * @note  Users should instantiate this structure in their board support package 
+ * (BSP) and pass its pointer as the gpio_halt handle to the GMP layer.
+ */
+typedef struct
+{
+    GPIO_TypeDef* port; /**< STM32 GPIO Port (e.g., GPIOA, GPIOB) */
+    uint16_t pin;       /**< STM32 GPIO Pin (e.g., GPIO_PIN_4) */
+} gmp_gpio_stm32_t;
 
 #endif // HAL_GPIO_MODULE_ENABLED
 
