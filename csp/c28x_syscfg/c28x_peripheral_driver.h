@@ -14,57 +14,57 @@ extern uart_halt debug_uart;
 //////////////////////////////////////////////////////////////////////////
 // SPI interface
 
-// This is a synchronize function
-GMP_STATIC_INLINE
-void gmp_hal_spi_write(spi_halt spi, const data_gt *data, size_gt length)
-{
-    size_gt i;
-
-    for (i = 0; i < length; ++i)
-        SPI_writeDataBlockingFIFO(spi, data[i]);
-}
-
-// This is a asynchronize function
-// GMP_STATIC_INLINE
-// void gmp_hal_spi_write_async(spi_halt spi, const data_gt *data, size_gt length)
+//// This is a synchronize function
+//GMP_STATIC_INLINE
+//void gmp_hal_spi_write(spi_halt spi, const data_gt *data, size_gt length)
 //{
-//    for (size_gt i = 0; i < length; ++i)
+//    size_gt i;
+//
+//    for (i = 0; i < length; ++i)
 //        SPI_writeDataBlockingFIFO(spi, data[i]);
 //}
-
-// This is a synchronize function
-GMP_STATIC_INLINE
-size_gt gmp_hal_spi_read(spi_halt spi, data_gt *data, size_gt length)
-{
-    size_gt i;
-
-    for (i = 0; i < length; ++i)
-        data[i] = SPI_readDataBlockingFIFO(spi);
-
-    return length;
-}
-
-GMP_STATIC_INLINE
-size_gt gmp_hal_spi_read_write(spi_halt spi, data_gt *data_in, data_gt *data_out, size_gt length)
-{
-    size_gt i;
-    for (i = 0; i < length; ++i)
-    {
-        SPI_writeDataBlockingFIFO(spi, data_in[i]);
-        data_out[i] = SPI_readDataBlockingFIFO(spi);
-    }
-    return length;
-}
-
-// This is a asynchronize function
-// size_gt gmp_hal_spi_read_async(spi_halt spi, data_gt *data, size_gt length);
-
-// Wait till transmit/receive complete
-GMP_STATIC_INLINE
-fast_gt gmp_hal_spi_is_busy(spi_halt spi)
-{
-    return SPI_isBusy(spi);
-}
+//
+//// This is a asynchronize function
+//// GMP_STATIC_INLINE
+//// void gmp_hal_spi_write_async(spi_halt spi, const data_gt *data, size_gt length)
+////{
+////    for (size_gt i = 0; i < length; ++i)
+////        SPI_writeDataBlockingFIFO(spi, data[i]);
+////}
+//
+//// This is a synchronize function
+//GMP_STATIC_INLINE
+//size_gt gmp_hal_spi_read(spi_halt spi, data_gt *data, size_gt length)
+//{
+//    size_gt i;
+//
+//    for (i = 0; i < length; ++i)
+//        data[i] = SPI_readDataBlockingFIFO(spi);
+//
+//    return length;
+//}
+//
+//GMP_STATIC_INLINE
+//size_gt gmp_hal_spi_read_write(spi_halt spi, data_gt *data_in, data_gt *data_out, size_gt length)
+//{
+//    size_gt i;
+//    for (i = 0; i < length; ++i)
+//    {
+//        SPI_writeDataBlockingFIFO(spi, data_in[i]);
+//        data_out[i] = SPI_readDataBlockingFIFO(spi);
+//    }
+//    return length;
+//}
+//
+//// This is a asynchronize function
+//// size_gt gmp_hal_spi_read_async(spi_halt spi, data_gt *data, size_gt length);
+//
+//// Wait till transmit/receive complete
+//GMP_STATIC_INLINE
+//fast_gt gmp_hal_spi_is_busy(spi_halt spi)
+//{
+//    return SPI_isBusy(spi);
+//}
 
 //////////////////////////////////////////////////////////////////////////
 // UART interface

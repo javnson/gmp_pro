@@ -3,6 +3,89 @@
 #include <gmp_core.h>
 
 /**
+ * @brief   Physical GPIO implementation for TI C2000 DSP family.
+ * @note    This file strictly utilizes the TI C2000ware DriverLib.
+ * The opaque gpio_halt is directly cast to a 32-bit pin number.
+ * WARNING: Do not use GPIO0 if your higher-layer logic treats 
+ * a NULL (0) handle as an "unassigned" or "hardware-managed" pin.
+ */
+
+/* ========================================================================= */
+/* ==================== PRIVATE MACROS ===================================== */
+/* ========================================================================= */
+
+/**
+ * @brief Safely cast the opaque handle back to a C2000 32-bit pin number.
+ * @note  uintptr_t is used to safely transition from a pointer to an integer 
+ * without generating compiler warnings about size differences.
+ */
+#define GET_C2000_PIN(hgpio) ((uint32_t)(uintptr_t)(hgpio))
+
+/* ========================================================================= */
+/* ==================== PUBLIC API IMPLEMENTATION ========================== */
+/* ========================================================================= */
+
+ec_gt gmp_hal_gpio_set_dir(gpio_halt hgpio, gpio_dir_et dir)
+{
+    /* Treat NULL handle safely if it's strictly considered invalid */
+    if (hgpio == NULL)
+    {
+        /* Return OK or Error based on whether GPIO0 is permissible in your system design */
+        return GMP_EC_GENERAL_ERROR;
+    }
+
+    uint32_t pin = GET_C2000_PIN(hgpio);
+
+    if (dir == GMP_HAL_GPIO_DIR_OUT)
+    {
+        /* Configure pin as push-pull output */
+        GPIO_setDirectionMode(pin, GPIO_DIR_MODE_OUT);
+
+        /* Optional but recommended: Set qualification to async for outputs */
+        GPIO_setQualificationMode(pin, GPIO_QUAL_ASYNC);
+    }
+    else
+    {
+        /* Configure pin as input */
+        GPIO_setDirectionMode(pin, GPIO_DIR_MODE_IN);
+    }
+
+    return GMP_EC_OK;
+}
+
+ec_gt gmp_hal_gpio_write(gpio_halt hgpio, fast_gt level)
+{
+    if (hgpio == NULL)
+        return GMP_EC_GENERAL_ERROR;
+
+    uint32_t pin = GET_C2000_PIN(hgpio);
+
+    /* C2000 DriverLib inherently handles the Set/Clear registers safely */
+    if (level == GMP_HAL_GPIO_HIGH)
+    {
+        GPIO_writePin(pin, 1);
+    }
+    else
+    {
+        GPIO_writePin(pin, 0);
+    }
+
+    return GMP_EC_OK;
+}
+
+fast_gt gmp_hal_gpio_read(gpio_halt hgpio)
+{
+    /* If handle is invalid, safely return 0 (LOW) */
+    if (hgpio == NULL)
+        return 0;
+
+    uint32_t pin = GET_C2000_PIN(hgpio);
+
+    /* GPIO_readPin returns 1 if HIGH, 0 if LOW */
+    return (fast_gt)GPIO_readPin(pin);
+}
+
+/**
  * @brief   Helper macro for timeout checking to keep code clean and prevent hardware lockups.
  * @note    It utilizes the overflow-safe time checking mechanism from gmp_base.
  * * @param   start_time  The recorded start time tick.
@@ -330,6 +413,143 @@ ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, s
     while (I2C_getStopConditionStatus(h))
     {
         CHECK_TIMEOUT(start, timeout);
+    }
+
+    return GMP_EC_OK;
+}
+
+/**
+ * @brief   Physical SPI Bus (Layer 1) implementation for TI C2000 DSP family.
+ * @note    This file strictly utilizes the TI C2000ware DriverLib. 
+ * It assumes the SPI peripheral is configured for 8-bit character length.
+ */
+
+/* ========================================================================= */
+/* ==================== PRIVATE MACROS ===================================== */
+/* ========================================================================= */
+
+/** * @brief Helper to safely extract the physical SPI base address (e.g., SPIA_BASE) 
+ * from the abstract Layer 1 bus handle.
+ */
+#define GET_SPI_BASE(hspi) ((uint32_t)(hspi))
+
+/* ========================================================================= */
+/* ==================== LAYER 1: PHYSICAL BUS APIs ========================= */
+/* ========================================================================= */
+
+ec_gt gmp_hal_spi_bus_write(spi_halt hspi, const data_gt* tx_buf, size_gt len, time_gt timeout)
+{
+    if ((hspi == NULL) || (tx_buf == NULL))
+        return GMP_EC_GENERAL_ERROR;
+
+    uint32_t base = GET_SPI_BASE(hspi);
+    size_gt i;
+
+    for (i = 0; i < len; i++)
+    {
+        time_gt start = gmp_base_get_system_tick();
+
+        /* 1. Wait until there is space in the TX FIFO (Not Full) */
+        while (SPI_getTxFIFOStatus(base) == SPI_FIFO_TX16)
+        {
+            if (gmp_base_is_delay_elapsed(start, timeout))
+                return GMP_EC_TIMEOUT;
+        }
+
+        /* 2. Write Data. 
+         * CRITICAL NOTE FOR C2000: Data written to SPITXBUF must be left-justified. 
+         * Since we are operating in 8-bit mode, we shift the 8-bit payload left by 8.
+         */
+        SPI_writeDataNonBlocking(base, ((uint16_t)tx_buf[i]) << 8);
+
+        /* 3. Wait until the word has been fully received into RX FIFO.
+         * SPI is full-duplex; every byte sent means a byte is received. 
+         * We MUST read it out to prevent RX FIFO Overflow (ROVF).
+         */
+        while (SPI_getRxFIFOStatus(base) == SPI_FIFO_RX0)
+        {
+            if (gmp_base_is_delay_elapsed(start, timeout))
+                return GMP_EC_TIMEOUT;
+        }
+
+        /* 4. Discard the dummy received byte */
+        SPI_readDataNonBlocking(base);
+    }
+
+    return GMP_EC_OK;
+}
+
+ec_gt gmp_hal_spi_bus_read(spi_halt hspi, data_gt* rx_buf, size_gt len, time_gt timeout)
+{
+    if ((hspi == NULL) || (rx_buf == NULL))
+        return GMP_EC_GENERAL_ERROR;
+
+    uint32_t base = GET_SPI_BASE(hspi);
+    size_gt i;
+
+    for (i = 0; i < len; i++)
+    {
+        time_gt start = gmp_base_get_system_tick();
+
+        /* 1. Wait until there is space in the TX FIFO */
+        while (SPI_getTxFIFOStatus(base) == SPI_FIFO_TX16)
+        {
+            if (gmp_base_is_delay_elapsed(start, timeout))
+                return GMP_EC_TIMEOUT;
+        }
+
+        /* 2. Send Dummy Byte (0xFF) to generate the SPI clock.
+         * Left-justified for 8-bit mode.
+         */
+        SPI_writeDataNonBlocking(base, 0xFF00);
+
+        /* 3. Wait for the actual data to arrive in the RX FIFO */
+        while (SPI_getRxFIFOStatus(base) == SPI_FIFO_RX0)
+        {
+            if (gmp_base_is_delay_elapsed(start, timeout))
+                return GMP_EC_TIMEOUT;
+        }
+
+        /* 4. Read Data. 
+         * C2000 SPIRXBUF is right-justified, so we just mask the lower 8 bits.
+         */
+        rx_buf[i] = (data_gt)(SPI_readDataNonBlocking(base) & 0x00FF);
+    }
+
+    return GMP_EC_OK;
+}
+
+ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const data_gt* tx_buf, data_gt* rx_buf, size_gt len, time_gt timeout)
+{
+    if ((hspi == NULL) || (tx_buf == NULL) || (rx_buf == NULL))
+        return GMP_EC_GENERAL_ERROR;
+
+    uint32_t base = GET_SPI_BASE(hspi);
+    size_gt i;
+
+    for (i = 0; i < len; i++)
+    {
+        time_gt start = gmp_base_get_system_tick();
+
+        /* 1. Wait for TX space */
+        while (SPI_getTxFIFOStatus(base) == SPI_FIFO_TX16)
+        {
+            if (gmp_base_is_delay_elapsed(start, timeout))
+                return GMP_EC_TIMEOUT;
+        }
+
+        /* 2. Write actual data to bus (Left-justified for 8-bit mode) */
+        SPI_writeDataNonBlocking(base, ((uint16_t)tx_buf[i]) << 8);
+
+        /* 3. Wait for response data */
+        while (SPI_getRxFIFOStatus(base) == SPI_FIFO_RX0)
+        {
+            if (gmp_base_is_delay_elapsed(start, timeout))
+                return GMP_EC_TIMEOUT;
+        }
+
+        /* 4. Read actual data from bus (Right-justified) */
+        rx_buf[i] = (data_gt)(SPI_readDataNonBlocking(base) & 0x00FF);
     }
 
     return GMP_EC_OK;

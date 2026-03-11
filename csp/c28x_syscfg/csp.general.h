@@ -86,11 +86,11 @@ extern "C"
 // GPIO definition
 // #define GMP_PORT_GPIO_T uint32_t
 
-#define gmp_hal_gpio_write(pin_num, value) GPIO_writePin((pin_num), (value))
-#define gmp_hal_gpio_read(pin_num)         GPIO_readPin((pin_num))
-#define gmp_hal_gpio_set(pin_num)          GPIO_writePin((pin_num), (1))
-#define gmp_hal_gpio_reset(pin_num)        GPIO_writePin((pin_num), (0))
-#define gmp_hal_gpio_toggle(pin_num)       GPIO_togglePin((pin_num))
+//#define gmp_hal_gpio_write(pin_num, value) GPIO_writePin((pin_num), (value))
+//#define gmp_hal_gpio_read(pin_num)         GPIO_readPin((pin_num))
+//#define gmp_hal_gpio_set(pin_num)          GPIO_writePin((pin_num), (1))
+//#define gmp_hal_gpio_reset(pin_num)        GPIO_writePin((pin_num), (0))
+//#define gmp_hal_gpio_toggle(pin_num)       GPIO_togglePin((pin_num))
 
 //////////////////////////////////////////////////////////////////////////
 // Watch Dog module
