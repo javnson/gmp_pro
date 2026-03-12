@@ -88,7 +88,7 @@ extern "C"
 
 // Invoke peripheral headers
 //
-#include <core/dev/interface.h>
+//#include <core/dev/interface.h>
 
 // Invoke endian config
 //
