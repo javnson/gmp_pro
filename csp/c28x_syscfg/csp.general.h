@@ -13,7 +13,7 @@
 #define _FILE_CSP_GENERAL_H_
 
 // Basement from C2000ware library.
-#include "device.h"
+//#include "device.h"
 #include "driverlib.h"
 
 //
@@ -26,7 +26,7 @@
 //  - Software - Device Support
 //
 #ifndef _C2000_CSP_DISABLE_DEVICE_SUPPORT_
-#include "device.h"
+//#include "device.h"
 #endif // _C2000_CSP_DISABLE_DEVICE_SUPPORT_
 
 //
