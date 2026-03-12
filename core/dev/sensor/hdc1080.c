@@ -3,8 +3,9 @@
  * @brief   Hardware-agnostic driver implementation for TI HDC1080.
  */
 
-#include <core/dev/sensor/hdc1080.h>
 #include <gmp_core.h>
+
+#include <core/dev/sensor/hdc1080.h>
 
 /**
  * @brief Internal helper to perform a blocking delay using system ticks.
