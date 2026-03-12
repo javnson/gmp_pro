@@ -80,12 +80,12 @@ typedef enum
  */
 typedef struct
 {
-    uint8_t cfg_port0; /**< Direction config for Port 0 (1=Input, 0=Output) */
-    uint8_t cfg_port1; /**< Direction config for Port 1 */
-    uint8_t out_port0; /**< Initial output state for Port 0 */
-    uint8_t out_port1; /**< Initial output state for Port 1 */
-    uint8_t pol_port0; /**< Polarity inversion for Port 0 (1=Inverted) */
-    uint8_t pol_port1; /**< Polarity inversion for Port 1 */
+    data_gt cfg_port0; /**< Direction config for Port 0 (1=Input, 0=Output) */
+    data_gt cfg_port1; /**< Direction config for Port 1 */
+    data_gt out_port0; /**< Initial output state for Port 0 */
+    data_gt out_port1; /**< Initial output state for Port 1 */
+    data_gt pol_port0; /**< Polarity inversion for Port 0 (1=Inverted) */
+    data_gt pol_port1; /**< Polarity inversion for Port 1 */
 } pca9555_init_t;
 
 /**
@@ -107,16 +107,16 @@ typedef struct
 
 ec_gt pca9555_init(pca9555_dev_t* dev, iic_halt bus, addr16_gt dev_addr, const pca9555_init_t* init_cfg);
 
-ec_gt pca9555_set_pin_direction(pca9555_dev_t* dev, pca9555_port_et port, uint8_t pin_num, pca9555_dir_et dir);
-ec_gt pca9555_set_pin_polarity(pca9555_dev_t* dev, pca9555_port_et port, uint8_t pin_num, pca9555_pol_et pol);
+ec_gt pca9555_set_pin_direction(pca9555_dev_t* dev, pca9555_port_et port, fast_gt pin_num, pca9555_dir_et dir);
+ec_gt pca9555_set_pin_polarity(pca9555_dev_t* dev, pca9555_port_et port, fast_gt pin_num, pca9555_pol_et pol);
 
-ec_gt pca9555_set_pin_output(pca9555_dev_t* dev, pca9555_port_et port, uint8_t pin_num, fast_gt state);
-fast_gt pca9555_get_pin_input(pca9555_dev_t* dev, pca9555_port_et port, uint8_t pin_num, ec_gt* err_code_ret);
+ec_gt pca9555_set_pin_output(pca9555_dev_t* dev, pca9555_port_et port, fast_gt pin_num, fast_gt state);
+fast_gt pca9555_get_pin_input(pca9555_dev_t* dev, pca9555_port_et port, fast_gt pin_num, ec_gt* err_code_ret);
 
-ec_gt pca9555_get_port0_input(pca9555_dev_t* dev, uint8_t* port_data_ret);
-ec_gt pca9555_get_port1_output(pca9555_dev_t* dev, uint8_t* port_data_ret);
+ec_gt pca9555_get_port0_input(pca9555_dev_t* dev, fast_gt* port_data_ret);
+ec_gt pca9555_get_port1_output(pca9555_dev_t* dev, fast_gt* port_data_ret);
 
-ec_gt pca9555_get_port_config(pca9555_dev_t* dev, pca9555_port_et port, uint8_t* cfg_ret, uint8_t* pol_ret);
+ec_gt pca9555_get_port_config(pca9555_dev_t* dev, pca9555_port_et port, fast_gt* cfg_ret, fast_gt* pol_ret);
 
 /* ========================================================================= */
 /* ==================== CACHE SYNCHRONIZATION API ========================== */

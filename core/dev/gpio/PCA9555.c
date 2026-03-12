@@ -58,7 +58,7 @@ ec_gt pca9555_init(pca9555_dev_t* dev, iic_halt bus, addr16_gt dev_addr, const p
     return ret;
 }
 
-ec_gt pca9555_set_pin_direction(pca9555_dev_t* dev, pca9555_port_et port, uint8_t pin_num, pca9555_dir_et dir)
+ec_gt pca9555_set_pin_direction(pca9555_dev_t* dev, pca9555_port_et port, fast_gt pin_num, pca9555_dir_et dir)
 {
     if ((dev == NULL) || (pin_num > 7))
         return GMP_EC_GENERAL_ERROR;
@@ -79,7 +79,7 @@ ec_gt pca9555_set_pin_direction(pca9555_dev_t* dev, pca9555_port_et port, uint8_
     return gmp_hal_iic_write_reg(dev->bus, dev->dev_addr, reg_addr, 1, dev->shadow_cfg[port], 1, PCA9555_CFG_TIMEOUT);
 }
 
-ec_gt pca9555_set_pin_polarity(pca9555_dev_t* dev, pca9555_port_et port, uint8_t pin_num, pca9555_pol_et pol)
+ec_gt pca9555_set_pin_polarity(pca9555_dev_t* dev, pca9555_port_et port, fast_gt pin_num, pca9555_pol_et pol)
 {
     if ((dev == NULL) || (pin_num > 7))
         return GMP_EC_GENERAL_ERROR;
@@ -99,7 +99,7 @@ ec_gt pca9555_set_pin_polarity(pca9555_dev_t* dev, pca9555_port_et port, uint8_t
     return gmp_hal_iic_write_reg(dev->bus, dev->dev_addr, reg_addr, 1, dev->shadow_pol[port], 1, PCA9555_CFG_TIMEOUT);
 }
 
-ec_gt pca9555_set_pin_output(pca9555_dev_t* dev, pca9555_port_et port, uint8_t pin_num, fast_gt state)
+ec_gt pca9555_set_pin_output(pca9555_dev_t* dev, pca9555_port_et port, fast_gt pin_num, fast_gt state)
 {
     if ((dev == NULL) || (pin_num > 7))
         return GMP_EC_GENERAL_ERROR;
@@ -119,7 +119,7 @@ ec_gt pca9555_set_pin_output(pca9555_dev_t* dev, pca9555_port_et port, uint8_t p
     return gmp_hal_iic_write_reg(dev->bus, dev->dev_addr, reg_addr, 1, dev->shadow_out[port], 1, PCA9555_CFG_TIMEOUT);
 }
 
-fast_gt pca9555_get_pin_input(pca9555_dev_t* dev, pca9555_port_et port, uint8_t pin_num, ec_gt* err_code_ret)
+fast_gt pca9555_get_pin_input(pca9555_dev_t* dev, pca9555_port_et port, fast_gt pin_num, ec_gt* err_code_ret)
 {
     uint32_t port_val = 0;
     ec_gt ret;
@@ -150,7 +150,7 @@ fast_gt pca9555_get_pin_input(pca9555_dev_t* dev, pca9555_port_et port, uint8_t 
     return 0;
 }
 
-ec_gt pca9555_get_port0_input(pca9555_dev_t* dev, uint8_t* port_data_ret)
+ec_gt pca9555_get_port0_input(pca9555_dev_t* dev, fast_gt* port_data_ret)
 {
     if ((dev == NULL) || (port_data_ret == NULL))
         return GMP_EC_GENERAL_ERROR;
@@ -160,12 +160,12 @@ ec_gt pca9555_get_port0_input(pca9555_dev_t* dev, uint8_t* port_data_ret)
 
     if (ret == GMP_EC_OK)
     {
-        *port_data_ret = (uint8_t)val;
+        *port_data_ret = (fast_gt)val;
     }
     return ret;
 }
 
-ec_gt pca9555_get_port1_output(pca9555_dev_t* dev, uint8_t* port_data_ret)
+ec_gt pca9555_get_port1_output(pca9555_dev_t* dev, fast_gt* port_data_ret)
 {
     if ((dev == NULL) || (port_data_ret == NULL))
         return GMP_EC_GENERAL_ERROR;
@@ -177,7 +177,7 @@ ec_gt pca9555_get_port1_output(pca9555_dev_t* dev, uint8_t* port_data_ret)
     return GMP_EC_OK;
 }
 
-ec_gt pca9555_get_port_config(pca9555_dev_t* dev, pca9555_port_et port, uint8_t* cfg_ret, uint8_t* pol_ret)
+ec_gt pca9555_get_port_config(pca9555_dev_t* dev, pca9555_port_et port, fast_gt* cfg_ret, fast_gt* pol_ret)
 {
     if (dev == NULL)
         return GMP_EC_GENERAL_ERROR;

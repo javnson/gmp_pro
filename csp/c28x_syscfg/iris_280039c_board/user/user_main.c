@@ -10,6 +10,8 @@
 
 // peripheral
 #include <core/dev/display/ht16k33.h>
+#include <core/dev/gpio/pca9555.h>
+#include <core/dev/sensor/hdc1080.h>
 
 //=================================================================================================
 // global variables
@@ -19,8 +21,10 @@ time_gt uart_last_tick;
 gmp_scheduler_t sched;
 
 // devices
-ht16k33_dev_t ht16k33;
 iic_halt iic_bus;
+ht16k33_dev_t ht16k33;
+pca9555_dev_t pca9555;
+hdc1080_dev_t hdc1080;
 
 //=================================================================================================
 // AT command
@@ -194,9 +198,7 @@ void init(void) GMP_NO_OPT_SUFFIX
 {
     int i;
 
-    at_device_init(&at_dev, at_cmds, sizeof(at_cmds) / sizeof(at_device_cmd_t), at_device_error_handler);
-
-    ht16k33_init_t ht16k33_init_struct=
+    ht16k33_init_t ht16k33_init_struct =
     {
      .brightness = 15,
      .blink_rate = 0,
@@ -205,6 +207,25 @@ void init(void) GMP_NO_OPT_SUFFIX
     };
 
     ht16k33_init(&ht16k33, iic_bus, HT16K33_DEFAULT_DEV_ADDR, &ht16k33_init_struct);
+
+    pca9555_init_t pca9555_init_struct =
+    {
+     .cfg_port0 = 0xFF,
+     .cfg_port1 = 0xFF,
+     .out_port0 = 0xFF,
+     .out_port1 = 0xFF,
+     .pol_port0 = 0,
+     .pol_port1 = 0
+    };
+
+    pca9555_init(&pca9555, iic_bus, PCA9555_CALC_ADDR(0,0,0), &pca9555_init_struct);
+
+    hdc1080_config_reg_t hdc1080_cfg = {.all = 0};
+    hdc1080_cfg.bits.mode = 1; // continuous acquisition data
+
+    hdc1080_init(&hdc1080, iic_bus, HDC1080_I2C_ADDR_DEFAULT, hdc1080_cfg);
+
+    at_device_init(&at_dev, at_cmds, sizeof(at_cmds) / sizeof(at_device_cmd_t), at_device_error_handler);
 
     gmp_scheduler_init(&sched);
 
