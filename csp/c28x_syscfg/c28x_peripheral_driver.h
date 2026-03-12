@@ -8,8 +8,7 @@ extern "C"
 {
 #endif // __cplusplus
 
-// debug port
-extern uart_halt debug_uart;
+
 
 //////////////////////////////////////////////////////////////////////////
 // SPI interface
@@ -68,38 +67,38 @@ extern uart_halt debug_uart;
 
 //////////////////////////////////////////////////////////////////////////
 // UART interface
-GMP_STATIC_INLINE
-void gmp_hal_uart_write(uart_halt uart, const data_gt *data, size_gt length)
-{
-    size_gt i;
-
-    for (i = 0; i < length; ++i)
-        SCI_writeCharBlockingFIFO(uart, data[i]);
-}
-
-// void gmp_hal_uart_write_async(uart_halt uart, const data_gt *data, size_gt length)
+//GMP_STATIC_INLINE
+//void gmp_hal_uart_write(uart_halt uart, const data_gt *data, size_gt length)
 //{
-
+//    size_gt i;
+//
+//    for (i = 0; i < length; ++i)
+//        SCI_writeCharBlockingFIFO(uart, data[i]);
 //}
-GMP_STATIC_INLINE
-size_gt gmp_hal_uart_read(uart_halt uart, data_gt *data, size_gt length)
-{
-    size_gt i;
-
-    for (i = 0; i < length; ++i)
-        data[i] = SCI_readCharBlockingFIFO(uart);
-
-    return length;
-}
-
-// size_gt gmp_hal_uart_read_async(uart_halt uart, data_gt *data, size_gt length);
-
-// wait till transmit/receive complete.
-GMP_STATIC_INLINE
-fast_gt gmp_hal_uart_is_busy(uart_halt uart)
-{
-    return SCI_isTransmitterBusy(uart);
-}
+//
+//// void gmp_hal_uart_write_async(uart_halt uart, const data_gt *data, size_gt length)
+////{
+//
+////}
+//GMP_STATIC_INLINE
+//size_gt gmp_hal_uart_read(uart_halt uart, data_gt *data, size_gt length)
+//{
+//    size_gt i;
+//
+//    for (i = 0; i < length; ++i)
+//        data[i] = SCI_readCharBlockingFIFO(uart);
+//
+//    return length;
+//}
+//
+//// size_gt gmp_hal_uart_read_async(uart_halt uart, data_gt *data, size_gt length);
+//
+//// wait till transmit/receive complete.
+//GMP_STATIC_INLINE
+//fast_gt gmp_hal_uart_is_busy(uart_halt uart)
+//{
+//    return SCI_isTransmitterBusy(uart);
+//}
 
 
 #ifdef __cplusplus

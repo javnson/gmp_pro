@@ -82,17 +82,18 @@ extern "C"
 
 #endif // __TMS320C28XX_CLA__
 
-	GMP_STATIC_INLINE
-	void gmp_base_enter_critical()
-	{
-        DINT;
-	}
+// debug port
+extern uart_halt debug_uart;
 
-	GMP_STATIC_INLINE
-	void gmp_base_leave_critical()
-	{
-        EINT;
-	}
+GMP_STATIC_INLINE void gmp_base_enter_critical()
+{
+    DINT;
+}
+
+GMP_STATIC_INLINE void gmp_base_leave_critical()
+{
+    EINT;
+}
 
 //////////////////////////////////////////////////////////////////////////
 // GPIO definition
@@ -106,8 +107,7 @@ extern "C"
 
 //////////////////////////////////////////////////////////////////////////
 // Watch Dog module
-GMP_STATIC_INLINE
-void gmp_hal_wd_feed(void)
+GMP_STATIC_INLINE void gmp_hal_wd_feed(void)
 {
 }
 
@@ -115,7 +115,7 @@ void gmp_hal_wd_feed(void)
 // SPI module
 
 // Debug Print function
-size_gt gmp_base_print_c28xsyscfg(const char *p_fmt, ...);
+size_gt gmp_base_print_c28xsyscfg(const char* p_fmt, ...);
 
 // Step System tick
 void gmp_step_system_tick(void);

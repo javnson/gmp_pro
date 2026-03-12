@@ -85,6 +85,86 @@ fast_gt gmp_hal_gpio_read(gpio_halt hgpio)
     return (fast_gt)GPIO_readPin(pin);
 }
 
+/* ========================================================================= */
+/* ==================== INLINE STATUS FUNCTIONS ============================ */
+/* ========================================================================= */
+
+GMP_STATIC_INLINE fast_gt gmp_hal_uart_is_tx_busy(uart_halt uart)
+{
+    /* SCI_isTransmitterBusy returns true if the shift register is active */
+    return (fast_gt)SCI_isTransmitterBusy((uint32_t)uart);
+}
+
+GMP_STATIC_INLINE size_gt gmp_hal_uart_get_rx_available(uart_halt uart)
+{
+    /* Returns the current number of words (bytes) in the RX FIFO */
+    return (size_gt)SCI_getRxFIFOStatus((uint32_t)uart);
+}
+
+/* ========================================================================= */
+/* ==================== SAFE BLOCKING I/O FUNCTIONS ======================== */
+/* ========================================================================= */
+
+ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, uint32_t timeout)
+{
+    uint32_t base = (uint32_t)uart;
+    size_gt i = 0;
+    uint32_t time_cnt;
+
+    for (i = 0; i < length; ++i)
+    {
+        time_cnt = timeout;
+
+        /* 轮询等待 TX FIFO 腾出空间 (最多容纳 16 个字节) */
+        while (SCI_getTxFIFOStatus(base) == SCI_FIFO_TX15)
+        {
+            if (--time_cnt == 0)
+            {
+                return GMP_EC_TIMEOUT; /* 硬件卡死或波特率太低，及时止损退出 */
+            }
+            /* 可选：在此处插入短暂的延时或 NOP */
+            DEVICE_DELAY_US(1);
+        }
+
+        /* 此时 FIFO 必有空位，安全写入单字节 */
+        SCI_writeCharNonBlocking(base, (uint16_t)data[i]);
+    }
+
+    return GMP_EC_OK;
+}
+
+ec_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length, uint32_t timeout, size_gt* bytes_read)
+{
+    uint32_t base = (uint32_t)uart;
+    size_gt i = 0;
+    uint32_t time_cnt;
+
+    for (i = 0; i < length; ++i)
+    {
+        time_cnt = timeout;
+
+        /* 轮询等待 RX FIFO 中出现数据 */
+        while (SCI_getRxFIFOStatus(base) == SCI_FIFO_RX0)
+        {
+            if (--time_cnt == 0)
+            {
+                if (bytes_read != NULL)
+                    *bytes_read = i;
+                return GMP_EC_TIMEOUT; /* 未在规定时间内等到数据 */
+            }
+            DEVICE_DELAY_US(1);
+        }
+
+        /* 此时 FIFO 必有数据，安全读取 */
+        data[i] = (data_gt)SCI_readCharNonBlocking(base);
+    }
+
+    if (bytes_read != NULL)
+        *bytes_read = length;
+    return GMP_EC_OK;
+}
+
+
 /**
  * @brief   Helper macro for timeout checking to keep code clean and prevent hardware lockups.
  * @note    It utilizes the overflow-safe time checking mechanism from gmp_base.

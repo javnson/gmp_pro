@@ -619,8 +619,52 @@ GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_transfer(spi_device_halt hdev, const dat
 //////////////////////////////////////////////////////////////////////////
 // UART interface
 
-void gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length);
-size_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length);
+/**
+ * @brief  Transmits a stream of characters over UART.
+ * @note   This function blocks until all data is written to the hardware FIFO 
+ * or the timeout expires.
+ * * @param[in]  uart     The physical UART hardware handle (e.g., SCIA_BASE).
+ * @param[in]  data     Pointer to the data buffer to be transmitted.
+ * @param[in]  length   Number of bytes to transmit.
+ * @param[in]  timeout  Maximum time to wait for transmission (in milliseconds or ticks).
+ * * @return ec_gt        GMP_EC_OK if all bytes are transmitted.
+ * GMP_EC_TIMEOUT if the operation timed out before completion.
+ */
+ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, uint32_t timeout);
+
+/**
+ * @brief  Receives a stream of characters from UART.
+ * @note   This function blocks until the requested length is received 
+ * or the timeout expires.
+ * * @param[in]  uart         The physical UART hardware handle.
+ * @param[out] data         Pointer to the buffer to store received data.
+ * @param[in]  length       Number of bytes requested to read.
+ * @param[in]  timeout      Maximum time to wait for reception.
+ * @param[out] bytes_read   (Optional) Pointer to store the actual number of bytes read.
+ * * @return ec_gt            GMP_EC_OK if exactly 'length' bytes were read.
+ * GMP_EC_TIMEOUT if fewer bytes were read before timeout.
+ */
+ec_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length, uint32_t timeout, size_gt* bytes_read);
+
+/* ========================================================================= */
+/* ==================== STATUS CHECK APIs ================================== */
+/* ========================================================================= */
+
+/**
+ * @brief  Checks if the UART Transmitter is currently busy.
+ * @note   Useful for checking if the physical line is clear before entering sleep mode.
+ * * @param[in]  uart     The physical UART hardware handle.
+ * @return fast_gt      1 (true) if busy shifting data out, 0 (false) if idle.
+ */
+GMP_STATIC_INLINE fast_gt gmp_hal_uart_is_tx_busy(uart_halt uart);
+
+/**
+ * @brief  Gets the number of unread bytes available in the hardware RX FIFO.
+ * @note   Allows the user to safely call `gmp_hal_uart_read` without blocking.
+ * * @param[in]  uart     The physical UART hardware handle.
+ * @return size_gt      Number of bytes currently available to read.
+ */
+GMP_STATIC_INLINE size_gt gmp_hal_uart_get_rx_available(uart_halt uart);
 
 // size_gt gmp_hal_uart_read_async(uart_halt uart, data_gt *data, size_gt length);
 //void gmp_hal_uart_write_async(uart_halt uart, const data_gt* data, size_gt length);
