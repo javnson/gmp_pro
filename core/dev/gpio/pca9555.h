@@ -96,9 +96,9 @@ typedef struct
 {
     iic_halt bus;
     addr16_gt dev_addr;
-    uint8_t shadow_cfg[2]; /**< Cache for Direction registers */
-    uint8_t shadow_out[2]; /**< Cache for Output registers */
-    uint8_t shadow_pol[2]; /**< Cache for Polarity registers */
+    data_gt shadow_cfg[2]; /**< Cache for Direction registers */
+    data_gt shadow_out[2]; /**< Cache for Output registers */
+    data_gt shadow_pol[2]; /**< Cache for Polarity registers */
 } pca9555_dev_t;
 
 /* ========================================================================= */

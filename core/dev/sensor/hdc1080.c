@@ -3,8 +3,8 @@
  * @brief   Hardware-agnostic driver implementation for TI HDC1080.
  */
 
-#include <gmp_core.h>
 #include <core/dev/sensor/hdc1080.h>
+#include <gmp_core.h>
 
 /**
  * @brief Internal helper to perform a blocking delay using system ticks.
@@ -30,7 +30,7 @@ ec_gt hdc1080_init(hdc1080_dev_t* dev, iic_halt bus, addr16_gt dev_addr, hdc1080
     dev->dev_addr = dev_addr;
 
     /* Cache the mode directly from the bit-field for later use */
-    dev->mode = init_cfg.bits.mode;
+    dev->mode = (hdc1080_mode_et)init_cfg.bits.mode;
 
     /* 1. Device Probe: Read Manufacturer ID */
     ret = gmp_hal_iic_read_reg(dev->bus, dev->dev_addr, HDC1080_REG_MANUFACTURER_ID, 1, &manuf_id, 2,

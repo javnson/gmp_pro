@@ -7,6 +7,104 @@
 
 #ifdef HAL_UART_MODULE_ENABLED
 
+
+/* ========================================================================= */
+/* ==================== INLINE STATUS FUNCTIONS ============================ */
+/* ========================================================================= */
+
+GMP_STATIC_INLINE fast_gt gmp_hal_uart_is_tx_busy(uart_halt uart)
+{
+    if (uart == NULL)
+        return 0;
+
+    UART_HandleTypeDef* huart = (UART_HandleTypeDef*)uart;
+
+    /* 检查 HAL 库维护的全局状态机，判断发送线路是否被占用 */
+    if (huart->gState == HAL_UART_STATE_BUSY_TX || huart->gState == HAL_UART_STATE_BUSY_TX_RX)
+    {
+        return 1; /* Busy */
+    }
+    return 0; /* Idle */
+}
+
+GMP_STATIC_INLINE size_gt gmp_hal_uart_get_rx_available(uart_halt uart)
+{
+    if (uart == NULL)
+        return 0;
+
+    UART_HandleTypeDef* huart = (UART_HandleTypeDef*)uart;
+
+    /* 检查 RXNE (Read Data Register Not Empty) 标志位 
+     * 注意：经典 STM32 没有深层硬件 FIFO，因此只要 RXNE 为 1，
+     * 就代表有 1 个字节准备好被读取。
+     */
+    if (__HAL_UART_GET_FLAG(huart, UART_FLAG_RXNE) == SET)
+    {
+        return 1; /* At least 1 byte is available in RDR */
+    }
+    return 0; /* No data available */
+}
+
+/* ========================================================================= */
+/* ==================== SAFE BLOCKING I/O FUNCTIONS ======================== */
+/* ========================================================================= */
+
+ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, uint32_t timeout)
+{
+    if (uart == NULL || data == NULL || length == 0)
+        return GMP_EC_GENERAL_ERROR;
+
+    UART_HandleTypeDef* huart = (UART_HandleTypeDef*)uart;
+
+    /* 调用 ST HAL 库的阻塞发送函数，自带基于 SysTick 的超时保护 */
+    HAL_StatusTypeDef status = HAL_UART_Transmit(huart, (uint8_t*)data, (uint16_t)length, timeout);
+
+    /* 状态映射 */
+    if (status == HAL_OK)
+    {
+        return GMP_EC_OK;
+    }
+    else if (status == HAL_TIMEOUT)
+    {
+        return GMP_EC_TIMEOUT;
+    }
+
+    return GMP_EC_GENERAL_ERROR;
+}
+
+ec_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length, uint32_t timeout, size_gt* bytes_read)
+{
+    if (uart == NULL || data == NULL || length == 0)
+        return GMP_EC_GENERAL_ERROR;
+
+    UART_HandleTypeDef* huart = (UART_HandleTypeDef*)uart;
+
+    /* 调用 ST HAL 库的阻塞接收函数，自带超时保护 */
+    HAL_StatusTypeDef status = HAL_UART_Receive(huart, (uint8_t*)data, (uint16_t)length, timeout);
+
+    /* 如果用户关心实际读取到的字节数 (处理超时未读完的情况) */
+    if (bytes_read != NULL)
+    {
+        /* 在 ST HAL 库中，RxXferSize 保存了请求读取的总量，
+         * RxXferCount 保存了【还剩多少没读完】的数量。
+         * 两者相减即为实际成功读取的字节数。
+         */
+        *bytes_read = (size_gt)(huart->RxXferSize - huart->RxXferCount);
+    }
+
+    /* 状态映射 */
+    if (status == HAL_OK)
+    {
+        return GMP_EC_OK;
+    }
+    else if (status == HAL_TIMEOUT)
+    {
+        return GMP_EC_TIMEOUT;
+    }
+
+    return GMP_EC_GENERAL_ERROR;
+}
+
 ///**
 // * @brief Setup GMP UART handle.
 // * This function should be called in `peripheral_mapping.c`

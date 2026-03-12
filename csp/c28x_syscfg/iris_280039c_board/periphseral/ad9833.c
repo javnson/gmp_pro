@@ -5,7 +5,7 @@
 
 #include <gmp_core.h>
 
-#include <core/dev/source/ad9833.h>
+#include <core/dev/excitation/ad9833.h>
 
 /* Helper macro for constant 2^28 used in frequency calculation */
 #define AD9833_FREQ_MULTIPLIER (268435456.0f)
