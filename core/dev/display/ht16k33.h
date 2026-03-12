@@ -15,6 +15,12 @@ extern "C"
 /* ==================== CONFIGURATION MACROS =============================== */
 /* ========================================================================= */
 
+/** * @brief Default I2C device address. 
+ */
+#ifndef HT16K33_DEFAULT_DEV_ADDR
+#define HT16K33_DEFAULT_DEV_ADDR (0x70)
+#endif
+
 /** * @brief Default I2C timeout in milliseconds. 
  * Note: 16 bytes at 100kHz takes ~1.8ms. 5ms is a safe default.
  */
@@ -69,10 +75,10 @@ extern "C"
  */
 typedef struct
 {
-    uint8_t brightness; /**< Brightness level (0 to 15) */
-    uint8_t blink_rate; /**< Blink frequency (0=Off, 1=2Hz, 2=1Hz, 3=0.5Hz) */
-    bool int_enable;    /**< Enable INT pin output */
-    bool int_act_high;  /**< True for Active-High, False for Active-Low */
+    fast_gt brightness; /**< Brightness level (0 to 15) */
+    fast_gt blink_rate; /**< Blink frequency (0=Off, 1=2Hz, 2=1Hz, 3=0.5Hz) */
+    fast_gt int_enable;    /**< Enable INT pin output */
+    fast_gt int_act_high;  /**< True for Active-High, False for Active-Low */
 } ht16k33_init_t;
 
 /**
@@ -84,7 +90,7 @@ typedef struct
     iic_halt bus;
     addr16_gt dev_addr;
     data_gt display_ram[HT16K33_CFG_DISP_RAM_SIZE];
-    bool is_dirty;
+    fast_gt is_dirty;
 } ht16k33_dev_t;
 
 /* ========================================================================= */
@@ -93,7 +99,7 @@ typedef struct
 
 ec_gt ht16k33_init(ht16k33_dev_t* dev, iic_halt bus, addr16_gt dev_addr, const ht16k33_init_t* init_cfg);
 ec_gt ht16k33_update_display(ht16k33_dev_t* dev);
-ec_gt ht16k33_read_keys(ht16k33_dev_t* dev, uint8_t* key_id_ret);
+ec_gt ht16k33_read_keys(ht16k33_dev_t* dev, fast_gt* key_id_ret);
 ec_gt ht16k33_test_all_leds_on(ht16k33_dev_t* dev);
 
 #ifdef __cplusplus

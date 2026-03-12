@@ -8,9 +8,6 @@
 #include "ctl_main.h"
 #include <stdlib.h>
 
-// peripheral
-#include <core/dev/display/ht16k33.h>
-
 //=================================================================================================
 // global variables
 
@@ -18,9 +15,6 @@ at_device_entity_t at_dev;
 time_gt uart_last_tick;
 gmp_scheduler_t sched;
 
-// devices
-ht16k33_dev_t ht16k33;
-iic_halt iic_bus;
 
 //=================================================================================================
 // AT command
@@ -136,42 +130,15 @@ gmp_task_status_t tsk_at_device(gmp_task_t* tsk)
     return GMP_TASK_DONE;
 }
 
-gmp_task_status_t tsk_LED_flush(gmp_task_t* tsk)
+void send_monitor_data(void);
+gmp_task_status_t tsk_monitor(gmp_task_t* tsk)
 {
-    ht16k33_dev_t *dev = (ht16k33_dev_t *) tsk->handler;
+    GMP_UNUSED_VAR(tsk);
 
-    // TODO: fresh LED buffer here.
-
-    ec_gt ret = ht16k33_update_display(dev);
-
-    // if meets error, close this task
-    if(ret != GMP_EC_OK)
-    {
-        tsk->is_enabled = 0;
-    }
+    send_monitor_data();
 
     return GMP_TASK_DONE;
 }
-
-gmp_task_status_t tsk_key_flush(gmp_task_t* tsk)
-{
-    ht16k33_dev_t *dev = (ht16k33_dev_t *) tsk->handler;
-    fast_gt key_id;
-
-    ec_gt ret = ht16k33_read_keys(dev, &key_id);
-
-    // if meets error, close this task
-    if(ret != GMP_EC_OK)
-    {
-        tsk->is_enabled = 0;
-    }
-
-    // TODO: response key message
-
-
-    return GMP_TASK_DONE;
-}
-
 
 // protect task this function would be implemented in ctl_main.c
 gmp_task_status_t tsk_protect(gmp_task_t* tsk);
@@ -182,9 +149,7 @@ gmp_task_t tasks[] = {
     {"protect", tsk_protect, 1000, 0, 1, NULL},
     {"blink_led", tsk_blink, 1000, 100, 1, NULL},
     {"at_device", tsk_at_device, 5, 1, 1, NULL},
-    {"flush_key", tsk_key_flush, 50, 10, 1, (void*)&ht16k33},
-    {"flush_led", tsk_LED_flush, 500, 200, 1, (void*)&ht16k33}
-};
+    {"monitor_data", tsk_monitor, 2, 0, 1, NULL}};
 
 //=================================================================================================
 // initialize routine
@@ -195,16 +160,6 @@ void init(void) GMP_NO_OPT_SUFFIX
     int i;
 
     at_device_init(&at_dev, at_cmds, sizeof(at_cmds) / sizeof(at_device_cmd_t), at_device_error_handler);
-
-    ht16k33_init_t ht16k33_init_struct=
-    {
-     .brightness = 15,
-     .blink_rate = 0,
-     .int_enable = 0,
-     .int_act_high = 0
-    };
-
-    ht16k33_init(&ht16k33, iic_bus, HT16K33_DEFAULT_DEV_ADDR, &ht16k33_init_struct);
 
     gmp_scheduler_init(&sched);
 

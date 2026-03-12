@@ -757,9 +757,9 @@ ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, s
 typedef struct
 {
     uint32_t id;      /**< @brief CAN ID (11-bit Standard or 29-bit Extended) */
-    bool is_extended; /**< @brief True if the ID is 29-bit Extended */
-    bool is_remote;   /**< @brief True if this is a Remote Transmission Request (RTR) */
-    uint8_t dlc;      /**< @brief Data Length Code (0 to 8) */
+    fast_gt is_extended; /**< @brief True if the ID is 29-bit Extended */
+    fast_gt is_remote;   /**< @brief True if this is a Remote Transmission Request (RTR) */
+    fast_gt dlc;      /**< @brief Data Length Code (0 to 8) */
 
     /** * @brief 64-bit Payload.
      * @note  data_32[0] contains logical bytes 0 to 3 (Little-Endian layout).

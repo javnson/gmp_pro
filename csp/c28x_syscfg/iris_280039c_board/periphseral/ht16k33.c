@@ -46,7 +46,7 @@ ec_gt ht16k33_init(ht16k33_dev_t* dev, iic_halt bus, addr16_gt dev_addr, const h
         return ret;
 
     /* 2. ROW/INT Set */
-    uint8_t rowint_cmd = HT16K33_REG_ROWINT_SET;
+    fast_gt rowint_cmd = HT16K33_REG_ROWINT_SET;
     if (init_cfg->int_enable)
     {
         rowint_cmd |= 0x01;
@@ -60,13 +60,13 @@ ec_gt ht16k33_init(ht16k33_dev_t* dev, iic_halt bus, addr16_gt dev_addr, const h
         return ret;
 
     /* 3. Brightness Set */
-    uint8_t brightness_cmd = HT16K33_REG_BRIGHTNESS | (init_cfg->brightness & 0x0F);
+    fast_gt brightness_cmd = HT16K33_REG_BRIGHTNESS | (init_cfg->brightness & 0x0F);
     ret = gmp_hal_iic_write_cmd(dev->bus, dev->dev_addr, brightness_cmd, 1, HT16K33_CFG_TIMEOUT);
     if (ret != GMP_EC_OK)
         return ret;
 
     /* 4. Display Setup */
-    uint8_t display_cmd = HT16K33_REG_DISPLAY_SETUP | 0x01;
+    fast_gt display_cmd = HT16K33_REG_DISPLAY_SETUP | 0x01;
     display_cmd |= ((init_cfg->blink_rate & 0x03) << 1);
     ret = gmp_hal_iic_write_cmd(dev->bus, dev->dev_addr, display_cmd, 1, HT16K33_CFG_TIMEOUT);
 
@@ -111,7 +111,7 @@ ec_gt ht16k33_update_display(ht16k33_dev_t* dev)
  * @param[in]  timeout      Timeout for I2C operations in milliseconds.
  * * @return  ec_gt           GMP_EC_OK on success.
  */
-ec_gt ht16k33_read_keys(ht16k33_dev_t* dev, uint8_t* key_id_ret)
+ec_gt ht16k33_read_keys(ht16k33_dev_t* dev, fast_gt* key_id_ret)
 {
     if ((dev == NULL) || (key_id_ret == NULL))
     {
@@ -144,7 +144,7 @@ ec_gt ht16k33_read_keys(ht16k33_dev_t* dev, uint8_t* key_id_ret)
                     uint32_t ksRow = byteIdx / 2;
                     uint32_t kCol = (byteIdx % 2) * 8 + bitIdx;
 
-                    *key_id_ret = (uint8_t)((ksRow * 13) + kCol + 1);
+                    *key_id_ret = (fast_gt)((ksRow * 13) + kCol + 1);
                     return GMP_EC_OK;
                 }
             }
