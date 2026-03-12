@@ -20,7 +20,7 @@
 #define GMP_EC_GENERAL_WARN  ((GMP_EC_WARN_BEGIN + 1))
 #define GMP_EC_GENERAL_ERROR ((GMP_EC_ERRO_BEGIN + 1))
 
-#define GMP_EC_WARN_PRINT    ((GMP_EC_WARN_BEGIN + 2))
+#define GMP_EC_WARN_PRINT ((GMP_EC_WARN_BEGIN + 2))
 // branch should not be reached
 #define GMP_EC_UNDEFINED_ACTION ((GMP_EC_FATAL_BEGIN + 3))
 // Hardware damaged
@@ -64,6 +64,6 @@
 // Operation was refused
 #define GMP_EC_REFUSED ((GMP_EC_ERRO_BEGIN + 22))
 // I2C Communication NACK
-#define GMP_EC_NACK ((GMP_EC_ERRO_BEGIN + 23))
-
-
+#define GMP_EC_NACK        ((GMP_EC_ERRO_BEGIN + 23))
+#define GMP_EC_DEQUE_FULL  (GMP_EC_ERRO_BEGIN + 0x24) /**< Deque is full, cannot push more elements. */
+#define GMP_EC_DEQUE_EMPTY (GMP_EC_ERRO_BEGIN + 0x25) /**< Deque is empty, cannot pop elements. */

@@ -82,6 +82,18 @@ extern "C"
 
 #endif // __TMS320C28XX_CLA__
 
+	GMP_STATIC_INLINE
+	void gmp_base_enter_critical()
+	{
+        DINT;
+	}
+
+	GMP_STATIC_INLINE
+	void gmp_base_leave_critical()
+	{
+        EINT;
+	}
+
 //////////////////////////////////////////////////////////////////////////
 // GPIO definition
 // #define GMP_PORT_GPIO_T uint32_t

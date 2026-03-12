@@ -18,6 +18,17 @@
 //
 #define GMP_DBG_SWBP __asm volatile("BKPT #0")
 
+
+GMP_STATIC_INLINE void gmp_base_enter_critical()
+{
+    __disable_irq();
+}
+
+GMP_STATIC_INLINE void gmp_base_leave_critical()
+{
+    __enable_irq();
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Step II: Invoke all the STM32 general headers.
 //

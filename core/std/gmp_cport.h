@@ -196,6 +196,9 @@ extern ctl_object_nano_t* ctl_nano_handle;
 #endif // SPECIFY_ENABLE_CTL_FRAMEWORK_NANO
 #endif // SPECIFY_ENABLE_GMP_CTL
 
+void gmp_base_enter_critical();
+void gmp_base_leave_critical();
+
 // This function would be called by main ISR function, by user.
 // User should call this function, in your ctl_main.cpp or just ignore it.
 // When you need to simulate your controller, this function would be invoked.

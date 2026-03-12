@@ -432,3 +432,93 @@ ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const data_gt* tx_buf, data_gt* rx
 #endif // HAL_SPI_MODULE_ENABLED
 
 
+////////////////////////////////////////////////////////////////////////
+// CAN Model
+
+#if defined HAL_CAN_MODULE_ENABLED
+
+//
+///**
+// * @brief 物理层写入函数
+// * @details 适配 STM32 的 3 邮箱发送机制。
+// */
+//ec_gt gmp_hal_can_bus_write(can_halt hcan, const gmp_can_msg_t* msg)
+//{
+//    CAN_HandleTypeDef* hcan_stm32 = (CAN_HandleTypeDef*)hcan;
+//    CAN_TxHeaderTypeDef tx_header;
+//    uint32_t tx_mailbox;
+//
+//    /* 1. 检查是否有空闲的发送邮箱 */
+//    if (HAL_CAN_GetTxMailboxesFreeLevel(hcan_stm32) == 0)
+//    {
+//        return GMP_EC_BUSY; /* 硬件邮箱全满，返回繁忙，触发 GMP Core 入队 */
+//    }
+//
+//    /* 2. 准备 STM32 格式的报文头 */
+//    tx_header.StdId = msg->is_extended ? 0 : msg->id;
+//    tx_header.ExtId = msg->is_extended ? msg->id : 0;
+//    tx_header.IDE = msg->is_extended ? CAN_ID_EXT : CAN_ID_STD;
+//    tx_header.RTR = msg->is_remote ? CAN_RTR_REMOTE : CAN_RTR_DATA;
+//    tx_header.DLC = msg->dlc;
+//    tx_header.TransmitGlobalTime = DISABLE;
+//
+//    /* 3. 搬运负载数据 */
+//    /* 由于 STM32 HAL 要求 uint8_t 数组，我们直接利用 data_32 的连续内存强转 */
+//    uint8_t* p_payload = (uint8_t*)(msg->data_32);
+//
+//    /* 4. 调用 STM32 HAL 写入邮箱 */
+//    if (HAL_CAN_AddTxMessage(hcan_stm32, &tx_header, p_payload, &tx_mailbox) != HAL_OK)
+//    {
+//        return GMP_EC_GENERAL_ERROR;
+//    }
+//
+//    return GMP_EC_OK;
+//}
+//
+///**
+// * @brief STM32 发送完成回调
+// */
+//void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef* hcan)
+//{
+//    /* 找到该硬件总线对应的 gmp_can_node 实例，并触发 Pump */
+//    /* 假设我们在 BSP 层维护了从 hcan 到 gmp_node 的映射 */
+//    gmp_can_node_t* node = bsp_get_can_node_from_handle(hcan);
+//    if (node)
+//    {
+//        gmp_can_node_tx_isr_pump(node);
+//    }
+//}
+//
+///**
+// * @brief STM32 接收回调
+// */
+//void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)
+//{
+//    CAN_RxHeaderTypeDef rx_header;
+//    gmp_can_msg_t rx_msg;
+//    uint8_t rx_raw_data[8];
+//
+//    /* 1. 从硬件 FIFO 中取出原始报文 */
+//    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, rx_raw_data) == HAL_OK)
+//    {
+//        /* 2. 转换为 GMP 标准格式 */
+//        rx_msg.id = (rx_header.IDE == CAN_ID_STD) ? rx_header.StdId : rx_header.ExtId;
+//        rx_msg.is_extended = (rx_header.IDE == CAN_ID_EXT);
+//        rx_msg.is_remote = (rx_header.RTR == CAN_RTR_REMOTE);
+//        rx_msg.dlc = rx_header.DLC;
+//
+//        /* 3. 安全拷贝负载 (考虑 32 位对齐) */
+//        rx_msg.data_32[0] = ((uint32_t*)rx_raw_data)[0];
+//        rx_msg.data_32[1] = ((uint32_t*)rx_raw_data)[1];
+//
+//        /* 4. 调用 GMP 路由引擎 */
+//        gmp_can_node_t* node = bsp_get_can_node_from_handle(hcan);
+//        if (node)
+//        {
+//            gmp_can_node_rx_isr_router(node, &rx_msg);
+//        }
+//    }
+//}
+
+
+#endif // HAL_CAN_MODULE_ENABLED

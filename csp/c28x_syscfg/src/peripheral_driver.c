@@ -554,3 +554,67 @@ ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const data_gt* tx_buf, data_gt* rx
 
     return GMP_EC_OK;
 }
+
+
+//
+///**
+// * @brief 物理总线写入函数
+// * @details 负责将 GMP 标准报文写入 C2000 的硬件邮箱。
+// */
+//ec_gt gmp_hal_can_bus_write(can_halt hcan, const gmp_can_msg_t* msg)
+//{
+//    uint32_t base = (uint32_t)hcan;
+//    uint32_t mailbox_idx;
+//    bool found_free = false;
+//
+//    /* 1. 在预留的发送邮箱（0~3）中寻找空闲邮箱 */
+//    for (mailbox_idx = 0; mailbox_idx < 4; mailbox_idx++)
+//    {
+//        /* 检查该邮箱的发送请求标志 (TXRQST) 是否为 0 */
+//        if (!CAN_getTransmissionRequests(base, (1UL << mailbox_idx)))
+//        {
+//            found_free = true;
+//            break;
+//        }
+//    }
+//
+//    if (!found_free)
+//        return GMP_EC_BUSY;
+//
+//    /* 2. 将数据从 data_32[2] 搬运到硬件 */
+//    /* C2000 寄存器本身是 32 位的，通过 DriverLib 接口直接写入 */
+//    CAN_setupMessageObject(base, mailbox_idx + 1, msg->id, msg->is_extended ? CAN_MSG_FRAME_EXT : CAN_MSG_FRAME_STD,
+//                           CAN_MSG_OBJ_TYPE_TX, 0, CAN_MSG_OBJ_NO_FLAGS, msg->dlc);
+//
+//    /* 关键优化：直接写入 32 位寄存器，绕过逐字节处理 */
+//    CAN_sendMessageRaw(base, mailbox_idx + 1, msg->dlc, (uint32_t*)(msg->data_32));
+//
+//    return GMP_EC_OK;
+//}
+
+
+/**
+ * @brief C2000 CAN 中断服务程序（示例）
+ */
+//__interrupt void can_isr(void)
+//{
+//    uint32_t status = CAN_getInterruptCause(base);
+//
+//    if (status >= 1 && status <= 4)
+//    {
+//        /* 发送邮箱完成中断：清除挂起位并触发 GMP 发送泵 */
+//        CAN_clearInterruptStatus(base, status);
+//        gmp_can_node_tx_isr_pump(&my_can_node);
+//    }
+//    else if (status >= 5 && status <= 32)
+//    {
+//        /* 接收邮箱中断 */
+//        gmp_can_msg_t rx_frame;
+//        /* 从硬件读出并填入 rx_frame ... (见下文) */
+//        gmp_can_node_rx_isr_router(&my_can_node, &rx_frame);
+//        CAN_clearInterruptStatus(base, status);
+//    }
+//
+//    CAN_clearGlobalInterruptStatus(base, CAN_GLOBAL_INT_CANINT0);
+//    PieCtrlRegs.PIEACK.all = PIEACK_GROUP9;
+//}

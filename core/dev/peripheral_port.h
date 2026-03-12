@@ -620,12 +620,10 @@ GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_transfer(spi_device_halt hdev, const dat
 // UART interface
 
 void gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length);
-
-void gmp_hal_uart_write_async(uart_halt uart, const data_gt* data, size_gt length);
-
 size_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length);
 
 // size_gt gmp_hal_uart_read_async(uart_halt uart, data_gt *data, size_gt length);
+//void gmp_hal_uart_write_async(uart_halt uart, const data_gt* data, size_gt length);
 
 // wait till transmit/receive complete.
 fast_gt gmp_hal_uart_is_busy(uart_halt uart);
@@ -703,7 +701,254 @@ ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, s
 //////////////////////////////////////////////////////////////////////////
 // CAN interface
 
-// void gmp_hal_can_write(can_halt can);
+/* ========================================================================= */
+/* ==================== CAN MESSAGE STRUCTURE ============================== */
+/* ========================================================================= */
+
+/**
+ * @brief Standardized CAN Message Structure.
+ * @note  Total size is strictly 16 bytes (assuming 32-bit CPU with 4-byte alignment).
+ * The explicit layout prevents compiler padding inconsistencies.
+ */
+typedef struct
+{
+    uint32_t id;      /**< @brief CAN ID (11-bit Standard or 29-bit Extended) */
+    bool is_extended; /**< @brief True if the ID is 29-bit Extended */
+    bool is_remote;   /**< @brief True if this is a Remote Transmission Request (RTR) */
+    uint8_t dlc;      /**< @brief Data Length Code (0 to 8) */
+
+    /** * @brief 64-bit Payload.
+     * @note  data_32[0] contains logical bytes 0 to 3 (Little-Endian layout).
+     * data_32[1] contains logical bytes 4 to 7 (Little-Endian layout).
+     */
+    uint32_t data_32[2];
+} gmp_can_msg_t;
+
+/* ========================================================================= */
+/* ==================== PAYLOAD ATOMIC PRIMITIVES (8-BIT) ================== */
+/* ========================================================================= */
+
+/**
+ * @brief Extract a single logical byte (8-bit) from the payload.
+ * @param msg    Pointer to the CAN message.
+ * @param offset Byte offset (0 to 7).
+ * @return       The 8-bit value at the specified offset.
+ */
+GMP_STATIC_INLINE uint8_t gmp_can_payload_get_u8(const gmp_can_msg_t* msg, uint8_t offset)
+{
+    if (offset < 4)
+    {
+        return (uint8_t)((msg->data_32[0] >> (offset * 8)) & 0xFFU);
+    }
+    else if (offset < 8)
+    {
+        return (uint8_t)((msg->data_32[1] >> ((offset - 4) * 8)) & 0xFFU);
+    }
+    return 0;
+}
+
+/**
+ * @brief Inject a single logical byte (8-bit) into the payload.
+ * @param msg    Pointer to the CAN message.
+ * @param offset Byte offset (0 to 7).
+ * @param val    The 8-bit value to inject.
+ */
+GMP_STATIC_INLINE void gmp_can_payload_set_u8(gmp_can_msg_t* msg, uint8_t offset, uint8_t val)
+{
+    if (offset < 4)
+    {
+        /* Clear the target 8 bits, then OR the new value */
+        msg->data_32[0] &= ~(0xFFUL << (offset * 8));
+        msg->data_32[0] |= ((uint32_t)val << (offset * 8));
+    }
+    else if (offset < 8)
+    {
+        msg->data_32[1] &= ~(0xFFUL << ((offset - 4) * 8));
+        msg->data_32[1] |= ((uint32_t)val << ((offset - 4) * 8));
+    }
+}
+
+/* ========================================================================= */
+/* ==================== PAYLOAD COMPOSITE GETTERS ========================== */
+/* ========================================================================= */
+
+/**
+ * @brief Read a 16-bit integer (Little-Endian) starting at any offset (0-6).
+ * @note  Safe against unaligned memory access and cross-word boundaries (e.g., offset 3).
+ */
+GMP_STATIC_INLINE uint16_t gmp_can_payload_get_u16(const gmp_can_msg_t* msg, uint8_t offset)
+{
+    return (uint16_t)gmp_can_payload_get_u8(msg, offset) | ((uint16_t)gmp_can_payload_get_u8(msg, offset + 1) << 8);
+}
+
+/**
+ * @brief Read a 32-bit integer (Little-Endian) starting at any offset (0-4).
+ */
+GMP_STATIC_INLINE uint32_t gmp_can_payload_get_u32(const gmp_can_msg_t* msg, uint8_t offset)
+{
+    return (uint32_t)gmp_can_payload_get_u8(msg, offset) | ((uint32_t)gmp_can_payload_get_u8(msg, offset + 1) << 8) |
+           ((uint32_t)gmp_can_payload_get_u8(msg, offset + 2) << 16) |
+           ((uint32_t)gmp_can_payload_get_u8(msg, offset + 3) << 24);
+}
+
+/**
+ * @brief Read a 32-bit floating point number (IEEE 754) starting at any offset (0-4).
+ */
+GMP_STATIC_INLINE float gmp_can_payload_get_f32(const gmp_can_msg_t* msg, uint8_t offset)
+{
+    union {
+        uint32_t u;
+        float f;
+    } conv;
+    conv.u = gmp_can_payload_get_u32(msg, offset);
+    return conv.f;
+}
+
+/* ========================================================================= */
+/* ==================== PAYLOAD COMPOSITE SETTERS ========================== */
+/* ========================================================================= */
+
+/**
+ * @brief Write a 16-bit integer (Little-Endian) starting at any offset (0-6).
+ */
+GMP_STATIC_INLINE void gmp_can_payload_set_u16(gmp_can_msg_t* msg, uint8_t offset, uint16_t val)
+{
+    gmp_can_payload_set_u8(msg, offset, (uint8_t)(val & 0xFFU));
+    gmp_can_payload_set_u8(msg, offset + 1, (uint8_t)((val >> 8) & 0xFFU));
+}
+
+/**
+ * @brief Write a 32-bit integer (Little-Endian) starting at any offset (0-4).
+ */
+GMP_STATIC_INLINE void gmp_can_payload_set_u32(gmp_can_msg_t* msg, uint8_t offset, uint32_t val)
+{
+    gmp_can_payload_set_u8(msg, offset, (uint8_t)(val & 0xFFU));
+    gmp_can_payload_set_u8(msg, offset + 1, (uint8_t)((val >> 8) & 0xFFU));
+    gmp_can_payload_set_u8(msg, offset + 2, (uint8_t)((val >> 16) & 0xFFU));
+    gmp_can_payload_set_u8(msg, offset + 3, (uint8_t)((val >> 24) & 0xFFU));
+}
+
+/**
+ * @brief Write a 32-bit floating point number (IEEE 754) starting at any offset (0-4).
+ * @note  Strict-aliasing safe implementation using union.
+ */
+GMP_STATIC_INLINE void gmp_can_payload_set_f32(gmp_can_msg_t* msg, uint8_t offset, float val)
+{
+    union {
+        float f;
+        uint32_t u;
+    } conv;
+    conv.f = val;
+    gmp_can_payload_set_u32(msg, offset, conv.u);
+}
+
+/**
+ * @brief Static Circular Deque Structure.
+ */
+typedef struct
+{
+    gmp_can_msg_t* buffer; /**< Pointer to the static array storage. */
+    uint16_t capacity;     /**< Maximum number of elements the deque can hold. */
+    uint16_t head;         /**< Index of the front element. */
+    uint16_t tail;         /**< Index of the next available slot at the rear. */
+    uint16_t count;        /**< Current number of elements in the deque. */
+} gmp_can_deque_t;
+
+/* ========================================================================= */
+/* ==================== API FUNCTIONS ====================================== */
+/* ========================================================================= */
+
+/**
+ * @brief Initializes the CAN message deque with a static buffer.
+ * * @param[out] dq       Pointer to the deque structure.
+ * @param[in]  buf      Pointer to a static array of gmp_can_msg_t.
+ * @param[in]  cap      Capacity of the buffer.
+ */
+void gmp_can_deque_init(gmp_can_deque_t* dq, gmp_can_msg_t* buf, uint16_t cap);
+
+/**
+ * @brief Inserts a message at the end of the deque (Normal priority).
+ * * @param[in,out] dq    Pointer to the deque structure.
+ * @param[in]     msg   Pointer to the message to be inserted.
+ * @return ec_gt        GMP_EC_OK on success, or GMP_EC_DEQUE_FULL.
+ */
+ec_gt gmp_can_deque_push_back(gmp_can_deque_t* dq, const gmp_can_msg_t* msg);
+
+/**
+ * @brief Inserts a message at the front of the deque (High priority).
+ * * @param[in,out] dq    Pointer to the deque structure.
+ * @param[in]     msg   Pointer to the message to be inserted.
+ * @return ec_gt        GMP_EC_OK on success, or GMP_EC_DEQUE_FULL.
+ */
+ec_gt gmp_can_deque_push_front(gmp_can_deque_t* dq, const gmp_can_msg_t* msg);
+
+/**
+ * @brief Removes and retrieves a message from the front of the deque.
+ * * @param[in,out] dq      Pointer to the deque structure.
+ * @param[out]    msg_ret Pointer to store the retrieved message.
+ * @return ec_gt          GMP_EC_OK on success, or GMP_EC_DEQUE_EMPTY.
+ */
+ec_gt gmp_can_deque_pop_front(gmp_can_deque_t* dq, gmp_can_msg_t* msg_ret);
+
+
+/**
+ * @brief CAN Node Configuration and State Object.
+ */
+typedef struct
+{
+    can_halt bus; /**< Pointer to the physical CAN bus (CSP layer). */
+
+    /* --- Software Queues --- */
+    gmp_can_deque_t tx_deque;      /**< Transmit deque (Supports push_front for high priority). */
+    gmp_can_deque_t rx_slow_queue; /**< Receive queue for non-real-time messages (SDO, etc.). */
+
+    /* --- Routing Rules --- */
+    uint32_t fast_rx_mask; /**< Mask to identify high-priority IDs. */
+    uint32_t fast_rx_id;   /**< Target ID pattern for fast callback. */
+
+    /* --- User Callbacks --- */
+    void (*fast_rx_callback)(const gmp_can_msg_t* msg); /**< ISR-context fast callback. */
+} gmp_can_node_t;
+
+/* ========================================================================= */
+/* ==================== CORE NODE APIs ===================================== */
+/* ========================================================================= */
+
+/**
+ * @brief Initializes a CAN node with provided bus and buffers.
+ */
+void gmp_can_node_init(gmp_can_node_t* node, can_halt bus, gmp_can_msg_t* tx_buf, uint16_t tx_cap,
+                       gmp_can_msg_t* rx_buf, uint16_t rx_cap);
+
+/**
+ * @brief Sets the routing rule for high-priority reception.
+ */
+void gmp_can_node_set_fast_path(gmp_can_node_t* node, uint32_t id, uint32_t mask, void (*cb)(const gmp_can_msg_t*));
+
+/* ========================================================================= */
+/* ==================== ISR ENGINE (PUMPS) ================================= */
+/* ========================================================================= */
+
+/**
+ * @brief The Transmit Pump: To be called in the CAN Transmit Empty Interrupt.
+ */
+void gmp_can_node_tx_isr_pump(gmp_can_node_t* node);
+
+/**
+ * @brief The Receive Router: To be called in the CAN Receive Interrupt.
+ */
+void gmp_can_node_rx_isr_router(gmp_can_node_t* node, const gmp_can_msg_t* rx_msg);
+
+/**
+ * @brief CAN message transmission priority.
+ */
+typedef enum
+{
+    GMP_CAN_PRIORITY_NORMAL = 0, /**< Normal priority: Appended to the end of the Tx deque. */
+    GMP_CAN_PRIORITY_HIGH = 1    /**< High priority: Inserted at the front of the Tx deque (pre-empts others). */
+} gmp_can_priority_et;
+
+ec_gt gmp_hal_can_bus_write(can_halt hcan, const gmp_can_msg_t* msg);
 
 #ifdef __cplusplus
 }
