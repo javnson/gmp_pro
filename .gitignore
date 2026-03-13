@@ -448,6 +448,13 @@ ctl/training/**/RTE/*
 ctl/**/gmp_src/**
 ctl/**/include_paths.txt
 
+# Disable GMP source manager output
+ctl/**/gmp_inc/**
+ctl/**/gmp_src/**
+
+tools/**/gmp_inc/**
+tools/**/gmp_src/**
+
 # disable all the CCS temporary files
 # ctl/suite/**/*.launch
 ctl/suite/**/*.prefs
