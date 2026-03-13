@@ -455,6 +455,9 @@ ctl/**/gmp_src/**
 tools/**/gmp_inc/**
 tools/**/gmp_src/**
 
+csp/**/gmp_inc/**
+csp/**/gmp_src/**
+
 # disable all the CCS temporary files
 # ctl/suite/**/*.launch
 ctl/suite/**/*.prefs

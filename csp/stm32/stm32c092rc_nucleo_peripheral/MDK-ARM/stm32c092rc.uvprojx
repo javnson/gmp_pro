@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32C092xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32C0xx_HAL_Driver/Inc;../Drivers/STM32C0xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32C0xx/Include;../Drivers/CMSIS/Include;..\..\..\..\..\gmp_pro;..\..\..\stm32;..\user;..\xplt</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32C0xx_HAL_Driver/Inc;../Drivers/STM32C0xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32C0xx/Include;../Drivers/CMSIS/Include;..\gmp_src_mgr\gmp_inc;..\gmp_src_mgr\gmp_inc\csp\stm32;..\user;..\xplt</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -699,6 +699,16 @@
               <FileType>1</FileType>
               <FilePath>..\gmp_src_mgr\gmp_src\stm32_peripheral_driver.c</FilePath>
             </File>
+            <File>
+              <FileName>ht16k33.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ht16k33.c</FilePath>
+            </File>
+            <File>
+              <FileName>PCA9555.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\PCA9555.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -753,76 +763,6 @@
               <FileName>xplt.peripheral.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\xplt\xplt.peripheral.h</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>GMP/peripheral</GroupName>
-          <Files>
-            <File>
-              <FileName>ad5933.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\periphseral\ad5933.c</FilePath>
-            </File>
-            <File>
-              <FileName>ad9833.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\periphseral\ad9833.c</FilePath>
-            </File>
-            <File>
-              <FileName>ad9834.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\periphseral\ad9834.c</FilePath>
-            </File>
-            <File>
-              <FileName>as5048a.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\periphseral\as5048a.c</FilePath>
-            </File>
-            <File>
-              <FileName>bh1750.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\periphseral\bh1750.c</FilePath>
-            </File>
-            <File>
-              <FileName>bmp280.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\periphseral\bmp280.c</FilePath>
-            </File>
-            <File>
-              <FileName>dac8563.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\periphseral\dac8563.c</FilePath>
-            </File>
-            <File>
-              <FileName>ds1337.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\periphseral\ds1337.c</FilePath>
-            </File>
-            <File>
-              <FileName>hdc1080.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\periphseral\hdc1080.c</FilePath>
-            </File>
-            <File>
-              <FileName>ht16k33.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\periphseral\ht16k33.c</FilePath>
-            </File>
-            <File>
-              <FileName>ina219.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\periphseral\ina219.c</FilePath>
-            </File>
-            <File>
-              <FileName>mcp41xx.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\periphseral\mcp41xx.c</FilePath>
-            </File>
-            <File>
-              <FileName>PCA9555.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\periphseral\PCA9555.c</FilePath>
             </File>
           </Files>
         </Group>

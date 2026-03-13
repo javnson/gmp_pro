@@ -102,8 +102,8 @@ void at_device_init(at_device_entity_t* dev, at_device_cmd_t* table, uint16_t ta
     dev->cmd_table = table;
     dev->cmd_table_size = table_size;
 
-    memset(dev->mem_pool, AT_DEVICE_RX_BUFFER, 0);
-    memset(dev->cmd_buffer, AT_LINE_MAX_LEN, 0);
+    memset(dev->mem_pool, 0, AT_DEVICE_RX_BUFFER);
+    memset(dev->cmd_buffer, 0, AT_LINE_MAX_LEN);
 
     // 3. 排序命令表 (优化：O(N) -> O(logN) 查找)
     // 警告：确保 table 指向的是 RAM 区域，否则这里会 Crash
