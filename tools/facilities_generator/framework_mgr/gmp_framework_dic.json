@@ -1,0 +1,24 @@
+{
+    "roots": [
+        "core",
+        "ctl",
+        "cctl",
+        "csp",
+        "vctl"
+    ],
+    "modules": {
+        "core": {
+            "core|mm": {
+                "type": "module",
+                "description": "新模块",
+                "src_patterns": [
+                    "src/*.c"
+                ],
+                "inc_patterns": [
+                    "**/*.h"
+                ],
+                "depends_on": []
+            }
+        }
+    }
+}
