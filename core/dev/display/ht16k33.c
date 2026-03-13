@@ -6,8 +6,10 @@
  * @note    Optimized with partial memory refresh and strict bounds checking.
  */
 
-#include <core/dev/display/ht16k33.h>
 #include <gmp_core.h>
+
+#include <core/dev/display/ht16k33.h>
+
 
 /**
  * @brief   Initialize the HT16K33 device.
