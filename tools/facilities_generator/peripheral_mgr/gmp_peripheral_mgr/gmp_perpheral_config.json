@@ -1,0 +1,20 @@
+{
+    "selected_modules": [
+        {
+            "category": "display",
+            "module": "ht16k33"
+        },
+        {
+            "category": "application",
+            "module": "ad5933"
+        },
+        {
+            "category": "dac",
+            "module": "dac8563"
+        },
+        {
+            "category": "gpio",
+            "module": "pca9555"
+        }
+    ]
+}

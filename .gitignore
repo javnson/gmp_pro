@@ -491,6 +491,10 @@ gmp_pro.zip
 # doxygen output files
 ctl/doc/**
 
+# peripheral manager output
+**/gmp_peripheral_src/**
+**/include_headers.inl
+
 ###################################################################################
 # HARDWARE Driver Section
 
