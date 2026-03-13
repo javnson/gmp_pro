@@ -456,7 +456,7 @@ ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, s
  * @param[in] hal_status Status returned by STM32 HAL functions.
  * @return  ec_gt        Mapped general error code.
  */
-static ec_gt stm32_hal_status_to_ec(HAL_StatusTypeDef hal_status)
+static ec_gt stm32_hal_status_to_ec_spi(HAL_StatusTypeDef hal_status)
 {
     switch (hal_status)
     {
@@ -489,7 +489,7 @@ ec_gt gmp_hal_spi_bus_write(spi_halt hspi, const data_gt* tx_buf, size_gt len, t
     /* STM32 HAL automatically handles the TX FIFO and waiting flags */
     HAL_StatusTypeDef res = HAL_SPI_Transmit(hspi_stm32, (uint8_t*)tx_buf, (uint16_t)len, (uint32_t)timeout);
 
-    return stm32_hal_status_to_ec(res);
+    return stm32_hal_status_to_ec_spi(res);
 }
 
 ec_gt gmp_hal_spi_bus_read(spi_halt hspi, data_gt* rx_buf, size_gt len, time_gt timeout)
@@ -506,7 +506,7 @@ ec_gt gmp_hal_spi_bus_read(spi_halt hspi, data_gt* rx_buf, size_gt len, time_gt 
      */
     HAL_StatusTypeDef res = HAL_SPI_Receive(hspi_stm32, (uint8_t*)rx_buf, (uint16_t)len, (uint32_t)timeout);
 
-    return stm32_hal_status_to_ec(res);
+    return stm32_hal_status_to_ec_spi(res);
 }
 
 ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const data_gt* tx_buf, data_gt* rx_buf, size_gt len, time_gt timeout)
@@ -524,7 +524,7 @@ ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const data_gt* tx_buf, data_gt* rx
     HAL_StatusTypeDef res =
         HAL_SPI_TransmitReceive(hspi_stm32, (uint8_t*)tx_buf, (uint8_t*)rx_buf, (uint16_t)len, (uint32_t)timeout);
 
-    return stm32_hal_status_to_ec(res);
+    return stm32_hal_status_to_ec_spi(res);
 }
 
 #endif // HAL_SPI_MODULE_ENABLED

@@ -43,6 +43,7 @@ adc_gt idc_src;
 //=================================================================================================
 // peripheral setup function
 
+extern UART_HandleTypeDef huart2;
 
 
 // User should setup all the peripheral in this function.
@@ -50,63 +51,11 @@ void setup_peripheral(void)
 {
 
     // Setup Debug Uart
-    //debug_uart = IRIS_UART_USB_BASE;
-
-    reset_controller();
+    debug_uart = &huart2;
 
     // Test print function
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
     //asm(" RPT #255 || NOP");
-
-    // inverter side ADC
-    ctl_init_tri_ptr_adc_channel(
-        &uuvw, uuvw_src,
-        // ADC gain, ADC bias
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_VOLTAGE_BIAS),
-        // ADC resolution, IQN
-        12, 24);
-
-    ctl_init_tri_ptr_adc_channel(
-        &iuvw, iuvw_src,
-        // ADC gain, ADC bias
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_CURRENT_BIAS),
-        // ADC resolution, IQN
-        12, 24);
-
-    // grid side ADC
-//    ctl_init_tri_ptr_adc_channel(
-//        &vabc, vabc_src,
-//        // ADC gain, ADC bias
-//        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
-//        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_VOLTAGE_BIAS),
-//        // ADC resolution, IQN
-//        12, 24);
-
-//    ctl_init_tri_ptr_adc_channel(
-//        &iabc, iabc_src,
-//        // ADC gain, ADC bias
-//        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
-//        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_CURRENT_BIAS),
-//        // ADC resolution, IQN
-//        12, 24);
-
-    ctl_init_ptr_adc_channel(
-        &udc, &udc_src,
-        // ADC gain, ADC bias
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_DC_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_DC_VOLTAGE_BIAS),
-        // ADC resolution, IQN
-        12, 24);
-
-    ctl_init_ptr_adc_channel(
-        &idc, &idc_src,
-        // ADC gain, ADC bias
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_DC_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_DC_CURRENT_BIAS),
-        // ADC resolution, IQN
-        12, 24);
 
 
 
@@ -146,13 +95,6 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 #endif // HAL_ADC_MODULE_ENABLED
 
 
-void reset_controller(void)
-{
-
-
-}
-
-
 
 //=================================================================================================
 // communication functions and interrupt functions here
@@ -162,19 +104,19 @@ void reset_controller(void)
 
 void at_device_flush_rx_buffer()
 {
-    uint16_t fifoLevel;
-		size_gt rx_len;
-    data_gt rxBuf[ISR_LOCAL_BUF_SIZE];
+//    uint16_t fifoLevel;
+//		size_gt rx_len;
+//    data_gt rxBuf[ISR_LOCAL_BUF_SIZE];
 
-    // Read all FIFO content
-    while ((fifoLevel = gmp_hal_uart_get_rx_available(debug_uart)) > 0)
-    {
-        // Get data
-				gmp_hal_uart_read(debug_uart, rxBuf, fifoLevel, 5, &rx_len);
+//    // Read all FIFO content
+//    while ((fifoLevel = gmp_hal_uart_get_rx_available(debug_uart)) > 0)
+//    {
+//        // Get data
+//				gmp_hal_uart_read(debug_uart, rxBuf, fifoLevel, 5, &rx_len);
 
-        // send to AT device
-        at_device_rx_isr(&at_dev, (char*)rxBuf, fifoLevel);
-    }
+//        // send to AT device
+//        at_device_rx_isr(&at_dev, (char*)rxBuf, fifoLevel);
+//    }
 }
 
 

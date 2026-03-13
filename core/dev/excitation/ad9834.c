@@ -6,7 +6,7 @@
 
 #include <gmp_core.h>
 
-#include <core/dev/application/ad9834.h>
+#include <core/dev/excitation/ad9834.h>
 
 
 #define AD9834_FREQ_MULTIPLIER  (268435456.0f)

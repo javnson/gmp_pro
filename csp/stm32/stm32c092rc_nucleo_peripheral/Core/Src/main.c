@@ -21,6 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <gmp_core.h>
 
 /* USER CODE END Includes */
 
@@ -106,7 +107,7 @@ int main(void)
   MX_I2C1_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-
+	gmp_base_entry();
   /* USER CODE END 2 */
 
   /* Infinite loop */

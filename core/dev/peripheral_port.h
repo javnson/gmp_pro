@@ -646,6 +646,8 @@ ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, ui
  */
 ec_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length, uint32_t timeout, size_gt* bytes_read);
 
+size_gt gmp_base_print_default(const char* p_fmt, ...);
+
 /* ========================================================================= */
 /* ==================== STATUS CHECK APIs ================================== */
 /* ========================================================================= */
