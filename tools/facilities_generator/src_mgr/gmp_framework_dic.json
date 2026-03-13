@@ -352,11 +352,11 @@
                 "type": "module",
                 "description": "",
                 "src_patterns": [
-                    "${GMP_PRO_LOCATION}/core/dev/at_device.h"
-                ],
-                "inc_patterns": [
                     "${GMP_PRO_LOCATION}/core/dev/src/gmp_dev_util.c",
                     "${GMP_PRO_LOCATION}/core/dev/src/gmp_at_device.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/core/dev/at_device.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
@@ -848,11 +848,11 @@
                 "type": "module",
                 "description": "",
                 "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/framework/cia402_state_machine.h"
-                ],
-                "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/framework/src/ctl_cia402_callback_fn.c",
                     "${GMP_PRO_LOCATION}/ctl/framework/src/ctl_cia402_state_machine.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/framework/cia402_state_machine.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
