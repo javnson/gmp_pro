@@ -1,0 +1,7 @@
+========== GMP 编译器 Include Paths 汇总 ==========
+1. 本地镜像基础路径:
+.\gmp_inc
+
+2. 外部宏依赖路径 (-I):
+E:/lib/gmp_pro
+E:/lib/gmp_pro/csp/stm32
