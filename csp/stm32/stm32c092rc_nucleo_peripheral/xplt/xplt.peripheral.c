@@ -45,6 +45,11 @@ adc_gt idc_src;
 
 extern UART_HandleTypeDef huart2;
 
+extern I2C_HandleTypeDef hi2c1;
+extern iic_halt iic_bus;
+
+gpio_model_stm32_t user_led_entity;
+extern gpio_halt user_led;
 
 // User should setup all the peripheral in this function.
 void setup_peripheral(void)
@@ -55,10 +60,13 @@ void setup_peripheral(void)
 
     // Test print function
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
-    //asm(" RPT #255 || NOP");
 
-
-
+	user_led_entity.gpio_port = GPIOA;
+	user_led_entity.gpio_pin = GPIO_PIN_5;
+	user_led = &user_led_entity;
+	
+	// iic bus
+	iic_bus = &hi2c1;
 
 }
 

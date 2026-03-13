@@ -86,7 +86,7 @@ typedef struct _tag_as5048a_dev_t
     /* --- Hardware Interface & Diagnostics --- */
     spi_device_halt spi_node; /**< @brief Layer 2 Logical SPI Device Handle. */
     uint16_t diag_flags;      /**< @brief Cached diagnostics flags (OCF, COF, COMP). */
-    bool err_flag;            /**< @brief SPI communication parity/framing error flag. */
+    fast_gt err_flag;            /**< @brief SPI communication parity/framing error flag. */
 
 } as5048a_dev_t;
 
@@ -183,14 +183,14 @@ GMP_STATIC_INLINE ctrl_gt as5048a_step(as5048a_dev_t* dev)
     uint16_t raw_res = ((uint16_t)rx_buf[0] << 8) | rx_buf[1];
 
     /* 3. Hardware Error & Parity Verification */
-    dev->err_flag = false;
+    dev->err_flag = 0;
     if (as5048a_calc_parity(raw_res & 0x7FFF) != (raw_res >> 15))
     {
-        dev->err_flag = true; /* Parity Mismatch */
+        dev->err_flag = 1; /* Parity Mismatch */
     }
     if (raw_res & 0x4000)
     {
-        dev->err_flag = true; /* AS5048A Internal Error Flag (Bit 14) */
+        dev->err_flag = 1; /* AS5048A Internal Error Flag (Bit 14) */
     }
 
     /* 4. Extract Raw Data (Lower 14 bits) */

@@ -26,6 +26,8 @@ ht16k33_dev_t ht16k33;
 pca9555_dev_t pca9555;
 hdc1080_dev_t hdc1080;
 
+// GPIO
+gpio_halt user_led;
 
 void beep_on()
 {
@@ -135,6 +137,18 @@ gmp_task_status_t tsk_blink(gmp_task_t* tsk)
     GMP_UNUSED_VAR(tsk);
 
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
+
+    static fast_gt led_stat = 0;
+    if(led_stat == 0)
+    {
+        led_stat = 1;
+        gmp_hal_gpio_write(user_led, 0);
+    }
+    else
+    {
+        led_stat = 0;
+        gmp_hal_gpio_write(user_led, 1);
+    }
 
     return GMP_TASK_DONE;
 }

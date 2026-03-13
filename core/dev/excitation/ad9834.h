@@ -124,8 +124,8 @@ ec_gt ad9834_set_waveform(ad9834_dev_t* dev, ad9834_wave_et wave_type);
 ec_gt ad9834_set_control_source(ad9834_dev_t* dev, ad9834_ctrl_src_et src);
 ec_gt ad9834_select_output_registers(ad9834_dev_t* dev, ad9834_reg_sel_et freq_sel, ad9834_reg_sel_et phase_sel);
 
-ec_gt ad9834_set_reset(ad9834_dev_t* dev, bool is_reset);
-ec_gt ad9834_set_sleep(ad9834_dev_t* dev, bool dac_sleep, bool clock_sleep);
+ec_gt ad9834_set_reset(ad9834_dev_t* dev, fast_gt is_reset);
+ec_gt ad9834_set_sleep(ad9834_dev_t* dev, fast_gt dac_sleep, fast_gt clock_sleep);
 
 /* example
 

@@ -140,7 +140,7 @@ ec_gt ad9833_select_output_registers(ad9833_dev_t* dev, ad9833_reg_sel_et freq_s
  * @brief Software reset control.
  * @param is_reset True to hold in reset, False to release and generate output.
  */
-ec_gt ad9833_set_reset(ad9833_dev_t* dev, bool is_reset);
+ec_gt ad9833_set_reset(ad9833_dev_t* dev, fast_gt is_reset);
 
 
 

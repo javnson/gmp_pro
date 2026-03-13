@@ -3,6 +3,7 @@
  * @brief   Hardware-agnostic driver implementation for DS1337 RTC.
  */
 
+
 #include <gmp_core.h>
 
 #include <core/dev/rtc/ds1337.h>

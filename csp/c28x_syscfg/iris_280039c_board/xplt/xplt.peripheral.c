@@ -44,6 +44,7 @@ adc_gt idc_src;
 // peripheral setup function
 
 extern iic_halt iic_bus;
+extern gpio_halt user_led;
 
 //
 // Function to configure I2C A in FIFO mode.
@@ -165,6 +166,8 @@ void setup_peripheral(void)
 
     iic_bus = I2CA_BASE;
 
+    user_led = SYSTEM_LED;
+
 }
 
 
@@ -188,10 +191,10 @@ interrupt void MainISR(void)
     //
     // Blink LED
     //
-    if (gmp_base_get_system_tick() % 1000 < 500)
-        GPIO_WritePin(SYSTEM_LED, 0);
-    else
-        GPIO_WritePin(SYSTEM_LED, 1);
+//    if (gmp_base_get_system_tick() % 1000 < 500)
+//        GPIO_WritePin(SYSTEM_LED, 0);
+//    else
+//        GPIO_WritePin(SYSTEM_LED, 1);
 
     //
     // Clear the interrupt flag

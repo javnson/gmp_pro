@@ -6,8 +6,8 @@
  * @note    Optimized with partial memory refresh and strict bounds checking.
  */
 
-#include <core/dev/display/ht16k33.h>
 #include <gmp_core.h>
+#include <core/dev/display/ht16k33.h>
 
 /**
  * @brief   Initialize the HT16K33 device.
@@ -149,7 +149,8 @@ ec_gt ht16k33_read_keys(ht16k33_dev_t* dev, fast_gt* key_id_ret)
 
                     current_key = (fast_gt)((ksRow * 13) + kCol + 1);
 
-                    if (current_key != dev->last_key || gmp_base_get_diff_system_tick(dev->last_trigger) > 120)
+
+                    if(current_key != dev->last_key || gmp_base_get_diff_system_tick(dev->last_trigger) > 120)
                     {
                         dev->last_key = current_key;
                         *key_id_ret = dev->last_key;

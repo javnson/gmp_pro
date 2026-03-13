@@ -8,6 +8,11 @@
 #include "ctl_main.h"
 #include <stdlib.h>
 
+// peripheral
+#include <core/dev/display/ht16k33.h>
+#include <core/dev/gpio/pca9555.h>
+#include <core/dev/sensor/hdc1080.h>
+
 //=================================================================================================
 // global variables
 
@@ -15,6 +20,24 @@ at_device_entity_t at_dev;
 time_gt uart_last_tick;
 gmp_scheduler_t sched;
 
+// devices
+iic_halt iic_bus;
+ht16k33_dev_t ht16k33;
+pca9555_dev_t pca9555;
+hdc1080_dev_t hdc1080;
+
+
+gpio_halt user_led;
+
+void beep_on()
+{
+    pca9555_set_pin_output(&pca9555, PCA9555_PORT_0, 5, 1);
+}
+
+void beep_off()
+{
+    pca9555_set_pin_output(&pca9555, PCA9555_PORT_0, 5, 0);
+}
 
 //=================================================================================================
 // AT command
@@ -114,6 +137,18 @@ gmp_task_status_t tsk_blink(gmp_task_t* tsk)
     GMP_UNUSED_VAR(tsk);
 
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
+	
+	static fast_gt led_stat = 0;
+	if(led_stat == 0)
+	{
+		led_stat = 1;
+		gmp_hal_gpio_write(user_led, 0);
+	}
+	else
+	{
+		led_stat = 0;
+		gmp_hal_gpio_write(user_led, 1);
+	}
 
     return GMP_TASK_DONE;
 }
@@ -133,12 +168,74 @@ gmp_task_status_t tsk_at_device(gmp_task_t* tsk)
 // protect task this function would be implemented in ctl_main.c
 gmp_task_status_t tsk_protect(gmp_task_t* tsk);
 
+gmp_task_status_t tsk_LED_flush(gmp_task_t* tsk)
+{
+    ht16k33_dev_t *dev = (ht16k33_dev_t *) tsk->user_data;
+
+    // TODO: fresh LED buffer here.
+
+    dev->display_ram[0] = 0xFF;
+
+    ec_gt ret = ht16k33_update_display(dev);
+
+
+    // if meets error, close this task
+    if(ret != GMP_EC_OK)
+    {
+        tsk->is_enabled = 0;
+    }
+
+    return GMP_TASK_DONE;
+}
+
+gmp_task_status_t tsk_key_flush(gmp_task_t* tsk)
+{
+    ht16k33_dev_t *dev = (ht16k33_dev_t *) tsk->user_data;
+    fast_gt key_id = 0;
+
+    ec_gt ret = ht16k33_read_keys(dev, &key_id);
+
+    // if meets error, close this task
+    if(ret != GMP_EC_OK)
+    {
+        tsk->is_enabled = 0;
+    }
+
+
+    if(key_id != 0)
+    {
+        // TODO: response key message
+        gmp_base_print("Receive Key Message, %d\r\n", key_id);
+
+        if(key_id < 8)
+        {
+            pca9555_set_pin_output(&pca9555,PCA9555_PORT_0,key_id,1);
+            beep_on();
+        }
+        else if(key_id < 20)
+        {
+            pca9555_set_pin_output(&pca9555, PCA9555_PORT_1, key_id - 14, 1);
+            beep_off();
+        }
+
+
+    }
+
+
+
+    return GMP_TASK_DONE;
+}
+
+
 // All tasks must be non blocking tasks
 gmp_task_t tasks[] = {
     // name,     task,      period(ms),  init_phase, is_enabled, pParam
     {"protect", tsk_protect, 1000, 0, 1, NULL},
     {"blink_led", tsk_blink, 1000, 100, 1, NULL},
-    {"at_device", tsk_at_device, 5, 1, 1, NULL}};
+    {"at_device", tsk_at_device, 5, 1, 1, NULL},
+    {"flush_key", tsk_key_flush, 100, 10, 1, (void*)&ht16k33},
+    {"flush_led", tsk_LED_flush, 500, 200, 1, (void*)&ht16k33}
+};
 
 //=================================================================================================
 // initialize routine

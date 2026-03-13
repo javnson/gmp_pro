@@ -757,6 +757,76 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>GMP/peripheral</GroupName>
+          <Files>
+            <File>
+              <FileName>ad5933.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\periphseral\ad5933.c</FilePath>
+            </File>
+            <File>
+              <FileName>ad9833.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\periphseral\ad9833.c</FilePath>
+            </File>
+            <File>
+              <FileName>ad9834.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\periphseral\ad9834.c</FilePath>
+            </File>
+            <File>
+              <FileName>as5048a.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\periphseral\as5048a.c</FilePath>
+            </File>
+            <File>
+              <FileName>bh1750.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\periphseral\bh1750.c</FilePath>
+            </File>
+            <File>
+              <FileName>bmp280.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\periphseral\bmp280.c</FilePath>
+            </File>
+            <File>
+              <FileName>dac8563.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\periphseral\dac8563.c</FilePath>
+            </File>
+            <File>
+              <FileName>ds1337.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\periphseral\ds1337.c</FilePath>
+            </File>
+            <File>
+              <FileName>hdc1080.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\periphseral\hdc1080.c</FilePath>
+            </File>
+            <File>
+              <FileName>ht16k33.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\periphseral\ht16k33.c</FilePath>
+            </File>
+            <File>
+              <FileName>ina219.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\periphseral\ina219.c</FilePath>
+            </File>
+            <File>
+              <FileName>mcp41xx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\periphseral\mcp41xx.c</FilePath>
+            </File>
+            <File>
+              <FileName>PCA9555.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\periphseral\PCA9555.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>::CMSIS</GroupName>
         </Group>
       </Groups>

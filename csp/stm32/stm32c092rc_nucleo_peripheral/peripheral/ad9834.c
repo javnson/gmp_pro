@@ -3,9 +3,11 @@
  * @brief   Hardware-agnostic driver implementation for AD9834.
  */
 
+
 #include <gmp_core.h>
 
 #include <core/dev/excitation/ad9834.h>
+
 
 #define AD9834_FREQ_MULTIPLIER  (268435456.0f)
 #define AD9834_PHASE_MULTIPLIER (11.377777778f)

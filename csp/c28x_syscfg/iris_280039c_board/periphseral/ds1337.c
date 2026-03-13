@@ -3,7 +3,6 @@
  * @brief   Hardware-agnostic driver implementation for DS1337 RTC.
  */
 
-
 #include <gmp_core.h>
 
 #include <core/dev/rtc/ds1337.h>
@@ -155,7 +154,7 @@ ec_gt ds1337_set_alarm2(ds1337_dev_t* dev, const ds1337_time_t* alarm_time, ds13
     return gmp_hal_iic_write_mem(dev->bus, dev->dev_addr, DS1337_REG_ALARM2_MIN, 1, buf, 3, DS1337_CFG_TIMEOUT);
 }
 
-ec_gt ds1337_enable_alarms(ds1337_dev_t* dev, bool enable_a1, bool enable_a2)
+ec_gt ds1337_enable_alarms(ds1337_dev_t* dev, fast_gt enable_a1, fast_gt enable_a2)
 {
     if (dev == NULL)
         return GMP_EC_GENERAL_ERROR;

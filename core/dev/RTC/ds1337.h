@@ -108,7 +108,7 @@ typedef enum
 typedef struct
 {
     ds1337_int_mode_et int_mode;
-    bool enable_oscillator; /**< Should be true to keep time */
+    fast_gt enable_oscillator; /**< Should be true to keep time */
 } ds1337_init_t;
 
 /**
@@ -132,7 +132,7 @@ ec_gt ds1337_get_time(ds1337_dev_t* dev, ds1337_time_t* time_ret);
 ec_gt ds1337_set_alarm1(ds1337_dev_t* dev, const ds1337_time_t* alarm_time, ds1337_alarm1_rate_et rate);
 ec_gt ds1337_set_alarm2(ds1337_dev_t* dev, const ds1337_time_t* alarm_time, ds1337_alarm2_rate_et rate);
 
-ec_gt ds1337_enable_alarms(ds1337_dev_t* dev, bool enable_a1, bool enable_a2);
+ec_gt ds1337_enable_alarms(ds1337_dev_t* dev, fast_gt enable_a1, fast_gt enable_a2);
 
 ec_gt ds1337_get_status(ds1337_dev_t* dev, uint8_t* status_ret);
 ec_gt ds1337_clear_status(ds1337_dev_t* dev, uint8_t status_mask_to_clear);
