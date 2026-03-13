@@ -6,8 +6,8 @@
  * @note    Optimized with partial memory refresh and strict bounds checking.
  */
 
-#include <gmp_core.h>
 #include <core/dev/display/ht16k33.h>
+#include <gmp_core.h>
 
 /**
  * @brief   Initialize the HT16K33 device.
@@ -32,6 +32,8 @@ ec_gt ht16k33_init(ht16k33_dev_t* dev, iic_halt bus, addr16_gt dev_addr, const h
 
     dev->bus = bus;
     dev->dev_addr = dev_addr;
+    dev->last_key = 0;
+    dev->last_trigger = gmp_base_get_system_tick();
 
     /* Clear only the configured amount of local display RAM */
     for (i = 0; i < HT16K33_CFG_DISP_RAM_SIZE; i++)
@@ -121,6 +123,7 @@ ec_gt ht16k33_read_keys(ht16k33_dev_t* dev, fast_gt* key_id_ret)
     /* Dynamically allocate array size based on user configuration */
     data_gt key_data[HT16K33_CFG_KEY_RAM_SIZE] = {0};
     uint32_t byteIdx, bitIdx;
+    fast_gt current_key;
 
     /* Read ONLY the necessary key RAM bytes to save I2C bandwidth */
     ec_gt ret = gmp_hal_iic_read_mem(dev->bus, dev->dev_addr, HT16K33_REG_KEY_DATA_ADDR, 1, key_data,
@@ -144,7 +147,15 @@ ec_gt ht16k33_read_keys(ht16k33_dev_t* dev, fast_gt* key_id_ret)
                     uint32_t ksRow = byteIdx / 2;
                     uint32_t kCol = (byteIdx % 2) * 8 + bitIdx;
 
-                    *key_id_ret = (fast_gt)((ksRow * 13) + kCol + 1);
+                    current_key = (fast_gt)((ksRow * 13) + kCol + 1);
+
+                    if (current_key != dev->last_key || gmp_base_get_diff_system_tick(dev->last_trigger) > 120)
+                    {
+                        dev->last_key = current_key;
+                        *key_id_ret = dev->last_key;
+                        dev->last_trigger = gmp_base_get_system_tick();
+                    }
+
                     return GMP_EC_OK;
                 }
             }

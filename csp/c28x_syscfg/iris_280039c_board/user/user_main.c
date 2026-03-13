@@ -26,6 +26,17 @@ ht16k33_dev_t ht16k33;
 pca9555_dev_t pca9555;
 hdc1080_dev_t hdc1080;
 
+
+void beep_on()
+{
+    pca9555_set_pin_output(&pca9555, PCA9555_PORT_0, 5, 1);
+}
+
+void beep_off()
+{
+    pca9555_set_pin_output(&pca9555, PCA9555_PORT_0, 5, 0);
+}
+
 //=================================================================================================
 // AT command
 
@@ -142,11 +153,14 @@ gmp_task_status_t tsk_at_device(gmp_task_t* tsk)
 
 gmp_task_status_t tsk_LED_flush(gmp_task_t* tsk)
 {
-    ht16k33_dev_t *dev = (ht16k33_dev_t *) tsk->handler;
+    ht16k33_dev_t *dev = (ht16k33_dev_t *) tsk->user_data;
 
     // TODO: fresh LED buffer here.
 
+    dev->display_ram[0] = 0xFF;
+
     ec_gt ret = ht16k33_update_display(dev);
+
 
     // if meets error, close this task
     if(ret != GMP_EC_OK)
@@ -157,10 +171,20 @@ gmp_task_status_t tsk_LED_flush(gmp_task_t* tsk)
     return GMP_TASK_DONE;
 }
 
+
+gmp_task_status_t tsk_joystick(gmp_task_t* tsk)
+{
+    pca9555_dev_t *dev = (ht16k33_dev_t *) tsk->user_data;
+
+
+
+    return GMP_TASK_DONE;
+}
+
 gmp_task_status_t tsk_key_flush(gmp_task_t* tsk)
 {
-    ht16k33_dev_t *dev = (ht16k33_dev_t *) tsk->handler;
-    fast_gt key_id;
+    ht16k33_dev_t *dev = (ht16k33_dev_t *) tsk->user_data;
+    fast_gt key_id = 0;
 
     ec_gt ret = ht16k33_read_keys(dev, &key_id);
 
@@ -170,7 +194,26 @@ gmp_task_status_t tsk_key_flush(gmp_task_t* tsk)
         tsk->is_enabled = 0;
     }
 
-    // TODO: response key message
+
+    if(key_id != 0)
+    {
+        // TODO: response key message
+        gmp_base_print("Receive Key Message, %d\r\n", key_id);
+
+        if(key_id < 8)
+        {
+            pca9555_set_pin_output(&pca9555,PCA9555_PORT_0,key_id,1);
+            beep_on();
+        }
+        else if(key_id < 20)
+        {
+            pca9555_set_pin_output(&pca9555, PCA9555_PORT_1, key_id - 14, 1);
+            beep_off();
+        }
+
+
+    }
+
 
 
     return GMP_TASK_DONE;
@@ -186,9 +229,12 @@ gmp_task_t tasks[] = {
     {"protect", tsk_protect, 1000, 0, 1, NULL},
     {"blink_led", tsk_blink, 1000, 100, 1, NULL},
     {"at_device", tsk_at_device, 5, 1, 1, NULL},
-    {"flush_key", tsk_key_flush, 50, 10, 1, (void*)&ht16k33},
+    {"joystick", tsk_joystick, 20, 10, 1, (void*)&pca9555},
+    {"flush_key", tsk_key_flush, 100, 10, 1, (void*)&ht16k33},
     {"flush_led", tsk_LED_flush, 500, 200, 1, (void*)&ht16k33}
 };
+
+
 
 //=================================================================================================
 // initialize routine
@@ -210,20 +256,22 @@ void init(void) GMP_NO_OPT_SUFFIX
 
     pca9555_init_t pca9555_init_struct =
     {
-     .cfg_port0 = 0xFF,
-     .cfg_port1 = 0xFF,
-     .out_port0 = 0xFF,
-     .out_port1 = 0xFF,
+     .cfg_port0 = 0x1F,
+     .cfg_port1 = 0x00,
+     .out_port0 = 0x00,
+     .out_port1 = 0x00,
      .pol_port0 = 0,
      .pol_port1 = 0
     };
 
     pca9555_init(&pca9555, iic_bus, PCA9555_CALC_ADDR(0,0,0), &pca9555_init_struct);
 
+    beep_off();
+
     hdc1080_config_reg_t hdc1080_cfg = {.all = 0};
     hdc1080_cfg.bits.mode = 1; // continuous acquisition data
 
-    hdc1080_init(&hdc1080, iic_bus, HDC1080_I2C_ADDR_DEFAULT, hdc1080_cfg);
+    //hdc1080_init(&hdc1080, iic_bus, HDC1080_I2C_ADDR_DEFAULT, hdc1080_cfg);
 
     at_device_init(&at_dev, at_cmds, sizeof(at_cmds) / sizeof(at_device_cmd_t), at_device_error_handler);
 

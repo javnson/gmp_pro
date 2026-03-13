@@ -47,12 +47,12 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
     idc_src = ADC_readResult(INV_IBUS_RESULT_BASE, INV_IBUS);
 
     // invoke ADC p.u. routine
-    ctl_step_tri_ptr_adc_channel(&iabc);
-    ctl_step_tri_ptr_adc_channel(&vabc);
-    ctl_step_tri_ptr_adc_channel(&iuvw);
-    ctl_step_tri_ptr_adc_channel(&uuvw);
-    ctl_step_ptr_adc_channel(&idc);
-    ctl_step_ptr_adc_channel(&udc);
+//    ctl_step_tri_ptr_adc_channel(&iabc);
+//    ctl_step_tri_ptr_adc_channel(&vabc);
+//    ctl_step_tri_ptr_adc_channel(&iuvw);
+//    ctl_step_tri_ptr_adc_channel(&uuvw);
+//    ctl_step_ptr_adc_channel(&idc);
+//    ctl_step_ptr_adc_channel(&udc);
 }
 
 // Output Callback

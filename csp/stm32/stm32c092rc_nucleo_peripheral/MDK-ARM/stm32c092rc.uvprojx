@@ -702,6 +702,61 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>GMP/user</GroupName>
+          <Files>
+            <File>
+              <FileName>ctl_main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\ctl_main.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_main.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\user\ctl_main.h</FilePath>
+            </File>
+            <File>
+              <FileName>user_main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\user_main.c</FilePath>
+            </File>
+            <File>
+              <FileName>user_main.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\user\user_main.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>GMP/xplt</GroupName>
+          <Files>
+            <File>
+              <FileName>ctrl_settings.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\xplt\ctrl_settings.h</FilePath>
+            </File>
+            <File>
+              <FileName>xplt.config.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\xplt\xplt.config.h</FilePath>
+            </File>
+            <File>
+              <FileName>xplt.ctl_interface.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\xplt\xplt.ctl_interface.h</FilePath>
+            </File>
+            <File>
+              <FileName>xplt.peripheral.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\xplt\xplt.peripheral.c</FilePath>
+            </File>
+            <File>
+              <FileName>xplt.peripheral.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\xplt\xplt.peripheral.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>::CMSIS</GroupName>
         </Group>
       </Groups>

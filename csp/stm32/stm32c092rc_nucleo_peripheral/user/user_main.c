@@ -1,4 +1,4 @@
-﻿// This is the example of user main.
+// This is the example of user main.
 
 // GMP basic core header
 #include <gmp_core.h>
@@ -130,16 +130,6 @@ gmp_task_status_t tsk_at_device(gmp_task_t* tsk)
     return GMP_TASK_DONE;
 }
 
-void send_monitor_data(void);
-gmp_task_status_t tsk_monitor(gmp_task_t* tsk)
-{
-    GMP_UNUSED_VAR(tsk);
-
-    send_monitor_data();
-
-    return GMP_TASK_DONE;
-}
-
 // protect task this function would be implemented in ctl_main.c
 gmp_task_status_t tsk_protect(gmp_task_t* tsk);
 
@@ -148,8 +138,7 @@ gmp_task_t tasks[] = {
     // name,     task,      period(ms),  init_phase, is_enabled, pParam
     {"protect", tsk_protect, 1000, 0, 1, NULL},
     {"blink_led", tsk_blink, 1000, 100, 1, NULL},
-    {"at_device", tsk_at_device, 5, 1, 1, NULL},
-    {"monitor_data", tsk_monitor, 2, 0, 1, NULL}};
+    {"at_device", tsk_at_device, 5, 1, 1, NULL}};
 
 //=================================================================================================
 // initialize routine
