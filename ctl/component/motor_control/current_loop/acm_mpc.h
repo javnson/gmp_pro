@@ -129,7 +129,7 @@ GMP_STATIC_INLINE void ctl_set_acm_mpc_flux_ref(ctl_acm_mpc_controller_t* mpc, c
 GMP_STATIC_INLINE void ctl_step_acm_mpc(ctl_acm_mpc_controller_t* mpc, ctl_vector2_t* idq_ref,
                                         ctl_vector2_t* is_ab_fbk, ctrl_gt omega_r, ctrl_gt _udc)
 {
-    int i;
+    fast_gt i;
 
     ctl_vector2_t is_ab_ref, is_pred, psi_r_pred;
     ctl_vector2_t J_psi_r_est = {{mpc->psi_r_est.dat[1], -mpc->psi_r_est.dat[0]}}; // Rotated by -90 deg
@@ -181,7 +181,7 @@ GMP_STATIC_INLINE void ctl_step_acm_mpc(ctl_acm_mpc_controller_t* mpc, ctl_vecto
         if (cost < min_cost)
         {
             min_cost = cost;
-            best_vector_idx = i;
+            best_vector_idx = (uint8_t)i;
         }
     }
 

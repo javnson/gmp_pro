@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <IncludePath>$(GMP_PRO_LOCATION);$(GMP_PRO_LOCATION)/third_party/asio/include;$(GMP_PRO_LOCATION)/third_party/assert/include;$(GMP_PRO_LOCATION)/third_party/config/include;$(GMP_PRO_LOCATION)/third_party/system/include;$(GMP_PRO_LOCATION)/third_party/winapi/include;$(GMP_PRO_LOCATION)/third_party/predef/include;$(GMP_PRO_LOCATION)/third_party/json/include;$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(GMP_PRO_LOCATION);$(GMP_PRO_LOCATION)/third_party/asio/include;$(GMP_PRO_LOCATION)/third_party/assert/include;$(GMP_PRO_LOCATION)/third_party/config/include;$(GMP_PRO_LOCATION)/third_party/system/include;$(GMP_PRO_LOCATION)/third_party/winapi/include;$(GMP_PRO_LOCATION)/third_party/predef/include;$(GMP_PRO_LOCATION)/third_party/json/include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</ExternalIncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>BOOST_ASIO_STANDALONE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup />
+</Project>

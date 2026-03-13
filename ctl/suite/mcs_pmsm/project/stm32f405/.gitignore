@@ -1,0 +1,24 @@
+# CMake build directory
+build/
+
+# STM32CubeMX project files
+*.mxproject
+*.ioc
+
+# STM32CubeMX generated linker scripts
+STM32*_FLASH.ld
+
+# Auto-generated GMP source files
+gmp_src/
+
+# Include path file
+include_path.txt
+
+# IDE specific files
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.temp
+*~

@@ -16,7 +16,7 @@
 #include <ctl\component\motor_control\basic\encoder.h>
 
 // motor controller
-#include <ctl/suite/mcs_pmsm_smo/pmsm_ctrl_smo.h>
+#include <ctl/component/motor_control/pmsm_controller/pmsm_ctrl_smo.h>
 
 #include <ctl/component/interface/pwm_channel.h>
 
@@ -33,7 +33,7 @@ extern "C"
 #endif // __cplusplus
 
 // PMSM controller
-extern pmsm_smo_bare_controller_t pmsm_ctrl;
+extern pmsm_smo_controller_t pmsm_ctrl;
 
 extern adc_bias_calibrator_t adc_calibrator;
 extern fast_gt flag_enable_adc_calibrator;

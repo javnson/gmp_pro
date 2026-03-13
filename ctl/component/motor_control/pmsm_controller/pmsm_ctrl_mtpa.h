@@ -254,7 +254,7 @@ GMP_STATIC_INLINE void ctl_step_pmsm_mtpa_ctrl(pmsm_mtpa_controller_t* ctrl)
 #if MTR_CTRL_CURRENT_MEASUREMENT_PHASES == 3
         ctl_ct_clarke(&ctrl->mtr_interface.iabc->value, &ctrl->iab0);
 #elif MTR_CTRL_CURRENT_MEASUREMENT_PHASES == 2
-        ctl_ct_clarke_2ph(&ctrl->mtr_interface.iabc->value, &ctrl->iab0);
+        ctl_ct_clarke_2ph((ctl_vector2_t*)&ctrl->mtr_interface.iabc->value, (ctl_vector2_t*)&ctrl->iab0);
 #else
 #error("Wrong parameter for macro MTR_CTRL_CURRENT_MEASUREMENT_PHASES")
 #endif

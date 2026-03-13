@@ -78,5 +78,10 @@
 #define PC_SIMULATE_STOP_CONDITION
 #endif // PC_SIMULATE_STOP_CONDITION
 
+// Select Little endian default
+#ifndef LITTLE_ENDIAN
+#define LITTLE_ENDIAN
+#endif // LITTLE_ENDIAN
+
 // Simulation will not stop automatically.
 // #define DISABLE_ASIO_HELPER_TIMEOUT_OPTION

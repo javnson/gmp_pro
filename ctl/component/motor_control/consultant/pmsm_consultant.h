@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file pmsm_consultant.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Defines data structures and utility functions for PMSM motor parameters.
@@ -160,7 +160,7 @@ GMP_STATIC_INLINE void ctl_pmsm_tune_speed_pi_params(const ctl_pmsm_dsn_consulta
                                                      parameter_gt bandwidth_hz, parameter_gt* kp, parameter_gt* ki)
 {
     parameter_gt kt = ctl_pmsm_get_Kt(pmsm_dsn);
-    if (kt < 1e-9)
+    if (kt < float2ctrl(0.000001))
     {
         *kp = 0.0;
         *ki = 0.0;
@@ -203,7 +203,7 @@ GMP_STATIC_INLINE void ctl_pmsm_tune_speed_pi_params(const ctl_pmsm_dsn_consulta
 GMP_STATIC_INLINE void ctl_pmsm_convert_current_pi_to_pu(const ctl_per_unit_consultant_t* pu, parameter_gt kp_real,
                                                          parameter_gt ki_real, parameter_gt* kp_pu, parameter_gt* ki_pu)
 {
-    if (pu->base_impedence < 1e-9 || pu->base_omega < 1e-9)
+    if (pu->base_impedence < float2ctrl(0.000001) || pu->base_omega < float2ctrl(0.000001))
     {
         *kp_pu = 0.0;
         *ki_pu = 0.0;
@@ -228,7 +228,7 @@ GMP_STATIC_INLINE void ctl_pmsm_convert_current_pi_to_pu(const ctl_per_unit_cons
 GMP_STATIC_INLINE void ctl_pmsm_convert_speed_pi_to_pu(const ctl_per_unit_consultant_t* pu, parameter_gt kp_real,
                                                        parameter_gt ki_real, parameter_gt* kp_pu, parameter_gt* ki_pu)
 {
-    if (pu->base_current < 1e-9)
+    if (pu->base_current < float2ctrl(0.000001))
     {
         *kp_pu = 0.0;
         *ki_pu = 0.0;

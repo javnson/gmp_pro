@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Rule
+  Name="MATLABConfiguration"
+  DisplayName="MATLAB"
+  Order="1000"
+  PageTemplate="tool"
+  xmlns="http://schemas.microsoft.com/build/2009/properties" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+	<Rule.DataSource>
+		<DataSource Persistence="ProjectFile" HasConfigurationCondition="true" />
+	</Rule.DataSource>
+	<Rule.Categories>
+		<Category Name="General" DisplayName="General" Description="General" />
+	</Rule.Categories>
+	<StringProperty Name="MatlabRoot" DisplayName="MATLAB Root Directory"  Visible="True"
+				 Description="Specifies the MATLAB installation root directory to use for compilation. This can be obtained by running 'matlabroot' at the MATLAB prompt."
+				 Category="General"
+				 Subtype="folder">
+	</StringProperty>
+	<StringListProperty Name="Matlab_IncludePath" DisplayName="Include Directories"  Visible="True"
+				 Description="Specifies the MATLAB and Simulink directories to be added to the include path. This path contains 'mex.h'."
+				 Category="General"
+				 Subtype="folder">
+	</StringListProperty>
+	<StringListProperty Name="Matlab_PreprocessorDefinitions" DisplayName="Preprocessor Definitions"  Visible="True"
+					Description="Specifies MEX-specific preprocessor definitions."
+					Category="General">
+	</StringListProperty>
+	<StringListProperty Name="Matlab_LibraryPath" DisplayName="Library Directories"  Visible="True"
+				 Description="Specifies the MATLAB directories containing linkage libraries."
+				 Category="General"
+				 Subtype="folder">
+	</StringListProperty>
+	<StringListProperty Name="Matlab_Dependencies" DisplayName="Dependencies"  Visible="True"
+				 Description="Specifies the MATLAB libraries to be linked."
+				 Category="General"
+				 Subtype="file">
+	</StringListProperty>
+</Rule>

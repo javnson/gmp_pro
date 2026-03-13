@@ -87,19 +87,7 @@ setlocal enabledelayedexpansion
 
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-
-:: Check if Git has installed correctly.
-:: For now git is not necessary.
-@REM git --version >nul 2>&1
-@REM if %errorlevel% neq 0 (
-@REM     echo Git is not installed correctly.
-@REM     echo You may find the installer of Git from the official website:
-@REM     echo https://git-scm.com/downloads
-@REM     exit /b
-@REM ) else (
-@REM     echo Git has installed, 
-@REM     git --version
-@REM )
+call ".\tools\gmp_installer\scoop_installer.bat"
 
 :: Check if Python has installed correctly.
 where python >nul 2>&1

@@ -138,7 +138,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_vector2_mag(ctl_vector2_t* vec)
 GMP_STATIC_INLINE void ctl_vector2_normalize(ctl_vector2_t* result, ctl_vector2_t* vec)
 {
     ctrl_gt mag = ctl_vector2_mag(vec);
-    if (mag > 1e-9) // Use a small epsilon to avoid division by zero
+    if (mag > float2ctrl(0.000001)) // Use a small epsilon to avoid division by zero
     {
         result->dat[0] = ctl_div(vec->dat[0], mag);
         result->dat[1] = ctl_div(vec->dat[1], mag);

@@ -16,7 +16,7 @@
 #include <ctl\component\motor_control\basic\encoder.h>
 
 // motor controller
-#include <ctl/suite/mcs_pmsm/pmsm_ctrl.h>
+//#include <ctl/suite/mcs_pmsm/pmsm_ctrl.h>
 
 #include <ctl/component/interface/pwm_channel.h>
 

@@ -40,7 +40,7 @@ void ctl_init_fuzzy_pid(ctl_fuzzy_pid_t* fp, parameter_gt base_kp, parameter_gt 
     // 3. Initialize the underlying standard PID controller with the base parameters.
     // The step function will dynamically update the kp, ki, kd coefficients,
     // but we initialize them here to their starting values.
-    ctl_init_pid_par(&fp->pid, base_kp, base_ti, base_td, fs);
+    ctl_init_pid_Tmode(&fp->pid, base_kp, base_ti, base_td, fs);
 
     // 4. Set the output and integrator saturation limits for the PID controller.
     fp->pid.out_max = sat_max;

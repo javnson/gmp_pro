@@ -1,0 +1,8 @@
+#Start recording tcl command: 11/9/2025 15:21:40
+#Project Location: E:/lib/gmp_pro/tools/hvhb40040_Antaioz/HVHB_Antaioz_new; Project name: HVHB_Antaioz_new
+prj_create -name "HVHB_Antaioz_new" -impl "impl_1" -dev iCE40UP5K-SG48I -performance "High-Performance_1.2V" -synthesis "lse"
+prj_save 
+prj_add_source "E:/lib/gmp_pro/tools/hvhb40040_Antaioz/HVHB_Antaioz_new/source/impl_1/top.v"
+prj_save 
+prj_close
+#Stop recording: 11/9/2025 16:11:06

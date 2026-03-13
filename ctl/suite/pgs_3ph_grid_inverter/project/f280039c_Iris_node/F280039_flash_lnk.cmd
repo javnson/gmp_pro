@@ -124,9 +124,9 @@ SECTIONS
    .bss             : > RAMLS5
    .bss:output      : > RAMLS3
    .bss:cio         : > RAMLS0
-   .data            : > RAMLS5
+   .data            : >> RAMLS6 | RAMLS7
    .sysmem          : > RAMLS5
-   .const           : > FLASH_BANK0_SEC4,  ALIGN(8)
+   .const           : >> FLASH_BANK0_SEC8 | FLASH_BANK0_SEC9,  ALIGN(8)
 #else
    .pinit           : > FLASH_BANK0_SEC1,  ALIGN(8)
    .ebss            : > RAMLS5

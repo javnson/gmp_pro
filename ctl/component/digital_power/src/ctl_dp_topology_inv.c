@@ -22,31 +22,34 @@
 
 void ctl_upgrade_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
 {
+    // loop variables
+    size_gt i;
+
     // --- Initialize sensor signal low-pass filters ---
     ctl_init_lp_filter(&inv->lpf_udc, init->fs, init->adc_fc);
     ctl_init_lp_filter(&inv->lpf_idc, init->fs, init->adc_fc);
-    for (int i = 0; i < 3; ++i)
+    for (i = 0; i < 3; ++i)
     {
         ctl_init_lp_filter(&inv->lpf_vabc[i], init->fs, init->adc_fc);
         ctl_init_lp_filter(&inv->lpf_iabc[i], init->fs, init->adc_fc);
     }
 
     // --- Initialize grid synchronization modules ---
-    ctl_init_pll_3ph(&inv->pll, init->freq_base, init->kp_pll_ctrl, init->Ti_pll_ctrl, 0, init->fs);
+    ctl_init_sfr_pll(&inv->pll, init->freq_base, init->kp_pll_ctrl, init->Ti_pll_ctrl, 0, init->fs);
     ctl_init_ramp_generator_via_freq(&inv->rg, init->fs, init->freq_base, 1, 0);
     inv->rg_slope_default = inv->rg.slope;
 
     // --- Initialize main d-q axis PI controllers (positive sequence) ---
-    ctl_init_pid_ser(&inv->voltage_ctrl[phase_d], init->kp_vd_ctrl, init->Ti_vd_ctrl, 0, init->fs);
-    ctl_init_pid_ser(&inv->voltage_ctrl[phase_q], init->kp_vq_ctrl, init->Ti_vq_ctrl, 0, init->fs);
-    ctl_init_pid_ser(&inv->current_ctrl[phase_d], init->kp_id_ctrl, init->Ti_id_ctrl, 0, init->fs);
-    ctl_init_pid_ser(&inv->current_ctrl[phase_q], init->kp_iq_ctrl, init->Ti_iq_ctrl, 0, init->fs);
+    ctl_init_pid_Tmode(&inv->voltage_ctrl[phase_d], init->kp_vd_ctrl, init->Ti_vd_ctrl, 0, init->fs);
+    ctl_init_pid_Tmode(&inv->voltage_ctrl[phase_q], init->kp_vq_ctrl, init->Ti_vq_ctrl, 0, init->fs);
+    ctl_init_pid_Tmode(&inv->current_ctrl[phase_d], init->kp_id_ctrl, init->Ti_id_ctrl, 0, init->fs);
+    ctl_init_pid_Tmode(&inv->current_ctrl[phase_q], init->kp_iq_ctrl, init->Ti_iq_ctrl, 0, init->fs);
 
     // --- Initialize negative sequence d-q axis PI controllers ---
-    ctl_init_pid_ser(&inv->neg_voltage_ctrl[phase_d], init->kp_vdn_ctrl, init->Ti_vdn_ctrl, 0, init->fs);
-    ctl_init_pid_ser(&inv->neg_voltage_ctrl[phase_q], init->kp_vqn_ctrl, init->Ti_vqn_ctrl, 0, init->fs);
-    ctl_init_pid_ser(&inv->neg_current_ctrl[phase_d], init->kp_idn_ctrl, init->Ti_idn_ctrl, 0, init->fs);
-    ctl_init_pid_ser(&inv->neg_current_ctrl[phase_q], init->kp_iqn_ctrl, init->Ti_iqn_ctrl, 0, init->fs);
+    ctl_init_pid_Tmode(&inv->neg_voltage_ctrl[phase_d], init->kp_vdn_ctrl, init->Ti_vdn_ctrl, 0, init->fs);
+    ctl_init_pid_Tmode(&inv->neg_voltage_ctrl[phase_q], init->kp_vqn_ctrl, init->Ti_vqn_ctrl, 0, init->fs);
+    ctl_init_pid_Tmode(&inv->neg_current_ctrl[phase_d], init->kp_idn_ctrl, init->Ti_idn_ctrl, 0, init->fs);
+    ctl_init_pid_Tmode(&inv->neg_current_ctrl[phase_q], init->kp_iqn_ctrl, init->Ti_iqn_ctrl, 0, init->fs);
 
     // --- Initialize droop control parameters ---
     // CORRECTED: Droop parameters should be sourced from the 'init' struct.
@@ -56,7 +59,7 @@ void ctl_upgrade_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
     ctl_init_saturation(&inv->idq_droop_sat[phase_q], -init->iq_lim_droop, init->iq_lim_droop);
 
     // --- Initialize harmonic compensation (Quasi-Resonant controllers) for 5th and 7th harmonics ---
-    for (int i = 0; i < 2; ++i)
+    for (i = 0; i < 2; ++i)
     {
         ctl_init_qr_controller(&inv->harm_qr_5[i], init->harm_ctrl_kr_5, init->freq_base * 5,
                                init->harm_ctrl_cut_freq_5, init->fs);
@@ -65,7 +68,7 @@ void ctl_upgrade_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
     }
 
     // --- Initialize zero-sequence harmonic compensation (3rd and 9th) ---
-    ctl_init_pid_ser(&inv->zero_pid, init->zero_ctrl_kp, init->zero_ctrl_Ti, 0, init->fs);
+    ctl_init_pid_Tmode(&inv->zero_pid, init->zero_ctrl_kp, init->zero_ctrl_Ti, 0, init->fs);
     ctl_init_qr_controller(&inv->zero_qr_3, init->zero_ctrl_kr_3, init->freq_base * 3, init->zero_ctrl_cut_freq_3,
                            init->fs);
     ctl_init_qr_controller(&inv->zero_qr_9, init->zero_ctrl_kr_9, init->freq_base * 9, init->zero_ctrl_cut_freq_9,
@@ -76,25 +79,25 @@ void ctl_upgrade_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
     inv->rg_freq_pu = float2ctrl(1.0);
 }
 
-void ctl_attach_three_phase_inv(inv_ctrl_t* inv, adc_ift* adc_udc, adc_ift* adc_idc, adc_ift* adc_ia, adc_ift* adc_ib,
-                                adc_ift* adc_ic, adc_ift* adc_ua, adc_ift* adc_ub, adc_ift* adc_uc)
+void ctl_attach_three_phase_inv(inv_ctrl_t* inv, tri_pwm_ift* pwm_out, adc_ift* adc_udc, adc_ift* adc_idc,
+                                tri_adc_ift* adc_iabc, tri_adc_ift* adc_vabc, tri_adc_ift* adc_iuvw,
+                                tri_adc_ift* adc_vuvw)
 {
     inv->adc_udc = adc_udc;
     inv->adc_idc = adc_idc;
 
-    inv->adc_iabc[phase_A] = adc_ia;
-    inv->adc_iabc[phase_B] = adc_ib;
-    inv->adc_iabc[phase_C] = adc_ic;
+    inv->pwm_out = pwm_out;
 
-    inv->adc_vabc[phase_A] = adc_ua;
-    inv->adc_vabc[phase_B] = adc_ub;
-    inv->adc_vabc[phase_C] = adc_uc;
+    inv->adc_iabc = adc_iabc;
+    inv->adc_iuvw = adc_iuvw;
+
+    inv->adc_vabc = adc_vabc;
+    inv->adc_vuvw = adc_vuvw;
 }
 
 void ctl_init_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init)
 {
+    inv->isr_tick = 0;
     ctl_upgrade_three_phase_inv(inv, init);
     ctl_clear_three_phase_inv(inv);
 }
-
-

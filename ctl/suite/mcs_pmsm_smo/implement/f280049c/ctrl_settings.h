@@ -4,10 +4,10 @@
 
 
 // invoke motor parameters
-#include <ctl/component/motor_control/motor_preset/GBM2804H_100T.h>
+#include <ctl/component/hardware_preset/pmsm_motor/GBM2804H_100T.h>
 
 // invoke motor controller parameters
-#include <ctl/component/motor_control/controller_preset/TI_3PH_GAN_INV.h>
+#include <ctl/component/hardware_preset/inverter_3ph/TI_BOOSTXL_3PhGaNInv.h>
 
 // Controller Frequency, unit Hz
 #define CONTROLLER_FREQUENCY (10000)
@@ -22,11 +22,12 @@
 #define MTR_CTRL_VOLTAGE_BASE ((MOTOR_PARAM_MAX_DC_VOLTAGE))
 #define MTR_CTRL_CURRENT_BASE ((MOTOR_PARAM_RATED_CURRENT))
 
+#define ADC_FULLSCALE_CURRENT (BOOSTXL_3PHGANINV_PH_CSA_BIAS_V / BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V / BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM)
 // Current ADC module default per unit parameter
 #define MTR_CTRL_CURRENT_GAIN (ADC_FULLSCALE_CURRENT * 2 / MTR_CTRL_CURRENT_BASE)
-#define MTR_CTRL_CURRENT_BIAS (ADC_FULLSCALE_CURRENT / ADC_REFERENCE)
+#define MTR_CTRL_CURRENT_BIAS (ADC_FULLSCALE_CURRENT / BOOSTXL_3PHGANINV_PH_CSA_BIAS_V)
 
-
+#define ADC_FULLSCALE_VOLTAGE (3.3 / BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN)
 // Voltage ADC module default per unit parameter
 #define MTR_CTRL_VOLTAGE_GAIN ((ADC_FULLSCALE_VOLTAGE / MTR_CTRL_VOLTAGE_BASE))
 #define MTR_CTRL_VOLTAGE_BIAS ((0.0))

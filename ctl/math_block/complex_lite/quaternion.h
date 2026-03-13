@@ -148,7 +148,7 @@ GMP_STATIC_INLINE ctl_quaternion_t ctl_qnormalize(ctl_quaternion_t q)
     ctl_quaternion_t result = {0, 0, 0, 0};
     ctrl_gt norm = ctl_qnorm(q);
 
-    if (norm > 1e-9) // Use a small epsilon to avoid division by zero
+    if (norm > float2ctrl(0.000001)) // Use a small epsilon to avoid division by zero
     {
         result.w = q.w / norm;
         result.x = q.x / norm;

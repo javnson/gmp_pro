@@ -481,16 +481,6 @@
 			<locationURI>COM_TI_C2000WARE_INSTALL_DIR/device_support/f28004x/common/source/f28004x_usdelay.asm</locationURI>
 		</link>
 		<link>
-			<name>pmsmDrv/pmsm_ctrl.c</name>
-			<type>1</type>
-			<locationURI>COM_TI_COM_GMP_CORE_C28X_SDK_INSTALL_DIR/ctl/suite/mcs_pmsm/src/pmsm_ctrl.c</locationURI>
-		</link>
-		<link>
-			<name>pmsmDrv/pmsm_ctrl.h</name>
-			<type>1</type>
-			<locationURI>COM_TI_COM_GMP_CORE_C28X_SDK_INSTALL_DIR/ctl/suite/mcs_pmsm/pmsm_ctrl.h</locationURI>
-		</link>
-		<link>
 			<name>user/as5048a.c</name>
 			<type>1</type>
 			<locationURI>COM_TI_COM_GMP_CORE_C28X_SDK_INSTALL_DIR/ext/encoder/as5048/as5048a.c</locationURI>

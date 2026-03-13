@@ -29,7 +29,7 @@ time_gt gmp_base_get_system_tick(void)
 
 // No divider default
 #ifndef DSP_C2000_DSP_TIME_DIV
-#define DSP_C2000_DSP_TIME_DIV ((1))
+#define DSP_C2000_DSP_TIME_DIV ((10))
 #endif // DSP_C2000_DSP_TIME_DIV
 
 ctl_divider_t sys_tick_div;

@@ -33,6 +33,31 @@ extern "C"
 extern gmp_pc_simulink_rx_buffer_t simulink_rx_buffer;
 extern gmp_pc_simulink_tx_buffer_t simulink_tx_buffer;
 
+// inverter side voltage feedback
+extern tri_ptr_adc_channel_t uuvw;
+extern adc_gt uuvw_src[3];
+
+// inverter side current feedback
+extern tri_ptr_adc_channel_t iuvw;
+extern adc_gt iuvw_src[3];
+
+// grid side voltage feedback
+extern tri_ptr_adc_channel_t vabc;
+extern adc_gt vabc_src[3];
+
+// grid side current feedback
+extern tri_ptr_adc_channel_t iabc;
+extern adc_gt iabc_src[3];
+
+// DC bus current & voltage feedback
+extern ptr_adc_channel_t udc;
+extern adc_gt udc_src;
+extern ptr_adc_channel_t idc;
+extern adc_gt idc_src;
+
+// PWM output channel
+extern pwm_tri_channel_t pwm_out;
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

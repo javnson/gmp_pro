@@ -90,6 +90,7 @@ void setup_peripheral(void)
         float2ctrl(MTR_CTRL_VOLTAGE_GAIN), float2ctrl(MTR_CTRL_VOLTAGE_BIAS),
         // ADC resolution, IQN
         12, 24);
+
 #if !defined PMSM_CTRL_USING_QEP_ENCODER
     // init AS5048 encoder
     ctl_init_as5048a_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, SPI_ENCODER_BASE, SPI_ENCODER_NCS);
@@ -106,7 +107,7 @@ void setup_peripheral(void)
 
     ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &pos_enc.encif);
 
-    ctl_attach_pmsm_bare_output(&pmsm_ctrl, &pwm_out.raw);
+    ctl_attach_pmsm_output(&pmsm_ctrl, &pwm_out.raw);
 
     // output channel
     ctl_init_pwm_tri_channel(&pwm_out, 0, CONTROLLER_PWM_CMP_MAX);

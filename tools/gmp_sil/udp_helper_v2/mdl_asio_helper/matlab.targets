@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)\matlab.xml" />
+  </ItemGroup>
+  <Target
+    Name="MEXCompile"
+    BeforeTargets="ClCompile">
+    <ItemGroup>
+      <ClCompile Condition="(%(ClCompile.CompileAs) == 'CompileAsCpp') And Exists('$(MatlabRoot)extern\version\cpp_mexapi_version.cpp')" 
+                 Include="$(MatlabRoot)extern\version\cpp_mexapi_version.cpp">
+        <PreprocessorDefinitions>MATLAB_MEXCMD_RELEASE=R2017b;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      </ClCompile>
+      <ClCompile Condition="(%(ClCompile.CompileAs) == 'CompileAsC') And Exists('$(MatlabRoot)extern\version\c_mexapi_version.c')" 
+                 Include="$(MatlabRoot)extern\version\c_mexapi_version.c">
+        <PreprocessorDefinitions>MATLAB_MEXCMD_RELEASE=R2017b;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      </ClCompile>
+    </ItemGroup>
+  </Target>
+  <Target
+    Name="MEXLink"
+    BeforeTargets="Link">
+    <ItemGroup>
+      <Link Condition="Exists('$(MatlabRoot)extern\version\cpp_mexapi_version.cpp') Or Exists('$(MatlabRoot)extern\version\c_mexapi_version.c')">
+        <AdditionalOptions>/EXPORT:mexfilerequiredapiversion %(Link.AdditionalOptions)</AdditionalOptions>
+      </Link>
+      <Link>
+        <AdditionalOptions>/EXPORT:mexFunction %(Link.AdditionalOptions)</AdditionalOptions>
+      </Link>
+    </ItemGroup>
+  </Target>
+</Project>

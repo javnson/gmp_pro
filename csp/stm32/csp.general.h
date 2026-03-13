@@ -33,3 +33,5 @@
 
 // STM32 general peripheral
 #include <csp/stm32/common/peripheral_model.stm32.h>
+
+extern uart_halt debug_uart;

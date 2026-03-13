@@ -1,0 +1,58 @@
+# =============================================================================
+# hvhb_top.lpf - 时序约束文件 for Lattice Radiant
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. 主时钟定义 (Primary Clock Definition)
+# -----------------------------------------------------------------------------
+# 定义来自'clk'引脚的24MHz主时钟 (周期41.667ns)
+create_clock -period 41.667 -name {clk_main} [get_ports {clk}]
+
+
+# -----------------------------------------------------------------------------
+# 2. I/O 接口时序约束 (Input/Output Timing Constraints)
+# -----------------------------------------------------------------------------
+# --- 输入延迟 ---
+# 请根据您的MCU/外部逻辑的数据手册和PCB走线长度来确定实际延迟值
+set_input_delay -clock {clk_main} <6.5> [get_ports {enable}]
+set_input_delay -clock {clk_main} <6.5> [get_ports {gateh_driver_inp}]
+set_input_delay -clock {clk_main} <6.5> [get_ports {gatel_driver_inp}]
+set_input_delay -clock {clk_main} <6.5> [get_ports {mcu_fan_not_ready}]
+set_input_delay -clock {clk_main} <6.5> [get_ports {mcu_psup_not_ready}]
+set_input_delay -clock {clk_main} <6.5> [get_ports {mcu_over_voltage}]
+set_input_delay -clock {clk_main} <6.5> [get_ports {mcu_over_current}]
+set_input_delay -clock {clk_main} <6.5> [get_ports {rmt_error_in}]
+
+# --- 输出延迟 ---
+# 请根据您的门级驱动器/外部逻辑的数据手册和PCB走线长度来确定实际延迟值
+set_output_delay -clock {clk_main} <5.5> [get_ports {gateh_driver_inn}]
+set_output_delay -clock {clk_main} <5.5> [get_ports {gatel_driver_inn}]
+set_output_delay -clock {clk_main} <5.5> [get_ports {gate_drv_nrst}]
+set_output_delay -clock {clk_main} <5.5> [get_ports {rmt_error_out}]
+# LED通常对时序不敏感，可以设置一个较宽松的约束或不设置
+set_output_delay -clock {clk_main} <10.0> [get_ports {led_*}]
+set_output_delay -clock {clk_main} <10.0> [get_ports {rgb_led[*]}]
+
+
+# -----------------------------------------------------------------------------
+# 3. 异步信号与跨时钟域处理 (Asynchronous & CDC Path Handling)
+# -----------------------------------------------------------------------------
+# 定义SPI时钟 (假设最快10MHz, 100ns)
+create_clock -period 100.0 -name {spi_clk_in} [get_ports {spi_clk}]
+
+# 声明主时钟域和SPI时钟域异步
+set_clock_groups -asynchronous -group {clk_main} -group {spi_clk_in}
+
+# 将已在设计中通过同步器处理的异步输入端口设置为伪路径
+set_false_path -from [get_ports {gateh_driver_rdy}]
+set_false_path -from [get_ports {gateh_driver_nflt}]
+set_false_path -from [get_ports {gatel_driver_rdy}]
+set_false_path -from [get_ports {gatel_driver_nflt}]
+set_false_path -from [get_ports {current_alert}]
+set_false_path -from [get_ports {current_oc_protect}]
+
+
+# -----------------------------------------------------------------------------
+# 4. 全局异步复位 (Global Asynchronous Reset)
+# -----------------------------------------------------------------------------
+set_false_path -from [get_ports {nrst}]

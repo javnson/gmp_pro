@@ -1,0 +1,282 @@
+<HTML>
+<HEAD>
+<TITLE>Lattice TCL Log</TITLE>
+<link href="file:///C:/lscc/radiant/2025.1/data/theme/css/light/report.css" rel="stylesheet" type="text/css" media="screen"/>
+<link href="file:///C:/lscc/radiant/2025.1/data/theme/css/print/report.css" rel="stylesheet" type="text/css" media="print"/>
+<style type="text/css">
+#toc {
+  position: fixed;
+  right: 2px;
+  top: 2px;
+  padding: 2px 5px 2px 5px;
+  background-color:rgba(210,210,210,0.1);
+  border-style: solid;
+  border-color: rgba(192,192,192,0.8);
+  border-width:1px;
+}
+#toc_list {
+  display: none;
+  }
+</style>
+
+<script type="text/javascript">
+<!--
+function showTocList() {
+var a = document.getElementById("toc_list");
+a.style.display = "block";
+}
+
+function hideTocList() {
+var a = document.getElementById("toc_list");
+if (a)
+    a.style.display = "none";
+}
+
+//-->
+</script>
+
+</HEAD>
+
+<BODY>
+
+<DIV id="content" onclick="hideTocList()"><PRE>
+<A name="pn250909234820"></A><B><U><big>pn250909234820</big></U></B>
+#Start recording tcl command: 9/9/2025 21:59:18
+#Project Location: E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian; Project name: HVHB_Guardian
+prj_open "E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian/HVHB_Guardian.rdf"
+prj_add_source "E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian/source/impl_1/hvhb_top.v" "E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian/source/impl_1/pwm_shoot_through.v" "E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian/source/impl_1/rgb_led.v"
+prj_add_source "E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian/hvhb_std.pdc"
+prj_run PAR -impl impl_1
+prj_run Export -impl impl_1
+prj_add_source "E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian/source/impl_1/qualified_fault_latch.v"
+prj_run PAR -impl impl_1
+prj_run Export -impl impl_1
+prj_add_source "E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian/source/impl_1/TMCS1133_decoder.v"
+prj_add_source "E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian/source/impl_1/safe_reset_sequence.v"
+prj_run PAR -impl impl_1
+prj_run Export -impl impl_1
+prj_run PAR -impl impl_1
+prj_run Export -impl impl_1
+prj_run PAR -impl impl_1
+prj_run Export -impl impl_1
+prj_run PAR -impl impl_1
+prj_run Export -impl impl_1
+prj_run Map -impl impl_1
+prj_run Map -impl impl_1
+prj_run PAR -impl impl_1
+prj_run Export -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Map -impl impl_1
+prj_run PAR -impl impl_1
+prj_run Export -impl impl_1
+#Stop recording: 9/9/2025 23:48:20
+
+
+
+<A name="pn251007123602"></A><B><U><big>pn251007123602</big></U></B>
+#Start recording tcl command: 10/7/2025 12:31:39
+#Project Location: E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian; Project name: HVHB_Guardian
+prj_open "E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian/HVHB_Guardian.rdf"
+#Stop recording: 10/7/2025 12:36:02
+
+
+
+<A name="pn251007163021"></A><B><U><big>pn251007163021</big></U></B>
+#Start recording tcl command: 10/7/2025 13:19:03
+#Project Location: E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian; Project name: HVHB_Guardian
+prj_open "E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian/HVHB_Guardian.rdf"
+#Stop recording: 10/7/2025 16:30:21
+
+
+
+<A name="pn251008011437"></A><B><U><big>pn251008011437</big></U></B>
+#Start recording tcl command: 10/7/2025 19:56:13
+#Project Location: E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian; Project name: HVHB_Guardian
+prj_open "E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian/HVHB_Guardian.rdf"
+prj_run Export -impl impl_1
+prj_set_impl_opt -impl "impl_1" {top} {hvhb_top}
+prj_set_strategy_value -strategy Strategy1 bit_out_format=rbt
+prj_run Export -impl impl_1
+prj_add_source "E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian/source/impl_1/RGB_LED_ip.v"
+prj_run Export -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Map -impl impl_1
+prj_run Export -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Map -impl impl_1
+prj_run PAR -impl impl_1
+prj_run Export -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Synthesis -impl impl_1 -forceAll
+prj_run Map -impl impl_1
+prj_run PAR -impl impl_1
+prj_run Export -impl impl_1
+prj_run Export -impl impl_1
+prj_run Export -impl impl_1
+#Stop recording: 10/8/2025 01:14:37
+
+
+
+<A name="pn251009003213"></A><B><U><big>pn251009003213</big></U></B>
+#Start recording tcl command: 10/8/2025 10:33:03
+#Project Location: E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian; Project name: HVHB_Guardian
+prj_open "E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian/HVHB_Guardian.rdf"
+prj_set_strategy_value -strategy Strategy1 bit_out_format=hex
+prj_run Export -impl impl_1
+prj_set_strategy_value -strategy Strategy1 bit_out_format=nvcm
+prj_run Export -impl impl_1
+prj_set_strategy_value -strategy Strategy1 bit_out_format=bin
+prj_run Export -impl impl_1
+#Stop recording: 10/9/2025 00:32:13
+
+
+
+<A name="pn251030004134"></A><B><U><big>pn251030004134</big></U></B>
+#Start recording tcl command: 10/29/2025 22:41:32
+#Project Location: E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian; Project name: HVHB_Guardian
+prj_open "E:/FPGA/ICE40UP5K/HVHB_400_Protect/HVHB_Guardian/HVHB_Guardian.rdf"
+#Stop recording: 10/30/2025 00:41:34
+
+
+
+<A name="pn251108194605"></A><B><U><big>pn251108194605</big></U></B>
+#Start recording tcl command: 11/8/2025 16:19:01
+#Project Location: E:/lib/gmp_pro/tools/hvhb40040_Antaioz/HVHB_FPGA_Guardian; Project name: HVHB_Guardian
+prj_open "E:/lib/gmp_pro/tools/hvhb40040_Antaioz/HVHB_FPGA_Guardian/HVHB_Guardian.rdf"
+prj_run PAR -impl impl_1
+prj_run Export -impl impl_1
+#Stop recording: 11/8/2025 19:46:05
+
+
+
+<A name="pn251109152139"></A><B><U><big>pn251109152139</big></U></B>
+#Start recording tcl command: 11/9/2025 09:12:26
+#Project Location: E:/lib/gmp_pro/tools/hvhb40040_Antaioz/HVHB_FPGA_Guardian; Project name: HVHB_Guardian
+prj_open "E:/lib/gmp_pro/tools/hvhb40040_Antaioz/HVHB_FPGA_Guardian/HVHB_Guardian.rdf"
+prj_run Export -impl impl_1
+prj_run Export -impl impl_1
+prj_run Export -impl impl_1
+prj_run Export -impl impl_1
+prj_add_source "E:/lib/gmp_pro/tools/hvhb40040_Antaioz/HVHB_FPGA_Guardian/source/impl_1/led_blink.v"
+prj_run Export -impl impl_1
+prj_add_source "E:/lib/gmp_pro/tools/hvhb40040_Antaioz/HVHB_FPGA_Guardian/system_clock/system_clock.ipx"
+prj_run Export -impl impl_1
+prj_run Export -impl impl_1
+prj_run Export -impl impl_1
+prj_run Export -impl impl_1
+prj_run PAR -impl impl_1
+prj_run Export -impl impl_1
+prj_run Export -impl impl_1
+prj_run Export -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Export -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_set_impl_opt synthesis "lse"
+prj_run Synthesis -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Export -impl impl_1
+prj_run Export -impl impl_1
+prj_remove_source "E:/lib/gmp_pro/tools/hvhb40040_Antaioz/HVHB_FPGA_Guardian/system_clock/system_clock.ipx"
+prj_run Export -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Map -impl impl_1
+prj_run PAR -impl impl_1
+prj_run Export -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Synthesis -impl impl_1 -forceOne
+prj_add_source "E:/lib/gmp_pro/tools/hvhb40040_Antaioz/HVHB_FPGA_Guardian/system_clk_gen/system_clk_gen.ipx"
+prj_run Synthesis -impl impl_1
+prj_run Map -impl impl_1
+prj_run PAR -impl impl_1
+prj_run Export -impl impl_1
+prj_run Export -impl impl_1
+prj_run Export -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Synthesis -impl impl_1
+prj_run Export -impl impl_1
+prj_save 
+prj_close
+#Stop recording: 11/9/2025 15:21:39
+
+
+
+</PRE></DIV>
+
+<DIV id="toc" class="radiant"><span onmousemove="showTocList()">Contents</span>
+<UL id="toc_list">
+<LI><A href=#pn250909234820>pn250909234820</A></LI>
+<LI><A href=#pn251007123602>pn251007123602</A></LI>
+<LI><A href=#pn251007163021>pn251007163021</A></LI>
+<LI><A href=#pn251008011437>pn251008011437</A></LI>
+<LI><A href=#pn251009003213>pn251009003213</A></LI>
+<LI><A href=#pn251030004134>pn251030004134</A></LI>
+<LI><A href=#pn251108194605>pn251108194605</A></LI>
+<LI><A href=#pn251109152139>pn251109152139</A></LI>
+</UL>
+</DIV>
+
+<button id="back_to_top" class="radiant" onclick="scrollToTop()">&lt;</button>
+<script type="text/javascript">
+<!--
+var scrollStep = 0;
+function scrollToTop(){
+  var funScroll = function() {
+    var top = document.body.scrollTop;
+    if (top == 0) {
+      scrollStep = 0;
+      return;
+    }
+    if (scrollStep == 0)
+      scrollStep = top/20 + 1;
+    top -= scrollStep;
+    if (top < 0)
+      top = 0;
+    document.body.scrollTop = top;
+    requestAnimationFrame(funScroll);
+  };
+  funScroll();
+}
+
+window.addEventListener('scroll', function(e) {
+  var backToTop = document.getElementById('back_to_top')
+  if (document.body.scrollTop > 0) {
+    backToTop.style.display = 'block';
+  } else {	backToTop.style.display = 'none'  }});
+
+//-->
+</script>
+
+<style type="text/css">
+#back_to_top {
+  bottom:20px; right:20px;
+  width:30px; height:30px;
+  font-size: 20px;
+  padding: 2px 5px 2px 5px;
+  position:fixed;
+  background-color:rgba(210,210,210,0.1);
+  border-style: solid;
+  border-color: rgba(192,192,192,0.8);
+  border-width:1px;
+  display:none;
+  -webkit-transform: rotate(90deg);
+  -webkit-transform-origin:50% 50%;
+}
+#back_to_top:focus {
+  outline-width:0px;
+}
+</style>
+
+</BODY>
+

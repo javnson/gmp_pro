@@ -20,12 +20,18 @@
 
 void ctl_init_saturation(ctl_saturation_t* obj, ctrl_gt out_min, ctrl_gt out_max)
 {
+    // Error prevention engineering
+    gmp_base_assert(out_min < out_max);
+
     obj->out_min = out_min;
     obj->out_max = out_max;
 }
 
 void ctl_init_bipolar_saturation(ctl_bipolar_saturation_t* obj, ctrl_gt out_min, ctrl_gt out_max)
 {
+    // Error prevention engineering
+    gmp_base_assert(out_min < out_max);
+
     obj->out_min = out_min;
     obj->out_max = out_max;
     obj->out = 0;
@@ -58,6 +64,9 @@ void ctl_init_divider(ctl_divider_t* obj, uint32_t counter_period)
 
 void ctl_init_slope_limiter(ctl_slope_limiter_t* obj, parameter_gt slope_max, parameter_gt slope_min, parameter_gt fs)
 {
+    // Error prevention engineering
+    gmp_base_assert(slope_min < slope_max);
+
     obj->slope_min = float2ctrl(slope_min / fs);
     obj->slope_max = float2ctrl(slope_max / fs);
 

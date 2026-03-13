@@ -61,18 +61,30 @@ extern "C"
  */
 typedef struct _tag_inv_ctrl_type
 {
+
+    uint32_t isr_tick; /**< @brief Main ISR tick */
+
     //
     // --- Input Ports (ADC Interfaces) ---
     //
-    adc_ift* adc_udc;     //!< DC Bus voltage.
-    adc_ift* adc_idc;     //!< DC Bus current.
-    adc_ift* adc_iabc[3]; //!< Array of pointers to phase current ADCs {Ia, Ib, Ic}.
-    adc_ift* adc_vabc[3]; //!< Array of pointers to phase voltage ADCs {Va, Vb, Vc}.
+    adc_ift* adc_udc; //!< DC Bus voltage.
+    adc_ift* adc_idc; //!< DC Bus current.
+                      //    adc_ift* adc_iabc[3]; //!< Array of pointers to phase current ADCs {Ia, Ib, Ic}.
+                      //    adc_ift* adc_vabc[3]; //!< Array of pointers to phase voltage ADCs {Va, Vb, Vc}.
+
+    // Grid side feedback
+    tri_adc_ift* adc_vabc; //!< grid phase voltage ADCs {Va, Vb, Vc}, this voltage will use as pll input.
+    tri_adc_ift* adc_iabc; //!< grid phase current ADCs {Ia, Ib, Ic}, this current will use as current control port.
+
+    // inverter side feedback
+    tri_adc_ift* adc_vuvw; //!< inverter phase voltage ADCs {Vu, Vv, Vw}, this voltage will use as observer input.
+    tri_adc_ift* adc_iuvw; //!< inverter phase current ADCs {Iu, Iv, Iw}, this current will use as active damping.
 
     //
     // --- Output Ports ---
     //
-    ctl_vector3_t pwm_out_pu; //!< Final PWM duty cycles {A, B, C} in per-unit format.
+    tri_pwm_ift*
+        pwm_out; /**< @brief Final PWM duty cycles {A, B, C} in per-unit format. Three-phase PWM output interface. */
 
     //
     // --- Feed-forward & Parameters ---
@@ -123,7 +135,7 @@ typedef struct _tag_inv_ctrl_type
     ctl_low_pass_filter_t lpf_iabc[3]; //!< LPFs for phase current measurements.
     ctl_low_pass_filter_t lpf_vabc[3]; //!< LPFs for phase voltage measurements.
 
-    three_phase_pll_t pll;   //!< Three-phase PLL for grid synchronization.
+    srf_pll_t pll;   //!< Three-phase PLL for grid synchronization.
     ctl_ramp_generator_t rg; //!< Ramp generator for open-loop/freerun operation.
 
     ctl_pid_t voltage_ctrl[2];     //!< PI controllers for d-q voltage loops.
@@ -218,8 +230,9 @@ typedef struct _tag_three_phase_inv_init_type
 // Forward declarations for functions defined in the corresponding .c file
 void ctl_upgrade_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init);
 void ctl_init_three_phase_inv(inv_ctrl_t* inv, three_phase_inv_init_t* init);
-void ctl_attach_three_phase_inv(inv_ctrl_t* inv, adc_ift* adc_udc, adc_ift* adc_idc, adc_ift* adc_ia, adc_ift* adc_ib,
-                                adc_ift* adc_ic, adc_ift* adc_ua, adc_ift* adc_ub, adc_ift* adc_uc);
+void ctl_attach_three_phase_inv(inv_ctrl_t* inv, tri_pwm_ift* pwm_out, adc_ift* adc_udc, adc_ift* adc_idc,
+                                tri_adc_ift* adc_iabc, tri_adc_ift* adc_vabc, tri_adc_ift* adc_iuvw,
+                                tri_adc_ift* adc_vuvw);
 
 /**
  * @brief Executes one step of the three-phase inverter control algorithm.
@@ -228,17 +241,30 @@ void ctl_attach_three_phase_inv(inv_ctrl_t* inv, adc_ift* adc_udc, adc_ift* adc_
  */
 GMP_STATIC_INLINE void ctl_step_inv_ctrl(inv_ctrl_t* ctrl)
 {
+    // loop variables
+    size_gt i;
+
+    // assert critical pointer
+    gmp_base_assert(ctrl);
+    gmp_base_assert(ctrl->pwm_out);
+    gmp_base_assert(ctrl->adc_iabc);
+    gmp_base_assert(ctrl->adc_vabc);
+    gmp_base_assert(ctrl->adc_iuvw);
+    gmp_base_assert(ctrl->adc_vuvw);
+
+    ctrl->isr_tick += 1;
+
     // --- 1. Input Filtering and Coordinate Transformation ---
     ctl_step_lowpass_filter(&ctrl->lpf_udc, ctrl->adc_udc->value);
     ctl_step_lowpass_filter(&ctrl->lpf_idc, ctrl->adc_idc->value);
 
 #if CURRENT_SAMPLE_PHASE_MODE == 3
-    for (size_gt i = 0; i < 3; ++i)
-        ctrl->iabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_iabc[i], ctrl->adc_iabc[i]->value);
+    for (i = 0; i < 3; ++i)
+        ctrl->iabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_iabc[i], ctrl->adc_iabc->value.dat[i]);
     ctl_ct_clarke(&ctrl->iabc, &ctrl->iab0);
 #elif CURRENT_SAMPLE_PHASE_MODE == 2
-    for (size_gt i = 0; i < 2; ++i)
-        ctrl->iabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_iabc[i], ctrl->adc_iabc[i]->value);
+    for (i = 0; i < 2; ++i)
+        ctrl->iabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_iabc[i], ctrl->adc_iabc->value.dat[i]);
     ctrl->iabc.dat[phase_C] = 0;
     ctl_ct_clarke_2ph((ctl_vector2_t*)&ctrl->iabc, (ctl_vector2_t*)&ctrl->iab0);
     ctrl->iab0.dat[phase_0] = 0;
@@ -246,17 +272,17 @@ GMP_STATIC_INLINE void ctl_step_inv_ctrl(inv_ctrl_t* ctrl)
 
 #if VOLTAGE_SAMPLE_PHASE_MODE == 3
     for (size_gt i = 0; i < 3; ++i)
-        ctrl->vabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_vabc[i], ctrl->adc_vabc[i]->value);
+        ctrl->vabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_vabc[i], ctrl->adc_vabc->value.dat[i]);
     ctl_ct_clarke(&ctrl->vabc, &ctrl->vab0);
 #elif VOLTAGE_SAMPLE_PHASE_MODE == 2
     for (size_gt i = 0; i < 2; ++i)
-        ctrl->vabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_vabc[i], ctrl->adc_vabc[i]->value);
+        ctrl->vabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_vabc[i], ctrl->adc_vabc->value.dat[i]);
     ctrl->vabc.dat[phase_C] = 0;
     ctl_ct_clarke_2ph((ctl_vector2_t*)&ctrl->vabc, (ctl_vector2_t*)&ctrl->vab0);
     ctrl->vab0.dat[phase_0] = 0;
 #elif VOLTAGE_SAMPLE_PHASE_MODE == 1
-    for (size_gt i = 0; i < 2; ++i)
-        ctrl->vabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_vabc[i], ctrl->adc_vabc[i]->value);
+    for (i = 0; i < 2; ++i)
+        ctrl->vabc.dat[i] = ctl_step_lowpass_filter(&ctrl->lpf_vabc[i], ctrl->adc_vabc->value.dat[i]);
     ctrl->vabc.dat[phase_C] = 0;
     ctl_ct_clarke_from_line((ctl_vector2_t*)&ctrl->vabc, (ctl_vector2_t*)&ctrl->vab0);
     ctrl->vab0.dat[phase_0] = 0;
@@ -282,7 +308,8 @@ GMP_STATIC_INLINE void ctl_step_inv_ctrl(inv_ctrl_t* ctrl)
         else
         {
             ctrl->angle = ctrl->pll.theta;
-            ctrl->phasor = ctrl->pll.phasor;
+            //ctrl->phasor = ctrl->pll.phasor;
+            ctl_vector2_copy(&ctrl->phasor, &ctrl->pll.phasor);
         }
 
         // --- 3b. Park Transformation ---
@@ -362,7 +389,7 @@ GMP_STATIC_INLINE void ctl_step_inv_ctrl(inv_ctrl_t* ctrl)
         // --- 3g. Harmonic Compensation ---
         if (ctrl->flag_enable_harm_ctrl)
         {
-            for (int i = 0; i < 2; ++i)
+            for (i = 0; i < 2; ++i)
             {
                 ctrl->vab_harm.dat[i] = ctl_step_qr_controller(&ctrl->harm_qr_5[i], -ctrl->iab0.dat[i]);
                 ctrl->vab_harm.dat[i] += ctl_step_qr_controller(&ctrl->harm_qr_7[i], -ctrl->iab0.dat[i]);
@@ -394,14 +421,14 @@ GMP_STATIC_INLINE void ctl_step_inv_ctrl(inv_ctrl_t* ctrl)
         ctrl->abc_out.dat[phase_C] += ctrl->v0_set;
 
         // --- 4. SVPWM or SPWM Output ---
-        ctrl->pwm_out_pu.dat[phase_A] = ctl_div2(ctl_add(ctrl->abc_out.dat[phase_A], float2ctrl(1)));
-        ctrl->pwm_out_pu.dat[phase_B] = ctl_div2(ctl_add(ctrl->abc_out.dat[phase_B], float2ctrl(1)));
-        ctrl->pwm_out_pu.dat[phase_C] = ctl_div2(ctl_add(ctrl->abc_out.dat[phase_C], float2ctrl(1)));
+        ctrl->pwm_out->value.dat[phase_A] = ctl_div2(ctl_add(ctrl->abc_out.dat[phase_A], float2ctrl(1)));
+        ctrl->pwm_out->value.dat[phase_B] = ctl_div2(ctl_add(ctrl->abc_out.dat[phase_B], float2ctrl(1)));
+        ctrl->pwm_out->value.dat[phase_C] = ctl_div2(ctl_add(ctrl->abc_out.dat[phase_C], float2ctrl(1)));
     }
     else
     {
         // Disable output if system is not enabled
-        ctl_vector3_set(&ctrl->pwm_out_pu, float2ctrl(0.5));
+        ctl_vector3_set(&ctrl->pwm_out->value, float2ctrl(0.5));
     }
 }
 
@@ -620,14 +647,18 @@ GMP_STATIC_INLINE fast_gt ctl_is_three_phase_inverter_freerun_mode(inv_ctrl_t* i
 /** @brief Clears all runtime states of the inverter controller. */
 GMP_STATIC_INLINE void ctl_clear_three_phase_inv(inv_ctrl_t* inv)
 {
+    // loop variable
+    size_gt i;
+
     ctl_clear_lowpass_filter(&inv->lpf_udc);
     ctl_clear_lowpass_filter(&inv->lpf_idc);
 
-    for (int i = 0; i < 3; ++i)
+    for (i = 0; i < 3; ++i)
     {
         ctl_clear_lowpass_filter(&inv->lpf_iabc[i]);
         ctl_clear_lowpass_filter(&inv->lpf_vabc[i]);
     }
+
     ctl_clear_pid(&inv->voltage_ctrl[phase_d]);
     ctl_clear_pid(&inv->voltage_ctrl[phase_q]);
     ctl_clear_pid(&inv->current_ctrl[phase_d]);
@@ -638,7 +669,7 @@ GMP_STATIC_INLINE void ctl_clear_three_phase_inv(inv_ctrl_t* inv)
     ctl_clear_pid(&inv->neg_current_ctrl[phase_d]);
     ctl_clear_pid(&inv->neg_current_ctrl[phase_q]);
 
-    for (int i = 0; i < 2; ++i)
+    for (i = 0; i < 2; ++i)
     {
         ctl_clear_qr_controller(&inv->harm_qr_5[i]);
         ctl_clear_qr_controller(&inv->harm_qr_7[i]);

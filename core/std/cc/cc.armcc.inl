@@ -46,11 +46,14 @@
 #define GMP_WEAK_FUNC_SUFFIX
 
 // + disable optimization
-#define GMP_NO_OPT_PREFIX
-#define GMP_NO_OPT_SUFFIX __attribute__((optnone))
+#define GMP_NO_OPT_PREFIX __attribute__((optnone))
+#define GMP_NO_OPT_SUFFIX
 
 // + variables aligned
 #define GMP_MEM_ALIGN __attribute__((aligned(4)))
+
+// + unused variable or function
+#define GMP_UNUSED_VAR(x) (void)(x)
 
 // + NOP
 #define GMP_INSTRUCTION_NOP asm("nop")

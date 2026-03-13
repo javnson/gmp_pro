@@ -45,7 +45,7 @@ void ctl_init_pmsm_hfi_controller(pmsm_hfi_controller_t* ctrl, pmsm_hfi_controll
 
 #else // using continuous controller
 
-    ctl_init_pid_ser(
+    ctl_init_pid_Tmode(
         // d axis current controller
         &ctrl->current_ctrl[phase_d],
         // parameters for current controller
@@ -54,7 +54,7 @@ void ctl_init_pmsm_hfi_controller(pmsm_hfi_controller_t* ctrl, pmsm_hfi_controll
         init->fs);
     ctl_set_pid_limit(&ctrl->current_ctrl[phase_d], init->voltage_limit_max, init->voltage_limit_min);
 
-    ctl_init_pid_ser(
+    ctl_init_pid_Tmode(
         // d axis current controller
         &ctrl->current_ctrl[phase_q],
         // parameters for current controller

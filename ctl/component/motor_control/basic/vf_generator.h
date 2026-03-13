@@ -95,16 +95,16 @@ typedef struct _tag_slope_f
     /** @brief Encoder output interface, provides position information. */
     rotation_ift enc;
 
-    /** @brief Input: The target frequency for the generator in Hz. */
+    /** @brief Input: The target frequency for the generator in pu, base value is isr_freq. */
     ctrl_gt target_frequency;
 
-    /** @brief Output: The current instantaneous frequency in Hz. */
+    /** @brief Output: The current instantaneous frequency in pu, base value is isr_freq. */
     ctrl_gt current_freq;
 
     /** @brief Ramp generator to produce the angle signal. */
     ctl_ramp_generator_t rg;
 
-    /** @brief Slope limiter to control the rate of frequency change. */
+    /** @brief Slope limiter to control the rate of frequency change, pu isr_freq/s. */
     ctl_slope_limiter_t freq_slope;
 
 } ctl_slope_f_controller;
@@ -157,6 +157,102 @@ GMP_STATIC_INLINE void ctl_clear_slope_f(ctl_slope_f_controller* ctrl)
  * @param[in] isr_freq The frequency of the interrupt service routine (ISR) in Hz.
  */
 void ctl_set_slope_f_freq(ctl_slope_f_controller* ctrl, parameter_gt target_freq, parameter_gt isr_freq);
+
+/**
+ * @brief Data structure for the Slope Frequency Controller (Per-Unit Version).
+ */
+typedef struct _tag_slope_f_pu
+{
+    /** @brief Encoder output interface, provides position information. */
+    rotation_ift enc;
+
+    /** @brief Input: The target frequency for the generator in pu. 
+     * 1.0 pu = Motor Rated Electrical Frequency. */
+    ctrl_gt target_freq_pu;
+
+    /** @brief Output: The current instantaneous frequency in pu. */
+    ctrl_gt current_freq_pu;
+
+    /** @brief Coefficient to convert frequency PU to Ramp Generator Slope (Step).
+     * Calculation: (Rated_Freq_Hz / ISR_Freq_Hz). 
+     * Real_Step = current_freq_pu * ratio_freq_pu_to_step. */
+    ctrl_gt ratio_freq_pu_to_step;
+
+    /** @brief Ramp generator to produce the angle signal. */
+    ctl_ramp_generator_t rg;
+
+    /** @brief Slope limiter to control the rate of frequency change.
+     * The limits here are in (PU / ISR_Tick). */
+    ctl_slope_limiter_t freq_slope;
+
+} ctl_slope_f_pu_controller;
+
+/**
+ * @brief Initializes the Constant Slope Frequency Controller (PU).
+ * @param[out] ctrl Pointer to the ctl_slope_f_pu_controller object.
+ * @param[in] frequency The initial target frequency in Hz.
+ * @param[in] freq_slope The maximum rate of frequency change in Hz/s.
+ * @param[in] rated_krpm The motor rated speed in krpm (Base value source).
+ * @param[in] pole_pairs The motor pole pairs (Base value source).
+ * @param[in] isr_freq The frequency of the interrupt service routine (ISR) in Hz.
+ */
+void ctl_init_const_slope_f_pu_controller(ctl_slope_f_pu_controller* ctrl, parameter_gt frequency,
+                                          parameter_gt freq_slope, parameter_gt rated_krpm, parameter_gt pole_pairs,
+                                          parameter_gt isr_freq);
+
+/**
+ * @brief Executes one step of the slope frequency controller (PU).
+ * @param[in,out] ctrl Pointer to the ctl_slope_f_pu_controller object.
+ * @return ctrl_gt The new electrical position (angle).
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_step_slope_f_pu(ctl_slope_f_pu_controller* ctrl)
+{
+    // 1. Ramp the Frequency in PU domain
+    // Input: Target PU (e.g., 0.5 for half speed)
+    // Output: Current PU (e.g., ramps 0.1, 0.11, 0.12...)
+    ctrl->current_freq_pu = ctl_step_slope_limiter(&ctrl->freq_slope, ctrl->target_freq_pu);
+
+    // 2. Convert PU Frequency to Ramp Generator Slope (Angle Increment)
+    // Slope = Current_PU * (Base_Hz / ISR_Hz)
+    ctrl_gt rg_slope = ctl_mul(ctrl->current_freq_pu, ctrl->ratio_freq_pu_to_step);
+
+    // 3. Update Ramp Generator
+    ctl_set_ramp_generator_slope(&ctrl->rg, rg_slope);
+
+    // 4. Step Ramp Generator to get Angle
+    ctrl->enc.elec_position = ctl_step_ramp_generator(&ctrl->rg);
+    ctrl->enc.position = ctrl->enc.elec_position;
+
+    return ctrl->enc.elec_position;
+}
+
+/**
+ * @brief Resets the internal state of the frequency slope limiter.
+ * @param[in,out] ctrl Pointer to the ctl_slope_f_controller object.
+ */
+GMP_STATIC_INLINE void ctl_clear_slope_f_pu(ctl_slope_f_pu_controller* ctrl)
+{
+    ctl_clear_slope_limiter(&ctrl->freq_slope);
+}
+
+/**
+ * @brief Sets the target frequency (Converting Hz input to PU).
+ * @param ctrl Controller instance.
+ * @param target_freq_hz Target frequency in Hz.
+ * @param rated_krpm Motor rated speed (Base).
+ * @param pole_pairs Motor pole pairs (Base).
+ */
+GMP_STATIC_INLINE void ctl_set_slope_f_pu_freq(ctl_slope_f_pu_controller* ctrl, parameter_gt target_freq_hz,
+                                               parameter_gt rated_krpm, parameter_gt pole_pairs)
+{
+    // Re-calculate base to be safe, or store base_freq in struct to save math
+    parameter_gt base_freq_hz = (rated_krpm * 1000.0f * pole_pairs) / 60.0f;
+
+    if (base_freq_hz > 0.1f)
+    {
+        ctrl->target_freq_pu = float2ctrl(target_freq_hz / base_freq_hz);
+    }
+}
 
 /** @} */ // end of SlopeFGen group
 

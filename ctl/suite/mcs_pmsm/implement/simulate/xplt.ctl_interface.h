@@ -39,6 +39,8 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
     // invoke position encoder routine.
     ctl_step_autoturn_pos_encoder(&pos_enc, simulink_rx_buffer.encoder);
 
+    pmsm_ctrl.speed_set = float2ctrl(simulink_rx_buffer.panel[0]);
+
     // Get panel input here.
 #if (BUILD_LEVEL == 1)
 
@@ -58,7 +60,7 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     simulink_tx_buffer.tabc[phase_C] = pwm_out.value[phase_C];
 
     // Monitor Port, 8 channels
-#if BUILD_LEVEL == 1
+//#if BUILD_LEVEL == 1
 
     // angle set
     simulink_tx_buffer.monitor_port[0] = rg.rg.current;
@@ -76,7 +78,7 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     simulink_tx_buffer.monitor_port[6] = pmsm_ctrl.mtr_interface.position->elec_position;
     simulink_tx_buffer.monitor_port[7] = pmsm_ctrl.mtr_interface.velocity->speed;
 
-#endif // BUILD_LEVEL
+//#endif // BUILD_LEVEL
 }
 
 // Enable Motor Controller

@@ -1,0 +1,123 @@
+{
+  "module_name": "pmsm_solver_v2",
+  "author": "javnson",
+  "description": "PMSM Motor Solver using MVME architecture with Park and Clarke transforms.",
+
+  "config": {
+    "mvme_module": "mvme_35_4ch_std",
+    "mvme_latency": 10,
+    "data_type": "Q8.27",
+    "turn_cycles": 12,
+    "mvme_count": 2
+  },
+
+  "ports": {
+    "parameters": [
+      "K_ID_SELF", "K_ID_CROSS", "K_ID_VOLT",
+      "K_IQ_SELF", "K_IQ_CROSS", "K_IQ_EMF", "K_IQ_VOLT",
+      "K_THETA", "ONE_CONST"
+    ],
+    "states_in": [
+      "id_init", "iq_init", "omega_init", "theta_init"
+    ],
+    "states_out": [
+      "id", "iq", "omega", "theta"
+    ],
+    "internal_wires": [
+      "ud", "uq", "w_iq", "w_id", "temp_mac_res"
+    ]
+  },
+  
+  "pipeline_sequence": [
+    {
+      "mvme_idx": 0,
+      "ops": [
+        {
+          "tick": 0,
+          "comment": "Tick 0: Park Transform (Ud, Uq)",
+          "inputs": {
+            "a": "id",     "b": "K_ID_SELF",
+            "c": "omega",  "d": "iq",
+            "e": "ud",     "f": "K_ID_VOLT",
+            "g": "0",      "h": "0"
+          },
+          "outputs": {
+            "mac1": "ud",
+            "mac2": "uq"
+          }
+        },
+        {
+          "tick": 1,
+          "comment": "Tick 1: Theta Update",
+          "inputs": {
+            "a": "theta",    "b": "ONE_CONST",
+            "c": "omega",    "d": "K_THETA",
+            "e": "0",        "f": "0",
+            "g": "0",        "h": "0"
+          },
+          "outputs": {
+            "total": "theta"
+          }
+        },
+        {
+          "tick": "TURN+0",
+          "comment": "Tick 12: Current Update (Depends on T=0 result)",
+          "inputs": {
+            "a": "ud",       "b": "K_ID_VOLT",
+            "c": "0",        "d": "0",
+            "e": "0",        "f": "0",
+            "g": "0",        "h": "0"
+          },
+          "outputs": {
+            "total": "id"
+          }
+        }
+      ]
+    },
+    {
+      "mvme_idx": 1,
+      "ops": [
+        {
+          "tick": 0,
+          "comment": "Tick 0: Park Transform (Ud, Uq)",
+          "inputs": {
+            "a": "id",     "b": "K_ID_SELF",
+            "c": "omega",  "d": "iq",
+            "e": "ud",     "f": "K_ID_VOLT",
+            "g": "0",      "h": "0"
+          },
+          "outputs": {
+            "mac1": "ud",
+            "mac2": "uq"
+          }
+        },
+        {
+          "tick": 1,
+          "comment": "Tick 1: Theta Update",
+          "inputs": {
+            "a": "theta",    "b": "ONE_CONST",
+            "c": "omega",    "d": "K_THETA",
+            "e": "0",        "f": "0",
+            "g": "0",        "h": "0"
+          },
+          "outputs": {
+            "total": "theta"
+          }
+        },
+        {
+          "tick": "TURN+0",
+          "comment": "Tick 12: Current Update (Depends on T=0 result)",
+          "inputs": {
+            "a": "ud",       "b": "K_ID_VOLT",
+            "c": "0",        "d": "0",
+            "e": "0",        "f": "0",
+            "g": "0",        "h": "0"
+          },
+          "outputs": {
+            "total": "id"
+          }
+        }
+      ]
+    }
+  ]
+}

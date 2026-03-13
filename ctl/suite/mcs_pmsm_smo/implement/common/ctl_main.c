@@ -21,7 +21,7 @@
 #include <xplt.peripheral.h>
 
 // PMSM controller
-pmsm_smo_bare_controller_t pmsm_ctrl;
+pmsm_smo_controller_t pmsm_ctrl;
 
 //
 adc_bias_calibrator_t adc_calibrator;
@@ -35,23 +35,23 @@ volatile fast_gt flag_enable_system = 0;
 void ctl_init()
 {
     // setup ADC calibrate
-    ctl_filter_IIR2_setup_t adc_calibrator_filter;
-    adc_calibrator_filter.filter_type = FILTER_IIR2_TYPE_LOWPASS;
-    adc_calibrator_filter.fc = 20;
-    adc_calibrator_filter.fs = CONTROLLER_FREQUENCY;
-    adc_calibrator_filter.gain = 1;
-    adc_calibrator_filter.q = 0.707f;
+//    ctl_filter_IIR2_setup_t adc_calibrator_filter;
+//    adc_calibrator_filter.filter_type = FILTER_IIR2_TYPE_LOWPASS;
+//    adc_calibrator_filter.fc = 20;
+//    adc_calibrator_filter.fs = CONTROLLER_FREQUENCY;
+//    adc_calibrator_filter.gain = 1;
+//    adc_calibrator_filter.q = 0.707f;
     // ctl_init_adc_bias_calibrator(&adc_calibrator, &adc_calibrator_filter);
 
     flag_enable_system = 0;
 
     // set pmsm_ctrl parameters
-    pmsm_smo_bare_controller_init_t pmsm_ctrl_init;
+    pmsm_smo_controller_init_t pmsm_ctrl_init;
 
     pmsm_ctrl_init.fs = CONTROLLER_FREQUENCY;
 
     // current pid controller parameters
-    pmsm_ctrl_init.current_pid_gain = (parameter_gt)(MOTOR_PARAM_LS * MTR_CTRL_CURRENT_LOOP_BW * 2 * PI *
+    pmsm_ctrl_init.current_pid_gain = (parameter_gt)(MOTOR_PARAM_LS * MTR_CTRL_CURRENT_LOOP_BW * 2 * CTL_PARAM_CONST_PI *
                                                      MTR_CTRL_VOLTAGE_BASE / MTR_CTRL_CURRENT_BASE);
     pmsm_ctrl_init.current_Ti = (parameter_gt)(MOTOR_PARAM_LS / MOTOR_PARAM_RS);
     pmsm_ctrl_init.current_Td = 0;

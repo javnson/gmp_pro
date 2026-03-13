@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
+  <style>
+    <?xml version="1.0" encoding="UTF-8"?>
+    <svg xmlns="http://www.w3.org/2000/svg" width="1400" height="2200" viewBox="0 0 1400 2200">
+      <style>
+        .title { font: bold 22px sans-serif; }
+        .box { fill:#f8f8f8; stroke:#333; stroke-width:1.2px; }
+        .cond { fill:#fff0ff; stroke:#333; stroke-width:1px; }
+        .sub { fill:#f0f7ff; stroke:#2b6cb0; stroke-width:1px; }
+        .text { font: 13px sans-serif; }
+        .small { font: 11px sans-serif; }
+      </style>
+
+      <text x="20" y="34" class="title">ctl_dispatch Detailed Flowchart (includes subfunction logic)</text>
+
+      <!-- Start -->
+      <rect x="520" y="60" width="360" height="36" rx="6" ry="6" class="box"/>
+      <text x="700" y="86" text-anchor="middle" class="text">Start ctl_dispatch</text>
+
+      <!-- ADC calibrator condition -->
+      <rect x="520" y="120" width="360" height="48" rx="6" ry="6" class="cond"/>
+      <text x="700" y="150" text-anchor="middle" class="text">flag_enable_adc_calibrator?</text>
+
+      <!-- ADC branch: expanded subfunction -->
+      <rect x="40" y="200" width="420" height="140" rx="6" ry="6" class="sub"/>
+      <text x="250" y="225" class="text">ctl_step_adc_calibrator(obj, adc_value)</text>
+      <text x="60" y="250" class="small">- obj->raw = adc_value</text>
+      <text x="60" y="270" class="small">- if (enable_filter) -> ctl_step_biquad_filter(&obj->filter, adc_value)</text>
+      <text x="60" y="290" class="small">- obj->filter_tick++</text>
+      <text x="60" y="310" class="small">- if (filter_tick &gt; filter_period) -> enable_filter=0; output_valid=1</text>
+
+      <!-- Normal controller path start -->
+      <rect x="520" y="220" width="360" height="36" rx="6" ry="6" class="box"/>
+      <text x="700" y="246" text-anchor="middle" class="text">ctl_step_slope_f_pu(&rg)</text>
+
+      <!-- ctl_step_slope_f_pu subbox -->
+      <rect x="520" y="270" width="360" height="120" rx="6" ry="6" class="sub"/>
+      <text x="700" y="295" text-anchor="middle" class="text">ctl_step_slope_f_pu(ctrl)</text>
+      <text x="540" y="320" class="small">- current_freq_pu = ctl_step_slope_limiter(...)</text>
+      <text x="540" y="340" class="small">- rg_slope = current_freq_pu * ratio</text>
+      <text x="540" y="360" class="small">- ctl_set_ramp_generator_slope(&rg, rg_slope)</text>
+      <text x="540" y="380" class="small">- enc.elec_position = ctl_step_ramp_generator(&rg)</text>
+
+      <!-- Speed calc -->
+      <rect x="520" y="400" width="360" height="88" rx="6" ry="6" class="box"/>
+      <text x="700" y="425" text-anchor="middle" class="text">ctl_step_spd_calc(&spd_enc)</text>
+      <text x="540" y="450" class="small">- if (divider) { pos=ctl_get_encoder_position(); delta=pos-old; wrap delta; new_spd = delta*scale; spd_if.speed=lowpass(new_spd); old=pos; }</text>
+
+      <!-- BUILD_LEVEL &gt; 3 branch -->
+      <rect x="520" y="492" width="360" height="48" rx="6" ry="6" class="cond"/>
+      <text x="700" y="522" text-anchor="middle" class="text">BUILD_LEVEL &gt; 3 ?</text>
+
+      <!-- vel/pos controller subbox -->
+      <rect x="520" y="560" width="760" height="160" rx="6" ry="6" class="sub"/>
+      <text x="700" y="590" text-anchor="middle" class="text">ctl_step_vel_pos_ctrl(&motion_ctrl)</text>
+      <text x="540" y="615" class="small">- Position loop (if enabled &amp; divider): rev_error, ang_error, pos_error = rev + ang; target_velocity = pid(pos_error)</text>
+      <text x="540" y="635" class="small">- Velocity loop (if enabled &amp; divider): spd_error = target_velocity - spd_feedback; cur_output = pid(spd_error)</text>
+      <text x="540" y="655" class="small">ctl_get_vel_pos_cmd() returns cur_output</text>
+
+      <!-- set current ref -->
+      <rect x="520" y="740" width="760" height="36" rx="6" ry="6" class="box"/>
+      <text x="900" y="765" text-anchor="middle" class="text">ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, 0, ctl_get_vel_pos_cmd(...))</text>
+      <text x="540" y="790" class="small">(sets idq_ref.d = 0; idq_ref.q = iq_ref)</text>
+
+      <!-- current controller subbox -->
+      <rect x="520" y="820" width="760" height="340" rx="6" ry="6" class="sub"/>
+      <text x="700" y="845" text-anchor="middle" class="text">ctl_step_current_controller(&mtr_ctrl)</text>
+      <text x="540" y="875" class="small">- mc->isr_tick++</text>
+      <text x="540" y="895" class="small">- Phasor: if flag_enable_theta_calc -> set from position; else copy phasor_input</text>
+      <text x="540" y="915" class="small">- Input filtering: iuvw filters -> Clarke -> iab0</text>
+      <text x="540" y="935" class="small">- udc = filter_udc(adc_udc)</text>
+      <text x="540" y="955" class="small">- Park: ctl_ct_park(iab0, phasor) -> idq0</text>
+      <text x="540" y="975" class="small">- If current_ctrl enabled: err_d/err_q = idq_ref - idq0; vdq_ctrl_out = pid(err)</text>
+      <text x="540" y="995" class="small">- Decouple/feedforward/lead compensator as configured</text>
+      <text x="540" y="1015" class="small">- vdq_out_bus_compensator: scale with udc if enabled</text>
+      <text x="540" y="1035" class="small">- Saturate outputs and anti-windup; ipark -> vab0 (vab0_out)</text>
+
+      <!-- SMO (optional) -->
+      <rect x="520" y="1180" width="760" height="240" rx="6" ry="6" class="sub"/>
+      <text x="700" y="1208" text-anchor="middle" class="text">ctl_step_pmsm_smo(&smo, u_alpha, u_beta, i_alpha, i_beta)</text>
+      <text x="540" y="1232" class="small">- delta_i = k1*(u - z) - k2*i_est +/- k3*wr_est*other</text>
+      <text x="540" y="1252" class="small">- i_est += delta_i</text>
+      <text x="540" y="1272" class="small">- z = sat(i_est - i_meas) * k_slide</text>
+      <text x="540" y="1292" class="small">- e_est = lowpass(z)</text>
+      <text x="540" y="1312" class="small">- e_error = -e_est.alpha*phasor.beta + e_est.beta*phasor.alpha</text>
+      <text x="540" y="1332" class="small">- pid_pll -> wr_est -> theta_est += wr_est * inv_2pi; wrap</text>
+      <text x="540" y="1352" class="small">- outputs: spdif.speed and encif.elec_position (with compensation)</text>
+
+      <!-- protection fast check -->
+      <rect x="520" y="1428" width="760" height="160" rx="6" ry="6" class="sub"/>
+      <text x="700" y="1454" text-anchor="middle" class="text">ctl_step_mtr_protect_fast(&protection)</text>
+      <text x="540" y="1476" class="small">- If latched errors (error_code &amp; ~mask) != NONE -&gt; return 1 (fault)</text>
+      <text x="540" y="1496" class="small">- Load inputs: u_dc = *ptr_udc; id/iq = ptr_idq</text>
+      <text x="540" y="1516" class="small">- Check over-voltage (debounced) -&gt; set error bit; if not masked -&gt; return 1</text>
+      <text x="540" y="1536" class="small">- Check over-current (i^2 &gt; limit) (debounced) -&gt; set bit; if not masked -&gt; return 1</text>
+      <text x="540" y="1556" class="small">- ...other checks (deviation etc.)</text>
+
+      <!-- mix outputs -->
+      <rect x="520" y="1600" width="760" height="44" rx="6" ry="6" class="box"/>
+      <text x="700" y="1629" text-anchor="middle" class="text">mix outputs: spwm.vab0_out = mtr_ctrl.vab0.dat</text>
+
+      <!-- Modulator selection -->
+      <rect x="520" y="1660" width="360" height="48" rx="6" ry="6" class="cond"/>
+      <text x="700" y="1690" text-anchor="middle" class="text">USING_NPC_MODULATOR ?</text>
+
+      <!-- NPC modulator summary -->
+      <rect x="160" y="1736" width="480" height="260" rx="6" ry="6" class="sub"/>
+      <text x="400" y="1766" class="text">ctl_step_npc_modulator(npc_modulator_t* mod)</text>
+      <text x="180" y="1796" class="small">- ctl_ct_iclarke(&vab0_out, &vabc_out)</text>
+      <text x="180" y="1816" class="small">- For each phase: compute v_ref = (neg_logic?-v_ref:v_ref)</text>
+      <text x="180" y="1836" class="small">- Map to outer/inner compare (cmp_outer/cmp_inner)</text>
+      <text x="180" y="1856" class="small">- Dead-time compensation based on iuvw and hysteresis</text>
+      <text x="180" y="1876" class="small">- write pwm_out[0..5]</text>
+
+      <!-- SVPWM modulator summary -->
+      <rect x="760" y="1736" width="480" height="220" rx="6" ry="6" class="sub"/>
+      <text x="1000" y="1766" class="text">ctl_step_svpwm_modulator(spwm_modulator_t* mod)</text>
+      <text x="780" y="1796" class="small">- ctl_ct_svpwm(&vab0_out, &vabc_out)</text>
+      <text x="780" y="1816" class="small">- For each phase: pwm_pu = (1 +/- vabc_out)/2 -> pwm_value = pwm_pu * full_scale</text>
+      <text x="780" y="1836" class="small">- Dead-time compensation and saturation</text>
+      <text x="780" y="1856" class="small">- write pwm_out[0..2]</text>
+
+      <!-- End -->
+      <rect x="520" y="2008" width="360" height="36" rx="6" ry="6" class="box"/>
+      <text x="700" y="2034" text-anchor="middle" class="text">End ctl_dispatch</text>
+
+      <!-- Connectors (simplified straight lines) -->
+      <line x1="700" y1="96" x2="700" y2="120" stroke="#333" stroke-width="1.2"/>
+      <line x1="700" y1="168" x2="700" y2="200" stroke="#333" stroke-width="1.2"/>
+      <line x1="400" y1="340" x2="520" y2="340" stroke="#333" stroke-width="1"/>
+      <line x1="700" y1="240" x2="700" y2="270" stroke="#333" stroke-width="1"/>
+      <line x1="700" y1="352" x2="700" y2="400" stroke="#333" stroke-width="1"/>
+      <line x1="700" y1="488" x2="700" y2="492" stroke="#333" stroke-width="1"/>
+      <line x1="700" y1="540" x2="700" y2="560" stroke="#333" stroke-width="1"/>
+      <line x1="700" y1="720" x2="900" y2="740" stroke="#333" stroke-width="1"/>
+      <line x1="700" y1="780" x2="700" y2="820" stroke="#333" stroke-width="1"/>
+      <line x1="700" y1="1160" x2="700" y2="1180" stroke="#333" stroke-width="1"/>
+      <line x1="700" y1="1408" x2="700" y2="1428" stroke="#333" stroke-width="1"/>
+      <line x1="700" y1="1624" x2="700" y2="1660" stroke="#333" stroke-width="1"/>
+      <line x1="700" y1="1708" x2="520" y2="1736" stroke="#333" stroke-width="1"/>
+      <line x1="700" y1="1708" x2="1000" y2="1736" stroke="#333" stroke-width="1"/>
+      <line x1="520" y1="2050" x2="700" y2="2050" stroke="#333" stroke-width="1"/>
+
+    </svg>
