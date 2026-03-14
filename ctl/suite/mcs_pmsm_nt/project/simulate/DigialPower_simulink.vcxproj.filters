@@ -129,12 +129,6 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\gmp_std_port.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="gmp_src_mgr\gmp_src\ht16k33.c">
-      <Filter>GMP Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="gmp_src_mgr\gmp_src\PCA9555.c">
-      <Filter>GMP Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="gmp_src_mgr\gmp_src\windows_rt_tracer.cpp">
       <Filter>GMP Source Files</Filter>
     </ClCompile>

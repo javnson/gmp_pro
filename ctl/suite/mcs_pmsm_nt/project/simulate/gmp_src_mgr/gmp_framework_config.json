@@ -7,22 +7,6 @@
         },
         {
             "root": "core",
-            "module": "dev|display|_internal"
-        },
-        {
-            "root": "core",
-            "module": "dev|display|ht16k33"
-        },
-        {
-            "root": "core",
-            "module": "dev|gpio|_internal"
-        },
-        {
-            "root": "core",
-            "module": "dev|gpio|pca9555"
-        },
-        {
-            "root": "core",
             "module": "dev|software|_internal"
         },
         {

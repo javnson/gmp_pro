@@ -26,8 +26,8 @@
 asio_udp_helper* helper = nullptr;
 
 // ASIO helper will send or receive message via this structure.
-half_duplex_ift simulink_rx;
-half_duplex_ift simulink_tx;
+//half_duplex_ift simulink_rx;
+//half_duplex_ift simulink_tx;
 
 // trace rt module context
 trace_rt_context_t trace_rt_context;
@@ -96,14 +96,14 @@ void gmp_csp_startup(void)
     gmp_base_print("[INFO] Simulink TX buffer size: %llu\r\n", sizeof(simulink_tx_buffer));
 
     // Config send & recv buffer
-    gmp_dev_init_half_duplex_channel(&simulink_rx, (data_gt*)&simulink_rx_buffer, sizeof(simulink_rx_buffer),
-                                     sizeof(simulink_rx_buffer));
+    //gmp_dev_init_half_duplex_channel(&simulink_rx, (data_gt*)&simulink_rx_buffer, sizeof(simulink_rx_buffer),
+    //                                 sizeof(simulink_rx_buffer));
     // simulink_rx.buf = (data_gt *)&simulink_rx_buffer;
     // simulink_rx.length = sizeof(simulink_rx_buffer);
     // simulink_rx.capacity = sizeof(simulink_rx_buffer);
 
-    gmp_dev_init_half_duplex_channel(&simulink_tx, (data_gt*)&simulink_tx_buffer, sizeof(simulink_tx_buffer),
-                                     sizeof(simulink_tx_buffer));
+    //gmp_dev_init_half_duplex_channel(&simulink_tx, (data_gt*)&simulink_tx_buffer, sizeof(simulink_tx_buffer),
+    //                                 sizeof(simulink_tx_buffer));
     // simulink_tx.buf = (data_gt *)&simulink_tx_buffer;
     // simulink_tx.length = sizeof(simulink_tx_buffer);
     // simulink_tx.capacity = sizeof(simulink_tx_buffer);
@@ -120,7 +120,7 @@ void gmp_csp_startup(void)
 void gmp_csp_post_process(void)
 {
     // Send the first message to enable the Simulink model.
-    helper->send_msg((char*)simulink_tx.buf, simulink_tx.length);
+    helper->send_msg((char*)&simulink_tx_buffer, sizeof(simulink_tx_buffer));
 
     // create & save tracert file
     gmp_trace_rt_generate_layout(&trace_rt_context);
@@ -151,15 +151,15 @@ void gmp_csp_loop(void)
         controller_loop_tick = 0;
 
         // parameters validate
-        if (simulink_tx.buf == nullptr || simulink_rx.buf == nullptr)
-        {
-            std::cout << "You should initialize Simulink TX and Simulink RX object.\r\n";
+        //if (simulink_tx.buf == nullptr || simulink_rx.buf == nullptr)
+        //{
+        //    std::cout << "You should initialize Simulink TX and Simulink RX object.\r\n";
 
-            helper->release_connect();
+        //    helper->release_connect();
 
-            delete helper;
-            helper = nullptr;
-        }
+        //    delete helper;
+        //    helper = nullptr;
+        //}
 
         if (helper == nullptr)
         {
@@ -171,7 +171,7 @@ void gmp_csp_loop(void)
         helper->set_overtime();
 
         // Receive message from Simulink
-        if (helper->recv_msg((char*)simulink_rx.buf, simulink_rx.length))
+        if (helper->recv_msg((char*)&simulink_rx_buffer, sizeof(simulink_rx_buffer)))
         {
             std::cout << "receive complete." << std::endl;
 
@@ -190,7 +190,7 @@ void gmp_csp_loop(void)
         gmp_base_ctl_step();
 
         // Send message to Simulink
-        helper->send_msg((char*)simulink_tx.buf, simulink_tx.length);
+        helper->send_msg((char*)&simulink_tx_buffer, sizeof(simulink_tx_buffer));
     }
 }
 
@@ -206,16 +206,16 @@ void gmp_port_system_stuck(void)
 }
 
 // Windows print function
-ec_gt windows_print_function(uint32_t* handle, half_duplex_ift* port)
-{
-    // allow handle not be referenced.
-    UNUSED_PARAMETER(handle);
-
-    for (size_gt i = 0; i < port->length; ++i)
-        putchar(port->buf[i]);
-
-    return GMP_EC_OK;
-}
+//ec_gt windows_print_function(uint32_t* handle, half_duplex_ift* port)
+//{
+//    // allow handle not be referenced.
+//    UNUSED_PARAMETER(handle);
+//
+//    for (size_gt i = 0; i < port->length; ++i)
+//        putchar(port->buf[i]);
+//
+//    return GMP_EC_OK;
+//}
 
 // Windows Simulink system tick function
 time_gt gmp_base_get_system_tick()

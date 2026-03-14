@@ -204,8 +204,6 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\gmp_process_mgr.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\gmp_std_error_code.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\gmp_std_port.c" />
-    <ClCompile Include="gmp_src_mgr\gmp_src\ht16k33.c" />
-    <ClCompile Include="gmp_src_mgr\gmp_src\PCA9555.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\windows_rt_tracer.cpp" />
     <ClCompile Include="gmp_src_mgr\gmp_src\windows_simulink_main.cpp" />
   </ItemGroup>
