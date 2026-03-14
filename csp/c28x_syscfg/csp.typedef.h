@@ -59,6 +59,10 @@
 //#define GMP_PORT_PWM_SIZE_PER_BYTES (2)
 //#endif // GMP_PORT_PWM_T
 
+#ifndef GMP_PORT_GPIO_T
+#define GMP_PORT_GPIO_T uint32_t
+#endif // GMP_PORT_GPIO_T
+
 // C28x device peripheral
 #ifndef GMP_PORT_UART_T
 #define GMP_PORT_UART_T uint32_t

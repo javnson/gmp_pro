@@ -156,7 +156,7 @@ size_gt gmp_base_print_c28xsyscfg(const char* p_fmt, ...)
 
     size_gt length = (size_gt)strlen((char*)str);
 
-    gmp_hal_uart_write(debug_uart, str, length);
+    gmp_hal_uart_write(debug_uart, str, length, 10);
 
     return length;
 }

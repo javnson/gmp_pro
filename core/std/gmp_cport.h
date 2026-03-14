@@ -77,39 +77,61 @@ fast_gt ctl_ready_mainloop(void);
 // ....................................................................//
 // The following function would be called by user.
 
-// Key this function must do implement, otherwise the time-based part may invalid.
-// This function would return the system tick point right now.
-//
+/**
+ * @brief   Get the current system tick point.
+ * @note    This function must be implemented by the user based on the specific 
+ * hardware platform (e.g., HAL_GetTick() in STM32 or CPU Timer in DSP).
+ * Otherwise, the time-based modules may become invalid.
+ * * @return  time_gt     The current system tick point (typically in milliseconds).
+ */
 #ifndef gmp_base_get_system_tick
 time_gt gmp_base_get_system_tick(void);
 #endif // gmp_base_get_system_tick
 
-// Derived function for system tick
-// Calculate the time difference from the specified time
-//
+/**
+ * @brief   Calculate the time difference from the specified past time to now.
+ * * @param[in] t0        The specified past time point to compare with.
+ * * @return  time_gt     The elapsed time since t0.
+ */
 GMP_STATIC_INLINE time_gt gmp_base_get_diff_system_tick(time_gt t0)
 {
     time_gt current_tick = gmp_base_get_system_tick();
     return current_tick - t0;
 }
 
-// judge if current time meets elapse conditions
-// return 1 if delay elapsed.
-GMP_STATIC_INLINE time_gt gmp_base_is_delay_elapsed(time_gt t0, uint32_t delay_t)
-{
-    time_gt current_tick = gmp_base_get_system_tick();
-    return ((current_tick - t0) >= delay_t);
-}
-
-// calculate time gap between t1 - t0
+/**
+ * @brief   Calculate the time gap (t1 - t0) with overflow safety.
+ * @note    This function safely handles the timer wraparound/overflow issue
+ * by using the GMP_PORT_TIME_MAXIMUM threshold.
+ * * @param[in] t1        The later time point.
+ * @param[in] t0        The earlier time point.
+ * * @return  time_gt     The absolute time gap between t1 and t0.
+ */
 GMP_STATIC_INLINE time_gt gmp_base_time_sub(time_gt t1, time_gt t0)
 {
     if (t0 > t1)
+    {
+        /* Handle timer overflow scenario */
         return GMP_PORT_TIME_MAXIMUM - t0 + t1;
+    }
     else
+    {
+        /* Normal scenario */
         return t1 - t0;
+    }
 }
 
+/**
+ * @brief   Judge if the current time meets the delay elapsed conditions.
+ * * @param[in] t0        The starting time point.
+ * @param[in] delay_t   The desired delay duration to check against.
+ * * @return  fast_gt     Returns 1 if the delay has elapsed, otherwise 0.
+ */
+GMP_STATIC_INLINE fast_gt gmp_base_is_delay_elapsed(time_gt t0, uint32_t delay_t)
+{
+    time_gt current_tick = gmp_base_get_system_tick();
+    return ((gmp_base_time_sub(current_tick, t0)) >= delay_t);
+}
 // The function should be called by user or system when fatal error happened.
 // So the function must own the ability of stop the program.
 //
@@ -173,6 +195,9 @@ extern ctl_object_nano_t* ctl_nano_handle;
 
 #endif // SPECIFY_ENABLE_CTL_FRAMEWORK_NANO
 #endif // SPECIFY_ENABLE_GMP_CTL
+
+void gmp_base_enter_critical();
+void gmp_base_leave_critical();
 
 // This function would be called by main ISR function, by user.
 // User should call this function, in your ctl_main.cpp or just ignore it.

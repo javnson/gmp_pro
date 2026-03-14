@@ -1,0 +1,217 @@
+{
+    "sync_mode": "inc_only",
+    "selected_modules": [
+        {
+            "root": "core",
+            "module": "dev|_internal"
+        },
+        {
+            "root": "core",
+            "module": "dev|display|_internal"
+        },
+        {
+            "root": "core",
+            "module": "dev|display|ht16k33"
+        },
+        {
+            "root": "core",
+            "module": "dev|gpio|_internal"
+        },
+        {
+            "root": "core",
+            "module": "dev|gpio|pca9555"
+        },
+        {
+            "root": "core",
+            "module": "dev|sensor|_internal"
+        },
+        {
+            "root": "core",
+            "module": "dev|sensor|hdc1080"
+        },
+        {
+            "root": "core",
+            "module": "dev|software|_internal"
+        },
+        {
+            "root": "core",
+            "module": "dev|software|at_device"
+        },
+        {
+            "root": "core",
+            "module": "mm"
+        },
+        {
+            "root": "core",
+            "module": "pm|_internal"
+        },
+        {
+            "root": "core",
+            "module": "pm|function_scheduler"
+        },
+        {
+            "root": "core",
+            "module": "std"
+        },
+        {
+            "root": "csp",
+            "module": "stm32"
+        },
+        {
+            "root": "ctl",
+            "module": "component|_internal"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|_internal"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|inv"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|mppt"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv"
+        },
+        {
+            "root": "ctl",
+            "module": "component|dsa"
+        },
+        {
+            "root": "ctl",
+            "module": "component|hardware_preset|_internal"
+        },
+        {
+            "root": "ctl",
+            "module": "component|hardware_preset|acm_motor"
+        },
+        {
+            "root": "ctl",
+            "module": "component|hardware_preset|grid_filter"
+        },
+        {
+            "root": "ctl",
+            "module": "component|hardware_preset|inverter_3ph"
+        },
+        {
+            "root": "ctl",
+            "module": "component|hardware_preset|inverter_HB"
+        },
+        {
+            "root": "ctl",
+            "module": "component|hardware_preset|pmsm_motor"
+        },
+        {
+            "root": "ctl",
+            "module": "component|hardware_preset|sensor"
+        },
+        {
+            "root": "ctl",
+            "module": "component|interface|_internal"
+        },
+        {
+            "root": "ctl",
+            "module": "component|interface|adc"
+        },
+        {
+            "root": "ctl",
+            "module": "component|interface|dac"
+        },
+        {
+            "root": "ctl",
+            "module": "component|interface|pwm"
+        },
+        {
+            "root": "ctl",
+            "module": "component|intrinsic|_internal"
+        },
+        {
+            "root": "ctl",
+            "module": "component|intrinsic|advance"
+        },
+        {
+            "root": "ctl",
+            "module": "component|intrinsic|continuous"
+        },
+        {
+            "root": "ctl",
+            "module": "component|intrinsic|discrete"
+        },
+        {
+            "root": "ctl",
+            "module": "component|intrinsic|protection"
+        },
+        {
+            "root": "ctl",
+            "module": "component|kinematics"
+        },
+        {
+            "root": "ctl",
+            "module": "component|motor_control|_internal"
+        },
+        {
+            "root": "ctl",
+            "module": "component|motor_control|acm_ctrl"
+        },
+        {
+            "root": "ctl",
+            "module": "component|motor_control|consultant"
+        },
+        {
+            "root": "ctl",
+            "module": "component|motor_control|current_loop"
+        },
+        {
+            "root": "ctl",
+            "module": "component|motor_control|motion"
+        },
+        {
+            "root": "ctl",
+            "module": "component|motor_control|observer"
+        },
+        {
+            "root": "ctl",
+            "module": "component|motor_control|param_est"
+        },
+        {
+            "root": "ctl",
+            "module": "component|motor_control|pmsm_ctrl"
+        },
+        {
+            "root": "ctl",
+            "module": "framework|_internal"
+        },
+        {
+            "root": "ctl",
+            "module": "framework|cia402"
+        },
+        {
+            "root": "ctl",
+            "module": "framework|ctl_nano"
+        },
+        {
+            "root": "ctl",
+            "module": "math_block|_internal"
+        },
+        {
+            "root": "ctl",
+            "module": "math_block|complex_lite"
+        },
+        {
+            "root": "ctl",
+            "module": "math_block|coordinate"
+        },
+        {
+            "root": "ctl",
+            "module": "math_block|matrix_lite"
+        },
+        {
+            "root": "ctl",
+            "module": "math_block|vector_lite"
+        }
+    ]
+}

@@ -1,0 +1,33 @@
+# ========================================
+# GMP 框架全局游离扫描忽略名单
+# 用法同 .gitignore
+# ========================================
+
+
+core/pie_in_the_sky/**
+core/tb/**
+
+# 屏蔽带有特定前缀/后缀的文件或目录
+ctl/suite/**
+ctl/tb/**
+
+csp/c28x_pinmux/**
+csp/c28x_syscfg/f28*/**
+csp/c28x_syscfg/iris_280039c_board/**
+csp/silan_spc6l64/**
+csp/null/**
+csp/hc32/**
+csp/matlab_simulink_level2/**
+csp/zynq7/**
+csp/windows_simulink/pure_gmp_debug_plat/**
+
+csp/stm32/stm32c092rc_nucleo_peripheral/**
+csp/stm32/stm32g030f6p6/**
+csp/stm32/stm32f411ceu6/**
+csp/stm32/stm32g071gbu6/**
+
+
+# 屏蔽特定后缀名 (比如一些编译产生的中间汇编文件)
+
+ctl/component/digital_power.h
+

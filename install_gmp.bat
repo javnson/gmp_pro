@@ -117,4 +117,8 @@ python ./gmp_fac_install_ccs_product.py
 :: generate facility_cfg.json
 python ./gmp_fac_generate_cfg_json.py
 
+cd src_mgr
+
+python .\framework_distribute_tools_v2.py
+
 pause

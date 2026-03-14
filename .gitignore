@@ -448,6 +448,28 @@ ctl/training/**/RTE/*
 ctl/**/gmp_src/**
 ctl/**/include_paths.txt
 
+# Disable GMP source manager output
+ctl/**/gmp_inc/**
+ctl/**/gmp_src/**
+
+tools/**/gmp_inc/**
+tools/**/gmp_src/**
+
+csp/**/gmp_inc/**
+csp/**/gmp_src/**
+
+csp/**/gmp_generate_inc.bat
+csp/**/gmp_generate_src.bat
+csp/**/gmp_config.bat
+
+ctl/**/gmp_generate_inc.bat
+ctl/**/gmp_generate_src.bat
+ctl/**/gmp_config.bat
+
+core/**/gmp_generate_inc.bat
+core/**/gmp_generate_src.bat
+core/**/gmp_config.bat
+
 # disable all the CCS temporary files
 # ctl/suite/**/*.launch
 ctl/suite/**/*.prefs
@@ -490,6 +512,10 @@ gmp_pro.zip
 
 # doxygen output files
 ctl/doc/**
+
+# peripheral manager output
+**/gmp_peripheral_src/**
+**/include_headers.inl
 
 ###################################################################################
 # HARDWARE Driver Section

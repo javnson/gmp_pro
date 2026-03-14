@@ -20,7 +20,7 @@
 #define GMP_EC_GENERAL_WARN  ((GMP_EC_WARN_BEGIN + 1))
 #define GMP_EC_GENERAL_ERROR ((GMP_EC_ERRO_BEGIN + 1))
 
-#define GMP_EC_WARN_PRINT    ((GMP_EC_WARN_BEGIN + 2))
+#define GMP_EC_WARN_PRINT ((GMP_EC_WARN_BEGIN + 2))
 // branch should not be reached
 #define GMP_EC_UNDEFINED_ACTION ((GMP_EC_FATAL_BEGIN + 3))
 // Hardware damaged
@@ -40,7 +40,7 @@
 // MM module unable to find the specified memory block
 #define GMP_EC_MM_NO_SPECIFIED_BLOCK ((GMP_EC_ERRO_BEGIN + 10))
 // Timeout
-#define GMP_EC_RESPONSE_TIMEOUT ((GMP_EC_WARN_BEGIN + 11))
+#define GMP_EC_TIMEOUT ((GMP_EC_WARN_BEGIN + 11))
 // data struct overflow
 #define GMP_EC_OVERFLOW ((GMP_EC_WARN_BEGIN + 12))
 // This function is disabled
@@ -63,3 +63,7 @@
 #define GMP_EC_WF_NO_RESET ((GMP_EC_ERRO_BEGIN + 21))
 // Operation was refused
 #define GMP_EC_REFUSED ((GMP_EC_ERRO_BEGIN + 22))
+// I2C Communication NACK
+#define GMP_EC_NACK        ((GMP_EC_ERRO_BEGIN + 23))
+#define GMP_EC_DEQUE_FULL  (GMP_EC_ERRO_BEGIN + 0x24) /**< Deque is full, cannot push more elements. */
+#define GMP_EC_DEQUE_EMPTY (GMP_EC_ERRO_BEGIN + 0x25) /**< Deque is empty, cannot pop elements. */
