@@ -10,12 +10,12 @@ def run_reverse_sync_inc():
     
     if not is_apply_mode:
         print("=" * 60)
-        print("[START] [GMP Reverse Sync] 头文件树比对扫描 (Header Diff Mode)...")
+        print("[START] [GMP Reverse Sync] Header tree diff scanning (Header Diff Mode)...")
         print("=" * 60)
 
     gmp_location = os.environ.get('GMP_PRO_LOCATION')
     if not gmp_location:
-        print("[ERROR] 未找到环境变量 GMP_PRO_LOCATION！")
+        print("[ERROR] Environment variable GMP_PRO_LOCATION not found!")
         return False
 
     gmp_base = Path(gmp_location).resolve()
@@ -25,7 +25,7 @@ def run_reverse_sync_inc():
     inc_dir = cwd / "gmp_inc"
 
     if not global_dic_path.exists() or not local_config_path.exists():
-        print("[ERROR] 找不到全局字典或本地配置！")
+        print("[ERROR] Global dictionary or local config not found!")
         return False
 
     with open(global_dic_path, 'r', encoding='utf-8') as f:
@@ -37,7 +37,7 @@ def run_reverse_sync_inc():
     macros["GMP_PRO_LOCATION"] = gmp_base.as_posix()
     sorted_macros = sorted(macros.items(), key=lambda item: len(item[1]), reverse=True)
 
-    # 1. 重建头文件的反向映射表 { "relative/path/file.h": absolute_core_path }
+    # 1. Rebuild the reverse mapping table for header files
     inc_map = {}
     for item in local_config.get("selected_modules", []):
         r, m = item.get("root"), item.get("module")
@@ -77,10 +77,10 @@ def run_reverse_sync_inc():
                         inc_map[f_abs.name] = f_abs
 
     if not inc_dir.exists():
-        print("[ERROR] 本地不存在 gmp_inc 目录，无法比对。")
+        print("[ERROR] Local directory 'gmp_inc' does not exist. Cannot perform diff.")
         return False
 
-    # 2. 执行 Diff 比对
+    # 2. Execute Diff comparison
     modified_files = []
     untracked_files = []
 
@@ -90,7 +90,7 @@ def run_reverse_sync_inc():
             local_file = root_path / file
             rel_path = local_file.relative_to(inc_dir).as_posix()
             
-            # 绝对不能动 _ext_ 开头的外部依赖！
+            # Absolutely do not touch external dependencies starting with _ext_!
             if rel_path.startswith("_ext_"):
                 continue
                 
@@ -103,31 +103,31 @@ def run_reverse_sync_inc():
             if not remote_file.exists() or not filecmp.cmp(local_file, remote_file, shallow=False):
                 modified_files.append((local_file, remote_file, rel_path))
 
-    # 3. 输出报告或执行覆盖
+    # 3. Output report or execute overwrite
     if not is_apply_mode:
         if not modified_files and not untracked_files:
-            print("[SAFE] 本地头文件树与核心库完全一致，没有需要提交的更改。")
+            print("[SAFE] Local header tree perfectly matches the core library. No changes to push.")
             return True
             
-        print("[REPORT] 扫描完毕。检查结果如下：\n")
+        print("[REPORT] Scan complete. Check results below:\n")
         
         for loc, rem, rel in modified_files:
-            print(f"  [MODIFIED] 发现变更: {rel}")
-            print(f"      -> 将覆盖至: {rem.relative_to(gmp_base) if rem.is_relative_to(gmp_base) else rem}")
+            print(f"  [MODIFIED] Detected change: {rel}")
+            print(f"      -> Will overwrite to: {rem.relative_to(gmp_base) if rem.is_relative_to(gmp_base) else rem}")
             
         for rel in untracked_files:
-            print(f"  [UNTRACKED] 未知文件: {rel} (该文件未在字典中注册，将被忽略)")
+            print(f"  [UNTRACKED] Unknown file: {rel} (Not registered in dictionary, will be ignored)")
             
-        print(f"\n[SUMMARY] 共有 {len(modified_files)} 个文件可推回核心库。")
+        print(f"\n[SUMMARY] A total of {len(modified_files)} file(s) can be pushed back to the core library.")
         
     else:
         print("=" * 60)
-        print("[APPLY] 正在将修改物理覆盖回核心库...")
+        print("[APPLY] Physically overwriting modifications back to the core library...")
         for loc, rem, rel in modified_files:
             rem.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(loc, rem)
-            print(f"  [OVERWRITE] 已覆盖: {rel}")
-        print("\n[SUCCESS] 反向同步物理写入完成！")
+            print(f"  [OVERWRITE] Overwritten: {rel}")
+        print("\n[SUCCESS] Reverse synchronization physical write complete!")
 
     return True
 

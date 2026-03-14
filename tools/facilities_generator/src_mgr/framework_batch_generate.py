@@ -37,12 +37,12 @@ def resolve_search_roots(search_paths, sorted_macros):
 
 def run_batch_generation():
     print("=" * 60)
-    print("⚡ [GMP Fleet] 启动批量代码生成引擎 (Macro & Glob Mode)...")
+    print("[START] [GMP Fleet] Starting Batch Generation Engine (Macro & Glob Mode)...")
     print("=" * 60)
 
     gmp_location = os.environ.get('GMP_PRO_LOCATION')
     if not gmp_location:
-        print("[ERROR] 未找到环境变量 GMP_PRO_LOCATION！")
+        print("[ERROR] Environment variable GMP_PRO_LOCATION not found!")
         return False
 
     base_dir = Path(__file__).parent.resolve()
@@ -50,7 +50,7 @@ def run_batch_generation():
     dic_path = base_dir / "gmp_framework_dic.json"
 
     if not target_json.exists():
-        print(f"[ERROR] 找不到目标配置文件: {target_json.name}")
+        print(f"[ERROR] Target config not found: {target_json.name}")
         return False
 
     sorted_macros = get_macros(dic_path, gmp_location)
@@ -60,12 +60,12 @@ def run_batch_generation():
     
     search_paths = config.get("search_paths", [])
     
-    print("[INFO] 正在解析搜索路径规则...")
+    print("[INFO] Parsing search rules...")
     active_roots = resolve_search_roots(search_paths, sorted_macros)
 
     projects_found = set()
 
-    print("[INFO] 正在深度扫描工程目标...")
+    print("[INFO] Deep scanning for target projects...")
     for root_path in active_roots:
         if root_path.name == "gmp_src_mgr":
             projects_found.add(root_path)
@@ -77,16 +77,16 @@ def run_batch_generation():
                 projects_found.add(current_dir)
 
     if not projects_found:
-        print("[WARNING] 未找到任何符合条件的 gmp_src_mgr 文件夹。")
+        print("[WARNING] No matching 'gmp_src_mgr' folders found.")
         return True
 
-    print(f"[INFO] 发现 {len(projects_found)} 个目标工程，开始执行构建列阵...")
+    print(f"[INFO] Found {len(projects_found)} target projects. Initiating batch build...")
     print("-" * 60)
 
     stats = {"success": 0, "failed": 0}
 
     for proj_dir in sorted(list(projects_found)):
-        print(f"\n>>> [BUILDING] 工程路径: {proj_dir.parent.name} ({proj_dir})")
+        print(f"\n>>> [BUILDING] Project: {proj_dir.parent.name} ({proj_dir})")
         
         script_src = proj_dir / "gmp_generate_src.bat"
         script_inc = proj_dir / "gmp_generate_inc.bat"
@@ -95,38 +95,38 @@ def run_batch_generation():
         creationflags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
 
         if script_src.exists():
-            print("    -> 正在执行源文件生成 (Source)...")
+            print("    -> Executing source file generation (Source)...")
             res_src = subprocess.run([str(script_src)], cwd=proj_dir, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, creationflags=creationflags, encoding='utf-8', errors='replace')
             if res_src.returncode != 0:
-                print(f"    ❌ [ERROR] 源文件生成失败 (Error Code: {res_src.returncode})")
+                print(f"    [ERROR] Source file generation failed (Error Code: {res_src.returncode})")
                 has_error = True
             else:
-                print("    ✅ [OK] 源文件生成成功。")
+                print("    [OK] Source file generation successful.")
         else:
-            print("    ⚠️ [SKIP] 找不到源文件生成脚本。")
+            print("    [SKIP] Source generation script not found.")
 
         if script_inc.exists() and not has_error:
-            print("    -> 正在执行头文件镜像 (Header)...")
+            print("    -> Executing header file mirroring (Header)...")
             res_inc = subprocess.run([str(script_inc)], cwd=proj_dir, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, creationflags=creationflags, encoding='utf-8', errors='replace')
             if res_inc.returncode != 0:
-                print(f"    ❌ [ERROR] 头文件生成失败 (Error Code: {res_inc.returncode})")
+                print(f"    [ERROR] Header file mirroring failed (Error Code: {res_inc.returncode})")
                 has_error = True
             else:
-                print("    ✅ [OK] 头文件镜像成功。")
+                print("    [OK] Header file mirroring successful.")
         elif not script_inc.exists():
-            print("    ⚠️ [SKIP] 找不到头文件生成脚本。")
+            print("    [SKIP] Header generation script not found.")
 
         if has_error:
             stats["failed"] += 1
-            print("    🛑 该工程构建异常中止。")
+            print("    [ABORT] Project build aborted due to errors.")
         else:
             stats["success"] += 1
-            print("    🎉 该工程全部生成任务完成。")
+            print("    [SUCCESS] All generation tasks completed for this project.")
 
     print("\n" + "=" * 60)
-    print("📊 [FLEET SUMMARY] 舰队构建任务执行完毕！")
-    print(f"    🟢 成功更新工程: {stats['success']} 个")
-    print(f"    🔴 发生错误工程: {stats['failed']} 个")
+    print("[FLEET SUMMARY] Fleet batch build completed!")
+    print(f"    [SUCCESS] Projects successfully updated: {stats['success']}")
+    print(f"    [FAILED] Projects with errors: {stats['failed']}")
     print("=" * 60)
     return True
 

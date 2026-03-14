@@ -6,12 +6,12 @@ from pathlib import Path
 
 def run_inc_sync():
     print("\n" + "=" * 60)
-    print("[START] [GMP Sync] 开始正向同步头文件树 (Header Mirror Mode)...")
+    print("[START] [GMP Sync] Starting forward header tree synchronization (Header Mirror Mode)...")
     print("=" * 60)
 
     gmp_location = os.environ.get('GMP_PRO_LOCATION')
     if not gmp_location:
-        print("[ERROR] 未找到环境变量 GMP_PRO_LOCATION！")
+        print("[ERROR] Environment variable GMP_PRO_LOCATION not found!")
         return False
 
     gmp_base = Path(gmp_location).resolve()
@@ -22,7 +22,7 @@ def run_inc_sync():
     dest_inc_txt = cwd / "gmp_compiler_includes.txt"
 
     if not global_dic_path.exists() or not local_config_path.exists():
-        print("[WARNING] 找不到全局字典或本地配置，跳过同步。")
+        print("[WARNING] Global dictionary or local configuration not found. Skipping synchronization.")
         return True
 
     with open(global_dic_path, 'r', encoding='utf-8') as f:
@@ -32,14 +32,14 @@ def run_inc_sync():
 
     sync_mode = local_config.get("sync_mode", "all")
     if sync_mode not in ("all", "inc_only"):
-        print("[SKIP] 当前配置模式无需同步头文件。")
+        print("[SKIP] Current configuration mode does not require header file synchronization.")
         return True
 
     macros = global_registry.get("macros", {})
     macros["GMP_PRO_LOCATION"] = gmp_base.as_posix()
     sorted_macros = sorted(macros.items(), key=lambda item: len(item[1]), reverse=True)
 
-    # 1. 收集规则
+    # 1. Collect rules
     all_inc_patterns, all_inc_dirs_patterns = [], []
     for item in local_config.get("selected_modules", []):
         r, m = item.get("root"), item.get("module")
@@ -47,7 +47,7 @@ def run_inc_sync():
             all_inc_patterns.extend(global_registry["modules"][r][m].get("inc_patterns", []))
             all_inc_dirs_patterns.extend(global_registry["modules"][r][m].get("inc_dirs", []))
 
-    # 2. 智能镜像树推导 { "relative/path/to/file.h": absolute_path }
+    # 2. Smart mirror tree derivation { "relative/path/to/file.h": absolute_path }
     inc_map = {}
     for pat in all_inc_patterns:
         resolved_pat = pat
@@ -85,12 +85,12 @@ def run_inc_sync():
             if not matched_ext:
                 inc_map[f_abs.name] = f_abs
 
-    # 3. 执行同步与裁剪
+    # 3. Execute synchronization and pruning
     dest_inc_dir.mkdir(parents=True, exist_ok=True)
     valid_dest_paths = { (dest_inc_dir / rel).resolve() for rel in inc_map.keys() }
     stats = {'CREATE': 0, 'UPDATE': 0, 'SKIP': 0, 'DELETE': 0}
 
-    # -- 裁剪无用文件和空目录 --
+    # -- Prune unused files and empty directories --
     for root_dir, dirs, files in os.walk(dest_inc_dir, topdown=False):
         root_path = Path(root_dir).resolve()
         for file in files:
@@ -103,7 +103,7 @@ def run_inc_sync():
         if not os.listdir(root_path) and root_path != dest_inc_dir.resolve():
             root_path.rmdir()
 
-    # -- 增量拷贝 --
+    # -- Incremental copy --
     for rel_path, src_abs_path in inc_map.items():
         dest_path = dest_inc_dir / rel_path
         dest_path.parent.mkdir(parents=True, exist_ok=True)
@@ -120,7 +120,7 @@ def run_inc_sync():
             print(f"  [SKIP]   {rel_path}")
             stats['SKIP'] += 1
 
-    # 4. 生成 Include 指南
+    # 4. Generate Include guidelines
     inc_dirs_list = set()
     for pat in all_inc_dirs_patterns:
         resolved_pat = pat
@@ -135,17 +135,17 @@ def run_inc_sync():
 
     try:
         with open(dest_inc_txt, 'w', encoding='utf-8') as f:
-            f.write("========== GMP 编译器 Include Paths 汇总 ==========\n")
-            f.write("1. 本地镜像基础路径:\n")
+            f.write("========== GMP Compiler Include Paths Summary ==========\n")
+            f.write("1. Local mirror base path:\n")
             f.write(f".\\{dest_inc_dir.name}\n\n")
             if inc_dirs_list:
-                f.write("2. 外部宏依赖路径 (-I):\n")
+                f.write("2. External macro dependency paths (-I):\n")
                 for d in sorted(list(inc_dirs_list)):
                     f.write(f"{d}\n")
     except Exception as e:
-        print(f"  [ERROR] 生成 Include 列表文件失败: {e}")
+        print(f"  [ERROR] Failed to generate Include list file: {e}")
 
-    print("\n[SUMMARY] 头文件同步完成: " + " | ".join(f"{k}:{v}" for k, v in stats.items()))
+    print("\n[SUMMARY] Header file synchronization completed: " + " | ".join(f"{k}:{v}" for k, v in stats.items()))
     print("=" * 60)
     return True
 
