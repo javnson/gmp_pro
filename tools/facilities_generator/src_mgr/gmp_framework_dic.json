@@ -21,7 +21,30 @@
                     "core|std"
                 ],
                 "inc_dirs": [],
-                "help_docs": []
+                "help_docs": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "std": {
                 "type": "module",
@@ -45,7 +68,30 @@
                 "inc_dirs": [
                     "${GMP_PRO_LOCATION}/"
                 ],
-                "help_docs": []
+                "help_docs": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             },
             "pm|_internal": {
                 "type": "module",
@@ -69,7 +115,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             },
             "dev|_internal": {
                 "type": "module",
@@ -109,7 +178,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "dev|dac|dac8563": {
                 "type": "module",
@@ -122,7 +214,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "dev|dac|_internal": {
                 "type": "module",
@@ -144,7 +259,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             },
             "dev|display|_internal": {
                 "type": "module",
@@ -166,7 +304,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "dev|encoder|_internal": {
                 "type": "module",
@@ -188,7 +349,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "dev|excitation|_internal": {
                 "type": "module",
@@ -210,7 +394,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "dev|gpio|pca9555": {
                 "type": "module",
@@ -223,7 +430,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             },
             "dev|gpio|_internal": {
                 "type": "module",
@@ -245,7 +475,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "dev|meter|_internal": {
                 "type": "module",
@@ -267,7 +520,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "dev|potentiometer|_internal": {
                 "type": "module",
@@ -289,7 +565,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "dev|rtc|_internal": {
                 "type": "module",
@@ -311,7 +610,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "dev|sensor|_internal": {
                 "type": "module",
@@ -333,7 +655,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "dev|sensor|hdc1080": {
                 "type": "module",
@@ -346,7 +691,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             },
             "dev|software|at_device": {
                 "type": "module",
@@ -360,7 +728,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             },
             "dev|software|_internal": {
                 "type": "module",
@@ -384,7 +775,30 @@
                 ],
                 "depends_on": [],
                 "inc_dirs": [],
-                "help_docs": []
+                "help_docs": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "component|kinematics": {
                 "type": "module",
@@ -393,7 +807,30 @@
                 "inc_patterns": [],
                 "depends_on": [],
                 "inc_dirs": [],
-                "help_docs": []
+                "help_docs": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "component|_internal": {
                 "type": "module",
@@ -433,7 +870,30 @@
                 ],
                 "inc_dirs": [],
                 "depends_on": [],
-                "help_docs": []
+                "help_docs": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "component|digital_power|inv": {
                 "type": "module",
@@ -447,7 +907,30 @@
                 ],
                 "inc_dirs": [],
                 "depends_on": [],
-                "help_docs": []
+                "help_docs": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "component|interface|_internal": {
                 "type": "module",
@@ -482,7 +965,30 @@
                 ],
                 "inc_dirs": [],
                 "depends_on": [],
-                "help_docs": []
+                "help_docs": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             },
             "component|interface|pwm": {
                 "type": "module",
@@ -494,7 +1000,30 @@
                 ],
                 "inc_dirs": [],
                 "depends_on": [],
-                "help_docs": []
+                "help_docs": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             },
             "component|interface|dac": {
                 "type": "module",
@@ -505,7 +1034,30 @@
                 ],
                 "inc_dirs": [],
                 "depends_on": [],
-                "help_docs": []
+                "help_docs": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             },
             "component|digital_power|mppt": {
                 "type": "module",
@@ -518,7 +1070,30 @@
                 ],
                 "inc_dirs": [],
                 "depends_on": [],
-                "help_docs": []
+                "help_docs": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "component|intrinsic|_internal": {
                 "type": "module",
@@ -546,7 +1121,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             },
             "component|intrinsic|discrete": {
                 "type": "module",
@@ -559,7 +1157,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             },
             "component|intrinsic|protection": {
                 "type": "module",
@@ -572,7 +1193,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             },
             "component|intrinsic|advance": {
                 "type": "module",
@@ -585,7 +1229,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "component|motor_control|_internal": {
                 "type": "module",
@@ -613,7 +1280,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "component|motor_control|current_loop": {
                 "type": "module",
@@ -626,7 +1316,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             },
             "component|motor_control|motion": {
                 "type": "module",
@@ -639,7 +1352,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             },
             "component|motor_control|observer": {
                 "type": "module",
@@ -652,7 +1388,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "component|motor_control|param_est": {
                 "type": "module",
@@ -665,7 +1424,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "component|motor_control|pmsm_ctrl": {
                 "type": "module",
@@ -681,7 +1463,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "component|motor_control|consultant": {
                 "type": "module",
@@ -694,7 +1499,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "component|hardware_preset|_internal": {
                 "type": "module",
@@ -716,7 +1544,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "component|hardware_preset|sensor": {
                 "type": "module",
@@ -727,7 +1578,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "component|hardware_preset|grid_filter": {
                 "type": "module",
@@ -738,7 +1612,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "component|hardware_preset|inverter_3ph": {
                 "type": "module",
@@ -749,7 +1646,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "component|hardware_preset|inverter_HB": {
                 "type": "module",
@@ -760,7 +1680,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "component|hardware_preset|pmsm_motor": {
                 "type": "module",
@@ -771,7 +1714,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "math_block|complex_lite": {
                 "type": "module",
@@ -782,7 +1748,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "math_block|_internal": {
                 "type": "module",
@@ -807,7 +1796,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             },
             "math_block|matrix_lite": {
                 "type": "module",
@@ -818,7 +1830,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "math_block|vector_lite": {
                 "type": "module",
@@ -829,7 +1864,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             },
             "framework|_internal": {
                 "type": "module",
@@ -856,7 +1914,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             },
             "framework|ctl_nano": {
                 "type": "module",
@@ -869,7 +1950,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             }
         },
         "csp": {
@@ -887,7 +1991,30 @@
                     "${GMP_PRO_LOCATION}/csp/stm32/"
                 ],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             },
             "c28x_syscfg": {
                 "type": "module",
@@ -902,7 +2029,30 @@
                     "${GMP_PRO_LOCATION}/csp/c28x_syscfg/"
                 ],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             },
             "windows_simulink": {
                 "type": "module",
@@ -915,7 +2065,30 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
             }
         }
     },

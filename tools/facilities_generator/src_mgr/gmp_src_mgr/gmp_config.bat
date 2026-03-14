@@ -15,7 +15,7 @@ if "%GMP_PRO_LOCATION%"=="" (
 )
 
 :: 拉起配置器 GUI
-python "%GMP_PRO_LOCATION%\tools\facilities_generator\src_mgr\framework_user_gui_v8.py"
+python "%GMP_PRO_LOCATION%\tools\facilities_generator\src_mgr\framework_user_gui_v10.py"
 
 :: 错误捕获
 if %ERRORLEVEL% neq 0 (

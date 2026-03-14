@@ -15,7 +15,7 @@ if "%GMP_PRO_LOCATION%"=="" (
 )
 
 :: 2. 拉起开发者 GUI (框架资产管理器)
-python "%GMP_PRO_LOCATION%\tools\facilities_generator\src_mgr\framework_dev_gui_v14.py"
+python "%GMP_PRO_LOCATION%\tools\facilities_generator\src_mgr\framework_dev_gui_v17.py"
 
 :: 3. 错误捕获
 if %ERRORLEVEL% neq 0 (
