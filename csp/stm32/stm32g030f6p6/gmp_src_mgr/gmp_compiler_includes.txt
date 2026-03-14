@@ -4,4 +4,4 @@
 
 2. 外部宏依赖路径 (-I):
 E:/lib/gmp_pro
-E:/lib/gmp_pro/csp/stm32
+E:/lib/gmp_pro/csp/c28x_syscfg

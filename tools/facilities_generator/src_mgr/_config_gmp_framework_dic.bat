@@ -3,27 +3,27 @@ setlocal EnableDelayedExpansion
 
 title GMP Framework Asset Manager (Developer)
 echo =======================================================
-echo ⚙️ [GMP Dev Tool] 正在启动核心框架资产管理器...
+echo ⚙️ [GMP Dev Tool] Starting Core Framework Asset Manager...
 echo =======================================================
 
-:: 1. 检查环境变量
+:: 1. Check environment variable
 if "%GMP_PRO_LOCATION%"=="" (
-    echo [ERROR] 未找到环境变量 GMP_PRO_LOCATION !
-    echo [ERROR] 请先将其设置为您的 GMP 核心库根目录。
+    echo [ERROR] Environment variable GMP_PRO_LOCATION is not set!
+    echo [ERROR] Please set it to the root directory of your GMP core library.
     pause
     exit /b 1
 )
 
-:: 2. 拉起开发者 GUI (框架资产管理器)
+:: 2. Launch Developer GUI (Framework Asset Manager)
 python "%GMP_PRO_LOCATION%\tools\facilities_generator\src_mgr\framework_dev_gui_v17.py"
 
-:: 3. 错误捕获
+:: 3. Error handling
 if %ERRORLEVEL% neq 0 (
     echo.
-    echo [ERROR] 资产管理器异常退出，错误码: %ERRORLEVEL%
+    echo [ERROR] Asset Manager exited abnormally. Error code: %ERRORLEVEL%
     pause
     exit /b %ERRORLEVEL%
 )
 
-:: 正常退出时直接关闭窗口，不留黑框
+:: Close window directly on normal exit
 exit /b 0
