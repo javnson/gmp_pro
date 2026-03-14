@@ -361,3 +361,126 @@ void ctl_init_mpc(ctl_mpc_controller_t* mpc, const ctl_mpc_init_t* init)
     ctl_matrix2_set(&mpc->B, 1, 0, 0.0f);
     ctl_matrix2_set(&mpc->B, 1, 1, mpc->Ts / mpc->Lq);
 }
+
+
+//////////////////////////////////////////////////////////////////////////
+// Current Distributor
+
+#include <ctl/component/motor_control/current_loop/lut_current_distributor.h>
+
+void ctl_init_lut_distributor(ctl_lut_distributor_t* dist, const ctl_lut_distributor_init_t* init)
+{
+    // 1. Convert offline configuration to real-time control variables
+    if (init->v_base > 1e-6f)
+    {
+        dist->vs_limit = float2ctrl(init->v_lim / init->v_base);
+    }
+    else
+    {
+        dist->vs_limit = float2ctrl(0.0f); // Fallback to avoid division by zero
+    }
+
+    dist->alpha_lim_fw = float2ctrl(init->alpha_lim_fw);
+    dist->alpha_neg_torque = float2ctrl(init->alpha_neg_torque);
+    dist->flag_enable_fw = 1; // Enabled by default
+
+    // 2. Initialize the Field Weakening PID controller
+    ctl_init_pid(&dist->fw_pid, init->kp_fw, init->ki_fw, 0.0f, init->fs);
+
+    // Clamp the PID output to prevent the angle from exceeding limits.
+    ctl_set_pid_limit(&dist->fw_pid, init->alpha_lim_fw, 0.0f);
+    ctl_set_pid_int_limit(&dist->fw_pid, init->alpha_lim_fw, 0.0f);
+
+    // 3. Initialize the Paired Look-Up Table module
+    if (init->current_alpha_table != NULL && init->lut_size > 1)
+    {
+        // 直接将传入的结构体数组绑定到 im_lut 中
+        ctl_init_paired_lut1d(&dist->im_lut, init->current_alpha_table, init->lut_size);
+    }
+    else
+    {
+        // Safe default if LUT data is missing
+        dist->im_lut.table = NULL;
+        dist->im_lut.size = 0;
+    }
+
+    // 4. Clear states
+    ctl_clear_lut_distributor(dist);
+}
+
+#include <ctl/component/motor_control/current_loop/const_current_distributor.h>
+
+void ctl_init_const_distributor(ctl_const_distributor_t* dist, const ctl_const_distributor_init_t* init)
+{
+    // 1. Convert offline configuration to real-time control variables
+    if (init->v_base > 1e-6f)
+    {
+        dist->vs_limit = float2ctrl(init->v_lim / init->v_base);
+    }
+    else
+    {
+        dist->vs_limit = float2ctrl(0.0f); // Fallback to avoid division by zero
+    }
+
+    dist->alpha_lim_fw = float2ctrl(init->alpha_lim_fw);
+    dist->alpha_const = float2ctrl(init->alpha_const);
+    dist->alpha_neg_torque = float2ctrl(init->alpha_neg_torque);
+
+    dist->flag_enable_fw = 1; // Enabled by default
+
+    // 2. Initialize the Field Weakening PID controller
+    ctl_init_pid(&dist->fw_pid, init->kp_fw, init->ki_fw, 0.0f, init->fs);
+
+    // The PID output directly represents the delta_alpha.
+    // Clamp the PID output to prevent the angle from exceeding limits or going negative during FW.
+    ctl_set_pid_limit(&dist->fw_pid, init->alpha_lim_fw, 0.0f);
+    ctl_set_pid_int_limit(&dist->fw_pid, init->alpha_lim_fw, 0.0f);
+
+    // 3. Clear states
+    ctl_clear_const_distributor(dist);
+}
+
+
+#include <ctl/component/motor_control/current_loop/idq_current_distributor.h>
+
+void ctl_init_idq_distributor(ctl_idq_distributor_t* dist, const ctl_idq_distributor_init_t* init)
+{
+    // 1. Core Parameter Mapping
+    if (init->v_base > 1e-6f)
+    {
+        dist->vs_limit = float2ctrl(init->v_lim / init->v_base);
+    }
+    else
+    {
+        dist->vs_limit = float2ctrl(0.0f);
+    }
+
+    dist->alpha_lim_fw = float2ctrl(init->alpha_lim_fw);
+    dist->alpha_const = float2ctrl(init->alpha_const);
+    dist->alpha_neg_torque = float2ctrl(init->alpha_neg_torque);
+
+    // Set default flags
+    dist->mode = DIST_MODE_CONST_ALPHA; // Default to const alpha, can be changed via setter
+    dist->flag_enable_fw = 1;
+
+    // 2. Initialize the Field Weakening PID controller
+    ctl_init_pid(&dist->fw_pid, init->kp_fw, init->ki_fw, 0.0f, init->fs);
+
+    // The PID output directly represents delta_alpha.
+    ctl_set_pid_limit(&dist->fw_pid, init->alpha_lim_fw, 0.0f);
+    ctl_set_pid_int_limit(&dist->fw_pid, init->alpha_lim_fw, 0.0f);
+
+    // 3. Initialize the Paired Look-Up Table module
+    if (init->lut_table != NULL && init->lut_size > 1)
+    {
+        ctl_init_paired_lut1d(&dist->im_lut, init->lut_table, init->lut_size);
+    }
+    else
+    {
+        dist->im_lut.table = NULL;
+        dist->im_lut.size = 0;
+    }
+
+    // 4. Clear states
+    ctl_clear_idq_distributor(dist);
+}
