@@ -88,7 +88,7 @@ extern "C"
 
 // Invoke peripheral headers
 //
-#include <core/dev/interface.h>
+//#include <core/dev/interface.h>
 
 // Invoke endian config
 //
@@ -118,6 +118,10 @@ extern "C"
 // GMP CSP port function
 //
 #include <core/std/cfg/csp.cfg.h>
+
+// GMP Peripheral port function
+//
+#include <core/dev/peripheral_port.h>
 
 // ....................................................................//
 // controller

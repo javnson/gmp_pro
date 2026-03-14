@@ -1,0 +1,197 @@
+{
+    "tree_nodes": {
+        "application": {
+            "ad5933": {
+                "type": "module",
+                "c_files": [
+                    "core/dev/application/ad5933.c"
+                ],
+                "h_files": [
+                    "core/dev/application/ad5933.h"
+                ],
+                "tags": [
+                    "application",
+                    "ADI"
+                ],
+                "description": "Auto-scanned module: ad5933"
+            }
+        },
+        "dac": {
+            "dac8563": {
+                "type": "module",
+                "c_files": [
+                    "core/dev/dac/dac8563.c"
+                ],
+                "h_files": [
+                    "core/dev/dac/dac8563.h"
+                ],
+                "tags": [
+                    "dac",
+                    "TI"
+                ],
+                "description": "Auto-scanned module: dac8563"
+            }
+        },
+        "display": {
+            "ht16k33": {
+                "type": "module",
+                "c_files": [
+                    "core/dev/display/ht16k33.c"
+                ],
+                "h_files": [
+                    "core/dev/display/ht16k33.h"
+                ],
+                "tags": [
+                    "display"
+                ],
+                "description": "Auto-scanned module: ht16k33"
+            }
+        },
+        "encoder": {
+            "as5048a": {
+                "type": "module",
+                "c_files": [
+                    "core/dev/encoder/as5048a.c"
+                ],
+                "h_files": [
+                    "core/dev/encoder/as5048a.h"
+                ],
+                "tags": [
+                    "encoder"
+                ],
+                "description": "Auto-scanned module: as5048a"
+            }
+        },
+        "excitation": {
+            "ad9833": {
+                "type": "module",
+                "c_files": [
+                    "core/dev/excitation/ad9833.c"
+                ],
+                "h_files": [
+                    "core/dev/excitation/ad9833.h"
+                ],
+                "tags": [
+                    "excitation",
+                    "ADI"
+                ],
+                "description": "Auto-scanned module: ad9833"
+            },
+            "ad9834": {
+                "type": "module",
+                "c_files": [
+                    "core/dev/excitation/ad9834.c"
+                ],
+                "h_files": [
+                    "core/dev/excitation/ad9834.h"
+                ],
+                "tags": [
+                    "excitation",
+                    "ADI"
+                ],
+                "description": "Auto-scanned module: ad9834"
+            }
+        },
+        "gpio": {
+            "pca9555": {
+                "type": "module",
+                "c_files": [],
+                "h_files": [
+                    "core/dev/gpio/pca9555.h"
+                ],
+                "tags": [
+                    "gpio"
+                ],
+                "description": "Auto-scanned module: pca9555"
+            }
+        },
+        "meter": {
+            "ina219": {
+                "type": "module",
+                "c_files": [
+                    "core/dev/meter/ina219.c"
+                ],
+                "h_files": [
+                    "core/dev/meter/ina219.h"
+                ],
+                "tags": [
+                    "meter",
+                    "TI"
+                ],
+                "description": "Auto-scanned module: ina219"
+            }
+        },
+        "potentiometer": {
+            "mcp41xx": {
+                "type": "module",
+                "c_files": [
+                    "core/dev/potentiometer/mcp41xx.c"
+                ],
+                "h_files": [
+                    "core/dev/potentiometer/mcp41xx.h"
+                ],
+                "tags": [
+                    "potentiometer"
+                ],
+                "description": "Auto-scanned module: mcp41xx"
+            }
+        },
+        "RTC": {
+            "ds1337": {
+                "type": "module",
+                "c_files": [
+                    "core/dev/RTC/ds1337.c"
+                ],
+                "h_files": [
+                    "core/dev/RTC/ds1337.h"
+                ],
+                "tags": [
+                    "RTC"
+                ],
+                "description": "Auto-scanned module: ds1337"
+            }
+        },
+        "sensor": {
+            "bh1750": {
+                "type": "module",
+                "c_files": [
+                    "core/dev/sensor/bh1750.c"
+                ],
+                "h_files": [
+                    "core/dev/sensor/bh1750.h"
+                ],
+                "tags": [
+                    "sensor"
+                ],
+                "description": "Auto-scanned module: bh1750"
+            },
+            "bmp280": {
+                "type": "module",
+                "c_files": [
+                    "core/dev/sensor/bmp280.c"
+                ],
+                "h_files": [
+                    "core/dev/sensor/bmp280.h"
+                ],
+                "tags": [
+                    "sensor"
+                ],
+                "description": "Auto-scanned module: bmp280"
+            },
+            "hdc1080": {
+                "type": "module",
+                "c_files": [
+                    "core/dev/sensor/hdc1080.c"
+                ],
+                "h_files": [
+                    "core/dev/sensor/hdc1080.h"
+                ],
+                "tags": [
+                    "sensor",
+                    "TI"
+                ],
+                "description": "Auto-scanned module: hdc1080"
+            }
+        }
+    }
+}

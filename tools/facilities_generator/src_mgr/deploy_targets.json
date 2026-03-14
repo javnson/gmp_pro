@@ -1,0 +1,7 @@
+{
+    "search_paths": [
+        "${GMP_PRO_LOCATION}/ctl/**",
+	"${GMP_PRO_LOCATION}/core/**",
+        "${GMP_PRO_LOCATION}/csp/**"
+    ]
+}

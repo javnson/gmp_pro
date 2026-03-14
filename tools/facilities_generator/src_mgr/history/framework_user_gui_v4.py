@@ -1,0 +1,591 @@
+import os
+import json
+import tkinter as tk
+from tkinter import ttk, messagebox
+from pathlib import Path
+
+# Unicode 字符用于模拟复选框状态
+CHECKED = "☑ "
+UNCHECKED = "☐ "
+PARTIAL = "[-] "
+
+class FrameworkUserGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("GMP 工程框架配置器 V4 (动态透视与分离部署)")
+        self.root.geometry("1180x850")
+
+        self.gmp_location = os.environ.get('GMP_PRO_LOCATION')
+        if not self.gmp_location:
+            messagebox.showerror("错误", "未找到环境变量 GMP_PRO_LOCATION！")
+            self.root.destroy()
+            return
+            
+        self.global_dic_path = Path(self.gmp_location) / "tools" / "facilities_generator" / "src_mgr" / "gmp_framework_dic.json"
+        self.local_config_path = Path(os.getcwd()) / "gmp_framework_config.json"
+        
+        self.registry = {"roots": [], "modules": {}, "macros": {}}
+        self.selected_modules = set() 
+        self.current_selected_node = None 
+        
+        self.load_global_dic()
+        self.load_local_config()
+        
+        self.build_ui()
+        self.refresh_tree()
+        self.update_dashboard()
+
+    # ================= 核心工具：路径与宏解析 =================
+    def resolve_paths(self, patterns, is_dir_mode=False, return_absolute=False):
+        matched = set()
+        base_dir = Path(self.gmp_location)
+        macros = self.registry.get("macros", {})
+        macros["GMP_PRO_LOCATION"] = base_dir.as_posix()
+
+        for pat in patterns:
+            resolved_pat = pat
+            for mac, val in macros.items():
+                resolved_pat = resolved_pat.replace(f"${{{mac}}}", val)
+
+            pat_obj = Path(resolved_pat)
+
+            if pat_obj.is_absolute():
+                search_base = Path(pat_obj.anchor)
+                search_pattern = str(pat_obj.relative_to(pat_obj.anchor))
+            else:
+                search_base = base_dir
+                search_pattern = str(pat_obj)
+
+            if is_dir_mode:
+                target = search_base / search_pattern
+                if target.exists() and target.is_dir():
+                    matched.add(target.resolve().as_posix() if return_absolute else target.as_posix())
+            else:
+                for f in search_base.glob(search_pattern):
+                    if f.is_file():
+                        matched.add(f.resolve().as_posix() if return_absolute else f.as_posix())
+
+        return sorted(list(matched))
+
+    # ================= 数据加载 =================
+    def load_global_dic(self):
+        if not self.global_dic_path.exists():
+            messagebox.showerror("错误", f"找不到全局框架字典：\n{self.global_dic_path}")
+            self.root.destroy()
+            return
+        try:
+            with open(self.global_dic_path, 'r', encoding='utf-8') as f:
+                self.registry = json.load(f)
+        except Exception as e:
+            messagebox.showerror("读取错误", f"全局字典解析失败: {e}")
+
+    def load_local_config(self):
+        if self.local_config_path.exists():
+            try:
+                with open(self.local_config_path, 'r', encoding='utf-8') as f:
+                    local_config = json.load(f)
+                    for item in local_config.get("selected_modules", []):
+                        root_name = item.get("root")
+                        mod_key = item.get("module")
+                        if root_name in self.registry.get("modules", {}) and mod_key in self.registry["modules"][root_name]:
+                            self.selected_modules.add(f"{root_name}|{mod_key}")
+            except Exception as e:
+                print(f"警告: 本地配置文件读取失败 ({e})")
+
+    # ================= UI 构建 =================
+    def build_ui(self):
+        top_frame = ttk.Frame(self.root, padding=10)
+        top_frame.pack(fill=tk.X)
+        ttk.Label(top_frame, text="当前工程路径:").pack(side=tk.LEFT)
+        ttk.Label(top_frame, text=str(os.getcwd()), foreground="blue", font=("Helvetica", 10, "bold")).pack(side=tk.LEFT, padx=5)
+
+        self.paned_window = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
+        self.paned_window.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        # === 左侧：智能复选框依赖树 ===
+        left_frame = ttk.Frame(self.paned_window)
+        self.paned_window.add(left_frame, weight=1)
+
+        ttk.Label(left_frame, text="可用框架模块 (双击支持三态切换):", font=("Helvetica", 10, "bold")).pack(anchor=tk.W, pady=(0, 5))
+        
+        tree_scroll = ttk.Scrollbar(left_frame)
+        tree_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.tree = ttk.Treeview(left_frame, yscrollcommand=tree_scroll.set, selectmode="browse")
+        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        tree_scroll.config(command=self.tree.yview)
+        
+        self.tree.heading("#0", text=" 框架库列表", anchor=tk.W)
+        self.tree.bind("<Double-1>", self.on_tree_double_click)
+        self.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
+
+        # === 右侧：多功能选项卡面板 ===
+        right_frame = ttk.Frame(self.paned_window, padding=5)
+        self.paned_window.add(right_frame, weight=2)
+
+        # 顶部详情说明与帮助文档区
+        self.info_frame = ttk.LabelFrame(right_frame, text="节点详情与资源", padding=10)
+        self.info_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        info_inner = ttk.Frame(self.info_frame)
+        info_inner.pack(fill=tk.X)
+        
+        text_info_frame = ttk.Frame(info_inner)
+        text_info_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.lbl_node_name = ttk.Label(text_info_frame, font=("Helvetica", 11, "bold"), text="请在左侧选择节点")
+        self.lbl_node_name.pack(anchor=tk.W)
+        self.lbl_node_desc = ttk.Label(text_info_frame, text="-", foreground="gray", wraplength=500)
+        self.lbl_node_desc.pack(anchor=tk.W, pady=(5, 0))
+        
+        self.btn_open_help = ttk.Button(info_inner, text="🌐 阅读说明文档", command=self.open_help_docs, state=tk.DISABLED)
+        self.btn_open_help.pack(side=tk.RIGHT, padx=10, ipadx=5, ipady=5)
+
+        # 选项卡汇总区
+        self.notebook = ttk.Notebook(right_frame)
+        self.notebook.pack(fill=tk.BOTH, expand=True)
+
+        # ------ Tab 1: 节点配置透视 ------
+        self.tab_detail = ttk.Frame(self.notebook, padding=5)
+        self.notebook.add(self.tab_detail, text="🔍 选中节点的配置透视")
+        
+        pw_detail = ttk.PanedWindow(self.tab_detail, orient=tk.VERTICAL)
+        pw_detail.pack(fill=tk.BOTH, expand=True)
+
+        def create_detail_box(parent, title, height=3):
+            frame = ttk.Frame(parent)
+            ttk.Label(frame, text=title, font=("Helvetica", 9, "bold")).pack(anchor=tk.W)
+            scroll = ttk.Scrollbar(frame)
+            scroll.pack(side=tk.RIGHT, fill=tk.Y)
+            txt = tk.Text(frame, height=height, bg="#fcfcfc", font=("Consolas", 9), yscrollcommand=scroll.set, state=tk.DISABLED)
+            txt.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            scroll.config(command=txt.yview)
+            parent.add(frame, weight=1)
+            return txt
+
+        self.txt_det_src = create_detail_box(pw_detail, "📄 需引入的源文件规则 (src_patterns):")
+        self.txt_det_inc = create_detail_box(pw_detail, "📁 需引入的头文件规则 (inc_patterns):")
+        self.txt_det_dirs = create_detail_box(pw_detail, "⚙️ 编译依赖包含目录 (inc_dirs):")
+        self.txt_det_deps = create_detail_box(pw_detail, "🔗 底层依赖关系 (depends_on):")
+
+        # ------ Tab 2: 全局汇总 ------
+        self.tab_summary = ttk.Frame(self.notebook, padding=5)
+        self.notebook.add(self.tab_summary, text="📊 全局配置汇总清单")
+        pw_summary = ttk.PanedWindow(self.tab_summary, orient=tk.VERTICAL)
+        pw_summary.pack(fill=tk.BOTH, expand=True)
+
+        frame_mods = ttk.Frame(pw_summary)
+        ttk.Label(frame_mods, text="📦 当前工程已启用的独立模块清单:", font=("Helvetica", 9, "bold")).pack(anchor=tk.W)
+        scroll_m = ttk.Scrollbar(frame_mods)
+        scroll_m.pack(side=tk.RIGHT, fill=tk.Y)
+        self.list_summary_mods = tk.Listbox(frame_mods, yscrollcommand=scroll_m.set, bg="#fcfcfc", font=("Consolas", 10))
+        self.list_summary_mods.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll_m.config(command=self.list_summary_mods.yview)
+        pw_summary.add(frame_mods, weight=1)
+
+        frame_dirs = ttk.Frame(pw_summary)
+        header_dirs = ttk.Frame(frame_dirs)
+        header_dirs.pack(fill=tk.X, pady=(5, 2))
+        ttk.Label(header_dirs, text="⚙️ 需添加至编译器的包含路径 (-I):", font=("Helvetica", 9, "bold"), foreground="#cc6600").pack(side=tk.LEFT)
+        ttk.Button(header_dirs, text="📋 一键复制", command=self.copy_inc_dirs).pack(side=tk.RIGHT)
+        
+        scroll_d = ttk.Scrollbar(frame_dirs)
+        scroll_d.pack(side=tk.RIGHT, fill=tk.Y)
+        self.list_inc_dirs = tk.Listbox(frame_dirs, yscrollcommand=scroll_d.set, fg="#cc6600", font=("Consolas", 10, "bold"), bg="#fff9f0")
+        self.list_inc_dirs.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll_d.config(command=self.list_inc_dirs.yview)
+        pw_summary.add(frame_dirs, weight=1)
+
+        # ------ Tab 3: 物理文件详情 ------
+        self.tab_files = ttk.Frame(self.notebook, padding=5)
+        self.notebook.add(self.tab_files, text="🗂️ 待同步物理文件详情")
+        pw_files = ttk.PanedWindow(self.tab_files, orient=tk.VERTICAL)
+        pw_files.pack(fill=tk.BOTH, expand=True)
+
+        frame_src = ttk.Frame(pw_files)
+        self.lbl_src_count = ttk.Label(frame_src, text="📄 待拷贝源文件 (.c / .cpp):", foreground="blue", font=("Helvetica", 9, "bold"))
+        self.lbl_src_count.pack(anchor=tk.W)
+        scroll_s = ttk.Scrollbar(frame_src)
+        scroll_s.pack(side=tk.RIGHT, fill=tk.Y)
+        self.list_src = tk.Listbox(frame_src, yscrollcommand=scroll_s.set, fg="blue", font=("Consolas", 9), bg="#fcfcfc")
+        self.list_src.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll_s.config(command=self.list_src.yview)
+        pw_files.add(frame_src, weight=1)
+
+        frame_inc = ttk.Frame(pw_files)
+        self.lbl_inc_count = ttk.Label(frame_inc, text="📁 待镜像头文件 (.h / .hpp):", foreground="green", font=("Helvetica", 9, "bold"))
+        self.lbl_inc_count.pack(anchor=tk.W)
+        scroll_i = ttk.Scrollbar(frame_inc)
+        scroll_i.pack(side=tk.RIGHT, fill=tk.Y)
+        self.list_inc = tk.Listbox(frame_inc, yscrollcommand=scroll_i.set, fg="green", font=("Consolas", 9), bg="#fcfcfc")
+        self.list_inc.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll_i.config(command=self.list_inc.yview)
+        pw_files.add(frame_inc, weight=1)
+
+        # === 底部：分离的生成按钮操作区 ===
+        bottom_frame = ttk.Frame(self.root, padding=10)
+        bottom_frame.pack(fill=tk.X)
+        
+        ttk.Button(bottom_frame, text="💾 仅保存配置", command=lambda: self.save_local_config("all") and messagebox.showinfo("成功", "配置已保存！")).pack(side=tk.LEFT, ipadx=10, ipady=5)
+        
+        # 核心改动：将生成分离为三类
+        self.btn_sync_all = ttk.Button(bottom_frame, text="🚀 保存并【全量】同步资产", command=lambda: self.save_and_sync("all"))
+        self.btn_sync_all.pack(side=tk.RIGHT, ipadx=10, ipady=5, padx=2)
+        
+        self.btn_sync_inc = ttk.Button(bottom_frame, text="🚀 仅生成头文件树 (Header)", command=lambda: self.save_and_sync("inc_only"))
+        self.btn_sync_inc.pack(side=tk.RIGHT, ipadx=5, ipady=5, padx=2)
+
+        self.btn_sync_src = ttk.Button(bottom_frame, text="🚀 仅生成源文件 (Source)", command=lambda: self.save_and_sync("src_only"))
+        self.btn_sync_src.pack(side=tk.RIGHT, ipadx=5, ipady=5, padx=2)
+
+
+    # ================= 智能依赖引擎 (核心防呆逻辑) =================
+    def get_all_dependencies(self, root_name, mod_key):
+        closure = set()
+        queue = [f"{root_name}|{mod_key}"]
+        while queue:
+            current = queue.pop(0)
+            if current in closure: continue
+            closure.add(current)
+            c_root, c_mod = current.split('|', 1)
+            deps = self.registry.get("modules", {}).get(c_root, {}).get(c_mod, {}).get("depends_on", [])
+            for dep in deps:
+                if dep not in closure: queue.append(dep)
+        closure.discard(f"{root_name}|{mod_key}")
+        return closure
+
+    def check_can_uncheck(self, root_name, mod_key):
+        target = f"{root_name}|{mod_key}"
+        conflicts = []
+        for sel_mod in self.selected_modules:
+            if sel_mod == target: continue
+            s_root, s_mod = sel_mod.split('|', 1)
+            deps = self.get_all_dependencies(s_root, s_mod)
+            if target in deps: conflicts.append(sel_mod)
+
+        if target.endswith("|_internal"):
+            folder_prefix = target[:-10] 
+            for sel_mod in self.selected_modules:
+                if sel_mod != target and sel_mod.startswith(folder_prefix + "|"):
+                    conflicts.append(f"{sel_mod} (同包必须依赖其 _internal)")
+        return conflicts
+
+    def set_module_checked(self, root_name, mod_key, state, silent=False):
+        target = f"{root_name}|{mod_key}"
+        
+        if state: 
+            if root_name == "csp":
+                chip_family = mod_key.split('|')[0]
+                to_uncheck = []
+                for sel in self.selected_modules:
+                    s_root, s_mod = sel.split('|', 1)
+                    if s_root == "csp" and s_mod.split('|')[0] != chip_family:
+                        to_uncheck.append((s_root, s_mod))
+                for r, m in to_uncheck:
+                    self.set_module_checked(r, m, False, silent=True)
+
+            self.selected_modules.add(target)
+
+            for dep in self.get_all_dependencies(root_name, mod_key):
+                self.selected_modules.add(dep)
+                
+            parts = mod_key.split('|')
+            for i in range(1, len(parts)):
+                parent_internal = f"{'|'.join(parts[:i])}|_internal"
+                if parent_internal in self.registry["modules"][root_name]:
+                    self.selected_modules.add(f"{root_name}|{parent_internal}")
+
+        else: 
+            conflicts = self.check_can_uncheck(root_name, mod_key)
+            if conflicts:
+                if not silent:
+                    conflict_str = "\n".join([f" - {c.replace('|', ' / ')}" for c in set(conflicts)])
+                    messagebox.showwarning("依赖冲突拦截", f"无法取消选中 '{mod_key}'！\n\n原因：\n{conflict_str}")
+                return False 
+            else:
+                self.selected_modules.discard(target)
+                
+        return True
+
+    # ================= 树形交互与三态逻辑 =================
+    def refresh_tree(self):
+        for item in self.tree.get_children(): self.tree.delete(item)
+
+        for root_name in self.registry.get("roots", []):
+            root_id = f"ROOT|{root_name}"
+            self.tree.insert("", tk.END, iid=root_id, text=f"📦 {root_name}", open=True)
+            
+            modules = self.registry.get("modules", {}).get(root_name, {})
+            for mod_key in sorted(modules.keys()):
+                mod_data = modules[mod_key]
+                if mod_data.get("type") == "module":
+                    parts = mod_key.split('|')
+                    parent_id = root_id
+                    
+                    for i in range(len(parts) - 1):
+                        folder_name = parts[i]
+                        current_folder_path = "|".join(parts[:i+1])
+                        folder_id = f"FOLDER|{root_name}|{current_folder_path}"
+                        if not self.tree.exists(folder_id):
+                            is_open = False if folder_name == "dev" else True
+                            self.tree.insert(parent_id, tk.END, iid=folder_id, text=f"{UNCHECKED}📁 {folder_name}", open=is_open)
+                        parent_id = folder_id
+
+                    leaf_name = parts[-1]
+                    mod_id = f"MOD|{root_name}|{mod_key}"
+                    if leaf_name == "_internal":
+                        self.tree.insert(parent_id, tk.END, iid=mod_id, text=f"{UNCHECKED}⚙️ _internal")
+                    else:
+                        self.tree.insert(parent_id, tk.END, iid=mod_id, text=f"{UNCHECKED}📄 {leaf_name}")
+
+        self.update_tree_checkboxes()
+
+    def update_tree_checkboxes(self, node=""):
+        children = self.tree.get_children(node)
+        if not children:
+            if node.startswith("MOD|"):
+                _, root_name, mod_key = node.split('|', 2)
+                is_checked = f"{root_name}|{mod_key}" in self.selected_modules
+                base_text = self.tree.item(node, "text").replace(CHECKED, "").replace(UNCHECKED, "")
+                self.tree.item(node, text=f"{CHECKED if is_checked else UNCHECKED}{base_text}")
+                return is_checked
+            return False
+
+        all_checked, any_checked = True, False
+        for child in children:
+            if self.update_tree_checkboxes(child): any_checked = True
+            else: all_checked = False
+
+        if node and node.startswith("FOLDER|"):
+            base_text = self.tree.item(node, "text").replace(CHECKED, "").replace(UNCHECKED, "").replace(PARTIAL, "")
+            if all_checked: self.tree.item(node, text=f"{CHECKED}{base_text}")
+            elif any_checked: self.tree.item(node, text=f"{PARTIAL}{base_text}")
+            else: self.tree.item(node, text=f"{UNCHECKED}{base_text}")
+
+        return all_checked
+
+    def on_tree_double_click(self, event):
+        region = self.tree.identify("region", event.x, event.y)
+        if region not in ("cell", "tree"): return "break"
+        
+        item_id = self.tree.focus()
+        if not item_id or item_id.startswith("ROOT|"): return "break"
+
+        if item_id.startswith("MOD|"):
+            _, root_name, mod_key = item_id.split('|', 2)
+            target_state = False if CHECKED in self.tree.item(item_id, "text") else True
+            self.set_module_checked(root_name, mod_key, target_state)
+            
+        elif item_id.startswith("FOLDER|"):
+            _, root_name, folder_path = item_id.split('|', 2)
+            
+            modules_in_folder = [m for m in self.registry["modules"][root_name].keys() if m.startswith(folder_path + '|')]
+            internal_key = f"{folder_path}|_internal"
+            has_internal = internal_key in modules_in_folder
+            
+            selected_in_folder = [m for m in modules_in_folder if f"{root_name}|{m}" in self.selected_modules]
+            S, N = len(selected_in_folder), len(modules_in_folder)
+
+            if S == N and N > 0:
+                for m in modules_in_folder:
+                    if m != internal_key: self.set_module_checked(root_name, m, False, silent=True)
+                if has_internal: self.set_module_checked(root_name, internal_key, True, silent=True)
+            elif has_internal and S == 1 and selected_in_folder[0] == internal_key:
+                self.set_module_checked(root_name, internal_key, False, silent=True)
+            else:
+                for m in modules_in_folder: self.set_module_checked(root_name, m, True, silent=True)
+
+        self.update_tree_checkboxes()
+        self.update_dashboard()
+        # 强行触发单击事件，以更新详情页面
+        self.on_tree_select(None)
+        
+        return "break" # 阻止双击展开/折叠
+
+    # ================= 动态配置透视逻辑 (核心改动) =================
+    def on_tree_select(self, event):
+        selected_items = self.tree.selection()
+        if not selected_items: return
+        node_id = selected_items[0]
+        
+        self.btn_open_help.config(state=tk.DISABLED)
+        self.clear_detail_tab()
+        
+        # 1. 根节点被点击：提取其下所有“被选中”的子模块进行聚合汇总
+        if node_id.startswith("ROOT|"):
+            self.current_selected_node = None
+            root_name = node_id.split('|')[1]
+            self.lbl_node_name.config(text=f"📦 {root_name}")
+            
+            sub_count = 0
+            all_src, all_inc, all_inc_dirs, all_deps = set(), set(), set(), set()
+            for sel in self.selected_modules:
+                r, m = sel.split('|', 1)
+                if r == root_name:
+                    sub_count += 1
+                    mod_data = self.registry["modules"][r][m]
+                    all_src.update(mod_data.get("src_patterns", []))
+                    all_inc.update(mod_data.get("inc_patterns", []))
+                    all_inc_dirs.update(mod_data.get("inc_dirs", []))
+                    all_deps.update(mod_data.get("depends_on", []))
+                    
+            self.lbl_node_desc.config(text=f"系统级根目录 (依据您的配置，当前已启用该目录下 {sub_count} 个子模块)")
+            self.fill_detail_box(self.txt_det_src, sorted(list(all_src)))
+            self.fill_detail_box(self.txt_det_inc, sorted(list(all_inc)))
+            self.fill_detail_box(self.txt_det_dirs, sorted(list(all_inc_dirs)))
+            self.fill_detail_box(self.txt_det_deps, sorted(list(all_deps)))
+
+        # 2. 文件夹被点击：提取该文件夹下“被选中”的子模块进行聚合汇总
+        elif node_id.startswith("FOLDER|"):
+            self.current_selected_node = None
+            _, root_name, folder_path = node_id.split('|', 2)
+            self.lbl_node_name.config(text=f"📁 {root_name} | {folder_path.replace('|', ' / ')}")
+            
+            sub_count = 0
+            all_src, all_inc, all_inc_dirs, all_deps = set(), set(), set(), set()
+            for sel in self.selected_modules:
+                r, m = sel.split('|', 1)
+                if r == root_name and m.startswith(folder_path + '|'):
+                    sub_count += 1
+                    mod_data = self.registry["modules"][r][m]
+                    all_src.update(mod_data.get("src_patterns", []))
+                    all_inc.update(mod_data.get("inc_patterns", []))
+                    all_inc_dirs.update(mod_data.get("inc_dirs", []))
+                    all_deps.update(mod_data.get("depends_on", []))
+                    
+            self.lbl_node_desc.config(text=f"包文件夹 (局部汇总：您已启用了该分类下的 {sub_count} 个模块。双击可执行三态循环勾选)")
+            self.fill_detail_box(self.txt_det_src, sorted(list(all_src)))
+            self.fill_detail_box(self.txt_det_inc, sorted(list(all_inc)))
+            self.fill_detail_box(self.txt_det_dirs, sorted(list(all_inc_dirs)))
+            self.fill_detail_box(self.txt_det_deps, sorted(list(all_deps)))
+            
+        # 3. 具体模块被点击：展示其自身的独立属性
+        elif node_id.startswith("MOD|"):
+            _, r, m = node_id.split('|', 2)
+            self.current_selected_node = (r, m)
+            mod_data = self.registry["modules"][r][m]
+            
+            self.lbl_node_name.config(text=f"📄 {m.replace('|', ' / ')}")
+            self.lbl_node_desc.config(text=mod_data.get("description", "无描述"))
+            
+            if mod_data.get("help_docs"):
+                self.btn_open_help.config(state=tk.NORMAL)
+                
+            self.fill_detail_box(self.txt_det_src, mod_data.get("src_patterns", []))
+            self.fill_detail_box(self.txt_det_inc, mod_data.get("inc_patterns", []))
+            self.fill_detail_box(self.txt_det_dirs, mod_data.get("inc_dirs", []))
+            self.fill_detail_box(self.txt_det_deps, mod_data.get("depends_on", []))
+
+    def fill_detail_box(self, txt_widget, data_list):
+        txt_widget.config(state=tk.NORMAL)
+        txt_widget.delete(1.0, tk.END)
+        if data_list:
+            txt_widget.insert(tk.END, "\n".join(data_list))
+        else:
+            txt_widget.insert(tk.END, "(无相关配置或尚未被选中)")
+        txt_widget.config(state=tk.DISABLED)
+
+    def clear_detail_tab(self):
+        for txt in (self.txt_det_src, self.txt_det_inc, self.txt_det_dirs, self.txt_det_deps):
+            self.fill_detail_box(txt, [])
+
+    def open_help_docs(self):
+        if not self.current_selected_node: return
+        r, m = self.current_selected_node
+        docs = self.registry["modules"][r][m].get("help_docs", [])
+        
+        abs_paths = self.resolve_paths(docs, return_absolute=True)
+        if not abs_paths:
+            messagebox.showwarning("警告", "未能找到说明文档！请确保字典中配置的路径正确。")
+            return
+            
+        for p in abs_paths:
+            try: os.startfile(p)
+            except Exception as e: print(f"打开文件失败 {p}: {e}")
+
+    # ================= 仪表盘与汇总 =================
+    def update_dashboard(self):
+        self.list_summary_mods.delete(0, tk.END)
+        self.list_inc_dirs.delete(0, tk.END)
+        self.list_src.delete(0, tk.END)
+        self.list_inc.delete(0, tk.END)
+
+        if not self.selected_modules:
+            self.notebook.tab(1, text="📊 全局配置汇总清单 (0)")
+            self.notebook.tab(2, text="🗂️ 待同步物理文件 (C:0 | H:0)")
+            return
+
+        for sel in sorted(list(self.selected_modules)):
+            self.list_summary_mods.insert(tk.END, f"  ✅ {sel.replace('|', ' / ')}")
+
+        all_src_patterns, all_inc_patterns, all_inc_dirs_patterns = [], [], []
+
+        for sel in self.selected_modules:
+            r, m = sel.split('|', 1)
+            mod_data = self.registry["modules"][r][m]
+            all_src_patterns.extend(mod_data.get("src_patterns", []))
+            all_inc_patterns.extend(mod_data.get("inc_patterns", []))
+            all_inc_dirs_patterns.extend(mod_data.get("inc_dirs", []))
+
+        dirs_files = self.resolve_paths(all_inc_dirs_patterns, is_dir_mode=True)
+        for d in dirs_files: self.list_inc_dirs.insert(tk.END, d)
+
+        src_files = self.resolve_paths(all_src_patterns)
+        for f in src_files: self.list_src.insert(tk.END, f)
+        
+        inc_files = self.resolve_paths(all_inc_patterns)
+        for f in inc_files: self.list_inc.insert(tk.END, f)
+        
+        self.notebook.tab(1, text=f"📊 全局配置汇总清单 (模块:{len(self.selected_modules)})")
+        self.notebook.tab(2, text=f"🗂️ 待同步物理文件 (C:{len(src_files)} | H:{len(inc_files)})")
+        
+        self.lbl_src_count.config(text=f"📄 待拷贝源文件 (.c / .cpp) - 共 {len(src_files)} 个:")
+        self.lbl_inc_count.config(text=f"📁 待镜像头文件 (.h / .hpp) - 共 {len(inc_files)} 个:")
+
+    def copy_inc_dirs(self):
+        dirs = self.list_inc_dirs.get(0, tk.END)
+        if not dirs:
+            messagebox.showinfo("提示", "当前没有包含路径可复制！")
+            return
+        self.root.clipboard_clear()
+        self.root.clipboard_append("\n".join(dirs))
+        messagebox.showinfo("复制成功", f"已复制 {len(dirs)} 条路径！\n请将它们粘贴至 Keil/IAR 的 Include Paths 设置中。")
+
+    # ================= 保存与同步模式机制 =================
+    def save_local_config(self, sync_mode="all"):
+        """将选中的模块和生成模式保存至 JSON"""
+        config_data = {
+            "sync_mode": sync_mode,
+            "selected_modules": []
+        }
+        for sel in sorted(list(self.selected_modules)):
+            root_name, mod_key = sel.split('|', 1)
+            config_data["selected_modules"].append({"root": root_name, "module": mod_key})
+            
+        try:
+            with open(self.local_config_path, 'w', encoding='utf-8') as f:
+                json.dump(config_data, f, indent=4, ensure_ascii=False)
+            return True
+        except Exception as e:
+            messagebox.showerror("保存失败", f"无法写入配置文件: {e}")
+            return False
+
+    def save_and_sync(self, mode):
+        """处理分离的生成按钮逻辑"""
+        if self.save_local_config(sync_mode=mode):
+            mode_text = {
+                "all": "【全量配置】 (源码与头文件树)",
+                "src_only": "【源码配置】 (仅 Source 源文件)",
+                "inc_only": "【头文件配置】 (仅 Header 头文件与包含目录)"
+            }
+            messagebox.showinfo(
+                "配置已保存并准备就绪", 
+                f"您选择了 {mode_text[mode]} 生成模式。\n\n"
+                "信息已写入本地 gmp_framework_config.json。\n"
+                "请运行您的编译流 .bat 脚本，后台生成引擎将根据您的要求进行部署！"
+            )
+            self.root.destroy()
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = FrameworkUserGUI(root)
+    root.mainloop()

@@ -77,10 +77,6 @@ extern "C"
             SCI_writeCharBlockingFIFO(uart, data[i]);
     }
 
-    // void gmp_hal_uart_write_async(uart_halt uart, const data_gt *data, size_gt length)
-    //{
-
-    //}
     GMP_STATIC_INLINE
     size_gt gmp_hal_uart_read(uart_halt uart, data_gt *data, size_gt length)
     {
@@ -91,8 +87,6 @@ extern "C"
 
         return length;
     }
-
-    // size_gt gmp_hal_uart_read_async(uart_halt uart, data_gt *data, size_gt length);
 
     // wait till transmit/receive complete.
     GMP_STATIC_INLINE

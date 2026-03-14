@@ -18,6 +18,17 @@
 //
 #define GMP_DBG_SWBP __asm volatile("BKPT #0")
 
+
+GMP_STATIC_INLINE void gmp_base_enter_critical()
+{
+    __disable_irq();
+}
+
+GMP_STATIC_INLINE void gmp_base_leave_critical()
+{
+    __enable_irq();
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Step II: Invoke all the STM32 general headers.
 //
@@ -32,6 +43,6 @@
 #include <csp/stm32/common/gpio_model.stm32.h>
 
 // STM32 general peripheral
-#include <csp/stm32/common/peripheral_model.stm32.h>
+//#include <csp/stm32/common/peripheral_model.stm32.h>
 
 extern uart_halt debug_uart;

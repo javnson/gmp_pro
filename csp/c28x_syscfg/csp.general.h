@@ -13,7 +13,7 @@
 #define _FILE_CSP_GENERAL_H_
 
 // Basement from C2000ware library.
-#include "device.h"
+//#include "device.h"
 #include "driverlib.h"
 
 //
@@ -26,7 +26,7 @@
 //  - Software - Device Support
 //
 #ifndef _C2000_CSP_DISABLE_DEVICE_SUPPORT_
-#include "device.h"
+//#include "device.h"
 #endif // _C2000_CSP_DISABLE_DEVICE_SUPPORT_
 
 //
@@ -82,20 +82,32 @@ extern "C"
 
 #endif // __TMS320C28XX_CLA__
 
+// debug port
+extern uart_halt debug_uart;
+
+GMP_STATIC_INLINE void gmp_base_enter_critical()
+{
+    DINT;
+}
+
+GMP_STATIC_INLINE void gmp_base_leave_critical()
+{
+    EINT;
+}
+
 //////////////////////////////////////////////////////////////////////////
 // GPIO definition
 // #define GMP_PORT_GPIO_T uint32_t
 
-#define gmp_hal_gpio_write(pin_num, value) GPIO_writePin((pin_num), (value))
-#define gmp_hal_gpio_read(pin_num)         GPIO_readPin((pin_num))
-#define gmp_hal_gpio_set(pin_num)          GPIO_writePin((pin_num), (1))
-#define gmp_hal_gpio_reset(pin_num)        GPIO_writePin((pin_num), (0))
-#define gmp_hal_gpio_toggle(pin_num)       GPIO_togglePin((pin_num))
+//#define gmp_hal_gpio_write(pin_num, value) GPIO_writePin((pin_num), (value))
+//#define gmp_hal_gpio_read(pin_num)         GPIO_readPin((pin_num))
+//#define gmp_hal_gpio_set(pin_num)          GPIO_writePin((pin_num), (1))
+//#define gmp_hal_gpio_reset(pin_num)        GPIO_writePin((pin_num), (0))
+//#define gmp_hal_gpio_toggle(pin_num)       GPIO_togglePin((pin_num))
 
 //////////////////////////////////////////////////////////////////////////
 // Watch Dog module
-GMP_STATIC_INLINE
-void gmp_hal_wd_feed(void)
+GMP_STATIC_INLINE void gmp_hal_wd_feed(void)
 {
 }
 
@@ -103,7 +115,7 @@ void gmp_hal_wd_feed(void)
 // SPI module
 
 // Debug Print function
-size_gt gmp_base_print_c28xsyscfg(const char *p_fmt, ...);
+size_gt gmp_base_print_c28xsyscfg(const char* p_fmt, ...);
 
 // Step System tick
 void gmp_step_system_tick(void);
