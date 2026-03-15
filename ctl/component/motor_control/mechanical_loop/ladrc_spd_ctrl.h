@@ -1,14 +1,19 @@
 /**
- * @file ladrc_speed_controller.h
- * @brief Implements a Per-Unit Linear Active Disturbance Rejection Controller (LADRC) for a motor speed loop.
+ * @file ladrc_spd_ctrl.h
+ * @brief Implements a 1st-Order LADRC-based Mechanical Speed Controller (PU System).
  *
  * @version 1.0
- * @date 2025-08-06
+ * @date 2024-10-26
  *
  */
 
-#ifndef _FILE_LADRC_SPEED_CONTROLLER_H_
-#define _FILE_LADRC_SPEED_CONTROLLER_H_
+#ifndef _FILE_LADRC_SPD_CTRL_H_
+#define _FILE_LADRC_SPD_CTRL_H_
+
+#include <ctl/component/intrinsic/basic/divider.h>
+#include <ctl/component/intrinsic/basic/slope_limiter.h>
+#include <ctl/component/intrinsic/continuous/ladrc1.h>
+#include <ctl/component/motor_control/interface/encoder.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -16,35 +21,15 @@ extern "C"
 #endif // __cplusplus
 
 /*---------------------------------------------------------------------------*/
-/* LADRC Speed Controller (Per-Unit)                                         */
+/* LADRC Speed Controller (Velocity Only)                                    */
 /*---------------------------------------------------------------------------*/
 
 /**
- * @defgroup LADRC_SPEED_PU LADRC Speed Controller (Per-Unit)
- * @brief A robust, per-unit speed controller using Active Disturbance Rejection.
- * @details This module provides a robust speed controller based on the LADRC
- * strategy. It uses a Linear Extended State Observer (LESO) to estimate and
- * actively compensate for total system disturbances, including load torque,
- * friction, and inertia variations. The controller's output is the reference
- * for the torque-producing current (Iq).
- *
- * The controller is designed to operate entirely within the per-unit system.
- * Plant Model: @f[\frac{d\omega_{m,pu}}{dt} = b_0 u_{pu} + f_{pu} @f]
- * Where @f( u_{pu} @f) is @f( i_{q,pu}, f_{pu} @f) is the total disturbance (load, friction, etc.),
- * and @f( b_0 = \frac{K_{t,pu}}{H} @f), with H being the inertia constant in seconds.
- * 
- * LESO (z1 -> omega_m_pu, z2 -> f_pu):
- * @f[ 
- * e = z_1 - \omega_{m,pu}  \\
- * \dot{z_1} = z_2 - 2\omega_o e + b_0 u_{pu} \\
- * \dot{z_2} = -\omega_o^2 e
- * @f]
- * 
- * Control Law:
- * @f[
- * u_0 = \omega_c (r_{pu} - z_1)
- * u_{pu} = \frac{u_0 - z_2}{b_0}
- * @f]
+ * @defgroup LADRC_SPD_CONTROLLER LADRC Speed Controller (PU System)
+ * @brief A pure velocity loop controller using 1st-Order LADRC.
+ * @details Replaces the traditional PI velocity loop. It automatically estimates 
+ * and compensates for system friction and external load torques using a Linear 
+ * Extended State Observer (LESO). Operates entirely in the Per-Unit (PU) domain.
  * @{
  */
 
@@ -53,103 +38,176 @@ extern "C"
 //================================================================================
 
 /**
- * @brief Main structure for the LADRC per-unit speed controller.
+ * @brief Available operating modes for the LADRC speed controller.
  */
-typedef struct
+typedef enum
 {
-    // --- Observer States ---
-    ctrl_gt z1; ///< Estimated state (mechanical speed, p.u.).
-    ctrl_gt z2; ///< Estimated total disturbance (p.u. speed/sec).
-
-    // --- Controller Parameters ---
-    parameter_gt wc; ///< Controller bandwidth (rad/s).
-    parameter_gt wo; ///< Observer bandwidth (rad/s).
-    parameter_gt b0; ///< System input gain (Kt_pu / H).
-    parameter_gt h;  ///< Sampling period (s).
-
-    // --- Internal State ---
-    ctrl_gt u_out_pu; ///< Stored output (Iq_ref_pu) from the last step (p.u.).
-
-} ctl_ladrc_speed_pu_t;
-
-//================================================================================
-// Function Prototypes & Definitions
-//================================================================================
+    LADRC_SPD_MODE_DISABLE = 0, //!< Controller is disabled, output is 0.
+    LADRC_SPD_MODE_ENABLE = 1   //!< Velocity control mode (LADRC active).
+} ctl_ladrc_spd_mode_e;
 
 /**
- * @brief Initializes the LADRC per-unit speed controller.
- * @param[out] ladrc Pointer to the LADRC controller structure.
- * @param[in]  wc_rads Desired closed-loop controller bandwidth (rad/s).
- * @param[in]  wo_rads Desired observer bandwidth (rad/s). Typically 3-5x wc.
- * @param[in]  Kt_pu Per-unit torque constant of the motor.
- * @param[in]  H_s Inertia constant of the system (motor + load) in seconds.
- * @param[in]  sample_time_s The controller's sampling period in seconds.
+ * @brief Initialization parameters for the LADRC Speed Controller.
  */
-void ctl_init_ladrc_speed_pu(ctl_ladrc_speed_pu_t* ladrc, parameter_gt wc_rads, parameter_gt wo_rads,
-                             parameter_gt Kt_pu, parameter_gt H_s, parameter_gt sample_time_s);
+typedef struct _tag_ladrc_spd_init
+{
+    // --- System & Hardware Configurations ---
+    parameter_gt fs;        //!< Execution frequency of the inner current loop (Hz).
+    uint32_t mech_division; //!< Divider ratio for the mechanical loop.
+
+    parameter_gt inertia;      //!< Total system inertia J (kg*m^2).
+    parameter_gt torque_const; //!< Motor torque constant Kt (Nm/A).
+
+    // --- Per-Unit Base Values ---
+    parameter_gt omega_base; //!< Base mechanical speed for per-unit conversion (rad/s).
+    parameter_gt i_base;     //!< Base current for per-unit conversion (A).
+
+    // --- Safety Limits ---
+    parameter_gt speed_limit;       //!< Absolute maximum speed reference (PU).
+    parameter_gt speed_slope_limit; //!< Maximum velocity slew rate (PU/s).
+    parameter_gt cur_limit;         //!< Absolute maximum current/torque output reference (PU).
+
+    // --- LADRC Tuning Targets ---
+    parameter_gt target_wc; //!< Controller bandwidth (Hz) -> Determines tracking speed.
+    parameter_gt target_wo; //!< Observer bandwidth (Hz) -> Determines disturbance rejection speed (Typically 3~5x wc).
+
+} ctl_ladrc_spd_init_t;
 
 /**
- * @brief Resets the internal states of the LADRC controller.
- * @param[out] ladrc Pointer to the LADRC controller structure.
+ * @brief Main structure for the LADRC Speed Controller.
  */
-GMP_STATIC_INLINE void ctl_clear_ladrc_speed_pu(ctl_ladrc_speed_pu_t* ladrc)
+typedef struct _tag_ladrc_spd_ctrl
 {
-    ladrc->z1 = 0.0f;
-    ladrc->z2 = 0.0f;
-    ladrc->u_out_pu = 0.0f;
+    // --- Interfaces ---
+    velocity_ift* spd_if; //!< Velocity feedback interface (PU).
+
+    // --- State Machine ---
+    ctl_ladrc_spd_mode_e active_mode; //!< Current operating mode.
+
+    // --- Sub-modules ---
+    ctl_ladrc1_t ladrc_core;      //!< Core 1st-order LADRC algorithm.
+    ctl_slope_limiter_t vel_traj; //!< Velocity trajectory/profile generator.
+    ctl_divider_t div_mech;       //!< Divider to down-sample execution.
+
+    // --- Targets & Limits (PU) ---
+    ctrl_gt target_velocity; //!< Raw target velocity (PU).
+    ctrl_gt speed_limit;     //!< Dynamic speed saturation limit (PU).
+    ctrl_gt cur_limit;       //!< Current/Torque limit (PU).
+
+    // --- Outputs (PU) ---
+    ctrl_gt torque_cmd; //!< The final calculated current/torque command (PU).
+
+} ctl_ladrc_spd_ctrl_t;
+
+//================================================================================
+// Function Prototypes & Inline Definitions
+//================================================================================
+
+void ctl_autotuning_ladrc_spd_ctrl(ctl_ladrc_spd_init_t* init, ctl_ladrc_spd_ctrl_t* ctrl);
+
+/**
+ * @brief Attaches velocity feedback interface.
+ */
+GMP_STATIC_INLINE void ctl_attach_ladrc_spd_ctrl(ctl_ladrc_spd_ctrl_t* ctrl, velocity_ift* spd_if)
+{
+    ctrl->spd_if = spd_if;
 }
 
 /**
- * @brief Executes one step of the LADRC speed controller.
- * @param[in,out] ladrc Pointer to the LADRC controller structure.
- * @param[in]  r_pu The speed reference command (p.u. mechanical speed).
- * @param[in]  y_pu The measured feedback speed (p.u. mechanical speed).
- * @return The calculated control output (q-axis current reference, p.u.).
+ * @brief Clears the internal states of the controller.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_step_ladrc_speed_pu(ctl_ladrc_speed_pu_t* ladrc, ctrl_gt r_pu, ctrl_gt y_pu)
+GMP_STATIC_INLINE void ctl_clear_ladrc_spd_ctrl(ctl_ladrc_spd_ctrl_t* ctrl)
 {
-    // --- State Feedback & Disturbance Compensation ---
-    // Calculate the preliminary control law based on the estimated states from the *previous* time step.
-    ctrl_gt u0 = ladrc->wc * (r_pu - ladrc->z1);
+    ctl_clear_ladrc1(&ctrl->ladrc_core);
+    ctl_clear_slope_limiter(&ctrl->vel_traj);
+    ctl_clear_divider(&ctrl->div_mech);
+    ctrl->torque_cmd = float2ctrl(0.0f);
+}
 
-    // Compensate for the total disturbance and apply the system gain.
-    if (fabsf(ladrc->b0) > 1e-9f)
+/**
+ * @brief Sets the operating mode with Bumpless Transfer.
+ * @param[in] current_iq_fbk The ACTUAL Iq current (PU) measured right now to pre-load the observer.
+ */
+GMP_STATIC_INLINE void ctl_set_ladrc_spd_mode(ctl_ladrc_spd_ctrl_t* ctrl, ctl_ladrc_spd_mode_e mode,
+                                              ctrl_gt current_iq_fbk)
+{
+    if (ctrl->active_mode == mode)
+        return;
+
+    if (mode == LADRC_SPD_MODE_ENABLE)
     {
-        ladrc->u_out_pu = (u0 - ladrc->z2) / ladrc->b0;
+        // 1. Get current actual speed
+        ctrl_gt actual_spd = (ctrl->spd_if != NULL) ? ctrl->spd_if->speed : float2ctrl(0.0f);
+
+        // 2. Bumpless Transfer: Sync trajectory generator
+        ctl_set_slope_limiter_current(&ctrl->vel_traj, actual_spd);
+        ctrl->target_velocity = actual_spd;
+
+        // 3. Bumpless Transfer: Pre-load LADRC observer states
+        // We tell the observer: "Currently we are at `actual_spd`, and we are outputting `current_iq_fbk`"
+        ctl_set_ladrc1_states(&ctrl->ladrc_core, actual_spd, current_iq_fbk);
     }
     else
     {
-        ladrc->u_out_pu = 0.0f;
+        ctl_clear_ladrc_spd_ctrl(ctrl);
     }
 
-    // --- Linear Extended State Observer (LESO) ---
-    // Update the observer for the *next* time step using the output from *this* step.
-    ctrl_gt error = ladrc->z1 - y_pu;
-    ctrl_gt beta1 = 2.0f * ladrc->wo;
-    ctrl_gt beta2 = ladrc->wo * ladrc->wo;
-
-    ladrc->z1 = ladrc->z1 + ladrc->h * (ladrc->z2 - beta1 * error + ladrc->b0 * ladrc->u_out_pu);
-    ladrc->z2 = ladrc->z2 + ladrc->h * (-beta2 * error);
-
-    return ladrc->u_out_pu;
+    ctrl->active_mode = mode;
 }
 
 /**
- * @brief Gets the last calculated control output (Iq reference).
- * @param[in] ladrc Pointer to the LADRC controller structure.
- * @return The last control output (q-axis current reference, p.u.).
+ * @brief Sets the target velocity.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_get_ladrc_output_pu(const ctl_ladrc_speed_pu_t* ladrc)
+GMP_STATIC_INLINE void ctl_set_ladrc_target_velocity(ctl_ladrc_spd_ctrl_t* ctrl, ctrl_gt spd_pu)
 {
-    return ladrc->u_out_pu;
+    ctrl->target_velocity = ctl_sat(spd_pu, ctrl->speed_limit, -ctrl->speed_limit);
 }
 
 /**
- * @}
- */ // end of LADRC_SPEED_PU group
+ * @brief Executes one step of the LADRC speed control loop.
+ */
+GMP_STATIC_INLINE void ctl_step_ladrc_spd_ctrl(ctl_ladrc_spd_ctrl_t* ctrl)
+{
+    if (ctrl->active_mode == LADRC_SPD_MODE_DISABLE)
+    {
+        ctrl->torque_cmd = float2ctrl(0.0f);
+        return;
+    }
+
+    if (ctl_step_divider(&ctrl->div_mech))
+    {
+        // ·ÀÓùÐÔ¶ÏÑÔ
+        gmp_base_assert(ctrl->spd_if != NULL);
+
+        // 1. Smooth the velocity command
+        ctrl_gt smoothed_vel_cmd_pu = ctl_step_slope_limiter(&ctrl->vel_traj, ctrl->target_velocity);
+
+        // 2. Execute 1st-Order LADRC (Everything is in PU, no conversions needed)
+        ctrl->torque_cmd = ctl_step_ladrc1(&ctrl->ladrc_core, smoothed_vel_cmd_pu, ctrl->spd_if->speed);
+    }
+}
+
+/**
+ * @brief Gets the calculated current/torque command (PU).
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_ladrc_spd_cmd(const ctl_ladrc_spd_ctrl_t* ctrl)
+{
+    return ctrl->torque_cmd;
+}
+
+/**
+ * @brief Gets the estimated total disturbance equivalent current (PU).
+ * @details Can be used to detect sudden load impacts or monitor friction.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_get_ladrc_spd_disturbance(const ctl_ladrc_spd_ctrl_t* ctrl)
+{
+    return ctl_get_ladrc1_disturbance_pu(&ctrl->ladrc_core);
+}
+
+/** @} */
 
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
-#endif // _FILE_LADRC_SPEED_CONTROLLER_H_
+#endif // _FILE_LADRC_SPD_CTRL_H_

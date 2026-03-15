@@ -80,6 +80,16 @@ GMP_STATIC_INLINE void ctl_clear_divider(ctl_divider_t* obj)
 }
 
 /**
+ * @brief Get counter of divider object.
+ * @details Get current divider's counter.
+ * @param[in] obj Pointer to the divider instance.
+ */
+GMP_STATIC_INLINE uint32_t ctl_divider_get_cnt(ctl_divider_t* obj)
+{
+    return obj->counter;
+}
+
+/**
  * @}
  */ // end of frequency_divider group
 

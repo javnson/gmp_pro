@@ -1,8 +1,8 @@
 /**
  * @file smc_mech_ctrl.h
- * @brief Implements a Sliding Mode Controller (SMC) for Mechanical Position/Velocity Loop.
+ * @brief Implements a Sliding Mode Controller (SMC) for Mechanical Position/Velocity Loop in PU System.
  *
- * @version 1.0
+ * @version 1.1
  * @date 2024-10-26
  *
  */
@@ -24,33 +24,32 @@ extern "C"
 /*---------------------------------------------------------------------------*/
 
 /**
- * @defgroup SMC_MECH_CONTROLLER SMC Mechanical Loop Controller
- * @brief Direct Position-to-Current robust controller using Sliding Mode Control.
+ * @defgroup SMC_MECH_CONTROLLER SMC Mechanical Loop Controller (PU System)
+ * @brief Direct Position-to-Current robust controller using Sliding Mode Control in PU.
  * @details Uses a switching sliding surface s = \lambda x_1 + x_2 to drive the 
- * mechanical errors to zero. It offers superior robustness against inertia 
- * mismatches and load torque disturbances compared to traditional PI loops.
+ * mechanical errors to zero. All parameters and gains are pre-scaled to the Per-Unit 
+ * domain during initialization, ensuring zero physical unit conversions during the 
+ * real-time interrupt execution.
  * * @par Example Usage:
  * @code
  * ctl_smc_mech_init_t smc_init;
  * ctl_smc_mech_ctrl_t smc_ctrl;
- * * // Physical Parameters
- * smc_init.fs_current = 10000.0f;
+ * * // System Configurations
+ * smc_init.fs = 10000.0f;
  * smc_init.mech_division = 10;
- * smc_init.inertia = 0.0002f;     // J
- * smc_init.torque_const = 0.5f;   // Kt
- * smc_init.cur_limit = 20.0f;     
+ * smc_init.inertia = 0.0002f;     // J (kg*m^2)
+ * smc_init.torque_const = 0.5f;   // Kt (Nm/A)
+ * smc_init.omega_base = 314.159f; // Base speed (rad/s)
+ * smc_init.i_base = 20.0f;        // Base current (A)
+ * smc_init.cur_limit = 1.0f;      // PU
  * * // SMC Tuning Targets
- * smc_init.target_bw = 30.0f;           // Determines the sliding surface slope \lambda
- * smc_init.dist_reject_torque = 2.0f;   // Max disturbance torque to reject (determines \rho)
+ * smc_init.target_bw = 30.0f;           // Determines lambda
+ * smc_init.dist_reject_torque = 2.0f;   // Max disturbance torque (Nm) to reject
  * ctl_autotuning_smc_mech_ctrl(&smc_init);
  * * // Init & Run
  * ctl_init_smc_mech_ctrl(&smc_ctrl, &smc_init);
  * ctl_attach_smc_mech_ctrl(&smc_ctrl, &encoder_pos, &encoder_spd);
  * ctl_enable_smc_mech_ctrl(&smc_ctrl);
- * * void Main_ISR(void) {
- * ctl_step_smc_mech_ctrl(&smc_ctrl, pos_ref, vel_ref, acc_ref);
- * target_iq = ctl_get_smc_mech_cmd(&smc_ctrl);
- * }
  * @endcode
  * @{
  */
@@ -65,27 +64,31 @@ extern "C"
 typedef struct _tag_smc_mech_init
 {
     // --- System & Hardware Configurations ---
-    parameter_gt fs_current; //!< Execution frequency of the inner current loop (Hz).
-    uint32_t mech_division;  //!< Divider ratio for the mechanical loop.
+    parameter_gt fs;        //!< Execution frequency of the inner current loop (Hz).
+    uint32_t mech_division; //!< Divider ratio for the mechanical loop.
 
     parameter_gt inertia;      //!< Total system inertia J (kg*m^2).
     parameter_gt torque_const; //!< Motor torque constant Kt (Nm/A).
 
+    // --- Per-Unit Base Values ---
+    parameter_gt omega_base; //!< Base mechanical speed for per-unit conversion (rad/s).
+    parameter_gt i_base;     //!< Base current for per-unit conversion (A).
+
     // --- Safety Limits ---
-    parameter_gt cur_limit; //!< Absolute maximum current/torque output reference (A).
+    parameter_gt cur_limit; //!< Absolute maximum current/torque output reference (PU).
 
     // --- Tuning Targets ---
-    parameter_gt target_bw;          //!< Target sliding surface decay bandwidth (Hz). Determines lambda.
+    parameter_gt target_bw;          //!< Target sliding surface decay bandwidth (Hz).
     parameter_gt dist_reject_torque; //!< Max disturbance torque to reject (Nm). Determines switching gain rho.
 
-    // --- Auto-Tuned SMC Gains ---
-    parameter_gt lambda; //!< Sliding surface slope (s = \lambda*x1 + x2).
-    parameter_gt eta11;  //!< Pos Error gain.
-    parameter_gt eta12;  //!< Pos Error gain.
-    parameter_gt eta21;  //!< Vel Error gain.
-    parameter_gt eta22;  //!< Vel Error gain.
-    parameter_gt rho;    //!< Switching gain for sgn(s) term.
-    parameter_gt k_ff;   //!< Feedforward gain for external acceleration (J/Kt).
+    // --- Auto-Tuned SMC Gains (PU Space) ---
+    parameter_gt lambda; //!< PU Sliding surface slope.
+    parameter_gt eta11;  //!< Pos Error gain (PU).
+    parameter_gt eta12;  //!< Pos Error gain (PU).
+    parameter_gt eta21;  //!< Vel Error gain (PU).
+    parameter_gt eta22;  //!< Vel Error gain (PU).
+    parameter_gt rho;    //!< Switching gain for sgn(s) term (PU).
+    parameter_gt k_ff;   //!< Feedforward gain for external acceleration (PU).
 
 } ctl_smc_mech_init_t;
 
@@ -95,17 +98,17 @@ typedef struct _tag_smc_mech_init
 typedef struct _tag_smc_mech_ctrl
 {
     // --- Interfaces ---
-    rotation_ift* pos_if; //!< Position feedback interface.
-    velocity_ift* spd_if; //!< Velocity feedback interface.
+    rotation_ift* pos_if; //!< Position feedback interface (PU).
+    velocity_ift* spd_if; //!< Velocity feedback interface (PU).
 
     // --- Controller Modules ---
     ctl_smc_t smc_core;     //!< The core Sliding Mode Controller instance.
     ctl_divider_t div_mech; //!< Divider to down-sample execution.
 
     // --- Real-time Parameters & States ---
-    ctrl_gt k_ff;        //!< Real-time Acceleration Feedforward Gain.
-    ctrl_gt cur_limit;   //!< Output saturation limit.
-    ctrl_gt cur_output;  //!< The final calculated current command.
+    ctrl_gt k_ff;        //!< Real-time Acceleration Feedforward Gain (PU).
+    ctrl_gt cur_limit;   //!< Output saturation limit (PU).
+    ctrl_gt cur_output;  //!< The final calculated current command (PU).
     fast_gt flag_enable; //!< Enable switch.
 
 } ctl_smc_mech_ctrl_t;
@@ -144,20 +147,15 @@ GMP_STATIC_INLINE void ctl_disable_smc_mech_ctrl(ctl_smc_mech_ctrl_t* ctrl)
 }
 
 /**
- * @brief Executes one step of the SMC mechanical loop.
- * @param[in,out] ctrl        Pointer to the controller.
- * @param[in]     target_revs Target position (Full revolutions).
- * @param[in]     target_pu   Target position (Fractional angle 0~1 PU).
- * @param[in]     vel_ref     Target velocity (rad/s).
- * @param[in]     acc_ref     Target acceleration (rad/s^2).
- * @details 
- * x1 = Position Error (\theta_ref - \theta_fb)
- * x2 = Velocity Error (\omega_ref - \omega_fb)
- * SMC Output u = \eta_1 x_1 + \eta_2 x_2 + \rho sgn(s)
- * Total Command = SMC_Output + Acc_Feedforward
+ * @brief Executes one step of the SMC mechanical loop entirely in PU.
+ * @param[in,out] ctrl            Pointer to the controller.
+ * @param[in]     target_revs     Target position (Full revolutions).
+ * @param[in]     target_angle_pu Target position (Fractional angle 0~1 PU).
+ * @param[in]     vel_ref_pu      Target velocity (PU).
+ * @param[in]     acc_ref_pu      Target acceleration (PU/s).
  */
-GMP_STATIC_INLINE void ctl_step_smc_mech_ctrl(ctl_smc_mech_ctrl_t* ctrl, int32_t target_revs, ctrl_gt target_pu,
-                                              ctrl_gt vel_ref, ctrl_gt acc_ref)
+GMP_STATIC_INLINE void ctl_step_smc_mech_ctrl(ctl_smc_mech_ctrl_t* ctrl, int32_t target_revs, ctrl_gt target_angle_pu,
+                                              ctrl_gt vel_ref_pu, ctrl_gt acc_ref_pu)
 {
     if (!ctrl->flag_enable)
     {
@@ -167,30 +165,31 @@ GMP_STATIC_INLINE void ctl_step_smc_mech_ctrl(ctl_smc_mech_ctrl_t* ctrl, int32_t
 
     if (ctl_step_divider(&ctrl->div_mech))
     {
-        // 1. Calculate Primary State Variables (x1, x2)
-        ctrl_gt pos_err_pu = ctl_calc_position_error(target_revs, target_pu, ctrl->pos_if);
+        // 防御性断言：SMC 控制极度依赖精确的双状态反馈
+        gmp_base_assert(ctrl->pos_if != NULL);
+        gmp_base_assert(ctrl->spd_if != NULL);
 
-        // Convert to physical radians: x1 = \theta_err
-        ctrl_gt x1 = ctl_mul(pos_err_pu, float2ctrl(CTL_PARAM_CONST_2PI));
+        // 1. Calculate Primary State Variables (PU directly)
+        // x1 = Position Error (Bounded PU via robust calculation)
+        ctrl_gt x1 = ctl_calc_position_error(target_revs, target_angle_pu, ctrl->pos_if);
 
-        // Velocity error: x2 = \omega_err
-        ctrl_gt x2 = vel_ref - ctrl->spd_if->speed;
+        // x2 = Velocity Error (PU)
+        ctrl_gt x2 = vel_ref_pu - ctrl->spd_if->speed;
 
-        // 2. Execute Sliding Mode Control Core
+        // 2. Execute Sliding Mode Control Core (Zero constant multiplication needed!)
         ctrl_gt u_smc = ctl_step_smc(&ctrl->smc_core, x1, x2);
 
-        // 3. Add Acceleration Feedforward
-        // Feedforward compensates for the known dynamic term J*\ddot{\theta}_{ref}
-        ctrl_gt u_ff = ctl_mul(acc_ref, ctrl->k_ff);
+        // 3. Add Acceleration Feedforward (PU)
+        ctrl_gt u_ff = ctl_mul(acc_ref_pu, ctrl->k_ff);
 
-        // 4. Combine and Saturate
+        // 4. Combine and Saturate (PU)
         ctrl_gt total_cmd = u_smc + u_ff;
         ctrl->cur_output = ctl_sat(total_cmd, ctrl->cur_limit, -ctrl->cur_limit);
     }
 }
 
 /**
- * @brief Gets the calculated current/torque command.
+ * @brief Gets the calculated current/torque command (PU).
  */
 GMP_STATIC_INLINE ctrl_gt ctl_get_smc_mech_cmd(const ctl_smc_mech_ctrl_t* ctrl)
 {
