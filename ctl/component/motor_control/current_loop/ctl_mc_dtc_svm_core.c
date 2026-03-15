@@ -15,47 +15,71 @@
 //////////////////////////////////////////////////////////////////////////
 // DTC
 
-#include <ctl/component/motor_control/current_loop/dtc.h>
+#include <ctl/component/motor_control/current_loop/dtc_svm_core.h>
 
-// The optimal voltage vector switching table for a 2-level DTC scheme.
-uint8_t DTC_SWITCH_TABLE[6][4] = {
-    // S=1      S=2      S=3      S=4      S=5      S=6
-    {5, 6, 2, 3}, // Flux Sector 1
-    {6, 1, 3, 4}, // Flux Sector 2
-    {1, 2, 4, 5}, // Flux Sector 3
-    {2, 3, 5, 6}, // Flux Sector 4
-    {3, 4, 6, 1}, // Flux Sector 5
-    {4, 5, 1, 2}  // Flux Sector 6
-};
-
-// Table to convert voltage vector index (0-7) to alpha-beta voltages.
-ctrl_gt V_ALPHA_BETA_TABLE[8][2] = {
-    {float2ctrl(0.0f), float2ctrl(0.0f)},             // V0
-    {float2ctrl(0.666667f), float2ctrl(0.0f)},        // V1
-    {float2ctrl(0.333333f), float2ctrl(0.577350f)},   // V2
-    {float2ctrl(-0.333333f), float2ctrl(0.577350f)},  // V3
-    {float2ctrl(-0.666667f), float2ctrl(0.0f)},       // V4
-    {float2ctrl(-0.333333f), float2ctrl(-0.577350f)}, // V5
-    {float2ctrl(0.333333f), float2ctrl(-0.577350f)},  // V6
-    {float2ctrl(0.0f), float2ctrl(0.0f)}              // V7
-};
-
-void ctl_init_dtc(ctl_dtc_controller_t* dtc, const ctl_dtc_init_t* init)
+/**
+ * @brief Initializes the DTC-SVM core and rigorously maps all physics to PU.
+ */
+void ctl_init_dtc_svm(dtc_svm_ctrl_t* mc, const dtc_svm_init_t* init)
 {
-    dtc->ts = 1.0f / (ctrl_gt)init->f_ctrl;
-    dtc->rs = (ctrl_gt)init->Rs;
-    dtc->pole_pairs = (ctrl_gt)init->pole_pairs;
+    parameter_gt fs_safe = (init->fs > 1e-6f) ? init->fs : 10000.0f;
+    parameter_gt Ts = 1.0f / fs_safe;
 
-    // Initialize hysteresis controllers
-    // Flux: Output 1 means INCREASE flux
-    ctl_init_hysteresis_controller(&dtc->flux_hcc, 1, init->flux_hyst_width);
-    // Torque: Output 1 means INCREASE torque
-    ctl_init_hysteresis_controller(&dtc->torque_hcc, 1, init->torque_hyst_width);
+    // 1. Calculate PU Base Parameters
+    parameter_gt omega_base_elec = (init->spd_base * 1000.0f) * CTL_PARAM_CONST_PI / 30.0f * init->pole_pairs;
+    parameter_gt flux_base = init->v_base / omega_base_elec;
 
-    // Clear state variables
-    ctl_vector2_clear(&dtc->stator_flux);
-    dtc->flux_mag_est = 0.0f;
-    dtc->torque_est = 0.0f;
-    dtc->flux_sector = 1;
-    dtc->voltage_vector_index = 0; // Start with zero vector
+    // 2. Flux Observer Constants Calculation (The core mapping)
+    // Equation: dPsi_pu = W_base * (V_pu - I_pu * Rs_pu) * dt
+    parameter_gt coef_ts_wbase_phy = Ts * omega_base_elec;
+    parameter_gt coef_rs_pu_phy = init->mtr_Rs * (init->i_base / init->v_base);
+
+    // High-Pass Drift Compensation: 1.0 - (wc * Ts)
+    parameter_gt coef_drift_phy = 1.0f - (init->flux_drift_wc * Ts);
+
+    mc->coef_ts_wbase = float2ctrl(coef_ts_wbase_phy);
+    mc->coef_rs_pu = float2ctrl(coef_rs_pu_phy);
+    mc->coef_drift_comp = float2ctrl(coef_drift_phy);
+
+    // 3. Simple PI Gain Tuning
+    // Flux loop plant is a pure integrator. Kp = Bandwidth.
+    parameter_gt kp_flux = CTL_PARAM_CONST_2PI * init->bw_flux;
+    parameter_gt ki_flux = kp_flux * 10.0f; // Minimal integral action to eliminate steady state
+
+    // Torque loop plant depends strongly on leakage inductance.
+    // This is a generic estimation, usually tuned empirically in DTC.
+    parameter_gt kp_torque = init->bw_torque * 0.1f;
+    parameter_gt ki_torque = kp_torque * 50.0f;
+
+    // 4. Initialize Controllers
+    mc->v_max_pu = float2ctrl((init->v_phase_limit * 1.4142f) / init->v_base);
+
+    ctl_init_pid(&mc->flux_ctrl, float2ctrl(kp_flux), float2ctrl(ki_flux), 0.0f, fs_safe);
+    ctl_set_pid_limit(&mc->flux_ctrl, mc->v_max_pu, -mc->v_max_pu);
+    ctl_set_pid_int_limit(&mc->flux_ctrl, mc->v_max_pu, -mc->v_max_pu);
+
+    ctl_init_pid(&mc->torque_ctrl, float2ctrl(kp_torque), float2ctrl(ki_torque), 0.0f, fs_safe);
+    ctl_set_pid_limit(&mc->torque_ctrl, mc->v_max_pu, -mc->v_max_pu);
+    ctl_set_pid_int_limit(&mc->torque_ctrl, mc->v_max_pu, -mc->v_max_pu);
+
+    // 5. State Initialization
+    // Seed the flux observer with the permanent magnet flux to avoid singularity at startup.
+    // If IM motor, mtr_Flux will be configured to a small non-zero value.
+    parameter_gt initial_flux_pu = init->mtr_Flux / flux_base;
+    if (initial_flux_pu < 0.01f)
+        initial_flux_pu = 0.01f;
+
+    mc->flux_ab_pu.dat[0] = float2ctrl(initial_flux_pu); // Assume flux aligns with alpha axis at startup
+    mc->flux_ab_pu.dat[1] = float2ctrl(0.0f);
+    mc->flux_mag_pu = float2ctrl(initial_flux_pu);
+
+    mc->torque_est_pu = float2ctrl(0.0f);
+    mc->flux_phasor.dat[0] = float2ctrl(1.0f); // cos(0)
+    mc->flux_phasor.dat[1] = float2ctrl(0.0f); // sin(0)
+
+    ctl_vector2_clear(&mc->vxy_ctrl);
+    ctl_vector2_clear(&mc->vab_out);
+
+    mc->iab_meas = NULL;
+    mc->flag_enable = 0;
 }

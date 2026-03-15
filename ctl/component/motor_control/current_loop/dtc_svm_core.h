@@ -1,16 +1,18 @@
 /**
- * @file pmsm_dtc.h
- * @brief Implements a classic Direct Torque Control (DTC) scheme for PMSM.
+ * @file dtc_svm_core.h
+ * @brief Implements an advanced DTC-SVM (Direct Torque Control - Space Vector Modulation) core.
  *
  * @version 1.0
- * @date 2025-08-06
+ * @date 2024-10-26
  *
  */
 
-#ifndef _FILE_PMSM_DTC_H_
-#define _FILE_PMSM_DTC_H_
+#ifndef _FILE_DTC_SVM_CORE_H_
+#define _FILE_DTC_SVM_CORE_H_
 
-#include <ctl/component/intrinsic/basic/hysteresis_controller.h> // Dependency for flux and torque control
+#include <ctl/component/intrinsic/continuous/continuous_pid.h>
+#include <ctl/math_block/coordinate/coord_trans.h>
+#include <ctl/math_block/vector_lite/vector2.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -18,165 +20,207 @@ extern "C"
 #endif // __cplusplus
 
 /*---------------------------------------------------------------------------*/
-/* Direct Torque Controller (DTC)                                            */
+/* DTC-SVM Core Controller                                                   */
 /*---------------------------------------------------------------------------*/
 
 /**
- * @defgroup DTC_CONTROLLER Direct Torque Controller (DTC)
- * @brief A high-performance controller based on direct flux and torque regulation.
- * @details This module provides a complete DTC controller. Unlike FOC, DTC does
- * not use inner current loops or a PWM modulator. Instead, it estimates the
- * stator flux and electromagnetic torque and uses two hysteresis controllers
- * to keep them within desired bands. Based on the outputs of the hysteresis
- * controllers and the current sector of the stator flux vector, an optimal
- * voltage vector is selected from a switching table and applied directly to
- * the motor for the entire control period.
- * The controller is based on the following estimations:
- * 1. Stator Flux Estimation (Voltage Model):
- *    @f[ \vec{\psi_s} = \int (\vec{v_s} - R_s \vec{i_s}) dt @f]
- * 2. Electromagnetic Torque Estimation:
- *    @f[ T_e = \frac{3}{2} p (\psi_{s\alpha} i_{s\beta} - \psi_{s\beta} i_{s\alpha}) @f]
+ * @defgroup DTC_SVM_CONTROLLER DTC-SVM Controller
+ * @brief Direct Torque Control with fixed switching frequency using SVM.
+ * @details Directly controls stator flux magnitude and electromagnetic torque.
+ * Includes a robust voltage-model flux observer with DC-drift compensation.
+ * Operates entirely in Per-Unit (PU) space, completely eliminating trigonometric 
+ * functions (atan2/sin/cos) from the real-time execution path.
  * @{
  */
 
 //================================================================================
-// Type Defines, Enums & Data
+// Type Defines & Macros
 //================================================================================
 
 /**
- * @brief The optimal voltage vector switching table for a 2-level DTC scheme.
- * @details Rows correspond to the flux vector sector (1-6).
- * Columns correspond to the combined hysteresis outputs [Flux, Torque]:
- * [0,0]->[Dec,Dec], [0,1]->[Dec,Inc], [1,0]->[Inc,Dec], [1,1]->[Inc,Inc]
+ * @brief Initialization parameters for the DTC-SVM Controller.
  */
-extern uint8_t DTC_SWITCH_TABLE[6][4];
-;
-
-/**
- * @brief Table to convert voltage vector index (0-7) to alpha-beta voltages.
- * @details Assumes Vdc is the DC bus voltage. The values are scaled by 2/3.
- */
-extern ctrl_gt V_ALPHA_BETA_TABLE[8][2];
-
-/**
- * @brief Initialization parameters for the DTC module.
- */
-typedef struct
+typedef struct _tag_dtc_svm_init
 {
-    // --- Motor & System Parameters ---
-    parameter_gt Rs;     ///< Stator Resistance (Ohm).
-    parameter_gt f_ctrl; ///< Controller execution frequency (Hz).
-    uint16_t pole_pairs; ///< Number of motor pole pairs.
+    parameter_gt fs;            //!< Controller execution frequency (Hz).
+    parameter_gt v_bus;         //!< Nominal DC Bus voltage (V).
+    parameter_gt v_phase_limit; //!< Phase voltage limitation (Vrms).
 
-    // --- Controller Parameters ---
-    ctrl_gt flux_hyst_width;   ///< The half-width of the flux hysteresis band.
-    ctrl_gt torque_hyst_width; ///< The half-width of the torque hysteresis band.
+    // --- PU Base Values ---
+    parameter_gt v_base;     //!< Base voltage (V).
+    parameter_gt i_base;     //!< Base current (A).
+    parameter_gt spd_base;   //!< Base speed (rpm).
+    parameter_gt pole_pairs; //!< Number of pole pairs.
 
-} ctl_dtc_init_t;
+    // --- Motor Physical Parameters ---
+    parameter_gt mtr_Rs;   //!< Stator resistance (Ohm).
+    parameter_gt mtr_Flux; //!< Nominal Flux Linkage (Wb) - Used to seed the observer.
+
+    // --- Tuning Targets ---
+    parameter_gt flux_drift_wc; //!< Flux observer drift compensation cutoff freq (rad/s) (e.g., 2~10 rad/s).
+    parameter_gt bw_flux;       //!< Flux loop bandwidth (Hz).
+    parameter_gt bw_torque;     //!< Torque loop bandwidth (Hz).
+
+} dtc_svm_init_t;
 
 /**
- * @brief Main structure for the DTC controller.
+ * @brief Main structure for the DTC-SVM controller.
  */
-typedef struct
+typedef struct _tag_dtc_svm_ctrl
 {
-    // --- Outputs ---
-    uint8_t voltage_vector_index; ///< The selected output voltage vector (0-7).
+    // --- Interfaces ---
+    ctl_vector2_t* iab_meas; //!< Measured alpha-beta stator currents (PU).
 
-    // --- Estimated Variables ---
-    ctl_vector2_t stator_flux; ///< Estimated stator flux vector [psi_alpha, psi_beta]^T.
-    ctrl_gt flux_mag_est;      ///< Magnitude of the estimated stator flux.
-    ctrl_gt torque_est;        ///< Estimated electromagnetic torque.
-    uint8_t flux_sector;       ///< Current sector of the stator flux vector (1-6).
+    // --- Setpoints ---
+    ctrl_gt torque_ref_pu; //!< Target electromagnetic torque (PU).
+    ctrl_gt flux_ref_pu;   //!< Target stator flux magnitude (PU).
 
-    // --- Hysteresis Controllers ---
-    ctl_hysteresis_controller_t flux_hcc;   ///< Hysteresis controller for flux.
-    ctl_hysteresis_controller_t torque_hcc; ///< Hysteresis controller for torque.
+    // --- Flux Observer States (The core of DTC) ---
+    ctl_vector2_t flux_ab_pu;  //!< Estimated stator flux in alpha-beta frame (PU).
+    ctrl_gt flux_mag_pu;       //!< Estimated stator flux magnitude |Psi_s| (PU).
+    ctrl_gt torque_est_pu;     //!< Estimated electromagnetic torque (PU).
+    ctl_vector2_t flux_phasor; //!< [cos(theta), sin(theta)] of the flux vector. Extracted without atan2!
 
-    // --- Pre-calculated Parameters ---
-    ctrl_gt rs;         ///< Stator Resistance.
-    ctrl_gt ts;         ///< Control period (1 / f_ctrl).
-    ctrl_gt pole_pairs; ///< Number of pole pairs.
+    // --- Pre-calculated Math Constants (PU Space) ---
+    ctrl_gt coef_ts_wbase;   //!< Integration constant: Ts * Omega_base_elec
+    ctrl_gt coef_rs_pu;      //!< Stator resistance PU: (Rs * I_base) / V_base
+    ctrl_gt coef_drift_comp; //!< Drift compensation multiplier: (1.0 - wc * Ts)
 
-} ctl_dtc_controller_t;
+    // --- Controllers ---
+    ctl_pid_t flux_ctrl;   //!< PI Controller for flux magnitude (Outputs d-axis voltage).
+    ctl_pid_t torque_ctrl; //!< PI Controller for torque (Outputs q-axis voltage).
+
+    // --- Voltage States ---
+    ctrl_gt v_max_pu;       //!< Voltage saturation limit (PU).
+    ctl_vector2_t vxy_ctrl; //!< Commanded voltage in flux synchronous frame (x-y).
+    ctl_vector2_t vab_out;  //!< Output voltage in stationary frame (alpha-beta) to feed SVPWM.
+
+    // --- Flags ---
+    fast_gt flag_enable; //!< Enable switch.
+
+} dtc_svm_ctrl_t;
 
 //================================================================================
-// Function Prototypes & Definitions
+// Function Prototypes & Inline Definitions
 //================================================================================
 
-/**
- * @brief Initializes the DTC controller.
- * @param[out] dtc  Pointer to the DTC structure.
- * @param[in]  init Pointer to the initialization parameters structure.
- */
-void ctl_init_dtc(ctl_dtc_controller_t* dtc, const ctl_dtc_init_t* init);
+void ctl_init_dtc_svm(dtc_svm_ctrl_t* mc, const dtc_svm_init_t* init);
 
-/**
- * @brief Sets the reference (target) values for the flux and torque controllers.
- * @param[out] dtc Pointer to the DTC structure.
- * @param[in]  flux_ref The target stator flux magnitude (Wb).
- * @param[in]  torque_ref The target electromagnetic torque (Nm).
- */
-GMP_STATIC_INLINE void ctl_set_dtc_references(ctl_dtc_controller_t* dtc, ctrl_gt flux_ref, ctrl_gt torque_ref)
+GMP_STATIC_INLINE void ctl_enable_dtc_svm(dtc_svm_ctrl_t* mc)
 {
-    ctl_set_hysteresis_target(&dtc->flux_hcc, flux_ref);
-    ctl_set_hysteresis_target(&dtc->torque_hcc, torque_ref);
+    mc->flag_enable = 1;
+}
+GMP_STATIC_INLINE void ctl_disable_dtc_svm(dtc_svm_ctrl_t* mc)
+{
+    mc->flag_enable = 0;
+    ctl_vector2_clear(&mc->vab_out);
+    ctl_vector2_clear(&mc->vxy_ctrl);
 }
 
 /**
- * @brief Executes one step of the Direct Torque Control algorithm.
- * @param[out] dtc      Pointer to the DTC structure.
- * @param[in]  i_alpha  The measured alpha-axis current.
- * @param[in]  i_beta   The measured beta-axis current.
- * @param[in]  udc      The measured DC bus voltage.
+ * @brief Sets the torque and flux references.
  */
-GMP_STATIC_INLINE void ctl_step_dtc(ctl_dtc_controller_t* dtc, ctrl_gt i_alpha, ctrl_gt i_beta, ctrl_gt _udc)
+GMP_STATIC_INLINE void ctl_set_dtc_svm_ref(dtc_svm_ctrl_t* mc, ctrl_gt torque_ref, ctrl_gt flux_ref)
 {
-    // 1. Determine the applied alpha-beta voltages from the PREVIOUS cycle's vector.
-    ctrl_gt u_alpha = V_ALPHA_BETA_TABLE[dtc->voltage_vector_index][0] * _udc;
-    ctrl_gt u_beta = V_ALPHA_BETA_TABLE[dtc->voltage_vector_index][1] * _udc;
-
-    // 2. Estimate Stator Flux (Voltage Model Integration).
-    dtc->stator_flux.dat[0] += dtc->ts * (u_alpha - dtc->rs * i_alpha);
-    dtc->stator_flux.dat[1] += dtc->ts * (u_beta - dtc->rs * i_beta);
-
-    // 3. Calculate Flux Magnitude and Electromagnetic Torque.
-    dtc->flux_mag_est = ctl_sqrt(ctl_mul(dtc->stator_flux.dat[0], dtc->stator_flux.dat[0]) +
-                                 ctl_mul(dtc->stator_flux.dat[1], dtc->stator_flux.dat[1]));
-    dtc->torque_est = 1.5f * dtc->pole_pairs * (dtc->stator_flux.dat[0] * i_beta - dtc->stator_flux.dat[1] * i_alpha);
-
-    // 4. Determine the Flux Vector Sector (1-6).
-    ctrl_gt angle = ctl_atan2(dtc->stator_flux.dat[1], dtc->stator_flux.dat[0]); // Angle in radians
-    if (angle < 0)
-        angle += 2.0f * CTL_CTRL_CONST_PI;
-    dtc->flux_sector = (uint8_t)(angle / (CTL_CTRL_CONST_PI / 3.0f)) + 1;
-    if (dtc->flux_sector > 6)
-        dtc->flux_sector = 6; // Clamp to sector 6
-
-    // 5. Run Hysteresis Controllers.
-    fast_gt flux_status = ctl_step_hysteresis_controller(&dtc->flux_hcc, dtc->flux_mag_est);
-    fast_gt torque_status = ctl_step_hysteresis_controller(&dtc->torque_hcc, dtc->torque_est);
-
-    // 6. Look up the Optimal Voltage Vector from the Switching Table.
-    fast_gt table_col = (flux_status << 1) | torque_status;
-    dtc->voltage_vector_index = DTC_SWITCH_TABLE[dtc->flux_sector - 1][table_col];
+    mc->torque_ref_pu = torque_ref;
+    mc->flux_ref_pu = flux_ref;
 }
 
 /**
- * @brief Gets the selected voltage vector index.
- * @param[in] dtc Pointer to the DTC structure.
- * @return The index of the selected voltage vector (0-7).
+ * @brief Executes one step of the DTC-SVM Controller.
+ * @details Executed entirely in PU space. Uses the previous voltage command 
+ * for the flux observer (Delay compensation).
  */
-GMP_STATIC_INLINE uint8_t ctl_get_dtc_vector_index(const ctl_dtc_controller_t* dtc)
+GMP_STATIC_INLINE void ctl_step_dtc_svm(dtc_svm_ctrl_t* mc)
 {
-    return dtc->voltage_vector_index;
+    if (!mc->flag_enable)
+        return;
+
+    // Local copy of measured currents
+    ctrl_gt i_alpha = mc->iab_meas->dat[0];
+    ctrl_gt i_beta = mc->iab_meas->dat[1];
+
+    // ========================================================================
+    // 1. Stator Flux Observer (Voltage Model with Drift Compensation)
+    // ========================================================================
+    // Physics Eq: dPsi/dt = V - Rs*I
+    // Discrete PU Eq: Psi(k+1) = Psi(k) * decay + Ts*W_base * (V(k) - Rs_pu*I(k))
+    // Note: We use the voltage output from the *previous* control cycle (mc->vab_out).
+
+    ctrl_gt back_emf_alpha = mc->vab_out.dat[0] - ctl_mul(mc->coef_rs_pu, i_alpha);
+    ctrl_gt back_emf_beta = mc->vab_out.dat[1] - ctl_mul(mc->coef_rs_pu, i_beta);
+
+    mc->flux_ab_pu.dat[0] =
+        ctl_mul(mc->coef_drift_comp, mc->flux_ab_pu.dat[0]) + ctl_mul(mc->coef_ts_wbase, back_emf_alpha);
+    mc->flux_ab_pu.dat[1] =
+        ctl_mul(mc->coef_drift_comp, mc->flux_ab_pu.dat[1]) + ctl_mul(mc->coef_ts_wbase, back_emf_beta);
+
+    // ========================================================================
+    // 2. Flux Magnitude & Torque Estimation (The Magic of PU)
+    // ========================================================================
+    ctrl_gt flux_sq =
+        ctl_mul(mc->flux_ab_pu.dat[0], mc->flux_ab_pu.dat[0]) + ctl_mul(mc->flux_ab_pu.dat[1], mc->flux_ab_pu.dat[1]);
+
+    mc->flux_mag_pu = ctl_sqrt(flux_sq);
+
+    // PU Torque Eq: Te_pu = Psi_alpha * I_beta - Psi_beta * I_alpha (Notice: NO 3/2*p constant!)
+    mc->torque_est_pu = ctl_mul(mc->flux_ab_pu.dat[0], i_beta) - ctl_mul(mc->flux_ab_pu.dat[1], i_alpha);
+
+    // ========================================================================
+    // 3. Fast Phasor Extraction (ZERO Trigonometric Functions)
+    // ========================================================================
+    // We extract the cos and sin directly from the flux vector to align the x-axis with the stator flux.
+    if (mc->flux_mag_pu > float2ctrl(0.01f)) // Protect against div-by-zero
+    {
+        mc->flux_phasor.dat[0] = ctl_div(mc->flux_ab_pu.dat[0], mc->flux_mag_pu); // cos(theta)
+        mc->flux_phasor.dat[1] = ctl_div(mc->flux_ab_pu.dat[1], mc->flux_mag_pu); // sin(theta)
+    }
+
+    // ========================================================================
+    // 4. Flux and Torque PI Controllers (x-y synchronous frame)
+    // ========================================================================
+    ctrl_gt flux_err = mc->flux_ref_pu - mc->flux_mag_pu;
+    ctrl_gt torque_err = mc->torque_ref_pu - mc->torque_est_pu;
+
+    // Vx controls Flux magnitude (radial)
+    mc->vxy_ctrl.dat[0] = ctl_step_pid_ser(&mc->flux_ctrl, flux_err);
+    // Vy controls Torque (tangential)
+    mc->vxy_ctrl.dat[1] = ctl_step_pid_ser(&mc->torque_ctrl, torque_err);
+
+    // Circular Saturation
+    ctrl_gt v_sq =
+        ctl_mul(mc->vxy_ctrl.dat[0], mc->vxy_ctrl.dat[0]) + ctl_mul(mc->vxy_ctrl.dat[1], mc->vxy_ctrl.dat[1]);
+    ctrl_gt v_max_sq = ctl_mul(mc->v_max_pu, mc->v_max_pu);
+
+    if (v_sq > v_max_sq)
+    {
+        ctrl_gt v_mag = ctl_sqrt(v_sq);
+        ctrl_gt scale = ctl_div(mc->v_max_pu, v_mag);
+        mc->vxy_ctrl.dat[0] = ctl_mul(mc->vxy_ctrl.dat[0], scale);
+        mc->vxy_ctrl.dat[1] = ctl_mul(mc->vxy_ctrl.dat[1], scale);
+
+        // Feed real saturated output back to PID for Anti-Windup
+        ctl_pid_clamping_correction_using_real_output(&mc->flux_ctrl, mc->vxy_ctrl.dat[0]);
+        ctl_pid_clamping_correction_using_real_output(&mc->torque_ctrl, mc->vxy_ctrl.dat[1]);
+    }
+
+    // ========================================================================
+    // 5. Inverse Transformation (x-y back to alpha-beta)
+    // ========================================================================
+    // V_alpha = Vx * cos - Vy * sin
+    // V_beta  = Vx * sin + Vy * cos
+    mc->vab_out.dat[0] =
+        ctl_mul(mc->vxy_ctrl.dat[0], mc->flux_phasor.dat[0]) - ctl_mul(mc->vxy_ctrl.dat[1], mc->flux_phasor.dat[1]);
+    mc->vab_out.dat[1] =
+        ctl_mul(mc->vxy_ctrl.dat[0], mc->flux_phasor.dat[1]) + ctl_mul(mc->vxy_ctrl.dat[1], mc->flux_phasor.dat[0]);
+
+    // Note: mc->vab_out is now ready to be fed into the standard SVPWM module.
 }
 
-/** 
- * @} 
- */ // end of DTC_CONTROLLER group
+/** @} */
 
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
-#endif // _FILE_PMSM_DTC_H_
+#endif // _FILE_DTC_SVM_CORE_H_
