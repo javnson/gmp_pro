@@ -1,22 +1,13 @@
 /**
- * @file pmsm_consultant.h
- * @author Javnson (javnson@zju.edu.cn)
- * @brief Defines data structures and utility functions for PMSM motor parameters.
- * @details This file provides "consultant" structures for key nameplate and design
- * parameters of a PMSM, along with functions to calculate derived constants,
- * estimate controller tuning parameters, and convert parameters to the per-unit system.
- * @version 0.3
- * @date 2024-09-30
+ * @file consultant_pmsm.h
+ * @brief Implements the Permanent Magnet Synchronous Motor (PMSM) physical model.
  *
- * @copyright Copyright GMP(c) 2024
- *
+ * @version 1.0
+ * @date 2024-10-27
  */
 
-#ifndef _FILE_PMSM_CONSULTANT_H_
-#define _FILE_PMSM_CONSULTANT_H_
-
-#include <ctl/component/motor_control/consultant/motor_per_unit_consultant.h> // Include for per-unit system base values
-#include <ctl/component/motor_control/consultant/motor_unit_calculator.h> // Include for physical constants and unit conversions
+#ifndef _FILE_CONSULTANT_PMSM_H_
+#define _FILE_CONSULTANT_PMSM_H_
 
 #ifdef __cplusplus
 extern "C"
@@ -24,224 +15,196 @@ extern "C"
 #endif // __cplusplus
 
 /*---------------------------------------------------------------------------*/
-/* PMSM Design Parameter Definitions                                         */
+/* Consultant: PMSM Physical Model                                           */
 /*---------------------------------------------------------------------------*/
 
 /**
- * @defgroup MC_PMSM_DESIGN PMSM Design Consultant
- * @ingroup CTL_MC_COMPONENT
- * @brief Holds the design (model) parameters of a PMSM.
+ * @defgroup CONSULTANT_PMSM PMSM Model Consultant
+ * @brief Manages the electrical and magnetic physical parameters of a PMSM.
+ * @details Acts as a standardized parameter provider for inner loop controllers 
+ * (FOC, MPC, DTC). Calculates intrinsic derived parameters such as characteristic 
+ * current and saliency ratio. Purely physical (no Per-Unit math here).
  * @{
  */
 
 /**
- * @brief Data structure for holding PMSM design (model) parameters.
- * @details These parameters are used in the mathematical model of the motor for FOC.
- * 
- * Pole pairs: @f( p @f), Stator Resistance: @f( R_s @f), d-axis Inductance: @f( L_d @f),
- * q-axis Inductance: @f( L_q @f), PM Flux: @f( \psi_f @f), Inertia: @f( J @f), Damping: @f( B @f).
+ * @brief Standardized structure for PMSM physical parameters.
  */
-typedef struct _tag_pmsm_dsn_consultant
+typedef struct _tag_consultant_pmsm
 {
-    uint16_t pole_pair;   /**< @brief Number of motor pole pairs. */
-    parameter_gt Rs;      /**< @brief Stator resistance per phase in Ohms (ohm). */
-    parameter_gt Ld;      /**< @brief D-axis inductance in Henrys (H). */
-    parameter_gt Lq;      /**< @brief Q-axis inductance in Henrys (H). */
-    parameter_gt flux;    /**< @brief Permanent magnet flux linkage in Weber (Wb). */
-    parameter_gt inertia; /**< @brief Moment of inertia (J) in kg m2. */
-    parameter_gt damp;    /**< @brief Damping factor (B) in N m s. */
-} ctl_pmsm_dsn_consultant_t;
+    // --- Nameplate & Basic Electrical Parameters ---
+    uint32_t pole_pairs;       //!< Number of pole pairs (p).
+    parameter_gt Rs;           //!< Stator phase resistance (Ohm).
+    parameter_gt Ld;           //!< D-axis synchronous inductance (H).
+    parameter_gt Lq;           //!< Q-axis synchronous inductance (H).
+    parameter_gt flux_linkage; //!< Permanent magnet flux linkage RMS (Weber).
+
+    // --- Derived Intrinsic Properties (Calculated automatically) ---
+    parameter_gt saliency_ratio; //!< Lq / Ld (1.0 for SPM, >1.0 for IPM).
+    parameter_gt char_current;   //!< Characteristic current: flux / (Lq - Ld) (A). Infinite for SPM.
+
+    fast_gt is_ipm; //!< Flag: 1 if Interior PM (Lq > Ld), 0 if Surface PM (Lq == Ld).
+
+} ctl_consultant_pmsm_t;
+
+//================================================================================
+// Function Prototypes & Inline APIs
+//================================================================================
 
 /**
- * @brief Initializes the PMSM design consultant structure.
- * @param[out] pmsm_dsn Pointer to the design consultant structure.
- * @param[in] pole_pair Number of motor pole pairs.
- * @param[in] Rs Stator resistance (ohm).
- * @param[in] Ld D-axis inductance (H).
- * @param[in] Lq Q-axis inductance (H).
- * @param[in] flux PM flux linkage (Wb).
- * @param[in] inertia Moment of inertia (kg m2).
- * @param[in] damp Damping factor (N m s).
+ * @brief Initializes the PMSM model and validates all physical parameters.
+ * @param[out] motor Pointer to the PMSM consultant instance.
+ * @param[in]  pp    Pole pairs.
+ * @param[in]  rs    Stator resistance (Ohm).
+ * @param[in]  ld    D-axis inductance (H).
+ * @param[in]  lq    Q-axis inductance (H).
+ * @param[in]  flux  PM flux linkage (Wb).
  */
-void ctl_init_pmsm_dsn_consultant(ctl_pmsm_dsn_consultant_t* pmsm_dsn, uint16_t pole_pair, parameter_gt Rs,
-                                  parameter_gt Ld, parameter_gt Lq, parameter_gt flux, parameter_gt inertia,
-                                  parameter_gt damp);
-
-/** @} */ // end of MC_PMSM_DESIGN group
-
-/*---------------------------------------------------------------------------*/
-/* PMSM Parameter Calculation Functions                                      */
-/*---------------------------------------------------------------------------*/
+void ctl_consultant_pmsm_init(ctl_consultant_pmsm_t* motor, uint32_t pp, parameter_gt rs, parameter_gt ld,
+                              parameter_gt lq, parameter_gt flux);
 
 /**
- * @defgroup MC_PMSM_CALCULATORS PMSM Parameter Calculators
- * @ingroup CTL_MC_COMPONENT
- * @brief A collection of functions to calculate derived parameters and tune controllers.
- * @{
+ * @brief Calculates the actual electromagnetic torque based on physical currents.
+ * @details Te = 1.5 * p * (Flux * Iq + (Ld - Lq) * Id * Iq)
+ * @param[in] motor Pointer to the PMSM consultant instance.
+ * @param[in] id    D-axis current (A).
+ * @param[in] iq    Q-axis current (A).
+ * @return parameter_gt Electromagnetic torque (Nm).
  */
-
-/**
- * @brief Calculates the PMSM torque constant (Kt).
- * @details Formula: @f[ K_t = 1.5 \cdot p \cdot \psi_f
- * @param[in] pmsm_dsn Pointer to the populated motor design consultant structure.
- * @return The torque constant in N·m / Amp_peak.
- */
-GMP_STATIC_INLINE parameter_gt ctl_pmsm_get_Kt(const ctl_pmsm_dsn_consultant_t* pmsm_dsn)
+GMP_STATIC_INLINE parameter_gt ctl_consultant_pmsm_calc_torque(const ctl_consultant_pmsm_t* motor, parameter_gt id,
+                                                               parameter_gt iq)
 {
-    return (1.5f * pmsm_dsn->pole_pair * pmsm_dsn->flux);
+    parameter_gt reluctance_term = (motor->Ld - motor->Lq) * id * iq;
+    parameter_gt magnet_term = motor->flux_linkage * iq;
+
+    return 1.5f * (parameter_gt)motor->pole_pairs * (magnet_term + reluctance_term);
 }
 
 /**
- * @brief Calculates the PMSM back-EMF constant (Ke).
- * @details This is the peak line-to-neutral voltage per electrical rad/s.
- * Formula: @f[ K_e = p \cdot \psi_f @f]
- * @param[in] pmsm_dsn Pointer to the populated motor design consultant structure.
- * @return The back-EMF constant in V_peak / (rad/s_elec).
+ * @brief Calculates the magnitude of the stator flux linkage vector.
+ * @details |Psi_s| = sqrt( (Flux + Ld*Id)^2 + (Lq*Iq)^2 )
+ * Useful for voltage limit predictions and DTC monitoring.
+ * @param[in] motor Pointer to the PMSM consultant instance.
+ * @param[in] id    D-axis current (A).
+ * @param[in] iq    Q-axis current (A).
+ * @return parameter_gt Stator flux magnitude (Wb).
  */
-GMP_STATIC_INLINE parameter_gt ctl_pmsm_get_Ke_Vpeak_per_rads(const ctl_pmsm_dsn_consultant_t* pmsm_dsn)
+GMP_STATIC_INLINE parameter_gt ctl_consultant_pmsm_calc_flux_mag(const ctl_consultant_pmsm_t* motor, parameter_gt id,
+                                                                 parameter_gt iq)
 {
-    return (pmsm_dsn->pole_pair * pmsm_dsn->flux);
+    parameter_gt psi_d = motor->flux_linkage + motor->Ld * id;
+    parameter_gt psi_q = motor->Lq * iq;
+
+    // Note: This is in physical float space, so standard sqrtf is used
+    return sqrtf(psi_d * psi_d + psi_q * psi_q);
+}
+
+//================================================================================
+// 1. Time Constants (电气时间常数)
+//================================================================================
+
+/**
+ * @brief Calculates the D-axis electrical time constant.
+ * @return parameter_gt Tau_d in seconds.
+ */
+GMP_STATIC_INLINE parameter_gt ctl_consultant_pmsm_tau_d(const ctl_consultant_pmsm_t* motor)
+{
+    return motor->Ld / motor->Rs;
 }
 
 /**
- * @brief Calculates the PMSM back-EMF constant (Ke) in V_RMS / kRPM.
- * @details This is a common unit found on motor datasheets.
- * Formula: @f[ K_e [V_{RMS,L-L}/kRPM] = p \cdot \psi_f \cdot \frac{\pi \sqrt{3}}{3} @f]
- * @param[in] pmsm_dsn Pointer to the populated motor design consultant structure.
- * @return The back-EMF constant in V_RMS_LL / kRPM.
+ * @brief Calculates the Q-axis electrical time constant.
+ * @return parameter_gt Tau_q in seconds.
  */
-GMP_STATIC_INLINE parameter_gt ctl_pmsm_get_Ke_Vrms_per_krpm(const ctl_pmsm_dsn_consultant_t* pmsm_dsn)
+GMP_STATIC_INLINE parameter_gt ctl_consultant_pmsm_tau_q(const ctl_consultant_pmsm_t* motor)
 {
-    // Ke(Vp/rads) * (rads/s / RPM) * (RPM / kRPM) * Vrms/Vp
-    // Ke(Vp/rads) * (2*pi/60) * 1000 * (1/sqrt(2)) * sqrt(3) for L-L
-    return ctl_pmsm_get_Ke_Vpeak_per_rads(pmsm_dsn) * (CTL_PARAM_CONST_PI * 100.0f / 3.0f) *
-           CTL_PARAM_CONST_SQRT3_OVER_SQRT2;
+    return motor->Lq / motor->Rs;
+}
+
+//================================================================================
+// 2. Torque Constant (力矩常数)
+//================================================================================
+
+/**
+ * @brief Calculates the nominal Torque Constant (Kt) in SI units (Nm / A_peak).
+ * @details Represents the torque produced per unit of peak Q-axis current, 
+ * assuming Id = 0 (Standard for SPM, or nominal for IPM without reluctance torque).
+ * Formula: Kt = 1.5 * p * Flux
+ */
+GMP_STATIC_INLINE parameter_gt ctl_consultant_pmsm_calc_Kt_SI(const ctl_consultant_pmsm_t* motor)
+{
+    return 1.5f * (parameter_gt)motor->pole_pairs * motor->flux_linkage;
+}
+
+//================================================================================
+// 3. Back-EMF Constant (反电动势常数 - 正向计算)
+//================================================================================
+
+/**
+ * @brief Calculates the Back-EMF Constant (Ke) in strict SI units.
+ * @details Unit: V_peak(phase-neutral) / (rad/s_mech).
+ * Formula: Ke_SI = p * Flux
+ */
+GMP_STATIC_INLINE parameter_gt ctl_consultant_pmsm_calc_Ke_SI(const ctl_consultant_pmsm_t* motor)
+{
+    return (parameter_gt)motor->pole_pairs * motor->flux_linkage;
 }
 
 /**
- * @brief Estimates PI controller parameters for the d-q axis current loops.
- * @details Uses the bandwidth method (pole placement) for tuning.
- * The plant is modeled as a first-order system.
- * Formulas:
- * @f[ K_p = \alpha_c L, \quad K_i = \alpha_c R_s @f]
- * where @f( \alpha_c @f) is the desired bandwidth.
- * @param[in] pmsm_dsn Pointer to the populated motor design consultant structure.
- * @param[in] bandwidth_hz The desired closed-loop bandwidth in Hertz (Hz).
- * @param[out] kp_d Pointer to store the d-axis proportional gain.
- * @param[out] ki_d Pointer to store the d-axis integral gain.
- * @param[out] kp_q Pointer to store the q-axis proportional gain.
- * @param[out] ki_q Pointer to store the q-axis integral gain.
+ * @brief Calculates the Back-EMF Constant (Ke) in common engineering units.
+ * @details Unit: V_rms(Line-to-Line) / krpm.
+ * Formula: Ke_Vrms_krpm = sqrt(3/2) * p * Flux * (1000 * 2PI / 60)
  */
-GMP_STATIC_INLINE void ctl_pmsm_tune_current_pi_params(const ctl_pmsm_dsn_consultant_t* pmsm_dsn,
-                                                       parameter_gt bandwidth_hz, parameter_gt* kp_d,
-                                                       parameter_gt* ki_d, parameter_gt* kp_q, parameter_gt* ki_q)
+GMP_STATIC_INLINE parameter_gt ctl_consultant_pmsm_calc_Ke_Vrms_krpm(const ctl_consultant_pmsm_t* motor)
 {
-    parameter_gt alpha_c = CTL_PARAM_CONST_2PI * bandwidth_hz; // Convert Hz to rad/s
+    // sqrt(3)/sqrt(2) = 1.22474487f
+    // (1000 * 2*PI) / 60 = 104.719755f
+    return 1.22474487f * (parameter_gt)motor->pole_pairs * motor->flux_linkage * 104.719755f;
+}
 
-    *kp_d = alpha_c * pmsm_dsn->Ld;
-    *ki_d = alpha_c * pmsm_dsn->Rs;
+//================================================================================
+// 4. Parameter Translators (反向推导工具：从铭牌到物理量)
+//================================================================================
 
-    *kp_q = alpha_c * pmsm_dsn->Lq;
-    *ki_q = alpha_c * pmsm_dsn->Rs;
+/**
+ * @brief Estimates Permanent Magnet Flux Linkage from a Datasheet Ke value.
+ * @details Solves for Flux (Weber) given Ke in V_rms(Line-to-Line) / krpm.
+ * Useful when populating the init structure from a motor datasheet.
+ * @param[in] pole_pairs The number of pole pairs (p).
+ * @param[in] ke_vrms_krpm The back-EMF constant from the datasheet.
+ * @return parameter_gt Estimated Flux Linkage (Weber).
+ */
+GMP_STATIC_INLINE parameter_gt ctl_consultant_pmsm_flux_from_Ke(uint32_t pole_pairs, parameter_gt ke_vrms_krpm)
+{
+    // Protect against division by zero if pole_pairs is accidentally 0
+    parameter_gt pp_safe = (pole_pairs > 0) ? (parameter_gt)pole_pairs : 1.0f;
+
+    // Flux = Ke / ( sqrt(3/2) * p * 104.719755 )
+    return ke_vrms_krpm / (1.22474487f * pp_safe * 104.719755f);
 }
 
 /**
- * @brief Estimates PI controller parameters for the speed loop.
- * @details Uses the bandwidth method. Assumes the current loop is significantly faster.
- * Formulas:
- * @f[ K_p = \frac{\alpha_s J}{K_t}, \quad K_i = \frac{\alpha_s B}{K_t} @f]
- * where @f( \alpha_s @f) is the desired bandwidth.
- * @param[in] pmsm_dsn Pointer to the populated motor design consultant structure.
- * @param[in] bandwidth_hz The desired closed-loop bandwidth in Hertz (Hz).
- * @param[out] kp Pointer to store the calculated proportional gain.
- * @param[out] ki Pointer to store the calculated integral gain.
+ * @brief Estimates Permanent Magnet Flux Linkage from a Datasheet Kt value.
+ * @details Solves for Flux (Weber) given Kt in Nm / A_rms.
+ * @param[in] pole_pairs The number of pole pairs (p).
+ * @param[in] kt_nm_arms The torque constant from the datasheet.
+ * @return parameter_gt Estimated Flux Linkage (Weber).
  */
-GMP_STATIC_INLINE void ctl_pmsm_tune_speed_pi_params(const ctl_pmsm_dsn_consultant_t* pmsm_dsn,
-                                                     parameter_gt bandwidth_hz, parameter_gt* kp, parameter_gt* ki)
+GMP_STATIC_INLINE parameter_gt ctl_consultant_pmsm_flux_from_Kt_Arms(uint32_t pole_pairs, parameter_gt kt_nm_arms)
 {
-    parameter_gt kt = ctl_pmsm_get_Kt(pmsm_dsn);
-    if (kt < float2ctrl(0.000001))
-    {
-        *kp = 0.0;
-        *ki = 0.0;
-        return;
-    }
+    parameter_gt pp_safe = (pole_pairs > 0) ? (parameter_gt)pole_pairs : 1.0f;
 
-    parameter_gt alpha_s = CTL_PARAM_CONST_2PI * bandwidth_hz; // Convert Hz to rad/s
-
-    *kp = (alpha_s * pmsm_dsn->inertia) / kt;
-    // Note: Ki calculation depends on an accurate damping/friction parameter 'B'.
-    // If B is unknown, Ki might be set to a small value or tuned experimentally.
-    *ki = (alpha_s * pmsm_dsn->damp) / kt;
+    // T = 1.5 * p * Flux * Iq_peak
+    // Iq_peak = sqrt(2) * Iq_rms
+    // Kt_rms = T / Iq_rms = 1.5 * sqrt(2) * p * Flux
+    // Flux = Kt_rms / (2.12132034f * p)
+    return kt_nm_arms / (2.12132034f * pp_safe);
 }
 
-/** @} */ // end of MC_PMSM_CALCULATORS group
-
-/*---------------------------------------------------------------------------*/
-/* Per-Unit Conversion Functions                                             */
-/*---------------------------------------------------------------------------*/
-
-/**
- * @defgroup MC_PMSM_PU_CONVERTERS Per-Unit System Converters
- * @ingroup CTL_MC_COMPONENT
- * @brief A collection of functions to convert PI controller gains to the per-unit system.
- * @{
- */
-
-/**
- * @brief Converts current controller PI gains from SI units to per-unit.
- * @details The current controller's input is current error and output is voltage.
- * Formulas:
- * //tex: K_{p,pu} = \frac{K_{p,real}}{Z_{base}}
- * //tex: K_{i,pu} = \frac{K_{i,real}}{Z_{base} \cdot \omega_{base}}
- * @param[in] pu Pointer to the populated per-unit consultant structure.
- * @param[in] kp_real The real-world proportional gain (V/A).
- * @param[in] ki_real The real-world integral gain (V/(A·s)).
- * @param[out] kp_pu Pointer to store the per-unit proportional gain.
- * @param[out] ki_pu Pointer to store the per-unit integral gain.
- */
-GMP_STATIC_INLINE void ctl_pmsm_convert_current_pi_to_pu(const ctl_per_unit_consultant_t* pu, parameter_gt kp_real,
-                                                         parameter_gt ki_real, parameter_gt* kp_pu, parameter_gt* ki_pu)
-{
-    if (pu->base_impedence < float2ctrl(0.000001) || pu->base_omega < float2ctrl(0.000001))
-    {
-        *kp_pu = 0.0;
-        *ki_pu = 0.0;
-        return;
-    }
-    *kp_pu = kp_real / pu->base_impedence;
-    *ki_pu = ki_real / (pu->base_impedence * pu->base_omega);
-}
-
-/**
- * @brief Converts speed controller PI gains from SI units to per-unit.
- * @details The speed controller's input is speed error and output is current.
- * Formulas:
- * //tex: K_{p,pu} = \frac{K_{p,real} \cdot \omega_{base}}{I_{base}}
- * //tex: K_{i,pu} = \frac{K_{i,real}}{I_{base}}
- * @param[in] pu Pointer to the populated per-unit consultant structure.
- * @param[in] kp_real The real-world proportional gain (A/(rad/s)).
- * @param[in] ki_real The real-world integral gain (A/rad).
- * @param[out] kp_pu Pointer to store the per-unit proportional gain.
- * @param[out] ki_pu Pointer to store the per-unit integral gain.
- */
-GMP_STATIC_INLINE void ctl_pmsm_convert_speed_pi_to_pu(const ctl_per_unit_consultant_t* pu, parameter_gt kp_real,
-                                                       parameter_gt ki_real, parameter_gt* kp_pu, parameter_gt* ki_pu)
-{
-    if (pu->base_current < float2ctrl(0.000001))
-    {
-        *kp_pu = 0.0;
-        *ki_pu = 0.0;
-        return;
-    }
-    *kp_pu = (kp_real * pu->base_omega) / pu->base_current;
-    *ki_pu = ki_real / pu->base_current;
-}
-
-/** @} */ // end of MC_PMSM_PU_CONVERTERS group
+/** @} */
 
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
-#endif // _FILE_PMSM_CONSULTANT_H_
+#endif // _FILE_CONSULTANT_PMSM_H_
