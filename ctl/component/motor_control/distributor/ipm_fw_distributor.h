@@ -50,7 +50,7 @@ typedef struct _tag_const_distributor_init
     parameter_gt alpha_const;        //!< Fixed advance angle used when Im >= 0 (rad).
     parameter_gt alpha_neg_torque;   //!< Fixed advance angle used when Im < 0 (braking/generator mode) (rad).
 
-} ctl_const_distributor_init_t;
+} ipm_fw_distributor_init_t;
 
 /**
  * @brief Main structure for the Constant Angle Distributor real-time execution.
@@ -74,7 +74,7 @@ typedef struct _tag_const_distributor
     // --- Sub-modules ---
     ctl_pid_t fw_pid;                //!< PID controller for Field Weakening.
 
-} ctl_const_distributor_t;
+} ipm_fw_distributor_t;
 
 
 //================================================================================
@@ -86,13 +86,13 @@ typedef struct _tag_const_distributor
  * @param[out] dist Pointer to the constant distributor controller structure.
  * @param[in]  init Pointer to the initialization configuration structure.
  */
-void ctl_init_const_distributor(ctl_const_distributor_t* dist, const ctl_const_distributor_init_t* init);
+void ctl_init_const_distributor(ipm_fw_distributor_t* dist, const ipm_fw_distributor_init_t* init);
 
 /**
  * @brief Clears the internal states of the distributor (PID integrators, outputs, etc.).
  * @param[out] dist Pointer to the constant distributor controller structure.
  */
-GMP_STATIC_INLINE void ctl_clear_const_distributor(ctl_const_distributor_t* dist)
+GMP_STATIC_INLINE void ctl_clear_const_distributor(ipm_fw_distributor_t* dist)
 {
     dist->id = float2ctrl(0.0f);
     dist->iq = float2ctrl(0.0f);
@@ -108,7 +108,7 @@ GMP_STATIC_INLINE void ctl_clear_const_distributor(ctl_const_distributor_t* dist
  * @param[in]     ud   Feedback d-axis voltage (used for FW).
  * @param[in]     uq   Feedback q-axis voltage (used for FW).
  */
-GMP_STATIC_INLINE void ctl_step_const_distributor(ctl_const_distributor_t* dist, ctrl_gt im, ctrl_gt ud, ctrl_gt uq)
+GMP_STATIC_INLINE void ctl_step_const_distributor(ipm_fw_distributor_t* dist, ctrl_gt im, ctrl_gt ud, ctrl_gt uq)
 {
     ctrl_gt alpha_base;
 
@@ -151,7 +151,7 @@ GMP_STATIC_INLINE void ctl_step_const_distributor(ctl_const_distributor_t* dist,
  * @param[in] dist Pointer to the distributor structure.
  * @return ctrl_gt The d-axis current reference (id).
  */
-GMP_STATIC_INLINE ctrl_gt ctl_get_const_distributor_id_ref(const ctl_const_distributor_t* dist)
+GMP_STATIC_INLINE ctrl_gt ctl_get_const_distributor_id_ref(const ipm_fw_distributor_t* dist)
 {
     return dist->id;
 }
@@ -161,7 +161,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_const_distributor_id_ref(const ctl_const_distr
  * @param[in] dist Pointer to the distributor structure.
  * @return ctrl_gt The q-axis current reference (iq).
  */
-GMP_STATIC_INLINE ctrl_gt ctl_get_const_distributor_iq_ref(const ctl_const_distributor_t* dist)
+GMP_STATIC_INLINE ctrl_gt ctl_get_const_distributor_iq_ref(const ipm_fw_distributor_t* dist)
 {
     return dist->iq;
 }
