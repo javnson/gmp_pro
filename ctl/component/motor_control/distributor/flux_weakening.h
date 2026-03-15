@@ -30,7 +30,7 @@ typedef struct _tag_fw_controller
 {
     // --- Config Parameters ---
     ctrl_gt v_ref_margin; //!< Voltage margin coefficient (e.g., 0.90 ~ 0.95).
-    ctrl_gt i_smax;       //!< Maximum allowing motor current (A or PU).
+    ctrl_gt i_smax;       //!< Maximum allowing motor current (PU).
 
     // --- Inputs (Updated each cycle) ---
     ctl_vector2_t vdq_curr; //!< Current d-q axis voltage output from current loop.

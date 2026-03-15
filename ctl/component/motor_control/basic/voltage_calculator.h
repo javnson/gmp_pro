@@ -9,6 +9,8 @@
  *
  */
 
+#include <ctl/math_block/vector_lite/vector3.h>
+
 #ifndef _FILE_VOLTAGE_CALCULATOR_H_
 #define _FILE_VOLTAGE_CALCULATOR_H_
 

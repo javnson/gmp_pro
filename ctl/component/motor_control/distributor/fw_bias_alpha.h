@@ -7,11 +7,12 @@
  *
  */
 
+#include <ctl/component/intrinsic/continuous/continuous_pid.h>
+
+
 #ifndef _FILE_CONST_CURRENT_DISTRIBUTOR_H_
 #define _FILE_CONST_CURRENT_DISTRIBUTOR_H_
 
-#include <ctl/component/intrinsic/continuous/continuous_pid.h>
-#include <ctl/math_block/gmp_math.h>
 
 #ifdef __cplusplus
 extern "C"

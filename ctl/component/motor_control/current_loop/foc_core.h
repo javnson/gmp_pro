@@ -18,6 +18,9 @@
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <ctl/component/intrinsic/discrete/lead_lag.h>
 
+#include <ctl/math_block/vector_lite/vector2.h>
+#include <ctl/math_block/vector_lite/vector3.h>
+
 #ifdef __cplusplus
 extern "C"
 {
