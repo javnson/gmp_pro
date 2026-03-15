@@ -7,13 +7,11 @@
  *
  */
 
-#ifndef _FILE_IDQ_CURRENT_DISTRIBUTOR_H_
-#define _FILE_IDQ_CURRENT_DISTRIBUTOR_H_
-
-
 #include <ctl/component/intrinsic/advance/paired_lut1d.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 
+#ifndef _FILE_IDQ_CURRENT_DISTRIBUTOR_H_
+#define _FILE_IDQ_CURRENT_DISTRIBUTOR_H_
 
 #ifdef __cplusplus
 extern "C"
@@ -127,7 +125,7 @@ GMP_STATIC_INLINE void ctl_idq_distributor_set_fw_mode(ctl_idq_distributor_t* di
 {
     if (fw_mode == 1 && dist->flag_enable_fw == 0)
         ctl_clear_pid(&dist->fw_pid);
-    
+
     dist->flag_enable_fw = fw_mode;
 }
 

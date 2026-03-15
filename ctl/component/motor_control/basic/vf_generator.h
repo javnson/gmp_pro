@@ -9,14 +9,15 @@
  *
  */
 
-#ifndef _FILE_CONST_VF_H_
-#define _FILE_CONST_VF_H_
 
 #include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl/component/intrinsic/basic/saturation.h>
 #include <ctl/component/intrinsic/basic/slope_limiter.h>
 #include <ctl/component/intrinsic/discrete/signal_generator.h>
-#include <ctl/component/motor_control/basic/motor_universal_interface.h>
+
+
+#ifndef _FILE_CONST_VF_H_
+#define _FILE_CONST_VF_H_
 
 #ifdef __cplusplus
 extern "C"

@@ -9,13 +9,13 @@
  *
  */
 
-#ifndef _FILE_ENCODER_H_
-#define _FILE_ENCODER_H_
+#ifndef _FILE_CTL_MC_ENCODER_H_
+#define _FILE_CTL_MC_ENCODER_H_
 
 //#include <core/std/gmp_cport.h>
 #include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
-#include <ctl/component/motor_control/basic/motor_universal_interface.h>
+#include <ctl/component/motor_control/interface/motor_universal_interface.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -320,4 +320,4 @@ GMP_STATIC_INLINE void ctl_step_spd_calc(spd_calculator_t* sc)
 }
 #endif // __cplusplus
 
-#endif // _FILE_ENCODER_H_
+#endif // _FILE_CTL_MC_ENCODER_H_

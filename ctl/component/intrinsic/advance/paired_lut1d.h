@@ -10,7 +10,6 @@
 #ifndef _FILE_PAIRED_LUT1D_H_
 #define _FILE_PAIRED_LUT1D_H_
 
-
 #ifdef __cplusplus
 extern "C"
 {
