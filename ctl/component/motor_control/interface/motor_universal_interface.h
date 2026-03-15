@@ -73,6 +73,48 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_encoder_elec_postion(rotation_ift* enc)
     return enc->elec_position;
 }
 
+// 允许用户通过编译器宏定义覆盖最大允许的圈数误差
+// 默认值为 5 圈。如果是浮点系统或低速高精度系统，用户可以修改此值。
+#ifndef MC_POS_ERROR_REV_LIMIT
+#define MC_POS_ERROR_REV_LIMIT 5
+#endif
+
+/**
+ * @brief Safely calculates the position error, preventing fixed-point overflow.
+ * @details Computes the difference between target and feedback positions. 
+ * The mechanical revolution difference is saturated to MC_POS_ERROR_REV_LIMIT 
+ * before being converted to the ctrl_gt type to guarantee numeric safety.
+ * * @param[in] target_revs Target mechanical revolutions (integer part).
+ * @param[in] target_angle Target mechanical position (fractional part, 0.0~1.0 PU).
+ * @param[in] pos_fb Pointer to the rotation encoder feedback interface.
+ * @return ctrl_gt The bounded total position error in PU.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_calc_position_error(int32_t target_revs, ctrl_gt target_angle, const rotation_ift* pos_fb)
+{
+    // 1. Calculate integer revolution error
+    int32_t rev_error = target_revs - pos_fb->revolutions;
+
+    // 2. Saturate the revolution error to strictly prevent ctrl_gt overflow
+    if (rev_error > MC_POS_ERROR_REV_LIMIT)
+    {
+        rev_error = MC_POS_ERROR_REV_LIMIT;
+    }
+    else if (rev_error < -MC_POS_ERROR_REV_LIMIT)
+    {
+        rev_error = -MC_POS_ERROR_REV_LIMIT;
+    }
+
+    // 3. Calculate fractional angle error in PU
+    ctrl_gt ang_error = target_angle - pos_fb->position;
+
+    // 4. Safely convert bounded integer to ctrl_gt and combine
+    // Convert to float first to ensure float2ctrl macro works correctly
+    // whether the underlying type is float or fixed-point.
+    ctrl_gt total_error = float2ctrl((float)rev_error) + ang_error;
+
+    return total_error;
+}
+
 /** @} */ // end of MC_ROTATION_IF group
 
 /*---------------------------------------------------------------------------*/

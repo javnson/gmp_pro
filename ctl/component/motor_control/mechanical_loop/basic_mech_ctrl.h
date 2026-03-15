@@ -241,10 +241,8 @@ GMP_STATIC_INLINE void ctl_step_mech_ctrl(ctl_mech_ctrl_t* ctrl)
         // 1. Position Control Loop (Outer Loop)
         if (ctrl->active_mode == MECH_MODE_POSITION)
         {
-            int32_t rev_error = ctrl->target_revs - ctrl->pos_if->revolutions;
-            ctrl_gt ang_error = ctrl->target_angle - ctrl->pos_if->position;
-
-            ctrl_gt pos_error = (ctrl_gt)rev_error + ang_error;
+            // Calculate position error
+            ctrl_gt pos_error = ctl_calc_position_error(ctrl->target_revs, ctrl->target_angle, ctrl->pos_if);
 
             // P-Controller generates raw velocity command
             vel_cmd = ctl_step_pid_par(&ctrl->pos_ctrl, pos_error);

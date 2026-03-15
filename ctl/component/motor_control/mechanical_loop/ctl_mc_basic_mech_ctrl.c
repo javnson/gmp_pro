@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////
 // velocity and position loop
 
-#include <ctl/component/motor_control/mechanical_loop/basic_mech_loop.h>
+#include <ctl/component/motor_control/mechanical_loop/basic_mechanical_loop.h>
 
 
 
