@@ -167,6 +167,75 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_pid_ser(ctl_pid_t* hpid, ctrl_gt input)
 }
 
 /**
+ * @brief Executes one step of the parallel-form IP (Integral-Proportional) controller.
+ * @details In an IP controller, the Proportional term acts ONLY on the feedback 
+ * (to prevent setpoint kick/overshoot), while the Integral term acts on the error.
+ * Output = -Kp * feedback + Ki * sum(target - feedback)
+ * * @param[in,out] hpid     Pointer to the PID controller instance.
+ * @param[in]     target   The target reference value.
+ * @param[in]     feedback The current actual feedback value.
+ * @return ctrl_gt The calculated controller output.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_step_ipd_par(ctl_pid_t* hpid, ctrl_gt target, ctrl_gt feedback)
+{
+    ctrl_gt err = target - feedback;
+
+    // P term acts ONLY on the negative feedback (eliminates closed-loop zero)
+    hpid->p_term = ctl_mul(-feedback, hpid->kp);
+
+    // I term acts on the error
+    hpid->i_term = ctl_sat(hpid->i_term + ctl_mul(err, hpid->ki), hpid->integral_max, hpid->integral_min);
+
+    // D term is typically 0 in pure IP, but implemented here for I-PD extension acting on feedback
+    hpid->d_term = ctl_mul(-(feedback - hpid->dn), hpid->kd);
+
+    // Output = P_term + I_term + D_term
+    hpid->out = hpid->p_term + hpid->i_term + hpid->d_term;
+
+    // Saturate final output
+    hpid->out = ctl_sat(hpid->out, hpid->out_max, hpid->out_min);
+
+    // Store current feedback for next derivative calculation
+    hpid->dn = feedback;
+
+    return hpid->out;
+}
+
+/**
+ * @brief Executes one step of the series-form IP (Integral-Proportional) controller.
+ * @details Output = Kp * [ -feedback + 1/Ti * sum(target - feedback) ]
+ * * @param[in,out] hpid     Pointer to the PID controller instance.
+ * @param[in]     target   The target reference value.
+ * @param[in]     feedback The current actual feedback value.
+ * @return ctrl_gt The calculated controller output.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_step_ipd_ser(ctl_pid_t* hpid, ctrl_gt target, ctrl_gt feedback)
+{
+    ctrl_gt err = target - feedback;
+
+    // P term acts ONLY on the negative feedback
+    hpid->p_term = ctl_mul(-feedback, hpid->kp);
+
+    // I term acts on the error, scaled by Kp and Ki (Ki is 1/Ti in series mode)
+    ctrl_gt err_scaled = ctl_mul(err, hpid->kp);
+    hpid->i_term = ctl_sat(hpid->i_term + ctl_mul(err_scaled, hpid->ki), hpid->integral_max, hpid->integral_min);
+
+    // D term acting on feedback
+    hpid->d_term = ctl_mul(-(feedback - hpid->dn), hpid->kd);
+
+    // Output = P_term + I_term + D_term
+    hpid->out = hpid->p_term + hpid->i_term + hpid->d_term;
+
+    // Saturate final output
+    hpid->out = ctl_sat(hpid->out, hpid->out_max, hpid->out_min);
+
+    // Store current feedback for next derivative calculation
+    hpid->dn = feedback;
+
+    return hpid->out;
+}
+
+/**
  * @brief Clears the internal states of the PID controller.
  * @param[out] hpid Pointer to the PID controller instance.
  */
