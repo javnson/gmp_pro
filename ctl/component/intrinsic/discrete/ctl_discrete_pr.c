@@ -8,6 +8,8 @@
 
 void ctl_init_resonant_controller(resonant_ctrl_t* r, parameter_gt kr, parameter_gt freq_resonant, parameter_gt fs)
 {
+    gmp_base_assert(fs > 0.0);
+
     parameter_gt T = 1.0f / fs;
     parameter_gt wr = CTL_PARAM_CONST_2PI * freq_resonant;
     parameter_gt wr_sq_T_sq = wr * wr * T * T;
@@ -23,45 +25,15 @@ void ctl_init_resonant_controller(resonant_ctrl_t* r, parameter_gt kr, parameter
     r->a1 = float2ctrl(2.0f * (4.0f - wr_sq_T_sq) * inv_den);
     r->a2 = float2ctrl(-1.0f); // This simplifies from -(4 + T^2*wr^2 - 8)/(4+T^2*wr^2) if no damping
 
-    // In the original code, the denominator of a1 was different.
-    // The standard discretization of an ideal resonant controller leads to a2 = -1.
-    // The original code's coefficients seem to be from a slightly different form.
-    // Let's stick to the standard bilinear transform result.
-    // Original code had: r->kr = float2ctrl(2.0f * (4.0f * fs * fs - wr * wr) / (4.0f * fs * fs + wr * wr));
-    // and r->krg = float2ctrl(kr * 4.0f * fs / (4.0f * fs * fs + wr * wr));
-    // which corresponds to a different difference equation form.
-    // The new form is u(n) = a1*u(n-1) + a2*u(n-2) + b0*e(n) + b2*e(n-2)
-
     ctl_clear_resonant_controller(r);
 }
 
 void ctl_init_pr_controller(pr_ctrl_t* pr, parameter_gt kp, parameter_gt kr, parameter_gt freq_resonant,
                             parameter_gt fs)
 {
-    pr->kp = kp;
+    pr->kp = float2ctrl(kp);
     ctl_init_resonant_controller(&pr->resonant_part, kr, freq_resonant, fs);
 }
-
-//void ctl_init_qr_controller(qr_ctrl_t* qr, parameter_gt kr, parameter_gt freq_resonant, parameter_gt freq_cut,
-//                            parameter_gt fs)
-//{
-//    parameter_gt T = 1.0f / fs;
-//    parameter_gt wr = CTL_PARAM_CONST_2PI * freq_resonant;
-//    parameter_gt wc = CTL_PARAM_CONST_2PI * freq_cut;
-//
-//    // Based on the bilinear transformation of G(s) = kr * (2*wc*s) / (s^2 + 2*wc*s + wr^2)
-//    // The resulting difference equation is:
-//    // u(n) = a1*u(n-1) + a2*u(n-2) + b0*e(n) + b2*e(n-2)
-//    parameter_gt den = 4.0f + 4.0f * wc * T + wr * wr * T * T;
-//    parameter_gt inv_den = 1.0f / den;
-//
-//    qr->b0 = float2ctrl(kr * 4.0f * wc * T * inv_den);
-//    qr->b2 = float2ctrl(-kr * 4.0f * wc * T * inv_den);
-//    qr->a1 = float2ctrl((8.0f - 2.0f * wr * wr * T * T) * inv_den);
-//    qr->a2 = float2ctrl((-4.0f + 4.0f * wc * T - wr * wr * T * T) * inv_den);
-//
-//    ctl_clear_qr_controller(qr);
-//}
 
 /**
  * @brief Helper function to calculate QR coefficients based on a specific K value.
@@ -116,6 +88,8 @@ static void _ctl_calc_qr_coeffs(qr_ctrl_t* qr, parameter_gt kr, parameter_gt wc,
 void ctl_init_qr_controller(qr_ctrl_t* qr, parameter_gt kr, parameter_gt freq_resonant, parameter_gt freq_cut,
                             parameter_gt fs)
 {
+    gmp_base_assert(fs > 0.0);
+
     parameter_gt wr = CTL_PARAM_CONST_2PI * freq_resonant;
     parameter_gt wc = CTL_PARAM_CONST_2PI * freq_cut;
 
@@ -139,6 +113,8 @@ void ctl_init_qr_controller(qr_ctrl_t* qr, parameter_gt kr, parameter_gt freq_re
 void ctl_init_qr_controller_prewarped(qr_ctrl_t* qr, parameter_gt kr, parameter_gt freq_resonant, parameter_gt freq_cut,
                                       parameter_gt fs)
 {
+    gmp_base_assert(fs > 0.0);
+
     parameter_gt wr = CTL_PARAM_CONST_2PI * freq_resonant;
     parameter_gt wc = CTL_PARAM_CONST_2PI * freq_cut;
 
@@ -168,118 +144,14 @@ void ctl_init_qr_controller_prewarped(qr_ctrl_t* qr, parameter_gt kr, parameter_
 void ctl_init_qpr_controller(qpr_ctrl_t* qpr, parameter_gt kp, parameter_gt kr, parameter_gt freq_resonant,
                              parameter_gt freq_cut, parameter_gt fs)
 {
-    qpr->kp = kp;
+    qpr->kp = float2ctrl(kp);
     ctl_init_qr_controller(&qpr->resonant_part, kr, freq_resonant, freq_cut, fs);
 }
 
 void ctl_init_qpr_controller_prewarped(qpr_ctrl_t* qpr, parameter_gt kp, parameter_gt kr, parameter_gt freq_resonant,
                                        parameter_gt freq_cut, parameter_gt fs)
 {
-    qpr->kp = kp;
+    qpr->kp = float2ctrl(kp);
     ctl_init_qr_controller_prewarped(&qpr->resonant_part, kr, freq_resonant, freq_cut, fs);
 }
 
-//void ctl_init_resonant_controller(
-//    // handle of PR controller
-//    resonant_ctrl_t* r,
-//    // gain of resonant frequency
-//    parameter_gt kr,
-//    // resonant frequency, unit Hz
-//    parameter_gt freq_resonant,
-//    // controller frequency
-//    parameter_gt fs)
-//{
-//    // resonant frequency, unit rad/s
-//    parameter_gt omega_r = CTL_PARAM_CONST_2PI * freq_resonant;
-//
-//    r->krg = float2ctrl(kr * (4 * fs) / (4 * fs * fs + omega_r * omega_r));
-//    r->kr = float2ctrl(2 * (4 * fs * fs - omega_r * omega_r) / (4 * fs * fs + omega_r * omega_r));
-//
-//    // clear temp variables
-//    ctl_clear_resonant_controller(r);
-//}
-//
-//void ctl_init_pr_controller(
-//    // handle of PR controller
-//    pr_ctrl_t *pr,
-//    // Kp
-//    parameter_gt kp,
-//    // gain of resonant frequency
-//    parameter_gt kr,
-//    // resonant frequency, unit Hz
-//    parameter_gt freq_resonant,
-//    // controller frequency
-//    parameter_gt fs)
-//{
-//    // resonant frequency, unit rad/s
-//    parameter_gt omega_r = CTL_PARAM_CONST_2PI * freq_resonant;
-//
-//    pr->kpg = float2ctrl(kp);
-//    pr->krg = float2ctrl(kr * (4 * fs) / (4 * fs * fs + omega_r * omega_r));
-//    pr->kr = float2ctrl(2 * (4 * fs * fs - omega_r * omega_r) / (4 * fs * fs + omega_r * omega_r));
-//
-//    // clear temp variables
-//    ctl_clear_pr_controller(pr);
-//}
-//
-//void ctl_init_qr_controller(
-//    // handle of QR controller
-//    qr_ctrl_t* qr,
-//    // gain of resonant frequency
-//    parameter_gt kr,
-//    // resonant frequency, unit Hz
-//    parameter_gt freq_resonant,
-//    // cut frequency, unit Hz
-//    parameter_gt freq_cut,
-//    // controller frequency
-//    parameter_gt fs)
-//{
-//    ctl_clear_qr_controller(qr);
-//
-//    parameter_gt omega_r_sqr = 4.0f * PI * PI * freq_resonant * freq_resonant;
-//    parameter_gt omega_c_fs = 4.0f * 2.0f * PI * freq_cut * fs;
-//
-//    parameter_gt kr_suffix = 4.0f * freq_cut * fs / (4.0f * fs * fs + omega_c_fs + omega_r_sqr);
-//
-//    parameter_gt b1 = 2.0f * (4.0f * fs * fs - omega_r_sqr) / (4.0f * fs * fs + omega_c_fs + omega_r_sqr);
-//    parameter_gt b2 = (4.0f * fs * fs - omega_c_fs + omega_r_sqr) / (4.0f * fs * fs + omega_c_fs + omega_r_sqr);
-//
-//    // Discrete parameters
-//    qr->a0 = float2ctrl(kr_suffix);
-//    qr->b1 = float2ctrl(b1);
-//    qr->b2 = float2ctrl(b2);
-//    qr->kr = float2ctrl(kr);
-//}
-//
-//void ctl_init_qpr_controller(
-//    // handle of QPR controller
-//    qpr_ctrl_t *qpr,
-//    // Kp
-//    parameter_gt kp,
-//    // gain of resonant frequency
-//    parameter_gt kr,
-//    // resonant frequency, unit Hz
-//    parameter_gt freq_resonant,
-//    // cut frequency, unit Hz
-//    parameter_gt freq_cut,
-//    // controller frequency
-//    parameter_gt fs)
-//{
-//    ctl_clear_qpr_controller(qpr);
-//
-//    parameter_gt omega_r_sqr = 4.0f * PI * PI * freq_resonant * freq_resonant;
-//    parameter_gt omega_c_fs = 4.0f * 2.0f * PI * freq_cut * fs;
-//
-//    parameter_gt kr_suffix = 4.0f * freq_cut * fs / (4.0f * fs * fs + omega_c_fs + omega_r_sqr);
-//
-//    parameter_gt b1 = 2.0f * (4.0f * fs * fs - omega_r_sqr) / (4.0f * fs * fs + omega_c_fs + omega_r_sqr);
-//    parameter_gt b2 = (4.0f * fs * fs - omega_c_fs + omega_r_sqr) / (4.0f * fs * fs + omega_c_fs + omega_r_sqr);
-//
-//    // Discrete parameters
-//    qpr->a0 = float2ctrl(kr_suffix);
-//    qpr->b1 = float2ctrl(b1);
-//    qpr->b2 = float2ctrl(b2);
-//
-//    qpr->kp = float2ctrl(kp);
-//    qpr->kr = float2ctrl(kr);
-//}
