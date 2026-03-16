@@ -17,13 +17,13 @@ void ctl_upgrade_ladrc1(ctl_ladrc1_t* ladrc, parameter_gt b0, parameter_gt fc, p
     parameter_gt b0_safe = (b0 > 1e-9f || b0 < -1e-9f) ? b0 : 1.0f; // Prevent Div by 0
 
     // 2. Physical Radian Frequencies
-    parameter_gt h = 1.0f / fs_safe;
+    parameter_gt h = (parameter_gt)1.0f / fs_safe;
     parameter_gt wc = CTL_PARAM_CONST_2PI * fc;
     parameter_gt wo = CTL_PARAM_CONST_2PI * fo;
 
     // 3. Absorbed Coefficients Calculation (Float/Parameter space)
     parameter_gt h_b0_phy = h * b0_safe;
-    parameter_gt h_beta1_phy = h * 2.0f * wo;
+    parameter_gt h_beta1_phy = h * (parameter_gt)2.0f * wo;
     parameter_gt h_beta2_b0_phy = h * (wo * wo) / b0_safe;
     parameter_gt kp_b0_phy = wc / b0_safe;
 

@@ -1,6 +1,7 @@
 /**
  * @file ladrc2.h
  * @brief Implements a highly optimized, Fixed-Point friendly 2nd-Order LADRC.
+ * @warning To maintain stability with Euler discretization, ensure the sampling frequency (fs) is at least 10 times the observer bandwidth (fo).
  *
  * @version 1.0
  * @date 2024-10-26

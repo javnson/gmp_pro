@@ -17,7 +17,11 @@ void ctl_upgrade_ladrc2(ctl_ladrc2_t* ladrc, parameter_gt b0, parameter_gt fc, p
 {
     // 1. Safe Guards
     parameter_gt fs_safe = (fs > 1e-6f) ? fs : 10000.0f;
-    parameter_gt b0_safe = (b0 > 1e-9f || b0 < -1e-9f) ? b0 : 1.0f; // Prevent Div by 0
+    parameter_gt b0_safe = b0;
+    if (b0 >= 0.0f && b0 < 1e-9f)
+        b0_safe = 1e-9f;
+    else if (b0 < 0.0f && b0 > -1e-9f)
+        b0_safe = -1e-9f;
 
     // 2. Physical Radian Frequencies
     parameter_gt h = 1.0f / fs_safe;
