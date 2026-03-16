@@ -1,5 +1,5 @@
 {
-    "sync_mode": "inc_only",
+    "sync_mode": "src_only",
     "selected_modules": [
         {
             "root": "core",

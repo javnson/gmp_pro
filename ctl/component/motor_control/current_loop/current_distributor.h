@@ -1,142 +1,258 @@
-/**
- * @file current_distributor.h
- * @brief Implements a current distributor using a look-up table (LUT).
- *
- * @version 0.2
- * @date 2025-08-06
- */
+// Current Allocation using Lookup Table
+// Distributes current idq based on the input im and alpha using a lookup table(im-alpha)
+// The im isometric distribution of the lookup table is required
+
+
+
+#include <ctl\component\intrinsic\continuous\continuous_pid.h>
 
 #ifndef _FILE_CURRENT_DISTRIBUTOR_H_
 #define _FILE_CURRENT_DISTRIBUTOR_H_
 
-#include <ctl/component/intrinsic/advance/surf_search.h> // Dependency for LUT search and interpolation
+
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif // __cplusplus
 
-/*---------------------------------------------------------------------------*/
-/* Look-up Table based Current Distributor                                   */
-/*---------------------------------------------------------------------------*/
 
-/**
- * @defgroup CURRENT_DISTRIBUTOR LUT Current Distributor
- * @brief Distributes a total current command into Id and Iq components via a LUT.
- * @details This module takes a total current magnitude command (Im) and distributes
- * it into d-axis (Id) and q-axis (Iq) components. The distribution is
- * determined by a current angle (alpha), which can either be a fixed constant
- * or interpolated from a 1D look-up table using the functions provided by
- * the surf_search module. This is typically used to implement strategies like
- * MTPA (Maximum Torque Per Ampere) where the optimal current angle varies
- * with the total current.
- * @{
- */
-
-//================================================================================
-// Type Defines & Enums
-//================================================================================
-
-/**
- * @brief Defines the operating modes for the current distributor.
- */
 typedef enum
 {
-    DIST_MODE_CONST_ALPHA, ///< Use a fixed, constant current angle (alpha).
-    DIST_MODE_LUT_LINEAR   ///< Use a 1D Look-Up Table to find alpha based on current magnitude.
-} ctl_dist_mode_t;
+    CONST_ALPHA, // Constant alpha
+    LUT_LINEAR   // LUT, linear interpolation
+} distribution_mode_t;
 
-/**
- * @brief Main structure for the LUT-based current distributor.
- */
 typedef struct
 {
-    // --- Outputs ---
-    ctrl_gt id_ref; ///< The calculated d-axis current reference.
-    ctrl_gt iq_ref; ///< The calculated q-axis current reference.
+    parameter_gt fs;
 
-    // --- Configuration & State ---
-    ctl_dist_mode_t mode; ///< The selected distribution mode.
-    ctrl_gt const_alpha;  ///< The fixed angle used in CONST_ALPHA mode (in radians).
+    parameter_gt v_lim;
+    parameter_gt v_base;
 
-    // --- LUT Data (for LUT_LINEAR mode) ---
-    ctl_lut1d_t im_axis_lut;     ///< The LUT structure for the current magnitude (Im) axis.
-    const ctrl_gt* alpha_values; ///< Pointer to the array of corresponding alpha values (in radians).
+    parameter_gt alpha_init;
 
-} ctl_current_distributor_t;
+    distribution_mode_t mode; // const/LUT of alpha
 
-//================================================================================
-// Function Prototypes & Definitions
-//================================================================================
+    parameter_gt kp_fw;
+    parameter_gt ki_fw;
+    parameter_gt alpha_lim_pi;
 
-/**
- * @brief Initializes the current distributor.
- * @details Sets up the distributor's mode and configures the look-up table data
- * if LUT mode is selected.
- * @param[out] dist Pointer to the current distributor structure.
- * @param[in]  mode The desired operating mode (CONST_ALPHA or LUT_LINEAR).
- * @param[in]  im_axis Pointer to the array of current magnitude (Im) values for the LUT's x-axis.
- * @param[in]  alpha_values Pointer to the array of corresponding current angle (alpha) values for the LUT's y-axis.
- * @param[in]  lut_size The number of elements in the LUT arrays.
- * @param[in]  const_alpha_rad The fixed angle (in radians) to be used in CONST_ALPHA mode.
- */
-void ctl_init_current_distributor(ctl_current_distributor_t* dist, ctl_dist_mode_t mode, const ctrl_gt* im_axis,
-                                  const ctrl_gt* alpha_values, uint32_t lut_size, ctrl_gt const_alpha_rad);
 
-/**
- * @brief Executes one step of the current distribution calculation.
- * @param[out] dist Pointer to the current distributor structure.
- * @param[in]  im_cmd The signed, total torque-producing current command from the speed loop.
- */
-GMP_STATIC_INLINE void ctl_step_current_distributor(ctl_current_distributor_t* dist, ctrl_gt im_cmd)
+} distribution_init_t;
+
+#define V_LIMIT_DEFUALT 294.5f
+#define ALPHA_LIMIT_PI 0.055 // 30deg/360deg=0.083
+#define ALPHA_LIMIT_FLUXWEAK 0.472 // 170deg/360deg=0.472
+#define ALPHA_NEG_TORQUE 0.625 // 225deg/360deg=0.625
+
+typedef struct
 {
-    ctrl_gt alpha;
-    ctrl_gt im_mag = fabsf(im_cmd);
+    ctrl_gt im;    // current amplitude
+    ctrl_gt alpha; // advance d-axis
+} current_lookup_table_t;
 
-    // 1. Determine the current angle 'alpha' based on the selected mode.
-    if (dist->mode == DIST_MODE_LUT_LINEAR)
+
+void ctl_autotuning_idq_current_distributor(distribution_init_t* init)
+{
+    init->mode = CONST_ALPHA;
+
+    init->kp_fw = 0.05f;
+    init->ki_fw = 0.005f;
+    init->alpha_lim_pi = ALPHA_LIMIT_PI;
+}
+
+
+typedef struct _tag_idq_current_distributor
+{
+    // input parameters
+    ctrl_gt im;    // Input current magnitude
+    ctrl_gt alpha; // Current angle (alpha)
+
+    // output parameters
+    ctrl_gt id; // d-axis current
+    ctrl_gt iq; // q-axis current
+
+    // Configuration for current distribution
+    distribution_mode_t mode;             // Mode for alpha calculation
+    ctrl_gt alpha_coef[distributor->lut_size - 1];        // Alpha interpolation coefficients
+
+    // Field weakening
+    fast_gt FW_ENB;
+    ctrl_gt spd_set;
+    ctrl_gt ud_set;
+    ctrl_gt uq_set;
+    ctrl_gt u_amp;
+    ctrl_gt vs_limit;
+    ctl_pid_t fw_pid;
+    ctrl_gt alpha_lim_fw;
+    ctrl_gt alpha_neg_torque;
+
+    current_lookup_table_t* lut;
+    size_gt lut_size;
+
+
+} idq_current_distributor_t;
+
+// Initialize the current distributor configuration
+void ctl_init_idq_current_distributor(idq_current_distributor_t *distributor, distribution_init_t *init)
+{
+    distributor->mode = init->mode;
+    distributor->im = 0;
+    distributor->alpha = float2ctrl(init->alpha_init);
+    distributor->id = 0;
+    distributor->iq = 0;
+    distributor->spd_set=0;
+    distributor->ud_set=0;
+    distributor->uq_set=0;
+    distributor->u_amp=0;
+
+    //---FW init
+    distributor->FW_ENB=1;
+    distributor->vs_limit=init->v_lim/init->v_base;    // FW limit voltage, 95%*537V/sqrt(3)
+//    ctrl_gt fw_kp = 0.05f;
+//    ctrl_gt fw_ki = 0.005f;
+    ctl_init_pid(
+           // fw pid for current angle(rad)
+            &distributor->fw_pid,
+           // parameters for pid controller: Kd Ti Td
+            init->kp_fw, init->ki_fw, 0,
+           // controller frequency
+           init->fs);
+
+    ctl_set_pid_limit(&distributor->fw_pid, init->alpha_lim_pi, 0);  // 30deg/360deg=0.083
+//    distributor->fw_pid.integral_min = 0;
+//    distributor->fw_pid.integral_max = 0.083;
+    ctl_clear_pid(&distributor->fw_pid);
+
+    // If LUT_LINEAR mode is selected, calculate interpolation coefficients
+    if (mode == LUT_LINEAR)
     {
-        // Use the generic 1D interpolation function from surf_search.h
-        alpha = ctl_step_interpolate_lut1d(&dist->im_axis_lut, dist->alpha_values, im_mag);
+        calc_interpolation_coefficients(distributor);
     }
-    else // DIST_MODE_CONST_ALPHA
+}
+
+
+
+
+// Function to calculate the interpolation coefficients for the lookup table
+void calc_interpolation_coefficients(idq_current_distributor_t *distributor)
+{
+    uint32_t i;
+    for (i = 0; i < distributor->lut_size - 1; i++) {
+        ctrl_gt im_lower = CURRENT_DISTRIBUTION_LUT[i].im;
+        ctrl_gt im_upper = CURRENT_DISTRIBUTION_LUT[i + 1].im;
+        ctrl_gt alpha_lower = CURRENT_DISTRIBUTION_LUT[i].alpha;
+        ctrl_gt alpha_upper = CURRENT_DISTRIBUTION_LUT[i + 1].alpha;
+
+        // ·ÀÖ¹³ýÁã£¬È·±£ im_upper != im_lower
+        if (im_upper != im_lower) {
+            distributor->alpha_coef[i] = (alpha_upper - alpha_lower) / (im_upper - im_lower);
+        } else {
+            distributor->alpha_coef[i] = (alpha_upper - alpha_lower) / 2.0;
+        }
+    }
+}
+
+
+
+
+// Function to perform linear interpolation based on input im
+ctrl_gt linear_interpolation(idq_current_distributor_t *distributor)
+{
+    ctrl_gt im_search = distributor->im;
+    int index = (im_search - CURRENT_DISTRIBUTION_LUT[0].im) / CURRENT_DISTRIBUTION_LUT_STEP;
+
+    // Prevent out-of-bound access
+    if (index < 0)
+        index = 0;
+    if (index >= distributor->lut_size - 1)
+        index = distributor->lut_size - 2;
+
+    if (im_search < CURRENT_DISTRIBUTION_LUT[0].im)
+        im_search = CURRENT_DISTRIBUTION_LUT[0].im;
+    if (im_search > CURRENT_DISTRIBUTION_LUT[distributor->lut_size - 1].im)
+        im_search = CURRENT_DISTRIBUTION_LUT[distributor->lut_size - 1].im;
+
+    ctrl_gt im_lower = CURRENT_DISTRIBUTION_LUT[index].im;
+    ctrl_gt im_upper = CURRENT_DISTRIBUTION_LUT[index + 1].im;
+    ctrl_gt alpha_lower = CURRENT_DISTRIBUTION_LUT[index].alpha;
+    ctrl_gt alpha_upper = CURRENT_DISTRIBUTION_LUT[index + 1].alpha;
+
+    // Perform linear interpolation: alpha = alpha_lower + (input_im - im_lower) * alpha_coef
+//    return (alpha_lower + (distributor->im - im_lower) * (distributor->alpha_coef[index]));
+    ctrl_gt scale = distributor->alpha_coef[index];
+    ctrl_gt inc = (im_search - im_lower) * scale;
+    return (alpha_lower + inc);
+}
+
+
+
+
+
+
+
+// Step function to calculate id and iq currents based on the given im
+GMP_STATIC_INLINE
+void ctl_step_idq_current_distributor(idq_current_distributor_t *distributor)
+{
+
+    // Select the method for alpha calculation based on the mode
+    if (distributor->mode == CONST_ALPHA)
     {
-        alpha = dist->const_alpha;
+        // If using constant alpha, set alpha to a predefined value
+        distributor->alpha = CURRENT_DISTRIBUTION_ALPHA; // Example: constant alpha of 30 degrees
+    }
+    else if (distributor->mode == LUT_LINEAR)
+    {
+        // If using LUT_LINEAR mode, calculate alpha using linear interpolation
+        distributor->alpha = linear_interpolation(distributor);
     }
 
-    // 2. Calculate Id and Iq based on the total current magnitude and the angle alpha.
-    ctrl_gt id_mag = im_mag * cosf(alpha);
-    ctrl_gt iq_mag = im_mag * sinf(alpha);
+    // Field weakening
+    if (distributor->FW_ENB)
+    {
+        ctrl_gt vs_diff = distributor->u_amp-distributor->vs_limit;
+        distributor->alpha = ctl_sat ( (distributor->alpha + ctl_step_pid_ser(&distributor->fw_pid, vs_diff) ), distributor->alpha_lim_fw, 0);
+    }
 
-    // 3. Apply the original sign of the command to the torque-producing component (Iq).
-    // The sign of Id is determined by the LUT (typically negative for MTPA).
-    dist->id_ref = id_mag;
-    dist->iq_ref = (im_cmd >= 0.0f) ? iq_mag : -iq_mag;
+    // Calculate id and iq based on the computed alpha and input im
+    if (distributor->im < 0) // speed down
+    {
+        distributor->id = distributor->im * ctl_cos(distributor->alpha_neg_torque);
+        distributor->iq = distributor->im * ctl_sin(distributor->alpha_neg_torque);
+    }
+    else
+    {
+        distributor->id = distributor->im * ctl_cos(distributor->alpha); // Convert alpha to radians
+        distributor->iq = distributor->im * ctl_sin(distributor->alpha); // Convert alpha to radians
+    }
+
 }
 
-/**
- * @brief Gets the calculated d-axis current reference.
- * @param[in] dist Pointer to the current distributor structure.
- * @return The calculated d-axis current reference.
- */
-GMP_STATIC_INLINE ctrl_gt ctl_get_distributor_id_ref(const ctl_current_distributor_t* dist)
+GMP_STATIC_INLINE
+void distributor_set_im(idq_current_distributor_t *distributor, ctrl_gt im)
 {
-    return dist->id_ref;
+    distributor->im = im;
 }
 
-/**
- * @brief Gets the calculated q-axis current reference.
- * @param[in] dist Pointer to the current distributor structure.
- * @return The calculated q-axis current reference.
- */
-GMP_STATIC_INLINE ctrl_gt ctl_get_distributor_iq_ref(const ctl_current_distributor_t* dist)
+
+GMP_STATIC_INLINE
+void distributor_set_spd(idq_current_distributor_t *distributor, ctrl_gt spd)
 {
-    return dist->iq_ref;
+    distributor->spd_set=spd;
 }
 
-/** 
- *@} 
- */ // end of CURRENT_DISTRIBUTOR group
+
+GMP_STATIC_INLINE
+void distributor_set_fw(idq_current_distributor_t *distributor, ctrl_gt ud, ctrl_gt uq)
+{
+    distributor->ud_set=ud;
+    distributor->uq_set=uq;
+    distributor->u_amp=ctl_sqrt(ctl_mul(ud,ud)+ctl_mul(uq,uq));
+}
+
+
 
 #ifdef __cplusplus
 }
