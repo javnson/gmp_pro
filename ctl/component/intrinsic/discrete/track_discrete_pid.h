@@ -9,12 +9,12 @@
  *
  */
 
-#ifndef _TRACKING_PID_H_
-#define _TRACKING_PID_H_
-
 #include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl/component/intrinsic/basic/slope_limiter.h>
 #include <ctl/component/intrinsic/discrete/discrete_pid.h>
+
+#ifndef _TRACKING_PID_H_
+#define _TRACKING_PID_H_
 
 #ifdef __cplusplus
 extern "C"

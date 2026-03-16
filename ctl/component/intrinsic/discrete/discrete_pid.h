@@ -110,9 +110,11 @@ void ctl_init_discrete_pid(discrete_pid_t* pid, parameter_gt kp, parameter_gt Ti
  */
 GMP_STATIC_INLINE void ctl_clear_discrete_pid(discrete_pid_t* pid)
 {
-    pid->input_1 = 0;
-    pid->input_2 = 0;
-    pid->output_1 = 0;
+    pid->input = float2ctrl(0.0f);
+    pid->input_1 = float2ctrl(0.0f);
+    pid->input_2 = float2ctrl(0.0f);
+    pid->output = float2ctrl(0.0f);
+    pid->output_1 = float2ctrl(0.0f);
 }
 
 /**
