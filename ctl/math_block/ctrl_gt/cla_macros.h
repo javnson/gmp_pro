@@ -138,6 +138,10 @@ GMP_STATIC_INLINE float32_t saturation_static_inline(float32_t in, float32_t max
  */
 #define CTRL_GT_IS_FLOAT
 
+#ifndef CTL_EPSILON
+#define CTL_EPSILON (float2ctrl(1e-6f)) /**< @brief Threshold for zero-division avoidance. */
+#endif
+
 /** @} */ // end of MC_CLA_MACROS group
 
 #endif // _FILE_CLA_MACROS_H_

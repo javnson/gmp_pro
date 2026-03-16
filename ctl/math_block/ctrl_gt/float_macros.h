@@ -168,6 +168,10 @@ GMP_STATIC_INLINE float abs_static_inline(float A)
  */
 #define CTRL_GT_IS_FLOAT
 
+#ifndef CTL_EPSILON
+#define CTL_EPSILON (float2ctrl(1e-6f)) /**< @brief Threshold for zero-division avoidance. */
+#endif
+
 /** @} */ // end of MC_FLOAT_MACROS group
 
 #endif // _FILE_FLOAT_MACROS_H_

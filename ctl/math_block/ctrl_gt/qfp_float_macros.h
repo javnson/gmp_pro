@@ -136,6 +136,10 @@ GMP_STATIC_INLINE float abs_static_inline(float A)
  */
 #define CTRL_GT_IS_QFP_FLOAT
 
+#ifndef CTL_EPSILON
+#define CTL_EPSILON (float2ctrl(1e-6f)) /**< @brief Threshold for zero-division avoidance. */
+#endif
+
 /**  
  * @} 
  */ // end of MC_QFP_MACROS group

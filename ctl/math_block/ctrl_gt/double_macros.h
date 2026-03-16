@@ -168,6 +168,10 @@ GMP_STATIC_INLINE double abs_static_inline(double A)
  */
 #define CTRL_GT_IS_DOUBLE
 
+#ifndef CTL_EPSILON
+#define CTL_EPSILON (float2ctrl(1e-6f)) /**< @brief Threshold for zero-division avoidance. */
+#endif
+
 /** @} */ // end of MC_DOUBLE_MACROS group
 
 #endif // _FILE_DOUBLE_MACROS_H_

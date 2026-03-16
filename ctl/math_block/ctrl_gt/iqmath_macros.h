@@ -3,7 +3,7 @@
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Defines a set of macros for fixed-point arithmetic using the IQmath library.
  * @version 0.1
- * @date 2042-09-30
+ * @date 2024-09-30
  *
  * @copyright Copyright GMP(c) 2024
  *
@@ -125,6 +125,10 @@ GMP_STATIC_INLINE _iq abs_static_inline(_iq A)
  * This can be used for conditional compilation in other parts of the library.
  */
 #define CTRL_GT_IS_FIXED
+
+#ifndef CTL_EPSILON
+#define CTL_EPSILON (float2ctrl(1e-6f)) /**< @brief Threshold for zero-division avoidance. */
+#endif
 
 /** @} */ // end of MC_IQMATH_MACROS group
 
