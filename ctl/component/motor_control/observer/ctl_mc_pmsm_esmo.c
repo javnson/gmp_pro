@@ -1,11 +1,4 @@
 
-#include <gmp_core.h>
-
-//////////////////////////////////////////////////////////////////////////
-// pmsm smo
-
-#include <ctl/component/motor_control/observer/pmsm_esmo.h>
-
 /**
  * @file pmsm_esmo.c
  * @author Javnson (javnson@zju.edu.cn)
@@ -17,7 +10,15 @@
  * @copyright Copyright GMP(c) 2024
  */
 
-#include "pmsm_esmo.h"
+
+#include <gmp_core.h>
+
+//////////////////////////////////////////////////////////////////////////
+// pmsm smo
+
+#include <ctl/component/motor_control/observer/pmsm_esmo.h>
+
+
 
 void ctl_init_pmsm_esmo_consultant(ctl_pmsm_esmo_t* esmo, const ctl_consultant_pmsm_t* motor,
                                    const ctl_consultant_pu_pmsm_t* pu, parameter_gt fs, parameter_gt fc_emf,

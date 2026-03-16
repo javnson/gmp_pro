@@ -16,8 +16,6 @@
  *
  */
 
-#ifndef _FILE_PMSM_SMO_H_
-#define _FILE_PMSM_SMO_H_
 
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
@@ -27,6 +25,10 @@
 #include <ctl/component/motor_control/observer/ato_pll.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 #include <ctl/math_block/vector_lite/vector2.h>
+
+#ifndef _FILE_PMSM_SMO_H_
+#define _FILE_PMSM_SMO_H_
+
 
 #ifdef __cplusplus
 extern "C"
