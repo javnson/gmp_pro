@@ -107,10 +107,11 @@ void ctl_init_mrac(ctl_mrac_controller_t* mrac, const ctl_mrac_init_t* init);
  */
 GMP_STATIC_INLINE void ctl_clear_mrac(ctl_mrac_controller_t* mrac)
 {
-    mrac->u_out = 0.0f;
-    mrac->k_r = 0.0f;
-    mrac->k_y = 0.0f;
-    mrac->y_m = 0.0f;
+    // 修复 3：强制类型隔离
+    mrac->u_out = float2ctrl(0.0f);
+    mrac->k_r = float2ctrl(0.0f);
+    mrac->k_y = float2ctrl(0.0f);
+    mrac->y_m = float2ctrl(0.0f);
 }
 
 /**
@@ -124,22 +125,28 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_mrac(ctl_mrac_controller_t* mrac, ctrl_gt r, 
 {
     // 1. Update the reference model to get the desired output for this step
     // y_m(k) = a_m_d * y_m(k-1) + b_m_d * r(k-1)
-    mrac->y_m = mrac->a_m_d * mrac->y_m + mrac->b_m_d * r;
+    // 修复 1：使用 ctl_mul 防止定点溢出
+    mrac->y_m = ctl_mul(mrac->a_m_d, mrac->y_m) + ctl_mul(mrac->b_m_d, r);
 
-    // 2. Calculate the tracking error
-    ctrl_gt error = y_p - mrac->y_m;
+    // 2. Calculate the tracking error between plant and reference model
+    ctrl_gt e = y_p - mrac->y_m;
 
-    // 3. Update the adaptive gains using the discretized MIT rule
-    // k(k) = k(k-1) - gamma * error * signal
-    mrac->k_r -= mrac->gamma_r_d * error * r;
-    mrac->k_y += mrac->gamma_y_d * error * y_p;
+    // 3. Update adaptive gains
+    // k_r(k) = k_r(k-1) - gamma_r_d * e * r
+    // 修复 1：将三重乘法拆分为安全的双重 ctl_mul
+    ctrl_gt e_times_r = ctl_mul(e, r);
+    mrac->k_r = mrac->k_r - ctl_mul(mrac->gamma_r_d, e_times_r);
+
+    // k_y(k) = k_y(k-1) + gamma_y_d * e * y_p
+    ctrl_gt e_times_yp = ctl_mul(e, y_p);
+    mrac->k_y = mrac->k_y + ctl_mul(mrac->gamma_y_d, e_times_yp);
 
     // 4. Calculate the control law
-    mrac->u_out = mrac->k_r * r - mrac->k_y * y_p;
+    // u = k_r * r - k_y * y_p
+    mrac->u_out = ctl_mul(mrac->k_r, r) - ctl_mul(mrac->k_y, y_p);
 
     return mrac->u_out;
 }
-
 /**
  * @}
  */ // end of ADAPTIVE_CONTROLLER group

@@ -66,22 +66,19 @@ void ctl_init_paired_lut1d(ctl_paired_lut1d_t* lut, const ctl_lut1d_pair_t* tabl
  */
 GMP_STATIC_INLINE int32_t ctl_search_paired_lut1d_index(const ctl_paired_lut1d_t* lut, ctrl_gt target)
 {
-    // Handle out-of-bounds cases
-    if (target < lut->table[0].x)
-    {
-        return -1;
-    }
-    if (target >= lut->table[lut->size - 1].x)
-    {
-        return lut->size - 2;
-    }
+    // 修复 2：使用 int32_t 防止游标下溢出 (MISRA C compliant)
+    int32_t left = 0;
+    int32_t right = (int32_t)lut->size - 1;
 
-    // Binary search
-    uint32_t left = 0;
-    uint32_t right = lut->size - 1;
+    // 边界极速拦截，防止无意义的二分搜索
+    if (target < lut->table[0].x)
+        return -1;
+    if (target >= lut->table[right].x)
+        return right;
+
     while (left <= right)
     {
-        uint32_t mid = left + (right - left) / 2;
+        int32_t mid = left + (right - left) / 2;
         if (lut->table[mid].x > target)
         {
             right = mid - 1;
@@ -107,24 +104,38 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_interpolate_paired_lut1d(const ctl_paired_lut
     // Handle boundary conditions (Clamp to extremes)
     if (index < 0)
     {
-        return lut->table[0].y; // Target is below the range
+        return lut->table[0].y;
     }
     if ((uint32_t)index >= lut->size - 1)
     {
-        return lut->table[lut->size - 1].y; // Target is above the range
+        return lut->table[lut->size - 1].y;
     }
 
-    // Linear interpolation
+    // Linear interpolation parameters
     ctrl_gt x0 = lut->table[index].x;
     ctrl_gt y0 = lut->table[index].y;
     ctrl_gt x1 = lut->table[index + 1].x;
     ctrl_gt y1 = lut->table[index + 1].y;
 
-    // Weight calculation: (target - x0) / (x1 - x0)
-    ctrl_gt weight = ctl_div(target - x0, x1 - x0);
+    ctrl_gt dx = x1 - x0;
+    ctrl_gt dy = y1 - y0;
 
-    // Result: y0 + weight * (y1 - y0)
-    return y0 + ctl_mul(weight, (y1 - y0));
+    // 修复 3：定点安全零比较
+    if (dx == float2ctrl(0.0f))
+    {
+        return y0;
+    }
+
+    // 修复 1：彻底抛弃浮点转换！在纯定点域 (ctrl_gt) 中使用底层宏完成计算
+    // 公式: y = y0 + (target - x0) * (dy / dx)
+    // 注意：为了防止除法截断丢失精度，我们先算乘法，再算除法 (或者使用 ctl_div 保证定点精度)
+    ctrl_gt delta_x = target - x0;
+
+    // 使用 ctl_div 计算出定点域的斜率，再乘以 delta_x
+    ctrl_gt slope = ctl_div(dy, dx);
+    ctrl_gt delta_y = ctl_mul(slope, delta_x);
+
+    return y0 + delta_y;
 }
 
 /**

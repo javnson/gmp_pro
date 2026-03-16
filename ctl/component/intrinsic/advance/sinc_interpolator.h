@@ -40,14 +40,13 @@ extern "C"
  */
 typedef struct _tag_sinc_interpolator_t
 {
-    uint32_t num_taps;   //!< The number of FIR filter taps (the length of the Sinc kernel). Must be even.
-    uint32_t table_size; //!< The number of pre-calculated filter sets in the LUT (resolution).
+    ctrl_gt* buffer;     //!< Pointer to externally allocated circular buffer (size: num_taps).
+    ctrl_gt* sinc_table; //!< Pointer to externally allocated 1D flattened table (size: table_size * num_taps).
 
-    ctrl_gt** sinc_table;  //!< 2D LUT storing the pre-calculated windowed-sinc coefficients.
-    ctrl_gt* buffer;       //!< Circular buffer for storing past input samples.
+    uint32_t num_taps;     //!< Length of the FIR filter (number of taps).
+    uint32_t table_size;   //!< Number of fractional delay intervals in the table.
     uint32_t buffer_index; //!< Current index for the circular buffer.
-
-    ctrl_gt output; //!< The last calculated interpolated output.
+    ctrl_gt output;        //!< The latest interpolated output.
 } ctl_sinc_interpolator_t;
 
 /**
@@ -62,11 +61,6 @@ typedef struct _tag_sinc_interpolator_t
  */
 fast_gt ctl_init_sinc_interpolator(ctl_sinc_interpolator_t* sinc, uint32_t num_taps, uint32_t table_size);
 
-/**
- * @brief Frees the memory allocated for the Sinc interpolator.
- * @param[in,out] sinc Pointer to the Sinc interpolator instance.
- */
-GMP_STATIC_INLINE void ctl_destroy_sinc_interpolator(ctl_sinc_interpolator_t* sinc);
 
 /**
  * @brief Clears the internal data buffer of the interpolator.
@@ -74,17 +68,16 @@ GMP_STATIC_INLINE void ctl_destroy_sinc_interpolator(ctl_sinc_interpolator_t* si
  */
 GMP_STATIC_INLINE void ctl_clear_sinc_interpolator(ctl_sinc_interpolator_t* sinc)
 {
-    uint32_t i;
+    sinc->buffer_index = 0;
+    sinc->output = float2ctrl(0.0f); // 修复：强类型清零
 
-    if (sinc->buffer != NULL)
+    if (sinc->buffer != 0)
     {
-        for (i = 0; i < sinc->num_taps; i++)
+        for (uint32_t i = 0; i < sinc->num_taps; i++)
         {
-            sinc->buffer[i] = 0.0f;
+            sinc->buffer[i] = float2ctrl(0.0f);
         }
     }
-    sinc->output = 0.0f;
-    sinc->buffer_index = 0;
 }
 
 /**
@@ -95,31 +88,37 @@ GMP_STATIC_INLINE void ctl_clear_sinc_interpolator(ctl_sinc_interpolator_t* sinc
  * @return ctrl_gt The interpolated output value.
  */
 GMP_STATIC_INLINE ctrl_gt ctl_step_sinc_interpolator(ctl_sinc_interpolator_t* sinc, ctrl_gt input,
-                                                     parameter_gt fractional_delay)
+                                                     ctrl_gt fractional_delay)
 {
     uint32_t i;
 
-    // --- Key Point Analysis 2: Update the Circular Buffer for Input Samples ---
+    // 1. Update the Circular Buffer
     sinc->buffer[sinc->buffer_index] = input;
 
-    // --- Key Point Analysis 3: Select FIR Filter Coefficients Based on Fractional Delay ---
-    // 'fractional_delay' is mapped to an index in the pre-calculated table, selecting
-    // the best-matching set of Sinc coefficients.
-    uint32_t table_index = (uint32_t)(fractional_delay * sinc->table_size);
+    // 2. Select FIR Filter Coefficients (修复 1：安全的索引映射)
+    // 防止 fractional_delay 作为大整数直接与 table_size 相乘导致溢出
+    parameter_gt fd_flt = ctrl2float(fractional_delay);
+    if (fd_flt < 0.0)
+        fd_flt = 0.0;
+    if (fd_flt > 1.0)
+        fd_flt = 1.0;
+
+    uint32_t table_index = (uint32_t)(fd_flt * (parameter_gt)sinc->table_size);
     if (table_index >= sinc->table_size)
     {
         table_index = sinc->table_size - 1;
     }
-    ctrl_gt* kernel = sinc->sinc_table[table_index];
 
-    // --- Key Point Analysis 4: Perform the Convolution Operation ---
-    // The output is calculated by convolving (dot product) the selected Sinc kernel
-    // (FIR coefficients) with the samples in the input buffer.
-    sinc->output = 0.0f;
+    // 架构升级：在展平的 1D 数组中极速定位 FIR 核的首地址
+    ctrl_gt* kernel = &sinc->sinc_table[table_index * sinc->num_taps];
+
+    // 3. Perform the Convolution Operation (修复 2：防止定点裸乘法溢出)
+    sinc->output = float2ctrl(0.0f);
     uint32_t j = sinc->buffer_index;
+
     for (i = 0; i < sinc->num_taps; i++)
     {
-        sinc->output += kernel[i] * sinc->buffer[j];
+        sinc->output += ctl_mul(kernel[i], sinc->buffer[j]);
         if (j == 0)
         {
             j = sinc->num_taps - 1;
@@ -130,7 +129,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinc_interpolator(ctl_sinc_interpolator_t* si
         }
     }
 
-    // Advance the circular buffer index for the next sample.
+    // 4. Advance buffer index
     sinc->buffer_index++;
     if (sinc->buffer_index >= sinc->num_taps)
     {

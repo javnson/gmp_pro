@@ -94,7 +94,8 @@ GMP_STATIC_INLINE void ctl_clear_repetitive_controller(ctl_repetitive_controller
             rc->state_buffer[i] = 0;
         }
     }
-    rc->output = 0;
+
+    rc->output = float2ctrl(0.0f);
     rc->buffer_index = 0;
 }
 
