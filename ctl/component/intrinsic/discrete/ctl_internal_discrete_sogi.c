@@ -15,6 +15,9 @@ void ctl_init_discrete_sogi(
     // isr frequency, Hz
     parameter_gt fs)
 {
+    gmp_base_assert(fs > 0.0);
+    gmp_base_assert(fn > 0.0);
+
     ctl_clear_discrete_sogi(sogi);
 
     parameter_gt osgx, osgy, temp, wn, delta_t;
@@ -27,17 +30,21 @@ void ctl_init_discrete_sogi(
     temp = (parameter_gt)1.0 / (osgx + osgy + 4.0f);
 
     sogi->b0 = float2ctrl(osgx * temp);
-    sogi->b2 = -sogi->b0;
+    sogi->b2 = float2ctrl(-osgx * temp);
     sogi->a1 = float2ctrl((2.0f * (4.0f - osgy)) * temp);
     sogi->a2 = float2ctrl((osgx - osgy - 4.0f) * temp);
-    sogi->qb0 = float2ctrl((k_damp * osgy) * temp);
-    sogi->qb1 = float2ctrl(sogi->qb0 * (2.0f));
+
+    parameter_gt qb0_f = (k_damp * osgy) * temp;
+    sogi->qb0 = float2ctrl(qb0_f);
+    sogi->qb1 = float2ctrl(qb0_f * (2.0f));
     sogi->qb2 = sogi->qb0;
 }
 
 void ctl_init_discrete_sogi_dc(discrete_sogi_dc_t* sogi_dc, parameter_gt k_damp, parameter_gt k_dc, parameter_gt fn,
                                parameter_gt fs)
 {
+    gmp_base_assert(fs > 0.0);
+
     // 1. Initialize Standard SOGI Core
     ctl_init_discrete_sogi(&sogi_dc->core, k_damp, fn, fs);
 
