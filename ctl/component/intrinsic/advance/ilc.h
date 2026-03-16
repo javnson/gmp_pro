@@ -62,24 +62,17 @@ typedef struct
 /**
  * @brief Main structure for the ILC controller.
  */
-typedef struct
+typedef struct _tag_ilc_t
 {
-    // --- Output ---
-    ctrl_gt u_out; ///< The calculated control output for the current time step.
+    ctrl_gt* u_k;         //!< Pointer to buffer for current control signal
+    ctrl_gt* u_k_minus_1; //!< Pointer to buffer for previous control signal
+    ctrl_gt* e_k_minus_1; //!< Pointer to buffer for previous error signal
 
-    // --- Buffers ---
-    ctrl_gt* u_k;         ///< Stores the control signal for the current iteration.
-    ctrl_gt* u_k_minus_1; ///< Stores the control signal from the previous iteration.
-    ctrl_gt* e_k_minus_1; ///< Stores the error from the previous iteration.
-
-    // --- State Variables ---
-    uint32_t time_step;  ///< The current time index within the trajectory (0 to N-1).
-    uint8_t is_learning; ///< Flag to enable/disable the learning process.
-
-    // --- Parameters ---
-    ctrl_gt learning_gain;      ///< Learning gain (L).
-    uint32_t trajectory_length; ///< Total number of steps in the trajectory (N).
-
+    ctrl_gt learning_gain;      //!< Learning gain (L)
+    uint32_t trajectory_length; //!< Total number of samples in one iteration
+    uint32_t time_step;         //!< Current sample index
+    fast_gt is_learning;        //!< Flag to enable/disable learning
+    ctrl_gt u_out;              //!< Current output
 } ctl_ilc_controller_t;
 
 //================================================================================
@@ -102,18 +95,8 @@ void ctl_init_ilc(ctl_ilc_controller_t* ilc, const ctl_ilc_init_t* init);
  */
 GMP_STATIC_INLINE void ctl_clear_ilc(ctl_ilc_controller_t* ilc)
 {
-    uint32_t i;
-
-    ilc->u_out = 0.0f;
+    ilc->u_out = float2ctrl(0.0f);
     ilc->time_step = 0;
-    ilc->is_learning = 0; // Learning is disabled by default
-
-    for (i = 0; i < ilc->trajectory_length; ++i)
-    {
-        ilc->u_k[i] = 0.0f;
-        ilc->u_k_minus_1[i] = 0.0f;
-        ilc->e_k_minus_1[i] = 0.0f;
-    }
 }
 
 /**
@@ -122,21 +105,21 @@ GMP_STATIC_INLINE void ctl_clear_ilc(ctl_ilc_controller_t* ilc)
  * trajectory. It updates the stored control and error signals for the next run.
  * @param[out] ilc Pointer to the ILC structure.
  */
-GMP_STATIC_INLINE void ctl_start_new_iteration(ctl_ilc_controller_t* ilc)
-{
-    uint32_t i;
-
-    // The control signal from the completed iteration becomes the base for the next one.
-    // The error from the completed iteration is now the error from the "previous" run.
-    for (i = 0; i < ilc->trajectory_length; ++i)
-    {
-        ilc->u_k_minus_1[i] = ilc->u_k[i];
-        // The error buffer e_k_minus_1 is now ready to be used for the new iteration.
-    }
-
-    // Reset the time step to the beginning of the trajectory
-    ilc->time_step = 0;
-}
+//GMP_STATIC_INLINE void ctl_start_new_iteration(ctl_ilc_controller_t* ilc)
+//{
+//    uint32_t i;
+//
+//    // The control signal from the completed iteration becomes the base for the next one.
+//    // The error from the completed iteration is now the error from the "previous" run.
+//    for (i = 0; i < ilc->trajectory_length; ++i)
+//    {
+//        ilc->u_k_minus_1[i] = ilc->u_k[i];
+//        // The error buffer e_k_minus_1 is now ready to be used for the new iteration.
+//    }
+//
+//    // Reset the time step to the beginning of the trajectory
+//    ilc->time_step = 0;
+//}
 
 /**
  * @brief Executes one step of the Iterative Learning Control algorithm.
@@ -147,13 +130,13 @@ GMP_STATIC_INLINE void ctl_start_new_iteration(ctl_ilc_controller_t* ilc)
  */
 GMP_STATIC_INLINE ctrl_gt ctl_step_ilc(ctl_ilc_controller_t* ilc, ctrl_gt r, ctrl_gt y_p)
 {
+    // 修复 2：极度关键的内存越界保护 (Buffer Overflow Protection)
     if (ilc->time_step >= ilc->trajectory_length)
     {
-        // Trajectory is finished for this iteration, hold the last output
+        // 轨迹已结束，拒绝越界访问数组，直接返回最后的输出
         return ilc->u_out;
     }
 
-    // 1. Calculate the ILC update law
     if (ilc->is_learning)
     {
         // u_k(t) = u_{k-1}(t) + L * e_{k-1}(t)
@@ -161,21 +144,35 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_ilc(ctl_ilc_controller_t* ilc, ctrl_gt r, ctr
     }
     else
     {
-        // If learning is disabled, just use the control signal from the last converged iteration
         ilc->u_out = ilc->u_k_minus_1[ilc->time_step];
     }
 
-    // 2. Calculate and store the error for the *next* iteration
+    // Calculate and store the error for the *next* iteration
     ctrl_gt current_error = r - y_p;
-    ilc->e_k_minus_1[ilc->time_step] = current_error; // This will be e_{k-1} in the next run
+    ilc->e_k_minus_1[ilc->time_step] = current_error;
 
-    // 3. Store the control signal for the *next* iteration
+    // Store the control signal for the *next* iteration
     ilc->u_k[ilc->time_step] = ilc->u_out;
 
-    // 4. Advance the time step
+    // Advance the time step
     ilc->time_step++;
 
     return ilc->u_out;
+}
+
+/**
+ * @brief Completes the current iteration and prepares for the next one (Epoch Swap).
+ * @details 修复 3：通过指针交换实现 O(1) 的极速“世代交替”，必须在每次轨迹周期结束时调用。
+ */
+GMP_STATIC_INLINE void ctl_finish_ilc_iteration(ctl_ilc_controller_t* ilc)
+{
+    // Swap the pointers: current control u_k becomes previous u_k_minus_1
+    ctrl_gt* temp_ptr = ilc->u_k_minus_1;
+    ilc->u_k_minus_1 = ilc->u_k;
+    ilc->u_k = temp_ptr; // The old u_k_minus_1 becomes the new working buffer for u_k
+
+    // Reset the time step for the new iteration
+    ilc->time_step = 0;
 }
 
 /**
