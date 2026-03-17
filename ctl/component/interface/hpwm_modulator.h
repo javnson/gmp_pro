@@ -67,8 +67,7 @@ void ctl_init_single_phase_H_modulation(single_phase_H_modulation_t* bridge, pwm
  * @brief Clears the internal state of the modulation module.
  * @param[out] bridge Handle of the modulation object.
  */
-GMP_STATIC_INLINE
-void ctl_clear_single_phase_H_modulation(single_phase_H_modulation_t* bridge)
+GMP_STATIC_INLINE void ctl_clear_single_phase_H_modulation(single_phase_H_modulation_t* bridge)
 {
     bridge->phase_L = 0;
     bridge->phase_N = 0;
@@ -83,8 +82,8 @@ void ctl_clear_single_phase_H_modulation(single_phase_H_modulation_t* bridge)
  * @param[in] u_target The target output voltage modulation index (-1.0 to 1.0).
  * @param[in] inverter_current The measured instantaneous output current.
  */
-GMP_STATIC_INLINE
-void ctl_step_single_phase_H_modulation(single_phase_H_modulation_t* bridge, ctrl_gt u_target, ctrl_gt inverter_current)
+GMP_STATIC_INLINE void ctl_step_single_phase_H_modulation(single_phase_H_modulation_t* bridge, ctrl_gt u_target,
+                                                          ctrl_gt inverter_current)
 {
     // 1. Detect current direction with hysteresis to prevent chattering near zero crossing.
     if (inverter_current > bridge->current_deadband)
@@ -130,8 +129,7 @@ void ctl_step_single_phase_H_modulation(single_phase_H_modulation_t* bridge, ctr
  * @param[in] bridge Handle of the modulation object.
  * @return The PWM compare value for the 'L' phase.
  */
-GMP_STATIC_INLINE
-pwm_gt ctl_get_single_phase_modulation_L_phase(single_phase_H_modulation_t* bridge)
+GMP_STATIC_INLINE pwm_gt ctl_get_single_phase_modulation_L_phase(single_phase_H_modulation_t* bridge)
 {
     return bridge->phase_L;
 }
@@ -141,8 +139,7 @@ pwm_gt ctl_get_single_phase_modulation_L_phase(single_phase_H_modulation_t* brid
  * @param[in] bridge Handle of the modulation object.
  * @return The PWM compare value for the 'N' phase.
  */
-GMP_STATIC_INLINE
-pwm_gt ctl_get_single_phase_modulation_N_phase(single_phase_H_modulation_t* bridge)
+GMP_STATIC_INLINE pwm_gt ctl_get_single_phase_modulation_N_phase(single_phase_H_modulation_t* bridge)
 {
     return bridge->phase_N;
 }

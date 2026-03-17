@@ -16,7 +16,8 @@
 
 #include <ctl/component/interface/adc_channel.h>
 #include <ctl/component/interface/pwm_channel.h>
-#include <ctl/component/interface/pwm_modulator.h>
+#include <ctl/component/interface/spwm_modulator.h>
+
 
 #include <ctl/component/motor_control/basic/encoder.h>
 #include <ctl/component/motor_control/basic/mtr_protection.h>
