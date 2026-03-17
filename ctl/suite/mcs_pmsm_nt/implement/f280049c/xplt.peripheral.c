@@ -252,13 +252,13 @@ void send_monitor_data(void)
     CAN_sendMessage(IRIS_CAN_BASE, 5, 8, (uint16_t*)tran_content);
 
     // 0x203: Monitor Velocity following
-    tran_content[0].i32 = (int32_t)(motion_ctrl.spd_if->speed * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(motion_ctrl.target_velocity * CAN_SCALE_FACTOR);
+//    tran_content[0].i32 = (int32_t)(motion_ctrl.spd_if->speed * CAN_SCALE_FACTOR);
+//    tran_content[1].i32 = (int32_t)(motion_ctrl.target_velocity * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 6, 8, (uint16_t*)tran_content);
 
     // 0x204: TODO Monitor elec-position following
-    tran_content[0].i32 = (int32_t)(motion_ctrl.pos_if->position * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(motion_ctrl.target_angle * CAN_SCALE_FACTOR);
+//    tran_content[0].i32 = (int32_t)(motion_ctrl.pos_if->position * CAN_SCALE_FACTOR);
+//    tran_content[1].i32 = (int32_t)(motion_ctrl.target_angle * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 7, 8, (uint16_t*)tran_content);
 
     // 0x205: Monitor DC Voltage / ISR tick

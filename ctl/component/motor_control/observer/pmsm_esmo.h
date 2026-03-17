@@ -25,6 +25,7 @@
 #include <ctl/component/motor_control/observer/ato_pll.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 #include <ctl/math_block/vector_lite/vector2.h>
+#include <ctl/component/motor_control/current_loop/foc_core.h>
 
 #ifndef _FILE_PMSM_SMO_H_
 #define _FILE_PMSM_SMO_H_
@@ -146,6 +147,19 @@ typedef struct _tag_pmsm_esmo_init_t
  * @param[in]  init Pointer to the raw initialization structure.
  */
 void ctl_init_pmsm_esmo(ctl_pmsm_esmo_t* esmo, const ctl_pmsm_esmo_init_t* init);
+
+/**
+ * @brief Auto-tunes and populates the ESMO init structure using motor base parameters.
+ * @details Translates physical motor parameters into the ESMO initialization format
+ * and automatically calculates the optimal bandwidths and cutoff frequencies
+ * for the back-EMF filter and the Angle Tracking Observer (ATO).
+ * * @param[out] esmo_init Pointer to the ESMO init structure to be populated.
+ * @param[in]  cur_init  Pointer to the generic motor and current loop base configuration.
+ * @param[in]  flux_linkage Permanent magnet flux linkage in Webers (Wb).
+ */
+void ctl_autotune_esmo_init_from_mtr(ctl_pmsm_esmo_init_t* esmo_init,
+                                     const mtr_current_init_t* cur_init,
+                                     parameter_gt flux_linkage);
 
 /**
  * @brief Auto-tunes and initializes the ESMO using rigid physics from the Consultants.

@@ -123,7 +123,7 @@ void ctl_init()
         CONTROLLER_FREQUENCY);
 
     //
-    // motion controller
+    // mechanical controller
     //
     mech_init.fs = CONTROLLER_FREQUENCY;
 

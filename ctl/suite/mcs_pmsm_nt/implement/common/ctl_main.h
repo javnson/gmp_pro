@@ -16,15 +16,15 @@
 
 #include <ctl/component/interface/adc_channel.h>
 #include <ctl/component/interface/pwm_channel.h>
-#include <ctl/component/interface/pwm_modulator.h>
+#include <ctl/component/interface/spwm_modulator.h>
 
-#include <ctl/component/motor_control/basic/encoder.h>
+#include <ctl/component/motor_control/interface/encoder.h>
 #include <ctl/component/motor_control/basic/mtr_protection.h>
 #include <ctl/component/motor_control/basic/vf_generator.h>
 
-#include <ctl/component/motor_control/current_loop/motor_current_ctrl.h>
-#include <ctl/component/motor_control/motion/vel_pos_loop.h>
-#include <ctl/component/motor_control/observer/pmsm.smo.h>
+#include <ctl/component/motor_control/current_loop/foc_core.h>
+#include <ctl/component/motor_control/mechanical_loop/basic_mech_ctrl.h>
+#include <ctl/component/motor_control/observer/pmsm_esmo.h>
 
 #include <ctl/framework/cia402_state_machine.h>
 
@@ -58,7 +58,7 @@ extern spwm_modulator_t spwm;
 
 // controller body: Current controller, Command dispatcher, motion controller
 extern mtr_current_ctrl_t mtr_ctrl;
-extern vel_pos_ctrl_t motion_ctrl;
+extern ctl_mech_ctrl_t mech_ctrl;
 
 // Observer: SMO, FO, Speed measurement.
 extern ctl_slope_f_pu_controller rg;
@@ -66,8 +66,8 @@ extern pos_autoturn_encoder_t pos_enc;
 extern spd_calculator_t spd_enc;
 
 #ifdef ENABLE_SMO
-extern ctl_smo_init_t smo_init;
-extern pmsm_smo_t smo;
+extern ctl_pmsm_esmo_init_t smo_init;
+extern ctl_pmsm_esmo_t smo;
 #endif // ENABLE_SMO
 
 // additional controller: harmonic management
@@ -106,10 +106,10 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 
 #if BUILD_LEVEL > 3
         // motion controller
-        ctl_step_vel_pos_ctrl(&motion_ctrl);
+        ctl_step_mech_ctrl(&mech_ctrl);
 
         // current command dispatch
-        ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, 0, ctl_get_vel_pos_cmd(&motion_ctrl));
+        ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, 0, ctl_get_mech_cmd(&mech_ctrl));
 
 #endif
 
@@ -126,7 +126,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         ctrl_gt v_alpha = ctl_mul(udc_for_smo, mtr_ctrl.vab0.dat[phase_alpha]);
         ctrl_gt v_beta = ctl_mul(udc_for_smo, mtr_ctrl.vab0.dat[phase_beta]);
 #endif
-        ctl_step_pmsm_smo(
+        ctl_step_pmsm_esmo(
             // SMO object
             &smo,
             // uab

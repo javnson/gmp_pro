@@ -39,7 +39,9 @@ spwm_modulator_t spwm;
 // controller body: Current controller, Command dispatcher, motion controller
 mtr_current_ctrl_t mtr_ctrl;
 mtr_current_init_t mtr_ctrl_init;
-vel_pos_ctrl_t motion_ctrl;
+
+ctl_mech_ctrl_t mech_ctrl;
+ctl_mech_ctrl_init_t mech_init;
 
 // Observer: SMO, FO, Speed measurement.
 ctl_slope_f_pu_controller rg;
@@ -48,8 +50,8 @@ spd_calculator_t spd_enc;
 
 #ifdef ENABLE_SMO
 
-ctl_smo_init_t smo_init;
-pmsm_smo_t smo;
+ctl_pmsm_esmo_init_t smo_init;
+ctl_pmsm_esmo_t smo;
 
 #endif // ENABLE_SMO
 
@@ -121,17 +123,23 @@ void ctl_init()
         CONTROLLER_FREQUENCY);
 
     //
-    // motion controller
+    // mechanical controller
     //
-    ctl_init_vel_pos_ctrl(
-        // controller object
-        &motion_ctrl,
-        // spd_kp, pos_kp, spd_ki, pos_ki
-        5.0f, 1.0f, 1.0f, 1.0f,
-        // spd_lim, spd_slope_lim, cur_lim
-        1.0f, 1.0f, 0.3f,
-        // spd_div, pos_div, controller freq
-        CTRL_SPD_DIV, CTRL_POS_DIV, CONTROLLER_FREQUENCY);
+    mech_init.fs = CONTROLLER_FREQUENCY;
+
+    mech_init.pos_kp = 5.0f;
+    mech_init.pos_ki = 1.0f;
+
+    mech_init.vel_kp = 5.0f;
+    mech_init.vel_ki = 1.0f;
+
+    mech_init.speed_limit = 1.0f;
+    mech_init.speed_slope_limit = 1.0f;
+    mech_init.cur_limit = 0.3f;
+
+    mech_init.mech_division = CTRL_MECH_DIV;
+
+    ctl_init_mech_ctrl(&mech_ctrl, &mech_init);
 
     //
     // Encoder Init
@@ -139,15 +147,15 @@ void ctl_init()
     ctl_init_autoturn_pos_encoder(&pos_enc, mtr_ctrl_init.pole_pairs, CTRL_POS_ENC_FS);
     ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, float2ctrl(CTRL_POS_ENC_BIAS));
 
-    ctl_init_spd_calculator(&spd_enc, &pos_enc.encif, CONTROLLER_FREQUENCY, CTRL_SPD_DIV, MOTOR_PARAM_MAX_SPEED, 20.0f);
+    ctl_init_spd_calculator(&spd_enc, &pos_enc.encif, CONTROLLER_FREQUENCY, CTRL_MECH_DIV, MOTOR_PARAM_MAX_SPEED, 20.0f);
 
 #ifdef ENABLE_SMO
 
     //
     // Observer Init
     //
-    ctl_auto_tuning_pmsm_smo(&smo_init, &mtr_ctrl_init);
-    ctl_init_pmsm_smo(&smo, &smo_init);
+    ctl_autotune_esmo_init_from_mtr(&smo_init, &mtr_ctrl_init, 0.01f);
+    ctl_init_pmsm_esmo(&smo, &smo_init);
 
 #endif // ENABLE_SMO
 
@@ -158,7 +166,7 @@ void ctl_init()
     ctl_attach_mtr_current_ctrl_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &pos_enc.encif, &spd_enc.encif);
 #endif // BUILD_LEVEL
 
-    ctl_attach_vel_pos_ctrl(&motion_ctrl, &pos_enc.encif, &spd_enc.encif);
+    ctl_attach_mech_ctrl(&mech_ctrl, &pos_enc.encif, &spd_enc.encif);
 
 #if BUILD_LEVEL == 1
     // Voltage open loop
@@ -178,8 +186,8 @@ void ctl_init()
 #elif BUILD_LEVEL == 4
     // Basic Speed close loop
     ctl_enable_mtr_current_ctrl(&mtr_ctrl);
-    ctl_enable_velocity_ctrl(&motion_ctrl);
-    ctl_set_target_velocity(&motion_ctrl, 0.1);
+    ctl_set_mech_ctrl_mode(&mech_ctrl, MECH_MODE_VELOCITY);
+    ctl_set_mech_target_velocity(&mech_ctrl, 0.1);
 
 #endif // BUILD_LEVEL
 
@@ -266,7 +274,7 @@ void ctl_disable_pwm()
 void clear_all_controllers()
 {
     ctl_clear_mtr_current_ctrl(&mtr_ctrl);
-    ctl_clear_vel_pos_ctrl(&motion_ctrl);
+    ctl_clear_mech_ctrl(&mech_ctrl);
     ctl_clear_slope_f_pu(&rg);
 
 #if defined USING_NPC_MODULATOR
