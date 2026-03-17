@@ -67,6 +67,7 @@ void ctl_autotuning_mech_ctrl(ctl_mech_ctrl_init_t* init)
 
     // Convert to PU gain
     init->pos_kp = w_cp * scale_pos_to_pu;
+    init->pos_ki = 0;
 }
 
 void ctl_init_mech_ctrl(ctl_mech_ctrl_t* ctrl, const ctl_mech_ctrl_init_t* init)
@@ -79,7 +80,7 @@ void ctl_init_mech_ctrl(ctl_mech_ctrl_t* ctrl, const ctl_mech_ctrl_init_t* init)
     ctl_set_pid_int_limit(&ctrl->vel_ctrl, init->cur_limit, -init->cur_limit);
 
     // 2. Initialize Position Controller (P-only) with PU gains
-    ctl_init_pid(&ctrl->pos_ctrl, init->pos_kp, 0.0f, 0.0f, fs_mech);
+    ctl_init_pid(&ctrl->pos_ctrl, init->pos_kp, init->pos_ki, 0.0f, fs_mech);
     ctl_set_pid_limit(&ctrl->pos_ctrl, init->speed_limit, -init->speed_limit);
 
     // 3. Initialize Velocity Trajectory (Slope Limiter)
