@@ -119,6 +119,6 @@ python ./gmp_fac_generate_cfg_json.py
 
 cd src_mgr
 
-python .\framework_distribute_tools_v2.py
+python .\framework_distribute_tools_v3.py
 
 pause
