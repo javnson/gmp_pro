@@ -59,11 +59,9 @@
 // Encoder Full scale
 #define CTRL_POS_ENC_FS (8000)
 
-// Speed division 
-#define CTRL_SPD_DIV (5)
+// Speed & Position control division
+#define CTRL_MECH_DIV (5)
 
-// Position division
-#define CTRL_POS_DIV (5)
 
 ///////////////////////////////////////////////////////////
 // Controller Base value

@@ -89,7 +89,8 @@ typedef struct _tag_mech_ctrl_init
     // --- Auto-Tuned PU Gains ---
     parameter_gt vel_kp; //!< Calculated PU Proportional gain for velocity loop.
     parameter_gt vel_ki; //!< Calculated PU Integral gain for velocity loop.
-    parameter_gt pos_kp; //!< Calculated PU Proportional gain for position loop (P-only).
+    parameter_gt pos_kp; //!< Calculated PU Proportional gain for position loop.
+    parameter_gt pos_ki; //!< Calculated PU Integral gain for position loop.
 
 } ctl_mech_ctrl_init_t;
 
@@ -153,7 +154,7 @@ GMP_STATIC_INLINE void ctl_clear_mech_ctrl(ctl_mech_ctrl_t* ctrl)
  * @brief Sets the operating mode with Bumpless Transfer.
  * @param[in] current_feedback The ACTUAL Iq current (PU) measured right now to pre-load the integrator.
  */
-GMP_STATIC_INLINE void ctl_set_mech_mode(ctl_mech_ctrl_t* ctrl, ctl_mech_mode_e mode, ctrl_gt current_feedback)
+GMP_STATIC_INLINE void ctl_set_mech_mode_rt(ctl_mech_ctrl_t* ctrl, ctl_mech_mode_e mode, ctrl_gt current_feedback)
 {
 
 
@@ -190,6 +191,14 @@ GMP_STATIC_INLINE void ctl_set_mech_mode(ctl_mech_ctrl_t* ctrl, ctl_mech_mode_e 
 GMP_STATIC_INLINE void ctl_set_mech_target_velocity(ctl_mech_ctrl_t* ctrl, ctrl_gt spd_pu)
 {
     ctrl->target_velocity = ctl_sat(spd_pu, ctrl->speed_limit, -ctrl->speed_limit);
+}
+
+/**
+ * @brief Sets the operating mode.
+ */
+GMP_STATIC_INLINE void ctl_set_mech_ctrl_mode(ctl_mech_ctrl_t* ctrl, ctl_mech_mode_e mode)
+{
+    ctrl->active_mode = mode;
 }
 
 /**

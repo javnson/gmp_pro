@@ -16,8 +16,8 @@
  * including dead-time compensation based on current direction.
  */
 
-#ifndef _FILE_THREE_PHASE_MODULATION_H_
-#define _FILE_THREE_PHASE_MODULATION_H_
+#ifndef _FILE_THREE_PHASE_NPC_MODULATION_H_
+#define _FILE_THREE_PHASE_NPC_MODULATION_H_
 
 #ifdef __cplusplus
 extern "C"
@@ -402,12 +402,13 @@ GMP_STATIC_INLINE void ctl_step_npc_svpwm_modulator(npc_modulator_t* mod)
     }
 }
 
+/**
+ * @}
+ */
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
-#endif // _FILE_THREE_PHASE_MODULATION_H_
+#endif // _FILE_THREE_PHASE_NPC_MODULATION_H_
 
-/**
- * @}
- */

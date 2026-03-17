@@ -20,8 +20,8 @@
 #include <ctl/component/digital_power/inv/pll_srf.h>
 
 
-#ifndef _FILE_THREE_PHASE_PLL_H_
-#define _FILE_THREE_PHASE_PLL_H_
+#ifndef _FILE_THREE_PHASE_PLL_DSOGI_H_
+#define _FILE_THREE_PHASE_PLL_DSOGI_H_
 
 #ifdef __cplusplus
 extern "C"
@@ -131,12 +131,14 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_dsogi_pll(dsogi_pll_t* dsogi, ctrl_gt alpha, 
     return ctl_step_pll_3ph(&dsogi->srf_pll, dsogi->v_pos_seq.dat[phase_alpha], dsogi->v_pos_seq.dat[phase_beta]);
 }
 
+/**
+ * @}
+ */
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
-#endif // _FILE_THREE_PHASE_PLL_H_
+#endif // _FILE_THREE_PHASE_PLL_DSOGI_H_
 
-/**
- * @}
- */
+

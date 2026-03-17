@@ -58,7 +58,7 @@ extern spwm_modulator_t spwm;
 
 // controller body: Current controller, Command dispatcher, motion controller
 extern mtr_current_ctrl_t mtr_ctrl;
-extern ctl_mech_ctrl_t motion_ctrl;
+extern ctl_mech_ctrl_t mech_ctrl;
 
 // Observer: SMO, FO, Speed measurement.
 extern ctl_slope_f_pu_controller rg;

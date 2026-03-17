@@ -99,7 +99,7 @@ at_status_t spdset_handler(at_device_entity_t* dev, at_cmd_type_t type, char* ar
 
     if(type == AT_CMD_TYPE_SETUP)
     {
-        ctl_set_target_velocity(&motion_ctrl, strtof(args, NULL));
+        ctl_set_mech_target_velocity(&mech_ctrl, strtof(args, NULL));
     }
 
     return AT_STATUS_OK;
