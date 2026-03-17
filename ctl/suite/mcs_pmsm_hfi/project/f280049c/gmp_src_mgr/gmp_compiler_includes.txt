@@ -1,7 +1,7 @@
-========== GMP 编译器 Include Paths 汇总 ==========
-1. 本地镜像基础路径:
+========== GMP Compiler Include Paths Summary ==========
+1. Local mirror base path:
 .\gmp_inc
 
-2. 外部宏依赖路径 (-I):
+2. External macro dependency paths (-I):
 E:/lib/gmp_pro
 E:/lib/gmp_pro/csp/c28x_syscfg
