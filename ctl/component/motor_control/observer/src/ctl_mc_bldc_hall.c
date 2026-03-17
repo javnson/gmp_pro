@@ -181,5 +181,5 @@ void ctl_step_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, uint8_t hall_state)
     // 4. Update Output Interfaces (Apply Installation Offset)
     // ========================================================================
     obs->pos_out.elec_position = ctrl_mod_1(center_pu + err_from_center + obs->hall_offset_pu);
-    obs->spd_out.velocity = obs->spd_est_pu;
+    obs->spd_out.speed = obs->spd_est_pu;
 }

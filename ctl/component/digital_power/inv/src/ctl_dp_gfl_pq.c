@@ -18,7 +18,7 @@
 // Three Phase GFL Converter
 //////////////////////////////////////////////////////////////////////////
 
-#include <ctl/component/digital_power/three_phase/three_phase_GFL.h>
+#include <ctl/component/digital_power/inv/gfl_pq_ctrl.h>
 
 void ctl_init_gfl_pq(gfl_pq_ctrl_t* pq, parameter_gt p_kp, parameter_gt p_ki, parameter_gt q_kp, parameter_gt q_ki,
                      parameter_gt i_out_max, parameter_gt fs)

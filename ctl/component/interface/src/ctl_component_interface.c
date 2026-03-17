@@ -240,7 +240,7 @@ void ctl_init_tri_ptr_adc_channel(
 //////////////////////////////////////////////////////////////////////////
 // SPWM modulator
 
-#include <ctl/component/interface/pwm_modulator.h>
+#include <ctl/component/interface/spwm_modulator.h>
 
 void ctl_init_spwm_modulator(spwm_modulator_t* mod, pwm_gt pwm_full_scale, pwm_gt pwm_deadband_comp_val,
                              ctl_vector3_t* _iuvw, ctrl_gt current_deadband, ctrl_gt current_hysteresis)

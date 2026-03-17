@@ -18,7 +18,7 @@
 // Single-Phase Inverter Control
 //////////////////////////////////////////////////////////////////////////
 
-#include <ctl/component/digital_power/single_phase/single_phase_dc_ac.h>
+#include <ctl/component/digital_power/sinv/sinv_core.h>
 
 void ctl_upgrade_sinv_param(sinv_ctrl_t* sinv, sinv_init_t* init)
 {

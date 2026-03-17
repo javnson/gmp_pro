@@ -8,8 +8,8 @@
 #include <ctl/component/intrinsic/advance/lms_filter.h>
 
 fast_gt ctl_init_lms_filter(ctl_lms_filter_t* lms, uint32_t order, parameter_gt mu,
-                            ctrl_gt* external_weights, // 架构升级：依赖注入权重数组
-                            ctrl_gt* external_buffer)  // 架构升级：依赖注入缓存数组
+                            ctrl_gt* external_weights,
+                            ctrl_gt* external_buffer)
 {
     // 防呆保护
     gmp_base_assert(order > 0);

@@ -171,7 +171,7 @@ void ctl_step_bldc_zcd_obs(ctl_bldc_zcd_obs_t* obs, ctrl_gt v_u_pu, ctrl_gt v_v_
 
             // Filter speed to prevent commutation jitter
             obs->spd_est_pu = ctl_step_filter_iir1(&obs->filter_spd, raw_spd_pu);
-            obs->spd_out.velocity = obs->spd_est_pu;
+            obs->spd_out.speed = obs->spd_est_pu;
 
             // Reset timer for the next 60-degree sector speed calculation
             obs->tick_since_last_zcd = 0;

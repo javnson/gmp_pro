@@ -18,7 +18,7 @@
 // Three Phase GFL Converter
 //////////////////////////////////////////////////////////////////////////
 
-#include <ctl/component/digital_power/three_phase/three_phase_GFL.h>
+#include <ctl/component/digital_power/inv/gfl_core.h>
 
 /**
  * @brief Auto-tuning GFL inverter parameters.

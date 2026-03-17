@@ -11,7 +11,8 @@
 
 #include <gmp_core.h>
 
-#include "smc_mech_ctrl.h"
+#include <ctl/component/motor_control/mechanical_loop/smc_mech_ctrl.h>
+
 
 /**
  * @brief Auto-tunes the SMC parameters and scales them to the PU system.
@@ -70,7 +71,7 @@ void ctl_init_smc_mech_ctrl(ctl_smc_mech_ctrl_t* ctrl, const ctl_smc_mech_init_t
 {
     // Initialize the internal Sliding Mode Controller core directly with PU gains
     ctl_init_smc(&ctrl->smc_core, float2ctrl(init->eta11), float2ctrl(init->eta12), float2ctrl(init->eta21),
-                 float2ctrl(init->eta22), float2ctrl(init->rho), float2ctrl(init->lambda));
+                 float2ctrl(init->eta22), float2ctrl(init->rho), float2ctrl(init->lambda), float2ctrl(0.001f));
 
     ctrl->cur_limit = float2ctrl(init->cur_limit);
     ctrl->k_ff = float2ctrl(init->k_ff);

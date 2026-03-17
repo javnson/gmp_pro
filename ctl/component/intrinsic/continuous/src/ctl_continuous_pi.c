@@ -1,5 +1,7 @@
-#include <ctl/component/intrinsic/continuous/continuous_pi.h>
 #include <gmp_core.h>
+
+
+#include <ctl/component/intrinsic/continuous/continuous_pi.h>
 
 // init a PI object (Time-constant mode, effectively Ideal/Series form)
 void ctl_init_pi_Tmode(

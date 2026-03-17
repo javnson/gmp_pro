@@ -28,7 +28,7 @@ void ctl_init_uniform_lut2d(ctl_uniform_lut2d_t* lut, ctrl_gt x_min, ctrl_gt x_m
 
     // 修复：必须先通过 ctrl2float 转换到物理域后再做减法，否则定点数相减会产生巨大整型垃圾
     parameter_gt x_delta = ctrl2float(x_max) - ctrl2float(x_min);
-    if (fabs(x_delta) < 1e-9)
+    if (fabsf(x_delta) < 1e-9f)
     {
         lut->x_step_inv = float2ctrl(0.0f);
     }
@@ -43,7 +43,7 @@ void ctl_init_uniform_lut2d(ctl_uniform_lut2d_t* lut, ctrl_gt x_min, ctrl_gt x_m
 
     // 同理修复 Y 轴
     parameter_gt y_delta = ctrl2float(y_max) - ctrl2float(y_min);
-    if (fabs(y_delta) < 1e-9)
+    if (fabsf(y_delta) < 1e-9f)
     {
         lut->y_step_inv = float2ctrl(0.0f);
     }

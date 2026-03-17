@@ -1,5 +1,7 @@
 
-#include <ctl/component/digital_power/single_phase/spll.h>
+#include <gmp_core.h>
+
+#include <ctl/component/digital_power/sinv/spll_sogi.h>
 
 void ctl_init_single_phase_pll(ctl_single_phase_pll* spll, parameter_gt gain, parameter_gt Ti, parameter_gt fc,
                                parameter_gt fg, parameter_gt fs)

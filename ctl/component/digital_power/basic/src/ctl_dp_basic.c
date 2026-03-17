@@ -17,7 +17,7 @@
 //////////////////////////////////////////////////////////////////////////
 // Buck Control
 //////////////////////////////////////////////////////////////////////////
-#include <ctl/component/digital_power/basic/buck.h>
+#include <ctl/component/digital_power/dcdc/buck.h>
 
 void ctl_init_buck_ctrl(buck_ctrl_t* buck, parameter_gt v_kp, parameter_gt v_Ti, parameter_gt v_Td, parameter_gt i_kp,
                         parameter_gt i_Ti, parameter_gt i_Td, parameter_gt uin_min, parameter_gt uin_max,
@@ -52,7 +52,7 @@ void ctl_attach_buck_ctrl_input(buck_ctrl_t* buck, adc_ift* uo, adc_ift* il, adc
 //////////////////////////////////////////////////////////////////////////
 // Boost Control
 //////////////////////////////////////////////////////////////////////////
-#include <ctl/component/digital_power/basic/boost.h>
+#include <ctl/component/digital_power/dcdc/boost.h>
 
 void ctl_init_boost_ctrl(boost_ctrl_t* boost, parameter_gt v_kp, parameter_gt v_Ti, parameter_gt v_Td,
                          parameter_gt i_kp, parameter_gt i_Ti, parameter_gt i_Td, parameter_gt vo_min,

@@ -4,7 +4,7 @@
 //////////////////////////////////////////////////////////////////////////
 // s curve trajectory
 
-#include <ctl/component/motor_control/motion/s_curve_trajectory.h>
+#include <ctl/component/motor_control/motion/s_curve_traj.h>
 
 /**
  * @brief Initializes the S-Curve planner and perfectly absorbs all dimension constants.

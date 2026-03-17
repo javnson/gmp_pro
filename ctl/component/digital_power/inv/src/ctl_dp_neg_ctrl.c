@@ -1,8 +1,14 @@
+
+#include <gmp_core.h>
+
+
+
 //////////////////////////////////////////////////////////////////////////
 // Three Phase Converter negative sequence controller
 //////////////////////////////////////////////////////////////////////////
 
-#include <ctl/component/digital_power/three_phase/three_phase_additional.h>
+#include <ctl/component/digital_power/inv/inv_neg_ctrl.h>
+#include <ctl/component/digital_power/inv/gfl_core.h>
 
 /**
  * @brief Auto-tuning Negative Sequence Controller parameters.

@@ -6,8 +6,8 @@
 #include <ctl/component/intrinsic/advance/sinc_interpolator.h>
 
 fast_gt ctl_init_sinc_interpolator(ctl_sinc_interpolator_t* sinc, uint32_t num_taps, uint32_t table_size,
-                                   ctrl_gt* external_buffer,     // 架构升级：要求传入外部缓冲区
-                                   ctrl_gt* external_sinc_table) // 架构升级：要求传入外部 1D 系数表
+                                   ctrl_gt* external_buffer,
+                                   ctrl_gt* external_sinc_table)
 {
     uint32_t i, j;
 

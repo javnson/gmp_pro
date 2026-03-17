@@ -11,7 +11,7 @@
 
 #include <gmp_core.h>
 
-#include <ctl/component/motor_control/observer/im_fo.h>
+#include <ctl/component/motor_control/observer/acim_fo.h>
 
 /**
  * @brief Core initialization function using explicit scale factors.

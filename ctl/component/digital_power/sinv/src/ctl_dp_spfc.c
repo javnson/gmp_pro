@@ -19,7 +19,7 @@
 //////////////////////////////////////////////////////////////////////////
 // Single Phase PFC Control
 //////////////////////////////////////////////////////////////////////////
-#include <ctl/component/digital_power/single_phase/spfc.h>
+#include <ctl/component/digital_power/sinv/spfc.h>
 
 void ctl_init_spfc_ctrl(spfc_t* pfc, parameter_gt voltage_kp, parameter_gt voltage_Ti, parameter_gt voltage_Td,
                         parameter_gt current_kp, parameter_gt current_Ti, parameter_gt current_Td, parameter_gt fs)

@@ -11,7 +11,7 @@
 
 #include <gmp_core.h>
 
-#include "mit_mech_ctrl.h"
+#include <ctl/component/motor_control/mechanical_loop/mit_mech_ctrl.h>
 
 /**
  * @brief Auto-tunes the FSF Gains using Pole Placement and absorbs PU scaling.

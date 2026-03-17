@@ -7,7 +7,7 @@
 
 fast_gt ctl_init_repetitive_controller(ctl_repetitive_controller_t* rc, parameter_gt fs, parameter_gt f_fund,
                                        parameter_gt q_filter_coeff,
-                                       ctrl_gt* external_buffer, // 架构升级：要求用户传入静态数组
+                                       ctrl_gt* external_buffer,
                                        uint32_t max_buffer_capacity)
 {
 

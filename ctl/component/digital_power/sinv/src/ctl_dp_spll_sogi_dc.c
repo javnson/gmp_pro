@@ -17,7 +17,7 @@
 //////////////////////////////////////////////////////////////////////////
 // Single Phase PLL
 //////////////////////////////////////////////////////////////////////////
-#include <ctl/component/digital_power/single_phase/spll.h>
+#include <ctl/component/digital_power/sinv/spll_sogi_dc.h>
 
 void ctl_init_single_phase_dc_pll(ctl_single_phase_dc_pll* spll, parameter_gt loop_kp, parameter_gt loop_ki,
                                   parameter_gt k_sogi, parameter_gt k_dc, parameter_gt fc_uq, parameter_gt fg,
