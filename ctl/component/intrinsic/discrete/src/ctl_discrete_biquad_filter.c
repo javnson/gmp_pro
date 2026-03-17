@@ -11,8 +11,8 @@ void ctl_init_biquad_lpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt
     gmp_base_assert(Q > 0.0f);
 
     parameter_gt omega = CTL_PARAM_CONST_2PI * fc / fs;
-    parameter_gt cos_w0 = cos(omega);
-    parameter_gt alpha = sin(omega) / (2.0f * Q);
+    parameter_gt cos_w0 = cosf(omega);
+    parameter_gt alpha = sinf(omega) / (2.0f * Q);
 
     parameter_gt a0_inv = 1.0f / (1.0f + alpha);
 
@@ -32,8 +32,8 @@ void ctl_init_biquad_hpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt
     gmp_base_assert(Q > 0.0f);
 
     parameter_gt omega = CTL_PARAM_CONST_2PI * fc / fs;
-    parameter_gt cos_w0 = cos(omega);
-    parameter_gt alpha = sin(omega) / (2.0f * Q);
+    parameter_gt cos_w0 = cosf(omega);
+    parameter_gt alpha = sinf(omega) / (2.0f * Q);
 
     parameter_gt a0_inv = 1.0f / (1.0f + alpha);
 
@@ -52,8 +52,8 @@ void ctl_init_biquad_bpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt
     gmp_base_assert(Q > 0.0f);
 
     parameter_gt omega = CTL_PARAM_CONST_2PI * fc / fs;
-    parameter_gt cos_w0 = cos(omega);
-    parameter_gt alpha = sin(omega) / (2.0f * Q);
+    parameter_gt cos_w0 = cosf(omega);
+    parameter_gt alpha = sinf(omega) / (2.0f * Q);
 
     parameter_gt a0_inv = 1.0f / (1.0f + alpha);
 
@@ -72,8 +72,8 @@ void ctl_init_biquad_notch(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_
     gmp_base_assert(Q > 0.0f);
 
     parameter_gt omega = CTL_PARAM_CONST_2PI * fc / fs;
-    parameter_gt cos_w0 = cos(omega);
-    parameter_gt alpha = sin(omega) / (2.0f * Q);
+    parameter_gt cos_w0 = cosf(omega);
+    parameter_gt alpha = sinf(omega) / (2.0f * Q);
 
     parameter_gt a0_inv = 1.0f / (1.0f + alpha);
 
@@ -93,10 +93,10 @@ void ctl_init_biquad_peaking_eq(ctl_biquad_filter_t* obj, parameter_gt fs, param
     gmp_base_assert(Q > 0.0f);
 
     // 修复 2：根据 RBJ Cookbook，A 的定义应为 10^(dB/40)
-    parameter_gt V0 = pow(10.0, gain_db / 40.0);
+    parameter_gt V0 = powf(10.0f, gain_db / 40.0f);
     parameter_gt omega = CTL_PARAM_CONST_2PI * fc / fs;
-    parameter_gt cos_w0 = cos(omega);
-    parameter_gt alpha = sin(omega) / (2.0f * Q);
+    parameter_gt cos_w0 = cosf(omega);
+    parameter_gt alpha = sinf(omega) / (2.0f * Q);
 
     parameter_gt a0_inv = 1.0f / (1.0f + alpha / V0);
 
@@ -116,11 +116,11 @@ void ctl_init_biquad_lowshelf(ctl_biquad_filter_t* obj, parameter_gt fs, paramet
     gmp_base_assert(Q > 0.0f);
 
     // 修复 2：根据 RBJ Cookbook，A 的定义应为 10^(dB/40)
-    parameter_gt V0 = pow(10.0, gain_db / 40.0);
+    parameter_gt V0 = powf(10.0f, gain_db / 40.0f);
     parameter_gt omega = CTL_PARAM_CONST_2PI * fc / fs;
-    parameter_gt cos_w0 = cos(omega);
-    parameter_gt alpha = sin(omega) / (2.0f * Q);
-    parameter_gt beta = 2.0f * sqrt(V0) * alpha;
+    parameter_gt cos_w0 = cosf(omega);
+    parameter_gt alpha = sinf(omega) / (2.0f * Q);
+    parameter_gt beta = 2.0f * sqrtf(V0) * alpha;
 
     parameter_gt a0_inv = 1.0f / ((V0 + 1.0f) + (V0 - 1.0f) * cos_w0 + beta);
 
@@ -140,11 +140,11 @@ void ctl_init_biquad_highshelf(ctl_biquad_filter_t* obj, parameter_gt fs, parame
     gmp_base_assert(Q > 0.0f);
 
     // 修复 2：根据 RBJ Cookbook，A 的定义应为 10^(dB/40)
-    parameter_gt V0 = pow(10.0, gain_db / 40.0);
+    parameter_gt V0 = powf(10.0f, gain_db / 40.0f);
     parameter_gt omega = CTL_PARAM_CONST_2PI * fc / fs;
-    parameter_gt cos_w0 = cos(omega);
-    parameter_gt alpha = sin(omega) / (2.0f * Q);
-    parameter_gt beta = 2.0f * sqrt(V0) * alpha;
+    parameter_gt cos_w0 = cosf(omega);
+    parameter_gt alpha = sinf(omega) / (2.0f * Q);
+    parameter_gt beta = 2.0f * sqrtf(V0) * alpha;
 
     parameter_gt a0_inv = 1.0f / ((V0 + 1.0f) - (V0 - 1.0f) * cos_w0 + beta);
 

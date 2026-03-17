@@ -167,7 +167,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_imc(ctl_imc_controller_t* imc, ctrl_gt r, ctr
 //        imc->delay_buffer_idx = 0;
 //    }
 //
-//    return imc->u_out;
+    return imc->u_out;
 }
 
 /** @} */ // end of IMC_CONTROLLER group
