@@ -70,7 +70,9 @@ typedef struct _tag_repetitive_controller_t
  * @return fast_gt Returns 1 on success (memory allocated), 0 on failure.
  */
 fast_gt ctl_init_repetitive_controller(ctl_repetitive_controller_t* rc, parameter_gt fs, parameter_gt f_fund,
-                                       parameter_gt q_filter_coeff);
+                                       parameter_gt q_filter_coeff,
+                                       ctrl_gt* external_buffer,
+                                       uint32_t max_buffer_capacity);
 
 /**
  * @brief Frees the memory allocated for the controller's buffer.

@@ -115,7 +115,7 @@ GMP_STATIC_INLINE void ctl_clear_bldc_zcd_obs(ctl_bldc_zcd_obs_t* obs)
     obs->flag_comm_trigger = 0;
     obs->flag_zcd_detected = 0;
     obs->flag_observer_locked = 0;
-    obs->spd_out.velocity = float2ctrl(0.0f);
+    obs->spd_out.speed = float2ctrl(0.0f);
 
     ctl_clear_filter_iir1(&obs->filter_spd);
 }

@@ -15,6 +15,11 @@
  * @brief A standard three-phase SRF-PLL for grid synchronization.
  */
 
+
+#include <ctl/component/intrinsic/discrete/discrete_sogi.h>
+#include <ctl/component/digital_power/inv/pll_srf.h>
+
+
 #ifndef _FILE_THREE_PHASE_PLL_H_
 #define _FILE_THREE_PHASE_PLL_H_
 

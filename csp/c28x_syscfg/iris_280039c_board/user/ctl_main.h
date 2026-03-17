@@ -18,14 +18,13 @@
 #include <ctl/component/interface/pwm_channel.h>
 #include <ctl/component/interface/spwm_modulator.h>
 
-
-#include <ctl/component/motor_control/basic/encoder.h>
+#include <ctl/component/motor_control/interface/encoder.h>
 #include <ctl/component/motor_control/basic/mtr_protection.h>
 #include <ctl/component/motor_control/basic/vf_generator.h>
 
-#include <ctl/component/motor_control/current_loop/motor_current_ctrl.h>
-#include <ctl/component/motor_control/motion/vel_pos_loop.h>
-#include <ctl/component/motor_control/observer/pmsm.smo.h>
+#include <ctl/component/motor_control/current_loop/foc_core.h>
+#include <ctl/component/motor_control/mechanical_loop/basic_mech_ctrl.h>
+#include <ctl/component/motor_control/observer/pmsm_esmo.h>
 
 #include <ctl/framework/cia402_state_machine.h>
 
@@ -59,7 +58,7 @@ extern spwm_modulator_t spwm;
 
 // controller body: Current controller, Command dispatcher, motion controller
 extern mtr_current_ctrl_t mtr_ctrl;
-extern vel_pos_ctrl_t motion_ctrl;
+extern ctl_mech_ctrl_t motion_ctrl;
 
 // Observer: SMO, FO, Speed measurement.
 extern ctl_slope_f_pu_controller rg;

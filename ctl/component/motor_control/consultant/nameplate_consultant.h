@@ -7,7 +7,7 @@
  * @date 2024-10-27
  */
 
-#include <ctl/component/motor_control/consultant/im_consultant.h>
+#include <ctl/component/motor_control/consultant/acim_consultant.h>
 #include <ctl/component/motor_control/consultant/pmsm_consultant.h>
 #include <ctl/component/motor_control/consultant/pu_consultant.h>
 

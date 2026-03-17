@@ -178,10 +178,10 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_interpolate_lut2d(const ctl_lut2d_t* lut, ctr
     //ctrl_gt p01 = lut->surface[idx1][idx2 + 1];
     //ctrl_gt p11 = lut->surface[idx1 + 1][idx2 + 1];
 
-    ctrl_gt p00 = lut->surface[x_idx * y_size + y_idx];
-    ctrl_gt p10 = lut->surface[x_idx * y_size + (y_idx + 1)];
-    ctrl_gt p01 = lut->surface[(x_idx + 1) * y_size + y_idx];
-    ctrl_gt p11 = lut->surface[(x_idx + 1) * y_size + (y_idx + 1)];
+    ctrl_gt p00 = lut->surface[idx1 * y_size + idx2];
+    ctrl_gt p10 = lut->surface[idx1 * y_size + (idx2 + 1)];
+    ctrl_gt p01 = lut->surface[(idx1 + 1) * y_size + idx2];
+    ctrl_gt p11 = lut->surface[(idx1 + 1) * y_size + (idx2 + 1)];
 
     // Calculate interpolation weights
     ctrl_gt w1 =

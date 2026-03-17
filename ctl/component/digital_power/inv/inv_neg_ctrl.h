@@ -34,6 +34,8 @@ extern "C"
 #include <ctl/component/intrinsic/discrete/lead_lag.h>
 #include <ctl/component/intrinsic/discrete/proportional_resonant.h>
 
+#include <ctl/component/digital_power/inv/gfl_core.h>
+
 //////////////////////////////////////////////////////////////////////////
 // DQ Harmonic controller
 //

@@ -24,13 +24,9 @@
 #include <gmp_core.h>
 
 // --- Standard Math & Component Includes ---
-#include <ctl/component/motor_control/consultant/im_consultant.h>
+#include <ctl/component/motor_control/consultant/acim_consultant.h>
 #include <ctl/component/motor_control/consultant/pu_consultant.h>
 #include <ctl/component/motor_control/interface/encoder.h>
-#include <ctl/math_block/gmp_math.h>
-
-#include "math_ctrl_const.h"
-#include "math_param_const.h"
 
 #ifdef __cplusplus
 extern "C"

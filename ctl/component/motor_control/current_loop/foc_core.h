@@ -10,7 +10,7 @@
 #ifndef _FILE_MOTOR_CURRENT_CTRL_H_
 #define _FILE_MOTOR_CURRENT_CTRL_H_
 
-#include <ctl/component/motor_control/basic/motor_universal_interface.h>
+#include <ctl/component/motor_control/interface/motor_universal_interface.h>
 
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 #include <ctl/math_block/coordinate/coord_trans.h>

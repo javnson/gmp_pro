@@ -10,7 +10,7 @@
 #ifndef _FILE_PMSM_DBPTC_H_
 #define _FILE_PMSM_DBPTC_H_
 
-#include <ctl/component/motor_control/basic/motor_universal_interface.h>
+#include <ctl/component/motor_control/interface/motor_universal_interface.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 #include <ctl/math_block/vector_lite/vector2.h>
 #include <gmp_core.h>
@@ -69,7 +69,8 @@ typedef struct _tag_pmsm_dbptc_ctrl
 {
     // --- Interfaces ---
     ctl_vector2_t* idq_meas; //!< Measured d-q axis current (PU).
-    rotation_ift* pos_if;    //!< Rotor position/velocity interface.
+    rotation_ift* pos_if;    //!< Rotor position interface.
+    velocity_ift *spd_if;    //!< Rotor velocity interface.
 
     // --- Setpoints ---
     ctl_vector2_t idq_ref; //!< d-q current reference target (PU).
@@ -160,7 +161,7 @@ GMP_STATIC_INLINE void ctl_step_pmsm_dbptc(pmsm_dbptc_ctrl_t* mc)
     ctrl_gt iq_meas = mc->idq_meas->dat[1];
 
     // Convert speed from Revs/s back to Electrical Rad/s (PU space)
-    ctrl_gt we_pu = mc->pos_if->velocity; // Assuming this provides PU electrical frequency
+    ctrl_gt we_pu = mc->spd_if->speed; // Assuming this provides PU electrical frequency
 
     // ========================================================================
     // Step 1: Delay Compensation (Predict current at k+1)

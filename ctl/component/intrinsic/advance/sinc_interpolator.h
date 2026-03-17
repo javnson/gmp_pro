@@ -59,7 +59,9 @@ typedef struct _tag_sinc_interpolator_t
  * @param[in] table_size The resolution of the fractional delay (e.g., 256). Higher resolution gives smoother interpolation.
  * @return fast_gt Returns 1 on success, 0 on failure (memory allocation).
  */
-fast_gt ctl_init_sinc_interpolator(ctl_sinc_interpolator_t* sinc, uint32_t num_taps, uint32_t table_size);
+fast_gt ctl_init_sinc_interpolator(ctl_sinc_interpolator_t* sinc, uint32_t num_taps, uint32_t table_size,
+                                   ctrl_gt* external_buffer,
+                                   ctrl_gt* external_sinc_table);
 
 
 /**
@@ -70,10 +72,11 @@ GMP_STATIC_INLINE void ctl_clear_sinc_interpolator(ctl_sinc_interpolator_t* sinc
 {
     sinc->buffer_index = 0;
     sinc->output = float2ctrl(0.0f); // 修复：强类型清零
+    uint32_t i;
 
     if (sinc->buffer != 0)
     {
-        for (uint32_t i = 0; i < sinc->num_taps; i++)
+        for (i = 0; i < sinc->num_taps; i++)
         {
             sinc->buffer[i] = float2ctrl(0.0f);
         }

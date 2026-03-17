@@ -113,8 +113,6 @@ GMP_STATIC_INLINE void ctl_clear_imc(ctl_imc_controller_t* imc)
 {
     // 强制使用强类型隔离进行清零
     imc->y_m = float2ctrl(0.0f);
-    imc->u_q = float2ctrl(0.0f);
-    imc->e_q_1 = float2ctrl(0.0f);
     imc->u_out = float2ctrl(0.0f);
     imc->delay_buffer_idx = 0;
 
@@ -134,42 +132,42 @@ GMP_STATIC_INLINE void ctl_clear_imc(ctl_imc_controller_t* imc)
  */
 GMP_STATIC_INLINE ctrl_gt ctl_step_imc(ctl_imc_controller_t* imc, ctrl_gt r, ctrl_gt y_p)
 {
-    // 1. 极速环形缓冲区寻址：消灭 % 取模操作
-    int32_t read_idx_temp = (int32_t)imc->delay_buffer_idx - (int32_t)imc->dead_time_samples;
-    if (read_idx_temp < 0)
-    {
-        read_idx_temp += IMC_MAX_DEAD_TIME_SAMPLES;
-    }
-    uint16_t read_idx = (uint16_t)read_idx_temp;
-    ctrl_gt u_delayed = imc->u_delay_buffer[read_idx];
-
-    // 2. 更新内部被控对象模型 (使用 ctl_mul 修复裸乘法溢出)
-    // y_m(k) = a_p_d * y_m(k-1) + b_p_d * u(k-d-1)
-    imc->y_m = ctl_mul(imc->a_p_d, imc->y_m) + ctl_mul(imc->b_p_d, u_delayed);
-
-    // 3. 计算模型预测误差
-    ctrl_gt model_error = r - (y_p - imc->y_m);
-
-    // 4. 计算 Q 控制器输出 (使用 ctl_mul 修复裸乘法溢出)
-    // u_q(k) = a_q_d*u_q(k-1) + b0_q_d*e(k) + b1_q_d*e(k-1)
-    ctrl_gt u_q = ctl_mul(imc->a_q_d, imc->u_q) + ctl_mul(imc->b0_q_d, model_error) + ctl_mul(imc->b1_q_d, imc->e_q_1);
-
-    // 5. 饱和限制
-    imc->u_out = ctl_sat(u_q, imc->out_max, imc->out_min);
-
-    // 6. 更新状态
-    imc->e_q_1 = model_error;
-    imc->u_q = imc->u_out;
-
-    // 7. 写入环形缓冲区并极速递增 (消灭 %)
-    imc->u_delay_buffer[imc->delay_buffer_idx] = imc->u_out;
-    imc->delay_buffer_idx++;
-    if (imc->delay_buffer_idx >= IMC_MAX_DEAD_TIME_SAMPLES)
-    {
-        imc->delay_buffer_idx = 0;
-    }
-
-    return imc->u_out;
+//    // 1. 极速环形缓冲区寻址：消灭 % 取模操作
+//    int32_t read_idx_temp = (int32_t)imc->delay_buffer_idx - (int32_t)imc->dead_time_samples;
+//    if (read_idx_temp < 0)
+//    {
+//        read_idx_temp += IMC_MAX_DEAD_TIME_SAMPLES;
+//    }
+//    uint16_t read_idx = (uint16_t)read_idx_temp;
+//    ctrl_gt u_delayed = imc->u_delay_buffer[read_idx];
+//
+//    // 2. 更新内部被控对象模型 (使用 ctl_mul 修复裸乘法溢出)
+//    // y_m(k) = a_p_d * y_m(k-1) + b_p_d * u(k-d-1)
+//    imc->y_m = ctl_mul(imc->a_p_d, imc->y_m) + ctl_mul(imc->b_p_d, u_delayed);
+//
+//    // 3. 计算模型预测误差
+//    ctrl_gt model_error = r - (y_p - imc->y_m);
+//
+//    // 4. 计算 Q 控制器输出 (使用 ctl_mul 修复裸乘法溢出)
+//    // u_q(k) = a_q_d*u_q(k-1) + b0_q_d*e(k) + b1_q_d*e(k-1)
+//    ctrl_gt u_q = ctl_mul(imc->a_q_d, imc->u_q) + ctl_mul(imc->b0_q_d, model_error) + ctl_mul(imc->b1_q_d, imc->e_q_1);
+//
+//    // 5. 饱和限制
+//    imc->u_out = ctl_sat(u_q, imc->out_max, imc->out_min);
+//
+//    // 6. 更新状态
+//    imc->e_q_1 = model_error;
+//    imc->u_q = imc->u_out;
+//
+//    // 7. 写入环形缓冲区并极速递增 (消灭 %)
+//    imc->u_delay_buffer[imc->delay_buffer_idx] = imc->u_out;
+//    imc->delay_buffer_idx++;
+//    if (imc->delay_buffer_idx >= IMC_MAX_DEAD_TIME_SAMPLES)
+//    {
+//        imc->delay_buffer_idx = 0;
+//    }
+//
+//    return imc->u_out;
 }
 
 /** @} */ // end of IMC_CONTROLLER group

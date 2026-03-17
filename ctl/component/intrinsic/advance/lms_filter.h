@@ -62,7 +62,9 @@ typedef struct _tag_lms_filter_t
  * @param[in] mu The step-size (learning rate). Must be chosen carefully to ensure stability.
  * @return fast_gt Returns 1 on success (memory allocated), 0 on failure.
  */
-fast_gt ctl_init_lms_filter(ctl_lms_filter_t* lms, uint32_t order, parameter_gt mu);
+fast_gt ctl_init_lms_filter(ctl_lms_filter_t* lms, uint32_t order, parameter_gt mu,
+                            ctrl_gt* external_weights,
+                            ctrl_gt* external_buffer);
 
 /**
  * @brief Frees the memory allocated for the LMS filter.
@@ -77,13 +79,15 @@ void ctl_destroy_lms_filter(ctl_lms_filter_t* lms);
  */
 GMP_STATIC_INLINE void ctl_clear_lms_filter(ctl_lms_filter_t* lms)
 {
+    uint32_t i;
+
     lms->buffer_index = 0;
     lms->output = float2ctrl(0.0f);
     lms->error = float2ctrl(0.0f);
 
     if (lms->buffer != 0 && lms->weights != 0)
     {
-        for (uint32_t i = 0; i < lms->order; i++)
+        for (i = 0; i < lms->order; i++)
         {
             lms->buffer[i] = float2ctrl(0.0f);
             lms->weights[i] = float2ctrl(0.0f); // 初始化权重通常为 0

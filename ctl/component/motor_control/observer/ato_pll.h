@@ -69,7 +69,7 @@ GMP_STATIC_INLINE void ctl_sync_ato_pll(ctl_ato_pll_t* pll, ctrl_gt angle_pu, ct
 {
     pll->elec_angle_pu = angle_pu;
     pll->elec_speed_pu = speed_pu;
-    pll->pi_ctrl.integral = speed_pu; // reset integral
+    pll->pi_ctrl.i_term = speed_pu; // reset integral
 }
 
 /**

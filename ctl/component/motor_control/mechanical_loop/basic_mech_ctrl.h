@@ -66,7 +66,7 @@ typedef enum
 typedef struct _tag_mech_ctrl_init
 {
     // --- System & Hardware Configurations ---
-    parameter_gt fs_current; //!< Execution frequency of the inner current loop (Hz).
+    parameter_gt fs; //!< Execution frequency of the inner current loop (Hz).
     uint32_t mech_division;  //!< Divider ratio (e.g., 5-10) for the mechanical loop.
 
     parameter_gt inertia;      //!< Total system inertia J (kg*m^2).
@@ -155,7 +155,7 @@ GMP_STATIC_INLINE void ctl_clear_mech_ctrl(ctl_mech_ctrl_t* ctrl)
  */
 GMP_STATIC_INLINE void ctl_set_mech_mode(ctl_mech_ctrl_t* ctrl, ctl_mech_mode_e mode, ctrl_gt current_feedback)
 {
-    gmp_base_assert()
+
 
     if (ctrl->active_mode == mode)
         return;

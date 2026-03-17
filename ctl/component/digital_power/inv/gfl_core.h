@@ -11,7 +11,8 @@
 #include <ctl/component/intrinsic/discrete/proportional_resonant.h>
 #include <ctl/component/intrinsic/discrete/signal_generator.h>
 
-#include <ctl/component/digital_power/three_phase/pll.h>
+#include <ctl/component/digital_power/inv/pll_srf.h>
+#include <ctl/component/digital_power/inv/pll_dsogi.h>
 
 /** 
  * @defgroup CTL_TOPOLOGY_INV_H_API Three-Phase Inverter Topology API (Header)

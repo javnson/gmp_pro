@@ -35,7 +35,8 @@ extern "C"
 #include <ctl/component/intrinsic/discrete/proportional_resonant.h>
 #include <ctl/component/intrinsic/discrete/signal_generator.h>
 
-#include <ctl/component/digital_power/three_phase/pll.h>
+#include <ctl/component/digital_power/inv/pll_srf.h>
+#include <ctl/component/digital_power/inv/pll_dsogi.h>
 
 // --- Compilation-time Configuration Macros ---
 #ifndef GFL_CURRENT_SAMPLE_PHASE_MODE

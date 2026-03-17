@@ -26,7 +26,7 @@ extern "C"
 {
 #endif // __cplusplus
 
-#include <ctl/component/digital_power/single_phase/spll.h>
+#include <ctl/component/digital_power/sinv/spll_sogi.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <ctl/component/intrinsic/discrete/proportional_resonant.h>

@@ -17,7 +17,7 @@
  */
 
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
-#include <ctl/component/motor_control/basic/motor_universal_interface.h>
+#include <ctl/component/motor_control/interface/motor_universal_interface.h>
 #include <ctl/component/motor_control/interface/encoder.h>
 
 #ifndef _FILE_PMSM_HALL_OBS_H_
@@ -104,7 +104,7 @@ GMP_STATIC_INLINE void ctl_clear_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs)
     ctl_clear_filter_iir1(&obs->filter_spd);
 
     obs->pos_out.elec_position = float2ctrl(0.0f);
-    obs->spd_out.velocity = float2ctrl(0.0f);
+    obs->spd_out.speed = float2ctrl(0.0f);
 }
 
 GMP_STATIC_INLINE void ctl_enable_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs)

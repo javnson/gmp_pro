@@ -39,7 +39,7 @@ spwm_modulator_t spwm;
 // controller body: Current controller, Command dispatcher, motion controller
 mtr_current_ctrl_t mtr_ctrl;
 mtr_current_init_t mtr_ctrl_init;
-vel_pos_ctrl_t motion_ctrl;
+ctl_mech_ctrl_t motion_ctrl;
 
 // Observer: SMO, FO, Speed measurement.
 ctl_slope_f_pu_controller rg;

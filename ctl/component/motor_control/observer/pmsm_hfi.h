@@ -132,7 +132,7 @@ GMP_STATIC_INLINE void ctl_clear_pmsm_hfi(ctl_pmsm_hfi_t* hfi)
     ctl_clear_ato_pll(&hfi->ato_pll);
 
     hfi->pos_out.elec_position = float2ctrl(0.0f);
-    hfi->spd_out.velocity = float2ctrl(0.0f);
+    hfi->spd_out.speed = float2ctrl(0.0f);
 }
 
 GMP_STATIC_INLINE void ctl_enable_pmsm_hfi(ctl_pmsm_hfi_t* hfi)
@@ -210,7 +210,7 @@ GMP_STATIC_INLINE void ctl_step_pmsm_hfi(ctl_pmsm_hfi_t* hfi, ctrl_gt i_alpha, c
     // 5. Output to Top-Level Interfaces
     // ========================================================================
     hfi->pos_out.elec_position = hfi->ato_pll.elec_angle_pu;
-    hfi->spd_out.velocity = hfi->ato_pll.elec_speed_pu;
+    hfi->spd_out.speed = hfi->ato_pll.elec_speed_pu;
 }
 /** @} */ // end of PMSM_HFI group
 

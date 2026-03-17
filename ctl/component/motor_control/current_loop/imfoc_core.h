@@ -13,10 +13,11 @@
 
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
-#include <ctl/component/motor_control/basic/motor_universal_interface.h>
+#include <ctl/component/motor_control/interface/motor_universal_interface.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 #include <ctl/component/motor_control/consultant/acim_consultant.h>
 #include <ctl/component/motor_control/consultant/pu_consultant.h>
+#include <ctl/component/motor_control/observer/acim_pos_calc.h>
 
 #ifndef _FILE_IM_IFOC_CORE_H_
 #define _FILE_IM_IFOC_CORE_H_
@@ -79,7 +80,9 @@ typedef struct _tag_im_ifoc_ctrl
     // --- Interfaces ---
     tri_adc_ift* adc_iuvw;
     adc_ift* adc_udc;
-    rotation_ift* pos_if; //!< Rotor mechanical position interface (Velocity must be in PU).
+    rotation_ift* pos_if; //!< Rotor mechanical position interface
+
+    velocity_ift spd_if; //!< (Velocity must be in PU).
 
     // --- Core Sub-modules ---
     ctl_im_pos_calc_t pos_calc; //!< Independent module for slip and sync angle calculation.
@@ -200,7 +203,7 @@ GMP_STATIC_INLINE void ctl_step_im_ifoc(im_ifoc_ctrl_t* mc)
     // IFOC heavily relies on using the Reference Iq rather than the noisy measured Iq
     // to calculate the slip speed smoothly. We feed it directly into our pos_calc.
     ctrl_gt sync_angle_pu =
-        ctl_step_im_pos_calc(&mc->pos_calc, mc->idq0.dat[phase_d], mc->idq_ref.dat[phase_q], mc->pos_if->velocity);
+        ctl_step_im_pos_calc(&mc->pos_calc, mc->idq0.dat[phase_d], mc->idq_ref.dat[phase_q], mc->spd_if.speed);
 
     ctl_set_phasor_via_angle(sync_angle_pu, &mc->sync_phasor);
 
@@ -276,7 +279,6 @@ GMP_STATIC_INLINE void ctl_step_im_ifoc(im_ifoc_ctrl_t* mc)
     // ========================================================================
     // 6. Inverse Park Transform
     // ========================================================================
-    mc->vdq_out_sat.dat[phase_0] = 0;
     ctl_ct_ipark((ctl_vector3_t*)&mc->vdq_out_sat, &mc->sync_phasor, &mc->vab0);
 }
 

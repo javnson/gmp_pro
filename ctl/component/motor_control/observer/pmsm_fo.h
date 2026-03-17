@@ -177,7 +177,7 @@ GMP_STATIC_INLINE void ctl_clear_pmsm_fo(ctl_pmsm_fo_t* fo)
     fo->diverge_cnt = 0;
     fo->flag_observer_locked = 0;
     fo->pos_out.elec_position = float2ctrl(0.0f);
-    fo->spd_out.velocity = float2ctrl(0.0f);
+    fo->spd_out.speed = float2ctrl(0.0f);
 }
 
 /**
@@ -290,7 +290,7 @@ GMP_STATIC_INLINE void ctl_step_pmsm_fo(ctl_pmsm_fo_t* fo, ctrl_gt v_alpha, ctrl
     // 5. Output to Top-Level Interfaces
     // ========================================================================
     fo->pos_out.elec_position = fo->ato_pll.elec_angle_pu; // Already modulo'd inside ATO
-    fo->spd_out.velocity = fo->ato_pll.elec_speed_pu;
+    fo->spd_out.speed = fo->ato_pll.elec_speed_pu;
 }
 /**
  * @}

@@ -197,7 +197,7 @@ GMP_STATIC_INLINE void ctl_clear_im_fo(ctl_im_fo_t* fo)
     fo->diverge_cnt = 0;
     fo->flag_observer_locked = 0;
     fo->pos_out.elec_position = float2ctrl(0.0f);
-    fo->spd_out.velocity = float2ctrl(0.0f);
+    fo->spd_out.speed = float2ctrl(0.0f);
     fo->torque_est = float2ctrl(0.0f);
     fo->psi_r_mag = float2ctrl(0.0f);
 }
@@ -264,8 +264,8 @@ GMP_STATIC_INLINE void ctl_step_im_fo(ctl_im_fo_t* fo, ctrl_gt v_alpha, ctrl_gt 
     ctrl_gt err_psi_alpha = fo->psi_s_est.dat[0] - fo->psi_s_ref.dat[0];
     ctrl_gt err_psi_beta = fo->psi_s_est.dat[1] - fo->psi_s_ref.dat[1];
 
-    ctrl_gt u_comp_alpha = ctl_step_pid_par(&fo->pi_comp[0], err_alpha);
-    ctrl_gt u_comp_beta = ctl_step_pid_par(&fo->pi_comp[1], err_beta);
+    ctrl_gt u_comp_alpha = ctl_step_pid_par(&fo->pi_comp[0], err_psi_alpha);
+    ctrl_gt u_comp_beta = ctl_step_pid_par(&fo->pi_comp[1], err_psi_beta);
 
     // ========================================================================
     // 3. Voltage Model (High-Speed Authority)
@@ -355,7 +355,7 @@ GMP_STATIC_INLINE void ctl_step_im_fo(ctl_im_fo_t* fo, ctrl_gt v_alpha, ctrl_gt 
     // 8. Output to Top-Level Interfaces
     // ========================================================================
     fo->pos_out.elec_position = fo->ato_pll.elec_angle_pu;
-    fo->spd_out.velocity = w_mech_pu; // Output mechanical speed for outer velocity loop
+    fo->spd_out.speed = w_mech_pu; // Output mechanical speed for outer velocity loop
 }
 
 /**

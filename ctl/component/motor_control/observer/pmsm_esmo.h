@@ -180,7 +180,7 @@ GMP_STATIC_INLINE void ctl_clear_pmsm_esmo(ctl_pmsm_esmo_t* esmo)
     esmo->diverge_cnt = 0;
     esmo->flag_observer_locked = 0;
     esmo->pos_out.elec_position = float2ctrl(0.0f);
-    esmo->spd_out.velocity = float2ctrl(0.0f);
+    esmo->spd_out.speed = float2ctrl(0.0f);
 }
 
 /**
@@ -305,7 +305,7 @@ GMP_STATIC_INLINE void ctl_step_pmsm_esmo(ctl_pmsm_esmo_t* esmo, ctrl_gt v_alpha
     // 7. Output to Top-Level Interfaces
     // ========================================================================
     esmo->pos_out.elec_position = ctrl_mod_1(comp_angle_pu);
-    esmo->spd_out.velocity = esmo->ato_pll.elec_speed_pu;
+    esmo->spd_out.speed = esmo->ato_pll.elec_speed_pu;
 }
 
 /** @} */ // end of PMSM_SMO group
