@@ -1,3 +1,5 @@
+// [Warning THIS MODULE HAS BEEN DISPOSED]
+
 /**
  * @file three_phase_dc_ac.h
  * @author Javnson (javnson@zju.edu.cn)
