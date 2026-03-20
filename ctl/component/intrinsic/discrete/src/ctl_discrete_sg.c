@@ -39,7 +39,7 @@ void ctl_init_ramp_generator_via_freq(
     // ramp range
     parameter_gt amp_pos, parameter_gt amp_neg)
 {
-    gmp_base_assert(target_freq > 0.0); // ·ÀÖ¹³ıÁã
+    //gmp_base_assert(target_freq > 0.0); // ·ÀÖ¹³ıÁã
     gmp_base_assert(amp_neg < amp_pos);
 
     _rg->current = float2ctrl(0);

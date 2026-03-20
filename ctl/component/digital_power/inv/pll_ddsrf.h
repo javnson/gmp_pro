@@ -15,8 +15,8 @@
  * @brief A standard three-phase SRF-PLL for grid synchronization.
  */
 
-#ifndef _FILE_THREE_PHASE_PLL_H_
-#define _FILE_THREE_PHASE_PLL_H_
+#ifndef _FILE_THREE_PHASE_PLL_DDSRF_H_
+#define _FILE_THREE_PHASE_PLL_DDSRF_H_
 
 #ifdef __cplusplus
 extern "C"

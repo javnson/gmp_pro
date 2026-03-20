@@ -82,79 +82,79 @@ void clear_all_controllers();
 // periodic callback function things.
 GMP_STATIC_INLINE void ctl_dispatch(void)
 {
-    // ADC calibrator routine
-    if (flag_enable_adc_calibrator)
-    {
-        if (index_adc_calibrator == 7)
-            ctl_step_adc_calibrator(&adc_calibrator, idc.control_port.value);
-        else if (index_adc_calibrator == 6)
-            ctl_step_adc_calibrator(&adc_calibrator, udc.control_port.value);
-        else if (index_adc_calibrator <= 5 && index_adc_calibrator >= 3)
-            ctl_step_adc_calibrator(&adc_calibrator, uuvw.control_port.value.dat[index_adc_calibrator - 3]);
-        else if (index_adc_calibrator <= 2)
-            ctl_step_adc_calibrator(&adc_calibrator, iuvw.control_port.value.dat[index_adc_calibrator]);
-    }
-
-    // normal controller routine
-    else
-    {
-        // ramp generator
-        ctl_step_slope_f_pu(&rg);
-
-        // Calculate Motor Speed
-        ctl_step_spd_calc(&spd_enc);
-
-#if BUILD_LEVEL > 3
-        // motion controller
-        ctl_step_vel_pos_ctrl(&motion_ctrl);
-
-        // current command dispatch
-        ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, 0, ctl_get_vel_pos_cmd(&motion_ctrl));
-
-#endif
-
-        // motor current controller
-        ctl_step_current_controller(&mtr_ctrl);
-
-#ifdef ENABLE_SMO
-        ctrl_gt udc_for_smo = ctl_mul(CTL_CTRL_CONST_1_OVER_SQRT3, mtr_ctrl.udc);
-
-#if (PWM_MODULATOR_USING_NEGATIVE_LOGIC == 1)
-        ctrl_gt v_alpha = ctl_mul(udc_for_smo, - mtr_ctrl.vab0.dat[phase_alpha]);
-        ctrl_gt v_beta = ctl_mul(udc_for_smo, - mtr_ctrl.vab0.dat[phase_beta]);
-#else
-        ctrl_gt v_alpha = ctl_mul(udc_for_smo, mtr_ctrl.vab0.dat[phase_alpha]);
-        ctrl_gt v_beta = ctl_mul(udc_for_smo, mtr_ctrl.vab0.dat[phase_beta]);
-#endif
-        ctl_step_pmsm_smo(
-            // SMO object
-            &smo,
-            // uab
-            v_alpha, v_beta,
-            // iab
-            mtr_ctrl.iab0.dat[phase_alpha], mtr_ctrl.iab0.dat[phase_beta]);
-#endif // ENABLE_SMO
-
-#ifdef ENABLE_MOTOR_FAULT_PROTECTION
-        // Motor protection callback, fast task
-        if (ctl_step_mtr_protect_fast(&protection))
-        {
-            cia402_fault_request(&cia402_sm);
-        }
-#endif // ENABLE_MOTOR_FAULT_PROTECTION
-
-        // mix all output
-        spwm.vab0_out.dat[phase_alpha] = mtr_ctrl.vab0.dat[phase_alpha];
-        spwm.vab0_out.dat[phase_beta] = mtr_ctrl.vab0.dat[phase_beta];
-        spwm.vab0_out.dat[phase_0] = mtr_ctrl.vab0.dat[phase_0];
-
-        // modulation
-#if defined USING_NPC_MODULATOR
-        ctl_step_npc_modulator(&spwm);
-#else
-        ctl_step_svpwm_modulator(&spwm);
-#endif // USING_NPC_MODULATOR
-    }
+//    // ADC calibrator routine
+//    if (flag_enable_adc_calibrator)
+//    {
+//        if (index_adc_calibrator == 7)
+//            ctl_step_adc_calibrator(&adc_calibrator, idc.control_port.value);
+//        else if (index_adc_calibrator == 6)
+//            ctl_step_adc_calibrator(&adc_calibrator, udc.control_port.value);
+//        else if (index_adc_calibrator <= 5 && index_adc_calibrator >= 3)
+//            ctl_step_adc_calibrator(&adc_calibrator, uuvw.control_port.value.dat[index_adc_calibrator - 3]);
+//        else if (index_adc_calibrator <= 2)
+//            ctl_step_adc_calibrator(&adc_calibrator, iuvw.control_port.value.dat[index_adc_calibrator]);
+//    }
+//
+//    // normal controller routine
+//    else
+//    {
+//        // ramp generator
+//        ctl_step_slope_f_pu(&rg);
+//
+//        // Calculate Motor Speed
+//        ctl_step_spd_calc(&spd_enc);
+//
+//#if BUILD_LEVEL > 3
+//        // motion controller
+//        ctl_step_vel_pos_ctrl(&motion_ctrl);
+//
+//        // current command dispatch
+//        ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, 0, ctl_get_vel_pos_cmd(&motion_ctrl));
+//
+//#endif
+//
+//        // motor current controller
+//        ctl_step_current_controller(&mtr_ctrl);
+//
+//#ifdef ENABLE_SMO
+//        ctrl_gt udc_for_smo = ctl_mul(CTL_CTRL_CONST_1_OVER_SQRT3, mtr_ctrl.udc);
+//
+//#if (PWM_MODULATOR_USING_NEGATIVE_LOGIC == 1)
+//        ctrl_gt v_alpha = ctl_mul(udc_for_smo, - mtr_ctrl.vab0.dat[phase_alpha]);
+//        ctrl_gt v_beta = ctl_mul(udc_for_smo, - mtr_ctrl.vab0.dat[phase_beta]);
+//#else
+//        ctrl_gt v_alpha = ctl_mul(udc_for_smo, mtr_ctrl.vab0.dat[phase_alpha]);
+//        ctrl_gt v_beta = ctl_mul(udc_for_smo, mtr_ctrl.vab0.dat[phase_beta]);
+//#endif
+//        ctl_step_pmsm_smo(
+//            // SMO object
+//            &smo,
+//            // uab
+//            v_alpha, v_beta,
+//            // iab
+//            mtr_ctrl.iab0.dat[phase_alpha], mtr_ctrl.iab0.dat[phase_beta]);
+//#endif // ENABLE_SMO
+//
+//#ifdef ENABLE_MOTOR_FAULT_PROTECTION
+//        // Motor protection callback, fast task
+//        if (ctl_step_mtr_protect_fast(&protection))
+//        {
+//            cia402_fault_request(&cia402_sm);
+//        }
+//#endif // ENABLE_MOTOR_FAULT_PROTECTION
+//
+//        // mix all output
+//        spwm.vab0_out.dat[phase_alpha] = mtr_ctrl.vab0.dat[phase_alpha];
+//        spwm.vab0_out.dat[phase_beta] = mtr_ctrl.vab0.dat[phase_beta];
+//        spwm.vab0_out.dat[phase_0] = mtr_ctrl.vab0.dat[phase_0];
+//
+//        // modulation
+//#if defined USING_NPC_MODULATOR
+//        ctl_step_npc_modulator(&spwm);
+//#else
+//        ctl_step_svpwm_modulator(&spwm);
+//#endif // USING_NPC_MODULATOR
+//    }
 }
 
 #ifdef __cplusplus

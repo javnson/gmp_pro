@@ -60,7 +60,6 @@
                     "${GMP_PRO_LOCATION}/core/std/cfg/*",
                     "${GMP_PRO_LOCATION}/core/std/ds/*",
                     "${GMP_PRO_LOCATION}/core/std/ec/*",
-                    "${GMP_PRO_LOCATION}/core/std/locale/*",
                     "${GMP_PRO_LOCATION}/gmp_core.h",
                     "${GMP_PRO_LOCATION}/gmp_core.hpp"
                 ],
@@ -169,7 +168,7 @@
             },
             "dev|app|ad5933": {
                 "type": "module",
-                "description": "",
+                "description": "Impedance \nConverter, Network Analyzer",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/core/dev/application/ad5933.c"
                 ],
@@ -177,7 +176,9 @@
                     "${GMP_PRO_LOCATION}/core/dev/application/ad5933.h"
                 ],
                 "inc_dirs": [],
-                "help_docs": [],
+                "help_docs": [
+                    "https://www.analog.com/media/en/technical-documentation/data-sheets/ad5933.pdf"
+                ],
                 "depends_on": [],
                 "tasks": [
                     {
@@ -1734,30 +1735,7 @@
                 "inc_patterns": [],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    }
-                ]
+                "depends_on": []
             },
             "component|intrinsic|continuous|pi": {
                 "type": "module",
@@ -2018,30 +1996,7 @@
                 "inc_patterns": [],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    }
-                ]
+                "depends_on": []
             },
             "component|intrinsic|discrete|pid": {
                 "type": "module",
@@ -2410,30 +2365,7 @@
                 "inc_patterns": [],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    }
-                ]
+                "depends_on": []
             },
             "component|intrinsic|protection|itoc": {
                 "type": "module",
@@ -2550,30 +2482,7 @@
                 "inc_patterns": [],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    }
-                ]
+                "depends_on": []
             },
             "component|intrinsic|advance|back_steppping": {
                 "type": "module",
@@ -2980,30 +2889,7 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    }
-                ]
+                "depends_on": []
             },
             "component|motor_control|consultant|acim": {
                 "type": "module",
@@ -3489,30 +3375,7 @@
                 "inc_patterns": [],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    }
-                ]
+                "depends_on": []
             },
             "component|motor_control|motion|trapezoidal": {
                 "type": "module",
@@ -3629,30 +3492,7 @@
                 "inc_patterns": [],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    }
-                ]
+                "depends_on": []
             },
             "component|motor_control|observer|acim_fo": {
                 "type": "module",
@@ -4174,30 +4014,7 @@
                 "inc_patterns": [],
                 "inc_dirs": [],
                 "depends_on": [],
-                "help_docs": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    }
-                ]
+                "help_docs": []
             },
             "component|digital_power|inv|inv_3ph_core": {
                 "type": "module",
@@ -4242,30 +4059,7 @@
                 "inc_patterns": [],
                 "inc_dirs": [],
                 "depends_on": [],
-                "help_docs": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    }
-                ]
+                "help_docs": []
             },
             "component|digital_power|mppt|inc": {
                 "type": "module",
@@ -4499,30 +4293,7 @@
                 "inc_patterns": [],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    }
-                ]
+                "depends_on": []
             },
             "component|digital_power|rectifier|vienna": {
                 "type": "module",
@@ -4565,30 +4336,7 @@
                 "inc_patterns": [],
                 "inc_dirs": [],
                 "depends_on": [],
-                "help_docs": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    }
-                ]
+                "help_docs": []
             },
             "component|digital_power|sinv|spll_sogi": {
                 "type": "module",

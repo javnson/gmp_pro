@@ -23,14 +23,6 @@
         },
         {
             "root": "core",
-            "module": "dev|sensor|_internal"
-        },
-        {
-            "root": "core",
-            "module": "dev|sensor|hdc1080"
-        },
-        {
-            "root": "core",
             "module": "dev|software|_internal"
         },
         {
@@ -371,27 +363,7 @@
         },
         {
             "root": "ctl",
-            "module": "component|motor_control|acm_ctrl"
-        },
-        {
-            "root": "ctl",
             "module": "component|motor_control|basic|_internal"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|basic|decouple"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|basic|protection"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|basic|vf_generator"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|basic|voltage_calculator"
         },
         {
             "root": "ctl",
@@ -399,47 +371,7 @@
         },
         {
             "root": "ctl",
-            "module": "component|motor_control|consultant|acim"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|consultant|inverter"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|consultant|mechanical"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|consultant|nameplate"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|consultant|pmsm"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|consultant|pu"
-        },
-        {
-            "root": "ctl",
             "module": "component|motor_control|current_loop|_internal"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|current_loop|dtc_svm"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|current_loop|foc"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|current_loop|imfoc"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|current_loop|pmsm_dbptc"
         },
         {
             "root": "ctl",
@@ -447,39 +379,7 @@
         },
         {
             "root": "ctl",
-            "module": "component|motor_control|distributor|ipm_fw"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|distributor|lut_fw"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|distributor|spm_fw"
-        },
-        {
-            "root": "ctl",
             "module": "component|motor_control|mech_loop|_internal"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|mech_loop|ladrc_pos"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|mech_loop|ladrc_spd"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|mech_loop|mit"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|mech_loop|pi_pi"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|mech_loop|smc_pos"
         },
         {
             "root": "ctl",
@@ -487,63 +387,7 @@
         },
         {
             "root": "ctl",
-            "module": "component|motor_control|motion|s_curve"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|motion|sogi_curve"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|motion|trapezoidal"
-        },
-        {
-            "root": "ctl",
             "module": "component|motor_control|observer|_internal"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|observer|acim_fo"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|observer|acim_pos_calc"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|observer|acim_smo"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|observer|ato_pll"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|observer|bldc_hall"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|observer|bldc_zcd"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|observer|pmsm_esmo"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|observer|pmsm_fo"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|observer|pmsm_hfi"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|param_est"
-        },
-        {
-            "root": "ctl",
-            "module": "component|motor_control|pmsm_ctrl"
         },
         {
             "root": "ctl",

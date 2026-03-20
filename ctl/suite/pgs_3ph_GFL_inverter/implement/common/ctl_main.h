@@ -17,10 +17,12 @@
 #include <ctl/component/interface/adc_channel.h>
 #include <ctl/component/interface/pwm_channel.h>
 
-#include <ctl/component/digital_power/three_phase/three_phase_GFL.h>
-#include <ctl/component/digital_power/three_phase/three_phase_additional.h>
+#include <ctl/component/digital_power/inv/gfl_core.h>
+#include <ctl/component/digital_power/inv/gfl_pq_ctrl.h>
+#include <ctl/component/digital_power/inv/inv_hcm.h>
+#include <ctl/component/digital_power/inv/inv_neg_ctrl.h>
 
-#include <ctl/component/interface/pwm_modulator.h>
+#include <ctl/component/interface/spwm_modulator.h>
 
 #include <ctl/framework/cia402_state_machine.h>
 

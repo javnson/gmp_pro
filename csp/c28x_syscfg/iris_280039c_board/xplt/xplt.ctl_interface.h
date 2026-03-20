@@ -26,25 +26,25 @@ extern "C"
 // Input Callback
 GMP_STATIC_INLINE void ctl_input_callback(void)
 {
-    // copy source ADC data
-    vabc_src[phase_A] = ADC_readResult(INV_UA_RESULT_BASE, INV_UA);
-    vabc_src[phase_B] = ADC_readResult(INV_UB_RESULT_BASE, INV_UB);
-    vabc_src[phase_C] = ADC_readResult(INV_UC_RESULT_BASE, INV_UC);
-
-    iabc_src[phase_A] = ADC_readResult(INV_IA_RESULT_BASE, INV_IA);
-    iabc_src[phase_B] = ADC_readResult(INV_IB_RESULT_BASE, INV_IB);
-    iabc_src[phase_C] = ADC_readResult(INV_IC_RESULT_BASE, INV_IC);
-
-    uuvw_src[phase_U] = ADC_readResult(INV_UU_RESULT_BASE, INV_UU);
-    uuvw_src[phase_V] = ADC_readResult(INV_UV_RESULT_BASE, INV_UV);
-    uuvw_src[phase_W] = ADC_readResult(INV_UW_RESULT_BASE, INV_UW);
-
-    iuvw_src[phase_U] = ADC_readResult(INV_IU_RESULT_BASE, INV_IU);
-    iuvw_src[phase_V] = ADC_readResult(INV_IV_RESULT_BASE, INV_IV);
-    iuvw_src[phase_W] = ADC_readResult(INV_IW_RESULT_BASE, INV_IW);
-
-    udc_src = ADC_readResult(INV_VBUS_RESULT_BASE, INV_VBUS);
-    idc_src = ADC_readResult(INV_IBUS_RESULT_BASE, INV_IBUS);
+//    // copy source ADC data
+//    vabc_src[phase_A] = ADC_readResult(INV_UA_RESULT_BASE, INV_UA);
+//    vabc_src[phase_B] = ADC_readResult(INV_UB_RESULT_BASE, INV_UB);
+//    vabc_src[phase_C] = ADC_readResult(INV_UC_RESULT_BASE, INV_UC);
+//
+//    iabc_src[phase_A] = ADC_readResult(INV_IA_RESULT_BASE, INV_IA);
+//    iabc_src[phase_B] = ADC_readResult(INV_IB_RESULT_BASE, INV_IB);
+//    iabc_src[phase_C] = ADC_readResult(INV_IC_RESULT_BASE, INV_IC);
+//
+//    uuvw_src[phase_U] = ADC_readResult(INV_UU_RESULT_BASE, INV_UU);
+//    uuvw_src[phase_V] = ADC_readResult(INV_UV_RESULT_BASE, INV_UV);
+//    uuvw_src[phase_W] = ADC_readResult(INV_UW_RESULT_BASE, INV_UW);
+//
+//    iuvw_src[phase_U] = ADC_readResult(INV_IU_RESULT_BASE, INV_IU);
+//    iuvw_src[phase_V] = ADC_readResult(INV_IV_RESULT_BASE, INV_IV);
+//    iuvw_src[phase_W] = ADC_readResult(INV_IW_RESULT_BASE, INV_IW);
+//
+//    udc_src = ADC_readResult(INV_VBUS_RESULT_BASE, INV_VBUS);
+//    idc_src = ADC_readResult(INV_IBUS_RESULT_BASE, INV_IBUS);
 
     // invoke ADC p.u. routine
 //    ctl_step_tri_ptr_adc_channel(&iabc);
@@ -58,34 +58,37 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
 // Output Callback
 GMP_STATIC_INLINE void ctl_output_callback(void)
 {
-    // Write ePWM peripheral CMP
-#if defined USING_NPC_MODULATOR
 
-#if BOARD_SELECTION == LAUNCHPAD
-    EPWM_setCounterCompareValue(EPWM_J4_PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_A_OUTER]);
-    EPWM_setCounterCompareValue(EPWM_J4_PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_B_OUTER]);
-    EPWM_setCounterCompareValue(EPWM_J4_PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_OUTER]);
-    EPWM_setCounterCompareValue(EPWM_J8_PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_A_INNER]);
-    EPWM_setCounterCompareValue(EPWM_J8_PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_B_INNER]);
-    EPWM_setCounterCompareValue(EPWM_J8_PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_INNER]);
+    EPWM_setCounterCompareValue(IRIS_EPWM1_BASE, EPWM_COUNTER_COMPARE_A, 1500);
 
-#elif BOARD_SELECTION == GMP_IRIS
-    EPWM_setCounterCompareValue(IRIS_EPWM1_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_A_INNER]);
-    EPWM_setCounterCompareValue(IRIS_EPWM2_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_A_OUTER]);
-    EPWM_setCounterCompareValue(IRIS_EPWM3_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_B_INNER]);
-    EPWM_setCounterCompareValue(IRIS_EPWM4_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_B_OUTER]);
-    EPWM_setCounterCompareValue(IRIS_EPWM5_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_INNER]);
-    EPWM_setCounterCompareValue(IRIS_EPWM6_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_OUTER]);
-
-#endif // BOARD_SELECTION
-
-#else // USING_NPC_MODULATOR
-
-    EPWM_setCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_U]);
-    EPWM_setCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_V]);
-    EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_W]);
-
-#endif // USING_NPC_MODULATOR
+//    // Write ePWM peripheral CMP
+//#if defined USING_NPC_MODULATOR
+//
+//#if BOARD_SELECTION == LAUNCHPAD
+//    EPWM_setCounterCompareValue(EPWM_J4_PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_A_OUTER]);
+//    EPWM_setCounterCompareValue(EPWM_J4_PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_B_OUTER]);
+//    EPWM_setCounterCompareValue(EPWM_J4_PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_OUTER]);
+//    EPWM_setCounterCompareValue(EPWM_J8_PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_A_INNER]);
+//    EPWM_setCounterCompareValue(EPWM_J8_PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_B_INNER]);
+//    EPWM_setCounterCompareValue(EPWM_J8_PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_INNER]);
+//
+//#elif BOARD_SELECTION == GMP_IRIS
+//    EPWM_setCounterCompareValue(IRIS_EPWM1_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_A_INNER]);
+//    EPWM_setCounterCompareValue(IRIS_EPWM2_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_A_OUTER]);
+//    EPWM_setCounterCompareValue(IRIS_EPWM3_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_B_INNER]);
+//    EPWM_setCounterCompareValue(IRIS_EPWM4_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_B_OUTER]);
+//    EPWM_setCounterCompareValue(IRIS_EPWM5_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_INNER]);
+//    EPWM_setCounterCompareValue(IRIS_EPWM6_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[NPC_IDX_PHASE_C_OUTER]);
+//
+//#endif // BOARD_SELECTION
+//
+//#else // USING_NPC_MODULATOR
+//
+//    EPWM_setCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_U]);
+//    EPWM_setCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_V]);
+//    EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_W]);
+//
+//#endif // USING_NPC_MODULATOR
 
     // Monitor Port
 #if BUILD_LEVEL == 1
