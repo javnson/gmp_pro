@@ -12,7 +12,7 @@
 /* ==================== INLINE STATUS FUNCTIONS ============================ */
 /* ========================================================================= */
 
-GMP_STATIC_INLINE fast_gt gmp_hal_uart_is_tx_busy(uart_halt uart)
+fast_gt gmp_hal_uart_is_tx_busy(uart_halt uart)
 {
     if (uart == NULL)
         return 0;
@@ -27,7 +27,7 @@ GMP_STATIC_INLINE fast_gt gmp_hal_uart_is_tx_busy(uart_halt uart)
     return 0; /* Idle */
 }
 
-GMP_STATIC_INLINE size_gt gmp_hal_uart_get_rx_available(uart_halt uart)
+size_gt gmp_hal_uart_get_rx_available(uart_halt uart)
 {
     if (uart == NULL)
         return 0;

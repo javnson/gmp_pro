@@ -294,6 +294,9 @@
     <ClCompile Include="DigialPower_simulink.cpp">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\windows_peripheral_driver.cpp">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\implement\common\ctl_main.h">

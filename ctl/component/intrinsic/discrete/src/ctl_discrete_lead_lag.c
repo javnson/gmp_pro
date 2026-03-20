@@ -7,7 +7,7 @@
 
 void ctl_init_lead(ctrl_lead_t* obj, parameter_gt K_D, parameter_gt tau_D, parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0); // 防呆保护
+    gmp_base_assert(fs > 0.0f); // 防呆保护
 
     // Sampling period (Unified to Ts)
     parameter_gt Ts = 1.0 / fs;
@@ -43,7 +43,7 @@ void ctl_init_lead(ctrl_lead_t* obj, parameter_gt K_D, parameter_gt tau_D, param
 
 void ctl_init_lead_form2(ctrl_lead_t* obj, parameter_gt alpha, parameter_gt T, parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0);
+    gmp_base_assert(fs > 0.0f);
 
     // Sampling period
     parameter_gt Ts = 1.0f / fs;
@@ -87,8 +87,8 @@ void ctl_init_lead_form3(ctrl_lead_t* obj, parameter_gt theta_rad, parameter_gt 
     parameter_gt sin_val = sinf(theta_rad);
 
     // Prevent division by zero if theta is 90 degrees (pi/2)
-    if (sin_val > 0.9999)
-        sin_val = 0.9999;
+    if (sin_val > 0.999999f)
+        sin_val = 0.999999f;
 
     alpha = (1.0f + sin_val) / (1.0f - sin_val);
 
@@ -112,7 +112,7 @@ void ctl_init_lead_form3(ctrl_lead_t* obj, parameter_gt theta_rad, parameter_gt 
 
 void ctl_init_lag(ctrl_lag_t* obj, parameter_gt tau_L, parameter_gt tau_P, parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0);
+    gmp_base_assert(fs > 0.0f);
 
     // Sampling period
     parameter_gt Ts = 1.0f / fs;
@@ -135,13 +135,13 @@ void ctl_init_lag(ctrl_lag_t* obj, parameter_gt tau_L, parameter_gt tau_P, param
     // H(z) = (b0 + b1*z^-1) / (1 - a1*z^-1)
 
     // a1 = (2*tau_P - Ts) / (2*tau_P + Ts)
-    obj->a1 = float2ctrl((2.0 * tau_P - Ts) * inv_den);
+    obj->a1 = float2ctrl((2.0f * tau_P - Ts) * inv_den);
 
     // b0 = (2*tau_L + Ts) / (2*tau_P + Ts)
-    obj->b0 = float2ctrl((2.0 * tau_L + Ts) * inv_den);
+    obj->b0 = float2ctrl((2.0f * tau_L + Ts) * inv_den);
 
     // b1 = (Ts - 2*tau_L) / (2*tau_P + Ts)
-    obj->b1 = float2ctrl((Ts - 2.0 * tau_L) * inv_den);
+    obj->b1 = float2ctrl((Ts - 2.0f * tau_L) * inv_den);
 
     // Clear initial states
     ctl_clear_lag(obj);

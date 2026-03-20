@@ -54,15 +54,15 @@ static void _calc_poly2_coeffs(parameter_gt r1_hz, parameter_gt r2_hz, int is_co
     parameter_gt c0, c1;
     if (is_complex)
     {
-        parameter_gt sigma = 2.0 * CTL_PARAM_CONST_PI * r1_hz;
-        parameter_gt wd = 2.0 * CTL_PARAM_CONST_PI * r2_hz;
+        parameter_gt sigma = 2.0f * CTL_PARAM_CONST_PI * r1_hz;
+        parameter_gt wd = 2.0f * CTL_PARAM_CONST_PI * r2_hz;
         c1 = 2.0 * sigma;
         c0 = sigma * sigma + wd * wd;
     }
     else
     {
-        parameter_gt w1 = 2.0 * CTL_PARAM_CONST_PI * r1_hz;
-        parameter_gt w2 = 2.0 * CTL_PARAM_CONST_PI * r2_hz;
+        parameter_gt w1 = 2.0f * CTL_PARAM_CONST_PI * r1_hz;
+        parameter_gt w2 = 2.0f * CTL_PARAM_CONST_PI * r2_hz;
         c1 = w1 + w2;
         c0 = w1 * w2;
     }
@@ -72,7 +72,7 @@ static void _calc_poly2_coeffs(parameter_gt r1_hz, parameter_gt r2_hz, int is_co
 
     // 直接返回未归一化的 Z 域系数
     coeffs[0] = k2 + c1 * k + c0;
-    coeffs[1] = 2.0 * c0 - 2.0 * k2;
+    coeffs[1] = 2.0f * c0 - 2.0f * k2;
     coeffs[2] = k2 - c1 * k + c0;
 }
 
@@ -87,14 +87,14 @@ void ctl_init_1p1z(ctrl_1p1z_t* c, parameter_gt gain, parameter_gt f_z, paramete
     parameter_gt Kp = tanf(CTL_PARAM_CONST_PI * f_p / fs);
 
     parameter_gt den_norm = Kp + 1.0;
-    if (den_norm < 1e-9)
-        den_norm = 1e-9;
+    if (den_norm < 1e-9f)
+        den_norm = 1e-9f;
 
-    parameter_gt b0 = (Kz + 1.0) / den_norm;
-    parameter_gt b1 = (Kz - 1.0) / den_norm;
-    parameter_gt a1 = (Kp - 1.0) / den_norm;
+    parameter_gt b0 = (Kz + 1.0f) / den_norm;
+    parameter_gt b1 = (Kz - 1.0f) / den_norm;
+    parameter_gt a1 = (Kp - 1.0f) / den_norm;
 
-    parameter_gt dc_gain_comp = (f_p > 1e-9 && f_z > 1e-9) ? (f_p / f_z) : 1.0;
+    parameter_gt dc_gain_comp = (f_p > 1e-9f && f_z > 1e-9f) ? (f_p / f_z) : 1.0f;
 
     // 修复 2：为了补偿零极点带来的固有衰减/放大，必须用乘法！
     parameter_gt final_gain = gain * dc_gain_comp;
@@ -112,7 +112,7 @@ void ctl_init_1p1z(ctrl_1p1z_t* c, parameter_gt gain, parameter_gt f_z, paramete
 void ctl_init_2p2z_real(ctrl_2p2z_t* c, parameter_gt gain, parameter_gt f_z1, parameter_gt f_z2, parameter_gt f_p1,
                         parameter_gt f_p2, parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0);
+    gmp_base_assert(fs > 0.0f);
 
     parameter_gt num_poly_z[3], den_poly_z[3];
     _calc_poly2_coeffs(f_z1, f_z2, 0, fs, num_poly_z);
@@ -139,7 +139,7 @@ void ctl_init_2p2z_real(ctrl_2p2z_t* c, parameter_gt gain, parameter_gt f_z1, pa
 void ctl_init_2p2z_complex_zeros(ctrl_2p2z_t* c, parameter_gt gain, parameter_gt f_czr, parameter_gt f_czi,
                                  parameter_gt f_p1, parameter_gt f_p2, parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0);
+    gmp_base_assert(fs > 0.0f);
 
     parameter_gt num_poly_z[3], den_poly_z[3];
     _calc_poly2_coeffs(f_czr, f_czi, 1, fs, num_poly_z);
@@ -171,13 +171,13 @@ void ctl_init_3p3z_real(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt f_z1, pa
 {
     int i;
 
-    gmp_base_assert(fs > 0.0);
+    gmp_base_assert(fs > 0.0f);
 
     ctrl_2p2z_t sec1;
     ctrl_1p1z_t sec2;
 
-    ctl_init_2p2z_real(&sec1, 1.0, f_z1, f_z2, f_p1, f_p2, fs);
-    ctl_init_1p1z(&sec2, 1.0, f_z3, f_p3, fs);
+    ctl_init_2p2z_real(&sec1, 1.0f, f_z1, f_z2, f_p1, f_p2, fs);
+    ctl_init_1p1z(&sec2, 1.0f, f_z3, f_p3, fs);
 
     parameter_gt b2[3] = {sec1.coef_b[0], sec1.coef_b[1], sec1.coef_b[2]};
     parameter_gt c2[2] = {sec2.coef_b[0], sec2.coef_b[1]};
@@ -211,8 +211,8 @@ void ctl_init_3p3z_complex_zeros(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt
 
     ctrl_2p2z_t sec1;
     ctrl_1p1z_t sec2;
-    ctl_init_2p2z_complex_zeros(&sec1, 1.0, f_czr, f_czi, f_p1, f_p2, fs);
-    ctl_init_1p1z(&sec2, 1.0, f_z3, f_p3, fs);
+    ctl_init_2p2z_complex_zeros(&sec1, 1.0f, f_czr, f_czi, f_p1, f_p2, fs);
+    ctl_init_1p1z(&sec2, 1.0f, f_z3, f_p3, fs);
 
     parameter_gt b2[3] = {sec1.coef_b[0], sec1.coef_b[1], sec1.coef_b[2]};
     parameter_gt c2[2] = {sec2.coef_b[0], sec2.coef_b[1]};
@@ -242,7 +242,7 @@ void ctl_init_3p3z_complex_poles(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt
 {
     int i;
 
-    gmp_base_assert(fs > 0.0);
+    gmp_base_assert(fs > 0.0f);
 
     ctrl_2p2z_t sec1;
     ctrl_1p1z_t sec2;
@@ -260,7 +260,7 @@ void ctl_init_3p3z_complex_poles(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt
     sec1.coef_b[2] = num_poly[2] * norm;
 
     // Build the 1P1Z section with the remaining real pole and zero
-    ctl_init_1p1z(&sec2, 1.0, f_z3, f_p3, fs);
+    ctl_init_1p1z(&sec2, 1.0f, f_z3, f_p3, fs);
 
     // Multiply the polynomials
     parameter_gt b2[3] = {sec1.coef_b[0], sec1.coef_b[1], sec1.coef_b[2]};
@@ -291,7 +291,7 @@ void ctl_init_3p3z_complex_pair(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt 
 {
     int i;
 
-    gmp_base_assert(fs > 0.0);
+    gmp_base_assert(fs > 0.0f);
 
     ctrl_2p2z_t complex_sec;
     ctrl_1p1z_t real_sec;
@@ -309,7 +309,7 @@ void ctl_init_3p3z_complex_pair(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt 
     complex_sec.coef_b[2] = num_poly[2] * norm;
 
     // Build the 1P1Z section from the real pair
-    ctl_init_1p1z(&real_sec, 1.0, f_z3, f_p3, fs);
+    ctl_init_1p1z(&real_sec, 1.0f, f_z3, f_p3, fs);
 
     // Multiply the polynomials
     parameter_gt b2[3] = {complex_sec.coef_b[0], complex_sec.coef_b[1], complex_sec.coef_b[2]};
@@ -342,7 +342,7 @@ parameter_gt ctl_get_2p2z_gain(ctrl_2p2z_t* c, parameter_gt fs, parameter_gt f)
 {
     parameter_gt w = 2.0f * CTL_PARAM_CONST_PI * f / fs;
     parameter_gt cos_w = cosf(w), sin_w = sinf(w);
-    parameter_gt cos_2w = cosf(2 * w), sin_2w = sinf(2 * w);
+    parameter_gt cos_2w = cosf(2.0f * w), sin_2w = sinf(2.0f * w);
 
     parameter_gt num_real = c->coef_b[0] + c->coef_b[1] * cos_w + c->coef_b[2] * cos_2w;
     parameter_gt num_imag = -c->coef_b[1] * sin_w - c->coef_b[2] * sin_2w;
@@ -359,7 +359,7 @@ parameter_gt ctl_get_2p2z_phase_lag(ctrl_2p2z_t* c, parameter_gt fs, parameter_g
 {
     parameter_gt w = 2.0f * CTL_PARAM_CONST_PI * f / fs;
     parameter_gt cos_w = cosf(w), sin_w = sinf(w);
-    parameter_gt cos_2w = cosf(2 * w), sin_2w = sinf(2 * w);
+    parameter_gt cos_2w = cosf(2.0f * w), sin_2w = sinf(2.0f * w);
 
     parameter_gt num_real = c->coef_b[0] + c->coef_b[1] * cos_w + c->coef_b[2] * cos_2w;
     parameter_gt num_imag = -c->coef_b[1] * sin_w - c->coef_b[2] * sin_2w;
@@ -376,8 +376,8 @@ parameter_gt ctl_get_3p3z_gain(ctrl_3p3z_t* c, parameter_gt fs, parameter_gt f)
 {
     parameter_gt w = 2.0f * CTL_PARAM_CONST_PI * f / fs;
     parameter_gt cos_w = cosf(w), sin_w = sinf(w);
-    parameter_gt cos_2w = cosf(2 * w), sin_2w = sinf(2 * w);
-    parameter_gt cos_3w = cosf(3 * w), sin_3w = sinf(3 * w);
+    parameter_gt cos_2w = cosf(2.0f * w), sin_2w = sinf(2.0f * w);
+    parameter_gt cos_3w = cosf(3.0f * w), sin_3w = sinf(3.0f * w);
 
     parameter_gt num_real = c->coef_b[0] + c->coef_b[1] * cos_w + c->coef_b[2] * cos_2w + c->coef_b[3] * cos_3w;
     parameter_gt num_imag = -c->coef_b[1] * sin_w - c->coef_b[2] * sin_2w - c->coef_b[3] * sin_3w;
@@ -394,8 +394,8 @@ parameter_gt ctl_get_3p3z_phase_lag(ctrl_3p3z_t* c, parameter_gt fs, parameter_g
 {
     parameter_gt w = 2.0f * CTL_PARAM_CONST_PI * f / fs;
     parameter_gt cos_w = cosf(w), sin_w = sinf(w);
-    parameter_gt cos_2w = cosf(2 * w), sin_2w = sinf(2 * w);
-    parameter_gt cos_3w = cosf(3 * w), sin_3w = sinf(3 * w);
+    parameter_gt cos_2w = cosf(2.0f * w), sin_2w = sinf(2.0f * w);
+    parameter_gt cos_3w = cosf(3.0f * w), sin_3w = sinf(3.0f * w);
 
     parameter_gt num_real = c->coef_b[0] + c->coef_b[1] * cos_w + c->coef_b[2] * cos_2w + c->coef_b[3] * cos_3w;
     parameter_gt num_imag = -c->coef_b[1] * sin_w - c->coef_b[2] * sin_2w - c->coef_b[3] * sin_3w;

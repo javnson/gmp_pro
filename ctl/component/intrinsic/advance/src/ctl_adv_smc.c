@@ -16,11 +16,11 @@ void ctl_init_smc(ctl_smc_t* smc, parameter_gt eta11, parameter_gt eta12, parame
     smc->lambda = float2ctrl(lambda);
 
     // 计算并存储边界层的倒数，以避免在 ISR 中执行除法
-    if (phi < 1e-6)
+    if (phi < 1e-6f)
     {
-        phi = 1e-6; // 防除零与极度高频保护
+        phi = 1e-6f; // 防除零与极度高频保护
     }
-    smc->inv_phi = float2ctrl(1.0 / phi);
+    smc->inv_phi = float2ctrl(1.0f / phi);
 
     ctl_clear_smc(smc);
 }
