@@ -27,7 +27,10 @@ extern "C"
 #include <ctl/component/digital_power/basic/std_sil_dp_interface.h>
 
 // Three phase DC/AC
-#include <ctl/component/digital_power/three_phase/three_phase_dc_ac.h>
+//#include <ctl/component/digital_power/inv/gfl_core.h>
+//#include <ctl/component/digital_power/inv/gfl_pq_ctrl.h>
+//#include <ctl/component/digital_power/inv/inv_hcm.h>
+//#include <ctl/component/digital_power/inv/inv_neg_ctrl.h>
 
 //=================================================================================================
 // definitions of peripheral

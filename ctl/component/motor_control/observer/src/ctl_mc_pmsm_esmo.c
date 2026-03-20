@@ -135,7 +135,7 @@ void ctl_autotune_esmo_init_from_mtr(ctl_pmsm_esmo_init_t* esmo_init,
                                      parameter_gt flux_linkage)
 {
     // 防呆保护：确保传入的指针有效且基础频率合法
-    if (esmo_init == 0 || cur_init == 0 || cur_init->fs < 1e-6 || cur_init->freq_base < 1e-6)
+    if (esmo_init == 0 || cur_init == 0 || cur_init->fs < 1e-6f || cur_init->freq_base < 1e-6f)
     {
         return;
     }
@@ -165,13 +165,13 @@ void ctl_autotune_esmo_init_from_mtr(ctl_pmsm_esmo_init_t* esmo_init,
     // Back-EMF Low-Pass Filter Cutoff Frequency (fc_emf)
     // 规则：滑模的开关抖振发生在 fs 级别。为了有效滤除高频抖振，同时又不会对
     // 基波反电动势造成太大的衰减和相位滞后，通常将截止频率设为 fs 的 1/10 到 1/20。
-    esmo_init->fc_emf = cur_init->fs / 10.0;
+    esmo_init->fc_emf = cur_init->fs / 10.0f;
 
     // ATO/PLL Tracking Loop Bandwidth (ato_bw_hz)
     // 规则：ATO 锁相环的带宽决定了追踪转子动态响应的速度。
     // 它必须远低于 fc_emf 以抑制噪声，但又要足够快以跟踪电机加速。
     // 经典设定为电机标称电频率的 0.5 到 1.0 倍 (例如 50Hz 电机对应 25Hz 带宽)。
-    esmo_init->ato_bw_hz = cur_init->freq_base * 0.5;
+    esmo_init->ato_bw_hz = cur_init->freq_base * 0.5f;
 
     // -------------------------------------------------------------------------
     // 4. Protection Margins & Limits (保护与边界裕度)
@@ -179,13 +179,13 @@ void ctl_autotune_esmo_init_from_mtr(ctl_pmsm_esmo_init_t* esmo_init,
 
     // Divergence confirmation time (故障确证防抖时间)
     // 允许 ESMO 在大动态突变时有短暂的失锁，一般设定为 50ms ~ 100ms
-    esmo_init->fault_time_ms = 50.0;
+    esmo_init->fault_time_ms = 50.0f;
 
     // 最大允许电流追踪误差 (PU)，超过此值即认为观测器发散
-    esmo_init->current_err_limit_pu = 0.3; // 30% of base current
+    esmo_init->current_err_limit_pu = 0.3f; // 30% of base current
 
     // 滑模控制器的边界层厚度 (Boundary layer margin)
     // 用于 Quasi-SMC 防抖振，通常设置在 5% 左右
-    esmo_init->z_margin_pu = 0.05;
+    esmo_init->z_margin_pu = 0.05f;
 }
 

@@ -51,11 +51,9 @@
 // Encoder Bias
 #define CTRL_POS_ENC_BIAS (0.0999145508f)
 
-// Speed division
-#define CTRL_SPD_DIV (5)
+// Speed & Position division
+#define CTRL_MECH_DIV (5)
 
-// Position division
-#define CTRL_POS_DIV (5)
 
 ///////////////////////////////////////////////////////////
 // Controller Base value
