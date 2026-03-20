@@ -177,7 +177,7 @@ void ctl_init()
     inv_ctrl.pid_idq[phase_q].kp /= 4.0f; 
 
     inv_ctrl.pll.pid_pll.kp *= 2.0f; 
-    inv_ctrl.pll.pid_pll.ki *= 0.2;
+    inv_ctrl.pll.pid_pll.ki *= 0.2f;
 
     iabc.bias[phase_A] += 0.001f;
     iabc.bias[phase_B] += 0.001f;

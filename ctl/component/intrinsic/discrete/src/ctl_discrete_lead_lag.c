@@ -10,7 +10,7 @@ void ctl_init_lead(ctrl_lead_t* obj, parameter_gt K_D, parameter_gt tau_D, param
     gmp_base_assert(fs > 0.0f); // ·À´ô±£»¤
 
     // Sampling period (Unified to Ts)
-    parameter_gt Ts = 1.0 / fs;
+    parameter_gt Ts = 1.0f / fs;
 
     // Denominator term from bilinear transform: (2*tau_D + T)
     parameter_gt den = 2.0f * tau_D + Ts;
@@ -30,13 +30,13 @@ void ctl_init_lead(ctrl_lead_t* obj, parameter_gt K_D, parameter_gt tau_D, param
     // H(z) = (b0 + b1*z^-1) / (1 - a1*z^-1)
 
     // a1 = (2*tau_D - Ts) / (2*tau_D + Ts)
-    obj->a1 = float2ctrl((2.0 * tau_D - Ts) * inv_den);
+    obj->a1 = float2ctrl((2.0f * tau_D - Ts) * inv_den);
 
     // b0 = (2*tau_D + 2*K_D + Ts) / (2*tau_D + Ts)
-    obj->b0 = float2ctrl((2.0 * tau_D + 2.0 * K_D + Ts) * inv_den);
+    obj->b0 = float2ctrl((2.0f * tau_D + 2.0f * K_D + Ts) * inv_den);
 
     // b1 = (Ts - 2*tau_D - 2*K_D) / (2*tau_D + Ts)
-    obj->b1 = float2ctrl((Ts - 2.0 * tau_D - 2.0 * K_D) * inv_den);
+    obj->b1 = float2ctrl((Ts - 2.0f * tau_D - 2.0f * K_D) * inv_den);
 
     ctl_clear_lead(obj);
 }

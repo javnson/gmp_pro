@@ -56,7 +56,7 @@ static void _calc_poly2_coeffs(parameter_gt r1_hz, parameter_gt r2_hz, int is_co
     {
         parameter_gt sigma = 2.0f * CTL_PARAM_CONST_PI * r1_hz;
         parameter_gt wd = 2.0f * CTL_PARAM_CONST_PI * r2_hz;
-        c1 = 2.0 * sigma;
+        c1 = 2.0f * sigma;
         c0 = sigma * sigma + wd * wd;
     }
     else
@@ -67,7 +67,7 @@ static void _calc_poly2_coeffs(parameter_gt r1_hz, parameter_gt r2_hz, int is_co
         c0 = w1 * w2;
     }
 
-    parameter_gt k = 2.0 * fs;
+    parameter_gt k = 2.0f * fs;
     parameter_gt k2 = k * k;
 
     // 直接返回未归一化的 Z 域系数
@@ -86,7 +86,7 @@ void ctl_init_1p1z(ctrl_1p1z_t* c, parameter_gt gain, parameter_gt f_z, paramete
     parameter_gt Kz = tanf(CTL_PARAM_CONST_PI * f_z / fs);
     parameter_gt Kp = tanf(CTL_PARAM_CONST_PI * f_p / fs);
 
-    parameter_gt den_norm = Kp + 1.0;
+    parameter_gt den_norm = Kp + 1.0f;
     if (den_norm < 1e-9f)
         den_norm = 1e-9f;
 

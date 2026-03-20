@@ -10,7 +10,7 @@
 // WARNING: This file must be kept in the include search path during compilation.
 //
 
-#include <ctl/component/motor_control/basic/std_sil_motor_interface.h>
+#include <ctl/component/motor_control/interface/std_sil_motor_interface.h>
 
 #include <xplt.peripheral.h>
 

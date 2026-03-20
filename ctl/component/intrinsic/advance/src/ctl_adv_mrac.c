@@ -1,4 +1,5 @@
 #include <gmp_core.h>
+#include <math.h>
 
 //////////////////////////////////////////////////////////////////////////
 // MRAC
@@ -7,15 +8,15 @@
 void ctl_init_mrac(ctl_mrac_controller_t* mrac, const ctl_mrac_init_t* init)
 {
     // 1. 基础防呆保护
-    gmp_base_assert(init->f_ctrl > 0.0);
-    gmp_base_assert(init->a_m > 1e-9); // 防除零保护
+    gmp_base_assert(init->f_ctrl > 0.0f);
+    gmp_base_assert(init->a_m > 1e-9f); // 防除零保护
 
     // 2. 在纯物理浮点域 (parameter_gt) 中进行高精度计算
-    parameter_gt Ts = 1.0 / init->f_ctrl;
+    parameter_gt Ts = 1.0f / init->f_ctrl;
 
     // Discretize the reference model using Zero-Order Hold (ZOH)
-    parameter_gt a_m_d_f = exp(-(init->a_m * Ts));
-    parameter_gt b_m_d_f = (init->b_m / init->a_m) * (1.0 - a_m_d_f);
+    parameter_gt a_m_d_f = expf(-(init->a_m * Ts));
+    parameter_gt b_m_d_f = (init->b_m / init->a_m) * (1.0f - a_m_d_f);
 
     // Discretize the adaptation rates
     parameter_gt gamma_r_d_f = init->gamma_r * Ts;
