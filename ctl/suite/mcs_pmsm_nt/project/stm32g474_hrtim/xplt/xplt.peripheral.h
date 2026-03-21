@@ -23,6 +23,23 @@ extern "C"
 // select ADC PTR interface
 #include <ctl/component/interface/adc_ptr_channel.h>
 
+//=================================================================================================
+// definitions of peripheral
+
+extern ADC_HandleTypeDef hadc1;
+extern ADC_HandleTypeDef hadc2;
+
+extern DAC_HandleTypeDef hdac1;
+
+extern FDCAN_HandleTypeDef hfdcan1;
+
+extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim3;
+extern TIM_HandleTypeDef htim4;
+extern TIM_HandleTypeDef htim8;
+
+extern UART_HandleTypeDef huart2;
+extern DMA_HandleTypeDef hdma_usart2_rx;
 
 // ADC Sequence
 enum ADC1_ITEMS
@@ -42,13 +59,6 @@ enum ADC2_ITEMS
     ADC2_SEQ_SIZE
 };
 
-// ADC DMA buffer
-extern uint32_t adc1_res[ADC1_SEQ_SIZE];
-extern uint32_t adc2_res[ADC2_SEQ_SIZE];
-
-//=================================================================================================
-// definitions of peripheral
-
 // inverter side voltage feedback
 extern tri_ptr_adc_channel_t uuvw;
 extern adc_gt uuvw_src[3];
@@ -57,24 +67,19 @@ extern adc_gt uuvw_src[3];
 extern tri_ptr_adc_channel_t iuvw;
 extern adc_gt iuvw_src[3];
 
+// grid side voltage feedback
+extern tri_ptr_adc_channel_t vabc;
+extern adc_gt vabc_src[3];
+
+// grid side current feedback
+extern tri_ptr_adc_channel_t iabc;
+extern adc_gt iabc_src[3];
+
 // DC bus current & voltage feedback
 extern ptr_adc_channel_t udc;
 extern adc_gt udc_src;
 extern ptr_adc_channel_t idc;
 extern adc_gt idc_src;
-
-extern ADC_HandleTypeDef hadc1;
-extern ADC_HandleTypeDef hadc2;
-
-extern DAC_HandleTypeDef hdac1;
-
-extern TIM_HandleTypeDef htim1;
-extern TIM_HandleTypeDef htim3;
-extern TIM_HandleTypeDef htim4;
-extern TIM_HandleTypeDef htim14;
-
-extern UART_HandleTypeDef huart2;
-
 
 #ifdef __cplusplus
 }

@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32G431xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32G4xx_HAL_Driver/Inc;../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32G4xx/Include;../Drivers/CMSIS/Include;../../../../../../../gmp_pro;../../../../../../csp/stm32;../../../implement/common;../../../implement/stm32g431</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32G4xx_HAL_Driver/Inc;../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32G4xx/Include;../Drivers/CMSIS/Include;../gmp_src_mgr/gmp_inc;../gmp_src_mgr/gmp_inc/csp/stm32;../../../src;../xplt</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -545,6 +545,66 @@
           <GroupName>GMP/source</GroupName>
           <Files>
             <File>
+              <FileName>ctl_adv_back_stepping.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_adv_back_stepping.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_adv_flc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_adv_flc.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_adv_flpid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_adv_flpid.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_adv_ilc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_adv_ilc.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_adv_imc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_adv_imc.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_adv_lms.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_adv_lms.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_adv_lut_pair.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_adv_lut_pair.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_adv_mrac.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_adv_mrac.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_adv_rc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_adv_rc.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_adv_sinc_interpolator.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_adv_sinc_interpolator.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_adv_smc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_adv_smc.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_adv_surf_search.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_adv_surf_search.c</FilePath>
+            </File>
+            <File>
               <FileName>ctl_cia402_callback_fn.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\gmp_src_mgr\gmp_src\ctl_cia402_callback_fn.c</FilePath>
@@ -555,34 +615,84 @@
               <FilePath>..\gmp_src_mgr\gmp_src\ctl_cia402_state_machine.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_component_advance.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_component_advance.c</FilePath>
-            </File>
-            <File>
-              <FileName>ctl_component_basic.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_component_basic.c</FilePath>
-            </File>
-            <File>
-              <FileName>ctl_component_continuous.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_component_continuous.c</FilePath>
-            </File>
-            <File>
-              <FileName>ctl_component_discrete.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_component_discrete.c</FilePath>
-            </File>
-            <File>
               <FileName>ctl_component_interface.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\gmp_src_mgr\gmp_src\ctl_component_interface.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_component_protection.c</FileName>
+              <FileName>ctl_continuous_pi.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_component_protection.c</FilePath>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_continuous_pi.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_continuous_pid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_continuous_pid.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_continuous_pid_aw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_continuous_pid_aw.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_discrete_biquad_filter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_discrete_biquad_filter.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_discrete_df.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_discrete_df.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_discrete_filter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_discrete_filter.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_discrete_lead_lag.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_discrete_lead_lag.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_discrete_pid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_discrete_pid.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_discrete_pole_zero.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_discrete_pole_zero.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_discrete_pr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_discrete_pr.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_discrete_sg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_discrete_sg.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_discrete_sogi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_discrete_sogi.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_discrete_track_pid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_discrete_track_pid.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_disrete_fir.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_disrete_fir.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_divider.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_divider.c</FilePath>
             </File>
             <File>
               <FileName>ctl_dp_basic.c</FileName>
@@ -590,89 +700,244 @@
               <FilePath>..\gmp_src_mgr\gmp_src\ctl_dp_basic.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_dp_mppt.c</FileName>
+              <FileName>ctl_hysteresis_controller.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_dp_mppt.c</FilePath>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_hysteresis_controller.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_dp_single_phase.c</FileName>
+              <FileName>ctl_if_pwm_h.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_dp_single_phase.c</FilePath>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_if_pwm_h.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_dp_three_phase.c</FileName>
+              <FileName>ctl_if_pwm_npc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_dp_three_phase.c</FilePath>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_if_pwm_npc.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_dp_topology_inv.c</FileName>
+              <FileName>ctl_if_pwm_spwm.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_dp_topology_inv.c</FilePath>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_if_pwm_spwm.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_dp_topology_sinv.c</FileName>
+              <FileName>ctl_internal_ladrc1.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_dp_topology_sinv.c</FilePath>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_internal_ladrc1.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_mc_acm_sensored_ctrl.c</FileName>
+              <FileName>ctl_internal_ladrc2.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_acm_sensored_ctrl.c</FilePath>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_internal_ladrc2.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_mc_basic.c</FileName>
+              <FileName>ctl_itoc_protection.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_basic.c</FilePath>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_itoc_protection.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_mc_consultant.c</FileName>
+              <FileName>ctl_mc_acim_consultant.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_consultant.c</FilePath>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_acim_consultant.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_mc_current_loop.c</FileName>
+              <FileName>ctl_mc_acim_fo.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_current_loop.c</FilePath>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_acim_fo.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_mc_motion.c</FileName>
+              <FileName>ctl_mc_acim_pos_calc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_motion.c</FilePath>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_acim_pos_calc.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_mc_observer.c</FileName>
+              <FileName>ctl_mc_acim_smo.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_observer.c</FilePath>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_acim_smo.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_mc_pmsm_ctrl.c</FileName>
+              <FileName>ctl_mc_ato_pll.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_pmsm_ctrl.c</FilePath>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_ato_pll.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_mc_pmsm_ctrl_hfi.c</FileName>
+              <FileName>ctl_mc_basic_mech_ctrl.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_pmsm_ctrl_hfi.c</FilePath>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_basic_mech_ctrl.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_mc_pmsm_ctrl_mtpa.c</FileName>
+              <FileName>ctl_mc_bldc_hall.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_pmsm_ctrl_mtpa.c</FilePath>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_bldc_hall.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_mc_pmsm_ctrl_smo.c</FileName>
+              <FileName>ctl_mc_bldc_zcd_obs.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_pmsm_ctrl_smo.c</FilePath>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_bldc_zcd_obs.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_mc_pmsm_offline_est.c</FileName>
+              <FileName>ctl_mc_dtc_svm_core.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_pmsm_offline_est.c</FilePath>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_dtc_svm_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_encoder.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_encoder.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_foc_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_foc_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_imfoc_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_imfoc_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_inverter_consultant.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_inverter_consultant.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_ipm_fw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_ipm_fw.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_ladrc_pos_ctrl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_ladrc_pos_ctrl.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_ladrc_spd_ctrl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_ladrc_spd_ctrl.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_lut_fw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_lut_fw.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_mech_consultant.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_mech_consultant.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_mit_mech_ctrl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_mit_mech_ctrl.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_mtr_protection.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_mtr_protection.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_mtr_vf_generator.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_mtr_vf_generator.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_nameplate_consultant.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_nameplate_consultant.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_pmsm_consultant.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_pmsm_consultant.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_pmsm_dbptc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_pmsm_dbptc.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_pmsm_esmo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_pmsm_esmo.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_pmsm_fo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_pmsm_fo.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_pmsm_hfi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_pmsm_hfi.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_pu_consultant.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_pu_consultant.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_s_curve_traj.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_s_curve_traj.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_smc_mech_ctrl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_smc_mech_ctrl.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_sogi_traj.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_sogi_traj.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_spm_fw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_spm_fw.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_trapezoudal_traj.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_trapezoudal_traj.c</FilePath>
             </File>
             <File>
               <FileName>ctl_nano.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\gmp_src_mgr\gmp_src\ctl_nano.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_protection.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_protection.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_sag_swell.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_sag_swell.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_saturation.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_saturation.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_slope_limiter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_slope_limiter.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_sogi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_sogi.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_track_pid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_track_pid.c</FilePath>
+            </File>
+            <File>
+              <FileName>dsa_trigger.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\dsa_trigger.c</FilePath>
             </File>
             <File>
               <FileName>gmp_at_device.c</FileName>
@@ -683,11 +948,6 @@
               <FileName>gmp_dev_util.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\gmp_src_mgr\gmp_src\gmp_dev_util.c</FilePath>
-            </File>
-            <File>
-              <FileName>gmp_ds_list.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\gmp_ds_list.c</FilePath>
             </File>
             <File>
               <FileName>gmp_mm_block_memory.c</FileName>
@@ -715,9 +975,9 @@
               <FilePath>..\gmp_src_mgr\gmp_src\stm32_chip_common.c</FilePath>
             </File>
             <File>
-              <FileName>dsa_trigger.c</FileName>
+              <FileName>stm32_peripheral_driver.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\dsa_trigger.c</FilePath>
+              <FilePath>..\gmp_src_mgr\gmp_src\stm32_peripheral_driver.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -727,27 +987,27 @@
             <File>
               <FileName>ctrl_settings.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\..\..\implement\stm32g431\ctrl_settings.h</FilePath>
+              <FilePath>..\xplt\ctrl_settings.h</FilePath>
             </File>
             <File>
               <FileName>xplt.config.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\..\..\implement\stm32g431\xplt.config.h</FilePath>
+              <FilePath>..\xplt\xplt.config.h</FilePath>
             </File>
             <File>
               <FileName>xplt.ctl_interface.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\..\..\implement\stm32g431\xplt.ctl_interface.h</FilePath>
+              <FilePath>..\xplt\xplt.ctl_interface.h</FilePath>
             </File>
             <File>
               <FileName>xplt.peripheral.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\implement\stm32g431\xplt.peripheral.c</FilePath>
+              <FilePath>..\xplt\xplt.peripheral.c</FilePath>
             </File>
             <File>
               <FileName>xplt.peripheral.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\..\..\implement\stm32g431\xplt.peripheral.h</FilePath>
+              <FilePath>..\xplt\xplt.peripheral.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -757,22 +1017,22 @@
             <File>
               <FileName>ctl_main.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\implement\common\ctl_main.c</FilePath>
+              <FilePath>..\..\..\src\ctl_main.c</FilePath>
             </File>
             <File>
               <FileName>ctl_main.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\..\..\implement\common\ctl_main.h</FilePath>
+              <FilePath>..\..\..\src\ctl_main.h</FilePath>
             </File>
             <File>
               <FileName>user_main.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\implement\common\user_main.c</FilePath>
+              <FilePath>..\..\..\src\user_main.c</FilePath>
             </File>
             <File>
               <FileName>user_main.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\..\..\implement\common\user_main.h</FilePath>
+              <FilePath>..\..\..\src\user_main.h</FilePath>
             </File>
           </Files>
         </Group>

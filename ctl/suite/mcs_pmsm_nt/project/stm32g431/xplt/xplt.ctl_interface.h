@@ -12,8 +12,6 @@
 
 #include <xplt.peripheral.h>
 
-#include "main.h"
-
 #ifndef _FILE_CTL_INTERFACE_H_
 #define _FILE_CTL_INTERFACE_H_
 
@@ -22,74 +20,78 @@ extern "C"
 {
 #endif // __cplusplus
 
-
-
-//=================================================================================================
+//////////////////////////////////////////////////////////////////////////
+// device related functions
 // Controller interface
+//
+
+// peripheral handles
+
+extern ADC_HandleTypeDef hadc1;
+
+extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim3;
+
+extern DAC_HandleTypeDef hdac1;
 
 // Input Callback
-GMP_STATIC_INLINE void ctl_input_callback(void)
+GMP_STATIC_INLINE
+void ctl_input_callback(void)
 {
-    // copy source ADC data
-    vabc_src[phase_A] = HAL_ADCEx_InjectedGetValue(&hadc2,ADC_INJECTED_RANK_1);
-    vabc_src[phase_B] = HAL_ADCEx_InjectedGetValue(&hadc2,ADC_INJECTED_RANK_2);
-    vabc_src[phase_C] = HAL_ADCEx_InjectedGetValue(&hadc2,ADC_INJECTED_RANK_3);
 
-    iabc_src[phase_A] = HAL_ADCEx_InjectedGetValue(&hadc1,ADC_INJECTED_RANK_1);
-    iabc_src[phase_B] = HAL_ADCEx_InjectedGetValue(&hadc1,ADC_INJECTED_RANK_2);
-    iabc_src[phase_C] = HAL_ADCEx_InjectedGetValue(&hadc1,ADC_INJECTED_RANK_3);
+    // copy ADC data to raw buffer
+//    udc_raw = adc2_res[MOTOR_UDC];
+
+//    uabc_raw[phase_U] = adc2_res[MOTOR_UA];
+//    uabc_raw[phase_V] = adc1_res[MOTOR_UB];
+//    uabc_raw[phase_W] = adc1_res[MOTOR_UC];
+
+//    iabc_raw[phase_U] = adc2_res[MOTOR_UA];
+//    iabc_raw[phase_V] = adc1_res[MOTOR_UB];
+//    iabc_raw[phase_W] = adc1_res[MOTOR_UC];
 		
-//    uuvw_src[phase_U] = ADC_readResult(INV_UU_RESULT_BASE, INV_UU);
-//    uuvw_src[phase_V] = ADC_readResult(INV_UV_RESULT_BASE, INV_UV);
-//    uuvw_src[phase_W] = ADC_readResult(INV_UW_RESULT_BASE, INV_UW);
-
-//    iuvw_src[phase_U] = ADC_readResult(INV_IU_RESULT_BASE, INV_IU);
-//    iuvw_src[phase_V] = ADC_readResult(INV_IV_RESULT_BASE, INV_IV);
-//    iuvw_src[phase_W] = ADC_readResult(INV_IW_RESULT_BASE, INV_IW);
-
-    udc_src = HAL_ADCEx_InjectedGetValue(&hadc1,ADC_INJECTED_RANK_4);
-    idc_src = HAL_ADCEx_InjectedGetValue(&hadc2,ADC_INJECTED_RANK_4);
-
+		// copy ADC injected data to raw buffer
+		iuvw_src[phase_A] = HAL_ADCEx_InjectedGetValue(&hadc1,ADC_INJECTED_RANK_1);
+		iuvw_src[phase_B] = HAL_ADCEx_InjectedGetValue(&hadc1,ADC_INJECTED_RANK_2);
+		iuvw_src[phase_C] = HAL_ADCEx_InjectedGetValue(&hadc1,ADC_INJECTED_RANK_3);
+		
+		udc_src = HAL_ADCEx_InjectedGetValue(&hadc1,ADC_INJECTED_RANK_4);
+	
     // invoke ADC p.u. routine
-    ctl_step_tri_ptr_adc_channel(&iabc);
-    ctl_step_tri_ptr_adc_channel(&vabc);
     ctl_step_tri_ptr_adc_channel(&iuvw);
     ctl_step_tri_ptr_adc_channel(&uuvw);
     ctl_step_ptr_adc_channel(&idc);
     ctl_step_ptr_adc_channel(&udc);
+
+    // invoke position encoder routine.
+    ctl_step_autoturn_pos_encoder(&pos_enc, __HAL_TIM_GET_COUNTER(&htim3));
+    // ctl_step_as5048a_pos_encoder(&pos_enc);
 }
 
 // Output Callback
-GMP_STATIC_INLINE void ctl_output_callback(void)
+GMP_STATIC_INLINE
+void ctl_output_callback(void)
 {
-    // Write ePWM peripheral CMP
-		__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, spwm.pwm_out[phase_U]);
+    // write to compare
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, spwm.pwm_out[phase_U]);
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, spwm.pwm_out[phase_V]);
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, spwm.pwm_out[phase_W]);
-
-
-    // Monitor Port
-#if BUILD_LEVEL == 1
-
-    // grid current and inverter current		
-		HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, iabc.control_port.value.dat[phase_C] * 2048 + 2048);
-		HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, iuvw.control_port.value.dat[phase_C] * 2048 + 2048);
-
-
-#endif // BUILD_LEVEL
+	
+		HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2048 + 2048.0f * spwm.vabc_out.dat[phase_U]);
+		HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 2048 + 2048.0f * mtr_ctrl.iab0.dat[phase_alpha]);
 }
 
 // Compare output enable reg mask CCER (CH1/CH1N, CH2/CH2N, CH3/CH3N)
 #define TIM_CCER_MASK  (TIM_CCER_CC1E | TIM_CCER_CC1NE | \
                         TIM_CCER_CC2E | TIM_CCER_CC2NE | \
                         TIM_CCER_CC3E | TIM_CCER_CC3NE)
-												
+
 // Enable Motor Controller
 // Enable Output
-GMP_STATIC_INLINE void ctl_fast_enable_output()
+GMP_STATIC_INLINE
+void ctl_fast_enable_output()
 {
-    // Clear any Trip Zone flag
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+		HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
     HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
@@ -97,29 +99,32 @@ GMP_STATIC_INLINE void ctl_fast_enable_output()
     HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
 		
 		htim1.Instance->CCER |= TIM_CCER_MASK;
-
-    ctl_enable_gfl_inv(&inv_ctrl);
-
-    // PWM enable
+		
+		// Enable Gate driver
 		HAL_GPIO_WritePin(PWM_DISABLE_GPIO_Port, PWM_DISABLE_Pin, GPIO_PIN_SET);
 		
-//    GPIO_WritePin(PWM_ENABLE_PORT, 1);
-
-//    GPIO_WritePin(PWM_RESET_PORT, 0);
-
-//    GPIO_WritePin(CONTROLLER_LED, 0);
 }
 
 // Disable Output
-GMP_STATIC_INLINE void ctl_fast_disable_output()
+GMP_STATIC_INLINE
+void ctl_fast_disable_output()
 {
-    // Disables the PWM device
-    htim1.Instance->CCER &= ~TIM_CCER_MASK;
-				
-    ctl_disable_gfl_inv(&inv_ctrl);
-
-    // PWM disable
+//		HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
+//    HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
+//    HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_3);
+//		
+//    HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_1);
+//    HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_2);
+//    HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_3);
+		
+		htim1.Instance->CCER &= ~TIM_CCER_MASK;
+		
+	  // Recover Timer
+//		__HAL_TIM_ENABLE(&htim1);
+		
+		// Disable Gate Driver
 		HAL_GPIO_WritePin(PWM_DISABLE_GPIO_Port, PWM_DISABLE_Pin, GPIO_PIN_RESET);
+		
 }
 
 #ifdef __cplusplus
