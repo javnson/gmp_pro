@@ -8,7 +8,7 @@
 void ctl_init_backstepping(ctl_backstepping_controller_t* bc, const ctl_backstepping_init_t* init)
 {
     // 1. 严格防呆保护，防止除以零 (移除 f 后缀)
-    gmp_base_assert(fabs(init->K_p) > 1e-9f);
+    gmp_base_assert(fabsf(init->K_p) > 1e-9f);
 
     // 2. 在物理浮点参数域计算倒数
     parameter_gt inv_kp_val = 1.0f / init->K_p;

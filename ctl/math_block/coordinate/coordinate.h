@@ -1,5 +1,4 @@
 
-#include <ctl/math_block/coordinate/coordinate.h>
 #include <ctl/math_block/vector_lite/vector2.h>
 
 #ifndef _FILE_GMP_MATH_COORDINATE_H_

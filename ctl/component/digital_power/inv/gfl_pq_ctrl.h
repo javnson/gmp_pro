@@ -37,6 +37,7 @@ extern "C"
 
 #include <ctl/component/digital_power/inv/pll_srf.h>
 #include <ctl/component/digital_power/inv/pll_dsogi.h>
+#include <ctl/component/digital_power/inv/gfl_core.h>
 
 //////////////////////////////////////////////////////////////////////////
 // PQ controller

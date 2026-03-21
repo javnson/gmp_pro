@@ -8,6 +8,8 @@
  * @copyright Copyright GMP(c) 2025
  */
 
+#include <ctl/component/intrinsic/continuous/continuous_pid.h>
+
 /**
  * @defgroup CTL_PLL_API Phase-Locked Loop (PLL) API
  * @{
