@@ -1,7 +1,0 @@
-========== GMP Compiler Include Paths Summary ==========
-1. Local mirror base path:
-.\gmp_inc
-
-2. External macro dependency paths (-I):
-E:/lib/gmp_pro
-E:/lib/gmp_pro/csp/c28x_syscfg
