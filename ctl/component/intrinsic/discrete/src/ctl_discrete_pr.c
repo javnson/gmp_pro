@@ -8,7 +8,7 @@
 
 void ctl_init_resonant_controller(resonant_ctrl_t* r, parameter_gt kr, parameter_gt freq_resonant, parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0);
+    gmp_base_assert(fs > 0.0f);
 
     parameter_gt T = 1.0f / fs;
     parameter_gt wr = CTL_PARAM_CONST_2PI * freq_resonant;
@@ -88,7 +88,7 @@ static void _ctl_calc_qr_coeffs(qr_ctrl_t* qr, parameter_gt kr, parameter_gt wc,
 void ctl_init_qr_controller(qr_ctrl_t* qr, parameter_gt kr, parameter_gt freq_resonant, parameter_gt freq_cut,
                             parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0);
+    gmp_base_assert(fs > 0.0f);
 
     parameter_gt wr = CTL_PARAM_CONST_2PI * freq_resonant;
     parameter_gt wc = CTL_PARAM_CONST_2PI * freq_cut;
@@ -113,7 +113,7 @@ void ctl_init_qr_controller(qr_ctrl_t* qr, parameter_gt kr, parameter_gt freq_re
 void ctl_init_qr_controller_prewarped(qr_ctrl_t* qr, parameter_gt kr, parameter_gt freq_resonant, parameter_gt freq_cut,
                                       parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0);
+    gmp_base_assert(fs > 0.0f);
 
     parameter_gt wr = CTL_PARAM_CONST_2PI * freq_resonant;
     parameter_gt wc = CTL_PARAM_CONST_2PI * freq_cut;

@@ -9,11 +9,11 @@ void ctl_init_fuzzy_pid(ctl_fuzzy_pid_t* fp, parameter_gt base_kp, parameter_gt 
                         ctrl_gt sat_max, ctrl_gt sat_min, parameter_gt e_q_factor, parameter_gt ec_q_factor,
                         ctl_lut2d_t d_kp_lut, ctl_lut2d_t d_ki_lut, ctl_lut2d_t d_kd_lut, parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0); // 增加防呆保护
+    gmp_base_assert(fs > 0.0f); // 增加防呆保护
 
     // 1. 将基于时间常数 (Ti, Td) 的输入转换为独立的 (Ki, Kd) 物理增益
-    parameter_gt base_ki = 0.0;
-    if (base_ti > 1e-6) // 移除 f 后缀
+    parameter_gt base_ki = 0.0f;
+    if (base_ti > 1e-6f) // 移除 f 后缀
     {
         base_ki = base_kp / base_ti;
     }
@@ -25,7 +25,7 @@ void ctl_init_fuzzy_pid(ctl_fuzzy_pid_t* fp, parameter_gt base_kp, parameter_gt 
     fp->base_kd = float2ctrl(base_kd * fs);
 
     // 3. 预先计算离散化需要用到的频率缩放因子
-    fp->inv_fs_ctrl = float2ctrl(1.0 / fs);
+    fp->inv_fs_ctrl = float2ctrl(1.0f / fs);
     fp->fs_ctrl = float2ctrl(fs);
 
     // 4. 量化因子固化

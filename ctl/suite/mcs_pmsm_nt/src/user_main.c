@@ -1,4 +1,4 @@
-﻿// This is the example of user main.
+// This is the example of user main.
 
 // GMP basic core header
 #include <gmp_core.h>
@@ -118,7 +118,7 @@ gmp_task_status_t tsk_blink(gmp_task_t* tsk)
     return GMP_TASK_DONE;
 }
 
-void at_device_flush_rx_buffer();
+void at_device_flush_rx_buffer(void);
 gmp_task_status_t tsk_at_device(gmp_task_t* tsk)
 {
     GMP_UNUSED_VAR(tsk);

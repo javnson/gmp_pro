@@ -1387,7 +1387,12 @@
                 "description": "",
                 "src_patterns": [],
                 "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/coord_trans.h"
+                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/Clarke.h",
+                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/coord_trans.h",
+                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/coordinate.h",
+                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/Park.h",
+                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/Park_neg.h",
+                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/svpwm.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],

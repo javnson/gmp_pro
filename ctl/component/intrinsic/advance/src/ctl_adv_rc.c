@@ -12,8 +12,8 @@ fast_gt ctl_init_repetitive_controller(ctl_repetitive_controller_t* rc, paramete
 {
 
     // 1. 防呆与除零保护
-    gmp_base_assert(fs > 0.0);
-    gmp_base_assert(f_fund > 0.0);
+    gmp_base_assert(fs > 0.0f);
+    gmp_base_assert(f_fund > 0.0f);
     gmp_base_assert(external_buffer != 0); // 确保指针不为空
 
     // 2. 计算需要的周期点数 N
@@ -32,8 +32,8 @@ fast_gt ctl_init_repetitive_controller(ctl_repetitive_controller_t* rc, paramete
     rc->q_filter_coeff = float2ctrl(q_filter_coeff);
 
     // 5. 设置默认限幅
-    rc->out_max = float2ctrl(1.0);
-    rc->out_min = float2ctrl(-1.0);
+    rc->out_max = float2ctrl(1.0f);
+    rc->out_min = float2ctrl(-1.0f);
 
     // 6. 清理历史状态
     ctl_clear_repetitive_controller(rc);

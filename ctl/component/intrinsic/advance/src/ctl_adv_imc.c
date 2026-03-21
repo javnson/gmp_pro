@@ -7,7 +7,7 @@
 int ctl_init_imc(ctl_imc_controller_t* imc, const ctl_imc_init_t* init)
 {
     // 1. 防呆与除零保护
-    gmp_base_assert(init->f_ctrl > 0.0);
+    gmp_base_assert(init->f_ctrl > 0.0f);
     gmp_base_assert(fabsf(init->K_p) > 1e-9f); // Kp 不能为 0，因为后续要作除数
 
     // 2. 纯物理参数域计算，严禁出现 ctrl_gt 强转！

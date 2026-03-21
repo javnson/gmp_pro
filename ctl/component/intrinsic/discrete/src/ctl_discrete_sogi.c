@@ -15,8 +15,8 @@ void ctl_init_discrete_sogi(
     // isr frequency, Hz
     parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0);
-    gmp_base_assert(fn > 0.0);
+    gmp_base_assert(fs > 0.0f);
+    gmp_base_assert(fn > 0.0f);
 
     ctl_clear_discrete_sogi(sogi);
 
@@ -43,7 +43,7 @@ void ctl_init_discrete_sogi(
 void ctl_init_discrete_sogi_dc(discrete_sogi_dc_t* sogi_dc, parameter_gt k_damp, parameter_gt k_dc, parameter_gt fn,
                                parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0);
+    gmp_base_assert(fs > 0.0f);
 
     // 1. Initialize Standard SOGI Core
     ctl_init_discrete_sogi(&sogi_dc->core, k_damp, fn, fs);

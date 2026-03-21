@@ -82,13 +82,13 @@ GMP_STATIC_INLINE ctrl_gt ctl_helper_lp_filter(parameter_gt fs, parameter_gt fc)
 {
     parameter_gt a_val = fc * CTL_PARAM_CONST_2PI / fs;
     // 修复 3：防止极点越界导致发散，将 a 安全钳位在 1.0 (纯直通) 以内
-    if (a_val > 1.0)
+    if (a_val > 1.0f)
     {
         a_val = 1.0;
     }
-    else if (a_val < 0.0)
+    else if (a_val < 0.0f)
     {
-        a_val = 0.0;
+        a_val = 0.0f;
     }
     return float2ctrl(a_val);
 }

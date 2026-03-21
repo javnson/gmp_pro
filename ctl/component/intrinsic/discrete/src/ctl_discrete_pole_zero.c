@@ -49,7 +49,7 @@ static void _multiply_den_poly2_poly1(const parameter_gt p2[2], const parameter_
 static void _calc_poly2_coeffs(parameter_gt r1_hz, parameter_gt r2_hz, int is_complex, parameter_gt fs,
                                parameter_gt coeffs[3])
 {
-    gmp_base_assert(fs > 0.0);
+    gmp_base_assert(fs > 0.0f);
 
     parameter_gt c0, c1;
     if (is_complex)
@@ -81,7 +81,7 @@ static void _calc_poly2_coeffs(parameter_gt r1_hz, parameter_gt r2_hz, int is_co
 /*---------------------------------------------------------------------------*/
 void ctl_init_1p1z(ctrl_1p1z_t* c, parameter_gt gain, parameter_gt f_z, parameter_gt f_p, parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0);
+    gmp_base_assert(fs > 0.0f);
 
     parameter_gt Kz = tanf(CTL_PARAM_CONST_PI * f_z / fs);
     parameter_gt Kp = tanf(CTL_PARAM_CONST_PI * f_p / fs);
@@ -207,7 +207,7 @@ void ctl_init_3p3z_complex_zeros(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt
 {
     int i;
 
-    gmp_base_assert(fs > 0.0);
+    gmp_base_assert(fs > 0.0f);
 
     ctrl_2p2z_t sec1;
     ctrl_1p1z_t sec2;

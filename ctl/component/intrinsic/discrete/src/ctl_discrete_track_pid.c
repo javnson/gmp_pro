@@ -22,7 +22,7 @@ void ctl_init_tracking_pid(
     // Error prevention engineering
     gmp_base_assert(slope_min < slope_max);
     gmp_base_assert(sat_min < sat_max);
-    gmp_base_assert(fs > 0.0);
+    gmp_base_assert(fs > 0.0f);
     gmp_base_assert(division >= 1); // 确保分频系数合法
 
     parameter_gt effective_fs = fs / (parameter_gt)division;

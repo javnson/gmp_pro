@@ -74,7 +74,7 @@ extern ctl_pmsm_esmo_t smo;
 
 //=================================================================================================
 // function prototype
-void clear_all_controllers();
+void clear_all_controllers(void);
 
 //=================================================================================================
 // controller process

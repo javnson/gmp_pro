@@ -57,7 +57,7 @@ void ctl_init_ramp_generator_via_freq(
 void ctl_init_square_wave_generator(ctl_square_wave_generator_t* sq, parameter_gt fs, parameter_gt target_freq,
                                     parameter_gt amplitude, parameter_gt offset)
 {
-    gmp_base_assert(fs > 0.0);
+    gmp_base_assert(fs > 0.0f);
 
     sq->high_level = float2ctrl(offset + amplitude);
     sq->low_level = float2ctrl(offset - amplitude);
@@ -70,7 +70,7 @@ void ctl_init_square_wave_generator(ctl_square_wave_generator_t* sq, parameter_g
 void ctl_init_triangle_wave_generator(ctl_triangle_wave_generator_t* tri, parameter_gt fs, parameter_gt target_freq,
                                       parameter_gt pos_peak, parameter_gt neg_peak)
 {
-    gmp_base_assert(fs > 0.0);
+    gmp_base_assert(fs > 0.0f);
     gmp_base_assert(neg_peak < pos_peak);
 
     tri->pos_peak = float2ctrl(pos_peak);
