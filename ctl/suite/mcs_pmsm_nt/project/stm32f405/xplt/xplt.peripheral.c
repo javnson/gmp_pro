@@ -42,6 +42,11 @@ adc_gt idc_src;
 // ext_as5048a_encoder_t pos_enc;
 uint32_t counter;
 
+// a local small cache size, capable of covering the depth of the hardware FIFO (typically 16 bytes)
+#define ISR_LOCAL_BUF_SIZE 16
+uint8_t rxBuf[ISR_LOCAL_BUF_SIZE];
+volatile uint16_t last_read_pos = 0;
+
 /////////////////////////////////////////////////////////////////////////
 // peripheral setup function
 //
@@ -126,6 +131,9 @@ void setup_peripheral(void)
 		// Enable DAC channels
 		HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
 		HAL_DAC_Start(&hdac, DAC_CHANNEL_2);
+		
+		// Enable UART RX DMA
+		HAL_UART_Receive_DMA(debug_uart, rxBuf, ISR_LOCAL_BUF_SIZE);
 
 
 
@@ -182,21 +190,66 @@ void send_monitor_data(void)
 {}
 
 	
-	// a local small cache size, capable of covering the depth of the hardware FIFO (typically 16 bytes)
-#define ISR_LOCAL_BUF_SIZE 16
 
+	
 void at_device_flush_rx_buffer(void)
 {
-    uint16_t fifoLevel;
-    uint16_t rxBuf[ISR_LOCAL_BUF_SIZE];
+// 1. 获取当前 DMA 写指针位置
+    // __HAL_DMA_GET_COUNTER 返回的是 DMA 还需要传输的数据量（剩余量）
+    // 因此当前写入的绝对位置 = 总长度 - 剩余量
+    uint16_t current_pos = ISR_LOCAL_BUF_SIZE - __HAL_DMA_GET_COUNTER(debug_uart->hdmarx);
 
-//    // Read all FIFO content
-//    while ((fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE)) > 0)
-//    {
-//        // Get data
-//        SCI_readCharArray(IRIS_UART_USB_BASE, rxBuf, fifoLevel);
+    // 2. 临界区保护开始：防止主循环执行到一半时被中断抢占导致逻辑混乱
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
 
-//        // send to AT device
-//        at_device_rx_isr(&at_dev, (char*)rxBuf, fifoLevel);
-//    }
+    // 如果没有新数据，直接退出
+    if (current_pos == last_read_pos) {
+        __set_PRIMASK(primask);
+        return;
+    }
+
+    uint16_t len1 = 0, len2 = 0;
+    uint16_t start1 = last_read_pos, start2 = 0;
+
+    // 3. 计算需要读取的数据长度（处理环形缓冲区的折返）
+    if (current_pos > last_read_pos) {
+        // 正常线性增长
+        len1 = current_pos - last_read_pos;
+    } else {
+        // DMA 指针已经折返 (Wraparound) 到缓冲区开头
+        // 第一段：从上次读取位置到缓冲区末尾
+        len1 = ISR_LOCAL_BUF_SIZE - last_read_pos;
+        // 第二段：从缓冲区开头到当前写指针位置
+        len2 = current_pos;
+    }
+
+    // 更新读指针
+    last_read_pos = current_pos;
+
+    // 4. 临界区保护结束：恢复中断
+    // 注意：我们将耗时的 AT 串口提交流程放在开中断之后执行，尽量缩短关中断的时间
+    __set_PRIMASK(primask);
+
+    // 5. 提交数据给 AT 控制器
+    if (len1 > 0) {
+        at_device_rx_isr(&at_dev, (char*)&rxBuf[start1], len1);
+    }
+    if (len2 > 0) { // 只有在发生折返时，len2 才会大于 0
+        at_device_rx_isr(&at_dev, (char*)&rxBuf[start2], len2);
+    }
+}
+
+// DMA 接收半满回调
+void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == USART2) { // 替换为你的实际串口
+        at_device_flush_rx_buffer();
+    }
+}
+
+// DMA 接收全满（完成）回调
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == USART2) { // 替换为你的实际串口
+        at_device_flush_rx_buffer();
+    }
 }
