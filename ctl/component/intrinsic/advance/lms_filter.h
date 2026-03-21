@@ -43,15 +43,14 @@ extern "C"
  */
 typedef struct _tag_lms_filter_t
 {
-    uint32_t order; //!< The order of the filter (number of taps/weights).
-    ctrl_gt mu;     //!< The step-size parameter (learning rate).
-
-    ctrl_gt* weights;      //!< Pointer to the array of filter coefficients (W).
-    ctrl_gt* buffer;       //!< Pointer to the circular buffer for past inputs (X).
+    ctrl_gt* weights;      //!< Pointer to externally allocated filter coefficients array.
+    ctrl_gt* buffer;       //!< Pointer to externally allocated input history buffer.
+    uint32_t order;        //!< The number of weights (taps) in the filter.
     uint32_t buffer_index; //!< Current index for the circular buffer.
 
-    ctrl_gt output; //!< The last calculated filter output, y(n).
-    ctrl_gt error;  //!< The last calculated error, e(n).
+    ctrl_gt mu;     //!< Step-size parameter (learning rate).
+    ctrl_gt output; //!< The filtered output signal y(n).
+    ctrl_gt error;  //!< The error signal e(n).
 } ctl_lms_filter_t;
 
 /**
@@ -63,7 +62,9 @@ typedef struct _tag_lms_filter_t
  * @param[in] mu The step-size (learning rate). Must be chosen carefully to ensure stability.
  * @return fast_gt Returns 1 on success (memory allocated), 0 on failure.
  */
-fast_gt ctl_init_lms_filter(ctl_lms_filter_t* lms, uint32_t order, parameter_gt mu);
+fast_gt ctl_init_lms_filter(ctl_lms_filter_t* lms, uint32_t order, parameter_gt mu,
+                            ctrl_gt* external_weights,
+                            ctrl_gt* external_buffer);
 
 /**
  * @brief Frees the memory allocated for the LMS filter.
@@ -80,17 +81,18 @@ GMP_STATIC_INLINE void ctl_clear_lms_filter(ctl_lms_filter_t* lms)
 {
     uint32_t i;
 
-    if (lms->weights != NULL && lms->buffer != NULL)
+    lms->buffer_index = 0;
+    lms->output = float2ctrl(0.0f);
+    lms->error = float2ctrl(0.0f);
+
+    if (lms->buffer != 0 && lms->weights != 0)
     {
         for (i = 0; i < lms->order; i++)
         {
-            lms->weights[i] = 0.0f;
-            lms->buffer[i] = 0.0f;
+            lms->buffer[i] = float2ctrl(0.0f);
+            lms->weights[i] = float2ctrl(0.0f); // 初始化权重通常为 0
         }
     }
-    lms->output = 0.0f;
-    lms->error = 0.0f;
-    lms->buffer_index = 0;
 }
 
 /**
@@ -104,64 +106,52 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_lms_filter(ctl_lms_filter_t* lms, ctrl_gt inp
 {
     uint32_t i;
 
-    // --- Key Point Analysis 2: Update Input Buffer ---
-    // A circular buffer is used to efficiently store the most recent 'order' input samples.
-    // This avoids large memory shifts in every step.
+    // 1. Update circular buffer
     lms->buffer[lms->buffer_index] = input;
 
-    // --- Key Point Analysis 3: Calculate Filter Output ---
-    // The output y(n) is the dot product of the weights vector W(n) and the input vector X(n).
-    // y(n) = W^T * X(n)
-    lms->output = 0.0f;
+    // 2. Calculate filter output (FIR Convolution)
+    lms->output = float2ctrl(0.0f);
     uint32_t j = lms->buffer_index;
     for (i = 0; i < lms->order; i++)
     {
-        lms->output += lms->weights[i] * lms->buffer[j];
+        // 修复 1：严格使用 ctl_mul 防止卷积溢出
+        lms->output += ctl_mul(lms->weights[i], lms->buffer[j]);
         if (j == 0)
-        {
             j = lms->order - 1;
-        }
         else
-        {
             j--;
-        }
     }
 
-    // --- Key Point Analysis 4: Calculate Error Signal ---
-    // The error e(n) is the difference between the desired signal and the filter's output.
-    // This error signal is what drives the adaptation process.
+    // 3. Calculate Error Signal
     // e(n) = d(n) - y(n)
     lms->error = desired - lms->output;
 
-    // --- Key Point Analysis 5: Update Filter Weights ---
-    // This is the core of the LMS algorithm. The weights are adjusted in the direction
-    // that minimizes the error. The step-size 'mu' controls the speed and stability
-    // of this convergence. A larger mu leads to faster adaptation but can cause instability.
+    // 4. Update Filter Weights (LMS Algorithm)
     // W(n+1) = W(n) + mu * e(n) * X(n)
     j = lms->buffer_index;
     for (i = 0; i < lms->order; i++)
     {
-        lms->weights[i] += lms->mu * lms->error * lms->buffer[j];
+        // 修复 2：将三重乘法拆解为嵌套的 ctl_mul，彻底杜绝定点溢出灾难
+        ctrl_gt error_x_input = ctl_mul(lms->error, lms->buffer[j]);
+        ctrl_gt delta_w = ctl_mul(lms->mu, error_x_input);
+
+        lms->weights[i] += delta_w;
+
         if (j == 0)
-        {
             j = lms->order - 1;
-        }
         else
-        {
             j--;
-        }
     }
 
-    // Advance the circular buffer index for the next sample
+    // 5. Advance buffer index
     lms->buffer_index++;
     if (lms->buffer_index >= lms->order)
     {
         lms->buffer_index = 0;
     }
 
-    return lms->error;
+    return lms->output;
 }
-
 /**
  * @}
  */ // end of lms_adaptive_filter group

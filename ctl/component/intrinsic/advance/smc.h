@@ -70,8 +70,11 @@ typedef struct _tag_smc_t_
     ctrl_gt eta12;  //!< Gain for x1 when s > 0 and x1 < 0 (or vice versa).
     ctrl_gt eta21;  //!< Gain for x2 when s > 0 and x2 > 0.
     ctrl_gt eta22;  //!< Gain for x2 when s > 0 and x2 < 0 (or vice versa).
+
+    // Reaching law parameters
     ctrl_gt rho;    //!< Switching gain for the sgn(s) term.
     ctrl_gt lambda; //!< Coefficient defining the slope of the sliding surface.
+    ctrl_gt inv_phi; //!< 边界层厚度的倒数 (1 / Phi)
 
     // State variables
     ctrl_gt output; //!< The current controller output, u.
@@ -87,9 +90,19 @@ typedef struct _tag_smc_t_
  * @param[in] eta22 Gain parameter.
  * @param[in] rho Switching gain.
  * @param[in] lambda Sliding surface slope.
+ * @param phi The boundary layer thickness to mitigate chattering. Set to a very small value (e.g., 0.001) for near-ideal SMC.
  */
-void ctl_init_smc(ctl_smc_t* smc, ctrl_gt eta11, ctrl_gt eta12, ctrl_gt eta21, ctrl_gt eta22, ctrl_gt rho,
-                  ctrl_gt lambda);
+void ctl_init_smc(ctl_smc_t* smc, parameter_gt eta11, parameter_gt eta12, parameter_gt eta21, parameter_gt eta22,
+                  parameter_gt rho, parameter_gt lambda, parameter_gt phi);
+
+/**
+ * @brief Clears the internal states of the SMC.
+ */
+GMP_STATIC_INLINE void ctl_clear_smc(ctl_smc_t* smc)
+{
+    smc->output = float2ctrl(0.0f);
+    smc->slide = float2ctrl(0.0f);
+}
 
 /**
  * @brief Executes one step of the Sliding Mode Controller.
@@ -113,16 +126,21 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_smc(ctl_smc_t* smc, ctrl_gt input, ctrl_gt in
         etax1 = (input > 0) ? ctl_mul(smc->eta11, input) : ctl_mul(smc->eta12, input);
         etax2 = (input_diff > 0) ? ctl_mul(smc->eta21, input_diff) : ctl_mul(smc->eta22, input_diff);
         // Switching control part
-        rhos = smc->rho;
+        //rhos = smc->rho;
     }
     else
     {
         // Equivalent control part based on state signs (gains are swapped)
+        // When s <= 0, gains are swapped according to Lyapunov stability criteria
         etax1 = (input > 0) ? ctl_mul(smc->eta12, input) : ctl_mul(smc->eta11, input);
         etax2 = (input_diff > 0) ? ctl_mul(smc->eta22, input_diff) : ctl_mul(smc->eta21, input_diff);
         // Switching control part
-        rhos = -smc->rho;
+        //rhos = -smc->rho;
     }
+
+    // rhos = rho * sat(s / phi)
+    ctrl_gt s_over_phi = ctl_mul(smc->slide, smc->inv_phi);
+    rhos = ctl_sat(s_over_phi, smc->rho, -smc->rho);
 
     // Total control output
     smc->output = etax1 + etax2 + rhos;

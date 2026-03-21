@@ -75,9 +75,22 @@ void ctl_init_lp_filter(ctl_low_pass_filter_t* lpf, parameter_gt fs, parameter_g
  * @param fc Cutoff frequency (Hz).
  * @return ctrl_gt The calculated filter coefficient.
  */
+/**
+ * @brief Helper function to calculate the filter coefficient 'a' with safety clamping.
+ */
 GMP_STATIC_INLINE ctrl_gt ctl_helper_lp_filter(parameter_gt fs, parameter_gt fc)
 {
-    return float2ctrl(fc * CTL_PARAM_CONST_2PI / fs);
+    parameter_gt a_val = fc * CTL_PARAM_CONST_2PI / fs;
+    // 修复 3：防止极点越界导致发散，将 a 安全钳位在 1.0 (纯直通) 以内
+    if (a_val > 1.0f)
+    {
+        a_val = 1.0;
+    }
+    else if (a_val < 0.0f)
+    {
+        a_val = 0.0f;
+    }
+    return float2ctrl(a_val);
 }
 
 /**
@@ -111,7 +124,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_lowpass_filter(ctl_low_pass_filter_t* lpf, ct
  */
 GMP_STATIC_INLINE void ctl_clear_lowpass_filter(ctl_low_pass_filter_t* lpf)
 {
-    lpf->out = 0;
+    lpf->out = float2ctrl(0.0f);
 }
 
 /**
@@ -153,7 +166,7 @@ typedef struct _tag_filter_IIR1_t
  */
 GMP_STATIC_INLINE ctrl_gt ctl_step_filter_iir1(ctl_filter_IIR1_t* obj, ctrl_gt input)
 {
-    obj->out = (obj->b0 * input) + (obj->b1 * obj->x1) - (obj->a1 * obj->y1);
+    obj->out = ctl_mul(obj->b0, input) + ctl_mul(obj->b1, obj->x1) - ctl_mul(obj->a1, obj->y1);
     obj->x1 = input;
     obj->y1 = obj->out;
     return obj->out;
@@ -165,9 +178,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_filter_iir1(ctl_filter_IIR1_t* obj, ctrl_gt i
  */
 GMP_STATIC_INLINE void ctl_clear_filter_iir1(ctl_filter_IIR1_t* obj)
 {
-    obj->out = 0;
-    obj->x1 = 0;
-    obj->y1 = 0;
+    obj->out = float2ctrl(0.0f);
+    obj->x1 = float2ctrl(0.0f);
+    obj->y1 = float2ctrl(0.0f);
 }
 
 /**

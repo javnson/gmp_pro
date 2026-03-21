@@ -36,6 +36,7 @@
 #define CTL_CTRL_CONST_1             (float2ctrl(1.0))                    /**< @brief The constant 1.0. */
 #define CTL_CTRL_CONST_1_OVER_2      (float2ctrl(0.5))                    /**< @brief The constant 0.5. */
 #define CTL_CTRL_CONST_3_OVER_2      (float2ctrl(1.5))                    /**< @brief The constant 1.5. */
+#define CTL_CTRL_CONST_2_OVER_PI     (float2ctrl(2.0f / 3.1415926535f))   /**< @brief The constant 2/Pi. */
 
 // --- Clarke/Park Transformation Constants ---
 

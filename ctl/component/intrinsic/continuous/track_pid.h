@@ -2,10 +2,10 @@
  * @file tracking_continuous_pid.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief A composite continuous-form PID with trajectory generation and rate division.
- * @version 0.2
- * @date 2024-09-30
+ * @version 0.3
+ * @date 2026-03-16
  *
- * @copyright Copyright GMP(c) 2024
+ * @copyright Copyright GMP(c) 2026
  *
  */
 
@@ -14,7 +14,7 @@
 
 #include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl/component/intrinsic/basic/slope_limiter.h>
-#include <ctl/component/intrinsic/continuous/continuous_pid.h>
+#include <ctl/component/intrinsic/continuous/continuous_pid_aw.h> // Éý¼¶Îª PID_AW
 
 #ifdef __cplusplus
 extern "C"
@@ -24,12 +24,6 @@ extern "C"
 /**
  * @defgroup tracking_continuous_pid Tracking Continuous PID Controller
  * @brief A composite PID controller for smooth setpoint tracking using a continuous-form PID.
- * @details This file implements a tracking PID controller based on the continuous-form
- * PID implementation. It combines three intrinsic modules:
- * 1.  A Frequency Divider: To execute the controller at a lower rate.
- * 2.  A Slope Limiter: To generate a smooth trajectory (ramp) for the setpoint.
- * 3.  A Continuous-Form PID: To calculate the control output.
- * This is ideal for setpoint tracking where smooth transitions are needed.
  * @{
  */
 
@@ -42,90 +36,75 @@ extern "C"
  */
 typedef struct _tag_tracking_continuous_pid_t
 {
-    ctl_pid_t pid;            //!< The core continuous-form PID controller instance.
+    ctl_pid_aw_t pid;         //!< The core anti-windup PID controller instance. (Upgraded)
     ctl_divider_t div;        //!< The frequency divider instance.
     ctl_slope_limiter_t traj; //!< The slope limiter for trajectory generation.
 } ctl_tracking_continuous_pid_t;
 
 /**
  * @brief Initializes the tracking continuous PID controller.
+ * @note The inner PID and Trajectory are automatically configured using the EFFECTIVE 
+ * sampling frequency (fs / division).
  * @param[out] tp Pointer to the tracking PID instance.
- * @param[in] kp Proportional gain of the PID.
- * @param[in] Ti Integral time constant of the PID (in seconds).
- * @param[in] Td Derivative time constant of the PID (in seconds).
+ * @param[in] kp Proportional gain.
+ * @param[in] Ti Integral time constant (seconds).
+ * @param[in] Td Derivative time constant (seconds).
  * @param[in] sat_max Maximum output saturation limit for the PID.
  * @param[in] sat_min Minimum output saturation limit for the PID.
  * @param[in] slope_max Maximum positive rate of change for the setpoint (units/sec).
  * @param[in] slope_min Maximum negative rate of change for the setpoint (-units/sec).
  * @param[in] division The factor by which to divide the execution frequency.
- * @param[in] fs The main sampling frequency (Hz) at which this module's step function is called.
+ * @param[in] fs The MAIN sampling frequency (Hz) of the caller loop.
  */
-void ctl_init_tracking_continuous_pid(
-    // handle of track pid
-    ctl_tracking_continuous_pid_t* tp,
-    // pid parameters
-    ctrl_gt kp, ctrl_gt ki, ctrl_gt kd,
-    // saturation limit
-    ctrl_gt sat_max, ctrl_gt sat_min,
-    // slope limit
-    ctrl_gt slope_max, ctrl_gt slope_min,
-    // division factor
-    uint32_t division,
-    // controller frequency
-    parameter_gt fs);
+void ctl_init_tracking_continuous_pid(ctl_tracking_continuous_pid_t* tp, parameter_gt kp, parameter_gt Ti,
+                                      parameter_gt Td, ctrl_gt sat_max, ctrl_gt sat_min, parameter_gt slope_max,
+                                      parameter_gt slope_min, uint32_t division, parameter_gt fs);
+
+/**
+ * @brief Manually overrides the derivative low-pass filter time constant (Tf).
+ * @param[out] tp Pointer to the tracking PID instance.
+ * @param[in] Tf New derivative filter time constant (seconds). Set to 0 to disable filtering.
+ * @param[in] division The original division factor.
+ * @param[in] fs The MAIN sampling frequency (Hz).
+ */
+void ctl_set_tracking_continuous_pid_filter(ctl_tracking_continuous_pid_t* tp, parameter_gt Tf, uint32_t division,
+                                            parameter_gt fs);
 
 /**
  * @brief Clears the internal states of the tracking continuous PID controller.
- * @param[out] tp Pointer to the tracking PID instance.
  */
 GMP_STATIC_INLINE void ctl_clear_tracking_continuous_pid(ctl_tracking_continuous_pid_t* tp)
 {
-    ctl_clear_pid(&tp->pid);
+    ctl_clear_pid_aw(&tp->pid);
     ctl_clear_divider(&tp->div);
     ctl_clear_slope_limiter(&tp->traj);
 }
 
 /**
  * @brief Executes one step of the tracking continuous PID controller.
- * @details This function should be called at the main system frequency (fs). It uses an
- * internal divider to decide when to execute the core control logic. When the
- * divider triggers, it updates the setpoint trajectory and calculates a new PID
- * output. On other steps, it holds the last calculated PID output.
- * @param[in,out] tp Pointer to the tracking PID instance.
- * @param[in] target The ultimate target value for the setpoint.
- * @param[in] fbk The feedback value from the system.
  * @return ctrl_gt The latest control output.
  */
 GMP_STATIC_INLINE ctrl_gt ctl_step_tracking_continuous_pid(ctl_tracking_continuous_pid_t* tp, ctrl_gt target,
                                                            ctrl_gt fbk)
 {
-    // Check if it's time to execute the controller based on the division factor
     if (ctl_step_divider(&tp->div))
     {
-        // If so, first update the trajectory by one step towards the target
         ctl_step_slope_limiter(&tp->traj, target);
-        // Then, execute the PID controller with the error between the current
-        // trajectory point and the feedback value. The series form is used here.
-        return ctl_step_pid_ser(&tp->pid, tp->traj.out - fbk);
+        // Using AW Series Step
+        return ctl_step_pid_aw_ser(&tp->pid, tp->traj.out - fbk);
     }
-
-    // If it's not time to execute, just return the last held PID output value.
     return tp->pid.out;
 }
 
 /**
  * @brief Gets the current output of the tracking PID controller.
- * @param[in] tp Pointer to the tracking PID instance.
- * @return ctrl_gt The last calculated output value.
  */
 GMP_STATIC_INLINE ctrl_gt ctl_get_tracking_continuous_pid_output(ctl_tracking_continuous_pid_t* tp)
 {
     return tp->pid.out;
 }
 
-/**
- * @}
- */ // end of tracking_continuous_pid group
+/** @} */
 
 #ifdef __cplusplus
 }

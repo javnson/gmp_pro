@@ -5,6 +5,8 @@
  * @version 0.1
  * @date 2024-09-30
  *
+ * @note DTOC (Three-Stage Definite-Time Over-Current) protection
+ * Note: Previously named ITOC, but mathematically acts as DTOC (LSIG).
  * @copyright Copyright GMP(c) 2024
  *
  */

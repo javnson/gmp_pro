@@ -33,7 +33,7 @@
 #endif
 
 #ifndef CTL_PARAM_CONST_2PI
-#define CTL_PARAM_CONST_2PI ((parameter_gt)(3.141592653589793 * 2.0)) /**< @brief The constant 2Pi (2¦Ð). */
+#define CTL_PARAM_CONST_2PI ((parameter_gt)(6.283185307179586476925286766559)) /**< @brief The constant 2Pi (2¦Ð). */
 #endif
 
 #ifndef CTL_PARAM_CONST_E

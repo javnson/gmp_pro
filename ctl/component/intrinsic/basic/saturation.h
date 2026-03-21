@@ -113,10 +113,15 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_bipolar_saturation(ctl_bipolar_saturation_t* 
     {
         obj->out = ctl_sat(input, obj->out_max, obj->out_min);
     }
-    else
+    else if (input < 0)
     {
         obj->out = ctl_sat(input, -obj->out_min, -obj->out_max);
     }
+    else
+    {
+        obj->out = float2ctrl(0.0f); // 输入严格为 0 时输出 0
+    }
+    
     return obj->out;
 }
 
@@ -143,14 +148,14 @@ typedef struct _tag_atan_saturation_t
  * @param[in] gain gain of saturatioin output.
  * @param[in] scale_factor scale factor of input
  */
-void ctl_init_tanh_saturation(ctl_atan_saturation_t* sat, ctrl_gt gain, ctrl_gt scale_factor);
+void ctl_init_atanh_saturation(ctl_atan_saturation_t* sat, ctrl_gt gain, ctrl_gt scale_factor);
 
 /**
  * @brief step the soft atan saturation module.
  * @param[in] sat handle of saturation.
  * @param[in] input input to saturation.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_step_tanh_saturation(ctl_atan_saturation_t* sat, ctrl_gt input)
+GMP_STATIC_INLINE ctrl_gt ctl_step_atanh_saturation(ctl_atan_saturation_t* sat, ctrl_gt input)
 {
     sat->out = ctl_mul(sat->gain, ctl_atan2(ctl_mul(input, sat->sf), CTL_CTRL_CONST_1));
     return sat->out;

@@ -224,6 +224,9 @@ divider4.divideValue = 2;
 const divider5       = system.clockTree["PLL_REFDIV"];
 divider5.divideValue = 4;
 
+const divider6       = system.clockTree["SYSCLKDIVSEL"];
+divider6.divideValue = 1;
+
 const multiplier1         = system.clockTree["PLL_IMULT"];
 multiplier1.multiplyValue = 80;
 
@@ -543,13 +546,15 @@ i2c1.emulationMode          = "I2C_EMULATION_FREE_RUN";
 i2c1.txFifo                 = "I2C_FIFO_TX10";
 i2c1.rxFifo                 = "I2C_FIFO_RX10";
 i2c1.bitCount               = "I2C_BITCOUNT_8";
-i2c1.useFifo                = false;
 i2c1.targetAddress          = 0x70;
 i2c1.ownAddress             = 0x8;
 i2c1.dataCount              = 0;
+i2c1.bitRate                = 50000;
 i2c1.i2c.$assign            = "I2CA";
 i2c1.i2c.i2c_sdaPin.$assign = "GPIO56";
 i2c1.i2c.i2c_sclPin.$assign = "GPIO57";
+i2c1.sdaQual.padConfig      = "OD";
+i2c1.sclQual.padConfig      = "OD";
 
 other1.useCase                   = "CUSTOM";
 other1.useInterfacePins          = ["ADCSOCAO","SYNCOUT","TDI","TDO","X1","XCLKOUT","XRSn"];

@@ -1,7 +1,20 @@
 /**
  * @file backstepping_ctrl.h
  * @brief Implements a Backstepping controller for Single-Input Single-Output (SISO) systems.
- *
+ * @note **Typical Application Scenarios (典型应用场景):**
+ * The Backstepping controller is highly effective in systems where linear controllers (like PI) 
+ * struggle with parameter variations, nonlinear dynamics, or strict-feedback structures.
+ * Typical applications in power electronics and motor drives include:
+ * * 1. **High-Performance PMSM Speed/Position Control:** * Replacing the traditional PI speed loop. Backstepping guarantees global asymptotic stability 
+ * under severe load torque steps and inertia variations, especially when combined with a 
+ * disturbance observer (such as an Extended State Observer, ESO) providing `disturbance_est`.
+ * * 2. **DC-DC Converter Voltage Regulation (Buck/Boost/Buck-Boost):** * Handling the non-minimum phase characteristics and severe nonlinearity of power converters. 
+ * It provides much faster transient response to input voltage drops or load shedding 
+ * compared to small-signal linearized PI controllers.
+ * * 3. **Grid-Tied Inverter Current Control:** * Robustly tracking the reference current `y_ref` even when grid impedance parameters 
+ * (represented by `tau_p` and `K_p`) vary, and effectively suppressing grid voltage harmonics 
+ * fed as `disturbance_est`.
+ * 
  * @version 1.1
  * @date 2025-08-07
  *
@@ -75,7 +88,7 @@ typedef struct
     ctrl_gt k1; ///< Tracking error gain.
 
     // --- Model Parameters ---
-    ctrl_gt K_p;   ///< Plant gain.
+    ctrl_gt inv_K_p; ///< Plant gain.
     ctrl_gt tau_p; ///< Plant time constant.
 
 } ctl_backstepping_controller_t;
@@ -97,7 +110,7 @@ void ctl_init_backstepping(ctl_backstepping_controller_t* bc, const ctl_backstep
  */
 GMP_STATIC_INLINE void ctl_clear_backstepping(ctl_backstepping_controller_t* bc)
 {
-    bc->u_out = 0.0f;
+    bc->u_out = float2ctrl(0.0f);
 }
 
 /**
@@ -120,21 +133,14 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_backstepping(ctl_backstepping_controller_t* b
     // 2. Calculate the control law based on the backstepping design
     // u = (tau_p * (y_ref_dot + k1*error) + y_actual - disturbance_est) / K_p
 
-    // Term 1: Dynamics and tracking term
+    // 2. Term 1: Dynamics and tracking term: tau_p * (y_ref_dot + k1*error)
     ctrl_gt term1 = ctl_mul(bc->tau_p, (y_ref_dot + ctl_mul(bc->k1, error)));
 
-    // Term 2: State feedback and disturbance rejection
+    // 3. Term 2: State feedback and disturbance rejection: y_actual - disturbance_est
     ctrl_gt term2 = y_actual - disturbance_est;
 
-    // 3. Sum terms and divide by plant gain
-    if (fabsf(bc->K_p) > 1e-9f) // Avoid division by zero
-    {
-        bc->u_out = (term1 + term2) / bc->K_p;
-    }
-    else
-    {
-        bc->u_out = 0.0f;
-    }
+    // 4. Multiply by inverse plant gain (Extreme fast execution, no division or branches)
+    bc->u_out = ctl_mul(term1 + term2, bc->inv_K_p);
 
     return bc->u_out;
 }

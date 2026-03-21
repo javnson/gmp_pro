@@ -86,78 +86,25 @@ void initI2C()
 // User should setup all the peripheral in this function.
 void setup_peripheral(void)
 {
-
     // Setup Debug Uart
     debug_uart = IRIS_UART_USB_BASE;
-
-    reset_controller();
 
     // Test print function
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
     asm(" RPT #255 || NOP");
-
-    // inverter side ADC
-    ctl_init_tri_ptr_adc_channel(
-        &uuvw, uuvw_src,
-        // ADC gain, ADC bias
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_VOLTAGE_BIAS),
-        // ADC resolution, IQN
-        12, 24);
-
-    ctl_init_tri_ptr_adc_channel(
-        &iuvw, iuvw_src,
-        // ADC gain, ADC bias
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_CURRENT_BIAS),
-        // ADC resolution, IQN
-        12, 24);
-
-    // grid side ADC
-//    ctl_init_tri_ptr_adc_channel(
-//        &vabc, vabc_src,
-//        // ADC gain, ADC bias
-//        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
-//        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_VOLTAGE_BIAS),
-//        // ADC resolution, IQN
-//        12, 24);
-
-//    ctl_init_tri_ptr_adc_channel(
-//        &iabc, iabc_src,
-//        // ADC gain, ADC bias
-//        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
-//        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_CURRENT_BIAS),
-//        // ADC resolution, IQN
-//        12, 24);
-
-    ctl_init_ptr_adc_channel(
-        &udc, &udc_src,
-        // ADC gain, ADC bias
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_DC_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_DC_VOLTAGE_BIAS),
-        // ADC resolution, IQN
-        12, 24);
-
-    ctl_init_ptr_adc_channel(
-        &idc, &idc_src,
-        // ADC gain, ADC bias
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_DC_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_DC_CURRENT_BIAS),
-        // ADC resolution, IQN
-        12, 24);
-
-
 
     //
     // Initialize GPIOs for use as SDA A and SCL A respectively
     //
     // GPIO_setPinConfig(DEVICE_GPIO_CFG_SDAA);
     GPIO_setPadConfig(IRIS_IIC_I2CSDA_GPIO, GPIO_PIN_TYPE_PULLUP);
-    // GPIO_setQualificationMode(DEVICE_GPIO_PIN_SDAA, GPIO_QUAL_ASYNC);
+    GPIO_setQualificationMode(IRIS_IIC_I2CSDA_GPIO, GPIO_QUAL_ASYNC);
 
     // GPIO_setPinConfig(DEVICE_GPIO_CFG_SCLA);
     GPIO_setPadConfig(IRIS_IIC_I2CSCL_GPIO, GPIO_PIN_TYPE_PULLUP);
-    // GPIO_setQualificationMode(DEVICE_GPIO_PIN_SCLA, GPIO_QUAL_ASYNC);
+    GPIO_setQualificationMode(IRIS_IIC_I2CSCL_GPIO, GPIO_QUAL_ASYNC);
+
+    GPIO_setPadConfig(IRIS_IIC_I2CSDA_GPIO, GPIO_PIN_TYPE_PULLUP);
 
     //
     // Set I2C use, initializing it for FIFO mode
@@ -254,14 +201,14 @@ interrupt void INT_IRIS_CAN_0_ISR(void)
         CAN_clearInterruptStatus(CANA_BASE, 1);
 
         // Control Flag, Enable System
-        if (rx_data[0] == 1)
-        {
-            cia402_send_cmd(&cia402_sm, CIA402_CMD_ENABLE_OPERATION);
-        }
-        if (rx_data[0] == 0)
-        {
-            cia402_send_cmd(&cia402_sm, CIA402_CMD_DISABLE_VOLTAGE);
-        }
+//        if (rx_data[0] == 1)
+//        {
+//            cia402_send_cmd(&cia402_sm, CIA402_CMD_ENABLE_OPERATION);
+//        }
+//        if (rx_data[0] == 0)
+//        {
+//            cia402_send_cmd(&cia402_sm, CIA402_CMD_DISABLE_VOLTAGE);
+//        }
     }
     else if (status == 2)
     {

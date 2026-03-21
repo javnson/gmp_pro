@@ -9,11 +9,11 @@
  *
  */
 
+#include <ctl/math_block/vector_lite/vector2.h>
+#include <ctl/math_block/coordinate/coord_trans.h>
+
 #ifndef _FILE_MTR_CTRL_DECOUPLE_H_
 #define _FILE_MTR_CTRL_DECOUPLE_H_
-
-// This header is assumed to contain the definition for ctl_vector2_t and phase_d/q enums.
-#include <ctl/component/motor_control/basic/motor_universal_interface.h>
 
 #ifdef __cplusplus
 extern "C"

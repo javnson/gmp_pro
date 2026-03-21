@@ -218,8 +218,8 @@ GMP_STATIC_INLINE void ctl_clear_3p3z(ctrl_3p3z_t* c)
     c->output = 0.0f;
     for (i = 0; i < 3; i++)
     {
-        c->resp[i] = 0.0f;
-        c->exct[i] = 0.0f;
+        c->resp[i] = float2ctrl(0.0f);
+        c->exct[i] = float2ctrl(0.0f);
     }
 }
 

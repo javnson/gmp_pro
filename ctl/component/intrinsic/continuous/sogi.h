@@ -86,9 +86,9 @@ void ctl_init_sogi(ctl_sogi_t* sogi, parameter_gt gain, parameter_gt freq_r, par
  */
 GMP_STATIC_INLINE void ctl_clear_sogi(ctl_sogi_t* sogi)
 {
-    sogi->d_integrate = 0;
-    sogi->q_integrate = 0;
-    sogi->integrate_reference = 0;
+    sogi->d_integrate = float2ctrl(0.0f);
+    sogi->q_integrate = float2ctrl(0.0f);
+    sogi->integrate_reference = float2ctrl(0.0f);
 }
 
 /**
@@ -101,11 +101,15 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sogi(ctl_sogi_t* sogi, ctrl_gt input)
 {
     // err = u - y_d
     ctrl_gt err = input - sogi->d_integrate;
+
     // ref = k * err
     sogi->integrate_reference = ctl_mul(sogi->k_damp, err);
+
     // y_d(n) = y_d(n-1) + wr*T * (ref - y_q(n-1))
     sogi->d_integrate += ctl_mul(sogi->k_r, sogi->integrate_reference - sogi->q_integrate);
+
     // y_q(n) = y_q(n-1) + wr*T * y_d(n)
+    // Symplectic Euler (using updated y_d)
     sogi->q_integrate += ctl_mul(sogi->k_r, sogi->d_integrate);
 
     return ctl_mul(sogi->d_integrate, sogi->gain);

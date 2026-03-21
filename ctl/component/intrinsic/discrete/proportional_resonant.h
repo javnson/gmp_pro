@@ -76,11 +76,11 @@ void ctl_init_resonant_controller(resonant_ctrl_t* r, parameter_gt kr, parameter
  */
 GMP_STATIC_INLINE void ctl_clear_resonant_controller(resonant_ctrl_t* r)
 {
-    r->output = 0;
-    r->output_1 = 0;
-    r->output_2 = 0;
-    r->input_1 = 0;
-    r->input_2 = 0;
+    r->output = float2ctrl(0.0f);
+    r->output_1 = float2ctrl(0.0f);
+    r->output_2 = float2ctrl(0.0f);
+    r->input_1 = float2ctrl(0.0f);
+    r->input_2 = float2ctrl(0.0f);
 }
 
 /**
@@ -118,7 +118,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_resonant_controller(resonant_ctrl_t* r, ctrl_
 typedef struct _tag_ctl_pr_controller
 {
     resonant_ctrl_t resonant_part; //!< The resonant part of the controller.
-    parameter_gt kp;               //!< The proportional gain.
+    ctrl_gt kp;                    //!< The proportional gain.
 } pr_ctrl_t;
 
 /**
@@ -150,7 +150,7 @@ GMP_STATIC_INLINE void ctl_clear_pr_controller(pr_ctrl_t* pr)
 GMP_STATIC_INLINE ctrl_gt ctl_step_pr_controller(pr_ctrl_t* pr, ctrl_gt input)
 {
     // u(n) = Kp*e(n) + R(n)
-    ctrl_gt p_out = ctl_mul(float2ctrl(pr->kp), input);
+    ctrl_gt p_out = ctl_mul(pr->kp, input);
     ctrl_gt r_out = ctl_step_resonant_controller(&pr->resonant_part, input);
     return p_out + r_out;
 }
@@ -214,11 +214,11 @@ void ctl_init_qr_controller_prewarped(qr_ctrl_t* qr, parameter_gt kr, parameter_
  */
 GMP_STATIC_INLINE void ctl_clear_qr_controller(qr_ctrl_t* qr)
 {
-    qr->output = 0;
-    qr->output_1 = 0;
-    qr->output_2 = 0;
-    qr->input_1 = 0;
-    qr->input_2 = 0;
+    qr->output = float2ctrl(0);
+    qr->output_1 = float2ctrl(0);
+    qr->output_2 = float2ctrl(0);
+    qr->input_1 = float2ctrl(0);
+    qr->input_2 = float2ctrl(0);
 }
 
 /**
@@ -256,7 +256,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_qr_controller(qr_ctrl_t* qr, ctrl_gt input)
 typedef struct _tag_ctl_qpr_controller
 {
     qr_ctrl_t resonant_part; //!< The quasi-resonant part of the controller.
-    parameter_gt kp;         //!< The proportional gain.
+    ctrl_gt kp;         //!< The proportional gain.
 } qpr_ctrl_t;
 
 /**

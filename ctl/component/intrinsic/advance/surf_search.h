@@ -132,9 +132,11 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_interpolate_lut1d(const ctl_lut1d_t* lut, con
  */
 typedef struct _tag_lut2d_t
 {
-    ctl_lut1d_t dim1_axis;   //!< 1D LUT for the first dimension (x-axis).
-    ctl_lut1d_t dim2_axis;   //!< 1D LUT for the second dimension (y-axis).
-    const ctrl_gt** surface; //!< Pointer to a 2D array of surface values.
+    ctl_lut1d_t dim1_axis; //!< 1D LUT for the first dimension (x-axis).
+    ctl_lut1d_t dim2_axis; //!< 1D LUT for the second dimension (y-axis).
+
+    //const ctrl_gt** surface; //!< Pointer to a 2D array of surface values.
+    const ctrl_gt* surface; // 架构升级：展平为一维连续数组，极致性能
 } ctl_lut2d_t;
 
 /**
@@ -147,7 +149,7 @@ typedef struct _tag_lut2d_t
  * @param[in] surface Pointer to the 2D array (size1 x size2) of surface data.
  */
 void ctl_init_lut2d(ctl_lut2d_t* lut, const ctrl_gt* axis1, uint32_t size1, const ctrl_gt* axis2, uint32_t size2,
-                    const ctrl_gt** surface);
+                    const ctrl_gt* surface);
 
 /**
  * @brief Performs 2D bilinear interpolation on a non-uniform grid.
@@ -168,11 +170,18 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_interpolate_lut2d(const ctl_lut2d_t* lut, ctr
     idx1 = (idx1 > (int32_t)lut->dim1_axis.size - 2) ? (lut->dim1_axis.size - 2) : idx1;
     idx2 = (idx2 > (int32_t)lut->dim2_axis.size - 2) ? (lut->dim2_axis.size - 2) : idx2;
 
+    uint32_t y_size = lut->dim2_axis.size;
+
     // Get corner points of the interpolation cell
-    ctrl_gt p00 = lut->surface[idx1][idx2];
-    ctrl_gt p10 = lut->surface[idx1 + 1][idx2];
-    ctrl_gt p01 = lut->surface[idx1][idx2 + 1];
-    ctrl_gt p11 = lut->surface[idx1 + 1][idx2 + 1];
+    //ctrl_gt p00 = lut->surface[idx1][idx2];
+    //ctrl_gt p10 = lut->surface[idx1 + 1][idx2];
+    //ctrl_gt p01 = lut->surface[idx1][idx2 + 1];
+    //ctrl_gt p11 = lut->surface[idx1 + 1][idx2 + 1];
+
+    ctrl_gt p00 = lut->surface[idx1 * y_size + idx2];
+    ctrl_gt p10 = lut->surface[idx1 * y_size + (idx2 + 1)];
+    ctrl_gt p01 = lut->surface[(idx1 + 1) * y_size + idx2];
+    ctrl_gt p11 = lut->surface[(idx1 + 1) * y_size + (idx2 + 1)];
 
     // Calculate interpolation weights
     ctrl_gt w1 =
@@ -203,7 +212,8 @@ typedef struct _tag_uniform_lut2d_t
     ctrl_gt y_step_inv; //!< Inverse of the y-axis step size (1 / delta_y).
     uint32_t y_size;    //!< Number of points on the y-axis.
 
-    const ctrl_gt** surface; //!< Pointer to a 2D array of surface values.
+    const ctrl_gt* surface;  // 架构升级：同样展平为一维数组
+    //const ctrl_gt** surface; //!< Pointer to a 2D array of surface values.
 } ctl_uniform_lut2d_t;
 
 /**
@@ -218,7 +228,7 @@ typedef struct _tag_uniform_lut2d_t
  * @param[in] surface Pointer to the 2D array (x_size x y_size) of surface data.
  */
 void ctl_init_uniform_lut2d(ctl_uniform_lut2d_t* lut, ctrl_gt x_min, ctrl_gt x_max, uint32_t x_size, ctrl_gt y_min,
-                            ctrl_gt y_max, uint32_t y_size, const ctrl_gt** surface);
+                            ctrl_gt y_max, uint32_t y_size, const ctrl_gt* surface);
 
 /**
  * @brief Performs 2D bilinear interpolation on a uniform grid.
@@ -233,23 +243,50 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_interpolate_uniform_lut2d(const ctl_uniform_l
     ctrl_gt x_fidx = ctl_mul(x - lut->x_min, lut->x_step_inv);
     ctrl_gt y_fidx = ctl_mul(y - lut->y_min, lut->y_step_inv);
 
+    ctrl_gt x_max_idx_ctrl = float2ctrl((parameter_gt)(lut->x_size - 1));
+    ctrl_gt y_max_idx_ctrl = float2ctrl((parameter_gt)(lut->y_size - 1));
+    ctrl_gt zero_ctrl = float2ctrl(0.0f);
+
     // Clamp indices
-    x_fidx = ctl_sat(x_fidx, (ctrl_gt)(lut->x_size - 1), 0);
-    y_fidx = ctl_sat(y_fidx, (ctrl_gt)(lut->y_size - 1), 0);
+    x_fidx = ctl_sat(x_fidx, x_max_idx_ctrl, zero_ctrl);
+    y_fidx = ctl_sat(y_fidx, y_max_idx_ctrl, zero_ctrl);
+
+    // 修复 2 & 3：泛型安全的提取整数与小数权重的方法
+    // 通过退回到浮点域提取整数部分，保证跨平台 (float/IQmath) 均不会产生内存越界
+    parameter_gt x_fidx_flt = ctrl2float(x_fidx);
+    parameter_gt y_fidx_flt = ctrl2float(y_fidx);
 
     // Get integer indices (lower bound)
-    uint32_t x_idx = (uint32_t)x_fidx;
-    uint32_t y_idx = (uint32_t)y_fidx;
+    uint32_t x_idx = (uint32_t)x_fidx_flt;
+    uint32_t y_idx = (uint32_t)y_fidx_flt;
 
     // Get interpolation weights (fractional part)
-    ctrl_gt wx = x_fidx - (ctrl_gt)x_idx;
-    ctrl_gt wy = y_fidx - (ctrl_gt)y_idx;
+    ctrl_gt wx = x_fidx - float2ctrl((parameter_gt)x_idx);
+    ctrl_gt wy = y_fidx - float2ctrl((parameter_gt)y_idx);
+
+    if (x_idx >= lut->x_size - 1)
+    {
+        x_idx = lut->x_size - 2;
+        wx = float2ctrl(1.0f);
+    }
+    if (y_idx >= lut->y_size - 1)
+    {
+        y_idx = lut->y_size - 2;
+        wy = float2ctrl(1.0f);
+    }
+
+    uint32_t y_size = lut->y_size;
 
     // Get corner points
-    ctrl_gt p00 = lut->surface[x_idx][y_idx];
-    ctrl_gt p10 = lut->surface[x_idx + 1][y_idx];
-    ctrl_gt p01 = lut->surface[x_idx][y_idx + 1];
-    ctrl_gt p11 = lut->surface[x_idx + 1][y_idx + 1];
+    //ctrl_gt p00 = lut->surface[x_idx][y_idx];
+    //ctrl_gt p10 = lut->surface[x_idx + 1][y_idx];
+    //ctrl_gt p01 = lut->surface[x_idx][y_idx + 1];
+    //ctrl_gt p11 = lut->surface[x_idx + 1][y_idx + 1];
+
+    ctrl_gt p00 = lut->surface[x_idx * y_size + y_idx];
+    ctrl_gt p10 = lut->surface[x_idx * y_size + (y_idx + 1)];
+    ctrl_gt p01 = lut->surface[(x_idx + 1) * y_size + y_idx];
+    ctrl_gt p11 = lut->surface[(x_idx + 1) * y_size + (y_idx + 1)];
 
     // Bilinear interpolation
     ctrl_gt r1 = p00 + ctl_mul(wx, p10 - p00);

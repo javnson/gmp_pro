@@ -60,7 +60,6 @@
                     "${GMP_PRO_LOCATION}/core/std/cfg/*",
                     "${GMP_PRO_LOCATION}/core/std/ds/*",
                     "${GMP_PRO_LOCATION}/core/std/ec/*",
-                    "${GMP_PRO_LOCATION}/core/std/locale/*",
                     "${GMP_PRO_LOCATION}/gmp_core.h",
                     "${GMP_PRO_LOCATION}/gmp_core.hpp"
                 ],
@@ -169,7 +168,7 @@
             },
             "dev|app|ad5933": {
                 "type": "module",
-                "description": "",
+                "description": "Impedance \nConverter, Network Analyzer",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/core/dev/application/ad5933.c"
                 ],
@@ -177,7 +176,9 @@
                     "${GMP_PRO_LOCATION}/core/dev/application/ad5933.h"
                 ],
                 "inc_dirs": [],
-                "help_docs": [],
+                "help_docs": [
+                    "https://www.analog.com/media/en/technical-documentation/data-sheets/ad5933.pdf"
+                ],
                 "depends_on": [],
                 "tasks": [
                     {
@@ -834,7 +835,7 @@
             },
             "component|_internal": {
                 "type": "module",
-                "description": "自动生成的包基础配置",
+                "description": "",
                 "src_patterns": [],
                 "inc_patterns": [],
                 "depends_on": [],
@@ -845,9 +846,9 @@
             },
             "component|digital_power|_internal": {
                 "type": "module",
-                "description": "数字电源控制器组件",
+                "description": "",
                 "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/src/ctl_dp_basic.c"
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/basic/src/ctl_dp_basic.c"
                 ],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/basic/*"
@@ -857,80 +858,6 @@
                     "${GMP_PRO_LOCATION}/"
                 ],
                 "help_docs": []
-            },
-            "component|digital_power|sinv": {
-                "type": "module",
-                "description": "",
-                "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/src/ctl_dp_single_phase.c",
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/src/ctl_dp_topology_sinv.c"
-                ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/single_phase/*"
-                ],
-                "inc_dirs": [],
-                "depends_on": [],
-                "help_docs": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    }
-                ]
-            },
-            "component|digital_power|inv": {
-                "type": "module",
-                "description": "",
-                "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/src/ctl_dp_three_phase.c",
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/src/ctl_dp_topology_inv.c"
-                ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/three_phase/*"
-                ],
-                "inc_dirs": [],
-                "depends_on": [],
-                "help_docs": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    }
-                ]
             },
             "component|interface|_internal": {
                 "type": "module",
@@ -995,8 +922,7 @@
                 "description": "",
                 "src_patterns": [],
                 "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/interface/pwm_channel.h",
-                    "${GMP_PRO_LOCATION}/ctl/component/interface/pwm_modulator.h"
+                    "${GMP_PRO_LOCATION}/ctl/component/interface/pwm_channel.h"
                 ],
                 "inc_dirs": [],
                 "depends_on": [],
@@ -1059,50 +985,20 @@
                     }
                 ]
             },
-            "component|digital_power|mppt": {
-                "type": "module",
-                "description": "",
-                "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/src/ctl_dp_mppt.c"
-                ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/mppt/*"
-                ],
-                "inc_dirs": [],
-                "depends_on": [],
-                "help_docs": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    }
-                ]
-            },
             "component|intrinsic|_internal": {
                 "type": "module",
                 "description": "基础控制器模块组件",
                 "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/src/ctl_component_basic.c"
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/src/ctl_divider.c",
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/src/ctl_hysteresis_controller.c",
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/src/ctl_saturation.c",
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/src/ctl_slope_limiter.c"
                 ],
                 "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/*"
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/divider.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/hysteresis_controller.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/saturation.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/slope_limiter.h"
                 ],
                 "depends_on": [],
                 "inc_dirs": [
@@ -1110,158 +1006,16 @@
                 ],
                 "help_docs": []
             },
-            "component|intrinsic|continuous": {
-                "type": "module",
-                "description": "",
-                "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/src/ctl_component_continuous.c"
-                ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/*"
-                ],
-                "inc_dirs": [],
-                "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    }
-                ]
-            },
-            "component|intrinsic|discrete": {
-                "type": "module",
-                "description": "",
-                "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/src/ctl_component_discrete.c"
-                ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/*"
-                ],
-                "inc_dirs": [],
-                "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    }
-                ]
-            },
-            "component|intrinsic|protection": {
-                "type": "module",
-                "description": "",
-                "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/src/ctl_component_protection.c"
-                ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/protection/*"
-                ],
-                "inc_dirs": [],
-                "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    }
-                ]
-            },
-            "component|intrinsic|advance": {
-                "type": "module",
-                "description": "",
-                "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/src/ctl_component_advance.c"
-                ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/*"
-                ],
-                "inc_dirs": [],
-                "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    }
-                ]
-            },
             "component|motor_control|_internal": {
                 "type": "module",
                 "description": "电机控制器组件",
                 "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/src/ctl_mc_basic.c"
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/src/ctl_mc_encoder.c"
                 ],
                 "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/basic/*"
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/encoder.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/motor_universal_interface.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/std_sil_motor_interface.h"
                 ],
                 "depends_on": [],
                 "inc_dirs": [
@@ -1272,12 +1026,8 @@
             "component|motor_control|acm_ctrl": {
                 "type": "module",
                 "description": "",
-                "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/src/ctl_mc_acm_sensored_ctrl.c"
-                ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/acm_controller/*"
-                ],
+                "src_patterns": [],
+                "inc_patterns": [],
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [],
@@ -1294,114 +1044,6 @@
                         "summary": "Simulation / Principle Verified",
                         "completed": false,
                         "date": "",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    }
-                ]
-            },
-            "component|motor_control|current_loop": {
-                "type": "module",
-                "description": "",
-                "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/src/ctl_mc_current_loop.c"
-                ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/current_loop/*"
-                ],
-                "inc_dirs": [],
-                "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    }
-                ]
-            },
-            "component|motor_control|motion": {
-                "type": "module",
-                "description": "",
-                "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/src/ctl_mc_motion.c"
-                ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/motion/*"
-                ],
-                "inc_dirs": [],
-                "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    }
-                ]
-            },
-            "component|motor_control|observer": {
-                "type": "module",
-                "description": "",
-                "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/src/ctl_mc_observer.c"
-                ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/*"
-                ],
-                "inc_dirs": [],
-                "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
                         "reply": ""
                     },
                     {
@@ -1416,12 +1058,8 @@
             "component|motor_control|param_est": {
                 "type": "module",
                 "description": "",
-                "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/src/ctl_mc_pmsm_offline_est.c"
-                ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/param_est/*"
-                ],
+                "src_patterns": [],
+                "inc_patterns": [],
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [],
@@ -1452,15 +1090,8 @@
             "component|motor_control|pmsm_ctrl": {
                 "type": "module",
                 "description": "",
-                "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/src/ctl_mc_pmsm_ctrl.c",
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/src/ctl_mc_pmsm_ctrl_hfi.c",
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/src/ctl_mc_pmsm_ctrl_mtpa.c",
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/src/ctl_mc_pmsm_ctrl_smo.c"
-                ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/pmsm_controller/*"
-                ],
+                "src_patterns": [],
+                "inc_patterns": [],
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [],
@@ -1477,42 +1108,6 @@
                         "summary": "Simulation / Principle Verified",
                         "completed": true,
                         "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    }
-                ]
-            },
-            "component|motor_control|consultant": {
-                "type": "module",
-                "description": "",
-                "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/src/ctl_mc_consultant.c"
-                ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/consultant/*"
-                ],
-                "inc_dirs": [],
-                "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": false,
-                        "date": "",
                         "reply": ""
                     },
                     {
@@ -1792,7 +1387,12 @@
                 "description": "",
                 "src_patterns": [],
                 "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/coord_trans.h"
+                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/Clarke.h",
+                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/coord_trans.h",
+                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/coordinate.h",
+                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/Park.h",
+                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/Park_neg.h",
+                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/svpwm.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
@@ -1964,6 +1564,3242 @@
                         "summary": "Simulation / Principle Verified",
                         "completed": true,
                         "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|current_loop|_internal": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|motor_control|basic|_internal": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|motor_control|basic|protection": {
+                "type": "module",
+                "description": "Motor control protection module",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/basic/src/ctl_mc_mtr_protection.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/basic/mtr_protection.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-15",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-15",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|basic|decouple": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/basic/decouple.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-15",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-15",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|basic|voltage_calculator": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/basic/voltage_calculator.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-15",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|basic|vf_generator": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/basic/src/ctl_mc_mtr_vf_generator.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/basic/vf_generator.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|continuous|_internal": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|intrinsic|continuous|pi": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/src/ctl_continuous_pi.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/continuous_pi.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|continuous|pid": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/src/ctl_continuous_pid.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/continuous_pid.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|continuous|pid_aw": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/src/ctl_continuous_pid_aw.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/continuous_pid_aw.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|continuous|ladrc1": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/src/ctl_internal_ladrc1.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/ladrc1.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|continuous|ladrc2": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/src/ctl_internal_ladrc2.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/ladrc2.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|continuous|sogi": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/src/ctl_sogi.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/sogi.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|continuous|track_pid": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/src/ctl_track_pid.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/track_pid.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|discrete|_internal": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|intrinsic|discrete|pid": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_pid.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/discrete_pid.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|discrete|biquad_filter": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_biquad_filter.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/biquad_filter.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|discrete|direct_form": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_df.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/direct_form.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|discrete|sogi": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_sogi.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/discrete_sogi.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|discrete|fir_filter": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_disrete_fir.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/fir_filter.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|discrete|lead_lag": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_lead_lag.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/lead_lag.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|discrete|pole_zero": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_pole_zero.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/pole_zero.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|discrete|pr": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_pr.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/proportional_resonant.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|discrete|signal_generator": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_sg.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/signal_generator.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|discrete|track_pid": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_track_pid.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/track_discrete_pid.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|protection|_internal": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|intrinsic|protection|itoc": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/protection/src/ctl_itoc_protection.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/protection/itoc_protection.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|protection|basic": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/protection/src/ctl_protection.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/protection/protection.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|protection|sag_swell": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/protection/src/ctl_sag_swell.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/protection/sag_swell.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|advance|_internal": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|intrinsic|advance|back_steppping": {
+                "type": "module",
+                "description": "Backstepping controller",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/src/ctl_adv_back_stepping.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/back_stepping.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|advance|fuzzy_pid": {
+                "type": "module",
+                "description": "Fuzzy PID controller",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/src/ctl_adv_flpid.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/fuzzy_pid.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|advance|ilc": {
+                "type": "module",
+                "description": "Iterative Learning Controller",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/src/ctl_adv_ilc.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/ilc.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|advance|imc": {
+                "type": "module",
+                "description": "Internal Model Controller",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/src/ctl_adv_imc.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/imc.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|advance|lms_filter": {
+                "type": "module",
+                "description": "LMS Adaptive Filter",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/src/ctl_adv_lms.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/lms_filter.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|advance|mrac": {
+                "type": "module",
+                "description": "Model Reference Adaptive Controller",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/src/ctl_adv_mrac.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/mrac.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|advance|paired_lud1d": {
+                "type": "module",
+                "description": "Paired 1D Look-Up Table",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/src/ctl_adv_lut_pair.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/paired_lut1d.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|advance|rc": {
+                "type": "module",
+                "description": "Repetitive Controller",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/src/ctl_adv_rc.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/repetitive_controller.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|advance|sinc_interpolator": {
+                "type": "module",
+                "description": "Sinc Interpolator",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/src/ctl_adv_sinc_interpolator.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/sinc_interpolator.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|advance|smc": {
+                "type": "module",
+                "description": "Sliding Mode Controller",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/src/ctl_adv_smc.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/smc.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|advance|surf_search": {
+                "type": "module",
+                "description": "Look-Up Tables",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/src/ctl_adv_surf_search.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/surf_search.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|consultant|_internal": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/consultant/unit_consultant.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|motor_control|consultant|acim": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/consultant/src/ctl_mc_acim_consultant.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/consultant/acim_consultant.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|consultant|pmsm": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/consultant/src/ctl_mc_pmsm_consultant.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/consultant/pmsm_consultant.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|consultant|inverter": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/consultant/src/ctl_mc_inverter_consultant.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/consultant/inverter_consultant.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|consultant|mechanical": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/consultant/src/ctl_mc_mech_consultant.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/consultant/mech_consultant.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|consultant|nameplate": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/consultant/src/ctl_mc_nameplate_consultant.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/consultant/nameplate_consultant.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|consultant|pu": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/consultant/src/ctl_mc_pu_consultant.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/consultant/pu_consultant.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|current_loop|imfoc": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/current_loop/src/ctl_mc_imfoc_core.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/current_loop/imfoc_core.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|current_loop|foc": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/current_loop/src/ctl_mc_foc_core.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/current_loop/foc_core.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|current_loop|pmsm_dbptc": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/current_loop/src/ctl_mc_pmsm_dbptc.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/current_loop/pmsm_dbptc.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|current_loop|dtc_svm": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/current_loop/src/ctl_mc_dtc_svm_core.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/current_loop/dtc_svm_core.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|distributor|ipm_fw": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/distributor/src/ctl_mc_ipm_fw.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/distributor/ipm_fw_distributor.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|distributor|_internal": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|motor_control|distributor|lut_fw": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/distributor/src/ctl_mc_lut_fw.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/distributor/lut_fw_distributor.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|distributor|spm_fw": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/distributor/src/ctl_mc_spm_fw.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/distributor/spm_fw_distributor.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|motion|_internal": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|motor_control|motion|trapezoidal": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/motion/src/ctl_mc_trapezoudal_traj.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/motion/trapezoidal_traj.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|motion|s_curve": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/motion/src/ctl_mc_s_curve_traj.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/motion/s_curve_traj.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|motion|sogi_curve": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/motion/src/ctl_mc_sogi_traj.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/motion/sogi_traj.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|observer|_internal": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|motor_control|observer|acim_fo": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/src/ctl_mc_acim_fo.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/acim_fo.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|observer|acim_pos_calc": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/src/ctl_mc_acim_pos_calc.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/acim_pos_calc.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|observer|acim_smo": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/src/ctl_mc_acim_smo.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/acim_smo.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|observer|bldc_hall": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/src/ctl_mc_bldc_hall.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/bldc_hall.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|observer|bldc_zcd": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/src/ctl_mc_bldc_zcd_obs.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/bldc_zcd_obs.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|observer|pmsm_esmo": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/src/ctl_mc_pmsm_esmo.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/pmsm_esmo.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|observer|pmsm_fo": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/src/ctl_mc_pmsm_fo.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/pmsm_fo.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|observer|pmsm_hfi": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/src/ctl_mc_pmsm_hfi.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/pmsm_hfi.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|mech_loop|pi_pi": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/mechanical_loop/src/ctl_mc_basic_mech_ctrl.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/mechanical_loop/basic_mech_ctrl.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|mech_loop|_internal": {
+                "type": "module",
+                "description": "Auto-generated internal config",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|motor_control|mech_loop|ladrc_pos": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/mechanical_loop/src/ctl_mc_ladrc_pos_ctrl.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/mechanical_loop/ladrc_pos_ctrl.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|mech_loop|ladrc_spd": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/mechanical_loop/src/ctl_mc_ladrc_spd_ctrl.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/mechanical_loop/ladrc_spd_ctrl.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|mech_loop|mit": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/mechanical_loop/src/ctl_mc_mit_mech_ctrl.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/mechanical_loop/mit_mech_ctrl.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|mech_loop|smc_pos": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/mechanical_loop/src/ctl_mc_smc_mech_ctrl.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/mechanical_loop/smc_mech_ctrl.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|dcdc": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/boost.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/buck.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/buckboost.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|inv|_internal": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "depends_on": [],
+                "help_docs": []
+            },
+            "component|digital_power|inv|inv_3ph_core": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_gfl_core.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/gfl_core.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|mppt|_internal": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "depends_on": [],
+                "help_docs": []
+            },
+            "component|digital_power|mppt|inc": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/mppt/src/ctl_dp_mppt_inc.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/mppt/INC_algorithm.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|mppt|po": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/mppt/src/ctl_dp_mppt_po.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/mppt/PnO_algorithm.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|observer|ato_pll": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/src/ctl_mc_ato_pll.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/ato_pll.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|interface|modulator|spwm": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/interface/src/ctl_if_pwm_spwm.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/interface/spwm_modulator.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|interface|modulator|_internal": {
+                "type": "module",
+                "description": "Auto-generated internal config",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|interface|modulator|npc": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/interface/src/ctl_if_pwm_npc.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/interface/npc_modulator.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|interface|modulator|H_bridge": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/interface/src/ctl_if_pwm_h.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/interface/hpwm_modulator.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|rectifier|_internal": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|digital_power|rectifier|vienna": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/rectifier/Vienna.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|sinv|_internal": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "depends_on": [],
+                "help_docs": []
+            },
+            "component|digital_power|sinv|spll_sogi": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/sinv/src/ctl_dp_spll_sogi.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/sinv/spll_sogi.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|sinv|spll_sogi_dc": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/sinv/src/ctl_dp_spll_sogi_dc.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/sinv/spll_sogi_dc.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|sinv|spfc": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/sinv/src/ctl_dp_spfc.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/sinv/spfc.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|sinv|sinv_core": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/sinv/src/ctl_dp_sinv_core.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/sinv/sinv_core.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|inv|gfl_pq_ctrl": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_gfl_pq.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/gfl_pq_ctrl.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|inv|gfm_droop": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_gfm_droop.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/gfm_droop.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|inv|hcm": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_hcm.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/inv_hcm.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|inv|neg_ctrl": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_neg_ctrl.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/inv_neg_ctrl.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|inv|pll_srf": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_pll_srf.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/pll_srf.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|inv|pll_ddsrf": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_pll_ddsrf.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/pll_ddsrf.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|inv|pll_dsogi": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_pll_dsogi.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/pll_dsogi.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|advance|flc": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/src/ctl_adv_flc.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/flc.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|discrete|discrete_filter": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_filter.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/discrete_filter.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
                         "reply": ""
                     },
                     {

@@ -12,8 +12,6 @@
 #ifndef _CONTINUOUS_PID_H_
 #define _CONTINUOUS_PID_H_
 
-#include <ctl/math_block/gmp_math.h>
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -59,28 +57,6 @@ typedef struct _tag_pid_regular_t
     //ctrl_gt sn;     //!< The integrator sum.
     ctrl_gt dn; //!< The previous input value for the derivative term.
 } ctl_pid_t;
-
-///**
-// * @brief Initializes a parallel-form PID controller.
-// * @details Calculates ki = T/Ti and kd = Td/T.
-// * @param[out] hpid Pointer to the PID controller instance.
-// * @param[in] kp Proportional gain.
-// * @param[in] Ti Integral time constant (seconds).
-// * @param[in] Td Derivative time constant (seconds).
-// * @param[in] fs Sampling frequency (Hz).
-// */
-//void ctl_init_pid_par(ctl_pid_t* hpid, parameter_gt kp, parameter_gt Ti, parameter_gt Td, parameter_gt fs);
-//
-///**
-// * @brief Initializes a parallel-form PID controller.
-// * @details Calculates ki = Ki * T and kd = Td/T.
-// * @param[out] hpid Pointer to the PID controller instance.
-// * @param[in] kp Proportional gain.
-// * @param[in] Ti Integral gain (Hz).
-// * @param[in] Td Derivative gain (seconds).
-// * @param[in] fs Sampling frequency (Hz).
-// */
-//void ctl_init_pid_par_kpid(ctl_pid_t* hpid, parameter_gt kp, parameter_gt ki, parameter_gt kd, parameter_gt fs);
 
 /**
  * @brief Initializes a series-form PID controller.
@@ -162,6 +138,75 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_pid_ser(ctl_pid_t* hpid, ctrl_gt input)
 
     // Store current input for next derivative calculation
     hpid->dn = input;
+
+    return hpid->out;
+}
+
+/**
+ * @brief Executes one step of the parallel-form IP (Integral-Proportional) controller.
+ * @details In an IP controller, the Proportional term acts ONLY on the feedback 
+ * (to prevent setpoint kick/overshoot), while the Integral term acts on the error.
+ * Output = -Kp * feedback + Ki * sum(target - feedback)
+ * * @param[in,out] hpid     Pointer to the PID controller instance.
+ * @param[in]     target   The target reference value.
+ * @param[in]     feedback The current actual feedback value.
+ * @return ctrl_gt The calculated controller output.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_step_ipd_par(ctl_pid_t* hpid, ctrl_gt target, ctrl_gt feedback)
+{
+    ctrl_gt err = target - feedback;
+
+    // P term acts ONLY on the negative feedback (eliminates closed-loop zero)
+    hpid->p_term = ctl_mul(-feedback, hpid->kp);
+
+    // I term acts on the error
+    hpid->i_term = ctl_sat(hpid->i_term + ctl_mul(err, hpid->ki), hpid->integral_max, hpid->integral_min);
+
+    // D term is typically 0 in pure IP, but implemented here for I-PD extension acting on feedback
+    hpid->d_term = ctl_mul(-(feedback - hpid->dn), hpid->kd);
+
+    // Output = P_term + I_term + D_term
+    hpid->out = hpid->p_term + hpid->i_term + hpid->d_term;
+
+    // Saturate final output
+    hpid->out = ctl_sat(hpid->out, hpid->out_max, hpid->out_min);
+
+    // Store current feedback for next derivative calculation
+    hpid->dn = feedback;
+
+    return hpid->out;
+}
+
+/**
+ * @brief Executes one step of the series-form IP (Integral-Proportional) controller.
+ * @details Output = Kp * [ -feedback + 1/Ti * sum(target - feedback) ]
+ * * @param[in,out] hpid     Pointer to the PID controller instance.
+ * @param[in]     target   The target reference value.
+ * @param[in]     feedback The current actual feedback value.
+ * @return ctrl_gt The calculated controller output.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_step_ipd_ser(ctl_pid_t* hpid, ctrl_gt target, ctrl_gt feedback)
+{
+    ctrl_gt err = target - feedback;
+
+    // P term acts ONLY on the negative feedback
+    hpid->p_term = ctl_mul(-feedback, hpid->kp);
+
+    // I term acts on the error, scaled by Kp and Ki (Ki is 1/Ti in series mode)
+    ctrl_gt err_scaled = ctl_mul(err, hpid->kp);
+    hpid->i_term = ctl_sat(hpid->i_term + ctl_mul(err_scaled, hpid->ki), hpid->integral_max, hpid->integral_min);
+
+    // D term acting on feedback
+    hpid->d_term = ctl_mul(-(feedback - hpid->dn), hpid->kd);
+
+    // Output = P_term + I_term + D_term
+    hpid->out = hpid->p_term + hpid->i_term + hpid->d_term;
+
+    // Saturate final output
+    hpid->out = ctl_sat(hpid->out, hpid->out_max, hpid->out_min);
+
+    // Store current feedback for next derivative calculation
+    hpid->dn = feedback;
 
     return hpid->out;
 }
@@ -253,122 +298,6 @@ GMP_STATIC_INLINE void ctl_pid_clamping_correction_using_real_output(ctl_pid_t* 
     // Apply the correction to the integrator state
     // We also respect the integrator's own limits
     hpid->i_term = ctl_sat(sn_corrected, hpid->integral_max, hpid->integral_min);
-}
-
-/*---------------------------------------------------------------------------*/
-/* PID Controller with Anti-Windup                                           */
-/*---------------------------------------------------------------------------*/
-
-/**
- * @brief Data structure for a PID controller with back-calculation anti-windup.
- */
-typedef struct _tag_pid_anti_windup
-{
-    // Parameters
-    ctrl_gt kp; //!< Proportional gain coefficient.
-    ctrl_gt ki; //!< Integral gain coefficient.
-    ctrl_gt kd; //!< Derivative gain coefficient.
-    ctrl_gt kc; //!< Back-calculation gain for anti-windup.
-
-    // Limits
-    ctrl_gt out_max; //!< Maximum output limit.
-    ctrl_gt out_min; //!< Minimum output limit.
-
-    // State variables
-    ctrl_gt out;             //!< The current, saturated controller output.
-    ctrl_gt sn;              //!< The integrator sum.
-    ctrl_gt dn;              //!< The previous input value for the derivative term.
-    ctrl_gt out_without_sat; //!< The unsaturated output, used for back-calculation.
-} ctl_pid_aw_t;
-
-/**
- * @brief Initializes a parallel-form PID controller with anti-windup.
- * @param[out] hpid Pointer to the PID anti-windup instance.
- * @param[in] kp Proportional gain.
- * @param[in] Ti Integral time constant (seconds).
- * @param[in] Td Derivative time constant (seconds).
- * @param[in] fs Sampling frequency (Hz).
- */
-void ctl_init_pid_aw_par(ctl_pid_aw_t* hpid, parameter_gt kp, parameter_gt Ti, parameter_gt Td, parameter_gt fs);
-
-/**
- * @brief Initializes a series-form PID controller with anti-windup.
- * @param[out] hpid Pointer to the PID anti-windup instance.
- * @param[in] kp Proportional gain.
- * @param[in] Ti Integral time constant (seconds).
- * @param[in] Td Derivative time constant (seconds).
- * @param[in] fs Sampling frequency (Hz).
- */
-void ctl_init_pid_aw_ser(ctl_pid_aw_t* hpid, parameter_gt kp, parameter_gt Ti, parameter_gt Td, parameter_gt fs);
-
-/**
- * @brief Executes one step of the parallel-form anti-windup PID controller.
- * @param[in,out] hpid Pointer to the PID anti-windup instance.
- * @param[in] input The current input error, e(n).
- * @return ctrl_gt The calculated controller output.
- */
-GMP_STATIC_INLINE ctrl_gt ctl_step_pid_aw_par(ctl_pid_aw_t* hpid, ctrl_gt input)
-{
-    // Calculate unsaturated output
-    hpid->out_without_sat = ctl_mul(input, hpid->kp) + hpid->sn + ctl_mul((input - hpid->dn), hpid->kd);
-
-    // Saturate the output
-    hpid->out = ctl_sat(hpid->out_without_sat, hpid->out_max, hpid->out_min);
-
-    // Update integrator sum with back-calculation anti-windup
-    ctrl_gt back_calc_term = ctl_mul(hpid->out_without_sat - hpid->out, hpid->kc);
-    hpid->sn = hpid->sn + ctl_mul(input, hpid->ki) - back_calc_term;
-
-    // Store current input for next derivative calculation
-    hpid->dn = input;
-
-    return hpid->out;
-}
-
-/**
- * @brief Executes one step of the series-form anti-windup PID controller.
- * @param[in,out] hpid Pointer to the PID anti-windup instance.
- * @param[in] input The current input error, e(n).
- * @return ctrl_gt The calculated controller output.
- */
-GMP_STATIC_INLINE ctrl_gt ctl_step_pid_aw_ser(ctl_pid_aw_t* hpid, ctrl_gt input)
-{
-    // Calculate unsaturated output
-    hpid->out_without_sat = ctl_mul(input + hpid->sn + ctl_mul((input - hpid->dn), hpid->kd), hpid->kp);
-
-    // Saturate the output
-    hpid->out = ctl_sat(hpid->out_without_sat, hpid->out_max, hpid->out_min);
-
-    // Update integrator sum with back-calculation anti-windup
-    ctrl_gt back_calc_term = ctl_mul(hpid->out_without_sat - hpid->out, hpid->kc);
-    hpid->sn = hpid->sn + ctl_mul(input, hpid->ki) - back_calc_term;
-
-    // Store current input for next derivative calculation
-    hpid->dn = input;
-
-    return hpid->out;
-}
-
-/**
- * @brief Clears the internal states of the anti-windup PID controller.
- * @param[out] hpid Pointer to the PID anti-windup instance.
- */
-GMP_STATIC_INLINE void ctl_clear_pid_aw(ctl_pid_aw_t* hpid)
-{
-    hpid->dn = 0;
-    hpid->sn = 0;
-    hpid->out = 0;
-    hpid->out_without_sat = 0;
-}
-
-/**
- * @brief Sets the back-calculation gain for the anti-windup mechanism.
- * @param[out] hpid Pointer to the PID anti-windup instance.
- * @param[in] back_gain The new back-calculation gain (kc).
- */
-GMP_STATIC_INLINE void ctl_set_pid_aw_back_gain(ctl_pid_aw_t* hpid, ctrl_gt back_gain)
-{
-    hpid->kc = back_gain;
 }
 
 /**

@@ -45,9 +45,9 @@ typedef struct _tag_fuzzy_pid_t
     ctl_pid_t pid; //!< The underlying standard PID controller.
 
     // Base PID parameters
-    parameter_gt base_kp; //!< The base proportional gain.
-    parameter_gt base_ti; //!< The base integral time constant.
-    parameter_gt base_td; //!< The base derivative time constant.
+    ctrl_gt base_kp; //!< The base proportional gain.
+    ctrl_gt base_ki; //!< The base integral time constant.
+    ctrl_gt base_kd; //!< The base derivative time constant.
 
     // Fuzzy tuning surfaces (Look-Up Tables)
     ctl_lut2d_t d_kp_lut; //!< 2D LUT for delta_Kp adjustments.
@@ -55,12 +55,13 @@ typedef struct _tag_fuzzy_pid_t
     ctl_lut2d_t d_kd_lut; //!< 2D LUT for delta_Kd adjustments.
 
     // Quantization factors
-    parameter_gt e_q_factor;  //!< Quantization factor for the error input.
-    parameter_gt ec_q_factor; //!< Quantization factor for the change-in-error input.
+    ctrl_gt e_q_factor;  //!< Quantization factor for the error input.
+    ctrl_gt ec_q_factor; //!< Quantization factor for the change-in-error input.
 
     // State variables
-    ctrl_gt last_error; //!< Stores the previous error for calculating the change in error.
-    parameter_gt fs;    //!< The sampling frequency of the controller.
+    ctrl_gt last_error;  //!< Stores the previous error for calculating the change in error.
+    ctrl_gt fs_ctrl;     //!< fs in ctrl_gt, for scaling d_kd
+    ctrl_gt inv_fs_ctrl; //!< The sampling frequency of the controller.
 
 } ctl_fuzzy_pid_t;
 
@@ -94,51 +95,46 @@ GMP_STATIC_INLINE void ctl_clear_fuzzy_pid(ctl_fuzzy_pid_t* fp)
 }
 
 /**
- * @brief Executes one step of the Fuzzy PID controller.
- * @param[in,out] fp Pointer to the Fuzzy PID instance.
- * @param[in] error The current system error, e(n).
- * @return ctrl_gt The calculated control output.
+ * @brief Executes one step of the fuzzy PID controller.
+ * @details 经过极致的定点优化，ISR 中没有任何浮点转换和除法。
  */
-GMP_STATIC_INLINE ctrl_gt ctl_step_fuzzy_pid(ctl_fuzzy_pid_t* fp, ctrl_gt error)
+GMP_STATIC_INLINE ctrl_gt ctl_step_fuzzy_pid(ctl_fuzzy_pid_t* fp, ctrl_gt target, ctrl_gt feedback)
 {
-    // 1. Calculate change in error (EC)
+    // 1. Calculate error and change in error
+    ctrl_gt error = target - feedback;
     ctrl_gt error_change = error - fp->last_error;
-
-    // 2. Quantize E and EC for LUT input
-    ctrl_gt e_quantized = ctl_mul(error, float2ctrl(fp->e_q_factor));
-    ctrl_gt ec_quantized = ctl_mul(error_change, float2ctrl(fp->ec_q_factor));
-
-    // 3. Look up PID parameter adjustments from fuzzy rule tables
-    ctrl_gt delta_kp = ctl_step_interpolate_lut2d(&fp->d_kp_lut, e_quantized, ec_quantized);
-    ctrl_gt delta_ki = ctl_step_interpolate_lut2d(&fp->d_ki_lut, e_quantized, ec_quantized);
-    ctrl_gt delta_kd = ctl_step_interpolate_lut2d(&fp->d_kd_lut, e_quantized, ec_quantized);
-
-    // 4. Calculate the new, tuned PID parameters
-    parameter_gt tuned_kp = fp->base_kp + ctrl2float(delta_kp);
-    parameter_gt tuned_ti = fp->base_ti + ctrl2float(delta_ki);
-    parameter_gt tuned_td = fp->base_td + ctrl2float(delta_kd);
-
-    // Ensure parameters remain physically meaningful
-    if (tuned_kp < 0)
-        tuned_kp = 0;
-    if (tuned_ti < 1e-9f)
-        tuned_ti = 1e-9f; // Avoid division by zero
-    if (tuned_td < 0)
-        tuned_td = 0;
-
-    // 5. Update the underlying PID controller's coefficients
-    parameter_gt T = 1.0f / fp->fs;
-    fp->pid.kp = float2ctrl(tuned_kp);
-    fp->pid.ki = float2ctrl(tuned_kp * T / tuned_ti);
-    fp->pid.kd = float2ctrl(tuned_kp * tuned_td / T);
-
-    // 6. Execute the standard PID step function
-    ctrl_gt output = ctl_step_pid_par(&fp->pid, error);
-
-    // 7. Update state for the next iteration
     fp->last_error = error;
 
-    return output;
+    // 2. Quantize inputs for the fuzzy LUTs (纯定点乘法)
+    ctrl_gt e_quantized = ctl_mul(error, fp->e_q_factor);
+    ctrl_gt ec_quantized = ctl_mul(error_change, fp->ec_q_factor);
+
+    // 3. Look up physical PID parameter increments (Delta Kp, Ki, Kd)
+    ctrl_gt d_kp = ctl_step_interpolate_lut2d(&fp->d_kp_lut, e_quantized, ec_quantized);
+    ctrl_gt d_ki = ctl_step_interpolate_lut2d(&fp->d_ki_lut, e_quantized, ec_quantized);
+    ctrl_gt d_kd = ctl_step_interpolate_lut2d(&fp->d_kd_lut, e_quantized, ec_quantized);
+
+    // 4. Update the underlying Parallel PID's runtime discrete coefficients
+    // Kp_run = base_Kp + dKp
+    fp->pid.kp = fp->base_kp + d_kp;
+
+    // Ki_run = (base_Ki + dKi) / fs = base_Ki_run + dKi * (1/fs)
+    fp->pid.ki = fp->base_ki + ctl_mul(d_ki, fp->inv_fs_ctrl);
+
+    // Kd_run = (base_Kd + dKd) * fs = base_Kd_run + dKd * fs
+    fp->pid.kd = fp->base_kd + ctl_mul(d_kd, fp->fs_ctrl);
+
+    // Ensure parameters remain physically meaningful (>= 0)
+    ctrl_gt zero_ctrl = float2ctrl(0.0f);
+    if (fp->pid.kp < zero_ctrl)
+        fp->pid.kp = zero_ctrl;
+    if (fp->pid.ki < zero_ctrl)
+        fp->pid.ki = zero_ctrl;
+    if (fp->pid.kd < zero_ctrl)
+        fp->pid.kd = zero_ctrl;
+
+    // 5. Execute the underlying Parallel PID controller! (必须用 par 而非 ser)
+    return ctl_step_pid_par(&fp->pid, error);
 }
 
 /**

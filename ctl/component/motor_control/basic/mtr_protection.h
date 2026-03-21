@@ -13,10 +13,10 @@
  * @copyright Copyright GMP(c) 2024
  */
 
+#include <ctl/component/intrinsic/basic/divider.h>
+
 #ifndef _FILE_MTR_PROTECTION_H_
 #define _FILE_MTR_PROTECTION_H_
-
-#include <ctl/component/intrinsic/basic/divider.h>
 
 #ifdef __cplusplus
 extern "C"

@@ -52,8 +52,6 @@ at_status_t enable_handler(at_device_entity_t* dev, at_cmd_type_t type, char* ar
 
     gmp_base_print(TEXT_STRING("[WOW] enable handle was called!\r\n"));
 
-    cia402_send_cmd(&cia402_sm, CIA402_CMD_ENABLE_OPERATION);
-
     return AT_STATUS_OK;
 }
 
@@ -67,8 +65,6 @@ at_status_t poweroff_handler(at_device_entity_t* dev, at_cmd_type_t type, char* 
 
     gmp_base_print(TEXT_STRING("[WOW] Power OFF handle was called!\r\n"));
 
-    cia402_send_cmd(&cia402_sm, CIA402_CMD_DISABLE_VOLTAGE);
-
     return AT_STATUS_OK;
 }
 
@@ -81,8 +77,6 @@ at_status_t rst_handler(at_device_entity_t* dev, at_cmd_type_t type, char* args,
     GMP_UNUSED_VAR(len);
 
     gmp_base_print(TEXT_STRING("[WOW] rst_handler, with arg: %s!\r\n"), args);
-
-    cia402_fault_reset(&cia402_sm);
 
     return AT_STATUS_OK;
 }
@@ -99,7 +93,7 @@ at_status_t spdset_handler(at_device_entity_t* dev, at_cmd_type_t type, char* ar
 
     if(type == AT_CMD_TYPE_SETUP)
     {
-        ctl_set_target_velocity(&motion_ctrl, strtof(args, NULL));
+        //ctl_set_mech_target_velocity(&mech_ctrl, strtof(args, NULL));
     }
 
     return AT_STATUS_OK;
@@ -185,16 +179,6 @@ gmp_task_status_t tsk_LED_flush(gmp_task_t* tsk)
     return GMP_TASK_DONE;
 }
 
-
-gmp_task_status_t tsk_joystick(gmp_task_t* tsk)
-{
-    pca9555_dev_t *dev = (ht16k33_dev_t *) tsk->user_data;
-
-
-
-    return GMP_TASK_DONE;
-}
-
 gmp_task_status_t tsk_key_flush(gmp_task_t* tsk)
 {
     ht16k33_dev_t *dev = (ht16k33_dev_t *) tsk->user_data;
@@ -224,11 +208,7 @@ gmp_task_status_t tsk_key_flush(gmp_task_t* tsk)
             pca9555_set_pin_output(&pca9555, PCA9555_PORT_1, key_id - 14, 1);
             beep_off();
         }
-
-
     }
-
-
 
     return GMP_TASK_DONE;
 }
@@ -240,10 +220,8 @@ gmp_task_status_t tsk_protect(gmp_task_t* tsk);
 // All tasks must be non blocking tasks
 gmp_task_t tasks[] = {
     // name,     task,      period(ms),  init_phase, is_enabled, pParam
-    {"protect", tsk_protect, 1000, 0, 1, NULL},
     {"blink_led", tsk_blink, 1000, 100, 1, NULL},
     {"at_device", tsk_at_device, 5, 1, 1, NULL},
-    {"joystick", tsk_joystick, 20, 10, 1, (void*)&pca9555},
     {"flush_key", tsk_key_flush, 100, 10, 1, (void*)&ht16k33},
     {"flush_led", tsk_LED_flush, 500, 200, 1, (void*)&ht16k33}
 };

@@ -167,6 +167,10 @@ GMP_STATIC_INLINE float32_t ctl_isqrt_inline(float32_t A)
  */
 #define CTRL_GT_IS_CMSIS_FLOAT
 
+#ifndef CTL_EPSILON
+#define CTL_EPSILON (float2ctrl(1e-6f)) /**< @brief Threshold for zero-division avoidance. */
+#endif
+
 /** @} */ // end of MC_CMSIS_MACROS group
 
 #endif // _FILE_ARM_CMSIS_MACROS_H_

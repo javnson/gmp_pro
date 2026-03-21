@@ -99,17 +99,18 @@ void ctl_init_discrete_sogi(discrete_sogi_t* sogi, parameter_gt k_damp, paramete
  */
 GMP_STATIC_INLINE void ctl_clear_discrete_sogi(discrete_sogi_t* sogi)
 {
-    sogi->u[0] = 0;
-    sogi->u[1] = 0;
-    sogi->u[2] = 0;
+    // 修复：强制使用 float2ctrl 进行强类型隔离
+    sogi->u[0] = float2ctrl(0.0f);
+    sogi->u[1] = float2ctrl(0.0f);
+    sogi->u[2] = float2ctrl(0.0f);
 
-    sogi->osg_u[0] = 0;
-    sogi->osg_u[1] = 0;
-    sogi->osg_u[2] = 0;
+    sogi->osg_u[0] = float2ctrl(0.0f);
+    sogi->osg_u[1] = float2ctrl(0.0f);
+    sogi->osg_u[2] = float2ctrl(0.0f);
 
-    sogi->osg_qu[0] = 0;
-    sogi->osg_qu[1] = 0;
-    sogi->osg_qu[2] = 0;
+    sogi->osg_qu[0] = float2ctrl(0.0f);
+    sogi->osg_qu[1] = float2ctrl(0.0f);
+    sogi->osg_qu[2] = float2ctrl(0.0f);
 }
 
 /**
@@ -227,8 +228,8 @@ GMP_STATIC_INLINE void ctl_clear_discrete_sogi_dc(discrete_sogi_dc_t* sogi_dc)
     ctl_clear_discrete_sogi(&sogi_dc->core);
 
     // Clear DC States
-    sogi_dc->v_dc_est = 0;
-    sogi_dc->input_prev = 0;
+    sogi_dc->v_dc_est = float2ctrl(0.0f);
+    sogi_dc->input_prev = float2ctrl(0.0f);
 }
 
 /**
