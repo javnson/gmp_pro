@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>CTL_MC_PMSM_NT_Iris_node_solution</name>
+	<name>CTL_MC_PMSM_NT_Iris_node_Sensored</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -33,47 +33,22 @@
 		<link>
 			<name>user/ctl_main.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT123/implement/common/ctl_main.c</locationURI>
+			<locationURI>PARENT-2-PROJECT_LOC/src/ctl_main.c</locationURI>
 		</link>
 		<link>
 			<name>user/ctl_main.h</name>
 			<type>1</type>
-			<locationURI>copy_PARENT123/implement/common/ctl_main.h</locationURI>
+			<locationURI>PARENT-2-PROJECT_LOC/src/ctl_main.h</locationURI>
 		</link>
 		<link>
 			<name>user/user_main.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT123/implement/common/user_main.c</locationURI>
+			<locationURI>PARENT-2-PROJECT_LOC/src/user_main.c</locationURI>
 		</link>
 		<link>
 			<name>user/user_main.h</name>
 			<type>1</type>
-			<locationURI>copy_PARENT123/implement/common/user_main.h</locationURI>
-		</link>
-		<link>
-			<name>xplt/ctrl_settings.h</name>
-			<type>1</type>
-			<locationURI>copy_PARENT123/implement/f280039c_iris_node/ctrl_settings.h</locationURI>
-		</link>
-		<link>
-			<name>xplt/xplt.config.h</name>
-			<type>1</type>
-			<locationURI>copy_PARENT123/implement/f280039c_iris_node/xplt.config.h</locationURI>
-		</link>
-		<link>
-			<name>xplt/xplt.ctl_interface.h</name>
-			<type>1</type>
-			<locationURI>copy_PARENT123/implement/f280039c_iris_node/xplt.ctl_interface.h</locationURI>
-		</link>
-		<link>
-			<name>xplt/xplt.peripheral.c</name>
-			<type>1</type>
-			<locationURI>copy_PARENT123/implement/f280039c_iris_node/xplt.peripheral.c</locationURI>
-		</link>
-		<link>
-			<name>xplt/xplt.peripheral.h</name>
-			<type>1</type>
-			<locationURI>copy_PARENT123/implement/f280039c_iris_node/xplt.peripheral.h</locationURI>
+			<locationURI>PARENT-2-PROJECT_LOC/src/user_main.h</locationURI>
 		</link>
 	</linkedResources>
 	<variableList>
@@ -92,6 +67,10 @@
 		<variable>
 			<name>copy_PARENT123</name>
 			<value>$%7BPARENT-1-copy_PARENT12%7D/mcs_pmsm_nt</value>
+		</variable>
+		<variable>
+			<name>copy_PARENT1231</name>
+			<value>$%7BPARENT-1-copy_PARENT12%7D/lib/gmp_pro/ctl/suite/mcs_pmsm_nt</value>
 		</variable>
 	</variableList>
 </projectDescription>

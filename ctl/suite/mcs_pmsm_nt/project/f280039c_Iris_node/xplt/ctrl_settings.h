@@ -41,24 +41,6 @@
 // ADC Voltage Reference
 #define CTRL_ADC_VOLTAGE_REF (3.3f)
 
-//=================================================================================================
-// Hardware parameters
-
-#include <ctl/component/hardware_preset/pmsm_motor/TYI_5008_KV335.h>
-#include <ctl/component/hardware_preset/inverter_3ph/GMP_Helios_3PhGaNInv_LV.h>
-
-///////////////////////////////////////////////////////////
-// Encoder Propeties
-
-// Encoder Full scale
-#define CTRL_POS_ENC_FS (8000)
-
-// Speed division 
-#define CTRL_SPD_DIV (5)
-
-// Position division
-#define CTRL_POS_DIV (5)
-
 ///////////////////////////////////////////////////////////
 // Controller Base value
 
@@ -69,40 +51,63 @@
 #define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE / 1.73205081f)
 
 // voltage base, SPWM modulation
-//#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE/2.0f)
+//#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE / 2.0f)
 
 // Current base, 10 A
 #define CTRL_CURRENT_BASE (10.0f)
+
+//=================================================================================================
+// Hardware parameters
+
+#define BOOSTXL_3PHGANINV_IS_DEFAULT_PARAM
+
+// invoke motor parameters
+#include <ctl/component/hardware_preset/pmsm_motor/SM060R20B30MNAD.h>
+
+// invoke motor controller parameters
+#include <ctl/component/hardware_preset/inverter_3ph/GMP_3PH_2136SINV_DUAL_TMPL.h>
+
+///////////////////////////////////////////////////////////
+// Encoder Properties
+
+// Encoder Full scale
+#define CTRL_POS_ENC_FS (10000)
+
+// Encoder Bias
+#define CTRL_POS_ENC_BIAS (0.0207000002f)
+
+// Speed & Position division
+#define CTRL_MECH_DIV (5)
 
 ///////////////////////////////////////////////////////////
 // inverter side sensor
 
 // Current sensor sensitivity, TMCS1133A2B, V/A
-#define CTRL_INVERTER_CURRENT_SENSITIVITY (50e-3f)
+#define CTRL_INVERTER_CURRENT_SENSITIVITY (MY_BOARD_PH_SHUNT_RESISTANCE_OHM * MY_BOARD_PH_CSA_GAIN_V_V)
 
 // Current sensor bias, V
-#define CTRL_INVERTER_CURRENT_BIAS (1.65f)
+#define CTRL_INVERTER_CURRENT_BIAS (MY_BOARD_PH_CSA_BIAS_V)
 
 // Voltage sensor sensitivity, V/V
-#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (0.02738589f)
+#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (MY_BOARD_PH_VOLTAGE_SENSE_GAIN)
 
 // Voltage sensor bias, V
-#define CTRL_INVERTER_VOLTAGE_BIAS (0.0f)
+#define CTRL_INVERTER_VOLTAGE_BIAS (MY_BOARD_PH_VOLTAGE_SENSE_BIAS_V)
 
 ///////////////////////////////////////////////////////////
 // DC Bus side sensor
 
 // Current sensor sensitivity, V/A
-#define CTRL_DC_CURRENT_SENSITIVITY (24.75e-3f)
+#define CTRL_DC_CURRENT_SENSITIVITY (MY_BOARD_DCBUS_CURRENT_SENSE_GAIN)
 
 // Current sensor bias, V
-#define CTRL_DC_CURRENT_BIAS (1.65f)
+#define CTRL_DC_CURRENT_BIAS (MY_BOARD_DCBUS_CURRENT_SENSE_BIAS_V)
 
 // Voltage sensor sensitivity, maximum 120V, V/V
-#define CTRL_DC_VOLTAGE_SENSITIVITY (0.02738589f)
+#define CTRL_DC_VOLTAGE_SENSITIVITY (MY_BOARD_DCBUS_VOLTAGE_SENSE_GAIN)
 
 // Voltage sensor bias, V
-#define CTRL_DC_VOLTAGE_BIAS (0.0f)
+#define CTRL_DC_VOLTAGE_BIAS (MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)
 
 //=================================================================================================
 // Controller Settings
@@ -229,6 +234,8 @@
 // System LED
 #define SYSTEM_LED      IRIS_LED1
 #define CONTROLLER_LED  IRIS_LED2
+
+#define EQEP_Encoder_BASE IRIS_EQEP1_BASE
 
 #endif //BOARD_PIN_MAPPING
 

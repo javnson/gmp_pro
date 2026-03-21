@@ -51,8 +51,8 @@
 									<listOptionValue builtIn="false" value="${SYSCONFIG_TOOL_INCLUDE_PATH}"/>
 									<listOptionValue builtIn="false" value="${PROJECT_ROOT}"/>
 									<listOptionValue builtIn="false" value="${CG_TOOL_ROOT}/include"/>
-									<listOptionValue builtIn="false" value="${PROJECT_LOC}/../../implement/common"/>
-									<listOptionValue builtIn="false" value="${PROJECT_LOC}/../../implement/f280039c_iris_node"/>
+									<listOptionValue builtIn="false" value="${PROJECT_LOC}/../../src"/>
+									<listOptionValue builtIn="false" value="${PROJECT_LOC}/xplt"/>
 									<listOptionValue builtIn="false" value="${COM_TI_C2000WARE_INSTALL_DIR}/device_support/f28003x/common/include"/>
 									<listOptionValue builtIn="false" value="${COM_TI_C2000WARE_INSTALL_DIR}/device_support/f28003x/headers/include"/>
 									<listOptionValue builtIn="false" value="${COM_TI_C2000WARE_INSTALL_DIR}/driverlib/f28003x/driverlib"/>

@@ -1,4 +1,4 @@
-//
+ï»¿//
 // THIS IS A DEMO SOURCE CODE FOR GMP LIBRARY.
 //
 // User should add all definitions of peripheral objects in this file.
@@ -14,6 +14,8 @@
 #include "user_main.h"
 #include <xplt.peripheral.h>
 
+#include <ctl/component/dsa/dsa_trigger.h>
+
 //=================================================================================================
 // definitions of peripheral
 
@@ -25,19 +27,19 @@ adc_gt uuvw_src[3];
 tri_ptr_adc_channel_t iuvw;
 adc_gt iuvw_src[3];
 
-// grid side voltage feedback
-tri_ptr_adc_channel_t vabc;
-adc_gt vabc_src[3];
-
-// grid side current feedback
-tri_ptr_adc_channel_t iabc;
-adc_gt iabc_src[3];
-
 // DC bus current & voltage feedback
 ptr_adc_channel_t udc;
 adc_gt udc_src;
 ptr_adc_channel_t idc;
 adc_gt idc_src;
+
+// dlog DSA objects
+basic_trigger_t trigger;
+#define DLOG_MEM_LENGTH 100
+
+// dlog variables
+ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];
+ctrl_gt dlog_mem2[DLOG_MEM_LENGTH];
 
 //=================================================================================================
 // peripheral setup function
@@ -45,11 +47,8 @@ adc_gt idc_src;
 // User should setup all the peripheral in this function.
 void setup_peripheral(void)
 {
-
     // Setup Debug Uart
     debug_uart = IRIS_UART_USB_BASE;
-
-    reset_controller();
 
     // Test print function
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
@@ -72,23 +71,6 @@ void setup_peripheral(void)
         // ADC resolution, IQN
         12, 24);
 
-    // grid side ADC
-    ctl_init_tri_ptr_adc_channel(
-        &vabc, vabc_src,
-        // ADC gain, ADC bias
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_VOLTAGE_BIAS),
-        // ADC resolution, IQN
-        12, 24);
-
-    ctl_init_tri_ptr_adc_channel(
-        &iabc, iabc_src,
-        // ADC gain, ADC bias
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_CURRENT_BIAS),
-        // ADC resolution, IQN
-        12, 24);
-
     ctl_init_ptr_adc_channel(
         &udc, &udc_src,
         // ADC gain, ADC bias
@@ -108,13 +90,14 @@ void setup_peripheral(void)
     //
     // attach
     //
-    ctl_attach_gfl_inv(
-        // inv controller
-        &inv_ctrl,
-        // idc, udc
-        &idc.control_port, &udc.control_port,
-        // grid side iabc, vabc
-        &iabc.control_port, &vabc.control_port);
+#if BUILD_LEVEL <= 2
+    ctl_attach_mtr_current_ctrl_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &rg.enc, &spd_enc.encif);
+#else  // BUILD_LEVEL
+    ctl_attach_mtr_current_ctrl_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &pos_enc.encif, &spd_enc.encif);
+#endif // BUILD_LEVEL
+
+    // dlog module
+    dsa_init_basic_trigger(&trigger, DLOG_MEM_LENGTH);
 }
 
 //=================================================================================================
@@ -123,6 +106,8 @@ void setup_peripheral(void)
 // ADC interrupt
 interrupt void MainISR(void)
 {
+    GPIO_WritePin(MONITOR_IO, 0);
+
     //
     // call GMP ISR  Controller operation callback function
     //
@@ -134,12 +119,27 @@ interrupt void MainISR(void)
     gmp_step_system_tick();
 
     //
+    // Call dlog module
+    //
+
+    // pass trigger source here
+    if (dsa_step_trigger(&trigger, mtr_ctrl.iab0.dat[phase_alpha]))
+    {
+        uint32_t index = dsa_get_trigger_index(&trigger);
+
+        dlog_mem1[index] = mtr_ctrl.iab0.dat[phase_alpha];
+        dlog_mem2[index] = mtr_ctrl.iab0.dat[phase_beta];
+    }
+
+    //
     // Blink LED
     //
-    if (gmp_base_get_system_tick() % 1000 < 500)
-        GPIO_WritePin(SYSTEM_LED, 0);
-    else
-        GPIO_WritePin(SYSTEM_LED, 1);
+//    if (gmp_base_get_system_tick() % 1000 < 500)
+//        GPIO_WritePin(SYSTEM_LED, 0);
+//    else
+//        GPIO_WritePin(SYSTEM_LED, 1);
+
+    GPIO_WritePin(MONITOR_IO, 1);
 
     //
     // Clear the interrupt flag
@@ -161,18 +161,6 @@ interrupt void MainISR(void)
     Interrupt_clearACKGroup(INT_IRIS_ADCA_1_INTERRUPT_ACK_GROUP);
 }
 
-void reset_controller(void)
-{
-    int i = 0;
-
-    GPIO_WritePin(PWM_RESET_PORT, 0);
-
-    for(i=0;i<10000;++i);
-
-    GPIO_WritePin(PWM_RESET_PORT, 1);
-
-}
-
 //=================================================================================================
 // communication functions and interrupt functions here
 
@@ -182,7 +170,7 @@ void reset_controller(void)
 // 32 bit union
 typedef union {
     int32_t i32;
-    uint16_t u16[2]; // C2000ÖÐuint16_tÕ¼1¸öword£¬32Î»Õ¼ÓÃ2¸öword
+    uint16_t u16[2];
 } can_data_t;
 
 // CAN interrupt
@@ -213,13 +201,13 @@ interrupt void INT_IRIS_CAN_0_ISR(void)
         CAN_readMessage(IRIS_CAN_BASE, 2, (uint16_t*)recv_content);
         CAN_clearInterruptStatus(CANA_BASE, 2);
 
-        // set target value
-#if BUILD_LEVEL == 1
-        // For level 1 Set target voltage
-        ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl((float)recv_content[0].i32 / CAN_SCALE_FACTOR),
-                                         float2ctrl((float)recv_content[1].i32 / CAN_SCALE_FACTOR));
-
-#endif // BUILD_LEVEL
+        //        // set target value
+        //#if BUILD_LEVEL == 1
+        //        // For level 1 Set target voltage
+        //        ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl((float)recv_content[0].i32 / CAN_SCALE_FACTOR),
+        //                                         float2ctrl((float)recv_content[1].i32 / CAN_SCALE_FACTOR));
+        //
+        //#endif // BUILD_LEVEL
     }
 
     //
@@ -253,62 +241,41 @@ void send_monitor_data(void)
     uint16_t rx_raw[4];
     can_data_t tran_content[2];
 
-    // 0x201: Monitor Grid Voltage
-    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
+    // 0x201: Monitor Motor Current
+    tran_content[0].i32 = (int32_t)(mtr_ctrl.idq0.dat[phase_d] * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(mtr_ctrl.idq0.dat[phase_q] * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 4, 8, (uint16_t*)tran_content);
 
     //0x202: Monitor inverter voltage
-    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
+    tran_content[0].i32 = (int32_t)(mtr_ctrl.vdq0.dat[phase_d] * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(mtr_ctrl.vdq0.dat[phase_q] * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 5, 8, (uint16_t*)tran_content);
 
-    // 0x203: Monitor grid current
-    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
+    // 0x203: Monitor Velocity following
+//    tran_content[0].i32 = (int32_t)(motion_ctrl.spd_if->speed * CAN_SCALE_FACTOR);
+//    tran_content[1].i32 = (int32_t)(motion_ctrl.target_velocity * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 6, 8, (uint16_t*)tran_content);
 
-    // 0x204: TODO Monitor inverter current
-    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
+    // 0x204: TODO Monitor elec-position following
+//    tran_content[0].i32 = (int32_t)(motion_ctrl.pos_if->position * CAN_SCALE_FACTOR);
+//    tran_content[1].i32 = (int32_t)(motion_ctrl.target_angle * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 7, 8, (uint16_t*)tran_content);
 
-    // 0x205: TODO Monitor DC Voltage / Current
-    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
+    // 0x205: Monitor DC Voltage / ISR tick
+    tran_content[0].i32 = (int32_t)(mtr_ctrl.udc * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(mtr_ctrl.isr_tick);
     CAN_sendMessage(IRIS_CAN_BASE, 8, 8, (uint16_t*)tran_content);
 
-    // 0x206: Monitor Grid Voltage A and PLL output angle
-    tran_content[0].i32 = (int32_t)(inv_ctrl.vabc.dat[phase_A] * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(inv_ctrl.pll.theta * CAN_SCALE_FACTOR);
-
+    // 0x206: ia,ib
+    tran_content[0].i32 = (int32_t)(mtr_ctrl.iuvw.dat[phase_U] * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(mtr_ctrl.iuvw.dat[phase_V] * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 9, 8, (uint16_t*)tran_content);
 
-    // 0x207: Monitor reserved
-    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
+    // 0x207: ualpha, ubeta
+    tran_content[0].i32 = (int32_t)(mtr_ctrl.vab0.dat[phase_alpha] * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(mtr_ctrl.vab0.dat[phase_beta] * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 10, 8, (uint16_t*)tran_content);
 }
-
-#if BOARD_SELECTION == GMP_IRIS
-
-interrupt void INT_IRIS_UART_RS232_RX_ISR(void)
-{
-    // Nothing here
-
-    //
-    // Acknowledge the interrupt
-    //
-    Interrupt_clearACKGroup(INT_IRIS_UART_RS232_RX_INTERRUPT_ACK_GROUP);
-}
-
-#endif // BOARD_SELECTION == GMP_IRIS
 
 // a local small cache size, capable of covering the depth of the hardware FIFO (typically 16 bytes)
 #define ISR_LOCAL_BUF_SIZE 16
@@ -341,23 +308,26 @@ interrupt void INT_IRIS_UART_USB_RX_ISR(void)
 
     if (rxStatus & SCI_RXSTATUS_OVERRUN)
     {
-        // ½ö´¦ÀíÒç³ö´íÎó£ºÇå³ýÒç³ö±êÖ¾Î»£¬¶ø²»ÊÇ¸´Î»Õû¸ö FIFO
-        // C2000 DriverLib Í¨³£Í¨¹ýÐ´Èë RXFFOVRCLR Î»À´Çå³ý
-        // Èç¹ûÃ»ÓÐÖ±½ÓAPI£¬¿ÉÒÔÊ¹ÓÃ HWREG ²Ù×÷£¬»òÕß±£³Ö resetRxFIFO µ«½öÕë¶Ô Overrun
+        // The Overrun flag indicates that the RX FIFO is full and data was lost.
+        // C2000 DriverLib typically clears this by writing to the RXFFOVRCLR bit.
+        // If there is no direct API, use HWREG or check if resetRxFIFO clears the Overrun.
 
-        // ÐÞÕý½¨Òé£ºÖ»ÔÚÈ·ÊµÒç³ö¿¨ËÀÊ±²Å Reset£¬ÆÕÍ¨ Error ²»Òª Reset
+        // Suggestion: Only perform a Reset if an actual Overflow occurs.
+        // Ordinary errors do not require a FIFO reset.
         SCI_clearOverflowStatus(IRIS_UART_USB_BASE);
 
-        // Èç¹û±ØÐëÊ¹ÓÃ resetRxFIFO£¬ÇëÈ·±£½öÔÚÑÏÖØ¹ÊÕÏÏÂÊ¹ÓÃ
+        // Resetting the FIFO is an option to ensure a clean state after an overflow.
         // SCI_resetRxFIFO(IRIS_UART_USB_BASE);
     }
 
     if (rxStatus & SCI_RXSTATUS_ERROR)
     {
-        // ¶ÔÓÚ Frame Error / Parity Error (±ÈÈçÔëÉù 0xFF)
-        // ¶ÁÈ¡Êý¾Ý¼Ä´æÆ÷Í¨³£»á×Ô¶¯Çå³ýÕâÐ©´íÎó±êÖ¾
-        // ÕâÀïÖ»ÐèÒª×öÒ»¸öÈí¼þ¸´Î»¸ø SCI ×´Ì¬»ú£¨²»Çå³ý FIFO£©£¬»òÕßµ¥´¿Çå³ý±êÖ¾
-        // ¾ø¶Ô²»Òªµ÷ÓÃ SCI_resetRxFIFO() !!!
+        // Handle Frame Error / Parity Error (e.g., receiving 0xFF or Break signal).
+        // Reading the data register usually automatically clears these error flags.
+        // We only need to ensure the SCI status flags are cleared.
+        // It is NOT necessary to reset the FIFO for these errors, doing so would lose valid data.
+
+        // Therefore, DO NOT call SCI_resetRxFIFO() here !!!
     }
 
     //
