@@ -40,6 +40,9 @@
 #define SPECIFY_CTRL_GT_TYPE USING_FLOAT_FPU
 // #define SPECIFY_CTRL_GT_TYPE USING_FIXED_TI_IQ_LIBRARY
 
+//////////////////////////////////////////////////////////////////////////
+// DSP C28x Simulate platform config
 
-// Invoke Controller Settings
-#include <ctrl_settings.h>
+
+#define MTR_CTRL_CURRENT_MEASUREMENT_PHASES (2)
+

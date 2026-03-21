@@ -11,11 +11,18 @@
 // GMP basic core header
 #include <gmp_core.h>
 
+// user main header
 #include "user_main.h"
 #include <xplt.peripheral.h>
 
-//=================================================================================================
+
+//////////////////////////////////////////////////////////////////////////
 // definitions of peripheral
+//
+
+// ADC DMA buffer
+uint32_t adc1_res[ADC1_SEQ_SIZE] = {0};
+uint32_t adc2_res[ADC2_SEQ_SIZE] = {0};
 
 // inverter side voltage feedback
 tri_ptr_adc_channel_t uuvw;
@@ -25,38 +32,35 @@ adc_gt uuvw_src[3];
 tri_ptr_adc_channel_t iuvw;
 adc_gt iuvw_src[3];
 
-// grid side voltage feedback
-tri_ptr_adc_channel_t vabc;
-adc_gt vabc_src[3];
-
-// grid side current feedback
-tri_ptr_adc_channel_t iabc;
-adc_gt iabc_src[3];
-
 // DC bus current & voltage feedback
 ptr_adc_channel_t udc;
 adc_gt udc_src;
 ptr_adc_channel_t idc;
 adc_gt idc_src;
 
-// a local small cache size, capable of covering the depth of the hardware FIFO (typically 16 bytes)
-#define UART_RX_DMA_BUFFER_SIZE 32
-uint8_t uart_rx_dma_buffer[UART_RX_DMA_BUFFER_SIZE];
-
+// Encoder Interface
+// ext_as5048a_encoder_t pos_enc;
 uint32_t counter;
 
-//=================================================================================================
+// a local small cache size, capable of covering the depth of the hardware FIFO (typically 16 bytes)
+#define ISR_LOCAL_BUF_SIZE 16
+uint8_t rxBuf[ISR_LOCAL_BUF_SIZE];
+volatile uint16_t last_read_pos = 0;
+
+/////////////////////////////////////////////////////////////////////////
 // peripheral setup function
+//
 
 // User should setup all the peripheral in this function.
 void setup_peripheral(void)
 {
-
     // Setup Debug Uart
     debug_uart = &huart2;
 
-    // Test print function
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
+
+		HAL_Delay(1);
+	
 
     // inverter side ADC
     ctl_init_tri_ptr_adc_channel(
@@ -72,23 +76,6 @@ void setup_peripheral(void)
         // ADC gain, ADC bias
         ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_CURRENT_BIAS),
-        // ADC resolution, IQN
-        12, 24);
-
-    // grid side ADC
-    ctl_init_tri_ptr_adc_channel(
-        &vabc, vabc_src,
-        // ADC gain, ADC bias
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_VOLTAGE_BIAS),
-        // ADC resolution, IQN
-        12, 24);
-
-    ctl_init_tri_ptr_adc_channel(
-        &iabc, iabc_src,
-        // ADC gain, ADC bias
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_GRID_CURRENT_BIAS),
         // ADC resolution, IQN
         12, 24);
 
@@ -108,59 +95,76 @@ void setup_peripheral(void)
         // ADC resolution, IQN
         12, 24);
 
+
+    //ctl_init_autoturn_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, ((uint32_t)1 << 14) - 1);
+//    ctl_init_as5048a_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, SPI_ENCODER_BASE, SPI_ENCODER_NCS);
+
+		// init TIM3 for QEP encoder
+		HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
+
     //
     // attach
     //
-    ctl_attach_gfl_inv(
-        // inv controller
-        &inv_ctrl,
-        // idc, udc
-        &idc.control_port, &udc.control_port,
-        // grid side iabc, vabc
-        &iabc.control_port, &vabc.control_port);
+#if BUILD_LEVEL <= 2
+    ctl_attach_mtr_current_ctrl_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &rg.enc, &spd_enc.encif);
+#else  // BUILD_LEVEL
+    ctl_attach_mtr_current_ctrl_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &pos_enc.encif, &spd_enc.encif);
+#endif // BUILD_LEVEL
 
-    //
-    // Enable Peripherals
-    //
-
-    // Encoder
-
-    // init TIM3 for QEP encoder
-    HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
-
-    // init TIM4 for QEP encoder
-    HAL_TIM_Encoder_Start(&htim4, TIM_CHANNEL_ALL);
 
     // Enabel ADC DMA
-    //    HAL_ADC_Start_DMA(&hadc1, adc1_res, ADC1_SEQ_SIZE);
+    HAL_ADC_Start_DMA(&hadc1, adc1_res, ADC1_SEQ_SIZE);
+    //HAL_ADC_Start_DMA(&hadc2, adc2_res, ADC2_SEQ_SIZE);
 
-    // Enable ADC Injected channel
     HAL_ADCEx_InjectedStart_IT(&hadc1);
-		HAL_ADCEx_InjectedStart_IT(&hadc2);
 
     // Enable PWM peripheral
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+		// 1. 使能波形输出 (打开 TA1/TA2, TB1/TB2, TC1/TC2 的引脚输出)
+		HAL_HRTIM_WaveformOutputStart(&hhrtim1, 
+                              HRTIM_OUTPUT_TA1 | HRTIM_OUTPUT_TA2 | 
+                              HRTIM_OUTPUT_TB1 | HRTIM_OUTPUT_TB2 | 
+                              HRTIM_OUTPUT_TC1 | HRTIM_OUTPUT_TC2);
 
-    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
-    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
-    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
+		// 2. 启动定时器计数 (让 TA, TB, TC 开始运行)
+		HAL_HRTIM_WaveformCountStart(&hhrtim1, 
+                             HRTIM_TIMERID_TIMER_A | 
+                             HRTIM_TIMERID_TIMER_B | 
+                             HRTIM_TIMERID_TIMER_C);
+														 
+//		// 1. 关闭波形输出 (引脚回到安全状态/默认状态)
+//		HAL_HRTIM_WaveformOutputStop(&hhrtim1, 
+//                             HRTIM_OUTPUT_TA1 | HRTIM_OUTPUT_TA2 | 
+//                             HRTIM_OUTPUT_TB1 | HRTIM_OUTPUT_TB2 | 
+//                             HRTIM_OUTPUT_TC1 | HRTIM_OUTPUT_TC2);
 
-    // Enable DAC channels
-    HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
-    HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
+//		// 2. 停止定时器计数
+//		HAL_HRTIM_WaveformCountStop(&hhrtim1, 
+//                            HRTIM_TIMERID_TIMER_A | 
+//                            HRTIM_TIMERID_TIMER_B | 
+//                            HRTIM_TIMERID_TIMER_C);
 
-    // Enable UART Receive DMA
-    HAL_UARTEx_ReceiveToIdle_DMA(&huart2, uart_rx_dma_buffer, UART_RX_DMA_BUFFER_SIZE);
+		// Enable DAC channels
+		HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
+		HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
+		
+		// Enable UART RX DMA
+		HAL_UART_Receive_DMA(debug_uart, rxBuf, ISR_LOCAL_BUF_SIZE);
 
-    // Close half-full interrupt
-    __HAL_DMA_DISABLE_IT(&hdma_usart2_rx, DMA_IT_HT);
+
+
 }
 
-//=================================================================================================
-// ADC Interrupt ISR and controller related function
+//////////////////////////////////////////////////////////////////////////
+// interrupt functions and callback functions here
+
+// ADC interrupt
+// void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+// {
+//     if (hadc == &hadc1)
+//     {
+//         gmp_base_ctl_step();
+//     }
+// }
 
 /**
   * @brief  Injected conversion complete callback in non blocking mode
@@ -168,14 +172,13 @@ void setup_peripheral(void)
   *         the configuration information for the specified ADC.
   * @retval None
   */
-void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc)
+void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
-    if (hadc == &hadc1)
+	if (hadc == &hadc1)
     {
         gmp_base_ctl_step();
-
         counter++;
-        if (counter >= 1000)
+        if(counter >= 1000)   
         {
             HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
             counter = 0;
@@ -183,144 +186,85 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc)
     }
 }
 
-////=================================================================================================
-//// communication functions and interrupt functions here
-
-//// 10000 -> 1.0
-//#define CAN_SCALE_FACTOR 10000
-
-//// 32 bit union
-//typedef union {
-//    int32_t i32;
-//    uint16_t u16[2]; // C2000中uint16_t占1个word，32位占用2个word
-//} can_data_t;
-
-//// CAN interrupt
-//interrupt void INT_IRIS_CAN_0_ISR(void)
-//{
-//    uint32_t status = CAN_getInterruptCause(IRIS_CAN_BASE);
-
-//    uint16_t rx_data[4];
-//    can_data_t recv_content[2];
-
-//    if (status == 1)
-//    {
-//        CAN_readMessage(IRIS_CAN_BASE, 1, rx_data);
-//        CAN_clearInterruptStatus(CANA_BASE, 1);
-
-//        // Control Flag, Enable System
-//        if (rx_data[0] == 1)
-//        {
-//            cia402_send_cmd(&cia402_sm, CIA402_CMD_ENABLE_OPERATION);
-//        }
-//        if (rx_data[0] == 0)
-//        {
-//            cia402_send_cmd(&cia402_sm, CIA402_CMD_DISABLE_VOLTAGE);
-//        }
-//    }
-//    else if (status == 2)
-//    {
-//        CAN_readMessage(IRIS_CAN_BASE, 2, (uint16_t*)recv_content);
-//        CAN_clearInterruptStatus(CANA_BASE, 2);
-
-//        // set target value
-//#if BUILD_LEVEL == 1
-//        // For level 1 Set target voltage
-//        ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl((float)recv_content[0].i32 / CAN_SCALE_FACTOR),
-//                                         float2ctrl((float)recv_content[1].i32 / CAN_SCALE_FACTOR));
-
-//#endif // BUILD_LEVEL
-//    }
-
-//    //
-//    // Clear the interrupt flag
-//    //
-//    CAN_clearGlobalInterruptStatus(IRIS_CAN_BASE, CAN_GLOBAL_INT_CANINT0);
-
-//    //
-//    // Acknowledge the interrupt
-//    //
-//    Interrupt_clearACKGroup(INT_IRIS_CAN_0_INTERRUPT_ACK_GROUP);
-//}
-
-void send_monitor_data(void)
-{
-//    uint16_t rx_raw[4];
-//    can_data_t tran_content[2];
-
-//    // 0x201: Monitor Grid Voltage
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
-//    CAN_sendMessage(IRIS_CAN_BASE, 4, 8, (uint16_t*)tran_content);
-
-//    //0x202: Monitor inverter voltage
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
-//    CAN_sendMessage(IRIS_CAN_BASE, 5, 8, (uint16_t*)tran_content);
-
-//    // 0x203: Monitor grid current
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
-//    CAN_sendMessage(IRIS_CAN_BASE, 6, 8, (uint16_t*)tran_content);
-
-//    // 0x204: TODO Monitor inverter current
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
-//    CAN_sendMessage(IRIS_CAN_BASE, 7, 8, (uint16_t*)tran_content);
-
-//    // 0x205: TODO Monitor DC Voltage / Current
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
-//    CAN_sendMessage(IRIS_CAN_BASE, 8, 8, (uint16_t*)tran_content);
-
-//    // 0x206: Monitor Grid Voltage A and PLL output angle
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.vabc.dat[phase_A] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.pll.theta * CAN_SCALE_FACTOR);
-
-//    CAN_sendMessage(IRIS_CAN_BASE, 9, 8, (uint16_t*)tran_content);
-
-//    // 0x207: Monitor reserved
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
-//    CAN_sendMessage(IRIS_CAN_BASE, 10, 8, (uint16_t*)tran_content);
-}
-
-void at_device_flush_rx_buffer()
-{
-    // for STM32 no need to flush rx buffer in Mainloop
-}
-
 /**
-  * @brief  Reception Event Callback (Rx event notification called after use of advanced reception service).
-  * @param  huart UART handle
-  * @param  Size  Number of data available in application reception buffer (indicates a position in
-  *               reception buffer until which, data are available)
+  * @brief  EXTI line detection callbacks.
+  * @param  GPIO_Pin Specifies the pins connected EXTI line
   * @retval None
   */
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef* huart, uint16_t Size)
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-
-    if (huart == &huart2)
+		// Index
+    if(GPIO_Pin == GPIO_PIN_9)
     {
-        // Stop UART DMA Receive
-        HAL_UART_DMAStop(huart);
+        __HAL_TIM_SET_COUNTER(&htim3, 0);
+        
+    }
+}
 
-        // Copy Data from DMA buffer
-        at_device_rx_isr(&at_dev, (char*)uart_rx_dma_buffer, Size);
+void send_monitor_data(void)
+{}
 
-        // Clear buffer
-        memset(uart_rx_dma_buffer, 0, UART_RX_DMA_BUFFER_SIZE);
+	
 
-        // Enable UART Receive DMA
-        HAL_UARTEx_ReceiveToIdle_DMA(&huart2, uart_rx_dma_buffer, UART_RX_DMA_BUFFER_SIZE);
+	
+void at_device_flush_rx_buffer(void)
+{
+// 1. 获取当前 DMA 写指针位置
+    // __HAL_DMA_GET_COUNTER 返回的是 DMA 还需要传输的数据量（剩余量）
+    // 因此当前写入的绝对位置 = 总长度 - 剩余量
+    uint16_t current_pos = ISR_LOCAL_BUF_SIZE - __HAL_DMA_GET_COUNTER(debug_uart->hdmarx);
 
-        // Close half-full interrupt
-        __HAL_DMA_DISABLE_IT(&hdma_usart2_rx, DMA_IT_HT);
+    // 2. 临界区保护开始：防止主循环执行到一半时被中断抢占导致逻辑混乱
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+
+    // 如果没有新数据，直接退出
+    if (current_pos == last_read_pos) {
+        __set_PRIMASK(primask);
+        return;
+    }
+
+    uint16_t len1 = 0, len2 = 0;
+    uint16_t start1 = last_read_pos, start2 = 0;
+
+    // 3. 计算需要读取的数据长度（处理环形缓冲区的折返）
+    if (current_pos > last_read_pos) {
+        // 正常线性增长
+        len1 = current_pos - last_read_pos;
+    } else {
+        // DMA 指针已经折返 (Wraparound) 到缓冲区开头
+        // 第一段：从上次读取位置到缓冲区末尾
+        len1 = ISR_LOCAL_BUF_SIZE - last_read_pos;
+        // 第二段：从缓冲区开头到当前写指针位置
+        len2 = current_pos;
+    }
+
+    // 更新读指针
+    last_read_pos = current_pos;
+
+    // 4. 临界区保护结束：恢复中断
+    // 注意：我们将耗时的 AT 串口提交流程放在开中断之后执行，尽量缩短关中断的时间
+    __set_PRIMASK(primask);
+
+    // 5. 提交数据给 AT 控制器
+    if (len1 > 0) {
+        at_device_rx_isr(&at_dev, (char*)&rxBuf[start1], len1);
+    }
+    if (len2 > 0) { // 只有在发生折返时，len2 才会大于 0
+        at_device_rx_isr(&at_dev, (char*)&rxBuf[start2], len2);
+    }
+}
+
+// DMA 接收半满回调
+void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == USART2) { // 替换为你的实际串口
+        at_device_flush_rx_buffer();
+    }
+}
+
+// DMA 接收全满（完成）回调
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == USART2) { // 替换为你的实际串口
+        at_device_flush_rx_buffer();
     }
 }

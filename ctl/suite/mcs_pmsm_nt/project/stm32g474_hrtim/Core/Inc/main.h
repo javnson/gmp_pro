@@ -60,6 +60,8 @@ void Error_Handler(void);
 
 /* Private defines -----------------------------------------------------------*/
 #define HRTIM_PERIOD 34000
+#define PWM_DISABLE_Pin GPIO_PIN_10
+#define PWM_DISABLE_GPIO_Port GPIOC
 
 /* USER CODE BEGIN Private defines */
 

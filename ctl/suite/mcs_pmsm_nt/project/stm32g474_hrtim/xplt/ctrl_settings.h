@@ -5,18 +5,13 @@
 //=================================================================================================
 // Incremental Debug Options
 
-// BUILD_LEVEL 1: inverter, voltage open loop
-// BUILD_LEVEL 2: inverter, current loop
-// BUILD_LEVEL 3: inverter, current loop, grid connected
-// BUILD_LEVEL 4: inverter, current loop, grid connected, all feed forward on.
-#define BUILD_LEVEL (1)
-
-//=================================================================================================
-// Select Board Pin definition
-#define LAUNCHPAD 0
-#define GMP_IRIS  1
-
-#define BOARD_SELECTION GMP_IRIS
+// BUILD_LEVEL 1: hardware validate, VF, voltage open loop
+// BUILD_LEVEL 2: IF, current close loop
+// BUILD_LEVEL 3: current loop with actual angle
+// BUILD_LEVEL 4: speed loop
+// BUILD_LEVEL 5: position loop
+// BUILD_LEVEL 6: communication mode
+#define BUILD_LEVEL (4)
 
 //=================================================================================================
 // Controller basic parameters
@@ -25,82 +20,85 @@
 #define CTRL_STARTUP_DELAY (100)
 
 // Controller Frequency
-#define CONTROLLER_FREQUENCY (10e3)
+#define CONTROLLER_FREQUENCY (20e3)
 
 // PWM depth
-#define CTRL_PWM_CMP_MAX (8500-1)
+#define CTRL_PWM_CMP_MAX (16800/2-1)
 
-// PWM deadband
+// PWM dead band
 #define CTRL_PWM_DEADBAND_CMP (100)
 
-// ADC Voltae Reference
+// ADC Voltage Reference
 #define CTRL_ADC_VOLTAGE_REF (3.3f)
 
 //=================================================================================================
 // Hardware parameters
 
-#include <ctl/component/hardware_preset/inverter_3ph/GMP_Helios_3PhGaNInv_LV.h>
-#include <ctl/component/hardware_preset/grid_LC_filter/GMP_Harmonia_3ph_LC_filter.h>
+#define BOOSTXL_3PHGANINV_IS_DEFAULT_PARAM
+
+// invoke motor parameters
+#include <ctl/component/hardware_preset/pmsm_motor/SM060R20B30MNAD.h>
+
+// invoke motor controller parameters
+#include <ctl/component/hardware_preset/inverter_3ph/GMP_3PH_2136SINV_DUAL_TMPL.h>
+
+///////////////////////////////////////////////////////////
+// Encoder Properties
+
+// Encoder Full scale
+#define CTRL_POS_ENC_FS (10000)
+
+// Encoder Bias
+#define CTRL_POS_ENC_BIAS (0.0207000002f)
+
+// Speed & Position division
+#define CTRL_MECH_DIV (5)
+
 
 ///////////////////////////////////////////////////////////
 // Controller Base value
 
 // DC bus voltage
-#define CTRL_DCBUS_VOLTAGE  (80.0f)
+#define CTRL_DCBUS_VOLTAGE (80.0f)
 
 // phase voltage base, SVPWM modulation
-#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE/1.73205081f)
+#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE / 1.73205081f)
 
 // voltage base, SPWM modulation
-//#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE/2.0f)
+//#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE / 2.0f)
 
 // Current base, 10 A
 #define CTRL_CURRENT_BASE (10.0f)
 
 ///////////////////////////////////////////////////////////
-// Grid side sensor
-
-// Current sensor sensitivity, V/A
-#define CTRL_GRID_CURRENT_SENSITIVITY (HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSITIVITY_MV_A*0.001f)
-
-// Current sensor bias, V
-#define CTRL_GRID_CURRENT_BIAS (HARMONIA_3PH_LC_FILTER_PH_CURRENT_ZERO_BIAS_V)
-
-// Voltage sensor sensitivity, V/V
-#define CTRL_GRID_VOLTAGE_SENSITIVITY (HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_GAIN)
-
-// Voltage sensor bias, V
-#define CTRL_GRID_VOLTAGE_BIAS (HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_BIAS_V)
-
-///////////////////////////////////////////////////////////
 // inverter side sensor
 
 // Current sensor sensitivity, TMCS1133A2B, V/A
-#define CTRL_INVERTER_CURRENT_SENSITIVITY (50e-3f)
+#define CTRL_INVERTER_CURRENT_SENSITIVITY (MY_BOARD_PH_SHUNT_RESISTANCE_OHM * MY_BOARD_PH_CSA_GAIN_V_V)
 
 // Current sensor bias, V
-#define CTRL_INVERTER_CURRENT_BIAS (1.65f)
+#define CTRL_INVERTER_CURRENT_BIAS (MY_BOARD_PH_CSA_BIAS_V)
 
 // Voltage sensor sensitivity, V/V
-#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (0.02738589f)
+#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (MY_BOARD_PH_VOLTAGE_SENSE_GAIN)
 
 // Voltage sensor bias, V
-#define CTRL_INVERTER_VOLTAGE_BIAS (0.0f)
+#define CTRL_INVERTER_VOLTAGE_BIAS (MY_BOARD_PH_VOLTAGE_SENSE_BIAS_V)
 
 ///////////////////////////////////////////////////////////
 // DC Bus side sensor
 
 // Current sensor sensitivity, V/A
-#define CTRL_DC_CURRENT_SENSITIVITY (24.75e-3f)
+#define CTRL_DC_CURRENT_SENSITIVITY (MY_BOARD_DCBUS_CURRENT_SENSE_GAIN)
 
 // Current sensor bias, V
-#define CTRL_DC_CURRENT_BIAS (1.65f)
+#define CTRL_DC_CURRENT_BIAS (MY_BOARD_DCBUS_CURRENT_SENSE_BIAS_V)
 
 // Voltage sensor sensitivity, maximum 120V, V/V
-#define CTRL_DC_VOLTAGE_SENSITIVITY (0.02738589f)
+#define CTRL_DC_VOLTAGE_SENSITIVITY (MY_BOARD_DCBUS_VOLTAGE_SENSE_GAIN)
 
 // Voltage sensor bias, V
-#define CTRL_DC_VOLTAGE_BIAS (0.0f)
+#define CTRL_DC_VOLTAGE_BIAS (MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)
 
 //=================================================================================================
 // Controller Settings
@@ -115,8 +113,22 @@
 // Enable ADC Calibrate
 #define SPECIFY_ENABLE_ADC_CALIBRATE
 
-// SPLL Close loop criteria
-#define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
+// Using negative modulator logic
+#define PWM_MODULATOR_USING_NEGATIVE_LOGIC (1)
+
+// Using three level modulator or two level modulator
+//#define USING_NPC_MODULATOR
+
+// ADC Calibrate time ms
+#define TIMEOUT_ADC_CALIB_MS 10000
+
+// Motor Current Sample phases
+#define MC_CURRENT_SAMPLE_PHASE_MODE (2)
+
+// Enable Motor Fault protection
+#define ENABLE_MOTOR_FAULT_PROTECTION
+
+// Enable SMO
+#define ENABLE_SMO
 
 #endif // _FILE_CTRL_SETTINGS_H_
- 
