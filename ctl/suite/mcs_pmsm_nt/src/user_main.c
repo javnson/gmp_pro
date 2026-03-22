@@ -15,6 +15,8 @@ at_device_entity_t at_dev;
 time_gt uart_last_tick;
 gmp_scheduler_t sched;
 
+gpio_halt gpio_led;
+
 
 //=================================================================================================
 // AT command
@@ -113,7 +115,13 @@ gmp_task_status_t tsk_blink(gmp_task_t* tsk)
 {
     GMP_UNUSED_VAR(tsk);
 
+    static fast_gt led_level = 0;
+
+    led_level = !led_level;
+
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
+
+    gmp_hal_gpio_write(gpio_led, led_level);
 
     return GMP_TASK_DONE;
 }

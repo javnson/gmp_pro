@@ -58,14 +58,22 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     EPWM_setCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_V]);
     EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_W]);
 
-    DAC_setShadowValue(IRIS_DACA_BASE, spwm.vabc_out.dat[phase_U] * 2048 + 2048);
-    DAC_setShadowValue(IRIS_DACB_BASE, mtr_ctrl.iab0.dat[phase_alpha] * 2048 + 2048);
+
     // Monitor Port
 #if BUILD_LEVEL == 1
 
-    //    DAC_setShadowValue(IRIS_DACB_BASE, inv_ctrl.angle * 2048 + 2048);
-    //    DAC_setShadowValue(IRIS_DACA_BASE, inv_ctrl.abc_out.dat[phase_B]  * 2048 + 2048);
+    DAC_setShadowValue(IRIS_DACA_BASE, spwm.vabc_out.dat[phase_U] * 2048 + 2048);
+    DAC_setShadowValue(IRIS_DACB_BASE, mtr_ctrl.iab0.dat[phase_alpha] * 2048 + 2048);
 
+#elif BUILD_LEVEL == 2
+
+    // SMO Observer
+    DAC_setShadowValue(IRIS_DACA_BASE, smo.e_est.dat[phase_A] * 2048 + 2048);
+    DAC_setShadowValue(IRIS_DACB_BASE, smo.e_est.dat[phase_B] * 2048 + 2048);
+
+#elif BUILD_LEVEL == 3
+    DAC_setShadowValue(IRIS_DACA_BASE, spwm.vabc_out.dat[phase_U] * 2048 + 2048);
+    DAC_setShadowValue(IRIS_DACB_BASE, mtr_ctrl.iab0.dat[phase_alpha] * 2048 + 2048);
 #endif // BUILD_LEVEL
 }
 

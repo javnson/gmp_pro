@@ -11,12 +11,12 @@
 <VarMeta IMemento.internal.id="mtr_ctrl.idq_ref.dat"/>
 <VarMeta IMemento.internal.id="mtr_ctrl.pos_if-&gt;elec_position"/>
 <VarMeta IMemento.internal.id="spd_enc.encif.speed"/>
-<VarMeta IMemento.internal.id="motion_ctrl.target_velocity"/>
+<VarMeta IMemento.internal.id="mech_ctrl.target_velocity"/>
 <VarMeta IMemento.internal.id="iuvw"/>
 <VarMeta IMemento.internal.id="pos_enc.encif"/>
 <VarMeta IMemento.internal.id="protection.error_code"/>
 <VarMeta IMemento.internal.id="cia402_sm.flag_fault_reset_request"/>
-<VarMeta IMemento.internal.id="motion_ctrl.vel_ctrl"/>
+<VarMeta IMemento.internal.id="mech_ctrl"/>
 <VarMeta IMemento.internal.id="udc"/>
 <VarMeta IMemento.internal.id="protection.error_code.bit"/>
 </ExportImportMemento.1>

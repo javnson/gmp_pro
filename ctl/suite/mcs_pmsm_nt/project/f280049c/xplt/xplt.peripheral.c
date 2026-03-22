@@ -41,6 +41,9 @@ basic_trigger_t trigger;
 ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];
 ctrl_gt dlog_mem2[DLOG_MEM_LENGTH];
 
+// GPIO port
+extern gpio_halt gpio_led;
+
 //=================================================================================================
 // peripheral setup function
 
@@ -53,6 +56,8 @@ void setup_peripheral(void)
     // Test print function
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
     asm(" RPT #255 || NOP");
+
+    gpio_led = SYSTEM_LED;
 
     // inverter side ADC
     ctl_init_tri_ptr_adc_channel(
