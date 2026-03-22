@@ -67,13 +67,26 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
 
 #elif BUILD_LEVEL == 2
 
-    // SMO Observer
-    DAC_setShadowValue(IRIS_DACA_BASE, smo.e_est.dat[phase_A] * 2048 + 2048);
-    DAC_setShadowValue(IRIS_DACB_BASE, smo.e_est.dat[phase_B] * 2048 + 2048);
+//    DAC_setShadowValue(IRIS_DACA_BASE, ctl_mul(ctl_mul(CTL_CTRL_CONST_1_OVER_SQRT3, mtr_ctrl.udc), mtr_ctrl.vab0.dat[phase_alpha]) * 2048 + 2048);
+//    DAC_setShadowValue(IRIS_DACB_BASE, mtr_ctrl.iab0.dat[phase_alpha] * 2048 + 2048);
+
+    // SMO Observer, back EMF
+//    DAC_setShadowValue(IRIS_DACA_BASE, smo.e_est.dat[phase_A] * 2048 + 2048);
+//    DAC_setShadowValue(IRIS_DACB_BASE, smo.e_est.dat[phase_B] * 2048 + 2048);
+
+    // SMO angle
+    DAC_setShadowValue(IRIS_DACA_BASE, smo.pos_out.elec_position * 2048 + 2048);
+    DAC_setShadowValue(IRIS_DACB_BASE, pos_enc.encif.elec_position * 2048 + 2048);
 
 #elif BUILD_LEVEL == 3
-    DAC_setShadowValue(IRIS_DACA_BASE, spwm.vabc_out.dat[phase_U] * 2048 + 2048);
-    DAC_setShadowValue(IRIS_DACB_BASE, mtr_ctrl.iab0.dat[phase_alpha] * 2048 + 2048);
+    // SMO angle
+    DAC_setShadowValue(IRIS_DACA_BASE, smo.pos_out.elec_position * 2048 + 2048);
+    DAC_setShadowValue(IRIS_DACB_BASE, pos_enc.encif.elec_position * 2048 + 2048);
+
+#elif BUILD_LEVEL == 4
+    // SMO angle
+    DAC_setShadowValue(IRIS_DACA_BASE, smo.pos_out.elec_position * 2048 + 2048);
+    DAC_setShadowValue(IRIS_DACB_BASE, pos_enc.encif.elec_position * 2048 + 2048);
 #endif // BUILD_LEVEL
 }
 

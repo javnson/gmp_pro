@@ -112,6 +112,9 @@ void ctl_init_pmsm_esmo(ctl_pmsm_esmo_t* esmo, const ctl_pmsm_esmo_init_t* init)
     parameter_gt err_lim = (init->current_err_limit_pu > 1e-3f) ? init->current_err_limit_pu : 0.3f;
     esmo->current_err_limit = float2ctrl(err_lim);
 
+    // 6. clear default angle bias
+    esmo->output_angle_bias = float2ctrl(0.0f);
+
     esmo->diverge_limit = (uint32_t)(init->fault_time_ms * fs_safe / 1000.0f);
     if (esmo->diverge_limit < 1)
         esmo->diverge_limit = 1;
@@ -119,6 +122,8 @@ void ctl_init_pmsm_esmo(ctl_pmsm_esmo_t* esmo, const ctl_pmsm_esmo_init_t* init)
     // 6. Finalize Initialization
     ctl_clear_pmsm_esmo(esmo);
     ctl_disable_pmsm_esmo(esmo);
+    ctl_enable_pmsm_esmo_compensate(esmo);
+    ctl_disable_pmsm_esmo_bias(esmo);
 }
 
 /**
