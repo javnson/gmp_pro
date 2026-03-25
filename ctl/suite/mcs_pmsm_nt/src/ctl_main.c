@@ -154,7 +154,7 @@ void ctl_init()
     //
     // Observer Init
     //
-    ctl_autotune_esmo_init_from_mtr(&smo_init, &mtr_ctrl_init, 0.01f);
+    ctl_autotune_esmo_init_from_mtr(&smo_init, &mtr_ctrl_init, 0.005f);
     ctl_init_pmsm_esmo(&smo, &smo_init);
 
 #endif // ENABLE_SMO

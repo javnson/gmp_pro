@@ -21,15 +21,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\implement\common\ctl_main.c">
-      <Filter>implement_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\implement\common\user_main.c">
-      <Filter>implement_common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\implement\simulate\xplt.peripheral.cpp">
-      <Filter>implement_interface</Filter>
-    </ClCompile>
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_back_stepping.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
@@ -249,24 +240,36 @@
     <ClCompile Include="DigialPower_simulink.cpp">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\ctl_main.c">
+      <Filter>implement_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\user_main.c">
+      <Filter>implement_common</Filter>
+    </ClCompile>
+    <ClCompile Include="xplt\xplt.peripheral.cpp">
+      <Filter>implement_interface</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\implement\common\ctl_main.h">
+    <ClInclude Include="..\..\src\ctl_main.h">
       <Filter>implement_common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\implement\common\user_main.h">
+    <ClInclude Include="..\..\src\user_main.h">
       <Filter>implement_common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\implement\simulate\ctrl_settings.h">
+    <ClInclude Include="xplt\ctrl_settings.h">
       <Filter>implement_interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\implement\simulate\xplt.config.h">
+    <ClInclude Include="xplt\pc_simulate_buffer.h">
       <Filter>implement_interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\implement\simulate\xplt.ctl_interface.h">
+    <ClInclude Include="xplt\xplt.config.h">
       <Filter>implement_interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\implement\simulate\xplt.peripheral.h">
+    <ClInclude Include="xplt\xplt.ctl_interface.h">
+      <Filter>implement_interface</Filter>
+    </ClInclude>
+    <ClInclude Include="xplt\xplt.peripheral.h">
       <Filter>implement_interface</Filter>
     </ClInclude>
   </ItemGroup>

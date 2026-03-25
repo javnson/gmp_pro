@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.2",
+  "node_type": "DeviceInstance",
+  "instance_name": "Drive_Axis1",
+  "blueprint_ref": "converter_board_3ph",
+  
+  "macro_values": {
+    "MACRO_ADC_BITS": 12,
+    "MACRO_PWM_FULL_SCALE": 4000
+  },
+  
+  "component_implementations": {
+    "I_Phase": {
+      "init_template": "init_current_shunt",
+      "template_parameters": {
+        "v_ref": 3.3,
+        "v_sens": 0.05,
+        "v_bias": 1.65
+      }
+    },
+    "V_Bus": {
+      "init_template": "init_voltage_divider",
+      "template_parameters": {
+        "v_ref": 3.3,
+        "r_high": 100000.0,
+        "r_low": 1000.0
+      }
+    },
+    "Inverter": {
+      "init_template": "init_standard_3ph_pwm",
+      "template_parameters": {
+        "phase": 0
+      }
+    }
+  }
+}

@@ -142,6 +142,10 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_ramp_generator(ctl_ramp_generator_t* rg)
     {
         rg->current = rg->minimum;
     }
+    if (rg->current < rg->minimum)
+    {
+        rg->current = rg->maximum;
+    }
 
     return rg->current;
 }

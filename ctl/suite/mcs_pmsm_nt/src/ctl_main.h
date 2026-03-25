@@ -119,20 +119,29 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 #ifdef ENABLE_SMO
         ctrl_gt udc_for_smo = ctl_mul(CTL_CTRL_CONST_1_OVER_SQRT3, mtr_ctrl.udc);
 
-#if (PWM_MODULATOR_USING_NEGATIVE_LOGIC == 1)
-        ctrl_gt v_alpha = ctl_mul(udc_for_smo, - mtr_ctrl.vab0.dat[phase_alpha]);
-        ctrl_gt v_beta = ctl_mul(udc_for_smo, - mtr_ctrl.vab0.dat[phase_beta]);
-#else
         ctrl_gt v_alpha = ctl_mul(udc_for_smo, mtr_ctrl.vab0.dat[phase_alpha]);
         ctrl_gt v_beta = ctl_mul(udc_for_smo, mtr_ctrl.vab0.dat[phase_beta]);
-#endif
+
+#if (PWM_MODULATOR_USING_NEGATIVE_LOGIC == 1)
         ctl_step_pmsm_esmo(
-            // SMO object
-            &smo,
-            // uab
-            v_alpha, v_beta,
-            // iab
-            mtr_ctrl.iab0.dat[phase_alpha], mtr_ctrl.iab0.dat[phase_beta]);
+                    // SMO object
+                    &smo,
+                    // uab
+                    v_alpha, v_beta,
+                    // iab
+                    mtr_ctrl.iab0.dat[phase_alpha], mtr_ctrl.iab0.dat[phase_beta]);
+#else
+        ctl_step_pmsm_esmo(
+                            // SMO object
+                            &smo,
+                            // uab
+                            v_alpha, v_beta,
+                            // iab
+                            mtr_ctrl.iab0.dat[phase_alpha], mtr_ctrl.iab0.dat[phase_beta]);
+
+#endif
+
+
 #endif // ENABLE_SMO
 
 #ifdef ENABLE_MOTOR_FAULT_PROTECTION
