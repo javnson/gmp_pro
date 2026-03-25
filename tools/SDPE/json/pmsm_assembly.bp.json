@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.2",
+  "node_type": "DeviceBlueprint",
+  "blueprint_id": "pmsm_assembly",
+  "struct_name": "hw_preset_pmsm_assembly_t",
+  "description": "PMSM motor coupled with an auto-turn position encoder.",
+  
+  "required_macros": [
+    {
+      "name": "MACRO_MOTOR_POLE_PAIRS", 
+      "description": "Shared pole pairs for both motor model and encoder to ensure consistency."
+    }
+  ],
+  
+  "components": {
+    "Motor_Model": {
+      "module_id": "std_pmsm_model",
+      "common_parameters": {
+        "pole_pairs": "{MACRO_MOTOR_POLE_PAIRS}"
+      }
+    },
+    "Encoder": {
+      "module_id": "std_autoturn_encoder",
+      "common_parameters": {
+        "pole_pairs": "{MACRO_MOTOR_POLE_PAIRS}"
+      }
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "blueprint_id": "converter_board_3ph",
+  "struct_name": "hw_preset_converter_t",
+  "description": "Standard 3-phase inverter power stage with voltage/current sensing.",
+  "required_macros": [
+    {"name": "MACRO_ADC_BITS", "description": "Global ADC resolution (e.g., 12)"},
+    {"name": "MACRO_PWM_FULL_SCALE", "description": "PWM timer auto-reload value"}
+  ],
+  "components": {
+    "I_Phase": {
+      "module_id": "std_tri_adc",
+      "common_parameters": {
+        "adc_res": "{MACRO_ADC_BITS}",
+        "iqn": 24
+      }
+    },
+    "V_Bus": {
+      "module_id": "std_single_adc",
+      "common_parameters": {
+        "adc_res": "{MACRO_ADC_BITS}",
+        "iqn": 24
+      }
+    },
+    "Inverter": {
+      "module_id": "std_tri_pwm",
+      "common_parameters": {
+        "full_scale": "{MACRO_PWM_FULL_SCALE}"
+      }
+    }
+  }
+}
