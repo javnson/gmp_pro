@@ -11,6 +11,30 @@
 
 #include <gmp_core.h>
 
+ec_gt gmp_hal_gpio_set_dir(gpio_halt hgpio, gpio_dir_et dir)
+{
+    GMP_UNUSED_VAR(hgpio);
+    GMP_UNUSED_VAR(dir);
+
+    return GMP_EC_OK;
+}
+
+ec_gt gmp_hal_gpio_write(gpio_halt hgpio, fast_gt level)
+{
+    GMP_UNUSED_VAR(hgpio);
+    GMP_UNUSED_VAR(level);
+
+    return GMP_EC_OK;
+}
+
+fast_gt gmp_hal_gpio_read(gpio_halt hgpio)
+{
+    GMP_UNUSED_VAR(hgpio);
+
+    return 0;
+}
+
+
 fast_gt gmp_hal_uart_is_tx_busy(uart_halt uart)
 {
     if (uart == NULL)
