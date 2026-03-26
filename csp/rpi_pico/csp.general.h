@@ -31,10 +31,5 @@ GMP_STATIC_INLINE void gmp_base_leave_critical()
     restore_interrupts(_gmp_critical_status);
 }
 
-//////////////////////////////////////////////////////////////////////////
-// Step II: Invoke all the RPI PICO general headers.
-//
-
-
 
 extern uart_halt debug_uart;
