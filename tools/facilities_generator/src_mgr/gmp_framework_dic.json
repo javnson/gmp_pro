@@ -4854,7 +4854,7 @@
             },
             "c28x_syscfg": {
                 "type": "module",
-                "description": "TI C28x 芯片支持包",
+                "description": "TI C28x Chip Support package",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/csp/c28x_syscfg/src/*"
                 ],
@@ -4922,6 +4922,44 @@
                         "summary": "Physical Hardware Verified",
                         "completed": true,
                         "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
+            },
+            "rp_pico": {
+                "type": "module",
+                "description": "Respberry Pi RP Series Support package",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/csp/rpi_pico/src/*"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/csp/rpi_pico/*"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/csp/rpi_pico"
+                ],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
                         "reply": ""
                     }
                 ]
