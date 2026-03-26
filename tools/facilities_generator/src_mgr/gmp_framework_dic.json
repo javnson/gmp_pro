@@ -4963,6 +4963,44 @@
                         "reply": ""
                     }
                 ]
+            },
+            "ZYNQ": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/csp/zynq7/src/*"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/csp/zynq7/*"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/csp/zynq7"
+                ],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             }
         }
     },

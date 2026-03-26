@@ -22,14 +22,19 @@
 // Step II: Invoke all the STM32 general headers.
 //
 
-// STM32 System core support
-#include <csp/stm32/common/sys_model.stm32.h>
+GMP_STATIC_INLINE void gmp_base_enter_critical()
+{
+    /* * 在 ARMv7-A 中，使用 CPSID i 指令屏蔽 IRQ
+     * Xilinx 提供的宏定义封装了这些汇编指令
+     */
+    Xil_ExceptionDisable();
+}
 
-// STM32 System Computing support
-#include <csp/stm32/common/computing_model.stm32.h>
+GMP_STATIC_INLINE void gmp_base_leave_critical()
+{
+    /* 使用 CPSIE i 指令使能 IRQ */
+    Xil_ExceptionEnable();
+}
 
-// STM32 GPIO support
-#include <csp/stm32/common/gpio_model.stm32.h>
 
-// STM32 general peripheral
-#include <csp/stm32/common/peripheral_model.stm32.h>
+extern uart_halt debug_uart;
