@@ -17,11 +17,16 @@
 //////////////////////////////////////////////////////////////////////////
 
 //TODO
+// 对于data analyze 的要求：
+// 1. 要有一个存储池用于保存数据
+// 2. 数据要能够划分成不同长度的单元（可以保存m*n的表格）
+// 3. 要能够提供2*n的数据单元拟合
+// 4.
 
 /**
  * @brief Forward declaration of the Data Analyzer structure.
  */
-    typedef struct _tag_ctl_data_analyzer ctl_data_analyzer_t;
+typedef struct _tag_ctl_data_analyzer ctl_data_analyzer_t;
 
 /**
  * @brief Clears the Data Analyzer buffers and resets its internal state.
@@ -37,12 +42,9 @@ void ctl_da_clear(ctl_data_analyzer_t* da);
  */
 void ctl_da_push_point(ctl_data_analyzer_t* da, ctrl_gt u, ctrl_gt i);
 
-
 //////////////////////////////////////////////////////////////////////////
 
-
 ctl_pos_autoturn_encoder_t enc; //!< physical encoder
-
 
 // ============================================================================
 
@@ -165,9 +167,6 @@ typedef struct _tag_pmsm_offline_id_rs_dt
 
 } pmsm_offline_id_rs_dt_t;
 
-
-
-
 // ============================================================================
 
 /**
@@ -214,9 +213,9 @@ typedef enum _tag_pmsm_offline_id_ld_lq_sm
 
 } pmsm_offline_id_ld_lq_sm_t;
 
-
 /**
  * @brief Configuration for Inductance (Ld, Lq) Identification.
+ * todo: 一些在主中断中参与计算的项目应当保存为ctrl_gt类型
  */
 typedef struct _tag_pmsm_oid_cfg_ld_lq
 {
@@ -261,6 +260,196 @@ typedef struct _tag_pmsm_offline_id_ldq
 
 } pmsm_offline_id_ldq_t;
 
+// ============================================================================
+
+/**
+ * @brief State enumeration for the PM Flux Linkage (Psi_m) sub-state machine.
+ * @details This state machine executes a step-wise speed profile in I/F mode:
+ * Execution Flow:
+ * INIT -> [Loop: Steps -> RAMP_SPEED -> SETTLE -> MEASURE -> EVALUATE] -> RAMP_STOP -> CALCULATE -> COMPLETE
+ */
+typedef enum _tag_pmsm_offline_id_flux_sm
+{
+    /** @brief 0: Disabled/Bypass. Safe state. */
+    PMSM_OID_FLUX_DISABLED = 0,
+
+    /** @brief 1: Initialization. 
+     * @details Pre-calculates step sizes and timing ticks in the background loop. 
+     * @note Debug: Resets `step_idx` = 0, `is_first_entry` = 1. 
+     */
+    PMSM_OID_FLUX_INIT,
+
+    /** @brief 2: Speed Trajectory Generator.
+     * @details Sets the target speed for the V/F generator and waits for the ramp to finish.
+     * @note Debug: Watch `ctx->vf_gen.current_freq_pu` approach `target_w_pu`.
+     */
+    PMSM_OID_FLUX_RAMP_SPEED,
+
+    /** @brief 3: Mechanical Stabilization.
+     * @details Waits for the "spring-pendulum" oscillation of the rotor to dampen.
+     * @note Debug: `tick_timer` increments until `settle_ticks`.
+     */
+    PMSM_OID_FLUX_SETTLE,
+
+    /** @brief 4: Data Collection.
+     * @details Accumulates Ud, Uq, Id, Iq, and W_ref over a fixed number of ISR ticks.
+     * @note Debug: `tick_timer` increments until `cfg.measure_points`.
+     */
+    PMSM_OID_FLUX_MEASURE,
+
+    /** @brief 5: Loop Controller.
+     * @details Evaluates if all speed steps are completed to route to STOP or next SPEED.
+     */
+    PMSM_OID_FLUX_STEP_EVALUATE,
+
+    /** @brief 6: Safe Shutdown.
+     * @details Ramps the speed down to 0 smoothly to avoid regenerative over-voltage.
+     */
+    PMSM_OID_FLUX_RAMP_STOP,
+
+    /** @brief 7: Mathematical Fitting.
+     * @details Hands over to the background loop. Calculates |E| and uses Data Analyzer to find Psi_m.
+     */
+    PMSM_OID_FLUX_CALCULATE,
+
+    /** @brief 8: Update ctl_consultant_pu_pmsm_t structure. Signal Main SM. */
+    PMSM_OID_FLUX_COMPLETE,
+
+    /** @brief 9: Exception handling. (Over-current, Loss of Sync, OVP). */
+    PMSM_OID_FLUX_FAULT
+
+} pmsm_offline_id_flux_sm_t;
+
+/**
+ * @brief Configuration for Flux Linkage (Psi_m) Identification.
+ */
+typedef struct _tag_pmsm_oid_cfg_flux
+{
+    parameter_gt min_target_speed_pu; /*!< Minimum speed for measurement (e.g., 0.15pu). */
+    parameter_gt max_target_speed_pu; /*!< Maximum speed for measurement (e.g., 0.35pu). */
+    uint16_t steps;                   /*!< Number of speed steps (e.g., 5). */
+    parameter_gt if_current_pu;       /*!< Constant dragging current magnitude (e.g., 0.2pu). */
+    parameter_gt settle_time_s;       /*!< Time to wait for rotor oscillation to dampen (s). */
+    uint16_t measure_points;          /*!< Number of sampling points to average per step. */
+} pmsm_oid_cfg_flux_t;
+
+/**
+ * @brief Sub-process context for Flux Linkage (Psi_m) identification.
+ */
+typedef struct _tag_pmsm_offline_id_flux
+{
+    pmsm_offline_id_flux_sm_t sm; /*!< Sub-SM: Current state of Flux identification. */
+    pmsm_oid_cfg_flux_t cfg;      /*!< Configuration specific to this module. */
+
+    // --- Pre-calculated Context (Computed in Loop) ---
+    uint32_t settle_ticks;      /*!< ISR ticks corresponding to settle_time_s. */
+    ctrl_gt step_size_pu;       /*!< Speed increment per step. */
+    ctrl_gt inv_measure_points; /*!< 1.0f / measure_points, to avoid division in ISR. */
+
+    // --- Runtime Context (ISR) ---
+    uint32_t tick_timer;    /*!< Internal timer for steady-state measuring. */
+    uint16_t step_idx;      /*!< Current speed step index. */
+    fast_gt is_first_entry; /*!< Flag to distinguish between step and hold logic. */
+    ctrl_gt target_w_pu;    /*!< Target speed for the current ramp. */
+
+    // --- Measurement Accumulators (ISR) ---
+    ctrl_gt sum_ud;
+    ctrl_gt sum_uq;
+    ctrl_gt sum_id;
+    ctrl_gt sum_iq;
+    ctrl_gt sum_w;
+
+    // --- Averaged Data Arrays (For Loop calculation) ---
+    ctrl_gt ud_array[16]; /*!< Averaged D-axis voltage array. */
+    ctrl_gt uq_array[16]; /*!< Averaged Q-axis voltage array. */
+    ctrl_gt id_array[16]; /*!< Averaged D-axis current array. */
+    ctrl_gt iq_array[16]; /*!< Averaged Q-axis current array. */
+    ctrl_gt w_array[16];  /*!< Averaged electrical speed array. */
+
+} pmsm_offline_id_flux_t;
+
+// ============================================================================
+
+/**
+ * @brief State enumeration for the Mechanical Parameters (J, B) sub-state machine.
+ * @details Execution flow:
+ * INIT -> IF_START -> HANDOVER_TO_CLOSED -> STEADY_LOW -> ACCEL_TEST -> STEADY_HIGH -> DECEL_TEST -> HANDOVER_TO_IF -> IF_STOP -> CALCULATE -> COMPLETE
+ */
+typedef enum _tag_pmsm_offline_id_mech_sm
+{
+    PMSM_OID_MECH_DISABLED = 0, /*!< 0: Disabled/Bypass. Safe state. */
+
+    PMSM_OID_MECH_INIT, /*!< 1: Initialize. Pre-calculate ticks and limits in the background loop. */
+
+    // --- Stage 1: Spin up & Closed-loop Transition ---
+    PMSM_OID_MECH_IF_START,           /*!< 2: Open-loop start. Drive motor in I/F mode up to W_low. */
+    PMSM_OID_MECH_HANDOVER_TO_CLOSED, /*!< 3: Bumpless Transfer to Closed-Loop. Transition angle from VF to Real/SMO. */
+    PMSM_OID_MECH_STEADY_LOW,         /*!< 4: Stabilize at W_low. Accumulate Iq to calculate low-speed friction. */
+
+    // --- Stage 2: Acceleration Test ---
+    PMSM_OID_MECH_ACCEL_TEST, /*!< 5: Inject constant +Iq. Record (Time, Speed) into Data Analyzer until W >= W_high. */
+    PMSM_OID_MECH_STEADY_HIGH, /*!< 6: Stabilize at W_high. Accumulate Iq to calculate high-speed friction. */
+
+    // --- Stage 3: Deceleration Test & Safe Shutdown ---
+    PMSM_OID_MECH_DECEL_TEST, /*!< 7: Inject constant -Iq. Record (Time, Speed) into DA until W <= W_low. Monitors OVP. */
+    PMSM_OID_MECH_HANDOVER_TO_IF, /*!< 8: Transition back to I/F mode to ensure safe shutdown as SMO fails at low speed. */
+    PMSM_OID_MECH_IF_STOP,        /*!< 9: Ramp V/F target to 0 and gracefully stop the motor. */
+
+    // --- Stage 4: Calculation ---
+    PMSM_OID_MECH_CALCULATE, /*!< 10: Trigger Math library. Fit J and B from DA buffers in the background loop. */
+    PMSM_OID_MECH_COMPLETE,  /*!< 11: Update ctl_consultant_mech1_t structure. Signal Main SM. */
+    PMSM_OID_MECH_FAULT      /*!< 12: Fault (OVP, Timeout, DA overflow). */
+
+} pmsm_offline_id_mech_sm_t;
+
+/**
+ * @brief Configuration for Mechanical Parameters (Inertia J, Damping B) Identification.
+ */
+typedef struct _tag_pmsm_oid_cfg_mech
+{
+    parameter_gt low_speed_pu;      /*!< Lower speed threshold for evaluation (e.g., 0.2pu). */
+    parameter_gt high_speed_pu;     /*!< Upper speed threshold for evaluation (e.g., 0.8pu). */
+    parameter_gt accel_iq_pu;       /*!< Constant q-axis current applied for acceleration (+). */
+    parameter_gt decel_iq_pu;       /*!< Constant q-axis current applied for deceleration (-). */
+    parameter_gt max_vbus_pu;       /*!< DC Bus over-voltage protection limit during deceleration. */
+    parameter_gt if_current_pu;     /*!< Constant current used for I/F dragging (e.g., 0.2pu). */
+    parameter_gt settle_time_s;     /*!< Time to maintain steady speeds for friction measurement (s). */
+    parameter_gt transition_time_s; /*!< Time duration for angle handover blending (s). */
+} pmsm_oid_cfg_mech_t;
+
+/**
+ * @brief Sub-process context for Mechanical (J, B) identification.
+ */
+typedef struct _tag_pmsm_offline_id_mech
+{
+    pmsm_offline_id_mech_sm_t sm; /*!< Sub-SM: Current state of Mechanical identification. */
+    pmsm_oid_cfg_mech_t cfg;      /*!< Configuration specific to this module. */
+
+    // --- Pre-calculated Context (Computed in Loop) ---
+    uint32_t settle_ticks;     /*!< ISR ticks corresponding to settle_time_s. */
+    uint32_t transition_ticks; /*!< ISR ticks corresponding to transition_time_s. */
+    ctrl_gt inv_settle_ticks;  /*!< Inverse of settle ticks for averaging. */
+    parameter_gt dt_sec;       /*!< Control loop period in seconds (1.0 / isr_freq). */
+
+    // --- Runtime Context (ISR) ---
+    uint32_t tick_timer;      /*!< Internal timer for delays, settling, and transitions. */
+    fast_gt is_first_entry;   /*!< Flag to distinguish between step and hold logic. */
+    ctrl_gt active_iq_ref_pu; /*!< The active torque current applied. */
+    ctrl_gt active_id_ref_pu; /*!< The active dragging current applied. */
+
+    // --- Friction Accumulators (ISR) ---
+    ctrl_gt sum_iq_steady;          /*!< Accumulator for steady-state friction current. */
+    parameter_gt iq_steady_low_pu;  /*!< Resulting average Iq at low speed. */
+    parameter_gt iq_steady_high_pu; /*!< Resulting average Iq at high speed. */
+
+    // --- Data Analyzer Tracking Indices ---
+    uint32_t da_idx_accel_start; /*!< Dataset start index for acceleration. */
+    uint32_t da_idx_accel_end;   /*!< Dataset end index for acceleration. */
+    uint32_t da_idx_decel_start; /*!< Dataset start index for deceleration. */
+    uint32_t da_idx_decel_end;   /*!< Dataset end index for deceleration. */
+
+} pmsm_offline_id_mech_t;
+
 //================================================================================
 // 2. Identification Configuration Structures
 //================================================================================
@@ -281,116 +470,6 @@ typedef struct _tag_pmsm_oid_cfg_basic
     fast_gt is_sensorless;       /*!< Flag: 1 if no physical encoder is present. */
 
 } pmsm_oid_cfg_basic_t;
-
-///**
-// * @brief Configuration for Stator Resistance (Rs) & Dead-Time (DT) Identification.
-// */
-//typedef struct _tag_pmsm_oid_cfg_rs_dt
-//{
-//    parameter_gt max_current_pu; /*!< Maximum DC current to inject (e.g., 0.8pu). */
-//    parameter_gt min_current_pu; /*!< Minimum DC current to inject (e.g., 0.2pu). */
-//    uint16_t steps;              /*!< Number of current steps between min and max (e.g., 5). */
-//    parameter_gt settle_time_s;  /*!< Time to wait at each step for L/R transient to decay (s). */
-//} pmsm_oid_cfg_rs_dt_t;
-//
-///**
-// * @brief Sub-process context for Resistance and Dead-time identification.
-// */
-//typedef struct _tag_pmsm_offline_id_rs_dt
-//{
-//    pmsm_offline_id_rs_dt_sm_t sm; /*!< Sub-SM: Current state of Rs & DT identification. */
-//    pmsm_oid_cfg_rs_dt_t cfg;      /*!< Configuration specific to this module. */
-//
-//    // --- Runtime Context ---
-//    uint32_t tick_timer;    /*!< Internal timer for delays and settling. */
-//    uint16_t angle_idx;     /*!< Current electrical angle index (0 to 5 for 6-position method). */
-//    uint16_t step_idx;      /*!< Current injected current step index. */
-//    ctrl_gt current_ref_pu; /*!< The active DC current reference being applied. */
-//} pmsm_offline_id_rs_dt_t;
-
-///**
-// * @brief Configuration for Inductance (Ld, Lq) Identification.
-// */
-//typedef struct _tag_pmsm_oid_cfg_ld_lq
-//{
-//    parameter_gt pulse_voltage_pu; /*!< Voltage magnitude for the high-frequency pulse (e.g., 0.3pu). */
-//    parameter_gt max_bias_curr_pu; /*!< Maximum DC bias current for saturation curve (e.g., 1.0pu). */
-//    uint16_t bias_steps;           /*!< Number of bias current steps (e.g., 5). */
-//    parameter_gt pulse_time_s;     /*!< Extremely short duration of the voltage pulse (e.g., 0.001s). */
-//    parameter_gt cooldown_time_s;  /*!< Time to wait for flux to reset between pulses (e.g., 0.1s). */
-//} pmsm_oid_cfg_ld_lq_t;
-//
-///**
-// * @brief Sub-process context for Inductance (Ld, Lq) identification.
-// */
-//typedef struct _tag_pmsm_offline_id_ldq
-//{
-//    pmsm_offline_id_ld_lq_sm_t sm; /*!< Sub-SM: Current state of Ld/Lq identification. */
-//    pmsm_oid_cfg_ld_lq_t cfg;      /*!< Configuration specific to this module. */
-//
-//    // --- Runtime Context ---
-//    uint32_t tick_timer;         /*!< Internal timer for pulse duration and cooldown. */
-//    uint16_t bias_step_idx;      /*!< Current bias current step index. */
-//    fast_gt is_measuring_q_axis; /*!< Flag: 0 for D-axis measurement, 1 for Q-axis. */
-//    ctrl_gt bias_curr_ref_pu;    /*!< The active DC bias current being applied. */
-//} pmsm_offline_id_ldq_t;
-
-/**
- * @brief Configuration for Flux Linkage (Psi_m) Identification.
- */
-typedef struct _tag_pmsm_oid_cfg_flux
-{
-    parameter_gt target_speed_pu; /*!< Target speed for I/F dragging (e.g., 0.3pu). */
-    parameter_gt if_current_pu;   /*!< Constant dragging current magnitude (e.g., 0.2pu). */
-    parameter_gt ramp_time_s;     /*!< Time to accelerate to target speed (s). */
-    parameter_gt measure_time_s;  /*!< Time to maintain steady speed for data collection (s). */
-} pmsm_oid_cfg_flux_t;
-
-/**
- * @brief Configuration for Mechanical Parameters (Inertia J, Damping B) Identification.
- */
-typedef struct _tag_pmsm_oid_cfg_mech
-{
-    parameter_gt low_speed_pu;  /*!< Lower speed threshold for evaluation (e.g., 0.2pu). */
-    parameter_gt high_speed_pu; /*!< Upper speed threshold for evaluation (e.g., 0.8pu). */
-    parameter_gt accel_iq_pu;   /*!< Constant q-axis current applied for acceleration (+). */
-    parameter_gt decel_iq_pu;   /*!< Constant q-axis current applied for deceleration (-). */
-    parameter_gt max_vbus_pu;   /*!< DC Bus over-voltage protection limit during deceleration. */
-} pmsm_oid_cfg_mech_t;
-
-//================================================================================
-// 3. Sub-Process Context Structures (State + Config + Runtime variables)
-//================================================================================
-
-
-
-
-
-/**
- * @brief Sub-process context for Flux Linkage (Psi_m) identification.
- */
-typedef struct _tag_pmsm_offline_id_flux
-{
-    pmsm_offline_id_flux_sm_t sm; /*!< Sub-SM: Current state of Flux identification. */
-    pmsm_oid_cfg_flux_t cfg;      /*!< Configuration specific to this module. */
-
-    // --- Runtime Context ---
-    uint32_t tick_timer; /*!< Internal timer for steady-state measuring. */
-    ctrl_gt target_w_pu; /*!< Target speed for the current ramp. */
-} pmsm_offline_id_flux_t;
-
-/**
- * @brief Sub-process context for Mechanical (J, B) identification.
- */
-typedef struct _tag_pmsm_offline_id_mech
-{
-    pmsm_offline_id_mech_sm_t sm; /*!< Sub-SM: Current state of Mechanical identification. */
-    pmsm_oid_cfg_mech_t cfg;      /*!< Configuration specific to this module. */
-
-    // --- Runtime Context ---
-    uint32_t tick_timer;      /*!< Internal timer for handover and settling. */
-    ctrl_gt active_iq_ref_pu; /*!< The active torque current applied during accel/decel. */
-} pmsm_offline_id_mech_t;
 
 /**
  * @brief Master Initialization Structure for PMSM Offline Identification.
@@ -461,6 +540,8 @@ typedef struct _tag_ctl_pmsm_offline_id
 //
 // Service function
 //
+
+#pragma region ServiceFunction
 
 /**
  * @brief Angle source routing options for the offline identification context.
@@ -568,9 +649,13 @@ GMP_STATIC_INLINE void ctl_id_step_vf_generator(ctl_pmsm_offline_id_t* ctx)
 // 将物理时间(秒)转换为 ISR 滴答数
 #define SEC_TO_TICKS(sec, freq) ((uint32_t)((sec) * (freq)))
 
+#pragma endregion
+
 //
 // --- Resistance & Dead-Time (RS_DT) ---
 //
+
+#pragma region RS_DT_MODULE
 
 /**
  * @brief Initializes the Rs & DT identification sub-task.
@@ -811,7 +896,14 @@ void ctl_loop_oid_rs_dt(ctl_pmsm_offline_id_t* ctx)
         }
     }
 }
+
+#pragma endregion
+
+//
 // --- Inductance (LD_LQ) ---
+//
+
+#pragma region LD_LQ_MDOULE
 
 /**
  * @brief Initializes the Inductance (Ld, Lq) identification sub-task.
@@ -882,6 +974,7 @@ void ctl_step_oid_ldq_isr(ctl_pmsm_offline_id_t* ctx)
         if (sub->is_first_entry)
         {
             // 1. Freeze current PI outputs (These voltages already compensate for Rs*I and Dead-time)
+            // CHECK POINT 是否需要重新测量？此处锁存的结果是否正确？
             sub->frozen_vd_pu = ctx->foc_core.vdq_out_sat.dat[0];
             sub->frozen_vq_pu = ctx->foc_core.vdq_out_sat.dat[1];
 
@@ -1062,102 +1155,37 @@ void ctl_loop_oid_ldq(ctl_pmsm_offline_id_t* ctx)
     }
 }
 
+#pragma endregion
+
 // --- Flux Linkage (FLUX) ---
 
+#pragma region FLUX
+
 /**
- * @brief Initializes the Flux Linkage (Psi_m) identification sub-task.
+ * @brief Initializes the Flux Linkage identification sub-task.
  * @param[in,out] ctx Pointer to the master offline ID context.
  */
 void ctl_init_oid_flux(ctl_pmsm_offline_id_t* ctx)
 {
-    // 1. Reset sub-state machine
     ctx->sub_flux.sm = PMSM_OID_FLUX_INIT;
+    ctx->sub_flux.is_first_entry = 1;
 
-    // 2. Reset runtime context
     ctx->sub_flux.tick_timer = 0;
+    ctx->sub_flux.step_idx = 0;
     ctx->sub_flux.target_w_pu = float2ctrl(0.0f);
-
-    // 我们借用 rs_dt 中的 step_idx 概念，在 flux 中定义一个内部静态计数器或扩展结构体
-    // 这里假设我们在 sub_flux 中也加入了一个 step_idx 变量 (如果结构体中没有，需补充)
-    // ctx->sub_flux.step_idx = 0;
-
-    // 3. Configure FOC core for I/F Open-Loop Control
-    // Disable advanced features as parameters are not yet fully known
-    ctx->foc_core.flag_enable_decouple = 0;
-    ctx->foc_core.flag_enable_vdq_feedforward = 0;
-
-    // Route angle to the V/F Generator
-    ctl_id_route_foc_angle(ctx, PMSM_OID_ANGLE_SRC_VF_GEN);
-
-    // 4. Initialize V/F Generator
-    // Set initial frequency to 0, and configure ramp slope
-    ctl_clear_slope_f_pu(&ctx->vf_gen);
-
-    // 5. Initialize Data Analyzer for Flux mode
-    // ctl_da_init_for_flux(&ctx->analyzer, FLUX_SPEED_STEPS);
 }
 
-这确实是整个离线辨识系统中最激动人心的一个模块——我们的电机将要真正转起来了！在
-            FLUX（磁链识别）模块中，我们将大量使用之前定义好的 Service API。我们将控制权交接给 V /
-        F 发生器（产生旋转坐标系）和 Data
-            Analyzer（抓取动态反电势）。由于我们采取了“多转速点测量拟合”的策略，我们需要在代码中将用户给定的
-                target_speed_pu 切分为几个阶梯（例如 3 个阶梯），以便拟合出一条高置信度的直线（$ |
-    E |
-    = \psi_m \cdot \omega_e$）。以下是 FLUX 模块的完整 C 语言实现：一、 模块初始化与辅助宏C #include "pmsm_offline_id.h"
-
-// 物理时间转换为 ISR 滴答数
-#define SEC_TO_TICKS(sec, freq) ((uint32_t)((sec) * (freq)))
-
-// 定义磁链测试的转速阶梯数量 (例如：分别在 50%, 75%, 100% 目标转速下测试)
-#define FLUX_SPEED_STEPS (3)
-
-    /**
- * @brief Initializes the Flux Linkage (Psi_m) identification sub-task.
- * @param[in,out] ctx Pointer to the master offline ID context.
- */
-    void
-    ctl_init_oid_flux(ctl_pmsm_offline_id_t * ctx)
-{
-    // 1. Reset sub-state machine
-    ctx->sub_flux.sm = PMSM_OID_FLUX_INIT;
-
-    // 2. Reset runtime context
-    ctx->sub_flux.tick_timer = 0;
-    ctx->sub_flux.target_w_pu = float2ctrl(0.0f);
-
-    // 我们借用 rs_dt 中的 step_idx 概念，在 flux 中定义一个内部静态计数器或扩展结构体
-    // 这里假设我们在 sub_flux 中也加入了一个 step_idx 变量 (如果结构体中没有，需补充)
-    // ctx->sub_flux.step_idx = 0;
-
-    // 3. Configure FOC core for I/F Open-Loop Control
-    // Disable advanced features as parameters are not yet fully known
-    ctx->foc_core.flag_enable_decouple = 0;
-    ctx->foc_core.flag_enable_vdq_feedforward = 0;
-
-    // Route angle to the V/F Generator
-    ctl_id_route_foc_angle(ctx, PMSM_OID_ANGLE_SRC_VF_GEN);
-
-    // 4. Initialize V/F Generator
-    // Set initial frequency to 0, and configure ramp slope
-    ctl_clear_slope_f_pu(&ctx->vf_gen);
-
-    // 5. Initialize Data Analyzer for Flux mode
-    // ctl_da_init_for_flux(&ctx->analyzer, FLUX_SPEED_STEPS);
-}
-二、 高频中断执行函数(ISR Step) 在 I / F 模式下，我们向 d 轴 注入恒定的电流。由于 FOC 的角度现在是由 V /
-    F 发生器强行给定的（与真实的转子角度有偏差），这个输入的 $I_d$
-    在定子空间中形成了一个旋转磁场，它像一根弹簧一样“拖拽”着转子同步旋转。C /**
+/**
  * @brief ISR step function for Flux Linkage identification.
- * @details Executes V/F ramping, I/F dragging, and coordinates back-EMF measurement.
- * MUST be called within the high-frequency motor control interrupt.
+ * @details Executes V/F ramping, I/F dragging, and data accumulation. Free of heavy math.
  * @param[in,out] ctx Pointer to the master offline ID context.
  */
-    void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
+void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
 {
     pmsm_offline_id_flux_t* sub = &ctx->sub_flux;
     pmsm_oid_cfg_flux_t* cfg = &sub->cfg;
 
-    // 状态机全局动作：在转动期间，必须始终更新 V/F 角度并维持拖拽电流
+    // 全局动作：如果在活动状态下，持续推进 V/F 角度发生器，并维持拖拽电流
     if (sub->sm >= PMSM_OID_FLUX_RAMP_SPEED && sub->sm <= PMSM_OID_FLUX_RAMP_STOP)
     {
         ctl_id_step_vf_generator(ctx);
@@ -1167,175 +1195,264 @@ void ctl_init_oid_flux(ctl_pmsm_offline_id_t* ctx)
     switch (sub->sm)
     {
     case PMSM_OID_FLUX_DISABLED:
-        break;
-
     case PMSM_OID_FLUX_INIT:
-        // 假设扩展了 step_idx
-        // sub->step_idx = 1;
-        sub->sm = PMSM_OID_FLUX_RAMP_SPEED;
-        break;
+    case PMSM_OID_FLUX_CALCULATE:
+    case PMSM_OID_FLUX_COMPLETE:
+    case PMSM_OID_FLUX_FAULT:
+        break; // Managed by background loop.
 
     case PMSM_OID_FLUX_RAMP_SPEED:
-        // 1. Calculate target speed for the current step (e.g., 1/3, 2/3, 3/3 of target_speed_pu)
-        // ctrl_gt fraction = float2ctrl((float)sub->step_idx / (float)FLUX_SPEED_STEPS);
-        // sub->target_w_pu = ctl_mul(cfg->target_speed_pu, fraction);
-
-        // 为了代码演示简化，这里假设直接加速到 target_speed_pu，实际开发可按需增加阶梯
-        sub->target_w_pu = cfg->target_speed_pu;
-
-        // 2. Set V/F generator target
-        ctl_id_set_vf_target_speed(ctx, sub->target_w_pu);
-
-        // 3. Check if ramp is complete
-        // 由于 V/F 发生器内部有限幅器(Slope Limiter)，我们判断当前输出是否已达到目标值
-        ctrl_gt current_w = ctx->vf_gen.current_freq_pu;
-        ctrl_gt err = sub->target_w_pu - current_w;
-
-        if (err < float2ctrl(0.001f) && err > float2ctrl(-0.001f))
+        if (sub->is_first_entry)
         {
-            sub->tick_timer = 0;
-            sub->sm = PMSM_OID_FLUX_SETTLE;
+            // Calculate target speed dynamically
+            ctrl_gt increment = ctl_mul(float2ctrl((float)sub->step_idx), sub->step_size_pu);
+            sub->target_w_pu = cfg->min_target_speed_pu + increment;
+
+            ctl_id_set_vf_target_speed(ctx, sub->target_w_pu);
+
+            sub->is_first_entry = 0;
+        }
+
+        // Hold: Wait for V/F generator to reach the target speed
+        {
+            ctrl_gt err = sub->target_w_pu - ctx->vf_gen.current_freq_pu;
+            if (err < float2ctrl(0.001f) && err > float2ctrl(-0.001f))
+            {
+                sub->sm = PMSM_OID_FLUX_SETTLE;
+                sub->is_first_entry = 1;
+            }
         }
         break;
 
     case PMSM_OID_FLUX_SETTLE:
-        // 等待转子机械振荡（“弹簧摆”效应）平息
-        sub->tick_timer++;
-        if (sub->tick_timer >= SEC_TO_TICKS(cfg->measure_time_s, ctx->cfg_basic.isr_freq_hz))
+        if (sub->is_first_entry)
         {
             sub->tick_timer = 0;
-            // ctl_da_start_recording(&ctx->analyzer);
+            sub->is_first_entry = 0;
+        }
+
+        sub->tick_timer++;
+        if (sub->tick_timer >= sub->settle_ticks)
+        {
             sub->sm = PMSM_OID_FLUX_MEASURE;
+            sub->is_first_entry = 1;
         }
         break;
 
     case PMSM_OID_FLUX_MEASURE:
-        // 等待 Data Analyzer 抓取足够的 alpha-beta 轴电压/电流和转速数据
-        // if (ctl_da_is_buffer_full(&ctx->analyzer))
-        // {
-        //     sub->sm = PMSM_OID_FLUX_STEP_EVALUATE;
-        // }
-        break;
-
-    case PMSM_OID_FLUX_STEP_EVALUATE:
-        // sub->step_idx++;
-        // if (sub->step_idx > FLUX_SPEED_STEPS) {
-        sub->sm = PMSM_OID_FLUX_RAMP_STOP;
-        // } else {
-        //     sub->sm = PMSM_OID_FLUX_RAMP_SPEED;
-        // }
-        break;
-
-    case PMSM_OID_FLUX_RAMP_STOP:
-        // 1. Ramp down to 0 smoothly
-        ctl_id_set_vf_target_speed(ctx, float2ctrl(0.0f));
-
-        // 2. Wait until motor fully stops
-        if (ctx->vf_gen.current_freq_pu <= float2ctrl(0.005f)) // Close to 0
+        if (sub->is_first_entry)
         {
-            ctl_id_disable_output(ctx);
-            sub->sm = PMSM_OID_FLUX_CALCULATE;
+            sub->tick_timer = 0;
+            sub->sum_ud = float2ctrl(0.0f);
+            sub->sum_uq = float2ctrl(0.0f);
+            sub->sum_id = float2ctrl(0.0f);
+            sub->sum_iq = float2ctrl(0.0f);
+            sub->sum_w = float2ctrl(0.0f);
+            sub->is_first_entry = 0;
+        }
+
+        // Accumulate voltages, currents, and actual frequency
+        sub->sum_ud += ctx->foc_core.vdq_ref.dat[0];
+        sub->sum_uq += ctx->foc_core.vdq_ref.dat[1];
+        sub->sum_id += ctx->foc_core.idq0.dat[0];
+        sub->sum_iq += ctx->foc_core.idq0.dat[1];
+        sub->sum_w += ctx->vf_gen.current_freq_pu;
+
+        sub->tick_timer++;
+        if (sub->tick_timer >= cfg->measure_points)
+        {
+            uint16_t idx = sub->step_idx;
+            if (idx < 16)
+            {
+                sub->ud_array[idx] = ctl_mul(sub->sum_ud, sub->inv_measure_points);
+                sub->uq_array[idx] = ctl_mul(sub->sum_uq, sub->inv_measure_points);
+                sub->id_array[idx] = ctl_mul(sub->sum_id, sub->inv_measure_points);
+                sub->iq_array[idx] = ctl_mul(sub->sum_iq, sub->inv_measure_points);
+                sub->w_array[idx] = ctl_mul(sub->sum_w, sub->inv_measure_points);
+            }
+
+            sub->sm = PMSM_OID_FLUX_STEP_EVALUATE;
+            sub->is_first_entry = 1;
         }
         break;
 
-    case PMSM_OID_FLUX_CALCULATE:
-    case PMSM_OID_FLUX_COMPLETE:
-    case PMSM_OID_FLUX_FAULT:
-        ctl_id_disable_output(ctx);
+    case PMSM_OID_FLUX_STEP_EVALUATE:
+        if (sub->is_first_entry)
+        {
+            sub->step_idx++;
+            if (sub->step_idx >= cfg->steps)
+            {
+                sub->sm = PMSM_OID_FLUX_RAMP_STOP;
+            }
+            else
+            {
+                sub->sm = PMSM_OID_FLUX_RAMP_SPEED;
+            }
+            sub->is_first_entry = 1;
+        }
+        break;
+
+    case PMSM_OID_FLUX_RAMP_STOP:
+        if (sub->is_first_entry)
+        {
+            ctl_id_set_vf_target_speed(ctx, float2ctrl(0.0f));
+            sub->is_first_entry = 0;
+        }
+
+        if (ctx->vf_gen.current_freq_pu <= float2ctrl(0.005f))
+        {
+            sub->sm = PMSM_OID_FLUX_CALCULATE;
+            sub->is_first_entry = 1;
+        }
         break;
     }
 }
 
+// 假设底层数学库提供了求平方根的函数
+extern parameter_gt ctl_math_sqrt(parameter_gt val);
+
 /**
  * @brief Background loop function for Flux Linkage identification.
- * @details Performs linear regression on back-EMF magnitude vs electrical frequency.
- * MUST be called from a low-priority task or main loop.
+ * @details Computes pre-requisites and performs the linear regression (E vs W) using the DA.
  * @param[in,out] ctx Pointer to the master offline ID context.
  */
 void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
 {
     pmsm_offline_id_flux_t* sub = &ctx->sub_flux;
+    pmsm_oid_cfg_flux_t* cfg = &sub->cfg;
 
-    if (sub->sm == PMSM_OID_FLUX_CALCULATE)
+    // --- Safety Rule: Zero output in passive states ---
+    if (sub->sm == PMSM_OID_FLUX_CALCULATE || sub->sm == PMSM_OID_FLUX_COMPLETE || sub->sm == PMSM_OID_FLUX_FAULT)
     {
-        // 1. Retrieve the previously identified Rs and L (needed for back-EMF decoupling)
-        // If these weren't identified, the system should fall back to nameplate values or 0
-        parameter_gt rs_ohm = ctx->pmsm_param.Rs;
-        parameter_gt l_avg_h = (ctx->pmsm_param.Ld + ctx->pmsm_param.Lq) / 2.0f;
+        ctl_id_disable_output(ctx);
+    }
 
-        // 2. Invoke Data Analyzer to compute |E| for each speed point and fit the slope
-        // ctl_da_calc_flux_results(&ctx->analyzer, rs_ohm, l_avg_h, ctx->cfg_basic.v_base);
-
-        // 3. Retrieve slope result
-        // parameter_gt flux_pu = ctx->analyzer.result_flux_pu;
-
-        // --- 占位符赋值 ---
-        parameter_gt flux_pu = 0.85f; // Dummy value
-
-        // 4. Convert PU Flux to Physical Units (Weber)
-        // Flux_base (Wb) = V_base (V) / W_base (rad/s)
-        parameter_gt flux_base = ctx->cfg_basic.v_base / ctx->cfg_basic.w_base;
-        ctx->pmsm_param.flux_linkage = flux_pu * flux_base;
-
-        // 5. Update the PU base structure
-        ctx->identified_pu.Flux_base = float2ctrl(flux_base);
-
-        // 6. Calculate Motor Characteristic Current (if applicable)
-        if (ctx->pmsm_param.is_ipm)
+    if (sub->sm == PMSM_OID_FLUX_INIT)
+    {
+        if (sub->is_first_entry)
         {
-            // Characteristic current = Psi_m / (Lq - Ld)
-            parameter_gt delta_l = ctx->pmsm_param.Lq - ctx->pmsm_param.Ld;
-            if (delta_l > 0.0001f)
+            // 1. Pre-calculate ISR constants
+            sub->settle_ticks = SEC_TO_TICKS(cfg->settle_time_s, ctx->cfg_basic.isr_freq_hz);
+            sub->inv_measure_points = ctl_div(float2ctrl(1.0f), float2ctrl((float)cfg->measure_points));
+
+            if (cfg->steps > 1)
             {
-                ctx->pmsm_param.char_current = ctx->pmsm_param.flux_linkage / delta_l;
+                sub->step_size_pu =
+                    ctl_div((cfg->max_target_speed_pu - cfg->min_target_speed_pu), float2ctrl((float)(cfg->steps - 1)));
             }
-        }
-        else
-        {
-            ctx->pmsm_param.char_current = 9999.0f; // Infinite for SPM
-        }
+            else
+            {
+                sub->step_size_pu = float2ctrl(0.0f);
+            }
 
-        // 7. Mark as complete
-        sub->sm = PMSM_OID_FLUX_COMPLETE;
+            // 2. Configure FOC core for I/F mode
+            ctl_id_route_foc_angle(ctx, PMSM_OID_ANGLE_SRC_VF_GEN);
+            ctl_enable_mtr_current_ctrl(&ctx->foc_core);
+            ctx->foc_core.flag_enable_decouple = 0;
+            ctx->foc_core.flag_enable_vdq_feedforward = 0;
+
+            ctl_clear_slope_f_pu(&ctx->vf_gen);
+
+            sub->is_first_entry = 0;
+            sub->sm = PMSM_OID_FLUX_RAMP_SPEED;
+            sub->is_first_entry = 1;
+        }
+    }
+    else if (sub->sm == PMSM_OID_FLUX_CALCULATE)
+    {
+        if (sub->is_first_entry)
+        {
+            // 1. Retrieve identified parameters from previous stages (In PU)
+            // If Rs/Ld/Lq were skipped, we assume they are 0 or fallback values.
+            parameter_gt rs_pu = ctx->pmsm_param.Rs / ctx->identified_pu.Z_base;
+            parameter_gt ld_pu = ctx->pmsm_param.Ld / ctx->identified_pu.L_base;
+            parameter_gt lq_pu = ctx->pmsm_param.Lq / ctx->identified_pu.L_base;
+
+            // 2. Prepare Data Analyzer
+            // Assuming ctx->analyzer is globally accessible
+            // ctl_da_clear(&ctx->analyzer);
+
+            // 3. Compute Back-EMF magnitude for each speed step and push to DA
+            for (uint16_t i = 0; i < cfg->steps && i < 16; i++)
+            {
+                parameter_gt ud = (parameter_gt)sub->ud_array[i];
+                parameter_gt uq = (parameter_gt)sub->uq_array[i];
+                parameter_gt id = (parameter_gt)sub->id_array[i];
+                parameter_gt iq = (parameter_gt)sub->iq_array[i];
+                parameter_gt w = (parameter_gt)sub->w_array[i];
+
+                // E_d = U_d - R_s * I_d + W * L_q * I_q
+                parameter_gt ed = ud - (rs_pu * id) + (w * lq_pu * iq);
+                // E_q = U_q - R_s * I_q - W * L_d * I_d
+                parameter_gt eq = uq - (rs_pu * iq) - (w * ld_pu * id);
+
+                // Magnitude |E| = sqrt(Ed^2 + Eq^2)
+                parameter_gt e_mag = ctl_math_sqrt((ed * ed) + (eq * eq));
+
+                // Push to Dataset: X = Speed (w), Y = Back-EMF (|E|)
+                // ctl_da_push_point(&ctx->analyzer, float2ctrl(w), float2ctrl(e_mag));
+            }
+
+            // 4. Perform Linear Regression: |E| = Psi_m * w + Intercept
+            parameter_gt flux_pu = 0.0f, intercept = 0.0f;
+            // ctl_da_linear_fit(&ctx->analyzer, 0, cfg->steps - 1, &flux_pu, &intercept);
+
+            // --- Dummy Value for compilation ---
+            flux_pu = 0.85f;
+
+            // 5. Convert PU Flux to Physical Units (Weber)
+            parameter_gt flux_base = ctx->cfg_basic.v_base / ctx->cfg_basic.w_base;
+            ctx->pmsm_param.flux_linkage = flux_pu * flux_base;
+            ctx->identified_pu.Flux_base = float2ctrl(flux_base);
+
+            // 6. Calculate Motor Characteristic Current (if IPM)
+            if (ctx->pmsm_param.is_ipm)
+            {
+                parameter_gt delta_l = ctx->pmsm_param.Lq - ctx->pmsm_param.Ld;
+                if (delta_l > 0.0001f)
+                {
+                    ctx->pmsm_param.char_current = ctx->pmsm_param.flux_linkage / delta_l;
+                }
+            }
+            else
+            {
+                ctx->pmsm_param.char_current = 9999.0f; // Infinite for SPM
+            }
+
+            // ctl_da_clear(&ctx->analyzer);
+
+            sub->is_first_entry = 0;
+            sub->sm = PMSM_OID_FLUX_COMPLETE;
+        }
     }
 }
 
+#pragma endregion
+
+//
 // --- Mechanical Parameters (MECH) ---
+//
+
+#pragma region MECH
+
 /**
- * @brief Initializes the Mechanical Parameters (J, B) identification sub-task.
+ * @brief Initializes the Mechanical Parameters identification sub-task.
  * @param[in,out] ctx Pointer to the master offline ID context.
  */
 void ctl_init_oid_mech(ctl_pmsm_offline_id_t* ctx)
 {
-    // 1. Reset sub-state machine
     ctx->sub_mech.sm = PMSM_OID_MECH_INIT;
+    ctx->sub_mech.is_first_entry = 1;
 
-    // 2. Reset runtime context
     ctx->sub_mech.tick_timer = 0;
     ctx->sub_mech.active_iq_ref_pu = float2ctrl(0.0f);
-
-    // 3. Configure FOC core and Angle Switcher for I/F Startup
-    ctx->foc_core.flag_enable_decouple = 0;
-    ctx->foc_core.flag_enable_vdq_feedforward = 0;
-
-    // Reset angle switcher to Output A (V/F Generator)
-    ctl_init_angle_switcher(&ctx->angle_switcher, 0.5f, ctx->cfg_basic.isr_freq_hz); // 0.5s transition
-    ctl_attach_angle_switcher(&ctx->angle_switcher, &ctx->vf_gen.enc, ctx->enc);
-
-    // Route FOC angle strictly to the Angle Switcher's output
-    ctx->foc_core.pos_if = &ctx->angle_switcher.out_enc;
-
-    // 4. Reset V/F Generator
-    ctl_clear_slope_f_pu(&ctx->vf_gen);
-
-    // 5. Initialize Data Analyzer
-    // ctl_da_init_for_mech(&ctx->analyzer);
+    ctx->sub_mech.active_id_ref_pu = float2ctrl(0.0f);
 }
 
 /**
  * @brief ISR step function for Mechanical Parameters identification.
- * @details Executes IF startup, angle handover, localized speed control, and accel/decel tests.
- * MUST be called within the high-frequency motor control interrupt.
+ * @details Highly optimized state machine managing V/F start, closed-loop handover, 
+ * localized speed control, and dual-curve high-speed recording.
  * @param[in,out] ctx Pointer to the master offline ID context.
  */
 void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
@@ -1343,232 +1460,337 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
     pmsm_offline_id_mech_t* sub = &ctx->sub_mech;
     pmsm_oid_cfg_mech_t* cfg = &sub->cfg;
 
-    // 始终更新 V/F 发生器（即使在闭环阶段，为了保持相位连续性也不应立即停止）
+    // 始终更新 V/F 发生器以备随时切回
     ctl_step_slope_f_pu(&ctx->vf_gen);
-
-    // 获取当前实际电角速度 (需确保 velocity_ift 已连接到真实观测器/编码器)
     ctrl_gt current_speed_pu = ctx->foc_core.spd_if->speed;
+    ctrl_gt time_now = float2ctrl((float)sub->tick_timer * sub->dt_sec);
 
     switch (sub->sm)
     {
     case PMSM_OID_MECH_DISABLED:
-        break;
-
     case PMSM_OID_MECH_INIT:
-        sub->tick_timer = 0;
-        sub->sm = PMSM_OID_MECH_IF_START;
-        break;
-
-    case PMSM_OID_MECH_IF_START:
-        // 1. Target low speed for I/F open-loop startup
-        ctl_id_set_vf_target_speed(ctx, cfg->low_speed_pu);
-
-        // 2. Apply dragging current (Id = drag_current, Iq = 0)
-        // Note: We use the same dragging current defined in flux config, or a hardcoded safe value
-        ctl_id_apply_dc_current(ctx, float2ctrl(0.2f), float2ctrl(0.0f));
-
-        // 3. Wait until V/F speed reaches low_speed_pu
-        if (ctx->vf_gen.current_freq_pu >= cfg->low_speed_pu)
-        {
-            sub->tick_timer = 0;
-            sub->sm = PMSM_OID_MECH_HANDOVER;
-        }
-        break;
-
-    case PMSM_OID_MECH_HANDOVER:
-        // 1. Trigger the angle switcher to smoothly blend from V/F (A) to Real/SMO (B)
-        if (sub->tick_timer == 0)
-        {
-            ctl_trigger_angle_transition(&ctx->angle_switcher, 1);
-        }
-
-        // 2. Gradually shift current vector from D-axis (IF drag) to Q-axis (Closed-loop Torque)
-        // Weight goes from 0.0 (Pure A) to 1.0 (Pure B)
-        ctrl_gt w = ctx->angle_switcher.weight;
-        ctrl_gt id_blend = ctl_mul(float2ctrl(0.2f), float2ctrl(1.0f) - w); // Id fades to 0
-        ctrl_gt iq_blend = ctl_mul(cfg->low_speed_pu, w); // Iq builds up to overcome friction (approx)
-
-        ctl_id_apply_dc_current(ctx, id_blend, iq_blend);
-        sub->active_iq_ref_pu = iq_blend;
-
-        // 3. Wait for the transition duration (0.5s configured in init) to finish
-        sub->tick_timer++;
-        if (sub->tick_timer > SEC_TO_TICKS(0.6f, ctx->cfg_basic.isr_freq_hz))
-        {
-            sub->tick_timer = 0;
-            sub->sm = PMSM_OID_MECH_STEADY_LOW;
-        }
-        break;
-
-    case PMSM_OID_MECH_STEADY_LOW:
-    case PMSM_OID_MECH_STEADY_HIGH: {
-        // Localized Integral (I) Speed Controller to hold the motor at target steady speed
-        ctrl_gt target_spd = (sub->sm == PMSM_OID_MECH_STEADY_LOW) ? cfg->low_speed_pu : cfg->high_speed_pu;
-        ctrl_gt err = target_spd - current_speed_pu;
-
-        // I-gain (Very small, just enough to find the friction equilibrium)
-        ctrl_gt ki_gain = float2ctrl(0.0005f);
-        sub->active_iq_ref_pu += ctl_mul(err, ki_gain);
-
-        // Saturate safety limit
-        sub->active_iq_ref_pu = ctl_sat(sub->active_iq_ref_pu, float2ctrl(0.5f), float2ctrl(-0.5f));
-        ctl_id_apply_dc_current(ctx, float2ctrl(0.0f), sub->active_iq_ref_pu);
-
-        sub->tick_timer++;
-        if (sub->tick_timer >= SEC_TO_TICKS(1.5f, ctx->cfg_basic.isr_freq_hz)) // Settle for 1.5 seconds
-        {
-            sub->tick_timer = 0;
-            if (sub->sm == PMSM_OID_MECH_STEADY_LOW)
-            {
-                // ctl_da_record_steady_torque(&ctx->analyzer, current_speed_pu, sub->active_iq_ref_pu);
-                sub->sm = PMSM_OID_MECH_ACCEL_TEST;
-                // ctl_da_start_high_speed_recording(&ctx->analyzer);
-            }
-            else
-            {
-                // ctl_da_record_steady_torque(&ctx->analyzer, current_speed_pu, sub->active_iq_ref_pu);
-                sub->sm = PMSM_OID_MECH_DECEL_TEST;
-                // ctl_da_start_high_speed_recording(&ctx->analyzer);
-            }
-        }
-    }
-    break;
-
-    case PMSM_OID_MECH_ACCEL_TEST:
-        // Apply constant positive torque
-        ctl_id_apply_dc_current(ctx, float2ctrl(0.0f), cfg->accel_iq_pu);
-
-        // Wait until high speed is reached
-        if (current_speed_pu >= cfg->high_speed_pu)
-        {
-            // ctl_da_stop_recording(&ctx->analyzer);
-            sub->active_iq_ref_pu = cfg->accel_iq_pu; // Handover initial value for STEADY_HIGH PI
-            sub->sm = PMSM_OID_MECH_STEADY_HIGH;
-        }
-        break;
-
-    case PMSM_OID_MECH_DECEL_TEST:
-        // 1. OVER-VOLTAGE PROTECTION (CRITICAL)
-        if (ctx->foc_core.udc > cfg->max_vbus_pu)
-        {
-            ctl_id_disable_output(ctx);
-            sub->sm = PMSM_OID_MECH_FAULT;
-            break;
-        }
-
-        // 2. Apply constant negative torque for regen braking
-        ctl_id_apply_dc_current(ctx, float2ctrl(0.0f), cfg->decel_iq_pu);
-
-        // 3. Wait until low speed is reached
-        if (current_speed_pu <= cfg->low_speed_pu)
-        {
-            // ctl_da_stop_recording(&ctx->analyzer);
-            ctl_id_disable_output(ctx);
-            sub->sm = PMSM_OID_MECH_CALCULATE;
-        }
-        break;
-
     case PMSM_OID_MECH_CALCULATE:
     case PMSM_OID_MECH_COMPLETE:
     case PMSM_OID_MECH_FAULT:
-        ctl_id_disable_output(ctx);
+        break; // Loop handles these.
+
+    // -------------------------------------------------------------
+    // IF Spin Up
+    // -------------------------------------------------------------
+    case PMSM_OID_MECH_IF_START:
+        if (sub->is_first_entry)
+        {
+            ctl_id_set_vf_target_speed(ctx, cfg->low_speed_pu);
+            ctl_id_apply_dc_current(ctx, cfg->if_current_pu, float2ctrl(0.0f));
+            sub->is_first_entry = 0;
+        }
+
+        if (ctx->vf_gen.current_freq_pu >= cfg->low_speed_pu)
+        {
+            sub->sm = PMSM_OID_MECH_HANDOVER_TO_CLOSED;
+            sub->is_first_entry = 1;
+        }
+        break;
+
+    // -------------------------------------------------------------
+    // Handover: IF (A) -> Real/SMO (B)
+    // -------------------------------------------------------------
+    case PMSM_OID_MECH_HANDOVER_TO_CLOSED:
+        if (sub->is_first_entry)
+        {
+            sub->tick_timer = 0;
+            // Target 1 = Source B (Real/SMO Angle)
+            ctl_trigger_angle_transition(&ctx->angle_switcher, 1);
+            sub->is_first_entry = 0;
+        }
+
+        // Blend current vector: Id fades out, Iq builds up
+        {
+            ctrl_gt w = ctx->angle_switcher.weight;
+            sub->active_id_ref_pu = ctl_mul(cfg->if_current_pu, float2ctrl(1.0f) - w);
+            sub->active_iq_ref_pu = ctl_mul(cfg->low_speed_pu, w); // Approx startup Iq
+            ctl_id_apply_dc_current(ctx, sub->active_id_ref_pu, sub->active_iq_ref_pu);
+        }
+
+        sub->tick_timer++;
+        if (sub->tick_timer >= sub->transition_ticks)
+        {
+            sub->sm = PMSM_OID_MECH_STEADY_LOW;
+            sub->is_first_entry = 1;
+        }
+        break;
+
+    // -------------------------------------------------------------
+    // Steady State (Low & High) for Friction Measurement
+    // -------------------------------------------------------------
+    case PMSM_OID_MECH_STEADY_LOW:
+    case PMSM_OID_MECH_STEADY_HIGH:
+        if (sub->is_first_entry)
+        {
+            sub->tick_timer = 0;
+            sub->sum_iq_steady = float2ctrl(0.0f);
+            sub->is_first_entry = 0;
+        }
+
+        // Mini I-Controller for Speed Hold
+        {
+            ctrl_gt target_spd = (sub->sm == PMSM_OID_MECH_STEADY_LOW) ? cfg->low_speed_pu : cfg->high_speed_pu;
+            ctrl_gt err = target_spd - current_speed_pu;
+            sub->active_iq_ref_pu += ctl_mul(err, float2ctrl(0.001f)); // Soft I-gain
+            sub->active_iq_ref_pu = ctl_sat(sub->active_iq_ref_pu, float2ctrl(0.5f), float2ctrl(-0.5f));
+            ctl_id_apply_dc_current(ctx, float2ctrl(0.0f), sub->active_iq_ref_pu);
+        }
+
+        sub->sum_iq_steady += ctx->foc_core.idq0.dat[1]; // Accumulate actual Iq
+
+        sub->tick_timer++;
+        if (sub->tick_timer >= sub->settle_ticks)
+        {
+            parameter_gt avg_iq = (parameter_gt)ctl_mul(sub->sum_iq_steady, sub->inv_settle_ticks);
+
+            if (sub->sm == PMSM_OID_MECH_STEADY_LOW)
+            {
+                sub->iq_steady_low_pu = avg_iq;
+                sub->sm = PMSM_OID_MECH_ACCEL_TEST;
+            }
+            else
+            {
+                sub->iq_steady_high_pu = avg_iq;
+                sub->sm = PMSM_OID_MECH_DECEL_TEST;
+            }
+            sub->is_first_entry = 1;
+        }
+        break;
+
+    // -------------------------------------------------------------
+    // Acceleration Test
+    // -------------------------------------------------------------
+    case PMSM_OID_MECH_ACCEL_TEST:
+        if (sub->is_first_entry)
+        {
+            sub->tick_timer = 0;
+            ctl_id_apply_dc_current(ctx, float2ctrl(0.0f), cfg->accel_iq_pu);
+            // Record DA start index
+            // sub->da_idx_accel_start = ctx->analyzer.count;
+            sub->is_first_entry = 0;
+        }
+
+        // Push Point: X = Time, Y = Speed
+        // ctl_da_push_point(&ctx->analyzer, time_now, current_speed_pu);
+
+        sub->tick_timer++;
+        // If speed reached OR DA is full
+        if (current_speed_pu >= cfg->high_speed_pu /* || ctx->analyzer.count >= CTL_DA_MAX_POINTS */)
+        {
+            // sub->da_idx_accel_end = ctx->analyzer.count - 1;
+            sub->active_iq_ref_pu = cfg->accel_iq_pu; // Handover to high-speed PI
+            sub->sm = PMSM_OID_MECH_STEADY_HIGH;
+            sub->is_first_entry = 1;
+        }
+        break;
+
+    // -------------------------------------------------------------
+    // Deceleration Test
+    // -------------------------------------------------------------
+    case PMSM_OID_MECH_DECEL_TEST:
+        if (sub->is_first_entry)
+        {
+            sub->tick_timer = 0;
+            ctl_id_apply_dc_current(ctx, float2ctrl(0.0f), cfg->decel_iq_pu);
+            // sub->da_idx_decel_start = ctx->analyzer.count;
+            sub->is_first_entry = 0;
+        }
+
+        // OVER-VOLTAGE PROTECTION
+        if (ctx->foc_core.udc > cfg->max_vbus_pu)
+        {
+            sub->sm = PMSM_OID_MECH_FAULT;
+            sub->is_first_entry = 1;
+            break;
+        }
+
+        // Push Point: X = Time, Y = Speed
+        // ctl_da_push_point(&ctx->analyzer, time_now, current_speed_pu);
+
+        sub->tick_timer++;
+        if (current_speed_pu <= cfg->low_speed_pu /* || ctx->analyzer.count >= CTL_DA_MAX_POINTS */)
+        {
+            // sub->da_idx_decel_end = ctx->analyzer.count - 1;
+            sub->sm = PMSM_OID_MECH_HANDOVER_TO_IF;
+            sub->is_first_entry = 1;
+        }
+        break;
+
+    // -------------------------------------------------------------
+    // Handover Back: Real/SMO (B) -> IF (A)
+    // -------------------------------------------------------------
+    case PMSM_OID_MECH_HANDOVER_TO_IF:
+        if (sub->is_first_entry)
+        {
+            sub->tick_timer = 0;
+            // Align V/F freq to current physical speed to prevent jerk
+            ctl_id_set_vf_target_speed(ctx, current_speed_pu);
+            ctx->vf_gen.current_freq_pu = current_speed_pu;
+
+            // Target 0 = Source A (V/F Generator)
+            ctl_trigger_angle_transition(&ctx->angle_switcher, 0);
+            sub->is_first_entry = 0;
+        }
+
+        // Blend current vector back to dragging Id
+        {
+            ctrl_gt w = ctx->angle_switcher.weight; // Transitions from 1.0 back to 0.0
+            sub->active_id_ref_pu = ctl_mul(cfg->if_current_pu, float2ctrl(1.0f) - w);
+            sub->active_iq_ref_pu = ctl_mul(sub->active_iq_ref_pu, w); // Fade out active Iq
+            ctl_id_apply_dc_current(ctx, sub->active_id_ref_pu, sub->active_iq_ref_pu);
+        }
+
+        sub->tick_timer++;
+        if (sub->tick_timer >= sub->transition_ticks)
+        {
+            sub->sm = PMSM_OID_MECH_IF_STOP;
+            sub->is_first_entry = 1;
+        }
+        break;
+
+    // -------------------------------------------------------------
+    // Safe IF Shutdown
+    // -------------------------------------------------------------
+    case PMSM_OID_MECH_IF_STOP:
+        if (sub->is_first_entry)
+        {
+            ctl_id_set_vf_target_speed(ctx, float2ctrl(0.0f));
+            sub->is_first_entry = 0;
+        }
+
+        if (ctx->vf_gen.current_freq_pu <= float2ctrl(0.005f))
+        {
+            sub->sm = PMSM_OID_MECH_CALCULATE;
+            sub->is_first_entry = 1;
+        }
         break;
     }
 }
 
 /**
  * @brief Background loop function for Mechanical Parameters identification.
- * @details Calculates total inertia J and viscous damping B using the dual-curve method.
- * MUST be called from a low-priority task or main loop.
+ * @details Safely executes pre-calculations and dual-curve linear regressions.
  * @param[in,out] ctx Pointer to the master offline ID context.
  */
 void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
 {
     pmsm_offline_id_mech_t* sub = &ctx->sub_mech;
+    pmsm_oid_cfg_mech_t* cfg = &sub->cfg;
 
-    if (sub->sm == PMSM_OID_MECH_CALCULATE)
+    // --- Safety Rule ---
+    if (sub->sm == PMSM_OID_MECH_CALCULATE || sub->sm == PMSM_OID_MECH_COMPLETE || sub->sm == PMSM_OID_MECH_FAULT)
     {
-        // 1. Trigger Data Analyzer to calculate accelerations (alpha) from buffers
-        // ctl_da_calc_mech_results(&ctx->analyzer);
+        ctl_id_disable_output(ctx);
+    }
 
-        // --- 占位符获取来自 Analyzer 的数据 ---
-        // 加速和减速的电角加速度 (PU/s)
-        parameter_gt alpha_acc_pu_s = 2.5f;  // Dummy value
-        parameter_gt alpha_dec_pu_s = -3.0f; // Dummy value
-
-        // 稳态摩擦电流 (PU)
-        parameter_gt iq_steady_low_pu = 0.05f;  // Dummy value
-        parameter_gt iq_steady_high_pu = 0.08f; // Dummy value
-
-        // 2. Base Conversions
-        parameter_gt I_base = ctx->cfg_basic.i_base;
-        // 机械角速度基准: W_mech_base = W_elec_base / pole_pairs
-        parameter_gt W_mech_base = ctx->cfg_basic.w_base / (parameter_gt)ctx->cfg_basic.pole_pairs;
-
-        // 3. Convert PU data to Physical Units
-        // 加速度转为 机械弧度/秒^2 (rad/s^2)
-        parameter_gt alpha_acc_rads2 = alpha_acc_pu_s * W_mech_base;
-        parameter_gt alpha_dec_rads2 = alpha_dec_pu_s * W_mech_base;
-
-        // 稳态转速转为 机械弧度/秒 (rad/s)
-        parameter_gt w_mech_low = sub->cfg.low_speed_pu * W_mech_base;
-        parameter_gt w_mech_high = sub->cfg.high_speed_pu * W_mech_base;
-
-        // 4. Calculate Electromagnetic Torque Constant Kt (Nm/A)
-        // Kt = 1.5 * p * Psi_m
-        parameter_gt Kt = 1.5f * (parameter_gt)ctx->pmsm_param.pole_pairs * ctx->pmsm_param.flux_linkage;
-
-        // Convert test currents to physical Torque (Nm)
-        parameter_gt T_acc = Kt * (sub->cfg.accel_iq_pu * I_base);
-        parameter_gt T_dec = Kt * (sub->cfg.decel_iq_pu * I_base);
-        parameter_gt T_fric_low = Kt * (iq_steady_low_pu * I_base);
-        parameter_gt T_fric_high = Kt * (iq_steady_high_pu * I_base);
-
-        // 5. Calculate Inertia J (kg*m^2) using Dual-Curve Differential Equation
-        // J * alpha_acc = T_acc - T_fric
-        // J * alpha_dec = T_dec - T_fric
-        // Subtracting eliminates friction (assuming friction is identical at the exact same speed point)
-        parameter_gt delta_T = T_acc - T_dec;
-        parameter_gt delta_alpha = alpha_acc_rads2 - alpha_dec_rads2;
-
-        if (delta_alpha > 0.001f)
+    if (sub->sm == PMSM_OID_MECH_INIT)
+    {
+        if (sub->is_first_entry)
         {
-            ctx->pmsm_mech_param.J_total = delta_T / delta_alpha;
-        }
-        else
-        {
-            ctx->pmsm_mech_param.J_total = 0.0001f; // Fallback safeguard
-        }
+            // 1. Pre-calculate ISR constants
+            sub->dt_sec = 1.0f / ctx->cfg_basic.isr_freq_hz;
+            sub->settle_ticks = SEC_TO_TICKS(cfg->settle_time_s, ctx->cfg_basic.isr_freq_hz);
+            sub->transition_ticks = SEC_TO_TICKS(cfg->transition_time_s, ctx->cfg_basic.isr_freq_hz);
+            sub->inv_settle_ticks = ctl_div(float2ctrl(1.0f), float2ctrl((float)sub->settle_ticks));
 
-        // 6. Calculate Viscous Damping B (Nm / (rad/s))
-        // Assuming linear friction model: T_fric = B * w + T_coulomb
-        // B = (T_fric_high - T_fric_low) / (w_mech_high - w_mech_low)
-        parameter_gt delta_T_fric = T_fric_high - T_fric_low;
-        parameter_gt delta_w_mech = w_mech_high - w_mech_low;
+            // 2. Configure FOC core and Angle Switcher
+            ctx->foc_core.flag_enable_decouple = 0;
+            ctx->foc_core.flag_enable_vdq_feedforward = 0;
+            ctl_init_angle_switcher(&ctx->angle_switcher, cfg->transition_time_s, ctx->cfg_basic.isr_freq_hz);
+            ctl_attach_angle_switcher(&ctx->angle_switcher, &ctx->vf_gen.enc, ctx->enc);
+            ctx->foc_core.pos_if = &ctx->angle_switcher.out_enc;
 
-        if (delta_w_mech > 0.001f)
-        {
-            ctx->pmsm_mech_param.B_viscous = delta_T_fric / delta_w_mech;
-        }
-        else
-        {
-            ctx->pmsm_mech_param.B_viscous = 0.0f;
-        }
+            // 3. Clear Data Analyzer
+            // ctl_da_clear(&ctx->analyzer);
 
-        // 7. Calculate Derived Mechanical Time Constant (Tau_m)
-        if (ctx->pmsm_mech_param.B_viscous > 0.00001f)
-        {
-            ctx->pmsm_mech_param.tau_m = ctx->pmsm_mech_param.J_total / ctx->pmsm_mech_param.B_viscous;
+            sub->is_first_entry = 0;
+            sub->sm = PMSM_OID_MECH_IF_START;
+            sub->is_first_entry = 1;
         }
-        else
+    }
+    else if (sub->sm == PMSM_OID_MECH_CALCULATE)
+    {
+        if (sub->is_first_entry)
         {
-            ctx->pmsm_mech_param.tau_m = 9999.0f; // Infinite
-        }
+            parameter_gt alpha_acc_pu_s = 0.0f, dummy_intercept = 0.0f;
+            parameter_gt alpha_dec_pu_s = 0.0f;
 
-        // 8. Mark as complete
-        sub->sm = PMSM_OID_MECH_COMPLETE;
+            // 1. Perform Linear Fitting on DA Segments: Speed = alpha * Time + initial_speed
+            // ctl_da_linear_fit(&ctx->analyzer, sub->da_idx_accel_start, sub->da_idx_accel_end, &alpha_acc_pu_s, &dummy_intercept);
+            // ctl_da_linear_fit(&ctx->analyzer, sub->da_idx_decel_start, sub->da_idx_decel_end, &alpha_dec_pu_s, &dummy_intercept);
+
+            // --- Dummy values for compilation ---
+            alpha_acc_pu_s = 2.5f;
+            alpha_dec_pu_s = -3.0f;
+
+            // 2. Base Conversions
+            parameter_gt I_base = ctx->cfg_basic.i_base;
+            parameter_gt W_mech_base = ctx->cfg_basic.w_base / (parameter_gt)ctx->cfg_basic.pole_pairs;
+
+            // 3. Convert PU data to Physical Units
+            parameter_gt alpha_acc_rads2 = alpha_acc_pu_s * W_mech_base;
+            parameter_gt alpha_dec_rads2 = alpha_dec_pu_s * W_mech_base;
+            parameter_gt w_mech_low = cfg->low_speed_pu * W_mech_base;
+            parameter_gt w_mech_high = cfg->high_speed_pu * W_mech_base;
+
+            // 4. Calculate Electromagnetic Torque Constant Kt (Nm/A)
+            parameter_gt Kt = 1.5f * (parameter_gt)ctx->pmsm_param.pole_pairs * ctx->pmsm_param.flux_linkage;
+
+            parameter_gt T_acc = Kt * (cfg->accel_iq_pu * I_base);
+            parameter_gt T_dec = Kt * (cfg->decel_iq_pu * I_base);
+            parameter_gt T_fric_low = Kt * (sub->iq_steady_low_pu * I_base);
+            parameter_gt T_fric_high = Kt * (sub->iq_steady_high_pu * I_base);
+
+            // 5. Calculate Inertia J (kg*m^2)
+            parameter_gt delta_T = T_acc - T_dec;
+            parameter_gt delta_alpha = alpha_acc_rads2 - alpha_dec_rads2;
+
+            if (delta_alpha > 0.001f)
+            {
+                ctx->pmsm_mech_param.J_total = delta_T / delta_alpha;
+            }
+            else
+            {
+                ctx->pmsm_mech_param.J_total = 0.0001f; // Safeguard
+            }
+
+            // 6. Calculate Viscous Damping B (Nm / (rad/s))
+            parameter_gt delta_T_fric = T_fric_high - T_fric_low;
+            parameter_gt delta_w_mech = w_mech_high - w_mech_low;
+
+            if (delta_w_mech > 0.001f)
+            {
+                ctx->pmsm_mech_param.B_viscous = delta_T_fric / delta_w_mech;
+            }
+            else
+            {
+                ctx->pmsm_mech_param.B_viscous = 0.0f;
+            }
+
+            // 7. Calculate Derived Mechanical Time Constant
+            if (ctx->pmsm_mech_param.B_viscous > 0.00001f)
+            {
+                ctx->pmsm_mech_param.tau_m = ctx->pmsm_mech_param.J_total / ctx->pmsm_mech_param.B_viscous;
+            }
+            else
+            {
+                ctx->pmsm_mech_param.tau_m = 9999.0f;
+            }
+
+            // ctl_da_clear(&ctx->analyzer);
+
+            sub->is_first_entry = 0;
+            sub->sm = PMSM_OID_MECH_COMPLETE;
+        }
     }
 }
+
+#pragma endregion
 
 /**
  * @brief High-frequency ISR step function for PMSM Offline Identification.
