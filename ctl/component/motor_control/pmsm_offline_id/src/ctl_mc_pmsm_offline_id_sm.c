@@ -1,6 +1,8 @@
 
 #include <gmp_core.h>
 
+#include <ctl/component/dsa/dsa_scope.h>
+
 #include <ctl/component/motor_control/basic/mtr_protection.h>
 #include <ctl/component/motor_control/basic/vf_generator.h>
 #include <ctl/component/motor_control/current_loop/foc_core.h>
@@ -13,34 +15,6 @@
 #include <ctl/component/motor_control/consultant/pmsm_consultant.h>
 
 #include <ctl/component/motor_control/pmsm_offline_id/pmsm_offline_id_sm.h>
-
-//////////////////////////////////////////////////////////////////////////
-
-//TODO
-// 对于data analyze 的要求：
-// 1. 要有一个存储池用于保存数据
-// 2. 数据要能够划分成不同长度的单元（可以保存m*n的表格）
-// 3. 要能够提供2*n的数据单元拟合
-// 4.
-
-/**
- * @brief Forward declaration of the Data Analyzer structure.
- */
-typedef struct _tag_ctl_data_analyzer ctl_data_analyzer_t;
-
-/**
- * @brief Clears the Data Analyzer buffers and resets its internal state.
- * @param[in,out] da Pointer to the data analyzer instance.
- */
-void ctl_da_clear(ctl_data_analyzer_t* da);
-
-/**
- * @brief Pushes a single data point into the analyzer's buffer.
- * @param[in,out] da Pointer to the data analyzer instance.
- * @param[in]     u  The sampled voltage value (PU).
- * @param[in]     i  The sampled current value (PU).
- */
-void ctl_da_push_point(ctl_data_analyzer_t* da, ctrl_gt u, ctrl_gt i);
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -149,6 +123,7 @@ typedef struct _tag_pmsm_offline_id_rs_dt
     // --- Runtime Context (ISR) ---
     uint32_t tick_timer;    /*!< Internal timer for delays and settling. */
     uint16_t angle_idx;     /*!< Current electrical angle index (0 to 5). */
+    ctrl_gt angle_pu;       /*!< Current electrical angle */
     uint16_t step_idx;      /*!< Current injected current step index. */
     ctrl_gt current_ref_pu; /*!< The active DC current reference being applied. */
     fast_gt is_first_entry; /*!< Flag to distinguish between step (first entry) and hold logic. */
@@ -505,8 +480,7 @@ typedef struct _tag_ctl_pmsm_offline_id
     ctl_slope_f_pu_controller vf_gen;    /*!< V/F slope frequency generator for I/F mode. */
     ctl_angle_switcher_t angle_switcher; /*!< Smooth transition router for angles. */
     ctl_pmsm_esmo_t esmo;                /*!< Extended Sliding Mode Observer. */
-
-    // ctl_data_analyzer_t    analyzer;       /*!< Data recording and fitting engine (WIP). */
+    ctl_dsa_scope_t analyzer;            /*!< Data recording and fitting engine (WIP). */
 
     // =========================================================================
     // 2. External Interfaces & Routing Dummies
@@ -669,6 +643,7 @@ void ctl_init_oid_rs_dt(ctl_pmsm_offline_id_t* ctx)
     ctx->sub_rs_dt.tick_timer = 0;
     ctx->sub_rs_dt.angle_idx = 0;
     ctx->sub_rs_dt.step_idx = 0;
+    ctx->sub_rs_dt.angle_pu = float2ctrl(0.0f);
     ctx->sub_rs_dt.current_ref_pu = float2ctrl(0.0f);
 }
 
@@ -695,8 +670,11 @@ void ctl_step_oid_rs_dt_isr(ctl_pmsm_offline_id_t* ctx)
         if (sub->is_first_entry)
         {
             // Calculate angle_pu dynamically: (idx * (1.0 / 6.0))
-            ctrl_gt angle_pu = ctl_mul(float2ctrl((float)sub->angle_idx), float2ctrl(0.1666667f));
-            ctl_id_set_static_angle(ctx, angle_pu);
+            //ctrl_gt angle_pu = ctl_mul(float2ctrl((float)sub->angle_idx), float2ctrl(0.1666667f));
+            if (sub->angle_idx < 6)
+                sub->angle_pu = sub->angle_pu + float2ctrl(0.1666667f);
+
+            ctl_id_set_static_angle(ctx, sub->angle_pu);
 
             // Apply maximum current to guarantee rotor alignment to this specific vector
             ctl_id_apply_dc_current(ctx, cfg->max_current_pu, float2ctrl(0.0f));
@@ -812,6 +790,9 @@ void ctl_loop_oid_rs_dt(ctl_pmsm_offline_id_t* ctx)
     {
         if (sub->is_first_entry)
         {
+            // clear integral parameters
+            ctx->sub_rs_dt.angle_pu = float2ctrl(0.0f);
+
             // 1. Pre-calculate ISR constants (Executes only once)
             sub->align_ticks = SEC_TO_TICKS(cfg->align_time_s, ctx->cfg_basic.isr_freq_hz);
             sub->measure_delay_ticks = SEC_TO_TICKS(cfg->measure_delay_s, ctx->cfg_basic.isr_freq_hz);

@@ -7,7 +7,7 @@
  * @{
  */
 
- #include <ctl/math_block/utilities/mem_view.h>
+#include <ctl/math_block/utilities/mem_view.h>
 
 #ifndef _FILE_CTL_DSA_SCOPE_H_
 #define _FILE_CTL_DSA_SCOPE_H_
@@ -192,4 +192,5 @@ GMP_STATIC_INLINE fast_gt ctl_step_dsa_scope_varargs(ctl_dsa_scope_t* scope, uin
 #endif
 
 #endif // _FILE_CTL_DSA_SCOPE_H_
-       /** @} */
+
+/** @} */
