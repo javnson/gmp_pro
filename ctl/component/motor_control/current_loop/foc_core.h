@@ -229,6 +229,22 @@ void ctl_auto_tuning_mtr_current_ctrl(mtr_current_init_t* init);
  */
 void ctl_init_mtr_current_ctrl(mtr_current_ctrl_t* mc, mtr_current_init_t* init);
 
+
+
+/**
+ * @brief Initializes the basic motor current controller (FOC Core).
+ * @details Sets up IIR filters for currents and bus voltage, initializes PI controllers 
+ * for d/q axes, configures lead compensators, sets voltage limits, and establishes safe 
+ * default execution flags.
+ * * @param[out] mc        Pointer to the motor current controller instance.
+ * @param[in]  kp        Proportional gain for the d/q axis PI controllers.
+ * @param[in]  ki        Integral gain for the d/q axis PI controllers.
+ * @param[in]  max_vs_pu Maximum stator voltage magnitude in per-unit (e.g., 0.577f for SVPWM).
+ * @param[in]  fs        Sampling/execution frequency of the control loop (Hz).
+ */
+void ctl_init_mtr_current_ctrl_basic(mtr_current_ctrl_t* mc, parameter_gt kp, parameter_gt ki, parameter_gt max_vs_pu,
+                                     parameter_gt fs);
+
 /**
  * @brief Executes one step of the FOC current control loop.
  * @param[out] mc      Pointer to the current controller structure.
