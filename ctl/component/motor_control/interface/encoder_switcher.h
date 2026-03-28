@@ -49,8 +49,8 @@ typedef struct _tag_angle_switcher
  */
 GMP_STATIC_INLINE ctrl_gt ctl_helper_wrap_angle_pu(ctrl_gt angle)
 {
-    ctrl_gt res = ctl_mod_1(angle, float2ctrl(1.0f));
-    if (res < float2ctrl(0 .0f))
+    ctrl_gt res = ctl_mod_1(angle);
+    if (res < float2ctrl(0.0f))
     {
         res += 1.0f;
     }

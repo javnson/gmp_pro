@@ -765,42 +765,6 @@
             }
         },
         "ctl": {
-            "component|dsa": {
-                "type": "module",
-                "description": "数字信号处理器组件",
-                "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/dsa/src/dsa_trigger.c"
-                ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/dsa/*"
-                ],
-                "depends_on": [],
-                "inc_dirs": [],
-                "help_docs": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    }
-                ]
-            },
             "component|kinematics": {
                 "type": "module",
                 "description": "数字运动学组件",
@@ -4783,6 +4747,182 @@
                 ],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/discrete_filter.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|motor_id|pmsm": {
+                "type": "module",
+                "description": "PMSM offline id module",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/pmsm_offline_id/src/ctl_mc_pmsm_offline_id_sm.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/pmsm_offline_id/pmsm_offline_id_sm.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [
+                    "ctl|component|intrinsic|continuous|_internal",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|intrinsic|discrete|_internal",
+                    "ctl|component|intrinsic|discrete|biquad_filter",
+                    "ctl|component|intrinsic|discrete|direct_form",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|intrinsic|discrete|fir_filter",
+                    "ctl|component|intrinsic|discrete|lead_lag",
+                    "ctl|component|intrinsic|discrete|pid",
+                    "ctl|component|intrinsic|discrete|pole_zero",
+                    "ctl|component|intrinsic|discrete|pr",
+                    "ctl|component|intrinsic|discrete|signal_generator",
+                    "ctl|component|intrinsic|discrete|sogi",
+                    "ctl|component|intrinsic|discrete|track_pid",
+                    "ctl|component|motor_control|basic|_internal",
+                    "ctl|component|motor_control|basic|decouple",
+                    "ctl|component|motor_control|basic|protection",
+                    "ctl|component|motor_control|basic|vf_generator",
+                    "ctl|component|motor_control|basic|voltage_calculator",
+                    "ctl|component|motor_control|consultant|_internal",
+                    "ctl|component|motor_control|consultant|pmsm",
+                    "ctl|component|motor_control|consultant|pu",
+                    "ctl|component|motor_control|current_loop|_internal",
+                    "ctl|component|motor_control|current_loop|foc",
+                    "ctl|component|motor_control|observer|_internal",
+                    "ctl|component|motor_control|observer|pmsm_esmo"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|motor_control|motor_id|_internal": {
+                "type": "module",
+                "description": "Auto-generated internal config",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|dsa|_internal": {
+                "type": "module",
+                "description": "Digital Signal Analyze",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "depends_on": [],
+                "inc_dirs": [],
+                "help_docs": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-03-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|dsa|dsa_scope": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/dsa/src/dsa_scope.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/dsa/dsa_scope.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|dsa|dsa_trigger": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/dsa/src/dsa_trigger.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/dsa/dsa_trigger.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
