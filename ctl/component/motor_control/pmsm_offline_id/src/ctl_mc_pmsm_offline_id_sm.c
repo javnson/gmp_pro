@@ -64,7 +64,7 @@ void ctl_step_oid_rs_dt_isr(ctl_pmsm_offline_id_t* ctx)
             // 1.0f / 6.0f = 0.1666667f
             if (sub->angle_idx < 6)
                 sub->angle_pu = sub->angle_pu_array[sub->angle_idx];
-            
+
             ctl_id_set_static_angle(ctx, sub->angle_pu);
 
             // Apply maximum current to guarantee rotor alignment
@@ -114,8 +114,8 @@ void ctl_step_oid_rs_dt_isr(ctl_pmsm_offline_id_t* ctx)
         }
 
         // Accumulate voltage command and actual current
-        sub->sum_u += ctx->foc_core.vdq_ref.dat[0]; // D-axis voltage ref
-        sub->sum_i += ctx->foc_core.idq0.dat[0];    // D-axis actual current
+        sub->sum_u += ctrl2float(ctl_id_get_vdq(ctx, phase_d)); // D-axis voltage ref
+        sub->sum_i += ctrl2float(ctl_id_get_idq(ctx, phase_d)); // D-axis actual current
 
         sub->tick_timer++;
         if (sub->tick_timer >= cfg->measure_points)

@@ -118,8 +118,8 @@ typedef struct _tag_pmsm_offline_id_rs_dt
     //ctrl_gt current_increment; /*!< Current increment for each step*/
 
     // --- Measurement Accumulators (ISR) ---
-    ctrl_gt sum_u; /*!< Voltage accumulator for averaging. */
-    ctrl_gt sum_i; /*!< Current accumulator for averaging. */
+    parameter_gt sum_u; /*!< Voltage accumulator for averaging. */
+    parameter_gt sum_i; /*!< Current accumulator for averaging. */
 
     // --- Identification Results ---
     parameter_gt rs_array[6];    /*!< Identified resistance (PU) for each of the 6 positions. */
@@ -724,6 +724,16 @@ GMP_STATIC_INLINE void ctl_id_set_foc_state(ctl_pmsm_offline_id_t* ctx, pmsm_id_
     default:
         break;
     }
+}
+
+GMP_STATIC_INLINE ctrl_gt ctl_id_get_idq(ctl_pmsm_offline_id_t* ctx, fast_gt index)
+{
+    return mtr_ctrl.idq0.dat[index];
+}
+
+GMP_STATIC_INLINE ctrl_gt ctl_id_get_vdq(ctl_pmsm_offline_id_t* ctx, fast_gt index)
+{
+    return mtr_ctrl.vdq_ref.dat[index];
 }
 
 /**
