@@ -37,11 +37,11 @@ spwm_modulator_t spwm;
 #endif // USING_NPC_MODULATOR
 
 // controller body: Current controller, Command dispatcher, motion controller
-mtr_current_ctrl_t mtr_ctrl;
-mtr_current_init_t mtr_ctrl_init;
+mc_foc_core_t mtr_ctrl;
+mc_foc_init_t mtr_ctrl_init;
 
 ctl_mech_ctrl_t mech_ctrl;
-ctl_mech_ctrl_init_t mech_init;
+ctl_mech_init_t mech_init;
 
 // Observer: SMO, FO, Speed measurement.
 ctl_slope_f_pu_controller rg;

@@ -57,7 +57,7 @@ extern spwm_modulator_t spwm;
 #endif // USING_NPC_MODULATOR
 
 // controller body: Current controller, Command dispatcher, motion controller
-extern mtr_current_ctrl_t mtr_ctrl;
+extern mc_foc_core_t mtr_ctrl;
 extern ctl_mech_ctrl_t mech_ctrl;
 
 // Observer: SMO, FO, Speed measurement.

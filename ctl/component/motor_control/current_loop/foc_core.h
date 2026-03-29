@@ -135,7 +135,7 @@ typedef struct _tag_current_controller
     fast_gt flag_enable_bus_compensation; //!< Enable V bus compensation
     fast_gt flag_enable_vdq_feedforward;  //!<  Enable vdq feed forward
 
-} mtr_current_ctrl_t;
+} mc_foc_core_t;
 
 //================================================================================
 // Function Prototypes & Definitions
@@ -145,7 +145,7 @@ typedef struct _tag_current_controller
  * @brief Initializes the current controller structure to safe defaults.
  * @param[out] mc Pointer to the current controller structure.
  */
-GMP_STATIC_INLINE void ctl_clear_mtr_current_ctrl(mtr_current_ctrl_t* mc)
+GMP_STATIC_INLINE void ctl_clear_mtr_current_ctrl(mc_foc_core_t* mc)
 {
     // 1. Clear Filters
     ctl_clear_filter_iir1(&mc->filter_iuvw[phase_U]); // 修正命名 iabc -> iuvw
@@ -214,20 +214,20 @@ typedef struct _tag_mtr_current_ctrl
     parameter_gt kpq;
     parameter_gt kiq;
 
-} mtr_current_init_t;
+} mc_foc_init_t;
 
 /**
  * @brief Auto-tuning motor driver parameters.
  * @param[in,out] init Pointer to the `mtr_current_init_t` structure.
  */
-void ctl_auto_tuning_mtr_current_ctrl(mtr_current_init_t* init);
+void ctl_auto_tuning_mtr_current_ctrl(mc_foc_init_t* init);
 
 /**
  * @brief Sets up the parameters for the d-q axis PI controllers.
  * @param[out] mc Pointer to the current controller structure.
  * @param[in]  init initialize object for Motor controller.
  */
-void ctl_init_mtr_current_ctrl(mtr_current_ctrl_t* mc, mtr_current_init_t* init);
+void ctl_init_mtr_current_ctrl(mc_foc_core_t* mc, mc_foc_init_t* init);
 
 
 
@@ -242,7 +242,7 @@ void ctl_init_mtr_current_ctrl(mtr_current_ctrl_t* mc, mtr_current_init_t* init)
  * @param[in]  max_vs_pu Maximum stator voltage magnitude in per-unit (e.g., 0.577f for SVPWM).
  * @param[in]  fs        Sampling/execution frequency of the control loop (Hz).
  */
-void ctl_init_mtr_current_ctrl_basic(mtr_current_ctrl_t* mc, parameter_gt kp, parameter_gt ki, parameter_gt max_vs_pu,
+void ctl_init_mtr_current_ctrl_basic(mc_foc_core_t* mc, parameter_gt kp, parameter_gt ki, parameter_gt max_vs_pu,
                                      parameter_gt fs);
 
 /**
@@ -250,7 +250,7 @@ void ctl_init_mtr_current_ctrl_basic(mtr_current_ctrl_t* mc, parameter_gt kp, pa
  * @param[out] mc      Pointer to the current controller structure.
  * @param[in]  theta   The current electrical angle of the rotor (0.0 to 1.0).
  */
-GMP_STATIC_INLINE void ctl_step_current_controller(mtr_current_ctrl_t* mc)
+GMP_STATIC_INLINE void ctl_step_current_controller(mc_foc_core_t* mc)
 {
     mc->isr_tick += 1;
 
@@ -431,7 +431,7 @@ GMP_STATIC_INLINE void ctl_step_current_controller(mtr_current_ctrl_t* mc)
  * @brief Enables the PI controller action.
  * @param[out] cc Pointer to the current controller structure.
  */
-GMP_STATIC_INLINE void ctl_enable_mtr_current_ctrl(mtr_current_ctrl_t* mc)
+GMP_STATIC_INLINE void ctl_enable_mtr_current_ctrl(mc_foc_core_t* mc)
 {
     mc->flag_enable_current_ctrl = 1;
 }
@@ -442,7 +442,7 @@ GMP_STATIC_INLINE void ctl_enable_mtr_current_ctrl(mtr_current_ctrl_t* mc)
  * @param[in]  id_ref The target d-axis current.
  * @param[in]  iq_ref The target q-axis current.
  */
-GMP_STATIC_INLINE void ctl_set_mtr_current_ctrl_ref(mtr_current_ctrl_t* mc, ctrl_gt id_ref, ctrl_gt iq_ref)
+GMP_STATIC_INLINE void ctl_set_mtr_current_ctrl_ref(mc_foc_core_t* mc, ctrl_gt id_ref, ctrl_gt iq_ref)
 {
     mc->idq_ref.dat[0] = id_ref;
     mc->idq_ref.dat[1] = iq_ref;
@@ -454,7 +454,7 @@ GMP_STATIC_INLINE void ctl_set_mtr_current_ctrl_ref(mtr_current_ctrl_t* mc, ctrl
  * @param[in]  vd_ff The d-axis voltage feed forward term.
  * @param[in]  vq_ff The q-axis voltage feed forward term.
  */
-GMP_STATIC_INLINE void ctl_set_mtr_current_ctrl_vdq_ref(mtr_current_ctrl_t* mc, ctrl_gt vd_ff, ctrl_gt vq_ff)
+GMP_STATIC_INLINE void ctl_set_mtr_current_ctrl_vdq_ref(mc_foc_core_t* mc, ctrl_gt vd_ff, ctrl_gt vq_ff)
 {
     mc->vdq_ref.dat[0] = vd_ff;
     mc->vdq_ref.dat[1] = vq_ff;
@@ -465,12 +465,12 @@ GMP_STATIC_INLINE void ctl_set_mtr_current_ctrl_vdq_ref(mtr_current_ctrl_t* mc, 
  * @details When disabled, the controller output will be zero, but feedforward terms will still be applied.
  * @param[out] cc Pointer to the current controller structure.
  */
-GMP_STATIC_INLINE void ctl_disable_mtr_current_ctrl(mtr_current_ctrl_t* mc)
+GMP_STATIC_INLINE void ctl_disable_mtr_current_ctrl(mc_foc_core_t* mc)
 {
     mc->flag_enable_current_ctrl = 0;
 }
 
-GMP_STATIC_INLINE void ctl_attach_mtr_current_ctrl_port(mtr_current_ctrl_t* mc, tri_adc_ift* _iabc, adc_ift* _udc,
+GMP_STATIC_INLINE void ctl_attach_mtr_current_ctrl_port(mc_foc_core_t* mc, tri_adc_ift* _iabc, adc_ift* _udc,
                                                         rotation_ift* _pos_if, velocity_ift* _vec_if)
 {
     mc->adc_iuvw = _iabc;
@@ -479,9 +479,19 @@ GMP_STATIC_INLINE void ctl_attach_mtr_current_ctrl_port(mtr_current_ctrl_t* mc, 
     mc->spd_if = _vec_if;
 }
 
-GMP_STATIC_INLINE void ctl_attach_mtr_current_ctrl_phasor(mtr_current_ctrl_t* mc, ctl_vector2_t* _phasor)
+GMP_STATIC_INLINE void ctl_attach_mtr_current_ctrl_phasor(mc_foc_core_t* mc, ctl_vector2_t* _phasor)
 {
     mc->phasor_input = _phasor;
+}
+
+GMP_STATIC_INLINE void ctl_disable_mtr_current_ctrl_decouple(mc_foc_core_t* mc)
+{
+    mc->flag_enable_decouple = 0;
+}
+
+GMP_STATIC_INLINE void ctl_enable_mtr_current_ctrl_decouple(mc_foc_core_t* mc)
+{
+    mc->flag_enable_decouple = 1;
 }
 
 /** 

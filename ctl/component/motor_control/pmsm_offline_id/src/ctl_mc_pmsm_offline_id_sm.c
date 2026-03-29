@@ -213,6 +213,8 @@ void ctl_loop_oid_rs_dt(ctl_pmsm_offline_id_t* ctx)
 
             // 2. Configure FOC core
             ctl_id_route_foc_angle(ctx, PMSM_OID_ANGLE_SRC_STATIC);
+            ctl_id_set_foc_state(&ctx, PMSM_ID_CURRENT_CLOSELOOP);
+
             ctl_enable_mtr_current_ctrl(&ctx->foc_core);
             ctx->foc_core.flag_enable_decouple = 0;
             ctx->foc_core.flag_enable_vdq_feedforward = 0;

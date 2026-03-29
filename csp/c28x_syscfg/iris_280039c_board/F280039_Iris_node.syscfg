@@ -511,13 +511,17 @@ gpio1.$name           = "IRIS_GPIO1";
 gpio1.direction       = "GPIO_DIR_MODE_OUT";
 gpio1.gpioPin.$assign = "GPIO58";
 
-gpio2.$name           = "IRIS_GPIO2";
-gpio2.direction       = "GPIO_DIR_MODE_OUT";
-gpio2.gpioPin.$assign = "GPIO23";
+gpio2.$name             = "IRIS_GPIO2";
+gpio2.direction         = "GPIO_DIR_MODE_OUT";
+gpio2.writeInitialValue = true;
+gpio2.initialValue      = 1;
+gpio2.gpioPin.$assign   = "GPIO23";
 
-gpio3.$name           = "IRIS_GPIO3";
-gpio3.direction       = "GPIO_DIR_MODE_OUT";
-gpio3.gpioPin.$assign = "GPIO40";
+gpio3.$name             = "IRIS_GPIO3";
+gpio3.direction         = "GPIO_DIR_MODE_OUT";
+gpio3.writeInitialValue = true;
+gpio3.initialValue      = 1;
+gpio3.gpioPin.$assign   = "GPIO40";
 
 gpio4.$name           = "IRIS_GPIO4";
 gpio4.gpioPin.$assign = "GPIO44";

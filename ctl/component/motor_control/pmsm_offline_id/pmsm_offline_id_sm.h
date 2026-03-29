@@ -506,12 +506,12 @@ typedef struct _tag_ctl_pmsm_offline_id
     // =========================================================================
     // 1. Core Embedded Components (Flat Memory Layout)
     // =========================================================================
-    mtr_current_ctrl_t foc_core;         /*!< Dedicated FOC current controller core. */
+    //mtr_current_ctrl_t foc_core;         /*!< Dedicated FOC current controller core. */
     ctl_slope_f_pu_controller vf_gen;    /*!< V/F slope frequency generator for I/F mode. */
     ctl_angle_switcher_t angle_switcher; /*!< Smooth transition router for angles. */
-    ctl_pmsm_esmo_t esmo;                /*!< Extended Sliding Mode Observer. */
-    ctl_dsa_scope_t analyzer;            /*!< Data recording and fitting engine (WIP). */
-    ctl_mtr_protect_t protect;           /*!< Protection Module*/
+    //ctl_pmsm_esmo_t esmo;                /*!< Extended Sliding Mode Observer. */
+    ctl_dsa_scope_t analyzer; /*!< Data recording and fitting engine (WIP). */
+    //ctl_mtr_protect_t protect;           /*!< Protection Module*/
 
     // =========================================================================
     // 2. External Interfaces & Routing Dummies
@@ -541,7 +541,6 @@ typedef struct _tag_ctl_pmsm_offline_id
     ctl_consultant_mech1_t pmsm_mech_param; /*!< The final identified mechanical parameters. */
 
 } ctl_pmsm_offline_id_t;
-
 
 //
 // --- Resistance & Dead-Time (RS_DT) ---
@@ -642,7 +641,6 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx);
  */
 void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx);
 
-
 /**
  * @brief High-frequency ISR step function for PMSM Offline Identification.
  * @details Routes execution to the active sub-task's ISR, steps angle switcher, and executes FOC.
@@ -666,8 +664,6 @@ void ctl_loop_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx);
  */
 void ctl_init_pmsm_offline_id_sm(ctl_pmsm_offline_id_t* ctx, const ctl_pmsm_offline_id_init_t* init_cfg,
                                  ctrl_gt* dsa_buffer, uint32_t dsa_capacity);
-
-
 
 //
 // Service function
@@ -693,13 +689,35 @@ GMP_STATIC_INLINE void ctl_id_route_foc_angle(ctl_pmsm_offline_id_t* ctx, pmsm_o
     switch (src)
     {
     case PMSM_OID_ANGLE_SRC_STATIC:
-        ctx->foc_core.pos_if = &ctx->static_angle;
+        mtr_ctrl.pos_if = &ctx->static_angle;
         break;
     case PMSM_OID_ANGLE_SRC_VF_GEN:
-        ctx->foc_core.pos_if = &ctx->vf_gen.enc;
+        mtr_ctrl.pos_if = &ctx->vf_gen.enc;
         break;
     case PMSM_OID_ANGLE_SRC_REAL_ENC:
-        ctx->foc_core.pos_if = ctx->enc; // Assuming ctx->enc points to the valid real encoder
+        mtr_ctrl.pos_if = ctx->enc;
+        break;
+    }
+}
+
+typedef enum _tag_pmsm_id_foc_state
+{
+    PMSM_ID_VOLTAGE_OPENLOOP = 0,
+    PMSM_ID_CURRENT_CLOSELOOP = 1
+} pmsm_id_foc_state_e;
+
+GMP_STATIC_INLINE void ctl_id_set_foc_state(ctl_pmsm_offline_id_t* ctx, pmsm_id_foc_state_e state)
+{
+    switch (src)
+    {
+    case PMSM_ID_VOLTAGE_OPENLOOP:
+        ctl_disable_mtr_current_ctrl(&mtr_ctrl);
+        ctl_disable_mtr_current_ctrl_decouple(&mtr_ctrl);
+        break;
+    case PMSM_ID_CURRENT_CLOSELOOP:
+        ctl_enable_mtr_current_ctrl(&mtr_ctrl);
+        break;
+    default:
         break;
     }
 }
@@ -722,9 +740,9 @@ GMP_STATIC_INLINE void ctl_id_set_static_angle(ctl_pmsm_offline_id_t* ctx, ctrl_
  */
 GMP_STATIC_INLINE void ctl_id_disable_output(ctl_pmsm_offline_id_t* ctx)
 {
-    ctl_disable_mtr_current_ctrl(&ctx->foc_core);
-    ctl_set_mtr_current_ctrl_ref(&ctx->foc_core, float2ctrl(0.0f), float2ctrl(0.0f));
-    ctl_set_mtr_current_ctrl_vdq_ref(&ctx->foc_core, float2ctrl(0.0f), float2ctrl(0.0f));
+    ctl_disable_mtr_current_ctrl(&mtr_ctrl);
+    ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, float2ctrl(0.0f), float2ctrl(0.0f));
+    ctl_set_mtr_current_ctrl_vdq_ref(&mtr_ctrl, float2ctrl(0.0f), float2ctrl(0.0f));
 }
 
 /**
@@ -737,8 +755,8 @@ GMP_STATIC_INLINE void ctl_id_disable_output(ctl_pmsm_offline_id_t* ctx)
  */
 GMP_STATIC_INLINE void ctl_id_apply_dc_current(ctl_pmsm_offline_id_t* ctx, ctrl_gt id_pu, ctrl_gt iq_pu)
 {
-    ctl_enable_mtr_current_ctrl(&ctx->foc_core);
-    ctl_set_mtr_current_ctrl_ref(&ctx->foc_core, id_pu, iq_pu);
+    ctl_enable_mtr_current_ctrl(&mtr_ctrl);
+    ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, id_pu, iq_pu);
 }
 
 /**
@@ -751,8 +769,8 @@ GMP_STATIC_INLINE void ctl_id_apply_dc_current(ctl_pmsm_offline_id_t* ctx, ctrl_
  */
 GMP_STATIC_INLINE void ctl_id_apply_voltage_pulse(ctl_pmsm_offline_id_t* ctx, ctrl_gt vd_pu, ctrl_gt vq_pu)
 {
-    ctl_disable_mtr_current_ctrl(&ctx->foc_core); // Disable PI regulation
-    ctl_set_mtr_current_ctrl_vdq_ref(&ctx->foc_core, vd_pu, vq_pu);
+    ctl_disable_mtr_current_ctrl(&mtr_ctrl); // Disable PI regulation
+    ctl_set_mtr_current_ctrl_vdq_ref(&mtr_ctrl, vd_pu, vq_pu);
 }
 
 /**
@@ -782,7 +800,8 @@ GMP_STATIC_INLINE void ctl_id_step_vf_generator(ctl_pmsm_offline_id_t* ctx)
  * @param[in] current_state The state that just finished executing.
  * @return pmsm_offline_id_sm_t The next state to transition to.
  */
-GMP_STATIC_INLINE pmsm_offline_id_sm_t ctl_oid_get_next_state(ctl_pmsm_offline_id_t* ctx, pmsm_offline_id_sm_t current_state)
+GMP_STATIC_INLINE pmsm_offline_id_sm_t ctl_oid_get_next_state(ctl_pmsm_offline_id_t* ctx,
+                                                              pmsm_offline_id_sm_t current_state)
 {
     // The fallthrough design perfectly matches sequential identification steps.
     switch (current_state)
@@ -844,7 +863,6 @@ static void ctl_oid_init_target_state(ctl_pmsm_offline_id_t* ctx)
     }
 }
 
-
 /**
  * @brief Enables the Offline Identification process.
  * @details Commands the state machine to transition from READY to the first 
@@ -869,7 +887,7 @@ GMP_STATIC_INLINE void ctl_enable_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
  */
 GMP_STATIC_INLINE void ctl_disable_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
 {
-    ctl_disable_mtr_current_ctrl(&ctx->foc_core);
+    ctl_disable_mtr_current_ctrl(&mtr_ctrl);
     ctx->sm = PMSM_OFFLINE_ID_DISABLED;
 }
 
@@ -882,11 +900,11 @@ GMP_STATIC_INLINE void ctl_disable_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
 GMP_STATIC_INLINE void ctl_clear_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
 {
     // 1. Safe Hardware Shutdown
-    ctl_disable_mtr_current_ctrl(&ctx->foc_core);
-    ctl_clear_mtr_current_ctrl(&ctx->foc_core);
+    //ctl_disable_mtr_current_ctrl(&mtr_ctrl);
+    //ctl_clear_mtr_current_ctrl(&mtr_ctrl);
 
     // 2. Reset Core Components
-    ctl_clear_mtr_protect(&ctx->protect);
+    //ctl_clear_mtr_protect(&ctx->protect);
     ctl_wipe_dsa_scope_memory(&ctx->analyzer);
     ctl_clear_slope_f_pu(&ctx->vf_gen);
 
@@ -900,10 +918,8 @@ GMP_STATIC_INLINE void ctl_clear_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
     ctx->sm = PMSM_OFFLINE_ID_READY;
 }
 
-
 // 将物理时间(秒)转换为 ISR 滴答数
 #define SEC_TO_TICKS(sec, freq) ((uint32_t)((sec) * (freq)))
-
 
 #ifdef __cplusplus
 }

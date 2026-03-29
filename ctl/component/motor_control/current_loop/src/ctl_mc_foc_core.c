@@ -16,7 +16,7 @@
 
 #include <ctl/component/motor_control/current_loop/foc_core.h>
 
-void ctl_auto_tuning_mtr_current_ctrl(mtr_current_init_t* init)
+void ctl_auto_tuning_mtr_current_ctrl(mc_foc_init_t* init)
 {
     init->current_adc_fc = init->fs / 3;
     init->voltage_adc_fc = init->fs / 3;
@@ -57,7 +57,7 @@ void ctl_auto_tuning_mtr_current_ctrl(mtr_current_init_t* init)
     init->kiq = 1 / Tq;
 }
 
-void ctl_init_mtr_current_ctrl(mtr_current_ctrl_t* mc, mtr_current_init_t* init)
+void ctl_init_mtr_current_ctrl(mc_foc_core_t* mc, mc_foc_init_t* init)
 {
     int i;
 
@@ -97,74 +97,15 @@ void ctl_init_mtr_current_ctrl(mtr_current_ctrl_t* mc, mtr_current_init_t* init)
     // 用于 step 函数中的: v_scale = max_dcbus_voltage / mc->udc;
     mc->max_dcbus_voltage = init->v_bus / init->v_base;
 
-    ctrl_gt max_vs = float2ctrl(mc->max_vs_mag);
-
     // dq轴实现方形限幅
-    ctl_set_pid_limit(&mc->idq_ctrl[phase_d], max_vs, -max_vs);
-    ctl_set_pid_int_limit(&mc->idq_ctrl[phase_d], max_vs, -max_vs);
+    ctl_set_pid_limit(&mc->idq_ctrl[phase_d], mc->max_vs_mag, -mc->max_vs_mag);
+    ctl_set_pid_int_limit(&mc->idq_ctrl[phase_d], mc->max_vs_mag, -mc->max_vs_mag);
 
-    ctl_set_pid_limit(&mc->idq_ctrl[phase_q], max_vs, -max_vs);
-    ctl_set_pid_int_limit(&mc->idq_ctrl[phase_q], max_vs, -max_vs);
+    ctl_set_pid_limit(&mc->idq_ctrl[phase_q], mc->max_vs_mag, -mc->max_vs_mag);
+    ctl_set_pid_int_limit(&mc->idq_ctrl[phase_q], mc->max_vs_mag, -mc->max_vs_mag);
 
     // 6. Flags Initialization (Safe defaults)
     mc->flag_enable_current_ctrl = 0;     // 默认不使能
-    mc->flag_enable_theta_calc = 1;       // 默认开启角度计算
-    mc->flag_enable_lead_compensator = 0; // 默认关闭超前补偿(需谨慎开启)
-    mc->flag_enable_decouple = 0;         // 默认关闭解耦
-    mc->flag_enable_bus_compensation = 0; // 默认关闭母线补偿
-    mc->flag_enable_vdq_feedforward = 0;  // 默认关闭前馈
-
-    // 7. Clear all states
-    ctl_clear_mtr_current_ctrl(mc);
-}
-
-/**
- * @brief Initializes the basic motor current controller (FOC Core).
- * @details Sets up IIR filters for currents and bus voltage, initializes PI controllers 
- * for d/q axes, configures lead compensators, sets voltage limits, and establishes safe 
- * default execution flags.
- * * @param[out] mc        Pointer to the motor current controller instance.
- * @param[in]  kp        Proportional gain for the d/q axis PI controllers.
- * @param[in]  ki        Integral gain for the d/q axis PI controllers.
- * @param[in]  max_vs_pu Maximum stator voltage magnitude in per-unit (e.g., 0.577f for SVPWM).
- * @param[in]  fs        Sampling/execution frequency of the control loop (Hz).
- */
-void ctl_init_mtr_current_ctrl_basic(mtr_current_ctrl_t* mc, parameter_gt kp, parameter_gt ki, parameter_gt max_vs_pu,
-                                     parameter_gt fs)
-{
-    int i;
-
-    // 1. Filter Init
-    for (i = 0; i < 3; ++i)
-    {
-        ctl_init_filter_iir1_lpf(&mc->filter_iuvw[i], fs, fs / 3.0f);
-    }
-    ctl_init_filter_iir1_lpf(&mc->filter_udc, fs, fs / 3.0f);
-
-    // 2. PID Init
-    ctl_init_pid(&mc->idq_ctrl[phase_d], kp, ki, 0, fs);
-    ctl_init_pid(&mc->idq_ctrl[phase_q], kp, ki, 0, fs);
-
-    // 3. Lead Compensator Init
-    ctl_init_lead_form3(&mc->lead_compensator[phase_d], 0, fs / 20.0f, fs);
-    ctl_init_lead_form3(&mc->lead_compensator[phase_q], 0, fs / 20.0f, fs);
-
-    // 4. Decoupling Coefficient Calculation
-    mc->coef_ff_decouple[phase_d] = 0;
-    mc->coef_ff_decouple[phase_q] = 0;
-
-    // 5. Voltage Limits Initialization
-    ctrl_gt max_vs = float2ctrl(max_vs_pu);
-
-    // dq轴实现方形限幅
-    ctl_set_pid_limit(&mc->idq_ctrl[phase_d], max_vs, -max_vs);
-    ctl_set_pid_int_limit(&mc->idq_ctrl[phase_d], max_vs, -max_vs);
-
-    ctl_set_pid_limit(&mc->idq_ctrl[phase_q], max_vs, -max_vs);
-    ctl_set_pid_int_limit(&mc->idq_ctrl[phase_q], max_vs, -max_vs);
-
-    // 6. Flags Initialization (Safe defaults)
-    mc->flag_enable_current_ctrl = 1;     // 默认使能
     mc->flag_enable_theta_calc = 1;       // 默认开启角度计算
     mc->flag_enable_lead_compensator = 0; // 默认关闭超前补偿(需谨慎开启)
     mc->flag_enable_decouple = 0;         // 默认关闭解耦

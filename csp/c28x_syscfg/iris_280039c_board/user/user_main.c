@@ -196,18 +196,8 @@ gmp_task_status_t tsk_key_flush(gmp_task_t* tsk)
     if(key_id != 0)
     {
         // TODO: response key message
-        gmp_base_print("Receive Key Message, %d\r\n", key_id);
 
-        if(key_id < 8)
-        {
-            pca9555_set_pin_output(&pca9555,PCA9555_PORT_0,key_id,1);
-            beep_on();
-        }
-        else if(key_id < 20)
-        {
-            pca9555_set_pin_output(&pca9555, PCA9555_PORT_1, key_id - 14, 1);
-            beep_off();
-        }
+        gmp_base_print("Receive Key Message, %d\r\n", key_id);
     }
 
     return GMP_TASK_DONE;
@@ -256,9 +246,9 @@ void init(void) GMP_NO_OPT_SUFFIX
      .pol_port1 = 0
     };
 
-    pca9555_init(&pca9555, iic_bus, PCA9555_CALC_ADDR(0,0,0), &pca9555_init_struct);
+    //pca9555_init(&pca9555, iic_bus, PCA9555_CALC_ADDR(0,0,0), &pca9555_init_struct);
 
-    beep_off();
+    //beep_off();
 
     hdc1080_config_reg_t hdc1080_cfg = {.all = 0};
     hdc1080_cfg.bits.mode = 1; // continuous acquisition data
