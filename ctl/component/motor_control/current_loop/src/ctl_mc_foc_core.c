@@ -16,7 +16,7 @@
 
 #include <ctl/component/motor_control/current_loop/foc_core.h>
 
-void ctl_auto_tuning_mtr_current_ctrl(mc_foc_init_t* init)
+void ctl_auto_tuning_foc_core(mc_foc_init_t* init)
 {
     init->current_adc_fc = init->fs / 3;
     init->voltage_adc_fc = init->fs / 3;
@@ -57,7 +57,7 @@ void ctl_auto_tuning_mtr_current_ctrl(mc_foc_init_t* init)
     init->kiq = 1 / Tq;
 }
 
-void ctl_init_mtr_current_ctrl(mc_foc_core_t* mc, mc_foc_init_t* init)
+void ctl_init_foc_core(mc_foc_core_t* mc, mc_foc_init_t* init)
 {
     int i;
 
@@ -113,5 +113,5 @@ void ctl_init_mtr_current_ctrl(mc_foc_core_t* mc, mc_foc_init_t* init)
     mc->flag_enable_vdq_feedforward = 0;  // Ä¬ÈÏ¹Ø±ÕÇ°À¡
 
     // 7. Clear all states
-    ctl_clear_mtr_current_ctrl(mc);
+    ctl_clear_foc_core(mc);
 }
