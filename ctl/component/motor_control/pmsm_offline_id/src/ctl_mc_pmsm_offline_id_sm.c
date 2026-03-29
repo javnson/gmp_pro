@@ -11,8 +11,8 @@
 #include <ctl/component/motor_control/observer/pmsm_esmo.h>
 
 #include <ctl/component/motor_control/consultant/mech_consultant.h>
-#include <ctl/component/motor_control/consultant/pu_consultant.h>
 #include <ctl/component/motor_control/consultant/pmsm_consultant.h>
+#include <ctl/component/motor_control/consultant/pu_consultant.h>
 
 #include <ctl/component/motor_control/pmsm_offline_id/pmsm_offline_id_sm.h>
 
@@ -28,7 +28,7 @@
  */
 void ctl_init_oid_rs_dt(ctl_pmsm_offline_id_t* ctx)
 {
-    ctx->sub_rs_dt.sm = PMSM_OID_RSDT_INIT;
+    ctx->sub_rs_dt.sm = PMSM_ID_RSDT_INIT;
     ctx->sub_rs_dt.is_first_entry = 1;
 
     ctx->sub_rs_dt.tick_timer = 0;
@@ -50,22 +50,21 @@ void ctl_step_oid_rs_dt_isr(ctl_pmsm_offline_id_t* ctx)
 
     switch (sub->sm)
     {
-    case PMSM_OID_RSDT_DISABLED:
-    case PMSM_OID_RSDT_INIT:
-    case PMSM_OID_RSDT_CALCULATE:
-    case PMSM_OID_RSDT_COMPLETE:
-    case PMSM_OID_RSDT_FAULT:
+    case PMSM_ID_RSDT_DISABLED:
+    case PMSM_ID_RSDT_INIT:
+    case PMSM_ID_RSDT_CALCULATE:
+    case PMSM_ID_RSDT_COMPLETE:
+    case PMSM_ID_RSDT_FAULT:
         break; // Managed by background loop.
 
-    case PMSM_OID_RSDT_ALIGN_SETTLE:
+    case PMSM_ID_RSDT_ALIGN_SETTLE:
         if (sub->is_first_entry)
         {
             // Calculate angle_pu directly via multiplication to avoid cumulative float error
             // 1.0f / 6.0f = 0.1666667f
             if (sub->angle_idx < 6)
-            {
                 sub->angle_pu = sub->angle_pu_array[sub->angle_idx];
-            }
+            
             ctl_id_set_static_angle(ctx, sub->angle_pu);
 
             // Apply maximum current to guarantee rotor alignment
@@ -76,19 +75,19 @@ void ctl_step_oid_rs_dt_isr(ctl_pmsm_offline_id_t* ctx)
         }
 
         sub->tick_timer++;
+
         if (sub->tick_timer >= sub->align_ticks)
         {
-            sub->sm = PMSM_OID_RSDT_STEP_DELAY;
+            sub->sm = PMSM_ID_RSDT_STEP_DELAY;
             sub->is_first_entry = 1;
         }
         break;
 
-    case PMSM_OID_RSDT_STEP_DELAY:
+    case PMSM_ID_RSDT_STEP_DELAY:
         if (sub->is_first_entry)
         {
             // Dynamic current calculation using basic math
-            ctrl_gt increment = ctl_mul(float2ctrl((float)sub->step_idx), sub->step_size_pu);
-            sub->current_ref_pu = cfg->min_current_pu + increment;
+            sub->current_ref_pu += sub->step_size_pu;
 
             ctl_id_apply_dc_current(ctx, sub->current_ref_pu, float2ctrl(0.0f));
 
@@ -97,14 +96,15 @@ void ctl_step_oid_rs_dt_isr(ctl_pmsm_offline_id_t* ctx)
         }
 
         sub->tick_timer++;
+
         if (sub->tick_timer >= sub->measure_delay_ticks)
         {
-            sub->sm = PMSM_OID_RSDT_MEASURE;
+            sub->sm = PMSM_ID_RSDT_MEASURE;
             sub->is_first_entry = 1;
         }
         break;
 
-    case PMSM_OID_RSDT_MEASURE:
+    case PMSM_ID_RSDT_MEASURE:
         if (sub->is_first_entry)
         {
             sub->tick_timer = 0;
@@ -128,12 +128,12 @@ void ctl_step_oid_rs_dt_isr(ctl_pmsm_offline_id_t* ctx)
             // Divider is set to 1, so this triggers and advances the index immediately.
             ctl_step_dsa_scope_2ch(&ctx->analyzer, avg_i, avg_u);
 
-            sub->sm = PMSM_OID_RSDT_STEP_EVALUATE;
+            sub->sm = PMSM_ID_RSDT_STEP_EVALUATE;
             sub->is_first_entry = 1;
         }
         break;
 
-    case PMSM_OID_RSDT_STEP_EVALUATE:
+    case PMSM_ID_RSDT_STEP_EVALUATE:
         if (sub->is_first_entry)
         {
             sub->step_idx++;
@@ -145,16 +145,16 @@ void ctl_step_oid_rs_dt_isr(ctl_pmsm_offline_id_t* ctx)
 
                 if (sub->angle_idx >= 6)
                 {
-                    sub->sm = PMSM_OID_RSDT_CALCULATE;
+                    sub->sm = PMSM_ID_RSDT_CALCULATE;
                 }
                 else
                 {
-                    sub->sm = PMSM_OID_RSDT_ALIGN_SETTLE;
+                    sub->sm = PMSM_ID_RSDT_ALIGN_SETTLE;
                 }
             }
             else
             {
-                sub->sm = PMSM_OID_RSDT_STEP_DELAY;
+                sub->sm = PMSM_ID_RSDT_STEP_DELAY;
             }
             sub->is_first_entry = 1;
         }
@@ -174,63 +174,54 @@ void ctl_loop_oid_rs_dt(ctl_pmsm_offline_id_t* ctx)
     uint16_t i;
 
     // --- Safety Rule: Zero output in passive states ---
-    if (sub->sm == PMSM_OID_RSDT_CALCULATE || sub->sm == PMSM_OID_RSDT_COMPLETE || sub->sm == PMSM_OID_RSDT_FAULT)
+    if (sub->sm == PMSM_ID_RSDT_CALCULATE || sub->sm == PMSM_ID_RSDT_COMPLETE || sub->sm == PMSM_ID_RSDT_FAULT)
     {
         ctl_id_disable_output(ctx);
     }
 
-    if (sub->sm == PMSM_OID_RSDT_INIT)
+    // The first time entry PMSM_ID_RSDT_INIT state
+    if (sub->sm == PMSM_ID_RSDT_INIT && sub->is_first_entry)
     {
-        if (sub->is_first_entry)
-        {
-            // 1. Pre-calculate ISR constants
-            sub->align_ticks = SEC_TO_TICKS(cfg->align_time_s, ctx->cfg_basic.isr_freq_hz);
-            sub->measure_delay_ticks = SEC_TO_TICKS(cfg->measure_delay_s, ctx->cfg_basic.isr_freq_hz);
+        // 1. Pre-calculate ISR constants
+        sub->align_ticks = SEC_TO_TICKS(cfg->align_time_s, ctx->cfg_basic.isr_freq_hz);
+        sub->measure_delay_ticks = SEC_TO_TICKS(cfg->measure_delay_s, ctx->cfg_basic.isr_freq_hz);
 
-            if (cfg->measure_points > 0)
-            {
-                sub->inv_measure_points = ctl_div(float2ctrl(1.0f), float2ctrl((float)cfg->measure_points));
-            }
-            else
-            {
-                sub->inv_measure_points = float2ctrl(1.0f); // Fallback
-            }
+        if (cfg->measure_points > 0)
+            sub->inv_measure_points = ctl_div(float2ctrl(1.0f), float2ctrl((float)cfg->measure_points));
+        else
+            sub->inv_measure_points = float2ctrl(1.0f); // Fallback
 
-            if (cfg->steps > 1)
-            {
-                sub->step_size_pu =
-                    ctl_div((cfg->max_current_pu - cfg->min_current_pu), float2ctrl((float)(cfg->steps - 1)));
-            }
-            else
-            {
-                sub->step_size_pu = float2ctrl(0.0f);
-            }
+        if (cfg->steps > 1)
+            sub->step_size_pu =
+                ctl_div((cfg->max_current_pu - cfg->min_current_pu), float2ctrl((float)(cfg->steps - 1)));
+        else
+            sub->step_size_pu = float2ctrl(0.0f);
 
-            for (i = 0; i < 6; i++)
-            {
-                sub->angle_pu_array[i] = float2ctrl((float)i * 0.1666667f);
-            }
+        // prepare 6 position to measurement
+        for (i = 0; i < 6; i++)
+            sub->angle_pu_array[i] = float2ctrl((float)i * 0.1666667f);
 
-            // 2. Configure FOC core
-            ctl_id_route_foc_angle(ctx, PMSM_OID_ANGLE_SRC_STATIC);
-            ctl_id_set_foc_state(&ctx, PMSM_ID_CURRENT_CLOSELOOP);
+        // prepare current increment
+        //sub->current_increment = ctl_mul(float2ctrl((float)sub->step_idx), sub->step_size_pu);
+        sub->current_ref_pu = float2ctrl(cfg->min_current_pu);
 
-            ctl_enable_mtr_current_ctrl(&ctx->foc_core);
-            ctx->foc_core.flag_enable_decouple = 0;
-            ctx->foc_core.flag_enable_vdq_feedforward = 0;
+        // 2. Configure FOC core
+        ctl_id_route_foc_angle(&ctx, PMSM_ID_ANGLE_SRC_STATIC);
+        ctl_id_set_foc_state(&ctx, PMSM_ID_CURRENT_CLOSELOOP);
 
-            // 3. Configure DSA Scope for RS_DT:
-            // We need 2 dimensions (Current, Voltage).
-            // We trigger manually per step, so divider = 1.
-            ctl_wipe_dsa_scope_memory(&ctx->analyzer);
-            ctl_config_dsa_scope(&ctx->analyzer, 2, 1);
+        // 3. Configure DSA Scope for RS_DT:
+        // We need 2 dimensions (Current, Voltage).
+        // We trigger manually per step, so divider = 1.
+        ctl_wipe_dsa_scope_memory(&ctx->analyzer);
+        ctl_config_dsa_scope(&ctx->analyzer, 2, 1);
 
-            sub->is_first_entry = 0;
-            sub->sm = PMSM_OID_RSDT_ALIGN_SETTLE;
-            sub->is_first_entry = 1;
-        }
+        // Close this callback
+        sub->is_first_entry = 0;
+
+        sub->sm = PMSM_ID_RSDT_ALIGN_SETTLE;
+        sub->is_first_entry = 1;
     }
-    else if (sub->sm == PMSM_OID_RSDT_CALCULATE)
+    else if (sub->sm == PMSM_ID_RSDT_CALCULATE)
     {
         if (sub->is_first_entry)
         {
@@ -255,7 +246,7 @@ void ctl_loop_oid_rs_dt(ctl_pmsm_offline_id_t* ctx)
                 else
                 {
                     // Fallback or Trigger Fault if matrix is singular
-                    sub->sm = PMSM_OID_RSDT_FAULT;
+                    sub->sm = PMSM_ID_RSDT_FAULT;
                     return;
                 }
 
@@ -288,7 +279,7 @@ void ctl_loop_oid_rs_dt(ctl_pmsm_offline_id_t* ctx)
             ctl_wipe_dsa_scope_memory(&ctx->analyzer);
 
             sub->is_first_entry = 0;
-            sub->sm = PMSM_OID_RSDT_COMPLETE;
+            sub->sm = PMSM_ID_RSDT_COMPLETE;
         }
     }
 }
@@ -307,7 +298,7 @@ void ctl_loop_oid_rs_dt(ctl_pmsm_offline_id_t* ctx)
  */
 void ctl_init_oid_ldq(ctl_pmsm_offline_id_t* ctx)
 {
-    ctx->sub_ldq.sm = PMSM_OID_LDQ_INIT;
+    ctx->sub_ldq.sm = PMSM_ID_LDQ_INIT;
     ctx->sub_ldq.is_first_entry = 1;
 
     ctx->sub_ldq.tick_timer = 0;
@@ -328,14 +319,14 @@ void ctl_step_oid_ldq_isr(ctl_pmsm_offline_id_t* ctx)
 
     switch (sub->sm)
     {
-    case PMSM_OID_LDQ_DISABLED:
-    case PMSM_OID_LDQ_INIT:
-    case PMSM_OID_LDQ_CALCULATE:
-    case PMSM_OID_LDQ_COMPLETE:
-    case PMSM_OID_LDQ_FAULT:
+    case PMSM_ID_LDQ_DISABLED:
+    case PMSM_ID_LDQ_INIT:
+    case PMSM_ID_LDQ_CALCULATE:
+    case PMSM_ID_LDQ_COMPLETE:
+    case PMSM_ID_LDQ_FAULT:
         break;
 
-    case PMSM_OID_LDQ_BIAS_SETTLE:
+    case PMSM_ID_LDQ_BIAS_SETTLE:
         if (sub->is_first_entry)
         {
             // Start from 0A bias to Max
@@ -360,12 +351,12 @@ void ctl_step_oid_ldq_isr(ctl_pmsm_offline_id_t* ctx)
         sub->tick_timer++;
         if (sub->tick_timer >= sub->settle_ticks)
         {
-            sub->sm = PMSM_OID_LDQ_PULSE_MEASURE;
+            sub->sm = PMSM_ID_LDQ_PULSE_MEASURE;
             sub->is_first_entry = 1;
         }
         break;
 
-    case PMSM_OID_LDQ_PULSE_MEASURE:
+    case PMSM_ID_LDQ_PULSE_MEASURE:
         if (sub->is_first_entry)
         {
             // 1. Freeze current PI outputs (These compensate for Rs*I and Dead-time automatically)
@@ -411,12 +402,12 @@ void ctl_step_oid_ldq_isr(ctl_pmsm_offline_id_t* ctx)
                 sub->q_end_idx[sub->bias_step_idx] = end_idx;
             }
 
-            sub->sm = PMSM_OID_LDQ_COOLDOWN;
+            sub->sm = PMSM_ID_LDQ_COOLDOWN;
             sub->is_first_entry = 1;
         }
         break;
 
-    case PMSM_OID_LDQ_COOLDOWN:
+    case PMSM_ID_LDQ_COOLDOWN:
         if (sub->is_first_entry)
         {
             // Apply frozen voltage WITHOUT pulse to let the inductive energy decay
@@ -429,12 +420,12 @@ void ctl_step_oid_ldq_isr(ctl_pmsm_offline_id_t* ctx)
         sub->tick_timer++;
         if (sub->tick_timer >= sub->cooldown_ticks)
         {
-            sub->sm = PMSM_OID_LDQ_STEP_EVALUATE;
+            sub->sm = PMSM_ID_LDQ_STEP_EVALUATE;
             sub->is_first_entry = 1;
         }
         break;
 
-    case PMSM_OID_LDQ_STEP_EVALUATE:
+    case PMSM_ID_LDQ_STEP_EVALUATE:
         if (sub->is_first_entry)
         {
             sub->bias_step_idx++;
@@ -444,16 +435,16 @@ void ctl_step_oid_ldq_isr(ctl_pmsm_offline_id_t* ctx)
                 {
                     sub->is_measuring_q_axis = 1; // Switch to Q-axis
                     sub->bias_step_idx = 0;
-                    sub->sm = PMSM_OID_LDQ_BIAS_SETTLE;
+                    sub->sm = PMSM_ID_LDQ_BIAS_SETTLE;
                 }
                 else
                 {
-                    sub->sm = PMSM_OID_LDQ_CALCULATE; // Both axes done
+                    sub->sm = PMSM_ID_LDQ_CALCULATE; // Both axes done
                 }
             }
             else
             {
-                sub->sm = PMSM_OID_LDQ_BIAS_SETTLE; // Next bias step
+                sub->sm = PMSM_ID_LDQ_BIAS_SETTLE; // Next bias step
             }
             sub->is_first_entry = 1;
         }
@@ -474,12 +465,12 @@ void ctl_loop_oid_ldq(ctl_pmsm_offline_id_t* ctx)
     uint16_t i;
 
     // --- Safety Rule: Zero output in passive states ---
-    if (sub->sm == PMSM_OID_LDQ_CALCULATE || sub->sm == PMSM_OID_LDQ_COMPLETE || sub->sm == PMSM_OID_LDQ_FAULT)
+    if (sub->sm == PMSM_ID_LDQ_CALCULATE || sub->sm == PMSM_ID_LDQ_COMPLETE || sub->sm == PMSM_ID_LDQ_FAULT)
     {
         ctl_id_disable_output(ctx);
     }
 
-    if (sub->sm == PMSM_OID_LDQ_INIT)
+    if (sub->sm == PMSM_ID_LDQ_INIT)
     {
         if (sub->is_first_entry)
         {
@@ -510,11 +501,11 @@ void ctl_loop_oid_ldq(ctl_pmsm_offline_id_t* ctx)
             ctl_config_dsa_scope(&ctx->analyzer, 1, 1);
 
             sub->is_first_entry = 0;
-            sub->sm = PMSM_OID_LDQ_BIAS_SETTLE;
+            sub->sm = PMSM_ID_LDQ_BIAS_SETTLE;
             sub->is_first_entry = 1;
         }
     }
-    else if (sub->sm == PMSM_OID_LDQ_CALCULATE)
+    else if (sub->sm == PMSM_ID_LDQ_CALCULATE)
     {
         if (sub->is_first_entry)
         {
@@ -559,7 +550,7 @@ void ctl_loop_oid_ldq(ctl_pmsm_offline_id_t* ctx)
             ctl_wipe_dsa_scope_memory(&ctx->analyzer);
 
             sub->is_first_entry = 0;
-            sub->sm = PMSM_OID_LDQ_COMPLETE;
+            sub->sm = PMSM_ID_LDQ_COMPLETE;
         }
     }
 }
@@ -577,7 +568,7 @@ void ctl_loop_oid_ldq(ctl_pmsm_offline_id_t* ctx)
  */
 void ctl_init_oid_flux(ctl_pmsm_offline_id_t* ctx)
 {
-    ctx->sub_flux.sm = PMSM_OID_FLUX_INIT;
+    ctx->sub_flux.sm = PMSM_ID_FLUX_INIT;
     ctx->sub_flux.is_first_entry = 1;
 
     ctx->sub_flux.tick_timer = 0;
@@ -596,7 +587,7 @@ void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
     pmsm_oid_cfg_flux_t* cfg = &sub->cfg;
 
     // Global action: Continue V/F angle generation and maintain drag current
-    if (sub->sm >= PMSM_OID_FLUX_RAMP_SPEED && sub->sm <= PMSM_OID_FLUX_RAMP_STOP)
+    if (sub->sm >= PMSM_ID_FLUX_RAMP_SPEED && sub->sm <= PMSM_ID_FLUX_RAMP_STOP)
     {
         ctl_id_step_vf_generator(ctx);
         ctl_id_apply_dc_current(ctx, cfg->if_current_pu, float2ctrl(0.0f));
@@ -604,14 +595,14 @@ void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
 
     switch (sub->sm)
     {
-    case PMSM_OID_FLUX_DISABLED:
-    case PMSM_OID_FLUX_INIT:
-    case PMSM_OID_FLUX_CALCULATE:
-    case PMSM_OID_FLUX_COMPLETE:
-    case PMSM_OID_FLUX_FAULT:
+    case PMSM_ID_FLUX_DISABLED:
+    case PMSM_ID_FLUX_INIT:
+    case PMSM_ID_FLUX_CALCULATE:
+    case PMSM_ID_FLUX_COMPLETE:
+    case PMSM_ID_FLUX_FAULT:
         break;
 
-    case PMSM_OID_FLUX_RAMP_SPEED:
+    case PMSM_ID_FLUX_RAMP_SPEED:
         if (sub->is_first_entry)
         {
             // Dynamic target calculation (Addition logic instead of multiplication)
@@ -633,13 +624,13 @@ void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
             ctrl_gt err = sub->target_w_pu - ctx->vf_gen.current_freq_pu;
             if (err < float2ctrl(0.001f) && err > float2ctrl(-0.001f))
             {
-                sub->sm = PMSM_OID_FLUX_SETTLE;
+                sub->sm = PMSM_ID_FLUX_SETTLE;
                 sub->is_first_entry = 1;
             }
         }
         break;
 
-    case PMSM_OID_FLUX_SETTLE:
+    case PMSM_ID_FLUX_SETTLE:
         if (sub->is_first_entry)
         {
             sub->tick_timer = 0;
@@ -649,12 +640,12 @@ void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
         sub->tick_timer++;
         if (sub->tick_timer >= sub->settle_ticks)
         {
-            sub->sm = PMSM_OID_FLUX_MEASURE;
+            sub->sm = PMSM_ID_FLUX_MEASURE;
             sub->is_first_entry = 1;
         }
         break;
 
-    case PMSM_OID_FLUX_MEASURE:
+    case PMSM_ID_FLUX_MEASURE:
         if (sub->is_first_entry)
         {
             sub->tick_timer = 0;
@@ -698,28 +689,28 @@ void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
                 ctx->analyzer.current_idx++;
             }
 
-            sub->sm = PMSM_OID_FLUX_STEP_EVALUATE;
+            sub->sm = PMSM_ID_FLUX_STEP_EVALUATE;
             sub->is_first_entry = 1;
         }
         break;
 
-    case PMSM_OID_FLUX_STEP_EVALUATE:
+    case PMSM_ID_FLUX_STEP_EVALUATE:
         if (sub->is_first_entry)
         {
             sub->step_idx++;
             if (sub->step_idx >= cfg->steps)
             {
-                sub->sm = PMSM_OID_FLUX_RAMP_STOP;
+                sub->sm = PMSM_ID_FLUX_RAMP_STOP;
             }
             else
             {
-                sub->sm = PMSM_OID_FLUX_RAMP_SPEED;
+                sub->sm = PMSM_ID_FLUX_RAMP_SPEED;
             }
             sub->is_first_entry = 1;
         }
         break;
 
-    case PMSM_OID_FLUX_RAMP_STOP:
+    case PMSM_ID_FLUX_RAMP_STOP:
         if (sub->is_first_entry)
         {
             ctl_id_set_vf_target_speed(ctx, float2ctrl(0.0f));
@@ -728,7 +719,7 @@ void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
 
         if (ctx->vf_gen.current_freq_pu <= float2ctrl(0.005f))
         {
-            sub->sm = PMSM_OID_FLUX_CALCULATE;
+            sub->sm = PMSM_ID_FLUX_CALCULATE;
             sub->is_first_entry = 1;
         }
         break;
@@ -747,12 +738,12 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
     uint32_t i;
 
     // --- Safety Rule: Zero output in passive states ---
-    if (sub->sm == PMSM_OID_FLUX_CALCULATE || sub->sm == PMSM_OID_FLUX_COMPLETE || sub->sm == PMSM_OID_FLUX_FAULT)
+    if (sub->sm == PMSM_ID_FLUX_CALCULATE || sub->sm == PMSM_ID_FLUX_COMPLETE || sub->sm == PMSM_ID_FLUX_FAULT)
     {
         ctl_id_disable_output(ctx);
     }
 
-    if (sub->sm == PMSM_OID_FLUX_INIT)
+    if (sub->sm == PMSM_ID_FLUX_INIT)
     {
         if (sub->is_first_entry)
         {
@@ -779,7 +770,7 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
             }
 
             // 2. Configure FOC core for I/F mode
-            ctl_id_route_foc_angle(ctx, PMSM_OID_ANGLE_SRC_VF_GEN);
+            ctl_id_route_foc_angle(ctx, PMSM_ID_ANGLE_SRC_VF_GEN);
             ctl_enable_mtr_current_ctrl(&ctx->foc_core);
             ctx->foc_core.flag_enable_decouple = 0;
             ctx->foc_core.flag_enable_vdq_feedforward = 0;
@@ -792,11 +783,11 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
             ctl_config_dsa_scope(&ctx->analyzer, 6, 1);
 
             sub->is_first_entry = 0;
-            sub->sm = PMSM_OID_FLUX_RAMP_SPEED;
+            sub->sm = PMSM_ID_FLUX_RAMP_SPEED;
             sub->is_first_entry = 1;
         }
     }
-    else if (sub->sm == PMSM_OID_FLUX_CALCULATE)
+    else if (sub->sm == PMSM_ID_FLUX_CALCULATE)
     {
         if (sub->is_first_entry)
         {
@@ -834,7 +825,7 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
 
             if (!fit_ok)
             {
-                sub->sm = PMSM_OID_FLUX_FAULT;
+                sub->sm = PMSM_ID_FLUX_FAULT;
                 return;
             }
 
@@ -860,7 +851,7 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
             ctl_wipe_dsa_scope_memory(&ctx->analyzer);
 
             sub->is_first_entry = 0;
-            sub->sm = PMSM_OID_FLUX_COMPLETE;
+            sub->sm = PMSM_ID_FLUX_COMPLETE;
         }
     }
 }
@@ -879,7 +870,7 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
  */
 void ctl_init_oid_mech(ctl_pmsm_offline_id_t* ctx)
 {
-    ctx->sub_mech.sm = PMSM_OID_MECH_INIT;
+    ctx->sub_mech.sm = PMSM_ID_MECH_INIT;
     ctx->sub_mech.is_first_entry = 1;
 
     ctx->sub_mech.tick_timer = 0;
@@ -904,15 +895,15 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
 
     switch (sub->sm)
     {
-    case PMSM_OID_MECH_DISABLED:
-    case PMSM_OID_MECH_INIT:
-    case PMSM_OID_MECH_CALCULATE:
-    case PMSM_OID_MECH_COMPLETE:
-    case PMSM_OID_MECH_FAULT:
+    case PMSM_ID_MECH_DISABLED:
+    case PMSM_ID_MECH_INIT:
+    case PMSM_ID_MECH_CALCULATE:
+    case PMSM_ID_MECH_COMPLETE:
+    case PMSM_ID_MECH_FAULT:
         break; // Loop handles these.
 
     // --- (IF_START 和 HANDOVER_TO_CLOSED 保持你提供的完美逻辑，此处略写以突出核心) ---
-    case PMSM_OID_MECH_IF_START:
+    case PMSM_ID_MECH_IF_START:
         if (sub->is_first_entry)
         {
             ctl_id_set_vf_target_speed(ctx, cfg->low_speed_pu);
@@ -921,12 +912,12 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
         }
         if (ctx->vf_gen.current_freq_pu >= cfg->low_speed_pu)
         {
-            sub->sm = PMSM_OID_MECH_HANDOVER_TO_CLOSED;
+            sub->sm = PMSM_ID_MECH_HANDOVER_TO_CLOSED;
             sub->is_first_entry = 1;
         }
         break;
 
-    case PMSM_OID_MECH_HANDOVER_TO_CLOSED:
+    case PMSM_ID_MECH_HANDOVER_TO_CLOSED:
         if (sub->is_first_entry)
         {
             sub->tick_timer = 0;
@@ -942,7 +933,7 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
         sub->tick_timer++;
         if (sub->tick_timer >= sub->transition_ticks)
         {
-            sub->sm = PMSM_OID_MECH_STEADY_LOW;
+            sub->sm = PMSM_ID_MECH_STEADY_LOW;
             sub->is_first_entry = 1;
         }
         break;
@@ -950,8 +941,8 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
     // -------------------------------------------------------------
     // Steady State (Low & High) for Friction Measurement
     // -------------------------------------------------------------
-    case PMSM_OID_MECH_STEADY_LOW:
-    case PMSM_OID_MECH_STEADY_HIGH:
+    case PMSM_ID_MECH_STEADY_LOW:
+    case PMSM_ID_MECH_STEADY_HIGH:
         if (sub->is_first_entry)
         {
             sub->tick_timer = 0;
@@ -961,7 +952,7 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
 
         // Mini I-Controller for Speed Hold
         {
-            ctrl_gt target_spd = (sub->sm == PMSM_OID_MECH_STEADY_LOW) ? cfg->low_speed_pu : cfg->high_speed_pu;
+            ctrl_gt target_spd = (sub->sm == PMSM_ID_MECH_STEADY_LOW) ? cfg->low_speed_pu : cfg->high_speed_pu;
             ctrl_gt err = target_spd - current_speed_pu;
             sub->active_iq_ref_pu += ctl_mul(err, float2ctrl(0.001f)); // Soft I-gain
             sub->active_iq_ref_pu = ctl_sat(sub->active_iq_ref_pu, float2ctrl(0.5f), float2ctrl(-0.5f));
@@ -975,15 +966,15 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
         {
             parameter_gt avg_iq = (parameter_gt)ctl_mul(sub->sum_iq_steady, sub->inv_settle_ticks);
 
-            if (sub->sm == PMSM_OID_MECH_STEADY_LOW)
+            if (sub->sm == PMSM_ID_MECH_STEADY_LOW)
             {
                 sub->iq_steady_low_pu = avg_iq;
-                sub->sm = PMSM_OID_MECH_ACCEL_TEST;
+                sub->sm = PMSM_ID_MECH_ACCEL_TEST;
             }
             else
             {
                 sub->iq_steady_high_pu = avg_iq;
-                sub->sm = PMSM_OID_MECH_DECEL_TEST;
+                sub->sm = PMSM_ID_MECH_DECEL_TEST;
             }
             sub->is_first_entry = 1;
         }
@@ -992,7 +983,7 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
     // -------------------------------------------------------------
     // Acceleration Test
     // -------------------------------------------------------------
-    case PMSM_OID_MECH_ACCEL_TEST:
+    case PMSM_ID_MECH_ACCEL_TEST:
         if (sub->is_first_entry)
         {
             sub->tick_timer = 0;
@@ -1014,7 +1005,7 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
             sub->da_idx_accel_end = (ctx->analyzer.current_idx > 0) ? ctx->analyzer.current_idx - 1 : 0;
 
             sub->active_iq_ref_pu = cfg->accel_iq_pu; // Handover initial value for STEADY_HIGH PI
-            sub->sm = PMSM_OID_MECH_STEADY_HIGH;
+            sub->sm = PMSM_ID_MECH_STEADY_HIGH;
             sub->is_first_entry = 1;
         }
         break;
@@ -1022,7 +1013,7 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
     // -------------------------------------------------------------
     // Deceleration Test
     // -------------------------------------------------------------
-    case PMSM_OID_MECH_DECEL_TEST:
+    case PMSM_ID_MECH_DECEL_TEST:
         if (sub->is_first_entry)
         {
             sub->tick_timer = 0;
@@ -1037,7 +1028,7 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
         if (ctx->foc_core.udc > cfg->max_vbus_pu)
         {
             ctl_id_disable_output(ctx);
-            sub->sm = PMSM_OID_MECH_FAULT;
+            sub->sm = PMSM_ID_MECH_FAULT;
             sub->is_first_entry = 1;
             break;
         }
@@ -1051,13 +1042,13 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
             // 记录结束索引
             sub->da_idx_decel_end = (ctx->analyzer.current_idx > 0) ? ctx->analyzer.current_idx - 1 : 0;
 
-            sub->sm = PMSM_OID_MECH_HANDOVER_TO_IF;
+            sub->sm = PMSM_ID_MECH_HANDOVER_TO_IF;
             sub->is_first_entry = 1;
         }
         break;
 
     // --- (HANDOVER_TO_IF 和 IF_STOP 保持原逻辑) ---
-    case PMSM_OID_MECH_HANDOVER_TO_IF:
+    case PMSM_ID_MECH_HANDOVER_TO_IF:
         if (sub->is_first_entry)
         {
             sub->tick_timer = 0;
@@ -1075,12 +1066,12 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
         sub->tick_timer++;
         if (sub->tick_timer >= sub->transition_ticks)
         {
-            sub->sm = PMSM_OID_MECH_IF_STOP;
+            sub->sm = PMSM_ID_MECH_IF_STOP;
             sub->is_first_entry = 1;
         }
         break;
 
-    case PMSM_OID_MECH_IF_STOP:
+    case PMSM_ID_MECH_IF_STOP:
         if (sub->is_first_entry)
         {
             ctl_id_set_vf_target_speed(ctx, float2ctrl(0.0f));
@@ -1088,7 +1079,7 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
         }
         if (ctx->vf_gen.current_freq_pu <= float2ctrl(0.005f))
         {
-            sub->sm = PMSM_OID_MECH_CALCULATE;
+            sub->sm = PMSM_ID_MECH_CALCULATE;
             sub->is_first_entry = 1;
         }
         break;
@@ -1107,12 +1098,12 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
     pmsm_oid_cfg_mech_t* cfg = &sub->cfg;
 
     // --- Safety Rule ---
-    if (sub->sm == PMSM_OID_MECH_CALCULATE || sub->sm == PMSM_OID_MECH_COMPLETE || sub->sm == PMSM_OID_MECH_FAULT)
+    if (sub->sm == PMSM_ID_MECH_CALCULATE || sub->sm == PMSM_ID_MECH_COMPLETE || sub->sm == PMSM_ID_MECH_FAULT)
     {
         ctl_id_disable_output(ctx);
     }
 
-    if (sub->sm == PMSM_OID_MECH_INIT)
+    if (sub->sm == PMSM_ID_MECH_INIT)
     {
         if (sub->is_first_entry)
         {
@@ -1141,11 +1132,11 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
             ctl_config_dsa_scope(&ctx->analyzer, 1, div);
 
             sub->is_first_entry = 0;
-            sub->sm = PMSM_OID_MECH_IF_START;
+            sub->sm = PMSM_ID_MECH_IF_START;
             sub->is_first_entry = 1;
         }
     }
-    else if (sub->sm == PMSM_OID_MECH_CALCULATE)
+    else if (sub->sm == PMSM_ID_MECH_CALCULATE)
     {
         if (sub->is_first_entry)
         {
@@ -1225,15 +1216,12 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
             ctl_wipe_dsa_scope_memory(&ctx->analyzer);
 
             sub->is_first_entry = 0;
-            sub->sm = PMSM_OID_MECH_COMPLETE;
+            sub->sm = PMSM_ID_MECH_COMPLETE;
         }
     }
 }
 
 #pragma endregion
-
-
-
 
 /**
  * @brief High-frequency ISR step function for PMSM Offline Identification.
@@ -1267,25 +1255,25 @@ void ctl_step_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
 
     case PMSM_OFFLINE_ID_RS_DT:
         ctl_step_oid_rs_dt_isr(ctx);
-        if (ctx->sub_rs_dt.sm == PMSM_OID_RSDT_FAULT)
+        if (ctx->sub_rs_dt.sm == PMSM_ID_RSDT_FAULT)
             ctx->sm = PMSM_OFFLINE_ID_FAULT;
         break;
 
     case PMSM_OFFLINE_ID_LD_LQ:
         ctl_step_oid_ldq_isr(ctx);
-        if (ctx->sub_ldq.sm == PMSM_OID_LDQ_FAULT)
+        if (ctx->sub_ldq.sm == PMSM_ID_LDQ_FAULT)
             ctx->sm = PMSM_OFFLINE_ID_FAULT;
         break;
 
     case PMSM_OFFLINE_ID_FLUX:
         ctl_step_oid_flux_isr(ctx);
-        if (ctx->sub_flux.sm == PMSM_OID_FLUX_FAULT)
+        if (ctx->sub_flux.sm == PMSM_ID_FLUX_FAULT)
             ctx->sm = PMSM_OFFLINE_ID_FAULT;
         break;
 
     case PMSM_OFFLINE_ID_MECH:
         ctl_step_oid_mech_isr(ctx);
-        if (ctx->sub_mech.sm == PMSM_OID_MECH_FAULT)
+        if (ctx->sub_mech.sm == PMSM_ID_MECH_FAULT)
             ctx->sm = PMSM_OFFLINE_ID_FAULT;
         break;
 
@@ -1331,7 +1319,7 @@ void ctl_loop_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
     // ---------------------------------------------------------------------
     case PMSM_OFFLINE_ID_RS_DT:
         ctl_loop_oid_rs_dt(ctx);
-        if (ctx->sub_rs_dt.sm == PMSM_OID_RSDT_COMPLETE)
+        if (ctx->sub_rs_dt.sm == PMSM_ID_RSDT_COMPLETE)
         {
             ctx->sm = ctl_oid_get_next_state(ctx, PMSM_OFFLINE_ID_RS_DT);
             ctl_oid_init_target_state(ctx);
@@ -1340,7 +1328,7 @@ void ctl_loop_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
 
     case PMSM_OFFLINE_ID_LD_LQ:
         ctl_loop_oid_ldq(ctx);
-        if (ctx->sub_ldq.sm == PMSM_OID_LDQ_COMPLETE)
+        if (ctx->sub_ldq.sm == PMSM_ID_LDQ_COMPLETE)
         {
             ctx->sm = ctl_oid_get_next_state(ctx, PMSM_OFFLINE_ID_LD_LQ);
             ctl_oid_init_target_state(ctx);
@@ -1349,7 +1337,7 @@ void ctl_loop_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
 
     case PMSM_OFFLINE_ID_FLUX:
         ctl_loop_oid_flux(ctx);
-        if (ctx->sub_flux.sm == PMSM_OID_FLUX_COMPLETE)
+        if (ctx->sub_flux.sm == PMSM_ID_FLUX_COMPLETE)
         {
             ctx->sm = ctl_oid_get_next_state(ctx, PMSM_OFFLINE_ID_FLUX);
             ctl_oid_init_target_state(ctx);
@@ -1358,7 +1346,7 @@ void ctl_loop_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
 
     case PMSM_OFFLINE_ID_MECH:
         ctl_loop_oid_mech(ctx);
-        if (ctx->sub_mech.sm == PMSM_OID_MECH_COMPLETE)
+        if (ctx->sub_mech.sm == PMSM_ID_MECH_COMPLETE)
         {
             ctx->sm = ctl_oid_get_next_state(ctx, PMSM_OFFLINE_ID_MECH);
             ctl_oid_init_target_state(ctx);
@@ -1435,11 +1423,11 @@ void ctl_init_pmsm_offline_id_sm(ctl_pmsm_offline_id_t* ctx, const ctl_pmsm_offl
 
     // --- BINDING PROTECTION PORTS ---
     ctl_attach_mtr_protect_port(&ctx->protect,
-                                &ctx->foc_core.udc,     // Bus voltage
-                                (ctl_vector2_t*)(&ctx->foc_core.idq0),    // Measured actual Idq
-                                &ctx->foc_core.idq_ref, // Reference target Idq
-                                NULL,                   // Motor Temp (Optional)
-                                NULL                    // Inverter Temp (Optional)
+                                &ctx->foc_core.udc,                    // Bus voltage
+                                (ctl_vector2_t*)(&ctx->foc_core.idq0), // Measured actual Idq
+                                &ctx->foc_core.idq_ref,                // Reference target Idq
+                                NULL,                                  // Motor Temp (Optional)
+                                NULL                                   // Inverter Temp (Optional)
     );
 
     // Clear protection mask (enable all protections)
@@ -1448,10 +1436,10 @@ void ctl_init_pmsm_offline_id_sm(ctl_pmsm_offline_id_t* ctx, const ctl_pmsm_offl
     // =========================================================================
     // 3. Reset Sub-Process Trackers
     // =========================================================================
-    ctx->sub_rs_dt.sm = PMSM_OID_RSDT_DISABLED;
-    ctx->sub_ldq.sm = PMSM_OID_LDQ_DISABLED;
-    ctx->sub_flux.sm = PMSM_OID_FLUX_DISABLED;
-    ctx->sub_mech.sm = PMSM_OID_MECH_DISABLED;
+    ctx->sub_rs_dt.sm = PMSM_ID_RSDT_DISABLED;
+    ctx->sub_ldq.sm = PMSM_ID_LDQ_DISABLED;
+    ctx->sub_flux.sm = PMSM_ID_FLUX_DISABLED;
+    ctx->sub_mech.sm = PMSM_ID_MECH_DISABLED;
 
     // Clear parameter structures
     ctx->pmsm_param.Rs = 0.0f;
@@ -1518,10 +1506,10 @@ void ctl_init_pmsm_offline_id_sm(ctl_pmsm_offline_id_t* ctx, const ctl_pmsm_offl
 //    ctl_clear_slope_f_pu(&ctx->vf_gen);
 //
 //    // 3. Reset Sub-state machines
-//    ctx->sub_rs_dt.sm = PMSM_OID_RSDT_DISABLED;
-//    ctx->sub_ldq.sm = PMSM_OID_LDQ_DISABLED;
-//    ctx->sub_flux.sm = PMSM_OID_FLUX_DISABLED;
-//    ctx->sub_mech.sm = PMSM_OID_MECH_DISABLED;
+//    ctx->sub_rs_dt.sm = PMSM_ID_RSDT_DISABLED;
+//    ctx->sub_ldq.sm = PMSM_ID_LDQ_DISABLED;
+//    ctx->sub_flux.sm = PMSM_ID_FLUX_DISABLED;
+//    ctx->sub_mech.sm = PMSM_ID_MECH_DISABLED;
 //
 //    // 4. Return to Staging Ground
 //    ctx->sm = PMSM_OFFLINE_ID_READY;

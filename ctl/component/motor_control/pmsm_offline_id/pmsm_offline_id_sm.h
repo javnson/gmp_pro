@@ -22,34 +22,34 @@ typedef enum _tag_pmsm_offline_id_rs_dt_sm
     /** * @brief 0: Idle / Bypassed.
      * @details PWM is off or the module is skipped. Safe state. 
      */
-    PMSM_OID_RSDT_DISABLED = 0,
+    PMSM_ID_RSDT_DISABLED = 0,
 
     /** * @brief 1: Initialization.
      * @details Triggers the background loop to pre-calculate tick delays and current arrays.
      * @note Debug: Resets `angle_idx` = 0, `step_idx` = 0, `tick_timer` = 0. 
      */
-    PMSM_OID_RSDT_INIT,
+    PMSM_ID_RSDT_INIT,
 
     /** * @brief 2: Mechanical & Electrical Alignment.
      * @details Forces the FOC static angle to `angle_pu_array[angle_idx]` and injects maximum 
      * current to pull the rotor to the target position.
      * @note Debug: `tick_timer` increments until it reaches `align_ticks` (derived from `cfg.align_time_s`). 
      */
-    PMSM_OID_RSDT_ALIGN_SETTLE,
+    PMSM_ID_RSDT_ALIGN_SETTLE,
 
     /** * @brief 3: Step Current Transient Delay.
      * @details Applies the specific target current `current_step_array[step_idx]` and waits for 
      * the L/R inductive transient to fully decay into a steady DC state.
      * @note Debug: `tick_timer` increments until it reaches `measure_delay_ticks` (derived from `cfg.measure_delay_s`). 
      */
-    PMSM_OID_RSDT_STEP_DELAY,
+    PMSM_ID_RSDT_STEP_DELAY,
 
     /** * @brief 4: Data Measurement & Accumulation.
      * @details Integrates voltage commands (`vdq_ref`) and actual currents (`idq0`) over a fixed number of ISR cycles.
      * @note Debug: `tick_timer` increments until it reaches `cfg.measure_points`. 
      * Variables `sum_u` and `sum_i` will actively accumulate during this state.
      */
-    PMSM_OID_RSDT_MEASURE,
+    PMSM_ID_RSDT_MEASURE,
 
     /** * @brief 5: Loop Evaluation & Routing.
      * @details A 0-tick transient state. Evaluates if all steps for the current angle are done, 
@@ -57,26 +57,26 @@ typedef enum _tag_pmsm_offline_id_rs_dt_sm
      * @note Debug: Watch `step_idx` and `angle_idx` increment here. Routes back to `STEP_DELAY`, 
      * `ALIGN_SETTLE`, or moves forward to `CALCULATE`.
      */
-    PMSM_OID_RSDT_STEP_EVALUATE,
+    PMSM_ID_RSDT_STEP_EVALUATE,
 
     /** * @brief 6: Least-Squares Calculation.
      * @details Hands over execution to the background loop to perform linear regression on the 
      * accumulated Data Analyzer points. Output is safely clamped to 0V/0A.
      * @note Debug: Watch for `rs_mean` and `vcomp_mean` to be populated in the main context.
      */
-    PMSM_OID_RSDT_CALCULATE,
+    PMSM_ID_RSDT_CALCULATE,
 
     /** * @brief 7: Identification Complete.
      * @details Signals the master state machine that Rs and DT parameters have been successfully 
      * updated in the global consultant structure. Output is disabled.
      */
-    PMSM_OID_RSDT_COMPLETE,
+    PMSM_ID_RSDT_COMPLETE,
 
     /** * @brief 8: Fault / Exception.
      * @details Entered upon over-current, timeout, or mathematical singularities during fitting.
      * Output is immediately disabled.
      */
-    PMSM_OID_RSDT_FAULT
+    PMSM_ID_RSDT_FAULT
 
 } pmsm_offline_id_rs_dt_sm_t;
 
@@ -109,12 +109,13 @@ typedef struct _tag_pmsm_offline_id_rs_dt
     ctrl_gt angle_pu_array[6];    /*!< NEW: Pre-calculated electrical angles to avoid float math in ISR. */
 
     // --- Runtime Context (ISR) ---
-    uint32_t tick_timer;    /*!< Internal timer for delays and settling. */
-    uint16_t angle_idx;     /*!< Current electrical angle index (0 to 5). */
-    ctrl_gt angle_pu;       /*!< Current active electrical angle. */
-    uint16_t step_idx;      /*!< Current injected current step index. */
-    ctrl_gt current_ref_pu; /*!< The active DC current reference being applied. */
-    fast_gt is_first_entry; /*!< Flag to distinguish between step (first entry) and hold logic. */
+    uint32_t tick_timer;       /*!< Internal timer for delays and settling. */
+    uint16_t angle_idx;        /*!< Current electrical angle index (0 to 5). */
+    ctrl_gt angle_pu;          /*!< Current active electrical angle. */
+    uint16_t step_idx;         /*!< Current injected current step index. */
+    ctrl_gt current_ref_pu;    /*!< The active DC current reference being applied. */
+    fast_gt is_first_entry;    /*!< Flag to distinguish between step (first entry) and hold logic. */
+    //ctrl_gt current_increment; /*!< Current increment for each step*/
 
     // --- Measurement Accumulators (ISR) ---
     ctrl_gt sum_u; /*!< Voltage accumulator for averaging. */
@@ -138,39 +139,39 @@ typedef struct _tag_pmsm_offline_id_rs_dt
  */
 typedef enum _tag_pmsm_offline_id_ld_lq_sm
 {
-    PMSM_OID_LDQ_DISABLED = 0, /*!< 0: Disabled/Bypass. Allows the main SM to skip this step. */
+    PMSM_ID_LDQ_DISABLED = 0, /*!< 0: Disabled/Bypass. Allows the main SM to skip this step. */
 
-    PMSM_OID_LDQ_INIT, /*!< 1: Initialize logic. Set target axis to D-axis (theta = alignment_offset).
+    PMSM_ID_LDQ_INIT, /*!< 1: Initialize logic. Set target axis to D-axis (theta = alignment_offset).
                                             Reset step counters and clear Data Analyzer buffers. */
 
-    PMSM_OID_LDQ_BIAS_SETTLE, /*!< 2: Apply DC Bias Current (Id_bias or Iq_bias) using PI controllers.
+    PMSM_ID_LDQ_BIAS_SETTLE, /*!< 2: Apply DC Bias Current (Id_bias or Iq_bias) using PI controllers.
                                             Wait for the L/R transient to settle. 
                                             If testing unsaturated L (bias=0A), just wait for I=0. */
 
-    PMSM_OID_LDQ_PULSE_MEASURE, /*!< 3: Open-loop Voltage Pulse Injection.
+    PMSM_ID_LDQ_PULSE_MEASURE, /*!< 3: Open-loop Voltage Pulse Injection.
                                             Suspend PI controllers. Inject a fixed voltage vector (e.g., U_test) 
                                             on the active axis for a VERY SHORT duration (e.g., 500us ~ 2ms).
                                             Trigger Data Analyzer to record high-speed current slope (di/dt). */
 
-    PMSM_OID_LDQ_COOLDOWN, /*!< 4: Flux/Energy Reset.
+    PMSM_ID_LDQ_COOLDOWN, /*!< 4: Flux/Energy Reset.
                                             Apply 0V (zero vector) or re-enable PI to drive current back to the 
                                             bias level or 0A. Wait until current is fully discharged to prevent 
                                             current runaway on the next pulse. */
 
-    PMSM_OID_LDQ_STEP_EVALUATE, /*!< 5: Loop Controller.
+    PMSM_ID_LDQ_STEP_EVALUATE, /*!< 5: Loop Controller.
                                             - If bias steps remain: Update bias current, go to BIAS_SETTLE.
                                             - If axis is D and D is done: Switch to Q-axis (theta += 90 deg), 
                                               reset steps, go to BIAS_SETTLE.
                                             - If both D and Q are mapped: Go to CALCULATE. */
 
-    PMSM_OID_LDQ_CALCULATE, /*!< 6: Trigger Math library. 
+    PMSM_ID_LDQ_CALCULATE, /*!< 6: Trigger Math library. 
                                             Calculate L = (U_ref - Rs*I - V_comp) / (di/dt) for each point.
                                             Fit the L-I saturation polynomial curves for D and Q axes. */
 
-    PMSM_OID_LDQ_COMPLETE, /*!< 7: Update the ctl_consultant_pu_pmsm_t structure.
+    PMSM_ID_LDQ_COMPLETE, /*!< 7: Update the ctl_consultant_pu_pmsm_t structure.
                                             Signal the main state machine to proceed. */
 
-    PMSM_OID_LDQ_FAULT /*!< 8: Exception handling. Triggered by over-current during pulse, 
+    PMSM_ID_LDQ_FAULT /*!< 8: Exception handling. Triggered by over-current during pulse, 
                                             unintended rotor movement (if encoder detects delta_theta > threshold), 
                                             or DA timeout. */
 
@@ -239,52 +240,52 @@ typedef struct _tag_pmsm_offline_id_ldq
 typedef enum _tag_pmsm_offline_id_flux_sm
 {
     /** @brief 0: Disabled/Bypass. Safe state. */
-    PMSM_OID_FLUX_DISABLED = 0,
+    PMSM_ID_FLUX_DISABLED = 0,
 
     /** @brief 1: Initialization. 
      * @details Pre-calculates step sizes and timing ticks in the background loop. 
      * @note Debug: Resets `step_idx` = 0, `is_first_entry` = 1. 
      */
-    PMSM_OID_FLUX_INIT,
+    PMSM_ID_FLUX_INIT,
 
     /** @brief 2: Speed Trajectory Generator.
      * @details Sets the target speed for the V/F generator and waits for the ramp to finish.
      * @note Debug: Watch `ctx->vf_gen.current_freq_pu` approach `target_w_pu`.
      */
-    PMSM_OID_FLUX_RAMP_SPEED,
+    PMSM_ID_FLUX_RAMP_SPEED,
 
     /** @brief 3: Mechanical Stabilization.
      * @details Waits for the "spring-pendulum" oscillation of the rotor to dampen.
      * @note Debug: `tick_timer` increments until `settle_ticks`.
      */
-    PMSM_OID_FLUX_SETTLE,
+    PMSM_ID_FLUX_SETTLE,
 
     /** @brief 4: Data Collection.
      * @details Accumulates Ud, Uq, Id, Iq, and W_ref over a fixed number of ISR ticks.
      * @note Debug: `tick_timer` increments until `cfg.measure_points`.
      */
-    PMSM_OID_FLUX_MEASURE,
+    PMSM_ID_FLUX_MEASURE,
 
     /** @brief 5: Loop Controller.
      * @details Evaluates if all speed steps are completed to route to STOP or next SPEED.
      */
-    PMSM_OID_FLUX_STEP_EVALUATE,
+    PMSM_ID_FLUX_STEP_EVALUATE,
 
     /** @brief 6: Safe Shutdown.
      * @details Ramps the speed down to 0 smoothly to avoid regenerative over-voltage.
      */
-    PMSM_OID_FLUX_RAMP_STOP,
+    PMSM_ID_FLUX_RAMP_STOP,
 
     /** @brief 7: Mathematical Fitting.
      * @details Hands over to the background loop. Calculates |E| and uses Data Analyzer to find Psi_m.
      */
-    PMSM_OID_FLUX_CALCULATE,
+    PMSM_ID_FLUX_CALCULATE,
 
     /** @brief 8: Update ctl_consultant_pu_pmsm_t structure. Signal Main SM. */
-    PMSM_OID_FLUX_COMPLETE,
+    PMSM_ID_FLUX_COMPLETE,
 
     /** @brief 9: Exception handling. (Over-current, Loss of Sync, OVP). */
-    PMSM_OID_FLUX_FAULT
+    PMSM_ID_FLUX_FAULT
 
 } pmsm_offline_id_flux_sm_t;
 
@@ -338,28 +339,28 @@ typedef struct _tag_pmsm_offline_id_flux
  */
 typedef enum _tag_pmsm_offline_id_mech_sm
 {
-    PMSM_OID_MECH_DISABLED = 0, /*!< 0: Disabled/Bypass. Safe state. */
+    PMSM_ID_MECH_DISABLED = 0, /*!< 0: Disabled/Bypass. Safe state. */
 
-    PMSM_OID_MECH_INIT, /*!< 1: Initialize. Pre-calculate ticks and limits in the background loop. */
+    PMSM_ID_MECH_INIT, /*!< 1: Initialize. Pre-calculate ticks and limits in the background loop. */
 
     // --- Stage 1: Spin up & Closed-loop Transition ---
-    PMSM_OID_MECH_IF_START,           /*!< 2: Open-loop start. Drive motor in I/F mode up to W_low. */
-    PMSM_OID_MECH_HANDOVER_TO_CLOSED, /*!< 3: Bumpless Transfer to Closed-Loop. Transition angle from VF to Real/SMO. */
-    PMSM_OID_MECH_STEADY_LOW,         /*!< 4: Stabilize at W_low. Accumulate Iq to calculate low-speed friction. */
+    PMSM_ID_MECH_IF_START,           /*!< 2: Open-loop start. Drive motor in I/F mode up to W_low. */
+    PMSM_ID_MECH_HANDOVER_TO_CLOSED, /*!< 3: Bumpless Transfer to Closed-Loop. Transition angle from VF to Real/SMO. */
+    PMSM_ID_MECH_STEADY_LOW,         /*!< 4: Stabilize at W_low. Accumulate Iq to calculate low-speed friction. */
 
     // --- Stage 2: Acceleration Test ---
-    PMSM_OID_MECH_ACCEL_TEST, /*!< 5: Inject constant +Iq. Record (Time, Speed) into Data Analyzer until W >= W_high. */
-    PMSM_OID_MECH_STEADY_HIGH, /*!< 6: Stabilize at W_high. Accumulate Iq to calculate high-speed friction. */
+    PMSM_ID_MECH_ACCEL_TEST,  /*!< 5: Inject constant +Iq. Record (Time, Speed) into Data Analyzer until W >= W_high. */
+    PMSM_ID_MECH_STEADY_HIGH, /*!< 6: Stabilize at W_high. Accumulate Iq to calculate high-speed friction. */
 
     // --- Stage 3: Deceleration Test & Safe Shutdown ---
-    PMSM_OID_MECH_DECEL_TEST, /*!< 7: Inject constant -Iq. Record (Time, Speed) into DA until W <= W_low. Monitors OVP. */
-    PMSM_OID_MECH_HANDOVER_TO_IF, /*!< 8: Transition back to I/F mode to ensure safe shutdown as SMO fails at low speed. */
-    PMSM_OID_MECH_IF_STOP,        /*!< 9: Ramp V/F target to 0 and gracefully stop the motor. */
+    PMSM_ID_MECH_DECEL_TEST, /*!< 7: Inject constant -Iq. Record (Time, Speed) into DA until W <= W_low. Monitors OVP. */
+    PMSM_ID_MECH_HANDOVER_TO_IF, /*!< 8: Transition back to I/F mode to ensure safe shutdown as SMO fails at low speed. */
+    PMSM_ID_MECH_IF_STOP,        /*!< 9: Ramp V/F target to 0 and gracefully stop the motor. */
 
     // --- Stage 4: Calculation ---
-    PMSM_OID_MECH_CALCULATE, /*!< 10: Trigger Math library. Fit J and B from DA buffers in the background loop. */
-    PMSM_OID_MECH_COMPLETE,  /*!< 11: Update ctl_consultant_mech1_t structure. Signal Main SM. */
-    PMSM_OID_MECH_FAULT      /*!< 12: Fault (OVP, Timeout, DA overflow). */
+    PMSM_ID_MECH_CALCULATE, /*!< 10: Trigger Math library. Fit J and B from DA buffers in the background loop. */
+    PMSM_ID_MECH_COMPLETE,  /*!< 11: Update ctl_consultant_mech1_t structure. Signal Main SM. */
+    PMSM_ID_MECH_FAULT      /*!< 12: Fault (OVP, Timeout, DA overflow). */
 
 } pmsm_offline_id_mech_sm_t;
 
@@ -674,9 +675,9 @@ void ctl_init_pmsm_offline_id_sm(ctl_pmsm_offline_id_t* ctx, const ctl_pmsm_offl
  */
 typedef enum _tag_pmsm_oid_angle_src
 {
-    PMSM_OID_ANGLE_SRC_STATIC = 0, /*!< Route FOC to the internal static dummy angle. */
-    PMSM_OID_ANGLE_SRC_VF_GEN,     /*!< Route FOC to the V/F slope generator. */
-    PMSM_OID_ANGLE_SRC_REAL_ENC    /*!< Route FOC to the real physical encoder or SMO. */
+    PMSM_ID_ANGLE_SRC_STATIC = 0, /*!< Route FOC to the internal static dummy angle. */
+    PMSM_ID_ANGLE_SRC_VF_GEN,     /*!< Route FOC to the V/F slope generator. */
+    PMSM_ID_ANGLE_SRC_REAL_ENC    /*!< Route FOC to the real physical encoder or SMO. */
 } pmsm_oid_angle_src_e;
 
 /**
@@ -688,13 +689,13 @@ GMP_STATIC_INLINE void ctl_id_route_foc_angle(ctl_pmsm_offline_id_t* ctx, pmsm_o
 {
     switch (src)
     {
-    case PMSM_OID_ANGLE_SRC_STATIC:
+    case PMSM_ID_ANGLE_SRC_STATIC:
         mtr_ctrl.pos_if = &ctx->static_angle;
         break;
-    case PMSM_OID_ANGLE_SRC_VF_GEN:
+    case PMSM_ID_ANGLE_SRC_VF_GEN:
         mtr_ctrl.pos_if = &ctx->vf_gen.enc;
         break;
-    case PMSM_OID_ANGLE_SRC_REAL_ENC:
+    case PMSM_ID_ANGLE_SRC_REAL_ENC:
         mtr_ctrl.pos_if = ctx->enc;
         break;
     }
@@ -711,11 +712,14 @@ GMP_STATIC_INLINE void ctl_id_set_foc_state(ctl_pmsm_offline_id_t* ctx, pmsm_id_
     switch (src)
     {
     case PMSM_ID_VOLTAGE_OPENLOOP:
-        ctl_disable_mtr_current_ctrl(&mtr_ctrl);
-        ctl_disable_mtr_current_ctrl_decouple(&mtr_ctrl);
+        ctl_disable_foc_core_current_ctrl(&mtr_ctrl);
+        ctl_disable_foc_core_decouple(&mtr_ctrl);
+        ctl_disable_foc_core_vdq_ff(&mtr_ctrl);
         break;
     case PMSM_ID_CURRENT_CLOSELOOP:
         ctl_enable_mtr_current_ctrl(&mtr_ctrl);
+        ctl_disable_foc_core_decouple(&mtr_ctrl);
+        ctl_disable_foc_core_vdq_ff(&mtr_ctrl);
         break;
     default:
         break;
@@ -730,7 +734,7 @@ GMP_STATIC_INLINE void ctl_id_set_foc_state(ctl_pmsm_offline_id_t* ctx, pmsm_id_
  */
 GMP_STATIC_INLINE void ctl_id_set_static_angle(ctl_pmsm_offline_id_t* ctx, ctrl_gt angle_pu)
 {
-    ctl_id_route_foc_angle(ctx, PMSM_OID_ANGLE_SRC_STATIC);
+    ctl_id_route_foc_angle(ctx, PMSM_ID_ANGLE_SRC_STATIC);
     ctx->static_angle.elec_position = angle_pu;
 }
 
@@ -790,7 +794,7 @@ GMP_STATIC_INLINE void ctl_id_set_vf_target_speed(ctl_pmsm_offline_id_t* ctx, ct
  */
 GMP_STATIC_INLINE void ctl_id_step_vf_generator(ctl_pmsm_offline_id_t* ctx)
 {
-    ctl_id_route_foc_angle(ctx, PMSM_OID_ANGLE_SRC_VF_GEN);
+    ctl_id_route_foc_angle(ctx, PMSM_ID_ANGLE_SRC_VF_GEN);
     ctl_step_slope_f_pu(&ctx->vf_gen);
 }
 
@@ -909,10 +913,10 @@ GMP_STATIC_INLINE void ctl_clear_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
     ctl_clear_slope_f_pu(&ctx->vf_gen);
 
     // 3. Reset Sub-state machines
-    ctx->sub_rs_dt.sm = PMSM_OID_RSDT_DISABLED;
-    ctx->sub_ldq.sm = PMSM_OID_LDQ_DISABLED;
-    ctx->sub_flux.sm = PMSM_OID_FLUX_DISABLED;
-    ctx->sub_mech.sm = PMSM_OID_MECH_DISABLED;
+    ctx->sub_rs_dt.sm = PMSM_ID_RSDT_DISABLED;
+    ctx->sub_ldq.sm = PMSM_ID_LDQ_DISABLED;
+    ctx->sub_flux.sm = PMSM_ID_FLUX_DISABLED;
+    ctx->sub_mech.sm = PMSM_ID_MECH_DISABLED;
 
     // 4. Return to Staging Ground
     ctx->sm = PMSM_OFFLINE_ID_READY;

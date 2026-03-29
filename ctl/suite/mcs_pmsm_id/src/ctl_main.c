@@ -95,8 +95,8 @@ void ctl_init()
     mtr_ctrl_init.mtr_Lq = MOTOR_PARAM_LS;
     mtr_ctrl_init.mtr_Rs = MOTOR_PARAM_RS;
 
-    ctl_auto_tuning_mtr_current_ctrl(&mtr_ctrl_init);
-    ctl_init_mtr_current_ctrl(&mtr_ctrl, &mtr_ctrl_init);
+    ctl_auto_tuning_foc_core(&mtr_ctrl_init);
+    ctl_init_foc_core(&mtr_ctrl, &mtr_ctrl_init);
 
     //
     // init SPWM modulator
@@ -161,31 +161,31 @@ void ctl_init()
 
 // attach motor current controller with input port
 #if BUILD_LEVEL <= 2
-    ctl_attach_mtr_current_ctrl_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &rg.enc, &spd_enc.encif);
+    ctl_attach_foc_core_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &rg.enc, &spd_enc.encif);
 #else  // BUILD_LEVEL
-    ctl_attach_mtr_current_ctrl_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &pos_enc.encif, &spd_enc.encif);
+    ctl_attach_foc_core_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &pos_enc.encif, &spd_enc.encif);
 #endif // BUILD_LEVEL
 
     ctl_attach_mech_ctrl(&mech_ctrl, &pos_enc.encif, &spd_enc.encif);
 
 #if BUILD_LEVEL == 1
     // Voltage open loop
-    ctl_disable_mtr_current_ctrl(&mtr_ctrl);
-    ctl_set_mtr_current_ctrl_vdq_ref(&mtr_ctrl, 0.0, 0.0);
+    ctl_disable_foc_core_current_ctrl(&mtr_ctrl);
+    ctl_set_foc_core_vdq_ref(&mtr_ctrl, 0.0, 0.0);
 
 #elif BUILD_LEVEL == 2
     // Basic current close loop, IF
-    ctl_enable_mtr_current_ctrl(&mtr_ctrl);
-    ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, float2ctrl(0.1), float2ctrl(0.1));
+    ctl_enable_foc_core_current_ctrl(&mtr_ctrl);
+    ctl_set_foc_core_idq_ref(&mtr_ctrl, float2ctrl(0.1), float2ctrl(0.1));
 
 #elif BUILD_LEVEL == 3
     // Basic current close loop, inverter
-    ctl_enable_mtr_current_ctrl(&mtr_ctrl);
-    ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, float2ctrl(0.1), float2ctrl(0.1));
+    ctl_enable_foc_core_current_ctrl(&mtr_ctrl);
+    ctl_set_foc_core_idq_ref(&mtr_ctrl, float2ctrl(0.1), float2ctrl(0.1));
 
 #elif BUILD_LEVEL == 4
     // Basic Speed close loop
-    ctl_enable_mtr_current_ctrl(&mtr_ctrl);
+    ctl_enable_foc_core_current_ctrl(&mtr_ctrl);
     ctl_set_mech_ctrl_mode(&mech_ctrl, MECH_MODE_VELOCITY);
     ctl_set_mech_target_velocity(&mech_ctrl, 0.1);
 
@@ -273,7 +273,7 @@ void ctl_disable_pwm()
 
 void clear_all_controllers()
 {
-    ctl_clear_mtr_current_ctrl(&mtr_ctrl);
+    ctl_clear_foc_core(&mtr_ctrl);
     ctl_clear_mech_ctrl(&mech_ctrl);
     ctl_clear_slope_f_pu(&rg);
 

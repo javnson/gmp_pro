@@ -103,7 +103,7 @@ GMP_STATIC_INLINE time_gt gmp_base_get_diff_system_tick(time_gt t0)
  * @brief   Calculate the time gap (t1 - t0) with overflow safety.
  * @note    This function safely handles the timer wraparound/overflow issue
  * by using the GMP_PORT_TIME_MAXIMUM threshold.
- * * @param[in] t1        The later time point.
+ * @param[in] t1        The later time point.
  * @param[in] t0        The earlier time point.
  * * @return  time_gt     The absolute time gap between t1 and t0.
  */
@@ -119,6 +119,11 @@ GMP_STATIC_INLINE time_gt gmp_base_time_sub(time_gt t1, time_gt t0)
         /* Normal scenario */
         return t1 - t0;
     }
+}
+
+GMP_STATIC_INLINE time_gt gmp_base_time2tick(float time_s)
+{
+    return time_s * 1000.0f;
 }
 
 /**
