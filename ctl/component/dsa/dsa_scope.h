@@ -7,12 +7,12 @@
  * @{
  */
 
+#include <stdarg.h>
+
 #include <ctl/math_block/utilities/mem_view.h>
 
 #ifndef _FILE_CTL_DSA_SCOPE_H_
 #define _FILE_CTL_DSA_SCOPE_H_
-
-#include <stdarg.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -289,7 +289,7 @@ fast_gt ctl_dsa_fit_vs_dim(ctl_dsa_scope_t* scope, uint16_t dim_x, uint16_t dim_
  * @return fast_gt            1 if successful, 0 if data bounds are invalid.
  */
 fast_gt ctl_dsa_fit_first_order_tau(ctl_dsa_scope_t* scope, uint16_t dim_y, uint32_t start_idx, uint32_t end_idx,
-                                    parameter_gt baseline_y, parameter_gt target_delta_y, parameter_gt* out_tau)
+                                    parameter_gt baseline_y, parameter_gt target_delta_y, parameter_gt* out_tau);
 
 #ifdef __cplusplus
 }

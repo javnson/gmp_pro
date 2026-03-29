@@ -1,4 +1,21 @@
 
+#include <ctl/component/intrinsic/basic/state_sequencer.h>
+
+#include <ctl/component/dsa/dsa_scope.h>
+
+#include <ctl/component/motor_control/basic/mtr_protection.h>
+#include <ctl/component/motor_control/basic/vf_generator.h>
+#include <ctl/component/motor_control/current_loop/foc_core.h>
+#include <ctl/component/motor_control/interface/encoder_switcher.h>
+#include <ctl/component/motor_control/interface/encoder.h>
+#include <ctl/component/motor_control/observer/pmsm_esmo.h>
+
+
+
+#include <ctl/component/motor_control/consultant/mech_consultant.h>
+#include <ctl/component/motor_control/consultant/pmsm_consultant.h>
+#include <ctl/component/motor_control/consultant/pu_consultant.h>
+
 #ifndef _FILE_PMSM_OFFLINE_ID_SM_H_
 #define _FILE_PMSM_OFFLINE_ID_SM_H_
 
@@ -660,8 +677,21 @@ typedef enum _tag_pmsm_oid_angle_src
 {
     PMSM_ID_ANGLE_SRC_STATIC = 0, /*!< Route FOC to the internal static dummy angle. */
     PMSM_ID_ANGLE_SRC_VF_GEN,     /*!< Route FOC to the V/F slope generator. */
-    PMSM_ID_ANGLE_SRC_REAL_ENC    /*!< Route FOC to the real physical encoder or SMO. */
+    PMSM_ID_ANGLE_SRC_REAL_ENC,   /*!< Route FOC to the real physical encoder or SMO. */
+    PMSM_ID_ANGLE_SRC_SWITCHER    /*!< Route FOC to the smooth angle transition switcher. */
 } pmsm_oid_angle_src_e;
+
+/**
+ * @brief Operating states for the FOC core during Offline Identification.
+ */
+typedef enum _tag_pmsm_id_foc_state
+{
+    PMSM_ID_VOLTAGE_OPENLOOP = 0, /*!< Open-loop voltage mode (PI controllers disabled). */
+    PMSM_ID_CURRENT_CLOSELOOP = 1 /*!< Closed-loop current mode (PI controllers active). */
+} pmsm_id_foc_state_e;
+
+//////////////////////////////////////////////////////////////////////////
+// FOC interface functions
 
 /**
  * @brief Routes the FOC core's angle input to a specific internal/external source.
@@ -675,24 +705,36 @@ GMP_STATIC_INLINE void ctl_id_route_foc_angle(ctl_pmsm_offline_id_t* ctx, pmsm_o
     case PMSM_ID_ANGLE_SRC_STATIC:
         mtr_ctrl.pos_if = &ctx->static_angle;
         break;
+
     case PMSM_ID_ANGLE_SRC_VF_GEN:
         mtr_ctrl.pos_if = &ctx->vf_gen.enc;
         break;
+
     case PMSM_ID_ANGLE_SRC_REAL_ENC:
         mtr_ctrl.pos_if = ctx->enc;
+        break;
+
+    case PMSM_ID_ANGLE_SRC_SWITCHER:
+        // Route FOC angle directly to the blended output of the angle switcher
+        mtr_ctrl.pos_if = &ctx->angle_switcher.out_enc;
+        break;
+
+    default:
         break;
     }
 }
 
-typedef enum _tag_pmsm_id_foc_state
-{
-    PMSM_ID_VOLTAGE_OPENLOOP = 0,
-    PMSM_ID_CURRENT_CLOSELOOP = 1
-} pmsm_id_foc_state_e;
-
+/**
+ * @brief Configures the operating state of the external FOC core.
+ * @details Safely switches the FOC core between open-loop voltage injection and 
+ * closed-loop current regulation. Automatically disables advanced features like 
+ * cross-coupling decoupling and feedforward to ensure pure fundamental responses during ID.
+ * @param[in,out] ctx   Pointer to the master offline ID context.
+ * @param[in]     state The target FOC operating state (Open-loop or Closed-loop).
+ */
 GMP_STATIC_INLINE void ctl_id_set_foc_state(ctl_pmsm_offline_id_t* ctx, pmsm_id_foc_state_e state)
 {
-    switch (src)
+    switch (state) // Fixed: Changed from 'src' to 'state'
     {
     case PMSM_ID_VOLTAGE_OPENLOOP:
         ctl_disable_foc_core_current_ctrl(&mtr_ctrl);
@@ -709,45 +751,55 @@ GMP_STATIC_INLINE void ctl_id_set_foc_state(ctl_pmsm_offline_id_t* ctx, pmsm_id_
     }
 }
 
+/**
+ * @brief Retrieves the measured actual current (Id or Iq) from the FOC core.
+ * @param[in] ctx   Pointer to the master offline ID context.
+ * @param[in] index 0 for D-axis current (Id), 1 for Q-axis current (Iq).
+ * @return ctrl_gt  The measured current in PU.
+ */
 GMP_STATIC_INLINE ctrl_gt ctl_id_get_idq(ctl_pmsm_offline_id_t* ctx, fast_gt index)
 {
     return mtr_ctrl.idq0.dat[index];
 }
 
+/**
+ * @brief Retrieves the applied voltage reference (Vd or Vq) from the FOC core.
+ * @details In closed-loop, this is the PI output. In open-loop, this is the injected voltage.
+ * @param[in] ctx   Pointer to the master offline ID context.
+ * @param[in] index 0 for D-axis voltage (Vd), 1 for Q-axis voltage (Vq).
+ * @return ctrl_gt  The applied voltage reference in PU.
+ */
 GMP_STATIC_INLINE ctrl_gt ctl_id_get_vdq(ctl_pmsm_offline_id_t* ctx, fast_gt index)
 {
     return mtr_ctrl.vdq_ref.dat[index];
 }
 
+/**
+ * @brief Retrieves the measured DC bus voltage from the FOC core.
+ * @param[in] ctx  Pointer to the master offline ID context.
+ * @return ctrl_gt The DC bus voltage in PU.
+ */
 GMP_STATIC_INLINE ctrl_gt ctl_id_get_udc(ctl_pmsm_offline_id_t* ctx)
 {
     return mtr_ctrl.udc;
 }
 
+/**
+ * @brief Retrieves the current electrical speed from the FOC core's position interface.
+ * @details Depending on the active angle routing (V/F, SMO, or Encoder), 
+ * this returns the synchronized speed of that specific source.
+ * @param[in] ctx  Pointer to the master offline ID context.
+ * @return ctrl_gt The electrical speed in PU.
+ */
 GMP_STATIC_INLINE ctrl_gt ctl_id_get_speed(ctl_pmsm_offline_id_t* ctx)
 {
     return mtr_ctrl.spd_if->speed;
 }
 
-GMP_STATIC_INLINE void ctl_id_attach_pos_enc(ctl_pmsm_offline_id_t* ctx, rotation_ift* _pos_if)
-{
-    ctl_attach_foc_core_pos_enc(&mtr_ctrl, _pos_if);
-}
-
-/**
- * @brief Sets a fixed electrical angle for static tests (Rs, DT, Ld/Lq).
- * @note Automatically routes the FOC angle to the static source.
- * @param[in,out] ctx      Pointer to the master offline ID context.
- * @param[in]     angle_pu The fixed electrical angle in per-unit [0.0, 1.0).
- */
-GMP_STATIC_INLINE void ctl_id_set_static_angle(ctl_pmsm_offline_id_t* ctx, ctrl_gt angle_pu)
-{
-    ctl_id_route_foc_angle(ctx, PMSM_ID_ANGLE_SRC_STATIC);
-    ctx->static_angle.elec_position = angle_pu;
-}
-
 /**
  * @brief Safely shuts down the FOC output (Zero current/voltage injection).
+ * @details Instantly disables PI controllers and commands 0V on both axes.
+ * Used for transitioning into safe passive states or upon fault detection.
  * @param[in,out] ctx Pointer to the master offline ID context.
  */
 GMP_STATIC_INLINE void ctl_id_disable_output(ctl_pmsm_offline_id_t* ctx)
@@ -759,8 +811,8 @@ GMP_STATIC_INLINE void ctl_id_disable_output(ctl_pmsm_offline_id_t* ctx)
 
 /**
  * @brief Applies a constant closed-loop DC current vector.
- * @details Re-enables the FOC PI controllers if they were disabled.
- * Used in Rs, Encoder Alignment, and Flux dragging.
+ * @details Re-enables the FOC PI controllers if they were disabled, and tracks the target Id/Iq.
+ * Exclusively used in Rs, Encoder Alignment, and steady-state dragging (Flux/Mech).
  * @param[in,out] ctx   Pointer to the master offline ID context.
  * @param[in]     id_pu D-axis current reference in PU.
  * @param[in]     iq_pu Q-axis current reference in PU.
@@ -773,7 +825,7 @@ GMP_STATIC_INLINE void ctl_id_apply_dc_current(ctl_pmsm_offline_id_t* ctx, ctrl_
 
 /**
  * @brief Applies an open-loop voltage pulse.
- * @details Disables the FOC PI controllers and directly injects Vd/Vq.
+ * @details Disables the FOC PI controllers and directly injects raw Vd/Vq voltages.
  * Exclusively used for high-frequency pulse injection during Ld/Lq measurement.
  * @param[in,out] ctx   Pointer to the master offline ID context.
  * @param[in]     vd_pu D-axis voltage reference in PU.
@@ -783,6 +835,20 @@ GMP_STATIC_INLINE void ctl_id_apply_voltage_pulse(ctl_pmsm_offline_id_t* ctx, ct
 {
     ctl_disable_mtr_current_ctrl(&mtr_ctrl); // Disable PI regulation
     ctl_set_mtr_current_ctrl_vdq_ref(&mtr_ctrl, vd_pu, vq_pu);
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Sets a fixed electrical angle for static tests (Rs, DT, Ld/Lq).
+ * @note Automatically routes the FOC angle to the static source.
+ * @param[in,out] ctx      Pointer to the master offline ID context.
+ * @param[in]     angle_pu The fixed electrical angle in per-unit [0.0, 1.0).
+ */
+GMP_STATIC_INLINE void ctl_id_set_static_angle(ctl_pmsm_offline_id_t* ctx, ctrl_gt angle_pu)
+{
+    ctl_id_route_foc_angle(ctx, PMSM_ID_ANGLE_SRC_STATIC);
+    ctx->static_angle.elec_position = angle_pu;
 }
 
 /**
@@ -847,7 +913,7 @@ GMP_STATIC_INLINE pmsm_offline_id_sm_t ctl_oid_get_next_state(ctl_pmsm_offline_i
 }
 
 /**
- * @brief Helper function to initialize the target state.
+ * @brief Helper function to initialize the target state sub-machines.
  * @param[in,out] ctx Pointer to the master offline ID context.
  */
 static void ctl_oid_init_target_state(ctl_pmsm_offline_id_t* ctx)
@@ -856,7 +922,6 @@ static void ctl_oid_init_target_state(ctl_pmsm_offline_id_t* ctx)
     {
     case PMSM_OFFLINE_ID_PREPARE:
         // Placeholder: Call user's external prepare init if needed
-        // ctl_init_oid_prepare(ctx);
         break;
     case PMSM_OFFLINE_ID_RS_DT:
         ctl_init_oid_rs_dt(ctx);

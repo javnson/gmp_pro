@@ -1,21 +1,6 @@
 
 #include <gmp_core.h>
 
-#include <ctl/component/intrinsic/basic/state_sequencer.h>
-
-#include <ctl/component/dsa/dsa_scope.h>
-
-#include <ctl/component/motor_control/basic/mtr_protection.h>
-#include <ctl/component/motor_control/basic/vf_generator.h>
-#include <ctl/component/motor_control/current_loop/foc_core.h>
-#include <ctl/component/motor_control/interface/encoder.h>
-#include <ctl/component/motor_control/interface/encoder_switcher.h>
-#include <ctl/component/motor_control/observer/pmsm_esmo.h>
-
-#include <ctl/component/motor_control/consultant/mech_consultant.h>
-#include <ctl/component/motor_control/consultant/pmsm_consultant.h>
-#include <ctl/component/motor_control/consultant/pu_consultant.h>
-
 #include <ctl/component/motor_control/pmsm_offline_id/pmsm_offline_id_sm.h>
 
 //
@@ -1039,7 +1024,7 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
     }
 
     ctl_state_seq_e loop_phase = ctl_loop_state_seq(&ctx->seq);
-    parameter_gt current_speed_real = ctrl2float(ctx->foc_core.spd_if->speed);
+    parameter_gt current_speed_real = ctrl2float(ctl_id_get_speed(ctx));
 
     switch (sub->sm)
     {
@@ -1054,7 +1039,7 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
             ctl_id_set_foc_state(ctx, PMSM_ID_CURRENT_CLOSELOOP);
             ctl_init_angle_switcher(&ctx->angle_switcher, cfg->transition_time_s, ctx->cfg_basic.isr_freq_hz);
             ctl_attach_angle_switcher(&ctx->angle_switcher, &ctx->vf_gen.enc, ctx->enc);
-            ctx->foc_core.pos_if = &ctx->angle_switcher.out_enc;
+            ctl_id_route_foc_angle(ctx, PMSM_ID_ANGLE_SRC_SWITCHER);
 
             // Configure DSA Scope (Estimate e.g., 6.0 seconds max for dynamic tests)
             uint32_t div = ctl_dsa_calc_min_divider(ctx->analyzer.mem.capacity, 1, 6.0f, ctx->cfg_basic.isr_freq_hz);
@@ -1209,9 +1194,15 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
 }
 #pragma endregion
 
+//
+// --- Global State machine. ---
+//
+
 /**
  * @brief High-frequency ISR step function for PMSM Offline Identification.
- * @details Routes execution to the active sub-task's ISR, steps angle switcher, and executes FOC.
+ * @details Routes execution to the active sub-task's ISR and steps the angle switcher.
+ * NOTE: The external FOC Core and Protection module MUST be stepped independently 
+ * in the main motor ISR by the host application.
  * @param[in,out] ctx Pointer to the master offline ID context.
  */
 void ctl_step_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
@@ -1221,15 +1212,6 @@ void ctl_step_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
         ctx->sm == PMSM_OFFLINE_ID_COMPLETE)
     {
         return;
-    }
-
-    // Execute High-Speed Protection Check
-    if (ctl_step_mtr_protect_fast(&ctx->protect))
-    {
-        // Immediate hardware shutdown action should happen here (e.g., disable PWM)
-        ctl_disable_mtr_current_ctrl(&ctx->foc_core);
-        ctx->sm = PMSM_OFFLINE_ID_FAULT;
-        return; // Abort further execution!
     }
 
     // 2. Dispatch ISR logic
@@ -1267,13 +1249,13 @@ void ctl_step_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
         break;
     }
 
-    // 3. Step Core Embedded Components
+    // 3. Step Core Embedded Components owned by this module
     ctl_step_angle_switcher(&ctx->angle_switcher);
 }
 
 /**
  * @brief Background loop function for PMSM Offline Identification.
- * @details Manages heavy calculations, timeout checking, and state transitions using the Move Next router.
+ * @details Manages heavy calculations, timeout checking, and state transitions.
  * @param[in,out] ctx Pointer to the master offline ID context.
  */
 void ctl_loop_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
@@ -1281,22 +1263,9 @@ void ctl_loop_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
     switch (ctx->sm)
     {
     case PMSM_OFFLINE_ID_DISABLED:
-        break;
-
     case PMSM_OFFLINE_ID_READY:
-        // Transition based on a user command (e.g., START_ID flag)
-        // if (user_command == START_ID) {
-        //     ctx->sm = ctl_oid_get_next_state(ctx, PMSM_OFFLINE_ID_READY);
-        //     ctl_oid_init_target_state(ctx);
-        // }
-        break;
-
     case PMSM_OFFLINE_ID_PREPARE:
-        // Wait for external user logic (ADC Calib / Enc Align) to finish
-        // if (user_prepare_done) {
-        //     ctx->sm = ctl_oid_get_next_state(ctx, PMSM_OFFLINE_ID_PREPARE);
-        //     ctl_oid_init_target_state(ctx);
-        // }
+        // Transition based on a user command handled externally
         break;
 
     // ---------------------------------------------------------------------
@@ -1342,19 +1311,14 @@ void ctl_loop_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
     // Finalization & Fault
     // ---------------------------------------------------------------------
     case PMSM_OFFLINE_ID_COMPLETE:
-        // 1. Safely disable FOC output
-        ctl_disable_mtr_current_ctrl(&ctx->foc_core);
-
-        // 2. Format final Consultant Structures if needed
-        // ctl_finalize_offline_id_report(ctx);
-
-        // 3. Hold in this state. The host application can read parameters now.
-        // It's up to the user to command ctx->sm = PMSM_OFFLINE_ID_READY or DISABLED to restart.
+        // 1. Safely disable FOC output via adapter interface
+        ctl_id_disable_output(ctx);
+        // 2. Hold in this state. The host application can read parameters now.
         break;
 
     case PMSM_OFFLINE_ID_FAULT:
-        ctl_disable_mtr_current_ctrl(&ctx->foc_core);
-        // Wait for user fault reset
+        // Safely disable FOC output via adapter interface
+        ctl_id_disable_output(ctx);
         break;
 
     default:
@@ -1364,6 +1328,8 @@ void ctl_loop_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
 
 /**
  * @brief Initializes the complete PMSM Offline Identification Master State Machine.
+ * @details Only initializes the sub-components strictly owned by the Offline ID context.
+ * The global FOC core and Protection modules must be initialized by the host application.
  * @param[out] ctx          Pointer to the master offline ID context.
  * @param[in]  init_cfg     Pointer to the configuration "checkup form".
  * @param[in]  dsa_buffer   Pointer to the memory pool for the DSA Scope.
@@ -1387,36 +1353,23 @@ void ctl_init_pmsm_offline_id_sm(ctl_pmsm_offline_id_t* ctx, const ctl_pmsm_offl
                                 init_cfg->cfg_basic.pole_pairs);
 
     // =========================================================================
-    // 2. Initialize Core Embedded Components
+    // 2. Initialize Core Embedded Components Owned by ID Module
     // =========================================================================
 
     // 2.1 V/F Generator
     ctl_clear_slope_f_pu(&ctx->vf_gen);
 
-    // 2.2 FOC Core Basic Init
-    ctl_init_mtr_current_ctrl_basic(&ctx->foc_core, init_cfg->kp, init_cfg->ki, init_cfg->max_vs_pu,
-                                    init_cfg->cfg_basic.isr_freq_hz);
-
-    // 2.3 Angle Switcher (Default to 0.5s transition)
+    // 2.2 Angle Switcher (Default to 0.5s transition)
     ctl_init_angle_switcher(&ctx->angle_switcher, 0.5f, ctx->cfg_basic.isr_freq_hz);
 
-    // 2.4 DSA Scope (Data Analyzer)
+    // 2.3 DSA Scope (Data Analyzer)
     ctl_init_dsa_scope(&ctx->analyzer, dsa_buffer, dsa_capacity, ctx->cfg_basic.isr_freq_hz);
 
-    // 2.5 Motor Protection Module
-    ctl_init_mtr_protect(&ctx->protect, ctx->cfg_basic.isr_freq_hz);
+    // 2.4 State Sequencer
+    ctl_clear_state_seq(&ctx->seq, 0);
 
-    // --- BINDING PROTECTION PORTS ---
-    ctl_attach_mtr_protect_port(&ctx->protect,
-                                &ctx->foc_core.udc,                    // Bus voltage
-                                (ctl_vector2_t*)(&ctx->foc_core.idq0), // Measured actual Idq
-                                &ctx->foc_core.idq_ref,                // Reference target Idq
-                                NULL,                                  // Motor Temp (Optional)
-                                NULL                                   // Inverter Temp (Optional)
-    );
-
-    // Clear protection mask (enable all protections)
-    ctl_set_mtr_protect_mask(&ctx->protect, MTR_PROT_NONE);
+    // Note: FOC Core and MTR Protect initialization are explicitly removed from here.
+    // They are global external dependencies and should be managed by the system bootloader.
 
     // =========================================================================
     // 3. Reset Sub-Process Trackers
@@ -1432,6 +1385,7 @@ void ctl_init_pmsm_offline_id_sm(ctl_pmsm_offline_id_t* ctx, const ctl_pmsm_offl
     ctx->pmsm_param.Lq = 0.0f;
     ctx->pmsm_param.flux_linkage = 0.0f;
     ctx->pmsm_param.pole_pairs = init_cfg->cfg_basic.pole_pairs;
+    ctx->pmsm_param.is_ipm = 0;
 
     ctx->pmsm_mech_param.J_total = 0.0f;
     ctx->pmsm_mech_param.B_viscous = 0.0f;
@@ -1444,58 +1398,3 @@ void ctl_init_pmsm_offline_id_sm(ctl_pmsm_offline_id_t* ctx, const ctl_pmsm_offl
     // Boot directly into READY state, awaiting the user's START command
     ctx->sm = PMSM_OFFLINE_ID_READY;
 }
-
-///**
-// * @brief Enables the Offline Identification process.
-// * @details Commands the state machine to transition from READY to the first
-// * active test stage (PREPARE or otherwise). If the system is not in READY, this is ignored.
-// * @param[in,out] ctx Pointer to the master offline ID context.
-// */
-//GMP_STATIC_INLINE void ctl_enable_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
-//{
-//    if (ctx->sm == PMSM_OFFLINE_ID_READY)
-//    {
-//        // Leverage the Move Next router to automatically jump to the first enabled step
-//        ctx->sm = ctl_oid_get_next_state(ctx, PMSM_OFFLINE_ID_READY);
-//        ctl_oid_init_target_state(ctx);
-//    }
-//}
-//
-///**
-// * @brief Safely disables the Offline Identification process.
-// * @details Immediately turns off the FOC PWM outputs and forces the master state
-// * machine into the DISABLED state. Can be used as a soft E-Stop.
-// * @param[in,out] ctx Pointer to the master offline ID context.
-// */
-//GMP_STATIC_INLINE void ctl_disable_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
-//{
-//    ctl_disable_mtr_current_ctrl(&ctx->foc_core);
-//    ctx->sm = PMSM_OFFLINE_ID_DISABLED;
-//}
-
-///**
-// * @brief Clears the operational state and faults of the Offline Identification module.
-// * @details Safely stops the motor, wipes the data analyzer memory, resets protection faults,
-// * clears FOC internal integrals, and puts the state machine back into the READY state.
-// * @param[in,out] ctx Pointer to the master offline ID context.
-// */
-//GMP_STATIC_INLINE void ctl_clear_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
-//{
-//    // 1. Safe Hardware Shutdown
-//    ctl_disable_mtr_current_ctrl(&ctx->foc_core);
-//    ctl_clear_mtr_current_ctrl(&ctx->foc_core);
-//
-//    // 2. Reset Core Components
-//    ctl_clear_mtr_protect(&ctx->protect);
-//    ctl_wipe_dsa_scope_memory(&ctx->analyzer);
-//    ctl_clear_slope_f_pu(&ctx->vf_gen);
-//
-//    // 3. Reset Sub-state machines
-//    ctx->sub_rs_dt.sm = PMSM_ID_RSDT_DISABLED;
-//    ctx->sub_ldq.sm = PMSM_ID_LDQ_DISABLED;
-//    ctx->sub_flux.sm = PMSM_ID_FLUX_DISABLED;
-//    ctx->sub_mech.sm = PMSM_ID_MECH_DISABLED;
-//
-//    // 4. Return to Staging Ground
-//    ctx->sm = PMSM_OFFLINE_ID_READY;
-//}
