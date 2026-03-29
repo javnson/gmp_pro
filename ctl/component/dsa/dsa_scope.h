@@ -234,6 +234,10 @@ GMP_STATIC_INLINE parameter_gt ctl_dsa_calc_max_duration(uint32_t capacity, uint
     return (parameter_gt)(depth * divider) / isr_freq_hz;
 }
 
+// ============================================================================
+// Mathematical Fitting Engines (Least-Squares Regression)
+// ============================================================================
+
 /**
  * @brief Performs a linear regression of a specific dimension AGAINST TIME.
  * @details Solves the equation: Y = slope * t + intercept.
@@ -265,6 +269,27 @@ fast_gt ctl_dsa_fit_vs_time(ctl_dsa_scope_t* scope, uint16_t dim_y, uint32_t sta
  */
 fast_gt ctl_dsa_fit_vs_dim(ctl_dsa_scope_t* scope, uint16_t dim_x, uint16_t dim_y, uint32_t start_idx, uint32_t end_idx,
                            parameter_gt* slope, parameter_gt* intercept);
+
+// ============================================================================
+// Dynamic System Identification Engines (Integral Methods)
+// ============================================================================
+
+/**
+ * @brief Performs an integral-based parameter estimation for a first-order step response.
+ * @details Solves the generic first-order system equation: \tau * y' + y = y_inf.
+ * By integrating both sides, it avoids noisy derivatives and directly computes the time constant.
+ * Extremely resilient to ADC noise and quantization errors.
+ * * @param[in]  scope          Pointer to the DSA scope instance.
+ * @param[in]  dim_y          The dimension index of the recorded response variable (e.g., Current, Speed).
+ * @param[in]  start_idx      Starting depth index of the data segment.
+ * @param[in]  end_idx        Ending depth index of the data segment (inclusive).
+ * @param[in]  baseline_y     The initial steady-state value y(0) before the step was applied.
+ * @param[in]  target_delta_y The theoretical steady-state change (\Delta y_inf = K * \Delta u).
+ * @param[out] out_tau        Pointer to store the calculated time constant (\tau) in seconds.
+ * @return fast_gt            1 if successful, 0 if data bounds are invalid.
+ */
+fast_gt ctl_dsa_fit_first_order_tau(ctl_dsa_scope_t* scope, uint16_t dim_y, uint32_t start_idx, uint32_t end_idx,
+                                    parameter_gt baseline_y, parameter_gt target_delta_y, parameter_gt* out_tau)
 
 #ifdef __cplusplus
 }

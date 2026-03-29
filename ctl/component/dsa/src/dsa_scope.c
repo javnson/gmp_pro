@@ -142,3 +142,61 @@ fast_gt ctl_dsa_fit_vs_dim(ctl_dsa_scope_t* scope, uint16_t dim_x, uint16_t dim_
 
     return 1;
 }
+
+// ============================================================================
+// Dynamic System Identification Engines (Integral Methods)
+// ============================================================================
+
+/**
+ * @brief Performs an integral-based parameter estimation for a first-order step response.
+ * @details Solves the generic first-order system equation: \tau * y' + y = y_inf.
+ * By integrating both sides, it avoids noisy derivatives and directly computes the time constant.
+ * Extremely resilient to ADC noise and quantization errors.
+ * * @param[in]  scope          Pointer to the DSA scope instance.
+ * @param[in]  dim_y          The dimension index of the recorded response variable (e.g., Current, Speed).
+ * @param[in]  start_idx      Starting depth index of the data segment.
+ * @param[in]  end_idx        Ending depth index of the data segment (inclusive).
+ * @param[in]  baseline_y     The initial steady-state value y(0) before the step was applied.
+ * @param[in]  target_delta_y The theoretical steady-state change (\Delta y_inf = K * \Delta u).
+ * @param[out] out_tau        Pointer to store the calculated time constant (\tau) in seconds.
+ * @return fast_gt            1 if successful, 0 if data bounds are invalid.
+ */
+fast_gt ctl_dsa_fit_first_order_tau(ctl_dsa_scope_t* scope, uint16_t dim_y, uint32_t start_idx, uint32_t end_idx,
+                                    parameter_gt baseline_y, parameter_gt target_delta_y, parameter_gt* out_tau)
+{
+    if (start_idx >= end_idx || end_idx >= scope->depth || dim_y >= scope->dims)
+    {
+        return 0; // Invalid bounds
+    }
+
+    uint32_t N = end_idx - start_idx + 1;
+    parameter_gt Ts = scope->effective_dt_sec;
+    parameter_gt sum_delta_y = 0.0f;
+    parameter_gt delta_y_end = 0.0f;
+
+    // 1. Calculate the integral area (sum) and the final value
+    for (uint32_t i = start_idx; i <= end_idx; i++)
+    {
+        parameter_gt y_k = (parameter_gt)ctl_mem_get_2d_soa(&scope->mem, dim_y, i, scope->depth);
+        parameter_gt delta_y = y_k - baseline_y;
+
+        sum_delta_y += delta_y;
+
+        if (i == end_idx)
+        {
+            delta_y_end = delta_y;
+        }
+    }
+
+    // 2. Prevent division by zero if the system didn't respond to the step input
+    if (delta_y_end < 1e-6f && delta_y_end > -1e-6f)
+    {
+        delta_y_end = (delta_y_end >= 0.0f) ? 1e-6f : -1e-6f;
+    }
+
+    // 3. Integral Equation: \tau = (target_delta_y * N * Ts - sum_delta_y * Ts) / delta_y_end
+    // Factored Ts out for a single multiplication
+    *out_tau = ((target_delta_y * (parameter_gt)N) - sum_delta_y) * Ts / delta_y_end;
+
+    return 1;
+}

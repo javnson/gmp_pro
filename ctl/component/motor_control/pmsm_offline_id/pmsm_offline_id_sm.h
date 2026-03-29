@@ -104,30 +104,27 @@ typedef struct _tag_pmsm_offline_id_rs_dt
     // --- Pre-calculated Context (Computed in Loop to save ISR time) ---
     uint32_t align_ticks;         /*!< ISR ticks corresponding to align_time_s. */
     uint32_t measure_delay_ticks; /*!< ISR ticks corresponding to measure_delay_s. */
-    ctrl_gt step_size_pu;         /*!< Current increment per step: (Max-Min)/(Steps-1). */
+    ctrl_gt step_size_pu;         /*!< Current increment per step. */
     ctrl_gt inv_measure_points;   /*!< 1.0f / measure_points, to avoid division in ISR. */
-    ctrl_gt angle_pu_array[6];    /*!< NEW: Pre-calculated electrical angles to avoid float math in ISR. */
+    ctrl_gt angle_pu_array[6];    /*!< Pre-calculated electrical angles. */
 
     // --- Runtime Context (ISR) ---
-    uint32_t tick_timer;       /*!< Internal timer for delays and settling. */
-    uint16_t angle_idx;        /*!< Current electrical angle index (0 to 5). */
-    ctrl_gt angle_pu;          /*!< Current active electrical angle. */
-    uint16_t step_idx;         /*!< Current injected current step index. */
-    ctrl_gt current_ref_pu;    /*!< The active DC current reference being applied. */
-    fast_gt is_first_entry;    /*!< Flag to distinguish between step (first entry) and hold logic. */
-    //ctrl_gt current_increment; /*!< Current increment for each step*/
+    uint16_t angle_idx;     /*!< Current electrical angle index (0 to 5). */
+    ctrl_gt angle_pu;       /*!< Current active electrical angle. */
+    uint16_t step_idx;      /*!< Current injected current step index. */
+    ctrl_gt current_ref_pu; /*!< The active DC current reference being applied. */
 
     // --- Measurement Accumulators (ISR) ---
-    parameter_gt sum_u; /*!< Voltage accumulator for averaging. */
-    parameter_gt sum_i; /*!< Current accumulator for averaging. */
+    ctrl_gt sum_u; /*!< Pure ctrl_gt voltage accumulator for max speed. */
+    ctrl_gt sum_i; /*!< Pure ctrl_gt current accumulator for max speed. */
 
     // --- Identification Results ---
-    parameter_gt rs_array[6];    /*!< Identified resistance (PU) for each of the 6 positions. */
-    parameter_gt vcomp_array[6]; /*!< Identified dead-time voltage (PU) for each of the 6 positions. */
-    parameter_gt rs_mean;        /*!< Mean value of the 6 identified resistances (PU). */
-    parameter_gt rs_var;         /*!< Variance of the 6 identified resistances (PU). */
-    parameter_gt vcomp_mean;     /*!< Mean value of the 6 identified dead-time voltages (PU). */
-    parameter_gt vcomp_var;      /*!< Variance of the 6 identified dead-time voltages (PU). */
+    parameter_gt rs_array[6];    /*!< Identified resistance (PU). */
+    parameter_gt vcomp_array[6]; /*!< Identified dead-time voltage (PU). */
+    parameter_gt rs_mean;
+    parameter_gt rs_var;
+    parameter_gt vcomp_mean;
+    parameter_gt vcomp_var;
 
 } pmsm_offline_id_rs_dt_t;
 
@@ -206,24 +203,18 @@ typedef struct _tag_pmsm_offline_id_ldq
     ctrl_gt step_size_pu;    /*!< Current increment per bias step. */
     parameter_gt dt_sec;     /*!< Time step per ISR tick (1.0 / isr_freq_hz). */
 
-    // --- Runtime Context (ISR) ---
-    uint32_t tick_timer;         /*!< Internal timer for pulse duration and cooldown. */
+    // --- Runtime Context (Managed by Loop, consumed by ISR) ---
     uint16_t bias_step_idx;      /*!< Current bias current step index. */
     fast_gt is_measuring_q_axis; /*!< Flag: 0 for D-axis measurement, 1 for Q-axis. */
     ctrl_gt bias_curr_ref_pu;    /*!< The active DC bias current being applied. */
-    fast_gt is_first_entry;      /*!< Flag to distinguish between step (first entry) and hold logic. */
 
-    // --- PI Output Freeze Variables ---
-    ctrl_gt frozen_vd_pu; /*!< Holds the steady-state Vd before opening the loop. */
-    ctrl_gt frozen_vq_pu; /*!< Holds the steady-state Vq before opening the loop. */
+    // --- PI Output Freeze Variables (For Incremental Delta Computation) ---
+    ctrl_gt frozen_vd_pu; /*!< Steady-state Vd before pulse. */
+    ctrl_gt frozen_vq_pu; /*!< Steady-state Vq before pulse. */
+    ctrl_gt frozen_id_pu; /*!< Steady-state Id before pulse (I_0). */
+    ctrl_gt frozen_iq_pu; /*!< Steady-state Iq before pulse (I_0). */
 
-    // --- DSA Slicing Indices ---
-    uint32_t d_start_idx[16]; /*!< DA start index for D-axis pulses. */
-    uint32_t d_end_idx[16];   /*!< DA end index for D-axis pulses. */
-    uint32_t q_start_idx[16]; /*!< DA start index for Q-axis pulses. */
-    uint32_t q_end_idx[16];   /*!< DA end index for Q-axis pulses. */
-
-    // --- Identification Results ---
+    // --- Identification Results (The "Inductance Curves") ---
     parameter_gt ld_array[16]; /*!< Identified Ld (PU) for each bias step. */
     parameter_gt lq_array[16]; /*!< Identified Lq (PU) for each bias step. */
 
@@ -505,14 +496,12 @@ typedef struct _tag_ctl_pmsm_offline_id_init
 typedef struct _tag_ctl_pmsm_offline_id
 {
     // =========================================================================
-    // 1. Core Embedded Components (Flat Memory Layout)
+    // 1. Core Embedded Components
     // =========================================================================
-    //mtr_current_ctrl_t foc_core;         /*!< Dedicated FOC current controller core. */
     ctl_slope_f_pu_controller vf_gen;    /*!< V/F slope frequency generator for I/F mode. */
     ctl_angle_switcher_t angle_switcher; /*!< Smooth transition router for angles. */
-    //ctl_pmsm_esmo_t esmo;                /*!< Extended Sliding Mode Observer. */
-    ctl_dsa_scope_t analyzer; /*!< Data recording and fitting engine (WIP). */
-    //ctl_mtr_protect_t protect;           /*!< Protection Module*/
+    ctl_dsa_scope_t analyzer;            /*!< Data recording and fitting engine. */
+    ctl_state_seq_t seq;                 /*!< NEW: Global shared state sequencer for all sub-tasks. */
 
     // =========================================================================
     // 2. External Interfaces & Routing Dummies
@@ -537,9 +526,8 @@ typedef struct _tag_ctl_pmsm_offline_id
 
     ctl_consultant_pu_pmsm_t identified_pu; /*!< PU bases used during calculation. */
 
-    // Extracted physical parameters for control integration & reporting
-    ctl_consultant_pmsm_t pmsm_param;       /*!< The final identified electrical parameters. */
-    ctl_consultant_mech1_t pmsm_mech_param; /*!< The final identified mechanical parameters. */
+    ctl_consultant_pmsm_t pmsm_param;       /*!< Identified electrical parameters. */
+    ctl_consultant_mech1_t pmsm_mech_param; /*!< Identified mechanical parameters. */
 
 } ctl_pmsm_offline_id_t;
 
