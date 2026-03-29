@@ -306,13 +306,11 @@ typedef struct _tag_pmsm_offline_id_flux
     ctrl_gt step_size_pu;       /*!< Speed increment per step. */
     ctrl_gt inv_measure_points; /*!< 1.0f / measure_points, to avoid division in ISR. */
 
-    // --- Runtime Context (ISR) ---
-    uint32_t tick_timer;    /*!< Internal timer for steady-state measuring. */
-    uint16_t step_idx;      /*!< Current speed step index. */
-    fast_gt is_first_entry; /*!< Flag to distinguish between step and hold logic. */
-    ctrl_gt target_w_pu;    /*!< Target speed for the current ramp. */
+    // --- Runtime Context (Managed by Loop, consumed by ISR) ---
+    uint16_t step_idx;   /*!< Current speed step index. */
+    ctrl_gt target_w_pu; /*!< Target speed for the current ramp. */
 
-    // --- Measurement Accumulators (ISR) ---
+    // --- Measurement Accumulators (Pure ctrl_gt for ISR speed) ---
     ctrl_gt sum_ud; /*!< D-axis voltage accumulator. */
     ctrl_gt sum_uq; /*!< Q-axis voltage accumulator. */
     ctrl_gt sum_id; /*!< D-axis current accumulator. */
@@ -382,15 +380,12 @@ typedef struct _tag_pmsm_offline_id_mech
     uint32_t settle_ticks;     /*!< ISR ticks corresponding to settle_time_s. */
     uint32_t transition_ticks; /*!< ISR ticks corresponding to transition_time_s. */
     ctrl_gt inv_settle_ticks;  /*!< 1.0f / settle_ticks for fast averaging. */
-    parameter_gt dt_sec;       /*!< Time step per ISR tick (1.0 / isr_freq_hz). */
 
-    // --- Runtime Context (ISR) ---
-    uint32_t tick_timer;      /*!< Internal timer for handover and settling. */
-    fast_gt is_first_entry;   /*!< Flag to distinguish between step (first entry) and hold logic. */
-    ctrl_gt active_iq_ref_pu; /*!< The active torque current applied during accel/decel. */
-    ctrl_gt active_id_ref_pu; /*!< The active dragging current applied. */
+    // --- Runtime Context (Managed by Loop, consumed by ISR) ---
+    ctrl_gt active_iq_ref_pu; /*!< The active torque current applied during accel/decel/steady. */
+    ctrl_gt active_id_ref_pu; /*!< The active dragging current applied during handover. */
 
-    // --- Measurement Accumulators (ISR) ---
+    // --- Measurement Accumulators (Pure ctrl_gt for ISR) ---
     ctrl_gt sum_iq_steady;          /*!< Accumulator for steady-state friction current. */
     parameter_gt iq_steady_low_pu;  /*!< Resulting average Iq at low speed. */
     parameter_gt iq_steady_high_pu; /*!< Resulting average Iq at high speed. */
@@ -722,6 +717,21 @@ GMP_STATIC_INLINE ctrl_gt ctl_id_get_idq(ctl_pmsm_offline_id_t* ctx, fast_gt ind
 GMP_STATIC_INLINE ctrl_gt ctl_id_get_vdq(ctl_pmsm_offline_id_t* ctx, fast_gt index)
 {
     return mtr_ctrl.vdq_ref.dat[index];
+}
+
+GMP_STATIC_INLINE ctrl_gt ctl_id_get_udc(ctl_pmsm_offline_id_t* ctx)
+{
+    return mtr_ctrl.udc;
+}
+
+GMP_STATIC_INLINE ctrl_gt ctl_id_get_speed(ctl_pmsm_offline_id_t* ctx)
+{
+    return mtr_ctrl.spd_if->speed;
+}
+
+GMP_STATIC_INLINE void ctl_id_attach_pos_enc(ctl_pmsm_offline_id_t* ctx, rotation_ift* _pos_if)
+{
+    ctl_attach_foc_core_pos_enc(&mtr_ctrl, _pos_if);
 }
 
 /**

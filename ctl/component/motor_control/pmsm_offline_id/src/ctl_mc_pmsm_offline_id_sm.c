@@ -327,6 +327,7 @@ void ctl_init_oid_ldq(ctl_pmsm_offline_id_t* ctx)
 /**
  * @brief ISR step function for Ld & Lq identification.
  * @details STRICT DATA PATH: Executes pulse actions and data recording via DSA.
+ * Safely freezes data pushing upon reaching LEAVE to prevent asynchronous loop overflow.
  * @param[in,out] ctx Pointer to the master offline ID context.
  */
 void ctl_step_oid_ldq_isr(ctl_pmsm_offline_id_t* ctx)
@@ -347,8 +348,9 @@ void ctl_step_oid_ldq_isr(ctl_pmsm_offline_id_t* ctx)
         break;
 
     case PMSM_ID_LDQ_BIAS_SETTLE:
-        if (seq_phase == CTL_ST_FIRST_ENTRY)
+        switch (seq_phase)
         {
+        case CTL_ST_FIRST_ENTRY:
             if (sub->is_measuring_q_axis == 0)
             {
                 ctl_id_apply_dc_current(ctx, sub->bias_curr_ref_pu, float2ctrl(0.0f));
@@ -357,12 +359,18 @@ void ctl_step_oid_ldq_isr(ctl_pmsm_offline_id_t* ctx)
             {
                 ctl_id_apply_dc_current(ctx, float2ctrl(cfg->align_current_pu), sub->bias_curr_ref_pu);
             }
+            break;
+        case CTL_ST_KEEP:
+        case CTL_ST_LEAVE:
+            // Wait for the PI controller to settle
+            break;
         }
         break;
 
     case PMSM_ID_LDQ_PULSE_MEASURE:
-        if (seq_phase == CTL_ST_FIRST_ENTRY)
+        switch (seq_phase)
         {
+        case CTL_ST_FIRST_ENTRY:
             // 1. Freeze PI voltages
             sub->frozen_vd_pu = ctl_id_get_vdq(ctx, 0);
             sub->frozen_vq_pu = ctl_id_get_vdq(ctx, 1);
@@ -382,21 +390,33 @@ void ctl_step_oid_ldq_isr(ctl_pmsm_offline_id_t* ctx)
                 ctl_id_apply_voltage_pulse(ctx, sub->frozen_vd_pu,
                                            sub->frozen_vq_pu + float2ctrl(cfg->pulse_voltage_pu));
             }
-        }
+            // Intentionally NO break to record the starting current point!
 
-        // Keep pushing high-speed current points during the active pulse
-        if (seq_phase == CTL_ST_KEEP || seq_phase == CTL_ST_LEAVE)
-        {
+        case CTL_ST_KEEP: {
+            // ONLY push high-speed current points during the active pulse
             ctrl_gt active_i = (sub->is_measuring_q_axis == 0) ? ctl_id_get_idq(ctx, 0) : ctl_id_get_idq(ctx, 1);
             ctl_step_dsa_scope_1ch(&ctx->analyzer, active_i);
+            break;
+        }
+
+        case CTL_ST_LEAVE:
+            // CRITICAL SAFETY WINDOW:
+            // Do NOT push to DSA! Stop accumulation.
+            // The pulse time is up, hold the voltage output and wait for loop to process the DSA buffer.
+            break;
         }
         break;
 
     case PMSM_ID_LDQ_COOLDOWN:
-        if (seq_phase == CTL_ST_FIRST_ENTRY)
+        switch (seq_phase)
         {
+        case CTL_ST_FIRST_ENTRY:
             // Remove pulse, let inductive energy decay safely
             ctl_id_apply_voltage_pulse(ctx, sub->frozen_vd_pu, sub->frozen_vq_pu);
+            break;
+        case CTL_ST_KEEP:
+        case CTL_ST_LEAVE:
+            break;
         }
         break;
     }
@@ -460,56 +480,53 @@ void ctl_loop_oid_ldq(ctl_pmsm_offline_id_t* ctx)
         }
         break;
 
-    case PMSM_ID_LDQ_PULSE_MEASURE:
+case PMSM_ID_LDQ_PULSE_MEASURE:
         if (loop_phase == CTL_ST_LEAVE)
         {
-            // === NEW: IMMEDIATE R-L INTEGRAL CALCULATION ===
-            // Get physical Rs previously identified, convert back to PU
+            // 1. Setup physical constants
             parameter_gt Z_base = ctx->identified_pu.V_base / ctx->identified_pu.I_base;
             parameter_gt rs_pu = ctx->pmsm_param.Rs / Z_base;
 
-            parameter_gt V_p = cfg->pulse_voltage_pu;
-            parameter_gt Ts = sub->dt_sec;
-            parameter_gt I_0 =
+            // 2. Calculate inputs for the First-Order Solver
+            // The theoretical steady-state current delta = Voltage Pulse / Resistance
+            parameter_gt target_delta_i = cfg->pulse_voltage_pu / rs_pu;
+
+            // Initial current baseline
+            parameter_gt baseline_i =
                 (sub->is_measuring_q_axis == 0) ? ctrl2float(sub->frozen_id_pu) : ctrl2float(sub->frozen_iq_pu);
 
-            uint32_t N = ctx->analyzer.current_idx;
-            parameter_gt sum_delta_i = 0.0f;
-            parameter_gt delta_i_N = 0.0f;
+            parameter_gt tau = 0.0f;
+            uint32_t end_idx = (ctx->analyzer.current_idx > 0) ? ctx->analyzer.current_idx - 1 : 0;
 
-            // Integrate over the recorded pulse
-            for (uint32_t i = 0; i < N; i++)
+            // 3. Call the generic DSA First-Order Time Constant solver
+            fast_gt fit_ok =
+                ctl_dsa_fit_first_order_tau(&ctx->analyzer, 0, 0, end_idx, baseline_i, target_delta_i, &tau);
+
+            if (fit_ok)
             {
-                parameter_gt I_k = ctrl2float(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 0, i, ctx->analyzer.depth));
-                parameter_gt delta_i = I_k - I_0;
+                // 4. Convert time constant to Inductance: L = tau * R
+                parameter_gt L_pu = tau * rs_pu;
 
-                sum_delta_i += delta_i; // Integration Area
-                if (i == N - 1)
-                    delta_i_N = delta_i; // Final Delta I
-            }
-
-            // Safety guard: prevent division by zero if current didn't move
-            if (delta_i_N < 1e-6f)
-                delta_i_N = 1e-6f;
-
-            // Integral Equation: L = (V_p * N * Ts - R_s * Ts * sum_delta_i) / delta_i_N
-            parameter_gt volt_time_area = V_p * (parameter_gt)N * Ts;
-            parameter_gt res_drop_area = rs_pu * Ts * sum_delta_i;
-            parameter_gt L_pu = (volt_time_area - res_drop_area) / delta_i_N;
-
-            // Store the immediate result
-            if (sub->is_measuring_q_axis == 0)
-            {
-                sub->ld_array[sub->bias_step_idx] = L_pu;
+                // Store the immediate result
+                if (sub->is_measuring_q_axis == 0)
+                {
+                    sub->ld_array[sub->bias_step_idx] = L_pu;
+                }
+                else
+                {
+                    sub->lq_array[sub->bias_step_idx] = L_pu;
+                }
             }
             else
             {
-                sub->lq_array[sub->bias_step_idx] = L_pu;
+                sub->sm = PMSM_ID_LDQ_FAULT; // Matrix or data error
+                return;
             }
 
             // WIPE the DSA Scope ready for the next pulse!
             ctl_wipe_dsa_scope_memory(&ctx->analyzer);
 
+            // TRANSITION -> COOLDOWN
             sub->sm = PMSM_ID_LDQ_COOLDOWN;
             ctl_clear_state_seq(&ctx->seq, sub->cooldown_ticks);
         }
@@ -591,16 +608,16 @@ void ctl_loop_oid_ldq(ctl_pmsm_offline_id_t* ctx)
 void ctl_init_oid_flux(ctl_pmsm_offline_id_t* ctx)
 {
     ctx->sub_flux.sm = PMSM_ID_FLUX_INIT;
-    ctx->sub_flux.is_first_entry = 1;
-
-    ctx->sub_flux.tick_timer = 0;
     ctx->sub_flux.step_idx = 0;
     ctx->sub_flux.target_w_pu = float2ctrl(0.0f);
+
+    // Arm the sequencer
+    ctl_clear_state_seq(&ctx->seq, 0);
 }
 
 /**
  * @brief ISR step function for Flux Linkage identification.
- * @details Executes V/F ramping, I/F dragging, and pushes averaged data to the DSA Scope.
+ * @details STRICT DATA PATH: Executes V/F ramping, I/F dragging, and data accumulation.
  * @param[in,out] ctx Pointer to the master offline ID context.
  */
 void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
@@ -608,141 +625,73 @@ void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
     pmsm_offline_id_flux_t* sub = &ctx->sub_flux;
     pmsm_oid_cfg_flux_t* cfg = &sub->cfg;
 
-    // Global action: Continue V/F angle generation and maintain drag current
+    ctl_state_seq_e seq_phase = ctl_step_state_seq(&ctx->seq);
+
+    // Global Action: During active dynamic states, maintain V/F generator and drag current
     if (sub->sm >= PMSM_ID_FLUX_RAMP_SPEED && sub->sm <= PMSM_ID_FLUX_RAMP_STOP)
     {
         ctl_id_step_vf_generator(ctx);
-        ctl_id_apply_dc_current(ctx, cfg->if_current_pu, float2ctrl(0.0f));
+        ctl_id_apply_dc_current(ctx, float2ctrl(cfg->if_current_pu), float2ctrl(0.0f));
     }
 
     switch (sub->sm)
     {
     case PMSM_ID_FLUX_DISABLED:
     case PMSM_ID_FLUX_INIT:
+    case PMSM_ID_FLUX_SETTLE:
+    case PMSM_ID_FLUX_STEP_EVALUATE:
     case PMSM_ID_FLUX_CALCULATE:
     case PMSM_ID_FLUX_COMPLETE:
     case PMSM_ID_FLUX_FAULT:
-        break;
+        break; // Passive or handled purely by loop
 
     case PMSM_ID_FLUX_RAMP_SPEED:
-        if (sub->is_first_entry)
+        if (seq_phase == CTL_ST_FIRST_ENTRY)
         {
-            // Dynamic target calculation (Addition logic instead of multiplication)
             if (sub->step_idx == 0)
             {
-                sub->target_w_pu = cfg->min_target_speed_pu;
+                sub->target_w_pu = float2ctrl(cfg->min_target_speed_pu);
             }
             else
             {
                 sub->target_w_pu += sub->step_size_pu;
             }
-
             ctl_id_set_vf_target_speed(ctx, sub->target_w_pu);
-            sub->is_first_entry = 0;
-        }
-
-        // Wait for V/F generator to reach target
-        {
-            ctrl_gt err = sub->target_w_pu - ctx->vf_gen.current_freq_pu;
-            if (err < float2ctrl(0.001f) && err > float2ctrl(-0.001f))
-            {
-                sub->sm = PMSM_ID_FLUX_SETTLE;
-                sub->is_first_entry = 1;
-            }
-        }
-        break;
-
-    case PMSM_ID_FLUX_SETTLE:
-        if (sub->is_first_entry)
-        {
-            sub->tick_timer = 0;
-            sub->is_first_entry = 0;
-        }
-
-        sub->tick_timer++;
-        if (sub->tick_timer >= sub->settle_ticks)
-        {
-            sub->sm = PMSM_ID_FLUX_MEASURE;
-            sub->is_first_entry = 1;
         }
         break;
 
     case PMSM_ID_FLUX_MEASURE:
-        if (sub->is_first_entry)
+        switch (seq_phase)
         {
-            sub->tick_timer = 0;
+        case CTL_ST_FIRST_ENTRY:
             sub->sum_ud = float2ctrl(0.0f);
             sub->sum_uq = float2ctrl(0.0f);
             sub->sum_id = float2ctrl(0.0f);
             sub->sum_iq = float2ctrl(0.0f);
             sub->sum_w = float2ctrl(0.0f);
-            sub->is_first_entry = 0;
-        }
+            // Intentionally NO break here! Accumulate the 0-th point.
 
-        // Accumulate data
-        sub->sum_ud += ctx->foc_core.vdq_ref.dat[0];
-        sub->sum_uq += ctx->foc_core.vdq_ref.dat[1];
-        sub->sum_id += ctx->foc_core.idq0.dat[0];
-        sub->sum_iq += ctx->foc_core.idq0.dat[1];
-        sub->sum_w += ctx->vf_gen.current_freq_pu;
+        case CTL_ST_KEEP:
+            // Fast accumulation: Only happens EXACTLY `measure_points` times.
+            sub->sum_ud += ctl_id_get_vdq(ctx, phase_d);
+            sub->sum_uq += ctl_id_get_vdq(ctx, phase_q);
+            sub->sum_id += ctl_id_get_idq(ctx, phase_d);
+            sub->sum_iq += ctl_id_get_idq(ctx, phase_q);
+            sub->sum_w += ctx->vf_gen.current_freq_pu;
+            break;
 
-        sub->tick_timer++;
-        if (sub->tick_timer >= cfg->measure_points)
-        {
-            // Calculate averages
-            ctrl_gt avg_ud = ctl_mul(sub->sum_ud, sub->inv_measure_points);
-            ctrl_gt avg_uq = ctl_mul(sub->sum_uq, sub->inv_measure_points);
-            ctrl_gt avg_id = ctl_mul(sub->sum_id, sub->inv_measure_points);
-            ctrl_gt avg_iq = ctl_mul(sub->sum_iq, sub->inv_measure_points);
-            ctrl_gt avg_w = ctl_mul(sub->sum_w, sub->inv_measure_points);
-
-            // Direct DSA Memory Write (Dimension 0 to 4)
-            // Since this is 5 variables, we bypass the 4ch limit by writing directly to SoA memory
-            uint32_t idx = ctx->analyzer.current_idx;
-            uint32_t depth = ctx->analyzer.depth;
-
-            if (idx < depth)
-            {
-                ctl_mem_set_2d_soa(&ctx->analyzer.mem, 0, idx, depth, avg_ud);
-                ctl_mem_set_2d_soa(&ctx->analyzer.mem, 1, idx, depth, avg_uq);
-                ctl_mem_set_2d_soa(&ctx->analyzer.mem, 2, idx, depth, avg_id);
-                ctl_mem_set_2d_soa(&ctx->analyzer.mem, 3, idx, depth, avg_iq);
-                ctl_mem_set_2d_soa(&ctx->analyzer.mem, 4, idx, depth, avg_w);
-                ctx->analyzer.current_idx++;
-            }
-
-            sub->sm = PMSM_ID_FLUX_STEP_EVALUATE;
-            sub->is_first_entry = 1;
-        }
-        break;
-
-    case PMSM_ID_FLUX_STEP_EVALUATE:
-        if (sub->is_first_entry)
-        {
-            sub->step_idx++;
-            if (sub->step_idx >= cfg->steps)
-            {
-                sub->sm = PMSM_ID_FLUX_RAMP_STOP;
-            }
-            else
-            {
-                sub->sm = PMSM_ID_FLUX_RAMP_SPEED;
-            }
-            sub->is_first_entry = 1;
+        case CTL_ST_LEAVE:
+            // CRITICAL SAFETY WINDOW:
+            // Stop accumulating! The data is now frozen.
+            // We hold here safely until the background loop reads the data and switches the state.
+            break;
         }
         break;
 
     case PMSM_ID_FLUX_RAMP_STOP:
-        if (sub->is_first_entry)
+        if (seq_phase == CTL_ST_FIRST_ENTRY)
         {
             ctl_id_set_vf_target_speed(ctx, float2ctrl(0.0f));
-            sub->is_first_entry = 0;
-        }
-
-        if (ctx->vf_gen.current_freq_pu <= float2ctrl(0.005f))
-        {
-            sub->sm = PMSM_ID_FLUX_CALCULATE;
-            sub->is_first_entry = 1;
         }
         break;
     }
@@ -750,7 +699,7 @@ void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
 
 /**
  * @brief Background loop function for Flux Linkage identification.
- * @details Computes pre-requisites and performs the linear regression (|E| vs W) using the DA.
+ * @details STRICT CONTROL PATH: Manages both time-based and condition-based transitions.
  * @param[in,out] ctx Pointer to the master offline ID context.
  */
 void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
@@ -759,17 +708,18 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
     pmsm_oid_cfg_flux_t* cfg = &sub->cfg;
     uint32_t i;
 
-    // --- Safety Rule: Zero output in passive states ---
     if (sub->sm == PMSM_ID_FLUX_CALCULATE || sub->sm == PMSM_ID_FLUX_COMPLETE || sub->sm == PMSM_ID_FLUX_FAULT)
     {
         ctl_id_disable_output(ctx);
     }
 
-    if (sub->sm == PMSM_ID_FLUX_INIT)
+    ctl_state_seq_e loop_phase = ctl_loop_state_seq(&ctx->seq);
+
+    switch (sub->sm)
     {
-        if (sub->is_first_entry)
+    case PMSM_ID_FLUX_INIT:
+        if (loop_phase == CTL_ST_FIRST_ENTRY)
         {
-            // 1. Pre-calculate ISR constants
             sub->settle_ticks = SEC_TO_TICKS(cfg->settle_time_s, ctx->cfg_basic.isr_freq_hz);
 
             if (cfg->measure_points > 0)
@@ -784,64 +734,125 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
             if (cfg->steps > 1)
             {
                 sub->step_size_pu =
-                    ctl_div((cfg->max_target_speed_pu - cfg->min_target_speed_pu), float2ctrl((float)(cfg->steps - 1)));
+                    float2ctrl((cfg->max_target_speed_pu - cfg->min_target_speed_pu) / (float)(cfg->steps - 1));
             }
             else
             {
                 sub->step_size_pu = float2ctrl(0.0f);
             }
 
-            // 2. Configure FOC core for I/F mode
             ctl_id_route_foc_angle(ctx, PMSM_ID_ANGLE_SRC_VF_GEN);
-            ctl_enable_mtr_current_ctrl(&ctx->foc_core);
-            ctx->foc_core.flag_enable_decouple = 0;
-            ctx->foc_core.flag_enable_vdq_feedforward = 0;
-
+            ctl_id_set_foc_state(ctx, PMSM_ID_CURRENT_CLOSELOOP);
             ctl_clear_slope_f_pu(&ctx->vf_gen);
 
-            // 3. Configure DSA Scope
-            // Dimensions = 6 (Ud, Uq, Id, Iq, W, |E|). Divider = 1 (Manual trigger).
             ctl_wipe_dsa_scope_memory(&ctx->analyzer);
             ctl_config_dsa_scope(&ctx->analyzer, 6, 1);
 
-            sub->is_first_entry = 0;
             sub->sm = PMSM_ID_FLUX_RAMP_SPEED;
-            sub->is_first_entry = 1;
+            // Use port maximum time for conditional wait
+            ctl_clear_state_seq(&ctx->seq, GMP_PORT_TIME_MAXIMUM);
+        }
+        break;
+
+    case PMSM_ID_FLUX_RAMP_SPEED: {
+        ctrl_gt err = sub->target_w_pu - ctx->vf_gen.current_freq_pu;
+        if (err < float2ctrl(0.001f) && err > float2ctrl(-0.001f))
+        {
+            sub->sm = PMSM_ID_FLUX_SETTLE;
+            ctl_clear_state_seq(&ctx->seq, sub->settle_ticks);
         }
     }
-    else if (sub->sm == PMSM_ID_FLUX_CALCULATE)
-    {
-        if (sub->is_first_entry)
+    break;
+
+    case PMSM_ID_FLUX_SETTLE:
+        if (loop_phase == CTL_ST_LEAVE)
         {
-            // 1. Retrieve identified parameters from previous stages (In PU)
-            parameter_gt rs_pu = ctx->pmsm_param.Rs / ctx->identified_pu.Z_base;
-            parameter_gt ld_pu = ctx->pmsm_param.Ld / ctx->identified_pu.L_base;
-            parameter_gt lq_pu = ctx->pmsm_param.Lq / ctx->identified_pu.L_base;
+            sub->sm = PMSM_ID_FLUX_MEASURE;
+            ctl_clear_state_seq(&ctx->seq, cfg->measure_points);
+        }
+        break;
+
+    case PMSM_ID_FLUX_MEASURE:
+        // Wait for ISR to hit LEAVE. At this exact moment, we know for a fact
+        // that ISR has stopped accumulating and the data is perfectly clean.
+        if (loop_phase == CTL_ST_LEAVE)
+        {
+            ctrl_gt avg_ud = ctl_mul(sub->sum_ud, sub->inv_measure_points);
+            ctrl_gt avg_uq = ctl_mul(sub->sum_uq, sub->inv_measure_points);
+            ctrl_gt avg_id = ctl_mul(sub->sum_id, sub->inv_measure_points);
+            ctrl_gt avg_iq = ctl_mul(sub->sum_iq, sub->inv_measure_points);
+            ctrl_gt avg_w = ctl_mul(sub->sum_w, sub->inv_measure_points);
+
+            uint32_t idx = ctx->analyzer.current_idx;
+            uint32_t depth = ctx->analyzer.depth;
+
+            if (idx < depth)
+            {
+                ctl_mem_set_2d_soa(&ctx->analyzer.mem, 0, idx, depth, avg_ud);
+                ctl_mem_set_2d_soa(&ctx->analyzer.mem, 1, idx, depth, avg_uq);
+                ctl_mem_set_2d_soa(&ctx->analyzer.mem, 2, idx, depth, avg_id);
+                ctl_mem_set_2d_soa(&ctx->analyzer.mem, 3, idx, depth, avg_iq);
+                ctl_mem_set_2d_soa(&ctx->analyzer.mem, 4, idx, depth, avg_w);
+                ctx->analyzer.current_idx++;
+            }
+
+            sub->sm = PMSM_ID_FLUX_STEP_EVALUATE;
+            ctl_clear_state_seq(&ctx->seq, 0);
+        }
+        break;
+
+    case PMSM_ID_FLUX_STEP_EVALUATE:
+        if (loop_phase == CTL_ST_FIRST_ENTRY)
+        {
+            sub->step_idx++;
+            if (sub->step_idx >= cfg->steps)
+            {
+                sub->sm = PMSM_ID_FLUX_RAMP_STOP;
+                ctl_clear_state_seq(&ctx->seq, GMP_PORT_TIME_MAXIMUM);
+            }
+            else
+            {
+                sub->sm = PMSM_ID_FLUX_RAMP_SPEED;
+                ctl_clear_state_seq(&ctx->seq, GMP_PORT_TIME_MAXIMUM);
+            }
+        }
+        break;
+
+    case PMSM_ID_FLUX_RAMP_STOP:
+        if (ctx->vf_gen.current_freq_pu <= float2ctrl(0.005f))
+        {
+            sub->sm = PMSM_ID_FLUX_CALCULATE;
+            ctl_clear_state_seq(&ctx->seq, 0);
+        }
+        break;
+
+    case PMSM_ID_FLUX_CALCULATE:
+        if (loop_phase == CTL_ST_FIRST_ENTRY)
+        {
+            parameter_gt Z_base = ctx->identified_pu.V_base / ctx->identified_pu.I_base;
+            parameter_gt L_base = Z_base / ctx->identified_pu.W_base;
+
+            parameter_gt rs_pu = ctx->pmsm_param.Rs / Z_base;
+            parameter_gt ld_pu = ctx->pmsm_param.Ld / L_base;
+            parameter_gt lq_pu = ctx->pmsm_param.Lq / L_base;
 
             uint32_t depth = ctx->analyzer.depth;
 
-            // 2. Compute Back-EMF magnitude for each speed step
             for (i = 0; i < cfg->steps && i < depth; i++)
             {
-                parameter_gt ud = (parameter_gt)ctl_mem_get_2d_soa(&ctx->analyzer.mem, 0, i, depth);
-                parameter_gt uq = (parameter_gt)ctl_mem_get_2d_soa(&ctx->analyzer.mem, 1, i, depth);
-                parameter_gt id = (parameter_gt)ctl_mem_get_2d_soa(&ctx->analyzer.mem, 2, i, depth);
-                parameter_gt iq = (parameter_gt)ctl_mem_get_2d_soa(&ctx->analyzer.mem, 3, i, depth);
-                parameter_gt w = (parameter_gt)ctl_mem_get_2d_soa(&ctx->analyzer.mem, 4, i, depth);
+                parameter_gt ud = ctrl2float(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 0, i, depth));
+                parameter_gt uq = ctrl2float(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 1, i, depth));
+                parameter_gt id = ctrl2float(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 2, i, depth));
+                parameter_gt iq = ctrl2float(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 3, i, depth));
+                parameter_gt w = ctrl2float(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 4, i, depth));
 
-                // E_d = U_d - R_s * I_d + W * L_q * I_q
                 parameter_gt ed = ud - (rs_pu * id) + (w * lq_pu * iq);
-                // E_q = U_q - R_s * I_q - W * L_d * I_d
                 parameter_gt eq = uq - (rs_pu * iq) - (w * ld_pu * id);
 
-                // Magnitude |E| = sqrt(Ed^2 + Eq^2)
-                parameter_gt e_mag = sqrtf((ed * ed) + (eq * eq));
-
-                // Save |E| to Dimension 5
+                parameter_gt e_mag = ctl_math_sqrt((ed * ed) + (eq * eq));
                 ctl_mem_set_2d_soa(&ctx->analyzer.mem, 5, i, depth, float2ctrl(e_mag));
             }
 
-            // 3. Perform Linear Regression: Dimension 5 (|E|) against Dimension 4 (W)
             parameter_gt flux_pu = 0.0f, intercept = 0.0f;
             fast_gt fit_ok = ctl_dsa_fit_vs_dim(&ctx->analyzer, 4, 5, 0, cfg->steps - 1, &flux_pu, &intercept);
 
@@ -851,12 +862,10 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
                 return;
             }
 
-            // 4. Convert PU Flux to Physical Units (Weber)
             parameter_gt flux_base = ctx->identified_pu.V_base / ctx->identified_pu.W_base;
             ctx->pmsm_param.flux_linkage = flux_pu * flux_base;
             ctx->identified_pu.Flux_base = float2ctrl(flux_base);
 
-            // 5. Calculate Motor Characteristic Current (if IPM)
             if (ctx->pmsm_param.is_ipm)
             {
                 parameter_gt delta_l = ctx->pmsm_param.Lq - ctx->pmsm_param.Ld;
@@ -872,9 +881,13 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
 
             ctl_wipe_dsa_scope_memory(&ctx->analyzer);
 
-            sub->is_first_entry = 0;
             sub->sm = PMSM_ID_FLUX_COMPLETE;
+            ctl_clear_state_seq(&ctx->seq, 0);
         }
+        break;
+
+    default:
+        break;
     }
 }
 
@@ -893,17 +906,16 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
 void ctl_init_oid_mech(ctl_pmsm_offline_id_t* ctx)
 {
     ctx->sub_mech.sm = PMSM_ID_MECH_INIT;
-    ctx->sub_mech.is_first_entry = 1;
-
-    ctx->sub_mech.tick_timer = 0;
     ctx->sub_mech.active_iq_ref_pu = float2ctrl(0.0f);
     ctx->sub_mech.active_id_ref_pu = float2ctrl(0.0f);
+
+    ctl_clear_state_seq(&ctx->seq, 0);
 }
 
 /**
  * @brief ISR step function for Mechanical Parameters identification.
- * @details Highly optimized state machine managing V/F start, closed-loop handover, 
- * localized speed control, and dual-curve high-speed recording via DSA Scope.
+ * @details STRICT DATA PATH: Executes closed-loop handovers, localized speed control, 
+ * and DSA data pushing. Never changes FSM states.
  * @param[in,out] ctx Pointer to the master offline ID context.
  */
 void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
@@ -911,9 +923,11 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
     pmsm_offline_id_mech_t* sub = &ctx->sub_mech;
     pmsm_oid_cfg_mech_t* cfg = &sub->cfg;
 
-    // 始终更新 V/F 发生器以备随时切回
-    ctl_step_slope_f_pu(&ctx->vf_gen);
+    // Always step V/F generator to keep the internal angle running
+    ctl_id_step_vf_generator(ctx);
     ctrl_gt current_speed_pu = ctx->foc_core.spd_if->speed;
+
+    ctl_state_seq_e seq_phase = ctl_step_state_seq(&ctx->seq);
 
     switch (sub->sm)
     {
@@ -922,187 +936,86 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
     case PMSM_ID_MECH_CALCULATE:
     case PMSM_ID_MECH_COMPLETE:
     case PMSM_ID_MECH_FAULT:
-        break; // Loop handles these.
+        break;
 
-    // --- (IF_START 和 HANDOVER_TO_CLOSED 保持你提供的完美逻辑，此处略写以突出核心) ---
     case PMSM_ID_MECH_IF_START:
-        if (sub->is_first_entry)
+        if (seq_phase == CTL_ST_FIRST_ENTRY)
         {
-            ctl_id_set_vf_target_speed(ctx, cfg->low_speed_pu);
-            ctl_id_apply_dc_current(ctx, cfg->if_current_pu, float2ctrl(0.0f));
-            sub->is_first_entry = 0;
-        }
-        if (ctx->vf_gen.current_freq_pu >= cfg->low_speed_pu)
-        {
-            sub->sm = PMSM_ID_MECH_HANDOVER_TO_CLOSED;
-            sub->is_first_entry = 1;
+            ctl_id_set_vf_target_speed(ctx, float2ctrl(cfg->low_speed_pu));
+            ctl_id_apply_dc_current(ctx, float2ctrl(cfg->if_current_pu), float2ctrl(0.0f));
         }
         break;
 
     case PMSM_ID_MECH_HANDOVER_TO_CLOSED:
-        if (sub->is_first_entry)
+        if (seq_phase == CTL_ST_FIRST_ENTRY)
         {
-            sub->tick_timer = 0;
             ctl_trigger_angle_transition(&ctx->angle_switcher, 1);
-            sub->is_first_entry = 0;
         }
+        if (seq_phase == CTL_ST_KEEP || seq_phase == CTL_ST_FIRST_ENTRY)
         {
             ctrl_gt w = ctx->angle_switcher.weight;
-            sub->active_id_ref_pu = ctl_mul(cfg->if_current_pu, float2ctrl(1.0f) - w);
-            sub->active_iq_ref_pu = ctl_mul(cfg->low_speed_pu, w);
+            sub->active_id_ref_pu = ctl_mul(float2ctrl(cfg->if_current_pu), float2ctrl(1.0f) - w);
+            sub->active_iq_ref_pu = ctl_mul(float2ctrl(cfg->low_speed_pu), w);
             ctl_id_apply_dc_current(ctx, sub->active_id_ref_pu, sub->active_iq_ref_pu);
         }
-        sub->tick_timer++;
-        if (sub->tick_timer >= sub->transition_ticks)
-        {
-            sub->sm = PMSM_ID_MECH_STEADY_LOW;
-            sub->is_first_entry = 1;
-        }
         break;
 
-    // -------------------------------------------------------------
-    // Steady State (Low & High) for Friction Measurement
-    // -------------------------------------------------------------
     case PMSM_ID_MECH_STEADY_LOW:
     case PMSM_ID_MECH_STEADY_HIGH:
-        if (sub->is_first_entry)
+        if (seq_phase == CTL_ST_FIRST_ENTRY)
         {
-            sub->tick_timer = 0;
             sub->sum_iq_steady = float2ctrl(0.0f);
-            sub->is_first_entry = 0;
         }
-
-        // Mini I-Controller for Speed Hold
+        if (seq_phase == CTL_ST_KEEP || seq_phase == CTL_ST_FIRST_ENTRY)
         {
-            ctrl_gt target_spd = (sub->sm == PMSM_ID_MECH_STEADY_LOW) ? cfg->low_speed_pu : cfg->high_speed_pu;
+            // Mini I-Controller for Speed Hold
+            ctrl_gt target_spd =
+                float2ctrl((sub->sm == PMSM_ID_MECH_STEADY_LOW) ? cfg->low_speed_pu : cfg->high_speed_pu);
             ctrl_gt err = target_spd - current_speed_pu;
-            sub->active_iq_ref_pu += ctl_mul(err, float2ctrl(0.001f)); // Soft I-gain
+            sub->active_iq_ref_pu += ctl_mul(err, float2ctrl(0.001f));
             sub->active_iq_ref_pu = ctl_sat(sub->active_iq_ref_pu, float2ctrl(0.5f), float2ctrl(-0.5f));
+
+            ctl_id_apply_dc_current(ctx, float2ctrl(0.0f), sub->active_iq_ref_pu);
+            sub->sum_iq_steady += ctl_id_get_idq(ctx, phase_q);
+        }
+        break;
+
+    case PMSM_ID_MECH_ACCEL_TEST:
+    case PMSM_ID_MECH_DECEL_TEST:
+        if (seq_phase == CTL_ST_FIRST_ENTRY)
+        {
+            sub->active_iq_ref_pu =
+                float2ctrl((sub->sm == PMSM_ID_MECH_ACCEL_TEST) ? cfg->accel_iq_pu : cfg->decel_iq_pu);
             ctl_id_apply_dc_current(ctx, float2ctrl(0.0f), sub->active_iq_ref_pu);
         }
-
-        sub->sum_iq_steady += ctx->foc_core.idq0.dat[1];
-
-        sub->tick_timer++;
-        if (sub->tick_timer >= sub->settle_ticks)
+        if (seq_phase == CTL_ST_KEEP || seq_phase == CTL_ST_FIRST_ENTRY)
         {
-            parameter_gt avg_iq = (parameter_gt)ctl_mul(sub->sum_iq_steady, sub->inv_settle_ticks);
-
-            if (sub->sm == PMSM_ID_MECH_STEADY_LOW)
-            {
-                sub->iq_steady_low_pu = avg_iq;
-                sub->sm = PMSM_ID_MECH_ACCEL_TEST;
-            }
-            else
-            {
-                sub->iq_steady_high_pu = avg_iq;
-                sub->sm = PMSM_ID_MECH_DECEL_TEST;
-            }
-            sub->is_first_entry = 1;
+            // DSA Integration: Push 1-channel data (Speed)
+            ctl_step_dsa_scope_1ch(&ctx->analyzer, current_speed_pu);
         }
+        // If LEAVE is reached (either by time limit or forced by loop), STOP pushing.
         break;
 
-    // -------------------------------------------------------------
-    // Acceleration Test
-    // -------------------------------------------------------------
-    case PMSM_ID_MECH_ACCEL_TEST:
-        if (sub->is_first_entry)
-        {
-            sub->tick_timer = 0;
-            ctl_id_apply_dc_current(ctx, float2ctrl(0.0f), cfg->accel_iq_pu);
-
-            // 记录加速段在 DA 内存中的起始索引
-            sub->da_idx_accel_start = ctx->analyzer.current_idx;
-            sub->is_first_entry = 0;
-        }
-
-        // DSA Integration: Push 1-channel data (Speed)
-        ctl_step_dsa_scope_1ch(&ctx->analyzer, current_speed_pu);
-
-        sub->tick_timer++;
-        // If speed reached OR DA is full (prevention of overwrite)
-        if (current_speed_pu >= cfg->high_speed_pu || ctx->analyzer.current_idx >= ctx->analyzer.depth)
-        {
-            // 记录结束索引
-            sub->da_idx_accel_end = (ctx->analyzer.current_idx > 0) ? ctx->analyzer.current_idx - 1 : 0;
-
-            sub->active_iq_ref_pu = cfg->accel_iq_pu; // Handover initial value for STEADY_HIGH PI
-            sub->sm = PMSM_ID_MECH_STEADY_HIGH;
-            sub->is_first_entry = 1;
-        }
-        break;
-
-    // -------------------------------------------------------------
-    // Deceleration Test
-    // -------------------------------------------------------------
-    case PMSM_ID_MECH_DECEL_TEST:
-        if (sub->is_first_entry)
-        {
-            sub->tick_timer = 0;
-            ctl_id_apply_dc_current(ctx, float2ctrl(0.0f), cfg->decel_iq_pu);
-
-            // 记录减速段在 DA 内存中的起始索引
-            sub->da_idx_decel_start = ctx->analyzer.current_idx;
-            sub->is_first_entry = 0;
-        }
-
-        // OVER-VOLTAGE PROTECTION (CRITICAL)
-        if (ctx->foc_core.udc > cfg->max_vbus_pu)
-        {
-            ctl_id_disable_output(ctx);
-            sub->sm = PMSM_ID_MECH_FAULT;
-            sub->is_first_entry = 1;
-            break;
-        }
-
-        // DSA Integration: Push 1-channel data (Speed)
-        ctl_step_dsa_scope_1ch(&ctx->analyzer, current_speed_pu);
-
-        sub->tick_timer++;
-        if (current_speed_pu <= cfg->low_speed_pu || ctx->analyzer.current_idx >= ctx->analyzer.depth)
-        {
-            // 记录结束索引
-            sub->da_idx_decel_end = (ctx->analyzer.current_idx > 0) ? ctx->analyzer.current_idx - 1 : 0;
-
-            sub->sm = PMSM_ID_MECH_HANDOVER_TO_IF;
-            sub->is_first_entry = 1;
-        }
-        break;
-
-    // --- (HANDOVER_TO_IF 和 IF_STOP 保持原逻辑) ---
     case PMSM_ID_MECH_HANDOVER_TO_IF:
-        if (sub->is_first_entry)
+        if (seq_phase == CTL_ST_FIRST_ENTRY)
         {
-            sub->tick_timer = 0;
             ctl_id_set_vf_target_speed(ctx, current_speed_pu);
             ctx->vf_gen.current_freq_pu = current_speed_pu;
             ctl_trigger_angle_transition(&ctx->angle_switcher, 0);
-            sub->is_first_entry = 0;
         }
+        if (seq_phase == CTL_ST_KEEP || seq_phase == CTL_ST_FIRST_ENTRY)
         {
             ctrl_gt w = ctx->angle_switcher.weight;
-            sub->active_id_ref_pu = ctl_mul(cfg->if_current_pu, float2ctrl(1.0f) - w);
+            sub->active_id_ref_pu = ctl_mul(float2ctrl(cfg->if_current_pu), float2ctrl(1.0f) - w);
             sub->active_iq_ref_pu = ctl_mul(sub->active_iq_ref_pu, w);
             ctl_id_apply_dc_current(ctx, sub->active_id_ref_pu, sub->active_iq_ref_pu);
-        }
-        sub->tick_timer++;
-        if (sub->tick_timer >= sub->transition_ticks)
-        {
-            sub->sm = PMSM_ID_MECH_IF_STOP;
-            sub->is_first_entry = 1;
         }
         break;
 
     case PMSM_ID_MECH_IF_STOP:
-        if (sub->is_first_entry)
+        if (seq_phase == CTL_ST_FIRST_ENTRY)
         {
             ctl_id_set_vf_target_speed(ctx, float2ctrl(0.0f));
-            sub->is_first_entry = 0;
-        }
-        if (ctx->vf_gen.current_freq_pu <= float2ctrl(0.005f))
-        {
-            sub->sm = PMSM_ID_MECH_CALCULATE;
-            sub->is_first_entry = 1;
         }
         break;
     }
@@ -1110,8 +1023,8 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
 
 /**
  * @brief Background loop function for Mechanical Parameters identification.
- * @details Safely executes pre-calculations and dual-curve linear regressions.
- * MUST be called from a low-priority task or main loop.
+ * @details STRICT CONTROL PATH: Safely executes pre-calculations, dynamic bounds checking, 
+ * and dual-curve linear regressions.
  * @param[in,out] ctx Pointer to the master offline ID context.
  */
 void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
@@ -1119,78 +1032,152 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
     pmsm_offline_id_mech_t* sub = &ctx->sub_mech;
     pmsm_oid_cfg_mech_t* cfg = &sub->cfg;
 
-    // --- Safety Rule ---
+    // Safety Rule
     if (sub->sm == PMSM_ID_MECH_CALCULATE || sub->sm == PMSM_ID_MECH_COMPLETE || sub->sm == PMSM_ID_MECH_FAULT)
     {
         ctl_id_disable_output(ctx);
     }
 
-    if (sub->sm == PMSM_ID_MECH_INIT)
+    ctl_state_seq_e loop_phase = ctl_loop_state_seq(&ctx->seq);
+    parameter_gt current_speed_real = ctrl2float(ctx->foc_core.spd_if->speed);
+
+    switch (sub->sm)
     {
-        if (sub->is_first_entry)
+    case PMSM_ID_MECH_INIT:
+        if (loop_phase == CTL_ST_FIRST_ENTRY)
         {
-            // 1. Pre-calculate ISR constants
-            sub->dt_sec = 1.0f / ctx->cfg_basic.isr_freq_hz;
             sub->settle_ticks = SEC_TO_TICKS(cfg->settle_time_s, ctx->cfg_basic.isr_freq_hz);
-            // 补充 transition_ticks 的安全计算
-            sub->transition_ticks = SEC_TO_TICKS(0.5f, ctx->cfg_basic.isr_freq_hz); // default 0.5s handover
+            sub->transition_ticks = SEC_TO_TICKS(cfg->transition_time_s, ctx->cfg_basic.isr_freq_hz);
             sub->inv_settle_ticks = ctl_div(float2ctrl(1.0f), float2ctrl((float)sub->settle_ticks));
 
-            // 2. Configure FOC core and Angle Switcher
-            ctx->foc_core.flag_enable_decouple = 0;
-            ctx->foc_core.flag_enable_vdq_feedforward = 0;
-            ctl_init_angle_switcher(&ctx->angle_switcher, 0.5f, ctx->cfg_basic.isr_freq_hz);
+            // Configure interfaces
+            ctl_id_set_foc_state(ctx, PMSM_ID_CURRENT_CLOSELOOP);
+            ctl_init_angle_switcher(&ctx->angle_switcher, cfg->transition_time_s, ctx->cfg_basic.isr_freq_hz);
             ctl_attach_angle_switcher(&ctx->angle_switcher, &ctx->vf_gen.enc, ctx->enc);
             ctx->foc_core.pos_if = &ctx->angle_switcher.out_enc;
 
-            // 3. Configure DSA Scope for MECH
-            // Estimate max duration for BOTH accel and decel (e.g., 6.0 seconds total)
-            parameter_gt max_duration_s = 6.0f;
-            // Calculate necessary divider to prevent buffer overflow (1 Dimension: Speed)
-            uint32_t div =
-                ctl_dsa_calc_min_divider(ctx->analyzer.mem.capacity, 1, max_duration_s, ctx->cfg_basic.isr_freq_hz);
-
+            // Configure DSA Scope (Estimate e.g., 6.0 seconds max for dynamic tests)
+            uint32_t div = ctl_dsa_calc_min_divider(ctx->analyzer.mem.capacity, 1, 6.0f, ctx->cfg_basic.isr_freq_hz);
             ctl_wipe_dsa_scope_memory(&ctx->analyzer);
             ctl_config_dsa_scope(&ctx->analyzer, 1, div);
 
-            sub->is_first_entry = 0;
+            // TRANSITION -> IF_START (Condition-based)
             sub->sm = PMSM_ID_MECH_IF_START;
-            sub->is_first_entry = 1;
+            ctl_clear_state_seq(&ctx->seq, GMP_PORT_TIME_MAXIMUM);
         }
-    }
-    else if (sub->sm == PMSM_ID_MECH_CALCULATE)
-    {
-        if (sub->is_first_entry)
+        break;
+
+    case PMSM_ID_MECH_IF_START:
+        if (current_speed_real >= cfg->low_speed_pu)
+        {
+            sub->sm = PMSM_ID_MECH_HANDOVER_TO_CLOSED;
+            ctl_clear_state_seq(&ctx->seq, sub->transition_ticks);
+        }
+        break;
+
+    case PMSM_ID_MECH_HANDOVER_TO_CLOSED:
+        if (loop_phase == CTL_ST_LEAVE)
+        {
+            sub->sm = PMSM_ID_MECH_STEADY_LOW;
+            ctl_clear_state_seq(&ctx->seq, sub->settle_ticks);
+        }
+        break;
+
+    case PMSM_ID_MECH_STEADY_LOW:
+        if (loop_phase == CTL_ST_LEAVE)
+        {
+            sub->iq_steady_low_pu = ctrl2float(ctl_mul(sub->sum_iq_steady, sub->inv_settle_ticks));
+
+            // Record DA starting index before transition
+            sub->da_idx_accel_start = ctx->analyzer.current_idx;
+
+            sub->sm = PMSM_ID_MECH_ACCEL_TEST;
+            ctl_clear_state_seq(&ctx->seq, GMP_PORT_TIME_MAXIMUM);
+        }
+        break;
+
+    case PMSM_ID_MECH_ACCEL_TEST:
+        // Conditional Transition: Speed reached OR DA buffer full
+        if (current_speed_real >= cfg->high_speed_pu || ctx->analyzer.current_idx >= ctx->analyzer.depth)
+        {
+            sub->da_idx_accel_end = (ctx->analyzer.current_idx > 0) ? ctx->analyzer.current_idx - 1 : 0;
+
+            sub->sm = PMSM_ID_MECH_STEADY_HIGH;
+            ctl_clear_state_seq(&ctx->seq, sub->settle_ticks);
+        }
+        break;
+
+    case PMSM_ID_MECH_STEADY_HIGH:
+        if (loop_phase == CTL_ST_LEAVE)
+        {
+            sub->iq_steady_high_pu = ctrl2float(ctl_mul(sub->sum_iq_steady, sub->inv_settle_ticks));
+
+            sub->da_idx_decel_start = ctx->analyzer.current_idx;
+
+            sub->sm = PMSM_ID_MECH_DECEL_TEST;
+            ctl_clear_state_seq(&ctx->seq, GMP_PORT_TIME_MAXIMUM);
+        }
+        break;
+
+    case PMSM_ID_MECH_DECEL_TEST:
+        // OVER-VOLTAGE PROTECTION (Control Path intercepts and throws FAULT)
+        if (ctrl2float(ctl_id_get_udc(ctx)) > cfg->max_vbus_pu)
+        {
+            sub->sm = PMSM_ID_MECH_FAULT;
+            return;
+        }
+
+        if (current_speed_real <= cfg->low_speed_pu || ctx->analyzer.current_idx >= ctx->analyzer.depth)
+        {
+            sub->da_idx_decel_end = (ctx->analyzer.current_idx > 0) ? ctx->analyzer.current_idx - 1 : 0;
+
+            sub->sm = PMSM_ID_MECH_HANDOVER_TO_IF;
+            ctl_clear_state_seq(&ctx->seq, sub->transition_ticks);
+        }
+        break;
+
+    case PMSM_ID_MECH_HANDOVER_TO_IF:
+        if (loop_phase == CTL_ST_LEAVE)
+        {
+            sub->sm = PMSM_ID_MECH_IF_STOP;
+            ctl_clear_state_seq(&ctx->seq, GMP_PORT_TIME_MAXIMUM);
+        }
+        break;
+
+    case PMSM_ID_MECH_IF_STOP:
+        if (current_speed_real <= 0.005f)
+        {
+            sub->sm = PMSM_ID_MECH_CALCULATE;
+            ctl_clear_state_seq(&ctx->seq, 0);
+        }
+        break;
+
+    case PMSM_ID_MECH_CALCULATE:
+        if (loop_phase == CTL_ST_FIRST_ENTRY)
         {
             parameter_gt alpha_acc_pu_s = 0.0f, initial_w_acc = 0.0f;
             parameter_gt alpha_dec_pu_s = 0.0f, initial_w_dec = 0.0f;
 
-            // 1. Perform Linear Fitting on DA Segments: Speed = alpha * Time + initial_speed
-            // 提取加速段角加速度
+            // Fit Acceleration
             ctl_dsa_fit_vs_time(&ctx->analyzer, 0, sub->da_idx_accel_start, sub->da_idx_accel_end, &alpha_acc_pu_s,
                                 &initial_w_acc);
-
-            // 提取减速段角加速度
+            // Fit Deceleration
             ctl_dsa_fit_vs_time(&ctx->analyzer, 0, sub->da_idx_decel_start, sub->da_idx_decel_end, &alpha_dec_pu_s,
                                 &initial_w_dec);
 
-            // Safety catch for singularities
             if (alpha_acc_pu_s < 0.001f)
                 alpha_acc_pu_s = 0.001f;
             if (alpha_dec_pu_s > -0.001f)
                 alpha_dec_pu_s = -0.001f;
 
-            // 2. Base Conversions
-            parameter_gt I_base = ctx->identified_pu.I_base;
-            parameter_gt W_mech_base = ctx->identified_pu.W_base / (parameter_gt)ctx->cfg_basic.pole_pairs;
+            parameter_gt I_base = ctrl2float(ctx->identified_pu.I_base);
+            parameter_gt W_mech_base = ctrl2float(ctx->identified_pu.W_base) / (parameter_gt)ctx->cfg_basic.pole_pairs;
 
-            // 3. Convert PU data to Physical Units
             parameter_gt alpha_acc_rads2 = alpha_acc_pu_s * W_mech_base;
             parameter_gt alpha_dec_rads2 = alpha_dec_pu_s * W_mech_base;
             parameter_gt w_mech_low = cfg->low_speed_pu * W_mech_base;
             parameter_gt w_mech_high = cfg->high_speed_pu * W_mech_base;
 
-            // 4. Calculate Electromagnetic Torque Constant Kt (Nm/A)
             parameter_gt Kt = 1.5f * (parameter_gt)ctx->pmsm_param.pole_pairs * ctx->pmsm_param.flux_linkage;
 
             parameter_gt T_acc = Kt * (cfg->accel_iq_pu * I_base);
@@ -1198,51 +1185,28 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
             parameter_gt T_fric_low = Kt * (sub->iq_steady_low_pu * I_base);
             parameter_gt T_fric_high = Kt * (sub->iq_steady_high_pu * I_base);
 
-            // 5. Calculate Inertia J (kg*m^2)
             parameter_gt delta_T = T_acc - T_dec;
             parameter_gt delta_alpha = alpha_acc_rads2 - alpha_dec_rads2;
 
-            if (delta_alpha > 0.001f)
-            {
-                ctx->pmsm_mech_param.J_total = delta_T / delta_alpha;
-            }
-            else
-            {
-                ctx->pmsm_mech_param.J_total = 0.0001f; // Safeguard
-            }
+            ctx->pmsm_mech_param.J_total = (delta_alpha > 0.001f) ? (delta_T / delta_alpha) : 0.0001f;
 
-            // 6. Calculate Viscous Damping B (Nm / (rad/s))
             parameter_gt delta_T_fric = T_fric_high - T_fric_low;
             parameter_gt delta_w_mech = w_mech_high - w_mech_low;
 
-            if (delta_w_mech > 0.001f)
-            {
-                ctx->pmsm_mech_param.B_viscous = delta_T_fric / delta_w_mech;
-            }
-            else
-            {
-                ctx->pmsm_mech_param.B_viscous = 0.0f;
-            }
+            ctx->pmsm_mech_param.B_viscous = (delta_w_mech > 0.001f) ? (delta_T_fric / delta_w_mech) : 0.0f;
 
-            // 7. Calculate Derived Mechanical Time Constant
-            if (ctx->pmsm_mech_param.B_viscous > 0.00001f)
-            {
-                ctx->pmsm_mech_param.tau_m = ctx->pmsm_mech_param.J_total / ctx->pmsm_mech_param.B_viscous;
-            }
-            else
-            {
-                ctx->pmsm_mech_param.tau_m = 9999.0f;
-            }
+            ctx->pmsm_mech_param.tau_m = (ctx->pmsm_mech_param.B_viscous > 0.00001f)
+                                             ? (ctx->pmsm_mech_param.J_total / ctx->pmsm_mech_param.B_viscous)
+                                             : 9999.0f;
 
-            // Cleanup memory bounds for next use
             ctl_wipe_dsa_scope_memory(&ctx->analyzer);
 
-            sub->is_first_entry = 0;
             sub->sm = PMSM_ID_MECH_COMPLETE;
+            ctl_clear_state_seq(&ctx->seq, 0);
         }
+        break;
     }
 }
-
 #pragma endregion
 
 /**
@@ -1305,7 +1269,6 @@ void ctl_step_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
 
     // 3. Step Core Embedded Components
     ctl_step_angle_switcher(&ctx->angle_switcher);
-    ctl_step_current_controller(&ctx->foc_core);
 }
 
 /**
