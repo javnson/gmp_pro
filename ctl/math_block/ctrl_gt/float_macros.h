@@ -84,6 +84,7 @@ GMP_STATIC_INLINE float abs_static_inline(float A)
  * @return The fractional part of x.
  */
 #define ctrl_mod_1(x) ((float)(((float)(x)) - ((int32_t)(x))))
+//#define ctrl_mod_1(x) fmodf(x, 1.0f)
 
 /** @} */ // end of MC_TYPE_CONVERSION_FLOAT group
 

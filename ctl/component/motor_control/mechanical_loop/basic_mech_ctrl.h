@@ -92,7 +92,7 @@ typedef struct _tag_mech_ctrl_init
     parameter_gt pos_kp; //!< Calculated PU Proportional gain for position loop.
     parameter_gt pos_ki; //!< Calculated PU Integral gain for position loop.
 
-} ctl_mech_ctrl_init_t;
+} ctl_mech_init_t;
 
 /**
  * @brief Main structure for the Mechanical Controller.
@@ -126,8 +126,8 @@ typedef struct _tag_mech_ctrl
 // Function Prototypes & Inline Definitions
 //================================================================================
 
-void ctl_autotuning_mech_ctrl(ctl_mech_ctrl_init_t* init);
-void ctl_init_mech_ctrl(ctl_mech_ctrl_t* ctrl, const ctl_mech_ctrl_init_t* init);
+void ctl_autotuning_mech_ctrl(ctl_mech_init_t* init);
+void ctl_init_mech_ctrl(ctl_mech_ctrl_t* ctrl, const ctl_mech_init_t* init);
 
 /**
  * @brief Attaches feedback interfaces to the mechanical controller.

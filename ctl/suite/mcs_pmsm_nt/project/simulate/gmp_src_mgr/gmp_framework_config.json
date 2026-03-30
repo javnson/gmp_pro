@@ -43,10 +43,6 @@
         },
         {
             "root": "ctl",
-            "module": "component|dsa"
-        },
-        {
-            "root": "ctl",
             "module": "component|hardware_preset|_internal"
         },
         {

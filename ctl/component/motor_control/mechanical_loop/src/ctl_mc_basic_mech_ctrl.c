@@ -32,7 +32,7 @@
  * Thus, the relationship to physical bandwidth @f$ K_{pp\_phy} = \omega_{cp} @f$ is:
  * @f[ K_{pp\_pu} = \omega_{cp} \cdot \frac{2\pi}{\omega_{base}} @f]
  */
-void ctl_autotuning_mech_ctrl(ctl_mech_ctrl_init_t* init)
+void ctl_autotuning_mech_ctrl(ctl_mech_init_t* init)
 {
     // Protect against division by zero
     parameter_gt kt = (init->torque_const > 1e-6f) ? init->torque_const : 1.0f;
@@ -70,7 +70,7 @@ void ctl_autotuning_mech_ctrl(ctl_mech_ctrl_init_t* init)
     init->pos_ki = 0;
 }
 
-void ctl_init_mech_ctrl(ctl_mech_ctrl_t* ctrl, const ctl_mech_ctrl_init_t* init)
+void ctl_init_mech_ctrl(ctl_mech_ctrl_t* ctrl, const ctl_mech_init_t* init)
 {
     parameter_gt fs_mech = init->fs / (parameter_gt)init->mech_division;
 

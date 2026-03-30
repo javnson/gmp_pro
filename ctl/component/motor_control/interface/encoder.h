@@ -51,7 +51,7 @@ typedef struct _tag_ctl_pos_encoder_t
     uint16_t pole_pairs; /**< @brief Number of motor pole pairs to calculate electrical position. */
     uint32_t
         position_base; /**< @brief The base value for a full mechanical revolution (e.g., 2^16 for a 16-bit encoder). */
-} pos_encoder_t;
+} pos_encoder_t, ctl_pos_encoder_t;
 
 /**
  * @brief Initializes the absolute position encoder structure.
@@ -112,7 +112,7 @@ typedef struct _tag_ctl_pos_multiturn_encoder_t
     ctrl_gt offset;         /**< @brief Position offset in per-unit. */
     uint16_t pole_pairs;    /**< @brief Number of motor pole pairs. */
     uint32_t position_base; /**< @brief The base value for a full mechanical revolution. */
-} pos_multiturn_encoder_t;
+} pos_multiturn_encoder_t, ctl_pos_multiturn_encoder_t;
 
 /**
  * @brief Initializes the multi-turn position encoder structure.
@@ -167,7 +167,7 @@ typedef struct _tag_ctl_pos_autoturn_encoder_t
     uint16_t pole_pairs;    /**< @brief Number of motor pole pairs. */
     ctrl_gt last_pos;       /**< @brief Last recorded mechanical position, used for revolution counting. */
     uint32_t position_base; /**< @brief The base value for a full mechanical revolution. */
-} pos_autoturn_encoder_t;
+} pos_autoturn_encoder_t, ctl_pos_autoturn_encoder_t;
 
 /**
  * @brief Initializes the auto-turn position encoder structure.
@@ -251,7 +251,7 @@ typedef struct _tag_speed_calculator_t
     ctrl_gt scale_factor;             /**< @brief Factor to convert position delta to speed in p.u. */
     ctl_low_pass_filter_t spd_filter; /**< @brief Low-pass filter for the calculated speed. */
     ctl_divider_t div;                /**< @brief Divider to control the execution frequency of the calculation. */
-} spd_calculator_t;
+} spd_calculator_t, ctl_spd_calculator_t;
 
 /**
  * @brief Initializes the speed calculator.

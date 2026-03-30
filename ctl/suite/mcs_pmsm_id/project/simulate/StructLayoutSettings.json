@@ -1,0 +1,12 @@
+{
+  "ExtractionTool": 1,
+  "AutomaticExtraction": true,
+  "CMakeCommandsFile": "",
+  "AdditionalPreprocessorDefinitions": "",
+  "AdditionalIncludeDirs": "",
+  "AdditionalForceIncludes": "",
+  "AdditionalCommandLine": "",
+  "EnableWarnings": false,
+  "PDBLocation": "E:\\lib\\gmp_pro\\ctl\\suite\\pgs_3ph_grid_inverter\\project\\simulate\\x64\\Debug\\Digital_Power_simulink.pdb",
+  "ParserOutputFolder": "E:\\lib\\gmp_pro\\ctl\\suite\\pgs_3ph_grid_inverter\\project\\simulate\\x64\\Debug\\"
+}

@@ -135,7 +135,7 @@ typedef struct _tag_current_controller
     fast_gt flag_enable_bus_compensation; //!< Enable V bus compensation
     fast_gt flag_enable_vdq_feedforward;  //!<  Enable vdq feed forward
 
-} mtr_current_ctrl_t;
+} mc_foc_core_t;
 
 //================================================================================
 // Function Prototypes & Definitions
@@ -145,7 +145,7 @@ typedef struct _tag_current_controller
  * @brief Initializes the current controller structure to safe defaults.
  * @param[out] mc Pointer to the current controller structure.
  */
-GMP_STATIC_INLINE void ctl_clear_mtr_current_ctrl(mtr_current_ctrl_t* mc)
+GMP_STATIC_INLINE void ctl_clear_foc_core(mc_foc_core_t* mc)
 {
     // 1. Clear Filters
     ctl_clear_filter_iir1(&mc->filter_iuvw[phase_U]); // 修正命名 iabc -> iuvw
@@ -214,27 +214,41 @@ typedef struct _tag_mtr_current_ctrl
     parameter_gt kpq;
     parameter_gt kiq;
 
-} mtr_current_init_t;
+} mc_foc_init_t;
 
 /**
  * @brief Auto-tuning motor driver parameters.
  * @param[in,out] init Pointer to the `mtr_current_init_t` structure.
  */
-void ctl_auto_tuning_mtr_current_ctrl(mtr_current_init_t* init);
+void ctl_auto_tuning_foc_core(mc_foc_init_t* init);
 
 /**
  * @brief Sets up the parameters for the d-q axis PI controllers.
  * @param[out] mc Pointer to the current controller structure.
  * @param[in]  init initialize object for Motor controller.
  */
-void ctl_init_mtr_current_ctrl(mtr_current_ctrl_t* mc, mtr_current_init_t* init);
+void ctl_init_foc_core(mc_foc_core_t* mc, mc_foc_init_t* init);
+
+/**
+ * @brief Initializes the basic motor current controller (FOC Core).
+ * @details Sets up IIR filters for currents and bus voltage, initializes PI controllers 
+ * for d/q axes, configures lead compensators, sets voltage limits, and establishes safe 
+ * default execution flags.
+ * * @param[out] mc        Pointer to the motor current controller instance.
+ * @param[in]  kp        Proportional gain for the d/q axis PI controllers.
+ * @param[in]  ki        Integral gain for the d/q axis PI controllers.
+ * @param[in]  max_vs_pu Maximum stator voltage magnitude in per-unit (e.g., 0.577f for SVPWM).
+ * @param[in]  fs        Sampling/execution frequency of the control loop (Hz).
+ */
+void ctl_init_foc_core_basic(mc_foc_core_t* mc, parameter_gt kp, parameter_gt ki, parameter_gt max_vs_pu,
+                                     parameter_gt fs);
 
 /**
  * @brief Executes one step of the FOC current control loop.
  * @param[out] mc      Pointer to the current controller structure.
  * @param[in]  theta   The current electrical angle of the rotor (0.0 to 1.0).
  */
-GMP_STATIC_INLINE void ctl_step_current_controller(mtr_current_ctrl_t* mc)
+GMP_STATIC_INLINE void ctl_step_foc_core(mc_foc_core_t* mc)
 {
     mc->isr_tick += 1;
 
@@ -412,21 +426,12 @@ GMP_STATIC_INLINE void ctl_step_current_controller(mtr_current_ctrl_t* mc)
 }
 
 /**
- * @brief Enables the PI controller action.
- * @param[out] cc Pointer to the current controller structure.
- */
-GMP_STATIC_INLINE void ctl_enable_mtr_current_ctrl(mtr_current_ctrl_t* mc)
-{
-    mc->flag_enable_current_ctrl = 1;
-}
-
-/**
  * @brief Sets the d-q axis current reference (target).
  * @param[out] cc Pointer to the current controller structure.
  * @param[in]  id_ref The target d-axis current.
  * @param[in]  iq_ref The target q-axis current.
  */
-GMP_STATIC_INLINE void ctl_set_mtr_current_ctrl_ref(mtr_current_ctrl_t* mc, ctrl_gt id_ref, ctrl_gt iq_ref)
+GMP_STATIC_INLINE void ctl_set_foc_core_idq_ref(mc_foc_core_t* mc, ctrl_gt id_ref, ctrl_gt iq_ref)
 {
     mc->idq_ref.dat[0] = id_ref;
     mc->idq_ref.dat[1] = iq_ref;
@@ -438,24 +443,44 @@ GMP_STATIC_INLINE void ctl_set_mtr_current_ctrl_ref(mtr_current_ctrl_t* mc, ctrl
  * @param[in]  vd_ff The d-axis voltage feed forward term.
  * @param[in]  vq_ff The q-axis voltage feed forward term.
  */
-GMP_STATIC_INLINE void ctl_set_mtr_current_ctrl_vdq_ref(mtr_current_ctrl_t* mc, ctrl_gt vd_ff, ctrl_gt vq_ff)
+GMP_STATIC_INLINE void ctl_set_foc_core_vdq_ref(mc_foc_core_t* mc, ctrl_gt vd_ff, ctrl_gt vq_ff)
 {
     mc->vdq_ref.dat[0] = vd_ff;
     mc->vdq_ref.dat[1] = vq_ff;
 }
 
 /**
- * @brief Disables the PI controller action.
- * @details When disabled, the controller output will be zero, but feedforward terms will still be applied.
- * @param[out] cc Pointer to the current controller structure.
+ * @brief Enables the closed-loop PI current controller action.
+ * @param[in,out] mc Pointer to the FOC core structure.
  */
-GMP_STATIC_INLINE void ctl_disable_mtr_current_ctrl(mtr_current_ctrl_t* mc)
+GMP_STATIC_INLINE void ctl_enable_foc_core_current_ctrl(mc_foc_core_t* mc)
+{
+    mc->flag_enable_current_ctrl = 1;
+}
+
+/**
+ * @brief Disables the closed-loop PI current controller action.
+ * @details When disabled, the PI controller output will be zero, but explicit voltage 
+ * commands or feedforward terms (if enabled) will still be applied to the plant.
+ * @param[in,out] mc Pointer to the FOC core structure.
+ */
+GMP_STATIC_INLINE void ctl_disable_foc_core_current_ctrl(mc_foc_core_t* mc)
 {
     mc->flag_enable_current_ctrl = 0;
 }
 
-GMP_STATIC_INLINE void ctl_attach_mtr_current_ctrl_port(mtr_current_ctrl_t* mc, tri_adc_ift* _iabc, adc_ift* _udc,
-                                                        rotation_ift* _pos_if, velocity_ift* _vec_if)
+/**
+ * @brief Attaches the primary hardware and sensor interfaces to the FOC core.
+ * @details Binds the physical ADC channels for phase currents and bus voltage, 
+ * as well as the position and velocity feedback interfaces.
+ * @param[in,out] mc       Pointer to the FOC core structure.
+ * @param[in]     _iabc    Pointer to the 3-phase current ADC interface.
+ * @param[in]     _udc     Pointer to the DC bus voltage ADC interface.
+ * @param[in]     _pos_if  Pointer to the rotor position interface.
+ * @param[in]     _vec_if  Pointer to the rotor velocity interface.
+ */
+GMP_STATIC_INLINE void ctl_attach_foc_core_port(mc_foc_core_t* mc, tri_adc_ift* _iabc, adc_ift* _udc,
+                                                rotation_ift* _pos_if, velocity_ift* _vec_if)
 {
     mc->adc_iuvw = _iabc;
     mc->adc_udc = _udc;
@@ -463,9 +488,68 @@ GMP_STATIC_INLINE void ctl_attach_mtr_current_ctrl_port(mtr_current_ctrl_t* mc, 
     mc->spd_if = _vec_if;
 }
 
-GMP_STATIC_INLINE void ctl_attach_mtr_current_ctrl_phasor(mtr_current_ctrl_t* mc, ctl_vector2_t* _phasor)
+/**
+ * @brief Dynamically attaches or updates the position encoder interface.
+ * @details Highly useful for seamless (bumpless) transitions between open-loop V/F, 
+ * sensorless observers (SMO), and physical encoders on the fly.
+ * @param[in,out] mc       Pointer to the FOC core structure.
+ * @param[in]     _pos_if  Pointer to the new rotor position interface.
+ */
+GMP_STATIC_INLINE void ctl_attach_foc_core_pos_enc(mc_foc_core_t* mc, rotation_ift* _pos_if)
+{
+    mc->pos_if = _pos_if;
+}
+
+/**
+ * @brief Attaches an external phasor (sine/cosine vector) input to the FOC core.
+ * @details Allows bypassing standard trigonometric (sin/cos) calculations by 
+ * providing pre-calculated phasor values, optimizing execution speed.
+ * @param[in,out] mc       Pointer to the FOC core structure.
+ * @param[in]     _phasor  Pointer to the external phasor structure (vector2).
+ */
+GMP_STATIC_INLINE void ctl_attach_foc_core_phasor(mc_foc_core_t* mc, ctl_vector2_t* _phasor)
 {
     mc->phasor_input = _phasor;
+}
+
+/**
+ * @brief Disables the d-q axis cross-coupling voltage compensation.
+ * @param[in,out] mc Pointer to the FOC core structure.
+ */
+GMP_STATIC_INLINE void ctl_disable_foc_core_decouple(mc_foc_core_t* mc)
+{
+    mc->flag_enable_decouple = 0;
+}
+
+/**
+ * @brief Enables the d-q axis cross-coupling voltage compensation.
+ * @details Improves current control dynamic response at high speeds by actively cancelling 
+ * out the cross-coupling back-EMF terms (w * Lq * Iq and -w * Ld * Id).
+ * @param[in,out] mc Pointer to the FOC core structure.
+ */
+GMP_STATIC_INLINE void ctl_enable_foc_core_decouple(mc_foc_core_t* mc)
+{
+    mc->flag_enable_decouple = 1;
+}
+
+/**
+ * @brief Disables the Vd/Vq voltage feedforward control.
+ * @param[in,out] mc Pointer to the FOC core structure.
+ */
+GMP_STATIC_INLINE void ctl_disable_foc_core_vdq_ff(mc_foc_core_t* mc)
+{
+    mc->flag_enable_vdq_feedforward = 0;
+}
+
+/**
+ * @brief Enables the Vd/Vq voltage feedforward control.
+ * @details Adds pre-calculated open-loop feedforward voltages directly to the 
+ * PI controller outputs. Essential for high-performance dynamic tracking.
+ * @param[in,out] mc Pointer to the FOC core structure.
+ */
+GMP_STATIC_INLINE void ctl_enable_foc_core_vdq_ff(mc_foc_core_t* mc)
+{
+    mc->flag_enable_vdq_feedforward = 1;
 }
 
 /** 

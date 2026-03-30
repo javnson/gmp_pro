@@ -10,16 +10,12 @@
  * @copyright Copyright GMP(c) 2024
  */
 
-
 #include <gmp_core.h>
 
 //////////////////////////////////////////////////////////////////////////
 // pmsm smo
 
 #include <ctl/component/motor_control/observer/pmsm_esmo.h>
-
-
-
 
 void ctl_init_pmsm_esmo_consultant(ctl_pmsm_esmo_t* esmo, const ctl_consultant_pmsm_t* motor,
                                    const ctl_consultant_pu_pmsm_t* pu, parameter_gt fs, parameter_gt fc_emf,
@@ -112,9 +108,6 @@ void ctl_init_pmsm_esmo(ctl_pmsm_esmo_t* esmo, const ctl_pmsm_esmo_init_t* init)
     parameter_gt err_lim = (init->current_err_limit_pu > 1e-3f) ? init->current_err_limit_pu : 0.3f;
     esmo->current_err_limit = float2ctrl(err_lim);
 
-    // 6. clear default angle bias
-    esmo->output_angle_bias = float2ctrl(0.0f);
-
     esmo->diverge_limit = (uint32_t)(init->fault_time_ms * fs_safe / 1000.0f);
     if (esmo->diverge_limit < 1)
         esmo->diverge_limit = 1;
@@ -122,8 +115,6 @@ void ctl_init_pmsm_esmo(ctl_pmsm_esmo_t* esmo, const ctl_pmsm_esmo_init_t* init)
     // 6. Finalize Initialization
     ctl_clear_pmsm_esmo(esmo);
     ctl_disable_pmsm_esmo(esmo);
-    ctl_enable_pmsm_esmo_compensate(esmo);
-    ctl_disable_pmsm_esmo_bias(esmo);
 }
 
 /**
@@ -135,8 +126,7 @@ void ctl_init_pmsm_esmo(ctl_pmsm_esmo_t* esmo, const ctl_pmsm_esmo_init_t* init)
  * @param[in]  cur_init  Pointer to the generic motor and current loop base configuration.
  * @param[in]  flux_linkage Permanent magnet flux linkage in Webers (Wb).
  */
-void ctl_autotune_esmo_init_from_mtr(ctl_pmsm_esmo_init_t* esmo_init,
-                                     const mtr_current_init_t* cur_init,
+void ctl_autotune_esmo_init_from_mtr(ctl_pmsm_esmo_init_t* esmo_init, const mc_foc_init_t* cur_init,
                                      parameter_gt flux_linkage)
 {
     // 防呆保护：确保传入的指针有效且基础频率合法
@@ -193,4 +183,3 @@ void ctl_autotune_esmo_init_from_mtr(ctl_pmsm_esmo_init_t* esmo_init,
     // 用于 Quasi-SMC 防抖振，通常设置在 5% 左右
     esmo_init->z_margin_pu = 0.05f;
 }
-

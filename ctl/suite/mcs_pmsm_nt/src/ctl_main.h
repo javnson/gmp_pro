@@ -57,7 +57,7 @@ extern spwm_modulator_t spwm;
 #endif // USING_NPC_MODULATOR
 
 // controller body: Current controller, Command dispatcher, motion controller
-extern mtr_current_ctrl_t mtr_ctrl;
+extern mc_foc_core_t mtr_ctrl;
 extern ctl_mech_ctrl_t mech_ctrl;
 
 // Observer: SMO, FO, Speed measurement.
@@ -109,12 +109,12 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         ctl_step_mech_ctrl(&mech_ctrl);
 
         // current command dispatch
-        ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, 0, ctl_get_mech_cmd(&mech_ctrl));
+        ctl_set_foc_core_idq_ref(&mtr_ctrl, 0, ctl_get_mech_cmd(&mech_ctrl));
 
 #endif
 
         // motor current controller
-        ctl_step_current_controller(&mtr_ctrl);
+        ctl_step_foc_core(&mtr_ctrl);
 
 #ifdef ENABLE_SMO
         ctrl_gt udc_for_smo = ctl_mul(CTL_CTRL_CONST_1_OVER_SQRT3, mtr_ctrl.udc);

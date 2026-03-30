@@ -161,7 +161,7 @@ extern "C"
 	 * @param[in]  flux_linkage Permanent magnet flux linkage in Webers (Wb).
 	 */
 	void ctl_autotune_esmo_init_from_mtr(ctl_pmsm_esmo_init_t* esmo_init,
-		const mtr_current_init_t* cur_init,
+		const mc_foc_init_t* cur_init,
 		parameter_gt flux_linkage);
 
 	/**
