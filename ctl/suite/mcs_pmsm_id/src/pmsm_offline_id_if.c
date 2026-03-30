@@ -3,101 +3,97 @@
 
 #include <ctl_main.h>
 
-
-
 // Offline ID Instances
 ctl_pmsm_offline_id_t pmsm_oid;
 ctl_pmsm_offline_id_init_t pmsm_oid_cfg;
 
-
-
 void init_pmsm_offline_id()
 {
     // =========================================================================
-        // PMSM Offline ID Configuration
-        // =========================================================================
-        pmsm_oid_cfg.v_base = CTRL_VOLTAGE_BASE;
-        pmsm_oid_cfg.i_base = CTRL_CURRENT_BASE;
-        pmsm_oid_cfg.w_base = MOTOR_PARAM_RATED_FREQUENCY * 2.0f * 3.1415926f;
+    // PMSM Offline ID Configuration
+    // =========================================================================
+    pmsm_oid_cfg.v_base = CTRL_VOLTAGE_BASE;
+    pmsm_oid_cfg.i_base = CTRL_CURRENT_BASE;
+    pmsm_oid_cfg.w_base = MOTOR_PARAM_RATED_FREQUENCY * 2.0f * 3.1415926f;
 
-        // 基础开关配置
-        pmsm_oid_cfg.cfg_basic.isr_freq_hz = CONTROLLER_FREQUENCY;
-        pmsm_oid_cfg.cfg_basic.pole_pairs = MOTOR_PARAM_POLE_PAIRS;
-        pmsm_oid_cfg.cfg_basic.is_sensorless = 0;
+    // 基础开关配置
+    pmsm_oid_cfg.cfg_basic.isr_freq_hz = CONTROLLER_FREQUENCY;
+    pmsm_oid_cfg.cfg_basic.pole_pairs = MOTOR_PARAM_POLE_PAIRS;
+    pmsm_oid_cfg.cfg_basic.is_sensorless = 0;
 
-        // 使能辨识的流程 (全开)
-        pmsm_oid_cfg.cfg_basic.flag_enable_prepare = 1; // 打开准备阶段 (连接 ADC 校准)
-        pmsm_oid_cfg.cfg_basic.flag_enable_rs_dt   = 1;
-        pmsm_oid_cfg.cfg_basic.flag_enable_ldq     = 1;
-        pmsm_oid_cfg.cfg_basic.flag_enable_flux    = 1;
-        pmsm_oid_cfg.cfg_basic.flag_enable_mech_id = 0;
+    // 使能辨识的流程 (全开)
+    pmsm_oid_cfg.cfg_basic.flag_enable_prepare = 1; // 打开准备阶段 (连接 ADC 校准)
+    pmsm_oid_cfg.cfg_basic.flag_enable_rs_dt = 1;
+    pmsm_oid_cfg.cfg_basic.flag_enable_ldq = 1;
+    pmsm_oid_cfg.cfg_basic.flag_enable_flux = 1;
+    pmsm_oid_cfg.cfg_basic.flag_enable_mech_id = 0;
 
-        // --- 子模块具体参数配置 (示例) ---
-        // Rs & DT
-        pmsm_oid_cfg.cfg_rs_dt.max_current_pu = 0.3f;
-        pmsm_oid_cfg.cfg_rs_dt.min_current_pu = 0.05f;
-        pmsm_oid_cfg.cfg_rs_dt.steps = 5;
-        pmsm_oid_cfg.cfg_rs_dt.align_time_s = 1.0f;
-        pmsm_oid_cfg.cfg_rs_dt.measure_delay_s = 0.2f;
-        pmsm_oid_cfg.cfg_rs_dt.measure_points = 100; // 采集 100 点求平均
+    // --- 子模块具体参数配置 (示例) ---
+    // Rs & DT
+    pmsm_oid_cfg.cfg_rs_dt.max_current_pu = 0.3f;
+    pmsm_oid_cfg.cfg_rs_dt.min_current_pu = 0.05f;
+    pmsm_oid_cfg.cfg_rs_dt.steps = 5;
+    pmsm_oid_cfg.cfg_rs_dt.align_time_s = 1.0f;
+    pmsm_oid_cfg.cfg_rs_dt.measure_delay_s = 0.2f;
+    pmsm_oid_cfg.cfg_rs_dt.measure_points = 100; // 采集 100 点求平均
 
-        // Ld & Lq
-        pmsm_oid_cfg.cfg_ld_lq.pulse_voltage_pu = 0.2f;
-        pmsm_oid_cfg.cfg_ld_lq.max_bias_curr_pu = 0.2f;
-        pmsm_oid_cfg.cfg_ld_lq.bias_steps = 5;
-        pmsm_oid_cfg.cfg_ld_lq.align_current_pu = 0.5f;
-        pmsm_oid_cfg.cfg_ld_lq.settle_time_s = 0.2f;
-        pmsm_oid_cfg.cfg_ld_lq.pulse_time_s = 0.002f; // 2ms 极短脉冲
-        pmsm_oid_cfg.cfg_ld_lq.cooldown_time_s = 0.05f;
+    // Ld & Lq
+    pmsm_oid_cfg.cfg_ld_lq.pulse_voltage_pu = 0.05f;
+    pmsm_oid_cfg.cfg_ld_lq.max_bias_curr_pu = 0.1f;
+    pmsm_oid_cfg.cfg_ld_lq.bias_steps = 5;
+    pmsm_oid_cfg.cfg_ld_lq.align_current_pu = 0.1f;
+    pmsm_oid_cfg.cfg_ld_lq.settle_time_s = 0.2f;
+    pmsm_oid_cfg.cfg_ld_lq.pulse_time_s = 0.002f; // 2ms 极短脉冲
+    pmsm_oid_cfg.cfg_ld_lq.cooldown_time_s = 0.05f;
 
-        // Flux Linkage
-        pmsm_oid_cfg.cfg_flux.min_target_speed_pu = 0.2f;
-        pmsm_oid_cfg.cfg_flux.max_target_speed_pu = 0.4f;
-        pmsm_oid_cfg.cfg_flux.steps = 3;
-        pmsm_oid_cfg.cfg_flux.if_current_pu = 0.2f;
-        pmsm_oid_cfg.cfg_flux.settle_time_s = 1.0f;
-        pmsm_oid_cfg.cfg_flux.measure_points = 2000;
+    // Flux Linkage
+    pmsm_oid_cfg.cfg_flux.min_target_speed_pu = 0.05f;
+    pmsm_oid_cfg.cfg_flux.max_target_speed_pu = 0.2f;
+    pmsm_oid_cfg.cfg_flux.steps = 6;
+    pmsm_oid_cfg.cfg_flux.if_current_pu = 0.35f;
+    pmsm_oid_cfg.cfg_flux.settle_time_s = 1.0f;
+    pmsm_oid_cfg.cfg_flux.measure_points = 2000;
 
-        // Mechanical
-        pmsm_oid_cfg.cfg_mech.low_speed_pu = 0.2f;
-        pmsm_oid_cfg.cfg_mech.high_speed_pu = 0.6f;
-        pmsm_oid_cfg.cfg_mech.accel_iq_pu = 0.5f;
-        pmsm_oid_cfg.cfg_mech.decel_iq_pu = -0.5f;
-        pmsm_oid_cfg.cfg_mech.max_vbus_pu = 1.2f; // 120% OV 保护
-        pmsm_oid_cfg.cfg_mech.if_current_pu = 0.2f;
-        pmsm_oid_cfg.cfg_mech.settle_time_s = 2.0f;
-        pmsm_oid_cfg.cfg_mech.transition_time_s = 0.5f;
+    // Mechanical
+    pmsm_oid_cfg.cfg_mech.low_speed_pu = 0.2f;
+    pmsm_oid_cfg.cfg_mech.high_speed_pu = 0.6f;
+    pmsm_oid_cfg.cfg_mech.accel_iq_pu = 0.5f;
+    pmsm_oid_cfg.cfg_mech.decel_iq_pu = -0.5f;
+    pmsm_oid_cfg.cfg_mech.max_vbus_pu = 1.2f; // 120% OV 保护
+    pmsm_oid_cfg.cfg_mech.if_current_pu = 0.2f;
+    pmsm_oid_cfg.cfg_mech.settle_time_s = 2.0f;
+    pmsm_oid_cfg.cfg_mech.transition_time_s = 0.5f;
 
-        // 初始化辨识引擎
-        ctl_init_pmsm_offline_id_sm(&pmsm_oid, &pmsm_oid_cfg, dsa_buffer, DSA_BUFFER_SIZE);
+    // 初始化辨识引擎
+    ctl_init_pmsm_offline_id_sm(&pmsm_oid, &pmsm_oid_cfg, dsa_buffer, DSA_BUFFER_SIZE);
 
-        pmsm_oid.enc = &pos_enc.encif;
+    pmsm_oid.enc = &pos_enc.encif;
 }
 
 void loop_pmsm_offline_id()
 {
     // =========================================================================
-        // Offline ID Phase 1: Prepare (ADC Calibration Handshake)
-        // =========================================================================
-        if (pmsm_oid.sm == PMSM_OFFLINE_ID_PREPARE)
+    // Offline ID Phase 1: Prepare (ADC Calibration Handshake)
+    // =========================================================================
+    if (pmsm_oid.sm == PMSM_OFFLINE_ID_PREPARE)
+    {
+
+        // 监控 ADC 校准是否彻底完成 (根据你代码里 index > 13 就清零 flag 的逻辑)
+        if (flag_enable_adc_calibrator == 0 && index_adc_calibrator > 7)
         {
-
-            // 监控 ADC 校准是否彻底完成 (根据你代码里 index > 13 就清零 flag 的逻辑)
-                    if (flag_enable_adc_calibrator == 0 && index_adc_calibrator > 7) {
-                        // 校准完成，手动将状态机推入下一个环节！
-                        pmsm_oid.sm = ctl_oid_get_next_state(&pmsm_oid, PMSM_OFFLINE_ID_PREPARE);
-                        // 这里声明一个外部可以调用的 ctl_oid_init_target_state
-                        extern void ctl_oid_init_target_state(ctl_pmsm_offline_id_t* ctx);
-                        ctl_oid_init_target_state(&pmsm_oid);
-                    }
+            // 校准完成，手动将状态机推入下一个环节！
+            pmsm_oid.sm = ctl_oid_get_next_state(&pmsm_oid, PMSM_OFFLINE_ID_PREPARE);
+            // 这里声明一个外部可以调用的 ctl_oid_init_target_state
+            extern void ctl_oid_init_target_state(ctl_pmsm_offline_id_t * ctx);
+            ctl_oid_init_target_state(&pmsm_oid);
         }
+    }
 
-        // =========================================================================
-            // OID Background Loop: Runs heavy math (Linear Regression, Regulators)
-            // =========================================================================
-            ctl_loop_pmsm_offline_id(&pmsm_oid);
+    // =========================================================================
+    // OID Background Loop: Runs heavy math (Linear Regression, Regulators)
+    // =========================================================================
+    ctl_loop_pmsm_offline_id(&pmsm_oid);
 }
-
 
 /**
  * @brief Routes the FOC core's angle input to a specific internal/external source.

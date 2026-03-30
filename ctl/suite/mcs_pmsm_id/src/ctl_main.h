@@ -18,9 +18,9 @@
 #include <ctl/component/interface/pwm_channel.h>
 #include <ctl/component/interface/spwm_modulator.h>
 
-#include <ctl/component/motor_control/interface/encoder.h>
 #include <ctl/component/motor_control/basic/mtr_protection.h>
 #include <ctl/component/motor_control/basic/vf_generator.h>
+#include <ctl/component/motor_control/interface/encoder.h>
 
 #include <ctl/component/motor_control/current_loop/foc_core.h>
 #include <ctl/component/motor_control/mechanical_loop/basic_mech_ctrl.h>
@@ -107,21 +107,21 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         ctl_step_spd_calc(&spd_enc);
 
         // =====================================================================
-                // [新增] OFFLINE ID DATA PATH (超级大脑介入)
-                // =====================================================================
-                // 它会在内部修改 mtr_ctrl 的 pos_if, vdq_ref, idq_ref 等引用接口
-                ctl_step_pmsm_offline_id(&pmsm_oid);
+        // [新增] OFFLINE ID DATA PATH (超级大脑介入)
+        // =====================================================================
+        // 它会在内部修改 mtr_ctrl 的 pos_if, vdq_ref, idq_ref 等引用接口
+        ctl_step_pmsm_offline_id(&pmsm_oid);
 
 #if BUILD_LEVEL > 3
-                // 2. 原有的机械与位置控制逻辑 (如果 OID 在运行，应被旁路)
-                        if (pmsm_oid.sm == PMSM_OFFLINE_ID_DISABLED || pmsm_oid.sm == PMSM_OFFLINE_ID_COMPLETE)
-                        {
-        // motion controller
-        ctl_step_mech_ctrl(&mech_ctrl);
+        // 2. 原有的机械与位置控制逻辑 (如果 OID 在运行，应被旁路)
+        if (pmsm_oid.sm == PMSM_OFFLINE_ID_DISABLED || pmsm_oid.sm == PMSM_OFFLINE_ID_COMPLETE)
+        {
+            // motion controller
+            ctl_step_mech_ctrl(&mech_ctrl);
 
-        // current command dispatch
-        ctl_set_foc_core_idq_ref(&mtr_ctrl, 0, ctl_get_mech_cmd(&mech_ctrl));
-                        }
+            // current command dispatch
+            ctl_set_foc_core_idq_ref(&mtr_ctrl, 0, ctl_get_mech_cmd(&mech_ctrl));
+        }
 #endif
 
         // motor current controller
@@ -135,23 +135,22 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 
 #if (PWM_MODULATOR_USING_NEGATIVE_LOGIC == 1)
         ctl_step_pmsm_esmo(
-                    // SMO object
-                    &smo,
-                    // uab
-                    v_alpha, v_beta,
-                    // iab
-                    mtr_ctrl.iab0.dat[phase_alpha], mtr_ctrl.iab0.dat[phase_beta]);
+            // SMO object
+            &smo,
+            // uab
+            v_alpha, v_beta,
+            // iab
+            mtr_ctrl.iab0.dat[phase_alpha], mtr_ctrl.iab0.dat[phase_beta]);
 #else
         ctl_step_pmsm_esmo(
-                            // SMO object
-                            &smo,
-                            // uab
-                            v_alpha, v_beta,
-                            // iab
-                            mtr_ctrl.iab0.dat[phase_alpha], mtr_ctrl.iab0.dat[phase_beta]);
+            // SMO object
+            &smo,
+            // uab
+            v_alpha, v_beta,
+            // iab
+            mtr_ctrl.iab0.dat[phase_alpha], mtr_ctrl.iab0.dat[phase_beta]);
 
 #endif
-
 
 #endif // ENABLE_SMO
 

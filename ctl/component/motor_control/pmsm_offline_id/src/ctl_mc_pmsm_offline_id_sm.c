@@ -39,6 +39,8 @@ void ctl_step_oid_rs_dt_isr(ctl_pmsm_offline_id_t* ctx)
     // Call the sequencer strictly in every active state
     ctl_state_seq_e seq_phase = ctl_step_state_seq(&ctx->seq);
 
+    ctrl_gt udc_pu;
+
     switch (sub->sm)
     {
     case PMSM_ID_RSDT_DISABLED:
@@ -90,7 +92,11 @@ void ctl_step_oid_rs_dt_isr(ctl_pmsm_offline_id_t* ctx)
             sub->sum_i = float2ctrl(0.0f);
             // Intentionally NO break. Accumulate the very first point!
         case CTL_ST_KEEP:
-            sub->sum_u += ctl_id_get_vdq(ctx, phase_d);
+
+            udc_pu = ctl_id_get_udc(ctx);
+
+            // calculate actual voltage
+            sub->sum_u += ctl_mul(ctl_id_get_vdq(ctx, phase_d), udc_pu);
             sub->sum_i += ctl_id_get_idq(ctx, phase_d);
             break;
         case CTL_ST_LEAVE:
@@ -274,7 +280,10 @@ void ctl_loop_oid_rs_dt(ctl_pmsm_offline_id_t* ctx)
             sub->vcomp_var = vcomp_var_sum / 6.0f;
 
             parameter_gt Z_base = ctx->identified_pu.V_base / ctx->identified_pu.I_base;
-            ctx->pmsm_param.Rs = sub->rs_mean * Z_base;
+            ctx->pmsm_param.Rs = (sub->rs_mean * Z_base) / 2.0f;
+
+            // 1. Save PU DT
+            ctx->V_comp_volts = sub->vcomp_mean * ctx->identified_pu.V_base;
 
             ctl_wipe_dsa_scope_memory(&ctx->analyzer);
 
@@ -366,6 +375,8 @@ void ctl_step_oid_ldq_isr(ctl_pmsm_offline_id_t* ctx)
             // 2. Freeze steady-state currents (I_0) to calculate Delta I later
             sub->frozen_id_pu = ctl_id_get_idq(ctx, 0);
             sub->frozen_iq_pu = ctl_id_get_idq(ctx, 1);
+
+            sub->frozen_udc_pu = ctl_id_get_udc(ctx);
 
             // 3. Open Loop Pulse Injection
             if (sub->is_measuring_q_axis == 0)
@@ -468,16 +479,21 @@ void ctl_loop_oid_ldq(ctl_pmsm_offline_id_t* ctx)
         }
         break;
 
-case PMSM_ID_LDQ_PULSE_MEASURE:
+    case PMSM_ID_LDQ_PULSE_MEASURE:
         if (loop_phase == CTL_ST_LEAVE)
         {
             // 1. Setup physical constants
-            parameter_gt Z_base = ctx->identified_pu.V_base / ctx->identified_pu.I_base;
-            parameter_gt rs_pu = ctx->pmsm_param.Rs / Z_base;
+            //            parameter_gt Z_base = ctx->identified_pu.V_base / ctx->identified_pu.I_base;
+            //            parameter_gt rs_pu = ctx->pmsm_param.Rs / Z_base;
+
+            parameter_gt rs_pu = ctx->sub_rs_dt.rs_mean;
+
+            //
+            parameter_gt actual_pulse_v = cfg->pulse_voltage_pu * ctrl2float(sub->frozen_udc_pu);
 
             // 2. Calculate inputs for the First-Order Solver
             // The theoretical steady-state current delta = Voltage Pulse / Resistance
-            parameter_gt target_delta_i = cfg->pulse_voltage_pu / rs_pu;
+            parameter_gt target_delta_i = actual_pulse_v / rs_pu;
 
             // Initial current baseline
             parameter_gt baseline_i =
@@ -566,8 +582,8 @@ case PMSM_ID_LDQ_PULSE_MEASURE:
             parameter_gt L_base = Z_base / ctx->identified_pu.W_base;
 
             // Store Nominal L (at 0A bias, i.e., index 0)
-            ctx->pmsm_param.Ld = sub->ld_array[0] * L_base;
-            ctx->pmsm_param.Lq = sub->lq_array[0] * L_base;
+            ctx->pmsm_param.Ld = sub->ld_array[0] * L_base / 2.0f;
+            ctx->pmsm_param.Lq = sub->lq_array[0] * L_base / 2.0f;
 
             ctx->pmsm_param.saliency_ratio = ctx->pmsm_param.Lq / ctx->pmsm_param.Ld;
             ctx->pmsm_param.is_ipm = (ctx->pmsm_param.saliency_ratio > 1.05f) ? 1 : 0;
@@ -615,10 +631,16 @@ void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
 
     ctl_state_seq_e seq_phase = ctl_step_state_seq(&ctx->seq);
 
+    ctrl_gt udc_pu;
+    ctrl_gt real_vd;
+    ctrl_gt real_vq;
+
+    ctl_id_route_foc_angle(ctx, PMSM_ID_ANGLE_SRC_VF_GEN);
+    ctl_step_slope_f_pu(&ctx->vf_gen);
+
     // Global Action: During active dynamic states, maintain V/F generator and drag current
     if (sub->sm >= PMSM_ID_FLUX_RAMP_SPEED && sub->sm <= PMSM_ID_FLUX_RAMP_STOP)
     {
-//        ctl_id_step_vf_generator(ctx);
         ctl_id_apply_dc_current(ctx, float2ctrl(cfg->if_current_pu), float2ctrl(0.0f));
     }
 
@@ -644,6 +666,7 @@ void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
             {
                 sub->target_w_pu += sub->step_size_pu;
             }
+
             ctl_id_set_vf_target_speed(ctx, sub->target_w_pu);
         }
         break;
@@ -661,8 +684,13 @@ void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
 
         case CTL_ST_KEEP:
             // Fast accumulation: Only happens EXACTLY `measure_points` times.
-            sub->sum_ud += ctl_id_get_vdq(ctx, phase_d);
-            sub->sum_uq += ctl_id_get_vdq(ctx, phase_q);
+            udc_pu = ctl_id_get_udc(ctx);
+
+            real_vd = ctl_mul(ctl_id_get_vdq(ctx, phase_d), udc_pu);
+            real_vq = ctl_mul(ctl_id_get_vdq(ctx, phase_q), udc_pu);
+
+            sub->sum_ud += real_vd;
+            sub->sum_uq += real_vq;
             sub->sum_id += ctl_id_get_idq(ctx, phase_d);
             sub->sum_iq += ctl_id_get_idq(ctx, phase_q);
             sub->sum_w += ctx->vf_gen.current_freq_pu;
@@ -834,8 +862,23 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
                 parameter_gt iq = ctrl2float(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 3, i, depth));
                 parameter_gt w = ctrl2float(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 4, i, depth));
 
-                parameter_gt ed = ud - (rs_pu * id) + (w * lq_pu * iq);
-                parameter_gt eq = uq - (rs_pu * iq) - (w * ld_pu * id);
+                parameter_gt i_mag = sqrtf((id * id) + (iq * iq));
+                parameter_gt ud_comp = 0.0f;
+                parameter_gt uq_comp = 0.0f;
+
+                if (i_mag > 0.001f)
+                {
+                    ud_comp = ctx->sub_rs_dt.vcomp_mean * (id / i_mag);
+                    uq_comp = ctx->sub_rs_dt.vcomp_mean * (iq / i_mag);
+                }
+
+                // 计算真实的电枢电压
+                parameter_gt ud_real = ud - ud_comp;
+                parameter_gt uq_real = uq - uq_comp;
+
+                // 使用真实电压计算反电势
+                parameter_gt ed = ud_real - (rs_pu * id) + (w * lq_pu * iq);
+                parameter_gt eq = uq_real - (rs_pu * iq) - (w * ld_pu * id);
 
                 parameter_gt e_mag = sqrtf((ed * ed) + (eq * eq));
                 ctl_mem_set_2d_soa(&ctx->analyzer.mem, 5, i, depth, float2ctrl(e_mag));
@@ -910,7 +953,6 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
 {
     pmsm_offline_id_mech_t* sub = &ctx->sub_mech;
     pmsm_oid_cfg_mech_t* cfg = &sub->cfg;
-
 
     ctrl_gt current_speed_pu = ctl_id_get_speed(ctx);
 
@@ -1254,7 +1296,7 @@ void ctl_step_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
     // 3. Step Core Embedded Components owned by this module
     ctl_step_angle_switcher(&ctx->angle_switcher);
 
-    ctl_id_step_vf_generator(&ctx);
+    //ctl_id_step_vf_generator(ctx);
 }
 
 /**
@@ -1361,6 +1403,13 @@ void ctl_init_pmsm_offline_id_sm(ctl_pmsm_offline_id_t* ctx, const ctl_pmsm_offl
     // =========================================================================
 
     // 2.1 V/F Generator
+    ctl_init_const_slope_f_pu_controller(&ctx->vf_gen, 20.0f, 20.0f,
+                                         // rated krpm, pole pairs
+                                         init_cfg->w_base * 60.0f / 6.28f / init_cfg->cfg_basic.pole_pairs / 1000.0f,
+                                         init_cfg->cfg_basic.pole_pairs,
+                                         // ISR frequency
+                                         ctx->cfg_basic.isr_freq_hz);
+
     ctl_clear_slope_f_pu(&ctx->vf_gen);
 
     // 2.2 Angle Switcher (Default to 0.5s transition)

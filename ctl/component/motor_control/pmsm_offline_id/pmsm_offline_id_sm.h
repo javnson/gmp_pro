@@ -230,6 +230,7 @@ typedef struct _tag_pmsm_offline_id_ldq
     ctrl_gt frozen_vq_pu; /*!< Steady-state Vq before pulse. */
     ctrl_gt frozen_id_pu; /*!< Steady-state Id before pulse (I_0). */
     ctrl_gt frozen_iq_pu; /*!< Steady-state Iq before pulse (I_0). */
+    ctrl_gt frozen_udc_pu; /*!< Steady-state Vdc at pulse (I_0). */
 
     // --- Identification Results (The "Inductance Curves") ---
     parameter_gt ld_array[16]; /*!< Identified Ld (PU) for each bias step. */
@@ -536,6 +537,8 @@ typedef struct _tag_ctl_pmsm_offline_id
     ctl_consultant_pmsm_t pmsm_param;       /*!< Identified electrical parameters. */
     ctl_consultant_mech1_t pmsm_mech_param; /*!< Identified mechanical parameters. */
 
+    parameter_gt V_comp_volts; /*!< Identified deadband Voltage */
+
 } ctl_pmsm_offline_id_t;
 
 //
@@ -803,11 +806,11 @@ GMP_STATIC_INLINE void ctl_id_set_vf_target_speed(ctl_pmsm_offline_id_t* ctx, ct
  * @details Must be called in the ISR during Flux I/F dragging.
  * @param[in,out] ctx Pointer to the master offline ID context.
  */
-GMP_STATIC_INLINE void ctl_id_step_vf_generator(ctl_pmsm_offline_id_t* ctx)
-{
-    ctl_id_route_foc_angle(ctx, PMSM_ID_ANGLE_SRC_VF_GEN);
-    ctl_step_slope_f_pu(&ctx->vf_gen);
-}
+//GMP_STATIC_INLINE void ctl_id_step_vf_generator(ctl_pmsm_offline_id_t* ctx)
+//{
+//    ctl_id_route_foc_angle(ctx, PMSM_ID_ANGLE_SRC_VF_GEN);
+//    ctl_step_slope_f_pu(&ctx->vf_gen);
+//}
 
 /**
  * @brief Helper function to navigate to the next enabled state based on configuration.

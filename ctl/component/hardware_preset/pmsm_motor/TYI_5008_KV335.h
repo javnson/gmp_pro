@@ -34,8 +34,8 @@ extern "C"
 //================================================================================
 // Electrical Parameters
 //================================================================================
-#define MOTOR_PARAM_RS   ((65.0e-3f)) ///< Stator resistance per phase (Ohm).
-#define MOTOR_PARAM_LS   ((25.0e-6f)) ///< Stator inductance per phase (H). Assumes Ld = Lq.
+#define MOTOR_PARAM_RS   ((130.0e-3f)) ///< Stator resistance per phase (Ohm).
+#define MOTOR_PARAM_LS   ((50.0e-6f)) ///< Stator inductance per phase (H). Assumes Ld = Lq.
 #define MOTOR_PARAM_FLUX ((0.0023f))  ///< Permanent magnet flux linkage (Wb).
 
 //================================================================================
@@ -64,7 +64,7 @@ extern "C"
 //================================================================================
 #define MOTOR_PARAM_RATED_VOLTAGE   ((24.0f/1.732f)) ///< Rated operating voltage (V).
 #define MOTOR_PARAM_NO_LOAD_CURRENT ((0.5f))  ///< No-load phase current (A, Peak).
-#define MOTOR_PARAM_RATED_FREQUENCY ((933.33333f))
+#define MOTOR_PARAM_RATED_FREQUENCY ((700.0f))
 
 //================================================================================
 // Absolute Maximum Ratings & Limits

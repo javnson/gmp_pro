@@ -75,7 +75,7 @@
 //#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE / 2.0f)
 
 // Current base, 10 A
-#define CTRL_CURRENT_BASE (2.0f)
+#define CTRL_CURRENT_BASE (4.0f)
 
 ///////////////////////////////////////////////////////////
 // inverter side sensor

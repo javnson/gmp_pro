@@ -4,8 +4,8 @@
 #include <gmp_core.h>
 
 // user main header
-#include "user_main.h"
 #include "ctl_main.h"
+#include "user_main.h"
 #include <stdlib.h>
 
 //=================================================================================================
@@ -16,7 +16,6 @@ time_gt uart_last_tick;
 gmp_scheduler_t sched;
 
 gpio_halt gpio_led;
-
 
 //=================================================================================================
 // AT command
@@ -66,7 +65,6 @@ at_status_t rst_handler(at_device_entity_t* dev, at_cmd_type_t type, char* args,
     return AT_STATUS_OK;
 }
 
-
 at_status_t spdset_handler(at_device_entity_t* dev, at_cmd_type_t type, char* args, uint16_t len)
 {
     GMP_UNUSED_VAR(dev);
@@ -76,7 +74,7 @@ at_status_t spdset_handler(at_device_entity_t* dev, at_cmd_type_t type, char* ar
 
     gmp_base_print(TEXT_STRING("[WOW] spdset_handler, with arg: %s!\r\n"), args);
 
-    if(type == AT_CMD_TYPE_SETUP)
+    if (type == AT_CMD_TYPE_SETUP)
     {
         ctl_set_mech_target_velocity(&mech_ctrl, strtof(args, NULL));
     }
@@ -105,8 +103,7 @@ at_device_cmd_t at_cmds[] = {
     {"PWRON", 5, 0, enable_handler, "Enable Controller Operation."},
     {"PWROFF", 6, 0, poweroff_handler, "Power off"},
     {"RST", 3, 0, rst_handler, "Reset Sys"},
-    {"SPDSET", 6, 0, spdset_handler, "Set speed reference"}
-};
+    {"SPDSET", 6, 0, spdset_handler, "Set speed reference"}};
 
 //=================================================================================================
 // task manager
