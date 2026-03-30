@@ -974,7 +974,8 @@
                 "type": "module",
                 "description": "电机控制器组件",
                 "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/src/ctl_mc_encoder.c"
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/src/ctl_mc_encoder.c",
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/src/ctl_mc_encoder_switcher.c"
                 ],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/encoder.h",
@@ -4854,30 +4855,7 @@
                 "inc_patterns": [],
                 "depends_on": [],
                 "inc_dirs": [],
-                "help_docs": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    }
-                ]
+                "help_docs": []
             },
             "component|dsa|dsa_scope": {
                 "type": "module",

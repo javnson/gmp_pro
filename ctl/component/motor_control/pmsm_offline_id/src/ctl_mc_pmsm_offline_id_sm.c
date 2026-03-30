@@ -214,6 +214,9 @@ void ctl_loop_oid_rs_dt(ctl_pmsm_offline_id_t* ctx)
                 }
                 else
                 {
+                    // clear add result
+                    sub->current_ref_pu = float2ctrl(cfg->min_current_pu) - sub->step_size_pu;
+
                     // TRANSITION -> ALIGN_SETTLE
                     sub->sm = PMSM_ID_RSDT_ALIGN_SETTLE;
                     ctl_clear_state_seq(&ctx->seq, sub->align_ticks);
@@ -615,7 +618,7 @@ void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
     // Global Action: During active dynamic states, maintain V/F generator and drag current
     if (sub->sm >= PMSM_ID_FLUX_RAMP_SPEED && sub->sm <= PMSM_ID_FLUX_RAMP_STOP)
     {
-        ctl_id_step_vf_generator(ctx);
+//        ctl_id_step_vf_generator(ctx);
         ctl_id_apply_dc_current(ctx, float2ctrl(cfg->if_current_pu), float2ctrl(0.0f));
     }
 
@@ -834,7 +837,7 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
                 parameter_gt ed = ud - (rs_pu * id) + (w * lq_pu * iq);
                 parameter_gt eq = uq - (rs_pu * iq) - (w * ld_pu * id);
 
-                parameter_gt e_mag = ctl_math_sqrt((ed * ed) + (eq * eq));
+                parameter_gt e_mag = sqrtf((ed * ed) + (eq * eq));
                 ctl_mem_set_2d_soa(&ctx->analyzer.mem, 5, i, depth, float2ctrl(e_mag));
             }
 
@@ -908,9 +911,8 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
     pmsm_offline_id_mech_t* sub = &ctx->sub_mech;
     pmsm_oid_cfg_mech_t* cfg = &sub->cfg;
 
-    // Always step V/F generator to keep the internal angle running
-    ctl_id_step_vf_generator(ctx);
-    ctrl_gt current_speed_pu = ctx->foc_core.spd_if->speed;
+
+    ctrl_gt current_speed_pu = ctl_id_get_speed(ctx);
 
     ctl_state_seq_e seq_phase = ctl_step_state_seq(&ctx->seq);
 
@@ -1251,6 +1253,8 @@ void ctl_step_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
 
     // 3. Step Core Embedded Components owned by this module
     ctl_step_angle_switcher(&ctx->angle_switcher);
+
+    ctl_id_step_vf_generator(&ctx);
 }
 
 /**

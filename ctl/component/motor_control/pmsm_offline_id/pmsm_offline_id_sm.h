@@ -487,11 +487,6 @@ typedef struct _tag_ctl_pmsm_offline_id_init
     parameter_gt i_base; /*!< Base Phase Current Peak (A). */
     parameter_gt w_base; /*!< Base Electrical Angular Velocity (rad/s). */
 
-    // --- FOC Core Initial Parameters ---
-    parameter_gt kp;        /*!< Proportional gain for FOC PI controllers. */
-    parameter_gt ki;        /*!< Integral gain for FOC PI controllers. */
-    parameter_gt max_vs_pu; /*!< Maximum output voltage magnitude (PU). */
-
     pmsm_oid_cfg_basic_t cfg_basic;
 
     // --- Identification Stage Configurations ---
@@ -698,31 +693,7 @@ typedef enum _tag_pmsm_id_foc_state
  * @param[in,out] ctx Pointer to the master offline ID context.
  * @param[in]     src The target angle source enum.
  */
-GMP_STATIC_INLINE void ctl_id_route_foc_angle(ctl_pmsm_offline_id_t* ctx, pmsm_oid_angle_src_e src)
-{
-    switch (src)
-    {
-    case PMSM_ID_ANGLE_SRC_STATIC:
-        mtr_ctrl.pos_if = &ctx->static_angle;
-        break;
-
-    case PMSM_ID_ANGLE_SRC_VF_GEN:
-        mtr_ctrl.pos_if = &ctx->vf_gen.enc;
-        break;
-
-    case PMSM_ID_ANGLE_SRC_REAL_ENC:
-        mtr_ctrl.pos_if = ctx->enc;
-        break;
-
-    case PMSM_ID_ANGLE_SRC_SWITCHER:
-        // Route FOC angle directly to the blended output of the angle switcher
-        mtr_ctrl.pos_if = &ctx->angle_switcher.out_enc;
-        break;
-
-    default:
-        break;
-    }
-}
+void ctl_id_route_foc_angle(ctl_pmsm_offline_id_t* ctx, pmsm_oid_angle_src_e src);
 
 /**
  * @brief Configures the operating state of the external FOC core.
@@ -732,24 +703,7 @@ GMP_STATIC_INLINE void ctl_id_route_foc_angle(ctl_pmsm_offline_id_t* ctx, pmsm_o
  * @param[in,out] ctx   Pointer to the master offline ID context.
  * @param[in]     state The target FOC operating state (Open-loop or Closed-loop).
  */
-GMP_STATIC_INLINE void ctl_id_set_foc_state(ctl_pmsm_offline_id_t* ctx, pmsm_id_foc_state_e state)
-{
-    switch (state) // Fixed: Changed from 'src' to 'state'
-    {
-    case PMSM_ID_VOLTAGE_OPENLOOP:
-        ctl_disable_foc_core_current_ctrl(&mtr_ctrl);
-        ctl_disable_foc_core_decouple(&mtr_ctrl);
-        ctl_disable_foc_core_vdq_ff(&mtr_ctrl);
-        break;
-    case PMSM_ID_CURRENT_CLOSELOOP:
-        ctl_enable_mtr_current_ctrl(&mtr_ctrl);
-        ctl_disable_foc_core_decouple(&mtr_ctrl);
-        ctl_disable_foc_core_vdq_ff(&mtr_ctrl);
-        break;
-    default:
-        break;
-    }
-}
+void ctl_id_set_foc_state(ctl_pmsm_offline_id_t* ctx, pmsm_id_foc_state_e state);
 
 /**
  * @brief Retrieves the measured actual current (Id or Iq) from the FOC core.
@@ -757,10 +711,7 @@ GMP_STATIC_INLINE void ctl_id_set_foc_state(ctl_pmsm_offline_id_t* ctx, pmsm_id_
  * @param[in] index 0 for D-axis current (Id), 1 for Q-axis current (Iq).
  * @return ctrl_gt  The measured current in PU.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_id_get_idq(ctl_pmsm_offline_id_t* ctx, fast_gt index)
-{
-    return mtr_ctrl.idq0.dat[index];
-}
+ctrl_gt ctl_id_get_idq(ctl_pmsm_offline_id_t* ctx, fast_gt index);
 
 /**
  * @brief Retrieves the applied voltage reference (Vd or Vq) from the FOC core.
@@ -769,20 +720,14 @@ GMP_STATIC_INLINE ctrl_gt ctl_id_get_idq(ctl_pmsm_offline_id_t* ctx, fast_gt ind
  * @param[in] index 0 for D-axis voltage (Vd), 1 for Q-axis voltage (Vq).
  * @return ctrl_gt  The applied voltage reference in PU.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_id_get_vdq(ctl_pmsm_offline_id_t* ctx, fast_gt index)
-{
-    return mtr_ctrl.vdq_ref.dat[index];
-}
+ctrl_gt ctl_id_get_vdq(ctl_pmsm_offline_id_t* ctx, fast_gt index);
 
 /**
  * @brief Retrieves the measured DC bus voltage from the FOC core.
  * @param[in] ctx  Pointer to the master offline ID context.
  * @return ctrl_gt The DC bus voltage in PU.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_id_get_udc(ctl_pmsm_offline_id_t* ctx)
-{
-    return mtr_ctrl.udc;
-}
+ctrl_gt ctl_id_get_udc(ctl_pmsm_offline_id_t* ctx);
 
 /**
  * @brief Retrieves the current electrical speed from the FOC core's position interface.
@@ -791,10 +736,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_id_get_udc(ctl_pmsm_offline_id_t* ctx)
  * @param[in] ctx  Pointer to the master offline ID context.
  * @return ctrl_gt The electrical speed in PU.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_id_get_speed(ctl_pmsm_offline_id_t* ctx)
-{
-    return mtr_ctrl.spd_if->speed;
-}
+ctrl_gt ctl_id_get_speed(ctl_pmsm_offline_id_t* ctx);
 
 /**
  * @brief Safely shuts down the FOC output (Zero current/voltage injection).
@@ -802,12 +744,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_id_get_speed(ctl_pmsm_offline_id_t* ctx)
  * Used for transitioning into safe passive states or upon fault detection.
  * @param[in,out] ctx Pointer to the master offline ID context.
  */
-GMP_STATIC_INLINE void ctl_id_disable_output(ctl_pmsm_offline_id_t* ctx)
-{
-    ctl_disable_mtr_current_ctrl(&mtr_ctrl);
-    ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, float2ctrl(0.0f), float2ctrl(0.0f));
-    ctl_set_mtr_current_ctrl_vdq_ref(&mtr_ctrl, float2ctrl(0.0f), float2ctrl(0.0f));
-}
+void ctl_id_disable_output(ctl_pmsm_offline_id_t* ctx);
 
 /**
  * @brief Applies a constant closed-loop DC current vector.
@@ -817,11 +754,7 @@ GMP_STATIC_INLINE void ctl_id_disable_output(ctl_pmsm_offline_id_t* ctx)
  * @param[in]     id_pu D-axis current reference in PU.
  * @param[in]     iq_pu Q-axis current reference in PU.
  */
-GMP_STATIC_INLINE void ctl_id_apply_dc_current(ctl_pmsm_offline_id_t* ctx, ctrl_gt id_pu, ctrl_gt iq_pu)
-{
-    ctl_enable_mtr_current_ctrl(&mtr_ctrl);
-    ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, id_pu, iq_pu);
-}
+void ctl_id_apply_dc_current(ctl_pmsm_offline_id_t* ctx, ctrl_gt id_pu, ctrl_gt iq_pu);
 
 /**
  * @brief Applies an open-loop voltage pulse.
@@ -831,11 +764,15 @@ GMP_STATIC_INLINE void ctl_id_apply_dc_current(ctl_pmsm_offline_id_t* ctx, ctrl_
  * @param[in]     vd_pu D-axis voltage reference in PU.
  * @param[in]     vq_pu Q-axis voltage reference in PU.
  */
-GMP_STATIC_INLINE void ctl_id_apply_voltage_pulse(ctl_pmsm_offline_id_t* ctx, ctrl_gt vd_pu, ctrl_gt vq_pu)
-{
-    ctl_disable_mtr_current_ctrl(&mtr_ctrl); // Disable PI regulation
-    ctl_set_mtr_current_ctrl_vdq_ref(&mtr_ctrl, vd_pu, vq_pu);
-}
+void ctl_id_apply_voltage_pulse(ctl_pmsm_offline_id_t* ctx, ctrl_gt vd_pu, ctrl_gt vq_pu);
+
+/**
+ * @brief Safely disables the Offline Identification process.
+ * @details Immediately turns off the FOC PWM outputs and forces the master state 
+ * machine into the DISABLED state. Can be used as a soft E-Stop.
+ * @param[in,out] ctx Pointer to the master offline ID context.
+ */
+void ctl_disable_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx);
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -956,17 +893,7 @@ GMP_STATIC_INLINE void ctl_enable_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
     }
 }
 
-/**
- * @brief Safely disables the Offline Identification process.
- * @details Immediately turns off the FOC PWM outputs and forces the master state 
- * machine into the DISABLED state. Can be used as a soft E-Stop.
- * @param[in,out] ctx Pointer to the master offline ID context.
- */
-GMP_STATIC_INLINE void ctl_disable_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
-{
-    ctl_disable_mtr_current_ctrl(&mtr_ctrl);
-    ctx->sm = PMSM_OFFLINE_ID_DISABLED;
-}
+
 
 /**
  * @brief Clears the operational state and faults of the Offline Identification module.

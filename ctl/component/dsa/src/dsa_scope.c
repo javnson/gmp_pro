@@ -1,5 +1,7 @@
 
 
+#include <gmp_core.h>
+
 #include <ctl/component/dsa/dsa_scope.h>
 
 
@@ -53,6 +55,8 @@ void ctl_config_dsa_scope(ctl_dsa_scope_t* scope, uint16_t dims, uint32_t div)
 fast_gt ctl_dsa_fit_vs_time(ctl_dsa_scope_t* scope, uint16_t dim_y, uint32_t start_idx, uint32_t end_idx,
                             parameter_gt* slope, parameter_gt* intercept)
 {
+    uint32_t i;
+
     // 1. Boundary & Safety Checks
     if (start_idx >= end_idx || end_idx >= scope->depth || dim_y >= scope->dims)
     {
@@ -63,7 +67,7 @@ fast_gt ctl_dsa_fit_vs_time(ctl_dsa_scope_t* scope, uint16_t dim_y, uint32_t sta
     parameter_gt sum_x = 0.0f, sum_y = 0.0f, sum_xy = 0.0f, sum_xx = 0.0f;
 
     // 2. Accumulate sums for Least-Squares method
-    for (uint32_t i = 0; i < n; i++)
+    for (i = 0; i < n; i++)
     {
         // X-axis: Relative physical time calculated from effective sample period
         parameter_gt x = (parameter_gt)i * scope->effective_dt_sec;
@@ -107,6 +111,8 @@ fast_gt ctl_dsa_fit_vs_time(ctl_dsa_scope_t* scope, uint16_t dim_y, uint32_t sta
 fast_gt ctl_dsa_fit_vs_dim(ctl_dsa_scope_t* scope, uint16_t dim_x, uint16_t dim_y, uint32_t start_idx, uint32_t end_idx,
                            parameter_gt* slope, parameter_gt* intercept)
 {
+    uint32_t i;
+
     // 1. Boundary & Safety Checks
     if (start_idx >= end_idx || end_idx >= scope->depth || dim_x >= scope->dims || dim_y >= scope->dims)
     {
@@ -117,7 +123,7 @@ fast_gt ctl_dsa_fit_vs_dim(ctl_dsa_scope_t* scope, uint16_t dim_x, uint16_t dim_
     parameter_gt sum_x = 0.0f, sum_y = 0.0f, sum_xy = 0.0f, sum_xx = 0.0f;
 
     // 2. Accumulate sums for Least-Squares method
-    for (uint32_t i = start_idx; i <= end_idx; i++)
+    for (i = start_idx; i <= end_idx; i++)
     {
         // Safely fetch X and Y points from the corresponding dimensions
         parameter_gt x = (parameter_gt)ctl_mem_get_2d_soa(&scope->mem, dim_x, i, scope->depth);
@@ -164,6 +170,8 @@ fast_gt ctl_dsa_fit_vs_dim(ctl_dsa_scope_t* scope, uint16_t dim_x, uint16_t dim_
 fast_gt ctl_dsa_fit_first_order_tau(ctl_dsa_scope_t* scope, uint16_t dim_y, uint32_t start_idx, uint32_t end_idx,
                                     parameter_gt baseline_y, parameter_gt target_delta_y, parameter_gt* out_tau)
 {
+    uint32_t i;
+
     if (start_idx >= end_idx || end_idx >= scope->depth || dim_y >= scope->dims)
     {
         return 0; // Invalid bounds
@@ -175,7 +183,7 @@ fast_gt ctl_dsa_fit_first_order_tau(ctl_dsa_scope_t* scope, uint16_t dim_y, uint
     parameter_gt delta_y_end = 0.0f;
 
     // 1. Calculate the integral area (sum) and the final value
-    for (uint32_t i = start_idx; i <= end_idx; i++)
+    for (i = start_idx; i <= end_idx; i++)
     {
         parameter_gt y_k = (parameter_gt)ctl_mem_get_2d_soa(&scope->mem, dim_y, i, scope->depth);
         parameter_gt delta_y = y_k - baseline_y;

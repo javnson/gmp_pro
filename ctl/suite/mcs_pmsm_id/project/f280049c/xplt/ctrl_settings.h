@@ -11,7 +11,7 @@
 // BUILD_LEVEL 4: speed loop
 // BUILD_LEVEL 5: position loop
 // BUILD_LEVEL 6: communication mode
-#define BUILD_LEVEL (4)
+#define BUILD_LEVEL (2)
 
 //=================================================================================================
 // Controller basic parameters
@@ -40,16 +40,20 @@
 #define BOOSTXL_3PHGANINV_IS_DEFAULT_PARAM
 
 // invoke motor parameters
-#include <ctl/component/hardware_preset/pmsm_motor/SM060R20B30MNAD.h>
+//#include <ctl/component/hardware_preset/pmsm_motor/SM060R20B30MNAD.h>
+#include <ctl/component/hardware_preset/pmsm_motor/TYI_5008_KV335.h>
+
 
 // invoke motor controller parameters
-#include <ctl/component/hardware_preset/inverter_3ph/GMP_3PH_2136SINV_DUAL_TMPL.h>
+//#include <ctl/component/hardware_preset/inverter_3ph/GMP_3PH_2136SINV_DUAL_TMPL.h>
+
+#include <ctl/component/hardware_preset/inverter_3ph/TI_BOOSTXL_3PhGaNInv.h>
 
 ///////////////////////////////////////////////////////////
 // Encoder Properties
 
 // Encoder Full scale
-#define CTRL_POS_ENC_FS (10000)
+#define CTRL_POS_ENC_FS (4096*4)
 
 // Encoder Bias
 #define CTRL_POS_ENC_BIAS (0.0207000002f)
@@ -62,7 +66,7 @@
 // Controller Base value
 
 // DC bus voltage
-#define CTRL_DCBUS_VOLTAGE (80.0f)
+#define CTRL_DCBUS_VOLTAGE (24.0f)
 
 // phase voltage base, SVPWM modulation
 #define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE / 1.73205081f)
@@ -71,7 +75,7 @@
 //#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE / 2.0f)
 
 // Current base, 10 A
-#define CTRL_CURRENT_BASE (10.0f)
+#define CTRL_CURRENT_BASE (2.0f)
 
 ///////////////////////////////////////////////////////////
 // inverter side sensor
@@ -117,7 +121,7 @@
 #define SPECIFY_ENABLE_ADC_CALIBRATE
 
 // Using negative modulator logic
-#define PWM_MODULATOR_USING_NEGATIVE_LOGIC (1)
+//#define PWM_MODULATOR_USING_NEGATIVE_LOGIC (1)
 
 // Using three level modulator or two level modulator
 //#define USING_NPC_MODULATOR
@@ -132,7 +136,7 @@
 #define ENABLE_MOTOR_FAULT_PROTECTION
 
 // Enable SMO
-#define ENABLE_SMO
+//#define ENABLE_SMO
 
 //=================================================================================================
 // Board peripheral mapping
@@ -180,3 +184,7 @@
 #define INV_UW_RESULT_BASE J3_VW_RESULT_BASE
 
 #endif // _FILE_CTRL_SETTINGS_H_
+
+
+
+

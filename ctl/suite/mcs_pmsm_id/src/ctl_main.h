@@ -26,6 +26,8 @@
 #include <ctl/component/motor_control/mechanical_loop/basic_mech_ctrl.h>
 #include <ctl/component/motor_control/observer/pmsm_esmo.h>
 
+#include "pmsm_offline_id_if.h"
+
 #include <ctl/framework/cia402_state_machine.h>
 
 #ifndef _FILE_CTL_MAIN_H_
@@ -104,13 +106,22 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         // Calculate Motor Speed
         ctl_step_spd_calc(&spd_enc);
 
+        // =====================================================================
+                // [新增] OFFLINE ID DATA PATH (超级大脑介入)
+                // =====================================================================
+                // 它会在内部修改 mtr_ctrl 的 pos_if, vdq_ref, idq_ref 等引用接口
+                ctl_step_pmsm_offline_id(&pmsm_oid);
+
 #if BUILD_LEVEL > 3
+                // 2. 原有的机械与位置控制逻辑 (如果 OID 在运行，应被旁路)
+                        if (pmsm_oid.sm == PMSM_OFFLINE_ID_DISABLED || pmsm_oid.sm == PMSM_OFFLINE_ID_COMPLETE)
+                        {
         // motion controller
         ctl_step_mech_ctrl(&mech_ctrl);
 
         // current command dispatch
         ctl_set_foc_core_idq_ref(&mtr_ctrl, 0, ctl_get_mech_cmd(&mech_ctrl));
-
+                        }
 #endif
 
         // motor current controller

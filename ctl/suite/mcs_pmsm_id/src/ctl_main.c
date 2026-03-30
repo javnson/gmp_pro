@@ -219,6 +219,8 @@ void ctl_init()
     {
         ctl_enable_adc_calibrator(&adc_calibrator);
     }
+
+    init_pmsm_offline_id();
 }
 
 //=================================================================================================
@@ -227,6 +229,8 @@ void ctl_init()
 void ctl_mainloop(void)
 {
     cia402_dispatch(&cia402_sm);
+
+    loop_pmsm_offline_id();
 
     return;
 }

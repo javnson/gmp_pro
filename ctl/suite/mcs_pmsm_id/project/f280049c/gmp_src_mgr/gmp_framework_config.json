@@ -59,6 +59,14 @@
         },
         {
             "root": "ctl",
+            "module": "component|dsa|_internal"
+        },
+        {
+            "root": "ctl",
+            "module": "component|dsa|dsa_scope"
+        },
+        {
+            "root": "ctl",
             "module": "component|hardware_preset|_internal"
         },
         {

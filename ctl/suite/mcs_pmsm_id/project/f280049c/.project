@@ -36,6 +36,16 @@
 			<locationURI>PARENT-2-PROJECT_LOC/src/ctl_main.h</locationURI>
 		</link>
 		<link>
+			<name>user/pmsm_offline_id_if.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/src/pmsm_offline_id_if.c</locationURI>
+		</link>
+		<link>
+			<name>user/pmsm_offline_id_if.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/src/pmsm_offline_id_if.h</locationURI>
+		</link>
+		<link>
 			<name>user/user_main.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/src/user_main.c</locationURI>

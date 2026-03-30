@@ -16,6 +16,9 @@
 
 #include <ctl/component/dsa/dsa_trigger.h>
 
+#include <pmsm_offline_id_if.h>
+
+
 //=================================================================================================
 // definitions of peripheral
 
@@ -34,12 +37,21 @@ ptr_adc_channel_t idc;
 adc_gt idc_src;
 
 // dlog DSA objects
-basic_trigger_t trigger;
-#define DLOG_MEM_LENGTH 100
+//basic_trigger_t trigger;
+//#define DLOG_MEM_LENGTH 100
+//
+//// dlog variables
+//ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];
+//ctrl_gt dlog_mem2[DLOG_MEM_LENGTH];
 
-// dlog variables
-ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];
-ctrl_gt dlog_mem2[DLOG_MEM_LENGTH];
+
+// 告诉编译器：将 dsa_buffer 分配到名为 "dsa_mem_section" 的自定义段中
+#pragma DATA_SECTION(dsa_buffer, "dsa_mem_section")
+
+// 如果你为了提升 FPU/DMA 的访问效率，建议加上内存对齐 (例如 4字节 或 8字节对齐)
+#pragma DATA_ALIGN(dsa_buffer, 4)
+
+ctrl_gt dsa_buffer[DSA_BUFFER_SIZE];
 
 // GPIO port
 extern gpio_halt gpio_led;
@@ -102,7 +114,7 @@ void setup_peripheral(void)
 #endif // BUILD_LEVEL
 
     // dlog module
-    dsa_init_basic_trigger(&trigger, DLOG_MEM_LENGTH);
+//    dsa_init_basic_trigger(&trigger, DLOG_MEM_LENGTH);
 }
 
 //=================================================================================================
@@ -128,13 +140,13 @@ interrupt void MainISR(void)
     //
 
     // pass trigger source here
-    if (dsa_step_trigger(&trigger, mtr_ctrl.iab0.dat[phase_alpha]))
-    {
-        uint32_t index = dsa_get_trigger_index(&trigger);
-
-        dlog_mem1[index] = mtr_ctrl.iab0.dat[phase_alpha];
-        dlog_mem2[index] = mtr_ctrl.iab0.dat[phase_beta];
-    }
+//    if (dsa_step_trigger(&trigger, mtr_ctrl.iab0.dat[phase_alpha]))
+//    {
+//        uint32_t index = dsa_get_trigger_index(&trigger);
+//
+//        dlog_mem1[index] = mtr_ctrl.iab0.dat[phase_alpha];
+//        dlog_mem2[index] = mtr_ctrl.iab0.dat[phase_beta];
+//    }
 
     //
     // Blink LED

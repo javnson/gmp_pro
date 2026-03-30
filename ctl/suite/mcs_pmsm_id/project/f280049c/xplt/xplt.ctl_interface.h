@@ -75,7 +75,7 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
 //    DAC_setShadowValue(IRIS_DACB_BASE, smo.e_est.dat[phase_B] * 2048 + 2048);
 
     // SMO angle
-    DAC_setShadowValue(IRIS_DACA_BASE, smo.pos_out.elec_position * 2048 + 2048);
+//    DAC_setShadowValue(IRIS_DACA_BASE, smo.pos_out.elec_position * 2048 + 2048);
     DAC_setShadowValue(IRIS_DACB_BASE, pos_enc.encif.elec_position * 2048 + 2048);
 
 #elif BUILD_LEVEL == 3
@@ -85,7 +85,7 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
 
 #elif BUILD_LEVEL == 4
     // SMO angle
-    DAC_setShadowValue(IRIS_DACA_BASE, smo.pos_out.elec_position * 2048 + 2048);
+//    DAC_setShadowValue(IRIS_DACA_BASE, smo.pos_out.elec_position * 2048 + 2048);
     DAC_setShadowValue(IRIS_DACB_BASE, pos_enc.encif.elec_position * 2048 + 2048);
 #endif // BUILD_LEVEL
 }
@@ -105,7 +105,7 @@ GMP_STATIC_INLINE void ctl_fast_enable_output()
     clear_all_controllers();
 
     // PWM enable
-    GPIO_WritePin(PWM_ENABLE_PORT, 1);
+    GPIO_WritePin(PWM_ENABLE_PORT, 0);
 
     GPIO_WritePin(CONTROLLER_LED, 0);
 }
@@ -121,7 +121,7 @@ GMP_STATIC_INLINE void ctl_fast_disable_output()
 //    clear_all_controllers();
 
     // PWM disable
-    GPIO_WritePin(PWM_ENABLE_PORT, 0);
+    GPIO_WritePin(PWM_ENABLE_PORT, 1);
 
     GPIO_WritePin(CONTROLLER_LED, 1);
 }

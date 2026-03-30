@@ -80,10 +80,10 @@ PAGE 1 :
    //RAMLS6      : origin = 0x00B000, length = 0x000800
    //RAMLS7      : origin = 0x00B800, length = 0x000800
 
-   RAMGS0      : origin = 0x00C000, length = 0x002000
-   RAMGS1      : origin = 0x00E000, length = 0x002000
-   RAMGS2      : origin = 0x010000, length = 0x002000
-   RAMGS3      : origin = 0x012000, length = 0x001FF8
+   RAMGS0_3      : origin = 0x00C000, length = 0x007FF8
+   //RAMGS1      : origin = 0x00E000, length = 0x002000
+   //RAMGS2      : origin = 0x010000, length = 0x002000
+   //RAMGS3      : origin = 0x012000, length = 0x001FF8
 //   RAMGS3_RSVD : origin = 0x013FF8, length = 0x000008     /* Reserve and do not use for code as per the errata advisory "Memory: Prefetching Beyond Valid Memory" */
 }
 
@@ -115,8 +115,10 @@ SECTIONS
    .econst          : >> FLASH_BANK0_SEC4 | FLASH_BANK0_SEC5,    PAGE = 0, ALIGN(4)
 #endif
 
-   ramgs0           : > RAMGS0,    PAGE = 1
-   ramgs1           : > RAMGS1,    PAGE = 1
+   dsa_mem_section : > RAMGS0_3, PAGE = 1
+
+   ramgs0           : > RAMGS0_3,    PAGE = 1
+   ramgs1           : > RAMGS0_3,    PAGE = 1
 
  
 #if defined(__TI_EABI__) 
