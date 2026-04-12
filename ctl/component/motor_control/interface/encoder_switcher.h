@@ -3,6 +3,8 @@
  * @brief Smooth angle transition module for motor control encoder sources.
  */
 
+#include <ctl/component/motor_control/interface/motor_universal_interface.h>
+
 #ifndef _FILE_ENCODER_SWITCHER_H_
 #define _FILE_ENCODER_SWITCHER_H_
 
