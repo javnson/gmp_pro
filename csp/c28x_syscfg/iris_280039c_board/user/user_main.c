@@ -23,20 +23,20 @@ gmp_scheduler_t sched;
 // devices
 iic_halt iic_bus;
 ht16k33_dev_t ht16k33;
-pca9555_dev_t pca9555;
 hdc1080_dev_t hdc1080;
 
 // GPIO
 gpio_halt user_led;
+gpio_halt gpio_beep;
 
 void beep_on()
 {
-    pca9555_set_pin_output(&pca9555, PCA9555_PORT_0, 5, 1);
+    gmp_hal_gpio_write(gpio_beep, 1);
 }
 
 void beep_off()
 {
-    pca9555_set_pin_output(&pca9555, PCA9555_PORT_0, 5, 0);
+    gmp_hal_gpio_write(gpio_beep, 0);
 }
 
 //=================================================================================================
@@ -117,14 +117,21 @@ void at_device_error_handler(at_device_entity_t* dev, at_error_code_t code)
 /*  Command List for AT device (non-const is necessary) */
 at_device_cmd_t at_cmds[] = {
     // name,    name_len, attr, handler,      help_info
-    {"PWRON", 5, 0, enable_handler, "Enable Controller Operation."},
-    {"PWROFF", 6, 0, poweroff_handler, "Power off"},
-    {"RST", 3, 0, rst_handler, "Reset Sys"},
-    {"SPDSET", 6, 0, spdset_handler, "Set speed reference"}
+    {"PWRON",   5, 0, enable_handler, "Enable Controller Operation."},
+    {"PWROFF",  6, 0, poweroff_handler, "Power off"},
+    {"RST",     3, 0, rst_handler, "Reset Sys"},
+    {"SPDSET",  6, 0, spdset_handler, "Set speed reference"}
 };
 
 //=================================================================================================
 // task manager
+
+
+// 定义一些全局变量方便在 CCS 的 Expressions 窗口中观察
+uint16_t test_write_val = 0;
+uint16_t test_read_val = 0;
+uint32_t test_pass_count = 0;
+uint32_t test_fail_count = 0;
 
 gmp_task_status_t tsk_blink(gmp_task_t* tsk)
 {
@@ -137,12 +144,26 @@ gmp_task_status_t tsk_blink(gmp_task_t* tsk)
     {
         led_stat = 1;
         gmp_hal_gpio_write(user_led, 0);
+        SPI_writeReg(0x01, 0x0003);
     }
     else
     {
         led_stat = 0;
         gmp_hal_gpio_write(user_led, 1);
+        SPI_writeReg(0x01, 0x0000);
     }
+
+    SPI_writeReg(0x03, 0x00FF);
+
+    // trigger ADC
+    SPI_writeReg(0x05, 0x8000);
+    SPI_writeReg(0x06, 0xA000);
+    SPI_writeReg(0x07, 0xF000);
+
+    uint16_t adc_result;
+    adc_result = SPI_readReg(0x08);
+
+    SPI_writeReg(0x04, adc_result);
 
     return GMP_TASK_DONE;
 }
@@ -164,9 +185,6 @@ gmp_task_status_t tsk_LED_flush(gmp_task_t* tsk)
     ht16k33_dev_t *dev = (ht16k33_dev_t *) tsk->user_data;
 
     // TODO: fresh LED buffer here.
-
-    dev->display_ram[0] = 0xFF;
-
     ec_gt ret = ht16k33_update_display(dev);
 
 
@@ -177,6 +195,47 @@ gmp_task_status_t tsk_LED_flush(gmp_task_t* tsk)
     }
 
     return GMP_TASK_DONE;
+}
+
+// 共阴极数码管段码表
+// 包含: 0-9, A-F, H, L, P, U, -, ., 暗
+const unsigned char led_lut[] = {
+    0x3F,  // 0  (a,b,c,d,e,f)
+    0x06,  // 1  (b,c)
+    0x5B,  // 2  (a,b,d,e,g)
+    0x4F,  // 3  (a,b,c,d,g)
+    0x66,  // 4  (b,c,f,g)
+    0x6D,  // 5  (a,c,d,f,g)
+    0x7D,  // 6  (a,c,d,e,f,g)
+    0x07,  // 7  (a,b,c)
+    0x7F,  // 8  (a,b,c,d,e,f,g)
+    0x6F,  // 9  (a,b,c,d,f,g)
+    0x77,  // A  (a,b,c,e,f,g)
+    0x7C,  // b  (c,d,e,f,g)  - 通常用小写b区分数字8
+    0x39,  // C  (a,d,e,f)
+    0x5E,  // d  (b,c,d,e,g)  - 通常用小写d区分数字0
+    0x79,  // E  (a,d,e,f,g)
+    0x71,  // F  (a,e,f,g)
+    0x76,  // H  (b,c,e,f,g)
+    0x38,  // L  (d,e,f)
+    0x73,  // P  (a,b,e,f,g)
+    0x3E,  // U  (b,c,d,e,f)
+    0x40,  // -  (g) - 负号或横杠
+    0x80,  // .  (dp) - 小数点
+    0x00   // 无显示 (全灭)
+};
+
+void update_led_content_8byte(ht16k33_dev_t* dev, uint16_t ch1, uint16_t ch2, uint16_t ch3, uint16_t ch4, uint16_t ch5, uint16_t ch6, uint16_t ch7, uint16_t ch8)
+{
+    dev->display_ram[0] = ch1;
+    dev->display_ram[2] = ch2;
+    dev->display_ram[4] = ch3;
+    dev->display_ram[6] = ch4;
+    dev->display_ram[8] = ch5;
+    dev->display_ram[10] = ch6;
+    dev->display_ram[12] = ch7;
+    dev->display_ram[14] = ch8;
+    dev->is_dirty = 1;
 }
 
 gmp_task_status_t tsk_key_flush(gmp_task_t* tsk)
@@ -196,9 +255,35 @@ gmp_task_status_t tsk_key_flush(gmp_task_t* tsk)
     if(key_id != 0)
     {
         // TODO: response key message
+        update_led_content_8byte(dev, led_lut[2], led_lut[0], led_lut[2], led_lut[6], led_lut[20], led_lut[key_id/10], led_lut[key_id%10], led_lut[20]);
 
         gmp_base_print("Receive Key Message, %d\r\n", key_id);
     }
+
+    return GMP_TASK_DONE;
+}
+
+
+gmp_task_status_t tsk_startup_beep(gmp_task_t* tsk)
+{
+    GMP_UNUSED_VAR(tsk);
+
+    static uint16_t beep_counter = 0;
+
+    if(beep_counter == 0)
+        beep_on();
+    else if(beep_counter == 1)
+        beep_off();
+    else if (beep_counter == 2)
+        beep_on();
+    else if (beep_counter == 3)
+        beep_off();
+
+    beep_counter += 1;
+
+    // if program is complete, close this routine.
+    if(beep_counter >= 4)
+        tsk->is_enabled = 0;
 
     return GMP_TASK_DONE;
 }
@@ -213,7 +298,8 @@ gmp_task_t tasks[] = {
     {"blink_led", tsk_blink, 1000, 100, 1, NULL},
     {"at_device", tsk_at_device, 5, 1, 1, NULL},
     {"flush_key", tsk_key_flush, 100, 10, 1, (void*)&ht16k33},
-    {"flush_led", tsk_LED_flush, 500, 200, 1, (void*)&ht16k33}
+    {"flush_led", tsk_LED_flush, 500, 200, 1, (void*)&ht16k33},
+    {"startup", tsk_startup_beep, 500, 0, 1, NULL}
 };
 
 
@@ -235,18 +321,6 @@ void init(void) GMP_NO_OPT_SUFFIX
     };
 
     ht16k33_init(&ht16k33, iic_bus, HT16K33_DEFAULT_DEV_ADDR, &ht16k33_init_struct);
-
-    pca9555_init_t pca9555_init_struct =
-    {
-     .cfg_port0 = 0x1F,
-     .cfg_port1 = 0x00,
-     .out_port0 = 0x00,
-     .out_port1 = 0x00,
-     .pol_port0 = 0,
-     .pol_port1 = 0
-    };
-
-    //pca9555_init(&pca9555, iic_bus, PCA9555_CALC_ADDR(0,0,0), &pca9555_init_struct);
 
     //beep_off();
 

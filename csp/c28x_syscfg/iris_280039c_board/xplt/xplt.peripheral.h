@@ -50,6 +50,9 @@ extern adc_gt idc_src;
 
 void reset_controller(void);
 
+uint16_t SPI_readReg(uint16_t addr);
+void SPI_writeReg(uint16_t addr, uint16_t data);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
