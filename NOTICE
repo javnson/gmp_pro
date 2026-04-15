@@ -1,4 +1,40 @@
-GMP Project Statement
+GMP 项目声明 (仓库： https://github.com/javnson/gmp_pro)
+
+
+本项目由 GMP 团队发起并维护。我们致力于构建开放、共存的电机控制、电力电子与嵌入式开发生态，并坚定拥护开源精神。本声明并没有扩展Apache2.0协议的要求，任何开源协议框架内的学习、开发、使用都是值得鼓励的。
+
+
+1. 鼓励商业落地 
+
+我们支持并鼓励开发者根据实际项目需求，对本项目进行裁剪、定制及二次开发。依据Apache 2.0开源协议，本项目完全允许并欢迎在商业场景中进行深度应用与落地。
+
+
+2. 知识产权与反垄断声明 
+
++ 现有技术告知
+
+本项目包含的架构设计、核心算法及逻辑框架（以下统称“技术方案”），自 2023 年起已通过互联网及开源代码托管平台持续向公众发布。根据《中华人民共和国专利法（2020年修正）》第二十二条之规定，上述公开内容已构成现有技术，即申请日以前在国内外为公众所知的技术。任何单位或个人不应就此技术方案申请专利。
+
++ 专利无效宣告权利
+
+我们坚决反对任何试图将开源共有技术私有化、垄断化的行为。根据《中华人民共和国专利法（2020年修正）》第四十五条之规定，自国务院专利行政部门公告授予专利权之日起，任何单位或者个人认为该专利权的授予不符合本法有关规定的，均可以请求国务院专利行政部门宣告该专利权无效。我们鼓励社区成员对违规申请专利的行为进行检举。对于企图将开源共有技术私有化、垄断化的行为，我们将保留提供证据并依法申请无效宣告的权利。
+
++ Apache License 2.0中的专利权益要求
+
+我们诚挚地提醒使用者注意 Apache License 2.0 协议第 3 条之规定。任何针对本项目的专利诉讼都将导致相关专利授权的自动终止。授权终止后，您将不再被允许使用本项目。若在此情况下继续使用，即构成侵权。根据《中华人民共和国专利法（2020年修正）》第七十一条之规定，违规行为单位或个人应当依据其因侵权所获得的利益、给权利人造成的实际损失或该专利许可使用费的倍数，依法承担相应的赔偿责任。
+
+
+3. 倡导协同创新 
+
+开源的生命力在于积累、反馈与提升！若您在应用过程中实现了新的模块功能或算法优化，我们热忱欢迎您通过拉取请求（Pull Request）将创新成果和工程实践合并至 GMP 主分支，共同推动行业技术进步。
+
+
+4. 归属与合规要求
+请尊重原创者的劳动成果！在基于本项目开发的商业产品或衍生作品中，请务必保留必要的版权声明与归属标注。我们期望所有使用者能将精力聚焦于 技术落地 ，而非 技术围猎 。
+
+
+GMP Project Statement  (repo: https://github.com/javnson/gmp_pro)
+
 
 This project is initiated and maintained by the GMP Team. We are dedicated to building an open and symbiotic ecosystem for motor control, power electronics, and embedded development, and we firmly uphold the spirit of open source. This statement does not extend the requirements of the Apache License 2.0; any learning, development, or use within the framework of the open-source license is encouraged.
 
@@ -31,38 +67,3 @@ The vitality of open source lies in accumulation, feedback, and improvement! If 
 4. Attribution and Compliance Requirements
 
 Please respect the labor of the original creators! In any commercial products or derivative works developed based on this project, necessary copyright notices and attribution labels must be retained. We expect all users to focus their energy on Technical Implementation rather than Patent Trolling.
-
-
-
-GMP 项目声明
-
-本项目由 GMP 团队发起并维护。我们致力于构建开放、共存的电机控制、电力电子与嵌入式开发生态，并坚定拥护开源精神。本声明并没有扩展Apache2.0协议的要求，任何开源协议框架内的学习、开发、使用都是值得鼓励的。
-
-
-1. 鼓励商业落地 
-
-我们支持并鼓励开发者根据实际项目需求，对本项目进行裁剪、定制及二次开发。依据Apache 2.0开源协议，本项目完全允许并欢迎在商业场景中进行深度应用与落地。
-
-
-2. 知识产权与反垄断声明 
-
-+ 现有技术告知
-
-本项目包含的架构设计、核心算法及逻辑框架（以下统称“技术方案”），自 2023 年起已通过互联网及开源代码托管平台持续向公众发布。根据《中华人民共和国专利法（2020年修正）》第二十二条之规定，上述公开内容已构成现有技术，即申请日以前在国内外为公众所知的技术。任何单位或个人不应就此技术方案申请专利。
-
-+ 专利无效宣告权利
-
-我们坚决反对任何试图将开源共有技术私有化、垄断化的行为。根据《中华人民共和国专利法（2020年修正）》第四十五条之规定，自国务院专利行政部门公告授予专利权之日起，任何单位或者个人认为该专利权的授予不符合本法有关规定的，均可以请求国务院专利行政部门宣告该专利权无效。我们鼓励社区成员对违规申请专利的行为进行检举。对于企图将开源共有技术私有化、垄断化的行为，我们将保留提供证据并依法申请无效宣告的权利。
-
-+ Apache License 2.0中的专利权益要求
-
-我们诚挚地提醒使用者注意 Apache License 2.0 协议第 3 条之规定。任何针对本项目的专利诉讼都将导致相关专利授权的自动终止。授权终止后，您将不再被允许使用本项目。若在此情况下继续使用，即构成侵权。根据《中华人民共和国专利法（2020年修正）》第七十一条之规定，违规行为单位或个人应当依据其因侵权所获得的利益、给权利人造成的实际损失或该专利许可使用费的倍数，依法承担相应的赔偿责任。
-
-
-3. 倡导协同创新 
-
-开源的生命力在于积累、反馈与提升！若您在应用过程中实现了新的模块功能或算法优化，我们热忱欢迎您通过拉取请求（Pull Request）将创新成果和工程实践合并至 GMP 主分支，共同推动行业技术进步。
-
-
-4. 归属与合规要求
-请尊重原创者的劳动成果！在基于本项目开发的商业产品或衍生作品中，请务必保留必要的版权声明与归属标注。我们期望所有使用者能将精力聚焦于 技术落地 ，而非 技术围猎 。
