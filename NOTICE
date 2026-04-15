@@ -1,0 +1,68 @@
+GMP Project Statement
+
+This project is initiated and maintained by the GMP Team. We are dedicated to building an open and symbiotic ecosystem for motor control, power electronics, and embedded development, and we firmly uphold the spirit of open source. This statement does not extend the requirements of the Apache License 2.0; any learning, development, or use within the framework of the open-source license is encouraged.
+
+
+1. Encouragement of Commercial Implementation
+
+We support and encourage developers to tailor, customize, and perform derivative development of this project based on actual project requirements. In accordance with the Apache License 2.0, this project fully permits and welcomes deep application and implementation in commercial scenarios.
+
+
+2. Intellectual Property and Anti-Monopoly Statement
+
++ Prior Art Notification
+
+The architectural design, core algorithms, and logical frameworks (collectively referred to as "Technical Solutions") of this project have been continuously released to the public through the internet and open-source code hosting platforms since 2023. According to Article 22, Paragraph 5 of the Patent Law of the People's Republic of China (2020 Amendment), the aforementioned disclosed content constitutes Prior Art (i.e., technology known to the public both domestically and abroad before the date of application). No entity or individual shall apply for a patent based on these Technical Solutions.
+
++ Right to Patent Invalidation
+
+We resolutely oppose any attempt to privatize or monopolize technology that is public and open-source. According to Article 45 of the Patent Law of the People's Republic of China (2020 Amendment), from the date of the announcement of the grant of a patent, any unit or individual that considers the grant of the said patent not in conformity with the relevant provisions of this Law may request the patent administration department under the State Council to declare the patent right invalid. We encourage community members to report any non-compliant patent applications. We reserve the right to provide evidence and legally apply for patent invalidation against any attempts to privatize or monopolize open-source shared technology.
+
++ Patent Rights Requirements under Apache License 2.0
+
+We sincerely remind users to note the provisions of Section 3 of the Apache License 2.0. Any patent litigation initiated against this project will result in the automatic termination of the relevant patent licenses. Upon termination of the license, you will no longer be permitted to use this project. Continued use under such circumstances constitutes infringement. According to Article 71 of the Patent Law of the People's Republic of China (2020 Amendment), the infringing entity or individual shall bear liability for damages based on the profits gained from the infringement, the actual losses suffered by the right holder, or a multiple of the patent license fee.
+
+
+3. Advocacy for Collaborative Innovation
+
+The vitality of open source lies in accumulation, feedback, and improvement! If you implement new module functions or algorithm optimizations during your application, we warmly welcome you to merge your innovations and engineering practices into the GMP main branch through Pull Requests, collectively driving technical progress in the industry.
+
+
+4. Attribution and Compliance Requirements
+
+Please respect the labor of the original creators! In any commercial products or derivative works developed based on this project, necessary copyright notices and attribution labels must be retained. We expect all users to focus their energy on Technical Implementation rather than Patent Trolling.
+
+
+
+GMP 项目声明
+
+本项目由 GMP 团队发起并维护。我们致力于构建开放、共存的电机控制、电力电子与嵌入式开发生态，并坚定拥护开源精神。本声明并没有扩展Apache2.0协议的要求，任何开源协议框架内的学习、开发、使用都是值得鼓励的。
+
+
+1. 鼓励商业落地 
+
+我们支持并鼓励开发者根据实际项目需求，对本项目进行裁剪、定制及二次开发。依据Apache 2.0开源协议，本项目完全允许并欢迎在商业场景中进行深度应用与落地。
+
+
+2. 知识产权与反垄断声明 
+
++ 现有技术告知
+
+本项目包含的架构设计、核心算法及逻辑框架（以下统称“技术方案”），自 2023 年起已通过互联网及开源代码托管平台持续向公众发布。根据《中华人民共和国专利法（2020年修正）》第二十二条之规定，上述公开内容已构成现有技术，即申请日以前在国内外为公众所知的技术。任何单位或个人不应就此技术方案申请专利。
+
++ 专利无效宣告权利
+
+我们坚决反对任何试图将开源共有技术私有化、垄断化的行为。根据《中华人民共和国专利法（2020年修正）》第四十五条之规定，自国务院专利行政部门公告授予专利权之日起，任何单位或者个人认为该专利权的授予不符合本法有关规定的，均可以请求国务院专利行政部门宣告该专利权无效。我们鼓励社区成员对违规申请专利的行为进行检举。对于企图将开源共有技术私有化、垄断化的行为，我们将保留提供证据并依法申请无效宣告的权利。
+
++ Apache License 2.0中的专利权益要求
+
+我们诚挚地提醒使用者注意 Apache License 2.0 协议第 3 条之规定。任何针对本项目的专利诉讼都将导致相关专利授权的自动终止。授权终止后，您将不再被允许使用本项目。若在此情况下继续使用，即构成侵权。根据《中华人民共和国专利法（2020年修正）》第七十一条之规定，违规行为单位或个人应当依据其因侵权所获得的利益、给权利人造成的实际损失或该专利许可使用费的倍数，依法承担相应的赔偿责任。
+
+
+3. 倡导协同创新 
+
+开源的生命力在于积累、反馈与提升！若您在应用过程中实现了新的模块功能或算法优化，我们热忱欢迎您通过拉取请求（Pull Request）将创新成果和工程实践合并至 GMP 主分支，共同推动行业技术进步。
+
+
+4. 归属与合规要求
+请尊重原创者的劳动成果！在基于本项目开发的商业产品或衍生作品中，请务必保留必要的版权声明与归属标注。我们期望所有使用者能将精力聚焦于 技术落地 ，而非 技术围猎 。
