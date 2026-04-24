@@ -3,10 +3,40 @@
 #include <core/dev/datalink.h>
 #include <core/std/checksum/crc16.h>
 
+// =========================================================
+// INTERNAL HELPER FUNCTIONS
+// =========================================================
 
 /**
- * @brief Initialize the datalink context and inject dependencies.
+ * @brief Resets the parser state to WAIT_SYNC and optionally clears memory for debugging.
  */
+static inline void datalink_reset_rx(gmp_datalink_t* ctx) 
+{
+    ctx->rx_state = GMP_DL_STATE_WAIT_SYNC;
+#if GMP_DL_DEBUG_CLEAR_MEM
+    memset(ctx->hdr_buf, 0, sizeof(ctx->hdr_buf));
+    memset(ctx->payload_buf, 0, sizeof(ctx->payload_buf));
+#endif
+}
+
+/**
+ * @brief Prepares the parser for a new frame.
+ */
+static inline void datalink_start_rx(gmp_datalink_t* ctx) 
+{
+    ctx->rx_state = GMP_DL_STATE_HEADER_RECV;
+    ctx->hdr_idx = 0;
+    ctx->payload_idx = 0;
+#if GMP_DL_DEBUG_CLEAR_MEM
+    memset(ctx->hdr_buf, 0, sizeof(ctx->hdr_buf));
+    memset(ctx->payload_buf, 0, sizeof(ctx->payload_buf));
+#endif
+}
+
+// =========================================================
+// API IMPLEMENTATIONS
+// =========================================================
+
 void gmp_datalink_init(gmp_datalink_t* ctx, uint16_t local_id, 
                        gmp_dl_hw_tx_cb tx_cb, gmp_dl_hw_tx_is_ready_cb tx_ready_cb,
                        gmp_dl_app_rx_cb rx_cb, gmp_dl_bypass_cb bypass_cb) 
@@ -20,16 +50,11 @@ void gmp_datalink_init(gmp_datalink_t* ctx, uint16_t local_id,
     
     ctx->rx_fifo_head = 0;
     ctx->rx_fifo_tail = 0;
-    ctx->rx_state = GMP_DL_STATE_WAIT_SYNC;
     ctx->tx_pending = 0;
+    
+    datalink_reset_rx(ctx);
 }
 
-/**
- * @brief  Extremely fast ISR handler to push data into the internal FIFO.
- * @note   This function contains NO parsing logic, making it safe for high-freq interrupts.
- * @param  ctx Pointer to the datalink context.
- * @param  raw_data The byte received from the hardware.
- */
 void gmp_datalink_feed_byte(gmp_datalink_t* ctx, data_gt raw_data) 
 {
     uint16_t next_head = (ctx->rx_fifo_head + 1) % GMP_DL_RX_FIFO_SIZE;
@@ -42,13 +67,6 @@ void gmp_datalink_feed_byte(gmp_datalink_t* ctx, data_gt raw_data)
     }
 }
 
-/**
- * @brief  Extremely fast ISR handler to push a block of data into the internal FIFO.
- * @note   This function contains NO parsing logic, making it safe for high-freq or DMA block interrupts.
- * @param  ctx Pointer to the datalink context.
- * @param  str Pointer to the data array (block) to be fed.
- * @param  size Number of elements to feed into the FIFO.
- */
 void gmp_datalink_feed_str(gmp_datalink_t* ctx, const data_gt *str, size_gt size) 
 {
     if (!ctx || !str || size == 0) {
@@ -56,12 +74,10 @@ void gmp_datalink_feed_str(gmp_datalink_t* ctx, const data_gt *str, size_gt size
     }
 
     size_gt i;
-
     for (i = 0; i < size; i++) {
         uint16_t next_head = (ctx->rx_fifo_head + 1) % GMP_DL_RX_FIFO_SIZE;
         
         if (next_head != ctx->rx_fifo_tail) {
-            // Ensure 8-bit masking to prevent alignment/sign-extension issues on DSPs
             ctx->rx_fifo[ctx->rx_fifo_head] = str[i] & 0xFF; 
             ctx->rx_fifo_head = next_head;
         } else {
@@ -73,11 +89,6 @@ void gmp_datalink_feed_str(gmp_datalink_t* ctx, const data_gt *str, size_gt size
     }
 }
 
-/**
- * @brief  Core event processor. Must be called periodically in the main loop/RTOS task.
- * @details Handles FSM parsing, Watchdog timeouts, and queued TX transmissions.
- * @param  ctx Pointer to the datalink context.
- */
 void gmp_datalink_tick(gmp_datalink_t* ctx) 
 {
     // =========================================================
@@ -94,8 +105,7 @@ void gmp_datalink_tick(gmp_datalink_t* ctx)
         // --- State 0: Wait Sync (Gateway) ---
         if (ctx->rx_state == GMP_DL_STATE_WAIT_SYNC) {
             if (byte == GMP_DL_SOF) {
-                ctx->rx_state = GMP_DL_STATE_HEADER_RECV;
-                ctx->hdr_idx = 0;
+                datalink_start_rx(ctx);
             } else if (ctx->bypass_func) {
                 // Character does not belong to datalink, forward to CLI/Terminal
                 ctx->bypass_func(byte); 
@@ -106,8 +116,7 @@ void gmp_datalink_tick(gmp_datalink_t* ctx)
         // --- Hard Reset Protection ---
         if ((ctx->rx_state == GMP_DL_STATE_HEADER_RECV || 
              ctx->rx_state == GMP_DL_STATE_HEADER_ESCAPE) && byte == GMP_DL_SOF) {
-            ctx->rx_state = GMP_DL_STATE_HEADER_RECV;
-            ctx->hdr_idx = 0;
+            datalink_start_rx(ctx);
             continue;
         }
 
@@ -120,7 +129,7 @@ void gmp_datalink_tick(gmp_datalink_t* ctx)
                 } 
                 else if (byte == GMP_DL_EOF) {
                     if (ctx->hdr_idx != GMP_DL_HDR_SIZE) {
-                        ctx->rx_state = GMP_DL_STATE_WAIT_SYNC;
+                        datalink_reset_rx(ctx);
                         break;
                     }
 
@@ -130,7 +139,7 @@ void gmp_datalink_tick(gmp_datalink_t* ctx)
 
                     if (h_crc_calc != h_crc_rcv) {
                         ctx->err_hdr_crc_cnt++;
-                        ctx->rx_state = GMP_DL_STATE_WAIT_SYNC; 
+                        datalink_reset_rx(ctx); 
                         break;
                     }
 
@@ -140,7 +149,7 @@ void gmp_datalink_tick(gmp_datalink_t* ctx)
                     ctx->expected_payload_len = (ctx->hdr_buf[2] & 0xFF) | ((ctx->hdr_buf[3] & 0xFF) << 8);
 
                     if (ctx->expected_payload_len > GMP_DL_MTU) {
-                        ctx->rx_state = GMP_DL_STATE_WAIT_SYNC;
+                        datalink_reset_rx(ctx);
                         break;
                     }
 
@@ -149,7 +158,6 @@ void gmp_datalink_tick(gmp_datalink_t* ctx)
                     } else {
                         ctx->rx_state = GMP_DL_STATE_BYPASS_RECV;
                     }
-                    ctx->payload_idx = 0;
                 } 
                 else {
                     if (ctx->hdr_idx < sizeof(ctx->hdr_buf)/sizeof(ctx->hdr_buf[0])) {
@@ -181,7 +189,7 @@ void gmp_datalink_tick(gmp_datalink_t* ctx)
                     } else {
                         ctx->err_pld_crc_cnt++;
                     }
-                    ctx->rx_state = GMP_DL_STATE_WAIT_SYNC;
+                    datalink_reset_rx(ctx);
                 }
                 break;
 
@@ -189,12 +197,12 @@ void gmp_datalink_tick(gmp_datalink_t* ctx)
                 // Blindly count and ignore foreign payload
                 ctx->payload_idx++;
                 if (ctx->payload_idx == (ctx->expected_payload_len + 2)) {
-                    ctx->rx_state = GMP_DL_STATE_WAIT_SYNC;
+                    datalink_reset_rx(ctx);
                 }
                 break;
                 
             default:
-                ctx->rx_state = GMP_DL_STATE_WAIT_SYNC;
+                datalink_reset_rx(ctx);
                 break;
         }
     }
@@ -205,7 +213,7 @@ void gmp_datalink_tick(gmp_datalink_t* ctx)
     if (ctx->rx_state != GMP_DL_STATE_WAIT_SYNC) {
         if (gmp_base_is_delay_elapsed(ctx->last_rx_tick, GMP_DL_OVERTIME)) {
             // FSM is stuck (e.g., missing EOF or cable disconnected), force reset
-            ctx->rx_state = GMP_DL_STATE_WAIT_SYNC;
+            datalink_reset_rx(ctx);
             ctx->err_timeout_cnt++;
         }
     }
@@ -220,14 +228,15 @@ void gmp_datalink_tick(gmp_datalink_t* ctx)
         if (hw_ready) {
             ctx->tx_func(ctx->tx_buf, ctx->tx_len);
             ctx->tx_pending = 0; // Release the TX lock
+            
+            // Optional: Also wipe TX buffer clean after sending for extreme strictness
+#if GMP_DL_DEBUG_CLEAR_MEM
+            memset(ctx->tx_buf, 0, sizeof(ctx->tx_buf));
+#endif
         }
     }
 }
 
-/**
- * @brief  Formats and queues a physical frame for transmission.
- * @return 1 if successfully buffered, 0 if the TX queue is currently busy.
- */
 fast_gt gmp_datalink_send(gmp_datalink_t* ctx, uint16_t target_id, uint16_t cmd, 
                           const data_gt* payload, size_gt len) 
 {

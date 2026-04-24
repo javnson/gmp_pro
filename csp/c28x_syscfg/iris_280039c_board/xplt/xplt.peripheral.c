@@ -342,7 +342,7 @@ void flush_dl_rx_buffer()
     data_gt rxBuf[ISR_LOCAL_BUF_SIZE];
 
     // Read all FIFO content
-    while ((fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE)) > 0)
+    if ((fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE)) > 0)
     {
         // Get data
         SCI_readCharArray(IRIS_UART_USB_BASE, rxBuf, fifoLevel);
