@@ -169,13 +169,18 @@ gmp_task_status_t tsk_blink(gmp_task_t* tsk)
 }
 
 void at_device_flush_rx_buffer();
+void flush_dl_rx_buffer();
 gmp_task_status_t tsk_at_device(gmp_task_t* tsk)
 {
     GMP_UNUSED_VAR(tsk);
 
     // AT device dispatch function
-    at_device_flush_rx_buffer();
-    at_device_dispatch(&at_dev);
+//    at_device_flush_rx_buffer();
+//    at_device_dispatch(&at_dev);
+
+    DINT;
+    flush_dl_rx_buffer();
+    EINT;
 
     return GMP_TASK_DONE;
 }
@@ -333,6 +338,41 @@ gmp_task_t tasks[] = {
 //=================================================================================================
 // initialize routine
 
+#define CMD_ECHO 0x99
+
+gmp_datalink_t my_dl;
+
+void hw_uart_tx(const data_gt* data, uint32_t len) {
+    // 假设是 8 位串口，如果是 DSP 注意强转或按位掩码
+    gmp_hal_uart_write(IRIS_UART_USB_BASE, data, len, 10);
+
+}
+
+fast_gt hw_uart_tx_ready(void) {
+    // 如果是用中断/DMA发送，这里检查相应的忙碌标志位
+    // 简写为阻塞式则永远返回 1
+    return 1;
+}
+
+// ========================================================
+// 2. 接收事件的回调函数 (业务层)
+// ========================================================
+void app_rx_callback(uint16_t target_id, uint16_t cmd, const data_gt* payload, uint32_t len) {
+
+    // 如果收到了 PC 的 ECHO 指令
+    if (cmd == CMD_ECHO) {
+        // 原封不动地把收到的数据发回去
+        // 注意：在实际应用中，如果是高频的应答，应该判断一下返回值是否成功
+        gmp_datalink_send(&my_dl, 0xFF, CMD_ECHO, payload, len);
+    }
+}
+
+// 旁路测试：如果不属于 Datalink，就把字符吐出来打印
+void app_bypass_callback(data_gt byte) {
+    return;
+}
+
+
 GMP_NO_OPT_PREFIX
 void init(void) GMP_NO_OPT_SUFFIX
 {
@@ -344,6 +384,13 @@ void init(void) GMP_NO_OPT_SUFFIX
 
     for (i = 0; i < sizeof(tasks) / sizeof(gmp_task_t); ++i)
         gmp_scheduler_add_task(&sched, &tasks[i]);
+
+    // 1. 初始化数据链路层
+        // 分配本机 ID 为 0x01，注入各种硬件回调
+        gmp_datalink_init(&my_dl, 0x01,
+                          hw_uart_tx, hw_uart_tx_ready,
+                          app_rx_callback, app_bypass_callback);
+
 }
 
 //=================================================================================================
@@ -354,4 +401,5 @@ void mainloop(void) GMP_NO_OPT_SUFFIX
 {
     // run task scheduler
     gmp_scheduler_dispatch(&sched);
+    gmp_datalink_tick(&my_dl);
 }

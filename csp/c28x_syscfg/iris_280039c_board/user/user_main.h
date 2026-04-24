@@ -7,6 +7,7 @@
 //
 
 #include <core/dev/at_device.h>
+#include <core/dev/datalink.h>
 
 #include <core/pm/function_scheduler.h>
 

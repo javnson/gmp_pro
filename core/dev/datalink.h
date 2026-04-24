@@ -71,9 +71,6 @@ typedef fast_gt (*gmp_dl_hw_tx_is_ready_cb)(void);
 /** @brief App RX function triggered when a PERFECT payload is received */
 typedef void (*gmp_dl_app_rx_cb)(uint16_t target_id, uint16_t cmd, const data_gt* payload, size_gt len);
 
-/** @brief Time fetcher for watchdog timeout calculation */
-typedef time_gt (*gmp_dl_get_tick_cb)(void);
-
 /** @brief Called when a byte is rejected by the Datalink FSM (e.g., for CLI routing) */
 typedef void (*gmp_dl_bypass_cb)(data_gt byte);
 
@@ -89,7 +86,6 @@ typedef struct {
     gmp_dl_hw_tx_cb          tx_func;
     gmp_dl_hw_tx_is_ready_cb tx_ready_func; 
     gmp_dl_app_rx_cb         rx_func;
-    gmp_dl_get_tick_cb       get_time_func;
     gmp_dl_bypass_cb         bypass_func;  ///< Optional CLI forwarder
 
     // --- ISR Decoupling FIFO ---
@@ -127,10 +123,18 @@ typedef struct {
 // ---------------------------------------------------------
 void gmp_datalink_init(gmp_datalink_t* ctx, uint16_t local_id, 
                        gmp_dl_hw_tx_cb tx_cb, gmp_dl_hw_tx_is_ready_cb tx_ready_cb,
-                       gmp_dl_app_rx_cb rx_cb, gmp_dl_bypass_cb bypass_cb, 
-                       gmp_dl_get_tick_cb time_cb);
+                       gmp_dl_app_rx_cb rx_cb, gmp_dl_bypass_cb bypass_cb);
 
 void gmp_datalink_feed_byte(gmp_datalink_t* ctx, data_gt raw_data);
+
+/**
+ * @brief  Extremely fast ISR handler to push a block of data into the internal FIFO.
+ * @note   This function contains NO parsing logic, making it safe for high-freq or DMA block interrupts.
+ * @param  ctx Pointer to the datalink context.
+ * @param  str Pointer to the data array (block) to be fed.
+ * @param  size Number of elements to feed into the FIFO.
+ */
+void gmp_datalink_feed_str(gmp_datalink_t* ctx, const data_gt *str, size_gt size);
 
 void gmp_datalink_tick(gmp_datalink_t* ctx);
 

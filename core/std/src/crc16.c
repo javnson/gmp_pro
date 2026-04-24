@@ -1,6 +1,8 @@
-#include <stdint.h>
+﻿#include <gmp_core.h>
 
-// 标准 CRC16-CCITT 查表法 (省空间且速度快)
+#include <core/std/checksum/crc16.h>
+
+// Standard CRC16-CCITT LUT mathod
 static const uint16_t crc16_ccitt_table[256] = {
     0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
     0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
@@ -36,11 +38,13 @@ static const uint16_t crc16_ccitt_table[256] = {
     0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0
 };
 
-// 必须严格与头文件声明一致 (使用泛型 data_gt)
-uint16_t gmp_base_calculate_crc16(const uint16_t* data, uint32_t len) {
+// using 
+uint16_t gmp_base_calculate_crc16(const data_gt* data, uint32_t len) {
     uint16_t crc = 0xFFFF; // 初始值
-    for (uint32_t i = 0; i < len; i++) {
-        uint8_t byte = (uint8_t)(data[i] & 0xFF);
+    uint32_t i;
+
+    for (i = 0; i < len; i++) {
+        data_gt byte = (data_gt)(data[i] & 0xFF);
         crc = (crc << 8) ^ crc16_ccitt_table[((crc >> 8) ^ byte) & 0xFF];
     }
     return crc;

@@ -9,8 +9,7 @@
  */
 void gmp_datalink_init(gmp_datalink_t* ctx, uint16_t local_id, 
                        gmp_dl_hw_tx_cb tx_cb, gmp_dl_hw_tx_is_ready_cb tx_ready_cb,
-                       gmp_dl_app_rx_cb rx_cb, gmp_dl_bypass_cb bypass_cb, 
-                       gmp_dl_get_tick_cb time_cb) 
+                       gmp_dl_app_rx_cb rx_cb, gmp_dl_bypass_cb bypass_cb) 
 {
     memset(ctx, 0, sizeof(gmp_datalink_t));
     ctx->local_id = local_id;
@@ -18,7 +17,6 @@ void gmp_datalink_init(gmp_datalink_t* ctx, uint16_t local_id,
     ctx->tx_ready_func = tx_ready_cb;
     ctx->rx_func = rx_cb;
     ctx->bypass_func = bypass_cb;
-    ctx->get_time_func = time_cb;
     
     ctx->rx_fifo_head = 0;
     ctx->rx_fifo_tail = 0;
@@ -45,6 +43,37 @@ void gmp_datalink_feed_byte(gmp_datalink_t* ctx, data_gt raw_data)
 }
 
 /**
+ * @brief  Extremely fast ISR handler to push a block of data into the internal FIFO.
+ * @note   This function contains NO parsing logic, making it safe for high-freq or DMA block interrupts.
+ * @param  ctx Pointer to the datalink context.
+ * @param  str Pointer to the data array (block) to be fed.
+ * @param  size Number of elements to feed into the FIFO.
+ */
+void gmp_datalink_feed_str(gmp_datalink_t* ctx, const data_gt *str, size_gt size) 
+{
+    if (!ctx || !str || size == 0) {
+        return;
+    }
+
+    size_gt i;
+
+    for (i = 0; i < size; i++) {
+        uint16_t next_head = (ctx->rx_fifo_head + 1) % GMP_DL_RX_FIFO_SIZE;
+        
+        if (next_head != ctx->rx_fifo_tail) {
+            // Ensure 8-bit masking to prevent alignment/sign-extension issues on DSPs
+            ctx->rx_fifo[ctx->rx_fifo_head] = str[i] & 0xFF; 
+            ctx->rx_fifo_head = next_head;
+        } else {
+            // Optimization: FIFO is full. 
+            // Accumulate the remaining dropped bytes to the error counter and exit early.
+            ctx->err_fifo_ovf_cnt += (size - i);
+            break; 
+        }
+    }
+}
+
+/**
  * @brief  Core event processor. Must be called periodically in the main loop/RTOS task.
  * @details Handles FSM parsing, Watchdog timeouts, and queued TX transmissions.
  * @param  ctx Pointer to the datalink context.
@@ -60,9 +89,7 @@ void gmp_datalink_tick(gmp_datalink_t* ctx)
         ctx->rx_fifo_tail = (ctx->rx_fifo_tail + 1) % GMP_DL_RX_FIFO_SIZE;
 
         // Refresh watchdog tick ONLY when actively processing data
-        if (ctx->get_time_func) {
-            ctx->last_rx_tick = ctx->get_time_func();
-        }
+        ctx->last_rx_tick = gmp_base_get_system_tick();
 
         // --- State 0: Wait Sync (Gateway) ---
         if (ctx->rx_state == GMP_DL_STATE_WAIT_SYNC) {
@@ -175,7 +202,7 @@ void gmp_datalink_tick(gmp_datalink_t* ctx)
     // =========================================================
     // EVENT 2: Check RX Watchdog Timeout
     // =========================================================
-    if (ctx->rx_state != GMP_DL_STATE_WAIT_SYNC && ctx->get_time_func) {
+    if (ctx->rx_state != GMP_DL_STATE_WAIT_SYNC) {
         if (gmp_base_is_delay_elapsed(ctx->last_rx_tick, GMP_DL_OVERTIME)) {
             // FSM is stuck (e.g., missing EOF or cable disconnected), force reset
             ctx->rx_state = GMP_DL_STATE_WAIT_SYNC;
@@ -210,6 +237,7 @@ fast_gt gmp_datalink_send(gmp_datalink_t* ctx, uint16_t target_id, uint16_t cmd,
     }
 
     size_gt tx_idx = 0;
+    size_gt i;
     
     // 1. Header Composition
     data_gt raw_hdr[4];
@@ -221,7 +249,7 @@ fast_gt gmp_datalink_send(gmp_datalink_t* ctx, uint16_t target_id, uint16_t cmd,
 
     // 2. Escape Header 
     ctx->tx_buf[tx_idx++] = GMP_DL_SOF;
-    for (int i = 0; i < 6; i++) {
+    for (i = 0; i < 6; i++) {
         data_gt b;
         if (i < 4) b = raw_hdr[i];
         else if (i == 4) b = h_crc & 0xFF;
@@ -238,7 +266,7 @@ fast_gt gmp_datalink_send(gmp_datalink_t* ctx, uint16_t target_id, uint16_t cmd,
 
     // 3. Blind Payload Composition (Zero Escape)
     if (len > 0 && payload != NULL) {
-        for (size_gt i = 0; i < len; i++) {
+        for (i = 0; i < len; i++) {
             ctx->tx_buf[tx_idx++] = payload[i] & 0xFF;
         }
         uint16_t p_crc = gmp_base_calculate_crc16(payload, len);

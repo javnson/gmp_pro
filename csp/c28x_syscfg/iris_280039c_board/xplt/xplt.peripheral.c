@@ -334,12 +334,32 @@ void at_device_flush_rx_buffer()
     }
 }
 
+extern gmp_datalink_t my_dl;
+
+void flush_dl_rx_buffer()
+{
+    uint16_t fifoLevel;
+    data_gt rxBuf[ISR_LOCAL_BUF_SIZE];
+
+    // Read all FIFO content
+    while ((fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE)) > 0)
+    {
+        // Get data
+        SCI_readCharArray(IRIS_UART_USB_BASE, rxBuf, fifoLevel);
+
+        gmp_datalink_feed_str(&my_dl, rxBuf, fifoLevel);
+    }
+}
+
+
 interrupt void INT_IRIS_UART_USB_RX_ISR(void)
 {
     uint32_t rxStatus;
 
     // clear receive FIFO
-    at_device_flush_rx_buffer();
+//    at_device_flush_rx_buffer();
+
+    flush_dl_rx_buffer();
 
     // Fault reaction
     rxStatus = SCI_getRxStatus(IRIS_UART_USB_BASE);
