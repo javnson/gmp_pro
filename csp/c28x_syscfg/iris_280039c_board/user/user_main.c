@@ -264,7 +264,7 @@ gmp_task_status_t tsk_key_flush(gmp_task_t* tsk)
 }
 
 
-gmp_task_status_t tsk_startup_beep(gmp_task_t* tsk)
+gmp_task_status_t tsk_startup(gmp_task_t* tsk)
 {
     GMP_UNUSED_VAR(tsk);
 
@@ -281,9 +281,35 @@ gmp_task_status_t tsk_startup_beep(gmp_task_t* tsk)
 
     beep_counter += 1;
 
-    // if program is complete, close this routine.
+    // if program is complete,
+    // init all the peripherals,
+    // and close this routine.
     if(beep_counter >= 4)
+    {
+        ht16k33_init_t ht16k33_init_struct =
+        {
+         .brightness = 15,
+         .blink_rate = 0,
+         .int_enable = 0,
+         .int_act_high = 0
+        };
+
+        ec_gt ec = ht16k33_init(&ht16k33, iic_bus, HT16K33_DEFAULT_DEV_ADDR, &ht16k33_init_struct);
+
+        if(ec == GMP_EC_OK)
+        {
+            sched.task_list[2]->is_enabled = 1;
+            sched.task_list[3]->is_enabled = 1;
+        }
+
+        hdc1080_config_reg_t hdc1080_cfg = {.all = 0};
+        hdc1080_cfg.bits.mode = 1; // continuous acquisition data
+
+        //hdc1080_init(&hdc1080, iic_bus, HDC1080_I2C_ADDR_DEFAULT, hdc1080_cfg);
+
+        // startup process is complete.
         tsk->is_enabled = 0;
+    }
 
     return GMP_TASK_DONE;
 }
@@ -297,9 +323,9 @@ gmp_task_t tasks[] = {
     // name,     task,      period(ms),  init_phase, is_enabled, pParam
     {"blink_led", tsk_blink, 1000, 100, 1, NULL},
     {"at_device", tsk_at_device, 5, 1, 1, NULL},
-    {"flush_key", tsk_key_flush, 100, 10, 1, (void*)&ht16k33},
-    {"flush_led", tsk_LED_flush, 500, 200, 1, (void*)&ht16k33},
-    {"startup", tsk_startup_beep, 500, 0, 1, NULL}
+    {"flush_key", tsk_key_flush, 100, 10, 0, (void*)&ht16k33},
+    {"flush_led", tsk_LED_flush, 500, 200, 0, (void*)&ht16k33},
+    {"startup", tsk_startup, 500, 0, 1, NULL}
 };
 
 
@@ -311,23 +337,6 @@ GMP_NO_OPT_PREFIX
 void init(void) GMP_NO_OPT_SUFFIX
 {
     int i;
-
-    ht16k33_init_t ht16k33_init_struct =
-    {
-     .brightness = 15,
-     .blink_rate = 0,
-     .int_enable = 0,
-     .int_act_high = 0
-    };
-
-    ht16k33_init(&ht16k33, iic_bus, HT16K33_DEFAULT_DEV_ADDR, &ht16k33_init_struct);
-
-    //beep_off();
-
-    hdc1080_config_reg_t hdc1080_cfg = {.all = 0};
-    hdc1080_cfg.bits.mode = 1; // continuous acquisition data
-
-    //hdc1080_init(&hdc1080, iic_bus, HDC1080_I2C_ADDR_DEFAULT, hdc1080_cfg);
 
     at_device_init(&at_dev, at_cmds, sizeof(at_cmds) / sizeof(at_device_cmd_t), at_device_error_handler);
 
