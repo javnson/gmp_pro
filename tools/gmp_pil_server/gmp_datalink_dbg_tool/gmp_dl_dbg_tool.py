@@ -173,7 +173,7 @@ class HermesDatalink:
 if __name__ == "__main__":
     
     # 默认使用 COM8，允许通过命令行参数覆盖 (如: python hermes.py COM3)
-    port_name = "COM8" if len(sys.argv) < 2 else sys.argv[1]
+    port_name = "COM20" if len(sys.argv) < 2 else sys.argv[1]
     target_baudrate = 921600
     
     # 初始化 Hermes
