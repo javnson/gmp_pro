@@ -1,139 +1,195 @@
 /**
- * @file gmp_tunable.h
- * @brief GMP Tunable Application Layer - Variable & Memory Access Dictionary.
- * @details Implements the ASAP2-like data dictionary and protocol dispatcher.
- * Supports static ROM-based variable registration and dynamic RAM-based backdoors.
+ * @file tunable.h
+ * @brief GMP Tunable Application Layer - Decoupled Variable, Memory, and Flex Modules.
+ * @details Implements object-oriented tunable modules with short-circuit dispatcher logic.
+ * Fully compatible with DSP/ARM architectures via data_gt mapping.
+ * * * HOW TO USE THIS MODULE:
+ * 1. Definition: Define your static variable dictionaries (`gmp_var_entry_t` array), 
+ * memory whitelists (`gmp_mem_region_t` array), and RAM arrays for flex backdoors.
+ * 2. Initialization: Instantiate the desired module contexts (e.g., `gmp_tunable_var_t`) 
+ * and call their respective init functions. You can assign the SAME `base_cmd` 
+ * to all modules (e.g., 0x10) because their internal offsets are designed to not overlap.
+ * 3. Dispatching: In your datalink application RX callback, chain the module callbacks 
+ * sequentially. Use the short-circuit return value (`GMP_TUNABLE_HANDLED`) to stop 
+ * propagation once a module handles the command. 
+ * * Example:
+ * if (gmp_tunable_var_rx_cb(...) == GMP_TUNABLE_HANDLED) return;
+ * if (gmp_tunable_flex_rx_cb(...) == GMP_TUNABLE_HANDLED) return;
+ * if (gmp_tunable_mem_rx_cb(...) == GMP_TUNABLE_HANDLED) return;
  */
-
-#include <core/dev/datalink.h>
 
 #ifndef _FILE_GMP_TUNABLE_H
 #define _FILE_GMP_TUNABLE_H
 
-// ---------------------------------------------------------
-// 1. Command Definitions (CMD)
-// ---------------------------------------------------------
-#define GMP_CMD_VAR_INFO_REQ  0x10 ///< PC requests variable physical address and metadata
-#define GMP_CMD_VAR_INFO_ACK  0x11 ///< MCU replies with metadata
-#define GMP_CMD_VAR_READ_REQ  0x12 ///< PC requests variable value
-#define GMP_CMD_VAR_READ_ACK  0x13 ///< MCU replies with variable value
-#define GMP_CMD_VAR_WRITE_REQ 0x14 ///< PC requests to write variable value
-#define GMP_CMD_VAR_WRITE_ACK 0x15 ///< MCU replies with write status
-
-#define GMP_CMD_BACKDOOR_CFG 0x19 ///< PC configures a backdoor channel
-#define GMP_CMD_BACKDOOR_ACK 0x1A ///< MCU replies with backdoor config status
-
-#define GMP_CMD_MEM_READ_REQ  0x20 ///< PC requests raw memory block
-#define GMP_CMD_MEM_READ_ACK  0x21 ///< MCU replies with memory block data
-#define GMP_CMD_MEM_WRITE_REQ 0x22 ///< PC requests to write memory block
-#define GMP_CMD_MEM_WRITE_ACK 0x23 ///< MCU replies with memory write status
+#include <core/dev/datalink.h>
 
 // ---------------------------------------------------------
-// 2. Data Types & Permissions
+// 1. Core Macros & Return Codes
+// ---------------------------------------------------------
+#define GMP_TUNABLE_HANDLED 0 ///< Command was successfully handled, stop dispatching
+#define GMP_TUNABLE_PASS    1 ///< Command does not belong to this module, pass to next
+
+// ---------------------------------------------------------
+// 3. Command Offset Definitions
+// ---------------------------------------------------------
+// Offsets for Variable & Flex Backdoor Modules (0 ~ 5)
+#define GMP_TUNABLE_OFFSET_INFO_REQ      0 ///< Request dictionary info
+#define GMP_TUNABLE_OFFSET_INFO_ACK      1 ///< Acknowledge dictionary info
+#define GMP_TUNABLE_OFFSET_VAR_READ_REQ  2 ///< Request to read variable
+#define GMP_TUNABLE_OFFSET_VAR_READ_ACK  3 ///< Acknowledge variable read
+#define GMP_TUNABLE_OFFSET_VAR_WRITE_REQ 4 ///< Request to write variable
+#define GMP_TUNABLE_OFFSET_VAR_WRITE_ACK 5 ///< Acknowledge variable write
+
+// Offsets for Memory Module (6 ~ 9)
+#define GMP_TUNABLE_OFFSET_MEM_READ_REQ  6 ///< Request to read memory block
+#define GMP_TUNABLE_OFFSET_MEM_READ_ACK  7 ///< Acknowledge memory block read
+#define GMP_TUNABLE_OFFSET_MEM_WRITE_REQ 8 ///< Request to write memory block
+#define GMP_TUNABLE_OFFSET_MEM_WRITE_ACK 9 ///< Acknowledge memory block write
+
+
+// ---------------------------------------------------------
+// 4. Data Types & Permissions
 // ---------------------------------------------------------
 
 /**
- * @brief  Supported variable data types for the dictionary.
- * @note   These map to byte/word lengths for memcpy and network transfer.
+ * @brief Supported variable data types for the dictionary.
  */
 typedef enum
 {
-    GMP_VAR_TYPE_UINT16 = 0x01, ///< 16-bit unsigned (2 bytes on wire)
-    GMP_VAR_TYPE_INT16 = 0x02,  ///< 16-bit signed   (2 bytes on wire)
-    GMP_VAR_TYPE_UINT32 = 0x03, ///< 32-bit unsigned (4 bytes on wire)
-    GMP_VAR_TYPE_INT32 = 0x04,  ///< 32-bit signed   (4 bytes on wire)
-    GMP_VAR_TYPE_FLOAT = 0x05   ///< 32-bit IEEE 754 (4 bytes on wire)
+    GMP_VAR_TYPE_UINT16 = 0x01, ///< 16-bit unsigned
+    GMP_VAR_TYPE_INT16 = 0x02,  ///< 16-bit signed
+    GMP_VAR_TYPE_UINT32 = 0x03, ///< 32-bit unsigned
+    GMP_VAR_TYPE_INT32 = 0x04,  ///< 32-bit signed
+    GMP_VAR_TYPE_FLOAT = 0x05   ///< 32-bit IEEE 754 Float
 } gmp_var_type_t;
 
 /**
- * @brief  Access permissions for dictionary entries.
+ * @brief Unified memory and variable access permissions.
  */
 typedef enum
 {
-    GMP_VAR_ACCESS_RO = 0x00, ///< Read-Only (e.g., ADC results, Status flags)
-    GMP_VAR_ACCESS_RW = 0x01  ///< Read-Write (e.g., PI Gains, Targets)
-} gmp_var_access_t;
-
-/**
- * @brief  Write Request Status Codes.
- */
-typedef enum
-{
-    GMP_VAR_STATUS_OK = 0x00,         ///< Write successful
-    GMP_VAR_STATUS_ERR_RO = 0x01,     ///< Error: Variable is Read-Only
-    GMP_VAR_STATUS_ERR_NO_ID = 0x02,  ///< Error: Variable ID not found
-    GMP_VAR_STATUS_ERR_BAD_LEN = 0x03 ///< Error: Payload length mismatch
-} gmp_var_status_t;
-
-/**
- * @brief  Memory Access Status Codes.
- */
-typedef enum
-{
-    GMP_MEM_STATUS_OK = 0x00,      ///< Memory access successful
-    GMP_MEM_STATUS_ERR_RO = 0x01,  ///< Error: Memory region is Read-Only
-    GMP_MEM_STATUS_ERR_OOB = 0x02, ///< Error: Address Out Of Bounds (Not in whitelist)
-    GMP_MEM_STATUS_ERR_MTU = 0x03  ///< Error: Requested length exceeds Datalink MTU
-} gmp_mem_status_t;
-
-/**
- * @brief  Access permissions for memory regions.
- */
-typedef enum
-{
-    GMP_MEM_ATTR_RO = 0x00, ///< Read-Only Region (e.g., Flash, Calibration Data)
-    GMP_MEM_ATTR_RW = 0x01  ///< Read-Write Region (e.g., RAM Buffers)
-} gmp_mem_attr_t;
+    GMP_TUNABLE_ACCESS_RO = 0x00, ///< Read-Only Region/Variable
+    GMP_TUNABLE_ACCESS_RW = 0x01  ///< Read-Write Region/Variable
+} gmp_tunable_access_t;
 
 // ---------------------------------------------------------
-// 3. Dictionary Entry Structure
+// 5. Dictionary Entry Structures
 // ---------------------------------------------------------
 
-/**
- * @brief  A single entry in the Variable Data Dictionary.
- * @details Stores the physical memory pointer and its metadata. 
- */
 typedef struct
 {
-    void* var_ptr;           ///< Physical address pointer of the variable
-    gmp_var_type_t var_type; ///< Data type for length deduction and casting
-    gmp_var_access_t access; ///< Read/Write permission
+    void* var_ptr;               ///< Physical address pointer
+    gmp_var_type_t var_type;     ///< Data type
+    gmp_tunable_access_t access; ///< Read/Write permission
 } gmp_var_entry_t;
 
-/**
- * @brief  A single entry in the Memory Protection Whitelist.
- * @details Defines a safe memory region that the PC is allowed to access.
- */
 typedef struct
 {
-    uint32_t start_addr; ///< Start physical address of the allowed region
-    uint32_t size;       ///< Size of the allowed region (in MAU / Bytes)
-    gmp_mem_attr_t attr; ///< Read/Write permission for this region
+    uint32_t start_addr;         ///< Start physical address
+    uint32_t size;               ///< Size of the region (in MAU / data_gt elements)
+    gmp_tunable_access_t access; ///< Read/Write permission
 } gmp_mem_region_t;
 
-// ---------------------------------------------------------
-// 4. API Declarations
-// ---------------------------------------------------------
+// =========================================================
+// MODULE 1: VARIABLE TUNABLE (Static Dictionary)
+// =========================================================
+typedef struct
+{
+    gmp_datalink_t* dl_ctx;
+    uint16_t base_cmd;
+    const gmp_var_entry_t* static_dict;
+    uint16_t static_dict_size;
+} gmp_tunable_var_t;
 
 /**
- * @brief  Initialize the Tunable application layer.
- * @param  dl_ctx Pointer to the underlying initialized datalink context.
+ * @brief  Initialize the static variable tunable module.
+ * @param  ctx        Pointer to the variable tunable context to initialize.
+ * @param  dl_ctx     Pointer to the bound datalink instance for transmitting ACKs.
+ * @param  base_cmd   The shared base command offset for the tunable subsystem (e.g., 0x10).
+ * @param  dict       Pointer to the static ROM-based variable dictionary array.
+ * @param  dict_size  Number of entries in the static variable dictionary.
  */
-void gmp_tunable_init(gmp_datalink_t* dl_ctx);
+void gmp_tunable_var_init(gmp_tunable_var_t* ctx, gmp_datalink_t* dl_ctx, uint16_t base_cmd,
+                          const gmp_var_entry_t* dict, uint16_t dict_size);
 
 /**
- * @brief  The core application RX callback, injected into datalink.
- * @details Acts as the central dispatcher for all tunable protocol commands.
+ * @brief  Receive callback dispatcher for the variable tunable module.
+ * @param  ctx        Pointer to the initialized variable tunable context.
+ * @param  target_id  The destination ID of the received frame.
+ * @param  cmd        The command byte extracted from the frame header.
+ * @param  payload    Pointer to the payload data array.
+ * @param  len        Length of the payload in data_gt elements.
+ * @return fast_gt    GMP_TUNABLE_HANDLED (0) if processed, GMP_TUNABLE_PASS (1) if ignored.
  */
-void gmp_tunable_rx_callback(uint16_t target_id, uint16_t cmd, const data_gt* payload, size_gt len);
+fast_gt gmp_tunable_var_rx_cb(gmp_tunable_var_t* ctx, uint16_t target_id, uint16_t cmd, const data_gt* payload,
+                              size_gt len);
 
-// ---------------------------------------------------------
-// 5. External Dictionary Declarations (User Provided)
-// ---------------------------------------------------------
-extern const gmp_var_entry_t gmp_static_dict[];
-extern const uint16_t gmp_static_dict_size;
+// =========================================================
+// MODULE 2: MEMORY TUNABLE (Whitelist Protection)
+// =========================================================
+typedef struct
+{
+    gmp_datalink_t* dl_ctx;
+    uint16_t base_cmd;
+    const gmp_mem_region_t* whitelist;
+    uint16_t whitelist_size;
+} gmp_tunable_mem_t;
 
-extern const gmp_mem_region_t gmp_mem_whitelist[];
-extern const uint16_t gmp_mem_whitelist_size;
+/**
+ * @brief  Initialize the memory protection and access tunable module.
+ * @param  ctx            Pointer to the memory tunable context to initialize.
+ * @param  dl_ctx         Pointer to the bound datalink instance.
+ * @param  base_cmd       The shared base command offset for the tunable subsystem.
+ * @param  whitelist      Pointer to the static ROM-based memory whitelist array.
+ * @param  whitelist_size Number of allowed regions in the whitelist.
+ */
+void gmp_tunable_mem_init(gmp_tunable_mem_t* ctx, gmp_datalink_t* dl_ctx, uint16_t base_cmd,
+                          const gmp_mem_region_t* whitelist, uint16_t whitelist_size);
+
+/**
+ * @brief  Receive callback dispatcher for the memory tunable module.
+ * @param  ctx        Pointer to the initialized memory tunable context.
+ * @param  target_id  The destination ID of the received frame.
+ * @param  cmd        The command byte extracted from the frame header.
+ * @param  payload    Pointer to the payload data array.
+ * @param  len        Length of the payload in data_gt elements.
+ * @return fast_gt    GMP_TUNABLE_HANDLED (0) if processed, GMP_TUNABLE_PASS (1) if ignored.
+ */
+fast_gt gmp_tunable_mem_rx_cb(gmp_tunable_mem_t* ctx, uint16_t target_id, uint16_t cmd, const data_gt* payload,
+                              size_gt len);
+
+// =========================================================
+// MODULE 3: FLEX VARIABLE TUNABLE (Dynamic Backdoor)
+// =========================================================
+typedef struct
+{
+    gmp_datalink_t* dl_ctx;
+    uint16_t base_cmd;
+    gmp_var_entry_t* backdoor_dict;
+    uint16_t max_channels;
+} gmp_tunable_flex_t;
+
+/**
+ * @brief  Initialize the dynamic flex (backdoor) tunable module.
+ * @param  ctx          Pointer to the flex tunable context to initialize.
+ * @param  dl_ctx       Pointer to the bound datalink instance.
+ * @param  base_cmd     The shared base command offset for the tunable subsystem.
+ * @param  ram_dict     Pointer to a RAM-allocated array for storing dynamic backdoor channels.
+ * @param  max_channels Maximum number of backdoor channels (size of the ram_dict array).
+ */
+void gmp_tunable_flex_init(gmp_tunable_flex_t* ctx, gmp_datalink_t* dl_ctx, uint16_t base_cmd,
+                           gmp_var_entry_t* ram_dict, uint16_t max_channels);
+
+/**
+ * @brief  Receive callback dispatcher for the dynamic flex tunable module.
+ * @param  ctx        Pointer to the initialized flex tunable context.
+ * @param  target_id  The destination ID of the received frame.
+ * @param  cmd        The command byte extracted from the frame header.
+ * @param  payload    Pointer to the payload data array.
+ * @param  len        Length of the payload in data_gt elements.
+ * @return fast_gt    GMP_TUNABLE_HANDLED (0) if processed, GMP_TUNABLE_PASS (1) if ignored.
+ */
+fast_gt gmp_tunable_flex_rx_cb(gmp_tunable_flex_t* ctx, uint16_t target_id, uint16_t cmd, const data_gt* payload,
+                               size_gt len);
 
 #endif // _FILE_GMP_TUNABLE_H

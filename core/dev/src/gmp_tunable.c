@@ -1,94 +1,77 @@
+#include <gmp_core.h>
+
 #include <core/dev/tunable.h>
-
-#define GMP_BACKDOOR_BASE_ID 0xFFF0
-#define GMP_BACKDOOR_MAX_CH  4
-
-// Internal reference to the datalink layer for sending ACKs
-static gmp_datalink_t* p_dl_ctx = NULL;
-
-// Dynamic RAM array for backdoor channels
-static gmp_var_entry_t gmp_backdoor_dict[GMP_BACKDOOR_MAX_CH];
-
-#ifndef GMP_ENABLE_STATIC_VARIABLE_DICT
-const gmp_var_entry_t gmp_static_dict[];
-const uint16_t gmp_static_dict_size;
-#endif // GMP_ENABLE_STATIC_VARIABLE_DICT
-
-#ifndef GMP_ENABLE_STATIC_MEM_DICT
-const gmp_mem_region_t gmp_mem_whitelist[];
-const uint16_t gmp_mem_whitelist_size;
-#endif // GMP_ENABLE_STATIC_MEM_DICT
+#include <string.h>
 
 // =========================================================
-// INTERNAL HELPERS
+// MODULE 1: VARIABLE TUNABLE
 // =========================================================
 
-/**
- * @brief  Internal helper to fetch a dictionary entry by its ID.
- * @return Pointer to the entry, or NULL if ID is invalid/unconfigured.
- */
-static const gmp_var_entry_t* get_dict_entry(uint16_t var_id) {
-    // 1. Check Danger Zone: Backdoor Channels
-    if (var_id >= GMP_BACKDOOR_BASE_ID && var_id < (GMP_BACKDOOR_BASE_ID + GMP_BACKDOOR_MAX_CH)) {
-        uint16_t ch = var_id - GMP_BACKDOOR_BASE_ID;
-        if (gmp_backdoor_dict[ch].var_ptr != NULL) {
-            return &gmp_backdoor_dict[ch];
-        }
-        return NULL; 
-    }
-    
-    // 2. Check Static ROM Dictionary
-    if (var_id < gmp_static_dict_size) {
-        if (gmp_static_dict[var_id].var_ptr != NULL) {
-            return &gmp_static_dict[var_id];
-        }
-    }
-    return NULL;
+void gmp_tunable_var_init(gmp_tunable_var_t* ctx, gmp_datalink_t* dl_ctx, uint16_t base_cmd,
+                          const gmp_var_entry_t* dict, uint16_t dict_size)
+{
+    if (!ctx)
+        return;
+    ctx->dl_ctx = dl_ctx;
+    ctx->base_cmd = base_cmd;
+    ctx->static_dict = dict;
+    ctx->static_dict_size = dict_size;
 }
 
-// =========================================================
-// COMMAND HANDLERS
-// =========================================================
+fast_gt gmp_tunable_var_rx_cb(gmp_tunable_var_t* ctx, uint16_t target_id, uint16_t cmd, const data_gt* payload,
+                              size_gt len)
+{
+    if (!ctx || cmd < ctx->base_cmd)
+        return GMP_TUNABLE_PASS;
 
-static void process_var_info_req(uint16_t target_id, const data_gt* payload, size_gt len) {
-    if (len < 2) return;
+    uint16_t offset = cmd - ctx->base_cmd;
 
-    uint16_t var_id = (payload[0] & 0xFF) | ((payload[1] & 0xFF) << 8);
-    const gmp_var_entry_t* entry = get_dict_entry(var_id);
-
-    if (entry != NULL) {
-        data_gt tx_payload[8];
-        uint32_t addr = (uint32_t)((uintptr_t)entry->var_ptr);
-
-        tx_payload[0] = var_id & 0xFF;
-        tx_payload[1] = (var_id >> 8) & 0xFF;
-        // Endian-safe packing of physical 32-bit address
-        tx_payload[2] = addr & 0xFF;
-        tx_payload[3] = (addr >> 8) & 0xFF;
-        tx_payload[4] = (addr >> 16) & 0xFF;
-        tx_payload[5] = (addr >> 24) & 0xFF;
-        tx_payload[6] = (data_gt)entry->var_type;
-        tx_payload[7] = (data_gt)entry->access;
-
-        gmp_datalink_send(p_dl_ctx, target_id, GMP_CMD_VAR_INFO_ACK, tx_payload, 8);
+    // Strict Offset Filtering: Var module only handles 0, 2, 4
+    if (offset != GMP_TUNABLE_OFFSET_INFO_REQ && offset != GMP_TUNABLE_OFFSET_VAR_READ_REQ &&
+        offset != GMP_TUNABLE_OFFSET_VAR_WRITE_REQ)
+    {
+        return GMP_TUNABLE_PASS;
     }
-}
 
-static void process_var_read_req(uint16_t target_id, const data_gt* payload, size_gt len) {
-    if (len < 2) return;
+    if (len < 2)
+        return GMP_TUNABLE_PASS;
 
     uint16_t var_id = (payload[0] & 0xFF) | ((payload[1] & 0xFF) << 8);
-    const gmp_var_entry_t* entry = get_dict_entry(var_id);
+    const gmp_var_entry_t* entry = NULL;
 
-    if (entry != NULL) {
-        data_gt tx_payload[6]; // ID(2) + max Data(4)
-        tx_payload[0] = var_id & 0xFF;
-        tx_payload[1] = (var_id >> 8) & 0xFF;
-        
-        size_gt tx_len = 2;
+    if (ctx->static_dict && var_id < ctx->static_dict_size)
+    {
+        entry = &ctx->static_dict[var_id];
+    }
 
-        // Strict type punning and extraction to avoid alignment faults on DSP
-        switch (entry->var_type) {
+    switch (offset)
+    {
+    case GMP_TUNABLE_OFFSET_INFO_REQ:
+        if (entry && entry->var_ptr)
+        {
+            data_gt tx_payload[8];
+            uint32_t addr = (uint32_t)((uintptr_t)entry->var_ptr);
+            tx_payload[0] = var_id & 0xFF;
+            tx_payload[1] = (var_id >> 8) & 0xFF;
+            tx_payload[2] = addr & 0xFF;
+            tx_payload[3] = (addr >> 8) & 0xFF;
+            tx_payload[4] = (addr >> 16) & 0xFF;
+            tx_payload[5] = (addr >> 24) & 0xFF;
+            tx_payload[6] = (data_gt)entry->var_type;
+            tx_payload[7] = (data_gt)entry->access;
+            gmp_datalink_send(ctx->dl_ctx, target_id, ctx->base_cmd + GMP_TUNABLE_OFFSET_INFO_ACK, tx_payload, 8);
+        }
+        return GMP_TUNABLE_HANDLED;
+
+    case GMP_TUNABLE_OFFSET_VAR_READ_REQ:
+        if (entry && entry->var_ptr)
+        {
+            data_gt tx_payload[6];
+            tx_payload[0] = var_id & 0xFF;
+            tx_payload[1] = (var_id >> 8) & 0xFF;
+            size_gt tx_len = 2;
+            switch (entry->var_type)
+            {
             case GMP_VAR_TYPE_UINT16:
             case GMP_VAR_TYPE_INT16: {
                 uint16_t val = *((uint16_t*)entry->var_ptr);
@@ -106,214 +89,340 @@ static void process_var_read_req(uint16_t target_id, const data_gt* payload, siz
                 tx_payload[tx_len++] = (val >> 24) & 0xFF;
                 break;
             }
+            }
+            gmp_datalink_send(ctx->dl_ctx, target_id, ctx->base_cmd + GMP_TUNABLE_OFFSET_VAR_READ_ACK, tx_payload,
+                              tx_len);
         }
-        gmp_datalink_send(p_dl_ctx, target_id, GMP_CMD_VAR_READ_ACK, tx_payload, tx_len);
+        return GMP_TUNABLE_HANDLED;
+
+    case GMP_TUNABLE_OFFSET_VAR_WRITE_REQ: {
+        uint32_t status = GMP_EC_OK;
+        if (!entry || !entry->var_ptr)
+            status = GMP_EC_TUNABLE_ERR_NO_ID;
+        else if (entry->access == GMP_TUNABLE_ACCESS_RO)
+            status = GMP_EC_TUNABLE_ERR_RO;
+        else
+        {
+            switch (entry->var_type)
+            {
+            case GMP_VAR_TYPE_UINT16:
+            case GMP_VAR_TYPE_INT16:
+                if (len < 4)
+                    status = GMP_EC_TUNABLE_ERR_BAD_LEN;
+                else
+                    *((uint16_t*)entry->var_ptr) = (payload[2] & 0xFF) | ((payload[3] & 0xFF) << 8);
+                break;
+            case GMP_VAR_TYPE_UINT32:
+            case GMP_VAR_TYPE_INT32:
+            case GMP_VAR_TYPE_FLOAT:
+                if (len < 6)
+                    status = GMP_EC_TUNABLE_ERR_BAD_LEN;
+                else
+                    *((uint32_t*)entry->var_ptr) = (payload[2] & 0xFF) | ((payload[3] & 0xFF) << 8) |
+                                                   ((payload[4] & 0xFF) << 16) | ((payload[5] & 0xFF) << 24);
+                break;
+            }
+        }
+        data_gt tx_payload[6];
+        tx_payload[0] = var_id & 0xFF;
+        tx_payload[1] = (var_id >> 8) & 0xFF;
+        tx_payload[2] = status & 0xFF;
+        tx_payload[3] = (status >> 8) & 0xFF;
+        tx_payload[4] = (status >> 16) & 0xFF;
+        tx_payload[5] = (status >> 24) & 0xFF;
+
+        gmp_datalink_send(ctx->dl_ctx, target_id, ctx->base_cmd + GMP_TUNABLE_OFFSET_VAR_WRITE_ACK, tx_payload, 6);
+        return GMP_TUNABLE_HANDLED;
+    }
+    default:
+        return GMP_TUNABLE_PASS;
     }
 }
 
-static void process_var_write_req(uint16_t target_id, const data_gt* payload, size_gt len) {
-    if (len < 2) return;
+// =========================================================
+// MODULE 2: MEMORY TUNABLE
+// =========================================================
 
-    uint16_t var_id = (payload[0] & 0xFF) | ((payload[1] & 0xFF) << 8);
-    const gmp_var_entry_t* entry = get_dict_entry(var_id);
-    
-    gmp_var_status_t status = GMP_VAR_STATUS_OK;
+void gmp_tunable_mem_init(gmp_tunable_mem_t* ctx, gmp_datalink_t* dl_ctx, uint16_t base_cmd,
+                          const gmp_mem_region_t* whitelist, uint16_t whitelist_size)
+{
+    if (!ctx)
+        return;
+    ctx->dl_ctx = dl_ctx;
+    ctx->base_cmd = base_cmd;
+    ctx->whitelist = whitelist;
+    ctx->whitelist_size = whitelist_size;
+}
 
-    if (entry == NULL) {
-        status = GMP_VAR_STATUS_ERR_NO_ID;
-    } else if (entry->access == GMP_VAR_ACCESS_RO) {
-        status = GMP_VAR_STATUS_ERR_RO;
-    } else {
-        // Perform Endian-safe combination and memory write
-        switch (entry->var_type) {
+static uint32_t check_mem_whitelist(gmp_tunable_mem_t* ctx, uint32_t req_addr, uint32_t req_len_mau, fast_gt is_write)
+{
+    if (!ctx || !ctx->whitelist)
+        return GMP_EC_TUNABLE_ERR_OOB;
+    for (uint16_t i = 0; i < ctx->whitelist_size; i++)
+    {
+        uint32_t start = ctx->whitelist[i].start_addr;
+        uint32_t end = start + ctx->whitelist[i].size;
+        if (req_addr >= start && (req_addr + req_len_mau) <= end)
+        {
+            if (is_write && ctx->whitelist[i].access == GMP_TUNABLE_ACCESS_RO)
+                return GMP_EC_TUNABLE_ERR_RO;
+            return GMP_EC_OK;
+        }
+    }
+    return GMP_EC_TUNABLE_ERR_OOB;
+}
+
+fast_gt gmp_tunable_mem_rx_cb(gmp_tunable_mem_t* ctx, uint16_t target_id, uint16_t cmd, const data_gt* payload,
+                              size_gt len)
+{
+    if (!ctx || cmd < ctx->base_cmd)
+        return GMP_TUNABLE_PASS;
+
+    uint16_t offset = cmd - ctx->base_cmd;
+
+    // Strict Offset Filtering: Mem module only handles 6, 8
+    if (offset != GMP_TUNABLE_OFFSET_MEM_READ_REQ && offset != GMP_TUNABLE_OFFSET_MEM_WRITE_REQ)
+    {
+        return GMP_TUNABLE_PASS;
+    }
+
+    if (len < 6)
+        return GMP_TUNABLE_PASS; // Require Addr(4) + Len(2)
+
+    uint32_t req_addr =
+        (payload[0] & 0xFF) | ((payload[1] & 0xFF) << 8) | ((payload[2] & 0xFF) << 16) | ((payload[3] & 0xFF) << 24);
+    uint16_t req_len_mau = (payload[4] & 0xFF) | ((payload[5] & 0xFF) << 8);
+
+    switch (offset)
+    {
+    case GMP_TUNABLE_OFFSET_MEM_READ_REQ: {
+        uint32_t status = check_mem_whitelist(ctx, req_addr, req_len_mau, 0);
+
+        if ((req_len_mau * GMP_PORT_DATA_SIZE_PER_BYTES) > (GMP_DL_MTU - 10))
+        {
+            status = GMP_EC_TUNABLE_ERR_MTU;
+            req_len_mau = 0;
+        }
+
+        data_gt tx_payload[GMP_DL_MTU];
+        tx_payload[0] = status & 0xFF;
+        tx_payload[1] = (status >> 8) & 0xFF;
+        tx_payload[2] = (status >> 16) & 0xFF;
+        tx_payload[3] = (status >> 24) & 0xFF;
+        for (int k = 0; k < 6; k++)
+            tx_payload[4 + k] = payload[k]; // Echo Addr & Len
+
+        size_gt tx_idx = 10;
+
+        if (status == GMP_EC_OK)
+        {
+            data_gt* ptr = (data_gt*)((uintptr_t)req_addr);
+            for (uint16_t i = 0; i < req_len_mau; i++)
+            {
+                data_gt val = ptr[i];
+                for (int b = 0; b < GMP_PORT_DATA_SIZE_PER_BYTES; b++)
+                {
+                    tx_payload[tx_idx++] = (val >> (b * 8)) & 0xFF;
+                }
+            }
+        }
+        gmp_datalink_send(ctx->dl_ctx, target_id, ctx->base_cmd + GMP_TUNABLE_OFFSET_MEM_READ_ACK, tx_payload, tx_idx);
+        return GMP_TUNABLE_HANDLED;
+    }
+
+    case GMP_TUNABLE_OFFSET_MEM_WRITE_REQ: {
+        uint32_t status = check_mem_whitelist(ctx, req_addr, req_len_mau, 1);
+
+        if (len < (6 + (req_len_mau * GMP_PORT_DATA_SIZE_PER_BYTES)))
+        {
+            status = GMP_EC_TUNABLE_ERR_MTU;
+        }
+
+        if (status == GMP_EC_OK)
+        {
+            data_gt* ptr = (data_gt*)((uintptr_t)req_addr);
+            size_gt p_idx = 6;
+            for (uint16_t i = 0; i < req_len_mau; i++)
+            {
+                data_gt val = 0;
+                for (int b = 0; b < GMP_PORT_DATA_SIZE_PER_BYTES; b++)
+                {
+                    val |= ((data_gt)(payload[p_idx++] & 0xFF) << (b * 8));
+                }
+                ptr[i] = val;
+            }
+        }
+
+        data_gt tx_payload[10];
+        tx_payload[0] = status & 0xFF;
+        tx_payload[1] = (status >> 8) & 0xFF;
+        tx_payload[2] = (status >> 16) & 0xFF;
+        tx_payload[3] = (status >> 24) & 0xFF;
+        for (int k = 0; k < 6; k++)
+            tx_payload[4 + k] = payload[k];
+
+        gmp_datalink_send(ctx->dl_ctx, target_id, ctx->base_cmd + GMP_TUNABLE_OFFSET_MEM_WRITE_ACK, tx_payload, 10);
+        return GMP_TUNABLE_HANDLED;
+    }
+    default:
+        return GMP_TUNABLE_PASS;
+    }
+}
+
+// =========================================================
+// MODULE 3: FLEX VARIABLE TUNABLE (Backdoor)
+// =========================================================
+
+void gmp_tunable_flex_init(gmp_tunable_flex_t* ctx, gmp_datalink_t* dl_ctx, uint16_t base_cmd,
+                           gmp_var_entry_t* ram_dict, uint16_t max_channels)
+{
+    if (!ctx)
+        return;
+    ctx->dl_ctx = dl_ctx;
+    ctx->base_cmd = base_cmd;
+    ctx->backdoor_dict = ram_dict;
+    ctx->max_channels = max_channels;
+
+    if (ram_dict)
+    {
+        memset(ram_dict, 0, sizeof(gmp_var_entry_t) * max_channels);
+    }
+}
+
+fast_gt gmp_tunable_flex_rx_cb(gmp_tunable_flex_t* ctx, uint16_t target_id, uint16_t cmd, const data_gt* payload,
+                               size_gt len)
+{
+    if (!ctx || cmd < ctx->base_cmd)
+        return GMP_TUNABLE_PASS;
+
+    uint16_t offset = cmd - ctx->base_cmd;
+
+    // Strict Offset Filtering: Flex module handles 0, 2, 4
+    if (offset != GMP_TUNABLE_OFFSET_INFO_REQ && offset != GMP_TUNABLE_OFFSET_VAR_READ_REQ &&
+        offset != GMP_TUNABLE_OFFSET_VAR_WRITE_REQ)
+    {
+        return GMP_TUNABLE_PASS;
+    }
+
+    switch (offset)
+    {
+    case GMP_TUNABLE_OFFSET_INFO_REQ: {
+        if (len < 6)
+            return GMP_TUNABLE_HANDLED;
+        uint16_t ch = (payload[0] & 0xFF) | ((payload[1] & 0xFF) << 8);
+
+        uint32_t status = GMP_EC_OK;
+        if (ch >= ctx->max_channels || !ctx->backdoor_dict)
+        {
+            status = GMP_EC_TUNABLE_ERR_NO_ID;
+        }
+        else
+        {
+            uint32_t addr = (payload[2] & 0xFF) | ((payload[3] & 0xFF) << 8) | ((payload[4] & 0xFF) << 16) |
+                            ((payload[5] & 0xFF) << 24);
+            uint8_t type = payload[6] & 0xFF;
+
+            ctx->backdoor_dict[ch].var_ptr = (void*)((uintptr_t)addr);
+            ctx->backdoor_dict[ch].var_type = (gmp_var_type_t)type;
+            ctx->backdoor_dict[ch].access = GMP_TUNABLE_ACCESS_RW;
+        }
+
+        data_gt tx_payload[6];
+        tx_payload[0] = payload[0];
+        tx_payload[1] = payload[1];
+        tx_payload[2] = status & 0xFF;
+        tx_payload[3] = (status >> 8) & 0xFF;
+        tx_payload[4] = (status >> 16) & 0xFF;
+        tx_payload[5] = (status >> 24) & 0xFF;
+
+        gmp_datalink_send(ctx->dl_ctx, target_id, ctx->base_cmd + GMP_TUNABLE_OFFSET_INFO_ACK, tx_payload, 6);
+        return GMP_TUNABLE_HANDLED;
+    }
+
+    case GMP_TUNABLE_OFFSET_VAR_READ_REQ: {
+        if (len < 2)
+            return GMP_TUNABLE_HANDLED;
+        uint16_t ch = (payload[0] & 0xFF) | ((payload[1] & 0xFF) << 8);
+
+        if (ctx->backdoor_dict && ch < ctx->max_channels && ctx->backdoor_dict[ch].var_ptr)
+        {
+            gmp_var_entry_t* entry = &ctx->backdoor_dict[ch];
+            data_gt tx_payload[6];
+            tx_payload[0] = ch & 0xFF;
+            tx_payload[1] = (ch >> 8) & 0xFF;
+            size_gt tx_len = 2;
+            switch (entry->var_type)
+            {
             case GMP_VAR_TYPE_UINT16:
             case GMP_VAR_TYPE_INT16: {
-                if (len < 4) { status = GMP_VAR_STATUS_ERR_BAD_LEN; break; }
-                uint16_t val = (payload[2] & 0xFF) | ((payload[3] & 0xFF) << 8);
-                *((uint16_t*)entry->var_ptr) = val;
+                uint16_t val = *((uint16_t*)entry->var_ptr);
+                tx_payload[tx_len++] = val & 0xFF;
+                tx_payload[tx_len++] = (val >> 8) & 0xFF;
                 break;
             }
             case GMP_VAR_TYPE_UINT32:
             case GMP_VAR_TYPE_INT32:
             case GMP_VAR_TYPE_FLOAT: {
-                if (len < 6) { status = GMP_VAR_STATUS_ERR_BAD_LEN; break; }
-                uint32_t val = (payload[2] & 0xFF) | ((payload[3] & 0xFF) << 8) | 
-                               ((payload[4] & 0xFF) << 16) | ((payload[5] & 0xFF) << 24);
-                *((uint32_t*)entry->var_ptr) = val;
+                uint32_t val = *((uint32_t*)entry->var_ptr);
+                tx_payload[tx_len++] = val & 0xFF;
+                tx_payload[tx_len++] = (val >> 8) & 0xFF;
+                tx_payload[tx_len++] = (val >> 16) & 0xFF;
+                tx_payload[tx_len++] = (val >> 24) & 0xFF;
+                break;
+            }
+            }
+            gmp_datalink_send(ctx->dl_ctx, target_id, ctx->base_cmd + GMP_TUNABLE_OFFSET_VAR_READ_ACK, tx_payload,
+                              tx_len);
+        }
+        return GMP_TUNABLE_HANDLED;
+    }
+
+    case GMP_TUNABLE_OFFSET_VAR_WRITE_REQ: {
+        if (len < 2)
+            return GMP_TUNABLE_HANDLED;
+        uint16_t ch = (payload[0] & 0xFF) | ((payload[1] & 0xFF) << 8);
+        uint32_t status = GMP_EC_OK;
+
+        gmp_var_entry_t* entry = NULL;
+        if (ctx->backdoor_dict && ch < ctx->max_channels)
+            entry = &ctx->backdoor_dict[ch];
+
+        if (!entry || !entry->var_ptr)
+            status = GMP_EC_TUNABLE_ERR_NO_ID;
+        else
+        {
+            switch (entry->var_type)
+            {
+            case GMP_VAR_TYPE_UINT16:
+            case GMP_VAR_TYPE_INT16:
+                if (len < 4)
+                    status = GMP_EC_TUNABLE_ERR_BAD_LEN;
+                else
+                    *((uint16_t*)entry->var_ptr) = (payload[2] & 0xFF) | ((payload[3] & 0xFF) << 8);
+                break;
+            case GMP_VAR_TYPE_UINT32:
+            case GMP_VAR_TYPE_INT32:
+            case GMP_VAR_TYPE_FLOAT:
+                if (len < 6)
+                    status = GMP_EC_TUNABLE_ERR_BAD_LEN;
+                else
+                    *((uint32_t*)entry->var_ptr) = (payload[2] & 0xFF) | ((payload[3] & 0xFF) << 8) |
+                                                   ((payload[4] & 0xFF) << 16) | ((payload[5] & 0xFF) << 24);
                 break;
             }
         }
+        data_gt tx_payload[6];
+        tx_payload[0] = ch & 0xFF;
+        tx_payload[1] = (ch >> 8) & 0xFF;
+        tx_payload[2] = status & 0xFF;
+        tx_payload[3] = (status >> 8) & 0xFF;
+        tx_payload[4] = (status >> 16) & 0xFF;
+        tx_payload[5] = (status >> 24) & 0xFF;
+
+        gmp_datalink_send(ctx->dl_ctx, target_id, ctx->base_cmd + GMP_TUNABLE_OFFSET_VAR_WRITE_ACK, tx_payload, 6);
+        return GMP_TUNABLE_HANDLED;
     }
-
-    // Always reply with an ACK status
-    data_gt tx_payload[3];
-    tx_payload[0] = var_id & 0xFF;
-    tx_payload[1] = (var_id >> 8) & 0xFF;
-    tx_payload[2] = (data_gt)status;
-    gmp_datalink_send(p_dl_ctx, target_id, GMP_CMD_VAR_WRITE_ACK, tx_payload, 3);
-}
-
-static void process_backdoor_cfg(uint16_t target_id, const data_gt* payload, size_gt len) {
-    if (len < 6) return;
-
-    uint8_t ch = payload[0] & 0xFF;
-    if (ch >= GMP_BACKDOOR_MAX_CH) return;
-
-    // Reconstruct 32-bit physical address
-    uint32_t addr = (payload[1] & 0xFF) | ((payload[2] & 0xFF) << 8) | 
-                    ((payload[3] & 0xFF) << 16) | ((payload[4] & 0xFF) << 24);
-    
-    uint8_t type = payload[5] & 0xFF;
-
-    // Mount to RAM dictionary (Always grant RW to backdoor!)
-    gmp_backdoor_dict[ch].var_ptr  = (void*)((uintptr_t)addr);
-    gmp_backdoor_dict[ch].var_type = (gmp_var_type_t)type;
-    gmp_backdoor_dict[ch].access   = GMP_VAR_ACCESS_RW; 
-
-    data_gt tx_payload[2] = {ch, GMP_VAR_STATUS_OK};
-    gmp_datalink_send(p_dl_ctx, target_id, GMP_CMD_BACKDOOR_ACK, tx_payload, 2);
-}
-
-// =========================================================
-// API IMPLEMENTATIONS
-// =========================================================
-
-void gmp_tunable_init(gmp_datalink_t* dl_ctx) {
-    p_dl_ctx = dl_ctx;
-    memset(gmp_backdoor_dict, 0, sizeof(gmp_backdoor_dict));
-}
-
-void gmp_tunable_rx_callback(uint16_t target_id, uint16_t cmd, const data_gt* payload, size_gt len) {
-    // Top-level Dispatcher
-    switch(cmd) {
-        case GMP_CMD_VAR_INFO_REQ:
-            process_var_info_req(target_id, payload, len);
-            break;
-        case GMP_CMD_VAR_READ_REQ:
-            process_var_read_req(target_id, payload, len);
-            break;
-        case GMP_CMD_VAR_WRITE_REQ:
-            process_var_write_req(target_id, payload, len);
-            break;
-        case GMP_CMD_BACKDOOR_CFG:
-            process_backdoor_cfg(target_id, payload, len);
-            break;
-        case GMP_CMD_MEM_READ_REQ:
-            process_mem_read_req(target_id, payload, len);
-            break;
-        case GMP_CMD_MEM_WRITE_REQ:
-            process_process_mem_write_req(target_id, payload, len);
-            break;
-        default:
-            // Future extensions (Memory read, Simulation step) will go here
-            break;
+    default:
+        return GMP_TUNABLE_PASS;
     }
-}
-
-// =========================================================
-// MEMORY PROTECTION UNIT (SOFTWARE MPU)
-// =========================================================
-
-/**
- * @brief  Validates if a requested memory block is strictly within the whitelist.
- * @param  req_addr The requested starting physical address.
- * @param  req_len  The requested length.
- * @param  is_write Flag indicating if the request is a write operation (requires RW attr).
- * @return gmp_mem_status_t Status of the validation (OK, OOB, RO).
- */
-static gmp_mem_status_t check_mem_access(uint32_t req_addr, uint32_t req_len, fast_gt is_write) {
-    uint16_t i;
-    for (i = 0; i < gmp_mem_whitelist_size; i++) {
-        uint32_t region_start = gmp_mem_whitelist[i].start_addr;
-        uint32_t region_end   = region_start + gmp_mem_whitelist[i].size;
-        
-        // Check if the requested block is COMPLETELY inside this region
-        if (req_addr >= region_start && (req_addr + req_len) <= region_end) {
-            if (is_write && gmp_mem_whitelist[i].attr == GMP_MEM_ATTR_RO) {
-                return GMP_MEM_STATUS_ERR_RO;
-            }
-            return GMP_MEM_STATUS_OK;
-        }
-    }
-    return GMP_MEM_STATUS_ERR_OOB;
-}
-
-// =========================================================
-// COMMAND HANDLERS (MEMORY ACCESS)
-// =========================================================
-
-static void process_mem_read_req(uint16_t target_id, const data_gt* payload, size_gt len) {
-    if (len < 6) return; // Addr(4) + Len(2)
-
-    uint32_t req_addr = (payload[0] & 0xFF) | ((payload[1] & 0xFF) << 8) | 
-                        ((payload[2] & 0xFF) << 16) | ((payload[3] & 0xFF) << 24);
-    uint16_t req_len  = (payload[4] & 0xFF) | ((payload[5] & 0xFF) << 8);
-
-    gmp_mem_status_t status = check_mem_access(req_addr, req_len, 0);
-
-    // Limit length to MTU payload limits (Need space for Addr(4) + Len(2) + Status(1))
-    if (req_len > (GMP_DL_MTU - 7)) {
-        status = GMP_MEM_STATUS_ERR_MTU;
-        req_len = 0; 
-    }
-
-    // Prepare ACK Payload: [Status(1)] [Addr(4)] [Len(2)] [Data...]
-    data_gt tx_payload[GMP_DL_MTU];
-    tx_payload[0] = (data_gt)status;
-    tx_payload[1] = payload[0];
-    tx_payload[2] = payload[1];
-    tx_payload[3] = payload[2];
-    tx_payload[4] = payload[3];
-    tx_payload[5] = payload[4];
-    tx_payload[6] = payload[5];
-
-    size_gt tx_idx = 7;
-
-    if (status == GMP_MEM_STATUS_OK) {
-        // Safe Memory Copy (Avoids unaligned access faults on strict architectures)
-        // Note: Cast to uintptr_t ensures safe integer-to-pointer conversion
-        uint8_t* ptr = (uint8_t*)((uintptr_t)req_addr);
-        uint16_t i;
-        for (i = 0; i < req_len; i++) {
-            tx_payload[tx_idx++] = (data_gt)(ptr[i] & 0xFF);
-        }
-    }
-
-    gmp_datalink_send(p_dl_ctx, target_id, GMP_CMD_MEM_READ_ACK, tx_payload, tx_idx);
-}
-
-static void process_mem_write_req(uint16_t target_id, const data_gt* payload, size_gt len) {
-    if (len < 6) return;
-
-    uint32_t req_addr = (payload[0] & 0xFF) | ((payload[1] & 0xFF) << 8) | 
-                        ((payload[2] & 0xFF) << 16) | ((payload[3] & 0xFF) << 24);
-    uint16_t req_len  = (payload[4] & 0xFF) | ((payload[5] & 0xFF) << 8);
-
-    gmp_mem_status_t status = check_mem_access(req_addr, req_len, 1);
-
-    // Verify if the payload actually contains the data it claims to have
-    if (len < (6 + req_len)) {
-        status = GMP_MEM_STATUS_ERR_MTU;
-    }
-
-    if (status == GMP_MEM_STATUS_OK) {
-        // Safe Memory Copy (Unaligned safe)
-        uint8_t* ptr = (uint8_t*)((uintptr_t)req_addr);
-        uint16_t i;
-        for (i = 0; i < req_len; i++) {
-            ptr[i] = (uint8_t)(payload[6 + i] & 0xFF);
-        }
-    }
-
-    // Prepare ACK Payload: [Status(1)] [Addr(4)] [Len(2)]
-    data_gt tx_payload[7];
-    tx_payload[0] = (data_gt)status;
-    tx_payload[1] = payload[0];
-    tx_payload[2] = payload[1];
-    tx_payload[3] = payload[2];
-    tx_payload[4] = payload[3];
-    tx_payload[5] = payload[4];
-    tx_payload[6] = payload[5];
-
-    gmp_datalink_send(p_dl_ctx, target_id, GMP_CMD_MEM_WRITE_ACK, tx_payload, 7);
 }
