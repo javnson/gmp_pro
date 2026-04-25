@@ -1,33 +1,38 @@
 import re
+import html
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTextBrowser, 
-                             QPlainTextEdit, QPushButton, QLabel, QRadioButton)
-from PyQt5.QtCore import Qt
+                             QPlainTextEdit, QPushButton, QLabel, QRadioButton, QLineEdit)
+from PyQt5.QtCore import Qt, QTimer
 from core_datalink import HermesDatalinkQt
-
-CMD_ECHO = 0x99
 
 class TabAscii(QWidget):
     def __init__(self, hermes: HermesDatalinkQt):
         super().__init__()
         self.hermes = hermes
-        self.hermes.sig_frame_received.connect(self.on_frame_received)
+        # 统一使用总线事件，只过滤 DL 帧
+        self.hermes.sig_bus_event.connect(self.on_bus_event)
         
         self.history = []
         self.rx_total_bytes = 0
         self.tx_total_bytes = 0
+        
+        self._needs_update = False
+        self.update_timer = QTimer()
+        self.update_timer.timeout.connect(self._render_html)
+        self.update_timer.start(50)
+        
         self._setup_ui()
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
         
-        # --- 接收控制栏 ---
         rx_ctrl_layout = QHBoxLayout()
         rx_ctrl_layout.addWidget(QLabel("<b>协议 Payload 记录:</b>"))
         
         self.rb_rx_ascii = QRadioButton("ASCII")
         self.rb_rx_hex = QRadioButton("HEX")
         self.rb_rx_ascii.setChecked(True)
-        self.rb_rx_ascii.toggled.connect(self.refresh_display)
+        self.rb_rx_ascii.toggled.connect(self.request_render)
         
         rx_ctrl_layout.addSpacing(20)
         rx_ctrl_layout.addWidget(QLabel("视图:"))
@@ -44,38 +49,43 @@ class TabAscii(QWidget):
         rx_ctrl_layout.addWidget(self.btn_clear_rx)
         layout.addLayout(rx_ctrl_layout)
         
-        # --- 接收显示区 ---
         self.rx_view = QTextBrowser()
         self.rx_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.rx_view.setStyleSheet("background-color: #FAFAFA; font-size: 13px;")
         layout.addWidget(self.rx_view, stretch=3)
         
-        # --- 发送控制栏 ---
         tx_ctrl_layout = QHBoxLayout()
-        self.rb_tx_ascii = QRadioButton("发送 ASCII")
-        self.rb_tx_hex = QRadioButton("发送 HEX (自动容错)")
+        self.rb_tx_ascii = QRadioButton("Payload 填 ASCII")
+        self.rb_tx_hex = QRadioButton("Payload 填 HEX")
         self.rb_tx_ascii.setChecked(True)
         self.rb_tx_ascii.toggled.connect(self.update_tx_status)
         self.rb_tx_hex.toggled.connect(self.update_tx_status)
         
         tx_ctrl_layout.addWidget(self.rb_tx_ascii)
         tx_ctrl_layout.addWidget(self.rb_tx_hex)
+        tx_ctrl_layout.addSpacing(20)
+        
+        # 【核心升级】可自定义的 CMD 输入框
+        tx_ctrl_layout.addWidget(QLabel("CMD:"))
+        self.tx_cmd_input = QLineEdit("0x99")
+        self.tx_cmd_input.setMaximumWidth(50)
+        tx_ctrl_layout.addWidget(self.tx_cmd_input)
         tx_ctrl_layout.addStretch()
         
         self.lbl_tx_len = QLabel("Ready")
         tx_ctrl_layout.addWidget(self.lbl_tx_len)
         layout.addLayout(tx_ctrl_layout)
         
-        # --- 发送输入区 ---
         tx_input_layout = QHBoxLayout()
         self.tx_input = QPlainTextEdit()
         self.tx_input.setPlaceholderText("输入要装入 Payload 的数据...")
         self.tx_input.setMaximumHeight(100)
         self.tx_input.textChanged.connect(self.update_tx_status)
         
-        self.btn_send = QPushButton("发送帧\n(CMD 0x99)")
+        self.btn_send = QPushButton("封包发送\n(加入协议头尾)")
         self.btn_send.setMinimumHeight(70)
-        self.btn_send.setMinimumWidth(100)
-        self.btn_send.setStyleSheet("background-color: #e8f5e9; font-weight: bold;")
+        self.btn_send.setMinimumWidth(120)
+        self.btn_send.setStyleSheet("background-color: #E8F5E9; font-weight: bold;")
         self.btn_send.clicked.connect(self.send_data)
         
         tx_input_layout.addWidget(self.tx_input)
@@ -116,49 +126,61 @@ class TabAscii(QWidget):
         text = self.tx_input.toPlainText()
         if not text: return
         payload = text.encode('utf-8') if self.rb_tx_ascii.isChecked() else self._parse_friendly_hex(text)
-        if not payload: return
+        if payload is None: return
         
-        self.hermes.send_frame(target_id=0x01, cmd=CMD_ECHO, payload=payload)
-        self.tx_total_bytes += len(payload)
+        # 安全获取用户输入的自定义 CMD
+        try:
+            cmd = int(self.tx_cmd_input.text(), 16)
+        except ValueError:
+            cmd = 0x99
+            self.tx_cmd_input.setText("0x99")
+            
+        self.hermes.send_frame(target_id=0x01, cmd=cmd, payload=payload)
+
+    def on_bus_event(self, ev: dict):
+        # DL 页面只关心 DL 帧
+        if ev['type'] != 'DL': return
         
-        self.history.append({'dir': 'TX', 'cmd': CMD_ECHO, 'data': payload})
-        self._limit_history()
-        self.refresh_display()
-
-    def on_frame_received(self, target_id: int, cmd: int, payload: bytes):
-        self.rx_total_bytes += len(payload)
-        self.history.append({'dir': 'RX', 'cmd': cmd, 'data': payload})
-        self._limit_history()
-        self.refresh_display()
-
-    def _limit_history(self):
-        if len(self.history) > 500: self.history = self.history[-500:]
+        # 仅统计 Payload 字节
+        self.rx_total_bytes += len(ev['dl_payload']) if ev['dir'] == 'RX' else 0
+        self.tx_total_bytes += len(ev['dl_payload']) if ev['dir'] == 'TX' else 0
+        
+        self.history.append(ev)
+        if len(self.history) > 300: self.history = self.history[-300:]
+        self.request_render()
 
     def clear_history(self):
         self.history.clear()
         self.rx_total_bytes = 0
         self.tx_total_bytes = 0
-        self.refresh_display()
+        self.request_render()
 
-    def refresh_display(self):
+    def request_render(self):
+        self._needs_update = True
+
+    def _render_html(self):
+        if not self._needs_update: return
+        self._needs_update = False
+        
         self.lbl_counters.setText(f"RX Payload: {self.rx_total_bytes} B  |  TX Payload: {self.tx_total_bytes} B")
         is_hex = self.rb_rx_hex.isChecked()
-        html = ""
+        html_parts = []
         
-        for item in self.history:
-            raw_bytes = item['data']
-            cmd_str = f"0x{item['cmd']:02X}"
+        for ev in self.history:
+            payload_bytes = ev['dl_payload']
+            if is_hex: text_str = payload_bytes.hex(' ').upper()
+            else:      text_str = html.escape(payload_bytes.decode('utf-8', errors='replace')).replace('\n', '<br>')
             
-            if is_hex:
-                text_str = raw_bytes.hex(' ').upper()
+            if ev['dir'] == 'TX':
+                color = '#4527A0' # 深紫
+                header = f"[{ev['dir']}: {ev['time']} | Payload -> CMD:0x{ev['dl_cmd']:02X}] >>>"
             else:
-                text_str = raw_bytes.decode('utf-8', errors='replace').replace('\n', '<br>')
-            
-            if item['dir'] == 'TX':
-                html += f"<span style='color:blue;'>[TX {cmd_str}] {text_str}</span><br>"
-            else:
-                html += f"<span style='color:#E65100;'>[RX {cmd_str}] {text_str}</span><br>"
+                color = '#E65100' if ev['dl_crc_ok'] else '#D32F2F' # 橙色正常，红色报错
+                crc_str = "OK" if ev['dl_crc_ok'] else f"FAIL"
+                header = f"[{ev['dir']}: {ev['time']} | Payload <- CMD:0x{ev['dl_cmd']:02X} | CRC:{crc_str}] >>>"
                 
-        self.rx_view.setHtml(html)
+            html_parts.append(f"<div style='color:{color}; font-family:Consolas, monospace; margin-bottom:8px; line-height: 1.4;'><b>{header}</b><br>{text_str}</div>")
+                
+        self.rx_view.setHtml("".join(html_parts))
         scrollbar = self.rx_view.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
