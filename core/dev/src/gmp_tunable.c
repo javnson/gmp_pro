@@ -118,8 +118,9 @@ fast_gt gmp_tunable_var_rx_cb(gmp_tunable_var_t* ctx, uint16_t target_id, uint16
                 if (len < 6)
                     status = GMP_EC_TUNABLE_ERR_BAD_LEN;
                 else
-                    *((uint32_t*)entry->var_ptr) = (payload[2] & 0xFF) | ((payload[3] & 0xFF) << 8) |
-                                                   ((payload[4] & 0xFF) << 16) | ((payload[5] & 0xFF) << 24);
+                    *((uint32_t*)entry->var_ptr) =
+                        (uint32_t)(payload[2] & 0xFF) | ((uint32_t)(payload[3] & 0xFF) << 8) |
+                        (((uint32_t)payload[4] & 0xFF) << 16) | (((uint32_t)payload[5] & 0xFF) << 24);
                 break;
             }
         }
@@ -158,7 +159,10 @@ static uint32_t check_mem_whitelist(gmp_tunable_mem_t* ctx, uint32_t req_addr, u
 {
     if (!ctx || !ctx->whitelist)
         return GMP_EC_TUNABLE_ERR_OOB;
-    for (uint16_t i = 0; i < ctx->whitelist_size; i++)
+
+    size_gt i;
+
+    for (i = 0; i < ctx->whitelist_size; i++)
     {
         uint32_t start = ctx->whitelist[i].start_addr;
         uint32_t end = start + ctx->whitelist[i].size;
@@ -178,6 +182,8 @@ fast_gt gmp_tunable_mem_rx_cb(gmp_tunable_mem_t* ctx, uint16_t target_id, uint16
     if (!ctx || cmd < ctx->base_cmd)
         return GMP_TUNABLE_PASS;
 
+    size_gt i, b, k;
+
     uint16_t offset = cmd - ctx->base_cmd;
 
     // Strict Offset Filtering: Mem module only handles 6, 8
@@ -189,8 +195,8 @@ fast_gt gmp_tunable_mem_rx_cb(gmp_tunable_mem_t* ctx, uint16_t target_id, uint16
     if (len < 6)
         return GMP_TUNABLE_PASS; // Require Addr(4) + Len(2)
 
-    uint32_t req_addr =
-        (payload[0] & 0xFF) | ((payload[1] & 0xFF) << 8) | ((payload[2] & 0xFF) << 16) | ((payload[3] & 0xFF) << 24);
+    uint32_t req_addr = ((uint32_t)payload[0] & 0xFF) | (((uint32_t)payload[1] & 0xFF) << 8) |
+                        (((uint32_t)payload[2] & 0xFF) << 16) | (((uint32_t)payload[3] & 0xFF) << 24);
     uint16_t req_len_mau = (payload[4] & 0xFF) | ((payload[5] & 0xFF) << 8);
 
     switch (offset)
@@ -209,7 +215,7 @@ fast_gt gmp_tunable_mem_rx_cb(gmp_tunable_mem_t* ctx, uint16_t target_id, uint16
         tx_payload[1] = (status >> 8) & 0xFF;
         tx_payload[2] = (status >> 16) & 0xFF;
         tx_payload[3] = (status >> 24) & 0xFF;
-        for (int k = 0; k < 6; k++)
+        for (k = 0; k < 6; k++)
             tx_payload[4 + k] = payload[k]; // Echo Addr & Len
 
         size_gt tx_idx = 10;
@@ -217,10 +223,10 @@ fast_gt gmp_tunable_mem_rx_cb(gmp_tunable_mem_t* ctx, uint16_t target_id, uint16
         if (status == GMP_EC_OK)
         {
             data_gt* ptr = (data_gt*)((uintptr_t)req_addr);
-            for (uint16_t i = 0; i < req_len_mau; i++)
+            for (i = 0; i < req_len_mau; i++)
             {
                 data_gt val = ptr[i];
-                for (int b = 0; b < GMP_PORT_DATA_SIZE_PER_BYTES; b++)
+                for (b = 0; b < GMP_PORT_DATA_SIZE_PER_BYTES; b++)
                 {
                     tx_payload[tx_idx++] = (val >> (b * 8)) & 0xFF;
                 }
@@ -242,10 +248,10 @@ fast_gt gmp_tunable_mem_rx_cb(gmp_tunable_mem_t* ctx, uint16_t target_id, uint16
         {
             data_gt* ptr = (data_gt*)((uintptr_t)req_addr);
             size_gt p_idx = 6;
-            for (uint16_t i = 0; i < req_len_mau; i++)
+            for (i = 0; i < req_len_mau; i++)
             {
                 data_gt val = 0;
-                for (int b = 0; b < GMP_PORT_DATA_SIZE_PER_BYTES; b++)
+                for (b = 0; b < GMP_PORT_DATA_SIZE_PER_BYTES; b++)
                 {
                     val |= ((data_gt)(payload[p_idx++] & 0xFF) << (b * 8));
                 }
@@ -258,7 +264,7 @@ fast_gt gmp_tunable_mem_rx_cb(gmp_tunable_mem_t* ctx, uint16_t target_id, uint16
         tx_payload[1] = (status >> 8) & 0xFF;
         tx_payload[2] = (status >> 16) & 0xFF;
         tx_payload[3] = (status >> 24) & 0xFF;
-        for (int k = 0; k < 6; k++)
+        for (k = 0; k < 6; k++)
             tx_payload[4 + k] = payload[k];
 
         gmp_datalink_send(ctx->dl_ctx, target_id, ctx->base_cmd + GMP_TUNABLE_OFFSET_MEM_WRITE_ACK, tx_payload, 10);
@@ -318,8 +324,8 @@ fast_gt gmp_tunable_flex_rx_cb(gmp_tunable_flex_t* ctx, uint16_t target_id, uint
         }
         else
         {
-            uint32_t addr = (payload[2] & 0xFF) | ((payload[3] & 0xFF) << 8) | ((payload[4] & 0xFF) << 16) |
-                            ((payload[5] & 0xFF) << 24);
+            uint32_t addr = ((uint32_t)payload[2] & 0xFF) | (((uint32_t)payload[3] & 0xFF) << 8) |
+                            (((uint32_t)payload[4] & 0xFF) << 16) | (((uint32_t)payload[5] & 0xFF) << 24);
             uint8_t type = payload[6] & 0xFF;
 
             ctx->backdoor_dict[ch].var_ptr = (void*)((uintptr_t)addr);
@@ -406,8 +412,9 @@ fast_gt gmp_tunable_flex_rx_cb(gmp_tunable_flex_t* ctx, uint16_t target_id, uint
                 if (len < 6)
                     status = GMP_EC_TUNABLE_ERR_BAD_LEN;
                 else
-                    *((uint32_t*)entry->var_ptr) = (payload[2] & 0xFF) | ((payload[3] & 0xFF) << 8) |
-                                                   ((payload[4] & 0xFF) << 16) | ((payload[5] & 0xFF) << 24);
+                    *((uint32_t*)entry->var_ptr) =
+                        ((uint32_t)payload[2] & 0xFF) | (((uint32_t)payload[3] & 0xFF) << 8) |
+                        (((uint32_t)payload[4] & 0xFF) << 16) | (((uint32_t)payload[5] & 0xFF) << 24);
                 break;
             }
         }

@@ -9,6 +9,7 @@ from PyQt5.QtCore import Qt
 from core_datalink import HermesDatalinkQt
 from tabs.tab_ascii import TabAscii
 from tabs.tab_raw import TabRaw
+from tabs.tab_sim import TabSim
 
 DATA_BITS_MAP = {'8': serial.EIGHTBITS, '7': serial.SEVENBITS, '6': serial.SIXBITS, '5': serial.FIVEBITS}
 STOP_BITS_MAP = {'1': serial.STOPBITS_ONE, '1.5': serial.STOPBITS_ONE_POINT_FIVE, '2': serial.STOPBITS_TWO}
@@ -34,13 +35,17 @@ class MainWindow(QMainWindow):
         self.tabs = QTabWidget()
         main_layout.addWidget(self.tabs, stretch=4)
 
-	# 挂载 Tab 1: 纯串口助手
+	    # 挂载 Tab 1: 纯串口助手
         self.tab_raw = TabRaw(self.hermes)
         self.tabs.addTab(self.tab_raw, "1. 标准串口调试助手 (RAW)")
         
         # 挂载 Tab 2: GMP 协议测试
         self.tab_ascii = TabAscii(self.hermes)
         self.tabs.addTab(self.tab_ascii, "2. GMP DL协议在环测试 (ECHO)")
+
+        # 【新增】挂载 Tab 3: PIL 仿真仪表盘
+        self.tab_sim = TabSim(self.hermes)
+        self.tabs.addTab(self.tab_sim, "3. PIL 在环仿真引擎")
         
         right_panel = QVBoxLayout()
         main_layout.addLayout(right_panel, stretch=1)

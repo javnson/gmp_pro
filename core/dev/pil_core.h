@@ -41,6 +41,11 @@ typedef union {
     } bit;
 } gmp_sim_mask_rx_t;
 
+typedef union {
+    ctrl_gt  f_val;  // 浮点数视角 (32-bit)
+    uint32_t u_val;  // 无符号整数视角 (32-bit)
+} gmp_safe_pun_t;
+
 // ---------------------------------------------------------
 // 2. Simulation Buffers (Cleaned)
 // ---------------------------------------------------------

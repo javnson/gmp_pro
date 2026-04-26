@@ -81,7 +81,6 @@ class HermesDatalinkQt(QObject):
             self.close()
 
     def send_frame(self, target_id: int, cmd: int, payload: bytes):
-        """发送协议帧，触发 DL 事件"""
         if not self.serial.is_open: return
         raw_hdr = struct.pack('<BBH', target_id, cmd, len(payload))
         h_crc = calculate_crc16_ccitt(raw_hdr)
@@ -94,15 +93,13 @@ class HermesDatalinkQt(QObject):
             else: tx_buf.append(b)
         tx_buf.append(EOF)
 
-        if len(payload) > 0:
-            tx_buf.extend(payload)
-            tx_buf.extend(struct.pack('<H', calculate_crc16_ccitt(payload)))
-        else:
-            tx_buf.extend(b'\x00\x00')
+        # 【修复核心】：移除 if len(payload) > 0 的硬编码，直接追加真实的 CRC
+        tx_buf.extend(payload)
+        tx_buf.extend(struct.pack('<H', calculate_crc16_ccitt(payload)))
 
         try:
             self.serial.write(tx_buf)
-            # 全局广播 DL 发送事件，这样 RAW 页面也能看到
+            # 全局广播发送事件
             self.sig_bus_event.emit({
                 'dir': 'TX', 'type': 'DL', 'time': get_time_str(), 'data': bytes(tx_buf),
                 'dl_target': target_id, 'dl_cmd': cmd, 'dl_payload': payload, 'dl_crc_ok': True, 'error': ''
@@ -116,8 +113,8 @@ class HermesDatalinkQt(QObject):
         state = STATE_WAIT
         hdr_buf = bytearray()
         pld_buf = bytearray()
-        frame_raw_buf = bytearray() # 记录完整协议帧的物理字节
-        bypass_buf = bytearray()    # 收集非协议的游离字节
+        frame_raw_buf = bytearray() # 用于记录完整协议帧的物理字节
+        bypass_buf = bytearray()    # 用于收集非协议的游离字节
         expected_len, current_cmd, current_target = 0, 0, 0
 
         while self.running:
@@ -132,11 +129,16 @@ class HermesDatalinkQt(QObject):
             if not raw_bytes: continue
             
             for byte in raw_bytes:
-                if byte == SOF:
+                # 【核心修复】：只有在非 Payload 阶段碰到 SOF，才执行状态机硬复位！
+                # 这样可以防止 Payload 数据中偶然包含 0x7B 导致上位机接收断流。
+                if byte == SOF and state != STATE_PLD:
                     if bypass_buf:
                         self.sig_bus_event.emit({'dir': 'RX', 'type': 'RAW', 'time': get_time_str(), 'data': bytes(bypass_buf)})
                         bypass_buf.clear()
-                    state = STATE_HDR; hdr_buf.clear(); frame_raw_buf.clear(); frame_raw_buf.append(byte)
+                    state = STATE_HDR
+                    hdr_buf.clear()
+                    frame_raw_buf.clear()
+                    frame_raw_buf.append(byte)
                     continue
                 
                 if state == STATE_WAIT:
@@ -148,6 +150,7 @@ class HermesDatalinkQt(QObject):
                         if len(hdr_buf) != 6:
                             bypass_buf.extend(frame_raw_buf) # 假 Header，退回给 bypass
                             state = STATE_WAIT; continue
+                        
                         if calculate_crc16_ccitt(hdr_buf[0:4]) != struct.unpack('<H', hdr_buf[4:6])[0]:
                             current_target, current_cmd, expected_len = struct.unpack('<BBH', hdr_buf[0:4])
                             self.sig_bus_event.emit({
@@ -177,7 +180,6 @@ class HermesDatalinkQt(QObject):
                             self.sig_frame_received.emit(current_target, current_cmd, bytes(actual_pld))
                         state = STATE_WAIT
 
-            # 块结束，抛出游离字节
             if bypass_buf:
                 self.sig_bus_event.emit({'dir': 'RX', 'type': 'RAW', 'time': get_time_str(), 'data': bytes(bypass_buf)})
                 bypass_buf.clear()

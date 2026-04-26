@@ -584,7 +584,6 @@ sci2.$name                      = "IRIS_UART_USB";
 sci2.enabledFIFOInterrupts      = ["SCI_INT_RXFF"];
 sci2.selectRegisteredInterrupts = ["registerRxInt"];
 sci2.enabledErrorInterrupts     = ["SCI_INT_FE","SCI_INT_OE"];
-sci2.baudRates                  = 921600;
 sci2.rxFifo                     = "SCI_FIFO_RX14";
 sci2.sci.$assign                = "SCIB";
 sci2.sci.sci_rxPin.$assign      = "GPIO41";

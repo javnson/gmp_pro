@@ -13,6 +13,8 @@
 #include <core/dev/gpio/pca9555.h>
 #include <core/dev/sensor/hdc1080.h>
 
+#include <core/dev/pil_core.h>
+
 //=================================================================================================
 // global variables
 
@@ -137,7 +139,7 @@ gmp_task_status_t tsk_blink(gmp_task_t* tsk)
 {
     GMP_UNUSED_VAR(tsk);
 
-    gmp_base_print(TEXT_STRING("Hello World!\r\n"));
+//    gmp_base_print(TEXT_STRING("Hello World!\r\n"));
 
     static fast_gt led_stat = 0;
     if(led_stat == 0)
@@ -342,6 +344,10 @@ gmp_task_t tasks[] = {
 
 gmp_datalink_t my_dl;
 
+gmp_tunable_sim_t pil_core;
+
+
+
 void hw_uart_tx(const data_gt* data, uint32_t len) {
     // 假设是 8 位串口，如果是 DSP 注意强转或按位掩码
     gmp_hal_uart_write(IRIS_UART_USB_BASE, data, len, 10);
@@ -357,7 +363,11 @@ fast_gt hw_uart_tx_ready(void) {
 // ========================================================
 // 2. 接收事件的回调函数 (业务层)
 // ========================================================
-void app_rx_callback(uint16_t target_id, uint16_t cmd, const data_gt* payload, uint32_t len) {
+void app_rx_callback(uint16_t target_id, uint16_t cmd, const data_gt* payload, uint32_t len)
+{
+
+    if(gmp_tunable_sim_rx_cb(&pil_core, target_id, cmd, payload, len) == GMP_TUNABLE_HANDLED)
+        return;
 
     // 如果收到了 PC 的 ECHO 指令
     if (cmd == CMD_ECHO) {
@@ -365,6 +375,11 @@ void app_rx_callback(uint16_t target_id, uint16_t cmd, const data_gt* payload, u
         // 注意：在实际应用中，如果是高频的应答，应该判断一下返回值是否成功
         gmp_datalink_send(&my_dl, 0xFF, CMD_ECHO, payload, len);
     }
+}
+
+void gmp_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
+{
+    return;
 }
 
 // 旁路测试：如果不属于 Datalink，就把字符吐出来打印
@@ -390,6 +405,8 @@ void init(void) GMP_NO_OPT_SUFFIX
         gmp_datalink_init(&my_dl, 0x01,
                           hw_uart_tx, hw_uart_tx_ready,
                           app_rx_callback, app_bypass_callback);
+
+        gmp_tunable_sim_init(&pil_core, &my_dl, 0x10);
 
 }
 

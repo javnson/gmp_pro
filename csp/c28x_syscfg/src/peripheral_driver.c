@@ -116,7 +116,7 @@ ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, ui
         time_cnt = timeout;
 
         /* 轮询等待 TX FIFO 腾出空间 (最多容纳 16 个字节) */
-        while (SCI_getTxFIFOStatus(base) == SCI_FIFO_TX15)
+        while (SCI_getTxFIFOStatus(base) >= SCI_FIFO_TX15)
         {
             if (--time_cnt == 0)
             {
@@ -163,7 +163,6 @@ ec_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length, uint32_t 
         *bytes_read = length;
     return GMP_EC_OK;
 }
-
 
 /**
  * @brief   Helper macro for timeout checking to keep code clean and prevent hardware lockups.
@@ -635,7 +634,6 @@ ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const data_gt* tx_buf, data_gt* rx
     return GMP_EC_OK;
 }
 
-
 //
 ///**
 // * @brief 物理总线写入函数
@@ -671,7 +669,6 @@ ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const data_gt* tx_buf, data_gt* rx
 //
 //    return GMP_EC_OK;
 //}
-
 
 /**
  * @brief C2000 CAN 中断服务程序（示例）

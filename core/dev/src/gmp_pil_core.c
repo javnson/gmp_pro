@@ -3,18 +3,18 @@
 
 #include <string.h>
 
-#include <core/dev/tunable_sim.h>
+#include <core/dev/pil_core.h>
 
 /**
  * @brief Default implementation of the simulation step. 
  * Marked as weak to allow user override without function pointers.
  */
-#if defined(__GNUC__) || defined(__TI_COMPILER_VERSION__)
-__attribute__((weak)) void gmp_sim_step_callback(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
-{
-    // Default: Do nothing
-}
-#endif
+//#if defined(__GNUC__) || defined(__TI_COMPILER_VERSION__)
+//GMP_WEAK_FUNC_PREFIX void gmp_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
+//{
+//    // Default: Do nothing
+//}
+//#endif
 
 // =========================================================
 // STRICT 8-BIT SERIALIZATION (For Universal Compatibility)
@@ -66,12 +66,14 @@ static inline void unpack_rx_buffer(gmp_tunable_sim_t* ctx, const data_gt* paylo
     ctx->rx_buf.isr_ticks = sim_unpack_32(payload, &p_idx);
     ctx->rx_buf.digital_input = sim_unpack_32(payload, &p_idx);
 
-    for (int i = 0; i < 24; i++)
+    size_gt i;
+
+    for (i = 0; i < 24; i++)
     {
         if ((ctx->mask_rx.all >> i) & 1)
             ctx->rx_buf.adc_result[i] = sim_unpack_16(payload, &p_idx);
     }
-    for (int i = 0; i < 8; i++)
+    for (i = 0; i < 8; i++)
     {
         if ((ctx->mask_rx.all >> (24 + i)) & 1)
         {
@@ -87,17 +89,19 @@ static inline size_gt pack_tx_buffer(gmp_tunable_sim_t* ctx, data_gt* tx_payload
     sim_pack_32(tx_payload, &tx_idx, ctx->mask_tx.all); // Always send current mask
     sim_pack_32(tx_payload, &tx_idx, ctx->tx_buf.digital_out);
 
-    for (int i = 0; i < 8; i++)
+    size_gt i;
+
+    for (i = 0; i < 8; i++)
     {
         if ((ctx->mask_tx.all >> i) & 1)
             sim_pack_16(tx_payload, &tx_idx, ctx->tx_buf.pwm_cmp[i]);
     }
-    for (int i = 0; i < 8; i++)
+    for (i = 0; i < 8; i++)
     {
         if ((ctx->mask_tx.all >> (8 + i)) & 1)
             sim_pack_16(tx_payload, &tx_idx, ctx->tx_buf.dac[i]);
     }
-    for (int i = 0; i < 16; i++)
+    for (i = 0; i < 16; i++)
     {
         if ((ctx->mask_tx.all >> (16 + i)) & 1)
         {
@@ -141,9 +145,13 @@ fast_gt gmp_tunable_sim_rx_cb(gmp_tunable_sim_t* ctx, uint16_t target_id, uint16
         ctx->mask_tx.all = sim_unpack_32(payload, &p_idx);
         ctx->mask_rx.all = sim_unpack_32(payload, &p_idx);
 
-        data_gt tx_payload[4];
+        data_gt tx_payload[12]; // À©´óÊý×éÈÝÄÉ Status + TX + RX
         size_gt tx_idx = 0;
-        sim_pack_32(tx_payload, &tx_idx, GMP_EC_OK);
+
+        sim_pack_32(tx_payload, &tx_idx, GMP_EC_OK);        // 4B Status
+        sim_pack_32(tx_payload, &tx_idx, ctx->mask_tx.all); // 4B Echo TX
+        sim_pack_32(tx_payload, &tx_idx, ctx->mask_rx.all); // 4B Echo RX
+
         gmp_datalink_send(ctx->dl_ctx, target_id, ctx->base_cmd + GMP_TUNABLE_OFFSET_SIM_SET_MASK_ACK, tx_payload,
                           tx_idx);
         return GMP_TUNABLE_HANDLED;
@@ -153,7 +161,7 @@ fast_gt gmp_tunable_sim_rx_cb(gmp_tunable_sim_t* ctx, uint16_t target_id, uint16
     case GMP_TUNABLE_OFFSET_SIM_STEP_REQ: {
         unpack_rx_buffer(ctx, payload);
 
-        gmp_sim_step_callback(&ctx->rx_buf, &ctx->tx_buf);
+        gmp_sim_step(&ctx->rx_buf, &ctx->tx_buf);
 
         data_gt tx_payload[GMP_DL_MTU];
         size_gt tx_idx = pack_tx_buffer(ctx, tx_payload);

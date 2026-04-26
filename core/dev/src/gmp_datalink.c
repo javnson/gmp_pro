@@ -237,17 +237,17 @@ void gmp_datalink_tick(gmp_datalink_t* ctx)
     }
 }
 
-fast_gt gmp_datalink_send(gmp_datalink_t* ctx, uint16_t target_id, uint16_t cmd, 
-                          const data_gt* payload, size_gt len) 
+fast_gt gmp_datalink_send(gmp_datalink_t* ctx, uint16_t target_id, uint16_t cmd, const data_gt* payload, size_gt len)
 {
     // Ensure thread/concurrency safety: block new requests if buffer is full
-    if (ctx->tx_pending) {
+    if (ctx->tx_pending)
+    {
         return 0; // BUSY
     }
 
     size_gt tx_idx = 0;
     size_gt i;
-    
+
     // 1. Header Composition
     data_gt raw_hdr[4];
     raw_hdr[0] = target_id & 0xFF;
@@ -256,35 +256,44 @@ fast_gt gmp_datalink_send(gmp_datalink_t* ctx, uint16_t target_id, uint16_t cmd,
     raw_hdr[3] = (len >> 8) & 0xFF;
     uint16_t h_crc = gmp_base_calculate_crc16(raw_hdr, 4);
 
-    // 2. Escape Header 
+    // 2. Escape Header
     ctx->tx_buf[tx_idx++] = GMP_DL_SOF;
-    for (i = 0; i < 6; i++) {
+    for (i = 0; i < 6; i++)
+    {
         data_gt b;
-        if (i < 4) b = raw_hdr[i];
-        else if (i == 4) b = h_crc & 0xFF;
-        else b = (h_crc >> 8) & 0xFF;
+        if (i < 4)
+            b = raw_hdr[i];
+        else if (i == 4)
+            b = h_crc & 0xFF;
+        else
+            b = (h_crc >> 8) & 0xFF;
 
-        if (b == GMP_DL_SOF || b == GMP_DL_EOF || b == GMP_DL_ESC) {
+        if (b == GMP_DL_SOF || b == GMP_DL_EOF || b == GMP_DL_ESC)
+        {
             ctx->tx_buf[tx_idx++] = GMP_DL_ESC;
             ctx->tx_buf[tx_idx++] = b ^ GMP_DL_XOR;
-        } else {
+        }
+        else
+        {
             ctx->tx_buf[tx_idx++] = b;
         }
     }
     ctx->tx_buf[tx_idx++] = GMP_DL_EOF;
 
     // 3. Blind Payload Composition (Zero Escape)
-    if (len > 0 && payload != NULL) {
-        for (i = 0; i < len; i++) {
+    uint16_t p_crc = 0xFFFF; // 【修复核心】：CCITT 初始值，作为空包的真实 CRC
+    if (len > 0 && payload != NULL)
+    {
+        for (i = 0; i < len; i++)
+        {
             ctx->tx_buf[tx_idx++] = payload[i] & 0xFF;
         }
-        uint16_t p_crc = gmp_base_calculate_crc16(payload, len);
-        ctx->tx_buf[tx_idx++] = p_crc & 0xFF;
-        ctx->tx_buf[tx_idx++] = (p_crc >> 8) & 0xFF;
-    } else {
-        ctx->tx_buf[tx_idx++] = 0x00;
-        ctx->tx_buf[tx_idx++] = 0x00;
+        p_crc = gmp_base_calculate_crc16(payload, len); // 只有非空才覆盖计算
     }
+
+    // 无论是否空包，都堂堂正正地追加 CRC
+    ctx->tx_buf[tx_idx++] = p_crc & 0xFF;
+    ctx->tx_buf[tx_idx++] = (p_crc >> 8) & 0xFF;
 
     // 4. Mark as pending and trigger immediate TX evaluation
     ctx->tx_len = tx_idx;
