@@ -1,52 +1,80 @@
-#ifndef GMP_PARAM_H
-#define GMP_PARAM_H
+/**
+ * @file gmp_param.h
+ * @brief Tunable Parameter Group Management (Dictionary-based Data Access)
+ * @details Provides a safe, whitelist-based mechanism for dynamically reading and 
+ * writing discrete variables over the datalink using a static data dictionary.
+ */
 
 #include <core/dev/datalink.h>
 
-// 1. 变量类型定义 (决定总线上的字节数)
+#ifndef GMP_PARAM_H
+#define GMP_PARAM_H
+
+/**
+ * @brief Variable type definitions.
+ * @details Determines the payload size and formatting of the variable on the bus.
+ */
 typedef enum
 {
-    GMP_PARAM_TYPE_U16 = 0,
-    GMP_PARAM_TYPE_I16,
-    GMP_PARAM_TYPE_U32,
-    GMP_PARAM_TYPE_I32,
-    GMP_PARAM_TYPE_F32
+    GMP_PARAM_TYPE_U16 = 0, /**< Unsigned 16-bit integer */
+    GMP_PARAM_TYPE_I16,     /**< Signed 16-bit integer */
+    GMP_PARAM_TYPE_U32,     /**< Unsigned 32-bit integer */
+    GMP_PARAM_TYPE_I32,     /**< Signed 32-bit integer */
+    GMP_PARAM_TYPE_F32      /**< 32-bit single-precision floating point */
 } gmp_param_type_t;
 
-// 2. 读写权限属性
+// =========================================================
+// Read/Write Permission Attributes
+// =========================================================
+
+/** @brief Read-only parameter permission */
 #define GMP_PARAM_PERM_RO 0x00
+/** @brief Read-write parameter permission */
 #define GMP_PARAM_PERM_RW 0x01
 
-// 3. 数据字典条目结构体 (静态存储区)
+/**
+ * @brief Data dictionary entry structure.
+ * @details Represents a single tunable parameter. Typically stored in static memory.
+ */
 typedef struct
 {
-    void* addr;            // 变量物理地址
-    gmp_param_type_t type; // 变量类型
-    fast16_gt perm;        // 权限属性 (兼容 DSP 16-bit 对齐)
+    void* addr;            /**< Physical memory address of the variable */
+    gmp_param_type_t type; /**< Data type of the variable */
+    fast16_gt perm;        /**< Permission attribute (DSP 16-bit alignment compatible) */
 } gmp_param_item_t;
 
-// 4. 可调参数组对象 (Class Context)
+/**
+ * @brief Tunable parameter group object (Class Context).
+ * @details Manages the datalink binding and the static dictionary mapping.
+ */
 typedef struct
 {
-    gmp_datalink_t* dl_ctx;       // 绑定的通信链路对象
-    uint16_t base_cmd;            // 占用的基地址指令 (Read = base, Write = base + 1)
-    const gmp_param_item_t* dict; // 指向绑定的数据字典数组
-    fast16_gt dict_size;          // 字典的最大容量 (最大支持 255)
+    gmp_datalink_t* dl_ctx;       /**< Bound datalink communication object */
+    uint16_t base_cmd;            /**< Base command ID occupied (Read = base_cmd, Write = base_cmd + 1) */
+    const gmp_param_item_t* dict; /**< Pointer to the bound data dictionary array */
+    fast16_gt dict_size;          /**< Maximum capacity of the dictionary (Max supported: 255) */
 } gmp_param_tunable_t;
 
 // =========================================================
-// API 声明
+// API Declarations
 // =========================================================
 
 /**
- * @brief 初始化可调参数组对象
+ * @brief Initialize the tunable parameter group object.
+ * @param ctx Pointer to the tunable parameter context to initialize.
+ * @param dl Pointer to the bound datalink communication object.
+ * @param base_cmd The base command ID to be occupied by this service.
+ * @param dict Pointer to the static data dictionary array.
+ * @param dict_size Number of items in the data dictionary array.
  */
 void gmp_param_tunable_init(gmp_param_tunable_t* ctx, gmp_datalink_t* dl, uint16_t base_cmd,
                             const gmp_param_item_t* dict, fast16_gt dict_size);
 
 /**
- * @brief 可调参数组接收回调 (需放置在 RX_OK 事件处理链中)
- * @return 1 表示指令属于该对象并已处理, 0 表示不属于该对象
+ * @brief Tunable parameter group reception callback.
+ * @details Must be placed within the datalink RX_OK event handling chain.
+ * @param ctx Pointer to the tunable parameter context.
+ * @return fast_gt Returns 1 if the command belongs to this object and is handled, 0 otherwise.
  */
 fast_gt gmp_param_tunable_rx_cb(gmp_param_tunable_t* ctx);
 
