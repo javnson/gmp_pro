@@ -238,7 +238,7 @@ void gmp_dev_dl_tx_request_cmd(gmp_datalink_t* ctx, uint16_t seq, uint16_t cmd);
  * @param  actual_payload_len Length of the data chunk being appended.
  * @param  data Pointer to the data chunk.
  */
-void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, size_gt actual_payload_len, const data_gt* data);
+void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, const data_gt* data, size_gt actual_payload_len);
 
 /**
  * @brief Safely append an 8-bit unsigned integer to the TX payload.
@@ -308,6 +308,16 @@ data_gt* gmp_dev_dl_get_tx_payload_ptr(gmp_datalink_t* ctx);
  */
 const data_gt* gmp_dev_dl_get_tx_hw_hdr(gmp_datalink_t* ctx, size_gt* out_len);
 
+GMP_STATIC_INLINE const data_gt* gmp_dev_dl_get_tx_hw_hdr_ptr(gmp_datalink_t* ctx)
+{
+    return ctx->tx_hdr_buf;
+}
+
+GMP_STATIC_INLINE size_gt gmp_dev_dl_get_tx_hw_hdr_size(gmp_datalink_t* ctx)
+{
+    return ctx->tx_hdr_len;
+}
+
 /**
  * @brief  Retrieve the physical Payload buffer for hardware transmission.
  * @note   Only valid when loop_cb returns GMP_DL_EVENT_TX_RDY.
@@ -316,6 +326,17 @@ const data_gt* gmp_dev_dl_get_tx_hw_hdr(gmp_datalink_t* ctx, size_gt* out_len);
  * @return data_gt* Pointer to the payload buffer.
  */
 const data_gt* gmp_dev_dl_get_tx_hw_pld(gmp_datalink_t* ctx, size_gt* out_len);
+
+GMP_STATIC_INLINE const data_gt* gmp_dev_dl_get_tx_hw_pld_ptr(gmp_datalink_t* ctx)
+{
+    return ctx->tx_buf;
+}
+
+GMP_STATIC_INLINE size_gt gmp_dev_dl_get_tx_hw_pld_size(gmp_datalink_t* ctx)
+{
+    return ctx->tx_len;
+}
+
 
 // ---------------------------------------------------------
 // Reactive TX APIs (Slave Mode - Auto-Routing)

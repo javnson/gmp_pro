@@ -334,7 +334,7 @@ void at_device_flush_rx_buffer()
     }
 }
 
-extern gmp_datalink_t my_dl;
+extern gmp_datalink_t dl;
 
 void flush_dl_rx_buffer()
 {
@@ -347,7 +347,7 @@ void flush_dl_rx_buffer()
         // Get data
         SCI_readCharArray(IRIS_UART_USB_BASE, rxBuf, fifoLevel);
 
-        gmp_datalink_feed_str(&my_dl, rxBuf, fifoLevel);
+        gmp_dev_dl_push_str(&dl, rxBuf, fifoLevel);
     }
 }
 

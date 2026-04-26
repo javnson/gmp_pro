@@ -27,11 +27,12 @@ def get_time_str():
     return datetime.now().strftime('%H:%M:%S.%f')[:-3]
 
 class HermesDatalinkQt(QObject):
+    # 保持接口不变，第一项原本是 target_id，现在逻辑上代表 seq_id
     sig_frame_received = pyqtSignal(int, int, bytes)
     sig_log_msg = pyqtSignal(str)
     sig_conn_state = pyqtSignal(bool)
     
-    # 【核心升级】全局总线事件，携带丰富的时间戳和解析信息
+    # 全局总线事件，携带丰富的时间戳和解析信息
     sig_bus_event = pyqtSignal(dict) 
 
     def __init__(self, local_id=0xFF):
@@ -82,6 +83,8 @@ class HermesDatalinkQt(QObject):
 
     def send_frame(self, target_id: int, cmd: int, payload: bytes):
         if not self.serial.is_open: return
+        
+        # 组装未转义的 Header (target_id 现在逻辑上作为 seq_id)
         raw_hdr = struct.pack('<BBH', target_id, cmd, len(payload))
         h_crc = calculate_crc16_ccitt(raw_hdr)
         raw_hdr += struct.pack('<H', h_crc)
@@ -93,9 +96,10 @@ class HermesDatalinkQt(QObject):
             else: tx_buf.append(b)
         tx_buf.append(EOF)
 
-        # 【修复核心】：移除 if len(payload) > 0 的硬编码，直接追加真实的 CRC
-        tx_buf.extend(payload)
-        tx_buf.extend(struct.pack('<H', calculate_crc16_ccitt(payload)))
+        # 【同步 C 端协议】：零长度优化，只有 Payload 大于 0 才追加内容和 P_CRC
+        if len(payload) > 0:
+            tx_buf.extend(payload)
+            tx_buf.extend(struct.pack('<H', calculate_crc16_ccitt(payload)))
 
         try:
             self.serial.write(tx_buf)
@@ -129,8 +133,7 @@ class HermesDatalinkQt(QObject):
             if not raw_bytes: continue
             
             for byte in raw_bytes:
-                # 【核心修复】：只有在非 Payload 阶段碰到 SOF，才执行状态机硬复位！
-                # 这样可以防止 Payload 数据中偶然包含 0x7B 导致上位机接收断流。
+                # 防止 Payload 数据中偶然包含 0x7B 导致上位机接收断流
                 if byte == SOF and state != STATE_PLD:
                     if bypass_buf:
                         self.sig_bus_event.emit({'dir': 'RX', 'type': 'RAW', 'time': get_time_str(), 'data': bytes(bypass_buf)})
@@ -143,35 +146,62 @@ class HermesDatalinkQt(QObject):
                 
                 if state == STATE_WAIT:
                     bypass_buf.append(byte)
+                    
                 elif state == STATE_HDR:
                     frame_raw_buf.append(byte)
-                    if byte == ESC: state = STATE_ESC
+                    if byte == ESC: 
+                        state = STATE_ESC
                     elif byte == EOF:
                         if len(hdr_buf) != 6:
                             bypass_buf.extend(frame_raw_buf) # 假 Header，退回给 bypass
-                            state = STATE_WAIT; continue
+                            state = STATE_WAIT
+                            continue
                         
-                        if calculate_crc16_ccitt(hdr_buf[0:4]) != struct.unpack('<H', hdr_buf[4:6])[0]:
+                        # 校验 Header CRC
+                        h_crc_calc = calculate_crc16_ccitt(hdr_buf[0:4])
+                        h_crc_rcv = struct.unpack('<H', hdr_buf[4:6])[0]
+                        
+                        if h_crc_calc != h_crc_rcv:
                             current_target, current_cmd, expected_len = struct.unpack('<BBH', hdr_buf[0:4])
                             self.sig_bus_event.emit({
                                 'dir': 'RX', 'type': 'DL', 'time': get_time_str(), 'data': bytes(frame_raw_buf),
                                 'dl_target': current_target, 'dl_cmd': current_cmd, 'dl_payload': b'', 'dl_crc_ok': False, 'error': 'Header CRC'
                             })
-                            state = STATE_WAIT; continue
+                            state = STATE_WAIT
+                            continue
                         
                         current_target, current_cmd, expected_len = struct.unpack('<BBH', hdr_buf[0:4])
-                        state = STATE_PLD; pld_buf.clear()
+                        
+                        # 【同步 C 端协议】：零长度载荷优化短路
+                        if expected_len == 0:
+                            self.sig_bus_event.emit({
+                                'dir': 'RX', 'type': 'DL', 'time': get_time_str(), 'data': bytes(frame_raw_buf),
+                                'dl_target': current_target, 'dl_cmd': current_cmd, 'dl_payload': b'', 'dl_crc_ok': True, 'error': ''
+                            })
+                            self.sig_frame_received.emit(current_target, current_cmd, b'')
+                            state = STATE_WAIT
+                        else:
+                            state = STATE_PLD
+                            pld_buf.clear()
                     else:
                         hdr_buf.append(byte)
+                        
                 elif state == STATE_ESC:
                     frame_raw_buf.append(byte)
-                    hdr_buf.append(byte ^ XOR); state = STATE_HDR
+                    hdr_buf.append(byte ^ XOR)
+                    state = STATE_HDR
+                    
                 elif state == STATE_PLD:
                     frame_raw_buf.append(byte)
                     pld_buf.append(byte)
+                    
+                    # 盲收完成：载荷长度 + 2字节 P_CRC
                     if len(pld_buf) == expected_len + 2:
                         actual_pld = pld_buf[:-2]
-                        crc_ok = (calculate_crc16_ccitt(actual_pld) == struct.unpack('<H', pld_buf[-2:])[0])
+                        p_crc_calc = calculate_crc16_ccitt(actual_pld)
+                        p_crc_rcv = struct.unpack('<H', pld_buf[-2:])[0]
+                        crc_ok = (p_crc_calc == p_crc_rcv)
+                        
                         self.sig_bus_event.emit({
                             'dir': 'RX', 'type': 'DL', 'time': get_time_str(), 'data': bytes(frame_raw_buf),
                             'dl_target': current_target, 'dl_cmd': current_cmd, 'dl_payload': bytes(actual_pld), 'dl_crc_ok': crc_ok, 'error': '' if crc_ok else 'Payload CRC'
@@ -180,6 +210,7 @@ class HermesDatalinkQt(QObject):
                             self.sig_frame_received.emit(current_target, current_cmd, bytes(actual_pld))
                         state = STATE_WAIT
 
+            # 循环结束后，清空游离缓冲区
             if bypass_buf:
                 self.sig_bus_event.emit({'dir': 'RX', 'type': 'RAW', 'time': get_time_str(), 'data': bytes(bypass_buf)})
                 bypass_buf.clear()

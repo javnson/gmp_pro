@@ -13,8 +13,6 @@
 #include <core/dev/gpio/pca9555.h>
 #include <core/dev/sensor/hdc1080.h>
 
-#include <core/dev/pil_core.h>
-
 //=================================================================================================
 // global variables
 
@@ -342,50 +340,8 @@ gmp_task_t tasks[] = {
 
 #define CMD_ECHO 0x99
 
-gmp_datalink_t my_dl;
+gmp_datalink_t dl;
 
-gmp_tunable_sim_t pil_core;
-
-
-
-void hw_uart_tx(const data_gt* data, uint32_t len) {
-    // 假设是 8 位串口，如果是 DSP 注意强转或按位掩码
-    gmp_hal_uart_write(IRIS_UART_USB_BASE, data, len, 10);
-
-}
-
-fast_gt hw_uart_tx_ready(void) {
-    // 如果是用中断/DMA发送，这里检查相应的忙碌标志位
-    // 简写为阻塞式则永远返回 1
-    return 1;
-}
-
-// ========================================================
-// 2. 接收事件的回调函数 (业务层)
-// ========================================================
-void app_rx_callback(uint16_t target_id, uint16_t cmd, const data_gt* payload, uint32_t len)
-{
-
-    if(gmp_tunable_sim_rx_cb(&pil_core, target_id, cmd, payload, len) == GMP_TUNABLE_HANDLED)
-        return;
-
-    // 如果收到了 PC 的 ECHO 指令
-    if (cmd == CMD_ECHO) {
-        // 原封不动地把收到的数据发回去
-        // 注意：在实际应用中，如果是高频的应答，应该判断一下返回值是否成功
-        gmp_datalink_send(&my_dl, 0xFF, CMD_ECHO, payload, len);
-    }
-}
-
-void gmp_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
-{
-    return;
-}
-
-// 旁路测试：如果不属于 Datalink，就把字符吐出来打印
-void app_bypass_callback(data_gt byte) {
-    return;
-}
 
 
 GMP_NO_OPT_PREFIX
@@ -401,13 +357,7 @@ void init(void) GMP_NO_OPT_SUFFIX
         gmp_scheduler_add_task(&sched, &tasks[i]);
 
     // 1. 初始化数据链路层
-        // 分配本机 ID 为 0x01，注入各种硬件回调
-        gmp_datalink_init(&my_dl, 0x01,
-                          hw_uart_tx, hw_uart_tx_ready,
-                          app_rx_callback, app_bypass_callback);
-
-        gmp_tunable_sim_init(&pil_core, &my_dl, 0x10);
-
+    gmp_dev_dl_init(&dl);
 }
 
 //=================================================================================================
@@ -418,5 +368,35 @@ void mainloop(void) GMP_NO_OPT_SUFFIX
 {
     // run task scheduler
     gmp_scheduler_dispatch(&sched);
-    gmp_datalink_tick(&my_dl);
+    gmp_dl_event_t e = gmp_dev_dl_loop_cb(&dl);
+
+    switch(e)
+    {
+    // if TX data is ready, do transmit
+    case GMP_DL_EVENT_TX_RDY:
+        // 物理发送逻辑（使用你平台的 UART/DMA 发送函数）
+        gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl), gmp_dev_dl_get_tx_hw_hdr_size(&dl), 10); // 发送 Header (含 SOF 和 转义)
+        if (gmp_dev_dl_get_tx_hw_pld_size(&dl) > 0)
+        {
+           gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_pld_ptr(&dl), gmp_dev_dl_get_tx_hw_pld_size(&dl), 10); // 发送 Payload 和 P_CRC
+        }
+
+        gmp_dev_dl_tx_state_done(&dl); // 释放 TX 状态机
+        break;
+
+    case GMP_DL_EVENT_RX_OK:
+
+        if (dl.rx_head.cmd == GMP_DL_CMD_ECHO)
+                    {
+                        // 使用刚刚写好的 Builder 连写 API，原封不动地将 payload_buf 中的数据打包回传
+                        gmp_dev_dl_tx_request(&dl, dl.rx_head.seq_id, GMP_DL_CMD_ECHO,
+                                              dl.expected_payload_len, dl.payload_buf);
+                        dl.flag_reply_handled = 1; // 告诉框架我们已经处理了
+                    }
+
+        break;
+
+    }
+
+
 }

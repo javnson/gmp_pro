@@ -1,5 +1,7 @@
-#include <core/dev/datalink.h>
 #include <gmp_core.h>
+
+#include <core/dev/datalink.h>
+
 #include <string.h> // for memset, memcpy
 
 // =========================================================
@@ -58,7 +60,9 @@ void gmp_dev_dl_push_str(gmp_datalink_t* ctx, const data_gt* str, size_gt size)
     if (!ctx || !str || size == 0)
         return;
 
-    for (size_gt i = 0; i < size; i++)
+    size_gt i;
+
+    for (i = 0; i < size; i++)
     {
         uint16_t next_head = ctx->rx_fifo_head + 1;
         if (next_head >= GMP_DL_RX_FIFO_SIZE)
@@ -277,7 +281,7 @@ void gmp_dev_dl_tx_request_cmd(gmp_datalink_t* ctx, uint16_t seq, uint16_t cmd)
     ctx->tx_state = GMP_DL_TX_STATE_BUILDING;
 }
 
-void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, size_gt actual_payload_len, const data_gt* data)
+void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, const data_gt* data, size_gt actual_payload_len)
 {
     if (ctx->tx_state != GMP_DL_TX_STATE_BUILDING)
         return;
