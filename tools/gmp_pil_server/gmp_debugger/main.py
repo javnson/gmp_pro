@@ -11,6 +11,8 @@ from tabs.tab_ascii import TabAscii
 from tabs.tab_raw import TabRaw
 from tabs.tab_sim import TabSim
 from tabs.tab_pil import TabPilBridge
+from tabs.tab_tunable import TabTunableManager
+
 
 DATA_BITS_MAP = {'8': serial.EIGHTBITS, '7': serial.SEVENBITS, '6': serial.SIXBITS, '5': serial.FIVEBITS}
 STOP_BITS_MAP = {'1': serial.STOPBITS_ONE, '1.5': serial.STOPBITS_ONE_POINT_FIVE, '2': serial.STOPBITS_TWO}
@@ -51,6 +53,10 @@ class MainWindow(QMainWindow):
         # 挂载 Tab 4: PIL 仿真网桥 (替代原有的 TabSim 或作为 Tab 4)
         self.tab_pil_bridge = TabPilBridge(self.hermes, self.tab_sim)
         self.tabs.addTab(self.tab_pil_bridge, "4. Simulink-PIL 网桥")
+
+        # 挂载 Tab 5: 在线可调参数工作台
+        self.tab_tunable = TabTunableManager(self.hermes)
+        self.tabs.addTab(self.tab_tunable, "5. 参数在线整定工作台")
 
         # 连线：让网桥吐出的数据流，直接灌进仿真引擎的 UI 更新函数里
         self.tab_pil_bridge.sig_rx_parsed.connect(self.tab_sim.update_rx_ui_from_bridge)

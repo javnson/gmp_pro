@@ -14,6 +14,7 @@
 #include <core/dev/sensor/hdc1080.h>
 
 #include <core/dev/pil_core.h>
+#include <core/dev/tunable.h>
 
 //=================================================================================================
 // global variables
@@ -43,6 +44,27 @@ void beep_off()
 {
     gmp_hal_gpio_write(gpio_beep, 0);
 }
+
+//=================================================================================================
+
+float kp1, kp2, spd1, spd2;
+
+// 1. 静态定义 M1 的字典
+const gmp_param_item_t dict_m1[] = {
+    { &kp1, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW },
+    { &spd1, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO },
+};
+
+// 2. 静态定义 M2 的字典
+const gmp_param_item_t dict_m2[] = {
+    { &kp2, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW },
+    { &spd2, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO },
+};
+
+// 3. 实例化两个 Server 对象
+gmp_param_tunable_t srv_m1;
+gmp_param_tunable_t srv_m2;
+
 
 //=================================================================================================
 // AT command
@@ -184,8 +206,6 @@ gmp_task_status_t tsk_at_device(gmp_task_t* tsk)
 
     gmp_dl_event_t e = gmp_dev_dl_loop_cb(&dl);
 
-
-
     switch (e)
     {
     // if TX data is ready, do transmit
@@ -204,10 +224,10 @@ gmp_task_status_t tsk_at_device(gmp_task_t* tsk)
 
     case GMP_DL_EVENT_RX_OK:
 
-        if(gmp_pil_sim_rx_cb(&pil))
-        {
-            return GMP_TASK_DONE;
-        }
+        if(gmp_pil_sim_rx_cb(&pil)) break;
+
+        if (gmp_param_tunable_rx_cb(&srv_m1)) break; // 让 M1 先挑指令
+        if (gmp_param_tunable_rx_cb(&srv_m2)) break; // 让 M2 接着挑
 
         if (dl.rx_head.cmd == 0x99)
         {
@@ -363,10 +383,12 @@ gmp_task_status_t tsk_protect(gmp_task_t* tsk);
 gmp_task_t tasks[] = {
     // name,     task,      period(ms),  init_phase, is_enabled, pParam
     {"blink_led", tsk_blink, 1000, 100, 1, NULL},
-    {"at_device", tsk_at_device, 2, 1, 1, NULL},
+    {"at_device", tsk_at_device, 1, 1, 1, NULL},
     {"flush_key", tsk_key_flush, 100, 10, 0, (void*)&ht16k33},
     {"flush_led", tsk_LED_flush, 500, 200, 0, (void*)&ht16k33},
     {"startup", tsk_startup, 500, 0, 1, NULL}};
+
+
 
 //=================================================================================================
 // initialize routine
@@ -387,6 +409,10 @@ void init(void) GMP_NO_OPT_SUFFIX
     gmp_dev_dl_init(&dl);
 
     gmp_pil_sim_init(&pil, &dl, 0x10);
+
+    // 绑定 Datalink, M1 占用 0x30/0x31，M2 占用 0x40/0x41
+    gmp_param_tunable_init(&srv_m1, &dl, 0x30, dict_m1, 2);
+    gmp_param_tunable_init(&srv_m2, &dl, 0x40, dict_m2, 2);
 }
 
 //=================================================================================================

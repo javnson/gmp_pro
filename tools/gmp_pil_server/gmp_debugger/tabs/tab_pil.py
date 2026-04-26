@@ -9,7 +9,7 @@ from PyQt5.QtGui import QPainter, QPen, QColor
 from core_datalink import HermesDatalinkQt
 
 # =========================================================
-# 现代化浅色系曲线绘制组件 (非零均值统计)
+# 现代化浅色系曲线绘制组件
 # =========================================================
 class TickPlotter(QWidget):
     def __init__(self, parent=None):
@@ -81,7 +81,6 @@ class TickPlotter(QWidget):
 class TabPilBridge(QWidget):
     sig_rx_parsed = pyqtSignal(dict)
 
-    # 【核心调整】：初始化时接收 tab_sim 的引用
     def __init__(self, hermes: HermesDatalinkQt, tab_sim):
         super().__init__()
         self.hermes = hermes
@@ -142,12 +141,11 @@ class TabPilBridge(QWidget):
         net_layout.addRow("MCU 重传触发阈值 (s):", self.edit_mcu_timeout)
         net_layout.addRow("MATLAB UI挂起警告阈值 (s):", self.edit_matlab_timeout)
         
-        # UI 提示：让用户知道 Mask 是自动获取的
-        # info_label = QLabel("ℹ️ 提示：串口组包解包所需的 TX/RX 掩码将自动从 '3. PIL 在环仿真引擎' 页面获取。")
-        # info_label.setStyleSheet("color: #1565C0; font-style: italic;")
-        # net_layout.addRow("", info_label)
+        info_label = QLabel("ℹ️ 提示：启动前请确保 3 号页面的 MASK 已同步，启动后将自动接管其界面。")
+        info_label.setStyleSheet("color: #1565C0; font-style: italic;")
+        net_layout.addRow("", info_label)
         
-        self.cb_test_mode = QCheckBox("开启 UDP 测试模式 (旁路串口直接回环)")
+        self.cb_test_mode = QCheckBox("开启 UDP 测试模式 (旁路串口直接回环，不检查 Mask 锁定)")
         self.cb_test_mode.setStyleSheet("color: #E65100; font-weight: bold;")
         net_layout.addRow("", self.cb_test_mode)
         
@@ -185,9 +183,24 @@ class TabPilBridge(QWidget):
             self.hermes.sig_log_msg.emit(f"<span style='color:{color}; font-weight:bold;'>[桥接器] {msg}</span>")
         else:
             print(msg)
+            
+    def _set_ui_enabled(self, enabled: bool):
+        """控制自身配置面板的启用状态"""
+        self.edit_ip.setEnabled(enabled)
+        self.edit_recv_port.setEnabled(enabled)
+        self.edit_trans_port.setEnabled(enabled)
+        self.edit_step_size.setEnabled(enabled)
+        self.edit_mcu_timeout.setEnabled(enabled)
+        self.edit_matlab_timeout.setEnabled(enabled)
+        self.cb_test_mode.setEnabled(enabled)
 
     def toggle_bridge(self):
         if not self.running:
+            # --- 【保护逻辑 1】：检查 Mask 状态 ---
+            if not self.cb_test_mode.isChecked() and not self.tab_sim.is_mask_synced:
+                self.log("❌ 启动被拒绝：请先在 '3. PIL 在环仿真引擎' 页面同步 Mask！", "red")
+                return
+
             try:
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 self.sock.bind(('0.0.0.0', int(self.edit_recv_port.text())))
@@ -205,6 +218,12 @@ class TabPilBridge(QWidget):
                 self.thread = threading.Thread(target=self._bridge_worker, daemon=True)
                 self.thread.start()
                 
+                # --- 【保护逻辑 2】：接管并锁定 TabSim 的 UI ---
+                if not self.cb_test_mode.isChecked():
+                    self.tab_sim.set_action_buttons_enabled(False)
+                    self.log("🔒 已接管并锁定 3 号页面的手动控制按钮", "orange")
+                self._set_ui_enabled(False) # 锁定自身配置
+                
                 self.btn_toggle.setText("🛑 停止 PIL 桥接服务")
                 self.btn_toggle.setStyleSheet("background-color: #FFEBEE; color: #D32F2F; font-weight: bold;")
                 self.log(f"服务已启动，监听 UDP 端口: {self.edit_recv_port.text()}", "green")
@@ -220,6 +239,12 @@ class TabPilBridge(QWidget):
             self.running = False
             if self.thread: self.thread.join()
             if self.sock: self.sock.close()
+            
+            # --- 【保护释放】：归还 UI 控制权 ---
+            self.tab_sim.set_action_buttons_enabled(True)
+            self._set_ui_enabled(True)
+            self.log("🔓 已归还 3 号页面的手动控制权限", "green")
+            
             self.btn_toggle.setText("🚀 启动 PIL 桥接服务")
             self.btn_toggle.setStyleSheet("")
             self.log("服务已正常关闭", "gray")
@@ -286,7 +311,6 @@ class TabPilBridge(QWidget):
                     adc_list = [int(v) & 0xFFFF for v in unpacked[1:25]]
                     panel_list = [float(v) for v in unpacked[25:33]]
                     
-                    # 【核心调整】：直接从 tab_sim 获取最新的 mask_rx
                     current_mask_rx = self.tab_sim.current_mask_rx
                     
                     serial_pld = bytearray()
@@ -335,7 +359,6 @@ class TabPilBridge(QWidget):
             if len(payload) < 4 or self.cb_test_mode.isChecked(): return
             
             try:
-                # 【核心调整】：直接从 tab_sim 获取最新的 mask_tx
                 current_mask_tx = self.tab_sim.current_mask_tx
                 
                 dig_out = struct.unpack_from('<I', payload, 0)[0]

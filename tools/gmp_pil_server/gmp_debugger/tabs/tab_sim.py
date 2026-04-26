@@ -45,6 +45,9 @@ class TabSim(QWidget):
         
         self.current_mask_tx = 0xFFFFFFFF
         self.current_mask_rx = 0xFFFFFFFF
+
+        # 显式记录 Mask 同步状态
+        self.is_mask_synced = False 
         
         self.rx_widgets = {} 
         self.tx_widgets = {} 
@@ -238,6 +241,9 @@ class TabSim(QWidget):
     # 状态控制与交互反馈
     # =========================================================
     def set_mask_button_state(self, is_synced: bool):
+        # 保存状态供外部读取
+        self.is_mask_synced = is_synced  
+
         if is_synced:
             self.btn_set_mask.setText("✅ Mask 已同步")
             self.btn_set_mask.setStyleSheet("background-color: #C8E6C9; color: #2E7D32; font-weight: bold; height: 30px; padding: 0 15px; border: 1px solid #4CAF50; border-radius: 4px;")
@@ -393,7 +399,7 @@ class TabSim(QWidget):
         elif cmd == self._get_target_cmd(REL_OFFSET_SET_INPUT):
             if len(payload) == 0:
                 self.log(f"✅ 输入变量注入成功!", "green")
-    
+
     # ------------------------------------------------------
     # 外部网桥接管 UI
     # ------------------------------------------------------
@@ -409,3 +415,19 @@ class TabSim(QWidget):
         for i, val in enumerate(data.get('panel', [])):
             if i < 8:
                 self.rx_widgets[f'panel_{i}'].setText(f"{val:.4f}")
+
+    # ------------------------------------------------------
+    # 外部网桥接管 UI 锁定接口
+    # ------------------------------------------------------
+    def set_action_buttons_enabled(self, enabled: bool):
+        """【新增】：提供给网桥调用，用于在自动化运行时锁定手动控制"""
+        self.btn_set_input.setEnabled(enabled)
+        self.btn_get_out.setEnabled(enabled)
+        self.btn_step.setEnabled(enabled)
+        self.btn_set_mask.setEnabled(enabled) # 连同 Mask 同步按钮一起锁定更安全
+        
+        if enabled:
+            self.btn_step.setStyleSheet("background-color: #C8E6C9; font-weight: bold; font-size: 16px; border: 2px solid #4CAF50; border-radius: 4px;")
+        else:
+            self.btn_step.setStyleSheet("background-color: #F5F5F5; color: #BDBDBD; font-weight: bold; font-size: 16px; border: 2px solid #E0E0E0; border-radius: 4px;")
+            
