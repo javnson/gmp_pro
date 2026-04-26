@@ -1,198 +1,211 @@
-
 #include <gmp_core.h>
 
-#include <string.h>
+#include <core/dev/pil_core.h> // 根据你的实际路径调整
 
-#include <core/dev/pil_core.h>
+#include <string.h> // for memset
+
+// =========================================================
+// 内部辅助函数：安全的 Little-Endian 反序列化提取器
+// =========================================================
 
 /**
- * @brief Default implementation of the simulation step. 
- * Marked as weak to allow user override without function pointers.
+ * @brief 从 Datalink 的 payload 缓冲区中安全提取一个 16-bit 整数
  */
-//#if defined(__GNUC__) || defined(__TI_COMPILER_VERSION__)
-//GMP_WEAK_FUNC_PREFIX void gmp_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
-//{
-//    // Default: Do nothing
-//}
-//#endif
-
-// =========================================================
-// STRICT 8-BIT SERIALIZATION (For Universal Compatibility)
-// =========================================================
-
-static inline void sim_pack_8(data_gt* buf, size_gt* idx, uint8_t val)
+static inline uint16_t sim_unpack_u16(const data_gt* buf, uint16_t* idx, uint16_t max_len)
 {
-    buf[(*idx)++] = (data_gt)(val & 0xFF);
+    if (*idx + 2 > max_len)
+        return 0; // 越界保护
+
+    uint16_t val = ((uint16_t)(buf[*idx] & 0xFF)) | (((uint16_t)(buf[*idx + 1] & 0xFF)) << 8);
+    *idx += 2;
+    return val;
 }
 
-static inline void sim_pack_16(data_gt* buf, size_gt* idx, uint16_t val)
+/**
+ * @brief 从 Datalink 的 payload 缓冲区中安全提取一个 32-bit 整数
+ */
+static inline uint32_t sim_unpack_u32(const data_gt* buf, uint16_t* idx, uint16_t max_len)
 {
-    sim_pack_8(buf, idx, (uint8_t)(val & 0xFF));
-    sim_pack_8(buf, idx, (uint8_t)((val >> 8) & 0xFF));
-}
+    if (*idx + 4 > max_len)
+        return 0; // 越界保护
 
-static inline void sim_pack_32(data_gt* buf, size_gt* idx, uint32_t val)
-{
-    sim_pack_16(buf, idx, (uint16_t)(val & 0xFFFF));
-    sim_pack_16(buf, idx, (uint16_t)((val >> 16) & 0xFFFF));
-}
-
-static inline uint8_t sim_unpack_8(const data_gt* buf, size_gt* idx)
-{
-    return (uint8_t)(buf[(*idx)++] & 0xFF);
-}
-
-static inline uint16_t sim_unpack_16(const data_gt* buf, size_gt* idx)
-{
-    uint16_t low = sim_unpack_8(buf, idx);
-    uint16_t high = sim_unpack_8(buf, idx);
-    return (uint16_t)(low | (high << 8));
-}
-
-static inline uint32_t sim_unpack_32(const data_gt* buf, size_gt* idx)
-{
-    uint32_t low = sim_unpack_16(buf, idx);
-    uint32_t high = sim_unpack_16(buf, idx);
-    return (uint32_t)(low | (high << 16));
+    uint32_t val = ((uint32_t)(buf[*idx] & 0xFF)) | (((uint32_t)(buf[*idx + 1] & 0xFF)) << 8) |
+                   (((uint32_t)(buf[*idx + 2] & 0xFF)) << 16) | (((uint32_t)(buf[*idx + 3] & 0xFF)) << 24);
+    *idx += 4;
+    return val;
 }
 
 // =========================================================
-// INTERNAL HELPERS FOR DYNAMIC PACKING/UNPACKING
+// 核心组包与解包引擎
 // =========================================================
 
-static inline void unpack_rx_buffer(gmp_tunable_sim_t* ctx, const data_gt* payload)
+/**
+ * @brief 根据 mask_rx 将 PC 传来的 payload 解包到 rx_buf 结构体中
+ */
+static void sim_deserialize_inputs(gmp_pil_sim_t* ctx)
 {
-    size_gt p_idx = 0;
-    ctx->rx_buf.isr_ticks = sim_unpack_32(payload, &p_idx);
-    ctx->rx_buf.digital_input = sim_unpack_32(payload, &p_idx);
-
+    const data_gt* pld = ctx->dl_ctx->payload_buf;
+    uint16_t pld_len = ctx->dl_ctx->expected_payload_len;
+    uint16_t idx = 0;
     size_gt i;
+    gmp_safe_pun_t pun;
 
+    // 1. 提取基础状态 (必须存在的定长头部)
+    ctx->rx_buf.isr_ticks = sim_unpack_u32(pld, &idx, pld_len);
+    ctx->rx_buf.digital_input = sim_unpack_u32(pld, &idx, pld_len);
+
+    // 2. 根据 Mask 提取 ADC 结果 (24个通道)
     for (i = 0; i < 24; i++)
     {
-        if ((ctx->mask_rx.all >> i) & 1)
-            ctx->rx_buf.adc_result[i] = sim_unpack_16(payload, &p_idx);
+        if (ctx->mask_rx.bit.adc_result & (1UL << i))
+        {
+            ctx->rx_buf.adc_result[i] = sim_unpack_u16(pld, &idx, pld_len);
+        }
     }
+
+    // 3. 根据 Mask 提取 Panel 虚拟面板数据 (8个通道，32-bit ctrl_gt)
     for (i = 0; i < 8; i++)
     {
-        if ((ctx->mask_rx.all >> (24 + i)) & 1)
+        if (ctx->mask_rx.bit.panel & (1UL << i))
         {
-            uint32_t raw = sim_unpack_32(payload, &p_idx);
-            ctx->rx_buf.panel[i] = *((ctrl_gt*)&raw);
+            pun.u_val = sim_unpack_u32(pld, &idx, pld_len);
+            ctx->rx_buf.panel[i] = pun.f_val;
         }
     }
 }
 
-static inline size_gt pack_tx_buffer(gmp_tunable_sim_t* ctx, data_gt* tx_payload)
+/**
+ * @brief 根据 mask_tx 将 tx_buf 结构体中的数据打包到发送缓冲区
+ * @note 必须在调用 gmp_dev_dl_tx_request_cmd 之后调用此函数！
+ */
+static void sim_serialize_outputs(gmp_pil_sim_t* ctx)
 {
-    size_gt tx_idx = 0;
-    sim_pack_32(tx_payload, &tx_idx, ctx->mask_tx.all); // Always send current mask
-    sim_pack_32(tx_payload, &tx_idx, ctx->tx_buf.digital_out);
-
     size_gt i;
+    gmp_safe_pun_t pun;
+    gmp_datalink_t* dl = ctx->dl_ctx;
 
+    // 1. 压入基础状态
+    gmp_dev_dl_tx_append_u32(dl, ctx->tx_buf.digital_out);
+
+    // 2. 根据 Mask 压入 PWM Compare 数据 (8个通道)
     for (i = 0; i < 8; i++)
     {
-        if ((ctx->mask_tx.all >> i) & 1)
-            sim_pack_16(tx_payload, &tx_idx, ctx->tx_buf.pwm_cmp[i]);
+        if (ctx->mask_tx.bit.pwm_cmp & (1UL << i))
+        {
+            gmp_dev_dl_tx_append_u16(dl, ctx->tx_buf.pwm_cmp[i]);
+        }
     }
+
+    // 3. 根据 Mask 压入 DAC 数据 (8个通道)
     for (i = 0; i < 8; i++)
     {
-        if ((ctx->mask_tx.all >> (8 + i)) & 1)
-            sim_pack_16(tx_payload, &tx_idx, ctx->tx_buf.dac[i]);
+        if (ctx->mask_tx.bit.dac & (1UL << i))
+        {
+            gmp_dev_dl_tx_append_u16(dl, ctx->tx_buf.dac[i]);
+        }
     }
+
+    // 4. 根据 Mask 压入 Monitor 监控变量 (16个通道，32-bit ctrl_gt)
     for (i = 0; i < 16; i++)
     {
-        if ((ctx->mask_tx.all >> (16 + i)) & 1)
+        if (ctx->mask_tx.bit.monitor & (1UL << i))
         {
-            uint32_t raw = *((uint32_t*)&ctx->tx_buf.monitor[i]);
-            sim_pack_32(tx_payload, &tx_idx, raw);
+            pun.f_val = ctx->tx_buf.monitor[i];
+            gmp_dev_dl_tx_append_u32(dl, pun.u_val);
         }
     }
-    return tx_idx;
 }
 
 // =========================================================
-// API IMPLEMENTATIONS
+// API 实现
 // =========================================================
 
-void gmp_tunable_sim_init(gmp_tunable_sim_t* ctx, gmp_datalink_t* dl_ctx, uint16_t base_cmd)
+void gmp_pil_sim_init(gmp_pil_sim_t* ctx, gmp_datalink_t* dl_ctx, uint16_t base_cmd)
 {
-    if (!ctx)
-        return;
-    memset(ctx, 0, sizeof(gmp_tunable_sim_t));
+    memset(ctx, 0, sizeof(gmp_pil_sim_t));
     ctx->dl_ctx = dl_ctx;
     ctx->base_cmd = base_cmd;
 
-    // Initial state: Enable basic I/O by default
+    // 默认全开，或者全关，取决于你的仿真设计
     ctx->mask_tx.all = 0xFFFFFFFF;
     ctx->mask_rx.all = 0xFFFFFFFF;
 }
 
-fast_gt gmp_tunable_sim_rx_cb(gmp_tunable_sim_t* ctx, uint16_t target_id, uint16_t cmd, const data_gt* payload,
-                              size_gt len)
+fast_gt gmp_pil_sim_rx_cb(gmp_pil_sim_t* ctx)
 {
-    if (!ctx || cmd < ctx->base_cmd)
-        return GMP_TUNABLE_PASS;
-    uint16_t offset = cmd - ctx->base_cmd;
+    gmp_datalink_t* dl = ctx->dl_ctx;
+    uint16_t rcv_cmd = dl->rx_head.cmd;
+
+    // 检查此指令是否属于当前 PIL 子系统的控制域
+    if (rcv_cmd < ctx->base_cmd || rcv_cmd > ctx->base_cmd + 4)
+    {
+        return 0; // 不属于我，Pass给其他模块或兜底函数
+    }
+
+    // 提取具体的 Offset
+    uint16_t offset = rcv_cmd - ctx->base_cmd;
+    uint16_t idx = 0;
 
     switch (offset)
     {
-    case GMP_TUNABLE_OFFSET_SIM_SET_MASK_REQ: {
-        if (len < 8)
-            return GMP_TUNABLE_HANDLED;
-        size_gt p_idx = 0;
-        ctx->mask_tx.all = sim_unpack_32(payload, &p_idx);
-        ctx->mask_rx.all = sim_unpack_32(payload, &p_idx);
+    case GMP_PIL_OFFSET_SIM_SET_MASK_REQ:
+        // 解析 8 字节：前 4 字节为 TX Mask，后 4 字节为 RX Mask
+        if (dl->expected_payload_len >= 8)
+        {
+            ctx->mask_tx.all = sim_unpack_u32(dl->payload_buf, &idx, dl->expected_payload_len);
+            ctx->mask_rx.all = sim_unpack_u32(dl->payload_buf, &idx, dl->expected_payload_len);
+        }
 
-        data_gt tx_payload[12]; // 扩大数组容纳 Status + TX + RX
-        size_gt tx_idx = 0;
+        // 【优化】：直接构建 8 字节的镜像回传包 (去除 Status 占位符)
+        gmp_dev_dl_tx_request_cmd(dl, dl->rx_head.seq_id, rcv_cmd);
+        gmp_dev_dl_tx_append_u32(dl, ctx->mask_tx.all); // 回传实际应用的 TX Mask
+        gmp_dev_dl_tx_append_u32(dl, ctx->mask_rx.all); // 回传实际应用的 RX Mask
+        gmp_dev_dl_tx_ready(dl);
+        break;
 
-        sim_pack_32(tx_payload, &tx_idx, GMP_EC_OK);        // 4B Status
-        sim_pack_32(tx_payload, &tx_idx, ctx->mask_tx.all); // 4B Echo TX
-        sim_pack_32(tx_payload, &tx_idx, ctx->mask_rx.all); // 4B Echo RX
+    case GMP_PIL_OFFSET_SIM_STEP_REQ:
+        // 1. 将接收到的字节流解包到结构体
+        sim_deserialize_inputs(ctx);
 
-        gmp_datalink_send(ctx->dl_ctx, target_id, ctx->base_cmd + GMP_TUNABLE_OFFSET_SIM_SET_MASK_ACK, tx_payload,
-                          tx_idx);
-        return GMP_TUNABLE_HANDLED;
-    }
+        // 2. 执行用户算法逻辑 (Weak callback / 外部实现)
+        gmp_pil_sim_step(&ctx->rx_buf, &ctx->tx_buf);
 
-    // --- 核心步进：吃输入 -> 算一步 -> 吐输出 ---
-    case GMP_TUNABLE_OFFSET_SIM_STEP_REQ: {
-        unpack_rx_buffer(ctx, payload);
+        // 3. 将计算结果打包回传
+        gmp_dev_dl_tx_request_cmd(dl, dl->rx_head.seq_id, rcv_cmd);
+        sim_serialize_outputs(ctx);
+        gmp_dev_dl_tx_ready(dl);
+        break;
 
-        gmp_sim_step(&ctx->rx_buf, &ctx->tx_buf);
+    case GMP_PIL_OFFSET_SIM_SET_INPUT_REQ:
+        // 仅解包覆盖输入数据，不触发控制算法步进
+        sim_deserialize_inputs(ctx);
+        gmp_dev_dl_reply_ack_null(dl);
+        break;
 
-        data_gt tx_payload[GMP_DL_MTU];
-        size_gt tx_idx = pack_tx_buffer(ctx, tx_payload);
-        gmp_datalink_send(ctx->dl_ctx, target_id, ctx->base_cmd + GMP_TUNABLE_OFFSET_SIM_STEP_ACK, tx_payload, tx_idx);
-        return GMP_TUNABLE_HANDLED;
-    }
-
-    // --- 【新增】静默输入：吃输入 -> 不运行 ---
-    case GMP_TUNABLE_OFFSET_SIM_SET_INPUT_REQ: {
-        unpack_rx_buffer(ctx, payload);
-
-        // 简单回复一个 4 字节的 OK 状态
-        data_gt tx_payload[4];
-        size_gt tx_idx = 0;
-        sim_pack_32(tx_payload, &tx_idx, GMP_EC_OK);
-        gmp_datalink_send(ctx->dl_ctx, target_id, ctx->base_cmd + GMP_TUNABLE_OFFSET_SIM_SET_INPUT_ACK, tx_payload,
-                          tx_idx);
-        return GMP_TUNABLE_HANDLED;
-    }
-
-    // --- 【新增】静默输出：不运行 -> 吐输出 ---
-    case GMP_TUNABLE_OFFSET_SIM_GET_OUTPUT_REQ: {
-        data_gt tx_payload[GMP_DL_MTU];
-        size_gt tx_idx = pack_tx_buffer(ctx, tx_payload);
-        // 与 STEP 吐出的数据格式完全一致，上位机可以用同一段逻辑解包
-        gmp_datalink_send(ctx->dl_ctx, target_id, ctx->base_cmd + GMP_TUNABLE_OFFSET_SIM_GET_OUTPUT_ACK, tx_payload,
-                          tx_idx);
-        return GMP_TUNABLE_HANDLED;
-    }
+    case GMP_PIL_OFFSET_SIM_GET_OUTPUT_REQ:
+        // 仅索要当前的计算输出状态，不修改输入
+        gmp_dev_dl_tx_request_cmd(dl, dl->rx_head.seq_id, rcv_cmd);
+        sim_serialize_outputs(ctx);
+        gmp_dev_dl_tx_ready(dl);
+        break;
 
     default:
-        return GMP_TUNABLE_PASS;
+        // 异常的 offset
+        gmp_dev_dl_reply_nack(dl, 0x0001);
+        break;
     }
+
+    // 【规范化接口】通知底层 Datalink：这笔交易我已经闭环了，不需要执行默认兜底了！
+    gmp_dev_dl_msg_handled(dl);
+
+    return 1; // 成功处理
 }
+
+// =========================================================
+// 弱定义算法
+// =========================================================
+
+//#pragma weak gmp_pil_sim_step
+//void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx) {
+//    // 默认实现为空
+//}

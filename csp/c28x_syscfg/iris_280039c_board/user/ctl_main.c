@@ -22,6 +22,8 @@
 
 #include <core/pm/function_scheduler.h>
 
+#include <core/dev/pil_core.h>
+
 //=================================================================================================
 // global controller variables
 
@@ -41,6 +43,12 @@ void ctl_init()
 void ctl_mainloop(void)
 {
     return;
+}
+
+
+void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
+{
+
 }
 
 //=================================================================================================

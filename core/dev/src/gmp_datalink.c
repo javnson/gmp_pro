@@ -543,3 +543,8 @@ gmp_dl_tx_state_t gmp_dev_dl_tx_state_next(gmp_datalink_t* ctx)
 
     return ctx->tx_state;
 }
+
+void gmp_dev_dl_msg_handled(gmp_datalink_t* ctx)
+{
+    ctx->flag_reply_handled = 1;
+}

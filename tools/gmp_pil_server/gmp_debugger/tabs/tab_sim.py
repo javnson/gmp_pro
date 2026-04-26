@@ -1,19 +1,17 @@
 import struct
+import re
+import html
 from PyQt5.QtCore import Qt, QTimer, QObject, QEvent
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, 
                              QLineEdit, QPushButton, QLabel, QGroupBox, QFormLayout,
                              QGridLayout, QCheckBox, QScrollArea, QApplication)
 from core_datalink import HermesDatalinkQt
 
-# 内部相对偏移量
-REL_OFFSET_SET_MASK   = 10
-REL_OFFSET_SET_MASK_ACK = 11
-REL_OFFSET_STEP       = 12
-REL_OFFSET_STEP_ACK   = 13
-REL_OFFSET_SET_INPUT  = 14
-REL_OFFSET_SET_INPUT_ACK = 15
-REL_OFFSET_GET_OUTPUT = 16
-REL_OFFSET_GET_OUTPUT_ACK = 17
+# 与 C 语言端完全对齐的内部相对偏移量
+REL_OFFSET_SET_MASK   = 1
+REL_OFFSET_STEP       = 2
+REL_OFFSET_SET_INPUT  = 3
+REL_OFFSET_GET_OUTPUT = 4
 
 class CheckboxDragFilter(QObject):
     """滑动拖拽批量勾选/取消"""
@@ -140,6 +138,16 @@ class TabSim(QWidget):
         main_layout.addLayout(btn_layout)
 
     # ------------------------------------------------------
+    # 辅助工具：补齐由于隔离可能缺少的日志方法
+    # ------------------------------------------------------
+    def log(self, msg: str, color: str = "black"):
+        """通过 Hermes 统一发送富文本格式的日志"""
+        if hasattr(self.hermes, 'sig_log_msg'):
+            self.hermes.sig_log_msg.emit(f"<span style='color:{color}; font-weight:bold;'>{msg}</span>")
+        else:
+            print(msg)
+
+    # ------------------------------------------------------
     # UI 构建辅助
     # ------------------------------------------------------
     def _build_mask_group(self, title, config, box_list):
@@ -230,7 +238,6 @@ class TabSim(QWidget):
     # 状态控制与交互反馈
     # =========================================================
     def set_mask_button_state(self, is_synced: bool):
-        """控制 Mask 同步按钮的闭环状态指示"""
         if is_synced:
             self.btn_set_mask.setText("✅ Mask 已同步")
             self.btn_set_mask.setStyleSheet("background-color: #C8E6C9; color: #2E7D32; font-weight: bold; height: 30px; padding: 0 15px; border: 1px solid #4CAF50; border-radius: 4px;")
@@ -251,11 +258,8 @@ class TabSim(QWidget):
         QTimer.singleShot(800, lambda: self.apply_base_style(w, is_tx))
 
     def sync_local_masks(self):
-        """复选框变动时触发，更新样式并打破同步状态"""
         self.current_mask_tx = sum((1 << i) for i, cb in enumerate(self.tx_mask_boxes) if cb.isChecked())
         self.current_mask_rx = sum((1 << i) for i, cb in enumerate(self.rx_mask_boxes) if cb.isChecked())
-
-        # 只要修改了，立刻标记为未同步
         self.set_mask_button_state(False)
 
         for w in [self.rx_widgets['isr_ticks'], self.rx_widgets['dig_in']]:
@@ -292,7 +296,6 @@ class TabSim(QWidget):
         except ValueError: return 0
 
     def cmd_set_mask(self):
-        # 点击时同步当前 Mask 并发送
         self.sync_local_masks()
         payload = struct.pack('<II', self.current_mask_tx, self.current_mask_rx)
         self.hermes.send_frame(0x01, self._get_target_cmd(REL_OFFSET_SET_MASK), payload)
@@ -331,46 +334,62 @@ class TabSim(QWidget):
         if ev['type'] != 'DL' or ev['dir'] != 'RX' or not ev['dl_crc_ok']: return
         cmd, payload = ev['dl_cmd'], ev['dl_payload']
 
-        # 1. 处理 Mask 设置的回传校验 (闭环核心)
-        if cmd == self._get_target_cmd(REL_OFFSET_SET_MASK_ACK):
-            if len(payload) >= 12:
-                status, ack_tx, ack_rx = struct.unpack_from('<III', payload, 0)
-                if status == 0 and ack_tx == self.current_mask_tx and ack_rx == self.current_mask_rx:
+        # 1. 处理 Mask 设置的回传校验：解析 8 字节的镜像数据并比对
+        if cmd == self._get_target_cmd(REL_OFFSET_SET_MASK):
+            if len(payload) >= 8:
+                # 解析 TX_Mask (4B) + RX_Mask (4B)
+                ack_tx, ack_rx = struct.unpack_from('<II', payload, 0)
+                
+                # 校验：收到的掩码和本机期望的完全一致
+                if ack_tx == self.current_mask_tx and ack_rx == self.current_mask_rx:
                     self.set_mask_button_state(True)
-                    # 【核心修复】：增加明确的日志反馈，防止“静默成功”
                     self.log(f"✅ MASK 闭环同步成功! (TX: 0x{ack_tx:08X}, RX: 0x{ack_rx:08X})", "green")
                 else:
-                    self.log(f"⚠️ MASK 同步比对失败! 期望TX: {self.current_mask_tx:08X}, 实际: {ack_tx:08X}", "red")
+                    self.log(f"⚠️ MASK 同步比对失败!<br>期望 -> TX: 0x{self.current_mask_tx:08X}, RX: 0x{self.current_mask_rx:08X}<br>实际 -> TX: 0x{ack_tx:08X}, RX: 0x{ack_rx:08X}", "red")
             else:
-                self.log(f"❌ 收到无效的 MASK ACK，长度不足: {len(payload)} 字节", "red")
+                self.log(f"❌ 收到无效的 MASK ACK，期望 8 字节，实际长度: {len(payload)} 字节", "red")
 
         # 2. 处理 STEP 和 GET_OUTPUT 的数据回传
-        elif cmd in (self._get_target_cmd(REL_OFFSET_STEP_ACK), self._get_target_cmd(REL_OFFSET_GET_OUTPUT_ACK)):
-            if len(payload) < 8: return
-            mask_tx, dig_out = struct.unpack_from('<II', payload, 0)
-            idx = 8
+        elif cmd in (self._get_target_cmd(REL_OFFSET_STEP), self._get_target_cmd(REL_OFFSET_GET_OUTPUT)):
+            # C 语言端返回：digital_out (4B) + [条件掩码数据...]
+            if len(payload) < 4: 
+                self.log(f"⚠️ 收到的数据包太短，无法解析状态", "orange")
+                return
+            
+            # C 端只负责发数据，并不前置发送 mask_tx，上位机使用自己保存的同步 Mask 解包
+            dig_out = struct.unpack_from('<I', payload, 0)[0]
+            idx = 4
+            mask_tx = self.current_mask_tx 
             
             w = self.tx_widgets['dig_out']
             w.setText(f"0x{dig_out:08X}")
             self.highlight_widget(w, True)
             
-            for i in range(8):
-                if (mask_tx >> i) & 1:
-                    w = self.tx_widgets[f'pwm_{i}']
-                    w.setText(str(struct.unpack_from('<H', payload, idx)[0]))
-                    self.highlight_widget(w, True)
-                    idx += 2
-            
-            for i in range(8):
-                if (mask_tx >> (8 + i)) & 1:
-                    w = self.tx_widgets[f'dac_{i}']
-                    w.setText(str(struct.unpack_from('<H', payload, idx)[0]))
-                    self.highlight_widget(w, True)
-                    idx += 2
+            try:
+                for i in range(8):
+                    if (mask_tx >> i) & 1:
+                        w = self.tx_widgets[f'pwm_{i}']
+                        w.setText(str(struct.unpack_from('<H', payload, idx)[0]))
+                        self.highlight_widget(w, True)
+                        idx += 2
+                
+                for i in range(8):
+                    if (mask_tx >> (8 + i)) & 1:
+                        w = self.tx_widgets[f'dac_{i}']
+                        w.setText(str(struct.unpack_from('<H', payload, idx)[0]))
+                        self.highlight_widget(w, True)
+                        idx += 2
 
-            for i in range(16):
-                if (mask_tx >> (16 + i)) & 1:
-                    w = self.tx_widgets[f'mon_{i}']
-                    w.setText(f"{struct.unpack_from('<f', payload, idx)[0]:.4f}")
-                    self.highlight_widget(w, True)
-                    idx += 4
+                for i in range(16):
+                    if (mask_tx >> (16 + i)) & 1:
+                        w = self.tx_widgets[f'mon_{i}']
+                        w.setText(f"{struct.unpack_from('<f', payload, idx)[0]:.4f}")
+                        self.highlight_widget(w, True)
+                        idx += 4
+            except struct.error:
+                self.log(f"⚠️ 数据包长度 ({len(payload)}B) 与当前 Mask 期望长度不匹配，可能失步！", "red")
+
+        # 3. 处理单纯设值 (SET_INPUT) 的空包回应
+        elif cmd == self._get_target_cmd(REL_OFFSET_SET_INPUT):
+            if len(payload) == 0:
+                self.log(f"✅ 输入变量注入成功!", "green")

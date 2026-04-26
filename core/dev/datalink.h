@@ -213,7 +213,8 @@ void gmp_dev_dl_push_byte(gmp_datalink_t* ctx, data_gt raw_data);
  */
 void gmp_dev_dl_push_str(gmp_datalink_t* ctx, const data_gt* str, size_gt size);
 
-/** * @brief Core event dispatcher. Must be called periodically in the main loop.
+/**
+ * @brief Core event dispatcher. Must be called periodically in the main loop.
  * @details Evaluates the TX FSM (priority 1) and RX FSM (priority 2).
  * @param ctx Pointer to the datalink context.
  * @return gmp_dl_event_t Actionable event requiring application intervention.
@@ -381,6 +382,13 @@ void gmp_dev_dl_reply_ack_null(gmp_datalink_t* ctx);
  * @param  error_code 16-bit code describing the rejection reason.
  */
 void gmp_dev_dl_reply_nack(gmp_datalink_t* ctx, uint16_t error_code);
+
+/**
+ * @brief  标记当前接收到的帧已被应用层成功处理。
+ * @details 调用此函数后，框架的默认兜底响应机制将跳过该帧，防止重复回复。
+ * @param  ctx Pointer to the datalink context.
+ */
+void gmp_dev_dl_msg_handled(gmp_datalink_t* ctx);
 
 // ---------------------------------------------------------
 // Hardware Transmission State Control

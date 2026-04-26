@@ -13,6 +13,8 @@
 #include <core/dev/gpio/pca9555.h>
 #include <core/dev/sensor/hdc1080.h>
 
+#include <core/dev/pil_core.h>
+
 //=================================================================================================
 // global variables
 
@@ -30,6 +32,7 @@ gpio_halt user_led;
 gpio_halt gpio_beep;
 
 gmp_datalink_t dl;
+gmp_pil_sim_t pil;
 
 void beep_on()
 {
@@ -181,6 +184,8 @@ gmp_task_status_t tsk_at_device(gmp_task_t* tsk)
 
     gmp_dl_event_t e = gmp_dev_dl_loop_cb(&dl);
 
+
+
     switch (e)
     {
     // if TX data is ready, do transmit
@@ -199,17 +204,26 @@ gmp_task_status_t tsk_at_device(gmp_task_t* tsk)
 
     case GMP_DL_EVENT_RX_OK:
 
+        if(gmp_pil_sim_rx_cb(&pil))
+        {
+            return GMP_TASK_DONE;
+        }
+
         if (dl.rx_head.cmd == 0x99)
         {
             // 使用刚刚写好的 Builder 连写 API，原封不动地将 payload_buf 中的数据打包回传
             gmp_dev_dl_tx_request(&dl, dl.rx_head.seq_id, GMP_DL_CMD_ECHO, dl.expected_payload_len, dl.payload_buf);
-            dl.flag_reply_handled = 1; // 告诉框架我们已经处理了
+
+            // 使用规范的 API 声明该指令已处理
+            gmp_dev_dl_msg_handled(&dl);
+        }
+        else
+        {
+            gmp_dev_dl_default_rx_handler(&dl);
         }
 
         break;
 
-    default:
-        gmp_dev_dl_default_rx_handler(&dl);
     }
 
     return GMP_TASK_DONE;
@@ -371,6 +385,8 @@ void init(void) GMP_NO_OPT_SUFFIX
 
     // 1. 初始化数据链路层
     gmp_dev_dl_init(&dl);
+
+    gmp_pil_sim_init(&pil, &dl, 0x10);
 }
 
 //=================================================================================================
