@@ -393,3 +393,19 @@ class TabSim(QWidget):
         elif cmd == self._get_target_cmd(REL_OFFSET_SET_INPUT):
             if len(payload) == 0:
                 self.log(f"✅ 输入变量注入成功!", "green")
+    
+    # ------------------------------------------------------
+    # 外部网桥接管 UI
+    # ------------------------------------------------------
+    def update_rx_ui_from_bridge(self, data: dict):
+        """接收来自网桥的 UDP 解析数据，并强行更新界面"""
+        self.rx_widgets['isr_ticks'].setText(str(data.get('isr_ticks', 0)))
+        self.rx_widgets['dig_in'].setText(f"0x{data.get('dig_in', 0):08X}")
+        
+        for i, val in enumerate(data.get('adc', [])):
+            if i < 24:
+                self.rx_widgets[f'adc_{i}'].setText(str(val))
+                
+        for i, val in enumerate(data.get('panel', [])):
+            if i < 8:
+                self.rx_widgets[f'panel_{i}'].setText(f"{val:.4f}")
