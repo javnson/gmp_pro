@@ -354,56 +354,8 @@ void flush_dl_rx_buffer()
         }
 }
 
-
-//interrupt void INT_IRIS_UART_USB_RX_ISR(void)
-//{
-//    uint32_t rxStatus;
-//
-//    // clear receive FIFO
-////    at_device_flush_rx_buffer();
-//
-//    flush_dl_rx_buffer();
-//
-//    // Fault reaction
-//    rxStatus = SCI_getRxStatus(IRIS_UART_USB_BASE);
-//
-//    if (rxStatus & SCI_RXSTATUS_OVERRUN)
-//    {
-//        // 仅处理溢出错误：清除溢出标志位，而不是复位整个 FIFO
-//        // C2000 DriverLib 通常通过写入 RXFFOVRCLR 位来清除
-//        // 如果没有直接API，可以使用 HWREG 操作，或者保持 resetRxFIFO 但仅针对 Overrun
-//
-//        // 修正建议：只在确实溢出卡死时才 Reset，普通 Error 不要 Reset
-//        SCI_clearOverflowStatus(IRIS_UART_USB_BASE);
-//
-//        // 如果必须使用 resetRxFIFO，请确保仅在严重故障下使用
-//        // SCI_resetRxFIFO(IRIS_UART_USB_BASE);
-//    }
-//
-//    if (rxStatus & SCI_RXSTATUS_ERROR)
-//    {
-//        // 对于 Frame Error / Parity Error (比如噪声 0xFF)
-//        // 读取数据寄存器通常会自动清除这些错误标志
-//        // 这里只需要做一个软件复位给 SCI 状态机（不清除 FIFO），或者单纯清除标志
-//        // 绝对不要调用 SCI_resetRxFIFO() !!!
-//    }
-//
-//    //
-//    // Clear the interrupt flag
-//    //
-//    SCI_clearInterruptStatus(IRIS_UART_USB_BASE, SCI_INT_RXFF | SCI_INT_RXERR);
-//
-//    //
-//    // Acknowledge the interrupt
-//    //
-//    Interrupt_clearACKGroup(INT_IRIS_UART_USB_RX_INTERRUPT_ACK_GROUP);
-//}
-
 interrupt void INT_IRIS_UART_USB_RX_ISR(void)
 {
-    uint16_t fifoLevel;
-    data_gt rxBuf[16];
-
     flush_dl_rx_buffer();
 
     // 3. 处理溢出 (Overrun)

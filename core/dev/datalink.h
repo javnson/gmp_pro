@@ -220,6 +220,22 @@ void gmp_dev_dl_push_str(gmp_datalink_t* ctx, const data_gt* str, size_gt size);
  */
 gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx);
 
+/**
+ * @brief  Default system-level RX frame handler and fallback policy.
+ * @details This function processes built-in system commands and provides a standard 
+ * fallback mechanism for unsupported application commands.
+ * Its internal routing policy is defined as follows:
+ * - GMP_DL_CMD_ECHO (0x00): Automatically replies with a loopback payload or a null ACK.
+ * - GMP_DL_CMD_NACK (0x01): Silently consumes the frame to prevent infinite NACK loops.
+ * - GMP_DL_CMD_STRAY (0xFF): Silently consumes foreign/stray characters.
+ * - Default (Unknown CMD): Automatically replies with a NACK (Error Code: 0x0001).
+ * @note    This function checks `ctx->flag_reply_handled` internally. It must be called 
+ * in the main loop under the `GMP_DL_EVENT_RX_OK` case ONLY AFTER the user's 
+ * custom application logic has finished evaluating the frame.
+ * @param   ctx Pointer to the datalink context instance.
+ */
+void gmp_dev_dl_default_rx_handler(gmp_datalink_t* ctx);
+
 // ---------------------------------------------------------
 // Active TX APIs (Master Mode - Builder Pattern)
 // ---------------------------------------------------------

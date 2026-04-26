@@ -26,6 +26,7 @@ class TabAscii(QWidget):
     def _setup_ui(self):
         layout = QVBoxLayout(self)
         
+        # --- RX 控制区 ---
         rx_ctrl_layout = QHBoxLayout()
         rx_ctrl_layout.addWidget(QLabel("<b>协议 Payload 记录:</b>"))
         
@@ -49,11 +50,13 @@ class TabAscii(QWidget):
         rx_ctrl_layout.addWidget(self.btn_clear_rx)
         layout.addLayout(rx_ctrl_layout)
         
+        # --- RX 显示区 ---
         self.rx_view = QTextBrowser()
         self.rx_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.rx_view.setStyleSheet("background-color: #FAFAFA; font-size: 13px;")
         layout.addWidget(self.rx_view, stretch=3)
         
+        # --- TX 控制与选项区 ---
         tx_ctrl_layout = QHBoxLayout()
         self.rb_tx_ascii = QRadioButton("Payload 填 ASCII")
         self.rb_tx_hex = QRadioButton("Payload 填 HEX")
@@ -65,17 +68,27 @@ class TabAscii(QWidget):
         tx_ctrl_layout.addWidget(self.rb_tx_hex)
         tx_ctrl_layout.addSpacing(20)
         
-        # 【核心升级】可自定义的 CMD 输入框
+        # 【新增】Seq/ID 输入框
+        tx_ctrl_layout.addWidget(QLabel("Seq/ID:"))
+        self.tx_id_input = QLineEdit("0x01")
+        self.tx_id_input.setMaximumWidth(50)
+        tx_ctrl_layout.addWidget(self.tx_id_input)
+
+        tx_ctrl_layout.addSpacing(10)
+
+        # CMD 输入框
         tx_ctrl_layout.addWidget(QLabel("CMD:"))
-        self.tx_cmd_input = QLineEdit("0x99")
+        self.tx_cmd_input = QLineEdit("0x00") # 默认 0x00 方便测试 ECHO
         self.tx_cmd_input.setMaximumWidth(50)
         tx_ctrl_layout.addWidget(self.tx_cmd_input)
+        
         tx_ctrl_layout.addStretch()
         
         self.lbl_tx_len = QLabel("Ready")
         tx_ctrl_layout.addWidget(self.lbl_tx_len)
         layout.addLayout(tx_ctrl_layout)
         
+        # --- TX 输入与发送区 ---
         tx_input_layout = QHBoxLayout()
         self.tx_input = QPlainTextEdit()
         self.tx_input.setPlaceholderText("输入要装入 Payload 的数据...")
@@ -124,18 +137,29 @@ class TabAscii(QWidget):
 
     def send_data(self):
         text = self.tx_input.toPlainText()
-        if not text: return
-        payload = text.encode('utf-8') if self.rb_tx_ascii.isChecked() else self._parse_friendly_hex(text)
-        if payload is None: return
         
+        # 允许发送空包（比如纯命令或 ACK）
+        if not text:
+            payload = b''
+        else:
+            payload = text.encode('utf-8') if self.rb_tx_ascii.isChecked() else self._parse_friendly_hex(text)
+            if payload is None: return
+        
+        # 安全获取用户输入的自定义 ID (Seq)
+        try:
+            seq_id = int(self.tx_id_input.text(), 16)
+        except ValueError:
+            seq_id = 0x01
+            self.tx_id_input.setText("0x01")
+
         # 安全获取用户输入的自定义 CMD
         try:
             cmd = int(self.tx_cmd_input.text(), 16)
         except ValueError:
-            cmd = 0x99
-            self.tx_cmd_input.setText("0x99")
+            cmd = 0x00
+            self.tx_cmd_input.setText("0x00")
             
-        self.hermes.send_frame(target_id=0x01, cmd=cmd, payload=payload)
+        self.hermes.send_frame(target_id=seq_id, cmd=cmd, payload=payload)
 
     def on_bus_event(self, ev: dict):
         # DL 页面只关心 DL 帧
@@ -168,16 +192,33 @@ class TabAscii(QWidget):
         
         for ev in self.history:
             payload_bytes = ev['dl_payload']
-            if is_hex: text_str = payload_bytes.hex(' ').upper()
-            else:      text_str = html.escape(payload_bytes.decode('utf-8', errors='replace')).replace('\n', '<br>')
+            if is_hex: 
+                text_str = payload_bytes.hex(' ').upper()
+            else:      
+                text_str = html.escape(payload_bytes.decode('utf-8', errors='replace')).replace('\n', '<br>')
             
             if ev['dir'] == 'TX':
                 color = '#4527A0' # 深紫
-                header = f"[{ev['dir']}: {ev['time']} | Payload -> CMD:0x{ev['dl_cmd']:02X}] >>>"
+                header = f"[{ev['dir']}: {ev['time']} | Payload -> Seq:0x{ev['dl_target']:02X} CMD:0x{ev['dl_cmd']:02X}] >>>"
             else:
-                color = '#E65100' if ev['dl_crc_ok'] else '#D32F2F' # 橙色正常，红色报错
-                crc_str = "OK" if ev['dl_crc_ok'] else f"FAIL"
-                header = f"[{ev['dir']}: {ev['time']} | Payload <- CMD:0x{ev['dl_cmd']:02X} | CRC:{crc_str}] >>>"
+                crc_str = "OK" if ev['dl_crc_ok'] else "FAIL"
+                
+                # 【核心修改】单独识别并高亮 NACK 消息 (CMD == 0x01)
+                if ev['dl_cmd'] == 0x01:
+                    color = '#E91E63' # 醒目的粉红色/紫红色
+                    header = f"[{ev['dir']}: {ev['time']} | Payload <- Seq:0x{ev['dl_target']:02X} CMD:0x{ev['dl_cmd']:02X} (NACK) | CRC:{crc_str}] >>>"
+                    
+                    # 尝试解析 NACK 的具体内容 (Byte 0: 被拒 CMD, Byte 1: 错误码)
+                    if len(payload_bytes) >= 2:
+                        rejected_cmd = payload_bytes[0]
+                        err_code = payload_bytes[1]
+                        nack_notice = f"<b>[系统提示] 收到 NACK！对方拒绝了指令 0x{rejected_cmd:02X} (错误码: 0x{err_code:02X})</b><br>"
+                        text_str = nack_notice + text_str
+                    else:
+                        text_str = "<b>[系统提示] 收到 NACK (未知原因)</b><br>" + text_str
+                else:
+                    color = '#E65100' if ev['dl_crc_ok'] else '#D32F2F' # 橙色正常，红色报错
+                    header = f"[{ev['dir']}: {ev['time']} | Payload <- Seq:0x{ev['dl_target']:02X} CMD:0x{ev['dl_cmd']:02X} | CRC:{crc_str}] >>>"
                 
             html_parts.append(f"<div style='color:{color}; font-family:Consolas, monospace; margin-bottom:8px; line-height: 1.4;'><b>{header}</b><br>{text_str}</div>")
                 

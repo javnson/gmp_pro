@@ -187,7 +187,7 @@ class TabRaw(QWidget):
                 # 深紫 和 橙色 (特殊高亮协议帧)
                 color = '#E65100' if ev['dir'] == 'RX' else '#4527A0' 
                 crc_str = "OK" if ev['dl_crc_ok'] else f"FAIL ({ev['error']})"
-                header = f"[{ev['dir']} DL_FRAME: {ev['time']} | CMD:0x{ev['dl_cmd']:02X} | Target:0x{ev['dl_target']:02X} | CRC:{crc_str}] >>>"
+                header = f"[{ev['dir']} DL_FRAME: {ev['time']} | CMD:0x{ev['dl_cmd']:02X} | Index:0x{ev['dl_target']:02X} | CRC:{crc_str}] >>>"
                 
             html_parts.append(f"<div style='color:{color}; font-family:Consolas, monospace; margin-bottom:8px; line-height: 1.4;'><b>{header}</b><br>{text_str}</div>")
 

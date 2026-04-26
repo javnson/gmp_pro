@@ -88,6 +88,10 @@ void gmp_dev_dl_push_str(gmp_datalink_t* ctx, const data_gt* str, size_gt size)
 // 核心状态机驱动 API
 // =========================================================
 
+// =========================================================
+// 核心状态机驱动 API (纯净版)
+// =========================================================
+
 gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
 {
     // -----------------------------------------------------
@@ -102,7 +106,6 @@ gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
 
     // -----------------------------------------------------
     // 优先级 2：如果底层硬件正在发送，阻塞 RX 解析
-    // 扩充了对 DMA 子状态的拦截，彻底保护正在发送的物理缓冲区
     // -----------------------------------------------------
     if (ctx->tx_state == GMP_DL_TX_STATE_PENDING_HW || ctx->tx_state == GMP_DL_TX_STATE_PENDING_HW_HDR ||
         ctx->tx_state == GMP_DL_TX_STATE_PENDING_HW_PLD)
@@ -147,13 +150,13 @@ gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
             }
             else
             {
-                // 游离字符路由：包装成单字符包抛给主循环
+                // 游离字符路由
                 ctx->rx_head.seq_id = 0;
                 ctx->rx_head.cmd = GMP_DL_CMD_STRAY;
                 ctx->payload_buf[0] = byte;
                 ctx->expected_payload_len = 1;
                 ctx->flag_reply_handled = 0;
-                return GMP_DL_EVENT_RX_OK; // 立刻移交控制权
+                return GMP_DL_EVENT_RX_OK;
             }
             break;
 
@@ -192,18 +195,9 @@ gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
                     break;
                 }
 
-                // 零长度载荷优化：短路，不接收 PCRC
+                // 零长度载荷优化：纯净抛出，业务解耦
                 if (ctx->expected_payload_len == 0)
                 {
-                    // === [新增] 框架底层自动处理 ECHO 请求 ===
-                    if (ctx->rx_head.cmd == GMP_DL_CMD_ECHO)
-                    {
-                        gmp_dev_dl_reply_ack_null(ctx);
-                        datalink_reset_rx(ctx);
-                        // 返回 IDLE 使得 FSM 退出循环，下一次 tick 会直接由于优先级1而触发 TX_WARP
-                        return GMP_DL_EVENT_IDLE;
-                    }
-
                     ctx->flag_reply_handled = 0;
                     datalink_reset_rx(ctx);
                     return GMP_DL_EVENT_RX_OK;
@@ -233,7 +227,6 @@ gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
         case GMP_DL_STATE_PAYLOAD_RECV:
             ctx->payload_buf[ctx->payload_idx++] = byte;
 
-            // 盲收完成：载荷长度 + 2字节 PCRC
             if (ctx->payload_idx == (ctx->expected_payload_len + 2))
             {
                 uint16_t p_crc_rcv = (ctx->payload_buf[ctx->expected_payload_len] & 0xFF) |
@@ -242,19 +235,9 @@ gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
 
                 if (p_crc_calc == p_crc_rcv)
                 {
-                    // === [新增] 框架底层自动处理带载荷的 ECHO 请求 ===
-                    if (ctx->rx_head.cmd == GMP_DL_CMD_ECHO)
-                    {
-                        gmp_dev_dl_tx_request(ctx, ctx->rx_head.seq_id, GMP_DL_CMD_ECHO, ctx->expected_payload_len,
-                                              ctx->payload_buf);
-                        ctx->flag_reply_handled = 1;
-                        datalink_reset_rx(ctx);
-                        return GMP_DL_EVENT_IDLE; // 返回 IDLE，外部应用无感
-                    }
-
                     ctx->flag_reply_handled = 0;
                     datalink_reset_rx(ctx);
-                    return GMP_DL_EVENT_RX_OK; // 返回完整帧
+                    return GMP_DL_EVENT_RX_OK; // 纯净抛出
                 }
                 else
                 {
@@ -270,9 +253,6 @@ gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
         }
     }
 
-    // -----------------------------------------------------
-    // 优先级 4：看门狗超时检测 (仅在非空闲态)
-    // -----------------------------------------------------
     if (ctx->rx_state != GMP_DL_STATE_WAIT_SYNC)
     {
         if (gmp_base_is_delay_elapsed(ctx->last_rx_tick, GMP_DL_OVERTIME))
@@ -283,6 +263,58 @@ gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
     }
 
     return GMP_DL_EVENT_IDLE;
+}
+
+// =========================================================
+// 应用层默认兜底响应 API (Default App-Level Policy)
+// =========================================================
+
+/**
+ * @brief 默认的系统级 RX 响应器
+ * @details 当接收到完整帧 (GMP_DL_EVENT_RX_OK) 后，如果用户的业务逻辑不需要处理
+ * 该命令（或者是内置的系统管理命令），可以直接调用此函数。
+ * 它会自动处理 ECHO 回环、NACK 丢弃，并对未知指令回复标准报错。
+ */
+void gmp_dev_dl_default_rx_handler(gmp_datalink_t* ctx)
+{
+    // 如果已经由用户的业务逻辑回复过了，直接忽略
+    if (ctx->flag_reply_handled)
+        return;
+
+    switch (ctx->rx_head.cmd)
+    {
+    case GMP_DL_CMD_ECHO:
+        // 系统命令：通信质量回环测试
+        if (ctx->expected_payload_len == 0)
+        {
+            gmp_dev_dl_reply_ack_null(ctx);
+        }
+        else
+        {
+            gmp_dev_dl_tx_request(ctx, ctx->rx_head.seq_id, GMP_DL_CMD_ECHO, ctx->expected_payload_len,
+                                  ctx->payload_buf);
+            ctx->flag_reply_handled = 1;
+        }
+        break;
+
+    case GMP_DL_CMD_NACK:
+        // 系统命令：收到上位机报错
+        // 应对策略：标记为已处理，静默丢弃，绝对不能互相 NACK 导致死循环
+        ctx->flag_reply_handled = 1;
+        break;
+
+    case GMP_DL_CMD_STRAY:
+        // 系统命令：游离字符/非法包头字符
+        // 应对策略：默认静默丢弃 (用户若需要 CLI 打印应在自己业务里拦截)
+        ctx->flag_reply_handled = 1;
+        break;
+
+    default:
+        // 用户的业务逻辑没有拦截，且也不是系统预留指令
+        // 应对策略：回复 NACK 告知上位机“指令不支持 (ERR: 0x0001)”
+        gmp_dev_dl_reply_nack(ctx, 0x0001);
+        break;
+    }
 }
 
 // =========================================================
@@ -300,8 +332,7 @@ void gmp_dev_dl_tx_request_cmd(gmp_datalink_t* ctx, uint16_t seq, uint16_t cmd)
     ctx->tx_state = GMP_DL_TX_STATE_BUILDING;
 }
 
-// 【关键修复】：将形参顺序修改为 size_gt actual_payload_len, const data_gt* data，匹配上游调用的参数顺序！
-void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, size_gt actual_payload_len, const data_gt* data)
+void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, const data_gt* data, size_gt actual_payload_len)
 {
     if (ctx->tx_state != GMP_DL_TX_STATE_BUILDING)
         return;
@@ -361,8 +392,7 @@ void gmp_dev_dl_tx_request(gmp_datalink_t* ctx, uint16_t seq, uint16_t cmd, size
                            const data_gt* data)
 {
     gmp_dev_dl_tx_request_cmd(ctx, seq, cmd);
-    // 这里传入参数为 (ctx, 长度, 指针)，之前的代码在实现时顺序反了导致严重错误
-    gmp_dev_dl_tx_append_payload(ctx, actual_payload_len, data);
+    gmp_dev_dl_tx_append_payload(ctx, data, actual_payload_len);
     gmp_dev_dl_tx_ready(ctx);
 }
 
