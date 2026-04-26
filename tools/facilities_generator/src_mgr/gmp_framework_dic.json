@@ -51,7 +51,8 @@
                 "description": "GMP 标准化接口",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/core/std/src/gmp_std_error_code.c",
-                    "${GMP_PRO_LOCATION}/core/std/src/gmp_std_port.c"
+                    "${GMP_PRO_LOCATION}/core/std/src/gmp_std_port.c",
+                    "${GMP_PRO_LOCATION}/core/std/src/crc16.c"
                 ],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/core/std/*",
@@ -61,7 +62,8 @@
                     "${GMP_PRO_LOCATION}/core/std/ds/*",
                     "${GMP_PRO_LOCATION}/core/std/ec/*",
                     "${GMP_PRO_LOCATION}/gmp_core.h",
-                    "${GMP_PRO_LOCATION}/gmp_core.hpp"
+                    "${GMP_PRO_LOCATION}/gmp_core.hpp",
+                    "${GMP_PRO_LOCATION}/core/std/checksum/crc16.h"
                 ],
                 "depends_on": [],
                 "inc_dirs": [
@@ -762,6 +764,127 @@
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": []
+            },
+            "dev|datalink|_internal": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/core/dev/src/gmp_datalink.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/core/dev/datalink.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "dev|datalink|pil": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/core/dev/src/gmp_pil_core.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/core/dev/pil_core.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "dev|datalink|variable_monitor": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/core/dev/src/gmp_tunable.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/core/dev/tunable.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "dev|datalink|mem_monitor": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/core/dev/src/gmp_mem_presp.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/core/dev/mem_presp.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             }
         },
         "ctl": {

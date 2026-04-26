@@ -15,6 +15,7 @@
 
 #include <core/dev/pil_core.h>
 #include <core/dev/tunable.h>
+#include <core/dev/mem_presp.h>
 
 //=================================================================================================
 // global variables
@@ -64,6 +65,21 @@ const gmp_param_item_t dict_m2[] = {
 // 3. 实例化两个 Server 对象
 gmp_param_tunable_t srv_m1;
 gmp_param_tunable_t srv_m2;
+
+float memory_pool[1024];
+
+const gmp_mem_region_t mem_regions[] = {
+    // 区域 1: 波形缓存区 (RO 只读)
+    {
+        .base_addr   = memory_pool, // 直接给原生指针，编译器非常开心
+        .byte_length = sizeof(memory_pool) * GMP_PORT_DATA_SIZE_PER_BYTES, // 常数运算，完美通过
+        .perm        = GMP_MEM_PERM_RW
+    }
+};
+
+const uint16_t mem_regions_count = sizeof(mem_regions) / sizeof(mem_regions[0]);
+
+gmp_mem_persp_t mem_persp_server;
 
 
 //=================================================================================================
@@ -228,6 +244,8 @@ gmp_task_status_t tsk_at_device(gmp_task_t* tsk)
 
         if (gmp_param_tunable_rx_cb(&srv_m1)) break; // 让 M1 先挑指令
         if (gmp_param_tunable_rx_cb(&srv_m2)) break; // 让 M2 接着挑
+
+        if (gmp_mem_persp_rx_cb(&mem_persp_server)) break;
 
         if (dl.rx_head.cmd == 0x99)
         {
@@ -413,6 +431,8 @@ void init(void) GMP_NO_OPT_SUFFIX
     // 绑定 Datalink, M1 占用 0x30/0x31，M2 占用 0x40/0x41
     gmp_param_tunable_init(&srv_m1, &dl, 0x30, dict_m1, 2);
     gmp_param_tunable_init(&srv_m2, &dl, 0x40, dict_m2, 2);
+
+    gmp_mem_persp_init(&mem_persp_server, &dl, 0x50, mem_regions, mem_regions_count);
 }
 
 //=================================================================================================
