@@ -29,6 +29,8 @@ hdc1080_dev_t hdc1080;
 gpio_halt user_led;
 gpio_halt gpio_beep;
 
+gmp_datalink_t dl;
+
 void beep_on()
 {
     gmp_hal_gpio_write(gpio_beep, 1);
@@ -178,9 +180,39 @@ gmp_task_status_t tsk_at_device(gmp_task_t* tsk)
 //    at_device_flush_rx_buffer();
 //    at_device_dispatch(&at_dev);
 
-    DINT;
+
     flush_dl_rx_buffer();
-    EINT;
+
+    gmp_dl_event_t e = gmp_dev_dl_loop_cb(&dl);
+
+    switch(e)
+    {
+    // if TX data is ready, do transmit
+    case GMP_DL_EVENT_TX_RDY:
+        // 物理发送逻辑（使用你平台的 UART/DMA 发送函数）
+        gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl), gmp_dev_dl_get_tx_hw_hdr_size(&dl), 10); // 发送 Header (含 SOF 和 转义)
+        if (gmp_dev_dl_get_tx_hw_pld_size(&dl) > 0)
+        {
+           gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_pld_ptr(&dl), gmp_dev_dl_get_tx_hw_pld_size(&dl), 10); // 发送 Payload 和 P_CRC
+        }
+
+        gmp_dev_dl_tx_state_done(&dl); // 释放 TX 状态机
+        break;
+
+    case GMP_DL_EVENT_RX_OK:
+
+        if (dl.rx_head.cmd == 0x99)
+                    {
+                        // 使用刚刚写好的 Builder 连写 API，原封不动地将 payload_buf 中的数据打包回传
+                        gmp_dev_dl_tx_request(&dl, dl.rx_head.seq_id, GMP_DL_CMD_ECHO,
+                                              dl.expected_payload_len, dl.payload_buf);
+                        dl.flag_reply_handled = 1; // 告诉框架我们已经处理了
+                    }
+
+        break;
+
+    }
+
 
     return GMP_TASK_DONE;
 }
@@ -327,7 +359,7 @@ gmp_task_status_t tsk_protect(gmp_task_t* tsk);
 gmp_task_t tasks[] = {
     // name,     task,      period(ms),  init_phase, is_enabled, pParam
     {"blink_led", tsk_blink, 1000, 100, 1, NULL},
-    {"at_device", tsk_at_device, 5, 1, 1, NULL},
+    {"at_device", tsk_at_device, 2, 1, 1, NULL},
     {"flush_key", tsk_key_flush, 100, 10, 0, (void*)&ht16k33},
     {"flush_led", tsk_LED_flush, 500, 200, 0, (void*)&ht16k33},
     {"startup", tsk_startup, 500, 0, 1, NULL}
@@ -338,9 +370,7 @@ gmp_task_t tasks[] = {
 //=================================================================================================
 // initialize routine
 
-#define CMD_ECHO 0x99
 
-gmp_datalink_t dl;
 
 
 
@@ -368,35 +398,7 @@ void mainloop(void) GMP_NO_OPT_SUFFIX
 {
     // run task scheduler
     gmp_scheduler_dispatch(&sched);
-    gmp_dl_event_t e = gmp_dev_dl_loop_cb(&dl);
 
-    switch(e)
-    {
-    // if TX data is ready, do transmit
-    case GMP_DL_EVENT_TX_RDY:
-        // 物理发送逻辑（使用你平台的 UART/DMA 发送函数）
-        gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl), gmp_dev_dl_get_tx_hw_hdr_size(&dl), 10); // 发送 Header (含 SOF 和 转义)
-        if (gmp_dev_dl_get_tx_hw_pld_size(&dl) > 0)
-        {
-           gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_pld_ptr(&dl), gmp_dev_dl_get_tx_hw_pld_size(&dl), 10); // 发送 Payload 和 P_CRC
-        }
-
-        gmp_dev_dl_tx_state_done(&dl); // 释放 TX 状态机
-        break;
-
-    case GMP_DL_EVENT_RX_OK:
-
-        if (dl.rx_head.cmd == GMP_DL_CMD_ECHO)
-                    {
-                        // 使用刚刚写好的 Builder 连写 API，原封不动地将 payload_buf 中的数据打包回传
-                        gmp_dev_dl_tx_request(&dl, dl.rx_head.seq_id, GMP_DL_CMD_ECHO,
-                                              dl.expected_payload_len, dl.payload_buf);
-                        dl.flag_reply_handled = 1; // 告诉框架我们已经处理了
-                    }
-
-        break;
-
-    }
 
 
 }

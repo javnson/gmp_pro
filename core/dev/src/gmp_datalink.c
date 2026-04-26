@@ -195,6 +195,15 @@ gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
                 // 零长度载荷优化：短路，不接收 PCRC
                 if (ctx->expected_payload_len == 0)
                 {
+                    // === [新增] 框架底层自动处理 ECHO 请求 ===
+                    if (ctx->rx_head.cmd == GMP_DL_CMD_ECHO)
+                    {
+                        gmp_dev_dl_reply_ack_null(ctx);
+                        datalink_reset_rx(ctx);
+                        // 返回 IDLE 使得 FSM 退出循环，下一次 tick 会直接由于优先级1而触发 TX_WARP
+                        return GMP_DL_EVENT_IDLE;
+                    }
+
                     ctx->flag_reply_handled = 0;
                     datalink_reset_rx(ctx);
                     return GMP_DL_EVENT_RX_OK;
@@ -233,6 +242,16 @@ gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
 
                 if (p_crc_calc == p_crc_rcv)
                 {
+                    // === [新增] 框架底层自动处理带载荷的 ECHO 请求 ===
+                    if (ctx->rx_head.cmd == GMP_DL_CMD_ECHO)
+                    {
+                        gmp_dev_dl_tx_request(ctx, ctx->rx_head.seq_id, GMP_DL_CMD_ECHO, ctx->expected_payload_len,
+                                              ctx->payload_buf);
+                        ctx->flag_reply_handled = 1;
+                        datalink_reset_rx(ctx);
+                        return GMP_DL_EVENT_IDLE; // 返回 IDLE，外部应用无感
+                    }
+
                     ctx->flag_reply_handled = 0;
                     datalink_reset_rx(ctx);
                     return GMP_DL_EVENT_RX_OK; // 返回完整帧
@@ -281,7 +300,8 @@ void gmp_dev_dl_tx_request_cmd(gmp_datalink_t* ctx, uint16_t seq, uint16_t cmd)
     ctx->tx_state = GMP_DL_TX_STATE_BUILDING;
 }
 
-void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, const data_gt* data, size_gt actual_payload_len)
+// 【关键修复】：将形参顺序修改为 size_gt actual_payload_len, const data_gt* data，匹配上游调用的参数顺序！
+void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, size_gt actual_payload_len, const data_gt* data)
 {
     if (ctx->tx_state != GMP_DL_TX_STATE_BUILDING)
         return;
@@ -341,6 +361,7 @@ void gmp_dev_dl_tx_request(gmp_datalink_t* ctx, uint16_t seq, uint16_t cmd, size
                            const data_gt* data)
 {
     gmp_dev_dl_tx_request_cmd(ctx, seq, cmd);
+    // 这里传入参数为 (ctx, 长度, 指针)，之前的代码在实现时顺序反了导致严重错误
     gmp_dev_dl_tx_append_payload(ctx, actual_payload_len, data);
     gmp_dev_dl_tx_ready(ctx);
 }
@@ -385,7 +406,7 @@ void gmp_dev_dl_tx_warp(gmp_datalink_t* ctx)
 {
     size_gt i;
 
-    // 【优化】提前保存纯业务载荷的真实长度，避免后续的减法运算混淆
+    // 提前保存纯业务载荷的真实长度
     uint16_t pld_len = ctx->tx_len;
 
     // 1. 如果有 Payload，追加 P_CRC (零长度则不追加)
@@ -394,7 +415,6 @@ void gmp_dev_dl_tx_warp(gmp_datalink_t* ctx)
         uint16_t p_crc = gmp_base_calculate_crc16(ctx->tx_buf, pld_len);
         ctx->tx_buf[ctx->tx_len++] = p_crc & 0xFF;
         ctx->tx_buf[ctx->tx_len++] = (p_crc >> 8) & 0xFF;
-        // 此时 ctx->tx_len 变成了物理载荷总长度 (Payload + 2)
     }
 
     // 2. 构建未转义的原始 Header
@@ -471,12 +491,10 @@ gmp_dl_tx_state_t gmp_dev_dl_tx_state_next(gmp_datalink_t* ctx)
     switch (ctx->tx_state)
     {
     case GMP_DL_TX_STATE_PENDING_HW:
-        // 初始触发，先推入 Header 发送阶段
         ctx->tx_state = GMP_DL_TX_STATE_PENDING_HW_HDR;
         break;
 
     case GMP_DL_TX_STATE_PENDING_HW_HDR:
-        // Header 发送完毕，检查是否还有 Payload 需要发送
         if (ctx->tx_len > 0)
         {
             ctx->tx_state = GMP_DL_TX_STATE_PENDING_HW_PLD;
@@ -489,7 +507,6 @@ gmp_dl_tx_state_t gmp_dev_dl_tx_state_next(gmp_datalink_t* ctx)
 
     case GMP_DL_TX_STATE_PENDING_HW_PLD:
     default:
-        // Payload 发送完毕，或处于异常状态，强制回归空闲
         ctx->tx_state = GMP_DL_TX_STATE_IDLE;
         break;
     }
