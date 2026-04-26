@@ -110,6 +110,9 @@ class TabPilBridge(QWidget):
         self.stat_rx_pkts = 0       
         self.stat_retransmits = 0   
         
+        # 【新增】UI 刷新节流阀：控制向 GUI 发信号的频率
+        self.last_ui_emit_time = 0  
+        
         self.watchdog_timer = QTimer()
         self.watchdog_timer.timeout.connect(self._check_timeouts)
         self.watchdog_timer.start(50) 
@@ -120,6 +123,11 @@ class TabPilBridge(QWidget):
 
         self._setup_ui()
         self.hermes.sig_bus_event.connect(self.on_serial_rx)
+
+        self.is_bus_preempted = False 
+
+    def set_bus_preempted(self, state: bool):
+        self.is_bus_preempted = state
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -185,7 +193,6 @@ class TabPilBridge(QWidget):
             print(msg)
             
     def _set_ui_enabled(self, enabled: bool):
-        """控制自身配置面板的启用状态"""
         self.edit_ip.setEnabled(enabled)
         self.edit_recv_port.setEnabled(enabled)
         self.edit_trans_port.setEnabled(enabled)
@@ -196,7 +203,6 @@ class TabPilBridge(QWidget):
 
     def toggle_bridge(self):
         if not self.running:
-            # --- 【保护逻辑 1】：检查 Mask 状态 ---
             if not self.cb_test_mode.isChecked() and not self.tab_sim.is_mask_synced:
                 self.log("❌ 启动被拒绝：请先在 '3. PIL 在环仿真引擎' 页面同步 Mask！", "red")
                 return
@@ -218,11 +224,10 @@ class TabPilBridge(QWidget):
                 self.thread = threading.Thread(target=self._bridge_worker, daemon=True)
                 self.thread.start()
                 
-                # --- 【保护逻辑 2】：接管并锁定 TabSim 的 UI ---
                 if not self.cb_test_mode.isChecked():
                     self.tab_sim.set_action_buttons_enabled(False)
                     self.log("🔒 已接管并锁定 3 号页面的手动控制按钮", "orange")
-                self._set_ui_enabled(False) # 锁定自身配置
+                self._set_ui_enabled(False) 
                 
                 self.btn_toggle.setText("🛑 停止 PIL 桥接服务")
                 self.btn_toggle.setStyleSheet("background-color: #FFEBEE; color: #D32F2F; font-weight: bold;")
@@ -240,7 +245,6 @@ class TabPilBridge(QWidget):
             if self.thread: self.thread.join()
             if self.sock: self.sock.close()
             
-            # --- 【保护释放】：归还 UI 控制权 ---
             self.tab_sim.set_action_buttons_enabled(True)
             self._set_ui_enabled(True)
             self.log("🔓 已归还 3 号页面的手动控制权限", "green")
@@ -275,6 +279,10 @@ class TabPilBridge(QWidget):
         if not self.running: return
         now = time.time()
 
+        if self.is_bus_preempted and self.is_waiting_ack:
+            self.last_step_time = now 
+            return
+
         if self.is_waiting_ack and self.last_step_payload:
             elapsed_mcu = now - self.last_step_time
             if elapsed_mcu > self.mcu_timeout_th:
@@ -303,7 +311,8 @@ class TabPilBridge(QWidget):
                     self.total_rx_bytes += len(data)
                     self.tick_counter += 1
                     self.stat_rx_pkts += 1
-                    self.last_matlab_rx_time = time.time()
+                    current_time = time.time()
+                    self.last_matlab_rx_time = current_time
                     
                     unpacked = struct.unpack(fmt, data)
                     isr_ticks = int(unpacked[0] / self.step_size)
@@ -323,15 +332,23 @@ class TabPilBridge(QWidget):
                             serial_pld.extend(struct.pack('<f', panel_list[i]))
                     
                     self.last_step_payload = bytes(serial_pld)
-                    self.last_step_time = time.time()
+                    self.last_step_time = current_time
                     self.is_waiting_ack = True
                     
-                    self.sig_rx_parsed.emit({
-                        'isr_ticks': isr_ticks, 'dig_in': digital_in,
-                        'adc': adc_list, 'panel': panel_list
-                    })
+                    # 【核心优化】：GUI 节流阀，最大 20fps 刷新 3 号监视窗口，防止 GUI 卡死
+                    if current_time - self.last_ui_emit_time > 0.05:
+                        self.sig_rx_parsed.emit({
+                            'isr_ticks': isr_ticks, 'dig_in': digital_in,
+                            'adc': adc_list, 'panel': panel_list
+                        })
+                        self.last_ui_emit_time = current_time
+                    
+                    # 仲裁锁：使用 time.sleep(0) 释放 CPU，提高抢占恢复速度
+                    while self.is_bus_preempted and self.running:
+                        time.sleep(0) 
                     
                     if self.hermes.running:
+                        # 【核心修复】：移除了多余的重复发送指令
                         self.hermes.send_frame(0x01, self.CMD_STEP, self.last_step_payload)
                         
                     if self.cb_test_mode.isChecked():

@@ -60,6 +60,9 @@ class MainWindow(QMainWindow):
 
         # 连线：让网桥吐出的数据流，直接灌进仿真引擎的 UI 更新函数里
         self.tab_pil_bridge.sig_rx_parsed.connect(self.tab_sim.update_rx_ui_from_bridge)
+
+        # 连线：让 Tunable 的霸道总线锁，直接控制 PIL 的发送节流阀
+        self.tab_tunable.sig_global_bus_busy.connect(self.tab_pil_bridge.set_bus_preempted)
         
         right_panel = QVBoxLayout()
         main_layout.addLayout(right_panel, stretch=1)

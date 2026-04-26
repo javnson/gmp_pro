@@ -2,6 +2,7 @@ import os
 import json
 import re
 import struct
+import time
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, 
                              QLineEdit, QPushButton, QLabel, QFormLayout, 
                              QTableWidget, QTableWidgetItem, QHeaderView, 
@@ -82,7 +83,7 @@ class ParamLineEdit(QLineEdit):
         super().__init__(parent)
         self.param_id = param_id
         self.is_ro = is_ro
-        self.is_dirty = False # 脏数据标记：用户是否敲击了键盘
+        self.is_dirty = False 
 
         if self.is_ro:
             self.setReadOnly(True)
@@ -94,22 +95,19 @@ class ParamLineEdit(QLineEdit):
     def focusInEvent(self, event):
         super().focusInEvent(event)
         if not self.is_ro:
-            # 选中时变为浅蓝色，停止外部数据覆盖
             self.setStyleSheet("background-color: #E3F2FD; color: #0D47A1; font-weight: bold;")
             self.sig_user_editing.emit()
 
     def focusOutEvent(self, event):
         super().focusOutEvent(event)
-        # 焦点丢失时（比如点到了旁边的空白处）
         if self.is_dirty:
             self.is_dirty = False
-            self.sig_edit_aborted.emit() # 恢复全局刷新，让真实值覆盖回来
+            self.sig_edit_aborted.emit() 
         if not self.is_ro:
             self.setStyleSheet("")
 
     def _on_text_edited(self):
         self.is_dirty = True
-        # 一旦敲入字符，变橙黄色高亮警示
         self.setStyleSheet("background-color: #FFE082; color: #E65100; font-weight: bold;")
 
     def _on_return_pressed(self):
@@ -119,16 +117,16 @@ class ParamLineEdit(QLineEdit):
             self.sig_write_requested.emit()
 
     def confirm_write(self):
-        """响应外部 W 按键点击"""
         self.is_dirty = False
         self.clearFocus()
         self.sig_write_requested.emit()
-
 
 # =========================================================
 # 单个可调对象实例面板
 # =========================================================
 class TunableInstanceWidget(QWidget):
+    sig_bus_busy = pyqtSignal(bool)
+
     def __init__(self, hermes: HermesDatalinkQt, instance_name: str, base_cmd: int = 0x30):
         super().__init__()
         self.hermes = hermes
@@ -140,8 +138,23 @@ class TunableInstanceWidget(QWidget):
         
         self.auto_timer = QTimer()
         self.auto_timer.timeout.connect(self.cmd_read_all)
+
+        self.busy_timer = QTimer()
+        self.busy_timer.setSingleShot(True)
+        self.busy_timer.timeout.connect(self._force_release_bus)
         
         self._setup_ui()
+
+    def _set_bus_occupied(self, state: bool):
+        self.sig_bus_busy.emit(state)
+        if state:
+            self.busy_timer.start(400) # 适当延长超时保护阈值
+        else:
+            self.busy_timer.stop()
+
+    def _force_release_bus(self):
+        self.sig_bus_busy.emit(False)
+        self.log("⚠️ 总线锁定超时，已强制释放 (可能发生了丢包)", "orange")
 
     def _setup_ui(self):
         main_layout = QVBoxLayout(self)
@@ -193,7 +206,7 @@ class TunableInstanceWidget(QWidget):
         self.btn_read_all = QPushButton("🔄 全局读取当前对象 (Read All)")
         self.btn_read_all.setMinimumHeight(40)
         self.btn_read_all.setStyleSheet("background-color: #E3F2FD; font-weight: bold;")
-        self.btn_read_all.clicked.connect(self.cmd_read_all)
+        self.btn_read_all.clicked.connect(lambda: self.cmd_read_all(False))
         
         btn_layout.addWidget(self.btn_read_all)
         main_layout.addLayout(btn_layout)
@@ -266,9 +279,6 @@ class TunableInstanceWidget(QWidget):
                 json.dump(data, f, indent=4)
             self.log(f"配置已导出至: {os.path.basename(path)}", "green")
 
-    # =========================================================
-    # UI 渲染与信号挂载
-    # =========================================================
     def _render_table(self):
         self.table.clearContents()
         self.table.setRowCount(len(self.current_params))
@@ -310,7 +320,7 @@ class TunableInstanceWidget(QWidget):
             self.table.setCellWidget(row, 5, action_widget)
 
     # =========================================================
-    # 编辑状态管理 (完全互锁)
+    # 状态互锁管理
     # =========================================================
     def on_user_editing(self):
         if self.cb_auto_refresh.isChecked() and self.auto_timer.isActive():
@@ -329,16 +339,23 @@ class TunableInstanceWidget(QWidget):
             self.log("▶️ 写入请求已下发，恢复定时刷新", "blue")
 
     # =========================================================
-    # 核心指令封装
+    # 核心指令封装 (带线程微秒级避让)
     # =========================================================
-    def cmd_read_all(self):
+    def cmd_read_all(self, keep_bus=False):
         if not self.hermes.running or not self.current_params: return
+        if not keep_bus:
+            self._set_bus_occupied(True)
+            time.sleep(0.005) # 避让后台 PIL 线程 5ms，杜绝串口冲突
+            
         payload = bytearray([len(self.current_params)])
         for p in self.current_params: payload.append(p['id'])
         self.hermes.send_frame(0x01, self.base_cmd, bytes(payload))
 
     def cmd_read_single(self, param_id):
         if not self.hermes.running: return
+        self._set_bus_occupied(True)
+        time.sleep(0.005) # 避让后台 PIL 线程
+        
         payload = bytes([1, param_id])
         self.hermes.send_frame(0x01, self.base_cmd, payload)
 
@@ -350,6 +367,9 @@ class TunableInstanceWidget(QWidget):
         fmt, _ = TYPE_MAP[param_info['type']]
         try:
             val = float(val_str) if 'F32' in param_info['type'] else int(val_str)
+            self._set_bus_occupied(True) 
+            time.sleep(0.005) # 避让后台 PIL 线程
+            
             payload = bytearray([1, param_id])
             payload.extend(struct.pack(fmt, val))
             self.hermes.send_frame(0x01, self.base_cmd + 1, bytes(payload))
@@ -367,6 +387,8 @@ class TunableInstanceWidget(QWidget):
         
         # 读回响 (READ ACK)
         if cmd == self.base_cmd:
+            self._set_bus_occupied(False) # 所有数据读取完毕，安全释放总线
+
             if len(payload) < 1: return
             valid_cnt, idx = payload[0], 1
             
@@ -396,35 +418,39 @@ class TunableInstanceWidget(QWidget):
                 for row in range(self.table.rowCount()):
                     w = self.table.cellWidget(row, 4)
                     if isinstance(w, ParamLineEdit) and w.param_id == param_id:
-                        if w.hasFocus() or w.is_dirty: break # 绝对不覆盖活跃框
+                        if w.hasFocus() or w.is_dirty: break 
                         
                         w.setText(f"{val:.4f}" if is_float else str(val))
                         
-                        # 视觉反馈 (变化显黄，平稳显绿)
                         if changed:
                             w.setStyleSheet("background-color: #FFF59D; color: black; font-weight: bold;")
                         else:
                             w.setStyleSheet("background-color: #C8E6C9; color: black;")
                             
-                        # 延长至 800ms 后自动褪色，视觉更柔和
                         QTimer.singleShot(800, lambda widget=w, ro="RO" in param_info['perm']: 
                                           widget.setStyleSheet("background-color: #F5F5F5; color: #757575;" if ro else ""))
                         break
         
         # 写回响 (WRITE ACK)
         elif cmd == self.base_cmd + 1:
+            # 【核心修改】：不释放总线，携带原子锁直接进行状态拉取
             if len(payload) >= 1:
                 status = payload[0]
                 if status == 0:
                     self.log(f"✅ 参数写入成功", "green")
-                    self.cmd_read_all() # 确权回读
+                    self.cmd_read_all(keep_bus=True) # 保持锁定，直接回读
                 else:
+                    self._set_bus_occupied(False) # 仅在失败时释放总线
                     self.log(f"❌ 参数被下位机拦截拒绝", "red")
+            else:
+                self._set_bus_occupied(False)
 
 # =========================================================
 # 容器管理面板
 # =========================================================
 class TabTunableManager(QWidget):
+    sig_global_bus_busy = pyqtSignal(bool)
+
     def __init__(self, hermes: HermesDatalinkQt):
         super().__init__()
         self.hermes = hermes
@@ -458,6 +484,9 @@ class TabTunableManager(QWidget):
                 
         suggested_cmd = default_cmd + (self.tab_widget.count() * 0x10)
         new_instance = TunableInstanceWidget(self.hermes, name, suggested_cmd)
+
+        new_instance.sig_bus_busy.connect(self.sig_global_bus_busy.emit)
+
         self.tab_widget.addTab(new_instance, f"⚙️ {name}")
         self.tab_widget.setCurrentWidget(new_instance)
 
