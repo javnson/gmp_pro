@@ -6,11 +6,9 @@
 #include <ctl/component/motor_control/basic/mtr_protection.h>
 #include <ctl/component/motor_control/basic/vf_generator.h>
 #include <ctl/component/motor_control/current_loop/foc_core.h>
-#include <ctl/component/motor_control/interface/encoder_switcher.h>
 #include <ctl/component/motor_control/interface/encoder.h>
+#include <ctl/component/motor_control/interface/encoder_switcher.h>
 #include <ctl/component/motor_control/observer/pmsm_esmo.h>
-
-
 
 #include <ctl/component/motor_control/consultant/mech_consultant.h>
 #include <ctl/component/motor_control/consultant/pmsm_consultant.h>
@@ -226,10 +224,10 @@ typedef struct _tag_pmsm_offline_id_ldq
     ctrl_gt bias_curr_ref_pu;    /*!< The active DC bias current being applied. */
 
     // --- PI Output Freeze Variables (For Incremental Delta Computation) ---
-    ctrl_gt frozen_vd_pu; /*!< Steady-state Vd before pulse. */
-    ctrl_gt frozen_vq_pu; /*!< Steady-state Vq before pulse. */
-    ctrl_gt frozen_id_pu; /*!< Steady-state Id before pulse (I_0). */
-    ctrl_gt frozen_iq_pu; /*!< Steady-state Iq before pulse (I_0). */
+    ctrl_gt frozen_vd_pu;  /*!< Steady-state Vd before pulse. */
+    ctrl_gt frozen_vq_pu;  /*!< Steady-state Vq before pulse. */
+    ctrl_gt frozen_id_pu;  /*!< Steady-state Id before pulse (I_0). */
+    ctrl_gt frozen_iq_pu;  /*!< Steady-state Iq before pulse (I_0). */
     ctrl_gt frozen_udc_pu; /*!< Steady-state Vdc at pulse (I_0). */
 
     // --- Identification Results (The "Inductance Curves") ---
@@ -896,8 +894,6 @@ GMP_STATIC_INLINE void ctl_enable_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
     }
 }
 
-
-
 /**
  * @brief Clears the operational state and faults of the Offline Identification module.
  * @details Safely stops the motor, wipes the data analyzer memory, resets protection faults,
@@ -925,7 +921,7 @@ GMP_STATIC_INLINE void ctl_clear_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
     ctx->sm = PMSM_OFFLINE_ID_READY;
 }
 
-// 将物理时间(秒)转换为 ISR 滴答数
+// Convert ISR to second.
 #define SEC_TO_TICKS(sec, freq) ((uint32_t)((sec) * (freq)))
 
 #ifdef __cplusplus

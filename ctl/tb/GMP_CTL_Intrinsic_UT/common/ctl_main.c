@@ -151,12 +151,12 @@ void ctl_mainloop(void)
         // log the first time enable the system
         if (firsttime_flag == 0)
         {
-            tick_bias = gmp_base_get_system_tick();
+            tick_bias = gmp_base_get_ctrl_tick();
             firsttime_flag = 1;
         }
 
         // a delay of 100ms
-        if ((started_flag == 0) && ((gmp_base_get_system_tick() - tick_bias) > CTRL_STARTUP_DELAY) &&
+        if ((started_flag == 0) && ((gmp_base_get_ctrl_tick() - tick_bias) > CTRL_STARTUP_DELAY) &&
             (startup_flag == 0))
         {
             startup_flag = 1;
@@ -171,7 +171,7 @@ void ctl_mainloop(void)
 
 #if BUILD_LEVEL >= 4
 
-        if (gmp_base_get_system_tick() - tick_bias > 300)
+        if (gmp_base_get_ctrl_tick() - tick_bias > 300)
         {
             ctl_enable_mppt_PnO_algo(&mppt);
         }

@@ -202,7 +202,7 @@ uint16_t sgen_out = 0;
 void ctl_mainloop(void)
 {
     // Get current System Tick
-    time_gt current_tick = gmp_base_get_system_tick();
+    time_gt current_tick = gmp_base_get_ctrl_tick();
 
     //
     // Judge if PWM is enabled

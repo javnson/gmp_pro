@@ -131,7 +131,7 @@ void ctl_init()
 
 void ctl_mainloop(void)
 {
-    int spd_target = gmp_base_get_system_tick() / 100;
+    int spd_target = gmp_base_get_ctrl_tick() / 100;
 
     ctl_set_pmsm_ctrl_speed(&pmsm_ctrl, float2ctrl(0.1) * spd_target - float2ctrl(1.0));
 

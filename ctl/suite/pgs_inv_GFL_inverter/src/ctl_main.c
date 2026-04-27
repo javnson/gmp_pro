@@ -352,3 +352,10 @@ void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
     ctl_output_callback_pil(tx);
 #endif // defined ENBALE_GMP_DL_PIL_SIM
 }
+
+#if defined ENBALE_GMP_DL_PIL_SIM
+time_gt gmp_base_get_ctrl_tick(void)
+{
+    return inv_ctrl.isr_tick/((uint32_t)CONTROLLER_FREQUENCY/1000);
+}
+#endif // defined ENBALE_GMP_DL_PIL_SIM

@@ -129,12 +129,12 @@ void ctl_init()
 void ctl_mainloop(void)
 {
     // User Controller logic here.
-    if (gmp_base_get_system_tick() > 2000)
+    if (gmp_base_get_ctrl_tick() > 2000)
     {
         ctl_set_pmsm_servo_spd(&pmsm_servo, float2ctrl(-0.5));
     }
 
-    else if (gmp_base_get_system_tick() > 1000)
+    else if (gmp_base_get_ctrl_tick() > 1000)
     {
         ctl_set_pmsm_servo_spd(&pmsm_servo, float2ctrl(0.1));
     }

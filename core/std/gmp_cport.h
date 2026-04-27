@@ -78,6 +78,35 @@ fast_gt ctl_ready_mainloop(void);
 // The following function would be called by user.
 
 /**
+ * @brief   Calculate the time gap (t1 - t0) with overflow safety.
+ * @note    This function safely handles the timer wraparound/overflow issue
+ * by using the GMP_PORT_TIME_MAXIMUM threshold.
+ * @param[in] t1        The later time point.
+ * @param[in] t0        The earlier time point.
+ * * @return  time_gt     The absolute time gap between t1 and t0.
+ */
+GMP_STATIC_INLINE time_gt gmp_base_time_sub(time_gt t1, time_gt t0)
+{
+    if (t0 > t1)
+    {
+        /* Handle timer overflow scenario */
+        return GMP_PORT_TIME_MAXIMUM - t0 + t1;
+    }
+    else
+    {
+        /* Normal scenario */
+        return t1 - t0;
+    }
+
+}
+
+
+GMP_STATIC_INLINE time_gt gmp_base_time2tick(float time_s)
+{
+    return time_s * 1000.0f;
+}
+
+/**
  * @brief   Get the current system tick point.
  * @note    This function must be implemented by the user based on the specific 
  * hardware platform (e.g., HAL_GetTick() in STM32 or CPU Timer in DSP).
@@ -99,6 +128,7 @@ GMP_STATIC_INLINE time_gt gmp_base_get_diff_system_tick(time_gt t0)
     return current_tick - t0;
 }
 
+
 /**
  * @brief   Judge if the current time meets the delay elapsed conditions.
  * * @param[in] t0        The starting time point.
@@ -109,33 +139,6 @@ GMP_STATIC_INLINE fast_gt gmp_base_is_delay_elapsed(time_gt t0, uint32_t delay_t
 {
     time_gt current_tick = gmp_base_get_system_tick();
     return ((gmp_base_time_sub(current_tick, t0)) >= delay_t);
-}
-
-/**
- * @brief   Calculate the time gap (t1 - t0) with overflow safety.
- * @note    This function safely handles the timer wraparound/overflow issue
- * by using the GMP_PORT_TIME_MAXIMUM threshold.
- * @param[in] t1        The later time point.
- * @param[in] t0        The earlier time point.
- * * @return  time_gt     The absolute time gap between t1 and t0.
- */
-GMP_STATIC_INLINE time_gt gmp_base_time_sub(time_gt t1, time_gt t0)
-{
-    if (t0 > t1)
-    {
-        /* Handle timer overflow scenario */
-        return GMP_PORT_TIME_MAXIMUM - t0 + t1;
-    }
-    else
-    {
-        /* Normal scenario */
-        return t1 - t0;
-    }
-}
-
-GMP_STATIC_INLINE time_gt gmp_base_time2tick(float time_s)
-{
-    return time_s * 1000.0f;
 }
 
 /**
