@@ -153,7 +153,7 @@ class CEnumParserDialog(QDialog):
         self.accept()
 
 # =========================================================
-# 交互增强型控件库 (多态支持 Enum / Hex)
+# 交互增强型控件库 (组件化状态机与防频闪引擎)
 # =========================================================
 
 class ParamLineEdit(QLineEdit):
@@ -164,29 +164,42 @@ class ParamLineEdit(QLineEdit):
     def __init__(self, param_id, is_ro, parent=None):
         super().__init__(parent)
         self.param_id = param_id
-        self.is_ro = is_ro
+        self.is_permanently_ro = is_ro
         self.is_dirty = False 
+        
+        # 初始始终锁定为只读，阻挡单击误编辑
+        self.setReadOnly(True) 
+        
+        # 【性能引擎】独立托管本组件的样式恢复定时器
+        self.fade_timer = QTimer(self)
+        self.fade_timer.setSingleShot(True)
+        self.fade_timer.timeout.connect(self._restore_style)
 
-        if self.is_ro:
-            self.setReadOnly(True)
+        if self.is_permanently_ro:
             self.setStyleSheet("background-color: #F5F5F5; color: #757575;")
         else:
             self.textEdited.connect(self._on_text_edited)
             self.returnPressed.connect(self._on_return_pressed)
 
-    def focusInEvent(self, event):
-        super().focusInEvent(event)
-        if not self.is_ro:
+    def mouseDoubleClickEvent(self, event):
+        """【体验优化】双击才允许编辑，单机只做焦点选取"""
+        if not self.is_permanently_ro:
+            self.setReadOnly(False)
             self.setStyleSheet("background-color: #E3F2FD; color: #0D47A1; font-weight: bold;")
+            self.setFocus()
+            self.selectAll()
             self.sig_user_editing.emit()
+        super().mouseDoubleClickEvent(event)
 
     def focusOutEvent(self, event):
         super().focusOutEvent(event)
         if self.is_dirty:
             self.is_dirty = False
             self.sig_edit_aborted.emit() 
-        if not self.is_ro:
-            self.setStyleSheet("")
+            
+        if not self.is_permanently_ro:
+            self.setReadOnly(True) # 失去焦点立即恢复护盾
+        self._restore_style()
 
     def _on_text_edited(self):
         self.is_dirty = True
@@ -203,12 +216,30 @@ class ParamLineEdit(QLineEdit):
         self.clearFocus()
         self.sig_write_requested.emit()
 
-    def update_display_value(self, val, is_float=False, is_hex=False):
-        if self.hasFocus() or self.is_dirty: return False
-        if is_float:
-            txt = f"{val:.4f}"
+    def _restore_style(self):
+        if self.hasFocus() and not self.isReadOnly(): return
+        if self.is_permanently_ro:
+            self.setStyleSheet("background-color: #F5F5F5; color: #757575;")
         else:
-            txt = f"0x{int(val):X}" if is_hex else str(int(val))
+            self.setStyleSheet("")
+
+    def flash_status(self, changed):
+        """【防频闪机制】刷新时间重叠时，直接延期定时器，杜绝闪烁"""
+        if self.hasFocus() and not self.isReadOnly(): return
+        
+        if changed:
+            self.setStyleSheet("background-color: #FFF59D; color: #D32F2F; font-weight: bold;") # 突变：黄底红字
+        else:
+            self.setStyleSheet("background-color: #C8E6C9; color: black;") # 持续刷新：静谧绿底
+            
+        self.fade_timer.start(1000) # 保持 1s
+
+    def update_display_value(self, val, is_float=False, is_hex=False):
+        if self.hasFocus() and not self.isReadOnly(): return False
+        if self.is_dirty: return False
+        
+        if is_float: txt = f"{val:.4f}"
+        else: txt = f"0x{int(val):X}" if is_hex else str(int(val))
         self.setText(txt)
         return True
 
@@ -228,6 +259,10 @@ class ParamComboBox(QComboBox):
         self.enum_map = enum_map
         self.is_popup_open = False 
         
+        self.fade_timer = QTimer(self)
+        self.fade_timer.setSingleShot(True)
+        self.fade_timer.timeout.connect(self._restore_style)
+        
         self.addItem("-", "")
         
         for val, name in self.enum_map.items():
@@ -238,6 +273,15 @@ class ParamComboBox(QComboBox):
             self.setStyleSheet("background-color: #F5F5F5; color: #757575;")
         else:
             self.activated.connect(self._on_activated)
+
+    def mousePressEvent(self, event):
+        """【体验优化】拦截鼠标单击，让事件穿透给表格，实现选中行而防误下拉"""
+        event.ignore()
+
+    def mouseDoubleClickEvent(self, event):
+        """双击才强制展开下拉列表"""
+        if not self.is_ro:
+            self.showPopup()
 
     def showPopup(self):
         if not self.is_ro:
@@ -250,6 +294,7 @@ class ParamComboBox(QComboBox):
         self.is_popup_open = False
         if not self.is_ro:
             self.sig_edit_aborted.emit()
+        self._restore_style()
 
     def _on_activated(self, index):
         data = self.itemData(index)
@@ -261,6 +306,21 @@ class ParamComboBox(QComboBox):
     def confirm_write(self):
         self.clearFocus()
         self.sig_write_requested.emit()
+
+    def _restore_style(self):
+        if self.is_popup_open: return
+        if self.is_ro:
+            self.setStyleSheet("background-color: #F5F5F5; color: #757575;")
+        else:
+            self.setStyleSheet("")
+
+    def flash_status(self, changed):
+        if self.is_popup_open: return
+        if changed:
+            self.setStyleSheet("background-color: #FFF59D; color: #D32F2F; font-weight: bold;")
+        else:
+            self.setStyleSheet("background-color: #C8E6C9; color: black;")
+        self.fade_timer.start(1000)
 
     def update_display_value(self, val, is_float=False, is_hex=False):
         if self.is_popup_open: return False
@@ -676,14 +736,9 @@ class TunableInstanceWidget(QWidget):
                         is_hex = param_info.get('display_hex', False)
                         updated = w.update_display_value(val, is_float, is_hex)
                         
-                        if updated and not isinstance(w, ParamComboBox):
-                            if changed:
-                                w.setStyleSheet("background-color: #FFF59D; color: black; font-weight: bold;")
-                            else:
-                                w.setStyleSheet("background-color: #C8E6C9; color: black;")
-                                
-                            QTimer.singleShot(800, lambda widget=w, ro="RO" in param_info['perm']: 
-                                              widget.setStyleSheet("background-color: #F5F5F5; color: #757575;" if ro else ""))
+                        # 【核心解耦】：视觉渲染彻底下放给组件自己管理，拒绝 Lambda 闭包灾难
+                        if updated:
+                            w.flash_status(changed)
                         break
         
         elif cmd == self.base_cmd + 1:

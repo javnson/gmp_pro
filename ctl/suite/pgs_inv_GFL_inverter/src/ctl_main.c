@@ -56,8 +56,6 @@ adc_bias_calibrator_t adc_calibrator;
 volatile fast_gt flag_enable_adc_calibrator = 0;
 volatile fast_gt index_adc_calibrator = 0;
 
-
-
 //=================================================================================================
 // CTL initialize routine
 
@@ -165,7 +163,6 @@ void ctl_init()
     {
         ctl_enable_adc_calibrator(&adc_calibrator);
     }
-    
 }
 
 //=================================================================================================
@@ -194,7 +191,6 @@ void ctl_disable_pwm()
     ctl_clear_gfl_inv(&inv_ctrl);
     ctl_clear_neg_inv(&neg_current_ctrl);
     ctl_clear_gfl_pq(&pq_ctrl);
-
 }
 
 fast_gt ctl_check_pll_locked(void)
@@ -356,4 +352,3 @@ void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
     ctl_output_callback_pil(tx);
 #endif // defined ENBALE_GMP_DL_PIL_SIM
 }
-

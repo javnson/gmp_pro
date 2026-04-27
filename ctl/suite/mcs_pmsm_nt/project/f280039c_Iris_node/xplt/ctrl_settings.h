@@ -131,6 +131,13 @@
 // Using three level modulator or two level modulator
 //#define USING_NPC_MODULATOR
 
+// Enable PIL simulation function
+// This macro will disable all the controller output.
+//#define ENBALE_GMP_DL_PIL_SIM
+
+// Enable Cia402 Debug Information
+//#define GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
+
 //=================================================================================================
 // Board peripheral mapping
 

@@ -378,3 +378,14 @@ fast_gt ctl_exec_adc_calibration(void)
     return 1;
 }
 
+void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
+{
+#if defined ENBALE_GMP_DL_PIL_SIM
+    ctl_input_callback_pil(rx);
+
+    ctl_dispatch();
+
+    ctl_output_callback_pil(tx);
+#endif // defined ENBALE_GMP_DL_PIL_SIM
+}
+

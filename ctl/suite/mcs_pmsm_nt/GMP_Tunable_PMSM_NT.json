@@ -1,0 +1,113 @@
+{
+    "base_cmd": 48,
+    "auto_refresh": true,
+    "refresh_interval": 1.0,
+    "params": [
+        {
+            "id": 0,
+            "name": "cia402_sm.current_cmd",
+            "type": "GMP_PARAM_TYPE_U16",
+            "perm": "GMP_PARAM_PERM_RW",
+            "display_hex": false,
+            "enum_map": {
+                "0": "CIA402_CMD_NULL",
+                "1": "CIA402_CMD_DISABLE_VOLTAGE",
+                "2": "CIA402_CMD_SHUTDOWN",
+                "3": "CIA402_CMD_SWITCHON",
+                "4": "CIA402_CMD_ENABLE_OPERATION",
+                "5": "CIA402_CMD_QUICK_STOP",
+                "6": "CIA402_CMD_FAULT_RESET"
+            }
+        },
+        {
+            "id": 1,
+            "name": "cia402_sm.current_state",
+            "type": "GMP_PARAM_TYPE_U16",
+            "perm": "GMP_PARAM_PERM_RO",
+            "display_hex": false,
+            "enum_map": {
+                "0": "CIA402_SM_NOT_READY_TO_SWITCH_ON",
+                "1": "CIA402_SM_SWITCH_ON_DISABLED",
+                "2": "CIA402_SM_READY_TO_SWITCH_ON",
+                "3": "CIA402_SM_SWITCHED_ON",
+                "4": "CIA402_SM_OPERATION_ENABLED",
+                "5": "CIA402_SM_QUICK_STOP_ACTIVE",
+                "6": "CIA402_SM_FAULT_REACTION",
+                "7": "CIA402_SM_FAULT",
+                "255": "CIA402_SM_UNKNOWN"
+            }
+        },
+        {
+            "id": 2,
+            "name": "mtr_ctrl.udc",
+            "type": "GMP_PARAM_TYPE_F32",
+            "perm": "GMP_PARAM_PERM_RO",
+            "display_hex": false,
+            "enum_map": null
+        },
+        {
+            "id": 3,
+            "name": "mtr_ctrl.idq_ref.dat[phase_d]",
+            "type": "GMP_PARAM_TYPE_F32",
+            "perm": "GMP_PARAM_PERM_RW",
+            "display_hex": false,
+            "enum_map": null
+        },
+        {
+            "id": 4,
+            "name": "mtr_ctrl.idq_ref.dat[phase_q]",
+            "type": "GMP_PARAM_TYPE_F32",
+            "perm": "GMP_PARAM_PERM_RW",
+            "display_hex": false,
+            "enum_map": null
+        },
+        {
+            "id": 5,
+            "name": "mtr_ctrl.idq0.dat[phase_d]",
+            "type": "GMP_PARAM_TYPE_F32",
+            "perm": "GMP_PARAM_PERM_RO",
+            "display_hex": false,
+            "enum_map": null
+        },
+        {
+            "id": 6,
+            "name": "mtr_ctrl.idq0.dat[phase_q]",
+            "type": "GMP_PARAM_TYPE_F32",
+            "perm": "GMP_PARAM_PERM_RO",
+            "display_hex": false,
+            "enum_map": null
+        },
+        {
+            "id": 7,
+            "name": "mtr_ctrl.vdq_ref.dat[phase_d]",
+            "type": "GMP_PARAM_TYPE_F32",
+            "perm": "GMP_PARAM_PERM_RW",
+            "display_hex": false,
+            "enum_map": null
+        },
+        {
+            "id": 8,
+            "name": "mtr_ctrl.vdq_ref.dat[phase_q]",
+            "type": "GMP_PARAM_TYPE_F32",
+            "perm": "GMP_PARAM_PERM_RW",
+            "display_hex": false,
+            "enum_map": null
+        },
+        {
+            "id": 9,
+            "name": "mech_ctrl.target_velocity",
+            "type": "GMP_PARAM_TYPE_F32",
+            "perm": "GMP_PARAM_PERM_RO",
+            "display_hex": false,
+            "enum_map": null
+        },
+        {
+            "id": 10,
+            "name": "spd_enc.encif.speed",
+            "type": "GMP_PARAM_TYPE_F32",
+            "perm": "GMP_PARAM_PERM_RW",
+            "display_hex": false,
+            "enum_map": null
+        }
+    ]
+}
