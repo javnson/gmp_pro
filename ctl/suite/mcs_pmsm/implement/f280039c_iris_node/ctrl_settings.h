@@ -2,71 +2,109 @@
 #ifndef _FILE_CTRL_SETTINGS_H_
 #define _FILE_CTRL_SETTINGS_H_
 
-// invoke motor parameters
-#include <ctl/component/hardware_preset/pmsm_motor/GBM2804H_100T.h>
+//=================================================================================================
+// Incremental Debug Options
 
-// invoke motor controller parameters
-#include <ctl/component/hardware_preset/inverter_3ph/TI_BOOSTXL_3PhGaNInv.h>
+// BUILD_LEVEL 1: hardware validate, VF, voltage open loop
+// BUILD_LEVEL 2: IF, current close loop
+// BUILD_LEVEL 3: current loop with actual angle
+// BUILD_LEVEL 4: speed loop
+// BUILD_LEVEL 5: position loop
+// BUILD_LEVEL 6: communication mode
+#define BUILD_LEVEL (4)
+
+//=================================================================================================
+// Controller basic parameters
 
 // Startup Delay, ms
 #define CTRL_STARTUP_DELAY (100)
 
 // Controller Frequency
-#define CTRL_FS (10000)
+#define CONTROLLER_FREQUENCY (20e3)
 
 // PWM depth
-#define CTRL_PWM_CMP_MAX (6000)
+#define CTRL_PWM_CMP_MAX (2500 - 1)
 
-// ADC Voltae Reference
+// PWM dead band
+#define CTRL_PWM_DEADBAND_CMP (100)
+
+// System tick
+#define DSP_C2000_DSP_TIME_DIV (100000 / CTRL_PWM_CMP_MAX / 2)
+
+// ADC Voltage Reference
 #define CTRL_ADC_VOLTAGE_REF (3.3f)
 
-// Speed controller Division
-#define SPD_CONTROLLER_PWM_DIVISION (5)
+//=================================================================================================
+// Hardware parameters
 
-// Controller Base Voltage and Base Current
-#define MTR_CTRL_VOLTAGE_BASE ((MOTOR_PARAM_MAX_DC_VOLTAGE))
-#define MTR_CTRL_CURRENT_BASE ((MOTOR_PARAM_RATED_CURRENT))
+#define BOOSTXL_3PHGANINV_IS_DEFAULT_PARAM
 
-// Current Bandwidth
-#define MTR_CTRL_CURRENT_LOOP_BW ((50))
+// invoke motor parameters
+#include <ctl/component/hardware_preset/pmsm_motor/SM060R20B30MNAD.h>
 
-// Speed Bandwidth
-#define MTR_CTRL_SPEED_LOOP_BW ((10))
+// invoke motor controller parameters
+#include <ctl/component/hardware_preset/inverter_3ph/GMP_3PH_2136SINV_DUAL_TMPL.h>
 
-// enable QEP encoder
-#define PMSM_CTRL_USING_QEP_ENCODER
+///////////////////////////////////////////////////////////
+// Encoder Properties
 
-// QEP Encoder Configuration
-#ifdef PMSM_CTRL_USING_QEP_ENCODER
+// Encoder Full scale
+#define CTRL_POS_ENC_FS (10000)
 
-// Encoer Lines
-#define MTR_ENCODER_LINES (10000)
+// Encoder Bias
+#define CTRL_POS_ENC_BIAS (0.0207000002f)
 
-// Encoder Offsets
-#define MTR_ENCODER_OFFSET (0.0226000007)
+// Speed & Position division
+#define CTRL_MECH_DIV (5)
 
-#endif // PMSM_CTRL_USING_QEP_ENCODER
 
-// Current sensor
-#define MTR_CTRL_CURRENT_GAIN (8.0)
-#define MTR_CTRL_CURRENT_BIAS (1.65 / ADC_REFERENCE)
+///////////////////////////////////////////////////////////
+// Controller Base value
 
-// Voltage sensor
-#define MTR_CTRL_VOLTAGE_GAIN (4.3889)
-#define MTR_CTRL_VOLTAGE_BIAS (0.0)
+// DC bus voltage
+#define CTRL_DCBUS_VOLTAGE (80.0f)
 
-// ADC reference Voltage
-#define ADC_REFERENCE (3.3)
+// phase voltage base, SVPWM modulation
+#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE / 1.73205081f)
 
-// BUILD_LEVEL 1: Voltage Open loop
-// BUILD_LEVEL 2: Current Open loop
-// BUILD_LEVEL 3: Actual Current loop
-// BUILD_LEVEL 4: Speed Close loop
-#define BUILD_LEVEL (1)
+// voltage base, SPWM modulation
+//#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE / 2.0f)
 
-// 
+// Current base, 10 A
+#define CTRL_CURRENT_BASE (10.0f)
+
+///////////////////////////////////////////////////////////
+// inverter side sensor
+
+// Current sensor sensitivity, TMCS1133A2B, V/A
+#define CTRL_INVERTER_CURRENT_SENSITIVITY (MY_BOARD_PH_SHUNT_RESISTANCE_OHM * MY_BOARD_PH_CSA_GAIN_V_V)
+
+// Current sensor bias, V
+#define CTRL_INVERTER_CURRENT_BIAS (MY_BOARD_PH_CSA_BIAS_V)
+
+// Voltage sensor sensitivity, V/V
+#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (MY_BOARD_PH_VOLTAGE_SENSE_GAIN)
+
+// Voltage sensor bias, V
+#define CTRL_INVERTER_VOLTAGE_BIAS (MY_BOARD_PH_VOLTAGE_SENSE_BIAS_V)
+
+///////////////////////////////////////////////////////////
+// DC Bus side sensor
+
+// Current sensor sensitivity, V/A
+#define CTRL_DC_CURRENT_SENSITIVITY (MY_BOARD_DCBUS_CURRENT_SENSE_GAIN)
+
+// Current sensor bias, V
+#define CTRL_DC_CURRENT_BIAS (MY_BOARD_DCBUS_CURRENT_SENSE_BIAS_V)
+
+// Voltage sensor sensitivity, maximum 120V, V/V
+#define CTRL_DC_VOLTAGE_SENSITIVITY (MY_BOARD_DCBUS_VOLTAGE_SENSE_GAIN)
+
+// Voltage sensor bias, V
+#define CTRL_DC_VOLTAGE_BIAS (MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)
+
+//=================================================================================================
 // Controller Settings
-//
 
 // Use discrete PID controller
 // Discrete controller may bring more smooth response.
@@ -78,6 +116,75 @@
 // Enable ADC Calibrate
 #define SPECIFY_ENABLE_ADC_CALIBRATE
 
+// Using negative modulator logic
+#define PWM_MODULATOR_USING_NEGATIVE_LOGIC (1)
+
+// Using three level modulator or two level modulator
+//#define USING_NPC_MODULATOR
+
+// ADC Calibrate time ms
+#define TIMEOUT_ADC_CALIB_MS 10000
+
+// Motor Current Sample phases
+#define MC_CURRENT_SAMPLE_PHASE_MODE (2)
+
+// Enable Motor Fault protection
+#define ENABLE_MOTOR_FAULT_PROTECTION
+
+// Enable SMO
+#define ENABLE_SMO
+
+// Enable PIL simulation function
+// This macro will disable all the controller output.
+//#define ENBALE_GMP_DL_PIL_SIM
+
+// Enable Cia402 Debug Information
+//#define GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
+
+//=================================================================================================
+// Board peripheral mapping
+
+// Launchpad Board Pin Mapping
+
+// QEP encoder channel
+#define EQEP_Encoder_BASE EQEP2_J13_BASE
+
+// System LED
+#define SYSTEM_LED     LED_R
+#define CONTROLLER_LED LED_G
+
+// PWM Channels
+#define PHASE_U_BASE EPWM_J4_PHASE_U_BASE
+#define PHASE_V_BASE EPWM_J4_PHASE_V_BASE
+#define PHASE_W_BASE EPWM_J4_PHASE_W_BASE
+
+// PWM Enable
+#define PWM_ENABLE_PORT ENABLE_GATE
+#define PWM_RESET_PORT  RESET_GATE
+
+// DC Bus Voltage & Current
+#define INV_VBUS J3_VDC
+#define INV_IBUS
+
+#define INV_VBUS_RESULT_BASE J3_VDC_RESULT_BASE
+#define INV_IBUS_RESULT_BASE
+
+// Inverter side Voltage & Current
+#define INV_IU J3_IU
+#define INV_IV J3_IV
+#define INV_IW J3_IW
+
+#define INV_IU_RESULT_BASE J3_IU_RESULT_BASE
+#define INV_IV_RESULT_BASE J3_IV_RESULT_BASE
+#define INV_IW_RESULT_BASE J3_IW_RESULT_BASE
+
+#define INV_UU J3_VU
+#define INV_UV J3_VV
+#define INV_UW J3_VW
+
+#define INV_UU_RESULT_BASE J3_VU_RESULT_BASE
+#define INV_UV_RESULT_BASE J3_VV_RESULT_BASE
+#define INV_UW_RESULT_BASE J3_VW_RESULT_BASE
 
 #endif // _FILE_CTRL_SETTINGS_H_
  

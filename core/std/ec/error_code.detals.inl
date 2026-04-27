@@ -67,3 +67,10 @@
 #define GMP_EC_NACK        ((GMP_EC_ERRO_BEGIN + 23))
 #define GMP_EC_DEQUE_FULL  (GMP_EC_ERRO_BEGIN + 0x24) /**< Deque is full, cannot push more elements. */
 #define GMP_EC_DEQUE_EMPTY (GMP_EC_ERRO_BEGIN + 0x25) /**< Deque is empty, cannot pop elements. */
+
+// Tunable Module Specific Errors
+#define GMP_EC_TUNABLE_ERR_RO      (GMP_EC_ERRO_BEGIN + 0x40) ///< Error: Target is Read-Only
+#define GMP_EC_TUNABLE_ERR_NO_ID   (GMP_EC_ERRO_BEGIN + 0x41) ///< Error: Variable ID not found or unconfigured
+#define GMP_EC_TUNABLE_ERR_BAD_LEN (GMP_EC_ERRO_BEGIN + 0x42) ///< Error: Payload length mismatch
+#define GMP_EC_TUNABLE_ERR_OOB     (GMP_EC_ERRO_BEGIN + 0x43) ///< Error: Memory Address Out Of Bounds (Whitelist)
+#define GMP_EC_TUNABLE_ERR_MTU     (GMP_EC_ERRO_BEGIN + 0x44) ///< Error: Requested length exceeds Datalink MTU

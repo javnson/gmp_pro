@@ -14,6 +14,8 @@
 #include "user_main.h"
 #include <xplt.peripheral.h>
 
+#include <core/dev/datalink.h>
+
 //=================================================================================================
 // definitions of peripheral
 
@@ -38,6 +40,8 @@ ptr_adc_channel_t udc;
 adc_gt udc_src;
 ptr_adc_channel_t idc;
 adc_gt idc_src;
+
+extern gpio_halt user_led;
 
 //=================================================================================================
 // peripheral setup function
@@ -113,6 +117,8 @@ void setup_peripheral(void)
         &idc.control_port, &udc.control_port,
         // grid side iabc, vabc
         &iabc.control_port, &vabc.control_port);
+
+    user_led = SYSTEM_LED;
 }
 
 //=================================================================================================
@@ -121,10 +127,12 @@ void setup_peripheral(void)
 // ADC interrupt
 interrupt void MainISR(void)
 {
+#if !defined ENBALE_GMP_DL_PIL_SIM
     //
     // call GMP ISR  Controller operation callback function
     //
     gmp_base_ctl_step();
+#endif // !defined ENBALE_GMP_DL_PIL_SIM
 
     //
     // Call GMP Timer
@@ -282,63 +290,61 @@ void send_monitor_data(void)
     CAN_sendMessage(IRIS_CAN_BASE, 10, 8, (uint16_t*)tran_content);
 }
 
+//=================================================================================================
+// Debug interface
+
 // a local small cache size, capable of covering the depth of the hardware FIFO (typically 16 bytes)
 #define ISR_LOCAL_BUF_SIZE 16
 
-void at_device_flush_rx_buffer()
+extern gmp_datalink_t dl;
+
+void flush_dl_tx_buffer()
+{
+    // Send head
+    gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl), gmp_dev_dl_get_tx_hw_hdr_size(&dl), 10);
+
+    // Send data body, if necessary
+    if (gmp_dev_dl_get_tx_hw_pld_size(&dl) > 0)
+    {
+        gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_pld_ptr(&dl), gmp_dev_dl_get_tx_hw_pld_size(&dl),
+                           10);
+    }
+}
+
+void flush_dl_rx_buffer()
 {
     uint16_t fifoLevel;
-    uint16_t rxBuf[ISR_LOCAL_BUF_SIZE];
+    data_gt rxBuf[ISR_LOCAL_BUF_SIZE];
 
-    // Read all FIFO content
-    while ((fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE)) > 0)
+    // read all FIFO messages
+    fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE);
+
+    if (fifoLevel > 0)
     {
-        // Get data
-        SCI_readCharArray(IRIS_UART_USB_BASE, rxBuf, fifoLevel);
+        SCI_readCharArray(IRIS_UART_USB_BASE, (uint16_t*)rxBuf, fifoLevel);
 
-        // send to AT device
-        at_device_rx_isr(&at_dev, (char*)rxBuf, fifoLevel);
+        // Lock-free ring queue pushed into the protocol stack (very fast, O(1))
+        gmp_dev_dl_push_str(&dl, rxBuf, fifoLevel);
     }
 }
 
 interrupt void INT_IRIS_UART_USB_RX_ISR(void)
 {
-    uint32_t rxStatus;
+    flush_dl_rx_buffer();
 
-    // clear receive FIFO
-    at_device_flush_rx_buffer();
-
-    // Fault reaction
-    rxStatus = SCI_getRxStatus(IRIS_UART_USB_BASE);
-
-    if (rxStatus & SCI_RXSTATUS_OVERRUN)
+    //
+    // deal with overrun
+    //
+    if (SCI_getRxStatus(IRIS_UART_USB_BASE) & SCI_RXSTATUS_OVERRUN)
     {
-        // 仅处理溢出错误：清除溢出标志位，而不是复位整个 FIFO
-        // C2000 DriverLib 通常通过写入 RXFFOVRCLR 位来清除
-        // 如果没有直接API，可以使用 HWREG 操作，或者保持 resetRxFIFO 但仅针对 Overrun
-
-        // 修正建议：只在确实溢出卡死时才 Reset，普通 Error 不要 Reset
         SCI_clearOverflowStatus(IRIS_UART_USB_BASE);
-
-        // 如果必须使用 resetRxFIFO，请确保仅在严重故障下使用
-        // SCI_resetRxFIFO(IRIS_UART_USB_BASE);
-    }
-
-    if (rxStatus & SCI_RXSTATUS_ERROR)
-    {
-        // 对于 Frame Error / Parity Error (比如噪声 0xFF)
-        // 读取数据寄存器通常会自动清除这些错误标志
-        // 这里只需要做一个软件复位给 SCI 状态机（不清除 FIFO），或者单纯清除标志
-        // 绝对不要调用 SCI_resetRxFIFO() !!!
     }
 
     //
-    // Clear the interrupt flag
-    //
-    SCI_clearInterruptStatus(IRIS_UART_USB_BASE, SCI_INT_RXFF | SCI_INT_RXERR);
-
-    //
-    // Acknowledge the interrupt
-    //
+    // Clear interrupt flags
+    // 
+    SCI_clearInterruptStatus(IRIS_UART_USB_BASE, SCI_INT_RXFF);
     Interrupt_clearACKGroup(INT_IRIS_UART_USB_RX_INTERRUPT_ACK_GROUP);
 }
+
+////

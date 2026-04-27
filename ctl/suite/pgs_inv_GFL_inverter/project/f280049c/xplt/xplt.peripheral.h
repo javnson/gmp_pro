@@ -23,6 +23,8 @@ extern "C"
 // select ADC PTR interface
 #include <ctl/component/interface/adc_ptr_channel.h>
 
+#include <core/dev/pil_core.h>
+
 //=================================================================================================
 // definitions of peripheral
 
@@ -47,6 +49,9 @@ extern ptr_adc_channel_t udc;
 extern adc_gt udc_src;
 extern ptr_adc_channel_t idc;
 extern adc_gt idc_src;
+
+void flush_dl_tx_buffer(void);
+void flush_dl_rx_buffer(void);
 
 #ifdef __cplusplus
 }

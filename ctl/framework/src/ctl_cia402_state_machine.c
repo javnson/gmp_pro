@@ -283,7 +283,7 @@ void cia402_transit(cia402_sm_t* sm, cia402_state_t next_state)
 
         // start a new delay stage
         sm->flag_delay_stage = 0;
-        sm->entry_state_tick = gmp_base_get_system_tick();
+        sm->entry_state_tick = gmp_base_get_ctrl_tick();
         sm->current_state_counter = 0;
 
         // update state word here
@@ -298,7 +298,7 @@ void cia402_transit(cia402_sm_t* sm, cia402_state_t next_state)
 
         // start a new delay stage
         sm->flag_delay_stage = 0;
-        sm->entry_state_tick = gmp_base_get_system_tick();
+        sm->entry_state_tick = gmp_base_get_ctrl_tick();
         sm->current_state_counter = 0;
 
         // update state word here
@@ -554,7 +554,7 @@ static void _fault_routine(cia402_sm_t* sm)
 
         // start a new delay stage
         sm->flag_delay_stage = 0;
-        sm->entry_state_tick = gmp_base_get_system_tick();
+        sm->entry_state_tick = gmp_base_get_ctrl_tick();
         sm->current_state_counter = 0;
 
         // update state word here
@@ -588,7 +588,7 @@ void cia402_dispatch(cia402_sm_t* sm)
 {
     gmp_base_assert(sm);
 
-    sm->current_tick = gmp_base_get_system_tick();
+    sm->current_tick = gmp_base_get_ctrl_tick();
 
     // snap shot of control word
     cia402_ctrl_word_t control_word = sm->control_word;

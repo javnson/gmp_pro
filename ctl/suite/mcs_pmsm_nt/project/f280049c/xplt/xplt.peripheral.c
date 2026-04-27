@@ -35,14 +35,13 @@ adc_gt idc_src;
 
 // dlog DSA objects
 basic_trigger_t trigger;
-#define DLOG_MEM_LENGTH 100
 
 // dlog variables
 ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];
 ctrl_gt dlog_mem2[DLOG_MEM_LENGTH];
 
 // GPIO port
-extern gpio_halt gpio_led;
+extern gpio_halt user_led;
 
 //=================================================================================================
 // peripheral setup function
@@ -57,7 +56,7 @@ void setup_peripheral(void)
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
     asm(" RPT #255 || NOP");
 
-    gpio_led = SYSTEM_LED;
+    user_led = SYSTEM_LED;
 
     // inverter side ADC
     ctl_init_tri_ptr_adc_channel(
@@ -103,6 +102,7 @@ void setup_peripheral(void)
 
     // dlog module
     dsa_init_basic_trigger(&trigger, DLOG_MEM_LENGTH);
+
 }
 
 //=================================================================================================
@@ -282,66 +282,61 @@ void send_monitor_data(void)
     CAN_sendMessage(IRIS_CAN_BASE, 10, 8, (uint16_t*)tran_content);
 }
 
+//=================================================================================================
+// Debug interface
+
 // a local small cache size, capable of covering the depth of the hardware FIFO (typically 16 bytes)
 #define ISR_LOCAL_BUF_SIZE 16
 
-void at_device_flush_rx_buffer()
+extern gmp_datalink_t dl;
+
+void flush_dl_tx_buffer()
+{
+    // Send head
+    gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl), gmp_dev_dl_get_tx_hw_hdr_size(&dl), 10);
+
+    // Send data body, if necessary
+    if (gmp_dev_dl_get_tx_hw_pld_size(&dl) > 0)
+    {
+        gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_pld_ptr(&dl), gmp_dev_dl_get_tx_hw_pld_size(&dl),
+                           10);
+    }
+}
+
+void flush_dl_rx_buffer()
 {
     uint16_t fifoLevel;
-    uint16_t rxBuf[ISR_LOCAL_BUF_SIZE];
+    data_gt rxBuf[ISR_LOCAL_BUF_SIZE];
 
-    // Read all FIFO content
-    while ((fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE)) > 0)
+    // read all FIFO messages
+    fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE);
+
+    if (fifoLevel > 0)
     {
-        // Get data
-        SCI_readCharArray(IRIS_UART_USB_BASE, rxBuf, fifoLevel);
+        SCI_readCharArray(IRIS_UART_USB_BASE, (uint16_t*)rxBuf, fifoLevel);
 
-        // send to AT device
-        at_device_rx_isr(&at_dev, (char*)rxBuf, fifoLevel);
+        // Lock-free ring queue pushed into the protocol stack (very fast, O(1))
+        gmp_dev_dl_push_str(&dl, rxBuf, fifoLevel);
     }
 }
 
 interrupt void INT_IRIS_UART_USB_RX_ISR(void)
 {
-    uint32_t rxStatus;
+    flush_dl_rx_buffer();
 
-    // clear receive FIFO
-    at_device_flush_rx_buffer();
-
-    // Fault reaction
-    rxStatus = SCI_getRxStatus(IRIS_UART_USB_BASE);
-
-    if (rxStatus & SCI_RXSTATUS_OVERRUN)
+    //
+    // deal with overrun
+    //
+    if (SCI_getRxStatus(IRIS_UART_USB_BASE) & SCI_RXSTATUS_OVERRUN)
     {
-        // The Overrun flag indicates that the RX FIFO is full and data was lost.
-        // C2000 DriverLib typically clears this by writing to the RXFFOVRCLR bit.
-        // If there is no direct API, use HWREG or check if resetRxFIFO clears the Overrun.
-
-        // Suggestion: Only perform a Reset if an actual Overflow occurs.
-        // Ordinary errors do not require a FIFO reset.
         SCI_clearOverflowStatus(IRIS_UART_USB_BASE);
-
-        // Resetting the FIFO is an option to ensure a clean state after an overflow.
-        // SCI_resetRxFIFO(IRIS_UART_USB_BASE);
-    }
-
-    if (rxStatus & SCI_RXSTATUS_ERROR)
-    {
-        // Handle Frame Error / Parity Error (e.g., receiving 0xFF or Break signal).
-        // Reading the data register usually automatically clears these error flags.
-        // We only need to ensure the SCI status flags are cleared.
-        // It is NOT necessary to reset the FIFO for these errors, doing so would lose valid data.
-
-        // Therefore, DO NOT call SCI_resetRxFIFO() here !!!
     }
 
     //
-    // Clear the interrupt flag
+    // Clear interrupt flags
     //
-    SCI_clearInterruptStatus(IRIS_UART_USB_BASE, SCI_INT_RXFF | SCI_INT_RXERR);
-
-    //
-    // Acknowledge the interrupt
-    //
+    SCI_clearInterruptStatus(IRIS_UART_USB_BASE, SCI_INT_RXFF);
     Interrupt_clearACKGroup(INT_IRIS_UART_USB_RX_INTERRUPT_ACK_GROUP);
 }
+
+////

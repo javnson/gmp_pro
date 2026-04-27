@@ -15,7 +15,7 @@
 #include <ctl/component/motor_control/basic/encoder_if.h>
 #include <ctl/component/motor_control/current_loop/motor_current_ctrl.h>
 #include <gmp/base/gmp_base_error_code.h>  // Assumed for GMP_EC_* codes
-#include <gmp/base/gmp_base_system_tick.h> // Assumed for gmp_base_get_system_tick
+#include <gmp/base/gmp_base_system_tick.h> // Assumed for gmp_base_get_ctrl_tick
 
 #ifdef __cplusplus
 extern "C"
@@ -156,7 +156,7 @@ ec_gt ctl_task_position_encoder_offset_calibrate(position_enc_calibrate_t* obj)
         // If the last 4 samples were stable (flag is all zeros), move to the next stage.
         if ((obj->flag_position_convergence & 0x0F) == 0)
         {
-            obj->switch_time = gmp_base_get_system_tick();
+            obj->switch_time = gmp_base_get_ctrl_tick();
             obj->flag_stage1 = 1; // Transition to Stage 1
         }
         return GMP_EC_RUNNING;
@@ -165,7 +165,7 @@ ec_gt ctl_task_position_encoder_offset_calibrate(position_enc_calibrate_t* obj)
     else
     {
         // Step III: Wait for the specified duration to ensure rotor is fully settled.
-        if ((gmp_base_get_system_tick() - obj->switch_time) > obj->wait_time)
+        if ((gmp_base_get_ctrl_tick() - obj->switch_time) > obj->wait_time)
         {
             // Step IV: Calculate and save the final offset.
             // The new offset is the sum of any existing offset and the current rotor position.

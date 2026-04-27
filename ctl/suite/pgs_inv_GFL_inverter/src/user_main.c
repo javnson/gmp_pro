@@ -6,85 +6,123 @@
 // user main header
 #include "user_main.h"
 
-//=================================================================================================
-// global variables
-
-at_device_entity_t at_dev;
-time_gt uart_last_tick;
-gmp_scheduler_t sched;
+#include <core/dev/mem_presp.h>
+#include <core/dev/pil_core.h>
+#include <core/dev/tunable.h>
 
 //=================================================================================================
-// AT command
+// Datalink protocol online Debug module
 
-/* 2.1 Enable asynchronous Handler */
-at_status_t enable_handler(at_device_entity_t* dev, at_cmd_type_t type, char* args, uint16_t len)
+gmp_datalink_t dl;
+
+//
+// PIL (processor in loop module)
+//
+gmp_pil_sim_t pil;
+
+//
+// Tunable Dictionary
+//
+const gmp_param_item_t dict_m1[] = {
+    {&cia402_sm.current_cmd, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RW},
+    {&cia402_sm.current_state, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RO},
+    {&inv_ctrl.filter_udc.out, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&inv_ctrl.idq_set.dat[phase_d], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
+    {&inv_ctrl.idq_set.dat[phase_q], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
+    {&inv_ctrl.idq.dat[phase_d], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&inv_ctrl.idq.dat[phase_q], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+};
+const uint16_t var_tunable_count = sizeof(dict_m1) / sizeof(dict_m1[0]);
+gmp_param_tunable_t tunable;
+
+//
+// Memory perspective Dictionary
+//
+const gmp_mem_region_t mem_regions[] = {
+    {.base_addr = &inv_ctrl, .byte_length = sizeof(inv_ctrl) * GMP_PORT_DATA_SIZE_PER_BYTES, .perm = GMP_MEM_PERM_RW},
+};
+const uint16_t mem_regions_count = sizeof(mem_regions) / sizeof(mem_regions[0]);
+gmp_mem_persp_t mem_persp_server;
+
+//
+// Datalink protocol stack task
+//
+gmp_task_status_t tsk_dl_debug_device(gmp_task_t* tsk)
 {
-    GMP_UNUSED_VAR(dev);
-    GMP_UNUSED_VAR(type);
-    GMP_UNUSED_VAR(args);
-    GMP_UNUSED_VAR(len);
+    GMP_UNUSED_VAR(tsk);
 
-    gmp_base_print(TEXT_STRING("[WOW] enable handle was called!\r\n"));
+    flush_dl_rx_buffer();
 
-    cia402_send_cmd(&cia402_sm, CIA402_CMD_ENABLE_OPERATION);
+    // In PC simulation environment the DL protocol module is disabled.
+#ifndef SPECIFY_PC_ENVIRONMENT
 
-    return AT_STATUS_OK;
-}
+    gmp_dl_event_t e = gmp_dev_dl_loop_cb(&dl);
 
-/* 2.2 Disable asynchronous Handler */
-at_status_t poweroff_handler(at_device_entity_t* dev, at_cmd_type_t type, char* args, uint16_t len)
-{
-    GMP_UNUSED_VAR(dev);
-    GMP_UNUSED_VAR(type);
-    GMP_UNUSED_VAR(args);
-    GMP_UNUSED_VAR(len);
-
-    gmp_base_print(TEXT_STRING("[WOW] Power OFF handle was called!\r\n"));
-
-    cia402_send_cmd(&cia402_sm, CIA402_CMD_DISABLE_VOLTAGE);
-
-    return AT_STATUS_OK;
-}
-
-/* 2.3 Reset asynchronous Handler */
-at_status_t rst_handler(at_device_entity_t* dev, at_cmd_type_t type, char* args, uint16_t len)
-{
-    GMP_UNUSED_VAR(dev);
-    GMP_UNUSED_VAR(type);
-    GMP_UNUSED_VAR(args);
-    GMP_UNUSED_VAR(len);
-
-    gmp_base_print(TEXT_STRING("[WOW] rst_handler, with arg: %s!\r\n"), args);
-
-    cia402_fault_reset(&cia402_sm);
-
-    return AT_STATUS_OK;
-}
-
-/* 3. AT device Error Handle */
-void at_device_error_handler(at_device_entity_t* dev, at_error_code_t code)
-{
-    GMP_UNUSED_VAR(dev);
-
-    if (code == AT_ERR_RX_OVERFLOW)
+    switch (e)
     {
-        gmp_base_print("[WOW] System Overload!\r\n");
-    }
-    else
-    {
-        gmp_base_print("[WOW] Unknown error happened!\r\n");
-    }
-}
+    //
+    // if TX data is ready, do transmit
+    //
+    case GMP_DL_EVENT_TX_RDY:
 
-/*  Command List for AT device (non-const is necessary) */
-at_device_cmd_t at_cmds[] = {
-    // name,    name_len, attr, handler,      help_info
-    {"PWMON", 4, 0, enable_handler, "Enable Controller Operation."},
-    {"PWROFF", 4, 0, poweroff_handler, "Power off"},
-    {"RST", 3, 0, rst_handler, "Reset Sys"}};
+        // send tx buffer message
+        flush_dl_tx_buffer();
+
+        // ack TX state machine.
+        gmp_dev_dl_tx_state_done(&dl);
+        break;
+
+    case GMP_DL_EVENT_RX_OK:
+
+        //
+        // Ack PIL simulation message
+        //
+        if (gmp_pil_sim_rx_cb(&pil))
+            break;
+
+        //
+        // Ack parameter tunable message
+        //
+        if (gmp_param_tunable_rx_cb(&tunable))
+            break;
+
+        //
+        // Ack memory perspective message
+        //
+        if (gmp_mem_persp_rx_cb(&mem_persp_server))
+            break;
+
+        //
+        // Echo Command
+        //
+        if (dl.rx_head.cmd == 0x99)
+        {
+            // echo payload_buf
+            gmp_dev_dl_tx_request(&dl, dl.rx_head.seq_id, GMP_DL_CMD_ECHO, dl.expected_payload_len, dl.payload_buf);
+
+            // ack this message
+            gmp_dev_dl_msg_handled(&dl);
+
+            break;
+        }
+
+        // default handler
+        gmp_dev_dl_default_rx_handler(&dl);
+
+        break;
+    }
+
+#endif // SPECIFY_PC_ENVIRONMENT
+
+    return GMP_TASK_DONE;
+}
 
 //=================================================================================================
 // task manager
+
+// GPIO
+gpio_halt user_led;
+
 
 gmp_task_status_t tsk_blink(gmp_task_t* tsk)
 {
@@ -92,17 +130,17 @@ gmp_task_status_t tsk_blink(gmp_task_t* tsk)
 
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
 
-    return GMP_TASK_DONE;
-}
-
-void at_device_flush_rx_buffer();
-gmp_task_status_t tsk_at_device(gmp_task_t* tsk)
-{
-    GMP_UNUSED_VAR(tsk);
-
-    // AT device dispatch function
-    at_device_flush_rx_buffer();
-    at_device_dispatch(&at_dev);
+    static fast_gt led_stat = 0;
+    if (led_stat == 0)
+    {
+        led_stat = 1;
+        gmp_hal_gpio_write(user_led, 0);
+    }
+    else
+    {
+        led_stat = 0;
+        gmp_hal_gpio_write(user_led, 1);
+    }
 
     return GMP_TASK_DONE;
 }
@@ -117,12 +155,19 @@ gmp_task_status_t tsk_monitor(gmp_task_t* tsk)
     return GMP_TASK_DONE;
 }
 
-// All tasks must be non blocking tasks
+//
+// Non-blocking task scheduler
+//
+gmp_scheduler_t sched;
+
+// tasks list
 gmp_task_t tasks[] = {
     // name,     task,      period(ms),  init_phase, is_enabled, pParam
     {"blink_led", tsk_blink, 1000, 0, 1, NULL},
-    {"at_device", tsk_at_device, 5, 1, 1, NULL},
-    {"monitor_data", tsk_monitor, 2, 0, 1, NULL}};
+    {"dl_online", tsk_dl_debug_device, 2, 0, 1, NULL},
+    {"monitor_data", tsk_monitor, 2, 0, 1, NULL},
+    {"startup", tsk_startup, 500, 0, 1, NULL},
+};
 
 //=================================================================================================
 // initialize routine
@@ -132,12 +177,38 @@ void init(void) GMP_NO_OPT_SUFFIX
 {
     int i;
 
-    at_device_init(&at_dev, at_cmds, sizeof(at_cmds) / sizeof(at_device_cmd_t), at_device_error_handler);
-
+    // init scheduler
     gmp_scheduler_init(&sched);
 
     for (i = 0; i < sizeof(tasks) / sizeof(gmp_task_t); ++i)
         gmp_scheduler_add_task(&sched, &tasks[i]);
+
+    // init datalink protocol
+    gmp_dev_dl_init(&dl);
+
+    // enable PIL simulation environment
+    gmp_pil_sim_init(&pil, &dl, 0x10);
+
+    // Band DL module with tunable and persp module.
+    gmp_param_tunable_init(&tunable, &dl, 0x30, dict_m1, var_tunable_count);
+    gmp_mem_persp_init(&mem_persp_server, &dl, 0x50, mem_regions, mem_regions_count);
+}
+
+// Initialization tasks after all peripherals have been initialized
+gmp_task_status_t tsk_startup(gmp_task_t* tsk)
+{
+    GMP_UNUSED_VAR(tsk);
+
+    //
+    // Add necessary init code here.
+    //
+
+    //
+    // startup process is complete, close this task
+    //
+    tsk->is_enabled = 0;
+
+    return GMP_TASK_DONE;
 }
 
 //=================================================================================================

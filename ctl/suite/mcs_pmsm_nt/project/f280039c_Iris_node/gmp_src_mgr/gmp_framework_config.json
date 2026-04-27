@@ -7,6 +7,22 @@
         },
         {
             "root": "core",
+            "module": "dev|datalink|_internal"
+        },
+        {
+            "root": "core",
+            "module": "dev|datalink|mem_monitor"
+        },
+        {
+            "root": "core",
+            "module": "dev|datalink|pil"
+        },
+        {
+            "root": "core",
+            "module": "dev|datalink|variable_monitor"
+        },
+        {
+            "root": "core",
             "module": "dev|display|_internal"
         },
         {
@@ -56,10 +72,6 @@
         {
             "root": "ctl",
             "module": "component|digital_power|_internal"
-        },
-        {
-            "root": "ctl",
-            "module": "component|dsa"
         },
         {
             "root": "ctl",

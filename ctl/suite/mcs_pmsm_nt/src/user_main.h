@@ -21,9 +21,6 @@ extern "C"
 //=================================================================================================
 // global variables
 
-extern at_device_entity_t at_dev;
-extern at_device_cmd_t at_cmds[];
-
 extern cia402_sm_t cia402_sm;
 
 #ifndef SPECIFY_PC_TEST_ENV
@@ -45,6 +42,8 @@ void setup_peripheral(void);
 //
 void ctl_init(void);
 void ctl_mainloop(void);
+
+gmp_task_status_t tsk_startup(gmp_task_t* tsk);
 
 #ifdef __cplusplus
 }
