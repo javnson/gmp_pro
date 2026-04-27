@@ -100,6 +100,18 @@ GMP_STATIC_INLINE time_gt gmp_base_get_diff_system_tick(time_gt t0)
 }
 
 /**
+ * @brief   Judge if the current time meets the delay elapsed conditions.
+ * * @param[in] t0        The starting time point.
+ * @param[in] delay_t   The desired delay duration to check against.
+ * * @return  fast_gt     Returns 1 if the delay has elapsed, otherwise 0.
+ */
+GMP_STATIC_INLINE fast_gt gmp_base_is_delay_elapsed(time_gt t0, uint32_t delay_t)
+{
+    time_gt current_tick = gmp_base_get_system_tick();
+    return ((gmp_base_time_sub(current_tick, t0)) >= delay_t);
+}
+
+/**
  * @brief   Calculate the time gap (t1 - t0) with overflow safety.
  * @note    This function safely handles the timer wraparound/overflow issue
  * by using the GMP_PORT_TIME_MAXIMUM threshold.
@@ -127,16 +139,44 @@ GMP_STATIC_INLINE time_gt gmp_base_time2tick(float time_s)
 }
 
 /**
+ * @brief   Get the current control system tick point.
+ * @note    In real world, this function would redirect to @ref gmp_base_get_system_tick.
+ * But in simulation, such as PIL, this function may defiend by controller ISR. 
+ * If this function is not implemented correctly, protection module would work incorrectly.
+ * * @return  time_gt     The current system tick point (typically in milliseconds).
+ */
+#if !defined ENBALE_GMP_DL_PIL_SIM
+GMP_STATIC_INLINE time_gt gmp_base_get_ctrl_tick(void)
+{
+    return gmp_base_get_system_tick();
+}
+#else  // Simulation mode
+time_gt gmp_base_get_ctrl_tick(void);
+#endif // !defined ENBALE_GMP_DL_PIL_SIM
+
+/**
+ * @brief   Calculate the time difference from the specified past time to now.
+ * * @param[in] t0        The specified past time point to compare with.
+ * * @return  time_gt     The elapsed time since t0.
+ */
+GMP_STATIC_INLINE time_gt gmp_base_get_diff_ctrl_tick(time_gt t0)
+{
+    time_gt current_tick = gmp_base_get_ctrl_tick();
+    return current_tick - t0;
+}
+
+/**
  * @brief   Judge if the current time meets the delay elapsed conditions.
  * * @param[in] t0        The starting time point.
  * @param[in] delay_t   The desired delay duration to check against.
  * * @return  fast_gt     Returns 1 if the delay has elapsed, otherwise 0.
  */
-GMP_STATIC_INLINE fast_gt gmp_base_is_delay_elapsed(time_gt t0, uint32_t delay_t)
+GMP_STATIC_INLINE fast_gt gmp_base_is_ctrl_delay_elapsed(time_gt t0, uint32_t delay_t)
 {
-    time_gt current_tick = gmp_base_get_system_tick();
+    time_gt current_tick = gmp_base_get_ctrl_tick();
     return ((gmp_base_time_sub(current_tick, t0)) >= delay_t);
 }
+
 // The function should be called by user or system when fatal error happened.
 // So the function must own the ability of stop the program.
 //
