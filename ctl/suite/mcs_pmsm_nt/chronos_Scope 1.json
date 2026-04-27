@@ -1,0 +1,35 @@
+{
+    "plots": [
+        {
+            "plot_id": 1,
+            "title": "Oscilloscope 1",
+            "slide_x": true,
+            "slide_x_val": "5.0",
+            "auto_y": false,
+            "y_min": "0",
+            "y_max": "0.5",
+            "waves": [
+                {
+                    "wave_id": 1,
+                    "name": "CH 1",
+                    "color": "#a87504",
+                    "mode": 0,
+                    "target": "5",
+                    "type": 0,
+                    "cmd": "0x30",
+                    "rate": "300 Hz"
+                },
+                {
+                    "wave_id": 2,
+                    "name": "CH 2",
+                    "color": "#063e5f",
+                    "mode": 0,
+                    "target": "7",
+                    "type": 0,
+                    "cmd": "0x30",
+                    "rate": "300 Hz"
+                }
+            ]
+        }
+    ]
+}

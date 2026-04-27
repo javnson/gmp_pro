@@ -1,7 +1,7 @@
 {
     "base_cmd": 48,
     "auto_refresh": true,
-    "refresh_interval": 1.0,
+    "refresh_interval": 2.0,
     "params": [
         {
             "id": 0,
@@ -39,6 +39,14 @@
         },
         {
             "id": 2,
+            "name": "protection.error_code",
+            "type": "GMP_PARAM_TYPE_U16",
+            "perm": "GMP_PARAM_PERM_RW",
+            "display_hex": false,
+            "enum_map": null
+        },
+        {
+            "id": 3,
             "name": "mtr_ctrl.udc",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RO",
@@ -46,7 +54,7 @@
             "enum_map": null
         },
         {
-            "id": 3,
+            "id": 4,
             "name": "mtr_ctrl.idq_ref.dat[phase_d]",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RW",
@@ -54,7 +62,7 @@
             "enum_map": null
         },
         {
-            "id": 4,
+            "id": 5,
             "name": "mtr_ctrl.idq_ref.dat[phase_q]",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RW",
@@ -62,7 +70,7 @@
             "enum_map": null
         },
         {
-            "id": 5,
+            "id": 6,
             "name": "mtr_ctrl.idq0.dat[phase_d]",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RO",
@@ -70,7 +78,7 @@
             "enum_map": null
         },
         {
-            "id": 6,
+            "id": 7,
             "name": "mtr_ctrl.idq0.dat[phase_q]",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RO",
@@ -78,24 +86,16 @@
             "enum_map": null
         },
         {
-            "id": 7,
-            "name": "mtr_ctrl.vdq_ref.dat[phase_d]",
-            "type": "GMP_PARAM_TYPE_F32",
-            "perm": "GMP_PARAM_PERM_RW",
-            "display_hex": false,
-            "enum_map": null
-        },
-        {
             "id": 8,
-            "name": "mtr_ctrl.vdq_ref.dat[phase_q]",
+            "name": "mtr_ctrl.iuvw.dat[phase_U]",
             "type": "GMP_PARAM_TYPE_F32",
-            "perm": "GMP_PARAM_PERM_RW",
+            "perm": "GMP_PARAM_PERM_RO",
             "display_hex": false,
             "enum_map": null
         },
         {
             "id": 9,
-            "name": "mech_ctrl.target_velocity",
+            "name": "mtr_ctrl.iuvw.dat[phase_V]",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RO",
             "display_hex": false,
@@ -103,9 +103,41 @@
         },
         {
             "id": 10,
-            "name": "spd_enc.encif.speed",
+            "name": "mtr_ctrl.iuvw.dat[phase_W]",
+            "type": "GMP_PARAM_TYPE_F32",
+            "perm": "GMP_PARAM_PERM_RO",
+            "display_hex": false,
+            "enum_map": null
+        },
+        {
+            "id": 11,
+            "name": "mtr_ctrl.vdq_ref.dat[phase_d]",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RW",
+            "display_hex": false,
+            "enum_map": null
+        },
+        {
+            "id": 12,
+            "name": "mtr_ctrl.vdq_ref.dat[phase_q]",
+            "type": "GMP_PARAM_TYPE_F32",
+            "perm": "GMP_PARAM_PERM_RW",
+            "display_hex": false,
+            "enum_map": null
+        },
+        {
+            "id": 13,
+            "name": "mech_ctrl.target_velocity",
+            "type": "GMP_PARAM_TYPE_F32",
+            "perm": "GMP_PARAM_PERM_RW",
+            "display_hex": false,
+            "enum_map": null
+        },
+        {
+            "id": 14,
+            "name": "spd_enc.encif.speed",
+            "type": "GMP_PARAM_TYPE_F32",
+            "perm": "GMP_PARAM_PERM_RO",
             "display_hex": false,
             "enum_map": null
         }

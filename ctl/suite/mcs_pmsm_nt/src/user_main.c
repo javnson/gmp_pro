@@ -28,15 +28,19 @@ gmp_pil_sim_t pil;
 const gmp_param_item_t dict_m1[] = {
     {&cia402_sm.current_cmd, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RW},
     {&cia402_sm.current_state, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RO},
+    {&protection.error_code, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RW},
     {&mtr_ctrl.udc, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
     {&mtr_ctrl.idq_ref.dat[phase_d], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
     {&mtr_ctrl.idq_ref.dat[phase_q], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
     {&mtr_ctrl.idq0.dat[phase_d], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
     {&mtr_ctrl.idq0.dat[phase_q], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&mtr_ctrl.iuvw.dat[phase_U], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&mtr_ctrl.iuvw.dat[phase_V], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&mtr_ctrl.iuvw.dat[phase_W], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
     {&mtr_ctrl.vdq_ref.dat[phase_d], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
     {&mtr_ctrl.vdq_ref.dat[phase_q], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-    {&mech_ctrl.target_velocity, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
-    {&spd_enc.encif.speed, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
+    {&mech_ctrl.target_velocity, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
+    {&spd_enc.encif.speed, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
 };
 const uint16_t var_tunable_count = sizeof(dict_m1) / sizeof(dict_m1[0]);
 gmp_param_tunable_t tunable;
@@ -136,7 +140,7 @@ gmp_task_status_t tsk_blink(gmp_task_t* tsk)
 {
     GMP_UNUSED_VAR(tsk);
 
-    gmp_base_print(TEXT_STRING("Hello World!\r\n"));
+//    gmp_base_print(TEXT_STRING("Hello World!\r\n"));
 
     static fast_gt led_stat = 0;
     if (led_stat == 0)

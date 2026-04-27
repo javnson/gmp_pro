@@ -1,8 +1,8 @@
 /**
  * These arguments were used when this file was generated. They will be automatically applied on subsequent loads
  * via the GUI or CLI. Run CLI with '--help' for additional information on how to override these arguments.
- * @cliArgs --device "F28004x" --part "F28004x_100PZ" --package "F28004x_100PZ" --context "system" --product "gmp_pro@1.00.00.05" --product "C2000WARE@5.04.00.00"
- * @v2CliArgs --device "TMS320F280049C" --package "100PZ" --context "system" --product "gmp_pro@1.00.00.05" --product "C2000WARE@5.04.00.00"
+ * @cliArgs --device "F28004x" --part "F28004x_100PZ" --package "F28004x_100PZ" --context "system" --product "gmp_pro@1.00.00.05" --product "C2000WARE@5.03.00.00"
+ * @v2CliArgs --device "TMS320F280049C" --package "100PZ" --context "system" --product "gmp_pro@1.00.00.05" --product "C2000WARE@5.03.00.00"
  * @versions {"tool":"1.21.0+3721"}
  */
 
@@ -166,6 +166,12 @@ can1.msgObj9.msgType       = "CAN_MSG_OBJ_TYPE_TX";
 can1.msgObj10.$name        = "msgObj9";
 can1.msgObj10.msgID        = 519;
 can1.msgObj10.msgType      = "CAN_MSG_OBJ_TYPE_TX";
+
+const multiplier2         = system.clockTree["PLL_IMULT"];
+multiplier2.multiplyValue = 10;
+
+const mux2       = system.clockTree["OSCCLKSRCSEL"];
+mux2.inputSelect = "X1_XTAL";
 
 dac1.$name            = "IRIS_DACA";
 dac1.referenceVoltage = "DAC_REF_ADC_VREFHI";
@@ -419,8 +425,11 @@ sci1.$name                      = "IRIS_UART_USB";
 sci1.selectRegisteredInterrupts = ["registerRxInt"];
 sci1.enabledFIFOInterrupts      = ["SCI_INT_RXFF"];
 sci1.enabledErrorInterrupts     = ["SCI_INT_FE","SCI_INT_OE"];
+sci1.rxFifo                     = "SCI_FIFO_RX14";
+sci1.baudRates                  = 256000;
 sci1.sci.$assign                = "SCIA";
 sci1.sci.sci_rxPin.$assign      = "GPIO28";
 sci1.sci.sci_txPin.$assign      = "GPIO29";
 sci1.rxQual.$name               = "myGPIOQUAL0";
 sci1.txQual.$name               = "myGPIOQUAL1";
+sci1.sciRXInt.enableInterrupt   = true;
