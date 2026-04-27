@@ -17,6 +17,7 @@ from tabs.tab_sim import TabSim
 from tabs.tab_pil import TabPilBridge
 from tabs.tab_tunable import TabTunableManager
 from tabs.tab_mem_persp import TabMemPersp
+from tabs.tab_chronos import TabChronosManager
 
 DATA_BITS_MAP = {'8': serial.EIGHTBITS, '7': serial.SEVENBITS, '6': serial.SIXBITS, '5': serial.FIVEBITS}
 STOP_BITS_MAP = {'1': serial.STOPBITS_ONE, '1.5': serial.STOPBITS_ONE_POINT_FIVE, '2': serial.STOPBITS_TWO}
@@ -71,6 +72,9 @@ class MainWindow(QMainWindow):
 
         self.tab_mem_persp = TabMemPersp(self.hermes)
         self.tabs.addTab(self.tab_mem_persp, "6. Argos 内存透视分析仪")
+
+        self.tab_chronos = TabChronosManager(self.hermes)
+        self.tabs.addTab(self.tab_chronos, "7. Chronos 波形记录仪")
 
         # =========================================================
         # 3. 跨模块信号互锁连线
