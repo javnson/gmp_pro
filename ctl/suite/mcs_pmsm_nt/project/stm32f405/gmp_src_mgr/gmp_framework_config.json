@@ -1,9 +1,25 @@
 {
-    "sync_mode": "src_only",
+    "sync_mode": "inc_only",
     "selected_modules": [
         {
             "root": "core",
             "module": "dev|_internal"
+        },
+        {
+            "root": "core",
+            "module": "dev|datalink|_internal"
+        },
+        {
+            "root": "core",
+            "module": "dev|datalink|mem_monitor"
+        },
+        {
+            "root": "core",
+            "module": "dev|datalink|pil"
+        },
+        {
+            "root": "core",
+            "module": "dev|datalink|variable_monitor"
         },
         {
             "root": "core",
@@ -44,10 +60,6 @@
         {
             "root": "ctl",
             "module": "component|digital_power|dcdc"
-        },
-        {
-            "root": "ctl",
-            "module": "component|dsa"
         },
         {
             "root": "ctl",

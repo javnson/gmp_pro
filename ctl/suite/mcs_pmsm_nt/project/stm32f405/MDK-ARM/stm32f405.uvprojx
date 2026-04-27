@@ -10,14 +10,14 @@
       <TargetName>stm32f405</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>5060750::V5.06 update 6 (build 750)::.\ARMCCV5</pCCUsed>
+      <pCCUsed>5060422::V5.06 update 4 (build 422)::ARMCC</pCCUsed>
       <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
           <Device>STM32F405RGTx</Device>
           <Vendor>STMicroelectronics</Vendor>
-          <PackID>Keil.STM32F4xx_DFP.2.16.0</PackID>
-          <PackURL>http://www.keil.com/pack/</PackURL>
+          <PackID>Keil.STM32F4xx_DFP.2.13.0</PackID>
+          <PackURL>http://www.keil.com/pack</PackURL>
           <Cpu>IRAM(0x20000000-0x2001BFFF) IRAM2(0x2001C000-0x2001FFFF) IROM(0x8000000-0x80FFFFF)  CLOCK(25000000) FPU2 CPUTYPE("Cortex-M4") TZ</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
@@ -976,11 +976,6 @@
               <FilePath>..\gmp_src_mgr\gmp_src\ctl_track_pid.c</FilePath>
             </File>
             <File>
-              <FileName>dsa_trigger.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\dsa_trigger.c</FilePath>
-            </File>
-            <File>
               <FileName>gmp_at_device.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\gmp_src_mgr\gmp_src\gmp_at_device.c</FilePath>
@@ -1019,6 +1014,36 @@
               <FileName>stm32_peripheral_driver.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\gmp_src_mgr\gmp_src\stm32_peripheral_driver.c</FilePath>
+            </File>
+            <File>
+              <FileName>crc16.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\crc16.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_encoder_switcher.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_encoder_switcher.c</FilePath>
+            </File>
+            <File>
+              <FileName>gmp_datalink.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\gmp_datalink.c</FilePath>
+            </File>
+            <File>
+              <FileName>gmp_mem_presp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\gmp_mem_presp.c</FilePath>
+            </File>
+            <File>
+              <FileName>gmp_pil_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\gmp_pil_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>gmp_tunable.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\gmp_tunable.c</FilePath>
             </File>
           </Files>
         </Group>

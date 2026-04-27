@@ -140,7 +140,7 @@ gmp_task_status_t tsk_blink(gmp_task_t* tsk)
 {
     GMP_UNUSED_VAR(tsk);
 
-//    gmp_base_print(TEXT_STRING("Hello World!\r\n"));
+    gmp_base_print(TEXT_STRING("Hello World!\r\n"));
 
     static fast_gt led_stat = 0;
     if (led_stat == 0)

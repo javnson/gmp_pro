@@ -1103,7 +1103,8 @@
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/encoder.h",
                     "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/motor_universal_interface.h",
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/std_sil_motor_interface.h"
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/std_sil_motor_interface.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/encoder_switcher.h"
                 ],
                 "depends_on": [],
                 "inc_dirs": [
@@ -5247,6 +5248,6 @@
     },
     "macros": {
         "C2000Ware": "C:/ti/c2000/C2000Ware_5_03_00_00",
-        "GMP_PRO_LOCATION": "E:/lib/gmp_pro"
+        "GMP_PRO_LOCATION": "D:/_Projects/gmp_pro"
     }
 }
