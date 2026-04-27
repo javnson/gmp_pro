@@ -13,7 +13,8 @@
 
 #include <ctl/framework/cia402_state_machine.h>
 
-#define GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
+// Enable Cia402 Debug Information
+//#define GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
 
 #ifndef _MSC_VER
 

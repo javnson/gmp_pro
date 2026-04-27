@@ -139,14 +139,6 @@ interrupt void MainISR(void)
     gmp_step_system_tick();
 
     //
-    // Blink LED
-    //
-//    if (gmp_base_get_system_tick() % 1000 < 500)
-//        GPIO_WritePin(SYSTEM_LED, 0);
-//    else
-//        GPIO_WritePin(SYSTEM_LED, 1);
-
-    //
     // Clear the interrupt flag
     //
     ADC_clearInterruptStatus(IRIS_ADCA_BASE, ADC_INT_NUMBER1);
@@ -315,63 +307,65 @@ interrupt void INT_IRIS_UART_RS232_RX_ISR(void)
 
 #endif // BOARD_SELECTION == GMP_IRIS
 
+//=================================================================================================
+// Debug interface
+
 // a local small cache size, capable of covering the depth of the hardware FIFO (typically 16 bytes)
 #define ISR_LOCAL_BUF_SIZE 16
 
-void at_device_flush_rx_buffer()
+extern gmp_datalink_t dl;
+
+void flush_dl_tx_buffer()
 {
-    uint16_t fifoLevel;
-    uint16_t rxBuf[ISR_LOCAL_BUF_SIZE];
+    // Send head
+    gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl), gmp_dev_dl_get_tx_hw_hdr_size(&dl), 10);
 
-    // Read all FIFO content
-    while ((fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE)) > 0)
+    // Send data body, if necessary
+    if (gmp_dev_dl_get_tx_hw_pld_size(&dl) > 0)
     {
-        // Get data
-        SCI_readCharArray(IRIS_UART_USB_BASE, rxBuf, fifoLevel);
-
-        // send to AT device
-        at_device_rx_isr(&at_dev, (char*)rxBuf, fifoLevel);
+        gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_pld_ptr(&dl), gmp_dev_dl_get_tx_hw_pld_size(&dl),
+                           10);
     }
 }
-
-extern gmp_datalink_t dl;
 
 void flush_dl_rx_buffer()
 {
     uint16_t fifoLevel;
     data_gt rxBuf[ISR_LOCAL_BUF_SIZE];
 
-    // 1. 读取当前 FIFO 中有多少数据
-        fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE);
+    // read all FIFO messages
+    fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE);
 
-        // 2. 连续读出所有数据
-        if (fifoLevel > 0)
-        {
-            SCI_readCharArray(IRIS_UART_USB_BASE, rxBuf, fifoLevel);
+    if (fifoLevel > 0)
+    {
+        SCI_readCharArray(IRIS_UART_USB_BASE, (uint16_t*)rxBuf, fifoLevel);
 
-            // 3. 压入协议栈的无锁环形队列 (非常快，O(1) 操作)
-            gmp_dev_dl_push_str(&dl, rxBuf, fifoLevel);
-        }
+        // Lock-free ring queue pushed into the protocol stack (very fast, O(1))
+        gmp_dev_dl_push_str(&dl, rxBuf, fifoLevel);
+    }
 }
 
 interrupt void INT_IRIS_UART_USB_RX_ISR(void)
 {
     flush_dl_rx_buffer();
 
-    // 3. 处理溢出 (Overrun)
-    // 即使把触发深度设为了 1，为了绝对的健壮性，依然保留溢出清除。
-    // 注意必须放在 readCharArray 之后，以防还有残留。
+    //
+    // deal with overrun
+    //
     if (SCI_getRxStatus(IRIS_UART_USB_BASE) & SCI_RXSTATUS_OVERRUN)
     {
         SCI_clearOverflowStatus(IRIS_UART_USB_BASE);
     }
 
-    // 4. 清除中断标志，准备接收下一次数据
+    //
+    // Clear interrupt flags
+    //
     SCI_clearInterruptStatus(IRIS_UART_USB_BASE, SCI_INT_RXFF);
     Interrupt_clearACKGroup(INT_IRIS_UART_USB_RX_INTERRUPT_ACK_GROUP);
 }
 
 ////
+
 
 //=========================================================
 // 1. SPI 读写底层函数封装

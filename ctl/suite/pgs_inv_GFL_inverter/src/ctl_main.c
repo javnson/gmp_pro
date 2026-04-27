@@ -56,7 +56,6 @@ adc_bias_calibrator_t adc_calibrator;
 volatile fast_gt flag_enable_adc_calibrator = 0;
 volatile fast_gt index_adc_calibrator = 0;
 
-ctl_triangle_wave_generator_t tri_wave;
 
 
 //=================================================================================================
@@ -167,24 +166,6 @@ void ctl_init()
         ctl_enable_adc_calibrator(&adc_calibrator);
     }
     
-#if 1
-
-    ctl_init_triangle_wave_generator(&tri_wave, CONTROLLER_FREQUENCY, 0.2f, 0.8f, 0.1f);  
-
-    //
-    // 下面这一组参数大概0.7pu开始振荡
-    //
-
-    inv_ctrl.pid_idq[phase_d].kp /= 4.0f;
-    inv_ctrl.pid_idq[phase_q].kp /= 4.0f; 
-
-    inv_ctrl.pll.pid_pll.kp *= 2.0f; 
-    inv_ctrl.pll.pid_pll.ki *= 0.2f;
-
-    iabc.bias[phase_A] += 0.001f;
-    iabc.bias[phase_B] += 0.001f;
-    iabc.bias[phase_C] += 0.001f;
-#endif
 }
 
 //=================================================================================================
@@ -367,6 +348,12 @@ fast_gt ctl_exec_adc_calibration(void)
 
 void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
 {
+#if defined ENBALE_GMP_DL_PIL_SIM
+    ctl_input_callback_pil(rx);
 
+    ctl_dispatch();
+
+    ctl_output_callback_pil(tx);
+#endif // defined ENBALE_GMP_DL_PIL_SIM
 }
 
