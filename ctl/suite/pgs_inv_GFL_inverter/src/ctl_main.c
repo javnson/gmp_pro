@@ -20,6 +20,8 @@
 
 #include <xplt.peripheral.h>
 
+#include <core/dev/pil_core.h>
+
 //=================================================================================================
 // global controller variables
 
@@ -362,3 +364,9 @@ fast_gt ctl_exec_adc_calibration(void)
     // skip calibrate routine
     return 1;
 }
+
+void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
+{
+
+}
+
