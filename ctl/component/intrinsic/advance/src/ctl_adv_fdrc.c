@@ -1,10 +1,16 @@
+/**
+ * @file rc_controller.c
+ * @author GMP Library Contributors
+ * @brief Implementation of the Fractional Delay Repetitive Controller.
+ * 
+ * @copyright Copyright GMP(c) 2024-2026
+ */
+
 #include <gmp_core.h>
 
-//////////////////////////////////////////////////////////////////////////
-// repetitive controller
-#include <ctl/component/intrinsic/advance/repetitive_controller.h>
+#include <ctl/component/intrinsic/advance/fdrc.h>
 
-void ctl_init_rc(ctl_fdrc_t* obj, ctrl_gt* buffer, uint32_t capacity, parameter_gt fs, parameter_gt f_min,
+void ctl_init_fdrc(ctl_fdrc_t* obj, ctrl_gt* buffer, uint32_t capacity, parameter_gt fs, parameter_gt f_min,
                    parameter_gt q_fc, parameter_gt k_rc, int32_t phase_lead_k)
 {
     // Memory and validity assertions
