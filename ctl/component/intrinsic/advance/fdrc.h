@@ -72,6 +72,7 @@
  *        ctl_enable_fdrc_integrating(&rc_ctrl);
  *    }
  *    @endcode
+ * 
  * @copyright Copyright GMP(c) 2024-2026
  */
 
