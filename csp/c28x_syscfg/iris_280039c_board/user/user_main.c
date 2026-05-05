@@ -159,8 +159,8 @@ gmp_task_t tasks[] = {
     {"blink_led", tsk_blink, 1000, 100, 1, NULL},
     {"fpga_test", fpga_test_task, 1000, 600, 1, NULL},
     {"dl_online", tsk_dl_debug_device, 2, 0, 1, NULL},
-    {"flush_key", tsk_key_flush, 100, 10, 0, (void*)&ht16k33},
-    {"flush_led", tsk_LED_flush, 500, 200, 0, (void*)&ht16k33},
+    {"flush_key", tsk_key_flush, 100, 10, 1, (void*)&ht16k33},
+    {"flush_led", tsk_LED_flush, 500, 200, 1, (void*)&ht16k33},
     {"startup", tsk_startup, 500, 0, 1, NULL},
 };
 
