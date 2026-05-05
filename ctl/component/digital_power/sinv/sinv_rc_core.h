@@ -76,14 +76,15 @@ typedef struct _tag_sinv_rc_init_t
  */
 typedef struct _tag_sinv_rc_core_t
 {
-    uint32_t isr_tick; //!< Controller Tick
+    uint32_t isr_tick; //!< Controller Tick counter.
 
     // --- Inputs (Updated each cycle before calling step) ---
     ctrl_gt i_ref; //!< AC current reference (from Ref Generator).
 
-    adc_ift* v_grid_fdbk; //!< Grid voltage feedback (from ADC).
-    adc_ift* v_bus_fdbk;  //!< DC bus voltage feedback (from ADC, PU). Set to 1.0f to disable compensation.
-    adc_ift* i_fdbk;      //!< AC current feedback (from ADC).
+    // --- Hardware Interface Bindings (Zero-copy Pointers) ---
+    adc_ift* v_grid_fdbk; //!< Grid voltage feedback interface pointer (from ADC).
+    adc_ift* v_bus_fdbk;  //!< DC bus voltage feedback interface pointer (from ADC, PU).
+    adc_ift* i_fdbk;      //!< AC current feedback interface pointer (from ADC).
 
     // --- Outputs & Intermediate Variables ---
     ctrl_gt current_error; //!< Real-time current tracking error.
@@ -96,8 +97,8 @@ typedef struct _tag_sinv_rc_core_t
     ctrl_gt v_out_ref; //!< Final unified voltage reference (Duty cycle equivalent).
 
     // --- Controller Entities ---
-    ctl_qpr_t qpr_ctrl;           //!< QPR controller.
-    ctl_fdrc_t fdrc_ctrl;         //!< Repetitive controller.
+    ctl_qpr_t qpr_ctrl;           //!< QPR controller instance.
+    ctl_fdrc_t fdrc_ctrl;         //!< Repetitive controller instance.
     ctrl_lead_t vgrid_lead;       //!< Lead compensator for grid feedforward.
     ctl_filter_IIR1_t err_filter; //!< LPF for transient detection (absolute error).
 
@@ -167,7 +168,9 @@ GMP_STATIC_INLINE void ctl_auto_tuning_sinv_rc(ctl_sinv_rc_init_t* init)
 /**
  * @brief Initializes the SINV RC core using the tuned parameters.
  * @param[out] core Pointer to the core structure.
- * @param[in] init Pointer to the populated and tuned init structure.
+ * @param[in]  init Pointer to the populated and tuned init structure.
+ * @param[in]  rc_buffer Pointer to the pre-allocated memory array for the FDRC delay line.
+ * @param[in]  rc_buf_capacity The total number of elements allocated in the rc_buffer.
  */
 void ctl_init_sinv_rc_core(ctl_sinv_rc_core_t* core, const ctl_sinv_rc_init_t* init, ctrl_gt* rc_buffer,
                            uint32_t rc_buf_capacity)
@@ -200,7 +203,6 @@ void ctl_init_sinv_rc_core(ctl_sinv_rc_core_t* core, const ctl_sinv_rc_init_t* i
 
     // Clear history states
     ctl_clear_qpr_controller(&core->qpr_ctrl);
-    // FDRC clear logic might depend on your internal API. Usually buffer memset is handled.
     ctl_clear_lead(&core->vgrid_lead);
     ctl_clear_filter_iir1(&core->err_filter);
 
@@ -210,6 +212,15 @@ void ctl_init_sinv_rc_core(ctl_sinv_rc_core_t* core, const ctl_sinv_rc_init_t* i
     core->isr_tick = 0;
 }
 
+/**
+ * @brief Binds ADC interfaces to the RC Core for zero-copy data fetching.
+ * @note This MUST be called during system initialization before `ctl_step_sinv_rc_core` is executed.
+ * 
+ * @param[out] core Pointer to the RC core structure.
+ * @param[in]  _u_dc Pointer to the DC bus voltage interface.
+ * @param[in]  _u_ac Pointer to the Grid AC voltage interface.
+ * @param[in]  _i_ac Pointer to the Inverter AC current interface.
+ */
 GMP_STATIC_INLINE void ctl_attach_sinv_rc(ctl_sinv_rc_core_t* core, adc_ift* _u_dc, adc_ift* _u_ac, adc_ift* _i_ac)
 {
     core->i_fdbk = _i_ac;
@@ -223,8 +234,12 @@ GMP_STATIC_INLINE void ctl_attach_sinv_rc(ctl_sinv_rc_core_t* core, adc_ift* _u_
 
 /**
  * @brief Executes one step of the Single-Phase RC Core.
+ * @details Fetches data directly via bound ADC interface pointers. If the controller
+ * is disabled, it bypasses the calculation and retains the previous (or zeroed) output.
+ * 
  * @param[in,out] core Pointer to the RC core instance.
- * @return ctrl_gt Final output voltage reference (duty cycle) after DC bus compensation.
+ * @param[in]     i_ref Instantaneous AC current reference command (PU).
+ * @return ctrl_gt Final output voltage reference (duty cycle PU) after DC bus compensation.
  */
 GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_rc_core(ctl_sinv_rc_core_t* core, ctrl_gt i_ref)
 {
@@ -237,7 +252,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_rc_core(ctl_sinv_rc_core_t* core, ctrl_g
 
     core->i_ref = i_ref;
 
-    // 1. Calculate Error
+    // 1. Calculate Error (Direct read from interface pointer)
     core->current_error = core->i_ref - core->i_fdbk->value;
 
     // 2. Transient Detection for Smart FDRC
