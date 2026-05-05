@@ -54,7 +54,7 @@ typedef struct _tag_ctrl_lead_t
     ctrl_gt a1;       //!< Denominator (pole) coefficient.
     ctrl_gt input_1;  //!< Previous input, e(n-1).
     ctrl_gt output_1; //!< Previous output, u(n-1).
-} ctrl_lead_t;
+} ctrl_lead_t, ctl_lead_t;
 
 /**
  * @brief Initializes a lead compensator from its continuous-time parameters.

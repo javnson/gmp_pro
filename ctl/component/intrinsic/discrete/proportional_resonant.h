@@ -257,7 +257,7 @@ typedef struct _tag_ctl_qpr_controller
 {
     qr_ctrl_t resonant_part; //!< The quasi-resonant part of the controller.
     ctrl_gt kp;         //!< The proportional gain.
-} qpr_ctrl_t;
+} qpr_ctrl_t, ctl_qpr_t;
 
 /**
  * @brief Initializes a QPR controller using Standard Tustin.
