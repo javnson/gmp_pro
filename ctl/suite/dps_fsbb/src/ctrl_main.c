@@ -1,241 +1,158 @@
 /**
- * @file ctl_main.c
+ * @file ctrl_main.c
  * @author GMP Library Contributors
- * @brief 20kW Single-Phase Inverter/AFE Top-level Implementation.
+ * @brief Top-level implementation for the Four-Switch Buck-Boost (FSBB) Converter.
  */
 
-#include <gmp_core.h>
-
-#include "ctl_main.h"
-#include <ctrl_settings.h>
+#include "ctrl_main.h"
 
 //=================================================================================================
-// 1. 全局变量定义与实例化 (Flat Architecture)
+// 1. 全局变量定义与实例化 (Global Instantiation)
 
-// 系统框架模块
 cia402_sm_t cia402_sm;
-ctl_sinv_protect_t protection;
-single_phase_H_modulation_t hpwm;
+ctl_dcdc_protect_t protection;
 
-// 算法核心模块
-spll_sogi_t pll;
-ctl_sms_pq_t pq_meter;
-ctl_sinv_ref_gen_t ref_gen;
-ctl_sinv_rc_core_t rc_core;
+ctl_dcdc_core_t dcdc_core;
+fsbb_modulator_t fsbb_mod;
 
-// 用户与系统交互变量
-ctrl_gt g_p_ref_user = float2ctrl(0.0f);
-ctrl_gt g_q_ref_user = float2ctrl(0.0f);
+// 用户指令 (默认启动输出 0V)
+ctrl_gt g_v_out_ref_user = float2ctrl(0.0f);
+ctrl_gt g_i_limit_user = float2ctrl(10.0f); // 默认限制 10A 标幺值
+
 volatile fast_gt flag_system_running = 0;
 volatile fast_gt flag_error = 0;
 
-// ADC 采样通道定义 (硬件增益和偏置在 setup_peripheral 中配置)
-adc_channel_t adc_v_grid;
-adc_channel_t adc_i_ac;
-adc_channel_t adc_v_bus;
-
-// ADC 校准标志
-adc_bias_calibrator_t adc_calibrator;
-volatile fast_gt flag_enable_adc_calibrator = 1;
-volatile fast_gt index_adc_calibrator = 0;
-
-// 定时器比较值缓存
-pwm_gt pwm_cmp_L = 0;
-pwm_gt pwm_cmp_N = 0;
-
-// FDRC 重复控制器静态内存 (根据控制频率自动计算数组长度)
-#define FDRC_ARRAY_SIZE ((int)(CONTROLLER_FREQUENCY / 50.0f) + 10)
-static ctrl_gt fdrc_buffer[FDRC_ARRAY_SIZE];
+// ADC 物理通道
+adc_channel_t adc_v_in;
+adc_channel_t adc_v_out;
+adc_channel_t adc_i_L;
+adc_channel_t adc_i_load;
 
 //=================================================================================================
-// 2. 状态机响应函数：锁相环状态检查
-
-/**
- * @brief 检测 PLL 是否满足并网收敛要求
- * @return 1: 锁相成功且稳定; 0: 锁定中或频率异常
- */
-fast_gt ctl_check_pll_locked(void)
-{
-    // 准入条件：
-    // 1. 电网电压幅值在 0.8pu ~ 1.2pu 之间 (防止断路器未闭合或严重欠压)
-    // 2. PLL 内部频率误差必须小于系统设定的容忍度 (例如 0.005 PU)
-    ctrl_gt v_mag_pu = pll.v_mag;
-    ctrl_gt f_err_abs = ctl_abs(pll.freq_error);
-
-    if ((v_mag_pu > float2ctrl(0.8f)) && (v_mag_pu < float2ctrl(1.2f)))
-    {
-        if (f_err_abs < CTRL_SPLL_EPSILON)
-        {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-//=================================================================================================
-// 3. 初始化程序
+// 2. 初始化程序 (Initialization)
 
 void ctl_init(void)
 {
-    // 停止 PWM 输出，进入高阻态安全状态
+    // 启动前强制封锁 PWM，确保安全
     ctl_fast_disable_output();
 
-    // 注: ADC 通道的增益与偏置初始化 (ctl_init_adc_channel)
-    // 已移至 xplt.peripheral.c 的 setup_peripheral() 中，以确保硬件配置彻底解耦。
+    // --- 2.1 FSBB 双环内核自整定与初始化 ---
 
-    // --- 3.1 算法核心参数整定与初始化 ---
+    ctl_dcdc_core_init_t core_init = {0};
 
-    // 电流环 (QPR) 初始化
-    ctl_sinv_rc_init_t rc_init = {0};
-    rc_init.fs = CONTROLLER_FREQUENCY;
-    rc_init.freq_grid = 50.0f;
-    rc_init.v_base = CTRL_VOLTAGE_BASE;
-    rc_init.i_base = CTRL_CURRENT_BASE;
-    rc_init.v_bus = CTRL_DCBUS_VOLTAGE;
-    rc_init.L_ac = 0.003f; // 根据实际滤波器电感修改
-    rc_init.R_ac = 0.1f;   // 寄生电阻估算
-    ctl_auto_tuning_sinv_rc(&rc_init);
-    ctl_init_sinv_rc_core(&rc_core, &rc_init, fdrc_buffer, FDRC_ARRAY_SIZE);
+    // 填入硬件物理参数 (从 ctrl_settings.h 的宏获取)
+    core_init.fs = CONTROLLER_FREQUENCY;
+    core_init.L_main = 22.0e-6f; // 22uH 主电感
+    core_init.C_out = 470.0e-6f; // 470uF 输出电容
+    core_init.r_L = 0.015f;      // 15mOhm 电感 ESR (极零对消)
+    core_init.r_C = 0.005f;      // 5mOhm 电容 ESR
 
-    // 绑定物理 ADC 指针到控制器 (零拷贝数据拉取)
-    ctl_attach_sinv_rc(&rc_core, &adc_v_bus.control_port, &adc_v_grid.control_port, &adc_i_ac.control_port);
+    // 填入运行工况 (用于推导最恶劣的 RHPZ 并压制外环带宽)
+    core_init.v_in_nom = 48.0f;  // 典型输入 48V
+    core_init.v_in_min = 18.0f;  // 最小输入 18V (最深 Boost 模式)
+    core_init.v_out_nom = 60.0f; // 典型输出 60V
+    core_init.i_out_max = 20.0f; // 最大负载电流 20A
 
-    // H桥单极性调制器初始化
-    ctl_init_single_phase_H_modulation(&hpwm, CTRL_PWM_CMP_MAX + 1, CTRL_PWM_DEADBAND_CMP, float2ctrl(0.5f));
-    hpwm.flag_enable_dbcomp = 1; // 开启死区补偿
+    // 系统基准值 (标幺化)
+    core_init.v_base = CTRL_VOLTAGE_BASE;
+    core_init.i_base = CTRL_CURRENT_BASE;
 
-    // PLL 与 PQ 计算初始化
-    ctl_init_single_phase_pll(&pll, 10.0f, 0.02f, 20.0f, 50.0f, CONTROLLER_FREQUENCY);
-    ctl_init_sms_pq(&pq_meter, CONTROLLER_FREQUENCY, 50.0f);
+    // 安全物理极限
+    core_init.i_L_max = 25.0f;   // 绝对最大电感电流 25A
+    core_init.i_L_min = -5.0f;   // 允许轻微反向电流 (适用于同步整流轻载)
+    core_init.v_req_max = 80.0f; // 最大等效调制电压 80V
+    core_init.v_req_min = 0.0f;  // 最小调制电压 0V
 
-    // 指令发生器初始化 (限幅保护: I_max, V_min, P_slope, Q_slope)
-    // 爬坡斜率设定为: 有功 10.0 PU/s， 无功 20.0 PU/s
-    ctl_init_sinv_ref_gen(&ref_gen, CTRL_CURRENT_BASE * 1.5f, 0.1f, 10.0f, 20.0f, CONTROLLER_FREQUENCY);
+    // 执行参数自动整定 (SI 转 PU，带 RHPZ 压制保护)
+    ctl_auto_tuning_dcdc_fsbb(&core_init);
 
-    // --- 3.2 框架模块初始化 ---
+    // 初始化内核：配置电压爬坡斜率(如 50V/s) 和 电流斜率(如 500A/s)
+    ctl_init_dcdc_core(&dcdc_core, &core_init, float2ctrl(50.0f / CTRL_VOLTAGE_BASE),
+                       float2ctrl(500.0f / CTRL_CURRENT_BASE));
 
-    // CiA 402 状态机
+    // 绑定物理 ADC 接口 (零拷贝)
+    ctl_attach_dcdc_core(&dcdc_core, &adc_v_in.control_port, &adc_v_out.control_port, &adc_i_L.control_port, NULL);
+
+    // --- 2.2 FSBB 调制器初始化 ---
+
+    // 设定自举电容安全占空比 [0.05, 0.95]
+    // 设定平滑过渡区 m_low = 0.9, m_high = 1.1 (即 Vin 的 ±10% 区间内四管齐动)
+    ctl_init_fsbb_modulator(&fsbb_mod, CTRL_PWM_CMP_MAX, float2ctrl(0.95f), float2ctrl(0.05f), float2ctrl(0.90f),
+                            float2ctrl(1.10f));
+
+    // --- 2.3 保护与状态机初始化 ---
+
     init_cia402_state_machine(&cia402_sm);
-    cia402_sm.minimum_transit_delay[3] = 100; // Operation Enabled 保持 100ms 后才正式切入负载
+    cia402_sm.minimum_transit_delay[3] = 20; // 延时 20ms 后切入运行
 
-    // 保护模块初始化
-    ctl_sinv_prot_init_t prot_init = {0};
-    prot_init.error_mask =
-        SINV_PROT_BIT_HW_TZ | SINV_PROT_BIT_DC_OVP_FAST | SINV_PROT_BIT_AC_OCP_FAST | SINV_PROT_BIT_CTRL_DIVERGE;
-    prot_init.warning_mask = SINV_PROT_BIT_AC_OVP_RMS | SINV_PROT_BIT_AC_UVP_RMS | SINV_PROT_BIT_PLL_FREQ_ERR;
-    prot_init.v_bus_max = CTRL_PROT_VBUS_MAX;
-    prot_init.i_ac_max = CTRL_MAX_HW_CURRENT * 0.9f; // 硬件极限的 90%
-    ctl_init_sinv_protect(&protection, &prot_init);
-
-    // ADC 自动偏置校准器
-    ctl_init_adc_calibrator(&adc_calibrator, 20, 0.707f, CONTROLLER_FREQUENCY);
-    if (flag_enable_adc_calibrator)
-    {
-        ctl_enable_adc_calibrator(&adc_calibrator);
-    }
-
-    // --- 3.3 BUILD_LEVEL 控制逻辑 ---
-#if (BUILD_LEVEL == 1)
-    // 离网负载校验模式：不需要 FDRC 和前馈
-    rc_core.flag_enable_fdrc = 0;
-    rc_core.flag_enable_lead_comp = 0;
-#endif
-
-#if (BUILD_LEVEL == 2)
-    // 并网 PQ 控制模式：禁止 FDRC，开启电压前馈
-    rc_core.flag_enable_fdrc = 0;
-    rc_core.flag_enable_lead_comp = 1;
-#endif
+    ctl_dcdc_prot_init_t prot_init = {0};
+    prot_init.v_in_max = 75.0f;
+    prot_init.v_out_max = 70.0f;
+    prot_init.i_L_max = 28.0f; // 硬件快保护阈值 > 控制器限幅 25A
+    ctl_init_dcdc_protect(&protection, &prot_init);
 }
 
 //=================================================================================================
-// 4. 后台任务调度 (低频任务)
+// 3. 后台主循环 (Background Task)
 
 void ctl_mainloop(void)
 {
-    // 状态机核心调度 (处理启停、故障复位)
+    // 状态机核心调度
     cia402_dispatch(&cia402_sm);
 
-#if (BUILD_LEVEL == 3)
-    // 并网性能优化模式：延时切入 FDRC
-    // 当并网稳定运行超过 200 个控制周期后，开启重复控制器消除畸变
-    if (cia402_sm.state_word.bits.operation_enabled && cia402_sm.current_state_counter > 200)
+    // --- 用户参数下发 ---
+    // 仅在设备处于运行状态时，更新核心目标值
+    if (cia402_sm.state_word.bits.operation_enabled)
     {
-        rc_core.flag_enable_fdrc = 1;
+        dcdc_core.v_out_set_user = g_v_out_ref_user;
     }
     else
     {
-        rc_core.flag_enable_fdrc = 0;
+        // 停机状态下，目标电压归零
+        dcdc_core.v_out_set_user = float2ctrl(0.0f);
     }
-    rc_core.flag_enable_lead_comp = 1;
+
+    // --- BUILD_LEVEL 分级测试 ---
+#if (BUILD_LEVEL == 1)
+    // Level 1: 纯开环发波测试 (验证调制器死区与极性)
+    // 强制内核输出固定调制电压 (例如输入的一半，纯 Buck)
+    dcdc_core.flag_enable = 0;
+#endif
+
+#if (BUILD_LEVEL == 2)
+    // Level 2: 闭环运行 (无负载前馈)
+    dcdc_core.flag_enable = 1;
+    dcdc_core.flag_enable_load_ff = 0;
+#endif
+
+#if (BUILD_LEVEL == 3)
+    // Level 3: 高性能全开 (启用负载电流前馈，应对剧烈负载跳变)
+    dcdc_core.flag_enable = 1;
+    dcdc_core.flag_enable_load_ff = 1;
 #endif
 }
 
 //=================================================================================================
-// 5. 背景回调函数实现 (慢速保护与 ADC 校准)
+// 4. 保护与回调接口
 
-/**
- * @brief 慢速保护后台任务
- * @note 放置在 RTOS 的低频 Task 中 (例如 1ms/10ms 周期)
- */
 gmp_task_status_t tsk_protect(gmp_task_t* tsk)
 {
     GMP_UNUSED_VAR(tsk);
 
-    // 执行慢保护检测 (交流有效值过欠压、温度、电网频率)
-    ctl_task_sinv_protect_slow(&protection, pq_meter.v_rms, pll.frequency,
-                               float2ctrl(25.0f), // Mock temp: 实际应接入板载温度传感器
-                               pq_meter.i_rms);
+    // 执行慢保护检测 (如平均功率限制、过温保护)
+    // ... (依据硬件具体配置)
 
     if (protection.active_errors != 0)
     {
         cia402_fault_request(&cia402_sm);
     }
-
     return GMP_TASK_DONE;
 }
 
-/**
- * @brief ADC 上电零点偏置校准器
- * @note  阻塞控制算法，直至交流电压/电流通道零点校准完毕
- */
-fast_gt ctl_exec_adc_calibration(void)
-{
-    if (flag_enable_adc_calibrator)
-    {
-        if (ctl_is_adc_calibrator_cmpt(&adc_calibrator) && ctl_is_adc_calibrator_result_valid(&adc_calibrator))
-        {
-            if (index_adc_calibrator == 0) // 通道 0: AC 电流零偏校准
-            {
-                adc_i_ac.bias += ctl_get_adc_calibrator_result(&adc_calibrator);
-                index_adc_calibrator += 1;
-
-                ctl_clear_adc_calibrator(&adc_calibrator);
-                ctl_enable_adc_calibrator(&adc_calibrator);
-            }
-            else if (index_adc_calibrator == 1) // 通道 1: 交流电压零偏校准
-            {
-                adc_v_grid.bias += ctl_get_adc_calibrator_result(&adc_calibrator);
-                index_adc_calibrator += 1;
-
-                flag_enable_adc_calibrator = 0;
-                clear_all_controllers(); // 校准完毕，清理滤波器内残余历史值
-            }
-        }
-        return 0; // 校准尚未完成，拦截主控制流程
-    }
-    return 1; // 校准已完成或被跳过，放行主控制流程
-}
-
-//=================================================================================================
-// 6. 控制器复位与使能动作
-
 void clear_all_controllers(void)
 {
-    ctl_clear_single_phase_pll(&pll);
-    ctl_clear_sinv_rc_core(&rc_core);
-    ctl_clear_sinv_ref_gen(&ref_gen);
-    ctl_clear_single_phase_H_modulation(&hpwm);
+    // 复位内核积分器，防止上次停机残留的积分项导致启动浪涌
+    ctl_clear_dcdc_core(&dcdc_core);
 }
 
 void ctl_enable_pwm(void)
