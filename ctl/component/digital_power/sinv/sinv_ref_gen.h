@@ -21,6 +21,11 @@ extern "C"
 {
 #endif
 
+
+/*---------------------------------------------------------------------------*/
+/* Single-Phase Reference Generator                                          */
+/*---------------------------------------------------------------------------*/
+
 /**
  * @brief Data structure for the Single-Phase Reference Generator.
  */
@@ -39,11 +44,11 @@ typedef struct _tag_sinv_ref_gen_t
     ctrl_gt v_mag_min; //!< Minimum grid voltage threshold to prevent division-by-zero during sags.
 
     // --- PQ slope limiter ---
-    ctl_slope_limiter_t p_slope_lim; //!< Slope limiter for P
-    ctl_slope_limiter_t q_slope_lim; //!< Slope limiter for Q
+    ctl_slope_limiter_t p_slope_lim; //!< Slope limiter for Active Power (P)
+    ctl_slope_limiter_t q_slope_lim; //!< Slope limiter for Reactive Power (Q)
 
     // --- Flags ---
-    fast_gt flag_over_current; //!< Over current warning
+    fast_gt flag_over_current; //!< Flag indicating the requested power exceeded hardware current limits.
 
 } ctl_sinv_ref_gen_t;
 
@@ -52,16 +57,21 @@ typedef struct _tag_sinv_ref_gen_t
 /*---------------------------------------------------------------------------*/
 
 /**
- * @brief Initializes the Reference Generator with safety limits.
+ * @brief Initializes the Reference Generator with safety limits and slope restrictions.
+ * 
  * @param[out] gen Pointer to the generator instance.
- * @param[in] i_max Maximum allowed peak current magnitude (e.g., 1.5 * rated peak).
- * @param[in] v_mag_min Minimum voltage magnitude to allow power calculation (e.g., 0.1 pu).
+ * @param[in]  i_max Maximum allowed peak current magnitude (e.g., 1.5 * rated peak).
+ * @param[in]  v_mag_min Minimum voltage magnitude to allow power calculation (e.g., 0.1 pu).
+ * @param[in]  p_slope Max rate of change for Active Power (Units/sec). Pass large value to disable.
+ * @param[in]  q_slope Max rate of change for Reactive Power (Units/sec). Pass large value to disable.
+ * @param[in]  fs System sampling frequency (Hz) to calculate per-step delta.
  */
 void ctl_init_sinv_ref_gen(ctl_sinv_ref_gen_t* gen, parameter_gt i_max, parameter_gt v_mag_min, parameter_gt p_slope,
-                           parameter_gt q_slope);
+                           parameter_gt q_slope, parameter_gt fs);
 
 /**
- * @brief Clears the internal states of the generator.
+ * @brief Clears the internal states and resets slope limiters of the generator.
+ * @param[out] gen Pointer to the generator instance.
  */
 GMP_STATIC_INLINE void ctl_clear_sinv_ref_gen(ctl_sinv_ref_gen_t* gen)
 {
@@ -80,19 +90,21 @@ GMP_STATIC_INLINE void ctl_clear_sinv_ref_gen(ctl_sinv_ref_gen_t* gen)
 
 /**
  * @brief Base Step Function: Generates current ref based on Active (P) & Reactive (Q) Power.
- * * @param[in,out] gen Pointer to the generator instance.
- * @param[in] p_ref Target active power.
- * @param[in] q_ref Target reactive power.
+ * 
+ * @param[in,out] gen Pointer to the generator instance.
+ * @param[in] _p_ref Target active power command (before slope limiting).
+ * @param[in] _q_ref Target reactive power command (before slope limiting).
  * @param[in] v_mag Instantaneous grid voltage magnitude (from PLL).
  * @param[in] phasor Pointer to the synchronized grid phasor [sin(theta), cos(theta)] (from PLL).
  * @return ctrl_gt The instantaneous AC current reference.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_ref_gen_pq(ctl_sinv_ref_gen_t* gen, ctrl_gt _p_ref, ctrl_gt _q_ref, ctrl_gt v_mag,
-                                                   const ctl_vector2_t* phasor)
+GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_ref_gen_pq(ctl_sinv_ref_gen_t* gen, ctrl_gt _p_ref, ctrl_gt _q_ref,
+                                                   ctrl_gt v_mag, const ctl_vector2_t* phasor)
 {
     // 1. Voltage Sag Protection (Anti Division-by-Zero)
     ctrl_gt v_safe = (v_mag > gen->v_mag_min) ? v_mag : gen->v_mag_min;
 
+    // Apply slope limits to power commands
     ctrl_gt p_ref = ctl_step_slope_limiter(&gen->p_slope_lim, _p_ref);
     ctrl_gt q_ref = ctl_step_slope_limiter(&gen->q_slope_lim, _q_ref);
 
@@ -131,7 +143,8 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_ref_gen_pq(ctl_sinv_ref_gen_t* gen, ctrl
 
 /**
  * @brief Overload 1: Generates current ref based on Apparent Power (S) and Power Factor Angle (Phi).
- * * @param[in,out] gen Pointer to the generator instance.
+ * 
+ * @param[in,out] gen Pointer to the generator instance.
  * @param[in] s_ref Target apparent power magnitude.
  * @param[in] phi_pu Target power factor angle in per-unit (0 to 1.0 represents 0 to 2*pi).
  * @param[in] v_mag Grid voltage magnitude.
@@ -151,7 +164,8 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_ref_gen_s_phi(ctl_sinv_ref_gen_t* gen, c
 
 /**
  * @brief Overload 2: Generates current ref based on Active Power (P) and Power Factor Angle (Phi).
- * * @param[in,out] gen Pointer to the generator instance.
+ * 
+ * @param[in,out] gen Pointer to the generator instance.
  * @param[in] p_ref Target active power.
  * @param[in] phi_pu Target power factor angle in per-unit (0 to 1.0 represents 0 to 2*pi).
  * @param[in] v_mag Grid voltage magnitude.
