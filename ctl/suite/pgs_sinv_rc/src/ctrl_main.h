@@ -41,7 +41,7 @@ extern adc_bias_calibrator_t adc_calibrator;
 extern volatile fast_gt flag_enable_adc_calibrator;
 extern volatile fast_gt index_adc_calibrator;
 
-// ADC interfaces
+// ADC interfaces (Values mapped automatically in step_adc_channel)
 extern adc_channel_t adc_v_grid;
 extern adc_channel_t adc_i_ac;
 extern adc_channel_t adc_v_bus;
@@ -58,10 +58,6 @@ extern spll_sogi_t pll;
 extern ctl_sms_pq_t pq_meter;
 extern ctl_sinv_ref_gen_t ref_gen;
 extern ctl_sinv_rc_core_t rc_core;
-
-// Ramp generators for Active (P) and Reactive (Q) power commands
-extern ctl_slope_f_pu_controller rg_p;
-extern ctl_slope_f_pu_controller rg_q;
 
 // User Setpoints
 extern ctrl_gt g_p_ref_user;
@@ -101,38 +97,37 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
     // normal controller routine
     else
     {
-        // 1. Ramp generators (Soft-start for P and Q)
-        // use slope limit module here
-
-        // 2. Grid Synchronization (PLL)
-        pll.flag_enable = 1;
+        // 1. Grid Synchronization (PLL)
         ctl_step_single_phase_pll(&pll, adc_v_grid.control_port.value);
 
-        // 3. Real-time PQ Measurement
+        // 2. Real-time PQ Measurement
         ctl_step_sms_pq(&pq_meter, adc_v_grid.control_port.value, adc_i_ac.control_port.value, &pll.phasor);
 
-        // 4. Command Generation (P/Q to I_ref)
+        // 3. Command Generation (P/Q to I_ref)
         if (cia402_sm.state_word.bits.operation_enabled)
         {
-            ctl_step_sinv_ref_gen_pq(&ref_gen, rg_p.out, rg_q.out, pll.v_mag, &pll.phasor);
+            // The internal slope limiters inside ref_gen handle the soft-start automatically
+            ctl_step_sinv_ref_gen_pq(&ref_gen, g_p_ref_user, g_q_ref_user, pll.v_mag, &pll.phasor);
         }
         else
         {
             ctl_clear_sinv_ref_gen(&ref_gen);
         }
 
-        // 5. Inner Current Controller (RC Core)
+        // 4. Inner Current Controller (RC Core)
         rc_core.flag_enable_ctrl = cia402_sm.state_word.bits.operation_enabled;
-        // pass i reference
+
+        // Pass I_ref from ref generator. Fdbk ptrs (ADC) are already zero-copy bound in init()
         ctl_step_sinv_rc_core(&rc_core, ref_gen.i_ref_inst);
 
-        // 6. Fast Protection Callback (ISR Level)
-        if (ctl_step_sinv_protect_fast(&protection, adc_v_bus.control_port.value, adc_i_ac.control_port.value, rc_core.v_out_ref))
+        // 5. Fast Protection Callback (ISR Level)
+        if (ctl_step_sinv_protect_fast(&protection, adc_v_bus.control_port.value, adc_i_ac.control_port.value,
+                                       rc_core.v_out_ref))
         {
             cia402_fault_request(&cia402_sm);
         }
 
-        // 7. Dead-time Compensation & PWM Modulation
+        // 6. Dead-time Compensation & PWM Modulation
         if (cia402_sm.state_word.bits.operation_enabled)
         {
             ctl_step_single_phase_H_modulation(&hpwm, rc_core.v_out_ref, adc_i_ac.control_port.value);
@@ -142,7 +137,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
             ctl_clear_single_phase_H_modulation(&hpwm);
         }
 
-        // Write outputs for hardware timers
+        // 7. Write outputs for hardware timers
         pwm_cmp_L = ctl_get_single_phase_modulation_L_phase(&hpwm);
         pwm_cmp_N = ctl_get_single_phase_modulation_N_phase(&hpwm);
     }
