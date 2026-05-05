@@ -28,27 +28,16 @@ extern "C"
 //=================================================================================================
 // definitions of peripheral
 
-// inverter side voltage feedback
-extern tri_ptr_adc_channel_t uuvw;
-extern adc_gt uuvw_src[3];
+extern adc_channel_t adc_v_grid;
 
-// inverter side current feedback
-extern tri_ptr_adc_channel_t iuvw;
-extern adc_gt iuvw_src[3];
+// AC Current Feedback
+extern adc_channel_t adc_i_ac;
 
-// grid side voltage feedback
-extern tri_ptr_adc_channel_t vabc;
-extern adc_gt vabc_src[3];
+// DC Bus Voltage Feedback
+extern adc_channel_t adc_v_bus;
 
-// grid side current feedback
-extern tri_ptr_adc_channel_t iabc;
-extern adc_gt iabc_src[3];
-
-// DC bus current & voltage feedback
-extern ptr_adc_channel_t udc;
-extern adc_gt udc_src;
-extern ptr_adc_channel_t idc;
-extern adc_gt idc_src;
+// dlog DSA objects
+extern basic_trigger_t trigger;
 
 #define DLOG_MEM_LENGTH 100
 extern ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];

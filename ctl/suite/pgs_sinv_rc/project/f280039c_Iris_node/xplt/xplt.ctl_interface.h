@@ -10,6 +10,7 @@
 // WARNING: This file must be kept in the include search path during compilation.
 //
 
+#include "ctl_main.h" // Includes SINV modules and ADC structures
 #include <xplt.peripheral.h>
 
 #ifndef _FILE_CTL_INTERFACE_H_
@@ -26,150 +27,103 @@ extern "C"
 // Input Callback
 GMP_STATIC_INLINE void ctl_input_callback(void)
 {
-    // copy source ADC data
-    uuvw_src[phase_U] = ADC_readResult(INV_UU_RESULT_BASE, INV_UU);
-    uuvw_src[phase_V] = ADC_readResult(INV_UV_RESULT_BASE, INV_UV);
-    uuvw_src[phase_W] = ADC_readResult(INV_UW_RESULT_BASE, INV_UW);
+    // Fetch raw ADC data from hardware registers and process through the ADC channels
+    // Note: Ensure the INV_VGRID_RESULT_BASE, INV_IAC_RESULT_BASE, etc.,
+    // are correctly mapped to your hardware macros in xplt.peripheral.h
 
-    iuvw_src[phase_U] = ADC_readResult(INV_IU_RESULT_BASE, INV_IU);
-    iuvw_src[phase_V] = ADC_readResult(INV_IV_RESULT_BASE, INV_IV);
-    iuvw_src[phase_W] = ADC_readResult(INV_IW_RESULT_BASE, INV_IW);
-
-    udc_src = ADC_readResult(INV_VBUS_RESULT_BASE, INV_VBUS);
-    //    idc_src = ADC_readResult(INV_IBUS_RESULT_BASE, INV_IBUS);
-
-    // Step auto turn pos encoder
-    ctl_step_autoturn_pos_encoder(&pos_enc, EQEP_getPosition(EQEP_Encoder_BASE));
-
-    // invoke ADC p.u. routine
-    ctl_step_tri_ptr_adc_channel(&iuvw);
-    ctl_step_tri_ptr_adc_channel(&uuvw);
-    ctl_step_ptr_adc_channel(&idc);
-    ctl_step_ptr_adc_channel(&udc);
+    ctl_step_adc_channel(&adc_v_grid, ADC_readResult(INV_VGRID_RESULT_BASE, INV_VGRID));
+    ctl_step_adc_channel(&adc_i_ac, ADC_readResult(INV_IAC_RESULT_BASE, INV_IAC));
+    ctl_step_adc_channel(&adc_v_bus, ADC_readResult(INV_VBUS_RESULT_BASE, INV_VBUS));
 }
 
 // Output Callback
 GMP_STATIC_INLINE void ctl_output_callback(void)
 {
-    // Write ePWM peripheral CMP
-    EPWM_setCounterCompareValue(PHASE_U_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_U]);
-    EPWM_setCounterCompareValue(PHASE_V_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_V]);
-    EPWM_setCounterCompareValue(PHASE_W_BASE, EPWM_COUNTER_COMPARE_A, spwm.pwm_out[phase_W]);
+    // Write ePWM peripheral CMP for H-Bridge (Phase L and Phase N)
+    EPWM_setCounterCompareValue(PHASE_L_BASE, EPWM_COUNTER_COMPARE_A, pwm_cmp_L);
+    EPWM_setCounterCompareValue(PHASE_N_BASE, EPWM_COUNTER_COMPARE_A, pwm_cmp_N);
 
-    DAC_setShadowValue(IRIS_DACA_BASE, spwm.vabc_out.dat[phase_U] * 2048 + 2048);
-    DAC_setShadowValue(IRIS_DACB_BASE, mtr_ctrl.iab0.dat[phase_alpha] * 2048 + 2048);
-    // Monitor Port
-#if BUILD_LEVEL == 1
-
-    //    DAC_setShadowValue(IRIS_DACB_BASE, inv_ctrl.angle * 2048 + 2048);
-    //    DAC_setShadowValue(IRIS_DACA_BASE, inv_ctrl.abc_out.dat[phase_B]  * 2048 + 2048);
-
+    // DAC Monitor Port (Offset by 2048 for bipolar signals on a 12-bit DAC)
+#if BUILD_LEVEL >= 1
+    // Monitor Grid Voltage and AC Current via DAC
+    DAC_setShadowValue(IRIS_DACA_BASE, (uint16_t)(adc_v_grid.control_port.value * 2048.0f + 2048.0f));
+    DAC_setShadowValue(IRIS_DACB_BASE, (uint16_t)(adc_i_ac.control_port.value * 2048.0f + 2048.0f));
 #endif // BUILD_LEVEL
 }
 
 // function prototype
 void GPIO_WritePin(uint16_t gpioNumber, uint16_t outVal);
 
-// Enable Motor Controller
-// Enable Output
-GMP_STATIC_INLINE void ctl_fast_enable_output()
+// Enable System Controller Output
+GMP_STATIC_INLINE void ctl_fast_enable_output(void)
 {
-    // Clear any Trip Zone flag
-    EPWM_clearTripZoneFlag(PHASE_U_BASE, EPWM_TZ_FORCE_EVENT_OST);
-    EPWM_clearTripZoneFlag(PHASE_V_BASE, EPWM_TZ_FORCE_EVENT_OST);
-    EPWM_clearTripZoneFlag(PHASE_W_BASE, EPWM_TZ_FORCE_EVENT_OST);
+    // Clear any Trip Zone (TZ) flag for Phase L and Phase N
+    EPWM_clearTripZoneFlag(PHASE_L_BASE, EPWM_TZ_FORCE_EVENT_OST);
+    EPWM_clearTripZoneFlag(PHASE_N_BASE, EPWM_TZ_FORCE_EVENT_OST);
 
+    // Reset algorithm history to prevent sudden jumps
     clear_all_controllers();
 
-    // PWM enable
+    // Hardware PWM gate driver enable
     GPIO_WritePin(PWM_ENABLE_PORT, 1);
 
+    // Turn ON Controller LED (assuming Active-Low LED)
     GPIO_WritePin(CONTROLLER_LED, 0);
 }
 
-// Disable Output
-GMP_STATIC_INLINE void ctl_fast_disable_output()
+// Disable System Controller Output
+GMP_STATIC_INLINE void ctl_fast_disable_output(void)
 {
-    // Disables the PWM device
-    EPWM_forceTripZoneEvent(PHASE_U_BASE, EPWM_TZ_FORCE_EVENT_OST);
-    EPWM_forceTripZoneEvent(PHASE_V_BASE, EPWM_TZ_FORCE_EVENT_OST);
-    EPWM_forceTripZoneEvent(PHASE_W_BASE, EPWM_TZ_FORCE_EVENT_OST);
+    // Force Trip Zone (TZ) event to hardware-block PWM outputs immediately
+    EPWM_forceTripZoneEvent(PHASE_L_BASE, EPWM_TZ_FORCE_EVENT_OST);
+    EPWM_forceTripZoneEvent(PHASE_N_BASE, EPWM_TZ_FORCE_EVENT_OST);
 
-    //    clear_all_controllers();
-
-    // PWM disable
+    // Hardware PWM gate driver disable
     GPIO_WritePin(PWM_ENABLE_PORT, 0);
 
+    // Turn OFF Controller LED (assuming Active-Low LED)
     GPIO_WritePin(CONTROLLER_LED, 1);
 }
 
 //=================================================================================================
-// Controller interface for PIL simulation
+// Controller interface for PIL (Processor-in-the-Loop) simulation
 
 typedef enum _tag_adc_index_items
 {
-    INV_ADC_ID_UDC = 0,
+    INV_ADC_ID_VBUS = 0,
+    INV_ADC_ID_VGRID = 1,
+    INV_ADC_ID_IAC = 2,
 
-    INV_ADC_ID_UA = 1,
-    INV_ADC_ID_UB = 2,
-    INV_ADC_ID_UC = 3,
-
-    INV_ADC_ID_IA = 4,
-    INV_ADC_ID_IB = 5,
-    INV_ADC_ID_IC = 6,
-    INV_ADC_SENSOR_NUMBER = 7
-
+    INV_ADC_SENSOR_NUMBER = 3
 } inv_adc_index_items;
 
-typedef enum _tag_digital_index_items
-{
-    MTR1_ENCODER_OUTPUT = 0,
-    MTR1_ENCODER_TURNS = 1,
-
-    DIGITAL_INDEX_NUMBER = 2
-} digital_index_items;
-
-// Input Callback
+// Input Callback for PIL Simulation
 GMP_STATIC_INLINE void ctl_input_callback_pil(const gmp_sim_rx_buf_t* rx)
 {
-    // copy source ADC data
-    uuvw_src[phase_U] = rx->adc_result[INV_ADC_ID_UA];
-    uuvw_src[phase_V] = rx->adc_result[INV_ADC_ID_UB];
-    uuvw_src[phase_W] = rx->adc_result[INV_ADC_ID_UC];
-
-    iuvw_src[phase_U] = rx->adc_result[INV_ADC_ID_IA];
-    iuvw_src[phase_V] = rx->adc_result[INV_ADC_ID_IB];
-    iuvw_src[phase_W] = rx->adc_result[INV_ADC_ID_IC];
-
-    udc_src = rx->adc_result[INV_ADC_ID_UDC];
-
-    // Step auto turn pos encoder
-    ctl_step_autoturn_pos_encoder(&pos_enc, rx->digital_input);
-
-    // invoke ADC p.u. routine
-    ctl_step_tri_ptr_adc_channel(&iuvw);
-    ctl_step_tri_ptr_adc_channel(&uuvw);
-    ctl_step_ptr_adc_channel(&idc);
-    ctl_step_ptr_adc_channel(&udc);
+    // Inject simulated ADC raw data directly into the ADC channel processing pipeline
+    ctl_step_adc_channel(&adc_v_bus, rx->adc_result[INV_ADC_ID_VBUS]);
+    ctl_step_adc_channel(&adc_v_grid, rx->adc_result[INV_ADC_ID_VGRID]);
+    ctl_step_adc_channel(&adc_i_ac, rx->adc_result[INV_ADC_ID_IAC]);
 }
 
-// Output Callback
+// Output Callback for PIL Simulation
 GMP_STATIC_INLINE void ctl_output_callback_pil(gmp_sim_tx_buf_t* tx)
 {
     //
-    // PWM channel
+    // PWM channel (Send calculated compare values back to the simulator)
     //
-    tx->pwm_cmp[0] = spwm.pwm_out[phase_U];
-    tx->pwm_cmp[1] = spwm.pwm_out[phase_V];
-    tx->pwm_cmp[2] = spwm.pwm_out[phase_W];
+    tx->pwm_cmp[0] = pwm_cmp_L;
+    tx->pwm_cmp[1] = pwm_cmp_N;
 
     //
-    // monitor
+    // Monitor Data (Send controller states to simulator scope)
     //
 
-    // Scope 1
-    tx->monitor[0] = mtr_ctrl.iuvw.dat[phase_A];
-    tx->monitor[1] = mtr_ctrl.iuvw.dat[phase_B];
+    // Scope 1: Feed back the measured AC current
+    tx->monitor[0] = adc_i_ac.control_port.value;
+
+    // Scope 2: Feed back the measured Grid Voltage
+    tx->monitor[1] = adc_v_grid.control_port.value;
 }
 
 #ifdef __cplusplus

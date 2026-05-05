@@ -2,41 +2,32 @@
 // THIS IS A DEMO SOURCE CODE FOR GMP LIBRARY.
 //
 // User should add all definitions of peripheral objects in this file.
-//
 // User should implement the peripheral objects initialization in setup_peripheral function.
-//
 // This file is platform-related.
 //
 
 // GMP basic core header
 #include <gmp_core.h>
 
+#include "ctl_main.h" // Includes SINV modules, ADC structures, and ctrl_settings.h
 #include "user_main.h"
+#include <ctl/component/dsa/dsa_trigger.h>
 #include <xplt.peripheral.h>
 
-#include <ctl/component/dsa/dsa_trigger.h>
-
-
 //=================================================================================================
-// definitions of peripheral
+// Definitions of Peripheral
 
-// inverter side voltage feedback
-tri_ptr_adc_channel_t uuvw;
-adc_gt uuvw_src[3];
+// Grid Voltage Feedback
+adc_channel_t adc_v_grid;
 
-// inverter side current feedback
-tri_ptr_adc_channel_t iuvw;
-adc_gt iuvw_src[3];
+// AC Current Feedback
+adc_channel_t adc_i_ac;
 
-// DC bus current & voltage feedback
-ptr_adc_channel_t udc;
-adc_gt udc_src;
-ptr_adc_channel_t idc;
-adc_gt idc_src;
+// DC Bus Voltage Feedback
+adc_channel_t adc_v_bus;
 
 // dlog DSA objects
 basic_trigger_t trigger;
-#define DLOG_MEM_LENGTH 100
 
 // dlog variables
 ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];
@@ -46,65 +37,62 @@ ctrl_gt dlog_mem2[DLOG_MEM_LENGTH];
 extern gpio_halt user_led;
 
 //=================================================================================================
-// peripheral setup function
+// Peripheral Setup Function
 
 // User should setup all the peripheral in this function.
 void setup_peripheral(void)
 {
+    // Setup Debug UART
+    debug_uart = IRIS_UART_USB_BASE;
 
-    // Setup Debug Uart
-       debug_uart = IRIS_UART_USB_BASE;
+    // Test print function
+    gmp_base_print(TEXT_STRING("Hello SINV!\r\n"));
+    asm(" RPT #255 || NOP");
 
-       // Test print function
-       gmp_base_print(TEXT_STRING("Hello World!\r\n"));
-       asm(" RPT #255 || NOP");
+    user_led = SYSTEM_LED;
 
-       user_led = SYSTEM_LED;
+    // ---------------------------------------------------------
+    // 1. Initialize AC Grid Voltage ADC Channel
+    // ---------------------------------------------------------
+    ctl_init_adc_channel(&adc_v_grid,
+                         // ADC gain
+                         ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_AC_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
+                         // ADC bias
+                         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_AC_VOLTAGE_BIAS),
+                         // ADC resolution, IQN
+                         12, 24);
 
-       // inverter side ADC
-       ctl_init_tri_ptr_adc_channel(
-           &uuvw, uuvw_src,
-           // ADC gain, ADC bias
-           ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
-           ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_VOLTAGE_BIAS),
-           // ADC resolution, IQN
-           12, 24);
+    // ---------------------------------------------------------
+    // 2. Initialize AC Current ADC Channel
+    // ---------------------------------------------------------
+    ctl_init_adc_channel(&adc_i_ac,
+                         // ADC gain
+                         ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_AC_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
+                         // ADC bias
+                         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_AC_CURRENT_BIAS),
+                         // ADC resolution, IQN
+                         12, 24);
 
-       ctl_init_tri_ptr_adc_channel(
-           &iuvw, iuvw_src,
-           // ADC gain, ADC bias
-           ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
-           ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_INVERTER_CURRENT_BIAS),
-           // ADC resolution, IQN
-           12, 24);
+    // ---------------------------------------------------------
+    // 3. Initialize DC Bus Voltage ADC Channel
+    // ---------------------------------------------------------
+    ctl_init_adc_channel(&adc_v_bus,
+                         // ADC gain
+                         ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_DC_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
+                         // ADC bias
+                         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_DC_VOLTAGE_BIAS),
+                         // ADC resolution, IQN
+                         12, 24);
 
-       ctl_init_ptr_adc_channel(
-           &udc, &udc_src,
-           // ADC gain, ADC bias
-           ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_DC_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
-           ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_DC_VOLTAGE_BIAS),
-           // ADC resolution, IQN
-           12, 24);
+    // ---------------------------------------------------------
+    // 4. Attach ADC Ports to the RC Core (Zero-Copy Binding)
+    // ---------------------------------------------------------
+    // This allows the step function inside ctl_dispatch to directly
+    // fetch the ADC values from the control_port without parameter passing.
+    ctl_attach_sinv_rc(&rc_core, &adc_v_bus.control_port, &adc_v_grid.control_port, &adc_i_ac.control_port);
 
-       ctl_init_ptr_adc_channel(
-           &idc, &idc_src,
-           // ADC gain, ADC bias
-           ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_DC_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
-           ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_DC_CURRENT_BIAS),
-           // ADC resolution, IQN
-           12, 24);
-
-       //
-       // attach
-       //
-#if BUILD_LEVEL <= 2
-    ctl_attach_foc_core_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &rg.enc, &spd_enc.encif);
-#else  // BUILD_LEVEL
-    ctl_attach_foc_core_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &pos_enc.encif, &spd_enc.encif);
-#endif // BUILD_LEVEL
-
-       // dlog module
-       dsa_init_basic_trigger(&trigger, DLOG_MEM_LENGTH);
+    // Initialize data logger module
+    dsa_init_basic_trigger(&trigger, DLOG_MEM_LENGTH);
 }
 
 //=================================================================================================
@@ -113,41 +101,29 @@ void setup_peripheral(void)
 // ADC interrupt
 interrupt void MainISR(void)
 {
-    //
-    // call GMP ISR  Controller operation callback function
-    //
+    // Call GMP ISR Controller operation callback function (invokes ctl_dispatch)
     gmp_base_ctl_step();
 
-    //
     // Call GMP Timer
-    //
     gmp_step_system_tick();
 
-    //
-    // Blink LED
-    //
+    // Blink LED (Heartbeat)
     if (gmp_base_get_system_tick() % 1000 < 500)
         GPIO_WritePin(SYSTEM_LED, 0);
     else
         GPIO_WritePin(SYSTEM_LED, 1);
 
-    //
     // Clear the interrupt flag
-    //
     ADC_clearInterruptStatus(IRIS_ADCA_BASE, ADC_INT_NUMBER1);
 
-    //
     // Check if overflow has occurred
-    //
     if (true == ADC_getInterruptOverflowStatus(IRIS_ADCA_BASE, ADC_INT_NUMBER1))
     {
         ADC_clearInterruptOverflowStatus(IRIS_ADCA_BASE, ADC_INT_NUMBER1);
         ADC_clearInterruptStatus(IRIS_ADCA_BASE, ADC_INT_NUMBER1);
     }
 
-    //
     // Acknowledge the interrupt
-    //
     Interrupt_clearACKGroup(INT_IRIS_ADCA_1_INTERRUPT_ACK_GROUP);
 }
 
@@ -157,22 +133,22 @@ void reset_controller(void)
 
     GPIO_WritePin(PWM_RESET_PORT, 0);
 
-    for(i=0;i<10000;++i);
+    for (i = 0; i < 10000; ++i)
+        ;
 
     GPIO_WritePin(PWM_RESET_PORT, 1);
-
 }
 
 //=================================================================================================
-// communication functions and interrupt functions here
+// Communication functions and interrupt functions
 
-// 10000 -> 1.0
+// 10000 -> 1.0 (Fixed point communication scale)
 #define CAN_SCALE_FACTOR 10000
 
-// 32 bit union
+// 32-bit union for C2000 (uint16_t takes 1 word, 32-bit takes 2 words)
 typedef union {
     int32_t i32;
-    uint16_t u16[2]; // C2000中uint16_t占1个word，32位占用2个word
+    uint16_t u16[2];
 } can_data_t;
 
 // CAN interrupt
@@ -188,12 +164,12 @@ interrupt void INT_IRIS_CAN_0_ISR(void)
         CAN_readMessage(IRIS_CAN_BASE, 1, rx_data);
         CAN_clearInterruptStatus(CANA_BASE, 1);
 
-        // Control Flag, Enable System
+        // Control Flag, Enable/Disable System
         if (rx_data[0] == 1)
         {
             cia402_send_cmd(&cia402_sm, CIA402_CMD_ENABLE_OPERATION);
         }
-        if (rx_data[0] == 0)
+        else if (rx_data[0] == 0)
         {
             cia402_send_cmd(&cia402_sm, CIA402_CMD_DISABLE_VOLTAGE);
         }
@@ -203,23 +179,16 @@ interrupt void INT_IRIS_CAN_0_ISR(void)
         CAN_readMessage(IRIS_CAN_BASE, 2, (uint16_t*)recv_content);
         CAN_clearInterruptStatus(CANA_BASE, 2);
 
-        // set target value
-#if BUILD_LEVEL == 1
-        // For level 1 Set target voltage
-        ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl((float)recv_content[0].i32 / CAN_SCALE_FACTOR),
-                                         float2ctrl((float)recv_content[1].i32 / CAN_SCALE_FACTOR));
-
-#endif // BUILD_LEVEL
+        // Set target User Power References
+        // Used in BUILD_LEVEL >= 2 (Grid-tied PQ control)
+        g_p_ref_user = float2ctrl((float)recv_content[0].i32 / CAN_SCALE_FACTOR);
+        g_q_ref_user = float2ctrl((float)recv_content[1].i32 / CAN_SCALE_FACTOR);
     }
 
-    //
     // Clear the interrupt flag
-    //
     CAN_clearGlobalInterruptStatus(IRIS_CAN_BASE, CAN_GLOBAL_INT_CANINT0);
 
-    //
     // Acknowledge the interrupt
-    //
     Interrupt_clearACKGroup(INT_IRIS_CAN_0_INTERRUPT_ACK_GROUP);
 }
 
@@ -227,62 +196,50 @@ interrupt void INT_IRIS_CAN_1_ISR(void)
 {
     // Nothing here
 
-    //
     // Clear the interrupt flag
-    //
     CAN_clearGlobalInterruptStatus(IRIS_CAN_BASE, CAN_GLOBAL_INT_CANINT1);
 
-    //
     // Acknowledge the interrupt
-    //
     Interrupt_clearACKGroup(INT_IRIS_CAN_1_INTERRUPT_ACK_GROUP);
 }
 
 void send_monitor_data(void)
 {
-    uint16_t rx_raw[4];
     can_data_t tran_content[2];
 
-    // 0x201: Monitor Grid Voltage
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
+    // 0x201: Monitor Grid Voltage Magnitude & PLL Frequency
+    tran_content[0].i32 = (int32_t)(pll.v_mag * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(pll.frequency * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 4, 8, (uint16_t*)tran_content);
 
-    //0x202: Monitor inverter voltage
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
+    // 0x202: Monitor Average Active(P) and Reactive(Q) Power
+    tran_content[0].i32 = (int32_t)(pq_meter.p_avg * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(pq_meter.q_avg * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 5, 8, (uint16_t*)tran_content);
 
-    // 0x203: Monitor grid current
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
+    // 0x203: Monitor RMS Grid Voltage & RMS Inverter Current
+    tran_content[0].i32 = (int32_t)(pq_meter.v_rms * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(pq_meter.i_rms * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 6, 8, (uint16_t*)tran_content);
 
-    // 0x204: TODO Monitor inverter current
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
+    // 0x204: Monitor Target AC Current (I_ref) & Modulator Duty Cycle Ref
+    tran_content[0].i32 = (int32_t)(ref_gen.i_ref_inst * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(rc_core.v_out_ref * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 7, 8, (uint16_t*)tran_content);
 
-    // 0x205: TODO Monitor DC Voltage / Current
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
+    // 0x205: Monitor DC Bus Voltage
+    tran_content[0].i32 = (int32_t)(adc_v_bus.control_port.value * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = 0; // Reserved
     CAN_sendMessage(IRIS_CAN_BASE, 8, 8, (uint16_t*)tran_content);
 
-    // 0x206: Monitor Grid Voltage A and PLL output angle
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.vabc.dat[phase_A] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.pll.theta * CAN_SCALE_FACTOR);
-
+    // 0x206: Monitor PLL Phase Angle (Theta) & Real-time Voltage Feedforward
+    tran_content[0].i32 = (int32_t)(pll.theta * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(rc_core.u_ff * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 9, 8, (uint16_t*)tran_content);
 
-    // 0x207: Monitor reserved
-//    tran_content[0].i32 = (int32_t)(inv_ctrl.idq.dat[phase_d] * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(inv_ctrl.idq.dat[phase_q] * CAN_SCALE_FACTOR);
-
+    // 0x207: Monitor CiA 402 State Machine Status Word & Error Flags
+    tran_content[0].i32 = (int32_t)(cia402_sm.state_word.all);
+    tran_content[1].i32 = (int32_t)(protection.active_errors);
     CAN_sendMessage(IRIS_CAN_BASE, 10, 8, (uint16_t*)tran_content);
 }
 
@@ -292,9 +249,7 @@ interrupt void INT_IRIS_UART_RS232_RX_ISR(void)
 {
     // Nothing here
 
-    //
     // Acknowledge the interrupt
-    //
     Interrupt_clearACKGroup(INT_IRIS_UART_RS232_RX_INTERRUPT_ACK_GROUP);
 }
 
@@ -303,7 +258,7 @@ interrupt void INT_IRIS_UART_RS232_RX_ISR(void)
 //=================================================================================================
 // Debug interface
 
-// a local small cache size, capable of covering the depth of the hardware FIFO (typically 16 bytes)
+// A local small cache size, capable of covering the depth of the hardware FIFO (typically 16 bytes)
 #define ISR_LOCAL_BUF_SIZE 16
 
 extern gmp_datalink_t dl;
@@ -326,7 +281,7 @@ void flush_dl_rx_buffer()
     uint16_t fifoLevel;
     data_gt rxBuf[ISR_LOCAL_BUF_SIZE];
 
-    // read all FIFO messages
+    // Read all FIFO messages
     fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE);
 
     if (fifoLevel > 0)
@@ -342,19 +297,13 @@ interrupt void INT_IRIS_UART_USB_RX_ISR(void)
 {
     flush_dl_rx_buffer();
 
-    //
-    // deal with overrun
-    //
+    // Deal with overrun
     if (SCI_getRxStatus(IRIS_UART_USB_BASE) & SCI_RXSTATUS_OVERRUN)
     {
         SCI_clearOverflowStatus(IRIS_UART_USB_BASE);
     }
 
-    //
     // Clear interrupt flags
-    //
     SCI_clearInterruptStatus(IRIS_UART_USB_BASE, SCI_INT_RXFF);
     Interrupt_clearACKGroup(INT_IRIS_UART_USB_RX_INTERRUPT_ACK_GROUP);
 }
-
-////
