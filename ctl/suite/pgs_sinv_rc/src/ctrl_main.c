@@ -4,6 +4,8 @@
  * @brief 20kW Single-Phase Inverter/AFE Top-level Implementation.
  */
 
+#include <gmp_core.h>
+
 #include "ctl_main.h"
 
 //=================================================================================================
