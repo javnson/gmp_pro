@@ -1,0 +1,321 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="GMP Source Files">
+      <UniqueIdentifier>{732746c9-da01-4ee0-bcff-4e11081b3b84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="implement_common">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="implement_interface">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="digital_power_bare">
+      <UniqueIdentifier>{4a6d68fd-b83a-450b-8884-47debe6a5ba4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_cia402_callback_fn.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_cia402_state_machine.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_component_interface.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_divider.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_basic.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_hysteresis_controller.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_acim_consultant.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_acim_fo.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_acim_pos_calc.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_acim_smo.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_ato_pll.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_basic_mech_ctrl.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_bldc_hall.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_bldc_zcd_obs.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_dtc_svm_core.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_encoder.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_foc_core.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_imfoc_core.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_inverter_consultant.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_ipm_fw.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_ladrc_pos_ctrl.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_ladrc_spd_ctrl.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_lut_fw.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_mech_consultant.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_mit_mech_ctrl.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_mtr_protection.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_mtr_vf_generator.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_nameplate_consultant.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_pmsm_consultant.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_pmsm_dbptc.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_pmsm_esmo.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_pmsm_fo.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_pmsm_hfi.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_pu_consultant.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_s_curve_traj.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_smc_mech_ctrl.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_sogi_traj.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_spm_fw.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_trapezoudal_traj.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_nano.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_saturation.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_slope_limiter.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\gmp_at_device.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\gmp_dev_util.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\gmp_mm_block_memory.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\gmp_process_mgr.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\gmp_std_error_code.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\gmp_std_port.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\windows_rt_tracer.cpp">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\windows_simulink_main.cpp">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_back_stepping.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_flc.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_flpid.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_ilc.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_imc.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_lms.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_lut_pair.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_mrac.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_rc.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_sinc_interpolator.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_smc.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_surf_search.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pi.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pid.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pid_aw.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_biquad_filter.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_df.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_filter.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_lead_lag.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_pid.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_pole_zero.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_pr.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_sg.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_sogi.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_track_pid.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_disrete_fir.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_if_pwm_h.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_if_pwm_npc.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_if_pwm_spwm.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_internal_ladrc1.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_internal_ladrc2.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_itoc_protection.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_protection.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_sag_swell.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_sogi.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_track_pid.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DigialPower_simulink.cpp">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\windows_peripheral_driver.cpp">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ctl_main.c">
+      <Filter>implement_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\user_main.c">
+      <Filter>implement_common</Filter>
+    </ClCompile>
+    <ClCompile Include="xplt\xplt.peripheral.cpp">
+      <Filter>implement_interface</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\ctl_main.h">
+      <Filter>implement_common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\user_main.h">
+      <Filter>implement_common</Filter>
+    </ClInclude>
+    <ClInclude Include="xplt\ctrl_settings.h">
+      <Filter>implement_interface</Filter>
+    </ClInclude>
+    <ClInclude Include="xplt\pc_simulate_buffer.h">
+      <Filter>implement_interface</Filter>
+    </ClInclude>
+    <ClInclude Include="xplt\xplt.config.h">
+      <Filter>implement_interface</Filter>
+    </ClInclude>
+    <ClInclude Include="xplt\xplt.ctl_interface.h">
+      <Filter>implement_interface</Filter>
+    </ClInclude>
+    <ClInclude Include="xplt\xplt.peripheral.h">
+      <Filter>implement_interface</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
