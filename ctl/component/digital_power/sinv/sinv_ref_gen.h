@@ -11,6 +11,8 @@
  * @copyright Copyright GMP(c) 2024-2026
  */
 
+#include <ctl/component/intrinsic/basic/slope_limiter.h>
+
 #ifndef _CTL_SINV_REF_GEN_H_
 #define _CTL_SINV_REF_GEN_H_
 
@@ -36,6 +38,10 @@ typedef struct _tag_sinv_ref_gen_t
     ctrl_gt i_max_sq;  //!< Pre-calculated squared max current (i_max * i_max) to save DSP cycles.
     ctrl_gt v_mag_min; //!< Minimum grid voltage threshold to prevent division-by-zero during sags.
 
+    // --- PQ slope limiter ---
+    ctl_slope_limiter_t p_slope_lim; //!< Slope limiter for P
+    ctl_slope_limiter_t q_slope_lim; //!< Slope limiter for Q
+
     // --- Flags ---
     fast_gt flag_over_current; //!< Over current warning
 
@@ -51,7 +57,8 @@ typedef struct _tag_sinv_ref_gen_t
  * @param[in] i_max Maximum allowed peak current magnitude (e.g., 1.5 * rated peak).
  * @param[in] v_mag_min Minimum voltage magnitude to allow power calculation (e.g., 0.1 pu).
  */
-void ctl_init_sinv_ref_gen(ctl_sinv_ref_gen_t* gen, parameter_gt i_max, parameter_gt v_mag_min);
+void ctl_init_sinv_ref_gen(ctl_sinv_ref_gen_t* gen, parameter_gt i_max, parameter_gt v_mag_min, parameter_gt p_slope,
+                           parameter_gt q_slope);
 
 /**
  * @brief Clears the internal states of the generator.
@@ -62,6 +69,9 @@ GMP_STATIC_INLINE void ctl_clear_sinv_ref_gen(ctl_sinv_ref_gen_t* gen)
     gen->i_p_mag = float2ctrl(0.0f);
     gen->i_q_mag = float2ctrl(0.0f);
     gen->flag_over_current = 0;
+
+    ctl_clear_slope_limiter(&gen->p_slope_lim);
+    ctl_clear_slope_limiter(&gen->q_slope_lim);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -77,11 +87,14 @@ GMP_STATIC_INLINE void ctl_clear_sinv_ref_gen(ctl_sinv_ref_gen_t* gen)
  * @param[in] phasor Pointer to the synchronized grid phasor [sin(theta), cos(theta)] (from PLL).
  * @return ctrl_gt The instantaneous AC current reference.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_ref_gen_pq(ctl_sinv_ref_gen_t* gen, ctrl_gt p_ref, ctrl_gt q_ref, ctrl_gt v_mag,
+GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_ref_gen_pq(ctl_sinv_ref_gen_t* gen, ctrl_gt _p_ref, ctrl_gt _q_ref, ctrl_gt v_mag,
                                                    const ctl_vector2_t* phasor)
 {
     // 1. Voltage Sag Protection (Anti Division-by-Zero)
     ctrl_gt v_safe = (v_mag > gen->v_mag_min) ? v_mag : gen->v_mag_min;
+
+    ctrl_gt p_ref = ctl_step_slope_limiter(&gen->p_slope_lim, _p_ref);
+    ctrl_gt q_ref = ctl_step_slope_limiter(&gen->q_slope_lim, _q_ref);
 
     // 2. Calculate ideal current amplitudes: I = 2 * Power / V_mag
     ctrl_gt two_over_v = ctl_div(float2ctrl(2.0f), v_safe);
