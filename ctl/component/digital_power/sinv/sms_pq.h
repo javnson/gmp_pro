@@ -51,13 +51,13 @@ typedef struct _tag_single_phase_pq_t
  * @param[in] fs Controller execution sampling frequency in Hz.
  * @param[in] lpf_fc Cutoff frequency for the output noise filter in Hz (e.g., 200.0f).
  */
-void ctl_init_single_phase_pq(ctl_sms_pq_t* pq, parameter_gt grid_freq, parameter_gt fs, parameter_gt lpf_fc);
+void ctl_init_sms_pq(ctl_sms_pq_t* pq, parameter_gt grid_freq, parameter_gt fs, parameter_gt lpf_fc);
 
 /**
  * @brief Clears the internal states of the PQ calculator.
  * @param[in,out] pq Pointer to the PQ calculator instance.
  */
-GMP_STATIC_INLINE void ctl_clear_single_phase_pq(ctl_sms_pq_t* pq)
+GMP_STATIC_INLINE void ctl_clear_sms_pq(ctl_sms_pq_t* pq)
 {
     ctl_clear_discrete_sogi(&pq->sogi_i);
     ctl_clear_biquad_filter(&pq->lpf_p);
@@ -80,7 +80,7 @@ GMP_STATIC_INLINE void ctl_clear_single_phase_pq(ctl_sms_pq_t* pq)
  * @param[in] v_beta Grid voltage beta component (from PLL's SOGI).
  * @param[in] i_ac The raw instantaneous single-phase AC grid current feedback.
  */
-GMP_STATIC_INLINE void ctl_step_single_phase_pq(ctl_sms_pq_t* pq, ctrl_gt v_alpha, ctrl_gt v_beta, ctrl_gt i_ac)
+GMP_STATIC_INLINE void ctl_step_sms_pq(ctl_sms_pq_t* pq, ctrl_gt v_alpha, ctrl_gt v_beta, ctrl_gt i_ac)
 {
     // 1. Generate orthogonal current signals using SOGI
     ctl_step_discrete_sogi(&pq->sogi_i, i_ac);

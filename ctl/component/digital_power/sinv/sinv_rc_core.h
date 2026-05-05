@@ -15,6 +15,8 @@
 #ifndef _CTL_SINV_RC_CORE_H_
 #define _CTL_SINV_RC_CORE_H_
 
+#include <ctl/component/interface/interface_base.h>
+
 #include <ctl/component/intrinsic/advance/fdrc.h>
 #include <ctl/component/intrinsic/discrete/filter_iir1.h>
 #include <ctl/component/intrinsic/discrete/lead_lag.h>
@@ -77,10 +79,11 @@ typedef struct _tag_sinv_rc_core_t
     uint32_t isr_tick; //!< Controller Tick
 
     // --- Inputs (Updated each cycle before calling step) ---
-    ctrl_gt i_ref;       //!< AC current reference (from Ref Generator).
-    ctrl_gt i_fdbk;      //!< AC current feedback (from ADC).
-    ctrl_gt v_grid_fdbk; //!< Grid voltage feedback (from ADC).
-    ctrl_gt v_bus_fdbk;  //!< DC bus voltage feedback (from ADC, PU). Set to 1.0f to disable compensation.
+    ctrl_gt i_ref; //!< AC current reference (from Ref Generator).
+
+    adc_ift* v_grid_fdbk; //!< Grid voltage feedback (from ADC).
+    adc_ift* v_bus_fdbk;  //!< DC bus voltage feedback (from ADC, PU). Set to 1.0f to disable compensation.
+    adc_ift* i_fdbk;      //!< AC current feedback (from ADC).
 
     // --- Outputs & Intermediate Variables ---
     ctrl_gt current_error; //!< Real-time current tracking error.
@@ -166,8 +169,8 @@ GMP_STATIC_INLINE void ctl_auto_tuning_sinv_rc(ctl_sinv_rc_init_t* init)
  * @param[out] core Pointer to the core structure.
  * @param[in] init Pointer to the populated and tuned init structure.
  */
-void ctl_init_sinv_rc_core(ctl_sinv_rc_core_t* core, const ctl_sinv_rc_init_t* init,
-                                             ctrl_gt* rc_buffer, uint32_t rc_buf_capacity)
+void ctl_init_sinv_rc_core(ctl_sinv_rc_core_t* core, const ctl_sinv_rc_init_t* init, ctrl_gt* rc_buffer,
+                           uint32_t rc_buf_capacity)
 {
     // 1. Init QPR
     ctl_init_qpr_controller(&core->qpr_ctrl, float2ctrl(init->kp_tuned), float2ctrl(init->kr_tuned),
@@ -207,6 +210,13 @@ void ctl_init_sinv_rc_core(ctl_sinv_rc_core_t* core, const ctl_sinv_rc_init_t* i
     core->isr_tick = 0;
 }
 
+GMP_STATIC_INLINE void ctl_attach_sinv_rc(ctl_sinv_rc_core_t* core, adc_ift* _u_dc, adc_ift* _u_ac, adc_ift* _i_ac)
+{
+    core->i_fdbk = _i_ac;
+    core->v_bus_fdbk = _u_dc;
+    core->v_grid_fdbk = _u_ac;
+}
+
 /*---------------------------------------------------------------------------*/
 /* Core Execution Step Function                                              */
 /*---------------------------------------------------------------------------*/
@@ -216,7 +226,7 @@ void ctl_init_sinv_rc_core(ctl_sinv_rc_core_t* core, const ctl_sinv_rc_init_t* i
  * @param[in,out] core Pointer to the RC core instance.
  * @return ctrl_gt Final output voltage reference (duty cycle) after DC bus compensation.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_rc_core(ctl_sinv_rc_core_t* core)
+GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_rc_core(ctl_sinv_rc_core_t* core, ctrl_gt i_ref)
 {
     core->isr_tick++;
 
@@ -225,8 +235,10 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_rc_core(ctl_sinv_rc_core_t* core)
         return core->v_out_ref; // Keep previous or zero
     }
 
+    core->i_ref = i_ref;
+
     // 1. Calculate Error
-    core->current_error = core->i_ref - core->i_fdbk;
+    core->current_error = core->i_ref - core->i_fdbk->value;
 
     // 2. Transient Detection for Smart FDRC
     ctrl_gt abs_err = ctl_abs(core->current_error);
@@ -256,18 +268,18 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_rc_core(ctl_sinv_rc_core_t* core)
     // 5. Grid Voltage Feedforward
     if (core->flag_enable_lead_comp)
     {
-        core->u_ff = ctl_step_lead(&core->vgrid_lead, core->v_grid_fdbk);
+        core->u_ff = ctl_step_lead(&core->vgrid_lead, core->v_grid_fdbk->value);
     }
     else
     {
-        core->u_ff = core->v_grid_fdbk; // Direct feedforward without phase compensation
+        core->u_ff = core->v_grid_fdbk->value; // Direct feedforward without phase compensation
     }
 
     // 6. Synthesis
     ctrl_gt v_ref_total = core->u_qpr + core->u_fdrc + core->u_ff;
 
     // 7. Universal DC Bus Voltage Compensation & Saturation
-    ctrl_gt v_bus_safe = (core->v_bus_fdbk > float2ctrl(0.1f)) ? core->v_bus_fdbk : float2ctrl(0.1f);
+    ctrl_gt v_bus_safe = (core->v_bus_fdbk->value > float2ctrl(0.1f)) ? core->v_bus_fdbk->value : float2ctrl(0.1f);
     ctrl_gt v_out_comp = ctl_div(v_ref_total, v_bus_safe);
 
     core->v_out_ref = ctl_sat(v_out_comp, core->v_out_max, -core->v_out_max);

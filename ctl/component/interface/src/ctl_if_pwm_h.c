@@ -13,5 +13,7 @@ void ctl_init_single_phase_H_modulation(single_phase_H_modulation_t* bridge, pwm
     bridge->pwm_deadband = pwm_deadband / 2;
     bridge->current_deadband = current_deadband;
 
+    bridge->flag_enable_dbcomp = 0;
+
     ctl_clear_single_phase_H_modulation(bridge);
 }
