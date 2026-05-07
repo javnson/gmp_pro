@@ -249,6 +249,27 @@
     <ClCompile Include="xplt\xplt.peripheral.cpp">
       <Filter>implement_interface</Filter>
     </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\crc16.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_encoder_switcher.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\dsa_scope.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\gmp_datalink.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\gmp_mem_presp.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\gmp_pil_core.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\gmp_tunable.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ctl_main.h">
