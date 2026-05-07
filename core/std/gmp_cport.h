@@ -103,7 +103,7 @@ GMP_STATIC_INLINE time_gt gmp_base_time_sub(time_gt t1, time_gt t0)
 
 GMP_STATIC_INLINE time_gt gmp_base_time2tick(float time_s)
 {
-    return time_s * 1000.0f;
+    return (time_gt)(time_s * 1000.0f);
 }
 
 /**

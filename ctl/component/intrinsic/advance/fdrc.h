@@ -99,7 +99,9 @@ extern "C"
  * @param fs System sampling frequency (Hz).
  * @param f_min Minimum expected grid/fundamental frequency (Hz).
  */
+#ifndef CTL_RC_CALC_MIN_CAPACITY
 #define CTL_RC_CALC_MIN_CAPACITY(fs, f_min) ((uint32_t)((fs) / (f_min)) + 10U)
+#endif // CTL_RC_CALC_MIN_CAPACITY
 
 /*---------------------------------------------------------------------------*/
 /* Repetitive Controller (RC) Core Generator                                 */

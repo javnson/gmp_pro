@@ -58,6 +58,17 @@ typedef struct _tag_repetitive_controller_t
 /*---------------------------------------------------------------------------*/
 
 /**
+ * @brief Macro to calculate the absolute minimum required buffer capacity.
+ * @details Adds a margin of 10 elements to prevent index boundary overflow 
+ * during extreme frequency deviations and phase lead calculations.
+ * @param fs System sampling frequency (Hz).
+ * @param f_min Minimum expected grid/fundamental frequency (Hz).
+ */
+#ifndef CTL_RC_CALC_MIN_CAPACITY
+#define CTL_RC_CALC_MIN_CAPACITY(fs, f_min) ((uint32_t)((fs) / (f_min)) + 10U)
+#endif // CTL_RC_CALC_MIN_CAPACITY
+
+/**
  * @brief Fast circular buffer index wrapping for ctl_rc_t.
  */
 GMP_STATIC_INLINE uint32_t _ctl_rc_wrap_index(int32_t index, uint32_t capacity)
@@ -204,38 +215,6 @@ GMP_STATIC_INLINE void ctl_set_rc_saturation(ctl_rc_t* obj, ctrl_gt out_min, ctr
 GMP_STATIC_INLINE void ctl_set_rc_fs(ctl_rc_t* obj, parameter_gt fs)
 {
     obj->fs = fs;
-}
-
-/* 
- * --------------------------------------------------------------------------
- * The following implementation belongs in the corresponding .c file or 
- * within the #ifdef __cplusplus section if acting as a header-only definition.
- * --------------------------------------------------------------------------
- */
-
-void ctl_init_rc(ctl_rc_t* obj, ctrl_gt* buffer, uint32_t capacity, parameter_gt fs, parameter_gt f_min,
-                 parameter_gt q_gain, parameter_gt k_rc, int32_t phase_lead_k)
-{
-    gmp_base_assert(buffer != NULL);
-    gmp_base_assert(fs > 0.0f);
-    gmp_base_assert(f_min > 0.0f);
-    gmp_base_assert(capacity >= CTL_RC_CALC_MIN_CAPACITY(fs, f_min));
-
-    obj->buffer = buffer;
-    obj->buffer_capacity = capacity;
-    obj->phase_lead_k = phase_lead_k;
-
-    obj->q_gain = float2ctrl(q_gain);
-    obj->k_rc = float2ctrl(k_rc);
-
-    obj->out_max = float2ctrl(1.0f);
-    obj->out_min = float2ctrl(-1.0f);
-
-    obj->fs = fs;
-    obj->f_min_rated = f_min;
-
-    ctl_enable_rc_integrating(obj);
-    ctl_clear_rc(obj);
 }
 
 /**

@@ -4,7 +4,34 @@
 // repetitive controller
 #include <ctl/component/intrinsic/advance/repetitive_controller.h>
 
-void ctl_init_rc(ctl_fdrc_t* obj, ctrl_gt* buffer, uint32_t capacity, parameter_gt fs, parameter_gt f_min,
+void ctl_init_rc(ctl_rc_t* obj, ctrl_gt* buffer, uint32_t capacity, parameter_gt fs, parameter_gt f_min,
+                 parameter_gt q_gain, parameter_gt k_rc, int32_t phase_lead_k)
+{
+    gmp_base_assert(buffer != NULL);
+    gmp_base_assert(fs > 0.0f);
+    gmp_base_assert(f_min > 0.0f);
+    gmp_base_assert(capacity >= CTL_RC_CALC_MIN_CAPACITY(fs, f_min));
+
+    obj->buffer = buffer;
+    obj->buffer_capacity = capacity;
+    obj->phase_lead_k = phase_lead_k;
+
+    obj->q_gain = float2ctrl(q_gain);
+    obj->k_rc = float2ctrl(k_rc);
+
+    obj->out_max = float2ctrl(1.0f);
+    obj->out_min = float2ctrl(-1.0f);
+
+    obj->fs = fs;
+    obj->f_min_rated = f_min;
+
+    ctl_enable_rc_integrating(obj);
+    ctl_clear_rc(obj);
+}
+
+#include <ctl/component/intrinsic/advance/fdrc.h>
+
+void ctl_init_fdrc(ctl_fdrc_t* obj, ctrl_gt* buffer, uint32_t capacity, parameter_gt fs, parameter_gt f_min,
                    parameter_gt q_fc, parameter_gt k_rc, int32_t phase_lead_k)
 {
     // Memory and validity assertions

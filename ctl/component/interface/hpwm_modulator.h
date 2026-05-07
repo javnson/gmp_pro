@@ -113,7 +113,7 @@ GMP_STATIC_INLINE void ctl_step_single_phase_H_modulation(single_phase_H_modulat
     // Duty_L = (1 - u_target) / 2
     // Duty_N = (1 + u_target) / 2
     ctrl_gt modulate_target_L = ctl_sat(ctl_div2(-u_target + float2ctrl(1)), float2ctrl(1), 0);
-    ctrl_gt modulate_target_N = ctl_sat(ctl_div2(u_target + float2ctrl(1), float2ctrl(1), 0);
+    ctrl_gt modulate_target_N = ctl_sat(ctl_div2(u_target + float2ctrl(1)), float2ctrl(1), 0);
 
     // 3. Apply dead-time compensation based on current direction.
     int32_t calc_L = (int32_t)pwm_mul(modulate_target_L, bridge->pwm_full_scale);
