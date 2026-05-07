@@ -107,12 +107,14 @@ void ctl_init_rc(ctl_rc_t* obj, ctrl_gt* buffer, uint32_t capacity, parameter_gt
  */
 GMP_STATIC_INLINE void ctl_clear_rc(ctl_rc_t* obj)
 {
+    uint32_t i;
+
     obj->buffer_index = 0;
     obj->output = float2ctrl(0.0f);
 
     if (obj->buffer != NULL)
     {
-        for (uint32_t i = 0; i < obj->buffer_capacity; i++)
+        for (i = 0; i < obj->buffer_capacity; i++)
         {
             obj->buffer[i] = float2ctrl(0.0f);
         }

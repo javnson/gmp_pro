@@ -181,13 +181,15 @@ void ctl_init_fdrc(ctl_fdrc_t* obj, ctrl_gt* buffer, uint32_t capacity, paramete
  */
 GMP_STATIC_INLINE void ctl_clear_fdrc(ctl_fdrc_t* obj)
 {
+    uint32_t i;
+
     obj->buffer_index = 0;
     obj->output = float2ctrl(0.0f);
     ctl_clear_biquad_filter(&obj->q_filter);
 
     if (obj->buffer != NULL)
     {
-        for (uint32_t i = 0; i < obj->buffer_capacity; i++)
+        for (i = 0; i < obj->buffer_capacity; i++)
         {
             obj->buffer[i] = float2ctrl(0.0f);
         }
