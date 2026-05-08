@@ -24,7 +24,7 @@
     <ProjectGuid>{2890a777-d5cc-4e07-b1bc-af761cbeb711}</ProjectGuid>
     <RootNamespace>motorcontrolsimulink</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Motor_Control_Suite_SIL_Env</ProjectName>
+    <ProjectName>Digital_Power_Suite_FSBB_SIL_Env</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

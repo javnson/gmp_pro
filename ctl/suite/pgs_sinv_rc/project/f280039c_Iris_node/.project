@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>CTL_MC_PMSM_NT_Iris_node_Sensored</name>
+	<name>CTL_PG_SINV_RC_Iris_node_Sensored</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -71,6 +71,10 @@
 		<variable>
 			<name>copy_PARENT1231</name>
 			<value>$%7BPARENT-1-copy_PARENT12%7D/lib/gmp_pro/ctl/suite/mcs_pmsm_nt</value>
+		</variable>
+		<variable>
+			<name>copy_PARENT1234</name>
+			<value>$%7BPARENT-1-copy_PARENT12%7D/pgs_sinv_rc</value>
 		</variable>
 	</variableList>
 </projectDescription>
