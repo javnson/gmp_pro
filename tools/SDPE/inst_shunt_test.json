@@ -1,0 +1,20 @@
+{
+    "instance_name": "iuvw",
+    "prefix": "CTRL_INVERTER_CURRENT",
+    "channel_mode": "tri_channel",
+    "parameter_values": {
+        "r_shunt_ohm": 0.002,
+        "amp_gain": 20.0,
+        "bias_v": 1.65,
+        "max_cont_arms": 15.0,
+        "max_peak_ap": 30.0,
+        "accuracy_class_pct": 0.5,
+        "chip_part_number": "INA240A1"
+    },
+    "test_context": {
+        "adc_vref": 3.3,
+        "adc_res": 12,
+        "adc_iqn": 24,
+        "current_base": 10.0
+    }
+}

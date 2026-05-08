@@ -1,0 +1,31 @@
+{
+    "requirement_name": "Standard_PMSM_FOC",
+    "required_interfaces": [
+        {
+            "name": "controller",
+            "type": "controller_base_settings",
+            "description": "控制器基本参数设置"
+        },
+        {
+            "name": "iuvw",
+            "type": "tri_phase_current",
+            "description": "电机三相电流输入"
+        },
+        {
+            "name": "vbus",
+            "type": "dc_voltage",
+            "description": "母线电压输入"
+        },
+        {
+            "name": "pos_enc",
+            "type": "position_encoder",
+            "description": "位置编码器"
+        },
+        {
+            "name": "pwm_out",
+            "type": "tri_phase_pwm",
+            "description": "三相占空比输出"
+        }
+    ],
+    "required_globals": [ "CTRL_VOLTAGE_BASE", "CTRL_CURRENT_BASE" ]
+}

@@ -1,0 +1,69 @@
+{
+    "paradigm_name": "current_shunt",
+    "display_name": "Shunt-based Current Sensor with Op-Amp",
+    "template_file": "current_shunt.j2",
+
+    "supported_modes": {
+        "single_channel": {
+            "c_type": "ptr_adc_channel_t",
+            "channel_count": 1,
+            "init_func": "ctl_init_ptr_adc_channel",
+            "step_func": "ctl_step_ptr_adc_channel"
+        },
+        "dual_channel": {
+            "c_type": "dual_adc_channel_t",
+            "channel_count": 2,
+            "init_func": "ctl_init_dual_adc_channel",
+            "step_func": "ctl_step_dual_adc_channel"
+        },
+        "tri_channel": {
+            "c_type": "tri_ptr_adc_channel_t",
+            "channel_count": 3,
+            "init_func": "ctl_init_tri_ptr_adc_channel",
+            "step_func": "ctl_step_tri_ptr_adc_channel"
+        }
+    },
+
+    "parameters": [
+        {
+            "name": "r_shunt_ohm",
+            "macro_name": "R_SHUNT_OHM",
+            "type": "float",
+            "value_format": "({}f)",
+            "description": "Shunt resistor value in Ohms"
+        },
+        {
+            "name": "amp_gain",
+            "macro_name": "AMP_GAIN",
+            "type": "float",
+            "value_format": "({}f)",
+            "description": "Total amplifier gain (V/V)"
+        },
+        {
+            "name": "bias_v",
+            "macro_name": "BIAS_V",
+            "type": "float",
+            "value_format": "({}f)",
+            "description": "Hardware bias voltage before ADC (V)"
+        }
+    ],
+
+    "required_context": [
+        {
+            "name": "adc_vref",
+            "type": "float",
+            "description": "ADC reference voltage (V)"
+        },
+        {
+            "name": "adc_res",
+            "type": "uint16",
+            "description": "ADC resolution in bits"
+        },
+        {
+            "name": "adc_iqn",
+            "type": "uint16",
+            "default": 24,
+            "description": "IQ math format number"
+        }
+    ]
+}

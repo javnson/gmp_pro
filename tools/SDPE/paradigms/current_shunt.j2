@@ -1,0 +1,44 @@
+{# ====================================================================== #}
+{# Paradigm: Current Shunt Sensor                                         #}
+{# ====================================================================== #}
+
+{# 0. Configuration Macros #}
+{% macro render_config_macros(ctx) %}
+/* --- {{ ctx.display_name }} ({{ ctx.obj_name }}) Parameters --- */
+{% for macro_key, macro_val in ctx.formatted_params.items() %}
+#define {{ ctx.prefix }}_{{ macro_key | ljust(20) }} {{ macro_val }}
+{% endfor %}
+
+#define {{ ctx.prefix }}_SENSITIVITY         GMP_SDPE_CALC_SHUNT_SENSITIVITY({{ ctx.prefix }}_R_SHUNT_OHM, {{ ctx.prefix }}_AMP_GAIN)
+#define {{ ctx.prefix }}_BIAS                GMP_SDPE_CALC_BIAS({{ ctx.prefix }}_BIAS_V)
+{% endmacro %}
+
+{# 1. Declaration (NO MORE IF-ELSE STATEMENTS!) #}
+{% macro render_decl(ctx) %}
+// {{ ctx.display_name }} object declaration
+{{ ctx.c_type }} {{ ctx.obj_name }};
+{% if ctx.channel_count > 1 %}
+adc_gt {{ ctx.obj_name }}_src[{{ ctx.channel_count }}];
+{% else %}
+adc_gt {{ ctx.obj_name }}_src;
+{% endif %}
+{% endmacro %}
+
+{# 2. Initialization #}
+{% macro render_init(ctx) %}
+    // Initialize {{ ctx.display_name }} (Ref: {{ ctx.adc_vref }}V, {{ ctx.adc_res }}-bit)
+    {{ ctx.init_func }}(
+        &{{ ctx.obj_name }}, {% if ctx.channel_count > 1 %}{{ ctx.obj_name }}_src{% else %}&{{ ctx.obj_name }}_src{% endif %},
+        ctl_gain_calc_generic({{ ctx.adc_vref }}f, {{ ctx.prefix }}_SENSITIVITY, {{ ctx.current_base }}f),
+        ctl_bias_calc_via_Vref_Vbias({{ ctx.adc_vref }}f, {{ ctx.prefix }}_BIAS),
+        {{ ctx.adc_res }}, {{ ctx.adc_iqn }});
+{% endmacro %}
+
+{# 3. Input Callback #}
+{% macro render_input(ctx) %}
+    {{ ctx.step_func }}(&{{ ctx.obj_name }});
+{% endmacro %}
+
+{# 4. Output Callback #}
+{% macro render_output(ctx) %}
+{% endmacro %}
