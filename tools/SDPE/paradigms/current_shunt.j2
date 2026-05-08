@@ -5,12 +5,31 @@
 {# 0. Configuration Macros #}
 {% macro render_config_macros(ctx) %}
 /* --- {{ ctx.display_name }} ({{ ctx.obj_name }}) Parameters --- */
-{% for macro_key, macro_val in ctx.formatted_params.items() %}
-#define {{ ctx.prefix }}_{{ macro_key | ljust(20) }} {{ macro_val }}
+
+{% for macro_key, param in ctx.formatted_params.items() %}
+/**
+ * @brief {{ param.desc }}
+{%- if param.unit %}
+ * @unit {{ param.unit }}
+{%- endif %}
+ */
+#define {{ ctx.prefix }}_{{ macro_key | ljust(20) }} {{ param.value }}
+
 {% endfor %}
 
-#define {{ ctx.prefix }}_SENSITIVITY         GMP_SDPE_CALC_SHUNT_SENSITIVITY({{ ctx.prefix }}_R_SHUNT_OHM, {{ ctx.prefix }}_AMP_GAIN)
-#define {{ ctx.prefix }}_BIAS                GMP_SDPE_CALC_BIAS({{ ctx.prefix }}_BIAS_V)
+/* --- Derived Sensitivity and Bias Macros --- */
+
+/**
+ * @brief Calculated hardware sensitivity for ADC scaling
+ * @unit V/A
+ */
+#define {{ ctx.prefix }}_SENSITIVITY         (GMP_SDPE_CALC_SHUNT_SENSITIVITY({{ ctx.prefix }}_R_SHUNT_OHM, {{ ctx.prefix }}_AMP_GAIN))
+
+/**
+ * @brief Hardware bias voltage for ADC offset
+ * @unit V
+ */
+#define {{ ctx.prefix }}_BIAS                (GMP_SDPE_CALC_BIAS({{ ctx.prefix }}_BIAS_V))
 {% endmacro %}
 
 {# 1. Declaration (NO MORE IF-ELSE STATEMENTS!) #}

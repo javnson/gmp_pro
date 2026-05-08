@@ -1,41 +1,88 @@
-// ============================================================================
-// SDPE Auto-Generated Component: Shunt-based Current Sensor with Op-Amp
-// ============================================================================
+/**
+ * @file
+ * @brief SDPE Auto-Generated Component Header
+ * @note Generated from: inst_shunt_test.json
+ * @note Using Paradigm: current_shunt.json
+ * @note WARNING: DO NOT MODIFY THIS FILE MANUALLY. EDIT THE SOURCE JSON INSTEAD.
+ * @note Command: python sdpe_cli.py -i inst_shunt_test.json -t paradigms/current_shunt.json
+ */
+
+#ifndef _FILE_SDPE_CTRL_INVERTER_CURRENT_IUVW_H_
+#define _FILE_SDPE_CTRL_INVERTER_CURRENT_IUVW_H_
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif // __cplusplus
 
 /* --- Shunt-based Current Sensor with Op-Amp (iuvw) Parameters --- */
 
-#define CTRL_INVERTER_CURRENT_R_SHUNT_OHM          (0.002f)
 
-#define CTRL_INVERTER_CURRENT_AMP_GAIN             (20.0f)
-
-#define CTRL_INVERTER_CURRENT_BIAS_V               (1.65f)
-
-#define CTRL_INVERTER_CURRENT_MAX_CONT_ARMS        (15.0)
-
-#define CTRL_INVERTER_CURRENT_MAX_PEAK_AP          (30.0)
-
-#define CTRL_INVERTER_CURRENT_ACCURACY_CLASS_PCT   (0.5)
-
-#define CTRL_INVERTER_CURRENT_CHIP_PART_NUMBER     (INA240A1)
+/**
+ * @brief Shunt resistor value
+ * @unit Ohms
+ */
+#define CTRL_INVERTER_CURRENT_R_SHUNT_OHM          ((0.002f))
 
 
-#define CTRL_INVERTER_CURRENT_SENSITIVITY         GMP_SDPE_CALC_SHUNT_SENSITIVITY(CTRL_INVERTER_CURRENT_R_SHUNT_OHM, CTRL_INVERTER_CURRENT_AMP_GAIN)
-#define CTRL_INVERTER_CURRENT_BIAS                GMP_SDPE_CALC_BIAS(CTRL_INVERTER_CURRENT_BIAS_V)
+/**
+ * @brief Total amplifier gain
+ * @unit V/V
+ */
+#define CTRL_INVERTER_CURRENT_AMP_GAIN             ((20.0f))
 
-/* --- Declarations --- */
-// Shunt-based Current Sensor with Op-Amp object declaration
-tri_ptr_adc_channel_t iuvw;
 
-adc_gt iuvw_src[3];
+/**
+ * @brief Hardware bias voltage before ADC
+ * @unit V
+ */
+#define CTRL_INVERTER_CURRENT_BIAS_V               ((1.65f))
 
-/* --- Initialization --- */
-// Initialize Shunt-based Current Sensor with Op-Amp (Ref: 3.3V, 12-bit)
-    ctl_init_tri_ptr_adc_channel(
-        &iuvw, iuvw_src,
-        ctl_gain_calc_generic(3.3f, CTRL_INVERTER_CURRENT_SENSITIVITY, 10.0f),
-        ctl_bias_calc_via_Vref_Vbias(3.3f, CTRL_INVERTER_CURRENT_BIAS),
-        12, 24);
 
-/* --- IO Step --- */
-ctl_step_tri_ptr_adc_channel(&iuvw);
+/**
+ * @brief Maximum continuous current
+ * @unit Arms
+ */
+#define CTRL_INVERTER_CURRENT_MAX_CONT_ARMS        ((15.0f))
 
+
+/**
+ * @brief Maximum peak current
+ * @unit Ap
+ */
+#define CTRL_INVERTER_CURRENT_MAX_PEAK_AP          ((30.0f))
+
+
+/**
+ * @brief Overall accuracy class
+ * @unit %
+ */
+#define CTRL_INVERTER_CURRENT_ACCURACY_CLASS_PCT   ((0.5f))
+
+
+/**
+ * @brief Main amplifier or CSA chip part number
+ */
+#define CTRL_INVERTER_CURRENT_CHIP_PN              "INA240A1"
+
+
+
+/* --- Derived Sensitivity and Bias Macros --- */
+
+/**
+ * @brief Calculated hardware sensitivity for ADC scaling
+ * @unit V/A
+ */
+#define CTRL_INVERTER_CURRENT_SENSITIVITY         (GMP_SDPE_CALC_SHUNT_SENSITIVITY(CTRL_INVERTER_CURRENT_R_SHUNT_OHM, CTRL_INVERTER_CURRENT_AMP_GAIN))
+
+/**
+ * @brief Hardware bias voltage for ADC offset
+ * @unit V
+ */
+#define CTRL_INVERTER_CURRENT_BIAS                (GMP_SDPE_CALC_BIAS(CTRL_INVERTER_CURRENT_BIAS_V))
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
+#endif // _FILE_SDPE_CTRL_INVERTER_CURRENT_IUVW_H_

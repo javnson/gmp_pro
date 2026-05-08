@@ -28,42 +28,51 @@
         {
             "name": "r_shunt_ohm",
             "macro_name": "R_SHUNT_OHM",
-            "type": "float",
-            "value_format": "({}f)",
-            "description": "Shunt resistor value in Ohms"
+            "value_format": "(({}f))",
+            "description": "Shunt resistor value",
+            "unit": "Ohms"
         },
         {
             "name": "amp_gain",
             "macro_name": "AMP_GAIN",
-            "type": "float",
-            "value_format": "({}f)",
-            "description": "Total amplifier gain (V/V)"
+            "value_format": "(({}f))",
+            "description": "Total amplifier gain",
+            "unit": "V/V"
         },
         {
             "name": "bias_v",
             "macro_name": "BIAS_V",
-            "type": "float",
-            "value_format": "({}f)",
-            "description": "Hardware bias voltage before ADC (V)"
-        }
-    ],
-
-    "required_context": [
-        {
-            "name": "adc_vref",
-            "type": "float",
-            "description": "ADC reference voltage (V)"
+            "value_format": "(({}f))",
+            "description": "Hardware bias voltage before ADC",
+            "unit": "V"
         },
         {
-            "name": "adc_res",
-            "type": "uint16",
-            "description": "ADC resolution in bits"
+            "name": "max_cont_arms",
+            "macro_name": "MAX_CONT_ARMS",
+            "value_format": "(({}f))",
+            "description": "Maximum continuous current",
+            "unit": "Arms"
         },
         {
-            "name": "adc_iqn",
-            "type": "uint16",
-            "default": 24,
-            "description": "IQ math format number"
+            "name": "max_peak_ap",
+            "macro_name": "MAX_PEAK_AP",
+            "value_format": "(({}f))",
+            "description": "Maximum peak current",
+            "unit": "Ap"
+        },
+        {
+            "name": "accuracy_class_pct",
+            "macro_name": "ACCURACY_CLASS_PCT",
+            "value_format": "(({}f))",
+            "description": "Overall accuracy class",
+            "unit": "%"
+        },
+        {
+            "name": "chip_part_number",
+            "macro_name": "CHIP_PN",
+            "value_format": "\"{}\"",
+            "description": "Main amplifier or CSA chip part number",
+            "unit": ""
         }
     ]
 }
