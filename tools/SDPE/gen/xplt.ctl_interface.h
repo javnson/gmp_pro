@@ -7,7 +7,7 @@
  */
 
 /* USER CODE BEGIN GLOBAL_INCLUDES */
-{{ user_code.GLOBAL_INCLUDES if user_code.GLOBAL_INCLUDES else "" }}
+
 /* USER CODE END GLOBAL_INCLUDES */
 
 #ifndef _FILE_CTL_INTERFACE_H_
@@ -17,7 +17,7 @@
 #include <xplt.peripheral.h>
 
 /* USER CODE BEGIN HEADER_TOP */
-{{ user_code.HEADER_TOP if user_code.HEADER_TOP else "" }}
+
 /* USER CODE END HEADER_TOP */
 
 #ifdef __cplusplus
@@ -31,16 +31,24 @@ extern "C" {
 static inline void ctl_input_callback(void)
 {
     /* USER CODE BEGIN INPUT_CB_BEGIN */
-{{- "\n" + user_code.INPUT_CB_BEGIN + "\n" if user_code.INPUT_CB_BEGIN else "" -}}
-    /* USER CODE END INPUT_CB_BEGIN */
+    
+    ASD_CALL_FUNCTION();
+ 
+    ASD_CALL_FUNCTION();
+    
+/* USER CODE END INPUT_CB_BEGIN */
 
-{% for block in input_blocks %}
-    {{ block | indent(4) }}
-{% endfor %}
+
+    // Execute encoder step using the provided data source
+        ctl_step_autoturn_pos_encoder(&SDPE_EXT_ENCODER_OBJ, EQEP_getPosition(EQEP_Encoder_BASE));
+
 
     /* USER CODE BEGIN INPUT_CB_END */
-{{- "\n" + user_code.INPUT_CB_END + "\n" if user_code.INPUT_CB_END else "" -}}
-    /* USER CODE END INPUT_CB_END */
+    
+    asd_called_function2();
+
+    
+/* USER CODE END INPUT_CB_END */
 }
 
 /**
@@ -50,16 +58,19 @@ static inline void ctl_input_callback(void)
 static inline void ctl_output_callback(void)
 {
     /* USER CODE BEGIN OUTPUT_CB_BEGIN */
-{{- "\n" + user_code.OUTPUT_CB_BEGIN + "\n" if user_code.OUTPUT_CB_BEGIN else "" -}}
-    /* USER CODE END OUTPUT_CB_BEGIN */
+                                                                
+    asd_called_function3();
+    
+    
+/* USER CODE END OUTPUT_CB_BEGIN */
 
-{% for block in output_blocks %}
-    {{ block | indent(4) }}
-{% endfor %}
+
 
     /* USER CODE BEGIN OUTPUT_CB_END */
-{{- "\n" + user_code.OUTPUT_CB_END + "\n" if user_code.OUTPUT_CB_END else "" -}}
-    /* USER CODE END OUTPUT_CB_END */
+                                                                
+    function5();
+    
+/* USER CODE END OUTPUT_CB_END */
 }
 
 #ifdef __cplusplus
@@ -67,7 +78,7 @@ static inline void ctl_output_callback(void)
 #endif
 
 /* USER CODE BEGIN HEADER_BOTTOM */
-{{ user_code.HEADER_BOTTOM if user_code.HEADER_BOTTOM else "" }}
+void function6();
 /* USER CODE END HEADER_BOTTOM */
 
 #endif // _FILE_CTL_INTERFACE_H_
