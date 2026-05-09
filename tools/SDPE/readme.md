@@ -190,10 +190,42 @@ JSON
 
   生成的代码将统一存放在 `SDPE/test/` 目录下，文件名格式为 `{instance_name}_preview.c`。
 
-### 工具 3：全库批量生成器 (Library Builder)
+- ## 工具 3: 正式元件库生成器 (Library Builder)
 
-- **功能**：扫描所有的 `paradigms`，根据 `instance_databases` 里的所有型号，一次性生成全部的预设头文件。
-- **用途**：用于维护和更新全局元件预设库。
+  ### 描述
+
+  该工具将范式与数据库结合，生成立即可供 C 语言工程包含 (`#include`) 的正式头文件。它会自动处理目录结构，并具备智能写入功能，保护文件修改时间戳以加速工程编译。
+
+  ### 位置
+
+  ```
+  $GMP_PRO_LOCATION/tools/SDPE/bin_py/sdpe_build_library.py
+  ```
+
+  ### 核心特性
+
+  - **自动归档**：根据范式 JSON 中的 `output_path` 自动决定存放位置。
+  - **智能写入**：若生成的代码内容与磁盘现有文件完全一致，则跳过写入操作，避免触发 IDE 的增量编译逻辑。
+
+  ### 示例指令
+
+  **1. 生成全部传感器库到默认路径：**
+
+  Bash
+
+  ```
+  python bin_py/sdpe_build_library.py -p current_hall
+  ```
+
+  - **结果**：文件将根据 `output_path` 放入 `ctl/hardware_presets/current_sensors/`。
+
+  **2. 强制将特定型号生成到临时测试位置：**
+
+  Bash
+
+  ```
+  python bin_py/sdpe_build_library.py -p current_hall -i ACS724_50B -o tmp_debug/sensors
+  ```
 
 ### 工具 4：工程构建引擎 (Project Engine)
 
