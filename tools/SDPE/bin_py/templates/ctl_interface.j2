@@ -1,0 +1,63 @@
+/**
+ * @file xplt.ctl_interface.h
+ * @brief SDPE Generated Controller Interface
+ */
+
+/* USER CODE BEGIN GLOBAL_INCLUDES */
+{{ user_code.GLOBAL_INCLUDES }}
+/* USER CODE END GLOBAL_INCLUDES */
+
+#ifndef _FILE_CTL_INTERFACE_H_
+#define _FILE_CTL_INTERFACE_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* USER CODE BEGIN HEADER_TOP */
+{{ user_code.HEADER_TOP }}
+/* USER CODE END HEADER_TOP */
+
+/**
+ * @brief Controller Input Callback
+ * @details Handles ADC data acquisition and per-unit scaling.
+ */
+static inline void ctl_input_callback(void)
+{
+    /* USER CODE BEGIN INPUT_CB_BEGIN */
+    {{ user_code.INPUT_CB_BEGIN }}
+    /* USER CODE END INPUT_CB_BEGIN */
+
+{% for block in input_blocks %}
+    {{ block | indent(4) }}
+{% endfor %}
+
+    /* USER CODE BEGIN INPUT_CB_END */
+    {{ user_code.INPUT_CB_END }}
+    /* USER CODE END INPUT_CB_END */
+}
+
+/**
+ * @brief Controller Output Callback
+ * @details Executes modulation and writes to PWM peripherals.
+ */
+static inline void ctl_output_callback(void)
+{
+    /* USER CODE BEGIN OUTPUT_CB_BEGIN */
+    {{ user_code.OUTPUT_CB_BEGIN }}
+    /* USER CODE END OUTPUT_CB_BEGIN */
+
+{% for block in output_blocks %}
+    {{ block | indent(4) }}
+{% endfor %}
+
+    /* USER CODE BEGIN OUTPUT_CB_END */
+    {{ user_code.OUTPUT_CB_END }}
+    /* USER CODE END OUTPUT_CB_END */
+}
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // _FILE_CTL_INTERFACE_H_

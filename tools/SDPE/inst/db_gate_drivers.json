@@ -1,0 +1,15 @@
+{
+    "database_name": "Standard Gate Drivers Library",
+    "paradigm_ref": "gate_driver",
+    "version": "1.0",
+    "instances": {
+        "gd_ucc21520": {
+            "description": "TI UCC21520 Isolated Dual-Channel Gate Driver",
+            "parameter_values": {
+                "prop_delay_ns": 19.0,
+                "delay_matching_ns": 5.0,
+                "deadtime_margin_ns": 100.0
+            }
+        }
+    }
+}

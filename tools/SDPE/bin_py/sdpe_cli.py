@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-SDPE Production CLI
-Generates formal C/H header and source files for a specific instance,
-placing them in the Paradigm's specified output_path.
+SDPE Production CLI (Header-Only Mode)
+Generates formal C header files (.h) containing pure hardware parameters 
+and declarations for a specific instance.
 """
 
 import os
@@ -14,7 +14,7 @@ def format_code_block(content):
     """Return content if valid, else empty string to avoid clutter."""
     return content.strip() if content and content.strip() else ""
 
-def generate_production_files(paradigm_name, instance_name, mode_override=None):
+def generate_production_header(paradigm_name, instance_name, mode_override=None):
     # Set paths relative to this script's location
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     paradigms_dir = os.path.join(base_dir, "paradigms")
@@ -57,18 +57,20 @@ def generate_production_files(paradigm_name, instance_name, mode_override=None):
     output_dir = os.path.join(base_dir, prod_path)
     os.makedirs(output_dir, exist_ok=True)
 
-    # Prefix generation for function wrappers
-    prefix_lower = f"sdpe_{instance_name.lower()}"
-    guard_name = f"_SDPE_{instance_name.upper()}_H_"
+    # Prefix generation for header guard
+    guard_name = f"_SDPE_HW_PRESET_{instance_name.upper()}_H_"
 
     # =========================================================
-    # Generate Header File (.h)
+    # Generate Header File (.h) ONLY
     # =========================================================
     h_filepath = os.path.join(output_dir, f"{instance_name}.h")
+    
+    # We only extract 'config' (Macros) and 'decl' (Extern objects)
+    # The 'init', 'input', and 'output' blocks are deliberately discarded in this mode.
     h_buffer = [
         "/**",
         f" * @file {instance_name}.h",
-        f" * @brief SDPE Generated Hardware Preset for {instance_name}",
+        f" * @brief SDPE Generated Hardware Preset Parameters for {instance_name}",
         f" * @paradigm {paradigm_name}",
         " */",
         f"#ifndef {guard_name}",
@@ -76,60 +78,41 @@ def generate_production_files(paradigm_name, instance_name, mode_override=None):
         "#ifdef __cplusplus",
         'extern "C" {',
         "#endif\n",
-        format_code_block(blocks["config"]),
-        "\n/* --- External Declarations --- */",
-        format_code_block(blocks["decl"]),
-        "\n/* --- Preset Function Prototypes --- */",
-        f"void {prefix_lower}_init(void);",
-        f"void {prefix_lower}_step_in(void);",
-        f"void {prefix_lower}_step_out(void);\n",
-        "#ifdef __cplusplus",
-        "}",
-        "#endif",
-        f"#endif // {guard_name}"
+        format_code_block(blocks["config"])
     ]
+
+    # Append declarations if they exist
+    decl_block = format_code_block(blocks["decl"])
+    if decl_block:
+        h_buffer.extend([
+            "\n/* --- External Declarations --- */",
+            decl_block
+        ])
+
+    h_buffer.extend([
+        "\n#ifdef __cplusplus",
+        "}",
+        "#endif // __cplusplus\n",
+        f"#endif // {guard_name}"
+    ])
 
     with open(h_filepath, "w", encoding="utf-8") as f:
         f.write("\n".join(h_buffer))
 
-    # =========================================================
-    # Generate Source File (.c)
-    # =========================================================
-    c_filepath = os.path.join(output_dir, f"{instance_name}.c")
-    c_buffer = [
-        "/**",
-        f" * @file {instance_name}.c",
-        f" * @brief SDPE Generated Hardware Implementation for {instance_name}",
-        " */",
-        f'#include "{instance_name}.h"\n',
-        f"void {prefix_lower}_init(void)\n{{",
-        format_code_block(blocks["init"]),
-        "}\n",
-        f"void {prefix_lower}_step_in(void)\n{{",
-        format_code_block(blocks["input"]),
-        "}\n",
-        f"void {prefix_lower}_step_out(void)\n{{",
-        format_code_block(blocks["output"]),
-        "}\n"
-    ]
-
-    with open(c_filepath, "w", encoding="utf-8") as f:
-        f.write("\n".join(c_buffer))
-
-    return True, f"Successfully generated {h_filepath} and {c_filepath}"
+    return True, f"Successfully generated {h_filepath}"
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="SDPE Production CLI Generator")
+    parser = argparse.ArgumentParser(description="SDPE Header-Only Production CLI")
     parser.add_argument("-p", "--paradigm", required=True, help="Paradigm name")
     parser.add_argument("-i", "--instance", required=True, help="Specific instance name")
     parser.add_argument("-m", "--mode", help="Specific mode (Optional)")
     
     args = parser.parse_args()
-    success, msg = generate_production_files(args.paradigm, args.instance, args.mode)
+    success, msg = generate_production_header(args.paradigm, args.instance, args.mode)
     
     if not success:
         print(f"[FAIL] {args.instance}: {msg}", file=sys.stderr)
         sys.exit(1)
     else:
-        print(f"[OK] {args.instance}: Generated successfully.")
+        # Keep the output extremely clean for the build_all.py scanner
         sys.exit(0)

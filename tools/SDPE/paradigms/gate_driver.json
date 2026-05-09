@@ -1,0 +1,58 @@
+{
+    "paradigm_name": "gate_driver",
+    "display_name": "Isolated Gate Driver",
+    "template_file": "gate_driver.j2",
+
+    "output_path": "hardware_presets/gate_drivers",
+
+    "instance_databases": [
+        "inst/db_gate_drivers.json"
+    ],
+
+    "supported_modes": {
+        "default": {
+            "c_type": "",
+            "channel_count": 0,
+            "init_func": "",
+            "step_func": "",
+            "data_injection": "none"
+        }
+    },
+
+    "parameters": [
+        {
+            "name": "prop_delay_ns",
+            "macro_name": "PROP_DELAY_NS",
+            "value_format": "(({}f))",
+            "description": "Typical Propagation Delay",
+            "unit": "ns"
+        },
+        {
+            "name": "delay_matching_ns",
+            "macro_name": "DELAY_MATCHING_NS",
+            "value_format": "(({}f))",
+            "description": "Part-to-part propagation delay matching (Max error)",
+            "unit": "ns"
+        },
+        {
+            "name": "deadtime_margin_ns",
+            "macro_name": "DT_MARGIN_NS",
+            "value_format": "(({}f))",
+            "description": "Safety margin added to theoretical dead-time",
+            "unit": "ns"
+        }
+    ],
+
+    "required_context": [
+        {
+            "name": "mosfet_turn_on_ns",
+            "type": "float",
+            "description": "Turn-on time of the driven MOSFET (from MOSFET context)"
+        },
+        {
+            "name": "mosfet_turn_off_ns",
+            "type": "float",
+            "description": "Turn-off time of the driven MOSFET (from MOSFET context)"
+        }
+    ]
+}

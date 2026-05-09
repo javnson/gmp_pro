@@ -10,11 +10,5 @@
         "max_peak_ap": 30.0,
         "accuracy_class_pct": 0.5,
         "chip_part_number": "INA240A1"
-    },
-    "test_context": {
-        "adc_vref": 3.3,
-        "adc_res": 12,
-        "adc_iqn": 24,
-        "current_base": 10.0
     }
 }
