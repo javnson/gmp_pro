@@ -13,7 +13,9 @@
  * @unit {{ param.unit }}
 {%- endif %}
  */
+#ifndef {{ ctx.prefix }}_{{ macro_key }}
 #define {{ ctx.prefix }}_{{ macro_key | ljust(20) }} {{ param.value }}
+#endif
 
 {% endfor %}
 {% endmacro %}
@@ -40,8 +42,13 @@
 
 {# 3. Input Callback #}
 {% macro render_input(ctx) %}
+{% if ctx.data_injection == 'step' %}
     // Execute encoder step using the provided data source
     {{ ctx.step_func }}(&{{ ctx.obj_name }}, {{ ctx.raw_data_source }});
+{% else %}
+    // Execute encoder step (Data source injected elsewhere)
+    {{ ctx.step_func }}(&{{ ctx.obj_name }});
+{% endif %}
 {% endmacro %}
 
 {# 4. Output Callback #}

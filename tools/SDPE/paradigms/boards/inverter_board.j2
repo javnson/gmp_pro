@@ -1,0 +1,30 @@
+{# ====================================================================== #}
+{# Paradigm: Three-Phase Inverter Board Composite                         #}
+{# ====================================================================== #}
+
+{% macro render_config_macros(ctx) %}
+/* --- {{ ctx.display_name }} ({{ ctx.obj_name }}) Level Settings --- */
+
+{% for macro_key, param in ctx.formatted_params.items() %}
+/**
+ * @brief {{ param.desc }}
+{%- if param.unit %}
+ * @unit {{ param.unit }}
+{%- endif %}
+ */
+#ifndef {{ ctx.prefix }}_{{ macro_key }}
+#define {{ ctx.prefix }}_{{ macro_key | ljust(25) }} {{ param.value }}
+#endif
+
+{% endfor %}
+
+/* Board Fault Thresholds Derived from Limits */
+#define {{ ctx.prefix }}_OVER_CURRENT_FAULT_TH       ({{ ctx.prefix }}_MAX_CURRENT_A * 1.1f)
+#define {{ ctx.prefix }}_OVER_VOLTAGE_FAULT_TH       ({{ ctx.prefix }}_MAX_VOLTAGE_V * 1.05f)
+{% endmacro %}
+
+{# 组合模块本身不产生独立的变量实体，所有实体均由子模块产生 #}
+{% macro render_decl(ctx) %}{% endmacro %}
+{% macro render_init(ctx) %}{% endmacro %}
+{% macro render_input(ctx) %}{% endmacro %}
+{% macro render_output(ctx) %}{% endmacro %}

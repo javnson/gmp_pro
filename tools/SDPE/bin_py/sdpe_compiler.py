@@ -106,6 +106,7 @@ class SDPECompiler:
             "channel_count": mode_config.get("channel_count", 1),
             "init_func": mode_config.get("init_func", ""),
             "step_func": mode_config.get("step_func", ""),
+            "data_injection": mode_config.get("data_injection", "step"),
             "formatted_params": formatted_params,
         }
 

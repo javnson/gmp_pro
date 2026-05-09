@@ -3,10 +3,20 @@
     "display_name": "PMSM Physical Parameter Consultant",
     "template_file": "pmsm_consultant.j2",
 
+    "output_path": "hardware_presets/motor_parameters",
+
+    "instance_databases": [
+        "inst/db_motors.json",
+        "inst/db_my_custom_motors.json"
+    ],
+
     "supported_modes": {
         "default": {
             "c_type": "ctl_consultant_pmsm_t",
-            "init_func": "ctl_consultant_pmsm_init"
+            "channel_count": 0,
+            "init_func": "ctl_consultant_pmsm_init",
+            "step_func": "",
+            "data_injection": "init"
         }
     },
 

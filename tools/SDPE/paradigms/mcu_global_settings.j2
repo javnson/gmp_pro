@@ -13,7 +13,9 @@
  * @unit {{ param.unit }}
 {%- endif %}
  */
+#ifndef {{ macro_key }}
 #define {{ macro_key | ljust(30) }} {{ param.value }}
+#endif
 
 {% endfor %}
 
@@ -22,7 +24,9 @@
 /**
  * @brief System tick divider for C2000 DSP (Specific to execution timing)
  */
+#ifndef DSP_C2000_DSP_TIME_DIV
 #define DSP_C2000_DSP_TIME_DIV                 (100000 / (CTRL_PWM_CMP_MAX) / 2)
+#endif
 {% endmacro %}
 
 {# 1. Declaration (Empty) #}

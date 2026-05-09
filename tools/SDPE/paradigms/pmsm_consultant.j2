@@ -13,7 +13,9 @@
  * @unit {{ param.unit }}
 {%- endif %}
  */
+#ifndef {{ ctx.prefix }}_{{ macro_key }}
 #define {{ ctx.prefix }}_{{ macro_key | ljust(25) }} {{ param.value }}
+#endif
 
 {% endfor %}
 {% endmacro %}

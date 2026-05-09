@@ -45,7 +45,9 @@
     // Initialize {{ ctx.display_name }} (Ref: {{ ctx.adc_vref }}V, {{ ctx.adc_res }}-bit)
     {{ ctx.init_func }}(
         &{{ ctx.obj_name }}, 
+{%- if ctx.data_injection == 'init' %}
         (adc_gt*){{ ctx.raw_data_source }},
+{%- endif %}
         ctl_gain_calc_generic({{ ctx.adc_vref }}f, {{ ctx.prefix }}_SENSITIVITY, {{ ctx.current_base }}f),
         ctl_bias_calc_via_Vref_Vbias({{ ctx.adc_vref }}f, {{ ctx.prefix }}_BIAS),
         {{ ctx.adc_res }}, {{ ctx.adc_iqn }});
@@ -53,7 +55,11 @@
 
 {# 3. Input Callback #}
 {% macro render_input(ctx) %}
+{% if ctx.data_injection == 'step' %}
+    {{ ctx.step_func }}(&{{ ctx.obj_name }}, {{ ctx.raw_data_source }});
+{% else %}
     {{ ctx.step_func }}(&{{ ctx.obj_name }});
+{% endif %}
 {% endmacro %}
 
 {# 4. Output Callback #}

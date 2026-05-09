@@ -1,0 +1,37 @@
+{# ====================================================================== #}
+{# Paradigm: Isolated Gate Driver & Dead-time Calculator                  #}
+{# ====================================================================== #}
+
+{% macro render_config_macros(ctx) %}
+/* --- {{ ctx.display_name }} ({{ ctx.obj_name }}) Parameters --- */
+
+{% for macro_key, param in ctx.formatted_params.items() %}
+/**
+ * @brief {{ param.desc }}
+{%- if param.unit %}
+ * @unit {{ param.unit }}
+{%- endif %}
+ */
+#ifndef {{ ctx.prefix }}_{{ macro_key }}
+#define {{ ctx.prefix }}_{{ macro_key | ljust(25) }} {{ param.value }}
+#endif
+
+{% endfor %}
+
+/* --- System Level Derived Macros --- */
+
+/**
+ * @brief Calculated Hardware System Dead-time
+ * @details Formula: MAX(0, Mosfet_TurnOff - Mosfet_TurnOn) + Driver_Delay_Matching + Safety_Margin
+ * @unit ns
+ */
+#ifndef {{ ctx.prefix }}_SYSTEM_DEADTIME_NS
+#define {{ ctx.prefix }}_SYSTEM_DEADTIME_NS     ( (({{ ctx.mosfet_turn_off_ns }}) > ({{ ctx.mosfet_turn_on_ns }}) ? (({{ ctx.mosfet_turn_off_ns }}) - ({{ ctx.mosfet_turn_on_ns }})) : 0.0f) + {{ ctx.prefix }}_DELAY_MATCHING_NS + {{ ctx.prefix }}_DT_MARGIN_NS )
+#endif
+{% endmacro %}
+
+{# 纯硬件描述，无需 C 变量和函数 #}
+{% macro render_decl(ctx) %}{% endmacro %}
+{% macro render_init(ctx) %}{% endmacro %}
+{% macro render_input(ctx) %}{% endmacro %}
+{% macro render_output(ctx) %}{% endmacro %}

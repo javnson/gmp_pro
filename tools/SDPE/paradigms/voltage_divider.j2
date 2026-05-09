@@ -13,7 +13,9 @@
  * @unit {{ param.unit }}
 {%- endif %}
  */
+#ifndef {{ ctx.prefix }}_{{ macro_key }}
 #define {{ ctx.prefix }}_{{ macro_key | ljust(20) }} {{ param.value }}
+#endif
 
 {% endfor %}
 
@@ -36,18 +38,16 @@
 {% macro render_decl(ctx) %}
 // {{ ctx.display_name }} object declaration
 {{ ctx.c_type }} {{ ctx.obj_name }};
-{% if ctx.channel_count > 1 %}
-adc_gt {{ ctx.obj_name }}_src[{{ ctx.channel_count }}];
-{% else %}
-adc_gt {{ ctx.obj_name }}_src;
-{% endif %}
 {% endmacro %}
 
 {# 2. Initialization #}
 {% macro render_init(ctx) %}
     // Initialize {{ ctx.display_name }} (Ref: {{ ctx.adc_vref }}V, {{ ctx.adc_res }}-bit)
     {{ ctx.init_func }}(
-        &{{ ctx.obj_name }}, {% if ctx.channel_count > 1 %}{{ ctx.obj_name }}_src{% else %}&{{ ctx.obj_name }}_src{% endif %},
+        &{{ ctx.obj_name }}, 
+{%- if ctx.data_injection == 'init' %}
+        (adc_gt*){{ ctx.raw_data_source }},
+{%- endif %}
         ctl_gain_calc_generic({{ ctx.adc_vref }}f, {{ ctx.prefix }}_SENSITIVITY, {{ ctx.voltage_base }}f),
         ctl_bias_calc_via_Vref_Vbias({{ ctx.adc_vref }}f, {{ ctx.prefix }}_BIAS),
         {{ ctx.adc_res }}, {{ ctx.adc_iqn }});
@@ -55,7 +55,11 @@ adc_gt {{ ctx.obj_name }}_src;
 
 {# 3. Input Callback #}
 {% macro render_input(ctx) %}
+{% if ctx.data_injection == 'step' %}
+    {{ ctx.step_func }}(&{{ ctx.obj_name }}, {{ ctx.raw_data_source }});
+{% else %}
     {{ ctx.step_func }}(&{{ ctx.obj_name }});
+{% endif %}
 {% endmacro %}
 
 {# 4. Output Callback #}

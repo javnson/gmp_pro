@@ -1,0 +1,26 @@
+{# ====================================================================== #}
+{# Paradigm: Power Semiconductor Switch (Pure Macro Provider)             #}
+{# ====================================================================== #}
+
+{% macro render_config_macros(ctx) %}
+/* --- {{ ctx.display_name }} ({{ ctx.obj_name }}) Parameters --- */
+
+{% for macro_key, param in ctx.formatted_params.items() %}
+/**
+ * @brief {{ param.desc }}
+{%- if param.unit %}
+ * @unit {{ param.unit }}
+{%- endif %}
+ */
+#ifndef {{ ctx.prefix }}_{{ macro_key }}
+#define {{ ctx.prefix }}_{{ macro_key | ljust(25) }} {{ param.value }}
+#endif
+
+{% endfor %}
+{% endmacro %}
+
+{# 纯硬件描述，无需 C 变量和函数 #}
+{% macro render_decl(ctx) %}{% endmacro %}
+{% macro render_init(ctx) %}{% endmacro %}
+{% macro render_input(ctx) %}{% endmacro %}
+{% macro render_output(ctx) %}{% endmacro %}

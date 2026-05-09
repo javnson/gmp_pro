@@ -1,0 +1,34 @@
+{
+    "database_name": "Standard Inverter Boards Library",
+    "paradigm_ref": "inverter_board",
+    "version": "1.1",
+    "instances": {
+        "brd_lvhb_v1_sic": {
+            "description": "LVHB V1 SiC Inverter Board",
+            "parameter_values": {
+                "board_name": "LVHB_V1_SiC",
+                "max_current_a": 50.0,
+                "max_voltage_v": 800.0
+            },
+            "components": {
+                "modulator": {
+                    "instance": "inst_mod_3ph_sic_gan",
+                    "mode": "svpwm",
+                    "context_override": {
+                        // 【依赖终结】：这块物理板的死区是固定的，不再向外部索要 deadtime_ns 参数！
+                        "deadtime_ns": "SDPE_GD_SYSTEM_DEADTIME_NS"
+                    }
+                },
+                "phase_current": {
+                    "instance": "inst_shunt_2mohm",
+                    "mode": "tri_ptr_channel"
+                    // 其余依赖使用范式的 default_context_map，继续向上冒泡
+                },
+                "bus_voltage": {
+                    "instance": "inst_volt_div_800v",
+                    "mode": "single_ptr_channel"
+                }
+            }
+        }
+    }
+}

@@ -3,12 +3,20 @@
     "display_name": "Auto-turn Counting Absolute Encoder",
     "template_file": "encoder_autoturn.j2",
 
+    "output_path": "hardware_presets/encoders",
+
+    "instance_databases": [
+        "inst/db_encoders.json",
+        "inst/db_my_custom_encoders.json"
+    ],
+
     "supported_modes": {
         "single_channel": {
             "c_type": "pos_autoturn_encoder_t",
             "channel_count": 1,
             "init_func": "ctl_init_autoturn_pos_encoder",
-            "step_func": "ctl_step_autoturn_pos_encoder"
+            "step_func": "ctl_step_autoturn_pos_encoder",
+            "data_injection": "step"
         }
     },
 

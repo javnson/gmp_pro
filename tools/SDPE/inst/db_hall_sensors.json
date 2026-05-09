@@ -1,0 +1,31 @@
+{
+    "database_name": "Standard Hall-effect Sensors Library",
+    "paradigm_ref": "current_hall",
+    "version": "1.0",
+
+    "instances": {
+        "inst_hall_acs724_20a": {
+            "description": "Allegro ACS724 20A Bidirectional Hall Sensor",
+            "parameter_values": {
+                "sensitivity_v_a": 0.1,
+                "bias_v": 2.5,
+                "max_cont_arms": 20.0,
+                "max_peak_ap": 40.0,
+                "accuracy_class_pct": 1.0,
+                "chip_part_number": "ACS724LLCTR-20AB-T"
+            }
+        },
+
+        "inst_hall_lem_hass_50_s": {
+            "description": "LEM HASS 50-S Current Transducer (50A)",
+            "parameter_values": {
+                "sensitivity_v_a": 0.0125,
+                "bias_v": 2.5,
+                "max_cont_arms": 50.0,
+                "max_peak_ap": 150.0,
+                "accuracy_class_pct": 0.5,
+                "chip_part_number": "HASS_50-S"
+            }
+        }
+    }
+}

@@ -13,7 +13,9 @@
  * @unit {{ param.unit }}
 {%- endif %}
  */
+#ifndef {{ ctx.prefix }}_{{ macro_key }}
 #define {{ ctx.prefix }}_{{ macro_key | ljust(20) }} {{ param.value }}
+#endif
 
 {% endfor %}
 
@@ -23,13 +25,13 @@
  * @brief Full scale PWM counter value (Center-aligned mode assumption)
  * @unit Counts
  */
-#define {{ ctx.prefix }}_FULL_SCALE_COUNTS   (GMP_SDPE_CALC_PWM_PERIOD_CENTER_ALIGNED({{ ctx.timer_clock_hz }}f, {{ ctx.prefix }}_PWM_FREQ_HZ))
+#define {{ ctx.prefix }}_FULL_SCALE_COUNTS   (GMP_SDPE_CALC_PWM_PERIOD_CENTER_ALIGNED({{ ctx.timer_clock_hz }}, {{ ctx.pwm_freq_hz }}))
 
 /**
  * @brief Dead-time compensation value
  * @unit Counts
  */
-#define {{ ctx.prefix }}_DEADBAND_COUNTS     (GMP_SDPE_CALC_PWM_DEADTIME_COUNTS({{ ctx.timer_clock_hz }}f, {{ ctx.prefix }}_DEADTIME_NS))
+#define {{ ctx.prefix }}_DEADBAND_COUNTS     (GMP_SDPE_CALC_PWM_DEADTIME_COUNTS({{ ctx.timer_clock_hz }}, {{ ctx.deadtime_ns }}))
 {% endmacro %}
 
 {# 1. Declaration #}
@@ -40,7 +42,7 @@
 
 {# 2. Initialization #}
 {% macro render_init(ctx) %}
-    // Initialize {{ ctx.display_name }} (Clock: {{ ctx.timer_clock_hz }}Hz)
+    // Initialize {{ ctx.display_name }}
     {{ ctx.init_func }}(
         &{{ ctx.obj_name }},
         (pwm_gt){{ ctx.prefix }}_FULL_SCALE_COUNTS,

@@ -1,0 +1,62 @@
+{
+    "paradigm_name": "mosfet_switch",
+    "display_name": "Power Semiconductor Switch (MOSFET/IGBT)",
+    "template_file": "mosfet_switch.j2",
+
+    "output_path": "hardware_presets/power_switches",
+
+    "instance_databases": [
+        "inst/db_mosfets.json",
+        "inst/db_my_custom_switches.json"
+    ],
+
+    "supported_modes": {
+        "default": {
+            "c_type": "",
+            "channel_count": 0,
+            "init_func": "",
+            "step_func": "",
+            "data_injection": "none"
+        }
+    },
+
+    "parameters": [
+        {
+            "name": "vds_max_v",
+            "macro_name": "VDS_MAX_V",
+            "value_format": "(({}f))",
+            "description": "Maximum Drain-Source Voltage",
+            "unit": "V"
+        },
+        {
+            "name": "id_cont_a",
+            "macro_name": "ID_CONT_A",
+            "value_format": "(({}f))",
+            "description": "Continuous Drain Current at 25C",
+            "unit": "A"
+        },
+        {
+            "name": "turn_on_delay_ns",
+            "macro_name": "TURN_ON_NS",
+            "value_format": "(({}f))",
+            "description": "Typical Turn-On Delay + Rise Time",
+            "unit": "ns"
+        },
+        {
+            "name": "turn_off_delay_ns",
+            "macro_name": "TURN_OFF_NS",
+            "value_format": "(({}f))",
+            "description": "Typical Turn-Off Delay + Fall Time",
+            "unit": "ns"
+        },
+        {
+            "name": "rds_on_mohm",
+            "macro_name": "RDS_ON_MOHM",
+            "value_format": "(({}f))",
+            "description": "Typical On-Resistance",
+            "unit": "mOhm"
+        }
+    ],
+
+    "required_context": []
+}
