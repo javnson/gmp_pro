@@ -4,8 +4,8 @@
     "template_file": "boards/inverter_board.j2",
 
     "is_composite": true,
-    "output_path": "hardware_presets/boards",
-    "instance_databases": [ "inst/boards/db_inverter_boards.json" ],
+    "output_path": "ctl/hardware_presets/inverter_3ph",
+    "instance_databases": [ "boards/db_inverter_boards.json" ],
 
     "parameters": [
         {

@@ -3,11 +3,11 @@
     "display_name": "Hall-effect Current Sensor",
     "template_file": "current_hall.j2",
 
-    "output_path": "hardware_presets/current_sensors",
+    "output_path": "ctl/hardware_presets/current_sensors",
 
     "instance_databases": [
-        "inst/db_hall_sensors.json",
-        "inst/db_my_custom_halls.json"
+        "db_hall_sensors.json",
+        "db_my_custom_halls.json"
     ],
 
     "supported_modes": {

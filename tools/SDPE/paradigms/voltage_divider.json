@@ -3,11 +3,11 @@
     "display_name": "Resistor Voltage Divider Sensor",
     "template_file": "voltage_divider.j2",
 
-    "output_path": "hardware_presets/voltage_sensors",
+    "output_path": "ctl/hardware_presets/voltage_sensors",
 
     "instance_databases": [
-        "inst/db_voltage_dividers.json",
-        "inst/db_my_custom_dividers.json"
+        "db_voltage_dividers.json",
+        "db_my_custom_dividers.json"
     ],
 
     "supported_modes": {

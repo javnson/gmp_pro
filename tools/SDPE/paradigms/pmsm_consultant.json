@@ -3,11 +3,11 @@
     "display_name": "PMSM Physical Parameter Consultant",
     "template_file": "pmsm_consultant.j2",
 
-    "output_path": "hardware_presets/motor_parameters",
+    "output_path": "ctl/hardware_presets/motor_parameters",
 
     "instance_databases": [
-        "inst/db_motors.json",
-        "inst/db_my_custom_motors.json"
+        "db_motors.json",
+        "db_my_custom_motors.json"
     ],
 
     "supported_modes": {

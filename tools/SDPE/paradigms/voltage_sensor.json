@@ -3,10 +3,10 @@
     "display_name": "Isolated Voltage Sensor or Transducer",
     "template_file": "voltage_sensor.j2",
 
-    "output_path": "hardware_presets/voltage_sensors",
+    "output_path": "ctl/hardware_presets/voltage_sensors",
 
     "instance_databases": [
-        "inst/db_isolated_voltages.json"
+        "db_isolated_voltages.json"
     ],
 
     "supported_modes": {

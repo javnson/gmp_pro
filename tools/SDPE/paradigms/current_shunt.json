@@ -3,11 +3,11 @@
     "display_name": "Shunt-based Current Sensor with Op-Amp",
     "template_file": "current_shunt.j2",
 
-    "output_path": "hardware_presets/current_sensors",
+    "output_path": "ctl/hardware_presets/current_sensors",
 
     "instance_databases": [
-        "inst/db_standard_shunts.json",
-        "inst/db_my_custom_shunts.json"
+        "db_standard_shunts.json",
+        "db_my_custom_shunts.json"
     ],
 
     "supported_modes": {

@@ -3,10 +3,10 @@
     "display_name": "Three-Phase PWM Modulator (Two-Level)",
     "template_file": "spwm_modulator.j2",
 
-    "output_path": "hardware_presets/modulators",
+    "output_path": "ctl/hardware_presets/modulators",
 
     "instance_databases": [
-        "inst/db_spwm_modulators.json"
+        "db_spwm_modulators.json"
     ],
 
     "supported_modes": {

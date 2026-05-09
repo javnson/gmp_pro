@@ -3,11 +3,11 @@
     "display_name": "MCU Global Control Settings",
     "template_file": "mcu_global_settings.j2",
 
-    "output_path": "hardware_presets/mcu_settings",
+    "output_path": "ctl/hardware_presets/mcu_settings",
 
     "instance_databases": [
-        "inst/db_mcu_settings.json",
-        "inst/db_my_custom_mcu.json"
+        "db_mcu_settings.json",
+        "db_my_custom_mcu.json"
     ],
 
     "supported_modes": {

@@ -3,11 +3,11 @@
     "display_name": "Auto-turn Counting Absolute Encoder",
     "template_file": "encoder_autoturn.j2",
 
-    "output_path": "hardware_presets/encoders",
+    "output_path": "ctl/hardware_presets/encoders",
 
     "instance_databases": [
-        "inst/db_encoders.json",
-        "inst/db_my_custom_encoders.json"
+        "db_encoders.json",
+        "db_my_custom_encoders.json"
     ],
 
     "supported_modes": {

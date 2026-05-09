@@ -3,10 +3,10 @@
     "display_name": "Isolated Gate Driver",
     "template_file": "gate_driver.j2",
 
-    "output_path": "hardware_presets/gate_drivers",
+    "output_path": "ctl/hardware_presets/gate_drivers",
 
     "instance_databases": [
-        "inst/db_gate_drivers.json"
+        "db_gate_drivers.json"
     ],
 
     "supported_modes": {

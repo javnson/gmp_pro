@@ -3,11 +3,11 @@
     "display_name": "Power Semiconductor Switch (MOSFET/IGBT)",
     "template_file": "mosfet_switch.j2",
 
-    "output_path": "hardware_presets/power_switches",
+    "output_path": "ctl/hardware_presets/power_switches",
 
     "instance_databases": [
-        "inst/db_mosfets.json",
-        "inst/db_my_custom_switches.json"
+        "db_mosfets.json",
+        "db_my_custom_switches.json"
     ],
 
     "supported_modes": {
