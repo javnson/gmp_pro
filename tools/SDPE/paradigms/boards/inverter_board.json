@@ -29,32 +29,29 @@
         "modulator": {
             "allowed_paradigms": [ "spwm_modulator" ],
             "default_context_map": {
-                "timer_clock_hz": "timer_clock_hz", // 内部 timer_clock_hz 连到板卡的 timer_clock_hz
-                "pwm_freq_hz": "pwm_freq_hz", // 内部 pwm_freq_hz 连到板卡的 pwm_freq_hz
-                "deadtime_ns": "deadtime_ns", // 默认继承
-                "current_feedback_ptr": "current_feedback_ptr" // 默认继承
+                "timer_clock_hz": "timer_clock_hz",
+                "pwm_freq_hz": "pwm_freq_hz",
+                "deadtime_ns": "deadtime_ns",
+                "current_feedback_ptr": "current_feedback_ptr"
             }
         },
         "phase_current": {
             "allowed_paradigms": [ "current_shunt", "current_hall" ],
             "default_context_map": {
-                // adc_vref, adc_res, adc_iqn 未写在这里，它们将被编译器【自动冒泡】到顶层！
                 "current_base": "current_base",
-                "raw_data_source": "curr_raw_data_source" // 内部的 raw_data 映射到板卡专属的 curr_raw_data_source 引脚
+                "raw_data_source": "curr_raw_data_source"
             }
         },
         "bus_voltage": {
             "allowed_paradigms": [ "voltage_divider", "voltage_sensor" ],
             "default_context_map": {
                 "voltage_base": "voltage_base",
-                "raw_data_source": "vbus_raw_data_source" // 内部的 raw_data 映射到板卡专属的 vbus_raw_data_source 引脚
+                "raw_data_source": "vbus_raw_data_source"
             }
         }
     },
 
     "required_context": [
-        // 顶层公共引脚（Public API）
-        // 这里只是为了显式提示用户，实际上哪怕不写，编译器也能推导出来
         {
             "name": "curr_raw_data_source",
             "type": "string",

@@ -15,14 +15,12 @@
                     "instance": "inst_mod_3ph_sic_gan",
                     "mode": "svpwm",
                     "context_override": {
-                        // 【依赖终结】：这块物理板的死区是固定的，不再向外部索要 deadtime_ns 参数！
                         "deadtime_ns": "SDPE_GD_SYSTEM_DEADTIME_NS"
                     }
                 },
                 "phase_current": {
                     "instance": "inst_shunt_2mohm",
                     "mode": "tri_ptr_channel"
-                    // 其余依赖使用范式的 default_context_map，继续向上冒泡
                 },
                 "bus_voltage": {
                     "instance": "inst_volt_div_800v",

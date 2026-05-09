@@ -1,0 +1,18 @@
+{
+    "database_name": "Standard Voltage Dividers Library",
+    "paradigm_ref": "voltage_divider",
+    "version": "1.0",
+    "instances": {
+        "inst_volt_div_800v": {
+            "description": "800V DC Bus Voltage Divider (2M Ohm / 10k Ohm)",
+            "parameter_values": {
+                "r_high_ohm": 2000000.0,
+                "r_low_ohm": 10000.0,
+                "amp_gain": 1.0,
+                "bias_v": 0.0,
+                "max_voltage_v": 800.0,
+                "accuracy_class_pct": 1.0
+            }
+        }
+    }
+}

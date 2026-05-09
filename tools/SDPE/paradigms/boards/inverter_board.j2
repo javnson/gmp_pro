@@ -23,7 +23,7 @@
 #define {{ ctx.prefix }}_OVER_VOLTAGE_FAULT_TH       ({{ ctx.prefix }}_MAX_VOLTAGE_V * 1.05f)
 {% endmacro %}
 
-{# 组合模块本身不产生独立的变量实体，所有实体均由子模块产生 #}
+{# Composite modules do not generate standalone variables/functions #}
 {% macro render_decl(ctx) %}{% endmacro %}
 {% macro render_init(ctx) %}{% endmacro %}
 {% macro render_input(ctx) %}{% endmacro %}

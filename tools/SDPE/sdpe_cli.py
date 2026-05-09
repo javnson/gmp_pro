@@ -1,145 +1,135 @@
 # -*- coding: utf-8 -*-
 """
-SDPE (Software-Defined Power Electronics) CLI Tool
-Component Header Compiler
+SDPE Production CLI
+Generates formal C/H header and source files for a specific instance,
+placing them in the Paradigm's specified output_path.
 """
 
 import os
-import json
-import argparse
 import sys
-from jinja2 import Environment, FileSystemLoader
+import argparse
+from sdpe_compiler import SDPECompiler
 
-def load_json(filepath):
-    """Load and return a JSON file as a dictionary."""
-    if not os.path.exists(filepath):
-        raise FileNotFoundError(f"Error: Could not find '{filepath}'")
-    with open(filepath, 'r', encoding='utf-8') as f:
-        return json.load(f)
+def format_code_block(content):
+    """Return content if valid, else empty string to avoid clutter."""
+    return content.strip() if content and content.strip() else ""
 
-def format_parameters(raw_params, paradigm_param_defs):
-    """
-    Format parameters and attach metadata (description, unit) for Doxygen generation.
-    """
-    formatted_params = {}
-    def_lookup = {p["name"]: p for p in paradigm_param_defs}
+def generate_production_files(paradigm_name, instance_name, mode_override=None):
+    # Set paths relative to this script's location
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    paradigms_dir = os.path.join(base_dir, "paradigms")
+    inst_dir = os.path.join(base_dir, "inst")
     
-    for param_name, param_value in raw_params.items():
-        if param_name in def_lookup:
-            param_def = def_lookup[param_name]
-            macro_name = param_def["macro_name"]
-            value_format = param_def.get("value_format", "(({}))")
-            
-            formatted_params[macro_name] = {
-                "value": value_format.format(param_value),
-                "desc": param_def.get("description", "Component parameter"),
-                "unit": param_def.get("unit", "")
-            }
-        else:
-            # Handle user custom parameters not defined in schema
-            macro_name = param_name.upper()
-            formatted_params[macro_name] = {
-                "value": f"(({param_value}))",
-                "desc": "User custom defined parameter",
-                "unit": ""
-            }
-            
-    return formatted_params
+    compiler = SDPECompiler(paradigms_dir=paradigms_dir, inst_dir=inst_dir)
 
-def generate_component_header(input_file, template_json_file, output_file):
-    """Generate the C header file containing the hardware preset macros."""
-    print(f"[*] Loading Instance Definition: {input_file}")
-    print(f"[*] Loading Paradigm Schema:   {template_json_file}")
+    paradigm = compiler.get_paradigm(paradigm_name)
+    if not paradigm:
+        return False, f"Paradigm '{paradigm_name}' not found."
+
+    db_paths = paradigm.get("instance_databases", [])
+    inst_data, _ = compiler.find_instance(instance_name, db_paths)
     
-    # 1. Load Data
-    instance = load_json(input_file)
-    paradigm = load_json(template_json_file)
-    
-    # 2. Setup Jinja2 Environment
-    template_dir = os.path.dirname(template_json_file) or "."
-    env = Environment(loader=FileSystemLoader(template_dir))
-    
-    # Register custom filter for aligning C macros
-    env.filters['ljust'] = lambda s, width: str(s).ljust(width)
-    
-    # 3. Format Parameters
-    formatted_params = format_parameters(
-        instance.get("parameter_values", {}), 
-        paradigm.get("parameters", [])
+    if not inst_data:
+        return False, f"Instance '{instance_name}' not found in databases."
+
+    # Fake context for top-level requirements to allow successful compilation
+    fake_context = {}
+    for req in paradigm.get("required_context", []):
+        ctx_name = req["name"]
+        fake_context[ctx_name] = f"/* FROM_OUT: {ctx_name} */"
+
+    # Render Component
+    blocks, prod_path, _ = compiler.render_component(
+        paradigm_name=paradigm_name,
+        instance_name=instance_name,
+        instance_data=inst_data,
+        mode_override=mode_override,
+        external_context=fake_context
     )
-    
-    # 4. Build Context Dictionary
-    obj_name = instance.get("instance_name", "obj")
-    prefix = instance.get("prefix", "PREFIX")
-    
-    ctx = {
-        "display_name": paradigm.get("display_name", "Unknown Component"),
-        "obj_name": obj_name,
-        "prefix": prefix,
-        "formatted_params": formatted_params,
-    }
-    
-    # 5. Render Macros via Jinja2
-    j2_filename = paradigm.get("template_file", "default.j2")
-    print(f"[*] Rendering Template: {j2_filename}")
-    template = env.get_template(j2_filename)
-    rendered_macros = template.module.render_config_macros(ctx).strip()
-    
-    # 6. Construct Header File Content
-    guard_name = f"_FILE_SDPE_{prefix.upper()}_{obj_name.upper()}_H_"
-    gen_command = " ".join(sys.argv)
-    
-    header_content = [
+
+    if blocks["error"]:
+        return False, f"Template Error: {blocks['error']}"
+
+    if prod_path == "NOT_SPECIFIED":
+        prod_path = "hardware_presets/uncategorized"
+
+    # Create target directory
+    output_dir = os.path.join(base_dir, prod_path)
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Prefix generation for function wrappers
+    prefix_lower = f"sdpe_{instance_name.lower()}"
+    guard_name = f"_SDPE_{instance_name.upper()}_H_"
+
+    # =========================================================
+    # Generate Header File (.h)
+    # =========================================================
+    h_filepath = os.path.join(output_dir, f"{instance_name}.h")
+    h_buffer = [
         "/**",
-        " * @file",
-        " * @brief SDPE Auto-Generated Component Header",
-        f" * @note Generated from: {os.path.basename(input_file)}",
-        f" * @note Using Paradigm: {os.path.basename(template_json_file)}",
-        " * @note WARNING: DO NOT MODIFY THIS FILE MANUALLY. EDIT THE SOURCE JSON INSTEAD.",
-        f" * @note Command: python {gen_command}",
+        f" * @file {instance_name}.h",
+        f" * @brief SDPE Generated Hardware Preset for {instance_name}",
+        f" * @paradigm {paradigm_name}",
         " */",
-        "",
         f"#ifndef {guard_name}",
-        f"#define {guard_name}",
-        "",
+        f"#define {guard_name}\n",
         "#ifdef __cplusplus",
-        'extern "C"',
-        "{",
-        "#endif // __cplusplus",
-        "",
-        rendered_macros,
-        "",
+        'extern "C" {',
+        "#endif\n",
+        format_code_block(blocks["config"]),
+        "\n/* --- External Declarations --- */",
+        format_code_block(blocks["decl"]),
+        "\n/* --- Preset Function Prototypes --- */",
+        f"void {prefix_lower}_init(void);",
+        f"void {prefix_lower}_step_in(void);",
+        f"void {prefix_lower}_step_out(void);\n",
         "#ifdef __cplusplus",
         "}",
-        "#endif // __cplusplus",
-        "",
-        f"#endif // {guard_name}",
-        ""
+        "#endif",
+        f"#endif // {guard_name}"
     ]
-    
-    # 7. Write to File
-    output_dir = os.path.dirname(output_file)
-    if output_dir:
-        os.makedirs(output_dir, exist_ok=True)
-        
-    with open(output_file, "w", encoding="utf-8") as f:
-        f.write("\n".join(header_content))
-        
-    print(f"[+] Success! Component Preset Header Generated at: {output_file}\n")
+
+    with open(h_filepath, "w", encoding="utf-8") as f:
+        f.write("\n".join(h_buffer))
+
+    # =========================================================
+    # Generate Source File (.c)
+    # =========================================================
+    c_filepath = os.path.join(output_dir, f"{instance_name}.c")
+    c_buffer = [
+        "/**",
+        f" * @file {instance_name}.c",
+        f" * @brief SDPE Generated Hardware Implementation for {instance_name}",
+        " */",
+        f'#include "{instance_name}.h"\n',
+        f"void {prefix_lower}_init(void)\n{{",
+        format_code_block(blocks["init"]),
+        "}\n",
+        f"void {prefix_lower}_step_in(void)\n{{",
+        format_code_block(blocks["input"]),
+        "}\n",
+        f"void {prefix_lower}_step_out(void)\n{{",
+        format_code_block(blocks["output"]),
+        "}\n"
+    ]
+
+    with open(c_filepath, "w", encoding="utf-8") as f:
+        f.write("\n".join(c_buffer))
+
+    return True, f"Successfully generated {h_filepath} and {c_filepath}"
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="SDPE Component Header Compiler")
-    parser.add_argument("-i", "--input", required=True, help="Input instance JSON file")
-    parser.add_argument("-t", "--template", required=True, help="Paradigm JSON file")
-    parser.add_argument("-o", "--output", help="Output .h file path (default: input_filename.h)")
+    parser = argparse.ArgumentParser(description="SDPE Production CLI Generator")
+    parser.add_argument("-p", "--paradigm", required=True, help="Paradigm name")
+    parser.add_argument("-i", "--instance", required=True, help="Specific instance name")
+    parser.add_argument("-m", "--mode", help="Specific mode (Optional)")
     
     args = parser.parse_args()
+    success, msg = generate_production_files(args.paradigm, args.instance, args.mode)
     
-    # Handle default output filename logic
-    if not args.output:
-        input_base = os.path.splitext(os.path.basename(args.input))[0]
-        output_path = f"{input_base}.h"
+    if not success:
+        print(f"[FAIL] {args.instance}: {msg}", file=sys.stderr)
+        sys.exit(1)
     else:
-        output_path = args.output
-        
-    generate_component_header(args.input, args.template, output_path)
+        print(f"[OK] {args.instance}: Generated successfully.")
+        sys.exit(0)
