@@ -1,0 +1,66 @@
+{
+    "project_name": "Standard_PMSM_Sensored_FOC",
+    "description": "Sensored PMSM FOC Drive Project mapped to C2000/STM32 platform",
+
+    "global_environment": {
+        "adc_vref": "CTRL_ADC_VOLTAGE_REF",
+        "timer_clock_hz": "CONTROLLER_FREQUENCY",
+        "adc_res": 12,
+        "adc_iqn": 24,
+        "voltage_base": 46.188,
+        "current_base": 10.0
+    },
+
+    "bindings": [
+        {
+            "role": "mcu_global_settings",
+            "obj_name": "sys_config",
+            "prefix": "",
+            "instance": "global_f280049c"
+        },
+        {
+            "role": "motor_consultant",
+            "obj_name": "mtr_consultant",
+            "prefix": "MTR_PARAM",
+            "instance": "mtr_sm060"
+        },
+        {
+            "role": "three_phase_current",
+            "obj_name": "iuvw",
+            "prefix": "CTRL_INV_CURR",
+            "channel_mode": "tri_channel",
+            "instance": "inst_shunt_2mohm"
+        },
+        {
+            "role": "three_phase_modulator",
+            "obj_name": "inv_mod",
+            "prefix": "CTRL_INV_PWM",
+            "channel_mode": "svpwm",
+            "instance": "inst_mod_3ph_20khz",
+            "custom_macros": {
+                "current_feedback_ptr": "&iuvw.control_port"
+            }
+        },
+        {
+            "role": "dc_bus_voltage",
+            "obj_name": "udc",
+            "prefix": "CTRL_DCBUS_VOLTAGE",
+            "channel_mode": "single_channel",
+            "instance": "inst_volt_div_800v"
+        },
+        {
+            "role": "motor_encoder",
+            "obj_name": "motor_main_enc",
+            "prefix": "CTRL_MAIN_ENCODER",
+            "channel_mode": "single_channel",
+            "instance": "inst_enc_as5047p",
+            "override_parameters": {
+                "mech_offset_pu": 0.618 // [改进2] 工程级覆写！每次标定后只改这里
+            },
+            "custom_macros": {
+                "motor_pole_pairs": "MTR_PARAM_POLE_PAIRS",
+                "raw_data_source": "motor_main_enc_raw"
+            }
+        }
+    ]
+}

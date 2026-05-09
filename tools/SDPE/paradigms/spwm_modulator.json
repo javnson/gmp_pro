@@ -1,0 +1,62 @@
+{
+    "paradigm_name": "spwm_modulator",
+    "display_name": "Three-Phase PWM Modulator (Two-Level)",
+    "template_file": "spwm_modulator.j2",
+
+    "supported_modes": {
+        "spwm": {
+            "c_type": "spwm_modulator_t",
+            "init_func": "ctl_init_spwm_modulator",
+            "step_func": "ctl_step_spwm_modulator"
+        },
+        "svpwm": {
+            "c_type": "spwm_modulator_t",
+            "init_func": "ctl_init_spwm_modulator",
+            "step_func": "ctl_step_svpwm_modulator"
+        }
+    },
+
+    "parameters": [
+        {
+            "name": "pwm_freq_hz",
+            "macro_name": "PWM_FREQ_HZ",
+            "value_format": "(({}f))",
+            "description": "PWM switching frequency",
+            "unit": "Hz"
+        },
+        {
+            "name": "deadtime_ns",
+            "macro_name": "DEADTIME_NS",
+            "value_format": "(({}f))",
+            "description": "Hardware dead-time to be compensated",
+            "unit": "ns"
+        },
+        {
+            "name": "current_deadband_pu",
+            "macro_name": "CURR_DB_PU",
+            "value_format": "(({}f))",
+            "description": "Current deadband threshold for compensation",
+            "unit": "PU"
+        },
+        {
+            "name": "current_hysteresis_pu",
+            "macro_name": "CURR_HYS_PU",
+            "value_format": "(({}f))",
+            "description": "Current hysteresis for compensation",
+            "unit": "PU"
+        }
+    ],
+
+    "required_context": [
+        {
+            "name": "timer_clock_hz",
+            "type": "float",
+            "description": "Timer peripheral clock frequency (Hz)"
+        },
+        {
+            "name": "current_feedback_ptr",
+            "type": "string",
+            "description": "Pointer to the phase current vector (e.g. &iuvw.control_port)"
+        }
+    ]
+}

@@ -1,0 +1,65 @@
+{
+    "paradigm_name": "pmsm_consultant",
+    "display_name": "PMSM Physical Parameter Consultant",
+    "template_file": "pmsm_consultant.j2",
+
+    "supported_modes": {
+        "default": {
+            "c_type": "ctl_consultant_pmsm_t",
+            "init_func": "ctl_consultant_pmsm_init"
+        }
+    },
+
+    "parameters": [
+        {
+            "name": "motor_model",
+            "macro_name": "MODEL_NAME",
+            "type": "string",
+            "value_format": "\"{}\"",
+            "description": "Motor model or part number",
+            "unit": ""
+        },
+        {
+            "name": "pole_pairs",
+            "macro_name": "POLE_PAIRS",
+            "type": "uint32",
+            "value_format": "({}U)",
+            "description": "Number of motor pole pairs",
+            "unit": ""
+        },
+        {
+            "name": "rs_ohm",
+            "macro_name": "RS_OHM",
+            "type": "float",
+            "value_format": "(({}f))",
+            "description": "Stator phase resistance",
+            "unit": "Ohm"
+        },
+        {
+            "name": "ld_h",
+            "macro_name": "LD_H",
+            "type": "float",
+            "value_format": "(({}f))",
+            "description": "D-axis synchronous inductance",
+            "unit": "H"
+        },
+        {
+            "name": "lq_h",
+            "macro_name": "LQ_H",
+            "type": "float",
+            "value_format": "(({}f))",
+            "description": "Q-axis synchronous inductance",
+            "unit": "H"
+        },
+        {
+            "name": "flux_linkage_wb",
+            "macro_name": "FLUX_LINKAGE_WB",
+            "type": "float",
+            "value_format": "(({}f))",
+            "description": "Permanent magnet flux linkage RMS",
+            "unit": "Wb"
+        }
+    ],
+
+    "required_context": []
+}

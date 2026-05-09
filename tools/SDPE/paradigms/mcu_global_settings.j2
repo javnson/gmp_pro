@@ -1,0 +1,42 @@
+{# ====================================================================== #}
+{# Paradigm: MCU Global Control Settings                                  #}
+{# ====================================================================== #}
+
+{# 0. Configuration Macros #}
+{% macro render_config_macros(ctx) %}
+/* --- {{ ctx.display_name }} --- */
+
+{% for macro_key, param in ctx.formatted_params.items() %}
+/**
+ * @brief {{ param.desc }}
+{%- if param.unit %}
+ * @unit {{ param.unit }}
+{%- endif %}
+ */
+#define {{ macro_key | ljust(30) }} {{ param.value }}
+
+{% endfor %}
+
+/* --- Derived System Tick Macros --- */
+
+/**
+ * @brief System tick divider for C2000 DSP (Specific to execution timing)
+ */
+#define DSP_C2000_DSP_TIME_DIV                 (100000 / (CTRL_PWM_CMP_MAX) / 2)
+{% endmacro %}
+
+{# 1. Declaration (Empty) #}
+{% macro render_decl(ctx) %}
+{% endmacro %}
+
+{# 2. Initialization (Empty) #}
+{% macro render_init(ctx) %}
+{% endmacro %}
+
+{# 3. Input Callback (Empty) #}
+{% macro render_input(ctx) %}
+{% endmacro %}
+
+{# 4. Output Callback (Empty) #}
+{% macro render_output(ctx) %}
+{% endmacro %}

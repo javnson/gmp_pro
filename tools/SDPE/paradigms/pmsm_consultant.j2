@@ -1,0 +1,45 @@
+{# ====================================================================== #}
+{# Paradigm: PMSM Physical Parameter Consultant                           #}
+{# ====================================================================== #}
+
+{# 0. Configuration Macros #}
+{% macro render_config_macros(ctx) %}
+/* --- {{ ctx.display_name }} ({{ ctx.obj_name }}) Parameters --- */
+
+{% for macro_key, param in ctx.formatted_params.items() %}
+/**
+ * @brief {{ param.desc }}
+{%- if param.unit %}
+ * @unit {{ param.unit }}
+{%- endif %}
+ */
+#define {{ ctx.prefix }}_{{ macro_key | ljust(25) }} {{ param.value }}
+
+{% endfor %}
+{% endmacro %}
+
+{# 1. Declaration #}
+{% macro render_decl(ctx) %}
+/** @brief {{ ctx.display_name }} object for motor information retrieval */
+{{ ctx.c_type }} {{ ctx.obj_name }};
+{% endmacro %}
+
+{# 2. Initialization #}
+{% macro render_init(ctx) %}
+    // Initialize {{ ctx.display_name }} for {{ ctx.obj_name }}
+    {{ ctx.init_func }}(
+        &{{ ctx.obj_name }},
+        {{ ctx.prefix }}_POLE_PAIRS,
+        {{ ctx.prefix }}_RS_OHM,
+        {{ ctx.prefix }}_LD_H,
+        {{ ctx.prefix }}_LQ_H,
+        {{ ctx.prefix }}_FLUX_LINKAGE_WB);
+{% endmacro %}
+
+{# 3. Input Callback (Empty for Consultant) #}
+{% macro render_input(ctx) %}
+{% endmacro %}
+
+{# 4. Output Callback (Empty for Consultant) #}
+{% macro render_output(ctx) %}
+{% endmacro %}

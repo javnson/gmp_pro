@@ -1,14 +1,7 @@
 {
-    "paradigm_name": "current_shunt",
-    "display_name": "Shunt-based Current Sensor with Op-Amp",
-    "template_file": "current_shunt.j2",
-
-    "output_path": "hardware_presets/current_sensors",
-
-    "instance_databases": [
-        "inst/db_standard_shunts.json",
-        "inst/db_ti_boostxl_shunts.json"
-    ],
+    "paradigm_name": "voltage_sensor",
+    "display_name": "Isolated Voltage Sensor or Transducer",
+    "template_file": "voltage_sensor.j2",
 
     "supported_modes": {
         "single_channel": {
@@ -33,39 +26,25 @@
 
     "parameters": [
         {
-            "name": "r_shunt_ohm",
-            "macro_name": "R_SHUNT_OHM",
+            "name": "sensitivity_v_v",
+            "macro_name": "SENSITIVITY_V_V",
             "value_format": "(({}f))",
-            "description": "Shunt resistor value",
-            "unit": "Ohms"
-        },
-        {
-            "name": "amp_gain",
-            "macro_name": "AMP_GAIN",
-            "value_format": "(({}f))",
-            "description": "Total amplifier gain",
+            "description": "Sensor transfer gain (Output Voltage / Input Voltage)",
             "unit": "V/V"
         },
         {
             "name": "bias_v",
             "macro_name": "BIAS_V",
             "value_format": "(({}f))",
-            "description": "Hardware bias voltage before ADC",
+            "description": "Zero-voltage output bias",
             "unit": "V"
         },
         {
-            "name": "max_cont_arms",
-            "macro_name": "MAX_CONT_ARMS",
+            "name": "max_voltage_v",
+            "macro_name": "MAX_VOLTAGE_V",
             "value_format": "(({}f))",
-            "description": "Maximum continuous current",
-            "unit": "Arms"
-        },
-        {
-            "name": "max_peak_ap",
-            "macro_name": "MAX_PEAK_AP",
-            "value_format": "(({}f))",
-            "description": "Maximum peak current",
-            "unit": "Ap"
+            "description": "Maximum continuous measurable voltage",
+            "unit": "V"
         },
         {
             "name": "accuracy_class_pct",
@@ -78,7 +57,7 @@
             "name": "chip_part_number",
             "macro_name": "CHIP_PN",
             "value_format": "\"{}\"",
-            "description": "Main amplifier or CSA chip part number",
+            "description": "Voltage transducer or isolated amplifier part number",
             "unit": ""
         }
     ],
@@ -101,14 +80,9 @@
             "description": "IQ math format number"
         },
         {
-            "name": "current_base",
+            "name": "voltage_base",
             "type": "float",
-            "description": "System current base for per-unit scaling"
-        },
-        {
-            "name": "raw_data_source",
-            "type": "string",
-            "description": "Pointer or array name of the raw ADC data (e.g., &AdcaResultRegs.ADCRESULT0, adc_dma_buffer)"
+            "description": "System voltage base for per-unit scaling"
         }
     ]
 }

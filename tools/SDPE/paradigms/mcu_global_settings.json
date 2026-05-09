@@ -1,0 +1,47 @@
+{
+    "paradigm_name": "mcu_global_settings",
+    "display_name": "MCU Global Control Settings",
+    "template_file": "mcu_global_settings.j2",
+
+    "supported_modes": {
+        "default": {
+            "c_type": "",
+            "channel_count": 0,
+            "init_func": "",
+            "step_func": ""
+        }
+    },
+
+    "parameters": [
+        {
+            "name": "controller_freq_hz",
+            "macro_name": "CONTROLLER_FREQUENCY",
+            "value_format": "(({}f))",
+            "description": "Main controller interrupt frequency",
+            "unit": "Hz"
+        },
+        {
+            "name": "pwm_cmp_max",
+            "macro_name": "CTRL_PWM_CMP_MAX",
+            "value_format": "({})",
+            "description": "Maximum PWM compare value (Period)",
+            "unit": "Counts"
+        },
+        {
+            "name": "pwm_deadband_cmp",
+            "macro_name": "CTRL_PWM_DEADBAND_CMP",
+            "value_format": "({})",
+            "description": "PWM deadband in counter ticks",
+            "unit": "Counts"
+        },
+        {
+            "name": "adc_vref",
+            "macro_name": "CTRL_ADC_VOLTAGE_REF",
+            "value_format": "(({}f))",
+            "description": "ADC reference voltage",
+            "unit": "V"
+        }
+    ],
+
+    "required_context": []
+}

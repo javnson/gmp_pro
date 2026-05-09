@@ -1,0 +1,15 @@
+{
+    "instance_name": "inv_mod",
+    "prefix": "CTRL_INVERTER_PWM",
+    "channel_mode": "svpwm",
+    "parameter_values": {
+        "pwm_freq_hz": 20000.0,
+        "deadtime_ns": 1000.0,
+        "current_deadband_pu": 0.02,
+        "current_hysteresis_pu": 0.005
+    },
+    "test_context": {
+        "timer_clock_hz": 100000000.0,
+        "current_feedback_ptr": "&iuvw.control_port"
+    }
+}

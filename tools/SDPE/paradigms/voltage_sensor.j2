@@ -1,5 +1,5 @@
 {# ====================================================================== #}
-{# Paradigm: Shunt-based Current Sensor with Op-Amp                       #}
+{# Paradigm: Isolated Voltage Sensor or Transducer                        #}
 {# ====================================================================== #}
 
 {# 0. Configuration Macros #}
@@ -13,9 +13,7 @@
  * @unit {{ param.unit }}
 {%- endif %}
  */
-#ifndef {{ ctx.prefix }}_{{ macro_key }}
 #define {{ ctx.prefix }}_{{ macro_key | ljust(20) }} {{ param.value }}
-#endif
 
 {% endfor %}
 
@@ -23,9 +21,9 @@
 
 /**
  * @brief Calculated hardware sensitivity for ADC scaling
- * @unit V/A
+ * @unit V/V
  */
-#define {{ ctx.prefix }}_SENSITIVITY         (GMP_SDPE_CALC_SHUNT_SENSITIVITY({{ ctx.prefix }}_R_SHUNT_OHM, {{ ctx.prefix }}_AMP_GAIN))
+#define {{ ctx.prefix }}_SENSITIVITY         (GMP_SDPE_CALC_VOLTAGE_SENSITIVITY({{ ctx.prefix }}_SENSITIVITY_V_V))
 
 /**
  * @brief Hardware bias voltage for ADC offset
@@ -38,15 +36,19 @@
 {% macro render_decl(ctx) %}
 // {{ ctx.display_name }} object declaration
 {{ ctx.c_type }} {{ ctx.obj_name }};
+{% if ctx.channel_count > 1 %}
+adc_gt {{ ctx.obj_name }}_src[{{ ctx.channel_count }}];
+{% else %}
+adc_gt {{ ctx.obj_name }}_src;
+{% endif %}
 {% endmacro %}
 
 {# 2. Initialization #}
 {% macro render_init(ctx) %}
     // Initialize {{ ctx.display_name }} (Ref: {{ ctx.adc_vref }}V, {{ ctx.adc_res }}-bit)
     {{ ctx.init_func }}(
-        &{{ ctx.obj_name }}, 
-        (adc_gt*){{ ctx.raw_data_source }},
-        ctl_gain_calc_generic({{ ctx.adc_vref }}f, {{ ctx.prefix }}_SENSITIVITY, {{ ctx.current_base }}f),
+        &{{ ctx.obj_name }}, {% if ctx.channel_count > 1 %}{{ ctx.obj_name }}_src{% else %}&{{ ctx.obj_name }}_src{% endif %},
+        ctl_gain_calc_generic({{ ctx.adc_vref }}f, {{ ctx.prefix }}_SENSITIVITY, {{ ctx.voltage_base }}f),
         ctl_bias_calc_via_Vref_Vbias({{ ctx.adc_vref }}f, {{ ctx.prefix }}_BIAS),
         {{ ctx.adc_res }}, {{ ctx.adc_iqn }});
 {% endmacro %}

@@ -1,0 +1,49 @@
+{# ====================================================================== #}
+{# Paradigm: Auto-turn Counting Absolute Encoder                          #}
+{# ====================================================================== #}
+
+{# 0. Configuration Macros #}
+{% macro render_config_macros(ctx) %}
+/* --- {{ ctx.display_name }} ({{ ctx.obj_name }}) Parameters --- */
+
+{% for macro_key, param in ctx.formatted_params.items() %}
+/**
+ * @brief {{ param.desc }}
+{%- if param.unit %}
+ * @unit {{ param.unit }}
+{%- endif %}
+ */
+#define {{ ctx.prefix }}_{{ macro_key | ljust(20) }} {{ param.value }}
+
+{% endfor %}
+{% endmacro %}
+
+{# 1. Declaration #}
+{% macro render_decl(ctx) %}
+// {{ ctx.display_name }} object declaration
+{{ ctx.c_type }} {{ ctx.obj_name }};
+{% endmacro %}
+
+{# 2. Initialization #}
+{% macro render_init(ctx) %}
+    // Initialize {{ ctx.display_name }} (Motor Pole Pairs: {{ ctx.motor_pole_pairs }})
+    {{ ctx.init_func }}(
+        &{{ ctx.obj_name }}, 
+        {{ ctx.motor_pole_pairs }}, 
+        {{ ctx.prefix }}_POSITION_BASE);
+        
+    // Set initial mechanical offset
+    ctl_set_autoturn_pos_encoder_mech_offset(
+        &{{ ctx.obj_name }}, 
+        (ctrl_gt){{ ctx.prefix }}_MECH_OFFSET_PU);
+{% endmacro %}
+
+{# 3. Input Callback #}
+{% macro render_input(ctx) %}
+    // Execute encoder step using the provided data source
+    {{ ctx.step_func }}(&{{ ctx.obj_name }}, {{ ctx.raw_data_source }});
+{% endmacro %}
+
+{# 4. Output Callback #}
+{% macro render_output(ctx) %}
+{% endmacro %}

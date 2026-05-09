@@ -1,0 +1,11 @@
+{
+    "instance_name": "f280049c_base_config",
+    "prefix": "",
+    "channel_mode": "default",
+    "parameter_values": {
+        "controller_freq_hz": 20000.0,
+        "pwm_cmp_max": "2500 - 1",
+        "pwm_deadband_cmp": 100,
+        "adc_vref": 3.3
+    }
+}

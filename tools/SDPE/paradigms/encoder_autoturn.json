@@ -1,0 +1,58 @@
+{
+    "paradigm_name": "encoder_autoturn",
+    "display_name": "Auto-turn Counting Absolute Encoder",
+    "template_file": "encoder_autoturn.j2",
+
+    "supported_modes": {
+        "single_channel": {
+            "c_type": "pos_autoturn_encoder_t",
+            "channel_count": 1,
+            "init_func": "ctl_init_autoturn_pos_encoder",
+            "step_func": "ctl_step_autoturn_pos_encoder"
+        }
+    },
+
+    "parameters": [
+        {
+            "name": "position_base",
+            "macro_name": "POSITION_BASE",
+            "value_format": "(({}U))",
+            "description": "Raw count value for a full mechanical revolution",
+            "unit": "Counts"
+        },
+        {
+            "name": "mech_offset_pu",
+            "macro_name": "MECH_OFFSET_PU",
+            "value_format": "(({}f))",
+            "description": "Mechanical zero position offset in per-unit",
+            "unit": "PU"
+        },
+        {
+            "name": "accuracy_class_pct",
+            "macro_name": "ACCURACY_CLASS_PCT",
+            "value_format": "(({}f))",
+            "description": "Overall accuracy class",
+            "unit": "%"
+        },
+        {
+            "name": "chip_part_number",
+            "macro_name": "CHIP_PN",
+            "value_format": "\"{}\"",
+            "description": "Encoder chip part number",
+            "unit": ""
+        }
+    ],
+
+    "required_context": [
+        {
+            "name": "motor_pole_pairs",
+            "type": "uint16",
+            "description": "Pole pairs of the motor attached to this encoder"
+        },
+        {
+            "name": "raw_data_source",
+            "type": "string",
+            "description": "Variable name, macro, or function call providing the raw encoder reading"
+        }
+    ]
+}

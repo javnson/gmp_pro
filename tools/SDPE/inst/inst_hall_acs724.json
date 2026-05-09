@@ -1,0 +1,19 @@
+{
+    "instance_name": "iu",
+    "prefix": "CTRL_PHASE_U_CURRENT",
+    "channel_mode": "single_channel",
+    "parameter_values": {
+        "sensitivity_v_a": 0.1,
+        "bias_v": 2.5,
+        "max_cont_arms": 20.0,
+        "max_peak_ap": 40.0,
+        "accuracy_class_pct": 1.0,
+        "chip_part_number": "ACS724LLCTR-20AB-T"
+    },
+    "test_context": {
+        "adc_vref": 5.0,
+        "adc_res": 12,
+        "adc_iqn": 24,
+        "current_base": 10.0
+    }
+}

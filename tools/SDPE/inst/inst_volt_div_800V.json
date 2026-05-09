@@ -1,0 +1,19 @@
+{
+    "instance_name": "udc",
+    "prefix": "CTRL_DCBUS_VOLTAGE",
+    "channel_mode": "single_channel",
+    "parameter_values": {
+        "r_high_ohm": 3000000.0,
+        "r_low_ohm": 10000.0,
+        "amp_gain": 1.0,
+        "bias_v": 0.0,
+        "max_voltage_v": 1000.0,
+        "accuracy_class_pct": 1.0
+    },
+    "test_context": {
+        "adc_vref": 3.3,
+        "adc_res": 12,
+        "adc_iqn": 24,
+        "voltage_base": 46.188
+    }
+}

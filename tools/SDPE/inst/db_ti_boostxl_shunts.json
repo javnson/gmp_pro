@@ -1,0 +1,33 @@
+{
+    "database_name": "TI Shunt Resistor Sensors Library",
+    "paradigm_ref": "current_shunt",
+    "version": "1.0",
+
+    "instances": {
+        "inst_shunt_5mohm": {
+            "description": "2mOhm Shunt with 20x Gain (INA240A1)",
+            "parameter_values": {
+                "r_shunt_ohm": 0.002,
+                "amp_gain": 20.0,
+                "bias_v": 1.65,
+                "max_cont_arms": 15.0,
+                "max_peak_ap": 30.0,
+                "accuracy_class_pct": 0.5,
+                "chip_part_number": "INA240A1"
+            }
+        },
+
+        "inst_shunt_6mohm_high_current": {
+            "description": "1mOhm Shunt with 50x Gain (INA240A2)",
+            "parameter_values": {
+                "r_shunt_ohm": 0.001,
+                "amp_gain": 50.0,
+                "bias_v": 1.65,
+                "max_cont_arms": 30.0,
+                "max_peak_ap": 60.0,
+                "accuracy_class_pct": 0.5,
+                "chip_part_number": "INA240A2"
+            }
+        }
+    }
+}
