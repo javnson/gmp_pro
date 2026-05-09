@@ -132,7 +132,7 @@ JSON
   Bash
 
   ```
-  python bin_py/debug_paradigms.py -p current_hall -i ACS724_50B
+  python bin_py/debug_paradigms.py -p current_hall -i inst_hall_acs724_20a
   ```
 
   - **动作**：查找 `current_hall` 范式，实例化 `ACS724_50B` 的参数。
@@ -143,7 +143,7 @@ JSON
   Bash
 
   ```
-  python bin_py/debug_paradigms.py -p voltage_divider
+  python bin_py/debug_paradigms.py -p current_hall
   ```
 
   - **动作**：遍历 `voltage_divider` 关联的所有数据库，为每个型号生成预览代码。
@@ -161,10 +161,34 @@ JSON
 
   生成的预览文件中会包含 `/* FROM_OUT: ... */` 标签。这代表该变量在实际工程中将由 `Topology` 或其他硬件模块提供，在调试阶段仅做占位处理。
 
-### 工具 2：模块化导出工具 (Module Packer)
+- ## 工具 2: 全库批量预览工具 (Batch Preview All)
 
-- **功能**：将特定的硬件配置（如一块特定的功率板）打包为独立的 `.h` 文件。
-- **存放位置**：根据 JSON 中的 `output_path` 自动归档。
+  ### 描述
+
+  该工具是 `debug_paradigms` 的自动化升级版。它会自动扫描 `paradigms/` 目录下的所有范式文件，并针对每个范式关联的数据库，生成库中**所有**器件型号的渲染预览。
+
+  ### 位置
+
+  ```
+  $GMP_PRO_LOCATION/tools/SDPE/bin_py/debug_preview_all.py
+  ```
+
+  ### 使用场景
+
+  - **模板回归测试**：当你修改了 `templates/common_logic.j2` 等通用底层模板时，运行此工具可以一次性检查是否导致某些特定型号（如三相传感器或复合板卡）的生成代码报错。
+  - **库同步校验**：检查是否有新增的实例 JSON 缺少了 Paradigm 要求的必要参数。
+
+  ### 示例指令
+
+  Bash
+
+  ```
+  python bin_py/debug_preview_all.py
+  ```
+
+  ### 运行结果
+
+  生成的代码将统一存放在 `SDPE/test/` 目录下，文件名格式为 `{instance_name}_preview.c`。
 
 ### 工具 3：全库批量生成器 (Library Builder)
 
