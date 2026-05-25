@@ -28,16 +28,13 @@ extern "C"
 //=================================================================================================
 // definitions of peripheral
 
-extern adc_channel_t adc_v_grid;
-
-// AC Current Feedback
-extern adc_channel_t adc_i_ac;
-
-// DC Bus Voltage Feedback
-extern adc_channel_t adc_v_bus;
+extern adc_channel_t adc_v_in;
+extern adc_channel_t adc_v_out;
+extern adc_channel_t adc_i_L;
+extern adc_channel_t adc_i_load;
 
 // dlog DSA objects
-extern basic_trigger_t trigger;
+//extern basic_trigger_t trigger;
 
 #define DLOG_MEM_LENGTH 100
 extern ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];

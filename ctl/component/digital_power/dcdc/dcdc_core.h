@@ -17,8 +17,8 @@ extern "C"
 #endif // __cplusplus
 
 #include <ctl/component/interface/adc_channel.h>
+#include <ctl/component/intrinsic/basic/slope_limiter.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
-#include <ctl/component/intrinsic/discrete/slope_f_pu.h>
 
 /*---------------------------------------------------------------------------*/
 /* Initialization & Auto-Tuning Structures                                   */
@@ -84,7 +84,10 @@ typedef struct _tag_dcdc_core_t
     adc_ift* i_load_fdbk; //!< Output load current feedback (PU). Optional.
 
     // --- User Setpoints & Limiters ---
-    ctrl_gt v_out_set_user; //!< User-commanded target voltage (PU).
+    ctrl_gt v_out_set_raw; //!< User-commanded target voltage (PU).
+    ctrl_gt i_out_set_raw; //!< Current command target current (PU).
+
+    ctrl_gt v_out_ff; //!< User Voltage feed-foward
 
     ctl_slope_limiter_t v_ramp; //!< Voltage reference slope limiter.
     ctl_slope_limiter_t i_ramp; //!< Current reference slope limiter.
@@ -102,8 +105,10 @@ typedef struct _tag_dcdc_core_t
     ctrl_gt v_pwm_req; //!< Final Equivalent Modulator Target Voltage (PU). Range: [0, V_max].
 
     // --- State Flags ---
-    fast_gt flag_enable;         //!< Master enable flag.
-    fast_gt flag_enable_load_ff; //!< Enable load current feedforward.
+    fast_gt flag_enable;              //!< Master enable flag.
+    fast_gt flag_enable_load_ff;      //!< Enable load current feedforward.
+    fast_gt flag_enable_current_loop; //!< Enable Current control
+    fast_gt flag_enable_voltage_loop; //!< Enable votlage control
 
 } ctl_dcdc_core_t;
 
@@ -207,42 +212,7 @@ GMP_STATIC_INLINE void ctl_auto_tuning_dcdc_fsbb(ctl_dcdc_core_init_t* init)
  * @brief Initializes the unified DC-DC core.
  */
 void ctl_init_dcdc_core(ctl_dcdc_core_t* core, const ctl_dcdc_core_init_t* init, parameter_gt v_slope_pu,
-                        parameter_gt i_slope_pu)
-{
-    // Init PI Controllers
-    ctl_init_pid_Tmode(&core->v_loop_pi, float2ctrl(init->kp_v_pu), float2ctrl(init->kp_v_pu / init->ki_v_pu),
-                       float2ctrl(0), float2ctrl(init->fs));
-    ctl_init_pid_Tmode(&core->i_loop_pi, float2ctrl(init->kp_i_pu), float2ctrl(init->kp_i_pu / init->ki_i_pu),
-                       float2ctrl(0), float2ctrl(init->fs));
-
-    // --- Configure Strict PID Limits (PU) ---
-    // 1. Voltage loop outputs Current. Limit it via i_L_max / i_L_min.
-    ctrl_gt limit_i_max = float2ctrl(init->i_L_max / init->i_base);
-    ctrl_gt limit_i_min = float2ctrl(init->i_L_min / init->i_base);
-    ctl_set_pid_limit(&core->v_loop_pi, limit_i_max, limit_i_min);
-    ctl_set_pid_int_limit(&core->v_loop_pi, limit_i_max, limit_i_min);
-
-    // 2. Current loop handles Voltage. Limit it via v_req_max / v_req_min.
-    // NOTE: Minimum voltage is strictly limited here (e.g., to 0 for unidirectional DC output).
-    ctrl_gt limit_v_max = float2ctrl(init->v_req_max / init->v_base);
-    ctrl_gt limit_v_min = float2ctrl(init->v_req_min / init->v_base);
-    ctl_set_pid_limit(&core->i_loop_pi, limit_v_max, limit_v_min);
-    ctl_set_pid_int_limit(&core->i_loop_pi, limit_v_max, limit_v_min);
-
-    // Init Slope Limiters (Units/sec)
-    ctl_init_slope_limiter(&core->v_ramp, float2ctrl(v_slope_pu), float2ctrl(-v_slope_pu), float2ctrl(init->fs));
-    ctl_init_slope_limiter(&core->i_ramp, float2ctrl(i_slope_pu), float2ctrl(-i_slope_pu), float2ctrl(init->fs));
-
-    core->flag_enable = 0;
-    core->flag_enable_load_ff = 0;
-    core->load_ff_gain = float2ctrl(1.0f);
-
-    // Null pointers
-    core->v_in_fdbk = NULL;
-    core->v_out_fdbk = NULL;
-    core->i_L_fdbk = NULL;
-    core->i_load_fdbk = NULL;
-}
+                        parameter_gt i_slope_pu);
 
 /**
  * @brief Binds ADC interfaces to the Core.
@@ -269,18 +239,18 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_buck(ctl_dcdc_core_t* core)
         return float2ctrl(0.0f);
 
     // 1. Voltage Loop & Ramp
-    core->v_out_ref = ctl_step_slope_limiter(&core->v_ramp, core->v_out_set_user);
+    core->v_out_ref = ctl_step_slope_limiter(&core->v_ramp, core->v_out_set_raw);
     ctrl_gt v_err = core->v_out_ref - core->v_out_fdbk->value;
-    ctrl_gt i_ref_raw = ctl_step_pid_ser(&core->v_loop_pi, v_err);
+    core->i_out_set_raw = ctl_step_pid_ser(&core->v_loop_pi, v_err);
 
     // 2. Load Feedforward
     if (core->flag_enable_load_ff && core->i_load_fdbk)
     {
-        i_ref_raw += ctl_mul(core->i_load_fdbk->value, core->load_ff_gain);
+        core->v_out_set_raw += ctl_mul(core->i_load_fdbk->value, core->load_ff_gain);
     }
 
     // 3. Current Slew Rate Limiter (Limiting relies on the slope limiter and the PID's internal out_max)
-    core->i_L_ref = ctl_step_slope_limiter(&core->i_ramp, i_ref_raw);
+    core->i_L_ref = ctl_step_slope_limiter(&core->i_ramp, core->v_out_set_raw);
 
     // === CASCADED ANTI-WINDUP 1 ===
     // Inform the outer loop if its output was clamped by slope or absolute limits
@@ -313,19 +283,19 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_boost(ctl_dcdc_core_t* core)
     if (!core->flag_enable)
         return float2ctrl(0.0f);
 
-    core->v_out_ref = ctl_step_slope_limiter(&core->v_ramp, core->v_out_set_user);
+    core->v_out_ref = ctl_step_slope_limiter(&core->v_ramp, core->v_out_set_raw);
     ctrl_gt v_err = core->v_out_ref - core->v_out_fdbk->value;
-    ctrl_gt i_ref_raw = ctl_step_pid_ser(&core->v_loop_pi, v_err);
+    core->v_out_set_raw = ctl_step_pid_ser(&core->v_loop_pi, v_err);
 
     if (core->flag_enable_load_ff && core->i_load_fdbk)
     {
         ctrl_gt v_in_safe = (core->v_in_fdbk->value > float2ctrl(0.1f)) ? core->v_in_fdbk->value : float2ctrl(0.1f);
         ctrl_gt duty_eff = float2ctrl(1.0f) - ctl_div(v_in_safe, core->v_out_fdbk->value);
         ctrl_gt boost_ff_gain = ctl_div(core->load_ff_gain, float2ctrl(1.0f) - duty_eff);
-        i_ref_raw += ctl_mul(core->i_load_fdbk->value, boost_ff_gain);
+        core->v_out_set_raw += ctl_mul(core->i_load_fdbk->value, boost_ff_gain);
     }
 
-    core->i_L_ref = ctl_step_slope_limiter(&core->i_ramp, i_ref_raw);
+    core->i_L_ref = ctl_step_slope_limiter(&core->i_ramp, core->v_out_set_raw);
     ctl_pid_clamping_correction_using_real_output(&core->v_loop_pi, core->i_L_ref);
 
     ctrl_gt i_err = core->i_L_ref - core->i_L_fdbk->value;
@@ -352,32 +322,59 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_fsbb(ctl_dcdc_core_t* core)
     if (!core->flag_enable)
         return float2ctrl(0.0f);
 
-    core->v_out_ref = ctl_step_slope_limiter(&core->v_ramp, core->v_out_set_user);
-    ctrl_gt v_err = core->v_out_ref - core->v_out_fdbk->value;
-    ctrl_gt i_ref_raw = ctl_step_pid_ser(&core->v_loop_pi, v_err);
-
-    if (core->flag_enable_load_ff && core->i_load_fdbk)
+    if (core->flag_enable_voltage_loop)
     {
-        ctrl_gt ratio = (core->v_out_fdbk->value > core->v_in_fdbk->value)
-                            ? ctl_div(core->v_out_fdbk->value, core->v_in_fdbk->value)
-                            : float2ctrl(1.0f);
-        i_ref_raw += ctl_mul(core->i_load_fdbk->value, ratio);
+        core->v_out_ref = ctl_step_slope_limiter(&core->v_ramp, core->v_out_set_raw);
+        ctrl_gt v_err = core->v_out_ref - core->v_out_fdbk->value;
+        core->v_out_set_raw = ctl_step_pid_ser(&core->v_loop_pi, v_err);
+
+        if (core->flag_enable_load_ff && core->i_load_fdbk)
+        {
+            ctrl_gt ratio = (core->v_out_fdbk->value > core->v_in_fdbk->value)
+                                ? ctl_div(core->v_out_fdbk->value, core->v_in_fdbk->value)
+                                : float2ctrl(1.0f);
+            core->v_out_set_raw += ctl_mul(core->i_load_fdbk->value, ratio);
+        }
+    }
+    else
+    {
+        // keep core->v_out_set_raw as user input
+        ctl_clear_pid(&core->v_loop_pi);
     }
 
-    core->i_L_ref = ctl_step_slope_limiter(&core->i_ramp, i_ref_raw);
-    ctl_pid_clamping_correction_using_real_output(&core->v_loop_pi, core->i_L_ref);
+    ctrl_gt v_adj;
 
-    ctrl_gt i_err = core->i_L_ref - core->i_L_fdbk->value;
-    ctrl_gt v_adj = ctl_step_pid_ser(&core->i_loop_pi, i_err);
+    if (core->flag_enable_current_loop)
+    {
+        core->i_L_ref = ctl_step_slope_limiter(&core->i_ramp, core->v_out_set_raw);
+        ctl_pid_clamping_correction_using_real_output(&core->v_loop_pi, core->i_L_ref);
+
+        ctrl_gt i_err = core->i_L_ref - core->i_L_fdbk->value;
+        v_adj = ctl_step_pid_ser(&core->i_loop_pi, i_err);
+    }
+    else
+    {
+        ctl_clear_pid(&core->i_loop_pi);
+        v_adj = 0;
+    }
 
     // For FSBB, the H-bridge output voltage needs to match V_out
     ctrl_gt v_ff = core->v_out_fdbk->value;
-    ctrl_gt v_req_raw = v_ff + v_adj;
+    ctrl_gt v_req_raw = v_ff + v_adj + core->v_out_ff;
 
     core->v_pwm_req = ctl_sat(v_req_raw, core->i_loop_pi.out_max, core->i_loop_pi.out_min);
     ctl_pid_clamping_correction_using_real_output(&core->i_loop_pi, core->v_pwm_req - v_ff);
 
     return core->v_pwm_req;
+}
+
+GMP_STATIC_INLINE void ctl_clear_dcdc_core(ctl_dcdc_core_t* core)
+{
+    ctl_clear_pid(&core->i_loop_pi);
+    ctl_clear_pid(&core->v_loop_pi);
+
+    ctl_clear_slope_limiter(&core->v_ramp);
+    ctl_clear_slope_limiter(&core->i_ramp);
 }
 
 #ifdef __cplusplus

@@ -4068,7 +4068,9 @@
             "component|digital_power|dcdc": {
                 "type": "module",
                 "description": "",
-                "src_patterns": [],
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/src/dcdc_core.c"
+                ],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/boost.h",
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/buck.h",

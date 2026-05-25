@@ -13,8 +13,6 @@
 
 #include <xplt.peripheral.h>
 
-#include "ctrl_main.h"
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -31,51 +29,10 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
     // 从 DSP 的 ADC 结果寄存器中读取原始值 (0~4095)
     // 这里的 ADCARESULT_BASE 等宏请根据您的实际硬件引脚分配进行替换
 
-    ctl_step_adc_channel(&adc_v_in,   ADC_readResult(ADCARESULT_BASE, ADC_SOC_NUMBER0));
-    ctl_step_adc_channel(&adc_v_out,  ADC_readResult(ADCBRESULT_BASE, ADC_SOC_NUMBER0));
-    ctl_step_adc_channel(&adc_i_L,    ADC_readResult(ADCCRESULT_BASE, ADC_SOC_NUMBER0));
-    ctl_step_adc_channel(&adc_i_load, ADC_readResult(ADCDRESULT_BASE, ADC_SOC_NUMBER0));
-}
-
-//=================================================================================================
-// 2. Controller Dispatch (算控制律)
-
-/**
- * @brief 控制算法的核心步进逻辑 (20kHz)
- * @details 负责处理 ADC 校准、双闭环运算、以及 FSBB 占空比映射
- */
-GMP_STATIC_INLINE void ctl_dispatch(void)
-{
-    // 如果系统正在执行 ADC 零点校准，则阻塞主控制流
-    if (flag_enable_adc_calibrator)
-    {
-        // 调用定义在 ctrl_main.c 中的校准状态机
-        // ctl_exec_adc_calibration();
-        return;
-    }
-
-#if (BUILD_LEVEL == 1)
-    // --- Level 1: 硬件验证 (开环) ---
-    // 强制输出 V_req = 0.5 * V_in，验证 Buck 桥臂是否输出 50% 占空比
-    ctrl_gt v_req_openloop = ctl_mul(adc_v_in.control_port.value, float2ctrl(0.5f));
-    ctl_step_fsbb_modulator(&fsbb_mod, v_req_openloop, adc_v_in.control_port.value);
-
-#elif (BUILD_LEVEL >= 2)
-    // --- Level 2 & 3: 闭环运行 ---
-    if (cia402_sm.state_word.bits.operation_enabled)
-    {
-        // 1. 执行 FSBB 统一双环内核，计算所需的物理节点电压 V_req
-        ctrl_gt v_req = ctl_step_dcdc_fsbb(&dcdc_core);
-
-        // 2. 将 V_req 丢给调制器，自动映射出 Buck 和 Boost 的无缝占空比
-        ctl_step_fsbb_modulator(&fsbb_mod, v_req, adc_v_in.control_port.value);
-    }
-    else
-    {
-        // 停机状态：强行令目标电压为 0，调制器输出最低安全占空比
-        ctl_step_fsbb_modulator(&fsbb_mod, float2ctrl(0.0f), adc_v_in.control_port.value);
-    }
-#endif
+    ctl_step_adc_channel(&adc_v_in,   ADC_readResult(FSBB_VIN_ADC_BASE, FSBB_VIN));
+    ctl_step_adc_channel(&adc_v_out,  ADC_readResult(FSBB_VOUT_ADC_BASE, FSBB_VOUT));
+    ctl_step_adc_channel(&adc_i_L,    ADC_readResult(FSBB_IL_ADC_BASE, FSBB_VIN));
+    ctl_step_adc_channel(&adc_i_load, ADC_readResult(FSBB_IOUT_ADC_BASE, FSBB_IOUT));
 }
 
 //=================================================================================================

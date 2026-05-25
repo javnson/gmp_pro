@@ -10,7 +10,7 @@
 #include <gmp_core.h>
 
 #include "user_main.h"
-#include "ctrl_main.h" // Includes FSBB modules, ADC structures, and ctrl_settings.h
+#include "ctl_main.h"
 #include <xplt.peripheral.h>
 #include <ctl/component/dsa/dsa_trigger.h>
 
@@ -128,7 +128,7 @@ interrupt void MainISR(void)
     }
 
     // Acknowledge the interrupt
-    Interrupt_clearACKGroup(INT_ADCA_1_INTERRUPT_ACK_GROUP);
+    Interrupt_clearACKGroup(INT_IRIS_ADCA_1_INTERRUPT_ACK_GROUP);
 }
 
 void reset_controller(void)
@@ -220,7 +220,7 @@ void send_monitor_data(void)
 
     // 0x204: Monitor State Machine Status Word & Active Errors
     tran_content[0].i32 = (int32_t)(cia402_sm.state_word.all);
-    tran_content[1].i32 = (int32_t)(protection.active_errors);
+//    tran_content[1].i32 = (int32_t)(protection.active_errors);
     CAN_sendMessage(IRIS_CAN_BASE, 7, 8, (uint16_t*)tran_content);
 }
 

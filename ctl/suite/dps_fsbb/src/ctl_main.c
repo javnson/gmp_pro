@@ -5,15 +5,17 @@
  * @details Implements a dual-loop PU controller with smooth mode transitions.
  */
 
-#include "ctrl_main.h"
 #include <gmp_core.h>
+
+#include "ctl_main.h"
+
 
 //=================================================================================================
 // 1. 全局变量定义与实例化 (Global Instantiation)
 
 // 系统框架与保护
 cia402_sm_t cia402_sm;
-ctl_dcdc_protect_t protection;
+//ctl_dcdc_protect_t protection;
 
 // 算法核心与调制器
 ctl_dcdc_core_t dcdc_core;
@@ -35,7 +37,7 @@ adc_channel_t adc_i_load;
 
 // ADC 偏置校准器
 adc_bias_calibrator_t adc_calibrator;
-volatile fast_gt flag_enable_adc_calibrator = 1;
+volatile fast_gt flag_enable_adc_calibrator = 0;
 volatile fast_gt index_adc_calibrator = 0;
 
 //=================================================================================================
@@ -52,24 +54,27 @@ void ctl_init(void)
 
     // 配置物理参数 (SI Units)
     core_init.v_base = CTRL_VOLTAGE_BASE; // 80V
-    core_init.i_base = CTRL_CURRENT_BASE; // 30A
+    core_init.i_base = CTRL_CURRENT_BASE; // 10A
     core_init.fs = CONTROLLER_FREQUENCY;
-    core_init.L_main = 22.0e-6f; // 22uH
-    core_init.C_out = 470.0e-6f; // 470uF
-    core_init.r_L = 0.015f;      // 15mR ESR
-    core_init.r_C = 0.005f;      // 5mR ESR
+
+    core_init.L_main = FSBB_L;
+    core_init.r_L = FSBB_L_ESR;
+
+    core_init.C_out = FSBB_COUT;
+    core_init.r_C = FSBB_COUT_ESR;
 
     // 运行点配置 (用于计算 RHPZ 安全带宽)
-    core_init.v_in_nom = CTRL_VIN_NOM; // 24V
-    core_init.v_in_min = 12.0f;        // 最深 Boost 模式下的输入
-    core_init.v_out_nom = 48.0f;
-    core_init.i_out_max = 15.0f;
+    core_init.v_in_nom = FSBB_INPUT_VOLTAGE;
+    core_init.v_in_min = FSBB_INPUT_VOLTAGE_MIN;
 
-    // 保护限幅配置 (SI 转 PU)
-    core_init.i_L_max = 25.0f;   // 25A 峰值限流
-    core_init.i_L_min = -2.0f;   // 允许微量反向电流
-    core_init.v_req_max = 75.0f; // 调制电压上限
-    core_init.v_req_min = 0.0f;
+    core_init.v_out_nom = FSBB_OUTPUT_VOLTAGE;
+    core_init.i_out_max = FSBB_OUTPUT_CURRENT_LIM;
+
+    core_init.i_L_max = FSBB_PROTECT_IL_MAX;
+    core_init.i_L_min = FSBB_PROTECT_IL_MIN;
+
+    core_init.v_req_max = FSBB_OUTPUT_VOLTAGE_MAX;
+    core_init.v_req_min = FSBB_OUTPUT_VOLTAGE_MIN;
 
     // 执行针对 FSBB 的自动整定 (自动压制 RHPZ 下的电压环带宽)
     ctl_auto_tuning_dcdc_fsbb(&core_init);
@@ -96,10 +101,10 @@ void ctl_init(void)
     cia402_sm.minimum_transit_delay[3] = 100; // 稳定运行 100ms 后才正式使能指令
 
     // 保护模块
-    ctl_dcdc_prot_init_t prot_init = {0};
-    prot_init.v_out_max = CTRL_PROT_VOUT_MAX;
-    prot_init.i_L_max = CTRL_PROT_IL_MAX;
-    ctl_init_dcdc_protect(&protection, &prot_init);
+//    ctl_dcdc_prot_init_t prot_init = {0};
+//    prot_init.v_out_max = CTRL_PROT_VOUT_MAX;
+//    prot_init.i_L_max = CTRL_PROT_IL_MAX;
+//    ctl_init_dcdc_protect(&protection, &prot_init);
 
     // ADC 校准器 (20个周期平均，0.707置信度)
     ctl_init_adc_calibrator(&adc_calibrator, 20, 0.707f, CONTROLLER_FREQUENCY);
@@ -121,13 +126,13 @@ void ctl_mainloop(void)
     if (cia402_sm.state_word.bits.operation_enabled)
     {
         // 允许运行：下发用户指令，并限制电感电流参考值
-        dcdc_core.v_out_set_user = g_v_out_ref_user;
+        dcdc_core.v_out_set_raw = g_v_out_ref_user;
         ctl_set_pid_limit(&dcdc_core.v_loop_pi, g_i_limit_user, -g_i_limit_user);
     }
     else
     {
         // 待机或故障：目标清零
-        dcdc_core.v_out_set_user = float2ctrl(0.0f);
+        dcdc_core.v_out_set_raw = float2ctrl(0.0f);
     }
 
     // --- BUILD_LEVEL 动态管理 ---
@@ -157,24 +162,36 @@ fast_gt ctl_exec_adc_calibration(void)
 
     if (ctl_is_adc_calibrator_cmpt(&adc_calibrator) && ctl_is_adc_calibrator_result_valid(&adc_calibrator))
     {
-        // 顺序校准：电感电流 -> 输出电压 -> 输入电压
         if (index_adc_calibrator == 0)
         {
-            adc_i_L.bias += ctl_get_adc_calibrator_result(&adc_calibrator);
+            adc_i_load.bias += ctl_get_adc_calibrator_result(&adc_calibrator);
             index_adc_calibrator++;
             ctl_clear_adc_calibrator(&adc_calibrator);
             ctl_enable_adc_calibrator(&adc_calibrator);
         }
         else if (index_adc_calibrator == 1)
         {
-            adc_v_out.bias += ctl_get_adc_calibrator_result(&adc_calibrator);
+            adc_i_L.bias += ctl_get_adc_calibrator_result(&adc_calibrator);
             index_adc_calibrator++;
             ctl_clear_adc_calibrator(&adc_calibrator);
             ctl_enable_adc_calibrator(&adc_calibrator);
         }
+        else if (index_adc_calibrator == 2)
+                {
+            adc_v_out.bias += ctl_get_adc_calibrator_result(&adc_calibrator);
+                    index_adc_calibrator++;
+                    ctl_clear_adc_calibrator(&adc_calibrator);
+                    ctl_enable_adc_calibrator(&adc_calibrator);
+                }
+        else if (index_adc_calibrator == 3)
+                {
+            adc_v_in.bias += ctl_get_adc_calibrator_result(&adc_calibrator);
+                    index_adc_calibrator++;
+                    ctl_clear_adc_calibrator(&adc_calibrator);
+                    ctl_enable_adc_calibrator(&adc_calibrator);
+                }
         else
         {
-            adc_v_in.bias += ctl_get_adc_calibrator_result(&adc_calibrator);
             flag_enable_adc_calibrator = 0; // 校准结束
             clear_all_controllers();
         }
@@ -190,10 +207,10 @@ gmp_task_status_t tsk_protect(gmp_task_t* tsk)
     GMP_UNUSED_VAR(tsk);
 
     // 监控慢速保护量（如过热、平均过载）
-    if (protection.active_errors != 0)
-    {
-        cia402_fault_request(&cia402_sm);
-    }
+//    if (protection.active_errors != 0)
+//    {
+//        cia402_fault_request(&cia402_sm);
+//    }
     return GMP_TASK_DONE;
 }
 
@@ -211,3 +228,24 @@ void ctl_disable_pwm(void)
 {
     ctl_fast_disable_output();
 }
+
+
+void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
+{
+#if defined ENBALE_GMP_DL_PIL_SIM
+    ctl_input_callback_pil(rx);
+
+    ctl_dispatch();
+
+    ctl_output_callback_pil(tx);
+#endif // defined ENBALE_GMP_DL_PIL_SIM
+}
+
+#if defined ENBALE_GMP_DL_PIL_SIM
+time_gt gmp_base_get_ctrl_tick(void)
+{
+    return mtr_ctrl.isr_tick/((uint32_t)CONTROLLER_FREQUENCY/1000);
+}
+#endif // defined ENBALE_GMP_DL_PIL_SIM
+
+

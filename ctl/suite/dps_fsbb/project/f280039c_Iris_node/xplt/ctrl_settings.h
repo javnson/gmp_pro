@@ -9,9 +9,9 @@
 //=================================================================================================
 // Incremental Debug Options (BUILD_LEVEL)
 
-// BUILD_LEVEL 1: 离网开环/纯电阻负载测试 (关闭 FDRC，关闭前馈，验证 QPR 与 SPWM 发波)
-// BUILD_LEVEL 2: 并网闭环控制 (引入电网电压前馈，实现基础 PQ 控制，FDRC 关闭)
-// BUILD_LEVEL 3: 并网电能质量优化 (延时切入 FDRC，消除死区与电网背景谐波，全功能运行)
+// BUILD_LEVEL 1: Modulation only, Hardware check
+// BUILD_LEVEL 2: Current loop
+// BUILD_LEVEL 3: Voltage loop
 #define BUILD_LEVEL (2)
 
 //=================================================================================================
@@ -37,6 +37,42 @@
 // ADC Voltage Reference
 #define CTRL_ADC_VOLTAGE_REF (3.3f)
 
+
+// Capacitor Input
+#define FSBB_CIN (440e-6f)
+
+// Capacitor Output
+#define FSBB_COUT (440E-6f)
+#define FSBB_COUT_ESR (0.1f)
+
+// Inductor for FSBB
+#define FSBB_L (1.5e-3f)
+#define FSBB_L_ESR (0.05f)
+
+// Input voltage for FSBB
+#define FSBB_INPUT_VOLTAGE (24.0f)
+
+// minimum voltage input for FSBB
+#define FSBB_INPUT_VOLTAGE_MIN (12.0f)
+
+// maximum output current for FSBB
+#define FSBB_OUTPUT_CURRENT_LIM (10.0f)
+
+// Output voltage for FSBB
+#define FSBB_OUTPUT_VOLTAGE (12.0f)
+
+// Maximum output voltage for FSBB
+#define FSBB_OUTPUT_VOLTAGE_MAX (72.0f)
+
+// Minimum output voltage for FSBB
+#define FSBB_OUTPUT_VOLTAGE_MIN (3.0f)
+
+// Protection parameters, iL max
+#define FSBB_PROTECT_IL_MAX (25.0f)
+
+// Protection parameters, iL min
+#define FSBB_PROTECT_IL_MIN (-2.0f)
+
 //=================================================================================================
 // Power System Ratings (24Vrms, 10A, 60Vdc)
 
@@ -51,29 +87,29 @@
 //=================================================================================================
 // Hardware Abstraction Mapping
 
-#include <ctl/component/hardware_preset/inverter_HB/GMP_LVHB_150_2ph_v2.h>
+#include <ctl/component/hardware_preset/inverter_HB/GMP_LVFB_150_2ph_v2.h>
 #include <ctl/component/hardware_preset/current_sensor/GMP_Quad_Sensor_Docker.h>
 
 // ---------------------------------------------------------
-// AC Voltage Sensing (Grid/Load Voltage)
+// Voltage Sensing
 // ---------------------------------------------------------
-// 使用 56kΩ 降压电阻 (适合 ±154V 量程)
-#define CTRL_AC_VOLTAGE_SENSITIVITY QUAD_SENSOR_CALC_V_GAIN(56.0f)
-#define CTRL_AC_VOLTAGE_BIAS        QUAD_SENSOR_BASE_BIAS_V
+#define CTRL_VIN_VOLTAGE_SENSITIVITY QUAD_SENSOR_CALC_V_GAIN(56.0f)
+#define CTRL_VIN_VOLTAGE_BIAS        QUAD_SENSOR_BASE_BIAS_V
+
+#define CTRL_VOUT_VOLTAGE_SENSITIVITY QUAD_SENSOR_CALC_V_GAIN(56.0f)
+#define CTRL_VOUT_VOLTAGE_BIAS        QUAD_SENSOR_BASE_BIAS_V
 
 // ---------------------------------------------------------
-// AC Current Sensing (Inverter Current)
+// Current Sensing
 // ---------------------------------------------------------
 // 10Arms 峰值为 14.1A。选用 TMCS1133-B2A (±31.0A 量程，50mV/A 灵敏度)
-#define CTRL_AC_CURRENT_SENSITIVITY QUAD_SENSOR_CALC_I_GAIN(TMCS1133_B2A_MV_A)
-#define CTRL_AC_CURRENT_BIAS        QUAD_SENSOR_BASE_BIAS_V
+#define CTRL_INDUCTOR_CURRENT_SENSITIVITY QUAD_SENSOR_CALC_I_GAIN(TMCS1133_B2A_MV_A)
+#define CTRL_INDUCTOR_CURRENT_BIAS        QUAD_SENSOR_BASE_BIAS_V
 
-// ---------------------------------------------------------
-// DC Bus Voltage Sensing
-// ---------------------------------------------------------
-// 直流母线 60V。使用 56kΩ 分压网络 (最大支持 154V，匹配母线电容与 MOSFET)
-#define CTRL_DC_VOLTAGE_SENSITIVITY QUAD_SENSOR_CALC_V_GAIN(56.0f)
-#define CTRL_DC_VOLTAGE_BIAS        QUAD_SENSOR_BASE_BIAS_V
+#define CTRL_LOAD_CURRENT_SENSITIVITY GMP_LVFB_150_2PH_CALC_I_GAIN(0.005)
+#define CTRL_LOAD_CURRENT_BIAS        QUAD_SENSOR_BASE_BIAS_V
+
+
 
 //=================================================================================================
 // System Protection Bounds (Derived from Hardware)
@@ -110,8 +146,8 @@
 // Board peripheral mapping
 
 // PWM Channels
-#define PHASE_L_BASE IRIS_EPWM1_BASE
-#define PHASE_N_BASE IRIS_EPWM2_BASE
+#define PHASE_BUCK_BASE IRIS_EPWM1_BASE
+#define PHASE_BOOST_BASE IRIS_EPWM2_BASE
 
 // PWM Enable
 #define PWM_ENABLE_PORT IRIS_GPIO1

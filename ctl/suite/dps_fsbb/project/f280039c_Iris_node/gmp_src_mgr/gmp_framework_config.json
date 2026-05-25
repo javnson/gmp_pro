@@ -75,6 +75,10 @@
         },
         {
             "root": "ctl",
+            "module": "component|digital_power|dcdc"
+        },
+        {
+            "root": "ctl",
             "module": "component|hardware_preset|_internal"
         },
         {
