@@ -30,28 +30,28 @@ void init_pmsm_offline_id()
 
     // --- 子模块具体参数配置 (示例) ---
     // Rs & DT
-    pmsm_oid_cfg.cfg_rs_dt.max_current_pu = 0.3f;
-    pmsm_oid_cfg.cfg_rs_dt.min_current_pu = 0.05f;
+    pmsm_oid_cfg.cfg_rs_dt.max_current_pu = 0.5f;
+    pmsm_oid_cfg.cfg_rs_dt.min_current_pu = 0.1f;
     pmsm_oid_cfg.cfg_rs_dt.steps = 5;
     pmsm_oid_cfg.cfg_rs_dt.align_time_s = 1.0f;
     pmsm_oid_cfg.cfg_rs_dt.measure_delay_s = 0.2f;
     pmsm_oid_cfg.cfg_rs_dt.measure_points = 100; // 采集 100 点求平均
 
     // Ld & Lq
-    pmsm_oid_cfg.cfg_ld_lq.pulse_voltage_pu = 0.05f;
-    pmsm_oid_cfg.cfg_ld_lq.max_bias_curr_pu = 0.1f;
-    pmsm_oid_cfg.cfg_ld_lq.bias_steps = 5;
-    pmsm_oid_cfg.cfg_ld_lq.align_current_pu = 0.1f;
+    pmsm_oid_cfg.cfg_ld_lq.pulse_voltage_pu = 0.02f;
+    pmsm_oid_cfg.cfg_ld_lq.max_bias_curr_pu = 0.5f;
+    pmsm_oid_cfg.cfg_ld_lq.bias_steps = 12;
+    pmsm_oid_cfg.cfg_ld_lq.align_current_pu = 0.5f;
     pmsm_oid_cfg.cfg_ld_lq.settle_time_s = 0.2f;
     pmsm_oid_cfg.cfg_ld_lq.pulse_time_s = 0.002f; // 2ms 极短脉冲
     pmsm_oid_cfg.cfg_ld_lq.cooldown_time_s = 0.05f;
 
     // Flux Linkage
-    pmsm_oid_cfg.cfg_flux.min_target_speed_pu = 0.05f;
-    pmsm_oid_cfg.cfg_flux.max_target_speed_pu = 0.2f;
+    pmsm_oid_cfg.cfg_flux.min_target_speed_pu = 0.1f;
+    pmsm_oid_cfg.cfg_flux.max_target_speed_pu = 0.6f;
     pmsm_oid_cfg.cfg_flux.steps = 6;
-    pmsm_oid_cfg.cfg_flux.if_current_pu = 0.35f;
-    pmsm_oid_cfg.cfg_flux.settle_time_s = 1.0f;
+    pmsm_oid_cfg.cfg_flux.if_current_pu = 0.4f;
+    pmsm_oid_cfg.cfg_flux.settle_time_s = 2.0f;
     pmsm_oid_cfg.cfg_flux.measure_points = 2000;
 
     // Mechanical
