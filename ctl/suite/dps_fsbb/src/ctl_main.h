@@ -127,7 +127,9 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         ctrl_gt v_req = ctl_step_dcdc_fsbb(&dcdc_core);
 
         // 2. FSBB 调制器映射：将 V_req 转化为 4 个管子的无缝占空比
-        ctl_step_fsbb_modulator(&fsbb_mod, v_req, adc_v_in.control_port.value);
+//        ctl_step_fsbb_modulator(&fsbb_mod, v_req, adc_v_in.control_port.value);
+
+        ctl_step_fsbb_modulator(&fsbb_mod, v_req, 0.5f);
 #elif (BUILD_LEVEL == 1)
         // 开环固定占空比发波测试
         ctl_step_fsbb_modulator(&fsbb_mod, float2ctrl(0.5f) * adc_v_in.control_port.value, adc_v_in.control_port.value);

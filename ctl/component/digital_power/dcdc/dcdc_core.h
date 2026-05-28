@@ -351,19 +351,22 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_fsbb(ctl_dcdc_core_t* core)
 
         ctrl_gt i_err = core->i_L_ref - core->i_L_fdbk->value;
         v_adj = ctl_step_pid_ser(&core->i_loop_pi, i_err);
+
+        // For FSBB, the H-bridge output voltage needs to match V_out
+        ctrl_gt v_ff = core->v_out_fdbk->value;
+        ctrl_gt v_req_raw = v_ff + v_adj + core->v_out_ff;
+
+        core->v_pwm_req = ctl_sat(v_req_raw, core->i_loop_pi.out_max, core->i_loop_pi.out_min);
+        ctl_pid_clamping_correction_using_real_output(&core->i_loop_pi, core->v_pwm_req - v_ff);
     }
     else
     {
         ctl_clear_pid(&core->i_loop_pi);
-        v_adj = 0;
+
+        ctrl_gt v_req_raw = core->v_out_ff;
+                core->v_pwm_req = ctl_sat(v_req_raw, core->i_loop_pi.out_max, core->i_loop_pi.out_min);
     }
 
-    // For FSBB, the H-bridge output voltage needs to match V_out
-    ctrl_gt v_ff = core->v_out_fdbk->value;
-    ctrl_gt v_req_raw = v_ff + v_adj + core->v_out_ff;
-
-    core->v_pwm_req = ctl_sat(v_req_raw, core->i_loop_pi.out_max, core->i_loop_pi.out_min);
-    ctl_pid_clamping_correction_using_real_output(&core->i_loop_pi, core->v_pwm_req - v_ff);
 
     return core->v_pwm_req;
 }

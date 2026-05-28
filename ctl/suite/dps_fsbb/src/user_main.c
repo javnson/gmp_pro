@@ -35,21 +35,24 @@ const gmp_param_item_t dict_m1[] = {
     {&cia402_sm.current_state, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RO},
 
     {&dcdc_core.flag_enable, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RW},
-    {&dcdc_core.v_out_ff, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RW},
 
+    {&dcdc_core.flag_enable_voltage_loop, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RW},
     {&dcdc_core.v_out_set_raw, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
     {&dcdc_core.v_out_ref, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
     {&adc_v_out.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
     {&dcdc_core.v_loop_pi.kp, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
     {&dcdc_core.v_loop_pi.ki, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
 
+    {&dcdc_core.flag_enable_current_loop, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RW},
     {&dcdc_core.i_out_set_raw, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
     {&dcdc_core.i_L_ref, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
     {&adc_i_L.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
     {&dcdc_core.i_loop_pi.kp, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
     {&dcdc_core.i_loop_pi.ki, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
 
+    {&dcdc_core.v_out_ff, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
     {&dcdc_core.v_pwm_req, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
+
     {&adc_v_in.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
 
 };
