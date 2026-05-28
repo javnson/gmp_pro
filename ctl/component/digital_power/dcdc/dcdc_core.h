@@ -1,4 +1,412 @@
 /**
+ * @file ctl_dcdc_core.h
+ * @author GMP Library Contributors
+ * @brief High-Performance DC-DC Core Supporting Decoupled Unidirectional & Bidirectional Pipeling.
+ * @version 4.00
+ * @date 2026-05-28
+ *
+ * @details Optimizations applied:
+ * 1. Normalized both fault and fault_mask registers to use the visual bitfield union.
+ * 2. Eliminated current direction tracking (HCC) overhead from unidirectional processing flows.
+ * 3. Dedicated discrete atomic execution paths for bidirectional systems to update flow vectors.
+ * 4. Maintained fully branchless inner loops execution for compiled release targets.
+ *
+ * @copyright Copyright GMP(c) 2026
+ */
+
+#ifndef _FILE_TXT_CTL_DCDC_CORE_H_
+#define _FILE_TXT_CTL_DCDC_CORE_H_
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif // __cplusplus
+
+#include <ctl/component/interface/adc_channel.h>
+#include <ctl/component/intrinsic/basic/slope_limiter.h>
+#include <ctl/component/intrinsic/continuous/continuous_pid.h>
+#include <ctl/component/intrinsic/discrete/discrete_filter.h>
+#include <ctl/component/intrinsic/discrete/hysteresis_controller.h>
+
+/**
+ * @brief 16-bit visual bitfield union for concurrent system diagnostics and masking masks.
+ */
+typedef union _tag_dcdc_fault {
+    uint16_t all; //!< Complete register status word access for rapid masking
+    struct
+    {
+        uint16_t vin_ovp : 1;      //!< Input over-voltage trip tracking bit
+        uint16_t vin_uvp : 1;      //!< Input under-voltage trip tracking bit
+        uint16_t vout_ovp : 1;     //!< Output over-voltage trip tracking bit
+        uint16_t iload_ocp : 1;    //!< Output load over-current trip tracking bit
+        uint16_t il_ocp : 1;       //!< Main power inductor over-current trip tracking bit
+        uint16_t unknown_mode : 1; //!< controller is set to an unknown mode
+        uint16_t reserved : 10;    //!< Prospective diagnostic expansion bits allocation
+    } bits;
+} dcdc_fault_t;
+
+/**
+ * @brief Unified operational cascade tracking modes configuration.
+ */
+typedef enum _tag_dcdc_mode
+{
+    DCDC_MODE_OPEN_LOOP = 0,       //!< Open-loop direct manipulation path
+    DCDC_MODE_CURRENT_LOOP = 1,    //!< Constant-Current (CC) inner regulation path
+    DCDC_MODE_VOLTAGE_LOOP = 2,    //!< Standard Constant-Voltage (CV) cascade path
+    DCDC_MODE_PARALLEL_COMPETE = 3 //!< Parallel Competitive Loop (Common for LLC/PSFB plants)
+} dcdc_mode_e;
+
+/**
+ * @brief Layered structured protection boundary parameters object.
+ */
+typedef struct _tag_dcdc_bounds
+{
+    ctrl_gt vin_max;   //!< High trip voltage limit for input supply rails (PU)
+    ctrl_gt vin_min;   //!< Low trip voltage limit for input supply rails (PU)
+    ctrl_gt vout_max;  //!< High trip voltage limit for output capacitive banks (PU)
+    ctrl_gt iload_max; //!< High trip current limit for consumer terminals load (PU)
+    ctrl_gt il_max;    //!< Absolute safe peak threshold for inductor current streams (PU)
+} dcdc_bounds_t;
+
+/**
+ * @brief Universal Cascade Dual-Loop DC-DC Controller Context Structure.
+ */
+typedef struct _tag_dcdc_core_t
+{
+    uint32_t isr_tick; //!< Micro-architectural task scheduling pulse clock counter
+
+    // --- Mode & Visual Diagnostic Status Register Maps ---
+    dcdc_mode_e target_mode; //!< Configuration targeted routing directive
+    dcdc_fault_t fault;      //!< Visual error bitfield register for diagnostics tracking
+    dcdc_fault_t fault_mask; //!< Visual error bitfield register to block chosen diagnostic flags
+
+    // --- Hardware Data Access Links (Zero-Copy Intercepts) ---
+    adc_ift* v_in_fdbk;   //!< External reference link pointing to input voltage (PU)
+    adc_ift* v_out_fdbk;  //!< External reference link pointing to output terminal voltage (PU)
+    adc_ift* i_L_fdbk;    //!< External reference link pointing to main inductor current (PU)
+    adc_ift* i_load_fdbk; //!< External reference link pointing to consumption load current (PU)
+
+    // --- Signal Purifiers & Anti-aliasing Pre-processors ---
+    ctl_low_pass_filter_t lpf_v_out; //!< Low-frequency behavior analyzer for output voltage tracking
+    ctl_low_pass_filter_t lpf_i_L;   //!< High-attenuation signal cleaner for quadrant estimation tracking
+
+    // --- Quadrant Estimators & Zero-Crossing Arbiters ---
+    ctl_hysteresis_controller_t dir_detect; //!< Hysteresis core blocking bounce around zero-crossings
+    fast_gt flag_direction;                 //!< 1 identifies forward/charging flow, 0 identifies reverse flow
+
+    // --- The Three Fundamental Signal Command Interfaces ---
+    ctrl_gt v_out_set_raw; //!< Var 1: User requested terminal voltage voltage reference index (PU)
+    ctrl_gt i_out_set_raw; //!< Var 2: User specified or cascade generated inner current index (PU)
+    ctrl_gt v_out_ff;      //!< Var 3: Direct baseline voltage modifier / open loop direct command (PU)
+
+    // --- Zero-Overhead Extension Feedforward Connections ---
+    ctrl_gt i_ff; //!< Branchless inner current loop predictive compensation hook (PU)
+    ctrl_gt v_ff; //!< Branchless final loop nominal voltage predictive compensation hook (PU)
+
+    // --- Dynamic Slew Profiles Tracking limiters ---
+    ctl_slope_limiter_t v_ramp; //!< Trajectory pathway slope constraint engine for voltage (PU)
+    ctl_slope_limiter_t i_ramp; //!< Trajectory pathway slope constraint engine for current (PU)
+
+    // --- Loop Regulatory Control Processors ---
+    ctl_pid_t v_loop_pi; //!< Outer terminal tracking loops compensator block
+    ctl_pid_t i_loop_pi; //!< Inner reactive current loops compensator block
+
+    // --- Layered Structural Limits ---
+    dcdc_bounds_t bounds; //!< Boundaries definitions cluster object
+
+    // --- Waveform Instrumentation Perspectives ---
+    ctrl_gt v_out_ref; //!< Active reference track matching soft voltage limits (PU)
+    ctrl_gt i_L_ref;   //!< Active reference track matching soft current limits (PU)
+    ctrl_gt delta_v;   //!< PRIMARY OUTPUT: Processed regulatory compensation quantity (PU)
+
+    // --- Execution Gate Controller Switches ---
+    fast_gt flag_enable; //!< Processing kernel loop block validation gate switch
+
+} ctl_dcdc_core_t;
+
+/*---------------------------------------------------------------------------*/
+/* 4. Lifecycles, Diagnostics & Config Services                             */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief Populates boundary tracking limits inside the structural safety sub-object.
+ */
+GMP_STATIC_INLINE void ctl_set_dcdc_core_bounds(ctl_dcdc_core_t* core, ctrl_gt vin_max, ctrl_gt vin_min,
+                                                ctrl_gt vout_max, ctrl_gt iload_max, ctrl_gt il_max)
+{
+    core->bounds.vin_max = vin_max;
+    core->bounds.vin_min = vin_min;
+    core->bounds.vout_max = vout_max;
+    core->bounds.iload_max = iload_max;
+    core->bounds.il_max = il_max;
+}
+
+/**
+ * @brief Flushes all bits inside the error bitfield register back to healthy status.
+ */
+GMP_STATIC_INLINE void ctl_clear_dcdc_fault(ctl_dcdc_core_t* core)
+{
+    core->fault.all = DCDC_FAULT_BIT_NONE;
+}
+
+/**
+ * @brief Rapid bitwise verification executing unmasked latched fault validation checks.
+ * @return 1 if an unmasked system fault bit is high, 0 if system is healthy.
+ */
+GMP_STATIC_INLINE fast_gt ctl_get_dcdc_fault_status(const ctl_dcdc_core_t* core)
+{
+    return ((core->fault.all & core->fault_mask.all) != DCDC_FAULT_BIT_NONE) ? 1 : 0;
+}
+
+/**
+ * @brief Universal safety windows checking processor.
+ */
+GMP_STATIC_INLINE uint16_t ctl_step_dcdc_protect_sub(ctl_dcdc_core_t* core)
+{
+    if (core->v_in_fdbk->value > core->bounds.vin_max)
+        core->fault.bits.vin_ovp = 1;
+    if (core->v_in_fdbk->value < core->bounds.vin_min)
+        core->fault.bits.vin_uvp = 1;
+    if (core->v_out_fdbk->value > core->bounds.vout_max)
+        core->fault.bits.vout_ovp = 1;
+
+    if (core->i_load_fdbk && (core->i_load_fdbk->value > core->bounds.iload_max))
+        core->fault.bits.iload_ocp = 1;
+
+    if (ctl_abs(core->i_L_fdbk->value) > core->bounds.il_max)
+        core->fault.bits.il_ocp = 1;
+
+    return (core->fault.all & core->fault_mask.all);
+}
+
+/**
+ * @brief Background on-demand service querying running cascade cross status.
+ */
+GMP_STATIC_INLINE dcdc_mode_e ctl_get_dcdc_actual_mode(const ctl_dcdc_core_t* core)
+{
+    if (core->target_mode == DCDC_MODE_VOLTAGE_LOOP)
+    {
+        if ((core->v_loop_pi.out >= core->v_loop_pi.out_max) || (core->v_loop_pi.out <= core->v_loop_pi.out_min))
+        {
+            return DCDC_MODE_CURRENT_LOOP;
+        }
+    }
+    return core->target_mode;
+}
+
+/*---------------------------------------------------------------------------*/
+/* 5. Unidirectional Control Law Substations (Zero HCC Tracking Overhead)    */
+/*---------------------------------------------------------------------------*/
+
+GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_unidir_openloop_sub(ctl_dcdc_core_t* core)
+{
+    ctl_clear_pid(&core->v_loop_pi);
+    ctl_clear_pid(&core->i_loop_pi);
+    core->flag_direction = 1; // Default locked forward for unidirectional setups
+    core->delta_v = core->v_out_ff + core->v_ff;
+    return core->delta_v;
+}
+
+GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_unidir_current_sub(ctl_dcdc_core_t* core)
+{
+    ctl_clear_pid(&core->v_loop_pi);
+    core->flag_direction = 1;
+    core->i_L_ref = ctl_step_slope_limiter(&core->i_ramp, core->i_out_set_raw);
+    ctrl_gt i_err = core->i_L_ref - core->i_L_fdbk->value;
+    core->delta_v = ctl_step_pid_ser(&core->i_loop_pi, i_err) + core->v_ff;
+    return core->delta_v;
+}
+
+GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_unidir_voltage_sub(ctl_dcdc_core_t* core)
+{
+    core->flag_direction = 1;
+    core->v_out_ref = ctl_step_slope_limiter(&core->v_ramp, core->v_out_set_raw);
+    ctrl_gt v_err = core->v_out_ref - core->v_out_fdbk->value;
+    ctrl_gt i_demand_raw = ctl_step_pid_ser(&core->v_loop_pi, v_err) + core->i_ff;
+    core->i_L_ref = ctl_step_slope_limiter(&core->i_ramp, i_demand_raw);
+
+    ctl_pid_clamping_correction_using_real_output(&core->v_loop_pi, core->i_L_ref);
+
+    ctrl_gt i_err = core->i_L_ref - core->i_L_fdbk->value;
+    core->delta_v = ctl_step_pid_ser(&core->i_loop_pi, i_err) + core->v_ff;
+    return core->delta_v;
+}
+
+/*---------------------------------------------------------------------------*/
+/* 6. Bidirectional Control Law Substations (Active Flow-Direction Tracks)  */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief Updates LPF signal purifiers and runs the HCC tracker for bidirectional flow.
+ */
+GMP_STATIC_INLINE void ctl_dcdc_core_refresh_direction_sub(ctl_dcdc_core_t* core)
+{
+    ctl_step_lowpass_filter(&core->lpf_i_L, core->i_L_fdbk->value);
+    ctl_set_hysteresis_target(&core->dir_detect, float2ctrl(0.0f));
+    core->flag_direction =
+        ctl_step_hysteresis_controller(&core->dir_detect, ctl_get_lowpass_filter_result(&core->lpf_i_L));
+}
+
+GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_bidir_openloop_sub(ctl_dcdc_core_t* core)
+{
+    ctl_clear_pid(&core->v_loop_pi);
+    ctl_clear_pid(&core->i_loop_pi);
+    ctl_dcdc_core_refresh_direction_sub(core); // Active flow direction update
+    core->delta_v = core->v_out_ff + core->v_ff;
+    return core->delta_v;
+}
+
+GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_bidir_current_sub(ctl_dcdc_core_t* core)
+{
+    ctl_clear_pid(&core->v_loop_pi);
+    ctl_dcdc_core_refresh_direction_sub(core);
+    core->i_L_ref = ctl_step_slope_limiter(&core->i_ramp, core->i_out_set_raw);
+    ctrl_gt i_err = core->i_L_ref - core->i_L_fdbk->value;
+    core->delta_v = ctl_step_pid_ser(&core->i_loop_pi, i_err) + core->v_ff;
+    return core->delta_v;
+}
+
+GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_bidir_voltage_sub(ctl_dcdc_core_t* core)
+{
+    ctl_dcdc_core_refresh_direction_sub(core);
+    core->v_out_ref = ctl_step_slope_limiter(&core->v_ramp, core->v_out_set_raw);
+    ctrl_gt v_err = core->v_out_ref - core->v_out_fdbk->value;
+    ctrl_gt i_demand_raw = ctl_step_pid_ser(&core->v_loop_pi, v_err) + core->i_ff;
+    core->i_L_ref = ctl_step_slope_limiter(&core->i_ramp, i_demand_raw);
+
+    ctl_pid_clamping_correction_using_real_output(&core->v_loop_pi, core->i_L_ref);
+
+    ctrl_gt i_err = core->i_L_ref - core->i_L_fdbk->value;
+    core->delta_v = ctl_step_pid_ser(&core->i_loop_pi, i_err) + core->v_ff;
+    return core->delta_v;
+}
+
+/**
+ * @brief Atomic execution block for Parallel Competitive (Voltage/Current) regulation.
+ * @details Both loops execute independently and compete using a MIN-selector. 
+ * The losing loop is forced into back-calculation clamping to guarantee glitch-free handover.
+ * Suitable for resonance power plants such as LLC converters.
+ * * @param[in,out] core Pointer to the controller core instance.
+ * @return Final won control voltage correction term delta_v (PU).
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_parallel_compete_sub(ctl_dcdc_core_t* core)
+{
+    // 1. Run independent profile trajectory rate limiters
+    core->v_out_ref = ctl_step_slope_limiter(&core->v_ramp, core->v_out_set_raw);
+    core->i_L_ref = ctl_step_slope_limiter(&core->i_ramp, core->i_out_set_raw);
+
+    // 2. Compute independent regulatory tracking errors
+    ctrl_gt v_err = core->v_out_ref - core->v_out_fdbk->value;
+    ctrl_gt i_err = core->i_L_ref - core->i_L_fdbk->value;
+
+    // 3. Execute both compensators concurrently to obtain candidate demands
+    // Note: In parallel competitive structure, both PIDs temporarily use their own internal state
+    ctrl_gt v_demand = ctl_step_pid_ser(&core->v_loop_pi, v_err);
+    ctrl_gt i_demand = ctl_step_pid_ser(&core->i_loop_pi, i_err);
+
+    // 4. MIN-Selector Arbitrator (Competitive Handover)
+    // The loop requesting a smaller control voltage (safer, less energetic) wins the execution port
+    if (v_demand <= i_demand)
+    {
+        // Voltage loop wins: Active constant-voltage regulation
+        core->delta_v = v_demand + core->v_out_ff + core->v_ff;
+
+        // Clamp absolute hardware safety limits inside the PID bounds
+        core->delta_v = ctl_sat(core->delta_v, core->i_loop_pi.out_max, core->i_loop_pi.out_min);
+
+        // === PARALLEL ANTI-WINDUP ===
+        // Current loop lost. Forcefully overwrite the current loop's integrator
+        // using the winning voltage loop's current localized output.
+        // This stops the losing current loop from drifting away.
+        ctl_pid_clamping_correction_using_real_output(&core->i_loop_pi, core->delta_v - core->v_ff - core->v_out_ff);
+    }
+    else
+    {
+        // Current loop wins: Active constant-current limiting
+        core->delta_v = i_demand + core->v_out_ff + core->v_ff;
+        core->delta_v = ctl_sat(core->delta_v, core->i_loop_pi.out_max, core->i_loop_pi.out_min);
+
+        // === PARALLEL ANTI-WINDUP ===
+        // Voltage loop lost. Forcefully overwrite the voltage loop's integrator
+        // based on the winning current loop's localized output.
+        ctl_pid_clamping_correction_using_real_output(&core->v_loop_pi, core->delta_v - core->v_ff - core->v_out_ff);
+    }
+
+    return core->delta_v;
+}
+
+/*---------------------------------------------------------------------------*/
+/* 7. Lab Evaluation & Parameters Debugging Unified Router Entries           */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief Debug router customized for single-direction DCDC plants.
+ * @note Skips HCC execution entirely to optimize clock cycles.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_unidir_unified(ctl_dcdc_core_t* core)
+{
+    core->isr_tick++;
+    if (!core->flag_enable)
+        return float2ctrl(0.0f);
+
+    switch (core->target_mode)
+    {
+    case DCDC_MODE_OPEN_LOOP:
+        ctl_step_dcdc_unidir_openloop_sub(core);
+        break;
+    case DCDC_MODE_CURRENT_LOOP:
+        ctl_step_dcdc_unidir_current_sub(core);
+        break;
+    case DCDC_MODE_VOLTAGE_LOOP:
+        ctl_step_dcdc_unidir_voltage_sub(core);
+        break;
+    case DCDC_MODE_PARALLEL_COMPETE:
+        ctl_step_dcdc_parallel_compete_sub(core);
+        break;
+
+    default:
+        // wrong mode
+        core->delta_v = 0;
+        core->fault.bits.unknown_mode = 1;
+        break;
+    }
+    ctl_step_dcdc_protect_sub(core);
+    return core->delta_v;
+}
+
+/**
+ * @brief Debug router customized for bidirectional DCDC energy flows.
+ * @note Actively monitors LPF and HCC to yield pristine flow direction states.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_bidir_unified(ctl_dcdc_core_t* core)
+{
+    core->isr_tick++;
+    if (!core->flag_enable)
+        return float2ctrl(0.0f);
+
+    switch (core->target_mode)
+    {
+    case DCDC_MODE_OPEN_LOOP:
+        ctl_step_dcdc_bidir_openloop_sub(core);
+        break;
+    case DCDC_MODE_CURRENT_LOOP:
+        ctl_step_dcdc_bidir_current_sub(core);
+        break;
+    case DCDC_MODE_VOLTAGE_LOOP:
+        ctl_step_dcdc_bidir_voltage_sub(core);
+        break;
+    }
+    ctl_step_dcdc_protect_sub(core);
+    return core->delta_v;
+}
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
+#endif // _FILE_TXT_CTL_DCDC_CORE_H_
+
+/**
  * @defgroup CTL_TOPOLOGY_DCDC_CORE_API Unified Dual-Loop DC-DC Core API
  * @{
  * @ingroup CTL_DP_LIB
@@ -364,9 +772,8 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_fsbb(ctl_dcdc_core_t* core)
         ctl_clear_pid(&core->i_loop_pi);
 
         ctrl_gt v_req_raw = core->v_out_ff;
-                core->v_pwm_req = ctl_sat(v_req_raw, core->i_loop_pi.out_max, core->i_loop_pi.out_min);
+        core->v_pwm_req = ctl_sat(v_req_raw, core->i_loop_pi.out_max, core->i_loop_pi.out_min);
     }
-
 
     return core->v_pwm_req;
 }
