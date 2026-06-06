@@ -64,6 +64,45 @@ void ctl_init_filter_iir1_apf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter
     ctl_clear_filter_iir1(obj);
 }
 
+/**
+ * @brief Initializes the 1st-order IIR filter as a simple first-order lag (exponential smoothing) filter.
+ * @details This initializer configures the IIR1 filter to emulate a standard discrete-time 
+ * first-order low-pass filter with the transfer function: y[n] = a*x[n] + (1-a)*y[n-1].
+ * Unlike the bilinear transform method, this approach does not introduce a transmission zero 
+ * at the Nyquist frequency, making it highly robust for filtering high-frequency switching 
+ * signals such as hysteresis control outputs or PWM ripples.
+ *
+ * @param[out] obj Pointer to the IIR filter instance.
+ * @param[in] fs Sampling frequency (Hz).
+ * @param[in] fc Cutoff frequency (Hz).
+ */
+void ctl_init_filter_iir1_lag(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt fc)
+{
+    gmp_base_assert(fs > 0.0f);
+    gmp_base_assert(fc >= 0.0f);
+
+    // Calculate the filter coefficient a = 2 * pi * fc / fs
+    parameter_gt a_val = fc * CTL_PARAM_CONST_2PI / fs;
+
+    // Safety clamping to prevent pole overflow and divergence
+    if (a_val > 1.0f)
+    {
+        a_val = 1.0f;
+    }
+    else if (a_val < 0.0f)
+    {
+        a_val = 0.0f;
+    }
+
+    // Map coefficients to the general IIR1 structure
+    // y[n] = b0*x[n] + b1*x[n-1] - a1*y[n-1] -> y[n] = a*x[n] + 0*x[n-1] - (a-1)*y[n-1]
+    obj->b0 = float2ctrl(a_val);
+    obj->b1 = float2ctrl(0.0f);         // Eliminates the x[n-1] term
+    obj->a1 = float2ctrl(a_val - 1.0f); // Sets the feedback pole
+
+    ctl_clear_filter_iir1(obj);
+}
+
 parameter_gt ctl_get_filter_iir1_phase_lag(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt f)
 {
     parameter_gt w = 2.0f * CTL_PARAM_CONST_PI * f / fs;

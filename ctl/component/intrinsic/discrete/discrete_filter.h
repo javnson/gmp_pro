@@ -81,7 +81,7 @@ void ctl_init_lp_filter(ctl_low_pass_filter_t* lpf, parameter_gt fs, parameter_g
 GMP_STATIC_INLINE ctrl_gt ctl_helper_lp_filter(parameter_gt fs, parameter_gt fc)
 {
     parameter_gt a_val = fc * CTL_PARAM_CONST_2PI / fs;
-    // 修复 3：防止极点越界导致发散，将 a 安全钳位在 1.0 (纯直通) 以内
+    // To prevent divergence caused by extreme values crossing the boundary, safely clamp a within 1.0 (pure pass-through)
     if (a_val > 1.0f)
     {
         a_val = 1.0;
@@ -209,6 +209,20 @@ void ctl_init_filter_iir1_hpf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter
  * @param[in] fc Center frequency (Hz).
  */
 void ctl_init_filter_iir1_apf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt fc);
+
+/**
+ * @brief Initializes the 1st-order IIR filter as a simple first-order lag (exponential smoothing) filter.
+ * @details This initializer configures the IIR1 filter to emulate a standard discrete-time 
+ * first-order low-pass filter with the transfer function: y[n] = a*x[n] + (1-a)*y[n-1].
+ * Unlike the bilinear transform method, this approach does not introduce a transmission zero 
+ * at the Nyquist frequency, making it highly robust for filtering high-frequency switching 
+ * signals such as hysteresis control outputs or PWM ripples.
+ *
+ * @param[out] obj Pointer to the IIR filter instance.
+ * @param[in] fs Sampling frequency (Hz).
+ * @param[in] fc Cutoff frequency (Hz).
+ */
+void ctl_init_filter_iir1_lag(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt fc);
 
 /**
  * @brief Calculates the phase lag of the 1st-order filter at a specific frequency.
