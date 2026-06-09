@@ -58,14 +58,13 @@ void ctl_init_dcdc_core(ctl_dcdc_core_t* core, const ctl_dcdc_core_init_t* init_
     ctl_init_slope_limiter(&core->ramp_i, init_config->slope_i_pu_s, -init_config->slope_i_pu_s, init_config->fs);
 
     /* 4. Series-Form Linear Compensators Configuration */
+    /* Strict clamping for outer loop integrator to prevent overshoots */
     ctl_init_pid(&core->voltage_pid, init_config->v_kp, init_config->v_ki, init_config->v_kd, init_config->fs);
     ctl_set_pid_limit(&core->voltage_pid, init_config->v_out_max, init_config->v_out_min);
-
-    /* Strict clamping for outer loop integrator to prevent overshoots */
     ctl_set_pid_int_limit(&core->voltage_pid, init_config->v_out_max, init_config->v_out_min);
-    ctl_init_pid(&core->current_pid, init_config->i_kp, init_config->i_ki, init_config->i_kd, init_config->fs);
 
     /* Supports asymmetric current bounds (e.g., heavy motoring vs light regeneration boundaries) */
+    ctl_init_pid(&core->current_pid, init_config->i_kp, init_config->i_ki, init_config->i_kd, init_config->fs);
     ctl_set_pid_limit(&core->current_pid, init_config->i_out_max, init_config->i_out_min);
     ctl_set_pid_int_limit(&core->current_pid, init_config->i_out_max, init_config->i_out_min);
 

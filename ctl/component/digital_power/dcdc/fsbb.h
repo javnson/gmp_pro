@@ -9,14 +9,7 @@
  * 
  */
 
-
-/** 
- * @defgroup CTL_BUCKBOOST_API 4-Switch Buck-Boost API
- * @{
- * @ingroup CTL_DP_LIB
- * @brief Provides a duty cycle calculation strategy for a 4-switch Buck-Boost converter,
- * covering four distinct operating regions for smooth transitions.
- */
+#include <ctl/component/digital_power/dcdc/dcdc_core.h>
 
 #ifndef _FILE_BUCKBOOST_4CH_H_
 #define _FILE_BUCKBOOST_4CH_H_
@@ -25,6 +18,57 @@
 extern "C"
 {
 #endif // __cplusplus
+
+/**
+ * @brief Comprehensive asset parameters for 4-Switch Buck-Boost auto-tuning.
+ */
+typedef struct _tag_4switch_buckboost_hardware_t
+{
+    parameter_gt fs; /**< System sampling and loop execution frequency (Hz). */
+
+    /* Plant Physical Assets */
+    parameter_gt v_in_min;  /**< Minimum operational input DC voltage (V). */
+    parameter_gt v_in_max;  /**< Maximum operational input DC voltage (V). */
+    parameter_gt v_out_min; /**< Minimum operational target output voltage (V). */
+    parameter_gt v_out_max; /**< Maximum operational target output voltage (V). */
+
+    parameter_gt L_henry;    /**< Main power inductor value (Henry). */
+    parameter_gt R_esr_ohm;  /**< Inductor equivalent series resistance (Ohm). */
+    parameter_gt C_farad;    /**< Output filter capacitance value (Farad). */
+    parameter_gt R_load_min; /**< Minimum rated equivalent resistive load (Ohm) - [Worst Case Heavy Load]. */
+
+    /* Normalization Bases */
+    parameter_gt v_base; /**< ADC Voltage normalization base (V corresponding to 1.0 PU). */
+    parameter_gt i_base; /**< ADC Current normalization base (A corresponding to 1.0 PU). */
+
+    /* Operational Constraints */
+    parameter_gt slope_v_pu_s; /**< Target voltage soft-start ramp rate (PU/sec). */
+    parameter_gt slope_i_pu_s; /**< Target current protection ramp rate (PU/sec). */
+    ctrl_gt i_out_max;         /**< Explicit maximum positive current saturation limit (PU). */
+    ctrl_gt i_out_min;         /**< Explicit maximum reverse current saturation limit (PU). */
+
+    /* Loop Dynamic Goals */
+    parameter_gt fc_current_loop; /**< Target cross-over frequency for the inner current loop (Hz). */
+    parameter_gt fc_voltage_loop; /**< Target desired cross-over frequency for the outer voltage loop (Hz). */
+} ctl_4switch_buckboost_hardware_t;
+
+/*---------------------------------------------------------------------------*/
+/* Exported Blueprint Service APIs                                           */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief Calculates the absolute worst-case RHPZ frequency occurring in the Boost region of the 4S-BB.
+ * @param[in] hw Pointer to the 4-Switch Buck-Boost hardware asset structure.
+ * @return parameter_gt The lowest RHPZ frequency in Hz.
+ */
+parameter_gt ctl_4sbb_calc_worst_rhp_zero(const ctl_4switch_buckboost_hardware_t* hw);
+
+/**
+ * @brief Computes the unified single PID coefficient set for the 4-Switch Buck-Boost converter.
+ * @param[out] init_config Pointer to the destination configuration profile to be populated.
+ * @param[in] hw Pointer to the comprehensive 4S-BB hardware asset boundary structure.
+ */
+void ctl_dcdc_blueprint_4sbb_cascade(ctl_dcdc_core_init_t* init_config, const ctl_4switch_buckboost_hardware_t* hw);
 
 /**
  * @brief Defines the maximum duty cycle for the pure Buck operating region.
