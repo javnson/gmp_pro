@@ -176,6 +176,17 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_pr_controller(pr_ctrl_t* pr, ctrl_gt input)
 /*---------------------------------------------------------------------------*/
 
 /**
+ * @brief Unified Discrete Coefficient Package for QR-Controller.
+ */
+typedef struct _tag_ctl_qr_coef
+{
+    ctrl_gt b0; /**< Numerator coefficient for e(n). */
+    ctrl_gt b2; /**< Numerator coefficient for e(n-2). */
+    ctrl_gt a1; /**< Denominator coefficient for u(n-1). */
+    ctrl_gt a2; /**< Denominator coefficient for u(n-2). */
+} ctl_qr_coef_t;
+
+/**
  * @brief Data structure for a Quasi-Resonant (QR) controller.
  * @details A non-ideal resonant controller with finite gain at the resonant
  * frequency, which improves stability and robustness to frequency variations.
@@ -193,11 +204,18 @@ typedef struct _tag_ctl_qr_controller
     ctrl_gt output_2; //!< Output from two steps ago, u(n-2).
 
     // Coefficients
-    ctrl_gt b0; //!< Numerator coefficient for e(n).
-    ctrl_gt b2; //!< Numerator coefficient for e(n-2).
-    ctrl_gt a1; //!< Denominator coefficient for u(n-1).
-    ctrl_gt a2; //!< Denominator coefficient for u(n-2).
+    ctl_qr_coef_t coef; /**< Active packed discrete parameters block. */
+
 } qr_ctrl_t;
+
+/**
+ * @brief Helper function to calculate QR coefficients based on a specific K value.
+ * @details Solves the Tustin substitution algebra.
+ * Transfer Function: G(s) = Kr * (2*Wc*s) / (s^2 + 2*Wc*s + Wr^2)
+ * Sub: s = K * (1-z^-1)/(1+z^-1)
+ */
+void ctl_calc_qr_ctrl_coef(ctl_qr_coef_t* coef, parameter_gt kr, parameter_gt wc, parameter_gt wr,
+                           parameter_gt k_tustin);
 
 /**
  * @brief Initializes a quasi-resonant controller using Standard Tustin.
@@ -246,8 +264,8 @@ GMP_STATIC_INLINE void ctl_clear_qr_controller(qr_ctrl_t* qr)
 GMP_STATIC_INLINE ctrl_gt ctl_step_qr_controller(qr_ctrl_t* qr, ctrl_gt input)
 {
     // u(n) = a1*u(n-1) + a2*u(n-2) + b0*e(n) + b2*e(n-2)
-    qr->output = ctl_mul(qr->a1, qr->output_1) + ctl_mul(qr->a2, qr->output_2) + ctl_mul(qr->b0, input) +
-                 ctl_mul(qr->b2, qr->input_2);
+    qr->output = ctl_mul(qr->coef.a1, qr->output_1) + ctl_mul(qr->coef.a2, qr->output_2) + ctl_mul(qr->coef.b0, input) +
+                 ctl_mul(qr->coef.b2, qr->input_2);
 
     // Update states
     qr->input_2 = qr->input_1;
@@ -324,7 +342,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_qpr_controller(qpr_ctrl_t* qpr, ctrl_gt input
 
 /**
  * @}
- */ // end of resonant_controllers group
+ */
+
+// end of resonant_controllers group
 
 #ifdef __cplusplus
 }
