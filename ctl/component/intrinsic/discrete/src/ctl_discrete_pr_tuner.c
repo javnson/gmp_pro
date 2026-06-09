@@ -1,27 +1,28 @@
 /**
- * @file ctl_resonant_tuner.c
- * @brief Realization of unified mathematical conversions and single-line flash reuse.
+ * @file ctl_discrete_pr_tuner.c
+ * @brief Realization of standardized tuning conversion, verification, and backward decompilation.
  */
 
 #include <gmp_core.h>
 
 #include <ctl/component/intrinsic/discrete/proportional_resonant_tuner.h>
 
+/*---------------------------------------------------------------------------*/
+/* Pure Resonant (R) Tuner Realization Engine                                */
+/*---------------------------------------------------------------------------*/
+
 void ctl_tune_resonant_compile(ctl_resonant_tuner_t* tuner, parameter_gt fs)
 {
+    gmp_base_assert(tuner != NULL);
     ctl_calc_resonant_ctrl_coef(&tuner->shadow_coef, tuner->target_kr, tuner->target_freq_resonant, fs);
-
-    /* Arm the flag for Main ISR deployment synchronization */
     tuner->flag_update_pending = 1;
 }
 
 void ctl_tune_resonant(ctl_resonant_tuner_t* tuner, parameter_gt kr, parameter_gt freq_resonant, parameter_gt fs)
 {
     gmp_base_assert(tuner != NULL);
-
     tuner->target_kr = kr;
     tuner->target_freq_resonant = freq_resonant;
-
     ctl_tune_resonant_compile(tuner, fs);
 }
 
@@ -36,7 +37,7 @@ void ctl_init_resonant_tuner_from_ctrl(ctl_resonant_tuner_t* tuner, const resona
     parameter_gt float_b0 = ctrl2float(active_ctrl->coef.b0);
     parameter_gt float_b2 = ctrl2float(active_ctrl->coef.b2);
 
-    /* Mathematical Consistency Verification */
+    /* Mathematical Structural Consistency Verification */
     if ((fabsf(float_a2 - (-1.0f)) > 1e-4f) || (fabsf(float_b0 + float_b2) > 1e-4f))
     {
         tuner->target_kr = 0.0f;
@@ -49,7 +50,6 @@ void ctl_init_resonant_tuner_from_ctrl(ctl_resonant_tuner_t* tuner, const resona
         return;
     }
 
-    /* Reverse-engineer coefficients back to physical fields */
     parameter_gt T = 1.0f / fs;
     parameter_gt wr_sq_T_sq = 4.0f * (2.0f - float_a1) / (2.0f + float_a1);
     if (wr_sq_T_sq < 0.0f)
@@ -61,7 +61,6 @@ void ctl_init_resonant_tuner_from_ctrl(ctl_resonant_tuner_t* tuner, const resona
     parameter_gt den = wr_sq_T_sq + 4.0f;
     tuner->target_kr = (float_b0 * den) / (2.0f * T);
 
-    /* Direct block copy to synchronize current operational real assets */
     tuner->shadow_coef = active_ctrl->coef;
     tuner->flag_update_pending = 0;
 }
@@ -72,47 +71,52 @@ void ctl_init_tunable_resonant_controller(resonant_ctrl_t* r, ctl_resonant_tuner
     gmp_base_assert(r != NULL);
     gmp_base_assert(tuner != NULL);
 
-    /* 1. Setup the Tuner Companion using standard pipelines */
     ctl_tune_resonant(tuner, kr, freq_resonant, fs);
-
-    /* 2. Directly flash parameters into the controller registers for instant cold start */
     r->coef = tuner->shadow_coef;
-
-    /* 3. Clear historical error/output state accumulators */
     ctl_clear_resonant_controller(r);
-
-    /* 4. Flush the update pending flag since entities are synchronized at birth */
     tuner->flag_update_pending = 0;
 }
 
-/**
- * @brief Standardized standalone initialization for the primary execution controller.
- * @details ADVANCED FLASH REUSE: Allocates a temporary runtime tuner on the stack 
- * to redirect calculations through ctl_init_tunable_resonant_controller, completely 
- * erasing redundant Bilinear transformation assembly footprints from the flash.
- */
-void ctl_init_resonant_controller(resonant_ctrl_t* r, parameter_gt kr, parameter_gt freq_resonant, parameter_gt fs)
-{
-    ctl_resonant_tuner_t stack_temporary_tuner;
-
-    /* Redirect and pipe everything into the unified calculation engine */
-    ctl_init_tunable_resonant_controller(r, &stack_temporary_tuner, kr, freq_resonant, fs);
-}
+/*---------------------------------------------------------------------------*/
+/* Quasi-Resonant (QR) Tuner Realization Engine                              */
+/*---------------------------------------------------------------------------*/
 
 void ctl_tune_qr_compile(ctl_qr_tuner_t* tuner, parameter_gt fs)
 {
-    // Standard Tustin K = 2 * Fs
-    parameter_gt k_val = 2.0f * fs;
+    gmp_base_assert(tuner != NULL);
+    gmp_base_assert(fs > 0.0f);
 
-    ctl_calc_resonant_ctrl_coef(&tuner->shadow_coef, tuner->target_kr, tuner->target_freq_resonant,
-                                tuner->target_freq_cut, k_val);
+    /* 1. Rigid Nyquist Guardrails Enforcement for QR Tuning Targets */
+    if ((tuner->target_freq_resonant <= 0.0f) || (tuner->target_freq_resonant >= (fs * 0.5f)) ||
+        (tuner->target_freq_cut <= 0.0f) || (tuner->target_freq_cut >= (fs * 0.5f)) || (tuner->target_kr < 0.0f))
+    {
+        return;
+    }
 
-    /* Arm the flag for Main ISR deployment synchronization */
+    parameter_gt wr = CTL_PARAM_CONST_2PI * tuner->target_freq_resonant;
+    parameter_gt wc = CTL_PARAM_CONST_2PI * tuner->target_freq_cut;
+    parameter_gt k_val = 2.0f * fs; /* Standard Tustin default operator */
+
+    /* Fixed: Properly map and route Prewarped frequency correction modal branch */
+    if (tuner->method_mode == CTL_TUNE_QR_PREWARPED)
+    {
+        parameter_gt half_angle = CTL_PARAM_CONST_PI * tuner->target_freq_resonant / fs;
+        if (half_angle < 1e-6f)
+            half_angle = 1e-6f;
+        if (half_angle > (CTL_PARAM_CONST_PI * 0.5f - 1e-6f))
+            half_angle = (CTL_PARAM_CONST_PI * 0.5f - 1e-6f);
+
+        k_val = wr / tanf(half_angle);
+    }
+
+    /* Compile parameters safely through floating core engine */
+    ctl_calc_qr_ctrl_coef(&tuner->shadow_coef, tuner->target_kr, wc, wr, k_val);
     tuner->flag_update_pending = 1;
 }
 
-void ctl_tune_qr(ctl_resonant_tuner_t* tuner, parameter_gt kr, parameter_gt freq_resonant, parameter_gt freq_cut,
-                 parameter_gt fs)
+/* Fixed: Aligned messy interface parameters naming block back to contract */
+void ctl_tune_qr(ctl_qr_tuner_t* tuner, parameter_gt kr, parameter_gt freq_resonant, parameter_gt freq_cut,
+                 ctl_tune_qr_mode_e mode, parameter_gt fs)
 {
     gmp_base_assert(tuner != NULL);
 
@@ -136,10 +140,9 @@ void ctl_init_qr_tuner_from_ctrl(ctl_qr_tuner_t* tuner, const qr_ctrl_t* active_
     parameter_gt float_a1 = ctrl2float(active_ctrl->coef.a1);
     parameter_gt float_a2 = ctrl2float(active_ctrl->coef.a2);
 
-    /* Mathematical Consistency Verification: check numerator perfect anti-symmetry */
+    /* Mathematical Consistency Verification */
     if (fabsf(float_b0 + float_b2) > 1e-4f)
     {
-        /* Safe default fallback for uninitialized black-box core */
         tuner->target_kr = 0.0f;
         tuner->target_freq_resonant = 0.0f;
         tuner->target_freq_cut = 0.0f;
@@ -155,9 +158,7 @@ void ctl_init_qr_tuner_from_ctrl(ctl_qr_tuner_t* tuner, const qr_ctrl_t* active_
     tuner->method_mode = mode;
     parameter_gt k_tustin = 2.0f * fs;
 
-    /* Analytical multi-variable backward deconvolution decoupling */
-    /* Step A: Extract center frequency utilizing algebraic ratio properties */
-    /* Continuous-discrete mapping ratio: wr_sq = k_sq * (2 - 2*a2 - 2*a1) / (2 - 2*a2 + 2*a1) */
+    /* Multi-variable backward deconvolution decoupling */
     parameter_gt num_ratio = 2.0f - 2.0f * float_a2 - 2.0f * float_a1;
     parameter_gt den_ratio = 2.0f - 2.0f * float_a2 + 2.0f * float_a1;
     if (den_ratio < 1e-9f)
@@ -170,8 +171,6 @@ void ctl_init_qr_tuner_from_ctrl(ctl_qr_tuner_t* tuner, const qr_ctrl_t* active_
 
     if (mode == CTL_TUNE_QR_PREWARPED)
     {
-        /* In prewarped mode, the active_ctrl was generated under modified K_pre. 
-           We must re-evaluate K based on the newly extracted target wr. */
         parameter_gt half_angle = wr_derived * (0.5f / fs);
         if (half_angle < 1e-6f)
             half_angle = 1e-6f;
@@ -179,7 +178,6 @@ void ctl_init_qr_tuner_from_ctrl(ctl_qr_tuner_t* tuner, const qr_ctrl_t* active_
             half_angle = (CTL_PARAM_CONST_PI * 0.5f - 1e-6f);
         k_tustin = wr_derived / tanf(half_angle);
 
-        /* Re-run frequency matching with the accurate K_pre scaling factor */
         wr_sq_derived = (k_tustin * k_tustin) * (num_ratio / den_ratio);
         if (wr_sq_derived < 0.0f)
             wr_sq_derived = 0.0f;
@@ -187,22 +185,17 @@ void ctl_init_qr_tuner_from_ctrl(ctl_qr_tuner_t* tuner, const qr_ctrl_t* active_
     }
     tuner->target_freq_resonant = wr_derived / CTL_PARAM_CONST_2PI;
 
-    /* Step B: Decouple cutoff frequency from a2 attenuation constant */
-    /* D0 = (2 * k_sq - 2 * wr_sq) / a1 */
     parameter_gt D0_derived = (2.0f * k_tustin * k_tustin - 2.0f * wr_sq_derived) / float_a1;
     if (fabsf(float_a1) < 1e-6f)
     {
-        /* Alternate derivation from a2 if a1 hits zero crossing */
         D0_derived = (4.0f * k_tustin * k_tustin) / (1.0f + float_a1 - float_a2);
     }
 
-    /* wc = (a2 * D0 + k_sq + wr_sq) / (2 * k_tustin) */
     parameter_gt wc_derived = (float_a2 * D0_derived + (k_tustin * k_tustin) + wr_sq_derived) / (2.0f * k_tustin);
     if (wc_derived < 0.0f)
         wc_derived = 0.0f;
     tuner->target_freq_cut = wc_derived / CTL_PARAM_CONST_2PI;
 
-    /* Step C: Decouple kr gain asset from b0 multiplier */
     if (wc_derived > 1e-6f)
     {
         tuner->target_kr = (float_b0 * D0_derived) / (2.0f * wc_derived * k_tustin);
@@ -212,7 +205,6 @@ void ctl_init_qr_tuner_from_ctrl(ctl_qr_tuner_t* tuner, const qr_ctrl_t* active_
         tuner->target_kr = 0.0f;
     }
 
-    /* Pull structural images to seal synchronization */
     tuner->shadow_coef = active_ctrl->coef;
     tuner->flag_update_pending = 0;
 }

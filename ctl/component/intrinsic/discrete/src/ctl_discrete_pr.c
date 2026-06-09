@@ -1,3 +1,7 @@
+/**
+ * @file ctl_discrete_pr.c
+ * @brief Core algebraic discretization calculators and basic non-tunable initializers.
+ */
 
 #include <gmp_core.h>
 
@@ -6,159 +10,111 @@
 
 #include <ctl/component/intrinsic/discrete/proportional_resonant.h>
 
-void ctl_calc_resonant_ctrl_coef(ctl_resonant_coef_t* _coef, parameter_gt target_kr, parameter_gt target_freq_resonant,
+void ctl_calc_resonant_ctrl_coef(ctl_resonant_coef_t* coef, parameter_gt target_kr, parameter_gt target_freq_resonant,
                                  parameter_gt fs)
 {
-    gmp_base_assert(_coef != NULL);
+    gmp_base_assert(coef != NULL);
     gmp_base_assert(fs > 0.0f);
 
     /* 1. Rigid Nyquist Guardrails Enforcement */
     if ((target_freq_resonant <= 0.0f) || (target_freq_resonant >= (fs * 0.5f)) || (target_kr < 0.0f))
     {
-        /* Block compilation safely to protect loop from divergence or fixed-point overflow */
-        return;
+        return; /* Safeguard against unit-circle overflow */
     }
 
-    /* 2. Execute Tustin Bilinear Discretization Calculation */
-    // Based on the bilinear transformation of G(s) = kr * (2s) / (s^2 + wr^2)
-    // The resulting difference equation is:
-    // u(n) = a1*u(n-1) + a2*u(n-2) + b0*e(n) + b2*e(n-2)
+    /* 2. Bilinear Tustin Discretization Calculation Mapping */
     parameter_gt T = 1.0f / fs;
     parameter_gt wr = CTL_PARAM_CONST_2PI * target_freq_resonant;
     parameter_gt wr_sq_T_sq = wr * wr * T * T;
     parameter_gt den = wr_sq_T_sq + 4.0f;
     parameter_gt inv_den = 1.0f / den;
 
-    _coef->b0 = float2ctrl(target_kr * 2.0f * T * inv_den);
-    _coef->b2 = float2ctrl(-target_kr * 2.0f * T * inv_den);
-    _coef->a1 = float2ctrl(2.0f * (4.0f - wr_sq_T_sq) * inv_den);
-    _coef->a2 = float2ctrl(-1.0f);
+    /* Secure floating-point conversion down into ctrl_gt fixed representation bounds */
+    coef->b0 = float2ctrl(target_kr * 2.0f * T * inv_den);
+    coef->b2 = float2ctrl(-target_kr * 2.0f * T * inv_den);
+    coef->a1 = float2ctrl(2.0f * (4.0f - wr_sq_T_sq) * inv_den);
+    coef->a2 = float2ctrl(-1.0f);
 }
 
-void ctl_init_resonant_controller(resonant_ctrl_t* _r, parameter_gt kr, parameter_gt freq_resonant, parameter_gt fs)
+void ctl_init_resonant_controller(resonant_ctrl_t* r, parameter_gt kr, parameter_gt freq_resonant, parameter_gt fs)
 {
-    ctl_calc_resonant_ctrl_coef(&_r->coef, kr, freq_resonant, fs);
-
+    gmp_base_assert(r != NULL);
+    ctl_calc_resonant_ctrl_coef(&r->coef, kr, freq_resonant, fs);
     ctl_clear_resonant_controller(r);
 }
 
 void ctl_init_pr_controller(pr_ctrl_t* pr, parameter_gt kp, parameter_gt kr, parameter_gt freq_resonant,
                             parameter_gt fs)
 {
+    gmp_base_assert(pr != NULL);
     pr->kp = float2ctrl(kp);
     ctl_init_resonant_controller(&pr->resonant_part, kr, freq_resonant, fs);
 }
 
-/**
- * @brief Helper function to calculate QR coefficients based on a specific K value.
- * @details Solves the Tustin substitution algebra.
- * Transfer Function: G(s) = Kr * (2*Wc*s) / (s^2 + 2*Wc*s + Wr^2)
- * Sub: s = K * (1-z^-1)/(1+z^-1)
- */
 void ctl_calc_qr_ctrl_coef(ctl_qr_coef_t* coef, parameter_gt kr, parameter_gt wc, parameter_gt wr,
-                                 parameter_gt k_tustin)
+                           parameter_gt k_tustin)
 {
+    gmp_base_assert(coef != NULL);
+
     parameter_gt k_sq = k_tustin * k_tustin;
     parameter_gt wr_sq = wr * wr;
-
-    // Common Denominator (D0)
-    // D0 = k^2 + 2*wc*k + wr^2
     parameter_gt D0 = k_sq + (2.0f * wc * k_tustin) + wr_sq;
 
-    // Check for stability/singularity
     if (D0 < 1e-9f)
-        D0 = 1e-9f;
+    {
+        D0 = 1e-9f; /* Guard rails against math exceptions */
+    }
     parameter_gt inv_D0 = 1.0f / D0;
 
-    // --- Numerator Coefficients ---
-    // Num = 2 * Kr * Wc * K * (1 - z^-2)
-    // b0 = (2 * Kr * Wc * K) / D0
-    coef->b0 = (2.0f * kr * wc * k_tustin) * inv_D0;
+    /* Crucial Optimization Fix: Extracted float evaluations wrapped safely into float2ctrl macros */
+    parameter_gt b0_val = (2.0f * kr * wc * k_tustin) * inv_D0;
+    coef->b0 = float2ctrl(b0_val);
+    coef->b2 = float2ctrl(-b0_val); /* Corrected previous variable typo block assignment */
 
-    // b1 = 0 (Theoretical property of QR Tustin transform)
-
-    // b2 = -b0
-    coef->b2 = -coef->b0;
-
-    // --- Denominator Coefficients ---
-    // Denom = D0 + (2*wr^2 - 2*k^2)z^-1 + (k^2 - 2*wc*k + wr^2)z^-2
-    // Difference Eq: y[n] = b0*x[n] + ... - A1*y[n-1] - A2*y[n-2]
-    // User's step function uses ADDITION: y = a1*y1 + a2*y2 ...
-    // So we must store NEGATIVE coefficients.
-
-    // Real A1 = (2*wr^2 - 2*k^2) / D0
-    // Stored a1 = -A1 = (2*k^2 - 2*wr^2) / D0
-    coef->a1 = (2.0f * k_sq - 2.0f * wr_sq) * inv_D0;
-
-    // Real A2 = (k^2 - 2*wc*k + wr^2) / D0
-    // Stored a2 = -A2 = (2*wc*k - k^2 - wr^2) / D0
-    // Note: Simplifies to -(k^2 - 2*wc*k + wr^2) / D0
-    coef->a2 = (2.0f * wc * k_tustin - k_sq - wr_sq) * inv_D0;
+    coef->a1 = float2ctrl((2.0f * k_sq - 2.0f * wr_sq) * inv_D0);
+    coef->a2 = float2ctrl((2.0f * wc * k_tustin - k_sq - wr_sq) * inv_D0);
 }
 
-/**
- * @brief Initializes a quasi-resonant controller using Standard Tustin.
- * @note  Use this only for low frequency resonances relative to Fs.
- */
 void ctl_init_qr_controller(qr_ctrl_t* qr, parameter_gt kr, parameter_gt freq_resonant, parameter_gt freq_cut,
                             parameter_gt fs)
 {
+    gmp_base_assert(qr != NULL);
     gmp_base_assert(fs > 0.0f);
 
     parameter_gt wr = CTL_PARAM_CONST_2PI * freq_resonant;
     parameter_gt wc = CTL_PARAM_CONST_2PI * freq_cut;
-
-    // Standard Tustin K = 2 * Fs
     parameter_gt k_val = 2.0f * fs;
 
-    ctl_calc_resonant_ctrl_coef(&qr->coef, kr, wc, wr, k_val);
+    /* Fixed: Redirected to specific QR algebraic engine instead of pure resonant calculation */
+    ctl_calc_qr_ctrl_coef(&qr->coef, kr, wc, wr, k_val);
     ctl_clear_qr_controller(qr);
 }
 
-/**
- * @brief Initializes a quasi-resonant controller with Frequency Pre-warping.
- * @details Corrects the frequency warping effect of bilinear transformation at the resonant frequency.
- * Essential for harmonic control (e.g., 6th, 12th harmonics).
- * @param[out] qr Pointer to the QR controller instance.
- * @param[in] kr Gain of the resonant term.
- * @param[in] freq_resonant Resonant frequency in Hz (Center Frequency).
- * @param[in] freq_cut Cutoff frequency in Hz (Bandwidth/2).
- * @param[in] fs Sampling frequency in Hz.
- */
 void ctl_init_qr_controller_prewarped(qr_ctrl_t* qr, parameter_gt kr, parameter_gt freq_resonant, parameter_gt freq_cut,
                                       parameter_gt fs)
 {
+    gmp_base_assert(qr != NULL);
     gmp_base_assert(fs > 0.0f);
 
     parameter_gt wr = CTL_PARAM_CONST_2PI * freq_resonant;
     parameter_gt wc = CTL_PARAM_CONST_2PI * freq_cut;
 
-    // --- Pre-warping Calculation ---
-    // Target angle in discrete domain: Wd = Wr * Ts
-    // Tustin mapping: Wa = (2/Ts) * tan(Wd / 2)
-    // We replace the standard K (2/Ts) with K_pre = Wr / tan(Wr * Ts / 2)
-
-    // Half angle normalized: (2*pi*f_res) / (2*fs) = pi * f_res / fs
     parameter_gt half_angle = CTL_PARAM_CONST_PI * freq_resonant / fs;
-
-    // Safety for DC or Nyquist
     if (half_angle < 1e-6f)
         half_angle = 1e-6f;
-    if (half_angle > (CTL_PARAM_CONST_PI / 2.0f - 1e-6f))
-        half_angle = (CTL_PARAM_CONST_PI / 2.0f - 1e-6f);
+    if (half_angle > (CTL_PARAM_CONST_PI * 0.5f - 1e-6f))
+        half_angle = (CTL_PARAM_CONST_PI * 0.5f - 1e-6f);
 
-    parameter_gt tan_val = tanf(half_angle);
+    parameter_gt k_pre = wr / tanf(half_angle);
 
-    // The "Pre-warped" K value
-    parameter_gt k_pre = wr / tan_val;
-
-    ctl_calc_resonant_ctrl_coef(&qr->coef, kr, wc, wr, k_pre);
+    ctl_calc_qr_ctrl_coef(&qr->coef, kr, wc, wr, k_pre);
     ctl_clear_qr_controller(qr);
 }
 
 void ctl_init_qpr_controller(qpr_ctrl_t* qpr, parameter_gt kp, parameter_gt kr, parameter_gt freq_resonant,
                              parameter_gt freq_cut, parameter_gt fs)
 {
+    gmp_base_assert(qpr != NULL);
     qpr->kp = float2ctrl(kp);
     ctl_init_qr_controller(&qpr->resonant_part, kr, freq_resonant, freq_cut, fs);
 }
@@ -166,6 +122,7 @@ void ctl_init_qpr_controller(qpr_ctrl_t* qpr, parameter_gt kp, parameter_gt kr, 
 void ctl_init_qpr_controller_prewarped(qpr_ctrl_t* qpr, parameter_gt kp, parameter_gt kr, parameter_gt freq_resonant,
                                        parameter_gt freq_cut, parameter_gt fs)
 {
+    gmp_base_assert(qpr != NULL);
     qpr->kp = float2ctrl(kp);
     ctl_init_qr_controller_prewarped(&qpr->resonant_part, kr, freq_resonant, freq_cut, fs);
 }

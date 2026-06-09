@@ -41,7 +41,7 @@ typedef struct _tag_srf_pll_3ph
     // Output Variables
     //
     ctrl_gt theta;        //!< Estimated grid angle, in per-unit format (0 to 1.0 represents 0 to 2*pi).
-    ctl_vector2_t phasor; //!< Phasor corresponding to the estimated angle {cos(theta), sin(theta)}.
+    ctl_vector2_t phasor; //!< Phasor corresponding to the estimated angle {sin(theta), cos(theta)}.
     ctrl_gt freq_pu;      //!< Estimated grid frequency, in per-unit format.
     ctrl_gt v_mag;        //!< Output voltage magnitude
 
