@@ -6,24 +6,38 @@
 
 #include <ctl/component/intrinsic/discrete/proportional_resonant.h>
 
-void ctl_init_resonant_controller(resonant_ctrl_t* r, parameter_gt kr, parameter_gt freq_resonant, parameter_gt fs)
+void ctl_calc_resonant_ctrl_coef(ctl_resonant_coef_t* _coef, parameter_gt target_kr, parameter_gt target_freq_resonant,
+                                 parameter_gt fs)
 {
+    gmp_base_assert(_coef != NULL);
     gmp_base_assert(fs > 0.0f);
 
-    parameter_gt T = 1.0f / fs;
-    parameter_gt wr = CTL_PARAM_CONST_2PI * freq_resonant;
-    parameter_gt wr_sq_T_sq = wr * wr * T * T;
+    /* 1. Rigid Nyquist Guardrails Enforcement */
+    if ((target_freq_resonant <= 0.0f) || (target_freq_resonant >= (fs * 0.5f)) || (target_kr < 0.0f))
+    {
+        /* Block compilation safely to protect loop from divergence or fixed-point overflow */
+        return;
+    }
 
+    /* 2. Execute Tustin Bilinear Discretization Calculation */
     // Based on the bilinear transformation of G(s) = kr * (2s) / (s^2 + wr^2)
     // The resulting difference equation is:
     // u(n) = a1*u(n-1) + a2*u(n-2) + b0*e(n) + b2*e(n-2)
+    parameter_gt T = 1.0f / fs;
+    parameter_gt wr = CTL_PARAM_CONST_2PI * target_freq_resonant;
+    parameter_gt wr_sq_T_sq = wr * wr * T * T;
     parameter_gt den = wr_sq_T_sq + 4.0f;
     parameter_gt inv_den = 1.0f / den;
 
-    r->b0 = float2ctrl(kr * 2.0f * T * inv_den);
-    r->b2 = float2ctrl(-kr * 2.0f * T * inv_den);
-    r->a1 = float2ctrl(2.0f * (4.0f - wr_sq_T_sq) * inv_den);
-    r->a2 = float2ctrl(-1.0f); // This simplifies from -(4 + T^2*wr^2 - 8)/(4+T^2*wr^2) if no damping
+    _coef->b0 = float2ctrl(target_kr * 2.0f * T * inv_den);
+    _coef->b2 = float2ctrl(-target_kr * 2.0f * T * inv_den);
+    _coef->a1 = float2ctrl(2.0f * (4.0f - wr_sq_T_sq) * inv_den);
+    _coef->a2 = float2ctrl(-1.0f);
+}
+
+void ctl_init_resonant_controller(resonant_ctrl_t* _r, parameter_gt kr, parameter_gt freq_resonant, parameter_gt fs)
+{
+    ctl_calc_resonant_ctrl_coef(&_r->coef, kr, freq_resonant, fs);
 
     ctl_clear_resonant_controller(r);
 }
@@ -154,4 +168,3 @@ void ctl_init_qpr_controller_prewarped(qpr_ctrl_t* qpr, parameter_gt kp, paramet
     qpr->kp = float2ctrl(kp);
     ctl_init_qr_controller_prewarped(&qpr->resonant_part, kr, freq_resonant, freq_cut, fs);
 }
-

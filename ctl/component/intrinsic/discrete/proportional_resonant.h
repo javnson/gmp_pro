@@ -35,6 +35,19 @@ extern "C"
 /*---------------------------------------------------------------------------*/
 
 /**
+ * @brief Unified Discrete Coefficient Package.
+ * @details Grouped explicitly to enable rapid single-cycle block memory copies 
+ * across both execution controllers and slow background tuning extensions.
+ */
+typedef struct _tag_ctl_resonant_coef
+{
+    ctrl_gt b0; /**< Numerator coefficient for e(n). */
+    ctrl_gt b2; /**< Numerator coefficient for e(n-2). */
+    ctrl_gt a1; /**< Denominator coefficient for u(n-1). */
+    ctrl_gt a2; /**< Denominator coefficient for u(n-2). */
+} ctl_resonant_coef_t;
+
+/**
  * @brief Data structure for a pure Resonant (R) controller.
  * @details Implements an ideal resonant controller which provides infinite gain
  * at the resonant frequency.
@@ -54,12 +67,15 @@ typedef struct _tag_ctl_resonant_controller
     ctrl_gt output_1; //!< Previous output, u(n-1).
     ctrl_gt output_2; //!< Output from two steps ago, u(n-2).
 
-    // Coefficients
-    ctrl_gt b0; //!< Numerator coefficient for e(n).
-    ctrl_gt b2; //!< Numerator coefficient for e(n-2).
-    ctrl_gt a1; //!< Denominator coefficient for u(n-1).
-    ctrl_gt a2; //!< Denominator coefficient for u(n-2).
+    /* Standardized Packed Coefficient Block */
+    ctl_resonant_coef_t coef; /**< Active discrete parameters block. */
+
 } resonant_ctrl_t;
+
+/**
+ * @brief Init a resonant coef structure.
+ */
+void ctl_tune_resonant_compile(ctl_resonant_tuner_t* tuner, parameter_gt fs);
 
 /**
  * @brief Initializes a resonant controller.
@@ -92,8 +108,8 @@ GMP_STATIC_INLINE void ctl_clear_resonant_controller(resonant_ctrl_t* r)
 GMP_STATIC_INLINE ctrl_gt ctl_step_resonant_controller(resonant_ctrl_t* r, ctrl_gt input)
 {
     // u(n) = a1*u(n-1) + a2*u(n-2) + b0*e(n) + b2*e(n-2)
-    r->output =
-        ctl_mul(r->a1, r->output_1) + ctl_mul(r->a2, r->output_2) + ctl_mul(r->b0, input) + ctl_mul(r->b2, r->input_2);
+    r->output = ctl_mul(r->coef.a1, r->output_1) + ctl_mul(r->coef.a2, r->output_2) + ctl_mul(r->coef.b0, input) +
+                ctl_mul(r->coef.b2, r->input_2);
 
     // Update states
     r->input_2 = r->input_1;
@@ -256,7 +272,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_qr_controller(qr_ctrl_t* qr, ctrl_gt input)
 typedef struct _tag_ctl_qpr_controller
 {
     qr_ctrl_t resonant_part; //!< The quasi-resonant part of the controller.
-    ctrl_gt kp;         //!< The proportional gain.
+    ctrl_gt kp;              //!< The proportional gain.
 } qpr_ctrl_t, ctl_qpr_t;
 
 /**
