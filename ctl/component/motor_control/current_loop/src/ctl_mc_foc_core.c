@@ -21,9 +21,22 @@ void ctl_auto_tuning_foc_core(mc_foc_init_t* init)
     init->current_adc_fc = init->fs / 3;
     init->voltage_adc_fc = init->fs / 3;
 
+    // Control Delay, 3 ~ 5 is available
     parameter_gt tau = 1.5f / init->fs;
-    // 3 ~ 5 is available
     init->current_loop_bw = 1.0f / (3.0f * tau * CTL_PARAM_CONST_2PI);
+
+    // per unit gain: I_base / V_base
+    parameter_gt kp_scale = init->i_base / init->v_base;
+
+    parameter_gt omega_bw = init->current_loop_bw * CTL_PARAM_CONST_2PI;
+
+    // kp = Ldq * BW
+    init->kpd = init->mtr_Ld * omega_bw * kp_scale;
+    init->kpq = init->mtr_Lq * omega_bw * kp_scale;
+
+    // Set zero to system pole
+    init->kid = init->mtr_Rs / init->mtr_Ld;
+    init->kiq = init->mtr_Rs / init->mtr_Lq;
 
     // controller delay
     parameter_gt control_delay = CTL_PARAM_CONST_2PI * init->current_loop_bw * tau;
@@ -36,25 +49,6 @@ void ctl_auto_tuning_foc_core(mc_foc_init_t* init)
 
     // current controller phase lag
     init->current_phase_lag = control_delay + filter_delay;
-
-    // calculate PI parameter based on band-width
-    parameter_gt lambda = 1.0f / init->current_loop_bw;
-
-    parameter_gt Td = init->mtr_Ld / init->mtr_Rs;
-    //    parameter_gt Kd = 1.0f / init->mtr_Rs;
-
-    parameter_gt Tq = init->mtr_Lq / init->mtr_Rs;
-    //    parameter_gt Kq = 1.0f / init->mtr_Rs;
-
-    // per unit gain: I_base / V_base
-    parameter_gt kp_scale = init->i_base / init->v_base;
-
-    // kp = Ldq * BW
-    init->kpd = init->mtr_Ld / (lambda + tau) * kp_scale;
-    init->kpq = init->mtr_Lq / (lambda + tau) * kp_scale;
-
-    init->kid = 1 / Td;
-    init->kiq = 1 / Tq;
 }
 
 void ctl_init_foc_core(mc_foc_core_t* mc, mc_foc_init_t* init)
