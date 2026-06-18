@@ -9,6 +9,8 @@
  * 
  */
 
+#include <ctl/component/interface/pwm_channel.h>
+
 #include <ctl/component/digital_power/dcdc/dcdc_core.h>
 
 #ifndef _FILE_BOOST_CTRL_H_
@@ -70,6 +72,37 @@ parameter_gt ctl_boost_calc_rhp_zero(const ctl_boost_hardware_t* hw);
  * @param[in] hw Pointer to the comprehensive boost hardware asset boundary structure.
  */
 void ctl_dcdc_blueprint_boost_cascade(ctl_dcdc_core_init_t* init_config, const ctl_boost_hardware_t* hw);
+
+/*---------------------------------------------------------------------------*/
+/* Boost Modulator                                                           */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief Data structure for the Boost Modulator.
+ */
+typedef struct _tag_boost_modulator_t
+{
+    pwm_channel_t pwm;
+    ctrl_gt duty_max; //!< Max duty for bottom switch (prevents continuous inductor short).
+    ctrl_gt duty_min; //!< Min duty to ensure bootstrap capacitor charges.
+} boost_modulator_t;
+
+GMP_STATIC_INLINE void ctl_init_boost_modulator(boost_modulator_t* mod, pwm_gt full_scale, ctrl_gt duty_max,
+                                                ctrl_gt duty_min)
+{
+    ctl_init_pwm_channel(&mod->pwm, 0, full_scale);
+    mod->duty_max = duty_max;
+    mod->duty_min = duty_min;
+}
+
+GMP_STATIC_INLINE pwm_gt ctl_step_boost_modulator(boost_modulator_t* mod, ctrl_gt v_req, ctrl_gt v_out)
+{
+    ctrl_gt v_out_safe = (v_out > float2ctrl(0.1f)) ? v_out : float2ctrl(0.1f);
+    ctrl_gt duty = float2ctrl(1.0f) - ctl_div(v_req, v_out_safe);
+
+    duty = ctl_sat(duty, mod->duty_max, mod->duty_min);
+    return ctl_step_pwm_channel(&mod->pwm, duty);
+}
 
 #ifdef __cplusplus
 }

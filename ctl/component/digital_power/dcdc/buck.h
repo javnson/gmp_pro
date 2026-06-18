@@ -9,6 +9,7 @@
  *
  */
 
+#include <ctl/component/interface/pwm_channel.h>
 #include <ctl/component/digital_power/dcdc/dcdc_core.h>
 
 #ifndef _FILE_BUCK_CTRL_H_
@@ -55,7 +56,37 @@ typedef struct _tag_buck_hardware_t
  */
 void ctl_dcdc_blueprint_buck_cascade(ctl_dcdc_core_init_t* init_config, const ctl_buck_hardware_t* hw);
 
+/*---------------------------------------------------------------------------*/
+/* 1. Buck Modulator                                                         */
+/*---------------------------------------------------------------------------*/
 
+/**
+ * @brief Data structure for the Buck Modulator.
+ */
+typedef struct _tag_buck_modulator_t
+{
+    pwm_channel_t pwm;
+    ctrl_gt duty_max; //!< Max duty to ensure bottom switch turns on for bootstrap.
+    ctrl_gt duty_min; //!< Min duty to ensure top switch minimum ON time.
+} buck_modulator_t;
+
+GMP_STATIC_INLINE void ctl_init_buck_modulator(buck_modulator_t* mod, pwm_gt full_scale, ctrl_gt duty_max,
+                                               ctrl_gt duty_min)
+{
+    ctl_init_pwm_channel(&mod->pwm, 0, full_scale);
+    mod->duty_max = duty_max;
+    mod->duty_min = duty_min;
+}
+
+GMP_STATIC_INLINE pwm_gt ctl_step_buck_modulator(buck_modulator_t* mod, ctrl_gt v_req, ctrl_gt v_in)
+{
+    ctrl_gt v_in_safe = (v_in > float2ctrl(0.1f)) ? v_in : float2ctrl(0.1f);
+    ctrl_gt duty = ctl_div(v_req, v_in_safe);
+
+    // Strict limits for Bootstrap and Min-On time
+    duty = ctl_sat(duty, mod->duty_max, mod->duty_min);
+    return ctl_step_pwm_channel(&mod->pwm, duty);
+}
 
 #ifdef __cplusplus
 }

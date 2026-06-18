@@ -9,6 +9,7 @@
  * 
  */
 
+#include <ctl/component/interface/pwm_channel.h>
 #include <ctl/component/digital_power/dcdc/dcdc_core.h>
 
 #ifndef _FILE_BUCKBOOST_4CH_H_
@@ -70,68 +71,117 @@ parameter_gt ctl_4sbb_calc_worst_rhp_zero(const ctl_4switch_buckboost_hardware_t
  */
 void ctl_dcdc_blueprint_4sbb_cascade(ctl_dcdc_core_init_t* init_config, const ctl_4switch_buckboost_hardware_t* hw);
 
-/**
- * @brief Defines the maximum duty cycle for the pure Buck operating region.
- * This threshold is used to manage the transition between different operating modes.
- */
-#define D_buck_max float2ctrl(0.8)
+/*---------------------------------------------------------------------------*/
+/* Four-Switch Buck-Boost (FSBB) Modulator                                   */
+/*---------------------------------------------------------------------------*/
 
 /**
- * @brief Enumeration for indexing the duty cycles of the Buck and Boost switches.
+ * @brief Data structure for the FSBB Modulator.
  */
-typedef enum _tag_buckboost_phase
+typedef struct _tag_fsbb_modulator_t
 {
-    buck_phase = 0, //!< Index for the Buck switch duty cycle in the output vector.
-    boost_phase = 1 //!< Index for the Boost switch duty cycle in the output vector.
-} ctl_buckboost_phases_t;
+    pwm_dual_channel_t pwm; //!< Ch0: Buck leg (Q1), Ch1: Boost leg (Q4).
+    ctrl_gt duty_max;       //!< Max duty (e.g., 0.95) to guarantee bootstrap charging.
+    ctrl_gt duty_min;       //!< Min duty (e.g., 0.05) to guarantee bootstrap charging.
+    ctrl_gt m_low;          //!< Lower threshold for transition zone (e.g., 0.90).
+    ctrl_gt m_high;         //!< Upper threshold for transition zone (e.g., 1.10).
+} fsbb_modulator_t;
 
 /**
- * @brief Calculates the duty cycles for the Buck and Boost switches based on the desired voltage ratio.
- * @ingroup CTL_BUCKBOOST_API
- * @details This function implements a control strategy that divides the converter's operation
- * into four distinct regions to manage the transition between Buck and Boost modes.
- *
- * The four operating regions are:
- * 1.  **Buck Section:** `ratio` in `[0, D_buck_max]`. Only the Buck controller is active.
- * 2.  **Buck-Boost Section 1:** `ratio` in `(D_buck_max, 1]`. The Buck duty is held at maximum while the Boost duty ramps up.
- * 3.  **Buck-Boost Section 2:** `ratio` in `(1, 1/D_buck_max]`. The Boost duty is held constant while the Buck duty changes.
- * 4.  **Boost Section:** `ratio` > `1/D_buck_max`. Only the Boost controller is active.
- *
- * @warning The logic in "Buck-Boost Section 2" appears to contradict the intended behavior. The comment
- * suggests the Buck duty should decrease, but the code causes it to increase. This also creates a
- * discontinuity in the Buck duty cycle at the boundary with the "Boost Section". Please review this
- * logic carefully.
- *
- * @param[in] ratio The desired voltage conversion ratio (Vout / Vin).
- * @param[out] buck_boost_duty A 2-element vector where `dat[0]` will be the Buck duty and `dat[1]` will be the Boost duty.
+ * @brief Initializes the FSBB modulator.
+ * @param mod Pointer to the FSBB modulator object.
+ * @param m_low Lower threshold for transition zone (V_req / V_in ratio, e.g. 0.9).
+ * @param m_high Upper threshold for transition zone (V_req / V_in ratio, e.g. 1.1).
  */
-GMP_STATIC_INLINE void ctl_buckboost_duty_preset(ctrl_gt ratio, ctl_vector2_t* buck_boost_duty)
+GMP_STATIC_INLINE void ctl_init_fsbb_modulator(fsbb_modulator_t* mod, pwm_gt full_scale, ctrl_gt duty_max,
+                                               ctrl_gt duty_min, ctrl_gt m_low, ctrl_gt m_high)
 {
-    if (ratio <= D_buck_max)
+    ctl_init_pwm_dual_channel(&mod->pwm, 0, full_scale);
+    mod->duty_max = duty_max;
+    mod->duty_min = duty_min;
+    mod->m_low = m_low;
+    mod->m_high = m_high;
+}
+
+/**
+ * @brief Executes the FSBB modulation step with Transition Zone blending.
+ * @details Solves the Non-Inverting Buck-Boost equation: V_out / V_in = D_buck / (1 - D_boost)
+ */
+GMP_STATIC_INLINE void ctl_step_fsbb_modulator(fsbb_modulator_t* mod, ctrl_gt v_req, ctrl_gt v_in)
+{
+    ctrl_gt v_in_safe = (v_in > float2ctrl(0.1f)) ? v_in : float2ctrl(0.1f);
+
+    // M represents the demanded voltage gain (V_req / V_in)
+    ctrl_gt M = ctl_div(v_req, v_in_safe);
+
+    ctrl_gt d_buck = float2ctrl(0.0f);
+    ctrl_gt d_boost = float2ctrl(0.0f);
+
+    if (M <= mod->m_low)
     {
-        // Region 1: Pure Buck mode
-        buck_boost_duty->dat[buck_phase] = ratio;
-        buck_boost_duty->dat[boost_phase] = 0;
+        // --- PURE BUCK MODE ---
+        // Boost leg must keep switching at min duty to maintain high-side bootstrap.
+        d_boost = mod->duty_min;
+
+        // M = D_buck / (1 - D_boost)  =>  D_buck = M * (1 - D_boost)
+        d_buck = ctl_mul(M, float2ctrl(1.0f) - d_boost);
     }
-    else if (ratio <= float2ctrl(1))
+    else if (M >= mod->m_high)
     {
-        // Region 2: Transition from Buck to Boost
-        buck_boost_duty->dat[buck_phase] = D_buck_max;
-        buck_boost_duty->dat[boost_phase] = ctl_div(ctl_sub(ratio, D_buck_max), ratio);
-    }
-    else if (ratio <= ctl_div(float2ctrl(1), D_buck_max))
-    {
-        // Region 3: Transition from Buck to Boost (WARNING: See function description)
-        buck_boost_duty->dat[buck_phase] = ctl_mul(D_buck_max, ratio);
-        buck_boost_duty->dat[boost_phase] = ctl_sub(float2ctrl(1), D_buck_max);
+        // --- PURE BOOST MODE ---
+        // Buck leg must not stay at 1.0; force to duty_max to maintain its bootstrap.
+        d_buck = mod->duty_max;
+
+        // M = D_buck / (1 - D_boost)  =>  D_boost = 1 - (D_buck / M)
+        d_boost = float2ctrl(1.0f) - ctl_div(d_buck, M);
     }
     else
     {
-        // Region 4: Pure Boost mode
-        buck_boost_duty->dat[buck_phase] = 0;
-        buck_boost_duty->dat[boost_phase] = ctl_div(ctl_sub(ratio, float2ctrl(1)), ratio);
+        // --- TRANSITION ZONE (BUCK-BOOST MODE) ---
+        // Smoothly blend the duty cycles linearly across the transition band.
+        // Weight 'w' goes from 0.0 (at m_low) to 1.0 (at m_high)
+        ctrl_gt w = ctl_div(M - mod->m_low, mod->m_high - mod->m_low);
+
+        // Linear interpolation for Buck Duty
+        ctrl_gt d_buck_start = ctl_mul(mod->m_low, float2ctrl(1.0f) - mod->duty_min);
+        ctrl_gt d_buck_end = mod->duty_max;
+        d_buck = d_buck_start + ctl_mul(w, d_buck_end - d_buck_start);
+
+        // Linear interpolation for Boost Duty
+        ctrl_gt d_boost_start = mod->duty_min;
+        ctrl_gt d_boost_end = float2ctrl(1.0f) - ctl_div(mod->duty_max, mod->m_high);
+        d_boost = d_boost_start + ctl_mul(w, d_boost_end - d_boost_start);
     }
+
+    // Final hard-clamp for absolute safety
+    d_buck = ctl_sat(d_buck, mod->duty_max, mod->duty_min);
+    d_boost = ctl_sat(d_boost, mod->duty_max, mod->duty_min);
+
+    // Map to Dual PWM Channels
+    ctl_vector2_t raw_duty;
+    raw_duty.dat[0] = d_buck;  // Channel 0 -> Buck Leg (Q1)
+    raw_duty.dat[1] = d_boost; // Channel 1 -> Boost Leg (Q4)
+
+    ctl_step_pwm_dual_channel(&mod->pwm, &raw_duty);
 }
+
+/**
+ * @brief Retrieves the actual calculated compare value for the Buck Leg.
+ */
+GMP_STATIC_INLINE pwm_gt ctl_get_fsbb_buck_cmp(fsbb_modulator_t* mod)
+{
+    return mod->pwm.value[0];
+}
+
+/**
+ * @brief Retrieves the actual calculated compare value for the Boost Leg.
+ */
+GMP_STATIC_INLINE pwm_gt ctl_get_fsbb_boost_cmp(fsbb_modulator_t* mod)
+{
+    return mod->pwm.value[1];
+}
+
+
 
 #ifdef __cplusplus
 }
