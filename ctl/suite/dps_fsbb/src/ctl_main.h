@@ -22,7 +22,8 @@ extern "C"
 #include <core/pm/function_scheduler.h>
 
 #include <ctl/component/digital_power/dcdc/dcdc_core.h>
-#include <ctl/component/digital_power/dcdc/dcdc_modulator.h>
+#include <ctl/component/digital_power/dcdc/fsbb.h>
+//#include <ctl/component/digital_power/dcdc/dcdc_modulator.h>
 
 // 引入框架组件
 #include <ctl/component/interface/adc_channel.h>
@@ -124,7 +125,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
     {
 #if (BUILD_LEVEL >= 2)
         // 1. 核心控制解算：输入真实反馈，输出所需的等效电压 V_req
-        ctrl_gt v_req = ctl_step_dcdc_fsbb(&dcdc_core);
+        ctrl_gt v_req = ctl_step_dcdc_core_cascade_generic(&dcdc_core);
 
         // 2. FSBB 调制器映射：将 V_req 转化为 4 个管子的无缝占空比
 //        ctl_step_fsbb_modulator(&fsbb_mod, v_req, adc_v_in.control_port.value);

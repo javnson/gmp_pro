@@ -214,8 +214,8 @@ void send_monitor_data(void)
     CAN_sendMessage(IRIS_CAN_BASE, 5, 8, (uint16_t*)tran_content);
 
     // 0x203: Monitor Voltage Reference (Ramped) & Final Equivalent PWM Voltage (PU)
-    tran_content[0].i32 = (int32_t)(dcdc_core.v_out_ref * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(dcdc_core.v_pwm_req * CAN_SCALE_FACTOR);
+    tran_content[0].i32 = (int32_t)(dcdc_core.v_target * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(dcdc_core.v_out_formal * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 6, 8, (uint16_t*)tran_content);
 
     // 0x204: Monitor State Machine Status Word & Active Errors

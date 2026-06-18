@@ -62,14 +62,14 @@ typedef struct _tag_4switch_buckboost_hardware_t
  * @param[in] hw Pointer to the 4-Switch Buck-Boost hardware asset structure.
  * @return parameter_gt The lowest RHPZ frequency in Hz.
  */
-parameter_gt ctl_4sbb_calc_worst_rhp_zero(const ctl_4switch_buckboost_hardware_t* hw);
+parameter_gt ctl_fsbb_calc_worst_rhp_zero(const ctl_4switch_buckboost_hardware_t* hw);
 
 /**
  * @brief Computes the unified single PID coefficient set for the 4-Switch Buck-Boost converter.
  * @param[out] init_config Pointer to the destination configuration profile to be populated.
  * @param[in] hw Pointer to the comprehensive 4S-BB hardware asset boundary structure.
  */
-void ctl_dcdc_blueprint_4sbb_cascade(ctl_dcdc_core_init_t* init_config, const ctl_4switch_buckboost_hardware_t* hw);
+void ctl_dcdc_blueprint_fsbb_cascade(ctl_dcdc_core_init_t* init_config, const ctl_4switch_buckboost_hardware_t* hw);
 
 /*---------------------------------------------------------------------------*/
 /* Four-Switch Buck-Boost (FSBB) Modulator                                   */

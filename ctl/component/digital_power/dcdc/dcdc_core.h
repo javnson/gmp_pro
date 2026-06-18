@@ -69,7 +69,7 @@ typedef struct _tag_dcdc_core_t
     ctrl_gt v_ramp_ref; /**< Rate-limited voltage target applied to error loop (PU). */
     ctrl_gt i_ramp_ref; /**< Rate-limited current target applied to error loop (PU). */
 
-    ctrl_gt formal_voltage;      /**< Final synthesized abstract voltage command for modulation (PU). */
+    ctrl_gt v_out_formal;      /**< Final synthesized abstract voltage command for modulation (PU). */
     fast_gt is_current_dominant; /**< Low-overhead shadow register: 1=CC dominant, 0=CV dominant. */
 
     /* Safety Output Saturation Limits */
@@ -140,7 +140,7 @@ GMP_STATIC_INLINE void ctl_clear_dcdc_core(ctl_dcdc_core_t* core)
 
     core->v_ramp_ref = float2ctrl(0.0f);
     core->i_ramp_ref = float2ctrl(0.0f);
-    core->formal_voltage = float2ctrl(0.0f);
+    core->v_out_formal = float2ctrl(0.0f);
     core->is_current_dominant = 0;
 }
 
@@ -212,8 +212,8 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_open_loop(ctl_dcdc_core_t* core)
 {
     ctl_dcdc_internal_ingest_and_filter(core);
     core->is_current_dominant = 0;
-    core->formal_voltage = ctl_sat(core->v_target, core->out_max, core->out_min);
-    return core->formal_voltage;
+    core->v_out_formal = ctl_sat(core->v_target, core->out_max, core->out_min);
+    return core->v_out_formal;
 }
 
 /**
@@ -229,9 +229,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_current_loop(ctl_dcdc_core_t* core)
     core->i_ramp_ref = ctl_step_slope_limiter(&core->ramp_i, core->i_target);
     ctrl_gt error_i = core->i_ramp_ref - core->filter_i_L.out;
 
-    core->formal_voltage = ctl_step_pid_ser(&core->current_pid, error_i);
-    core->formal_voltage = ctl_sat(core->formal_voltage, core->out_max, core->out_min);
-    return core->formal_voltage;
+    core->v_out_formal = ctl_step_pid_ser(&core->current_pid, error_i);
+    core->v_out_formal = ctl_sat(core->v_out_formal, core->out_max, core->out_min);
+    return core->v_out_formal;
 }
 
 /**
@@ -247,9 +247,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_output_current_loop(ctl_dcdc_core_t* cor
     core->i_ramp_ref = ctl_step_slope_limiter(&core->ramp_i, core->i_target);
     ctrl_gt error_i = core->i_ramp_ref - core->filter_i_load.out;
 
-    core->formal_voltage = ctl_step_pid_ser(&core->current_pid, error_i);
-    core->formal_voltage = ctl_sat(core->formal_voltage, core->out_max, core->out_min);
-    return core->formal_voltage;
+    core->v_out_formal = ctl_step_pid_ser(&core->current_pid, error_i);
+    core->v_out_formal = ctl_sat(core->v_out_formal, core->out_max, core->out_min);
+    return core->v_out_formal;
 }
 
 /**
@@ -268,8 +268,8 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_cascade(ctl_dcdc_core_t* core)
 
     /* 2. Route outer loop output as inner loop reference and execute */
     ctrl_gt error_i = inner_i_ref - core->filter_i_L.out;
-    core->formal_voltage = ctl_step_pid_ser(&core->current_pid, error_i);
-    core->formal_voltage = ctl_sat(core->formal_voltage, core->out_max, core->out_min);
+    core->v_out_formal = ctl_step_pid_ser(&core->current_pid, error_i);
+    core->v_out_formal = ctl_sat(core->v_out_formal, core->out_max, core->out_min);
 
     /* 3. Extract saturation state to update low-overhead shadow register */
     if ((inner_i_ref >= core->voltage_pid.out_max) || (inner_i_ref <= core->voltage_pid.out_min))
@@ -281,7 +281,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_cascade(ctl_dcdc_core_t* core)
         core->is_current_dominant = 0;
     }
 
-    return core->formal_voltage;
+    return core->v_out_formal;
 }
 
 /**
@@ -305,23 +305,23 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_parallel(ctl_dcdc_core_t* core)
     /* Competition Logic: Lower voltage demand wins to protect system from over-current */
     if (out_i_pid < out_v_pid)
     {
-        core->formal_voltage = out_i_pid;
+        core->v_out_formal = out_i_pid;
         core->is_current_dominant = 1;
 
         /* Enforce back-calculation anti-windup on the losing voltage integrator */
-        ctl_pid_clamping_correction_using_real_output(&core->voltage_pid, core->formal_voltage);
+        ctl_pid_clamping_correction_using_real_output(&core->voltage_pid, core->v_out_formal);
     }
     else
     {
-        core->formal_voltage = out_v_pid;
+        core->v_out_formal = out_v_pid;
         core->is_current_dominant = 0;
 
         /* Enforce back-calculation anti-windup on the losing current integrator */
-        ctl_pid_clamping_correction_using_real_output(&core->current_pid, core->formal_voltage);
+        ctl_pid_clamping_correction_using_real_output(&core->current_pid, core->v_out_formal);
     }
 
-    core->formal_voltage = ctl_sat(core->formal_voltage, core->out_max, core->out_min);
-    return core->formal_voltage;
+    core->v_out_formal = ctl_sat(core->v_out_formal, core->out_max, core->out_min);
+    return core->v_out_formal;
 }
 
 /**

@@ -53,7 +53,7 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
 #if BUILD_LEVEL >= 1
     // 观测实际输出电压与目标电压的跟踪情况
     DAC_setShadowValue(IRIS_DACA_BASE, (uint16_t)(adc_v_out.control_port.value * 2048.0f + 2048.0f));
-    DAC_setShadowValue(IRIS_DACB_BASE, (uint16_t)(dcdc_core.v_out_ref * 2048.0f + 2048.0f));
+    DAC_setShadowValue(IRIS_DACB_BASE, (uint16_t)(dcdc_core.v_out_formal * 2048.0f + 2048.0f));
 #endif // BUILD_LEVEL
 }
 
@@ -134,7 +134,7 @@ GMP_STATIC_INLINE void ctl_output_callback_pil(gmp_sim_tx_buf_t* tx)
 
     // 监测信号发回仿真示波器
     tx->monitor[0] = adc_v_out.control_port.value;
-    tx->monitor[1] = dcdc_core.v_out_ref;
+    tx->monitor[1] = dcdc_core.v_out_formal;
 }
 
 #ifdef __cplusplus

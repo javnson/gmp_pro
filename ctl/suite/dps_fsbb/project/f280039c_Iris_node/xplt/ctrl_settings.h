@@ -37,6 +37,8 @@
 // ADC Voltage Reference
 #define CTRL_ADC_VOLTAGE_REF (3.3f)
 
+// Resistance Load, Omega
+#define FSBB_RLOAD_MIN (20.0f)
 
 // Capacitor Input
 #define FSBB_CIN (440e-6f)

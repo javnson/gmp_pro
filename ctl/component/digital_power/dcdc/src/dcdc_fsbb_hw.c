@@ -8,7 +8,7 @@
 /**
  * @brief Clamps cutoff frequency below Nyquist limit, or forces pure bypass if limits exceeded.
  */
-static parameter_gt ctl_4sbb_calc_safe_fc(parameter_gt fs, parameter_gt target_fc)
+static parameter_gt ctl_fsbb_calc_safe_fc(parameter_gt fs, parameter_gt target_fc)
 {
     parameter_gt nyquist = fs * 0.5f;
 
@@ -23,7 +23,7 @@ static parameter_gt ctl_4sbb_calc_safe_fc(parameter_gt fs, parameter_gt target_f
     return target_fc;
 }
 
-parameter_gt ctl_4sbb_calc_worst_rhp_zero(const ctl_4switch_buckboost_hardware_t* hw)
+parameter_gt ctl_fsbb_calc_worst_rhp_zero(const ctl_4switch_buckboost_hardware_t* hw)
 {
     gmp_base_assert(hw != NULL);
     gmp_base_assert(hw->v_in_min > 0.0f);
@@ -44,7 +44,7 @@ parameter_gt ctl_4sbb_calc_worst_rhp_zero(const ctl_4switch_buckboost_hardware_t
     return worst_f_rhpz;
 }
 
-void ctl_dcdc_blueprint_4sbb_cascade(ctl_dcdc_core_init_t* init_config, const ctl_4switch_buckboost_hardware_t* hw)
+void ctl_dcdc_blueprint_fsbb_cascade(ctl_dcdc_core_init_t* init_config, const ctl_4switch_buckboost_hardware_t* hw)
 {
     gmp_base_assert(init_config != NULL);
     gmp_base_assert(hw != NULL);

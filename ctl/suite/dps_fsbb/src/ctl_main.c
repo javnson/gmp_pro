@@ -50,38 +50,45 @@ void ctl_init(void)
 
     // --- 2.1 FSBB 算法核心自整定 ---
 
+
+
+    ctl_4switch_buckboost_hardware_t fsbb_init = {0};
+
+    fsbb_init.C_farad = FSBB_COUT;
+
+    fsbb_init.fs = CTRL_FS;
+
+    fsbb_init.v_in_min = FSBB_OUTPUT_VOLTAGE_MIN;
+    fsbb_init.v_in_max = FSBB_OUTPUT_VOLTAGE_MAX;
+
+    fsbb_init.v_out_max = FSBB_OUTPUT_VOLTAGE_MAX;
+    fsbb_init.v_out_min = FSBB_OUTPUT_VOLTAGE_MIN;
+
+    fsbb_init.L_henry = FSBB_L;
+    fsbb_init.R_esr_ohm = FSBB_L_ESR;
+
+    fsbb_init.C_farad = FSBB_COUT;
+    fsbb_init.R_load_min = FSBB_RLOAD_MIN;
+
+    fsbb_init.v_base = CTRL_VOLTAGE_BASE;
+    fsbb_init.i_base = CTRL_CURRENT_BASE;
+
+    fsbb_init.slope_v_pu_s = float2ctrl(1.0f);
+    fsbb_init.slope_i_pu_s = float2ctrl(1.0f);
+
+    fsbb_init.i_out_max = float2ctrl(1.0f);
+    fsbb_init.i_out_min = -float2ctrl(1.0f);
+
+    fsbb_init.fc_current_loop = 800.0f;
+    fsbb_init.fc_voltage_loop = 40.0f;
+
+
     ctl_dcdc_core_init_t core_init = {0};
+    ctl_dcdc_blueprint_fsbb_cascade(&core_init, &fsbb_init)
 
-    // 配置物理参数 (SI Units)
-    core_init.v_base = CTRL_VOLTAGE_BASE; // 80V
-    core_init.i_base = CTRL_CURRENT_BASE; // 10A
-    core_init.fs = CONTROLLER_FREQUENCY;
-
-    core_init.L_main = FSBB_L;
-    core_init.r_L = FSBB_L_ESR;
-
-    core_init.C_out = FSBB_COUT;
-    core_init.r_C = FSBB_COUT_ESR;
-
-    // 运行点配置 (用于计算 RHPZ 安全带宽)
-    core_init.v_in_nom = FSBB_INPUT_VOLTAGE;
-    core_init.v_in_min = FSBB_INPUT_VOLTAGE_MIN;
-
-    core_init.v_out_nom = FSBB_OUTPUT_VOLTAGE;
-    core_init.i_out_max = FSBB_OUTPUT_CURRENT_LIM;
-
-    core_init.i_L_max = FSBB_PROTECT_IL_MAX;
-    core_init.i_L_min = FSBB_PROTECT_IL_MIN;
-
-    core_init.v_req_max = FSBB_OUTPUT_VOLTAGE_MAX;
-    core_init.v_req_min = FSBB_OUTPUT_VOLTAGE_MIN;
-
-    // 执行针对 FSBB 的自动整定 (自动压制 RHPZ 下的电压环带宽)
-    ctl_auto_tuning_dcdc_fsbb(&core_init);
 
     // 初始化内核 (注入斜率: 电压 50V/s, 电感电流 500A/s)
-    ctl_init_dcdc_core(&dcdc_core, &core_init, float2ctrl(50.0f / CTRL_VOLTAGE_BASE),
-                       float2ctrl(500.0f / CTRL_CURRENT_BASE));
+    ctl_init_dcdc_core(&dcdc_core, &core_init);
 
     // 绑定 ADC 指针 (零拷贝接入)
     ctl_attach_dcdc_core(&dcdc_core, &adc_v_in.control_port, &adc_v_out.control_port, &adc_i_L.control_port,
