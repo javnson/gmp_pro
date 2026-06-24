@@ -56,7 +56,7 @@ void ctl_init(void)
 
     fsbb_init.C_farad = FSBB_COUT;
 
-    fsbb_init.fs = CTRL_FS;
+    fsbb_init.fs = CONTROLLER_FREQUENCY;
 
     fsbb_init.v_in_min = FSBB_OUTPUT_VOLTAGE_MIN;
     fsbb_init.v_in_max = FSBB_OUTPUT_VOLTAGE_MAX;
@@ -84,7 +84,7 @@ void ctl_init(void)
 
 
     ctl_dcdc_core_init_t core_init = {0};
-    ctl_dcdc_blueprint_fsbb_cascade(&core_init, &fsbb_init)
+    ctl_dcdc_blueprint_fsbb_cascade(&core_init, &fsbb_init);
 
 
     // 初始化内核 (注入斜率: 电压 50V/s, 电感电流 500A/s)
@@ -129,31 +129,6 @@ void ctl_mainloop(void)
     // 调度 CiA402 状态机
     cia402_dispatch(&cia402_sm);
 
-    // 根据状态机决定输出目标
-    if (cia402_sm.state_word.bits.operation_enabled)
-    {
-        // 允许运行：下发用户指令，并限制电感电流参考值
-        dcdc_core.v_out_set_raw = g_v_out_ref_user;
-        ctl_set_pid_limit(&dcdc_core.v_loop_pi, g_i_limit_user, -g_i_limit_user);
-    }
-    else
-    {
-        // 待机或故障：目标清零
-        dcdc_core.v_out_set_raw = float2ctrl(0.0f);
-    }
-
-    // --- BUILD_LEVEL 动态管理 ---
-#if (BUILD_LEVEL == 1)
-    dcdc_core.flag_enable = 0; // 内核不运行，依靠 interface 中的开环逻辑
-#else
-    dcdc_core.flag_enable = 1;
-#endif
-
-#if (BUILD_LEVEL == 3)
-    dcdc_core.flag_enable_load_ff = 1; // 开启负载电流前馈，应对动态跳变
-#else
-    dcdc_core.flag_enable_load_ff = 0;
-#endif
 }
 
 //=================================================================================================

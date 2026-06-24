@@ -961,7 +961,6 @@
                 ],
                 "depends_on": [
                     "ctl|component|_internal",
-                    "ctl|component|dsa",
                     "ctl|component|kinematics"
                 ],
                 "inc_dirs": [
@@ -4069,12 +4068,15 @@
                 "type": "module",
                 "description": "",
                 "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/src/dcdc_core.c"
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/src/dcdc_core.c",
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/src/dcdc_boost_hw.c",
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/src/dcdc_fsbb_hw.c",
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/src/dcdc_buck_hw.c"
                 ],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/boost.h",
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/buck.h",
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/buckboost.h"
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/fsbb.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
@@ -4354,49 +4356,6 @@
                 ],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/interface/hpwm_modulator.h"
-                ],
-                "inc_dirs": [],
-                "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    }
-                ]
-            },
-            "component|digital_power|rectifier|_internal": {
-                "type": "module",
-                "description": "",
-                "src_patterns": [],
-                "inc_patterns": [],
-                "inc_dirs": [],
-                "help_docs": [],
-                "depends_on": []
-            },
-            "component|digital_power|rectifier|vienna": {
-                "type": "module",
-                "description": "",
-                "src_patterns": [],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/rectifier/Vienna.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
@@ -5250,6 +5209,6 @@
     },
     "macros": {
         "C2000Ware": "C:/ti/c2000/C2000Ware_5_03_00_00",
-        "GMP_PRO_LOCATION": "D:/_Projects/gmp_pro"
+        "GMP_PRO_LOCATION": "E:/lib/gmp_pro"
     }
 }

@@ -3,6 +3,8 @@
  * @brief Unified loop tuning calculator for 4-Switch Buck-Boost topologies with linear modulation.
  */
 
+#include <gmp_core.h>
+
 #include <ctl/component/digital_power/dcdc/fsbb.h>
 
 /**
@@ -55,7 +57,7 @@ void ctl_dcdc_blueprint_fsbb_cascade(ctl_dcdc_core_init_t* init_config, const ct
     init_config->fs = hw->fs;
 
     /* 2. Analyze right half plane zero boundary under deepest boost condition */
-    parameter_gt limit_f_rhpz = ctl_4sbb_calc_worst_rhp_zero(hw);
+    parameter_gt limit_f_rhpz = ctl_fsbb_calc_worst_rhp_zero(hw);
 
     /* Enforce 1/5 RHPZ safety margin for the single voltage controller parameter set */
     parameter_gt max_safe_v_bandwidth = limit_f_rhpz * 0.2f;
@@ -67,10 +69,10 @@ void ctl_dcdc_blueprint_fsbb_cascade(ctl_dcdc_core_init_t* init_config, const ct
     }
 
     /* 3. Coordinate Signal Filters based on the validated single loop bandwidth */
-    init_config->fc_v_in = ctl_4sbb_calc_safe_fc(hw->fs, actual_fc_v * 20.0f);
-    init_config->fc_v_out = ctl_4sbb_calc_safe_fc(hw->fs, actual_fc_v * 15.0f);
-    init_config->fc_i_L = ctl_4sbb_calc_safe_fc(hw->fs, hw->fc_current_loop * 10.0f);
-    init_config->fc_i_load = ctl_4sbb_calc_safe_fc(hw->fs, hw->fc_current_loop * 5.0f);
+    init_config->fc_v_in = ctl_fsbb_calc_safe_fc(hw->fs, actual_fc_v * 20.0f);
+    init_config->fc_v_out = ctl_fsbb_calc_safe_fc(hw->fs, actual_fc_v * 15.0f);
+    init_config->fc_i_L = ctl_fsbb_calc_safe_fc(hw->fs, hw->fc_current_loop * 10.0f);
+    init_config->fc_i_load = ctl_fsbb_calc_safe_fc(hw->fs, hw->fc_current_loop * 5.0f);
 
     /* 4. Assign Global Dynamic Profile Limits */
     init_config->slope_v_pu_s = hw->slope_v_pu_s;
