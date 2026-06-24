@@ -227,6 +227,17 @@ void ctl_disable_grid_relay() GMP_WEAK_FUNC_SUFFIX
 #endif // GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
 }
 
+GMP_WEAK_FUNC_PREFIX
+fast_gt ctl_fault_recover_routine() GMP_WEAK_FUNC_SUFFIX
+{
+#ifdef GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
+    gmp_base_print("fault_recover_routine()\r\n");
+#endif // GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
+    
+    // return fault recover routine has completed.
+    return 1;
+}
+
 #else // in MSVC environment
 
 #pragma comment(linker, "/alternatename:ctl_enable_pwm=default_ctl_void_void_func")
@@ -252,6 +263,9 @@ void ctl_disable_grid_relay() GMP_WEAK_FUNC_SUFFIX
 
 #pragma comment(linker, "/alternatename:ctl_enable_grid_relay=default_ctl_void_void_func")
 #pragma comment(linker, "/alternatename:ctl_disable_grid_relay=default_ctl_void_void_func")
+
+#pragma comment(linker, "/alternatename:ctl_fault_recover_routine=default_ctl_fast_gt_void_func_with1_ret")
+
 
 void default_ctl_void_void_func(void)
 {
