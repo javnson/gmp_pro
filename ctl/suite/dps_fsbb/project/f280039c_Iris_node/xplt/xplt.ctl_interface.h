@@ -31,7 +31,7 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
 
     ctl_step_adc_channel(&adc_v_in,   ADC_readResult(FSBB_VIN_ADC_BASE, FSBB_VIN));
     ctl_step_adc_channel(&adc_v_out,  ADC_readResult(FSBB_VOUT_ADC_BASE, FSBB_VOUT));
-    ctl_step_adc_channel(&adc_i_L,    ADC_readResult(FSBB_IL_ADC_BASE, FSBB_VIN));
+    ctl_step_adc_channel(&adc_i_L,    ADC_readResult(FSBB_IL_ADC_BASE, FSBB_IL));
     ctl_step_adc_channel(&adc_i_load, ADC_readResult(FSBB_IOUT_ADC_BASE, FSBB_IOUT));
 }
 

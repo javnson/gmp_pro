@@ -12,7 +12,7 @@
 // BUILD_LEVEL 1: Modulation only, Hardware check
 // BUILD_LEVEL 2: Current loop
 // BUILD_LEVEL 3: Voltage loop
-#define BUILD_LEVEL (2)
+#define BUILD_LEVEL (1)
 
 //=================================================================================================
 // Controller Basic Parameters
@@ -44,7 +44,7 @@
 #define FSBB_CIN (440e-6f)
 
 // Capacitor Output
-#define FSBB_COUT (440E-6f)
+#define FSBB_COUT (440e-6f)
 #define FSBB_COUT_ESR (0.1f)
 
 // Inductor for FSBB
@@ -95,10 +95,10 @@
 // ---------------------------------------------------------
 // Voltage Sensing
 // ---------------------------------------------------------
-#define CTRL_VIN_VOLTAGE_SENSITIVITY QUAD_SENSOR_CALC_V_GAIN(56.0f)
-#define CTRL_VIN_VOLTAGE_BIAS        QUAD_SENSOR_BASE_BIAS_V
+#define CTRL_VIN_VOLTAGE_SENSITIVITY  QUAD_SENSOR_V_SENSITIVE
+#define CTRL_VIN_VOLTAGE_BIAS         QUAD_SENSOR_BASE_BIAS_V
 
-#define CTRL_VOUT_VOLTAGE_SENSITIVITY QUAD_SENSOR_CALC_V_GAIN(56.0f)
+#define CTRL_VOUT_VOLTAGE_SENSITIVITY QUAD_SENSOR_V_SENSITIVE
 #define CTRL_VOUT_VOLTAGE_BIAS        QUAD_SENSOR_BASE_BIAS_V
 
 // ---------------------------------------------------------
@@ -158,6 +158,19 @@
 // System LED
 #define SYSTEM_LED     IRIS_LED1
 #define CONTROLLER_LED IRIS_LED2
+
+// ADC channel Mapping
+#define FSBB_VIN_ADC_BASE  ADC_CH1_ADC_BASE
+#define FSBB_VIN           ADC_CH1
+
+#define FSBB_VOUT_ADC_BASE ADC_CH2_ADC_BASE
+#define FSBB_VOUT          ADC_CH2
+
+#define FSBB_IL_ADC_BASE   ADC_CH3_ADC_BASE
+#define FSBB_IL            ADC_CH3
+
+#define FSBB_IOUT_ADC_BASE ADC_CH4_ADC_BASE
+#define FSBB_IOUT          ADC_CH4
 
 #endif // _FILE_CTRL_SETTINGS_H_
 
