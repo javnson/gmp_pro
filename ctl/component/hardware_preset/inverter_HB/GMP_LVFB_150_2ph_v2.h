@@ -125,7 +125,8 @@ extern "C"
 // ============================================================================
 
 /** @brief Base reference scale voltage for the analog-to-digital converter interface. */
-#define GMP_LVFB_SENSOR_BASE_V (3.3f)
+#define GMP_LVFB_VOLTAGE_BASE_V (3.3f)
+#define GMP_LVFB_VOLTAGE_BIAS_V (0.0f)
 
 /** @brief Bandwidth of the voltage sensing attenuation and filtering network. */
 #define GMP_LVFB_SENSOR_VOLTAGE_BW_HZ (114.47e3f)

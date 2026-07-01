@@ -61,6 +61,8 @@ extern adc_bias_calibrator_t adc_calibrator;
 extern volatile fast_gt flag_enable_adc_calibrator;
 extern volatile fast_gt index_adc_calibrator;
 
+extern ctrl_gt v_req;
+
 //=================================================================================================
 // 核心 API 声明 (Core API)
 
@@ -130,10 +132,10 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         // 2. FSBB 调制器映射：将 V_req 转化为 4 个管子的无缝占空比
 //        ctl_step_fsbb_modulator(&fsbb_mod, v_req, adc_v_in.control_port.value);
 
-        ctl_step_fsbb_modulator(&fsbb_mod, v_req, 0.5f);
 #elif (BUILD_LEVEL == 1)
         // 开环固定占空比发波测试
-        ctl_step_fsbb_modulator(&fsbb_mod, float2ctrl(0.5f) * adc_v_in.control_port.value, adc_v_in.control_port.value);
+//        ctl_step_fsbb_modulator(&fsbb_mod, float2ctrl(0.5f) * adc_v_in.control_port.value, adc_v_in.control_port.value);
+        ctl_step_fsbb_modulator(&fsbb_mod, v_req, 0.5f);
 #endif
     }
 }

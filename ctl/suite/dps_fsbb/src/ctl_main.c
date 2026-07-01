@@ -40,6 +40,8 @@ adc_bias_calibrator_t adc_calibrator;
 volatile fast_gt flag_enable_adc_calibrator = 0;
 volatile fast_gt index_adc_calibrator = 0;
 
+ctrl_gt v_req;
+
 //=================================================================================================
 // 2. 初始化程序 (Initialization)
 
@@ -49,8 +51,6 @@ void ctl_init(void)
     ctl_fast_disable_output();
 
     // --- 2.1 FSBB 算法核心自整定 ---
-
-
 
     ctl_4switch_buckboost_hardware_t fsbb_init = {0};
 
@@ -82,7 +82,6 @@ void ctl_init(void)
     fsbb_init.fc_current_loop = 800.0f;
     fsbb_init.fc_voltage_loop = 40.0f;
 
-
     ctl_dcdc_core_init_t core_init = {0};
     ctl_dcdc_blueprint_fsbb_cascade(&core_init, &fsbb_init);
 
@@ -95,6 +94,8 @@ void ctl_init(void)
                          &adc_i_load.control_port);
 
     // --- 2.2 调制器初始化 (带过渡区) ---
+
+    v_req = float2ctrl(0.6f);
 
     // 配置占空比限制 [0.05, 0.95] 保证自举电容充电
     // 过渡区设置在 Vin 的 90% 到 110% 之间

@@ -79,8 +79,8 @@
 // Power System Ratings (24Vrms, 10A, 60Vdc)
 
 #define CTRL_DCBUS_VOLTAGE     (60.0f) // 额定直流母线电压
-#define CTRL_GRID_VOLTAGE_RMS  (24.0f) // 额定交流有效值
-#define CTRL_RATED_CURRENT_RMS (10.0f) // 额定交流电流有效值
+//#define CTRL_GRID_VOLTAGE_RMS  (24.0f) // 额定交流有效值
+//#define CTRL_RATED_CURRENT_RMS (10.0f) // 额定交流电流有效值
 
 // 单相逆变器标幺化基准值 (使用峰值作为计算 Base)
 #define CTRL_VOLTAGE_BASE (34.0f)  // 24Vrms * 1.414
@@ -98,28 +98,26 @@
 #define CTRL_VIN_VOLTAGE_SENSITIVITY  QUAD_SENSOR_V_SENSITIVE
 #define CTRL_VIN_VOLTAGE_BIAS         QUAD_SENSOR_BASE_BIAS_V
 
-#define CTRL_VOUT_VOLTAGE_SENSITIVITY QUAD_SENSOR_V_SENSITIVE
-#define CTRL_VOUT_VOLTAGE_BIAS        QUAD_SENSOR_BASE_BIAS_V
+#define CTRL_VOUT_VOLTAGE_SENSITIVITY GMP_LVFB_SENSOR_V_SENSITIVE
+#define CTRL_VOUT_VOLTAGE_BIAS        GMP_LVFB_VOLTAGE_BIAS_V
 
 // ---------------------------------------------------------
 // Current Sensing
 // ---------------------------------------------------------
 // 10Arms 峰值为 14.1A。选用 TMCS1133-B2A (±31.0A 量程，50mV/A 灵敏度)
-#define CTRL_INDUCTOR_CURRENT_SENSITIVITY QUAD_SENSOR_CALC_I_GAIN(TMCS1133_B2A_MV_A)
-#define CTRL_INDUCTOR_CURRENT_BIAS        QUAD_SENSOR_BASE_BIAS_V
+#define CTRL_INDUCTOR_CURRENT_SENSITIVITY GMP_LVFB_SENSOR_I_SENSITIVE
+#define CTRL_INDUCTOR_CURRENT_BIAS        GMP_LVFB_CURRENT_BIAS_V
 
-#define CTRL_LOAD_CURRENT_SENSITIVITY GMP_LVFB_150_2PH_CALC_I_GAIN(0.005)
+#define CTRL_LOAD_CURRENT_SENSITIVITY QUAD_SENSOR_I_SENSITIVE
 #define CTRL_LOAD_CURRENT_BIAS        QUAD_SENSOR_BASE_BIAS_V
-
-
 
 //=================================================================================================
 // System Protection Bounds (Derived from Hardware)
 
-#define CTRL_MAX_HW_VOLTAGE QUAD_SENSOR_CALC_V_MAX(56.0f)   // 154V
-#define CTRL_MAX_HW_CURRENT QUAD_SENSOR_CALC_I_MAX_A(50.0f) // 33A (ADC 饱和点)
+#define CTRL_MAX_HW_VOLTAGE GMP_LVFB_VBUS_MAX_V
+#define CTRL_MAX_HW_CURRENT GMP_LVFB_CURRENT_MAX_RMS_A
 
-#define CTRL_PROT_VBUS_MAX (100.0f)
+//#define CTRL_PROT_VBUS_MAX (100.0f)
 
 //=================================================================================================
 // Controller Settings

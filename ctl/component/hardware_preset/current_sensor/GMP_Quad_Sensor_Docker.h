@@ -120,7 +120,7 @@ extern "C"
 #define QUAD_SENSOR_I_MAX_A     QUAD_SENSOR_CALC_I_MAX_A(TMCS1133_B5A_S_MV_A)
 
 /** @brief Configured default current sensitivity based on the selected sensor variant (TMCS1133_B5A). */
-#define QUAD_SENSOR_I_SENSITIVE QUAD_SENSOR_CALC_I_SENSATIVE(TMCS1133_B5A_S_MV_A)
+#define QUAD_SENSOR_I_SENSITIVE QUAD_SENSOR_CALC_I_SENSITIVE(TMCS1133_B5A_S_MV_A)
 
 /**
  * @}
