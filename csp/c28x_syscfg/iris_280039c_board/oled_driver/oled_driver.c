@@ -323,7 +323,7 @@ void oled_init(void)
     oled_clear();
     oled_set_position(0, 0);
 
-    oled_show_str(30,0,"OLED TEST");
-    oled_show_str(20,4,"2026/07/01");
+    oled_show_str(0,0,"OLED TEST");
+    oled_show_str(0,4,"2026/07/01");
 }
 

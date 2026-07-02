@@ -127,6 +127,7 @@ gmp_task_status_t tsk_dl_debug_device(gmp_task_t* tsk)
 
 // GPIO
 gpio_halt user_led;
+volatile uint16_t flag_init_cmpt = 0;
 
 gmp_task_status_t tsk_blink(gmp_task_t* tsk)
 {
@@ -144,6 +145,16 @@ gmp_task_status_t tsk_blink(gmp_task_t* tsk)
     {
         led_stat = 0;
         gmp_hal_gpio_write(user_led, 1);
+    }
+
+    static uint16_t index;
+
+    char output_msg[32];
+
+    if (flag_init_cmpt == 1)
+    {
+        sprintf(output_msg, "index: %d C", index++);
+        oled_show_str(0,2,output_msg);
     }
 
     return GMP_TASK_DONE;
@@ -217,17 +228,20 @@ gmp_task_status_t tsk_startup(gmp_task_t* tsk)
 
         if (ec == GMP_EC_OK)
         {
-            sched.task_list[2]->is_enabled = 1;
             sched.task_list[3]->is_enabled = 1;
+            sched.task_list[4]->is_enabled = 1;
         }
-
-        hdc1080_config_reg_t hdc1080_cfg = {.all = 0};
-        hdc1080_cfg.bits.mode = 1; // continuous acquisition data
-
-//        hdc1080_init(&hdc1080, iic_bus, HDC1080_I2C_ADDR_DEFAULT, hdc1080_cfg);
 
         // init and test the oled.
         oled_init();
+
+//        hdc1080_config_reg_t hdc1080_cfg = {.all = 0};
+//        hdc1080_cfg.bits.mode = 1; // continuous acquisition data
+//
+//        hdc1080_init(&hdc1080, iic_bus, HDC1080_I2C_ADDR_DEFAULT, hdc1080_cfg);
+//        hdc1080_trigger_temp_hum_sequence(&hdc1080);
+
+        flag_init_cmpt = 1;
 
         // startup process is complete.
         tsk->is_enabled = 0;
