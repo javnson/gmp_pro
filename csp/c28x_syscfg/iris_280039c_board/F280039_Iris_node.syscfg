@@ -1,8 +1,8 @@
 /**
  * These arguments were used when this file was generated. They will be automatically applied on subsequent loads
  * via the GUI or CLI. Run CLI with '--help' for additional information on how to override these arguments.
- * @cliArgs --device "F28003x" --part "F28003x_100PZ" --package "100PZ" --context "system" --product "C2000WARE@5.03.00.00" --product "gmp_pro@1.00.00.05"
- * @v2CliArgs --device "TMS320F280039C" --package "100PZ" --context "system" --product "C2000WARE@5.03.00.00" --product "gmp_pro@1.00.00.05"
+ * @cliArgs --device "F28003x" --part "F28003x_100PZ" --package "100PZ" --context "system" --product "gmp_pro@1.00.00.05" --product "C2000WARE@5.03.00.00"
+ * @v2CliArgs --device "TMS320F280039C" --package "100PZ" --context "system" --product "gmp_pro@1.00.00.05" --product "C2000WARE@5.03.00.00"
  * @versions {"tool":"1.21.0+3721"}
  */
 
@@ -74,23 +74,23 @@ adc1.soc1IndependentNameMode        = true;
 adc1.soc2Trigger                    = "ADC_TRIGGER_EPWM1_SOCA";
 adc1.soc1Trigger                    = "ADC_TRIGGER_EPWM1_SOCA";
 adc1.soc2IndependentNameMode        = true;
-adc1.soc0Name                       = "INV_IU";
-adc1.soc0Channel                    = "ADC_CH_ADCIN2";
-adc1.soc1Name                       = "INV_IA";
-adc1.soc1Channel                    = "ADC_CH_ADCIN8";
-adc1.soc2Name                       = "INV_UA";
-adc1.soc2Channel                    = "ADC_CH_ADCIN10";
-adc1.soc3Name                       = "INV_UU";
 adc1.soc3SampleWindow               = 9;
 adc1.soc3Trigger                    = "ADC_TRIGGER_EPWM1_SOCA";
 adc1.soc3IndependentNameMode        = true;
-adc1.soc3Channel                    = "ADC_CH_ADCIN6";
-adc1.enabledSOCs                    = ["ADC_SOC_NUMBER0","ADC_SOC_NUMBER1","ADC_SOC_NUMBER2","ADC_SOC_NUMBER3","ADC_SOC_NUMBER4"];
 adc1.soc4Name                       = "INV_VBUS";
 adc1.soc4Channel                    = "ADC_CH_ADCIN11";
 adc1.soc4Trigger                    = "ADC_TRIGGER_EPWM1_SOCA";
 adc1.soc4SampleWindow               = 9;
 adc1.soc4IndependentNameMode        = true;
+adc1.soc0Channel                    = "ADC_CH_ADCIN6";
+adc1.soc0Name                       = "ADC_CH1";
+adc1.enabledSOCs                    = ["ADC_SOC_NUMBER0","ADC_SOC_NUMBER1","ADC_SOC_NUMBER2","ADC_SOC_NUMBER3"];
+adc1.soc1Name                       = "ADC_CH5";
+adc1.soc2Name                       = "ADC_CH9";
+adc1.soc3Name                       = "ADC_CH12";
+adc1.soc1Channel                    = "ADC_CH_ADCIN3";
+adc1.soc2Channel                    = "ADC_CH_ADCIN12";
+adc1.soc3Channel                    = "ADC_CH_ADCIN7";
 adc1.adcInt1.interruptHandler       = "MainISR";
 adc1.adcInt1.enableInterrupt        = true;
 
@@ -106,22 +106,22 @@ adc2.soc0IndependentNameMode = true;
 adc2.soc2SampleWindow        = 9;
 adc2.soc2IndependentNameMode = true;
 adc2.soc2Trigger             = "ADC_TRIGGER_EPWM1_SOCA";
-adc2.soc0Name                = "INV_IV";
-adc2.soc1Name                = "INV_IB";
-adc2.soc2Name                = "INV_UB";
-adc2.soc3Name                = "INV_UV";
 adc2.soc3IndependentNameMode = true;
 adc2.soc3SampleWindow        = 9;
-adc2.soc0Channel             = "ADC_CH_ADCIN9";
-adc2.soc1Channel             = "ADC_CH_ADCIN8";
-adc2.soc3Channel             = "ADC_CH_ADCIN3";
 adc2.soc3Trigger             = "ADC_TRIGGER_EPWM1_SOCA";
-adc2.enabledSOCs             = ["ADC_SOC_NUMBER0","ADC_SOC_NUMBER1","ADC_SOC_NUMBER2","ADC_SOC_NUMBER3","ADC_SOC_NUMBER4"];
-adc2.soc4Name                = "INV_IBUS";
 adc2.soc4IndependentNameMode = true;
-adc2.soc4Channel             = "ADC_CH_ADCIN12";
-adc2.soc4Trigger             = "ADC_TRIGGER_EPWM1_SOCA";
 adc2.soc4SampleWindow        = 9;
+adc2.soc0Channel             = "ADC_CH_ADCIN3";
+adc2.enabledSOCs             = ["ADC_SOC_NUMBER0","ADC_SOC_NUMBER1","ADC_SOC_NUMBER2","ADC_SOC_NUMBER3","ADC_SOC_NUMBER4"];
+adc2.soc0Name                = "ADC_CH3";
+adc2.soc1Name                = "ADC_CH7";
+adc2.soc2Name                = "ADC_CH8";
+adc2.soc3Name                = "ADC_CH11";
+adc2.soc1Channel             = "ADC_CH_ADCIN10";
+adc2.soc2Channel             = "ADC_CH_ADCIN12";
+adc2.soc3Channel             = "ADC_CH_ADCIN11";
+adc2.soc4Name                = "ANALOG_INPUT";
+adc2.soc4Channel             = "ADC_CH_ADCIN5";
 
 adc3.$name                   = "IRIS_ADCC";
 adc3.adcBase                 = "ADCC_BASE";
@@ -132,21 +132,21 @@ adc3.soc1Trigger             = "ADC_TRIGGER_EPWM1_SOCA";
 adc3.soc0Trigger             = "ADC_TRIGGER_EPWM1_SOCA";
 adc3.soc0IndependentNameMode = true;
 adc3.soc1IndependentNameMode = true;
-adc3.enabledSOCs             = ["ADC_SOC_NUMBER0","ADC_SOC_NUMBER1","ADC_SOC_NUMBER2","ADC_SOC_NUMBER3"];
-adc3.soc1Name                = "INV_IC";
-adc3.soc2Name                = "INV_UC";
-adc3.soc3Name                = "INV_UW";
 adc3.soc3IndependentNameMode = true;
 adc3.soc2IndependentNameMode = true;
 adc3.soc2SampleWindow        = 9;
 adc3.soc3SampleWindow        = 9;
 adc3.soc3Trigger             = "ADC_TRIGGER_EPWM1_SOCA";
 adc3.soc2Trigger             = "ADC_TRIGGER_EPWM1_SOCA";
-adc3.soc0Channel             = "ADC_CH_ADCIN4";
-adc3.soc1Channel             = "ADC_CH_ADCIN8";
-adc3.soc2Channel             = "ADC_CH_ADCIN14";
-adc3.soc3Channel             = "ADC_CH_ADCIN6";
-adc3.soc0Name                = "INV_IW";
+adc3.soc0Channel             = "ADC_CH_ADCIN6";
+adc3.soc1Channel             = "ADC_CH_ADCIN9";
+adc3.enabledSOCs             = ["ADC_SOC_NUMBER0","ADC_SOC_NUMBER1","ADC_SOC_NUMBER2","ADC_SOC_NUMBER3"];
+adc3.soc0Name                = "ADC_CH2";
+adc3.soc1Name                = "ADC_CH4";
+adc3.soc2Name                = "ADC_CH6";
+adc3.soc2Channel             = "ADC_CH_ADCIN4";
+adc3.soc3Name                = "ADC_CH10";
+adc3.soc3Channel             = "ADC_CH_ADCIN1";
 
 fsi1.$name               = "myBoardFSI0";
 fsi1.fsiRx.d0Qual.$name  = "myGPIOQUAL12";
@@ -223,9 +223,6 @@ divider4.divideValue = 2;
 
 const divider5       = system.clockTree["PLL_REFDIV"];
 divider5.divideValue = 4;
-
-const divider6       = system.clockTree["SYSCLKDIVSEL"];
-divider6.divideValue = 1;
 
 const multiplier1         = system.clockTree["PLL_IMULT"];
 multiplier1.multiplyValue = 80;
@@ -511,17 +508,13 @@ gpio1.$name           = "IRIS_GPIO1";
 gpio1.direction       = "GPIO_DIR_MODE_OUT";
 gpio1.gpioPin.$assign = "GPIO58";
 
-gpio2.$name             = "IRIS_GPIO2";
-gpio2.direction         = "GPIO_DIR_MODE_OUT";
-gpio2.writeInitialValue = true;
-gpio2.initialValue      = 1;
-gpio2.gpioPin.$assign   = "GPIO23";
+gpio2.$name           = "IRIS_GPIO2";
+gpio2.direction       = "GPIO_DIR_MODE_OUT";
+gpio2.gpioPin.$assign = "GPIO23";
 
-gpio3.$name             = "IRIS_GPIO3";
-gpio3.direction         = "GPIO_DIR_MODE_OUT";
-gpio3.writeInitialValue = true;
-gpio3.initialValue      = 1;
-gpio3.gpioPin.$assign   = "GPIO40";
+gpio3.$name           = "IRIS_GPIO3";
+gpio3.direction       = "GPIO_DIR_MODE_OUT";
+gpio3.gpioPin.$assign = "GPIO40";
 
 gpio4.$name           = "IRIS_GPIO4";
 gpio4.gpioPin.$assign = "GPIO44";
@@ -545,20 +538,9 @@ gpio9.direction       = "GPIO_DIR_MODE_OUT";
 gpio9.gpioPin.$assign = "GPIO55";
 
 i2c1.$name                  = "IRIS_IIC";
-i2c1.duty                   = "I2C_DUTYCYCLE_50";
-i2c1.emulationMode          = "I2C_EMULATION_FREE_RUN";
-i2c1.txFifo                 = "I2C_FIFO_TX10";
-i2c1.rxFifo                 = "I2C_FIFO_RX10";
-i2c1.bitCount               = "I2C_BITCOUNT_8";
-i2c1.targetAddress          = 0x70;
-i2c1.ownAddress             = 0x8;
-i2c1.dataCount              = 0;
-i2c1.bitRate                = 50000;
 i2c1.i2c.$assign            = "I2CA";
 i2c1.i2c.i2c_sdaPin.$assign = "GPIO56";
 i2c1.i2c.i2c_sclPin.$assign = "GPIO57";
-i2c1.sdaQual.padConfig      = "OD";
-i2c1.sclQual.padConfig      = "OD";
 
 other1.useCase                   = "CUSTOM";
 other1.useInterfacePins          = ["ADCSOCAO","SYNCOUT","TDI","TDO","X1","XCLKOUT","XRSn"];
@@ -584,7 +566,7 @@ sci2.$name                      = "IRIS_UART_USB";
 sci2.enabledFIFOInterrupts      = ["SCI_INT_RXFF"];
 sci2.selectRegisteredInterrupts = ["registerRxInt"];
 sci2.enabledErrorInterrupts     = ["SCI_INT_FE","SCI_INT_OE"];
-sci2.rxFifo                     = "SCI_FIFO_RX14";
+sci2.rxFifo                     = "SCI_FIFO_RX12";
 sci2.baudRates                  = 921600;
 sci2.sci.$assign                = "SCIB";
 sci2.sci.sci_rxPin.$assign      = "GPIO41";

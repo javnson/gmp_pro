@@ -173,7 +173,7 @@ gmp_task_t tasks[] = {
     {"dl_online", tsk_dl_debug_device, 2, 0, 1, NULL},
     {"flush_key", tsk_key_flush, 100, 10, 1, (void*)&ht16k33},
     {"flush_led", tsk_LED_flush, 500, 200, 1, (void*)&ht16k33},
-    {"startup", tsk_startup, 500, 0, 1, NULL},
+    {"startup", tsk_startup, 250, 0, 1, NULL},
 };
 
 //=================================================================================================
