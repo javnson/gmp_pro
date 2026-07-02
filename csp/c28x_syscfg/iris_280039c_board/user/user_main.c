@@ -12,6 +12,7 @@
 #include <core/dev/tunable.h>
 #include <core/dev/mem_presp.h>
 
+#include <oled_driver.h>
 
 ctrl_gt kp, ki, kd;
 
@@ -223,10 +224,14 @@ gmp_task_status_t tsk_startup(gmp_task_t* tsk)
         hdc1080_config_reg_t hdc1080_cfg = {.all = 0};
         hdc1080_cfg.bits.mode = 1; // continuous acquisition data
 
-        //hdc1080_init(&hdc1080, iic_bus, HDC1080_I2C_ADDR_DEFAULT, hdc1080_cfg);
+//        hdc1080_init(&hdc1080, iic_bus, HDC1080_I2C_ADDR_DEFAULT, hdc1080_cfg);
+
+        // init and test the oled.
+        oled_init();
 
         // startup process is complete.
         tsk->is_enabled = 0;
+
     }
 
     return GMP_TASK_DONE;
