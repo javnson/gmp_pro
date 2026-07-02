@@ -11,7 +11,7 @@
 
 
 //=================================================================================================
-// 1. 全局变量定义与实例化 (Global Instantiation)
+// global controller variables
 
 // 系统框架与保护
 cia402_sm_t cia402_sm;
@@ -43,7 +43,7 @@ volatile fast_gt index_adc_calibrator = 0;
 ctrl_gt v_req;
 
 //=================================================================================================
-// 2. 初始化程序 (Initialization)
+// CTL initialize routine
 
 void ctl_init(void)
 {
@@ -123,7 +123,7 @@ void ctl_init(void)
 }
 
 //=================================================================================================
-// 3. 后台主循环 (Low-Frequency Logic)
+// CTL endless loop routine
 
 void ctl_mainloop(void)
 {
@@ -132,8 +132,27 @@ void ctl_mainloop(void)
 
 }
 
+void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
+{
+#if defined ENBALE_GMP_DL_PIL_SIM
+    ctl_input_callback_pil(rx);
+
+    ctl_dispatch();
+
+    ctl_output_callback_pil(tx);
+#endif // defined ENBALE_GMP_DL_PIL_SIM
+}
+
+#if defined ENBALE_GMP_DL_PIL_SIM
+time_gt gmp_base_get_ctrl_tick(void)
+{
+    return mtr_ctrl.isr_tick/((uint32_t)CONTROLLER_FREQUENCY/1000);
+}
+#endif // defined ENBALE_GMP_DL_PIL_SIM
+
+
 //=================================================================================================
-// 4. 回调函数与任务实现
+// CiA402 default callback routine
 
 /**
  * @brief 处理 ADC 校准的自动流程
@@ -213,22 +232,5 @@ void ctl_disable_pwm(void)
 }
 
 
-void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
-{
-#if defined ENBALE_GMP_DL_PIL_SIM
-    ctl_input_callback_pil(rx);
-
-    ctl_dispatch();
-
-    ctl_output_callback_pil(tx);
-#endif // defined ENBALE_GMP_DL_PIL_SIM
-}
-
-#if defined ENBALE_GMP_DL_PIL_SIM
-time_gt gmp_base_get_ctrl_tick(void)
-{
-    return mtr_ctrl.isr_tick/((uint32_t)CONTROLLER_FREQUENCY/1000);
-}
-#endif // defined ENBALE_GMP_DL_PIL_SIM
 
 

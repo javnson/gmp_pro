@@ -9,6 +9,24 @@
  *
  */
 
+//=================================================================================================
+// include Necessary control modules
+
+#include "ctrl_settings.h"
+
+#include <core/pm/function_scheduler.h>
+
+#include <core/dev/pil_core.h>
+
+#include <ctl/framework/cia402_state_machine.h>
+
+#include <ctl/component/interface/adc_channel.h>
+
+#include <ctl/component/digital_power/dcdc/dcdc_core.h>
+#include <ctl/component/digital_power/dcdc/fsbb.h>
+
+//#include <ctl/component/system/dcdc_protect.h> // 假设有对应的 DCDC 保护模块
+
 #ifndef _FILE_CTRL_MAIN_H_
 #define _FILE_CTRL_MAIN_H_
 
@@ -17,23 +35,9 @@ extern "C"
 {
 #endif
 
-#include "ctrl_settings.h"
-
-#include <core/pm/function_scheduler.h>
-
-#include <ctl/component/digital_power/dcdc/dcdc_core.h>
-#include <ctl/component/digital_power/dcdc/fsbb.h>
-//#include <ctl/component/digital_power/dcdc/dcdc_modulator.h>
-
-// 引入框架组件
-#include <ctl/component/interface/adc_channel.h>
-#include <ctl/framework/cia402_state_machine.h>
-//#include <ctl/component/system/dcdc_protect.h> // 假设有对应的 DCDC 保护模块
-
-#include <core/dev/pil_core.h>
-
 //=================================================================================================
-// 全局变量声明 (Global Variables Export)
+// controller modules with extern
+
 
 // 1. 系统框架模块
 extern cia402_sm_t cia402_sm;
@@ -64,39 +68,21 @@ extern volatile fast_gt index_adc_calibrator;
 extern ctrl_gt v_req;
 
 //=================================================================================================
-// 核心 API 声明 (Core API)
+// function prototype
 
-/**
- * @brief 初始化整个 FSBB 系统的控制参数与底层绑定
- */
+
 void ctl_init(void);
-
-/**
- * @brief 系统的慢速后台主循环 (处理状态机、参数下发)
- */
 void ctl_mainloop(void);
 
-/**
- * @brief 硬件发波使能动作
- */
+
 void ctl_enable_pwm(void);
-
-/**
- * @brief 硬件发波封锁动作
- */
 void ctl_disable_pwm(void);
-
-/**
- * @brief 清理所有控制器的历史积分状态，防止启动冲击
- */
 void clear_all_controllers(void);
 
 //=================================================================================================
-// 后台任务声明 (Background Tasks)
+// Background Controller Tasks
 
-/**
- * @brief 慢速保护与监控任务 (如过温、均值过载保护)
- */
+// Protection Tasks
 gmp_task_status_t tsk_protect(gmp_task_t* tsk);
 
 //=================================================================================================
