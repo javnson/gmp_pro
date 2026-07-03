@@ -51,7 +51,7 @@
 //=================================================================================================
 // Hardware Abstraction Mapping
 
-#include <ctl/component/hardware_preset/inverter_HB/GMP_LVHB_150_2ph_v2.h>
+#include <ctl/component/hardware_preset/inverter_HB/GMP_LVFB_150_2ph_v2.h>
 #include <ctl/component/hardware_preset/current_sensor/GMP_Quad_Sensor_Docker.h>
 
 // ---------------------------------------------------------

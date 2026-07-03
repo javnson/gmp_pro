@@ -136,7 +136,6 @@
 // Enable Cia402 Debug Information
 //#define GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
 
-
 //=================================================================================================
 // Board peripheral mapping
 
@@ -207,39 +206,64 @@
 #define BOARD_PIN_MAPPING
 
 // PWM Channels
-#define PHASE_U_BASE    IRIS_EPWM1_BASE
-#define PHASE_V_BASE    IRIS_EPWM2_BASE
-#define PHASE_W_BASE    IRIS_EPWM3_BASE
+#define PHASE_U_BASE       IRIS_EPWM1_BASE
+#define PHASE_V_BASE       IRIS_EPWM2_BASE
+#define PHASE_W_BASE       IRIS_EPWM3_BASE
 
 // PWM Enable
-#define PWM_ENABLE_PORT IRIS_GPIO1
-#define PWM_RESET_PORT  IRIS_GPIO3
+#define PWM_ENABLE_PORT    IRIS_GPIO1
+#define PWM_RESET_PORT     IRIS_GPIO3
 
-// Vbus Voltage Channels
-//#define MOTOR_VBUS_RESULT_BASE IRIS_ADCA_RESULT_BASE
-//#define MOTOR_VBUS
+// Grid side Voltage Measurement
+#define INV_UA_RESULT_BASE ADC_CH1_RESULT_BASE
+#define INV_UA             ADC_CH1
 
-// ADC Voltage Channels
-//#define MOTOR_VU_RESULT_BASE IRIS_ADCA_RESULT_BASE
-//#define MOTOR_VV_RESULT_BASE IRIS_ADCB_RESULT_BASE
-//#define MOTOR_VW_RESULT_BASE IRIS_ADCC_RESULT_BASE
+#define INV_UB_RESULT_BASE ADC_CH2_RESULT_BASE
+#define INV_UB             ADC_CH2
 
-//#define MOTOR_VU
-//#define MOTOR_VV
-//#define MOTOR_VW
+#define INV_UC_RESULT_BASE ADC_CH3_RESULT_BASE
+#define INV_UC             ADC_CH3
 
-// ADC Current Channels
-//#define MOTOR_IU_RESULT_BASE IRIS_ADCA_RESULT_BASE
-//#define MOTOR_IV_RESULT_BASE IRIS_ADCB_RESULT_BASE
-//#define MOTOR_IW_RESULT_BASE IRIS_ADCC_RESULT_BASE
+// Grid side Current Measurement
+#define INV_IA_RESULT_BASE ADC_CH4_RESULT_BASE
+#define INV_IA             ADC_CH4
 
-//#define MOTOR_IU
-//#define MOTOR_IV
-//#define MOTOR_IW
+#define INV_IB_RESULT_BASE ADC_CH5_RESULT_BASE
+#define INV_IB             ADC_CH5
+
+#define INV_IC_RESULT_BASE ADC_CH6_RESULT_BASE
+#define INV_IC             ADC_CH6
+
+// Inverter side Voltage Measurement
+#define INV_UU_RESULT_BASE ADC_CH9_RESULT_BASE
+#define INV_UU             ADC_CH9
+
+#define INV_UV_RESULT_BASE ADC_CH10_RESULT_BASE
+#define INV_UV             ADC_CH10
+
+#define INV_UW_RESULT_BASE ADC_CH11_RESULT_BASE
+#define INV_UW             ADC_CH11
+
+// Inverter side Current Measurement
+#define INV_IU_RESULT_BASE ADC_CH4_RESULT_BASE
+#define INV_IU             ADC_CH4
+
+#define INV_IV_RESULT_BASE ADC_CH5_RESULT_BASE
+#define INV_IV             ADC_CH5
+
+#define INV_IW_RESULT_BASE   ADC_CH6_RESULT_BASE
+#define INV_IW               ADC_CH6
+
+// DC Bus Voltage & Current
+#define INV_VBUS_RESULT_BASE ADC_CH7_RESULT_BASE
+#define INV_VBUS             ADC_CH7
+
+#define INV_IBUS_RESULT_BASE ADC_CH8_RESULT_BASE
+#define INV_IBUS             ADC_CH8
 
 // System LED
-#define SYSTEM_LED      IRIS_LED1
-#define CONTROLLER_LED  IRIS_LED2
+#define SYSTEM_LED           IRIS_LED1
+#define CONTROLLER_LED       IRIS_LED2
 
 #endif //BOARD_PIN_MAPPING
 

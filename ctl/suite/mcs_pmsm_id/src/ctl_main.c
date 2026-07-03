@@ -237,7 +237,7 @@ void ctl_mainloop(void)
 }
 
 //=================================================================================================
-// CiA402 default callback routine
+// Controller Tasks
 
 gmp_task_status_t tsk_protect(gmp_task_t* tsk)
 {
@@ -265,6 +265,9 @@ gmp_task_status_t tsk_protect(gmp_task_t* tsk)
 
     return GMP_TASK_DONE;
 }
+
+//=================================================================================================
+// CiA402 default callback routine
 
 void ctl_enable_pwm()
 {

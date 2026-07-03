@@ -13,7 +13,7 @@
 #define _FILE_CTL_MAIN_H_
 
 #include <ctl/component/interface/adc_channel.h>
-#include <ctl/component/intrinsic/discrete/slope_f_pu.h>
+//#include <ctl/component/intrinsic/discrete/slope_f_pu.h>
 #include <ctl/framework/cia402_state_machine.h>
 #include <xplt.peripheral.h>
 

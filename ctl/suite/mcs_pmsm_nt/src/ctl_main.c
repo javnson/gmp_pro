@@ -8,9 +8,6 @@
 // User should implement a ctl loop function, this
 // function would be called every main loop.
 //
-// User should implement a state machine if you are using
-// Controller Nanon framework.
-//
 
 #include <gmp_core.h>
 
@@ -231,8 +228,26 @@ void ctl_mainloop(void)
     return;
 }
 
+void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
+{
+#if defined ENBALE_GMP_DL_PIL_SIM
+    ctl_input_callback_pil(rx);
+
+    ctl_dispatch();
+
+    ctl_output_callback_pil(tx);
+#endif // defined ENBALE_GMP_DL_PIL_SIM
+}
+
+#if defined ENBALE_GMP_DL_PIL_SIM
+time_gt gmp_base_get_ctrl_tick(void)
+{
+    return mtr_ctrl.isr_tick/((uint32_t)CONTROLLER_FREQUENCY/1000);
+}
+#endif // defined ENBALE_GMP_DL_PIL_SIM
+
 //=================================================================================================
-// CiA402 default callback routine
+// Controller Tasks
 
 gmp_task_status_t tsk_protect(gmp_task_t* tsk)
 {
@@ -260,6 +275,10 @@ gmp_task_status_t tsk_protect(gmp_task_t* tsk)
 
     return GMP_TASK_DONE;
 }
+
+
+//=================================================================================================
+// CiA402 default callback routine
 
 void ctl_enable_pwm()
 {
@@ -378,21 +397,5 @@ fast_gt ctl_exec_adc_calibration(void)
     return 1;
 }
 
-void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
-{
-#if defined ENBALE_GMP_DL_PIL_SIM
-    ctl_input_callback_pil(rx);
 
-    ctl_dispatch();
-
-    ctl_output_callback_pil(tx);
-#endif // defined ENBALE_GMP_DL_PIL_SIM
-}
-
-#if defined ENBALE_GMP_DL_PIL_SIM
-time_gt gmp_base_get_ctrl_tick(void)
-{
-    return mtr_ctrl.isr_tick/((uint32_t)CONTROLLER_FREQUENCY/1000);
-}
-#endif // defined ENBALE_GMP_DL_PIL_SIM
 
