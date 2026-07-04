@@ -1,3 +1,6 @@
+
+#include <gmp_core.h>
+
 #include <ctl/component/digital_power/sinv/sms_pq.h>
 
 void ctl_init_sms_pq(ctl_sms_pq_t* pq, parameter_gt grid_freq, parameter_gt fs, parameter_gt lpf_fc)

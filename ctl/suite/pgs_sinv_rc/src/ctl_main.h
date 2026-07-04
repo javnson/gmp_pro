@@ -25,6 +25,8 @@
 #include <ctl/component/digital_power/sinv/spll_sogi.h>
 #include <ctl/component/interface/hpwm_modulator.h>
 
+#include <core/dev/pil_core.h>
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -101,7 +103,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         ctl_step_single_phase_pll(&pll, adc_v_grid.control_port.value);
 
         // 2. Real-time PQ Measurement
-        ctl_step_sms_pq(&pq_meter, adc_v_grid.control_port.value, adc_i_ac.control_port.value, &pll.phasor);
+        ctl_step_sms_pq(&pq_meter, pll.uab.dat[phase_alpha], pll.uab.dat[phase_beta], adc_i_ac.control_port.value);
 
         // 3. Command Generation (P/Q to I_ref)
         if (cia402_sm.state_word.bits.operation_enabled)

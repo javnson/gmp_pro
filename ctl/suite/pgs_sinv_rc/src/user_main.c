@@ -44,10 +44,8 @@ const gmp_param_item_t dict_m1[] = {
     {&pll.frequency, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
 
     // Power Meter Observations
-    {&pq_meter.p_avg, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
-    {&pq_meter.q_avg, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
-    {&pq_meter.v_rms, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
-    {&pq_meter.i_rms, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&pq_meter.active_power_p, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&pq_meter.reactive_power_q, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
 
     // DC Bus Observation
     {&adc_v_bus.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
@@ -128,7 +126,7 @@ gmp_scheduler_t sched;
 // task manager
 
 // GPIO
-extern gpio_halt user_led;
+gpio_halt user_led;
 
 gmp_task_status_t tsk_blink(gmp_task_t* tsk)
 {

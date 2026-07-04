@@ -9,13 +9,13 @@
  *
  */
 
-#ifndef _FILE_SINGLE_PHASE_PLL_H_
-#define _FILE_SINGLE_PHASE_PLL_H_
-
 #include <ctl/component/interface/interface_base.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 #include <ctl/component/intrinsic/discrete/discrete_sogi.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
+
+#ifndef _FILE_SINGLE_PHASE_PLL_DC_H_
+#define _FILE_SINGLE_PHASE_PLL_DC_H_
 
 #ifdef __cplusplus
 extern "C"
@@ -152,4 +152,4 @@ GMP_STATIC_INLINE void ctl_step_single_phase_dc_pll(ctl_single_phase_dc_pll* spl
 }
 #endif // __cplusplus
 
-#endif // _FILE_SINGLE_PHASE_PLL_H_
+#endif // _FILE_SINGLE_PHASE_PLL_DC_H_

@@ -213,13 +213,13 @@ void send_monitor_data(void)
     CAN_sendMessage(IRIS_CAN_BASE, 4, 8, (uint16_t*)tran_content);
 
     // 0x202: Monitor Average Active(P) and Reactive(Q) Power
-    tran_content[0].i32 = (int32_t)(pq_meter.p_avg * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(pq_meter.q_avg * CAN_SCALE_FACTOR);
+//    tran_content[0].i32 = (int32_t)(pq_meter.p_avg * CAN_SCALE_FACTOR);
+//    tran_content[1].i32 = (int32_t)(pq_meter.q_avg * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 5, 8, (uint16_t*)tran_content);
 
     // 0x203: Monitor RMS Grid Voltage & RMS Inverter Current
-    tran_content[0].i32 = (int32_t)(pq_meter.v_rms * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(pq_meter.i_rms * CAN_SCALE_FACTOR);
+//    tran_content[0].i32 = (int32_t)(pq_meter.v_rms * CAN_SCALE_FACTOR);
+//    tran_content[1].i32 = (int32_t)(pq_meter.i_rms * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 6, 8, (uint16_t*)tran_content);
 
     // 0x204: Monitor Target AC Current (I_ref) & Modulator Duty Cycle Ref

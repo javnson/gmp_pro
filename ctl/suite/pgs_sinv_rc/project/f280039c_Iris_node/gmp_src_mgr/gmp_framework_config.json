@@ -1,5 +1,5 @@
 {
-    "sync_mode": "src_only",
+    "sync_mode": "all",
     "selected_modules": [
         {
             "root": "core",
@@ -72,6 +72,42 @@
         {
             "root": "ctl",
             "module": "component|digital_power|_internal"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv|_internal"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv|sinv_core"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv|sinv_core_rc"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv|sinv_proctect"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv|sinv_ref_gen"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv|sms_pq"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv|spfc"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv|spll_sogi"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv|spll_sogi_dc"
         },
         {
             "root": "ctl",
@@ -280,6 +316,10 @@
         {
             "root": "ctl",
             "module": "component|intrinsic|protection|itoc"
+        },
+        {
+            "root": "ctl",
+            "module": "component|intrinsic|protection|pt_sensor"
         },
         {
             "root": "ctl",

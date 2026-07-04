@@ -57,29 +57,29 @@
 // ---------------------------------------------------------
 // AC Voltage Sensing (Grid/Load Voltage)
 // ---------------------------------------------------------
-// 使用 56kΩ 降压电阻 (适合 ±154V 量程)
-#define CTRL_AC_VOLTAGE_SENSITIVITY QUAD_SENSOR_CALC_V_GAIN(56.0f)
+
+#define CTRL_AC_VOLTAGE_SENSITIVITY QUAD_SENSOR_V_SENSITIVE
 #define CTRL_AC_VOLTAGE_BIAS        QUAD_SENSOR_BASE_BIAS_V
 
 // ---------------------------------------------------------
 // AC Current Sensing (Inverter Current)
 // ---------------------------------------------------------
-// 10Arms 峰值为 14.1A。选用 TMCS1133-B2A (±31.0A 量程，50mV/A 灵敏度)
-#define CTRL_AC_CURRENT_SENSITIVITY QUAD_SENSOR_CALC_I_GAIN(TMCS1133_B2A_MV_A)
-#define CTRL_AC_CURRENT_BIAS        QUAD_SENSOR_BASE_BIAS_V
+
+#define CTRL_AC_CURRENT_SENSITIVITY GMP_LVFB_SENSOR_I_SENSITIVE
+#define CTRL_AC_CURRENT_BIAS        GMP_LVFB_CURRENT_BIAS_V
 
 // ---------------------------------------------------------
 // DC Bus Voltage Sensing
 // ---------------------------------------------------------
-// 直流母线 60V。使用 56kΩ 分压网络 (最大支持 154V，匹配母线电容与 MOSFET)
-#define CTRL_DC_VOLTAGE_SENSITIVITY QUAD_SENSOR_CALC_V_GAIN(56.0f)
-#define CTRL_DC_VOLTAGE_BIAS        QUAD_SENSOR_BASE_BIAS_V
+
+#define CTRL_DC_VOLTAGE_SENSITIVITY GMP_LVFB_SENSOR_V_SENSITIVE
+#define CTRL_DC_VOLTAGE_BIAS        GMP_LVFB_VOLTAGE_BIAS_V
 
 //=================================================================================================
 // System Protection Bounds (Derived from Hardware)
 
-#define CTRL_MAX_HW_VOLTAGE QUAD_SENSOR_CALC_V_MAX(56.0f)   // 154V
-#define CTRL_MAX_HW_CURRENT QUAD_SENSOR_CALC_I_MAX_A(50.0f) // 33A (ADC 饱和点)
+#define CTRL_MAX_HW_VOLTAGE GMP_LVFB_VBUS_MAX_V
+#define CTRL_MAX_HW_CURRENT GMP_LVFB_CURRENT_MAX_RMS_A
 
 #define CTRL_PROT_VBUS_MAX (100.0f)
 
@@ -120,6 +120,20 @@
 // System LED
 #define SYSTEM_LED     IRIS_LED1
 #define CONTROLLER_LED IRIS_LED2
+
+// Grid side Current Measurement
+#define INV_IAC_RESULT_BASE ADC_CH1_RESULT_BASE
+#define INV_IAC             ADC_CH1
+
+// Grid side Voltage Measurement
+#define INV_VAC_RESULT_BASE ADC_CH2_RESULT_BASE
+#define INV_VAC             ADC_CH2
+
+// DC bus voltage measurement
+#define INV_VBUS_RESULT_BASE ADC_CH3_RESULT_BASE
+#define INV_VBUS             ADC_CH3
+
+
 
 #endif // _FILE_CTRL_SETTINGS_H_
 

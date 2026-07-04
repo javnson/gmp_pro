@@ -18,7 +18,7 @@
 #include <ctl/component/interface/interface_base.h>
 
 #include <ctl/component/intrinsic/advance/fdrc.h>
-#include <ctl/component/intrinsic/discrete/filter_iir1.h>
+#include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <ctl/component/intrinsic/discrete/lead_lag.h>
 #include <ctl/component/intrinsic/discrete/proportional_resonant.h>
 
@@ -149,6 +149,12 @@ GMP_STATIC_INLINE void ctl_attach_sinv_rc(ctl_sinv_rc_core_t* core, adc_ift* _u_
     core->v_grid_fdbk = _u_ac;
 }
 
+// TODO
+GMP_STATIC_INLINE void ctl_clear_sinv_rc_core(ctl_sinv_rc_core_t* core)
+{
+
+}
+
 /*---------------------------------------------------------------------------*/
 /* Core Execution Step Function                                              */
 /*---------------------------------------------------------------------------*/
@@ -197,8 +203,8 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_rc_core(ctl_sinv_rc_core_t* core, ctrl_g
             ctl_enable_fdrc_integrating(&core->fdrc_ctrl); // Resume memory update
         }
 
-        // Execute FDRC step
-        core->u_fdrc = ctl_step_fdrc(&core->fdrc_ctrl, core->current_error);
+        // Execute FDRC step, using normal freq
+        core->u_fdrc = ctl_step_fdrc(&core->fdrc_ctrl, core->current_error, 50.0f);
     }
 
     // 5. Grid Voltage Feedforward

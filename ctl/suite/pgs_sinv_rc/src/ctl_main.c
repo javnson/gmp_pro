@@ -9,6 +9,8 @@
 #include "ctl_main.h"
 #include <ctrl_settings.h>
 
+#include <core/pm/function_scheduler.h>
+
 //=================================================================================================
 // 1. 全局变量定义与实例化 (Flat Architecture)
 
@@ -28,11 +30,6 @@ ctrl_gt g_p_ref_user = float2ctrl(0.0f);
 ctrl_gt g_q_ref_user = float2ctrl(0.0f);
 volatile fast_gt flag_system_running = 0;
 volatile fast_gt flag_error = 0;
-
-// ADC 采样通道定义 (硬件增益和偏置在 setup_peripheral 中配置)
-adc_channel_t adc_v_grid;
-adc_channel_t adc_i_ac;
-adc_channel_t adc_v_bus;
 
 // ADC 校准标志
 adc_bias_calibrator_t adc_calibrator;
@@ -106,7 +103,7 @@ void ctl_init(void)
 
     // PLL 与 PQ 计算初始化
     ctl_init_single_phase_pll(&pll, 10.0f, 0.02f, 20.0f, 50.0f, CONTROLLER_FREQUENCY);
-    ctl_init_sms_pq(&pq_meter, CONTROLLER_FREQUENCY, 50.0f);
+    ctl_init_sms_pq(&pq_meter, CONTROLLER_FREQUENCY, 50.0f, 200.0f);
 
     // 指令发生器初始化 (限幅保护: I_max, V_min, P_slope, Q_slope)
     // 爬坡斜率设定为: 有功 10.0 PU/s， 无功 20.0 PU/s
@@ -171,6 +168,25 @@ void ctl_mainloop(void)
 #endif
 }
 
+void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
+{
+#if defined ENBALE_GMP_DL_PIL_SIM
+    ctl_input_callback_pil(rx);
+
+    ctl_dispatch();
+
+    ctl_output_callback_pil(tx);
+#endif // defined ENBALE_GMP_DL_PIL_SIM
+}
+
+#if defined ENBALE_GMP_DL_PIL_SIM
+time_gt gmp_base_get_ctrl_tick(void)
+{
+    return mtr_ctrl.isr_tick/((uint32_t)CONTROLLER_FREQUENCY/1000);
+}
+#endif // defined ENBALE_GMP_DL_PIL_SIM
+
+
 //=================================================================================================
 // 5. 背景回调函数实现 (慢速保护与 ADC 校准)
 
@@ -183,9 +199,9 @@ gmp_task_status_t tsk_protect(gmp_task_t* tsk)
     GMP_UNUSED_VAR(tsk);
 
     // 执行慢保护检测 (交流有效值过欠压、温度、电网频率)
-    ctl_task_sinv_protect_slow(&protection, pq_meter.v_rms, pll.frequency,
-                               float2ctrl(25.0f), // Mock temp: 实际应接入板载温度传感器
-                               pq_meter.i_rms);
+//    ctl_task_sinv_protect_slow(&protection, pq_meter.v_rms, pll.frequency,
+//                               float2ctrl(25.0f), // Mock temp: 实际应接入板载温度传感器
+//                               pq_meter.i_rms);
 
     if (protection.active_errors != 0)
     {

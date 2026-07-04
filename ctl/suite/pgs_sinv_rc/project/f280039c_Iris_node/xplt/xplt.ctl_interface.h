@@ -31,7 +31,7 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
     // Note: Ensure the INV_VGRID_RESULT_BASE, INV_IAC_RESULT_BASE, etc.,
     // are correctly mapped to your hardware macros in xplt.peripheral.h
 
-    ctl_step_adc_channel(&adc_v_grid, ADC_readResult(INV_VGRID_RESULT_BASE, INV_VGRID));
+    ctl_step_adc_channel(&adc_v_grid, ADC_readResult(INV_VAC_RESULT_BASE, INV_VAC));
     ctl_step_adc_channel(&adc_i_ac, ADC_readResult(INV_IAC_RESULT_BASE, INV_IAC));
     ctl_step_adc_channel(&adc_v_bus, ADC_readResult(INV_VBUS_RESULT_BASE, INV_VBUS));
 }

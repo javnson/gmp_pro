@@ -10,8 +10,8 @@
  * @copyright Copyright GMP(c) 2024-2026
  */
 
-#ifndef _CTL_PROTECTION_H_
-#define _CTL_PROTECTION_H_
+#ifndef _CTL_PT100X_PROTECTION_H_
+#define _CTL_PT100X_PROTECTION_H_
 
 #ifdef __cplusplus
 extern "C"
@@ -106,4 +106,4 @@ GMP_STATIC_INLINE uint32_t ctl_step_prot_pt_sensor(ctl_prot_pt_sensor_t* node, p
 }
 #endif
 
-#endif // _CTL_PROTECTION_H_
+#endif // _CTL_PT100X_PROTECTION_H_
