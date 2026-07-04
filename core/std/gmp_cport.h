@@ -103,7 +103,7 @@ GMP_STATIC_INLINE time_gt gmp_base_time_sub(time_gt t1, time_gt t0)
 
 GMP_STATIC_INLINE time_gt gmp_base_time2tick(float time_s)
 {
-    return time_s * 1000.0f;
+    return (time_gt)(time_s * 1000.0f);
 }
 
 /**
@@ -198,6 +198,18 @@ void gmp_base_assert(void* condition);
 #include <assert.h>
 #define gmp_base_assert(assert_condition) assert(assert_condition)
 #endif // USE_GMP_BASE_ASSERT
+
+// Use assert will import lot of strings and judgment conditions.
+// in Controller release version these assert should be removed.
+// All the components in CTL will use this macro instead of gmp_base_assert.
+// So, in controller user may add macro DISABLE_CTL_LIB_ASSERT to 
+// disable all the ASSERT in control law.
+#if defined DISABLE_CTL_LIB_ASSERT
+#define gmp_ctl_assert(assert_cond) (void)(assert_condition)
+#else // DISABLE_CTL_LIB_ASSERT
+#define gmp_ctl_assert(assert_cond) gmp_base_assert(assert_cond)
+#endif // DISABLE_CTL_LIB_ASSERT
+
 // When a function is unimplemented, the function would be invoke.
 //
 void gmp_base_not_impl(const char* file, uint32_t line);

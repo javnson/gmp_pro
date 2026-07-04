@@ -1,0 +1,54 @@
+{
+    "project_name": "My_C2000_Servo_Drive",
+    "topology_ref": "pmsm_sensored_foc",
+
+    "global_environment": {
+        "adc_res": 12,
+        "adc_iqn": 24,
+        "voltage_base": 46.188,
+        "current_base": 10.0,
+        "timer_clock_hz": "100000000.0f"
+    },
+
+    "hardware_pool": {
+        "sys_config": {
+            "paradigm": "mcu_global_settings",
+            "instance": "global_f280049c_100mhz_20khz"
+        },
+        "main_inv_board": {
+            "paradigm": "inverter_board",
+            "instance": "brd_lvhb_v1_sic",
+            "is_composite": true
+        },
+        "ext_encoder": {
+            "paradigm": "encoder_autoturn",
+            "instance": "inst_enc_as5047p_14bit"
+        },
+        "mtr_load": {
+            "paradigm": "pmsm_consultant",
+            "instance": "mtr_sm060_24v_150w"
+        }
+    },
+
+    "role_mapping": {
+        "mcu_core": "sys_config",
+        "motor_plant": "mtr_load",
+        "modulator": "main_inv_board.modulator",
+        "phase_current": "main_inv_board.phase_current",
+        "dc_bus_voltage": "main_inv_board.bus_voltage",
+        "motor_encoder": "ext_encoder"
+    },
+
+    "overrides": {
+        "ext_encoder": {
+            "mech_offset_pu": 0.618
+        }
+    },
+
+    "custom_macros": {
+        "main_inv_board.curr_raw_data_source": "ADC_readResult(INV_IU_RESULT_BASE, INV_IU), ADC_readResult(INV_IV_RESULT_BASE, INV_IV), ADC_readResult(INV_IW_RESULT_BASE, INV_IW)",
+        "main_inv_board.vbus_raw_data_source": "ADC_readResult(INV_VBUS_RESULT_BASE, INV_VBUS)",
+        "ext_encoder.raw_data_source": "EQEP_getPosition(EQEP_Encoder_BASE)",
+        "modulator.current_feedback_ptr": "&SDPE_MAIN_INV_BOARD_PHASE_CURRENT_OBJ.control_port"
+    }
+}

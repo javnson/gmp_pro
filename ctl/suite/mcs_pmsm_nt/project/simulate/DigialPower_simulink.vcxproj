@@ -170,6 +170,7 @@
     <ClCompile Include="..\..\src\ctl_main.c" />
     <ClCompile Include="..\..\src\user_main.c" />
     <ClCompile Include="DigialPower_simulink.cpp" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\crc16.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_back_stepping.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_flc.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_flpid.c" />
@@ -218,6 +219,7 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_bldc_zcd_obs.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_dtc_svm_core.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_encoder.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_encoder_switcher.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_foc_core.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_imfoc_core.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_inverter_consultant.c" />
@@ -249,11 +251,15 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_sogi.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_track_pid.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\gmp_at_device.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\gmp_datalink.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\gmp_dev_util.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\gmp_mem_presp.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\gmp_mm_block_memory.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\gmp_pil_core.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\gmp_process_mgr.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\gmp_std_error_code.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\gmp_std_port.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\gmp_tunable.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\windows_peripheral_driver.cpp" />
     <ClCompile Include="gmp_src_mgr\gmp_src\windows_rt_tracer.cpp" />
     <ClCompile Include="gmp_src_mgr\gmp_src\windows_simulink_main.cpp" />

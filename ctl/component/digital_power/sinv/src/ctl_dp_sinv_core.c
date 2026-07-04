@@ -20,56 +20,93 @@
 
 #include <ctl/component/digital_power/sinv/sinv_core.h>
 
-void ctl_upgrade_sinv_param(sinv_ctrl_t* sinv, sinv_init_t* init)
+/**
+ * @brief Auto-tunes the SINV Core parameters based on rigorous analytical models.
+ * @param[in,out] init Pointer to the init structure.
+ */
+void ctl_auto_tuning_sinv_core(ctl_sinv_core_init_t* init)
 {
-    // --- Initialize grid synchronization modules ---
-    ctl_init_single_phase_pll(&sinv->spll, init->pll_ctrl_kp, init->pll_ctrl_Ti, init->pll_ctrl_cut_freq,
-                              init->base_freq, init->f_ctrl);
-    ctl_init_ramp_generator_via_freq(&sinv->rg, init->f_ctrl, init->base_freq, 1, 0);
+    // 1. Default Assignments for omitted tuning targets
+    if (init->current_loop_bw <= 0.001f)
+        init->current_loop_bw = init->fs / 15.0f;
+    if (init->qpr_wi <= 0.001f)
+        init->qpr_wi = 2.0f * 3.14159265f; // Standard 2 rad/s width
 
-    // --- Initialize sensor signal low-pass filters ---
-    ctl_init_lp_filter(&sinv->lpf_idc, init->f_ctrl, init->adc_filter_fc);
-    ctl_init_lp_filter(&sinv->lpf_udc, init->f_ctrl, init->adc_filter_fc);
-    ctl_init_lp_filter(&sinv->lpf_il, init->f_ctrl, init->adc_filter_fc);
-    ctl_init_lp_filter(&sinv->lpf_igrid, init->f_ctrl, init->adc_filter_fc);
-    ctl_init_lp_filter(&sinv->lpf_ugrid, init->f_ctrl, init->adc_filter_fc);
+    if (init->vgrid_lead_steps <= 0.001f)
+        init->vgrid_lead_steps = 1.5f; // Standard digital delay compensation
+    if (init->v_out_max_pu <= 0.001f)
+        init->v_out_max_pu = 1.0f;
 
-    // --- Initialize main controllers ---
-    ctl_init_pid_Tmode(&sinv->voltage_pid, init->v_ctrl_kp, init->v_ctrl_Ti, init->v_ctrl_Td, init->f_ctrl);
-    ctl_init_qpr_controller(&sinv->sinv_qpr_base, init->i_ctrl_kp, init->i_ctrl_kr, init->base_freq,
-                            init->i_ctrl_cut_freq, init->f_ctrl);
+    // 2. Analytical Parameter Derivation (PU Mapping)
+    parameter_gt z_base = init->v_base / init->i_base;
+    parameter_gt wc = 2.0f * 3.14159265f * init->current_loop_bw;
 
-    // --- Initialize harmonic compensation (Quasi-Resonant controllers) ---
-    ctl_init_qr_controller(&sinv->sinv_qr_3, init->harm_ctrl_kr_3, init->base_freq * 3.0f, init->harm_ctrl_cut_freq_3,
-                           init->f_ctrl);
-    ctl_init_qr_controller(&sinv->sinv_qr_5, init->harm_ctrl_kr_5, init->base_freq * 5.0f, init->harm_ctrl_cut_freq_5,
-                           init->f_ctrl);
-    ctl_init_qr_controller(&sinv->sinv_qr_7, init->harm_ctrl_kr_7, init->base_freq * 7.0f, init->harm_ctrl_cut_freq_7,
-                           init->f_ctrl);
-    ctl_init_qr_controller(&sinv->sinv_qr_9, init->harm_ctrl_kr_9, init->base_freq * 9.0f, init->harm_ctrl_cut_freq_9,
-                           init->f_ctrl);
+    // Kp Calculation (Plant Inductance dictates Proportional Gain)
+    parameter_gt kp_si = init->L_ac * wc;
+    init->kp_tuned = kp_si / z_base;
 
-    // --- Initialize AC signal measurement modules ---
-    ctl_init_sine_analyzer(&sinv->ac_current_measure, 0.01f, init->base_freq * 0.8f, init->base_freq * 1.2f,
-                           init->base_freq, init->f_ctrl);
-    ctl_init_sine_analyzer(&sinv->ac_voltage_measure, 0.01f, init->base_freq * 0.8f, init->base_freq * 1.2f,
-                           init->base_freq, init->f_ctrl);
+    // Kr Calculation for Fundamental (Pole-Zero Cancellation based on Resistance)
+    parameter_gt kr_si = init->R_ac * wc;
+    init->kr_fund_tuned = kr_si / z_base;
+
+    // Safety fallback if R_ac is extremely small or zero
+    if (init->kr_fund_tuned < (init->kp_tuned * 0.1f))
+    {
+        init->kr_fund_tuned = init->kp_tuned * 5.0f;
+    }
+
+    // Heuristic: Harmonic QPRs typically require slightly less gain to maintain stability margin
+    init->kr_harm_tuned = init->kr_fund_tuned * 0.5f;
 }
 
-void ctl_init_sinv_ctrl(sinv_ctrl_t* sinv, sinv_init_t* init)
+/**
+ * @brief Initializes the SINV Core using the tuned parameters.
+ * @note Unlike sinv_rc_core, this does NOT require an external buffer injection.
+ * @param[out] core Pointer to the core structure.
+ * @param[in]  init Pointer to the populated and tuned init structure.
+ */
+void ctl_init_sinv_core(ctl_sinv_core_t* core, const ctl_sinv_core_init_t* init)
 {
-    ctl_upgrade_sinv_param(sinv, init);
-    ctl_clear_sinv(sinv);
-    // Set a default power factor of 1.0 on initialization.
-    sinv->pf_set = 1;
-}
+    // 1. Init Fundamental QPR (Kp is only applied here)
+    ctl_init_qpr_controller(&core->qpr_base, float2ctrl(init->kp_tuned), float2ctrl(init->kr_fund_tuned),
+                            float2ctrl(init->freq_grid), float2ctrl(init->qpr_wi), float2ctrl(init->fs));
 
-void ctl_attach_sinv_with_adc(sinv_ctrl_t* sinv, adc_ift* _udc, adc_ift* _idc, adc_ift* il, adc_ift* ugrid,
-                              adc_ift* igrid)
-{
-    sinv->adc_idc = _idc;
-    sinv->adc_udc = _udc;
-    sinv->adc_il = il;
-    sinv->adc_igrid = igrid;
-    sinv->adc_ugrid = ugrid;
+    // 2. Init Harmonic QPRs (Kp MUST be 0 to prevent proportional gain stacking)
+    // Resonance frequency = freq_grid * Harmonic_Order
+    ctl_init_qpr_controller(&core->qpr_h3, float2ctrl(0.0f), float2ctrl(init->kr_harm_tuned),
+                            float2ctrl(init->freq_grid * 3.0f), float2ctrl(init->qpr_wi), float2ctrl(init->fs));
+    ctl_init_qpr_controller(&core->qpr_h5, float2ctrl(0.0f), float2ctrl(init->kr_harm_tuned),
+                            float2ctrl(init->freq_grid * 5.0f), float2ctrl(init->qpr_wi), float2ctrl(init->fs));
+    ctl_init_qpr_controller(&core->qpr_h7, float2ctrl(0.0f), float2ctrl(init->kr_harm_tuned),
+                            float2ctrl(init->freq_grid * 7.0f), float2ctrl(init->qpr_wi), float2ctrl(init->fs));
+    ctl_init_qpr_controller(&core->qpr_h9, float2ctrl(0.0f), float2ctrl(init->kr_harm_tuned),
+                            float2ctrl(init->freq_grid * 9.0f), float2ctrl(init->qpr_wi), float2ctrl(init->fs));
+    ctl_init_qpr_controller(&core->qpr_h11, float2ctrl(0.0f), float2ctrl(init->kr_harm_tuned),
+                            float2ctrl(init->freq_grid * 11.0f), float2ctrl(init->qpr_wi), float2ctrl(init->fs));
+    ctl_init_qpr_controller(&core->qpr_h13, float2ctrl(0.0f), float2ctrl(init->kr_harm_tuned),
+                            float2ctrl(init->freq_grid * 13.0f), float2ctrl(init->qpr_wi), float2ctrl(init->fs));
+    ctl_init_qpr_controller(&core->qpr_h15, float2ctrl(0.0f), float2ctrl(init->kr_harm_tuned),
+                            float2ctrl(init->freq_grid * 15.0f), float2ctrl(init->qpr_wi), float2ctrl(init->fs));
+
+    // 3. Init Feedforward Lead Compensator
+    parameter_gt vgrid_phase_delay = init->vgrid_lead_steps * (1.0f / init->fs) * init->freq_grid * 2.0f * 3.14159265f;
+    ctl_init_lead_form3(&core->vgrid_lead, float2ctrl(vgrid_phase_delay), float2ctrl(init->freq_grid),
+                        float2ctrl(init->fs));
+
+    // 4. Apply Safe Limits
+    core->v_out_max = float2ctrl(init->v_out_max_pu);
+
+    // 5. Ensure everything is explicitly disabled upon init
+    core->flag_enable_ctrl = 0;
+    core->flag_enable_harm_ctrl = 0;
+    core->flag_enable_lead_comp = 0;
+
+    // Safety init for interface pointers
+    core->v_grid_fdbk = NULL;
+    core->v_bus_fdbk = NULL;
+    core->i_fdbk = NULL;
+
+    core->current_error = float2ctrl(0.0f);
+    core->v_out_ref = float2ctrl(0.0f);
+    core->isr_tick = 0;
 }

@@ -1,0 +1,23 @@
+{
+    "database_name": "Standard SPWM Modulators Library",
+    "paradigm_ref": "spwm_modulator",
+    "version": "1.1",
+
+    "instances": {
+        "inst_mod_3ph_sic_gan": {
+            "description": "Standard compensation parameters for fast-switching SiC/GaN inverters",
+            "parameter_values": {
+                "current_deadband_pu": 0.02,
+                "current_hysteresis_pu": 0.005
+            }
+        },
+
+        "inst_mod_3ph_igbt": {
+            "description": "Standard compensation parameters for heavy IGBT modules",
+            "parameter_values": {
+                "current_deadband_pu": 0.03,
+                "current_hysteresis_pu": 0.008
+            }
+        }
+    }
+}

@@ -4,39 +4,62 @@
 // repetitive controller
 #include <ctl/component/intrinsic/advance/repetitive_controller.h>
 
-
-fast_gt ctl_init_repetitive_controller(ctl_repetitive_controller_t* rc, parameter_gt fs, parameter_gt f_fund,
-                                       parameter_gt q_filter_coeff,
-                                       ctrl_gt* external_buffer,
-                                       uint32_t max_buffer_capacity)
+void ctl_init_rc(ctl_rc_t* obj, ctrl_gt* buffer, uint32_t capacity, parameter_gt fs, parameter_gt f_min,
+                 parameter_gt q_gain, parameter_gt k_rc, int32_t phase_lead_k)
 {
-
-    // 1. 防呆与除零保护
+    gmp_base_assert(buffer != NULL);
     gmp_base_assert(fs > 0.0f);
-    gmp_base_assert(f_fund > 0.0f);
-    gmp_base_assert(external_buffer != 0); // 确保指针不为空
+    gmp_base_assert(f_min > 0.0f);
+    gmp_base_assert(capacity >= CTL_RC_CALC_MIN_CAPACITY(fs, f_min));
 
-    // 2. 计算需要的周期点数 N
-    uint32_t required_samples = (uint32_t)(fs / f_fund);
+    obj->buffer = buffer;
+    obj->buffer_capacity = capacity;
+    obj->phase_lead_k = phase_lead_k;
 
-    // 3. 内存安全终极防线：防止缓冲区溢出
-    if (required_samples > max_buffer_capacity || required_samples == 0)
-    {
-        // 如果基波频率太低，导致需要的点数超过了用户分配的内存，直接拒绝初始化
-        return 0;
-    }
+    obj->q_gain = float2ctrl(q_gain);
+    obj->k_rc = float2ctrl(k_rc);
 
-   // 4. 安全赋值
-    rc->period_samples = required_samples;
-    rc->state_buffer = external_buffer;
-    rc->q_filter_coeff = float2ctrl(q_filter_coeff);
+    obj->out_max = float2ctrl(1.0f);
+    obj->out_min = float2ctrl(-1.0f);
 
-    // 5. 设置默认限幅
-    rc->out_max = float2ctrl(1.0f);
-    rc->out_min = float2ctrl(-1.0f);
+    obj->fs = fs;
+    obj->f_min_rated = f_min;
 
-    // 6. 清理历史状态
-    ctl_clear_repetitive_controller(rc);
+    ctl_enable_rc_integrating(obj);
+    ctl_clear_rc(obj);
+}
 
-    return 1; // Success
+#include <ctl/component/intrinsic/advance/fdrc.h>
+
+void ctl_init_fdrc(ctl_fdrc_t* obj, ctrl_gt* buffer, uint32_t capacity, parameter_gt fs, parameter_gt f_min,
+                   parameter_gt q_fc, parameter_gt k_rc, int32_t phase_lead_k)
+{
+    // Memory and validity assertions
+    gmp_base_assert(buffer != NULL);
+    gmp_base_assert(fs > 0.0f);
+    gmp_base_assert(f_min > 0.0f);
+
+    // Ensure the provided capacity is physically large enough to hold the lowest frequency cycle
+    gmp_base_assert(capacity >= CTL_RC_CALC_MIN_CAPACITY(fs, f_min));
+
+    // Configure structural parameters
+    obj->buffer = buffer;
+    obj->buffer_capacity = capacity;
+    obj->phase_lead_k = phase_lead_k;
+    obj->k_rc = float2ctrl(k_rc);
+
+    obj->out_max = float2ctrl(1.0f);
+    obj->out_min = float2ctrl(-1.0f);
+
+    obj->fs = fs;
+    obj->f_min_rated = f_min;
+
+    // Enable learning by default
+    ctl_enable_fdrc_integrating(obj);
+
+    // Initialize the internal Q(z) Biquad filter as a Low-Pass Filter with Butterworth response
+    ctl_init_biquad_lpf(&obj->q_filter, fs, q_fc, 0.707f);
+
+    // Reset runtime states
+    ctl_clear_fdrc(obj);
 }

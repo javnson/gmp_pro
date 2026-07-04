@@ -116,43 +116,49 @@ void setup_peripheral(void)
 #define ISR_LOCAL_BUF_SIZE 1024
 
 // Using Windows console to simulate UART
-void at_device_flush_rx_buffer()
-{
-    uint16_t fifoLevel = 0;
-    uint16_t rxBuf[ISR_LOCAL_BUF_SIZE];
-
-    // 使用while一次性读取FIFO中的所有内容
-    while (_kbhit())
-    {
-        //_getch() 读取字符但不回显，也不等待回车
-        int ch = _getch();
-
-        // 处理特殊键 (例如方向键会产生两个码: 0/0xE0 和 键码)
-        // 这里我们简单处理，只接收普通 ASCII
-        if (ch == 0 || ch == 0xE0)
-        {
-            _getch(); // 读走无效部分
-            continue;
-        }
-
-        // 【重要】Windows控制台输入不自动回显，手动回显以便用户看到自己打的字
-        putchar(ch);
-
-        // 读取数据
-        rxBuf[fifoLevel++] = (uint16_t)ch;
-    }
-
-    // 推送给设备
-    if (fifoLevel > 0)
-    {
-        at_device_rx_isr(&at_dev, (char*)rxBuf, fifoLevel);
-    }
-}
+//void at_device_flush_rx_buffer()
+//{
+//    uint16_t fifoLevel = 0;
+//    uint16_t rxBuf[ISR_LOCAL_BUF_SIZE];
+//
+//    // 使用while一次性读取FIFO中的所有内容
+//    while (_kbhit())
+//    {
+//        //_getch() 读取字符但不回显，也不等待回车
+//        int ch = _getch();
+//
+//        // 处理特殊键 (例如方向键会产生两个码: 0/0xE0 和 键码)
+//        // 这里我们简单处理，只接收普通 ASCII
+//        if (ch == 0 || ch == 0xE0)
+//        {
+//            _getch(); // 读走无效部分
+//            continue;
+//        }
+//
+//        // 【重要】Windows控制台输入不自动回显，手动回显以便用户看到自己打的字
+//        putchar(ch);
+//
+//        // 读取数据
+//        rxBuf[fifoLevel++] = (uint16_t)ch;
+//    }
+//
+//    // 推送给设备
+//    if (fifoLevel > 0)
+//    {
+//        // AT device has been canceled.
+//        //at_device_rx_isr(&at_dev, (char*)rxBuf, fifoLevel);
+//    }
+//}
 
 // Execute RT monitor
 void send_monitor_data(void)
 {
     //gmp_trace_rt_log_double(trt_node[TRT_TEST], inv_ctrl.isr_tick, inv_ctrl.vab0.dat[phase_A]);
+}
+
+void flush_dl_rx_buffer()
+{
+    // Data link module RX callback function
 }
 
 #ifdef __cplusplus

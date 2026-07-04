@@ -1,0 +1,40 @@
+{
+    "topology_name": "Standard_PMSM_Sensored_FOC",
+    "description": "Sensored PMSM FOC Drive Framework Topology",
+
+    "required_roles": [
+        {
+            "name": "mcu_core",
+            "allowed_paradigms": [ "mcu_global_settings" ]
+        },
+        {
+            "name": "motor_plant",
+            "allowed_paradigms": [ "pmsm_consultant" ]
+        },
+        {
+            "name": "modulator",
+            "allowed_paradigms": [ "spwm_modulator" ]
+        },
+        {
+            "name": "phase_current",
+            "allowed_paradigms": [ "current_shunt", "current_hall" ]
+        },
+        {
+            "name": "dc_bus_voltage",
+            "allowed_paradigms": [ "voltage_divider", "voltage_sensor" ]
+        },
+        {
+            "name": "motor_encoder",
+            "allowed_paradigms": [ "encoder_autoturn" ]
+        }
+    ],
+
+    "exported_api": {
+        "CTRL_ADC_VOLTAGE_REF": "{mcu_core.ADC_VREF}",
+        "CONTROLLER_FREQUENCY": "{mcu_core.CONTROLLER_FREQ_HZ}",
+        "CTRL_MAX_PHASE_CURRENT": "{phase_current.MAX_CONT_ARMS}",
+        "CTRL_MAX_BUS_VOLTAGE": "{dc_bus_voltage.MAX_VOLTAGE_V}",
+        "CTRL_ENCODER_OFFSET_PU": "{motor_encoder.MECH_OFFSET_PU}",
+        "CTRL_MOTOR_POLE_PAIRS": "{motor_plant.POLE_PAIRS}"
+    }
+}

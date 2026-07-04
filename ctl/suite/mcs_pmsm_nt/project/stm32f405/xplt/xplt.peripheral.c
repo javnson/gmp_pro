@@ -15,7 +15,6 @@
 #include "user_main.h"
 #include <xplt.peripheral.h>
 
-
 //////////////////////////////////////////////////////////////////////////
 // definitions of peripheral
 //
@@ -42,10 +41,15 @@ adc_gt idc_src;
 // ext_as5048a_encoder_t pos_enc;
 uint32_t counter;
 
+// GPIO port
+gpio_model_stm32_t user_led_entity;
+extern gpio_halt user_led;
+
 // a local small cache size, capable of covering the depth of the hardware FIFO (typically 16 bytes)
 #define ISR_LOCAL_BUF_SIZE 16
+
+// DMA buffer for UART
 uint8_t rxBuf[ISR_LOCAL_BUF_SIZE];
-volatile uint16_t last_read_pos = 0;
 
 /////////////////////////////////////////////////////////////////////////
 // peripheral setup function
@@ -59,8 +63,11 @@ void setup_peripheral(void)
 
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
 
-		HAL_Delay(1);
-	
+    user_led_entity.gpio_port = GPIOC;
+		user_led_entity.gpio_pin = GPIO_PIN_13;
+	  user_led = &user_led_entity;
+
+    HAL_Delay(1);
 
     // inverter side ADC
     ctl_init_tri_ptr_adc_channel(
@@ -95,20 +102,19 @@ void setup_peripheral(void)
         // ADC resolution, IQN
         12, 24);
 
-
     //ctl_init_autoturn_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, ((uint32_t)1 << 14) - 1);
-//    ctl_init_as5048a_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, SPI_ENCODER_BASE, SPI_ENCODER_NCS);
+    //    ctl_init_as5048a_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, SPI_ENCODER_BASE, SPI_ENCODER_NCS);
 
-		// init TIM3 for QEP encoder
-		HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
-
+    // init TIM3 for QEP encoder
+    HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
+    
     //
     // attach
     //
 #if BUILD_LEVEL <= 2
-    ctl_attach_mtr_current_ctrl_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &rg.enc, &spd_enc.encif);
+    ctl_attach_foc_core_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &rg.enc, &spd_enc.encif);
 #else  // BUILD_LEVEL
-    ctl_attach_mtr_current_ctrl_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &pos_enc.encif, &spd_enc.encif);
+    ctl_attach_foc_core_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &pos_enc.encif, &spd_enc.encif);
 #endif // BUILD_LEVEL
 
 
@@ -122,21 +128,18 @@ void setup_peripheral(void)
     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
-		HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
-		
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+
     HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
     HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
     HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
 
-		// Enable DAC channels
-		HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
-		HAL_DAC_Start(&hdac, DAC_CHANNEL_2);
-		
-		// Enable UART RX DMA
-		HAL_UART_Receive_DMA(debug_uart, rxBuf, ISR_LOCAL_BUF_SIZE);
+    // Enable DAC channels
+    HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
+    HAL_DAC_Start(&hdac, DAC_CHANNEL_2);
 
-
-
+    // Enable UART RX DMA
+    HAL_UART_Receive_DMA(debug_uart, rxBuf, ISR_LOCAL_BUF_SIZE);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -157,13 +160,13 @@ void setup_peripheral(void)
   *         the configuration information for the specified ADC.
   * @retval None
   */
-void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
+void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-	if (hadc == &hadc1)
+    if (hadc == &hadc1)
     {
         gmp_base_ctl_step();
         counter++;
-        if(counter >= 1000)   
+        if (counter >= 1000)
         {
             HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
             counter = 0;
@@ -178,78 +181,97 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
   */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-		// Index
-    if(GPIO_Pin == GPIO_PIN_9)
+    // Index
+    if (GPIO_Pin == GPIO_PIN_9)
     {
         __HAL_TIM_SET_COUNTER(&htim3, 0);
-        
     }
 }
 
 void send_monitor_data(void)
-{}
-
-	
-
-	
-void at_device_flush_rx_buffer(void)
 {
-// 1. 获取当前 DMA 写指针位置
-    // __HAL_DMA_GET_COUNTER 返回的是 DMA 还需要传输的数据量（剩余量）
-    // 因此当前写入的绝对位置 = 总长度 - 剩余量
+}
+
+//=================================================================================================
+// Debug interface
+
+extern gmp_datalink_t dl;
+
+
+
+uart_halt dl_uart_channel;
+
+void flush_dl_tx_buffer()
+{
+    // Send head
+    gmp_hal_uart_write(debug_uart, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl), gmp_dev_dl_get_tx_hw_hdr_size(&dl), 10);
+
+    // Send data body, if necessary
+    if (gmp_dev_dl_get_tx_hw_pld_size(&dl) > 0)
+    {
+        gmp_hal_uart_write(debug_uart, gmp_dev_dl_get_tx_hw_pld_ptr(&dl), gmp_dev_dl_get_tx_hw_pld_size(&dl), 10);
+    }
+}
+
+void flush_dl_rx_buffer(void)
+{
+    static volatile uint16_t last_read_pos = 0;
+
+    // Get current DMA position, __HAL_DMA_GET_COUNTER wil get remaining quantity
     uint16_t current_pos = ISR_LOCAL_BUF_SIZE - __HAL_DMA_GET_COUNTER(debug_uart->hdmarx);
 
-    // 2. 临界区保护开始：防止主循环执行到一半时被中断抢占导致逻辑混乱
+    // No new data arrived, return directly
+    if (current_pos == last_read_pos)
+        return;
+
+    // Stop IRQ, prevent interruptting reading progress
     uint32_t primask = __get_PRIMASK();
     __disable_irq();
-
-    // 如果没有新数据，直接退出
-    if (current_pos == last_read_pos) {
-        __set_PRIMASK(primask);
-        return;
-    }
 
     uint16_t len1 = 0, len2 = 0;
     uint16_t start1 = last_read_pos, start2 = 0;
 
-    // 3. 计算需要读取的数据长度（处理环形缓冲区的折返）
-    if (current_pos > last_read_pos) {
-        // 正常线性增长
+    // Calculate valid length of DMA
+    if (current_pos > last_read_pos)
+    {
+        // No warparound scene
         len1 = current_pos - last_read_pos;
-    } else {
-        // DMA 指针已经折返 (Wraparound) 到缓冲区开头
-        // 第一段：从上次读取位置到缓冲区末尾
+    }
+    else
+    {
+        // Warparound scene, two section of length
         len1 = ISR_LOCAL_BUF_SIZE - last_read_pos;
-        // 第二段：从缓冲区开头到当前写指针位置
         len2 = current_pos;
     }
 
-    // 更新读指针
+    // update last position
     last_read_pos = current_pos;
 
-    // 4. 临界区保护结束：恢复中断
-    // 注意：我们将耗时的 AT 串口提交流程放在开中断之后执行，尽量缩短关中断的时间
+    // recover IQR
     __set_PRIMASK(primask);
 
-    // 5. 提交数据给 AT 控制器
-    if (len1 > 0) {
-        at_device_rx_isr(&at_dev, (char*)&rxBuf[start1], len1);
-    }
-    if (len2 > 0) { // 只有在发生折返时，len2 才会大于 0
-        at_device_rx_isr(&at_dev, (char*)&rxBuf[start2], len2);
+    // Lock-free ring queue pushed into the protocol stack (very fast, O(1))
+    if (len1 > 0)
+        gmp_dev_dl_push_str(&dl, (data_gt*)&rxBuf[start1], len1);
+
+    if (len2 > 0)
+        gmp_dev_dl_push_str(&dl, (data_gt*)&rxBuf[start2], len2);
+}
+
+// DMA half-full callback
+void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef* huart)
+{
+    if (huart->Instance == USART2)
+    {
+        flush_dl_rx_buffer();
     }
 }
 
-// DMA 接收半满回调
-void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart) {
-    if (huart->Instance == USART2) { // 替换为你的实际串口
-        at_device_flush_rx_buffer();
-    }
-}
-
-// DMA 接收全满（完成）回调
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-    if (huart->Instance == USART2) { // 替换为你的实际串口
-        at_device_flush_rx_buffer();
+// DMA full callback
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart)
+{
+    if (huart->Instance == USART2)
+    {
+        flush_dl_rx_buffer();
     }
 }

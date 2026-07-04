@@ -71,7 +71,10 @@ typedef struct _tag_channel_base_t
  */
 GMP_STATIC_INLINE ctrl_gt ctl_get_adc_result(adc_ift* adc)
 {
-    return adc->value;
+    if (adc != NULL)
+        return adc->value;
+    else
+        return 0;
 }
 
 /**

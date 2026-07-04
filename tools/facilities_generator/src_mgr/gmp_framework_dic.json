@@ -961,7 +961,6 @@
                 ],
                 "depends_on": [
                     "ctl|component|_internal",
-                    "ctl|component|dsa",
                     "ctl|component|kinematics"
                 ],
                 "inc_dirs": [
@@ -1103,7 +1102,8 @@
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/encoder.h",
                     "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/motor_universal_interface.h",
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/std_sil_motor_interface.h"
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/std_sil_motor_interface.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/encoder_switcher.h"
                 ],
                 "depends_on": [],
                 "inc_dirs": [
@@ -4067,11 +4067,16 @@
             "component|digital_power|dcdc": {
                 "type": "module",
                 "description": "",
-                "src_patterns": [],
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/src/dcdc_core.c",
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/src/dcdc_boost_hw.c",
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/src/dcdc_fsbb_hw.c",
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/src/dcdc_buck_hw.c"
+                ],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/boost.h",
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/buck.h",
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/buckboost.h"
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/fsbb.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
@@ -4351,49 +4356,6 @@
                 ],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/interface/hpwm_modulator.h"
-                ],
-                "inc_dirs": [],
-                "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
-                    }
-                ]
-            },
-            "component|digital_power|rectifier|_internal": {
-                "type": "module",
-                "description": "",
-                "src_patterns": [],
-                "inc_patterns": [],
-                "inc_dirs": [],
-                "help_docs": [],
-                "depends_on": []
-            },
-            "component|digital_power|rectifier|vienna": {
-                "type": "module",
-                "description": "",
-                "src_patterns": [],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/rectifier/Vienna.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
@@ -5024,6 +4986,186 @@
                 ],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/dsa/dsa_trigger.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|sinv|sinv_core_rc": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/sinv/src/ctl_dp_sinv_rc_core.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/sinv/sinv_rc_core.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|sinv|sinv_proctect": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/sinv/src/ctl_dp_sinv_protect.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/sinv/sinv_protect.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|sinv|sinv_ref_gen": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/sinv/src/ctl_sinv_ref_gen.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/sinv/sinv_ref_gen.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|protection|pt_sensor": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/protection/src/ctl_prot_pt100x.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/protection/pt100x.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|sinv|sms_pq": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/sinv/src/ctl_dp_sms_pq.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/sinv/sms_pq.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],

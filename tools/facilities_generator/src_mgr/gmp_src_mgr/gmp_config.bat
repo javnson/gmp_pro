@@ -14,6 +14,9 @@ if "%GMP_PRO_LOCATION%"=="" (
     exit /b 1
 )
 
+:: Change to correct position, where the script's location
+cd /d "%~dp0"
+
 :: Launch Configurator GUI
 python "%GMP_PRO_LOCATION%\tools\facilities_generator\src_mgr\framework_user_gui_v10.py"
 

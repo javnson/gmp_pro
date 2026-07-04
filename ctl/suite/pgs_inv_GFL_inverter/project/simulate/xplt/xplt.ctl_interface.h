@@ -93,7 +93,7 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
 
     // Scope 2
     simulink_tx_buffer.monitor[2] = inv_ctrl.iabc.dat[phase_A];
-    simulink_tx_buffer.monitor[3] = tri_wave.output;
+    simulink_tx_buffer.monitor[3] = 0;
 
     // Scope 3
     simulink_tx_buffer.monitor[4] = inv_ctrl.vab0.dat[phase_alpha];

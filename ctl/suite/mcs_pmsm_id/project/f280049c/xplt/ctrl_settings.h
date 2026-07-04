@@ -40,8 +40,8 @@
 #define BOOSTXL_3PHGANINV_IS_DEFAULT_PARAM
 
 // invoke motor parameters
-//#include <ctl/component/hardware_preset/pmsm_motor/SM060R20B30MNAD.h>
-#include <ctl/component/hardware_preset/pmsm_motor/TYI_5008_KV335.h>
+#include <ctl/component/hardware_preset/pmsm_motor/SM060R20B30MNAD.h>
+//#include <ctl/component/hardware_preset/pmsm_motor/TYI_5008_KV335.h>
 
 
 // invoke motor controller parameters
@@ -66,7 +66,7 @@
 // Controller Base value
 
 // DC bus voltage
-#define CTRL_DCBUS_VOLTAGE (24.0f)
+#define CTRL_DCBUS_VOLTAGE (36.0f)
 
 // phase voltage base, SVPWM modulation
 #define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE / 1.73205081f)
@@ -75,7 +75,7 @@
 //#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE / 2.0f)
 
 // Current base, 10 A
-#define CTRL_CURRENT_BASE (4.0f)
+#define CTRL_CURRENT_BASE (10.0f)
 
 ///////////////////////////////////////////////////////////
 // inverter side sensor

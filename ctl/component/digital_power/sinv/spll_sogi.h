@@ -66,7 +66,7 @@ typedef struct _tag_single_phase_pll
     ctl_pid_t spll_ctrl;             /**< The PI controller that acts as the loop filter. */
     ctl_low_pass_filter_t filter_uq; /**< Low-pass filter for the q-axis component to reduce harmonics. */
 
-} ctl_single_phase_pll;
+} ctl_single_phase_pll, spll_sogi_t;
 
 /**
  * @brief Initializes the Single-Phase PLL module.

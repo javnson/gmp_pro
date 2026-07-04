@@ -140,6 +140,59 @@ void ctl_init_pwm_tri_channel(pwm_tri_channel_t* pwm_obj, pwm_gt phase, pwm_gt f
 }
 
 //////////////////////////////////////////////////////////////////////////
+// Advanced Single PWM Channel Realization
+
+#include <ctl/component/interface/adv_pwm_channel.h>
+
+void ctl_init_adv_pwm_channel(adv_pwm_channel_t* pwm_obj, pwm_gt nominal_period_base)
+{
+    gmp_base_assert(pwm_obj != NULL);
+    gmp_base_assert(nominal_period_base > 0);
+
+    /* 1. Reset input per-unit interfaces workspace to absolute safe zero states */
+    pwm_obj->raw.period = float2ctrl(0.0f);
+    pwm_obj->raw.phase = float2ctrl(0.0f);
+    pwm_obj->raw.duty = float2ctrl(0.0f);
+
+    /* 2. Load global static hardware timebase baseline */
+    pwm_obj->period_base = nominal_period_base;
+
+    /* 3. Pre-load default output hardware registers image with safety constraints */
+    pwm_obj->period = nominal_period_base; /* Cold-start with full scale nominal period ticks */
+    pwm_obj->phase = 0;                    /* Zero default startup shift ticks */
+    pwm_obj->duty = 0;                     /* Zero default startup active output width */
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Advanced Dual PWM Channel Realization
+
+void ctl_init_adv_pwm_dual_channel(adv_pwm_dual_channel_t* pwm_obj, pwm_gt nominal_period_base)
+{
+    fast_gt i;
+    gmp_base_assert(pwm_obj != NULL);
+    gmp_base_assert(nominal_period_base > 0);
+
+    /* 1. Reset shared period timebase reference input */
+    pwm_obj->raw.period = float2ctrl(0.0f);
+
+    /* 2. Concurrent vectorized interface array space initialization */
+    for (i = 0; i < 2; ++i)
+    {
+        pwm_obj->raw.phase[i] = float2ctrl(0.0f);
+        pwm_obj->raw.duty[i] = float2ctrl(0.0f);
+
+        pwm_obj->phase[i] = 0;
+        pwm_obj->duty[i] = 0;
+    }
+
+    /* 3. Load global static hardware timebase baseline */
+    pwm_obj->period_base = nominal_period_base;
+
+    /* 4. Pre-load default output shared hardware period capacity ticks */
+    pwm_obj->period = nominal_period_base;
+}
+
+//////////////////////////////////////////////////////////////////////////
 // ADC ptr channel init functions
 
 #include <ctl/component/interface/adc_ptr_channel.h>

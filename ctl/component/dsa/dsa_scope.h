@@ -8,8 +8,10 @@
  */
 
 #include <stdarg.h>
+#include <stdint.h>
 
 #include <ctl/math_block/utilities/mem_view.h>
+#include <ctl/component/intrinsic/basic/divider.h>
 
 #ifndef _FILE_CTL_DSA_SCOPE_H_
 #define _FILE_CTL_DSA_SCOPE_H_

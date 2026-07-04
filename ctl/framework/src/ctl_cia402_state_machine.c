@@ -659,7 +659,7 @@ void cia402_dispatch(cia402_sm_t* sm)
     cia402_update_status_word(sm);
 
     // 5. finally, clear the command
-//    sm->current_cmd = CIA402_CMD_NULL;
+    //    sm->current_cmd = CIA402_CMD_NULL;
 
     // update counter
     sm->current_state_counter += 1;
@@ -913,6 +913,17 @@ cia402_sm_error_code_t default_cb_fn_fault(cia402_sm_t* sm)
         ctl_disable_grid_relay();
         ctl_disable_precharge_relay();
     }
+
+#ifndef CTL_FM_DISABLE_FAULT_RESET
+    if (sm->current_cmd == CIA402_CMD_FAULT_RESET)
+    {
+        // Try to recovery from fault state.
+        if (ctl_fault_recover_routine())
+        {
+            sm->flag_fault_reset_request = 1;
+        }
+    }
+#endif // CTL_FM_DISABLE_FAULT_RESET
 
     // nothing happened. 等待 Reset 信号
     return CIA402_EC_KEEP;

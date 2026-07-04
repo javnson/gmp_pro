@@ -1,0 +1,27 @@
+{
+    "database_name": "Standard Power Switches Library",
+    "paradigm_ref": "mosfet_switch",
+    "version": "1.0",
+    "instances": {
+        "sw_c3m0065090d_sic": {
+            "description": "Wolfspeed 900V 65mOhm SiC MOSFET",
+            "parameter_values": {
+                "vds_max_v": 900.0,
+                "id_cont_a": 36.0,
+                "turn_on_delay_ns": 24.0,
+                "turn_off_delay_ns": 32.0,
+                "rds_on_mohm": 65.0
+            }
+        },
+        "sw_fgh40n60_igbt": {
+            "description": "onsemi 600V 40A Field Stop IGBT",
+            "parameter_values": {
+                "vds_max_v": 600.0,
+                "id_cont_a": 40.0,
+                "turn_on_delay_ns": 80.0,
+                "turn_off_delay_ns": 320.0,
+                "rds_on_mohm": 0.0
+            }
+        }
+    }
+}
