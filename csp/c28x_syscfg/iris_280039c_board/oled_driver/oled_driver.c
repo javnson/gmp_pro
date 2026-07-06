@@ -6,6 +6,8 @@
 
 #include <core/pm/function_scheduler.h>
 
+#define TIMEOUT_SET 40
+
 
 /**
  * @brief  Re-implementation of official OLED_WR_Byte using your custom HAL.
@@ -15,7 +17,7 @@
 void OLED_WR_Byte(uint8_t dat, uint8_t cmd)
 {
     /* Use an explicit tick timeout value for C2000 blocking execution */
-    const time_gt timeout_ticks = 200;
+    const time_gt timeout_ticks = TIMEOUT_SET;
     uint32_t control_byte = (cmd != 0) ? 0x40 : 0x00;
 
     /*
@@ -32,7 +34,7 @@ void OLED_WR_Byte(uint8_t dat, uint8_t cmd)
  */
 void oled_set_position(uint8_t x, uint8_t y_page)
 {
-    const time_gt timeout_ticks = 2000;
+    const time_gt timeout_ticks = TIMEOUT_SET;
     static data_gt pos_cmds[4];
 
     pos_cmds[0] = 0x00;                           /* Control Byte: Following are commands */
@@ -50,7 +52,7 @@ void oled_set_position(uint8_t x, uint8_t y_page)
  */
 void oled_display_on(void)
 {
-    const time_gt timeout_ticks = 2000;
+    const time_gt timeout_ticks = TIMEOUT_SET;
     static data_gt on_cmds[4];
 
     on_cmds[0] = 0x00; /* Control Byte: Following are commands */
@@ -66,7 +68,7 @@ void oled_display_on(void)
  */
 void oled_display_off(void)
 {
-    const time_gt timeout_ticks = 2000;
+    const time_gt timeout_ticks = TIMEOUT_SET;
     static data_gt off_cmds[4];
 
     off_cmds[0] = 0x00; /* Control Byte: Following are commands */
@@ -83,7 +85,7 @@ void oled_display_off(void)
  */
 void oled_clear(void)
 {
-    const time_gt timeout_ticks = 2000;
+    const time_gt timeout_ticks = TIMEOUT_SET;
 
     /* 1. Pack commands into a single packet to target Page and Column addresses */
     static data_gt page_cmd[4];
@@ -128,7 +130,7 @@ void oled_show_char(uint8_t x, uint8_t y_page, uint8_t chr)
 {
     uint16_t i;
 
-    const time_gt timeout_ticks = 2000;
+    const time_gt timeout_ticks = TIMEOUT_SET;
     uint8_t c_offset = chr - ' '; /* Calculate ASCII matrix offset index */
 
     /*
@@ -214,7 +216,7 @@ void oled_show_str(uint8_t x, uint8_t y_page, const char *str)
  */
 void oled_show_bmp(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1, unsigned char BMP[])
 {
-    const time_gt timeout_ticks = 2000;
+    const time_gt timeout_ticks = TIMEOUT_SET;
     unsigned int bmp_idx = 0;
     unsigned char y_page;
     uint16_t x;

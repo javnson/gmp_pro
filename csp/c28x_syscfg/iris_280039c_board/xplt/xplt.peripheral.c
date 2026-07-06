@@ -60,7 +60,7 @@ void initI2C()
     //
     // I2C configuration. Use a 400kHz I2CCLK with a 33% duty cycle.
     //
-    I2C_initController(I2CA_BASE, DEVICE_SYSCLK_FREQ, 200000, I2C_DUTYCYCLE_33);
+    I2C_initController(I2CA_BASE, DEVICE_SYSCLK_FREQ, 400000, I2C_DUTYCYCLE_33);
     I2C_setBitCount(I2CA_BASE, I2C_BITCOUNT_8);
     I2C_setTargetAddress(I2CA_BASE, 0x70);
     I2C_setEmulationMode(I2CA_BASE, I2C_EMULATION_FREE_RUN);
