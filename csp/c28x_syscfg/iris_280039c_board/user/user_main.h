@@ -35,6 +35,8 @@ extern iic_halt iic_bus;
 extern ht16k33_dev_t ht16k33;
 extern hdc1080_dev_t hdc1080;
 
+extern volatile uint16_t flag_init_cmpt;
+
 //=================================================================================================
 // global functions
 
@@ -55,6 +57,7 @@ gmp_task_status_t tsk_startup(gmp_task_t* tsk);
 gmp_task_status_t tsk_key_flush(gmp_task_t* tsk);
 gmp_task_status_t tsk_LED_flush(gmp_task_t* tsk);
 gmp_task_status_t fpga_test_task(gmp_task_t* tsk);
+gmp_task_status_t oled_show_task(gmp_task_t* tsk);
 
 
 // peripheral function

@@ -146,16 +146,6 @@ gmp_task_status_t tsk_blink(gmp_task_t* tsk)
         gmp_hal_gpio_write(user_led, 1);
     }
 
-    static uint16_t index;
-
-    char output_msg[32];
-
-    if (flag_init_cmpt == 1)
-    {
-        sprintf(output_msg, "index: %d C", index++);
-        oled_show_str(0, 2, output_msg);
-    }
-
     return GMP_TASK_DONE;
 }
 
@@ -169,6 +159,7 @@ gmp_task_t tasks[] = {
     // name,     task,      period(ms),  init_phase, is_enabled, pParam
     {"blink_led", tsk_blink, 1000, 100, 1, NULL},
     {"fpga_test", fpga_test_task, 1000, 600, 1, NULL},
+    {"oled_show", oled_show_task, 1000, 500, 1, NULL},
     {"dl_online", tsk_dl_debug_device, 2, 0, 1, NULL},
     {"flush_key", tsk_key_flush, 100, 10, 1, (void*)&ht16k33},
     {"flush_led", tsk_LED_flush, 500, 200, 1, (void*)&ht16k33},
@@ -227,8 +218,8 @@ gmp_task_status_t tsk_startup(gmp_task_t* tsk)
 
         if (ec == GMP_EC_OK)
         {
-            sched.task_list[3]->is_enabled = 1;
             sched.task_list[4]->is_enabled = 1;
+            sched.task_list[5]->is_enabled = 1;
         }
 
         // init and test the oled.
