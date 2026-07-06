@@ -25,36 +25,35 @@
 //=================================================================================================
 // global controller variables
 
-// state machine
+// System framework
 cia402_sm_t cia402_sm;
 
-// modulator: SPWM modulator / SVPWM modulator / NPC modulator
-#if defined USING_NPC_MODULATOR
-npc_modulator_t spwm;
-#else
-spwm_modulator_t spwm;
-#endif // USING_NPC_MODULATOR
-
-// controller body: Current controller, Power controller / Voltage controller
+// Control Law Core
+// Current controller, Power controller / Voltage controller
 gfl_pq_ctrl_t pq_ctrl;
 inv_neg_ctrl_init_t gfl_neg_init;
 inv_neg_ctrl_t neg_current_ctrl;
 gfl_inv_ctrl_init_t gfl_init;
 gfl_inv_ctrl_t inv_ctrl;
 
-// Observer: PLL
+// Input channel
 
-// additional controller: harmonic management, negative current controller
+// Output channel: SPWM modulator / SVPWM modulator / NPC modulator
+#if defined USING_NPC_MODULATOR
+npc_modulator_t spwm;
+#else
+spwm_modulator_t spwm;
+#endif // USING_NPC_MODULATOR
 
-//
-volatile fast_gt flag_system_running = 0;
-volatile fast_gt flag_error = 0;
+// Protection module
 
-// adc calibrator flags
+// ADC Calibrator
 adc_bias_calibrator_t adc_calibrator;
 //volatile fast_gt flag_enable_adc_calibrator = 1;
 volatile fast_gt flag_enable_adc_calibrator = 0;
 volatile fast_gt index_adc_calibrator = 0;
+
+// User commands
 
 //=================================================================================================
 // CTL initialize routine
@@ -174,6 +173,24 @@ void ctl_mainloop(void)
 
     return;
 }
+
+void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
+{
+#if defined ENBALE_GMP_DL_PIL_SIM
+    ctl_input_callback_pil(rx);
+
+    ctl_dispatch();
+
+    ctl_output_callback_pil(tx);
+#endif // defined ENBALE_GMP_DL_PIL_SIM
+}
+
+#if defined ENBALE_GMP_DL_PIL_SIM
+time_gt gmp_base_get_ctrl_tick(void)
+{
+    return inv_ctrl.isr_tick / ((uint32_t)CONTROLLER_FREQUENCY / 1000);
+}
+#endif // defined ENBALE_GMP_DL_PIL_SIM
 
 //=================================================================================================
 // CiA402 default callback routine
@@ -341,21 +358,3 @@ fast_gt ctl_exec_adc_calibration(void)
     // skip calibrate routine
     return 1;
 }
-
-void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
-{
-#if defined ENBALE_GMP_DL_PIL_SIM
-    ctl_input_callback_pil(rx);
-
-    ctl_dispatch();
-
-    ctl_output_callback_pil(tx);
-#endif // defined ENBALE_GMP_DL_PIL_SIM
-}
-
-#if defined ENBALE_GMP_DL_PIL_SIM
-time_gt gmp_base_get_ctrl_tick(void)
-{
-    return inv_ctrl.isr_tick/((uint32_t)CONTROLLER_FREQUENCY/1000);
-}
-#endif // defined ENBALE_GMP_DL_PIL_SIM

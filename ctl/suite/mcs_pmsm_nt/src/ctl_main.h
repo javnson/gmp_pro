@@ -18,9 +18,9 @@
 #include <ctl/component/interface/pwm_channel.h>
 #include <ctl/component/interface/spwm_modulator.h>
 
-#include <ctl/component/motor_control/interface/encoder.h>
 #include <ctl/component/motor_control/basic/mtr_protection.h>
 #include <ctl/component/motor_control/basic/vf_generator.h>
+#include <ctl/component/motor_control/interface/encoder.h>
 
 #include <ctl/component/motor_control/current_loop/foc_core.h>
 #include <ctl/component/motor_control/mechanical_loop/basic_mech_ctrl.h>
@@ -39,25 +39,12 @@ extern "C"
 #endif // __cplusplus
 
 //=================================================================================================
-// controller modules with extern
+// extern controller modules
 
-extern volatile fast_gt flag_system_running;
-
-extern adc_bias_calibrator_t adc_calibrator;
-extern volatile fast_gt flag_enable_adc_calibrator;
-extern volatile fast_gt index_adc_calibrator;
-
-// state machine
+// System framework
 extern cia402_sm_t cia402_sm;
-extern ctl_mtr_protect_t protection;
 
-// modulator: SPWM modulator / SVPWM modulator / NPC modulator
-#if defined USING_NPC_MODULATOR
-extern npc_modulator_t spwm;
-#else
-extern spwm_modulator_t spwm;
-#endif // USING_NPC_MODULATOR
-
+// Control Law Core
 // controller body: Current controller, Command dispatcher, motion controller
 extern mc_foc_core_t mtr_ctrl;
 extern ctl_mech_ctrl_t mech_ctrl;
@@ -72,7 +59,25 @@ extern ctl_pmsm_esmo_init_t smo_init;
 extern ctl_pmsm_esmo_t smo;
 #endif // ENABLE_SMO
 
-// additional controller: harmonic management
+// Input channel
+
+// Output channel
+// modulator: SPWM modulator / SVPWM modulator / NPC modulator
+#if defined USING_NPC_MODULATOR
+extern npc_modulator_t spwm;
+#else
+extern spwm_modulator_t spwm;
+#endif // USING_NPC_MODULATOR
+
+// Protection module
+extern ctl_mtr_protect_t protection;
+
+// ADC Calibrator
+extern adc_bias_calibrator_t adc_calibrator;
+extern volatile fast_gt flag_enable_adc_calibrator;
+extern volatile fast_gt index_adc_calibrator;
+
+// User commands
 
 //=================================================================================================
 // function prototype
@@ -126,23 +131,22 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 
 #if (PWM_MODULATOR_USING_NEGATIVE_LOGIC == 1)
         ctl_step_pmsm_esmo(
-                    // SMO object
-                    &smo,
-                    // uab
-                    v_alpha, v_beta,
-                    // iab
-                    mtr_ctrl.iab0.dat[phase_alpha], mtr_ctrl.iab0.dat[phase_beta]);
+            // SMO object
+            &smo,
+            // uab
+            v_alpha, v_beta,
+            // iab
+            mtr_ctrl.iab0.dat[phase_alpha], mtr_ctrl.iab0.dat[phase_beta]);
 #else
         ctl_step_pmsm_esmo(
-                            // SMO object
-                            &smo,
-                            // uab
-                            v_alpha, v_beta,
-                            // iab
-                            mtr_ctrl.iab0.dat[phase_alpha], mtr_ctrl.iab0.dat[phase_beta]);
+            // SMO object
+            &smo,
+            // uab
+            v_alpha, v_beta,
+            // iab
+            mtr_ctrl.iab0.dat[phase_alpha], mtr_ctrl.iab0.dat[phase_beta]);
 
 #endif
-
 
 #endif // ENABLE_SMO
 
