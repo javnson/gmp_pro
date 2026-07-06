@@ -218,7 +218,7 @@ gmp_task_status_t tsk_startup(gmp_task_t* tsk)
 
         if (ec == GMP_EC_OK)
         {
-            sched.task_list[1]->is_enabled = 1;
+            sched.task_list[1]->is_enabled = 0;
             sched.task_list[3]->is_enabled = 1;
         }
 

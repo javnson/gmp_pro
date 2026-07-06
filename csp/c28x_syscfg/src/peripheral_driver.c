@@ -119,20 +119,20 @@ ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, ui
     //
     // Check if FIFO enhancement is enabled.
     //
-    if(SCI_isFIFOEnabled(base))
+    if (SCI_isFIFOEnabled(base))
     {
         //
         // FIFO is enabled.
         // For loop to write (Blocking) 'length' number of characters
         //
-        for(i = 0U; i < length; i++)
+        for (i = 0U; i < length; i++)
         {
             //
             // Wait until space is available in the transmit FIFO.
             //
-            while(SCI_getTxFIFOStatus(base) == SCI_FIFO_TX16)
+            while (SCI_getTxFIFOStatus(base) == SCI_FIFO_TX16)
             {
-                if(gmp_base_is_delay_elapsed(time_cnt, timeout))
+                if (gmp_base_is_delay_elapsed(time_cnt, timeout))
                     return GMP_EC_TIMEOUT; // 硬件卡死或波特率太低，及时止损退出
                 DEVICE_DELAY_US(1);
             }
@@ -149,14 +149,14 @@ ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, ui
         // FIFO is not enabled.
         // For loop to write (Blocking) 'length' number of characters
         //
-        for(i = 0U; i < length; i++)
+        for (i = 0U; i < length; i++)
         {
             //
             // Wait until space is available in the transmit buffer.
             //
-            while(!SCI_isSpaceAvailableNonFIFO(base))
+            while (!SCI_isSpaceAvailableNonFIFO(base))
             {
-                if(gmp_base_is_delay_elapsed(time_cnt, timeout))
+                if (gmp_base_is_delay_elapsed(time_cnt, timeout))
                     return GMP_EC_TIMEOUT; //硬件卡死或波特率太低，及时止损退出
                 DEVICE_DELAY_US(1);
             }
@@ -188,7 +188,7 @@ ec_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length, uint32_t 
             {
                 if (bytes_read != NULL)
                     *bytes_read = i;
-                    // 未在规定时间内等到数据
+                // 未在规定时间内等到数据
                 return GMP_EC_TIMEOUT;
             }
             DEVICE_DELAY_US(1);
@@ -243,14 +243,41 @@ static void reset_bus_status(iic_halt h)
     I2C_clearStatus(h, I2C_STS_NO_ACK | I2C_STS_ARB_LOST);
 }
 
+static inline uint16_t I2C_getTargetAddress(uint32_t base)
+{
+    //
+    // Check the arguments.
+    //
+    ASSERT(I2C_isBaseValid(base));
+
+    return (uint16_t)HWREGH(base + I2C_O_TAR);
+}
+
 ec_gt gmp_hal_iic_write_cmd(iic_halt h, addr16_gt dev_addr, uint32_t cmd, size_gt cmd_len, time_gt timeout)
 {
     ec_gt ret = wait_bus_idle(h, timeout);
     if (ret != GMP_EC_OK)
         return ret;
 
-    I2C_setTargetAddress(h, dev_addr);
+    time_gt start = gmp_base_get_system_tick();
+
+    addr16_gt current_hardware_addr = I2C_getTargetAddress(h);
+
+    if (current_hardware_addr != dev_addr)
+    {
+        // Wait for TX fifo is transmit complete
+        while (I2C_getTxFIFOStatus(h) != I2C_FIFO_TX0)
+        {
+            CHECK_TIMEOUT(start, timeout);
+        }
+
+        // Select to target address
+        I2C_setTargetAddress(h, dev_addr);
+    }
+
+    // reset bus
     reset_bus_status(h);
+
     I2C_setDataCount(h, cmd_len);
 
     // Serialize command into bytes (MSB first generally used in I2C)
@@ -265,7 +292,6 @@ ec_gt gmp_hal_iic_write_cmd(iic_halt h, addr16_gt dev_addr, uint32_t cmd, size_g
     I2C_sendStartCondition(h);
     I2C_sendStopCondition(h);
 
-    time_gt start = gmp_base_get_system_tick();
     while (I2C_getStopConditionStatus(h))
     {
         if (I2C_getStatus(h) & I2C_STS_NO_ACK)
@@ -287,7 +313,23 @@ ec_gt gmp_hal_iic_write_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, 
     if (ret != GMP_EC_OK)
         return ret;
 
-    I2C_setTargetAddress(h, dev_addr);
+    time_gt start = gmp_base_get_system_tick();
+
+    addr16_gt current_hardware_addr = I2C_getTargetAddress(h);
+
+    if (current_hardware_addr != dev_addr)
+    {
+        // Wait for TX fifo is transmit complete
+        while (I2C_getTxFIFOStatus(h) != I2C_FIFO_TX0)
+        {
+            CHECK_TIMEOUT(start, timeout);
+        }
+
+        // Select to target address
+        I2C_setTargetAddress(h, dev_addr);
+    }
+
+    // reset bus
     reset_bus_status(h);
 
     // Total bytes = address bytes + data bytes
@@ -310,7 +352,6 @@ ec_gt gmp_hal_iic_write_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, 
     I2C_sendStartCondition(h);
     I2C_sendStopCondition(h);
 
-    time_gt start = gmp_base_get_system_tick();
     while (I2C_getStopConditionStatus(h))
     {
         if (I2C_getStatus(h) & I2C_STS_NO_ACK)
@@ -325,51 +366,31 @@ ec_gt gmp_hal_iic_write_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, 
     return GMP_EC_OK;
 }
 
-static inline uint16_t
-I2C_getTargetAddress(uint32_t base)
-{
-    //
-    // Check the arguments.
-    //
-    ASSERT(I2C_isBaseValid(base));
-
-    return (uint16_t)HWREGH(base + I2C_O_TAR);
-}
-
 ec_gt gmp_hal_iic_write_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, const data_gt* mem,
                             size_gt mem_len, time_gt timeout)
 {
-    time_gt start = gmp_base_get_system_tick();
-    
     ec_gt ret = wait_bus_idle(h, timeout);
     if (ret != GMP_EC_OK)
         return ret;
 
+    time_gt start = gmp_base_get_system_tick();
 
+    addr16_gt current_hardware_addr = I2C_getTargetAddress(h);
 
-//    I2C_setTargetAddress(h, dev_addr);
-//    reset_bus_status(h);
-
-    // Get current target address
-        addr16_gt current_hardware_addr = I2C_getTargetAddress(h);
-
-        if (current_hardware_addr != dev_addr)
+    if (current_hardware_addr != dev_addr)
+    {
+        // Wait for TX fifo is transmit complete
+        while (I2C_getTxFIFOStatus(h) != I2C_FIFO_TX0)
         {
-            // if current target neq last target wait for FIFO is complete
-            while (I2C_getTxFIFOStatus(h) != I2C_FIFO_TX0)
-            {
-                CHECK_TIMEOUT(start, timeout);
-            }
+            CHECK_TIMEOUT(start, timeout);
+        }
 
-            // Select target Address safely
-            I2C_setTargetAddress(h, dev_addr);
-            reset_bus_status(h);
-        }
-        else
-        {
-            // if address is same, reset bus and fill new data.
-            reset_bus_status(h);
-        }
+        // Select to target address
+        I2C_setTargetAddress(h, dev_addr);
+    }
+
+    // reset bus
+    reset_bus_status(h);
 
     uint32_t total_bytes = addr_len + mem_len;
     I2C_setDataCount(h, total_bytes);
@@ -378,8 +399,6 @@ ec_gt gmp_hal_iic_write_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, 
     I2C_setConfig(h, I2C_CONTROLLER_SEND_MODE);
     I2C_sendStartCondition(h);
     I2C_sendStopCondition(h);
-
-
 
     // 1. Send Address
     int32_t i;
@@ -434,7 +453,23 @@ ec_gt gmp_hal_iic_read_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, s
     if (ret != GMP_EC_OK)
         return ret;
 
-    I2C_setTargetAddress(h, dev_addr);
+    time_gt start = gmp_base_get_system_tick();
+
+    addr16_gt current_hardware_addr = I2C_getTargetAddress(h);
+
+    if (current_hardware_addr != dev_addr)
+    {
+        // Wait for TX fifo is transmit complete
+        while (I2C_getTxFIFOStatus(h) != I2C_FIFO_TX0)
+        {
+            CHECK_TIMEOUT(start, timeout);
+        }
+
+        // Select to target address
+        I2C_setTargetAddress(h, dev_addr);
+    }
+
+    // reset bus
     reset_bus_status(h);
 
     // ==========================================
@@ -450,7 +485,6 @@ ec_gt gmp_hal_iic_read_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, s
     I2C_setConfig(h, I2C_CONTROLLER_SEND_MODE);
     I2C_sendStartCondition(h);
 
-    time_gt start = gmp_base_get_system_tick();
     while ((I2C_getStatus(h) & I2C_STS_REG_ACCESS_RDY) == 0)
     {
         if (I2C_getStatus(h) & I2C_STS_NO_ACK)
@@ -508,7 +542,23 @@ ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, s
     if (ret != GMP_EC_OK)
         return ret;
 
-    I2C_setTargetAddress(h, dev_addr);
+    time_gt start = gmp_base_get_system_tick();
+
+    addr16_gt current_hardware_addr = I2C_getTargetAddress(h);
+
+    if (current_hardware_addr != dev_addr)
+    {
+        // Wait for TX fifo is transmit complete
+        while (I2C_getTxFIFOStatus(h) != I2C_FIFO_TX0)
+        {
+            CHECK_TIMEOUT(start, timeout);
+        }
+
+        // Select to target address
+        I2C_setTargetAddress(h, dev_addr);
+    }
+
+    // reset bus
     reset_bus_status(h);
 
     // ==========================================
@@ -524,7 +574,6 @@ ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, s
     I2C_setConfig(h, I2C_CONTROLLER_SEND_MODE);
     I2C_sendStartCondition(h);
 
-    time_gt start = gmp_base_get_system_tick();
     while ((I2C_getStatus(h) & I2C_STS_REG_ACCESS_RDY) == 0)
     {
         if (I2C_getStatus(h) & I2C_STS_NO_ACK)
