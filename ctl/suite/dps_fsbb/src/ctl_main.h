@@ -36,44 +36,42 @@ extern "C"
 #endif
 
 //=================================================================================================
-// controller modules with extern
+// extern controller modules
 
-
-// 1. 系统框架模块
+// System framework
 extern cia402_sm_t cia402_sm;
-//extern ctl_dcdc_protect_t protection;
 
-// 2. 算法核心与调制器
+// Control Law Core
 extern ctl_dcdc_core_t dcdc_core;
-extern fsbb_modulator_t fsbb_mod;
 
-// 3. 用户设定值 (User Setpoints)
-extern ctrl_gt g_v_out_ref_user;
-extern ctrl_gt g_i_limit_user;
-
-// 4. ADC 采样通道 (物理接口)
+// Input channel
 extern adc_channel_t adc_v_in;
 extern adc_channel_t adc_v_out;
 extern adc_channel_t adc_i_L;
-extern adc_channel_t adc_i_load; // 可选的负载电流前馈
+extern adc_channel_t adc_i_load;
 
-// 5. 状态标志
-extern volatile fast_gt flag_system_running;
-extern volatile fast_gt flag_error;
+// Output channel
+extern fsbb_modulator_t fsbb_mod;
 
+// Protection module
+//extern ctl_dcdc_protect_t protection;
+
+// ADC Calibrator
 extern adc_bias_calibrator_t adc_calibrator;
 extern volatile fast_gt flag_enable_adc_calibrator;
 extern volatile fast_gt index_adc_calibrator;
+
+// User commands
+extern ctrl_gt g_v_out_ref_user;
+extern ctrl_gt g_i_limit_user;
 
 extern ctrl_gt v_req;
 
 //=================================================================================================
 // function prototype
 
-
 void ctl_init(void);
 void ctl_mainloop(void);
-
 
 void ctl_enable_pwm(void);
 void ctl_disable_pwm(void);
@@ -116,11 +114,11 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         ctrl_gt v_req = ctl_step_dcdc_core_cascade_generic(&dcdc_core);
 
         // 2. FSBB 调制器映射：将 V_req 转化为 4 个管子的无缝占空比
-//        ctl_step_fsbb_modulator(&fsbb_mod, v_req, adc_v_in.control_port.value);
+        //        ctl_step_fsbb_modulator(&fsbb_mod, v_req, adc_v_in.control_port.value);
 
 #elif (BUILD_LEVEL == 1)
         // 开环固定占空比发波测试
-//        ctl_step_fsbb_modulator(&fsbb_mod, float2ctrl(0.5f) * adc_v_in.control_port.value, adc_v_in.control_port.value);
+        //        ctl_step_fsbb_modulator(&fsbb_mod, float2ctrl(0.5f) * adc_v_in.control_port.value, adc_v_in.control_port.value);
         ctl_step_fsbb_modulator(&fsbb_mod, v_req, 0.5f);
 #endif
     }

@@ -29,10 +29,21 @@ extern "C"
 #endif // __cplusplus
 
 //=================================================================================================
-// controller modules with extern
+// extern controller modules
 
+// System framework
 
+// Control Law Core
 
+// Input channel
+
+// Output channel
+
+// Protection module
+
+// ADC Calibrator
+
+// User commands
 
 //=================================================================================================
 // function prototype
@@ -43,12 +54,14 @@ void ctl_mainloop(void);
 void clear_all_controllers();
 
 //=================================================================================================
+// Background Controller Tasks
+
+//=================================================================================================
 // controller process
 
 // periodic callback function things.
 GMP_STATIC_INLINE void ctl_dispatch(void)
 {
-
 }
 
 #ifdef __cplusplus

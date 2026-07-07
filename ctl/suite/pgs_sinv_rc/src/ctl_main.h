@@ -12,10 +12,14 @@
 #ifndef _FILE_CTL_MAIN_H_
 #define _FILE_CTL_MAIN_H_
 
-#include <ctl/component/interface/adc_channel.h>
-//#include <ctl/component/intrinsic/discrete/slope_f_pu.h>
-#include <ctl/framework/cia402_state_machine.h>
 #include <xplt.peripheral.h>
+
+#include <core/pm/function_scheduler.h>
+
+#include <core/dev/pil_core.h>
+
+#include <ctl/component/interface/adc_channel.h>
+#include <ctl/framework/cia402_state_machine.h>
 
 // SINV Control Modules
 #include <ctl/component/digital_power/sinv/sinv_protect.h>
@@ -25,45 +29,45 @@
 #include <ctl/component/digital_power/sinv/spll_sogi.h>
 #include <ctl/component/interface/hpwm_modulator.h>
 
-#include <core/dev/pil_core.h>
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif // __cplusplus
 
 //=================================================================================================
-// controller modules with extern
+// extern controller modules
 
-extern volatile fast_gt flag_system_running;
-extern volatile fast_gt flag_error;
+// System framework
+extern cia402_sm_t cia402_sm;
+
+// Control Law Core
+extern spll_sogi_t pll;
+extern ctl_sms_pq_t pq_meter;
+extern ctl_sinv_ref_gen_t ref_gen;
+extern ctl_sinv_rc_core_t rc_core;
+
+// Input channel
+extern adc_channel_t adc_v_grid;
+extern adc_channel_t adc_i_ac;
+extern adc_channel_t adc_v_bus;
+
+// Output channel
+extern single_phase_H_modulation_t hpwm;
+
+// Protection module
+extern ctl_sinv_protect_t protection;
 
 // ADC Calibrator
 extern adc_bias_calibrator_t adc_calibrator;
 extern volatile fast_gt flag_enable_adc_calibrator;
 extern volatile fast_gt index_adc_calibrator;
 
-// ADC interfaces (Values mapped automatically in step_adc_channel)
-extern adc_channel_t adc_v_grid;
-extern adc_channel_t adc_i_ac;
-extern adc_channel_t adc_v_bus;
-
-// State machine & Protection
-extern cia402_sm_t cia402_sm;
-extern ctl_sinv_protect_t protection;
-
-// Modulator
-extern single_phase_H_modulation_t hpwm;
-
-// Controller body: SINV Core
-extern spll_sogi_t pll;
-extern ctl_sms_pq_t pq_meter;
-extern ctl_sinv_ref_gen_t ref_gen;
-extern ctl_sinv_rc_core_t rc_core;
-
-// User Setpoints
+// User commands
 extern ctrl_gt g_p_ref_user;
 extern ctrl_gt g_q_ref_user;
+
+extern volatile fast_gt flag_system_running;
+extern volatile fast_gt flag_error;
 
 // Final output duty cycle for the modulator
 extern pwm_gt pwm_cmp_L;
@@ -75,6 +79,9 @@ void clear_all_controllers(void);
 void ctl_init(void);
 void ctl_mainloop(void);
 fast_gt ctl_exec_adc_calibration(void);
+
+//=================================================================================================
+// Background Controller Tasks
 
 //=================================================================================================
 // controller process

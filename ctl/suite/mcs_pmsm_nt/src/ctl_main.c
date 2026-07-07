@@ -22,16 +22,10 @@
 //=================================================================================================
 // global controller variables
 
-// state machine
+// System framework
 cia402_sm_t cia402_sm;
-ctl_mtr_protect_t protection;
 
-// modulator: SPWM modulator / SVPWM modulator / NPC modulator
-#if defined USING_NPC_MODULATOR
-npc_modulator_t spwm;
-#else
-spwm_modulator_t spwm;
-#endif // USING_NPC_MODULATOR
+// Control Law Core
 
 // controller body: Current controller, Command dispatcher, motion controller
 mc_foc_core_t mtr_ctrl;
@@ -52,17 +46,26 @@ ctl_pmsm_esmo_t smo;
 
 #endif // ENABLE_SMO
 
-// additional controller: harmonic management
+// Input channel
 
-//
-volatile fast_gt flag_system_running = 0;
-volatile fast_gt flag_error = 0;
+// Output channel
+// modulator: SPWM modulator / SVPWM modulator / NPC modulator
+#if defined USING_NPC_MODULATOR
+npc_modulator_t spwm;
+#else
+spwm_modulator_t spwm;
+#endif // USING_NPC_MODULATOR
 
-// adc calibrator flags
+// Protection module
+ctl_mtr_protect_t protection;
+
+// ADC Calibrator
 adc_bias_calibrator_t adc_calibrator;
 volatile fast_gt flag_enable_adc_calibrator = 1;
 //volatile fast_gt flag_enable_adc_calibrator = 0;
 volatile fast_gt index_adc_calibrator = 0;
+
+// User commands
 
 //=================================================================================================
 // CTL initialize routine
@@ -144,7 +147,8 @@ void ctl_init()
     ctl_init_autoturn_pos_encoder(&pos_enc, mtr_ctrl_init.pole_pairs, CTRL_POS_ENC_FS);
     ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, float2ctrl(CTRL_POS_ENC_BIAS));
 
-    ctl_init_spd_calculator(&spd_enc, &pos_enc.encif, CONTROLLER_FREQUENCY, CTRL_MECH_DIV, MOTOR_PARAM_MAX_SPEED, 20.0f);
+    ctl_init_spd_calculator(&spd_enc, &pos_enc.encif, CONTROLLER_FREQUENCY, CTRL_MECH_DIV, MOTOR_PARAM_MAX_SPEED,
+                            20.0f);
 
 #ifdef ENABLE_SMO
 
@@ -164,6 +168,10 @@ void ctl_init()
 #endif // BUILD_LEVEL
 
     ctl_attach_mech_ctrl(&mech_ctrl, &pos_enc.encif, &spd_enc.encif);
+
+    //
+    // incremental compilation configuration
+    //
 
 #if BUILD_LEVEL == 1
     // Voltage open loop
@@ -242,7 +250,7 @@ void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
 #if defined ENBALE_GMP_DL_PIL_SIM
 time_gt gmp_base_get_ctrl_tick(void)
 {
-    return mtr_ctrl.isr_tick/((uint32_t)CONTROLLER_FREQUENCY/1000);
+    return mtr_ctrl.isr_tick / ((uint32_t)CONTROLLER_FREQUENCY / 1000);
 }
 #endif // defined ENBALE_GMP_DL_PIL_SIM
 
@@ -276,7 +284,6 @@ gmp_task_status_t tsk_protect(gmp_task_t* tsk)
     return GMP_TASK_DONE;
 }
 
-
 //=================================================================================================
 // CiA402 default callback routine
 
@@ -306,7 +313,7 @@ void clear_all_controllers()
 fast_gt ctl_exec_adc_calibration(void)
 {
     //
-    // 1. ADC Auto calibrate
+    // ADC Auto calibrate
     //
     if (flag_enable_adc_calibrator)
     {
@@ -396,6 +403,3 @@ fast_gt ctl_exec_adc_calibration(void)
     // skip calibrate routine
     return 1;
 }
-
-
-

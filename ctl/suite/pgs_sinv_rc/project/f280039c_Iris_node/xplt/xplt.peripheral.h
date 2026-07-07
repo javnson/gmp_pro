@@ -22,6 +22,7 @@ extern "C"
 
 // select ADC PTR interface
 #include <ctl/component/interface/adc_ptr_channel.h>
+#include <ctl/component/interface/adc_channel.h>
 
 #include <core/dev/datalink.h>
 

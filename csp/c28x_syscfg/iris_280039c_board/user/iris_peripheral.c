@@ -12,8 +12,12 @@
 #include <core/dev/gpio/pca9555.h>
 #include <core/dev/sensor/hdc1080.h>
 
+#include <oled_driver.h>
+
 //=================================================================================================
 // BEEP control function
+
+
 
 gpio_halt gpio_beep;
 
@@ -35,8 +39,9 @@ iic_halt iic_bus;
 ht16k33_dev_t ht16k33;
 hdc1080_dev_t hdc1080;
 
-// 共阴极数码管段码表
-// 包含: 0-9, A-F, H, L, P, U, -, ., 暗
+//
+// Common cathode digital tube segment code table
+//
 const unsigned char led_lut[] = {
     0x3F, // 0  (a,b,c,d,e,f)
     0x06, // 1  (b,c)
@@ -49,18 +54,18 @@ const unsigned char led_lut[] = {
     0x7F, // 8  (a,b,c,d,e,f,g)
     0x6F, // 9  (a,b,c,d,f,g)
     0x77, // A  (a,b,c,e,f,g)
-    0x7C, // b  (c,d,e,f,g)  - 通常用小写b区分数字8
+    0x7C, // b  (c,d,e,f,g)
     0x39, // C  (a,d,e,f)
-    0x5E, // d  (b,c,d,e,g)  - 通常用小写d区分数字0
+    0x5E, // d  (b,c,d,e,g)
     0x79, // E  (a,d,e,f,g)
     0x71, // F  (a,e,f,g)
     0x76, // H  (b,c,e,f,g)
     0x38, // L  (d,e,f)
     0x73, // P  (a,b,e,f,g)
     0x3E, // U  (b,c,d,e,f)
-    0x40, // -  (g) - 负号或横杠
-    0x80, // .  (dp) - 小数点
-    0x00  // 无显示 (全灭)
+    0x40, // -  (g) - dash
+    0x80, // .  (dp) - dot
+    0x00  // close all
 };
 
 void update_led_content_8byte(ht16k33_dev_t* dev, uint16_t ch1, uint16_t ch2, uint16_t ch3, uint16_t ch4, uint16_t ch5,
@@ -77,11 +82,12 @@ void update_led_content_8byte(ht16k33_dev_t* dev, uint16_t ch1, uint16_t ch2, ui
     dev->is_dirty = 1;
 }
 
-
 gmp_task_status_t tsk_LED_flush(gmp_task_t* tsk)
 {
     ht16k33_dev_t* dev = (ht16k33_dev_t*)tsk->user_data;
 
+    if(flag_init_cmpt)
+    {
     // fresh LED buffer here.
     ec_gt ret = ht16k33_update_display(dev);
 
@@ -90,15 +96,18 @@ gmp_task_status_t tsk_LED_flush(gmp_task_t* tsk)
     {
         tsk->is_enabled = 0;
     }
+    }
 
     return GMP_TASK_DONE;
 }
-
 
 gmp_task_status_t tsk_key_flush(gmp_task_t* tsk)
 {
     ht16k33_dev_t* dev = (ht16k33_dev_t*)tsk->user_data;
     fast_gt key_id = 0;
+
+    if(flag_init_cmpt)
+    {
 
     ec_gt ret = ht16k33_read_keys(dev, &key_id);
 
@@ -115,6 +124,22 @@ gmp_task_status_t tsk_key_flush(gmp_task_t* tsk)
                                  led_lut[key_id % 10], led_lut[20]);
 
         gmp_base_print("Receive Key Message, %d\r\n", key_id);
+    }
+    }
+
+    return GMP_TASK_DONE;
+}
+
+gmp_task_status_t oled_show_task(gmp_task_t* tsk)
+{
+    static uint16_t index;
+
+    char output_msg[32];
+
+    if (flag_init_cmpt == 1)
+    {
+        sprintf(output_msg, "index: %d C", index++);
+        oled_show_str(0, 2, output_msg);
     }
 
     return GMP_TASK_DONE;
@@ -153,5 +178,3 @@ gmp_task_status_t fpga_test_task(gmp_task_t* tsk)
 
     return GMP_TASK_DONE;
 }
-
-

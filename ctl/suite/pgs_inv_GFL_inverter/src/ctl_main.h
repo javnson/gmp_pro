@@ -35,37 +35,35 @@ extern "C"
 #endif // __cplusplus
 
 //=================================================================================================
-// controller modules with extern
+// extern controller modules
 
-extern volatile fast_gt flag_system_running;
-
-extern adc_bias_calibrator_t adc_calibrator;
-extern volatile fast_gt flag_enable_adc_calibrator;
-extern volatile fast_gt index_adc_calibrator;
-
-// state machine
+// System framework
 extern cia402_sm_t cia402_sm;
 
-// modulator: SPWM modulator / SVPWM modulator / NPC modulator
-#if defined USING_NPC_MODULATOR
-extern npc_modulator_t spwm;
-#else
-extern spwm_modulator_t spwm;
-#endif // USING_NPC_MODULATOR
-
-// controller body: Current controller, Power controller / Voltage controller
+// Control Law Core
 extern gfl_inv_ctrl_init_t gfl_init;
 extern gfl_inv_ctrl_t inv_ctrl;
 extern gfl_pq_ctrl_t pq_ctrl;
 extern inv_neg_ctrl_init_t gfl_neg_init;
 extern inv_neg_ctrl_t neg_current_ctrl;
 
-// Observer: PLL
+// Input channel
 
+// Output channel
+#if defined USING_NPC_MODULATOR
+extern npc_modulator_t spwm;
+#else
+extern spwm_modulator_t spwm;
+#endif // USING_NPC_MODULATOR
 
-// additional controller: harmonic management, negative current controller
+// Protection module
 
-//
+// ADC Calibrator
+extern adc_bias_calibrator_t adc_calibrator;
+extern volatile fast_gt flag_enable_adc_calibrator;
+extern volatile fast_gt index_adc_calibrator;
+
+// User commands
 
 //=================================================================================================
 // controller process

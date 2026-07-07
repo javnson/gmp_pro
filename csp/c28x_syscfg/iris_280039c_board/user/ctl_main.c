@@ -27,14 +27,25 @@
 //=================================================================================================
 // global controller variables
 
+// System framework
 
+// Control Law Core
+
+// Input channel
+
+// Output channel
+
+// Protection module
+
+// ADC Calibrator
+
+// User commands
 
 //=================================================================================================
 // CTL initialize routine
 
 void ctl_init()
 {
-
 }
 
 //=================================================================================================
@@ -45,10 +56,8 @@ void ctl_mainloop(void)
     return;
 }
 
-
 void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
 {
-
 }
 
 //=================================================================================================
@@ -56,4 +65,3 @@ void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
 
 //=================================================================================================
 // CiA402 default callback routine
-

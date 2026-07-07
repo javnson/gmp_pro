@@ -1,4 +1,4 @@
-
+﻿
 
 #include <gmp_core.h>
 
@@ -119,21 +119,21 @@ ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, ui
     //
     // Check if FIFO enhancement is enabled.
     //
-    if(SCI_isFIFOEnabled(base))
+    if (SCI_isFIFOEnabled(base))
     {
         //
         // FIFO is enabled.
         // For loop to write (Blocking) 'length' number of characters
         //
-        for(i = 0U; i < length; i++)
+        for (i = 0U; i < length; i++)
         {
             //
             // Wait until space is available in the transmit FIFO.
             //
-            while(SCI_getTxFIFOStatus(base) == SCI_FIFO_TX16)
+            while (SCI_getTxFIFOStatus(base) == SCI_FIFO_TX16)
             {
-                if(gmp_base_is_delay_elapsed(time_cnt, timeout))
-                    return GMP_EC_TIMEOUT; /* 硬件卡死或波特率太低，及时止损退出 */
+                if (gmp_base_is_delay_elapsed(time_cnt, timeout))
+                    return GMP_EC_TIMEOUT; // 硬件卡死或波特率太低，及时止损退出
                 DEVICE_DELAY_US(1);
             }
 
@@ -149,15 +149,15 @@ ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, ui
         // FIFO is not enabled.
         // For loop to write (Blocking) 'length' number of characters
         //
-        for(i = 0U; i < length; i++)
+        for (i = 0U; i < length; i++)
         {
             //
             // Wait until space is available in the transmit buffer.
             //
-            while(!SCI_isSpaceAvailableNonFIFO(base))
+            while (!SCI_isSpaceAvailableNonFIFO(base))
             {
-                if(gmp_base_is_delay_elapsed(time_cnt, timeout))
-                    return GMP_EC_TIMEOUT; /* 硬件卡死或波特率太低，及时止损退出 */
+                if (gmp_base_is_delay_elapsed(time_cnt, timeout))
+                    return GMP_EC_TIMEOUT; //硬件卡死或波特率太低，及时止损退出
                 DEVICE_DELAY_US(1);
             }
 
@@ -181,19 +181,20 @@ ec_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length, uint32_t 
     {
         time_cnt = timeout;
 
-        /* 轮询等待 RX FIFO 中出现数据 */
+        // 轮询等待 RX FIFO 中出现数据
         while (SCI_getRxFIFOStatus(base) == SCI_FIFO_RX0)
         {
             if (--time_cnt == 0)
             {
                 if (bytes_read != NULL)
                     *bytes_read = i;
-                return GMP_EC_TIMEOUT; /* 未在规定时间内等到数据 */
+                // 未在规定时间内等到数据
+                return GMP_EC_TIMEOUT;
             }
             DEVICE_DELAY_US(1);
         }
 
-        /* 此时 FIFO 必有数据，安全读取 */
+        // 此时 FIFO 必有数据，安全读取
         data[i] = (data_gt)SCI_readCharNonBlocking(base);
     }
 
@@ -242,29 +243,82 @@ static void reset_bus_status(iic_halt h)
     I2C_clearStatus(h, I2C_STS_NO_ACK | I2C_STS_ARB_LOST);
 }
 
+static inline uint16_t I2C_getTargetAddress(uint32_t base)
+{
+    //
+    // Check the arguments.
+    //
+    ASSERT(I2C_isBaseValid(base));
+
+    return (uint16_t)HWREGH(base + I2C_O_TAR);
+}
+
 ec_gt gmp_hal_iic_write_cmd(iic_halt h, addr16_gt dev_addr, uint32_t cmd, size_gt cmd_len, time_gt timeout)
 {
+    // wait for bus free
     ec_gt ret = wait_bus_idle(h, timeout);
+
     if (ret != GMP_EC_OK)
         return ret;
 
-    I2C_setTargetAddress(h, dev_addr);
+    time_gt start = gmp_base_get_system_tick();
+
+    addr16_gt current_hardware_addr = I2C_getTargetAddress(h);
+
+    if (current_hardware_addr != dev_addr)
+    {
+        // Wait for TX fifo is transmit complete
+        while (I2C_getTxFIFOStatus(h) != I2C_FIFO_TX0)
+        {
+            CHECK_TIMEOUT(start, timeout);
+        }
+
+        // ensure last message has been sent
+        while (I2C_getStopConditionStatus(h))
+        {
+            CHECK_TIMEOUT(start, timeout);
+        }
+
+        // Select to target address
+        I2C_setTargetAddress(h, dev_addr);
+    }
+
+    // reset bus
     reset_bus_status(h);
+
+    // reset fifo
+    I2C_disableFIFO(h);
+    I2C_enableFIFO(h);
+
+    // reset I2C tx counter
     I2C_setDataCount(h, cmd_len);
+
+    I2C_setConfig(h, I2C_CONTROLLER_SEND_MODE);
 
     // Serialize command into bytes (MSB first generally used in I2C)
     // The peripheral driver can use LE16/BE16 macros to format 'cmd' beforehand.
     int32_t i;
     for (i = (int32_t)cmd_len - 1; i >= 0; i--)
     {
+        // if FIFO is full, pending and wait for FIFO space
+        while (I2C_getTxFIFOStatus(h) == I2C_FIFO_TX16)
+        {
+            // Monitor if NACK occurred.
+            if (I2C_getStatus(h) & I2C_STS_NO_ACK)
+            {
+                I2C_sendStopCondition(h);
+                I2C_clearStatus(h, I2C_STS_NO_ACK);
+                return GMP_EC_NACK;
+            }
+            CHECK_TIMEOUT(start, timeout);
+        }
+
         I2C_putData(h, (cmd >> (i * 8)) & 0xFF);
     }
 
-    I2C_setConfig(h, I2C_CONTROLLER_SEND_MODE);
     I2C_sendStartCondition(h);
     I2C_sendStopCondition(h);
 
-    time_gt start = gmp_base_get_system_tick();
     while (I2C_getStopConditionStatus(h))
     {
         if (I2C_getStatus(h) & I2C_STS_NO_ACK)
@@ -275,6 +329,11 @@ ec_gt gmp_hal_iic_write_cmd(iic_halt h, addr16_gt dev_addr, uint32_t cmd, size_g
         }
         CHECK_TIMEOUT(start, timeout);
     }
+
+    // ensure I2C bus Busy = 0
+    ret = wait_bus_idle(h, timeout);
+    if (ret != GMP_EC_OK)
+        return ret;
 
     return GMP_EC_OK;
 }
@@ -286,30 +345,80 @@ ec_gt gmp_hal_iic_write_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, 
     if (ret != GMP_EC_OK)
         return ret;
 
-    I2C_setTargetAddress(h, dev_addr);
+    time_gt start = gmp_base_get_system_tick();
+
+    addr16_gt current_hardware_addr = I2C_getTargetAddress(h);
+
+    if (current_hardware_addr != dev_addr)
+    {
+        // Wait for TX fifo is transmit complete
+        while (I2C_getTxFIFOStatus(h) != I2C_FIFO_TX0)
+        {
+            CHECK_TIMEOUT(start, timeout);
+        }
+
+        // ensure last message has been sent
+        while (I2C_getStopConditionStatus(h))
+        {
+            CHECK_TIMEOUT(start, timeout);
+        }
+
+        // Select to target address
+        I2C_setTargetAddress(h, dev_addr);
+    }
+
+    // reset bus
     reset_bus_status(h);
+
+    // reset FIFO
+    I2C_disableFIFO(h);
+    I2C_enableFIFO(h);
 
     // Total bytes = address bytes + data bytes
     I2C_setDataCount(h, addr_len + reg_len);
+
+    I2C_setConfig(h, I2C_CONTROLLER_SEND_MODE);
 
     // 1. Put Address Bytes (MSB first)
     int32_t i;
     for (i = (int32_t)addr_len - 1; i >= 0; i--)
     {
+        // 实时检查 FIFO 是否已满（防止地址+数据总长 > 16 字节时溢出）
+        while (I2C_getTxFIFOStatus(h) == I2C_FIFO_TX16)
+        {
+            if (I2C_getStatus(h) & I2C_STS_NO_ACK)
+            {
+                I2C_sendStopCondition(h);
+                I2C_clearStatus(h, I2C_STS_NO_ACK);
+                return GMP_EC_NACK;
+            }
+            CHECK_TIMEOUT(start, timeout);
+        }
+
         I2C_putData(h, (reg_addr >> (i * 8)) & 0xFF);
     }
 
     // 2. Put Data Bytes (MSB first)
     for (i = (int32_t)reg_len - 1; i >= 0; i--)
     {
+        // 实时检查 FIFO 是否已满（防止地址+数据总长 > 16 字节时溢出）
+        while (I2C_getTxFIFOStatus(h) == I2C_FIFO_TX16)
+        {
+            if (I2C_getStatus(h) & I2C_STS_NO_ACK)
+            {
+                I2C_sendStopCondition(h);
+                I2C_clearStatus(h, I2C_STS_NO_ACK);
+                return GMP_EC_NACK;
+            }
+            CHECK_TIMEOUT(start, timeout);
+        }
+
         I2C_putData(h, (reg_data >> (i * 8)) & 0xFF);
     }
 
-    I2C_setConfig(h, I2C_CONTROLLER_SEND_MODE);
     I2C_sendStartCondition(h);
     I2C_sendStopCondition(h);
 
-    time_gt start = gmp_base_get_system_tick();
     while (I2C_getStopConditionStatus(h))
     {
         if (I2C_getStatus(h) & I2C_STS_NO_ACK)
@@ -321,6 +430,10 @@ ec_gt gmp_hal_iic_write_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, 
         CHECK_TIMEOUT(start, timeout);
     }
 
+    ret = wait_bus_idle(h, timeout);
+    if (ret != GMP_EC_OK)
+        return ret;
+
     return GMP_EC_OK;
 }
 
@@ -331,18 +444,47 @@ ec_gt gmp_hal_iic_write_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, 
     if (ret != GMP_EC_OK)
         return ret;
 
-    I2C_setTargetAddress(h, dev_addr);
+    time_gt start = gmp_base_get_system_tick();
+
+    addr16_gt current_hardware_addr = I2C_getTargetAddress(h);
+
+    if (current_hardware_addr != dev_addr)
+    {
+        // Wait for TX fifo is transmit complete
+        while (I2C_getTxFIFOStatus(h) != I2C_FIFO_TX0)
+        {
+            CHECK_TIMEOUT(start, timeout);
+        }
+
+        // ensure last message has been sent
+        while (I2C_getStopConditionStatus(h))
+        {
+            CHECK_TIMEOUT(start, timeout);
+        }
+
+        // Select to target address
+        I2C_setTargetAddress(h, dev_addr);
+    }
+
+    else
+    {
+        // ensure last message has been sent
+        while (I2C_getStopConditionStatus(h))
+        {
+            CHECK_TIMEOUT(start, timeout);
+        }
+    }
+
+    // reset bus
     reset_bus_status(h);
+    I2C_disableFIFO(h);
+    I2C_enableFIFO(h);
 
     uint32_t total_bytes = addr_len + mem_len;
     I2C_setDataCount(h, total_bytes);
 
     // Start transmission before FIFO is full (Hardware will pull data from FIFO)
     I2C_setConfig(h, I2C_CONTROLLER_SEND_MODE);
-    I2C_sendStartCondition(h);
-    I2C_sendStopCondition(h);
-
-    time_gt start = gmp_base_get_system_tick();
 
     // 1. Send Address
     int32_t i;
@@ -350,10 +492,20 @@ ec_gt gmp_hal_iic_write_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, 
     {
         while (I2C_getTxFIFOStatus(h) == I2C_FIFO_TX16)
         {
+            // 在填充地址时，也要严密监控是否瞬间收到了 NACK
+            if (I2C_getStatus(h) & I2C_STS_NO_ACK)
+            {
+                I2C_sendStopCondition(h);
+                I2C_clearStatus(h, I2C_STS_NO_ACK);
+                return GMP_EC_NACK;
+            }
             CHECK_TIMEOUT(start, timeout);
         }
+
         I2C_putData(h, (mem_addr >> (i * 8)) & 0xFF);
     }
+
+    I2C_sendStartCondition(h);
 
     // 2. Send Memory Block (Continuous Push)
     // Note: mem[i] is truncated to 8-bits, automatically resolving C2000 16-bit char issues.
@@ -377,12 +529,23 @@ ec_gt gmp_hal_iic_write_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, 
         }
     }
 
+    I2C_sendStopCondition(h);
+
     // Wait for physical bus transmission to end
-    start = gmp_base_get_system_tick();
     while (I2C_getStopConditionStatus(h))
     {
+        if (I2C_getStatus(h) & I2C_STS_NO_ACK)
+        {
+            I2C_sendStopCondition(h);
+            I2C_clearStatus(h, I2C_STS_NO_ACK);
+            return GMP_EC_NACK;
+        }
         CHECK_TIMEOUT(start, timeout);
     }
+
+    ret = wait_bus_idle(h, timeout);
+    if (ret != GMP_EC_OK)
+        return ret;
 
     return GMP_EC_OK;
 }
@@ -397,23 +560,60 @@ ec_gt gmp_hal_iic_read_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, s
     if (ret != GMP_EC_OK)
         return ret;
 
-    I2C_setTargetAddress(h, dev_addr);
+    time_gt start = gmp_base_get_system_tick();
+
+    addr16_gt current_hardware_addr = I2C_getTargetAddress(h);
+
+    if (current_hardware_addr != dev_addr)
+    {
+        // Wait for TX fifo is transmit complete
+        while (I2C_getTxFIFOStatus(h) != I2C_FIFO_TX0)
+        {
+            CHECK_TIMEOUT(start, timeout);
+        }
+
+        // ensure last message has been sent
+        while (I2C_getStopConditionStatus(h))
+        {
+            CHECK_TIMEOUT(start, timeout);
+        }
+
+        // Select to target address
+        I2C_setTargetAddress(h, dev_addr);
+    }
+    else
+    {
+        while (I2C_getStopConditionStatus(h))
+        {
+            CHECK_TIMEOUT(start, timeout);
+        }
+    }
+
+    // reset bus
     reset_bus_status(h);
+    I2C_disableFIFO(h);
+    I2C_enableFIFO(h);
 
     // ==========================================
     // Phase 1: Write Register Address (No STOP)
     // ==========================================
     I2C_setDataCount(h, addr_len);
+
     int32_t i;
     for (i = (int32_t)addr_len - 1; i >= 0; i--)
     {
+        // 写入前确保 TX FIFO 有空间
+        while (I2C_getTxFIFOStatus(h) == I2C_FIFO_TX16)
+        {
+            CHECK_TIMEOUT(start, timeout);
+        }
+
         I2C_putData(h, (reg_addr >> (i * 8)) & 0xFF);
     }
 
     I2C_setConfig(h, I2C_CONTROLLER_SEND_MODE);
     I2C_sendStartCondition(h);
 
-    time_gt start = gmp_base_get_system_tick();
     while ((I2C_getStatus(h) & I2C_STS_REG_ACCESS_RDY) == 0)
     {
         if (I2C_getStatus(h) & I2C_STS_NO_ACK)
@@ -429,9 +629,9 @@ ec_gt gmp_hal_iic_read_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, s
     // Phase 2: Read Data (Repeated START + STOP)
     // ==========================================
     I2C_setDataCount(h, reg_len);
+
     I2C_setConfig(h, I2C_CONTROLLER_RECEIVE_MODE);
     I2C_sendStartCondition(h);
-    I2C_sendStopCondition(h);
 
     uint32_t result = 0;
     start = gmp_base_get_system_tick();
@@ -452,14 +652,118 @@ ec_gt gmp_hal_iic_read_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, s
         result = (result << 8) | I2C_getData(h);
     }
 
+    I2C_sendStopCondition(h);
+
     while (I2C_getStopConditionStatus(h))
     {
         CHECK_TIMEOUT(start, timeout);
     }
 
+    ret = wait_bus_idle(h, timeout);
+    if (ret != GMP_EC_OK)
+        return ret;
+
     *reg_data_ret = result;
     return GMP_EC_OK;
 }
+
+//ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, data_gt* mem,
+//                           size_gt mem_len, time_gt timeout)
+//{
+//    if (mem == NULL)
+//        return GMP_EC_GENERAL_ERROR;
+//
+//    ec_gt ret = wait_bus_idle(h, timeout);
+//    if (ret != GMP_EC_OK)
+//        return ret;
+//
+//    time_gt start = gmp_base_get_system_tick();
+//
+//    addr16_gt current_hardware_addr = I2C_getTargetAddress(h);
+//
+//    if (current_hardware_addr != dev_addr)
+//    {
+//        // Wait for TX fifo is transmit complete
+//        while (I2C_getTxFIFOStatus(h) != I2C_FIFO_TX0)
+//        {
+//            CHECK_TIMEOUT(start, timeout);
+//        }
+//
+//        // ensure last message has been sent
+//        while(I2C_getStopConditionStatus(h))
+//        {
+//            CHECK_TIMEOUT(start, timeout);
+//        }
+//
+//        // Select to target address
+//        I2C_setTargetAddress(h, dev_addr);
+//    }
+//
+//    // reset bus
+//    reset_bus_status(h);
+//
+//    // ==========================================
+//    // Phase 1: Write Memory Address (No STOP)
+//    // ==========================================
+//
+//    int32_t i;
+//    for (i = (int32_t)addr_len - 1; i >= 0; i--)
+//    {
+//        I2C_putData(h, (mem_addr >> (i * 8)) & 0xFF);
+//    }
+//
+//    I2C_setConfig(h, I2C_CONTROLLER_SEND_MODE);
+//
+//    I2C_setDataCount(h, addr_len);
+//
+//    I2C_sendStartCondition(h);
+//
+//    while ((I2C_getStatus(h) & I2C_STS_REG_ACCESS_RDY) == 0)
+//    {
+//        if (I2C_getStatus(h) & I2C_STS_NO_ACK)
+//        {
+//            I2C_sendStopCondition(h);
+//            return GMP_EC_NACK;
+//        }
+//        CHECK_TIMEOUT(start, timeout);
+//    }
+//
+//    // ==========================================
+//    // Phase 2: Read Continuous Block
+//    // ==========================================
+//    I2C_setDataCount(h, mem_len);
+//    I2C_setConfig(h, I2C_CONTROLLER_RECEIVE_MODE);
+//    I2C_sendStartCondition(h);
+//    I2C_sendStopCondition(h);
+//
+//    start = gmp_base_get_system_tick();
+//    uint32_t idx = 0;
+//    while (idx < mem_len)
+//    {
+//        if (I2C_getRxFIFOStatus(h) != I2C_FIFO_RX0)
+//        {
+//            // Direct mapping: 1 Byte on Bus -> 1 Element in data_gt array
+//            mem[idx] = (data_gt)I2C_getData(h);
+//            idx++;
+//        }
+//        else
+//        {
+//            if (I2C_getStatus(h) & I2C_STS_NO_ACK)
+//            {
+//                I2C_sendStopCondition(h);
+//                return GMP_EC_NACK;
+//            }
+//            CHECK_TIMEOUT(start, timeout);
+//        }
+//    }
+//
+//    while (I2C_getStopConditionStatus(h))
+//    {
+//        CHECK_TIMEOUT(start, timeout);
+//    }
+//
+//    return GMP_EC_OK;
+//}
 
 ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, data_gt* mem,
                            size_gt mem_len, time_gt timeout)
@@ -471,13 +775,33 @@ ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, s
     if (ret != GMP_EC_OK)
         return ret;
 
-    I2C_setTargetAddress(h, dev_addr);
-    reset_bus_status(h);
+    time_gt start = gmp_base_get_system_tick();
+    addr16_gt current_hardware_addr = I2C_getTargetAddress(h);
+
+    while (I2C_getStopConditionStatus(I2CA_BASE))
+    {
+        CHECK_TIMEOUT(start, timeout);
+    }
+
+    if (current_hardware_addr != dev_addr)
+    {
+        //        while (I2C_getTxFIFOStatus(h) != I2C_FIFO_TX0) { CHECK_TIMEOUT(start, timeout); }
+        //        while (I2C_getStopConditionStatus(h)) { CHECK_TIMEOUT(start, timeout); }
+        I2C_setTargetAddress(h, dev_addr);
+    }
+
+    // 彻底重置 FIFO 和状态，洗净上一轮残留
+    I2C_disableFIFO(h);
+    I2C_clearStatus(h, I2C_STS_NO_ACK | I2C_STS_ARB_LOST | I2C_STS_REG_ACCESS_RDY);
+    I2C_enableFIFO(h);
 
     // ==========================================
     // Phase 1: Write Memory Address (No STOP)
     // ==========================================
+
+    // 【修正点 1】：必须在 putData 之前，先设定好发送计数器
     I2C_setDataCount(h, addr_len);
+
     int32_t i;
     for (i = (int32_t)addr_len - 1; i >= 0; i--)
     {
@@ -485,52 +809,89 @@ ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, s
     }
 
     I2C_setConfig(h, I2C_CONTROLLER_SEND_MODE);
-    I2C_sendStartCondition(h);
+    I2C_sendStartCondition(h); // 发射地址，不发送 Stop 信号
 
-    time_gt start = gmp_base_get_system_tick();
+    // 【修正点 2】：放弃不可靠的 ARDY，通过判断 TX FIFO 清空和移位完成来确认发送完毕
+    while (I2C_getTxFIFOStatus(h) != I2C_FIFO_TX0)
+    {
+        if (I2C_getStatus(h) & I2C_STS_NO_ACK)
+        {
+            I2C_sendStopCondition(h);
+            I2C_clearStatus(h, I2C_STS_NO_ACK);
+            return GMP_EC_NACK;
+        }
+        CHECK_TIMEOUT(start, timeout);
+    }
+
+    // 给硬件移位寄存器留出最后一个字节发送完的微小间隙
+    // 检查并等待内部传输准备好或总线不报错
     while ((I2C_getStatus(h) & I2C_STS_REG_ACCESS_RDY) == 0)
     {
         if (I2C_getStatus(h) & I2C_STS_NO_ACK)
         {
             I2C_sendStopCondition(h);
+            I2C_clearStatus(h, I2C_STS_NO_ACK);
             return GMP_EC_NACK;
         }
         CHECK_TIMEOUT(start, timeout);
     }
 
     // ==========================================
-    // Phase 2: Read Continuous Block
+    // Phase 2: Read Continuous Block (Repeated Start)
     // ==========================================
+
+    // 配置接收字节数
     I2C_setDataCount(h, mem_len);
     I2C_setConfig(h, I2C_CONTROLLER_RECEIVE_MODE);
+
+    // 触发 Repeated Start
     I2C_sendStartCondition(h);
-    I2C_sendStopCondition(h);
+
+    // 【修正点 3】：不要立刻在 Start 后面跟 Stop 条件。
+    // 在接收模式下，当 RX FIFO 开始收到数据或临近结束时再给 Stop 指令是最安全的。
+    // 这里我们等收到第一个数据后，或者确认开始接收后，再安全挂载 Stop。
+    bool stop_conditioned = false;
 
     start = gmp_base_get_system_tick();
     uint32_t idx = 0;
     while (idx < mem_len)
     {
+        // 随时监控 NACK（例如从机突然断开或拒绝回应）
+        if (I2C_getStatus(h) & I2C_STS_NO_ACK)
+        {
+            I2C_sendStopCondition(h);
+            I2C_clearStatus(h, I2C_STS_NO_ACK);
+            return GMP_EC_NACK;
+        }
+
+        // 一旦开始顺利接收第 1 个字节，代表时序已经稳固建立，此时安全追加 Stop 指令
+        // 这样硬件就能在收完最后一个字节时，正确发出 NACK + STOP。
+        if (!stop_conditioned && idx >= 0)
+        {
+            I2C_sendStopCondition(h);
+            stop_conditioned = true;
+        }
+
         if (I2C_getRxFIFOStatus(h) != I2C_FIFO_RX0)
         {
-            // Direct mapping: 1 Byte on Bus -> 1 Element in data_gt array
             mem[idx] = (data_gt)I2C_getData(h);
             idx++;
         }
         else
         {
-            if (I2C_getStatus(h) & I2C_STS_NO_ACK)
-            {
-                I2C_sendStopCondition(h);
-                return GMP_EC_NACK;
-            }
             CHECK_TIMEOUT(start, timeout);
         }
     }
 
+    // 等待引脚上的 STOP 硬件电平完全跳变结束，释放总线
     while (I2C_getStopConditionStatus(h))
     {
         CHECK_TIMEOUT(start, timeout);
     }
+
+    ret = wait_bus_idle(h, timeout);
+    if (ret != GMP_EC_OK)
+        return ret;
 
     return GMP_EC_OK;
 }
@@ -683,7 +1044,7 @@ ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const data_gt* tx_buf, data_gt* rx
 //    uint32_t mailbox_idx;
 //    bool found_free = false;
 //
-//    /* 1. 在预留的发送邮箱（0~3）中寻找空闲邮箱 */
+//     /* 1. 在预留的发送邮箱（0~3）中寻找空闲邮箱 */
 //    for (mailbox_idx = 0; mailbox_idx < 4; mailbox_idx++)
 //    {
 //        /* 检查该邮箱的发送请求标志 (TXRQST) 是否为 0 */
@@ -709,7 +1070,7 @@ ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const data_gt* tx_buf, data_gt* rx
 //}
 
 /**
- * @brief C2000 CAN 中断服务程序（示例）
+* @brief C2000 CAN 中断服务程序（示例）
  */
 //__interrupt void can_isr(void)
 //{

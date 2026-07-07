@@ -25,7 +25,7 @@ extern "C"
  * Note: 16 bytes at 100kHz takes ~1.8ms. 5ms is a safe default.
  */
 #ifndef HT16K33_CFG_TIMEOUT
-#define HT16K33_CFG_TIMEOUT (5U)
+#define HT16K33_CFG_TIMEOUT (20U)
 #endif
 
 /** * @brief Number of bytes used for display RAM.
