@@ -19,6 +19,7 @@ spll_sogi_t pll;
 ctl_sms_pq_t pq_meter;
 ctl_sinv_ref_gen_t ref_gen;
 ctl_sinv_rc_core_t rc_core;
+ctl_ramp_generator_t rg;
 
 // FDRC controller static memory
 #define FDRC_ARRAY_SIZE ((int)(CONTROLLER_FREQUENCY / 50.0f) + 10)
@@ -41,12 +42,8 @@ volatile fast_gt index_adc_calibrator = 0;
 ctrl_gt g_p_ref_user = float2ctrl(0.0f);
 ctrl_gt g_q_ref_user = float2ctrl(0.0f);
 
-//volatile fast_gt flag_system_running = 0;
-//volatile fast_gt flag_error = 0;
-
-// 定时器比较值缓存
-pwm_gt pwm_cmp_L = 0;
-pwm_gt pwm_cmp_N = 0;
+ctrl_gt openloop_v_ref = float2ctrl(0.5f);
+vector2_gt phasor;
 
 //=================================================================================================
 // CTL initialize routine
@@ -83,6 +80,9 @@ void ctl_init(void)
 
     // Command generator, I_max(pu), V_min(pu), P_slope(pu/s), Q_slope(pu/s)
     ctl_init_sinv_ref_gen(&ref_gen, CTRL_CURRENT_BASE * 1.5f, 0.1f, 10.0f, 20.0f, CONTROLLER_FREQUENCY);
+
+    // freerun angle reference generator, 50Hz, [0, 1] range for pu angle
+    ctl_init_ramp_generator_via_freq(&rg, CONTROLLER_FREQUENCY, 50.0f, 1, 0);
 
     //
     // init H PWM modulator

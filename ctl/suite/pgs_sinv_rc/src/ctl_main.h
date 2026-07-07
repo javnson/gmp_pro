@@ -28,6 +28,7 @@
 #include <ctl/component/digital_power/sinv/sms_pq.h>
 #include <ctl/component/digital_power/sinv/spll_sogi.h>
 #include <ctl/component/interface/hpwm_modulator.h>
+#include <ctl/component/intrinsic/discrete/signal_generator.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -45,6 +46,7 @@ extern spll_sogi_t pll;
 extern ctl_sms_pq_t pq_meter;
 extern ctl_sinv_ref_gen_t ref_gen;
 extern ctl_sinv_rc_core_t rc_core;
+extern ctl_ramp_generator_t rg;
 
 // Input channel
 extern adc_channel_t adc_v_grid;
@@ -66,12 +68,8 @@ extern volatile fast_gt index_adc_calibrator;
 extern ctrl_gt g_p_ref_user;
 extern ctrl_gt g_q_ref_user;
 
-extern volatile fast_gt flag_system_running;
-extern volatile fast_gt flag_error;
-
-// Final output duty cycle for the modulator
-extern pwm_gt pwm_cmp_L;
-extern pwm_gt pwm_cmp_N;
+extern ctrl_gt openloop_v_ref;
+extern vector2_gt phasor;
 
 //=================================================================================================
 // function prototype
@@ -94,6 +92,8 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 {
     // ADC input will handled by input process
 
+
+
     // ADC calibrator routine
     if (flag_enable_adc_calibrator)
     {
@@ -115,8 +115,24 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         // 3. Command Generation (P/Q to I_ref)
         if (cia402_sm.state_word.bits.operation_enabled)
         {
+
+
+#if BUILD_LEVEL <= 2
+            // SINV running in free run mode.
+
+            // generate a reference angle signal
+            ctl_step_ramp_generator(&rg);
+
+            ctl_set_phasor_via_angle(rg.current, &phasor);
+
+            ctl_step_sinv_ref_gen_pq(&ref_gen, g_p_ref_user, g_q_ref_user, pll.v_mag, &phasor);
+
+#elif BUILD_LEVEL >= 3
+            // SINV running in PLL mode.
+
             // The internal slope limiters inside ref_gen handle the soft-start automatically
             ctl_step_sinv_ref_gen_pq(&ref_gen, g_p_ref_user, g_q_ref_user, pll.v_mag, &pll.phasor);
+#endif // BUILD_LEVEL
         }
         else
         {
@@ -130,25 +146,28 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         ctl_step_sinv_rc_core(&rc_core, ref_gen.i_ref_inst);
 
         // 5. Fast Protection Callback (ISR Level)
-        if (ctl_step_sinv_protect_fast(&protection, adc_v_bus.control_port.value, adc_i_ac.control_port.value,
-                                       rc_core.v_out_ref))
-        {
-            cia402_fault_request(&cia402_sm);
-        }
+//        if (ctl_step_sinv_protect_fast(&protection, adc_v_bus.control_port.value, adc_i_ac.control_port.value,
+//                                       rc_core.v_out_ref))
+//        {
+//            cia402_fault_request(&cia402_sm);
+//        }
 
-        // 6. Dead-time Compensation & PWM Modulation
+        // PWM Modulation
         if (cia402_sm.state_word.bits.operation_enabled)
         {
+#if BUILD_LEVEL == 1
+            ctl_step_single_phase_H_modulation(&hpwm, ctl_mul(openloop_v_ref, phasor.dat[phasor_sin]), adc_i_ac.control_port.value);
+#else
             ctl_step_single_phase_H_modulation(&hpwm, rc_core.v_out_ref, adc_i_ac.control_port.value);
+#endif // BUILD_LEVEL
+
+
         }
         else
         {
             ctl_clear_single_phase_H_modulation(&hpwm);
         }
 
-        // 7. Write outputs for hardware timers
-        pwm_cmp_L = ctl_get_single_phase_modulation_L_phase(&hpwm);
-        pwm_cmp_N = ctl_get_single_phase_modulation_N_phase(&hpwm);
     }
 }
 

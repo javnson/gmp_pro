@@ -12,7 +12,7 @@
 // BUILD_LEVEL 1: 离网开环/纯电阻负载测试 (关闭 FDRC，关闭前馈，验证 QPR 与 SPWM 发波)
 // BUILD_LEVEL 2: 并网闭环控制 (引入电网电压前馈，实现基础 PQ 控制，FDRC 关闭)
 // BUILD_LEVEL 3: 并网电能质量优化 (延时切入 FDRC，消除死区与电网背景谐波，全功能运行)
-#define BUILD_LEVEL (2)
+#define BUILD_LEVEL (1)
 
 //=================================================================================================
 // Controller Basic Parameters
@@ -110,8 +110,8 @@
 // Board peripheral mapping
 
 // PWM Channels
-#define PHASE_L_BASE IRIS_EPWM1_BASE
-#define PHASE_N_BASE IRIS_EPWM2_BASE
+#define PHASE_L_BASE IRIS_EPWM3_BASE
+#define PHASE_N_BASE IRIS_EPWM4_BASE
 
 // PWM Enable
 #define PWM_ENABLE_PORT IRIS_GPIO1
