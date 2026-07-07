@@ -158,7 +158,7 @@ gmp_scheduler_t sched;
 gmp_task_t tasks[] = {
     // name,     task,      period(ms),  init_phase, is_enabled, pParam
     {"dl_online", tsk_dl_debug_device, 2, 0, 1, NULL},
-    {"flush_key", tsk_key_flush, 100, 10, 0, (void*)&ht16k33},
+    {"flush_key", tsk_key_flush, 200, 10, 0, (void*)&ht16k33},
     {"oled_show", oled_show_task, 1000, 500, 1, NULL},
     {"flush_led", tsk_LED_flush, 500, 200, 0, (void*)&ht16k33},
     {"fpga_test", fpga_test_task, 1000, 600, 1, NULL},
@@ -216,9 +216,12 @@ gmp_task_status_t tsk_startup(gmp_task_t* tsk)
 
         ec_gt ec = ht16k33_init(&ht16k33, iic_bus, HT16K33_DEFAULT_DEV_ADDR, &ht16k33_init_struct);
 
+        update_led_content_8byte(&ht16k33, led_lut[2], led_lut[0], led_lut[2], led_lut[6], led_lut[20], led_lut[7],
+                                         led_lut[7], led_lut[20]);
+
         if (ec == GMP_EC_OK)
         {
-            sched.task_list[1]->is_enabled = 0;
+            sched.task_list[1]->is_enabled = 1;
             sched.task_list[3]->is_enabled = 1;
         }
 

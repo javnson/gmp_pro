@@ -31,6 +31,8 @@ extern "C"
 
 #endif // SPECIFY_PC_TEST_ENV
 
+extern const unsigned char led_lut[];
+
 extern iic_halt iic_bus;
 extern ht16k33_dev_t ht16k33;
 extern hdc1080_dev_t hdc1080;
