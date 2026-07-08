@@ -2,48 +2,54 @@
   "id": "voltage_sensor",
   "display_name": "Voltage Sensor",
   "description": "Voltage sensor or resistor divider model.",
-  "category": "voltage_sensor",
-  "tags": ["sensor", "voltage_sensor"],
+  "category": "Voltage Sensor",
+  "tags": [
+    "sensor",
+    "voltage_sensor"
+  ],
   "output_subdir": "voltage_sensor",
   "parameters": [
     {
       "name": "chip",
       "c_name": "CHIP",
-      "description": "Main sensing IC or front-end topology.",
+      "unit": "",
       "required": true,
-      "value_format": "\"{}\""
+      "value_format": "\"{}\"",
+      "description": "Main sensing IC or front-end topology."
     },
     {
       "name": "rated_voltage_v",
       "c_name": "RATED_VOLTAGE_V",
       "unit": "V",
-      "description": "Nominal measurable voltage.",
       "required": true,
-      "value_format": "({}f)"
+      "value_format": "({}f)",
+      "description": "Nominal measurable voltage."
     },
     {
       "name": "bias_v",
       "c_name": "BIAS_V",
       "unit": "V",
+      "required": false,
+      "value_format": "({}f)",
       "description": "Output bias voltage.",
-      "default": 0.0,
-      "value_format": "({}f)"
+      "default": 0.0
     },
     {
       "name": "sensitivity_v_per_v",
       "c_name": "SENSITIVITY_V_PER_V",
       "unit": "V/V",
-      "description": "Voltage sensor sensitivity.",
       "required": true,
-      "value_format": "({}f)"
+      "value_format": "({}f)",
+      "description": "Voltage sensor sensitivity."
     },
     {
       "name": "input_resistance_ohm",
       "c_name": "INPUT_RESISTANCE_OHM",
       "unit": "ohm",
+      "required": false,
+      "value_format": "({}f)",
       "description": "Equivalent input resistance.",
-      "default": 0.0,
-      "value_format": "({}f)"
+      "default": 0.0
     }
   ],
   "derived_macros": [
@@ -70,5 +76,7 @@
       "unit": "V",
       "description": "Voltage range."
     }
-  }
+  },
+  "header_prefix": "",
+  "components": {}
 }

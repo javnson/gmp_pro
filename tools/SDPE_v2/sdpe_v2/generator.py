@@ -83,7 +83,7 @@ class HeaderGenerator:
         rel = self.entity_header_path(entity).relative_to(self.out_dir).as_posix()
         guard = header_guard(rel)
         prefix = self.prefix(entity, schema)
-        includes = self._child_includes(entity)
+        includes = self._entity_includes(entity, schema)
 
         lines: list[str] = []
         lines.extend(
@@ -163,8 +163,8 @@ class HeaderGenerator:
         )
         return "\n".join(lines)
 
-    def _child_includes(self, entity: HardwareEntity) -> list[str]:
-        includes = []
+    def _entity_includes(self, entity: HardwareEntity, schema: HardwareSchema) -> list[str]:
+        includes = [*schema.includes, *entity.includes]
         for comp in entity.components.values():
             if not comp.inline:
                 includes.append(self.entity_include_path(comp.entity))

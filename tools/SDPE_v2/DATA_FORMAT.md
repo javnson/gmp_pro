@@ -21,6 +21,7 @@ Schema 文件放在 `schemas/` 下。
 | `category` | string | 分类。 |
 | `tags` | array | 用于搜索和分类的标签。 |
 | `output_subdir` | string | 生成头文件的子目录。 |
+| `includes` | array | 当前类型生成头文件时需要额外包含的 GMP 头文件路径。 |
 | `parameters` | array | 参数定义。 |
 | `derived_macros` | array | 派生宏定义。 |
 | `components` | object | 默认 Sub Components，格式与 Entity 的 `components` 一致。 |
@@ -118,6 +119,7 @@ Entity 文件放在 `entities/` 下。
   "datasheet_url": "https://www.ti.com/lit/ds/symlink/tmcs1133.pdf",
   "document_url": "",
   "macro_prefix": "TMCS1133_B5A",
+  "includes": [],
   "tags": ["current_sensor", "hall", "tmcs1133"],
   "parameters": {
     "chip": "TMCS1133B5A",
@@ -127,6 +129,8 @@ Entity 文件放在 `entities/` 下。
   }
 }
 ```
+
+`includes` 也可以在 Entity 中声明，用于某个具体实例额外依赖的头文件。Schema 和 Entity 的 `includes` 会与 Sub Components 产生的 include 一起去重输出。
 
 复合 entity 使用 `components`：
 
@@ -225,6 +229,7 @@ Binding 支持三种形式：
 
 - 生成头文件使用 Doxygen 风格文件头。
 - 宏前缀来自 entity 的 `macro_prefix`。
+- Schema 和 Entity 的 `includes` 会原样写入生成头文件。
 - 非 inline 子实体生成独立头文件，并由父硬件 include。
 - inline 子实体展开到父硬件头文件，不生成独立文件。
 - 组件 `overrides` 使用父硬件的槽位作用域生成本地宏。

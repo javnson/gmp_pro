@@ -2,56 +2,76 @@
   "id": "iris_c2000_core_board",
   "display_name": "IRIS C2000 Core Board",
   "description": "DSP C2000 core board peripheral name binding model.",
-  "category": "mcu_board",
+  "category": "C2000 Mathor Board",
   "output_subdir": "mcu_board",
   "parameters": [
     {
       "name": "chip",
       "c_name": "CHIP",
-      "description": "C2000 device name.",
+      "unit": "",
       "required": true,
-      "value_format": "\"{}\""
+      "value_format": "\"{}\"",
+      "description": "C2000 device name."
     },
     {
       "name": "syscfg_file",
       "c_name": "SYSCFG_FILE",
-      "description": "SysConfig source file used by this binding.",
+      "unit": "",
       "required": true,
-      "value_format": "\"{}\""
+      "value_format": "\"{}\"",
+      "description": "SysConfig source file used by this binding."
     },
     {
       "name": "epwm1_base",
       "c_name": "EPWM1_BASE",
+      "unit": "",
+      "required": false,
+      "value_format": "{}",
       "description": "SysConfig EPWM1 base macro.",
       "default": "IRIS_EPWM1_BASE"
     },
     {
       "name": "epwm2_base",
       "c_name": "EPWM2_BASE",
+      "unit": "",
+      "required": false,
+      "value_format": "{}",
       "description": "SysConfig EPWM2 base macro.",
       "default": "IRIS_EPWM2_BASE"
     },
     {
       "name": "adc_ch1",
       "c_name": "ADC_CH1",
+      "unit": "",
+      "required": false,
+      "value_format": "{}",
       "description": "SysConfig ADC channel 1 macro.",
       "default": "ADC_CH1"
     },
     {
       "name": "adc_ch2",
       "c_name": "ADC_CH2",
+      "unit": "",
+      "required": false,
+      "value_format": "{}",
       "description": "SysConfig ADC channel 2 macro.",
       "default": "ADC_CH2"
     },
     {
       "name": "adc_ch3",
       "c_name": "ADC_CH3",
+      "unit": "",
+      "required": false,
+      "value_format": "{}",
       "description": "SysConfig ADC channel 3 macro.",
       "default": "ADC_CH3"
     },
     {
       "name": "adc_ch4",
       "c_name": "ADC_CH4",
+      "unit": "",
+      "required": false,
+      "value_format": "{}",
       "description": "SysConfig ADC channel 4 macro.",
       "default": "ADC_CH4"
     }
@@ -81,5 +101,8 @@
       "macro": "{PREFIX}_ADC_CH4",
       "description": "ADC channel 4 macro."
     }
-  }
+  },
+  "tags": [],
+  "header_prefix": "",
+  "components": {}
 }

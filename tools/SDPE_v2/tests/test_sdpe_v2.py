@@ -22,11 +22,44 @@ class SDPEV2Tests(unittest.TestCase):
         self.assertEqual(warnings, [])
         self.assertIn("half_bridge", lib.schemas)
         self.assertIn("current_sensor", lib.schemas["current_sensor"].tags)
-        self.assertEqual(lib.schemas["current_sensor"].category, "current_sensor")
+        self.assertEqual(lib.schemas["current_sensor"].category, "Current Sensor")
         self.assertIn("lvfb_half_bridge_phase_a", lib.entity_files)
         self.assertIn("hall", lib.entity("tmcs1133_b2a").tags)
         self.assertEqual(lib.entity("tmcs1133_b2a").vendor, "Texas Instruments")
         self.assertIn("current_sensor", lib.schemas["half_bridge"].default_components)
+
+    def test_real_hardware_presets_are_modeled(self) -> None:
+        lib = self.load_library()
+        for entity_id in [
+            "tle4971a025",
+            "tmcs1133",
+            "gbm2804h_100t",
+            "hbl48zl400330k",
+            "pmsrm_4p_15kw520v",
+            "sm060r20b30mnad",
+            "tyi_5008_kv335",
+            "tyi_5010_360kv",
+            "acm_4p24v",
+            "gmp_harmonia_3ph_lc_filter",
+            "gmp_lvfb_150_2ph_v2",
+        ]:
+            self.assertIn(entity_id, lib.entity_files)
+
+        self.assertEqual(lib.entity("gmp_lvfb_150_2ph_v2").components["current_sensor"].entity.id, "tmcs1133_b5a")
+        self.assertEqual(
+            lib.entity("gmp_harmonia_3ph_lc_filter").components["phase_current_sensor"].entity.id,
+            "tle4971a025",
+        )
+
+    def test_schema_declared_includes_are_generated(self) -> None:
+        lib = self.load_library()
+        with tempfile.TemporaryDirectory() as tmp:
+            gen = HeaderGenerator(lib, Path(tmp))
+            gen.generate_entity_tree("gbm2804h_100t")
+            header = (Path(tmp) / "hardware_preset" / "pmsm_motor" / "gbm2804h_100t.h").read_text(
+                encoding="utf-8"
+            )
+            self.assertIn("#include <ctl/component/motor_control/consultant/unit_consultant.h>", header)
 
     def test_schema_default_components_are_applied(self) -> None:
         lib = self.load_library()

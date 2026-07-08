@@ -21,11 +21,13 @@ try:
         QFormLayout,
         QHBoxLayout,
         QHeaderView,
+        QInputDialog,
         QLabel,
         QLineEdit,
         QListWidget,
         QListWidgetItem,
         QMainWindow,
+        QMenu,
         QMessageBox,
         QPushButton,
         QSplitter,
@@ -53,11 +55,13 @@ except ImportError:  # pragma: no cover - depends on local desktop environment.
             QFormLayout,
             QHBoxLayout,
             QHeaderView,
+            QInputDialog,
             QLabel,
             QLineEdit,
             QListWidget,
             QListWidgetItem,
             QMainWindow,
+            QMenu,
             QMessageBox,
             QPushButton,
             QSplitter,
@@ -244,6 +248,24 @@ def choose_item(parent: QWidget, title: str, items: list[str]) -> str | None:
     return None
 
 
+def prompt_identifier(parent: QWidget, title: str, label: str) -> str:
+    text, ok = QInputDialog.getText(parent, title, label)
+    if not ok:
+        return ""
+    return text.strip()
+
+
+def confirm_delete(parent: QWidget, title: str, text: str) -> bool:
+    result = QMessageBox.question(
+        parent,
+        title,
+        text,
+        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        QMessageBox.StandardButton.No,
+    )
+    return result == QMessageBox.StandardButton.Yes
+
+
 class SDPEPage(QWidget):
     """Common split view page: searchable object list, form editor, JSON/code preview."""
 
@@ -253,6 +275,9 @@ class SDPEPage(QWidget):
         self.title = title
         self.current_id = ""
         self.has_code = has_code
+        self.loading = False
+        self.drafts: dict[str, dict[str, Any]] = {}
+        self.dirty_ids: set[str] = set()
 
         self.search = QLineEdit()
         self.search.setPlaceholderText("Search id, name, tag")
@@ -314,6 +339,8 @@ class SDPEPage(QWidget):
         layout.addWidget(self.splitter)
         self.save_shortcut = QShortcut(QKeySequence.StandardKey.Save, self)
         self.save_shortcut.activated.connect(self.save_current)
+        self.save_all_shortcut = QShortcut(QKeySequence("Ctrl+Shift+S"), self)
+        self.save_all_shortcut.activated.connect(self.save_all)
         self.undo_shortcut = QShortcut(QKeySequence.StandardKey.Undo, self)
         self.undo_shortcut.activated.connect(self.undo_focused_widget)
 
@@ -331,6 +358,8 @@ class SDPEPage(QWidget):
         item_id = current.data(0, Qt.ItemDataRole.UserRole) if isinstance(current, QTreeWidgetItem) else current.data(Qt.ItemDataRole.UserRole)
         if not item_id:
             return
+        if self.current_id and item_id != self.current_id:
+            self.store_current_draft()
         self.current_id = item_id
         self.load_current()
 
@@ -339,6 +368,60 @@ class SDPEPage(QWidget):
 
     def save_current(self) -> None:
         return None
+
+    def collect_current_data(self) -> dict[str, Any] | None:
+        return None
+
+    def path_for_id(self, item_id: str) -> Path:
+        raise NotImplementedError
+
+    def mark_current_dirty(self) -> None:
+        if self.loading or not self.current_id:
+            return
+        self.dirty_ids.add(self.current_id)
+        current = self.list_widget.currentItem() if isinstance(self.list_widget, QTreeWidget) else self.list_widget.currentItem()
+        if current is not None:
+            if isinstance(current, QTreeWidgetItem):
+                text = current.text(0)
+                if not text.endswith(" *"):
+                    current.setText(0, f"{text} *")
+            else:
+                text = current.text()
+                if not text.endswith(" *"):
+                    current.setText(f"{text} *")
+
+    def store_current_draft(self) -> None:
+        if self.loading or not self.current_id:
+            return
+        data = self.collect_current_data()
+        if data is None:
+            return
+        self.drafts[self.current_id] = data
+        path = self.path_for_id(self.current_id)
+        old = read_json(path) if path.exists() else {}
+        if pretty_json(data) != pretty_json(old):
+            self.dirty_ids.add(self.current_id)
+
+    def data_for_id(self, item_id: str, path: Path) -> dict[str, Any]:
+        if item_id in self.drafts:
+            return self.drafts[item_id]
+        return read_json(path)
+
+    def save_all(self) -> None:
+        self.store_current_draft()
+        saved = 0
+        for item_id in list(self.dirty_ids):
+            data = self.drafts.get(item_id)
+            if data is None:
+                continue
+            self.window.write_json(self.path_for_id(item_id), data)
+            saved += 1
+        self.dirty_ids.clear()
+        self.drafts.clear()
+        if saved:
+            self.window.reload()
+            self.refresh_list()
+            self.message("Saved", f"Saved {saved} file(s).")
 
     def set_professional_text(self, text: str) -> None:
         self.professional_panel.setPlainText(text)
@@ -403,6 +486,14 @@ class SDPEPage(QWidget):
 class TemplatePage(SDPEPage):
     """Template/schema object editor."""
 
+    def create_items_widget(self):
+        widget = QTreeWidget()
+        widget.setHeaderHidden(True)
+        widget.currentItemChanged.connect(lambda current, _previous: self.on_current_changed(current))
+        widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        widget.customContextMenuRequested.connect(self.show_template_context_menu)
+        return widget
+
     def __init__(self, window: "MainWindow"):
         super().__init__(window, "Template Definition", has_code=False)
         self.id_edit = QLineEdit()
@@ -426,6 +517,18 @@ class TemplatePage(SDPEPage):
             QHeaderView.ResizeMode.Interactive,
         )
         self.slots.cellDoubleClicked.connect(self.on_component_cell_double_clicked)
+        for widget in [
+            self.id_edit,
+            self.name_edit,
+            self.category_edit,
+            self.tags_edit,
+            self.output_edit,
+            self.header_prefix_edit,
+        ]:
+            widget.textChanged.connect(self.mark_current_dirty)
+        self.description_edit.textChanged.connect(self.mark_current_dirty)
+        self.params.cellChanged.connect(lambda _row, _col: self.mark_current_dirty())
+        self.slots.cellChanged.connect(lambda _row, _col: self.mark_current_dirty())
 
         form = QFormLayout()
         form.addRow("Template ID", self.id_edit)
@@ -444,13 +547,22 @@ class TemplatePage(SDPEPage):
         add_slot.clicked.connect(self.add_template_component)
         del_slot = QPushButton("Remove slot")
         del_slot.clicked.connect(lambda: self.slots.removeRow(max(0, self.slots.currentRow())))
-        save = QPushButton("Save template")
+        new_template = QPushButton("New")
+        new_template.clicked.connect(self.new_template)
+        copy_template = QPushButton("Copy")
+        copy_template.clicked.connect(self.copy_template)
+        delete_template = QPushButton("Delete")
+        delete_template.clicked.connect(self.delete_template)
+        save = QPushButton("Save")
         save.clicked.connect(self.save_current)
+        save_all = QPushButton("Save All")
+        save_all.clicked.connect(self.save_all)
 
         tabs = QTabWidget()
         basic_tab = QWidget()
         basic_layout = QVBoxLayout(basic_tab)
         basic_layout.addLayout(form)
+        basic_layout.addLayout(row_buttons([new_template, copy_template, delete_template, save, save_all]))
         basic_layout.addStretch(1)
         param_tab = QWidget()
         param_layout = QVBoxLayout(param_tab)
@@ -468,29 +580,39 @@ class TemplatePage(SDPEPage):
     def refresh_list(self) -> None:
         current = self.current_id
         self.list_widget.clear()
-        for schema in sorted(self.window.library.schemas.values(), key=lambda item: item.id):
+        category_nodes: dict[str, QTreeWidgetItem] = {}
+        for schema in sorted(self.window.library.schemas.values(), key=lambda item: (item.category, item.display_name, item.id)):
             if not self.filter_match([schema.id, schema.display_name, schema.category, *schema.tags]):
                 continue
-            item = QListWidgetItem(f"{schema.display_name}  ({schema.id})")
-            item.setToolTip(f"{schema.id}\nCategory: {schema.category}\nTags: {', '.join(schema.tags)}")
-            item.setData(Qt.ItemDataRole.UserRole, schema.id)
-            self.list_widget.addItem(item)
+            category = schema.category or "uncategorized"
+            if category not in category_nodes:
+                category_item = QTreeWidgetItem([category])
+                category_item.setData(0, Qt.ItemDataRole.UserRole, "")
+                self.list_widget.addTopLevelItem(category_item)
+                category_nodes[category] = category_item
+            suffix = " *" if schema.id in self.dirty_ids else ""
+            item = QTreeWidgetItem([f"{schema.display_name} ({schema.id}){suffix}"])
+            item.setToolTip(0, f"{schema.id}\nCategory: {schema.category}\nTags: {', '.join(schema.tags)}")
+            item.setData(0, Qt.ItemDataRole.UserRole, schema.id)
+            category_nodes[category].addChild(item)
             if schema.id == current:
                 self.list_widget.setCurrentItem(item)
+        self.list_widget.expandAll()
         self.select_first()
 
     def load_current(self) -> None:
         if not self.current_id:
             return
-        schema = self.window.library.schema(self.current_id)
-        data = read_json(self.window.schema_path(schema.id))
-        self.id_edit.setText(schema.id)
-        self.name_edit.setText(schema.display_name)
-        self.category_edit.setText(schema.category)
-        self.tags_edit.setText(", ".join(schema.tags))
-        self.output_edit.setText(schema.output_subdir)
-        self.header_prefix_edit.setText(schema.header_prefix)
-        self.description_edit.setPlainText(schema.description)
+        path = self.window.schema_path(self.current_id)
+        data = self.data_for_id(self.current_id, path)
+        self.loading = True
+        self.id_edit.setText(data.get("id", self.current_id))
+        self.name_edit.setText(data.get("display_name", self.current_id))
+        self.category_edit.setText(data.get("category", ""))
+        self.tags_edit.setText(", ".join(data.get("tags", [])))
+        self.output_edit.setText(data.get("output_subdir", data.get("id", self.current_id)))
+        self.header_prefix_edit.setText(data.get("header_prefix", ""))
+        self.description_edit.setPlainText(data.get("description", ""))
         self.params.setRowCount(0)
         for param in data.get("parameters", []):
             row = self.params.rowCount()
@@ -521,33 +643,124 @@ class TemplatePage(SDPEPage):
                 set_item(self.slots, row, 2, slot.get("entity", ""))
             set_item(self.slots, row, 3, pretty_json(slot.get("overrides", {})))
         self.set_professional_text(pretty_json(data))
+        self.loading = False
 
     def save_current(self) -> None:
         try:
-            path = self.window.schema_path(self.current_id)
-            data = read_json(path)
-            data.update(
-                {
-                    "id": self.id_edit.text().strip(),
-                    "display_name": self.name_edit.text().strip(),
-                    "description": self.description_edit.toPlainText().strip(),
-                    "category": self.category_edit.text().strip(),
-                    "tags": split_tags(self.tags_edit.text()),
-                    "output_subdir": self.output_edit.text().strip(),
-                    "header_prefix": self.header_prefix_edit.text().strip(),
-                }
-            )
-            data["parameters"] = self._table_parameters()
-            data["components"] = self._table_slots()
-            data.pop("component_slots", None)
-            data.pop("required_components", None)
-            data.pop("default_components", None)
+            data = self.collect_current_data()
+            if data is None:
+                return
+            path = self.path_for_id(self.current_id)
             self.window.write_json(path, data)
+            self.dirty_ids.discard(self.current_id)
+            self.drafts.pop(self.current_id, None)
             self.window.reload()
             self.refresh_list()
             self.message("Saved", f"Template saved: {path}")
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
+
+    def collect_current_data(self) -> dict[str, Any] | None:
+        if not self.current_id:
+            return None
+        path = self.path_for_id(self.current_id)
+        data = read_json(path) if path.exists() else {}
+        data.update(
+            {
+                "id": self.id_edit.text().strip(),
+                "display_name": self.name_edit.text().strip(),
+                "description": self.description_edit.toPlainText().strip(),
+                "category": self.category_edit.text().strip(),
+                "tags": split_tags(self.tags_edit.text()),
+                "output_subdir": self.output_edit.text().strip(),
+                "header_prefix": self.header_prefix_edit.text().strip(),
+            }
+        )
+        data["parameters"] = self._table_parameters()
+        data["components"] = self._table_slots()
+        data.pop("component_slots", None)
+        data.pop("required_components", None)
+        data.pop("default_components", None)
+        return data
+
+    def path_for_id(self, item_id: str) -> Path:
+        return self.window.schema_path(item_id)
+
+    def selected_category(self) -> str:
+        item = self.list_widget.currentItem()
+        if item is None:
+            return "uncategorized"
+        if item.data(0, Qt.ItemDataRole.UserRole):
+            parent = item.parent()
+            return parent.text(0).replace(" *", "") if parent else "uncategorized"
+        return item.text(0).replace(" *", "")
+
+    def new_template(self, category: str | None = None) -> None:
+        schema_id = prompt_identifier(self, "New Template", "Template ID:")
+        if not schema_id:
+            return
+        path = self.window.schema_path(schema_id)
+        if path.exists():
+            self.error(f"Template already exists: {schema_id}")
+            return
+        data = {
+            "id": schema_id,
+            "display_name": schema_id,
+            "description": "",
+            "category": category or self.selected_category(),
+            "tags": [],
+            "output_subdir": schema_id,
+            "parameters": [],
+            "components": {},
+            "exports": {},
+        }
+        self.window.write_json(path, data)
+        self.window.reload()
+        self.current_id = schema_id
+        self.refresh_list()
+        self.load_current()
+
+    def copy_template(self) -> None:
+        if not self.current_id:
+            return
+        new_id = prompt_identifier(self, "Copy Template", "New Template ID:")
+        if not new_id:
+            return
+        path = self.window.schema_path(new_id)
+        if path.exists():
+            self.error(f"Template already exists: {new_id}")
+            return
+        data = read_json(self.window.schema_path(self.current_id))
+        data["id"] = new_id
+        data["display_name"] = f"{data.get('display_name', self.current_id)} Copy"
+        data["output_subdir"] = data.get("output_subdir") or new_id
+        self.window.write_json(path, data)
+        self.window.reload()
+        self.current_id = new_id
+        self.refresh_list()
+        self.load_current()
+
+    def delete_template(self) -> None:
+        if not self.current_id:
+            return
+        path = self.window.schema_path(self.current_id)
+        if confirm_delete(self, "Delete Template", f"Delete template '{self.current_id}'?\n\n{path}"):
+            path.unlink(missing_ok=True)
+            self.current_id = ""
+            self.window.reload()
+            self.refresh_list()
+
+    def show_template_context_menu(self, pos) -> None:
+        item = self.list_widget.itemAt(pos)
+        if item is not None:
+            self.list_widget.setCurrentItem(item)
+        menu = QMenu(self)
+        category = self.selected_category()
+        menu.addAction(f"New Template in {category}", lambda: self.new_template(category))
+        if self.current_id:
+            menu.addAction("Copy Template", self.copy_template)
+            menu.addAction("Delete Template", self.delete_template)
+        menu.exec(self.list_widget.viewport().mapToGlobal(pos))
 
     def _table_parameters(self) -> list[dict[str, Any]]:
         rows = []
@@ -622,6 +835,8 @@ class EntityPage(SDPEPage):
         widget = QTreeWidget()
         widget.setHeaderHidden(True)
         widget.currentItemChanged.connect(lambda current, _previous: self.on_current_changed(current))
+        widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        widget.customContextMenuRequested.connect(self.show_entity_context_menu)
         return widget
 
     def __init__(self, window: "MainWindow"):
@@ -650,6 +865,21 @@ class EntityPage(SDPEPage):
             QHeaderView.ResizeMode.Interactive,
         )
         self.components.cellDoubleClicked.connect(self.on_entity_component_cell_double_clicked)
+        for widget in [
+            self.id_edit,
+            self.name_edit,
+            self.vendor_edit,
+            self.datasheet_edit,
+            self.document_edit,
+            self.macro_edit,
+            self.tags_edit,
+            self.output_edit,
+        ]:
+            widget.textChanged.connect(self.mark_current_dirty)
+        self.schema_combo.currentTextChanged.connect(lambda _text: self.mark_current_dirty())
+        self.description_edit.textChanged.connect(self.mark_current_dirty)
+        self.params.cellChanged.connect(lambda _row, _col: self.mark_current_dirty())
+        self.components.cellChanged.connect(lambda _row, _col: self.mark_current_dirty())
         self.out_dir = QLineEdit(str(window.default_output_dir))
 
         form = QFormLayout()
@@ -665,10 +895,18 @@ class EntityPage(SDPEPage):
         form.addRow("Description", self.description_edit)
         form.addRow("Header Output", self.out_dir)
 
+        new_entity = QPushButton("New")
+        new_entity.clicked.connect(self.new_entity)
+        copy_entity = QPushButton("Copy")
+        copy_entity.clicked.connect(self.copy_entity)
+        delete_entity = QPushButton("Delete")
+        delete_entity.clicked.connect(self.delete_entity)
         browse = QPushButton("Browse")
         browse.clicked.connect(self.browse_out)
-        save = QPushButton("Save entity")
+        save = QPushButton("Save")
         save.clicked.connect(self.save_current)
+        save_all = QPushButton("Save All")
+        save_all.clicked.connect(self.save_all)
         add_comp = QPushButton("Add component")
         add_comp.clicked.connect(self.add_entity_component)
         del_comp = QPushButton("Remove component")
@@ -682,7 +920,7 @@ class EntityPage(SDPEPage):
         basic_tab = QWidget()
         basic_layout = QVBoxLayout(basic_tab)
         basic_layout.addLayout(form)
-        basic_layout.addLayout(row_buttons([browse, save]))
+        basic_layout.addLayout(row_buttons([new_entity, copy_entity, delete_entity, browse, save, save_all]))
         basic_layout.addStretch(1)
         param_tab = QWidget()
         param_layout = QVBoxLayout(param_tab)
@@ -729,11 +967,14 @@ class EntityPage(SDPEPage):
             if schema_key not in schema_nodes:
                 schema_item = QTreeWidgetItem([f"{schema.display_name} ({schema.id})"])
                 schema_item.setData(0, Qt.ItemDataRole.UserRole, "")
+                schema_item.setData(0, Qt.ItemDataRole.UserRole + 1, schema.id)
                 category_nodes[category].addChild(schema_item)
                 schema_nodes[schema_key] = schema_item
-            item = QTreeWidgetItem([f"{entity.display_name or entity.id} ({entity.id})"])
+            suffix = " *" if entity.id in self.dirty_ids else ""
+            item = QTreeWidgetItem([f"{entity.display_name or entity.id} ({entity.id}){suffix}"])
             item.setToolTip(0, f"{entity.id}\nTemplate: {schema.display_name}\nCategory: {category}")
             item.setData(0, Qt.ItemDataRole.UserRole, entity.id)
+            item.setData(0, Qt.ItemDataRole.UserRole + 1, schema.id)
             schema_nodes[schema_key].addChild(item)
             if entity.id == current:
                 self.list_widget.setCurrentItem(item)
@@ -743,18 +984,20 @@ class EntityPage(SDPEPage):
     def load_current(self) -> None:
         if not self.current_id:
             return
-        entity = self.window.library.entity(self.current_id)
-        data = read_json(self.window.entity_path(entity.id))
-        self.id_edit.setText(entity.id)
-        self.schema_combo.setCurrentText(entity.schema_id)
-        self.name_edit.setText(entity.display_name)
-        self.vendor_edit.setText(entity.vendor)
-        self.datasheet_edit.setText(entity.datasheet_url)
-        self.document_edit.setText(entity.document_url)
-        self.macro_edit.setText(entity.macro_prefix)
-        self.tags_edit.setText(", ".join(entity.tags))
-        self.output_edit.setText(entity.output_subdir)
-        self.description_edit.setPlainText(entity.description)
+        path = self.path_for_id(self.current_id)
+        data = self.data_for_id(self.current_id, path)
+        entity = self.window.library.entity(self.current_id) if self.current_id in self.window.library.entity_files else HardwareEntity.from_json(data, path)
+        self.loading = True
+        self.id_edit.setText(data.get("id", entity.id))
+        self.schema_combo.setCurrentText(data.get("schema", entity.schema_id))
+        self.name_edit.setText(data.get("display_name", entity.display_name))
+        self.vendor_edit.setText(data.get("vendor", entity.vendor))
+        self.datasheet_edit.setText(data.get("datasheet_url", entity.datasheet_url))
+        self.document_edit.setText(data.get("document_url", entity.document_url))
+        self.macro_edit.setText(data.get("macro_prefix", entity.macro_prefix))
+        self.tags_edit.setText(", ".join(data.get("tags", entity.tags)))
+        self.output_edit.setText(data.get("output_subdir", entity.output_subdir))
+        self.description_edit.setPlainText(data.get("description", entity.description))
         self.load_param_rows(entity, data)
         self.components.setRowCount(0)
         components_data = self.entity_components_with_defaults(entity, data)
@@ -774,6 +1017,7 @@ class EntityPage(SDPEPage):
             self.set_code_text(self.generator().render_entity_header(entity), reveal=False)
         except Exception as exc:
             self.code_panel.setPlainText(f"// Failed to render entity header preview:\n// {exc}")
+        self.loading = False
 
     def load_param_rows(self, entity: HardwareEntity, data: dict[str, Any]) -> None:
         schema = self.window.library.schema(entity.schema_id)
@@ -799,30 +1043,121 @@ class EntityPage(SDPEPage):
 
     def save_current(self) -> None:
         try:
-            path = self.window.entity_path(self.current_id)
-            data = read_json(path)
-            data.update(
-                {
-                    "id": self.id_edit.text().strip(),
-                    "schema": self.schema_combo.currentText().strip(),
-                    "display_name": self.name_edit.text().strip(),
-                    "description": self.description_edit.toPlainText().strip(),
-                    "vendor": self.vendor_edit.text().strip(),
-                    "datasheet_url": self.datasheet_edit.text().strip(),
-                    "document_url": self.document_edit.text().strip(),
-                    "macro_prefix": self.macro_edit.text().strip(),
-                    "tags": split_tags(self.tags_edit.text()),
-                    "output_subdir": self.output_edit.text().strip(),
-                    "parameters": self._table_parameters(),
-                    "components": self._table_components(),
-                }
-            )
+            data = self.collect_current_data()
+            if data is None:
+                return
+            path = self.path_for_id(self.current_id)
             self.window.write_json(path, data)
+            self.dirty_ids.discard(self.current_id)
+            self.drafts.pop(self.current_id, None)
             self.window.reload()
             self.refresh_list()
             self.message("Saved", f"Entity saved: {path}")
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
+
+    def collect_current_data(self) -> dict[str, Any] | None:
+        if not self.current_id:
+            return None
+        path = self.path_for_id(self.current_id)
+        data = read_json(path) if path.exists() else {}
+        data.update(
+            {
+                "id": self.id_edit.text().strip(),
+                "schema": self.schema_combo.currentText().strip(),
+                "display_name": self.name_edit.text().strip(),
+                "description": self.description_edit.toPlainText().strip(),
+                "vendor": self.vendor_edit.text().strip(),
+                "datasheet_url": self.datasheet_edit.text().strip(),
+                "document_url": self.document_edit.text().strip(),
+                "macro_prefix": self.macro_edit.text().strip(),
+                "tags": split_tags(self.tags_edit.text()),
+                "output_subdir": self.output_edit.text().strip(),
+                "parameters": self._table_parameters(),
+                "components": self._table_components(),
+            }
+        )
+        return data
+
+    def path_for_id(self, item_id: str) -> Path:
+        return self.window.entity_path(item_id)
+
+    def selected_schema_id(self) -> str:
+        item = self.list_widget.currentItem()
+        if item is not None:
+            schema_id = item.data(0, Qt.ItemDataRole.UserRole + 1)
+            if schema_id:
+                return schema_id
+            category = item.text(0).replace(" *", "")
+            for schema in self.window.library.schemas.values():
+                if schema.category == category:
+                    return schema.id
+        return self.schema_combo.currentText().strip() or next(iter(self.window.library.schemas))
+
+    def new_entity(self, schema_id: str | None = None) -> None:
+        entity_id = prompt_identifier(self, "New Entity", "Entity ID:")
+        if not entity_id:
+            return
+        path = self.window.entity_path(entity_id)
+        if path.exists():
+            self.error(f"Entity already exists: {entity_id}")
+            return
+        schema_id = schema_id or self.selected_schema_id()
+        data = {
+            "id": entity_id,
+            "schema": schema_id,
+            "display_name": entity_id,
+            "macro_prefix": entity_id.upper(),
+            "parameters": {},
+            "components": {},
+        }
+        self.window.write_json(path, data)
+        self.window.reload()
+        self.current_id = entity_id
+        self.refresh_list()
+        self.load_current()
+
+    def copy_entity(self) -> None:
+        if not self.current_id:
+            return
+        new_id = prompt_identifier(self, "Copy Entity", "New Entity ID:")
+        if not new_id:
+            return
+        path = self.window.entity_path(new_id)
+        if path.exists():
+            self.error(f"Entity already exists: {new_id}")
+            return
+        data = read_json(self.window.entity_path(self.current_id))
+        data["id"] = new_id
+        data["display_name"] = f"{data.get('display_name', self.current_id)} Copy"
+        data["macro_prefix"] = new_id.upper()
+        self.window.write_json(path, data)
+        self.window.reload()
+        self.current_id = new_id
+        self.refresh_list()
+        self.load_current()
+
+    def delete_entity(self) -> None:
+        if not self.current_id:
+            return
+        path = self.window.entity_path(self.current_id)
+        if confirm_delete(self, "Delete Entity", f"Delete entity '{self.current_id}'?\n\n{path}"):
+            path.unlink(missing_ok=True)
+            self.current_id = ""
+            self.window.reload()
+            self.refresh_list()
+
+    def show_entity_context_menu(self, pos) -> None:
+        item = self.list_widget.itemAt(pos)
+        if item is not None:
+            self.list_widget.setCurrentItem(item)
+        menu = QMenu(self)
+        schema_id = self.selected_schema_id()
+        menu.addAction(f"New Entity in {schema_id}", lambda: self.new_entity(schema_id))
+        if self.current_id:
+            menu.addAction("Copy Entity", self.copy_entity)
+            menu.addAction("Delete Entity", self.delete_entity)
+        menu.exec(self.list_widget.viewport().mapToGlobal(pos))
 
     def _table_parameters(self) -> dict[str, Any]:
         params = {}

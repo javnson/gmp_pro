@@ -66,6 +66,7 @@ class HardwareSchema:
     tags: list[str] = field(default_factory=list)
     output_subdir: str = ""
     header_prefix: str = ""
+    includes: tuple[str, ...] = ()
     parameters: dict[str, ParameterSpec] = field(default_factory=dict)
     derived_macros: list[DerivedMacroSpec] = field(default_factory=list)
     default_components: dict[str, Any] = field(default_factory=dict)
@@ -131,6 +132,7 @@ class HardwareSchema:
             tags=list(data.get("tags", [])),
             output_subdir=data.get("output_subdir", schema_id),
             header_prefix=data.get("header_prefix", ""),
+            includes=tuple(data.get("includes", [])),
             parameters=parameters,
             derived_macros=derived_macros,
             default_components=dict(data.get("components", data.get("default_components", {}))),
@@ -163,6 +165,7 @@ class HardwareEntity:
     document_url: str = ""
     macro_prefix: str = ""
     output_subdir: str = ""
+    includes: list[str] = field(default_factory=list)
     parameters: dict[str, Any] = field(default_factory=dict)
     components: dict[str, ComponentRef] = field(default_factory=dict)
     tags: list[str] = field(default_factory=list)
@@ -187,6 +190,7 @@ class HardwareEntity:
             document_url=data.get("document_url", ""),
             macro_prefix=data.get("macro_prefix", ""),
             output_subdir=data.get("output_subdir", ""),
+            includes=list(data.get("includes", [])),
             parameters=dict(data.get("parameters", {})),
             tags=list(data.get("tags", [])),
             source=source,
