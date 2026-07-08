@@ -10,6 +10,9 @@
  *
  */
 
+#include <ctl/component/intrinsic/basic/divider.h>
+#include <ctl/math_block/utilities/mem_view.h>
+
 #ifndef _FILE_DSA_TRIGGER_H_
 #define _FILE_DSA_TRIGGER_H_
 
@@ -54,6 +57,217 @@ extern "C"
  * @addtogroup DSA_TRIGGER
  * @{
  */
+
+/*---------------------------------------------------------------------------*/
+/* DSA Trigger Modules                                                       */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief Options for DSA triggering behavior.
+ */
+typedef enum _tag_ctl_trigger_option
+{
+    DSA_TRIGGER_OPTION_CONTINUOUS = 0,       //!< Always triggered, ignores conditions.
+    DSA_TRIGGER_OPTION_RISING_EDGE = 1,      //!< Triggers on rising edge only.
+    DSA_TRIGGER_OPTION_FALLING_EDGE = 2,     //!< Triggers on falling edge only.
+    DSA_TRIGGER_OPTION_RISING_EDGE_AUTO = 3, //!< Triggers on rising edge, or forces trigger on timeout.
+    DSA_TRIGGER_OPTION_FALLING_EDGE_AUTO = 4 //!< Triggers on falling edge, or forces trigger on timeout.
+} ctl_dsa_trigger_option_t;
+
+/**
+ * @brief Data structure for the DSA trigger module.
+ */
+typedef struct _tag_dsa_trigger
+{
+    ctl_dsa_trigger_option_t option; //!< Selected trigger option mode.
+    ctrl_gt trigger_level;           //!< Target threshold value for edge detection.
+
+    // --- Internal State Variables ---
+    ctrl_gt prev_input;          //!< Cached signal value from the previous execution cycle.
+    uint32_t auto_timeout_ticks; //!< Maximum execution ticks to wait before forcing an AUTO trigger.
+    uint32_t auto_timer;         //!< Internal counter tracking the timeout period.
+    fast_gt flag_is_first_step;  //!< Guard flag to prevent false edge triggers on initialization.
+} ctl_dsa_trigger_t;
+
+GMP_STATIC_INLINE void ctl_clear_dsa_trigger(ctl_dsa_trigger_t* obj)
+{
+    obj->prev_input = 0;
+    obj->auto_timer = 0;
+    obj->flag_is_first_step = 0;
+}
+
+GMP_STATIC_INLINE void ctl_init_dsa_trigger(ctl_dsa_trigger_t* obj, ctl_dsa_trigger_option_t trigger_option,
+                                            parameter_gt trigger_level,
+                                            parameter_gt trigger_suppression, // unit, s
+                                            parameter_gt isr_freq)            // sample frequency
+{
+    obj->option = trigger_option;
+    obj->trigger_level = float2ctrl(trigger_level);
+    obj->auto_timeout_ticks = (uint32_t)trigger_suppression * isr_freq;
+
+    ctl_clear_dsa_trigger(obj);
+}
+
+/**
+ * @brief Evaluates the trigger logic based on the current signal input.
+ * @param[in,out] obj Pointer to the DSA trigger instance.
+ * @param[in]     input The current value of the source signal under observation.
+ * @return fast_gt Returns 1 if a trigger condition (edge or timeout) is met, otherwise 0.
+ */
+GMP_STATIC_INLINE fast_gt ctl_step_dsa_trigger(ctl_dsa_trigger_t* obj, ctrl_gt input)
+{
+    fast_gt is_triggered = 0;
+
+    if (obj->option == DSA_TRIGGER_OPTION_CONTINUOUS)
+    {
+        is_triggered = 1;
+    }
+    else
+    {
+        if (!obj->flag_is_first_step)
+        {
+            // Evaluate hardware edge matching conditions
+            if (obj->option == DSA_TRIGGER_OPTION_RISING_EDGE || obj->option == DSA_TRIGGER_OPTION_RISING_EDGE_AUTO)
+            {
+                if ((obj->prev_input < obj->trigger_level) && (input >= obj->trigger_level))
+                {
+                    is_triggered = 1;
+                }
+            }
+            else if (obj->option == DSA_TRIGGER_OPTION_FALLING_EDGE ||
+                     obj->option == DSA_TRIGGER_OPTION_FALLING_EDGE_AUTO)
+            {
+                if ((obj->prev_input > obj->trigger_level) && (input <= obj->trigger_level))
+                {
+                    is_triggered = 1;
+                }
+            }
+
+            // Evaluate software auto-timeout conditions
+            if (!is_triggered && (obj->option == DSA_TRIGGER_OPTION_RISING_EDGE_AUTO ||
+                                  obj->option == DSA_TRIGGER_OPTION_FALLING_EDGE_AUTO))
+            {
+                obj->auto_timer++;
+                if (obj->auto_timer >= obj->auto_timeout_ticks)
+                {
+                    is_triggered = 1;
+                }
+            }
+        }
+        else
+        {
+            obj->flag_is_first_step = 0;
+        }
+
+        // Cache current input for the next cycle edge comparison
+        obj->prev_input = input;
+    }
+
+    if (is_triggered)
+    {
+        obj->auto_timer = 0;
+    }
+
+    return is_triggered;
+}
+
+/*---------------------------------------------------------------------------*/
+/* DSA Logger Modules                                                        */
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief State machine for the DSA data logger.
+ */
+typedef enum _tag_ctl_dsa_logger_sm
+{
+    DSA_LOGGER_READY = 0,    //!< Waiting for a valid trigger event.
+    DSA_LOGGER_SAMPLING = 1, //!< Triggered, actively filling the memory buffer.
+    DSA_LOGGER_COMPLETE = 2, //!< Buffer is full, sampling complete.
+    DSA_LOGGER_WAIT = 3      //!< Holding state, waiting for user to release or re-arm.
+} ctl_dsa_logger_sm_t;
+
+/**
+ * @brief Data structure for the DSA data logger module.
+ */
+typedef struct _tag_dsa_logger
+{
+    ctl_dsa_logger_sm_t sm;    //!< Current operational state of the logger machine.
+    ctl_mem_view_t mem;        //!< Memory view manager bound to the data destination.
+    ctl_divider_t divider;     //!< Frequency divider determining the downsampling rate.
+    fast_gt flag_wait_for_next_trigger;  //!< Mode configuration: if true, holds in WAIT state post-sample instead of COMPLETE.
+    uint32_t current_position; //!< Target absolute write index within the memory buffer.
+} ctl_dsa_logger_t;
+
+/**
+ * @brief Executes one step of the DSA logging state machine.
+ * @details This function should be placed inside a deterministic periodic interrupt.
+ * @param[in,out] logger Pointer to the DSA logger instance.
+ * @param[in,out] trigger Pointer to the associated DSA trigger instance.
+ * @param[in]     trig_signal The value of the signal used for trigger evaluation.
+ * @param[in]     log_signal The value of the signal to be recorded into the memory buffer.
+ */
+GMP_STATIC_INLINE void ctl_step_dsa_logger(ctl_dsa_logger_t* logger, ctl_dsa_trigger_t* trigger, ctrl_gt trig_signal,
+                                           ctrl_gt log_signal)
+{
+    // Step trigger continuously to maintain signal history and timeout tracking
+    fast_gt trigger_fired = ctl_step_dsa_trigger(trigger, trig_signal);
+
+    switch (logger->sm)
+    {
+    case DSA_LOGGER_READY:
+        if (trigger_fired)
+        {
+            logger->current_position = 0;
+            ctl_clear_divider(&logger->divider);
+
+            // Instantly capture the first point upon trigger firing event
+            ctl_mem_set_1d(&logger->mem, logger->current_position, log_signal);
+            logger->current_position++;
+
+            if (logger->current_position >= logger->mem.capacity)
+            {
+                logger->sm = logger->flag_enable_wait ? DSA_LOGGER_WAIT : DSA_LOGGER_COMPLETE;
+            }
+            else
+            {
+                logger->sm = DSA_LOGGER_SAMPLING;
+            }
+        }
+        break;
+
+    case DSA_LOGGER_SAMPLING:
+        if (ctl_step_divider(&logger->divider))
+        {
+            ctl_mem_set_1d(&logger->mem, logger->current_position, log_signal);
+            logger->current_position++;
+
+            if (logger->current_position >= logger->mem.capacity)
+            {
+                logger->sm = logger->flag_enable_wait ? DSA_LOGGER_WAIT : DSA_LOGGER_COMPLETE;
+            }
+        }
+        break;
+
+    case DSA_LOGGER_COMPLETE:
+        // Stays here until external application fetches data and explicitly calls ctl_arm_dsa_logger()
+        break;
+
+
+    default:
+        logger->sm = DSA_LOGGER_READY;
+        break;
+    }
+}
+
+GMP_STATIC_INLINE void dsa_enable_wait_signal(ctl_dsa_logger_t* dsa)
+{
+    dsa->flag_enable_wait = 1;
+}
+
+GMP_STATIC_INLINE void dsa_disable_wait_signal(ctl_dsa_logger_t* dsa)
+{
+    dsa->flag_enable_wait = 1;
+}
 
 /**
  * @brief Data structure for the basic data acquisition trigger.
