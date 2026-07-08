@@ -1,0 +1,15 @@
+{
+  "id": "tmcs1133_b2a",
+  "schema": "current_sensor",
+  "display_name": "TMCS1133 B2A Hall Current Sensor",
+  "macro_prefix": "TMCS1133_B2A",
+  "parameters": {
+    "chip": "TMCS1133B2A",
+    "range_a": 31.0,
+    "output_min_v": 0.0,
+    "output_max_v": 3.3,
+    "bias_v": 1.65,
+    "sensitivity_mv_per_a": 50.0,
+    "internal_resistance_ohm": 0.0018
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "id": "dps_fsbb_iris_node",
+  "display_name": "DPS FSBB on F280039C IRIS Node",
+  "suite": "dps_fsbb",
+  "output_header": "sdpe_dps_fsbb_iris_bindings.h",
+  "hardware": [
+    {
+      "role": "mcu_board",
+      "entity": "iris_f280039c_node"
+    },
+    {
+      "role": "buck_half_bridge",
+      "entity": "fsbb_inline_shunt_half_bridge"
+    },
+    {
+      "role": "boost_half_bridge",
+      "entity": "lvfb_half_bridge_phase_a"
+    }
+  ],
+  "requirements": [
+    {
+      "role": "input_voltage_sensor_sensitivity",
+      "macro": "CTRL_VIN_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "export": "fsbb_inline_shunt_half_bridge.voltage_sensor.sensitivity"
+      },
+      "description": "Voltage sensor sensitivity for FSBB input voltage ADC channel."
+    },
+    {
+      "role": "input_voltage_sensor_bias",
+      "macro": "CTRL_VIN_VOLTAGE_BIAS",
+      "binding": {
+        "export": "fsbb_inline_shunt_half_bridge.voltage_sensor.bias"
+      },
+      "description": "Voltage sensor bias for FSBB input voltage ADC channel."
+    },
+    {
+      "role": "inductor_current_sensitivity",
+      "macro": "CTRL_INDUCTOR_CURRENT_SENSITIVITY",
+      "binding": {
+        "export": "fsbb_inline_shunt_half_bridge.current_sensor.sensitivity"
+      },
+      "description": "Current sensor sensitivity for FSBB inductor current ADC channel."
+    },
+    {
+      "role": "inductor_current_bias",
+      "macro": "CTRL_INDUCTOR_CURRENT_BIAS",
+      "binding": {
+        "export": "fsbb_inline_shunt_half_bridge.current_sensor.bias"
+      },
+      "description": "Current sensor bias for FSBB inductor current ADC channel."
+    },
+    {
+      "role": "output_voltage_sensor_sensitivity",
+      "macro": "CTRL_VOUT_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "export": "lvfb_half_bridge_phase_a.voltage_sensor.sensitivity"
+      },
+      "description": "Voltage sensor sensitivity for FSBB output voltage ADC channel."
+    },
+    {
+      "role": "output_voltage_sensor_bias",
+      "macro": "CTRL_VOUT_VOLTAGE_BIAS",
+      "binding": {
+        "export": "lvfb_half_bridge_phase_a.voltage_sensor.bias"
+      },
+      "description": "Voltage sensor bias for FSBB output voltage ADC channel."
+    }
+  ],
+  "peripheral_bindings": {
+    "PHASE_BUCK_BASE": "IRIS_F280039C_EPWM1_BASE",
+    "PHASE_BOOST_BASE": "IRIS_F280039C_EPWM2_BASE",
+    "FSBB_VIN": "IRIS_F280039C_ADC_CH1",
+    "FSBB_VOUT": "IRIS_F280039C_ADC_CH2",
+    "FSBB_IL": "IRIS_F280039C_ADC_CH3",
+    "FSBB_IOUT": "IRIS_F280039C_ADC_CH4"
+  },
+  "global_macros": {
+    "SDPE_ENABLE_DPS_FSBB_BINDINGS": "1"
+  }
+}

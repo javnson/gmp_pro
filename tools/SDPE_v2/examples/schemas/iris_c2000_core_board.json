@@ -1,0 +1,85 @@
+{
+  "id": "iris_c2000_core_board",
+  "display_name": "IRIS C2000 Core Board",
+  "description": "DSP C2000 core board peripheral name binding model.",
+  "category": "mcu_board",
+  "output_subdir": "mcu_board",
+  "parameters": [
+    {
+      "name": "chip",
+      "c_name": "CHIP",
+      "description": "C2000 device name.",
+      "required": true,
+      "value_format": "\"{}\""
+    },
+    {
+      "name": "syscfg_file",
+      "c_name": "SYSCFG_FILE",
+      "description": "SysConfig source file used by this binding.",
+      "required": true,
+      "value_format": "\"{}\""
+    },
+    {
+      "name": "epwm1_base",
+      "c_name": "EPWM1_BASE",
+      "description": "SysConfig EPWM1 base macro.",
+      "default": "IRIS_EPWM1_BASE"
+    },
+    {
+      "name": "epwm2_base",
+      "c_name": "EPWM2_BASE",
+      "description": "SysConfig EPWM2 base macro.",
+      "default": "IRIS_EPWM2_BASE"
+    },
+    {
+      "name": "adc_ch1",
+      "c_name": "ADC_CH1",
+      "description": "SysConfig ADC channel 1 macro.",
+      "default": "ADC_CH1"
+    },
+    {
+      "name": "adc_ch2",
+      "c_name": "ADC_CH2",
+      "description": "SysConfig ADC channel 2 macro.",
+      "default": "ADC_CH2"
+    },
+    {
+      "name": "adc_ch3",
+      "c_name": "ADC_CH3",
+      "description": "SysConfig ADC channel 3 macro.",
+      "default": "ADC_CH3"
+    },
+    {
+      "name": "adc_ch4",
+      "c_name": "ADC_CH4",
+      "description": "SysConfig ADC channel 4 macro.",
+      "default": "ADC_CH4"
+    }
+  ],
+  "exports": {
+    "epwm1_base": {
+      "macro": "{PREFIX}_EPWM1_BASE",
+      "description": "EPWM1 base macro."
+    },
+    "epwm2_base": {
+      "macro": "{PREFIX}_EPWM2_BASE",
+      "description": "EPWM2 base macro."
+    },
+    "adc_ch1": {
+      "macro": "{PREFIX}_ADC_CH1",
+      "description": "ADC channel 1 macro."
+    },
+    "adc_ch2": {
+      "macro": "{PREFIX}_ADC_CH2",
+      "description": "ADC channel 2 macro."
+    },
+    "adc_ch3": {
+      "macro": "{PREFIX}_ADC_CH3",
+      "description": "ADC channel 3 macro."
+    },
+    "adc_ch4": {
+      "macro": "{PREFIX}_ADC_CH4",
+      "description": "ADC channel 4 macro."
+    }
+  }
+}

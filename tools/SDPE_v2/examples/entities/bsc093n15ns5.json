@@ -1,0 +1,13 @@
+{
+  "id": "bsc093n15ns5",
+  "schema": "power_switch",
+  "display_name": "Infineon BSC093N15NS5 MOSFET",
+  "macro_prefix": "BSC093N15NS5",
+  "parameters": {
+    "part_number": "BSC093N15NS5",
+    "device_type": "MOSFET",
+    "voltage_rating_v": 150.0,
+    "current_rating_a": 55.0,
+    "rdson_ohm": 0.0093
+  }
+}

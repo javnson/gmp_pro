@@ -1,0 +1,73 @@
+{
+  "id": "voltage_sensor",
+  "display_name": "Voltage Sensor",
+  "description": "Voltage sensor or resistor divider model.",
+  "category": "sensor",
+  "output_subdir": "voltage_sensor",
+  "parameters": [
+    {
+      "name": "chip",
+      "c_name": "CHIP",
+      "description": "Main sensing IC or front-end topology.",
+      "required": true,
+      "value_format": "\"{}\""
+    },
+    {
+      "name": "rated_voltage_v",
+      "c_name": "RATED_VOLTAGE_V",
+      "unit": "V",
+      "description": "Nominal measurable voltage.",
+      "required": true,
+      "value_format": "({}f)"
+    },
+    {
+      "name": "bias_v",
+      "c_name": "BIAS_V",
+      "unit": "V",
+      "description": "Output bias voltage.",
+      "default": 0.0,
+      "value_format": "({}f)"
+    },
+    {
+      "name": "sensitivity_v_per_v",
+      "c_name": "SENSITIVITY_V_PER_V",
+      "unit": "V/V",
+      "description": "Voltage sensor sensitivity.",
+      "required": true,
+      "value_format": "({}f)"
+    },
+    {
+      "name": "input_resistance_ohm",
+      "c_name": "INPUT_RESISTANCE_OHM",
+      "unit": "ohm",
+      "description": "Equivalent input resistance.",
+      "default": 0.0,
+      "value_format": "({}f)"
+    }
+  ],
+  "derived_macros": [
+    {
+      "name": "MAX_BY_BIAS_V",
+      "unit": "V",
+      "description": "Approximate positive full scale voltage when biased at mid-supply.",
+      "expr": "(({PREFIX}_BIAS_V > 0.0f) ? ({PREFIX}_BIAS_V / {PREFIX}_SENSITIVITY_V_PER_V) : {PREFIX}_RATED_VOLTAGE_V)"
+    }
+  ],
+  "exports": {
+    "sensitivity": {
+      "macro": "{PREFIX}_SENSITIVITY_V_PER_V",
+      "unit": "V/V",
+      "description": "ADC scaling sensitivity."
+    },
+    "bias": {
+      "macro": "{PREFIX}_BIAS_V",
+      "unit": "V",
+      "description": "ADC bias."
+    },
+    "range": {
+      "macro": "{PREFIX}_RATED_VOLTAGE_V",
+      "unit": "V",
+      "description": "Voltage range."
+    }
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "id": "half_bridge",
+  "display_name": "Half Bridge Module",
+  "description": "Composable half-bridge module containing power switches and sensors.",
+  "category": "power_stage",
+  "output_subdir": "half_bridge",
+  "required_components": ["power_device", "current_sensor", "voltage_sensor"],
+  "parameters": [
+    {
+      "name": "board_name",
+      "c_name": "BOARD_NAME",
+      "description": "Board or module name.",
+      "required": true,
+      "value_format": "\"{}\""
+    },
+    {
+      "name": "phase_count",
+      "c_name": "PHASE_COUNT",
+      "description": "Number of half-bridge phases represented by this module.",
+      "default": 1,
+      "value_format": "({}U)"
+    },
+    {
+      "name": "deadtime_ns",
+      "c_name": "DEADTIME_NS",
+      "unit": "ns",
+      "description": "Recommended hardware deadtime.",
+      "default": 0.0,
+      "value_format": "({}f)"
+    },
+    {
+      "name": "bus_capacitance_f",
+      "c_name": "BUS_CAPACITANCE_F",
+      "unit": "F",
+      "description": "Optional local DC bus capacitance.",
+      "default": 0.0,
+      "value_format": "({}f)"
+    }
+  ],
+  "component_slots": {
+    "power_device": {
+      "accepted_schemas": ["power_switch"],
+      "required": true,
+      "description": "Power semiconductor used by the half bridge."
+    },
+    "current_sensor": {
+      "accepted_schemas": ["current_sensor"],
+      "required": true,
+      "description": "Current measurement path."
+    },
+    "voltage_sensor": {
+      "accepted_schemas": ["voltage_sensor"],
+      "required": true,
+      "description": "Voltage measurement path."
+    },
+    "bus_capacitor": {
+      "accepted_schemas": ["passive_capacitor"],
+      "required": false,
+      "description": "Optional bus capacitor module."
+    }
+  },
+  "derived_macros": [
+    {
+      "name": "HAS_LOCAL_BUS_CAP",
+      "description": "Whether this module declares a local bus capacitor.",
+      "expr": "({PREFIX}_BUS_CAPACITANCE_F > 0.0f)"
+    }
+  ],
+  "exports": {
+    "current_sensitivity": {
+      "macro": "{PREFIX}_CURRENT_SENSOR_SENSITIVITY",
+      "unit": "V/A",
+      "description": "Current sensor sensitivity alias."
+    },
+    "current_bias": {
+      "macro": "{PREFIX}_CURRENT_SENSOR_BIAS",
+      "unit": "V",
+      "description": "Current sensor bias alias."
+    },
+    "voltage_sensitivity": {
+      "macro": "{PREFIX}_VOLTAGE_SENSOR_SENSITIVITY",
+      "unit": "V/V",
+      "description": "Voltage sensor sensitivity alias."
+    },
+    "voltage_bias": {
+      "macro": "{PREFIX}_VOLTAGE_SENSOR_BIAS",
+      "unit": "V",
+      "description": "Voltage sensor bias alias."
+    }
+  }
+}

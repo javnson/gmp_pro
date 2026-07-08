@@ -1,0 +1,49 @@
+{
+  "id": "mcs_pmsm_nt_sensor_binding",
+  "display_name": "MCS PMSM NT Sensor Binding Example",
+  "suite": "mcs_pmsm_nt",
+  "output_header": "sdpe_mcs_pmsm_nt_bindings.h",
+  "hardware": [
+    {
+      "role": "phase_a_power_stage",
+      "entity": "lvfb_half_bridge_phase_a"
+    }
+  ],
+  "requirements": [
+    {
+      "role": "phase_current_sensitivity",
+      "macro": "CTRL_PHASE_CURRENT_SENSITIVITY",
+      "binding": {
+        "export": "lvfb_half_bridge_phase_a.current_sensor.sensitivity"
+      },
+      "description": "Current sensor sensitivity used to initialize PMSM_NT ADC current channel."
+    },
+    {
+      "role": "phase_current_bias",
+      "macro": "CTRL_PHASE_CURRENT_BIAS",
+      "binding": {
+        "export": "lvfb_half_bridge_phase_a.current_sensor.bias"
+      },
+      "description": "Current sensor zero-current bias used to initialize PMSM_NT ADC current channel."
+    },
+    {
+      "role": "dc_bus_voltage_sensitivity",
+      "macro": "CTRL_DCBUS_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "export": "lvfb_half_bridge_phase_a.voltage_sensor.sensitivity"
+      },
+      "description": "DC bus voltage sensor sensitivity."
+    },
+    {
+      "role": "dc_bus_voltage_bias",
+      "macro": "CTRL_DCBUS_VOLTAGE_BIAS",
+      "binding": {
+        "export": "lvfb_half_bridge_phase_a.voltage_sensor.bias"
+      },
+      "description": "DC bus voltage sensor bias."
+    }
+  ],
+  "global_macros": {
+    "SDPE_ENABLE_MCS_PMSM_NT_SENSOR_BINDINGS": "1"
+  }
+}
