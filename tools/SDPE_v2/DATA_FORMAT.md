@@ -23,8 +23,7 @@ Schema 文件放在 `schemas/` 下。
 | `output_subdir` | string | 生成头文件的子目录。 |
 | `parameters` | array | 参数定义。 |
 | `derived_macros` | array | 派生宏定义。 |
-| `component_slots` | object | 可组合子硬件槽位。 |
-| `required_components` | array | 必须存在的子硬件槽位。 |
+| `components` | object | 默认 Sub Components，格式与 Entity 的 `components` 一致。 |
 | `exports` | object | 可被工程需求引用的逻辑导出量。 |
 
 ### Parameter
@@ -42,6 +41,8 @@ Schema 文件放在 `schemas/` 下。
 ```
 
 `value_format` 使用 Python `str.format`，其中 `{}` 会被替换为 JSON 值。
+
+`name` 面向用户显示，可以使用更自然的名称；`c_name` / Macro Name 是生成 C 宏和兼容旧 Entity 参数键的稳定标识。Entity 参数既可以使用 `name`，也可以使用 `c_name` 的小写形式，例如 `RANGE_A` 对应 `range_a`。
 
 常用格式：
 
@@ -77,17 +78,20 @@ Schema 文件放在 `schemas/` 下。
 
 `{PREFIX}` 会替换为 entity 的 `macro_prefix`。
 
-### Component Slot
+### Default Sub Components
 
 ```json
-{
-  "accepted_categories": ["current_sensor"],
-  "required": true,
-  "description": "Current measurement path."
+"components": {
+  "current_sensor": {
+    "entity": "tmcs1133_b5a"
+  },
+  "voltage_sensor": {
+    "entity": "lvfb_voltage_divider_150v"
+  }
 }
 ```
 
-`accepted_schemas` 用于指定某几个明确模板；`accepted_categories` 用于指定一类兼容模板。比如工程只要求电流传感器时，可以接受 `current_sensor` category 下的霍尔传感器模板，也可以接受分流器传感器模板。
+Template Definition 中的 Sub Components 表示实例化 Entity 时默认带出的子模块，不再表示必填槽位或类型约束。Entity 可以继承这些默认子模块，也可以在自己的 `components` 中用同名 slot 覆盖。
 
 ### Export
 

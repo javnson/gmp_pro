@@ -42,7 +42,10 @@ def macro_name(value: str) -> str:
 def header_guard(relative_path: str) -> str:
     """Create a stable include guard from a relative path."""
 
-    return f"_SDPE_V2_{macro_name(relative_path)}_"
+    path = relative_path.replace("\\", "/")
+    parts = [part for part in path.split("/") if part and part != "hardware_preset"]
+    stemmed = "/".join(parts[-2:]) if len(parts) >= 2 else "/".join(parts)
+    return f"_{macro_name(stemmed)}_"
 
 
 def c_literal(value: Any, value_format: str = "{}") -> str:

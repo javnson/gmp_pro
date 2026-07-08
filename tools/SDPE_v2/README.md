@@ -22,6 +22,8 @@ Schema 定义一类硬件的规范，位于 `examples/schemas`。
 - 这类硬件向工程需求导出哪些逻辑量。
 - 这类硬件有哪些 `tags`，用于搜索和分类。
 
+Template Definition 中的 Sub Components 是默认子模块，格式与 Entity Instance 中的 Sub Components 一致。创建或编辑 Entity 时，这些默认子模块会自动带出；Entity 可以直接使用，也可以用同名 slot 覆盖。
+
 例如 `current_sensor` 可以要求芯片型号、量程、输出范围、偏置、灵敏度、内阻等信息。
 
 ### 1.2 Entity
@@ -150,7 +152,16 @@ PyQt 管理器包含 4 个工作页：
 | Requirement Binding | 将需求宏绑定到硬件导出量、直接参数、已有宏或手工 literal，并生成工程绑定头文件。 |
 | Settings | 设置模板路径、元件路径、工程需求路径和默认头文件生成路径。 |
 
-每个页面采用左侧搜索列表、中间对象表单、右侧 JSON/头文件预览的布局。`Form` 和 `Code` 面板可以按需关闭，适合一边图形化编辑、一边检查底层数据。
+每个页面采用可开关的横向面板布局：
+
+| 面板 | 用途 |
+| --- | --- |
+| Items | 当前对象列表和搜索。 |
+| Basic | 图形化对象编辑区。 |
+| Professional | JSON 专业视图，用于检查底层数据。 |
+| Code | 生成头文件预览。Template Definition 没有最终头文件，因此不显示 Code。 |
+
+默认只打开 `Items` 和 `Basic`，把主要空间留给图形化编辑。用户需要检查 JSON 或最终生成头文件时，再打开 `Professional` 或 `Code`。
 
 `Template Definition` 和 `Entity Instance` 面向硬件库，适合固定保存在 GMP 仓库或扩展包中。`Project Requirement` 和 `Requirement Binding` 面向具体工程，建议通过 `--projects` 指向 suite 工程内的需求文件或目录。
 

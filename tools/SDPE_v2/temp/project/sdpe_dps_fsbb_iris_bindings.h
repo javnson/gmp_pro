@@ -3,8 +3,8 @@
  * @brief SDPE project bindings for DPS FSBB on F280039C IRIS Node.
  */
 
-#ifndef _SDPE_V2_PROJECT_SDPE_DPS_FSBB_IRIS_BINDINGS_H_
-#define _SDPE_V2_PROJECT_SDPE_DPS_FSBB_IRIS_BINDINGS_H_
+#ifndef _PROJECT_SDPE_DPS_FSBB_IRIS_BINDINGS_H_
+#define _PROJECT_SDPE_DPS_FSBB_IRIS_BINDINGS_H_
 
 #include <ctl/component/hardware_preset/current_sensor/tmcs1133_b2a.h>
 #include <ctl/component/hardware_preset/half_bridge/fsbb_inline_shunt_half_bridge.h>
@@ -67,4 +67,4 @@
 // Global project macros
 #define SDPE_ENABLE_DPS_FSBB_BINDINGS 1
 
-#endif // _SDPE_V2_PROJECT_SDPE_DPS_FSBB_IRIS_BINDINGS_H_
+#endif // _PROJECT_SDPE_DPS_FSBB_IRIS_BINDINGS_H_

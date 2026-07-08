@@ -34,6 +34,8 @@ try:
         QTabWidget,
         QTextEdit,
         QToolBar,
+        QTreeWidget,
+        QTreeWidgetItem,
         QVBoxLayout,
         QWidget,
     )
@@ -64,6 +66,8 @@ except ImportError:  # pragma: no cover - depends on local desktop environment.
             QTabWidget,
             QTextEdit,
             QToolBar,
+            QTreeWidget,
+            QTreeWidgetItem,
             QVBoxLayout,
             QWidget,
         )
@@ -93,7 +97,68 @@ def parse_json_text(text: str, fallback: Any) -> Any:
     value = text.strip()
     if not value:
         return fallback
-    return json.loads(value)
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        if fallback == value:
+            return fallback
+        raise
+
+
+FORMAT_TO_LABEL = {
+    "{}": "Custom",
+    "raw": "Raw C",
+    "({}f)": "Float",
+    "{}f": "Float",
+    "({})": "Integer",
+    "({}U)": "Unsigned Integer",
+    '"{}"': "String",
+}
+LABEL_TO_FORMAT = {
+    "String": '"{}"',
+    "Float": "({}f)",
+    "Integer": "({})",
+    "Unsigned Integer": "({}U)",
+    "Raw C": "raw",
+    "Custom": "{}",
+}
+
+
+def format_label(value_format: str) -> str:
+    return FORMAT_TO_LABEL.get(value_format, value_format or "Custom")
+
+
+def format_value(label: str) -> str:
+    return LABEL_TO_FORMAT.get(label, label or "{}")
+
+
+def validate_value_for_format(name: str, value: Any, value_format: str) -> None:
+    if isinstance(value, dict):
+        return
+    label = format_label(value_format)
+    if label == "String":
+        if not isinstance(value, str):
+            raise ValueError(f"Parameter '{name}' expects a string value.")
+    elif label == "Float":
+        if not isinstance(value, (int, float)):
+            raise ValueError(f"Parameter '{name}' expects a numeric float value.")
+    elif label in {"Integer", "Unsigned Integer"}:
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise ValueError(f"Parameter '{name}' expects an integer value.")
+        if label == "Unsigned Integer" and value < 0:
+            raise ValueError(f"Parameter '{name}' expects an unsigned integer value.")
+
+
+def parameter_value_by_name(parameters: dict[str, Any], name: str, c_name: str) -> Any:
+    if name in parameters:
+        return parameters[name]
+    c_key = c_name.lower()
+    if c_key in parameters:
+        return parameters[c_key]
+    for key, value in parameters.items():
+        if key.lower() == c_key:
+            return value
+    return ""
 
 
 def set_table_headers(
@@ -125,13 +190,11 @@ def set_combo(table: QTableWidget, row: int, col: int, values: list[str], curren
     combo.addItems(values)
     combo.setEditable(True)
     combo.setCurrentText("" if current is None else str(current))
+    combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+    width = max([combo.fontMetrics().horizontalAdvance(value) for value in values + [combo.currentText()]] or [0]) + 48
+    combo.setMinimumWidth(width)
     table.setCellWidget(row, col, combo)
-
-
-def set_button(table: QTableWidget, row: int, col: int, label: str, callback) -> None:
-    button = QPushButton(label)
-    button.clicked.connect(callback)
-    table.setCellWidget(row, col, button)
+    table.setColumnWidth(col, max(table.columnWidth(col), width + 12))
 
 
 def edit_multiline(parent: QWidget, title: str, text: str) -> str | None:
@@ -184,48 +247,67 @@ def choose_item(parent: QWidget, title: str, items: list[str]) -> str | None:
 class SDPEPage(QWidget):
     """Common split view page: searchable object list, form editor, JSON/code preview."""
 
-    def __init__(self, window: "MainWindow", title: str):
+    def __init__(self, window: "MainWindow", title: str, has_code: bool = True):
         super().__init__()
         self.window = window
         self.title = title
         self.current_id = ""
+        self.has_code = has_code
 
         self.search = QLineEdit()
         self.search.setPlaceholderText("Search id, name, tag")
         self.search.textChanged.connect(self.refresh_list)
-        self.list_widget = QListWidget()
-        self.list_widget.currentItemChanged.connect(self.on_current_changed)
+        self.list_widget = self.create_items_widget()
 
         self.form_panel = QWidget()
         self.form_layout = QVBoxLayout(self.form_panel)
-        self.preview = QTextEdit()
-        self.preview.setReadOnly(True)
-        self.preview.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
+        self.professional_panel = QTextEdit()
+        self.professional_panel.setReadOnly(True)
+        self.professional_panel.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
+        self.code_panel = QTextEdit()
+        self.code_panel.setReadOnly(True)
+        self.code_panel.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
 
-        left = QWidget()
-        left_layout = QVBoxLayout(left)
+        self.items_panel = QWidget()
+        left_layout = QVBoxLayout(self.items_panel)
         left_layout.addWidget(self.search)
         left_layout.addWidget(self.list_widget)
 
         self.splitter = QSplitter()
-        self.splitter.addWidget(left)
+        self.splitter.addWidget(self.items_panel)
         self.splitter.addWidget(self.form_panel)
-        self.splitter.addWidget(self.preview)
-        self.splitter.setSizes([220, 520, 520])
+        self.splitter.addWidget(self.professional_panel)
+        self.splitter.addWidget(self.code_panel)
+        self.splitter.setSizes([240, 760, 460, 520])
 
-        self.show_form = QCheckBox("Form")
-        self.show_form.setChecked(True)
-        self.show_form.toggled.connect(self.form_panel.setVisible)
-        self.show_preview = QCheckBox("Code")
-        self.show_preview.setChecked(False)
-        self.show_preview.toggled.connect(self.preview.setVisible)
-        self.preview.setVisible(False)
+        self.show_items = QCheckBox("Items")
+        self.show_items.setChecked(True)
+        self.show_items.toggled.connect(self.items_panel.setVisible)
+        self.show_items.toggled.connect(lambda _checked: self.update_panel_sizes())
+        self.show_basic = QCheckBox("Basic")
+        self.show_basic.setChecked(True)
+        self.show_basic.toggled.connect(self.form_panel.setVisible)
+        self.show_basic.toggled.connect(lambda _checked: self.update_panel_sizes())
+        self.show_professional = QCheckBox("Professional")
+        self.show_professional.setChecked(False)
+        self.show_professional.toggled.connect(self.professional_panel.setVisible)
+        self.show_professional.toggled.connect(lambda _checked: self.update_panel_sizes())
+        self.show_code = QCheckBox("Code")
+        self.show_code.setChecked(False)
+        self.show_code.toggled.connect(self.code_panel.setVisible)
+        self.show_code.toggled.connect(lambda _checked: self.update_panel_sizes())
+        self.professional_panel.setVisible(False)
+        self.code_panel.setVisible(False)
+        if not self.has_code:
+            self.show_code.setEnabled(False)
 
         toolbar = QToolBar(title)
         toolbar.addWidget(QLabel(title))
         toolbar.addSeparator()
-        toolbar.addWidget(self.show_form)
-        toolbar.addWidget(self.show_preview)
+        toolbar.addWidget(self.show_items)
+        toolbar.addWidget(self.show_basic)
+        toolbar.addWidget(self.show_professional)
+        toolbar.addWidget(self.show_code)
 
         layout = QVBoxLayout(self)
         layout.addWidget(toolbar)
@@ -235,11 +317,21 @@ class SDPEPage(QWidget):
         self.undo_shortcut = QShortcut(QKeySequence.StandardKey.Undo, self)
         self.undo_shortcut.activated.connect(self.undo_focused_widget)
 
+    def create_items_widget(self):
+        widget = QListWidget()
+        widget.currentItemChanged.connect(self.on_current_changed)
+        return widget
+
     def refresh_list(self) -> None:
         raise NotImplementedError
 
-    def on_current_changed(self, current: QListWidgetItem | None) -> None:
-        self.current_id = "" if current is None else current.data(Qt.ItemDataRole.UserRole)
+    def on_current_changed(self, current) -> None:
+        if current is None:
+            return
+        item_id = current.data(0, Qt.ItemDataRole.UserRole) if isinstance(current, QTreeWidgetItem) else current.data(Qt.ItemDataRole.UserRole)
+        if not item_id:
+            return
+        self.current_id = item_id
         self.load_current()
 
     def load_current(self) -> None:
@@ -248,14 +340,51 @@ class SDPEPage(QWidget):
     def save_current(self) -> None:
         return None
 
+    def set_professional_text(self, text: str) -> None:
+        self.professional_panel.setPlainText(text)
+
+    def set_code_text(self, text: str, reveal: bool = True) -> None:
+        self.code_panel.setPlainText(text)
+        if self.has_code and reveal:
+            self.show_code.setChecked(True)
+            self.update_panel_sizes()
+
+    def update_panel_sizes(self) -> None:
+        sizes = [
+            240 if self.show_items.isChecked() else 0,
+            760 if self.show_basic.isChecked() else 0,
+            460 if self.show_professional.isChecked() else 0,
+            560 if self.show_code.isChecked() and self.has_code else 0,
+        ]
+        if sum(sizes) > 0:
+            self.splitter.setSizes(sizes)
+
     def undo_focused_widget(self) -> None:
         focused = QApplication.focusWidget()
         if focused is not None and hasattr(focused, "undo"):
             focused.undo()
 
     def select_first(self) -> None:
+        if isinstance(self.list_widget, QTreeWidget):
+            if self.list_widget.currentItem() is None and self.list_widget.topLevelItemCount():
+                root = self.list_widget.topLevelItem(0)
+                leaf = self.first_tree_leaf(root)
+                if leaf is not None:
+                    self.list_widget.setCurrentItem(leaf)
+            return
         if self.list_widget.count() and self.list_widget.currentRow() < 0:
             self.list_widget.setCurrentRow(0)
+
+    def first_tree_leaf(self, item: QTreeWidgetItem | None) -> QTreeWidgetItem | None:
+        if item is None:
+            return None
+        if item.data(0, Qt.ItemDataRole.UserRole):
+            return item
+        for index in range(item.childCount()):
+            leaf = self.first_tree_leaf(item.child(index))
+            if leaf is not None:
+                return leaf
+        return None
 
     def filter_match(self, haystack: list[str]) -> bool:
         query = self.search.text().strip().lower()
@@ -275,7 +404,7 @@ class TemplatePage(SDPEPage):
     """Template/schema object editor."""
 
     def __init__(self, window: "MainWindow"):
-        super().__init__(window, "Template Definition")
+        super().__init__(window, "Template Definition", has_code=False)
         self.id_edit = QLineEdit()
         self.name_edit = QLineEdit()
         self.category_edit = QLineEdit()
@@ -286,15 +415,17 @@ class TemplatePage(SDPEPage):
         self.params = QTableWidget()
         set_table_headers(
             self.params,
-            ["Name", "Macro Name", "Default", "Unit", "Required", "Format", "Description", "..."],
+            ["Name", "Macro Name", "Default", "Unit", "Required", "Format", "Description"],
             QHeaderView.ResizeMode.Interactive,
         )
+        self.params.cellDoubleClicked.connect(self.on_template_param_double_clicked)
         self.slots = QTableWidget()
         set_table_headers(
             self.slots,
-            ["Slot", "Accepted Schemas", "Accepted Categories", "Required", "Description"],
+            ["Slot", "Mode", "Entity or Inline JSON", "Overrides JSON"],
             QHeaderView.ResizeMode.Interactive,
         )
+        self.slots.cellDoubleClicked.connect(self.on_component_cell_double_clicked)
 
         form = QFormLayout()
         form.addRow("Template ID", self.id_edit)
@@ -309,8 +440,8 @@ class TemplatePage(SDPEPage):
         add_param.clicked.connect(self.add_template_parameter)
         del_param = QPushButton("Remove parameter")
         del_param.clicked.connect(lambda: self.params.removeRow(max(0, self.params.currentRow())))
-        add_slot = QPushButton("Add slot")
-        add_slot.clicked.connect(lambda: self.slots.insertRow(self.slots.rowCount()))
+        add_slot = QPushButton("Add sub module")
+        add_slot.clicked.connect(self.add_template_component)
         del_slot = QPushButton("Remove slot")
         del_slot.clicked.connect(lambda: self.slots.removeRow(max(0, self.slots.currentRow())))
         save = QPushButton("Save template")
@@ -340,7 +471,8 @@ class TemplatePage(SDPEPage):
         for schema in sorted(self.window.library.schemas.values(), key=lambda item: item.id):
             if not self.filter_match([schema.id, schema.display_name, schema.category, *schema.tags]):
                 continue
-            item = QListWidgetItem(f"{schema.id}  [{', '.join(schema.tags)}]")
+            item = QListWidgetItem(f"{schema.display_name}  ({schema.id})")
+            item.setToolTip(f"{schema.id}\nCategory: {schema.category}\nTags: {', '.join(schema.tags)}")
             item.setData(Qt.ItemDataRole.UserRole, schema.id)
             self.list_widget.addItem(item)
             if schema.id == current:
@@ -368,19 +500,27 @@ class TemplatePage(SDPEPage):
             set_item(self.params, row, 2, pretty_json(param["default"]) if "default" in param else "")
             set_item(self.params, row, 3, param.get("unit", ""))
             set_combo(self.params, row, 4, ["false", "true"], str(bool(param.get("required", False))).lower())
-            set_combo(self.params, row, 5, ['{}', 'raw', '({}f)', '({}U)', '"{}"', '{}f'], param.get("value_format", "{}"))
+            set_combo(
+                self.params,
+                row,
+                5,
+                ["String", "Float", "Integer", "Unsigned Integer", "Raw C", "Custom"],
+                format_label(param.get("value_format", "{}")),
+            )
             set_item(self.params, row, 6, param.get("description", ""))
-            set_button(self.params, row, 7, "...", lambda _=False, r=row: self.edit_template_description(r))
         self.slots.setRowCount(0)
-        for name, slot in data.get("component_slots", {}).items():
+        for name, slot in data.get("components", data.get("default_components", {})).items():
             row = self.slots.rowCount()
             self.slots.insertRow(row)
             set_item(self.slots, row, 0, name)
-            set_item(self.slots, row, 1, ", ".join(slot.get("accepted_schemas", [])))
-            set_item(self.slots, row, 2, ", ".join(slot.get("accepted_categories", [])))
-            set_item(self.slots, row, 3, slot.get("required", False))
-            set_item(self.slots, row, 4, slot.get("description", ""))
-        self.preview.setPlainText(pretty_json(data))
+            if "inline" in slot:
+                set_combo(self.slots, row, 1, ["entity", "inline"], "inline")
+                set_item(self.slots, row, 2, pretty_json(slot.get("inline", {})))
+            else:
+                set_combo(self.slots, row, 1, ["entity", "inline"], "entity")
+                set_item(self.slots, row, 2, slot.get("entity", ""))
+            set_item(self.slots, row, 3, pretty_json(slot.get("overrides", {})))
+        self.set_professional_text(pretty_json(data))
 
     def save_current(self) -> None:
         try:
@@ -398,7 +538,10 @@ class TemplatePage(SDPEPage):
                 }
             )
             data["parameters"] = self._table_parameters()
-            data["component_slots"] = self._table_slots()
+            data["components"] = self._table_slots()
+            data.pop("component_slots", None)
+            data.pop("required_components", None)
+            data.pop("default_components", None)
             self.window.write_json(path, data)
             self.window.reload()
             self.refresh_list()
@@ -417,7 +560,7 @@ class TemplatePage(SDPEPage):
                 "c_name": item_text(self.params, row, 1) or name.upper(),
                 "unit": item_text(self.params, row, 3),
                 "required": item_text(self.params, row, 4).lower() in {"1", "true", "yes"},
-                "value_format": item_text(self.params, row, 5) or "{}",
+                "value_format": format_value(item_text(self.params, row, 5)),
                 "description": item_text(self.params, row, 6),
             }
             default_text = item_text(self.params, row, 2)
@@ -431,33 +574,58 @@ class TemplatePage(SDPEPage):
         if text is not None:
             set_item(self.params, row, 6, text)
 
+    def on_template_param_double_clicked(self, row: int, col: int) -> None:
+        if col == 6:
+            self.edit_template_description(row)
+
     def add_template_parameter(self) -> None:
         row = self.params.rowCount()
         self.params.insertRow(row)
         set_combo(self.params, row, 4, ["false", "true"], "false")
-        set_combo(self.params, row, 5, ['{}', 'raw', '({}f)', '({}U)', '"{}"', '{}f'], "{}")
-        set_button(self.params, row, 7, "...", lambda _=False, r=row: self.edit_template_description(r))
+        set_combo(self.params, row, 5, ["String", "Float", "Integer", "Unsigned Integer", "Raw C", "Custom"], "Custom")
 
     def _table_slots(self) -> dict[str, dict[str, Any]]:
-        slots = {}
+        components = {}
         for row in range(self.slots.rowCount()):
-            name = item_text(self.slots, row, 0)
-            if not name:
+            slot = item_text(self.slots, row, 0)
+            if not slot:
                 continue
-            slots[name] = {
-                "accepted_schemas": split_tags(item_text(self.slots, row, 1)),
-                "accepted_categories": split_tags(item_text(self.slots, row, 2)),
-                "required": item_text(self.slots, row, 3).lower() in {"1", "true", "yes"},
-                "description": item_text(self.slots, row, 4),
-            }
-        return slots
+            mode = item_text(self.slots, row, 1) or "entity"
+            value = item_text(self.slots, row, 2)
+            comp: dict[str, Any]
+            if mode == "inline":
+                comp = {"inline": parse_json_text(value, {})}
+            else:
+                comp = {"entity": value}
+            overrides = parse_json_text(item_text(self.slots, row, 3), {})
+            if overrides:
+                comp["overrides"] = overrides
+            components[slot] = comp
+        return components
+
+    def add_template_component(self) -> None:
+        row = self.slots.rowCount()
+        self.slots.insertRow(row)
+        set_combo(self.slots, row, 1, ["entity", "inline"], "entity")
+
+    def on_component_cell_double_clicked(self, row: int, col: int) -> None:
+        if col in {2, 3}:
+            text = edit_multiline(self, "Sub Component", item_text(self.slots, row, col))
+            if text is not None:
+                set_item(self.slots, row, col, text)
 
 
 class EntityPage(SDPEPage):
     """Hardware entity editor and per-entity header generation."""
 
+    def create_items_widget(self):
+        widget = QTreeWidget()
+        widget.setHeaderHidden(True)
+        widget.currentItemChanged.connect(lambda current, _previous: self.on_current_changed(current))
+        return widget
+
     def __init__(self, window: "MainWindow"):
-        super().__init__(window, "Entity Instance")
+        super().__init__(window, "Entity Instance", has_code=True)
         self.id_edit = QLineEdit()
         self.schema_combo = QComboBox()
         self.name_edit = QLineEdit()
@@ -471,15 +639,17 @@ class EntityPage(SDPEPage):
         self.params = QTableWidget()
         set_table_headers(
             self.params,
-            ["Parameter", "Value", "...", "Unit", "Description"],
+            ["Parameter", "Value", "Unit", "Description"],
             QHeaderView.ResizeMode.Interactive,
         )
+        self.params.cellDoubleClicked.connect(self.on_entity_param_double_clicked)
         self.components = QTableWidget()
         set_table_headers(
             self.components,
             ["Slot", "Mode", "Entity or Inline JSON", "Overrides JSON"],
             QHeaderView.ResizeMode.Interactive,
         )
+        self.components.cellDoubleClicked.connect(self.on_entity_component_cell_double_clicked)
         self.out_dir = QLineEdit(str(window.default_output_dir))
 
         form = QFormLayout()
@@ -532,16 +702,42 @@ class EntityPage(SDPEPage):
         self.schema_combo.clear()
         self.schema_combo.addItems(sorted(self.window.library.schemas))
         self.list_widget.clear()
+        category_nodes: dict[str, QTreeWidgetItem] = {}
+        schema_nodes: dict[str, QTreeWidgetItem] = {}
         for entity_id in sorted(self.window.library.entity_files):
             entity = self.window.library.entity(entity_id)
             schema = self.window.library.schema(entity.schema_id)
-            if not self.filter_match([entity.id, entity.display_name, entity.schema_id, *entity.tags, *schema.tags]):
+            if not self.filter_match(
+                [
+                    entity.id,
+                    entity.display_name,
+                    entity.schema_id,
+                    schema.display_name,
+                    schema.category,
+                    *entity.tags,
+                    *schema.tags,
+                ]
+            ):
                 continue
-            item = QListWidgetItem(f"{entity.id}  ({entity.schema_id}) [{', '.join(entity.tags)}]")
-            item.setData(Qt.ItemDataRole.UserRole, entity.id)
-            self.list_widget.addItem(item)
+            category = schema.category or "uncategorized"
+            if category not in category_nodes:
+                category_item = QTreeWidgetItem([category])
+                category_item.setData(0, Qt.ItemDataRole.UserRole, "")
+                self.list_widget.addTopLevelItem(category_item)
+                category_nodes[category] = category_item
+            schema_key = f"{category}/{schema.id}"
+            if schema_key not in schema_nodes:
+                schema_item = QTreeWidgetItem([f"{schema.display_name} ({schema.id})"])
+                schema_item.setData(0, Qt.ItemDataRole.UserRole, "")
+                category_nodes[category].addChild(schema_item)
+                schema_nodes[schema_key] = schema_item
+            item = QTreeWidgetItem([f"{entity.display_name or entity.id} ({entity.id})"])
+            item.setToolTip(0, f"{entity.id}\nTemplate: {schema.display_name}\nCategory: {category}")
+            item.setData(0, Qt.ItemDataRole.UserRole, entity.id)
+            schema_nodes[schema_key].addChild(item)
             if entity.id == current:
                 self.list_widget.setCurrentItem(item)
+        self.list_widget.expandAll()
         self.select_first()
 
     def load_current(self) -> None:
@@ -561,18 +757,23 @@ class EntityPage(SDPEPage):
         self.description_edit.setPlainText(entity.description)
         self.load_param_rows(entity, data)
         self.components.setRowCount(0)
-        for slot, comp in data.get("components", {}).items():
+        components_data = self.entity_components_with_defaults(entity, data)
+        for slot, comp in components_data.items():
             row = self.components.rowCount()
             self.components.insertRow(row)
             set_item(self.components, row, 0, slot)
             if "entity" in comp:
-                set_item(self.components, row, 1, "entity")
+                set_combo(self.components, row, 1, ["entity", "inline"], "entity")
                 set_item(self.components, row, 2, comp["entity"])
             else:
-                set_item(self.components, row, 1, "inline")
+                set_combo(self.components, row, 1, ["entity", "inline"], "inline")
                 set_item(self.components, row, 2, pretty_json(comp.get("inline", {})))
             set_item(self.components, row, 3, pretty_json(comp.get("overrides", {})))
-        self.preview.setPlainText(pretty_json(data))
+        self.set_professional_text(pretty_json(data))
+        try:
+            self.set_code_text(self.generator().render_entity_header(entity), reveal=False)
+        except Exception as exc:
+            self.code_panel.setPlainText(f"// Failed to render entity header preview:\n// {exc}")
 
     def load_param_rows(self, entity: HardwareEntity, data: dict[str, Any]) -> None:
         schema = self.window.library.schema(entity.schema_id)
@@ -582,10 +783,9 @@ class EntityPage(SDPEPage):
             row = self.params.rowCount()
             self.params.insertRow(row)
             set_item(self.params, row, 0, name)
-            set_item(self.params, row, 1, pretty_json(data.get("parameters", {}).get(name, "")))
-            set_button(self.params, row, 2, "...", lambda _=False, r=row: self.select_parameter_symbol(r))
-            set_item(self.params, row, 3, pspec.unit)
-            set_item(self.params, row, 4, pspec.description)
+            set_item(self.params, row, 1, pretty_json(parameter_value_by_name(data.get("parameters", {}), name, pspec.c_name)))
+            set_item(self.params, row, 2, pspec.unit)
+            set_item(self.params, row, 3, pspec.description)
             self.params.item(row, 0).setToolTip(f"{pspec.description}\nUnit: {pspec.unit}")
             self.params.item(row, 1).setToolTip(f"{pspec.description}\nUnit: {pspec.unit}")
             known.add(name)
@@ -596,7 +796,6 @@ class EntityPage(SDPEPage):
             self.params.insertRow(row)
             set_item(self.params, row, 0, name)
             set_item(self.params, row, 1, pretty_json(value))
-            set_button(self.params, row, 2, "...", lambda _=False, r=row: self.select_parameter_symbol(r))
 
     def save_current(self) -> None:
         try:
@@ -627,11 +826,15 @@ class EntityPage(SDPEPage):
 
     def _table_parameters(self) -> dict[str, Any]:
         params = {}
+        schema = self.window.library.schema(self.schema_combo.currentText().strip())
         for row in range(self.params.rowCount()):
             name = item_text(self.params, row, 0)
             value = item_text(self.params, row, 1)
             if name and value:
-                params[name] = parse_json_text(value, value)
+                parsed = parse_json_text(value, value)
+                if name in schema.parameters:
+                    validate_value_for_format(name, parsed, schema.parameters[name].value_format)
+                params[name] = parsed
         return params
 
     def select_parameter_symbol(self, row: int) -> None:
@@ -640,10 +843,31 @@ class EntityPage(SDPEPage):
         if selected:
             set_item(self.params, row, 1, pretty_json({"ref": selected}))
 
+    def on_entity_param_double_clicked(self, row: int, col: int) -> None:
+        if col == 1:
+            self.select_parameter_symbol(row)
+        elif col == 3:
+            text = edit_multiline(self, "Parameter Description", item_text(self.params, row, 3))
+            if text is not None:
+                set_item(self.params, row, 3, text)
+
     def add_entity_component(self) -> None:
         row = self.components.rowCount()
         self.components.insertRow(row)
         set_combo(self.components, row, 1, ["entity", "inline"], "entity")
+
+    def entity_components_with_defaults(self, entity: HardwareEntity, data: dict[str, Any]) -> dict[str, Any]:
+        schema_data = read_json(self.window.schema_path(entity.schema_id))
+        components = dict(schema_data.get("components", schema_data.get("default_components", {})))
+        for slot, comp in data.get("components", {}).items():
+            components[slot] = comp
+        return components
+
+    def on_entity_component_cell_double_clicked(self, row: int, col: int) -> None:
+        if col in {2, 3}:
+            text = edit_multiline(self, "Sub Component", item_text(self.components, row, col))
+            if text is not None:
+                set_item(self.components, row, col, text)
 
     def _table_components(self) -> dict[str, Any]:
         components = {}
@@ -675,8 +899,7 @@ class EntityPage(SDPEPage):
     def preview_header(self) -> None:
         try:
             entity = self.window.library.entity(self.current_id)
-            self.preview.setPlainText(self.generator().render_entity_header(entity))
-            self.show_preview.setChecked(True)
+            self.set_code_text(self.generator().render_entity_header(entity))
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
 
@@ -692,7 +915,7 @@ class ProjectPage(SDPEPage):
     """Project requirement editor."""
 
     def __init__(self, window: "MainWindow"):
-        super().__init__(window, "Project Requirement")
+        super().__init__(window, "Project Requirement", has_code=True)
         self.id_edit = QLineEdit()
         self.name_edit = QLineEdit()
         self.suite_edit = QLineEdit()
@@ -723,6 +946,8 @@ class ProjectPage(SDPEPage):
         add_req.clicked.connect(lambda: self.requirements.insertRow(self.requirements.rowCount()))
         del_req = QPushButton("Remove requirement")
         del_req.clicked.connect(lambda: self.requirements.removeRow(max(0, self.requirements.currentRow())))
+        preview = QPushButton("Preview header")
+        preview.clicked.connect(self.preview_project_header)
 
         self.form_layout.addLayout(form)
         self.form_layout.addWidget(QLabel("Hardware includes"))
@@ -730,7 +955,7 @@ class ProjectPage(SDPEPage):
         self.form_layout.addLayout(row_buttons([add_hw, del_hw]))
         self.form_layout.addWidget(QLabel("Requirements"))
         self.form_layout.addWidget(self.requirements)
-        self.form_layout.addLayout(row_buttons([add_req, del_req, save]))
+        self.form_layout.addLayout(row_buttons([add_req, del_req, preview, save]))
         self.form_layout.addWidget(QLabel("Peripheral bindings JSON"))
         self.form_layout.addWidget(self.peripherals)
         self.form_layout.addWidget(QLabel("Global macros JSON"))
@@ -776,7 +1001,14 @@ class ProjectPage(SDPEPage):
                 set_item(self.requirements, row, col, value)
         self.peripherals.setPlainText(pretty_json(data.get("peripheral_bindings", {})))
         self.global_macros.setPlainText(pretty_json(data.get("global_macros", {})))
-        self.preview.setPlainText(pretty_json(data))
+        self.set_professional_text(pretty_json(data))
+        try:
+            self.set_code_text(
+                HeaderGenerator(self.window.library, self.window.default_output_dir).render_project_header(data),
+                reveal=False,
+            )
+        except Exception:
+            self.code_panel.clear()
 
     def save_current(self) -> None:
         try:
@@ -823,12 +1055,19 @@ class ProjectPage(SDPEPage):
             )
         return rows
 
+    def preview_project_header(self) -> None:
+        try:
+            data = read_json(self.window.project_path(self.current_id))
+            self.set_code_text(HeaderGenerator(self.window.library, self.window.default_output_dir).render_project_header(data))
+        except Exception as exc:  # pragma: no cover - GUI guard.
+            self.error(str(exc))
+
 
 class BindingPage(SDPEPage):
     """Focused requirement binding page with suggestions and generation."""
 
     def __init__(self, window: "MainWindow"):
-        super().__init__(window, "Requirement Binding")
+        super().__init__(window, "Requirement Binding", has_code=True)
         self.out_dir = QLineEdit(str(window.default_output_dir))
         self.binding_table = QTableWidget()
         set_table_headers(
@@ -881,7 +1120,11 @@ class BindingPage(SDPEPage):
             for col, value in enumerate([req.get("macro", ""), btype, bvalue, req.get("description", "")]):
                 set_item(self.binding_table, row, col, value)
         self.load_suggestions(data)
-        self.preview.setPlainText(pretty_json(data))
+        self.set_professional_text(pretty_json(data))
+        try:
+            self.set_code_text(self.generator().render_project_header(data), reveal=False)
+        except Exception as exc:
+            self.code_panel.setPlainText(f"// Failed to render project header preview:\n// {exc}")
 
     def load_suggestions(self, data: dict[str, Any]) -> None:
         self.suggestions.clear()
@@ -930,8 +1173,7 @@ class BindingPage(SDPEPage):
     def preview_project(self) -> None:
         try:
             data = read_json(self.window.project_path(self.current_id))
-            self.preview.setPlainText(self.generator().render_project_header(data))
-            self.show_preview.setChecked(True)
+            self.set_code_text(self.generator().render_project_header(data))
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
 

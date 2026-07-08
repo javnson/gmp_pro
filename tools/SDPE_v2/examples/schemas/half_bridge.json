@@ -5,7 +5,17 @@
   "category": "power_stage",
   "tags": ["power_stage", "half_bridge"],
   "output_subdir": "half_bridge",
-  "required_components": ["power_device", "current_sensor", "voltage_sensor"],
+  "components": {
+    "power_device": {
+      "entity": "bsc093n15ns5"
+    },
+    "current_sensor": {
+      "entity": "tmcs1133_b5a"
+    },
+    "voltage_sensor": {
+      "entity": "lvfb_voltage_divider_150v"
+    }
+  },
   "parameters": [
     {
       "name": "board_name",
@@ -48,28 +58,6 @@
       "value_format": "({}f)"
     }
   ],
-  "component_slots": {
-    "power_device": {
-      "accepted_categories": ["power_device"],
-      "required": true,
-      "description": "Power semiconductor used by the half bridge."
-    },
-    "current_sensor": {
-      "accepted_categories": ["current_sensor"],
-      "required": true,
-      "description": "Current measurement path."
-    },
-    "voltage_sensor": {
-      "accepted_categories": ["voltage_sensor"],
-      "required": true,
-      "description": "Voltage measurement path."
-    },
-    "bus_capacitor": {
-      "accepted_categories": ["passive_capacitor"],
-      "required": false,
-      "description": "Optional bus capacitor module."
-    }
-  },
   "derived_macros": [
     {
       "name": "HAS_LOCAL_BUS_CAP",
@@ -78,25 +66,10 @@
     }
   ],
   "exports": {
-    "current_sensitivity": {
-      "macro": "{PREFIX}_CURRENT_SENSOR_SENSITIVITY",
-      "unit": "V/A",
-      "description": "Current sensor sensitivity alias."
-    },
-    "current_bias": {
-      "macro": "{PREFIX}_CURRENT_SENSOR_BIAS",
-      "unit": "V",
-      "description": "Current sensor bias alias."
-    },
-    "voltage_sensitivity": {
-      "macro": "{PREFIX}_VOLTAGE_SENSOR_SENSITIVITY",
-      "unit": "V/V",
-      "description": "Voltage sensor sensitivity alias."
-    },
-    "voltage_bias": {
-      "macro": "{PREFIX}_VOLTAGE_SENSOR_BIAS",
-      "unit": "V",
-      "description": "Voltage sensor bias alias."
+    "measured_current_range": {
+      "macro": "{PREFIX}_MEASURED_CURRENT_RANGE_A",
+      "unit": "A",
+      "description": "Current measurement range exported by this half bridge."
     }
   }
 }

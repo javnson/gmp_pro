@@ -26,6 +26,24 @@ class SDPEV2Tests(unittest.TestCase):
         self.assertIn("lvfb_half_bridge_phase_a", lib.entity_files)
         self.assertIn("hall", lib.entity("tmcs1133_b2a").tags)
         self.assertEqual(lib.entity("tmcs1133_b2a").vendor, "Texas Instruments")
+        self.assertIn("current_sensor", lib.schemas["half_bridge"].default_components)
+
+    def test_schema_default_components_are_applied(self) -> None:
+        lib = self.load_library()
+        entity = lib.inline_entity(
+            {
+                "id": "default_half_bridge",
+                "schema": "half_bridge",
+                "parameters": {
+                    "board_name": "Default half bridge"
+                },
+            },
+            "test",
+            "half_bridge",
+        )
+        self.assertIn("power_device", entity.components)
+        self.assertIn("current_sensor", entity.components)
+        self.assertEqual(entity.components["current_sensor"].entity.id, "tmcs1133_b5a")
 
     def test_generate_inline_component_without_standalone_header(self) -> None:
         lib = self.load_library()
@@ -41,7 +59,7 @@ class SDPEV2Tests(unittest.TestCase):
             )
             self.assertIn("#define FSBB_5M_SHUNT_SENSITIVITY_V_PER_A", header)
             self.assertIn("#define FSBB_HB_INLINE_MEASURED_CURRENT_RANGE_A FSBB_5M_SHUNT_RANGE_A", header)
-            self.assertIn("#define FSBB_HB_INLINE_CURRENT_SENSOR_SENSITIVITY FSBB_5M_SHUNT_SENSITIVITY_V_PER_A", header)
+            self.assertNotIn("#define FSBB_HB_INLINE_CURRENT_SENSOR_SENSITIVITY", header)
             self.assertIn("#include <ctl/component/hardware_preset/power_switch/bsc093n15ns5.h>", header)
 
     def test_project_bindings_resolve_nested_exports(self) -> None:
@@ -75,11 +93,7 @@ class SDPEV2Tests(unittest.TestCase):
                 "TMCS1133_B2A_SENSITIVITY_MV_PER_A",
                 header,
             )
-            self.assertIn(
-                "#define GMP_LVFB_HB_B_TUNED_CURRENT_SENSOR_SENSITIVITY "
-                "GMP_LVFB_HB_B_TUNED_CURRENT_SENSOR_SENSITIVITY_V_PER_A",
-                header,
-            )
+            self.assertNotIn("#define GMP_LVFB_HB_B_TUNED_CURRENT_SENSOR_SENSITIVITY ", header)
 
 
 if __name__ == "__main__":

@@ -68,6 +68,7 @@ class HardwareSchema:
     header_prefix: str = ""
     parameters: dict[str, ParameterSpec] = field(default_factory=dict)
     derived_macros: list[DerivedMacroSpec] = field(default_factory=list)
+    default_components: dict[str, Any] = field(default_factory=dict)
     component_slots: dict[str, ComponentSlotSpec] = field(default_factory=dict)
     exports: dict[str, ExportSpec] = field(default_factory=dict)
     required_components: tuple[str, ...] = ()
@@ -132,6 +133,7 @@ class HardwareSchema:
             header_prefix=data.get("header_prefix", ""),
             parameters=parameters,
             derived_macros=derived_macros,
+            default_components=dict(data.get("components", data.get("default_components", {}))),
             component_slots=component_slots,
             exports=exports,
             required_components=tuple(data.get("required_components", [])),

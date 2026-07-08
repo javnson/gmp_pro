@@ -146,7 +146,7 @@ class HeaderGenerator:
         self._append_parameter_macros(lines, entity, schema, prefix)
         self._append_derived_macros(lines, entity, schema, prefix)
         self._append_inline_components(lines, entity)
-        self._append_component_aliases(lines, entity, schema, prefix)
+        self._append_component_overrides(lines, entity, schema)
         self._append_export_comments(lines, schema, prefix)
 
         lines.extend(
@@ -177,8 +177,9 @@ class HeaderGenerator:
             return
         lines.append("// Parameter macros")
         for pname, pspec in schema.parameters.items():
-            if pname in entity.parameters:
-                value = entity.parameters[pname]
+            found, value = self._entity_parameter_value(entity, pname, pspec.c_name)
+            if found:
+                pass
             elif pspec.default is not None:
                 value = pspec.default
             elif pspec.required:
@@ -237,26 +238,17 @@ class HeaderGenerator:
             if comp.overrides:
                 self._append_component_override_macros(lines, comp, entity, self.library.schema(entity.schema_id))
 
-    def _append_component_aliases(
-        self, lines: list[str], entity: HardwareEntity, schema: HardwareSchema, prefix: str
+    def _append_component_overrides(
+        self, lines: list[str], entity: HardwareEntity, schema: HardwareSchema
     ) -> None:
         if not entity.components:
             return
-        lines.append("// Component include and alias macros")
-        for slot, comp in entity.components.items():
-            child_schema = self.library.schema(comp.entity.schema_id)
-            child_prefix = self._component_effective_prefix(entity, schema, comp)
-            slot_prefix = f"{prefix}_{macro_name(slot)}"
-            lines.append(f"// {slot}: {comp.entity.display_name or comp.entity.id}")
-            lines.append(f"#define {slot_prefix}_ENTITY_ID \"{comp.entity.id}\"")
-            lines.append(f"#define {slot_prefix}_PREFIX {child_prefix}")
-            if comp.overrides and not comp.inline:
-                self._append_component_override_macros(lines, comp, entity, schema)
-            for export_name, export in child_schema.exports.items():
-                alias = f"{slot_prefix}_{macro_name(export_name)}"
-                target = self._format_expr(export.macro, child_prefix)
-                lines.append(f"#define {alias} {target}")
-            lines.append("")
+        override_components = [comp for comp in entity.components.values() if comp.overrides and not comp.inline]
+        if not override_components:
+            return
+        lines.append("// Component local override macros")
+        for comp in override_components:
+            self._append_component_override_macros(lines, comp, entity, schema)
 
     def _append_component_override_macros(
         self, lines: list[str], comp: ComponentRef, parent: HardwareEntity, parent_schema: HardwareSchema
@@ -268,8 +260,9 @@ class HeaderGenerator:
         lines.append(f"// Local overrides for {comp.slot}")
         for pname, pspec in child_schema.parameters.items():
             macro = f"{slot_prefix}_{pspec.c_name}"
-            if pname in comp.overrides:
-                value = self._format_parameter_value(comp.overrides[pname], pspec.value_format, parent, parent_prefix)
+            found_override, override_value = self._parameter_mapping_value(comp.overrides, pname, pspec.c_name)
+            if found_override:
+                value = self._format_parameter_value(override_value, pspec.value_format, parent, parent_prefix)
             else:
                 target = f"{child_prefix}_{pspec.c_name}"
                 value = target
@@ -451,8 +444,9 @@ class HeaderGenerator:
         if export_name in schema.exports:
             export = schema.exports[export_name]
             return self._format_expr(export.macro, current_prefix)
-        if export_name in schema.parameters:
-            return f"{current_prefix}_{schema.parameters[export_name].c_name}"
+        pspec = self._parameter_spec_by_symbol(schema, export_name)
+        if pspec is not None:
+            return f"{current_prefix}_{pspec.c_name}"
         for item in schema.derived_macros:
             if export_name == item.name or export_name.lower() == item.name.lower():
                 return f"{current_prefix}_{item.name}"
@@ -474,9 +468,34 @@ class HeaderGenerator:
         schema = self.library.schema(current.schema_id)
         if name in schema.exports:
             return self._format_expr(schema.exports[name].macro, current_prefix)
-        if name in schema.parameters:
-            return f"{current_prefix}_{schema.parameters[name].c_name}"
+        pspec = self._parameter_spec_by_symbol(schema, name)
+        if pspec is not None:
+            return f"{current_prefix}_{pspec.c_name}"
         for item in schema.derived_macros:
             if name == item.name or name.lower() == item.name.lower():
                 return f"{current_prefix}_{item.name}"
         raise SDPEError(f"Schema {schema.id} has no export, parameter, or derived macro '{name}' in symbol {path}")
+
+    def _entity_parameter_value(self, entity: HardwareEntity, pname: str, c_name: str) -> tuple[bool, Any]:
+        return self._parameter_mapping_value(entity.parameters, pname, c_name)
+
+    def _parameter_mapping_value(self, values: dict[str, Any], pname: str, c_name: str) -> tuple[bool, Any]:
+        if pname in values:
+            return True, values[pname]
+        c_key = c_name.lower()
+        if c_key in values:
+            return True, values[c_key]
+        normalized = c_key.replace("__", "_")
+        for key, value in values.items():
+            if key.lower() == normalized:
+                return True, value
+        return False, None
+
+    def _parameter_spec_by_symbol(self, schema: HardwareSchema, name: str):
+        if name in schema.parameters:
+            return schema.parameters[name]
+        key = name.lower()
+        for pspec in schema.parameters.values():
+            if pspec.c_name.lower() == key:
+                return pspec
+        return None

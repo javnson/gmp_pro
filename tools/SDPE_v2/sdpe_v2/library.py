@@ -68,9 +68,10 @@ class SDPELibrary:
             path = self.entity_files[entity_id]
         except KeyError as exc:
             raise SDPEError(f"Unknown entity: {entity_id}") from exc
-        entity = HardwareEntity.from_json(read_json(path), path)
+        data = read_json(path)
+        entity = HardwareEntity.from_json(data, path)
         self._entities[entity.id] = entity
-        self._resolve_components(entity, read_json(path).get("components", {}))
+        self._resolve_components(entity, self._merge_default_components(entity, data.get("components", {})))
         return entity
 
     def inline_entity(self, data: dict[str, Any], parent_id: str, slot: str) -> HardwareEntity:
@@ -79,20 +80,23 @@ class SDPELibrary:
         inline_data = dict(data)
         inline_data.setdefault("id", f"{parent_id}_{slot}")
         entity = HardwareEntity.from_json(inline_data, None, inline=True)
-        self._resolve_components(entity, inline_data.get("components", {}))
+        self._resolve_components(entity, self._merge_default_components(entity, inline_data.get("components", {})))
         return entity
+
+    def _merge_default_components(
+        self, entity: HardwareEntity, components_data: dict[str, Any]
+    ) -> dict[str, Any]:
+        schema = self.schema(entity.schema_id)
+        merged = {slot: dict(value) for slot, value in schema.default_components.items()}
+        for slot, value in components_data.items():
+            merged[slot] = dict(value)
+        return merged
 
     def _resolve_components(self, entity: HardwareEntity, components_data: dict[str, Any]) -> None:
         schema = self.schema(entity.schema_id)
 
-        for required in schema.required_components:
-            if required not in components_data:
-                raise SDPEError(f"Entity {entity.id} requires component slot '{required}'.")
-
         for slot, comp_data in components_data.items():
-            if slot not in schema.component_slots:
-                raise SDPEError(f"Entity {entity.id} uses unknown component slot '{slot}'.")
-            slot_spec = schema.component_slots[slot]
+            slot_spec = schema.component_slots.get(slot)
             if "entity" in comp_data:
                 child = self.entity(comp_data["entity"])
                 inline = False
@@ -102,18 +106,19 @@ class SDPELibrary:
             else:
                 raise SDPEError(f"Component {entity.id}.{slot} must have 'entity' or 'inline'.")
 
-            child_schema = self.schema(child.schema_id)
-            has_schema_rule = bool(slot_spec.accepted_schemas)
-            has_category_rule = bool(slot_spec.accepted_categories)
-            schema_allowed = has_schema_rule and child.schema_id in slot_spec.accepted_schemas
-            category_allowed = has_category_rule and child_schema.category in slot_spec.accepted_categories
-            if (has_schema_rule or has_category_rule) and not (schema_allowed or category_allowed):
-                allowed = ", ".join([*slot_spec.accepted_schemas, *slot_spec.accepted_categories])
-                raise SDPEError(
-                    f"Component {entity.id}.{slot} schema '{child.schema_id}' "
-                    f"category '{child_schema.category}' is not allowed. "
-                    f"Allowed: {allowed}"
-                )
+            if slot_spec is not None:
+                child_schema = self.schema(child.schema_id)
+                has_schema_rule = bool(slot_spec.accepted_schemas)
+                has_category_rule = bool(slot_spec.accepted_categories)
+                schema_allowed = has_schema_rule and child.schema_id in slot_spec.accepted_schemas
+                category_allowed = has_category_rule and child_schema.category in slot_spec.accepted_categories
+                if (has_schema_rule or has_category_rule) and not (schema_allowed or category_allowed):
+                    allowed = ", ".join([*slot_spec.accepted_schemas, *slot_spec.accepted_categories])
+                    raise SDPEError(
+                        f"Component {entity.id}.{slot} schema '{child.schema_id}' "
+                        f"category '{child_schema.category}' is not allowed. "
+                        f"Allowed: {allowed}"
+                    )
             overrides = dict(comp_data.get("overrides", {}))
             entity.components[slot] = ComponentRef(slot=slot, entity=child, inline=inline, overrides=overrides)
 
@@ -125,9 +130,14 @@ class SDPELibrary:
             entity = self.entity(entity_id)
             schema = self.schema(entity.schema_id)
             for pname, pspec in schema.parameters.items():
-                if pspec.required and pname not in entity.parameters and pspec.default is None:
+                if pspec.required and not self._has_parameter_value(entity, pname, pspec.c_name) and pspec.default is None:
                     raise SDPEError(f"Entity {entity.id} misses required parameter '{pname}'.")
-            for slot, slot_spec in schema.component_slots.items():
-                if slot_spec.required and slot not in entity.components:
-                    raise SDPEError(f"Entity {entity.id} misses required component '{slot}'.")
         return warnings
+
+    def _has_parameter_value(self, entity: HardwareEntity, pname: str, c_name: str) -> bool:
+        if pname in entity.parameters:
+            return True
+        c_key = c_name.lower()
+        if c_key in entity.parameters:
+            return True
+        return any(key.lower() == c_key for key in entity.parameters)
