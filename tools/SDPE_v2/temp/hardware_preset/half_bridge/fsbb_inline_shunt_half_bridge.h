@@ -47,6 +47,14 @@ extern "C"
 #endif // FSBB_HB_INLINE_PHASE_COUNT
 
 /**
+ * @brief Current measurement range exported by the current sensor sub component.
+ * @unit A
+ */
+#ifndef FSBB_HB_INLINE_MEASURED_CURRENT_RANGE_A
+#define FSBB_HB_INLINE_MEASURED_CURRENT_RANGE_A FSBB_5M_SHUNT_RANGE_A
+#endif // FSBB_HB_INLINE_MEASURED_CURRENT_RANGE_A
+
+/**
  * @brief Recommended hardware deadtime.
  * @unit ns
  */
@@ -140,7 +148,7 @@ extern "C"
 #define FSBB_5M_SHUNT_MAX_CURRENT_FROM_BIAS_A (FSBB_5M_SHUNT_BIAS_V / FSBB_5M_SHUNT_SENSITIVITY_V_PER_A)
 
 // Component include and alias macros
-// power_device: Infineon BSC093N15NS5 MOSFET
+// power_device: BSC093N15NS5
 #define FSBB_HB_INLINE_POWER_DEVICE_ENTITY_ID "bsc093n15ns5"
 #define FSBB_HB_INLINE_POWER_DEVICE_PREFIX BSC093N15NS5
 #define FSBB_HB_INLINE_POWER_DEVICE_VOLTAGE_RATING BSC093N15NS5_VOLTAGE_RATING_V

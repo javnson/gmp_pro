@@ -40,6 +40,7 @@ class SDPEV2Tests(unittest.TestCase):
                 encoding="utf-8"
             )
             self.assertIn("#define FSBB_5M_SHUNT_SENSITIVITY_V_PER_A", header)
+            self.assertIn("#define FSBB_HB_INLINE_MEASURED_CURRENT_RANGE_A FSBB_5M_SHUNT_RANGE_A", header)
             self.assertIn("#define FSBB_HB_INLINE_CURRENT_SENSOR_SENSITIVITY FSBB_5M_SHUNT_SENSITIVITY_V_PER_A", header)
             self.assertIn("#include <ctl/component/hardware_preset/power_switch/bsc093n15ns5.h>", header)
 

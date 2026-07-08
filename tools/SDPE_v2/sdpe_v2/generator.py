@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -198,7 +199,7 @@ class HeaderGenerator:
                 [
                     " */",
                     f"#ifndef {macro}",
-                    f"#define {macro} {c_literal(value, pspec.value_format)}",
+                    f"#define {macro} {self._format_parameter_value(value, pspec.value_format, entity, prefix)}",
                     f"#endif // {macro}",
                     "",
                 ]
@@ -268,7 +269,7 @@ class HeaderGenerator:
         for pname, pspec in child_schema.parameters.items():
             macro = f"{slot_prefix}_{pspec.c_name}"
             if pname in comp.overrides:
-                value = c_literal(comp.overrides[pname], pspec.value_format)
+                value = self._format_parameter_value(comp.overrides[pname], pspec.value_format, parent, parent_prefix)
             else:
                 target = f"{child_prefix}_{pspec.c_name}"
                 value = target
@@ -289,6 +290,32 @@ class HeaderGenerator:
 
     def _format_expr(self, expr: str, prefix: str) -> str:
         return expr.replace("{PREFIX}", prefix)
+
+    def _format_parameter_value(
+        self, value: Any, value_format: str, entity: HardwareEntity, prefix: str
+    ) -> str:
+        if isinstance(value, dict):
+            if "literal" in value:
+                return str(value["literal"])
+            if "macro" in value:
+                return str(value["macro"])
+            if "ref" in value:
+                return self._resolve_entity_symbol(entity, prefix, str(value["ref"]))
+            if "export" in value:
+                return self._resolve_entity_symbol(entity, prefix, str(value["export"]))
+            if "expr" in value:
+                return self._format_local_expr(str(value["expr"]), entity, prefix)
+            raise SDPEError(f"Unsupported parameter value object: {value!r}")
+        return c_literal(value, value_format)
+
+    def _format_local_expr(self, expr: str, entity: HardwareEntity, prefix: str) -> str:
+        def replace(match: re.Match[str]) -> str:
+            token = match.group(1)
+            if token == "PREFIX":
+                return prefix
+            return self._resolve_entity_symbol(entity, prefix, token)
+
+        return re.sub(r"\{([A-Za-z0-9_][A-Za-z0-9_.]*)\}", replace, expr)
 
     def prefix(self, entity: HardwareEntity, schema: HardwareSchema) -> str:
         """Resolve macro prefix for an entity."""
@@ -430,3 +457,26 @@ class HeaderGenerator:
             if export_name == item.name or export_name.lower() == item.name.lower():
                 return f"{current_prefix}_{item.name}"
         raise SDPEError(f"Schema {schema.id} has no export or parameter '{export_name}' in binding {export_path}")
+
+    def _resolve_entity_symbol(self, entity: HardwareEntity, root_prefix: str, path: str) -> str:
+        parts = path.split(".")
+        if not parts:
+            raise SDPEError(f"Empty entity symbol path for {entity.id}")
+        current = entity
+        current_prefix = root_prefix
+        for slot in parts[:-1]:
+            if slot not in current.components:
+                raise SDPEError(f"Entity {current.id} has no component slot '{slot}' in symbol {path}")
+            comp = current.components[slot]
+            current_prefix = self._component_effective_prefix(current, self.library.schema(current.schema_id), comp)
+            current = comp.entity
+        name = parts[-1]
+        schema = self.library.schema(current.schema_id)
+        if name in schema.exports:
+            return self._format_expr(schema.exports[name].macro, current_prefix)
+        if name in schema.parameters:
+            return f"{current_prefix}_{schema.parameters[name].c_name}"
+        for item in schema.derived_macros:
+            if name == item.name or name.lower() == item.name.lower():
+                return f"{current_prefix}_{item.name}"
+        raise SDPEError(f"Schema {schema.id} has no export, parameter, or derived macro '{name}' in symbol {path}")

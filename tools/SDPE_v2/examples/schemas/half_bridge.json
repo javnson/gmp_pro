@@ -22,6 +22,16 @@
       "value_format": "({}U)"
     },
     {
+      "name": "measured_current_range_a",
+      "c_name": "MEASURED_CURRENT_RANGE_A",
+      "unit": "A",
+      "description": "Current measurement range exported by the current sensor sub component.",
+      "default": {
+        "ref": "current_sensor.range"
+      },
+      "value_format": "raw"
+    },
+    {
       "name": "deadtime_ns",
       "c_name": "DEADTIME_NS",
       "unit": "ns",

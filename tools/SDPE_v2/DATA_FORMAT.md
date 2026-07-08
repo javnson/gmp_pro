@@ -43,6 +43,27 @@ Schema 文件放在 `schemas/` 下。
 
 `value_format` 使用 Python `str.format`，其中 `{}` 会被替换为 JSON 值。
 
+常用格式：
+
+| 格式 | 说明 |
+| --- | --- |
+| `{}` | 原始值套入格式。 |
+| `raw` | 完全原样输出，适合 C 表达式或已写好的宏。 |
+| `({}f)` | float 字面量。 |
+| `({}U)` | unsigned 字面量。 |
+| `"{}"` | C 字符串字面量。 |
+
+`default` 可以是普通 JSON 值，也可以是绑定对象：
+
+```json
+{"literal": "(2048U)"}
+{"macro": "EXISTING_C_MACRO"}
+{"ref": "current_sensor.range"}
+{"expr": "({current_sensor.internal_resistance_ohm} * 20.0f)"}
+```
+
+其中 `ref` 和 `expr` 以当前 entity 为根，引用 Sub Components 中的参数、derived macro 或 export。
+
 ### Derived Macro
 
 ```json

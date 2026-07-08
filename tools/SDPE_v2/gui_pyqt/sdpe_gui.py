@@ -15,6 +15,8 @@ try:
         QApplication,
         QCheckBox,
         QComboBox,
+        QDialog,
+        QDialogButtonBox,
         QFileDialog,
         QFormLayout,
         QHBoxLayout,
@@ -43,6 +45,8 @@ except ImportError:  # pragma: no cover - depends on local desktop environment.
             QApplication,
             QCheckBox,
             QComboBox,
+            QDialog,
+            QDialogButtonBox,
             QFileDialog,
             QFormLayout,
             QHBoxLayout,
@@ -98,15 +102,83 @@ def set_table_headers(
     table.setColumnCount(len(headers))
     table.setHorizontalHeaderLabels(headers)
     table.horizontalHeader().setSectionResizeMode(mode)
+    table.horizontalHeader().setStretchLastSection(True)
+    table.verticalHeader().setVisible(False)
+    table.setAlternatingRowColors(True)
+    table.resizeColumnsToContents()
 
 
 def item_text(table: QTableWidget, row: int, col: int) -> str:
+    widget = table.cellWidget(row, col)
+    if isinstance(widget, QComboBox):
+        return widget.currentText().strip()
     item = table.item(row, col)
     return "" if item is None else item.text().strip()
 
 
 def set_item(table: QTableWidget, row: int, col: int, value: Any) -> None:
     table.setItem(row, col, QTableWidgetItem("" if value is None else str(value)))
+
+
+def set_combo(table: QTableWidget, row: int, col: int, values: list[str], current: Any = "") -> None:
+    combo = QComboBox()
+    combo.addItems(values)
+    combo.setEditable(True)
+    combo.setCurrentText("" if current is None else str(current))
+    table.setCellWidget(row, col, combo)
+
+
+def set_button(table: QTableWidget, row: int, col: int, label: str, callback) -> None:
+    button = QPushButton(label)
+    button.clicked.connect(callback)
+    table.setCellWidget(row, col, button)
+
+
+def edit_multiline(parent: QWidget, title: str, text: str) -> str | None:
+    dialog = QDialog(parent)
+    dialog.setWindowTitle(title)
+    dialog.resize(620, 360)
+    edit = QTextEdit()
+    edit.setPlainText(text)
+    buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+    buttons.accepted.connect(dialog.accept)
+    buttons.rejected.connect(dialog.reject)
+    layout = QVBoxLayout(dialog)
+    layout.addWidget(edit)
+    layout.addWidget(buttons)
+    if dialog.exec() == QDialog.DialogCode.Accepted:
+        return edit.toPlainText()
+    return None
+
+
+def choose_item(parent: QWidget, title: str, items: list[str]) -> str | None:
+    dialog = QDialog(parent)
+    dialog.setWindowTitle(title)
+    dialog.resize(560, 420)
+    search = QLineEdit()
+    search.setPlaceholderText("Search")
+    list_widget = QListWidget()
+
+    def populate() -> None:
+        query = search.text().strip().lower()
+        list_widget.clear()
+        for item in items:
+            if not query or all(part in item.lower() for part in query.split()):
+                list_widget.addItem(item)
+
+    search.textChanged.connect(populate)
+    populate()
+    buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+    buttons.accepted.connect(dialog.accept)
+    buttons.rejected.connect(dialog.reject)
+    list_widget.itemDoubleClicked.connect(lambda _item: dialog.accept())
+    layout = QVBoxLayout(dialog)
+    layout.addWidget(search)
+    layout.addWidget(list_widget)
+    layout.addWidget(buttons)
+    if dialog.exec() == QDialog.DialogCode.Accepted and list_widget.currentItem():
+        return list_widget.currentItem().text()
+    return None
 
 
 class SDPEPage(QWidget):
@@ -145,8 +217,9 @@ class SDPEPage(QWidget):
         self.show_form.setChecked(True)
         self.show_form.toggled.connect(self.form_panel.setVisible)
         self.show_preview = QCheckBox("Code")
-        self.show_preview.setChecked(True)
+        self.show_preview.setChecked(False)
         self.show_preview.toggled.connect(self.preview.setVisible)
+        self.preview.setVisible(False)
 
         toolbar = QToolBar(title)
         toolbar.addWidget(QLabel(title))
@@ -213,7 +286,7 @@ class TemplatePage(SDPEPage):
         self.params = QTableWidget()
         set_table_headers(
             self.params,
-            ["Name", "Macro Name", "Unit", "Required", "Default", "Format", "Description"],
+            ["Name", "Macro Name", "Default", "Unit", "Required", "Format", "Description", "..."],
             QHeaderView.ResizeMode.Interactive,
         )
         self.slots = QTableWidget()
@@ -233,7 +306,7 @@ class TemplatePage(SDPEPage):
         form.addRow("Description", self.description_edit)
 
         add_param = QPushButton("Add parameter")
-        add_param.clicked.connect(lambda: self.params.insertRow(self.params.rowCount()))
+        add_param.clicked.connect(self.add_template_parameter)
         del_param = QPushButton("Remove parameter")
         del_param.clicked.connect(lambda: self.params.removeRow(max(0, self.params.currentRow())))
         add_slot = QPushButton("Add slot")
@@ -243,13 +316,23 @@ class TemplatePage(SDPEPage):
         save = QPushButton("Save template")
         save.clicked.connect(self.save_current)
 
-        self.form_layout.addLayout(form)
-        self.form_layout.addWidget(QLabel("Parameters"))
-        self.form_layout.addWidget(self.params)
-        self.form_layout.addLayout(row_buttons([add_param, del_param]))
-        self.form_layout.addWidget(QLabel("Component slots"))
-        self.form_layout.addWidget(self.slots)
-        self.form_layout.addLayout(row_buttons([add_slot, del_slot, save]))
+        tabs = QTabWidget()
+        basic_tab = QWidget()
+        basic_layout = QVBoxLayout(basic_tab)
+        basic_layout.addLayout(form)
+        basic_layout.addStretch(1)
+        param_tab = QWidget()
+        param_layout = QVBoxLayout(param_tab)
+        param_layout.addWidget(self.params)
+        param_layout.addLayout(row_buttons([add_param, del_param, save]))
+        comp_tab = QWidget()
+        comp_layout = QVBoxLayout(comp_tab)
+        comp_layout.addWidget(self.slots)
+        comp_layout.addLayout(row_buttons([add_slot, del_slot, save]))
+        tabs.addTab(basic_tab, "Basic")
+        tabs.addTab(param_tab, "Parameters")
+        tabs.addTab(comp_tab, "Sub Components")
+        self.form_layout.addWidget(tabs)
 
     def refresh_list(self) -> None:
         current = self.current_id
@@ -280,8 +363,14 @@ class TemplatePage(SDPEPage):
         for param in data.get("parameters", []):
             row = self.params.rowCount()
             self.params.insertRow(row)
-            for col, key in enumerate(["name", "c_name", "unit", "required", "default", "value_format", "description"]):
-                set_item(self.params, row, col, pretty_json(param[key]) if key == "default" and key in param else param.get(key, ""))
+            set_item(self.params, row, 0, param.get("name", ""))
+            set_item(self.params, row, 1, param.get("c_name", param.get("name", "").upper()))
+            set_item(self.params, row, 2, pretty_json(param["default"]) if "default" in param else "")
+            set_item(self.params, row, 3, param.get("unit", ""))
+            set_combo(self.params, row, 4, ["false", "true"], str(bool(param.get("required", False))).lower())
+            set_combo(self.params, row, 5, ['{}', 'raw', '({}f)', '({}U)', '"{}"', '{}f'], param.get("value_format", "{}"))
+            set_item(self.params, row, 6, param.get("description", ""))
+            set_button(self.params, row, 7, "...", lambda _=False, r=row: self.edit_template_description(r))
         self.slots.setRowCount(0)
         for name, slot in data.get("component_slots", {}).items():
             row = self.slots.rowCount()
@@ -326,16 +415,28 @@ class TemplatePage(SDPEPage):
             item = {
                 "name": name,
                 "c_name": item_text(self.params, row, 1) or name.upper(),
-                "unit": item_text(self.params, row, 2),
-                "required": item_text(self.params, row, 3).lower() in {"1", "true", "yes"},
+                "unit": item_text(self.params, row, 3),
+                "required": item_text(self.params, row, 4).lower() in {"1", "true", "yes"},
                 "value_format": item_text(self.params, row, 5) or "{}",
                 "description": item_text(self.params, row, 6),
             }
-            default_text = item_text(self.params, row, 4)
+            default_text = item_text(self.params, row, 2)
             if default_text:
                 item["default"] = parse_json_text(default_text, default_text)
             rows.append(item)
         return rows
+
+    def edit_template_description(self, row: int) -> None:
+        text = edit_multiline(self, "Parameter Description", item_text(self.params, row, 6))
+        if text is not None:
+            set_item(self.params, row, 6, text)
+
+    def add_template_parameter(self) -> None:
+        row = self.params.rowCount()
+        self.params.insertRow(row)
+        set_combo(self.params, row, 4, ["false", "true"], "false")
+        set_combo(self.params, row, 5, ['{}', 'raw', '({}f)', '({}U)', '"{}"', '{}f'], "{}")
+        set_button(self.params, row, 7, "...", lambda _=False, r=row: self.edit_template_description(r))
 
     def _table_slots(self) -> dict[str, dict[str, Any]]:
         slots = {}
@@ -368,7 +469,11 @@ class EntityPage(SDPEPage):
         self.description_edit = QTextEdit()
         self.output_edit = QLineEdit()
         self.params = QTableWidget()
-        set_table_headers(self.params, ["Parameter", "Value"], QHeaderView.ResizeMode.Interactive)
+        set_table_headers(
+            self.params,
+            ["Parameter", "Value", "...", "Unit", "Description"],
+            QHeaderView.ResizeMode.Interactive,
+        )
         self.components = QTableWidget()
         set_table_headers(
             self.components,
@@ -395,7 +500,7 @@ class EntityPage(SDPEPage):
         save = QPushButton("Save entity")
         save.clicked.connect(self.save_current)
         add_comp = QPushButton("Add component")
-        add_comp.clicked.connect(lambda: self.components.insertRow(self.components.rowCount()))
+        add_comp.clicked.connect(self.add_entity_component)
         del_comp = QPushButton("Remove component")
         del_comp.clicked.connect(lambda: self.components.removeRow(max(0, self.components.currentRow())))
         generate = QPushButton("Generate entity header")
@@ -403,13 +508,24 @@ class EntityPage(SDPEPage):
         preview_header = QPushButton("Preview header")
         preview_header.clicked.connect(self.preview_header)
 
-        self.form_layout.addLayout(form)
-        self.form_layout.addLayout(row_buttons([browse, save]))
-        self.form_layout.addWidget(QLabel("Parameters"))
-        self.form_layout.addWidget(self.params)
-        self.form_layout.addWidget(QLabel("Components"))
-        self.form_layout.addWidget(self.components)
-        self.form_layout.addLayout(row_buttons([add_comp, del_comp, preview_header, generate]))
+        tabs = QTabWidget()
+        basic_tab = QWidget()
+        basic_layout = QVBoxLayout(basic_tab)
+        basic_layout.addLayout(form)
+        basic_layout.addLayout(row_buttons([browse, save]))
+        basic_layout.addStretch(1)
+        param_tab = QWidget()
+        param_layout = QVBoxLayout(param_tab)
+        param_layout.addWidget(self.params)
+        param_layout.addLayout(row_buttons([preview_header, generate, save]))
+        comp_tab = QWidget()
+        comp_layout = QVBoxLayout(comp_tab)
+        comp_layout.addWidget(self.components)
+        comp_layout.addLayout(row_buttons([add_comp, del_comp, save]))
+        tabs.addTab(basic_tab, "Basic")
+        tabs.addTab(param_tab, "Parameters")
+        tabs.addTab(comp_tab, "Sub Components")
+        self.form_layout.addWidget(tabs)
 
     def refresh_list(self) -> None:
         current = self.current_id
@@ -462,11 +578,16 @@ class EntityPage(SDPEPage):
         schema = self.window.library.schema(entity.schema_id)
         self.params.setRowCount(0)
         known = set()
-        for name in schema.parameters:
+        for name, pspec in schema.parameters.items():
             row = self.params.rowCount()
             self.params.insertRow(row)
             set_item(self.params, row, 0, name)
             set_item(self.params, row, 1, pretty_json(data.get("parameters", {}).get(name, "")))
+            set_button(self.params, row, 2, "...", lambda _=False, r=row: self.select_parameter_symbol(r))
+            set_item(self.params, row, 3, pspec.unit)
+            set_item(self.params, row, 4, pspec.description)
+            self.params.item(row, 0).setToolTip(f"{pspec.description}\nUnit: {pspec.unit}")
+            self.params.item(row, 1).setToolTip(f"{pspec.description}\nUnit: {pspec.unit}")
             known.add(name)
         for name, value in data.get("parameters", {}).items():
             if name in known:
@@ -475,6 +596,7 @@ class EntityPage(SDPEPage):
             self.params.insertRow(row)
             set_item(self.params, row, 0, name)
             set_item(self.params, row, 1, pretty_json(value))
+            set_button(self.params, row, 2, "...", lambda _=False, r=row: self.select_parameter_symbol(r))
 
     def save_current(self) -> None:
         try:
@@ -512,6 +634,17 @@ class EntityPage(SDPEPage):
                 params[name] = parse_json_text(value, value)
         return params
 
+    def select_parameter_symbol(self, row: int) -> None:
+        symbols = self.window.symbols_for_subcomponents(self.current_id)
+        selected = choose_item(self, "Select Sub Component Symbol", symbols)
+        if selected:
+            set_item(self.params, row, 1, pretty_json({"ref": selected}))
+
+    def add_entity_component(self) -> None:
+        row = self.components.rowCount()
+        self.components.insertRow(row)
+        set_combo(self.components, row, 1, ["entity", "inline"], "entity")
+
     def _table_components(self) -> dict[str, Any]:
         components = {}
         for row in range(self.components.rowCount()):
@@ -543,6 +676,7 @@ class EntityPage(SDPEPage):
         try:
             entity = self.window.library.entity(self.current_id)
             self.preview.setPlainText(self.generator().render_entity_header(entity))
+            self.show_preview.setChecked(True)
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
 
@@ -797,6 +931,7 @@ class BindingPage(SDPEPage):
         try:
             data = read_json(self.window.project_path(self.current_id))
             self.preview.setPlainText(self.generator().render_project_header(data))
+            self.show_preview.setChecked(True)
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
 
@@ -928,6 +1063,13 @@ class MainWindow(QMainWindow):
         entity = self.library.entity(entity_id)
         symbols: list[str] = []
         self._collect_symbols(entity, entity.id, symbols)
+        return symbols
+
+    def symbols_for_subcomponents(self, entity_id: str) -> list[str]:
+        entity = self.library.entity(entity_id)
+        symbols: list[str] = []
+        for slot, comp in entity.components.items():
+            self._collect_symbols(comp.entity, slot, symbols)
         return symbols
 
     def _collect_symbols(self, entity: HardwareEntity, path: str, symbols: list[str]) -> None:

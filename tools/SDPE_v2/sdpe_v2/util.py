@@ -48,6 +48,8 @@ def header_guard(relative_path: str) -> str:
 def c_literal(value: Any, value_format: str = "{}") -> str:
     """Format a JSON value as a C literal."""
 
+    if value_format == "raw":
+        return str(value)
     if isinstance(value, bool):
         raw = "1" if value else "0"
     elif isinstance(value, (int, float)):

@@ -1,6 +1,8 @@
 # SDPE v2 软件定义电力电子工具
 
-SDPE 是 Software Defined Power Electronics 的缩写。它的目标是把 `ctrl_settings.h` 中冗长、易错、强耦合的硬件配置拆成可复用的数据模型，并根据工程需求自动生成硬件预设头文件和工程绑定头文件。
+SDPE 是 Software Defined Power Electronics 的缩写。它本质上是一个数据管理与关联工具：Template 定义可导出的参数面，Entity 填写具体数据，Sub Components 引入其他硬件对象，Project Requirement 再把这些对象的参数绑定到控制工程需求。
+
+一个硬件头文件应当主要导出 Template Parameters 中声明的宏。需要来自其他器件的数据时，通过 Sub Components include 对方头文件，并在当前 Parameters 中引用子组件的参数或导出量。例如半桥模块可以导出自己的测量电流范围宏，而这个宏的值来自 `current_sensor.range`。
 
 v2 当前采用“核心 CLI + PyQt 图形化管理器”的结构。CLI 负责数据校验和头文件生成，PyQt 管理器负责以对象化表单维护模板、元件、工程需求和需求绑定。`gui/` 下保留了一个轻量 Web 原型，便于快速查看数据。
 
@@ -13,6 +15,7 @@ Schema 定义一类硬件的规范，位于 `examples/schemas`。
 它描述：
 
 - 这类硬件有哪些参数。
+- 这些参数是否来自当前硬件本身，或者引用某个 Sub Component。
 - 哪些参数必填，哪些有默认值。
 - 参数如何生成 C 宏。
 - 这类硬件可以包含哪些子硬件。
@@ -46,6 +49,17 @@ Entity 支持 `tags`，也支持对引用进来的完整子对象做局部覆盖
 ```
 
 这种写法仍然 include `tmcs1133_b2a.h`，但父对象会额外生成 `PARENT_CURRENT_SENSOR_*` 这一组本地宏。未覆盖参数会自动别名到原始元件，覆盖参数则使用父对象本地值。
+
+Entity 的参数值支持四类写法：
+
+```json
+{"literal": "(2048U)"}
+{"macro": "EXISTING_C_MACRO"}
+{"ref": "current_sensor.range"}
+{"expr": "({current_sensor.internal_resistance_ohm} * 20.0f)"}
+```
+
+`ref` 和 `expr` 用于从 Sub Components 中引用参数或导出量。`expr` 中用 `{slot.parameter}` 或 `{slot.export}` 写占位符。
 
 ### 1.3 Project
 

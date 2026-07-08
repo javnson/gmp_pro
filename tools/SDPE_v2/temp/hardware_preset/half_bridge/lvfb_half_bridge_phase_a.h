@@ -48,6 +48,14 @@ extern "C"
 #endif // GMP_LVFB_HB_A_PHASE_COUNT
 
 /**
+ * @brief Current measurement range exported by the current sensor sub component.
+ * @unit A
+ */
+#ifndef GMP_LVFB_HB_A_MEASURED_CURRENT_RANGE_A
+#define GMP_LVFB_HB_A_MEASURED_CURRENT_RANGE_A TMCS1133_B5A_RANGE_A
+#endif // GMP_LVFB_HB_A_MEASURED_CURRENT_RANGE_A
+
+/**
  * @brief Recommended hardware deadtime.
  * @unit ns
  */
@@ -70,7 +78,7 @@ extern "C"
 #define GMP_LVFB_HB_A_HAS_LOCAL_BUS_CAP (GMP_LVFB_HB_A_BUS_CAPACITANCE_F > 0.0f)
 
 // Component include and alias macros
-// power_device: Infineon BSC093N15NS5 MOSFET
+// power_device: BSC093N15NS5
 #define GMP_LVFB_HB_A_POWER_DEVICE_ENTITY_ID "bsc093n15ns5"
 #define GMP_LVFB_HB_A_POWER_DEVICE_PREFIX BSC093N15NS5
 #define GMP_LVFB_HB_A_POWER_DEVICE_VOLTAGE_RATING BSC093N15NS5_VOLTAGE_RATING_V
