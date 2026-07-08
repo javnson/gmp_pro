@@ -26,6 +26,8 @@ extern "C"
 #define GMP_LVFB_HB_A_SCHEMA "half_bridge"
 #define GMP_LVFB_HB_A_NAME "GMP LVFB Half Bridge Phase A"
 
+// Tags: half_bridge, hall, lvfb, power_stage
+
 /*
  * Schema: Composable half-bridge module containing power switches and sensors.
  */

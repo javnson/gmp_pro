@@ -12,10 +12,17 @@ from .util import read_json
 class SDPELibrary:
     """Load schemas and entities from a library directory."""
 
-    def __init__(self, root: Path):
+    def __init__(
+        self,
+        root: Path,
+        schema_dirs: list[Path] | None = None,
+        entity_dirs: list[Path] | None = None,
+    ):
         self.root = root
         self.schemas_dir = root / "schemas"
         self.entities_dir = root / "entities"
+        self.schema_dirs = schema_dirs or [self.schemas_dir]
+        self.entity_dirs = entity_dirs or [self.entities_dir]
         self.schemas: dict[str, HardwareSchema] = {}
         self.entity_files: dict[str, Path] = {}
         self._entities: dict[str, HardwareEntity] = {}
@@ -23,16 +30,18 @@ class SDPELibrary:
     def load(self) -> "SDPELibrary":
         """Load all schema and entity indexes."""
 
-        if not self.schemas_dir.exists():
-            raise SDPEError(f"Schema directory not found: {self.schemas_dir}")
-        for path in sorted(self.schemas_dir.rglob("*.json")):
-            schema = HardwareSchema.from_json(read_json(path), path)
-            if schema.id in self.schemas:
-                raise SDPEError(f"Duplicate schema id: {schema.id}")
-            self.schemas[schema.id] = schema
+        existing_schema_dirs = [path for path in self.schema_dirs if path.exists()]
+        if not existing_schema_dirs:
+            raise SDPEError(f"Schema directory not found: {self.schema_dirs[0]}")
+        for schema_dir in existing_schema_dirs:
+            for path in sorted(schema_dir.rglob("*.json")):
+                schema = HardwareSchema.from_json(read_json(path), path)
+                if schema.id in self.schemas:
+                    raise SDPEError(f"Duplicate schema id: {schema.id}")
+                self.schemas[schema.id] = schema
 
-        if self.entities_dir.exists():
-            for path in sorted(self.entities_dir.rglob("*.json")):
+        for entity_dir in [path for path in self.entity_dirs if path.exists()]:
+            for path in sorted(entity_dir.rglob("*.json")):
                 data = read_json(path)
                 entity_id = data.get("id")
                 if not entity_id:
@@ -93,13 +102,20 @@ class SDPELibrary:
             else:
                 raise SDPEError(f"Component {entity.id}.{slot} must have 'entity' or 'inline'.")
 
-            if slot_spec.accepted_schemas and child.schema_id not in slot_spec.accepted_schemas:
-                allowed = ", ".join(slot_spec.accepted_schemas)
+            child_schema = self.schema(child.schema_id)
+            has_schema_rule = bool(slot_spec.accepted_schemas)
+            has_category_rule = bool(slot_spec.accepted_categories)
+            schema_allowed = has_schema_rule and child.schema_id in slot_spec.accepted_schemas
+            category_allowed = has_category_rule and child_schema.category in slot_spec.accepted_categories
+            if (has_schema_rule or has_category_rule) and not (schema_allowed or category_allowed):
+                allowed = ", ".join([*slot_spec.accepted_schemas, *slot_spec.accepted_categories])
                 raise SDPEError(
-                    f"Component {entity.id}.{slot} schema '{child.schema_id}' is not allowed. "
+                    f"Component {entity.id}.{slot} schema '{child.schema_id}' "
+                    f"category '{child_schema.category}' is not allowed. "
                     f"Allowed: {allowed}"
                 )
-            entity.components[slot] = ComponentRef(slot=slot, entity=child, inline=inline)
+            overrides = dict(comp_data.get("overrides", {}))
+            entity.components[slot] = ComponentRef(slot=slot, entity=child, inline=inline, overrides=overrides)
 
     def validate(self) -> list[str]:
         """Resolve every entity and return warning messages."""

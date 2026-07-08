@@ -2,7 +2,8 @@
   "id": "voltage_sensor",
   "display_name": "Voltage Sensor",
   "description": "Voltage sensor or resistor divider model.",
-  "category": "sensor",
+  "category": "voltage_sensor",
+  "tags": ["sensor", "voltage_sensor"],
   "output_subdir": "voltage_sensor",
   "parameters": [
     {

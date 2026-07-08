@@ -3,6 +3,7 @@
   "schema": "half_bridge",
   "display_name": "GMP LVFB Half Bridge Phase A",
   "macro_prefix": "GMP_LVFB_HB_A",
+  "tags": ["half_bridge", "lvfb", "hall"],
   "parameters": {
     "board_name": "GMP LVFB 150V 2ph V2 Phase A",
     "phase_count": 1,

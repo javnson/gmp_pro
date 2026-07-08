@@ -2,7 +2,7 @@
 
 SDPE 是 Software Defined Power Electronics 的缩写。它的目标是把 `ctrl_settings.h` 中冗长、易错、强耦合的硬件配置拆成可复用的数据模型，并根据工程需求自动生成硬件预设头文件和工程绑定头文件。
 
-v2 当前先实现核心 CLI 和数据规范，不依赖 GUI，也不依赖第三方 Python 包。后续可以在此基础上接入 PyQt、Electron 或 Web UI。
+v2 当前采用“核心 CLI + PyQt 图形化管理器”的结构。CLI 负责数据校验和头文件生成，PyQt 管理器负责以对象化表单维护模板、元件、工程需求和需求绑定。`gui/` 下保留了一个轻量 Web 原型，便于快速查看数据。
 
 ## 1. 核心概念
 
@@ -17,6 +17,7 @@ Schema 定义一类硬件的规范，位于 `examples/schemas`。
 - 参数如何生成 C 宏。
 - 这类硬件可以包含哪些子硬件。
 - 这类硬件向工程需求导出哪些逻辑量。
+- 这类硬件有哪些 `tags`，用于搜索和分类。
 
 例如 `current_sensor` 可以要求芯片型号、量程、输出范围、偏置、灵敏度、内阻等信息。
 
@@ -31,6 +32,20 @@ Entity 是 schema 的具体实例，位于 `examples/entities`。
 - `lvfb_half_bridge_phase_a` 是一个复合半桥模块，包含功率器件、电流传感器、电压传感器。
 
 Entity 可以引用另一个独立 entity，也可以使用 inline 子实体。Inline 子实体不会生成独立头文件，适合“某个分流器阻值只属于当前板卡”的场景。
+
+Entity 支持 `tags`，也支持对引用进来的完整子对象做局部覆盖：
+
+```json
+"current_sensor": {
+  "entity": "tmcs1133_b2a",
+  "overrides": {
+    "range_a": 25.0,
+    "bias_v": 1.64
+  }
+}
+```
+
+这种写法仍然 include `tmcs1133_b2a.h`，但父对象会额外生成 `PARENT_CURRENT_SENSOR_*` 这一组本地宏。未覆盖参数会自动别名到原始元件，覆盖参数则使用父对象本地值。
 
 ### 1.3 Project
 
@@ -59,6 +74,11 @@ tools/SDPE_v2/
 │   ├── schemas/
 │   ├── entities/
 │   └── projects/
+├── gui_pyqt/
+│   └── sdpe_gui.py
+├── gui/
+│   ├── server.py
+│   └── static/
 └── tests/
 ```
 
@@ -70,7 +90,57 @@ tools/SDPE_v2/
 python .\sdpe.py --library .\examples validate
 ```
 
-启动图形化管理工具：
+Windows 用户也可以直接使用批处理入口：
+
+```powershell
+.\gmp_sdpe_generate_all.bat
+.\gmp_sdpe_gui.bat
+.\gmp_sdpe_project_gui.bat
+```
+
+`gmp_sdpe_generate_all.bat` 的第一个参数是库目录，第二个参数是输出目录：
+
+```powershell
+.\gmp_sdpe_generate_all.bat .\examples .\build
+```
+
+`gmp_sdpe_gui.bat` 的第一个参数是库目录：
+第二个参数是工作模式，可选 `all`、`library`、`project`：
+
+```powershell
+.\gmp_sdpe_gui.bat .\examples
+.\gmp_sdpe_gui.bat .\examples library
+```
+
+`gmp_sdpe_project_gui.bat` 用于只管理某个工程的需求和绑定。第一个参数是硬件库目录，第二个参数是 project requirement 文件或目录：
+
+```powershell
+.\gmp_sdpe_project_gui.bat .\examples .\examples\projects
+```
+
+启动 PyQt 图形化管理工具：
+
+```powershell
+python .\gui_pyqt\sdpe_gui.py --library .\examples
+python .\gui_pyqt\sdpe_gui.py --library .\examples --mode library
+python .\gui_pyqt\sdpe_gui.py --library .\examples --mode project --projects .\examples\projects
+```
+
+PyQt 管理器包含 4 个工作页：
+
+| 页面 | 对应需求 |
+| --- | --- |
+| Template Definition | 定义元件模板、参数、组件槽位和 tag。 |
+| Entity Instance | 实例化模板、引入子元件、编辑 overrides，并生成单个元件头文件。 |
+| Project Requirement | 为 suite 创建工程需求、引入硬件、维护需求宏和外设映射。 |
+| Requirement Binding | 将需求宏绑定到硬件导出量、直接参数、已有宏或手工 literal，并生成工程绑定头文件。 |
+| Settings | 设置模板路径、元件路径、工程需求路径和默认头文件生成路径。 |
+
+每个页面采用左侧搜索列表、中间对象表单、右侧 JSON/头文件预览的布局。`Form` 和 `Code` 面板可以按需关闭，适合一边图形化编辑、一边检查底层数据。
+
+`Template Definition` 和 `Entity Instance` 面向硬件库，适合固定保存在 GMP 仓库或扩展包中。`Project Requirement` 和 `Requirement Binding` 面向具体工程，建议通过 `--projects` 指向 suite 工程内的需求文件或目录。
+
+启动轻量 Web 原型：
 
 ```powershell
 python .\gui\server.py --library .\examples --host 127.0.0.1 --port 8765
@@ -82,7 +152,7 @@ python .\gui\server.py --library .\examples --host 127.0.0.1 --port 8765
 http://127.0.0.1:8765/
 ```
 
-GUI 当前包含 5 个工作页：
+Web GUI 当前包含 5 个工作页：
 
 | 页面 | 对应需求 |
 | --- | --- |
@@ -233,6 +303,28 @@ Inline 子实体会被展开到父硬件头文件中，不会生成 `fsbb_5m_shu
 #define CTRL_INDUCTOR_CURRENT_SENSITIVITY FSBB_5M_SHUNT_SENSITIVITY_V_PER_A
 ```
 
+工程绑定也可以直接引用参数路径：
+
+```json
+{
+  "macro": "CTRL_REFERENCE_CURRENT_RANGE_A",
+  "binding": {
+    "export": "tmcs1133_b2a.range_a"
+  }
+}
+```
+
+如果需求值不属于任何元件，可以使用手工输入：
+
+```json
+{
+  "macro": "CTRL_VIN_ADC_OFFSET_MANUAL",
+  "binding": {
+    "literal": "(2048U)"
+  }
+}
+```
+
 板级外设映射用于 IRIS 这类硬件：
 
 ```json
@@ -271,6 +363,8 @@ python -m unittest discover -s .\tests
 - inline 子实体不生成独立头文件。
 - 生成 include 使用 GMP 根目录风格。
 - 工程需求可以解析嵌套子硬件 export。
+- 工程需求可以解析 `entity.parameter` 直接参数路径。
+- 组件 overrides 会生成父对象槽位作用域下的本地宏。
 - 同一个子硬件被多个模块引用时不会重复输出。
 
 ## 9. 下一步
@@ -281,5 +375,5 @@ python -m unittest discover -s .\tests
 - 增加 `ctrl_settings.h` patch/overlay 生成模式。
 - 增加 `xplt.ctl_interface.h` 片段生成，用于 ADC/PWM 输入输出回调。
 - 从 `*.syscfg` 自动提取 IRIS/C2000 外设名称。
-- 增加 GUI：模板编辑、实体实例化、工程需求矩阵、实时预览。
+- 继续增强 PyQt GUI：对象复制、批量 tag、参数绑定矩阵、差异预览。
 - 将成熟的生成结果接入 `ctl/component/hardware_preset`。

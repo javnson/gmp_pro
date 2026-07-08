@@ -2,7 +2,11 @@
   "id": "tmcs1133_b2a",
   "schema": "current_sensor",
   "display_name": "TMCS1133 B2A Hall Current Sensor",
+  "vendor": "Texas Instruments",
+  "datasheet_url": "https://www.ti.com/lit/ds/symlink/tmcs1133.pdf",
+  "document_url": "",
   "macro_prefix": "TMCS1133_B2A",
+  "tags": ["current_sensor", "hall", "tmcs1133"],
   "parameters": {
     "chip": "TMCS1133B2A",
     "range_a": 31.0,

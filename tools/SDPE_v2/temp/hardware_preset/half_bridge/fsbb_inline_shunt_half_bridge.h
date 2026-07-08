@@ -25,6 +25,8 @@ extern "C"
 #define FSBB_HB_INLINE_SCHEMA "half_bridge"
 #define FSBB_HB_INLINE_NAME "FSBB Half Bridge With Inline Shunt"
 
+// Tags: fsbb, half_bridge, power_stage, shunt
+
 /*
  * Schema: Composable half-bridge module containing power switches and sensors.
  */

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .library import SDPELibrary
-from .model import HardwareEntity, HardwareSchema, SDPEError
+from .model import ComponentRef, HardwareEntity, HardwareSchema, SDPEError
 from .util import c_literal, header_guard, macro_name, read_json, write_if_changed
 
 
@@ -122,12 +122,23 @@ class HeaderGenerator:
             ]
         )
 
-        if schema.description or entity.description:
+        tags = sorted(dict.fromkeys([*schema.tags, *entity.tags]))
+        if tags:
+            lines.append(f"// Tags: {', '.join(tags)}")
+            lines.append("")
+
+        if schema.description or entity.description or entity.vendor or entity.datasheet_url or entity.document_url:
             lines.append("/*")
             if schema.description:
                 lines.append(f" * Schema: {schema.description}")
             if entity.description:
                 lines.append(f" * Entity: {entity.description}")
+            if entity.vendor:
+                lines.append(f" * Vendor: {entity.vendor}")
+            if entity.datasheet_url:
+                lines.append(f" * Datasheet: {entity.datasheet_url}")
+            if entity.document_url:
+                lines.append(f" * Document: {entity.document_url}")
             lines.append(" */")
             lines.append("")
 
@@ -222,6 +233,8 @@ class HeaderGenerator:
             lines.append(f"// Inline component: {comp.slot} ({child_schema.display_name})")
             self._append_parameter_macros(lines, comp.entity, child_schema, self.prefix(comp.entity, child_schema))
             self._append_derived_macros(lines, comp.entity, child_schema, self.prefix(comp.entity, child_schema))
+            if comp.overrides:
+                self._append_component_override_macros(lines, comp, entity, self.library.schema(entity.schema_id))
 
     def _append_component_aliases(
         self, lines: list[str], entity: HardwareEntity, schema: HardwareSchema, prefix: str
@@ -231,16 +244,40 @@ class HeaderGenerator:
         lines.append("// Component include and alias macros")
         for slot, comp in entity.components.items():
             child_schema = self.library.schema(comp.entity.schema_id)
-            child_prefix = self.prefix(comp.entity, child_schema)
+            child_prefix = self._component_effective_prefix(entity, schema, comp)
             slot_prefix = f"{prefix}_{macro_name(slot)}"
             lines.append(f"// {slot}: {comp.entity.display_name or comp.entity.id}")
             lines.append(f"#define {slot_prefix}_ENTITY_ID \"{comp.entity.id}\"")
             lines.append(f"#define {slot_prefix}_PREFIX {child_prefix}")
+            if comp.overrides and not comp.inline:
+                self._append_component_override_macros(lines, comp, entity, schema)
             for export_name, export in child_schema.exports.items():
                 alias = f"{slot_prefix}_{macro_name(export_name)}"
                 target = self._format_expr(export.macro, child_prefix)
                 lines.append(f"#define {alias} {target}")
             lines.append("")
+
+    def _append_component_override_macros(
+        self, lines: list[str], comp: ComponentRef, parent: HardwareEntity, parent_schema: HardwareSchema
+    ) -> None:
+        child_schema = self.library.schema(comp.entity.schema_id)
+        parent_prefix = self.prefix(parent, parent_schema)
+        slot_prefix = f"{parent_prefix}_{macro_name(comp.slot)}"
+        child_prefix = self.prefix(comp.entity, child_schema)
+        lines.append(f"// Local overrides for {comp.slot}")
+        for pname, pspec in child_schema.parameters.items():
+            macro = f"{slot_prefix}_{pspec.c_name}"
+            if pname in comp.overrides:
+                value = c_literal(comp.overrides[pname], pspec.value_format)
+            else:
+                target = f"{child_prefix}_{pspec.c_name}"
+                value = target
+            lines.append(f"#define {macro} {value}")
+        for item in child_schema.derived_macros:
+            macro = f"{slot_prefix}_{item.name}"
+            expr = self._format_expr(item.expr, slot_prefix)
+            lines.append(f"#define {macro} {expr}")
+        lines.append("")
 
     def _append_export_comments(self, lines: list[str], schema: HardwareSchema, prefix: str) -> None:
         if not schema.exports:
@@ -262,13 +299,21 @@ class HeaderGenerator:
             return f"{schema.header_prefix}_{macro_name(entity.id)}"
         return macro_name(entity.id)
 
+    def _component_effective_prefix(
+        self, parent: HardwareEntity, parent_schema: HardwareSchema, comp: ComponentRef
+    ) -> str:
+        child_schema = self.library.schema(comp.entity.schema_id)
+        if not comp.overrides:
+            return self.prefix(comp.entity, child_schema)
+        return f"{self.prefix(parent, parent_schema)}_{macro_name(comp.slot)}"
+
     def generate_project(self, project_path: Path) -> list[GeneratedFile]:
         """Generate a project binding header."""
 
         data = read_json(project_path)
         generated: list[GeneratedFile] = []
         seen: set[Path] = set()
-        included_entities = [item["entity"] for item in data.get("hardware", [])]
+        included_entities = self._project_entity_ids(data)
         for entity_id in included_entities:
             for item in self.generate_entity_tree(entity_id):
                 if item.path not in seen:
@@ -286,7 +331,7 @@ class HeaderGenerator:
 
         project_id = data.get("id", "sdpe_project")
         guard = header_guard(f"project/{data.get('output_header', 'sdpe_project_bindings.h')}")
-        hardware_ids = [item["entity"] for item in data.get("hardware", [])]
+        hardware_ids = self._project_entity_ids(data)
         includes = [self.entity_include_path(self.library.entity(entity_id)) for entity_id in hardware_ids]
 
         lines = [
@@ -331,6 +376,21 @@ class HeaderGenerator:
         lines.extend([f"#endif // {guard}", ""])
         return "\n".join(lines)
 
+    def _project_entity_ids(self, data: dict[str, Any]) -> list[str]:
+        ids = [item["entity"] for item in data.get("hardware", [])]
+        for req in data.get("requirements", []):
+            binding = req.get("binding")
+            export_path = None
+            if isinstance(binding, dict):
+                export_path = binding.get("export")
+            elif isinstance(binding, str) and "." in binding:
+                export_path = binding
+            if export_path:
+                root_id = export_path.split(".", 1)[0]
+                if root_id in self.library.entity_files:
+                    ids.append(root_id)
+        return list(dict.fromkeys(ids))
+
     def _resolve_binding_value(self, binding: Any) -> str:
         if isinstance(binding, dict):
             if "literal" in binding:
@@ -351,13 +411,22 @@ class HeaderGenerator:
             raise SDPEError(f"Export binding must look like entity.export or entity.slot.export: {export_path}")
         entity = self.library.entity(parts[0])
         current = entity
+        current_schema = self.library.schema(current.schema_id)
+        current_prefix = self.prefix(current, current_schema)
         for slot in parts[1:-1]:
             if slot not in current.components:
                 raise SDPEError(f"Entity {current.id} has no component slot '{slot}' in binding {export_path}")
-            current = current.components[slot].entity
+            comp = current.components[slot]
+            current_prefix = self._component_effective_prefix(current, self.library.schema(current.schema_id), comp)
+            current = comp.entity
         export_name = parts[-1]
         schema = self.library.schema(current.schema_id)
-        if export_name not in schema.exports:
-            raise SDPEError(f"Schema {schema.id} has no export '{export_name}' in binding {export_path}")
-        export = schema.exports[export_name]
-        return self._format_expr(export.macro, self.prefix(current, schema))
+        if export_name in schema.exports:
+            export = schema.exports[export_name]
+            return self._format_expr(export.macro, current_prefix)
+        if export_name in schema.parameters:
+            return f"{current_prefix}_{schema.parameters[export_name].c_name}"
+        for item in schema.derived_macros:
+            if export_name == item.name or export_name.lower() == item.name.lower():
+                return f"{current_prefix}_{item.name}"
+        raise SDPEError(f"Schema {schema.id} has no export or parameter '{export_name}' in binding {export_path}")

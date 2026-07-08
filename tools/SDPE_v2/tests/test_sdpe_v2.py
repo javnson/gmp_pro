@@ -21,7 +21,11 @@ class SDPEV2Tests(unittest.TestCase):
         warnings = lib.validate()
         self.assertEqual(warnings, [])
         self.assertIn("half_bridge", lib.schemas)
+        self.assertIn("current_sensor", lib.schemas["current_sensor"].tags)
+        self.assertEqual(lib.schemas["current_sensor"].category, "current_sensor")
         self.assertIn("lvfb_half_bridge_phase_a", lib.entity_files)
+        self.assertIn("hall", lib.entity("tmcs1133_b2a").tags)
+        self.assertEqual(lib.entity("tmcs1133_b2a").vendor, "Texas Instruments")
 
     def test_generate_inline_component_without_standalone_header(self) -> None:
         lib = self.load_library()
@@ -49,8 +53,32 @@ class SDPEV2Tests(unittest.TestCase):
 
             header = (Path(tmp) / "project" / "sdpe_dps_fsbb_iris_bindings.h").read_text(encoding="utf-8")
             self.assertIn("#define CTRL_INDUCTOR_CURRENT_SENSITIVITY FSBB_5M_SHUNT_SENSITIVITY_V_PER_A", header)
+            self.assertIn("#define CTRL_REFERENCE_CURRENT_RANGE_A TMCS1133_B2A_RANGE_A", header)
+            self.assertIn("#define CTRL_VIN_ADC_OFFSET_MANUAL (2048U)", header)
             self.assertIn("#define PHASE_BUCK_BASE IRIS_F280039C_EPWM1_BASE", header)
             self.assertIn("#include <ctl/component/hardware_preset/half_bridge/fsbb_inline_shunt_half_bridge.h>", header)
+            self.assertIn("#include <ctl/component/hardware_preset/current_sensor/tmcs1133_b2a.h>", header)
+
+    def test_component_overrides_create_slot_local_macros(self) -> None:
+        lib = self.load_library()
+        with tempfile.TemporaryDirectory() as tmp:
+            gen = HeaderGenerator(lib, Path(tmp))
+            gen.generate_entity_tree("lvfb_half_bridge_phase_b_tuned")
+            header = (
+                Path(tmp) / "hardware_preset" / "half_bridge" / "lvfb_half_bridge_phase_b_tuned.h"
+            ).read_text(encoding="utf-8")
+            self.assertIn("#define GMP_LVFB_HB_B_TUNED_CURRENT_SENSOR_RANGE_A (25.0f)", header)
+            self.assertIn("#define GMP_LVFB_HB_B_TUNED_CURRENT_SENSOR_BIAS_V (1.64f)", header)
+            self.assertIn(
+                "#define GMP_LVFB_HB_B_TUNED_CURRENT_SENSOR_SENSITIVITY_MV_PER_A "
+                "TMCS1133_B2A_SENSITIVITY_MV_PER_A",
+                header,
+            )
+            self.assertIn(
+                "#define GMP_LVFB_HB_B_TUNED_CURRENT_SENSOR_SENSITIVITY "
+                "GMP_LVFB_HB_B_TUNED_CURRENT_SENSOR_SENSITIVITY_V_PER_A",
+                header,
+            )
 
 
 if __name__ == "__main__":

@@ -65,6 +65,22 @@
         "export": "lvfb_half_bridge_phase_a.voltage_sensor.bias"
       },
       "description": "Voltage sensor bias for FSBB output voltage ADC channel."
+    },
+    {
+      "role": "tmcs1133_b2a_range_for_reference",
+      "macro": "CTRL_REFERENCE_CURRENT_RANGE_A",
+      "binding": {
+        "export": "tmcs1133_b2a.range_a"
+      },
+      "description": "Direct parameter binding example using scope-style entity.parameter syntax."
+    },
+    {
+      "role": "manual_input_voltage_adc_offset",
+      "macro": "CTRL_VIN_ADC_OFFSET_MANUAL",
+      "binding": {
+        "literal": "(2048U)"
+      },
+      "description": "Manual binding example for requirement values that are not owned by a hardware entity."
     }
   ],
   "peripheral_bindings": {

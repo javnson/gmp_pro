@@ -40,6 +40,7 @@ class ComponentSlotSpec:
 
     name: str
     accepted_schemas: tuple[str, ...] = ()
+    accepted_categories: tuple[str, ...] = ()
     required: bool = False
     description: str = ""
 
@@ -62,6 +63,7 @@ class HardwareSchema:
     display_name: str
     description: str = ""
     category: str = ""
+    tags: list[str] = field(default_factory=list)
     output_subdir: str = ""
     header_prefix: str = ""
     parameters: dict[str, ParameterSpec] = field(default_factory=dict)
@@ -106,6 +108,7 @@ class HardwareSchema:
             component_slots[name] = ComponentSlotSpec(
                 name=name,
                 accepted_schemas=tuple(item.get("accepted_schemas", [])),
+                accepted_categories=tuple(item.get("accepted_categories", [])),
                 required=bool(item.get("required", False)),
                 description=item.get("description", ""),
             )
@@ -124,6 +127,7 @@ class HardwareSchema:
             display_name=data.get("display_name", schema_id),
             description=data.get("description", ""),
             category=data.get("category", ""),
+            tags=list(data.get("tags", [])),
             output_subdir=data.get("output_subdir", schema_id),
             header_prefix=data.get("header_prefix", ""),
             parameters=parameters,
@@ -141,6 +145,7 @@ class ComponentRef:
     slot: str
     entity: "HardwareEntity"
     inline: bool = False
+    overrides: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -151,10 +156,14 @@ class HardwareEntity:
     schema_id: str
     display_name: str = ""
     description: str = ""
+    vendor: str = ""
+    datasheet_url: str = ""
+    document_url: str = ""
     macro_prefix: str = ""
     output_subdir: str = ""
     parameters: dict[str, Any] = field(default_factory=dict)
     components: dict[str, ComponentRef] = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
     source: Path | None = None
     inline: bool = False
 
@@ -171,9 +180,13 @@ class HardwareEntity:
             schema_id=schema_id,
             display_name=data.get("display_name", entity_id),
             description=data.get("description", ""),
+            vendor=data.get("vendor", ""),
+            datasheet_url=data.get("datasheet_url", ""),
+            document_url=data.get("document_url", ""),
             macro_prefix=data.get("macro_prefix", ""),
             output_subdir=data.get("output_subdir", ""),
             parameters=dict(data.get("parameters", {})),
+            tags=list(data.get("tags", [])),
             source=source,
             inline=inline,
         )

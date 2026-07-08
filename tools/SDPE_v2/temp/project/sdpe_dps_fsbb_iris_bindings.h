@@ -6,6 +6,7 @@
 #ifndef _SDPE_V2_PROJECT_SDPE_DPS_FSBB_IRIS_BINDINGS_H_
 #define _SDPE_V2_PROJECT_SDPE_DPS_FSBB_IRIS_BINDINGS_H_
 
+#include <ctl/component/hardware_preset/current_sensor/tmcs1133_b2a.h>
 #include <ctl/component/hardware_preset/half_bridge/fsbb_inline_shunt_half_bridge.h>
 #include <ctl/component/hardware_preset/half_bridge/lvfb_half_bridge_phase_a.h>
 #include <ctl/component/hardware_preset/mcu_board/iris_f280039c_node.h>
@@ -44,6 +45,16 @@
  * @brief Voltage sensor bias for FSBB output voltage ADC channel.
  */
 #define CTRL_VOUT_VOLTAGE_BIAS LVFB_VDIV_150V_BIAS_V
+
+/**
+ * @brief Direct parameter binding example using scope-style entity.parameter syntax.
+ */
+#define CTRL_REFERENCE_CURRENT_RANGE_A TMCS1133_B2A_RANGE_A
+
+/**
+ * @brief Manual binding example for requirement values that are not owned by a hardware entity.
+ */
+#define CTRL_VIN_ADC_OFFSET_MANUAL (2048U)
 
 // Board peripheral mapping
 #define PHASE_BUCK_BASE IRIS_F280039C_EPWM1_BASE

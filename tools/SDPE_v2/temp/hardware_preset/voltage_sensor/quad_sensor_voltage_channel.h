@@ -22,8 +22,11 @@ extern "C"
 #define QUAD_SENSOR_VCH_SCHEMA "voltage_sensor"
 #define QUAD_SENSOR_VCH_NAME "Quad Sensor Docker Voltage Channel"
 
+// Tags: isolated, quad_sensor, sensor, voltage_sensor
+
 /*
  * Schema: Voltage sensor or resistor divider model.
+ * Vendor: GMP
  */
 
 // Parameter macros

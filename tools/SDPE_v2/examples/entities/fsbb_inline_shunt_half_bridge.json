@@ -3,6 +3,7 @@
   "schema": "half_bridge",
   "display_name": "FSBB Half Bridge With Inline Shunt",
   "macro_prefix": "FSBB_HB_INLINE",
+  "tags": ["half_bridge", "fsbb", "shunt"],
   "parameters": {
     "board_name": "FSBB inline shunt example",
     "phase_count": 1,

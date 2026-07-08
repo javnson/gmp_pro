@@ -22,8 +22,12 @@ extern "C"
 #define BSC093N15NS5_SCHEMA "power_switch"
 #define BSC093N15NS5_NAME "Infineon BSC093N15NS5 MOSFET"
 
+// Tags: infineon, mosfet, power_device, switch
+
 /*
  * Schema: Power switch device used by bridge modules.
+ * Vendor: Infineon
+ * Datasheet: https://www.infineon.com/cms/en/product/power/mosfet/n-channel/bsc093n15ns5/
  */
 
 // Parameter macros

@@ -3,6 +3,7 @@
   "display_name": "Half Bridge Module",
   "description": "Composable half-bridge module containing power switches and sensors.",
   "category": "power_stage",
+  "tags": ["power_stage", "half_bridge"],
   "output_subdir": "half_bridge",
   "required_components": ["power_device", "current_sensor", "voltage_sensor"],
   "parameters": [
@@ -39,22 +40,22 @@
   ],
   "component_slots": {
     "power_device": {
-      "accepted_schemas": ["power_switch"],
+      "accepted_categories": ["power_device"],
       "required": true,
       "description": "Power semiconductor used by the half bridge."
     },
     "current_sensor": {
-      "accepted_schemas": ["current_sensor"],
+      "accepted_categories": ["current_sensor"],
       "required": true,
       "description": "Current measurement path."
     },
     "voltage_sensor": {
-      "accepted_schemas": ["voltage_sensor"],
+      "accepted_categories": ["voltage_sensor"],
       "required": true,
       "description": "Voltage measurement path."
     },
     "bus_capacitor": {
-      "accepted_schemas": ["passive_capacitor"],
+      "accepted_categories": ["passive_capacitor"],
       "required": false,
       "description": "Optional bus capacitor module."
     }

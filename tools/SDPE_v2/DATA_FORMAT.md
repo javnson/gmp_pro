@@ -19,6 +19,7 @@ Schema 文件放在 `schemas/` 下。
 | --- | --- | --- |
 | `description` | string | 说明。 |
 | `category` | string | 分类。 |
+| `tags` | array | 用于搜索和分类的标签。 |
 | `output_subdir` | string | 生成头文件的子目录。 |
 | `parameters` | array | 参数定义。 |
 | `derived_macros` | array | 派生宏定义。 |
@@ -59,11 +60,13 @@ Schema 文件放在 `schemas/` 下。
 
 ```json
 {
-  "accepted_schemas": ["current_sensor"],
+  "accepted_categories": ["current_sensor"],
   "required": true,
   "description": "Current measurement path."
 }
 ```
+
+`accepted_schemas` 用于指定某几个明确模板；`accepted_categories` 用于指定一类兼容模板。比如工程只要求电流传感器时，可以接受 `current_sensor` category 下的霍尔传感器模板，也可以接受分流器传感器模板。
 
 ### Export
 
@@ -75,7 +78,7 @@ Schema 文件放在 `schemas/` 下。
 }
 ```
 
-工程绑定可以通过 `entity.export` 或 `entity.slot.export` 引用。
+工程绑定可以通过 `entity.export`、`entity.slot.export`、`entity.parameter` 或 `entity.slot.parameter` 引用。
 
 ## 2. Entity
 
@@ -86,7 +89,11 @@ Entity 文件放在 `entities/` 下。
   "id": "tmcs1133_b5a",
   "schema": "current_sensor",
   "display_name": "TMCS1133 B5A Hall Current Sensor",
+  "vendor": "Texas Instruments",
+  "datasheet_url": "https://www.ti.com/lit/ds/symlink/tmcs1133.pdf",
+  "document_url": "",
   "macro_prefix": "TMCS1133_B5A",
+  "tags": ["current_sensor", "hall", "tmcs1133"],
   "parameters": {
     "chip": "TMCS1133B5A",
     "range_a": 10.3,
@@ -103,6 +110,29 @@ Entity 文件放在 `entities/` 下。
   "current_sensor": {"entity": "tmcs1133_b5a"}
 }
 ```
+
+引用完整 entity 时可以用 `overrides` 覆盖局部参数：
+
+```json
+"components": {
+  "current_sensor": {
+    "entity": "tmcs1133_b2a",
+    "overrides": {
+      "range_a": 25.0,
+      "bias_v": 1.64
+    }
+  }
+}
+```
+
+这表示当前元件仍然 include `tmcs1133_b2a.h`，但是会在父元件作用域下生成本地覆盖宏，例如：
+
+```c
+#define GMP_LVFB_HB_B_TUNED_CURRENT_SENSOR_RANGE_A (25.0f)
+#define GMP_LVFB_HB_B_TUNED_CURRENT_SENSOR_SENSITIVITY_MV_PER_A TMCS1133_B2A_SENSITIVITY_MV_PER_A
+```
+
+因此用户可以把一个完整元件作为基础对象引入，只修改本工程、本板卡或当前装配中发生变化的参数。
 
 Inline 子实体使用：
 
@@ -157,11 +187,21 @@ Binding 支持三种形式：
 {"literal": "(3.3f)"}
 ```
 
+`export` 路径也支持直接参数引用：
+
+```json
+{"export": "tmcs1133_b2a.range_a"}
+{"export": "lvfb_half_bridge_phase_b_tuned.current_sensor.bias_v"}
+```
+
+这类路径会解析到对应作用域下的 C 宏。如果中间组件使用了 `overrides`，解析结果会指向父对象槽位作用域宏；否则解析到原始子元件宏。
+
 ## 4. 生成约定
 
 - 生成头文件使用 Doxygen 风格文件头。
 - 宏前缀来自 entity 的 `macro_prefix`。
 - 非 inline 子实体生成独立头文件，并由父硬件 include。
 - inline 子实体展开到父硬件头文件，不生成独立文件。
+- 组件 `overrides` 使用父硬件的槽位作用域生成本地宏。
 - include 默认以 GMP 根目录为逻辑根：`ctl/component/...`。
 - 工程绑定头文件只做别名绑定，不在其中重新计算硬件参数。

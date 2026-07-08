@@ -22,8 +22,11 @@ extern "C"
 #define LVFB_VDIV_150V_SCHEMA "voltage_sensor"
 #define LVFB_VDIV_150V_NAME "LVFB 150V Voltage Divider"
 
+// Tags: divider, lvfb, sensor, voltage_sensor
+
 /*
  * Schema: Voltage sensor or resistor divider model.
+ * Vendor: GMP
  */
 
 // Parameter macros

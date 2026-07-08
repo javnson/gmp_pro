@@ -2,7 +2,7 @@
   "id": "passive_capacitor",
   "display_name": "Passive Capacitor",
   "description": "Optional capacitor module.",
-  "category": "passive",
+  "category": "passive_capacitor",
   "output_subdir": "passive",
   "parameters": [
     {

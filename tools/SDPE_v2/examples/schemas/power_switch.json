@@ -3,6 +3,7 @@
   "display_name": "Power Semiconductor Device",
   "description": "Power switch device used by bridge modules.",
   "category": "power_device",
+  "tags": ["power_device", "switch"],
   "output_subdir": "power_switch",
   "parameters": [
     {

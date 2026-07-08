@@ -22,8 +22,12 @@ extern "C"
 #define TMCS1133_B5A_SCHEMA "current_sensor"
 #define TMCS1133_B5A_NAME "TMCS1133 B5A Hall Current Sensor"
 
+// Tags: current_sensor, hall, sensor, tmcs1133
+
 /*
  * Schema: Basic current sensor model used to scale ADC voltage into current.
+ * Vendor: Texas Instruments
+ * Datasheet: https://www.ti.com/lit/ds/symlink/tmcs1133.pdf
  */
 
 // Parameter macros
