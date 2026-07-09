@@ -22,6 +22,7 @@ Schema 文件放在 `schemas/` 下。
 | `tags` | array | 用于搜索和分类的标签。 |
 | `output_subdir` | string | 生成头文件的子目录。 |
 | `includes` | array | 当前类型生成头文件时需要额外包含的 GMP 头文件路径。 |
+| `code_sections` | object | 生成头文件时注入的自定义代码段。 |
 | `parameters` | array | 参数定义。 |
 | `derived_macros` | array | 派生宏定义。 |
 | `components` | object | 默认 Sub Components，格式与 Entity 的 `components` 一致。 |
@@ -132,6 +133,23 @@ Entity 文件放在 `entities/` 下。
 
 `includes` 也可以在 Entity 中声明，用于某个具体实例额外依赖的头文件。Schema 和 Entity 的 `includes` 会与 Sub Components 产生的 include 一起去重输出。
 
+`code_sections` 用于在生成头文件中保留用户自定义代码。当前支持这些插入点：
+
+| 字段 | 位置 |
+| --- | --- |
+| `after_includes` | include 列表之后，`extern "C"` 之前。 |
+| `before_parameters` | 参数宏生成之前。 |
+| `before_exports` | Logical exports 注释之前。 |
+| `before_footer` | 文件结尾、include guard 关闭之前。 |
+
+每个插入点可以是字符串，也可以是字符串数组。例如：
+
+```json
+"code_sections": {
+  "before_footer": "#define TMCS1133_USE_EXTERNAL_CALIBRATION 1"
+}
+```
+
 复合 entity 使用 `components`：
 
 ```json
@@ -230,6 +248,7 @@ Binding 支持三种形式：
 - 生成头文件使用 Doxygen 风格文件头。
 - 宏前缀来自 entity 的 `macro_prefix`。
 - Schema 和 Entity 的 `includes` 会原样写入生成头文件。
+- Schema 和 Entity 的 `code_sections` 会按插入点顺序写入生成头文件；同一插入点中 Schema 内容先于 Entity 内容。
 - 非 inline 子实体生成独立头文件，并由父硬件 include。
 - inline 子实体展开到父硬件头文件，不生成独立文件。
 - 组件 `overrides` 使用父硬件的槽位作用域生成本地宏。

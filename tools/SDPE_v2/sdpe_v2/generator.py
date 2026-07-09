@@ -103,6 +103,7 @@ class HeaderGenerator:
             lines.append(f"#include <{inc}>")
         if includes:
             lines.append("")
+        self._append_code_section(lines, schema, entity, "after_includes", "User code after includes")
         lines.extend(
             [
                 "#ifdef __cplusplus",
@@ -143,11 +144,14 @@ class HeaderGenerator:
             lines.append(" */")
             lines.append("")
 
+        self._append_code_section(lines, schema, entity, "before_parameters", "User code before parameters")
         self._append_parameter_macros(lines, entity, schema, prefix)
         self._append_derived_macros(lines, entity, schema, prefix)
         self._append_inline_components(lines, entity)
         self._append_component_overrides(lines, entity, schema)
+        self._append_code_section(lines, schema, entity, "before_exports", "User code before exports")
         self._append_export_comments(lines, schema, prefix)
+        self._append_code_section(lines, schema, entity, "before_footer", "User code before footer")
 
         lines.extend(
             [
@@ -169,6 +173,29 @@ class HeaderGenerator:
             if not comp.inline:
                 includes.append(self.entity_include_path(comp.entity))
         return sorted(dict.fromkeys(includes))
+
+    def _append_code_section(
+        self, lines: list[str], schema: HardwareSchema, entity: HardwareEntity, name: str, title: str
+    ) -> None:
+        snippets: list[str] = []
+        snippets.extend(self._code_section_values(schema.code_sections.get(name)))
+        snippets.extend(self._code_section_values(entity.code_sections.get(name)))
+        if not snippets:
+            return
+        lines.append(f"// {title}")
+        for snippet in snippets:
+            if snippet.strip():
+                lines.extend(snippet.rstrip().splitlines())
+        lines.append("")
+
+    def _code_section_values(self, value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            return [value]
+        if isinstance(value, list):
+            return [str(item) for item in value if str(item).strip()]
+        return [str(value)]
 
     def _append_parameter_macros(
         self, lines: list[str], entity: HardwareEntity, schema: HardwareSchema, prefix: str

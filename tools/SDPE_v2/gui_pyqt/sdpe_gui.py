@@ -139,7 +139,13 @@ def format_value(label: str) -> str:
 def validate_value_for_format(name: str, value: Any, value_format: str) -> None:
     if isinstance(value, dict):
         return
+    if value == "":
+        return
     label = format_label(value_format)
+    if label in {"Raw C", "Custom"}:
+        return
+    if isinstance(value, str) and looks_like_c_expression(value):
+        return
     if label == "String":
         if not isinstance(value, str):
             raise ValueError(f"Parameter '{name}' expects a string value.")
@@ -151,6 +157,15 @@ def validate_value_for_format(name: str, value: Any, value_format: str) -> None:
             raise ValueError(f"Parameter '{name}' expects an integer value.")
         if label == "Unsigned Integer" and value < 0:
             raise ValueError(f"Parameter '{name}' expects an unsigned integer value.")
+
+
+def looks_like_c_expression(value: str) -> bool:
+    text = value.strip()
+    return bool(text) and (
+        text.startswith("(")
+        or text.isidentifier()
+        or any(token in text for token in ("+", "-", "*", "/", "_"))
+    )
 
 
 def parameter_value_by_name(parameters: dict[str, Any], name: str, c_name: str) -> Any:
@@ -850,6 +865,8 @@ class EntityPage(SDPEPage):
         self.macro_edit = QLineEdit()
         self.tags_edit = QLineEdit()
         self.description_edit = QTextEdit()
+        self.tail_code_edit = QTextEdit()
+        self.tail_code_edit.setFixedHeight(96)
         self.output_edit = QLineEdit()
         self.params = QTableWidget()
         set_table_headers(
@@ -878,6 +895,7 @@ class EntityPage(SDPEPage):
             widget.textChanged.connect(self.mark_current_dirty)
         self.schema_combo.currentTextChanged.connect(lambda _text: self.mark_current_dirty())
         self.description_edit.textChanged.connect(self.mark_current_dirty)
+        self.tail_code_edit.textChanged.connect(self.mark_current_dirty)
         self.params.cellChanged.connect(lambda _row, _col: self.mark_current_dirty())
         self.components.cellChanged.connect(lambda _row, _col: self.mark_current_dirty())
         self.out_dir = QLineEdit(str(window.default_output_dir))
@@ -893,6 +911,7 @@ class EntityPage(SDPEPage):
         form.addRow("Tags", self.tags_edit)
         form.addRow("Output Folder", self.output_edit)
         form.addRow("Description", self.description_edit)
+        form.addRow("Tail Code", self.tail_code_edit)
         form.addRow("Header Output", self.out_dir)
 
         new_entity = QPushButton("New")
@@ -998,6 +1017,7 @@ class EntityPage(SDPEPage):
         self.tags_edit.setText(", ".join(data.get("tags", entity.tags)))
         self.output_edit.setText(data.get("output_subdir", entity.output_subdir))
         self.description_edit.setPlainText(data.get("description", entity.description))
+        self.tail_code_edit.setPlainText(data.get("code_sections", {}).get("before_footer", ""))
         self.load_param_rows(entity, data)
         self.components.setRowCount(0)
         components_data = self.entity_components_with_defaults(entity, data)
@@ -1077,6 +1097,16 @@ class EntityPage(SDPEPage):
                 "components": self._table_components(),
             }
         )
+        code_sections = dict(data.get("code_sections", {}))
+        tail_code = self.tail_code_edit.toPlainText().strip()
+        if tail_code:
+            code_sections["before_footer"] = tail_code
+        else:
+            code_sections.pop("before_footer", None)
+        if code_sections:
+            data["code_sections"] = code_sections
+        else:
+            data.pop("code_sections", None)
         return data
 
     def path_for_id(self, item_id: str) -> Path:
@@ -1165,11 +1195,14 @@ class EntityPage(SDPEPage):
         for row in range(self.params.rowCount()):
             name = item_text(self.params, row, 0)
             value = item_text(self.params, row, 1)
-            if name and value:
-                parsed = parse_json_text(value, value)
-                if name in schema.parameters:
-                    validate_value_for_format(name, parsed, schema.parameters[name].value_format)
-                params[name] = parsed
+            if not name or not value.strip():
+                continue
+            parsed = parse_json_text(value, value)
+            if parsed == "":
+                continue
+            if name in schema.parameters:
+                validate_value_for_format(name, parsed, schema.parameters[name].value_format)
+            params[name] = parsed
         return params
 
     def select_parameter_symbol(self, row: int) -> None:
@@ -1233,7 +1266,13 @@ class EntityPage(SDPEPage):
 
     def preview_header(self) -> None:
         try:
-            entity = self.window.library.entity(self.current_id)
+            data = self.collect_current_data()
+            if data is None:
+                return
+            entity = HardwareEntity.from_json(data, self.path_for_id(self.current_id))
+            self.window.library._resolve_components(
+                entity, self.window.library._merge_default_components(entity, data.get("components", {}))
+            )
             self.set_code_text(self.generator().render_entity_header(entity))
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))

@@ -61,6 +61,16 @@ class SDPEV2Tests(unittest.TestCase):
             )
             self.assertIn("#include <ctl/component/motor_control/consultant/unit_consultant.h>", header)
 
+    def test_entity_code_sections_are_generated_before_footer(self) -> None:
+        lib = self.load_library()
+        entity = lib.entity("tmcs1133_b5a")
+        entity.code_sections["before_footer"] = "#define TMCS1133_B5A_USER_CALIBRATION 1"
+        with tempfile.TemporaryDirectory() as tmp:
+            header = HeaderGenerator(lib, Path(tmp)).render_entity_header(entity)
+            self.assertIn("// User code before footer", header)
+            self.assertIn("#define TMCS1133_B5A_USER_CALIBRATION 1", header)
+            self.assertLess(header.index("#define TMCS1133_B5A_USER_CALIBRATION 1"), header.rindex("#endif //"))
+
     def test_schema_default_components_are_applied(self) -> None:
         lib = self.load_library()
         entity = lib.inline_entity(
