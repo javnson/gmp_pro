@@ -2022,13 +2022,16 @@ class ProjectPage(SDPEPage):
         set_table_headers(self.hardware, ["Entity", "Name", "Template", "Category", "Description"], QHeaderView.ResizeMode.Interactive)
         self.hardware.cellDoubleClicked.connect(self.on_hardware_cell_double_clicked)
 
-        self.requirements = QTableWidget()
-        set_table_headers(
-            self.requirements,
-            ["Name", "Macro", "Binding Type", "Binding Value", "Description"],
-            QHeaderView.ResizeMode.Interactive,
-        )
-        self.requirements.cellDoubleClicked.connect(self.on_requirement_cell_double_clicked)
+        self.requirements = QTreeWidget()
+        self.requirements.setHeaderLabels(["Name", "Macro", "Binding Type", "Binding Value", "Description"])
+        self.requirements.setAlternatingRowColors(True)
+        self.requirements.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
+        self.requirements.setDefaultDropAction(Qt.DropAction.MoveAction)
+        self.requirements.itemChanged.connect(lambda _item, _col: self.mark_current_dirty())
+        self.requirements.itemDoubleClicked.connect(self.on_requirement_cell_double_clicked)
+        self.requirements.model().rowsMoved.connect(lambda *_args: self.after_requirement_tree_changed())
+        self.requirements.model().rowsInserted.connect(lambda *_args: self.after_requirement_tree_changed())
+        self.requirements.model().rowsRemoved.connect(lambda *_args: self.after_requirement_tree_changed())
         self.feature_macros = QTableWidget()
         setup_feature_macro_table(self.feature_macros)
         self.feature_macros.cellDoubleClicked.connect(self.on_macro_cell_double_clicked)
@@ -2040,7 +2043,7 @@ class ProjectPage(SDPEPage):
             widget.textChanged.connect(self.mark_current_dirty)
         for widget in [self.description_edit, self.prefix_code, self.tail_code]:
             widget.textChanged.connect(self.mark_current_dirty)
-        for table in [self.hardware, self.requirements, self.feature_macros, self.enum_macros]:
+        for table in [self.hardware, self.feature_macros, self.enum_macros]:
             table.cellChanged.connect(lambda _row, _col: self.mark_current_dirty())
         self.enum_macros.cellChanged.connect(self.on_enum_macro_cell_changed)
         self.hardware.cellChanged.connect(lambda _row, _col: self.refresh_hardware_status())
@@ -2072,12 +2075,14 @@ class ProjectPage(SDPEPage):
 
         req_tab = QWidget()
         req_layout = QVBoxLayout(req_tab)
+        add_req_group = QPushButton("Add group")
+        add_req_group.clicked.connect(self.add_requirement_group)
         add_req = QPushButton("Add requirement")
         add_req.clicked.connect(self.add_requirement)
         del_req = QPushButton("Remove requirement")
-        del_req.clicked.connect(lambda: self.requirements.removeRow(max(0, self.requirements.currentRow())))
+        del_req.clicked.connect(self.remove_requirement_item)
         req_layout.addWidget(self.requirements)
-        req_layout.addLayout(row_buttons([add_req, del_req]))
+        req_layout.addLayout(row_buttons([add_req_group, add_req, del_req]))
 
         macro_tab = QWidget()
         macro_layout = QVBoxLayout(macro_tab)
@@ -2226,17 +2231,28 @@ class ProjectPage(SDPEPage):
         fit_table_columns(self.hardware)
 
     def load_requirements(self, data: dict[str, Any]) -> None:
-        self.requirements.setRowCount(0)
-        for req in data.get("requirements", []):
-            row = self.requirements.rowCount()
-            self.requirements.insertRow(row)
-            btype, bvalue = binding_to_cells(req.get("binding", {}))
-            for col, value in enumerate([req.get("role", ""), req.get("macro", ""), btype, bvalue, req.get("description", "")]):
-                if col == 2:
-                    set_combo(self.requirements, row, col, binding_type_options(), value)
-                else:
-                    set_item(self.requirements, row, col, value)
-        fit_table_columns(self.requirements)
+        self.requirements.clear()
+        requirements = list(data.get("requirements", []))
+        by_name = {req.get("role", req.get("macro", "")): req for req in requirements if req.get("role") or req.get("macro")}
+        used: set[str] = set()
+        groups = data.get("requirement_groups", [])
+        if not groups:
+            groups = [{"name": "Requirements", "requirements": [req.get("role", req.get("macro", "")) for req in requirements]}]
+        for group in groups:
+            group_item = self.create_requirement_group_item(group.get("name", "Requirements"))
+            self.requirements.addTopLevelItem(group_item)
+            for name in group.get("requirements", []):
+                if name in by_name:
+                    self.add_requirement_item(group_item, by_name[name])
+                    used.add(name)
+        missing = [req for req in requirements if req.get("role", req.get("macro", "")) not in used]
+        if missing:
+            group_item = self.create_requirement_group_item("Ungrouped")
+            self.requirements.addTopLevelItem(group_item)
+            for req in missing:
+                self.add_requirement_item(group_item, req)
+        self.requirements.expandAll()
+        fit_tree_key_columns(self.requirements, description_col=4)
 
     def load_macro_tables(self, data: dict[str, Any]) -> None:
         load_feature_macro_table(self.feature_macros, data.get("feature_macros", []))
@@ -2263,6 +2279,7 @@ class ProjectPage(SDPEPage):
                 "output_header": self.header_edit.text().strip(),
                 "hardware": self._table_hardware(),
                 "requirements": self._table_requirements(),
+                "requirement_groups": self._requirement_groups(),
                 "feature_macros": self._table_feature_macros(),
                 "option_macros": self._table_option_macros(),
             }
@@ -2310,18 +2327,38 @@ class ProjectPage(SDPEPage):
 
     def _table_requirements(self) -> list[dict[str, Any]]:
         rows = []
-        for row in range(self.requirements.rowCount()):
-            macro = item_text(self.requirements, row, 1)
-            if macro:
-                rows.append(
-                    {
-                        "role": item_text(self.requirements, row, 0),
-                        "macro": macro,
-                        "binding": cells_to_binding(item_text(self.requirements, row, 2), item_text(self.requirements, row, 3)),
-                        "description": item_text(self.requirements, row, 4),
-                    }
-                )
+        for group_index in range(self.requirements.topLevelItemCount()):
+            group = self.requirements.topLevelItem(group_index)
+            for child_index in range(group.childCount()):
+                item = group.child(child_index)
+                if item.data(0, Qt.ItemDataRole.UserRole) != "requirement":
+                    continue
+                macro = tree_cell_text(self.requirements, item, 1)
+                if macro:
+                    rows.append(
+                        {
+                            "role": tree_cell_text(self.requirements, item, 0),
+                            "macro": macro,
+                            "binding": cells_to_binding(
+                                tree_cell_text(self.requirements, item, 2),
+                                tree_cell_text(self.requirements, item, 3),
+                            ),
+                            "description": tree_cell_text(self.requirements, item, 4),
+                        }
+                    )
         return rows
+
+    def _requirement_groups(self) -> list[dict[str, Any]]:
+        groups = []
+        for group_index in range(self.requirements.topLevelItemCount()):
+            group = self.requirements.topLevelItem(group_index)
+            names = [
+                tree_cell_text(self.requirements, group.child(child_index), 0)
+                for child_index in range(group.childCount())
+                if tree_cell_text(self.requirements, group.child(child_index), 0)
+            ]
+            groups.append({"name": group.text(0).strip() or "Requirements", "requirements": names})
+        return groups
 
     def _table_feature_macros(self) -> list[dict[str, Any]]:
         return collect_feature_macro_table(self.feature_macros)
@@ -2335,9 +2372,113 @@ class ProjectPage(SDPEPage):
         set_combo(self.feature_macros, row, 1, ["Enable", "Disable"], "Enable")
 
     def add_requirement(self) -> None:
-        row = self.requirements.rowCount()
-        self.requirements.insertRow(row)
-        set_combo(self.requirements, row, 2, binding_type_options(), "number")
+        group = self.current_requirement_group()
+        item = self.add_requirement_item(group, {"role": "new_requirement", "macro": "NEW_REQUIREMENT", "binding": {"number": "0"}})
+        group.setExpanded(True)
+        self.requirements.setCurrentItem(item)
+        self.mark_current_dirty()
+
+    def add_requirement_group(self) -> None:
+        item = self.create_requirement_group_item("New Group")
+        self.requirements.addTopLevelItem(item)
+        self.requirements.setCurrentItem(item)
+        self.requirements.editItem(item, 0)
+        self.mark_current_dirty()
+
+    def create_requirement_group_item(self, name: str) -> QTreeWidgetItem:
+        item = QTreeWidgetItem([name])
+        item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsDropEnabled)
+        item.setData(0, Qt.ItemDataRole.UserRole, "group")
+        return item
+
+    def add_requirement_item(self, group: QTreeWidgetItem, req: dict[str, Any]) -> QTreeWidgetItem:
+        btype, bvalue = binding_to_cells(req.get("binding", {}))
+        item = QTreeWidgetItem([req.get("role", ""), req.get("macro", ""), "", bvalue, req.get("description", "")])
+        item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsDragEnabled)
+        item.setData(0, Qt.ItemDataRole.UserRole, "requirement")
+        group.addChild(item)
+        set_tree_combo(self.requirements, item, 2, binding_type_options(), btype)
+        return item
+
+    def current_requirement_group(self) -> QTreeWidgetItem:
+        item = self.requirements.currentItem()
+        if item is not None:
+            if item.data(0, Qt.ItemDataRole.UserRole) == "group":
+                return item
+            if item.parent() is not None:
+                return item.parent()
+        if self.requirements.topLevelItemCount() == 0:
+            self.add_requirement_group()
+        return self.requirements.topLevelItem(0)
+
+    def remove_requirement_item(self) -> None:
+        item = self.requirements.currentItem()
+        if item is None:
+            return
+        parent = item.parent()
+        if parent is None:
+            index = self.requirements.indexOfTopLevelItem(item)
+            self.requirements.takeTopLevelItem(index)
+        else:
+            parent.removeChild(item)
+        self.mark_current_dirty()
+
+    def after_requirement_tree_changed(self) -> None:
+        QTimer.singleShot(0, self.restore_requirement_widgets)
+        self.mark_current_dirty()
+
+    def restore_requirement_widgets(self) -> None:
+        if self.loading:
+            return
+        self.loading = True
+        try:
+            self.normalize_requirement_groups()
+            for item in self.iter_requirement_items():
+                btype = tree_cell_text(self.requirements, item, 2) or "number"
+                if not isinstance(self.requirements.itemWidget(item, 2), QComboBox):
+                    set_tree_combo(self.requirements, item, 2, binding_type_options(), btype)
+            fit_tree_key_columns(self.requirements, description_col=4)
+        finally:
+            self.loading = False
+
+    def iter_requirement_items(self) -> list[QTreeWidgetItem]:
+        items: list[QTreeWidgetItem] = []
+        for group_index in range(self.requirements.topLevelItemCount()):
+            group = self.requirements.topLevelItem(group_index)
+            if group.data(0, Qt.ItemDataRole.UserRole) == "requirement":
+                items.append(group)
+                continue
+            for child_index in range(group.childCount()):
+                child = group.child(child_index)
+                if child.data(0, Qt.ItemDataRole.UserRole) == "requirement":
+                    items.append(child)
+        return items
+
+    def normalize_requirement_groups(self) -> None:
+        if self.requirements.topLevelItemCount() == 0:
+            self.requirements.addTopLevelItem(self.create_requirement_group_item("Requirements"))
+            return
+        top_level_requirements: list[QTreeWidgetItem] = []
+        for index in range(self.requirements.topLevelItemCount()):
+            item = self.requirements.topLevelItem(index)
+            if item.data(0, Qt.ItemDataRole.UserRole) == "requirement":
+                top_level_requirements.append(item)
+        if not top_level_requirements:
+            return
+        ungrouped: QTreeWidgetItem | None = None
+        for index in range(self.requirements.topLevelItemCount()):
+            item = self.requirements.topLevelItem(index)
+            if item.data(0, Qt.ItemDataRole.UserRole) == "group" and item.text(0) == "Ungrouped":
+                ungrouped = item
+                break
+        if ungrouped is None:
+            ungrouped = self.create_requirement_group_item("Ungrouped")
+            self.requirements.addTopLevelItem(ungrouped)
+        for item in top_level_requirements:
+            index = self.requirements.indexOfTopLevelItem(item)
+            moved = self.requirements.takeTopLevelItem(index)
+            ungrouped.addChild(moved)
+        ungrouped.setExpanded(True)
 
     def add_enum_macro(self) -> None:
         row = self.enum_macros.rowCount()
@@ -2408,9 +2549,13 @@ class ProjectPage(SDPEPage):
                 self.window.tabs.setCurrentWidget(page)
                 return
 
-    def on_requirement_cell_double_clicked(self, row: int, col: int) -> None:
+    def on_requirement_cell_double_clicked(self, item: QTreeWidgetItem, col: int) -> None:
+        if item.data(0, Qt.ItemDataRole.UserRole) != "requirement":
+            return
         if col == 4:
-            edit_table_cell_multiline(self.requirements, row, col, self, "Requirement Description")
+            text = edit_multiline(self, "Requirement Description", tree_cell_text(self.requirements, item, col))
+            if text is not None:
+                item.setText(col, text)
             return
         if col != 3:
             return
@@ -2422,9 +2567,9 @@ class ProjectPage(SDPEPage):
                 continue
         selected = choose_tree_item(self, "Select Requirement Binding", sorted(dict.fromkeys(symbols)))
         if selected:
-            if item_text(self.requirements, row, 2) != "expr":
-                set_combo(self.requirements, row, 2, binding_type_options(), "export")
-            set_item(self.requirements, row, 3, f"${{{selected}}}")
+            if tree_cell_text(self.requirements, item, 2) != "expr":
+                set_tree_combo(self.requirements, item, 2, binding_type_options(), "export")
+            item.setText(3, f"${{{selected}}}")
 
     def on_macro_cell_double_clicked(self, row: int, col: int) -> None:
         table = self.sender()
@@ -2475,10 +2620,10 @@ class ProjectPage(SDPEPage):
     def replace_requirement_entity(self, old_entity: str, new_entity: str) -> None:
         if not old_entity or old_entity == new_entity:
             return
-        for row in range(self.requirements.rowCount()):
-            value = item_text(self.requirements, row, 3)
+        for item in self.iter_requirement_items():
+            value = tree_cell_text(self.requirements, item, 3)
             if value == old_entity or value.startswith(f"{old_entity}."):
-                set_item(self.requirements, row, 3, new_entity + value[len(old_entity):])
+                item.setText(3, new_entity + value[len(old_entity):])
 
     def populate_hardware_info(self, row: int, entity_id: str) -> None:
         try:
