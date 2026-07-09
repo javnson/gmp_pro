@@ -16,6 +16,22 @@
   },
   "parameters": [
     {
+      "name": "Inductance",
+      "c_name": "INDUCTANCE_H",
+      "unit": "H",
+      "required": false,
+      "value_format": "{}",
+      "description": "Main filter inductance."
+    },
+    {
+      "name": "Capacitance",
+      "c_name": "CAPACITANCE_F",
+      "unit": "F",
+      "required": false,
+      "value_format": "{}",
+      "description": "Main filter capacitance."
+    },
+    {
       "name": "Board Name",
       "c_name": "BOARD_NAME",
       "unit": "",
@@ -24,36 +40,20 @@
       "description": "Board or module name."
     },
     {
-      "name": "Current Sensor Model",
-      "c_name": "CURRENT_SENSOR_MODEL",
-      "unit": "",
+      "name": "VBUS Max",
+      "c_name": "VBUS_MAX_V",
+      "unit": "V",
       "required": false,
-      "value_format": "\"{}\"",
-      "description": "Phase current sensor model."
-    },
-    {
-      "name": "Voltage Sensor Model",
-      "c_name": "VOLTAGE_SENSOR_MODEL",
-      "unit": "",
-      "required": false,
-      "value_format": "\"{}\"",
-      "description": "Phase voltage sensor model."
+      "value_format": "{}",
+      "description": "Maximum DC bus voltage."
     },
     {
       "name": "VBUS Min",
       "c_name": "VBUS_MIN_V",
       "unit": "V",
       "required": false,
-      "value_format": "raw",
+      "value_format": "{}",
       "description": "Minimum DC bus voltage."
-    },
-    {
-      "name": "VBUS Max",
-      "c_name": "VBUS_MAX_V",
-      "unit": "V",
-      "required": true,
-      "value_format": "raw",
-      "description": "Maximum DC bus voltage."
     },
     {
       "name": "Current Max RMS",
@@ -80,22 +80,6 @@
       "description": "Recommended maximum PCB operating temperature."
     },
     {
-      "name": "Inductance",
-      "c_name": "INDUCTANCE_H",
-      "unit": "H",
-      "required": true,
-      "value_format": "raw",
-      "description": "Main filter inductance."
-    },
-    {
-      "name": "Capacitance",
-      "c_name": "CAPACITANCE_F",
-      "unit": "F",
-      "required": true,
-      "value_format": "raw",
-      "description": "Main filter capacitance."
-    },
-    {
       "name": "Phase Current Sense Type",
       "c_name": "PH_CURRENT_SENSE_TYPE",
       "unit": "",
@@ -118,22 +102,6 @@
       "required": false,
       "value_format": "raw",
       "description": "Phase voltage sensing type enum."
-    },
-    {
-      "name": "Phase Current Sensitivity",
-      "c_name": "PH_CURRENT_SENSITIVITY_MV_A",
-      "unit": "mV/A",
-      "required": false,
-      "value_format": "raw",
-      "description": "Phase current sensor sensitivity."
-    },
-    {
-      "name": "Phase Current Bias",
-      "c_name": "PH_CURRENT_ZERO_BIAS_V",
-      "unit": "V",
-      "required": false,
-      "value_format": "raw",
-      "description": "Zero-current output bias."
     },
     {
       "name": "Phase Current Pole",
@@ -184,14 +152,6 @@
       "description": "Voltage sensing op-amp input resistor."
     },
     {
-      "name": "Phase Voltage Sense Gain",
-      "c_name": "PH_VOLTAGE_SENSE_GAIN",
-      "unit": "V/V",
-      "required": false,
-      "value_format": "raw",
-      "description": "Calculated phase voltage sense gain."
-    },
-    {
       "name": "Phase Voltage Sense Bias",
       "c_name": "PH_VOLTAGE_SENSE_BIAS_V",
       "unit": "V",
@@ -206,6 +166,46 @@
       "required": false,
       "value_format": "raw",
       "description": "Approximate phase voltage sense bandwidth."
+    },
+    {
+      "name": "Voltage Sensor Model",
+      "c_name": "VOLTAGE_SENSOR_MODEL",
+      "unit": "",
+      "required": false,
+      "value_format": "{}",
+      "description": "Phase voltage sensor model."
+    },
+    {
+      "name": "Phase Voltage Sense Gain",
+      "c_name": "PH_VOLTAGE_SENSE_GAIN",
+      "unit": "V/V",
+      "required": false,
+      "value_format": "{}",
+      "description": "Calculated phase voltage sense gain."
+    },
+    {
+      "name": "Current Sensor Model",
+      "c_name": "CURRENT_SENSOR_MODEL",
+      "unit": "",
+      "required": false,
+      "value_format": "{}",
+      "description": "Phase current sensor model."
+    },
+    {
+      "name": "Phase Current Sensitivity",
+      "c_name": "PH_CURRENT_SENSITIVITY_MV_A",
+      "unit": "mV/A",
+      "required": false,
+      "value_format": "{}",
+      "description": "Phase current sensor sensitivity."
+    },
+    {
+      "name": "Phase Current Bias",
+      "c_name": "PH_CURRENT_ZERO_BIAS_V",
+      "unit": "V",
+      "required": false,
+      "value_format": "{}",
+      "description": "Zero-current output bias."
     }
   ],
   "exports": {
@@ -230,5 +230,46 @@
       "description": "Phase voltage sensing gain."
     }
   },
-  "header_prefix": ""
+  "header_prefix": "",
+  "parameter_groups": [
+    {
+      "name": "Parameters",
+      "parameters": [
+        "Inductance",
+        "Capacitance",
+        "Board Name",
+        "VBUS Max",
+        "VBUS Min",
+        "Current Max RMS",
+        "Current Max Peak",
+        "Temperature Max",
+        "Phase Current Sense Type",
+        "Phase Current Sense Topology",
+        "Phase Voltage Sense Type",
+        "Phase Current Pole",
+        "Voltage Divider Top Resistance",
+        "Voltage Divider Bottom Resistance",
+        "Voltage Isolation Gain",
+        "Voltage OPAMP Feedback Resistance",
+        "Voltage OPAMP Input Resistance",
+        "Phase Voltage Sense Bias",
+        "Phase Voltage Sense Pole"
+      ]
+    },
+    {
+      "name": "Voltage Measurement",
+      "parameters": [
+        "Voltage Sensor Model",
+        "Phase Voltage Sense Gain"
+      ]
+    },
+    {
+      "name": "Current Measurement",
+      "parameters": [
+        "Current Sensor Model",
+        "Phase Current Sensitivity",
+        "Phase Current Bias"
+      ]
+    }
+  ]
 }

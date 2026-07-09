@@ -3,12 +3,16 @@
   "schema": "half_bridge",
   "display_name": "FSBB Half Bridge With Inline Shunt",
   "macro_prefix": "FSBB_HB_INLINE",
-  "tags": ["half_bridge", "fsbb", "shunt"],
+  "tags": [
+    "half_bridge",
+    "fsbb",
+    "shunt"
+  ],
   "parameters": {
     "board_name": "FSBB inline shunt example",
     "phase_count": 1,
     "deadtime_ns": 500.0,
-    "bus_capacitance_f": 440e-6
+    "bus_capacitance_f": 0.00044
   },
   "components": {
     "power_device": {
@@ -34,5 +38,10 @@
     "voltage_sensor": {
       "entity": "quad_sensor_voltage_channel"
     }
-  }
+  },
+  "description": "",
+  "vendor": "",
+  "datasheet_url": "",
+  "document_url": "",
+  "output_subdir": ""
 }

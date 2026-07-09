@@ -182,8 +182,8 @@ typedef enum _tag_ctl_dsa_logger_sm
 {
     DSA_LOGGER_READY = 0,    //!< Waiting for a valid trigger event.
     DSA_LOGGER_SAMPLING = 1, //!< Triggered, actively filling the memory buffer.
-    DSA_LOGGER_COMPLETE = 2, //!< Buffer is full, sampling complete.
-    DSA_LOGGER_WAIT = 3      //!< Holding state, waiting for user to release or re-arm.
+    DSA_LOGGER_COMPLETE =
+        2 //!< Buffer is full, sampling complete.if wait flag is set wait here, till next trigger is set.
 } ctl_dsa_logger_sm_t;
 
 /**
@@ -191,12 +191,40 @@ typedef enum _tag_ctl_dsa_logger_sm
  */
 typedef struct _tag_dsa_logger
 {
-    ctl_dsa_logger_sm_t sm;    //!< Current operational state of the logger machine.
-    ctl_mem_view_t mem;        //!< Memory view manager bound to the data destination.
-    ctl_divider_t divider;     //!< Frequency divider determining the downsampling rate.
-    fast_gt flag_wait_for_next_trigger;  //!< Mode configuration: if true, holds in WAIT state post-sample instead of COMPLETE.
+    ctl_dsa_logger_sm_t sm; //!< Current operational state of the logger machine.
+    ctl_mem_view_t mem;     //!< Memory view manager bound to the data destination.
+    ctl_divider_t divider;  //!< Frequency divider determining the downsampling rate.
+    ctl_dsa_trigger_t trigger;
+
+    uint16_t channels;         //!< 定义了这个logger一共具有多少个channels,小于等于4
     uint32_t current_position; //!< Target absolute write index within the memory buffer.
+
+    fast_gt
+        flag_wait_for_next_trigger; //!< Mode configuration: if true, holds in WAIT state post-sample instead of COMPLETE.
 } ctl_dsa_logger_t;
+
+void ctl_init_dsa_logger(ctl_dsa_logger_t* logger, ctrl_gt* mem_pool, uint32_t capacity, uint16_t channels,
+                         uint32_t divider_step, ctl_dsa_trigger_option_t trigger_option, parameter_gt trigger_level,
+                         parameter_gt trigger_suppression, // unit, s
+                         parameter_gt isr_freq)            // unit, Hz
+{
+    logger->sm = DSA_LOGGER_READY;
+    ctl_init_divider(&logger->divider, divider_step);
+    ctl_init_mem_view(&logger->mem, mem_pool, capacity);
+    ctl_init_dsa_trigger(&logger->trigger, trigger_option, trigger_level, trigger_suppression, isr_freq);
+
+    logger->channels = channels;
+    logger->current_position = 0;
+
+    logger->flag_wait_for_next_trigger = 0;
+}
+
+void ctl_set_dsa_logger_trigger(ctl_dsa_logger_t* logger, ctl_dsa_trigger_option_t trigger_option,
+                                parameter_gt trigger_level)
+{
+    logger->trigger.option = trigger_option;
+    logger->trigger.trigger_level = trigger_level;
+}
 
 /**
  * @brief Executes one step of the DSA logging state machine.
@@ -206,11 +234,10 @@ typedef struct _tag_dsa_logger
  * @param[in]     trig_signal The value of the signal used for trigger evaluation.
  * @param[in]     log_signal The value of the signal to be recorded into the memory buffer.
  */
-GMP_STATIC_INLINE void ctl_step_dsa_logger(ctl_dsa_logger_t* logger, ctl_dsa_trigger_t* trigger, ctrl_gt trig_signal,
-                                           ctrl_gt log_signal)
+GMP_STATIC_INLINE void ctl_step_dsa_logger_1ch(ctl_dsa_logger_t* logger, ctrl_gt trig_signal, ctrl_gt log_signal)
 {
     // Step trigger continuously to maintain signal history and timeout tracking
-    fast_gt trigger_fired = ctl_step_dsa_trigger(trigger, trig_signal);
+    fast_gt trigger_fired = ctl_step_dsa_trigger(logger->trigger, trig_signal);
 
     switch (logger->sm)
     {
@@ -226,7 +253,7 @@ GMP_STATIC_INLINE void ctl_step_dsa_logger(ctl_dsa_logger_t* logger, ctl_dsa_tri
 
             if (logger->current_position >= logger->mem.capacity)
             {
-                logger->sm = logger->flag_enable_wait ? DSA_LOGGER_WAIT : DSA_LOGGER_COMPLETE;
+                logger->sm = logger->flag_wait_for_next_trigger ? DSA_LOGGER_WAIT : DSA_LOGGER_COMPLETE;
             }
             else
             {
@@ -243,7 +270,7 @@ GMP_STATIC_INLINE void ctl_step_dsa_logger(ctl_dsa_logger_t* logger, ctl_dsa_tri
 
             if (logger->current_position >= logger->mem.capacity)
             {
-                logger->sm = logger->flag_enable_wait ? DSA_LOGGER_WAIT : DSA_LOGGER_COMPLETE;
+                logger->sm = logger->flag_wait_for_next_trigger ? DSA_LOGGER_WAIT : DSA_LOGGER_COMPLETE;
             }
         }
         break;
@@ -252,22 +279,38 @@ GMP_STATIC_INLINE void ctl_step_dsa_logger(ctl_dsa_logger_t* logger, ctl_dsa_tri
         // Stays here until external application fetches data and explicitly calls ctl_arm_dsa_logger()
         break;
 
-
     default:
         logger->sm = DSA_LOGGER_READY;
         break;
     }
 }
 
+GMP_STATIC_INLINE void ctl_step_dsa_logger_2ch(ctl_dsa_logger_t* logger, ctrl_gt trig_signal, ctrl_gt log_signal_ch1,
+                                               ctrl_gt log_signal_ch2)
+{
+}
+
+GMP_STATIC_INLINE void ctl_step_dsa_logger_3ch(ctl_dsa_logger_t* logger, ctrl_gt trig_signal, ctrl_gt log_signal_ch1,
+                                               ctrl_gt log_signal_ch2, ctrl_gt log_signal_ch3)
+{
+}
+
+GMP_STATIC_INLINE void ctl_step_dsa_logger_4ch(ctl_dsa_logger_t* logger, ctrl_gt trig_signal, ctrl_gt log_signal_ch1,
+                                               ctrl_gt log_signal_ch2, ctrl_gt log_signal_ch3, ctrl_gt log_signal_ch4)
+{
+}
+
 GMP_STATIC_INLINE void dsa_enable_wait_signal(ctl_dsa_logger_t* dsa)
 {
-    dsa->flag_enable_wait = 1;
+    dsa->flag_wait_for_next_trigger = 1;
 }
 
 GMP_STATIC_INLINE void dsa_disable_wait_signal(ctl_dsa_logger_t* dsa)
 {
-    dsa->flag_enable_wait = 1;
+    dsa->flag_wait_for_next_trigger = 1;
 }
+
+/*---------------------------------------------------------------------------*/
 
 /**
  * @brief Data structure for the basic data acquisition trigger.

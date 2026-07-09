@@ -68,6 +68,9 @@ class HardwareSchema:
     header_prefix: str = ""
     includes: tuple[str, ...] = ()
     code_sections: dict[str, Any] = field(default_factory=dict)
+    option_sets: dict[str, Any] = field(default_factory=dict)
+    feature_macros: list[dict[str, Any]] = field(default_factory=list)
+    option_macros: list[dict[str, Any]] = field(default_factory=list)
     parameters: dict[str, ParameterSpec] = field(default_factory=dict)
     derived_macros: list[DerivedMacroSpec] = field(default_factory=list)
     default_components: dict[str, Any] = field(default_factory=dict)
@@ -135,6 +138,9 @@ class HardwareSchema:
             header_prefix=data.get("header_prefix", ""),
             includes=tuple(data.get("includes", [])),
             code_sections=dict(data.get("code_sections", {})),
+            option_sets=dict(data.get("option_sets", {})),
+            feature_macros=list(data.get("feature_macros", [])),
+            option_macros=list(data.get("option_macros", [])),
             parameters=parameters,
             derived_macros=derived_macros,
             default_components=dict(data.get("components", data.get("default_components", {}))),
@@ -169,6 +175,10 @@ class HardwareEntity:
     output_subdir: str = ""
     includes: list[str] = field(default_factory=list)
     code_sections: dict[str, Any] = field(default_factory=dict)
+    option_sets: dict[str, Any] = field(default_factory=dict)
+    feature_macros: list[dict[str, Any]] = field(default_factory=list)
+    option_macros: list[dict[str, Any]] = field(default_factory=list)
+    conditional_macros: list[dict[str, Any]] = field(default_factory=list)
     parameters: dict[str, Any] = field(default_factory=dict)
     components: dict[str, ComponentRef] = field(default_factory=dict)
     tags: list[str] = field(default_factory=list)
@@ -195,6 +205,10 @@ class HardwareEntity:
             output_subdir=data.get("output_subdir", ""),
             includes=list(data.get("includes", [])),
             code_sections=dict(data.get("code_sections", {})),
+            option_sets=dict(data.get("option_sets", {})),
+            feature_macros=list(data.get("feature_macros", [])),
+            option_macros=list(data.get("option_macros", [])),
+            conditional_macros=list(data.get("conditional_macros", [])),
             parameters=dict(data.get("parameters", {})),
             tags=list(data.get("tags", [])),
             source=source,

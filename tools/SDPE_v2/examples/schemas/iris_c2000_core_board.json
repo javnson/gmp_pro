@@ -104,5 +104,44 @@
   },
   "tags": [],
   "header_prefix": "",
-  "components": {}
+  "components": {},
+  "option_sets": {
+    "IRIS_EPWM": {
+      "options": [
+        "IRIS_EPWM1_BASE",
+        "IRIS_EPWM2_BASE",
+        "IRIS_EPWM3_BASE",
+        "IRIS_EPWM4_BASE",
+        "IRIS_EPWM5_BASE",
+        "IRIS_EPWM6_BASE"
+      ],
+      "description": "EPWM Peripheral Option Presets"
+    },
+    "IRIS_GPIO": {
+      "options": [
+        "IRIS_GPIO1",
+        "IRIS_GPIO2",
+        "IRIS_GPIO3",
+        "IRIS_GPIO4",
+        "IRIS_GPIO5",
+        "IRIS_GPIO6"
+      ],
+      "description": "GPIO Option Presets"
+    }
+  },
+  "parameter_groups": [
+    {
+      "name": "Parameters",
+      "parameters": [
+        "chip",
+        "syscfg_file",
+        "epwm1_base",
+        "epwm2_base",
+        "adc_ch1",
+        "adc_ch2",
+        "adc_ch3",
+        "adc_ch4"
+      ]
+    }
+  ]
 }

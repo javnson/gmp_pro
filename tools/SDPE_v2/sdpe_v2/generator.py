@@ -103,7 +103,7 @@ class HeaderGenerator:
             lines.append(f"#include <{inc}>")
         if includes:
             lines.append("")
-        self._append_code_section(lines, schema, entity, "after_includes", "User code after includes")
+        self._append_code_section(lines, schema, entity, "after_includes", "User code after includes", True)
         lines.extend(
             [
                 "#ifdef __cplusplus",
@@ -132,9 +132,9 @@ class HeaderGenerator:
         if schema.description or entity.description or entity.vendor or entity.datasheet_url or entity.document_url:
             lines.append("/*")
             if schema.description:
-                lines.append(f" * Schema: {schema.description}")
+                self._append_block_comment_lines(lines, "Schema", schema.description)
             if entity.description:
-                lines.append(f" * Entity: {entity.description}")
+                self._append_block_comment_lines(lines, "Entity", entity.description)
             if entity.vendor:
                 lines.append(f" * Vendor: {entity.vendor}")
             if entity.datasheet_url:
@@ -145,13 +145,14 @@ class HeaderGenerator:
             lines.append("")
 
         self._append_code_section(lines, schema, entity, "before_parameters", "User code before parameters")
+        self._append_entity_config_macros(lines, schema, entity)
         self._append_parameter_macros(lines, entity, schema, prefix)
         self._append_derived_macros(lines, entity, schema, prefix)
         self._append_inline_components(lines, entity)
         self._append_component_overrides(lines, entity, schema)
         self._append_code_section(lines, schema, entity, "before_exports", "User code before exports")
         self._append_export_comments(lines, schema, prefix)
-        self._append_code_section(lines, schema, entity, "before_footer", "User code before footer")
+        self._append_code_section(lines, schema, entity, "before_footer", "User code before footer", True)
 
         lines.extend(
             [
@@ -175,12 +176,22 @@ class HeaderGenerator:
         return sorted(dict.fromkeys(includes))
 
     def _append_code_section(
-        self, lines: list[str], schema: HardwareSchema, entity: HardwareEntity, name: str, title: str
+        self,
+        lines: list[str],
+        schema: HardwareSchema,
+        entity: HardwareEntity,
+        name: str,
+        title: str,
+        placeholder_if_empty: bool = False,
     ) -> None:
         snippets: list[str] = []
         snippets.extend(self._code_section_values(schema.code_sections.get(name)))
         snippets.extend(self._code_section_values(entity.code_sections.get(name)))
         if not snippets:
+            if placeholder_if_empty:
+                lines.append(f"// {title}")
+                lines.append(f"// SDPE extension point: add {name} code in the Entity Instance Code page if needed.")
+                lines.append("")
             return
         lines.append(f"// {title}")
         for snippet in snippets:
@@ -196,6 +207,33 @@ class HeaderGenerator:
         if isinstance(value, list):
             return [str(item) for item in value if str(item).strip()]
         return [str(value)]
+
+    def _append_doc_comment(self, lines: list[str], brief: str, unit: str = "") -> None:
+        lines.append("/**")
+        parts = str(brief).splitlines() or [""]
+        for index, part in enumerate(parts):
+            tag = "@brief " if index == 0 else "       "
+            lines.append(f" * {tag}{part}")
+        if unit:
+            lines.append(f" * @unit {unit}")
+        lines.append(" */")
+
+    def _append_line_comment(self, lines: list[str], text: str) -> None:
+        for part in str(text).splitlines():
+            lines.append(f"// {part}")
+
+    def _append_block_comment_lines(self, lines: list[str], label: str, text: str) -> None:
+        for index, part in enumerate(str(text).splitlines() or [""]):
+            prefix = f"{label}: " if index == 0 else " " * (len(label) + 2)
+            lines.append(f" * {prefix}{part}")
+
+    def _format_binding_text(self, value: str) -> str:
+        text = str(value).strip()
+        return re.sub(
+            r"\$\{([A-Za-z0-9_][A-Za-z0-9_.]*)\}",
+            lambda match: self._resolve_export(match.group(1)),
+            text,
+        )
 
     def _append_parameter_macros(
         self, lines: list[str], entity: HardwareEntity, schema: HardwareSchema, prefix: str
@@ -215,23 +253,68 @@ class HeaderGenerator:
                 continue
             macro = f"{prefix}_{pspec.c_name}"
             desc = pspec.description or pname
+            self._append_doc_comment(lines, desc, pspec.unit)
             lines.extend(
                 [
-                    "/**",
-                    f" * @brief {desc}",
-                ]
-            )
-            if pspec.unit:
-                lines.append(f" * @unit {pspec.unit}")
-            lines.extend(
-                [
-                    " */",
                     f"#ifndef {macro}",
                     f"#define {macro} {self._format_parameter_value(value, pspec.value_format, entity, prefix)}",
                     f"#endif // {macro}",
                     "",
                 ]
             )
+
+    def _append_entity_config_macros(
+        self, lines: list[str], schema: HardwareSchema, entity: HardwareEntity
+    ) -> None:
+        feature_macros = [*schema.feature_macros, *entity.feature_macros]
+        option_macros = [*schema.option_macros, *entity.option_macros]
+
+        if feature_macros:
+            lines.append("// Entity selection macros")
+            for item in feature_macros:
+                macro = item.get("macro", "")
+                if not macro:
+                    continue
+                if item.get("description"):
+                    self._append_line_comment(lines, item["description"])
+                value = f" {item['value']}" if item.get("value") else ""
+                if item.get("enabled", True):
+                    lines.append(f"#define {macro}{value}")
+                else:
+                    lines.append(f"// #define {macro}{value}")
+            lines.append("")
+
+        if option_macros:
+            lines.append("// Entity option macros")
+            for item in option_macros:
+                macro = item.get("macro", "")
+                if not macro:
+                    continue
+                options = self._option_macro_values(item, lambda preset: self._resolve_entity_option_preset(schema, entity, preset))
+                if item.get("description") or options:
+                    if item.get("description"):
+                        self._append_line_comment(lines, item["description"])
+                    if options:
+                        self._append_line_comment(lines, f"Options: {', '.join(str(v) for v in options)}")
+                value = str(item.get("value", ""))
+                enabled = item.get("enabled", True)
+                marker = "" if enabled else "// "
+                lines.append(f"{marker}#define {macro} {value}")
+                if enabled and re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", value):
+                    lines.append(f"#define {macro}_{macro_name(value)} 1")
+            lines.append("")
+
+        if entity.conditional_macros:
+            lines.append("// Entity conditional macros")
+            for item in entity.conditional_macros:
+                condition = item.get("condition") or item.get("condition_macro") or item.get("selector")
+                if not condition:
+                    continue
+                lines.append(f"#if defined({condition})")
+                for macro, value in item.get("macros", {}).items():
+                    lines.append(f"#define {macro} {value}")
+                lines.append(f"#endif // {condition}")
+            lines.append("")
 
     def _append_derived_macros(
         self, lines: list[str], entity: HardwareEntity, schema: HardwareSchema, prefix: str
@@ -242,15 +325,8 @@ class HeaderGenerator:
         for item in schema.derived_macros:
             macro = f"{prefix}_{item.name}"
             expr = self._format_expr(item.expr, prefix)
-            lines.extend(
-                [
-                    "/**",
-                    f" * @brief {item.description or item.name}",
-                ]
-            )
-            if item.unit:
-                lines.append(f" * @unit {item.unit}")
-            lines.extend([" */", f"#define {macro} {expr}", ""])
+            self._append_doc_comment(lines, item.description or item.name, item.unit)
+            lines.extend([f"#define {macro} {expr}", ""])
 
     def _append_inline_components(self, lines: list[str], entity: HardwareEntity) -> None:
         inline_components = [comp for comp in entity.components.values() if comp.inline]
@@ -326,6 +402,10 @@ class HeaderGenerator:
             if "expr" in value:
                 return self._format_local_expr(str(value["expr"]), entity, prefix)
             raise SDPEError(f"Unsupported parameter value object: {value!r}")
+        if isinstance(value, str):
+            match = re.fullmatch(r"\$\{([A-Za-z0-9_][A-Za-z0-9_.]*)\}", value.strip())
+            if match:
+                return self._resolve_entity_symbol(entity, prefix, match.group(1))
         return c_literal(value, value_format)
 
     def _format_local_expr(self, expr: str, entity: HardwareEntity, prefix: str) -> str:
@@ -385,28 +465,73 @@ class HeaderGenerator:
             "/**",
             f" * @file {data.get('output_header', 'sdpe_project_bindings.h')}",
             f" * @brief SDPE project bindings for {data.get('display_name', project_id)}.",
-            " */",
-            "",
-            f"#ifndef {guard}",
-            f"#define {guard}",
-            "",
         ]
+        if data.get("description"):
+            for index, part in enumerate(str(data["description"]).splitlines()):
+                tag = "@note " if index == 0 else "      "
+                lines.append(f" * {tag}{part}")
+        lines.extend([" */", "", f"#ifndef {guard}", f"#define {guard}", ""])
         for inc in sorted(dict.fromkeys(includes)):
             lines.append(f"#include <{inc}>")
         if includes:
             lines.append("")
 
+        lines.extend(["#ifdef __cplusplus", 'extern "C"', "{", "#endif", ""])
+        self._append_project_code_section(lines, data, "after_extern_open", "User project prefix code", True)
+
         lines.extend(["// Project metadata", f"#define SDPE_PROJECT_ID \"{project_id}\""])
         if "suite" in data:
             lines.append(f"#define SDPE_PROJECT_SUITE \"{data['suite']}\"")
+        if data.get("version"):
+            lines.append(f"#define SDPE_PROJECT_VERSION \"{data['version']}\"")
+        if data.get("updated_at"):
+            lines.append(f"#define SDPE_PROJECT_UPDATED_AT \"{data['updated_at']}\"")
         lines.append("")
+
+        if data.get("feature_macros"):
+            lines.append("// Selection macros")
+            for item in data["feature_macros"]:
+                macro = item.get("macro", "")
+                if not macro:
+                    continue
+                desc = item.get("description", "")
+                if desc:
+                    self._append_line_comment(lines, desc)
+                value = f" {item['value']}" if item.get("value") else ""
+                if item.get("enabled", True):
+                    lines.append(f"#define {macro}{value}")
+                else:
+                    lines.append(f"// #define {macro}{value}")
+            lines.append("")
+
+        if data.get("option_macros"):
+            lines.append("// Option macros")
+            for item in data["option_macros"]:
+                macro = item.get("macro", "")
+                if not macro:
+                    continue
+                options = self._option_macro_values(item, lambda preset: self._resolve_project_option_preset(data, preset))
+                desc = item.get("description", "")
+                if desc or options:
+                    if desc:
+                        self._append_line_comment(lines, desc)
+                    if options:
+                        self._append_line_comment(lines, f"Options: {', '.join(str(v) for v in options)}")
+                value = str(item.get("value", ""))
+                enabled = item.get("enabled", True)
+                marker = "" if enabled else "// "
+                lines.append(f"{marker}#define {macro} {value}")
+                if enabled and re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", value):
+                    lines.append(f"#define {macro}_{macro_name(value)} 1")
+            lines.append("")
 
         lines.append("// Requirement bindings")
         for req in data.get("requirements", []):
             macro = req["macro"]
             value = self._resolve_binding_value(req["binding"])
             desc = req.get("description", req.get("role", macro))
-            lines.extend(["/**", f" * @brief {desc}", " */", f"#define {macro} {value}", ""])
+            self._append_doc_comment(lines, desc)
+            lines.extend([f"#define {macro} {value}", ""])
 
         if data.get("peripheral_bindings"):
             lines.append("// Board peripheral mapping")
@@ -420,8 +545,77 @@ class HeaderGenerator:
                 lines.append(f"#define {macro} {value}")
             lines.append("")
 
-        lines.extend([f"#endif // {guard}", ""])
+        self._append_project_code_section(lines, data, "before_footer", "User project tail code", True)
+        lines.extend(["#ifdef __cplusplus", "}", "#endif", "", f"#endif // {guard}", ""])
         return "\n".join(lines)
+
+    def _append_project_code_section(
+        self, lines: list[str], data: dict[str, Any], name: str, title: str, placeholder_if_empty: bool = False
+    ) -> None:
+        snippets = self._code_section_values(data.get("code_sections", {}).get(name))
+        if not snippets:
+            if placeholder_if_empty:
+                lines.append(f"// {title}")
+                lines.append(f"// SDPE extension point: add {name} code in the Project Requirement Code page if needed.")
+                lines.append("")
+            return
+        lines.append(f"// {title}")
+        for snippet in snippets:
+            if snippet.strip():
+                lines.extend(snippet.rstrip().splitlines())
+        lines.append("")
+
+    def _resolve_entity_option_preset(
+        self, schema: HardwareSchema, entity: HardwareEntity, preset: str
+    ) -> list[Any]:
+        key = str(preset).strip()
+        if not key:
+            return []
+        candidates = [key]
+        if "." in key:
+            candidates.append(key.split(".", 1)[1])
+        for store in (entity.option_sets, schema.option_sets):
+            for candidate in candidates:
+                if candidate in store:
+                    return self._option_set_values(store[candidate])
+        return []
+
+    def _resolve_project_option_preset(self, data: dict[str, Any], preset: str) -> list[Any]:
+        key = str(preset).strip()
+        if not key:
+            return []
+        if "." in key:
+            owner, name = key.split(".", 1)
+            if owner in self.library.entity_files:
+                entity = self.library.entity(owner)
+                schema = self.library.schema(entity.schema_id)
+                return self._resolve_entity_option_preset(schema, entity, name)
+            if owner in self.library.schemas:
+                schema = self.library.schema(owner)
+                if name in schema.option_sets:
+                    return self._option_set_values(schema.option_sets[name])
+        for entity_id in self._project_entity_ids(data):
+            entity = self.library.entity(entity_id)
+            schema = self.library.schema(entity.schema_id)
+            values = self._resolve_entity_option_preset(schema, entity, key)
+            if values:
+                return values
+        for schema in self.library.schemas.values():
+            if key in schema.option_sets:
+                return self._option_set_values(schema.option_sets[key])
+        return []
+
+    def _option_set_values(self, value: Any) -> list[Any]:
+        options = value.get("options", value) if isinstance(value, dict) else value
+        return options if isinstance(options, list) else [options]
+
+    def _option_macro_values(self, item: dict[str, Any], resolver) -> list[Any]:
+        options = item.get("options", [])
+        if len(options) == 1:
+            match = re.fullmatch(r"\$\{([^}]+)\}", str(options[0]).strip())
+            if match:
+                return resolver(match.group(1))
+        return options or resolver(item.get("options_preset", ""))
 
     def _project_entity_ids(self, data: dict[str, Any]) -> list[str]:
         ids = [item["entity"] for item in data.get("hardware", [])]
@@ -430,6 +624,11 @@ class HeaderGenerator:
             export_path = None
             if isinstance(binding, dict):
                 export_path = binding.get("export")
+                if binding.get("expr"):
+                    for ref in re.findall(r"\$\{([A-Za-z0-9_][A-Za-z0-9_.]*)\}", str(binding["expr"])):
+                        root_id = ref.split(".", 1)[0]
+                        if root_id in self.library.entity_files:
+                            ids.append(root_id)
             elif isinstance(binding, str) and "." in binding:
                 export_path = binding
             if export_path:
@@ -441,13 +640,27 @@ class HeaderGenerator:
     def _resolve_binding_value(self, binding: Any) -> str:
         if isinstance(binding, dict):
             if "literal" in binding:
-                return str(binding["literal"])
+                return self._format_binding_text(str(binding["literal"]))
             if "macro" in binding:
-                return str(binding["macro"])
+                return self._format_binding_text(str(binding["macro"]))
             if "export" in binding:
-                return self._resolve_export(binding["export"])
+                value = str(binding["export"])
+                if value.strip().startswith("${"):
+                    return self._format_binding_text(value)
+                return self._resolve_export(value)
+            if "expr" in binding:
+                return self._format_binding_text(str(binding["expr"]))
+            if "string" in binding:
+                return '"' + str(binding["string"]).replace("\\", "\\\\").replace('"', '\\"') + '"'
+            if "float" in binding:
+                raw = str(binding["float"]).strip()
+                return raw if raw.startswith("(") and raw.endswith(")") else f"({raw}f)"
+            if "number" in binding:
+                raw = str(binding["number"]).strip()
+                return raw if raw.startswith("(") and raw.endswith(")") else f"({raw})"
         if isinstance(binding, str):
-            if "." in binding:
+            binding = self._format_binding_text(binding)
+            if "." in binding and not binding.startswith("${"):
                 return self._resolve_export(binding)
             return binding
         raise SDPEError(f"Unsupported binding: {binding!r}")

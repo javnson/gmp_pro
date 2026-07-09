@@ -6,10 +6,15 @@ from pathlib import Path
 
 from sdpe_v2.generator import HeaderGenerator
 from sdpe_v2.library import SDPELibrary
+from sdpe_v2.util import read_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = ROOT / "examples"
+
+
+def read_project(name: str) -> dict:
+    return read_json(EXAMPLES / "projects" / f"{name}.json")
 
 
 class SDPEV2Tests(unittest.TestCase):
@@ -71,6 +76,15 @@ class SDPEV2Tests(unittest.TestCase):
             self.assertIn("#define TMCS1133_B5A_USER_CALIBRATION 1", header)
             self.assertLess(header.index("#define TMCS1133_B5A_USER_CALIBRATION 1"), header.rindex("#endif //"))
 
+    def test_entity_option_sets_and_conditional_macros_are_available(self) -> None:
+        lib = self.load_library()
+        self.assertIn("epwm_base", lib.entity("iris_f280039c_node").option_sets)
+        with tempfile.TemporaryDirectory() as tmp:
+            header = HeaderGenerator(lib, Path(tmp)).render_entity_header(lib.entity("tmcs1133"))
+            self.assertIn("#define TMCS1133_CURRENT_SUFFIX B5A", header)
+            self.assertIn("#define TMCS1133_CURRENT_SUFFIX_B5A 1", header)
+            self.assertIn("#if defined(TMCS1133_CURRENT_SUFFIX_B5A)", header)
+
     def test_schema_default_components_are_applied(self) -> None:
         lib = self.load_library()
         entity = lib.inline_entity(
@@ -120,6 +134,17 @@ class SDPEV2Tests(unittest.TestCase):
             self.assertIn("#define PHASE_BUCK_BASE IRIS_F280039C_EPWM1_BASE", header)
             self.assertIn("#include <ctl/component/hardware_preset/half_bridge/fsbb_inline_shunt_half_bridge.h>", header)
             self.assertIn("#include <ctl/component/hardware_preset/current_sensor/tmcs1133_b2a.h>", header)
+
+    def test_project_header_renders_metadata_and_macro_options(self) -> None:
+        lib = self.load_library()
+        data = read_project("mcs_pmsm_nt_sensor_binding")
+        with tempfile.TemporaryDirectory() as tmp:
+            header = HeaderGenerator(lib, Path(tmp)).render_project_header(data)
+            self.assertIn("@note Typical PMSM_NT ctrl_settings-style requirement list", header)
+            self.assertIn('#define SDPE_PROJECT_VERSION "0.2.0"', header)
+            self.assertIn("// #define PMSM_CTRL_USING_DISCRETE_CTRL", header)
+            self.assertIn("#define BUILD_LEVEL (4)", header)
+            self.assertIn("#include <ctl/component/hardware_preset/inverter_3ph/GMP_3PH_2136SINV_DUAL_TMPL.h>", header)
 
     def test_component_overrides_create_slot_local_macros(self) -> None:
         lib = self.load_library()

@@ -52,6 +52,10 @@ def c_literal(value: Any, value_format: str = "{}") -> str:
     """Format a JSON value as a C literal."""
 
     if value_format == "raw":
+        if isinstance(value, (int, float)):
+            return f"(({value!r}))"
+        if isinstance(value, str) and re.fullmatch(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?[fFuUlL]*", value.strip()):
+            return f"(({value.strip()}))"
         return str(value)
     if isinstance(value, bool):
         raw = "1" if value else "0"

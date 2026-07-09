@@ -5,15 +5,12 @@
   "output_header": "sdpe_dps_fsbb_iris_bindings.h",
   "hardware": [
     {
-      "role": "mcu_board",
       "entity": "iris_f280039c_node"
     },
     {
-      "role": "buck_half_bridge",
       "entity": "fsbb_inline_shunt_half_bridge"
     },
     {
-      "role": "boost_half_bridge",
       "entity": "lvfb_half_bridge_phase_a"
     }
   ],
@@ -93,5 +90,50 @@
   },
   "global_macros": {
     "SDPE_ENABLE_DPS_FSBB_BINDINGS": "1"
-  }
+  },
+  "description": "",
+  "version": "0.1.0",
+  "updated_at": "2026-07-09",
+  "feature_macros": [
+    {
+      "macro": "_USE_DEBUG_DISCRETE_PID",
+      "enabled": true,
+      "value": "",
+      "description": "Enable Discrete PID controller anti-saturation algorithm"
+    },
+    {
+      "macro": "SPECIFY_ENABLE_ADC_CALIBRATE",
+      "enabled": true,
+      "value": "",
+      "description": "Enable ADC Calibrate"
+    },
+    {
+      "macro": "PWM_MODULATOR_USING_NEGATIVE_LOGIC",
+      "enabled": true,
+      "value": "1",
+      "description": "Using negative modulator logic"
+    },
+    {
+      "macro": "USING_NPC_MODULATOR",
+      "enabled": false,
+      "value": "",
+      "description": "Using three level modulator or two level modulator"
+    }
+  ],
+  "option_macros": [
+    {
+      "macro": "BUILD_LEVEL",
+      "enabled": true,
+      "value": "1",
+      "options_preset": "",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "description": ""
+    }
+  ]
 }
