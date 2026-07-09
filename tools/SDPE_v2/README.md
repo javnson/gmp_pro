@@ -211,6 +211,42 @@ python .\sdpe.py --library .\examples generate-project .\examples\projects\dps_f
 python .\sdpe.py --library .\examples generate-project .\examples\projects\dps_fsbb_iris_node.json --out .\build --include-prefix ctl/component
 ```
 
+### 项目侧 sdpe_mgr 部署
+
+在实际 suite 工程中，推荐像 `gmp_src_mgr` 一样建立项目本地的 `sdpe_mgr` 文件夹。主程序仍保存在：
+
+```text
+%GMP_PRO_LOCATION%\tools\SDPE_v2
+```
+
+在目标工程目录下部署：
+
+```bat
+%GMP_PRO_LOCATION%\tools\SDPE_v2\gmp_sdpe_deploy_project_mgr.bat .
+```
+
+也可以显式指定工程目录：
+
+```bat
+%GMP_PRO_LOCATION%\tools\SDPE_v2\gmp_sdpe_deploy_project_mgr.bat E:\lib\gmp_pro\ctl\suite\mcs_pmsm_nt\project\f280039c_Iris_node
+```
+
+生成的 `sdpe_mgr` 包含：
+
+- `sdpe_requirement.json`：当前工程需求和硬件绑定。
+- `sdpe_settings.bat`：工程本地配置，包含 SDPE 库位置、需求文件、输出目录。
+- `sdpe_edit.bat`：启动 Project Requirement GUI。
+- `sdpe_generate.bat`：生成工程 SDPE 头文件。
+- `sdpe_validate.bat`：检查 SDPE 库和当前需求文件是否可读取。
+
+默认生成输出目录为：
+
+```text
+..\xplt\sdpe_generated
+```
+
+如果工程需要其他输出位置，只需要修改 `sdpe_mgr\sdpe_settings.bat`。
+
 ## 4. 生成结果
 
 生成目录示例：
