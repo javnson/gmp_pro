@@ -87,7 +87,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from sdpe_v2.generator import HeaderGenerator
+from sdpe_v2.generator import HeaderGenerator, macro_name
 from sdpe_v2.library import SDPELibrary
 from sdpe_v2.model import HardwareEntity, HardwareSchema, SDPEError
 from sdpe_v2.util import read_json
@@ -210,7 +210,7 @@ def set_table_headers(
     table.setColumnCount(len(headers))
     table.setHorizontalHeaderLabels(headers)
     table.horizontalHeader().setSectionResizeMode(mode)
-    table.horizontalHeader().setStretchLastSection(True)
+    table.horizontalHeader().setStretchLastSection(mode != QHeaderView.ResizeMode.Interactive)
     table.verticalHeader().setVisible(False)
     table.setAlternatingRowColors(True)
     table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -224,6 +224,7 @@ def set_table_headers(
     )
     install_table_clipboard_shortcuts(table)
     install_table_change_hooks(table)
+    install_table_status_descriptions(table)
     table.resizeColumnsToContents()
 
 
@@ -251,6 +252,8 @@ def install_table_change_hooks(table: QTableWidget) -> None:
 
 
 def fit_table_columns(table: QTableWidget, max_width: int = 360) -> None:
+    table.horizontalHeader().setStretchLastSection(False)
+    table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
     table.resizeColumnsToContents()
     for col in range(table.columnCount()):
         header = table.horizontalHeaderItem(col)
@@ -259,23 +262,37 @@ def fit_table_columns(table: QTableWidget, max_width: int = 360) -> None:
         table.setColumnWidth(col, min(max(table.columnWidth(col) + 18, 96), max_width))
 
 
-def fit_tree_key_columns(tree: QTreeWidget, description_col: int | None = None) -> None:
+def fit_tree_key_columns(tree: QTreeWidget, description_col: int | None = None, interactive: bool = False) -> None:
     header = tree.header()
-    header.setStretchLastSection(description_col is not None)
+    header.setStretchLastSection(description_col is not None and not interactive)
     if description_col is None:
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive if interactive else QHeaderView.ResizeMode.ResizeToContents)
+        tree.resizeColumnToContents(0)
         tree.setColumnWidth(0, max(tree.columnWidth(0), 260))
         return
     for col in range(tree.columnCount()):
-        mode = QHeaderView.ResizeMode.Stretch if col == description_col else QHeaderView.ResizeMode.ResizeToContents
+        mode = QHeaderView.ResizeMode.Interactive if interactive else (
+            QHeaderView.ResizeMode.Stretch if col == description_col else QHeaderView.ResizeMode.ResizeToContents
+        )
         header.setSectionResizeMode(col, mode)
+        if interactive:
+            tree.resizeColumnToContents(col)
     tree.setColumnWidth(0, max(tree.columnWidth(0), 360))
+    if interactive:
+        for col in range(tree.columnCount()):
+            if col == description_col:
+                tree.setColumnWidth(col, max(tree.columnWidth(col), 220))
+            else:
+                tree.setColumnWidth(col, max(tree.columnWidth(col) + 18, 120))
 
 
 def tree_cell_text(tree: QTreeWidget, item: QTreeWidgetItem, col: int) -> str:
     widget = tree.itemWidget(item, col)
     if isinstance(widget, QComboBox):
         return widget.currentText().strip()
+    value = item.data(col, Qt.ItemDataRole.UserRole)
+    if col != 0 and value is not None:
+        return str(value).strip()
     return item.text(col).strip()
 
 
@@ -284,11 +301,61 @@ def set_tree_combo(tree: QTreeWidget, item: QTreeWidgetItem, col: int, values: l
     combo.addItems(values)
     combo.setEditable(True)
     current_text = "" if current is None else str(current)
-    item.setText(col, current_text)
+    item.setData(col, Qt.ItemDataRole.UserRole, current_text)
+    item.setText(col, "")
     combo.setCurrentText(current_text)
     combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-    combo.currentTextChanged.connect(lambda text, i=item, c=col, t=tree: (i.setText(c, text), notify_tree_changed(t)))
+    combo.currentTextChanged.connect(lambda text, i=item, c=col, t=tree: (i.setData(c, Qt.ItemDataRole.UserRole, text), notify_tree_changed(t)))
     tree.setItemWidget(item, col, combo)
+
+
+def show_status_description(widget: QWidget, text: str) -> None:
+    text = text.strip()
+    if not text:
+        return
+    window = widget.window()
+    if hasattr(window, "statusBar"):
+        window.statusBar().showMessage(text)
+
+
+def description_column(headers: list[str]) -> int | None:
+    for index, header in enumerate(headers):
+        if "description" in header.lower():
+            return index
+    return None
+
+
+def install_table_status_descriptions(table: QTableWidget) -> None:
+    headers = [table.horizontalHeaderItem(col).text() if table.horizontalHeaderItem(col) else "" for col in range(table.columnCount())]
+    desc_col = description_column(headers)
+    if desc_col is None:
+        return
+    table.setMouseTracking(True)
+
+    def show_row(row: int) -> None:
+        if row < 0 or row >= table.rowCount():
+            return
+        show_status_description(table, item_text(table, row, desc_col))
+
+    table.cellEntered.connect(lambda row, _col: show_row(row))
+    table.currentCellChanged.connect(lambda row, _col, _previous_row, _previous_col: show_row(row))
+
+
+def install_tree_status_descriptions(tree: QTreeWidget, description_col: int | None = None) -> None:
+    if description_col is None:
+        headers = [tree.headerItem().text(col) for col in range(tree.columnCount())]
+        description_col = description_column(headers)
+    if description_col is None:
+        return
+    tree.setMouseTracking(True)
+
+    def show_item(item: QTreeWidgetItem | None) -> None:
+        if item is None:
+            return
+        show_status_description(tree, tree_cell_text(tree, item, description_col))
+
+    tree.itemEntered.connect(lambda item, _col: show_item(item))
+    tree.currentItemChanged.connect(lambda current, _previous: show_item(current))
 
 
 def notify_tree_changed(tree: QTreeWidget) -> None:
@@ -2015,6 +2082,7 @@ class ProjectPage(SDPEPage):
         self.hardware_tree = QTreeWidget()
         self.hardware_tree.setHeaderLabels(["Hardware", "Description"])
         fit_tree_key_columns(self.hardware_tree, description_col=1)
+        install_tree_status_descriptions(self.hardware_tree, description_col=1)
         self.hardware_tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.hardware_tree.customContextMenuRequested.connect(self.show_hardware_context_menu)
         self.hardware_tree.itemDoubleClicked.connect(self.on_hardware_tree_double_clicked)
@@ -2025,6 +2093,8 @@ class ProjectPage(SDPEPage):
         self.requirements = QTreeWidget()
         self.requirements.setHeaderLabels(["Name", "Macro", "Binding Type", "Binding Value", "Description"])
         self.requirements.setAlternatingRowColors(True)
+        fit_tree_key_columns(self.requirements, description_col=4, interactive=True)
+        install_tree_status_descriptions(self.requirements, description_col=4)
         self.requirements.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
         self.requirements.setDefaultDropAction(Qt.DropAction.MoveAction)
         self.requirements.itemChanged.connect(lambda _item, _col: self.mark_current_dirty())
@@ -2252,7 +2322,7 @@ class ProjectPage(SDPEPage):
             for req in missing:
                 self.add_requirement_item(group_item, req)
         self.requirements.expandAll()
-        fit_tree_key_columns(self.requirements, description_col=4)
+        fit_tree_key_columns(self.requirements, description_col=4, interactive=True)
 
     def load_macro_tables(self, data: dict[str, Any]) -> None:
         load_feature_macro_table(self.feature_macros, data.get("feature_macros", []))
@@ -2437,7 +2507,10 @@ class ProjectPage(SDPEPage):
                 btype = tree_cell_text(self.requirements, item, 2) or "number"
                 if not isinstance(self.requirements.itemWidget(item, 2), QComboBox):
                     set_tree_combo(self.requirements, item, 2, binding_type_options(), btype)
-            fit_tree_key_columns(self.requirements, description_col=4)
+            header = self.requirements.header()
+            header.setStretchLastSection(False)
+            for col in range(self.requirements.columnCount()):
+                header.setSectionResizeMode(col, QHeaderView.ResizeMode.Interactive)
         finally:
             self.loading = False
 
@@ -2810,35 +2883,25 @@ class ProjectPage(SDPEPage):
 
 
 class BindingPage(SDPEPage):
-    """Focused requirement binding page with suggestions and generation."""
+    """Project-level SDPE overview and generation page."""
 
     def __init__(self, window: "MainWindow"):
-        super().__init__(window, "Requirement Binding", has_code=True)
-        self.out_dir = QLineEdit(str(window.default_output_dir))
-        self.binding_table = QTableWidget()
-        set_table_headers(
-            self.binding_table,
-            ["Macro", "Type", "Value", "Description"],
-            QHeaderView.ResizeMode.Interactive,
-        )
-        self.suggestions = QListWidget()
-        self.suggestions.itemDoubleClicked.connect(self.use_suggestion)
-        browse = QPushButton("Browse")
-        browse.clicked.connect(self.browse_out)
-        save = QPushButton("Save bindings")
-        save.clicked.connect(self.save_current)
-        generate = QPushButton("Generate project header")
-        generate.clicked.connect(self.generate_project)
+        super().__init__(window, "SDPE Project Overview", has_code=True)
+        self.overview = QTreeWidget()
+        self.overview.setHeaderLabels(["Item", "Macro", "Value", "Source", "Description"])
+        self.overview.setAlternatingRowColors(True)
+        self.overview.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        fit_tree_key_columns(self.overview, description_col=4, interactive=True)
+        install_tree_status_descriptions(self.overview, description_col=4)
+
         preview = QPushButton("Preview project header")
         preview.clicked.connect(self.preview_project)
-        form = QFormLayout()
-        form.addRow("Header Output", self.out_dir)
-        self.form_layout.addLayout(form)
-        self.form_layout.addLayout(row_buttons([browse, save, preview, generate]))
-        self.form_layout.addWidget(QLabel("Requirement bindings"))
-        self.form_layout.addWidget(self.binding_table)
-        self.form_layout.addWidget(QLabel("Available scoped symbols"))
-        self.form_layout.addWidget(self.suggestions)
+        generate = QPushButton("Generate project header")
+        generate.clicked.connect(self.generate_project)
+
+        self.form_layout.addLayout(row_buttons([preview, generate]))
+        self.form_layout.addWidget(QLabel("Supported project macros"))
+        self.form_layout.addWidget(self.overview)
 
     def refresh_list(self) -> None:
         current = self.current_id
@@ -2859,14 +2922,7 @@ class BindingPage(SDPEPage):
             return
         self.loading = True
         data = self.data_for_id(self.current_id, self.window.project_path(self.current_id))
-        self.binding_table.setRowCount(0)
-        for req in data.get("requirements", []):
-            row = self.binding_table.rowCount()
-            self.binding_table.insertRow(row)
-            btype, bvalue = binding_to_cells(req.get("binding", {}))
-            for col, value in enumerate([req.get("macro", ""), btype, bvalue, req.get("description", "")]):
-                set_item(self.binding_table, row, col, value)
-        self.load_suggestions(data)
+        self.populate_overview(data)
         self.set_professional_text(pretty_json(data))
         try:
             self.set_code_text(self.generator().render_project_header(data), reveal=False)
@@ -2876,22 +2932,124 @@ class BindingPage(SDPEPage):
         if not self.restoring_undo:
             self.reset_undo_history(self.collect_current_data() or data)
 
-    def load_suggestions(self, data: dict[str, Any]) -> None:
-        self.suggestions.clear()
-        roots = [hw.get("entity") for hw in data.get("hardware", []) if hw.get("entity")]
-        for entity_id in roots:
-            try:
-                for symbol in self.window.symbols_for_entity(entity_id):
-                    self.suggestions.addItem(symbol)
-            except SDPEError:
-                continue
+    def populate_overview(self, data: dict[str, Any]) -> None:
+        self.overview.clear()
+        generator = self.generator()
+        self.add_metadata_group(data)
+        self.add_hardware_group(data, generator)
+        self.add_feature_macro_group(data)
+        self.add_option_macro_group(data, generator)
+        self.add_requirement_group(data, generator)
+        self.overview.expandAll()
+        fit_tree_key_columns(self.overview, description_col=4, interactive=True)
 
-    def use_suggestion(self, item: QListWidgetItem) -> None:
-        row = self.binding_table.currentRow()
-        if row < 0:
-            return
-        set_item(self.binding_table, row, 1, "export")
-        set_item(self.binding_table, row, 2, item.text())
+    def add_group(self, name: str, description: str = "") -> QTreeWidgetItem:
+        item = QTreeWidgetItem([name, "", "", "", description])
+        item.setFirstColumnSpanned(False)
+        item.setData(0, Qt.ItemDataRole.UserRole, "group")
+        self.overview.addTopLevelItem(item)
+        return item
+
+    def add_overview_row(
+        self,
+        parent: QTreeWidgetItem,
+        item: str,
+        macro: str = "",
+        value: str = "",
+        source: str = "",
+        description: str = "",
+    ) -> QTreeWidgetItem:
+        child = QTreeWidgetItem([item, macro, value, source, description])
+        child.setToolTip(4, description)
+        parent.addChild(child)
+        return child
+
+    def add_metadata_group(self, data: dict[str, Any]) -> None:
+        group = self.add_group("Project Metadata", "Macros generated for SDPE project identity.")
+        project_id = data.get("id", self.current_id or "")
+        self.add_overview_row(group, "Project ID", "SDPE_PROJECT_ID", f"\"{project_id}\"", "project", "SDPE project identifier.")
+        if data.get("suite"):
+            self.add_overview_row(group, "Suite", "SDPE_PROJECT_SUITE", f"\"{data['suite']}\"", "project", "Suite identifier.")
+        if data.get("version"):
+            self.add_overview_row(group, "Version", "SDPE_PROJECT_VERSION", f"\"{data['version']}\"", "project", "Requirement version.")
+        if data.get("updated_at"):
+            self.add_overview_row(group, "Updated At", "SDPE_PROJECT_UPDATED_AT", f"\"{data['updated_at']}\"", "project", "Last update date.")
+
+    def add_hardware_group(self, data: dict[str, Any], generator: HeaderGenerator) -> None:
+        group = self.add_group("Hardware Includes", "Hardware headers included by the generated project header.")
+        for hw in data.get("hardware", []):
+            entity_id = hw.get("entity", "")
+            if not entity_id:
+                continue
+            try:
+                entity = self.window.library.entity(entity_id)
+                schema = self.window.library.schema(entity.schema_id)
+                include_path = generator.entity_include_path(entity)
+                desc = entity.description or schema.description
+                parent = self.add_overview_row(group, entity.display_name or entity.id, "#include", f"<{include_path}>", entity.id, desc)
+                for pspec in schema.parameters:
+                    macro = f"{generator.prefix(entity, schema)}_{pspec.c_name}"
+                    self.add_overview_row(parent, pspec.name, macro, "", schema.id, pspec.description)
+            except Exception as exc:
+                self.add_overview_row(group, entity_id, "#include", "", entity_id, f"Unable to resolve hardware entity: {exc}")
+
+    def add_feature_macro_group(self, data: dict[str, Any]) -> None:
+        group = self.add_group("Selection Macros", "Enable or disable project feature macros.")
+        for item in data.get("feature_macros", []):
+            macro = item.get("macro", "")
+            if not macro:
+                continue
+            enabled = item.get("enabled", True)
+            value = str(item.get("value", ""))
+            display_value = value if enabled else f"disabled ({value})" if value else "disabled"
+            self.add_overview_row(group, macro, macro, display_value, "selection macro", item.get("description", ""))
+
+    def add_option_macro_group(self, data: dict[str, Any], generator: HeaderGenerator) -> None:
+        group = self.add_group("Option Macros", "Project macros with selectable values.")
+        for item in data.get("option_macros", []):
+            macro = item.get("macro", "")
+            if not macro:
+                continue
+            options = generator._option_macro_values(item, lambda preset: generator._resolve_project_option_preset(data, preset))
+            value = str(item.get("value", ""))
+            enabled = item.get("enabled", True)
+            display_value = value if enabled else f"disabled ({value})"
+            desc = item.get("description", "")
+            parent = self.add_overview_row(group, macro, macro, display_value, "option macro", desc)
+            if options:
+                self.add_overview_row(parent, "Options", "", ", ".join(str(option) for option in options), item.get("options_preset", ""), "Selectable values.")
+            if enabled and re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", value):
+                marker_macro = f"{macro}_{macro_name(value)}"
+                self.add_overview_row(parent, "Selected marker", marker_macro, "1", "generated marker", "Generated marker macro for the selected symbolic option.")
+
+    def add_requirement_group(self, data: dict[str, Any], generator: HeaderGenerator) -> None:
+        group = self.add_group("Requirement Bindings", "Project requirement macros resolved from manual values or hardware parameters.")
+        requirements = data.get("requirements", [])
+        by_role = {req.get("role", req.get("macro", "")): req for req in requirements}
+        grouped_roles: set[str] = set()
+        for req_group in data.get("requirement_groups", []):
+            subgroup = QTreeWidgetItem([req_group.get("name", "Requirements"), "", "", "", "Requirement group."])
+            group.addChild(subgroup)
+            for role in req_group.get("requirements", []):
+                req = by_role.get(role)
+                if req is not None:
+                    self.add_requirement_row(subgroup, req, generator)
+                    grouped_roles.add(role)
+        for req in requirements:
+            role = req.get("role", req.get("macro", ""))
+            if role not in grouped_roles:
+                self.add_requirement_row(group, req, generator)
+
+    def add_requirement_row(self, parent: QTreeWidgetItem, req: dict[str, Any], generator: HeaderGenerator) -> None:
+        macro = req.get("macro", "")
+        role = req.get("role", macro)
+        try:
+            value = generator._resolve_binding_value(req.get("binding", {}))
+        except Exception as exc:
+            value = f"<unresolved: {exc}>"
+        btype, bvalue = binding_to_cells(req.get("binding", {}))
+        source = f"{btype}: {bvalue}" if bvalue else btype
+        self.add_overview_row(parent, role, macro, value, source, req.get("description", ""))
 
     def path_for_id(self, item_id: str) -> Path:
         return self.window.project_path(item_id)
@@ -2899,37 +3057,13 @@ class BindingPage(SDPEPage):
     def collect_current_data(self) -> dict[str, Any] | None:
         if not self.current_id:
             return None
-        data = read_json(self.window.project_path(self.current_id))
-        requirements = data.get("requirements", [])
-        for row in range(min(len(requirements), self.binding_table.rowCount())):
-            requirements[row]["macro"] = item_text(self.binding_table, row, 0)
-            requirements[row]["binding"] = cells_to_binding(
-                item_text(self.binding_table, row, 1), item_text(self.binding_table, row, 2)
-            )
-            requirements[row]["description"] = item_text(self.binding_table, row, 3)
-        data["requirements"] = requirements
-        return data
+        return read_json(self.window.project_path(self.current_id))
 
     def save_current(self) -> None:
-        try:
-            path = self.window.project_path(self.current_id)
-            data = self.collect_current_data()
-            if data is None:
-                return
-            self.window.write_json(path, data)
-            self.window.reload()
-            self.refresh_list()
-            self.message("Saved", f"Bindings saved: {path}")
-        except Exception as exc:  # pragma: no cover - GUI guard.
-            self.error(str(exc))
-
-    def browse_out(self) -> None:
-        selected = QFileDialog.getExistingDirectory(self, "Select output directory", self.out_dir.text())
-        if selected:
-            self.out_dir.setText(selected)
+        self.message("Overview", "Project Overview is read-only. Edit requirements in Project Requirement.")
 
     def generator(self) -> HeaderGenerator:
-        return HeaderGenerator(self.window.library, Path(self.out_dir.text()))
+        return HeaderGenerator(self.window.library, self.window.default_output_dir)
 
     def preview_project(self) -> None:
         try:

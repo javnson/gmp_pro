@@ -127,6 +127,47 @@
         "IRIS_GPIO6"
       ],
       "description": "GPIO Option Presets"
+    },
+    "ADC_CHANNEL_INDEX": {
+      "options": [
+        "ADC_CH1",
+        "ADC_CH2",
+        "ADC_CH3",
+        "ADC_CH4",
+        "ADC_CH5",
+        "ADC_CH6",
+        "ADC_CH7",
+        "ADC_CH8",
+        "ADC_CH9",
+        "ADC_CH10",
+        "ADC_CH11",
+        "ADC_CH12"
+      ],
+      "description": "ADC Channel Index"
+    },
+    "ADC_RESULT_REG": {
+      "options": [
+        "ADC_CH1_RESULT_BASE",
+        "ADC_CH2_RESULT_BASE",
+        "ADC_CH3_RESULT_BASE",
+        "ADC_CH4_RESULT_BASE",
+        "ADC_CH5_RESULT_BASE",
+        "ADC_CH6_RESULT_BASE",
+        "ADC_CH7_RESULT_BASE",
+        "ADC_CH8_RESULT_BASE",
+        "ADC_CH9_RESULT_BASE",
+        "ADC_CH10_RESULT_BASE",
+        "ADC_CH11_RESULT_BASE",
+        "ADC_CH12_RESULT_BASE"
+      ],
+      "description": "ADC Result Register Base"
+    },
+    "EQEP_BASE": {
+      "options": [
+        "IRIS_EQEP1_BASE",
+        "IRIS_EQEP2_BASE"
+      ],
+      "description": "EQEP Base Registers"
     }
   },
   "parameter_groups": [

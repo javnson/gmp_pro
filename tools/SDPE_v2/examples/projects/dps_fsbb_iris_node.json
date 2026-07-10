@@ -135,5 +135,20 @@
       ],
       "description": ""
     }
+  ],
+  "requirement_groups": [
+    {
+      "name": "Requirements",
+      "requirements": [
+        "input_voltage_sensor_sensitivity",
+        "input_voltage_sensor_bias",
+        "inductor_current_sensitivity",
+        "inductor_current_bias",
+        "output_voltage_sensor_sensitivity",
+        "output_voltage_sensor_bias",
+        "tmcs1133_b2a_range_for_reference",
+        "manual_input_voltage_adc_offset"
+      ]
+    }
   ]
 }

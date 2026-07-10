@@ -4,7 +4,7 @@
   "description": "Typical PMSM_NT ctrl_settings-style requirement list for controller base values, motor parameters, sensor scaling, debug switches, and board peripheral aliases.\nMultiline comments here.",
   "suite": "mcs_pmsm_nt",
   "version": "0.2.0",
-  "updated_at": "2026-07-09",
+  "updated_at": "2026-07-10",
   "output_header": "sdpe_mcs_pmsm_nt_bindings.h",
   "hardware": [
     {
@@ -336,5 +336,29 @@
   },
   "global_macros": {
     "BOOSTXL_3PHGANINV_IS_DEFAULT_PARAM": ""
-  }
+  },
+  "requirement_groups": [
+    {
+      "name": "Requirements",
+      "requirements": [
+        "startup_delay",
+        "controller_frequency",
+        "pwm_cmp_max",
+        "pwm_deadband",
+        "adc_voltage_reference",
+        "mechanical_division",
+        "dc_bus_voltage",
+        "phase_voltage_base",
+        "current_base",
+        "inverter_current_sensitivity",
+        "inverter_current_bias",
+        "inverter_voltage_sensitivity",
+        "inverter_voltage_bias",
+        "motor_rs",
+        "motor_ld",
+        "motor_lq",
+        "encoder_bias"
+      ]
+    }
+  ]
 }
