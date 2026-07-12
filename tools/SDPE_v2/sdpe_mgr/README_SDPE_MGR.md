@@ -6,7 +6,8 @@ It demonstrates the intended deployment model:
 
 - the SDPE program stays in `%GMP_PRO_LOCATION%\tools\SDPE_v2`;
 - the project-local manager stores its own requirement file and batch tools;
-- generation and editing are launched through `GMP_PRO_LOCATION`.
+- generation and editing are launched through `GMP_PRO_LOCATION`;
+- library paths and generation modes are read from `%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe_settings.json`.
 
 Files:
 
@@ -28,10 +29,12 @@ sdpe_edit.bat
 Generated output:
 
 ```text
-build\
+sdpe_mgr\
+  sdpe_demo_bindings.h
   hardware_preset\
-  project\sdpe_demo_bindings.h
 ```
+
+Project-local generated headers use relative include paths.
 
 For real suite projects, deploy a local manager with:
 

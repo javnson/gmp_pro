@@ -1,0 +1,122 @@
+{
+  "id": "current_sensor",
+  "display_name": "Current Sensor",
+  "description": "Basic current sensor model used to scale ADC voltage into current.",
+  "category": "Current Sensor",
+  "tags": [
+    "sensor",
+    "current_sensor"
+  ],
+  "output_subdir": "current_sensor",
+  "parameters": [
+    {
+      "name": "chip",
+      "c_name": "CHIP",
+      "unit": "",
+      "required": false,
+      "value_format": "\"{}\"",
+      "description": "Main sensing IC or technology name."
+    },
+    {
+      "name": "sensor_type",
+      "c_name": "SENSOR_TYPE",
+      "unit": "",
+      "required": false,
+      "value_format": "\"{}\"",
+      "description": "Current sensing technology, such as Hall, shunt, or fluxgate."
+    },
+    {
+      "name": "measure range",
+      "c_name": "RANGE_A",
+      "unit": "A",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Nominal measurable current range."
+    },
+    {
+      "name": "min output",
+      "c_name": "OUTPUT_MIN_V",
+      "unit": "V",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Minimum output voltage.",
+      "default": 0.0
+    },
+    {
+      "name": "max output",
+      "c_name": "OUTPUT_MAX_V",
+      "unit": "V",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Maximum output voltage.",
+      "default": 3.3
+    },
+    {
+      "name": "bias",
+      "c_name": "BIAS_V",
+      "unit": "V",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Zero-current output bias.",
+      "default": 1.65
+    },
+    {
+      "name": "sensitivity",
+      "c_name": "SENSITIVITY_MV_PER_A",
+      "unit": "mV/A",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Current sensor sensitivity."
+    },
+    {
+      "name": "bandwidth_hz",
+      "c_name": "BANDWIDTH_HZ",
+      "unit": "Hz",
+      "required": false,
+      "value_format": "({}f)",
+      "description": "Typical small-signal bandwidth."
+    },
+    {
+      "name": "internal_resistance_ohm",
+      "c_name": "INTERNAL_RESISTANCE_OHM",
+      "unit": "ohm",
+      "required": false,
+      "value_format": "({}f)",
+      "description": "Sensor internal series resistance.",
+      "default": 0.0
+    }
+  ],
+  "derived_macros": [
+    {
+      "name": "SENSITIVITY_V_PER_A",
+      "unit": "V/A",
+      "description": "Current sensor sensitivity converted to V/A.",
+      "expr": "({PREFIX}_SENSITIVITY_MV_PER_A / 1000.0f)"
+    },
+    {
+      "name": "MAX_CURRENT_FROM_BIAS_A",
+      "unit": "A",
+      "description": "Positive current range implied by bias and sensitivity.",
+      "expr": "({PREFIX}_BIAS_V / {PREFIX}_SENSITIVITY_V_PER_A)"
+    }
+  ],
+  "exports": {
+    "sensitivity": {
+      "macro": "{PREFIX}_SENSITIVITY_V_PER_A",
+      "unit": "V/A",
+      "description": "ADC scaling sensitivity."
+    },
+    "bias": {
+      "macro": "{PREFIX}_BIAS_V",
+      "unit": "V",
+      "description": "ADC zero-current bias."
+    },
+    "range": {
+      "macro": "{PREFIX}_RANGE_A",
+      "unit": "A",
+      "description": "Nominal sensor current range."
+    }
+  },
+  "header_prefix": "",
+  "components": {}
+}

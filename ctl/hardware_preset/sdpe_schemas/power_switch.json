@@ -1,0 +1,68 @@
+{
+  "id": "power_switch",
+  "display_name": "Power Semiconductor Device",
+  "description": "Power switch device used by bridge modules.",
+  "category": "Power Device",
+  "tags": [
+    "power_device",
+    "switch"
+  ],
+  "output_subdir": "power_switch",
+  "parameters": [
+    {
+      "name": "part_number",
+      "c_name": "PART_NUMBER",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "Power device part number."
+    },
+    {
+      "name": "device_type",
+      "c_name": "DEVICE_TYPE",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "MOSFET, IGBT, GaN, SiC, etc."
+    },
+    {
+      "name": "voltage_rating_v",
+      "c_name": "VOLTAGE_RATING_V",
+      "unit": "V",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Drain-source or collector-emitter voltage rating."
+    },
+    {
+      "name": "current_rating_a",
+      "c_name": "CURRENT_RATING_A",
+      "unit": "A",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Current rating."
+    },
+    {
+      "name": "rdson_ohm",
+      "c_name": "RDSON_OHM",
+      "unit": "ohm",
+      "required": false,
+      "value_format": "({}f)",
+      "description": "On resistance.",
+      "default": 0.0
+    }
+  ],
+  "exports": {
+    "voltage_rating": {
+      "macro": "{PREFIX}_VOLTAGE_RATING_V",
+      "unit": "V",
+      "description": "Voltage rating."
+    },
+    "current_rating": {
+      "macro": "{PREFIX}_CURRENT_RATING_A",
+      "unit": "A",
+      "description": "Current rating."
+    }
+  },
+  "header_prefix": "",
+  "components": {}
+}

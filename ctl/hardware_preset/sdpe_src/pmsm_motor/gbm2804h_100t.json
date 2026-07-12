@@ -1,0 +1,36 @@
+{
+  "id": "gbm2804h_100t",
+  "schema": "PMSM",
+  "display_name": "GBM2804H-100T Brushless Gimbal Motor",
+  "vendor": "",
+  "datasheet_url": "",
+  "document_url": "ctl/component/hardware_preset/pmsm_motor/GBM2804H_100T.h",
+  "macro_prefix": "GBM2804H_100T",
+  "tags": [
+    "motor",
+    "pmsm",
+    "gimbal"
+  ],
+  "parameters": {
+    "motor_name": "GBM2804H-100T",
+    "rs": "((4.7f))",
+    "ld": "((0.96e-3f))",
+    "lq": "((0.96e-3f))",
+    "flux": {
+      "expr": "((MOTOR_PARAM_CALCULATE_FLUX_BY_KV({KV}, {POLE_PAIRS})))"
+    },
+    "pole_pairs": "((7))",
+    "inertia": "((497.0f))",
+    "friction": "((755.0f))",
+    "kv": "((206.2f))",
+    "emf": "((4.85f))",
+    "rated_voltage": "((10.0f))",
+    "rated_current": "((4.5f))",
+    "no_load_current": "((0.01f))",
+    "rated_frequency": "((250.0f))",
+    "max_speed": "((2180.0f))",
+    "max_torque": "((0.981f))",
+    "max_dc_voltage": "((14.2f))",
+    "max_ph_current": "((5.0f))"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "id": "sm060r20b30mnad",
+  "schema": "PMSM",
+  "display_name": "SM060R20B30MNAD Brushless Gimbal Motor",
+  "vendor": "",
+  "datasheet_url": "",
+  "document_url": "ctl/component/hardware_preset/pmsm_motor/SM060R20B30MNAD.h",
+  "macro_prefix": "SM060R20B30MNAD",
+  "tags": [
+    "motor",
+    "pmsm",
+    "gimbal"
+  ],
+  "parameters": {
+    "motor_name": "SM060R20B30MNAD",
+    "rs": "((0.165f))",
+    "ld": "((0.45e-3f))",
+    "lq": "((0.45e-3f))",
+    "flux": {
+      "expr": "((MOTOR_PARAM_CALCULATE_FLUX_BY_KV({KV}, {POLE_PAIRS})))"
+    },
+    "pole_pairs": "((4))",
+    "inertia": "((497.0f))",
+    "friction": "((755.0f))",
+    "kv": "((206.2f))",
+    "emf": "((4.85f))",
+    "rated_voltage": "((36.0f))",
+    "rated_current": "((7.5f))",
+    "no_load_current": "((0.01f))",
+    "rated_frequency": "((200.0f))",
+    "max_speed": "((3000.0f))",
+    "max_torque": "((0.981f))",
+    "max_dc_voltage": "((14.2f))",
+    "max_ph_current": "((5.0f))"
+  }
+}

@@ -179,7 +179,8 @@ gmp_task_status_t tsk_startup(gmp_task_t* tsk);
 // All tasks must be non blocking tasks
 gmp_task_t tasks[] = {
     // name,          task,                period(ms),  init_phase, is_enabled, pParam
-    {"blink_led", tsk_blink, 1000, 0, 1, NULL},    {"dl_online", tsk_dl_debug_device, 2, 0, 1, NULL},
+    {"blink_led", tsk_blink, 1000, 0, 1, NULL},
+    {"dl_online", tsk_dl_debug_device, 2, 0, 1, NULL},
     {"monitor_data", tsk_monitor, 5, 0, 1, NULL},  // 5ms -> 200Hz refresh rate
     {"ctl_mainloop", tsk_ctl_main, 1, 0, 1, NULL}, // 1ms state machine tick
     {"slow_protect", tsk_protect, 10, 0, 1, NULL}, // 10ms thermal/RMS protection

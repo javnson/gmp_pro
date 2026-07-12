@@ -1,0 +1,40 @@
+{
+  "id": "hbl48zl400330k",
+  "schema": "PMSM",
+  "display_name": "HBL48ZL400330K Brushless DC Motor",
+  "vendor": "",
+  "datasheet_url": "",
+  "document_url": "ctl/component/hardware_preset/pmsm_motor/HBL48ZL400330K.h",
+  "macro_prefix": "HBL48ZL400330K",
+  "tags": [
+    "motor",
+    "pmsm",
+    "bldc"
+  ],
+  "parameters": {
+    "motor_name": "HBL48ZL400330K",
+    "encoder_type": {
+      "literal": "QEP_ENCODER"
+    },
+    "encoder_line_number": 2500,
+    "rs": "((0.4 / 2.0))",
+    "ld": "((0.6e-3 / 2.0))",
+    "lq": "((0.6e-3 / 2.0))",
+    "flux": {
+      "expr": "((MOTOR_PARAM_CALCULATE_FLUX_BY_EMF({EMF})))"
+    },
+    "pole_pairs": "((8))",
+    "inertia": "((0.45))",
+    "friction": "((0.55))",
+    "emf": "((10.5))",
+    "rated_voltage": "((48.0))",
+    "rated_speed": "((3000))",
+    "rated_current": "((11.0))",
+    "rated_torque": "((1.27))",
+    "no_load_current": "((0.25))",
+    "max_speed": "((3500))",
+    "max_torque": "((3.81))",
+    "max_dc_voltage": "((54.0))",
+    "max_ph_current": "((33.0))"
+  }
+}

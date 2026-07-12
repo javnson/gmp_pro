@@ -8,9 +8,9 @@
 #ifndef _PROJECT_SDPE_PGS_SINV_RC_IRIS_BINDINGS_H_
 #define _PROJECT_SDPE_PGS_SINV_RC_IRIS_BINDINGS_H_
 
-#include <ctl/component/hardware_preset/grid_LC_filter/gmp_harmonia_3ph_lc_filter.h>
-#include <ctl/component/hardware_preset/half_bridge/gmp_lvfb_150_2ph_v2.h>
-#include <ctl/component/hardware_preset/mcu_board/iris_f280039c_node.h>
+#include "hardware_preset/grid_lc_filter/gmp_harmonia_3ph_lc_filter.h"
+#include "hardware_preset/half_bridge/gmp_lvfb_150_2ph_v2.h"
+#include "hardware_preset/mcu_board/iris_f280039c_node.h"
 
 #ifdef __cplusplus
 extern "C"

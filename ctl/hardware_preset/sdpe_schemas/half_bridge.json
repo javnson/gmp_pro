@@ -1,0 +1,221 @@
+{
+  "id": "half_bridge",
+  "display_name": "Half Bridge Module",
+  "description": "Composable half-bridge module containing power switches and sensors.",
+  "category": "PE Board",
+  "tags": [
+    "power_stage",
+    "half_bridge"
+  ],
+  "output_subdir": "half_bridge",
+  "components": {
+    "power_device": {
+      "entity": "bsc093n15ns5"
+    },
+    "current_sensor": {
+      "entity": "tmcs1133_b5a"
+    },
+    "voltage_sensor": {
+      "entity": "lvfb_voltage_divider_150v"
+    }
+  },
+  "parameters": [
+    {
+      "name": "board_name",
+      "c_name": "BOARD_NAME",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "Board or module name."
+    },
+    {
+      "name": "gate_driver",
+      "c_name": "GATE_DRIVER",
+      "unit": "",
+      "required": false,
+      "value_format": "\"{}\"",
+      "description": "Integrated gate driver part number."
+    },
+    {
+      "name": "mosfet",
+      "c_name": "MOSFET",
+      "unit": "",
+      "required": false,
+      "value_format": "\"{}\"",
+      "description": "Power MOSFET part number."
+    },
+    {
+      "name": "current_sensor_name",
+      "c_name": "CURRENT_SENSOR_NAME",
+      "unit": "",
+      "required": false,
+      "value_format": "\"{}\"",
+      "description": "On-board current sensing device."
+    },
+    {
+      "name": "voltage_sensor_name",
+      "c_name": "VOLTAGE_SENSOR_NAME",
+      "unit": "",
+      "required": false,
+      "value_format": "\"{}\"",
+      "description": "On-board voltage sensing device."
+    },
+    {
+      "name": "phase_count",
+      "c_name": "PHASE_COUNT",
+      "unit": "",
+      "required": false,
+      "value_format": "({}U)",
+      "description": "Number of half-bridge phases represented by this module.",
+      "default": 1
+    },
+    {
+      "name": "measured_current_range_a",
+      "c_name": "MEASURED_CURRENT_RANGE_A",
+      "unit": "A",
+      "required": false,
+      "value_format": "raw",
+      "description": "Current measurement range exported by the current sensor sub component.",
+      "default": {
+        "ref": "current_sensor.range"
+      }
+    },
+    {
+      "name": "vbus_max_v",
+      "c_name": "VBUS_MAX_V",
+      "unit": "V",
+      "required": false,
+      "value_format": "raw",
+      "description": "Maximum allowable DC bus voltage."
+    },
+    {
+      "name": "current_max_peak_a",
+      "c_name": "CURRENT_MAX_PEAK_A",
+      "unit": "A",
+      "required": false,
+      "value_format": "raw",
+      "description": "Maximum instantaneous peak phase current."
+    },
+    {
+      "name": "current_max_rms_a",
+      "c_name": "CURRENT_MAX_RMS_A",
+      "unit": "A",
+      "required": false,
+      "value_format": "raw",
+      "description": "Maximum continuous RMS phase current."
+    },
+    {
+      "name": "deadtime_ns",
+      "c_name": "DEADTIME_NS",
+      "unit": "ns",
+      "required": false,
+      "value_format": "({}f)",
+      "description": "Recommended hardware deadtime.",
+      "default": 0.0
+    },
+    {
+      "name": "current_bandwidth_hz",
+      "c_name": "CURRENT_BW_HZ",
+      "unit": "Hz",
+      "required": false,
+      "value_format": "raw",
+      "description": "Current sensing signal bandwidth."
+    },
+    {
+      "name": "current_bias_v",
+      "c_name": "CURRENT_BIAS_V",
+      "unit": "V",
+      "required": false,
+      "value_format": "raw",
+      "description": "Current sensor ADC bias voltage."
+    },
+    {
+      "name": "current_sensitivity",
+      "c_name": "CURRENT_SENSITIVITY",
+      "unit": "V/A",
+      "required": false,
+      "value_format": "raw",
+      "description": "Configured current sensitivity."
+    },
+    {
+      "name": "voltage_base_v",
+      "c_name": "VOLTAGE_BASE_V",
+      "unit": "V",
+      "required": false,
+      "value_format": "raw",
+      "description": "ADC reference scale voltage."
+    },
+    {
+      "name": "voltage_bias_v",
+      "c_name": "VOLTAGE_BIAS_V",
+      "unit": "V",
+      "required": false,
+      "value_format": "raw",
+      "description": "Voltage sensing ADC bias voltage."
+    },
+    {
+      "name": "voltage_bandwidth_hz",
+      "c_name": "VOLTAGE_BW_HZ",
+      "unit": "Hz",
+      "required": false,
+      "value_format": "raw",
+      "description": "Voltage sensing bandwidth."
+    },
+    {
+      "name": "voltage_divider_r_low",
+      "c_name": "VOLTAGE_R_LOW_OHM",
+      "unit": "ohm",
+      "required": false,
+      "value_format": "raw",
+      "description": "Default low-side voltage divider resistance."
+    },
+    {
+      "name": "voltage_divider_r_high",
+      "c_name": "VOLTAGE_R_HIGH_OHM",
+      "unit": "ohm",
+      "required": false,
+      "value_format": "raw",
+      "description": "Default high-side voltage divider resistance."
+    },
+    {
+      "name": "voltage_sensitivity",
+      "c_name": "VOLTAGE_SENSITIVITY",
+      "unit": "V/V",
+      "required": false,
+      "value_format": "raw",
+      "description": "Configured voltage sensing gain."
+    },
+    {
+      "name": "voltage_max",
+      "c_name": "VOLTAGE_MAX",
+      "unit": "V",
+      "required": false,
+      "value_format": "raw",
+      "description": "Configured maximum measurable voltage."
+    },
+    {
+      "name": "bus_capacitance_f",
+      "c_name": "BUS_CAPACITANCE_F",
+      "unit": "F",
+      "required": false,
+      "value_format": "({}f)",
+      "description": "Optional local DC bus capacitance.",
+      "default": 0.0
+    }
+  ],
+  "derived_macros": [
+    {
+      "name": "HAS_LOCAL_BUS_CAP",
+      "description": "Whether this module declares a local bus capacitor.",
+      "expr": "({PREFIX}_BUS_CAPACITANCE_F > 0.0f)"
+    }
+  ],
+  "exports": {
+    "measured_current_range": {
+      "macro": "{PREFIX}_MEASURED_CURRENT_RANGE_A",
+      "unit": "A",
+      "description": "Current measurement range exported by this half bridge."
+    }
+  },
+  "header_prefix": ""
+}

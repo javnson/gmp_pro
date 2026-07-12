@@ -13,13 +13,13 @@ echo =======================================================
 echo [SDPE] Validating demo SDPE project...
 echo =======================================================
 
-python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --library "%SDPE_LIBRARY%" validate
+python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --settings "%SDPE_SETTINGS%" validate
 if errorlevel 1 (
     pause
     exit /b %errorlevel%
 )
 
-python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --library "%SDPE_LIBRARY%" inspect-project "%SDPE_REQUIREMENT%"
+python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --settings "%SDPE_SETTINGS%" inspect-project "%SDPE_REQUIREMENT%"
 if errorlevel 1 (
     pause
     exit /b %errorlevel%

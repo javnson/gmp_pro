@@ -1,0 +1,59 @@
+{
+  "id": "acm_4p24v",
+  "schema": "ACM",
+  "display_name": "ACM 4P 24V Induction Motor",
+  "vendor": "",
+  "datasheet_url": "",
+  "document_url": "ctl/component/hardware_preset/acm_motor/ACM_4P24V.h",
+  "macro_prefix": "ACM_4P24V",
+  "tags": [
+    "motor",
+    "acm",
+    "induction_motor"
+  ],
+  "parameters": {
+    "Motor Name": "ACM 4P 24V",
+    "Encoder Type": {
+      "literal": "QEP_INC_ENCODER"
+    },
+    "Stator Resistance": 0.329,
+    "Stator Leakage Inductance": 0.0003,
+    "Rotor Resistance": 0.44,
+    "Rotor Leakage Inductance": 0.0005,
+    "Magnetizing Inductance": 0.0012,
+    "Pole Pairs": 2,
+    "Inertia": 0.001,
+    "Friction": 1e-05,
+    "Rated Voltage": 24.0,
+    "Rated Current": 8.5,
+    "No-load Current": 0.5,
+    "Rated Frequency": 50.0,
+    "Max Speed": 1450,
+    "Max Torque": 0.981,
+    "Max DC Voltage": 36.0,
+    "Max Phase Current": 10.0,
+    "motor_name": "ACM 4P 24V",
+    "encoder_type": {
+      "literal": "QEP_INC_ENCODER"
+    },
+    "rs": 0.329,
+    "l1s": 0.0003,
+    "rr": 0.44,
+    "l1r": 0.0005,
+    "lm": 0.0012,
+    "pole_pairs": 2,
+    "inertia": 0.001,
+    "friction": 1e-05,
+    "rated_voltage": 24.0,
+    "rated_current": 8.5,
+    "no_load_current": 0.5,
+    "rated_frequency": 50.0,
+    "max_speed": 1450,
+    "max_torque": 0.981,
+    "max_dc_voltage": 36.0,
+    "max_ph_current": 10.0
+  },
+  "description": "",
+  "output_subdir": "",
+  "components": {}
+}

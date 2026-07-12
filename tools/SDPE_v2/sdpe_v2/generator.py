@@ -20,13 +20,30 @@ class GeneratedFile:
     changed: bool
 
 
+def folder_name(value: str) -> str:
+    """Normalize generated folder names to lowercase snake_case."""
+
+    text = re.sub(r"[^A-Za-z0-9]+", "_", str(value).strip())
+    text = re.sub(r"_+", "_", text).strip("_").lower()
+    return text or "misc"
+
+
 class HeaderGenerator:
     """Generate hardware entity and project binding headers."""
 
-    def __init__(self, library: SDPELibrary, out_dir: Path, include_prefix: str = "ctl/component"):
+    def __init__(
+        self,
+        library: SDPELibrary,
+        out_dir: Path,
+        include_prefix: str = "ctl/component",
+        include_mode: str = "prefixed",
+        project_subdir: str = "project",
+    ):
         self.library = library
         self.out_dir = out_dir
         self.include_prefix = include_prefix.strip("/")
+        self.include_mode = include_mode
+        self.project_subdir = project_subdir.strip("/\\")
 
     def generate_entity_tree(self, entity_id: str) -> list[GeneratedFile]:
         """Generate headers for an entity and every referenced non-inline child."""
@@ -64,17 +81,29 @@ class HeaderGenerator:
         """Return the output header path for an entity."""
 
         schema = self.library.schema(entity.schema_id)
-        subdir = entity.output_subdir or schema.output_subdir or schema.id
+        subdir = folder_name(entity.output_subdir or schema.output_subdir or schema.category or schema.id)
         return self.out_dir / "hardware_preset" / subdir / f"{entity.id}.h"
 
-    def entity_include_path(self, entity: HardwareEntity) -> str:
+    def entity_include_path(self, entity: HardwareEntity, from_path: Path | None = None) -> str:
         """Return generated include path relative to the output root."""
 
         path = self.entity_header_path(entity)
+        if self.include_mode == "relative" and from_path is not None:
+            return path.relative_to(from_path.parent, walk_up=True).as_posix()
         rel = path.relative_to(self.out_dir).as_posix()
         if self.include_prefix:
             return f"{self.include_prefix}/{rel}"
         return rel
+
+    def include_directive(self, include_path: str) -> str:
+        """Return an include directive with the configured delimiter style."""
+
+        text = include_path.strip()
+        if text.startswith("<") or text.startswith('"'):
+            return f"#include {text}"
+        if self.include_mode == "relative":
+            return f'#include "{text}"'
+        return f"#include <{text}>"
 
     def render_entity_header(self, entity: HardwareEntity) -> str:
         """Render a hardware entity header."""
@@ -83,7 +112,7 @@ class HeaderGenerator:
         rel = self.entity_header_path(entity).relative_to(self.out_dir).as_posix()
         guard = header_guard(rel)
         prefix = self.prefix(entity, schema)
-        includes = self._entity_includes(entity, schema)
+        includes = self._entity_includes(entity, schema, self.entity_header_path(entity))
 
         lines: list[str] = []
         lines.extend(
@@ -100,7 +129,7 @@ class HeaderGenerator:
             ]
         )
         for inc in includes:
-            lines.append(f"#include <{inc}>")
+            lines.append(self.include_directive(inc))
         if includes:
             lines.append("")
         self._append_code_section(lines, schema, entity, "after_includes", "User code after includes", True)
@@ -168,11 +197,11 @@ class HeaderGenerator:
         )
         return "\n".join(lines)
 
-    def _entity_includes(self, entity: HardwareEntity, schema: HardwareSchema) -> list[str]:
+    def _entity_includes(self, entity: HardwareEntity, schema: HardwareSchema, from_path: Path) -> list[str]:
         includes = [*schema.includes, *entity.includes]
         for comp in entity.components.values():
             if not comp.inline:
-                includes.append(self.entity_include_path(comp.entity))
+                includes.append(self.entity_include_path(comp.entity, from_path))
         return sorted(dict.fromkeys(includes))
 
     def _append_code_section(
@@ -447,11 +476,18 @@ class HeaderGenerator:
                     seen.add(item.path)
                     generated.append(item)
 
-        header_name = data.get("output_header", "sdpe_project_bindings.h")
-        out_path = self.out_dir / "project" / header_name
+        out_path = self.project_header_path(data)
         changed = write_if_changed(out_path, self.render_project_header(data))
         generated.append(GeneratedFile(out_path, changed))
         return generated
+
+    def project_header_path(self, data: dict[str, Any]) -> Path:
+        """Return the generated project header path."""
+
+        header_name = data.get("output_header", "sdpe_project_bindings.h")
+        if self.project_subdir:
+            return self.out_dir / self.project_subdir / header_name
+        return self.out_dir / header_name
 
     def render_project_header(self, data: dict[str, Any]) -> str:
         """Render project requirement binding header."""
@@ -459,7 +495,8 @@ class HeaderGenerator:
         project_id = data.get("id", "sdpe_project")
         guard = header_guard(f"project/{data.get('output_header', 'sdpe_project_bindings.h')}")
         hardware_ids = self._project_entity_ids(data)
-        includes = [self.entity_include_path(self.library.entity(entity_id)) for entity_id in hardware_ids]
+        out_path = self.project_header_path(data)
+        includes = [self.entity_include_path(self.library.entity(entity_id), out_path) for entity_id in hardware_ids]
 
         lines = [
             "/**",
@@ -472,7 +509,7 @@ class HeaderGenerator:
                 lines.append(f" * {tag}{part}")
         lines.extend([" */", "", f"#ifndef {guard}", f"#define {guard}", ""])
         for inc in sorted(dict.fromkeys(includes)):
-            lines.append(f"#include <{inc}>")
+            lines.append(self.include_directive(inc))
         if includes:
             lines.append("")
 

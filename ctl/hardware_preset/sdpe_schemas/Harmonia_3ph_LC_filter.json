@@ -1,0 +1,275 @@
+{
+  "id": "Harmonia_3ph_LC_filter",
+  "display_name": "Three-phase LC Filter",
+  "description": "Three-phase grid LC filter board parameter template.",
+  "category": "Power Filter",
+  "tags": [
+    "filter",
+    "lc_filter",
+    "grid"
+  ],
+  "output_subdir": "grid_LC_filter",
+  "components": {
+    "phase_current_sensor": {
+      "entity": "tle4971a025"
+    }
+  },
+  "parameters": [
+    {
+      "name": "Inductance",
+      "c_name": "INDUCTANCE_H",
+      "unit": "H",
+      "required": false,
+      "value_format": "{}",
+      "description": "Main filter inductance."
+    },
+    {
+      "name": "Capacitance",
+      "c_name": "CAPACITANCE_F",
+      "unit": "F",
+      "required": false,
+      "value_format": "{}",
+      "description": "Main filter capacitance."
+    },
+    {
+      "name": "Board Name",
+      "c_name": "BOARD_NAME",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "Board or module name."
+    },
+    {
+      "name": "VBUS Max",
+      "c_name": "VBUS_MAX_V",
+      "unit": "V",
+      "required": false,
+      "value_format": "{}",
+      "description": "Maximum DC bus voltage."
+    },
+    {
+      "name": "VBUS Min",
+      "c_name": "VBUS_MIN_V",
+      "unit": "V",
+      "required": false,
+      "value_format": "{}",
+      "description": "Minimum DC bus voltage."
+    },
+    {
+      "name": "Current Max RMS",
+      "c_name": "CURRENT_MAX_RMS_A",
+      "unit": "A",
+      "required": true,
+      "value_format": "raw",
+      "description": "Maximum continuous RMS current."
+    },
+    {
+      "name": "Current Max Peak",
+      "c_name": "CURRENT_MAX_PEAK_A",
+      "unit": "A",
+      "required": false,
+      "value_format": "raw",
+      "description": "Maximum peak current."
+    },
+    {
+      "name": "Temperature Max",
+      "c_name": "TEMP_MAX_C",
+      "unit": "degC",
+      "required": false,
+      "value_format": "raw",
+      "description": "Recommended maximum PCB operating temperature."
+    },
+    {
+      "name": "Phase Current Sense Type",
+      "c_name": "PH_CURRENT_SENSE_TYPE",
+      "unit": "",
+      "required": false,
+      "value_format": "raw",
+      "description": "Phase current sensor type enum."
+    },
+    {
+      "name": "Phase Current Sense Topology",
+      "c_name": "PH_CURRENT_SENSE_TOPOLOGY",
+      "unit": "",
+      "required": false,
+      "value_format": "raw",
+      "description": "Phase current sensing topology enum."
+    },
+    {
+      "name": "Phase Voltage Sense Type",
+      "c_name": "PH_VOLTAGE_SENSE_TYPE",
+      "unit": "",
+      "required": false,
+      "value_format": "raw",
+      "description": "Phase voltage sensing type enum."
+    },
+    {
+      "name": "Phase Current Pole",
+      "c_name": "PH_CURRENT_SENSE_POLE_HZ",
+      "unit": "Hz",
+      "required": false,
+      "value_format": "raw",
+      "description": "Phase current sensor bandwidth."
+    },
+    {
+      "name": "Voltage Divider Top Resistance",
+      "c_name": "VS_R_TOP_TOTAL_OHM",
+      "unit": "ohm",
+      "required": false,
+      "value_format": "raw",
+      "description": "Total high-side voltage divider resistance."
+    },
+    {
+      "name": "Voltage Divider Bottom Resistance",
+      "c_name": "VS_R_BOT_OHM",
+      "unit": "ohm",
+      "required": false,
+      "value_format": "raw",
+      "description": "Bottom voltage divider resistance."
+    },
+    {
+      "name": "Voltage Isolation Gain",
+      "c_name": "VS_ISO_GAIN_V_V",
+      "unit": "V/V",
+      "required": false,
+      "value_format": "raw",
+      "description": "Isolation amplifier voltage gain."
+    },
+    {
+      "name": "Voltage OPAMP Feedback Resistance",
+      "c_name": "VS_OPAMP_R_FB_OHM",
+      "unit": "ohm",
+      "required": false,
+      "value_format": "raw",
+      "description": "Voltage sensing op-amp feedback resistor."
+    },
+    {
+      "name": "Voltage OPAMP Input Resistance",
+      "c_name": "VS_OPAMP_R_IN_OHM",
+      "unit": "ohm",
+      "required": false,
+      "value_format": "raw",
+      "description": "Voltage sensing op-amp input resistor."
+    },
+    {
+      "name": "Phase Voltage Sense Bias",
+      "c_name": "PH_VOLTAGE_SENSE_BIAS_V",
+      "unit": "V",
+      "required": false,
+      "value_format": "raw",
+      "description": "ADC bias for phase voltage sensing."
+    },
+    {
+      "name": "Phase Voltage Sense Pole",
+      "c_name": "PH_VOLTAGE_SENSE_POLE_HZ",
+      "unit": "Hz",
+      "required": false,
+      "value_format": "raw",
+      "description": "Approximate phase voltage sense bandwidth."
+    },
+    {
+      "name": "Voltage Sensor Model",
+      "c_name": "VOLTAGE_SENSOR_MODEL",
+      "unit": "",
+      "required": false,
+      "value_format": "{}",
+      "description": "Phase voltage sensor model."
+    },
+    {
+      "name": "Phase Voltage Sense Gain",
+      "c_name": "PH_VOLTAGE_SENSE_GAIN",
+      "unit": "V/V",
+      "required": false,
+      "value_format": "{}",
+      "description": "Calculated phase voltage sense gain."
+    },
+    {
+      "name": "Current Sensor Model",
+      "c_name": "CURRENT_SENSOR_MODEL",
+      "unit": "",
+      "required": false,
+      "value_format": "{}",
+      "description": "Phase current sensor model."
+    },
+    {
+      "name": "Phase Current Sensitivity",
+      "c_name": "PH_CURRENT_SENSITIVITY_MV_A",
+      "unit": "mV/A",
+      "required": false,
+      "value_format": "{}",
+      "description": "Phase current sensor sensitivity."
+    },
+    {
+      "name": "Phase Current Bias",
+      "c_name": "PH_CURRENT_ZERO_BIAS_V",
+      "unit": "V",
+      "required": false,
+      "value_format": "{}",
+      "description": "Zero-current output bias."
+    }
+  ],
+  "exports": {
+    "inductance": {
+      "macro": "{PREFIX}_INDUCTANCE_H",
+      "unit": "H",
+      "description": "Filter inductance."
+    },
+    "capacitance": {
+      "macro": "{PREFIX}_CAPACITANCE_F",
+      "unit": "F",
+      "description": "Filter capacitance."
+    },
+    "current_sensitivity": {
+      "macro": "{PREFIX}_PH_CURRENT_SENSITIVITY_MV_A",
+      "unit": "mV/A",
+      "description": "Phase current sensing sensitivity."
+    },
+    "voltage_gain": {
+      "macro": "{PREFIX}_PH_VOLTAGE_SENSE_GAIN",
+      "unit": "V/V",
+      "description": "Phase voltage sensing gain."
+    }
+  },
+  "header_prefix": "",
+  "parameter_groups": [
+    {
+      "name": "Parameters",
+      "parameters": [
+        "Inductance",
+        "Capacitance",
+        "Board Name",
+        "VBUS Max",
+        "VBUS Min",
+        "Current Max RMS",
+        "Current Max Peak",
+        "Temperature Max",
+        "Phase Current Sense Type",
+        "Phase Current Sense Topology",
+        "Phase Voltage Sense Type",
+        "Phase Current Pole",
+        "Voltage Divider Top Resistance",
+        "Voltage Divider Bottom Resistance",
+        "Voltage Isolation Gain",
+        "Voltage OPAMP Feedback Resistance",
+        "Voltage OPAMP Input Resistance",
+        "Phase Voltage Sense Bias",
+        "Phase Voltage Sense Pole"
+      ]
+    },
+    {
+      "name": "Voltage Measurement",
+      "parameters": [
+        "Voltage Sensor Model",
+        "Phase Voltage Sense Gain"
+      ]
+    },
+    {
+      "name": "Current Measurement",
+      "parameters": [
+        "Current Sensor Model",
+        "Phase Current Sensitivity",
+        "Phase Current Bias"
+      ]
+    }
+  ]
+}

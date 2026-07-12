@@ -1,0 +1,12 @@
+{
+  "id": "Passive_Inductor",
+  "display_name": "Inductor",
+  "description": "",
+  "category": "Passive Element",
+  "tags": [],
+  "output_subdir": "Inductor",
+  "parameters": [],
+  "components": {},
+  "exports": {},
+  "header_prefix": ""
+}

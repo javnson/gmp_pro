@@ -1,0 +1,54 @@
+{
+  "id": "gmp_lvfb_150_2ph_v2",
+  "schema": "half_bridge",
+  "display_name": "GMP LVFB 150V 2-Phase V2 Inverter Board",
+  "vendor": "GMP",
+  "datasheet_url": "",
+  "document_url": "ctl/component/hardware_preset/inverter_HB/GMP_LVFB_150_2ph_v2.h",
+  "macro_prefix": "GMP_LVFB",
+  "tags": [
+    "power_stage",
+    "half_bridge",
+    "lvfb",
+    "two_phase"
+  ],
+  "components": {
+    "power_device": {
+      "entity": "bsc093n15ns5"
+    },
+    "current_sensor": {
+      "entity": "tmcs1133_b5a"
+    },
+    "voltage_sensor": {
+      "entity": "lvfb_voltage_divider_150v"
+    }
+  },
+  "parameters": {
+    "board_name": "GMP LVFB 2ph V6.1",
+    "gate_driver": "UCC21520DWR",
+    "mosfet": "BSC093N15NS5",
+    "current_sensor_name": "TMCS1133B5A",
+    "voltage_sensor_name": "AMC1311BDWVR",
+    "phase_count": 2,
+    "measured_current_range_a": {
+      "ref": "current_sensor.range"
+    },
+    "vbus_max_v": "(120.0f)",
+    "current_max_peak_a": "(55.0f)",
+    "current_max_rms_a": "(35.0f)",
+    "deadtime_ns": 523.0,
+    "current_bandwidth_hz": "(300.0e3f)",
+    "current_bias_v": "(1.65f)",
+    "current_sensitivity": {
+      "ref": "current_sensor.sensitivity"
+    },
+    "voltage_base_v": "(3.3f)",
+    "voltage_bias_v": "(0.0f)",
+    "voltage_bandwidth_hz": "(114.47e3f)",
+    "voltage_divider_r_low": "((15e3))",
+    "voltage_divider_r_high": "((300e3))",
+    "voltage_sensitivity": "((15e3) / ((15e3) + ((300e3) * 3)) * 1.65f)",
+    "voltage_max": "(3.3f / ((15e3) / ((15e3) + ((300e3) * 3)) * 1.65f))",
+    "bus_capacitance_f": 0.0
+  }
+}

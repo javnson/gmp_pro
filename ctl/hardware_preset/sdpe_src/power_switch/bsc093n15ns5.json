@@ -1,0 +1,24 @@
+{
+  "id": "bsc093n15ns5",
+  "schema": "power_switch",
+  "display_name": "BSC093N15NS5",
+  "vendor": "Infineon",
+  "datasheet_url": "https://www.infineon.com/cms/en/product/power/mosfet/n-channel/bsc093n15ns5/",
+  "document_url": "",
+  "macro_prefix": "BSC093N15NS5",
+  "tags": [
+    "power_device",
+    "mosfet",
+    "infineon"
+  ],
+  "parameters": {
+    "part_number": "BSC093N15NS5",
+    "device_type": "MOSFET",
+    "voltage_rating_v": 150.0,
+    "current_rating_a": 55.0,
+    "rdson_ohm": 0.0093
+  },
+  "description": "",
+  "output_subdir": "",
+  "components": {}
+}

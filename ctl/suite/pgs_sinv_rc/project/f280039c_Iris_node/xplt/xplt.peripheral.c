@@ -27,7 +27,7 @@ adc_channel_t adc_i_ac;
 adc_channel_t adc_v_bus;
 
 // dlog DSA objects
-basic_trigger_t trigger;
+//basic_trigger_t trigger;
 
 // dlog variables
 ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];
@@ -92,7 +92,7 @@ void setup_peripheral(void)
     ctl_attach_sinv_rc(&rc_core, &adc_v_bus.control_port, &adc_v_grid.control_port, &adc_i_ac.control_port);
 
     // Initialize data logger module
-    dsa_init_basic_trigger(&trigger, DLOG_MEM_LENGTH);
+//    dsa_init_basic_trigger(&trigger, DLOG_MEM_LENGTH);
 }
 
 //=================================================================================================

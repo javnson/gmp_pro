@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -13,8 +14,61 @@ from sdpe_v2.library import SDPELibrary
 from sdpe_v2.model import SDPEError
 
 
-def load_library(path: str) -> SDPELibrary:
-    return SDPELibrary(Path(path)).load()
+ROOT = Path(__file__).resolve().parent
+DEFAULT_SETTINGS = ROOT / "sdpe_settings.json"
+
+
+def read_settings(path: str | Path | None) -> dict:
+    settings_path = Path(path) if path else DEFAULT_SETTINGS
+    if not settings_path.exists():
+        return {}
+    return json.loads(settings_path.read_text(encoding="utf-8"))
+
+
+def expand_path(value: str | Path, base: Path | None = None) -> Path:
+    text = os.path.expandvars(str(value))
+    path = Path(text)
+    if path.is_absolute():
+        return path
+    return ((base or ROOT) / path).resolve()
+
+
+def expand_path_list(values: list[str], base: Path | None = None) -> list[Path]:
+    return [expand_path(value, base) for value in values]
+
+
+def load_library(args) -> SDPELibrary:
+    settings = read_settings(getattr(args, "settings", None))
+    explicit_library = bool(getattr(args, "library", None))
+    library_root = expand_path(args.library, Path.cwd()) if explicit_library else expand_path(settings.get("library_root", "."), ROOT)
+    explicit_schema_dirs = getattr(args, "schema_dirs", None)
+    explicit_entity_dirs = getattr(args, "entity_dirs", None)
+    schema_values = explicit_schema_dirs if explicit_schema_dirs is not None else ([] if explicit_library else settings.get("schema_dirs", []))
+    entity_values = explicit_entity_dirs if explicit_entity_dirs is not None else ([] if explicit_library else settings.get("entity_dirs", []))
+    schema_base = Path.cwd() if explicit_schema_dirs is not None else ROOT
+    entity_base = Path.cwd() if explicit_entity_dirs is not None else ROOT
+    schema_dirs = expand_path_list(schema_values, schema_base) or None
+    entity_dirs = expand_path_list(entity_values, entity_base) or None
+    return SDPELibrary(library_root, schema_dirs=schema_dirs, entity_dirs=entity_dirs).load()
+
+
+def generation_value(args, settings: dict, section: str, key: str, default: str) -> str:
+    arg_value = getattr(args, key, None)
+    if arg_value not in (None, ""):
+        return arg_value
+    if getattr(args, "library", ""):
+        return default
+    return str(settings.get(section, {}).get(key, default))
+
+
+def build_generator(args, section: str = "global_generation") -> HeaderGenerator:
+    settings = read_settings(getattr(args, "settings", None))
+    lib = load_library(args)
+    out_value = generation_value(args, settings, section, "out", "build")
+    include_prefix = generation_value(args, settings, section, "include_prefix", "ctl/component")
+    include_mode = generation_value(args, settings, section, "include_mode", "prefixed")
+    project_subdir = generation_value(args, settings, section, "project_subdir", "project")
+    return HeaderGenerator(lib, expand_path(out_value, Path.cwd()), include_prefix, include_mode, project_subdir)
 
 
 def print_generated(items) -> None:
@@ -24,7 +78,7 @@ def print_generated(items) -> None:
 
 
 def cmd_validate(args) -> int:
-    lib = load_library(args.library)
+    lib = load_library(args)
     warnings = lib.validate()
     print(f"schemas: {len(lib.schemas)}")
     print(f"entities: {len(lib.entity_files)}")
@@ -35,23 +89,42 @@ def cmd_validate(args) -> int:
 
 
 def cmd_generate_entity(args) -> int:
-    lib = load_library(args.library)
-    gen = HeaderGenerator(lib, Path(args.out), args.include_prefix)
+    gen = build_generator(args)
     print_generated(gen.generate_entity_tree(args.entity))
     return 0
 
 
 def cmd_generate_all(args) -> int:
-    lib = load_library(args.library)
-    gen = HeaderGenerator(lib, Path(args.out), args.include_prefix)
+    gen = build_generator(args)
     print_generated(gen.generate_all_entities())
     return 0
 
 
 def cmd_generate_project(args) -> int:
-    lib = load_library(args.library)
-    gen = HeaderGenerator(lib, Path(args.out), args.include_prefix)
+    gen = build_generator(args)
     print_generated(gen.generate_project(Path(args.project)))
+    return 0
+
+
+def cmd_generate_global_hardware(args) -> int:
+    gen = build_generator(args, "global_generation")
+    print_generated(gen.generate_all_entities())
+    return 0
+
+
+def cmd_generate_project_local(args) -> int:
+    settings = read_settings(getattr(args, "settings", None))
+    project_path = Path(args.project).resolve()
+    project_dir = Path(args.project_dir).resolve() if args.project_dir else project_path.parent
+    local_cfg = settings.get("local_generation", {})
+    out_value = args.out or local_cfg.get("out", ".")
+    out_dir = expand_path(out_value, project_dir)
+    include_prefix = args.include_prefix if args.include_prefix is not None else local_cfg.get("include_prefix", "")
+    include_mode = args.include_mode or local_cfg.get("include_mode", "relative")
+    project_subdir = args.project_subdir if args.project_subdir is not None else local_cfg.get("project_subdir", "")
+    lib = load_library(args)
+    gen = HeaderGenerator(lib, out_dir, include_prefix, include_mode, project_subdir)
+    print_generated(gen.generate_project(project_path))
     return 0
 
 
@@ -97,10 +170,9 @@ if "%GMP_PRO_LOCATION%"=="" (
     exit /b 1
 )
 
-set "SDPE_LIBRARY=%GMP_PRO_LOCATION%\tools\SDPE_v2\examples"
+set "SDPE_SETTINGS=%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe_settings.json"
 set "SDPE_REQUIREMENT=%~dp0sdpe_requirement.json"
-set "SDPE_OUT=%~dp0..\xplt\sdpe_generated"
-set "SDPE_INCLUDE_PREFIX=ctl/component"
+set "SDPE_OUT=%~dp0."
 exit /b 0
 ''',
         "sdpe_edit.bat": r'''@echo off
@@ -117,11 +189,11 @@ if errorlevel 1 (
 echo =======================================================
 echo [SDPE] Starting project requirement GUI...
 echo =======================================================
-echo [SDPE] Library    : %SDPE_LIBRARY%
+echo [SDPE] Settings   : %SDPE_SETTINGS%
 echo [SDPE] Requirement: %SDPE_REQUIREMENT%
 echo [SDPE] Output     : %SDPE_OUT%
 
-python "%GMP_PRO_LOCATION%\tools\SDPE_v2\gui_pyqt\sdpe_gui.py" --library "%SDPE_LIBRARY%" --mode project --projects "%SDPE_REQUIREMENT%" --out "%SDPE_OUT%"
+python "%GMP_PRO_LOCATION%\tools\SDPE_v2\gui_pyqt\sdpe_gui.py" --settings "%SDPE_SETTINGS%" --mode project --projects "%SDPE_REQUIREMENT%" --out "%SDPE_OUT%"
 if errorlevel 1 (
     echo.
     echo [ERROR] SDPE GUI exited abnormally. Error code: %ERRORLEVEL%
@@ -144,17 +216,17 @@ if errorlevel 1 (
 echo =======================================================
 echo [SDPE] Generating project SDPE headers...
 echo =======================================================
-echo [SDPE] Library    : %SDPE_LIBRARY%
+echo [SDPE] Settings   : %SDPE_SETTINGS%
 echo [SDPE] Requirement: %SDPE_REQUIREMENT%
 echo [SDPE] Output     : %SDPE_OUT%
 
-python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --library "%SDPE_LIBRARY%" validate
+python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --settings "%SDPE_SETTINGS%" validate
 if errorlevel 1 (
     pause
     exit /b %errorlevel%
 )
 
-python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --library "%SDPE_LIBRARY%" generate-project "%SDPE_REQUIREMENT%" --out "%SDPE_OUT%" --include-prefix "%SDPE_INCLUDE_PREFIX%"
+python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --settings "%SDPE_SETTINGS%" generate-project-local "%SDPE_REQUIREMENT%" --out "%SDPE_OUT%"
 if errorlevel 1 (
     echo.
     echo [ERROR] SDPE project generation failed. Error code: %ERRORLEVEL%
@@ -183,13 +255,13 @@ echo =======================================================
 echo [SDPE] Validating SDPE library and project requirement...
 echo =======================================================
 
-python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --library "%SDPE_LIBRARY%" validate
+python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --settings "%SDPE_SETTINGS%" validate
 if errorlevel 1 (
     pause
     exit /b %errorlevel%
 )
 
-python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --library "%SDPE_LIBRARY%" inspect-project "%SDPE_REQUIREMENT%"
+python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --settings "%SDPE_SETTINGS%" inspect-project "%SDPE_REQUIREMENT%"
 if errorlevel 1 (
     pause
     exit /b %errorlevel%
@@ -211,13 +283,17 @@ This folder is the project-local SDPE manager.
 - `sdpe_generate.bat`: generate SDPE headers for this project.
 - `sdpe_validate.bat`: validate the central SDPE library and read this requirement file.
 
-The scripts call `%GMP_PRO_LOCATION%\\tools\\SDPE_v2`, so set `GMP_PRO_LOCATION` to the GMP repository root before using them.
+The scripts call `%GMP_PRO_LOCATION%\\tools\\SDPE_v2` and read `%GMP_PRO_LOCATION%\\tools\\SDPE_v2\\sdpe_settings.json`, so set `GMP_PRO_LOCATION` to the GMP repository root before using them.
 
 Default generated output:
 
 ```text
-..\\xplt\\sdpe_generated
+sdpe_mgr\\
+  <project_settings_header>.h
+  hardware_preset\\
 ```
+
+Project-local generated headers use relative include paths, so the generated project header can include the generated hardware headers without depending on the global `ctl\\hardware_preset` output.
 
 Project id: `{project_id}`
 Suite: `{suite}`
@@ -269,7 +345,10 @@ def cmd_deploy_project(args) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="SDPE v2 hardware preset generator")
-    parser.add_argument("--library", default="examples", help="Library root containing schemas/ and entities/")
+    parser.add_argument("--settings", default=str(DEFAULT_SETTINGS), help="SDPE settings JSON file")
+    parser.add_argument("--library", default="", help="Library root containing schemas/ and entities/. Overrides settings JSON.")
+    parser.add_argument("--schema-dir", dest="schema_dirs", action="append", help="Additional/override schema directory")
+    parser.add_argument("--entity-dir", dest="entity_dirs", action="append", help="Additional/override entity directory")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p = sub.add_parser("validate", help="Validate schemas and entities")
@@ -277,20 +356,42 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("generate-entity", help="Generate one entity and its referenced children")
     p.add_argument("entity")
-    p.add_argument("--out", default="build")
-    p.add_argument("--include-prefix", default="ctl/component")
+    p.add_argument("--out", default="")
+    p.add_argument("--include-prefix", default=None)
+    p.add_argument("--include-mode", default="")
+    p.add_argument("--project-subdir", default=None)
     p.set_defaults(func=cmd_generate_entity)
 
     p = sub.add_parser("generate-all", help="Generate all entities")
-    p.add_argument("--out", default="build")
-    p.add_argument("--include-prefix", default="ctl/component")
+    p.add_argument("--out", default="")
+    p.add_argument("--include-prefix", default=None)
+    p.add_argument("--include-mode", default="")
+    p.add_argument("--project-subdir", default=None)
     p.set_defaults(func=cmd_generate_all)
 
     p = sub.add_parser("generate-project", help="Generate project binding header")
     p.add_argument("project")
-    p.add_argument("--out", default="build")
-    p.add_argument("--include-prefix", default="ctl/component")
+    p.add_argument("--out", default="")
+    p.add_argument("--include-prefix", default=None)
+    p.add_argument("--include-mode", default="")
+    p.add_argument("--project-subdir", default=None)
     p.set_defaults(func=cmd_generate_project)
+
+    p = sub.add_parser("generate-global-hardware", help="Generate all global hardware preset headers from sdpe_src")
+    p.add_argument("--out", default="")
+    p.add_argument("--include-prefix", default=None)
+    p.add_argument("--include-mode", default="")
+    p.add_argument("--project-subdir", default=None)
+    p.set_defaults(func=cmd_generate_global_hardware)
+
+    p = sub.add_parser("generate-project-local", help="Generate a project header and all required hardware headers locally")
+    p.add_argument("project")
+    p.add_argument("--project-dir", default="")
+    p.add_argument("--out", default="")
+    p.add_argument("--include-prefix", default=None)
+    p.add_argument("--include-mode", default="")
+    p.add_argument("--project-subdir", default=None)
+    p.set_defaults(func=cmd_generate_project_local)
 
     p = sub.add_parser("inspect-project", help="Read and summarize one project requirement file")
     p.add_argument("project")

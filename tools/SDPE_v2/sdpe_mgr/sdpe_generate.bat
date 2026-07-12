@@ -12,17 +12,17 @@ if errorlevel 1 (
 echo =======================================================
 echo [SDPE] Generating demo SDPE headers...
 echo =======================================================
-echo [SDPE] Library    : %SDPE_LIBRARY%
+echo [SDPE] Settings   : %SDPE_SETTINGS%
 echo [SDPE] Requirement: %SDPE_REQUIREMENT%
 echo [SDPE] Output     : %SDPE_OUT%
 
-python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --library "%SDPE_LIBRARY%" validate
+python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --settings "%SDPE_SETTINGS%" validate
 if errorlevel 1 (
     pause
     exit /b %errorlevel%
 )
 
-python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --library "%SDPE_LIBRARY%" generate-project "%SDPE_REQUIREMENT%" --out "%SDPE_OUT%" --include-prefix "%SDPE_INCLUDE_PREFIX%"
+python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --settings "%SDPE_SETTINGS%" generate-project-local "%SDPE_REQUIREMENT%" --project-dir "%~dp0." --out "%SDPE_OUT%"
 if errorlevel 1 (
     echo.
     echo [ERROR] SDPE demo generation failed. Error code: %ERRORLEVEL%

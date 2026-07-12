@@ -7,7 +7,7 @@
 #ifndef _GRID_LC_FILTER_GMP_HARMONIA_3PH_LC_FILTER_H_
 #define _GRID_LC_FILTER_GMP_HARMONIA_3PH_LC_FILTER_H_
 
-#include <ctl/component/hardware_preset/current_sensor/tle4971a025.h>
+#include <ctl/hardware_preset/current_sensor/tle4971a025.h>
 
 // User code after includes
 // SDPE extension point: add after_includes code in the Entity Instance Code page if needed.

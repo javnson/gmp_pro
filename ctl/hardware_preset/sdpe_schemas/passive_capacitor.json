@@ -1,0 +1,41 @@
+{
+  "id": "passive_capacitor",
+  "display_name": "Capacitor",
+  "description": "Optional capacitor module.",
+  "category": "Passive Element",
+  "output_subdir": "passive",
+  "parameters": [
+    {
+      "name": "capacitance_f",
+      "c_name": "CAPACITANCE_F",
+      "unit": "F",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Capacitance."
+    },
+    {
+      "name": "esr_ohm",
+      "c_name": "ESR_OHM",
+      "unit": "ohm",
+      "required": false,
+      "value_format": "({}f)",
+      "description": "Equivalent series resistance.",
+      "default": 0.0
+    }
+  ],
+  "exports": {
+    "capacitance": {
+      "macro": "{PREFIX}_CAPACITANCE_F",
+      "unit": "F",
+      "description": "Capacitance."
+    },
+    "esr": {
+      "macro": "{PREFIX}_ESR_OHM",
+      "unit": "ohm",
+      "description": "ESR."
+    }
+  },
+  "tags": [],
+  "header_prefix": "",
+  "components": {}
+}

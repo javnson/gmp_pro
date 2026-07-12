@@ -7,9 +7,9 @@
 #ifndef _HALF_BRIDGE_GMP_LVFB_150_2PH_V2_H_
 #define _HALF_BRIDGE_GMP_LVFB_150_2PH_V2_H_
 
-#include <ctl/component/hardware_preset/current_sensor/tmcs1133_b5a.h>
-#include <ctl/component/hardware_preset/power_switch/bsc093n15ns5.h>
-#include <ctl/component/hardware_preset/voltage_sensor/lvfb_voltage_divider_150v.h>
+#include <ctl/hardware_preset/current_sensor/tmcs1133_b5a.h>
+#include <ctl/hardware_preset/power_switch/bsc093n15ns5.h>
+#include <ctl/hardware_preset/voltage_sensor/lvfb_voltage_divider_150v.h>
 
 // User code after includes
 // SDPE extension point: add after_includes code in the Entity Instance Code page if needed.

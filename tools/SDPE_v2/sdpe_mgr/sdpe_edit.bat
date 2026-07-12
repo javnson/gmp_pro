@@ -12,11 +12,11 @@ if errorlevel 1 (
 echo =======================================================
 echo [SDPE] Starting demo project requirement GUI...
 echo =======================================================
-echo [SDPE] Library    : %SDPE_LIBRARY%
+echo [SDPE] Settings   : %SDPE_SETTINGS%
 echo [SDPE] Requirement: %SDPE_REQUIREMENT%
 echo [SDPE] Output     : %SDPE_OUT%
 
-python "%GMP_PRO_LOCATION%\tools\SDPE_v2\gui_pyqt\sdpe_gui.py" --library "%SDPE_LIBRARY%" --mode project --projects "%SDPE_REQUIREMENT%" --out "%SDPE_OUT%"
+python "%GMP_PRO_LOCATION%\tools\SDPE_v2\gui_pyqt\sdpe_gui.py" --settings "%SDPE_SETTINGS%" --mode project --projects "%SDPE_REQUIREMENT%" --out "%SDPE_OUT%"
 if errorlevel 1 (
     echo.
     echo [ERROR] SDPE GUI exited abnormally. Error code: %ERRORLEVEL%

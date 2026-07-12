@@ -6,11 +6,31 @@ SDPE 是 Software Defined Power Electronics 的缩写。它本质上是一个数
 
 v2 当前采用“核心 CLI + PyQt 图形化管理器”的结构。CLI 负责数据校验和头文件生成，PyQt 管理器负责以对象化表单维护模板、元件、工程需求和需求绑定。`gui/` 下保留了一个轻量 Web 原型，便于快速查看数据。
 
+正式部署后，SDPE 使用 `%GMP_PRO_LOCATION%` 定位仓库：
+
+- Template 原始文件：`%GMP_PRO_LOCATION%/ctl/hardware_preset/sdpe_schemas`
+- Entity 原始文件：`%GMP_PRO_LOCATION%/ctl/hardware_preset/sdpe_src/<category>`
+- 全局硬件头文件输出：`%GMP_PRO_LOCATION%/ctl/hardware_preset/<category>`
+- 工程局部输出：工程的 `sdpe_mgr` 目录；工程设置头文件放在 `sdpe_mgr` 根目录，硬件头文件放在 `sdpe_mgr/hardware_preset`
+- 默认设置文件：`%GMP_PRO_LOCATION%/tools/SDPE_v2/sdpe_settings.json`
+
+全局硬件头文件生成入口：
+
+```bat
+%GMP_PRO_LOCATION%\ctl\hardware_preset\gmp_sdpe_generate_all.bat
+```
+
+工程局部生成入口位于工程的 `sdpe_mgr` 文件夹，例如：
+
+```bat
+%GMP_PRO_LOCATION%\ctl\suite\pgs_sinv_rc\project\f280039c_Iris_node\sdpe_mgr\sdpe_generate.bat
+```
+
 ## 1. 核心概念
 
 ### 1.1 Schema
 
-Schema 定义一类硬件的规范，位于 `examples/schemas`。
+Schema 定义一类硬件的规范，正式部署路径为 `ctl/hardware_preset/sdpe_schemas`。`tools/SDPE_v2/examples/schemas` 仅作为工具开发样例保留。
 
 它描述：
 
@@ -28,7 +48,7 @@ Template Definition 中的 Sub Components 是默认子模块，格式与 Entity 
 
 ### 1.2 Entity
 
-Entity 是 schema 的具体实例，位于 `examples/entities`。
+Entity 是 schema 的具体实例，正式部署路径为 `ctl/hardware_preset/sdpe_src/<category>`。`tools/SDPE_v2/examples/entities` 仅作为工具开发样例保留。
 
 例如：
 
@@ -242,7 +262,9 @@ python .\sdpe.py --library .\examples generate-project .\examples\projects\dps_f
 默认生成输出目录为：
 
 ```text
-..\xplt\sdpe_generated
+sdpe_mgr\
+  <project_settings_header>.h
+  hardware_preset\
 ```
 
 如果工程需要其他输出位置，只需要修改 `sdpe_mgr\sdpe_settings.bat`。
@@ -252,15 +274,14 @@ python .\sdpe.py --library .\examples generate-project .\examples\projects\dps_f
 生成目录示例：
 
 ```text
-build/
+sdpe_mgr/
 ├── hardware_preset/
 │   ├── current_sensor/
 │   ├── half_bridge/
 │   ├── mcu_board/
 │   ├── power_switch/
 │   └── voltage_sensor/
-└── project/
-    └── sdpe_dps_fsbb_iris_bindings.h
+└── sdpe_dps_fsbb_iris_bindings.h
 ```
 
 硬件 entity 头文件包含：
@@ -437,4 +458,4 @@ python -m unittest discover -s .\tests
 - 增加 `xplt.ctl_interface.h` 片段生成，用于 ADC/PWM 输入输出回调。
 - 从 `*.syscfg` 自动提取 IRIS/C2000 外设名称。
 - 继续增强 PyQt GUI：对象复制、批量 tag、参数绑定矩阵、差异预览。
-- 将成熟的生成结果接入 `ctl/component/hardware_preset`。
+- 完善工程 `ctrl_settings.h` 对 `sdpe_mgr/<project_settings_header>.h` 的集成方式。

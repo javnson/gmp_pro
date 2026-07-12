@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from datetime import date
@@ -2028,7 +2029,7 @@ class EntityPage(SDPEPage):
             self.out_dir.setText(selected)
 
     def generator(self) -> HeaderGenerator:
-        return HeaderGenerator(self.window.library, Path(self.out_dir.text()))
+        return self.window.generator(Path(self.out_dir.text()))
 
     def preview_header(self) -> None:
         try:
@@ -2283,7 +2284,7 @@ class ProjectPage(SDPEPage):
         self.load_macro_tables(data)
         self.set_professional_text(pretty_json(data))
         try:
-            self.set_code_text(HeaderGenerator(self.window.library, self.window.default_output_dir).render_project_header(data), reveal=False)
+            self.set_code_text(self.window.generator().render_project_header(data), reveal=False)
         except Exception:
             self.code_panel.clear()
         self.loading = False
@@ -2877,7 +2878,7 @@ class ProjectPage(SDPEPage):
         try:
             data = self.collect_current_data()
             if data is not None:
-                self.set_code_text(HeaderGenerator(self.window.library, self.window.default_output_dir).render_project_header(data))
+                self.set_code_text(self.window.generator().render_project_header(data))
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
 
@@ -3063,7 +3064,7 @@ class BindingPage(SDPEPage):
         self.message("Overview", "Project Overview is read-only. Edit requirements in Project Requirement.")
 
     def generator(self) -> HeaderGenerator:
-        return HeaderGenerator(self.window.library, self.window.default_output_dir)
+        return self.window.generator()
 
     def preview_project(self) -> None:
         try:
@@ -3130,6 +3131,9 @@ class MainWindow(QMainWindow):
         entity_dirs: list[Path] | None = None,
         project_dirs: list[Path] | None = None,
         default_output_dir: Path | None = None,
+        include_prefix: str = "ctl/component",
+        include_mode: str = "prefixed",
+        project_subdir: str = "project",
     ):
         super().__init__()
         self.library_root = library_root
@@ -3139,6 +3143,9 @@ class MainWindow(QMainWindow):
         self.project_dirs = project_dirs or [library_root / "projects"]
         self.project_dirs.extend(self.load_recent_project_files())
         self.default_output_dir = default_output_dir or (ROOT / "build_gui_pyqt")
+        self.include_prefix = include_prefix
+        self.include_mode = include_mode
+        self.project_subdir = project_subdir
         self.library = self.load_library()
         self.setWindowTitle(f"SDPE v2 Manager - {mode} - {library_root}")
         self.resize(1360, 820)
@@ -3159,6 +3166,15 @@ class MainWindow(QMainWindow):
 
     def load_library(self) -> SDPELibrary:
         return SDPELibrary(self.library_root, self.schema_dirs, self.entity_dirs).load()
+
+    def generator(self, out_dir: Path | None = None) -> HeaderGenerator:
+        return HeaderGenerator(
+            self.library,
+            out_dir or self.default_output_dir,
+            self.include_prefix,
+            self.include_mode,
+            self.project_subdir,
+        )
 
     def recent_project_file(self) -> Path:
         return self.library_root / ".sdpe_project_files.json"
@@ -3328,26 +3344,51 @@ def cells_to_binding(kind: str, value: str) -> dict[str, str]:
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Start SDPE v2 PyQt manager.")
-    parser.add_argument("--library", type=Path, default=ROOT / "examples", help="SDPE library root.")
+    parser.add_argument("--settings", type=Path, default=ROOT / "sdpe_settings.json", help="SDPE settings JSON file.")
+    parser.add_argument("--library", type=Path, default=None, help="SDPE library root.")
     parser.add_argument("--mode", choices=["all", "library", "project"], default="all", help="GUI work mode.")
     parser.add_argument("--schemas", nargs="*", type=Path, help="Template/schema directories.")
     parser.add_argument("--entities", nargs="*", type=Path, help="Entity instance directories.")
     parser.add_argument("--projects", nargs="*", type=Path, help="Project requirement files or directories.")
-    parser.add_argument("--out", type=Path, default=ROOT / "build_gui_pyqt", help="Default header output directory.")
+    parser.add_argument("--out", type=Path, default=None, help="Default header output directory.")
     return parser.parse_args(argv)
+
+
+def expand_settings_path(value: str | Path, base: Path = ROOT) -> Path:
+    path = Path(os.path.expandvars(str(value)))
+    return path if path.is_absolute() else (base / path).resolve()
+
+
+def load_gui_settings(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    return read_json(path)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     app = QApplication(sys.argv)
-    library_root = args.library.resolve()
+    settings = load_gui_settings(args.settings)
+    explicit_library = args.library is not None
+    library_root = args.library.resolve() if explicit_library else expand_settings_path(settings.get("library_root", ROOT / "examples"))
+    schema_dirs = [path.resolve() for path in args.schemas] if args.schemas else (
+        [] if explicit_library else [expand_settings_path(path) for path in settings.get("schema_dirs", [])]
+    ) or None
+    entity_dirs = [path.resolve() for path in args.entities] if args.entities else (
+        [] if explicit_library else [expand_settings_path(path) for path in settings.get("entity_dirs", [])]
+    ) or None
+    generation_section = "local_generation" if args.mode == "project" else "global_generation"
+    generation_cfg = settings.get(generation_section, {})
     window = MainWindow(
         library_root,
         mode=args.mode,
-        schema_dirs=[path.resolve() for path in args.schemas] if args.schemas else None,
-        entity_dirs=[path.resolve() for path in args.entities] if args.entities else None,
+        schema_dirs=schema_dirs,
+        entity_dirs=entity_dirs,
         project_dirs=[path.resolve() for path in args.projects] if args.projects else None,
-        default_output_dir=args.out.resolve(),
+        default_output_dir=args.out.resolve() if args.out else expand_settings_path(settings.get("gui", {}).get("default_out", ROOT / "build_gui_pyqt")),
+        include_prefix=str(generation_cfg.get("include_prefix", "ctl/component")),
+        include_mode=str(generation_cfg.get("include_mode", "prefixed")),
+        project_subdir=str(generation_cfg.get("project_subdir", "project")),
     )
     window.show()
     return app.exec()
