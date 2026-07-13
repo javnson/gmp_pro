@@ -4,7 +4,14 @@
   "suite": "dps_fsbb",
   "version": "0.1.0",
   "output_header": "dps_fsbb_f280039c_Iris_node_sdpe_bindings.h",
-  "hardware": [],
+  "hardware": [
+    {
+      "entity": "gmp_lvfb_150_2ph_v2"
+    },
+    {
+      "entity": "iris_f280039c_node"
+    }
+  ],
   "requirements": [
     {
       "role": "PWM Frequency",
@@ -357,7 +364,7 @@
     },
     {
       "group": "PWM Channel",
-      "macro": "PHASE_BUCK_BASE",
+      "macro": "FSBB_BUCK_BASE",
       "enabled": true,
       "value": "1",
       "options_preset": "",
@@ -372,7 +379,7 @@
     },
     {
       "group": "PWM Channel",
-      "macro": "PHASE_BOOST_BASE",
+      "macro": "FSBB_BOOST_BASE",
       "enabled": true,
       "value": "1",
       "options_preset": "",
@@ -383,6 +390,15 @@
         "4",
         "5"
       ],
+      "description": ""
+    },
+    {
+      "group": "ADC Channel",
+      "macro": "FSBB_ADC_VIN_BASE",
+      "enabled": true,
+      "value": "1",
+      "options_preset": "",
+      "options": [],
       "description": ""
     }
   ],

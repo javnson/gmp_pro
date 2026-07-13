@@ -13,7 +13,7 @@ from typing import Any
 
 try:
     from PyQt6.QtCore import QTimer, Qt
-    from PyQt6.QtGui import QColor, QKeySequence, QShortcut
+    from PyQt6.QtGui import QColor, QKeySequence, QPen, QShortcut
     from PyQt6.QtWidgets import (
         QApplication,
         QCheckBox,
@@ -35,6 +35,7 @@ try:
         QMessageBox,
         QPushButton,
         QSplitter,
+        QStyledItemDelegate,
         QTableWidget,
         QTableWidgetItem,
         QTabWidget,
@@ -48,7 +49,7 @@ try:
 except ImportError:  # pragma: no cover - depends on local desktop environment.
     try:
         from PySide6.QtCore import QTimer, Qt
-        from PySide6.QtGui import QColor, QKeySequence, QShortcut
+        from PySide6.QtGui import QColor, QKeySequence, QPen, QShortcut
         from PySide6.QtWidgets import (
             QApplication,
             QCheckBox,
@@ -70,6 +71,7 @@ except ImportError:  # pragma: no cover - depends on local desktop environment.
             QMessageBox,
             QPushButton,
             QSplitter,
+            QStyledItemDelegate,
             QTableWidget,
             QTableWidgetItem,
             QTabWidget,
@@ -95,6 +97,9 @@ from sdpe_v2.util import read_json
 from gui_pyqt.dialogs import choose_item, choose_tree_item, confirm_delete, edit_multiline, prompt_identifier
 
 
+VALIDATION_BORDER_ROLE = Qt.ItemDataRole.UserRole.value + 101
+
+
 class SDPEComboBox(QComboBox):
     """Combo box that does not steal mouse-wheel scrolling unless focused."""
 
@@ -107,6 +112,21 @@ class SDPEComboBox(QComboBox):
             super().wheelEvent(event)
         else:
             event.ignore()
+
+
+class ValidationBorderDelegate(QStyledItemDelegate):
+    """Draw a validation outline without changing themed text/background colors."""
+
+    def paint(self, painter, option, index) -> None:  # noqa: ANN001, N802 - Qt override signature.
+        super().paint(painter, option, index)
+        if not index.data(VALIDATION_BORDER_ROLE):
+            return
+        painter.save()
+        pen = QPen(QColor(220, 40, 40))
+        pen.setWidth(2)
+        painter.setPen(pen)
+        painter.drawRect(option.rect.adjusted(1, 1, -2, -2))
+        painter.restore()
 
 
 def pretty_json(data: Any) -> str:
@@ -2139,6 +2159,7 @@ class ProjectPage(SDPEPage):
         self.requirements.setAlternatingRowColors(True)
         self.requirements.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.requirements.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.requirements.setItemDelegate(ValidationBorderDelegate(self.requirements))
         fit_tree_key_columns(self.requirements, description_col=4, interactive=True)
         install_tree_status_descriptions(self.requirements, description_col=4)
         self.requirements.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -2164,6 +2185,7 @@ class ProjectPage(SDPEPage):
         self.requirements_delete_shortcut.activated.connect(self.remove_requirement_item)
         self.feature_macros = QTreeWidget()
         self.feature_macros.setHeaderLabels(["Macro", "Enabled", "Value", "Description"])
+        self.feature_macros.setItemDelegate(ValidationBorderDelegate(self.feature_macros))
         self.setup_macro_tree(self.feature_macros, description_col=3)
         self.feature_macros.itemDoubleClicked.connect(self.on_macro_tree_double_clicked)
         self.feature_macros.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -2171,6 +2193,7 @@ class ProjectPage(SDPEPage):
         self.install_macro_tree_shortcuts(self.feature_macros, "feature")
         self.enum_macros = QTreeWidget()
         self.enum_macros.setHeaderLabels(["Macro", "Enabled", "Value", "Options Preset", "Options CSV", "Description"])
+        self.enum_macros.setItemDelegate(ValidationBorderDelegate(self.enum_macros))
         self.setup_macro_tree(self.enum_macros, description_col=5)
         self.enum_macros.itemDoubleClicked.connect(self.on_macro_tree_double_clicked)
         self.enum_macros.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -2266,12 +2289,14 @@ class ProjectPage(SDPEPage):
         tabs.addTab(code_tab, "Code")
         preview = QPushButton("Preview header")
         preview.clicked.connect(self.preview_project_header)
+        validate_macros = QPushButton("Validate Macros")
+        validate_macros.clicked.connect(self.validate_project_macros)
         matlab = QPushButton("Generate MATLAB Init Script")
         matlab.clicked.connect(self.generate_matlab_init_script)
         save = QPushButton("Save project")
         save.clicked.connect(self.save_current)
         self.form_layout.addWidget(tabs)
-        self.form_layout.addLayout(row_buttons([preview, matlab, save]))
+        self.form_layout.addLayout(row_buttons([preview, validate_macros, matlab, save]))
         self.update_hardware_view()
 
     def refresh_list(self) -> None:
@@ -2972,6 +2997,66 @@ class ProjectPage(SDPEPage):
 
     def add_enum_macro(self) -> None:
         self.add_macro_item(self.enum_macros, "option")
+
+    def set_tree_row_validation_border(self, tree: QTreeWidget, item: QTreeWidgetItem, enabled: bool) -> None:
+        for col in range(tree.columnCount()):
+            item.setData(col, VALIDATION_BORDER_ROLE, enabled)
+
+    def clear_macro_validation_highlights(self) -> None:
+        for item in self.iter_requirement_items():
+            self.set_tree_row_validation_border(self.requirements, item, False)
+        for tree in (self.feature_macros, self.enum_macros):
+            for item in self.iter_macro_items(tree):
+                self.set_tree_row_validation_border(tree, item, False)
+
+    def collect_project_macro_occurrences(self) -> dict[str, list[tuple[QTreeWidget, QTreeWidgetItem, str]]]:
+        occurrences: dict[str, list[tuple[QTreeWidget, QTreeWidgetItem, str]]] = {}
+
+        def add(name: str, tree: QTreeWidget, item: QTreeWidgetItem, label: str) -> None:
+            macro = macro_name(name)
+            if not macro:
+                return
+            occurrences.setdefault(macro, []).append((tree, item, label))
+
+        for item in self.iter_requirement_items():
+            add(tree_cell_text(self.requirements, item, 1), self.requirements, item, "requirement")
+
+        for item in self.iter_macro_items(self.feature_macros):
+            add(tree_cell_text(self.feature_macros, item, 0), self.feature_macros, item, "selection macro")
+
+        for item in self.iter_macro_items(self.enum_macros):
+            macro = tree_cell_text(self.enum_macros, item, 0)
+            add(macro, self.enum_macros, item, "option macro")
+            value = tree_cell_text(self.enum_macros, item, 2)
+            if macro and re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", value):
+                add(f"{macro}_{macro_name(value)}", self.enum_macros, item, "option marker")
+        return occurrences
+
+    def validate_project_macros(self) -> None:
+        self.clear_macro_validation_highlights()
+        occurrences = self.collect_project_macro_occurrences()
+        reserved = {"SDPE_PROJECT_ID"}
+        if self.suite_edit.text().strip():
+            reserved.add("SDPE_PROJECT_SUITE")
+        if self.version_edit.text().strip():
+            reserved.add("SDPE_PROJECT_VERSION")
+        if self.updated_edit.text().strip():
+            reserved.add("SDPE_PROJECT_UPDATED_AT")
+        duplicates = {
+            macro: rows
+            for macro, rows in occurrences.items()
+            if len(rows) > 1 or macro in reserved
+        }
+        if not duplicates:
+            self.message("Validate Macros", "No duplicate project macros found.")
+            return
+
+        for rows in duplicates.values():
+            for tree, item, _label in rows:
+                self.set_tree_row_validation_border(tree, item, True)
+        names = ", ".join(sorted(duplicates)[:8])
+        extra = "" if len(duplicates) <= 8 else f" (+{len(duplicates) - 8} more)"
+        self.message("Validate Macros", f"Duplicate macro(s): {names}{extra}")
 
     def add_hardware(self, category_hint: str = "") -> None:
         selected = self.choose_entity(category_hint)
