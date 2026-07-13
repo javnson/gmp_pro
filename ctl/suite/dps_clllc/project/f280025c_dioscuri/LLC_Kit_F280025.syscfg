@@ -46,6 +46,7 @@ const sci1           = sci.addInstance();
 adc1.$name             = "myADC0";
 adc1.adcClockPrescaler = "ADC_CLK_DIV_2_0";
 adc1.enabledSOCs       = ["ADC_SOC_NUMBER0","ADC_SOC_NUMBER1","ADC_SOC_NUMBER2","ADC_SOC_NUMBER3","ADC_SOC_NUMBER4","ADC_SOC_NUMBER5","ADC_SOC_NUMBER6"];
+adc1.soc0SampleWindow  = 8;
 
 adc2.$name             = "myADC1";
 adc2.adcBase           = "ADCC_BASE";

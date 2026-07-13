@@ -8,9 +8,9 @@
 #ifndef _PROJECT_SDPE_PGS_SINV_RC_IRIS_BINDINGS_H_
 #define _PROJECT_SDPE_PGS_SINV_RC_IRIS_BINDINGS_H_
 
-#include "hardware_preset/grid_lc_filter/gmp_harmonia_3ph_lc_filter.h"
-#include "hardware_preset/half_bridge/gmp_lvfb_150_2ph_v2.h"
-#include "hardware_preset/mcu_board/iris_f280039c_node.h"
+#include <ctl/hardware_preset/grid_lc_filter/gmp_harmonia_3ph_lc_filter.h>
+#include <ctl/hardware_preset/half_bridge/gmp_lvfb_150_2ph_v2.h>
+#include <ctl/hardware_preset/mcu_board/iris_f280039c_node.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -20,82 +20,138 @@ extern "C"
 // User project prefix code
 /* Original ctrl_settings.h includes are intentionally ignored during this SDPE migration trial. */
 
-// Project metadata
+//=================================================================================================
+/**
+ * @brief Project metadata.
+ */
+
 #define SDPE_PROJECT_ID "pgs_sinv_rc_iris_node"
 #define SDPE_PROJECT_SUITE "pgs_sinv_rc"
 #define SDPE_PROJECT_VERSION "0.1.0"
 #define SDPE_PROJECT_UPDATED_AT "2026-07-10"
 
-// Selection macros
-// Enable Discrete PID controller anti-saturation algorithm.
+//=================================================================================================
+/**
+ * @brief Selection macros.
+ */
+
+/**
+ * @brief Enable Discrete PID controller anti-saturation algorithm.
+ */
 #define _USE_DEBUG_DISCRETE_PID
-// Enable ADC calibration.
+
+/**
+ * @brief Enable ADC calibration.
+ */
 #define SPECIFY_ENABLE_ADC_CALIBRATE
-// Enable PIL simulation function. This macro disables controller output.
+
+/**
+ * @brief Enable PIL simulation function. This macro disables controller output.
+ */
 // #define ENBALE_GMP_DL_PIL_SIM
-// Enable CiA402 debug information.
+
+/**
+ * @brief Enable CiA402 debug information.
+ */
 // #define GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
 
-// Option macros
-// Single-phase inverter incremental debug build level.
-// BUILD_LEVEL 1: modulator and resistive-load validation.
-// BUILD_LEVEL 2: voltage closed-loop validation.
-// BUILD_LEVEL 3: current-loop and full controller validation.
-// Options: (1), (2), (3)
-#define BUILD_LEVEL (1)
-// Use negative PWM modulator logic.
-// Options: (0), (1)
-#define PWM_MODULATOR_USING_NEGATIVE_LOGIC (0)
-// PWM base for inverter phase L.
-// Options: IRIS_EPWM1_BASE, IRIS_EPWM2_BASE, IRIS_EPWM3_BASE, IRIS_EPWM4_BASE, IRIS_EPWM5_BASE, IRIS_EPWM6_BASE
-#define PHASE_L_BASE IRIS_EPWM3_BASE
-#define PHASE_L_BASE_IRIS_EPWM3_BASE 1
-// PWM base for inverter phase N.
-// Options: IRIS_EPWM1_BASE, IRIS_EPWM2_BASE, IRIS_EPWM3_BASE, IRIS_EPWM4_BASE, IRIS_EPWM5_BASE, IRIS_EPWM6_BASE
-#define PHASE_N_BASE IRIS_EPWM4_BASE
-#define PHASE_N_BASE_IRIS_EPWM4_BASE 1
-// Gate-driver enable GPIO.
-// Options: IRIS_GPIO1, IRIS_GPIO2, IRIS_GPIO3, IRIS_GPIO4, IRIS_GPIO5, IRIS_GPIO6
-#define PWM_ENABLE_PORT IRIS_GPIO1
-#define PWM_ENABLE_PORT_IRIS_GPIO1 1
-// Gate-driver reset GPIO.
-// Options: IRIS_GPIO1, IRIS_GPIO2, IRIS_GPIO3, IRIS_GPIO4, IRIS_GPIO5, IRIS_GPIO6
-#define PWM_RESET_PORT IRIS_GPIO3
-#define PWM_RESET_PORT_IRIS_GPIO3 1
-// System status LED.
-// Options: IRIS_LED1, IRIS_LED2, LED_R, LED_G
-#define SYSTEM_LED IRIS_LED1
-#define SYSTEM_LED_IRIS_LED1 1
-// Controller status LED.
-// Options: IRIS_LED1, IRIS_LED2, LED_R, LED_G
-#define CONTROLLER_LED IRIS_LED2
-#define CONTROLLER_LED_IRIS_LED2 1
-// AC current ADC result register base.
-// Options: ADC_CH1_RESULT_BASE, ADC_CH2_RESULT_BASE, ADC_CH3_RESULT_BASE, ADC_CH4_RESULT_BASE, ADC_CH5_RESULT_BASE, ADC_CH6_RESULT_BASE, ADC_CH7_RESULT_BASE, ADC_CH8_RESULT_BASE, ADC_CH9_RESULT_BASE, ADC_CH10_RESULT_BASE, ADC_CH11_RESULT_BASE, ADC_CH12_RESULT_BASE
-#define INV_IAC_RESULT_BASE ADC_CH1_RESULT_BASE
-#define INV_IAC_RESULT_BASE_ADC_CH1_RESULT_BASE 1
-// AC current ADC channel.
-// Options: ADC_CH1, ADC_CH2, ADC_CH3, ADC_CH4, ADC_CH5, ADC_CH6, ADC_CH7, ADC_CH8, ADC_CH9, ADC_CH10, ADC_CH11, ADC_CH12
-#define INV_IAC ADC_CH1
-#define INV_IAC_ADC_CH1 1
-// AC voltage ADC result register base.
-// Options: ADC_CH1_RESULT_BASE, ADC_CH2_RESULT_BASE, ADC_CH3_RESULT_BASE, ADC_CH4_RESULT_BASE, ADC_CH5_RESULT_BASE, ADC_CH6_RESULT_BASE, ADC_CH7_RESULT_BASE, ADC_CH8_RESULT_BASE, ADC_CH9_RESULT_BASE, ADC_CH10_RESULT_BASE, ADC_CH11_RESULT_BASE, ADC_CH12_RESULT_BASE
-#define INV_VAC_RESULT_BASE ADC_CH2_RESULT_BASE
-#define INV_VAC_RESULT_BASE_ADC_CH2_RESULT_BASE 1
-// AC voltage ADC channel.
-// Options: ADC_CH1, ADC_CH2, ADC_CH3, ADC_CH4, ADC_CH5, ADC_CH6, ADC_CH7, ADC_CH8, ADC_CH9, ADC_CH10, ADC_CH11, ADC_CH12
-#define INV_VAC ADC_CH2
-#define INV_VAC_ADC_CH2 1
-// DC bus voltage ADC result register base.
-// Options: ADC_CH1_RESULT_BASE, ADC_CH2_RESULT_BASE, ADC_CH3_RESULT_BASE, ADC_CH4_RESULT_BASE, ADC_CH5_RESULT_BASE, ADC_CH6_RESULT_BASE, ADC_CH7_RESULT_BASE, ADC_CH8_RESULT_BASE, ADC_CH9_RESULT_BASE, ADC_CH10_RESULT_BASE, ADC_CH11_RESULT_BASE, ADC_CH12_RESULT_BASE
-#define INV_VBUS_RESULT_BASE ADC_CH3_RESULT_BASE
-#define INV_VBUS_RESULT_BASE_ADC_CH3_RESULT_BASE 1
-// DC bus voltage ADC channel.
-// Options: ADC_CH1, ADC_CH2, ADC_CH3, ADC_CH4, ADC_CH5, ADC_CH6, ADC_CH7, ADC_CH8, ADC_CH9, ADC_CH10, ADC_CH11, ADC_CH12
-#define INV_VBUS ADC_CH3
-#define INV_VBUS_ADC_CH3 1
+//=================================================================================================
+/**
+ * @brief Option macros.
+ */
 
-// Requirement bindings
+/**
+ * @brief Single-phase inverter incremental debug build level.
+ *        BUILD_LEVEL 1: modulator and resistive-load validation.
+ *        BUILD_LEVEL 2: voltage closed-loop validation.
+ *        BUILD_LEVEL 3: current-loop and full controller validation.
+ *        Options: (1), (2), (3)
+ */
+#define BUILD_LEVEL (1)
+
+/**
+ * @brief Use negative PWM modulator logic.
+ *        Options: (0), (1)
+ */
+#define PWM_MODULATOR_USING_NEGATIVE_LOGIC (0)
+
+/**
+ * @brief PWM base for inverter phase L.
+ *        Options: IRIS_EPWM1_BASE, IRIS_EPWM2_BASE, IRIS_EPWM3_BASE, IRIS_EPWM4_BASE, IRIS_EPWM5_BASE, IRIS_EPWM6_BASE
+ */
+#define PHASE_L_BASE IRIS_EPWM3_BASE
+
+/**
+ * @brief PWM base for inverter phase N.
+ *        Options: IRIS_EPWM1_BASE, IRIS_EPWM2_BASE, IRIS_EPWM3_BASE, IRIS_EPWM4_BASE, IRIS_EPWM5_BASE, IRIS_EPWM6_BASE
+ */
+#define PHASE_N_BASE IRIS_EPWM4_BASE
+
+/**
+ * @brief Gate-driver enable GPIO.
+ *        Options: IRIS_GPIO1, IRIS_GPIO2, IRIS_GPIO3, IRIS_GPIO4, IRIS_GPIO5, IRIS_GPIO6
+ */
+#define PWM_ENABLE_PORT IRIS_GPIO1
+
+/**
+ * @brief Gate-driver reset GPIO.
+ *        Options: IRIS_GPIO1, IRIS_GPIO2, IRIS_GPIO3, IRIS_GPIO4, IRIS_GPIO5, IRIS_GPIO6
+ */
+#define PWM_RESET_PORT IRIS_GPIO3
+
+/**
+ * @brief System status LED.
+ *        Options: IRIS_LED1, IRIS_LED2, LED_R, LED_G
+ */
+#define SYSTEM_LED IRIS_LED1
+
+/**
+ * @brief Controller status LED.
+ *        Options: IRIS_LED1, IRIS_LED2, LED_R, LED_G
+ */
+#define CONTROLLER_LED IRIS_LED2
+
+/**
+ * @brief AC current ADC result register base.
+ *        Options: ADC_CH1_RESULT_BASE, ADC_CH2_RESULT_BASE, ADC_CH3_RESULT_BASE, ADC_CH4_RESULT_BASE, ADC_CH5_RESULT_BASE, ADC_CH6_RESULT_BASE, ADC_CH7_RESULT_BASE, ADC_CH8_RESULT_BASE, ADC_CH9_RESULT_BASE, ADC_CH10_RESULT_BASE, ADC_CH11_RESULT_BASE, ADC_CH12_RESULT_BASE
+ */
+#define INV_IAC_RESULT_BASE ADC_CH1_RESULT_BASE
+
+/**
+ * @brief AC current ADC channel.
+ *        Options: ADC_CH1, ADC_CH2, ADC_CH3, ADC_CH4, ADC_CH5, ADC_CH6, ADC_CH7, ADC_CH8, ADC_CH9, ADC_CH10, ADC_CH11, ADC_CH12
+ */
+#define INV_IAC ADC_CH1
+
+/**
+ * @brief AC voltage ADC result register base.
+ *        Options: ADC_CH1_RESULT_BASE, ADC_CH2_RESULT_BASE, ADC_CH3_RESULT_BASE, ADC_CH4_RESULT_BASE, ADC_CH5_RESULT_BASE, ADC_CH6_RESULT_BASE, ADC_CH7_RESULT_BASE, ADC_CH8_RESULT_BASE, ADC_CH9_RESULT_BASE, ADC_CH10_RESULT_BASE, ADC_CH11_RESULT_BASE, ADC_CH12_RESULT_BASE
+ */
+#define INV_VAC_RESULT_BASE ADC_CH2_RESULT_BASE
+
+/**
+ * @brief AC voltage ADC channel.
+ *        Options: ADC_CH1, ADC_CH2, ADC_CH3, ADC_CH4, ADC_CH5, ADC_CH6, ADC_CH7, ADC_CH8, ADC_CH9, ADC_CH10, ADC_CH11, ADC_CH12
+ */
+#define INV_VAC ADC_CH2
+
+/**
+ * @brief DC bus voltage ADC result register base.
+ *        Options: ADC_CH1_RESULT_BASE, ADC_CH2_RESULT_BASE, ADC_CH3_RESULT_BASE, ADC_CH4_RESULT_BASE, ADC_CH5_RESULT_BASE, ADC_CH6_RESULT_BASE, ADC_CH7_RESULT_BASE, ADC_CH8_RESULT_BASE, ADC_CH9_RESULT_BASE, ADC_CH10_RESULT_BASE, ADC_CH11_RESULT_BASE, ADC_CH12_RESULT_BASE
+ */
+#define INV_VBUS_RESULT_BASE ADC_CH3_RESULT_BASE
+
+/**
+ * @brief DC bus voltage ADC channel.
+ *        Options: ADC_CH1, ADC_CH2, ADC_CH3, ADC_CH4, ADC_CH5, ADC_CH6, ADC_CH7, ADC_CH8, ADC_CH9, ADC_CH10, ADC_CH11, ADC_CH12
+ */
+#define INV_VBUS ADC_CH3
+
+//=================================================================================================
+/**
+ * @brief Requirement bindings.
+ */
+
 /**
  * @brief Startup delay in ms.
  */

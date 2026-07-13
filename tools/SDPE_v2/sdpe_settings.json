@@ -6,6 +6,13 @@
   "entity_dirs": [
     "%GMP_PRO_LOCATION%/ctl/hardware_preset/sdpe_src"
   ],
+  "system_hardware": {
+    "entity_dirs": [
+      "%GMP_PRO_LOCATION%/ctl/hardware_preset/sdpe_src"
+    ],
+    "out": "%GMP_PRO_LOCATION%/ctl",
+    "include_prefix": "ctl"
+  },
   "global_generation": {
     "out": "%GMP_PRO_LOCATION%/ctl",
     "include_prefix": "ctl",

@@ -38,14 +38,20 @@ class HeaderGenerator:
         include_prefix: str = "ctl/component",
         include_mode: str = "prefixed",
         project_subdir: str = "project",
+        system_entity_dirs: list[Path] | None = None,
+        system_out_dir: Path | None = None,
+        system_include_prefix: str = "ctl",
     ):
         self.library = library
         self.out_dir = out_dir
         self.include_prefix = include_prefix.strip("/")
         self.include_mode = include_mode
         self.project_subdir = project_subdir.strip("/\\")
+        self.system_entity_dirs = [path.resolve() for path in (system_entity_dirs or [])]
+        self.system_out_dir = system_out_dir.resolve() if system_out_dir else None
+        self.system_include_prefix = system_include_prefix.strip("/")
 
-    def generate_entity_tree(self, entity_id: str) -> list[GeneratedFile]:
+    def generate_entity_tree(self, entity_id: str, skip_system: bool = False) -> list[GeneratedFile]:
         """Generate headers for an entity and every referenced non-inline child."""
 
         entity = self.library.entity(entity_id)
@@ -53,6 +59,8 @@ class HeaderGenerator:
         visited: set[str] = set()
 
         def walk(node: HardwareEntity) -> None:
+            if skip_system and self.is_system_entity(node):
+                return
             for comp in node.components.values():
                 if not comp.inline:
                     walk(comp.entity)
@@ -80,12 +88,38 @@ class HeaderGenerator:
     def entity_header_path(self, entity: HardwareEntity) -> Path:
         """Return the output header path for an entity."""
 
+        if self.is_system_entity(entity) and self.system_out_dir is not None:
+            return self.entity_header_path_in_root(entity, self.system_out_dir)
+        return self.entity_header_path_in_root(entity, self.out_dir)
+
+    def local_entity_header_path(self, entity: HardwareEntity) -> Path:
+        """Return the local output header path for an entity."""
+
+        return self.entity_header_path_in_root(entity, self.out_dir)
+
+    def entity_header_path_in_root(self, entity: HardwareEntity, root: Path) -> Path:
+        """Return the generated header path for an entity under a given root."""
+
         schema = self.library.schema(entity.schema_id)
         subdir = folder_name(entity.output_subdir or schema.output_subdir or schema.category or schema.id)
-        return self.out_dir / "hardware_preset" / subdir / f"{entity.id}.h"
+        return root / "hardware_preset" / subdir / f"{entity.id}.h"
+
+    def is_system_entity(self, entity: HardwareEntity) -> bool:
+        """Return whether the entity belongs to the configured global hardware library."""
+
+        if not entity.source or not self.system_entity_dirs:
+            return False
+        source = entity.source.resolve()
+        return any(source.is_relative_to(root) for root in self.system_entity_dirs)
 
     def entity_include_path(self, entity: HardwareEntity, from_path: Path | None = None) -> str:
         """Return generated include path relative to the output root."""
+
+        if self.is_system_entity(entity) and self.system_out_dir is not None:
+            path = self.entity_header_path_in_root(entity, self.system_out_dir)
+            rel = path.relative_to(self.system_out_dir).as_posix()
+            prefix = self.system_include_prefix
+            return f"<{prefix}/{rel}>" if prefix else f"<{rel}>"
 
         path = self.entity_header_path(entity)
         if self.include_mode == "relative" and from_path is not None:
@@ -109,10 +143,11 @@ class HeaderGenerator:
         """Render a hardware entity header."""
 
         schema = self.library.schema(entity.schema_id)
-        rel = self.entity_header_path(entity).relative_to(self.out_dir).as_posix()
+        header_path = self.local_entity_header_path(entity)
+        rel = header_path.relative_to(self.out_dir).as_posix()
         guard = header_guard(rel)
         prefix = self.prefix(entity, schema)
-        includes = self._entity_includes(entity, schema, self.entity_header_path(entity))
+        includes = self._entity_includes(entity, schema, header_path)
 
         lines: list[str] = []
         lines.extend(
@@ -471,7 +506,7 @@ class HeaderGenerator:
         seen: set[Path] = set()
         included_entities = self._project_entity_ids(data)
         for entity_id in included_entities:
-            for item in self.generate_entity_tree(entity_id):
+            for item in self.generate_entity_tree(entity_id, skip_system=True):
                 if item.path not in seen:
                     seen.add(item.path)
                     generated.append(item)
@@ -516,7 +551,8 @@ class HeaderGenerator:
         lines.extend(["#ifdef __cplusplus", 'extern "C"', "{", "#endif", ""])
         self._append_project_code_section(lines, data, "after_extern_open", "User project prefix code", True)
 
-        lines.extend(["// Project metadata", f"#define SDPE_PROJECT_ID \"{project_id}\""])
+        self._append_project_section_header(lines, "Project metadata")
+        lines.append(f"#define SDPE_PROJECT_ID \"{project_id}\"")
         if "suite" in data:
             lines.append(f"#define SDPE_PROJECT_SUITE \"{data['suite']}\"")
         if data.get("version"):
@@ -526,43 +562,39 @@ class HeaderGenerator:
         lines.append("")
 
         if data.get("feature_macros"):
-            lines.append("// Selection macros")
+            self._append_project_section_header(lines, "Selection macros")
             for item in data["feature_macros"]:
                 macro = item.get("macro", "")
                 if not macro:
                     continue
                 desc = item.get("description", "")
-                if desc:
-                    self._append_line_comment(lines, desc)
+                self._append_doc_comment(lines, desc or macro)
                 value = f" {item['value']}" if item.get("value") else ""
                 if item.get("enabled", True):
                     lines.append(f"#define {macro}{value}")
                 else:
                     lines.append(f"// #define {macro}{value}")
-            lines.append("")
+                lines.append("")
 
         if data.get("option_macros"):
-            lines.append("// Option macros")
+            self._append_project_section_header(lines, "Option macros")
             for item in data["option_macros"]:
                 macro = item.get("macro", "")
                 if not macro:
                     continue
                 options = self._option_macro_values(item, lambda preset: self._resolve_project_option_preset(data, preset))
                 desc = item.get("description", "")
-                if desc or options:
-                    if desc:
-                        self._append_line_comment(lines, desc)
-                    if options:
-                        self._append_line_comment(lines, f"Options: {', '.join(str(v) for v in options)}")
+                comment_lines = [desc or macro]
+                if options:
+                    comment_lines.append(f"Options: {', '.join(str(v) for v in options)}")
+                self._append_doc_comment(lines, "\n".join(comment_lines))
                 value = str(item.get("value", ""))
                 enabled = item.get("enabled", True)
                 marker = "" if enabled else "// "
                 lines.append(f"{marker}#define {macro} {value}")
-                if enabled and re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", value):
-                    lines.append(f"#define {macro}_{macro_name(value)} 1")
-            lines.append("")
+                lines.append("")
 
-        lines.append("// Requirement bindings")
+        self._append_project_section_header(lines, "Requirement bindings")
         for req in data.get("requirements", []):
             macro = req["macro"]
             value = self._resolve_binding_value(req["binding"])
@@ -571,20 +603,37 @@ class HeaderGenerator:
             lines.extend([f"#define {macro} {value}", ""])
 
         if data.get("peripheral_bindings"):
-            lines.append("// Board peripheral mapping")
+            self._append_project_section_header(lines, "Board peripheral mapping")
             for macro, value in data["peripheral_bindings"].items():
+                self._append_doc_comment(lines, macro)
                 lines.append(f"#define {macro} {value}")
-            lines.append("")
+                lines.append("")
 
         if data.get("global_macros"):
-            lines.append("// Global project macros")
+            self._append_project_section_header(lines, "Global project macros")
             for macro, value in data["global_macros"].items():
+                self._append_doc_comment(lines, macro)
                 lines.append(f"#define {macro} {value}")
-            lines.append("")
+                lines.append("")
 
         self._append_project_code_section(lines, data, "before_footer", "User project tail code", True)
         lines.extend(["#ifdef __cplusplus", "}", "#endif", "", f"#endif // {guard}", ""])
         return "\n".join(lines)
+
+    def _append_project_section_header(self, lines: list[str], title: str) -> None:
+        """Append a visually clear Doxygen section header."""
+
+        if lines and lines[-1] != "":
+            lines.append("")
+        lines.extend(
+            [
+                "//=================================================================================================",
+                "/**",
+                f" * @brief {title}.",
+                " */",
+                "",
+            ]
+        )
 
     def _append_project_code_section(
         self, lines: list[str], data: dict[str, Any], name: str, title: str, placeholder_if_empty: bool = False

@@ -68,7 +68,20 @@ def build_generator(args, section: str = "global_generation") -> HeaderGenerator
     include_prefix = generation_value(args, settings, section, "include_prefix", "ctl/component")
     include_mode = generation_value(args, settings, section, "include_mode", "prefixed")
     project_subdir = generation_value(args, settings, section, "project_subdir", "project")
-    return HeaderGenerator(lib, expand_path(out_value, Path.cwd()), include_prefix, include_mode, project_subdir)
+    system_cfg = settings.get("system_hardware", {})
+    system_entity_dirs = expand_path_list(system_cfg.get("entity_dirs", []), ROOT)
+    system_out_dir = expand_path(system_cfg["out"], ROOT) if system_cfg.get("out") else None
+    system_include_prefix = str(system_cfg.get("include_prefix", "ctl"))
+    return HeaderGenerator(
+        lib,
+        expand_path(out_value, Path.cwd()),
+        include_prefix,
+        include_mode,
+        project_subdir,
+        system_entity_dirs,
+        system_out_dir,
+        system_include_prefix,
+    )
 
 
 def print_generated(items) -> None:
@@ -123,7 +136,20 @@ def cmd_generate_project_local(args) -> int:
     include_mode = args.include_mode or local_cfg.get("include_mode", "relative")
     project_subdir = args.project_subdir if args.project_subdir is not None else local_cfg.get("project_subdir", "")
     lib = load_library(args)
-    gen = HeaderGenerator(lib, out_dir, include_prefix, include_mode, project_subdir)
+    system_cfg = settings.get("system_hardware", {})
+    system_entity_dirs = expand_path_list(system_cfg.get("entity_dirs", []), ROOT)
+    system_out_dir = expand_path(system_cfg["out"], ROOT) if system_cfg.get("out") else None
+    system_include_prefix = str(system_cfg.get("include_prefix", "ctl"))
+    gen = HeaderGenerator(
+        lib,
+        out_dir,
+        include_prefix,
+        include_mode,
+        project_subdir,
+        system_entity_dirs,
+        system_out_dir,
+        system_include_prefix,
+    )
     print_generated(gen.generate_project(project_path))
     return 0
 

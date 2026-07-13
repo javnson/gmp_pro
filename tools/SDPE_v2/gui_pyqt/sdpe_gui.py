@@ -3134,6 +3134,9 @@ class MainWindow(QMainWindow):
         include_prefix: str = "ctl/component",
         include_mode: str = "prefixed",
         project_subdir: str = "project",
+        system_entity_dirs: list[Path] | None = None,
+        system_out_dir: Path | None = None,
+        system_include_prefix: str = "ctl",
     ):
         super().__init__()
         self.library_root = library_root
@@ -3146,6 +3149,9 @@ class MainWindow(QMainWindow):
         self.include_prefix = include_prefix
         self.include_mode = include_mode
         self.project_subdir = project_subdir
+        self.system_entity_dirs = system_entity_dirs or []
+        self.system_out_dir = system_out_dir
+        self.system_include_prefix = system_include_prefix
         self.library = self.load_library()
         self.setWindowTitle(f"SDPE v2 Manager - {mode} - {library_root}")
         self.resize(1360, 820)
@@ -3174,6 +3180,9 @@ class MainWindow(QMainWindow):
             self.include_prefix,
             self.include_mode,
             self.project_subdir,
+            self.system_entity_dirs,
+            self.system_out_dir,
+            self.system_include_prefix,
         )
 
     def recent_project_file(self) -> Path:
@@ -3379,6 +3388,7 @@ def main(argv: list[str] | None = None) -> int:
     ) or None
     generation_section = "local_generation" if args.mode == "project" else "global_generation"
     generation_cfg = settings.get(generation_section, {})
+    system_cfg = settings.get("system_hardware", {})
     window = MainWindow(
         library_root,
         mode=args.mode,
@@ -3389,6 +3399,9 @@ def main(argv: list[str] | None = None) -> int:
         include_prefix=str(generation_cfg.get("include_prefix", "ctl/component")),
         include_mode=str(generation_cfg.get("include_mode", "prefixed")),
         project_subdir=str(generation_cfg.get("project_subdir", "project")),
+        system_entity_dirs=[expand_settings_path(path) for path in system_cfg.get("entity_dirs", [])],
+        system_out_dir=expand_settings_path(system_cfg["out"]) if system_cfg.get("out") else None,
+        system_include_prefix=str(system_cfg.get("include_prefix", "ctl")),
     )
     window.show()
     return app.exec()
