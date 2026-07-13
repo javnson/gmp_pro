@@ -2105,6 +2105,8 @@ class ProjectPage(SDPEPage):
         self.requirements = QTreeWidget()
         self.requirements.setHeaderLabels(["Name", "Macro", "Binding Type", "Binding Value", "Description"])
         self.requirements.setAlternatingRowColors(True)
+        self.requirements.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.requirements.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         fit_tree_key_columns(self.requirements, description_col=4, interactive=True)
         install_tree_status_descriptions(self.requirements, description_col=4)
         self.requirements.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -2116,6 +2118,12 @@ class ProjectPage(SDPEPage):
         self.requirements.model().rowsMoved.connect(lambda *_args: self.after_requirement_tree_changed())
         self.requirements.model().rowsInserted.connect(lambda *_args: self.after_requirement_tree_changed())
         self.requirements.model().rowsRemoved.connect(lambda *_args: self.after_requirement_tree_changed())
+        self.requirements_copy_shortcut = QShortcut(QKeySequence.StandardKey.Copy, self.requirements)
+        self.requirements_copy_shortcut.activated.connect(self.copy_selected_requirements)
+        self.requirements_cut_shortcut = QShortcut(QKeySequence.StandardKey.Cut, self.requirements)
+        self.requirements_cut_shortcut.activated.connect(self.cut_selected_requirements)
+        self.requirements_paste_shortcut = QShortcut(QKeySequence.StandardKey.Paste, self.requirements)
+        self.requirements_paste_shortcut.activated.connect(self.paste_requirements)
         self.feature_macros = QTableWidget()
         setup_feature_macro_table(self.feature_macros)
         self.feature_macros.cellDoubleClicked.connect(self.on_macro_cell_double_clicked)
@@ -2208,10 +2216,12 @@ class ProjectPage(SDPEPage):
         tabs.addTab(code_tab, "Code")
         preview = QPushButton("Preview header")
         preview.clicked.connect(self.preview_project_header)
+        matlab = QPushButton("Generate MATLAB Init Script")
+        matlab.clicked.connect(self.generate_matlab_init_script)
         save = QPushButton("Save project")
         save.clicked.connect(self.save_current)
         self.form_layout.addWidget(tabs)
-        self.form_layout.addLayout(row_buttons([preview, save]))
+        self.form_layout.addLayout(row_buttons([preview, matlab, save]))
         self.update_hardware_view()
 
     def refresh_list(self) -> None:
@@ -2476,11 +2486,14 @@ class ProjectPage(SDPEPage):
         return item
 
     def add_requirement_item(self, group: QTreeWidgetItem, req: dict[str, Any]) -> QTreeWidgetItem:
+        return self.insert_requirement_item(group, group.childCount(), req)
+
+    def insert_requirement_item(self, group: QTreeWidgetItem, index: int, req: dict[str, Any]) -> QTreeWidgetItem:
         btype, bvalue = binding_to_cells(req.get("binding", {}))
         item = QTreeWidgetItem([req.get("role", ""), req.get("macro", ""), "", bvalue, req.get("description", "")])
         item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsDragEnabled)
         item.setData(0, Qt.ItemDataRole.UserRole, "requirement")
-        group.addChild(item)
+        group.insertChild(max(0, min(index, group.childCount())), item)
         set_tree_combo(self.requirements, item, 2, binding_type_options(), btype)
         return item
 
@@ -2496,6 +2509,10 @@ class ProjectPage(SDPEPage):
         return self.requirements.topLevelItem(0)
 
     def remove_requirement_item(self) -> None:
+        selected = self.selected_requirement_items()
+        if selected:
+            self.remove_requirement_items(selected)
+            return
         item = self.requirements.currentItem()
         if item is None:
             return
@@ -2505,6 +2522,107 @@ class ProjectPage(SDPEPage):
             self.requirements.takeTopLevelItem(index)
         else:
             parent.removeChild(item)
+        self.mark_current_dirty()
+
+    def selected_requirement_items(self) -> list[QTreeWidgetItem]:
+        items = [
+            item
+            for item in self.requirements.selectedItems()
+            if item.data(0, Qt.ItemDataRole.UserRole) == "requirement"
+        ]
+        current = self.requirements.currentItem()
+        if not items and current is not None and current.data(0, Qt.ItemDataRole.UserRole) == "requirement":
+            items = [current]
+        order = {id(item): index for index, item in enumerate(self.iter_requirement_items())}
+        return sorted(dict.fromkeys(items), key=lambda item: order.get(id(item), 10**9))
+
+    def requirement_item_to_data(self, item: QTreeWidgetItem) -> dict[str, Any]:
+        return {
+            "role": tree_cell_text(self.requirements, item, 0),
+            "macro": tree_cell_text(self.requirements, item, 1),
+            "binding": cells_to_binding(
+                tree_cell_text(self.requirements, item, 2),
+                tree_cell_text(self.requirements, item, 3),
+            ),
+            "description": tree_cell_text(self.requirements, item, 4),
+        }
+
+    def copy_selected_requirements(self) -> None:
+        rows = [self.requirement_item_to_data(item) for item in self.selected_requirement_items()]
+        if not rows:
+            return
+        QApplication.clipboard().setText(
+            pretty_json(
+                {
+                    "sdpe_clipboard": "project_requirements_v1",
+                    "rows": rows,
+                }
+            )
+        )
+
+    def cut_selected_requirements(self) -> None:
+        items = self.selected_requirement_items()
+        if not items:
+            return
+        self.copy_selected_requirements()
+        self.remove_requirement_items(items)
+
+    def remove_requirement_items(self, items: list[QTreeWidgetItem]) -> None:
+        for item in reversed(items):
+            parent = item.parent()
+            if parent is not None:
+                parent.removeChild(item)
+        self.mark_current_dirty()
+
+    def parse_requirement_clipboard(self, text: str) -> list[dict[str, Any]]:
+        value = text.strip()
+        if not value:
+            return []
+        try:
+            data = json.loads(value)
+            if isinstance(data, dict) and data.get("sdpe_clipboard") == "project_requirements_v1":
+                rows = data.get("rows", [])
+                return [row for row in rows if isinstance(row, dict)]
+        except json.JSONDecodeError:
+            pass
+        rows = []
+        for line in value.splitlines():
+            if not line.strip():
+                continue
+            cells = line.split("\t")
+            while len(cells) < 5:
+                cells.append("")
+            rows.append(
+                {
+                    "role": cells[0].strip(),
+                    "macro": cells[1].strip(),
+                    "binding": cells_to_binding(cells[2], cells[3]),
+                    "description": cells[4].strip(),
+                }
+            )
+        return rows
+
+    def requirement_paste_target(self) -> tuple[QTreeWidgetItem, int]:
+        item = self.requirements.currentItem()
+        if item is not None and item.data(0, Qt.ItemDataRole.UserRole) == "requirement" and item.parent() is not None:
+            group = item.parent()
+            return group, group.indexOfChild(item) + 1
+        group = self.current_requirement_group()
+        return group, group.childCount()
+
+    def paste_requirements(self) -> None:
+        rows = self.parse_requirement_clipboard(QApplication.clipboard().text())
+        if not rows:
+            return
+        group, index = self.requirement_paste_target()
+        first_item: QTreeWidgetItem | None = None
+        for offset, row in enumerate(rows):
+            item = self.insert_requirement_item(group, index + offset, row)
+            if first_item is None:
+                first_item = item
+        group.setExpanded(True)
+        if first_item is not None:
+            self.requirements.setCurrentItem(first_item)
         self.mark_current_dirty()
 
     def after_requirement_tree_changed(self) -> None:
@@ -2988,8 +3106,17 @@ class ProjectPage(SDPEPage):
     def show_requirement_context_menu(self, pos) -> None:
         item = self.requirements.itemAt(pos)
         col = self.requirements.indexAt(pos).column()
+        if item is not None and not item.isSelected():
+            self.requirements.setCurrentItem(item, max(0, col))
         menu = QMenu(self)
         is_requirement = item is not None and item.data(0, Qt.ItemDataRole.UserRole) == "requirement"
+        copy_action = menu.addAction("Copy selected rows", self.copy_selected_requirements)
+        copy_action.setEnabled(bool(self.selected_requirement_items()))
+        cut_action = menu.addAction("Cut selected rows", self.cut_selected_requirements)
+        cut_action.setEnabled(bool(self.selected_requirement_items()))
+        paste_action = menu.addAction("Paste rows", self.paste_requirements)
+        paste_action.setEnabled(bool(QApplication.clipboard().text().strip()))
+        menu.addSeparator()
         if is_requirement and col == 3:
             menu.addAction("Edit in cell", lambda: self.edit_requirement_value_in_cell(item))
             menu.addAction("Edit in dialog", lambda: self.edit_requirement_value_dialog(item))
@@ -3017,6 +3144,16 @@ class ProjectPage(SDPEPage):
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
 
+    def generate_matlab_init_script(self) -> None:
+        try:
+            self.save_current()
+            if not self.current_id:
+                return
+            item = self.window.generator().generate_project_matlab_script(self.window.project_path(self.current_id))
+            self.message("Generated", str(item.path))
+        except Exception as exc:  # pragma: no cover - GUI guard.
+            self.error(str(exc))
+
 
 class BindingPage(SDPEPage):
     """Project-level SDPE overview and generation page."""
@@ -3034,8 +3171,10 @@ class BindingPage(SDPEPage):
         preview.clicked.connect(self.preview_project)
         generate = QPushButton("Generate project header")
         generate.clicked.connect(self.generate_project)
+        generate_matlab = QPushButton("Generate MATLAB Init Script")
+        generate_matlab.clicked.connect(self.generate_matlab_init_script)
 
-        self.form_layout.addLayout(row_buttons([preview, generate]))
+        self.form_layout.addLayout(row_buttons([preview, generate, generate_matlab]))
         self.form_layout.addWidget(QLabel("Supported project macros"))
         self.form_layout.addWidget(self.overview)
 
@@ -3212,6 +3351,14 @@ class BindingPage(SDPEPage):
         try:
             files = self.generator().generate_project(self.window.project_path(self.current_id))
             self.message("Generated", "\n".join(str(item.path) for item in files))
+        except Exception as exc:  # pragma: no cover - GUI guard.
+            self.error(str(exc))
+
+    def generate_matlab_init_script(self) -> None:
+        try:
+            item = self.generator().generate_project_matlab_script(self.window.project_path(self.current_id))
+            self.set_code_text(item.path.read_text(encoding="utf-8"))
+            self.message("Generated", str(item.path))
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
 

@@ -5,11 +5,452 @@
   "version": "0.1.0",
   "output_header": "dps_fsbb_f280039c_Iris_node_sdpe_bindings.h",
   "hardware": [],
-  "requirements": [],
-  "feature_macros": [],
-  "option_macros": [],
+  "requirements": [
+    {
+      "role": "PWM Frequency",
+      "macro": "PWM_FREQ",
+      "binding": {
+        "float": "10e3"
+      },
+      "description": ""
+    },
+    {
+      "role": "Controller Frequency",
+      "macro": "CONTROLLER_FREQUENCY",
+      "binding": {
+        "float": "10e3"
+      },
+      "description": ""
+    },
+    {
+      "role": "PWM Depth",
+      "macro": "CTRL_PWM_CMP_MAX",
+      "binding": {
+        "number": "3000"
+      },
+      "description": ""
+    },
+    {
+      "role": "PWM Deadband Width",
+      "macro": "CTRL_PWM_DEADBAND_CMP",
+      "binding": {
+        "number": "50"
+      },
+      "description": ""
+    },
+    {
+      "role": "CPU Main Frequency",
+      "macro": "CTRL_SYS_FREQUENCY",
+      "binding": {
+        "float": "120e6"
+      },
+      "description": ""
+    },
+    {
+      "role": "System Divition",
+      "macro": "DSP_C2000_DSP_TIME_DIV",
+      "binding": {
+        "literal": "(CTRL_SYS_FREQUENCY / 1000 / CTRL_PWM_CMP_MAX / 2)"
+      },
+      "description": ""
+    },
+    {
+      "role": "ADC reference Voltage",
+      "macro": "CTRL_ADC_VOLTAGE_REF",
+      "binding": {
+        "float": "3.3"
+      },
+      "description": ""
+    },
+    {
+      "role": "Voltage PU Base",
+      "macro": "CTRL_VOLTAGE_BASE",
+      "binding": {
+        "float": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Current PU Base",
+      "macro": "NEW_REQUIREMENT",
+      "binding": {
+        "float": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Input Voltage Sensitive",
+      "macro": "CTRL_FSBB_VIN_SENSITIVITY",
+      "binding": {
+        "float": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Input Voltage Bias",
+      "macro": "CTRL_FSBB_VIN_BIAS",
+      "binding": {
+        "float": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Output Voltage Sensitive",
+      "macro": "CTRL_FSBB_VOUT_SENSITIVITY",
+      "binding": {
+        "float": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Output Voltage Bias",
+      "macro": "CTRL_FSBB_VOUT_BIAS",
+      "binding": {
+        "float": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Input Current Sensitive",
+      "macro": "CTRL_FSBB_IIN_SENSITIVITY",
+      "binding": {
+        "float": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Input Current Bias",
+      "macro": "CTRL_FSBB_IIN_BIAS",
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Output Current Sensitive",
+      "macro": "CTRL_FSBB_IOUT_SENSITIVITY",
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Output Current Bias",
+      "macro": "CTRL_FSBB_IOUT_BIAS",
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Inductor Current Sensitive",
+      "macro": "CTRL_FSBB_IL_SENSITIVITY",
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Inductor Current Bias",
+      "macro": "CTRL_FSBB_IL_BIAS",
+      "binding": {
+        "float": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Main Inductor",
+      "macro": "PARAM_FSBB_L",
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Input Capacitor",
+      "macro": "PARAM_FSBB_CIN",
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Output Capcitor",
+      "macro": "PARAM_FSBB_COUT",
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Max Input Voltage",
+      "macro": "NEW_REQUIREMENT",
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Min Input Voltage",
+      "macro": "NEW_REQUIREMENT",
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Max Output Voltage",
+      "macro": "NEW_REQUIREMENT",
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Min Output Voltage",
+      "macro": "NEW_REQUIREMENT",
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Max Inductor Current",
+      "macro": "NEW_REQUIREMENT",
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Min Inductor Current",
+      "macro": "NEW_REQUIREMENT",
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Max Input Current",
+      "macro": "NEW_REQUIREMENT",
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Min Input Current",
+      "macro": "NEW_REQUIREMENT",
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Max Output Current",
+      "macro": "NEW_REQUIREMENT",
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Min Output Current",
+      "macro": "NEW_REQUIREMENT",
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "TIMEOUT_ADC_CALIB_MS",
+      "macro": "NEW_REQUIREMENT",
+      "binding": {
+        "number": "3000"
+      },
+      "description": ""
+    }
+  ],
+  "feature_macros": [
+    {
+      "macro": "SPECIFY_ENABLE_ADC_CALIBRATE",
+      "enabled": true,
+      "value": "",
+      "description": ""
+    },
+    {
+      "macro": "ENBALE_GMP_DL_PIL_SIM",
+      "enabled": false,
+      "value": "",
+      "description": ""
+    },
+    {
+      "macro": "GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO",
+      "enabled": false,
+      "value": "",
+      "description": ""
+    }
+  ],
+  "option_macros": [
+    {
+      "macro": "BUILD_LEVEL",
+      "enabled": true,
+      "value": "1",
+      "options_preset": "",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "description": ""
+    },
+    {
+      "macro": "PHASE_BUCK_BASE",
+      "enabled": true,
+      "value": "1",
+      "options_preset": "",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "description": ""
+    },
+    {
+      "macro": "PHASE_BOOST_BASE",
+      "enabled": true,
+      "value": "1",
+      "options_preset": "",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "description": ""
+    },
+    {
+      "macro": "PWM_ENABLE_PORT",
+      "enabled": true,
+      "value": "1",
+      "options_preset": "",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "description": ""
+    },
+    {
+      "macro": "PWM_RESET_PORT",
+      "enabled": true,
+      "value": "1",
+      "options_preset": "",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "description": ""
+    },
+    {
+      "macro": "SYSTEM_LED",
+      "enabled": true,
+      "value": "1",
+      "options_preset": "",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "description": ""
+    }
+  ],
   "code_sections": {
     "after_extern_open": "/* Add project-specific includes here. */",
     "before_footer": "/* Add project-specific tail macros here. */"
-  }
+  },
+  "description": "",
+  "updated_at": "2026-07-13",
+  "requirement_groups": [
+    {
+      "name": "System Overview",
+      "requirements": [
+        "PWM Frequency",
+        "Controller Frequency",
+        "PWM Depth",
+        "PWM Deadband Width",
+        "CPU Main Frequency",
+        "System Divition",
+        "ADC reference Voltage"
+      ]
+    },
+    {
+      "name": "Per Unit Base Value",
+      "requirements": [
+        "Voltage PU Base",
+        "Current PU Base"
+      ]
+    },
+    {
+      "name": "Voltage Sensor Configuration",
+      "requirements": [
+        "Input Voltage Sensitive",
+        "Input Voltage Bias",
+        "Output Voltage Sensitive",
+        "Output Voltage Bias"
+      ]
+    },
+    {
+      "name": "Current Sensor Configuration",
+      "requirements": [
+        "Input Current Sensitive",
+        "Input Current Bias",
+        "Output Current Sensitive",
+        "Output Current Bias",
+        "Inductor Current Sensitive",
+        "Inductor Current Bias"
+      ]
+    },
+    {
+      "name": "Main Parameters",
+      "requirements": [
+        "Main Inductor",
+        "Input Capacitor",
+        "Output Capcitor"
+      ]
+    },
+    {
+      "name": "Absolute Maximum Parameters",
+      "requirements": [
+        "Max Input Voltage",
+        "Min Input Voltage",
+        "Max Output Voltage",
+        "Min Output Voltage",
+        "Max Inductor Current",
+        "Min Inductor Current",
+        "Max Input Current",
+        "Min Input Current",
+        "Max Output Current",
+        "Min Output Current"
+      ]
+    },
+    {
+      "name": "Controller Parameters",
+      "requirements": [
+        "TIMEOUT_ADC_CALIB_MS"
+      ]
+    }
+  ]
 }

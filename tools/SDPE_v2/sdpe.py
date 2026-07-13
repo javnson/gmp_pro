@@ -119,6 +119,12 @@ def cmd_generate_project(args) -> int:
     return 0
 
 
+def cmd_generate_project_matlab(args) -> int:
+    gen = build_generator(args)
+    print_generated([gen.generate_project_matlab_script(Path(args.project))])
+    return 0
+
+
 def cmd_generate_global_hardware(args) -> int:
     gen = build_generator(args, "global_generation")
     print_generated(gen.generate_all_entities())
@@ -126,6 +132,18 @@ def cmd_generate_global_hardware(args) -> int:
 
 
 def cmd_generate_project_local(args) -> int:
+    gen, project_path = build_local_project_generator(args)
+    print_generated(gen.generate_project(project_path))
+    return 0
+
+
+def cmd_generate_project_matlab_local(args) -> int:
+    gen, project_path = build_local_project_generator(args)
+    print_generated([gen.generate_project_matlab_script(project_path)])
+    return 0
+
+
+def build_local_project_generator(args) -> tuple[HeaderGenerator, Path]:
     settings = read_settings(getattr(args, "settings", None))
     project_path = Path(args.project).resolve()
     project_dir = Path(args.project_dir).resolve() if args.project_dir else project_path.parent
@@ -150,8 +168,7 @@ def cmd_generate_project_local(args) -> int:
         system_out_dir,
         system_include_prefix,
     )
-    print_generated(gen.generate_project(project_path))
-    return 0
+    return gen, project_path
 
 
 def default_requirement(project_dir: Path, project_id: str, suite: str) -> dict:
@@ -403,6 +420,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--project-subdir", default=None)
     p.set_defaults(func=cmd_generate_project)
 
+    p = sub.add_parser("generate-project-matlab", help="Generate MATLAB initialization script for a project")
+    p.add_argument("project")
+    p.add_argument("--out", default="")
+    p.add_argument("--include-prefix", default=None)
+    p.add_argument("--include-mode", default="")
+    p.add_argument("--project-subdir", default=None)
+    p.set_defaults(func=cmd_generate_project_matlab)
+
     p = sub.add_parser("generate-global-hardware", help="Generate all global hardware preset headers from sdpe_src")
     p.add_argument("--out", default="")
     p.add_argument("--include-prefix", default=None)
@@ -418,6 +443,15 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--include-mode", default="")
     p.add_argument("--project-subdir", default=None)
     p.set_defaults(func=cmd_generate_project_local)
+
+    p = sub.add_parser("generate-project-matlab-local", help="Generate a project MATLAB initialization script locally")
+    p.add_argument("project")
+    p.add_argument("--project-dir", default="")
+    p.add_argument("--out", default="")
+    p.add_argument("--include-prefix", default=None)
+    p.add_argument("--include-mode", default="")
+    p.add_argument("--project-subdir", default=None)
+    p.set_defaults(func=cmd_generate_project_matlab_local)
 
     p = sub.add_parser("inspect-project", help="Read and summarize one project requirement file")
     p.add_argument("project")

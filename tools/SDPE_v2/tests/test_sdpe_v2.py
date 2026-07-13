@@ -146,6 +146,22 @@ class SDPEV2Tests(unittest.TestCase):
             self.assertIn("#define BUILD_LEVEL (4)", header)
             self.assertIn("#include <ctl/component/hardware_preset/inverter_3ph/GMP_3PH_2136SINV_DUAL_TMPL.h>", header)
 
+    def test_project_matlab_init_script_exports_macro_variables(self) -> None:
+        lib = self.load_library()
+        data = read_project("dps_fsbb_iris_node")
+        with tempfile.TemporaryDirectory() as tmp:
+            gen = HeaderGenerator(lib, Path(tmp))
+            script = gen.render_project_matlab_script(data)
+            self.assertIn("SDPE_PROJECT_ID = 'dps_fsbb_iris_node';", script)
+            self.assertIn("BUILD_LEVEL = 1;", script)
+            self.assertIn("CTRL_INDUCTOR_CURRENT_SENSITIVITY = FSBB_5M_SHUNT_SENSITIVITY_V_PER_A;", script)
+            self.assertIn("TMCS1133_B2A_RANGE_A =", script)
+            self.assertIn("sdpe_select(", script)
+
+            generated = gen.generate_project_matlab_script(EXAMPLES / "projects" / "dps_fsbb_iris_node.json")
+            self.assertTrue(generated.path.name.endswith("_matlab_init.m"))
+            self.assertTrue(generated.path.exists())
+
     def test_component_overrides_create_slot_local_macros(self) -> None:
         lib = self.load_library()
         with tempfile.TemporaryDirectory() as tmp:
