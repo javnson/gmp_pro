@@ -428,6 +428,15 @@ def set_item(table: QTableWidget, row: int, col: int, value: Any) -> None:
     table.setItem(row, col, QTableWidgetItem("" if value is None else str(value)))
 
 
+def set_table_text(table: QTableWidget, row: int, col: int, value: Any) -> None:
+    widget = table.cellWidget(row, col)
+    text = "" if value is None else str(value)
+    if isinstance(widget, QComboBox):
+        widget.setCurrentText(text)
+    else:
+        set_item(table, row, col, text)
+
+
 def edit_table_cell_multiline(table: QTableWidget, row: int, col: int, parent: QWidget, title: str) -> None:
     text = edit_multiline(parent, title, item_text(table, row, col))
     if text is not None:
@@ -2089,6 +2098,8 @@ class ProjectPage(SDPEPage):
         self.hardware_tree.itemDoubleClicked.connect(self.on_hardware_tree_double_clicked)
         self.hardware = QTableWidget()
         set_table_headers(self.hardware, ["Entity", "Name", "Template", "Category", "Description"], QHeaderView.ResizeMode.Interactive)
+        self.hardware.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.hardware.customContextMenuRequested.connect(self.show_hardware_table_context_menu)
         self.hardware.cellDoubleClicked.connect(self.on_hardware_cell_double_clicked)
 
         self.requirements = QTreeWidget()
@@ -2096,6 +2107,8 @@ class ProjectPage(SDPEPage):
         self.requirements.setAlternatingRowColors(True)
         fit_tree_key_columns(self.requirements, description_col=4, interactive=True)
         install_tree_status_descriptions(self.requirements, description_col=4)
+        self.requirements.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.requirements.customContextMenuRequested.connect(self.show_requirement_context_menu)
         self.requirements.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
         self.requirements.setDefaultDropAction(Qt.DropAction.MoveAction)
         self.requirements.itemChanged.connect(lambda _item, _col: self.mark_current_dirty())
@@ -2590,6 +2603,26 @@ class ProjectPage(SDPEPage):
         selected = choose_item(self, "Select Hardware Entity", hinted + rest)
         return selected.split("|", 1)[0].strip() if selected else None
 
+    def choose_entity_with_same_template(self, old_entity: str) -> str | None:
+        try:
+            old = self.window.library.entity(old_entity)
+        except SDPEError:
+            return self.choose_entity()
+        labels: list[str] = []
+        for entity_id in sorted(self.window.library.entity_files):
+            if entity_id == old_entity:
+                continue
+            try:
+                entity = self.window.library.entity(entity_id)
+                if entity.schema_id != old.schema_id:
+                    continue
+                schema = self.window.library.schema(entity.schema_id)
+                labels.append(f"{entity_id} | {entity.display_name} | {schema.display_name} | {schema.category}")
+            except SDPEError:
+                continue
+        selected = choose_item(self, "Replace With Same Template Entity", labels)
+        return selected.split("|", 1)[0].strip() if selected else None
+
     def on_hardware_cell_double_clicked(self, row: int, col: int) -> None:
         entity_id = item_text(self.hardware, row, 0)
         if col == 0 and entity_id:
@@ -2601,13 +2634,17 @@ class ProjectPage(SDPEPage):
         row = self.hardware.currentRow()
         if row < 0:
             return
+        self.replace_hardware_row(row)
+
+    def replace_hardware_row(self, row: int) -> None:
         old_entity = item_text(self.hardware, row, 0)
-        selected = self.choose_entity(self.entity_category(old_entity))
+        selected = self.choose_entity_with_same_template(old_entity)
         if selected:
             set_item(self.hardware, row, 0, selected)
             self.populate_hardware_info(row, selected)
-            self.replace_requirement_entity(old_entity, selected)
+            self.replace_project_entity_references(old_entity, selected)
             self.refresh_hardware_status()
+            self.mark_current_dirty()
 
     def on_hardware_tree_double_clicked(self, item: QTreeWidgetItem, _column: int) -> None:
         entity_id = item.data(0, Qt.ItemDataRole.UserRole)
@@ -2627,12 +2664,29 @@ class ProjectPage(SDPEPage):
         if item.data(0, Qt.ItemDataRole.UserRole) != "requirement":
             return
         if col == 4:
-            text = edit_multiline(self, "Requirement Description", tree_cell_text(self.requirements, item, col))
-            if text is not None:
-                item.setText(col, text)
+            self.edit_requirement_description(item)
             return
         if col != 3:
             return
+        btype = tree_cell_text(self.requirements, item, 2)
+        if btype == "export":
+            self.select_requirement_hardware_parameter(item)
+        elif btype in {"float", "number", "string", "macro"}:
+            self.edit_requirement_value_in_cell(item)
+        else:
+            self.edit_requirement_value_dialog(item)
+
+    def edit_requirement_value_in_cell(self, item: QTreeWidgetItem) -> None:
+        self.requirements.setCurrentItem(item, 3)
+        self.requirements.editItem(item, 3)
+
+    def edit_requirement_value_dialog(self, item: QTreeWidgetItem) -> None:
+        text = edit_multiline(self, "Requirement Binding Value", tree_cell_text(self.requirements, item, 3))
+        if text is not None:
+            item.setText(3, text)
+            self.mark_current_dirty()
+
+    def select_requirement_hardware_parameter(self, item: QTreeWidgetItem) -> None:
         symbols: list[str] = []
         for hw in self._table_hardware():
             try:
@@ -2644,6 +2698,7 @@ class ProjectPage(SDPEPage):
             if tree_cell_text(self.requirements, item, 2) != "expr":
                 set_tree_combo(self.requirements, item, 2, binding_type_options(), "export")
             item.setText(3, f"${{{selected}}}")
+            self.mark_current_dirty()
 
     def on_macro_cell_double_clicked(self, row: int, col: int) -> None:
         table = self.sender()
@@ -2698,6 +2753,29 @@ class ProjectPage(SDPEPage):
             value = tree_cell_text(self.requirements, item, 3)
             if value == old_entity or value.startswith(f"{old_entity}."):
                 item.setText(3, new_entity + value[len(old_entity):])
+
+    def replace_project_entity_references(self, old_entity: str, new_entity: str) -> None:
+        if not old_entity or old_entity == new_entity:
+            return
+
+        def replace_text(text: str) -> str:
+            pattern = re.compile(rf"(?<![A-Za-z0-9_]){re.escape(old_entity)}(?=\.|\b)")
+            return pattern.sub(new_entity, text)
+
+        for item in self.iter_requirement_items():
+            for col in (0, 1, 3, 4):
+                text = tree_cell_text(self.requirements, item, col)
+                new_text = replace_text(text)
+                if new_text != text:
+                    item.setText(col, new_text)
+
+        for table in (self.feature_macros, self.enum_macros):
+            for row in range(table.rowCount()):
+                for col in range(table.columnCount()):
+                    text = item_text(table, row, col)
+                    new_text = replace_text(text)
+                    if new_text != text:
+                        set_table_text(table, row, col, new_text)
 
     def populate_hardware_info(self, row: int, entity_id: str) -> None:
         try:
@@ -2857,15 +2935,39 @@ class ProjectPage(SDPEPage):
     def show_hardware_context_menu(self, pos) -> None:
         item = self.hardware_tree.itemAt(pos)
         category = item.text(0) if item and not item.parent() else ""
+        root_item = self.hardware_root_item(item)
         menu = QMenu(self)
         menu.addAction("Insert hardware", lambda: self.add_hardware(category))
-        menu.addAction("Delete selected root hardware", self.remove_tree_root_hardware)
+        replace_action = menu.addAction("Replace with same template", lambda: self.replace_tree_root_hardware(root_item))
+        replace_action.setEnabled(root_item is not None)
+        delete_action = menu.addAction("Delete selected root hardware", self.remove_tree_root_hardware)
+        delete_action.setEnabled(root_item is not None)
         menu.exec(self.hardware_tree.viewport().mapToGlobal(pos))
+
+    def show_hardware_table_context_menu(self, pos) -> None:
+        row = self.hardware.rowAt(pos.y())
+        menu = QMenu(self)
+        if row >= 0:
+            self.hardware.setCurrentCell(row, max(0, self.hardware.currentColumn()))
+        replace_action = menu.addAction("Replace with same template", lambda: self.replace_hardware_row(row))
+        replace_action.setEnabled(row >= 0)
+        remove_action = menu.addAction("Remove hardware", self.remove_hardware)
+        remove_action.setEnabled(row >= 0)
+        menu.exec(self.hardware.viewport().mapToGlobal(pos))
+
+    def hardware_root_item(self, item: QTreeWidgetItem | None) -> QTreeWidgetItem | None:
+        if item is None:
+            return None
+        if item.parent() is None:
+            return None
+        root = item
+        while root.parent() is not None and root.parent().parent() is not None:
+            root = root.parent()
+        return root
 
     def remove_tree_root_hardware(self) -> None:
         item = self.hardware_tree.currentItem()
-        while item and item.parent() and item.parent().parent():
-            item = item.parent()
+        item = self.hardware_root_item(item)
         if item and item.parent():
             entity_id = item.data(0, Qt.ItemDataRole.UserRole)
             for row in range(self.hardware.rowCount()):
@@ -2873,6 +2975,39 @@ class ProjectPage(SDPEPage):
                     self.hardware.removeRow(row)
                     break
             self.refresh_hardware_status()
+
+    def replace_tree_root_hardware(self, item: QTreeWidgetItem | None) -> None:
+        if item is None:
+            return
+        entity_id = item.data(0, Qt.ItemDataRole.UserRole)
+        for row in range(self.hardware.rowCount()):
+            if item_text(self.hardware, row, 0) == entity_id:
+                self.replace_hardware_row(row)
+                return
+
+    def show_requirement_context_menu(self, pos) -> None:
+        item = self.requirements.itemAt(pos)
+        col = self.requirements.indexAt(pos).column()
+        menu = QMenu(self)
+        is_requirement = item is not None and item.data(0, Qt.ItemDataRole.UserRole) == "requirement"
+        if is_requirement and col == 3:
+            menu.addAction("Edit in cell", lambda: self.edit_requirement_value_in_cell(item))
+            menu.addAction("Edit in dialog", lambda: self.edit_requirement_value_dialog(item))
+            menu.addAction("Select hardware parameter", lambda: self.select_requirement_hardware_parameter(item))
+        elif is_requirement and col == 4:
+            menu.addAction("Edit description", lambda: self.edit_requirement_description(item))
+        else:
+            menu.addAction("Add group", self.add_requirement_group)
+            menu.addAction("Add requirement", self.add_requirement)
+            remove_action = menu.addAction("Remove selected", self.remove_requirement_item)
+            remove_action.setEnabled(is_requirement or item is not None)
+        menu.exec(self.requirements.viewport().mapToGlobal(pos))
+
+    def edit_requirement_description(self, item: QTreeWidgetItem) -> None:
+        text = edit_multiline(self, "Requirement Description", tree_cell_text(self.requirements, item, 4))
+        if text is not None:
+            item.setText(4, text)
+            self.mark_current_dirty()
 
     def preview_project_header(self) -> None:
         try:
