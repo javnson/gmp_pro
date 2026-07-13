@@ -162,6 +162,20 @@ class SDPEV2Tests(unittest.TestCase):
             self.assertTrue(generated.path.name.endswith("_matlab_init.m"))
             self.assertTrue(generated.path.exists())
 
+    def test_project_macros_can_be_grouped_in_generated_outputs(self) -> None:
+        lib = self.load_library()
+        data = read_project("dps_fsbb_iris_node")
+        data["feature_macros"][0]["group"] = "Debug Switches"
+        data["option_macros"][0]["group"] = "Build Options"
+        with tempfile.TemporaryDirectory() as tmp:
+            gen = HeaderGenerator(lib, Path(tmp))
+            header = gen.render_project_header(data)
+            matlab = gen.render_project_matlab_script(data)
+            self.assertIn("@brief Debug Switches.", header)
+            self.assertIn("@brief Build Options.", header)
+            self.assertIn("%% Debug Switches", matlab)
+            self.assertIn("%% Build Options", matlab)
+
     def test_component_overrides_create_slot_local_macros(self) -> None:
         lib = self.load_library()
         with tempfile.TemporaryDirectory() as tmp:

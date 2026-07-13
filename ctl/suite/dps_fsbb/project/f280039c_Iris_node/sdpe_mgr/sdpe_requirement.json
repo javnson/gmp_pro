@@ -42,7 +42,7 @@
       "role": "CPU Main Frequency",
       "macro": "CTRL_SYS_FREQUENCY",
       "binding": {
-        "float": "120e6"
+        "expr": "120e6"
       },
       "description": ""
     },
@@ -106,7 +106,7 @@
       "role": "Output Voltage Bias",
       "macro": "CTRL_FSBB_VOUT_BIAS",
       "binding": {
-        "float": "0"
+        "expr": "0"
       },
       "description": ""
     },
@@ -273,18 +273,21 @@
   ],
   "feature_macros": [
     {
+      "group": "Controller Settings",
       "macro": "SPECIFY_ENABLE_ADC_CALIBRATE",
       "enabled": true,
       "value": "",
       "description": ""
     },
     {
+      "group": "Controller Settings",
       "macro": "ENBALE_GMP_DL_PIL_SIM",
       "enabled": false,
       "value": "",
       "description": ""
     },
     {
+      "group": "Controller Settings",
       "macro": "GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO",
       "enabled": false,
       "value": "",
@@ -293,6 +296,7 @@
   ],
   "option_macros": [
     {
+      "group": "Option Macros",
       "macro": "BUILD_LEVEL",
       "enabled": true,
       "value": "1",
@@ -307,34 +311,7 @@
       "description": ""
     },
     {
-      "macro": "PHASE_BUCK_BASE",
-      "enabled": true,
-      "value": "1",
-      "options_preset": "",
-      "options": [
-        "1",
-        "2",
-        "3",
-        "4",
-        "5"
-      ],
-      "description": ""
-    },
-    {
-      "macro": "PHASE_BOOST_BASE",
-      "enabled": true,
-      "value": "1",
-      "options_preset": "",
-      "options": [
-        "1",
-        "2",
-        "3",
-        "4",
-        "5"
-      ],
-      "description": ""
-    },
-    {
+      "group": "Option Macros",
       "macro": "PWM_ENABLE_PORT",
       "enabled": true,
       "value": "1",
@@ -349,6 +326,7 @@
       "description": ""
     },
     {
+      "group": "Option Macros",
       "macro": "PWM_RESET_PORT",
       "enabled": true,
       "value": "1",
@@ -363,7 +341,38 @@
       "description": ""
     },
     {
+      "group": "Option Macros",
       "macro": "SYSTEM_LED",
+      "enabled": true,
+      "value": "1",
+      "options_preset": "",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "description": ""
+    },
+    {
+      "group": "PWM Channel",
+      "macro": "PHASE_BUCK_BASE",
+      "enabled": true,
+      "value": "1",
+      "options_preset": "",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "description": ""
+    },
+    {
+      "group": "PWM Channel",
+      "macro": "PHASE_BOOST_BASE",
       "enabled": true,
       "value": "1",
       "options_preset": "",
@@ -382,7 +391,7 @@
     "before_footer": "/* Add project-specific tail macros here. */"
   },
   "description": "",
-  "updated_at": "2026-07-13",
+  "updated_at": "2026-07-14",
   "requirement_groups": [
     {
       "name": "System Overview",

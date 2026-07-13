@@ -578,9 +578,9 @@ class HeaderGenerator:
             lines.append(f"#define SDPE_PROJECT_UPDATED_AT \"{data['updated_at']}\"")
         lines.append("")
 
-        if data.get("feature_macros"):
-            self._append_project_section_header(lines, "Selection macros")
-            for item in data["feature_macros"]:
+        for group, items in self._group_project_macros(data.get("feature_macros", []), "Selection macros"):
+            self._append_project_section_header(lines, group)
+            for item in items:
                 macro = item.get("macro", "")
                 if not macro:
                     continue
@@ -593,9 +593,9 @@ class HeaderGenerator:
                     lines.append(f"// #define {macro}{value}")
                 lines.append("")
 
-        if data.get("option_macros"):
-            self._append_project_section_header(lines, "Option macros")
-            for item in data["option_macros"]:
+        for group, items in self._group_project_macros(data.get("option_macros", []), "Option macros"):
+            self._append_project_section_header(lines, group)
+            for item in items:
                 macro = item.get("macro", "")
                 if not macro:
                     continue
@@ -682,9 +682,9 @@ class HeaderGenerator:
             for entity_id in hardware_ids:
                 self._append_entity_matlab_macros(lines, self.library.entity(entity_id), emitted, known_macros=known_macros)
 
-        if data.get("feature_macros"):
-            lines.append("%% Project selection macros")
-            for item in data["feature_macros"]:
+        for group, items in self._group_project_macros(data.get("feature_macros", []), "Project selection macros"):
+            lines.append(f"%% {group}")
+            for item in items:
                 macro = item.get("macro", "")
                 if not macro:
                     continue
@@ -696,9 +696,9 @@ class HeaderGenerator:
                     lines.append(f"% {macro} = {self._matlab_value(value, known_macros)};")
                     lines.append("")
 
-        if data.get("option_macros"):
-            lines.append("%% Project option macros")
-            for item in data["option_macros"]:
+        for group, items in self._group_project_macros(data.get("option_macros", []), "Project option macros"):
+            lines.append(f"%% {group}")
+            for item in items:
                 macro = item.get("macro", "")
                 if not macro:
                     continue
@@ -986,6 +986,17 @@ class HeaderGenerator:
                 "",
             ]
         )
+
+    def _group_project_macros(self, items: list[dict[str, Any]], default_group: str) -> list[tuple[str, list[dict[str, Any]]]]:
+        """Group project macros by the editable group label."""
+
+        groups: dict[str, list[dict[str, Any]]] = {}
+        for item in items:
+            if not item.get("macro"):
+                continue
+            group = str(item.get("group") or default_group).strip() or default_group
+            groups.setdefault(group, []).append(item)
+        return list(groups.items())
 
     def _append_project_code_section(
         self, lines: list[str], data: dict[str, Any], name: str, title: str, placeholder_if_empty: bool = False
