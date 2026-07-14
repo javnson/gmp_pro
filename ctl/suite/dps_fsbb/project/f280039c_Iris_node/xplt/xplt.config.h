@@ -41,5 +41,5 @@
 // #define SPECIFY_CTRL_GT_TYPE USING_FIXED_TI_IQ_LIBRARY
 
 
-// Invoke Controller Settings
-#include <ctrl_settings.h>
+// Invoke SDPE-generated project settings
+#include <sdpe_dps_fsbb_iris_settings.h>

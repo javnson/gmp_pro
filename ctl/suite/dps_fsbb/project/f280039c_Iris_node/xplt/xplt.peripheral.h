@@ -17,8 +17,12 @@ extern "C"
 
 #include <gmp_core.h>
 
-// controller settings
-#include "ctrl_settings.h"
+// SDPE-generated controller settings
+#include <sdpe_dps_fsbb_iris_settings.h>
+
+#ifndef CONTROLLER_LED
+#define CONTROLLER_LED SYSTEM_LED
+#endif // CONTROLLER_LED
 
 // select ADC PTR interface
 #include <ctl/component/interface/adc_ptr_channel.h>

@@ -12,7 +12,7 @@
 //=================================================================================================
 // include Necessary control modules
 
-#include "ctrl_settings.h"
+#include <sdpe_dps_fsbb_iris_settings.h>
 
 #include <core/pm/function_scheduler.h>
 

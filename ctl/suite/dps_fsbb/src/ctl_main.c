@@ -57,21 +57,21 @@ void ctl_init(void)
     //
     ctl_4switch_buckboost_hardware_t fsbb_init = {0};
 
-    fsbb_init.C_farad = FSBB_COUT;
+    fsbb_init.C_farad = FSBB_PARAM_COUT;
 
     fsbb_init.fs = CONTROLLER_FREQUENCY;
 
-    fsbb_init.v_in_min = FSBB_OUTPUT_VOLTAGE_MIN;
-    fsbb_init.v_in_max = FSBB_OUTPUT_VOLTAGE_MAX;
+    fsbb_init.v_in_min = FSBB_INPUT_VOLTAGE_MIN;
+    fsbb_init.v_in_max = FSBB_INPUT_VOLTAGE_MAX;
 
     fsbb_init.v_out_max = FSBB_OUTPUT_VOLTAGE_MAX;
     fsbb_init.v_out_min = FSBB_OUTPUT_VOLTAGE_MIN;
 
-    fsbb_init.L_henry = FSBB_L;
-    fsbb_init.R_esr_ohm = FSBB_L_ESR;
+    fsbb_init.L_henry = FSBB_PARAM_L;
+    fsbb_init.R_esr_ohm = FSBB_PARAM_L_ESR;
 
-    fsbb_init.C_farad = FSBB_COUT;
-    fsbb_init.R_load_min = FSBB_RLOAD_MIN;
+    fsbb_init.C_farad = FSBB_PARAM_COUT;
+    fsbb_init.R_load_min = FSBB_PARAM_RLOAD_MIN;
 
     fsbb_init.v_base = CTRL_VOLTAGE_BASE;
     fsbb_init.i_base = CTRL_CURRENT_BASE;

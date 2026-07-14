@@ -49,9 +49,9 @@ void setup_peripheral(void)
     ctl_init_adc_channel(
         &adc_v_in,
         // ADC gain calculation
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_VIN_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_FSBB_VIN_SENSITIVITY, CTRL_VOLTAGE_BASE),
         // ADC bias calculation
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_VIN_VOLTAGE_BIAS),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_FSBB_VIN_BIAS),
         // ADC resolution, IQN
         12, 24);
 
@@ -61,9 +61,9 @@ void setup_peripheral(void)
     ctl_init_adc_channel(
         &adc_v_out,
         // ADC gain calculation
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_VOUT_VOLTAGE_SENSITIVITY, CTRL_VOLTAGE_BASE),
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_FSBB_VOUT_SENSITIVITY, CTRL_VOLTAGE_BASE),
         // ADC bias calculation
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_VOUT_VOLTAGE_BIAS),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_FSBB_VOUT_BIAS),
         // ADC resolution, IQN
         12, 24);
 
@@ -73,9 +73,9 @@ void setup_peripheral(void)
     ctl_init_adc_channel(
         &adc_i_L,
         // ADC gain calculation
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_INDUCTOR_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_FSBB_IL_SENSITIVITY, CTRL_CURRENT_BASE),
         // ADC bias calculation
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_INDUCTOR_CURRENT_BIAS),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_FSBB_IL_BIAS),
         // ADC resolution, IQN
         12, 24);
 
@@ -85,9 +85,9 @@ void setup_peripheral(void)
     ctl_init_adc_channel(
         &adc_i_load,
         // ADC gain calculation
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_LOAD_CURRENT_SENSITIVITY, CTRL_CURRENT_BASE),
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_FSBB_IOUT_SENSITIVITY, CTRL_CURRENT_BASE),
         // ADC bias calculation
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_LOAD_CURRENT_BIAS),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_FSBB_IOUT_BIAS),
         // ADC resolution, IQN
         12, 24);
 
