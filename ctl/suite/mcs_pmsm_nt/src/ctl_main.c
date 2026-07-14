@@ -13,6 +13,12 @@
 
 #include <ctrl_settings.h>
 
+// Backward compatibility for project settings that still use the historical
+// misspelled PIL switch. New SDPE projects use ENABLE_GMP_DL_PIL_SIM.
+#if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM
+#define ENABLE_GMP_DL_PIL_SIM
+#endif
+
 #include "ctl_main.h"
 
 #include <xplt.peripheral.h>
@@ -238,21 +244,21 @@ void ctl_mainloop(void)
 
 void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
 {
-#if defined ENBALE_GMP_DL_PIL_SIM
+#if defined ENABLE_GMP_DL_PIL_SIM
     ctl_input_callback_pil(rx);
 
     ctl_dispatch();
 
     ctl_output_callback_pil(tx);
-#endif // defined ENBALE_GMP_DL_PIL_SIM
+#endif // defined ENABLE_GMP_DL_PIL_SIM
 }
 
-#if defined ENBALE_GMP_DL_PIL_SIM
+#if defined ENABLE_GMP_DL_PIL_SIM
 time_gt gmp_base_get_ctrl_tick(void)
 {
     return mtr_ctrl.isr_tick / ((uint32_t)CONTROLLER_FREQUENCY / 1000);
 }
-#endif // defined ENBALE_GMP_DL_PIL_SIM
+#endif // defined ENABLE_GMP_DL_PIL_SIM
 
 //=================================================================================================
 // Controller Tasks
