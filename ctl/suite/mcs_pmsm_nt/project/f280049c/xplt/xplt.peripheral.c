@@ -50,7 +50,7 @@ extern gpio_halt user_led;
 void setup_peripheral(void)
 {
     // Setup Debug Uart
-    debug_uart = IRIS_UART_USB_BASE;
+    debug_uart = LAUNCHXL_UART_USB_BASE;
 
     // Test print function
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
@@ -149,21 +149,21 @@ interrupt void MainISR(void)
     //
     // Clear the interrupt flag
     //
-    ADC_clearInterruptStatus(IRIS_ADCA_BASE, ADC_INT_NUMBER1);
+    ADC_clearInterruptStatus(LAUNCHXL_ADCA_BASE, ADC_INT_NUMBER1);
 
     //
     // Check if overflow has occurred
     //
-    if (true == ADC_getInterruptOverflowStatus(IRIS_ADCA_BASE, ADC_INT_NUMBER1))
+    if (true == ADC_getInterruptOverflowStatus(LAUNCHXL_ADCA_BASE, ADC_INT_NUMBER1))
     {
-        ADC_clearInterruptOverflowStatus(IRIS_ADCA_BASE, ADC_INT_NUMBER1);
-        ADC_clearInterruptStatus(IRIS_ADCA_BASE, ADC_INT_NUMBER1);
+        ADC_clearInterruptOverflowStatus(LAUNCHXL_ADCA_BASE, ADC_INT_NUMBER1);
+        ADC_clearInterruptStatus(LAUNCHXL_ADCA_BASE, ADC_INT_NUMBER1);
     }
 
     //
     // Acknowledge the interrupt
     //
-    Interrupt_clearACKGroup(INT_IRIS_ADCA_1_INTERRUPT_ACK_GROUP);
+    Interrupt_clearACKGroup(INT_LAUNCHXL_ADCA_1_INTERRUPT_ACK_GROUP);
 }
 
 //=================================================================================================
@@ -179,16 +179,16 @@ typedef union {
 } can_data_t;
 
 // CAN interrupt
-interrupt void INT_IRIS_CAN_0_ISR(void)
+interrupt void INT_LAUNCHXL_CAN_0_ISR(void)
 {
-    uint32_t status = CAN_getInterruptCause(IRIS_CAN_BASE);
+    uint32_t status = CAN_getInterruptCause(LAUNCHXL_CAN_BASE);
 
     uint16_t rx_data[4];
     can_data_t recv_content[2];
 
     if (status == 1)
     {
-        CAN_readMessage(IRIS_CAN_BASE, 1, rx_data);
+        CAN_readMessage(LAUNCHXL_CAN_BASE, 1, rx_data);
         CAN_clearInterruptStatus(CANA_BASE, 1);
 
         // Control Flag, Enable System
@@ -203,7 +203,7 @@ interrupt void INT_IRIS_CAN_0_ISR(void)
     }
     else if (status == 2)
     {
-        CAN_readMessage(IRIS_CAN_BASE, 2, (uint16_t*)recv_content);
+        CAN_readMessage(LAUNCHXL_CAN_BASE, 2, (uint16_t*)recv_content);
         CAN_clearInterruptStatus(CANA_BASE, 2);
 
         //        // set target value
@@ -218,27 +218,27 @@ interrupt void INT_IRIS_CAN_0_ISR(void)
     //
     // Clear the interrupt flag
     //
-    CAN_clearGlobalInterruptStatus(IRIS_CAN_BASE, CAN_GLOBAL_INT_CANINT0);
+    CAN_clearGlobalInterruptStatus(LAUNCHXL_CAN_BASE, CAN_GLOBAL_INT_CANINT0);
 
     //
     // Acknowledge the interrupt
     //
-    Interrupt_clearACKGroup(INT_IRIS_CAN_0_INTERRUPT_ACK_GROUP);
+    Interrupt_clearACKGroup(INT_LAUNCHXL_CAN_0_INTERRUPT_ACK_GROUP);
 }
 
-interrupt void INT_IRIS_CAN_1_ISR(void)
+interrupt void INT_LAUNCHXL_CAN_1_ISR(void)
 {
     // Nothing here
 
     //
     // Clear the interrupt flag
     //
-    CAN_clearGlobalInterruptStatus(IRIS_CAN_BASE, CAN_GLOBAL_INT_CANINT1);
+    CAN_clearGlobalInterruptStatus(LAUNCHXL_CAN_BASE, CAN_GLOBAL_INT_CANINT1);
 
     //
     // Acknowledge the interrupt
     //
-    Interrupt_clearACKGroup(INT_IRIS_CAN_1_INTERRUPT_ACK_GROUP);
+    Interrupt_clearACKGroup(INT_LAUNCHXL_CAN_1_INTERRUPT_ACK_GROUP);
 }
 
 void send_monitor_data(void)
@@ -249,37 +249,37 @@ void send_monitor_data(void)
     // 0x201: Monitor Motor Current
     tran_content[0].i32 = (int32_t)(mtr_ctrl.idq0.dat[phase_d] * CAN_SCALE_FACTOR);
     tran_content[1].i32 = (int32_t)(mtr_ctrl.idq0.dat[phase_q] * CAN_SCALE_FACTOR);
-    CAN_sendMessage(IRIS_CAN_BASE, 4, 8, (uint16_t*)tran_content);
+    CAN_sendMessage(LAUNCHXL_CAN_BASE, 4, 8, (uint16_t*)tran_content);
 
     //0x202: Monitor inverter voltage
     tran_content[0].i32 = (int32_t)(mtr_ctrl.vdq0.dat[phase_d] * CAN_SCALE_FACTOR);
     tran_content[1].i32 = (int32_t)(mtr_ctrl.vdq0.dat[phase_q] * CAN_SCALE_FACTOR);
-    CAN_sendMessage(IRIS_CAN_BASE, 5, 8, (uint16_t*)tran_content);
+    CAN_sendMessage(LAUNCHXL_CAN_BASE, 5, 8, (uint16_t*)tran_content);
 
     // 0x203: Monitor Velocity following
 //    tran_content[0].i32 = (int32_t)(motion_ctrl.spd_if->speed * CAN_SCALE_FACTOR);
 //    tran_content[1].i32 = (int32_t)(motion_ctrl.target_velocity * CAN_SCALE_FACTOR);
-    CAN_sendMessage(IRIS_CAN_BASE, 6, 8, (uint16_t*)tran_content);
+    CAN_sendMessage(LAUNCHXL_CAN_BASE, 6, 8, (uint16_t*)tran_content);
 
     // 0x204: TODO Monitor elec-position following
 //    tran_content[0].i32 = (int32_t)(motion_ctrl.pos_if->position * CAN_SCALE_FACTOR);
 //    tran_content[1].i32 = (int32_t)(motion_ctrl.target_angle * CAN_SCALE_FACTOR);
-    CAN_sendMessage(IRIS_CAN_BASE, 7, 8, (uint16_t*)tran_content);
+    CAN_sendMessage(LAUNCHXL_CAN_BASE, 7, 8, (uint16_t*)tran_content);
 
     // 0x205: Monitor DC Voltage / ISR tick
     tran_content[0].i32 = (int32_t)(mtr_ctrl.udc * CAN_SCALE_FACTOR);
     tran_content[1].i32 = (int32_t)(mtr_ctrl.isr_tick);
-    CAN_sendMessage(IRIS_CAN_BASE, 8, 8, (uint16_t*)tran_content);
+    CAN_sendMessage(LAUNCHXL_CAN_BASE, 8, 8, (uint16_t*)tran_content);
 
     // 0x206: ia,ib
     tran_content[0].i32 = (int32_t)(mtr_ctrl.iuvw.dat[phase_U] * CAN_SCALE_FACTOR);
     tran_content[1].i32 = (int32_t)(mtr_ctrl.iuvw.dat[phase_V] * CAN_SCALE_FACTOR);
-    CAN_sendMessage(IRIS_CAN_BASE, 9, 8, (uint16_t*)tran_content);
+    CAN_sendMessage(LAUNCHXL_CAN_BASE, 9, 8, (uint16_t*)tran_content);
 
     // 0x207: ualpha, ubeta
     tran_content[0].i32 = (int32_t)(mtr_ctrl.vab0.dat[phase_alpha] * CAN_SCALE_FACTOR);
     tran_content[1].i32 = (int32_t)(mtr_ctrl.vab0.dat[phase_beta] * CAN_SCALE_FACTOR);
-    CAN_sendMessage(IRIS_CAN_BASE, 10, 8, (uint16_t*)tran_content);
+    CAN_sendMessage(LAUNCHXL_CAN_BASE, 10, 8, (uint16_t*)tran_content);
 }
 
 //=================================================================================================
@@ -293,12 +293,12 @@ extern gmp_datalink_t dl;
 void flush_dl_tx_buffer()
 {
     // Send head
-    gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl), gmp_dev_dl_get_tx_hw_hdr_size(&dl), 10);
+    gmp_hal_uart_write(LAUNCHXL_UART_USB_BASE, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl), gmp_dev_dl_get_tx_hw_hdr_size(&dl), 10);
 
     // Send data body, if necessary
     if (gmp_dev_dl_get_tx_hw_pld_size(&dl) > 0)
     {
-        gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_pld_ptr(&dl), gmp_dev_dl_get_tx_hw_pld_size(&dl),
+        gmp_hal_uart_write(LAUNCHXL_UART_USB_BASE, gmp_dev_dl_get_tx_hw_pld_ptr(&dl), gmp_dev_dl_get_tx_hw_pld_size(&dl),
                            10);
     }
 }
@@ -309,34 +309,34 @@ void flush_dl_rx_buffer()
     data_gt rxBuf[ISR_LOCAL_BUF_SIZE];
 
     // read all FIFO messages
-    fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE);
+    fifoLevel = SCI_getRxFIFOStatus(LAUNCHXL_UART_USB_BASE);
 
     if (fifoLevel > 0)
     {
-        SCI_readCharArray(IRIS_UART_USB_BASE, (uint16_t*)rxBuf, fifoLevel);
+        SCI_readCharArray(LAUNCHXL_UART_USB_BASE, (uint16_t*)rxBuf, fifoLevel);
 
         // Lock-free ring queue pushed into the protocol stack (very fast, O(1))
         gmp_dev_dl_push_str(&dl, rxBuf, fifoLevel);
     }
 }
 
-interrupt void INT_IRIS_UART_USB_RX_ISR(void)
+interrupt void INT_LAUNCHXL_UART_USB_RX_ISR(void)
 {
     flush_dl_rx_buffer();
 
     //
     // deal with overrun
     //
-    if (SCI_getRxStatus(IRIS_UART_USB_BASE) & SCI_RXSTATUS_OVERRUN)
+    if (SCI_getRxStatus(LAUNCHXL_UART_USB_BASE) & SCI_RXSTATUS_OVERRUN)
     {
-        SCI_clearOverflowStatus(IRIS_UART_USB_BASE);
+        SCI_clearOverflowStatus(LAUNCHXL_UART_USB_BASE);
     }
 
     //
     // Clear interrupt flags
     //
-    SCI_clearInterruptStatus(IRIS_UART_USB_BASE, SCI_INT_RXFF);
-    Interrupt_clearACKGroup(INT_IRIS_UART_USB_RX_INTERRUPT_ACK_GROUP);
+    SCI_clearInterruptStatus(LAUNCHXL_UART_USB_BASE, SCI_INT_RXFF);
+    Interrupt_clearACKGroup(INT_LAUNCHXL_UART_USB_RX_INTERRUPT_ACK_GROUP);
 }
 
 ////
