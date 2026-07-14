@@ -55,6 +55,9 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern DMA_HandleTypeDef hdma_usart2_rx;
+extern UART_HandleTypeDef huart2;
+extern ADC_HandleTypeDef hadc1;
 
 /* USER CODE BEGIN EV */
 
@@ -199,5 +202,20 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /* USER CODE BEGIN 1 */
+
+void DMA1_Channel2_IRQHandler(void)
+{
+  HAL_DMA_IRQHandler(&hdma_usart2_rx);
+}
+
+void ADC1_2_IRQHandler(void)
+{
+  HAL_ADC_IRQHandler(&hadc1);
+}
+
+void USART2_IRQHandler(void)
+{
+  HAL_UART_IRQHandler(&huart2);
+}
 
 /* USER CODE END 1 */

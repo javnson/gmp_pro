@@ -1,15 +1,458 @@
 {
   "id": "mcs_pmsm_nt_stm32g431",
-  "display_name": "mcs_pmsm_nt_stm32g431",
+  "display_name": "MCS PMSM NT NUCLEO-G431RB",
+  "description": "NUCLEO-G431RB PMSM settings with selectable TIM1/TIM8 motor PWM and USART2 circular-DMA Datalink.",
   "suite": "mcs_pmsm_nt",
-  "version": "0.1.0",
-  "output_header": "mcs_pmsm_nt_stm32g431_sdpe_bindings.h",
-  "hardware": [],
-  "requirements": [],
-  "feature_macros": [],
-  "option_macros": [],
+  "version": "1.0.0",
+  "updated_at": "2026-07-14",
+  "output_header": "sdpe_mcs_pmsm_nt_stm32g431_settings.h",
+  "hardware": [
+    {
+      "entity": "nucleo_g431rb_motor_board"
+    },
+    {
+      "entity": "sm060r20b30mnad"
+    }
+  ],
   "code_sections": {
-    "after_extern_open": "/* Add project-specific includes here. */",
-    "before_footer": "/* Add project-specific tail macros here. */"
-  }
+    "after_extern_open": "/* BOOSTXL inverter compatibility. */\n#define BOOSTXL_3PHGANINV_IS_DEFAULT_PARAM\n#include <ctl/component/hardware_preset/inverter_3ph/GMP_3PH_2136SINV_DUAL_TMPL.h>\n#define MOTOR_TYPE SM060R20B30MNAD_MOTOR_TYPE\n#define MOTOR_PARAM_RS SM060R20B30MNAD_RS\n#define MOTOR_PARAM_LS SM060R20B30MNAD_LD\n#define MOTOR_PARAM_LD SM060R20B30MNAD_LD\n#define MOTOR_PARAM_LQ SM060R20B30MNAD_LQ\n#define MOTOR_PARAM_FLUX SM060R20B30MNAD_FLUX\n#define MOTOR_PARAM_POLE_PAIRS SM060R20B30MNAD_POLE_PAIRS\n#define MOTOR_PARAM_INERTIA SM060R20B30MNAD_INERTIA\n#define MOTOR_PARAM_FRICTION SM060R20B30MNAD_FRICTION\n#define MOTOR_PARAM_KV SM060R20B30MNAD_KV\n#define MOTOR_PARAM_EMF SM060R20B30MNAD_EMF\n#define MOTOR_PARAM_RATED_VOLTAGE SM060R20B30MNAD_RATED_VOLTAGE\n#define MOTOR_PARAM_RATED_CURRENT SM060R20B30MNAD_RATED_CURRENT\n#define MOTOR_PARAM_NO_LOAD_CURRENT SM060R20B30MNAD_NO_LOAD_CURRENT\n#define MOTOR_PARAM_RATED_FREQUENCY SM060R20B30MNAD_RATED_FREQUENCY\n#define MOTOR_PARAM_MAX_SPEED SM060R20B30MNAD_MAX_SPEED\n#define MOTOR_PARAM_MAX_TORQUE SM060R20B30MNAD_MAX_TORQUE\n#define MOTOR_PARAM_MAX_DC_VOLTAGE SM060R20B30MNAD_MAX_DC_VOLTAGE\n#define MOTOR_PARAM_MAX_PH_CURRENT SM060R20B30MNAD_MAX_PH_CURRENT",
+    "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 4)\n#error \"BUILD_LEVEL must be in range 1..4.\"\n#endif\n\n#if MCS_PWM_TIMER_SELECTION == 1\n#define MCS_PWM_TIMER_HANDLE (&htim1)\n#define MCS_PWM_ADC_TRIGGER ADC_EXTERNALTRIGINJEC_T1_TRGO\n#elif MCS_PWM_TIMER_SELECTION == 8\n#define MCS_PWM_TIMER_HANDLE (&htim8)\n#define MCS_PWM_ADC_TRIGGER ADC_EXTERNALTRIGINJEC_T8_TRGO\n#else\n#error \"MCS_PWM_TIMER_SELECTION must be 1 or 8.\"\n#endif"
+  },
+  "feature_macros": [
+    {
+      "group": "Control Algorithm",
+      "macro": "PMSM_CTRL_USING_DISCRETE_CTRL",
+      "enabled": false,
+      "value": "",
+      "description": "Use discrete controller implementation."
+    },
+    {
+      "group": "Control Algorithm",
+      "macro": "_USE_DEBUG_DISCRETE_PID",
+      "enabled": true,
+      "value": "",
+      "description": "Enable discrete PID anti-saturation."
+    },
+    {
+      "group": "Control Algorithm",
+      "macro": "ENABLE_SMO",
+      "enabled": true,
+      "value": "",
+      "description": "Enable sliding-mode observer."
+    },
+    {
+      "group": "Protection",
+      "macro": "ENABLE_MOTOR_FAULT_PROTECTION",
+      "enabled": true,
+      "value": "",
+      "description": "Enable motor fault protection."
+    },
+    {
+      "group": "ADC",
+      "macro": "SPECIFY_ENABLE_ADC_CALIBRATE",
+      "enabled": true,
+      "value": "",
+      "description": "Enable ADC offset calibration."
+    },
+    {
+      "group": "PWM",
+      "macro": "PWM_MODULATOR_USING_NEGATIVE_LOGIC",
+      "enabled": true,
+      "value": "(1)",
+      "description": "Use active-low inverter modulation."
+    },
+    {
+      "group": "PWM",
+      "macro": "USING_NPC_MODULATOR",
+      "enabled": false,
+      "value": "",
+      "description": "Enable NPC modulation."
+    }
+  ],
+  "option_macros": [
+    {
+      "group": "Controller",
+      "macro": "BUILD_LEVEL",
+      "enabled": true,
+      "value": "(4)",
+      "options": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)"
+      ],
+      "description": "Commissioning build level."
+    },
+    {
+      "group": "ADC",
+      "macro": "MC_CURRENT_SAMPLE_PHASE_MODE",
+      "enabled": true,
+      "value": "(2)",
+      "options": [
+        "(2)",
+        "(3)"
+      ],
+      "description": "Directly sampled phase-current count."
+    },
+    {
+      "group": "Board",
+      "macro": "MCS_PWM_TIMER_SELECTION",
+      "enabled": true,
+      "value": "1",
+      "options_preset": "nucleo_g431rb_motor_board.PWM_TIMER_SELECTION",
+      "options": [],
+      "description": "Select TIM1 or TIM8 as the complete three-phase PWM and ADC trigger source."
+    },
+    {
+      "group": "Board",
+      "macro": "MCS_UART_HANDLE",
+      "enabled": true,
+      "value": "(&huart2)",
+      "options_preset": "nucleo_g431rb_motor_board.UART_HANDLE",
+      "options": [],
+      "description": "Datalink UART handle."
+    },
+    {
+      "group": "Board",
+      "macro": "MCS_UART_INSTANCE",
+      "enabled": true,
+      "value": "USART2",
+      "options": [
+        "USART2"
+      ],
+      "description": "Datalink UART instance."
+    },
+    {
+      "group": "Board",
+      "macro": "MCS_ENCODER_TIMER_HANDLE",
+      "enabled": true,
+      "value": "(&htim3)",
+      "options": [
+        "(&htim3)"
+      ],
+      "description": "Encoder timer handle."
+    }
+  ],
+  "requirements": [
+    {
+      "role": "startup_delay",
+      "macro": "CTRL_STARTUP_DELAY",
+      "binding": {
+        "number": "100"
+      },
+      "description": "Controller startup delay in milliseconds."
+    },
+    {
+      "role": "controller_frequency",
+      "macro": "CONTROLLER_FREQUENCY",
+      "binding": {
+        "float": "20e3"
+      },
+      "description": "Motor-control update frequency in hertz."
+    },
+    {
+      "role": "pwm_compare_max",
+      "macro": "CTRL_PWM_CMP_MAX",
+      "binding": {
+        "number": "4249"
+      },
+      "description": "TIM1/TIM8 center-aligned ARR at 170 MHz and 20 kHz."
+    },
+    {
+      "role": "pwm_deadband",
+      "macro": "CTRL_PWM_DEADBAND_CMP",
+      "binding": {
+        "number": "100"
+      },
+      "description": "Advanced-timer dead-time count."
+    },
+    {
+      "role": "system_frequency",
+      "macro": "CTRL_SYS_FREQUENCY",
+      "binding": {
+        "number": "170e6"
+      },
+      "description": "STM32G431 system clock frequency."
+    },
+    {
+      "role": "adc_voltage_reference",
+      "macro": "CTRL_ADC_VOLTAGE_REF",
+      "binding": {
+        "float": "3.3"
+      },
+      "description": "ADC reference voltage."
+    },
+    {
+      "role": "adc_calibration_timeout",
+      "macro": "TIMEOUT_ADC_CALIB_MS",
+      "binding": {
+        "number": "10000"
+      },
+      "description": "ADC calibration timeout in milliseconds."
+    },
+    {
+      "role": "dc_bus_voltage_base",
+      "macro": "CTRL_DCBUS_VOLTAGE",
+      "binding": {
+        "float": "80.0"
+      },
+      "description": "DC-bus voltage base."
+    },
+    {
+      "role": "phase_voltage_base",
+      "macro": "CTRL_VOLTAGE_BASE",
+      "binding": {
+        "literal": "(CTRL_DCBUS_VOLTAGE / 1.73205081f)"
+      },
+      "description": "SVPWM phase-voltage base."
+    },
+    {
+      "role": "current_base",
+      "macro": "CTRL_CURRENT_BASE",
+      "binding": {
+        "float": "10.0"
+      },
+      "description": "Phase-current base in amperes."
+    },
+    {
+      "role": "encoder_full_scale",
+      "macro": "CTRL_POS_ENC_FS",
+      "binding": {
+        "number": "10000"
+      },
+      "description": "Encoder counts per revolution."
+    },
+    {
+      "role": "encoder_bias",
+      "macro": "CTRL_POS_ENC_BIAS",
+      "binding": {
+        "float": "0.0207000002"
+      },
+      "description": "Encoder position bias in per unit."
+    },
+    {
+      "role": "mechanical_division",
+      "macro": "CTRL_MECH_DIV",
+      "binding": {
+        "number": "5"
+      },
+      "description": "Mechanical speed and position division."
+    },
+    {
+      "role": "phase_current_sensitivity",
+      "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
+      "binding": {
+        "literal": "(MY_BOARD_PH_SHUNT_RESISTANCE_OHM * MY_BOARD_PH_CSA_GAIN_V_V)"
+      },
+      "description": "Phase-current sensor sensitivity."
+    },
+    {
+      "role": "phase_current_bias",
+      "macro": "CTRL_INVERTER_CURRENT_BIAS",
+      "binding": {
+        "literal": "(MY_BOARD_PH_CSA_BIAS_V)"
+      },
+      "description": "Phase-current sensor bias."
+    },
+    {
+      "role": "phase_voltage_sensitivity",
+      "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "literal": "(MY_BOARD_PH_VOLTAGE_SENSE_GAIN)"
+      },
+      "description": "Phase-voltage sensor gain."
+    },
+    {
+      "role": "phase_voltage_bias",
+      "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
+      "binding": {
+        "literal": "(MY_BOARD_PH_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "Phase-voltage sensor bias."
+    },
+    {
+      "role": "dc_current_sensitivity",
+      "macro": "CTRL_DC_CURRENT_SENSITIVITY",
+      "binding": {
+        "literal": "(MY_BOARD_DCBUS_CURRENT_SENSE_GAIN)"
+      },
+      "description": "DC-bus current sensor gain."
+    },
+    {
+      "role": "dc_current_bias",
+      "macro": "CTRL_DC_CURRENT_BIAS",
+      "binding": {
+        "literal": "(MY_BOARD_DCBUS_CURRENT_SENSE_BIAS_V)"
+      },
+      "description": "DC-bus current sensor bias."
+    },
+    {
+      "role": "dc_voltage_sensitivity",
+      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "literal": "(MY_BOARD_DCBUS_VOLTAGE_SENSE_GAIN)"
+      },
+      "description": "DC-bus voltage sensor gain."
+    },
+    {
+      "role": "dc_voltage_bias",
+      "macro": "CTRL_DC_VOLTAGE_BIAS",
+      "binding": {
+        "literal": "(MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "DC-bus voltage sensor bias."
+    },
+    {
+      "role": "deadtime_current_deadband",
+      "macro": "MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A",
+      "binding": {
+        "float": "0.2"
+      },
+      "description": "Dead-time compensation current deadband."
+    },
+    {
+      "role": "deadtime_current_hysteresis",
+      "macro": "MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A",
+      "binding": {
+        "float": "0.05"
+      },
+      "description": "Dead-time compensation hysteresis."
+    },
+    {
+      "role": "open_loop_frequency",
+      "macro": "MCS_OPEN_LOOP_FREQ_HZ",
+      "binding": {
+        "float": "20.0"
+      },
+      "description": "Open-loop electrical frequency."
+    },
+    {
+      "role": "open_loop_frequency_slope",
+      "macro": "MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S",
+      "binding": {
+        "float": "20.0"
+      },
+      "description": "Open-loop frequency slew rate."
+    },
+    {
+      "role": "mechanical_position_kp",
+      "macro": "MCS_MECH_POSITION_KP_PU",
+      "binding": {
+        "float": "5.0"
+      },
+      "description": "Position-loop proportional gain."
+    },
+    {
+      "role": "mechanical_position_ki",
+      "macro": "MCS_MECH_POSITION_KI_PU_S",
+      "binding": {
+        "float": "1.0"
+      },
+      "description": "Position-loop integral gain."
+    },
+    {
+      "role": "mechanical_velocity_kp",
+      "macro": "MCS_MECH_VELOCITY_KP_PU",
+      "binding": {
+        "float": "5.0"
+      },
+      "description": "Velocity-loop proportional gain."
+    },
+    {
+      "role": "mechanical_velocity_ki",
+      "macro": "MCS_MECH_VELOCITY_KI_PU_S",
+      "binding": {
+        "float": "1.0"
+      },
+      "description": "Velocity-loop integral gain."
+    },
+    {
+      "role": "mechanical_speed_limit",
+      "macro": "MCS_MECH_SPEED_LIMIT_RPM",
+      "binding": {
+        "literal": "(MOTOR_PARAM_MAX_SPEED)"
+      },
+      "description": "Mechanical speed limit."
+    },
+    {
+      "role": "mechanical_speed_slope",
+      "macro": "MCS_MECH_SPEED_SLOPE_RPM_S",
+      "binding": {
+        "literal": "(MOTOR_PARAM_MAX_SPEED)"
+      },
+      "description": "Mechanical speed slew rate."
+    },
+    {
+      "role": "mechanical_current_limit",
+      "macro": "MCS_MECH_CURRENT_LIMIT_A",
+      "binding": {
+        "literal": "(0.3f * CTRL_CURRENT_BASE)"
+      },
+      "description": "Mechanical current limit."
+    },
+    {
+      "role": "encoder_speed_filter",
+      "macro": "MCS_ENCODER_SPEED_FILTER_FC_HZ",
+      "binding": {
+        "float": "20.0"
+      },
+      "description": "Encoder speed filter cutoff."
+    },
+    {
+      "role": "commissioning_id",
+      "macro": "MCS_COMMISSIONING_ID_REF_A",
+      "binding": {
+        "literal": "(0.1f * CTRL_CURRENT_BASE)"
+      },
+      "description": "Commissioning d-axis current."
+    },
+    {
+      "role": "commissioning_iq",
+      "macro": "MCS_COMMISSIONING_IQ_REF_A",
+      "binding": {
+        "literal": "(0.1f * CTRL_CURRENT_BASE)"
+      },
+      "description": "Commissioning q-axis current."
+    },
+    {
+      "role": "commissioning_speed",
+      "macro": "MCS_COMMISSIONING_SPEED_REF_RPM",
+      "binding": {
+        "literal": "(0.1f * MOTOR_PARAM_MAX_SPEED)"
+      },
+      "description": "Commissioning speed."
+    },
+    {
+      "role": "cia402_delay",
+      "macro": "MCS_CIA402_OPERATION_ENABLE_DELAY_MS",
+      "binding": {
+        "number": "100"
+      },
+      "description": "CiA402 operation-enable delay."
+    },
+    {
+      "role": "adc_calibrator_fc",
+      "macro": "MCS_ADC_CALIBRATOR_FC_HZ",
+      "binding": {
+        "float": "20.0"
+      },
+      "description": "ADC calibrator cutoff."
+    },
+    {
+      "role": "adc_calibrator_q",
+      "macro": "MCS_ADC_CALIBRATOR_Q",
+      "binding": {
+        "float": "0.707"
+      },
+      "description": "ADC calibrator quality factor."
+    },
+    {
+      "role": "uart_rx_buffer_size",
+      "macro": "MCS_UART_RX_BUFFER_SIZE",
+      "binding": {
+        "number": "64"
+      },
+      "description": "Circular UART RX DMA buffer size."
+    }
+  ]
 }

@@ -64,7 +64,7 @@ void ctl_input_callback(void)
     ctl_step_ptr_adc_channel(&udc);
 
     // invoke position encoder routine.
-    ctl_step_autoturn_pos_encoder(&pos_enc, __HAL_TIM_GET_COUNTER(&htim3));
+    ctl_step_autoturn_pos_encoder(&pos_enc, __HAL_TIM_GET_COUNTER(MCS_ENCODER_TIMER_HANDLE));
     // ctl_step_as5048a_pos_encoder(&pos_enc);
 }
 
@@ -73,9 +73,9 @@ GMP_STATIC_INLINE
 void ctl_output_callback(void)
 {
     // write to compare
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, spwm.pwm_out[phase_U]);
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, spwm.pwm_out[phase_V]);
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, spwm.pwm_out[phase_W]);
+    __HAL_TIM_SET_COMPARE(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_1, spwm.pwm_out[phase_U]);
+    __HAL_TIM_SET_COMPARE(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_2, spwm.pwm_out[phase_V]);
+    __HAL_TIM_SET_COMPARE(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_3, spwm.pwm_out[phase_W]);
 	
 		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2048 + 2048.0f * spwm.vabc_out.dat[phase_U]);
 		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 2048 + 2048.0f * mtr_ctrl.iab0.dat[phase_alpha]);
@@ -91,17 +91,18 @@ void ctl_output_callback(void)
 GMP_STATIC_INLINE
 void ctl_fast_enable_output()
 {
-		HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
-    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
-    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
-    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
+		HAL_TIM_PWM_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_2);
+    HAL_TIM_PWM_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_3);
+    HAL_TIMEx_PWMN_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_1);
+    HAL_TIMEx_PWMN_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_2);
+    HAL_TIMEx_PWMN_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_3);
 		
-		htim1.Instance->CCER |= TIM_CCER_MASK;
+		MCS_PWM_TIMER_HANDLE->Instance->CCER |= TIM_CCER_MASK;
 		
 		// Enable Gate driver
-		HAL_GPIO_WritePin(PWM_DISABLE_GPIO_Port, PWM_DISABLE_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(STM32F405_MOTOR_BOARD_GATE_ENABLE_PORT,
+		                  STM32F405_MOTOR_BOARD_GATE_ENABLE_PIN, GPIO_PIN_SET);
 		
 }
 
@@ -117,13 +118,14 @@ void ctl_fast_disable_output()
 //    HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_2);
 //    HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_3);
 		
-		htim1.Instance->CCER &= ~TIM_CCER_MASK;
+		MCS_PWM_TIMER_HANDLE->Instance->CCER &= ~TIM_CCER_MASK;
 		
 	  // Recover Timer
 //		__HAL_TIM_ENABLE(&htim1);
 		
 		// Disable Gate Driver
-		HAL_GPIO_WritePin(PWM_DISABLE_GPIO_Port, PWM_DISABLE_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(STM32F405_MOTOR_BOARD_GATE_ENABLE_PORT,
+		                  STM32F405_MOTOR_BOARD_GATE_ENABLE_PIN, GPIO_PIN_RESET);
 		
 }
 

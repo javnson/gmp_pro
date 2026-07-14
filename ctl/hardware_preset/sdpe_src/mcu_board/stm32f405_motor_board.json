@@ -1,0 +1,12 @@
+{
+  "id":"stm32f405_motor_board",
+  "schema":"stm32_motor_control_board",
+  "display_name":"STM32F405 Motor Control Board",
+  "macro_prefix":"STM32F405_MOTOR_BOARD",
+  "option_sets":{"PWM_TIMER_SELECTION":["1"],"UART_HANDLE":["(&huart2)"]},
+  "parameters":{
+    "chip":"STM32F405RGTx","board":"Validated STM32F405 motor-control carrier","ioc_file":"ctl/suite/mcs_pmsm_nt/project/stm32f405/stm32f405.ioc","system_clock_hz":"168000000",
+    "adc_handle":"(&hadc1)","encoder_timer_handle":"(&htim3)","uart_handle":"(&huart2)","uart_instance":"USART2","uart_rx_dma_handle":"(&hdma_usart2_rx)",
+    "gate_enable_port":"PWM_DISABLE_GPIO_Port","gate_enable_pin":"PWM_DISABLE_Pin","status_led_port":"GPIOC","status_led_pin":"GPIO_PIN_13"
+  }
+}

@@ -1,1 +1,1 @@
-You may run this Power Shell script to register GMP product.
+See README.md for the GMP private/portable environment guide.

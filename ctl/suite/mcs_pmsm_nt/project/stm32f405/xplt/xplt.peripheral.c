@@ -46,7 +46,7 @@ gpio_model_stm32_t user_led_entity;
 extern gpio_halt user_led;
 
 // a local small cache size, capable of covering the depth of the hardware FIFO (typically 16 bytes)
-#define ISR_LOCAL_BUF_SIZE 16
+#define ISR_LOCAL_BUF_SIZE MCS_UART_RX_BUFFER_SIZE
 
 // DMA buffer for UART
 uint8_t rxBuf[ISR_LOCAL_BUF_SIZE];
@@ -59,12 +59,12 @@ uint8_t rxBuf[ISR_LOCAL_BUF_SIZE];
 void setup_peripheral(void)
 {
     // Setup Debug Uart
-    debug_uart = &huart2;
+    debug_uart = MCS_UART_HANDLE;
 
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
 
-    user_led_entity.gpio_port = GPIOC;
-		user_led_entity.gpio_pin = GPIO_PIN_13;
+    user_led_entity.gpio_port = STM32F405_MOTOR_BOARD_STATUS_LED_PORT;
+		user_led_entity.gpio_pin = STM32F405_MOTOR_BOARD_STATUS_LED_PIN;
 	  user_led = &user_led_entity;
 
     HAL_Delay(1);
@@ -106,7 +106,7 @@ void setup_peripheral(void)
     //    ctl_init_as5048a_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, SPI_ENCODER_BASE, SPI_ENCODER_NCS);
 
     // init TIM3 for QEP encoder
-    HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
+    HAL_TIM_Encoder_Start(MCS_ENCODER_TIMER_HANDLE, TIM_CHANNEL_ALL);
     
     //
     // attach
@@ -125,14 +125,14 @@ void setup_peripheral(void)
     HAL_ADCEx_InjectedStart_IT(&hadc1);
 
     // Enable PWM peripheral
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+    HAL_TIM_PWM_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_2);
+    HAL_TIM_PWM_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_3);
+    HAL_TIM_PWM_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_4);
 
-    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
-    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
-    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
+    HAL_TIMEx_PWMN_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_1);
+    HAL_TIMEx_PWMN_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_2);
+    HAL_TIMEx_PWMN_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_3);
 
     // Enable DAC channels
     HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
@@ -168,7 +168,8 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc)
         counter++;
         if (counter >= 1000)
         {
-            HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+            HAL_GPIO_TogglePin(STM32F405_MOTOR_BOARD_STATUS_LED_PORT,
+                               STM32F405_MOTOR_BOARD_STATUS_LED_PIN);
             counter = 0;
         }
     }
@@ -201,7 +202,7 @@ extern gmp_datalink_t dl;
 
 uart_halt dl_uart_channel;
 
-void flush_dl_tx_buffer()
+void flush_dl_tx_buffer(void)
 {
     // Send head
     gmp_hal_uart_write(debug_uart, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl), gmp_dev_dl_get_tx_hw_hdr_size(&dl), 10);
@@ -261,7 +262,7 @@ void flush_dl_rx_buffer(void)
 // DMA half-full callback
 void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef* huart)
 {
-    if (huart->Instance == USART2)
+    if (huart->Instance == MCS_UART_INSTANCE)
     {
         flush_dl_rx_buffer();
     }
@@ -270,7 +271,7 @@ void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef* huart)
 // DMA full callback
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart)
 {
-    if (huart->Instance == USART2)
+    if (huart->Instance == MCS_UART_INSTANCE)
     {
         flush_dl_rx_buffer();
     }

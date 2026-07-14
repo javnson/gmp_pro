@@ -52,11 +52,10 @@ void ctl_input_callback(void)
 //    iabc_raw[phase_W] = adc1_res[MOTOR_UC];
 		
 		// copy ADC injected data to raw buffer
-		iuvw_src[phase_A] = HAL_ADCEx_InjectedGetValue(&hadc1,ADC_INJECTED_RANK_1);
-		iuvw_src[phase_B] = HAL_ADCEx_InjectedGetValue(&hadc1,ADC_INJECTED_RANK_2);
-		iuvw_src[phase_C] = HAL_ADCEx_InjectedGetValue(&hadc1,ADC_INJECTED_RANK_3);
-		
-		udc_src = HAL_ADCEx_InjectedGetValue(&hadc1,ADC_INJECTED_RANK_4);
+		iuvw_src[phase_A] = HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_1);
+		iuvw_src[phase_B] = HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_2);
+		iuvw_src[phase_C] = 0;
+		udc_src = HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_3);
 	
     // invoke ADC p.u. routine
     ctl_step_tri_ptr_adc_channel(&iuvw);
@@ -65,7 +64,7 @@ void ctl_input_callback(void)
     ctl_step_ptr_adc_channel(&udc);
 
     // invoke position encoder routine.
-    ctl_step_autoturn_pos_encoder(&pos_enc, __HAL_TIM_GET_COUNTER(&htim3));
+    ctl_step_autoturn_pos_encoder(&pos_enc, __HAL_TIM_GET_COUNTER(MCS_ENCODER_TIMER_HANDLE));
     // ctl_step_as5048a_pos_encoder(&pos_enc);
 }
 
@@ -74,9 +73,9 @@ GMP_STATIC_INLINE
 void ctl_output_callback(void)
 {
     // write to compare
-		__HAL_HRTIM_SETCOMPARE(&hhrtim1, HRTIM_TIMERINDEX_TIMER_A, HRTIM_COMPAREUNIT_1, spwm.pwm_out[phase_U]);
-		__HAL_HRTIM_SETCOMPARE(&hhrtim1, HRTIM_TIMERINDEX_TIMER_B, HRTIM_COMPAREUNIT_1, spwm.pwm_out[phase_V]);
-		__HAL_HRTIM_SETCOMPARE(&hhrtim1, HRTIM_TIMERINDEX_TIMER_C, HRTIM_COMPAREUNIT_1, spwm.pwm_out[phase_W]);
+		__HAL_HRTIM_SETCOMPARE(&hhrtim1, MCS_HRTIM_PHASE_U_TIMER_INDEX, HRTIM_COMPAREUNIT_1, spwm.pwm_out[phase_U]);
+		__HAL_HRTIM_SETCOMPARE(&hhrtim1, MCS_HRTIM_PHASE_V_TIMER_INDEX, HRTIM_COMPAREUNIT_1, spwm.pwm_out[phase_V]);
+		__HAL_HRTIM_SETCOMPARE(&hhrtim1, MCS_HRTIM_PHASE_W_TIMER_INDEX, HRTIM_COMPAREUNIT_1, spwm.pwm_out[phase_W]);
 	
 		HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2048 + 2048.0f * spwm.vabc_out.dat[phase_U]);
 		HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 2048 + 2048.0f * mtr_ctrl.iab0.dat[phase_alpha]);
@@ -92,20 +91,21 @@ void ctl_output_callback(void)
 GMP_STATIC_INLINE
 void ctl_fast_enable_output()
 {
-	// 1.  πƒ‹≤®–Œ ‰≥ˆ (¥Úø™ TA1/TA2, TB1/TB2, TC1/TC2 µƒ“˝Ω≈ ‰≥ˆ)
-	HAL_HRTIM_WaveformOutputStart(&hhrtim1, 
-                              HRTIM_OUTPUT_TA1 | HRTIM_OUTPUT_TA2 | 
-                              HRTIM_OUTPUT_TB1 | HRTIM_OUTPUT_TB2 | 
-                              HRTIM_OUTPUT_TC1 | HRTIM_OUTPUT_TC2);
+	// 1. ‰ΩøËÉΩÊ≥¢ÂΩ¢ËæìÂá∫ (ÊâìÂºÄ TA1/TA2, TB1/TB2, TC1/TC2 ÁöÑÂºïËÑöËæìÂá∫)
+	HAL_HRTIM_WaveformOutputStart(&hhrtim1,
+                              MCS_HRTIM_PHASE_U_OUTPUTS |
+                              MCS_HRTIM_PHASE_V_OUTPUTS |
+                              MCS_HRTIM_PHASE_W_OUTPUTS);
 
-	// 2. ∆Ù∂Ø∂® ±∆˜º∆ ˝ (»√ TA, TB, TC ø™ º‘À––)
-	HAL_HRTIM_WaveformCountStart(&hhrtim1, 
-                             HRTIM_TIMERID_TIMER_A | 
-                             HRTIM_TIMERID_TIMER_B | 
-                             HRTIM_TIMERID_TIMER_C);
+	// 2. ÂêØÂä®ÂÆöÊó∂Âô®ËÆ°Êï∞ (ËÆ© TA, TB, TC ÂºÄÂßãËøêË°å)
+	HAL_HRTIM_WaveformCountStart(&hhrtim1,
+                             MCS_HRTIM_PHASE_U_TIMER_ID |
+                             MCS_HRTIM_PHASE_V_TIMER_ID |
+                             MCS_HRTIM_PHASE_W_TIMER_ID);
 		
 		// Enable Gate driver
-		HAL_GPIO_WritePin(PWM_DISABLE_GPIO_Port, PWM_DISABLE_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(NUCLEO_G474RE_HRTIM_MOTOR_BOARD_GATE_ENABLE_PORT,
+		                  NUCLEO_G474RE_HRTIM_MOTOR_BOARD_GATE_ENABLE_PIN, GPIO_PIN_SET);
 		
 }
 
@@ -113,13 +113,14 @@ void ctl_fast_enable_output()
 GMP_STATIC_INLINE
 void ctl_fast_disable_output()
 {
-		HAL_HRTIM_WaveformOutputStop(&hhrtim1, 
-                             HRTIM_OUTPUT_TA1 | HRTIM_OUTPUT_TA2 | 
-                             HRTIM_OUTPUT_TB1 | HRTIM_OUTPUT_TB2 | 
-                             HRTIM_OUTPUT_TC1 | HRTIM_OUTPUT_TC2);
+		HAL_HRTIM_WaveformOutputStop(&hhrtim1,
+                             MCS_HRTIM_PHASE_U_OUTPUTS |
+                             MCS_HRTIM_PHASE_V_OUTPUTS |
+                             MCS_HRTIM_PHASE_W_OUTPUTS);
 		
 		// Disable Gate Driver
-		HAL_GPIO_WritePin(PWM_DISABLE_GPIO_Port, PWM_DISABLE_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(NUCLEO_G474RE_HRTIM_MOTOR_BOARD_GATE_ENABLE_PORT,
+		                  NUCLEO_G474RE_HRTIM_MOTOR_BOARD_GATE_ENABLE_PIN, GPIO_PIN_RESET);
 		
 }
 

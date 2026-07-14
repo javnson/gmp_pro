@@ -540,6 +540,9 @@ tools/hvhb40040_Antaioz/**/impl_1
 
 **/vcpkg_installed/**
 
+# GMP private/portable development environment
+/bin/
+
 # cache of rt_trace module
 *.crt_bin
 

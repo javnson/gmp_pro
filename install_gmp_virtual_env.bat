@@ -6,10 +6,10 @@ if errorlevel 1 (
 )
 
 setlocal
-call "%GMP_PRO_LOCATION%\tools\gmp_installer\install_system.bat" %*
+call "%GMP_PRO_LOCATION%\tools\gmp_installer\install_online.bat" %*
 set "RESULT=%ERRORLEVEL%"
 if not "%RESULT%"=="0" (
     echo.
-    echo [GMP] System environment installation failed with exit code %RESULT%.
+    echo [GMP] Private environment installation failed with exit code %RESULT%.
 )
 exit /b %RESULT%

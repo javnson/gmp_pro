@@ -1,0 +1,12 @@
+{
+  "id":"nucleo_g474re_hrtim_motor_board",
+  "schema":"stm32_motor_control_board",
+  "display_name":"NUCLEO-G474RE HRTIM Motor Control Board",
+  "macro_prefix":"NUCLEO_G474RE_HRTIM_MOTOR_BOARD",
+  "option_sets":{"HRTIM_CHANNEL":["0","1","2","3","4"],"UART_HANDLE":["(&huart2)"]},
+  "parameters":{
+    "chip":"STM32G474RETx","board":"NUCLEO-G474RE","ioc_file":"ctl/suite/mcs_pmsm_nt/project/stm32g474_hrtim/stm32g474_hrtim.ioc","system_clock_hz":"170000000",
+    "adc_handle":"(&hadc1)","encoder_timer_handle":"(&htim3)","uart_handle":"(&huart2)","uart_instance":"USART2","uart_rx_dma_handle":"(&hdma_usart2_rx)",
+    "gate_enable_port":"PWM_DISABLE_GPIO_Port","gate_enable_pin":"PWM_DISABLE_Pin","status_led_port":"GPIOA","status_led_pin":"GPIO_PIN_5"
+  }
+}
