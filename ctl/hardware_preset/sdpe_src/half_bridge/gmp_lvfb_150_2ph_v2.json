@@ -45,10 +45,12 @@
     "voltage_base_v": "(3.3f)",
     "voltage_bias_v": "(0.0f)",
     "voltage_bandwidth_hz": "(114.47e3f)",
-    "voltage_divider_r_low": "((15e3))",
-    "voltage_divider_r_high": "((300e3))",
+    "voltage_divider_r_low": 15000.0,
+    "voltage_divider_r_high": 300000.0,
     "voltage_sensitivity": "((15e3) / ((15e3) + ((300e3) * 3)) * 1.65f)",
     "voltage_max": "(3.3f / ((15e3) / ((15e3) + ((300e3) * 3)) * 1.65f))",
     "bus_capacitance_f": 0.0
-  }
+  },
+  "description": "",
+  "output_subdir": ""
 }

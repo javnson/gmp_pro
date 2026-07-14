@@ -6,6 +6,30 @@
 // trigger memory module
 #include <ctl/component/dsa/dsa_trigger.h>
 
+void ctl_init_dsa_logger(ctl_dsa_logger_t* logger, ctrl_gt* mem_pool, uint32_t capacity, uint16_t channels,
+                         uint32_t divider_step, ctl_dsa_trigger_option_t trigger_option, parameter_gt trigger_level,
+                         parameter_gt trigger_suppression, parameter_gt isr_freq)
+{
+    logger->sm = DSA_LOGGER_READY;
+    ctl_init_divider(&logger->divider, divider_step);
+    ctl_init_mem_view(&logger->mem, mem_pool, capacity);
+    ctl_init_dsa_trigger(&logger->trigger, trigger_option, trigger_level, trigger_suppression, isr_freq);
+
+    logger->channels = (channels > 4) ? 4 : ((channels == 0) ? 1 : channels);
+
+    // Calculate separate continuous segment size for each channel up front
+    logger->channel_capacity = capacity / logger->channels;
+    logger->current_position = 0;
+}
+
+void ctl_arm_dsa_logger(ctl_dsa_logger_t* logger)
+{
+    logger->current_position = 0;
+    ctl_clear_divider(&logger->divider);
+    ctl_clear_dsa_trigger(&logger->trigger);
+    logger->sm = DSA_LOGGER_READY;
+}
+
 //void dsa_init_basic_trigger(basic_trigger_t *trigger, addr32_gt cell_size)
 //{
 //    trigger->target_index = 0;

@@ -18,12 +18,12 @@
 // Definitions of Peripheral
 
 // dlog DSA objects
-basic_trigger_t trigger;
-#define DLOG_MEM_LENGTH 100
-
-// dlog variables
-ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];
-ctrl_gt dlog_mem2[DLOG_MEM_LENGTH];
+//basic_trigger_t trigger;
+//#define DLOG_MEM_LENGTH 100
+//
+//// dlog variables
+//ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];
+//ctrl_gt dlog_mem2[DLOG_MEM_LENGTH];
 
 // GPIO port
 extern gpio_halt user_led;
@@ -92,7 +92,7 @@ void setup_peripheral(void)
         12, 24);
 
     // Initialize data logger module
-    dsa_init_basic_trigger(&trigger, DLOG_MEM_LENGTH);
+//    dsa_init_basic_trigger(&trigger, DLOG_MEM_LENGTH);
 }
 
 //=================================================================================================

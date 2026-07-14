@@ -2452,6 +2452,7 @@ class ProjectPage(SDPEPage):
         if not groups:
             self.feature_macros.addTopLevelItem(self.create_macro_group_item("Selection Macros"))
         self.feature_macros.expandAll()
+        self.feature_macros.clearSelection()
         fit_tree_key_columns(self.feature_macros, description_col=3, interactive=True)
 
     def load_option_macro_tree(self, items: list[dict[str, Any]]) -> None:
@@ -2468,6 +2469,7 @@ class ProjectPage(SDPEPage):
         if not groups:
             self.enum_macros.addTopLevelItem(self.create_macro_group_item("Option Macros"))
         self.enum_macros.expandAll()
+        self.enum_macros.clearSelection()
         fit_tree_key_columns(self.enum_macros, description_col=5, interactive=True)
 
     def collect_feature_macro_tree(self) -> list[dict[str, Any]]:
@@ -2607,6 +2609,9 @@ class ProjectPage(SDPEPage):
         tree.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         tree.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
         tree.setDefaultDropAction(Qt.DropAction.MoveAction)
+        tree.model().rowsMoved.connect(lambda *_args, t=tree: self.after_macro_tree_changed(t))
+        tree.model().rowsInserted.connect(lambda *_args, t=tree: self.after_macro_tree_changed(t))
+        tree.model().rowsRemoved.connect(lambda *_args, t=tree: self.after_macro_tree_changed(t))
         fit_tree_key_columns(tree, description_col=description_col, interactive=True)
         install_tree_status_descriptions(tree, description_col=description_col)
 
@@ -2652,8 +2657,9 @@ class ProjectPage(SDPEPage):
             parent.addChild(item)
             set_tree_combo(tree, item, 1, ["Enable", "Disable"], "Enable" if data.get("enabled", True) else "Disable")
         item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsDragEnabled)
-        tree.setCurrentItem(item, 0)
-        self.mark_current_dirty()
+        if not self.loading:
+            tree.setCurrentItem(item, 0)
+            self.mark_current_dirty()
         return item
 
     def add_macro_group(self, tree: QTreeWidget, macro_type: str) -> None:
@@ -2955,6 +2961,61 @@ class ProjectPage(SDPEPage):
                 header.setSectionResizeMode(col, QHeaderView.ResizeMode.Interactive)
         finally:
             self.loading = False
+
+    def after_macro_tree_changed(self, tree: QTreeWidget) -> None:
+        if self.loading:
+            return
+        QTimer.singleShot(0, lambda t=tree: self.restore_macro_widgets(t))
+        self.mark_current_dirty()
+
+    def restore_macro_widgets(self, tree: QTreeWidget) -> None:
+        if self.loading:
+            return
+        self.loading = True
+        try:
+            self.normalize_macro_groups(tree)
+            macro_type = "option" if tree is self.enum_macros else "feature"
+            for item in self.iter_macro_items(tree):
+                enabled = tree_cell_text(tree, item, 1) or "Enable"
+                if not isinstance(tree.itemWidget(item, 1), QComboBox):
+                    set_tree_combo(tree, item, 1, ["Enable", "Disable"], enabled)
+                if macro_type == "option":
+                    options = [part.strip() for part in tree_cell_text(tree, item, 4).split(",") if part.strip()]
+                    value = tree_cell_text(tree, item, 2) or (options[0] if options else "1")
+                    if not isinstance(tree.itemWidget(item, 2), QComboBox):
+                        set_tree_combo(tree, item, 2, options or [value], value)
+            description_col = 5 if tree is self.enum_macros else 3
+            fit_tree_key_columns(tree, description_col=description_col, interactive=True)
+        finally:
+            self.loading = False
+
+    def normalize_macro_groups(self, tree: QTreeWidget) -> None:
+        default_group = "Option Macros" if tree is self.enum_macros else "Selection Macros"
+        if tree.topLevelItemCount() == 0:
+            tree.addTopLevelItem(self.create_macro_group_item(default_group))
+            return
+        macro_roles = {"feature_macro", "option_macro"}
+        top_level_macros: list[QTreeWidgetItem] = []
+        for index in range(tree.topLevelItemCount()):
+            item = tree.topLevelItem(index)
+            if item.data(0, Qt.ItemDataRole.UserRole) in macro_roles:
+                top_level_macros.append(item)
+        if not top_level_macros:
+            return
+        ungrouped: QTreeWidgetItem | None = None
+        for index in range(tree.topLevelItemCount()):
+            item = tree.topLevelItem(index)
+            if item.data(0, Qt.ItemDataRole.UserRole) == "group" and item.text(0) == "Ungrouped":
+                ungrouped = item
+                break
+        if ungrouped is None:
+            ungrouped = self.create_macro_group_item("Ungrouped")
+            tree.addTopLevelItem(ungrouped)
+        for item in top_level_macros:
+            index = tree.indexOfTopLevelItem(item)
+            moved = tree.takeTopLevelItem(index)
+            ungrouped.addChild(moved)
+        ungrouped.setExpanded(True)
 
     def iter_requirement_items(self) -> list[QTreeWidgetItem]:
         items: list[QTreeWidgetItem] = []

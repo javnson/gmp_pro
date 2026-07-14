@@ -1,15 +1,15 @@
 {
   "id": "dps_fsbb_f280039c_Iris_node",
-  "display_name": "dps_fsbb_f280039c_Iris_node",
+  "display_name": "DPS FSBB F280039C IRIS Node",
   "suite": "dps_fsbb",
   "version": "0.1.0",
-  "output_header": "dps_fsbb_f280039c_Iris_node_sdpe_bindings.h",
+  "output_header": "sdpe_dps_fsbb_iris_settings.h",
   "hardware": [
     {
-      "entity": "gmp_lvfb_150_2ph_v2"
+      "entity": "iris_f280039c_node"
     },
     {
-      "entity": "iris_f280039c_node"
+      "entity": "gmp_lvfb_150_2ph_v2"
     }
   ],
   "requirements": [
@@ -17,25 +17,25 @@
       "role": "PWM Frequency",
       "macro": "PWM_FREQ",
       "binding": {
-        "float": "10e3"
+        "float": "20e3"
       },
-      "description": ""
+      "description": "PWM carrier frequency used by the FSBB power stage."
     },
     {
       "role": "Controller Frequency",
       "macro": "CONTROLLER_FREQUENCY",
       "binding": {
-        "float": "10e3"
+        "float": "20e3"
       },
-      "description": ""
+      "description": "Main control ISR frequency."
     },
     {
       "role": "PWM Depth",
       "macro": "CTRL_PWM_CMP_MAX",
       "binding": {
-        "number": "3000"
+        "number": "3000 - 1"
       },
-      "description": ""
+      "description": "PWM compare maximum value for the configured ePWM time base."
     },
     {
       "role": "PWM Deadband Width",
@@ -43,23 +43,23 @@
       "binding": {
         "number": "50"
       },
-      "description": ""
+      "description": "PWM deadband compare count."
     },
     {
       "role": "CPU Main Frequency",
       "macro": "CTRL_SYS_FREQUENCY",
       "binding": {
-        "expr": "120e6"
+        "number": "120e6"
       },
-      "description": ""
+      "description": "CPU main clock frequency."
     },
     {
       "role": "System Divition",
       "macro": "DSP_C2000_DSP_TIME_DIV",
       "binding": {
-        "literal": "(CTRL_SYS_FREQUENCY / 1000 / CTRL_PWM_CMP_MAX / 2)"
+        "number": "CTRL_SYS_FREQUENCY / 1000 / CTRL_PWM_CMP_MAX / 2"
       },
-      "description": ""
+      "description": "C2000 system tick divider derived from PWM period."
     },
     {
       "role": "ADC reference Voltage",
@@ -67,215 +67,207 @@
       "binding": {
         "float": "3.3"
       },
-      "description": ""
+      "description": "ADC voltage reference used by sensor gain and bias conversion."
     },
     {
       "role": "Voltage PU Base",
       "macro": "CTRL_VOLTAGE_BASE",
       "binding": {
-        "float": "0"
+        "float": "34.0"
       },
-      "description": ""
+      "description": "Voltage per-unit base value, using the peak value of the nominal 24 Vrms system."
     },
     {
       "role": "Current PU Base",
-      "macro": "NEW_REQUIREMENT",
+      "macro": "CTRL_CURRENT_BASE",
       "binding": {
-        "float": "0"
+        "float": "14.14"
       },
-      "description": ""
+      "description": "Current per-unit base value, using the peak value of the nominal 10 Arms system."
     },
     {
       "role": "Input Voltage Sensitive",
       "macro": "CTRL_FSBB_VIN_SENSITIVITY",
       "binding": {
-        "float": "0"
+        "export": "gmp_lvfb_150_2ph_v2.voltage_sensitivity"
       },
-      "description": ""
+      "description": "Input voltage ADC sensing sensitivity provided by the LVFB voltage sensor path."
     },
     {
       "role": "Input Voltage Bias",
       "macro": "CTRL_FSBB_VIN_BIAS",
       "binding": {
-        "float": "0"
+        "export": "gmp_lvfb_150_2ph_v2.voltage_bias_v"
       },
-      "description": ""
+      "description": "Input voltage ADC bias voltage provided by the LVFB voltage sensor path."
     },
     {
       "role": "Output Voltage Sensitive",
       "macro": "CTRL_FSBB_VOUT_SENSITIVITY",
       "binding": {
-        "float": "0"
+        "export": "gmp_lvfb_150_2ph_v2.voltage_sensitivity"
       },
-      "description": ""
+      "description": "Output voltage ADC sensing sensitivity provided by the LVFB voltage sensor path."
     },
     {
       "role": "Output Voltage Bias",
       "macro": "CTRL_FSBB_VOUT_BIAS",
       "binding": {
-        "expr": "0"
+        "export": "gmp_lvfb_150_2ph_v2.voltage_bias_v"
       },
-      "description": ""
-    },
-    {
-      "role": "Input Current Sensitive",
-      "macro": "CTRL_FSBB_IIN_SENSITIVITY",
-      "binding": {
-        "float": "0"
-      },
-      "description": ""
-    },
-    {
-      "role": "Input Current Bias",
-      "macro": "CTRL_FSBB_IIN_BIAS",
-      "binding": {
-        "number": "0"
-      },
-      "description": ""
-    },
-    {
-      "role": "Output Current Sensitive",
-      "macro": "CTRL_FSBB_IOUT_SENSITIVITY",
-      "binding": {
-        "number": "0"
-      },
-      "description": ""
-    },
-    {
-      "role": "Output Current Bias",
-      "macro": "CTRL_FSBB_IOUT_BIAS",
-      "binding": {
-        "number": "0"
-      },
-      "description": ""
+      "description": "Output voltage ADC bias voltage provided by the LVFB voltage sensor path."
     },
     {
       "role": "Inductor Current Sensitive",
       "macro": "CTRL_FSBB_IL_SENSITIVITY",
       "binding": {
-        "number": "0"
+        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
       },
-      "description": ""
+      "description": "Inductor current ADC sensing sensitivity provided by the LVFB current sensor path."
     },
     {
       "role": "Inductor Current Bias",
       "macro": "CTRL_FSBB_IL_BIAS",
       "binding": {
-        "float": "0"
+        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
       },
-      "description": ""
+      "description": "Inductor current ADC bias voltage provided by the LVFB current sensor path."
     },
     {
-      "role": "Main Inductor",
-      "macro": "PARAM_FSBB_L",
+      "role": "Output Current Sensitive",
+      "macro": "CTRL_FSBB_IOUT_SENSITIVITY",
       "binding": {
-        "number": "0"
+        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
       },
-      "description": ""
+      "description": "Load/output current ADC sensing sensitivity provided by the LVFB current sensor path."
     },
     {
-      "role": "Input Capacitor",
-      "macro": "PARAM_FSBB_CIN",
+      "role": "Output Current Bias",
+      "macro": "CTRL_FSBB_IOUT_BIAS",
       "binding": {
-        "number": "0"
+        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
       },
-      "description": ""
+      "description": "Load/output current ADC bias voltage provided by the LVFB current sensor path."
+    },
+    {
+      "role": "Min Resistance Load",
+      "macro": "FSBB_PARAM_RLOAD_MIN",
+      "binding": {
+        "float": "20.0"
+      },
+      "description": "Minimum load resistance used by FSBB controller initialization."
+    },
+    {
+      "role": "Input Capcitor",
+      "macro": "FSBB_PARAM_CIN",
+      "binding": {
+        "float": "440e-6"
+      },
+      "description": "Input DC-link capacitance."
     },
     {
       "role": "Output Capcitor",
-      "macro": "PARAM_FSBB_COUT",
+      "macro": "FSBB_PARAM_COUT",
       "binding": {
-        "number": "0"
+        "float": "440e-6"
       },
-      "description": ""
+      "description": "Output capacitance used by FSBB controller initialization."
+    },
+    {
+      "role": "ESR of Output Capcitor",
+      "macro": "FSBB_PARAM_COUT_ESR",
+      "binding": {
+        "float": "0.1"
+      },
+      "description": "Output capacitor equivalent series resistance."
+    },
+    {
+      "role": "Main Inductor",
+      "macro": "FSBB_PARAM_L",
+      "binding": {
+        "float": "1.5e-3"
+      },
+      "description": "Main FSBB inductor value."
+    },
+    {
+      "role": "ESR of Main Inductor",
+      "macro": "FSBB_PARAM_L_ESR",
+      "binding": {
+        "float": "0.05"
+      },
+      "description": "Main inductor equivalent series resistance."
     },
     {
       "role": "Max Input Voltage",
-      "macro": "NEW_REQUIREMENT",
+      "macro": "FSBB_INPUT_VOLTAGE_MAX",
       "binding": {
-        "number": "0"
+        "float": "60.0"
       },
       "description": ""
     },
     {
       "role": "Min Input Voltage",
-      "macro": "NEW_REQUIREMENT",
+      "macro": "FSBB_INPUT_VOLTAGE_MIN",
       "binding": {
-        "number": "0"
+        "float": "12.0"
       },
-      "description": ""
+      "description": "Minimum allowed FSBB input voltage."
     },
     {
       "role": "Max Output Voltage",
-      "macro": "NEW_REQUIREMENT",
+      "macro": "FSBB_OUTPUT_VOLTAGE_MAX",
       "binding": {
-        "number": "0"
+        "float": "72.0"
       },
-      "description": ""
+      "description": "Maximum allowed FSBB output voltage command."
     },
     {
       "role": "Min Output Voltage",
-      "macro": "NEW_REQUIREMENT",
+      "macro": "FSBB_OUTPUT_VOLTAGE_MIN",
       "binding": {
-        "number": "0"
+        "float": "3.0"
       },
-      "description": ""
-    },
-    {
-      "role": "Max Inductor Current",
-      "macro": "NEW_REQUIREMENT",
-      "binding": {
-        "number": "0"
-      },
-      "description": ""
-    },
-    {
-      "role": "Min Inductor Current",
-      "macro": "NEW_REQUIREMENT",
-      "binding": {
-        "number": "0"
-      },
-      "description": ""
-    },
-    {
-      "role": "Max Input Current",
-      "macro": "NEW_REQUIREMENT",
-      "binding": {
-        "number": "0"
-      },
-      "description": ""
-    },
-    {
-      "role": "Min Input Current",
-      "macro": "NEW_REQUIREMENT",
-      "binding": {
-        "number": "0"
-      },
-      "description": ""
+      "description": "Minimum allowed FSBB output voltage command."
     },
     {
       "role": "Max Output Current",
-      "macro": "NEW_REQUIREMENT",
+      "macro": "FSBB_OUTPUT_CURRENT_LIM",
       "binding": {
-        "number": "0"
+        "float": "10.0"
       },
-      "description": ""
+      "description": "Maximum allowed FSBB output/load current."
     },
     {
-      "role": "Min Output Current",
-      "macro": "NEW_REQUIREMENT",
+      "role": "Max Inductor Current",
+      "macro": "FSBB_PROTECT_IL_MAX",
       "binding": {
-        "number": "0"
+        "float": "25.0"
       },
-      "description": ""
+      "description": "Positive inductor current protection threshold."
     },
     {
-      "role": "TIMEOUT_ADC_CALIB_MS",
-      "macro": "NEW_REQUIREMENT",
+      "role": "Min Inductor Current",
+      "macro": "FSBB_PROTECT_IL_MIN",
+      "binding": {
+        "float": "-2.0"
+      },
+      "description": "Negative inductor current protection threshold."
+    },
+    {
+      "role": "adc_calibration_timeout",
+      "macro": "TIMEOUT_ADC_CALIB_MS",
       "binding": {
         "number": "3000"
       },
-      "description": ""
+      "description": "ADC calibration timeout in ms."
+    },
+    {
+      "role": "spll_epsilon",
+      "macro": "CTRL_SPLL_EPSILON",
+      "binding": {
+        "literal": "((float2ctrl(0.005)))"
+      },
+      "description": "SPLL close-loop convergence threshold."
     }
   ],
   "feature_macros": [
@@ -284,133 +276,208 @@
       "macro": "SPECIFY_ENABLE_ADC_CALIBRATE",
       "enabled": true,
       "value": "",
-      "description": ""
+      "description": "Enable ADC calibration before normal control starts."
     },
     {
       "group": "Controller Settings",
       "macro": "ENBALE_GMP_DL_PIL_SIM",
       "enabled": false,
       "value": "",
-      "description": ""
+      "description": "Enable PIL simulation mode. This mode disables direct controller output for safe communication-based simulation."
     },
     {
       "group": "Controller Settings",
       "macro": "GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO",
       "enabled": false,
       "value": "",
-      "description": ""
+      "description": "Enable GMP framework debug information."
+    },
+    {
+      "group": "Controller Settings",
+      "macro": "PWM_MODULATOR_USING_NEGATIVE_LOGIC",
+      "enabled": true,
+      "value": "0",
+      "description": "Use negative PWM modulator logic."
+    },
+    {
+      "group": "Optional Sampling Channels",
+      "macro": "FSBB_ENABLE_IOUT_SAMPLE",
+      "enabled": false,
+      "value": "",
+      "description": "Enable output/load current sampling path."
+    },
+    {
+      "group": "Optional Sampling Channels",
+      "macro": "FSBB_ENABLE_VIN_SAMPLE",
+      "enabled": false,
+      "value": "",
+      "description": "Enable input voltage sampling path."
     }
   ],
   "option_macros": [
     {
-      "group": "Option Macros",
+      "group": "Controller Options",
       "macro": "BUILD_LEVEL",
       "enabled": true,
-      "value": "1",
+      "value": "(1)",
       "options_preset": "",
       "options": [
-        "1",
-        "2",
-        "3",
-        "4",
-        "5"
+        "(1)",
+        "(2)",
+        "(3)"
       ],
-      "description": ""
+      "description": "Incremental debug build level. 1: modulation and hardware check; 2: current loop; 3: voltage loop."
     },
     {
-      "group": "Option Macros",
+      "group": "Board GPIO",
       "macro": "PWM_ENABLE_PORT",
       "enabled": true,
-      "value": "1",
-      "options_preset": "",
-      "options": [
-        "1",
-        "2",
-        "3",
-        "4",
-        "5"
-      ],
-      "description": ""
+      "value": "IRIS_GPIO1",
+      "options_preset": "iris_f280039c_node.IRIS_GPIO",
+      "options": [],
+      "description": "Gate-driver enable GPIO."
     },
     {
-      "group": "Option Macros",
+      "group": "Board GPIO",
       "macro": "PWM_RESET_PORT",
       "enabled": true,
-      "value": "1",
-      "options_preset": "",
-      "options": [
-        "1",
-        "2",
-        "3",
-        "4",
-        "5"
-      ],
-      "description": ""
+      "value": "IRIS_GPIO3",
+      "options_preset": "iris_f280039c_node.IRIS_GPIO",
+      "options": [],
+      "description": "Gate-driver reset GPIO."
     },
     {
-      "group": "Option Macros",
+      "group": "Board GPIO",
       "macro": "SYSTEM_LED",
       "enabled": true,
-      "value": "1",
+      "value": "IRIS_LED1",
       "options_preset": "",
       "options": [
-        "1",
-        "2",
-        "3",
-        "4",
-        "5"
+        "IRIS_LED1",
+        "IRIS_LED2",
+        "LED_R",
+        "LED_G"
       ],
-      "description": ""
+      "description": "System status LED."
     },
     {
       "group": "PWM Channel",
-      "macro": "FSBB_BUCK_BASE",
+      "macro": "PHASE_BUCK_BASE",
       "enabled": true,
-      "value": "1",
-      "options_preset": "",
-      "options": [
-        "1",
-        "2",
-        "3",
-        "4",
-        "5"
-      ],
-      "description": ""
+      "value": "IRIS_EPWM1_BASE",
+      "options_preset": "iris_f280039c_node.IRIS_EPWM",
+      "options": [],
+      "description": "Buck phase ePWM base."
     },
     {
       "group": "PWM Channel",
-      "macro": "FSBB_BOOST_BASE",
+      "macro": "PHASE_BOOST_BASE",
       "enabled": true,
-      "value": "1",
-      "options_preset": "",
-      "options": [
-        "1",
-        "2",
-        "3",
-        "4",
-        "5"
-      ],
-      "description": ""
+      "value": "IRIS_EPWM2_BASE",
+      "options_preset": "iris_f280039c_node.IRIS_EPWM",
+      "options": [],
+      "description": "Boost phase ePWM base."
     },
     {
       "group": "ADC Channel",
-      "macro": "FSBB_ADC_VIN_BASE",
+      "macro": "FSBB_VIN_ADC_BASE",
       "enabled": true,
-      "value": "1",
-      "options_preset": "",
+      "value": "ADC_CH1_ADC_BASE",
+      "options_preset": "iris_f280039c_node.ADC_BASE",
       "options": [],
-      "description": ""
+      "description": "Input voltage ADC result register base."
+    },
+    {
+      "group": "ADC Channel",
+      "macro": "FSBB_VIN",
+      "enabled": true,
+      "value": "ADC_CH1",
+      "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
+      "options": [],
+      "description": "Input voltage ADC channel index."
+    },
+    {
+      "group": "ADC Channel",
+      "macro": "FSBB_VOUT_ADC_BASE",
+      "enabled": true,
+      "value": "ADC_CH2_ADC_BASE",
+      "options_preset": "iris_f280039c_node.ADC_BASE",
+      "options": [],
+      "description": "Output voltage ADC result register base."
+    },
+    {
+      "group": "ADC Channel",
+      "macro": "FSBB_VOUT",
+      "enabled": true,
+      "value": "ADC_CH2",
+      "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
+      "options": [],
+      "description": "Output voltage ADC channel index."
+    },
+    {
+      "group": "ADC Channel",
+      "macro": "FSBB_IL_ADC_BASE",
+      "enabled": true,
+      "value": "ADC_CH3_ADC_BASE",
+      "options_preset": "iris_f280039c_node.ADC_BASE",
+      "options": [],
+      "description": "Inductor current ADC result register base."
+    },
+    {
+      "group": "ADC Channel",
+      "macro": "FSBB_IL",
+      "enabled": true,
+      "value": "ADC_CH3",
+      "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
+      "options": [],
+      "description": "Inductor current ADC channel index."
+    },
+    {
+      "group": "ADC Channel",
+      "macro": "FSBB_IIN_ADC_BASE",
+      "enabled": true,
+      "value": "ADC_CH4_ADC_BASE",
+      "options_preset": "iris_f280039c_node.ADC_BASE",
+      "options": [],
+      "description": "Input current ADC result register base, available when input-current sampling is enabled."
+    },
+    {
+      "group": "ADC Channel",
+      "macro": "FSBB_IIN",
+      "enabled": true,
+      "value": "ADC_CH4",
+      "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
+      "options": [],
+      "description": "Input current ADC channel index, available when input-current sampling is enabled."
+    },
+    {
+      "group": "ADC Channel",
+      "macro": "FSBB_IOUT_ADC_BASE",
+      "enabled": true,
+      "value": "ADC_CH4_ADC_BASE",
+      "options_preset": "iris_f280039c_node.ADC_BASE",
+      "options": [],
+      "description": "Output/load current ADC result register base."
+    },
+    {
+      "group": "ADC Channel",
+      "macro": "FSBB_IOUT",
+      "enabled": true,
+      "value": "ADC_CH4",
+      "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
+      "options": [],
+      "description": "Output/load current ADC channel index."
     }
   ],
   "code_sections": {
-    "after_extern_open": "/* Add project-specific includes here. */",
-    "before_footer": "/* Add project-specific tail macros here. */"
+    "after_extern_open": "/* Project-specific includes can be added here if the migrated project needs extra headers. */",
+    "before_footer": "/* Project-specific tail macros can be added here during migration. */"
   },
-  "description": "",
+  "description": "Four-switch buck-boost converter SDPE project requirement prepared from ctl/suite/dps_fsbb/project/f280039c_Iris_node/xplt/ctrl_settings.h.\nThe requirement introduces the GMP LVFB 150V 2-phase board as the switching stage and sensor source, and IRIS F280039C Node as the peripheral option provider.",
   "updated_at": "2026-07-14",
   "requirement_groups": [
     {
-      "name": "System Overview",
+      "name": "Controller Basic Parameters",
       "requirements": [
         "PWM Frequency",
         "Controller Frequency",
@@ -422,7 +489,7 @@
       ]
     },
     {
-      "name": "Per Unit Base Value",
+      "name": "Power System Ratings",
       "requirements": [
         "Voltage PU Base",
         "Current PU Base"
@@ -440,20 +507,21 @@
     {
       "name": "Current Sensor Configuration",
       "requirements": [
-        "Input Current Sensitive",
-        "Input Current Bias",
-        "Output Current Sensitive",
-        "Output Current Bias",
         "Inductor Current Sensitive",
-        "Inductor Current Bias"
+        "Inductor Current Bias",
+        "Output Current Sensitive",
+        "Output Current Bias"
       ]
     },
     {
       "name": "Main Parameters",
       "requirements": [
+        "Min Resistance Load",
+        "Input Capcitor",
+        "Output Capcitor",
+        "ESR of Output Capcitor",
         "Main Inductor",
-        "Input Capacitor",
-        "Output Capcitor"
+        "ESR of Main Inductor"
       ]
     },
     {
@@ -463,18 +531,16 @@
         "Min Input Voltage",
         "Max Output Voltage",
         "Min Output Voltage",
-        "Max Inductor Current",
-        "Min Inductor Current",
-        "Max Input Current",
-        "Min Input Current",
         "Max Output Current",
-        "Min Output Current"
+        "Max Inductor Current",
+        "Min Inductor Current"
       ]
     },
     {
       "name": "Controller Parameters",
       "requirements": [
-        "TIMEOUT_ADC_CALIB_MS"
+        "adc_calibration_timeout",
+        "spll_epsilon"
       ]
     }
   ]
