@@ -21,6 +21,7 @@ if not exist "%GMP_BIN%\python\python.exe" (
 
 if not "%GMP_ENV_ACTIVE%"=="%GMP_PRO_LOCATION%" (
     set "GMP_ENV_ACTIVE=%GMP_PRO_LOCATION%"
+    set "GMP_ENV_MODE=virtual"
     set "PYTHONHOME=%GMP_BIN%\python"
     set "PYTHONNOUSERSITE=1"
     set "PYTHONUTF8=1"
@@ -34,9 +35,9 @@ if not "%GMP_ENV_ACTIVE%"=="%GMP_PRO_LOCATION%" (
     set "CMAKE_TOOLCHAIN_FILE=%GMP_BIN%\vcpkg\scripts\buildsystems\vcpkg.cmake"
     set "PATH=%GMP_BIN%\python;%GMP_BIN%\python\Scripts;%GMP_BIN%\apps\git\cmd;%GMP_BIN%\apps\git\mingw64\bin;%GMP_BIN%\apps\cmake\bin;%GMP_BIN%\apps\ninja;%GMP_BIN%\apps\doxygen;%GMP_BIN%\apps\graphviz\bin;%GMP_BIN%\vcpkg;%PATH%"
 )
+set "GMP_ENV_MODE=virtual"
 
 set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
-if exist "%VSWHERE%" if not defined VSCMD_VER for /f "usebackq tokens=*" %%I in (`"%VSWHERE%" -latest -version "[17.0,18.0^)" -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do if exist "%%I\Common7\Tools\VsDevCmd.bat" call "%%I\Common7\Tools\VsDevCmd.bat" -no_logo -arch=x64 -host_arch=x64
 if exist "%VSWHERE%" if not defined VSCMD_VER for /f "usebackq tokens=*" %%I in (`"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do if exist "%%I\Common7\Tools\VsDevCmd.bat" call "%%I\Common7\Tools\VsDevCmd.bat" -no_logo -arch=x64 -host_arch=x64
 
 cd /d "%GMP_PRO_LOCATION%"

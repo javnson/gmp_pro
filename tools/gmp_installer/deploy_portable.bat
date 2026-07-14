@@ -18,6 +18,8 @@ echo ========================================================
 echo Root: %GMP_ROOT%
 echo.
 
+del /q "%GMP_ROOT%\bin\gmp_virtual_env_installed.flag" >nul 2>&1
+
 if not exist "%PYTHON_EXE%" (
     echo [ERROR] The copied bin folder is incomplete.
     echo         Missing: %PYTHON_EXE%

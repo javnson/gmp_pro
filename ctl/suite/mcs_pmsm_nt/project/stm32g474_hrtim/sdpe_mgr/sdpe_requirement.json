@@ -3,8 +3,8 @@
   "display_name": "MCS PMSM NT NUCLEO-G474RE HRTIM",
   "description": "NUCLEO-G474RE PMSM settings with independently selectable HRTIM A-E resources for phases U/V/W and USART2 circular-DMA Datalink.",
   "suite": "mcs_pmsm_nt",
-  "version": "1.0.0",
-  "updated_at": "2026-07-14",
+  "version": "1.2.0",
+  "updated_at": "2026-07-15",
   "output_header": "sdpe_mcs_pmsm_nt_stm32g474_hrtim_settings.h",
   "hardware": [
     {
@@ -15,74 +15,11 @@
     }
   ],
   "code_sections": {
-    "after_extern_open": "/* BOOSTXL inverter compatibility. */\n#define BOOSTXL_3PHGANINV_IS_DEFAULT_PARAM\n#include <ctl/component/hardware_preset/inverter_3ph/GMP_3PH_2136SINV_DUAL_TMPL.h>\n#define MOTOR_TYPE SM060R20B30MNAD_MOTOR_TYPE\n#define MOTOR_PARAM_RS SM060R20B30MNAD_RS\n#define MOTOR_PARAM_LS SM060R20B30MNAD_LD\n#define MOTOR_PARAM_LD SM060R20B30MNAD_LD\n#define MOTOR_PARAM_LQ SM060R20B30MNAD_LQ\n#define MOTOR_PARAM_FLUX SM060R20B30MNAD_FLUX\n#define MOTOR_PARAM_POLE_PAIRS SM060R20B30MNAD_POLE_PAIRS\n#define MOTOR_PARAM_INERTIA SM060R20B30MNAD_INERTIA\n#define MOTOR_PARAM_FRICTION SM060R20B30MNAD_FRICTION\n#define MOTOR_PARAM_KV SM060R20B30MNAD_KV\n#define MOTOR_PARAM_EMF SM060R20B30MNAD_EMF\n#define MOTOR_PARAM_RATED_VOLTAGE SM060R20B30MNAD_RATED_VOLTAGE\n#define MOTOR_PARAM_RATED_CURRENT SM060R20B30MNAD_RATED_CURRENT\n#define MOTOR_PARAM_NO_LOAD_CURRENT SM060R20B30MNAD_NO_LOAD_CURRENT\n#define MOTOR_PARAM_RATED_FREQUENCY SM060R20B30MNAD_RATED_FREQUENCY\n#define MOTOR_PARAM_MAX_SPEED SM060R20B30MNAD_MAX_SPEED\n#define MOTOR_PARAM_MAX_TORQUE SM060R20B30MNAD_MAX_TORQUE\n#define MOTOR_PARAM_MAX_DC_VOLTAGE SM060R20B30MNAD_MAX_DC_VOLTAGE\n#define MOTOR_PARAM_MAX_PH_CURRENT SM060R20B30MNAD_MAX_PH_CURRENT",
-    "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 4)\n#error \"BUILD_LEVEL must be in range 1..4.\"\n#endif\n#if (MCS_HRTIM_PHASE_U_CHANNEL == MCS_HRTIM_PHASE_V_CHANNEL) || (MCS_HRTIM_PHASE_U_CHANNEL == MCS_HRTIM_PHASE_W_CHANNEL) || (MCS_HRTIM_PHASE_V_CHANNEL == MCS_HRTIM_PHASE_W_CHANNEL)\n#error \"HRTIM phase U/V/W channels must be unique.\"\n#endif\n#if (MCS_HRTIM_PHASE_U_CHANNEL > 4) || (MCS_HRTIM_PHASE_V_CHANNEL > 4) || (MCS_HRTIM_PHASE_W_CHANNEL > 4)\n#error \"HRTIM phase channel must be in range 0 (A) through 4 (E).\"\n#endif\n\n#define MCS_HRTIM_CAT_RAW(a, b) a##b\n#define MCS_HRTIM_CAT(a, b) MCS_HRTIM_CAT_RAW(a, b)\n#define MCS_HRTIM_SELECT(prefix, channel) MCS_HRTIM_CAT(prefix, channel)\n#define MCS_HRTIM_TIMER_INDEX_0 HRTIM_TIMERINDEX_TIMER_A\n#define MCS_HRTIM_TIMER_INDEX_1 HRTIM_TIMERINDEX_TIMER_B\n#define MCS_HRTIM_TIMER_INDEX_2 HRTIM_TIMERINDEX_TIMER_C\n#define MCS_HRTIM_TIMER_INDEX_3 HRTIM_TIMERINDEX_TIMER_D\n#define MCS_HRTIM_TIMER_INDEX_4 HRTIM_TIMERINDEX_TIMER_E\n#define MCS_HRTIM_TIMER_ID_0 HRTIM_TIMERID_TIMER_A\n#define MCS_HRTIM_TIMER_ID_1 HRTIM_TIMERID_TIMER_B\n#define MCS_HRTIM_TIMER_ID_2 HRTIM_TIMERID_TIMER_C\n#define MCS_HRTIM_TIMER_ID_3 HRTIM_TIMERID_TIMER_D\n#define MCS_HRTIM_TIMER_ID_4 HRTIM_TIMERID_TIMER_E\n#define MCS_HRTIM_OUTPUT1_0 HRTIM_OUTPUT_TA1\n#define MCS_HRTIM_OUTPUT1_1 HRTIM_OUTPUT_TB1\n#define MCS_HRTIM_OUTPUT1_2 HRTIM_OUTPUT_TC1\n#define MCS_HRTIM_OUTPUT1_3 HRTIM_OUTPUT_TD1\n#define MCS_HRTIM_OUTPUT1_4 HRTIM_OUTPUT_TE1\n#define MCS_HRTIM_OUTPUT2_0 HRTIM_OUTPUT_TA2\n#define MCS_HRTIM_OUTPUT2_1 HRTIM_OUTPUT_TB2\n#define MCS_HRTIM_OUTPUT2_2 HRTIM_OUTPUT_TC2\n#define MCS_HRTIM_OUTPUT2_3 HRTIM_OUTPUT_TD2\n#define MCS_HRTIM_OUTPUT2_4 HRTIM_OUTPUT_TE2\n#define MCS_HRTIM_ADC_UPDATE_0 HRTIM_ADCTRIGGERUPDATE_TIMER_A\n#define MCS_HRTIM_ADC_UPDATE_1 HRTIM_ADCTRIGGERUPDATE_TIMER_B\n#define MCS_HRTIM_ADC_UPDATE_2 HRTIM_ADCTRIGGERUPDATE_TIMER_C\n#define MCS_HRTIM_ADC_UPDATE_3 HRTIM_ADCTRIGGERUPDATE_TIMER_D\n#define MCS_HRTIM_ADC_UPDATE_4 HRTIM_ADCTRIGGERUPDATE_TIMER_E\n#define MCS_HRTIM_ADC_EVENT_0 HRTIM_ADCTRIGGEREVENT24_TIMERA_PERIOD\n#define MCS_HRTIM_ADC_EVENT_1 HRTIM_ADCTRIGGEREVENT24_TIMERB_PERIOD\n#define MCS_HRTIM_ADC_EVENT_2 HRTIM_ADCTRIGGEREVENT24_TIMERC_PERIOD\n#define MCS_HRTIM_ADC_EVENT_3 HRTIM_ADCTRIGGEREVENT24_TIMERD_PERIOD\n#define MCS_HRTIM_ADC_EVENT_4 HRTIM_ADCTRIGGEREVENT24_TIMERE_RESET\n#define MCS_HRTIM_PHASE_U_TIMER_INDEX MCS_HRTIM_SELECT(MCS_HRTIM_TIMER_INDEX_, MCS_HRTIM_PHASE_U_CHANNEL)\n#define MCS_HRTIM_PHASE_V_TIMER_INDEX MCS_HRTIM_SELECT(MCS_HRTIM_TIMER_INDEX_, MCS_HRTIM_PHASE_V_CHANNEL)\n#define MCS_HRTIM_PHASE_W_TIMER_INDEX MCS_HRTIM_SELECT(MCS_HRTIM_TIMER_INDEX_, MCS_HRTIM_PHASE_W_CHANNEL)\n#define MCS_HRTIM_PHASE_U_TIMER_ID MCS_HRTIM_SELECT(MCS_HRTIM_TIMER_ID_, MCS_HRTIM_PHASE_U_CHANNEL)\n#define MCS_HRTIM_PHASE_V_TIMER_ID MCS_HRTIM_SELECT(MCS_HRTIM_TIMER_ID_, MCS_HRTIM_PHASE_V_CHANNEL)\n#define MCS_HRTIM_PHASE_W_TIMER_ID MCS_HRTIM_SELECT(MCS_HRTIM_TIMER_ID_, MCS_HRTIM_PHASE_W_CHANNEL)\n#define MCS_HRTIM_PHASE_U_OUTPUT1 MCS_HRTIM_SELECT(MCS_HRTIM_OUTPUT1_, MCS_HRTIM_PHASE_U_CHANNEL)\n#define MCS_HRTIM_PHASE_V_OUTPUT1 MCS_HRTIM_SELECT(MCS_HRTIM_OUTPUT1_, MCS_HRTIM_PHASE_V_CHANNEL)\n#define MCS_HRTIM_PHASE_W_OUTPUT1 MCS_HRTIM_SELECT(MCS_HRTIM_OUTPUT1_, MCS_HRTIM_PHASE_W_CHANNEL)\n#define MCS_HRTIM_PHASE_U_OUTPUT2 MCS_HRTIM_SELECT(MCS_HRTIM_OUTPUT2_, MCS_HRTIM_PHASE_U_CHANNEL)\n#define MCS_HRTIM_PHASE_V_OUTPUT2 MCS_HRTIM_SELECT(MCS_HRTIM_OUTPUT2_, MCS_HRTIM_PHASE_V_CHANNEL)\n#define MCS_HRTIM_PHASE_W_OUTPUT2 MCS_HRTIM_SELECT(MCS_HRTIM_OUTPUT2_, MCS_HRTIM_PHASE_W_CHANNEL)\n#define MCS_HRTIM_PHASE_U_OUTPUTS (MCS_HRTIM_PHASE_U_OUTPUT1 | MCS_HRTIM_PHASE_U_OUTPUT2)\n#define MCS_HRTIM_PHASE_V_OUTPUTS (MCS_HRTIM_PHASE_V_OUTPUT1 | MCS_HRTIM_PHASE_V_OUTPUT2)\n#define MCS_HRTIM_PHASE_W_OUTPUTS (MCS_HRTIM_PHASE_W_OUTPUT1 | MCS_HRTIM_PHASE_W_OUTPUT2)\n#define MCS_HRTIM_ADC_UPDATE_SOURCE MCS_HRTIM_SELECT(MCS_HRTIM_ADC_UPDATE_, MCS_HRTIM_PHASE_U_CHANNEL)\n#define MCS_HRTIM_ADC_TRIGGER_EVENT MCS_HRTIM_SELECT(MCS_HRTIM_ADC_EVENT_, MCS_HRTIM_PHASE_U_CHANNEL)"
+    "after_extern_open": "#include <sdpe_mcs_pmsm_nt_common_settings.h>\n\n/* BOOSTXL inverter compatibility. */\n#define BOOSTXL_3PHGANINV_IS_DEFAULT_PARAM\n#include <ctl/component/hardware_preset/inverter_3ph/GMP_3PH_2136SINV_DUAL_TMPL.h>\n#define MOTOR_TYPE SM060R20B30MNAD_MOTOR_TYPE\n#define MOTOR_PARAM_RS SM060R20B30MNAD_RS\n#define MOTOR_PARAM_LS SM060R20B30MNAD_LD\n#define MOTOR_PARAM_LD SM060R20B30MNAD_LD\n#define MOTOR_PARAM_LQ SM060R20B30MNAD_LQ\n#define MOTOR_PARAM_FLUX SM060R20B30MNAD_FLUX\n#define MOTOR_PARAM_POLE_PAIRS SM060R20B30MNAD_POLE_PAIRS\n#define MOTOR_PARAM_INERTIA SM060R20B30MNAD_INERTIA\n#define MOTOR_PARAM_FRICTION SM060R20B30MNAD_FRICTION\n#define MOTOR_PARAM_KV SM060R20B30MNAD_KV\n#define MOTOR_PARAM_EMF SM060R20B30MNAD_EMF\n#define MOTOR_PARAM_RATED_VOLTAGE SM060R20B30MNAD_RATED_VOLTAGE\n#define MOTOR_PARAM_RATED_CURRENT SM060R20B30MNAD_RATED_CURRENT\n#define MOTOR_PARAM_NO_LOAD_CURRENT SM060R20B30MNAD_NO_LOAD_CURRENT\n#define MOTOR_PARAM_RATED_FREQUENCY SM060R20B30MNAD_RATED_FREQUENCY\n#define MOTOR_PARAM_MAX_SPEED SM060R20B30MNAD_MAX_SPEED\n#define MOTOR_PARAM_MAX_TORQUE SM060R20B30MNAD_MAX_TORQUE\n#define MOTOR_PARAM_MAX_DC_VOLTAGE SM060R20B30MNAD_MAX_DC_VOLTAGE\n#define MOTOR_PARAM_MAX_PH_CURRENT SM060R20B30MNAD_MAX_PH_CURRENT",
+    "before_footer": "/* Platform-specific peripheral selection and validation. */\n#if (MCS_HRTIM_PHASE_U_CHANNEL == MCS_HRTIM_PHASE_V_CHANNEL) || (MCS_HRTIM_PHASE_U_CHANNEL == MCS_HRTIM_PHASE_W_CHANNEL) || (MCS_HRTIM_PHASE_V_CHANNEL == MCS_HRTIM_PHASE_W_CHANNEL)\n#error \"HRTIM phase U/V/W channels must be unique.\"\n#endif\n#if (MCS_HRTIM_PHASE_U_CHANNEL > 4) || (MCS_HRTIM_PHASE_V_CHANNEL > 4) || (MCS_HRTIM_PHASE_W_CHANNEL > 4)\n#error \"HRTIM phase channel must be in range 0 (A) through 4 (E).\"\n#endif\n\n#define MCS_HRTIM_CAT_RAW(a, b) a##b\n#define MCS_HRTIM_CAT(a, b) MCS_HRTIM_CAT_RAW(a, b)\n#define MCS_HRTIM_SELECT(prefix, channel) MCS_HRTIM_CAT(prefix, channel)\n#define MCS_HRTIM_TIMER_INDEX_0 HRTIM_TIMERINDEX_TIMER_A\n#define MCS_HRTIM_TIMER_INDEX_1 HRTIM_TIMERINDEX_TIMER_B\n#define MCS_HRTIM_TIMER_INDEX_2 HRTIM_TIMERINDEX_TIMER_C\n#define MCS_HRTIM_TIMER_INDEX_3 HRTIM_TIMERINDEX_TIMER_D\n#define MCS_HRTIM_TIMER_INDEX_4 HRTIM_TIMERINDEX_TIMER_E\n#define MCS_HRTIM_TIMER_ID_0 HRTIM_TIMERID_TIMER_A\n#define MCS_HRTIM_TIMER_ID_1 HRTIM_TIMERID_TIMER_B\n#define MCS_HRTIM_TIMER_ID_2 HRTIM_TIMERID_TIMER_C\n#define MCS_HRTIM_TIMER_ID_3 HRTIM_TIMERID_TIMER_D\n#define MCS_HRTIM_TIMER_ID_4 HRTIM_TIMERID_TIMER_E\n#define MCS_HRTIM_OUTPUT1_0 HRTIM_OUTPUT_TA1\n#define MCS_HRTIM_OUTPUT1_1 HRTIM_OUTPUT_TB1\n#define MCS_HRTIM_OUTPUT1_2 HRTIM_OUTPUT_TC1\n#define MCS_HRTIM_OUTPUT1_3 HRTIM_OUTPUT_TD1\n#define MCS_HRTIM_OUTPUT1_4 HRTIM_OUTPUT_TE1\n#define MCS_HRTIM_OUTPUT2_0 HRTIM_OUTPUT_TA2\n#define MCS_HRTIM_OUTPUT2_1 HRTIM_OUTPUT_TB2\n#define MCS_HRTIM_OUTPUT2_2 HRTIM_OUTPUT_TC2\n#define MCS_HRTIM_OUTPUT2_3 HRTIM_OUTPUT_TD2\n#define MCS_HRTIM_OUTPUT2_4 HRTIM_OUTPUT_TE2\n#define MCS_HRTIM_ADC_UPDATE_0 HRTIM_ADCTRIGGERUPDATE_TIMER_A\n#define MCS_HRTIM_ADC_UPDATE_1 HRTIM_ADCTRIGGERUPDATE_TIMER_B\n#define MCS_HRTIM_ADC_UPDATE_2 HRTIM_ADCTRIGGERUPDATE_TIMER_C\n#define MCS_HRTIM_ADC_UPDATE_3 HRTIM_ADCTRIGGERUPDATE_TIMER_D\n#define MCS_HRTIM_ADC_UPDATE_4 HRTIM_ADCTRIGGERUPDATE_TIMER_E\n#define MCS_HRTIM_ADC_EVENT_0 HRTIM_ADCTRIGGEREVENT24_TIMERA_PERIOD\n#define MCS_HRTIM_ADC_EVENT_1 HRTIM_ADCTRIGGEREVENT24_TIMERB_PERIOD\n#define MCS_HRTIM_ADC_EVENT_2 HRTIM_ADCTRIGGEREVENT24_TIMERC_PERIOD\n#define MCS_HRTIM_ADC_EVENT_3 HRTIM_ADCTRIGGEREVENT24_TIMERD_PERIOD\n#define MCS_HRTIM_ADC_EVENT_4 HRTIM_ADCTRIGGEREVENT24_TIMERE_RESET\n#define MCS_HRTIM_PHASE_U_TIMER_INDEX MCS_HRTIM_SELECT(MCS_HRTIM_TIMER_INDEX_, MCS_HRTIM_PHASE_U_CHANNEL)\n#define MCS_HRTIM_PHASE_V_TIMER_INDEX MCS_HRTIM_SELECT(MCS_HRTIM_TIMER_INDEX_, MCS_HRTIM_PHASE_V_CHANNEL)\n#define MCS_HRTIM_PHASE_W_TIMER_INDEX MCS_HRTIM_SELECT(MCS_HRTIM_TIMER_INDEX_, MCS_HRTIM_PHASE_W_CHANNEL)\n#define MCS_HRTIM_PHASE_U_TIMER_ID MCS_HRTIM_SELECT(MCS_HRTIM_TIMER_ID_, MCS_HRTIM_PHASE_U_CHANNEL)\n#define MCS_HRTIM_PHASE_V_TIMER_ID MCS_HRTIM_SELECT(MCS_HRTIM_TIMER_ID_, MCS_HRTIM_PHASE_V_CHANNEL)\n#define MCS_HRTIM_PHASE_W_TIMER_ID MCS_HRTIM_SELECT(MCS_HRTIM_TIMER_ID_, MCS_HRTIM_PHASE_W_CHANNEL)\n#define MCS_HRTIM_PHASE_U_OUTPUT1 MCS_HRTIM_SELECT(MCS_HRTIM_OUTPUT1_, MCS_HRTIM_PHASE_U_CHANNEL)\n#define MCS_HRTIM_PHASE_V_OUTPUT1 MCS_HRTIM_SELECT(MCS_HRTIM_OUTPUT1_, MCS_HRTIM_PHASE_V_CHANNEL)\n#define MCS_HRTIM_PHASE_W_OUTPUT1 MCS_HRTIM_SELECT(MCS_HRTIM_OUTPUT1_, MCS_HRTIM_PHASE_W_CHANNEL)\n#define MCS_HRTIM_PHASE_U_OUTPUT2 MCS_HRTIM_SELECT(MCS_HRTIM_OUTPUT2_, MCS_HRTIM_PHASE_U_CHANNEL)\n#define MCS_HRTIM_PHASE_V_OUTPUT2 MCS_HRTIM_SELECT(MCS_HRTIM_OUTPUT2_, MCS_HRTIM_PHASE_V_CHANNEL)\n#define MCS_HRTIM_PHASE_W_OUTPUT2 MCS_HRTIM_SELECT(MCS_HRTIM_OUTPUT2_, MCS_HRTIM_PHASE_W_CHANNEL)\n#define MCS_HRTIM_PHASE_U_OUTPUTS (MCS_HRTIM_PHASE_U_OUTPUT1 | MCS_HRTIM_PHASE_U_OUTPUT2)\n#define MCS_HRTIM_PHASE_V_OUTPUTS (MCS_HRTIM_PHASE_V_OUTPUT1 | MCS_HRTIM_PHASE_V_OUTPUT2)\n#define MCS_HRTIM_PHASE_W_OUTPUTS (MCS_HRTIM_PHASE_W_OUTPUT1 | MCS_HRTIM_PHASE_W_OUTPUT2)\n#define MCS_HRTIM_ADC_UPDATE_SOURCE MCS_HRTIM_SELECT(MCS_HRTIM_ADC_UPDATE_, MCS_HRTIM_PHASE_U_CHANNEL)\n#define MCS_HRTIM_ADC_TRIGGER_EVENT MCS_HRTIM_SELECT(MCS_HRTIM_ADC_EVENT_, MCS_HRTIM_PHASE_U_CHANNEL)"
   },
-  "feature_macros": [
-    {
-      "group": "Control Algorithm",
-      "macro": "PMSM_CTRL_USING_DISCRETE_CTRL",
-      "enabled": false,
-      "value": "",
-      "description": "Use discrete controller implementation."
-    },
-    {
-      "group": "Control Algorithm",
-      "macro": "_USE_DEBUG_DISCRETE_PID",
-      "enabled": true,
-      "value": "",
-      "description": "Enable discrete PID anti-saturation."
-    },
-    {
-      "group": "Control Algorithm",
-      "macro": "ENABLE_SMO",
-      "enabled": true,
-      "value": "",
-      "description": "Enable sliding-mode observer."
-    },
-    {
-      "group": "Protection",
-      "macro": "ENABLE_MOTOR_FAULT_PROTECTION",
-      "enabled": true,
-      "value": "",
-      "description": "Enable motor fault protection."
-    },
-    {
-      "group": "ADC",
-      "macro": "SPECIFY_ENABLE_ADC_CALIBRATE",
-      "enabled": true,
-      "value": "",
-      "description": "Enable ADC offset calibration."
-    },
-    {
-      "group": "PWM",
-      "macro": "PWM_MODULATOR_USING_NEGATIVE_LOGIC",
-      "enabled": true,
-      "value": "(1)",
-      "description": "Use active-low inverter modulation."
-    },
-    {
-      "group": "PWM",
-      "macro": "USING_NPC_MODULATOR",
-      "enabled": false,
-      "value": "",
-      "description": "Enable NPC modulation."
-    }
-  ],
+  "feature_macros": [],
   "option_macros": [
-    {
-      "group": "Controller",
-      "macro": "BUILD_LEVEL",
-      "enabled": true,
-      "value": "(4)",
-      "options": [
-        "(1)",
-        "(2)",
-        "(3)",
-        "(4)"
-      ],
-      "description": "Commissioning build level."
-    },
     {
       "group": "ADC",
       "macro": "MC_CURRENT_SAMPLE_PHASE_MODE",
@@ -153,28 +90,12 @@
   ],
   "requirements": [
     {
-      "role": "startup_delay",
-      "macro": "CTRL_STARTUP_DELAY",
-      "binding": {
-        "number": "100"
-      },
-      "description": "Controller startup delay in milliseconds."
-    },
-    {
-      "role": "controller_frequency",
-      "macro": "CONTROLLER_FREQUENCY",
-      "binding": {
-        "float": "20e3"
-      },
-      "description": "Motor-control update frequency in hertz."
-    },
-    {
       "role": "pwm_compare_max",
       "macro": "CTRL_PWM_CMP_MAX",
       "binding": {
         "number": "34000"
       },
-      "description": "HRTIM period for 20 kHz center-aligned PWM at 170 MHz with x8 multiplier."
+      "description": "Maximum compare count of the platform PWM peripheral at the configured controller switching frequency."
     },
     {
       "role": "pwm_deadband",
@@ -182,7 +103,7 @@
       "binding": {
         "number": "100"
       },
-      "description": "Advanced-timer dead-time count."
+      "description": "Dead-time count interpreted in the selected PWM peripheral clock domain."
     },
     {
       "role": "system_frequency",
@@ -190,7 +111,7 @@
       "binding": {
         "number": "170e6"
       },
-      "description": "STM32G474 system clock frequency."
+      "description": "Platform CPU or system clock frequency in hertz."
     },
     {
       "role": "adc_voltage_reference",
@@ -198,15 +119,7 @@
       "binding": {
         "float": "3.3"
       },
-      "description": "ADC reference voltage."
-    },
-    {
-      "role": "adc_calibration_timeout",
-      "macro": "TIMEOUT_ADC_CALIB_MS",
-      "binding": {
-        "number": "10000"
-      },
-      "description": "ADC calibration timeout in milliseconds."
+      "description": "ADC reference voltage used by all sensor conversions."
     },
     {
       "role": "dc_bus_voltage_base",
@@ -214,7 +127,7 @@
       "binding": {
         "float": "80.0"
       },
-      "description": "DC-bus voltage base."
+      "description": "Configured DC-bus voltage base."
     },
     {
       "role": "phase_voltage_base",
@@ -222,7 +135,7 @@
       "binding": {
         "literal": "(CTRL_DCBUS_VOLTAGE / 1.73205081f)"
       },
-      "description": "SVPWM phase-voltage base."
+      "description": "Phase-voltage per-unit base derived from the DC-bus base."
     },
     {
       "role": "current_base",
@@ -230,7 +143,7 @@
       "binding": {
         "float": "10.0"
       },
-      "description": "Phase-current base in amperes."
+      "description": "Phase-current per-unit base in amperes."
     },
     {
       "role": "encoder_full_scale",
@@ -238,7 +151,7 @@
       "binding": {
         "number": "10000"
       },
-      "description": "Encoder counts per revolution."
+      "description": "Encoder counts per mechanical revolution."
     },
     {
       "role": "encoder_bias",
@@ -246,7 +159,7 @@
       "binding": {
         "float": "0.0207000002"
       },
-      "description": "Encoder position bias in per unit."
+      "description": "Mechanical encoder position bias in per unit."
     },
     {
       "role": "mechanical_division",
@@ -254,7 +167,7 @@
       "binding": {
         "number": "5"
       },
-      "description": "Mechanical speed and position division."
+      "description": "Mechanical speed and position division factor."
     },
     {
       "role": "phase_current_sensitivity",
@@ -262,7 +175,7 @@
       "binding": {
         "literal": "(MY_BOARD_PH_SHUNT_RESISTANCE_OHM * MY_BOARD_PH_CSA_GAIN_V_V)"
       },
-      "description": "Phase-current sensor sensitivity."
+      "description": "Phase-current sensor sensitivity in volts per ampere."
     },
     {
       "role": "phase_current_bias",
@@ -270,7 +183,7 @@
       "binding": {
         "literal": "(MY_BOARD_PH_CSA_BIAS_V)"
       },
-      "description": "Phase-current sensor bias."
+      "description": "Phase-current sensor zero-current bias in volts."
     },
     {
       "role": "phase_voltage_sensitivity",
@@ -278,7 +191,7 @@
       "binding": {
         "literal": "(MY_BOARD_PH_VOLTAGE_SENSE_GAIN)"
       },
-      "description": "Phase-voltage sensor gain."
+      "description": "Phase-voltage sensing gain in ADC volts per measured volt."
     },
     {
       "role": "phase_voltage_bias",
@@ -286,7 +199,7 @@
       "binding": {
         "literal": "(MY_BOARD_PH_VOLTAGE_SENSE_BIAS_V)"
       },
-      "description": "Phase-voltage sensor bias."
+      "description": "Phase-voltage sensor bias in volts."
     },
     {
       "role": "dc_current_sensitivity",
@@ -294,7 +207,7 @@
       "binding": {
         "literal": "(MY_BOARD_DCBUS_CURRENT_SENSE_GAIN)"
       },
-      "description": "DC-bus current sensor gain."
+      "description": "DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path."
     },
     {
       "role": "dc_current_bias",
@@ -310,7 +223,7 @@
       "binding": {
         "literal": "(MY_BOARD_DCBUS_VOLTAGE_SENSE_GAIN)"
       },
-      "description": "DC-bus voltage sensor gain."
+      "description": "DC-bus voltage sensing gain in ADC volts per measured volt."
     },
     {
       "role": "dc_voltage_bias",
@@ -318,151 +231,7 @@
       "binding": {
         "literal": "(MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)"
       },
-      "description": "DC-bus voltage sensor bias."
-    },
-    {
-      "role": "deadtime_current_deadband",
-      "macro": "MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A",
-      "binding": {
-        "float": "0.2"
-      },
-      "description": "Dead-time compensation current deadband."
-    },
-    {
-      "role": "deadtime_current_hysteresis",
-      "macro": "MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A",
-      "binding": {
-        "float": "0.05"
-      },
-      "description": "Dead-time compensation hysteresis."
-    },
-    {
-      "role": "open_loop_frequency",
-      "macro": "MCS_OPEN_LOOP_FREQ_HZ",
-      "binding": {
-        "float": "20.0"
-      },
-      "description": "Open-loop electrical frequency."
-    },
-    {
-      "role": "open_loop_frequency_slope",
-      "macro": "MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S",
-      "binding": {
-        "float": "20.0"
-      },
-      "description": "Open-loop frequency slew rate."
-    },
-    {
-      "role": "mechanical_position_kp",
-      "macro": "MCS_MECH_POSITION_KP_PU",
-      "binding": {
-        "float": "5.0"
-      },
-      "description": "Position-loop proportional gain."
-    },
-    {
-      "role": "mechanical_position_ki",
-      "macro": "MCS_MECH_POSITION_KI_PU_S",
-      "binding": {
-        "float": "1.0"
-      },
-      "description": "Position-loop integral gain."
-    },
-    {
-      "role": "mechanical_velocity_kp",
-      "macro": "MCS_MECH_VELOCITY_KP_PU",
-      "binding": {
-        "float": "5.0"
-      },
-      "description": "Velocity-loop proportional gain."
-    },
-    {
-      "role": "mechanical_velocity_ki",
-      "macro": "MCS_MECH_VELOCITY_KI_PU_S",
-      "binding": {
-        "float": "1.0"
-      },
-      "description": "Velocity-loop integral gain."
-    },
-    {
-      "role": "mechanical_speed_limit",
-      "macro": "MCS_MECH_SPEED_LIMIT_RPM",
-      "binding": {
-        "literal": "(MOTOR_PARAM_MAX_SPEED)"
-      },
-      "description": "Mechanical speed limit."
-    },
-    {
-      "role": "mechanical_speed_slope",
-      "macro": "MCS_MECH_SPEED_SLOPE_RPM_S",
-      "binding": {
-        "literal": "(MOTOR_PARAM_MAX_SPEED)"
-      },
-      "description": "Mechanical speed slew rate."
-    },
-    {
-      "role": "mechanical_current_limit",
-      "macro": "MCS_MECH_CURRENT_LIMIT_A",
-      "binding": {
-        "literal": "(0.3f * CTRL_CURRENT_BASE)"
-      },
-      "description": "Mechanical current limit."
-    },
-    {
-      "role": "encoder_speed_filter",
-      "macro": "MCS_ENCODER_SPEED_FILTER_FC_HZ",
-      "binding": {
-        "float": "20.0"
-      },
-      "description": "Encoder speed filter cutoff."
-    },
-    {
-      "role": "commissioning_id",
-      "macro": "MCS_COMMISSIONING_ID_REF_A",
-      "binding": {
-        "literal": "(0.1f * CTRL_CURRENT_BASE)"
-      },
-      "description": "Commissioning d-axis current."
-    },
-    {
-      "role": "commissioning_iq",
-      "macro": "MCS_COMMISSIONING_IQ_REF_A",
-      "binding": {
-        "literal": "(0.1f * CTRL_CURRENT_BASE)"
-      },
-      "description": "Commissioning q-axis current."
-    },
-    {
-      "role": "commissioning_speed",
-      "macro": "MCS_COMMISSIONING_SPEED_REF_RPM",
-      "binding": {
-        "literal": "(0.1f * MOTOR_PARAM_MAX_SPEED)"
-      },
-      "description": "Commissioning speed."
-    },
-    {
-      "role": "cia402_delay",
-      "macro": "MCS_CIA402_OPERATION_ENABLE_DELAY_MS",
-      "binding": {
-        "number": "100"
-      },
-      "description": "CiA402 operation-enable delay."
-    },
-    {
-      "role": "adc_calibrator_fc",
-      "macro": "MCS_ADC_CALIBRATOR_FC_HZ",
-      "binding": {
-        "float": "20.0"
-      },
-      "description": "ADC calibrator cutoff."
-    },
-    {
-      "role": "adc_calibrator_q",
-      "macro": "MCS_ADC_CALIBRATOR_Q",
-      "binding": {
-        "float": "0.707"
-      },
-      "description": "ADC calibrator quality factor."
+      "description": "DC-bus voltage sensor bias in volts."
     },
     {
       "role": "uart_rx_buffer_size",

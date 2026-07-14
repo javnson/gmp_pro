@@ -1,84 +1,15 @@
 /**
  * @file ctl_settings_defaults.h
- * @brief Backward-compatible defaults for MCS PMSM NT project settings.
+ * @brief Compatibility include for the shared MCS PMSM NT SDPE contract.
  *
- * New projects should provide these macros through SDPE. The fallbacks keep
- * existing platform projects buildable until each one receives an SDPE module.
+ * The defaults previously duplicated here are now generated from
+ * src/sdpe_mgr/sdpe_requirement.json. Platform projects provide only their
+ * hardware-specific SDPE header, which includes this common settings header.
  */
 
 #ifndef _FILE_MCS_PMSM_NT_CTL_SETTINGS_DEFAULTS_H_
 #define _FILE_MCS_PMSM_NT_CTL_SETTINGS_DEFAULTS_H_
 
-#ifndef MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A
-#define MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A (0.2f)
-#endif
-
-#ifndef MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A
-#define MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A (0.05f)
-#endif
-
-#ifndef MCS_OPEN_LOOP_FREQ_HZ
-#define MCS_OPEN_LOOP_FREQ_HZ (20.0f)
-#endif
-
-#ifndef MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S
-#define MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S (20.0f)
-#endif
-
-#ifndef MCS_MECH_POSITION_KP_PU
-#define MCS_MECH_POSITION_KP_PU (5.0f)
-#endif
-
-#ifndef MCS_MECH_POSITION_KI_PU_S
-#define MCS_MECH_POSITION_KI_PU_S (1.0f)
-#endif
-
-#ifndef MCS_MECH_VELOCITY_KP_PU
-#define MCS_MECH_VELOCITY_KP_PU (5.0f)
-#endif
-
-#ifndef MCS_MECH_VELOCITY_KI_PU_S
-#define MCS_MECH_VELOCITY_KI_PU_S (1.0f)
-#endif
-
-#ifndef MCS_MECH_SPEED_LIMIT_RPM
-#define MCS_MECH_SPEED_LIMIT_RPM (MOTOR_PARAM_MAX_SPEED)
-#endif
-
-#ifndef MCS_MECH_SPEED_SLOPE_RPM_S
-#define MCS_MECH_SPEED_SLOPE_RPM_S (MOTOR_PARAM_MAX_SPEED)
-#endif
-
-#ifndef MCS_MECH_CURRENT_LIMIT_A
-#define MCS_MECH_CURRENT_LIMIT_A (0.3f * CTRL_CURRENT_BASE)
-#endif
-
-#ifndef MCS_ENCODER_SPEED_FILTER_FC_HZ
-#define MCS_ENCODER_SPEED_FILTER_FC_HZ (20.0f)
-#endif
-
-#ifndef MCS_COMMISSIONING_ID_REF_A
-#define MCS_COMMISSIONING_ID_REF_A (0.1f * CTRL_CURRENT_BASE)
-#endif
-
-#ifndef MCS_COMMISSIONING_IQ_REF_A
-#define MCS_COMMISSIONING_IQ_REF_A (0.1f * CTRL_CURRENT_BASE)
-#endif
-
-#ifndef MCS_COMMISSIONING_SPEED_REF_RPM
-#define MCS_COMMISSIONING_SPEED_REF_RPM (0.1f * MOTOR_PARAM_MAX_SPEED)
-#endif
-
-#ifndef MCS_CIA402_OPERATION_ENABLE_DELAY_MS
-#define MCS_CIA402_OPERATION_ENABLE_DELAY_MS (100)
-#endif
-
-#ifndef MCS_ADC_CALIBRATOR_FC_HZ
-#define MCS_ADC_CALIBRATOR_FC_HZ (20.0f)
-#endif
-
-#ifndef MCS_ADC_CALIBRATOR_Q
-#define MCS_ADC_CALIBRATOR_Q (0.707f)
-#endif
+#include <sdpe_mcs_pmsm_nt_common_settings.h>
 
 #endif // _FILE_MCS_PMSM_NT_CTL_SETTINGS_DEFAULTS_H_

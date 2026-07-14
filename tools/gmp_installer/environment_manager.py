@@ -21,6 +21,7 @@ MANIFEST_PATH = INSTALLER_DIR / "environment_manifest.json"
 GMP_ROOT = Path(os.environ["GMP_PRO_LOCATION"]).resolve() if os.environ.get("GMP_PRO_LOCATION") else None
 BIN_DIR = GMP_ROOT / "bin" if GMP_ROOT else None
 STATE_PATH = BIN_DIR / "gmp_environment.json" if BIN_DIR else None
+COMPLETION_MARKER_PATH = BIN_DIR / "gmp_virtual_env_installed.flag" if BIN_DIR else None
 
 
 class EnvironmentError(RuntimeError):
@@ -207,6 +208,8 @@ def private_environment() -> dict[str, str]:
         {
             "GMP_PRO_LOCATION": str(GMP_ROOT),
             "GMP_BIN": str(BIN_DIR),
+            "GMP_ENV_ACTIVE": str(GMP_ROOT),
+            "GMP_ENV_MODE": "virtual",
             "PYTHONHOME": str(BIN_DIR / "python"),
             "PYTHONNOUSERSITE": "1",
             "PYTHONUTF8": "1",
@@ -336,6 +339,7 @@ def configure_repository() -> None:
     python = BIN_DIR / "python" / "python.exe"
     env = private_environment()
     facilities = GMP_ROOT / "tools" / "facilities_generator"
+    run([python, facilities / "gmp_fac_install_ccs_product.py"], cwd=facilities, env=env)
     run([python, facilities / "gmp_fac_generate_cfg_json.py"], cwd=facilities, env=env)
     source_manager = facilities / "src_mgr"
     run([python, source_manager / "framework_distribute_tools_v3.py"], cwd=source_manager, env=env)
@@ -365,6 +369,16 @@ def write_state(manifest: dict, mode: str) -> None:
     STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def remove_completion_marker() -> None:
+    COMPLETION_MARKER_PATH.unlink(missing_ok=True)
+
+
+def create_completion_marker() -> None:
+    temporary = COMPLETION_MARKER_PATH.with_suffix(".flag.tmp")
+    temporary.write_text("GMP virtual environment installation completed.\n", encoding="ascii")
+    temporary.replace(COMPLETION_MARKER_PATH)
+
+
 def expected_vcpkg_ports(manifest: dict) -> set[str]:
     ports = set()
     for relative in manifest["vcpkg"]["projects"]:
@@ -374,8 +388,15 @@ def expected_vcpkg_ports(manifest: dict) -> set[str]:
     return ports
 
 
-def doctor(manifest: dict, *, require_vcpkg_packages: bool = True) -> bool:
+def doctor(
+    manifest: dict,
+    *,
+    require_vcpkg_packages: bool = True,
+    require_completion_marker: bool = True,
+) -> bool:
     failures = []
+    if require_completion_marker and not COMPLETION_MARKER_PATH.is_file():
+        failures.append(f"missing completion marker: {display_path(COMPLETION_MARKER_PATH)}")
     python = BIN_DIR / "python" / "python.exe"
     if not python.is_file():
         failures.append(f"missing {display_path(python)}")
@@ -445,6 +466,7 @@ def main() -> int:
         if args.command == "doctor":
             return 0 if doctor(manifest) else 1
         if args.command == "online":
+            remove_completion_marker()
             install_python_packages(manifest)
             install_applications(manifest)
             install_vcpkg(manifest)
@@ -453,14 +475,29 @@ def main() -> int:
             if not args.skip_project_setup:
                 configure_repository()
             write_state(manifest, "online")
-            if not doctor(manifest, require_vcpkg_packages=not args.skip_vcpkg_packages):
+            if not doctor(
+                manifest,
+                require_vcpkg_packages=not args.skip_vcpkg_packages,
+                require_completion_marker=False,
+            ):
                 return 1
+            if args.skip_vcpkg_packages or args.skip_project_setup:
+                print("\n[WARNING] Partial installation completed; completion marker was not created.")
+                return 0
+            create_completion_marker()
         elif args.command == "deploy":
-            if not doctor(manifest):
+            remove_completion_marker()
+            if not doctor(manifest, require_completion_marker=False):
                 return 1
             if not args.skip_project_setup:
                 configure_repository()
             write_state(manifest, "portable-copy")
+            if args.skip_project_setup:
+                print("\n[WARNING] Partial deployment completed; completion marker was not created.")
+                return 0
+            if not doctor(manifest, require_completion_marker=False):
+                return 1
+            create_completion_marker()
         print("\n[SUCCESS] GMP private environment is ready. Run gmp_env.bat to enter it.")
         return 0
     except (EnvironmentError, OSError, json.JSONDecodeError, zipfile.BadZipFile) as error:

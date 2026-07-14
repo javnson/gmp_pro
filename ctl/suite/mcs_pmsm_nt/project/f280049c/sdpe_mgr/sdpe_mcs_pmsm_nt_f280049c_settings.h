@@ -16,6 +16,8 @@ extern "C"
 #endif
 
 // User project prefix code
+#include <sdpe_mcs_pmsm_nt_common_settings.h>
+
 /* The BOOSTXL inverter remains a legacy preset until it receives an SDPE entity. */
 #define BOOSTXL_3PHGANINV_IS_DEFAULT_PARAM
 #include <ctl/component/hardware_preset/inverter_3ph/GMP_3PH_2136SINV_DUAL_TMPL.h>
@@ -52,79 +54,13 @@ extern "C"
 
 #define SDPE_PROJECT_ID "mcs_pmsm_nt_f280049c"
 #define SDPE_PROJECT_SUITE "mcs_pmsm_nt"
-#define SDPE_PROJECT_VERSION "1.0.0"
-#define SDPE_PROJECT_UPDATED_AT "2026-07-14"
-
-//=================================================================================================
-/**
- * @brief Control Algorithm.
- */
-
-/**
- * @brief Use the discrete controller implementation.
- */
-// #define PMSM_CTRL_USING_DISCRETE_CTRL
-
-/**
- * @brief Enable discrete-PID anti-saturation path.
- */
-#define _USE_DEBUG_DISCRETE_PID
-
-/**
- * @brief Enable the sliding-mode observer path, preserving the original LaunchPad project setting.
- */
-#define ENABLE_SMO
-
-/**
- * @brief Enable motor fault protection processing.
- */
-#define ENABLE_MOTOR_FAULT_PROTECTION
-
-//=================================================================================================
-/**
- * @brief Controller Runtime.
- */
-
-/**
- * @brief Calibrate ADC offsets at startup.
- */
-#define SPECIFY_ENABLE_ADC_CALIBRATE
-
-/**
- * @brief Enable processor-in-the-loop mode.
- */
-// #define ENABLE_GMP_DL_PIL_SIM
-
-/**
- * @brief Enable CiA402 framework debug information.
- */
-// #define GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
-
-//=================================================================================================
-/**
- * @brief PWM Modulator.
- */
-
-/**
- * @brief Use the inverter's active-low PWM logic.
- */
-#define PWM_MODULATOR_USING_NEGATIVE_LOGIC (1)
-
-/**
- * @brief Enable three-level NPC modulation.
- */
-// #define USING_NPC_MODULATOR
+#define SDPE_PROJECT_VERSION "1.2.0"
+#define SDPE_PROJECT_UPDATED_AT "2026-07-15"
 
 //=================================================================================================
 /**
  * @brief Controller Options.
  */
-
-/**
- * @brief Incremental commissioning level.
- *        Options: (1), (2), (3), (4)
- */
-#define BUILD_LEVEL (4)
 
 /**
  * @brief Number of directly sampled phase currents.
@@ -312,52 +248,37 @@ extern "C"
  */
 
 /**
- * @brief Controller startup delay in milliseconds.
- */
-#define CTRL_STARTUP_DELAY (100)
-
-/**
- * @brief Main motor-control ISR frequency in hertz.
- */
-#define CONTROLLER_FREQUENCY (20e3f)
-
-/**
- * @brief Center-aligned PWM compare maximum at 100 MHz and 20 kHz.
+ * @brief Maximum compare count of the platform PWM peripheral at the configured controller switching frequency.
  */
 #define CTRL_PWM_CMP_MAX (2500 - 1)
 
 /**
- * @brief PWM dead-band count.
+ * @brief Dead-time count interpreted in the selected PWM peripheral clock domain.
  */
 #define CTRL_PWM_DEADBAND_CMP (100)
 
 /**
- * @brief F280049C system clock frequency in hertz.
+ * @brief Platform CPU or system clock frequency in hertz.
  */
 #define CTRL_SYS_FREQUENCY (100e6)
 
 /**
- * @brief System tick divider derived from clock and PWM period.
+ * @brief C2000 millisecond system-tick divider derived from the CPU clock and ePWM period.
  */
 #define DSP_C2000_DSP_TIME_DIV (CTRL_SYS_FREQUENCY / 1000 / CTRL_PWM_CMP_MAX / 2)
 
 /**
- * @brief ADC reference voltage.
+ * @brief ADC reference voltage used by all sensor conversions.
  */
 #define CTRL_ADC_VOLTAGE_REF (3.3f)
 
 /**
- * @brief ADC offset calibration timeout in milliseconds.
- */
-#define TIMEOUT_ADC_CALIB_MS (10000)
-
-/**
- * @brief DC-bus voltage per-unit base.
+ * @brief Configured DC-bus voltage base.
  */
 #define CTRL_DCBUS_VOLTAGE (80.0f)
 
 /**
- * @brief SVPWM phase-voltage base.
+ * @brief Phase-voltage per-unit base derived from the DC-bus base.
  */
 #define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE / 1.73205081f)
 
@@ -387,22 +308,22 @@ extern "C"
 #define CTRL_INVERTER_CURRENT_SENSITIVITY (MY_BOARD_PH_SHUNT_RESISTANCE_OHM * MY_BOARD_PH_CSA_GAIN_V_V)
 
 /**
- * @brief Phase-current sensor bias in volts.
+ * @brief Phase-current sensor zero-current bias in volts.
  */
 #define CTRL_INVERTER_CURRENT_BIAS (MY_BOARD_PH_CSA_BIAS_V)
 
 /**
- * @brief Phase-voltage sensor gain.
+ * @brief Phase-voltage sensing gain in ADC volts per measured volt.
  */
 #define CTRL_INVERTER_VOLTAGE_SENSITIVITY (MY_BOARD_PH_VOLTAGE_SENSE_GAIN)
 
 /**
- * @brief Phase-voltage sensor bias.
+ * @brief Phase-voltage sensor bias in volts.
  */
 #define CTRL_INVERTER_VOLTAGE_BIAS (MY_BOARD_PH_VOLTAGE_SENSE_BIAS_V)
 
 /**
- * @brief DC-bus current sensor gain.
+ * @brief DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path.
  */
 #define CTRL_DC_CURRENT_SENSITIVITY (MY_BOARD_DCBUS_CURRENT_SENSE_GAIN)
 
@@ -412,114 +333,17 @@ extern "C"
 #define CTRL_DC_CURRENT_BIAS (MY_BOARD_DCBUS_CURRENT_SENSE_BIAS_V)
 
 /**
- * @brief DC-bus voltage sensor gain.
+ * @brief DC-bus voltage sensing gain in ADC volts per measured volt.
  */
 #define CTRL_DC_VOLTAGE_SENSITIVITY (MY_BOARD_DCBUS_VOLTAGE_SENSE_GAIN)
 
 /**
- * @brief DC-bus voltage sensor bias.
+ * @brief DC-bus voltage sensor bias in volts.
  */
 #define CTRL_DC_VOLTAGE_BIAS (MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)
 
-/**
- * @brief Current deadband for dead-time polarity selection in amperes.
- */
-#define MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A (0.2f)
-
-/**
- * @brief Dead-time polarity hysteresis in amperes.
- */
-#define MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A (0.05f)
-
-/**
- * @brief Commissioning open-loop electrical frequency.
- */
-#define MCS_OPEN_LOOP_FREQ_HZ (20.0f)
-
-/**
- * @brief Open-loop electrical-frequency slew rate.
- */
-#define MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S (20.0f)
-
-/**
- * @brief Outer position-loop proportional gain.
- */
-#define MCS_MECH_POSITION_KP_PU (5.0f)
-
-/**
- * @brief Outer position-loop integral gain per second.
- */
-#define MCS_MECH_POSITION_KI_PU_S (1.0f)
-
-/**
- * @brief Velocity-loop proportional gain.
- */
-#define MCS_MECH_VELOCITY_KP_PU (5.0f)
-
-/**
- * @brief Velocity-loop integral gain per second.
- */
-#define MCS_MECH_VELOCITY_KI_PU_S (1.0f)
-
-/**
- * @brief Mechanical speed-command limit in rpm.
- */
-#define MCS_MECH_SPEED_LIMIT_RPM (MOTOR_PARAM_MAX_SPEED)
-
-/**
- * @brief Mechanical speed-command slew rate in rpm/s.
- */
-#define MCS_MECH_SPEED_SLOPE_RPM_S (MOTOR_PARAM_MAX_SPEED)
-
-/**
- * @brief Mechanical controller torque-current limit in amperes.
- */
-#define MCS_MECH_CURRENT_LIMIT_A (0.3f * CTRL_CURRENT_BASE)
-
-/**
- * @brief Encoder speed-estimator cutoff frequency.
- */
-#define MCS_ENCODER_SPEED_FILTER_FC_HZ (20.0f)
-
-/**
- * @brief Commissioning d-axis current reference.
- */
-#define MCS_COMMISSIONING_ID_REF_A (0.1f * CTRL_CURRENT_BASE)
-
-/**
- * @brief Commissioning q-axis current reference.
- */
-#define MCS_COMMISSIONING_IQ_REF_A (0.1f * CTRL_CURRENT_BASE)
-
-/**
- * @brief Commissioning speed reference.
- */
-#define MCS_COMMISSIONING_SPEED_REF_RPM (0.1f * MOTOR_PARAM_MAX_SPEED)
-
-/**
- * @brief CiA402 operation-enable transition delay.
- */
-#define MCS_CIA402_OPERATION_ENABLE_DELAY_MS (100)
-
-/**
- * @brief ADC offset calibrator filter cutoff.
- */
-#define MCS_ADC_CALIBRATOR_FC_HZ (20.0f)
-
-/**
- * @brief ADC offset calibrator filter quality factor.
- */
-#define MCS_ADC_CALIBRATOR_Q (0.707f)
-
 // User project tail code
-/* Accept the historical misspelling while source code uses the canonical switch. */
-#if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM
-#define ENABLE_GMP_DL_PIL_SIM
-#endif
-
-#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 4)
-#error "BUILD_LEVEL must be 1 (V/f), 2 (current loop/synthetic angle), 3 (current loop/encoder), or 4 (speed loop)."
-#endif
+/* No additional platform-specific tail definitions. */
 
 #ifdef __cplusplus
 }

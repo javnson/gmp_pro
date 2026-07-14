@@ -28,12 +28,19 @@ if /i "%~1"=="--plan" (
     exit /b 0
 )
 
+call "%GMP_PRO_LOCATION%\tools\gmp_installer\configure_proxy.bat"
+if errorlevel 1 exit /b 1
+
 set "SCOOP_HOME=%USERPROFILE%\scoop"
 set "SCOOP_CMD=%SCOOP_HOME%\shims\scoop.cmd"
 
 if not exist "%SCOOP_CMD%" (
     echo [INSTALL] Scoop...
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh'))"
+    if defined GMP_INSTALLER_PROXY_URL (
+        powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$client = New-Object System.Net.WebClient; $client.Proxy = New-Object System.Net.WebProxy($env:GMP_INSTALLER_PROXY_URL); iex ($client.DownloadString('https://get.scoop.sh'))"
+    ) else (
+        powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$client = New-Object System.Net.WebClient; $client.Proxy = [System.Net.GlobalProxySelection]::GetEmptyWebProxy(); iex ($client.DownloadString('https://get.scoop.sh'))"
+    )
     if errorlevel 1 (
         echo [ERROR] Scoop installation failed. Existing HTTP_PROXY/HTTPS_PROXY variables are honored.
         exit /b 1

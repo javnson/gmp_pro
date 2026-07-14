@@ -1,14 +1,13 @@
 /**
- * @file sdpe_mcs_pmsm_nt_stm32f405_settings.h
- * @brief SDPE project bindings for MCS PMSM NT STM32F405.
- * @note Validated STM32F405 PMSM project settings, timer resources and USART2 DMA Datalink bindings.
+ * @file sdpe_mcs_pmsm_nt_simulate_settings.h
+ * @brief SDPE project bindings for MCS PMSM NT Windows/Simulink SIL.
+ * @note Windows/Simulink SIL implementation of the common mcs_pmsm_nt controller requirement contract.
  */
 
-#ifndef _PROJECT_SDPE_MCS_PMSM_NT_STM32F405_SETTINGS_H_
-#define _PROJECT_SDPE_MCS_PMSM_NT_STM32F405_SETTINGS_H_
+#ifndef _PROJECT_SDPE_MCS_PMSM_NT_SIMULATE_SETTINGS_H_
+#define _PROJECT_SDPE_MCS_PMSM_NT_SIMULATE_SETTINGS_H_
 
-#include <ctl/hardware_preset/mcu_board/stm32f405_motor_board.h>
-#include <ctl/hardware_preset/pmsm_motor/sm060r20b30mnad.h>
+#include <ctl/hardware_preset/pmsm_motor/tyi_5008_kv335.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -18,35 +17,17 @@ extern "C"
 // User project prefix code
 #include <sdpe_mcs_pmsm_nt_common_settings.h>
 
-/* BOOSTXL inverter compatibility. */
+/* Preserve the validated SIL motor and inverter models while using SDPE as the settings source. */
 #define BOOSTXL_3PHGANINV_IS_DEFAULT_PARAM
-#include <ctl/component/hardware_preset/inverter_3ph/GMP_3PH_2136SINV_DUAL_TMPL.h>
-#define MOTOR_TYPE SM060R20B30MNAD_MOTOR_TYPE
-#define MOTOR_PARAM_RS SM060R20B30MNAD_RS
-#define MOTOR_PARAM_LS SM060R20B30MNAD_LD
-#define MOTOR_PARAM_LD SM060R20B30MNAD_LD
-#define MOTOR_PARAM_LQ SM060R20B30MNAD_LQ
-#define MOTOR_PARAM_FLUX SM060R20B30MNAD_FLUX
-#define MOTOR_PARAM_POLE_PAIRS SM060R20B30MNAD_POLE_PAIRS
-#define MOTOR_PARAM_INERTIA SM060R20B30MNAD_INERTIA
-#define MOTOR_PARAM_FRICTION SM060R20B30MNAD_FRICTION
-#define MOTOR_PARAM_KV SM060R20B30MNAD_KV
-#define MOTOR_PARAM_EMF SM060R20B30MNAD_EMF
-#define MOTOR_PARAM_RATED_VOLTAGE SM060R20B30MNAD_RATED_VOLTAGE
-#define MOTOR_PARAM_RATED_CURRENT SM060R20B30MNAD_RATED_CURRENT
-#define MOTOR_PARAM_NO_LOAD_CURRENT SM060R20B30MNAD_NO_LOAD_CURRENT
-#define MOTOR_PARAM_RATED_FREQUENCY SM060R20B30MNAD_RATED_FREQUENCY
-#define MOTOR_PARAM_MAX_SPEED SM060R20B30MNAD_MAX_SPEED
-#define MOTOR_PARAM_MAX_TORQUE SM060R20B30MNAD_MAX_TORQUE
-#define MOTOR_PARAM_MAX_DC_VOLTAGE SM060R20B30MNAD_MAX_DC_VOLTAGE
-#define MOTOR_PARAM_MAX_PH_CURRENT SM060R20B30MNAD_MAX_PH_CURRENT
+#include <ctl/component/hardware_preset/pmsm_motor/TYI_5008_KV335.h>
+#include <ctl/component/hardware_preset/inverter_3ph/TI_BOOSTXL_3PhGaNInv.h>
 
 //=================================================================================================
 /**
  * @brief Project metadata.
  */
 
-#define SDPE_PROJECT_ID "mcs_pmsm_nt_stm32f405"
+#define SDPE_PROJECT_ID "mcs_pmsm_nt_simulate"
 #define SDPE_PROJECT_SUITE "mcs_pmsm_nt"
 #define SDPE_PROJECT_VERSION "1.2.0"
 #define SDPE_PROJECT_UPDATED_AT "2026-07-15"
@@ -64,42 +45,13 @@ extern "C"
 
 //=================================================================================================
 /**
- * @brief Board.
- */
-
-/**
- * @brief Advanced motor PWM timer selection.
- *        Options: 1
- */
-#define MCS_PWM_TIMER_SELECTION 1
-
-/**
- * @brief Datalink UART handle.
- *        Options: (&huart2)
- */
-#define MCS_UART_HANDLE (&huart2)
-
-/**
- * @brief Datalink UART instance.
- *        Options: USART2
- */
-#define MCS_UART_INSTANCE USART2
-
-/**
- * @brief Encoder timer handle.
- *        Options: (&htim3)
- */
-#define MCS_ENCODER_TIMER_HANDLE (&htim3)
-
-//=================================================================================================
-/**
  * @brief Requirement bindings.
  */
 
 /**
  * @brief Maximum compare count of the platform PWM peripheral at the configured controller switching frequency.
  */
-#define CTRL_PWM_CMP_MAX (4199)
+#define CTRL_PWM_CMP_MAX (2500 - 1)
 
 /**
  * @brief Dead-time count interpreted in the selected PWM peripheral clock domain.
@@ -109,7 +61,7 @@ extern "C"
 /**
  * @brief Platform CPU or system clock frequency in hertz.
  */
-#define CTRL_SYS_FREQUENCY (168e6)
+#define CTRL_SYS_FREQUENCY (CONTROLLER_FREQUENCY)
 
 /**
  * @brief ADC reference voltage used by all sensor conversions.
@@ -134,12 +86,12 @@ extern "C"
 /**
  * @brief Encoder counts per mechanical revolution.
  */
-#define CTRL_POS_ENC_FS (10000)
+#define CTRL_POS_ENC_FS (16384)
 
 /**
  * @brief Mechanical encoder position bias in per unit.
  */
-#define CTRL_POS_ENC_BIAS (0.0207000002f)
+#define CTRL_POS_ENC_BIAS (0.0999145508f)
 
 /**
  * @brief Mechanical speed and position division factor.
@@ -186,18 +138,11 @@ extern "C"
  */
 #define CTRL_DC_VOLTAGE_BIAS (MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)
 
-/**
- * @brief Circular UART RX DMA buffer size.
- */
-#define MCS_UART_RX_BUFFER_SIZE (64)
-
 // User project tail code
-/* Platform-specific peripheral selection and validation. */
-#define MCS_PWM_TIMER_HANDLE (&htim1)
-#define MCS_PWM_ADC_TRIGGER ADC_EXTERNALTRIGINJEC_T1_TRGO
+/* No additional platform-specific tail definitions. */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // _PROJECT_SDPE_MCS_PMSM_NT_STM32F405_SETTINGS_H_
+#endif // _PROJECT_SDPE_MCS_PMSM_NT_SIMULATE_SETTINGS_H_

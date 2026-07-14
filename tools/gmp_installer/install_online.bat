@@ -29,9 +29,14 @@ if /i "%~1"=="--plan" (
     echo Applications : portable Git, CMake, Ninja, Doxygen, Graphviz
     echo vcpkg         : repository-local bin\vcpkg and shared bin\vcpkg_installed
     echo Python packages: tools\gmp_installer\requirements-gmp.txt
-    echo Repository    : facilities generation and source distribution
+    echo Repository    : CCS registration, facilities generation, source distribution
     exit /b 0
 )
+
+del /q "%GMP_BIN%\gmp_virtual_env_installed.flag" >nul 2>&1
+
+call "%GMP_PRO_LOCATION%\tools\gmp_installer\configure_proxy.bat"
+if errorlevel 1 exit /b 1
 
 if not exist "%PYTHON_EXE%" (
     where curl.exe >nul 2>&1
