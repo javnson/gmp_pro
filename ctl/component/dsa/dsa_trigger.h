@@ -284,7 +284,7 @@ GMP_STATIC_INLINE void ctl_step_dsa_logger_1ch(ctl_dsa_logger_t* logger, ctrl_gt
 
     case DSA_LOGGER_COMPLETE:
         // continuous trigger
-        if (flag_single_trigger == 0)
+        if (logger->flag_single_trigger == 0)
             logger->sm = DSA_LOGGER_READY;
 
         break;
@@ -335,7 +335,7 @@ GMP_STATIC_INLINE void ctl_step_dsa_logger_2ch(ctl_dsa_logger_t* logger, ctrl_gt
 
     case DSA_LOGGER_COMPLETE:
         // continuous trigger
-        if (flag_single_trigger == 0)
+        if (logger->flag_single_trigger == 0)
             logger->sm = DSA_LOGGER_READY;
 
         break;
@@ -387,7 +387,7 @@ GMP_STATIC_INLINE void ctl_step_dsa_logger_3ch(ctl_dsa_logger_t* logger, ctrl_gt
 
     case DSA_LOGGER_COMPLETE:
         // continuous trigger
-        if (flag_single_trigger == 0)
+        if (logger->flag_single_trigger == 0)
             logger->sm = DSA_LOGGER_READY;
 
         break;
