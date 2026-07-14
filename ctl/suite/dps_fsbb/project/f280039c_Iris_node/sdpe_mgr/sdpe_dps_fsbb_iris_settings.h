@@ -42,7 +42,7 @@ extern "C"
 /**
  * @brief Enable PIL simulation mode. This mode disables direct controller output for safe communication-based simulation.
  */
-// #define ENBALE_GMP_DL_PIL_SIM
+// #define ENABLE_GMP_DL_PIL_SIM
 
 /**
  * @brief Enable GMP framework debug information.
@@ -316,6 +316,11 @@ extern "C"
 #define FSBB_INPUT_VOLTAGE_MIN (12.0f)
 
 /**
+ * @brief Nominal input voltage used when input-voltage sampling is disabled.
+ */
+#define FSBB_INPUT_VOLTAGE_NOMINAL (24.0f)
+
+/**
  * @brief Maximum allowed FSBB output voltage command.
  */
 #define FSBB_OUTPUT_VOLTAGE_MAX (72.0f)
@@ -329,6 +334,61 @@ extern "C"
  * @brief Maximum allowed FSBB output/load current.
  */
 #define FSBB_OUTPUT_CURRENT_LIM (10.0f)
+
+/**
+ * @brief Default startup output-voltage command.
+ */
+#define FSBB_DEFAULT_OUTPUT_VOLTAGE (24.0f)
+
+/**
+ * @brief Default startup current command and limit.
+ */
+#define FSBB_DEFAULT_CURRENT_LIMIT (5.0f)
+
+/**
+ * @brief Equivalent output-voltage command used by BUILD_LEVEL 1.
+ */
+#define FSBB_OPEN_LOOP_VOLTAGE_COMMAND (12.0f)
+
+/**
+ * @brief Voltage-reference slew rate in PU/s.
+ */
+#define FSBB_VOLTAGE_RAMP_PU_S (1.0f)
+
+/**
+ * @brief Current-reference slew rate in PU/s.
+ */
+#define FSBB_CURRENT_RAMP_PU_S (1.0f)
+
+/**
+ * @brief Requested current-loop crossover frequency.
+ */
+#define FSBB_CURRENT_LOOP_BANDWIDTH (800.0f)
+
+/**
+ * @brief Requested voltage-loop crossover frequency.
+ */
+#define FSBB_VOLTAGE_LOOP_BANDWIDTH (40.0f)
+
+/**
+ * @brief Maximum FSBB leg duty ratio.
+ */
+#define FSBB_DUTY_MAX (0.95f)
+
+/**
+ * @brief Minimum FSBB leg duty ratio.
+ */
+#define FSBB_DUTY_MIN (0.05f)
+
+/**
+ * @brief Lower voltage-ratio boundary of the buck-boost transition region.
+ */
+#define FSBB_TRANSITION_RATIO_LOW (0.90f)
+
+/**
+ * @brief Upper voltage-ratio boundary of the buck-boost transition region.
+ */
+#define FSBB_TRANSITION_RATIO_HIGH (1.10f)
 
 /**
  * @brief Positive inductor current protection threshold.
@@ -351,7 +411,15 @@ extern "C"
 #define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
 
 // User project tail code
-/* Project-specific tail macros can be added here during migration. */
+/* Backward compatibility for the historical misspelled PIL switch. */
+#if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM
+#define ENABLE_GMP_DL_PIL_SIM
+#endif
+
+/* Project-specific compile-time validation. */
+#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 3)
+#error "BUILD_LEVEL must be 1 (open loop), 2 (current loop), or 3 (voltage/current cascade)."
+#endif
 
 #ifdef __cplusplus
 }

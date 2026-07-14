@@ -89,13 +89,13 @@ fast_gt gmp_hal_gpio_read(gpio_halt hgpio)
 /* ==================== INLINE STATUS FUNCTIONS ============================ */
 /* ========================================================================= */
 
-GMP_STATIC_INLINE fast_gt gmp_hal_uart_is_tx_busy(uart_halt uart)
+fast_gt gmp_hal_uart_is_tx_busy(uart_halt uart)
 {
     /* SCI_isTransmitterBusy returns true if the shift register is active */
     return (fast_gt)SCI_isTransmitterBusy((uint32_t)uart);
 }
 
-GMP_STATIC_INLINE size_gt gmp_hal_uart_get_rx_available(uart_halt uart)
+size_gt gmp_hal_uart_get_rx_available(uart_halt uart)
 {
     /* Returns the current number of words (bytes) in the RX FIFO */
     return (size_gt)SCI_getRxFIFOStatus((uint32_t)uart);
@@ -866,7 +866,7 @@ ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, s
 
         // 一旦开始顺利接收第 1 个字节，代表时序已经稳固建立，此时安全追加 Stop 指令
         // 这样硬件就能在收完最后一个字节时，正确发出 NACK + STOP。
-        if (!stop_conditioned && idx >= 0)
+        if (!stop_conditioned)
         {
             I2C_sendStopCondition(h);
             stop_conditioned = true;

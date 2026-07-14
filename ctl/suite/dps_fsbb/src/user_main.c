@@ -30,31 +30,24 @@ gmp_pil_sim_t pil;
 // Tunable Dictionary (Mapped for SINV)
 //
 const gmp_param_item_t dict_m1[] = {
-    // CiA 402 State Machine & Protection
+    // CiA 402 state and user commands
     {&cia402_sm.current_cmd, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RW},
     {&cia402_sm.current_state, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RO},
+    {&g_v_out_ref_user, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
+    {&g_i_limit_user, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
 
-//    {&dcdc_core.flag_enable, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RW},
-//
-//    {&dcdc_core.flag_enable_voltage_loop, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RW},
-//    {&dcdc_core.v_out_set_raw, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-//    {&dcdc_core.v_out_ref, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-//    {&adc_v_out.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
-//    {&dcdc_core.v_loop_pi.kp, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-//    {&dcdc_core.v_loop_pi.ki, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-//
-//    {&dcdc_core.flag_enable_current_loop, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RW},
-//    {&dcdc_core.i_out_set_raw, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-//    {&dcdc_core.i_L_ref, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-//    {&adc_i_L.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
-//    {&dcdc_core.i_loop_pi.kp, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-//    {&dcdc_core.i_loop_pi.ki, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-//
-//    {&dcdc_core.v_out_ff, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-//    {&dcdc_core.v_pwm_req, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-
+    // Feedback and controller state
     {&adc_v_in.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
-
+    {&adc_v_out.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&adc_i_L.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+#if defined FSBB_ENABLE_IOUT_SAMPLE
+    {&adc_i_load.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+#endif
+    {&dcdc_core.v_target, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&dcdc_core.i_target, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&dcdc_core.v_out_formal, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&v_req, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {(void*)&g_fsbb_faults, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RO},
 };
 const uint16_t var_tunable_count = sizeof(dict_m1) / sizeof(dict_m1[0]);
 gmp_param_tunable_t tunable;
@@ -95,8 +88,10 @@ gmp_task_status_t tsk_dl_debug_device(gmp_task_t* tsk)
 
     case GMP_DL_EVENT_RX_OK:
         // Ack PIL simulation message
+#if defined ENABLE_GMP_DL_PIL_SIM
         if (gmp_pil_sim_rx_cb(&pil))
             break;
+#endif
 
         // Ack parameter tunable message
         if (gmp_param_tunable_rx_cb(&tunable))
@@ -138,7 +133,19 @@ gmp_task_status_t tsk_blink(gmp_task_t* tsk)
 {
     GMP_UNUSED_VAR(tsk);
 
-    gmp_base_print(TEXT_STRING("Hello SINV World!\r\n"));
+    gmp_base_print(TEXT_STRING("FSBB controller online.\r\n"));
+
+    if (g_fsbb_faults != FSBB_FAULT_NONE)
+    {
+        gmp_hal_gpio_write(user_led, 0);
+        return GMP_TASK_DONE;
+    }
+
+    if (g_fsbb_output_enabled)
+    {
+        gmp_hal_gpio_write(user_led, 0);
+        return GMP_TASK_DONE;
+    }
 
     static fast_gt led_stat = 0;
     if (led_stat == 0)
@@ -208,8 +215,10 @@ GMP_NO_OPT_PREFIX void init(void) GMP_NO_OPT_SUFFIX
     // init datalink protocol
     gmp_dev_dl_init(&dl);
 
-    // enable PIL simulation environment
+    // Enable PIL only when selected by the SDPE project setting.
+#if defined ENABLE_GMP_DL_PIL_SIM
     gmp_pil_sim_init(&pil, &dl, 0x10);
+#endif
 
     // Band DL module with tunable and persp module.
     gmp_param_tunable_init(&tunable, &dl, 0x30, dict_m1, var_tunable_count);

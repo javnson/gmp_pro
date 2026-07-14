@@ -47,6 +47,8 @@ typedef struct _tag_4switch_buckboost_hardware_t
     parameter_gt slope_i_pu_s; /**< Target current protection ramp rate (PU/sec). */
     ctrl_gt i_out_max;         /**< Explicit maximum positive current saturation limit (PU). */
     ctrl_gt i_out_min;         /**< Explicit maximum reverse current saturation limit (PU). */
+    ctrl_gt v_cmd_max;         /**< Maximum voltage command produced by the inner current loop (PU). */
+    ctrl_gt v_cmd_min;         /**< Minimum voltage command produced by the inner current loop (PU). */
 
     /* Loop Dynamic Goals */
     parameter_gt fc_current_loop; /**< Target cross-over frequency for the inner current loop (Hz). */
@@ -162,7 +164,11 @@ GMP_STATIC_INLINE void ctl_step_fsbb_modulator(fsbb_modulator_t* mod, ctrl_gt v_
     raw_duty.dat[0] = d_buck;  // Channel 0 -> Buck Leg (Q1)
     raw_duty.dat[1] = d_boost; // Channel 1 -> Boost Leg (Q4)
 
+#if (PWM_MODULATOR_USING_NEGATIVE_LOGIC == 1)
+    ctl_step_pwm_dual_channel_inv(&mod->pwm, &raw_duty);
+#else
     ctl_step_pwm_dual_channel(&mod->pwm, &raw_duty);
+#endif
 }
 
 /**

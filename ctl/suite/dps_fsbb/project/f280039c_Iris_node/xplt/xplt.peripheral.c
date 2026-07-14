@@ -111,12 +111,6 @@ interrupt void MainISR(void)
     // Call GMP System Timer
     gmp_step_system_tick();
 
-    // Blink LED (Heartbeat at 1Hz)
-    if (gmp_base_get_system_tick() % 1000 < 500)
-        GPIO_WritePin(SYSTEM_LED, 0);
-    else
-        GPIO_WritePin(SYSTEM_LED, 1);
-
     // Clear the interrupt flag
     ADC_clearInterruptStatus(ADCA_BASE, ADC_INT_NUMBER1);
 
@@ -164,7 +158,7 @@ interrupt void INT_IRIS_CAN_0_ISR(void)
     if (status == 1)
     {
         CAN_readMessage(IRIS_CAN_BASE, 1, rx_data);
-        CAN_clearInterruptStatus(CANA_BASE, 1);
+        CAN_clearInterruptStatus(IRIS_CAN_BASE, 1);
 
         if (rx_data[0] == 1)
         {
@@ -174,12 +168,17 @@ interrupt void INT_IRIS_CAN_0_ISR(void)
         {
             cia402_send_cmd(&cia402_sm, CIA402_CMD_DISABLE_VOLTAGE);
         }
+        else if ((rx_data[0] == 2) && (ctl_fsbb_active_faults() == FSBB_FAULT_NONE))
+        {
+            g_fsbb_faults = FSBB_FAULT_NONE;
+            cia402_send_cmd(&cia402_sm, CIA402_CMD_FAULT_RESET);
+        }
     }
     // Mailbox 2: Reference Commands (V_out Setpoint & I_limit)
     else if (status == 2)
     {
         CAN_readMessage(IRIS_CAN_BASE, 2, (uint16_t*)recv_content);
-        CAN_clearInterruptStatus(CANA_BASE, 2);
+        CAN_clearInterruptStatus(IRIS_CAN_BASE, 2);
 
         // Map received CAN payload to user setpoints (Converted to PU)
         g_v_out_ref_user = float2ctrl((float)recv_content[0].i32 / CAN_SCALE_FACTOR);
@@ -220,7 +219,7 @@ void send_monitor_data(void)
 
     // 0x204: Monitor State Machine Status Word & Active Errors
     tran_content[0].i32 = (int32_t)(cia402_sm.state_word.all);
-//    tran_content[1].i32 = (int32_t)(protection.active_errors);
+    tran_content[1].i32 = (int32_t)g_fsbb_faults;
     CAN_sendMessage(IRIS_CAN_BASE, 7, 8, (uint16_t*)tran_content);
 }
 
@@ -242,7 +241,7 @@ interrupt void INT_IRIS_UART_RS232_RX_ISR(void)
 
 extern gmp_datalink_t dl;
 
-void flush_dl_tx_buffer()
+void flush_dl_tx_buffer(void)
 {
     // Send head
     gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl), gmp_dev_dl_get_tx_hw_hdr_size(&dl), 10);
@@ -254,7 +253,7 @@ void flush_dl_tx_buffer()
     }
 }
 
-void flush_dl_rx_buffer()
+void flush_dl_rx_buffer(void)
 {
     uint16_t fifoLevel;
     data_gt rxBuf[ISR_LOCAL_BUF_SIZE];

@@ -214,6 +214,14 @@
       "description": "Minimum allowed FSBB input voltage."
     },
     {
+      "role": "Nominal Input Voltage",
+      "macro": "FSBB_INPUT_VOLTAGE_NOMINAL",
+      "binding": {
+        "float": "24.0"
+      },
+      "description": "Nominal input voltage used when input-voltage sampling is disabled."
+    },
+    {
       "role": "Max Output Voltage",
       "macro": "FSBB_OUTPUT_VOLTAGE_MAX",
       "binding": {
@@ -236,6 +244,94 @@
         "float": "10.0"
       },
       "description": "Maximum allowed FSBB output/load current."
+    },
+    {
+      "role": "Default Output Voltage",
+      "macro": "FSBB_DEFAULT_OUTPUT_VOLTAGE",
+      "binding": {
+        "float": "24.0"
+      },
+      "description": "Default startup output-voltage command."
+    },
+    {
+      "role": "Default Current Limit",
+      "macro": "FSBB_DEFAULT_CURRENT_LIMIT",
+      "binding": {
+        "float": "5.0"
+      },
+      "description": "Default startup current command and limit."
+    },
+    {
+      "role": "Open Loop Voltage Command",
+      "macro": "FSBB_OPEN_LOOP_VOLTAGE_COMMAND",
+      "binding": {
+        "float": "12.0"
+      },
+      "description": "Equivalent output-voltage command used by BUILD_LEVEL 1."
+    },
+    {
+      "role": "Voltage Ramp Rate",
+      "macro": "FSBB_VOLTAGE_RAMP_PU_S",
+      "binding": {
+        "float": "1.0"
+      },
+      "description": "Voltage-reference slew rate in PU/s."
+    },
+    {
+      "role": "Current Ramp Rate",
+      "macro": "FSBB_CURRENT_RAMP_PU_S",
+      "binding": {
+        "float": "1.0"
+      },
+      "description": "Current-reference slew rate in PU/s."
+    },
+    {
+      "role": "Current Loop Bandwidth",
+      "macro": "FSBB_CURRENT_LOOP_BANDWIDTH",
+      "binding": {
+        "float": "800.0"
+      },
+      "description": "Requested current-loop crossover frequency."
+    },
+    {
+      "role": "Voltage Loop Bandwidth",
+      "macro": "FSBB_VOLTAGE_LOOP_BANDWIDTH",
+      "binding": {
+        "float": "40.0"
+      },
+      "description": "Requested voltage-loop crossover frequency."
+    },
+    {
+      "role": "Maximum Duty",
+      "macro": "FSBB_DUTY_MAX",
+      "binding": {
+        "float": "0.95"
+      },
+      "description": "Maximum FSBB leg duty ratio."
+    },
+    {
+      "role": "Minimum Duty",
+      "macro": "FSBB_DUTY_MIN",
+      "binding": {
+        "float": "0.05"
+      },
+      "description": "Minimum FSBB leg duty ratio."
+    },
+    {
+      "role": "Low Transition Ratio",
+      "macro": "FSBB_TRANSITION_RATIO_LOW",
+      "binding": {
+        "float": "0.90"
+      },
+      "description": "Lower voltage-ratio boundary of the buck-boost transition region."
+    },
+    {
+      "role": "High Transition Ratio",
+      "macro": "FSBB_TRANSITION_RATIO_HIGH",
+      "binding": {
+        "float": "1.10"
+      },
+      "description": "Upper voltage-ratio boundary of the buck-boost transition region."
     },
     {
       "role": "Max Inductor Current",
@@ -280,7 +376,7 @@
     },
     {
       "group": "Controller Settings",
-      "macro": "ENBALE_GMP_DL_PIL_SIM",
+      "macro": "ENABLE_GMP_DL_PIL_SIM",
       "enabled": false,
       "value": "",
       "description": "Enable PIL simulation mode. This mode disables direct controller output for safe communication-based simulation."
@@ -471,7 +567,7 @@
   ],
   "code_sections": {
     "after_extern_open": "/* Project-specific includes can be added here if the migrated project needs extra headers. */",
-    "before_footer": "/* Project-specific tail macros can be added here during migration. */"
+    "before_footer": "/* Backward compatibility for the historical misspelled PIL switch. */\n#if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM\n#define ENABLE_GMP_DL_PIL_SIM\n#endif\n\n/* Project-specific compile-time validation. */\n#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 3)\n#error \"BUILD_LEVEL must be 1 (open loop), 2 (current loop), or 3 (voltage/current cascade).\"\n#endif"
   },
   "description": "Four-switch buck-boost converter SDPE project requirement prepared from ctl/suite/dps_fsbb/project/f280039c_Iris_node/xplt/ctrl_settings.h.\nThe requirement introduces the GMP LVFB 150V 2-phase board as the switching stage and sensor source, and IRIS F280039C Node as the peripheral option provider.",
   "updated_at": "2026-07-14",

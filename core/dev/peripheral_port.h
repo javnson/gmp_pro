@@ -658,7 +658,7 @@ size_gt gmp_base_print_default(const char* p_fmt, ...);
  * * @param[in]  uart     The physical UART hardware handle.
  * @return fast_gt      1 (true) if busy shifting data out, 0 (false) if idle.
  */
-GMP_STATIC_INLINE fast_gt gmp_hal_uart_is_tx_busy(uart_halt uart);
+fast_gt gmp_hal_uart_is_tx_busy(uart_halt uart);
 
 /**
  * @brief  Gets the number of unread bytes available in the hardware RX FIFO.
@@ -666,7 +666,7 @@ GMP_STATIC_INLINE fast_gt gmp_hal_uart_is_tx_busy(uart_halt uart);
  * * @param[in]  uart     The physical UART hardware handle.
  * @return size_gt      Number of bytes currently available to read.
  */
-GMP_STATIC_INLINE size_gt gmp_hal_uart_get_rx_available(uart_halt uart);
+size_gt gmp_hal_uart_get_rx_available(uart_halt uart);
 
 // size_gt gmp_hal_uart_read_async(uart_halt uart, data_gt *data, size_gt length);
 //void gmp_hal_uart_write_async(uart_halt uart, const data_gt* data, size_gt length);
