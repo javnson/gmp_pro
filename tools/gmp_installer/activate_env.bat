@@ -19,6 +19,21 @@ if not exist "%GMP_BIN%\python\python.exe" (
     exit /b 1
 )
 
+if not exist "%GMP_BIN%\cache\vcpkg-downloads" (
+    mkdir "%GMP_BIN%\cache\vcpkg-downloads"
+    if errorlevel 1 (
+        echo [ERROR] Cannot create the vcpkg downloads cache.
+        exit /b 1
+    )
+)
+if not exist "%GMP_BIN%\cache\vcpkg-archives" (
+    mkdir "%GMP_BIN%\cache\vcpkg-archives"
+    if errorlevel 1 (
+        echo [ERROR] Cannot create the vcpkg binary cache.
+        exit /b 1
+    )
+)
+
 if not "%GMP_ENV_ACTIVE%"=="%GMP_PRO_LOCATION%" (
     set "GMP_ENV_ACTIVE=%GMP_PRO_LOCATION%"
     set "GMP_ENV_MODE=virtual"

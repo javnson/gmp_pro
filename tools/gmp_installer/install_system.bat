@@ -22,7 +22,7 @@ echo.
 if /i "%~1"=="--plan" (
     echo Applications : git, python, cmake, ninja, doxygen, graphviz, vcpkg
     echo Python packages: tools\gmp_installer\requirements-gmp.txt
-    echo vcpkg project : ctl\suite\mcs_pmsm\project\motor_control_simulink
+    echo vcpkg projects: ctl\suite\*\project\simulate with vcpkg.json
     echo Integration   : user-wide vcpkg integration
     echo Repository    : CCS registration, facilities generation, source distribution
     exit /b 0
@@ -88,10 +88,30 @@ echo [INSTALL] Enabling user-wide vcpkg integration for compatibility mode...
 vcpkg integrate install --disable-metrics
 if errorlevel 1 exit /b 1
 
-set "GMP_VCPKG_PROJECT=%GMP_PRO_LOCATION%\ctl\suite\mcs_pmsm\project\motor_control_simulink"
-echo [INSTALL] Restoring motor_control_simulink vcpkg manifest...
-vcpkg install --x-manifest-root="%GMP_VCPKG_PROJECT%" --triplet=x64-windows --disable-metrics
-if errorlevel 1 exit /b 1
+set "GMP_VCPKG_PROJECT_LIST=%TEMP%\gmp_vcpkg_projects_%RANDOM%_%RANDOM%.txt"
+python "%GMP_PRO_LOCATION%\tools\gmp_installer\environment_manager.py" list-vcpkg-projects >"%GMP_VCPKG_PROJECT_LIST%"
+if errorlevel 1 (
+    del /q "%GMP_VCPKG_PROJECT_LIST%" >nul 2>&1
+    echo [ERROR] Failed to discover GMP vcpkg projects.
+    exit /b 1
+)
+
+set "GMP_VCPKG_PROJECT_COUNT=0"
+for /f "usebackq delims=" %%R in ("%GMP_VCPKG_PROJECT_LIST%") do (
+    set /a GMP_VCPKG_PROJECT_COUNT+=1
+    set "GMP_VCPKG_PROJECT=%GMP_PRO_LOCATION%\%%R"
+    echo [INSTALL] Restoring vcpkg manifest: %%R
+    vcpkg install --x-manifest-root="!GMP_VCPKG_PROJECT!" --triplet=x64-windows --disable-metrics
+    if errorlevel 1 (
+        del /q "%GMP_VCPKG_PROJECT_LIST%" >nul 2>&1
+        exit /b 1
+    )
+)
+del /q "%GMP_VCPKG_PROJECT_LIST%" >nul 2>&1
+if %GMP_VCPKG_PROJECT_COUNT% equ 0 (
+    echo [ERROR] No GMP vcpkg projects were discovered.
+    exit /b 1
+)
 
 echo [SETUP] Registering CCS facilities product...
 python "%GMP_PRO_LOCATION%\tools\facilities_generator\gmp_fac_install_ccs_product.py"

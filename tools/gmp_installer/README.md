@@ -18,6 +18,11 @@ process and its child tools; it does not rewrite the Windows proxy setting.
 For unattended installation, set `GMP_INSTALLER_PROXY_CHOICE=Y` or `N` before
 launching the installer; interactive runs leave this variable unset.
 
+The root installation/deployment launchers pause after a failure so a window
+opened by double-click remains visible. Automated callers can disable only this
+failure pause by setting `GMP_INSTALLER_NO_PAUSE=1`; the original non-zero exit
+code is preserved in both cases.
+
 Visual Studio with the Desktop development with C++ workload and a Windows SDK
 is a host prerequisite. Visual Studio itself is intentionally not copied into
 `bin`; its licensing and installer servicing model do not support treating an
@@ -53,7 +58,7 @@ install_gmp.bat
 
 This installs or verifies Scoop-managed Git, Python, CMake, Ninja, Doxygen,
 Graphviz, and vcpkg; installs the shared Python requirement set; runs
-`vcpkg integrate install`; restores the motor-control simulation manifest; and
+`vcpkg integrate install`; restores every suite simulation manifest; and
 runs the complete repository setup, including CCS product registration.
 
 ## 2. Build a private environment from zero
@@ -68,11 +73,15 @@ The initial Python installer is downloaded with Windows `curl.exe`. All later
 downloads and extraction are performed by the private Python interpreter. The
 selected proxy is inherited by curl, Python/pip, vcpkg, Git, and Scoop.
 
-The default installation also restores the vcpkg manifest for:
+The default installation automatically restores every vcpkg manifest matching:
 
 ```text
-ctl/suite/mcs_pmsm/project/motor_control_simulink/vcpkg.json
+ctl/suite/*/project/simulate/vcpkg.json
 ```
+
+Any `simulate` directory containing a `.sln` or `.vcxproj` is a managed Visual
+Studio simulation project and must contain `vcpkg.json`. This convention means
+a new suite receives installation support without another installer edit.
 
 and runs CCS product registration plus the facilities/source-manager repository
 setup. Useful diagnostic
@@ -125,7 +134,7 @@ A single command can also be run without opening an interactive prompt:
 ```bat
 gmp_env.bat python --version
 gmp_env.bat cmake --version
-gmp_env.bat msbuild ctl\suite\mcs_pmsm\project\motor_control_simulink\motor_control_simulink.vcxproj /p:Platform=x64
+gmp_env.bat msbuild ctl\suite\mcs_pmsm\project\simulate\motor_control_simulink.vcxproj /p:Platform=x64
 ```
 
 Scripts that need to activate the environment in an existing command prompt can
@@ -157,8 +166,9 @@ repository root and prevents repeated activation. The guard preserves the
 caller's working directory.
 
 The marker is currently required on the CTL Doxygen generator, SDPE v2 BAT
-entry points, and source-manager BAT templates. Search for `GMP_ENV_GUARD` when
-auditing new or renamed scripts. The coverage audit can also be run directly:
+entry points, GMP Debugger v2 launchers, and source-manager BAT templates.
+Search for `GMP_ENV_GUARD` when auditing new or renamed scripts. The coverage
+audit can also be run directly:
 
 ```bat
 python tools\gmp_installer\audit_env_guards.py
@@ -297,17 +307,33 @@ under `bin` must remain relocatable to another computer after
 
 ### Maintaining vcpkg packages
 
-Add C/C++ dependencies to the owning project's `vcpkg.json`. The currently
-managed Visual Studio project is:
+Add C/C++ dependencies to the owning project's `vcpkg.json`. The standard GMP
+suite convention is:
 
 ```text
-ctl/suite/mcs_pmsm/project/motor_control_simulink
+ctl/suite/<suite-name>/project/simulate/vcpkg.json
 ```
 
-If another project must be restored during GMP installation, add its repository-
-relative path to `vcpkg.projects` in `environment_manifest.json`. Keep the vcpkg
-repository version and URL pinned together, restore the manifest with the
-configured triplet, and verify both installation modes.
+The installer discovers this pattern on every run. If the `simulate` directory
+contains one or more top-level `.sln` or `.vcxproj` files but has no
+`vcpkg.json`, both installation modes fail with the missing manifest path.
+Therefore, adding a new suite requires no installer change: create the
+conventional directory, place the Visual Studio project and its manifest
+together, and commit both.
+
+`vcpkg.projects` in `environment_manifest.json` is only for exceptional projects
+outside the suite convention. Paths listed there are added to the automatically
+discovered set; normal suite projects must not be listed individually. Keep the
+vcpkg repository version and URL pinned together, restore every manifest with
+the configured triplet, and verify both installation modes.
+
+`ctl/suite/Directory.Build.props` and `Directory.Build.targets` provide the
+shared MSBuild rule. When a project directory contains `vcpkg.json`, they enable
+manifest mode automatically and, when `bin/vcpkg` exists, point Visual Studio at
+the repository-private vcpkg tree and shared installed directory. Do not create
+suite-specific copies of these files unless that project genuinely needs to
+override the common behavior: MSBuild uses the nearest `Directory.Build.*`
+files, which can shadow the central rule.
 
 The Visual Studio project consumes local vcpkg through `Directory.Build.props`
 and `Directory.Build.targets` when `bin/vcpkg` exists. Otherwise it remains

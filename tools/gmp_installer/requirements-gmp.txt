@@ -1,4 +1,5 @@
 # Runtime packages imported by GMP repository tools.
+# GMP Debugger v2 directly requires PyQt5, pyserial, pyqtgraph, and numpy.
 PyQt5==5.15.11
 PyQt6==6.9.1
 PySide6==6.9.1

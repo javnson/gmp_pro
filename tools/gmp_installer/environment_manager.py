@@ -22,6 +22,7 @@ GMP_ROOT = Path(os.environ["GMP_PRO_LOCATION"]).resolve() if os.environ.get("GMP
 BIN_DIR = GMP_ROOT / "bin" if GMP_ROOT else None
 STATE_PATH = BIN_DIR / "gmp_environment.json" if BIN_DIR else None
 COMPLETION_MARKER_PATH = BIN_DIR / "gmp_virtual_env_installed.flag" if BIN_DIR else None
+SUITE_SIMULATE_GLOB = "ctl/suite/*/project/simulate"
 
 
 class EnvironmentError(RuntimeError):
@@ -172,7 +173,47 @@ def install_python_packages(manifest: dict) -> None:
     run([python, "-m", "pip", "check"], env=env)
 
 
+def ensure_vcpkg_cache_directories() -> None:
+    """Create every directory exported to vcpkg as a writable cache."""
+    for directory in (
+        BIN_DIR / "cache" / "vcpkg-downloads",
+        BIN_DIR / "cache" / "vcpkg-archives",
+    ):
+        directory.mkdir(parents=True, exist_ok=True)
+
+
+def discover_vcpkg_projects(manifest: dict) -> list[Path]:
+    """Return convention-based suite manifests plus explicit extra projects."""
+    projects: set[Path] = set()
+
+    for simulate in sorted(GMP_ROOT.glob(SUITE_SIMULATE_GLOB)):
+        if not simulate.is_dir():
+            continue
+        manifest_path = simulate / "vcpkg.json"
+        has_visual_studio_project = any(simulate.glob("*.vcxproj")) or any(simulate.glob("*.sln"))
+        if has_visual_studio_project and not manifest_path.is_file():
+            relative = simulate.relative_to(GMP_ROOT).as_posix()
+            raise EnvironmentError(
+                f"Visual Studio simulate project is missing its vcpkg manifest: {relative}/vcpkg.json"
+            )
+        if manifest_path.is_file():
+            projects.add(simulate.resolve())
+
+    for relative in manifest["vcpkg"].get("projects", []):
+        project = (GMP_ROOT / relative).resolve()
+        try:
+            project.relative_to(GMP_ROOT)
+        except ValueError as error:
+            raise EnvironmentError(f"vcpkg project escapes the GMP repository: {relative}") from error
+        if not (project / "vcpkg.json").is_file():
+            raise EnvironmentError(f"vcpkg manifest is missing: {relative}/vcpkg.json")
+        projects.add(project)
+
+    return sorted(projects, key=lambda path: path.relative_to(GMP_ROOT).as_posix().lower())
+
+
 def install_vcpkg(manifest: dict) -> None:
+    ensure_vcpkg_cache_directories()
     config = manifest["vcpkg"]
     vcpkg_root = BIN_DIR / "vcpkg"
     executable = vcpkg_root / "vcpkg.exe"
@@ -310,6 +351,7 @@ def visual_studio_environment(base_env: dict[str, str]) -> dict[str, str]:
 
 
 def install_vcpkg_projects(manifest: dict) -> None:
+    ensure_vcpkg_cache_directories()
     executable = BIN_DIR / "vcpkg" / "vcpkg.exe"
     if not executable.is_file():
         raise EnvironmentError("vcpkg.exe is missing")
@@ -317,10 +359,12 @@ def install_vcpkg_projects(manifest: dict) -> None:
     triplet = manifest["vcpkg"]["triplet"]
     install_root = BIN_DIR / "vcpkg_installed" / triplet
     install_root.mkdir(parents=True, exist_ok=True)
-    for relative in manifest["vcpkg"]["projects"]:
-        project = GMP_ROOT / relative
-        if not (project / "vcpkg.json").is_file():
-            raise EnvironmentError(f"vcpkg manifest is missing: {relative}/vcpkg.json")
+    projects = discover_vcpkg_projects(manifest)
+    if not projects:
+        raise EnvironmentError(f"No vcpkg projects were found by {SUITE_SIMULATE_GLOB}")
+    for project in projects:
+        relative = project.relative_to(GMP_ROOT).as_posix()
+        print(f"[INSTALL] Restoring vcpkg manifest: {relative}")
         run(
             [
                 executable,
@@ -362,6 +406,10 @@ def write_state(manifest: dict, mode: str) -> None:
         "python_version": manifest["python"]["version"],
         "applications": {item["name"]: item["version"] for item in manifest["applications"]},
         "vcpkg_repository_version": manifest["vcpkg"]["repository_version"],
+        "vcpkg_projects": [
+            project.relative_to(GMP_ROOT).as_posix()
+            for project in discover_vcpkg_projects(manifest)
+        ],
         "python_packages": freeze.stdout.splitlines() if freeze.returncode == 0 else [],
         "portable": True,
     }
@@ -381,8 +429,8 @@ def create_completion_marker() -> None:
 
 def expected_vcpkg_ports(manifest: dict) -> set[str]:
     ports = set()
-    for relative in manifest["vcpkg"]["projects"]:
-        data = json.loads((GMP_ROOT / relative / "vcpkg.json").read_text(encoding="utf-8"))
+    for project in discover_vcpkg_projects(manifest):
+        data = json.loads((project / "vcpkg.json").read_text(encoding="utf-8"))
         for dependency in data.get("dependencies", []):
             ports.add(dependency if isinstance(dependency, str) else dependency["name"])
     return ports
@@ -439,8 +487,16 @@ def print_plan(manifest: dict) -> None:
     for item in manifest["applications"]:
         print(f"  - {item['name']} {item['version']} -> bin/{item['destination']}")
     print(f"vcpkg: {manifest['vcpkg']['repository_version']} ({manifest['vcpkg']['triplet']})")
-    for project in manifest["vcpkg"]["projects"]:
-        print(f"  - manifest: {project}/vcpkg.json")
+    print(f"  - automatic rule: {SUITE_SIMULATE_GLOB}/vcpkg.json")
+    for project in discover_vcpkg_projects(manifest):
+        relative = project.relative_to(GMP_ROOT).as_posix()
+        print(f"  - manifest: {relative}/vcpkg.json")
+
+
+def print_vcpkg_project_paths(manifest: dict) -> None:
+    """Print machine-readable repository-relative paths, one per line."""
+    for project in discover_vcpkg_projects(manifest):
+        print(project.relative_to(GMP_ROOT).as_posix())
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -453,6 +509,10 @@ def parse_arguments() -> argparse.Namespace:
     deploy.add_argument("--skip-project-setup", action="store_true")
     subparsers.add_parser("doctor", help="validate the current bin folder")
     subparsers.add_parser("plan", help="print the pinned environment plan without changing files")
+    subparsers.add_parser(
+        "list-vcpkg-projects",
+        help="print convention-based and explicitly configured vcpkg project paths",
+    )
     return parser.parse_args()
 
 
@@ -462,6 +522,9 @@ def main() -> int:
         manifest = load_manifest()
         if args.command == "plan":
             print_plan(manifest)
+            return 0
+        if args.command == "list-vcpkg-projects":
+            print_vcpkg_project_paths(manifest)
             return 0
         if args.command == "doctor":
             return 0 if doctor(manifest) else 1
