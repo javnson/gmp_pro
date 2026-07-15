@@ -5,7 +5,7 @@
   "category": "PE Board",
   "tags": ["power_stage", "inverter", "three_phase", "full_bridge"],
   "output_subdir": "inverter_3ph",
-  "includes": ["ctl/hardware_preset/inverter_3ph/inverter_3ph_general.h"],
+  "includes": ["ctl/component/hardware_preset/inverter_3ph/inverter_3ph_general.h"],
   "component_slots": {
     "power_stage": {"accepted_schemas":["power_switch","integrated_power_module","integrated_power_stage"],"required":false,"description":"Discrete switch, IPM or integrated power stage used by the board."},
     "phase_current_sensor": {"accepted_schemas":["current_sensor"],"required":false,"description":"Discrete current-sensor IC; omit for shunt-only channels."}

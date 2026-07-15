@@ -12,5 +12,5 @@ set "SDPE_SETTINGS=%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe_settings.json"
 set "SDPE_REQUIREMENT=%~dp0sdpe_requirement.json"
 rem Emit the shared header directly into src so every project can include it
 rem through the existing common-source include path.
-set "SDPE_OUT=%~dp0.."
+set "SDPE_OUT=%~dp0..\src"
 exit /b 0

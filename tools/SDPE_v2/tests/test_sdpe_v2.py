@@ -146,6 +146,19 @@ class SDPEV2Tests(unittest.TestCase):
             self.assertIn("#define BUILD_LEVEL (4)", header)
             self.assertIn("#include <ctl/component/hardware_preset/inverter_3ph/GMP_3PH_2136SINV_DUAL_TMPL.h>", header)
 
+    def test_project_metadata_can_use_a_namespace_prefix(self) -> None:
+        lib = self.load_library()
+        data = read_project("mcs_pmsm_nt_sensor_binding")
+        data["macro_prefix"] = "mcs pmsm common"
+        with tempfile.TemporaryDirectory() as tmp:
+            generator = HeaderGenerator(lib, Path(tmp))
+            header = generator.render_project_header(data)
+            matlab = generator.render_project_matlab_script(data)
+            self.assertIn('#define MCS_PMSM_COMMON_SDPE_PROJECT_ID "mcs_pmsm_nt_sensor_IRIS_node"', header)
+            self.assertIn('#define MCS_PMSM_COMMON_SDPE_PROJECT_VERSION "0.2.0"', header)
+            self.assertNotIn('#define SDPE_PROJECT_ID "', header)
+            self.assertIn("MCS_PMSM_COMMON_SDPE_PROJECT_ID = 'mcs_pmsm_nt_sensor_IRIS_node';", matlab)
+
     def test_project_matlab_init_script_exports_macro_variables(self) -> None:
         lib = self.load_library()
         data = read_project("dps_fsbb_iris_node")

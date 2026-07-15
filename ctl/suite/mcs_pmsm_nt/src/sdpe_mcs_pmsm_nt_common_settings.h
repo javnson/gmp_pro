@@ -20,10 +20,10 @@ extern "C"
  * @brief Project metadata.
  */
 
-#define SDPE_PROJECT_ID "mcs_pmsm_nt_common"
-#define SDPE_PROJECT_SUITE "mcs_pmsm_nt"
-#define SDPE_PROJECT_VERSION "1.0.0"
-#define SDPE_PROJECT_UPDATED_AT "2026-07-15"
+#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_ID "mcs_pmsm_nt_common"
+#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
+#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION "1.0.0"
+#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT "2026-07-15"
 
 //=================================================================================================
 /**
@@ -216,12 +216,6 @@ extern "C"
 #if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 4)
 #error "BUILD_LEVEL must be 1 (V/f), 2 (current loop/synthetic angle), 3 (current loop/encoder), or 4 (speed loop)."
 #endif
-
-/* Do not leak common-package metadata into the including platform header. */
-#undef SDPE_PROJECT_ID
-#undef SDPE_PROJECT_SUITE
-#undef SDPE_PROJECT_VERSION
-#undef SDPE_PROJECT_UPDATED_AT
 
 #ifdef __cplusplus
 }

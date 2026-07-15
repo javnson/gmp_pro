@@ -1,5 +1,6 @@
 {
   "id": "mcs_pmsm_nt_stm32f405",
+  "macro_prefix": "MCS_PMSM_NT_STM32F405",
   "display_name": "MCS PMSM NT STM32F405",
   "description": "Validated STM32F405 PMSM project settings, timer resources and USART2 DMA Datalink bindings.",
   "suite": "mcs_pmsm_nt",

@@ -1,5 +1,6 @@
 {
   "id": "mcs_pmsm_nt_f280039c_iris_node",
+  "macro_prefix": "MCS_PMSM_NT_IRIS",
   "display_name": "MCS PMSM NT F280039C IRIS Node",
   "description": "F280039C IRIS hardware timing, sensing and peripheral bindings. Platform-independent controller settings are supplied by src/sdpe_mcs_pmsm_nt_common_settings.h.",
   "suite": "mcs_pmsm_nt",

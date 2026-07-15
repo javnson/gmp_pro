@@ -1,5 +1,6 @@
 {
   "id": "mcs_pmsm_nt_simulate",
+  "macro_prefix": "MCS_PMSM_NT_SIMULATE",
   "display_name": "MCS PMSM NT Windows/Simulink SIL",
   "suite": "mcs_pmsm_nt",
   "version": "1.2.0",
@@ -173,7 +174,7 @@
     }
   ],
   "code_sections": {
-    "after_extern_open": "#include <sdpe_mcs_pmsm_nt_common_settings.h>\n\n/* Preserve the validated SIL motor and inverter models while using SDPE as the settings source. */\n/* Motor and inverter headers are emitted from the SDPE hardware list. */",
+    "after_extern_open": "#include <sdpe_mcs_pmsm_nt_common_settings.h>\n\n/* Preserve the validated SIL motor and inverter models while using SDPE as the settings source. */\n/* Motor and inverter headers are emitted from the SDPE hardware list. */\n#define MOTOR_TYPE TYI_5008_KV335_MOTOR_TYPE\n#define MOTOR_PARAM_RS TYI_5008_KV335_RS\n#define MOTOR_PARAM_LS TYI_5008_KV335_LD\n#define MOTOR_PARAM_LD TYI_5008_KV335_LD\n#define MOTOR_PARAM_LQ TYI_5008_KV335_LQ\n#define MOTOR_PARAM_FLUX TYI_5008_KV335_FLUX\n#define MOTOR_PARAM_POLE_PAIRS TYI_5008_KV335_POLE_PAIRS\n#define MOTOR_PARAM_KV TYI_5008_KV335_KV\n#define MOTOR_PARAM_EMF TYI_5008_KV335_EMF\n#define MOTOR_PARAM_RATED_VOLTAGE TYI_5008_KV335_RATED_VOLTAGE\n#define MOTOR_PARAM_NO_LOAD_CURRENT TYI_5008_KV335_NO_LOAD_CURRENT\n#define MOTOR_PARAM_RATED_FREQUENCY TYI_5008_KV335_RATED_FREQUENCY\n#define MOTOR_PARAM_MAX_SPEED TYI_5008_KV335_MAX_SPEED\n#define MOTOR_PARAM_MAX_TORQUE TYI_5008_KV335_MAX_TORQUE\n#define MOTOR_PARAM_MAX_DC_VOLTAGE TYI_5008_KV335_MAX_DC_VOLTAGE\n#define MOTOR_PARAM_MAX_PH_CURRENT TYI_5008_KV335_MAX_PH_CURRENT",
     "before_footer": "/* No additional platform-specific tail definitions. */"
   },
   "description": "Windows/Simulink SIL implementation of the common mcs_pmsm_nt controller requirement contract.",

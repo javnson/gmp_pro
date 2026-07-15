@@ -45,10 +45,10 @@ extern "C"
  * @brief Project metadata.
  */
 
-#define SDPE_PROJECT_ID "mcs_pmsm_nt_stm32g474_hrtim"
-#define SDPE_PROJECT_SUITE "mcs_pmsm_nt"
-#define SDPE_PROJECT_VERSION "1.2.0"
-#define SDPE_PROJECT_UPDATED_AT "2026-07-15"
+#define MCS_PMSM_NT_STM32G474_HRTIM_SDPE_PROJECT_ID "mcs_pmsm_nt_stm32g474_hrtim"
+#define MCS_PMSM_NT_STM32G474_HRTIM_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
+#define MCS_PMSM_NT_STM32G474_HRTIM_SDPE_PROJECT_VERSION "1.2.0"
+#define MCS_PMSM_NT_STM32G474_HRTIM_SDPE_PROJECT_UPDATED_AT "2026-07-15"
 
 //=================================================================================================
 /**

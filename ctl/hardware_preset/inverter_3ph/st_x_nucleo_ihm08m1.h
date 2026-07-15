@@ -8,7 +8,7 @@
 #define _INVERTER_3PH_ST_X_NUCLEO_IHM08M1_H_
 
 #include <ctl/hardware_preset/power_switch/stl220n6f7.h>
-#include <ctl/hardware_preset/inverter_3ph/inverter_3ph_general.h>
+#include <ctl/component/hardware_preset/inverter_3ph/inverter_3ph_general.h>
 
 // User code after includes
 // SDPE extension point: add after_includes code in the Entity Instance Code page if needed.

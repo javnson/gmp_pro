@@ -203,6 +203,7 @@ Project 文件放在 `projects/` 下。
 ```json
 {
   "id": "dps_fsbb_iris_node",
+  "macro_prefix": "DPS_FSBB_IRIS",
   "display_name": "DPS FSBB on F280039C IRIS Node",
   "suite": "dps_fsbb",
   "output_header": "sdpe_dps_fsbb_iris_bindings.h",
@@ -225,6 +226,10 @@ Project 文件放在 `projects/` 下。
   }
 }
 ```
+
+`macro_prefix` 是可选的 Project 元数据命名空间，可在 Project Requirement 的 Basic 页面编辑。设置后，生成器会输出
+`DPS_FSBB_IRIS_SDPE_PROJECT_ID`、`DPS_FSBB_IRIS_SDPE_PROJECT_SUITE` 等元数据宏；未设置时继续输出旧的
+`SDPE_PROJECT_*` 名称。这样同一个 C/C++ 工程可以同时包含多个 SDPE Project 头文件。
 
 Binding 支持三种形式：
 

@@ -185,6 +185,10 @@ PyQt 管理器包含 4 个工作页：
 
 `Template Definition` 和 `Entity Instance` 面向硬件库，适合固定保存在 GMP 仓库或扩展包中。`Project Requirement` 和 `Requirement Binding` 面向具体工程，建议通过 `--projects` 指向 suite 工程内的需求文件或目录。
 
+Project Requirement 的 Basic 页面提供 `Macro Prefix`。为它设置独立前缀后，Project 元数据宏会生成为
+`<PREFIX>_SDPE_PROJECT_ID`、`<PREFIX>_SDPE_PROJECT_SUITE`、`<PREFIX>_SDPE_PROJECT_VERSION` 和
+`<PREFIX>_SDPE_PROJECT_UPDATED_AT`，因此一个软件工程可以安全包含多个 SDPE Project 生成头文件。未填写时保持旧命名以兼容现有工程。
+
 启动轻量 Web 原型：
 
 ```powershell

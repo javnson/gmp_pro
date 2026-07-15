@@ -20,16 +20,32 @@ extern "C"
 
 /* Preserve the validated SIL motor and inverter models while using SDPE as the settings source. */
 /* Motor and inverter headers are emitted from the SDPE hardware list. */
+#define MOTOR_TYPE TYI_5008_KV335_MOTOR_TYPE
+#define MOTOR_PARAM_RS TYI_5008_KV335_RS
+#define MOTOR_PARAM_LS TYI_5008_KV335_LD
+#define MOTOR_PARAM_LD TYI_5008_KV335_LD
+#define MOTOR_PARAM_LQ TYI_5008_KV335_LQ
+#define MOTOR_PARAM_FLUX TYI_5008_KV335_FLUX
+#define MOTOR_PARAM_POLE_PAIRS TYI_5008_KV335_POLE_PAIRS
+#define MOTOR_PARAM_KV TYI_5008_KV335_KV
+#define MOTOR_PARAM_EMF TYI_5008_KV335_EMF
+#define MOTOR_PARAM_RATED_VOLTAGE TYI_5008_KV335_RATED_VOLTAGE
+#define MOTOR_PARAM_NO_LOAD_CURRENT TYI_5008_KV335_NO_LOAD_CURRENT
+#define MOTOR_PARAM_RATED_FREQUENCY TYI_5008_KV335_RATED_FREQUENCY
+#define MOTOR_PARAM_MAX_SPEED TYI_5008_KV335_MAX_SPEED
+#define MOTOR_PARAM_MAX_TORQUE TYI_5008_KV335_MAX_TORQUE
+#define MOTOR_PARAM_MAX_DC_VOLTAGE TYI_5008_KV335_MAX_DC_VOLTAGE
+#define MOTOR_PARAM_MAX_PH_CURRENT TYI_5008_KV335_MAX_PH_CURRENT
 
 //=================================================================================================
 /**
  * @brief Project metadata.
  */
 
-#define SDPE_PROJECT_ID "mcs_pmsm_nt_simulate"
-#define SDPE_PROJECT_SUITE "mcs_pmsm_nt"
-#define SDPE_PROJECT_VERSION "1.2.0"
-#define SDPE_PROJECT_UPDATED_AT "2026-07-15"
+#define MCS_PMSM_NT_SIMULATE_SDPE_PROJECT_ID "mcs_pmsm_nt_simulate"
+#define MCS_PMSM_NT_SIMULATE_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
+#define MCS_PMSM_NT_SIMULATE_SDPE_PROJECT_VERSION "1.2.0"
+#define MCS_PMSM_NT_SIMULATE_SDPE_PROJECT_UPDATED_AT "2026-07-15"
 
 //=================================================================================================
 /**

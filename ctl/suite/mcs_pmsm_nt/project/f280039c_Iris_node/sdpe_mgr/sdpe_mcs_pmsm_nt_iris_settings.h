@@ -52,10 +52,10 @@ extern "C"
  * @brief Project metadata.
  */
 
-#define SDPE_PROJECT_ID "mcs_pmsm_nt_f280039c_iris_node"
-#define SDPE_PROJECT_SUITE "mcs_pmsm_nt"
-#define SDPE_PROJECT_VERSION "1.2.0"
-#define SDPE_PROJECT_UPDATED_AT "2026-07-15"
+#define MCS_PMSM_NT_IRIS_SDPE_PROJECT_ID "mcs_pmsm_nt_f280039c_iris_node"
+#define MCS_PMSM_NT_IRIS_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
+#define MCS_PMSM_NT_IRIS_SDPE_PROJECT_VERSION "1.2.0"
+#define MCS_PMSM_NT_IRIS_SDPE_PROJECT_UPDATED_AT "2026-07-15"
 
 //=================================================================================================
 /**

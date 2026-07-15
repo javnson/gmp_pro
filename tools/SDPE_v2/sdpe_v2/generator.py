@@ -51,6 +51,13 @@ class HeaderGenerator:
         self.system_out_dir = system_out_dir.resolve() if system_out_dir else None
         self.system_include_prefix = system_include_prefix.strip("/")
 
+    @staticmethod
+    def project_metadata_macro(data: dict[str, Any], name: str) -> str:
+        """Return a project metadata macro with its optional namespace prefix."""
+
+        prefix = str(data.get("macro_prefix", "")).strip()
+        return f"{macro_name(prefix)}_{name}" if prefix else name
+
     def generate_entity_tree(self, entity_id: str, skip_system: bool = False) -> list[GeneratedFile]:
         """Generate headers for an entity and every referenced non-inline child."""
 
@@ -569,13 +576,13 @@ class HeaderGenerator:
         self._append_project_code_section(lines, data, "after_extern_open", "User project prefix code", True)
 
         self._append_project_section_header(lines, "Project metadata")
-        lines.append(f"#define SDPE_PROJECT_ID \"{project_id}\"")
+        lines.append(f"#define {self.project_metadata_macro(data, 'SDPE_PROJECT_ID')} \"{project_id}\"")
         if "suite" in data:
-            lines.append(f"#define SDPE_PROJECT_SUITE \"{data['suite']}\"")
+            lines.append(f"#define {self.project_metadata_macro(data, 'SDPE_PROJECT_SUITE')} \"{data['suite']}\"")
         if data.get("version"):
-            lines.append(f"#define SDPE_PROJECT_VERSION \"{data['version']}\"")
+            lines.append(f"#define {self.project_metadata_macro(data, 'SDPE_PROJECT_VERSION')} \"{data['version']}\"")
         if data.get("updated_at"):
-            lines.append(f"#define SDPE_PROJECT_UPDATED_AT \"{data['updated_at']}\"")
+            lines.append(f"#define {self.project_metadata_macro(data, 'SDPE_PROJECT_UPDATED_AT')} \"{data['updated_at']}\"")
         lines.append("")
 
         for group, items in self._group_project_macros(data.get("feature_macros", []), "Selection macros"):
@@ -668,13 +675,13 @@ class HeaderGenerator:
             emitted.add(macro)
 
         lines.append("%% Project metadata")
-        emit("SDPE_PROJECT_ID", self._matlab_string(project_id))
+        emit(self.project_metadata_macro(data, "SDPE_PROJECT_ID"), self._matlab_string(project_id))
         if "suite" in data:
-            emit("SDPE_PROJECT_SUITE", self._matlab_string(data["suite"]))
+            emit(self.project_metadata_macro(data, "SDPE_PROJECT_SUITE"), self._matlab_string(data["suite"]))
         if data.get("version"):
-            emit("SDPE_PROJECT_VERSION", self._matlab_string(data["version"]))
+            emit(self.project_metadata_macro(data, "SDPE_PROJECT_VERSION"), self._matlab_string(data["version"]))
         if data.get("updated_at"):
-            emit("SDPE_PROJECT_UPDATED_AT", self._matlab_string(data["updated_at"]))
+            emit(self.project_metadata_macro(data, "SDPE_PROJECT_UPDATED_AT"), self._matlab_string(data["updated_at"]))
 
         hardware_ids = self._project_entity_ids(data)
         if hardware_ids:
@@ -842,13 +849,13 @@ class HeaderGenerator:
                 emit(f"{slot_prefix}_{item.name}", self._format_expr(item.expr, slot_prefix), item.description or item.name)
 
     def _project_matlab_macro_names(self, data: dict[str, Any]) -> set[str]:
-        names = {"SDPE_PROJECT_ID"}
+        names = {self.project_metadata_macro(data, "SDPE_PROJECT_ID")}
         if "suite" in data:
-            names.add("SDPE_PROJECT_SUITE")
+            names.add(self.project_metadata_macro(data, "SDPE_PROJECT_SUITE"))
         if data.get("version"):
-            names.add("SDPE_PROJECT_VERSION")
+            names.add(self.project_metadata_macro(data, "SDPE_PROJECT_VERSION"))
         if data.get("updated_at"):
-            names.add("SDPE_PROJECT_UPDATED_AT")
+            names.add(self.project_metadata_macro(data, "SDPE_PROJECT_UPDATED_AT"))
         for entity_id in self._project_entity_ids(data):
             self._collect_entity_matlab_macro_names(self.library.entity(entity_id), names)
         for item in data.get("feature_macros", []):

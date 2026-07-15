@@ -1,5 +1,6 @@
 {
   "id": "mcs_pmsm_nt_f280049c",
+  "macro_prefix": "MCS_PMSM_NT_F280049C",
   "display_name": "MCS PMSM NT LaunchXL-F280049C",
   "description": "PMSM sensored-control settings and project bindings for the LaunchXL-F280049C. Board resources remain physical BOOSTXL connector resources and are assigned application roles here.",
   "suite": "mcs_pmsm_nt",

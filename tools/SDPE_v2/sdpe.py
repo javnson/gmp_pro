@@ -12,6 +12,7 @@ from pathlib import Path
 from sdpe_v2.generator import HeaderGenerator
 from sdpe_v2.library import SDPELibrary
 from sdpe_v2.model import SDPEError
+from sdpe_v2.util import macro_name
 
 
 ROOT = Path(__file__).resolve().parent
@@ -174,6 +175,7 @@ def build_local_project_generator(args) -> tuple[HeaderGenerator, Path]:
 def default_requirement(project_dir: Path, project_id: str, suite: str) -> dict:
     return {
         "id": project_id,
+        "macro_prefix": macro_name(project_id),
         "display_name": project_id,
         "suite": suite,
         "version": "0.1.0",

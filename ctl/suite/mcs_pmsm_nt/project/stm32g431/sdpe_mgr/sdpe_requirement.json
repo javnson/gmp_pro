@@ -1,5 +1,6 @@
 {
   "id": "mcs_pmsm_nt_stm32g431",
+  "macro_prefix": "MCS_PMSM_NT_STM32G431",
   "display_name": "MCS PMSM NT NUCLEO-G431RB",
   "description": "NUCLEO-G431RB PMSM settings with selectable TIM1/TIM8 motor PWM and USART2 circular-DMA Datalink.",
   "suite": "mcs_pmsm_nt",

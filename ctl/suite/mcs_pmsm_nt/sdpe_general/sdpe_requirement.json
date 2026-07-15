@@ -1,5 +1,6 @@
 {
   "id": "mcs_pmsm_nt_common",
+  "macro_prefix": "MCS_PMSM_NT_COMMON",
   "display_name": "MCS PMSM NT Common Controller Settings",
   "description": "Platform-independent controller contract shared by every mcs_pmsm_nt implementation. Hardware timing, sensing and peripheral bindings remain in each project SDPE requirement.",
   "suite": "mcs_pmsm_nt",
@@ -9,7 +10,7 @@
   "hardware": [],
   "code_sections": {
     "after_extern_open": "/* Platform-independent settings only. Project hardware is supplied by the including project header. */",
-    "before_footer": "/* Accept the historical misspelling while all source code uses the canonical switch. */\n#if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM\n#define ENABLE_GMP_DL_PIL_SIM\n#endif\n\n/* Reject unsupported incremental build levels at preprocessing time. */\n#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 4)\n#error \"BUILD_LEVEL must be 1 (V/f), 2 (current loop/synthetic angle), 3 (current loop/encoder), or 4 (speed loop).\"\n#endif\n\n/* Do not leak common-package metadata into the including platform header. */\n#undef SDPE_PROJECT_ID\n#undef SDPE_PROJECT_SUITE\n#undef SDPE_PROJECT_VERSION\n#undef SDPE_PROJECT_UPDATED_AT"
+    "before_footer": "/* Accept the historical misspelling while all source code uses the canonical switch. */\n#if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM\n#define ENABLE_GMP_DL_PIL_SIM\n#endif\n\n/* Reject unsupported incremental build levels at preprocessing time. */\n#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 4)\n#error \"BUILD_LEVEL must be 1 (V/f), 2 (current loop/synthetic angle), 3 (current loop/encoder), or 4 (speed loop).\"\n#endif"
   },
   "feature_macros": [
     {

@@ -2126,6 +2126,7 @@ class ProjectPage(SDPEPage):
     def __init__(self, window: "MainWindow"):
         super().__init__(window, "Project Requirement", has_code=True)
         self.id_edit = QLineEdit()
+        self.macro_prefix_edit = QLineEdit()
         self.path_edit = QLineEdit()
         self.path_edit.setReadOnly(True)
         self.name_edit = QLineEdit()
@@ -2200,7 +2201,7 @@ class ProjectPage(SDPEPage):
         self.enum_macros.customContextMenuRequested.connect(lambda pos: self.show_macro_tree_context_menu(self.enum_macros, "option", pos))
         self.install_macro_tree_shortcuts(self.enum_macros, "option")
 
-        for widget in [self.id_edit, self.name_edit, self.suite_edit, self.version_edit, self.header_edit]:
+        for widget in [self.id_edit, self.macro_prefix_edit, self.name_edit, self.suite_edit, self.version_edit, self.header_edit]:
             widget.textChanged.connect(self.mark_current_dirty)
         for widget in [self.description_edit, self.prefix_code, self.tail_code]:
             widget.textChanged.connect(self.mark_current_dirty)
@@ -2215,6 +2216,7 @@ class ProjectPage(SDPEPage):
         basic_form = QFormLayout(basic_tab)
         basic_form.addRow("File Path", self.path_edit)
         basic_form.addRow("Project ID", self.id_edit)
+        basic_form.addRow("Macro Prefix", self.macro_prefix_edit)
         basic_form.addRow("Name", self.name_edit)
         basic_form.addRow("Suite", self.suite_edit)
         basic_form.addRow("Version", self.version_edit)
@@ -2368,6 +2370,7 @@ class ProjectPage(SDPEPage):
         self.loading = True
         self.path_edit.setText(str(self.window.project_path(self.current_id)))
         self.id_edit.setText(data.get("id", ""))
+        self.macro_prefix_edit.setText(data.get("macro_prefix", ""))
         self.name_edit.setText(data.get("display_name", ""))
         self.suite_edit.setText(data.get("suite", ""))
         self.version_edit.setText(data.get("version", "0.1.0"))
@@ -2505,6 +2508,7 @@ class ProjectPage(SDPEPage):
         data.update(
             {
                 "id": self.id_edit.text().strip(),
+                "macro_prefix": self.macro_prefix_edit.text().strip(),
                 "display_name": self.name_edit.text().strip(),
                 "description": self.description_edit.toPlainText().strip(),
                 "suite": self.suite_edit.text().strip(),
@@ -3096,13 +3100,15 @@ class ProjectPage(SDPEPage):
     def validate_project_macros(self) -> None:
         self.clear_macro_validation_highlights()
         occurrences = self.collect_project_macro_occurrences()
-        reserved = {"SDPE_PROJECT_ID"}
+        metadata = self.window.generator().project_metadata_macro
+        prefix_data = {"macro_prefix": self.macro_prefix_edit.text()}
+        reserved = {metadata(prefix_data, "SDPE_PROJECT_ID")}
         if self.suite_edit.text().strip():
-            reserved.add("SDPE_PROJECT_SUITE")
+            reserved.add(metadata(prefix_data, "SDPE_PROJECT_SUITE"))
         if self.version_edit.text().strip():
-            reserved.add("SDPE_PROJECT_VERSION")
+            reserved.add(metadata(prefix_data, "SDPE_PROJECT_VERSION"))
         if self.updated_edit.text().strip():
-            reserved.add("SDPE_PROJECT_UPDATED_AT")
+            reserved.add(metadata(prefix_data, "SDPE_PROJECT_UPDATED_AT"))
         duplicates = {
             macro: rows
             for macro, rows in occurrences.items()
@@ -3689,13 +3695,14 @@ class BindingPage(SDPEPage):
     def add_metadata_group(self, data: dict[str, Any]) -> None:
         group = self.add_group("Project Metadata", "Macros generated for SDPE project identity.")
         project_id = data.get("id", self.current_id or "")
-        self.add_overview_row(group, "Project ID", "SDPE_PROJECT_ID", f"\"{project_id}\"", "project", "SDPE project identifier.")
+        metadata = self.generator().project_metadata_macro
+        self.add_overview_row(group, "Project ID", metadata(data, "SDPE_PROJECT_ID"), f"\"{project_id}\"", "project", "SDPE project identifier.")
         if data.get("suite"):
-            self.add_overview_row(group, "Suite", "SDPE_PROJECT_SUITE", f"\"{data['suite']}\"", "project", "Suite identifier.")
+            self.add_overview_row(group, "Suite", metadata(data, "SDPE_PROJECT_SUITE"), f"\"{data['suite']}\"", "project", "Suite identifier.")
         if data.get("version"):
-            self.add_overview_row(group, "Version", "SDPE_PROJECT_VERSION", f"\"{data['version']}\"", "project", "Requirement version.")
+            self.add_overview_row(group, "Version", metadata(data, "SDPE_PROJECT_VERSION"), f"\"{data['version']}\"", "project", "Requirement version.")
         if data.get("updated_at"):
-            self.add_overview_row(group, "Updated At", "SDPE_PROJECT_UPDATED_AT", f"\"{data['updated_at']}\"", "project", "Last update date.")
+            self.add_overview_row(group, "Updated At", metadata(data, "SDPE_PROJECT_UPDATED_AT"), f"\"{data['updated_at']}\"", "project", "Last update date.")
 
     def add_hardware_group(self, data: dict[str, Any], generator: HeaderGenerator) -> None:
         group = self.add_group("Hardware Includes", "Hardware headers included by the generated project header.")

@@ -1,5 +1,6 @@
 {
   "id": "mcs_pmsm_nt_stm32g474_hrtim",
+  "macro_prefix": "MCS_PMSM_NT_STM32G474_HRTIM",
   "display_name": "MCS PMSM NT NUCLEO-G474RE HRTIM",
   "description": "NUCLEO-G474RE PMSM settings with independently selectable HRTIM A-E resources for phases U/V/W and USART2 circular-DMA Datalink.",
   "suite": "mcs_pmsm_nt",
