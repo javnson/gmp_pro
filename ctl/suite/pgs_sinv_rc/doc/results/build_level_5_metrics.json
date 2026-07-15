@@ -1,0 +1,20 @@
+{
+  "build_level": 5,
+  "model": "PGS_STD_SINV_MODEL_Rectifier",
+  "stop_time_s": 5,
+  "output_enable_final": 1,
+  "cia402_state_final": 4,
+  "active_errors_final": 0,
+  "diverge_fault_value": -10.634349822998047,
+  "vac_rms_v": 23.99002194050864,
+  "iac_rms_a": 5.1671401531483685,
+  "vbus_mean_v": 60.007538532838822,
+  "iref_rms_a": 5.1696651511594522,
+  "current_error_rms_pu": 0.012803487869614095,
+  "active_power_pu": -0.25552421972304584,
+  "reactive_power_pu": 0.00037639293011266974,
+  "pll_frequency_hz": 50.00013340272713,
+  "fdrc_enabled_final": 1,
+  "fdrc_output_rms_pu": 0.0035224131702928409,
+  "iac_thd_percent": 3.0186038374162809
+}
