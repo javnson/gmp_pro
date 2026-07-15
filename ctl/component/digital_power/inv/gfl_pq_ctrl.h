@@ -112,6 +112,13 @@ GMP_STATIC_INLINE void ctl_clear_gfl_pq(gfl_pq_ctrl_t* pq)
     pq->idq_set_out.dat[phase_q] = 0;
 }
 
+/** @brief Set active and reactive power references in per unit. */
+GMP_STATIC_INLINE void ctl_set_gfl_pq_ref(gfl_pq_ctrl_t* pq, ctrl_gt p_ref, ctrl_gt q_ref)
+{
+    pq->pq_set.dat[0] = p_ref;
+    pq->pq_set.dat[1] = q_ref;
+}
+
 /**
  * @brief Attach feedback pointers to the PQ controller.
  * @param[in,out] pq Pointer to the PQ controller instance.
@@ -154,6 +161,8 @@ GMP_STATIC_INLINE void ctl_step_gfl_pq(gfl_pq_ctrl_t* pq)
 
     pq->pq_meas.dat[0] = ctl_mul(vd, id) + ctl_mul(vq, iq); // Active Power P
     pq->pq_meas.dat[1] = ctl_mul(vq, id) - ctl_mul(vd, iq); // Reactive Power Q
+    pq->s_mag_sq = ctl_mul(pq->pq_meas.dat[0], pq->pq_meas.dat[0]) +
+                   ctl_mul(pq->pq_meas.dat[1], pq->pq_meas.dat[1]);
 
     // -----------------------------------------------------------
     // 2. Main Control Loop
@@ -172,9 +181,10 @@ GMP_STATIC_INLINE void ctl_step_gfl_pq(gfl_pq_ctrl_t* pq)
         // Error = Setpoint - Measure
         ctrl_gt q_err = pq->pq_set.dat[1] - pq->pq_meas.dat[1];
 
-        // PID Output is Iq reference
-        // Source convention Q>0 means discharging inductive reactive power to grid.
-        pq->idq_set_out.dat[phase_q] = ctl_step_pid_ser(&pq->pid_q, q_err);
+        // With Q = Vq*Id - Vd*Iq and a locked PLL (Vq ~= 0), positive Q
+        // requires negative Iq. Negate the regulator output to preserve
+        // negative feedback under this power convention.
+        pq->idq_set_out.dat[phase_q] = -ctl_step_pid_ser(&pq->pid_q, q_err);
 
         // -----------------------------------------------------------
         // 3. Current Limiting (Circular Saturation)
@@ -188,10 +198,14 @@ GMP_STATIC_INLINE void ctl_step_gfl_pq(gfl_pq_ctrl_t* pq)
 
         if (i_mag_sq > i2_limit)
         {
-            // Simple scaling to keep vector direction but limit magnitude
+            // Scale both components by the same factor to preserve vector direction.
             ctrl_gt scaler = ctl_sqrt(ctl_div(i2_limit, i_mag_sq));
-            pq->idq_set_out.dat[phase_d] *= ctl_mul(scaler, pq->idq_set_out.dat[phase_d]);
-            pq->idq_set_out.dat[phase_q] *= ctl_mul(scaler, pq->idq_set_out.dat[phase_q]);
+            pq->idq_set_out.dat[phase_d] = ctl_mul(scaler, id_ref);
+            pq->idq_set_out.dat[phase_q] = ctl_mul(scaler, iq_ref);
+
+            // Keep both integrators consistent with the externally limited current vector.
+            ctl_pid_clamping_correction_using_real_output(&pq->pid_p, pq->idq_set_out.dat[phase_d]);
+            ctl_pid_clamping_correction_using_real_output(&pq->pid_q, -pq->idq_set_out.dat[phase_q]);
         }
     }
     else
@@ -212,6 +226,7 @@ GMP_STATIC_INLINE void ctl_enable_gfl_pq_ctrl(gfl_pq_ctrl_t* pq)
 GMP_STATIC_INLINE void ctl_disable_gfl_pq_ctrl(gfl_pq_ctrl_t* pq)
 {
     pq->flag_enable = 0;
+    ctl_clear_gfl_pq(pq);
 }
 
 

@@ -10,15 +10,14 @@ This folder is the project-local SDPE manager.
 
 The scripts call `%GMP_PRO_LOCATION%\tools\SDPE_v2` and read `%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe_settings.json`, so set `GMP_PRO_LOCATION` to the GMP repository root before using them.
 
-Default generated output:
+Generated platform output:
 
 ```text
 sdpe_mgr\
-  <project_settings_header>.h
-  hardware_preset\
+  sdpe_pgs_inv_gfl_stm32g431_settings.h
 ```
 
-Project-local generated headers use relative include paths, so the generated project header can include the generated hardware headers without depending on the global `ctl\hardware_preset` output.
+Selected hardware entities are included from the repository-wide `ctl\hardware_preset` output.
 
-Project id: `pgs_inv_GFL_inverter_stm32g431`
+Project id: `pgs_inv_gfl_stm32g431`
 Suite: `pgs_inv_GFL_inverter`

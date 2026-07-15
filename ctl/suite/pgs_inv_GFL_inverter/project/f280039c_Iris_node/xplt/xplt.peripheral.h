@@ -18,7 +18,7 @@ extern "C"
 #include <gmp_core.h>
 
 // controller settings
-#include "ctrl_settings.h"
+#include "../sdpe_mgr/sdpe_pgs_inv_gfl_iris_settings.h"
 
 // select ADC PTR interface
 #include <ctl/component/interface/adc_ptr_channel.h>
@@ -50,6 +50,8 @@ extern adc_gt udc_src;
 extern ptr_adc_channel_t idc;
 extern adc_gt idc_src;
 
+void flush_dl_tx_buffer(void);
+void flush_dl_rx_buffer(void);
 void reset_controller(void);
 
 #ifdef __cplusplus

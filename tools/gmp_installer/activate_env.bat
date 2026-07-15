@@ -34,6 +34,14 @@ if not exist "%GMP_BIN%\cache\vcpkg-archives" (
     )
 )
 
+if exist "%GMP_BIN%\gmp_proxy_env.bat" (
+    call "%GMP_BIN%\gmp_proxy_env.bat"
+    if errorlevel 1 (
+        echo [ERROR] Cannot load the GMP private proxy configuration.
+        exit /b 1
+    )
+)
+
 if not "%GMP_ENV_ACTIVE%"=="%GMP_PRO_LOCATION%" (
     set "GMP_ENV_ACTIVE=%GMP_PRO_LOCATION%"
     set "GMP_ENV_MODE=virtual"
@@ -55,12 +63,22 @@ set "GMP_ENV_MODE=virtual"
 set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 if exist "%VSWHERE%" if not defined VSCMD_VER for /f "usebackq tokens=*" %%I in (`"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do if exist "%%I\Common7\Tools\VsDevCmd.bat" call "%%I\Common7\Tools\VsDevCmd.bat" -no_logo -arch=x64 -host_arch=x64
 
+rem VsDevCmd may select Visual Studio's bundled vcpkg. Reassert GMP ownership.
+set "VCPKG_ROOT=%GMP_BIN%\vcpkg"
+set "VCPKG_DOWNLOADS=%GMP_BIN%\cache\vcpkg-downloads"
+set "VCPKG_DEFAULT_BINARY_CACHE=%GMP_BIN%\cache\vcpkg-archives"
+set "VCPKG_INSTALLED_DIR=%GMP_BIN%\vcpkg_installed\x64-windows"
+set "VCPKG_DEFAULT_TRIPLET=x64-windows"
+set "VCPKG_FEATURE_FLAGS=manifests,binarycaching"
+set "CMAKE_TOOLCHAIN_FILE=%GMP_BIN%\vcpkg\scripts\buildsystems\vcpkg.cmake"
+
 cd /d "%GMP_PRO_LOCATION%"
 echo.
 echo [GMP] Private development environment activated.
 echo [GMP] Root   : %GMP_PRO_LOCATION%
 echo [GMP] Python : %GMP_BIN%\python\python.exe
 echo [GMP] vcpkg  : %VCPKG_ROOT%\vcpkg.exe
+if defined GMP_PROXY_MODE echo [GMP] Network: %GMP_PROXY_MODE%
 if not defined VSCMD_VER echo [WARN] Visual Studio C++ developer tools were not detected.
 echo.
 exit /b 0

@@ -1,222 +1,99 @@
-# 跟网型变流器 (GFL Inverter) 项目说明文档
+# 三相并网跟网型变流器（GFL）
 
-## 项目概述
+本工程实现三相两电平跟网型并网变流器控制，控制主体位于 `src`，目前包含 F280039C IRIS、LaunchXL-F280049C、PC 仿真和 STM32G431 四个平台。IRIS 与 F280049C 是已完成硬件调通的平台；PC 仿真用于软件验证，STM32G431 仍应按增量调试流程完成实机验证。
 
-本项目实现了一个简单的跟网型变流器 (Grid Following Inverter)，基于 GMP 库开发。该变流器支持并网运行，可通过 `BUILD_LEVEL` 进行增量化逐步调试，适用于多种硬件平台。
+## 两层 SDPE 配置
 
-## 项目结构
+工程已弃用各平台原有的 `xplt/ctrl_settings.h`，参数分成公共层和平台层：
 
-```
-pgs_3ph_GFL_inverter/
-├── implement/          # 实现代码
-│   ├── common/         # 所有平台公用代码
-│   │   ├── ctl_main.c  # 核心控制逻辑
-│   │   ├── ctl_main.h  # 控制逻辑头文件
-│   │   ├── user_main.c # 用户主循环
-│   │   └── user_main.h # 用户主循环头文件
-│   ├── f280039c_iris_node/ # TI F280039C平台
-│   ├── f280049c/       # TI F280049C平台
-│   ├── simulate/       # 仿真平台
-│   └── stm32g431/      # STM32G431平台
-├── project/            # 工程结构
-│   ├── f280039c_Iris_node/ # TI F280039C工程
-│   └── f280049c/       # TI F280049C工程
-└── README.md           # 项目说明文档
+- `sdpe_general/sdpe_requirement.json`：网压/频率、PLL、P/Q 外环、调试给定、ADC 校准器、控制算法开关等平台无关参数。
+- `project/<platform>/sdpe_mgr/sdpe_requirement.json`：`BUILD_LEVEL`、控制频率、PWM 时基、标幺基值、传感器标定、板级资源映射以及硬件实体。
+- `src/ctl_settings_defaults.h`：控制源码唯一的公共设置入口。
+- `src/sdpe_pgs_inv_gfl_common_settings.h` 和各平台 `sdpe_mgr/sdpe_pgs_inv_gfl_*_settings.h`：SDPE 生成文件，不应手工修改。
+
+公共工程带有前缀 `PGS_INV_GFL_COMMON`，各平台也使用独立前缀，因此多个 SDPE 模块包含在同一编译单元时不会发生项目元数据宏冲突，也不再需要通过 `#undef SDPE_PROJECT_*` 清理公共层元数据。
+
+从 `sdpe_general` 目录运行：
+
+```bat
+sdpe_edit.bat
+sdpe_validate.bat
+sdpe_generate.bat
 ```
 
-## 核心组件
+`sdpe_edit.bat` 会同时打开公共配置和 `project` 下全部四个平台配置。平台目录中的 `sdpe_edit.bat`、`sdpe_validate.bat` 和 `sdpe_generate.bat` 可用于单独维护某个平台。运行脚本前需设置 `GMP_PRO_LOCATION` 指向仓库根目录。
 
-### 1. 控制核心 (implement/common/ctl_main.c)
+## 硬件配置
 
-#### 主要对象
-- **CiA402状态机**：实现变流器的状态管理
-- **调制器**：支持SPWM和NPC调制
-- **控制器主体**：
-  - `gfl_pq_ctrl_t`：PQ功率控制器
-  - `gfl_inv_ctrl_t`：逆变器控制器
-- **PLL观测器**：用于电网同步
-- **ADC校准器**：用于ADC偏移校准
+IRIS 和 LaunchXL-F280049C 平台均在 SDPE 中选择以下功率硬件：
 
-#### 初始化流程
-1. 禁用输出
-2. 初始化GFL逆变器参数
-3. 初始化调制器
-4. 初始化PQ功率控制器
-5. 根据`BUILD_LEVEL`配置不同的控制模式
-6. 初始化CiA402状态机
-7. 初始化ADC校准器
+- `gmp_helios_3phganinv_lv`：三相 GaN 逆变器及其功率器件、电流传感器定义。
+- `gmp_harmonia_3ph_lc_filter`：并网 LC 滤波器及网侧电流、电压采样定义。
 
-### 2. 用户主循环 (implement/common/user_main.c)
+平台层保留了原工程已经调通的 80 V 直流母线基值、10 A 电流基值和传感器标定值。硬件实体中尚标记为待确认的 BOM 参数不会自动覆盖这些实机标定值。IRIS 的 PWM 负逻辑也只在 IRIS 平台层启用。
 
-#### 主要功能
-- **AT命令处理**：提供PWMON、PWROFF、RST等命令
-- **任务调度**：使用GMP调度器管理多个任务
-  - `tsk_blink`：LED闪烁任务
-  - `tsk_at_device`：AT命令处理任务
-  - `tsk_monitor`：监控数据发送任务
+当前平台默认值如下：
 
-### 3. 平台特有代码
+| 平台 | 默认 BUILD_LEVEL | 控制频率 | 状态 |
+|---|---:|---:|---|
+| F280039C IRIS Node | 3 | 20 kHz | 已调通，保持原默认值 |
+| LaunchXL-F280049C | 1 | 10 kHz | 已调通，保持原默认值 |
+| PC simulate | 2 | 20 kHz | 可编译仿真 |
+| STM32G431 | 1 | 10 kHz | 待实机增量验证 |
 
-每个平台目录包含：
-- `ctrl_settings.h`：控制参数设置
-- `xplt.config.h`：平台配置
-- `xplt.ctl_interface.h`：控制接口
-- `xplt.peripheral.c/h`：外设驱动
+## 增量调试级别
 
-## BUILD_LEVEL 增量化调试
+`BUILD_LEVEL` 现在由各平台 SDPE 工程选择：
 
-项目使用 `BUILD_LEVEL` 宏定义实现增量化逐步调试，从简单到复杂的控制模式：
+1. 电压开环，验证采样、PWM 极性、死区和门极驱动。
+2. 离网电流闭环，验证 dq 电流调节器。
+3. PLL 并网与正/负序电流闭环。
+4. 在级别 3 的基础上启用解耦、主动阻尼和超前补偿。
+5. 完整功率闭环：P/Q 外环生成 dq 电流给定，内层电流环继续按 PWM 频率执行。
 
-### BUILD_LEVEL 1: 电压开环控制
-- 逆变器工作在开环模式
-- 设置固定的输出电压幅值和频率
+严禁在未完成前一级保护与波形检查时直接切换到更高等级。启用 `SPECIFY_ENABLE_ADC_CALIBRATE` 时，必须保证被校准的功率输入处于已知零状态；并网带电输入下不应进行零偏校准。
 
-### BUILD_LEVEL 2: 基本电流闭环控制
-- 逆变器工作在电流闭环模式
-- 设置固定的电流参考值
+## 功率闭环
 
-### BUILD_LEVEL 3: 并网电流闭环控制
-- 逆变器工作在电流闭环模式
-- 启用PLL进行电网同步
-- 配置为并网模式
-- 调整CiA402状态机切换延迟，确保成功并网
+本次检查确认原有 `gfl_pq_ctrl` 虽然被初始化和调用，但没有给定、没有启用，并且电流矢量限幅公式会错误地对分量平方，因此原程序并未形成可用的功率闭环。现在 `BUILD_LEVEL == 5` 实现完整级联结构：
 
-### BUILD_LEVEL 4: 高级电流闭环控制
-- 逆变器工作在电流闭环模式
-- 启用前馈控制
-- 启用解耦控制
-- 启用有源阻尼
-- 启用超前补偿器
-- 设置较大的电流参考值
-
-## 状态机与操作流程
-
-### CiA402状态机
-
-项目使用CiA402标准状态机管理变流器的运行状态：
-
-1. **初始状态**：设备通电后进入
-2. **就绪状态**：完成初始化后进入
-3. **运行状态**：接收到使能命令后进入
-4. **故障状态**：发生故障时进入
-
-### 操作流程
-
-1. **启动流程**：
-   - 设备通电，初始化完成
-   - 发送 `PWMON` 命令使能操作
-   - 状态机从 "Ready to Switch On" 切换到 "Enable Operation"
-   - 逆变器开始运行
-
-2. **停止流程**：
-   - 发送 `PWROFF` 命令
-   - 状态机切换到 "Switched Off"
-   - 逆变器停止运行
-
-3. **故障处理**：
-   - 发生故障时进入 "Fault" 状态
-   - 发送 `RST` 命令重置故障
-   - 状态机恢复到 "Ready to Switch On"
-
-## 硬件平台支持
-
-项目支持以下硬件平台：
-
-1. **TI F280039C Iris Node**
-2. **TI F280049C**
-3. **STM32G431**
-4. **仿真平台**
-
-## 如何使用
-
-### 1. 选择平台
-
-根据目标硬件选择对应的平台目录，例如：
-- 对于TI F280039C，使用 `implement/f280039c_iris_node/`
-- 对于仿真环境，使用 `implement/simulate/`
-
-### 2. 配置 BUILD_LEVEL
-
-在编译前，根据调试需要设置 `BUILD_LEVEL` 宏定义：
-
-```c
-#define BUILD_LEVEL 1  // 从电压开环开始
+```text
+P*/Q* -> P/Q PI（默认 1 kHz）-> 圆形 dq 电流限幅 -> dq 电流环（10/20 kHz）-> PWM
+                 ^                              |
+                 |------ vdq、idq 测量 ---------|
 ```
 
-### 3. 编译与烧录
+功率定义为：
 
-使用对应平台的工程文件进行编译和烧录：
-- 对于TI平台，使用CCS工程
-- 对于STM32平台，使用Keil工程
-- 对于仿真平台，使用对应的仿真工具
+```text
+P = vd*id + vq*iq
+Q = vq*id - vd*iq
+```
 
-### 4. 调试步骤
+在 PLL 锁定且 `vq ≈ 0` 时，正有功对应正 `id`，正无功对应负 `iq`。Q 控制器已按这一约定修正反馈方向。P/Q 外环使用独立分频器运行，电流给定采用圆形幅值限制，并对 PI 积分器执行限幅回算。默认给定、增益、外环频率和电流上限均由公共 SDPE 页面管理，也可通过 Datalink 在线观察或修改 `pq_ctrl.pq_set`、`pq_ctrl.pq_meas`。
 
-按照以下步骤进行增量化调试：
+## 编译与生成顺序
 
-1. **BUILD_LEVEL 1**：验证电压开环输出
-   - 检查PWM波形是否正确
-   - 检查并确认电压传感器和电流传感器工作正常
-   - 测量输出电压幅值和频率
-   
-2. **BUILD_LEVEL 2**：验证电流闭环控制
-   - 接入负载
-   - 检查电流是否跟踪参考值
-   - 检查PLL是否可以正常工作
-   
-3. **BUILD_LEVEL 3**：验证并网功能
-   - 连接到电网
-   - 检查PLL是否锁定
-   - 验证并网电流波形
+推荐修改参数后的顺序：
 
-4. **BUILD_LEVEL 4**：验证高级控制功能
-   - 检查系统稳定性
-   - 测试动态响应
-   - 验证各种补偿器的效果
+1. 在 `sdpe_general` 运行 `sdpe_validate.bat`。
+2. 修改公共参数后运行公共 `sdpe_generate.bat`。
+3. 在目标平台 `sdpe_mgr` 运行平台 `sdpe_generate.bat`。
+4. 再由 CCS、Keil 或 Visual Studio 编译目标工程。
 
-## 监控与调试
+PC 仿真工程已用 Visual Studio 2022 的 `Debug|x64` 配置完成编译验证。构建时若不需要自动恢复 vcpkg，可传入 `VcpkgEnableManifest=false`。
 
-### AT命令
+## 目录结构
 
-| 命令    | 功能                  |
-|---------|-----------------------|
-| PWMON   | 使能控制器操作        |
-| PWROFF  | 关闭控制器            |
-| RST     | 重置系统故障          |
-
-### 监控数据
-
-项目通过 `tsk_monitor` 任务定期发送监控数据，可通过串口查看系统状态。
-
-## 注意事项
-
-1. **并网安全**：在进行并网测试时，确保符合当地电网规范，建议在专业人员指导下进行。
-
-2. **硬件保护**：确保硬件电路具有过压、过流、过热等保护措施。
-
-3. **参数调整**：根据实际硬件参数调整 `gfl_init` 结构体中的参数，特别是电网滤波器参数。
-
-4. **调试顺序**：严格按照 `BUILD_LEVEL` 的顺序进行调试，确保每个级别都工作正常后再进入下一级别。
-
-## 故障排查
-
-### 常见问题
-
-1. **无法并网**：
-   - 检查PLL是否锁定
-   - 验证电网电压和频率是否在正常范围
-   - 检查CiA402状态机切换延迟设置
-
-2. **电流波形异常**：
-   - 检查电流传感器校准
-   - 调整电流控制器参数
-   - 验证调制器配置
-
-3. **系统不稳定**：
-   - 检查控制器参数是否合适
-   - 验证采样频率和控制频率
-   - 检查硬件电路是否存在谐振
-
-## 总结
-
-本项目提供了一个基于GMP库的跟网型变流器实现，通过模块化设计和增量化调试方法，方便用户理解和开发变流器控制算法。项目支持多种硬件平台，可根据实际需求进行扩展和修改。
+```text
+pgs_inv_GFL_inverter/
+├─ src/                         公共控制实现与公共生成头文件
+├─ sdpe_general/                公共 SDPE requirement 与管理脚本
+└─ project/
+   ├─ f280039c_Iris_node/
+   ├─ f280049c/
+   ├─ simulate/
+   └─ stm32g431/
+      ├─ sdpe_mgr/              平台 SDPE requirement 与生成头文件
+      └─ xplt/                  平台外设适配层
+```

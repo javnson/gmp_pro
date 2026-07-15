@@ -22,6 +22,8 @@ GMP_ROOT = Path(os.environ["GMP_PRO_LOCATION"]).resolve() if os.environ.get("GMP
 BIN_DIR = GMP_ROOT / "bin" if GMP_ROOT else None
 STATE_PATH = BIN_DIR / "gmp_environment.json" if BIN_DIR else None
 COMPLETION_MARKER_PATH = BIN_DIR / "gmp_virtual_env_installed.flag" if BIN_DIR else None
+PROXY_CONFIG_PATH = BIN_DIR / "gmp_proxy.json" if BIN_DIR else None
+PROXY_ACTIVATION_PATH = BIN_DIR / "gmp_proxy_env.bat" if BIN_DIR else None
 SUITE_SIMULATE_GLOB = "ctl/suite/*/project/simulate"
 
 
@@ -42,6 +44,75 @@ def load_manifest() -> dict:
     if manifest.get("schema_version") != 1:
         raise EnvironmentError("Unsupported environment manifest schema")
     return manifest
+
+
+def proxy_environment(mode: str, url: str | None = None) -> dict[str, str]:
+    if mode == "proxy":
+        if not url or any(character in url for character in "\r\n\""):
+            raise EnvironmentError("The selected proxy URL is invalid")
+        return {
+            "GMP_PROXY_MODE": "proxy",
+            "HTTP_PROXY": url,
+            "HTTPS_PROXY": url,
+            "ALL_PROXY": url,
+            "http_proxy": url,
+            "https_proxy": url,
+            "all_proxy": url,
+            "NO_PROXY": "localhost,127.0.0.1,::1",
+            "no_proxy": "localhost,127.0.0.1,::1",
+        }
+    if mode == "direct":
+        return {
+            "GMP_PROXY_MODE": "direct",
+            "HTTP_PROXY": "",
+            "HTTPS_PROXY": "",
+            "ALL_PROXY": "",
+            "http_proxy": "",
+            "https_proxy": "",
+            "all_proxy": "",
+            "NO_PROXY": "*",
+            "no_proxy": "*",
+        }
+    raise EnvironmentError(f"Unsupported GMP proxy mode: {mode}")
+
+
+def write_proxy_configuration() -> None:
+    """Persist the user's installer proxy choice inside the portable bin tree."""
+    mode = os.environ.get("GMP_INSTALLER_PROXY_MODE")
+    if mode not in {"proxy", "direct"}:
+        raise EnvironmentError("The GMP proxy choice has not been configured")
+    url = os.environ.get("GMP_INSTALLER_PROXY_URL") if mode == "proxy" else None
+    settings = proxy_environment(mode, url)
+    data = {"schema_version": 1, "mode": mode}
+    if url:
+        data["url"] = url
+
+    BIN_DIR.mkdir(parents=True, exist_ok=True)
+    temporary_json = PROXY_CONFIG_PATH.with_suffix(".json.tmp")
+    temporary_json.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    temporary_json.replace(PROXY_CONFIG_PATH)
+
+    lines = ["@echo off"]
+    for name, value in settings.items():
+        # A percent sign must be doubled when persisted in a BAT file. Proxy
+        # URLs are kept inside SET quotes, so ampersands remain literal.
+        lines.append(f'set "{name}={value.replace("%", "%%")}"')
+    temporary_bat = PROXY_ACTIVATION_PATH.with_suffix(".bat.tmp")
+    temporary_bat.write_text("\r\n".join(lines) + "\r\n", encoding="utf-8")
+    temporary_bat.replace(PROXY_ACTIVATION_PATH)
+    print(f"[PROXY] Saved GMP private environment proxy mode: {mode}")
+
+
+def apply_persisted_proxy(env: dict[str, str]) -> None:
+    if not PROXY_CONFIG_PATH.is_file():
+        return
+    try:
+        data = json.loads(PROXY_CONFIG_PATH.read_text(encoding="utf-8"))
+        env.update(proxy_environment(data["mode"], data.get("url")))
+    except (KeyError, json.JSONDecodeError) as error:
+        raise EnvironmentError(f"Invalid GMP proxy configuration: {PROXY_CONFIG_PATH}") from error
 
 
 def display_path(path: Path) -> str:
@@ -276,6 +347,7 @@ def private_environment() -> dict[str, str]:
         BIN_DIR / "vcpkg",
     ]
     env["PATH"] = os.pathsep.join(str(path) for path in path_entries) + os.pathsep + env.get("PATH", "")
+    apply_persisted_proxy(env)
     return env
 
 
@@ -347,6 +419,37 @@ def visual_studio_environment(base_env: dict[str, str]) -> dict[str, str]:
         if "=" in line:
             key, value = line.split("=", 1)
             activated[key] = value
+    # VsDevCmd may advertise Visual Studio's bundled vcpkg. Repository-private
+    # builds must retain the GMP roots/caches/proxy selected before VS setup.
+    protected_names = (
+        "GMP_PRO_LOCATION",
+        "GMP_BIN",
+        "GMP_ENV_ACTIVE",
+        "GMP_ENV_MODE",
+        "PYTHONHOME",
+        "PYTHONNOUSERSITE",
+        "PYTHONUTF8",
+        "PIP_DISABLE_PIP_VERSION_CHECK",
+        "VCPKG_ROOT",
+        "VCPKG_DOWNLOADS",
+        "VCPKG_DEFAULT_BINARY_CACHE",
+        "VCPKG_INSTALLED_DIR",
+        "VCPKG_DEFAULT_TRIPLET",
+        "VCPKG_FEATURE_FLAGS",
+        "CMAKE_TOOLCHAIN_FILE",
+        "GMP_PROXY_MODE",
+        "HTTP_PROXY",
+        "HTTPS_PROXY",
+        "ALL_PROXY",
+        "http_proxy",
+        "https_proxy",
+        "all_proxy",
+        "NO_PROXY",
+        "no_proxy",
+    )
+    for name in protected_names:
+        if name in base_env:
+            activated[name] = base_env[name]
     return activated
 
 
@@ -513,6 +616,14 @@ def parse_arguments() -> argparse.Namespace:
         "list-vcpkg-projects",
         help="print convention-based and explicitly configured vcpkg project paths",
     )
+    subparsers.add_parser(
+        "configure-proxy",
+        help="persist the selected proxy mode for future GMP and Visual Studio processes",
+    )
+    subparsers.add_parser(
+        "restore-vcpkg",
+        help="download/restore all discovered vcpkg tools and project dependencies",
+    )
     return parser.parse_args()
 
 
@@ -526,9 +637,17 @@ def main() -> int:
         if args.command == "list-vcpkg-projects":
             print_vcpkg_project_paths(manifest)
             return 0
+        if args.command == "configure-proxy":
+            write_proxy_configuration()
+            return 0
+        if args.command == "restore-vcpkg":
+            install_vcpkg(manifest)
+            install_vcpkg_projects(manifest)
+            return 0 if doctor(manifest, require_completion_marker=False) else 1
         if args.command == "doctor":
             return 0 if doctor(manifest) else 1
         if args.command == "online":
+            write_proxy_configuration()
             remove_completion_marker()
             install_python_packages(manifest)
             install_applications(manifest)
@@ -549,6 +668,7 @@ def main() -> int:
                 return 0
             create_completion_marker()
         elif args.command == "deploy":
+            write_proxy_configuration()
             remove_completion_marker()
             if not doctor(manifest, require_completion_marker=False):
                 return 1

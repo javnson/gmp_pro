@@ -57,18 +57,26 @@ void GPIO_WritePin(uint16_t gpioNumber, uint16_t outVal);
 // Enable System Controller Output
 GMP_STATIC_INLINE void ctl_fast_enable_output(void)
 {
+    DINT;
+
+    // Reset histories first and preload a zero differential-voltage command.
+    clear_all_controllers();
+    EPWM_setCounterCompareValue(PHASE_L_BASE, EPWM_COUNTER_COMPARE_A,
+                                ctl_get_single_phase_modulation_L_phase(&hpwm));
+    EPWM_setCounterCompareValue(PHASE_N_BASE, EPWM_COUNTER_COMPARE_A,
+                                ctl_get_single_phase_modulation_N_phase(&hpwm));
+
     // Clear any Trip Zone (TZ) flag for Phase L and Phase N
     EPWM_clearTripZoneFlag(PHASE_L_BASE, EPWM_TZ_FORCE_EVENT_OST);
     EPWM_clearTripZoneFlag(PHASE_N_BASE, EPWM_TZ_FORCE_EVENT_OST);
-
-    // Reset algorithm history to prevent sudden jumps
-    clear_all_controllers();
 
     // Hardware PWM gate driver enable
     GPIO_WritePin(PWM_ENABLE_PORT, 1);
 
     // Turn ON Controller LED (assuming Active-Low LED)
     GPIO_WritePin(CONTROLLER_LED, 0);
+
+    EINT;
 }
 
 // Disable System Controller Output
@@ -112,8 +120,8 @@ GMP_STATIC_INLINE void ctl_output_callback_pil(gmp_sim_tx_buf_t* tx)
     //
     // PWM channel (Send calculated compare values back to the simulator)
     //
-//    tx->pwm_cmp[0] = pwm_cmp_L;
-//    tx->pwm_cmp[1] = pwm_cmp_N;
+    tx->pwm_cmp[0] = ctl_get_single_phase_modulation_L_phase(&hpwm);
+    tx->pwm_cmp[1] = ctl_get_single_phase_modulation_N_phase(&hpwm);
 
     //
     // Monitor Data (Send controller states to simulator scope)

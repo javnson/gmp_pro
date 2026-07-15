@@ -27,12 +27,12 @@ extern "C"
 
 #define SDPE_PROJECT_ID "pgs_sinv_rc_iris_node"
 #define SDPE_PROJECT_SUITE "pgs_sinv_rc"
-#define SDPE_PROJECT_VERSION "0.1.0"
-#define SDPE_PROJECT_UPDATED_AT "2026-07-10"
+#define SDPE_PROJECT_VERSION "0.2.0"
+#define SDPE_PROJECT_UPDATED_AT "2026-07-15"
 
 //=================================================================================================
 /**
- * @brief Selection macros.
+ * @brief Controller Features.
  */
 
 /**
@@ -40,15 +40,25 @@ extern "C"
  */
 #define _USE_DEBUG_DISCRETE_PID
 
+//=================================================================================================
+/**
+ * @brief Sensing and Calibration.
+ */
+
 /**
  * @brief Enable ADC calibration.
  */
 #define SPECIFY_ENABLE_ADC_CALIBRATE
 
+//=================================================================================================
+/**
+ * @brief Diagnostics and Simulation.
+ */
+
 /**
  * @brief Enable PIL simulation function. This macro disables controller output.
  */
-// #define ENBALE_GMP_DL_PIL_SIM
+// #define ENABLE_GMP_DL_PIL_SIM
 
 /**
  * @brief Enable CiA402 debug information.
@@ -57,7 +67,7 @@ extern "C"
 
 //=================================================================================================
 /**
- * @brief Option macros.
+ * @brief Control Mode.
  */
 
 /**
@@ -69,11 +79,21 @@ extern "C"
  */
 #define BUILD_LEVEL (1)
 
+//=================================================================================================
+/**
+ * @brief PWM Modulator.
+ */
+
 /**
  * @brief Use negative PWM modulator logic.
  *        Options: (0), (1)
  */
 #define PWM_MODULATOR_USING_NEGATIVE_LOGIC (0)
+
+//=================================================================================================
+/**
+ * @brief PWM Channel Mapping.
+ */
 
 /**
  * @brief PWM base for inverter phase L.
@@ -87,6 +107,11 @@ extern "C"
  */
 #define PHASE_N_BASE IRIS_EPWM4_BASE
 
+//=================================================================================================
+/**
+ * @brief Gate Driver GPIO.
+ */
+
 /**
  * @brief Gate-driver enable GPIO.
  *        Options: IRIS_GPIO1, IRIS_GPIO2, IRIS_GPIO3, IRIS_GPIO4, IRIS_GPIO5, IRIS_GPIO6
@@ -98,6 +123,11 @@ extern "C"
  *        Options: IRIS_GPIO1, IRIS_GPIO2, IRIS_GPIO3, IRIS_GPIO4, IRIS_GPIO5, IRIS_GPIO6
  */
 #define PWM_RESET_PORT IRIS_GPIO3
+
+//=================================================================================================
+/**
+ * @brief Status GPIO.
+ */
 
 /**
  * @brief System status LED.
@@ -111,6 +141,11 @@ extern "C"
  */
 #define CONTROLLER_LED IRIS_LED2
 
+//=================================================================================================
+/**
+ * @brief AC Current Sensing.
+ */
+
 /**
  * @brief AC current ADC result register base.
  *        Options: ADC_CH1_RESULT_BASE, ADC_CH2_RESULT_BASE, ADC_CH3_RESULT_BASE, ADC_CH4_RESULT_BASE, ADC_CH5_RESULT_BASE, ADC_CH6_RESULT_BASE, ADC_CH7_RESULT_BASE, ADC_CH8_RESULT_BASE, ADC_CH9_RESULT_BASE, ADC_CH10_RESULT_BASE, ADC_CH11_RESULT_BASE, ADC_CH12_RESULT_BASE
@@ -123,6 +158,11 @@ extern "C"
  */
 #define INV_IAC ADC_CH1
 
+//=================================================================================================
+/**
+ * @brief AC Voltage Sensing.
+ */
+
 /**
  * @brief AC voltage ADC result register base.
  *        Options: ADC_CH1_RESULT_BASE, ADC_CH2_RESULT_BASE, ADC_CH3_RESULT_BASE, ADC_CH4_RESULT_BASE, ADC_CH5_RESULT_BASE, ADC_CH6_RESULT_BASE, ADC_CH7_RESULT_BASE, ADC_CH8_RESULT_BASE, ADC_CH9_RESULT_BASE, ADC_CH10_RESULT_BASE, ADC_CH11_RESULT_BASE, ADC_CH12_RESULT_BASE
@@ -134,6 +174,11 @@ extern "C"
  *        Options: ADC_CH1, ADC_CH2, ADC_CH3, ADC_CH4, ADC_CH5, ADC_CH6, ADC_CH7, ADC_CH8, ADC_CH9, ADC_CH10, ADC_CH11, ADC_CH12
  */
 #define INV_VAC ADC_CH2
+
+//=================================================================================================
+/**
+ * @brief DC Bus Sensing.
+ */
 
 /**
  * @brief DC bus voltage ADC result register base.
@@ -208,6 +253,71 @@ extern "C"
 #define CTRL_CURRENT_BASE (14.14f)
 
 /**
+ * @brief Nominal AC grid/fundamental frequency in Hz.
+ */
+#define CTRL_GRID_FREQUENCY (50.0f)
+
+/**
+ * @brief Total AC-side filter/grid inductance in H.
+ */
+#define CTRL_AC_INDUCTANCE (0.003f)
+
+/**
+ * @brief Total AC-side series resistance in Ohm.
+ */
+#define CTRL_AC_RESISTANCE (0.1f)
+
+/**
+ * @brief Single-phase PLL proportional gain.
+ */
+#define CTRL_PLL_KP (10.0f)
+
+/**
+ * @brief Single-phase PLL integral time constant in seconds.
+ */
+#define CTRL_PLL_TI (0.02f)
+
+/**
+ * @brief PLL q-axis error low-pass cutoff in Hz.
+ */
+#define CTRL_PLL_LPF_FC (20.0f)
+
+/**
+ * @brief Measured active/reactive power low-pass cutoff in Hz.
+ */
+#define CTRL_PQ_LPF_FC (200.0f)
+
+/**
+ * @brief Peak current-reference limit in per unit.
+ */
+#define CTRL_CURRENT_LIMIT_PU (1.5f)
+
+/**
+ * @brief Minimum PLL voltage magnitude used by P/Q reference division.
+ */
+#define CTRL_GRID_VMIN_PU (0.1f)
+
+/**
+ * @brief Active-power command slew limit in PU/s.
+ */
+#define CTRL_P_SLEW_PU_S (10.0f)
+
+/**
+ * @brief Reactive-power command slew limit in PU/s.
+ */
+#define CTRL_Q_SLEW_PU_S (20.0f)
+
+/**
+ * @brief Current polarity deadband for PWM dead-time compensation.
+ */
+#define CTRL_CURRENT_DB_PU (0.01f)
+
+/**
+ * @brief Minimum fundamental frequency tracked by the repetitive controller in Hz.
+ */
+#define CTRL_FDRC_MIN_FREQ (45.0f)
+
+/**
  * @brief AC voltage sensing gain from the grid LC filter voltage sense path.
  */
 #define CTRL_AC_VOLTAGE_SENSITIVITY HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_GAIN
@@ -253,6 +363,26 @@ extern "C"
 #define CTRL_PROT_VBUS_MAX (100.0f)
 
 /**
+ * @brief Fast AC peak-current trip threshold in A.
+ */
+#define CTRL_PROT_IAC_PEAK_MAX (CTRL_MAX_HW_CURRENT * 0.9f * 1.41421356f)
+
+/**
+ * @brief Maximum unsaturated modulation command before controller-divergence trip.
+ */
+#define CTRL_PROT_VCTRL_MAX_PU (1.5f)
+
+/**
+ * @brief Minimum physical DC-bus voltage accepted by the startup state machine.
+ */
+#define CTRL_DCBUS_READY_MIN (CTRL_DCBUS_VOLTAGE * 0.8f)
+
+/**
+ * @brief Maximum physical DC-bus voltage accepted by the startup state machine.
+ */
+#define CTRL_DCBUS_READY_MAX (CTRL_PROT_VBUS_MAX)
+
+/**
  * @brief ADC calibration timeout in ms.
  */
 #define TIMEOUT_ADC_CALIB_MS (3000)
@@ -263,7 +393,13 @@ extern "C"
 #define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
 
 // User project tail code
-/* Project-specific tail extension point. */
+/* Compatibility with framework revisions that use the historical misspelling. */
+#if defined(ENABLE_GMP_DL_PIL_SIM) && !defined(ENBALE_GMP_DL_PIL_SIM)
+#define ENBALE_GMP_DL_PIL_SIM
+#endif
+#if defined(ENBALE_GMP_DL_PIL_SIM) && !defined(ENABLE_GMP_DL_PIL_SIM)
+#define ENABLE_GMP_DL_PIL_SIM
+#endif
 
 #ifdef __cplusplus
 }

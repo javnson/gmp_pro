@@ -62,7 +62,6 @@ extern ctl_sinv_protect_t protection;
 // ADC Calibrator
 extern adc_bias_calibrator_t adc_calibrator;
 extern volatile fast_gt flag_enable_adc_calibrator;
-extern volatile fast_gt index_adc_calibrator;
 
 // User commands
 extern ctrl_gt g_p_ref_user;
@@ -77,6 +76,10 @@ void clear_all_controllers(void);
 void ctl_init(void);
 void ctl_mainloop(void);
 fast_gt ctl_exec_adc_calibration(void);
+fast_gt ctl_exec_dc_voltage_ready(void);
+fast_gt ctl_check_pll_locked(void);
+fast_gt ctl_check_compliance(void);
+fast_gt ctl_fault_recover_routine(void);
 
 //=================================================================================================
 // Background Controller Tasks
@@ -97,11 +100,9 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
     // ADC calibrator routine
     if (flag_enable_adc_calibrator)
     {
-        // For Single Phase, we calibrate AC voltage and AC current
-        if (index_adc_calibrator == 1)
-            ctl_step_adc_calibrator(&adc_calibrator, adc_v_grid.control_port.value);
-        else if (index_adc_calibrator == 0)
-            ctl_step_adc_calibrator(&adc_calibrator, adc_i_ac.control_port.value);
+        // Calibrate only the zero-current channel. Grid voltage can be present
+        // during startup and therefore is not a valid zero-offset source.
+        ctl_step_adc_calibrator(&adc_calibrator, adc_i_ac.control_port.value);
     }
     // normal controller routine
     else
@@ -125,13 +126,13 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 
             ctl_set_phasor_via_angle(rg.current, &phasor);
 
-            ctl_step_sinv_ref_gen_pq(&ref_gen, g_p_ref_user, g_q_ref_user, pll.v_mag, &phasor);
+            ctl_step_sinv_ref_gen_pq(&ref_gen, g_p_ref_user, g_q_ref_user, ctl_abs(pll.v_mag), &phasor);
 
 #elif BUILD_LEVEL >= 3
             // SINV running in PLL mode.
 
             // The internal slope limiters inside ref_gen handle the soft-start automatically
-            ctl_step_sinv_ref_gen_pq(&ref_gen, g_p_ref_user, g_q_ref_user, pll.v_mag, &pll.phasor);
+            ctl_step_sinv_ref_gen_pq(&ref_gen, g_p_ref_user, g_q_ref_user, ctl_abs(pll.v_mag), &pll.phasor);
 #endif // BUILD_LEVEL
         }
         else
@@ -142,15 +143,22 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         // 4. Inner Current Controller (RC Core)
         rc_core.flag_enable_ctrl = cia402_sm.state_word.bits.operation_enabled;
 
+#if BUILD_LEVEL >= 3
+        // PLL frequency is per-unit; FDRC requires the actual fundamental in Hz.
+        rc_core.fundamental_freq = CTRL_GRID_FREQUENCY * ctrl2float(pll.frequency);
+#else
+        rc_core.fundamental_freq = CTRL_GRID_FREQUENCY;
+#endif
+
         // Pass I_ref from ref generator. Fdbk ptrs (ADC) are already zero-copy bound in init()
         ctl_step_sinv_rc_core(&rc_core, ref_gen.i_ref_inst);
 
         // 5. Fast Protection Callback (ISR Level)
-//        if (ctl_step_sinv_protect_fast(&protection, adc_v_bus.control_port.value, adc_i_ac.control_port.value,
-//                                       rc_core.v_out_ref))
-//        {
-//            cia402_fault_request(&cia402_sm);
-//        }
+        if (ctl_step_sinv_protect_fast(&protection, adc_v_bus.control_port.value, adc_i_ac.control_port.value,
+                                       rc_core.v_out_unsat))
+        {
+            cia402_fault_request(&cia402_sm);
+        }
 
         // PWM Modulation
         if (cia402_sm.state_word.bits.operation_enabled)

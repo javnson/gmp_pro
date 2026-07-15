@@ -38,7 +38,7 @@ if not defined GMP_PROXY_CANDIDATE (
 
 if not defined GMP_PROXY_CANDIDATE (
     echo [PROXY] No enabled manual proxy was detected. Using a direct connection.
-    endlocal
+    endlocal & set "GMP_INSTALLER_PROXY_MODE=direct" & set "GMP_INSTALLER_PROXY_URL="
     exit /b 0
 )
 
@@ -53,10 +53,10 @@ if errorlevel 2 goto :SKIP_PROXY
 
 :USE_PROXY
 echo [PROXY] Proxy enabled for this installation process.
-endlocal & set "GMP_INSTALLER_PROXY_URL=%GMP_PROXY_CANDIDATE%" & set "HTTP_PROXY=%GMP_PROXY_CANDIDATE%" & set "HTTPS_PROXY=%GMP_PROXY_CANDIDATE%" & set "ALL_PROXY=%GMP_PROXY_CANDIDATE%" & set "http_proxy=%GMP_PROXY_CANDIDATE%" & set "https_proxy=%GMP_PROXY_CANDIDATE%" & set "all_proxy=%GMP_PROXY_CANDIDATE%" & set "NO_PROXY=localhost,127.0.0.1,::1" & set "no_proxy=localhost,127.0.0.1,::1"
+endlocal & set "GMP_INSTALLER_PROXY_MODE=proxy" & set "GMP_INSTALLER_PROXY_URL=%GMP_PROXY_CANDIDATE%" & set "HTTP_PROXY=%GMP_PROXY_CANDIDATE%" & set "HTTPS_PROXY=%GMP_PROXY_CANDIDATE%" & set "ALL_PROXY=%GMP_PROXY_CANDIDATE%" & set "http_proxy=%GMP_PROXY_CANDIDATE%" & set "https_proxy=%GMP_PROXY_CANDIDATE%" & set "all_proxy=%GMP_PROXY_CANDIDATE%" & set "NO_PROXY=localhost,127.0.0.1,::1" & set "no_proxy=localhost,127.0.0.1,::1"
 exit /b 0
 
 :SKIP_PROXY
 echo [PROXY] Proxy disabled for this installation process.
-endlocal & set "GMP_INSTALLER_PROXY_URL=" & set "HTTP_PROXY=" & set "HTTPS_PROXY=" & set "ALL_PROXY=" & set "http_proxy=" & set "https_proxy=" & set "all_proxy=" & set "NO_PROXY=*" & set "no_proxy=*"
+endlocal & set "GMP_INSTALLER_PROXY_MODE=direct" & set "GMP_INSTALLER_PROXY_URL=" & set "HTTP_PROXY=" & set "HTTPS_PROXY=" & set "ALL_PROXY=" & set "http_proxy=" & set "https_proxy=" & set "all_proxy=" & set "NO_PROXY=*" & set "no_proxy=*"
 exit /b 0

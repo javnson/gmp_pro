@@ -27,5 +27,8 @@ if not exist "%PYTHON_EXE%" (
     exit /b 1
 )
 
+call "%GMP_ROOT%\tools\gmp_installer\configure_proxy.bat"
+if errorlevel 1 exit /b 1
+
 "%PYTHON_EXE%" "%~dp0environment_manager.py" deploy %*
 exit /b %ERRORLEVEL%

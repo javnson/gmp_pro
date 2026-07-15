@@ -159,16 +159,6 @@ gmp_task_status_t tsk_monitor(gmp_task_t* tsk)
     return GMP_TASK_DONE;
 }
 
-// Wrapper task for ctl_main.c state machine dispatch
-gmp_task_status_t tsk_ctl_main(gmp_task_t* tsk)
-{
-    GMP_UNUSED_VAR(tsk);
-
-    ctl_mainloop();
-
-    return GMP_TASK_DONE;
-}
-
 // External declaration for slow protection task defined in ctl_main.c
 extern gmp_task_status_t tsk_protect(gmp_task_t* tsk);
 gmp_task_status_t tsk_startup(gmp_task_t* tsk);
@@ -182,8 +172,7 @@ gmp_task_t tasks[] = {
     {"blink_led", tsk_blink, 1000, 0, 1, NULL},
     {"dl_online", tsk_dl_debug_device, 2, 0, 1, NULL},
     {"monitor_data", tsk_monitor, 5, 0, 1, NULL},  // 5ms -> 200Hz refresh rate
-    {"ctl_mainloop", tsk_ctl_main, 1, 0, 1, NULL}, // 1ms state machine tick
-    {"slow_protect", tsk_protect, 10, 0, 1, NULL}, // 10ms thermal/RMS protection
+    {"slow_protect", tsk_protect, 1, 0, 1, NULL}, // 1ms matches protection-node debounce tuning
     {"startup", tsk_startup, 500, 0, 1, NULL},
 };
 

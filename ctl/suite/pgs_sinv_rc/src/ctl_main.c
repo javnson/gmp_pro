@@ -22,7 +22,7 @@ ctl_sinv_rc_core_t rc_core;
 ctl_ramp_generator_t rg;
 
 // FDRC controller static memory
-#define FDRC_ARRAY_SIZE ((int)(CONTROLLER_FREQUENCY / 50.0f) + 10)
+#define FDRC_ARRAY_SIZE ((int)(CONTROLLER_FREQUENCY / CTRL_FDRC_MIN_FREQ) + 10)
 static ctrl_gt fdrc_buffer[FDRC_ARRAY_SIZE];
 
 // Input channel
@@ -35,8 +35,11 @@ ctl_sinv_protect_t protection;
 
 // ADC Calibrator
 adc_bias_calibrator_t adc_calibrator;
+#ifdef SPECIFY_ENABLE_ADC_CALIBRATE
 volatile fast_gt flag_enable_adc_calibrator = 1;
-volatile fast_gt index_adc_calibrator = 0;
+#else
+volatile fast_gt flag_enable_adc_calibrator = 0;
+#endif
 
 // User commands
 ctrl_gt g_p_ref_user = float2ctrl(0.0f);
@@ -61,12 +64,13 @@ void ctl_init(void)
     ctl_sinv_rc_init_t rc_init = {0};
 
     rc_init.fs = CONTROLLER_FREQUENCY;
-    rc_init.freq_grid = 50.0f;
+    rc_init.freq_grid = CTRL_GRID_FREQUENCY;
     rc_init.v_base = CTRL_VOLTAGE_BASE;
     rc_init.i_base = CTRL_CURRENT_BASE;
     rc_init.v_bus = CTRL_DCBUS_VOLTAGE;
-    rc_init.L_ac = 0.003f; // ¸ù¾ÝÊµ¼ÊÂË²¨Æ÷µç¸ÐÐÞ¸Ä
-    rc_init.R_ac = 0.1f;   // ¼ÄÉúµç×è¹ÀËã
+    rc_init.L_ac = CTRL_AC_INDUCTANCE;
+    rc_init.R_ac = CTRL_AC_RESISTANCE;
+    rc_init.fdrc_min_freq = CTRL_FDRC_MIN_FREQ;
 
     ctl_auto_tuning_sinv_rc(&rc_init);
     ctl_init_sinv_rc_core(&rc_core, &rc_init, fdrc_buffer, FDRC_ARRAY_SIZE);
@@ -75,26 +79,29 @@ void ctl_init(void)
     ctl_attach_sinv_rc(&rc_core, &adc_v_bus.control_port, &adc_v_grid.control_port, &adc_i_ac.control_port);
 
     // init PLL & PQ controller
-    ctl_init_single_phase_pll(&pll, 10.0f, 0.02f, 20.0f, 50.0f, CONTROLLER_FREQUENCY);
-    ctl_init_sms_pq(&pq_meter, CONTROLLER_FREQUENCY, 50.0f, 200.0f);
+    ctl_init_single_phase_pll(&pll, CTRL_PLL_KP, CTRL_PLL_TI, CTRL_PLL_LPF_FC, CTRL_GRID_FREQUENCY,
+                              CONTROLLER_FREQUENCY);
+    ctl_init_sms_pq(&pq_meter, CTRL_GRID_FREQUENCY, CONTROLLER_FREQUENCY, CTRL_PQ_LPF_FC);
 
     // Command generator, I_max(pu), V_min(pu), P_slope(pu/s), Q_slope(pu/s)
-    ctl_init_sinv_ref_gen(&ref_gen, CTRL_CURRENT_BASE * 1.5f, 0.1f, 10.0f, 20.0f, CONTROLLER_FREQUENCY);
+    ctl_init_sinv_ref_gen(&ref_gen, CTRL_CURRENT_LIMIT_PU, CTRL_GRID_VMIN_PU, CTRL_P_SLEW_PU_S,
+                          CTRL_Q_SLEW_PU_S, CONTROLLER_FREQUENCY);
 
     // freerun angle reference generator, 50Hz, [0, 1] range for pu angle
-    ctl_init_ramp_generator_via_freq(&rg, CONTROLLER_FREQUENCY, 50.0f, 1, 0);
+    ctl_init_ramp_generator_via_freq(&rg, CONTROLLER_FREQUENCY, CTRL_GRID_FREQUENCY, 1, 0);
 
     //
     // init H PWM modulator
     //
-    ctl_init_single_phase_H_modulation(&hpwm, CTRL_PWM_CMP_MAX + 1, CTRL_PWM_DEADBAND_CMP, float2ctrl(0.5f));
-    //hpwm.flag_enable_dbcomp = 1; // ¿ªÆôËÀÇø²¹³¥
+    ctl_init_single_phase_H_modulation(&hpwm, CTRL_PWM_CMP_MAX + 1, CTRL_PWM_DEADBAND_CMP,
+                                       float2ctrl(CTRL_CURRENT_DB_PU));
+    //hpwm.flag_enable_dbcomp = 1; // å¼€å¯æ­»åŒºè¡¥å¿
 
     //
     // init and config CiA402 standard state machine
     //
     init_cia402_state_machine(&cia402_sm);
-    cia402_sm.minimum_transit_delay[3] = 100; // Operation Enabled ±£³Ö 100ms ºó²ÅÕýÊ½ÇÐÈë¸ºÔØ
+    cia402_sm.minimum_transit_delay[3] = 100; // Operation Enabled ä¿æŒ 100ms åŽæ‰æ­£å¼åˆ‡å…¥è´Ÿè½½
 
     //
     // init and config Protection module
@@ -103,8 +110,15 @@ void ctl_init(void)
     prot_init.error_mask =
         SINV_PROT_BIT_HW_TZ | SINV_PROT_BIT_DC_OVP_FAST | SINV_PROT_BIT_AC_OCP_FAST | SINV_PROT_BIT_CTRL_DIVERGE;
     prot_init.warning_mask = SINV_PROT_BIT_AC_OVP_RMS | SINV_PROT_BIT_AC_UVP_RMS | SINV_PROT_BIT_PLL_FREQ_ERR;
-    prot_init.v_bus_max = CTRL_PROT_VBUS_MAX;
-    prot_init.i_ac_max = CTRL_MAX_HW_CURRENT * 0.9f; // Ó²¼þ¼«ÏÞµÄ 90%
+    // Protection inputs are per-unit because they are fed by adc_channel outputs.
+    prot_init.v_bus_max = CTRL_PROT_VBUS_MAX / CTRL_VOLTAGE_BASE;
+    prot_init.i_ac_max = CTRL_PROT_IAC_PEAK_MAX / CTRL_CURRENT_BASE;
+    prot_init.v_ctrl_max = CTRL_PROT_VCTRL_MAX_PU;
+    prot_init.v_ac_rms_max = 1.2f * CTRL_GRID_VOLTAGE_RMS / CTRL_VOLTAGE_BASE;
+    prot_init.v_ac_rms_min = 0.8f * CTRL_GRID_VOLTAGE_RMS / CTRL_VOLTAGE_BASE;
+    prot_init.freq_grid_nom = CTRL_GRID_FREQUENCY;
+    prot_init.freq_dev_max = 1.0f;
+    prot_init.i_ac_rated_rms = CTRL_RATED_CURRENT_RMS / CTRL_CURRENT_BASE;
     ctl_init_sinv_protect(&protection, &prot_init);
 
     //
@@ -127,7 +141,7 @@ void ctl_init(void)
 #endif
 
 #if (BUILD_LEVEL == 2)
-    // ²¢Íø PQ ¿ØÖÆÄ£Ê½£º½ûÖ¹ FDRC£¬¿ªÆôµçÑ¹Ç°À¡
+    // å¹¶ç½‘ PQ æŽ§åˆ¶æ¨¡å¼ï¼šç¦æ­¢ FDRCï¼Œå¼€å¯ç”µåŽ‹å‰é¦ˆ
     rc_core.flag_enable_fdrc = 0;
     rc_core.flag_enable_lead_comp = 1;
 #endif
@@ -138,12 +152,21 @@ void ctl_init(void)
 
 void ctl_mainloop(void)
 {
+    // gmp_base_loop() may spin much faster than 1 kHz. Run state-machine and
+    // background control policy exactly once per millisecond control tick.
+    static time_gt last_tick = (time_gt)-1;
+    time_gt current_tick = gmp_base_get_ctrl_tick();
+    if (current_tick == last_tick)
+        return;
+    last_tick = current_tick;
+
     cia402_dispatch(&cia402_sm);
 
 #if (BUILD_LEVEL == 3)
-    // ²¢ÍøÐÔÄÜÓÅ»¯Ä£Ê½£ºÑÓÊ±ÇÐÈë FDRC
-    // µ±²¢ÍøÎÈ¶¨ÔËÐÐ³¬¹ý 200 ¸ö¿ØÖÆÖÜÆÚºó£¬¿ªÆôÖØ¸´¿ØÖÆÆ÷Ïû³ý»û±ä
-    if (cia402_sm.state_word.bits.operation_enabled && cia402_sm.current_state_counter > 200)
+    // å¹¶ç½‘æ€§èƒ½ä¼˜åŒ–æ¨¡å¼ï¼šå»¶æ—¶åˆ‡å…¥ FDRC
+    // å½“å¹¶ç½‘ç¨³å®šè¿è¡Œè¶…è¿‡ 200 ms åŽï¼Œå¼€å¯é‡å¤æŽ§åˆ¶å™¨æ¶ˆé™¤ç•¸å˜
+    if (cia402_sm.state_word.bits.operation_enabled &&
+        gmp_base_time_sub(current_tick, cia402_sm.entry_state_tick) > 200)
     {
         rc_core.flag_enable_fdrc = 1;
     }
@@ -157,21 +180,21 @@ void ctl_mainloop(void)
 
 void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
 {
-#if defined ENBALE_GMP_DL_PIL_SIM
+#if defined ENABLE_GMP_DL_PIL_SIM
     ctl_input_callback_pil(rx);
 
     ctl_dispatch();
 
     ctl_output_callback_pil(tx);
-#endif // defined ENBALE_GMP_DL_PIL_SIM
+#endif // defined ENABLE_GMP_DL_PIL_SIM
 }
 
-#if defined ENBALE_GMP_DL_PIL_SIM
+#if defined ENABLE_GMP_DL_PIL_SIM
 time_gt gmp_base_get_ctrl_tick(void)
 {
     return mtr_ctrl.isr_tick / ((uint32_t)CONTROLLER_FREQUENCY / 1000);
 }
-#endif // defined ENBALE_GMP_DL_PIL_SIM
+#endif // defined ENABLE_GMP_DL_PIL_SIM
 
 //=================================================================================================
 // Controller Tasks
@@ -180,10 +203,15 @@ gmp_task_status_t tsk_protect(gmp_task_t* tsk)
 {
     GMP_UNUSED_VAR(tsk);
 
-    // Ö´ÐÐÂý±£»¤¼ì²â (½»Á÷ÓÐÐ§Öµ¹ýÇ·Ñ¹¡¢ÎÂ¶È¡¢µçÍøÆµÂÊ)
-    //    ctl_task_sinv_protect_slow(&protection, pq_meter.v_rms, pll.frequency,
-    //                               float2ctrl(25.0f), // Mock temp: Êµ¼ÊÓ¦½ÓÈë°åÔØÎÂ¶È´«¸ÐÆ÷
-    //                               pq_meter.i_rms);
+    // PLL magnitude and the SOGI current vector are peak quantities in PU.
+    const ctrl_gt inv_sqrt2 = float2ctrl(0.70710678f);
+    ctrl_gt v_rms_pu = ctl_mul(ctl_abs(pll.v_mag), inv_sqrt2);
+    ctrl_gt i_peak_pu = ctl_sqrt(ctl_mul(pq_meter.i_ab.dat[phase_alpha], pq_meter.i_ab.dat[phase_alpha]) +
+                                 ctl_mul(pq_meter.i_ab.dat[phase_beta], pq_meter.i_ab.dat[phase_beta]));
+    ctrl_gt i_rms_pu = ctl_mul(i_peak_pu, inv_sqrt2);
+    ctrl_gt pll_freq_hz = ctl_mul(pll.frequency, float2ctrl(CTRL_GRID_FREQUENCY));
+
+    ctl_task_sinv_protect_slow(&protection, v_rms_pu, pll_freq_hz, float2ctrl(0.0f), i_rms_pu);
 
     if (protection.active_errors != 0)
     {
@@ -202,10 +230,14 @@ gmp_task_status_t tsk_protect(gmp_task_t* tsk)
 //
 fast_gt ctl_check_pll_locked(void)
 {
-    // ×¼ÈëÌõ¼þ£º
-    // 1. µçÍøµçÑ¹·ùÖµÔÚ 0.8pu ~ 1.2pu Ö®¼ä (·ÀÖ¹¶ÏÂ·Æ÷Î´±ÕºÏ»òÑÏÖØÇ·Ñ¹)
-    // 2. PLL ÄÚ²¿ÆµÂÊÎó²î±ØÐëÐ¡ÓÚÏµÍ³Éè¶¨µÄÈÝÈÌ¶È (ÀýÈç 0.005 PU)
-    ctrl_gt v_mag_pu = pll.v_mag;
+#if BUILD_LEVEL < 3
+    // Bench/open-loop build levels intentionally use the free-running angle.
+    return 1;
+#else
+    // å‡†å…¥æ¡ä»¶ï¼š
+    // 1. ç”µç½‘ç”µåŽ‹å¹…å€¼åœ¨ 0.8pu ~ 1.2pu ä¹‹é—´ (é˜²æ­¢æ–­è·¯å™¨æœªé—­åˆæˆ–ä¸¥é‡æ¬ åŽ‹)
+    // 2. PLL å†…éƒ¨é¢‘çŽ‡è¯¯å·®å¿…é¡»å°äºŽç³»ç»Ÿè®¾å®šçš„å®¹å¿åº¦ (ä¾‹å¦‚ 0.005 PU)
+    ctrl_gt v_mag_pu = ctl_abs(pll.v_mag);
     ctrl_gt f_err_abs = ctl_abs(pll.freq_error);
 
     if ((v_mag_pu > float2ctrl(0.8f)) && (v_mag_pu < float2ctrl(1.2f)))
@@ -216,6 +248,33 @@ fast_gt ctl_check_pll_locked(void)
         }
     }
     return 0;
+#endif
+}
+
+fast_gt ctl_exec_dc_voltage_ready(void)
+{
+    ctrl_gt v_bus = adc_v_bus.control_port.value;
+    return (v_bus >= float2ctrl(CTRL_DCBUS_READY_MIN / CTRL_VOLTAGE_BASE)) &&
+           (v_bus <= float2ctrl(CTRL_DCBUS_READY_MAX / CTRL_VOLTAGE_BASE));
+}
+
+fast_gt ctl_check_compliance(void)
+{
+    if (protection.active_errors != 0)
+        return 0;
+
+#if BUILD_LEVEL >= 3
+    return ctl_check_pll_locked();
+#else
+    return 1;
+#endif
+}
+
+fast_gt ctl_fault_recover_routine(void)
+{
+    ctl_reset_sinv_protect(&protection);
+    clear_all_controllers();
+    return 1;
 }
 
 //
@@ -227,22 +286,9 @@ fast_gt ctl_exec_adc_calibration(void)
     {
         if (ctl_is_adc_calibrator_cmpt(&adc_calibrator) && ctl_is_adc_calibrator_result_valid(&adc_calibrator))
         {
-            if (index_adc_calibrator == 0) // Í¨µÀ 0: AC µçÁ÷ÁãÆ«Ð£×¼
-            {
-                adc_i_ac.bias += ctl_get_adc_calibrator_result(&adc_calibrator);
-                index_adc_calibrator += 1;
-
-                ctl_clear_adc_calibrator(&adc_calibrator);
-                ctl_enable_adc_calibrator(&adc_calibrator);
-            }
-            else if (index_adc_calibrator == 1) // Í¨µÀ 1: ½»Á÷µçÑ¹ÁãÆ«Ð£×¼
-            {
-                adc_v_grid.bias += ctl_get_adc_calibrator_result(&adc_calibrator);
-                index_adc_calibrator += 1;
-
-                flag_enable_adc_calibrator = 0;
-                clear_all_controllers(); // Ð£×¼Íê±Ï£¬ÇåÀíÂË²¨Æ÷ÄÚ²ÐÓàÀúÊ·Öµ
-            }
+            adc_i_ac.bias += ctl_get_adc_calibrator_result(&adc_calibrator);
+            flag_enable_adc_calibrator = 0;
+            clear_all_controllers();
         }
 
         // ADC calibrate is not complete
@@ -256,6 +302,7 @@ fast_gt ctl_exec_adc_calibration(void)
 void clear_all_controllers(void)
 {
     ctl_clear_single_phase_pll(&pll);
+    ctl_clear_sms_pq(&pq_meter);
     ctl_clear_sinv_rc_core(&rc_core);
     ctl_clear_sinv_ref_gen(&ref_gen);
     ctl_clear_single_phase_H_modulation(&hpwm);

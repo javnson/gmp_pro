@@ -14,9 +14,12 @@ Before either installer downloads anything, it checks existing
 `HTTPS_PROXY`/`HTTP_PROXY`/`ALL_PROXY` variables and the enabled Windows user
 proxy setting. When a proxy is found, the installer displays its address and
 asks `Y/N` whether it should be used. The answer affects only that installation
-process and its child tools; it does not rewrite the Windows proxy setting.
-For unattended installation, set `GMP_INSTALLER_PROXY_CHOICE=Y` or `N` before
-launching the installer; interactive runs leave this variable unset.
+process and its child tools; it does not rewrite the Windows proxy setting. For
+a private environment, the choice is additionally stored under `bin` and loaded
+by later GMP prompts and the GMP Visual Studio launcher. Copied-bin deployment
+asks again and replaces the source computer's choice. For unattended
+installation, set `GMP_INSTALLER_PROXY_CHOICE=Y` or `N` before launching the
+installer; interactive runs leave this variable unset.
 
 The root installation/deployment launchers pause after a failure so a window
 opened by double-click remains visible. Automated callers can disable only this
@@ -43,6 +46,8 @@ bin/
   vcpkg/                   pinned vcpkg registry and executable
   vcpkg_installed/         shared manifest installation tree
   cache/                   downloads and vcpkg binary/download caches
+  gmp_proxy.json           private proxy/direct mode selected on this computer
+  gmp_proxy_env.bat        generated activation settings for child processes
   gmp_environment.json     generated inventory (contains no absolute root path)
 ```
 
@@ -136,6 +141,27 @@ gmp_env.bat python --version
 gmp_env.bat cmake --version
 gmp_env.bat msbuild ctl\suite\mcs_pmsm\project\simulate\motor_control_simulink.vcxproj /p:Platform=x64
 ```
+
+Visual Studio must inherit the GMP environment if its MSBuild-driven vcpkg
+restore may need the private proxy. Close an older Visual Studio instance and
+launch the solution through:
+
+```bat
+gmp_vs.bat ctl\suite\dps_fsbb\project\simulate\GMP_Motor_Control_simulink.sln
+```
+
+To change only the private proxy choice, or to repair/pre-download vcpkg tools
+and all discovered project dependencies without reinstalling Python and other
+applications, use:
+
+```bat
+configure_gmp_proxy.bat
+repair_gmp_vcpkg.bat
+```
+
+`repair_gmp_vcpkg.bat` does not create the installation completion marker. It
+uses the saved proxy to obtain vcpkg's auxiliary CMake/7zip/7zr tools and then
+restores every discovered suite manifest.
 
 Scripts that need to activate the environment in an existing command prompt can
 use:
@@ -330,10 +356,13 @@ the configured triplet, and verify both installation modes.
 `ctl/suite/Directory.Build.props` and `Directory.Build.targets` provide the
 shared MSBuild rule. When a project directory contains `vcpkg.json`, they enable
 manifest mode automatically and, when `bin/vcpkg` exists, point Visual Studio at
-the repository-private vcpkg tree and shared installed directory. Do not create
-suite-specific copies of these files unless that project genuinely needs to
-override the common behavior: MSBuild uses the nearest `Directory.Build.*`
-files, which can shadow the central rule.
+the repository-private vcpkg tree and shared installed directory. They also set
+`VCPkgLocalAppDataDisabled=true`, preventing a user-wide Scoop/classic vcpkg
+integration from injecting a second, incompatible `vcpkg.props/targets` pair.
+This does not uninstall or modify the user's vcpkg. Do not create suite-specific
+copies of these files unless that project genuinely needs to override the
+common behavior: MSBuild uses the nearest `Directory.Build.*` files, which can
+shadow the central rule.
 
 The Visual Studio project consumes local vcpkg through `Directory.Build.props`
 and `Directory.Build.targets` when `bin/vcpkg` exists. Otherwise it remains

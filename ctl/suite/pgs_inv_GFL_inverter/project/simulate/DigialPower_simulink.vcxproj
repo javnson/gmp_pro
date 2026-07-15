@@ -80,20 +80,20 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(ProjectDir)..\..\implement\common;$(ProjectDir)..\..\implement\simulate;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\src;$(ProjectDir)xplt;$(ProjectDir)sdpe_mgr;$(ProjectDir)..\..\sdpe_general;$(IncludePath)</IncludePath>
     <ExternalIncludePath>$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_common;$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_simulink;$(ProjectDir);$(GMP_PRO_LOCATION);$(GMP_PRO_LOCATION)/third_party/asio/include;$(GMP_PRO_LOCATION)/third_party/eigen/Eigen;$(GMP_PRO_LOCATION)/csp/windows_simulink;$(GMP_PRO_LOCATION)/third_party/fmt/include/fmt;$(VC_IncludePath);$(WindowsSDK_IncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(ProjectDir)..\..\implement\common;$(ProjectDir)..\..\implement\simulate;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\src;$(ProjectDir)xplt;$(ProjectDir)sdpe_mgr;$(ProjectDir)..\..\sdpe_general;$(IncludePath)</IncludePath>
     <ExternalIncludePath>$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_common;$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_simulink;$(ProjectDir);$(GMP_PRO_LOCATION);$(GMP_PRO_LOCATION)/third_party/asio/include;$(GMP_PRO_LOCATION)/third_party/eigen/Eigen;$(GMP_PRO_LOCATION)/csp/windows_simulink;$(GMP_PRO_LOCATION)/third_party/fmt/include/fmt;$(VC_IncludePath);$(WindowsSDK_IncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)..\..\src\;$(ProjectDir)xplt\;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\src;$(ProjectDir)xplt;$(ProjectDir)sdpe_mgr;$(ProjectDir)..\..\sdpe_general;$(IncludePath)</IncludePath>
     <ExternalIncludePath>$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_common;$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_simulink;$(ProjectDir);$(GMP_PRO_LOCATION);$(GMP_PRO_LOCATION)/third_party/asio/include;$(GMP_PRO_LOCATION)/third_party/eigen/Eigen;$(GMP_PRO_LOCATION)/csp/windows_simulink;$(GMP_PRO_LOCATION)/third_party/fmt/include/fmt;$(VC_IncludePath);$(WindowsSDK_IncludePath)</ExternalIncludePath>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)..\..\implement\common;$(ProjectDir)..\..\implement\simulate;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\src;$(ProjectDir)xplt;$(ProjectDir)sdpe_mgr;$(ProjectDir)..\..\sdpe_general;$(IncludePath)</IncludePath>
     <ExternalIncludePath>$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_common;$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_simulink;$(ProjectDir);$(GMP_PRO_LOCATION);$(GMP_PRO_LOCATION)/third_party/asio/include;$(GMP_PRO_LOCATION)/third_party/eigen/Eigen;$(GMP_PRO_LOCATION)/csp/windows_simulink;$(GMP_PRO_LOCATION)/third_party/fmt/include/fmt;$(VC_IncludePath);$(WindowsSDK_IncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
@@ -252,7 +252,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\ctl_main.h" />
     <ClInclude Include="..\..\src\user_main.h" />
-    <ClInclude Include="xplt\ctrl_settings.h" />
+    <ClInclude Include="sdpe_mgr\sdpe_pgs_inv_gfl_simulate_settings.h" />
     <ClInclude Include="xplt\pc_simulate_buffer.h" />
     <ClInclude Include="xplt\xplt.config.h" />
     <ClInclude Include="xplt\xplt.ctl_interface.h" />

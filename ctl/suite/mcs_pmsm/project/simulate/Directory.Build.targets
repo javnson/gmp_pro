@@ -1,4 +1,4 @@
 <Project>
-  <Import Project="$(VcpkgRoot)scripts\buildsystems\msbuild\vcpkg.targets"
-          Condition="Exists('$(VcpkgRoot)scripts\buildsystems\msbuild\vcpkg.targets')" />
+  <Import Project="$(GMP_PRO_LOCATION)\bin\vcpkg\scripts\buildsystems\msbuild\vcpkg.targets"
+          Condition="Exists('$(GMP_PRO_LOCATION)\bin\vcpkg\scripts\buildsystems\msbuild\vcpkg.targets')" />
 </Project>

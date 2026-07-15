@@ -9,7 +9,7 @@
 
 #include <ctl/hardware_preset/current_sensor/tmcs1133_b4a.h>
 #include <ctl/hardware_preset/power_switch/inn100e0016a.h>
-#include <ctl/hardware_preset/inverter_3ph/inverter_3ph_general.h>
+#include <ctl/component/hardware_preset/inverter_3ph/inverter_3ph_general.h>
 
 // User code after includes
 // SDPE extension point: add after_includes code in the Entity Instance Code page if needed.

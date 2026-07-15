@@ -104,6 +104,11 @@ GMP_STATIC_INLINE void ctl_clear_single_phase_pll(ctl_single_phase_pll* spll)
     ctl_clear_pid(&spll->spll_ctrl);
 
     spll->theta = float2ctrl(0.0f);
+    spll->frequency = float2ctrl(1.0f);
+    spll->freq_error = float2ctrl(0.0f);
+    spll->v_mag = float2ctrl(0.0f);
+    ctl_vector2_clear(&spll->uab);
+    ctl_vector2_clear(&spll->udq);
     ctl_set_phasor_via_angle(spll->theta, &spll->phasor);
 }
 

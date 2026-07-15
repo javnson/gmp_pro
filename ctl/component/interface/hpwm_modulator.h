@@ -72,8 +72,10 @@ void ctl_init_single_phase_H_modulation(single_phase_H_modulation_t* bridge, pwm
  */
 GMP_STATIC_INLINE void ctl_clear_single_phase_H_modulation(single_phase_H_modulation_t* bridge)
 {
-    bridge->phase_L = 0;
-    bridge->phase_N = 0;
+    // Both legs at 50% produce zero differential bridge voltage and avoid a
+    // full-scale pulse when the trip-zone latch is released.
+    bridge->phase_L = bridge->pwm_full_scale / 2;
+    bridge->phase_N = bridge->pwm_full_scale / 2;
     bridge->current_dir = 0;
 }
 

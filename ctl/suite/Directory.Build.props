@@ -10,7 +10,9 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="Exists('$(MSBuildProjectDirectory)\vcpkg.json') and Exists('$(GMP_PRO_LOCATION)\bin\vcpkg\scripts\buildsystems\msbuild\vcpkg.props')">
-    <VcpkgRoot Condition="'$(VcpkgRoot)' == ''">$(GMP_PRO_LOCATION)\bin\vcpkg\</VcpkgRoot>
+    <!-- Prevent user-wide/Scoop vcpkg integration from being imported later. -->
+    <VCPkgLocalAppDataDisabled>true</VCPkgLocalAppDataDisabled>
+    <VcpkgRoot>$(GMP_PRO_LOCATION)\bin\vcpkg\</VcpkgRoot>
     <VcpkgTriplet Condition="'$(VcpkgTriplet)' == ''">x64-windows</VcpkgTriplet>
     <VcpkgInstalledDir>$(GMP_PRO_LOCATION)\bin\vcpkg_installed\$(VcpkgTriplet)\</VcpkgInstalledDir>
   </PropertyGroup>
