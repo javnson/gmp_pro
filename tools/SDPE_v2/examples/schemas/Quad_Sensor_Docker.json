@@ -1,0 +1,12 @@
+{
+  "id": "Quad_Sensor_Docker",
+  "display_name": "Quad Sensor Docker",
+  "description": "",
+  "category": "PE Board",
+  "tags": [],
+  "output_subdir": "Quad_Sensor_Docker",
+  "parameters": [],
+  "components": {},
+  "exports": {},
+  "header_prefix": ""
+}

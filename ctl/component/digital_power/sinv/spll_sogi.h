@@ -104,6 +104,11 @@ GMP_STATIC_INLINE void ctl_clear_single_phase_pll(ctl_single_phase_pll* spll)
     ctl_clear_pid(&spll->spll_ctrl);
 
     spll->theta = float2ctrl(0.0f);
+    spll->frequency = float2ctrl(1.0f);
+    spll->freq_error = float2ctrl(0.0f);
+    spll->v_mag = float2ctrl(0.0f);
+    ctl_vector2_clear(&spll->uab);
+    ctl_vector2_clear(&spll->udq);
     ctl_set_phasor_via_angle(spll->theta, &spll->phasor);
 }
 
@@ -119,10 +124,10 @@ GMP_STATIC_INLINE void ctl_step_single_phase_pll(ctl_single_phase_pll* spll, ctr
     ctl_step_discrete_sogi(&spll->sogi, ac_input);
 
     // 2. Park Transform from stationary \alpha - \beta to rotating d-q frame
-    // The SOGI outputs are assigned to alpha and beta components.
-    // The negative sign is a convention to align the final locked phase.
-    spll->uab.dat[phase_alpha] = -ctl_get_discrete_sogi_ds(&spll->sogi);
-    spll->uab.dat[phase_beta] = ctl_get_discrete_sogi_qs(&spll->sogi);
+    // For a sine input, D(s) is sin(theta) and the lagging Q(s) is
+    // -cos(theta).  Park.h expects [alpha,beta] = [cos(theta),sin(theta)].
+    spll->uab.dat[phase_alpha] = -ctl_get_discrete_sogi_qs(&spll->sogi);
+    spll->uab.dat[phase_beta] = ctl_get_discrete_sogi_ds(&spll->sogi);
 
     // 3. Update the phasor (sin/cos) for the next iteration's Park transform.
     ctl_set_phasor_via_angle(spll->theta, &spll->phasor);

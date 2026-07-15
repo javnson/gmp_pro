@@ -481,6 +481,7 @@ void ctl_disable_precharge_relay(void);
  * @return true: 校准完成且成功; false: 失败或正在进行中
  */
 fast_gt ctl_exec_adc_calibration(void);
+fast_gt ctl_fault_recover_routine(void);
 
 /**
  * @brief 检查直流母线电压是否在允许范围内

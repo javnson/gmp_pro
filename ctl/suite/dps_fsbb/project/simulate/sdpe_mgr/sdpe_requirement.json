@@ -1,0 +1,612 @@
+{
+  "id": "dps_fsbb_simulate",
+  "display_name": "DPS FSBB MATLAB/Simulink SIL",
+  "suite": "dps_fsbb",
+  "version": "1.0.0",
+  "output_header": "sdpe_dps_fsbb_simulate_settings.h",
+  "hardware": [
+    {
+      "entity": "gmp_lvfb_150_2ph_v2"
+    }
+  ],
+  "requirements": [
+    {
+      "role": "PWM Frequency",
+      "macro": "PWM_FREQ",
+      "binding": {
+        "float": "20e3"
+      },
+      "description": "FSBB switching frequency."
+    },
+    {
+      "role": "Controller Frequency",
+      "macro": "CONTROLLER_FREQUENCY",
+      "binding": {
+        "float": "20e3"
+      },
+      "description": "SIL controller sample frequency."
+    },
+    {
+      "role": "PWM Depth",
+      "macro": "CTRL_PWM_CMP_MAX",
+      "binding": {
+        "number": "3000 - 1"
+      },
+      "description": "PWM compare maximum shared by controller and plant model."
+    },
+    {
+      "role": "PWM Deadband Width",
+      "macro": "CTRL_PWM_DEADBAND_CMP",
+      "binding": {
+        "number": "50"
+      },
+      "description": "Symmetric PWM deadband in compare counts."
+    },
+    {
+      "role": "ADC Resolution",
+      "macro": "CTRL_ADC_RESOLUTION",
+      "binding": {
+        "number": "12"
+      },
+      "description": "ADC resolution used by all simulated sensor channels."
+    },
+    {
+      "role": "ADC Reference Voltage",
+      "macro": "CTRL_ADC_VOLTAGE_REF",
+      "binding": {
+        "float": "3.3"
+      },
+      "description": "ADC reference voltage."
+    },
+    {
+      "role": "Voltage PU Base",
+      "macro": "CTRL_VOLTAGE_BASE",
+      "binding": {
+        "float": "34.0"
+      },
+      "description": "Voltage per-unit base."
+    },
+    {
+      "role": "Current PU Base",
+      "macro": "CTRL_CURRENT_BASE",
+      "binding": {
+        "float": "14.14"
+      },
+      "description": "Current per-unit base."
+    },
+    {
+      "role": "Input Voltage Sensitivity",
+      "macro": "CTRL_FSBB_VIN_SENSITIVITY",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.voltage_sensitivity"
+      },
+      "description": "Input-voltage sensor sensitivity in V/V."
+    },
+    {
+      "role": "Input Voltage Bias",
+      "macro": "CTRL_FSBB_VIN_BIAS",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.voltage_bias_v"
+      },
+      "description": "Input-voltage sensor bias in V."
+    },
+    {
+      "role": "Output Voltage Sensitivity",
+      "macro": "CTRL_FSBB_VOUT_SENSITIVITY",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.voltage_sensitivity"
+      },
+      "description": "Output-voltage sensor sensitivity in V/V."
+    },
+    {
+      "role": "Output Voltage Bias",
+      "macro": "CTRL_FSBB_VOUT_BIAS",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.voltage_bias_v"
+      },
+      "description": "Output-voltage sensor bias in V."
+    },
+    {
+      "role": "Inductor Current Sensitivity",
+      "macro": "CTRL_FSBB_IL_SENSITIVITY",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
+      },
+      "description": "Inductor-current sensor sensitivity in V/A."
+    },
+    {
+      "role": "Inductor Current Bias",
+      "macro": "CTRL_FSBB_IL_BIAS",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
+      },
+      "description": "Inductor-current sensor bias in V."
+    },
+    {
+      "role": "Input Current Sensitivity",
+      "macro": "CTRL_FSBB_IIN_SENSITIVITY",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
+      },
+      "description": "Buck-side input-current sensor sensitivity in V/A."
+    },
+    {
+      "role": "Input Current Bias",
+      "macro": "CTRL_FSBB_IIN_BIAS",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
+      },
+      "description": "Buck-side input-current sensor bias in V."
+    },
+    {
+      "role": "Output Current Sensitivity",
+      "macro": "CTRL_FSBB_IOUT_SENSITIVITY",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
+      },
+      "description": "Boost-side output-current sensor sensitivity in V/A."
+    },
+    {
+      "role": "Output Current Bias",
+      "macro": "CTRL_FSBB_IOUT_BIAS",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
+      },
+      "description": "Boost-side output-current sensor bias in V."
+    },
+    {
+      "role": "Minimum Load Resistance",
+      "macro": "FSBB_PARAM_RLOAD_MIN",
+      "binding": {
+        "float": "20.0"
+      },
+      "description": "Minimum load resistance."
+    },
+    {
+      "role": "Input Capacitance",
+      "macro": "FSBB_PARAM_CIN",
+      "binding": {
+        "float": "440e-6"
+      },
+      "description": "Input capacitance."
+    },
+    {
+      "role": "Input Capacitor ESR",
+      "macro": "FSBB_PARAM_CIN_ESR",
+      "binding": {
+        "float": "0.1"
+      },
+      "description": "Input capacitor ESR used by the plant."
+    },
+    {
+      "role": "Output Capacitance",
+      "macro": "FSBB_PARAM_COUT",
+      "binding": {
+        "float": "440e-6"
+      },
+      "description": "Output capacitance."
+    },
+    {
+      "role": "Output Capacitor ESR",
+      "macro": "FSBB_PARAM_COUT_ESR",
+      "binding": {
+        "float": "0.1"
+      },
+      "description": "Output capacitor ESR."
+    },
+    {
+      "role": "Main Inductor",
+      "macro": "FSBB_PARAM_L",
+      "binding": {
+        "float": "1.5e-3"
+      },
+      "description": "Main FSBB inductance."
+    },
+    {
+      "role": "Main Inductor ESR",
+      "macro": "FSBB_PARAM_L_ESR",
+      "binding": {
+        "float": "0.05"
+      },
+      "description": "Main inductor ESR."
+    },
+    {
+      "role": "Maximum Input Voltage",
+      "macro": "FSBB_INPUT_VOLTAGE_MAX",
+      "binding": {
+        "float": "60.0"
+      },
+      "description": "Maximum input voltage."
+    },
+    {
+      "role": "Minimum Input Voltage",
+      "macro": "FSBB_INPUT_VOLTAGE_MIN",
+      "binding": {
+        "float": "12.0"
+      },
+      "description": "Minimum input voltage."
+    },
+    {
+      "role": "Nominal Input Voltage",
+      "macro": "FSBB_INPUT_VOLTAGE_NOMINAL",
+      "binding": {
+        "float": "24.0"
+      },
+      "description": "Nominal model source voltage."
+    },
+    {
+      "role": "Maximum Output Voltage",
+      "macro": "FSBB_OUTPUT_VOLTAGE_MAX",
+      "binding": {
+        "float": "72.0"
+      },
+      "description": "Maximum output voltage."
+    },
+    {
+      "role": "Minimum Output Voltage",
+      "macro": "FSBB_OUTPUT_VOLTAGE_MIN",
+      "binding": {
+        "float": "3.0"
+      },
+      "description": "Minimum output voltage."
+    },
+    {
+      "role": "Maximum Output Current",
+      "macro": "FSBB_OUTPUT_CURRENT_LIM",
+      "binding": {
+        "float": "10.0"
+      },
+      "description": "Output current limit."
+    },
+    {
+      "role": "Default Output Voltage",
+      "macro": "FSBB_DEFAULT_OUTPUT_VOLTAGE",
+      "binding": {
+        "float": "24.0"
+      },
+      "description": "Default voltage-loop command."
+    },
+    {
+      "role": "Default Current Limit",
+      "macro": "FSBB_DEFAULT_CURRENT_LIMIT",
+      "binding": {
+        "float": "5.0"
+      },
+      "description": "Default current limit."
+    },
+    {
+      "role": "Open-loop Voltage Command",
+      "macro": "FSBB_OPEN_LOOP_VOLTAGE_COMMAND",
+      "binding": {
+        "float": "12.0"
+      },
+      "description": "Open-loop equivalent voltage command."
+    },
+    {
+      "role": "Voltage Ramp Rate",
+      "macro": "FSBB_VOLTAGE_RAMP_PU_S",
+      "binding": {
+        "float": "1.0"
+      },
+      "description": "Voltage command ramp in pu/s."
+    },
+    {
+      "role": "Current Ramp Rate",
+      "macro": "FSBB_CURRENT_RAMP_PU_S",
+      "binding": {
+        "float": "1.0"
+      },
+      "description": "Current command ramp in pu/s."
+    },
+    {
+      "role": "Current-loop Bandwidth",
+      "macro": "FSBB_CURRENT_LOOP_BANDWIDTH",
+      "binding": {
+        "float": "800.0"
+      },
+      "description": "Current-loop crossover frequency."
+    },
+    {
+      "role": "Voltage-loop Bandwidth",
+      "macro": "FSBB_VOLTAGE_LOOP_BANDWIDTH",
+      "binding": {
+        "float": "40.0"
+      },
+      "description": "Voltage-loop crossover frequency."
+    },
+    {
+      "role": "Maximum Duty",
+      "macro": "FSBB_DUTY_MAX",
+      "binding": {
+        "float": "0.95"
+      },
+      "description": "Maximum leg duty."
+    },
+    {
+      "role": "Minimum Duty",
+      "macro": "FSBB_DUTY_MIN",
+      "binding": {
+        "float": "0.05"
+      },
+      "description": "Minimum leg duty."
+    },
+    {
+      "role": "Low Transition Ratio",
+      "macro": "FSBB_TRANSITION_RATIO_LOW",
+      "binding": {
+        "float": "0.90"
+      },
+      "description": "Buck-to-transition boundary."
+    },
+    {
+      "role": "High Transition Ratio",
+      "macro": "FSBB_TRANSITION_RATIO_HIGH",
+      "binding": {
+        "float": "1.10"
+      },
+      "description": "Transition-to-boost boundary."
+    },
+    {
+      "role": "Maximum Inductor Current",
+      "macro": "FSBB_PROTECT_IL_MAX",
+      "binding": {
+        "float": "25.0"
+      },
+      "description": "Positive inductor-current protection threshold."
+    },
+    {
+      "role": "Minimum Inductor Current",
+      "macro": "FSBB_PROTECT_IL_MIN",
+      "binding": {
+        "float": "-2.0"
+      },
+      "description": "Negative inductor-current protection threshold."
+    },
+    {
+      "role": "MOSFET On Resistance",
+      "macro": "FSBB_MODEL_MOSFET_RON",
+      "binding": {
+        "float": "9.3e-3"
+      },
+      "description": "BSC093N15NS5 nominal on resistance used by the plant."
+    },
+    {
+      "role": "MOSFET Snubber Resistance",
+      "macro": "FSBB_MODEL_SNUBBER_R",
+      "binding": {
+        "float": "1e5"
+      },
+      "description": "Plant-model snubber resistance."
+    },
+    {
+      "role": "MOSFET Snubber Capacitance",
+      "macro": "FSBB_MODEL_SNUBBER_C",
+      "binding": {
+        "float": "1e12"
+      },
+      "description": "Large plant-model snubber capacitance approximating an open capacitive branch."
+    },
+    {
+      "role": "Diode Forward Voltage",
+      "macro": "FSBB_MODEL_DIODE_VF",
+      "binding": {
+        "float": "0.8"
+      },
+      "description": "MOSFET body-diode forward voltage."
+    },
+    {
+      "role": "Diode On Resistance",
+      "macro": "FSBB_MODEL_DIODE_RON",
+      "binding": {
+        "float": "1e-3"
+      },
+      "description": "MOSFET body-diode on resistance."
+    },
+    {
+      "role": "Switch Inductance",
+      "macro": "FSBB_MODEL_SWITCH_LON",
+      "binding": {
+        "float": "0"
+      },
+      "description": "Ideal-switch series inductance."
+    },
+    {
+      "role": "ADC Calibration Timeout",
+      "macro": "TIMEOUT_ADC_CALIB_MS",
+      "binding": {
+        "number": "3000"
+      },
+      "description": "ADC calibration timeout."
+    },
+    {
+      "role": "SPLL Epsilon",
+      "macro": "CTRL_SPLL_EPSILON",
+      "binding": {
+        "float": "0.005"
+      },
+      "description": "Compatibility setting used by the suite framework."
+    }
+  ],
+  "feature_macros": [
+    {
+      "group": "SIL",
+      "macro": "SPECIFY_ENABLE_ADC_CALIBRATE",
+      "enabled": false,
+      "value": "",
+      "description": "The simulated ADC already includes the configured sensor bias."
+    },
+    {
+      "group": "SIL",
+      "macro": "ENABLE_GMP_DL_PIL_SIM",
+      "enabled": false,
+      "value": "",
+      "description": "Use the native ASIO SIL path instead of datalink PIL."
+    },
+    {
+      "group": "SIL",
+      "macro": "CIA402_CONFIG_ENABLE_SEQUENCE_SWITCH",
+      "enabled": true,
+      "value": "",
+      "description": "Allow ENABLE_OPERATION to advance through the complete CiA402 startup sequence."
+    },
+    {
+      "group": "Sampling",
+      "macro": "FSBB_ENABLE_VIN_SAMPLE",
+      "enabled": true,
+      "value": "",
+      "description": "Use the simulated input-voltage ADC channel."
+    },
+    {
+      "group": "Sampling",
+      "macro": "FSBB_ENABLE_IOUT_SAMPLE",
+      "enabled": true,
+      "value": "",
+      "description": "Use the simulated Boost-side output-current ADC channel."
+    },
+    {
+      "group": "PWM",
+      "macro": "PWM_MODULATOR_USING_NEGATIVE_LOGIC",
+      "enabled": false,
+      "value": "1",
+      "description": "The Simulink phase model uses compare-proportional duty; Boost Q4 complementing is handled by xplt."
+    }
+  ],
+  "option_macros": [
+    {
+      "group": "Controller",
+      "macro": "BUILD_LEVEL",
+      "enabled": true,
+      "value": "(3)",
+      "options_preset": "",
+      "options": [
+        "(1)",
+        "(2)",
+        "(3)"
+      ],
+      "description": "1: open loop, 2: current loop, 3: voltage/current cascade."
+    }
+  ],
+  "code_sections": {
+    "after_extern_open": "/* MATLAB/Simulink SIL project settings. */",
+    "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 3)\n#error \"BUILD_LEVEL must be 1, 2, or 3.\"\n#endif"
+  },
+  "requirement_groups": [
+    {
+      "name": "Peripheral Parameters",
+      "requirements": [
+        "PWM Frequency",
+        "Controller Frequency",
+        "PWM Depth",
+        "PWM Deadband Width",
+        "ADC Resolution",
+        "ADC Reference Voltage"
+      ]
+    },
+    {
+      "name": "Per-Unit Base Parameters",
+      "requirements": [
+        "Voltage PU Base",
+        "Current PU Base"
+      ]
+    },
+    {
+      "name": "Main Element Parameters",
+      "requirements": [
+        "Minimum Load Resistance",
+        "Input Capacitance",
+        "Input Capacitor ESR",
+        "Output Capacitance",
+        "Output Capacitor ESR",
+        "Main Inductor",
+        "Main Inductor ESR"
+      ]
+    },
+    {
+      "name": "Input Voltage Sensor",
+      "requirements": [
+        "Input Voltage Sensitivity",
+        "Input Voltage Bias"
+      ]
+    },
+    {
+      "name": "Output Voltage Sensor",
+      "requirements": [
+        "Output Voltage Sensitivity",
+        "Output Voltage Bias"
+      ]
+    },
+    {
+      "name": "Input Current Sensor",
+      "requirements": [
+        "Input Current Sensitivity",
+        "Input Current Bias"
+      ]
+    },
+    {
+      "name": "Output Current Sensor",
+      "requirements": [
+        "Output Current Sensitivity",
+        "Output Current Bias"
+      ]
+    },
+    {
+      "name": "Inductor Current Sensor",
+      "requirements": [
+        "Inductor Current Sensitivity",
+        "Inductor Current Bias"
+      ]
+    },
+    {
+      "name": "MOSFET Parameters",
+      "requirements": [
+        "MOSFET On Resistance",
+        "MOSFET Snubber Resistance",
+        "MOSFET Snubber Capacitance",
+        "Diode Forward Voltage",
+        "Diode On Resistance",
+        "Switch Inductance"
+      ]
+    },
+    {
+      "name": "Protection Parameters",
+      "requirements": [
+        "Maximum Input Voltage",
+        "Minimum Input Voltage",
+        "Nominal Input Voltage",
+        "Maximum Output Voltage",
+        "Minimum Output Voltage",
+        "Maximum Output Current",
+        "Default Output Voltage",
+        "Default Current Limit",
+        "Maximum Duty",
+        "Minimum Duty",
+        "Maximum Inductor Current",
+        "Minimum Inductor Current"
+      ]
+    },
+    {
+      "name": "Control Loop Parameters",
+      "requirements": [
+        "Open-loop Voltage Command",
+        "Current-loop Bandwidth",
+        "Voltage-loop Bandwidth",
+        "Low Transition Ratio",
+        "High Transition Ratio",
+        "SPLL Epsilon"
+      ]
+    },
+    {
+      "name": "Runtime Parameters",
+      "requirements": [
+        "ADC Calibration Timeout"
+      ]
+    },
+    {
+      "name": "Default Parameters",
+      "requirements": [
+        "Voltage Ramp Rate",
+        "Current Ramp Rate"
+      ]
+    }
+  ]
+}

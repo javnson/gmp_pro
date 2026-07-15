@@ -27,7 +27,7 @@ adc_channel_t adc_i_ac;
 adc_channel_t adc_v_bus;
 
 // dlog DSA objects
-basic_trigger_t trigger;
+//basic_trigger_t trigger;
 
 // dlog variables
 ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];
@@ -92,7 +92,7 @@ void setup_peripheral(void)
     ctl_attach_sinv_rc(&rc_core, &adc_v_bus.control_port, &adc_v_grid.control_port, &adc_i_ac.control_port);
 
     // Initialize data logger module
-    dsa_init_basic_trigger(&trigger, DLOG_MEM_LENGTH);
+//    dsa_init_basic_trigger(&trigger, DLOG_MEM_LENGTH);
 }
 
 //=================================================================================================
@@ -162,7 +162,7 @@ interrupt void INT_IRIS_CAN_0_ISR(void)
     if (status == 1)
     {
         CAN_readMessage(IRIS_CAN_BASE, 1, rx_data);
-        CAN_clearInterruptStatus(CANA_BASE, 1);
+        CAN_clearInterruptStatus(IRIS_CAN_BASE, 1);
 
         // Control Flag, Enable/Disable System
         if (rx_data[0] == 1)
@@ -177,7 +177,7 @@ interrupt void INT_IRIS_CAN_0_ISR(void)
     else if (status == 2)
     {
         CAN_readMessage(IRIS_CAN_BASE, 2, (uint16_t*)recv_content);
-        CAN_clearInterruptStatus(CANA_BASE, 2);
+        CAN_clearInterruptStatus(IRIS_CAN_BASE, 2);
 
         // Set target User Power References
         // Used in BUILD_LEVEL >= 2 (Grid-tied PQ control)
@@ -209,17 +209,19 @@ void send_monitor_data(void)
 
     // 0x201: Monitor Grid Voltage Magnitude & PLL Frequency
     tran_content[0].i32 = (int32_t)(pll.v_mag * CAN_SCALE_FACTOR);
-    tran_content[1].i32 = (int32_t)(pll.frequency * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(pll.frequency * CTRL_GRID_FREQUENCY * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 4, 8, (uint16_t*)tran_content);
 
     // 0x202: Monitor Average Active(P) and Reactive(Q) Power
-//    tran_content[0].i32 = (int32_t)(pq_meter.p_avg * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(pq_meter.q_avg * CAN_SCALE_FACTOR);
+    tran_content[0].i32 = (int32_t)(pq_meter.active_power_p * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(pq_meter.reactive_power_q * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 5, 8, (uint16_t*)tran_content);
 
     // 0x203: Monitor RMS Grid Voltage & RMS Inverter Current
-//    tran_content[0].i32 = (int32_t)(pq_meter.v_rms * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(pq_meter.i_rms * CAN_SCALE_FACTOR);
+    ctrl_gt i_peak_pu = ctl_sqrt(ctl_mul(pq_meter.i_ab.dat[phase_alpha], pq_meter.i_ab.dat[phase_alpha]) +
+                                 ctl_mul(pq_meter.i_ab.dat[phase_beta], pq_meter.i_ab.dat[phase_beta]));
+    tran_content[0].i32 = (int32_t)(ctl_abs(pll.v_mag) * 0.70710678f * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(i_peak_pu * 0.70710678f * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 6, 8, (uint16_t*)tran_content);
 
     // 0x204: Monitor Target AC Current (I_ref) & Modulator Duty Cycle Ref

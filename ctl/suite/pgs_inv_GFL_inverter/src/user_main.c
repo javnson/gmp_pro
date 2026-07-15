@@ -31,6 +31,10 @@ const gmp_param_item_t dict_m1[] = {
     {&inv_ctrl.idq_set.dat[phase_q], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
     {&inv_ctrl.idq.dat[phase_d], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
     {&inv_ctrl.idq.dat[phase_q], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&pq_ctrl.pq_set.dat[0], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
+    {&pq_ctrl.pq_set.dat[1], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
+    {&pq_ctrl.pq_meas.dat[0], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&pq_ctrl.pq_meas.dat[1], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
 };
 const uint16_t var_tunable_count = sizeof(dict_m1) / sizeof(dict_m1[0]);
 gmp_param_tunable_t tunable;
@@ -51,10 +55,10 @@ gmp_task_status_t tsk_dl_debug_device(gmp_task_t* tsk)
 {
     GMP_UNUSED_VAR(tsk);
 
-    flush_dl_rx_buffer();
-
     // In PC simulation environment the DL protocol module is disabled.
 #ifndef SPECIFY_PC_ENVIRONMENT
+
+    flush_dl_rx_buffer();
 
     gmp_dl_event_t e = gmp_dev_dl_loop_cb(&dl);
 

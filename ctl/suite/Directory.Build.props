@@ -1,0 +1,22 @@
+<Project>
+  <!--
+    Every ctl/suite/*/project/simulate Visual Studio project with vcpkg.json is
+    a GMP-managed manifest project. The private environment uses the shared
+    repository-local vcpkg installation; classic installs continue to use the
+    normal user-wide vcpkg MSBuild integration.
+  -->
+  <PropertyGroup Condition="Exists('$(MSBuildProjectDirectory)\vcpkg.json')">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="Exists('$(MSBuildProjectDirectory)\vcpkg.json') and Exists('$(GMP_PRO_LOCATION)\bin\vcpkg\scripts\buildsystems\msbuild\vcpkg.props')">
+    <!-- Prevent user-wide/Scoop vcpkg integration from being imported later. -->
+    <VCPkgLocalAppDataDisabled>true</VCPkgLocalAppDataDisabled>
+    <VcpkgRoot>$(GMP_PRO_LOCATION)\bin\vcpkg\</VcpkgRoot>
+    <VcpkgTriplet Condition="'$(VcpkgTriplet)' == ''">x64-windows</VcpkgTriplet>
+    <VcpkgInstalledDir>$(GMP_PRO_LOCATION)\bin\vcpkg_installed\$(VcpkgTriplet)\</VcpkgInstalledDir>
+  </PropertyGroup>
+
+  <Import Project="$(GMP_PRO_LOCATION)\bin\vcpkg\scripts\buildsystems\msbuild\vcpkg.props"
+          Condition="Exists('$(MSBuildProjectDirectory)\vcpkg.json') and Exists('$(GMP_PRO_LOCATION)\bin\vcpkg\scripts\buildsystems\msbuild\vcpkg.props')" />
+</Project>

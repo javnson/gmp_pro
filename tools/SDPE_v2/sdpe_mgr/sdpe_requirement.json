@@ -1,0 +1,88 @@
+{
+  "id": "sdpe_demo_current_sensor_project",
+  "display_name": "SDPE Demo Current Sensor Project",
+  "description": "Built-in SDPE manager demo project. It binds a concrete current sensor entity to a small project requirement header.",
+  "suite": "sdpe_demo",
+  "version": "0.1.0",
+  "output_header": "sdpe_demo_bindings.h",
+  "hardware": [
+    {
+      "entity": "tmcs1133_b2a"
+    }
+  ],
+  "requirement_groups": [
+    {
+      "name": "Current Sensor",
+      "requirements": [
+        "current_sensor_sensitivity",
+        "current_sensor_bias",
+        "current_sensor_range"
+      ]
+    },
+    {
+      "name": "Manual Constants",
+      "requirements": [
+        "adc_reference_voltage"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "role": "current_sensor_sensitivity",
+      "macro": "CTRL_DEMO_CURRENT_SENSITIVITY",
+      "binding": {
+        "export": "${tmcs1133_b2a.sensitivity}"
+      },
+      "description": "Current sensor sensitivity used by the demo ADC scaling logic."
+    },
+    {
+      "role": "current_sensor_bias",
+      "macro": "CTRL_DEMO_CURRENT_BIAS",
+      "binding": {
+        "export": "${tmcs1133_b2a.bias}"
+      },
+      "description": "Current sensor bias voltage."
+    },
+    {
+      "role": "current_sensor_range",
+      "macro": "CTRL_DEMO_CURRENT_RANGE_A",
+      "binding": {
+        "export": "${tmcs1133_b2a.range_a}"
+      },
+      "description": "Current sensor measurable current range."
+    },
+    {
+      "role": "adc_reference_voltage",
+      "macro": "CTRL_DEMO_ADC_REF_V",
+      "binding": {
+        "float": "3.3"
+      },
+      "description": "Manual constant example. This value is not owned by a hardware entity."
+    }
+  ],
+  "feature_macros": [
+    {
+      "macro": "SDPE_DEMO_ENABLE_CURRENT_SENSOR",
+      "enabled": true,
+      "value": "",
+      "description": "Enable current sensor demo bindings."
+    }
+  ],
+  "option_macros": [
+    {
+      "macro": "SDPE_DEMO_BUILD_LEVEL",
+      "enabled": true,
+      "value": "(1)",
+      "options": [
+        "(1)",
+        "(2)",
+        "(3)"
+      ],
+      "description": "Demo build level selection."
+    }
+  ],
+  "code_sections": {
+    "after_extern_open": "/* Add demo project includes here if required. */",
+    "before_footer": "/* Add demo project tail macros here if required. */"
+  }
+}

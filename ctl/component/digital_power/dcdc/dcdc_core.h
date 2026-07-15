@@ -212,7 +212,11 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_open_loop(ctl_dcdc_core_t* core)
 {
     ctl_dcdc_internal_ingest_and_filter(core);
     core->is_current_dominant = 0;
-    core->v_out_formal = ctl_sat(core->v_target, core->out_max, core->out_min);
+    /* Open-loop commissioning must retain the configured soft-start. A raw
+       voltage step can excite the output LC and trip protection before the
+       current and voltage loops are introduced at later build levels. */
+    core->v_ramp_ref = ctl_step_slope_limiter(&core->ramp_v, core->v_target);
+    core->v_out_formal = ctl_sat(core->v_ramp_ref, core->out_max, core->out_min);
     return core->v_out_formal;
 }
 

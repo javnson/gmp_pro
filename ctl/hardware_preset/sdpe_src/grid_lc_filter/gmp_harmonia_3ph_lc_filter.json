@@ -1,0 +1,92 @@
+{
+  "id": "gmp_harmonia_3ph_lc_filter",
+  "schema": "Harmonia_3ph_LC_filter",
+  "display_name": "GMP Harmonia 3-Phase LC Filter",
+  "vendor": "GMP",
+  "datasheet_url": "",
+  "document_url": "ctl/component/hardware_preset/grid_LC_filter/GMP_Harmonia_3ph_LC_filter.h",
+  "macro_prefix": "HARMONIA_3PH_LC_FILTER",
+  "tags": [
+    "filter",
+    "lc_filter",
+    "grid",
+    "harmonia"
+  ],
+  "components": {
+    "phase_current_sensor": {
+      "entity": "tle4971a025"
+    }
+  },
+  "parameters": {
+    "Inductance": "(0.0015f)",
+    "Capacitance": "(0.000005f)",
+    "Board Name": "Harmonia 3Ph LC Filter",
+    "VBUS Max": "(1000.0f)",
+    "VBUS Min": "(0.0f)",
+    "Current Max RMS": "(40.0f)",
+    "Current Max Peak": {
+      "expr": "({CURRENT_MAX_RMS_A} * 1.41421356237f)"
+    },
+    "Temperature Max": "(85.0f)",
+    "Phase Current Sense Type": "(2)",
+    "Phase Current Sense Topology": "(3)",
+    "Phase Voltage Sense Type": "(1)",
+    "Phase Current Pole": {
+      "ref": "phase_current_sensor.bandwidth_hz"
+    },
+    "Voltage Divider Top Resistance": "(3920000.0f)",
+    "Voltage Divider Bottom Resistance": "(560000.0f)",
+    "Voltage Isolation Gain": "(0.4f)",
+    "Voltage OPAMP Feedback Resistance": "(1650.0f)",
+    "Voltage OPAMP Input Resistance": "(2000.0f)",
+    "Phase Voltage Sense Bias": "(1.65f)",
+    "Phase Voltage Sense Pole": "(100000.0f)",
+    "Voltage Sensor Model": "ResDiv + AMC1350 + TLV9061",
+    "Phase Voltage Sense Gain": {
+      "expr": "((({VS_R_BOT_OHM} / ({VS_R_TOP_TOTAL_OHM} + {VS_R_BOT_OHM})) * {VS_ISO_GAIN_V_V} * ({VS_OPAMP_R_FB_OHM} / {VS_OPAMP_R_IN_OHM})))"
+    },
+    "Current Sensor Model": "Infineon TLE4971A025",
+    "Phase Current Sensitivity": {
+      "ref": "phase_current_sensor.sensitivity_mv_per_a"
+    },
+    "Phase Current Bias": {
+      "ref": "phase_current_sensor.bias"
+    },
+    "board_name": "Harmonia 3Ph LC Filter",
+    "current_sensor_model": "Infineon TLE4971A025",
+    "voltage_sensor_model": "ResDiv + AMC1350 + TLV9061",
+    "vbus_min_v": "(0.0f)",
+    "vbus_max_v": "(1000.0f)",
+    "current_max_rms_a": "(40.0f)",
+    "current_max_peak_a": {
+      "expr": "({CURRENT_MAX_RMS_A} * 1.41421356237f)"
+    },
+    "temp_max_c": "(85.0f)",
+    "inductance_h": "(0.0015f)",
+    "capacitance_f": "(0.000005f)",
+    "ph_current_sense_type": "(2)",
+    "ph_current_sense_topology": "(3)",
+    "ph_voltage_sense_type": "(1)",
+    "ph_current_sensitivity_mv_a": {
+      "ref": "phase_current_sensor.sensitivity_mv_per_a"
+    },
+    "ph_current_zero_bias_v": {
+      "ref": "phase_current_sensor.bias"
+    },
+    "ph_current_sense_pole_hz": {
+      "ref": "phase_current_sensor.bandwidth_hz"
+    },
+    "vs_r_top_total_ohm": "(3920000.0f)",
+    "vs_r_bot_ohm": "(560000.0f)",
+    "vs_iso_gain_v_v": "(0.4f)",
+    "vs_opamp_r_fb_ohm": "(1650.0f)",
+    "vs_opamp_r_in_ohm": "(2000.0f)",
+    "ph_voltage_sense_gain": {
+      "expr": "((({VS_R_BOT_OHM} / ({VS_R_TOP_TOTAL_OHM} + {VS_R_BOT_OHM})) * {VS_ISO_GAIN_V_V} * ({VS_OPAMP_R_FB_OHM} / {VS_OPAMP_R_IN_OHM})))"
+    },
+    "ph_voltage_sense_bias_v": "(1.65f)",
+    "ph_voltage_sense_pole_hz": "(100000.0f)"
+  },
+  "description": "",
+  "output_subdir": ""
+}

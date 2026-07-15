@@ -92,9 +92,20 @@ void ctl_dcdc_blueprint_fsbb_cascade(ctl_dcdc_core_init_t* init_config, const ct
     init_config->i_ki = init_config->i_kp * (hw->R_esr_ohm / hw->L_henry);
     init_config->i_kd = 0.0f;
 
-    /* Enforce hardware protection bounds */
-    init_config->i_out_max = hw->i_out_max;
-    init_config->i_out_min = hw->i_out_min;
+    /* The inner current controller produces a voltage command. Keep its
+       saturation in voltage-command units, not current-reference units. */
+    if ((hw->v_cmd_max == 0) && (hw->v_cmd_min == 0))
+    {
+        /* Backward compatibility for configurations created before the
+           voltage-command limits were split from current-reference limits. */
+        init_config->i_out_max = hw->i_out_max;
+        init_config->i_out_min = hw->i_out_min;
+    }
+    else
+    {
+        init_config->i_out_max = hw->v_cmd_max;
+        init_config->i_out_min = hw->v_cmd_min;
+    }
 
     /* ===================================================================== */
     /* 6. Outer Voltage Loop Universal Tuning (Worst-Case RHPZ Bound)        */
@@ -120,7 +131,7 @@ void ctl_dcdc_blueprint_fsbb_cascade(ctl_dcdc_core_init_t* init_config, const ct
     }
     init_config->v_kd = 0.0f;
 
-    /* Sync voltage loop headroom to current constraints */
+    /* The outer voltage controller produces the inner-loop current reference. */
     init_config->v_out_max = hw->i_out_max;
     init_config->v_out_min = hw->i_out_min;
 }

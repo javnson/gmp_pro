@@ -1,0 +1,10 @@
+{
+  "id": "dc_bus_440uf",
+  "schema": "passive_capacitor",
+  "display_name": "440 uF DC Bus Capacitor",
+  "macro_prefix": "DCBUS_440UF",
+  "parameters": {
+    "capacitance_f": 440e-6,
+    "esr_ohm": 0.1
+  }
+}

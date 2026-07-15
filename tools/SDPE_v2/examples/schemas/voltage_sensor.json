@@ -1,0 +1,82 @@
+{
+  "id": "voltage_sensor",
+  "display_name": "Voltage Sensor",
+  "description": "Voltage sensor or resistor divider model.",
+  "category": "Voltage Sensor",
+  "tags": [
+    "sensor",
+    "voltage_sensor"
+  ],
+  "output_subdir": "voltage_sensor",
+  "parameters": [
+    {
+      "name": "chip",
+      "c_name": "CHIP",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "Main sensing IC or front-end topology."
+    },
+    {
+      "name": "rated_voltage_v",
+      "c_name": "RATED_VOLTAGE_V",
+      "unit": "V",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Nominal measurable voltage."
+    },
+    {
+      "name": "bias_v",
+      "c_name": "BIAS_V",
+      "unit": "V",
+      "required": false,
+      "value_format": "({}f)",
+      "description": "Output bias voltage.",
+      "default": 0.0
+    },
+    {
+      "name": "sensitivity_v_per_v",
+      "c_name": "SENSITIVITY_V_PER_V",
+      "unit": "V/V",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Voltage sensor sensitivity."
+    },
+    {
+      "name": "input_resistance_ohm",
+      "c_name": "INPUT_RESISTANCE_OHM",
+      "unit": "ohm",
+      "required": false,
+      "value_format": "({}f)",
+      "description": "Equivalent input resistance.",
+      "default": 0.0
+    }
+  ],
+  "derived_macros": [
+    {
+      "name": "MAX_BY_BIAS_V",
+      "unit": "V",
+      "description": "Approximate positive full scale voltage when biased at mid-supply.",
+      "expr": "(({PREFIX}_BIAS_V > 0.0f) ? ({PREFIX}_BIAS_V / {PREFIX}_SENSITIVITY_V_PER_V) : {PREFIX}_RATED_VOLTAGE_V)"
+    }
+  ],
+  "exports": {
+    "sensitivity": {
+      "macro": "{PREFIX}_SENSITIVITY_V_PER_V",
+      "unit": "V/V",
+      "description": "ADC scaling sensitivity."
+    },
+    "bias": {
+      "macro": "{PREFIX}_BIAS_V",
+      "unit": "V",
+      "description": "ADC bias."
+    },
+    "range": {
+      "macro": "{PREFIX}_RATED_VOLTAGE_V",
+      "unit": "V",
+      "description": "Voltage range."
+    }
+  },
+  "header_prefix": "",
+  "components": {}
+}

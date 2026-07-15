@@ -28,8 +28,6 @@ void ctl_init_discrete_pid(
     parameter_gt b1 = ki / 2.0f / fs - 2.0f * kd * fs;
     parameter_gt b0 = kd * fs + ki / 2.0f / fs;
 
-    pid->kp = float2ctrl(kp);
-
     pid->b2 = float2ctrl(b2);
     pid->b1 = float2ctrl(b1);
     pid->b0 = float2ctrl(b0);
@@ -58,21 +56,18 @@ void ctl_init_discrete_pid(
     pid->output = 0;
     pid->output_1 = 0;
 
-    // 1. 处理积分参数与防除零
+    // Disable the integral term safely when Ti is effectively zero.
     parameter_gt ki = 0.0;
-    if (Ti > 1e-6) // 如果 Ti 极小，视为关闭积分
+    if (Ti > 1e-6)
     {
         ki = kp / Ti;
     }
 
-    parameter_gt ki = kp / Ti;
     parameter_gt kd = kp * Td;
 
     parameter_gt b2 = kd * fs;
     parameter_gt b1 = ki / 2.0f / fs - kp - 2.0f * kd * fs;
     parameter_gt b0 = kp + kd * fs + ki / 2.0f / fs;
-
-    pid->kp = float2ctrl(kp);
 
     pid->b2 = float2ctrl(b2);
     pid->b1 = float2ctrl(b1);

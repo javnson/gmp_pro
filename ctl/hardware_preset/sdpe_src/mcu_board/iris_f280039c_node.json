@@ -1,0 +1,33 @@
+{
+  "id": "iris_f280039c_node",
+  "schema": "iris_c2000_core_board",
+  "display_name": "IRIS F280039C Core Board",
+  "macro_prefix": "IRIS_F280039C",
+  "option_sets": {
+    "epwm_base": [
+      "IRIS_F280039C_EPWM1_BASE",
+      "IRIS_F280039C_EPWM2_BASE",
+      "IRIS_F280039C_EPWM3_BASE"
+    ],
+    "adc_channel": [
+      "IRIS_F280039C_ADC_CH1",
+      "IRIS_F280039C_ADC_CH2",
+      "IRIS_F280039C_ADC_CH3",
+      "IRIS_F280039C_ADC_CH4"
+    ],
+    "led": [
+      "LED_R",
+      "LED_G"
+    ]
+  },
+  "parameters": {
+    "chip": "TMS320F280039C",
+    "syscfg_file": "ctl/suite/dps_fsbb/project/f280039c_Iris_node/F280039_Iris_node.syscfg",
+    "epwm1_base": "IRIS_EPWM1_BASE",
+    "epwm2_base": "IRIS_EPWM2_BASE",
+    "adc_ch1": "ADC_CH1",
+    "adc_ch2": "ADC_CH2",
+    "adc_ch3": "ADC_CH3",
+    "adc_ch4": "ADC_CH4"
+  }
+}

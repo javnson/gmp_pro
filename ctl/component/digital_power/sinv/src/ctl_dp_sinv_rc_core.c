@@ -16,6 +16,8 @@ void ctl_auto_tuning_sinv_rc(ctl_sinv_rc_init_t* init)
 
     if (init->fdrc_q_fc <= 0.001f)
         init->fdrc_q_fc = init->fs / 10.0f; // e.g., 2000Hz for 20kHz fs
+    if (init->fdrc_min_freq <= 0.001f)
+        init->fdrc_min_freq = init->freq_grid * 0.9f;
     if (init->fdrc_lead_steps <= 0.001f)
         init->fdrc_lead_steps = 3.0f; // Common plant delay compensation
     if (init->vgrid_lead_steps <= 0.001f)
@@ -46,8 +48,10 @@ void ctl_auto_tuning_sinv_rc(ctl_sinv_rc_init_t* init)
     }
 
     // 3. Robustness Thresholds
-    init->fdrc_gain = 0.5f;      // Universal stable learning rate
-    init->err_threshold = 0.05f; // 5% of I_base triggers FDRC freeze
+    if (init->fdrc_gain <= 0.001f)
+        init->fdrc_gain = 0.1f;
+    if (init->err_threshold <= 0.001f)
+        init->err_threshold = 0.05f;
 }
 
 /**
@@ -65,7 +69,7 @@ void ctl_init_sinv_rc_core(ctl_sinv_rc_core_t* core, const ctl_sinv_rc_init_t* i
                             float2ctrl(init->freq_grid), float2ctrl(init->qpr_wi), float2ctrl(init->fs));
 
     // 2. Init FDRC (Memory Buffer Injected here)
-    ctl_init_fdrc(&core->fdrc_ctrl, rc_buffer, rc_buf_capacity, init->fs, init->freq_grid, init->fdrc_q_fc,
+    ctl_init_fdrc(&core->fdrc_ctrl, rc_buffer, rc_buf_capacity, init->fs, init->fdrc_min_freq, init->fdrc_q_fc,
                   init->fdrc_gain, (int32_t)init->fdrc_lead_steps);
 
     // 3. Init Feedforward Lead Compensator
@@ -80,19 +84,13 @@ void ctl_init_sinv_rc_core(ctl_sinv_rc_core_t* core, const ctl_sinv_rc_init_t* i
     // 5. Apply Safe Limits & Thresholds
     core->v_out_max = float2ctrl(init->v_out_max_pu);
     core->fdrc_err_th = float2ctrl(init->err_threshold);
+    core->fundamental_freq = init->freq_grid;
 
     // 6. Ensure everything is explicitly disabled upon init
     core->flag_enable_ctrl = 0;
     core->flag_enable_fdrc = 0;
     core->flag_enable_lead_comp = 0;
 
-    // Clear history states
-    ctl_clear_qpr_controller(&core->qpr_ctrl);
-    ctl_clear_lead(&core->vgrid_lead);
-    ctl_clear_filter_iir1(&core->err_filter);
-
-    core->current_error = float2ctrl(0.0f);
-    core->error_lpf_abs = float2ctrl(0.0f);
-    core->v_out_ref = float2ctrl(0.0f);
-    core->isr_tick = 0;
+    // Clear all history states and outputs.
+    ctl_clear_sinv_rc_core(core);
 }

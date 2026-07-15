@@ -18,7 +18,7 @@ extern "C"
 #include <gmp_core.h>
 
 // controller settings
-#include "ctrl_settings.h"
+#include <sdpe_mcs_pmsm_nt_stm32g431_settings.h>
 
 // select ADC PTR interface
 #include <ctl/component/interface/adc_ptr_channel.h>
@@ -71,9 +71,13 @@ extern DAC_HandleTypeDef hdac1;
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
-extern TIM_HandleTypeDef htim14;
+extern TIM_HandleTypeDef htim8;
 
 extern UART_HandleTypeDef huart2;
+extern DMA_HandleTypeDef hdma_usart2_rx;
+
+void flush_dl_tx_buffer(void);
+void flush_dl_rx_buffer(void);
 
 
 #ifdef __cplusplus

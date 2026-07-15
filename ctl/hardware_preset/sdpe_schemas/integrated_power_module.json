@@ -1,0 +1,25 @@
+{
+  "id": "integrated_power_module",
+  "display_name": "Integrated Power Module",
+  "description": "Three-phase intelligent power module containing switches, drivers and protection.",
+  "category": "Power Device",
+  "tags": ["power_device", "ipm", "three_phase"],
+  "output_subdir": "integrated_power_module",
+  "parameters": [
+    {"name":"part_number","c_name":"PART_NUMBER","unit":"","required":true,"value_format":"\"{}\"","description":"Manufacturer part number."},
+    {"name":"switch_technology","c_name":"SWITCH_TECHNOLOGY","unit":"","required":true,"value_format":"\"{}\"","description":"IGBT, MOSFET, GaN, etc."},
+    {"name":"phase_count","c_name":"PHASE_COUNT","unit":"","required":false,"value_format":"({}U)","description":"Integrated inverter phase count.","default":3},
+    {"name":"voltage_rating_v","c_name":"VOLTAGE_RATING_V","unit":"V","required":true,"value_format":"({}f)","description":"Switch blocking voltage."},
+    {"name":"current_rating_a","c_name":"CURRENT_RATING_A","unit":"A","required":true,"value_format":"({}f)","description":"Continuous current per switch under datasheet conditions."},
+    {"name":"peak_current_a","c_name":"PEAK_CURRENT_A","unit":"A","required":false,"value_format":"({}f)","description":"Peak current per switch.","default":0.0},
+    {"name":"input_active_level","c_name":"INPUT_ACTIVE_LEVEL","unit":"","required":false,"value_format":"({}U)","description":"One for active-high logic, zero for active-low.","default":1},
+    {"name":"has_current_opamp","c_name":"HAS_CURRENT_OPAMP","unit":"","required":false,"value_format":"({}U)","description":"Integrated current-sense op amp availability.","default":0},
+    {"name":"has_temperature_output","c_name":"HAS_TEMPERATURE_OUTPUT","unit":"","required":false,"value_format":"({}U)","description":"Temperature signal availability.","default":0},
+    {"name":"package","c_name":"PACKAGE","unit":"","required":false,"value_format":"\"{}\"","description":"Manufacturer package.","default":"unknown"}
+  ],
+  "exports": {
+    "voltage_rating":{"macro":"{PREFIX}_VOLTAGE_RATING_V","unit":"V","description":"Blocking voltage."},
+    "current_rating":{"macro":"{PREFIX}_CURRENT_RATING_A","unit":"A","description":"Continuous switch current."}
+  },
+  "components": {}
+}

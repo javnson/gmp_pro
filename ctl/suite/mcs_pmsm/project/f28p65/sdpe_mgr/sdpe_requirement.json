@@ -1,0 +1,15 @@
+{
+  "id": "mcs_pmsm_f28p65",
+  "display_name": "mcs_pmsm_f28p65",
+  "suite": "mcs_pmsm",
+  "version": "0.1.0",
+  "output_header": "mcs_pmsm_f28p65_sdpe_bindings.h",
+  "hardware": [],
+  "requirements": [],
+  "feature_macros": [],
+  "option_macros": [],
+  "code_sections": {
+    "after_extern_open": "/* Add project-specific includes here. */",
+    "before_footer": "/* Add project-specific tail macros here. */"
+  }
+}

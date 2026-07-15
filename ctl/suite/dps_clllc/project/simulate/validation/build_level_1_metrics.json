@@ -1,0 +1,8 @@
+{
+  "stop_time_s": 0.02,
+  "final_primary_voltage_v": 47.982429504394531,
+  "final_primary_current_a": -3.3461909294128418,
+  "final_secondary_voltage_v": 7.7736897468566895,
+  "final_resonant_current_a": -3.3461909294128418,
+  "final_modulation_command": 0.10000000149011612
+}

@@ -11,7 +11,13 @@
 
 #include <gmp_core.h>
 
-#include <ctrl_settings.h>
+#include "ctl_settings_defaults.h"
+
+// Backward compatibility for project settings that still use the historical
+// misspelled PIL switch. New SDPE projects use ENABLE_GMP_DL_PIL_SIM.
+#if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM
+#define ENABLE_GMP_DL_PIL_SIM
+#endif
 
 #include "ctl_main.h"
 
@@ -61,8 +67,11 @@ ctl_mtr_protect_t protection;
 
 // ADC Calibrator
 adc_bias_calibrator_t adc_calibrator;
+#if defined SPECIFY_ENABLE_ADC_CALIBRATE
 volatile fast_gt flag_enable_adc_calibrator = 1;
-//volatile fast_gt flag_enable_adc_calibrator = 0;
+#else
+volatile fast_gt flag_enable_adc_calibrator = 0;
+#endif
 volatile fast_gt index_adc_calibrator = 0;
 
 // User commands
@@ -84,7 +93,8 @@ void ctl_init()
     mtr_ctrl_init.v_base = CTRL_VOLTAGE_BASE;
     mtr_ctrl_init.i_base = CTRL_CURRENT_BASE;
 
-    mtr_ctrl_init.v_bus = CTRL_VOLTAGE_BASE;
+    // Physical DC-link voltage used by the bus-voltage compensator.
+    mtr_ctrl_init.v_bus = CTRL_DCBUS_VOLTAGE;
     mtr_ctrl_init.v_phase_limit = MOTOR_PARAM_RATED_VOLTAGE;
 
     mtr_ctrl_init.freq_base = MOTOR_PARAM_RATED_FREQUENCY;
@@ -102,11 +112,13 @@ void ctl_init()
     // init SPWM modulator
     //
 #if defined USING_NPC_MODULATOR
-    ctl_init_npc_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &mtr_ctrl.iuvw, float2ctrl(0.02),
-                           float2ctrl(0.005));
+    ctl_init_npc_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &mtr_ctrl.iuvw,
+                           float2ctrl(MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A / CTRL_CURRENT_BASE),
+                           float2ctrl(MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A / CTRL_CURRENT_BASE));
 #else
-    ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &mtr_ctrl.iuvw, float2ctrl(0.02),
-                            float2ctrl(0.005));
+    ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &mtr_ctrl.iuvw,
+                            float2ctrl(MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A / CTRL_CURRENT_BASE),
+                            float2ctrl(MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A / CTRL_CURRENT_BASE));
 #endif // USING_NPC_MODULATOR
 
     //
@@ -116,7 +128,7 @@ void ctl_init()
         // ramp angle generator
         &rg,
         // target frequency (Hz), target frequency slope (Hz/s)
-        20.0f, 20.0f,
+        MCS_OPEN_LOOP_FREQ_HZ, MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S,
         // rated krpm, pole pairs
         MOTOR_PARAM_MAX_SPEED / 1000.0f, mtr_ctrl_init.pole_pairs,
         // ISR frequency
@@ -127,15 +139,15 @@ void ctl_init()
     //
     mech_init.fs = CONTROLLER_FREQUENCY;
 
-    mech_init.pos_kp = 5.0f;
-    mech_init.pos_ki = 1.0f;
+    mech_init.pos_kp = MCS_MECH_POSITION_KP_PU;
+    mech_init.pos_ki = MCS_MECH_POSITION_KI_PU_S;
 
-    mech_init.vel_kp = 5.0f;
-    mech_init.vel_ki = 1.0f;
+    mech_init.vel_kp = MCS_MECH_VELOCITY_KP_PU;
+    mech_init.vel_ki = MCS_MECH_VELOCITY_KI_PU_S;
 
-    mech_init.speed_limit = 1.0f;
-    mech_init.speed_slope_limit = 1.0f;
-    mech_init.cur_limit = 0.3f;
+    mech_init.speed_limit = MCS_MECH_SPEED_LIMIT_RPM / MOTOR_PARAM_MAX_SPEED;
+    mech_init.speed_slope_limit = MCS_MECH_SPEED_SLOPE_RPM_S / MOTOR_PARAM_MAX_SPEED;
+    mech_init.cur_limit = MCS_MECH_CURRENT_LIMIT_A / CTRL_CURRENT_BASE;
 
     mech_init.mech_division = CTRL_MECH_DIV;
 
@@ -148,14 +160,14 @@ void ctl_init()
     ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, float2ctrl(CTRL_POS_ENC_BIAS));
 
     ctl_init_spd_calculator(&spd_enc, &pos_enc.encif, CONTROLLER_FREQUENCY, CTRL_MECH_DIV, MOTOR_PARAM_MAX_SPEED,
-                            20.0f);
+                            MCS_ENCODER_SPEED_FILTER_FC_HZ);
 
 #ifdef ENABLE_SMO
 
     //
     // Observer Init
     //
-    ctl_autotune_esmo_init_from_mtr(&smo_init, &mtr_ctrl_init, 0.005f);
+    ctl_autotune_esmo_init_from_mtr(&smo_init, &mtr_ctrl_init, MOTOR_PARAM_FLUX);
     ctl_init_pmsm_esmo(&smo, &smo_init);
 
 #endif // ENABLE_SMO
@@ -181,18 +193,21 @@ void ctl_init()
 #elif BUILD_LEVEL == 2
     // Basic current close loop, IF
     ctl_enable_foc_core_current_ctrl(&mtr_ctrl);
-    ctl_set_foc_core_idq_ref(&mtr_ctrl, float2ctrl(0.1), float2ctrl(0.1));
+    ctl_set_foc_core_idq_ref(&mtr_ctrl, float2ctrl(MCS_COMMISSIONING_ID_REF_A / CTRL_CURRENT_BASE),
+                             float2ctrl(MCS_COMMISSIONING_IQ_REF_A / CTRL_CURRENT_BASE));
 
 #elif BUILD_LEVEL == 3
     // Basic current close loop, inverter
     ctl_enable_foc_core_current_ctrl(&mtr_ctrl);
-    ctl_set_foc_core_idq_ref(&mtr_ctrl, float2ctrl(0.1), float2ctrl(0.1));
+    ctl_set_foc_core_idq_ref(&mtr_ctrl, float2ctrl(MCS_COMMISSIONING_ID_REF_A / CTRL_CURRENT_BASE),
+                             float2ctrl(MCS_COMMISSIONING_IQ_REF_A / CTRL_CURRENT_BASE));
 
 #elif BUILD_LEVEL == 4
     // Basic Speed close loop
     ctl_enable_foc_core_current_ctrl(&mtr_ctrl);
     ctl_set_mech_ctrl_mode(&mech_ctrl, MECH_MODE_VELOCITY);
-    ctl_set_mech_target_velocity(&mech_ctrl, 0.1);
+    ctl_set_mech_target_velocity(&mech_ctrl,
+                                 float2ctrl(MCS_COMMISSIONING_SPEED_REF_RPM / MOTOR_PARAM_MAX_SPEED));
 
 #endif // BUILD_LEVEL
 
@@ -200,7 +215,7 @@ void ctl_init()
     // init and config CiA402 standard state machine
     //
     init_cia402_state_machine(&cia402_sm);
-    cia402_sm.minimum_transit_delay[3] = 100;
+    cia402_sm.minimum_transit_delay[3] = MCS_CIA402_OPERATION_ENABLE_DELAY_MS;
 
 #if defined SPECIFY_PC_ENVIRONMENT
     cia402_sm.flag_enable_control_word = 0;
@@ -218,7 +233,8 @@ void ctl_init()
     //
     // init ADC Calibrator
     //
-    ctl_init_adc_calibrator(&adc_calibrator, 20, 0.707f, CONTROLLER_FREQUENCY);
+    ctl_init_adc_calibrator(&adc_calibrator, MCS_ADC_CALIBRATOR_FC_HZ, MCS_ADC_CALIBRATOR_Q,
+                            CONTROLLER_FREQUENCY);
 
     if (flag_enable_adc_calibrator)
     {
@@ -238,21 +254,21 @@ void ctl_mainloop(void)
 
 void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
 {
-#if defined ENBALE_GMP_DL_PIL_SIM
+#if defined ENABLE_GMP_DL_PIL_SIM
     ctl_input_callback_pil(rx);
 
     ctl_dispatch();
 
     ctl_output_callback_pil(tx);
-#endif // defined ENBALE_GMP_DL_PIL_SIM
+#endif // defined ENABLE_GMP_DL_PIL_SIM
 }
 
-#if defined ENBALE_GMP_DL_PIL_SIM
+#if defined ENABLE_GMP_DL_PIL_SIM
 time_gt gmp_base_get_ctrl_tick(void)
 {
     return mtr_ctrl.isr_tick / ((uint32_t)CONTROLLER_FREQUENCY / 1000);
 }
-#endif // defined ENBALE_GMP_DL_PIL_SIM
+#endif // defined ENABLE_GMP_DL_PIL_SIM
 
 //=================================================================================================
 // Controller Tasks

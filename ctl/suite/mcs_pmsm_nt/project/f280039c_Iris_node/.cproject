@@ -50,6 +50,7 @@
 									<listOptionValue builtIn="false" value="${COM_TI_COM_GMP_CORE_C28X_SDK_INCLUDE_PATH}"/>
 									<listOptionValue builtIn="false" value="${SYSCONFIG_TOOL_INCLUDE_PATH}"/>
 									<listOptionValue builtIn="false" value="${PROJECT_ROOT}"/>
+									<listOptionValue builtIn="false" value="${PROJECT_ROOT}/sdpe_mgr"/>
 									<listOptionValue builtIn="false" value="${CG_TOOL_ROOT}/include"/>
 									<listOptionValue builtIn="false" value="${PROJECT_LOC}/../../src"/>
 									<listOptionValue builtIn="false" value="${PROJECT_LOC}/xplt"/>

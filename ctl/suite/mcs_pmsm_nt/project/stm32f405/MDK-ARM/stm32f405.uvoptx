@@ -103,7 +103,7 @@
         <bEvRecOn>1</bEvRecOn>
         <bSchkAxf>0</bSchkAxf>
         <bTchkAxf>0</bTchkAxf>
-        <nTsel>5</nTsel>
+        <nTsel>6</nTsel>
         <sDll></sDll>
         <sDllPa></sDllPa>
         <sDlgDll></sDlgDll>
@@ -1670,8 +1670,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\xplt\ctrl_settings.h</PathWithFileName>
-      <FilenameWithoutPath>ctrl_settings.h</FilenameWithoutPath>
+      <PathWithFileName>..\sdpe_mgr\sdpe_mcs_pmsm_nt_stm32f405_settings.h</PathWithFileName>
+      <FilenameWithoutPath>sdpe_mcs_pmsm_nt_stm32f405_settings.h</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>

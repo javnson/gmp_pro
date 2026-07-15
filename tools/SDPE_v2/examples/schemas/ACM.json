@@ -1,0 +1,188 @@
+{
+  "id": "ACM",
+  "display_name": "AC Induction Motor",
+  "description": "AC induction motor parameter template.",
+  "category": "Motor",
+  "tags": [
+    "motor",
+    "acm",
+    "induction_motor"
+  ],
+  "output_subdir": "acm_motor",
+  "parameters": [
+    {
+      "name": "Motor Name",
+      "c_name": "MOTOR_NAME",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "Human-readable motor model name."
+    },
+    {
+      "name": "Motor Type",
+      "c_name": "MOTOR_TYPE",
+      "unit": "",
+      "required": false,
+      "value_format": "raw",
+      "description": "GMP motor type macro.",
+      "default": {
+        "literal": "INDUCTION_MOTOR"
+      }
+    },
+    {
+      "name": "Encoder Type",
+      "c_name": "ENCODER_TYPE",
+      "unit": "",
+      "required": false,
+      "value_format": "raw",
+      "description": "Optional encoder type macro."
+    },
+    {
+      "name": "Stator Resistance",
+      "c_name": "RS",
+      "unit": "ohm",
+      "required": true,
+      "value_format": "raw",
+      "description": "Stator resistance per phase."
+    },
+    {
+      "name": "Stator Leakage Inductance",
+      "c_name": "L1S",
+      "unit": "H",
+      "required": true,
+      "value_format": "raw",
+      "description": "Stator leakage inductance."
+    },
+    {
+      "name": "Rotor Resistance",
+      "c_name": "RR",
+      "unit": "ohm",
+      "required": true,
+      "value_format": "raw",
+      "description": "Rotor resistance per phase referred to stator."
+    },
+    {
+      "name": "Rotor Leakage Inductance",
+      "c_name": "L1R",
+      "unit": "H",
+      "required": true,
+      "value_format": "raw",
+      "description": "Rotor leakage inductance referred to stator."
+    },
+    {
+      "name": "Magnetizing Inductance",
+      "c_name": "LM",
+      "unit": "H",
+      "required": true,
+      "value_format": "raw",
+      "description": "Main magnetizing inductance."
+    },
+    {
+      "name": "Pole Pairs",
+      "c_name": "POLE_PAIRS",
+      "unit": "",
+      "required": true,
+      "value_format": "raw",
+      "description": "Number of pole pairs."
+    },
+    {
+      "name": "Inertia",
+      "c_name": "INERTIA",
+      "unit": "kg*m^2",
+      "required": false,
+      "value_format": "raw",
+      "description": "Rotor inertia."
+    },
+    {
+      "name": "Friction",
+      "c_name": "FRICTION",
+      "unit": "N*m*s/rad",
+      "required": false,
+      "value_format": "raw",
+      "description": "Viscous friction coefficient."
+    },
+    {
+      "name": "Rated Voltage",
+      "c_name": "RATED_VOLTAGE",
+      "unit": "V",
+      "required": false,
+      "value_format": "raw",
+      "description": "Rated line-to-line voltage."
+    },
+    {
+      "name": "Rated Current",
+      "c_name": "RATED_CURRENT",
+      "unit": "A",
+      "required": false,
+      "value_format": "raw",
+      "description": "Rated phase current."
+    },
+    {
+      "name": "No-load Current",
+      "c_name": "NO_LOAD_CURRENT",
+      "unit": "A",
+      "required": false,
+      "value_format": "raw",
+      "description": "No-load phase current."
+    },
+    {
+      "name": "Rated Frequency",
+      "c_name": "RATED_FREQUENCY",
+      "unit": "Hz",
+      "required": false,
+      "value_format": "raw",
+      "description": "Rated operating frequency."
+    },
+    {
+      "name": "Max Speed",
+      "c_name": "MAX_SPEED",
+      "unit": "RPM",
+      "required": false,
+      "value_format": "raw",
+      "description": "Rated or maximum continuous speed."
+    },
+    {
+      "name": "Max Torque",
+      "c_name": "MAX_TORQUE",
+      "unit": "N*m",
+      "required": false,
+      "value_format": "raw",
+      "description": "Maximum intermittent torque."
+    },
+    {
+      "name": "Max DC Voltage",
+      "c_name": "MAX_DC_VOLTAGE",
+      "unit": "V",
+      "required": false,
+      "value_format": "raw",
+      "description": "Maximum allowable DC bus voltage."
+    },
+    {
+      "name": "Max Phase Current",
+      "c_name": "MAX_PH_CURRENT",
+      "unit": "A",
+      "required": false,
+      "value_format": "raw",
+      "description": "Maximum allowable phase current."
+    }
+  ],
+  "components": {},
+  "exports": {
+    "rs": {
+      "macro": "{PREFIX}_RS",
+      "unit": "ohm",
+      "description": "Stator resistance."
+    },
+    "lm": {
+      "macro": "{PREFIX}_LM",
+      "unit": "H",
+      "description": "Magnetizing inductance."
+    },
+    "pole_pairs": {
+      "macro": "{PREFIX}_POLE_PAIRS",
+      "unit": "",
+      "description": "Pole pairs."
+    }
+  },
+  "header_prefix": ""
+}

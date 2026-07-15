@@ -85,10 +85,10 @@ GMP_STATIC_INLINE void ctl_step_sms_pq(ctl_sms_pq_t* pq, ctrl_gt v_alpha, ctrl_g
     // 1. Generate orthogonal current signals using SOGI
     ctl_step_discrete_sogi(&pq->sogi_i, i_ac);
 
-    // 2. Align coordinate conventions with the PLL module
-    // The PLL convention is: alpha = -sogi_ds, beta = sogi_qs
-    pq->i_ab.dat[phase_alpha] = -ctl_get_discrete_sogi_ds(&pq->sogi_i);
-    pq->i_ab.dat[phase_beta] = ctl_get_discrete_sogi_qs(&pq->sogi_i);
+    // 2. Use the same stationary-vector convention as the PLL:
+    // [alpha,beta] = [cos(theta),sin(theta)] for a sine input.
+    pq->i_ab.dat[phase_alpha] = -ctl_get_discrete_sogi_qs(&pq->sogi_i);
+    pq->i_ab.dat[phase_beta] = ctl_get_discrete_sogi_ds(&pq->sogi_i);
 
     // 3. Instantaneous Power Theory for Single Phase (using peak values)
     // Note: The 0.5f multiplier is required because SOGI produces peak-amplitude signals.

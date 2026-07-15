@@ -1,0 +1,237 @@
+{
+  "id": "mcs_pmsm_nt_simulate",
+  "macro_prefix": "MCS_PMSM_NT_SIMULATE",
+  "display_name": "MCS PMSM NT Windows/Simulink SIL",
+  "suite": "mcs_pmsm_nt",
+  "version": "1.2.0",
+  "output_header": "sdpe_mcs_pmsm_nt_simulate_settings.h",
+  "hardware": [
+    {
+      "entity": "tyi_5008_kv335"
+    },
+    {
+      "entity": "ti_boostxl_3phganinv"
+    }
+  ],
+  "requirements": [
+    {
+      "role": "pwm_compare_max",
+      "macro": "CTRL_PWM_CMP_MAX",
+      "binding": {
+        "literal": "(2500 - 1)"
+      },
+      "description": "Maximum compare count of the platform PWM peripheral at the configured controller switching frequency."
+    },
+    {
+      "role": "pwm_deadband",
+      "macro": "CTRL_PWM_DEADBAND_CMP",
+      "binding": {
+        "number": "100"
+      },
+      "description": "Dead-time count interpreted in the selected PWM peripheral clock domain."
+    },
+    {
+      "role": "system_frequency",
+      "macro": "CTRL_SYS_FREQUENCY",
+      "binding": {
+        "literal": "(CONTROLLER_FREQUENCY)"
+      },
+      "description": "Platform CPU or system clock frequency in hertz."
+    },
+    {
+      "role": "adc_voltage_reference",
+      "macro": "CTRL_ADC_VOLTAGE_REF",
+      "binding": {
+        "float": "3.3"
+      },
+      "description": "ADC reference voltage used by all sensor conversions."
+    },
+    {
+      "role": "dc_bus_voltage_base",
+      "macro": "CTRL_DCBUS_VOLTAGE",
+      "binding": {
+        "float": "80.0"
+      },
+      "description": "Configured DC-bus voltage base."
+    },
+    {
+      "role": "phase_voltage_base",
+      "macro": "CTRL_VOLTAGE_BASE",
+      "binding": {
+        "literal": "(CTRL_DCBUS_VOLTAGE / 1.73205081f)"
+      },
+      "description": "Phase-voltage per-unit base derived from the DC-bus base."
+    },
+    {
+      "role": "current_base",
+      "macro": "CTRL_CURRENT_BASE",
+      "binding": {
+        "float": "10.0"
+      },
+      "description": "Phase-current per-unit base in amperes."
+    },
+    {
+      "role": "encoder_full_scale",
+      "macro": "CTRL_POS_ENC_FS",
+      "binding": {
+        "number": "16384"
+      },
+      "description": "Encoder counts per mechanical revolution."
+    },
+    {
+      "role": "encoder_bias",
+      "macro": "CTRL_POS_ENC_BIAS",
+      "binding": {
+        "float": "0.0999145508"
+      },
+      "description": "Mechanical encoder position bias in per unit."
+    },
+    {
+      "role": "mechanical_division",
+      "macro": "CTRL_MECH_DIV",
+      "binding": {
+        "number": "5"
+      },
+      "description": "Mechanical speed and position division factor."
+    },
+    {
+      "role": "phase_current_sensitivity",
+      "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM * TI_BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V)"
+      },
+      "description": "Phase-current sensor sensitivity in volts per ampere."
+    },
+    {
+      "role": "phase_current_bias",
+      "macro": "CTRL_INVERTER_CURRENT_BIAS",
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_PH_CSA_BIAS_V)"
+      },
+      "description": "Phase-current sensor zero-current bias in volts."
+    },
+    {
+      "role": "phase_voltage_sensitivity",
+      "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN)"
+      },
+      "description": "Phase-voltage sensing gain in ADC volts per measured volt."
+    },
+    {
+      "role": "phase_voltage_bias",
+      "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "Phase-voltage sensor bias in volts."
+    },
+    {
+      "role": "dc_current_sensitivity",
+      "macro": "CTRL_DC_CURRENT_SENSITIVITY",
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_GAIN)"
+      },
+      "description": "DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path."
+    },
+    {
+      "role": "dc_current_bias",
+      "macro": "CTRL_DC_CURRENT_BIAS",
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_BIAS_V)"
+      },
+      "description": "DC-bus current sensor bias."
+    },
+    {
+      "role": "dc_voltage_sensitivity",
+      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_GAIN)"
+      },
+      "description": "DC-bus voltage sensing gain in ADC volts per measured volt."
+    },
+    {
+      "role": "dc_voltage_bias",
+      "macro": "CTRL_DC_VOLTAGE_BIAS",
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "DC-bus voltage sensor bias in volts."
+    }
+  ],
+  "feature_macros": [],
+  "option_macros": [
+    {
+      "group": "ADC",
+      "macro": "MC_CURRENT_SAMPLE_PHASE_MODE",
+      "enabled": true,
+      "value": "(3)",
+      "options": [
+        "(2)",
+        "(3)"
+      ],
+      "description": "Directly sampled phase-current count."
+    }
+  ],
+  "code_sections": {
+    "after_extern_open": "#include <sdpe_mcs_pmsm_nt_common_settings.h>\n\n/* Preserve the validated SIL motor and inverter models while using SDPE as the settings source. */\n/* Motor and inverter headers are emitted from the SDPE hardware list. */\n#define MOTOR_TYPE TYI_5008_KV335_MOTOR_TYPE\n#define MOTOR_PARAM_RS TYI_5008_KV335_RS\n#define MOTOR_PARAM_LS TYI_5008_KV335_LD\n#define MOTOR_PARAM_LD TYI_5008_KV335_LD\n#define MOTOR_PARAM_LQ TYI_5008_KV335_LQ\n#define MOTOR_PARAM_FLUX TYI_5008_KV335_FLUX\n#define MOTOR_PARAM_POLE_PAIRS TYI_5008_KV335_POLE_PAIRS\n#define MOTOR_PARAM_KV TYI_5008_KV335_KV\n#define MOTOR_PARAM_EMF TYI_5008_KV335_EMF\n#define MOTOR_PARAM_RATED_VOLTAGE TYI_5008_KV335_RATED_VOLTAGE\n#define MOTOR_PARAM_NO_LOAD_CURRENT TYI_5008_KV335_NO_LOAD_CURRENT\n#define MOTOR_PARAM_RATED_FREQUENCY TYI_5008_KV335_RATED_FREQUENCY\n#define MOTOR_PARAM_MAX_SPEED TYI_5008_KV335_MAX_SPEED\n#define MOTOR_PARAM_MAX_TORQUE TYI_5008_KV335_MAX_TORQUE\n#define MOTOR_PARAM_MAX_DC_VOLTAGE TYI_5008_KV335_MAX_DC_VOLTAGE\n#define MOTOR_PARAM_MAX_PH_CURRENT TYI_5008_KV335_MAX_PH_CURRENT",
+    "before_footer": "/* No additional platform-specific tail definitions. */"
+  },
+  "description": "Windows/Simulink SIL implementation of the common mcs_pmsm_nt controller requirement contract.",
+  "updated_at": "2026-07-15",
+  "requirement_groups": [
+    {
+      "name": "Peripheral Parameters",
+      "requirements": [
+        "pwm_compare_max",
+        "pwm_deadband",
+        "system_frequency",
+        "adc_voltage_reference"
+      ]
+    },
+    {
+      "name": "Per-Unit Base Parameters",
+      "requirements": [
+        "dc_bus_voltage_base",
+        "phase_voltage_base",
+        "current_base"
+      ]
+    },
+    {
+      "name": "Position Sensor Parameters",
+      "requirements": [
+        "encoder_full_scale",
+        "encoder_bias",
+        "mechanical_division"
+      ]
+    },
+    {
+      "name": "DC Bus Voltage Sensor",
+      "requirements": [
+        "dc_voltage_sensitivity",
+        "dc_voltage_bias"
+      ]
+    },
+    {
+      "name": "Inverter Phase Voltage Sensor",
+      "requirements": [
+        "phase_voltage_sensitivity",
+        "phase_voltage_bias"
+      ]
+    },
+    {
+      "name": "DC Current Sensor",
+      "requirements": [
+        "dc_current_sensitivity",
+        "dc_current_bias"
+      ]
+    },
+    {
+      "name": "Inverter Phase Current Sensor",
+      "requirements": [
+        "phase_current_sensitivity",
+        "phase_current_bias"
+      ]
+    }
+  ]
+}

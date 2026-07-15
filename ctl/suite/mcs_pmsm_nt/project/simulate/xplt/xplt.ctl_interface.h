@@ -100,13 +100,13 @@ GMP_STATIC_INLINE void ctl_fast_enable_output()
 {
     csp_sl_enable_output();
 
-    flag_system_running = 1;
+    //flag_system_running = 1;
 }
 
 // Disable Output
 GMP_STATIC_INLINE void ctl_fast_disable_output()
 {
-    flag_system_running = 0;
+    //flag_system_running = 0;
     csp_sl_disable_output();
 }
 

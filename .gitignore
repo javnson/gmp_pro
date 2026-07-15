@@ -489,6 +489,16 @@ tools/facilities_generator/gmp_src/**
 tools/facilities_generator/**/include_paths.txt
 tools/facilities_generator/gmp_make_tool.cmake
 
+# Project-local SDPE BAT toolchains are distributed from tools/SDPE_v2/sdpe_mgr.
+**/sdpe_mgr/sdpe_edit.bat
+**/sdpe_mgr/sdpe_generate.bat
+**/sdpe_mgr/sdpe_settings.bat
+**/sdpe_mgr/sdpe_validate.bat
+!tools/SDPE_v2/sdpe_mgr/sdpe_edit.bat
+!tools/SDPE_v2/sdpe_mgr/sdpe_generate.bat
+!tools/SDPE_v2/sdpe_mgr/sdpe_settings.bat
+!tools/SDPE_v2/sdpe_mgr/sdpe_validate.bat
+
 # ignore meta folder
 **/.meta
 **/.metadata
@@ -540,9 +550,14 @@ tools/hvhb40040_Antaioz/**/impl_1
 
 **/vcpkg_installed/**
 
+# GMP private/portable development environment
+/bin/
+
 # cache of rt_trace module
 *.crt_bin
 
 tools/gmp_sil/udp_helper_v2/mdl_asio_helper_linux/build/**
 
 
+# debug temp
+tmp/**

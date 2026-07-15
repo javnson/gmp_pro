@@ -1,0 +1,405 @@
+{
+  "id": "pgs_sinv_rc_simulate",
+  "macro_prefix": "PGS_SINV_RC_SIM",
+  "display_name": "PGS SINV RC MATLAB/Simulink SIL",
+  "description": "Windows SIL platform, plant and sensing settings for all SINV commissioning models.",
+  "suite": "pgs_sinv_rc",
+  "version": "1.0.0",
+  "updated_at": "2026-07-15",
+  "output_header": "sdpe_pgs_sinv_rc_simulate_settings.h",
+  "hardware": [],
+  "code_sections": {
+    "after_extern_open": "#include <sdpe_pgs_sinv_rc_common_settings.h>\n#define SPECIFY_PC_ENVIRONMENT",
+    "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 5)\n#error BUILD_LEVEL_must_be_between_1_and_5\n#endif"
+  },
+  "feature_macros": [
+    {
+      "group": "SIL Runtime",
+      "macro": "SINV_SIM_AUTO_ENABLE",
+      "enabled": true,
+      "value": "",
+      "description": "Automatically request CiA402 ENABLE_OPERATION in the simulation executable."
+    },
+    {
+      "group": "SIL Runtime",
+      "macro": "SPECIFY_ENABLE_ADC_CALIBRATE",
+      "enabled": false,
+      "value": "",
+      "description": "Simulated sensor ADC offsets are deterministic and do not require startup calibration."
+    },
+    {
+      "group": "SIL Runtime",
+      "macro": "ENABLE_GMP_DL_PIL_SIM",
+      "enabled": false,
+      "value": "",
+      "description": "Use the native ASIO UDP SIL path instead of datalink PIL."
+    }
+  ],
+  "option_macros": [
+    {
+      "group": "Commissioning",
+      "macro": "BUILD_LEVEL",
+      "enabled": true,
+      "value": "(5)",
+      "options": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)",
+        "(5)"
+      ],
+      "description": "1 open-loop R load; 2 current-loop R load; 3 grid current loop; 4 grid power loop; 5 DC-bus rectifier loop."
+    }
+  ],
+  "requirements": [
+    {
+      "role": "controller_frequency",
+      "macro": "CONTROLLER_FREQUENCY",
+      "binding": {
+        "float": "20e3"
+      },
+      "description": "SIL controller and PWM update frequency."
+    },
+    {
+      "role": "pwm_frequency",
+      "macro": "SINV_PWM_FREQUENCY_HZ",
+      "binding": {
+        "float": "20e3"
+      },
+      "description": "Plant switching frequency."
+    },
+    {
+      "role": "pwm_compare",
+      "macro": "CTRL_PWM_CMP_MAX",
+      "binding": {
+        "number": "2999"
+      },
+      "description": "Virtual PWM compare maximum."
+    },
+    {
+      "role": "pwm_deadband",
+      "macro": "CTRL_PWM_DEADBAND_CMP",
+      "binding": {
+        "number": "50"
+      },
+      "description": "Virtual PWM deadband counts."
+    },
+    {
+      "role": "adc_bits",
+      "macro": "CTRL_ADC_RESOLUTION",
+      "binding": {
+        "number": "12"
+      },
+      "description": "ADC resolution used by all sensor blocks."
+    },
+    {
+      "role": "adc_reference",
+      "macro": "CTRL_ADC_VOLTAGE_REF",
+      "binding": {
+        "float": "3.3"
+      },
+      "description": "ADC reference voltage."
+    },
+    {
+      "role": "dc_bus",
+      "macro": "CTRL_DCBUS_VOLTAGE",
+      "binding": {
+        "float": "60.0"
+      },
+      "description": "Rated and nominal DC-bus voltage."
+    },
+    {
+      "role": "grid_rms",
+      "macro": "CTRL_GRID_VOLTAGE_RMS",
+      "binding": {
+        "float": "24.0"
+      },
+      "description": "Nominal grid/load RMS voltage."
+    },
+    {
+      "role": "current_rms",
+      "macro": "CTRL_RATED_CURRENT_RMS",
+      "binding": {
+        "float": "10.0"
+      },
+      "description": "Rated RMS AC current."
+    },
+    {
+      "role": "voltage_base",
+      "macro": "CTRL_VOLTAGE_BASE",
+      "binding": {
+        "float": "34.0"
+      },
+      "description": "Peak voltage PU base."
+    },
+    {
+      "role": "current_base",
+      "macro": "CTRL_CURRENT_BASE",
+      "binding": {
+        "float": "14.14"
+      },
+      "description": "Peak current PU base."
+    },
+    {
+      "role": "filter_l",
+      "macro": "CTRL_AC_INDUCTANCE",
+      "binding": {
+        "float": "480e-6"
+      },
+      "description": "AC filter series inductance."
+    },
+    {
+      "role": "filter_l_esr",
+      "macro": "CTRL_AC_RESISTANCE",
+      "binding": {
+        "float": "0.10"
+      },
+      "description": "AC filter series resistance."
+    },
+    {
+      "role": "filter_c",
+      "macro": "SINV_FILTER_CAPACITANCE_F",
+      "binding": {
+        "float": "22e-6"
+      },
+      "description": "AC filter shunt capacitance."
+    },
+    {
+      "role": "filter_c_esr",
+      "macro": "SINV_FILTER_CAP_ESR_OHM",
+      "binding": {
+        "float": "0.10"
+      },
+      "description": "Filter capacitor ESR."
+    },
+    {
+      "role": "dc_cap",
+      "macro": "SINV_DC_CAPACITANCE_F",
+      "binding": {
+        "float": "2200e-6"
+      },
+      "description": "DC-link capacitance."
+    },
+    {
+      "role": "load_r",
+      "macro": "SINV_RLOAD_OHM",
+      "binding": {
+        "float": "12.0"
+      },
+      "description": "Resistive load for levels 1 and 2."
+    },
+    {
+      "role": "rectifier_load_r",
+      "macro": "SINV_RECTIFIER_RLOAD_OHM",
+      "binding": {
+        "float": "30.0"
+      },
+      "description": "DC-side load for level 5. At 60 V this draws 120 W, within the configured converter current rating."
+    },
+    {
+      "role": "ac_voltage_gain",
+      "macro": "CTRL_AC_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "float": "0.020"
+      },
+      "description": "AC voltage sensor sensitivity in V/V."
+    },
+    {
+      "role": "ac_voltage_bias",
+      "macro": "CTRL_AC_VOLTAGE_BIAS",
+      "binding": {
+        "float": "1.65"
+      },
+      "description": "AC voltage ADC bias."
+    },
+    {
+      "role": "ac_current_gain",
+      "macro": "CTRL_AC_CURRENT_SENSITIVITY",
+      "binding": {
+        "float": "0.150"
+      },
+      "description": "AC current sensor sensitivity in V/A."
+    },
+    {
+      "role": "ac_current_bias",
+      "macro": "CTRL_AC_CURRENT_BIAS",
+      "binding": {
+        "float": "1.65"
+      },
+      "description": "AC current ADC bias."
+    },
+    {
+      "role": "dc_voltage_gain",
+      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "float": "0.040"
+      },
+      "description": "DC bus voltage sensor sensitivity in V/V."
+    },
+    {
+      "role": "dc_voltage_bias",
+      "macro": "CTRL_DC_VOLTAGE_BIAS",
+      "binding": {
+        "float": "0.0"
+      },
+      "description": "DC bus voltage ADC bias."
+    },
+    {
+      "role": "prot_vbus",
+      "macro": "CTRL_PROT_VBUS_MAX",
+      "binding": {
+        "float": "90.0"
+      },
+      "description": "DC bus overvoltage threshold."
+    },
+    {
+      "role": "prot_current",
+      "macro": "CTRL_PROT_IAC_PEAK_MAX",
+      "binding": {
+        "float": "18.0"
+      },
+      "description": "Fast AC peak-current threshold."
+    },
+    {
+      "role": "prot_control",
+      "macro": "CTRL_PROT_VCTRL_MAX_PU",
+      "binding": {
+        "float": "1.5"
+      },
+      "description": "Controller divergence threshold; BUILD_LEVEL 5 masks it only during passive-rectifier takeover."
+    },
+    {
+      "role": "bus_ready_min",
+      "macro": "CTRL_DCBUS_READY_MIN",
+      "binding": {
+        "float": "25.0"
+      },
+      "description": "Minimum precharged DC bus accepted by startup."
+    },
+    {
+      "role": "bus_ready_max",
+      "macro": "CTRL_DCBUS_READY_MAX",
+      "binding": {
+        "float": "90.0"
+      },
+      "description": "Maximum DC bus accepted by startup."
+    },
+    {
+      "role": "cal_timeout",
+      "macro": "TIMEOUT_ADC_CALIB_MS",
+      "binding": {
+        "number": "3000"
+      },
+      "description": "ADC calibration timeout."
+    },
+    {
+      "role": "mosfet_ron",
+      "macro": "SINV_MODEL_MOSFET_RON",
+      "binding": {
+        "float": "4.6e-3"
+      },
+      "description": "Plant MOSFET on resistance."
+    },
+    {
+      "role": "diode_ron",
+      "macro": "SINV_MODEL_DIODE_RON",
+      "binding": {
+        "float": "0.01"
+      },
+      "description": "Body-diode on resistance."
+    },
+    {
+      "role": "diode_vf",
+      "macro": "SINV_MODEL_DIODE_VF",
+      "binding": {
+        "float": "0.5"
+      },
+      "description": "Body-diode forward voltage."
+    }
+  ],
+  "requirement_groups": [
+    {
+      "name": "Peripheral Parameters",
+      "requirements": [
+        "controller_frequency",
+        "pwm_frequency",
+        "pwm_compare",
+        "pwm_deadband",
+        "adc_bits",
+        "adc_reference"
+      ]
+    },
+    {
+      "name": "Per-Unit Base Parameters",
+      "requirements": [
+        "dc_bus",
+        "grid_rms",
+        "current_rms",
+        "voltage_base",
+        "current_base"
+      ]
+    },
+    {
+      "name": "Main Element Parameters",
+      "requirements": [
+        "filter_l",
+        "filter_l_esr",
+        "filter_c",
+        "filter_c_esr",
+        "load_r",
+        "rectifier_load_r"
+      ]
+    },
+    {
+      "name": "DC Link Parameters",
+      "requirements": [
+        "dc_cap"
+      ]
+    },
+    {
+      "name": "DC Bus Voltage Sensor",
+      "requirements": [
+        "dc_voltage_gain",
+        "dc_voltage_bias"
+      ]
+    },
+    {
+      "name": "AC Voltage Sensor",
+      "requirements": [
+        "ac_voltage_gain",
+        "ac_voltage_bias"
+      ]
+    },
+    {
+      "name": "AC Current Sensor",
+      "requirements": [
+        "ac_current_gain",
+        "ac_current_bias"
+      ]
+    },
+    {
+      "name": "MOSFET Parameters",
+      "requirements": [
+        "mosfet_ron",
+        "diode_ron",
+        "diode_vf"
+      ]
+    },
+    {
+      "name": "Protection Parameters",
+      "requirements": [
+        "prot_vbus",
+        "prot_current",
+        "prot_control",
+        "bus_ready_min",
+        "bus_ready_max"
+      ]
+    },
+    {
+      "name": "Runtime Parameters",
+      "requirements": [
+        "cal_timeout"
+      ]
+    }
+  ]
+}

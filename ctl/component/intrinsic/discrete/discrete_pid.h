@@ -162,6 +162,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_discrete_pid(discrete_pid_t* ctrl, ctrl_gt in
     ctrl->output += ctrl->output_1;
 #endif // _USE_DEBUG_DISCRETE_PID
 
+
     // Handle output saturation
     ctrl->output = ctl_sat(ctrl->output, ctrl->output_max, ctrl->output_min);
 

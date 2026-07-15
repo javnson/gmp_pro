@@ -1,0 +1,17 @@
+{
+  "id": "lvfb_voltage_divider_150v",
+  "schema": "voltage_sensor",
+  "display_name": "LVFB 150V Voltage Divider",
+  "vendor": "GMP",
+  "datasheet_url": "",
+  "document_url": "",
+  "macro_prefix": "LVFB_VDIV_150V",
+  "tags": ["voltage_sensor", "divider", "lvfb"],
+  "parameters": {
+    "chip": "AMC1311BDWVR + resistor divider",
+    "rated_voltage_v": 150.0,
+    "bias_v": 0.0,
+    "sensitivity_v_per_v": 0.016129,
+    "input_resistance_ohm": 915000.0
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "id": "tle4971a025",
+  "schema": "current_sensor",
+  "display_name": "TLE4971A025 Coreless Hall Current Sensor",
+  "vendor": "Infineon",
+  "datasheet_url": "https://www.infineon.com/cms/en/product/sensor/current-sensors/tle4971/",
+  "document_url": "ctl/component/hardware_preset/current_sensor/TLE4971A.h",
+  "macro_prefix": "TLE4971A025",
+  "tags": [
+    "current_sensor",
+    "hall",
+    "coreless",
+    "tle4971"
+  ],
+  "parameters": {
+    "chip": "TLE4971A025",
+    "sensor_type": "Coreless Hall",
+    "range_a": 25.0,
+    "output_min_v": 0.0,
+    "output_max_v": 3.3,
+    "bias_v": 1.65,
+    "sensitivity_mv_per_a": 48.0,
+    "bandwidth_hz": 210000.0,
+    "internal_resistance_ohm": 0.0
+  }
+}

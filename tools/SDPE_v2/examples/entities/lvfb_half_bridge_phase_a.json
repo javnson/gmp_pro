@@ -1,0 +1,24 @@
+{
+  "id": "lvfb_half_bridge_phase_a",
+  "schema": "half_bridge",
+  "display_name": "GMP LVFB Half Bridge Phase A",
+  "macro_prefix": "GMP_LVFB_HB_A",
+  "tags": ["half_bridge", "lvfb", "hall"],
+  "parameters": {
+    "board_name": "GMP LVFB 150V 2ph V2 Phase A",
+    "phase_count": 1,
+    "deadtime_ns": 523.0,
+    "bus_capacitance_f": 0.0
+  },
+  "components": {
+    "power_device": {
+      "entity": "bsc093n15ns5"
+    },
+    "current_sensor": {
+      "entity": "tmcs1133_b5a"
+    },
+    "voltage_sensor": {
+      "entity": "lvfb_voltage_divider_150v"
+    }
+  }
+}

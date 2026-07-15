@@ -57,4 +57,4 @@
 #define gmp_pc_simulink_tx_buffer_t dp_sil_tx_buf_t
 
 // Invoke Controller Settings
-#include <ctrl_settings.h>
+#include <sdpe_mcs_pmsm_nt_simulate_settings.h>

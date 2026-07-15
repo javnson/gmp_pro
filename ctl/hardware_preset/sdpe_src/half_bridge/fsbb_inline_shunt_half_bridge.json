@@ -1,0 +1,47 @@
+{
+  "id": "fsbb_inline_shunt_half_bridge",
+  "schema": "half_bridge",
+  "display_name": "FSBB Half Bridge With Inline Shunt",
+  "macro_prefix": "FSBB_HB_INLINE",
+  "tags": [
+    "half_bridge",
+    "fsbb",
+    "shunt"
+  ],
+  "parameters": {
+    "board_name": "FSBB inline shunt example",
+    "phase_count": 1,
+    "deadtime_ns": 500.0,
+    "bus_capacitance_f": 0.00044
+  },
+  "components": {
+    "power_device": {
+      "entity": "bsc093n15ns5"
+    },
+    "current_sensor": {
+      "inline": {
+        "id": "fsbb_5m_shunt",
+        "schema": "current_sensor",
+        "display_name": "Inline 5 milliohm shunt current sensor",
+        "macro_prefix": "FSBB_5M_SHUNT",
+        "parameters": {
+          "chip": "5mR shunt + op amp",
+          "range_a": 30.0,
+          "output_min_v": 0.0,
+          "output_max_v": 3.3,
+          "bias_v": 1.65,
+          "sensitivity_mv_per_a": 50.0,
+          "internal_resistance_ohm": 0.005
+        }
+      }
+    },
+    "voltage_sensor": {
+      "entity": "quad_sensor_voltage_channel"
+    }
+  },
+  "description": "",
+  "vendor": "",
+  "datasheet_url": "",
+  "document_url": "",
+  "output_subdir": ""
+}

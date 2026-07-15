@@ -5,6 +5,8 @@ import shutil
 import glob
 from pathlib import Path
 
+from framework_project_discovery import exclude_git_ignored
+
 def get_macros(dic_path, gmp_location):
     macros = {"GMP_PRO_LOCATION": Path(gmp_location).as_posix()}
     if dic_path.exists():
@@ -75,6 +77,17 @@ def run_batch_clean():
             current_dir = Path(dirpath)
             if current_dir.name == "gmp_src_mgr":
                 projects_found.add(current_dir)
+
+    try:
+        visible_projects, ignored_projects = exclude_git_ignored(
+            projects_found, Path(gmp_location)
+        )
+    except RuntimeError as error:
+        print(f"[ERROR] Project discovery failed: {error}")
+        return False
+    for path in ignored_projects:
+        print(f"[IGNORE] Git-ignored source-manager copy: {path}")
+    projects_found = set(visible_projects)
 
     if not projects_found:
         print("[WARNING] No matching projects found.")

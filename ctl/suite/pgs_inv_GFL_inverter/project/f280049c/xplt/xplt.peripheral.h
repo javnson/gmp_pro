@@ -18,7 +18,7 @@ extern "C"
 #include <gmp_core.h>
 
 // controller settings
-#include "ctrl_settings.h"
+#include "../sdpe_mgr/sdpe_pgs_inv_gfl_f280049c_settings.h"
 
 // select ADC PTR interface
 #include <ctl/component/interface/adc_ptr_channel.h>

@@ -1,0 +1,31 @@
+{
+  "id": "lvfb_half_bridge_phase_b_tuned",
+  "schema": "half_bridge",
+  "display_name": "GMP LVFB Half Bridge Phase B Tuned",
+  "macro_prefix": "GMP_LVFB_HB_B_TUNED",
+  "tags": ["half_bridge", "lvfb", "hall", "override"],
+  "parameters": {
+    "board_name": "GMP LVFB 150V 2ph V2 Phase B tuned",
+    "phase_count": 1,
+    "deadtime_ns": 523.0,
+    "bus_capacitance_f": 0.0
+  },
+  "components": {
+    "power_device": {
+      "entity": "bsc093n15ns5"
+    },
+    "current_sensor": {
+      "entity": "tmcs1133_b2a",
+      "overrides": {
+        "range_a": 25.0,
+        "bias_v": 1.64
+      }
+    },
+    "voltage_sensor": {
+      "entity": "lvfb_voltage_divider_150v",
+      "overrides": {
+        "bias_v": 0.01
+      }
+    }
+  }
+}

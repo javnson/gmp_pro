@@ -1,19 +1,20 @@
-| MAILBOX | ID    | RX / TX | Abstract       | Note                                                         | Appendix                  |
-| ------- | ----- | ------- | -------------- | ------------------------------------------------------------ | ------------------------- |
-| 1       | 0x101 | RX      | Control Flag   | Enable System                                                | 0: disable<br />1: enable |
-| 2       | 0x102 | RX      | Control Target | 0-3: Target voltage / current d axis<br />4-7: Target voltage / current q axis |                           |
-| 3       | 0x103 | RX      | Debug          | reserved for debug                                           |                           |
-| 4       | 0x201 | TX      | Monitor        | 0-3: Monitor Voltage from Grid d axis<br />4-7: Monitor Voltage from Grid q axis |                           |
-| 5       | 0x202 | TX      | Monitor        | 0-3: Monitor Voltage from inverter d axis<br />4-7: Monitor Voltage from inverter q axis |                           |
-| 6       | 0x203 | TX      | Monitor        | 0-3: Monitor Current from Grid d axis<br />4-7: Monitor Current from Grid q axis |                           |
-| 7       | 0x204 | TX      | Monitor        | 0-3: Monitor Current from inverter d axis<br />4-7: Monitor Current from inverter q axis |                           |
-| 8       | 0x205 | TX      | Monitor        | 0-3: Monitor DC bus Voltage<br />4-7: Monitor DC bus Current |                           |
-| 9       | 0x206 | TX      | Monitor        | 0-3: Monitor Voltage from Grid A axis<br />4-7: Monitor Voltage from PLL angle output |                           |
-| 10      | 0x206 | TX      | Debug          | reserved for debug                                           |                           |
+# CAN communication definition
 
+All signed 32-bit values use a scale factor of 10000 and are transmitted as
+two 16-bit C2000 words. Power, voltage, current, phase and modulation values
+are per-unit unless an explicit physical unit is shown.
 
-NOTE for SCI interface
+| Mailbox | CAN ID | Direction | Payload word 0 (bytes 0-3) | Payload word 1 (bytes 4-7) |
+| --- | --- | --- | --- | --- |
+| 1 | 0x101 | RX | Enable command: 0 = disable voltage, 1 = enable operation | Reserved |
+| 2 | 0x102 | RX | Active-power reference P (PU) | Reactive-power reference Q (PU) |
+| 3 | 0x103 | RX | Reserved | Reserved |
+| 4 | 0x201 | TX | Grid voltage peak magnitude (PU) | PLL frequency (Hz) |
+| 5 | 0x202 | TX | Measured active power P (PU) | Measured reactive power Q (PU) |
+| 6 | 0x203 | TX | Grid voltage RMS (PU) | AC current RMS (PU) |
+| 7 | 0x204 | TX | Instantaneous current reference (PU) | Saturated modulation reference (PU) |
+| 8 | 0x205 | TX | DC bus voltage (PU) | Reserved |
+| 9 | 0x206 | TX | PLL phase angle (PU/revolution) | Grid-voltage feedforward (PU) |
+| 10 | 0x207 | TX | CiA402 status word | Active protection error bitmap |
 
-921600 bps for gmp_base_print() function and AT command input.
-
-
+The SCI debug/datalink interface uses 921600 baud.

@@ -1,0 +1,31 @@
+{
+  "id": "tyi_5008_kv335",
+  "schema": "PMSM",
+  "display_name": "TYI-5008 KV335 Brushless Motor",
+  "vendor": "TYI",
+  "datasheet_url": "",
+  "document_url": "ctl/component/hardware_preset/pmsm_motor/TYI_5008_KV335.h",
+  "macro_prefix": "TYI_5008_KV335",
+  "tags": [
+    "motor",
+    "pmsm",
+    "bldc"
+  ],
+  "parameters": {
+    "motor_name": "TYI-5008 KV335",
+    "rs": "((130.0e-3f))",
+    "ld": "((50.0e-6f))",
+    "lq": "((50.0e-6f))",
+    "flux": "((0.0023f))",
+    "pole_pairs": "((7))",
+    "kv": "((335.0f))",
+    "emf": "((4.85f))",
+    "rated_voltage": "((24.0f/1.732f))",
+    "no_load_current": "((0.5f))",
+    "rated_frequency": "((700.0f))",
+    "max_speed": "((6000))",
+    "max_torque": "((0.4))",
+    "max_dc_voltage": "((25.2))",
+    "max_ph_current": "((27.0))"
+  }
+}

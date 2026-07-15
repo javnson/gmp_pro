@@ -153,6 +153,7 @@ void ctl_init_adv_pwm_channel(adv_pwm_channel_t* pwm_obj, pwm_gt nominal_period_
     pwm_obj->raw.period = float2ctrl(0.0f);
     pwm_obj->raw.phase = float2ctrl(0.0f);
     pwm_obj->raw.duty = float2ctrl(0.0f);
+    pwm_obj->raw.deadband = float2ctrl(0.0f);
 
     /* 2. Load global static hardware timebase baseline */
     pwm_obj->period_base = nominal_period_base;
@@ -161,6 +162,7 @@ void ctl_init_adv_pwm_channel(adv_pwm_channel_t* pwm_obj, pwm_gt nominal_period_
     pwm_obj->period = nominal_period_base; /* Cold-start with full scale nominal period ticks */
     pwm_obj->phase = 0;                    /* Zero default startup shift ticks */
     pwm_obj->duty = 0;                     /* Zero default startup active output width */
+    pwm_obj->deadband = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -174,6 +176,7 @@ void ctl_init_adv_pwm_dual_channel(adv_pwm_dual_channel_t* pwm_obj, pwm_gt nomin
 
     /* 1. Reset shared period timebase reference input */
     pwm_obj->raw.period = float2ctrl(0.0f);
+    pwm_obj->raw.deadband = float2ctrl(0.0f);
 
     /* 2. Concurrent vectorized interface array space initialization */
     for (i = 0; i < 2; ++i)
@@ -190,6 +193,7 @@ void ctl_init_adv_pwm_dual_channel(adv_pwm_dual_channel_t* pwm_obj, pwm_gt nomin
 
     /* 4. Pre-load default output shared hardware period capacity ticks */
     pwm_obj->period = nominal_period_base;
+    pwm_obj->deadband = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////

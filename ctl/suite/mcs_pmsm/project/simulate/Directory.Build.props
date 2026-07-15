@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup Condition="Exists('$(GMP_PRO_LOCATION)\bin\vcpkg\scripts\buildsystems\msbuild\vcpkg.props')">
+    <VCPkgLocalAppDataDisabled>true</VCPkgLocalAppDataDisabled>
+    <VcpkgRoot>$(GMP_PRO_LOCATION)\bin\vcpkg\</VcpkgRoot>
+    <VcpkgTriplet Condition="'$(VcpkgTriplet)' == ''">x64-windows</VcpkgTriplet>
+    <VcpkgInstalledDir>$(GMP_PRO_LOCATION)\bin\vcpkg_installed\$(VcpkgTriplet)\</VcpkgInstalledDir>
+  </PropertyGroup>
+  <Import Project="$(GMP_PRO_LOCATION)\bin\vcpkg\scripts\buildsystems\msbuild\vcpkg.props"
+          Condition="Exists('$(GMP_PRO_LOCATION)\bin\vcpkg\scripts\buildsystems\msbuild\vcpkg.props')" />
+</Project>

@@ -1,0 +1,232 @@
+{
+  "id": "PMSM",
+  "display_name": "PMSM Motor",
+  "description": "Permanent magnet synchronous motor parameter template.",
+  "category": "Motor",
+  "tags": [
+    "motor",
+    "pmsm"
+  ],
+  "output_subdir": "pmsm_motor",
+  "includes": [
+    "ctl/component/motor_control/consultant/unit_consultant.h"
+  ],
+  "parameters": [
+    {
+      "name": "Motor Name",
+      "c_name": "MOTOR_NAME",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "Human-readable motor model name."
+    },
+    {
+      "name": "Motor Type",
+      "c_name": "MOTOR_TYPE",
+      "unit": "",
+      "required": false,
+      "value_format": "raw",
+      "description": "GMP motor type macro.",
+      "default": {
+        "literal": "PMSM_MOTOR"
+      }
+    },
+    {
+      "name": "Encoder Type",
+      "c_name": "ENCODER_TYPE",
+      "unit": "",
+      "required": false,
+      "value_format": "raw",
+      "description": "Optional encoder type macro."
+    },
+    {
+      "name": "Encoder Line Number",
+      "c_name": "ENCODER_LINE_NUMBER",
+      "unit": "PPR",
+      "required": false,
+      "value_format": "({}U)",
+      "description": "Quadrature encoder line count."
+    },
+    {
+      "name": "Stator Resistance",
+      "c_name": "RS",
+      "unit": "ohm",
+      "required": true,
+      "value_format": "raw",
+      "description": "Stator resistance per phase."
+    },
+    {
+      "name": "D-axis Inductance",
+      "c_name": "LD",
+      "unit": "H",
+      "required": true,
+      "value_format": "raw",
+      "description": "D-axis stator inductance."
+    },
+    {
+      "name": "Q-axis Inductance",
+      "c_name": "LQ",
+      "unit": "H",
+      "required": true,
+      "value_format": "raw",
+      "description": "Q-axis stator inductance."
+    },
+    {
+      "name": "Flux Linkage",
+      "c_name": "FLUX",
+      "unit": "Wb",
+      "required": true,
+      "value_format": "raw",
+      "description": "Permanent magnet flux linkage."
+    },
+    {
+      "name": "Pole Pairs",
+      "c_name": "POLE_PAIRS",
+      "unit": "",
+      "required": true,
+      "value_format": "raw",
+      "description": "Number of pole pairs in the motor."
+    },
+    {
+      "name": "Inertia",
+      "c_name": "INERTIA",
+      "unit": "",
+      "required": false,
+      "value_format": "raw",
+      "description": "Rotor inertia. Unit follows the source document."
+    },
+    {
+      "name": "Friction",
+      "c_name": "FRICTION",
+      "unit": "",
+      "required": false,
+      "value_format": "raw",
+      "description": "Viscous friction coefficient. Unit follows the source document."
+    },
+    {
+      "name": "KV",
+      "c_name": "KV",
+      "unit": "RPM/V",
+      "required": false,
+      "value_format": "raw",
+      "description": "Motor velocity constant."
+    },
+    {
+      "name": "EMF",
+      "c_name": "EMF",
+      "unit": "V/kRPM",
+      "required": false,
+      "value_format": "raw",
+      "description": "Back-EMF constant."
+    },
+    {
+      "name": "Rated Voltage",
+      "c_name": "RATED_VOLTAGE",
+      "unit": "V",
+      "required": false,
+      "value_format": "raw",
+      "description": "Rated operating voltage."
+    },
+    {
+      "name": "Rated Current",
+      "c_name": "RATED_CURRENT",
+      "unit": "A",
+      "required": false,
+      "value_format": "raw",
+      "description": "Rated phase current."
+    },
+    {
+      "name": "No-load Current",
+      "c_name": "NO_LOAD_CURRENT",
+      "unit": "A",
+      "required": false,
+      "value_format": "raw",
+      "description": "No-load phase current."
+    },
+    {
+      "name": "Rated Frequency",
+      "c_name": "RATED_FREQUENCY",
+      "unit": "Hz",
+      "required": false,
+      "value_format": "raw",
+      "description": "Rated operating frequency."
+    },
+    {
+      "name": "Rated Speed",
+      "c_name": "RATED_SPEED",
+      "unit": "RPM",
+      "required": false,
+      "value_format": "raw",
+      "description": "Rated operating speed."
+    },
+    {
+      "name": "Rated Torque",
+      "c_name": "RATED_TORQUE",
+      "unit": "N*m",
+      "required": false,
+      "value_format": "raw",
+      "description": "Rated continuous torque."
+    },
+    {
+      "name": "Max Speed",
+      "c_name": "MAX_SPEED",
+      "unit": "RPM",
+      "required": false,
+      "value_format": "raw",
+      "description": "Maximum allowable speed."
+    },
+    {
+      "name": "Max Torque",
+      "c_name": "MAX_TORQUE",
+      "unit": "N*m",
+      "required": false,
+      "value_format": "raw",
+      "description": "Maximum intermittent torque."
+    },
+    {
+      "name": "Max DC Voltage",
+      "c_name": "MAX_DC_VOLTAGE",
+      "unit": "V",
+      "required": false,
+      "value_format": "raw",
+      "description": "Maximum allowable DC bus voltage."
+    },
+    {
+      "name": "Max Phase Current",
+      "c_name": "MAX_PH_CURRENT",
+      "unit": "A",
+      "required": false,
+      "value_format": "raw",
+      "description": "Maximum allowable phase current."
+    }
+  ],
+  "components": {},
+  "exports": {
+    "rs": {
+      "macro": "{PREFIX}_RS",
+      "unit": "ohm",
+      "description": "Stator resistance."
+    },
+    "ld": {
+      "macro": "{PREFIX}_LD",
+      "unit": "H",
+      "description": "D-axis inductance."
+    },
+    "lq": {
+      "macro": "{PREFIX}_LQ",
+      "unit": "H",
+      "description": "Q-axis inductance."
+    },
+    "flux": {
+      "macro": "{PREFIX}_FLUX",
+      "unit": "Wb",
+      "description": "Flux linkage."
+    },
+    "pole_pairs": {
+      "macro": "{PREFIX}_POLE_PAIRS",
+      "unit": "",
+      "description": "Pole pairs."
+    }
+  },
+  "header_prefix": ""
+}

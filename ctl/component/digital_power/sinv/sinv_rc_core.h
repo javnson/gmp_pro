@@ -53,6 +53,7 @@ typedef struct _tag_sinv_rc_init_t
     parameter_gt qpr_wi;          //!< QPR resonant bandwidth (rad/s).
 
     parameter_gt fdrc_q_fc;        //!< Cutoff frequency for FDRC Q(z) low-pass filter (Hz).
+    parameter_gt fdrc_min_freq;    //!< Minimum tracked fundamental frequency (Hz).
     parameter_gt fdrc_lead_steps;  //!< Phase lead step count for FDRC to compensate plant delay.
     parameter_gt vgrid_lead_steps; //!< Phase lead steps for grid voltage feedforward (typically 1.5).
 
@@ -94,7 +95,8 @@ typedef struct _tag_sinv_rc_core_t
     ctrl_gt u_fdrc; //!< FDRC controller output.
     ctrl_gt u_ff;   //!< Grid Feedforward output.
 
-    ctrl_gt v_out_ref; //!< Final unified voltage reference (Duty cycle equivalent).
+    ctrl_gt v_out_unsat; //!< DC-bus-compensated command before saturation.
+    ctrl_gt v_out_ref;   //!< Final unified voltage reference (Duty cycle equivalent).
 
     // --- Controller Entities ---
     ctl_qpr_t qpr_ctrl;           //!< QPR controller instance.
@@ -105,6 +107,7 @@ typedef struct _tag_sinv_rc_core_t
     // --- Safety & Thresholds ---
     ctrl_gt v_out_max;   //!< Max output voltage limit (anti-windup limit).
     ctrl_gt fdrc_err_th; //!< Threshold for filtering absolute error to freeze FDRC learning.
+    parameter_gt fundamental_freq; //!< Measured/commanded fundamental frequency for FDRC (Hz).
 
     // --- State Flags ---
     fast_gt flag_enable_ctrl;      //!< Master enable flag for the inner loop.
@@ -149,10 +152,22 @@ GMP_STATIC_INLINE void ctl_attach_sinv_rc(ctl_sinv_rc_core_t* core, adc_ift* _u_
     core->v_grid_fdbk = _u_ac;
 }
 
-// TODO
 GMP_STATIC_INLINE void ctl_clear_sinv_rc_core(ctl_sinv_rc_core_t* core)
 {
+    ctl_clear_qpr_controller(&core->qpr_ctrl);
+    ctl_clear_fdrc(&core->fdrc_ctrl);
+    ctl_clear_lead(&core->vgrid_lead);
+    ctl_clear_filter_iir1(&core->err_filter);
 
+    core->isr_tick = 0;
+    core->i_ref = float2ctrl(0.0f);
+    core->current_error = float2ctrl(0.0f);
+    core->error_lpf_abs = float2ctrl(0.0f);
+    core->u_qpr = float2ctrl(0.0f);
+    core->u_fdrc = float2ctrl(0.0f);
+    core->u_ff = float2ctrl(0.0f);
+    core->v_out_unsat = float2ctrl(0.0f);
+    core->v_out_ref = float2ctrl(0.0f);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -174,7 +189,14 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_rc_core(ctl_sinv_rc_core_t* core, ctrl_g
 
     if (!core->flag_enable_ctrl)
     {
-        return core->v_out_ref; // Keep previous or zero
+        core->i_ref = float2ctrl(0.0f);
+        core->current_error = float2ctrl(0.0f);
+        core->u_qpr = float2ctrl(0.0f);
+        core->u_fdrc = float2ctrl(0.0f);
+        core->u_ff = float2ctrl(0.0f);
+        core->v_out_unsat = float2ctrl(0.0f);
+        core->v_out_ref = float2ctrl(0.0f);
+        return core->v_out_ref;
     }
 
     core->i_ref = i_ref;
@@ -204,7 +226,8 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_rc_core(ctl_sinv_rc_core_t* core, ctrl_g
         }
 
         // Execute FDRC step, using normal freq
-        core->u_fdrc = ctl_step_fdrc(&core->fdrc_ctrl, core->current_error, 50.0f);
+        parameter_gt fdrc_freq = (core->fundamental_freq > 1.0f) ? core->fundamental_freq : 50.0f;
+        core->u_fdrc = ctl_step_fdrc(&core->fdrc_ctrl, core->current_error, fdrc_freq);
     }
 
     // 5. Grid Voltage Feedforward
@@ -224,6 +247,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_rc_core(ctl_sinv_rc_core_t* core, ctrl_g
     ctrl_gt v_bus_safe = (core->v_bus_fdbk->value > float2ctrl(0.1f)) ? core->v_bus_fdbk->value : float2ctrl(0.1f);
     ctrl_gt v_out_comp = ctl_div(v_ref_total, v_bus_safe);
 
+    core->v_out_unsat = v_out_comp;
     core->v_out_ref = ctl_sat(v_out_comp, core->v_out_max, -core->v_out_max);
 
     return core->v_out_ref;

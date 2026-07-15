@@ -1,0 +1,28 @@
+{
+  "id": "stm32_motor_control_board",
+  "display_name": "STM32 Motor Control Board",
+  "description": "STM32 motor-control board resource model for ADC, advanced PWM/HRTIM, encoder, UART-DMA Datalink, gate control and status indication.",
+  "category": "STM32 Motor Control Board",
+  "output_subdir": "mcu_board",
+  "parameters": [
+    {"name":"chip","c_name":"CHIP","required":true,"value_format":"\"{}\"","description":"STM32 device name."},
+    {"name":"board","c_name":"BOARD","required":true,"value_format":"\"{}\"","description":"Board or carrier identification."},
+    {"name":"ioc_file","c_name":"IOC_FILE","required":true,"value_format":"\"{}\"","description":"STM32CubeMX project implementing the pin map."},
+    {"name":"system_clock_hz","c_name":"SYSTEM_CLOCK_HZ","required":true,"value_format":"({}UL)","description":"CPU/system clock in hertz."},
+    {"name":"adc_handle","c_name":"ADC_HANDLE","required":true,"value_format":"{}","description":"ADC handle used for motor-control injected conversions."},
+    {"name":"encoder_timer_handle","c_name":"ENCODER_TIMER_HANDLE","required":true,"value_format":"{}","description":"Quadrature encoder timer handle."},
+    {"name":"uart_handle","c_name":"UART_HANDLE","required":true,"value_format":"{}","description":"UART handle used by GMP Datalink."},
+    {"name":"uart_instance","c_name":"UART_INSTANCE","required":true,"value_format":"{}","description":"UART peripheral instance used by callbacks."},
+    {"name":"uart_rx_dma_handle","c_name":"UART_RX_DMA_HANDLE","required":true,"value_format":"{}","description":"Circular RX DMA handle used by GMP Datalink."},
+    {"name":"gate_enable_port","c_name":"GATE_ENABLE_PORT","required":true,"value_format":"{}","description":"Gate-driver enable GPIO port."},
+    {"name":"gate_enable_pin","c_name":"GATE_ENABLE_PIN","required":true,"value_format":"{}","description":"Gate-driver enable GPIO pin."},
+    {"name":"status_led_port","c_name":"STATUS_LED_PORT","required":true,"value_format":"{}","description":"Status LED GPIO port."},
+    {"name":"status_led_pin","c_name":"STATUS_LED_PIN","required":true,"value_format":"{}","description":"Status LED GPIO pin."}
+  ],
+  "option_sets": {},
+  "parameter_groups": [
+    {"name":"Identification","parameters":["chip","board","ioc_file","system_clock_hz"]},
+    {"name":"Control Peripherals","parameters":["adc_handle","encoder_timer_handle","gate_enable_port","gate_enable_pin"]},
+    {"name":"Datalink and Indication","parameters":["uart_handle","uart_instance","uart_rx_dma_handle","status_led_port","status_led_pin"]}
+  ]
+}

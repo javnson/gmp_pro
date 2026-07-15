@@ -12,30 +12,27 @@
 mcs_pmsm_nt/
 ├── doc/                          # 项目文档和图片资源
 │   └── img/                      # 文档图片资源
-├── implement/                    # 控制算法实现代码
-│   ├── common/                   # 所有平台公用的控制代码
-│   │   ├── ctl_main.c           # 控制器主逻辑实现
-│   │   ├── ctl_main.h           # 控制器声明和接口
-│   │   ├── user_main.c          # 用户主程序（AT命令、调度器）
-│   │   └── user_main.h          # 用户主程序头文件
-│   ├── f280039c_iris_node/      # TI C2000 F280039C (Iris节点) 平台特化代码
-│   ├── f280049c/                # TI C2000 F280049C 平台特化代码
-│   ├── simulate/                # PC仿真环境特化代码
-│   └── stm32g431/               # STM32G431 平台特化代码
+├── src/                          # 所有平台公用的控制代码与公共SDPE
+│   ├── ctl_main.c/h             # 控制器主逻辑
+│   ├── user_main.c/h            # 用户主程序与Datalink
+│   ├── sdpe_mgr/                # 公共控制器requirement
+│   └── sdpe_mcs_pmsm_nt_common_settings.h
 └── project/                      # 各平台的工程文件
     ├── f280039c_Iris_node/      # TI CCS 工程 (F280039C)
     ├── f280049c/                # TI CCS 工程 (F280049C)
     ├── simulate/                # Simulink 仿真工程
-    └── stm32g431/               # STM32CubeIDE 工程
+    ├── stm32f405/               # STM32F405 工程
+    ├── stm32g431/               # STM32G431 工程
+    └── stm32g474_hrtim/         # STM32G474 HRTIM 工程
 ```
 
 ### 平台特化文件说明
 
-每个平台特化文件夹（如 `f280039c_iris_node/`、`stm32g431/` 等）包含以下核心文件：
+每个平台工程文件夹包含以下核心文件：
 
 | 文件名 | 功能说明 |
 |--------|----------|
-| `ctrl_settings.h` | 控制参数配置（BUILD_LEVEL、PWM频率、电机参数等） |
+| `sdpe_mgr/sdpe_requirement.json` | 平台特殊参数（PWM/ADC时钟、传感器标定、电机和外设映射） |
 | `xplt.config.h` | 平台配置（引脚定义、外设配置） |
 | `xplt.ctl_interface.h` | 控制接口（ADC采样、PWM输出回调函数） |
 | `xplt.peripheral.c/h` | 外设初始化和底层驱动代码 |
@@ -44,7 +41,7 @@ mcs_pmsm_nt/
 
 ## 核心功能模块
 
-### 1. 控制器主逻辑 (`common/ctl_main.c`)
+### 1. 控制器主逻辑 (`src/ctl_main.c`)
 
 **核心组件：**
 - **CiA402 状态机** (`cia402_sm`): 符合CiA402标准的电机控制状态机
@@ -61,7 +58,7 @@ mcs_pmsm_nt/
 - `ctl_mainloop()`: 主循环任务（CiA402状态机调度）
 - `ctl_dispatch()`: 周期性控制回调（由中断调用）
 
-### 2. 用户主程序 (`common/user_main.c`)
+### 2. 用户主程序 (`src/user_main.c`)
 
 **功能：**
 - **AT命令接口**: 通过串口发送指令控制电机
@@ -89,7 +86,7 @@ mcs_pmsm_nt/
 
 ### BUILD_LEVEL 定义
 
-在 `ctrl_settings.h` 文件中定义 `BUILD_LEVEL` 宏，控制编译时的功能启用级别：
+在公共SDPE需求 `src/sdpe_mgr/sdpe_requirement.json` 中配置 `BUILD_LEVEL`，控制编译时的功能启用级别。生成结果位于 `src/sdpe_mcs_pmsm_nt_common_settings.h`：
 
 ```c
 #define BUILD_LEVEL (2)  // 可设置为 1, 2, 3, 4
@@ -238,22 +235,18 @@ cia402_sm.minimum_transit_delay[CIA402_SM_READY_TO_SWITCH_ON] = 0;
 |----------|----------|-----|
 | TI F280039C (Iris节点) | `project/f280039c_Iris_node/` | Code Composer Studio |
 | TI F280049C LaunchPad | `project/f280049c/` | Code Composer Studio |
+| STM32F405 | `project/stm32f405/` | STM32CubeIDE / Keil MDK |
 | STM32G431 | `project/stm32g431/` | STM32CubeIDE / Keil MDK |
+| STM32G474 HRTIM | `project/stm32g474_hrtim/` | STM32CubeIDE / Keil MDK |
 | PC仿真（Simulink） | `project/simulate/` | MATLAB/Simulink |
 
 ### 2. 配置控制参数
 
-编辑对应平台的 `ctrl_settings.h`：
+控制算法公共参数在 `src/sdpe_mgr/sdpe_requirement.json` 中配置；板卡参数在对应工程的 `sdpe_mgr/sdpe_requirement.json` 中配置。修改后分别运行两个目录中的 `sdpe_generate.bat`：
 
-```c
-// 设置调试级别
-#define BUILD_LEVEL (1)  // 从1开始逐步增加
-
-// 配置电机参数（或使用预设）
-#include <ctl/component/hardware_preset/pmsm_motor/TYI_5008_KV335.h>
-
-// 配置变流器参数
-#include <ctl/component/hardware_preset/inverter_3ph/GMP_Helios_3PhGaNInv_LV.h>
+```bat
+src\sdpe_mgr\sdpe_generate.bat
+project\<target>\sdpe_mgr\sdpe_generate.bat
 ```
 
 ### 3. 编译并下载程序
@@ -400,11 +393,12 @@ undefined reference to 'ctl_init_mtr_current_ctrl'
 
 ### 添加新平台支持
 
-1. 在 `implement/` 下创建新平台文件夹：
+1. 在 `project/` 下创建新平台文件夹：
    ```
-   implement/
+   project/
    └── your_platform/
-       ├── ctrl_settings.h
+       ├── sdpe_mgr/
+       │   └── sdpe_requirement.json
        ├── xplt.config.h
        ├── xplt.ctl_interface.h
        ├── xplt.peripheral.c
@@ -421,7 +415,7 @@ undefined reference to 'ctl_init_mtr_current_ctrl'
 
 ### 修改控制算法
 
-控制算法修改主要在 `implement/common/ctl_main.c` 中：
+控制算法修改主要在 `src/ctl_main.c` 中：
 
 - 修改电流环PI参数：`ctl_auto_tuning_mtr_current_ctrl()`
 - 修改速度环参数：`ctl_init_vel_pos_ctrl()`

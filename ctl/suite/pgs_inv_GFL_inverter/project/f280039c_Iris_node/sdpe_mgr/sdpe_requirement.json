@@ -1,0 +1,342 @@
+{
+  "id": "pgs_inv_gfl_f280039c_iris_node",
+  "macro_prefix": "PGS_INV_GFL_IRIS",
+  "display_name": "PGS GFL Inverter F280039C IRIS Node",
+  "description": "Validated IRIS platform timing, sensing and resource bindings for the common GFL controller.",
+  "suite": "pgs_inv_GFL_inverter",
+  "version": "1.0.0",
+  "updated_at": "2026-07-15",
+  "output_header": "sdpe_pgs_inv_gfl_iris_settings.h",
+  "hardware": [
+    {
+      "entity": "iris_f280039c_node"
+    },
+    {
+      "entity": "gmp_helios_3phganinv_lv"
+    },
+    {
+      "entity": "gmp_harmonia_3ph_lc_filter"
+    }
+  ],
+  "code_sections": {
+    "after_extern_open": "#include <sdpe_pgs_inv_gfl_common_settings.h>\n\n/* Existing IRIS SysConfig resource names assigned to GFL application roles. */\n#define PHASE_U_BASE IRIS_EPWM1_BASE\n#define PHASE_V_BASE IRIS_EPWM2_BASE\n#define PHASE_W_BASE IRIS_EPWM3_BASE\n#define PWM_ENABLE_PORT IRIS_GPIO1\n#define PWM_RESET_PORT IRIS_GPIO3\n#define INV_UA_RESULT_BASE ADC_CH1_RESULT_BASE\n#define INV_UA ADC_CH1\n#define INV_UB_RESULT_BASE ADC_CH2_RESULT_BASE\n#define INV_UB ADC_CH2\n#define INV_UC_RESULT_BASE ADC_CH3_RESULT_BASE\n#define INV_UC ADC_CH3\n#define INV_IA_RESULT_BASE ADC_CH4_RESULT_BASE\n#define INV_IA ADC_CH4\n#define INV_IB_RESULT_BASE ADC_CH5_RESULT_BASE\n#define INV_IB ADC_CH5\n#define INV_IC_RESULT_BASE ADC_CH6_RESULT_BASE\n#define INV_IC ADC_CH6\n#define INV_UU_RESULT_BASE ADC_CH9_RESULT_BASE\n#define INV_UU ADC_CH9\n#define INV_UV_RESULT_BASE ADC_CH10_RESULT_BASE\n#define INV_UV ADC_CH10\n#define INV_UW_RESULT_BASE ADC_CH11_RESULT_BASE\n#define INV_UW ADC_CH11\n#define INV_IU_RESULT_BASE ADC_CH4_RESULT_BASE\n#define INV_IU ADC_CH4\n#define INV_IV_RESULT_BASE ADC_CH5_RESULT_BASE\n#define INV_IV ADC_CH5\n#define INV_IW_RESULT_BASE ADC_CH6_RESULT_BASE\n#define INV_IW ADC_CH6\n#define INV_VBUS_RESULT_BASE ADC_CH7_RESULT_BASE\n#define INV_VBUS ADC_CH7\n#define INV_IBUS_RESULT_BASE ADC_CH8_RESULT_BASE\n#define INV_IBUS ADC_CH8\n#define SYSTEM_LED IRIS_LED1\n#define CONTROLLER_LED IRIS_LED2",
+    "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 5)\n#error BUILD_LEVEL_must_be_between_1_and_5\n#endif"
+  },
+  "feature_macros": [
+    {
+      "group": "PWM",
+      "macro": "PWM_MODULATOR_USING_NEGATIVE_LOGIC",
+      "enabled": true,
+      "value": "(1)",
+      "description": "IRIS Helios gate path uses the validated inverted PWM command polarity."
+    }
+  ],
+  "option_macros": [
+    {
+      "group": "Commissioning",
+      "macro": "BUILD_LEVEL",
+      "enabled": true,
+      "value": "(3)",
+      "options": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)",
+        "(5)"
+      ],
+      "description": "Incremental control level; level 5 enables the cascaded P/Q power loop."
+    },
+    {
+      "group": "Sampling",
+      "macro": "GFL_CURRENT_SAMPLE_PHASE_MODE",
+      "enabled": true,
+      "value": "(3)",
+      "options": [
+        "(2)",
+        "(3)"
+      ],
+      "description": "Number of directly sampled phase currents."
+    },
+    {
+      "group": "Sampling",
+      "macro": "GFL_VOLTAGE_SAMPLE_PHASE_MODE",
+      "enabled": true,
+      "value": "(3)",
+      "options": [
+        "(2)",
+        "(3)"
+      ],
+      "description": "Number of directly sampled phase voltages."
+    }
+  ],
+  "requirements": [
+    {
+      "role": "startup_delay",
+      "macro": "CTRL_STARTUP_DELAY",
+      "binding": {
+        "number": "100"
+      },
+      "description": "Startup delay in milliseconds."
+    },
+    {
+      "role": "controller_frequency",
+      "macro": "CONTROLLER_FREQUENCY",
+      "binding": {
+        "number": "20e3"
+      },
+      "description": "Current-loop and PWM update frequency in hertz."
+    },
+    {
+      "role": "pwm_compare_max",
+      "macro": "CTRL_PWM_CMP_MAX",
+      "binding": {
+        "number": "3000 - 1"
+      },
+      "description": "IRIS ePWM compare range at 20 kHz."
+    },
+    {
+      "role": "pwm_deadband",
+      "macro": "CTRL_PWM_DEADBAND_CMP",
+      "binding": {
+        "number": "50"
+      },
+      "description": "IRIS ePWM dead-band count."
+    },
+    {
+      "role": "system_frequency",
+      "macro": "CTRL_SYS_FREQUENCY",
+      "binding": {
+        "number": "120e6"
+      },
+      "description": "F280039C system clock in hertz."
+    },
+    {
+      "role": "system_tick_divider",
+      "macro": "DSP_C2000_DSP_TIME_DIV",
+      "binding": {
+        "number": "CTRL_SYS_FREQUENCY / 1000 / CTRL_PWM_CMP_MAX / 2"
+      },
+      "description": "C2000 millisecond tick divider."
+    },
+    {
+      "role": "adc_voltage_reference",
+      "macro": "CTRL_ADC_VOLTAGE_REF",
+      "binding": {
+        "float": "3.3"
+      },
+      "description": "ADC reference voltage."
+    },
+    {
+      "role": "dc_bus_voltage_base",
+      "macro": "CTRL_DCBUS_VOLTAGE",
+      "binding": {
+        "float": "80.0"
+      },
+      "description": "DC-bus per-unit voltage base."
+    },
+    {
+      "role": "phase_voltage_base",
+      "macro": "CTRL_VOLTAGE_BASE",
+      "binding": {
+        "literal": "(CTRL_DCBUS_VOLTAGE / 1.73205081f)"
+      },
+      "description": "SVPWM phase-voltage base."
+    },
+    {
+      "role": "current_base",
+      "macro": "CTRL_CURRENT_BASE",
+      "binding": {
+        "float": "10.0"
+      },
+      "description": "Phase-current per-unit base in amperes."
+    },
+    {
+      "role": "grid_filter_inductance",
+      "macro": "GFL_GRID_FILTER_INDUCTANCE_H",
+      "binding": {
+        "literal": "(HARMONIA_3PH_LC_FILTER_INDUCTANCE_H)"
+      },
+      "description": "Grid-filter inductance from the selected Harmonia entity."
+    },
+    {
+      "role": "grid_filter_capacitance",
+      "macro": "GFL_GRID_FILTER_CAPACITANCE_F",
+      "binding": {
+        "literal": "(HARMONIA_3PH_LC_FILTER_CAPACITANCE_F)"
+      },
+      "description": "Grid-filter capacitance from the selected Harmonia entity."
+    },
+    {
+      "role": "grid_current_sensitivity",
+      "macro": "CTRL_GRID_CURRENT_SENSITIVITY",
+      "binding": {
+        "literal": "(HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSITIVITY_MV_A * 0.001f)"
+      },
+      "description": "Grid-current sensitivity in volts per ampere."
+    },
+    {
+      "role": "grid_current_bias",
+      "macro": "CTRL_GRID_CURRENT_BIAS",
+      "binding": {
+        "literal": "(HARMONIA_3PH_LC_FILTER_PH_CURRENT_ZERO_BIAS_V)"
+      },
+      "description": "Grid-current zero bias."
+    },
+    {
+      "role": "grid_voltage_sensitivity",
+      "macro": "CTRL_GRID_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "literal": "(HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_GAIN)"
+      },
+      "description": "Grid-voltage sensing gain."
+    },
+    {
+      "role": "grid_voltage_bias",
+      "macro": "CTRL_GRID_VOLTAGE_BIAS",
+      "binding": {
+        "literal": "(HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "Grid-voltage sensing bias."
+    },
+    {
+      "role": "inverter_current_sensitivity",
+      "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
+      "binding": {
+        "float": "0.05"
+      },
+      "description": "Validated Helios phase-current sensitivity in volts per ampere."
+    },
+    {
+      "role": "inverter_current_bias",
+      "macro": "CTRL_INVERTER_CURRENT_BIAS",
+      "binding": {
+        "float": "1.65"
+      },
+      "description": "Helios phase-current zero bias."
+    },
+    {
+      "role": "inverter_voltage_sensitivity",
+      "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "float": "0.02738589"
+      },
+      "description": "Helios phase-voltage sensing gain."
+    },
+    {
+      "role": "inverter_voltage_bias",
+      "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
+      "binding": {
+        "float": "0.0"
+      },
+      "description": "Helios phase-voltage sensing bias."
+    },
+    {
+      "role": "dc_current_sensitivity",
+      "macro": "CTRL_DC_CURRENT_SENSITIVITY",
+      "binding": {
+        "float": "0.02475"
+      },
+      "description": "DC-link current sensitivity in volts per ampere."
+    },
+    {
+      "role": "dc_current_bias",
+      "macro": "CTRL_DC_CURRENT_BIAS",
+      "binding": {
+        "float": "1.65"
+      },
+      "description": "DC-link current zero bias."
+    },
+    {
+      "role": "dc_voltage_sensitivity",
+      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "float": "0.02738589"
+      },
+      "description": "DC-link voltage sensing gain."
+    },
+    {
+      "role": "dc_voltage_bias",
+      "macro": "CTRL_DC_VOLTAGE_BIAS",
+      "binding": {
+        "float": "0.0"
+      },
+      "description": "DC-link voltage sensing bias."
+    }
+  ],
+  "requirement_groups": [
+    {
+      "name": "Peripheral Parameters",
+      "requirements": [
+        "controller_frequency",
+        "pwm_compare_max",
+        "pwm_deadband",
+        "system_frequency",
+        "system_tick_divider",
+        "adc_voltage_reference"
+      ]
+    },
+    {
+      "name": "Per-Unit Base Parameters",
+      "requirements": [
+        "dc_bus_voltage_base",
+        "phase_voltage_base",
+        "current_base"
+      ]
+    },
+    {
+      "name": "Grid Filter Parameters",
+      "requirements": [
+        "grid_filter_inductance",
+        "grid_filter_capacitance"
+      ]
+    },
+    {
+      "name": "DC Bus Voltage Sensor",
+      "requirements": [
+        "dc_voltage_sensitivity",
+        "dc_voltage_bias"
+      ]
+    },
+    {
+      "name": "Grid Voltage Sensor",
+      "requirements": [
+        "grid_voltage_sensitivity",
+        "grid_voltage_bias"
+      ]
+    },
+    {
+      "name": "Inverter Phase Voltage Sensor",
+      "requirements": [
+        "inverter_voltage_sensitivity",
+        "inverter_voltage_bias"
+      ]
+    },
+    {
+      "name": "DC Current Sensor",
+      "requirements": [
+        "dc_current_sensitivity",
+        "dc_current_bias"
+      ]
+    },
+    {
+      "name": "Grid Current Sensor",
+      "requirements": [
+        "grid_current_sensitivity",
+        "grid_current_bias"
+      ]
+    },
+    {
+      "name": "Inverter Phase Current Sensor",
+      "requirements": [
+        "inverter_current_sensitivity",
+        "inverter_current_bias"
+      ]
+    },
+    {
+      "name": "Runtime Parameters",
+      "requirements": [
+        "startup_delay"
+      ]
+    }
+  ]
+}

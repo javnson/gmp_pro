@@ -1,0 +1,351 @@
+/**
+ * @file sdpe_mcs_pmsm_nt_f280049c_settings.h
+ * @brief SDPE project bindings for MCS PMSM NT LaunchXL-F280049C.
+ * @note PMSM sensored-control settings and project bindings for the LaunchXL-F280049C. Board resources remain physical BOOSTXL connector resources and are assigned application roles here.
+ */
+
+#ifndef _PROJECT_SDPE_MCS_PMSM_NT_F280049C_SETTINGS_H_
+#define _PROJECT_SDPE_MCS_PMSM_NT_F280049C_SETTINGS_H_
+
+#include <ctl/hardware_preset/inverter_3ph/ti_boostxl_3phganinv.h>
+#include <ctl/hardware_preset/mcu_board/launchxl_f280049c.h>
+#include <ctl/hardware_preset/pmsm_motor/sm060r20b30mnad.h>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+// User project prefix code
+#include <sdpe_mcs_pmsm_nt_common_settings.h>
+
+/* The inverter is selected as an SDPE hardware entity. */
+
+/* Compatibility names consumed by the existing PMSM controller. */
+#define MOTOR_TYPE                     SM060R20B30MNAD_MOTOR_TYPE
+#define MOTOR_PARAM_RS                 SM060R20B30MNAD_RS
+#define MOTOR_PARAM_LS                 SM060R20B30MNAD_LD
+#define MOTOR_PARAM_LD                 SM060R20B30MNAD_LD
+#define MOTOR_PARAM_LQ                 SM060R20B30MNAD_LQ
+#define MOTOR_PARAM_FLUX               SM060R20B30MNAD_FLUX
+#define MOTOR_PARAM_POLE_PAIRS         SM060R20B30MNAD_POLE_PAIRS
+#define MOTOR_PARAM_INERTIA            SM060R20B30MNAD_INERTIA
+#define MOTOR_PARAM_FRICTION           SM060R20B30MNAD_FRICTION
+#define MOTOR_PARAM_KV                 SM060R20B30MNAD_KV
+#define MOTOR_PARAM_EMF                SM060R20B30MNAD_EMF
+#define MOTOR_PARAM_RATED_VOLTAGE      SM060R20B30MNAD_RATED_VOLTAGE
+#define MOTOR_PARAM_RATED_CURRENT      SM060R20B30MNAD_RATED_CURRENT
+#define MOTOR_PARAM_NO_LOAD_CURRENT    SM060R20B30MNAD_NO_LOAD_CURRENT
+#define MOTOR_PARAM_RATED_FREQUENCY    SM060R20B30MNAD_RATED_FREQUENCY
+#define MOTOR_PARAM_MAX_SPEED          SM060R20B30MNAD_MAX_SPEED
+#define MOTOR_PARAM_MAX_TORQUE         SM060R20B30MNAD_MAX_TORQUE
+#define MOTOR_PARAM_MAX_DC_VOLTAGE     SM060R20B30MNAD_MAX_DC_VOLTAGE
+#define MOTOR_PARAM_MAX_PH_CURRENT     SM060R20B30MNAD_MAX_PH_CURRENT
+
+#define LAUNCHPAD 1
+#define GMP_IRIS  0
+#define BOARD_SELECTION LAUNCHPAD
+
+//=================================================================================================
+/**
+ * @brief Project metadata.
+ */
+
+#define MCS_PMSM_NT_F280049C_SDPE_PROJECT_ID "mcs_pmsm_nt_f280049c"
+#define MCS_PMSM_NT_F280049C_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
+#define MCS_PMSM_NT_F280049C_SDPE_PROJECT_VERSION "1.2.0"
+#define MCS_PMSM_NT_F280049C_SDPE_PROJECT_UPDATED_AT "2026-07-15"
+
+//=================================================================================================
+/**
+ * @brief Controller Options.
+ */
+
+/**
+ * @brief Number of directly sampled phase currents.
+ *        Options: (2), (3)
+ */
+#define MC_CURRENT_SAMPLE_PHASE_MODE (3)
+
+//=================================================================================================
+/**
+ * @brief Board GPIO.
+ */
+
+/**
+ * @brief Gate-driver enable GPIO.
+ *        Options: ENABLE_GATE, RESET_GATE, MONITOR_IO
+ */
+#define PWM_ENABLE_PORT ENABLE_GATE
+
+/**
+ * @brief Gate-driver reset GPIO.
+ *        Options: ENABLE_GATE, RESET_GATE, MONITOR_IO
+ */
+#define PWM_RESET_PORT RESET_GATE
+
+/**
+ * @brief System status LED.
+ *        Options: LED_R, LED_G
+ */
+#define SYSTEM_LED LED_R
+
+/**
+ * @brief Controller-running LED.
+ *        Options: LED_R, LED_G
+ */
+#define CONTROLLER_LED LED_G
+
+//=================================================================================================
+/**
+ * @brief PWM Channel.
+ */
+
+/**
+ * @brief U-phase PWM pair.
+ *        Options: BOOSTXL_J4_PWM1_BASE, BOOSTXL_J4_PWM2_BASE, BOOSTXL_J4_PWM3_BASE, BOOSTXL_J8_PWM1_BASE, BOOSTXL_J8_PWM2_BASE, BOOSTXL_J8_PWM3_BASE
+ */
+#define PHASE_U_BASE BOOSTXL_J4_PWM1_BASE
+
+/**
+ * @brief V-phase PWM pair.
+ *        Options: BOOSTXL_J4_PWM1_BASE, BOOSTXL_J4_PWM2_BASE, BOOSTXL_J4_PWM3_BASE, BOOSTXL_J8_PWM1_BASE, BOOSTXL_J8_PWM2_BASE, BOOSTXL_J8_PWM3_BASE
+ */
+#define PHASE_V_BASE BOOSTXL_J4_PWM2_BASE
+
+/**
+ * @brief W-phase PWM pair.
+ *        Options: BOOSTXL_J4_PWM1_BASE, BOOSTXL_J4_PWM2_BASE, BOOSTXL_J4_PWM3_BASE, BOOSTXL_J8_PWM1_BASE, BOOSTXL_J8_PWM2_BASE, BOOSTXL_J8_PWM3_BASE
+ */
+#define PHASE_W_BASE BOOSTXL_J4_PWM3_BASE
+
+//=================================================================================================
+/**
+ * @brief Encoder.
+ */
+
+/**
+ * @brief Rotor encoder connector.
+ *        Options: EQEP1_J12_BASE, EQEP2_J13_BASE
+ */
+#define EQEP_Encoder_BASE EQEP2_J13_BASE
+
+//=================================================================================================
+/**
+ * @brief ADC DC Bus.
+ */
+
+/**
+ * @brief DC-bus voltage SOC.
+ *        Options: BOOSTXL_J3_AIN1, BOOSTXL_J3_AIN2, BOOSTXL_J3_AIN3, BOOSTXL_J3_AIN4, BOOSTXL_J3_AIN5, BOOSTXL_J3_AIN6, BOOSTXL_J3_AIN7, BOOSTXL_J3_AIN8, BOOSTXL_J7_AIN1, BOOSTXL_J7_AIN2, BOOSTXL_J7_AIN3, BOOSTXL_J7_AIN4, BOOSTXL_J7_AIN5, BOOSTXL_J7_AIN6, BOOSTXL_J7_AIN7, BOOSTXL_J7_AIN8
+ */
+#define INV_VBUS BOOSTXL_J3_AIN1
+
+/**
+ * @brief DC-bus voltage result base.
+ *        Options: BOOSTXL_J3_AIN1_RESULT_BASE, BOOSTXL_J3_AIN2_RESULT_BASE, BOOSTXL_J3_AIN3_RESULT_BASE, BOOSTXL_J3_AIN4_RESULT_BASE, BOOSTXL_J3_AIN5_RESULT_BASE, BOOSTXL_J3_AIN6_RESULT_BASE, BOOSTXL_J3_AIN7_RESULT_BASE, BOOSTXL_J3_AIN8_RESULT_BASE, BOOSTXL_J7_AIN1_RESULT_BASE, BOOSTXL_J7_AIN2_RESULT_BASE, BOOSTXL_J7_AIN3_RESULT_BASE, BOOSTXL_J7_AIN4_RESULT_BASE, BOOSTXL_J7_AIN5_RESULT_BASE, BOOSTXL_J7_AIN6_RESULT_BASE, BOOSTXL_J7_AIN7_RESULT_BASE, BOOSTXL_J7_AIN8_RESULT_BASE
+ */
+#define INV_VBUS_RESULT_BASE BOOSTXL_J3_AIN1_RESULT_BASE
+
+/**
+ * @brief DC-bus current SOC.
+ *        Options: BOOSTXL_J3_AIN1, BOOSTXL_J3_AIN2, BOOSTXL_J3_AIN3, BOOSTXL_J3_AIN4, BOOSTXL_J3_AIN5, BOOSTXL_J3_AIN6, BOOSTXL_J3_AIN7, BOOSTXL_J3_AIN8, BOOSTXL_J7_AIN1, BOOSTXL_J7_AIN2, BOOSTXL_J7_AIN3, BOOSTXL_J7_AIN4, BOOSTXL_J7_AIN5, BOOSTXL_J7_AIN6, BOOSTXL_J7_AIN7, BOOSTXL_J7_AIN8
+ */
+#define INV_IBUS BOOSTXL_J3_AIN8
+
+/**
+ * @brief DC-bus current result base.
+ *        Options: BOOSTXL_J3_AIN1_RESULT_BASE, BOOSTXL_J3_AIN2_RESULT_BASE, BOOSTXL_J3_AIN3_RESULT_BASE, BOOSTXL_J3_AIN4_RESULT_BASE, BOOSTXL_J3_AIN5_RESULT_BASE, BOOSTXL_J3_AIN6_RESULT_BASE, BOOSTXL_J3_AIN7_RESULT_BASE, BOOSTXL_J3_AIN8_RESULT_BASE, BOOSTXL_J7_AIN1_RESULT_BASE, BOOSTXL_J7_AIN2_RESULT_BASE, BOOSTXL_J7_AIN3_RESULT_BASE, BOOSTXL_J7_AIN4_RESULT_BASE, BOOSTXL_J7_AIN5_RESULT_BASE, BOOSTXL_J7_AIN6_RESULT_BASE, BOOSTXL_J7_AIN7_RESULT_BASE, BOOSTXL_J7_AIN8_RESULT_BASE
+ */
+#define INV_IBUS_RESULT_BASE BOOSTXL_J3_AIN8_RESULT_BASE
+
+//=================================================================================================
+/**
+ * @brief ADC Phase Current.
+ */
+
+/**
+ * @brief U-phase current SOC.
+ *        Options: BOOSTXL_J3_AIN1, BOOSTXL_J3_AIN2, BOOSTXL_J3_AIN3, BOOSTXL_J3_AIN4, BOOSTXL_J3_AIN5, BOOSTXL_J3_AIN6, BOOSTXL_J3_AIN7, BOOSTXL_J3_AIN8, BOOSTXL_J7_AIN1, BOOSTXL_J7_AIN2, BOOSTXL_J7_AIN3, BOOSTXL_J7_AIN4, BOOSTXL_J7_AIN5, BOOSTXL_J7_AIN6, BOOSTXL_J7_AIN7, BOOSTXL_J7_AIN8
+ */
+#define INV_IU BOOSTXL_J3_AIN5
+
+/**
+ * @brief U-phase current result base.
+ *        Options: BOOSTXL_J3_AIN1_RESULT_BASE, BOOSTXL_J3_AIN2_RESULT_BASE, BOOSTXL_J3_AIN3_RESULT_BASE, BOOSTXL_J3_AIN4_RESULT_BASE, BOOSTXL_J3_AIN5_RESULT_BASE, BOOSTXL_J3_AIN6_RESULT_BASE, BOOSTXL_J3_AIN7_RESULT_BASE, BOOSTXL_J3_AIN8_RESULT_BASE, BOOSTXL_J7_AIN1_RESULT_BASE, BOOSTXL_J7_AIN2_RESULT_BASE, BOOSTXL_J7_AIN3_RESULT_BASE, BOOSTXL_J7_AIN4_RESULT_BASE, BOOSTXL_J7_AIN5_RESULT_BASE, BOOSTXL_J7_AIN6_RESULT_BASE, BOOSTXL_J7_AIN7_RESULT_BASE, BOOSTXL_J7_AIN8_RESULT_BASE
+ */
+#define INV_IU_RESULT_BASE BOOSTXL_J3_AIN5_RESULT_BASE
+
+/**
+ * @brief V-phase current SOC.
+ *        Options: BOOSTXL_J3_AIN1, BOOSTXL_J3_AIN2, BOOSTXL_J3_AIN3, BOOSTXL_J3_AIN4, BOOSTXL_J3_AIN5, BOOSTXL_J3_AIN6, BOOSTXL_J3_AIN7, BOOSTXL_J3_AIN8, BOOSTXL_J7_AIN1, BOOSTXL_J7_AIN2, BOOSTXL_J7_AIN3, BOOSTXL_J7_AIN4, BOOSTXL_J7_AIN5, BOOSTXL_J7_AIN6, BOOSTXL_J7_AIN7, BOOSTXL_J7_AIN8
+ */
+#define INV_IV BOOSTXL_J3_AIN6
+
+/**
+ * @brief V-phase current result base.
+ *        Options: BOOSTXL_J3_AIN1_RESULT_BASE, BOOSTXL_J3_AIN2_RESULT_BASE, BOOSTXL_J3_AIN3_RESULT_BASE, BOOSTXL_J3_AIN4_RESULT_BASE, BOOSTXL_J3_AIN5_RESULT_BASE, BOOSTXL_J3_AIN6_RESULT_BASE, BOOSTXL_J3_AIN7_RESULT_BASE, BOOSTXL_J3_AIN8_RESULT_BASE, BOOSTXL_J7_AIN1_RESULT_BASE, BOOSTXL_J7_AIN2_RESULT_BASE, BOOSTXL_J7_AIN3_RESULT_BASE, BOOSTXL_J7_AIN4_RESULT_BASE, BOOSTXL_J7_AIN5_RESULT_BASE, BOOSTXL_J7_AIN6_RESULT_BASE, BOOSTXL_J7_AIN7_RESULT_BASE, BOOSTXL_J7_AIN8_RESULT_BASE
+ */
+#define INV_IV_RESULT_BASE BOOSTXL_J3_AIN6_RESULT_BASE
+
+/**
+ * @brief W-phase current SOC.
+ *        Options: BOOSTXL_J3_AIN1, BOOSTXL_J3_AIN2, BOOSTXL_J3_AIN3, BOOSTXL_J3_AIN4, BOOSTXL_J3_AIN5, BOOSTXL_J3_AIN6, BOOSTXL_J3_AIN7, BOOSTXL_J3_AIN8, BOOSTXL_J7_AIN1, BOOSTXL_J7_AIN2, BOOSTXL_J7_AIN3, BOOSTXL_J7_AIN4, BOOSTXL_J7_AIN5, BOOSTXL_J7_AIN6, BOOSTXL_J7_AIN7, BOOSTXL_J7_AIN8
+ */
+#define INV_IW BOOSTXL_J3_AIN7
+
+/**
+ * @brief W-phase current result base.
+ *        Options: BOOSTXL_J3_AIN1_RESULT_BASE, BOOSTXL_J3_AIN2_RESULT_BASE, BOOSTXL_J3_AIN3_RESULT_BASE, BOOSTXL_J3_AIN4_RESULT_BASE, BOOSTXL_J3_AIN5_RESULT_BASE, BOOSTXL_J3_AIN6_RESULT_BASE, BOOSTXL_J3_AIN7_RESULT_BASE, BOOSTXL_J3_AIN8_RESULT_BASE, BOOSTXL_J7_AIN1_RESULT_BASE, BOOSTXL_J7_AIN2_RESULT_BASE, BOOSTXL_J7_AIN3_RESULT_BASE, BOOSTXL_J7_AIN4_RESULT_BASE, BOOSTXL_J7_AIN5_RESULT_BASE, BOOSTXL_J7_AIN6_RESULT_BASE, BOOSTXL_J7_AIN7_RESULT_BASE, BOOSTXL_J7_AIN8_RESULT_BASE
+ */
+#define INV_IW_RESULT_BASE BOOSTXL_J3_AIN7_RESULT_BASE
+
+//=================================================================================================
+/**
+ * @brief ADC Phase Voltage.
+ */
+
+/**
+ * @brief U-phase voltage SOC.
+ *        Options: BOOSTXL_J3_AIN1, BOOSTXL_J3_AIN2, BOOSTXL_J3_AIN3, BOOSTXL_J3_AIN4, BOOSTXL_J3_AIN5, BOOSTXL_J3_AIN6, BOOSTXL_J3_AIN7, BOOSTXL_J3_AIN8, BOOSTXL_J7_AIN1, BOOSTXL_J7_AIN2, BOOSTXL_J7_AIN3, BOOSTXL_J7_AIN4, BOOSTXL_J7_AIN5, BOOSTXL_J7_AIN6, BOOSTXL_J7_AIN7, BOOSTXL_J7_AIN8
+ */
+#define INV_UU BOOSTXL_J3_AIN2
+
+/**
+ * @brief U-phase voltage result base.
+ *        Options: BOOSTXL_J3_AIN1_RESULT_BASE, BOOSTXL_J3_AIN2_RESULT_BASE, BOOSTXL_J3_AIN3_RESULT_BASE, BOOSTXL_J3_AIN4_RESULT_BASE, BOOSTXL_J3_AIN5_RESULT_BASE, BOOSTXL_J3_AIN6_RESULT_BASE, BOOSTXL_J3_AIN7_RESULT_BASE, BOOSTXL_J3_AIN8_RESULT_BASE, BOOSTXL_J7_AIN1_RESULT_BASE, BOOSTXL_J7_AIN2_RESULT_BASE, BOOSTXL_J7_AIN3_RESULT_BASE, BOOSTXL_J7_AIN4_RESULT_BASE, BOOSTXL_J7_AIN5_RESULT_BASE, BOOSTXL_J7_AIN6_RESULT_BASE, BOOSTXL_J7_AIN7_RESULT_BASE, BOOSTXL_J7_AIN8_RESULT_BASE
+ */
+#define INV_UU_RESULT_BASE BOOSTXL_J3_AIN2_RESULT_BASE
+
+/**
+ * @brief V-phase voltage SOC.
+ *        Options: BOOSTXL_J3_AIN1, BOOSTXL_J3_AIN2, BOOSTXL_J3_AIN3, BOOSTXL_J3_AIN4, BOOSTXL_J3_AIN5, BOOSTXL_J3_AIN6, BOOSTXL_J3_AIN7, BOOSTXL_J3_AIN8, BOOSTXL_J7_AIN1, BOOSTXL_J7_AIN2, BOOSTXL_J7_AIN3, BOOSTXL_J7_AIN4, BOOSTXL_J7_AIN5, BOOSTXL_J7_AIN6, BOOSTXL_J7_AIN7, BOOSTXL_J7_AIN8
+ */
+#define INV_UV BOOSTXL_J3_AIN3
+
+/**
+ * @brief V-phase voltage result base.
+ *        Options: BOOSTXL_J3_AIN1_RESULT_BASE, BOOSTXL_J3_AIN2_RESULT_BASE, BOOSTXL_J3_AIN3_RESULT_BASE, BOOSTXL_J3_AIN4_RESULT_BASE, BOOSTXL_J3_AIN5_RESULT_BASE, BOOSTXL_J3_AIN6_RESULT_BASE, BOOSTXL_J3_AIN7_RESULT_BASE, BOOSTXL_J3_AIN8_RESULT_BASE, BOOSTXL_J7_AIN1_RESULT_BASE, BOOSTXL_J7_AIN2_RESULT_BASE, BOOSTXL_J7_AIN3_RESULT_BASE, BOOSTXL_J7_AIN4_RESULT_BASE, BOOSTXL_J7_AIN5_RESULT_BASE, BOOSTXL_J7_AIN6_RESULT_BASE, BOOSTXL_J7_AIN7_RESULT_BASE, BOOSTXL_J7_AIN8_RESULT_BASE
+ */
+#define INV_UV_RESULT_BASE BOOSTXL_J3_AIN3_RESULT_BASE
+
+/**
+ * @brief W-phase voltage SOC.
+ *        Options: BOOSTXL_J3_AIN1, BOOSTXL_J3_AIN2, BOOSTXL_J3_AIN3, BOOSTXL_J3_AIN4, BOOSTXL_J3_AIN5, BOOSTXL_J3_AIN6, BOOSTXL_J3_AIN7, BOOSTXL_J3_AIN8, BOOSTXL_J7_AIN1, BOOSTXL_J7_AIN2, BOOSTXL_J7_AIN3, BOOSTXL_J7_AIN4, BOOSTXL_J7_AIN5, BOOSTXL_J7_AIN6, BOOSTXL_J7_AIN7, BOOSTXL_J7_AIN8
+ */
+#define INV_UW BOOSTXL_J3_AIN4
+
+/**
+ * @brief W-phase voltage result base.
+ *        Options: BOOSTXL_J3_AIN1_RESULT_BASE, BOOSTXL_J3_AIN2_RESULT_BASE, BOOSTXL_J3_AIN3_RESULT_BASE, BOOSTXL_J3_AIN4_RESULT_BASE, BOOSTXL_J3_AIN5_RESULT_BASE, BOOSTXL_J3_AIN6_RESULT_BASE, BOOSTXL_J3_AIN7_RESULT_BASE, BOOSTXL_J3_AIN8_RESULT_BASE, BOOSTXL_J7_AIN1_RESULT_BASE, BOOSTXL_J7_AIN2_RESULT_BASE, BOOSTXL_J7_AIN3_RESULT_BASE, BOOSTXL_J7_AIN4_RESULT_BASE, BOOSTXL_J7_AIN5_RESULT_BASE, BOOSTXL_J7_AIN6_RESULT_BASE, BOOSTXL_J7_AIN7_RESULT_BASE, BOOSTXL_J7_AIN8_RESULT_BASE
+ */
+#define INV_UW_RESULT_BASE BOOSTXL_J3_AIN4_RESULT_BASE
+
+//=================================================================================================
+/**
+ * @brief Requirement bindings.
+ */
+
+/**
+ * @brief Maximum compare count of the platform PWM peripheral at the configured controller switching frequency.
+ */
+#define CTRL_PWM_CMP_MAX (2500 - 1)
+
+/**
+ * @brief Dead-time count interpreted in the selected PWM peripheral clock domain.
+ */
+#define CTRL_PWM_DEADBAND_CMP (100)
+
+/**
+ * @brief Platform CPU or system clock frequency in hertz.
+ */
+#define CTRL_SYS_FREQUENCY (100e6)
+
+/**
+ * @brief C2000 millisecond system-tick divider derived from the CPU clock and ePWM period.
+ */
+#define DSP_C2000_DSP_TIME_DIV (CTRL_SYS_FREQUENCY / 1000 / CTRL_PWM_CMP_MAX / 2)
+
+/**
+ * @brief ADC reference voltage used by all sensor conversions.
+ */
+#define CTRL_ADC_VOLTAGE_REF (3.3f)
+
+/**
+ * @brief Configured DC-bus voltage base.
+ */
+#define CTRL_DCBUS_VOLTAGE (80.0f)
+
+/**
+ * @brief Phase-voltage per-unit base derived from the DC-bus base.
+ */
+#define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE / 1.73205081f)
+
+/**
+ * @brief Phase-current per-unit base in amperes.
+ */
+#define CTRL_CURRENT_BASE (10.0f)
+
+/**
+ * @brief Encoder counts per mechanical revolution.
+ */
+#define CTRL_POS_ENC_FS (10000)
+
+/**
+ * @brief Mechanical encoder position bias in per unit.
+ */
+#define CTRL_POS_ENC_BIAS (0.0207000002f)
+
+/**
+ * @brief Mechanical speed and position division factor.
+ */
+#define CTRL_MECH_DIV (5)
+
+/**
+ * @brief Phase-current sensor sensitivity in volts per ampere.
+ */
+#define CTRL_INVERTER_CURRENT_SENSITIVITY (TI_BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM * TI_BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V)
+
+/**
+ * @brief Phase-current sensor zero-current bias in volts.
+ */
+#define CTRL_INVERTER_CURRENT_BIAS (TI_BOOSTXL_3PHGANINV_PH_CSA_BIAS_V)
+
+/**
+ * @brief Phase-voltage sensing gain in ADC volts per measured volt.
+ */
+#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN)
+
+/**
+ * @brief Phase-voltage sensor bias in volts.
+ */
+#define CTRL_INVERTER_VOLTAGE_BIAS (TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V)
+
+/**
+ * @brief DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path.
+ */
+#define CTRL_DC_CURRENT_SENSITIVITY (TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_GAIN)
+
+/**
+ * @brief DC-bus current sensor bias.
+ */
+#define CTRL_DC_CURRENT_BIAS (TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_BIAS_V)
+
+/**
+ * @brief DC-bus voltage sensing gain in ADC volts per measured volt.
+ */
+#define CTRL_DC_VOLTAGE_SENSITIVITY (TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_GAIN)
+
+/**
+ * @brief DC-bus voltage sensor bias in volts.
+ */
+#define CTRL_DC_VOLTAGE_BIAS (TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_BIAS_V)
+
+// User project tail code
+/* No additional platform-specific tail definitions. */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // _PROJECT_SDPE_MCS_PMSM_NT_F280049C_SETTINGS_H_

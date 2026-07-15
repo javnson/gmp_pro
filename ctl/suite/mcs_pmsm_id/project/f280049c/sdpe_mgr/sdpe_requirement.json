@@ -1,0 +1,15 @@
+{
+  "id": "mcs_pmsm_id_f280049c",
+  "display_name": "mcs_pmsm_id_f280049c",
+  "suite": "mcs_pmsm_id",
+  "version": "0.1.0",
+  "output_header": "mcs_pmsm_id_f280049c_sdpe_bindings.h",
+  "hardware": [],
+  "requirements": [],
+  "feature_macros": [],
+  "option_macros": [],
+  "code_sections": {
+    "after_extern_open": "/* Add project-specific includes here. */",
+    "before_footer": "/* Add project-specific tail macros here. */"
+  }
+}

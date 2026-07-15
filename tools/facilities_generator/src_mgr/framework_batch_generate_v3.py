@@ -5,6 +5,8 @@ import subprocess
 import re
 from pathlib import Path
 
+from framework_project_discovery import exclude_git_ignored
+
 def get_macros(dic_path):
     """
     只负责从 json 配置文件中读取自定义宏，不再混入系统环境变量。
@@ -21,7 +23,9 @@ def get_macros(dic_path):
             pass
     return sorted(macros.items(), key=lambda item: len(item[0]), reverse=True)
 
-def find_target_projects(search_paths, sorted_macros, target_dir_name="gmp_src_mgr"):
+def find_target_projects(
+    search_paths, sorted_macros, repository_root, target_dir_name="gmp_src_mgr"
+):
     projects_found = set()
     
     # 预编译正则表达式，用于动态匹配 ${VAR_NAME} 格式的环境变量
@@ -73,16 +77,21 @@ def find_target_projects(search_paths, sorted_macros, target_dir_name="gmp_src_m
             if target.is_dir():
                 projects_found.add(target.resolve())
                 
-    return list(projects_found)
+    visible, ignored = exclude_git_ignored(projects_found, repository_root)
+    for path in ignored:
+        print(f"[IGNORE] Git-ignored source-manager copy: {path}")
+    return visible
 
 def run_batch_generation():
     print("=" * 60)
     print("[START] [GMP Fleet] Starting Batch Generation Engine (Dynamic Env Mode)...")
     print("=" * 60)
 
-    # 这里的检查仅用作预警提示，如果用户没有配置该变量，及时提醒
-    if not os.environ.get('GMP_PRO_LOCATION'):
-        print("[WARNING] Environment variable GMP_PRO_LOCATION not found! Paths depending on it may fail.")
+    root_value = os.environ.get('GMP_PRO_LOCATION')
+    if not root_value:
+        print("[ERROR] Environment variable GMP_PRO_LOCATION not found!")
+        return False
+    repository_root = Path(root_value).resolve()
 
     base_dir = Path(__file__).parent.resolve()
     target_json = base_dir / "deploy_targets.json"
@@ -101,7 +110,13 @@ def run_batch_generation():
     search_paths = config.get("search_paths", [])
     
     print("[INFO] Parsing search rules and scanning for projects...")
-    projects_found_list = find_target_projects(search_paths, sorted_macros)
+    try:
+        projects_found_list = find_target_projects(
+            search_paths, sorted_macros, repository_root
+        )
+    except RuntimeError as error:
+        print(f"[ERROR] Project discovery failed: {error}")
+        return False
 
     if not projects_found_list:
         print("[WARNING] No matching 'gmp_src_mgr' folders found.")

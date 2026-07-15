@@ -1,0 +1,205 @@
+{
+  "id": "iris_c2000_core_board",
+  "display_name": "IRIS C2000 Core Board",
+  "description": "DSP C2000 core board peripheral name binding model.",
+  "category": "C2000 Mathor Board",
+  "output_subdir": "mcu_board",
+  "parameters": [
+    {
+      "name": "chip",
+      "c_name": "CHIP",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "C2000 device name."
+    },
+    {
+      "name": "syscfg_file",
+      "c_name": "SYSCFG_FILE",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "SysConfig source file used by this binding."
+    },
+    {
+      "name": "epwm1_base",
+      "c_name": "EPWM1_BASE",
+      "unit": "",
+      "required": false,
+      "value_format": "{}",
+      "description": "SysConfig EPWM1 base macro.",
+      "default": "IRIS_EPWM1_BASE"
+    },
+    {
+      "name": "epwm2_base",
+      "c_name": "EPWM2_BASE",
+      "unit": "",
+      "required": false,
+      "value_format": "{}",
+      "description": "SysConfig EPWM2 base macro.",
+      "default": "IRIS_EPWM2_BASE"
+    },
+    {
+      "name": "adc_ch1",
+      "c_name": "ADC_CH1",
+      "unit": "",
+      "required": false,
+      "value_format": "{}",
+      "description": "SysConfig ADC channel 1 macro.",
+      "default": "ADC_CH1"
+    },
+    {
+      "name": "adc_ch2",
+      "c_name": "ADC_CH2",
+      "unit": "",
+      "required": false,
+      "value_format": "{}",
+      "description": "SysConfig ADC channel 2 macro.",
+      "default": "ADC_CH2"
+    },
+    {
+      "name": "adc_ch3",
+      "c_name": "ADC_CH3",
+      "unit": "",
+      "required": false,
+      "value_format": "{}",
+      "description": "SysConfig ADC channel 3 macro.",
+      "default": "ADC_CH3"
+    },
+    {
+      "name": "adc_ch4",
+      "c_name": "ADC_CH4",
+      "unit": "",
+      "required": false,
+      "value_format": "{}",
+      "description": "SysConfig ADC channel 4 macro.",
+      "default": "ADC_CH4"
+    }
+  ],
+  "exports": {
+    "epwm1_base": {
+      "macro": "{PREFIX}_EPWM1_BASE",
+      "description": "EPWM1 base macro."
+    },
+    "epwm2_base": {
+      "macro": "{PREFIX}_EPWM2_BASE",
+      "description": "EPWM2 base macro."
+    },
+    "adc_ch1": {
+      "macro": "{PREFIX}_ADC_CH1",
+      "description": "ADC channel 1 macro."
+    },
+    "adc_ch2": {
+      "macro": "{PREFIX}_ADC_CH2",
+      "description": "ADC channel 2 macro."
+    },
+    "adc_ch3": {
+      "macro": "{PREFIX}_ADC_CH3",
+      "description": "ADC channel 3 macro."
+    },
+    "adc_ch4": {
+      "macro": "{PREFIX}_ADC_CH4",
+      "description": "ADC channel 4 macro."
+    }
+  },
+  "tags": [],
+  "header_prefix": "",
+  "components": {},
+  "option_sets": {
+    "IRIS_EPWM": {
+      "options": [
+        "IRIS_EPWM1_BASE",
+        "IRIS_EPWM2_BASE",
+        "IRIS_EPWM3_BASE",
+        "IRIS_EPWM4_BASE",
+        "IRIS_EPWM5_BASE",
+        "IRIS_EPWM6_BASE"
+      ],
+      "description": "EPWM Peripheral Option Presets"
+    },
+    "IRIS_GPIO": {
+      "options": [
+        "IRIS_GPIO1",
+        "IRIS_GPIO2",
+        "IRIS_GPIO3",
+        "IRIS_GPIO4",
+        "IRIS_GPIO5",
+        "IRIS_GPIO6"
+      ],
+      "description": "GPIO Option Presets"
+    },
+    "ADC_CHANNEL_INDEX": {
+      "options": [
+        "ADC_CH1",
+        "ADC_CH2",
+        "ADC_CH3",
+        "ADC_CH4",
+        "ADC_CH5",
+        "ADC_CH6",
+        "ADC_CH7",
+        "ADC_CH8",
+        "ADC_CH9",
+        "ADC_CH10",
+        "ADC_CH11",
+        "ADC_CH12"
+      ],
+      "description": "ADC Channel Index"
+    },
+    "ADC_RESULT_REG": {
+      "options": [
+        "ADC_CH1_RESULT_BASE",
+        "ADC_CH2_RESULT_BASE",
+        "ADC_CH3_RESULT_BASE",
+        "ADC_CH4_RESULT_BASE",
+        "ADC_CH5_RESULT_BASE",
+        "ADC_CH6_RESULT_BASE",
+        "ADC_CH7_RESULT_BASE",
+        "ADC_CH8_RESULT_BASE",
+        "ADC_CH9_RESULT_BASE",
+        "ADC_CH10_RESULT_BASE",
+        "ADC_CH11_RESULT_BASE",
+        "ADC_CH12_RESULT_BASE"
+      ],
+      "description": "ADC Result Register Base"
+    },
+    "ADC_BASE": {
+      "options": [
+        "ADC_CH1_ADC_BASE",
+        "ADC_CH2_ADC_BASE",
+        "ADC_CH3_ADC_BASE",
+        "ADC_CH4_ADC_BASE",
+        "ADC_CH5_ADC_BASE",
+        "ADC_CH6_ADC_BASE",
+        "ADC_CH7_ADC_BASE",
+        "ADC_CH8_ADC_BASE",
+        "ADC_CH9_ADC_BASE",
+        "ADC_CH10_ADC_BASE",
+        "ADC_CH11_ADC_BASE",
+        "ADC_CH12_ADC_BASE"
+      ],
+      "description": "ADC Peripheral Base"
+    },
+    "EQEP_BASE": {
+      "options": [
+        "IRIS_EQEP1_BASE",
+        "IRIS_EQEP2_BASE"
+      ],
+      "description": "EQEP Base Registers"
+    }
+  },
+  "parameter_groups": [
+    {
+      "name": "Parameters",
+      "parameters": [
+        "chip",
+        "syscfg_file",
+        "epwm1_base",
+        "epwm2_base",
+        "adc_ch1",
+        "adc_ch2",
+        "adc_ch3",
+        "adc_ch4"
+      ]
+    }
+  ]
+}

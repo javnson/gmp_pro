@@ -1,0 +1,49 @@
+{
+  "id": "dps_clllc_f280025c_dioscuri",
+  "display_name": "DPS CLLLC / DAB F280025C Dioscuri",
+  "description": "Bidirectional isolated CLLLC/DAB controller, resonant tank, sensing, variable-frequency PWM and independent scheduler tick requirements.",
+  "suite": "dps_clllc",
+  "version": "0.2.0",
+  "updated_at": "2026-07-15",
+  "output_header": "sdpe_dps_clllc_dioscuri_bindings.h",
+  "hardware": [],
+  "feature_macros": [
+    {
+      "macro": "SPECIFY_ENABLE_ADC_CALIBRATE",
+      "enabled": true,
+      "value": "",
+      "description": "Calibrate the bipolar Hall-current sensor offsets while PWM is disabled."
+    }
+  ],
+  "option_macros": [
+    {
+      "macro": "BUILD_LEVEL",
+      "enabled": true,
+      "value": "(1)",
+      "options": ["(1)", "(2)", "(3)"],
+      "description": "1: open-loop modulation; 2: resonant-current loop; 3: parallel voltage/current competition control."
+    },
+    {"macro":"CLLLC_F_RESONANT_HZ","enabled":true,"value":"(100000.0f)","options":[],"description":"Tank resonant frequency."},
+    {"macro":"CLLLC_F_MIN_HZ","enabled":true,"value":"(75000.0f)","options":[],"description":"Minimum switching frequency."},
+    {"macro":"CLLLC_F_MAX_HZ","enabled":true,"value":"(150000.0f)","options":[],"description":"Maximum switching frequency."},
+    {"macro":"CLLLC_PWM_CYCLES_PER_CONTROL","enabled":true,"value":"(2U)","options":["(1U)","(2U)","(4U)"],"description":"PWM periods per ADC conversion and main control interrupt."},
+    {"macro":"CTRL_SYSTEM_TICK_HZ","enabled":true,"value":"(1000U)","options":[],"description":"CPU Timer scheduler tick, independent of variable PWM frequency."},
+    {"macro":"CLLLC_DEADBAND_S","enabled":true,"value":"(200.0e-9f)","options":[],"description":"Absolute complementary MOSFET dead time."},
+    {"macro":"CLLLC_MAX_DAB_PHASE_PU","enabled":true,"value":"(0.25f)","options":[],"description":"Maximum signed secondary-bridge DAB phase shift."},
+    {"macro":"CLLLC_LM_H","enabled":true,"value":"(120.0e-6f)","options":[],"description":"Transformer magnetizing inductance."},
+    {"macro":"CLLLC_LR_PRIMARY_H","enabled":true,"value":"(20.0e-6f)","options":[],"description":"Primary resonant inductance."},
+    {"macro":"CLLLC_LR_SECONDARY_H","enabled":true,"value":"(20.0e-6f)","options":[],"description":"Secondary resonant inductance."},
+    {"macro":"CLLLC_CR_PRIMARY_F","enabled":true,"value":"(120.0e-9f)","options":[],"description":"Primary resonant capacitance."},
+    {"macro":"CLLLC_CR_SECONDARY_F","enabled":true,"value":"(120.0e-9f)","options":[],"description":"Secondary resonant capacitance."},
+    {"macro":"CLLLC_TRANSFORMER_NS_NP","enabled":true,"value":"(1.0f)","options":[],"description":"Secondary-to-primary transformer turns ratio."},
+    {"macro":"CLLLC_VOLTAGE_TARGET_PU","enabled":true,"value":"(0.40f)","options":[],"description":"Default output-voltage reference."},
+    {"macro":"CLLLC_CURRENT_LIMIT_PU","enabled":true,"value":"(0.50f)","options":[],"description":"Default resonant-current limit."},
+    {"macro":"CLLLC_CURRENT_LOOP_BW_HZ","enabled":true,"value":"(5000.0f)","options":[],"description":"Requested current-loop bandwidth, constrained by auto tuning."},
+    {"macro":"CLLLC_VOLTAGE_LOOP_BW_HZ","enabled":true,"value":"(400.0f)","options":[],"description":"Requested voltage-loop bandwidth, constrained by auto tuning."}
+  ],
+  "requirements": [],
+  "code_sections": {
+    "after_extern_open": "/* Project-specific peripheral bindings remain in xplt/ctrl_settings.h. */",
+    "before_footer": "/* CLLLC/DAB project extension point. */"
+  }
+}

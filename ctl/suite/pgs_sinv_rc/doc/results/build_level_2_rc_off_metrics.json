@@ -1,0 +1,20 @@
+{
+  "build_level": 2,
+  "model": "PGS_STD_SINV_MODEL_RLOAD",
+  "stop_time_s": 3,
+  "output_enable_final": 1,
+  "cia402_state_final": 4,
+  "active_errors_final": 0,
+  "diverge_fault_value": 0,
+  "vac_rms_v": 23.240327885594478,
+  "iac_rms_a": 2.0003689432358533,
+  "vbus_mean_v": 59.197084058379808,
+  "iref_rms_a": 1.998610961660801,
+  "current_error_rms_pu": 0.0079191406794043625,
+  "active_power_pu": 0.095868455349847934,
+  "reactive_power_pu": -0.011871010559924388,
+  "pll_frequency_hz": 49.874926346485758,
+  "fdrc_enabled_final": 0,
+  "fdrc_output_rms_pu": 0,
+  "iac_thd_percent": 0.88677170963698326
+}

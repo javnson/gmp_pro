@@ -1,0 +1,31 @@
+{
+  "library_root": "%GMP_PRO_LOCATION%/ctl/hardware_preset",
+  "schema_dirs": [
+    "%GMP_PRO_LOCATION%/ctl/hardware_preset/sdpe_schemas"
+  ],
+  "entity_dirs": [
+    "%GMP_PRO_LOCATION%/ctl/hardware_preset/sdpe_src"
+  ],
+  "system_hardware": {
+    "entity_dirs": [
+      "%GMP_PRO_LOCATION%/ctl/hardware_preset/sdpe_src"
+    ],
+    "out": "%GMP_PRO_LOCATION%/ctl",
+    "include_prefix": "ctl"
+  },
+  "global_generation": {
+    "out": "%GMP_PRO_LOCATION%/ctl",
+    "include_prefix": "ctl",
+    "include_mode": "prefixed",
+    "project_subdir": "project"
+  },
+  "local_generation": {
+    "out": ".",
+    "include_prefix": "",
+    "include_mode": "relative",
+    "project_subdir": ""
+  },
+  "gui": {
+    "default_out": "%GMP_PRO_LOCATION%/tools/SDPE_v2/build_gui_pyqt"
+  }
+}

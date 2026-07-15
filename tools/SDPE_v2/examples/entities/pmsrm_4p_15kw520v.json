@@ -1,0 +1,68 @@
+{
+  "id": "pmsrm_4p_15kw520v",
+  "schema": "PMSM",
+  "display_name": "PMSRM 4P 15kW 520V Motor",
+  "vendor": "",
+  "datasheet_url": "",
+  "document_url": "ctl/component/hardware_preset/pmsm_motor/PMSRM_4P_15KW520V.h",
+  "macro_prefix": "PMSRM_4P_15KW520V",
+  "tags": [
+    "motor",
+    "pmsm",
+    "pmsrm",
+    "salient"
+  ],
+  "parameters": {
+    "Motor Name": "PMSRM 4P 15kW 520V",
+    "Encoder Type": {
+      "literal": "RS485_ABS"
+    },
+    "Stator Resistance": 0.1215,
+    "D-axis Inductance": 0.00303,
+    "Q-axis Inductance": 0.02019,
+    "Flux Linkage": 0.44,
+    "Pole Pairs": 2,
+    "Inertia": 0.018,
+    "KV": {
+      "expr": "((MOTOR_PARAM_CALCULATE_KV_BY_FLUX({FLUX}, {POLE_PAIRS})))"
+    },
+    "EMF": {
+      "expr": "((MOTOR_PARAM_CALCULATE_EMF_BY_FLUX({FLUX}, {POLE_PAIRS})))"
+    },
+    "Rated Voltage": 500.0,
+    "Rated Current": 32.09,
+    "Rated Frequency": 100.0,
+    "Rated Speed": 3000,
+    "Rated Torque": 47.8,
+    "Max Speed": 3000,
+    "Max DC Voltage": 150.0,
+    "Max Phase Current": 20.0,
+    "motor_name": "PMSRM 4P 15kW 520V",
+    "encoder_type": {
+      "literal": "RS485_ABS"
+    },
+    "rs": 0.1215,
+    "ld": 0.00303,
+    "lq": 0.02019,
+    "flux": 0.44,
+    "pole_pairs": 2,
+    "inertia": 0.018,
+    "kv": {
+      "expr": "((MOTOR_PARAM_CALCULATE_KV_BY_FLUX({FLUX}, {POLE_PAIRS})))"
+    },
+    "emf": {
+      "expr": "((MOTOR_PARAM_CALCULATE_EMF_BY_FLUX({FLUX}, {POLE_PAIRS})))"
+    },
+    "rated_voltage": 500.0,
+    "rated_current": 32.09,
+    "rated_frequency": 100.0,
+    "rated_speed": 3000,
+    "rated_torque": 47.8,
+    "max_speed": 3000,
+    "max_ph_current": 20.0,
+    "max_dc_voltage": 150.0
+  },
+  "description": "",
+  "output_subdir": "",
+  "components": {}
+}

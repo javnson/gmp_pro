@@ -42,4 +42,4 @@
 
 
 // Invoke Controller Settings
-#include <ctrl_settings.h>
+#include "../sdpe_mgr/sdpe_pgs_inv_gfl_stm32g431_settings.h"

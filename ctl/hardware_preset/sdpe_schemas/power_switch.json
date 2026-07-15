@@ -1,0 +1,113 @@
+{
+  "id": "power_switch",
+  "display_name": "Power Semiconductor Device",
+  "description": "Power switch device used by bridge modules.",
+  "category": "Power Device",
+  "tags": [
+    "power_device",
+    "switch"
+  ],
+  "output_subdir": "power_switch",
+  "parameters": [
+    {
+      "name": "part_number",
+      "c_name": "PART_NUMBER",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "Power device part number."
+    },
+    {
+      "name": "device_type",
+      "c_name": "DEVICE_TYPE",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "MOSFET, IGBT, GaN, SiC, etc."
+    },
+    {
+      "name": "voltage_rating_v",
+      "c_name": "VOLTAGE_RATING_V",
+      "unit": "V",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Drain-source or collector-emitter voltage rating."
+    },
+    {
+      "name": "current_rating_a",
+      "c_name": "CURRENT_RATING_A",
+      "unit": "A",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Current rating."
+    },
+    {
+      "name": "rdson_ohm",
+      "c_name": "RDSON_OHM",
+      "unit": "ohm",
+      "required": false,
+      "value_format": "({}f)",
+      "description": "On resistance.",
+      "default": 0.0
+    },
+    {
+      "name": "configuration",
+      "c_name": "CONFIGURATION",
+      "unit": "",
+      "required": false,
+      "value_format": "\"{}\"",
+      "description": "Single switch, dual switch, half bridge power block, etc.",
+      "default": "single"
+    },
+    {
+      "name": "rdson_max_ohm",
+      "c_name": "RDSON_MAX_OHM",
+      "unit": "ohm",
+      "required": false,
+      "value_format": "({}f)",
+      "description": "Maximum on resistance at the documented gate voltage.",
+      "default": 0.0
+    },
+    {
+      "name": "gate_voltage_v",
+      "c_name": "GATE_VOLTAGE_V",
+      "unit": "V",
+      "required": false,
+      "value_format": "({}f)",
+      "description": "Gate voltage associated with the resistance value.",
+      "default": 0.0
+    },
+    {
+      "name": "gate_charge_nc",
+      "c_name": "GATE_CHARGE_NC",
+      "unit": "nC",
+      "required": false,
+      "value_format": "({}f)",
+      "description": "Typical total gate charge.",
+      "default": 0.0
+    },
+    {
+      "name": "package",
+      "c_name": "PACKAGE",
+      "unit": "",
+      "required": false,
+      "value_format": "\"{}\"",
+      "description": "Manufacturer package name.",
+      "default": "unknown"
+    }
+  ],
+  "exports": {
+    "voltage_rating": {
+      "macro": "{PREFIX}_VOLTAGE_RATING_V",
+      "unit": "V",
+      "description": "Voltage rating."
+    },
+    "current_rating": {
+      "macro": "{PREFIX}_CURRENT_RATING_A",
+      "unit": "A",
+      "description": "Current rating."
+    }
+  },
+  "header_prefix": "",
+  "components": {}
+}

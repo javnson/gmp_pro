@@ -1,0 +1,26 @@
+{
+  "id": "integrated_power_stage",
+  "display_name": "Integrated Motor Power Stage",
+  "description": "Integrated half-bridge or three-phase power stage that is not classified as an IPM.",
+  "category": "Power Device",
+  "tags": ["power_device", "integrated_power_stage"],
+  "output_subdir": "integrated_power_stage",
+  "parameters": [
+    {"name":"part_number","c_name":"PART_NUMBER","unit":"","required":true,"value_format":"\"{}\"","description":"Manufacturer part number."},
+    {"name":"switch_technology","c_name":"SWITCH_TECHNOLOGY","unit":"","required":true,"value_format":"\"{}\"","description":"Integrated switch technology."},
+    {"name":"configuration","c_name":"CONFIGURATION","unit":"","required":true,"value_format":"\"{}\"","description":"Half bridge or three-phase bridge."},
+    {"name":"phase_count","c_name":"PHASE_COUNT","unit":"","required":false,"value_format":"({}U)","description":"Number of integrated phases.","default":1},
+    {"name":"voltage_rating_v","c_name":"VOLTAGE_RATING_V","unit":"V","required":true,"value_format":"({}f)","description":"Maximum switch or operating voltage."},
+    {"name":"current_rating_a","c_name":"CURRENT_RATING_A","unit":"A","required":true,"value_format":"({}f)","description":"Continuous/RMS output current under datasheet conditions."},
+    {"name":"peak_current_a","c_name":"PEAK_CURRENT_A","unit":"A","required":false,"value_format":"({}f)","description":"Peak output current.","default":0.0},
+    {"name":"rdson_ohm","c_name":"RDSON_OHM","unit":"ohm","required":false,"value_format":"({}f)","description":"Documented on resistance; for a bridge this may be HS+LS.","default":0.0},
+    {"name":"driver_integrated","c_name":"DRIVER_INTEGRATED","unit":"","required":false,"value_format":"({}U)","description":"Whether the gate driver is integrated.","default":1},
+    {"name":"input_active_level","c_name":"INPUT_ACTIVE_LEVEL","unit":"","required":false,"value_format":"({}U)","description":"One for active-high logic, zero for active-low.","default":1},
+    {"name":"package","c_name":"PACKAGE","unit":"","required":false,"value_format":"\"{}\"","description":"Manufacturer package.","default":"unknown"}
+  ],
+  "exports": {
+    "voltage_rating":{"macro":"{PREFIX}_VOLTAGE_RATING_V","unit":"V","description":"Voltage rating."},
+    "current_rating":{"macro":"{PREFIX}_CURRENT_RATING_A","unit":"A","description":"Current rating."}
+  },
+  "components": {}
+}

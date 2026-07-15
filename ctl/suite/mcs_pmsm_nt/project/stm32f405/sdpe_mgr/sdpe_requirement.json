@@ -1,0 +1,287 @@
+{
+  "id": "mcs_pmsm_nt_stm32f405",
+  "macro_prefix": "MCS_PMSM_NT_STM32F405",
+  "display_name": "MCS PMSM NT STM32F405",
+  "description": "Validated STM32F405 PMSM project settings, timer resources and USART2 DMA Datalink bindings.",
+  "suite": "mcs_pmsm_nt",
+  "version": "1.2.0",
+  "updated_at": "2026-07-15",
+  "output_header": "sdpe_mcs_pmsm_nt_stm32f405_settings.h",
+  "hardware": [
+    {
+      "entity": "stm32f405_motor_board"
+    },
+    {
+      "entity": "sm060r20b30mnad"
+    },
+    {
+      "entity": "gmp_3ph_2136sinv_dual"
+    }
+  ],
+  "code_sections": {
+    "after_extern_open": "#include <sdpe_mcs_pmsm_nt_common_settings.h>\n\n/* SDPE inverter selection. */\n#define MOTOR_TYPE SM060R20B30MNAD_MOTOR_TYPE\n#define MOTOR_PARAM_RS SM060R20B30MNAD_RS\n#define MOTOR_PARAM_LS SM060R20B30MNAD_LD\n#define MOTOR_PARAM_LD SM060R20B30MNAD_LD\n#define MOTOR_PARAM_LQ SM060R20B30MNAD_LQ\n#define MOTOR_PARAM_FLUX SM060R20B30MNAD_FLUX\n#define MOTOR_PARAM_POLE_PAIRS SM060R20B30MNAD_POLE_PAIRS\n#define MOTOR_PARAM_INERTIA SM060R20B30MNAD_INERTIA\n#define MOTOR_PARAM_FRICTION SM060R20B30MNAD_FRICTION\n#define MOTOR_PARAM_KV SM060R20B30MNAD_KV\n#define MOTOR_PARAM_EMF SM060R20B30MNAD_EMF\n#define MOTOR_PARAM_RATED_VOLTAGE SM060R20B30MNAD_RATED_VOLTAGE\n#define MOTOR_PARAM_RATED_CURRENT SM060R20B30MNAD_RATED_CURRENT\n#define MOTOR_PARAM_NO_LOAD_CURRENT SM060R20B30MNAD_NO_LOAD_CURRENT\n#define MOTOR_PARAM_RATED_FREQUENCY SM060R20B30MNAD_RATED_FREQUENCY\n#define MOTOR_PARAM_MAX_SPEED SM060R20B30MNAD_MAX_SPEED\n#define MOTOR_PARAM_MAX_TORQUE SM060R20B30MNAD_MAX_TORQUE\n#define MOTOR_PARAM_MAX_DC_VOLTAGE SM060R20B30MNAD_MAX_DC_VOLTAGE\n#define MOTOR_PARAM_MAX_PH_CURRENT SM060R20B30MNAD_MAX_PH_CURRENT",
+    "before_footer": "/* Platform-specific peripheral selection and validation. */\n#define MCS_PWM_TIMER_HANDLE (&htim1)\n#define MCS_PWM_ADC_TRIGGER ADC_EXTERNALTRIGINJEC_T1_TRGO"
+  },
+  "feature_macros": [],
+  "option_macros": [
+    {
+      "group": "ADC",
+      "macro": "MC_CURRENT_SAMPLE_PHASE_MODE",
+      "enabled": true,
+      "value": "(3)",
+      "options": [
+        "(2)",
+        "(3)"
+      ],
+      "description": "Directly sampled phase-current count."
+    },
+    {
+      "group": "Board",
+      "macro": "MCS_PWM_TIMER_SELECTION",
+      "enabled": true,
+      "value": "1",
+      "options_preset": "stm32f405_motor_board.PWM_TIMER_SELECTION",
+      "options": [],
+      "description": "Advanced motor PWM timer selection."
+    },
+    {
+      "group": "Board",
+      "macro": "MCS_UART_HANDLE",
+      "enabled": true,
+      "value": "(&huart2)",
+      "options_preset": "stm32f405_motor_board.UART_HANDLE",
+      "options": [],
+      "description": "Datalink UART handle."
+    },
+    {
+      "group": "Board",
+      "macro": "MCS_UART_INSTANCE",
+      "enabled": true,
+      "value": "USART2",
+      "options": [
+        "USART2"
+      ],
+      "description": "Datalink UART instance."
+    },
+    {
+      "group": "Board",
+      "macro": "MCS_ENCODER_TIMER_HANDLE",
+      "enabled": true,
+      "value": "(&htim3)",
+      "options": [
+        "(&htim3)"
+      ],
+      "description": "Encoder timer handle."
+    }
+  ],
+  "requirements": [
+    {
+      "role": "pwm_compare_max",
+      "macro": "CTRL_PWM_CMP_MAX",
+      "binding": {
+        "number": "4199"
+      },
+      "description": "Maximum compare count of the platform PWM peripheral at the configured controller switching frequency."
+    },
+    {
+      "role": "pwm_deadband",
+      "macro": "CTRL_PWM_DEADBAND_CMP",
+      "binding": {
+        "number": "100"
+      },
+      "description": "Dead-time count interpreted in the selected PWM peripheral clock domain."
+    },
+    {
+      "role": "system_frequency",
+      "macro": "CTRL_SYS_FREQUENCY",
+      "binding": {
+        "number": "168e6"
+      },
+      "description": "Platform CPU or system clock frequency in hertz."
+    },
+    {
+      "role": "adc_voltage_reference",
+      "macro": "CTRL_ADC_VOLTAGE_REF",
+      "binding": {
+        "float": "3.3"
+      },
+      "description": "ADC reference voltage used by all sensor conversions."
+    },
+    {
+      "role": "dc_bus_voltage_base",
+      "macro": "CTRL_DCBUS_VOLTAGE",
+      "binding": {
+        "float": "80.0"
+      },
+      "description": "Configured DC-bus voltage base."
+    },
+    {
+      "role": "phase_voltage_base",
+      "macro": "CTRL_VOLTAGE_BASE",
+      "binding": {
+        "literal": "(CTRL_DCBUS_VOLTAGE / 1.73205081f)"
+      },
+      "description": "Phase-voltage per-unit base derived from the DC-bus base."
+    },
+    {
+      "role": "current_base",
+      "macro": "CTRL_CURRENT_BASE",
+      "binding": {
+        "float": "10.0"
+      },
+      "description": "Phase-current per-unit base in amperes."
+    },
+    {
+      "role": "encoder_full_scale",
+      "macro": "CTRL_POS_ENC_FS",
+      "binding": {
+        "number": "10000"
+      },
+      "description": "Encoder counts per mechanical revolution."
+    },
+    {
+      "role": "encoder_bias",
+      "macro": "CTRL_POS_ENC_BIAS",
+      "binding": {
+        "float": "0.0207000002"
+      },
+      "description": "Mechanical encoder position bias in per unit."
+    },
+    {
+      "role": "mechanical_division",
+      "macro": "CTRL_MECH_DIV",
+      "binding": {
+        "number": "5"
+      },
+      "description": "Mechanical speed and position division factor."
+    },
+    {
+      "role": "phase_current_sensitivity",
+      "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
+      "binding": {
+        "literal": "(GMP_3PH_2136SINV_DUAL_PH_SHUNT_RESISTANCE_OHM * GMP_3PH_2136SINV_DUAL_PH_CSA_GAIN_V_V)"
+      },
+      "description": "Phase-current sensor sensitivity in volts per ampere."
+    },
+    {
+      "role": "phase_current_bias",
+      "macro": "CTRL_INVERTER_CURRENT_BIAS",
+      "binding": {
+        "literal": "(GMP_3PH_2136SINV_DUAL_PH_CSA_BIAS_V)"
+      },
+      "description": "Phase-current sensor zero-current bias in volts."
+    },
+    {
+      "role": "phase_voltage_sensitivity",
+      "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "literal": "(GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_GAIN)"
+      },
+      "description": "Phase-voltage sensing gain in ADC volts per measured volt."
+    },
+    {
+      "role": "phase_voltage_bias",
+      "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
+      "binding": {
+        "literal": "(GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "Phase-voltage sensor bias in volts."
+    },
+    {
+      "role": "dc_current_sensitivity",
+      "macro": "CTRL_DC_CURRENT_SENSITIVITY",
+      "binding": {
+        "literal": "(GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_GAIN)"
+      },
+      "description": "DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path."
+    },
+    {
+      "role": "dc_current_bias",
+      "macro": "CTRL_DC_CURRENT_BIAS",
+      "binding": {
+        "literal": "(GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_BIAS_V)"
+      },
+      "description": "DC-bus current sensor bias."
+    },
+    {
+      "role": "dc_voltage_sensitivity",
+      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "literal": "(GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_GAIN)"
+      },
+      "description": "DC-bus voltage sensing gain in ADC volts per measured volt."
+    },
+    {
+      "role": "dc_voltage_bias",
+      "macro": "CTRL_DC_VOLTAGE_BIAS",
+      "binding": {
+        "literal": "(GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "DC-bus voltage sensor bias in volts."
+    },
+    {
+      "role": "uart_rx_buffer_size",
+      "macro": "MCS_UART_RX_BUFFER_SIZE",
+      "binding": {
+        "number": "64"
+      },
+      "description": "Circular UART RX DMA buffer size."
+    }
+  ],
+  "requirement_groups": [
+    {
+      "name": "Peripheral Parameters",
+      "requirements": [
+        "pwm_compare_max",
+        "pwm_deadband",
+        "system_frequency",
+        "adc_voltage_reference",
+        "uart_rx_buffer_size"
+      ]
+    },
+    {
+      "name": "Per-Unit Base Parameters",
+      "requirements": [
+        "dc_bus_voltage_base",
+        "phase_voltage_base",
+        "current_base"
+      ]
+    },
+    {
+      "name": "Position Sensor Parameters",
+      "requirements": [
+        "encoder_full_scale",
+        "encoder_bias",
+        "mechanical_division"
+      ]
+    },
+    {
+      "name": "DC Bus Voltage Sensor",
+      "requirements": [
+        "dc_voltage_sensitivity",
+        "dc_voltage_bias"
+      ]
+    },
+    {
+      "name": "Inverter Phase Voltage Sensor",
+      "requirements": [
+        "phase_voltage_sensitivity",
+        "phase_voltage_bias"
+      ]
+    },
+    {
+      "name": "DC Current Sensor",
+      "requirements": [
+        "dc_current_sensitivity",
+        "dc_current_bias"
+      ]
+    },
+    {
+      "name": "Inverter Phase Current Sensor",
+      "requirements": [
+        "phase_current_sensitivity",
+        "phase_current_bias"
+      ]
+    }
+  ]
+}

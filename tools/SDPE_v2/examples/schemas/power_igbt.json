@@ -1,0 +1,12 @@
+{
+  "id": "power_igbt",
+  "display_name": "power_igbt",
+  "description": "",
+  "category": "Power Device",
+  "tags": [],
+  "output_subdir": "power_igbt",
+  "parameters": [],
+  "components": {},
+  "exports": {},
+  "header_prefix": ""
+}

@@ -43,9 +43,62 @@ adc_gt idc_src;
 uint32_t counter;
 
 // a local small cache size, capable of covering the depth of the hardware FIFO (typically 16 bytes)
-#define ISR_LOCAL_BUF_SIZE 16
+#define ISR_LOCAL_BUF_SIZE MCS_UART_RX_BUFFER_SIZE
 uint8_t rxBuf[ISR_LOCAL_BUF_SIZE];
-volatile uint16_t last_read_pos = 0;
+
+static void configure_motor_pwm_timer(TIM_HandleTypeDef* timer)
+{
+    TIM_OC_InitTypeDef output = {0};
+    TIM_MasterConfigTypeDef master = {0};
+    TIM_BreakDeadTimeConfigTypeDef deadtime = {0};
+
+    __HAL_TIM_DISABLE(timer);
+    timer->Init.Prescaler = 0;
+    timer->Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED1;
+    timer->Init.Period = CTRL_PWM_CMP_MAX;
+    timer->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    timer->Init.RepetitionCounter = 1;
+    timer->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+    if (HAL_TIM_PWM_Init(timer) != HAL_OK)
+        Error_Handler();
+
+    output.OCMode = TIM_OCMODE_PWM1;
+    output.Pulse = 0;
+    output.OCPolarity = TIM_OCPOLARITY_LOW;
+    output.OCNPolarity = TIM_OCNPOLARITY_LOW;
+    output.OCFastMode = TIM_OCFAST_DISABLE;
+    output.OCIdleState = TIM_OCIDLESTATE_RESET;
+    output.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+    if ((HAL_TIM_PWM_ConfigChannel(timer, &output, TIM_CHANNEL_1) != HAL_OK) ||
+        (HAL_TIM_PWM_ConfigChannel(timer, &output, TIM_CHANNEL_2) != HAL_OK) ||
+        (HAL_TIM_PWM_ConfigChannel(timer, &output, TIM_CHANNEL_3) != HAL_OK))
+        Error_Handler();
+
+    master.MasterOutputTrigger = TIM_TRGO_UPDATE;
+    master.MasterOutputTrigger2 = TIM_TRGO2_RESET;
+    master.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+    if (HAL_TIMEx_MasterConfigSynchronization(timer, &master) != HAL_OK)
+        Error_Handler();
+
+    deadtime.OffStateRunMode = TIM_OSSR_DISABLE;
+    deadtime.OffStateIDLEMode = TIM_OSSI_DISABLE;
+    deadtime.LockLevel = TIM_LOCKLEVEL_OFF;
+    deadtime.DeadTime = CTRL_PWM_DEADBAND_CMP;
+    deadtime.BreakState = TIM_BREAK_DISABLE;
+    deadtime.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+    deadtime.BreakFilter = 0;
+    deadtime.BreakAFMode = TIM_BREAK_AFMODE_INPUT;
+    deadtime.Break2State = TIM_BREAK2_DISABLE;
+    deadtime.Break2Polarity = TIM_BREAK2POLARITY_HIGH;
+    deadtime.Break2Filter = 0;
+    deadtime.Break2AFMode = TIM_BREAK_AFMODE_INPUT;
+    deadtime.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+    if (HAL_TIMEx_ConfigBreakDeadTime(timer, &deadtime) != HAL_OK)
+        Error_Handler();
+
+    MODIFY_REG(hadc1.Instance->JSQR, ADC_JSQR_JEXTSEL | ADC_JSQR_JEXTEN,
+               MCS_PWM_ADC_TRIGGER | ADC_EXTERNALTRIGINJECCONV_EDGE_RISING);
+}
 
 /////////////////////////////////////////////////////////////////////////
 // peripheral setup function
@@ -55,7 +108,7 @@ volatile uint16_t last_read_pos = 0;
 void setup_peripheral(void)
 {
     // Setup Debug Uart
-    debug_uart = &huart2;
+    debug_uart = MCS_UART_HANDLE;
 
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
 
@@ -100,15 +153,15 @@ void setup_peripheral(void)
 //    ctl_init_as5048a_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, SPI_ENCODER_BASE, SPI_ENCODER_NCS);
 
 		// init TIM3 for QEP encoder
-		HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
+		HAL_TIM_Encoder_Start(MCS_ENCODER_TIMER_HANDLE, TIM_CHANNEL_ALL);
 
     //
     // attach
     //
 #if BUILD_LEVEL <= 2
-    ctl_attach_mtr_current_ctrl_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &rg.enc, &spd_enc.encif);
+    ctl_attach_foc_core_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &rg.enc, &spd_enc.encif);
 #else  // BUILD_LEVEL
-    ctl_attach_mtr_current_ctrl_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &pos_enc.encif, &spd_enc.encif);
+    ctl_attach_foc_core_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &pos_enc.encif, &spd_enc.encif);
 #endif // BUILD_LEVEL
 
 
@@ -118,15 +171,14 @@ void setup_peripheral(void)
 
     HAL_ADCEx_InjectedStart_IT(&hadc1);
 
-    // Enable PWM peripheral
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
-		HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
-		
-    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
-    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
-    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
+    // Reconfigure and start the complete SDPE-selected advanced timer.
+    configure_motor_pwm_timer(MCS_PWM_TIMER_HANDLE);
+    HAL_TIM_PWM_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_2);
+    HAL_TIM_PWM_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_3);
+    HAL_TIMEx_PWMN_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_1);
+    HAL_TIMEx_PWMN_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_2);
+    HAL_TIMEx_PWMN_Start(MCS_PWM_TIMER_HANDLE, TIM_CHANNEL_3);
 
 		// Enable DAC channels
 		HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
@@ -165,7 +217,8 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
         counter++;
         if(counter >= 1000)   
         {
-            HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+            HAL_GPIO_TogglePin(NUCLEO_G431RB_MOTOR_BOARD_STATUS_LED_PORT,
+                               NUCLEO_G431RB_MOTOR_BOARD_STATUS_LED_PIN);
             counter = 0;
         }
     }
@@ -181,7 +234,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		// Index
     if(GPIO_Pin == GPIO_PIN_9)
     {
-        __HAL_TIM_SET_COUNTER(&htim3, 0);
+        __HAL_TIM_SET_COUNTER(MCS_ENCODER_TIMER_HANDLE, 0);
         
     }
 }
@@ -189,67 +242,55 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 void send_monitor_data(void)
 {}
 
-	
+extern gmp_datalink_t dl;
 
-	
-void at_device_flush_rx_buffer(void)
+void flush_dl_tx_buffer(void)
 {
-// 1. 获取当前 DMA 写指针位置
-    // __HAL_DMA_GET_COUNTER 返回的是 DMA 还需要传输的数据量（剩余量）
-    // 因此当前写入的绝对位置 = 总长度 - 剩余量
-    uint16_t current_pos = ISR_LOCAL_BUF_SIZE - __HAL_DMA_GET_COUNTER(debug_uart->hdmarx);
+    gmp_hal_uart_write(debug_uart, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl),
+                       gmp_dev_dl_get_tx_hw_hdr_size(&dl), 10);
+    if (gmp_dev_dl_get_tx_hw_pld_size(&dl) > 0)
+    {
+        gmp_hal_uart_write(debug_uart, gmp_dev_dl_get_tx_hw_pld_ptr(&dl),
+                           gmp_dev_dl_get_tx_hw_pld_size(&dl), 10);
+    }
+}
 
-    // 2. 临界区保护开始：防止主循环执行到一半时被中断抢占导致逻辑混乱
+void flush_dl_rx_buffer(void)
+{
+    static volatile uint16_t last_read_pos = 0;
+    uint16_t current_pos = ISR_LOCAL_BUF_SIZE - __HAL_DMA_GET_COUNTER(debug_uart->hdmarx);
+    uint16_t len1 = 0, len2 = 0;
+    uint16_t start1 = last_read_pos;
+
+    if (current_pos == last_read_pos)
+        return;
+
     uint32_t primask = __get_PRIMASK();
     __disable_irq();
-
-    // 如果没有新数据，直接退出
-    if (current_pos == last_read_pos) {
-        __set_PRIMASK(primask);
-        return;
-    }
-
-    uint16_t len1 = 0, len2 = 0;
-    uint16_t start1 = last_read_pos, start2 = 0;
-
-    // 3. 计算需要读取的数据长度（处理环形缓冲区的折返）
-    if (current_pos > last_read_pos) {
-        // 正常线性增长
+    if (current_pos > last_read_pos)
         len1 = current_pos - last_read_pos;
-    } else {
-        // DMA 指针已经折返 (Wraparound) 到缓冲区开头
-        // 第一段：从上次读取位置到缓冲区末尾
+    else
+    {
         len1 = ISR_LOCAL_BUF_SIZE - last_read_pos;
-        // 第二段：从缓冲区开头到当前写指针位置
         len2 = current_pos;
     }
-
-    // 更新读指针
     last_read_pos = current_pos;
-
-    // 4. 临界区保护结束：恢复中断
-    // 注意：我们将耗时的 AT 串口提交流程放在开中断之后执行，尽量缩短关中断的时间
     __set_PRIMASK(primask);
 
-    // 5. 提交数据给 AT 控制器
-    if (len1 > 0) {
-        at_device_rx_isr(&at_dev, (char*)&rxBuf[start1], len1);
-    }
-    if (len2 > 0) { // 只有在发生折返时，len2 才会大于 0
-        at_device_rx_isr(&at_dev, (char*)&rxBuf[start2], len2);
-    }
+    if (len1 > 0)
+        gmp_dev_dl_push_str(&dl, (data_gt*)&rxBuf[start1], len1);
+    if (len2 > 0)
+        gmp_dev_dl_push_str(&dl, (data_gt*)&rxBuf[0], len2);
 }
 
-// DMA 接收半满回调
-void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart) {
-    if (huart->Instance == USART2) { // 替换为你的实际串口
-        at_device_flush_rx_buffer();
-    }
+void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef* huart)
+{
+    if (huart->Instance == MCS_UART_INSTANCE)
+        flush_dl_rx_buffer();
 }
 
-// DMA 接收全满（完成）回调
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-    if (huart->Instance == USART2) { // 替换为你的实际串口
-        at_device_flush_rx_buffer();
-    }
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart)
+{
+    if (huart->Instance == MCS_UART_INSTANCE)
+        flush_dl_rx_buffer();
 }

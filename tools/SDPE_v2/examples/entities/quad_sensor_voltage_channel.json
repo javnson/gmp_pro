@@ -1,0 +1,17 @@
+{
+  "id": "quad_sensor_voltage_channel",
+  "schema": "voltage_sensor",
+  "display_name": "Quad Sensor Docker Voltage Channel",
+  "vendor": "GMP",
+  "datasheet_url": "",
+  "document_url": "",
+  "macro_prefix": "QUAD_SENSOR_VCH",
+  "tags": ["voltage_sensor", "isolated", "quad_sensor"],
+  "parameters": {
+    "chip": "AMC1350 + TLV9061",
+    "rated_voltage_v": 100.0,
+    "bias_v": 1.65,
+    "sensitivity_v_per_v": 0.01454,
+    "input_resistance_ohm": 444600.0
+  }
+}

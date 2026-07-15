@@ -1,0 +1,81 @@
+{
+  "id": "tmcs1133",
+  "schema": "current_sensor",
+  "display_name": "TMCS1133 Hall Current Sensor Family",
+  "vendor": "Texas Instruments",
+  "datasheet_url": "https://www.ti.com/lit/ds/symlink/tmcs1133.pdf",
+  "document_url": "ctl/component/hardware_preset/current_sensor/TMCS1133.h",
+  "macro_prefix": "TMCS1133",
+  "option_sets": {
+    "suffix": [
+      "B7A",
+      "B1A",
+      "B8A",
+      "B2A",
+      "B3A",
+      "B5A"
+    ]
+  },
+  "option_macros": [
+    {
+      "macro": "TMCS1133_CURRENT_SUFFIX",
+      "value": "B5A",
+      "options": [
+        "B7A",
+        "B1A",
+        "B8A",
+        "B2A",
+        "B3A",
+        "B5A"
+      ],
+      "description": "Selected TMCS1133 current sensor suffix."
+    }
+  ],
+  "conditional_macros": [
+    {
+      "condition": "TMCS1133_CURRENT_SUFFIX_B7A",
+      "macros": {
+        "TMCS1133_RANGE_A": "(77.5f)",
+        "TMCS1133_SENSITIVITY_MV_PER_A": "(20.0f)"
+      }
+    },
+    {
+      "condition": "TMCS1133_CURRENT_SUFFIX_B1A",
+      "macros": {
+        "TMCS1133_RANGE_A": "(62.0f)",
+        "TMCS1133_SENSITIVITY_MV_PER_A": "(25.0f)"
+      }
+    },
+    {
+      "condition": "TMCS1133_CURRENT_SUFFIX_B2A",
+      "macros": {
+        "TMCS1133_RANGE_A": "(31.0f)",
+        "TMCS1133_SENSITIVITY_MV_PER_A": "(50.0f)"
+      }
+    },
+    {
+      "condition": "TMCS1133_CURRENT_SUFFIX_B5A",
+      "macros": {
+        "TMCS1133_RANGE_A": "(10.3f)",
+        "TMCS1133_SENSITIVITY_MV_PER_A": "(150.0f)"
+      }
+    }
+  ],
+  "tags": [
+    "current_sensor",
+    "hall",
+    "tmcs1133",
+    "family"
+  ],
+  "parameters": {
+    "chip": "TMCS1133",
+    "sensor_type": "Hall",
+    "range_a": 77.5,
+    "output_min_v": 0.0,
+    "output_max_v": 3.3,
+    "bias_v": 1.65,
+    "sensitivity_mv_per_a": 20.0,
+    "bandwidth_hz": 300000.0,
+    "internal_resistance_ohm": 0.0018
+  }
+}
