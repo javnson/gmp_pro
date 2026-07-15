@@ -30,6 +30,9 @@ if errorlevel 1 (
     exit /b %ERRORLEVEL%
 )
 
+python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --settings "%SDPE_SETTINGS%" generate-project-matlab-local "%SDPE_REQUIREMENT%" --out "%SDPE_OUT%"
+if errorlevel 1 exit /b %errorlevel%
+
 echo.
 echo =======================================================
 echo [SUCCESS] SDPE project headers generated successfully.

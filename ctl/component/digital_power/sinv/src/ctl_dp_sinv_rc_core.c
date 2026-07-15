@@ -48,8 +48,10 @@ void ctl_auto_tuning_sinv_rc(ctl_sinv_rc_init_t* init)
     }
 
     // 3. Robustness Thresholds
-    init->fdrc_gain = 0.5f;      // Universal stable learning rate
-    init->err_threshold = 0.05f; // 5% of I_base triggers FDRC freeze
+    if (init->fdrc_gain <= 0.001f)
+        init->fdrc_gain = 0.1f;
+    if (init->err_threshold <= 0.001f)
+        init->err_threshold = 0.05f;
 }
 
 /**

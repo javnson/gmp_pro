@@ -7,6 +7,22 @@
         },
         {
             "root": "core",
+            "module": "dev|datalink|_internal"
+        },
+        {
+            "root": "core",
+            "module": "dev|datalink|mem_monitor"
+        },
+        {
+            "root": "core",
+            "module": "dev|datalink|pil"
+        },
+        {
+            "root": "core",
+            "module": "dev|datalink|variable_monitor"
+        },
+        {
+            "root": "core",
             "module": "dev|software|_internal"
         },
         {
@@ -40,6 +56,70 @@
         {
             "root": "ctl",
             "module": "component|digital_power|_internal"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|dcdc"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|mppt|_internal"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|mppt|inc"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|mppt|po"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv|_internal"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv|sinv_core"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv|sinv_core_rc"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv|sinv_proctect"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv|sinv_ref_gen"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv|sms_pq"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv|spfc"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv|spll_sogi"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|sinv|spll_sogi_dc"
+        },
+        {
+            "root": "ctl",
+            "module": "component|dsa|_internal"
+        },
+        {
+            "root": "ctl",
+            "module": "component|dsa|dsa_scope"
+        },
+        {
+            "root": "ctl",
+            "module": "component|dsa|dsa_trigger"
         },
         {
             "root": "ctl",
@@ -248,6 +328,10 @@
         {
             "root": "ctl",
             "module": "component|intrinsic|protection|itoc"
+        },
+        {
+            "root": "ctl",
+            "module": "component|intrinsic|protection|pt_sensor"
         },
         {
             "root": "ctl",

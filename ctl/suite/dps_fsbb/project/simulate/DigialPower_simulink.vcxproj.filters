@@ -33,9 +33,6 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_divider.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_basic.c">
-      <Filter>GMP Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_hysteresis_controller.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
@@ -195,9 +192,6 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_mrac.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_rc.c">
-      <Filter>GMP Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_sinc_interpolator.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
@@ -241,9 +235,6 @@
       <Filter>GMP Source Files</Filter>
     </ClCompile>
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_pole_zero.c">
-      <Filter>GMP Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_pr.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_sg.c">
@@ -302,6 +293,42 @@
     </ClCompile>
     <ClCompile Include="xplt\xplt.peripheral.cpp">
       <Filter>implement_interface</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_rc.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_pr.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_basic.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_mppt_inc.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_mppt_po.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_encoder_switcher.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\dcdc_boost_hw.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\dcdc_buck_hw.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\gmp_datalink.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\gmp_mem_presp.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\gmp_pil_core.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\gmp_tunable.c">
+      <Filter>GMP Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

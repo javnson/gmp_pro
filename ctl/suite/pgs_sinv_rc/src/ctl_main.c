@@ -19,6 +19,7 @@ spll_sogi_t pll;
 ctl_sms_pq_t pq_meter;
 ctl_sinv_ref_gen_t ref_gen;
 ctl_sinv_rc_core_t rc_core;
+ctl_sinv_outer_loop_t outer_loop;
 ctl_ramp_generator_t rg;
 
 // FDRC controller static memory
@@ -44,8 +45,9 @@ volatile fast_gt flag_enable_adc_calibrator = 0;
 // User commands
 ctrl_gt g_p_ref_user = float2ctrl(0.0f);
 ctrl_gt g_q_ref_user = float2ctrl(0.0f);
+ctrl_gt g_vbus_ref_user = float2ctrl(0.0f);
 
-ctrl_gt openloop_v_ref = float2ctrl(0.5f);
+ctrl_gt openloop_v_ref = float2ctrl(0.0f);
 vector2_gt phasor;
 
 //=================================================================================================
@@ -70,7 +72,12 @@ void ctl_init(void)
     rc_init.v_bus = CTRL_DCBUS_VOLTAGE;
     rc_init.L_ac = CTRL_AC_INDUCTANCE;
     rc_init.R_ac = CTRL_AC_RESISTANCE;
+    rc_init.current_loop_bw = SINV_CURRENT_LOOP_BANDWIDTH_HZ;
     rc_init.fdrc_min_freq = CTRL_FDRC_MIN_FREQ;
+    rc_init.fdrc_gain = SINV_FDRC_LEARNING_GAIN;
+    rc_init.fdrc_q_fc = SINV_FDRC_Q_FILTER_HZ;
+    rc_init.fdrc_lead_steps = SINV_FDRC_LEAD_STEPS;
+    rc_init.err_threshold = SINV_FDRC_FREEZE_ERROR_PU;
 
     ctl_auto_tuning_sinv_rc(&rc_init);
     ctl_init_sinv_rc_core(&rc_core, &rc_init, fdrc_buffer, FDRC_ARRAY_SIZE);
@@ -87,6 +94,10 @@ void ctl_init(void)
     ctl_init_sinv_ref_gen(&ref_gen, CTRL_CURRENT_LIMIT_PU, CTRL_GRID_VMIN_PU, CTRL_P_SLEW_PU_S,
                           CTRL_Q_SLEW_PU_S, CONTROLLER_FREQUENCY);
 
+    ctl_init_sinv_outer_loop(&outer_loop, SINV_POWER_LOOP_KP, SINV_POWER_LOOP_KI,
+        SINV_DC_BUS_LOOP_KP, SINV_DC_BUS_LOOP_KI, SINV_OUTER_LOOP_FREQUENCY_HZ,
+        CONTROLLER_FREQUENCY, SINV_OUTER_LOOP_POWER_LIMIT_PU);
+
     // freerun angle reference generator, 50Hz, [0, 1] range for pu angle
     ctl_init_ramp_generator_via_freq(&rg, CONTROLLER_FREQUENCY, CTRL_GRID_FREQUENCY, 1, 0);
 
@@ -101,14 +112,18 @@ void ctl_init(void)
     // init and config CiA402 standard state machine
     //
     init_cia402_state_machine(&cia402_sm);
-    cia402_sm.minimum_transit_delay[3] = 100; // Operation Enabled 保持 100ms 后才正式切入负载
+    cia402_sm.minimum_transit_delay[3] = SINV_CIA402_OPERATION_ENABLE_DELAY_MS;
 
     //
     // init and config Protection module
     //
     ctl_sinv_prot_init_t prot_init = {0};
-    prot_init.error_mask =
-        SINV_PROT_BIT_HW_TZ | SINV_PROT_BIT_DC_OVP_FAST | SINV_PROT_BIT_AC_OCP_FAST | SINV_PROT_BIT_CTRL_DIVERGE;
+    prot_init.error_mask = SINV_PROT_BIT_HW_TZ | SINV_PROT_BIT_DC_OVP_FAST | SINV_PROT_BIT_AC_OCP_FAST;
+#if BUILD_LEVEL != 5
+    /* During passive-rectifier takeover Vgrid/Vdc can legitimately demand
+       more than one PU before the boost stage raises the DC link. */
+    prot_init.error_mask |= SINV_PROT_BIT_CTRL_DIVERGE;
+#endif
     prot_init.warning_mask = SINV_PROT_BIT_AC_OVP_RMS | SINV_PROT_BIT_AC_UVP_RMS | SINV_PROT_BIT_PLL_FREQ_ERR;
     // Protection inputs are per-unit because they are fed by adc_channel outputs.
     prot_init.v_bus_max = CTRL_PROT_VBUS_MAX / CTRL_VOLTAGE_BASE;
@@ -134,16 +149,21 @@ void ctl_init(void)
     // incremental compilation configuration
     //
 
-#if (BUILD_LEVEL == 1)
-    // Disable FDRC and feed forward
-    rc_core.flag_enable_fdrc = 0;
-    rc_core.flag_enable_lead_comp = 0;
+    openloop_v_ref = float2ctrl(SINV_LEVEL1_VOLTAGE_REF_PU);
+#if BUILD_LEVEL == 3
+    g_p_ref_user = float2ctrl(SINV_LEVEL3_ACTIVE_POWER_REF_PU);
+    g_q_ref_user = float2ctrl(SINV_LEVEL3_REACTIVE_POWER_REF_PU);
+#elif BUILD_LEVEL == 4
+    g_p_ref_user = float2ctrl(SINV_LEVEL4_ACTIVE_POWER_REF_PU);
+    g_q_ref_user = float2ctrl(0.0f);
+#elif BUILD_LEVEL == 5
+    g_vbus_ref_user = float2ctrl(SINV_DC_BUS_REF_V / CTRL_VOLTAGE_BASE);
 #endif
-
-#if (BUILD_LEVEL == 2)
-    // 并网 PQ 控制模式：禁止 FDRC，开启电压前馈
     rc_core.flag_enable_fdrc = 0;
+#if BUILD_LEVEL >= 2 && defined(SINV_ENABLE_GRID_VOLTAGE_FEEDFORWARD)
     rc_core.flag_enable_lead_comp = 1;
+#else
+    rc_core.flag_enable_lead_comp = 0;
 #endif
 }
 
@@ -162,11 +182,9 @@ void ctl_mainloop(void)
 
     cia402_dispatch(&cia402_sm);
 
-#if (BUILD_LEVEL == 3)
-    // 并网性能优化模式：延时切入 FDRC
-    // 当并网稳定运行超过 200 ms 后，开启重复控制器消除畸变
+#if (BUILD_LEVEL >= 2) && defined(SINV_ENABLE_REPETITIVE_CONTROL)
     if (cia402_sm.state_word.bits.operation_enabled &&
-        gmp_base_time_sub(current_tick, cia402_sm.entry_state_tick) > 200)
+        gmp_base_time_sub(current_tick, cia402_sm.entry_state_tick) > SINV_FDRC_ENABLE_DELAY_MS)
     {
         rc_core.flag_enable_fdrc = 1;
     }
@@ -174,7 +192,6 @@ void ctl_mainloop(void)
     {
         rc_core.flag_enable_fdrc = 0;
     }
-    rc_core.flag_enable_lead_comp = 1;
 #endif
 }
 
@@ -264,7 +281,20 @@ fast_gt ctl_check_compliance(void)
         return 0;
 
 #if BUILD_LEVEL >= 3
-    return ctl_check_pll_locked();
+    /* Entry uses the tight PLL lock criterion.  Once connected, use a wider
+       ride-through window so normal sample jitter cannot create an immediate
+       CiA402 fault; the slow protection nodes still supervise frequency and RMS. */
+    static uint16_t compliance_bad_ms = 0;
+    ctrl_gt v_mag = ctl_abs(pll.v_mag);
+    fast_gt valid = (v_mag > float2ctrl(0.7f)) && (v_mag < float2ctrl(1.3f)) &&
+                    (pll.frequency > float2ctrl(0.9f)) && (pll.frequency < float2ctrl(1.1f));
+    if (valid) {
+        compliance_bad_ms = 0;
+        return 1;
+    }
+    if (compliance_bad_ms < 100U)
+        compliance_bad_ms++;
+    return compliance_bad_ms < 100U;
 #else
     return 1;
 #endif
@@ -305,6 +335,7 @@ void clear_all_controllers(void)
     ctl_clear_sms_pq(&pq_meter);
     ctl_clear_sinv_rc_core(&rc_core);
     ctl_clear_sinv_ref_gen(&ref_gen);
+    ctl_clear_sinv_outer_loop(&outer_loop);
     ctl_clear_single_phase_H_modulation(&hpwm);
 }
 

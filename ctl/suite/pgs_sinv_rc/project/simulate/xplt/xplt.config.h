@@ -56,5 +56,5 @@
 #define gmp_pc_simulink_rx_buffer_t dp_sil_rx_buf_t
 #define gmp_pc_simulink_tx_buffer_t dp_sil_tx_buf_t
 
-// Invoke Controller Settings
-#include <ctrl_settings.h>
+// Invoke the generated platform settings directly; ctrl_settings.h is retired.
+#include <sdpe_pgs_sinv_rc_simulate_settings.h>
