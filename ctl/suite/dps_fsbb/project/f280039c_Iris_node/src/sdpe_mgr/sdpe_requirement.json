@@ -392,8 +392,8 @@
       "group": "Controller Settings",
       "macro": "PWM_MODULATOR_USING_NEGATIVE_LOGIC",
       "enabled": true,
-      "value": "0",
-      "description": "Use negative PWM modulator logic."
+      "value": "1",
+      "description": "Invert duty-to-CMP mapping because the IRIS ePWM action qualifier sets high on up-count CMPA and low on down-count CMPA."
     },
     {
       "group": "Optional Sampling Channels",

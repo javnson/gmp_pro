@@ -175,6 +175,17 @@ class SDPEV2Tests(unittest.TestCase):
             self.assertTrue(generated.path.name.endswith("_matlab_init.m"))
             self.assertTrue(generated.path.exists())
 
+    def test_matlab_components_are_emitted_before_parent_references(self) -> None:
+        lib = self.load_library()
+        data = read_project("pgs_sinv_rc_iris_node")
+        with tempfile.TemporaryDirectory() as tmp:
+            script = HeaderGenerator(lib, Path(tmp)).render_project_matlab_script(data)
+            child = "TMCS1133_B5A_SENSITIVITY_V_PER_A ="
+            parent = "GMP_LVFB_CURRENT_SENSITIVITY = TMCS1133_B5A_SENSITIVITY_V_PER_A;"
+            self.assertIn(child, script)
+            self.assertIn(parent, script)
+            self.assertLess(script.index(child), script.index(parent))
+
     def test_project_macros_can_be_grouped_in_generated_outputs(self) -> None:
         lib = self.load_library()
         data = read_project("dps_fsbb_iris_node")

@@ -140,7 +140,22 @@ void ctl_init(void)
 
 void ctl_mainloop(void)
 {
+#if defined SPECIFY_PC_ENVIRONMENT
+    // The standalone SIL executable has no CiA402 fieldbus master. Keep the
+    // simulated power stage enabled while retaining the same latched-fault
+    // shutdown behavior as the embedded target.
+    if (g_fsbb_faults == FSBB_FAULT_NONE)
+    {
+        if (!g_fsbb_output_enabled)
+            ctl_enable_pwm();
+    }
+    else if (g_fsbb_output_enabled)
+    {
+        ctl_disable_pwm();
+    }
+#else
     cia402_dispatch(&cia402_sm);
+#endif
     return;
 }
 

@@ -56,10 +56,11 @@ gmp_param_tunable_t tunable;
 // Memory perspective Dictionary (Mapped for SINV)
 //
 const gmp_mem_region_t mem_regions[] = {
-//    {.base_addr = &rc_core, .byte_length = sizeof(rc_core) * GMP_PORT_DATA_SIZE_PER_BYTES, .perm = GMP_MEM_PERM_RW},
-//    {.base_addr = &pll, .byte_length = sizeof(pll) * GMP_PORT_DATA_SIZE_PER_BYTES, .perm = GMP_MEM_PERM_RW},
+    // ISO C does not permit a zero-length array. Keep one inert element while
+    // explicitly publishing zero active regions.
+    {NULL, 0, GMP_MEM_PERM_RO},
 };
-const uint16_t mem_regions_count = sizeof(mem_regions) / sizeof(mem_regions[0]);
+const uint16_t mem_regions_count = 0;
 gmp_mem_persp_t mem_persp_server;
 
 //
@@ -223,6 +224,15 @@ GMP_NO_OPT_PREFIX void init(void) GMP_NO_OPT_SUFFIX
     // Band DL module with tunable and persp module.
     gmp_param_tunable_init(&tunable, &dl, 0x30, dict_m1, var_tunable_count);
     gmp_mem_persp_init(&mem_persp_server, &dl, 0x50, mem_regions, mem_regions_count);
+
+#if defined SPECIFY_PC_ENVIRONMENT
+    // The SIL target has no external CiA402 master. Use the normal sequenced
+    // transitions and request operation immediately after initialization.
+    cia402_sm.current_cmd = CIA402_CMD_ENABLE_OPERATION;
+    // Assert the plant enable for the very first UDP frame. The CiA402 state
+    // machine continues to run and owns all subsequent fault transitions.
+    ctl_enable_pwm();
+#endif
 }
 
 // Initialization tasks after all peripherals have been initialized

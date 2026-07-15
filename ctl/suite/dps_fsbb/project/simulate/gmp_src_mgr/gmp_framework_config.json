@@ -43,6 +43,22 @@
         },
         {
             "root": "ctl",
+            "module": "component|digital_power|dcdc"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|mppt|_internal"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|mppt|inc"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|mppt|po"
+        },
+        {
+            "root": "ctl",
             "module": "component|hardware_preset|_internal"
         },
         {

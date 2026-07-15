@@ -762,6 +762,12 @@ class HeaderGenerator:
         schema = self.library.schema(entity.schema_id)
         prefix = self.prefix(entity, schema)
 
+        # A parent entity may export expressions that reference macros from one
+        # of its component entities.  MATLAB evaluates a script sequentially,
+        # unlike the C preprocessor, so emit component variables first.
+        for comp in entity.components.values():
+            self._append_entity_matlab_macros(lines, comp.entity, emitted, seen, known_macros)
+
         def emit(name: str, value: Any, description: str = "") -> None:
             macro = macro_name(name)
             if not macro or macro in emitted:
@@ -807,12 +813,8 @@ class HeaderGenerator:
             emit(f"{prefix}_{item.name}", self._format_expr(item.expr, prefix), item.description or item.name)
 
         for comp in entity.components.values():
-            if comp.inline:
-                self._append_entity_matlab_macros(lines, comp.entity, emitted, seen, known_macros)
             if comp.overrides:
                 self._append_component_override_matlab_macros(lines, comp, entity, schema, emitted, known_macros)
-            if not comp.inline:
-                self._append_entity_matlab_macros(lines, comp.entity, emitted, seen, known_macros)
 
     def _append_component_override_matlab_macros(
         self,

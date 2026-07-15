@@ -6,7 +6,10 @@
 #ifndef _FILE_CTRL_MAIN_H_
 #define _FILE_CTRL_MAIN_H_
 
-#include <sdpe_dps_fsbb_iris_settings.h>
+#ifndef SDPE_FSBB_SETTINGS_HEADER
+#define SDPE_FSBB_SETTINGS_HEADER <sdpe_dps_fsbb_iris_settings.h>
+#endif
+#include SDPE_FSBB_SETTINGS_HEADER
 #include <core/pm/function_scheduler.h>
 #include <core/dev/pil_core.h>
 #include <ctl/framework/cia402_state_machine.h>

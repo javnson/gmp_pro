@@ -50,9 +50,9 @@ extern "C"
 // #define GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
 
 /**
- * @brief Use negative PWM modulator logic.
+ * @brief Invert duty-to-CMP mapping because the IRIS ePWM action qualifier sets high on up-count CMPA and low on down-count CMPA.
  */
-#define PWM_MODULATOR_USING_NEGATIVE_LOGIC 0
+#define PWM_MODULATOR_USING_NEGATIVE_LOGIC 1
 
 //=================================================================================================
 /**
