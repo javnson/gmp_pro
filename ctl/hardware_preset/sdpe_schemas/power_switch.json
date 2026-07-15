@@ -49,6 +49,51 @@
       "value_format": "({}f)",
       "description": "On resistance.",
       "default": 0.0
+    },
+    {
+      "name": "configuration",
+      "c_name": "CONFIGURATION",
+      "unit": "",
+      "required": false,
+      "value_format": "\"{}\"",
+      "description": "Single switch, dual switch, half bridge power block, etc.",
+      "default": "single"
+    },
+    {
+      "name": "rdson_max_ohm",
+      "c_name": "RDSON_MAX_OHM",
+      "unit": "ohm",
+      "required": false,
+      "value_format": "({}f)",
+      "description": "Maximum on resistance at the documented gate voltage.",
+      "default": 0.0
+    },
+    {
+      "name": "gate_voltage_v",
+      "c_name": "GATE_VOLTAGE_V",
+      "unit": "V",
+      "required": false,
+      "value_format": "({}f)",
+      "description": "Gate voltage associated with the resistance value.",
+      "default": 0.0
+    },
+    {
+      "name": "gate_charge_nc",
+      "c_name": "GATE_CHARGE_NC",
+      "unit": "nC",
+      "required": false,
+      "value_format": "({}f)",
+      "description": "Typical total gate charge.",
+      "default": 0.0
+    },
+    {
+      "name": "package",
+      "c_name": "PACKAGE",
+      "unit": "",
+      "required": false,
+      "value_format": "\"{}\"",
+      "description": "Manufacturer package name.",
+      "default": "unknown"
     }
   ],
   "exports": {

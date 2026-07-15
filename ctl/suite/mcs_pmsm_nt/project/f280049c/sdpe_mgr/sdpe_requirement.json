@@ -12,10 +12,13 @@
     },
     {
       "entity": "sm060r20b30mnad"
+    },
+    {
+      "entity": "gmp_3ph_2136sinv_dual"
     }
   ],
   "code_sections": {
-    "after_extern_open": "#include <sdpe_mcs_pmsm_nt_common_settings.h>\n\n/* The BOOSTXL inverter remains a legacy preset until it receives an SDPE entity. */\n#define BOOSTXL_3PHGANINV_IS_DEFAULT_PARAM\n#include <ctl/component/hardware_preset/inverter_3ph/GMP_3PH_2136SINV_DUAL_TMPL.h>\n\n/* Compatibility names consumed by the existing PMSM controller. */\n#define MOTOR_TYPE                     SM060R20B30MNAD_MOTOR_TYPE\n#define MOTOR_PARAM_RS                 SM060R20B30MNAD_RS\n#define MOTOR_PARAM_LS                 SM060R20B30MNAD_LD\n#define MOTOR_PARAM_LD                 SM060R20B30MNAD_LD\n#define MOTOR_PARAM_LQ                 SM060R20B30MNAD_LQ\n#define MOTOR_PARAM_FLUX               SM060R20B30MNAD_FLUX\n#define MOTOR_PARAM_POLE_PAIRS         SM060R20B30MNAD_POLE_PAIRS\n#define MOTOR_PARAM_INERTIA            SM060R20B30MNAD_INERTIA\n#define MOTOR_PARAM_FRICTION           SM060R20B30MNAD_FRICTION\n#define MOTOR_PARAM_KV                 SM060R20B30MNAD_KV\n#define MOTOR_PARAM_EMF                SM060R20B30MNAD_EMF\n#define MOTOR_PARAM_RATED_VOLTAGE      SM060R20B30MNAD_RATED_VOLTAGE\n#define MOTOR_PARAM_RATED_CURRENT      SM060R20B30MNAD_RATED_CURRENT\n#define MOTOR_PARAM_NO_LOAD_CURRENT    SM060R20B30MNAD_NO_LOAD_CURRENT\n#define MOTOR_PARAM_RATED_FREQUENCY    SM060R20B30MNAD_RATED_FREQUENCY\n#define MOTOR_PARAM_MAX_SPEED          SM060R20B30MNAD_MAX_SPEED\n#define MOTOR_PARAM_MAX_TORQUE         SM060R20B30MNAD_MAX_TORQUE\n#define MOTOR_PARAM_MAX_DC_VOLTAGE     SM060R20B30MNAD_MAX_DC_VOLTAGE\n#define MOTOR_PARAM_MAX_PH_CURRENT     SM060R20B30MNAD_MAX_PH_CURRENT\n\n#define LAUNCHPAD 1\n#define GMP_IRIS  0\n#define BOARD_SELECTION LAUNCHPAD",
+    "after_extern_open": "#include <sdpe_mcs_pmsm_nt_common_settings.h>\n\n/* The inverter is selected as an SDPE hardware entity. */\n\n/* Compatibility names consumed by the existing PMSM controller. */\n#define MOTOR_TYPE                     SM060R20B30MNAD_MOTOR_TYPE\n#define MOTOR_PARAM_RS                 SM060R20B30MNAD_RS\n#define MOTOR_PARAM_LS                 SM060R20B30MNAD_LD\n#define MOTOR_PARAM_LD                 SM060R20B30MNAD_LD\n#define MOTOR_PARAM_LQ                 SM060R20B30MNAD_LQ\n#define MOTOR_PARAM_FLUX               SM060R20B30MNAD_FLUX\n#define MOTOR_PARAM_POLE_PAIRS         SM060R20B30MNAD_POLE_PAIRS\n#define MOTOR_PARAM_INERTIA            SM060R20B30MNAD_INERTIA\n#define MOTOR_PARAM_FRICTION           SM060R20B30MNAD_FRICTION\n#define MOTOR_PARAM_KV                 SM060R20B30MNAD_KV\n#define MOTOR_PARAM_EMF                SM060R20B30MNAD_EMF\n#define MOTOR_PARAM_RATED_VOLTAGE      SM060R20B30MNAD_RATED_VOLTAGE\n#define MOTOR_PARAM_RATED_CURRENT      SM060R20B30MNAD_RATED_CURRENT\n#define MOTOR_PARAM_NO_LOAD_CURRENT    SM060R20B30MNAD_NO_LOAD_CURRENT\n#define MOTOR_PARAM_RATED_FREQUENCY    SM060R20B30MNAD_RATED_FREQUENCY\n#define MOTOR_PARAM_MAX_SPEED          SM060R20B30MNAD_MAX_SPEED\n#define MOTOR_PARAM_MAX_TORQUE         SM060R20B30MNAD_MAX_TORQUE\n#define MOTOR_PARAM_MAX_DC_VOLTAGE     SM060R20B30MNAD_MAX_DC_VOLTAGE\n#define MOTOR_PARAM_MAX_PH_CURRENT     SM060R20B30MNAD_MAX_PH_CURRENT\n\n#define LAUNCHPAD 1\n#define GMP_IRIS  0\n#define BOARD_SELECTION LAUNCHPAD",
     "before_footer": "/* No additional platform-specific tail definitions. */"
   },
   "feature_macros": [],
@@ -342,7 +345,7 @@
       "role": "phase_current_sensitivity",
       "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
       "binding": {
-        "literal": "(MY_BOARD_PH_SHUNT_RESISTANCE_OHM * MY_BOARD_PH_CSA_GAIN_V_V)"
+        "literal": "(GMP_3PH_2136SINV_DUAL_PH_SHUNT_RESISTANCE_OHM * GMP_3PH_2136SINV_DUAL_PH_CSA_GAIN_V_V)"
       },
       "description": "Phase-current sensor sensitivity in volts per ampere."
     },
@@ -350,7 +353,7 @@
       "role": "phase_current_bias",
       "macro": "CTRL_INVERTER_CURRENT_BIAS",
       "binding": {
-        "literal": "(MY_BOARD_PH_CSA_BIAS_V)"
+        "literal": "(GMP_3PH_2136SINV_DUAL_PH_CSA_BIAS_V)"
       },
       "description": "Phase-current sensor zero-current bias in volts."
     },
@@ -358,7 +361,7 @@
       "role": "phase_voltage_sensitivity",
       "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
       "binding": {
-        "literal": "(MY_BOARD_PH_VOLTAGE_SENSE_GAIN)"
+        "literal": "(GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_GAIN)"
       },
       "description": "Phase-voltage sensing gain in ADC volts per measured volt."
     },
@@ -366,7 +369,7 @@
       "role": "phase_voltage_bias",
       "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
       "binding": {
-        "literal": "(MY_BOARD_PH_VOLTAGE_SENSE_BIAS_V)"
+        "literal": "(GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_BIAS_V)"
       },
       "description": "Phase-voltage sensor bias in volts."
     },
@@ -374,7 +377,7 @@
       "role": "dc_current_sensitivity",
       "macro": "CTRL_DC_CURRENT_SENSITIVITY",
       "binding": {
-        "literal": "(MY_BOARD_DCBUS_CURRENT_SENSE_GAIN)"
+        "literal": "(GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_GAIN)"
       },
       "description": "DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path."
     },
@@ -382,7 +385,7 @@
       "role": "dc_current_bias",
       "macro": "CTRL_DC_CURRENT_BIAS",
       "binding": {
-        "literal": "(MY_BOARD_DCBUS_CURRENT_SENSE_BIAS_V)"
+        "literal": "(GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_BIAS_V)"
       },
       "description": "DC-bus current sensor bias."
     },
@@ -390,7 +393,7 @@
       "role": "dc_voltage_sensitivity",
       "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
       "binding": {
-        "literal": "(MY_BOARD_DCBUS_VOLTAGE_SENSE_GAIN)"
+        "literal": "(GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_GAIN)"
       },
       "description": "DC-bus voltage sensing gain in ADC volts per measured volt."
     },
@@ -398,7 +401,7 @@
       "role": "dc_voltage_bias",
       "macro": "CTRL_DC_VOLTAGE_BIAS",
       "binding": {
-        "literal": "(MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)"
+        "literal": "(GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_BIAS_V)"
       },
       "description": "DC-bus voltage sensor bias in volts."
     }

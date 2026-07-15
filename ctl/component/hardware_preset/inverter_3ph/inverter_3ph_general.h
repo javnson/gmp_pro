@@ -45,9 +45,11 @@ enum
  */
 enum
 {
+    CS_TOPOLOGY_NONE = 0,      ///< No current measurement channel.
     CS_TOPOLOGY_LOW_SIDE = 1,  ///< Low-side sensing on inverter legs.
     CS_TOPOLOGY_HIGH_SIDE = 2, ///< High-side sensing on inverter legs.
     CS_TOPOLOGY_INLINE = 3,    ///< In-phase (inline) sensing.
+    CS_TOPOLOGY_DC_LINK = 4,   ///< Single DC-link or common return shunt.
 };
 /** @} */
 

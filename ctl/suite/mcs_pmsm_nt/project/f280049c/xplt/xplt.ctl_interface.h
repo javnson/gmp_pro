@@ -75,8 +75,10 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
 //    DAC_setShadowValue(LAUNCHXL_DACB_BASE, smo.e_est.dat[phase_B] * 2048 + 2048);
 
     // SMO angle
+#ifdef ENABLE_SMO
     DAC_setShadowValue(LAUNCHXL_DACA_BASE, smo.pos_out.elec_position * 2048 + 2048);
     DAC_setShadowValue(LAUNCHXL_DACB_BASE, pos_enc.encif.elec_position * 2048 + 2048);
+#endif // ENABLE_SMO
 
 #elif BUILD_LEVEL == 3
     // SMO angle

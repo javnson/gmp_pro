@@ -7,6 +7,9 @@
   "hardware": [
     {
       "entity": "tyi_5008_kv335"
+    },
+    {
+      "entity": "ti_boostxl_3phganinv"
     }
   ],
   "requirements": [
@@ -94,7 +97,7 @@
       "role": "phase_current_sensitivity",
       "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
       "binding": {
-        "literal": "(MY_BOARD_PH_SHUNT_RESISTANCE_OHM * MY_BOARD_PH_CSA_GAIN_V_V)"
+        "literal": "(TI_BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM * TI_BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V)"
       },
       "description": "Phase-current sensor sensitivity in volts per ampere."
     },
@@ -102,7 +105,7 @@
       "role": "phase_current_bias",
       "macro": "CTRL_INVERTER_CURRENT_BIAS",
       "binding": {
-        "literal": "(MY_BOARD_PH_CSA_BIAS_V)"
+        "literal": "(TI_BOOSTXL_3PHGANINV_PH_CSA_BIAS_V)"
       },
       "description": "Phase-current sensor zero-current bias in volts."
     },
@@ -110,7 +113,7 @@
       "role": "phase_voltage_sensitivity",
       "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
       "binding": {
-        "literal": "(MY_BOARD_PH_VOLTAGE_SENSE_GAIN)"
+        "literal": "(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN)"
       },
       "description": "Phase-voltage sensing gain in ADC volts per measured volt."
     },
@@ -118,7 +121,7 @@
       "role": "phase_voltage_bias",
       "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
       "binding": {
-        "literal": "(MY_BOARD_PH_VOLTAGE_SENSE_BIAS_V)"
+        "literal": "(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V)"
       },
       "description": "Phase-voltage sensor bias in volts."
     },
@@ -126,7 +129,7 @@
       "role": "dc_current_sensitivity",
       "macro": "CTRL_DC_CURRENT_SENSITIVITY",
       "binding": {
-        "literal": "(MY_BOARD_DCBUS_CURRENT_SENSE_GAIN)"
+        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_GAIN)"
       },
       "description": "DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path."
     },
@@ -134,7 +137,7 @@
       "role": "dc_current_bias",
       "macro": "CTRL_DC_CURRENT_BIAS",
       "binding": {
-        "literal": "(MY_BOARD_DCBUS_CURRENT_SENSE_BIAS_V)"
+        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_BIAS_V)"
       },
       "description": "DC-bus current sensor bias."
     },
@@ -142,7 +145,7 @@
       "role": "dc_voltage_sensitivity",
       "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
       "binding": {
-        "literal": "(MY_BOARD_DCBUS_VOLTAGE_SENSE_GAIN)"
+        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_GAIN)"
       },
       "description": "DC-bus voltage sensing gain in ADC volts per measured volt."
     },
@@ -150,7 +153,7 @@
       "role": "dc_voltage_bias",
       "macro": "CTRL_DC_VOLTAGE_BIAS",
       "binding": {
-        "literal": "(MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)"
+        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_BIAS_V)"
       },
       "description": "DC-bus voltage sensor bias in volts."
     }
@@ -170,7 +173,7 @@
     }
   ],
   "code_sections": {
-    "after_extern_open": "#include <sdpe_mcs_pmsm_nt_common_settings.h>\n\n/* Preserve the validated SIL motor and inverter models while using SDPE as the settings source. */\n#define BOOSTXL_3PHGANINV_IS_DEFAULT_PARAM\n#include <ctl/component/hardware_preset/pmsm_motor/TYI_5008_KV335.h>\n#include <ctl/component/hardware_preset/inverter_3ph/TI_BOOSTXL_3PhGaNInv.h>",
+    "after_extern_open": "#include <sdpe_mcs_pmsm_nt_common_settings.h>\n\n/* Preserve the validated SIL motor and inverter models while using SDPE as the settings source. */\n/* Motor and inverter headers are emitted from the SDPE hardware list. */",
     "before_footer": "/* No additional platform-specific tail definitions. */"
   },
   "description": "Windows/Simulink SIL implementation of the common mcs_pmsm_nt controller requirement contract.",
