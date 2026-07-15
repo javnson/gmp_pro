@@ -1,7 +1,7 @@
 //
 // THIS IS A DEMO SOURCE CODE FOR GMP LIBRARY.
 //
-// User main implementation for Single-Phase Inverter (SINV).
+// User main implementation for the bidirectional CLLLC/DAB converter.
 //
 
 // GMP basic core header
@@ -27,33 +27,21 @@ gmp_datalink_t dl;
 gmp_pil_sim_t pil;
 
 //
-// Tunable Dictionary (Mapped for SINV)
+// Tunable Dictionary
 //
 const gmp_param_item_t dict_m1[] = {
     // CiA 402 State Machine & Protection
     {&cia402_sm.current_cmd, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RW},
     {&cia402_sm.current_state, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RO},
 
-//    {&dcdc_core.flag_enable, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RW},
-//
-//    {&dcdc_core.flag_enable_voltage_loop, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RW},
-//    {&dcdc_core.v_out_set_raw, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-//    {&dcdc_core.v_out_ref, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-//    {&adc_v_out.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
-//    {&dcdc_core.v_loop_pi.kp, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-//    {&dcdc_core.v_loop_pi.ki, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-//
-//    {&dcdc_core.flag_enable_current_loop, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RW},
-//    {&dcdc_core.i_out_set_raw, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-//    {&dcdc_core.i_L_ref, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-//    {&adc_i_L.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
-//    {&dcdc_core.i_loop_pi.kp, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-//    {&dcdc_core.i_loop_pi.ki, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-//
-//    {&dcdc_core.v_out_ff, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-//    {&dcdc_core.v_pwm_req, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
-
-    {&adc_v_in.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&g_v_out_ref_user, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
+    {&g_i_limit_user, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
+    {&g_modulation_command, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&adc_v_primary.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&adc_i_primary.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&adc_v_secondary.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&adc_i_secondary.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&adc_i_resonant.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
 
 };
 const uint16_t var_tunable_count = sizeof(dict_m1) / sizeof(dict_m1[0]);
@@ -62,11 +50,8 @@ gmp_param_tunable_t tunable;
 //
 // Memory perspective Dictionary (Mapped for SINV)
 //
-const gmp_mem_region_t mem_regions[] = {
-//    {.base_addr = &rc_core, .byte_length = sizeof(rc_core) * GMP_PORT_DATA_SIZE_PER_BYTES, .perm = GMP_MEM_PERM_RW},
-//    {.base_addr = &pll, .byte_length = sizeof(pll) * GMP_PORT_DATA_SIZE_PER_BYTES, .perm = GMP_MEM_PERM_RW},
-};
-const uint16_t mem_regions_count = sizeof(mem_regions) / sizeof(mem_regions[0]);
+const gmp_mem_region_t mem_regions[] = {{NULL, 0, GMP_MEM_PERM_RO}};
+const uint16_t mem_regions_count = 0;
 gmp_mem_persp_t mem_persp_server;
 
 //
@@ -138,7 +123,7 @@ gmp_task_status_t tsk_blink(gmp_task_t* tsk)
 {
     GMP_UNUSED_VAR(tsk);
 
-    gmp_base_print(TEXT_STRING("Hello SINV World!\r\n"));
+    gmp_base_print(TEXT_STRING("CLLLC controller alive.\r\n"));
 
     static fast_gt led_stat = 0;
     if (led_stat == 0)
@@ -221,7 +206,10 @@ gmp_task_status_t tsk_startup(gmp_task_t* tsk)
 {
     GMP_UNUSED_VAR(tsk);
 
-    // Add necessary init code here.
+    /* Use the normal CiA402 transition sequence; no external command is
+       required for the first commissioning build. */
+    cia402_sm.flag_enable_control_word = 0;
+    cia402_sm.current_cmd = CIA402_CMD_ENABLE_OPERATION;
 
     // startup process is complete, close this task
     tsk->is_enabled = 0;

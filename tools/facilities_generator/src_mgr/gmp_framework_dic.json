@@ -4071,12 +4071,14 @@
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/src/dcdc_core.c",
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/src/dcdc_boost_hw.c",
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/src/dcdc_fsbb_hw.c",
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/src/dcdc_buck_hw.c"
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/src/dcdc_buck_hw.c",
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/src/dcdc_clllc_hw.c"
                 ],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/boost.h",
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/buck.h",
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/fsbb.h"
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/fsbb.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/clllc.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],

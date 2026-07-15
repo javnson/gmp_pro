@@ -24,7 +24,7 @@ if /i "%~1"=="--plan" (
     echo Python packages: tools\gmp_installer\requirements-gmp.txt
     echo vcpkg projects: ctl\suite\*\project\simulate with vcpkg.json
     echo Integration   : user-wide vcpkg integration
-    echo Repository    : CCS registration, facilities generation, source distribution
+    echo Repository    : CCS registration, facilities/source and SDPE tool distribution
     exit /b 0
 )
 
@@ -123,6 +123,10 @@ if errorlevel 1 exit /b 1
 
 echo [SETUP] Distributing source-management tools and generated files...
 python "%GMP_PRO_LOCATION%\tools\facilities_generator\src_mgr\framework_distribute_tools_v3.py"
+if errorlevel 1 exit /b 1
+
+echo [SETUP] Distributing project-local SDPE toolchains...
+python "%GMP_PRO_LOCATION%\tools\SDPE_v2\distribute_sdpe_mgr.py"
 if errorlevel 1 exit /b 1
 
 echo.

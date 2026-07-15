@@ -28,10 +28,11 @@ extern "C"
 //=================================================================================================
 // definitions of peripheral
 
-extern adc_channel_t adc_v_in;
-extern adc_channel_t adc_v_out;
-extern adc_channel_t adc_i_L;
-extern adc_channel_t adc_i_load;
+extern adc_channel_t adc_v_primary;
+extern adc_channel_t adc_i_primary;
+extern adc_channel_t adc_v_secondary;
+extern adc_channel_t adc_i_secondary;
+extern adc_channel_t adc_i_resonant;
 
 // dlog DSA objects
 //extern basic_trigger_t trigger;
@@ -41,6 +42,9 @@ extern ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];
 extern ctrl_gt dlog_mem2[DLOG_MEM_LENGTH];
 
 void reset_controller(void);
+void flush_dl_tx_buffer(void);
+void flush_dl_rx_buffer(void);
+void send_monitor_data(void);
 
 #ifdef __cplusplus
 }

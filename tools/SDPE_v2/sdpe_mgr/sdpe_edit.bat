@@ -9,7 +9,7 @@ if not defined GMP_PRO_LOCATION (
 call "%GMP_PRO_LOCATION%\tools\gmp_installer\ensure_gmp_environment.bat"
 if errorlevel 1 exit /b 1
 
-title SDPE Demo Project Requirement Editor
+title SDPE Project Requirement Editor
 cd /d "%~dp0"
 call "%~dp0sdpe_settings.bat"
 if errorlevel 1 (
@@ -18,7 +18,7 @@ if errorlevel 1 (
 )
 
 echo =======================================================
-echo [SDPE] Starting demo project requirement GUI...
+echo [SDPE] Starting project requirement GUI...
 echo =======================================================
 echo [SDPE] Settings   : %SDPE_SETTINGS%
 echo [SDPE] Requirement: %SDPE_REQUIREMENT%

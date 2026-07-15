@@ -218,6 +218,7 @@ must select the installed environment through the common guard.
 | Add a C/C++ package to an existing project | That project's `vcpkg.json` | `environment_manifest.json` only if a new project is introduced |
 | Add a GMP BAT entry point | The owning tool directory | `audit_env_guards.py` scope, when a new managed directory is introduced |
 | Change a source-manager BAT copied into projects | `tools/facilities_generator/src_mgr/gmp_src_mgr` | Run the framework distributor; do not edit generated project copies |
+| Change an SDPE BAT copied into projects | `tools/SDPE_v2/sdpe_mgr` | Run `distribute_sdpe_mgr.py`; project copies are ignored release artifacts |
 
 `tools/gmp_installer/environment_manifest.json` describes the reproducible
 private environment. Increment its `environment_version` whenever the published
@@ -510,6 +511,16 @@ the distributor runs `gmp_generate_inc.bat` and then
 `gmp_generate_src.bat` for every valid target. A copy or generation failure
 returns a non-zero status, which prevents the installer completion marker from
 being created.
+
+SDPE project launchers follow the same release model. The canonical
+`sdpe_edit.bat`, `sdpe_generate.bat`, `sdpe_settings.bat`, and
+`sdpe_validate.bat` live under `tools/SDPE_v2/sdpe_mgr` and are distributed by
+`tools/SDPE_v2/distribute_sdpe_mgr.py`. The distributor searches the repository
+for `sdpe_mgr`, applies `.gitignore` through `git check-ignore`, and updates only
+those four BAT files. It never overwrites `sdpe_requirement.json`, project
+README files, generated headers, Matlab initialization files, or
+`hardware_preset`. Project copies of the BAT files are ignored by Git and must
+not be edited directly.
 
 When a new managed BAT directory is introduced, extend
 `audit_env_guards.py` so guard coverage remains enforceable. Run the audit after

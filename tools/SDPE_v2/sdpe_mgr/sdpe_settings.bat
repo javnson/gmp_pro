@@ -1,6 +1,5 @@
 @echo off
-rem SDPE built-in demo manager settings.
-rem This manager is intentionally stored under %GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe_mgr.
+rem Canonical SDPE project-manager settings distributed by GMP installation.
 
 rem [GMP_ENV_GUARD] Prefer the GMP virtual environment when installed.
 if not defined GMP_PRO_LOCATION (

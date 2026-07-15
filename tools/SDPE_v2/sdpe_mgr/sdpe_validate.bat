@@ -9,7 +9,7 @@ if not defined GMP_PRO_LOCATION (
 call "%GMP_PRO_LOCATION%\tools\gmp_installer\ensure_gmp_environment.bat"
 if errorlevel 1 exit /b 1
 
-title SDPE Demo Project Validator
+title SDPE Project Validator
 cd /d "%~dp0"
 call "%~dp0sdpe_settings.bat"
 if errorlevel 1 (
@@ -18,7 +18,7 @@ if errorlevel 1 (
 )
 
 echo =======================================================
-echo [SDPE] Validating demo SDPE project...
+echo [SDPE] Validating SDPE library and project requirement...
 echo =======================================================
 
 python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --settings "%SDPE_SETTINGS%" validate
@@ -35,6 +35,6 @@ if errorlevel 1 (
 
 echo.
 echo =======================================================
-echo [SUCCESS] SDPE demo project requirement is readable.
+echo [SUCCESS] SDPE project requirement is readable.
 echo =======================================================
 exit /b 0

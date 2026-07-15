@@ -65,6 +65,12 @@ typedef struct _tag_adv_pwm_ift
      * INPUT: Per-unit unipolar active duty cycle command based on current period (1.0 PU = 100% / Full Period).
      */
     ctrl_gt duty;
+    /**
+     * @brief INPUT: Per-unit dead time based on the current period.
+     * @details For example 200 ns at 100 kHz is 0.02 PU.  The hardware
+     * adapter may write the result to both DBRED and DBFED.
+     */
+    ctrl_gt deadband;
 } adv_pwm_ift;
 
 /**
@@ -94,6 +100,8 @@ typedef struct _tag_adv_pwm_channel
      * @brief OUTPUT: Computed definitive absolute integer compare match threshold ticks for hardware register (e.g., CMPA). 
      */
     pwm_gt duty;
+    /** @brief OUTPUT: Absolute dead-band ticks (DBRED/DBFED). */
+    pwm_gt deadband;
 
 } adv_pwm_channel_t;
 
@@ -129,22 +137,14 @@ GMP_STATIC_INLINE void ctl_step_adv_pwm_channel(adv_pwm_channel_t* pwm_obj, cons
     /* 2. Compile real-time hardware period baseline (Ticks) */
     pwm_obj->period = pwm_mul(pwm_obj->raw.period, pwm_obj->period_base);
 
-    /* 3. Ingest and calculate phase shift ticks based on the newly updated active period */
-    if (input_ref->phase <= float2ctrl(0.0f))
-    {
-        pwm_obj->raw.phase = float2ctrl(0.0f);
-        pwm_obj->phase = 0;
-    }
-    else if (input_ref->phase >= float2ctrl(1.0f))
-    {
-        pwm_obj->raw.phase = float2ctrl(1.0f);
-        pwm_obj->phase = pwm_obj->period;
-    }
-    else
-    {
-        pwm_obj->raw.phase = input_ref->phase;
-        pwm_obj->phase = pwm_mul(pwm_obj->raw.phase, pwm_obj->period);
-    }
+    /* 3. Wrap phase to [0, 1).  Negative commands are deliberately retained
+       as an equivalent lag, which is required by bidirectional DAB control. */
+    pwm_obj->raw.phase = input_ref->phase;
+    while (pwm_obj->raw.phase < float2ctrl(0.0f))
+        pwm_obj->raw.phase += float2ctrl(1.0f);
+    while (pwm_obj->raw.phase >= float2ctrl(1.0f))
+        pwm_obj->raw.phase -= float2ctrl(1.0f);
+    pwm_obj->phase = pwm_mul(pwm_obj->raw.phase, pwm_obj->period);
 
     /* 4. Ingest and compile duty cycle threshold ticks based on the newly updated active period */
     if (input_ref->duty <= float2ctrl(0.0f))
@@ -166,6 +166,11 @@ GMP_STATIC_INLINE void ctl_step_adv_pwm_channel(adv_pwm_channel_t* pwm_obj, cons
     /* 5. Direct hard saturation guard rails to seal hardware safety contract */
     pwm_obj->phase = pwm_sat(pwm_obj->phase, pwm_obj->period, 0);
     pwm_obj->duty = pwm_sat(pwm_obj->duty, pwm_obj->period, 0);
+
+    /* Dead time is intentionally limited below half a period so invalid
+       commands can never suppress both bridge transitions indefinitely. */
+    pwm_obj->raw.deadband = ctl_sat(input_ref->deadband, float2ctrl(0.49f), float2ctrl(0.0f));
+    pwm_obj->deadband = pwm_mul(pwm_obj->raw.deadband, pwm_obj->period);
 }
 
 /**
@@ -176,62 +181,8 @@ GMP_STATIC_INLINE void ctl_step_adv_pwm_channel(adv_pwm_channel_t* pwm_obj, cons
  */
 GMP_STATIC_INLINE void ctl_step_adv_pwm_channel_inv(adv_pwm_channel_t* pwm_obj, const adv_pwm_ift* input_ref)
 {
-    /* 1. Sync primary forward period properties first */
-    if (input_ref->period <= float2ctrl(0.01f))
-    {
-        pwm_obj->raw.period = float2ctrl(0.01f);
-    }
-    else
-    {
-        pwm_obj->raw.period = input_ref->period;
-    }
-    pwm_obj->period = pwm_mul(pwm_obj->raw.period, pwm_obj->period_base);
-
-    if (input_ref->phase <= float2ctrl(0.0f))
-    {
-        pwm_obj->raw.phase = float2ctrl(0.0f);
-        pwm_obj->phase = 0;
-    }
-    else if (input_ref->phase >= float2ctrl(1.0f))
-    {
-        pwm_obj->raw.phase = float2ctrl(1.0f);
-        pwm_obj->phase = pwm_obj->period;
-    }
-    else
-    {
-        pwm_obj->raw.phase = input_ref->phase;
-        pwm_obj->phase = pwm_mul(pwm_obj->raw.phase, pwm_obj->period);
-    }
-
-    /* 2. Compile complementary active threshold ticks */
-    if (input_ref->duty <= float2ctrl(0.0f))
-    {
-        pwm_obj->raw.duty = float2ctrl(0.0f);
-        pwm_obj->duty = pwm_obj->period;
-    }
-    else if (input_ref->duty >= float2ctrl(1.0f))
-    {
-        pwm_obj->raw.duty = float2ctrl(1.0f);
-        pwm_obj->duty = 0;
-    }
-    else
-    {
-        pwm_obj->raw.duty = input_ref->duty;
-        pwm_gt forward_duty_ticks = pwm_mul(pwm_obj->raw.duty, pwm_obj->period);
-
-        if (pwm_obj->period >= forward_duty_ticks)
-        {
-            pwm_obj->duty = pwm_obj->period - forward_duty_ticks;
-        }
-        else
-        {
-            pwm_obj->duty = 0;
-        }
-    }
-
-    /* 3. Safety boundaries check */
-    pwm_obj->phase = pwm_sat(pwm_obj->phase, pwm_obj->period, 0);
-    pwm_obj->duty = pwm_sat(pwm_obj->duty, pwm_obj->period, 0);
+    ctl_step_adv_pwm_channel(pwm_obj, input_ref);
+    pwm_obj->duty = pwm_obj->period - pwm_obj->duty;
 }
 
 /**
@@ -271,6 +222,8 @@ typedef struct _tag_adv_pwm_dual_ift
      * @brief INPUT: Vectorized per-unit unipolar active duty cycles for Channel 0 and Channel 1 (1.0 PU = 100% / Full Period).
      */
     ctrl_gt duty[2];
+    /** @brief INPUT: Shared per-unit dead time for both complementary legs. */
+    ctrl_gt deadband;
 } adv_pwm_dual_ift;
 
 /**
@@ -301,6 +254,8 @@ typedef struct _tag_adv_pwm_dual_channel
      * @brief OUTPUT: Computed absolute integer compare thresholds matrix for Leg 0 and Leg 1 (CMPA).
      */
     pwm_gt duty[2];
+    /** @brief OUTPUT: Shared absolute dead-band ticks. */
+    pwm_gt deadband;
 } adv_pwm_dual_channel_t;
 
 /*---------------------------------------------------------------------------*/
@@ -335,26 +290,20 @@ GMP_STATIC_INLINE void ctl_step_adv_pwm_dual_channel(adv_pwm_dual_channel_t* pwm
     }
     pwm_obj->period = pwm_mul(pwm_obj->raw.period, pwm_obj->period_base);
 
+    pwm_obj->raw.deadband = ctl_sat(input_ref->deadband, float2ctrl(0.49f), float2ctrl(0.0f));
+    pwm_obj->deadband = pwm_mul(pwm_obj->raw.deadband, pwm_obj->period);
+
     /* 2. Concurrent Loop Compilation for both symmetrical channels */
     for (i = 0; i < 2; ++i)
     {
         /* --- Symmetrical Phase Vectors Matrix Compilation --- */
         ctrl_gt phase_cmd = input_ref->phase[i];
-        if (phase_cmd <= float2ctrl(0.0f))
-        {
-            pwm_obj->raw.phase[i] = float2ctrl(0.0f);
-            pwm_obj->phase[i] = 0;
-        }
-        else if (phase_cmd >= float2ctrl(1.0f))
-        {
-            pwm_obj->raw.phase[i] = float2ctrl(1.0f);
-            pwm_obj->phase[i] = pwm_obj->period;
-        }
-        else
-        {
-            pwm_obj->raw.phase[i] = phase_cmd;
-            pwm_obj->phase[i] = pwm_mul(pwm_obj->raw.phase[i], pwm_obj->period);
-        }
+        while (phase_cmd < float2ctrl(0.0f))
+            phase_cmd += float2ctrl(1.0f);
+        while (phase_cmd >= float2ctrl(1.0f))
+            phase_cmd -= float2ctrl(1.0f);
+        pwm_obj->raw.phase[i] = phase_cmd;
+        pwm_obj->phase[i] = pwm_mul(phase_cmd, pwm_obj->period);
         pwm_obj->phase[i] = pwm_sat(pwm_obj->phase[i], pwm_obj->period, 0);
 
         /* --- Symmetrical Duty Vectors Matrix Compilation --- */

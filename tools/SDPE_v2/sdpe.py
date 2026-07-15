@@ -204,121 +204,17 @@ def write_json_if_needed(path: Path, data: dict, force: bool = False) -> bool:
 
 
 def project_mgr_files(project_id: str, suite: str) -> dict[str, str]:
-    return {
-        "sdpe_settings.bat": r'''@echo off
-rem SDPE project manager settings.
-rem This file is intentionally project-local. Adjust paths for your project branch.
-
-if "%GMP_PRO_LOCATION%"=="" (
-    echo [ERROR] Environment variable GMP_PRO_LOCATION is not set!
-    echo [ERROR] Please set it to the GMP repository root directory.
-    exit /b 1
-)
-
-set "SDPE_SETTINGS=%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe_settings.json"
-set "SDPE_REQUIREMENT=%~dp0sdpe_requirement.json"
-set "SDPE_OUT=%~dp0."
-exit /b 0
-''',
-        "sdpe_edit.bat": r'''@echo off
-setlocal EnableDelayedExpansion
-
-title SDPE Project Requirement Editor
-cd /d "%~dp0"
-call "%~dp0sdpe_settings.bat"
-if errorlevel 1 (
-    pause
-    exit /b %errorlevel%
-)
-
-echo =======================================================
-echo [SDPE] Starting project requirement GUI...
-echo =======================================================
-echo [SDPE] Settings   : %SDPE_SETTINGS%
-echo [SDPE] Requirement: %SDPE_REQUIREMENT%
-echo [SDPE] Output     : %SDPE_OUT%
-
-python "%GMP_PRO_LOCATION%\tools\SDPE_v2\gui_pyqt\sdpe_gui.py" --settings "%SDPE_SETTINGS%" --mode project --projects "%SDPE_REQUIREMENT%" --out "%SDPE_OUT%"
-if errorlevel 1 (
-    echo.
-    echo [ERROR] SDPE GUI exited abnormally. Error code: %ERRORLEVEL%
-    pause
-    exit /b %ERRORLEVEL%
-)
-exit /b 0
-''',
-        "sdpe_generate.bat": r'''@echo off
-setlocal EnableDelayedExpansion
-
-title SDPE Project Header Generator
-cd /d "%~dp0"
-call "%~dp0sdpe_settings.bat"
-if errorlevel 1 (
-    pause
-    exit /b %errorlevel%
-)
-
-echo =======================================================
-echo [SDPE] Generating project SDPE headers...
-echo =======================================================
-echo [SDPE] Settings   : %SDPE_SETTINGS%
-echo [SDPE] Requirement: %SDPE_REQUIREMENT%
-echo [SDPE] Output     : %SDPE_OUT%
-
-python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --settings "%SDPE_SETTINGS%" validate
-if errorlevel 1 (
-    pause
-    exit /b %errorlevel%
-)
-
-python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --settings "%SDPE_SETTINGS%" generate-project-local "%SDPE_REQUIREMENT%" --out "%SDPE_OUT%"
-if errorlevel 1 (
-    echo.
-    echo [ERROR] SDPE project generation failed. Error code: %ERRORLEVEL%
-    pause
-    exit /b %ERRORLEVEL%
-)
-
-echo.
-echo =======================================================
-echo [SUCCESS] SDPE project headers generated successfully.
-echo =======================================================
-exit /b 0
-''',
-        "sdpe_validate.bat": r'''@echo off
-setlocal EnableDelayedExpansion
-
-title SDPE Project Validator
-cd /d "%~dp0"
-call "%~dp0sdpe_settings.bat"
-if errorlevel 1 (
-    pause
-    exit /b %errorlevel%
-)
-
-echo =======================================================
-echo [SDPE] Validating SDPE library and project requirement...
-echo =======================================================
-
-python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --settings "%SDPE_SETTINGS%" validate
-if errorlevel 1 (
-    pause
-    exit /b %errorlevel%
-)
-
-python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --settings "%SDPE_SETTINGS%" inspect-project "%SDPE_REQUIREMENT%"
-if errorlevel 1 (
-    pause
-    exit /b %errorlevel%
-)
-
-echo.
-echo =======================================================
-echo [SUCCESS] SDPE project requirement is readable.
-echo =======================================================
-exit /b 0
-''',
-        "README_SDPE_MGR.md": f"""# SDPE Project Manager
+    toolchain_names = (
+        "sdpe_settings.bat",
+        "sdpe_edit.bat",
+        "sdpe_generate.bat",
+        "sdpe_validate.bat",
+    )
+    files = {
+        name: (ROOT / "sdpe_mgr" / name).read_text(encoding="utf-8-sig")
+        for name in toolchain_names
+    }
+    files["README_SDPE_MGR.md"] = f"""# SDPE Project Manager
 
 This folder is the project-local SDPE manager.
 
@@ -342,8 +238,8 @@ Project-local generated headers use relative include paths, so the generated pro
 
 Project id: `{project_id}`
 Suite: `{suite}`
-""",
-    }
+"""
+    return files
 
 
 def cmd_inspect_project(args) -> int:

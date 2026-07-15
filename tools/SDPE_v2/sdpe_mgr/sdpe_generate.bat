@@ -9,7 +9,7 @@ if not defined GMP_PRO_LOCATION (
 call "%GMP_PRO_LOCATION%\tools\gmp_installer\ensure_gmp_environment.bat"
 if errorlevel 1 exit /b 1
 
-title SDPE Demo Project Header Generator
+title SDPE Project Header Generator
 cd /d "%~dp0"
 call "%~dp0sdpe_settings.bat"
 if errorlevel 1 (
@@ -18,7 +18,7 @@ if errorlevel 1 (
 )
 
 echo =======================================================
-echo [SDPE] Generating demo SDPE headers...
+echo [SDPE] Generating project SDPE headers...
 echo =======================================================
 echo [SDPE] Settings   : %SDPE_SETTINGS%
 echo [SDPE] Requirement: %SDPE_REQUIREMENT%
@@ -33,13 +33,13 @@ if errorlevel 1 (
 python "%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe.py" --settings "%SDPE_SETTINGS%" generate-project-local "%SDPE_REQUIREMENT%" --project-dir "%~dp0." --out "%SDPE_OUT%"
 if errorlevel 1 (
     echo.
-    echo [ERROR] SDPE demo generation failed. Error code: %ERRORLEVEL%
+    echo [ERROR] SDPE project generation failed. Error code: %ERRORLEVEL%
     pause
     exit /b %ERRORLEVEL%
 )
 
 echo.
 echo =======================================================
-echo [SUCCESS] SDPE demo headers generated successfully.
+echo [SUCCESS] SDPE project headers generated successfully.
 echo =======================================================
 exit /b 0

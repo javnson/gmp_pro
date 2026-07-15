@@ -258,7 +258,7 @@ python .\sdpe.py --library .\examples generate-project .\examples\projects\dps_f
 生成的 `sdpe_mgr` 包含：
 
 - `sdpe_requirement.json`：当前工程需求和硬件绑定。
-- `sdpe_settings.bat`：工程本地配置，包含 SDPE 库位置、需求文件、输出目录。
+- `sdpe_settings.bat`：由统一模板分发的运行路径设置。
 - `sdpe_edit.bat`：启动 Project Requirement GUI。
 - `sdpe_generate.bat`：生成工程 SDPE 头文件。
 - `sdpe_validate.bat`：检查 SDPE 库和当前需求文件是否可读取。
@@ -271,7 +271,37 @@ sdpe_mgr\
   hardware_preset\
 ```
 
-如果工程需要其他输出位置，只需要修改 `sdpe_mgr\sdpe_settings.bat`。
+工程差异应保存在 `sdpe_requirement.json` 或其他独立配置文件中，不要直接
+修改会在安装时被覆盖的 BAT。若所有工程都需要新的启动行为，应修改
+`tools\SDPE_v2\sdpe_mgr` 中的规范模板。
+
+### 全仓库工具链分发
+
+工程侧的以下四个批处理属于发行工具链，不再作为各工程的独立源码维护：
+
+- `sdpe_edit.bat`
+- `sdpe_generate.bat`
+- `sdpe_settings.bat`
+- `sdpe_validate.bat`
+
+唯一模板位于 `tools\SDPE_v2\sdpe_mgr`。安装程序会运行：
+
+```bat
+python tools\SDPE_v2\distribute_sdpe_mgr.py
+```
+
+该程序会全仓库搜索带有 `sdpe_requirement.json` 的 `sdpe_mgr`，使用 Git
+自身解释 `.gitignore` 并排除 Debug 等忽略目录，然后原子覆盖上述四个
+BAT。它不会修改工程的 requirement、README、生成头文件、Matlab 初始化
+文件或 `hardware_preset`。只查看分发范围而不写文件时使用：
+
+```bat
+python tools\SDPE_v2\distribute_sdpe_mgr.py --dry-run
+```
+
+工程内的四个 BAT 已加入 `.gitignore`。维护工具链时只修改规范模板，不要
+修改工程副本；新建工程只需准备 `sdpe_mgr\sdpe_requirement.json`，下一次
+安装或手动分发会补齐最新启动脚本。
 
 ## 4. 生成结果
 

@@ -29,7 +29,7 @@ if /i "%~1"=="--plan" (
     echo Applications : portable Git, CMake, Ninja, Doxygen, Graphviz
     echo vcpkg         : repository-local bin\vcpkg and shared bin\vcpkg_installed
     echo Python packages: tools\gmp_installer\requirements-gmp.txt
-    echo Repository    : CCS registration, facilities generation, source distribution
+    echo Repository    : CCS registration, facilities/source and SDPE tool distribution
     exit /b 0
 )
 
