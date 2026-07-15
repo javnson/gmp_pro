@@ -288,79 +288,105 @@
     {
       "role": "grid_frequency",
       "macro": "CTRL_GRID_FREQUENCY",
-      "binding": { "float": "50.0" },
+      "binding": {
+        "float": "50.0"
+      },
       "description": "Nominal AC grid/fundamental frequency in Hz."
     },
     {
       "role": "ac_inductance",
       "macro": "CTRL_AC_INDUCTANCE",
-      "binding": { "float": "0.003" },
+      "binding": {
+        "float": "0.003"
+      },
       "description": "Total AC-side filter/grid inductance in H."
     },
     {
       "role": "ac_resistance",
       "macro": "CTRL_AC_RESISTANCE",
-      "binding": { "float": "0.1" },
+      "binding": {
+        "float": "0.1"
+      },
       "description": "Total AC-side series resistance in Ohm."
     },
     {
       "role": "pll_kp",
       "macro": "CTRL_PLL_KP",
-      "binding": { "float": "10.0" },
+      "binding": {
+        "float": "10.0"
+      },
       "description": "Single-phase PLL proportional gain."
     },
     {
       "role": "pll_ti",
       "macro": "CTRL_PLL_TI",
-      "binding": { "float": "0.02" },
+      "binding": {
+        "float": "0.02"
+      },
       "description": "Single-phase PLL integral time constant in seconds."
     },
     {
       "role": "pll_lpf_fc",
       "macro": "CTRL_PLL_LPF_FC",
-      "binding": { "float": "20.0" },
+      "binding": {
+        "float": "20.0"
+      },
       "description": "PLL q-axis error low-pass cutoff in Hz."
     },
     {
       "role": "pq_lpf_fc",
       "macro": "CTRL_PQ_LPF_FC",
-      "binding": { "float": "200.0" },
+      "binding": {
+        "float": "200.0"
+      },
       "description": "Measured active/reactive power low-pass cutoff in Hz."
     },
     {
       "role": "current_limit_pu",
       "macro": "CTRL_CURRENT_LIMIT_PU",
-      "binding": { "float": "1.5" },
+      "binding": {
+        "float": "1.5"
+      },
       "description": "Peak current-reference limit in per unit."
     },
     {
       "role": "grid_vmin_pu",
       "macro": "CTRL_GRID_VMIN_PU",
-      "binding": { "float": "0.1" },
+      "binding": {
+        "float": "0.1"
+      },
       "description": "Minimum PLL voltage magnitude used by P/Q reference division."
     },
     {
       "role": "p_slew_pu_s",
       "macro": "CTRL_P_SLEW_PU_S",
-      "binding": { "float": "10.0" },
+      "binding": {
+        "float": "10.0"
+      },
       "description": "Active-power command slew limit in PU/s."
     },
     {
       "role": "q_slew_pu_s",
       "macro": "CTRL_Q_SLEW_PU_S",
-      "binding": { "float": "20.0" },
+      "binding": {
+        "float": "20.0"
+      },
       "description": "Reactive-power command slew limit in PU/s."
     },
     {
       "role": "current_deadband_pu",
       "macro": "CTRL_CURRENT_DB_PU",
-      "binding": { "float": "0.01" },
+      "binding": {
+        "float": "0.01"
+      },
       "description": "Current polarity deadband for PWM dead-time compensation."
     },
     {
       "role": "fdrc_min_frequency",
       "macro": "CTRL_FDRC_MIN_FREQ",
-      "binding": { "float": "45.0" },
+      "binding": {
+        "float": "45.0"
+      },
       "description": "Minimum fundamental frequency tracked by the repetitive controller in Hz."
     },
     {
@@ -438,25 +464,33 @@
     {
       "role": "protection_iac_peak_max",
       "macro": "CTRL_PROT_IAC_PEAK_MAX",
-      "binding": { "literal": "(CTRL_MAX_HW_CURRENT * 0.9f * 1.41421356f)" },
+      "binding": {
+        "literal": "(CTRL_MAX_HW_CURRENT * 0.9f * 1.41421356f)"
+      },
       "description": "Fast AC peak-current trip threshold in A."
     },
     {
       "role": "protection_controller_max_pu",
       "macro": "CTRL_PROT_VCTRL_MAX_PU",
-      "binding": { "float": "1.5" },
+      "binding": {
+        "float": "1.5"
+      },
       "description": "Maximum unsaturated modulation command before controller-divergence trip."
     },
     {
       "role": "dc_bus_ready_min",
       "macro": "CTRL_DCBUS_READY_MIN",
-      "binding": { "literal": "(CTRL_DCBUS_VOLTAGE * 0.8f)" },
+      "binding": {
+        "literal": "(CTRL_DCBUS_VOLTAGE * 0.8f)"
+      },
       "description": "Minimum physical DC-bus voltage accepted by the startup state machine."
     },
     {
       "role": "dc_bus_ready_max",
       "macro": "CTRL_DCBUS_READY_MAX",
-      "binding": { "literal": "(CTRL_PROT_VBUS_MAX)" },
+      "binding": {
+        "literal": "(CTRL_PROT_VBUS_MAX)"
+      },
       "description": "Maximum physical DC-bus voltage accepted by the startup state machine."
     },
     {
@@ -478,9 +512,8 @@
   ],
   "requirement_groups": [
     {
-      "name": "Controller Basic Parameters",
+      "name": "Peripheral Parameters",
       "requirements": [
-        "startup_delay",
         "controller_frequency",
         "pwm_cmp_max",
         "pwm_deadband",
@@ -489,62 +522,47 @@
       ]
     },
     {
-      "name": "Power System Ratings",
+      "name": "Per-Unit Base Parameters",
       "requirements": [
         "dc_bus_voltage",
         "grid_voltage_rms",
         "rated_current_rms",
         "voltage_base",
-        "current_base",
-        "grid_frequency"
+        "current_base"
       ]
     },
     {
-      "name": "AC Plant Model",
+      "name": "Main Element Parameters",
       "requirements": [
         "ac_inductance",
-        "ac_resistance",
-        "fdrc_min_frequency"
+        "ac_resistance"
       ]
     },
     {
-      "name": "Grid Synchronization and Metering",
+      "name": "DC Bus Voltage Sensor",
       "requirements": [
-        "pll_kp",
-        "pll_ti",
-        "pll_lpf_fc",
-        "pq_lpf_fc"
-      ]
-    },
-    {
-      "name": "Power Command and Current Limit",
-      "requirements": [
-        "current_limit_pu",
-        "grid_vmin_pu",
-        "p_slew_pu_s",
-        "q_slew_pu_s"
-      ]
-    },
-    {
-      "name": "PWM Compensation",
-      "requirements": [
-        "current_deadband_pu"
-      ]
-    },
-    {
-      "name": "Hardware Abstraction Mapping",
-      "requirements": [
-        "ac_voltage_sensitivity",
-        "ac_voltage_bias",
-        "ac_current_sensitivity",
-        "ac_current_bias",
         "dc_voltage_sensitivity",
         "dc_voltage_bias"
       ]
     },
     {
-      "name": "System Protection Bounds",
+      "name": "AC Voltage Sensor",
       "requirements": [
+        "ac_voltage_sensitivity",
+        "ac_voltage_bias"
+      ]
+    },
+    {
+      "name": "AC Current Sensor",
+      "requirements": [
+        "ac_current_sensitivity",
+        "ac_current_bias"
+      ]
+    },
+    {
+      "name": "Protection Parameters",
+      "requirements": [
+        "grid_vmin_pu",
         "max_hw_voltage",
         "max_hw_current",
         "protection_vbus_max",
@@ -555,10 +573,31 @@
       ]
     },
     {
-      "name": "Controller Settings",
+      "name": "Control Loop Parameters",
       "requirements": [
+        "pll_kp",
+        "pll_ti",
+        "pll_lpf_fc",
+        "pq_lpf_fc",
+        "current_limit_pu",
+        "p_slew_pu_s",
+        "q_slew_pu_s",
+        "current_deadband_pu",
+        "fdrc_min_frequency",
         "adc_calibration_timeout",
         "spll_epsilon"
+      ]
+    },
+    {
+      "name": "Runtime Parameters",
+      "requirements": [
+        "startup_delay"
+      ]
+    },
+    {
+      "name": "Default Parameters",
+      "requirements": [
+        "grid_frequency"
       ]
     }
   ]

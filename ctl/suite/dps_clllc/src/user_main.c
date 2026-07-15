@@ -174,7 +174,9 @@ gmp_task_t tasks[] = {
     {"monitor_data", tsk_monitor, 5, 0, 1, NULL},  // 5ms -> 200Hz refresh rate
     {"ctl_mainloop", tsk_ctl_main, 1, 0, 1, NULL}, // 1ms state machine tick
     {"slow_protect", tsk_protect, 10, 0, 1, NULL}, // 10ms thermal/RMS protection
-    {"startup", tsk_startup, 500, 0, 1, NULL},
+    /* Run immediately after the 1 kHz scheduler starts.  The CiA402 state
+       machine still enforces its configured transition delays. */
+    {"startup", tsk_startup, 1, 0, 1, NULL},
 };
 
 //=================================================================================================

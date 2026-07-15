@@ -262,5 +262,58 @@
       },
       "description": "Legacy loop-convergence epsilon retained for controller compatibility."
     }
+  ],
+  "requirement_groups": [
+    {
+      "name": "Peripheral Parameters",
+      "requirements": [
+        "controller_frequency",
+        "pwm_dtc_current_deadband",
+        "pwm_dtc_current_hysteresis"
+      ]
+    },
+    {
+      "name": "Position Sensor Parameters",
+      "requirements": [
+        "encoder_speed_filter_cutoff"
+      ]
+    },
+    {
+      "name": "Protection Parameters",
+      "requirements": [
+        "mech_speed_limit",
+        "mech_speed_slope_limit",
+        "mech_current_limit"
+      ]
+    },
+    {
+      "name": "Control Loop Parameters",
+      "requirements": [
+        "open_loop_frequency",
+        "open_loop_frequency_slope",
+        "mech_position_kp",
+        "mech_position_ki",
+        "mech_velocity_kp",
+        "mech_velocity_ki",
+        "spll_epsilon"
+      ]
+    },
+    {
+      "name": "Commissioning Defaults",
+      "requirements": [
+        "commissioning_id_reference",
+        "commissioning_iq_reference",
+        "commissioning_speed_reference"
+      ]
+    },
+    {
+      "name": "Runtime Parameters",
+      "requirements": [
+        "startup_delay",
+        "cia402_operation_enable_delay",
+        "adc_calibrator_cutoff",
+        "adc_calibrator_quality_factor"
+      ]
+    }
   ]
 }

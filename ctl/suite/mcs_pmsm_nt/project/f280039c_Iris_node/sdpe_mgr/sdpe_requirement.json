@@ -398,10 +398,8 @@
   ],
   "requirement_groups": [
     {
-      "name": "Controller Timing",
+      "name": "Peripheral Parameters",
       "requirements": [
-        "startup_delay",
-        "controller_frequency",
         "pwm_compare_max",
         "pwm_deadband",
         "system_frequency",
@@ -410,81 +408,47 @@
       ]
     },
     {
-      "name": "Per-unit and Encoder Bases",
+      "name": "Per-Unit Base Parameters",
       "requirements": [
         "dc_bus_voltage_base",
         "phase_voltage_base",
-        "current_base",
+        "current_base"
+      ]
+    },
+    {
+      "name": "Position Sensor Parameters",
+      "requirements": [
         "encoder_full_scale",
         "encoder_bias",
         "mechanical_division"
       ]
     },
     {
-      "name": "Phase Sensor Scaling",
+      "name": "DC Bus Voltage Sensor",
       "requirements": [
-        "phase_current_sensitivity",
-        "phase_current_bias",
-        "phase_voltage_sensitivity",
-        "phase_voltage_bias"
-      ]
-    },
-    {
-      "name": "DC Bus Sensor Scaling",
-      "requirements": [
-        "dc_current_sensitivity",
-        "dc_current_bias",
         "dc_voltage_sensitivity",
         "dc_voltage_bias"
       ]
     },
     {
-      "name": "PWM Compensation and Open-loop Commissioning",
+      "name": "Inverter Phase Voltage Sensor",
       "requirements": [
-        "pwm_dtc_current_deadband",
-        "pwm_dtc_current_hysteresis",
-        "open_loop_frequency",
-        "open_loop_frequency_slope"
+        "phase_voltage_sensitivity",
+        "phase_voltage_bias"
       ]
     },
     {
-      "name": "Mechanical Controller Gains",
+      "name": "DC Current Sensor",
       "requirements": [
-        "mech_position_kp",
-        "mech_position_ki",
-        "mech_velocity_kp",
-        "mech_velocity_ki"
+        "dc_current_sensitivity",
+        "dc_current_bias"
       ]
     },
     {
-      "name": "Mechanical Limits and Feedback",
+      "name": "Inverter Phase Current Sensor",
       "requirements": [
-        "mech_speed_limit",
-        "mech_speed_slope_limit",
-        "mech_current_limit",
-        "encoder_speed_filter_cutoff"
-      ]
-    },
-    {
-      "name": "Incremental Commissioning Commands",
-      "requirements": [
-        "commissioning_id_reference",
-        "commissioning_iq_reference",
-        "commissioning_speed_reference"
-      ]
-    },
-    {
-      "name": "Runtime Filters and State Machine",
-      "requirements": [
-        "cia402_operation_enable_delay",
-        "adc_calibrator_cutoff",
-        "adc_calibrator_quality_factor"
-      ]
-    },
-    {
-      "name": "Compatibility Parameters",
-      "requirements": [
-        "spll_epsilon"
+        "phase_current_sensitivity",
+        "phase_current_bias"
       ]
     }
   ]

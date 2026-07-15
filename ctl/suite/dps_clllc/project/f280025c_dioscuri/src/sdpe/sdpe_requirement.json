@@ -1,50 +1,18 @@
 {
-  "id": "pgs_sinv_rc_iris_node",
-  "display_name": "PGS SINV RC F280039C IRIS Node",
-  "description": "Single-phase inverter project requirement prepared from xplt/ctrl_settings.h.\nThis requirement introduces the GMP LVFB 150V 2-phase inverter board as the switching stage and the GMP Harmonia 3-phase LC filter as the grid filter. IRIS F280039C is included as the peripheral option provider.",
-  "suite": "pgs_sinv_rc",
-  "version": "0.1.0",
-  "updated_at": "2026-07-10",
-  "output_header": "sdpe_pgs_sinv_rc_iris_bindings.h",
-  "hardware": [
-    {
-      "entity": "iris_f280039c_node"
-    },
-    {
-      "entity": "gmp_lvfb_150_2ph_v2"
-    },
-    {
-      "entity": "gmp_harmonia_3ph_lc_filter"
-    }
-  ],
-  "code_sections": {
-    "after_extern_open": "/* Original ctrl_settings.h includes are intentionally ignored during this SDPE migration trial. */",
-    "before_footer": "/* Project-specific tail extension point. */"
-  },
+  "id": "dps_clllc_f280025c_dioscuri",
+  "display_name": "DPS CLLLC / DAB F280025C Dioscuri",
+  "description": "Bidirectional isolated CLLLC/DAB controller, resonant tank, sensing, variable-frequency PWM and independent scheduler tick requirements.",
+  "suite": "dps_clllc",
+  "version": "0.2.0",
+  "updated_at": "2026-07-15",
+  "output_header": "sdpe_dps_clllc_dioscuri_bindings.h",
+  "hardware": [],
   "feature_macros": [
-    {
-      "macro": "_USE_DEBUG_DISCRETE_PID",
-      "enabled": true,
-      "value": "",
-      "description": "Enable Discrete PID controller anti-saturation algorithm."
-    },
     {
       "macro": "SPECIFY_ENABLE_ADC_CALIBRATE",
       "enabled": true,
       "value": "",
-      "description": "Enable ADC calibration."
-    },
-    {
-      "macro": "ENBALE_GMP_DL_PIL_SIM",
-      "enabled": false,
-      "value": "",
-      "description": "Enable PIL simulation function. This macro disables controller output."
-    },
-    {
-      "macro": "GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO",
-      "enabled": false,
-      "value": "",
-      "description": "Enable CiA402 debug information."
+      "description": "Calibrate the bipolar Hall-current sensor offsets while PWM is disabled."
     }
   ],
   "option_macros": [
@@ -52,357 +20,30 @@
       "macro": "BUILD_LEVEL",
       "enabled": true,
       "value": "(1)",
-      "options_preset": "",
-      "options": [
-        "(1)",
-        "(2)",
-        "(3)"
-      ],
-      "description": "Single-phase inverter incremental debug build level.\nBUILD_LEVEL 1: modulator and resistive-load validation.\nBUILD_LEVEL 2: voltage closed-loop validation.\nBUILD_LEVEL 3: current-loop and full controller validation."
+      "options": ["(1)", "(2)", "(3)"],
+      "description": "1: open-loop modulation; 2: resonant-current loop; 3: parallel voltage/current competition control."
     },
-    {
-      "macro": "PWM_MODULATOR_USING_NEGATIVE_LOGIC",
-      "enabled": true,
-      "value": "(0)",
-      "options_preset": "",
-      "options": [
-        "(0)",
-        "(1)"
-      ],
-      "description": "Use negative PWM modulator logic."
-    },
-    {
-      "macro": "PHASE_L_BASE",
-      "enabled": true,
-      "value": "IRIS_EPWM3_BASE",
-      "options_preset": "iris_f280039c_node.IRIS_EPWM",
-      "options": [],
-      "description": "PWM base for inverter phase L."
-    },
-    {
-      "macro": "PHASE_N_BASE",
-      "enabled": true,
-      "value": "IRIS_EPWM4_BASE",
-      "options_preset": "iris_f280039c_node.IRIS_EPWM",
-      "options": [],
-      "description": "PWM base for inverter phase N."
-    },
-    {
-      "macro": "PWM_ENABLE_PORT",
-      "enabled": true,
-      "value": "IRIS_GPIO1",
-      "options_preset": "iris_f280039c_node.IRIS_GPIO",
-      "options": [],
-      "description": "Gate-driver enable GPIO."
-    },
-    {
-      "macro": "PWM_RESET_PORT",
-      "enabled": true,
-      "value": "IRIS_GPIO3",
-      "options_preset": "iris_f280039c_node.IRIS_GPIO",
-      "options": [],
-      "description": "Gate-driver reset GPIO."
-    },
-    {
-      "macro": "SYSTEM_LED",
-      "enabled": true,
-      "value": "IRIS_LED1",
-      "options_preset": "",
-      "options": [
-        "IRIS_LED1",
-        "IRIS_LED2",
-        "LED_R",
-        "LED_G"
-      ],
-      "description": "System status LED."
-    },
-    {
-      "macro": "CONTROLLER_LED",
-      "enabled": true,
-      "value": "IRIS_LED2",
-      "options_preset": "",
-      "options": [
-        "IRIS_LED1",
-        "IRIS_LED2",
-        "LED_R",
-        "LED_G"
-      ],
-      "description": "Controller status LED."
-    },
-    {
-      "macro": "INV_IAC_RESULT_BASE",
-      "enabled": true,
-      "value": "ADC_CH1_RESULT_BASE",
-      "options_preset": "iris_f280039c_node.ADC_RESULT_REG",
-      "options": [],
-      "description": "AC current ADC result register base."
-    },
-    {
-      "macro": "INV_IAC",
-      "enabled": true,
-      "value": "ADC_CH1",
-      "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
-      "options": [],
-      "description": "AC current ADC channel."
-    },
-    {
-      "macro": "INV_VAC_RESULT_BASE",
-      "enabled": true,
-      "value": "ADC_CH2_RESULT_BASE",
-      "options_preset": "iris_f280039c_node.ADC_RESULT_REG",
-      "options": [],
-      "description": "AC voltage ADC result register base."
-    },
-    {
-      "macro": "INV_VAC",
-      "enabled": true,
-      "value": "ADC_CH2",
-      "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
-      "options": [],
-      "description": "AC voltage ADC channel."
-    },
-    {
-      "macro": "INV_VBUS_RESULT_BASE",
-      "enabled": true,
-      "value": "ADC_CH3_RESULT_BASE",
-      "options_preset": "iris_f280039c_node.ADC_RESULT_REG",
-      "options": [],
-      "description": "DC bus voltage ADC result register base."
-    },
-    {
-      "macro": "INV_VBUS",
-      "enabled": true,
-      "value": "ADC_CH3",
-      "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
-      "options": [],
-      "description": "DC bus voltage ADC channel."
-    }
+    {"macro":"CLLLC_F_RESONANT_HZ","enabled":true,"value":"(100000.0f)","options":[],"description":"Tank resonant frequency."},
+    {"macro":"CLLLC_F_MIN_HZ","enabled":true,"value":"(75000.0f)","options":[],"description":"Minimum switching frequency."},
+    {"macro":"CLLLC_F_MAX_HZ","enabled":true,"value":"(150000.0f)","options":[],"description":"Maximum switching frequency."},
+    {"macro":"CLLLC_PWM_CYCLES_PER_CONTROL","enabled":true,"value":"(2U)","options":["(1U)","(2U)","(4U)"],"description":"PWM periods per ADC conversion and main control interrupt."},
+    {"macro":"CTRL_SYSTEM_TICK_HZ","enabled":true,"value":"(1000U)","options":[],"description":"CPU Timer scheduler tick, independent of variable PWM frequency."},
+    {"macro":"CLLLC_DEADBAND_S","enabled":true,"value":"(200.0e-9f)","options":[],"description":"Absolute complementary MOSFET dead time."},
+    {"macro":"CLLLC_MAX_DAB_PHASE_PU","enabled":true,"value":"(0.25f)","options":[],"description":"Maximum signed secondary-bridge DAB phase shift."},
+    {"macro":"CLLLC_LM_H","enabled":true,"value":"(120.0e-6f)","options":[],"description":"Transformer magnetizing inductance."},
+    {"macro":"CLLLC_LR_PRIMARY_H","enabled":true,"value":"(20.0e-6f)","options":[],"description":"Primary resonant inductance."},
+    {"macro":"CLLLC_LR_SECONDARY_H","enabled":true,"value":"(20.0e-6f)","options":[],"description":"Secondary resonant inductance."},
+    {"macro":"CLLLC_CR_PRIMARY_F","enabled":true,"value":"(120.0e-9f)","options":[],"description":"Primary resonant capacitance."},
+    {"macro":"CLLLC_CR_SECONDARY_F","enabled":true,"value":"(120.0e-9f)","options":[],"description":"Secondary resonant capacitance."},
+    {"macro":"CLLLC_TRANSFORMER_NS_NP","enabled":true,"value":"(1.0f)","options":[],"description":"Secondary-to-primary transformer turns ratio."},
+    {"macro":"CLLLC_VOLTAGE_TARGET_PU","enabled":true,"value":"(0.40f)","options":[],"description":"Default output-voltage reference."},
+    {"macro":"CLLLC_CURRENT_LIMIT_PU","enabled":true,"value":"(0.50f)","options":[],"description":"Default resonant-current limit."},
+    {"macro":"CLLLC_CURRENT_LOOP_BW_HZ","enabled":true,"value":"(5000.0f)","options":[],"description":"Requested current-loop bandwidth, constrained by auto tuning."},
+    {"macro":"CLLLC_VOLTAGE_LOOP_BW_HZ","enabled":true,"value":"(400.0f)","options":[],"description":"Requested voltage-loop bandwidth, constrained by auto tuning."}
   ],
-  "requirements": [
-    {
-      "role": "startup_delay",
-      "macro": "CTRL_STARTUP_DELAY",
-      "binding": {
-        "number": "100"
-      },
-      "description": "Startup delay in ms."
-    },
-    {
-      "role": "controller_frequency",
-      "macro": "CONTROLLER_FREQUENCY",
-      "binding": {
-        "number": "20e3"
-      },
-      "description": "Controller ISR frequency."
-    },
-    {
-      "role": "pwm_cmp_max",
-      "macro": "CTRL_PWM_CMP_MAX",
-      "binding": {
-        "number": "3000 - 1"
-      },
-      "description": "PWM compare maximum."
-    },
-    {
-      "role": "pwm_deadband",
-      "macro": "CTRL_PWM_DEADBAND_CMP",
-      "binding": {
-        "number": "50"
-      },
-      "description": "PWM deadband compare value."
-    },
-    {
-      "role": "system_tick_divider",
-      "macro": "DSP_C2000_DSP_TIME_DIV",
-      "binding": {
-        "number": "120000 / CTRL_PWM_CMP_MAX / 2"
-      },
-      "description": "System tick divider derived from PWM period."
-    },
-    {
-      "role": "adc_voltage_reference",
-      "macro": "CTRL_ADC_VOLTAGE_REF",
-      "binding": {
-        "float": "3.3"
-      },
-      "description": "ADC voltage reference."
-    },
-    {
-      "role": "dc_bus_voltage",
-      "macro": "CTRL_DCBUS_VOLTAGE",
-      "binding": {
-        "float": "60.0"
-      },
-      "description": "Rated DC bus voltage."
-    },
-    {
-      "role": "grid_voltage_rms",
-      "macro": "CTRL_GRID_VOLTAGE_RMS",
-      "binding": {
-        "float": "24.0"
-      },
-      "description": "Rated AC grid/load RMS voltage."
-    },
-    {
-      "role": "rated_current_rms",
-      "macro": "CTRL_RATED_CURRENT_RMS",
-      "binding": {
-        "float": "10.0"
-      },
-      "description": "Rated AC output RMS current."
-    },
-    {
-      "role": "voltage_base",
-      "macro": "CTRL_VOLTAGE_BASE",
-      "binding": {
-        "float": "34.0"
-      },
-      "description": "Voltage per-unit base, using peak value."
-    },
-    {
-      "role": "current_base",
-      "macro": "CTRL_CURRENT_BASE",
-      "binding": {
-        "float": "14.14"
-      },
-      "description": "Current per-unit base, using peak value."
-    },
-    {
-      "role": "ac_voltage_sensitivity",
-      "macro": "CTRL_AC_VOLTAGE_SENSITIVITY",
-      "binding": {
-        "export": "gmp_harmonia_3ph_lc_filter.ph_voltage_sense_gain"
-      },
-      "description": "AC voltage sensing gain from the grid LC filter voltage sense path."
-    },
-    {
-      "role": "ac_voltage_bias",
-      "macro": "CTRL_AC_VOLTAGE_BIAS",
-      "binding": {
-        "export": "gmp_harmonia_3ph_lc_filter.ph_voltage_sense_bias_v"
-      },
-      "description": "AC voltage sensing ADC bias from the grid LC filter."
-    },
-    {
-      "role": "ac_current_sensitivity",
-      "macro": "CTRL_AC_CURRENT_SENSITIVITY",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
-      },
-      "description": "AC current sensing sensitivity from the LVFB inverter current sensor."
-    },
-    {
-      "role": "ac_current_bias",
-      "macro": "CTRL_AC_CURRENT_BIAS",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
-      },
-      "description": "AC current sensing ADC bias from the LVFB inverter current sensor."
-    },
-    {
-      "role": "dc_voltage_sensitivity",
-      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.voltage_sensitivity"
-      },
-      "description": "DC bus voltage sensing gain from the LVFB inverter voltage sensor."
-    },
-    {
-      "role": "dc_voltage_bias",
-      "macro": "CTRL_DC_VOLTAGE_BIAS",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.voltage_bias_v"
-      },
-      "description": "DC bus voltage sensing ADC bias from the LVFB inverter voltage sensor."
-    },
-    {
-      "role": "max_hw_voltage",
-      "macro": "CTRL_MAX_HW_VOLTAGE",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.vbus_max_v"
-      },
-      "description": "Maximum hardware DC bus voltage from the LVFB inverter board."
-    },
-    {
-      "role": "max_hw_current",
-      "macro": "CTRL_MAX_HW_CURRENT",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.current_max_rms_a"
-      },
-      "description": "Maximum continuous RMS hardware current from the LVFB inverter board."
-    },
-    {
-      "role": "protection_vbus_max",
-      "macro": "CTRL_PROT_VBUS_MAX",
-      "binding": {
-        "float": "100.0"
-      },
-      "description": "Project DC bus over-voltage protection threshold."
-    },
-    {
-      "role": "adc_calibration_timeout",
-      "macro": "TIMEOUT_ADC_CALIB_MS",
-      "binding": {
-        "number": "3000"
-      },
-      "description": "ADC calibration timeout in ms."
-    },
-    {
-      "role": "spll_epsilon",
-      "macro": "CTRL_SPLL_EPSILON",
-      "binding": {
-        "literal": "((float2ctrl(0.005)))"
-      },
-      "description": "SPLL close-loop convergence criterion."
-    }
-  ],
-  "requirement_groups": [
-    {
-      "name": "Controller Basic Parameters",
-      "requirements": [
-        "startup_delay",
-        "controller_frequency",
-        "pwm_cmp_max",
-        "pwm_deadband",
-        "system_tick_divider",
-        "adc_voltage_reference"
-      ]
-    },
-    {
-      "name": "Power System Ratings",
-      "requirements": [
-        "dc_bus_voltage",
-        "grid_voltage_rms",
-        "rated_current_rms",
-        "voltage_base",
-        "current_base"
-      ]
-    },
-    {
-      "name": "Hardware Abstraction Mapping",
-      "requirements": [
-        "ac_voltage_sensitivity",
-        "ac_voltage_bias",
-        "ac_current_sensitivity",
-        "ac_current_bias",
-        "dc_voltage_sensitivity",
-        "dc_voltage_bias"
-      ]
-    },
-    {
-      "name": "System Protection Bounds",
-      "requirements": [
-        "max_hw_voltage",
-        "max_hw_current",
-        "protection_vbus_max"
-      ]
-    },
-    {
-      "name": "Controller Settings",
-      "requirements": [
-        "adc_calibration_timeout",
-        "spll_epsilon"
-      ]
-    }
-  ]
+  "requirements": [],
+  "code_sections": {
+    "after_extern_open": "/* Project-specific peripheral bindings remain in xplt/ctrl_settings.h. */",
+    "before_footer": "/* CLLLC/DAB project extension point. */"
+  }
 }

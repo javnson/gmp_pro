@@ -409,48 +409,57 @@
   ],
   "requirement_groups": [
     {
-      "name": "Requirements",
+      "name": "Peripheral Parameters",
       "requirements": [
-        "startup_delay",
-        "controller_frequency",
         "pwm_compare_max",
         "pwm_deadband",
         "system_frequency",
         "system_time_divider",
-        "adc_voltage_reference",
-        "adc_calibration_timeout",
+        "adc_voltage_reference"
+      ]
+    },
+    {
+      "name": "Per-Unit Base Parameters",
+      "requirements": [
         "dc_bus_voltage_base",
         "phase_voltage_base",
-        "current_base",
+        "current_base"
+      ]
+    },
+    {
+      "name": "Position Sensor Parameters",
+      "requirements": [
         "encoder_full_scale",
         "encoder_bias",
-        "mechanical_division",
-        "phase_current_sensitivity",
-        "phase_current_bias",
-        "phase_voltage_sensitivity",
-        "phase_voltage_bias",
-        "dc_current_sensitivity",
-        "dc_current_bias",
+        "mechanical_division"
+      ]
+    },
+    {
+      "name": "DC Bus Voltage Sensor",
+      "requirements": [
         "dc_voltage_sensitivity",
-        "dc_voltage_bias",
-        "deadtime_current_deadband",
-        "deadtime_current_hysteresis",
-        "open_loop_frequency",
-        "open_loop_frequency_slope",
-        "mechanical_position_kp",
-        "mechanical_position_ki",
-        "mechanical_velocity_kp",
-        "mechanical_velocity_ki",
-        "mechanical_speed_limit",
-        "mechanical_speed_slope",
-        "mechanical_current_limit",
-        "encoder_speed_filter",
-        "commissioning_id_reference",
-        "commissioning_iq_reference",
-        "commissioning_speed_reference",
-        "cia402_enable_delay",
-        "adc_calibrator_cutoff",
-        "adc_calibrator_q"
+        "dc_voltage_bias"
+      ]
+    },
+    {
+      "name": "Inverter Phase Voltage Sensor",
+      "requirements": [
+        "phase_voltage_sensitivity",
+        "phase_voltage_bias"
+      ]
+    },
+    {
+      "name": "DC Current Sensor",
+      "requirements": [
+        "dc_current_sensitivity",
+        "dc_current_bias"
+      ]
+    },
+    {
+      "name": "Inverter Phase Current Sensor",
+      "requirements": [
+        "phase_current_sensitivity",
+        "phase_current_bias"
       ]
     }
   ]

@@ -227,5 +227,61 @@
       },
       "description": "Circular UART RX DMA buffer size."
     }
+  ],
+  "requirement_groups": [
+    {
+      "name": "Peripheral Parameters",
+      "requirements": [
+        "pwm_compare_max",
+        "pwm_deadband",
+        "system_frequency",
+        "adc_voltage_reference",
+        "uart_rx_buffer_size"
+      ]
+    },
+    {
+      "name": "Per-Unit Base Parameters",
+      "requirements": [
+        "dc_bus_voltage_base",
+        "phase_voltage_base",
+        "current_base"
+      ]
+    },
+    {
+      "name": "Position Sensor Parameters",
+      "requirements": [
+        "encoder_full_scale",
+        "encoder_bias",
+        "mechanical_division"
+      ]
+    },
+    {
+      "name": "DC Bus Voltage Sensor",
+      "requirements": [
+        "dc_voltage_sensitivity",
+        "dc_voltage_bias"
+      ]
+    },
+    {
+      "name": "Inverter Phase Voltage Sensor",
+      "requirements": [
+        "phase_voltage_sensitivity",
+        "phase_voltage_bias"
+      ]
+    },
+    {
+      "name": "DC Current Sensor",
+      "requirements": [
+        "dc_current_sensitivity",
+        "dc_current_bias"
+      ]
+    },
+    {
+      "name": "Inverter Phase Current Sensor",
+      "requirements": [
+        "phase_current_sensitivity",
+        "phase_current_bias"
+      ]
+    }
   ]
 }

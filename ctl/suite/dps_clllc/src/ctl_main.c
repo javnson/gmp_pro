@@ -63,6 +63,12 @@ void ctl_init(void)
                              CLLLC_F_MAX_HZ, CLLLC_DEADBAND_S,
                              float2ctrl(CLLLC_MAX_DAB_PHASE_PU));
     init_cia402_state_machine(&cia402_sm);
+    /* Keep the complete automatic commissioning sequence configurable.
+       Hardware uses the conservative 100 ms default per stage; SIL reduces
+       it to 2 ms so a short switching simulation still traverses all states. */
+    cia402_sm.minimum_transit_delay[0] = CTRL_STARTUP_DELAY_MS;
+    cia402_sm.minimum_transit_delay[1] = CTRL_STARTUP_DELAY_MS;
+    cia402_sm.minimum_transit_delay[2] = CTRL_STARTUP_DELAY_MS;
     cia402_sm.minimum_transit_delay[3] = CTRL_STARTUP_DELAY_MS;
     ctl_init_adc_calibrator(&adc_calibrator, 20.0f, 0.707f, CONTROLLER_FREQUENCY);
 }

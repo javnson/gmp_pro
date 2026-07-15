@@ -573,7 +573,7 @@
   "updated_at": "2026-07-14",
   "requirement_groups": [
     {
-      "name": "Controller Basic Parameters",
+      "name": "Peripheral Parameters",
       "requirements": [
         "PWM Frequency",
         "Controller Frequency",
@@ -585,32 +585,14 @@
       ]
     },
     {
-      "name": "Power System Ratings",
+      "name": "Per-Unit Base Parameters",
       "requirements": [
         "Voltage PU Base",
         "Current PU Base"
       ]
     },
     {
-      "name": "Voltage Sensor Configuration",
-      "requirements": [
-        "Input Voltage Sensitive",
-        "Input Voltage Bias",
-        "Output Voltage Sensitive",
-        "Output Voltage Bias"
-      ]
-    },
-    {
-      "name": "Current Sensor Configuration",
-      "requirements": [
-        "Inductor Current Sensitive",
-        "Inductor Current Bias",
-        "Output Current Sensitive",
-        "Output Current Bias"
-      ]
-    },
-    {
-      "name": "Main Parameters",
+      "name": "Main Element Parameters",
       "requirements": [
         "Min Resistance Load",
         "Input Capcitor",
@@ -621,22 +603,67 @@
       ]
     },
     {
-      "name": "Absolute Maximum Parameters",
+      "name": "Input Voltage Sensor",
+      "requirements": [
+        "Input Voltage Sensitive",
+        "Input Voltage Bias"
+      ]
+    },
+    {
+      "name": "Output Voltage Sensor",
+      "requirements": [
+        "Output Voltage Sensitive",
+        "Output Voltage Bias"
+      ]
+    },
+    {
+      "name": "Output Current Sensor",
+      "requirements": [
+        "Output Current Sensitive",
+        "Output Current Bias"
+      ]
+    },
+    {
+      "name": "Inductor Current Sensor",
+      "requirements": [
+        "Inductor Current Sensitive",
+        "Inductor Current Bias"
+      ]
+    },
+    {
+      "name": "Protection Parameters",
       "requirements": [
         "Max Input Voltage",
         "Min Input Voltage",
+        "Nominal Input Voltage",
         "Max Output Voltage",
         "Min Output Voltage",
         "Max Output Current",
+        "Default Output Voltage",
+        "Default Current Limit",
+        "Maximum Duty",
+        "Minimum Duty",
         "Max Inductor Current",
         "Min Inductor Current"
       ]
     },
     {
-      "name": "Controller Parameters",
+      "name": "Control Loop Parameters",
       "requirements": [
+        "Open Loop Voltage Command",
+        "Current Loop Bandwidth",
+        "Voltage Loop Bandwidth",
+        "Low Transition Ratio",
+        "High Transition Ratio",
         "adc_calibration_timeout",
         "spll_epsilon"
+      ]
+    },
+    {
+      "name": "Default Parameters",
+      "requirements": [
+        "Voltage Ramp Rate",
+        "Current Ramp Rate"
       ]
     }
   ]
