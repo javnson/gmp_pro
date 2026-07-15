@@ -2,8 +2,11 @@ import os
 import sys
 import json
 import shutil
+import subprocess
 import re
 from pathlib import Path
+
+from framework_project_discovery import exclude_git_ignored
 
 def get_macros(dic_path):
     """
@@ -21,7 +24,9 @@ def get_macros(dic_path):
             pass
     return sorted(macros.items(), key=lambda item: len(item[0]), reverse=True)
 
-def find_target_projects(search_paths, sorted_macros, target_dir_name="gmp_src_mgr"):
+def find_target_projects(
+    search_paths, sorted_macros, repository_root, target_dir_name="gmp_src_mgr"
+):
     """
     Super Path Resolution Engine V2: 
     支持正则动态解析任何系统环境变量，并使用 pathlib 极速递归。
@@ -71,15 +76,35 @@ def find_target_projects(search_paths, sorted_macros, target_dir_name="gmp_src_m
             if target.is_dir():
                 projects_found.add(target.resolve())
                 
-    return list(projects_found)
+    visible, ignored = exclude_git_ignored(projects_found, repository_root)
+    for path in ignored:
+        print(f"  [IGNORE] Git-ignored source-manager copy: {path}")
+    return visible
+
+
+def execute_generation_script(script_path):
+    """Run one distributed BAT without hiding its output or exit code."""
+    if os.name != "nt":
+        print(f"    -> [ERROR] BAT generation is only supported on Windows: {script_path.name}")
+        return False
+    command = [os.environ.get("COMSPEC", "cmd.exe"), "/d", "/c", "call", str(script_path)]
+    result = subprocess.run(command, cwd=script_path.parent)
+    if result.returncode:
+        print(f"    -> [ERROR] {script_path.name} failed with exit code {result.returncode}")
+        return False
+    print(f"    -> [OK] {script_path.name}")
+    return True
 
 def run_distribution():
     print("=" * 60)
     print("[START] [GMP Fleet] Starting Distribution Engine (Dynamic Env Mode)...")
     print("=" * 60)
 
-    if not os.environ.get('GMP_PRO_LOCATION'):
-        print("[WARNING] Environment variable GMP_PRO_LOCATION not found! Paths depending on it may fail.")
+    root_value = os.environ.get('GMP_PRO_LOCATION')
+    if not root_value:
+        print("[ERROR] Environment variable GMP_PRO_LOCATION not found!")
+        return False
+    repository_root = Path(root_value).resolve()
 
     base_dir = Path(__file__).parent.resolve()
     target_json = base_dir / "deploy_targets.json"
@@ -125,7 +150,11 @@ def run_distribution():
     print("[INFO] Parsing search rules and deep scanning for targets...\n")
     
     # 获取所有目标项目路径
-    target_dirs = find_target_projects(search_paths, sorted_macros)
+    try:
+        target_dirs = find_target_projects(search_paths, sorted_macros, repository_root)
+    except RuntimeError as error:
+        print(f"[ERROR] Project discovery failed: {error}")
+        return False
 
     if not target_dirs:
         print("\n[WARNING] Scan completed, no target projects found.")
@@ -139,7 +168,8 @@ def run_distribution():
     print("\n" + "-" * 60)
     print("[INFO] Scan completed. Distributing/overwriting toolchain to target projects...\n")
     
-    success_count = 0
+    deployed_targets = []
+    deployment_failures = 0
     for current_dir in sorted(target_dirs):
         print(f"  [DEPLOY] Deploying to project: {current_dir.parent.name}")
         try:
@@ -147,14 +177,41 @@ def run_distribution():
                 dest_file = current_dir / src_file.name
                 shutil.copy2(src_file, dest_file)
                 print(f"    -> [OVERWRITE] {src_file.name}")
-            success_count += 1
+            deployed_targets.append(current_dir)
         except Exception as e:
             print(f"    -> [ERROR] Overwrite failed: {e}")
+            deployment_failures += 1
+
+    # Phase 3: Generate headers and sources only after the tool scripts have
+    # been refreshed. Header generation runs first by installer contract.
+    print("\n" + "-" * 60)
+    print("[INFO] Tool distribution completed. Generating project files...\n")
+
+    generation_successes = 0
+    generation_failures = 0
+    for current_dir in deployed_targets:
+        print(f"  [GENERATE] Project: {current_dir.parent.name} ({current_dir})")
+        project_ok = True
+        for script_name in ("gmp_generate_inc.bat", "gmp_generate_src.bat"):
+            script_path = current_dir / script_name
+            if not script_path.is_file():
+                print(f"    -> [ERROR] Required generation script is missing: {script_name}")
+                project_ok = False
+                continue
+            if not execute_generation_script(script_path):
+                project_ok = False
+        if project_ok:
+            generation_successes += 1
+        else:
+            generation_failures += 1
 
     print("\n" + "=" * 60)
-    print(f"[SUMMARY] Distribution complete! Successfully updated toolchain for {success_count} project(s).")
+    print(f"[SUMMARY] Tool scripts deployed: {len(deployed_targets)} project(s).")
+    print(f"[SUMMARY] Generation succeeded: {generation_successes} project(s).")
+    print(f"[SUMMARY] Deployment failures: {deployment_failures} project(s).")
+    print(f"[SUMMARY] Generation failures: {generation_failures} project(s).")
     print("=" * 60)
-    return True
+    return deployment_failures == 0 and generation_failures == 0
 
 if __name__ == "__main__":
     if not run_distribution():

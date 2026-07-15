@@ -19,13 +19,13 @@ cd /d "%~dp0"
 
 :: Execute source file sync script
 python "%GMP_PRO_LOCATION%\tools\facilities_generator\src_mgr\framework_sync_src_v3.py"
+set "RESULT=%ERRORLEVEL%"
 
 :: Error handling
-if %ERRORLEVEL% neq 0 (
+if not "%RESULT%"=="0" (
     echo.
     echo [ERROR] Source file generation failed. Process terminated!
-    pause
-    exit /b %ERRORLEVEL%
+    exit /b %RESULT%
 )
 
 echo.

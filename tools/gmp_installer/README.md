@@ -472,6 +472,16 @@ projects are generated artifacts. After changing the canonical templates, run
 the framework distributor so every project's `gmp_src_mgr` receives the same
 implementation.
 
+Fleet discovery applies the repository's real `.gitignore` rules through
+`git check-ignore`. A `gmp_src_mgr` copied into CCS `Debug`, `Release`, or any
+other ignored build tree is not a deploy/generation target. Do not replace this
+with a hard-coded build-directory list; adding a repository ignore rule must be
+enough to exclude future generated trees. After copying the canonical scripts,
+the distributor runs `gmp_generate_inc.bat` and then
+`gmp_generate_src.bat` for every valid target. A copy or generation failure
+returns a non-zero status, which prevents the installer completion marker from
+being created.
+
 When a new managed BAT directory is introduced, extend
 `audit_env_guards.py` so guard coverage remains enforceable. Run the audit after
 adding, renaming, or moving an entry point:
