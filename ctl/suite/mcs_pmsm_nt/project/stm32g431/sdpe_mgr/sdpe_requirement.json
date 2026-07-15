@@ -14,7 +14,7 @@
       "entity": "sm060r20b30mnad"
     },
     {
-      "entity": "gmp_3ph_2136sinv_dual"
+      "entity": "st_x_nucleo_ihm08m1"
     }
   ],
   "code_sections": {
@@ -27,7 +27,7 @@
       "group": "ADC",
       "macro": "MC_CURRENT_SAMPLE_PHASE_MODE",
       "enabled": true,
-      "value": "(2)",
+      "value": "(3)",
       "options": [
         "(2)",
         "(3)"
@@ -158,7 +158,7 @@
       "role": "phase_current_sensitivity",
       "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
       "binding": {
-        "literal": "(GMP_3PH_2136SINV_DUAL_PH_SHUNT_RESISTANCE_OHM * GMP_3PH_2136SINV_DUAL_PH_CSA_GAIN_V_V)"
+        "literal": "(ST_X_NUCLEO_IHM08M1_PH_SHUNT_RESISTANCE_OHM * ST_X_NUCLEO_IHM08M1_PH_CSA_GAIN_V_V)"
       },
       "description": "Phase-current sensor sensitivity in volts per ampere."
     },
@@ -166,7 +166,7 @@
       "role": "phase_current_bias",
       "macro": "CTRL_INVERTER_CURRENT_BIAS",
       "binding": {
-        "literal": "(GMP_3PH_2136SINV_DUAL_PH_CSA_BIAS_V)"
+        "literal": "(ST_X_NUCLEO_IHM08M1_PH_CSA_BIAS_V)"
       },
       "description": "Phase-current sensor zero-current bias in volts."
     },
@@ -174,7 +174,7 @@
       "role": "phase_voltage_sensitivity",
       "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
       "binding": {
-        "literal": "(GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_GAIN)"
+        "literal": "(ST_X_NUCLEO_IHM08M1_PH_VOLTAGE_SENSE_GAIN)"
       },
       "description": "Phase-voltage sensing gain in ADC volts per measured volt."
     },
@@ -182,7 +182,7 @@
       "role": "phase_voltage_bias",
       "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
       "binding": {
-        "literal": "(GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_BIAS_V)"
+        "literal": "(ST_X_NUCLEO_IHM08M1_PH_VOLTAGE_SENSE_BIAS_V)"
       },
       "description": "Phase-voltage sensor bias in volts."
     },
@@ -190,15 +190,15 @@
       "role": "dc_current_sensitivity",
       "macro": "CTRL_DC_CURRENT_SENSITIVITY",
       "binding": {
-        "literal": "(GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_GAIN)"
+        "literal": "(ST_X_NUCLEO_IHM08M1_DCBUS_CURRENT_SENSE_GAIN)"
       },
-      "description": "DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path."
+      "description": "DC-link current scaling is not consumed in the selected phase-current sampling mode."
     },
     {
       "role": "dc_current_bias",
       "macro": "CTRL_DC_CURRENT_BIAS",
       "binding": {
-        "literal": "(GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_BIAS_V)"
+        "literal": "(ST_X_NUCLEO_IHM08M1_DCBUS_CURRENT_SENSE_BIAS_V)"
       },
       "description": "DC-bus current sensor bias."
     },
@@ -206,7 +206,7 @@
       "role": "dc_voltage_sensitivity",
       "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
       "binding": {
-        "literal": "(GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_GAIN)"
+        "literal": "(ST_X_NUCLEO_IHM08M1_DCBUS_VOLTAGE_SENSE_GAIN)"
       },
       "description": "DC-bus voltage sensing gain in ADC volts per measured volt."
     },
@@ -214,7 +214,7 @@
       "role": "dc_voltage_bias",
       "macro": "CTRL_DC_VOLTAGE_BIAS",
       "binding": {
-        "literal": "(GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_BIAS_V)"
+        "literal": "(ST_X_NUCLEO_IHM08M1_DCBUS_VOLTAGE_SENSE_BIAS_V)"
       },
       "description": "DC-bus voltage sensor bias in volts."
     },

@@ -24,6 +24,17 @@
   "feature_macros": [],
   "option_macros": [
     {
+      "group": "ADC",
+      "macro": "MC_CURRENT_SAMPLE_PHASE_MODE",
+      "enabled": true,
+      "value": "(3)",
+      "options": [
+        "(2)",
+        "(3)"
+      ],
+      "description": "Directly sampled phase-current count; the selected 2136SINV preset provides three low-side channels."
+    },
+    {
       "group": "Board GPIO",
       "macro": "PWM_ENABLE_PORT",
       "enabled": true,

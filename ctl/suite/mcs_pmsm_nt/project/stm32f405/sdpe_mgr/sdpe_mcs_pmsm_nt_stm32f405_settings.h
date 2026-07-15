@@ -59,7 +59,7 @@ extern "C"
  * @brief Directly sampled phase-current count.
  *        Options: (2), (3)
  */
-#define MC_CURRENT_SAMPLE_PHASE_MODE (2)
+#define MC_CURRENT_SAMPLE_PHASE_MODE (3)
 
 //=================================================================================================
 /**

@@ -7,7 +7,7 @@
 #ifndef _PROJECT_SDPE_MCS_PMSM_NT_STM32G431_SETTINGS_H_
 #define _PROJECT_SDPE_MCS_PMSM_NT_STM32G431_SETTINGS_H_
 
-#include <ctl/hardware_preset/inverter_3ph/gmp_3ph_2136sinv_dual.h>
+#include <ctl/hardware_preset/inverter_3ph/st_x_nucleo_ihm08m1.h>
 #include <ctl/hardware_preset/mcu_board/nucleo_g431rb_motor_board.h>
 #include <ctl/hardware_preset/pmsm_motor/sm060r20b30mnad.h>
 
@@ -59,7 +59,7 @@ extern "C"
  * @brief Directly sampled phase-current count.
  *        Options: (2), (3)
  */
-#define MC_CURRENT_SAMPLE_PHASE_MODE (2)
+#define MC_CURRENT_SAMPLE_PHASE_MODE (3)
 
 //=================================================================================================
 /**
@@ -148,42 +148,42 @@ extern "C"
 /**
  * @brief Phase-current sensor sensitivity in volts per ampere.
  */
-#define CTRL_INVERTER_CURRENT_SENSITIVITY (GMP_3PH_2136SINV_DUAL_PH_SHUNT_RESISTANCE_OHM * GMP_3PH_2136SINV_DUAL_PH_CSA_GAIN_V_V)
+#define CTRL_INVERTER_CURRENT_SENSITIVITY (ST_X_NUCLEO_IHM08M1_PH_SHUNT_RESISTANCE_OHM * ST_X_NUCLEO_IHM08M1_PH_CSA_GAIN_V_V)
 
 /**
  * @brief Phase-current sensor zero-current bias in volts.
  */
-#define CTRL_INVERTER_CURRENT_BIAS (GMP_3PH_2136SINV_DUAL_PH_CSA_BIAS_V)
+#define CTRL_INVERTER_CURRENT_BIAS (ST_X_NUCLEO_IHM08M1_PH_CSA_BIAS_V)
 
 /**
  * @brief Phase-voltage sensing gain in ADC volts per measured volt.
  */
-#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_GAIN)
+#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (ST_X_NUCLEO_IHM08M1_PH_VOLTAGE_SENSE_GAIN)
 
 /**
  * @brief Phase-voltage sensor bias in volts.
  */
-#define CTRL_INVERTER_VOLTAGE_BIAS (GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_BIAS_V)
+#define CTRL_INVERTER_VOLTAGE_BIAS (ST_X_NUCLEO_IHM08M1_PH_VOLTAGE_SENSE_BIAS_V)
 
 /**
- * @brief DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path.
+ * @brief DC-link current scaling is not consumed in the selected phase-current sampling mode.
  */
-#define CTRL_DC_CURRENT_SENSITIVITY (GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_GAIN)
+#define CTRL_DC_CURRENT_SENSITIVITY (ST_X_NUCLEO_IHM08M1_DCBUS_CURRENT_SENSE_GAIN)
 
 /**
  * @brief DC-bus current sensor bias.
  */
-#define CTRL_DC_CURRENT_BIAS (GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_BIAS_V)
+#define CTRL_DC_CURRENT_BIAS (ST_X_NUCLEO_IHM08M1_DCBUS_CURRENT_SENSE_BIAS_V)
 
 /**
  * @brief DC-bus voltage sensing gain in ADC volts per measured volt.
  */
-#define CTRL_DC_VOLTAGE_SENSITIVITY (GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_GAIN)
+#define CTRL_DC_VOLTAGE_SENSITIVITY (ST_X_NUCLEO_IHM08M1_DCBUS_VOLTAGE_SENSE_GAIN)
 
 /**
  * @brief DC-bus voltage sensor bias in volts.
  */
-#define CTRL_DC_VOLTAGE_BIAS (GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_BIAS_V)
+#define CTRL_DC_VOLTAGE_BIAS (ST_X_NUCLEO_IHM08M1_DCBUS_VOLTAGE_SENSE_BIAS_V)
 
 /**
  * @brief Circular UART RX DMA buffer size.

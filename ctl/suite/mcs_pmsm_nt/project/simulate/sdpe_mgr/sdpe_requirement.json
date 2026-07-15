@@ -164,7 +164,7 @@
       "group": "ADC",
       "macro": "MC_CURRENT_SAMPLE_PHASE_MODE",
       "enabled": true,
-      "value": "(2)",
+      "value": "(3)",
       "options": [
         "(2)",
         "(3)"

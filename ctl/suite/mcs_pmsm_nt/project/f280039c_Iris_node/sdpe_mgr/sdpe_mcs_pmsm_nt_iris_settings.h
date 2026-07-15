@@ -59,6 +59,17 @@ extern "C"
 
 //=================================================================================================
 /**
+ * @brief ADC.
+ */
+
+/**
+ * @brief Directly sampled phase-current count; the selected 2136SINV preset provides three low-side channels.
+ *        Options: (2), (3)
+ */
+#define MC_CURRENT_SAMPLE_PHASE_MODE (3)
+
+//=================================================================================================
+/**
  * @brief Board GPIO.
  */
 
