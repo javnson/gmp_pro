@@ -15,6 +15,8 @@ typedef enum _tag_dcdc_adc_index_items {
     DCDC_ADC_SENSOR_NUMBER = 5
 } dcdc_adc_index_items;
 
+extern fast_gt g_fsbb_sim_enable_pending;
+
 GMP_STATIC_INLINE uint16_t ctl_fsbb_sim_active_faults(void)
 {
     uint16_t faults = FSBB_FAULT_NONE;
@@ -47,23 +49,35 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
 GMP_STATIC_INLINE void ctl_output_callback(void)
 {
     simulink_tx_buffer.pwm_cmp[0] = ctl_get_fsbb_buck_cmp(&fsbb_mod);
-    simulink_tx_buffer.pwm_cmp[1] = ctl_get_fsbb_boost_cmp(&fsbb_mod);
+    /* CH2 is the Boost low-side Q4 duty, while the Simulink phase input
+       directly defines the upper Q3 gate duty. Send its complement. */
+    simulink_tx_buffer.pwm_cmp[1] = CTRL_PWM_CMP_MAX - ctl_get_fsbb_boost_cmp(&fsbb_mod);
     simulink_tx_buffer.monitor[0] = ctrl2float(adc_v_in.control_port.value) * CTRL_VOLTAGE_BASE;
     simulink_tx_buffer.monitor[1] = ctrl2float(adc_v_out.control_port.value) * CTRL_VOLTAGE_BASE;
     simulink_tx_buffer.monitor[2] = ctrl2float(adc_i_L.control_port.value) * CTRL_CURRENT_BASE;
     simulink_tx_buffer.monitor[3] = ctrl2float(adc_i_load.control_port.value) * CTRL_CURRENT_BASE;
     simulink_tx_buffer.monitor[4] = ctrl2float(dcdc_core.v_out_formal) * CTRL_VOLTAGE_BASE;
     simulink_tx_buffer.monitor[5] = ctrl2float(v_req) * CTRL_VOLTAGE_BASE;
+    simulink_tx_buffer.monitor[6] = (double)cia402_sm.current_state;
+    simulink_tx_buffer.monitor[7] = (double)cia402_sm.current_cmd;
+    if (g_fsbb_sim_enable_pending)
+    {
+        csp_sl_enable_output();
+        g_fsbb_sim_enable_pending = 0;
+    }
 }
 
 GMP_STATIC_INLINE void ctl_fast_enable_output(void)
 {
     clear_all_controllers();
-    csp_sl_enable_output();
+    /* Commit Enable in ctl_output_callback(), after the freshly calculated
+       PWM compare values have been copied into the same UDP frame. */
+    g_fsbb_sim_enable_pending = 1;
     g_fsbb_output_enabled = 1;
 }
 GMP_STATIC_INLINE void ctl_fast_disable_output(void)
 {
+    g_fsbb_sim_enable_pending = 0;
     csp_sl_disable_output();
     g_fsbb_output_enabled = 0;
 }

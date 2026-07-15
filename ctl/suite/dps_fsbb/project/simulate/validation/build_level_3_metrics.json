@@ -1,0 +1,21 @@
+{
+  "build_level": 3,
+  "stop_time_s": 1.5,
+  "vin_final_v": 23.977052688598633,
+  "vout_final_v": 23.999970898628234,
+  "vout_peak_v": 24.036623001098633,
+  "il_final_a": 1.3402793404261271,
+  "iout_final_a": 1.1977537870407104,
+  "vformal_final_v": 24.882857090328052,
+  "vrequest_final_v": 24.882857090328052,
+  "enable_final": 1,
+  "cia402_state_final": 4,
+  "cia402_command_final": 4,
+  "adc_final_codes": [
+    805,
+    806,
+    2297,
+    2271,
+    2048
+  ]
+}

@@ -169,15 +169,15 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\ctl_main.c" />
     <ClCompile Include="..\..\src\user_main.c" />
-    <ClCompile Include="..\..\..\..\component\digital_power\dcdc\src\dcdc_core.c" />
-    <ClCompile Include="..\..\..\..\component\digital_power\dcdc\src\dcdc_fsbb_hw.c" />
-    <ClCompile Include="..\..\..\..\component\intrinsic\discrete\src\ctl_discrete_filter.c" />
-    <ClCompile Include="..\..\..\..\component\intrinsic\discrete\src\ctl_discrete_pid.c" />
     <ClCompile Include="..\..\..\..\..\core\dev\src\gmp_datalink.c" />
     <ClCompile Include="..\..\..\..\..\core\dev\src\gmp_mem_presp.c" />
     <ClCompile Include="..\..\..\..\..\core\dev\src\gmp_tunable.c" />
-    <ClCompile Include="..\..\..\..\..\core\std\src\crc16.c" />
     <ClCompile Include="DigialPower_simulink.cpp" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\crc16.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_filter.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_pid.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\dcdc_core.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\dcdc_fsbb_hw.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_back_stepping.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_flc.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_flpid.c" />

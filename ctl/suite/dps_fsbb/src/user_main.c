@@ -228,10 +228,8 @@ GMP_NO_OPT_PREFIX void init(void) GMP_NO_OPT_SUFFIX
 #if defined SPECIFY_PC_ENVIRONMENT
     // The SIL target has no external CiA402 master. Use the normal sequenced
     // transitions and request operation immediately after initialization.
+    cia402_sm.flag_enable_control_word = 0;
     cia402_sm.current_cmd = CIA402_CMD_ENABLE_OPERATION;
-    // Assert the plant enable for the very first UDP frame. The CiA402 state
-    // machine continues to run and owns all subsequent fault transitions.
-    ctl_enable_pwm();
 #endif
 }
 

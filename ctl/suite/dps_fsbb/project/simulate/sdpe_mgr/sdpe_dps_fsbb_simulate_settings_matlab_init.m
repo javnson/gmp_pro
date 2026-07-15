@@ -191,6 +191,9 @@ GMP_LVFB_HAS_LOCAL_BUS_CAP = GMP_LVFB_BUS_CAPACITANCE_F > 0.0;
 % ENABLE_GMP_DL_PIL_SIM is disabled in the SDPE project requirement.
 % ENABLE_GMP_DL_PIL_SIM = true;
 
+% Allow ENABLE_OPERATION to advance through the complete CiA402 startup sequence.
+CIA402_CONFIG_ENABLE_SEQUENCE_SWITCH = true;
+
 %% Sampling
 % Use the simulated input-voltage ADC channel.
 FSBB_ENABLE_VIN_SAMPLE = true;
@@ -199,8 +202,8 @@ FSBB_ENABLE_VIN_SAMPLE = true;
 FSBB_ENABLE_IOUT_SAMPLE = true;
 
 %% PWM
-% CMP is inverted because ePWM sets high on up-count CMPA and low on down-count CMPA.
-PWM_MODULATOR_USING_NEGATIVE_LOGIC = 1;
+% PWM_MODULATOR_USING_NEGATIVE_LOGIC is disabled in the SDPE project requirement.
+% PWM_MODULATOR_USING_NEGATIVE_LOGIC = 1;
 
 %% Controller
 % 1: open loop, 2: current loop, 3: voltage/current cascade.

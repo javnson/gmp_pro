@@ -231,6 +231,15 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_pid.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\crc16.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\dcdc_core.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\dcdc_fsbb_hw.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_pole_zero.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>

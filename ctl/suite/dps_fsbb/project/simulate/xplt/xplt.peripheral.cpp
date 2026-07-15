@@ -5,6 +5,7 @@
 
 extern "C" {
 extern gpio_halt user_led;
+fast_gt g_fsbb_sim_enable_pending = 0;
 
 void setup_peripheral(void)
 {

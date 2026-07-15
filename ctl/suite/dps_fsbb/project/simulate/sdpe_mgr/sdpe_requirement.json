@@ -64,9 +64,10 @@
   "feature_macros": [
     { "group": "SIL", "macro": "SPECIFY_ENABLE_ADC_CALIBRATE", "enabled": false, "value": "", "description": "The simulated ADC already includes the configured sensor bias." },
     { "group": "SIL", "macro": "ENABLE_GMP_DL_PIL_SIM", "enabled": false, "value": "", "description": "Use the native ASIO SIL path instead of datalink PIL." },
+    { "group": "SIL", "macro": "CIA402_CONFIG_ENABLE_SEQUENCE_SWITCH", "enabled": true, "value": "", "description": "Allow ENABLE_OPERATION to advance through the complete CiA402 startup sequence." },
     { "group": "Sampling", "macro": "FSBB_ENABLE_VIN_SAMPLE", "enabled": true, "value": "", "description": "Use the simulated input-voltage ADC channel." },
     { "group": "Sampling", "macro": "FSBB_ENABLE_IOUT_SAMPLE", "enabled": true, "value": "", "description": "Use the simulated Boost-side output-current ADC channel." },
-    { "group": "PWM", "macro": "PWM_MODULATOR_USING_NEGATIVE_LOGIC", "enabled": true, "value": "1", "description": "CMP is inverted because ePWM sets high on up-count CMPA and low on down-count CMPA." }
+    { "group": "PWM", "macro": "PWM_MODULATOR_USING_NEGATIVE_LOGIC", "enabled": false, "value": "1", "description": "The Simulink phase model uses compare-proportional duty; Boost Q4 complementing is handled by xplt." }
   ],
   "option_macros": [
     { "group": "Controller", "macro": "BUILD_LEVEL", "enabled": true, "value": "(3)", "options_preset": "", "options": ["(1)", "(2)", "(3)"], "description": "1: open loop, 2: current loop, 3: voltage/current cascade." }

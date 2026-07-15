@@ -40,6 +40,11 @@ extern "C"
  */
 // #define ENABLE_GMP_DL_PIL_SIM
 
+/**
+ * @brief Allow ENABLE_OPERATION to advance through the complete CiA402 startup sequence.
+ */
+#define CIA402_CONFIG_ENABLE_SEQUENCE_SWITCH
+
 //=================================================================================================
 /**
  * @brief Sampling.
@@ -61,9 +66,9 @@ extern "C"
  */
 
 /**
- * @brief CMP is inverted because ePWM sets high on up-count CMPA and low on down-count CMPA.
+ * @brief The Simulink phase model uses compare-proportional duty; Boost Q4 complementing is handled by xplt.
  */
-#define PWM_MODULATOR_USING_NEGATIVE_LOGIC 1
+// #define PWM_MODULATOR_USING_NEGATIVE_LOGIC 1
 
 //=================================================================================================
 /**
