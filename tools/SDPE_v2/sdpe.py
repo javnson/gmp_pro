@@ -220,7 +220,7 @@ This folder is the project-local SDPE manager.
 
 - `sdpe_requirement.json`: project requirement and hardware bindings.
 - `sdpe_settings.bat`: project-local paths and output settings.
-- `sdpe_edit.bat`: open the SDPE Project Requirement GUI.
+- `sdpe_edit.bat`: open this requirement plus its related two-layer SDPE requirements.
 - `sdpe_generate.bat`: generate SDPE headers for this project.
 - `sdpe_validate.bat`: validate the central SDPE library and read this requirement file.
 
@@ -235,6 +235,11 @@ sdpe_mgr\\
 ```
 
 Project-local generated headers use relative include paths, so the generated project header can include the generated hardware headers without depending on the global `ctl\\hardware_preset` output.
+
+When a suite has `sdpe_general`, opening its editor also loads every target
+requirement below `project`; opening a target manager loads that target and the
+common requirement. The common C header is generated into the suite `src`
+directory, while its MATLAB initialization script remains in `sdpe_general`.
 
 Project id: `{project_id}`
 Suite: `{suite}`

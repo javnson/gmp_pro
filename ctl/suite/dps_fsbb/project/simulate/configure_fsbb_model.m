@@ -3,21 +3,20 @@ function configure_fsbb_model()
 
 model = 'MCS_STD_FSBB_MODEL';
 root = fileparts(mfilename('fullpath'));
-load_system(fullfile(root, [model '.slx']));
+model_file = fullfile(root, [model '.slx']);
+gmp_run_model_sdpe_init(model_file);
+load_system(model_file);
 fsbb = [model '/GMP STD FSBB Module'];
 
-% Make both generated SDPE variables and the UDP S-function discoverable.
-% PreLoadFcn runs before block parameters are evaluated, so use the resolved
-% project location captured when this reproducible configurator is run.
-sdpe_dir = strrep(fullfile(root, 'sdpe_mgr'), '\', '/');
-mex_dir = strrep(fullfile(root, '..', '..', '..', '..', '..', 'tools', ...
-    'gmp_sil', 'udp_helper_v2', 'mdl_asio_helper', 'bin', 'x64', 'Debug'), '\', '/');
-preload = sprintf(['addpath(''%s''); addpath(''%s''); ' ...
-    'evalin(''base'',''sdpe_dps_fsbb_simulate_settings_matlab_init;'');'], sdpe_dir, mex_dir);
+% Resolve every callback path from the model file at run time.  No machine- or
+% checkout-specific absolute path is persisted in the SLX file.
+preload = [ ...
+    'gmp_model_dir=fileparts(get_param(bdroot,''FileName'')); ' ...
+    'addpath(fullfile(gmp_model_dir,''..'',''..'',''..'',''..'',''..'',''tools'',' ...
+    '''gmp_sil'',''udp_helper_v2'',''mdl_asio_helper'',''bin'',''x64'',''Debug'')); ' ...
+    'gmp_run_model_sdpe_init(bdroot); clear gmp_model_dir;'];
 set_param(model, 'PreLoadFcn', preload);
 set_param(model, 'InitFcn', preload);
-addpath(fullfile(root, 'sdpe_mgr'));
-sdpe_dps_fsbb_simulate_settings_matlab_init;
 
 % Correct the sensor name without changing its electrical connections.
 old_iin = [fsbb '/Output Current Measurement1'];

@@ -56,12 +56,14 @@ The controller currently consumes the first four channels. With the configured 1
 
 ## SDPE and grouped model mask
 
-`sdpe_mgr/sdpe_requirement.json` is the source of truth for control, PWM, ADC, sensor,
-power-stage, and semiconductor parameters. Generate both artifacts after changing it:
+FSBB uses two SDPE layers. `../../sdpe_general/sdpe_requirement.json` owns the shared
+topology, sensing, protection and controller parameters. `sdpe_mgr/sdpe_requirement.json`
+contains only the SIL platform, model semiconductor, ADC/PWM and BUILD_LEVEL settings.
+Generate both layers after changing them:
 
 ```powershell
-python E:\lib\gmp_pro\tools\SDPE_v2\sdpe.py generate-project-local sdpe_mgr\sdpe_requirement.json --project-dir sdpe_mgr
-python E:\lib\gmp_pro\tools\SDPE_v2\sdpe.py generate-project-matlab-local sdpe_mgr\sdpe_requirement.json --project-dir sdpe_mgr
+..\..\sdpe_general\sdpe_generate.bat
+sdpe_mgr\sdpe_generate.bat
 ```
 
 Run `configure_fsbb_model` after changing mask bindings or internal wiring. The
@@ -74,8 +76,10 @@ Run `configure_fsbb_model` after changing mask bindings or internal wiring. The
 - Voltage Sensors
 - Current Sensors
 
-The generated C header configures the controller executable. The generated MATLAB script
-initializes every corresponding model-mask expression.
+The generated C headers configure the controller executable. Before model initialization,
+`gmp_run_model_sdpe_init` derives both folders from the SLX location and executes the one
+generated `*_matlab_init.m` file in the common layer first and the target layer second.
+No checkout-specific absolute path is stored in the model callback.
 
 ## Simulation startup sequence
 

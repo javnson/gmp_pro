@@ -12,7 +12,7 @@ if errorlevel 1 exit /b 1
 title SDPE Project Manager Deployer
 
 set "SDPE_PROJECT_DIR=%~1"
-if "%SDPE_PROJECT_DIR%"=="" set "SDPE_PROJECT_DIR=%CD%"
+if "%SDPE_PROJECT_DIR%"=="" goto deploy_all
 
 echo =======================================================
 echo [SDPE] Deploying project-local sdpe_mgr...
@@ -30,5 +30,22 @@ if errorlevel 1 (
 echo.
 echo =======================================================
 echo [SUCCESS] sdpe_mgr deployed successfully.
+echo =======================================================
+exit /b 0
+
+:deploy_all
+echo =======================================================
+echo [SDPE] Deploying toolchain to all sdpe_mgr and sdpe_general folders...
+echo =======================================================
+python "%GMP_PRO_LOCATION%\tools\SDPE_v2\distribute_sdpe_mgr.py"
+if errorlevel 1 (
+    echo.
+    echo [ERROR] SDPE toolchain distribution failed. Error code: %ERRORLEVEL%
+    pause
+    exit /b %ERRORLEVEL%
+)
+echo.
+echo =======================================================
+echo [SUCCESS] All SDPE managers updated successfully.
 echo =======================================================
 exit /b 0
