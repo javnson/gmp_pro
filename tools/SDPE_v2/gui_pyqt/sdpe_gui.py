@@ -13,7 +13,7 @@ from typing import Any
 
 try:
     from PyQt6.QtCore import QTimer, Qt
-    from PyQt6.QtGui import QColor, QKeySequence, QPen, QShortcut
+    from PyQt6.QtGui import QAction, QColor, QKeySequence, QPen, QShortcut
     from PyQt6.QtWidgets import (
         QApplication,
         QCheckBox,
@@ -49,7 +49,7 @@ try:
 except ImportError:  # pragma: no cover - depends on local desktop environment.
     try:
         from PySide6.QtCore import QTimer, Qt
-        from PySide6.QtGui import QColor, QKeySequence, QPen, QShortcut
+        from PySide6.QtGui import QAction, QColor, QKeySequence, QPen, QShortcut
         from PySide6.QtWidgets import (
             QApplication,
             QCheckBox,
@@ -2291,6 +2291,8 @@ class ProjectPage(SDPEPage):
         tabs.addTab(code_tab, "Code")
         preview = QPushButton("Preview header")
         preview.clicked.connect(self.preview_project_header)
+        generate_header = QPushButton("Generate project header")
+        generate_header.clicked.connect(self.generate_project_header)
         validate_macros = QPushButton("Validate Macros")
         validate_macros.clicked.connect(self.validate_project_macros)
         matlab = QPushButton("Generate MATLAB Init Script")
@@ -2298,7 +2300,7 @@ class ProjectPage(SDPEPage):
         save = QPushButton("Save project")
         save.clicked.connect(self.save_current)
         self.form_layout.addWidget(tabs)
-        self.form_layout.addLayout(row_buttons([preview, validate_macros, matlab, save]))
+        self.form_layout.addLayout(row_buttons([preview, generate_header, validate_macros, matlab, save]))
         self.update_hardware_view()
 
     def refresh_list(self) -> None:
@@ -3592,6 +3594,20 @@ class ProjectPage(SDPEPage):
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
 
+    def generate_project_header(self) -> None:
+        try:
+            self.save_current()
+            if not self.current_id:
+                return
+            files = self.window.generator().generate_project(self.window.project_path(self.current_id))
+            for item in files:
+                if item.path.suffix.lower() == ".h" and item.path.exists():
+                    self.set_code_text(item.path.read_text(encoding="utf-8"))
+                    break
+            self.message("Generated", "\n".join(str(item.path) for item in files))
+        except Exception as exc:  # pragma: no cover - GUI guard.
+            self.error(str(exc))
+
     def generate_matlab_init_script(self) -> None:
         try:
             self.save_current()
@@ -3915,6 +3931,9 @@ class MainWindow(QMainWindow):
             self.tabs.addTab(page, page.title)
         self.tabs.addTab(self.settings_page, self.settings_page.title)
         self.setCentralWidget(self.tabs)
+        self.create_menus()
+        self.tabs.currentChanged.connect(lambda _index: self.update_menu_actions())
+        self.update_menu_actions()
         self.refresh_pages()
 
     def load_library(self) -> SDPELibrary:
@@ -3957,6 +3976,121 @@ class MainWindow(QMainWindow):
 
     def reload(self) -> None:
         self.library = self.load_library()
+
+    def create_menus(self) -> None:
+        file_menu = self.menuBar().addMenu("&File")
+        self.action_save = self.add_menu_action(file_menu, "Save current", self.save_current_page)
+        self.action_save_all = self.add_menu_action(file_menu, "Save all", self.save_all_pages)
+        file_menu.addSeparator()
+        self.action_open_project = self.add_menu_action(file_menu, "Open project requirement...", lambda: self.call_page_action("open_project_file"))
+
+        edit_menu = self.menuBar().addMenu("&Edit")
+        self.action_undo = self.add_menu_action(edit_menu, "Undo", self.undo_current_page)
+        edit_menu.addSeparator()
+        self.add_menu_action(edit_menu, "Copy", lambda: self.call_focused_edit("copy"))
+        self.add_menu_action(edit_menu, "Cut", lambda: self.call_focused_edit("cut"))
+        self.add_menu_action(edit_menu, "Paste", lambda: self.call_focused_edit("paste"))
+        self.add_menu_action(edit_menu, "Select all", lambda: self.call_focused_edit("selectAll"))
+
+        generate_menu = self.menuBar().addMenu("&Generate")
+        self.action_preview_header = self.add_menu_action(generate_menu, "Preview header", self.preview_current_header)
+        self.action_generate_header = self.add_menu_action(generate_menu, "Generate header", self.generate_current_header)
+        self.action_generate_matlab = self.add_menu_action(generate_menu, "Generate MATLAB init script", self.generate_current_matlab_init)
+        generate_menu.addSeparator()
+        self.action_validate_macros = self.add_menu_action(generate_menu, "Validate macros", self.validate_current_macros)
+
+    def add_menu_action(self, menu: QMenu, text: str, callback, shortcut: QKeySequence | QKeySequence.StandardKey | None = None) -> QAction:
+        action = QAction(text, self)
+        if shortcut is not None:
+            action.setShortcut(shortcut)
+        action.triggered.connect(callback)
+        menu.addAction(action)
+        return action
+
+    def current_sdpe_page(self) -> SDPEPage | None:
+        widget = self.tabs.currentWidget()
+        return widget if isinstance(widget, SDPEPage) else None
+
+    def call_page_action(self, action_name: str) -> bool:
+        page = self.current_sdpe_page()
+        callback = getattr(page, action_name, None) if page is not None else None
+        if callable(callback):
+            callback()
+            return True
+        self.statusBar().showMessage("This action is not available on the current page.", 2600)
+        return False
+
+    def call_first_page_action(self, action_names: list[str]) -> bool:
+        page = self.current_sdpe_page()
+        if page is not None:
+            for action_name in action_names:
+                callback = getattr(page, action_name, None)
+                if callable(callback):
+                    callback()
+                    return True
+        self.statusBar().showMessage("This action is not available on the current page.", 2600)
+        return False
+
+    def save_current_page(self) -> None:
+        self.call_page_action("save_current")
+
+    def save_all_pages(self) -> None:
+        saved = 0
+        for page in self.pages:
+            saved += page.save_dirty()
+        if saved:
+            self.reload()
+            self.refresh_pages()
+        self.statusBar().showMessage(f"Saved {saved} file(s).", 2600)
+
+    def undo_current_page(self) -> None:
+        self.call_page_action("undo_current_change")
+
+    def preview_current_header(self) -> None:
+        self.call_first_page_action(["preview_project_header", "preview_project", "preview_header"])
+
+    def generate_current_header(self) -> None:
+        self.call_first_page_action(["generate_project_header", "generate_project", "generate_header"])
+
+    def generate_current_matlab_init(self) -> None:
+        self.call_page_action("generate_matlab_init_script")
+
+    def validate_current_macros(self) -> None:
+        self.call_page_action("validate_project_macros")
+
+    def call_focused_edit(self, method_name: str) -> None:
+        widget = QApplication.focusWidget()
+        method = getattr(widget, method_name, None) if widget is not None else None
+        if callable(method):
+            method()
+            return
+        self.statusBar().showMessage("The focused control does not support this edit action.", 2600)
+
+    def update_menu_actions(self) -> None:
+        page = self.current_sdpe_page()
+        has_page = page is not None
+        self.action_save.setEnabled(has_page and callable(getattr(page, "save_current", None)))
+        self.action_save_all.setEnabled(has_page)
+        self.action_undo.setEnabled(has_page and callable(getattr(page, "undo_current_change", None)))
+        self.action_open_project.setEnabled(callable(getattr(page, "open_project_file", None)) if page is not None else False)
+        self.action_preview_header.setEnabled(
+            has_page
+            and (
+                callable(getattr(page, "preview_project_header", None))
+                or callable(getattr(page, "preview_project", None))
+                or callable(getattr(page, "preview_header", None))
+            )
+        )
+        self.action_generate_header.setEnabled(
+            has_page
+            and (
+                callable(getattr(page, "generate_project_header", None))
+                or callable(getattr(page, "generate_project", None))
+                or callable(getattr(page, "generate_header", None))
+            )
+        )
+        self.action_generate_matlab.setEnabled(has_page and callable(getattr(page, "generate_matlab_init_script", None)))
+        self.action_validate_macros.setEnabled(has_page and callable(getattr(page, "validate_project_macros", None)))
 
     def closeEvent(self, event) -> None:  # noqa: N802 - Qt override
         dirty: list[tuple[SDPEPage, str, Path]] = []

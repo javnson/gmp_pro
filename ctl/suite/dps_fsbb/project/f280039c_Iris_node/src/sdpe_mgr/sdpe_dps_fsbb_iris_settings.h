@@ -27,7 +27,7 @@ extern "C"
 #define SDPE_PROJECT_ID "dps_fsbb_f280039c_Iris_node"
 #define SDPE_PROJECT_SUITE "dps_fsbb"
 #define SDPE_PROJECT_VERSION "0.1.0"
-#define SDPE_PROJECT_UPDATED_AT "2026-07-14"
+#define SDPE_PROJECT_UPDATED_AT "2026-07-16"
 
 //=================================================================================================
 /**
@@ -236,46 +236,6 @@ extern "C"
 #define CTRL_CURRENT_BASE (14.14f)
 
 /**
- * @brief Input voltage ADC sensing sensitivity provided by the LVFB voltage sensor path.
- */
-#define CTRL_FSBB_VIN_SENSITIVITY GMP_LVFB_VOLTAGE_SENSITIVITY
-
-/**
- * @brief Input voltage ADC bias voltage provided by the LVFB voltage sensor path.
- */
-#define CTRL_FSBB_VIN_BIAS GMP_LVFB_VOLTAGE_BIAS_V
-
-/**
- * @brief Output voltage ADC sensing sensitivity provided by the LVFB voltage sensor path.
- */
-#define CTRL_FSBB_VOUT_SENSITIVITY GMP_LVFB_VOLTAGE_SENSITIVITY
-
-/**
- * @brief Output voltage ADC bias voltage provided by the LVFB voltage sensor path.
- */
-#define CTRL_FSBB_VOUT_BIAS GMP_LVFB_VOLTAGE_BIAS_V
-
-/**
- * @brief Inductor current ADC sensing sensitivity provided by the LVFB current sensor path.
- */
-#define CTRL_FSBB_IL_SENSITIVITY GMP_LVFB_CURRENT_SENSITIVITY
-
-/**
- * @brief Inductor current ADC bias voltage provided by the LVFB current sensor path.
- */
-#define CTRL_FSBB_IL_BIAS GMP_LVFB_CURRENT_BIAS_V
-
-/**
- * @brief Load/output current ADC sensing sensitivity provided by the LVFB current sensor path.
- */
-#define CTRL_FSBB_IOUT_SENSITIVITY GMP_LVFB_CURRENT_SENSITIVITY
-
-/**
- * @brief Load/output current ADC bias voltage provided by the LVFB current sensor path.
- */
-#define CTRL_FSBB_IOUT_BIAS GMP_LVFB_CURRENT_BIAS_V
-
-/**
  * @brief Minimum load resistance used by FSBB controller initialization.
  */
 #define FSBB_PARAM_RLOAD_MIN (20.0f)
@@ -304,6 +264,46 @@ extern "C"
  * @brief Main inductor equivalent series resistance.
  */
 #define FSBB_PARAM_L_ESR (0.05f)
+
+/**
+ * @brief Input voltage ADC sensing sensitivity provided by the LVFB voltage sensor path.
+ */
+#define CTRL_FSBB_VIN_SENSITIVITY GMP_LVFB_VOLTAGE_SENSITIVITY
+
+/**
+ * @brief Input voltage ADC bias voltage provided by the LVFB voltage sensor path.
+ */
+#define CTRL_FSBB_VIN_BIAS GMP_LVFB_VOLTAGE_BIAS_V
+
+/**
+ * @brief Output voltage ADC sensing sensitivity provided by the LVFB voltage sensor path.
+ */
+#define CTRL_FSBB_VOUT_SENSITIVITY GMP_LVFB_VOLTAGE_SENSITIVITY
+
+/**
+ * @brief Output voltage ADC bias voltage provided by the LVFB voltage sensor path.
+ */
+#define CTRL_FSBB_VOUT_BIAS GMP_LVFB_VOLTAGE_BIAS_V
+
+/**
+ * @brief Load/output current ADC sensing sensitivity provided by the LVFB current sensor path.
+ */
+#define CTRL_FSBB_IOUT_SENSITIVITY GMP_LVFB_CURRENT_SENSITIVITY
+
+/**
+ * @brief Load/output current ADC bias voltage provided by the LVFB current sensor path.
+ */
+#define CTRL_FSBB_IOUT_BIAS GMP_LVFB_CURRENT_BIAS_V
+
+/**
+ * @brief Inductor current ADC sensing sensitivity provided by the LVFB current sensor path.
+ */
+#define CTRL_FSBB_IL_SENSITIVITY GMP_LVFB_CURRENT_SENSITIVITY
+
+/**
+ * @brief Inductor current ADC bias voltage provided by the LVFB current sensor path.
+ */
+#define CTRL_FSBB_IL_BIAS GMP_LVFB_CURRENT_BIAS_V
 
 /**
  * @brief 
@@ -346,31 +346,6 @@ extern "C"
 #define FSBB_DEFAULT_CURRENT_LIMIT (5.0f)
 
 /**
- * @brief Equivalent output-voltage command used by BUILD_LEVEL 1.
- */
-#define FSBB_OPEN_LOOP_VOLTAGE_COMMAND (12.0f)
-
-/**
- * @brief Voltage-reference slew rate in PU/s.
- */
-#define FSBB_VOLTAGE_RAMP_PU_S (1.0f)
-
-/**
- * @brief Current-reference slew rate in PU/s.
- */
-#define FSBB_CURRENT_RAMP_PU_S (1.0f)
-
-/**
- * @brief Requested current-loop crossover frequency.
- */
-#define FSBB_CURRENT_LOOP_BANDWIDTH (800.0f)
-
-/**
- * @brief Requested voltage-loop crossover frequency.
- */
-#define FSBB_VOLTAGE_LOOP_BANDWIDTH (40.0f)
-
-/**
  * @brief Maximum FSBB leg duty ratio.
  */
 #define FSBB_DUTY_MAX (0.95f)
@@ -379,16 +354,6 @@ extern "C"
  * @brief Minimum FSBB leg duty ratio.
  */
 #define FSBB_DUTY_MIN (0.05f)
-
-/**
- * @brief Lower voltage-ratio boundary of the buck-boost transition region.
- */
-#define FSBB_TRANSITION_RATIO_LOW (0.90f)
-
-/**
- * @brief Upper voltage-ratio boundary of the buck-boost transition region.
- */
-#define FSBB_TRANSITION_RATIO_HIGH (1.10f)
 
 /**
  * @brief Positive inductor current protection threshold.
@@ -401,6 +366,31 @@ extern "C"
 #define FSBB_PROTECT_IL_MIN (-2.0f)
 
 /**
+ * @brief Equivalent output-voltage command used by BUILD_LEVEL 1.
+ */
+#define FSBB_OPEN_LOOP_VOLTAGE_COMMAND (12.0f)
+
+/**
+ * @brief Requested current-loop crossover frequency.
+ */
+#define FSBB_CURRENT_LOOP_BANDWIDTH (800.0f)
+
+/**
+ * @brief Requested voltage-loop crossover frequency.
+ */
+#define FSBB_VOLTAGE_LOOP_BANDWIDTH (40.0f)
+
+/**
+ * @brief Lower voltage-ratio boundary of the buck-boost transition region.
+ */
+#define FSBB_TRANSITION_RATIO_LOW (0.90f)
+
+/**
+ * @brief Upper voltage-ratio boundary of the buck-boost transition region.
+ */
+#define FSBB_TRANSITION_RATIO_HIGH (1.10f)
+
+/**
  * @brief ADC calibration timeout in ms.
  */
 #define TIMEOUT_ADC_CALIB_MS (3000)
@@ -409,6 +399,16 @@ extern "C"
  * @brief SPLL close-loop convergence threshold.
  */
 #define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
+
+/**
+ * @brief Voltage-reference slew rate in PU/s.
+ */
+#define FSBB_VOLTAGE_RAMP_PU_S (1.0f)
+
+/**
+ * @brief Current-reference slew rate in PU/s.
+ */
+#define FSBB_CURRENT_RAMP_PU_S (1.0f)
 
 // User project tail code
 /* Backward compatibility for the historical misspelled PIL switch. */
