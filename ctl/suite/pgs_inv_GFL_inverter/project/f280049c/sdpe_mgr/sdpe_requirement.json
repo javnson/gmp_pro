@@ -5,7 +5,7 @@
   "description": "Validated LaunchXL-F280049C timing, sensing and BOOSTXL resource bindings for the common GFL controller.",
   "suite": "pgs_inv_GFL_inverter",
   "version": "1.0.0",
-  "updated_at": "2026-07-15",
+  "updated_at": "2026-07-16",
   "output_header": "sdpe_pgs_inv_gfl_f280049c_settings.h",
   "hardware": [
     {
@@ -29,6 +29,7 @@
       "macro": "BUILD_LEVEL",
       "enabled": true,
       "value": "(1)",
+      "options_preset": "",
       "options": [
         "(1)",
         "(2)",
@@ -43,6 +44,7 @@
       "macro": "GFL_CURRENT_SAMPLE_PHASE_MODE",
       "enabled": true,
       "value": "(3)",
+      "options_preset": "",
       "options": [
         "(2)",
         "(3)"
@@ -54,6 +56,7 @@
       "macro": "GFL_VOLTAGE_SAMPLE_PHASE_MODE",
       "enabled": true,
       "value": "(3)",
+      "options_preset": "",
       "options": [
         "(2)",
         "(3)"
@@ -62,14 +65,6 @@
     }
   ],
   "requirements": [
-    {
-      "role": "startup_delay",
-      "macro": "CTRL_STARTUP_DELAY",
-      "binding": {
-        "number": "100"
-      },
-      "description": "Startup delay in milliseconds."
-    },
     {
       "role": "controller_frequency",
       "macro": "CONTROLLER_FREQUENCY",
@@ -159,20 +154,20 @@
       "description": "Harmonia grid-filter capacitance."
     },
     {
-      "role": "grid_current_sensitivity",
-      "macro": "CTRL_GRID_CURRENT_SENSITIVITY",
+      "role": "dc_voltage_sensitivity",
+      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
       "binding": {
-        "literal": "(HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSITIVITY_MV_A * 0.001f)"
+        "float": "0.02738589"
       },
-      "description": "Grid-current sensitivity."
+      "description": "DC-link voltage sensing gain."
     },
     {
-      "role": "grid_current_bias",
-      "macro": "CTRL_GRID_CURRENT_BIAS",
+      "role": "dc_voltage_bias",
+      "macro": "CTRL_DC_VOLTAGE_BIAS",
       "binding": {
-        "literal": "(HARMONIA_3PH_LC_FILTER_PH_CURRENT_ZERO_BIAS_V)"
+        "float": "0.0"
       },
-      "description": "Grid-current bias."
+      "description": "DC-link voltage sensing bias."
     },
     {
       "role": "grid_voltage_sensitivity",
@@ -189,22 +184,6 @@
         "literal": "(HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_BIAS_V)"
       },
       "description": "Grid-voltage sensing bias."
-    },
-    {
-      "role": "inverter_current_sensitivity",
-      "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
-      "binding": {
-        "float": "0.05"
-      },
-      "description": "Validated Helios current sensitivity."
-    },
-    {
-      "role": "inverter_current_bias",
-      "macro": "CTRL_INVERTER_CURRENT_BIAS",
-      "binding": {
-        "float": "1.65"
-      },
-      "description": "Helios current bias."
     },
     {
       "role": "inverter_voltage_sensitivity",
@@ -239,20 +218,44 @@
       "description": "DC-link current bias."
     },
     {
-      "role": "dc_voltage_sensitivity",
-      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
+      "role": "grid_current_sensitivity",
+      "macro": "CTRL_GRID_CURRENT_SENSITIVITY",
       "binding": {
-        "float": "0.02738589"
+        "literal": "(HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSITIVITY_MV_A * 0.001f)"
       },
-      "description": "DC-link voltage sensing gain."
+      "description": "Grid-current sensitivity."
     },
     {
-      "role": "dc_voltage_bias",
-      "macro": "CTRL_DC_VOLTAGE_BIAS",
+      "role": "grid_current_bias",
+      "macro": "CTRL_GRID_CURRENT_BIAS",
       "binding": {
-        "float": "0.0"
+        "literal": "(HARMONIA_3PH_LC_FILTER_PH_CURRENT_ZERO_BIAS_V)"
       },
-      "description": "DC-link voltage sensing bias."
+      "description": "Grid-current bias."
+    },
+    {
+      "role": "inverter_current_sensitivity",
+      "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
+      "binding": {
+        "float": "0.05"
+      },
+      "description": "Validated Helios current sensitivity."
+    },
+    {
+      "role": "inverter_current_bias",
+      "macro": "CTRL_INVERTER_CURRENT_BIAS",
+      "binding": {
+        "float": "1.65"
+      },
+      "description": "Helios current bias."
+    },
+    {
+      "role": "startup_delay",
+      "macro": "CTRL_STARTUP_DELAY",
+      "binding": {
+        "number": "100"
+      },
+      "description": "Startup delay in milliseconds."
     }
   ],
   "requirement_groups": [
