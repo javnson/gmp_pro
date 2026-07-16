@@ -1,19 +1,16 @@
 /**
  * @file csp.general.hpp
- * @author Javnson (javnson@zju.edu.cn)
- * @brief
- * @version 0.1
- * @date 2024-09-30
- *
- * @copyright Copyright GMP(c) 2024
- *
+ * @brief C++ wrapper for the Raspberry Pi Pico GMP CSP.
  */
 
-// CSP general module for CPP
+#ifndef GMP_CSP_RPI_PICO_GENERAL_HPP
+#define GMP_CSP_RPI_PICO_GENERAL_HPP
 
 extern "C"
 {
 #include <csp.general.h>
 }
 
-// No other features should be added.
+#include <gmp_core.h>
+
+#endif /* GMP_CSP_RPI_PICO_GENERAL_HPP */
