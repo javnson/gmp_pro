@@ -15,16 +15,18 @@ Before either installer downloads anything, it checks existing
 proxy setting. When a proxy is found, the installer displays its address and
 asks `Y/N` whether it should be used. The answer affects only that installation
 process and its child tools; it does not rewrite the Windows proxy setting. For
-a private environment, the choice is additionally stored under `bin` and loaded
+a private online installation, the installer always asks whether a proxy should
+be used. If no proxy was detected and the user selects `Y`, it asks for a proxy
+URL such as `http://127.0.0.1:7890`. The choice is additionally stored under `bin` and loaded
 by later GMP prompts and the GMP Visual Studio launcher. Copied-bin deployment
 asks again and replaces the source computer's choice. For unattended
 installation, set `GMP_INSTALLER_PROXY_CHOICE=Y` or `N` before launching the
 installer; interactive runs leave this variable unset.
 
-The root installation/deployment launchers pause after a failure so a window
-opened by double-click remains visible. Automated callers can disable only this
-failure pause by setting `GMP_INSTALLER_NO_PAUSE=1`; the original non-zero exit
-code is preserved in both cases.
+The root installation/deployment launchers pause after both success and failure
+so a window opened by double-click remains visible. Automated callers can
+disable this final pause by setting `GMP_INSTALLER_NO_PAUSE=1`; the original
+exit code is preserved in both cases.
 
 Visual Studio is an optional capability, not an installation prerequisite.
 Hardware/CCS workflows, private Python, documentation, source-management, and

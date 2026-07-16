@@ -3,8 +3,12 @@ setlocal EnableExtensions EnableDelayedExpansion
 
 set "GMP_PROXY_SOURCE="
 set "GMP_PROXY_CANDIDATE="
+set "GMP_PROXY_CONFIRMED=0"
 
-if defined HTTPS_PROXY (
+if defined GMP_INSTALLER_PROXY_URL (
+    set "GMP_PROXY_CANDIDATE=!GMP_INSTALLER_PROXY_URL!"
+    set "GMP_PROXY_SOURCE=GMP_INSTALLER_PROXY_URL"
+) else if defined HTTPS_PROXY (
     set "GMP_PROXY_CANDIDATE=!HTTPS_PROXY!"
     set "GMP_PROXY_SOURCE=HTTPS_PROXY environment variable"
 ) else if defined HTTP_PROXY (
@@ -37,14 +41,34 @@ if not defined GMP_PROXY_CANDIDATE (
 )
 
 if not defined GMP_PROXY_CANDIDATE (
-    echo [PROXY] No enabled manual proxy was detected. Using a direct connection.
-    endlocal & set "GMP_INSTALLER_PROXY_MODE=direct" & set "GMP_INSTALLER_PROXY_URL="
-    exit /b 0
+    if /i "!GMP_INSTALLER_PROXY_CHOICE!"=="N" goto :SKIP_PROXY
+    if /i "!GMP_INSTALLER_PROXY_CHOICE!"=="Y" goto :REQUEST_PROXY_URL
+    if /i not "!GMP_INSTALLER_PROMPT_FOR_PROXY!"=="1" goto :USE_DIRECT_NO_PROXY
+
+    echo [PROXY] No enabled system proxy was detected.
+    %SystemRoot%\System32\choice.exe /c YN /n /m "Use a proxy for GMP downloads? [Y/N]: "
+    if errorlevel 2 goto :SKIP_PROXY
+    goto :REQUEST_PROXY_URL
 )
+
+goto :HAVE_PROXY_CANDIDATE
+
+:REQUEST_PROXY_URL
+set "GMP_PROXY_CANDIDATE="
+set /p "GMP_PROXY_CANDIDATE=Enter proxy URL (for example http://127.0.0.1:7890): "
+if not defined GMP_PROXY_CANDIDATE (
+    echo [ERROR] A proxy was requested, but no proxy URL was entered.
+    exit /b 1
+)
+set "GMP_PROXY_SOURCE=manual input"
+set "GMP_PROXY_CONFIRMED=1"
+
+:HAVE_PROXY_CANDIDATE
 
 if "!GMP_PROXY_CANDIDATE:://=!"=="!GMP_PROXY_CANDIDATE!" set "GMP_PROXY_CANDIDATE=http://!GMP_PROXY_CANDIDATE!"
 
 echo [PROXY] Detected !GMP_PROXY_SOURCE!: !GMP_PROXY_CANDIDATE!
+if "!GMP_PROXY_CONFIRMED!"=="1" goto :USE_PROXY
 if /i "!GMP_INSTALLER_PROXY_CHOICE!"=="Y" goto :USE_PROXY
 if /i "!GMP_INSTALLER_PROXY_CHOICE!"=="N" goto :SKIP_PROXY
 
@@ -54,6 +78,11 @@ if errorlevel 2 goto :SKIP_PROXY
 :USE_PROXY
 echo [PROXY] Proxy enabled for this installation process.
 endlocal & set "GMP_INSTALLER_PROXY_MODE=proxy" & set "GMP_INSTALLER_PROXY_URL=%GMP_PROXY_CANDIDATE%" & set "HTTP_PROXY=%GMP_PROXY_CANDIDATE%" & set "HTTPS_PROXY=%GMP_PROXY_CANDIDATE%" & set "ALL_PROXY=%GMP_PROXY_CANDIDATE%" & set "http_proxy=%GMP_PROXY_CANDIDATE%" & set "https_proxy=%GMP_PROXY_CANDIDATE%" & set "all_proxy=%GMP_PROXY_CANDIDATE%" & set "NO_PROXY=localhost,127.0.0.1,::1" & set "no_proxy=localhost,127.0.0.1,::1"
+exit /b 0
+
+:USE_DIRECT_NO_PROXY
+echo [PROXY] No enabled manual proxy was detected. Using a direct connection.
+endlocal & set "GMP_INSTALLER_PROXY_MODE=direct" & set "GMP_INSTALLER_PROXY_URL="
 exit /b 0
 
 :SKIP_PROXY
