@@ -21,15 +21,6 @@ add_executable(pico_gmp_demo main.c)
 
 include("${CMAKE_CURRENT_LIST_DIR}/gmp_pico_src/gmp_config.cmake")
 
-target_link_libraries(pico_gmp_demo PRIVATE
-    pico_stdlib
-    hardware_gpio
-    hardware_i2c
-    hardware_spi
-    hardware_uart
-    hardware_watchdog
-)
-
 pico_enable_stdio_usb(pico_gmp_demo 0)
 pico_enable_stdio_uart(pico_gmp_demo 0)
 pico_add_extra_outputs(pico_gmp_demo)

@@ -5324,6 +5324,14 @@
                 "inc_dirs": [
                     "${GMP_PRO_LOCATION}/csp/rpi_pico"
                 ],
+                "cmake_libraries": [
+                    "pico_stdlib",
+                    "hardware_gpio",
+                    "hardware_i2c",
+                    "hardware_spi",
+                    "hardware_uart",
+                    "hardware_watchdog"
+                ],
                 "help_docs": [],
                 "depends_on": [],
                 "tasks": [
