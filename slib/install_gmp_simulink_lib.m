@@ -4,8 +4,13 @@ function install_gmp_simulink_lib()
 
 matlab_version = matlabRelease; %matlab_version.Release => R2022b
 matlab_path = fileparts(mfilename('fullpath'));
-%matlab_path = '%GMP_PRO_LOCATION%\slib';
-simulink_lib_path = append(fullfile(matlab_path), '\install_path\', matlab_version.Release);
+simulink_lib_path = fullfile(matlab_path, 'install_path', matlab_version.Release);
+
+% upgrade_gmp_simulink_lib uses repository-relative source paths.  Make the
+% installer independent of the caller's current working directory.
+installer_path = pwd;
+restore_path = onCleanup(@() cd(installer_path));
+cd(matlab_path);
 
 upgrade_gmp_simulink_lib();
 
@@ -13,7 +18,7 @@ upgrade_gmp_simulink_lib();
 
 addpath(simulink_lib_path);
 
-m_file_path = append(simulink_lib_path, '/src');
+m_file_path = fullfile(simulink_lib_path, 'src');
 addpath(m_file_path);
 
 savepath;
@@ -22,10 +27,7 @@ savepath;
 
 disp('GMP Simulink Library: Register to Simulink Library');
 
-% save PWD
-installer_path = pwd;
-cd install_path
-cd(matlab_version.Release)
+cd(simulink_lib_path)
 
 load_system('gmp_peripheral_utilities');
 set_param('gmp_peripheral_utilities','Lock','off')
@@ -57,10 +59,6 @@ else
     close_system('gmp_simulink_utilities');
     close_system('gmp_sil_core_pack');
 end
-
-
-% recover context
-cd(installer_path);
 
 
 %% Complete

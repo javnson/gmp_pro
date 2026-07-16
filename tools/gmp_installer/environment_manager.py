@@ -351,13 +351,14 @@ def private_environment() -> dict[str, str]:
     return env
 
 
-def visual_studio_environment(base_env: dict[str, str]) -> dict[str, str]:
+def find_visual_studio_installation() -> Path | None:
+    """Find a Visual Studio installation with the x64 C++ workload."""
     program_files_x86 = os.environ.get("ProgramFiles(x86)")
     if not program_files_x86:
-        raise EnvironmentError("Visual Studio discovery is only supported on Windows")
+        return None
     vswhere = Path(program_files_x86) / "Microsoft Visual Studio" / "Installer" / "vswhere.exe"
     if not vswhere.is_file():
-        raise EnvironmentError("Visual Studio Installer/vswhere.exe was not found")
+        return None
     common_query = [
         str(vswhere),
         "-latest",
@@ -386,8 +387,30 @@ def visual_studio_environment(base_env: dict[str, str]) -> dict[str, str]:
         )
         installation = query.stdout.strip()
     if not installation:
-        raise EnvironmentError("Visual Studio C++ build tools were not found")
-    developer_batch = Path(installation) / "Common7" / "Tools" / "VsDevCmd.bat"
+        return None
+    installation_path = Path(installation)
+    if not (installation_path / "Common7" / "Tools" / "VsDevCmd.bat").is_file():
+        return None
+    return installation_path
+
+
+def visual_studio_is_available() -> bool:
+    return find_visual_studio_installation() is not None
+
+
+def print_optional_visual_studio_warning() -> None:
+    print("[OPTIONAL] Visual Studio C++ tools were not found.")
+    print("           Skipping suite vcpkg package restoration; hardware/GMP tools remain available.")
+    print("           Install the VS Desktop development with C++ workload later, then run repair_gmp_vcpkg.bat.")
+
+
+def visual_studio_environment(base_env: dict[str, str]) -> dict[str, str]:
+    installation = find_visual_studio_installation()
+    if installation is None:
+        raise EnvironmentError(
+            "Visual Studio C++ tools are unavailable; install the Desktop development with C++ workload to use suite simulation packages"
+        )
+    developer_batch = installation / "Common7" / "Tools" / "VsDevCmd.bat"
     result = subprocess.run(
         [
             os.environ.get("COMSPEC", "cmd.exe"),
@@ -494,7 +517,13 @@ def configure_repository() -> None:
     run([python, sdpe / "distribute_sdpe_mgr.py"], cwd=sdpe, env=env)
 
 
-def write_state(manifest: dict, mode: str) -> None:
+def write_state(
+    manifest: dict,
+    mode: str,
+    *,
+    visual_studio_cpp: bool,
+    vcpkg_packages_restored: bool,
+) -> None:
     python = BIN_DIR / "python" / "python.exe"
     freeze = subprocess.run(
         [str(python), "-m", "pip", "freeze", "--all"],
@@ -515,6 +544,10 @@ def write_state(manifest: dict, mode: str) -> None:
             project.relative_to(GMP_ROOT).as_posix()
             for project in discover_vcpkg_projects(manifest)
         ],
+        "capabilities": {
+            "visual_studio_cpp": visual_studio_cpp,
+            "vcpkg_packages_restored": vcpkg_packages_restored,
+        },
         "python_packages": freeze.stdout.splitlines() if freeze.returncode == 0 else [],
         "portable": True,
     }
@@ -544,9 +577,11 @@ def expected_vcpkg_ports(manifest: dict) -> set[str]:
 def doctor(
     manifest: dict,
     *,
-    require_vcpkg_packages: bool = True,
+    require_vcpkg_packages: bool | None = None,
     require_completion_marker: bool = True,
 ) -> bool:
+    if require_vcpkg_packages is None:
+        require_vcpkg_packages = visual_studio_is_available()
     failures = []
     if require_completion_marker and not COMPLETION_MARKER_PATH.is_file():
         failures.append(f"missing completion marker: {display_path(COMPLETION_MARKER_PATH)}")
@@ -592,6 +627,10 @@ def print_plan(manifest: dict) -> None:
     for item in manifest["applications"]:
         print(f"  - {item['name']} {item['version']} -> bin/{item['destination']}")
     print(f"vcpkg: {manifest['vcpkg']['repository_version']} ({manifest['vcpkg']['triplet']})")
+    print(
+        "Visual Studio C++: "
+        + ("available; suite packages will be restored" if visual_studio_is_available() else "not detected; optional suite package restore will be skipped")
+    )
     print(f"  - automatic rule: {SUITE_SIMULATE_GLOB}/vcpkg.json")
     for project in discover_vcpkg_projects(manifest):
         relative = project.relative_to(GMP_ROOT).as_posix()
@@ -626,6 +665,10 @@ def parse_arguments() -> argparse.Namespace:
         "restore-vcpkg",
         help="download/restore all discovered vcpkg tools and project dependencies",
     )
+    subparsers.add_parser(
+        "check-visual-studio",
+        help="return success only when the Visual Studio x64 C++ workload is available",
+    )
     return parser.parse_args()
 
 
@@ -642,7 +685,16 @@ def main() -> int:
         if args.command == "configure-proxy":
             write_proxy_configuration()
             return 0
+        if args.command == "check-visual-studio":
+            if visual_studio_is_available():
+                print("[OK] Visual Studio x64 C++ tools are available.")
+                return 0
+            print_optional_visual_studio_warning()
+            return 2
         if args.command == "restore-vcpkg":
+            if not visual_studio_is_available():
+                print_optional_visual_studio_warning()
+                return 2
             install_vcpkg(manifest)
             install_vcpkg_projects(manifest)
             return 0 if doctor(manifest, require_completion_marker=False) else 1
@@ -654,14 +706,24 @@ def main() -> int:
             install_python_packages(manifest)
             install_applications(manifest)
             install_vcpkg(manifest)
-            if not args.skip_vcpkg_packages:
+            visual_studio_cpp = visual_studio_is_available()
+            vcpkg_packages_restored = False
+            if not args.skip_vcpkg_packages and visual_studio_cpp:
                 install_vcpkg_projects(manifest)
+                vcpkg_packages_restored = True
+            elif not args.skip_vcpkg_packages:
+                print_optional_visual_studio_warning()
             if not args.skip_project_setup:
                 configure_repository()
-            write_state(manifest, "online")
+            write_state(
+                manifest,
+                "online",
+                visual_studio_cpp=visual_studio_cpp,
+                vcpkg_packages_restored=vcpkg_packages_restored,
+            )
             if not doctor(
                 manifest,
-                require_vcpkg_packages=not args.skip_vcpkg_packages,
+                require_vcpkg_packages=vcpkg_packages_restored,
                 require_completion_marker=False,
             ):
                 return 1
@@ -672,15 +734,31 @@ def main() -> int:
         elif args.command == "deploy":
             write_proxy_configuration()
             remove_completion_marker()
-            if not doctor(manifest, require_completion_marker=False):
+            visual_studio_cpp = visual_studio_is_available()
+            if not visual_studio_cpp:
+                print_optional_visual_studio_warning()
+            if not doctor(
+                manifest,
+                require_vcpkg_packages=visual_studio_cpp,
+                require_completion_marker=False,
+            ):
                 return 1
             if not args.skip_project_setup:
                 configure_repository()
-            write_state(manifest, "portable-copy")
+            write_state(
+                manifest,
+                "portable-copy",
+                visual_studio_cpp=visual_studio_cpp,
+                vcpkg_packages_restored=visual_studio_cpp,
+            )
             if args.skip_project_setup:
                 print("\n[WARNING] Partial deployment completed; completion marker was not created.")
                 return 0
-            if not doctor(manifest, require_completion_marker=False):
+            if not doctor(
+                manifest,
+                require_vcpkg_packages=visual_studio_cpp,
+                require_completion_marker=False,
+            ):
                 return 1
             create_completion_marker()
         print("\n[SUCCESS] GMP private environment is ready. Run gmp_env.bat to enter it.")

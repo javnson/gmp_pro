@@ -86,70 +86,6 @@
       "description": "Current per-unit base value, using the peak value of the nominal 10 Arms system."
     },
     {
-      "role": "Input Voltage Sensitive",
-      "macro": "CTRL_FSBB_VIN_SENSITIVITY",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.voltage_sensitivity"
-      },
-      "description": "Input voltage ADC sensing sensitivity provided by the LVFB voltage sensor path."
-    },
-    {
-      "role": "Input Voltage Bias",
-      "macro": "CTRL_FSBB_VIN_BIAS",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.voltage_bias_v"
-      },
-      "description": "Input voltage ADC bias voltage provided by the LVFB voltage sensor path."
-    },
-    {
-      "role": "Output Voltage Sensitive",
-      "macro": "CTRL_FSBB_VOUT_SENSITIVITY",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.voltage_sensitivity"
-      },
-      "description": "Output voltage ADC sensing sensitivity provided by the LVFB voltage sensor path."
-    },
-    {
-      "role": "Output Voltage Bias",
-      "macro": "CTRL_FSBB_VOUT_BIAS",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.voltage_bias_v"
-      },
-      "description": "Output voltage ADC bias voltage provided by the LVFB voltage sensor path."
-    },
-    {
-      "role": "Inductor Current Sensitive",
-      "macro": "CTRL_FSBB_IL_SENSITIVITY",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
-      },
-      "description": "Inductor current ADC sensing sensitivity provided by the LVFB current sensor path."
-    },
-    {
-      "role": "Inductor Current Bias",
-      "macro": "CTRL_FSBB_IL_BIAS",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
-      },
-      "description": "Inductor current ADC bias voltage provided by the LVFB current sensor path."
-    },
-    {
-      "role": "Output Current Sensitive",
-      "macro": "CTRL_FSBB_IOUT_SENSITIVITY",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
-      },
-      "description": "Load/output current ADC sensing sensitivity provided by the LVFB current sensor path."
-    },
-    {
-      "role": "Output Current Bias",
-      "macro": "CTRL_FSBB_IOUT_BIAS",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
-      },
-      "description": "Load/output current ADC bias voltage provided by the LVFB current sensor path."
-    },
-    {
       "role": "Min Resistance Load",
       "macro": "FSBB_PARAM_RLOAD_MIN",
       "binding": {
@@ -158,6 +94,7 @@
       "description": "Minimum load resistance used by FSBB controller initialization."
     },
     {
+      "macro": "CTRL_FSBB_VIN_BIAS",
       "role": "Input Capcitor",
       "macro": "FSBB_PARAM_CIN",
       "binding": {
@@ -196,6 +133,70 @@
         "float": "0.05"
       },
       "description": "Main inductor equivalent series resistance."
+    },
+    {
+      "role": "Input Voltage Sensitive",
+      "macro": "CTRL_FSBB_VIN_SENSITIVITY",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.voltage_sensitivity"
+      },
+      "description": "Input voltage ADC sensing sensitivity provided by the LVFB voltage sensor path."
+    },
+    {
+      "role": "Input Voltage Bias",
+      "macro": "CTRL_FSBB_VIN_BIAS",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.voltage_bias_v"
+      },
+      "description": "Input voltage ADC bias voltage provided by the LVFB voltage sensor path."
+    },
+    {
+      "role": "Output Voltage Sensitive",
+      "macro": "CTRL_FSBB_VOUT_SENSITIVITY",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.voltage_sensitivity"
+      },
+      "description": "Output voltage ADC sensing sensitivity provided by the LVFB voltage sensor path."
+    },
+    {
+      "role": "Output Voltage Bias",
+      "macro": "CTRL_FSBB_VOUT_BIAS",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.voltage_bias_v"
+      },
+      "description": "Output voltage ADC bias voltage provided by the LVFB voltage sensor path."
+    },
+    {
+      "role": "Output Current Sensitive",
+      "macro": "CTRL_FSBB_IOUT_SENSITIVITY",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
+      },
+      "description": "Load/output current ADC sensing sensitivity provided by the LVFB current sensor path."
+    },
+    {
+      "role": "Output Current Bias",
+      "macro": "CTRL_FSBB_IOUT_BIAS",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
+      },
+      "description": "Load/output current ADC bias voltage provided by the LVFB current sensor path."
+    },
+    {
+      "role": "Inductor Current Sensitive",
+      "macro": "CTRL_FSBB_IL_SENSITIVITY",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
+      },
+      "description": "Inductor current ADC sensing sensitivity provided by the LVFB current sensor path."
+    },
+    {
+      "role": "Inductor Current Bias",
+      "macro": "CTRL_FSBB_IL_BIAS",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
+      },
+      "description": "Inductor current ADC bias voltage provided by the LVFB current sensor path."
     },
     {
       "role": "Max Input Voltage",
@@ -262,46 +263,6 @@
       "description": "Default startup current command and limit."
     },
     {
-      "role": "Open Loop Voltage Command",
-      "macro": "FSBB_OPEN_LOOP_VOLTAGE_COMMAND",
-      "binding": {
-        "float": "12.0"
-      },
-      "description": "Equivalent output-voltage command used by BUILD_LEVEL 1."
-    },
-    {
-      "role": "Voltage Ramp Rate",
-      "macro": "FSBB_VOLTAGE_RAMP_PU_S",
-      "binding": {
-        "float": "1.0"
-      },
-      "description": "Voltage-reference slew rate in PU/s."
-    },
-    {
-      "role": "Current Ramp Rate",
-      "macro": "FSBB_CURRENT_RAMP_PU_S",
-      "binding": {
-        "float": "1.0"
-      },
-      "description": "Current-reference slew rate in PU/s."
-    },
-    {
-      "role": "Current Loop Bandwidth",
-      "macro": "FSBB_CURRENT_LOOP_BANDWIDTH",
-      "binding": {
-        "float": "800.0"
-      },
-      "description": "Requested current-loop crossover frequency."
-    },
-    {
-      "role": "Voltage Loop Bandwidth",
-      "macro": "FSBB_VOLTAGE_LOOP_BANDWIDTH",
-      "binding": {
-        "float": "40.0"
-      },
-      "description": "Requested voltage-loop crossover frequency."
-    },
-    {
       "role": "Maximum Duty",
       "macro": "FSBB_DUTY_MAX",
       "binding": {
@@ -316,22 +277,6 @@
         "float": "0.05"
       },
       "description": "Minimum FSBB leg duty ratio."
-    },
-    {
-      "role": "Low Transition Ratio",
-      "macro": "FSBB_TRANSITION_RATIO_LOW",
-      "binding": {
-        "float": "0.90"
-      },
-      "description": "Lower voltage-ratio boundary of the buck-boost transition region."
-    },
-    {
-      "role": "High Transition Ratio",
-      "macro": "FSBB_TRANSITION_RATIO_HIGH",
-      "binding": {
-        "float": "1.10"
-      },
-      "description": "Upper voltage-ratio boundary of the buck-boost transition region."
     },
     {
       "role": "Max Inductor Current",
@@ -350,6 +295,46 @@
       "description": "Negative inductor current protection threshold."
     },
     {
+      "role": "Open Loop Voltage Command",
+      "macro": "FSBB_OPEN_LOOP_VOLTAGE_COMMAND",
+      "binding": {
+        "float": "12.0"
+      },
+      "description": "Equivalent output-voltage command used by BUILD_LEVEL 1."
+    },
+    {
+      "role": "Current Loop Bandwidth",
+      "macro": "FSBB_CURRENT_LOOP_BANDWIDTH",
+      "binding": {
+        "float": "800.0"
+      },
+      "description": "Requested current-loop crossover frequency."
+    },
+    {
+      "role": "Voltage Loop Bandwidth",
+      "macro": "FSBB_VOLTAGE_LOOP_BANDWIDTH",
+      "binding": {
+        "float": "40.0"
+      },
+      "description": "Requested voltage-loop crossover frequency."
+    },
+    {
+      "role": "Low Transition Ratio",
+      "macro": "FSBB_TRANSITION_RATIO_LOW",
+      "binding": {
+        "float": "0.90"
+      },
+      "description": "Lower voltage-ratio boundary of the buck-boost transition region."
+    },
+    {
+      "role": "High Transition Ratio",
+      "macro": "FSBB_TRANSITION_RATIO_HIGH",
+      "binding": {
+        "float": "1.10"
+      },
+      "description": "Upper voltage-ratio boundary of the buck-boost transition region."
+    },
+    {
       "role": "adc_calibration_timeout",
       "macro": "TIMEOUT_ADC_CALIB_MS",
       "binding": {
@@ -364,6 +349,22 @@
         "literal": "((float2ctrl(0.005)))"
       },
       "description": "SPLL close-loop convergence threshold."
+    },
+    {
+      "role": "Voltage Ramp Rate",
+      "macro": "FSBB_VOLTAGE_RAMP_PU_S",
+      "binding": {
+        "float": "1.0"
+      },
+      "description": "Voltage-reference slew rate in PU/s."
+    },
+    {
+      "role": "Current Ramp Rate",
+      "macro": "FSBB_CURRENT_RAMP_PU_S",
+      "binding": {
+        "float": "1.0"
+      },
+      "description": "Current-reference slew rate in PU/s."
     }
   ],
   "feature_macros": [
@@ -430,7 +431,14 @@
       "enabled": true,
       "value": "IRIS_GPIO1",
       "options_preset": "iris_f280039c_node.IRIS_GPIO",
-      "options": [],
+      "options": [
+        "IRIS_GPIO1",
+        "IRIS_GPIO2",
+        "IRIS_GPIO3",
+        "IRIS_GPIO4",
+        "IRIS_GPIO5",
+        "IRIS_GPIO6"
+      ],
       "description": "Gate-driver enable GPIO."
     },
     {
@@ -439,7 +447,14 @@
       "enabled": true,
       "value": "IRIS_GPIO3",
       "options_preset": "iris_f280039c_node.IRIS_GPIO",
-      "options": [],
+      "options": [
+        "IRIS_GPIO1",
+        "IRIS_GPIO2",
+        "IRIS_GPIO3",
+        "IRIS_GPIO4",
+        "IRIS_GPIO5",
+        "IRIS_GPIO6"
+      ],
       "description": "Gate-driver reset GPIO."
     },
     {
@@ -462,7 +477,14 @@
       "enabled": true,
       "value": "IRIS_EPWM1_BASE",
       "options_preset": "iris_f280039c_node.IRIS_EPWM",
-      "options": [],
+      "options": [
+        "IRIS_EPWM1_BASE",
+        "IRIS_EPWM2_BASE",
+        "IRIS_EPWM3_BASE",
+        "IRIS_EPWM4_BASE",
+        "IRIS_EPWM5_BASE",
+        "IRIS_EPWM6_BASE"
+      ],
       "description": "Buck phase ePWM base."
     },
     {
@@ -471,7 +493,14 @@
       "enabled": true,
       "value": "IRIS_EPWM2_BASE",
       "options_preset": "iris_f280039c_node.IRIS_EPWM",
-      "options": [],
+      "options": [
+        "IRIS_EPWM1_BASE",
+        "IRIS_EPWM2_BASE",
+        "IRIS_EPWM3_BASE",
+        "IRIS_EPWM4_BASE",
+        "IRIS_EPWM5_BASE",
+        "IRIS_EPWM6_BASE"
+      ],
       "description": "Boost phase ePWM base."
     },
     {
@@ -480,7 +509,20 @@
       "enabled": true,
       "value": "ADC_CH1_ADC_BASE",
       "options_preset": "iris_f280039c_node.ADC_BASE",
-      "options": [],
+      "options": [
+        "ADC_CH1_ADC_BASE",
+        "ADC_CH2_ADC_BASE",
+        "ADC_CH3_ADC_BASE",
+        "ADC_CH4_ADC_BASE",
+        "ADC_CH5_ADC_BASE",
+        "ADC_CH6_ADC_BASE",
+        "ADC_CH7_ADC_BASE",
+        "ADC_CH8_ADC_BASE",
+        "ADC_CH9_ADC_BASE",
+        "ADC_CH10_ADC_BASE",
+        "ADC_CH11_ADC_BASE",
+        "ADC_CH12_ADC_BASE"
+      ],
       "description": "Input voltage ADC result register base."
     },
     {
@@ -489,7 +531,20 @@
       "enabled": true,
       "value": "ADC_CH1",
       "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
-      "options": [],
+      "options": [
+        "ADC_CH1",
+        "ADC_CH2",
+        "ADC_CH3",
+        "ADC_CH4",
+        "ADC_CH5",
+        "ADC_CH6",
+        "ADC_CH7",
+        "ADC_CH8",
+        "ADC_CH9",
+        "ADC_CH10",
+        "ADC_CH11",
+        "ADC_CH12"
+      ],
       "description": "Input voltage ADC channel index."
     },
     {
@@ -498,7 +553,20 @@
       "enabled": true,
       "value": "ADC_CH2_ADC_BASE",
       "options_preset": "iris_f280039c_node.ADC_BASE",
-      "options": [],
+      "options": [
+        "ADC_CH1_ADC_BASE",
+        "ADC_CH2_ADC_BASE",
+        "ADC_CH3_ADC_BASE",
+        "ADC_CH4_ADC_BASE",
+        "ADC_CH5_ADC_BASE",
+        "ADC_CH6_ADC_BASE",
+        "ADC_CH7_ADC_BASE",
+        "ADC_CH8_ADC_BASE",
+        "ADC_CH9_ADC_BASE",
+        "ADC_CH10_ADC_BASE",
+        "ADC_CH11_ADC_BASE",
+        "ADC_CH12_ADC_BASE"
+      ],
       "description": "Output voltage ADC result register base."
     },
     {
@@ -507,7 +575,20 @@
       "enabled": true,
       "value": "ADC_CH2",
       "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
-      "options": [],
+      "options": [
+        "ADC_CH1",
+        "ADC_CH2",
+        "ADC_CH3",
+        "ADC_CH4",
+        "ADC_CH5",
+        "ADC_CH6",
+        "ADC_CH7",
+        "ADC_CH8",
+        "ADC_CH9",
+        "ADC_CH10",
+        "ADC_CH11",
+        "ADC_CH12"
+      ],
       "description": "Output voltage ADC channel index."
     },
     {
@@ -516,7 +597,20 @@
       "enabled": true,
       "value": "ADC_CH3_ADC_BASE",
       "options_preset": "iris_f280039c_node.ADC_BASE",
-      "options": [],
+      "options": [
+        "ADC_CH1_ADC_BASE",
+        "ADC_CH2_ADC_BASE",
+        "ADC_CH3_ADC_BASE",
+        "ADC_CH4_ADC_BASE",
+        "ADC_CH5_ADC_BASE",
+        "ADC_CH6_ADC_BASE",
+        "ADC_CH7_ADC_BASE",
+        "ADC_CH8_ADC_BASE",
+        "ADC_CH9_ADC_BASE",
+        "ADC_CH10_ADC_BASE",
+        "ADC_CH11_ADC_BASE",
+        "ADC_CH12_ADC_BASE"
+      ],
       "description": "Inductor current ADC result register base."
     },
     {
@@ -525,7 +619,20 @@
       "enabled": true,
       "value": "ADC_CH3",
       "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
-      "options": [],
+      "options": [
+        "ADC_CH1",
+        "ADC_CH2",
+        "ADC_CH3",
+        "ADC_CH4",
+        "ADC_CH5",
+        "ADC_CH6",
+        "ADC_CH7",
+        "ADC_CH8",
+        "ADC_CH9",
+        "ADC_CH10",
+        "ADC_CH11",
+        "ADC_CH12"
+      ],
       "description": "Inductor current ADC channel index."
     },
     {
@@ -534,7 +641,20 @@
       "enabled": true,
       "value": "ADC_CH4_ADC_BASE",
       "options_preset": "iris_f280039c_node.ADC_BASE",
-      "options": [],
+      "options": [
+        "ADC_CH1_ADC_BASE",
+        "ADC_CH2_ADC_BASE",
+        "ADC_CH3_ADC_BASE",
+        "ADC_CH4_ADC_BASE",
+        "ADC_CH5_ADC_BASE",
+        "ADC_CH6_ADC_BASE",
+        "ADC_CH7_ADC_BASE",
+        "ADC_CH8_ADC_BASE",
+        "ADC_CH9_ADC_BASE",
+        "ADC_CH10_ADC_BASE",
+        "ADC_CH11_ADC_BASE",
+        "ADC_CH12_ADC_BASE"
+      ],
       "description": "Input current ADC result register base, available when input-current sampling is enabled."
     },
     {
@@ -543,7 +663,20 @@
       "enabled": true,
       "value": "ADC_CH4",
       "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
-      "options": [],
+      "options": [
+        "ADC_CH1",
+        "ADC_CH2",
+        "ADC_CH3",
+        "ADC_CH4",
+        "ADC_CH5",
+        "ADC_CH6",
+        "ADC_CH7",
+        "ADC_CH8",
+        "ADC_CH9",
+        "ADC_CH10",
+        "ADC_CH11",
+        "ADC_CH12"
+      ],
       "description": "Input current ADC channel index, available when input-current sampling is enabled."
     },
     {
@@ -552,7 +685,20 @@
       "enabled": true,
       "value": "ADC_CH4_ADC_BASE",
       "options_preset": "iris_f280039c_node.ADC_BASE",
-      "options": [],
+      "options": [
+        "ADC_CH1_ADC_BASE",
+        "ADC_CH2_ADC_BASE",
+        "ADC_CH3_ADC_BASE",
+        "ADC_CH4_ADC_BASE",
+        "ADC_CH5_ADC_BASE",
+        "ADC_CH6_ADC_BASE",
+        "ADC_CH7_ADC_BASE",
+        "ADC_CH8_ADC_BASE",
+        "ADC_CH9_ADC_BASE",
+        "ADC_CH10_ADC_BASE",
+        "ADC_CH11_ADC_BASE",
+        "ADC_CH12_ADC_BASE"
+      ],
       "description": "Output/load current ADC result register base."
     },
     {
@@ -561,7 +707,20 @@
       "enabled": true,
       "value": "ADC_CH4",
       "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
-      "options": [],
+      "options": [
+        "ADC_CH1",
+        "ADC_CH2",
+        "ADC_CH3",
+        "ADC_CH4",
+        "ADC_CH5",
+        "ADC_CH6",
+        "ADC_CH7",
+        "ADC_CH8",
+        "ADC_CH9",
+        "ADC_CH10",
+        "ADC_CH11",
+        "ADC_CH12"
+      ],
       "description": "Output/load current ADC channel index."
     }
   ],
@@ -570,7 +729,7 @@
     "before_footer": "/* Backward compatibility for the historical misspelled PIL switch. */\n#if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM\n#define ENABLE_GMP_DL_PIL_SIM\n#endif\n\n/* Project-specific compile-time validation. */\n#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 3)\n#error \"BUILD_LEVEL must be 1 (open loop), 2 (current loop), or 3 (voltage/current cascade).\"\n#endif"
   },
   "description": "Four-switch buck-boost converter SDPE project requirement prepared from ctl/suite/dps_fsbb/project/f280039c_Iris_node/xplt/ctrl_settings.h.\nThe requirement introduces the GMP LVFB 150V 2-phase board as the switching stage and sensor source, and IRIS F280039C Node as the peripheral option provider.",
-  "updated_at": "2026-07-14",
+  "updated_at": "2026-07-16",
   "requirement_groups": [
     {
       "name": "Peripheral Parameters",
@@ -666,5 +825,6 @@
         "Current Ramp Rate"
       ]
     }
-  ]
+  ],
+  "macro_prefix": ""
 }

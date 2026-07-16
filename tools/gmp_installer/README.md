@@ -26,11 +26,17 @@ opened by double-click remains visible. Automated callers can disable only this
 failure pause by setting `GMP_INSTALLER_NO_PAUSE=1`; the original non-zero exit
 code is preserved in both cases.
 
-Visual Studio with the Desktop development with C++ workload and a Windows SDK
-is a host prerequisite. Visual Studio itself is intentionally not copied into
-`bin`; its licensing and installer servicing model do not support treating an
-existing VS installation as a portable repository tool. The activation script
-detects it with `vswhere` and imports its x64 developer-command-prompt settings.
+Visual Studio is an optional capability, not an installation prerequisite.
+Hardware/CCS workflows, private Python, documentation, source-management, and
+SDPE tools install and run on a computer without Visual Studio. When the
+installer detects Visual Studio with the Desktop development with C++ workload,
+it also restores the suite simulation vcpkg packages. Otherwise it prints an
+`[OPTIONAL]` warning, skips only that step, and still creates the private
+environment completion marker. Visual Studio itself is intentionally not copied
+into `bin`; its licensing and installer servicing model do not support treating
+an existing VS installation as a portable repository tool. After Visual Studio
+is installed later, run `repair_gmp_vcpkg.bat` for a private environment or
+rerun `install_gmp.bat` for the classic environment to add simulation support.
 
 ## Layout
 
@@ -62,9 +68,10 @@ install_gmp.bat
 ```
 
 This installs or verifies Scoop-managed Git, Python, CMake, Ninja, Doxygen,
-Graphviz, and vcpkg; installs the shared Python requirement set; runs
-`vcpkg integrate install`; restores every suite simulation manifest; and
-runs the complete repository setup, including CCS product registration.
+Graphviz, and vcpkg; installs the shared Python requirement set; and runs the
+complete repository setup, including CCS product registration. It runs
+`vcpkg integrate install` and restores every suite simulation manifest only when
+the Visual Studio x64 C++ workload is detected.
 
 ## 2. Build a private environment from zero
 
@@ -78,7 +85,8 @@ The initial Python installer is downloaded with Windows `curl.exe`. All later
 downloads and extraction are performed by the private Python interpreter. The
 selected proxy is inherited by curl, Python/pip, vcpkg, Git, and Scoop.
 
-The default installation automatically restores every vcpkg manifest matching:
+When Visual Studio C++ is available, the default installation automatically
+restores every vcpkg manifest matching:
 
 ```text
 ctl/suite/*/project/simulate/vcpkg.json
@@ -109,9 +117,11 @@ deploy_gmp_env.bat
 ```
 
 This mode performs no downloads and no package installations. It validates the
-Python version and imports, portable applications, vcpkg executable, and the
-required `asio`, `fmt`, and `nlohmann-json` package trees. It then runs only the
-CCS registration and repository configuration/generation steps. The generated environment
+Python version and imports, portable applications, and the vcpkg executable. If
+Visual Studio C++ is present, it additionally requires the copied `bin` to
+contain the required `asio`, `fmt`, and `nlohmann-json` package trees; without
+Visual Studio those optional package trees are not required. It then runs only
+the CCS registration and repository configuration/generation steps. The generated environment
 inventory deliberately stores versions rather than the original absolute path,
 so moving the repository does not require rewriting it.
 
@@ -129,9 +139,11 @@ Double-click or run:
 gmp_env.bat
 ```
 
-This opens a new x64 GMP developer prompt. It prepends private tools to `PATH`,
+This opens a new GMP developer prompt. It prepends private tools to `PATH`,
 reads the registered `GMP_PRO_LOCATION`, isolates Python from user site-packages, configures the
-vcpkg caches/toolchain, and then imports Visual Studio's developer environment.
+vcpkg caches/toolchain, and imports Visual Studio's x64 developer environment
+when it is available. Without Visual Studio it prints a warning and leaves all
+non-Visual-Studio GMP tools active.
 It does not persist any additional user or machine environment variables.
 
 A single command can also be run without opening an interactive prompt:
@@ -159,7 +171,8 @@ configure_gmp_proxy.bat
 repair_gmp_vcpkg.bat
 ```
 
-`repair_gmp_vcpkg.bat` does not create the installation completion marker. It
+`repair_gmp_vcpkg.bat` requires Visual Studio C++ and does not create the
+installation completion marker. It
 uses the saved proxy to obtain vcpkg's auxiliary CMake/7zip/7zr tools and then
 restores every discovered suite manifest.
 
@@ -537,7 +550,9 @@ environment is complete. `gmp_environment.json` is diagnostic inventory and
 must never be used as the completion test. Online installation and copied-bin
 deployment delete any old marker before work begins; only
 `environment_manager.py` creates it atomically after all mandatory validation,
-vcpkg restoration, CCS registration, and framework distribution steps succeed.
+CCS registration, and framework distribution steps succeed. Suite vcpkg package
+restoration is mandatory only when Visual Studio C++ is detected; its deliberate
+absence must not prevent hardware-only installations from becoming complete.
 
 No other program may create the marker. A debug install using `--skip-*` is
 intentionally incomplete and must finish without it. This invariant ensures
@@ -550,7 +565,8 @@ Before committing an installer or dependency change:
 
 1. Run `install_gmp.bat --plan` and `install_gmp_virtual_env.bat --plan`; verify
    that both reports match their real behavior.
-2. Test the classic installation path and build a fresh private environment.
+2. Test the classic installation path and build a fresh private environment on
+   both a Visual Studio C++ host and a host (or test environment) without it.
 3. Run `bin\python\python.exe -m pip check` and the doctor command below.
 4. Open `gmp_env.bat` and check `python --version` plus every changed
    application with its `--version` or equivalent command.
@@ -561,8 +577,9 @@ Before committing an installer or dependency change:
 7. Copy the finished `bin` folder to a repository at a different absolute path
    and run `deploy_gmp_env.bat`; this catches embedded paths and incomplete
    archives.
-8. Build the affected Visual Studio/vcpkg project and run the affected GMP
-   service scripts from a working directory other than their own.
+8. On the Visual Studio test host, build the affected Visual Studio/vcpkg
+   project. On both hosts, run the affected GMP service scripts from a working
+   directory other than their own.
 9. Run `git diff --check`. Confirm that `bin/` remains ignored and that no
    downloaded archive, token, proxy credential, or machine-specific path is
    staged.
