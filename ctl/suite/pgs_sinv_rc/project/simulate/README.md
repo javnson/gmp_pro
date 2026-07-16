@@ -28,7 +28,7 @@ sdpe_generate.bat
 configure_sinv_models
 ```
 
-该脚本把两级生成的 MATLAB 初始化脚本同时写入三个模型的 `PreLoadFcn`/`InitFcn`，并把功率级 Mask 按 PWM、开关器件、交流滤波器、直流母线、ADC、电压传感器和电流传感器分组。模型中出现的 disabled library link 提示来自功率级 Mask 的项目级定制，模型更新检查已通过。
+该脚本清空三个模型不可靠的 `PreLoadFcn`，并在 `PostLoadFcn` 和 `InitFcn` 中保存自包含的相对路径初始化代码。模型加载后、编译前都会先执行 `../../sdpe_general/sdpe_pgs_sinv_rc_common_settings_matlab_init.m`，再执行 `sdpe_mgr/sdpe_pgs_sinv_rc_simulate_settings_matlab_init.m`，因此不要求用户预先把 GMP MATLAB 辅助函数加入搜索路径。随后回调会根据模型位置加入 UDP MEX 目录。功率级 Mask 按 PWM、开关器件、交流滤波器、直流母线、ADC、电压传感器和电流传感器分组。模型中出现的 disabled library link 提示来自功率级 Mask 的项目级定制，模型更新检查已通过。
 
 ## 模型与 BUILD_LEVEL
 

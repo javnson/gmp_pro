@@ -1,35 +1,36 @@
 /**
  * @file csp.general.h
- * @author Javnson (javnson@zju.edu.cn)
- * @brief
- * @version 0.1
- * @date 2024-09-30
- *
- * @copyright Copyright GMP(c) 2024
- *
+ * @brief General Raspberry Pi Pico SDK integration for GMP.
  */
 
+#ifndef GMP_CSP_RPI_PICO_GENERAL_H
+#define GMP_CSP_RPI_PICO_GENERAL_H
+
 #include <csp.config.h>
+#include <hardware/sync.h>
 
-//
-// Instert a software breakpoint right here
-// GMP library Debug Software Break Point Macro
-// This instruction is valid in Cotex-M kernel chip.
-//
-#define GMP_DBG_SWBP __asm volatile("BKPT #0")
+#define GMP_DBG_SWBP __asm volatile("bkpt #0")
 
-// 定义一个全局静态变量用于保存中断状态（支持嵌套需特殊处理）
-static uint32_t _gmp_critical_status;
-
-GMP_STATIC_INLINE void gmp_base_enter_critical()
+#ifdef __cplusplus
+extern "C"
 {
-    _gmp_critical_status = save_and_disable_interrupts();
-}
+#endif
 
-GMP_STATIC_INLINE void gmp_base_leave_critical()
-{
-    restore_interrupts(_gmp_critical_status);
-}
+/**
+ * @brief Enter a core-local critical section while preserving the IRQ state.
+ */
+void gmp_base_enter_critical(void);
 
+/**
+ * @brief Leave a core-local critical section and restore the IRQ state.
+ */
+void gmp_base_leave_critical(void);
 
+/** UART used by the default GMP diagnostic output implementation. */
 extern uart_halt debug_uart;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* GMP_CSP_RPI_PICO_GENERAL_H */

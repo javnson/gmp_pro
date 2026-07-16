@@ -27,7 +27,7 @@ if /i "%~1"=="--plan" (
     echo Visual Studio : optional; enables suite simulation package restore
     echo vcpkg projects: ctl\suite\*\project\simulate with vcpkg.json, when VS C++ is available
     echo Integration   : user-wide vcpkg integration, when VS C++ is available
-    echo Repository    : CCS registration, facilities/source and SDPE tool distribution
+    echo Repository    : CCS registration, source/SDPE tools, and project .gitignore distribution
     exit /b 0
 )
 
@@ -147,6 +147,10 @@ if errorlevel 1 exit /b 1
 
 echo [SETUP] Distributing project-local SDPE toolchains...
 python "%GMP_PRO_LOCATION%\tools\SDPE_v2\distribute_sdpe_mgr.py"
+if errorlevel 1 exit /b 1
+
+echo [SETUP] Distributing standalone project .gitignore files...
+python "%GMP_PRO_LOCATION%\tools\gmp_installer\distribute_project_gitignores.py"
 if errorlevel 1 exit /b 1
 
 echo.

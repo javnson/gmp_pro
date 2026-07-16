@@ -180,6 +180,7 @@ class HardwareEntity:
     option_macros: list[dict[str, Any]] = field(default_factory=list)
     conditional_macros: list[dict[str, Any]] = field(default_factory=list)
     parameters: dict[str, Any] = field(default_factory=dict)
+    parameter_macros: dict[str, Any] = field(default_factory=dict)
     components: dict[str, ComponentRef] = field(default_factory=dict)
     tags: list[str] = field(default_factory=list)
     source: Path | None = None
@@ -210,6 +211,7 @@ class HardwareEntity:
             option_macros=list(data.get("option_macros", [])),
             conditional_macros=list(data.get("conditional_macros", [])),
             parameters=dict(data.get("parameters", {})),
+            parameter_macros=dict(data.get("parameter_macros", {})),
             tags=list(data.get("tags", [])),
             source=source,
             inline=inline,

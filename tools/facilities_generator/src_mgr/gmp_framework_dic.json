@@ -5313,15 +5313,24 @@
             },
             "rp_pico": {
                 "type": "module",
-                "description": "Respberry Pi RP Series Support package",
+                "description": "Raspberry Pi RP2040/RP2350 Pico SDK support package",
                 "src_patterns": [
-                    "${GMP_PRO_LOCATION}/csp/rpi_pico/src/*"
+                    "${GMP_PRO_LOCATION}/csp/rpi_pico/src/*.c"
                 ],
                 "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/csp/rpi_pico/*"
+                    "${GMP_PRO_LOCATION}/csp/rpi_pico/*.h",
+                    "${GMP_PRO_LOCATION}/csp/rpi_pico/*.hpp"
                 ],
                 "inc_dirs": [
                     "${GMP_PRO_LOCATION}/csp/rpi_pico"
+                ],
+                "cmake_libraries": [
+                    "pico_stdlib",
+                    "hardware_gpio",
+                    "hardware_i2c",
+                    "hardware_spi",
+                    "hardware_uart",
+                    "hardware_watchdog"
                 ],
                 "help_docs": [],
                 "depends_on": [],
@@ -5329,9 +5338,9 @@
                     {
                         "id": "sys_compile",
                         "summary": "Compilation Passed",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
+                        "completed": true,
+                        "date": "2026-07-17",
+                        "reply": "RP2040 and RP2350 Pico SDK example builds passed."
                     },
                     {
                         "id": "sys_sim",

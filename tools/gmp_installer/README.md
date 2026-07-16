@@ -234,6 +234,7 @@ must select the installed environment through the common guard.
 | Add a GMP BAT entry point | The owning tool directory | `audit_env_guards.py` scope, when a new managed directory is introduced |
 | Change a source-manager BAT copied into projects | `tools/facilities_generator/src_mgr/gmp_src_mgr` | Run the framework distributor; do not edit generated project copies |
 | Change an SDPE BAT copied into projects | `tools/SDPE_v2/sdpe_mgr` | Run `distribute_sdpe_mgr.py`; project copies are ignored release artifacts |
+| Change standalone project ignore rules | `tools/gmp_installer/project_gitignore.template` | Run `distribute_project_gitignores.py`; keep project-only additions outside the managed block |
 
 `tools/gmp_installer/environment_manifest.json` describes the reproducible
 private environment. Increment its `environment_version` whenever the published
@@ -536,6 +537,35 @@ those four BAT files. It never overwrites `sdpe_requirement.json`, project
 README files, generated headers, Matlab initialization files, or
 `hardware_preset`. Project copies of the BAT files are ignored by Git and must
 not be edited directly.
+
+Standalone project `.gitignore` files are managed by
+`tools/gmp_installer/distribute_project_gitignores.py`. The distributor covers
+each immediate project under `csp/stm32` (excluding shared `common` and `src`),
+each project under `csp/c28x_syscfg` (excluding `doc`, `src`, and metadata), and
+every `ctl/suite/*/project/*` directory. Its managed block is the portable,
+project-relative subset in `project_gitignore.template`; the repository root
+`.gitignore` remains authoritative and is never rewritten.
+
+The distributor is idempotent and preserves rules outside the managed markers,
+so hardware- or IDE-specific additions may be kept below the block. Do not edit
+the managed block in an individual project. After adding a new project or
+changing the template, run:
+
+```bat
+python tools\gmp_installer\distribute_project_gitignores.py
+```
+
+Both installers run this distribution during repository setup. Commit the
+resulting per-project `.gitignore` files so a project copied outside `gmp_pro`
+retains protection from generated sources, IDE state, compiler output, Simulink
+work folders, and local vcpkg trees.
+
+The standalone template must not ignore distributed BAT tools such as
+`gmp_generate_inc.bat`, `gmp_generate_src.bat`, `gmp_config.bat`, or the
+`sdpe_mgr` launchers. Those copies are redundant inside the main GMP repository
+and remain ignored only by the root `.gitignore`; once a project is copied out,
+they are required source-controlled tooling that preserves its generation and
+SDPE capabilities.
 
 When a new managed BAT directory is introduced, extend
 `audit_env_guards.py` so guard coverage remains enforceable. Run the audit after

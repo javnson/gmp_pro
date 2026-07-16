@@ -287,6 +287,8 @@ class FrameworkUserGUI:
         self.btn_sync_src.pack(side=tk.LEFT, padx=5)
         self.btn_sync_inc = ttk.Button(fwd_frame, text="⬇️ Generate Headers (Include)", command=lambda: self.save_and_run_script("inc_only"))
         self.btn_sync_inc.pack(side=tk.LEFT, padx=5)
+        self.btn_generate_cmake = ttk.Button(fwd_frame, text="🛠️ Generate CMake", command=self.generate_cmake)
+        self.btn_generate_cmake.pack(side=tk.LEFT, padx=5)
 
     # ================= Dependency Engine =================
     def get_all_dependencies(self, root_name, mod_key):
@@ -737,6 +739,22 @@ class FrameworkUserGUI:
             txt.insert(tk.END, f"\n>>> [FATAL] Failed to launch backend engine:\n{e}\n")
             
         txt.config(state=tk.DISABLED)
+
+    def generate_cmake(self):
+        """Generate a relocatable CMake integration for the deployed sources."""
+        source_dir = Path(os.getcwd()) / "gmp_src"
+        if not source_dir.is_dir() or not any(source_dir.iterdir()):
+            messagebox.showerror(
+                "Missing Sources",
+                "Local 'gmp_src' is missing or empty. Run Generate Source before generating CMake.",
+            )
+            return
+
+        script_path = Path(__file__).parent.resolve() / "framework_generate_cmake.py"
+        if not script_path.exists():
+            messagebox.showerror("Missing Tool", f"Cannot find CMake generator:\n{script_path}")
+            return
+        self.execute_script_live(script_path, "GMP CMake Generator")
 
     # ================= Reverse Sync Guard =================
     def reverse_sync_src(self):

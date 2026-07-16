@@ -1,327 +1,521 @@
+/**
+ * @file rpi_pico_peripheral.c
+ * @brief GMP GPIO, UART, I2C and SPI ports for the Raspberry Pi Pico SDK.
+ */
 
 #include <gmp_core.h>
 
-//////////////////////////////////////////////////////////////////////////
-// RP PICO library
+#include <limits.h>
+
+#include <hardware/structs/spi.h>
+
+static bool pico_gpio_is_valid(gpio_halt gpio)
+{
+    uintptr_t encoded = (uintptr_t)gpio;
+    return encoded != 0U && encoded <= (uintptr_t)NUM_BANK0_GPIOS;
+}
+
+static absolute_time_t pico_deadline_from_ms(time_gt timeout_ms)
+{
+    uint32_t bounded_ms = timeout_ms > UINT32_MAX ? UINT32_MAX : (uint32_t)timeout_ms;
+    return make_timeout_time_ms(bounded_ms);
+}
+
+static uint pico_deadline_remaining_us(absolute_time_t deadline)
+{
+    int64_t remaining = absolute_time_diff_us(get_absolute_time(), deadline);
+    if (remaining <= 0)
+    {
+        return 0U;
+    }
+    return remaining > (int64_t)UINT_MAX ? UINT_MAX : (uint)remaining;
+}
+
+static bool pico_deadline_expired(absolute_time_t deadline)
+{
+    return time_reached(deadline);
+}
 
 /**
- * @brief 设定 GPIO 引脚方向
- * @note  Pico SDK 中 gpio_set_dir 会自动处理方向切换
+ * @brief Configure a Pico GPIO as a floating input or push-pull output.
+ * @param gpio Encoded Pico GPIO handle.
+ * @param dir Requested GMP GPIO direction.
+ * @return GMP_EC_OK on success, otherwise GMP_EC_GENERAL_ERROR.
  */
-ec_gt gmp_hal_gpio_set_dir(gpio_halt hgpio, gpio_dir_et dir)
+ec_gt gmp_hal_gpio_set_dir(gpio_halt gpio, gpio_dir_et dir)
 {
-    /* 对于 Pico，0-29 是合法范围，简单的安全检查 */
-    if (hgpio > 29)
+    if (!pico_gpio_is_valid(gpio))
     {
         return GMP_EC_GENERAL_ERROR;
     }
 
-    /* 初始化引脚（确保该引脚已受 GPIO 模块控制，而非 SIO 或其他外设） */
-    gpio_init(hgpio);
-
-    if (dir == GMP_HAL_GPIO_DIR_OUT)
-    {
-        /* 设置为输出 */
-        gpio_set_dir(hgpio, GPIO_OUT);
-        /* 默认为推挽模式，Pico 默认不开启内建上/下拉 */
-        //gpio_disable_pulls(hgpio);
-    }
-    else
-    {
-        /* 设置为输入 */
-        gpio_set_dir(hgpio, GPIO_IN);
-        /* 对应 STM32 的 Floating 模式 */
-        //gpio_disable_pulls(hgpio);
-    }
-
+    uint pin = GMP_RPI_PICO_GPIO_NUM(gpio);
+    gpio_init(pin);
+    gpio_set_dir(pin, dir == GMP_HAL_GPIO_DIR_OUT ? GPIO_OUT : GPIO_IN);
+    gpio_disable_pulls(pin);
     return GMP_EC_OK;
 }
 
 /**
- * @brief 写入 GPIO 电平
+ * @brief Write a logical level to a Pico GPIO.
+ * @param gpio Encoded Pico GPIO handle.
+ * @param level GMP_HAL_GPIO_LOW or GMP_HAL_GPIO_HIGH.
+ * @return GMP_EC_OK on success, otherwise GMP_EC_GENERAL_ERROR.
  */
-ec_gt gmp_hal_gpio_write(gpio_halt hgpio, fast_gt level)
+ec_gt gmp_hal_gpio_write(gpio_halt gpio, fast_gt level)
 {
-    if (hgpio > 29)
+    if (!pico_gpio_is_valid(gpio))
+    {
         return GMP_EC_GENERAL_ERROR;
+    }
 
-    /* 直接调用 SDK 函数，level 非 0 即为高 */
-    gpio_put(hgpio, (level == GMP_HAL_GPIO_HIGH) ? true : false);
-
+    gpio_put(GMP_RPI_PICO_GPIO_NUM(gpio), level == GMP_HAL_GPIO_HIGH);
     return GMP_EC_OK;
 }
 
 /**
- * @brief 读取 GPIO 电平
+ * @brief Read the logical level of a Pico GPIO.
+ * @param gpio Encoded Pico GPIO handle.
+ * @return The GPIO level, or low for an invalid handle.
  */
-fast_gt gmp_hal_gpio_read(gpio_halt hgpio)
+fast_gt gmp_hal_gpio_read(gpio_halt gpio)
 {
-    if (hgpio > 29)
+    if (!pico_gpio_is_valid(gpio))
+    {
         return 0;
-
-    /* 读取当前引脚电平状态 */
-    bool state = gpio_get(hgpio);
-
-    return state ? 1 : 0;
+    }
+    return gpio_get(GMP_RPI_PICO_GPIO_NUM(gpio)) ? GMP_HAL_GPIO_HIGH : GMP_HAL_GPIO_LOW;
 }
 
-//////////////////////////////////////////////////////////////////////////
-// UART Peripheral
-
+/**
+ * @brief Test whether a UART transmitter is still shifting data.
+ * @param uart Pico SDK UART instance.
+ * @return Nonzero while the transmitter is busy.
+ */
 fast_gt gmp_hal_uart_is_tx_busy(uart_halt uart)
 {
     if (uart == NULL)
+    {
         return 0;
-
-    /* uart_is_writable 返回 true 表示 FIFO 未满，
-     * 但 busy 状态通常指“正在移位输出”，对应 SDK 的 uart_tx_wait_blocking 内部逻辑 */
-    // 检查硬件状态：如果 FR (Flag Register) 的 BUSY 位为 1，则返回忙
-    return uart_get_hw(uart)->fr & UART_UARTFR_BUSY_BITS ? 1 : 0;
+    }
+    return (uart_get_hw(uart)->fr & UART_UARTFR_BUSY_BITS) != 0U;
 }
 
+/**
+ * @brief Test whether a UART is busy.
+ * @param uart Pico SDK UART instance.
+ * @return Nonzero while the transmitter is busy.
+ */
+fast_gt gmp_hal_uart_is_busy(uart_halt uart)
+{
+    return gmp_hal_uart_is_tx_busy(uart);
+}
+
+/**
+ * @brief Report whether at least one UART receive byte is available.
+ * @param uart Pico SDK UART instance.
+ * @return Zero when empty, otherwise one.
+ */
 size_gt gmp_hal_uart_get_rx_available(uart_halt uart)
 {
-    if (uart == NULL)
-        return 0;
-
-    /* Pico SDK 判断 RX FIFO 是否有数据 */
-    if (uart_is_readable(uart))
-    {
-        return 1; // 简单语义：至少有 1 字节可用
-    }
-    return 0;
+    /* The PL011 exposes only empty/not-empty, not the exact FIFO level. */
+    return uart != NULL && uart_is_readable(uart) ? 1U : 0U;
 }
 
+/**
+ * @brief Write bytes to a UART within a total timeout.
+ * @param uart Pico SDK UART instance.
+ * @param data Source byte buffer.
+ * @param length Number of bytes to write.
+ * @param timeout Total timeout in milliseconds.
+ * @return GMP_EC_OK, GMP_EC_TIMEOUT, or GMP_EC_GENERAL_ERROR.
+ */
 ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, uint32_t timeout)
 {
-    if (uart == NULL || data == NULL || length == 0)
-        return GMP_EC_GENERAL_ERROR;
-
-    // 计算截止时间
-    absolute_time_t t_end = make_timeout_time_ms(timeout);
-
-    for (size_gt i = 0; i < length; i++)
+    if (uart == NULL || (length != 0U && data == NULL))
     {
-        // 循环等待直到 FIFO 有空间或超时
-        while (!uart_is_writable(uart))
-        {
-            if (time_reached(t_end))
-                return GMP_EC_TIMEOUT;
-            tight_loop_contents(); // 简单的 nop 占位，防止编译器过度优化
-        }
-        uart_putc_raw(uart, data[i]);
+        return GMP_EC_GENERAL_ERROR;
+    }
+    if (length == 0U)
+    {
+        return GMP_EC_OK;
     }
 
-    return GMP_EC_OK;
-}
-
-ec_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length, uint32_t timeout, size_gt* bytes_read)
-{
-    if (uart == NULL || data == NULL || length == 0)
-        return GMP_EC_GENERAL_ERROR;
-
-    absolute_time_t t_end = make_timeout_time_ms(timeout);
-    size_gt count = 0;
-
-    for (count = 0; count < length; count++)
+    absolute_time_t deadline = pico_deadline_from_ms(timeout);
+    for (size_gt i = 0; i < length; ++i)
     {
-        // 循环等待直到接收 FIFO 有数据或超时
-        while (!uart_is_readable(uart))
+        while (!uart_is_writable(uart))
         {
-            if (time_reached(t_end))
+            if (pico_deadline_expired(deadline))
             {
-                if (bytes_read != NULL)
-                    *bytes_read = count;
                 return GMP_EC_TIMEOUT;
             }
             tight_loop_contents();
         }
-        data[count] = uart_getc(uart);
+        uart_get_hw(uart)->dr = data[i];
     }
-
-    if (bytes_read != NULL)
-        *bytes_read = count;
     return GMP_EC_OK;
 }
 
-//////////////////////////////////////////////////////////////////////////
-// IIC peripheral
-
-// 映射 PICO 的返回值到 GMP 错误码
-static ec_gt pico_i2c_status_to_ec(int pico_res)
+/**
+ * @brief Read bytes from a UART within a total timeout.
+ * @param uart Pico SDK UART instance.
+ * @param data Destination byte buffer.
+ * @param length Number of bytes requested.
+ * @param timeout Total timeout in milliseconds.
+ * @param bytes_read Optional number of bytes actually received.
+ * @return GMP_EC_OK, GMP_EC_TIMEOUT, or GMP_EC_GENERAL_ERROR.
+ */
+ec_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length, uint32_t timeout, size_gt* bytes_read)
 {
-    if (pico_res >= 0)
+    if (bytes_read != NULL)
+    {
+        *bytes_read = 0U;
+    }
+    if (uart == NULL || (length != 0U && data == NULL))
+    {
+        return GMP_EC_GENERAL_ERROR;
+    }
+    if (length == 0U)
+    {
         return GMP_EC_OK;
-    if (pico_res == PICO_ERROR_GENERIC)
-        return GMP_EC_NACK; // 通常是无应答
-    if (pico_res == PICO_ERROR_TIMEOUT)
+    }
+
+    absolute_time_t deadline = pico_deadline_from_ms(timeout);
+    size_gt count = 0U;
+    while (count < length)
+    {
+        while (!uart_is_readable(uart))
+        {
+            if (pico_deadline_expired(deadline))
+            {
+                if (bytes_read != NULL)
+                {
+                    *bytes_read = count;
+                }
+                return GMP_EC_TIMEOUT;
+            }
+            tight_loop_contents();
+        }
+        data[count++] = (data_gt)uart_get_hw(uart)->dr;
+    }
+
+    if (bytes_read != NULL)
+    {
+        *bytes_read = count;
+    }
+    return GMP_EC_OK;
+}
+
+static ec_gt pico_i2c_result(int result, size_t expected)
+{
+    if (result == (int)expected)
+    {
+        return GMP_EC_OK;
+    }
+    if (result == PICO_ERROR_TIMEOUT)
+    {
         return GMP_EC_TIMEOUT;
+    }
+    if (result == PICO_ERROR_GENERIC)
+    {
+        return GMP_EC_NACK;
+    }
     return GMP_EC_GENERAL_ERROR;
 }
 
-// 发送指令 (无数据段)
-ec_gt gmp_hal_iic_write_cmd(iic_halt h, addr16_gt dev_addr, uint32_t cmd, size_gt cmd_len, time_gt timeout)
+static bool pico_i2c_args_valid(iic_halt i2c, addr16_gt address, size_gt length, const void* data)
 {
-    i2c_inst_t* i2c = (i2c_inst_t*)h;
-    uint8_t buf[4];
-    for (uint32_t i = 0; i < cmd_len; i++)
-    {
-        buf[i] = (uint8_t)((cmd >> ((cmd_len - 1 - i) * 8)) & 0xFF);
-    }
-
-    // Pico SDK 地址不需要左移，且带超时机制
-    int res = i2c_write_timeout_per_char_us(i2c, dev_addr, buf, cmd_len, false, timeout * 1000);
-    return pico_i2c_status_to_ec(res);
+    return i2c != NULL && address <= 0x7FU && length <= (size_gt)INT_MAX && (length == 0U || data != NULL);
 }
 
-// 写入单个寄存器数据
-ec_gt gmp_hal_iic_write_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, size_gt addr_len, uint32_t reg_data,
-                            size_gt reg_len, time_gt timeout)
+static void pico_pack_be(uint8_t* destination, uint32_t value, size_gt length)
 {
-    i2c_inst_t* i2c = (i2c_inst_t*)h;
-    uint8_t buf[8];
-    uint32_t idx = 0;
-
-    for (uint32_t i = 0; i < addr_len; i++)
+    for (size_gt i = 0U; i < length; ++i)
     {
-        buf[idx++] = (uint8_t)((reg_addr >> ((addr_len - 1 - i) * 8)) & 0xFF);
+        destination[i] = (uint8_t)(value >> (8U * (length - i - 1U)));
     }
-    for (uint32_t i = 0; i < reg_len; i++)
-    {
-        buf[idx++] = (uint8_t)((reg_data >> ((reg_len - 1 - i) * 8)) & 0xFF);
-    }
-
-    int res = i2c_write_timeout_per_char_us(i2c, dev_addr, buf, idx, false, timeout * 1000);
-    return pico_i2c_status_to_ec(res);
 }
 
-// 写入连续内存块
-ec_gt gmp_hal_iic_write_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, const data_gt* mem,
-                            size_gt mem_len, time_gt timeout)
+/**
+ * @brief Write a big-endian command value to a 7-bit I2C address.
+ * @param i2c Pico SDK I2C instance.
+ * @param dev_addr Right-aligned 7-bit device address.
+ * @param cmd Command value.
+ * @param cmd_len Command length from one to four bytes.
+ * @param timeout Total timeout in milliseconds.
+ * @return GMP_EC_OK or a mapped Pico SDK transfer error.
+ */
+ec_gt gmp_hal_iic_write_cmd(iic_halt i2c, addr16_gt dev_addr, uint32_t cmd, size_gt cmd_len, time_gt timeout)
 {
-    i2c_inst_t* i2c = (i2c_inst_t*)h;
-    if (addr_len == 0)
+    uint8_t buffer[4];
+    if (!pico_i2c_args_valid(i2c, dev_addr, cmd_len, buffer) || cmd_len == 0U || cmd_len > sizeof(buffer))
     {
-        int res = i2c_write_timeout_per_char_us(i2c, dev_addr, mem, mem_len, false, timeout * 1000);
-        return pico_i2c_status_to_ec(res);
+        return GMP_EC_GENERAL_ERROR;
     }
 
-    // Pico 没有 Mem_Write，需要拼接地址和数据
-    uint8_t addr_buf[4];
-    for (uint32_t i = 0; i < addr_len; i++)
-    {
-        addr_buf[i] = (uint8_t)((mem_addr >> ((addr_len - 1 - i) * 8)) & 0xFF);
-    }
-
-    // 首先发送地址，使用 nostop=true 保持总线
-    int res = i2c_write_timeout_per_char_us(i2c, dev_addr, addr_buf, addr_len, true, timeout * 1000);
-    if (res < 0)
-        return pico_i2c_status_to_ec(res);
-
-    // 发送数据
-    res = i2c_write_timeout_per_char_us(i2c, dev_addr, mem, mem_len, false, timeout * 1000);
-    return pico_i2c_status_to_ec(res);
+    pico_pack_be(buffer, cmd, cmd_len);
+    uint timeout_us = pico_deadline_remaining_us(pico_deadline_from_ms(timeout));
+    int result = i2c_write_timeout_us(i2c, (uint8_t)dev_addr, buffer, cmd_len, false, timeout_us);
+    return pico_i2c_result(result, cmd_len);
 }
 
-// 读取寄存器 (Start -> Write Addr -> Restart -> Read Data)
-ec_gt gmp_hal_iic_read_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, size_gt addr_len, uint32_t* reg_data_ret,
-                           size_gt reg_len, time_gt timeout)
+/**
+ * @brief Write a big-endian value to an I2C register.
+ * @param i2c Pico SDK I2C instance.
+ * @param dev_addr Right-aligned 7-bit device address.
+ * @param reg_addr Register address.
+ * @param addr_len Register address length from zero to four bytes.
+ * @param reg_data Register value.
+ * @param reg_len Register value length from one to four bytes.
+ * @param timeout Total timeout in milliseconds.
+ * @return GMP_EC_OK or a mapped Pico SDK transfer error.
+ */
+ec_gt gmp_hal_iic_write_reg(iic_halt i2c, addr16_gt dev_addr, addr32_gt reg_addr, size_gt addr_len,
+                            uint32_t reg_data, size_gt reg_len, time_gt timeout)
 {
-    uint8_t buf[4] = {0};
-    ec_gt status = gmp_hal_iic_read_mem(h, dev_addr, reg_addr, addr_len, buf, reg_len, timeout);
-
-    if (status == GMP_EC_OK && reg_data_ret != NULL)
+    uint8_t buffer[8];
+    size_gt total = addr_len + reg_len;
+    if (!pico_i2c_args_valid(i2c, dev_addr, total, buffer) || addr_len > 4U || reg_len == 0U || reg_len > 4U)
     {
-        uint32_t val = 0;
-        for (uint32_t i = 0; i < reg_len; i++)
-        {
-            val = (val << 8) | buf[i];
-        }
-        *reg_data_ret = val;
-    }
-    return status;
-}
-
-// 读取内存块
-ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, data_gt* mem,
-                           size_gt mem_len, time_gt timeout)
-{
-    i2c_inst_t* i2c = (i2c_inst_t*)h;
-    if (addr_len > 0)
-    {
-        uint8_t addr_buf[4];
-        for (uint32_t i = 0; i < addr_len; i++)
-        {
-            addr_buf[i] = (uint8_t)((mem_addr >> ((addr_len - 1 - i) * 8)) & 0xFF);
-        }
-        // 发送地址，nostop=true 触发 Repeated Start
-        int res = i2c_write_timeout_per_char_us(i2c, dev_addr, addr_buf, addr_len, true, timeout * 1000);
-        if (res < 0)
-            return pico_i2c_status_to_ec(res);
+        return GMP_EC_GENERAL_ERROR;
     }
 
-    int res = i2c_read_timeout_per_char_us(i2c, dev_addr, mem, mem_len, false, timeout * 1000);
-    return pico_i2c_status_to_ec(res);
+    pico_pack_be(buffer, reg_addr, addr_len);
+    pico_pack_be(buffer + addr_len, reg_data, reg_len);
+    uint timeout_us = pico_deadline_remaining_us(pico_deadline_from_ms(timeout));
+    int result = i2c_write_timeout_us(i2c, (uint8_t)dev_addr, buffer, total, false, timeout_us);
+    return pico_i2c_result(result, total);
 }
 
-//////////////////////////////////////////////////////////////////////////
-// SPI peripheral
-
-// 将 PICO SDK 的逻辑映射到 GMP 错误码
-static ec_gt pico_spi_status_to_ec(int pico_res)
+/**
+ * @brief Write a byte buffer after an I2C memory address in one transaction.
+ * @param i2c Pico SDK I2C instance.
+ * @param dev_addr Right-aligned 7-bit device address.
+ * @param mem_addr Memory address.
+ * @param addr_len Memory address length from zero to four bytes.
+ * @param mem Source byte buffer.
+ * @param mem_len Number of bytes to write.
+ * @param timeout Total timeout in milliseconds.
+ * @return GMP_EC_OK or a mapped Pico SDK transfer error.
+ */
+ec_gt gmp_hal_iic_write_mem(iic_halt i2c, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len,
+                            const data_gt* mem, size_gt mem_len, time_gt timeout)
 {
-    if (pico_res >= 0)
+    if (addr_len > 4U || mem_len > (size_gt)(SIZE_MAX - addr_len))
+    {
+        return GMP_EC_GENERAL_ERROR;
+    }
+
+    size_t total = (size_t)addr_len + (size_t)mem_len;
+    if (total > (size_t)INT_MAX || i2c == NULL || dev_addr > 0x7FU || (mem_len != 0U && mem == NULL))
+    {
+        return GMP_EC_GENERAL_ERROR;
+    }
+    if (total == 0U)
+    {
         return GMP_EC_OK;
-    // PICO SDK 的 SPI 阻塞函数通常返回写入/读取的字节数，
-    // 硬件层面的错误（如超时）在基础 SDK 中较少直接返回，
-    // 这里保留映射逻辑以对标 STM32。
-    return GMP_EC_GENERAL_ERROR;
+    }
+
+    uint8_t* buffer = (uint8_t*)malloc(total);
+    if (buffer == NULL)
+    {
+        return GMP_EC_GENERAL_ERROR;
+    }
+    pico_pack_be(buffer, mem_addr, addr_len);
+    if (mem_len != 0U)
+    {
+        memcpy(buffer + addr_len, mem, mem_len);
+    }
+
+    uint timeout_us = pico_deadline_remaining_us(pico_deadline_from_ms(timeout));
+    int result = i2c_write_timeout_us(i2c, (uint8_t)dev_addr, buffer, total, false, timeout_us);
+    free(buffer);
+    return pico_i2c_result(result, total);
 }
 
-ec_gt gmp_hal_spi_bus_write(spi_halt hspi, const data_gt* tx_buf, size_gt len, time_gt timeout)
+/**
+ * @brief Read bytes from an I2C memory address using a repeated start.
+ * @param i2c Pico SDK I2C instance.
+ * @param dev_addr Right-aligned 7-bit device address.
+ * @param mem_addr Memory address.
+ * @param addr_len Memory address length from zero to four bytes.
+ * @param mem Destination byte buffer.
+ * @param mem_len Number of bytes to read.
+ * @param timeout Total timeout in milliseconds.
+ * @return GMP_EC_OK or a mapped Pico SDK transfer error.
+ */
+ec_gt gmp_hal_iic_read_mem(iic_halt i2c, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len,
+                           data_gt* mem, size_gt mem_len, time_gt timeout)
 {
-    if ((hspi == NULL) || (tx_buf == NULL))
+    if (addr_len > 4U || !pico_i2c_args_valid(i2c, dev_addr, mem_len, mem))
+    {
+        return GMP_EC_GENERAL_ERROR;
+    }
+    if (mem_len == 0U)
+    {
+        return GMP_EC_OK;
+    }
+
+    absolute_time_t deadline = pico_deadline_from_ms(timeout);
+    if (addr_len != 0U)
+    {
+        uint8_t address_buffer[4];
+        pico_pack_be(address_buffer, mem_addr, addr_len);
+        uint remaining_us = pico_deadline_remaining_us(deadline);
+        int result = i2c_write_timeout_us(i2c, (uint8_t)dev_addr, address_buffer, addr_len, true, remaining_us);
+        ec_gt status = pico_i2c_result(result, addr_len);
+        if (status != GMP_EC_OK)
+        {
+            return status;
+        }
+    }
+
+    uint remaining_us = pico_deadline_remaining_us(deadline);
+    int result = i2c_read_timeout_us(i2c, (uint8_t)dev_addr, mem, mem_len, false, remaining_us);
+    return pico_i2c_result(result, mem_len);
+}
+
+/**
+ * @brief Read a big-endian value from an I2C register.
+ * @param i2c Pico SDK I2C instance.
+ * @param dev_addr Right-aligned 7-bit device address.
+ * @param reg_addr Register address.
+ * @param addr_len Register address length from zero to four bytes.
+ * @param reg_data_ret Destination for the decoded register value.
+ * @param reg_len Register value length from one to four bytes.
+ * @param timeout Total timeout in milliseconds.
+ * @return GMP_EC_OK or a mapped Pico SDK transfer error.
+ */
+ec_gt gmp_hal_iic_read_reg(iic_halt i2c, addr16_gt dev_addr, addr32_gt reg_addr, size_gt addr_len,
+                           uint32_t* reg_data_ret, size_gt reg_len, time_gt timeout)
+{
+    uint8_t buffer[4];
+    if (reg_data_ret == NULL || reg_len == 0U || reg_len > sizeof(buffer))
     {
         return GMP_EC_GENERAL_ERROR;
     }
 
-    spi_inst_t* spi = (spi_inst_t*)hspi;
+    ec_gt status = gmp_hal_iic_read_mem(i2c, dev_addr, reg_addr, addr_len, buffer, reg_len, timeout);
+    if (status != GMP_EC_OK)
+    {
+        return status;
+    }
 
-    /* Pico SDK 的 spi_write_blocking 会持续发送直到完成。
-     * 由于 SDK 默认不带超时参数，这里直接调用同步接口。
-     * 如果需要严格超时，通常需要配合 DMA 或手动轮询 FIFO 状态位。
-     */
-    int res = spi_write_blocking(spi, (const uint8_t*)tx_buf, (size_t)len);
-
-    return (res == (int)len) ? GMP_EC_OK : GMP_EC_GENERAL_ERROR;
+    uint32_t value = 0U;
+    for (size_gt i = 0U; i < reg_len; ++i)
+    {
+        value = (value << 8U) | buffer[i];
+    }
+    *reg_data_ret = value;
+    return GMP_EC_OK;
 }
 
-ec_gt gmp_hal_spi_bus_read(spi_halt hspi, data_gt* rx_buf, size_gt len, time_gt timeout)
+static ec_gt pico_spi_transfer(spi_halt spi, const data_gt* tx, data_gt* rx, size_gt length, time_gt timeout)
 {
-    if ((hspi == NULL) || (rx_buf == NULL))
+    if (spi == NULL || (length != 0U && tx == NULL && rx == NULL))
     {
         return GMP_EC_GENERAL_ERROR;
     }
+    if (length == 0U)
+    {
+        return GMP_EC_OK;
+    }
 
-    spi_inst_t* spi = (spi_inst_t*)hspi;
+    while (spi_is_readable(spi))
+    {
+        (void)spi_get_hw(spi)->dr;
+    }
 
-    /* 自动发送重复的重复字节（通常为 0）以产生时钟并捕获 MISO 数据 */
-    int res = spi_read_blocking(spi, 0, (uint8_t*)rx_buf, (size_t)len);
+    absolute_time_t deadline = pico_deadline_from_ms(timeout);
+    size_gt tx_remaining = length;
+    size_gt rx_remaining = length;
+    const size_gt fifo_depth = 8U;
 
-    return (res == (int)len) ? GMP_EC_OK : GMP_EC_GENERAL_ERROR;
+    while (tx_remaining != 0U || rx_remaining != 0U)
+    {
+        if (tx_remaining != 0U && spi_is_writable(spi) && rx_remaining < tx_remaining + fifo_depth)
+        {
+            size_gt index = length - tx_remaining;
+            spi_get_hw(spi)->dr = tx == NULL ? 0U : tx[index];
+            --tx_remaining;
+        }
+        if (rx_remaining != 0U && spi_is_readable(spi))
+        {
+            size_gt index = length - rx_remaining;
+            uint8_t value = (uint8_t)spi_get_hw(spi)->dr;
+            if (rx != NULL)
+            {
+                rx[index] = value;
+            }
+            --rx_remaining;
+        }
+        if (pico_deadline_expired(deadline))
+        {
+            return GMP_EC_TIMEOUT;
+        }
+        tight_loop_contents();
+    }
+
+    while (spi_is_busy(spi))
+    {
+        if (pico_deadline_expired(deadline))
+        {
+            return GMP_EC_TIMEOUT;
+        }
+        tight_loop_contents();
+    }
+    return GMP_EC_OK;
 }
 
-ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const data_gt* tx_buf, data_gt* rx_buf, size_gt len, time_gt timeout)
+/**
+ * @brief Write bytes over an initialized Pico SPI bus.
+ * @param spi Pico SDK SPI instance configured for 8-bit transfers.
+ * @param tx_buf Source byte buffer.
+ * @param len Number of bytes to write.
+ * @param timeout Total timeout in milliseconds.
+ * @return GMP_EC_OK, GMP_EC_TIMEOUT, or GMP_EC_GENERAL_ERROR.
+ */
+ec_gt gmp_hal_spi_bus_write(spi_halt spi, const data_gt* tx_buf, size_gt len, time_gt timeout)
 {
-    if ((hspi == NULL) || (tx_buf == NULL) || (rx_buf == NULL))
+    if (len != 0U && tx_buf == NULL)
     {
         return GMP_EC_GENERAL_ERROR;
     }
+    return pico_spi_transfer(spi, tx_buf, NULL, len, timeout);
+}
 
-    spi_inst_t* spi = (spi_inst_t*)hspi;
+/**
+ * @brief Read bytes over an initialized Pico SPI bus using zero fill bytes.
+ * @param spi Pico SDK SPI instance configured for 8-bit transfers.
+ * @param rx_buf Destination byte buffer.
+ * @param len Number of bytes to read.
+ * @param timeout Total timeout in milliseconds.
+ * @return GMP_EC_OK, GMP_EC_TIMEOUT, or GMP_EC_GENERAL_ERROR.
+ */
+ec_gt gmp_hal_spi_bus_read(spi_halt spi, data_gt* rx_buf, size_gt len, time_gt timeout)
+{
+    if (len != 0U && rx_buf == NULL)
+    {
+        return GMP_EC_GENERAL_ERROR;
+    }
+    return pico_spi_transfer(spi, NULL, rx_buf, len, timeout);
+}
 
-    /* 同时进行发送和接收 */
-    int res = spi_write_read_blocking(spi, (const uint8_t*)tx_buf, (uint8_t*)rx_buf, (size_t)len);
-
-    return (res == (int)len) ? GMP_EC_OK : GMP_EC_GENERAL_ERROR;
+/**
+ * @brief Perform a full-duplex transfer over an initialized Pico SPI bus.
+ * @param spi Pico SDK SPI instance configured for 8-bit transfers.
+ * @param tx_buf Source byte buffer.
+ * @param rx_buf Destination byte buffer.
+ * @param len Number of bytes to transfer.
+ * @param timeout Total timeout in milliseconds.
+ * @return GMP_EC_OK, GMP_EC_TIMEOUT, or GMP_EC_GENERAL_ERROR.
+ */
+ec_gt gmp_hal_spi_bus_transfer(spi_halt spi, const data_gt* tx_buf, data_gt* rx_buf, size_gt len, time_gt timeout)
+{
+    if (len != 0U && (tx_buf == NULL || rx_buf == NULL))
+    {
+        return GMP_EC_GENERAL_ERROR;
+    }
+    return pico_spi_transfer(spi, tx_buf, rx_buf, len, timeout);
 }

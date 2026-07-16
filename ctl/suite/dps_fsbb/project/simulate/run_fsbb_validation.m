@@ -23,10 +23,13 @@ if isempty(level_token) || str2double(level_token{1}) ~= build_level
         'Generated settings do not select BUILD_LEVEL=%d.', build_level);
 end
 
-addpath(fullfile(root, 'sdpe_mgr'));
-sdpe_dps_fsbb_simulate_settings_matlab_init;
-load_system(fullfile(root, [model '.slx']));
-model_cleanup = onCleanup(@() close_model_without_saving(model)); %#ok<NASGU>
+model_file = fullfile(root, [model '.slx']);
+run(fullfile(root, '..', '..', 'sdpe_general', ...
+    'sdpe_dps_fsbb_common_settings_matlab_init.m'));
+run(fullfile(root, 'sdpe_mgr', ...
+    'sdpe_dps_fsbb_simulate_settings_matlab_init.m'));
+load_system(model_file);
+model_cleanup = onCleanup(@() close_model_without_saving(model));
 
 % Controller monitor contract: Vin, Vout, IL, Iout, formal V command, raw V request.
 selectors = {'Bus Selector2', 'Bus Selector2', 'Bus Selector3', ...
@@ -49,7 +52,7 @@ start_info.WorkingDirectory = root;
 start_info.UseShellExecute = false;
 start_info.CreateNoWindow = true;
 controller = System.Diagnostics.Process.Start(start_info);
-controller_cleanup = onCleanup(@() stop_controller(controller)); %#ok<NASGU>
+controller_cleanup = onCleanup(@() stop_controller(controller));
 pause(0.25);
 
 out = sim(model, 'StopTime', num2str(stop_time, 17), ...
@@ -114,7 +117,7 @@ exportgraphics(fig, fullfile(result_dir, [stem '_waveforms.png']), 'Resolution',
 close(fig);
 
 fid = fopen(fullfile(result_dir, [stem '_metrics.json']), 'w');
-file_cleanup = onCleanup(@() fclose(fid)); %#ok<NASGU>
+file_cleanup = onCleanup(@() fclose(fid));
 fprintf(fid, '%s\n', jsonencode(metrics, PrettyPrint=true));
 
 fprintf(['BUILD_LEVEL=%d: enable=%g, Vin=%.3f V, Vout=%.3f V, ' ...

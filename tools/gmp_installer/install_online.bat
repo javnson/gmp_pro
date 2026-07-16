@@ -30,7 +30,7 @@ if /i "%~1"=="--plan" (
     echo vcpkg         : repository-local bin\vcpkg and shared bin\vcpkg_installed
     echo Visual Studio : optional; enables suite simulation package restore
     echo Python packages: tools\gmp_installer\requirements-gmp.txt
-    echo Repository    : CCS registration, facilities/source and SDPE tool distribution
+    echo Repository    : CCS registration, source/SDPE tools, and project .gitignore distribution
     exit /b 0
 )
 

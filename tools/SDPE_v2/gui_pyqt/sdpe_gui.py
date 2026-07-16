@@ -220,6 +220,30 @@ def parameter_value_by_name(parameters: dict[str, Any], name: str, c_name: str) 
     return ""
 
 
+def project_hardware_items(data: dict[str, Any]) -> list[Any]:
+    for key in ("hardware", "hardware_includes", "hardwareIncludes", "hardware_entities", "hardware_presets"):
+        value = data.get(key)
+        if isinstance(value, list):
+            return value
+    return []
+
+
+def project_hardware_entity_id(item: Any) -> str:
+    if isinstance(item, str):
+        return item.strip()
+    if isinstance(item, dict):
+        for key in ("entity", "id", "name", "hardware"):
+            value = item.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+    return ""
+
+
+def is_inherited_hardware_row(table: QTableWidget, row: int) -> bool:
+    item = table.item(row, 0)
+    return item is not None and item.data(Qt.ItemDataRole.UserRole + 10) == "inherited"
+
+
 def display_parameter_value(value: Any) -> str:
     if isinstance(value, dict) and set(value) == {"ref"}:
         return f"${{{value['ref']}}}"
@@ -244,6 +268,14 @@ def set_table_headers(
 ) -> None:
     table.setColumnCount(len(headers))
     table.setHorizontalHeaderLabels(headers)
+    for col, header in enumerate(headers):
+        header_item = table.horizontalHeaderItem(col)
+        if header_item is None:
+            continue
+        if header == "En":
+            header_item.setToolTip("Enable: checked macros are emitted normally; unchecked macros are commented out.")
+        elif header == "Wk":
+            header_item.setToolTip("Weak macro: checked macros are wrapped by #ifndef / #define / #endif.")
     table.horizontalHeader().setSectionResizeMode(mode)
     table.horizontalHeader().setStretchLastSection(mode != QHeaderView.ResizeMode.Interactive)
     table.verticalHeader().setVisible(False)
@@ -325,6 +357,9 @@ def tree_cell_text(tree: QTreeWidget, item: QTreeWidgetItem, col: int) -> str:
     widget = tree.itemWidget(item, col)
     if isinstance(widget, QComboBox):
         return widget.currentText().strip()
+    checked = checkbox_widget_checked(widget)
+    if checked is not None:
+        return "1" if checked else "0"
     value = item.data(col, Qt.ItemDataRole.UserRole)
     if col != 0 and value is not None:
         return str(value).strip()
@@ -342,6 +377,36 @@ def set_tree_combo(tree: QTreeWidget, item: QTreeWidgetItem, col: int, values: l
     combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
     combo.currentTextChanged.connect(lambda text, i=item, c=col, t=tree: (i.setData(c, Qt.ItemDataRole.UserRole, text), notify_tree_changed(t)))
     tree.setItemWidget(item, col, combo)
+
+
+def set_tree_check(item: QTreeWidgetItem, col: int, checked: bool) -> None:
+    item.setText(col, "")
+    item.setData(col, Qt.ItemDataRole.UserRole, bool(checked))
+    tree = item.treeWidget()
+    if tree is not None:
+        def changed(i=item, c=col, t=tree) -> None:
+            current = checkbox_widget_checked(t.itemWidget(i, c))
+            if current is not None:
+                i.setData(c, Qt.ItemDataRole.UserRole, current)
+            notify_tree_changed(t)
+
+        tree.setItemWidget(item, col, centered_checkbox(checked, changed))
+
+
+def tree_checked(item: QTreeWidgetItem, col: int, default: bool = False) -> bool:
+    tree = item.treeWidget()
+    checked = checkbox_widget_checked(tree.itemWidget(item, col) if tree is not None else None)
+    if checked is not None:
+        return checked
+    value = item.data(col, Qt.ItemDataRole.UserRole)
+    if isinstance(value, bool):
+        return value
+    state = item.checkState(col)
+    if state == Qt.CheckState.Checked:
+        return True
+    if state == Qt.CheckState.Unchecked:
+        return False
+    return default
 
 
 def show_status_description(widget: QWidget, text: str) -> None:
@@ -403,8 +468,15 @@ def item_text(table: QTableWidget, row: int, col: int) -> str:
     widget = table.cellWidget(row, col)
     if isinstance(widget, QComboBox):
         return widget.currentText().strip()
+    checked = checkbox_widget_checked(widget)
+    if checked is not None:
+        return "1" if checked else "0"
     item = table.item(row, col)
-    return "" if item is None else item.text().strip()
+    if item is None:
+        return ""
+    if item.data(Qt.ItemDataRole.CheckStateRole) is not None:
+        return "1" if item.checkState() == Qt.CheckState.Checked else "0"
+    return item.text().strip()
 
 
 def selected_rows(table: QTableWidget) -> list[int]:
@@ -462,6 +534,48 @@ def set_item(table: QTableWidget, row: int, col: int, value: Any) -> None:
     table.setItem(row, col, QTableWidgetItem("" if value is None else str(value)))
 
 
+def centered_checkbox(checked: bool, changed_callback=None) -> QWidget:
+    box = QCheckBox()
+    box.setChecked(checked)
+    box.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+    panel = QWidget()
+    layout = QHBoxLayout(panel)
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    layout.addWidget(box)
+    panel._sdpe_checkbox = box
+    if changed_callback is not None:
+        box.stateChanged.connect(lambda _state: changed_callback())
+    return panel
+
+
+def checkbox_widget_checked(widget: QWidget | None) -> bool | None:
+    if isinstance(widget, QCheckBox):
+        return widget.isChecked()
+    box = getattr(widget, "_sdpe_checkbox", None) if widget is not None else None
+    if isinstance(box, QCheckBox):
+        return box.isChecked()
+    return None
+
+
+def set_bool_item(table: QTableWidget, row: int, col: int, checked: bool) -> None:
+    item = QTableWidgetItem("")
+    item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+    item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+    table.setItem(row, col, item)
+    table.setCellWidget(row, col, centered_checkbox(checked, lambda t=table: notify_table_changed(t)))
+
+
+def table_checked(table: QTableWidget, row: int, col: int, default: bool = False) -> bool:
+    checked = checkbox_widget_checked(table.cellWidget(row, col))
+    if checked is not None:
+        return checked
+    item = table.item(row, col)
+    if item is None:
+        return default
+    return item.checkState() == Qt.CheckState.Checked
+
+
 def set_table_text(table: QTableWidget, row: int, col: int, value: Any) -> None:
     widget = table.cellWidget(row, col)
     text = "" if value is None else str(value)
@@ -478,15 +592,19 @@ def edit_table_cell_multiline(table: QTableWidget, row: int, col: int, parent: Q
 
 
 def setup_feature_macro_table(table: QTableWidget) -> None:
-    set_table_headers(table, ["Macro", "Enabled", "Value", "Description"], QHeaderView.ResizeMode.Interactive)
+    set_table_headers(table, ["Macro", "En", "Wk", "Value", "Description"], QHeaderView.ResizeMode.Interactive)
+    table.setColumnWidth(1, 46)
+    table.setColumnWidth(2, 46)
 
 
 def setup_option_macro_table(table: QTableWidget) -> None:
     set_table_headers(
         table,
-        ["Macro", "Enabled", "Value", "Options Preset", "Options CSV", "Description"],
+        ["Macro", "En", "Wk", "Value", "Options Preset", "Options CSV", "Description"],
         QHeaderView.ResizeMode.Interactive,
     )
+    table.setColumnWidth(1, 46)
+    table.setColumnWidth(2, 46)
 
 
 def setup_option_set_table(table: QTableWidget) -> None:
@@ -499,10 +617,13 @@ def load_feature_macro_table(table: QTableWidget, items: list[dict[str, Any]]) -
         row = table.rowCount()
         table.insertRow(row)
         set_item(table, row, 0, item.get("macro", ""))
-        set_combo(table, row, 1, ["Enable", "Disable"], "Enable" if item.get("enabled", True) else "Disable")
-        set_item(table, row, 2, item.get("value", ""))
-        set_item(table, row, 3, item.get("description", ""))
+        set_bool_item(table, row, 1, bool(item.get("enabled", True)))
+        set_bool_item(table, row, 2, bool(item.get("weak", False)))
+        set_item(table, row, 3, item.get("value", ""))
+        set_item(table, row, 4, item.get("description", ""))
     fit_table_columns(table)
+    table.setColumnWidth(1, 46)
+    table.setColumnWidth(2, 46)
 
 
 def load_option_macro_table(table: QTableWidget, items: list[dict[str, Any]]) -> None:
@@ -518,12 +639,15 @@ def load_option_macro_table(table: QTableWidget, items: list[dict[str, Any]]) ->
                 preset = match.group(1)
                 options = []
         set_item(table, row, 0, item.get("macro", ""))
-        set_combo(table, row, 1, ["Enable", "Disable"], "Enable" if item.get("enabled", True) else "Disable")
-        set_combo(table, row, 2, options or [str(item.get("value", ""))], item.get("value", ""))
-        set_item(table, row, 3, preset)
-        set_item(table, row, 4, ", ".join(options))
-        set_item(table, row, 5, item.get("description", ""))
+        set_bool_item(table, row, 1, bool(item.get("enabled", True)))
+        set_bool_item(table, row, 2, bool(item.get("weak", False)))
+        set_combo(table, row, 3, options or [str(item.get("value", ""))], item.get("value", ""))
+        set_item(table, row, 4, preset)
+        set_item(table, row, 5, ", ".join(options))
+        set_item(table, row, 6, item.get("description", ""))
     fit_table_columns(table)
+    table.setColumnWidth(1, 46)
+    table.setColumnWidth(2, 46)
 
 
 def load_option_set_table(table: QTableWidget, option_sets: dict[str, Any]) -> None:
@@ -549,9 +673,10 @@ def collect_feature_macro_table(table: QTableWidget) -> list[dict[str, Any]]:
             rows.append(
                 {
                     "macro": macro,
-                    "enabled": item_text(table, row, 1).lower() != "disable",
-                    "value": item_text(table, row, 2),
-                    "description": item_text(table, row, 3),
+                    "enabled": table_checked(table, row, 1, True),
+                    "weak": table_checked(table, row, 2, False),
+                    "value": item_text(table, row, 3),
+                    "description": item_text(table, row, 4),
                 }
             )
     return rows
@@ -565,11 +690,12 @@ def collect_option_macro_table(table: QTableWidget) -> list[dict[str, Any]]:
             rows.append(
                 {
                     "macro": macro,
-                    "enabled": item_text(table, row, 1).lower() != "disable",
-                    "value": item_text(table, row, 2),
-                    "options_preset": item_text(table, row, 3),
-                    "options": [item.strip() for item in item_text(table, row, 4).split(",") if item.strip()],
-                    "description": item_text(table, row, 5),
+                    "enabled": table_checked(table, row, 1, True),
+                    "weak": table_checked(table, row, 2, False),
+                    "value": item_text(table, row, 3),
+                    "options_preset": item_text(table, row, 4),
+                    "options": [item.strip() for item in item_text(table, row, 5).split(",") if item.strip()],
+                    "description": item_text(table, row, 6),
                 }
             )
     return rows
@@ -774,6 +900,14 @@ class SDPEPage(QWidget):
             jumped = self.find_in_preview(self.matlab_panel, self.matlab_search, forward=True) or jumped
         if not jumped and (self.show_code.isChecked() or self.show_matlab.isChecked()):
             self.message("Jump", f"Not found: {text}")
+
+    def set_parameter_header_tooltips(self, tree: QTreeWidget) -> None:
+        for col in range(tree.columnCount()):
+            header = tree.headerItem().text(col)
+            if header == "En":
+                tree.headerItem().setToolTip(col, "Enable: checked macros are emitted normally; unchecked macros are commented out.")
+            elif header == "Wk":
+                tree.headerItem().setToolTip(col, "Weak macro: checked macros are wrapped by #ifndef / #define / #endif.")
 
     def create_items_widget(self):
         widget = QListWidget()
@@ -1537,10 +1671,11 @@ class TemplatePage(SDPEPage):
     def add_macro_row(self, table: QTableWidget, macro_type: str) -> None:
         row = table.rowCount()
         table.insertRow(row)
-        set_combo(table, row, 1, ["Enable", "Disable"], "Enable")
+        set_bool_item(table, row, 1, True)
+        set_bool_item(table, row, 2, False)
         if macro_type == "option":
-            set_combo(table, row, 2, ["1", "2", "3", "4", "5"], "1")
-            set_item(table, row, 4, "1, 2, 3, 4, 5")
+            set_combo(table, row, 3, ["1", "2", "3", "4", "5"], "1")
+            set_item(table, row, 5, "1, 2, 3, 4, 5")
 
     def add_option_set(self) -> None:
         row = self.option_sets.rowCount()
@@ -1548,7 +1683,7 @@ class TemplatePage(SDPEPage):
 
     def on_template_macro_double_clicked(self, row: int, col: int) -> None:
         table = self.sender()
-        if isinstance(table, QTableWidget) and (col == table.columnCount() - 1 or col == 4):
+        if isinstance(table, QTableWidget) and (col == table.columnCount() - 1 or col == 5):
             edit_table_cell_multiline(table, row, col, self, "Macro Field")
 
     def on_option_set_double_clicked(self, row: int, col: int) -> None:
@@ -1589,7 +1724,8 @@ class EntityPage(SDPEPage):
         self.tail_code_edit = QTextEdit()
         self.output_edit = QLineEdit()
         self.params = QTreeWidget()
-        self.params.setHeaderLabels(["Parameter", "Value", "Unit", "Description"])
+        self.params.setHeaderLabels(["Parameter", "En", "Wk", "Value", "Unit", "Description"])
+        self.set_parameter_header_tooltips(self.params)
         self.params.setAlternatingRowColors(True)
         self.params.itemChanged.connect(lambda _item, _col: self.mark_current_dirty())
         self.params.itemDoubleClicked.connect(self.on_entity_param_double_clicked)
@@ -1815,7 +1951,9 @@ class EntityPage(SDPEPage):
                 set_combo(self.components, row, 1, ["entity", "inline"], "inline")
                 set_item(self.components, row, 2, pretty_json(comp.get("inline", {})))
             set_item(self.components, row, 3, pretty_json(comp.get("overrides", {})))
-        fit_tree_key_columns(self.params, description_col=3)
+        fit_tree_key_columns(self.params, description_col=5, interactive=True)
+        self.params.setColumnWidth(1, 46)
+        self.params.setColumnWidth(2, 46)
         fit_table_columns(self.components)
         load_feature_macro_table(self.feature_macros, data.get("feature_macros", []))
         load_option_macro_table(self.option_macros, data.get("option_macros", []))
@@ -1857,12 +1995,33 @@ class EntityPage(SDPEPage):
             if name in known:
                 continue
             group_item = self.ensure_entity_parameter_group("Ungrouped")
-            item = QTreeWidgetItem([name, display_parameter_value(value), "", ""])
+            modifiers = self.entity_parameter_modifier(data, name, name)
+            item = QTreeWidgetItem([name, "", "", display_parameter_value(value), "", ""])
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
             item.setData(0, Qt.ItemDataRole.UserRole, "parameter")
             group_item.addChild(item)
+            set_tree_check(item, 1, modifiers.get("enabled", True))
+            set_tree_check(item, 2, modifiers.get("weak", False))
         self.params.expandAll()
-        fit_tree_key_columns(self.params, description_col=3)
+        fit_tree_key_columns(self.params, description_col=5, interactive=True)
+        self.params.setColumnWidth(1, 46)
+        self.params.setColumnWidth(2, 46)
+
+    def set_parameter_header_tooltips(self, tree: QTreeWidget) -> None:
+        for col in range(tree.columnCount()):
+            header = tree.headerItem().text(col)
+            if header == "En":
+                tree.headerItem().setToolTip(col, "Enable: checked parameter macros are emitted normally; unchecked macros are commented out.")
+            elif header == "Wk":
+                tree.headerItem().setToolTip(col, "Weak macro: checked parameter macros are wrapped by #ifndef / #define / #endif.")
+
+    def entity_parameter_modifier(self, data: dict[str, Any], name: str, c_name: str) -> dict[str, bool]:
+        modifiers = data.get("parameter_macros", {})
+        item = modifiers.get(name, modifiers.get(c_name, {})) if isinstance(modifiers, dict) else {}
+        return {
+            "enabled": bool(item.get("enabled", True)) if isinstance(item, dict) else True,
+            "weak": bool(item.get("weak", False)) if isinstance(item, dict) else False,
+        }
 
     def create_entity_parameter_group_item(self, name: str) -> QTreeWidgetItem:
         item = QTreeWidgetItem([name])
@@ -1883,12 +2042,15 @@ class EntityPage(SDPEPage):
         self, group: QTreeWidgetItem, name: str, pspec: Any, data: dict[str, Any]
     ) -> QTreeWidgetItem:
         value = display_parameter_value(parameter_value_by_name(data.get("parameters", {}), name, pspec.c_name))
-        item = QTreeWidgetItem([name, value, pspec.unit, pspec.description])
+        modifiers = self.entity_parameter_modifier(data, name, pspec.c_name)
+        item = QTreeWidgetItem([name, "", "", value, pspec.unit, pspec.description])
         item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
         item.setData(0, Qt.ItemDataRole.UserRole, "parameter")
         item.setToolTip(0, f"{pspec.description}\nUnit: {pspec.unit}")
-        item.setToolTip(1, f"{pspec.description}\nUnit: {pspec.unit}")
+        item.setToolTip(3, f"{pspec.description}\nUnit: {pspec.unit}")
         group.addChild(item)
+        set_tree_check(item, 1, modifiers["enabled"])
+        set_tree_check(item, 2, modifiers["weak"])
         return item
 
     def save_current(self) -> None:
@@ -1924,6 +2086,7 @@ class EntityPage(SDPEPage):
                 "tags": split_tags(self.tags_edit.text()),
                 "output_subdir": self.output_edit.text().strip(),
                 "parameters": self._table_parameters(),
+                "parameter_macros": self._table_parameter_macros(),
                 "components": self._table_components(),
                 "option_sets": collect_option_set_table(self.option_sets),
                 "feature_macros": collect_feature_macro_table(self.feature_macros),
@@ -2046,7 +2209,7 @@ class EntityPage(SDPEPage):
                 if item.data(0, Qt.ItemDataRole.UserRole) != "parameter":
                     continue
                 name = tree_cell_text(self.params, item, 0)
-                value = tree_cell_text(self.params, item, 1)
+                value = tree_cell_text(self.params, item, 3)
                 if not name or not value.strip():
                     continue
                 parsed = parse_parameter_value(value)
@@ -2057,21 +2220,38 @@ class EntityPage(SDPEPage):
                 params[name] = parsed
         return params
 
+    def _table_parameter_macros(self) -> dict[str, dict[str, bool]]:
+        modifiers: dict[str, dict[str, bool]] = {}
+        for group_index in range(self.params.topLevelItemCount()):
+            group = self.params.topLevelItem(group_index)
+            for child_index in range(group.childCount()):
+                item = group.child(child_index)
+                if item.data(0, Qt.ItemDataRole.UserRole) != "parameter":
+                    continue
+                name = tree_cell_text(self.params, item, 0)
+                if not name:
+                    continue
+                modifiers[name] = {
+                    "enabled": tree_checked(item, 1, True),
+                    "weak": tree_checked(item, 2, False),
+                }
+        return modifiers
+
     def select_parameter_symbol(self, item: QTreeWidgetItem) -> None:
         symbols = self.window.symbols_for_subcomponents(self.current_id)
         selected = choose_item(self, "Select Sub Component Symbol", symbols)
         if selected:
-            item.setText(1, f"${{{selected}}}")
+            item.setText(3, f"${{{selected}}}")
 
     def on_entity_param_double_clicked(self, item: QTreeWidgetItem, col: int) -> None:
         if item.data(0, Qt.ItemDataRole.UserRole) != "parameter":
             return
-        if col == 1:
+        if col == 3:
             self.select_parameter_symbol(item)
-        elif col == 3:
-            text = edit_multiline(self, "Parameter Description", tree_cell_text(self.params, item, 3))
+        elif col == 5:
+            text = edit_multiline(self, "Parameter Description", tree_cell_text(self.params, item, 5))
             if text is not None:
-                item.setText(3, text)
+                item.setText(5, text)
 
     def add_entity_component(self) -> None:
         row = self.components.rowCount()
@@ -2081,10 +2261,11 @@ class EntityPage(SDPEPage):
     def add_macro_row(self, table: QTableWidget, macro_type: str) -> None:
         row = table.rowCount()
         table.insertRow(row)
-        set_combo(table, row, 1, ["Enable", "Disable"], "Enable")
+        set_bool_item(table, row, 1, True)
+        set_bool_item(table, row, 2, False)
         if macro_type == "option":
-            set_combo(table, row, 2, ["1", "2", "3", "4", "5"], "1")
-            set_item(table, row, 4, "1, 2, 3, 4, 5")
+            set_combo(table, row, 3, ["1", "2", "3", "4", "5"], "1")
+            set_item(table, row, 5, "1, 2, 3, 4, 5")
 
     def add_option_set(self) -> None:
         row = self.option_sets.rowCount()
@@ -2121,7 +2302,7 @@ class EntityPage(SDPEPage):
 
     def on_entity_macro_double_clicked(self, row: int, col: int) -> None:
         table = self.sender()
-        if isinstance(table, QTableWidget) and (col == table.columnCount() - 1 or col == 4):
+        if isinstance(table, QTableWidget) and (col == table.columnCount() - 1 or col == 5):
             edit_table_cell_multiline(table, row, col, self, "Macro Field")
 
     def on_entity_option_set_double_clicked(self, row: int, col: int) -> None:
@@ -2215,6 +2396,8 @@ class ProjectPage(SDPEPage):
         self.updated_edit = QLineEdit()
         self.updated_edit.setReadOnly(True)
         self.header_edit = QLineEdit()
+        self.matlab_file_edit = QLineEdit()
+        self.matlab_file_edit.setReadOnly(True)
         self.description_edit = QTextEdit()
         self.description_edit.setFixedHeight(92)
         self.prefix_code = QTextEdit()
@@ -2236,13 +2419,16 @@ class ProjectPage(SDPEPage):
         self.hardware.cellDoubleClicked.connect(self.on_hardware_cell_double_clicked)
 
         self.requirements = QTreeWidget()
-        self.requirements.setHeaderLabels(["Name", "Macro", "Binding Type", "Binding Value", "Description"])
+        self.requirements.setHeaderLabels(["Name", "Macro", "En", "Wk", "Binding Type", "Binding Value", "Description"])
+        self.set_parameter_header_tooltips(self.requirements)
         self.requirements.setAlternatingRowColors(True)
         self.requirements.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.requirements.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.requirements.setItemDelegate(ValidationBorderDelegate(self.requirements))
-        fit_tree_key_columns(self.requirements, description_col=4, interactive=True)
-        install_tree_status_descriptions(self.requirements, description_col=4)
+        fit_tree_key_columns(self.requirements, description_col=6, interactive=True)
+        self.requirements.setColumnWidth(2, 46)
+        self.requirements.setColumnWidth(3, 46)
+        install_tree_status_descriptions(self.requirements, description_col=6)
         self.requirements.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.requirements.customContextMenuRequested.connect(self.show_requirement_context_menu)
         self.requirements.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
@@ -2266,18 +2452,20 @@ class ProjectPage(SDPEPage):
         self.requirements_delete_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
         self.requirements_delete_shortcut.activated.connect(self.remove_requirement_item)
         self.feature_macros = QTreeWidget()
-        self.feature_macros.setHeaderLabels(["Macro", "Enabled", "Value", "Description"])
+        self.feature_macros.setHeaderLabels(["Macro", "En", "Wk", "Value", "Description"])
+        self.set_macro_header_tooltips(self.feature_macros)
         self.feature_macros.setItemDelegate(ValidationBorderDelegate(self.feature_macros))
-        self.setup_macro_tree(self.feature_macros, description_col=3)
+        self.setup_macro_tree(self.feature_macros, description_col=4)
         self.feature_macros.itemDoubleClicked.connect(self.on_macro_tree_double_clicked)
         self.feature_macros.currentItemChanged.connect(lambda current, _previous: self.jump_from_macro_item(self.feature_macros, current))
         self.feature_macros.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.feature_macros.customContextMenuRequested.connect(lambda pos: self.show_macro_tree_context_menu(self.feature_macros, "feature", pos))
         self.install_macro_tree_shortcuts(self.feature_macros, "feature")
         self.enum_macros = QTreeWidget()
-        self.enum_macros.setHeaderLabels(["Macro", "Enabled", "Value", "Options Preset", "Options CSV", "Description"])
+        self.enum_macros.setHeaderLabels(["Macro", "En", "Wk", "Value", "Options Preset", "Options CSV", "Description"])
+        self.set_macro_header_tooltips(self.enum_macros)
         self.enum_macros.setItemDelegate(ValidationBorderDelegate(self.enum_macros))
-        self.setup_macro_tree(self.enum_macros, description_col=5)
+        self.setup_macro_tree(self.enum_macros, description_col=6)
         self.enum_macros.itemDoubleClicked.connect(self.on_macro_tree_double_clicked)
         self.enum_macros.currentItemChanged.connect(lambda current, _previous: self.jump_from_macro_item(self.enum_macros, current))
         self.enum_macros.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -2286,6 +2474,7 @@ class ProjectPage(SDPEPage):
 
         for widget in [self.id_edit, self.macro_prefix_edit, self.name_edit, self.suite_edit, self.version_edit, self.header_edit]:
             widget.textChanged.connect(self.mark_current_dirty)
+        self.header_edit.textChanged.connect(lambda _text: self.update_matlab_script_name())
         for widget in [self.description_edit, self.prefix_code, self.tail_code]:
             widget.textChanged.connect(self.mark_current_dirty)
         self.hardware.cellChanged.connect(lambda _row, _col: self.mark_current_dirty())
@@ -2304,7 +2493,8 @@ class ProjectPage(SDPEPage):
         basic_form.addRow("Suite", self.suite_edit)
         basic_form.addRow("Version", self.version_edit)
         basic_form.addRow("Last Updated", self.updated_edit)
-        basic_form.addRow("Output Header", self.header_edit)
+        basic_form.addRow("C Header File", self.header_edit)
+        basic_form.addRow("MATLAB Init Script", self.matlab_file_edit)
         basic_form.addRow("Description / @note", self.description_edit)
 
         hw_tab = QWidget()
@@ -2461,6 +2651,7 @@ class ProjectPage(SDPEPage):
         self.version_edit.setText(data.get("version", "0.1.0"))
         self.updated_edit.setText(data.get("updated_at", ""))
         self.header_edit.setText(data.get("output_header", "sdpe_project_bindings.h"))
+        self.update_matlab_script_name()
         self.description_edit.setPlainText(data.get("description", ""))
         sections = data.get("code_sections", {})
         self.prefix_code.setPlainText(sections.get("after_extern_open", ""))
@@ -2481,15 +2672,64 @@ class ProjectPage(SDPEPage):
         if not self.restoring_undo:
             self.reset_undo_history(self.collect_current_data() or data)
 
+    def update_matlab_script_name(self) -> None:
+        header_name = Path(self.header_edit.text().strip() or "sdpe_project_bindings.h")
+        self.matlab_file_edit.setText(f"{header_name.stem}_matlab_init.m")
+
     def load_hardware(self, data: dict[str, Any]) -> None:
         self.hardware.setRowCount(0)
-        for hw in data.get("hardware", []):
-            row = self.hardware.rowCount()
-            self.hardware.insertRow(row)
-            set_item(self.hardware, row, 0, hw.get("entity", ""))
-            self.populate_hardware_info(row, hw.get("entity", ""))
+        for hw in project_hardware_items(data):
+            entity_id = project_hardware_entity_id(hw)
+            if not entity_id:
+                continue
+            self.add_hardware_row(entity_id, inherited=False)
+        for entity_id in self.inherited_hardware_entity_ids(data):
+            if entity_id and not self.hardware_entity_in_table(entity_id):
+                self.add_hardware_row(entity_id, inherited=True)
         self.refresh_hardware_status()
         fit_table_columns(self.hardware)
+
+    def add_hardware_row(self, entity_id: str, inherited: bool = False) -> None:
+        row = self.hardware.rowCount()
+        self.hardware.insertRow(row)
+        set_item(self.hardware, row, 0, entity_id)
+        item = self.hardware.item(row, 0)
+        if item is not None and inherited:
+            item.setData(Qt.ItemDataRole.UserRole + 10, "inherited")
+            item.setToolTip("Inherited from a related SDPE requirement. It will not be saved into this project file.")
+        self.populate_hardware_info(row, entity_id)
+        if inherited:
+            for col in range(self.hardware.columnCount()):
+                cell = self.hardware.item(row, col)
+                if cell is not None:
+                    cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+
+    def hardware_entity_in_table(self, entity_id: str) -> bool:
+        for row in range(self.hardware.rowCount()):
+            if item_text(self.hardware, row, 0) == entity_id:
+                return True
+        return False
+
+    def inherited_hardware_entity_ids(self, data: dict[str, Any]) -> list[str]:
+        if not self.current_id:
+            return []
+        current_path = self.window.project_path(self.current_id).resolve()
+        if "sdpe_general" in {part.lower() for part in current_path.parts}:
+            return []
+        suite = data.get("suite", "")
+        ids: list[str] = []
+        for path in self.window.project_paths():
+            path = path.resolve()
+            if path == current_path or "sdpe_general" not in {part.lower() for part in path.parts}:
+                continue
+            try:
+                related = read_json(path)
+            except Exception:
+                continue
+            if suite and related.get("suite") != suite:
+                continue
+            ids.extend(project_hardware_entity_id(hw) for hw in project_hardware_items(related))
+        return [item for item in dict.fromkeys(ids) if item]
 
     def load_requirements(self, data: dict[str, Any]) -> None:
         self.requirements.clear()
@@ -2513,7 +2753,9 @@ class ProjectPage(SDPEPage):
             for req in missing:
                 self.add_requirement_item(group_item, req)
         self.requirements.expandAll()
-        fit_tree_key_columns(self.requirements, description_col=4, interactive=True)
+        fit_tree_key_columns(self.requirements, description_col=6, interactive=True)
+        self.requirements.setColumnWidth(2, 46)
+        self.requirements.setColumnWidth(3, 46)
 
     def load_macro_tables(self, data: dict[str, Any]) -> None:
         self.load_feature_macro_tree(data.get("feature_macros", []))
@@ -2541,7 +2783,9 @@ class ProjectPage(SDPEPage):
             self.feature_macros.addTopLevelItem(self.create_macro_group_item("Selection Macros"))
         self.feature_macros.expandAll()
         self.feature_macros.clearSelection()
-        fit_tree_key_columns(self.feature_macros, description_col=3, interactive=True)
+        fit_tree_key_columns(self.feature_macros, description_col=4, interactive=True)
+        self.feature_macros.setColumnWidth(1, 46)
+        self.feature_macros.setColumnWidth(2, 46)
 
     def load_option_macro_tree(self, items: list[dict[str, Any]]) -> None:
         self.enum_macros.clear()
@@ -2558,7 +2802,9 @@ class ProjectPage(SDPEPage):
             self.enum_macros.addTopLevelItem(self.create_macro_group_item("Option Macros"))
         self.enum_macros.expandAll()
         self.enum_macros.clearSelection()
-        fit_tree_key_columns(self.enum_macros, description_col=5, interactive=True)
+        fit_tree_key_columns(self.enum_macros, description_col=6, interactive=True)
+        self.enum_macros.setColumnWidth(1, 46)
+        self.enum_macros.setColumnWidth(2, 46)
 
     def collect_feature_macro_tree(self) -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
@@ -2643,9 +2889,19 @@ class ProjectPage(SDPEPage):
     def _table_hardware(self) -> list[dict[str, str]]:
         rows = []
         for row in range(self.hardware.rowCount()):
+            if is_inherited_hardware_row(self.hardware, row):
+                continue
             entity = item_text(self.hardware, row, 0)
             if entity:
                 rows.append({"entity": entity})
+        return rows
+
+    def _display_hardware(self) -> list[dict[str, str]]:
+        rows = []
+        for row in range(self.hardware.rowCount()):
+            entity = item_text(self.hardware, row, 0)
+            if entity:
+                rows.append({"entity": entity, "inherited": "1" if is_inherited_hardware_row(self.hardware, row) else ""})
         return rows
 
     def _table_requirements(self) -> list[dict[str, Any]]:
@@ -2658,17 +2914,7 @@ class ProjectPage(SDPEPage):
                     continue
                 macro = tree_cell_text(self.requirements, item, 1)
                 if macro:
-                    rows.append(
-                        {
-                            "role": tree_cell_text(self.requirements, item, 0),
-                            "macro": macro,
-                            "binding": cells_to_binding(
-                                tree_cell_text(self.requirements, item, 2),
-                                tree_cell_text(self.requirements, item, 3),
-                            ),
-                            "description": tree_cell_text(self.requirements, item, 4),
-                        }
-                    )
+                    rows.append(self.requirement_item_to_data(item))
         return rows
 
     def _requirement_groups(self) -> list[dict[str, Any]]:
@@ -2691,6 +2937,14 @@ class ProjectPage(SDPEPage):
 
     def add_feature_macro(self) -> None:
         self.add_macro_item(self.feature_macros, "feature")
+
+    def set_macro_header_tooltips(self, tree: QTreeWidget) -> None:
+        for col in range(tree.columnCount()):
+            header = tree.headerItem().text(col)
+            if header == "En":
+                tree.headerItem().setToolTip(col, "Enable: checked macros are emitted normally; unchecked macros are commented out.")
+            elif header == "Wk":
+                tree.headerItem().setToolTip(col, "Weak macro: checked macros are wrapped by #ifndef / #define / #endif.")
 
     def setup_macro_tree(self, tree: QTreeWidget, description_col: int) -> None:
         tree.setAlternatingRowColors(True)
@@ -2730,6 +2984,7 @@ class ProjectPage(SDPEPage):
             item = QTreeWidgetItem([
                 data.get("macro", ""),
                 "",
+                "",
                 str(data.get("value", "")),
                 data.get("options_preset", data.get("preset", "")),
                 ", ".join(str(v) for v in data.get("options", [])),
@@ -2737,14 +2992,16 @@ class ProjectPage(SDPEPage):
             ])
             item.setData(0, Qt.ItemDataRole.UserRole, "option_macro")
             parent.addChild(item)
-            set_tree_combo(tree, item, 1, ["Enable", "Disable"], "Enable" if data.get("enabled", True) else "Disable")
-            options = [item.strip() for item in tree_cell_text(tree, item, 4).split(",") if item.strip()]
-            set_tree_combo(tree, item, 2, options or [tree_cell_text(tree, item, 2) or "1"], tree_cell_text(tree, item, 2) or (options[0] if options else "1"))
+            set_tree_check(item, 1, bool(data.get("enabled", True)))
+            set_tree_check(item, 2, bool(data.get("weak", False)))
+            options = [item.strip() for item in tree_cell_text(tree, item, 5).split(",") if item.strip()]
+            set_tree_combo(tree, item, 3, options or [tree_cell_text(tree, item, 3) or "1"], tree_cell_text(tree, item, 3) or (options[0] if options else "1"))
         else:
-            item = QTreeWidgetItem([data.get("macro", ""), "", str(data.get("value", "")), data.get("description", "")])
+            item = QTreeWidgetItem([data.get("macro", ""), "", "", str(data.get("value", "")), data.get("description", "")])
             item.setData(0, Qt.ItemDataRole.UserRole, "feature_macro")
             parent.addChild(item)
-            set_tree_combo(tree, item, 1, ["Enable", "Disable"], "Enable" if data.get("enabled", True) else "Disable")
+            set_tree_check(item, 1, bool(data.get("enabled", True)))
+            set_tree_check(item, 2, bool(data.get("weak", False)))
         item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsDragEnabled)
         if not self.loading:
             tree.setCurrentItem(item, 0)
@@ -2793,18 +3050,20 @@ class ProjectPage(SDPEPage):
             return {
                 "group": group,
                 "macro": tree_cell_text(tree, item, 0),
-                "enabled": tree_cell_text(tree, item, 1) != "Disable",
-                "value": tree_cell_text(tree, item, 2),
-                "options_preset": tree_cell_text(tree, item, 3),
-                "options": [part.strip() for part in tree_cell_text(tree, item, 4).split(",") if part.strip()],
-                "description": tree_cell_text(tree, item, 5),
+                "enabled": tree_checked(item, 1, True),
+                "weak": tree_checked(item, 2, False),
+                "value": tree_cell_text(tree, item, 3),
+                "options_preset": tree_cell_text(tree, item, 4),
+                "options": [part.strip() for part in tree_cell_text(tree, item, 5).split(",") if part.strip()],
+                "description": tree_cell_text(tree, item, 6),
             }
         return {
             "group": group,
             "macro": tree_cell_text(tree, item, 0),
-            "enabled": tree_cell_text(tree, item, 1) != "Disable",
-            "value": tree_cell_text(tree, item, 2),
-            "description": tree_cell_text(tree, item, 3),
+            "enabled": tree_checked(item, 1, True),
+            "weak": tree_checked(item, 2, False),
+            "value": tree_cell_text(tree, item, 3),
+            "description": tree_cell_text(tree, item, 4),
         }
 
     def copy_macro_items(self, tree: QTreeWidget, macro_type: str) -> None:
@@ -2895,11 +3154,13 @@ class ProjectPage(SDPEPage):
 
     def insert_requirement_item(self, group: QTreeWidgetItem, index: int, req: dict[str, Any]) -> QTreeWidgetItem:
         btype, bvalue = binding_to_cells(req.get("binding", {}))
-        item = QTreeWidgetItem([req.get("role", ""), req.get("macro", ""), "", bvalue, req.get("description", "")])
+        item = QTreeWidgetItem([req.get("role", ""), req.get("macro", ""), "", "", "", bvalue, req.get("description", "")])
         item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsDragEnabled)
         item.setData(0, Qt.ItemDataRole.UserRole, "requirement")
         group.insertChild(max(0, min(index, group.childCount())), item)
-        set_tree_combo(self.requirements, item, 2, binding_type_options(), btype)
+        set_tree_check(item, 2, bool(req.get("enabled", True)))
+        set_tree_check(item, 3, bool(req.get("weak", False)))
+        set_tree_combo(self.requirements, item, 4, binding_type_options(), btype)
         return item
 
     def current_requirement_group(self) -> QTreeWidgetItem:
@@ -2945,11 +3206,13 @@ class ProjectPage(SDPEPage):
         return {
             "role": tree_cell_text(self.requirements, item, 0),
             "macro": tree_cell_text(self.requirements, item, 1),
+            "enabled": tree_checked(item, 2, True),
+            "weak": tree_checked(item, 3, False),
             "binding": cells_to_binding(
-                tree_cell_text(self.requirements, item, 2),
-                tree_cell_text(self.requirements, item, 3),
+                tree_cell_text(self.requirements, item, 4),
+                tree_cell_text(self.requirements, item, 5),
             ),
-            "description": tree_cell_text(self.requirements, item, 4),
+            "description": tree_cell_text(self.requirements, item, 6),
         }
 
     def copy_selected_requirements(self) -> None:
@@ -2995,12 +3258,26 @@ class ProjectPage(SDPEPage):
             if not line.strip():
                 continue
             cells = line.split("\t")
+            if len(cells) >= 7:
+                rows.append(
+                    {
+                        "role": cells[0].strip(),
+                        "macro": cells[1].strip(),
+                        "enabled": cells[2].strip().lower() not in {"0", "false", "disable", "disabled", "no"},
+                        "weak": cells[3].strip().lower() in {"1", "true", "enable", "enabled", "yes"},
+                        "binding": cells_to_binding(cells[4], cells[5]),
+                        "description": cells[6].strip(),
+                    }
+                )
+                continue
             while len(cells) < 5:
                 cells.append("")
             rows.append(
                 {
                     "role": cells[0].strip(),
                     "macro": cells[1].strip(),
+                    "enabled": True,
+                    "weak": False,
                     "binding": cells_to_binding(cells[2], cells[3]),
                     "description": cells[4].strip(),
                 }
@@ -3041,13 +3318,19 @@ class ProjectPage(SDPEPage):
         try:
             self.normalize_requirement_groups()
             for item in self.iter_requirement_items():
-                btype = tree_cell_text(self.requirements, item, 2) or "number"
-                if not isinstance(self.requirements.itemWidget(item, 2), QComboBox):
-                    set_tree_combo(self.requirements, item, 2, binding_type_options(), btype)
+                if checkbox_widget_checked(self.requirements.itemWidget(item, 2)) is None:
+                    set_tree_check(item, 2, tree_checked(item, 2, True))
+                if checkbox_widget_checked(self.requirements.itemWidget(item, 3)) is None:
+                    set_tree_check(item, 3, tree_checked(item, 3, False))
+                btype = tree_cell_text(self.requirements, item, 4) or "number"
+                if not isinstance(self.requirements.itemWidget(item, 4), QComboBox):
+                    set_tree_combo(self.requirements, item, 4, binding_type_options(), btype)
             header = self.requirements.header()
             header.setStretchLastSection(False)
             for col in range(self.requirements.columnCount()):
                 header.setSectionResizeMode(col, QHeaderView.ResizeMode.Interactive)
+            self.requirements.setColumnWidth(2, 46)
+            self.requirements.setColumnWidth(3, 46)
         finally:
             self.loading = False
 
@@ -3065,16 +3348,18 @@ class ProjectPage(SDPEPage):
             self.normalize_macro_groups(tree)
             macro_type = "option" if tree is self.enum_macros else "feature"
             for item in self.iter_macro_items(tree):
-                enabled = tree_cell_text(tree, item, 1) or "Enable"
-                if not isinstance(tree.itemWidget(item, 1), QComboBox):
-                    set_tree_combo(tree, item, 1, ["Enable", "Disable"], enabled)
+                if not (item.flags() & Qt.ItemFlag.ItemIsUserCheckable):
+                    set_tree_check(item, 1, tree_checked(item, 1, True))
+                    set_tree_check(item, 2, tree_checked(item, 2, False))
                 if macro_type == "option":
-                    options = [part.strip() for part in tree_cell_text(tree, item, 4).split(",") if part.strip()]
-                    value = tree_cell_text(tree, item, 2) or (options[0] if options else "1")
-                    if not isinstance(tree.itemWidget(item, 2), QComboBox):
-                        set_tree_combo(tree, item, 2, options or [value], value)
-            description_col = 5 if tree is self.enum_macros else 3
+                    options = [part.strip() for part in tree_cell_text(tree, item, 5).split(",") if part.strip()]
+                    value = tree_cell_text(tree, item, 3) or (options[0] if options else "1")
+                    if not isinstance(tree.itemWidget(item, 3), QComboBox):
+                        set_tree_combo(tree, item, 3, options or [value], value)
+            description_col = 6 if tree is self.enum_macros else 4
             fit_tree_key_columns(tree, description_col=description_col, interactive=True)
+            tree.setColumnWidth(1, 46)
+            tree.setColumnWidth(2, 46)
         finally:
             self.loading = False
 
@@ -3177,7 +3462,7 @@ class ProjectPage(SDPEPage):
         for item in self.iter_macro_items(self.enum_macros):
             macro = tree_cell_text(self.enum_macros, item, 0)
             add(macro, self.enum_macros, item, "option macro")
-            value = tree_cell_text(self.enum_macros, item, 2)
+            value = tree_cell_text(self.enum_macros, item, 3)
             if macro and re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", value):
                 add(f"{macro}_{macro_name(value)}", self.enum_macros, item, "option marker")
         return occurrences
@@ -3299,12 +3584,12 @@ class ProjectPage(SDPEPage):
     def on_requirement_cell_double_clicked(self, item: QTreeWidgetItem, col: int) -> None:
         if item.data(0, Qt.ItemDataRole.UserRole) != "requirement":
             return
-        if col == 4:
+        if col == 6:
             self.edit_requirement_description(item)
             return
-        if col != 3:
+        if col != 5:
             return
-        btype = tree_cell_text(self.requirements, item, 2)
+        btype = tree_cell_text(self.requirements, item, 4)
         if btype == "export":
             self.select_requirement_hardware_parameter(item)
         elif btype in {"float", "number", "string", "macro"}:
@@ -3313,27 +3598,27 @@ class ProjectPage(SDPEPage):
             self.edit_requirement_value_dialog(item)
 
     def edit_requirement_value_in_cell(self, item: QTreeWidgetItem) -> None:
-        self.requirements.setCurrentItem(item, 3)
-        self.requirements.editItem(item, 3)
+        self.requirements.setCurrentItem(item, 5)
+        self.requirements.editItem(item, 5)
 
     def edit_requirement_value_dialog(self, item: QTreeWidgetItem) -> None:
-        text = edit_multiline(self, "Requirement Binding Value", tree_cell_text(self.requirements, item, 3))
+        text = edit_multiline(self, "Requirement Binding Value", tree_cell_text(self.requirements, item, 5))
         if text is not None:
-            item.setText(3, text)
+            item.setText(5, text)
             self.mark_current_dirty()
 
     def select_requirement_hardware_parameter(self, item: QTreeWidgetItem) -> None:
         symbols: list[str] = []
-        for hw in self._table_hardware():
+        for hw in self._display_hardware():
             try:
                 symbols.extend(self.window.symbols_for_entity(hw["entity"]))
             except SDPEError:
                 continue
         selected = choose_tree_item(self, "Select Requirement Binding", sorted(dict.fromkeys(symbols)))
         if selected:
-            if tree_cell_text(self.requirements, item, 2) != "expr":
-                set_tree_combo(self.requirements, item, 2, binding_type_options(), "export")
-            item.setText(3, f"${{{selected}}}")
+            if tree_cell_text(self.requirements, item, 4) != "expr":
+                set_tree_combo(self.requirements, item, 4, binding_type_options(), "export")
+            item.setText(5, f"${{{selected}}}")
             self.mark_current_dirty()
 
     def on_macro_tree_double_clicked(self, item: QTreeWidgetItem, col: int) -> None:
@@ -3342,24 +3627,24 @@ class ProjectPage(SDPEPage):
             if col == 0:
                 tree.editItem(item, 0)
             return
-        if tree is self.feature_macros and col == 3:
+        if tree is self.feature_macros and col == 4:
             text = edit_multiline(self, "Selection Macro Description", tree_cell_text(self.feature_macros, item, col))
             if text is not None:
                 item.setText(col, text)
                 self.mark_current_dirty()
-        elif tree is self.enum_macros and col == 3:
+        elif tree is self.enum_macros and col == 4:
             presets = self.option_preset_labels()
             selected = choose_item(self, "Select Option Preset", presets)
             if selected:
                 item.setText(col, selected.split("|", 1)[0].strip())
                 self.sync_option_macro_preset_item(item, prefer_preset=True)
-        elif tree is self.enum_macros and col == 4:
+        elif tree is self.enum_macros and col == 5:
             text = edit_multiline(self, "Option Macro Options", tree_cell_text(self.enum_macros, item, col))
             if text is not None:
                 item.setText(col, text)
                 self.sync_option_macro_value_combo_item(item)
                 self.mark_current_dirty()
-        elif tree is self.enum_macros and col == 5:
+        elif tree is self.enum_macros and col == 6:
             text = edit_multiline(self, "Option Macro Description", tree_cell_text(self.enum_macros, item, col))
             if text is not None:
                 item.setText(col, text)
@@ -3370,51 +3655,56 @@ class ProjectPage(SDPEPage):
             return
         if item.data(0, Qt.ItemDataRole.UserRole) != "option_macro":
             return
-        if col == 3:
+        if col == 4:
             self.sync_option_macro_preset_item(item, prefer_preset=True)
-        elif col == 4:
+        elif col == 5:
             self.sync_option_macro_value_combo_item(item)
 
     def sync_option_macro_preset_item(self, item: QTreeWidgetItem, prefer_preset: bool = True) -> None:
-        preset = tree_cell_text(self.enum_macros, item, 3)
+        preset = tree_cell_text(self.enum_macros, item, 4)
         options = self.option_preset_options(preset) if preset else []
         if not options and not prefer_preset:
             return
         old_state = self.enum_macros.blockSignals(True)
         try:
             if options:
-                item.setText(4, ", ".join(str(option) for option in options))
+                item.setText(5, ", ".join(str(option) for option in options))
             self.sync_option_macro_value_combo_item(item)
         finally:
             self.enum_macros.blockSignals(old_state)
 
     def sync_option_macro_value_combo_item(self, item: QTreeWidgetItem) -> None:
-        options = [part.strip() for part in tree_cell_text(self.enum_macros, item, 4).split(",") if part.strip()]
+        options = [part.strip() for part in tree_cell_text(self.enum_macros, item, 5).split(",") if part.strip()]
         if not options:
             return
-        current = tree_cell_text(self.enum_macros, item, 2)
+        current = tree_cell_text(self.enum_macros, item, 3)
         if current not in options:
             current = options[0]
-        set_tree_combo(self.enum_macros, item, 2, options, current)
+        set_tree_combo(self.enum_macros, item, 3, options, current)
 
     def replace_requirement_entity(self, old_entity: str, new_entity: str) -> None:
         if not old_entity or old_entity == new_entity:
             return
         for item in self.iter_requirement_items():
-            value = tree_cell_text(self.requirements, item, 3)
+            value = tree_cell_text(self.requirements, item, 5)
             if value == old_entity or value.startswith(f"{old_entity}."):
-                item.setText(3, new_entity + value[len(old_entity):])
+                item.setText(5, new_entity + value[len(old_entity):])
 
-    def replace_project_entity_references(self, old_entity: str, new_entity: str) -> None:
+    def replace_project_entity_references(self, old_entity: str, new_entity: str, aliases: list[str] | None = None) -> None:
         if not old_entity or old_entity == new_entity:
             return
+        names = [old_entity, *(aliases or [])]
+        names = [name for name in dict.fromkeys(names) if name]
 
         def replace_text(text: str) -> str:
-            pattern = re.compile(rf"(?<![A-Za-z0-9_]){re.escape(old_entity)}(?=\.|\b)")
-            return pattern.sub(new_entity, text)
+            result = text
+            for name in names:
+                pattern = re.compile(rf"(?<![A-Za-z0-9_]){re.escape(name)}(?=\.|\b)")
+                result = pattern.sub(new_entity, result)
+            return result
 
         for item in self.iter_requirement_items():
-            for col in (0, 1, 3, 4):
+            for col in (0, 1, 5, 6):
                 text = tree_cell_text(self.requirements, item, col)
                 new_text = replace_text(text)
                 if new_text != text:
@@ -3471,21 +3761,31 @@ class ProjectPage(SDPEPage):
     def refresh_hardware_tree(self) -> None:
         self.hardware_tree.clear()
         categories: dict[str, QTreeWidgetItem] = {}
-        for hw in self._table_hardware():
+        for hw in self._display_hardware():
             entity_id = hw["entity"]
             category = self.entity_category(entity_id) or "Missing"
             if category not in categories:
                 node = QTreeWidgetItem([category])
                 self.hardware_tree.addTopLevelItem(node)
                 categories[category] = node
-            entity_node = QTreeWidgetItem([entity_id, self.entity_description(entity_id)])
+            label = f"{entity_id} (inherited)" if hw.get("inherited") else entity_id
+            entity_node = QTreeWidgetItem([label, self.entity_description(entity_id)])
             entity_node.setData(0, Qt.ItemDataRole.UserRole, entity_id)
+            entity_node.setData(0, Qt.ItemDataRole.UserRole + 1, "root")
+            entity_node.setData(0, Qt.ItemDataRole.UserRole + 2, entity_id)
             categories[category].addChild(entity_node)
-            self.add_component_nodes(entity_node, entity_id, set())
+            self.add_component_nodes(entity_node, entity_id, set(), entity_id, entity_id)
         self.hardware_tree.expandAll()
         fit_tree_key_columns(self.hardware_tree, description_col=1)
 
-    def add_component_nodes(self, parent: QTreeWidgetItem, entity_id: str, seen: set[str]) -> None:
+    def add_component_nodes(
+        self,
+        parent: QTreeWidgetItem,
+        entity_id: str,
+        seen: set[str],
+        root_entity: str,
+        path: str,
+    ) -> None:
         if entity_id in seen:
             return
         seen.add(entity_id)
@@ -3494,10 +3794,15 @@ class ProjectPage(SDPEPage):
         except SDPEError:
             return
         for slot, comp in entity.components.items():
+            child_path = f"{path}.{slot}"
             child = QTreeWidgetItem([f"{slot}: {comp.entity.id}", comp.entity.description])
             child.setData(0, Qt.ItemDataRole.UserRole, comp.entity.id)
+            child.setData(0, Qt.ItemDataRole.UserRole + 1, "component")
+            child.setData(0, Qt.ItemDataRole.UserRole + 2, root_entity)
+            child.setData(0, Qt.ItemDataRole.UserRole + 3, slot)
+            child.setData(0, Qt.ItemDataRole.UserRole + 4, child_path)
             parent.addChild(child)
-            self.add_component_nodes(child, comp.entity.id, seen)
+            self.add_component_nodes(child, comp.entity.id, seen, root_entity, child_path)
 
     def entity_description(self, entity_id: str) -> str:
         try:
@@ -3516,7 +3821,7 @@ class ProjectPage(SDPEPage):
                 if not isinstance(options, list):
                     options = [options]
                 labels.append(f"{name} | template:{schema.id} | {', '.join(str(v) for v in options)}")
-        for hw in self._table_hardware():
+        for hw in self._display_hardware():
             entity_id = hw["entity"]
             try:
                 data = read_json(self.window.entity_path(entity_id))
@@ -3558,7 +3863,7 @@ class ProjectPage(SDPEPage):
             if owner in self.window.library.schemas:
                 return values_from_store(read_json(self.window.schema_path(owner)).get("option_sets", {}), name)
 
-        for hw in self._table_hardware():
+        for hw in self._display_hardware():
             entity_id = hw["entity"]
             if entity_id not in self.window.library.entity_files:
                 continue
@@ -3587,10 +3892,13 @@ class ProjectPage(SDPEPage):
         item = self.hardware_tree.itemAt(pos)
         category = item.text(0) if item and not item.parent() else ""
         root_item = self.hardware_root_item(item)
+        is_component = item is not None and item.data(0, Qt.ItemDataRole.UserRole + 1) == "component"
         menu = QMenu(self)
         menu.addAction("Insert hardware", lambda: self.add_hardware(category))
         replace_action = menu.addAction("Replace with same template", lambda: self.replace_tree_root_hardware(root_item))
         replace_action.setEnabled(root_item is not None)
+        replace_component_action = menu.addAction("Replace selected submodule", lambda: self.replace_tree_submodule(item))
+        replace_component_action.setEnabled(is_component)
         delete_action = menu.addAction("Delete selected root hardware", self.remove_tree_root_hardware)
         delete_action.setEnabled(root_item is not None)
         menu.exec(self.hardware_tree.viewport().mapToGlobal(pos))
@@ -3636,6 +3944,24 @@ class ProjectPage(SDPEPage):
                 self.replace_hardware_row(row)
                 return
 
+    def replace_tree_submodule(self, item: QTreeWidgetItem | None) -> None:
+        if item is None or item.data(0, Qt.ItemDataRole.UserRole + 1) != "component":
+            return
+        old_entity = item.data(0, Qt.ItemDataRole.UserRole)
+        if not old_entity:
+            return
+        component_path = item.data(0, Qt.ItemDataRole.UserRole + 4)
+        selected = self.choose_entity_with_same_template(old_entity)
+        if not selected:
+            return
+        if not self.hardware_entity_in_table(selected):
+            self.add_hardware_row(selected, inherited=False)
+        aliases = [component_path] if component_path else []
+        self.replace_project_entity_references(old_entity, selected, aliases=aliases)
+        self.refresh_hardware_status()
+        self.mark_current_dirty()
+        self.message("Submodule replaced", f"{old_entity} -> {selected}")
+
     def show_requirement_context_menu(self, pos) -> None:
         item = self.requirements.itemAt(pos)
         col = self.requirements.indexAt(pos).column()
@@ -3650,11 +3976,11 @@ class ProjectPage(SDPEPage):
         paste_action = menu.addAction("Paste rows", self.paste_requirements)
         paste_action.setEnabled(bool(QApplication.clipboard().text().strip()))
         menu.addSeparator()
-        if is_requirement and col == 3:
+        if is_requirement and col == 5:
             menu.addAction("Edit in cell", lambda: self.edit_requirement_value_in_cell(item))
             menu.addAction("Edit in dialog", lambda: self.edit_requirement_value_dialog(item))
             menu.addAction("Select hardware parameter", lambda: self.select_requirement_hardware_parameter(item))
-        elif is_requirement and col == 4:
+        elif is_requirement and col == 6:
             menu.addAction("Edit description", lambda: self.edit_requirement_description(item))
         else:
             menu.addAction("Add group", self.add_requirement_group)
@@ -3664,9 +3990,9 @@ class ProjectPage(SDPEPage):
         menu.exec(self.requirements.viewport().mapToGlobal(pos))
 
     def edit_requirement_description(self, item: QTreeWidgetItem) -> None:
-        text = edit_multiline(self, "Requirement Description", tree_cell_text(self.requirements, item, 4))
+        text = edit_multiline(self, "Requirement Description", tree_cell_text(self.requirements, item, 6))
         if text is not None:
-            item.setText(4, text)
+            item.setText(6, text)
             self.mark_current_dirty()
 
     def jump_from_requirement_item(self, item: QTreeWidgetItem | None) -> None:
@@ -3816,8 +4142,8 @@ class BindingPage(SDPEPage):
 
     def add_hardware_group(self, data: dict[str, Any], generator: HeaderGenerator) -> None:
         group = self.add_group("Hardware Includes", "Hardware headers included by the generated project header.")
-        for hw in data.get("hardware", []):
-            entity_id = hw.get("entity", "")
+        for hw in project_hardware_items(data):
+            entity_id = project_hardware_entity_id(hw)
             if not entity_id:
                 continue
             try:
@@ -3840,8 +4166,11 @@ class BindingPage(SDPEPage):
             for item in items:
                 macro = item.get("macro", "")
                 enabled = item.get("enabled", True)
+                weak = item.get("weak", False)
                 value = str(item.get("value", ""))
                 display_value = value if enabled else f"disabled ({value})" if value else "disabled"
+                if weak:
+                    display_value = f"{display_value}; weak"
                 self.add_overview_row(subgroup, macro, macro, display_value, "selection macro", item.get("description", ""))
 
     def add_option_macro_group(self, data: dict[str, Any], generator: HeaderGenerator) -> None:
@@ -3854,7 +4183,10 @@ class BindingPage(SDPEPage):
                 options = generator._option_macro_values(item, lambda preset: generator._resolve_project_option_preset(data, preset))
                 value = str(item.get("value", ""))
                 enabled = item.get("enabled", True)
+                weak = item.get("weak", False)
                 display_value = value if enabled else f"disabled ({value})"
+                if weak:
+                    display_value = f"{display_value}; weak"
                 desc = item.get("description", "")
                 parent = self.add_overview_row(subgroup, macro, macro, display_value, "option macro", desc)
                 if options:

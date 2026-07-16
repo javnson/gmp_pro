@@ -11,9 +11,12 @@ if ~isfile(exe)
         'Build Debug|x64 first; controller executable not found: %s', exe);
 end
 
-addpath(fullfile(root, 'sdpe_mgr'));
-sdpe_dps_fsbb_simulate_settings_matlab_init;
-load_system(fullfile(root, [model '.slx']));
+model_file = fullfile(root, [model '.slx']);
+run(fullfile(root, '..', '..', 'sdpe_general', ...
+    'sdpe_dps_fsbb_common_settings_matlab_init.m'));
+run(fullfile(root, 'sdpe_mgr', ...
+    'sdpe_dps_fsbb_simulate_settings_matlab_init.m'));
+load_system(model_file);
 
 start_info = System.Diagnostics.ProcessStartInfo;
 start_info.FileName = exe;
@@ -21,7 +24,7 @@ start_info.WorkingDirectory = root;
 start_info.UseShellExecute = false;
 start_info.CreateNoWindow = true;
 controller = System.Diagnostics.Process.Start(start_info);
-cleanup = onCleanup(@() stop_controller(controller)); %#ok<NASGU>
+cleanup = onCleanup(@() stop_controller(controller));
 
 pause(0.25); % Let the UDP endpoint bind before mdlStart sends its handshake.
 if nargin < 1 || isempty(stop_time)

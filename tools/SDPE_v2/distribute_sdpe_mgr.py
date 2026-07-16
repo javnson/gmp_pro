@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Distribute the canonical SDPE BAT toolchain to every project manager."""
+"""Distribute the canonical SDPE BAT toolchain to project and general managers."""
 
 from __future__ import annotations
 
@@ -35,12 +35,12 @@ def discover_managers(repository_root: Path) -> tuple[list[Path], list[Path]]:
         if current == canonical:
             dirnames[:] = []
             continue
-        if current.name == "sdpe_mgr":
+        if current.name in {"sdpe_mgr", "sdpe_general"}:
             dirnames[:] = []
             if (current / "sdpe_requirement.json").is_file():
                 candidates.add(current)
             else:
-                print(f"[SKIP] sdpe_mgr has no project requirement: {current}")
+                print(f"[SKIP] {current.name} has no project requirement: {current}")
             continue
 
         # These roots cannot contain deployable project managers and can be
@@ -85,7 +85,7 @@ def distribute(*, dry_run: bool = False) -> bool:
     for path in ignored:
         print(f"[IGNORE] Git-ignored SDPE manager: {path}")
     if not managers:
-        print("[WARNING] No project-local sdpe_mgr directories were found.")
+        print("[WARNING] No sdpe_mgr or sdpe_general directories were found.")
         return True
 
     failures = 0

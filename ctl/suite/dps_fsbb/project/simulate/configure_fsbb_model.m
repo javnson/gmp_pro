@@ -3,21 +3,29 @@ function configure_fsbb_model()
 
 model = 'MCS_STD_FSBB_MODEL';
 root = fileparts(mfilename('fullpath'));
-load_system(fullfile(root, [model '.slx']));
+model_file = fullfile(root, [model '.slx']);
+common_init = 'sdpe_dps_fsbb_common_settings_matlab_init.m';
+simulate_init = 'sdpe_dps_fsbb_simulate_settings_matlab_init.m';
+run(fullfile(root, '..', '..', 'sdpe_general', common_init));
+run(fullfile(root, 'sdpe_mgr', simulate_init));
+load_system(model_file);
 fsbb = [model '/GMP STD FSBB Module'];
 
-% Make both generated SDPE variables and the UDP S-function discoverable.
-% PreLoadFcn runs before block parameters are evaluated, so use the resolved
-% project location captured when this reproducible configurator is run.
-sdpe_dir = strrep(fullfile(root, 'sdpe_mgr'), '\', '/');
-mex_dir = strrep(fullfile(root, '..', '..', '..', '..', '..', 'tools', ...
-    'gmp_sil', 'udp_helper_v2', 'mdl_asio_helper', 'bin', 'x64', 'Debug'), '\', '/');
-preload = sprintf(['addpath(''%s''); addpath(''%s''); ' ...
-    'evalin(''base'',''sdpe_dps_fsbb_simulate_settings_matlab_init;'');'], sdpe_dir, mex_dir);
-set_param(model, 'PreLoadFcn', preload);
-set_param(model, 'InitFcn', preload);
-addpath(fullfile(root, 'sdpe_mgr'));
-sdpe_dps_fsbb_simulate_settings_matlab_init;
+% Resolve every callback path from the model file at run time.  No machine- or
+% checkout-specific absolute path is persisted in the SLX file.
+callback = [ ...
+    'gmp_model_file=get_param(bdroot,''FileName''); ' ...
+    'if isempty(gmp_model_file), error(''GMP:FSBB:ModelPath'', ' ...
+    '''The FSBB model must be saved before SDPE initialization.''); end; ' ...
+    'gmp_model_dir=fileparts(gmp_model_file); ' ...
+    'run(fullfile(gmp_model_dir,''..'',''..'',''sdpe_general'',''' common_init ''')); ' ...
+    'run(fullfile(gmp_model_dir,''sdpe_mgr'',''' simulate_init ''')); ' ...
+    'addpath(fullfile(gmp_model_dir,''..'',''..'',''..'',''..'',''..'',''tools'',' ...
+    '''gmp_sil'',''udp_helper_v2'',''mdl_asio_helper'',''bin'',''x64'',''Debug'')); ' ...
+    'clear gmp_model_file gmp_model_dir;'];
+set_param(model, 'PreLoadFcn', '');
+set_param(model, 'PostLoadFcn', callback);
+set_param(model, 'InitFcn', callback);
 
 % Correct the sensor name without changing its electrical connections.
 old_iin = [fsbb '/Output Current Measurement1'];
