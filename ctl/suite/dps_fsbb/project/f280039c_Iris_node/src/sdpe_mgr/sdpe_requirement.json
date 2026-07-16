@@ -94,7 +94,6 @@
       "description": "Minimum load resistance used by FSBB controller initialization."
     },
     {
-      "macro": "CTRL_FSBB_VIN_BIAS",
       "role": "Input Capcitor",
       "macro": "FSBB_PARAM_CIN",
       "binding": {
