@@ -1,4 +1,5 @@
 # BEGIN GMP MANAGED PROJECT IGNORE RULES
+# This block is distributed from tools/gmp_installer/project_gitignore.template.
 # Keep project-specific rules outside the managed block.
 
 # User and editor state

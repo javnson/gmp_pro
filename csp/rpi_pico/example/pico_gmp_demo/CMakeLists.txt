@@ -17,21 +17,17 @@ set(CMAKE_CXX_STANDARD 17)
 
 pico_sdk_init()
 
-get_filename_component(GMP_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../.." ABSOLUTE)
-set(GMP_PICO_CSP "${GMP_ROOT}/csp/rpi_pico")
-
 add_executable(pico_gmp_demo main.c)
 
-add_subdirectory("${GMP_PICO_CSP}" "${CMAKE_BINARY_DIR}/gmp_csp_rpi_pico")
-
-target_include_directories(pico_gmp_demo PRIVATE
-    "${CMAKE_CURRENT_LIST_DIR}"
-    "${GMP_PICO_CSP}"
-    "${GMP_ROOT}"
-)
+include("${CMAKE_CURRENT_LIST_DIR}/gmp_pico_src/gmp_config.cmake")
 
 target_link_libraries(pico_gmp_demo PRIVATE
-    gmp_csp_rpi_pico
+    pico_stdlib
+    hardware_gpio
+    hardware_i2c
+    hardware_spi
+    hardware_uart
+    hardware_watchdog
 )
 
 pico_enable_stdio_usb(pico_gmp_demo 0)

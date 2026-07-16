@@ -29,17 +29,23 @@ gmp_hal_gpio_write(status_led, GMP_HAL_GPIO_HIGH);
 
 ## CMake integration
 
-Initialize the Pico SDK first, then add this directory and link the CSP target:
+Select the `core/std` and `csp/rp_pico` modules in the GMP source manager,
+generate the sources and headers, and then click **Generate CMake**. The source
+manager writes `gmp_config.cmake` next to `gmp_src_mgr`.
+
+Set the `GMP_PRO_LOCATION` environment variable to the GMP repository root.
+After creating the Pico target, include the generated file:
 
 ```cmake
 pico_sdk_init()
-set(GMP_XPLT_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-add_subdirectory(path/to/gmp_pro/csp/rpi_pico gmp_csp_rpi_pico)
-target_link_libraries(your_target PRIVATE gmp_csp_rpi_pico)
+add_executable(your_target main.c)
+include("${CMAKE_CURRENT_SOURCE_DIR}/gmp_src/gmp_config.cmake")
+target_link_libraries(your_target PRIVATE pico_stdlib hardware_gpio)
 ```
 
-The application must provide `xplt.config.h` and the standard GMP lifecycle
-functions required by its selected configuration.
+The generated source entries are relative to `gmp_config.cmake`. GMP include
+directories are derived from `GMP_PRO_LOCATION`. Set `GMP_CMAKE_TARGET` before
+the include only when the CMake target name differs from the project name.
 
 ## Watchdog
 
@@ -48,4 +54,5 @@ Define `GMP_RPI_PICO_WATCHDOG_TIMEOUT_MS` to a nonzero integer in
 is zero, which leaves the watchdog disabled. `gmp_csp_loop()` reloads the
 counter when the feature is enabled.
 
-See `example/pico_gmp_demo` for a complete Pico SDK project.
+See `example/pico_gmp_demo` for a source-manager-based blink project using the
+GMP function scheduler.
