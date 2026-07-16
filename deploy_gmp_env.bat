@@ -9,9 +9,12 @@ if errorlevel 1 (
 setlocal
 call "%GMP_PRO_LOCATION%\tools\gmp_installer\deploy_portable.bat" %*
 set "RESULT=%ERRORLEVEL%"
-if not "%RESULT%"=="0" (
+if "%RESULT%"=="0" (
+    echo.
+    echo [GMP] Portable environment deployment completed successfully.
+) else (
     echo.
     echo [GMP] Portable environment deployment failed with exit code %RESULT%.
-    if /i not "%GMP_INSTALLER_NO_PAUSE%"=="1" pause
 )
+if /i not "%GMP_INSTALLER_NO_PAUSE%"=="1" pause
 exit /b %RESULT%

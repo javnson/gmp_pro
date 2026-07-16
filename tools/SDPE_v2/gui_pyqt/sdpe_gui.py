@@ -13,7 +13,7 @@ from typing import Any
 
 try:
     from PyQt6.QtCore import QTimer, Qt
-    from PyQt6.QtGui import QAction, QColor, QKeySequence, QPen, QShortcut
+    from PyQt6.QtGui import QAction, QColor, QKeySequence, QPen, QShortcut, QTextCursor, QTextDocument
     from PyQt6.QtWidgets import (
         QApplication,
         QCheckBox,
@@ -49,7 +49,7 @@ try:
 except ImportError:  # pragma: no cover - depends on local desktop environment.
     try:
         from PySide6.QtCore import QTimer, Qt
-        from PySide6.QtGui import QAction, QColor, QKeySequence, QPen, QShortcut
+        from PySide6.QtGui import QAction, QColor, QKeySequence, QPen, QShortcut, QTextCursor, QTextDocument
         from PySide6.QtWidgets import (
             QApplication,
             QCheckBox,
@@ -632,21 +632,41 @@ class SDPEPage(QWidget):
         self.code_panel = QTextEdit()
         self.code_panel.setReadOnly(True)
         self.code_panel.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
+        self.code_search = QLineEdit()
+        self.code_search.setPlaceholderText("Find macro or text in Code")
+        self.code_search.returnPressed.connect(lambda: self.find_in_preview(self.code_panel, self.code_search, forward=True))
         self.matlab_panel = QTextEdit()
         self.matlab_panel.setReadOnly(True)
         self.matlab_panel.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
+        self.matlab_search = QLineEdit()
+        self.matlab_search.setPlaceholderText("Find macro or text in MATLAB Init")
+        self.matlab_search.returnPressed.connect(lambda: self.find_in_preview(self.matlab_panel, self.matlab_search, forward=True))
 
         self.items_panel = QWidget()
         left_layout = QVBoxLayout(self.items_panel)
         left_layout.addWidget(self.search)
         left_layout.addWidget(self.list_widget)
+        self.code_preview_panel = self.create_preview_panel(
+            "Code Search",
+            self.code_search,
+            self.code_panel,
+            lambda: self.find_in_preview(self.code_panel, self.code_search, forward=False),
+            lambda: self.find_in_preview(self.code_panel, self.code_search, forward=True),
+        )
+        self.matlab_preview_panel = self.create_preview_panel(
+            "MATLAB Search",
+            self.matlab_search,
+            self.matlab_panel,
+            lambda: self.find_in_preview(self.matlab_panel, self.matlab_search, forward=False),
+            lambda: self.find_in_preview(self.matlab_panel, self.matlab_search, forward=True),
+        )
 
         self.splitter = QSplitter()
         self.splitter.addWidget(self.items_panel)
         self.splitter.addWidget(self.form_panel)
         self.splitter.addWidget(self.professional_panel)
-        self.splitter.addWidget(self.code_panel)
-        self.splitter.addWidget(self.matlab_panel)
+        self.splitter.addWidget(self.code_preview_panel)
+        self.splitter.addWidget(self.matlab_preview_panel)
         self.splitter.setSizes([240, 760, 420, 500, 500])
 
         self.show_items = QCheckBox("Items")
@@ -663,15 +683,15 @@ class SDPEPage(QWidget):
         self.show_professional.toggled.connect(lambda _checked: self.update_panel_sizes())
         self.show_code = QCheckBox("Code")
         self.show_code.setChecked(False)
-        self.show_code.toggled.connect(self.code_panel.setVisible)
+        self.show_code.toggled.connect(self.code_preview_panel.setVisible)
         self.show_code.toggled.connect(lambda _checked: self.update_panel_sizes())
         self.show_matlab = QCheckBox("MATLAB Init")
         self.show_matlab.setChecked(False)
-        self.show_matlab.toggled.connect(self.matlab_panel.setVisible)
+        self.show_matlab.toggled.connect(self.matlab_preview_panel.setVisible)
         self.show_matlab.toggled.connect(lambda _checked: self.update_panel_sizes())
         self.professional_panel.setVisible(False)
-        self.code_panel.setVisible(False)
-        self.matlab_panel.setVisible(False)
+        self.code_preview_panel.setVisible(False)
+        self.matlab_preview_panel.setVisible(False)
         if not self.has_code:
             self.show_code.setEnabled(False)
             self.show_matlab.setEnabled(False)
@@ -694,6 +714,66 @@ class SDPEPage(QWidget):
         self.save_all_shortcut.activated.connect(self.save_all)
         self.undo_shortcut = QShortcut(QKeySequence.StandardKey.Undo, self)
         self.undo_shortcut.activated.connect(self.undo_current_change)
+
+    def create_preview_panel(self, title: str, search: QLineEdit, editor: QTextEdit, previous, next_) -> QWidget:
+        panel = QWidget()
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(0, 0, 0, 0)
+        row = QHBoxLayout()
+        row.addWidget(QLabel(title))
+        row.addWidget(search)
+        prev_button = QPushButton("Prev")
+        prev_button.clicked.connect(previous)
+        next_button = QPushButton("Next")
+        next_button.clicked.connect(next_)
+        row.addWidget(prev_button)
+        row.addWidget(next_button)
+        layout.addLayout(row)
+        layout.addWidget(editor)
+        return panel
+
+    def find_in_preview(self, editor: QTextEdit, search: QLineEdit, forward: bool = True) -> bool:
+        text = search.text().strip()
+        if not text:
+            return False
+        flags = QTextDocument.FindFlag(0)
+        if not forward:
+            flags |= QTextDocument.FindFlag.FindBackward
+        if editor.find(text, flags):
+            self.message("Find", text)
+            return True
+        cursor = editor.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.Start if forward else QTextCursor.MoveOperation.End)
+        editor.setTextCursor(cursor)
+        if editor.find(text, flags):
+            self.message("Find", f"Wrapped: {text}")
+            return True
+        self.message("Find", f"Not found: {text}")
+        return False
+
+    def jump_preview_to_text(self, text: str, reveal: bool = False) -> None:
+        text = text.strip()
+        if not text:
+            return
+        if reveal:
+            if self.has_code:
+                self.show_code.setChecked(True)
+                self.show_matlab.setChecked(True)
+        self.code_search.setText(text)
+        self.matlab_search.setText(text)
+        jumped = False
+        if self.show_code.isChecked():
+            cursor = self.code_panel.textCursor()
+            cursor.movePosition(QTextCursor.MoveOperation.Start)
+            self.code_panel.setTextCursor(cursor)
+            jumped = self.find_in_preview(self.code_panel, self.code_search, forward=True) or jumped
+        if self.show_matlab.isChecked():
+            cursor = self.matlab_panel.textCursor()
+            cursor.movePosition(QTextCursor.MoveOperation.Start)
+            self.matlab_panel.setTextCursor(cursor)
+            jumped = self.find_in_preview(self.matlab_panel, self.matlab_search, forward=True) or jumped
+        if not jumped and (self.show_code.isChecked() or self.show_matlab.isChecked()):
+            self.message("Jump", f"Not found: {text}")
 
     def create_items_widget(self):
         widget = QListWidget()
@@ -2169,6 +2249,7 @@ class ProjectPage(SDPEPage):
         self.requirements.setDefaultDropAction(Qt.DropAction.MoveAction)
         self.requirements.itemChanged.connect(lambda _item, _col: self.mark_current_dirty())
         self.requirements.itemDoubleClicked.connect(self.on_requirement_cell_double_clicked)
+        self.requirements.currentItemChanged.connect(lambda current, _previous: self.jump_from_requirement_item(current))
         self.requirements.model().rowsMoved.connect(lambda *_args: self.after_requirement_tree_changed())
         self.requirements.model().rowsInserted.connect(lambda *_args: self.after_requirement_tree_changed())
         self.requirements.model().rowsRemoved.connect(lambda *_args: self.after_requirement_tree_changed())
@@ -2189,6 +2270,7 @@ class ProjectPage(SDPEPage):
         self.feature_macros.setItemDelegate(ValidationBorderDelegate(self.feature_macros))
         self.setup_macro_tree(self.feature_macros, description_col=3)
         self.feature_macros.itemDoubleClicked.connect(self.on_macro_tree_double_clicked)
+        self.feature_macros.currentItemChanged.connect(lambda current, _previous: self.jump_from_macro_item(self.feature_macros, current))
         self.feature_macros.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.feature_macros.customContextMenuRequested.connect(lambda pos: self.show_macro_tree_context_menu(self.feature_macros, "feature", pos))
         self.install_macro_tree_shortcuts(self.feature_macros, "feature")
@@ -2197,6 +2279,7 @@ class ProjectPage(SDPEPage):
         self.enum_macros.setItemDelegate(ValidationBorderDelegate(self.enum_macros))
         self.setup_macro_tree(self.enum_macros, description_col=5)
         self.enum_macros.itemDoubleClicked.connect(self.on_macro_tree_double_clicked)
+        self.enum_macros.currentItemChanged.connect(lambda current, _previous: self.jump_from_macro_item(self.enum_macros, current))
         self.enum_macros.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.enum_macros.customContextMenuRequested.connect(lambda pos: self.show_macro_tree_context_menu(self.enum_macros, "option", pos))
         self.install_macro_tree_shortcuts(self.enum_macros, "option")
@@ -3585,6 +3668,17 @@ class ProjectPage(SDPEPage):
         if text is not None:
             item.setText(4, text)
             self.mark_current_dirty()
+
+    def jump_from_requirement_item(self, item: QTreeWidgetItem | None) -> None:
+        if self.loading or item is None or item.data(0, Qt.ItemDataRole.UserRole) != "requirement":
+            return
+        symbol = tree_cell_text(self.requirements, item, 1) or tree_cell_text(self.requirements, item, 0)
+        self.jump_preview_to_text(symbol)
+
+    def jump_from_macro_item(self, tree: QTreeWidget, item: QTreeWidgetItem | None) -> None:
+        if self.loading or item is None or item.data(0, Qt.ItemDataRole.UserRole) not in {"feature_macro", "option_macro"}:
+            return
+        self.jump_preview_to_text(tree_cell_text(tree, item, 0))
 
     def preview_project_header(self) -> None:
         try:

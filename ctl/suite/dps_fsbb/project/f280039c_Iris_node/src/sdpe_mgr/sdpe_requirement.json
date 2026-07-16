@@ -94,7 +94,6 @@
       "description": "Minimum load resistance used by FSBB controller initialization."
     },
     {
-      "macro": "CTRL_FSBB_VIN_BIAS",
       "role": "Input Capcitor",
       "macro": "FSBB_PARAM_CIN",
       "binding": {
@@ -395,6 +394,13 @@
       "enabled": true,
       "value": "1",
       "description": "Invert duty-to-CMP mapping because the IRIS ePWM action qualifier sets high on up-count CMPA and low on down-count CMPA."
+    },
+    {
+      "group": "Controller Settings",
+      "macro": "DISABLE_FSBB_PROTECTION_FAULT_LOGIC",
+      "enabled": true,
+      "value": "",
+      "description": "This macro will disable the fault request of the controller. That's dangerous."
     },
     {
       "group": "Optional Sampling Channels",

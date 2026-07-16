@@ -3,6 +3,8 @@
 function install_gmp_simulink_lib()
 
 matlab_version = matlabRelease; %matlab_version.Release => R2022b
+assert_specialized_power_systems_available(matlab_version.Release);
+
 matlab_path = fileparts(mfilename('fullpath'));
 simulink_lib_path = fullfile(matlab_path, 'install_path', matlab_version.Release);
 
@@ -66,3 +68,49 @@ disp('GMP Simulink Library has installed Successfully.');
 
 
 end % function end
+
+
+function assert_specialized_power_systems_available(matlab_release)
+% GMP Simulink models require the Specialized Power Systems block library.
+% Test the actual library instead of relying only on product metadata: this
+% also catches an installation that is incomplete or unavailable to MATLAB.
+
+required_library = 'powerlib';
+required_product = 'Simscape Electrical / Specialized Power Systems';
+
+if isempty(which(required_library))
+    release_number = str2double(extract(matlab_release, digitsPattern));
+    if release_number >= 2026
+        error('GMP:SpecializedPowerSystemsRemoved', ...
+            ['GMP Simulink Library installation stopped.\n' ...
+             'Specialized Power Systems was removed from MATLAB R2026a and later.\n' ...
+             'Use MATLAB R2025b or earlier with %s installed.'], ...
+            required_product);
+    end
+
+    error('GMP:MissingSpecializedPowerSystems', ...
+        ['GMP Simulink Library installation stopped.\n' ...
+         'The required library "%s" was not found.\n' ...
+         'Install %s with the MathWorks installer, restart MATLAB, and run this installer again.'], ...
+        required_library, required_product);
+end
+
+was_loaded = bdIsLoaded(required_library);
+try
+    load_system(required_library);
+catch load_error
+    if ~was_loaded && bdIsLoaded(required_library)
+        close_system(required_library, 0);
+    end
+    error('GMP:SpecializedPowerSystemsUnavailable', ...
+        ['GMP Simulink Library installation stopped.\n' ...
+         '%s is installed but MATLAB could not load "%s".\n' ...
+         'Check the product license and installation, then try again.\n' ...
+         'MATLAB details: %s'], ...
+        required_product, required_library, load_error.message);
+end
+
+if ~was_loaded
+    close_system(required_library, 0);
+end
+end
