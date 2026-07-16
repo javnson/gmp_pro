@@ -5,69 +5,513 @@
   "category": "C2000 LaunchPad Board",
   "output_subdir": "mcu_board",
   "parameters": [
-    {"name":"chip","c_name":"CHIP","required":true,"value_format":"\"{}\"","description":"C2000 device name."},
-    {"name":"syscfg_file","c_name":"SYSCFG_FILE","required":true,"value_format":"\"{}\"","description":"SysConfig source file implementing this resource map."},
-    {"name":"system_clock_hz","c_name":"SYSTEM_CLOCK_HZ","required":true,"value_format":"({}UL)","description":"Device system clock in hertz."},
-    {"name":"adca_soc_count","c_name":"ADCA_SOC_COUNT","required":true,"value_format":"({}U)","description":"BOOSTXL analog inputs assigned to ADCA."},
-    {"name":"adcb_soc_count","c_name":"ADCB_SOC_COUNT","required":true,"value_format":"({}U)","description":"BOOSTXL analog inputs assigned to ADCB."},
-    {"name":"adcc_soc_count","c_name":"ADCC_SOC_COUNT","required":true,"value_format":"({}U)","description":"BOOSTXL analog inputs assigned to ADCC."},
-    {"name":"j3_ain1","c_name":"J3_AIN1","required":true,"value_format":"{}","description":"J3 pin 23, ADCINA5, ADCA SOC0."},
-    {"name":"j3_ain2","c_name":"J3_AIN2","required":true,"value_format":"{}","description":"J3 pin 24, ADCINB0, ADCB SOC0."},
-    {"name":"j3_ain3","c_name":"J3_AIN3","required":true,"value_format":"{}","description":"J3 pin 25, ADCINC2, ADCC SOC0."},
-    {"name":"j3_ain4","c_name":"J3_AIN4","required":true,"value_format":"{}","description":"J3 pin 26, ADCINB1, ADCB SOC1."},
-    {"name":"j3_ain5","c_name":"J3_AIN5","required":true,"value_format":"{}","description":"J3 pin 27, ADCINB2, ADCB SOC2."},
-    {"name":"j3_ain6","c_name":"J3_AIN6","required":true,"value_format":"{}","description":"J3 pin 28, ADCINC0, ADCC SOC1."},
-    {"name":"j3_ain7","c_name":"J3_AIN7","required":true,"value_format":"{}","description":"J3 pin 29, ADCINA9, ADCA SOC1."},
-    {"name":"j3_ain8","c_name":"J3_AIN8","required":true,"value_format":"{}","description":"J3 pin 30, ADCINA1/DACB, ADCA SOC2; mutually exclusive with DACB output."},
-    {"name":"j7_ain1","c_name":"J7_AIN1","required":true,"value_format":"{}","description":"J7 pin 23, ADCINA6, ADCA SOC3."},
-    {"name":"j7_ain2","c_name":"J7_AIN2","required":true,"value_format":"{}","description":"J7 pin 24, ADCINA2, ADCA SOC4."},
-    {"name":"j7_ain3","c_name":"J7_AIN3","required":true,"value_format":"{}","description":"J7 pin 25, ADCINC14, ADCC SOC2."},
-    {"name":"j7_ain4","c_name":"J7_AIN4","required":true,"value_format":"{}","description":"J7 pin 26, ADCINC1, ADCC SOC3."},
-    {"name":"j7_ain5","c_name":"J7_AIN5","required":true,"value_format":"{}","description":"J7 pin 27, ADCINC3, ADCC SOC4."},
-    {"name":"j7_ain6","c_name":"J7_AIN6","required":true,"value_format":"{}","description":"J7 pin 28, ADCINC5, ADCC SOC5."},
-    {"name":"j7_ain7","c_name":"J7_AIN7","required":true,"value_format":"{}","description":"J7 pin 29, ADCINA3, ADCA SOC5."},
-    {"name":"j7_ain8","c_name":"J7_AIN8","required":true,"value_format":"{}","description":"J7 pin 30, ADCINA0/DACA, ADCA SOC6; mutually exclusive with DACA output."},
-    {"name":"j4_pwm1_base","c_name":"J4_PWM1_BASE","required":true,"value_format":"{}","description":"BOOSTXL site 1 J4 PWM pair 1, GPIO10/11, ePWM6."},
-    {"name":"j4_pwm2_base","c_name":"J4_PWM2_BASE","required":true,"value_format":"{}","description":"BOOSTXL site 1 J4 PWM pair 2, GPIO8/9, ePWM5."},
-    {"name":"j4_pwm3_base","c_name":"J4_PWM3_BASE","required":true,"value_format":"{}","description":"BOOSTXL site 1 J4 PWM pair 3, GPIO4/5, ePWM3."},
-    {"name":"j8_pwm1_base","c_name":"J8_PWM1_BASE","required":true,"value_format":"{}","description":"BOOSTXL site 2 J8 PWM pair 1, GPIO0/1, ePWM1."},
-    {"name":"j8_pwm2_base","c_name":"J8_PWM2_BASE","required":true,"value_format":"{}","description":"BOOSTXL site 2 J8 PWM pair 2, GPIO6/7, ePWM4."},
-    {"name":"j8_pwm3_base","c_name":"J8_PWM3_BASE","required":true,"value_format":"{}","description":"BOOSTXL site 2 J8 PWM pair 3, GPIO2/3, ePWM2."},
-    {"name":"eqep_j12_base","c_name":"EQEP_J12_BASE","required":true,"value_format":"{}","description":"J12 encoder connector eQEP1 base."},
-    {"name":"eqep_j13_base","c_name":"EQEP_J13_BASE","required":true,"value_format":"{}","description":"J13 encoder connector eQEP2 base."},
-    {"name":"led_red","c_name":"LED_RED","required":true,"value_format":"{}","description":"On-board red LED GPIO resource."},
-    {"name":"led_green","c_name":"LED_GREEN","required":true,"value_format":"{}","description":"On-board green LED GPIO resource."},
-    {"name":"gate_enable","c_name":"GATE_ENABLE","required":true,"value_format":"{}","description":"BOOSTXL gate-enable GPIO resource."},
-    {"name":"gate_reset","c_name":"GATE_RESET","required":true,"value_format":"{}","description":"BOOSTXL gate-reset GPIO resource."},
-    {"name":"monitor_gpio","c_name":"MONITOR_GPIO","required":true,"value_format":"{}","description":"Board monitor/test GPIO resource."},
-    {"name":"can_base","c_name":"CAN_BASE","required":true,"value_format":"{}","description":"LaunchPad CAN peripheral base."},
-    {"name":"uart_usb_base","c_name":"UART_USB_BASE","required":true,"value_format":"{}","description":"XDS110 back-channel UART base."},
-    {"name":"daca_base","c_name":"DACA_BASE","required":true,"value_format":"{}","description":"DAC A base."},
-    {"name":"dacb_base","c_name":"DACB_BASE","required":true,"value_format":"{}","description":"DAC B base."}
+    {
+      "name": "chip",
+      "c_name": "CHIP",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "C2000 device name."
+    },
+    {
+      "name": "syscfg_file",
+      "c_name": "SYSCFG_FILE",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "SysConfig source file implementing this resource map."
+    },
+    {
+      "name": "system_clock_hz",
+      "c_name": "SYSTEM_CLOCK_HZ",
+      "unit": "",
+      "required": true,
+      "value_format": "({}UL)",
+      "description": "Device system clock in hertz."
+    },
+    {
+      "name": "adca_soc_count",
+      "c_name": "ADCA_SOC_COUNT",
+      "unit": "",
+      "required": true,
+      "value_format": "({}U)",
+      "description": "BOOSTXL analog inputs assigned to ADCA."
+    },
+    {
+      "name": "adcb_soc_count",
+      "c_name": "ADCB_SOC_COUNT",
+      "unit": "",
+      "required": true,
+      "value_format": "({}U)",
+      "description": "BOOSTXL analog inputs assigned to ADCB."
+    },
+    {
+      "name": "adcc_soc_count",
+      "c_name": "ADCC_SOC_COUNT",
+      "unit": "",
+      "required": true,
+      "value_format": "({}U)",
+      "description": "BOOSTXL analog inputs assigned to ADCC."
+    },
+    {
+      "name": "j3_ain1",
+      "c_name": "J3_AIN1",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "J3 pin 23, ADCINA5, ADCA SOC0."
+    },
+    {
+      "name": "j3_ain2",
+      "c_name": "J3_AIN2",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "J3 pin 24, ADCINB0, ADCB SOC0."
+    },
+    {
+      "name": "j3_ain3",
+      "c_name": "J3_AIN3",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "J3 pin 25, ADCINC2, ADCC SOC0."
+    },
+    {
+      "name": "j3_ain4",
+      "c_name": "J3_AIN4",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "J3 pin 26, ADCINB1, ADCB SOC1."
+    },
+    {
+      "name": "j3_ain5",
+      "c_name": "J3_AIN5",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "J3 pin 27, ADCINB2, ADCB SOC2."
+    },
+    {
+      "name": "j3_ain6",
+      "c_name": "J3_AIN6",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "J3 pin 28, ADCINC0, ADCC SOC1."
+    },
+    {
+      "name": "j3_ain7",
+      "c_name": "J3_AIN7",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "J3 pin 29, ADCINA9, ADCA SOC1."
+    },
+    {
+      "name": "j3_ain8",
+      "c_name": "J3_AIN8",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "J3 pin 30, ADCINA1/DACB, ADCA SOC2; mutually exclusive with DACB output."
+    },
+    {
+      "name": "j7_ain1",
+      "c_name": "J7_AIN1",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "J7 pin 23, ADCINA6, ADCA SOC3."
+    },
+    {
+      "name": "j7_ain2",
+      "c_name": "J7_AIN2",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "J7 pin 24, ADCINA2, ADCA SOC4."
+    },
+    {
+      "name": "j7_ain3",
+      "c_name": "J7_AIN3",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "J7 pin 25, ADCINC14, ADCC SOC2."
+    },
+    {
+      "name": "j7_ain4",
+      "c_name": "J7_AIN4",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "J7 pin 26, ADCINC1, ADCC SOC3."
+    },
+    {
+      "name": "j7_ain5",
+      "c_name": "J7_AIN5",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "J7 pin 27, ADCINC3, ADCC SOC4."
+    },
+    {
+      "name": "j7_ain6",
+      "c_name": "J7_AIN6",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "J7 pin 28, ADCINC5, ADCC SOC5."
+    },
+    {
+      "name": "j7_ain7",
+      "c_name": "J7_AIN7",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "J7 pin 29, ADCINA3, ADCA SOC5."
+    },
+    {
+      "name": "j7_ain8",
+      "c_name": "J7_AIN8",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "J7 pin 30, ADCINA0/DACA, ADCA SOC6; mutually exclusive with DACA output."
+    },
+    {
+      "name": "j4_pwm1_base",
+      "c_name": "J4_PWM1_BASE",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "BOOSTXL site 1 J4 PWM pair 1, GPIO10/11, ePWM6."
+    },
+    {
+      "name": "j4_pwm2_base",
+      "c_name": "J4_PWM2_BASE",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "BOOSTXL site 1 J4 PWM pair 2, GPIO8/9, ePWM5."
+    },
+    {
+      "name": "j4_pwm3_base",
+      "c_name": "J4_PWM3_BASE",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "BOOSTXL site 1 J4 PWM pair 3, GPIO4/5, ePWM3."
+    },
+    {
+      "name": "j8_pwm1_base",
+      "c_name": "J8_PWM1_BASE",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "BOOSTXL site 2 J8 PWM pair 1, GPIO0/1, ePWM1."
+    },
+    {
+      "name": "j8_pwm2_base",
+      "c_name": "J8_PWM2_BASE",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "BOOSTXL site 2 J8 PWM pair 2, GPIO6/7, ePWM4."
+    },
+    {
+      "name": "j8_pwm3_base",
+      "c_name": "J8_PWM3_BASE",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "BOOSTXL site 2 J8 PWM pair 3, GPIO2/3, ePWM2."
+    },
+    {
+      "name": "eqep_j12_base",
+      "c_name": "EQEP_J12_BASE",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "J12 encoder connector eQEP1 base."
+    },
+    {
+      "name": "eqep_j13_base",
+      "c_name": "EQEP_J13_BASE",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "J13 encoder connector eQEP2 base."
+    },
+    {
+      "name": "led_red",
+      "c_name": "LED_RED",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "On-board red LED GPIO resource."
+    },
+    {
+      "name": "led_green",
+      "c_name": "LED_GREEN",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "On-board green LED GPIO resource."
+    },
+    {
+      "name": "gate_enable",
+      "c_name": "GATE_ENABLE",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "BOOSTXL gate-enable GPIO resource."
+    },
+    {
+      "name": "gate_reset",
+      "c_name": "GATE_RESET",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "BOOSTXL gate-reset GPIO resource."
+    },
+    {
+      "name": "monitor_gpio",
+      "c_name": "MONITOR_GPIO",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "Board monitor/test GPIO resource."
+    },
+    {
+      "name": "can_base",
+      "c_name": "CAN_BASE",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "LaunchPad CAN peripheral base."
+    },
+    {
+      "name": "uart_usb_base",
+      "c_name": "UART_USB_BASE",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "XDS110 back-channel UART base."
+    },
+    {
+      "name": "daca_base",
+      "c_name": "DACA_BASE",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "DAC A base."
+    },
+    {
+      "name": "dacb_base",
+      "c_name": "DACB_BASE",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "DAC B base."
+    }
   ],
   "exports": {
-    "j4_pwm1_base":{"macro":"{PREFIX}_J4_PWM1_BASE","description":"BOOSTXL J4 PWM pair 1."},
-    "j4_pwm2_base":{"macro":"{PREFIX}_J4_PWM2_BASE","description":"BOOSTXL J4 PWM pair 2."},
-    "j4_pwm3_base":{"macro":"{PREFIX}_J4_PWM3_BASE","description":"BOOSTXL J4 PWM pair 3."},
-    "j8_pwm1_base":{"macro":"{PREFIX}_J8_PWM1_BASE","description":"BOOSTXL J8 PWM pair 1."},
-    "j8_pwm2_base":{"macro":"{PREFIX}_J8_PWM2_BASE","description":"BOOSTXL J8 PWM pair 2."},
-    "j8_pwm3_base":{"macro":"{PREFIX}_J8_PWM3_BASE","description":"BOOSTXL J8 PWM pair 3."},
-    "eqep_j12_base":{"macro":"{PREFIX}_EQEP_J12_BASE","description":"J12 eQEP base."},
-    "eqep_j13_base":{"macro":"{PREFIX}_EQEP_J13_BASE","description":"J13 eQEP base."}
+    "j4_pwm1_base": {
+      "macro": "{PREFIX}_J4_PWM1_BASE",
+      "description": "BOOSTXL J4 PWM pair 1."
+    },
+    "j4_pwm2_base": {
+      "macro": "{PREFIX}_J4_PWM2_BASE",
+      "description": "BOOSTXL J4 PWM pair 2."
+    },
+    "j4_pwm3_base": {
+      "macro": "{PREFIX}_J4_PWM3_BASE",
+      "description": "BOOSTXL J4 PWM pair 3."
+    },
+    "j8_pwm1_base": {
+      "macro": "{PREFIX}_J8_PWM1_BASE",
+      "description": "BOOSTXL J8 PWM pair 1."
+    },
+    "j8_pwm2_base": {
+      "macro": "{PREFIX}_J8_PWM2_BASE",
+      "description": "BOOSTXL J8 PWM pair 2."
+    },
+    "j8_pwm3_base": {
+      "macro": "{PREFIX}_J8_PWM3_BASE",
+      "description": "BOOSTXL J8 PWM pair 3."
+    },
+    "eqep_j12_base": {
+      "macro": "{PREFIX}_EQEP_J12_BASE",
+      "description": "J12 eQEP base."
+    },
+    "eqep_j13_base": {
+      "macro": "{PREFIX}_EQEP_J13_BASE",
+      "description": "J13 eQEP base."
+    }
   },
   "option_sets": {
-    "BOOSTXL_PWM_BASE":{"options":["BOOSTXL_J4_PWM1_BASE","BOOSTXL_J4_PWM2_BASE","BOOSTXL_J4_PWM3_BASE","BOOSTXL_J8_PWM1_BASE","BOOSTXL_J8_PWM2_BASE","BOOSTXL_J8_PWM3_BASE"],"description":"All six BOOSTXL PWM pair base registers."},
-    "BOOSTXL_ADC_SOC":{"options":["BOOSTXL_J3_AIN1","BOOSTXL_J3_AIN2","BOOSTXL_J3_AIN3","BOOSTXL_J3_AIN4","BOOSTXL_J3_AIN5","BOOSTXL_J3_AIN6","BOOSTXL_J3_AIN7","BOOSTXL_J3_AIN8","BOOSTXL_J7_AIN1","BOOSTXL_J7_AIN2","BOOSTXL_J7_AIN3","BOOSTXL_J7_AIN4","BOOSTXL_J7_AIN5","BOOSTXL_J7_AIN6","BOOSTXL_J7_AIN7","BOOSTXL_J7_AIN8"],"description":"All 16 BOOSTXL analog input SOC indices."},
-    "BOOSTXL_ADC_RESULT_BASE":{"options":["BOOSTXL_J3_AIN1_RESULT_BASE","BOOSTXL_J3_AIN2_RESULT_BASE","BOOSTXL_J3_AIN3_RESULT_BASE","BOOSTXL_J3_AIN4_RESULT_BASE","BOOSTXL_J3_AIN5_RESULT_BASE","BOOSTXL_J3_AIN6_RESULT_BASE","BOOSTXL_J3_AIN7_RESULT_BASE","BOOSTXL_J3_AIN8_RESULT_BASE","BOOSTXL_J7_AIN1_RESULT_BASE","BOOSTXL_J7_AIN2_RESULT_BASE","BOOSTXL_J7_AIN3_RESULT_BASE","BOOSTXL_J7_AIN4_RESULT_BASE","BOOSTXL_J7_AIN5_RESULT_BASE","BOOSTXL_J7_AIN6_RESULT_BASE","BOOSTXL_J7_AIN7_RESULT_BASE","BOOSTXL_J7_AIN8_RESULT_BASE"],"description":"ADC result bases matching every BOOSTXL analog input."},
-    "BOOSTXL_ADC_BASE":{"options":["BOOSTXL_J3_AIN1_ADC_BASE","BOOSTXL_J3_AIN2_ADC_BASE","BOOSTXL_J3_AIN3_ADC_BASE","BOOSTXL_J3_AIN4_ADC_BASE","BOOSTXL_J3_AIN5_ADC_BASE","BOOSTXL_J3_AIN6_ADC_BASE","BOOSTXL_J3_AIN7_ADC_BASE","BOOSTXL_J3_AIN8_ADC_BASE","BOOSTXL_J7_AIN1_ADC_BASE","BOOSTXL_J7_AIN2_ADC_BASE","BOOSTXL_J7_AIN3_ADC_BASE","BOOSTXL_J7_AIN4_ADC_BASE","BOOSTXL_J7_AIN5_ADC_BASE","BOOSTXL_J7_AIN6_ADC_BASE","BOOSTXL_J7_AIN7_ADC_BASE","BOOSTXL_J7_AIN8_ADC_BASE"],"description":"ADC peripheral bases matching every BOOSTXL analog input."},
-    "EQEP_BASE":{"options":["EQEP1_J12_BASE","EQEP2_J13_BASE"],"description":"LaunchPad encoder connector bases."},
-    "BOARD_LED":{"options":["LED_R","LED_G"],"description":"On-board status LEDs."},
-    "GATE_GPIO":{"options":["ENABLE_GATE","RESET_GATE","MONITOR_IO"],"description":"BOOSTXL gate and monitor GPIO resources."}
+    "BOOSTXL_PWM_BASE": {
+      "options": [
+        "BOOSTXL_J4_PWM1_BASE",
+        "BOOSTXL_J4_PWM2_BASE",
+        "BOOSTXL_J4_PWM3_BASE",
+        "BOOSTXL_J8_PWM1_BASE",
+        "BOOSTXL_J8_PWM2_BASE",
+        "BOOSTXL_J8_PWM3_BASE"
+      ],
+      "description": "All six BOOSTXL PWM pair base registers."
+    },
+    "BOOSTXL_ADC_SOC": {
+      "options": [
+        "BOOSTXL_J3_AIN1",
+        "BOOSTXL_J3_AIN2",
+        "BOOSTXL_J3_AIN3",
+        "BOOSTXL_J3_AIN4",
+        "BOOSTXL_J3_AIN5",
+        "BOOSTXL_J3_AIN6",
+        "BOOSTXL_J3_AIN7",
+        "BOOSTXL_J3_AIN8",
+        "BOOSTXL_J7_AIN1",
+        "BOOSTXL_J7_AIN2",
+        "BOOSTXL_J7_AIN3",
+        "BOOSTXL_J7_AIN4",
+        "BOOSTXL_J7_AIN5",
+        "BOOSTXL_J7_AIN6",
+        "BOOSTXL_J7_AIN7",
+        "BOOSTXL_J7_AIN8"
+      ],
+      "description": "All 16 BOOSTXL analog input SOC indices."
+    },
+    "BOOSTXL_ADC_RESULT_BASE": {
+      "options": [
+        "BOOSTXL_J3_AIN1_RESULT_BASE",
+        "BOOSTXL_J3_AIN2_RESULT_BASE",
+        "BOOSTXL_J3_AIN3_RESULT_BASE",
+        "BOOSTXL_J3_AIN4_RESULT_BASE",
+        "BOOSTXL_J3_AIN5_RESULT_BASE",
+        "BOOSTXL_J3_AIN6_RESULT_BASE",
+        "BOOSTXL_J3_AIN7_RESULT_BASE",
+        "BOOSTXL_J3_AIN8_RESULT_BASE",
+        "BOOSTXL_J7_AIN1_RESULT_BASE",
+        "BOOSTXL_J7_AIN2_RESULT_BASE",
+        "BOOSTXL_J7_AIN3_RESULT_BASE",
+        "BOOSTXL_J7_AIN4_RESULT_BASE",
+        "BOOSTXL_J7_AIN5_RESULT_BASE",
+        "BOOSTXL_J7_AIN6_RESULT_BASE",
+        "BOOSTXL_J7_AIN7_RESULT_BASE",
+        "BOOSTXL_J7_AIN8_RESULT_BASE"
+      ],
+      "description": "ADC result bases matching every BOOSTXL analog input."
+    },
+    "BOOSTXL_ADC_BASE": {
+      "options": [
+        "BOOSTXL_J3_AIN1_ADC_BASE",
+        "BOOSTXL_J3_AIN2_ADC_BASE",
+        "BOOSTXL_J3_AIN3_ADC_BASE",
+        "BOOSTXL_J3_AIN4_ADC_BASE",
+        "BOOSTXL_J3_AIN5_ADC_BASE",
+        "BOOSTXL_J3_AIN6_ADC_BASE",
+        "BOOSTXL_J3_AIN7_ADC_BASE",
+        "BOOSTXL_J3_AIN8_ADC_BASE",
+        "BOOSTXL_J7_AIN1_ADC_BASE",
+        "BOOSTXL_J7_AIN2_ADC_BASE",
+        "BOOSTXL_J7_AIN3_ADC_BASE",
+        "BOOSTXL_J7_AIN4_ADC_BASE",
+        "BOOSTXL_J7_AIN5_ADC_BASE",
+        "BOOSTXL_J7_AIN6_ADC_BASE",
+        "BOOSTXL_J7_AIN7_ADC_BASE",
+        "BOOSTXL_J7_AIN8_ADC_BASE"
+      ],
+      "description": "ADC peripheral bases matching every BOOSTXL analog input."
+    },
+    "EQEP_BASE": {
+      "options": [
+        "EQEP1_J12_BASE",
+        "EQEP2_J13_BASE"
+      ],
+      "description": "LaunchPad encoder connector bases."
+    },
+    "BOARD_LED": {
+      "options": [
+        "LED_R",
+        "LED_G"
+      ],
+      "description": "On-board status LEDs."
+    },
+    "GATE_GPIO": {
+      "options": [
+        "ENABLE_GATE",
+        "RESET_GATE",
+        "MONITOR_IO"
+      ],
+      "description": "BOOSTXL gate and monitor GPIO resources."
+    }
   },
   "parameter_groups": [
-    {"name":"Identification","parameters":["chip","syscfg_file","system_clock_hz"]},
-    {"name":"ADC Allocation","parameters":["adca_soc_count","adcb_soc_count","adcc_soc_count","j3_ain1","j3_ain2","j3_ain3","j3_ain4","j3_ain5","j3_ain6","j3_ain7","j3_ain8","j7_ain1","j7_ain2","j7_ain3","j7_ain4","j7_ain5","j7_ain6","j7_ain7","j7_ain8"]},
-    {"name":"BOOSTXL PWM","parameters":["j4_pwm1_base","j4_pwm2_base","j4_pwm3_base","j8_pwm1_base","j8_pwm2_base","j8_pwm3_base"]},
-    {"name":"Board Peripherals","parameters":["eqep_j12_base","eqep_j13_base","led_red","led_green","gate_enable","gate_reset","monitor_gpio","can_base","uart_usb_base","daca_base","dacb_base"]}
-  ]
+    {
+      "name": "Identification",
+      "parameters": [
+        "chip",
+        "syscfg_file",
+        "system_clock_hz"
+      ]
+    },
+    {
+      "name": "ADC Allocation",
+      "parameters": [
+        "adca_soc_count",
+        "adcb_soc_count",
+        "adcc_soc_count",
+        "j3_ain1",
+        "j3_ain2",
+        "j3_ain3",
+        "j3_ain4",
+        "j3_ain5",
+        "j3_ain6",
+        "j3_ain7",
+        "j3_ain8",
+        "j7_ain1",
+        "j7_ain2",
+        "j7_ain3",
+        "j7_ain4",
+        "j7_ain5",
+        "j7_ain6",
+        "j7_ain7",
+        "j7_ain8"
+      ]
+    },
+    {
+      "name": "BOOSTXL PWM",
+      "parameters": [
+        "j4_pwm1_base",
+        "j4_pwm2_base",
+        "j4_pwm3_base",
+        "j8_pwm1_base",
+        "j8_pwm2_base",
+        "j8_pwm3_base"
+      ]
+    },
+    {
+      "name": "Board Peripherals",
+      "parameters": [
+        "eqep_j12_base",
+        "eqep_j13_base",
+        "led_red",
+        "led_green",
+        "gate_enable",
+        "gate_reset",
+        "monitor_gpio",
+        "can_base",
+        "uart_usb_base",
+        "daca_base",
+        "dacb_base"
+      ]
+    }
+  ],
+  "tags": [],
+  "header_prefix": "",
+  "components": {}
 }
