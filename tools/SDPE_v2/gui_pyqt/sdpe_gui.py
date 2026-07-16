@@ -2396,6 +2396,8 @@ class ProjectPage(SDPEPage):
         self.updated_edit = QLineEdit()
         self.updated_edit.setReadOnly(True)
         self.header_edit = QLineEdit()
+        self.matlab_file_edit = QLineEdit()
+        self.matlab_file_edit.setReadOnly(True)
         self.description_edit = QTextEdit()
         self.description_edit.setFixedHeight(92)
         self.prefix_code = QTextEdit()
@@ -2472,6 +2474,7 @@ class ProjectPage(SDPEPage):
 
         for widget in [self.id_edit, self.macro_prefix_edit, self.name_edit, self.suite_edit, self.version_edit, self.header_edit]:
             widget.textChanged.connect(self.mark_current_dirty)
+        self.header_edit.textChanged.connect(lambda _text: self.update_matlab_script_name())
         for widget in [self.description_edit, self.prefix_code, self.tail_code]:
             widget.textChanged.connect(self.mark_current_dirty)
         self.hardware.cellChanged.connect(lambda _row, _col: self.mark_current_dirty())
@@ -2490,7 +2493,8 @@ class ProjectPage(SDPEPage):
         basic_form.addRow("Suite", self.suite_edit)
         basic_form.addRow("Version", self.version_edit)
         basic_form.addRow("Last Updated", self.updated_edit)
-        basic_form.addRow("Output Header", self.header_edit)
+        basic_form.addRow("C Header File", self.header_edit)
+        basic_form.addRow("MATLAB Init Script", self.matlab_file_edit)
         basic_form.addRow("Description / @note", self.description_edit)
 
         hw_tab = QWidget()
@@ -2647,6 +2651,7 @@ class ProjectPage(SDPEPage):
         self.version_edit.setText(data.get("version", "0.1.0"))
         self.updated_edit.setText(data.get("updated_at", ""))
         self.header_edit.setText(data.get("output_header", "sdpe_project_bindings.h"))
+        self.update_matlab_script_name()
         self.description_edit.setPlainText(data.get("description", ""))
         sections = data.get("code_sections", {})
         self.prefix_code.setPlainText(sections.get("after_extern_open", ""))
@@ -2666,6 +2671,10 @@ class ProjectPage(SDPEPage):
         self.loading = False
         if not self.restoring_undo:
             self.reset_undo_history(self.collect_current_data() or data)
+
+    def update_matlab_script_name(self) -> None:
+        header_name = Path(self.header_edit.text().strip() or "sdpe_project_bindings.h")
+        self.matlab_file_edit.setText(f"{header_name.stem}_matlab_init.m")
 
     def load_hardware(self, data: dict[str, Any]) -> None:
         self.hardware.setRowCount(0)
@@ -3679,18 +3688,23 @@ class ProjectPage(SDPEPage):
         for item in self.iter_requirement_items():
             value = tree_cell_text(self.requirements, item, 5)
             if value == old_entity or value.startswith(f"{old_entity}."):
-                item.setText(3, new_entity + value[len(old_entity):])
+                item.setText(5, new_entity + value[len(old_entity):])
 
-    def replace_project_entity_references(self, old_entity: str, new_entity: str) -> None:
+    def replace_project_entity_references(self, old_entity: str, new_entity: str, aliases: list[str] | None = None) -> None:
         if not old_entity or old_entity == new_entity:
             return
+        names = [old_entity, *(aliases or [])]
+        names = [name for name in dict.fromkeys(names) if name]
 
         def replace_text(text: str) -> str:
-            pattern = re.compile(rf"(?<![A-Za-z0-9_]){re.escape(old_entity)}(?=\.|\b)")
-            return pattern.sub(new_entity, text)
+            result = text
+            for name in names:
+                pattern = re.compile(rf"(?<![A-Za-z0-9_]){re.escape(name)}(?=\.|\b)")
+                result = pattern.sub(new_entity, result)
+            return result
 
         for item in self.iter_requirement_items():
-            for col in (0, 1, 3, 4):
+            for col in (0, 1, 5, 6):
                 text = tree_cell_text(self.requirements, item, col)
                 new_text = replace_text(text)
                 if new_text != text:
@@ -3757,12 +3771,21 @@ class ProjectPage(SDPEPage):
             label = f"{entity_id} (inherited)" if hw.get("inherited") else entity_id
             entity_node = QTreeWidgetItem([label, self.entity_description(entity_id)])
             entity_node.setData(0, Qt.ItemDataRole.UserRole, entity_id)
+            entity_node.setData(0, Qt.ItemDataRole.UserRole + 1, "root")
+            entity_node.setData(0, Qt.ItemDataRole.UserRole + 2, entity_id)
             categories[category].addChild(entity_node)
-            self.add_component_nodes(entity_node, entity_id, set())
+            self.add_component_nodes(entity_node, entity_id, set(), entity_id, entity_id)
         self.hardware_tree.expandAll()
         fit_tree_key_columns(self.hardware_tree, description_col=1)
 
-    def add_component_nodes(self, parent: QTreeWidgetItem, entity_id: str, seen: set[str]) -> None:
+    def add_component_nodes(
+        self,
+        parent: QTreeWidgetItem,
+        entity_id: str,
+        seen: set[str],
+        root_entity: str,
+        path: str,
+    ) -> None:
         if entity_id in seen:
             return
         seen.add(entity_id)
@@ -3771,10 +3794,15 @@ class ProjectPage(SDPEPage):
         except SDPEError:
             return
         for slot, comp in entity.components.items():
+            child_path = f"{path}.{slot}"
             child = QTreeWidgetItem([f"{slot}: {comp.entity.id}", comp.entity.description])
             child.setData(0, Qt.ItemDataRole.UserRole, comp.entity.id)
+            child.setData(0, Qt.ItemDataRole.UserRole + 1, "component")
+            child.setData(0, Qt.ItemDataRole.UserRole + 2, root_entity)
+            child.setData(0, Qt.ItemDataRole.UserRole + 3, slot)
+            child.setData(0, Qt.ItemDataRole.UserRole + 4, child_path)
             parent.addChild(child)
-            self.add_component_nodes(child, comp.entity.id, seen)
+            self.add_component_nodes(child, comp.entity.id, seen, root_entity, child_path)
 
     def entity_description(self, entity_id: str) -> str:
         try:
@@ -3864,10 +3892,13 @@ class ProjectPage(SDPEPage):
         item = self.hardware_tree.itemAt(pos)
         category = item.text(0) if item and not item.parent() else ""
         root_item = self.hardware_root_item(item)
+        is_component = item is not None and item.data(0, Qt.ItemDataRole.UserRole + 1) == "component"
         menu = QMenu(self)
         menu.addAction("Insert hardware", lambda: self.add_hardware(category))
         replace_action = menu.addAction("Replace with same template", lambda: self.replace_tree_root_hardware(root_item))
         replace_action.setEnabled(root_item is not None)
+        replace_component_action = menu.addAction("Replace selected submodule", lambda: self.replace_tree_submodule(item))
+        replace_component_action.setEnabled(is_component)
         delete_action = menu.addAction("Delete selected root hardware", self.remove_tree_root_hardware)
         delete_action.setEnabled(root_item is not None)
         menu.exec(self.hardware_tree.viewport().mapToGlobal(pos))
@@ -3912,6 +3943,24 @@ class ProjectPage(SDPEPage):
             if item_text(self.hardware, row, 0) == entity_id:
                 self.replace_hardware_row(row)
                 return
+
+    def replace_tree_submodule(self, item: QTreeWidgetItem | None) -> None:
+        if item is None or item.data(0, Qt.ItemDataRole.UserRole + 1) != "component":
+            return
+        old_entity = item.data(0, Qt.ItemDataRole.UserRole)
+        if not old_entity:
+            return
+        component_path = item.data(0, Qt.ItemDataRole.UserRole + 4)
+        selected = self.choose_entity_with_same_template(old_entity)
+        if not selected:
+            return
+        if not self.hardware_entity_in_table(selected):
+            self.add_hardware_row(selected, inherited=False)
+        aliases = [component_path] if component_path else []
+        self.replace_project_entity_references(old_entity, selected, aliases=aliases)
+        self.refresh_hardware_status()
+        self.mark_current_dirty()
+        self.message("Submodule replaced", f"{old_entity} -> {selected}")
 
     def show_requirement_context_menu(self, pos) -> None:
         item = self.requirements.itemAt(pos)
