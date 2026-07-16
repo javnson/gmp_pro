@@ -28,6 +28,25 @@ def folder_name(value: str) -> str:
     return text or "misc"
 
 
+def project_hardware_entity_id(item: Any) -> str:
+    if isinstance(item, str):
+        return item.strip()
+    if isinstance(item, dict):
+        for key in ("entity", "id", "name", "hardware"):
+            value = item.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+    return ""
+
+
+def project_hardware_items(data: dict[str, Any]) -> list[Any]:
+    for key in ("hardware", "hardware_includes", "hardwareIncludes", "hardware_entities", "hardware_presets"):
+        value = data.get(key)
+        if isinstance(value, list):
+            return value
+    return []
+
+
 class HeaderGenerator:
     """Generate hardware entity and project binding headers."""
 
@@ -57,6 +76,30 @@ class HeaderGenerator:
 
         prefix = str(data.get("macro_prefix", "")).strip()
         return f"{macro_name(prefix)}_{name}" if prefix else name
+
+    def _append_config_macro(
+        self,
+        lines: list[str],
+        macro: str,
+        value: Any = "",
+        enabled: bool = True,
+        weak: bool = False,
+    ) -> None:
+        """Append a configurable macro with enable and weak modifiers."""
+
+        value_text = str(value).strip()
+        define = f"#define {macro}" + (f" {value_text}" if value_text else "")
+        marker = "" if enabled else "// "
+        if weak:
+            lines.extend(
+                [
+                    f"{marker}#ifndef {macro}",
+                    f"{marker}{define}",
+                    f"{marker}#endif // {macro}",
+                ]
+            )
+        else:
+            lines.append(f"{marker}{define}")
 
     def generate_entity_tree(self, entity_id: str, skip_system: bool = False) -> list[GeneratedFile]:
         """Generate headers for an entity and every referenced non-inline child."""
@@ -324,15 +367,23 @@ class HeaderGenerator:
                 continue
             macro = f"{prefix}_{pspec.c_name}"
             desc = pspec.description or pname
+            modifier = self._entity_parameter_modifier(entity, pname, pspec.c_name)
             self._append_doc_comment(lines, desc, pspec.unit)
-            lines.extend(
-                [
-                    f"#ifndef {macro}",
-                    f"#define {macro} {self._format_parameter_value(value, pspec.value_format, entity, prefix)}",
-                    f"#endif // {macro}",
-                    "",
-                ]
+            self._append_config_macro(
+                lines,
+                macro,
+                self._format_parameter_value(value, pspec.value_format, entity, prefix),
+                enabled=modifier["enabled"],
+                weak=modifier["weak"],
             )
+            lines.append("")
+
+    def _entity_parameter_modifier(self, entity: HardwareEntity, name: str, c_name: str) -> dict[str, bool]:
+        item = entity.parameter_macros.get(name, entity.parameter_macros.get(c_name, {}))
+        return {
+            "enabled": bool(item.get("enabled", True)) if isinstance(item, dict) else True,
+            "weak": bool(item.get("weak", False)) if isinstance(item, dict) else False,
+        }
 
     def _append_entity_config_macros(
         self, lines: list[str], schema: HardwareSchema, entity: HardwareEntity
@@ -348,11 +399,13 @@ class HeaderGenerator:
                     continue
                 if item.get("description"):
                     self._append_line_comment(lines, item["description"])
-                value = f" {item['value']}" if item.get("value") else ""
-                if item.get("enabled", True):
-                    lines.append(f"#define {macro}{value}")
-                else:
-                    lines.append(f"// #define {macro}{value}")
+                self._append_config_macro(
+                    lines,
+                    macro,
+                    item.get("value", ""),
+                    enabled=item.get("enabled", True),
+                    weak=item.get("weak", False),
+                )
             lines.append("")
 
         if option_macros:
@@ -369,10 +422,10 @@ class HeaderGenerator:
                         self._append_line_comment(lines, f"Options: {', '.join(str(v) for v in options)}")
                 value = str(item.get("value", ""))
                 enabled = item.get("enabled", True)
-                marker = "" if enabled else "// "
-                lines.append(f"{marker}#define {macro} {value}")
+                weak = item.get("weak", False)
+                self._append_config_macro(lines, macro, value, enabled=enabled, weak=weak)
                 if enabled and re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", value):
-                    lines.append(f"#define {macro}_{macro_name(value)} 1")
+                    self._append_config_macro(lines, f"{macro}_{macro_name(value)}", "1", enabled=True, weak=weak)
             lines.append("")
 
         if entity.conditional_macros:
@@ -593,11 +646,13 @@ class HeaderGenerator:
                     continue
                 desc = item.get("description", "")
                 self._append_doc_comment(lines, desc or macro)
-                value = f" {item['value']}" if item.get("value") else ""
-                if item.get("enabled", True):
-                    lines.append(f"#define {macro}{value}")
-                else:
-                    lines.append(f"// #define {macro}{value}")
+                self._append_config_macro(
+                    lines,
+                    macro,
+                    item.get("value", ""),
+                    enabled=item.get("enabled", True),
+                    weak=item.get("weak", False),
+                )
                 lines.append("")
 
         for group, items in self._group_project_macros(data.get("option_macros", []), "Option macros"):
@@ -614,8 +669,7 @@ class HeaderGenerator:
                 self._append_doc_comment(lines, "\n".join(comment_lines))
                 value = str(item.get("value", ""))
                 enabled = item.get("enabled", True)
-                marker = "" if enabled else "// "
-                lines.append(f"{marker}#define {macro} {value}")
+                self._append_config_macro(lines, macro, value, enabled=enabled, weak=item.get("weak", False))
                 lines.append("")
 
         self._append_project_section_header(lines, "Requirement bindings")
@@ -624,7 +678,14 @@ class HeaderGenerator:
             value = self._resolve_binding_value(req["binding"])
             desc = req.get("description", req.get("role", macro))
             self._append_doc_comment(lines, desc)
-            lines.extend([f"#define {macro} {value}", ""])
+            self._append_config_macro(
+                lines,
+                macro,
+                value,
+                enabled=req.get("enabled", True),
+                weak=req.get("weak", False),
+            )
+            lines.append("")
 
         if data.get("peripheral_bindings"):
             self._append_project_section_header(lines, "Board peripheral mapping")
@@ -726,7 +787,13 @@ class HeaderGenerator:
             macro = req.get("macro", "")
             if not macro:
                 continue
-            emit(macro, self._resolve_binding_value(req.get("binding", {})), req.get("description", req.get("role", macro)))
+            value = self._resolve_binding_value(req.get("binding", {}))
+            if req.get("enabled", True):
+                emit(macro, value, req.get("description", req.get("role", macro)))
+            else:
+                lines.append(f"% {macro} is disabled in the SDPE project requirement.")
+                lines.append(f"% {macro} = {self._matlab_value(value, known_macros)};")
+                lines.append("")
 
         lines.extend(
             [
@@ -1076,7 +1143,8 @@ class HeaderGenerator:
         return options or resolver(item.get("options_preset", ""))
 
     def _project_entity_ids(self, data: dict[str, Any]) -> list[str]:
-        ids = [item["entity"] for item in data.get("hardware", [])]
+        ids = [project_hardware_entity_id(item) for item in project_hardware_items(data)]
+        ids = [item for item in ids if item]
         for req in data.get("requirements", []):
             binding = req.get("binding")
             export_path = None

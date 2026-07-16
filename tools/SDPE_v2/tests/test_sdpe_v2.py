@@ -6,6 +6,7 @@ from pathlib import Path
 
 from sdpe_v2.generator import HeaderGenerator
 from sdpe_v2.library import SDPELibrary
+from sdpe_v2.model import HardwareEntity
 from sdpe_v2.util import read_json
 
 
@@ -199,6 +200,43 @@ class SDPEV2Tests(unittest.TestCase):
             self.assertIn("@brief Build Options.", header)
             self.assertIn("%% Debug Switches", matlab)
             self.assertIn("%% Build Options", matlab)
+
+    def test_project_macros_can_be_weak(self) -> None:
+        lib = self.load_library()
+        data = read_project("dps_fsbb_iris_node")
+        data["feature_macros"] = [{"macro": "SDPE_WEAK_FEATURE", "enabled": True, "weak": True, "value": "1"}]
+        data["option_macros"] = [{"macro": "SDPE_WEAK_OPTION", "enabled": True, "weak": True, "value": "IRIS_EPWM1_BASE"}]
+        with tempfile.TemporaryDirectory() as tmp:
+            header = HeaderGenerator(lib, Path(tmp)).render_project_header(data)
+            self.assertIn("#ifndef SDPE_WEAK_FEATURE", header)
+            self.assertIn("#define SDPE_WEAK_FEATURE 1", header)
+            self.assertIn("#endif // SDPE_WEAK_FEATURE", header)
+            self.assertIn("#ifndef SDPE_WEAK_OPTION", header)
+            self.assertIn("#define SDPE_WEAK_OPTION IRIS_EPWM1_BASE", header)
+
+    def test_requirement_and_entity_parameter_macros_have_modifiers(self) -> None:
+        lib = self.load_library()
+        data = read_project("dps_fsbb_iris_node")
+        data["requirements"][0]["enabled"] = False
+        data["requirements"][0]["weak"] = True
+        with tempfile.TemporaryDirectory() as tmp:
+            header = HeaderGenerator(lib, Path(tmp)).render_project_header(data)
+            self.assertIn(f"// #ifndef {data['requirements'][0]['macro']}", header)
+
+        entity = read_json(EXAMPLES / "entities" / "tmcs1133.json")
+        entity["parameter_macros"] = {"range_a": {"enabled": True, "weak": False}}
+        with tempfile.TemporaryDirectory() as tmp:
+            header = HeaderGenerator(lib, Path(tmp)).render_entity_header(HardwareEntity.from_json(entity, EXAMPLES / "entities" / "tmcs1133.json"))
+            self.assertIn("#define TMCS1133_RANGE_A", header)
+            self.assertNotIn("#ifndef TMCS1133_RANGE_A", header)
+
+    def test_project_hardware_accepts_legacy_string_entries(self) -> None:
+        lib = self.load_library()
+        data = read_project("dps_fsbb_iris_node")
+        data["hardware"] = [data["hardware"][0]["entity"]]
+        with tempfile.TemporaryDirectory() as tmp:
+            header = HeaderGenerator(lib, Path(tmp)).render_project_header(data)
+            self.assertIn("#include", header)
 
     def test_component_overrides_create_slot_local_macros(self) -> None:
         lib = self.load_library()
