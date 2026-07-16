@@ -17,13 +17,16 @@ echo Root: %GMP_PRO_LOCATION%
 echo.
 echo This compatibility mode installs user-scoped applications with Scoop
 echo and enables user-wide vcpkg Visual Studio integration.
+echo Visual Studio is optional; suite simulation packages are restored only
+echo when the x64 C++ workload is available.
 echo.
 
 if /i "%~1"=="--plan" (
     echo Applications : git, python, cmake, ninja, doxygen, graphviz, vcpkg
     echo Python packages: tools\gmp_installer\requirements-gmp.txt
-    echo vcpkg projects: ctl\suite\*\project\simulate with vcpkg.json
-    echo Integration   : user-wide vcpkg integration
+    echo Visual Studio : optional; enables suite simulation package restore
+    echo vcpkg projects: ctl\suite\*\project\simulate with vcpkg.json, when VS C++ is available
+    echo Integration   : user-wide vcpkg integration, when VS C++ is available
     echo Repository    : CCS registration, facilities/source and SDPE tool distribution
     exit /b 0
 )
@@ -84,6 +87,14 @@ if errorlevel 1 (
     echo [ERROR] vcpkg is unavailable after Scoop installation.
     exit /b 1
 )
+python "%GMP_PRO_LOCATION%\tools\gmp_installer\environment_manager.py" check-visual-studio >nul 2>&1
+set "GMP_VS_CHECK_RESULT=!ERRORLEVEL!"
+if "!GMP_VS_CHECK_RESULT!"=="2" goto :SKIP_GMP_VCPKG_PROJECT_RESTORE
+if not "!GMP_VS_CHECK_RESULT!"=="0" (
+    echo [ERROR] Visual Studio capability detection failed with exit code !GMP_VS_CHECK_RESULT!.
+    exit /b !GMP_VS_CHECK_RESULT!
+)
+
 echo [INSTALL] Enabling user-wide vcpkg integration for compatibility mode...
 vcpkg integrate install --disable-metrics
 if errorlevel 1 exit /b 1
@@ -112,6 +123,15 @@ if %GMP_VCPKG_PROJECT_COUNT% equ 0 (
     echo [ERROR] No GMP vcpkg projects were discovered.
     exit /b 1
 )
+goto :GMP_VCPKG_PROJECT_RESTORE_DONE
+
+:SKIP_GMP_VCPKG_PROJECT_RESTORE
+echo [OPTIONAL] Visual Studio x64 C++ tools were not found.
+echo            Skipping Visual Studio vcpkg integration and suite package restoration.
+echo            Hardware, CCS, Python, source-management, and SDPE tools will still be installed.
+echo            Install the VS Desktop development with C++ workload later, then rerun install_gmp.bat.
+
+:GMP_VCPKG_PROJECT_RESTORE_DONE
 
 echo [SETUP] Registering CCS facilities product...
 python "%GMP_PRO_LOCATION%\tools\facilities_generator\gmp_fac_install_ccs_product.py"

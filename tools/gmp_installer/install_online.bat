@@ -28,6 +28,7 @@ if /i "%~1"=="--plan" (
     echo Python       : %PYTHON_VERSION% in bin\python
     echo Applications : portable Git, CMake, Ninja, Doxygen, Graphviz
     echo vcpkg         : repository-local bin\vcpkg and shared bin\vcpkg_installed
+    echo Visual Studio : optional; enables suite simulation package restore
     echo Python packages: tools\gmp_installer\requirements-gmp.txt
     echo Repository    : CCS registration, facilities/source and SDPE tool distribution
     exit /b 0
