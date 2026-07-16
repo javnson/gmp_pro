@@ -75,86 +75,6 @@
       "description": "Current per-unit base."
     },
     {
-      "role": "Input Voltage Sensitivity",
-      "macro": "CTRL_FSBB_VIN_SENSITIVITY",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.voltage_sensitivity"
-      },
-      "description": "Input-voltage sensor sensitivity in V/V."
-    },
-    {
-      "role": "Input Voltage Bias",
-      "macro": "CTRL_FSBB_VIN_BIAS",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.voltage_bias_v"
-      },
-      "description": "Input-voltage sensor bias in V."
-    },
-    {
-      "role": "Output Voltage Sensitivity",
-      "macro": "CTRL_FSBB_VOUT_SENSITIVITY",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.voltage_sensitivity"
-      },
-      "description": "Output-voltage sensor sensitivity in V/V."
-    },
-    {
-      "role": "Output Voltage Bias",
-      "macro": "CTRL_FSBB_VOUT_BIAS",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.voltage_bias_v"
-      },
-      "description": "Output-voltage sensor bias in V."
-    },
-    {
-      "role": "Inductor Current Sensitivity",
-      "macro": "CTRL_FSBB_IL_SENSITIVITY",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
-      },
-      "description": "Inductor-current sensor sensitivity in V/A."
-    },
-    {
-      "role": "Inductor Current Bias",
-      "macro": "CTRL_FSBB_IL_BIAS",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
-      },
-      "description": "Inductor-current sensor bias in V."
-    },
-    {
-      "role": "Input Current Sensitivity",
-      "macro": "CTRL_FSBB_IIN_SENSITIVITY",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
-      },
-      "description": "Buck-side input-current sensor sensitivity in V/A."
-    },
-    {
-      "role": "Input Current Bias",
-      "macro": "CTRL_FSBB_IIN_BIAS",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
-      },
-      "description": "Buck-side input-current sensor bias in V."
-    },
-    {
-      "role": "Output Current Sensitivity",
-      "macro": "CTRL_FSBB_IOUT_SENSITIVITY",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
-      },
-      "description": "Boost-side output-current sensor sensitivity in V/A."
-    },
-    {
-      "role": "Output Current Bias",
-      "macro": "CTRL_FSBB_IOUT_BIAS",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
-      },
-      "description": "Boost-side output-current sensor bias in V."
-    },
-    {
       "role": "Minimum Load Resistance",
       "macro": "FSBB_PARAM_RLOAD_MIN",
       "binding": {
@@ -209,6 +129,134 @@
         "float": "0.05"
       },
       "description": "Main inductor ESR."
+    },
+    {
+      "role": "Input Voltage Sensitivity",
+      "macro": "CTRL_FSBB_VIN_SENSITIVITY",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.voltage_sensitivity"
+      },
+      "description": "Input-voltage sensor sensitivity in V/V."
+    },
+    {
+      "role": "Input Voltage Bias",
+      "macro": "CTRL_FSBB_VIN_BIAS",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.voltage_bias_v"
+      },
+      "description": "Input-voltage sensor bias in V."
+    },
+    {
+      "role": "Output Voltage Sensitivity",
+      "macro": "CTRL_FSBB_VOUT_SENSITIVITY",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.voltage_sensitivity"
+      },
+      "description": "Output-voltage sensor sensitivity in V/V."
+    },
+    {
+      "role": "Output Voltage Bias",
+      "macro": "CTRL_FSBB_VOUT_BIAS",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.voltage_bias_v"
+      },
+      "description": "Output-voltage sensor bias in V."
+    },
+    {
+      "role": "Input Current Sensitivity",
+      "macro": "CTRL_FSBB_IIN_SENSITIVITY",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
+      },
+      "description": "Buck-side input-current sensor sensitivity in V/A."
+    },
+    {
+      "role": "Input Current Bias",
+      "macro": "CTRL_FSBB_IIN_BIAS",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
+      },
+      "description": "Buck-side input-current sensor bias in V."
+    },
+    {
+      "role": "Output Current Sensitivity",
+      "macro": "CTRL_FSBB_IOUT_SENSITIVITY",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
+      },
+      "description": "Boost-side output-current sensor sensitivity in V/A."
+    },
+    {
+      "role": "Output Current Bias",
+      "macro": "CTRL_FSBB_IOUT_BIAS",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
+      },
+      "description": "Boost-side output-current sensor bias in V."
+    },
+    {
+      "role": "Inductor Current Sensitivity",
+      "macro": "CTRL_FSBB_IL_SENSITIVITY",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
+      },
+      "description": "Inductor-current sensor sensitivity in V/A."
+    },
+    {
+      "role": "Inductor Current Bias",
+      "macro": "CTRL_FSBB_IL_BIAS",
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
+      },
+      "description": "Inductor-current sensor bias in V."
+    },
+    {
+      "role": "MOSFET On Resistance",
+      "macro": "FSBB_MODEL_MOSFET_RON",
+      "binding": {
+        "float": "9.3e-3"
+      },
+      "description": "BSC093N15NS5 nominal on resistance used by the plant."
+    },
+    {
+      "role": "MOSFET Snubber Resistance",
+      "macro": "FSBB_MODEL_SNUBBER_R",
+      "binding": {
+        "float": "1e5"
+      },
+      "description": "Plant-model snubber resistance."
+    },
+    {
+      "role": "MOSFET Snubber Capacitance",
+      "macro": "FSBB_MODEL_SNUBBER_C",
+      "binding": {
+        "float": "1e12"
+      },
+      "description": "Large plant-model snubber capacitance approximating an open capacitive branch."
+    },
+    {
+      "role": "Diode Forward Voltage",
+      "macro": "FSBB_MODEL_DIODE_VF",
+      "binding": {
+        "float": "0.8"
+      },
+      "description": "MOSFET body-diode forward voltage."
+    },
+    {
+      "role": "Diode On Resistance",
+      "macro": "FSBB_MODEL_DIODE_RON",
+      "binding": {
+        "float": "1e-3"
+      },
+      "description": "MOSFET body-diode on resistance."
+    },
+    {
+      "role": "Switch Inductance",
+      "macro": "FSBB_MODEL_SWITCH_LON",
+      "binding": {
+        "float": "0"
+      },
+      "description": "Ideal-switch series inductance."
     },
     {
       "role": "Maximum Input Voltage",
@@ -275,46 +323,6 @@
       "description": "Default current limit."
     },
     {
-      "role": "Open-loop Voltage Command",
-      "macro": "FSBB_OPEN_LOOP_VOLTAGE_COMMAND",
-      "binding": {
-        "float": "12.0"
-      },
-      "description": "Open-loop equivalent voltage command."
-    },
-    {
-      "role": "Voltage Ramp Rate",
-      "macro": "FSBB_VOLTAGE_RAMP_PU_S",
-      "binding": {
-        "float": "1.0"
-      },
-      "description": "Voltage command ramp in pu/s."
-    },
-    {
-      "role": "Current Ramp Rate",
-      "macro": "FSBB_CURRENT_RAMP_PU_S",
-      "binding": {
-        "float": "1.0"
-      },
-      "description": "Current command ramp in pu/s."
-    },
-    {
-      "role": "Current-loop Bandwidth",
-      "macro": "FSBB_CURRENT_LOOP_BANDWIDTH",
-      "binding": {
-        "float": "800.0"
-      },
-      "description": "Current-loop crossover frequency."
-    },
-    {
-      "role": "Voltage-loop Bandwidth",
-      "macro": "FSBB_VOLTAGE_LOOP_BANDWIDTH",
-      "binding": {
-        "float": "40.0"
-      },
-      "description": "Voltage-loop crossover frequency."
-    },
-    {
       "role": "Maximum Duty",
       "macro": "FSBB_DUTY_MAX",
       "binding": {
@@ -329,22 +337,6 @@
         "float": "0.05"
       },
       "description": "Minimum leg duty."
-    },
-    {
-      "role": "Low Transition Ratio",
-      "macro": "FSBB_TRANSITION_RATIO_LOW",
-      "binding": {
-        "float": "0.90"
-      },
-      "description": "Buck-to-transition boundary."
-    },
-    {
-      "role": "High Transition Ratio",
-      "macro": "FSBB_TRANSITION_RATIO_HIGH",
-      "binding": {
-        "float": "1.10"
-      },
-      "description": "Transition-to-boost boundary."
     },
     {
       "role": "Maximum Inductor Current",
@@ -363,52 +355,52 @@
       "description": "Negative inductor-current protection threshold."
     },
     {
-      "role": "MOSFET On Resistance",
-      "macro": "FSBB_MODEL_MOSFET_RON",
+      "role": "Open-loop Voltage Command",
+      "macro": "FSBB_OPEN_LOOP_VOLTAGE_COMMAND",
       "binding": {
-        "float": "9.3e-3"
+        "float": "12.0"
       },
-      "description": "BSC093N15NS5 nominal on resistance used by the plant."
+      "description": "Open-loop equivalent voltage command."
     },
     {
-      "role": "MOSFET Snubber Resistance",
-      "macro": "FSBB_MODEL_SNUBBER_R",
+      "role": "Current-loop Bandwidth",
+      "macro": "FSBB_CURRENT_LOOP_BANDWIDTH",
       "binding": {
-        "float": "1e5"
+        "float": "800.0"
       },
-      "description": "Plant-model snubber resistance."
+      "description": "Current-loop crossover frequency."
     },
     {
-      "role": "MOSFET Snubber Capacitance",
-      "macro": "FSBB_MODEL_SNUBBER_C",
+      "role": "Voltage-loop Bandwidth",
+      "macro": "FSBB_VOLTAGE_LOOP_BANDWIDTH",
       "binding": {
-        "float": "1e12"
+        "float": "40.0"
       },
-      "description": "Large plant-model snubber capacitance approximating an open capacitive branch."
+      "description": "Voltage-loop crossover frequency."
     },
     {
-      "role": "Diode Forward Voltage",
-      "macro": "FSBB_MODEL_DIODE_VF",
+      "role": "Low Transition Ratio",
+      "macro": "FSBB_TRANSITION_RATIO_LOW",
       "binding": {
-        "float": "0.8"
+        "float": "0.90"
       },
-      "description": "MOSFET body-diode forward voltage."
+      "description": "Buck-to-transition boundary."
     },
     {
-      "role": "Diode On Resistance",
-      "macro": "FSBB_MODEL_DIODE_RON",
+      "role": "High Transition Ratio",
+      "macro": "FSBB_TRANSITION_RATIO_HIGH",
       "binding": {
-        "float": "1e-3"
+        "float": "1.10"
       },
-      "description": "MOSFET body-diode on resistance."
+      "description": "Transition-to-boost boundary."
     },
     {
-      "role": "Switch Inductance",
-      "macro": "FSBB_MODEL_SWITCH_LON",
+      "role": "SPLL Epsilon",
+      "macro": "CTRL_SPLL_EPSILON",
       "binding": {
-        "float": "0"
+        "float": "0.005"
       },
-      "description": "Ideal-switch series inductance."
+      "description": "Compatibility setting used by the suite framework."
     },
     {
       "role": "ADC Calibration Timeout",
@@ -419,12 +411,20 @@
       "description": "ADC calibration timeout."
     },
     {
-      "role": "SPLL Epsilon",
-      "macro": "CTRL_SPLL_EPSILON",
+      "role": "Voltage Ramp Rate",
+      "macro": "FSBB_VOLTAGE_RAMP_PU_S",
       "binding": {
-        "float": "0.005"
+        "float": "1.0"
       },
-      "description": "Compatibility setting used by the suite framework."
+      "description": "Voltage command ramp in pu/s."
+    },
+    {
+      "role": "Current Ramp Rate",
+      "macro": "FSBB_CURRENT_RAMP_PU_S",
+      "binding": {
+        "float": "1.0"
+      },
+      "description": "Current command ramp in pu/s."
     }
   ],
   "feature_macros": [
@@ -469,6 +469,13 @@
       "enabled": false,
       "value": "1",
       "description": "The Simulink phase model uses compare-proportional duty; Boost Q4 complementing is handled by xplt."
+    },
+    {
+      "group": "Controller Settings",
+      "macro": "DISABLE_FSBB_PROTECTION_FAULT_LOGIC",
+      "enabled": false,
+      "value": "",
+      "description": "This macro will disable the fault request of the controller. That's dangerous."
     }
   ],
   "option_macros": [
@@ -608,5 +615,8 @@
         "Current Ramp Rate"
       ]
     }
-  ]
+  ],
+  "macro_prefix": "",
+  "description": "",
+  "updated_at": "2026-07-16"
 }

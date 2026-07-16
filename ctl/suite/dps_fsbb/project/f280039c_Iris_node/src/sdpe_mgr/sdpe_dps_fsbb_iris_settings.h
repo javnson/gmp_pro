@@ -54,6 +54,11 @@ extern "C"
  */
 #define PWM_MODULATOR_USING_NEGATIVE_LOGIC 1
 
+/**
+ * @brief This macro will disable the fault request of the controller. That's dangerous.
+ */
+#define DISABLE_FSBB_PROTECTION_FAULT_LOGIC
+
 //=================================================================================================
 /**
  * @brief Optional Sampling Channels.

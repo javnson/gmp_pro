@@ -171,8 +171,11 @@ gmp_task_status_t tsk_protect(gmp_task_t* tsk)
 {
     GMP_UNUSED_VAR(tsk);
 
+#if !defined DISABLE_FSBB_PROTECTION_FAULT_LOGIC
     if (g_fsbb_faults != FSBB_FAULT_NONE)
         cia402_fault_request(&cia402_sm);
+#endif // DISABLE_FSBB_PROTECTION_FAULT_LOGIC
+
     return GMP_TASK_DONE;
 }
 
