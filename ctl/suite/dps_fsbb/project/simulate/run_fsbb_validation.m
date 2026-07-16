@@ -24,7 +24,10 @@ if isempty(level_token) || str2double(level_token{1}) ~= build_level
 end
 
 model_file = fullfile(root, [model '.slx']);
-gmp_run_model_sdpe_init(model_file);
+run(fullfile(root, '..', '..', 'sdpe_general', ...
+    'sdpe_dps_fsbb_common_settings_matlab_init.m'));
+run(fullfile(root, 'sdpe_mgr', ...
+    'sdpe_dps_fsbb_simulate_settings_matlab_init.m'));
 load_system(model_file);
 model_cleanup = onCleanup(@() close_model_without_saving(model));
 

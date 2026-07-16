@@ -76,10 +76,14 @@ Run `configure_fsbb_model` after changing mask bindings or internal wiring. The
 - Voltage Sensors
 - Current Sensors
 
-The generated C headers configure the controller executable. Before model initialization,
-`gmp_run_model_sdpe_init` derives both folders from the SLX location and executes the one
-generated `*_matlab_init.m` file in the common layer first and the target layer second.
-No checkout-specific absolute path is stored in the model callback.
+The generated C headers configure the controller executable. The model has no
+`PreLoadFcn`; its self-contained `PostLoadFcn` and `InitFcn` derive all paths from the
+saved SLX location. They explicitly execute
+`../../sdpe_general/sdpe_dps_fsbb_common_settings_matlab_init.m` first and
+`sdpe_mgr/sdpe_dps_fsbb_simulate_settings_matlab_init.m` second, then add the UDP MEX
+directory. This works without pre-installing `gmp_run_model_sdpe_init` on the MATLAB path,
+and no checkout-specific absolute path is stored in the model callback. The two automated
+simulation runners use the same explicit common-then-simulate initialization order.
 
 ## Simulation startup sequence
 
