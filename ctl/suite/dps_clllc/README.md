@@ -1,5 +1,7 @@
 # GMP CLLLC / DAB digital-power project
 
+**English** | [简体中文](README_CN.md)
+
 This suite implements the Dioscuri bidirectional isolated converter on the
 TMS320F280025C and provides a MATLAB/Simulink SIL commissioning target.  The
 same controller source is used by both targets.
@@ -64,4 +66,3 @@ C:\ti\ccs2002\ccs\utils\bin\gmake.exe -j4 all
 The generated image is `Debug/CTL_DP_CLLLC_Dioscuri.out`.  See
 [`doc/commissioning.md`](doc/commissioning.md) for the SIL build, model Mask,
 signal wiring, validation procedure and present commissioning limits.
-

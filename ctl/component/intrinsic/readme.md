@@ -1,5 +1,7 @@
 # CTL Control Template Library - Documentation
 
+**English** | [简体中文](readme_cn.md)
+
 ## Introduction
 
 The CTL (Control Template Library) is a modular, reusable C-language library designed for digital control systems. It provides a series of validated, independent control modules aimed at simplifying and accelerating the development of embedded control applications.

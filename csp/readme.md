@@ -1,5 +1,7 @@
 # Chip Support Package
 
+**English** | [简体中文](readme_cn.md)
+
 describe chip features
 
 Unified device function name

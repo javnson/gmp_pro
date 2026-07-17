@@ -1,5 +1,7 @@
 # GMP Simulink Library sl-lib -> slib
 
+**English** | [简体中文](readme_cn.md)
+
 Install GMP Simulink Library via running 
 
 `install_gmp_simulink_lib.m`

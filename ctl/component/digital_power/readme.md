@@ -1,5 +1,7 @@
 # GMP CTL DP Digital Power Control Library Documentation
 
+**English** | [简体中文](readme_cn.md)
+
 ## Introduction
 
 This document serves as the official user guide for the **Digital Power Control Library**. This library is designed to provide power electronics engineers and embedded developers with a powerful, portable, and highly modular firmware toolkit. By encapsulating common power topology control algorithms, advanced grid-tied strategies, protection mechanisms, and hardware interfaces, this library significantly accelerates the development process from simulation to prototype.

@@ -1,5 +1,7 @@
 # General Motor Platform（GMP）
 
+**简体中文** | [English](README.md)
+
 GMP 是一套面向实时控制、电机驱动和电力电子系统的跨平台开发框架。仓库同时提供控制算法组件、硬件抽象、可运行控制套件、参数工程工具，以及 MATLAB/Simulink SIL 联合仿真支持。
 
 ![GMP Logo](manual/img/GMP_LOGO.png)
@@ -68,7 +70,7 @@ gmp_env.bat python --version
 gmp_env.bat cmake --version
 ```
 
-完整的环境安装、离线复制部署、代理配置和修复方法见 [GMP 环境安装说明](tools/gmp_installer/README.md)。
+完整的环境安装、离线复制部署、代理配置和修复方法见 [GMP 环境安装说明](tools/gmp_installer/README_CN.md)。
 
 ### 1.3 安装 Simulink 库
 
@@ -87,28 +89,28 @@ run(fullfile(getenv('GMP_PRO_LOCATION'), ...
 
 | 目标应用 | 推荐套件 | 说明 |
 | --- | --- | --- |
-| 四开关全桥 DC-DC | [`dps_fsbb`](ctl/suite/dps_fsbb) | 包含 C2000 工程、SDPE 配置和 UDP/SIL 仿真实验报告。 |
-| 双向隔离 CLLLC / DAB | [`dps_clllc`](ctl/suite/dps_clllc) | 面向 F280025C，支持变频、移相与高级 PWM 接口。 |
-| PMSM 矢量控制 | [`mcs_pmsm_nt`](ctl/suite/mcs_pmsm_nt) | 当前 PMSM 新模板，支持 C2000、STM32 和仿真平台。 |
-| PMSM 参数识别 | [`mcs_pmsm_id`](ctl/suite/mcs_pmsm_id) | 用于电机参数识别。 |
-| 三相跟网型变流器 | [`pgs_inv_GFL_inverter`](ctl/suite/pgs_inv_GFL_inverter) | GFL 并网变流器控制工程。 |
-| 单相整流/逆变器 | [`pgs_sinv_rc`](ctl/suite/pgs_sinv_rc) | 包含 BUILD_LEVEL 1–5、重复控制及完整 SIL 实验报告。 |
+| 四开关全桥 DC-DC | [`dps_fsbb`](ctl/suite/dps_fsbb/README_CN.md) | 包含 C2000 工程、SDPE 配置和 UDP/SIL 仿真实验报告。 |
+| 双向隔离 CLLLC / DAB | [`dps_clllc`](ctl/suite/dps_clllc/README_CN.md) | 面向 F280025C，支持变频、移相与高级 PWM 接口。 |
+| PMSM 矢量控制 | [`mcs_pmsm_nt`](ctl/suite/mcs_pmsm_nt/README_CN.md) | 当前 PMSM 新模板，支持 C2000、STM32 和仿真平台。 |
+| PMSM 参数识别 | [`mcs_pmsm_id`](ctl/suite/mcs_pmsm_id/README_CN.md) | 用于电机参数识别。 |
+| 三相跟网型变流器 | [`pgs_inv_GFL_inverter`](ctl/suite/pgs_inv_GFL_inverter/README_CN.md) | GFL 并网变流器控制工程。 |
+| 单相整流/逆变器 | [`pgs_sinv_rc`](ctl/suite/pgs_sinv_rc/readme_cn.md) | 包含 BUILD_LEVEL 1–5、重复控制及完整 SIL 实验报告。 |
 
-`mcs_pmsm` 和部分 `mcs_acm` 内容属于较早的工程结构，适合兼容维护，不建议作为新项目的首选模板。完整套件说明见 [CTL Suite 指南](ctl/suite/readme.md)。
+`mcs_pmsm` 和部分 `mcs_acm` 内容属于较早的工程结构，适合兼容维护，不建议作为新项目的首选模板。完整套件说明见 [CTL Suite 指南](ctl/suite/readme_cn.md)。
 
 ## 2. 仓库结构
 
 | 目录 | 作用 |
 | --- | --- |
-| [`core`](core) | GMP 核心运行时：调度、设备、内存、通信及基础框架。 |
-| [`csp`](csp) | Chip Support Package，芯片和运行平台支持。 |
-| [`ctl`](ctl) | 控制模板库，包括数学模块、控制组件、框架和完整 suite。 |
-| [`cctl`](cctl) | C++ 类形式的控制与电力电子对象。 |
-| [`vcore`](vcore) | HDL/Verilog 与相关实验性平台支持。 |
-| [`slib`](slib) | GMP MATLAB/Simulink 库的源文件、安装脚本和版本化安装目录。 |
+| [`core`](core/readme_cn.md) | GMP 核心运行时：调度、设备、内存、通信及基础框架。 |
+| [`csp`](csp/readme_cn.md) | Chip Support Package，芯片和运行平台支持。 |
+| [`ctl`](ctl/readme_cn.md) | 控制模板库，包括数学模块、控制组件、框架和完整 suite。 |
+| [`cctl`](cctl/readme_cn.md) | C++ 类形式的控制与电力电子对象。 |
+| [`vcore`](vcore/readme_cn.md) | HDL/Verilog 与相关实验性平台支持。 |
+| [`slib`](slib/readme_cn.md) | GMP MATLAB/Simulink 库的源文件、安装脚本和版本化安装目录。 |
 | [`tools`](tools) | SDPE、源代码管理、SIL/PIL、调试器、安装器等开发工具。 |
-| [`quick_start`](quick_start) | 轻量级工程和源文件生成示例。 |
-| [`manual`](manual) | 使用指南、编码规范及平台操作文档。 |
+| [`quick_start`](quick_start/readme_cn.md) | 轻量级工程和源文件生成示例。 |
+| [`manual`](manual/README_CN.md) | 使用指南、编码规范及平台操作文档。 |
 | [`third_party`](third_party) | 仓库直接维护的第三方依赖。 |
 
 常用 C/C++ 总入口为：
@@ -191,7 +193,7 @@ Simulink 模型通过模型位置计算相对路径，运行时依次执行：
 tools\SDPE_v2\gmp_sdpe_deploy_project_mgr.bat
 ```
 
-SDPE 的 schema、命令行、GUI 和双层工程约定见 [SDPE v2 文档](tools/SDPE_v2/README.md)。
+SDPE 的 schema、命令行、GUI 和双层工程约定见 [SDPE v2 文档](tools/SDPE_v2/README_CN.md)。
 
 ## 5. GMP 源代码管理器
 
@@ -256,13 +258,15 @@ GMP 还提供 Processor-in-the-Loop 和 Datalink 调试机制：
 - 控制器应按 `BUILD_LEVEL` 从采样、PWM 和开环开始逐级验证，不能跳过保护与极性检查直接闭环上电。
 - 提交前至少运行相关生成器、目标编译、仿真 smoke test 以及 `git diff --check`。
 
-编码风格与详细手册：
+中文编码说明与详细手册：
 
-- [GMP 中文手册](manual/Readme_CN.md)
 - [代码规范](manual/code-standard.md)
-- [CTL 组件开发说明](ctl/component/readme.md)
-- [SysConfig 工程指南](manual/Start%20a%20Sysconfig%20Project%20using%20GMP.md)
-- [Simulink SIL 工程指南](manual/Start%20a%20Simulation%20Project%20using%20Simulink%20GMP%20SIL%20tools.md)
+- [CTL 组件开发说明](ctl/component/readme_cn.md)
+- [CTL Suite 指南](ctl/suite/readme_cn.md)
+- [SDPE v2 文档](tools/SDPE_v2/README_CN.md)
+- [C28x SysConfig 工程说明](csp/c28x_syscfg/doc/readme.md)
+
+英文资料和英文工程指南统一收录在 [English README](README.md) 中。
 
 ## 9. 许可证
 

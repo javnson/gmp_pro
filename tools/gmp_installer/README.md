@@ -1,5 +1,7 @@
 # GMP Pro development environment installers
 
+**English** | [简体中文](README_CN.md)
+
 GMP Pro provides two compatible installation modes. Both first validate the
 repository path and register the user environment variable
 `GMP_PRO_LOCATION=<gmp_pro root>`. The variable is also set immediately for the
