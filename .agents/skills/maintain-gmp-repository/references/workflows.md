@@ -53,7 +53,7 @@
 3. Avoid allocation, blocking I/O and host-only dependencies in real-time step functions.
 4. Use `ctrl_gt`, `parameter_gt`, GMP math and saturation helpers.
 5. Register headers/sources and dependencies in `gmp_framework_dic.json`.
-6. Generate a representative project and ensure no flattened source filename collision occurs.
+6. Generate a representative project and ensure no flattened source filename collision occurs. Repository modules must not contain colliding flattened `.c`/`.cpp` names; use an explicit duplicate-name audit until the generator gains a hard-fail check.
 7. Build/test the module under at least one relevant numeric/compiler mode.
 
 ## 4. Change suite or SDPE parameters
@@ -65,6 +65,8 @@
 5. Rebuild the executable/firmware.
 6. Use the lowest safe `BUILD_LEVEL`; validate sensing, PWM polarity, dead time and protection before closing loops.
 7. Update the suite README when a channel contract, supported target or validated result changes.
+
+Inside GMP, do not require generated SDPE headers or MATLAB initialization files to be committed. When exporting a suite/project as an independent repository, include those outputs and the project-local generation tools so it can build and regenerate without the parent checkout.
 
 Never infer identical `BUILD_LEVEL` meaning between motor, DC-DC and grid suites.
 
@@ -120,3 +122,11 @@ Use the smallest matrix that covers the changed contract:
 | SLX/MEX/SIL ABI | Release regeneration, library load and affected suite co-simulation |
 
 Report skipped checks and why. Do not imply hardware verification from simulation or simulation verification from compilation.
+
+Use registry validation flags as follows:
+
+- compilation: every component committed to GMP must compile in its supported configuration;
+- simulation: set after a suite simulation or a relevant module unit test passes;
+- hardware: set only after the module operates successfully on real hardware.
+
+Record the target/configuration and evidence where practical. Expanding unit-test coverage to every reusable module is an explicit long-term maintenance goal.

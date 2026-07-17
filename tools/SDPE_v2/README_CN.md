@@ -313,6 +313,11 @@ python tools\SDPE_v2\distribute_sdpe_mgr.py --dry-run
 
 ## 4. 生成结果
 
+在 GMP 主仓库中，生成的工程头文件和 `*_matlab_init.m` 与 SDPE requirement
+及库数据重复，因此可以不提交。工程复制到 GMP 仓库之外并作为独立仓库维护时，
+必须提交这些生成结果以及工程侧生成工具，使独立工程无需父仓库也能直接编译，
+同时保留重新生成能力。
+
 生成目录示例：
 
 ```text

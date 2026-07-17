@@ -19,7 +19,7 @@ Use repository evidence before changing GMP. Treat generated and distributed fil
 
 - Edit library code under `core`, `csp`, `ctl`, `cctl`, or `vcore`; do not patch a project's generated `gmp_src_mgr/gmp_inc` or `gmp_src_mgr/gmp_src` as the upstream fix.
 - Edit source-manager templates and engines under `tools/facilities_generator/src_mgr`; project `gmp_src_mgr` scripts are distributed copies, while each project's `gmp_framework_config.json` is local configuration.
-- Edit SDPE engines/templates under `tools/SDPE_v2`; suite `sdpe_requirement.json` files are project inputs, generated headers and `*_matlab_init.m` files are outputs, and project BAT files are distributed copies.
+- Edit SDPE engines/templates under `tools/SDPE_v2`; suite `sdpe_requirement.json` files are project inputs, generated headers and `*_matlab_init.m` files are outputs, and project BAT files are distributed copies. Ignore generated SDPE outputs inside the main GMP repository, but retain and commit them when a project is copied into a standalone repository.
 - Edit Simulink library sources under `slib/simulink_lib_src`; never make the primary fix under `slib/install_path/<Release>`.
 - Edit shared suite algorithms under `ctl/suite/<suite>/src` and platform bindings under `project/<target>`; do not move target register access into reusable CTL components.
 - Update the global `.gitignore` and the project-ignore distributor deliberately. Standalone project `.gitignore` files must retain tools needed after copying a project outside GMP.
@@ -61,7 +61,7 @@ When changing source selection:
 2. Check dependency/module names against real paths.
 3. Run the canonical sync engine or the project BAT files.
 4. Verify `gmp_inc` mirrors repository-relative header paths and `gmp_src` contains unique flattened source names.
-5. Treat a flattened filename collision as a design issue requiring review.
+5. Require globally unique flattened C/C++ source filenames. The current generator only warns and overwrites on collision, so audit for duplicates until a dedicated hard-fail checker is added.
 
 When changing SDPE:
 
@@ -80,7 +80,7 @@ Read `slib/readme.md` for the current supported Releases, libraries, SIL data fl
 - Keep Simulink channel packing synchronized with the native buffer types and target `xplt` binding.
 - Regenerate `install_path/<Release>` with `install_gmp_simulink_lib`; do not hand-edit it.
 - After changing helpers, run `slib/simulink_lib_src/tests` and at least one affected suite simulation.
-- Do not claim Linux SIL/UDP support beyond the binaries and native sources actually present.
+- Treat Linux SIL as an officially supported but currently incomplete path. Preserve it, document missing UDP/helper coverage accurately, and do not refactor it until dedicated optimization and validation work is authorized.
 
 ## Validate proportionally
 

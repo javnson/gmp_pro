@@ -40,6 +40,12 @@ ctl/suite/<suite>/project/<target>/
 All repository paths are resolved from `GMP_PRO_LOCATION`. Generated files and
 project data must not contain developer-machine absolute paths.
 
+Generated project headers and `*_matlab_init.m` files duplicate information in
+the SDPE requirements and library, so they may be ignored in the main GMP
+repository. When a project is copied into an independent repository, commit
+those generated outputs together with the project-local tools so the exported
+project remains directly buildable.
+
 ## Layered suite configuration
 
 Opening `sdpe_edit.bat` from `sdpe_general` loads the common layer and every

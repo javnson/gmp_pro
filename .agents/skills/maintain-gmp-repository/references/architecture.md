@@ -109,7 +109,7 @@ Fleet distribution searches roots from `deploy_targets.json`, filters candidates
 
 `tools/SDPE_v2` owns the generator/editor and canonical four BAT wrappers. `distribute_sdpe_mgr.py` finds `sdpe_mgr` and `sdpe_general` directories containing `sdpe_requirement.json`, applies Git ignore rules, and atomically refreshes only the BAT wrappers.
 
-Suite SDPE commonly has a general physical/control layer and a target peripheral/build layer. Generated `.h` and `*_matlab_init.m` files are consumed by C and Simulink respectively.
+Suite SDPE commonly has a general physical/control layer and a target peripheral/build layer. Generated `.h` and `*_matlab_init.m` files are consumed by C and Simulink respectively. They duplicate information available from the GMP library and SDPE requirements, so the main repository may ignore them. Once a user copies a project outside GMP, the standalone repository must commit these generated files so it remains buildable without the parent library's generation workflow.
 
 ## 6. Installation and host tools
 
@@ -127,5 +127,7 @@ After base tools, both modes configure the repository: CCS product registration,
 Read `slib/readme.md` for the detailed library contract.
 
 The Windows SIL CSP receives a packed suite-defined buffer over ASIO UDP, updates platform inputs, invokes `gmp_base_ctl_step`, and transmits outputs. The native buffer types are selected by `gmp_pc_simulink_rx_buffer_t` and `gmp_pc_simulink_tx_buffer_t` macros. Model packing and target binding must be changed as one ABI.
+
+Linux SIL is an official platform direction but is not yet optimized or complete. Preserve the existing Linux core and describe missing helper binaries or validation as implementation gaps, not as a decision to drop Linux.
 
 `gmp_run_model_sdpe_init` derives the suite layout from the saved SLX path and loads exactly one common and one target MATLAB initialization script, in that order.

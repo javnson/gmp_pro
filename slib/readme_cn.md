@@ -9,7 +9,7 @@
 - `upgrade_gmp_simulink_lib.m` 要求 MATLAB/Simulink R2022b 或更新版本。
 - 现有功率级模型依赖 Simscape Electrical Specialized Power Systems 及其 `powerlib`。
 - 当前安装器会拒绝 R2026a 及更新版本，因为这些版本不再包含 Specialized Power Systems。现有模型应使用 R2025b 或更早版本。
-- 仓库提供 Windows x64 的 `GMP_SIL_Core` 和 `MEX_UDP_Helper`，也提供 Linux x64 的 `GMP_SIL_Core`；目前没有随库提供 Linux UDP-helper 二进制文件。
+- Linux SIL 属于正式支持方向，但当前实现尚不完整：仓库已有 Linux x64 `GMP_SIL_Core`，目前还没有 Linux UDP-helper 二进制文件。在完成后续适配与验证前保持现有 Linux 代码不变。
 - SLX 与 MEX 文件必须与 MATLAB Release 和操作系统兼容，不能默认复用其他 Release 的生成目录。
 
 安装器会实际尝试加载 `powerlib`。仅仅在 MATLAB 产品信息中看到相关产品，并不能证明文件和许可证都可用。
@@ -70,6 +70,8 @@ run(fullfile(getenv('GMP_PRO_LOCATION'), ...
 ```
 
 `reg_path_gmp_simulink_lib.m` 只会重新注册已经生成的目录，不检查依赖，也不会重新构建模型。
+
+卸载程序会移除生成目录对应的 MATLAB 路径，调用 `savepath` 永久保存这一变化，然后删除当前 Release 目录。
 
 ## SIL 结构
 

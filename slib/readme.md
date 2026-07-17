@@ -9,7 +9,7 @@
 - MATLAB and Simulink R2022b or later are required by `upgrade_gmp_simulink_lib.m`.
 - Existing power-stage models require Simscape Electrical Specialized Power Systems and its `powerlib` library.
 - The current installer deliberately rejects R2026a and later because Specialized Power Systems is no longer available there. Use R2025b or earlier for the current models.
-- The committed SIL binaries include Windows x64 `GMP_SIL_Core` and `MEX_UDP_Helper`; a Linux x64 `GMP_SIL_Core` is also present, but no Linux UDP-helper binary is currently shipped.
+- Linux SIL is a formally supported direction, but its current implementation is incomplete: a Linux x64 `GMP_SIL_Core` is present while no Linux UDP-helper binary is currently shipped. Keep the current Linux code unchanged until that path is completed and validated.
 - A MATLAB Release can only use compatible SLX and MEX artifacts. Do not assume that a generated directory for one Release is valid for another.
 
 The installation script tests whether `powerlib` can actually be loaded. A product appearing in MATLAB metadata is not sufficient if its files or license are unavailable.
@@ -70,6 +70,8 @@ run(fullfile(getenv('GMP_PRO_LOCATION'), ...
 ```
 
 `reg_path_gmp_simulink_lib.m` only re-adds an already-generated release directory. It does not validate dependencies or regenerate models.
+
+Uninstallation removes the generated paths, persists that removal with `savepath`, and then deletes the current Release directory.
 
 ## SIL architecture
 

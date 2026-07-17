@@ -35,7 +35,7 @@
       "description": "Enable ADC calibration."
     },
     {
-      "macro": "ENBALE_GMP_DL_PIL_SIM",
+      "macro": "ENABLE_GMP_DL_PIL_SIM",
       "enabled": false,
       "value": "",
       "description": "Enable PIL simulation function. This macro disables controller output."
