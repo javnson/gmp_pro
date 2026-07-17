@@ -299,9 +299,11 @@ ISR. Move debug communication into scheduled background tasks.
 English documentation:
 
 - [Development environment and installer guide](tools/gmp_installer/README.md)
+- [MATLAB/Simulink library and SIL guide](slib/readme.md)
 - [Start a SysConfig project using GMP](manual/Start%20a%20Sysconfig%20Project%20using%20GMP.md)
 - [Start a Simulink GMP SIL project](manual/Start%20a%20Simulation%20Project%20using%20Simulink%20GMP%20SIL%20tools.md)
 - [CLLLC / DAB commissioning guide](ctl/suite/dps_clllc/doc/commissioning.md)
+- [AI repository maintenance skill](.agents/skills/maintain-gmp-repository/SKILL.md)
 
 For Chinese guides and the Chinese suite/component documentation index, switch
 to the [简体中文说明](README_CN.md).

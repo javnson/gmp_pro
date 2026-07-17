@@ -1,0 +1,4 @@
+interface:
+  display_name: "Maintain GMP Repository"
+  short_description: "Navigate, debug, and extend the GMP control platform"
+  default_prompt: "Use $maintain-gmp-repository to inspect and safely modify this GMP repository."

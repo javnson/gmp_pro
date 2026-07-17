@@ -261,10 +261,12 @@ GMP 还提供 Processor-in-the-Loop 和 Datalink 调试机制：
 中文编码说明与详细手册：
 
 - [代码规范](manual/code-standard.md)
+- [MATLAB/Simulink 库与 SIL 说明](slib/readme_cn.md)
 - [CTL 组件开发说明](ctl/component/readme_cn.md)
 - [CTL Suite 指南](ctl/suite/readme_cn.md)
 - [SDPE v2 文档](tools/SDPE_v2/README_CN.md)
 - [C28x SysConfig 工程说明](csp/c28x_syscfg/doc/readme.md)
+- [面向 AI 的仓库维护技能](.agents/skills/maintain-gmp-repository/SKILL.md)
 
 英文资料和英文工程指南统一收录在 [English README](README.md) 中。
 
