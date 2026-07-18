@@ -1,6 +1,12 @@
 function result = measure_component_block(block, frequenciesHz)
 % Measure a compiled generated S-Function with a coherent sequential sine sweep.
 maskMetadata = Simulink.Mask.get(block);
+component = get_param(block, 'UserData');
+if ~isstruct(component) || ~isfield(component, 'inputs') || ~isfield(component, 'outputs')
+    error('GMP:MCB:Metadata', 'Block does not contain generated component port metadata.');
+end
+inputIndex = selected_port_index(block, maskMetadata, component.inputs, 'analysis_input_port');
+outputIndex = selected_port_index(block, maskMetadata, component.outputs, 'analysis_output_port');
 if isempty(maskMetadata.getParameter('fs'))
     parameterFs = NaN;
 else
@@ -28,8 +34,6 @@ ts = 1 / executionFs;
 model = ['gmp_mcb_measure_' char(java.util.UUID.randomUUID().toString().replace('-', '_'))];
 new_system(model);
 cleanup = onCleanup(@() cleanup_model(model));
-add_block('simulink/Sources/From Workspace', [model '/Excitation'], ...
-    'VariableName', 'mcb_input', 'Interpolate', 'on', 'Position', [40 70 150 100]);
 dut = [model '/DUT'];
 add_block(block, dut, 'Position', [220 55 430 115]);
 mask = Simulink.Mask.get(dut);
@@ -37,11 +41,41 @@ for index = 1:numel(mask.Parameters)
     name = mask.Parameters(index).Name;
     if startsWith(name, 'expose_'), set_param(dut, name, 'off'); end
 end
+set_param(model, 'SimulationCommand', 'update');
+
+operatingPoints = zeros(numel(component.inputs), 1);
+for port = 1:numel(component.inputs)
+    input = component.inputs(port);
+    if port == inputIndex
+        operatingPoints(port) = bias;
+        source = [model '/Excitation'];
+        add_block('simulink/Sources/From Workspace', source, ...
+            'VariableName', 'mcb_input', 'Interpolate', 'on', ...
+            'Position', [40 40 + 55 * port 150 70 + 55 * port]);
+    else
+        parameterName = ['analysis_operating_' char(input.id)];
+        operatingPoints(port) = optional_mask_value(block, parameterName, 0);
+        source = sprintf('%s/OperatingPoint%d', model, port);
+        add_block('simulink/Sources/Constant', source, ...
+            'Value', num2str(operatingPoints(port), 17), ...
+            'Position', [60 40 + 55 * port 130 70 + 55 * port]);
+    end
+    add_line(model, [get_param(source, 'Name') '/1'], sprintf('DUT/%d', port));
+end
+
 add_block('simulink/Sinks/To Workspace', [model '/Response'], ...
     'VariableName', 'mcb_output', 'SaveFormat', 'Structure With Time', ...
     'Position', [500 70 610 100]);
-add_line(model, 'Excitation/1', 'DUT/1');
-add_line(model, 'DUT/1', 'Response/1');
+for port = 1:numel(component.outputs)
+    if port == outputIndex
+        add_line(model, sprintf('DUT/%d', port), 'Response/1');
+    else
+        terminator = sprintf('%s/UnusedOutput%d', model, port);
+        add_block('simulink/Sinks/Terminator', terminator, ...
+            'Position', [520 40 + 55 * port 540 60 + 55 * port]);
+        add_line(model, sprintf('DUT/%d', port), [get_param(terminator, 'Name') '/1']);
+    end
+end
 set_param(model, 'Solver', 'FixedStepDiscrete', 'FixedStep', num2str(ts, 17), ...
     'ReturnWorkspaceOutputs', 'on');
 
@@ -69,13 +103,15 @@ for index = 1:numel(frequenciesHz)
 end
 
 models = gmp_mcb.component_frequency_models(block, actualFrequency);
-component = get_param(block, 'UserData');
 result = struct('frequencyHz', actualFrequency, 'measured', response, ...
     'continuous', models.continuous, 'implementation', models.implementation, ...
     'hasReferenceModel', models.hasReferenceModel, ...
     'amplitude', amplitude, 'bias', bias, 'parameterFs', parameterFs, 'executionFs', executionFs, ...
     'settlingPeriods', settlingPeriods, 'measurementPeriods', measurementPeriods, ...
-    'componentId', string(component.id), 'componentName', string(component.display_name));
+    'componentId', string(component.id), 'componentName', string(component.display_name), ...
+    'inputIndex', inputIndex, 'inputLabel', string(component.inputs(inputIndex).label), ...
+    'outputIndex', outputIndex, 'outputLabel', string(component.outputs(outputIndex).label), ...
+    'operatingPoints', operatingPoints);
 cacheDir = fullfile(gmp_mcb.tool_root(), 'cache');
 if ~isfolder(cacheDir), mkdir(cacheDir); end
 cacheFile = fullfile(cacheDir, ['component_' datestr(now, 'yyyymmdd_HHMMSS_FFF') '.mat']);
@@ -87,4 +123,27 @@ end
 
 function cleanup_model(model)
 if bdIsLoaded(model), close_system(model, 0); end
+end
+
+function index = selected_port_index(block, mask, ports, parameterName)
+parameter = mask.getParameter(parameterName);
+if isempty(parameter)
+    index = 1;
+    return;
+end
+selected = string(get_param(block, parameterName));
+labels = string({ports.label});
+index = find(labels == selected, 1);
+if isempty(index)
+    error('GMP:MCB:AnalysisPort', 'Selected analysis port %s is invalid.', selected);
+end
+end
+
+function value = optional_mask_value(block, name, defaultValue)
+mask = Simulink.Mask.get(block);
+if isempty(mask.getParameter(name))
+    value = defaultValue;
+else
+    value = gmp_mcb.mask_value(block, name);
+end
 end

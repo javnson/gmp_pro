@@ -90,6 +90,8 @@ Every SISO component retains **Measure and plot simulated frequency response**. 
 
 For nonlinear components such as saturation and hysteresis, the measured response depends on excitation amplitude, bias, and settled operating condition; it is not a unique linear transfer function. Plot titles and cached results record the excitation, execution frequency, and settling/measurement durations.
 
+For time-domain MIMO components such as LADRC, the **Simulation Analysis** tab exposes the excited input, observed output, and steady operating value for every input. The harness adds the sine only to the selected input, holds all other inputs at their configured operating values, and plots the local response for the selected input/output pair.
+
 ## Current scope
 
 - SISO and scalar MIMO `double` Simulink ports with GMP `ctrl_gt` internally.

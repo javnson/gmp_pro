@@ -25,7 +25,7 @@ functions = string(get_param(blocks, 'FunctionName'));
 verifyTrue(testCase, any(functions == "gmp_mcb_intrinsic_continuous_pid"));
 verifyTrue(testCase, any(functions == "gmp_mcb_intrinsic_discrete_resonant_qpr"));
 for index = 1:numel(blocks)
-    verifyEqual(testCase, get_param(blocks{index}, 'MaskType'), 'GMP MATLAB Component Builder SISO');
+    verifyEqual(testCase, get_param(blocks{index}, 'MaskType'), 'GMP MATLAB Component Builder');
     mask = Simulink.Mask.get(blocks{index});
     tabs = mask.getDialogControl('mcb_tabs');
     verifyEqual(testCase, string({tabs.DialogControls.Name}), ["parameters_tab" "analysis_tab"]);
@@ -174,6 +174,30 @@ set_param(model, 'Solver', 'FixedStepDiscrete', 'FixedStep', '1e-4', 'StopTime',
 set_param(model, 'SimulationCommand', 'update');
 ports = get_param([model '/LADRC2'], 'Ports');
 verifyEqual(testCase, ports(1:2), [4 3]);
+mask = Simulink.Mask.get([model '/LADRC2']);
+verifyNotEmpty(testCase, mask.getDialogControl('measure_model'));
+verifyNotEmpty(testCase, mask.getParameter('analysis_input_port'));
+verifyNotEmpty(testCase, mask.getParameter('analysis_output_port'));
+clear cleanup;
+close_model(model);
+end
+
+function testLadrcMimoFrequencyMeasurement(testCase)
+model = 'gmp_mcb_unit_ladrc_measurement';
+cleanup = onCleanup(@() close_model(model));
+new_system(model);
+add_block(library_block('gmp_mcb_intrinsic_continuous_ladrc1'), [model '/LADRC1']);
+set_param([model '/LADRC1'], 'analysis_input_port', 'Reference', ...
+    'analysis_output_port', 'Control', 'analysis_operating_feedback', '0', ...
+    'analysis_execution_fs', '10000', 'analysis_amplitude', '0.001', ...
+    'analysis_settling_periods', '4', 'analysis_measurement_periods', '4');
+result = gmp_mcb.measure_component_block([model '/LADRC1'], [50; 100]);
+verifyFalse(testCase, result.hasReferenceModel);
+verifyEqual(testCase, result.inputLabel, "Reference");
+verifyEqual(testCase, result.outputLabel, "Control");
+verifyEqual(testCase, result.operatingPoints, [0; 0]);
+verifyTrue(testCase, all(isfinite(result.measured)));
+close all force;
 clear cleanup;
 close_model(model);
 end

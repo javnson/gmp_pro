@@ -6,8 +6,9 @@ end
 
 figureHandle = figure('Name', ['Measured GMP Component: ' char(blockName)]);
 layout = tiledlayout(figureHandle, 2, 1);
-title(layout, sprintf('%s | excitation %.6g | bias %.6g | execution %.6g Hz', ...
-    char(result.componentName), result.amplitude, result.bias, result.executionFs));
+title(layout, sprintf('%s | %s to %s | excitation %.6g | bias %.6g | execution %.6g Hz', ...
+    char(result.componentName), char(result.inputLabel), char(result.outputLabel), ...
+    result.amplitude, result.bias, result.executionFs));
 
 nexttile;
 if result.hasReferenceModel

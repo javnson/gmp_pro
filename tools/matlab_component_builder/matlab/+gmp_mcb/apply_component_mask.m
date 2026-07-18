@@ -1,7 +1,7 @@
 function apply_component_mask(block, component)
-% Create grouped parameter and analysis tabs for a generated SISO component.
+% Create grouped parameter and analysis tabs for a generated component.
 mask = Simulink.Mask.create(block);
-mask.Type = 'GMP MATLAB Component Builder SISO';
+mask.Type = 'GMP MATLAB Component Builder';
 mask.Description = sprintf(['%s\n\nExecution sample time is inherited from the surrounding ' ...
     'solver, triggered subsystem, or function-call subsystem.'], char(component.description));
 
@@ -75,6 +75,25 @@ if isfield(analysis, 'excitation_bias'), defaultBias = analysis.excitation_bias;
 mask.addParameter('Type', 'edit', 'Name', 'analysis_bias', ...
     'Prompt', 'Excitation bias / operating point', 'Value', num2str(defaultBias, 16), ...
     'Container', analysisTab.Name);
+if numel(component.inputs) > 1
+    inputLabels = cellstr(string({component.inputs.label}));
+    mask.addParameter('Type', 'popup', 'Name', 'analysis_input_port', ...
+        'Prompt', 'Excitation input port', 'TypeOptions', inputLabels, ...
+        'Value', inputLabels{1}, 'Container', analysisTab.Name, 'Tunable', 'off');
+    for index = 1:numel(component.inputs)
+        input = component.inputs(index);
+        mask.addParameter('Type', 'edit', ...
+            'Name', ['analysis_operating_' char(input.id)], ...
+            'Prompt', ['Steady operating value: ' char(input.label)], ...
+            'Value', '0', 'Container', analysisTab.Name);
+    end
+end
+if numel(component.outputs) > 1
+    outputLabels = cellstr(string({component.outputs.label}));
+    mask.addParameter('Type', 'popup', 'Name', 'analysis_output_port', ...
+        'Prompt', 'Measured output port', 'TypeOptions', outputLabels, ...
+        'Value', outputLabels{1}, 'Container', analysisTab.Name, 'Tunable', 'off');
+end
 mask.addParameter('Type', 'edit', 'Name', 'analysis_settling_periods', ...
     'Prompt', 'Settling periods', 'Value', num2str(analysis.settling_periods), ...
     'Container', analysisTab.Name);
@@ -87,11 +106,9 @@ if any(strcmp(char(component.template), {'pid_siso_v2', 'resonant_siso_v1'}))
     plotButton.Prompt = 'Plot ideal and implemented models';
     plotButton.Callback = 'gmp_mcb.plot_component_models(gcb);';
 end
-if numel(component.inputs) == 1 && numel(component.outputs) == 1
-    measureButton = analysisTab.addDialogControl('pushbutton', 'measure_model');
-    measureButton.Prompt = 'Measure and plot simulated frequency response';
-    measureButton.Callback = 'gmp_mcb.measure_component_block(gcb);';
-end
+measureButton = analysisTab.addDialogControl('pushbutton', 'measure_model');
+measureButton.Prompt = 'Measure and plot simulated frequency response';
+measureButton.Callback = 'gmp_mcb.measure_component_block(gcb);';
 
 displayLines = {sprintf('disp(''%s'');', strrep(char(component.display_name), '''', '''''')), ...
     'mcb_ports = get_param(gcb,''Ports'');'};
