@@ -60,6 +60,12 @@ class BuilderTests(unittest.TestCase):
             with self.assertRaises(ComponentError):
                 ComponentDefinition.load(path)
 
+    def test_windows_launcher_uses_gmp_environment_guard(self) -> None:
+        launcher = (TOOL_ROOT / "run_python.bat").read_text(encoding="utf-8")
+        self.assertIn("ensure_gmp_environment.bat", launcher)
+        self.assertIn("import jinja2", launcher)
+        self.assertNotIn("pip install", launcher.lower())
+
 
 if __name__ == "__main__":
     unittest.main()

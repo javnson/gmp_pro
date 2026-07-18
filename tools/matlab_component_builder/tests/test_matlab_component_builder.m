@@ -32,6 +32,13 @@ for index = 1:numel(blocks)
 end
 end
 
+function testPythonGenerationUsesGmpEnvironment(testCase)
+output = gmp_mcb.generate_registry();
+verifyTrue(testCase, contains(output, '[GMP MCB] Environment:'));
+verifyTrue(testCase, contains(output, '[GMP MCB] Python'));
+verifyTrue(testCase, isfile(fullfile(testCase.TestData.toolRoot, 'build', 'registry.json')));
+end
+
 function testParallelFirstSamplesHaveNoExtraDelay(testCase)
 model = 'gmp_mcb_unit_sample';
 cleanup = onCleanup(@() close_model(model));

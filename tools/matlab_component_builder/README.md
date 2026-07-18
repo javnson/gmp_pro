@@ -47,6 +47,13 @@ run(fullfile(getenv('GMP_PRO_LOCATION'), 'tools', ...
     'install_gmp_matlab_components.m'));
 ```
 
+The MATLAB installer now invokes the canonical GMP environment guard. A completed
+private installation uses `bin/python/python.exe`; otherwise it uses the system
+Python provisioned by `install_gmp.bat`. MATLAB does not need to be launched from
+an activated GMP command prompt. Missing Jinja2 diagnostics identify the selected
+interpreter and direct the user to the appropriate GMP repair entry point; the
+feature installer never performs an ad-hoc `pip install`.
+
 The editor presents all definitions in a category tree. It manages scalar MIMO port tables, parameter groups and external-input eligibility, and previews generated C++ before generation. Open **GMP MATLAB Components** in the Simulink Library Browser after installation.
 
 Each block mask has separate **Parameters** and **Simulation Analysis** tabs. An externalizable parameter has a checkbox: off uses its fixed Mask value; on disables that editor and adds a Simulink input port in parameter-table order. PID gains and both output/integrator limits support this gain-scheduling interface. Initialization frequency `fs` remains an initialization-only parameter.

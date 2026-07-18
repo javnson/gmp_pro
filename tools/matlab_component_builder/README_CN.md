@@ -47,6 +47,12 @@ run(fullfile(getenv('GMP_PRO_LOCATION'), 'tools', ...
     'install_gmp_matlab_components.m'));
 ```
 
+MATLAB 安装脚本会自动调用 GMP 环境守卫：如果存在完整的
+`bin/gmp_virtual_env_installed.flag`，使用 `bin/python/python.exe`；否则使用
+`install_gmp.bat` 配置的 system Python。无需从已经激活的命令行启动 MATLAB。
+如果所选环境缺少 Jinja2，安装器会报告实际 Python 路径，并要求通过对应的
+GMP 安装入口修复环境，而不会在 MATLAB 中临时执行 `pip install`。
+
 编辑器左侧按分类显示全部元件，右侧可表格化维护多输入/多输出端口、参数分组、外部输入资格，并预览生成的 C++ S-Function。刷新 MATLAB 后可以在 Simulink Library Browser 中找到 **GMP MATLAB Components**。
 
 每个 Block 的 Mask 分为 **Parameters** 和 **Simulation Analysis** 两页。可外部化的参数旁有 Check Box：关闭时使用 Mask 固定值，开启时固定值编辑框禁用，并按参数表顺序增加输入端口。PID 的 Kp/Ki/Kd、输出限幅和积分限幅均支持这种增益调度接口；初始化频率 `fs` 保持为初始化参数。
