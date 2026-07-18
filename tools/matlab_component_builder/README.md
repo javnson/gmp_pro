@@ -4,7 +4,7 @@
 
 `matlab_component_builder` turns a real GMP C control component into an independently installed, masked Simulink block. It does not depend on or modify the existing GMP `slib` library.
 
-The first supported template is a SISO PID using the implementations in `ctl/component/intrinsic/continuous/continuous_pid.h`. The generated block supports the parallel-gain and time-constant initializers, executes the original GMP step function, plots the ideal and exact implemented frequency models, and can measure the compiled MEX block with a coherent sine sweep.
+The foundational templates cover the SISO PID and the R, PR, QR, and QPR controllers in `proportional_resonant.h`. Generated blocks execute the original GMP step function, plot ideal and exact implemented frequency models, and measure the compiled MEX block with a coherent sine sweep.
 
 ## Source and generated boundaries
 
@@ -47,7 +47,9 @@ run(fullfile(getenv('GMP_PRO_LOCATION'), 'tools', ...
     'install_gmp_matlab_components.m'));
 ```
 
-Open **GMP MATLAB Components** in the Simulink Library Browser, add the PID block, and open its mask. The mask provides controls to plot the reference models and measure the compiled block.
+The editor presents all definitions in a category tree. Its parameter table supports groups and external-input eligibility, and the generated C++ S-Function can be previewed before generation. Open **GMP MATLAB Components** in the Simulink Library Browser after installation.
+
+Each block mask has separate **Parameters** and **Simulation Analysis** tabs. An externalizable parameter has a checkbox: off uses its fixed Mask value; on disables that editor and adds a Simulink input port in parameter-table order. PID gains and both output/integrator limits support this gain-scheduling interface. Initialization frequency `fs` remains an initialization-only parameter.
 
 To remove the registered MATLAB paths:
 
@@ -63,7 +65,7 @@ Uninstalling removes paths but retains generated files for inspection. Delete th
 
 The generated S-Function uses inherited sample time. The `fs` mask value is passed to the GMP initialization function and does not force Simulink scheduling. A triggered or function-call subsystem can therefore execute the controller at a slower rate than the surrounding plant model.
 
-The mask has a separate **Analysis/execution frequency** expression, defaulting to `fs`. Frequency plots and the generated measurement harness use this value to map sample index to physical frequency. Set it to the actual trigger rate when it differs from the initializer's `fs` parameter.
+The **Simulation Analysis** tab separately owns execution frequency, sweep range, point count, excitation amplitude, and measurement durations. The plot and measurement harness use the analysis execution frequency to map sample index to physical frequency. It is not passed to the controller and does not schedule the block. Set it to the actual trigger rate when that rate differs from initializer `fs`.
 
 ## PID model definitions
 
@@ -82,13 +84,14 @@ The measurement button creates a temporary discrete Simulink harness, copies the
 ## Current scope
 
 - SISO, scalar `double` Simulink ports with GMP `float` `ctrl_gt` internally.
-- PID-specific code template.
-- Parallel and time-constant initialization modes.
+- PID template with parallel and time-constant initialization.
+- R/PR/QR/QPR template; QR and QPR support standard and prewarped Tustin initialization.
+- Parameter groups and selectable fixed-Mask/external-port values.
 - Inherited Simulink scheduling.
 - Host MEX simulation on the active MATLAB platform.
 - Ideal/implementation plots and sequential-sine measurement.
 
-MIMO, generic state probes, fixed-point MEX variants, Simulink Coder deployment, arbitrary component templates, and separate boundary-condition testbenches are future extensions. A successful host MEX test is not hardware validation.
+MIMO, generic state probes, fixed-point MEX variants, Simulink Coder deployment, and separate boundary-condition testbenches are future extensions. A successful host MEX test is not hardware validation.
 
 ## Validation
 
@@ -98,5 +101,4 @@ Python checks:
 python -m unittest discover -s tests -v
 ```
 
-MATLAB checks require a configured MEX compiler. The implementation has been exercised with MATLAB R2024b and Microsoft Visual C++ 2022 by compiling the PID MEX, creating/loading the library, checking first-sample behavior, and comparing measured parallel/T-mode responses against the exact difference equations.
-
+MATLAB checks require a configured MEX compiler. The implementation has been exercised with MATLAB R2024b and Microsoft Visual C++ 2022 by compiling all five MEX files, creating/loading the library and two-tab masks, checking PID first-sample and external-port behavior, and comparing the measured QPR response with its exact difference equation.

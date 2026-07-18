@@ -119,6 +119,10 @@ class ComponentDefinition:
             parameter_ids.add(param_id)
             if parameter.get("type") not in {"number", "choice"}:
                 raise ComponentError(f"unsupported parameter type for {param_id}")
+            if not isinstance(parameter.get("group", "General"), str):
+                raise ComponentError(f"parameter group must be a string for {param_id}")
+            if not isinstance(parameter.get("externalizable", False), bool):
+                raise ComponentError(f"externalizable must be true or false for {param_id}")
 
         initializers = _require(self.data, "initializers", list)
         if not initializers:
@@ -132,6 +136,8 @@ class ComponentDefinition:
                 if argument != "$instance" and argument not in parameter_ids:
                     raise ComponentError(f"initializer references unknown parameter: {argument}")
 
-        if self.data.get("template") != "pid_siso_v1":
-            raise ComponentError("the basic framework currently supports template='pid_siso_v1'")
-
+        template = self.data.get("template")
+        if template not in {"pid_siso_v2", "resonant_siso_v1"}:
+            raise ComponentError(f"unsupported component template: {template}")
+        if template == "resonant_siso_v1" and self.data.get("variant") not in {"r", "pr", "qr", "qpr"}:
+            raise ComponentError("resonant_siso_v1 requires variant r, pr, qr, or qpr")

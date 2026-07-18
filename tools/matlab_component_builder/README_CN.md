@@ -4,7 +4,7 @@
 
 `matlab_component_builder` 用于把真实的 GMP C 控制元件转换成独立安装、带 Mask 的 Simulink Block。它不依赖、也不修改现有的 GMP `slib`。
 
-首个模板是 SISO PID，直接使用 `ctl/component/intrinsic/continuous/continuous_pid.h` 中的实现。生成的 Block 支持并联增益和时间常数两种初始化方式，逐拍执行真实 GMP step 函数，可以绘制连续理想模型和实际差分实现模型，并能对编译后的 MEX Block 进行相干正弦扫频测量。
+当前基础模板覆盖 SISO PID，以及 `proportional_resonant.h` 中的 R、PR、QR、QPR 控制器。生成的 Block 逐拍执行真实 GMP step 函数，可绘制连续理想模型和实际差分实现模型，并能对编译后的 MEX Block 进行相干正弦扫频测量。
 
 ## 源文件与生成物边界
 
@@ -47,7 +47,9 @@ run(fullfile(getenv('GMP_PRO_LOCATION'), 'tools', ...
     'install_gmp_matlab_components.m'));
 ```
 
-刷新后可以在 Simulink Library Browser 中找到 **GMP MATLAB Components**。把 PID Block 加入模型并双击打开 Mask，即可编辑参数、绘制模型或测量真实 MEX 频响。
+编辑器左侧按分类显示全部元件，右侧可表格化维护参数分组、选择参数是否允许外部输入，并预览生成的 C++ S-Function。刷新 MATLAB 后可以在 Simulink Library Browser 中找到 **GMP MATLAB Components**。
+
+每个 Block 的 Mask 分为 **Parameters** 和 **Simulation Analysis** 两页。可外部化的参数旁有 Check Box：关闭时使用 Mask 固定值，开启时固定值编辑框禁用，并按参数表顺序增加输入端口。PID 的 Kp/Ki/Kd、输出限幅和积分限幅均支持这种增益调度接口；初始化频率 `fs` 保持为初始化参数。
 
 移除注册路径：
 
@@ -63,7 +65,7 @@ run(fullfile(getenv('GMP_PRO_LOCATION'), 'tools', ...
 
 生成的 S-Function 使用继承采样时间。Mask 中的 `fs` 只传递给 GMP 初始化函数，不强制 Simulink 的调度周期。因此用户可以把控制器放进 Triggered Subsystem 或 Function-Call Subsystem，使控制器以正常控制频率运行，而外部对象使用更精细的仿真步长。
 
-Mask 另有 **Analysis/execution frequency**，默认表达式为 `fs`。理论离散模型和测量 testbench 用它把离散拍数映射为真实时间。如果实际触发频率与初始化参数 `fs` 不同，应在这里填写真实执行频率。
+**Simulation Analysis** 页另有独立的执行频率、扫频范围、点数、激励幅值和测量周期。理论离散模型和测量 testbench 用分析执行频率把离散拍数映射为真实时间；该值不传入控制器，也不改变 Block 的调度。如果实际触发频率与初始化参数 `fs` 不同，应在这里填写真实执行频率。
 
 ## PID 模型定义
 
@@ -86,13 +88,14 @@ z^-1 = exp(-j*2*pi*f/fs_execution)
 ## 当前范围
 
 - 单输入单输出；Simulink 端口为标量 `double`，GMP 内部 `ctrl_gt` 为 `float`。
-- PID 专用模板。
-- 并联参数和时间常数两种初始化方式。
+- PID 模板（并联参数和时间常数初始化）。
+- R、PR、QR、QPR 谐振模板（QR/QPR 支持标准与预扭曲 Tustin 初始化）。
+- 参数分组，以及固定 Mask 值/动态输入端口选择。
 - 继承 Simulink 调度周期。
 - 当前 MATLAB 平台上的 Host MEX 仿真。
 - 连续理想/离散实现绘图与逐频正弦测量。
 
-MIMO、通用状态观察端口、定点 MEX、Simulink Coder 部署、任意元件模板和独立边界 testbench 尚未实现。Host MEX 通过不等同于硬件验证通过。
+MIMO、通用状态观察端口、定点 MEX、Simulink Coder 部署和独立边界 testbench 尚未实现。Host MEX 通过不等同于硬件验证通过。
 
 ## 验证
 
@@ -102,5 +105,4 @@ Python 测试：
 python -m unittest discover -s tests -v
 ```
 
-MATLAB 验证需要已经配置 MEX 编译器。当前框架已在 MATLAB R2024b、Microsoft Visual C++ 2022 下完成 PID MEX 编译、Library 生成/加载、首拍时序检查，以及并联/T-mode 实测频响与真实差分方程对比。
-
+MATLAB 验证需要已经配置 MEX 编译器。当前框架已在 MATLAB R2024b、Microsoft Visual C++ 2022 下完成 5 个 MEX 的编译、Library/双页 Mask 生成、PID 首拍与外部参数端口检查，以及 QPR 实测频响与真实差分方程对比。

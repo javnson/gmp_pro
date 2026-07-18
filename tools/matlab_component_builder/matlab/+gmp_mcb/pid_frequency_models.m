@@ -4,7 +4,7 @@ kp = gmp_mcb.mask_value(block, 'kp');
 integralValue = gmp_mcb.mask_value(block, 'ki_or_ti');
 derivativeValue = gmp_mcb.mask_value(block, 'kd_or_td');
 parameterFs = gmp_mcb.mask_value(block, 'fs');
-executionFs = gmp_mcb.mask_value(block, 'analysis_fs');
+executionFs = gmp_mcb.mask_value(block, 'analysis_execution_fs');
 if parameterFs <= 0 || executionFs <= 0
     error('GMP:MCB:Fs', 'Controller parameter fs and analysis/execution frequency must be positive.');
 end

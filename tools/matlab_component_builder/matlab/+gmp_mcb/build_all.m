@@ -1,15 +1,24 @@
-function paths = build_all()
+function paths = build_all(outputDir)
 % Compile every generated component S-Function for the active MATLAB Release.
 toolRoot = gmp_mcb.tool_root();
 gmpRoot = gmp_mcb.gmp_root();
 registry = gmp_mcb.load_registry();
-paths.installDir = fullfile(toolRoot, 'install', version('-release'));
-paths.mexDir = fullfile(paths.installDir, 'mex');
+if nargin < 1 || strlength(string(outputDir)) == 0
+    paths.installDir = fullfile(toolRoot, 'install', version('-release'));
+    paths.mexDir = fullfile(paths.installDir, 'mex');
+else
+    paths.installDir = '';
+    paths.mexDir = char(outputDir);
+end
 if ~isfolder(paths.mexDir), mkdir(paths.mexDir); end
 
 includeDir = fullfile(toolRoot, 'matlab', 'include');
 for index = 1:numel(registry.components)
-    component = registry.components(index);
+    if iscell(registry.components)
+        component = registry.components{index};
+    else
+        component = registry.components(index);
+    end
     arguments = { ...
         '-R2018a', ...
         ['-I' includeDir], ...
@@ -29,4 +38,3 @@ for index = 1:numel(registry.components)
     end
 end
 end
-

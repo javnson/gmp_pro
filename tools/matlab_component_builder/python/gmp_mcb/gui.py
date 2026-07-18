@@ -19,10 +19,13 @@ from PyQt5.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QPushButton,
+    QSplitter,
     QTableWidget,
     QTableWidgetItem,
     QTabWidget,
     QTextEdit,
+    QTreeWidget,
+    QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -40,6 +43,7 @@ class BuilderWindow(QMainWindow):
         self.setWindowTitle("GMP MATLAB Component Builder")
         self.resize(1050, 720)
         self._build_ui()
+        self.refresh_tree()
         self.load(self.config_path)
 
     def _build_ui(self) -> None:
@@ -50,6 +54,7 @@ class BuilderWindow(QMainWindow):
             ("Open", self.open_file),
             ("Save", self.save),
             ("Validate", self.validate),
+            ("Preview Code", self.preview_code),
             ("Generate", self.generate),
             ("Install in MATLAB", self.install_matlab),
         ):
@@ -59,8 +64,33 @@ class BuilderWindow(QMainWindow):
         toolbar.addStretch(1)
         layout.addLayout(toolbar)
 
+        splitter = QSplitter()
+        tree_panel = QWidget()
+        tree_layout = QVBoxLayout(tree_panel)
+        tree_layout.addWidget(QLabel("Component Library"))
+        self.component_tree = QTreeWidget()
+        self.component_tree.setHeaderLabels(["Components"])
+        self.component_tree.itemDoubleClicked.connect(self._tree_item_opened)
+        tree_layout.addWidget(self.component_tree, 1)
+        tree_buttons = QHBoxLayout()
+        duplicate = QPushButton("Duplicate")
+        duplicate.clicked.connect(self.duplicate_component)
+        delete = QPushButton("Delete")
+        delete.clicked.connect(self.delete_component)
+        reload_tree = QPushButton("Reload")
+        reload_tree.clicked.connect(self.refresh_tree)
+        tree_buttons.addWidget(duplicate)
+        tree_buttons.addWidget(delete)
+        tree_buttons.addWidget(reload_tree)
+        tree_layout.addLayout(tree_buttons)
+        splitter.addWidget(tree_panel)
+
         self.tabs = QTabWidget()
-        layout.addWidget(self.tabs, 1)
+        splitter.addWidget(self.tabs)
+        splitter.setStretchFactor(0, 0)
+        splitter.setStretchFactor(1, 1)
+        splitter.setSizes([280, 800])
+        layout.addWidget(splitter, 1)
 
         general = QWidget()
         form = QFormLayout(general)
@@ -92,8 +122,10 @@ class BuilderWindow(QMainWindow):
         parameters = QWidget()
         param_layout = QVBoxLayout(parameters)
         param_layout.addWidget(QLabel("Mask parameters. Edit values directly in the table."))
-        self.parameter_table = QTableWidget(0, 6)
-        self.parameter_table.setHorizontalHeaderLabels(["ID", "Label", "Type", "Default", "Unit", "Description"])
+        self.parameter_table = QTableWidget(0, 8)
+        self.parameter_table.setHorizontalHeaderLabels(
+            ["ID", "Label", "Group", "Type", "Default", "Unit", "External input", "Description"]
+        )
         self.parameter_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         param_layout.addWidget(self.parameter_table)
         param_buttons = QHBoxLayout()
@@ -150,6 +182,15 @@ class BuilderWindow(QMainWindow):
         raw_layout.addWidget(self.raw_preview)
         self.tabs.addTab(raw, "JSON Preview")
 
+        code = QWidget()
+        code_layout = QVBoxLayout(code)
+        code_layout.addWidget(QLabel("Generated C MEX S-Function preview for the selected component."))
+        self.code_preview = QTextEdit()
+        self.code_preview.setReadOnly(True)
+        self.code_preview.setLineWrapMode(QTextEdit.NoWrap)
+        code_layout.addWidget(self.code_preview)
+        self.tabs.addTab(code, "Generated Code")
+
         self.status = QLabel()
         self.status.setTextInteractionFlags(Qt.TextSelectableByMouse)
         layout.addWidget(self.status)
@@ -171,7 +212,20 @@ class BuilderWindow(QMainWindow):
         self.output_label_edit.setText(outputs[0].get("label", "") if outputs else "")
         self.headers_edit.setPlainText("\n".join(impl.get("headers", [])))
         self.sources_edit.setPlainText("\n".join(impl.get("sources", [])))
-        self._fill_table(self.parameter_table, self.data.get("parameters", []), ["id", "label", "type", "default", "unit", "description"])
+        parameter_rows = []
+        for item in self.data.get("parameters", []):
+            parameter_rows.append({**item, "externalizable": "yes" if item.get("externalizable", False) else "no"})
+        self._fill_table(
+            self.parameter_table,
+            parameter_rows,
+            ["id", "label", "group", "type", "default", "unit", "externalizable", "description"],
+        )
+        for row, item in enumerate(self.data.get("parameters", [])):
+            checkbox = QTableWidgetItem()
+            checkbox.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable)
+            checkbox.setCheckState(Qt.Checked if item.get("externalizable", False) else Qt.Unchecked)
+            checkbox.setToolTip("Allow the Mask value to be replaced by a Simulink input port")
+            self.parameter_table.setItem(row, 6, checkbox)
         init_rows = []
         for item in self.data.get("initializers", []):
             init_rows.append({**item, "arguments": ", ".join(item.get("arguments", []))})
@@ -189,7 +243,36 @@ class BuilderWindow(QMainWindow):
         self.settling_edit.setText(str(analysis.get("settling_periods", 8)))
         self.measurement_edit.setText(str(analysis.get("measurement_periods", 8)))
         self._refresh_preview()
+        self._refresh_code_preview()
         self.status.setText(str(self.config_path))
+
+    def refresh_tree(self) -> None:
+        self.component_tree.clear()
+        nodes: dict[tuple[str, ...], QTreeWidgetItem] = {}
+        for path in sorted((self.tool_root / "components").glob("*.json")):
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            parent = self.component_tree.invisibleRootItem()
+            category_path: tuple[str, ...] = ()
+            for category in data.get("category", ["Uncategorized"]):
+                category_path += (str(category),)
+                if category_path not in nodes:
+                    node = QTreeWidgetItem([str(category)])
+                    parent.addChild(node)
+                    nodes[category_path] = node
+                parent = nodes[category_path]
+            leaf = QTreeWidgetItem([data.get("display_name", path.stem)])
+            leaf.setData(0, Qt.UserRole, str(path.resolve()))
+            leaf.setToolTip(0, data.get("id", path.stem))
+            parent.addChild(leaf)
+        self.component_tree.expandAll()
+
+    def _tree_item_opened(self, item: QTreeWidgetItem) -> None:
+        value = item.data(0, Qt.UserRole)
+        if value:
+            self.load(Path(value))
 
     @staticmethod
     def _fill_table(table: QTableWidget, rows: list[dict], keys: list[str]) -> None:
@@ -225,7 +308,7 @@ class BuilderWindow(QMainWindow):
         )
         params = []
         for row in range(self.parameter_table.rowCount()):
-            default_text = self._cell(self.parameter_table, row, 3)
+            default_text = self._cell(self.parameter_table, row, 4)
             try:
                 default: object = float(default_text)
                 if default_text.isdigit():
@@ -236,10 +319,15 @@ class BuilderWindow(QMainWindow):
                 {
                     "id": self._cell(self.parameter_table, row, 0),
                     "label": self._cell(self.parameter_table, row, 1),
-                    "type": self._cell(self.parameter_table, row, 2),
+                    "group": self._cell(self.parameter_table, row, 2) or "General",
+                    "type": self._cell(self.parameter_table, row, 3),
                     "default": default,
-                    "unit": self._cell(self.parameter_table, row, 4),
-                    "description": self._cell(self.parameter_table, row, 5),
+                    "unit": self._cell(self.parameter_table, row, 5),
+                    "externalizable": bool(
+                        self.parameter_table.item(row, 6)
+                        and self.parameter_table.item(row, 6).checkState() == Qt.Checked
+                    ),
+                    "description": self._cell(self.parameter_table, row, 7),
                 }
             )
         data["parameters"] = params
@@ -268,23 +356,37 @@ class BuilderWindow(QMainWindow):
     def _refresh_preview(self) -> None:
         self.raw_preview.setPlainText(json.dumps(self.collect(), ensure_ascii=False, indent=2))
 
+    def _refresh_code_preview(self) -> None:
+        try:
+            component = ComponentDefinition.load(self.config_path)
+            self.code_preview.setPlainText(ComponentGenerator(self.tool_root).preview(component))
+        except Exception as exc:
+            self.code_preview.setPlainText(f"Code preview unavailable:\n{exc}")
+
     def open_file(self) -> None:
         value, _ = QFileDialog.getOpenFileName(self, "Open component", str(self.config_path.parent), "JSON (*.json)")
         if value:
             self.load(Path(value))
 
+    def _save_or_raise(self) -> None:
+        data = self.collect()
+        ComponentDefinition(data=data, path=self.config_path).validate()
+        self.config_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        self.data = data
+        self._refresh_preview()
+        self._refresh_code_preview()
+        self.refresh_tree()
+        self.status.setText(f"Saved {self.config_path}")
+
     def save(self) -> None:
         try:
-            self.data = self.collect()
-            self.config_path.write_text(json.dumps(self.data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-            self._refresh_preview()
-            self.status.setText(f"Saved {self.config_path}")
+            self._save_or_raise()
         except Exception as exc:
             QMessageBox.critical(self, "Save failed", str(exc))
 
     def validate(self) -> None:
         try:
-            self.save()
+            self._save_or_raise()
             component = ComponentDefinition.load(self.config_path)
             self.status.setText(f"Valid: {component.component_id}")
             QMessageBox.information(self, "Validation", "Component definition is valid.")
@@ -293,11 +395,52 @@ class BuilderWindow(QMainWindow):
 
     def generate(self) -> None:
         try:
-            self.save()
-            outputs = ComponentGenerator(self.tool_root).generate([self.config_path], self.tool_root / "build")
+            self._save_or_raise()
+            configs = sorted((self.tool_root / "components").glob("*.json"))
+            outputs = ComponentGenerator(self.tool_root).generate(configs, self.tool_root / "build")
             self.status.setText(f"Generated {len(outputs)} files under {self.tool_root / 'build'}")
         except Exception as exc:
             QMessageBox.critical(self, "Generation failed", str(exc))
+
+    def preview_code(self) -> None:
+        try:
+            self._save_or_raise()
+            self._refresh_code_preview()
+            self.tabs.setCurrentWidget(self.code_preview.parentWidget())
+        except Exception as exc:
+            QMessageBox.critical(self, "Code preview failed", str(exc))
+
+    def duplicate_component(self) -> None:
+        target, _ = QFileDialog.getSaveFileName(
+            self, "Duplicate component", str(self.tool_root / "components" / f"{self.config_path.stem}_copy.json"), "JSON (*.json)"
+        )
+        if not target:
+            return
+        path = Path(target).resolve()
+        if path.parent != (self.tool_root / "components").resolve():
+            QMessageBox.critical(self, "Invalid location", "Components must be stored in the components directory.")
+            return
+        data = self.collect()
+        data["id"] = path.stem.replace("_", ".")
+        data["display_name"] = f"{data.get('display_name', path.stem)} Copy"
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        self.refresh_tree()
+        self.load(path)
+
+    def delete_component(self) -> None:
+        components_dir = (self.tool_root / "components").resolve()
+        if self.config_path.parent != components_dir:
+            return
+        answer = QMessageBox.question(self, "Delete component", f"Delete {self.config_path.name}?")
+        if answer != QMessageBox.Yes:
+            return
+        candidates = [path for path in sorted(components_dir.glob("*.json")) if path.resolve() != self.config_path]
+        if not candidates:
+            QMessageBox.critical(self, "Delete component", "At least one component definition must remain.")
+            return
+        self.config_path.unlink()
+        self.refresh_tree()
+        self.load(candidates[0])
 
     def install_matlab(self) -> None:
         try:

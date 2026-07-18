@@ -16,15 +16,18 @@ set_param(libraryName, 'Lock', 'off');
 x = 60;
 y = 60;
 for index = 1:numel(registry.components)
-    component = registry.components(index);
+    if iscell(registry.components)
+        component = registry.components{index};
+    else
+        component = registry.components(index);
+    end
     blockName = matlab.lang.makeValidName(char(component.display_name));
     block = [libraryName '/' blockName];
     add_block('built-in/S-Function', block, ...
         'FunctionName', char(component.sfunction_name), ...
-        'Parameters', ['gmp_mcb.init_mode_code(init_method),' ...
-            'kp,ki_or_ti,kd_or_td,fs,out_max,out_min,integral_max,integral_min'], ...
+        'Parameters', gmp_mcb.sfunction_parameter_expression(component), ...
         'Position', [x y x + 190 y + 100]);
-    gmp_mcb.apply_pid_mask(block, component);
+    gmp_mcb.apply_component_mask(block, component);
     y = y + 150;
 end
 
@@ -39,4 +42,3 @@ end
 function close_if_loaded(name)
 if bdIsLoaded(name), close_system(name, 0); end
 end
-

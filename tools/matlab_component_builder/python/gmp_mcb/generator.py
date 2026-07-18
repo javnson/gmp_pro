@@ -31,16 +31,11 @@ class ComponentGenerator:
 
         outputs: list[Path] = []
         registry: list[dict] = []
-        template = self.environment.get_template("pid_sfunction.cpp.j2")
         for component in components:
             component_dir = generated_root / component.symbol
             component_dir.mkdir(parents=True, exist_ok=True)
             target = component_dir / f"{component.sfunction_name}.cpp"
-            target.write_text(
-                template.render(component=component.data, symbol=component.symbol, sfunction=component.sfunction_name),
-                encoding="utf-8",
-                newline="\n",
-            )
+            target.write_text(self.preview(component), encoding="utf-8", newline="\n")
             outputs.append(target)
             registry.append(
                 {
@@ -61,3 +56,11 @@ class ComponentGenerator:
         outputs.append(registry_path)
         return outputs
 
+    def preview(self, component: ComponentDefinition) -> str:
+        template = self.environment.get_template(f"{component.data['template']}.cpp.j2")
+        return template.render(
+            component=component.data,
+            symbol=component.symbol,
+            sfunction=component.sfunction_name,
+            external_parameters=[item for item in component.data["parameters"] if item.get("externalizable", False)],
+        )

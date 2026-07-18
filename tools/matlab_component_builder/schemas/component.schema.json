@@ -20,15 +20,29 @@
     "id": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]*$"},
     "display_name": {"type": "string"},
     "system_type": {"const": "siso"},
-    "template": {"const": "pid_siso_v1"},
+    "template": {"enum": ["pid_siso_v2", "resonant_siso_v1"]},
+    "variant": {"enum": ["r", "pr", "qr", "qpr"]},
     "implementation": {
       "type": "object",
       "required": ["instance_type", "headers", "sources"]
     },
     "inputs": {"type": "array", "minItems": 1, "maxItems": 1},
     "outputs": {"type": "array", "minItems": 1, "maxItems": 1},
-    "parameters": {"type": "array", "minItems": 1},
+    "parameters": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "type", "default"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+          "label": {"type": "string"},
+          "group": {"type": "string"},
+          "type": {"type": "string"},
+          "externalizable": {"type": "boolean"}
+        }
+      }
+    },
     "initializers": {"type": "array", "minItems": 1}
   }
 }
-

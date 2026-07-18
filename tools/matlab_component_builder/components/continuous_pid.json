@@ -8,7 +8,7 @@
     "Continuous-form"
   ],
   "system_type": "siso",
-  "template": "pid_siso_v1",
+  "template": "pid_siso_v2",
   "implementation": {
     "instance_type": "ctl_pid_t",
     "headers": [
@@ -40,6 +40,8 @@
       "id": "kp",
       "label": "Kp",
       "type": "number",
+      "group": "Gains",
+      "externalizable": true,
       "default": 0.4,
       "unit": "",
       "description": "Proportional gain"
@@ -48,6 +50,8 @@
       "id": "ki_or_ti",
       "label": "Ki or Ti",
       "type": "number",
+      "group": "Gains",
+      "externalizable": true,
       "default": 20.0,
       "unit": "Hz or s",
       "description": "Ki in parallel mode; Ti in time-constant mode"
@@ -56,6 +60,8 @@
       "id": "kd_or_td",
       "label": "Kd or Td",
       "type": "number",
+      "group": "Gains",
+      "externalizable": true,
       "default": 0.0001,
       "unit": "s",
       "description": "Kd in parallel mode; Td in time-constant mode"
@@ -64,6 +70,8 @@
       "id": "fs",
       "label": "Controller parameter frequency",
       "type": "number",
+      "group": "Initialization",
+      "externalizable": false,
       "default": 10000.0,
       "unit": "Hz",
       "description": "Passed to GMP initialization; scheduling remains inherited from Simulink"
@@ -72,6 +80,8 @@
       "id": "out_max",
       "label": "Output maximum",
       "type": "number",
+      "group": "Output limits",
+      "externalizable": true,
       "default": 1000000.0,
       "unit": "",
       "description": "Output saturation maximum"
@@ -80,6 +90,8 @@
       "id": "out_min",
       "label": "Output minimum",
       "type": "number",
+      "group": "Output limits",
+      "externalizable": true,
       "default": -1000000.0,
       "unit": "",
       "description": "Output saturation minimum"
@@ -88,6 +100,8 @@
       "id": "integral_max",
       "label": "Integral maximum",
       "type": "number",
+      "group": "Integrator limits",
+      "externalizable": true,
       "default": 1000000.0,
       "unit": "",
       "description": "Integrator saturation maximum"
@@ -96,6 +110,8 @@
       "id": "integral_min",
       "label": "Integral minimum",
       "type": "number",
+      "group": "Integrator limits",
+      "externalizable": true,
       "default": -1000000.0,
       "unit": "",
       "description": "Integrator saturation minimum"
@@ -142,4 +158,3 @@
     "measurement_periods": 8
   }
 }
-

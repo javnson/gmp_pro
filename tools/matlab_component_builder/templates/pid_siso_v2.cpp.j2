@@ -3,25 +3,16 @@
 #define S_FUNCTION_LEVEL 2
 
 #include "simstruc.h"
-
-#include <cstring>
 #include <new>
-
 #include <gmp_core.h>
 #include <{{ component.implementation.headers[0] }}>
 
 enum ParameterIndex
 {
     PARAM_INIT_MODE = 0,
-    PARAM_KP,
-    PARAM_KI_OR_TI,
-    PARAM_KD_OR_TD,
-    PARAM_FS,
-    PARAM_OUT_MAX,
-    PARAM_OUT_MIN,
-    PARAM_INTEGRAL_MAX,
-    PARAM_INTEGRAL_MIN,
-    PARAM_COUNT
+{% for parameter in component.parameters %}    PARAM_{{ parameter.id|upper }},
+{% endfor %}{% for parameter in external_parameters %}    PARAM_EXPOSE_{{ parameter.id|upper }},
+{% endfor %}    PARAM_COUNT
 };
 
 struct {{ symbol }}_runtime_t
@@ -36,21 +27,12 @@ static double parameter_value(SimStruct *S, int index)
     return mxGetScalar(ssGetSFcnParam(S, index));
 }
 
-static bool initialize_controller(SimStruct *S, {{ component.implementation.instance_type }} *controller)
+static bool values_are_valid(SimStruct *S, double fs, double out_max, double out_min,
+                             double integral_max, double integral_min)
 {
-    const int mode = static_cast<int>(parameter_value(S, PARAM_INIT_MODE));
-    const double kp = parameter_value(S, PARAM_KP);
-    const double ki_or_ti = parameter_value(S, PARAM_KI_OR_TI);
-    const double kd_or_td = parameter_value(S, PARAM_KD_OR_TD);
-    const double fs = parameter_value(S, PARAM_FS);
-    const double out_max = parameter_value(S, PARAM_OUT_MAX);
-    const double out_min = parameter_value(S, PARAM_OUT_MIN);
-    const double integral_max = parameter_value(S, PARAM_INTEGRAL_MAX);
-    const double integral_min = parameter_value(S, PARAM_INTEGRAL_MIN);
-
     if (!(fs > 0.0))
     {
-        ssSetErrorStatus(S, "Controller parameter fs must be positive.");
+        ssSetErrorStatus(S, "Controller initialization parameter fs must be positive.");
         return false;
     }
     if (!(out_max >= out_min) || !(integral_max >= integral_min))
@@ -58,21 +40,25 @@ static bool initialize_controller(SimStruct *S, {{ component.implementation.inst
         ssSetErrorStatus(S, "PID maximum limits must be greater than or equal to minimum limits.");
         return false;
     }
+    return true;
+}
 
+static bool initialize_controller(SimStruct *S, {{ component.implementation.instance_type }} *controller)
+{
+    const int mode = static_cast<int>(parameter_value(S, PARAM_INIT_MODE));
+{% for parameter in component.parameters %}    const double {{ parameter.id }} = parameter_value(S, PARAM_{{ parameter.id|upper }});
+{% endfor %}
+    if (!values_are_valid(S, fs, out_max, out_min, integral_max, integral_min))
+        return false;
     if (mode == 1)
-    {
         {{ component.initializers[0].function }}(controller, kp, ki_or_ti, kd_or_td, fs);
-    }
     else if (mode == 2)
-    {
         {{ component.initializers[1].function }}(controller, kp, ki_or_ti, kd_or_td, fs);
-    }
     else
     {
         ssSetErrorStatus(S, "Unknown PID initialization mode.");
         return false;
     }
-
     ctl_set_pid_limit(controller, float2ctrl(out_max), float2ctrl(out_min));
     ctl_set_pid_int_limit(controller, float2ctrl(integral_max), float2ctrl(integral_min));
     return true;
@@ -86,7 +72,7 @@ static void mdlCheckParameters(SimStruct *S)
         const mxArray *value = ssGetSFcnParam(S, index);
         if (!mxIsNumeric(value) || mxIsComplex(value) || mxIsSparse(value) || mxGetNumberOfElements(value) != 1)
         {
-            ssSetErrorStatus(S, "All generated PID S-Function parameters must be real numeric scalars.");
+            ssSetErrorStatus(S, "All generated PID parameters must be real numeric scalars.");
             return;
         }
     }
@@ -95,31 +81,28 @@ static void mdlCheckParameters(SimStruct *S)
 static void mdlInitializeSizes(SimStruct *S)
 {
     ssSetNumSFcnParams(S, PARAM_COUNT);
-    if (ssGetNumSFcnParams(S) != ssGetSFcnParamsCount(S))
-        return;
-
+    if (ssGetNumSFcnParams(S) != ssGetSFcnParamsCount(S)) return;
     mdlCheckParameters(S);
-    if (ssGetErrorStatus(S) != nullptr)
-        return;
-
+    if (ssGetErrorStatus(S) != nullptr) return;
     for (int index = 0; index < PARAM_COUNT; ++index)
         ssSetSFcnParamTunable(S, index, SS_PRM_NOT_TUNABLE);
 
-    ssSetNumContStates(S, 0);
-    ssSetNumDiscStates(S, 0);
-
-    if (!ssSetNumInputPorts(S, 1))
-        return;
-    ssSetInputPortWidth(S, 0, 1);
-    ssSetInputPortDataType(S, 0, SS_DOUBLE);
-    ssSetInputPortDirectFeedThrough(S, 0, 1);
-    ssSetInputPortRequiredContiguous(S, 0, 1);
-
-    if (!ssSetNumOutputPorts(S, 1))
-        return;
+    int input_count = 1;
+{% for parameter in external_parameters %}    if (parameter_value(S, PARAM_EXPOSE_{{ parameter.id|upper }}) != 0.0) ++input_count;
+{% endfor %}
+    if (!ssSetNumInputPorts(S, input_count)) return;
+    for (int port = 0; port < input_count; ++port)
+    {
+        ssSetInputPortWidth(S, port, 1);
+        ssSetInputPortDataType(S, port, SS_DOUBLE);
+        ssSetInputPortDirectFeedThrough(S, port, 1);
+        ssSetInputPortRequiredContiguous(S, port, 1);
+    }
+    if (!ssSetNumOutputPorts(S, 1)) return;
     ssSetOutputPortWidth(S, 0, 1);
     ssSetOutputPortDataType(S, 0, SS_DOUBLE);
-
+    ssSetNumContStates(S, 0);
+    ssSetNumDiscStates(S, 0);
     ssSetNumSampleTimes(S, 1);
     ssSetNumPWork(S, 1);
     ssSetNumRWork(S, 0);
@@ -131,7 +114,7 @@ static void mdlInitializeSizes(SimStruct *S)
 
 static void mdlInitializeSampleTimes(SimStruct *S)
 {
-    /* Scheduling is intentionally owned by the surrounding Simulink model. */
+    /* The surrounding solver, trigger, or function-call subsystem owns scheduling. */
     ssSetSampleTime(S, 0, INHERITED_SAMPLE_TIME);
     ssSetOffsetTime(S, 0, 0.0);
     ssSetModelReferenceSampleTimeDefaultInheritance(S);
@@ -143,7 +126,7 @@ static void mdlStart(SimStruct *S)
     auto *runtime = new (std::nothrow) {{ symbol }}_runtime_t{};
     if (runtime == nullptr)
     {
-        ssSetErrorStatus(S, "Unable to allocate the generated PID runtime state.");
+        ssSetErrorStatus(S, "Unable to allocate generated PID runtime state.");
         return;
     }
     if (!initialize_controller(S, &runtime->current))
@@ -164,17 +147,34 @@ static void mdlOutputs(SimStruct *S, int_T)
         ssSetErrorStatus(S, "Generated PID runtime is not initialized.");
         return;
     }
+    int external_port = 1;
+{% for parameter in component.parameters %}    double {{ parameter.id }} = parameter_value(S, PARAM_{{ parameter.id|upper }});
+{% if parameter.get('externalizable', False) %}    if (parameter_value(S, PARAM_EXPOSE_{{ parameter.id|upper }}) != 0.0)
+        {{ parameter.id }} = static_cast<const real_T *>(ssGetInputPortSignal(S, external_port++))[0];
+{% endif %}{% endfor %}
+    if (!values_are_valid(S, fs, out_max, out_min, integral_max, integral_min)) return;
 
-    const real_T *input = static_cast<const real_T *>(ssGetInputPortSignal(S, 0));
-    real_T *output = ssGetOutputPortRealSignal(S, 0);
     runtime->pending = runtime->current;
     const int mode = static_cast<int>(parameter_value(S, PARAM_INIT_MODE));
-    ctrl_gt result;
+    runtime->pending.kp = float2ctrl(kp);
     if (mode == 1)
-        result = {{ component.initializers[0].step_function }}(&runtime->pending, float2ctrl(input[0]));
+    {
+        runtime->pending.ki = float2ctrl(ki_or_ti / fs);
+        runtime->pending.kd = float2ctrl(fs * kd_or_td);
+    }
     else
-        result = {{ component.initializers[1].step_function }}(&runtime->pending, float2ctrl(input[0]));
-    output[0] = static_cast<real_T>(ctrl2float(result));
+    {
+        runtime->pending.ki = float2ctrl(ki_or_ti <= 0.000001 ? 0.0 : 1.0 / (fs * ki_or_ti));
+        runtime->pending.kd = float2ctrl(fs * kd_or_td);
+    }
+    ctl_set_pid_limit(&runtime->pending, float2ctrl(out_max), float2ctrl(out_min));
+    ctl_set_pid_int_limit(&runtime->pending, float2ctrl(integral_max), float2ctrl(integral_min));
+
+    const real_T input = static_cast<const real_T *>(ssGetInputPortSignal(S, 0))[0];
+    ctrl_gt result = mode == 1
+        ? {{ component.initializers[0].step_function }}(&runtime->pending, float2ctrl(input))
+        : {{ component.initializers[1].step_function }}(&runtime->pending, float2ctrl(input));
+    ssGetOutputPortRealSignal(S, 0)[0] = static_cast<real_T>(ctrl2float(result));
     runtime->pending_valid = true;
 }
 
@@ -191,8 +191,7 @@ static void mdlUpdate(SimStruct *S, int_T)
 
 static void mdlTerminate(SimStruct *S)
 {
-    auto *runtime = static_cast<{{ symbol }}_runtime_t *>(ssGetPWork(S)[0]);
-    delete runtime;
+    delete static_cast<{{ symbol }}_runtime_t *>(ssGetPWork(S)[0]);
     ssGetPWork(S)[0] = nullptr;
 }
 
