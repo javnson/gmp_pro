@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "intrinsic.continuous.ladrc1",
+  "display_name": "GMP First-Order LADRC",
+  "description": "First-order LADRC with reference and feedback inputs plus disturbance observation output.",
+  "category": ["Intrinsic", "Continuous-form", "LADRC"],
+  "system_type": "mimo",
+  "template": "generic_stateful_v1",
+  "implementation": {"instance_type": "ctl_ladrc1_t", "headers": ["ctl/component/intrinsic/continuous/ladrc1.h"], "sources": ["ctl/component/intrinsic/continuous/src/ctl_internal_ladrc1.c"]},
+  "inputs": [
+    {"id": "reference", "label": "Reference", "width": 1, "type": "double"},
+    {"id": "feedback", "label": "Feedback", "width": 1, "type": "double"}
+  ],
+  "outputs": [
+    {"id": "control", "label": "Control", "width": 1, "type": "double"},
+    {"id": "disturbance", "label": "Disturbance", "width": 1, "type": "double"}
+  ],
+  "parameters": [
+    {"id": "b0", "label": "Estimated plant gain", "type": "number", "group": "Observer", "externalizable": true, "default": 1.0, "unit": "", "description": "Estimated input gain"},
+    {"id": "fc", "label": "Controller bandwidth", "type": "number", "group": "Bandwidth", "externalizable": true, "default": 50.0, "unit": "Hz", "description": "Control bandwidth"},
+    {"id": "fo", "label": "Observer bandwidth", "type": "number", "group": "Bandwidth", "externalizable": true, "default": 200.0, "unit": "Hz", "description": "Observer bandwidth"},
+    {"id": "fs", "label": "Initialization frequency", "type": "number", "group": "Initialization", "externalizable": false, "default": 10000.0, "unit": "Hz", "description": "Coefficient initialization frequency"},
+    {"id": "out_max", "label": "Output maximum", "type": "number", "group": "Limits", "externalizable": true, "default": 1.0, "unit": "", "description": "Upper output limit"},
+    {"id": "out_min", "label": "Output minimum", "type": "number", "group": "Limits", "externalizable": true, "default": -1.0, "unit": "", "description": "Lower output limit"}
+  ],
+  "initializers": [{"id": "bandwidth", "label": "Bandwidth design", "function": "ctl_init_ladrc1", "step_function": "ctl_step_ladrc1", "arguments": ["$instance", "b0", "fc", "fo", "fs"], "reference_model": "ladrc1"}],
+  "execution": {
+    "initialize_code": ["ctl_set_ladrc1_limit(&runtime->current, float2ctrl(out_max), float2ctrl(out_min));"],
+    "parameter_update_code": ["ctl_upgrade_ladrc1(&runtime->pending, b0, fc, fo, fs);", "ctl_set_ladrc1_limit(&runtime->pending, float2ctrl(out_max), float2ctrl(out_min));"],
+    "step_code": ["output_control = ctrl2float(ctl_step_ladrc1(&runtime->pending, float2ctrl(input_reference), float2ctrl(input_feedback)));", "output_disturbance = ctrl2float(ctl_get_ladrc1_disturbance_pu(&runtime->pending));"],
+    "terminate_code": []
+  },
+  "analysis": {"default_frequency_hz": [1.0, 1000.0], "default_points": 60, "excitation_amplitude": 0.001, "settling_periods": 20, "measurement_periods": 12}
+}

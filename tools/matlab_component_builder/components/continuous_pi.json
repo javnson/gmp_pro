@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "intrinsic.continuous.pi",
+  "display_name": "GMP Continuous-Form Discrete PI",
+  "description": "Real GMP PI implementation with parallel-gain and time-constant initialization modes.",
+  "category": ["Intrinsic", "Continuous-form"],
+  "system_type": "siso",
+  "template": "generic_stateful_v1",
+  "implementation": {"instance_type": "ctl_pi_t", "headers": ["ctl/component/intrinsic/continuous/continuous_pi.h"], "sources": ["ctl/component/intrinsic/continuous/src/ctl_continuous_pi.c"]},
+  "inputs": [{"id": "error", "label": "Error", "width": 1, "type": "double"}],
+  "outputs": [{"id": "output", "label": "Output", "width": 1, "type": "double"}],
+  "parameters": [
+    {"id": "kp", "label": "Kp", "type": "number", "group": "Gains", "externalizable": true, "default": 0.4, "unit": "", "description": "Proportional gain"},
+    {"id": "ki_or_ti", "label": "Ki or Ti", "type": "number", "group": "Gains", "externalizable": true, "default": 20.0, "unit": "Hz or s", "description": "Ki in parallel mode; Ti in time-constant mode"},
+    {"id": "fs", "label": "Initialization frequency", "type": "number", "group": "Initialization", "externalizable": false, "default": 10000.0, "unit": "Hz", "description": "Coefficient initialization frequency"},
+    {"id": "out_max", "label": "Output maximum", "type": "number", "group": "Output limits", "externalizable": true, "default": 1000000.0, "unit": "", "description": "Output maximum"},
+    {"id": "out_min", "label": "Output minimum", "type": "number", "group": "Output limits", "externalizable": true, "default": -1000000.0, "unit": "", "description": "Output minimum"},
+    {"id": "integral_max", "label": "Integral maximum", "type": "number", "group": "Integrator limits", "externalizable": true, "default": 1000000.0, "unit": "", "description": "Integrator maximum"},
+    {"id": "integral_min", "label": "Integral minimum", "type": "number", "group": "Integrator limits", "externalizable": true, "default": -1000000.0, "unit": "", "description": "Integrator minimum"}
+  ],
+  "initializers": [
+    {"id": "parallel", "label": "Parallel gains (Kp, Ki)", "function": "ctl_init_pi", "step_function": "ctl_step_pi_par", "arguments": ["$instance", "kp", "ki_or_ti", "fs"], "reference_model": "pi_parallel"},
+    {"id": "time_constant", "label": "Time constants (Kp, Ti)", "function": "ctl_init_pi_Tmode", "step_function": "ctl_step_pi_ser", "arguments": ["$instance", "kp", "ki_or_ti", "fs"], "reference_model": "pi_time_constant"}
+  ],
+  "execution": {
+    "initialize_code": ["ctl_set_pi_limit(&runtime->current, float2ctrl(out_max), float2ctrl(out_min));", "ctl_set_pi_int_limit(&runtime->current, float2ctrl(integral_max), float2ctrl(integral_min));"],
+    "parameter_update_code": ["runtime->pending.kp = float2ctrl(kp);", "runtime->pending.ki = float2ctrl(mode == 1 ? ki_or_ti / fs : (ki_or_ti <= 0.000001 ? 0.0 : 1.0 / (fs * ki_or_ti)));", "ctl_set_pi_limit(&runtime->pending, float2ctrl(out_max), float2ctrl(out_min));", "ctl_set_pi_int_limit(&runtime->pending, float2ctrl(integral_max), float2ctrl(integral_min));"],
+    "step_code": ["output_output = ctrl2float(mode == 1 ? ctl_step_pi_par(&runtime->pending, float2ctrl(input_error)) : ctl_step_pi_ser(&runtime->pending, float2ctrl(input_error)));"],
+    "terminate_code": []
+  },
+  "analysis": {"default_frequency_hz": [1.0, 2000.0], "default_points": 40, "excitation_amplitude": 0.001, "settling_periods": 8, "measurement_periods": 8}
+}

@@ -77,25 +77,37 @@ mask.addParameter('Type', 'edit', 'Name', 'analysis_measurement_periods', ...
     'Prompt', 'Measurement periods', 'Value', num2str(analysis.measurement_periods), ...
     'Container', analysisTab.Name);
 
-plotButton = analysisTab.addDialogControl('pushbutton', 'plot_models');
-plotButton.Prompt = 'Plot ideal and implemented models';
-plotButton.Callback = 'gmp_mcb.plot_component_models(gcb);';
-measureButton = analysisTab.addDialogControl('pushbutton', 'measure_model');
-measureButton.Prompt = 'Measure compiled S-Function response';
-measureButton.Callback = 'gmp_mcb.measure_component_block(gcb);';
+if any(strcmp(char(component.template), {'pid_siso_v2', 'resonant_siso_v1'}))
+    plotButton = analysisTab.addDialogControl('pushbutton', 'plot_models');
+    plotButton.Prompt = 'Plot ideal and implemented models';
+    plotButton.Callback = 'gmp_mcb.plot_component_models(gcb);';
+end
+if numel(component.inputs) == 1 && numel(component.outputs) == 1
+    measureButton = analysisTab.addDialogControl('pushbutton', 'measure_model');
+    measureButton.Prompt = 'Measure compiled S-Function response';
+    measureButton.Callback = 'gmp_mcb.measure_component_block(gcb);';
+end
 
 displayLines = {sprintf('disp(''%s'');', strrep(char(component.display_name), '''', '''''')), ...
-    sprintf('port_label(''input'',1,''%s'');', char(component.inputs(1).label)), ...
-    'mcb_port_index = 2;'};
+    'mcb_ports = get_param(gcb,''Ports'');'};
+for index = 1:numel(component.inputs)
+    displayLines{end + 1} = sprintf('if mcb_ports(1)>=%d, port_label(''input'',%d,''%s''); end', ...
+        index, ...
+        index, char(component.inputs(index).label)); %#ok<AGROW>
+end
+displayLines{end + 1} = sprintf('mcb_port_index = %d;', numel(component.inputs) + 1);
 for index = 1:numel(parameters)
     parameter = parameters(index);
     if isfield(parameter, 'externalizable') && parameter.externalizable
         displayLines{end + 1} = sprintf([ ...
-            'if gmp_mcb.checkbox_code(expose_%s), port_label(''input'',mcb_port_index,''%s''); ' ...
+            'if gmp_mcb.checkbox_code(expose_%s) && mcb_ports(1)>=mcb_port_index, port_label(''input'',mcb_port_index,''%s''); ' ...
             'mcb_port_index=mcb_port_index+1; end'], char(parameter.id), char(parameter.label)); %#ok<AGROW>
     end
 end
-displayLines{end + 1} = sprintf('port_label(''output'',1,''%s'');', char(component.outputs(1).label));
+for index = 1:numel(component.outputs)
+    displayLines{end + 1} = sprintf('if mcb_ports(2)>=%d, port_label(''output'',%d,''%s''); end', ...
+        index, index, char(component.outputs(index).label)); %#ok<AGROW>
+end
 mask.Display = strjoin(displayLines, newline);
 set_param(block, 'UserData', component, 'UserDataPersistent', 'on');
 end

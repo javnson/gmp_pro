@@ -4,7 +4,7 @@
 
 `matlab_component_builder` turns a real GMP C control component into an independently installed, masked Simulink block. It does not depend on or modify the existing GMP `slib` library.
 
-The foundational templates cover the SISO PID and the R, PR, QR, and QPR controllers in `proportional_resonant.h`. Generated blocks execute the original GMP step function, plot ideal and exact implemented frequency models, and measure the compiled MEX block with a coherent sine sweep.
+The current catalog includes basic hysteresis/saturation/slope limiting, continuous PI/PID/LADRC1/LADRC2/SOGI, the PR family, and advanced RC/FDRC. See the [component rollout ledger](docs/COMPONENT_ROLLOUT_CN.md) for the remaining queue.
 
 ## Source and generated boundaries
 
@@ -47,7 +47,7 @@ run(fullfile(getenv('GMP_PRO_LOCATION'), 'tools', ...
     'install_gmp_matlab_components.m'));
 ```
 
-The editor presents all definitions in a category tree. Its parameter table supports groups and external-input eligibility, and the generated C++ S-Function can be previewed before generation. Open **GMP MATLAB Components** in the Simulink Library Browser after installation.
+The editor presents all definitions in a category tree. It manages scalar MIMO port tables, parameter groups and external-input eligibility, and previews generated C++ before generation. Open **GMP MATLAB Components** in the Simulink Library Browser after installation.
 
 Each block mask has separate **Parameters** and **Simulation Analysis** tabs. An externalizable parameter has a checkbox: off uses its fixed Mask value; on disables that editor and adds a Simulink input port in parameter-table order. PID gains and both output/integrator limits support this gain-scheduling interface. Initialization frequency `fs` remains an initialization-only parameter.
 
@@ -83,10 +83,11 @@ The measurement button creates a temporary discrete Simulink harness, copies the
 
 ## Current scope
 
-- SISO, scalar `double` Simulink ports with GMP `float` `ctrl_gt` internally.
+- SISO and scalar MIMO `double` Simulink ports with GMP `ctrl_gt` internally.
 - PID template with parallel and time-constant initialization.
 - R/PR/QR/QPR template; QR and QPR support standard and prewarped Tustin initialization.
 - Parameter groups and selectable fixed-Mask/external-port values.
+- Double-buffered dynamic workspaces committed in `mdlUpdate` and released in `mdlTerminate`.
 - Inherited Simulink scheduling.
 - Host MEX simulation on the active MATLAB platform.
 - Ideal/implementation plots and sequential-sine measurement.

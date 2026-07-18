@@ -98,11 +98,10 @@ class BuilderWindow(QMainWindow):
         self.name_edit = QLineEdit()
         self.description_edit = QTextEdit()
         self.description_edit.setMaximumHeight(90)
+        self.system_type_edit = QLineEdit()
+        self.template_edit = QLineEdit()
+        self.variant_edit = QLineEdit()
         self.instance_edit = QLineEdit()
-        self.input_id_edit = QLineEdit()
-        self.input_label_edit = QLineEdit()
-        self.output_id_edit = QLineEdit()
-        self.output_label_edit = QLineEdit()
         self.headers_edit = QTextEdit()
         self.headers_edit.setMaximumHeight(80)
         self.sources_edit = QTextEdit()
@@ -110,14 +109,46 @@ class BuilderWindow(QMainWindow):
         form.addRow("Component ID", self.id_edit)
         form.addRow("Display name", self.name_edit)
         form.addRow("Description", self.description_edit)
+        form.addRow("System type (siso/mimo)", self.system_type_edit)
+        form.addRow("Generator template", self.template_edit)
+        form.addRow("Template variant", self.variant_edit)
         form.addRow("C instance type", self.instance_edit)
-        form.addRow("Input ID", self.input_id_edit)
-        form.addRow("Input label", self.input_label_edit)
-        form.addRow("Output ID", self.output_id_edit)
-        form.addRow("Output label", self.output_label_edit)
         form.addRow("Headers (one per line)", self.headers_edit)
         form.addRow("Sources (one per line)", self.sources_edit)
         self.tabs.addTab(general, "Component")
+
+        ports = QWidget()
+        ports_layout = QVBoxLayout(ports)
+        ports_layout.addWidget(QLabel("Scalar Simulink ports, in displayed order."))
+        ports_layout.addWidget(QLabel("Inputs"))
+        self.input_table = QTableWidget(0, 4)
+        self.input_table.setHorizontalHeaderLabels(["ID", "Label", "Width", "Type"])
+        self.input_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        ports_layout.addWidget(self.input_table)
+        input_buttons = QHBoxLayout()
+        add_input = QPushButton("Add input")
+        add_input.clicked.connect(lambda: self.input_table.insertRow(self.input_table.rowCount()))
+        remove_input = QPushButton("Remove selected input")
+        remove_input.clicked.connect(lambda: self._remove_selected(self.input_table))
+        input_buttons.addWidget(add_input)
+        input_buttons.addWidget(remove_input)
+        input_buttons.addStretch(1)
+        ports_layout.addLayout(input_buttons)
+        ports_layout.addWidget(QLabel("Outputs"))
+        self.output_table = QTableWidget(0, 4)
+        self.output_table.setHorizontalHeaderLabels(["ID", "Label", "Width", "Type"])
+        self.output_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        ports_layout.addWidget(self.output_table)
+        output_buttons = QHBoxLayout()
+        add_output = QPushButton("Add output")
+        add_output.clicked.connect(lambda: self.output_table.insertRow(self.output_table.rowCount()))
+        remove_output = QPushButton("Remove selected output")
+        remove_output.clicked.connect(lambda: self._remove_selected(self.output_table))
+        output_buttons.addWidget(add_output)
+        output_buttons.addWidget(remove_output)
+        output_buttons.addStretch(1)
+        ports_layout.addLayout(output_buttons)
+        self.tabs.addTab(ports, "Ports")
 
         parameters = QWidget()
         param_layout = QVBoxLayout(parameters)
@@ -203,13 +234,12 @@ class BuilderWindow(QMainWindow):
         self.id_edit.setText(self.data.get("id", ""))
         self.name_edit.setText(self.data.get("display_name", ""))
         self.description_edit.setPlainText(self.data.get("description", ""))
+        self.system_type_edit.setText(self.data.get("system_type", "siso"))
+        self.template_edit.setText(self.data.get("template", "generic_stateful_v1"))
+        self.variant_edit.setText(self.data.get("variant", ""))
         self.instance_edit.setText(impl.get("instance_type", ""))
-        inputs = self.data.get("inputs", [{}])
-        outputs = self.data.get("outputs", [{}])
-        self.input_id_edit.setText(inputs[0].get("id", "") if inputs else "")
-        self.input_label_edit.setText(inputs[0].get("label", "") if inputs else "")
-        self.output_id_edit.setText(outputs[0].get("id", "") if outputs else "")
-        self.output_label_edit.setText(outputs[0].get("label", "") if outputs else "")
+        self._fill_table(self.input_table, self.data.get("inputs", []), ["id", "label", "width", "type"])
+        self._fill_table(self.output_table, self.data.get("outputs", []), ["id", "label", "width", "type"])
         self.headers_edit.setPlainText("\n".join(impl.get("headers", [])))
         self.sources_edit.setPlainText("\n".join(impl.get("sources", [])))
         parameter_rows = []
@@ -297,15 +327,28 @@ class BuilderWindow(QMainWindow):
         data["id"] = self.id_edit.text().strip()
         data["display_name"] = self.name_edit.text().strip()
         data["description"] = self.description_edit.toPlainText().strip()
+        data["system_type"] = self.system_type_edit.text().strip()
+        data["template"] = self.template_edit.text().strip()
+        variant = self.variant_edit.text().strip()
+        if variant:
+            data["variant"] = variant
+        else:
+            data.pop("variant", None)
         data.setdefault("implementation", {})["instance_type"] = self.instance_edit.text().strip()
         data["implementation"]["headers"] = [x.strip() for x in self.headers_edit.toPlainText().splitlines() if x.strip()]
         data["implementation"]["sources"] = [x.strip() for x in self.sources_edit.toPlainText().splitlines() if x.strip()]
-        data.setdefault("inputs", [{}])[0].update(
-            {"id": self.input_id_edit.text().strip(), "label": self.input_label_edit.text().strip()}
-        )
-        data.setdefault("outputs", [{}])[0].update(
-            {"id": self.output_id_edit.text().strip(), "label": self.output_label_edit.text().strip()}
-        )
+        data["inputs"] = [
+            {"id": self._cell(self.input_table, row, 0), "label": self._cell(self.input_table, row, 1),
+             "width": int(self._cell(self.input_table, row, 2) or "1"),
+             "type": self._cell(self.input_table, row, 3) or "double"}
+            for row in range(self.input_table.rowCount())
+        ]
+        data["outputs"] = [
+            {"id": self._cell(self.output_table, row, 0), "label": self._cell(self.output_table, row, 1),
+             "width": int(self._cell(self.output_table, row, 2) or "1"),
+             "type": self._cell(self.output_table, row, 3) or "double"}
+            for row in range(self.output_table.rowCount())
+        ]
         params = []
         for row in range(self.parameter_table.rowCount()):
             default_text = self._cell(self.parameter_table, row, 4)

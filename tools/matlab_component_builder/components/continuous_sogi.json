@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "id": "intrinsic.continuous.sogi",
+  "display_name": "GMP Continuous-Form SOGI",
+  "description": "Continuous-form discrete SOGI with direct and quadrature outputs.",
+  "category": ["Intrinsic", "Continuous-form"],
+  "system_type": "mimo",
+  "template": "generic_stateful_v1",
+  "implementation": {"instance_type": "ctl_sogi_t", "headers": ["ctl/component/intrinsic/continuous/sogi.h"], "sources": ["ctl/component/intrinsic/continuous/src/ctl_sogi.c"]},
+  "inputs": [{"id": "input", "label": "Input", "width": 1, "type": "double"}],
+  "outputs": [
+    {"id": "direct", "label": "Direct", "width": 1, "type": "double"},
+    {"id": "quadrature", "label": "Quadrature", "width": 1, "type": "double"}
+  ],
+  "parameters": [
+    {"id": "gain", "label": "Direct output gain", "type": "number", "group": "Gain", "externalizable": true, "default": 1.0, "unit": "", "description": "Gain applied to direct output"},
+    {"id": "freq_r", "label": "Resonant frequency", "type": "number", "group": "Frequency", "externalizable": true, "default": 50.0, "unit": "Hz", "description": "SOGI center frequency"},
+    {"id": "damp", "label": "Damping factor", "type": "number", "group": "Dynamics", "externalizable": true, "default": 1.41421356237, "unit": "", "description": "SOGI damping factor"},
+    {"id": "fs", "label": "Initialization frequency", "type": "number", "group": "Initialization", "externalizable": false, "default": 10000.0, "unit": "Hz", "description": "Coefficient initialization frequency"}
+  ],
+  "initializers": [{"id": "standard", "label": "Standard", "function": "ctl_init_sogi", "step_function": "ctl_step_sogi", "arguments": ["$instance", "gain", "freq_r", "damp", "fs"], "reference_model": "sogi"}],
+  "execution": {
+    "initialize_code": [],
+    "parameter_update_code": ["ctl_sogi_t fresh{};", "ctl_init_sogi(&fresh, gain, freq_r, damp, fs);", "runtime->pending.k_damp = fresh.k_damp;", "runtime->pending.k_r = fresh.k_r;", "runtime->pending.gain = fresh.gain;"],
+    "step_code": ["output_direct = ctrl2float(ctl_step_sogi(&runtime->pending, float2ctrl(input_input)));", "output_quadrature = ctrl2float(ctl_get_sogi_quadrature_out(&runtime->pending));"],
+    "terminate_code": []
+  },
+  "analysis": {"default_frequency_hz": [1.0, 1000.0], "default_points": 80, "excitation_amplitude": 0.001, "settling_periods": 20, "measurement_periods": 12}
+}

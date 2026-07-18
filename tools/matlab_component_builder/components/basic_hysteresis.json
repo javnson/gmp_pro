@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "id": "intrinsic.basic.hysteresis",
+  "display_name": "GMP Hysteresis Controller",
+  "description": "State-latched hysteresis comparator with configurable target, half-width, and polarity.",
+  "category": ["Intrinsic", "Basic"],
+  "system_type": "siso",
+  "template": "generic_stateful_v1",
+  "implementation": {"instance_type": "ctl_hysteresis_controller_t", "headers": ["ctl/component/intrinsic/basic/hysteresis_controller.h"], "sources": ["ctl/component/intrinsic/basic/src/ctl_hysteresis_controller.c"]},
+  "inputs": [{"id": "input", "label": "Input", "width": 1, "type": "double"}],
+  "outputs": [{"id": "switch", "label": "Switch", "width": 1, "type": "double"}],
+  "parameters": [
+    {"id": "polarity", "label": "Upper-band output", "type": "number", "group": "Behavior", "externalizable": false, "default": 1, "unit": "0/1", "description": "Output state after crossing the upper band"},
+    {"id": "target", "label": "Target", "type": "number", "group": "Band", "externalizable": true, "default": 0.0, "unit": "", "description": "Band center"},
+    {"id": "half_width", "label": "Half width", "type": "number", "group": "Band", "externalizable": true, "default": 0.1, "unit": "", "description": "Positive hysteresis half-width"}
+  ],
+  "initializers": [{"id": "standard", "label": "Standard", "function": "ctl_init_hysteresis_controller", "step_function": "ctl_step_hysteresis_controller", "arguments": ["$instance", "polarity", "half_width"], "reference_model": "nonlinear"}],
+  "execution": {
+    "initialize_code": ["ctl_set_hysteresis_target(&runtime->current, float2ctrl(target));"],
+    "parameter_update_code": ["runtime->pending.flag_polarity = static_cast<fast_gt>(polarity != 0.0);", "runtime->pending.half_width = float2ctrl(half_width);", "ctl_set_hysteresis_target(&runtime->pending, float2ctrl(target));"],
+    "step_code": ["output_switch = static_cast<double>(ctl_step_hysteresis_controller(&runtime->pending, float2ctrl(input_input)));"],
+    "terminate_code": []
+  },
+  "analysis": {"default_frequency_hz": [1.0, 1000.0], "default_points": 40, "excitation_amplitude": 1.0, "settling_periods": 2, "measurement_periods": 8}
+}

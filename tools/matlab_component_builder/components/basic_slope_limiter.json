@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "id": "intrinsic.basic.slope_limiter",
+  "display_name": "GMP Slope Limiter",
+  "description": "GMP rate limiter. Initialization frequency converts physical slopes to per-step increments; scheduling is inherited.",
+  "category": ["Intrinsic", "Basic"],
+  "system_type": "siso",
+  "template": "generic_stateful_v1",
+  "implementation": {"instance_type": "ctl_slope_limiter_t", "headers": ["ctl/component/intrinsic/basic/slope_limiter.h"], "sources": ["ctl/component/intrinsic/basic/src/ctl_slope_limiter.c"]},
+  "inputs": [{"id": "target", "label": "Target", "width": 1, "type": "double"}],
+  "outputs": [{"id": "output", "label": "Output", "width": 1, "type": "double"}],
+  "parameters": [
+    {"id": "slope_max", "label": "Maximum rising slope", "type": "number", "group": "Slopes", "externalizable": true, "default": 100.0, "unit": "unit/s", "description": "Positive physical rate"},
+    {"id": "slope_min", "label": "Maximum falling slope", "type": "number", "group": "Slopes", "externalizable": true, "default": -100.0, "unit": "unit/s", "description": "Negative physical rate"},
+    {"id": "fs", "label": "Initialization frequency", "type": "number", "group": "Initialization", "externalizable": false, "default": 10000.0, "unit": "Hz", "description": "Converts physical slopes to increments"},
+    {"id": "initial_output", "label": "Initial output", "type": "number", "group": "Initialization", "externalizable": false, "default": 0.0, "unit": "", "description": "Initial limiter state"}
+  ],
+  "initializers": [{"id": "standard", "label": "Standard", "function": "ctl_init_slope_limiter", "step_function": "ctl_step_slope_limiter", "arguments": ["$instance", "slope_max", "slope_min", "fs"], "reference_model": "nonlinear"}],
+  "execution": {
+    "initialize_code": ["ctl_set_slope_limiter_current(&runtime->current, float2ctrl(initial_output));"],
+    "parameter_update_code": ["ctl_set_slope_limiter_slopes(&runtime->pending, float2ctrl(slope_max / fs), float2ctrl(slope_min / fs));"],
+    "step_code": ["output_output = ctrl2float(ctl_step_slope_limiter(&runtime->pending, float2ctrl(input_target)));"],
+    "terminate_code": []
+  },
+  "analysis": {"default_frequency_hz": [0.1, 100.0], "default_points": 40, "excitation_amplitude": 1.0, "settling_periods": 2, "measurement_periods": 8}
+}

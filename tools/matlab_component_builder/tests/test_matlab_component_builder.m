@@ -19,7 +19,8 @@ end
 
 function testGeneratedLibraryAndTabbedMasks(testCase)
 blocks = find_system('gmp_mcb_components', 'BlockType', 'S-Function');
-verifyEqual(testCase, numel(blocks), 5);
+registry = gmp_mcb.load_registry();
+verifyEqual(testCase, numel(blocks), numel(registry.components));
 functions = string(get_param(blocks, 'FunctionName'));
 verifyTrue(testCase, any(functions == "gmp_mcb_intrinsic_continuous_pid"));
 verifyTrue(testCase, any(functions == "gmp_mcb_intrinsic_discrete_resonant_qpr"));
@@ -103,6 +104,67 @@ result = gmp_mcb.measure_component_block([model '/QPR'], [20; 50; 100]);
 relativeError = abs(result.measured - result.implementation) ./ max(abs(result.implementation), eps);
 verifyLessThan(testCase, relativeError, 0.03 * ones(size(relativeError)));
 close all force;
+clear cleanup;
+close_model(model);
+end
+
+function testGenericSaturationAndExternalLimit(testCase)
+model = 'gmp_mcb_unit_saturation';
+cleanup = onCleanup(@() close_model(model));
+new_system(model);
+add_block('simulink/Sources/Constant', [model '/Input'], 'Value', '2');
+add_block('simulink/Sources/Constant', [model '/Maximum'], 'Value', '0.25');
+add_block(library_block('gmp_mcb_intrinsic_basic_saturation'), [model '/Saturation']);
+set_param([model '/Saturation'], 'expose_out_max', 'on');
+add_block('simulink/Sinks/To Workspace', [model '/Out'], 'VariableName', 'y', 'SaveFormat', 'Array');
+add_line(model, 'Input/1', 'Saturation/1');
+add_line(model, 'Maximum/1', 'Saturation/2');
+add_line(model, 'Saturation/1', 'Out/1');
+simulationOutput = sim(Simulink.SimulationInput(model).setModelParameter( ...
+    'Solver', 'FixedStepDiscrete', 'FixedStep', '1e-4', 'StopTime', '1e-4'));
+verifyEqual(testCase, simulationOutput.y(1), 0.25, 'AbsTol', 1e-8);
+clear cleanup;
+close_model(model);
+end
+
+function testMimoLadrcPortsCompile(testCase)
+model = 'gmp_mcb_unit_ladrc';
+cleanup = onCleanup(@() close_model(model));
+new_system(model);
+for index = 1:4
+    add_block('simulink/Sources/Constant', sprintf('%s/In%d', model, index), 'Value', '0');
+end
+add_block(library_block('gmp_mcb_intrinsic_continuous_ladrc2'), [model '/LADRC2']);
+set_param(model, 'SimulationCommand', 'update');
+for index = 1:3
+    add_block('simulink/Sinks/Terminator', sprintf('%s/Out%d', model, index));
+end
+for index = 1:4, add_line(model, sprintf('In%d/1', index), sprintf('LADRC2/%d', index)); end
+for index = 1:3, add_line(model, sprintf('LADRC2/%d', index), sprintf('Out%d/1', index)); end
+set_param(model, 'Solver', 'FixedStepDiscrete', 'FixedStep', '1e-4', 'StopTime', '1e-4');
+set_param(model, 'SimulationCommand', 'update');
+ports = get_param([model '/LADRC2'], 'Ports');
+verifyEqual(testCase, ports(1:2), [4 3]);
+clear cleanup;
+close_model(model);
+end
+
+function testManagedRepetitiveWorkspaceCanRestart(testCase)
+model = 'gmp_mcb_unit_rc_memory';
+cleanup = onCleanup(@() close_model(model));
+new_system(model);
+add_block('simulink/Sources/Constant', [model '/Error'], 'Value', '0.01');
+add_block('simulink/Sources/Constant', [model '/Frequency'], 'Value', '50');
+add_block(library_block('gmp_mcb_intrinsic_advance_repetitive_controller'), [model '/RC']);
+set_param(model, 'SimulationCommand', 'update');
+add_block('simulink/Sinks/Terminator', [model '/Out']);
+add_line(model, 'Error/1', 'RC/1');
+add_line(model, 'Frequency/1', 'RC/2');
+add_line(model, 'RC/1', 'Out/1');
+simulationInput = Simulink.SimulationInput(model).setModelParameter( ...
+    'Solver', 'FixedStepDiscrete', 'FixedStep', '1e-4', 'StopTime', '0.03');
+sim(simulationInput);
+sim(simulationInput);
 clear cleanup;
 close_model(model);
 end

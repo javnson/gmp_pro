@@ -27,7 +27,7 @@ class BuilderTests(unittest.TestCase):
 
     def test_all_foundational_definitions_are_valid(self) -> None:
         components = [ComponentDefinition.load(path) for path in sorted((TOOL_ROOT / "components").glob("*.json"))]
-        self.assertEqual(len(components), 5)
+        self.assertGreaterEqual(len(components), 14)
         self.assertEqual({item.data.get("variant") for item in components if item.data["template"] == "resonant_siso_v1"},
                          {"r", "pr", "qr", "qpr"})
 
@@ -47,7 +47,7 @@ class BuilderTests(unittest.TestCase):
             configs = sorted((TOOL_ROOT / "components").glob("*.json"))
             ComponentGenerator(TOOL_ROOT).generate(configs, Path(temp))
             registry = json.loads((Path(temp) / "registry.json").read_text(encoding="utf-8"))
-            self.assertEqual(len(registry["components"]), 5)
+            self.assertEqual(len(registry["components"]), len(configs))
             for item in registry["components"]:
                 self.assertTrue(Path(item["generated_source"]).is_file())
 

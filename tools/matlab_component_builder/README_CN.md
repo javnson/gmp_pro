@@ -4,7 +4,7 @@
 
 `matlab_component_builder` 用于把真实的 GMP C 控制元件转换成独立安装、带 Mask 的 Simulink Block。它不依赖、也不修改现有的 GMP `slib`。
 
-当前基础模板覆盖 SISO PID，以及 `proportional_resonant.h` 中的 R、PR、QR、QPR 控制器。生成的 Block 逐拍执行真实 GMP step 函数，可绘制连续理想模型和实际差分实现模型，并能对编译后的 MEX Block 进行相干正弦扫频测量。
+当前已接入 basic 的滞环、饱和与斜率限制，continuous 的 PI/PID、LADRC1/LADRC2、SOGI，PR 控制器族，以及 advance 的 RC/FDRC。完整接入队列见 [元件接入清单](docs/COMPONENT_ROLLOUT_CN.md)。
 
 ## 源文件与生成物边界
 
@@ -47,7 +47,7 @@ run(fullfile(getenv('GMP_PRO_LOCATION'), 'tools', ...
     'install_gmp_matlab_components.m'));
 ```
 
-编辑器左侧按分类显示全部元件，右侧可表格化维护参数分组、选择参数是否允许外部输入，并预览生成的 C++ S-Function。刷新 MATLAB 后可以在 Simulink Library Browser 中找到 **GMP MATLAB Components**。
+编辑器左侧按分类显示全部元件，右侧可表格化维护多输入/多输出端口、参数分组、外部输入资格，并预览生成的 C++ S-Function。刷新 MATLAB 后可以在 Simulink Library Browser 中找到 **GMP MATLAB Components**。
 
 每个 Block 的 Mask 分为 **Parameters** 和 **Simulation Analysis** 两页。可外部化的参数旁有 Check Box：关闭时使用 Mask 固定值，开启时固定值编辑框禁用，并按参数表顺序增加输入端口。PID 的 Kp/Ki/Kd、输出限幅和积分限幅均支持这种增益调度接口；初始化频率 `fs` 保持为初始化参数。
 
@@ -87,10 +87,11 @@ z^-1 = exp(-j*2*pi*f/fs_execution)
 
 ## 当前范围
 
-- 单输入单输出；Simulink 端口为标量 `double`，GMP 内部 `ctrl_gt` 为 `float`。
+- SISO 和标量多输入/多输出；Simulink 端口为 `double`，GMP 内部使用 `ctrl_gt`。
 - PID 模板（并联参数和时间常数初始化）。
 - R、PR、QR、QPR 谐振模板（QR/QPR 支持标准与预扭曲 Tustin 初始化）。
 - 参数分组，以及固定 Mask 值/动态输入端口选择。
+- 动态工作区 current/pending 双缓冲，在 `mdlTerminate` 中统一释放。
 - 继承 Simulink 调度周期。
 - 当前 MATLAB 平台上的 Host MEX 仿真。
 - 连续理想/离散实现绘图与逐频正弦测量。

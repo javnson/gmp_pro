@@ -1,6 +1,11 @@
 function result = measure_component_block(block, frequenciesHz)
 % Measure a compiled generated S-Function with a coherent sequential sine sweep.
-parameterFs = gmp_mcb.mask_value(block, 'fs');
+maskMetadata = Simulink.Mask.get(block);
+if isempty(maskMetadata.getParameter('fs'))
+    parameterFs = NaN;
+else
+    parameterFs = gmp_mcb.mask_value(block, 'fs');
+end
 executionFs = gmp_mcb.mask_value(block, 'analysis_execution_fs');
 if nargin < 2 || isempty(frequenciesHz)
     fmin = gmp_mcb.mask_value(block, 'analysis_frequency_min');
@@ -87,4 +92,3 @@ end
 function cleanup_model(model)
 if bdIsLoaded(model), close_system(model, 0); end
 end
-

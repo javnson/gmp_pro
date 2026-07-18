@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "intrinsic.continuous.ladrc2",
+  "display_name": "GMP Second-Order LADRC",
+  "description": "Second-order LADRC with trajectory feedforward, position feedback, and observer outputs.",
+  "category": ["Intrinsic", "Continuous-form", "LADRC"],
+  "system_type": "mimo",
+  "template": "generic_stateful_v1",
+  "implementation": {"instance_type": "ctl_ladrc2_t", "headers": ["ctl/component/intrinsic/continuous/ladrc2.h"], "sources": ["ctl/component/intrinsic/continuous/src/ctl_internal_ladrc2.c"]},
+  "inputs": [
+    {"id": "ref_pos", "label": "Reference position", "width": 1, "type": "double"},
+    {"id": "ref_vel", "label": "Reference velocity", "width": 1, "type": "double"},
+    {"id": "ref_acc", "label": "Reference acceleration", "width": 1, "type": "double"},
+    {"id": "fbk_pos", "label": "Position feedback", "width": 1, "type": "double"}
+  ],
+  "outputs": [
+    {"id": "control", "label": "Control", "width": 1, "type": "double"},
+    {"id": "velocity", "label": "Estimated velocity", "width": 1, "type": "double"},
+    {"id": "disturbance", "label": "Disturbance", "width": 1, "type": "double"}
+  ],
+  "parameters": [
+    {"id": "b0", "label": "Estimated plant gain", "type": "number", "group": "Observer", "externalizable": true, "default": 1.0, "unit": "", "description": "Estimated input gain"},
+    {"id": "fc", "label": "Controller bandwidth", "type": "number", "group": "Bandwidth", "externalizable": true, "default": 20.0, "unit": "Hz", "description": "Control bandwidth"},
+    {"id": "fo", "label": "Observer bandwidth", "type": "number", "group": "Bandwidth", "externalizable": true, "default": 100.0, "unit": "Hz", "description": "Observer bandwidth"},
+    {"id": "fs", "label": "Initialization frequency", "type": "number", "group": "Initialization", "externalizable": false, "default": 10000.0, "unit": "Hz", "description": "Coefficient initialization frequency"},
+    {"id": "out_max", "label": "Output maximum", "type": "number", "group": "Limits", "externalizable": true, "default": 1.0, "unit": "", "description": "Upper output limit"},
+    {"id": "out_min", "label": "Output minimum", "type": "number", "group": "Limits", "externalizable": true, "default": -1.0, "unit": "", "description": "Lower output limit"}
+  ],
+  "initializers": [{"id": "bandwidth", "label": "Bandwidth design", "function": "ctl_init_ladrc2", "step_function": "ctl_step_ladrc2", "arguments": ["$instance", "b0", "fc", "fo", "fs"], "reference_model": "ladrc2"}],
+  "execution": {
+    "initialize_code": ["ctl_set_ladrc2_limit(&runtime->current, float2ctrl(out_max), float2ctrl(out_min));"],
+    "parameter_update_code": ["ctl_upgrade_ladrc2(&runtime->pending, b0, fc, fo, fs);", "ctl_set_ladrc2_limit(&runtime->pending, float2ctrl(out_max), float2ctrl(out_min));"],
+    "step_code": ["output_control = ctrl2float(ctl_step_ladrc2(&runtime->pending, float2ctrl(input_ref_pos), float2ctrl(input_ref_vel), float2ctrl(input_ref_acc), float2ctrl(input_fbk_pos)));", "output_velocity = ctrl2float(ctl_get_ladrc2_velocity(&runtime->pending));", "output_disturbance = ctrl2float(ctl_get_ladrc2_disturbance_pu(&runtime->pending));"],
+    "terminate_code": []
+  },
+  "analysis": {"default_frequency_hz": [0.5, 500.0], "default_points": 60, "excitation_amplitude": 0.001, "settling_periods": 30, "measurement_periods": 12}
+}

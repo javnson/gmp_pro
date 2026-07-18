@@ -83,8 +83,9 @@ class ComponentDefinition:
         component_id = _require(self.data, "id", str)
         if not _COMPONENT_ID.fullmatch(component_id):
             raise ComponentError("id must use lower-case letters, digits, dots, dashes or underscores")
-        if self.data.get("system_type") != "siso":
-            raise ComponentError("the basic framework currently supports system_type='siso' only")
+        system_type = self.data.get("system_type")
+        if system_type not in {"siso", "mimo"}:
+            raise ComponentError("system_type must be 'siso' or 'mimo'")
 
         implementation = _require(self.data, "implementation", dict)
         instance_type = _require(implementation, "instance_type", str)
@@ -92,8 +93,8 @@ class ComponentDefinition:
             raise ComponentError("implementation.instance_type must be a C identifier")
         headers = _require(implementation, "headers", list)
         sources = _require(implementation, "sources", list)
-        if not headers or not sources:
-            raise ComponentError("implementation requires at least one header and source")
+        if not headers:
+            raise ComponentError("implementation requires at least one header")
         for index, value in enumerate(headers):
             if not isinstance(value, str):
                 raise ComponentError("implementation.headers entries must be strings")
@@ -105,8 +106,21 @@ class ComponentDefinition:
 
         inputs = _require(self.data, "inputs", list)
         outputs = _require(self.data, "outputs", list)
-        if len(inputs) != 1 or len(outputs) != 1:
+        if not inputs or not outputs:
+            raise ComponentError("a component requires at least one input and output")
+        if system_type == "siso" and (len(inputs) != 1 or len(outputs) != 1):
             raise ComponentError("SISO definitions require exactly one input and one output")
+        for collection_name, collection in (("inputs", inputs), ("outputs", outputs)):
+            port_ids: set[str] = set()
+            for port in collection:
+                if not isinstance(port, dict):
+                    raise ComponentError(f"{collection_name} entries must be objects")
+                port_id = _require(port, "id", str)
+                if not _IDENTIFIER.fullmatch(port_id) or port_id in port_ids:
+                    raise ComponentError(f"invalid or duplicate {collection_name} id: {port_id}")
+                port_ids.add(port_id)
+                if port.get("width", 1) != 1 or port.get("type", "double") != "double":
+                    raise ComponentError("the current generic MEX backend supports scalar double ports")
 
         parameters = _require(self.data, "parameters", list)
         parameter_ids: set[str] = set()
@@ -133,11 +147,33 @@ class ComponentDefinition:
             if not _IDENTIFIER.fullmatch(function) or not _IDENTIFIER.fullmatch(step_function):
                 raise ComponentError("initializer functions must be C identifiers")
             for argument in _require(initializer, "arguments", list):
-                if argument != "$instance" and argument not in parameter_ids:
+                if argument != "$instance" and not str(argument).startswith("$memory:") and argument not in parameter_ids:
                     raise ComponentError(f"initializer references unknown parameter: {argument}")
 
         template = self.data.get("template")
-        if template not in {"pid_siso_v2", "resonant_siso_v1"}:
+        if template not in {"pid_siso_v2", "resonant_siso_v1", "generic_stateful_v1"}:
             raise ComponentError(f"unsupported component template: {template}")
         if template == "resonant_siso_v1" and self.data.get("variant") not in {"r", "pr", "qr", "qpr"}:
             raise ComponentError("resonant_siso_v1 requires variant r, pr, qr, or qpr")
+        if template == "generic_stateful_v1":
+            execution = _require(self.data, "execution", dict)
+            step_code = _require(execution, "step_code", list)
+            if not step_code or not all(isinstance(line, str) for line in step_code):
+                raise ComponentError("generic_stateful_v1 execution.step_code must contain C++ statements")
+            for field in ("initialize_code", "parameter_update_code", "terminate_code"):
+                value = execution.get(field, [])
+                if not isinstance(value, list) or not all(isinstance(line, str) for line in value):
+                    raise ComponentError(f"execution.{field} must be a list of C++ statements")
+            memory_ids: set[str] = set()
+            for memory in self.data.get("memory", []):
+                if not isinstance(memory, dict):
+                    raise ComponentError("memory entries must be objects")
+                memory_id = _require(memory, "id", str)
+                if not _IDENTIFIER.fullmatch(memory_id) or memory_id in memory_ids:
+                    raise ComponentError(f"invalid or duplicate memory id: {memory_id}")
+                memory_ids.add(memory_id)
+                if _require(memory, "length_parameter", str) not in parameter_ids:
+                    raise ComponentError(f"memory {memory_id} references an unknown length parameter")
+                pointer_field = _require(memory, "state_pointer_field", str)
+                if not _IDENTIFIER.fullmatch(pointer_field):
+                    raise ComponentError(f"memory {memory_id} state_pointer_field must be a C identifier")
