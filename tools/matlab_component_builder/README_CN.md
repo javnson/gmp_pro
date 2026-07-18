@@ -4,7 +4,7 @@
 
 `matlab_component_builder` 用于把真实的 GMP C 控制元件转换成独立安装、带 Mask 的 Simulink Block。它不依赖、也不修改现有的 GMP `slib`。
 
-当前已接入 basic 的滞环、饱和与斜率限制，continuous 的 PI/PID、LADRC1/LADRC2、SOGI，PR 控制器族，以及 advance 的 RC/FDRC。完整接入队列见 [元件接入清单](docs/COMPONENT_ROLLOUT_CN.md)。
+当前已接入 basic 的滞环、饱和与斜率限制，continuous 的 PI/PID、LADRC1/LADRC2、SOGI，PR 控制器族，lead/lag、biquad、一级离散滤波器、1P1Z/2P2Z/3P3Z，以及 advance 的 RC/FDRC。完整接入队列见 [元件接入清单](docs/COMPONENT_ROLLOUT_CN.md)。
 
 ## 源文件与生成物边界
 
@@ -95,6 +95,8 @@ z^-1 = exp(-j*2*pi*f/fs_execution)
 
 对于 LADRC 等多输入/多输出时域模块，**Simulation Analysis** 页会提供激励输入端口、观测输出端口和每个输入的稳态工作值。测量程序只在所选输入上叠加正弦激励，其余输入保持指定工作值，并绘制所选输入到所选输出的局部幅相响应。
 
+RC/FDRC 在整个扫频过程中保持固定的 **Locked frequency**。每个频点先持续施加当前误差正弦，按锁定频率计算并运行指定数量的预学习周期，随后进入独立的相干测量窗口。扫频激励频率不会反向修改控制器的锁定频率。
+
 ## 当前范围
 
 - SISO 和标量多输入/多输出；Simulink 端口为 `double`，GMP 内部使用 `ctrl_gt`。
@@ -104,7 +106,7 @@ z^-1 = exp(-j*2*pi*f/fs_execution)
 - 动态工作区 current/pending 双缓冲，在 `mdlTerminate` 中统一释放。
 - 继承 Simulink 调度周期。
 - 当前 MATLAB 平台上的 Host MEX 仿真。
-- 连续理想/离散实现绘图与逐频正弦测量。
+- 连续理想/离散实现绘图与逐频正弦测量，支持 RC 固定锁频预学习。
 
 MIMO、通用状态观察端口、定点 MEX、Simulink Coder 部署和独立边界 testbench 尚未实现。Host MEX 通过不等同于硬件验证通过。
 
@@ -116,4 +118,4 @@ Python 测试：
 python -m unittest discover -s tests -v
 ```
 
-MATLAB 验证需要已经配置 MEX 编译器。当前框架已在 MATLAB R2024b、Microsoft Visual C++ 2022 下完成 5 个 MEX 的编译、Library/双页 Mask 生成、PID 首拍与外部参数端口检查，以及 QPR 实测频响与真实差分方程对比。
+MATLAB 验证需要已经配置 MEX 编译器。当前框架已在 MATLAB R2024b、Microsoft Visual C++ 2022 下完成 22 个 MEX 的编译、Library/双页 Mask 生成、PID 首拍与外部参数端口检查，以及 QPR、RC 和 biquad 的实测频响检查。

@@ -1,0 +1,9 @@
+{
+  "schema_version":1,"id":"intrinsic.discrete.lag","display_name":"GMP Lag Compensator","description":"First-order discrete lag compensator.","category":["Intrinsic","Discrete","Compensators"],"system_type":"siso","template":"generic_stateful_v1",
+  "implementation":{"instance_type":"ctrl_lag_t","headers":["ctl/component/intrinsic/discrete/lead_lag.h"],"sources":["ctl/component/intrinsic/discrete/src/ctl_discrete_lead_lag.c"]},
+  "inputs":[{"id":"input","label":"Input","width":1,"type":"double"}],"outputs":[{"id":"output","label":"Output","width":1,"type":"double"}],
+  "parameters":[{"id":"tau_l","label":"Zero time constant","type":"number","group":"Design","externalizable":true,"default":0.001,"unit":"s","description":"Lag zero time constant"},{"id":"tau_p","label":"Pole time constant","type":"number","group":"Design","externalizable":true,"default":0.01,"unit":"s","description":"Lag pole time constant"},{"id":"fs","label":"Initialization frequency","type":"number","group":"Initialization","externalizable":false,"default":10000.0,"unit":"Hz","description":"Coefficient design frequency"}],
+  "initializers":[{"id":"lag","label":"tau_L and tau_P","function":"ctl_init_lag","step_function":"ctl_step_lag","arguments":["$instance","tau_l","tau_p","fs"],"reference_model":"measured"}],
+  "execution":{"initialize_code":[],"parameter_update_code":["ctrl_lag_t fresh{};","ctl_init_lag(&fresh, tau_l, tau_p, fs);","runtime->pending.b0 = fresh.b0; runtime->pending.b1 = fresh.b1; runtime->pending.a1 = fresh.a1;"],"step_code":["output_output = ctrl2float(ctl_step_lag(&runtime->pending, float2ctrl(input_input)));"],"terminate_code":[]},
+  "analysis":{"default_frequency_hz":[1.0,4000.0],"default_points":60,"excitation_amplitude":0.001,"settling_periods":12,"measurement_periods":12}
+}

@@ -82,10 +82,20 @@ if numel(component.inputs) > 1
         'Value', inputLabels{1}, 'Container', analysisTab.Name, 'Tunable', 'off');
     for index = 1:numel(component.inputs)
         input = component.inputs(index);
+        defaultOperating = 0;
+        if isfield(analysis, 'default_operating_values') && ...
+                numel(analysis.default_operating_values) >= index
+            defaultOperating = analysis.default_operating_values(index);
+        end
+        operatingPrompt = ['Steady operating value: ' char(input.label)];
+        if isfield(analysis, 'settling_reference_input') && ...
+                strcmp(char(analysis.settling_reference_input), char(input.id))
+            operatingPrompt = ['Locked frequency: ' char(input.label) ' [Hz]'];
+        end
         mask.addParameter('Type', 'edit', ...
             'Name', ['analysis_operating_' char(input.id)], ...
-            'Prompt', ['Steady operating value: ' char(input.label)], ...
-            'Value', '0', 'Container', analysisTab.Name);
+            'Prompt', operatingPrompt, ...
+            'Value', num2str(defaultOperating, 16), 'Container', analysisTab.Name);
     end
 end
 if numel(component.outputs) > 1
@@ -95,7 +105,7 @@ if numel(component.outputs) > 1
         'Value', outputLabels{1}, 'Container', analysisTab.Name, 'Tunable', 'off');
 end
 mask.addParameter('Type', 'edit', 'Name', 'analysis_settling_periods', ...
-    'Prompt', 'Settling periods', 'Value', num2str(analysis.settling_periods), ...
+    'Prompt', settling_prompt(analysis), 'Value', num2str(analysis.settling_periods), ...
     'Container', analysisTab.Name);
 mask.addParameter('Type', 'edit', 'Name', 'analysis_measurement_periods', ...
     'Prompt', 'Measurement periods', 'Value', num2str(analysis.measurement_periods), ...
@@ -132,4 +142,11 @@ for index = 1:numel(component.outputs)
 end
 mask.Display = strjoin(displayLines, newline);
 set_param(block, 'UserData', component, 'UserDataPersistent', 'on');
+end
+
+function prompt = settling_prompt(analysis)
+prompt = 'Settling periods';
+if isfield(analysis, 'settling_reference_input')
+    prompt = 'Pre-learning periods at locked frequency';
+end
 end

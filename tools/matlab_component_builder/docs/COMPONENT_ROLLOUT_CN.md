@@ -25,15 +25,19 @@
 | continuous | LADRC2 | 已编译 | 4 输入、3 输出，需要工作点分析。 |
 | continuous | SOGI | 已编译 | 1 输入、direct/quadrature 双输出。 |
 | discrete | PR/R/QR/QPR | 已编译、QPR 已测量 | 已有理论连续/离散模型。 |
-| advance | repetitive controller | 已编译 | 双缓冲延迟线，支持重复启动/释放测试。 |
-| advance | FDRC | 已编译 | 双缓冲延迟线和内部 biquad Q 滤波器。 |
+| discrete | lead / lag | 已编译 | lead 支持三种初始化形式，设计参数可外引。 |
+| discrete | biquad | 已编译、已测量 | LPF/HPF/BPF/notch/peaking/low-shelf/high-shelf。头文件声明但源码未实现的 all-pass 未注册。 |
+| discrete | LP / IIR1 filter | 已编译 | 轻量 LP 与 LPF/HPF/APF/lag 四种 IIR1 初始化。 |
+| discrete | 1P1Z / 2P2Z / 3P3Z | 已编译 | 覆盖实数根与 GMP 已提供的复共轭初始化形式。 |
+| advance | repetitive controller | 已编译、已测量 | 双缓冲延迟线；固定锁频，先学习后测量，并与差分方程频响对照。 |
+| advance | FDRC | 已编译 | 双缓冲延迟线和内部 biquad Q 滤波器，采用相同固定锁频测量流程。 |
 
 ## 后续接入队列
 
 | 批次 | 元件 |
 | --- | --- |
-| Discrete A | biquad、DF11/DF22/DF13/DF23、LP/IIR1 filter、discrete PID。 |
-| Discrete B | discrete SOGI/SOGI-DC、lead、lag、1p1z/2p2z/3p3z。 |
+| Discrete A | DF11/DF22/DF13/DF23、discrete PID。 |
+| Discrete B | discrete SOGI/SOGI-DC。 |
 | Advanced | back stepping、MRAC、SMC。 |
 | Interface 数值层 | ADC/DAC 数值换算、PWM channel、调制器。 |
 | Interface 绑定层 | ptr ADC、advanced ADC/PWM、标准接口对象；需要明确 Host 端口代替硬件指针的契约。 |

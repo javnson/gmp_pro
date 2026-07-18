@@ -4,7 +4,7 @@
 
 `matlab_component_builder` turns a real GMP C control component into an independently installed, masked Simulink block. It does not depend on or modify the existing GMP `slib` library.
 
-The current catalog includes basic hysteresis/saturation/slope limiting, continuous PI/PID/LADRC1/LADRC2/SOGI, the PR family, and advanced RC/FDRC. See the [component rollout ledger](docs/COMPONENT_ROLLOUT_CN.md) for the remaining queue.
+The current catalog includes basic hysteresis/saturation/slope limiting, continuous PI/PID/LADRC1/LADRC2/SOGI, the PR family, lead/lag, biquad and first-order filters, 1P1Z/2P2Z/3P3Z, and advanced RC/FDRC. See the [component rollout ledger](docs/COMPONENT_ROLLOUT_CN.md) for the remaining queue.
 
 ## Source and generated boundaries
 
@@ -92,6 +92,8 @@ For nonlinear components such as saturation and hysteresis, the measured respons
 
 For time-domain MIMO components such as LADRC, the **Simulation Analysis** tab exposes the excited input, observed output, and steady operating value for every input. The harness adds the sine only to the selected input, holds all other inputs at their configured operating values, and plots the local response for the selected input/output pair.
 
+RC and FDRC use a fixed **Locked frequency** input during the entire sweep. At every sweep point, the error sine is first applied for the configured number of pre-learning periods (measured in locked-frequency periods), then the response is estimated over a separate coherent measurement window. This measures the conventional fixed-period repetitive-controller response; the lock frequency never follows the sweep frequency.
+
 ## Current scope
 
 - SISO and scalar MIMO `double` Simulink ports with GMP `ctrl_gt` internally.
@@ -101,7 +103,7 @@ For time-domain MIMO components such as LADRC, the **Simulation Analysis** tab e
 - Double-buffered dynamic workspaces committed in `mdlUpdate` and released in `mdlTerminate`.
 - Inherited Simulink scheduling.
 - Host MEX simulation on the active MATLAB platform.
-- Ideal/implementation plots and sequential-sine measurement.
+- Ideal/implementation plots and sequential-sine measurement, including fixed-lock RC pre-learning.
 
 MIMO, generic state probes, fixed-point MEX variants, Simulink Coder deployment, and separate boundary-condition testbenches are future extensions. A successful host MEX test is not hardware validation.
 
@@ -113,4 +115,4 @@ Python checks:
 python -m unittest discover -s tests -v
 ```
 
-MATLAB checks require a configured MEX compiler. The implementation has been exercised with MATLAB R2024b and Microsoft Visual C++ 2022 by compiling all five MEX files, creating/loading the library and two-tab masks, checking PID first-sample and external-port behavior, and comparing the measured QPR response with its exact difference equation.
+MATLAB checks require a configured MEX compiler. The implementation has been exercised with MATLAB R2024b and Microsoft Visual C++ 2022 by compiling all 22 MEX files, creating/loading the library and two-tab masks, checking PID first-sample and external-port behavior, and checking measured QPR, RC, and biquad responses.

@@ -81,10 +81,28 @@ set_param(model, 'Solver', 'FixedStepDiscrete', 'FixedStep', num2str(ts, 17), ..
 
 response = complex(zeros(size(frequenciesHz)));
 actualFrequency = zeros(size(frequenciesHz));
+settlingReferenceHz = NaN;
+if isfield(component.analysis, 'settling_reference_input')
+    referenceId = string(component.analysis.settling_reference_input);
+    referenceIndex = find(string({component.inputs.id}) == referenceId, 1);
+    if isempty(referenceIndex) || referenceIndex == inputIndex
+        error('GMP:MCB:AnalysisSettings', ...
+            'Settling reference input must identify a non-excited input port.');
+    end
+    settlingReferenceHz = operatingPoints(referenceIndex);
+    if ~isfinite(settlingReferenceHz) || settlingReferenceHz <= 0 || settlingReferenceHz >= executionFs / 2
+        error('GMP:MCB:AnalysisSettings', 'Locked frequency must lie between 0 and Nyquist.');
+    end
+end
 for index = 1:numel(frequenciesHz)
     samplesPerPeriod = max(3, round(executionFs / frequenciesHz(index)));
     frequency = executionFs / samplesPerPeriod;
-    sampleCount = (settlingPeriods + measurementPeriods) * samplesPerPeriod;
+    settlingSamples = settlingPeriods * samplesPerPeriod;
+    if isfinite(settlingReferenceHz)
+        lockedSamplesPerPeriod = max(3, round(executionFs / settlingReferenceHz));
+        settlingSamples = settlingPeriods * lockedSamplesPerPeriod;
+    end
+    sampleCount = settlingSamples + measurementPeriods * samplesPerPeriod;
     time = (0:sampleCount)' * ts;
     excitation = amplitude * sin(2 * pi * frequency * time);
     input = bias + excitation;
@@ -108,6 +126,7 @@ result = struct('frequencyHz', actualFrequency, 'measured', response, ...
     'hasReferenceModel', models.hasReferenceModel, ...
     'amplitude', amplitude, 'bias', bias, 'parameterFs', parameterFs, 'executionFs', executionFs, ...
     'settlingPeriods', settlingPeriods, 'measurementPeriods', measurementPeriods, ...
+    'settlingReferenceHz', settlingReferenceHz, ...
     'componentId', string(component.id), 'componentName', string(component.display_name), ...
     'inputIndex', inputIndex, 'inputLabel', string(component.inputs(inputIndex).label), ...
     'outputIndex', outputIndex, 'outputLabel', string(component.outputs(outputIndex).label), ...

@@ -31,5 +31,5 @@
     "step_code": ["output_output = ctrl2float(ctl_step_fdrc(&runtime->pending, float2ctrl(input_error), input_frequency));"],
     "terminate_code": []
   },
-  "analysis": {"default_frequency_hz": [45.0, 55.0], "default_points": 21, "excitation_amplitude": 0.001, "settling_periods": 40, "measurement_periods": 20}
+  "analysis": {"default_frequency_hz": [1.0, 500.0], "default_points": 60, "excitation_amplitude": 0.001, "settling_periods": 80, "measurement_periods": 20, "default_operating_values": [0.0, 50.0], "settling_reference_input": "frequency"}
 }
