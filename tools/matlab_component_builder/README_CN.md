@@ -1,0 +1,106 @@
+# GMP MATLAB 元件构建器
+
+[English](README.md) | **简体中文**
+
+`matlab_component_builder` 用于把真实的 GMP C 控制元件转换成独立安装、带 Mask 的 Simulink Block。它不依赖、也不修改现有的 GMP `slib`。
+
+首个模板是 SISO PID，直接使用 `ctl/component/intrinsic/continuous/continuous_pid.h` 中的实现。生成的 Block 支持并联增益和时间常数两种初始化方式，逐拍执行真实 GMP step 函数，可以绘制连续理想模型和实际差分实现模型，并能对编译后的 MEX Block 进行相干正弦扫频测量。
+
+## 源文件与生成物边界
+
+| 路径 | 作用 |
+| --- | --- |
+| `components/*.json` | 用户维护的权威元件定义。 |
+| `schemas/` | 配置格式说明。 |
+| `templates/` | 代码生成模板。 |
+| `python/gmp_mcb/` | 校验、生成器和 PyQt 编辑器。 |
+| `matlab/+gmp_mcb/` | MATLAB 编译、建库、Mask、模型和测量程序。 |
+| `build/` | 生成的 C++ 源码和注册表，不提交。 |
+| `install/<Release>/` | 生成的 MEX 和 Simulink Library，不提交。 |
+| `cache/` | 频响测量结果，不提交。 |
+
+JSON 中的 GMP 头文件和源文件位置必须相对 `GMP_PRO_LOCATION`。本地生成物可以包含解析后的绝对路径，但绝对路径不会成为权威输入。
+
+## 快速使用
+
+首先安装或激活 GMP，确保已经定义 `GMP_PRO_LOCATION`。
+
+启动编辑器：
+
+```bat
+tools\matlab_component_builder\run_builder.bat
+```
+
+也可以使用命令行：
+
+```bat
+cd /d %GMP_PRO_LOCATION%\tools\matlab_component_builder
+python matlab_component_builder.py validate
+python matlab_component_builder.py generate
+```
+
+为当前 MATLAB Release 编译并注册：
+
+```matlab
+run(fullfile(getenv('GMP_PRO_LOCATION'), 'tools', ...
+    'matlab_component_builder', 'matlab', ...
+    'install_gmp_matlab_components.m'));
+```
+
+刷新后可以在 Simulink Library Browser 中找到 **GMP MATLAB Components**。把 PID Block 加入模型并双击打开 Mask，即可编辑参数、绘制模型或测量真实 MEX 频响。
+
+移除注册路径：
+
+```matlab
+run(fullfile(getenv('GMP_PRO_LOCATION'), 'tools', ...
+    'matlab_component_builder', 'matlab', ...
+    'uninstall_gmp_matlab_components.m'));
+```
+
+卸载只移除 MATLAB 路径，不删除生成物。如需完全重建，可手动删除被忽略的 `build/`、`install/` 和 `cache/`。
+
+## 调度频率与 `fs`
+
+生成的 S-Function 使用继承采样时间。Mask 中的 `fs` 只传递给 GMP 初始化函数，不强制 Simulink 的调度周期。因此用户可以把控制器放进 Triggered Subsystem 或 Function-Call Subsystem，使控制器以正常控制频率运行，而外部对象使用更精细的仿真步长。
+
+Mask 另有 **Analysis/execution frequency**，默认表达式为 `fs`。理论离散模型和测量 testbench 用它把离散拍数映射为真实时间。如果实际触发频率与初始化参数 `fs` 不同，应在这里填写真实执行频率。
+
+## PID 模型定义
+
+并联初始化对应的当前实际差分频响为：
+
+```text
+Kp + (Ki/fs_parameter)/(1-z^-1) + (Kd*fs_parameter)(1-z^-1)
+```
+
+其中：
+
+```text
+z^-1 = exp(-j*2*pi*f/fs_execution)
+```
+
+时间常数模式严格跟随当前 `ctl_step_pid_ser` 实现。当前代码的微分项没有再次乘以 `Kp`，分析器会忠实显示这一行为，而不会用理想串联 PID 掩盖它。
+
+测量按钮会创建临时离散 Simulink testbench，复制当前 Masked Block，运行相干逐频正弦激励，把真实 MEX 输出与差分方程参考结果比较，并把 MAT 结果保存到 `cache/`。
+
+## 当前范围
+
+- 单输入单输出；Simulink 端口为标量 `double`，GMP 内部 `ctrl_gt` 为 `float`。
+- PID 专用模板。
+- 并联参数和时间常数两种初始化方式。
+- 继承 Simulink 调度周期。
+- 当前 MATLAB 平台上的 Host MEX 仿真。
+- 连续理想/离散实现绘图与逐频正弦测量。
+
+MIMO、通用状态观察端口、定点 MEX、Simulink Coder 部署、任意元件模板和独立边界 testbench 尚未实现。Host MEX 通过不等同于硬件验证通过。
+
+## 验证
+
+Python 测试：
+
+```bat
+python -m unittest discover -s tests -v
+```
+
+MATLAB 验证需要已经配置 MEX 编译器。当前框架已在 MATLAB R2024b、Microsoft Visual C++ 2022 下完成 PID MEX 编译、Library 生成/加载、首拍时序检查，以及并联/T-mode 实测频响与真实差分方程对比。
+

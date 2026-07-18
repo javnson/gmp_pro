@@ -1,0 +1,13 @@
+#ifndef GMP_MCB_XPLT_CONFIG_H
+#define GMP_MCB_XPLT_CONFIG_H
+
+/* Minimal host configuration used only by generated MATLAB components. */
+#define SPECIFY_DISABLE_CSP
+#define SPECIFY_ENABLE_GMP_CTL
+#define SPECIFY_DISABLE_GMP_LOGO
+#define SPECIFY_BASE_PRINT_NOT_IMPL
+#define SPECIFY_CTRL_GT_TYPE USING_FLOAT_FPU
+#define SPECIFY_PARAMETER_GT_TYPE USING_DOUBLE_FPU
+
+#endif
+

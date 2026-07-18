@@ -1,0 +1,51 @@
+from __future__ import annotations
+
+import json
+import os
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+TOOL_ROOT = Path(__file__).resolve().parents[1]
+PYTHON_ROOT = TOOL_ROOT / "python"
+if str(PYTHON_ROOT) not in sys.path:
+    sys.path.insert(0, str(PYTHON_ROOT))
+
+from gmp_mcb.generator import ComponentGenerator
+from gmp_mcb.model import ComponentDefinition, ComponentError
+
+
+class BuilderTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        os.environ.setdefault("GMP_PRO_LOCATION", str(TOOL_ROOT.parents[1]))
+
+    def test_pid_definition_is_valid(self) -> None:
+        component = ComponentDefinition.load(TOOL_ROOT / "components" / "continuous_pid.json")
+        self.assertEqual(component.sfunction_name, "gmp_mcb_intrinsic_continuous_pid")
+
+    def test_generator_emits_source_and_registry(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            outputs = ComponentGenerator(TOOL_ROOT).generate(
+                [TOOL_ROOT / "components" / "continuous_pid.json"], Path(temp)
+            )
+            registry = json.loads((Path(temp) / "registry.json").read_text(encoding="utf-8"))
+            source = Path(registry["components"][0]["generated_source"])
+            self.assertTrue(source.is_file())
+            self.assertIn("ctl_step_pid_par", source.read_text(encoding="utf-8"))
+            self.assertIn(Path(temp) / "registry.json", outputs)
+
+    def test_absolute_source_path_is_rejected(self) -> None:
+        original = json.loads((TOOL_ROOT / "components" / "continuous_pid.json").read_text(encoding="utf-8"))
+        original["implementation"]["sources"] = ["C:/outside.c"]
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "bad.json"
+            path.write_text(json.dumps(original), encoding="utf-8")
+            with self.assertRaises(ComponentError):
+                ComponentDefinition.load(path)
+
+
+if __name__ == "__main__":
+    unittest.main()
+
