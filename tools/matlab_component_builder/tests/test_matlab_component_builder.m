@@ -134,6 +134,28 @@ clear cleanup;
 close_model(model);
 end
 
+function testGenericSisoKeepsMeasuredFrequencyPlot(testCase)
+model = 'gmp_mcb_unit_measured_only';
+cleanup = onCleanup(@() close_model(model));
+new_system(model);
+add_block(library_block('gmp_mcb_intrinsic_basic_saturation'), [model '/Saturation']);
+mask = Simulink.Mask.get([model '/Saturation']);
+verifyNotEmpty(testCase, mask.getDialogControl('measure_model'));
+set_param([model '/Saturation'], 'analysis_execution_fs', '10000', ...
+    'analysis_amplitude', '0.1', 'analysis_bias', '0.2', 'analysis_settling_periods', '1', ...
+    'analysis_measurement_periods', '4');
+result = gmp_mcb.measure_component_block([model '/Saturation'], [10; 100]);
+verifyFalse(testCase, result.hasReferenceModel);
+verifyEqual(testCase, result.bias, 0.2);
+verifyTrue(testCase, all(isfinite(result.measured)));
+verifyEqual(testCase, abs(result.measured), ones(2, 1), 'AbsTol', 2e-5);
+verifyTrue(testCase, all(isnan(result.continuous)));
+verifyTrue(testCase, all(isnan(result.implementation)));
+close all force;
+clear cleanup;
+close_model(model);
+end
+
 function testMimoLadrcPortsCompile(testCase)
 model = 'gmp_mcb_unit_ladrc';
 cleanup = onCleanup(@() close_model(model));

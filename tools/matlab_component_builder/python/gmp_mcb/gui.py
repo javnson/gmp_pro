@@ -196,12 +196,14 @@ class BuilderWindow(QMainWindow):
         self.freq_max_edit = QLineEdit()
         self.freq_points_edit = QLineEdit()
         self.amplitude_edit = QLineEdit()
+        self.bias_edit = QLineEdit()
         self.settling_edit = QLineEdit()
         self.measurement_edit = QLineEdit()
         analysis_form.addRow("Minimum frequency [Hz]", self.freq_min_edit)
         analysis_form.addRow("Maximum frequency [Hz]", self.freq_max_edit)
         analysis_form.addRow("Frequency points", self.freq_points_edit)
         analysis_form.addRow("Excitation amplitude", self.amplitude_edit)
+        analysis_form.addRow("Excitation bias / operating point", self.bias_edit)
         analysis_form.addRow("Settling periods", self.settling_edit)
         analysis_form.addRow("Measurement periods", self.measurement_edit)
         self.tabs.addTab(analysis, "Analysis")
@@ -270,6 +272,7 @@ class BuilderWindow(QMainWindow):
         self.freq_max_edit.setText(str(frequency[1]))
         self.freq_points_edit.setText(str(analysis.get("default_points", 40)))
         self.amplitude_edit.setText(str(analysis.get("excitation_amplitude", 0.001)))
+        self.bias_edit.setText(str(analysis.get("excitation_bias", 0.0)))
         self.settling_edit.setText(str(analysis.get("settling_periods", 8)))
         self.measurement_edit.setText(str(analysis.get("measurement_periods", 8)))
         self._refresh_preview()
@@ -391,6 +394,7 @@ class BuilderWindow(QMainWindow):
             "default_frequency_hz": [float(self.freq_min_edit.text()), float(self.freq_max_edit.text())],
             "default_points": int(self.freq_points_edit.text()),
             "excitation_amplitude": float(self.amplitude_edit.text()),
+            "excitation_bias": float(self.bias_edit.text()),
             "settling_periods": int(self.settling_edit.text()),
             "measurement_periods": int(self.measurement_edit.text()),
         }

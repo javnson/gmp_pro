@@ -89,7 +89,9 @@ z^-1 = exp(-j*2*pi*f/fs_execution)
 
 时间常数模式严格跟随当前 `ctl_step_pid_ser` 实现。当前代码的微分项没有再次乘以 `Kp`，分析器会忠实显示这一行为，而不会用理想串联 PID 掩盖它。
 
-测量按钮会创建临时离散 Simulink testbench，复制当前 Masked Block，运行相干逐频正弦激励，把真实 MEX 输出与差分方程参考结果比较，并把 MAT 结果保存到 `cache/`。
+所有 SISO 元件都保留 **Measure and plot simulated frequency response**。测量按钮会创建临时离散 Simulink testbench，复制当前 Masked Block，并运行相干逐频正弦激励。有解析模型时，图中叠加连续理论、离散实现和 MEX 实测曲线；没有解析模型时，只绘制实际测得的幅频和相频曲线。MAT 结果保存到 `cache/`。
+
+对于饱和、滞环等非线性模块，测得的频响取决于激励幅值、偏置和稳态条件，不应解释为唯一的线性传递函数。测量图标题和缓存会记录激励幅值、执行频率与稳态/测量周期。
 
 ## 当前范围
 

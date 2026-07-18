@@ -86,7 +86,9 @@ where `z^-1 = exp(-j*2*pi*f/fs_execution)`.
 
 For time-constant initialization, the implementation follows the current `ctl_step_pid_ser` code. Its derivative term is not multiplied by `Kp`; the analyzer intentionally preserves and displays that behavior.
 
-The measurement button creates a temporary discrete Simulink harness, copies the selected masked block, runs a coherent sequential sine sweep, compares measured values with the implementation reference, and stores a MAT result under `cache/`.
+Every SISO component retains **Measure and plot simulated frequency response**. The action creates a temporary discrete Simulink harness and runs a coherent sequential sine sweep. Components with analytical models overlay the continuous, implementation-reference, and measured MEX responses. Components without analytical models show a clean measured-only magnitude/phase plot. Results are stored under `cache/`.
+
+For nonlinear components such as saturation and hysteresis, the measured response depends on excitation amplitude, bias, and settled operating condition; it is not a unique linear transfer function. Plot titles and cached results record the excitation, execution frequency, and settling/measurement durations.
 
 ## Current scope
 
