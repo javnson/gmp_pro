@@ -39,119 +39,89 @@ extern "C"
 /**
  * @brief Human-readable motor model name.
  */
-#ifndef TYI_5010_360KV_MOTOR_NAME
 #define TYI_5010_360KV_MOTOR_NAME "TYI-5010 360KV"
-#endif // TYI_5010_360KV_MOTOR_NAME
 
 /**
  * @brief GMP motor type macro.
  */
-#ifndef TYI_5010_360KV_MOTOR_TYPE
 #define TYI_5010_360KV_MOTOR_TYPE PMSM_MOTOR
-#endif // TYI_5010_360KV_MOTOR_TYPE
 
 /**
  * @brief Stator resistance per phase.
  * @unit ohm
  */
-#ifndef TYI_5010_360KV_RS
 #define TYI_5010_360KV_RS ((0.12))
-#endif // TYI_5010_360KV_RS
 
 /**
  * @brief D-axis stator inductance.
  * @unit H
  */
-#ifndef TYI_5010_360KV_LD
 #define TYI_5010_360KV_LD ((5e-05))
-#endif // TYI_5010_360KV_LD
 
 /**
  * @brief Q-axis stator inductance.
  * @unit H
  */
-#ifndef TYI_5010_360KV_LQ
 #define TYI_5010_360KV_LQ ((5e-05))
-#endif // TYI_5010_360KV_LQ
 
 /**
  * @brief Permanent magnet flux linkage.
  * @unit Wb
  */
-#ifndef TYI_5010_360KV_FLUX
 #define TYI_5010_360KV_FLUX ((0.0021))
-#endif // TYI_5010_360KV_FLUX
 
 /**
  * @brief Number of pole pairs in the motor.
  */
-#ifndef TYI_5010_360KV_POLE_PAIRS
 #define TYI_5010_360KV_POLE_PAIRS ((7))
-#endif // TYI_5010_360KV_POLE_PAIRS
 
 /**
  * @brief Motor velocity constant.
  * @unit RPM/V
  */
-#ifndef TYI_5010_360KV_KV
 #define TYI_5010_360KV_KV ((360.0))
-#endif // TYI_5010_360KV_KV
 
 /**
  * @brief Back-EMF constant.
  * @unit V/kRPM
  */
-#ifndef TYI_5010_360KV_EMF
 #define TYI_5010_360KV_EMF ((4.85))
-#endif // TYI_5010_360KV_EMF
 
 /**
  * @brief Rated operating voltage.
  * @unit V
  */
-#ifndef TYI_5010_360KV_RATED_VOLTAGE
 #define TYI_5010_360KV_RATED_VOLTAGE ((24.0))
-#endif // TYI_5010_360KV_RATED_VOLTAGE
 
 /**
  * @brief No-load phase current.
  * @unit A
  */
-#ifndef TYI_5010_360KV_NO_LOAD_CURRENT
 #define TYI_5010_360KV_NO_LOAD_CURRENT ((0.5))
-#endif // TYI_5010_360KV_NO_LOAD_CURRENT
 
 /**
  * @brief Maximum allowable speed.
  * @unit RPM
  */
-#ifndef TYI_5010_360KV_MAX_SPEED
 #define TYI_5010_360KV_MAX_SPEED ((8600))
-#endif // TYI_5010_360KV_MAX_SPEED
 
 /**
  * @brief Maximum intermittent torque.
  * @unit N*m
  */
-#ifndef TYI_5010_360KV_MAX_TORQUE
 #define TYI_5010_360KV_MAX_TORQUE ((0.25))
-#endif // TYI_5010_360KV_MAX_TORQUE
 
 /**
  * @brief Maximum allowable DC bus voltage.
  * @unit V
  */
-#ifndef TYI_5010_360KV_MAX_DC_VOLTAGE
 #define TYI_5010_360KV_MAX_DC_VOLTAGE ((25.2))
-#endif // TYI_5010_360KV_MAX_DC_VOLTAGE
 
 /**
  * @brief Maximum allowable phase current.
  * @unit A
  */
-#ifndef TYI_5010_360KV_MAX_PH_CURRENT
 #define TYI_5010_360KV_MAX_PH_CURRENT ((23.0))
-#endif // TYI_5010_360KV_MAX_PH_CURRENT
 
 // Logical exports
 // rs: TYI_5010_360KV_RS

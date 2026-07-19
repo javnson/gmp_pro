@@ -40,187 +40,139 @@ extern "C"
  * @brief Main filter inductance.
  * @unit H
  */
-#ifndef HARMONIA_3PH_LC_FILTER_INDUCTANCE_H
 #define HARMONIA_3PH_LC_FILTER_INDUCTANCE_H (0.0015f)
-#endif // HARMONIA_3PH_LC_FILTER_INDUCTANCE_H
 
 /**
  * @brief Main filter capacitance.
  * @unit F
  */
-#ifndef HARMONIA_3PH_LC_FILTER_CAPACITANCE_F
 #define HARMONIA_3PH_LC_FILTER_CAPACITANCE_F (0.000005f)
-#endif // HARMONIA_3PH_LC_FILTER_CAPACITANCE_F
 
 /**
  * @brief Board or module name.
  */
-#ifndef HARMONIA_3PH_LC_FILTER_BOARD_NAME
 #define HARMONIA_3PH_LC_FILTER_BOARD_NAME "Harmonia 3Ph LC Filter"
-#endif // HARMONIA_3PH_LC_FILTER_BOARD_NAME
 
 /**
  * @brief Maximum DC bus voltage.
  * @unit V
  */
-#ifndef HARMONIA_3PH_LC_FILTER_VBUS_MAX_V
 #define HARMONIA_3PH_LC_FILTER_VBUS_MAX_V (1000.0f)
-#endif // HARMONIA_3PH_LC_FILTER_VBUS_MAX_V
 
 /**
  * @brief Minimum DC bus voltage.
  * @unit V
  */
-#ifndef HARMONIA_3PH_LC_FILTER_VBUS_MIN_V
 #define HARMONIA_3PH_LC_FILTER_VBUS_MIN_V (0.0f)
-#endif // HARMONIA_3PH_LC_FILTER_VBUS_MIN_V
 
 /**
  * @brief Maximum continuous RMS current.
  * @unit A
  */
-#ifndef HARMONIA_3PH_LC_FILTER_CURRENT_MAX_RMS_A
 #define HARMONIA_3PH_LC_FILTER_CURRENT_MAX_RMS_A (40.0f)
-#endif // HARMONIA_3PH_LC_FILTER_CURRENT_MAX_RMS_A
 
 /**
  * @brief Maximum peak current.
  * @unit A
  */
-#ifndef HARMONIA_3PH_LC_FILTER_CURRENT_MAX_PEAK_A
 #define HARMONIA_3PH_LC_FILTER_CURRENT_MAX_PEAK_A (HARMONIA_3PH_LC_FILTER_CURRENT_MAX_RMS_A * 1.41421356237f)
-#endif // HARMONIA_3PH_LC_FILTER_CURRENT_MAX_PEAK_A
 
 /**
  * @brief Recommended maximum PCB operating temperature.
  * @unit degC
  */
-#ifndef HARMONIA_3PH_LC_FILTER_TEMP_MAX_C
 #define HARMONIA_3PH_LC_FILTER_TEMP_MAX_C (85.0f)
-#endif // HARMONIA_3PH_LC_FILTER_TEMP_MAX_C
 
 /**
  * @brief Phase current sensor type enum.
  */
-#ifndef HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSE_TYPE
 #define HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSE_TYPE (2)
-#endif // HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSE_TYPE
 
 /**
  * @brief Phase current sensing topology enum.
  */
-#ifndef HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSE_TOPOLOGY
 #define HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSE_TOPOLOGY (3)
-#endif // HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSE_TOPOLOGY
 
 /**
  * @brief Phase voltage sensing type enum.
  */
-#ifndef HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_TYPE
 #define HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_TYPE (1)
-#endif // HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_TYPE
 
 /**
  * @brief Phase current sensor bandwidth.
  * @unit Hz
  */
-#ifndef HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSE_POLE_HZ
 #define HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSE_POLE_HZ TLE4971A025_BANDWIDTH_HZ
-#endif // HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSE_POLE_HZ
 
 /**
  * @brief Total high-side voltage divider resistance.
  * @unit ohm
  */
-#ifndef HARMONIA_3PH_LC_FILTER_VS_R_TOP_TOTAL_OHM
 #define HARMONIA_3PH_LC_FILTER_VS_R_TOP_TOTAL_OHM (3920000.0f)
-#endif // HARMONIA_3PH_LC_FILTER_VS_R_TOP_TOTAL_OHM
 
 /**
  * @brief Bottom voltage divider resistance.
  * @unit ohm
  */
-#ifndef HARMONIA_3PH_LC_FILTER_VS_R_BOT_OHM
 #define HARMONIA_3PH_LC_FILTER_VS_R_BOT_OHM (560000.0f)
-#endif // HARMONIA_3PH_LC_FILTER_VS_R_BOT_OHM
 
 /**
  * @brief Isolation amplifier voltage gain.
  * @unit V/V
  */
-#ifndef HARMONIA_3PH_LC_FILTER_VS_ISO_GAIN_V_V
 #define HARMONIA_3PH_LC_FILTER_VS_ISO_GAIN_V_V (0.4f)
-#endif // HARMONIA_3PH_LC_FILTER_VS_ISO_GAIN_V_V
 
 /**
  * @brief Voltage sensing op-amp feedback resistor.
  * @unit ohm
  */
-#ifndef HARMONIA_3PH_LC_FILTER_VS_OPAMP_R_FB_OHM
 #define HARMONIA_3PH_LC_FILTER_VS_OPAMP_R_FB_OHM (1650.0f)
-#endif // HARMONIA_3PH_LC_FILTER_VS_OPAMP_R_FB_OHM
 
 /**
  * @brief Voltage sensing op-amp input resistor.
  * @unit ohm
  */
-#ifndef HARMONIA_3PH_LC_FILTER_VS_OPAMP_R_IN_OHM
 #define HARMONIA_3PH_LC_FILTER_VS_OPAMP_R_IN_OHM (2000.0f)
-#endif // HARMONIA_3PH_LC_FILTER_VS_OPAMP_R_IN_OHM
 
 /**
  * @brief ADC bias for phase voltage sensing.
  * @unit V
  */
-#ifndef HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_BIAS_V
 #define HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_BIAS_V (1.65f)
-#endif // HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_BIAS_V
 
 /**
  * @brief Approximate phase voltage sense bandwidth.
  * @unit Hz
  */
-#ifndef HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_POLE_HZ
 #define HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_POLE_HZ (100000.0f)
-#endif // HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_POLE_HZ
 
 /**
  * @brief Phase voltage sensor model.
  */
-#ifndef HARMONIA_3PH_LC_FILTER_VOLTAGE_SENSOR_MODEL
 #define HARMONIA_3PH_LC_FILTER_VOLTAGE_SENSOR_MODEL ResDiv + AMC1350 + TLV9061
-#endif // HARMONIA_3PH_LC_FILTER_VOLTAGE_SENSOR_MODEL
 
 /**
  * @brief Calculated phase voltage sense gain.
  * @unit V/V
  */
-#ifndef HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_GAIN
 #define HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_GAIN (((HARMONIA_3PH_LC_FILTER_VS_R_BOT_OHM / (HARMONIA_3PH_LC_FILTER_VS_R_TOP_TOTAL_OHM + HARMONIA_3PH_LC_FILTER_VS_R_BOT_OHM)) * HARMONIA_3PH_LC_FILTER_VS_ISO_GAIN_V_V * (HARMONIA_3PH_LC_FILTER_VS_OPAMP_R_FB_OHM / HARMONIA_3PH_LC_FILTER_VS_OPAMP_R_IN_OHM)))
-#endif // HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_GAIN
 
 /**
  * @brief Phase current sensor model.
  */
-#ifndef HARMONIA_3PH_LC_FILTER_CURRENT_SENSOR_MODEL
 #define HARMONIA_3PH_LC_FILTER_CURRENT_SENSOR_MODEL Infineon TLE4971A025
-#endif // HARMONIA_3PH_LC_FILTER_CURRENT_SENSOR_MODEL
 
 /**
  * @brief Phase current sensor sensitivity.
  * @unit mV/A
  */
-#ifndef HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSITIVITY_MV_A
 #define HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSITIVITY_MV_A TLE4971A025_SENSITIVITY_MV_PER_A
-#endif // HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSITIVITY_MV_A
 
 /**
  * @brief Zero-current output bias.
  * @unit V
  */
-#ifndef HARMONIA_3PH_LC_FILTER_PH_CURRENT_ZERO_BIAS_V
 #define HARMONIA_3PH_LC_FILTER_PH_CURRENT_ZERO_BIAS_V TLE4971A025_BIAS_V
-#endif // HARMONIA_3PH_LC_FILTER_PH_CURRENT_ZERO_BIAS_V
 
 // Logical exports
 // inductance: HARMONIA_3PH_LC_FILTER_INDUCTANCE_H

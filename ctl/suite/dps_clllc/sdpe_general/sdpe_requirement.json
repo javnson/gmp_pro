@@ -1,0 +1,67 @@
+{
+  "id": "dps_clllc_common",
+  "macro_prefix": "DPS_CLLLC_COMMON",
+  "display_name": "DPS CLLLC / DAB Common Control",
+  "description": "Platform-independent Dioscuri CLLLC/DAB tank, sensing, modulation and control-loop contract.",
+  "suite": "dps_clllc",
+  "version": "1.0.0",
+  "updated_at": "2026-07-19",
+  "output_header": "sdpe_dps_clllc_common_settings.h",
+  "hardware": [
+    {"entity":"tmcs1133_b5a"},
+    {"entity":"dioscuri_voltage_sensor"}
+  ],
+  "feature_macros": [
+    {
+      "group":"Sensing",
+      "macro":"SPECIFY_ENABLE_ADC_CALIBRATE",
+      "enabled":true,
+      "value":"",
+      "description":"Calibrate the TMCS1133B5A zero-current bias while all PWM outputs are disabled."
+    }
+  ],
+  "option_macros": [],
+  "requirements": [
+    {"role":"Resonant Frequency","macro":"CLLLC_F_RESONANT_HZ","binding":{"float":"100000.0"},"description":"Nominal tank resonant frequency."},
+    {"role":"Minimum Switching Frequency","macro":"CLLLC_F_MIN_HZ","binding":{"float":"75000.0"},"description":"Lowest allowed hybrid modulation frequency."},
+    {"role":"Maximum Switching Frequency","macro":"CLLLC_F_MAX_HZ","binding":{"float":"150000.0"},"description":"Highest allowed hybrid modulation frequency."},
+    {"role":"Dead Time","macro":"CLLLC_DEADBAND_S","binding":{"float":"200e-9"},"description":"Absolute complementary-switch dead time."},
+    {"role":"Maximum Phase Shift","macro":"CLLLC_MAX_PHASE_SHIFT_PU","binding":{"float":"0.25"},"description":"Maximum signed primary-to-secondary bridge phase displacement, where 1 pu is 360 degrees."},
+    {"role":"Magnetizing Inductance","macro":"CLLLC_LM_H","binding":{"float":"120e-6"},"description":"Transformer magnetizing inductance."},
+    {"role":"Primary Resonant Inductance","macro":"CLLLC_LR_PRIMARY_H","binding":{"float":"20e-6"},"description":"Primary resonant inductance."},
+    {"role":"Secondary Resonant Inductance","macro":"CLLLC_LR_SECONDARY_H","binding":{"float":"20e-6"},"description":"Secondary resonant inductance."},
+    {"role":"Primary Resonant Capacitance","macro":"CLLLC_CR_PRIMARY_F","binding":{"float":"120e-9"},"description":"Primary resonant capacitance."},
+    {"role":"Secondary Resonant Capacitance","macro":"CLLLC_CR_SECONDARY_F","binding":{"float":"120e-9"},"description":"Secondary resonant capacitance."},
+    {"role":"Transformer Ratio","macro":"CLLLC_TRANSFORMER_NS_NP","binding":{"float":"1.0"},"description":"Secondary-to-primary turns ratio."},
+    {"role":"Output Capacitance","macro":"CLLLC_COUT_F","binding":{"float":"440e-6"},"description":"Equivalent output capacitance."},
+    {"role":"Minimum Load Resistance","macro":"CLLLC_RLOAD_MIN_OHM","binding":{"float":"10.0"},"description":"Minimum resistive load used for conservative tuning."},
+    {"role":"Tank ESR","macro":"CLLLC_TANK_ESR_OHM","binding":{"float":"0.10"},"description":"Equivalent resonant-tank series resistance."},
+    {"role":"Voltage PU Base","macro":"CTRL_VOLTAGE_BASE","binding":{"float":"120.0"},"description":"Voltage per-unit base."},
+    {"role":"Current PU Base","macro":"CTRL_CURRENT_BASE","binding":{"float":"10.0"},"description":"Current per-unit base, kept within the TMCS1133B5A rated measurement range."},
+    {"role":"Voltage Sensor Sensitivity","macro":"CLLLC_VOLTAGE_SENSITIVITY_V_PER_V","binding":{"export":"dioscuri_voltage_sensor.sensitivity"},"description":"AMC1311 board-level ADC sensitivity."},
+    {"role":"Voltage Sensor Bias","macro":"CLLLC_VOLTAGE_BIAS_V","binding":{"export":"dioscuri_voltage_sensor.bias"},"description":"Unidirectional AMC1311 board-level ADC bias."},
+    {"role":"Voltage Sensor Range","macro":"CLLLC_VOLTAGE_SENSOR_RANGE_V","binding":{"export":"dioscuri_voltage_sensor.range"},"description":"AMC1311 front-end full-scale voltage."},
+    {"role":"Current Sensor Sensitivity","macro":"CLLLC_CURRENT_SENSITIVITY_V_PER_A","binding":{"export":"tmcs1133_b5a.sensitivity"},"description":"TMCS1133B5A sensitivity."},
+    {"role":"Current Sensor Bias","macro":"CLLLC_CURRENT_BIAS_V","binding":{"export":"tmcs1133_b5a.bias"},"description":"TMCS1133B5A zero-current output bias."},
+    {"role":"Current Sensor Range","macro":"CLLLC_CURRENT_SENSOR_RANGE_A","binding":{"export":"tmcs1133_b5a.range"},"description":"TMCS1133B5A rated current range."},
+    {"role":"Default Voltage Target","macro":"CLLLC_VOLTAGE_TARGET_PU","binding":{"float":"0.40"},"description":"Default secondary voltage reference."},
+    {"role":"Default Current Target","macro":"CLLLC_CURRENT_TARGET_PU","binding":{"float":"0.50"},"description":"Current-loop reference and parallel current limit."},
+    {"role":"Current-loop Bandwidth","macro":"CLLLC_CURRENT_LOOP_BW_HZ","binding":{"float":"5000.0"},"description":"Requested current-loop bandwidth, constrained by CLLLC auto tuning."},
+    {"role":"Voltage-loop Bandwidth","macro":"CLLLC_VOLTAGE_LOOP_BW_HZ","binding":{"float":"400.0"},"description":"Requested voltage-loop bandwidth, constrained below the current loop."},
+    {"role":"Voltage Ramp","macro":"CLLLC_VOLTAGE_SLOPE_PU_S","binding":{"float":"0.5"},"description":"Voltage-reference slew rate."},
+    {"role":"Current Ramp","macro":"CLLLC_CURRENT_SLOPE_PU_S","binding":{"float":"1.0"},"description":"Current-reference slew rate."},
+    {"role":"ADC Calibration Timeout","macro":"TIMEOUT_ADC_CALIB_MS","binding":{"number":"3000"},"description":"Maximum current-sensor offset calibration time."}
+  ],
+  "requirement_groups": [
+    {"name":"Hybrid Modulation","requirements":["Resonant Frequency","Minimum Switching Frequency","Maximum Switching Frequency","Dead Time","Maximum Phase Shift"]},
+    {"name":"Resonant Tank","requirements":["Magnetizing Inductance","Primary Resonant Inductance","Secondary Resonant Inductance","Primary Resonant Capacitance","Secondary Resonant Capacitance","Transformer Ratio","Output Capacitance","Minimum Load Resistance","Tank ESR"]},
+    {"name":"Per-Unit Bases","requirements":["Voltage PU Base","Current PU Base"]},
+    {"name":"AMC1311 Voltage Sensors","requirements":["Voltage Sensor Sensitivity","Voltage Sensor Bias","Voltage Sensor Range"]},
+    {"name":"TMCS1133B5A Current Sensors","requirements":["Current Sensor Sensitivity","Current Sensor Bias","Current Sensor Range"]},
+    {"name":"Control Loops","requirements":["Default Voltage Target","Default Current Target","Current-loop Bandwidth","Voltage-loop Bandwidth","Voltage Ramp","Current Ramp"]},
+    {"name":"Runtime","requirements":["ADC Calibration Timeout"]}
+  ],
+  "code_sections": {
+    "after_extern_open":"/* Shared CLLLC/DAB control and physical hardware contract. Floating-point physical ranges are constrained by their SDPE parameter definitions rather than non-portable preprocessor arithmetic. */"
+  }
+}

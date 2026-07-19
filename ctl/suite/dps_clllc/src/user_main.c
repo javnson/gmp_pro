@@ -36,6 +36,7 @@ const gmp_param_item_t dict_m1[] = {
 
     {&g_v_out_ref_user, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
     {&g_i_limit_user, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
+//    {&g_modulation_target_user, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
     {&g_modulation_command, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
     {&adc_v_primary.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
     {&adc_i_primary.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
@@ -170,7 +171,8 @@ gmp_task_status_t tsk_startup(gmp_task_t* tsk);
 // All tasks must be non blocking tasks
 gmp_task_t tasks[] = {
     // name,          task,                period(ms),  init_phase, is_enabled, pParam
-    {"blink_led", tsk_blink, 1000, 0, 1, NULL},    {"dl_online", tsk_dl_debug_device, 2, 0, 1, NULL},
+    /* Toggle every 500 ms: one complete SYS_LED on/off period is 1 s. */
+    {"blink_led", tsk_blink, 500, 0, 1, NULL},     {"dl_online", tsk_dl_debug_device, 2, 0, 1, NULL},
     {"monitor_data", tsk_monitor, 5, 0, 1, NULL},  // 5ms -> 200Hz refresh rate
     {"ctl_mainloop", tsk_ctl_main, 1, 0, 1, NULL}, // 1ms state machine tick
     {"slow_protect", tsk_protect, 10, 0, 1, NULL}, // 10ms thermal/RMS protection

@@ -33,93 +33,67 @@ extern "C"
 /**
  * @brief STM32 device name.
  */
-#ifndef NUCLEO_G431RB_MOTOR_BOARD_CHIP
 #define NUCLEO_G431RB_MOTOR_BOARD_CHIP "STM32G431RBTx"
-#endif // NUCLEO_G431RB_MOTOR_BOARD_CHIP
 
 /**
  * @brief Board or carrier identification.
  */
-#ifndef NUCLEO_G431RB_MOTOR_BOARD_BOARD
 #define NUCLEO_G431RB_MOTOR_BOARD_BOARD "NUCLEO-G431RB"
-#endif // NUCLEO_G431RB_MOTOR_BOARD_BOARD
 
 /**
  * @brief STM32CubeMX project implementing the pin map.
  */
-#ifndef NUCLEO_G431RB_MOTOR_BOARD_IOC_FILE
 #define NUCLEO_G431RB_MOTOR_BOARD_IOC_FILE "ctl/suite/mcs_pmsm_nt/project/stm32g431/stm32g431.ioc"
-#endif // NUCLEO_G431RB_MOTOR_BOARD_IOC_FILE
 
 /**
  * @brief CPU/system clock in hertz.
  */
-#ifndef NUCLEO_G431RB_MOTOR_BOARD_SYSTEM_CLOCK_HZ
 #define NUCLEO_G431RB_MOTOR_BOARD_SYSTEM_CLOCK_HZ (170000000UL)
-#endif // NUCLEO_G431RB_MOTOR_BOARD_SYSTEM_CLOCK_HZ
 
 /**
  * @brief ADC handle used for motor-control injected conversions.
  */
-#ifndef NUCLEO_G431RB_MOTOR_BOARD_ADC_HANDLE
 #define NUCLEO_G431RB_MOTOR_BOARD_ADC_HANDLE (&hadc1)
-#endif // NUCLEO_G431RB_MOTOR_BOARD_ADC_HANDLE
 
 /**
  * @brief Quadrature encoder timer handle.
  */
-#ifndef NUCLEO_G431RB_MOTOR_BOARD_ENCODER_TIMER_HANDLE
 #define NUCLEO_G431RB_MOTOR_BOARD_ENCODER_TIMER_HANDLE (&htim3)
-#endif // NUCLEO_G431RB_MOTOR_BOARD_ENCODER_TIMER_HANDLE
 
 /**
  * @brief UART handle used by GMP Datalink.
  */
-#ifndef NUCLEO_G431RB_MOTOR_BOARD_UART_HANDLE
 #define NUCLEO_G431RB_MOTOR_BOARD_UART_HANDLE (&huart2)
-#endif // NUCLEO_G431RB_MOTOR_BOARD_UART_HANDLE
 
 /**
  * @brief UART peripheral instance used by callbacks.
  */
-#ifndef NUCLEO_G431RB_MOTOR_BOARD_UART_INSTANCE
 #define NUCLEO_G431RB_MOTOR_BOARD_UART_INSTANCE USART2
-#endif // NUCLEO_G431RB_MOTOR_BOARD_UART_INSTANCE
 
 /**
  * @brief Circular RX DMA handle used by GMP Datalink.
  */
-#ifndef NUCLEO_G431RB_MOTOR_BOARD_UART_RX_DMA_HANDLE
 #define NUCLEO_G431RB_MOTOR_BOARD_UART_RX_DMA_HANDLE (&hdma_usart2_rx)
-#endif // NUCLEO_G431RB_MOTOR_BOARD_UART_RX_DMA_HANDLE
 
 /**
  * @brief Gate-driver enable GPIO port.
  */
-#ifndef NUCLEO_G431RB_MOTOR_BOARD_GATE_ENABLE_PORT
 #define NUCLEO_G431RB_MOTOR_BOARD_GATE_ENABLE_PORT PWM_DISABLE_GPIO_Port
-#endif // NUCLEO_G431RB_MOTOR_BOARD_GATE_ENABLE_PORT
 
 /**
  * @brief Gate-driver enable GPIO pin.
  */
-#ifndef NUCLEO_G431RB_MOTOR_BOARD_GATE_ENABLE_PIN
 #define NUCLEO_G431RB_MOTOR_BOARD_GATE_ENABLE_PIN PWM_DISABLE_Pin
-#endif // NUCLEO_G431RB_MOTOR_BOARD_GATE_ENABLE_PIN
 
 /**
  * @brief Status LED GPIO port.
  */
-#ifndef NUCLEO_G431RB_MOTOR_BOARD_STATUS_LED_PORT
 #define NUCLEO_G431RB_MOTOR_BOARD_STATUS_LED_PORT SYS_LED_GPIO_Port
-#endif // NUCLEO_G431RB_MOTOR_BOARD_STATUS_LED_PORT
 
 /**
  * @brief Status LED GPIO pin.
  */
-#ifndef NUCLEO_G431RB_MOTOR_BOARD_STATUS_LED_PIN
 #define NUCLEO_G431RB_MOTOR_BOARD_STATUS_LED_PIN SYS_LED_Pin
-#endif // NUCLEO_G431RB_MOTOR_BOARD_STATUS_LED_PIN
 
 // User code before footer
 // SDPE extension point: add before_footer code in the Entity Instance Code page if needed.

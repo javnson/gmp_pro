@@ -39,40 +39,30 @@ extern "C"
 /**
  * @brief Board or module name.
  */
-#ifndef GMP_LVFB_HB_A_BOARD_NAME
 #define GMP_LVFB_HB_A_BOARD_NAME "GMP LVFB 150V 2ph V2 Phase A"
-#endif // GMP_LVFB_HB_A_BOARD_NAME
 
 /**
  * @brief Number of half-bridge phases represented by this module.
  */
-#ifndef GMP_LVFB_HB_A_PHASE_COUNT
 #define GMP_LVFB_HB_A_PHASE_COUNT (1U)
-#endif // GMP_LVFB_HB_A_PHASE_COUNT
 
 /**
  * @brief Current measurement range exported by the current sensor sub component.
  * @unit A
  */
-#ifndef GMP_LVFB_HB_A_MEASURED_CURRENT_RANGE_A
 #define GMP_LVFB_HB_A_MEASURED_CURRENT_RANGE_A TMCS1133_B5A_RANGE_A
-#endif // GMP_LVFB_HB_A_MEASURED_CURRENT_RANGE_A
 
 /**
  * @brief Recommended hardware deadtime.
  * @unit ns
  */
-#ifndef GMP_LVFB_HB_A_DEADTIME_NS
 #define GMP_LVFB_HB_A_DEADTIME_NS (523.0f)
-#endif // GMP_LVFB_HB_A_DEADTIME_NS
 
 /**
  * @brief Optional local DC bus capacitance.
  * @unit F
  */
-#ifndef GMP_LVFB_HB_A_BUS_CAPACITANCE_F
 #define GMP_LVFB_HB_A_BUS_CAPACITANCE_F (0.0f)
-#endif // GMP_LVFB_HB_A_BUS_CAPACITANCE_F
 
 // Derived macros
 /**

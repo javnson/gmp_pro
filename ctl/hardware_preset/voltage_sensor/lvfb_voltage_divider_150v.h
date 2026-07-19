@@ -36,41 +36,37 @@ extern "C"
 /**
  * @brief Main sensing IC or front-end topology.
  */
-#ifndef LVFB_VDIV_150V_CHIP
 #define LVFB_VDIV_150V_CHIP "AMC1311BDWVR + resistor divider"
-#endif // LVFB_VDIV_150V_CHIP
 
 /**
  * @brief Nominal measurable voltage.
  * @unit V
  */
-#ifndef LVFB_VDIV_150V_RATED_VOLTAGE_V
 #define LVFB_VDIV_150V_RATED_VOLTAGE_V (150.0f)
-#endif // LVFB_VDIV_150V_RATED_VOLTAGE_V
 
 /**
  * @brief Output bias voltage.
  * @unit V
  */
-#ifndef LVFB_VDIV_150V_BIAS_V
 #define LVFB_VDIV_150V_BIAS_V (0.0f)
-#endif // LVFB_VDIV_150V_BIAS_V
 
 /**
  * @brief Voltage sensor sensitivity.
  * @unit V/V
  */
-#ifndef LVFB_VDIV_150V_SENSITIVITY_V_PER_V
 #define LVFB_VDIV_150V_SENSITIVITY_V_PER_V (0.016129f)
-#endif // LVFB_VDIV_150V_SENSITIVITY_V_PER_V
 
 /**
  * @brief Equivalent input resistance.
  * @unit ohm
  */
-#ifndef LVFB_VDIV_150V_INPUT_RESISTANCE_OHM
 #define LVFB_VDIV_150V_INPUT_RESISTANCE_OHM (915000.0f)
-#endif // LVFB_VDIV_150V_INPUT_RESISTANCE_OHM
+
+/**
+ * @brief Small-signal sensing bandwidth.
+ * @unit Hz
+ */
+#define LVFB_VDIV_150V_BANDWIDTH_HZ (0.0f)
 
 // Derived macros
 /**
@@ -83,6 +79,7 @@ extern "C"
 // sensitivity: LVFB_VDIV_150V_SENSITIVITY_V_PER_V
 // bias: LVFB_VDIV_150V_BIAS_V
 // range: LVFB_VDIV_150V_RATED_VOLTAGE_V
+// bandwidth: LVFB_VDIV_150V_BANDWIDTH_HZ
 
 // User code before footer
 // SDPE extension point: add before_footer code in the Entity Instance Code page if needed.

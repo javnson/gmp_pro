@@ -38,164 +38,122 @@ extern "C"
 /**
  * @brief Human-readable motor model name.
  */
-#ifndef HBL48ZL400330K_MOTOR_NAME
 #define HBL48ZL400330K_MOTOR_NAME "HBL48ZL400330K"
-#endif // HBL48ZL400330K_MOTOR_NAME
 
 /**
  * @brief GMP motor type macro.
  */
-#ifndef HBL48ZL400330K_MOTOR_TYPE
 #define HBL48ZL400330K_MOTOR_TYPE PMSM_MOTOR
-#endif // HBL48ZL400330K_MOTOR_TYPE
 
 /**
  * @brief Optional encoder type macro.
  */
-#ifndef HBL48ZL400330K_ENCODER_TYPE
 #define HBL48ZL400330K_ENCODER_TYPE QEP_ENCODER
-#endif // HBL48ZL400330K_ENCODER_TYPE
 
 /**
  * @brief Quadrature encoder line count.
  * @unit PPR
  */
-#ifndef HBL48ZL400330K_ENCODER_LINE_NUMBER
 #define HBL48ZL400330K_ENCODER_LINE_NUMBER (2500U)
-#endif // HBL48ZL400330K_ENCODER_LINE_NUMBER
 
 /**
  * @brief Stator resistance per phase.
  * @unit ohm
  */
-#ifndef HBL48ZL400330K_RS
-#define HBL48ZL400330K_RS ((0.4 / 2.0))
-#endif // HBL48ZL400330K_RS
+#define HBL48ZL400330K_RS 0.4 / 2.0
 
 /**
  * @brief D-axis stator inductance.
  * @unit H
  */
-#ifndef HBL48ZL400330K_LD
-#define HBL48ZL400330K_LD ((0.6e-3 / 2.0))
-#endif // HBL48ZL400330K_LD
+#define HBL48ZL400330K_LD 0.6e-3 / 2.0
 
 /**
  * @brief Q-axis stator inductance.
  * @unit H
  */
-#ifndef HBL48ZL400330K_LQ
-#define HBL48ZL400330K_LQ ((0.6e-3 / 2.0))
-#endif // HBL48ZL400330K_LQ
+#define HBL48ZL400330K_LQ 0.6e-3 / 2.0
 
 /**
  * @brief Permanent magnet flux linkage.
  * @unit Wb
  */
-#ifndef HBL48ZL400330K_FLUX
 #define HBL48ZL400330K_FLUX ((MOTOR_PARAM_CALCULATE_FLUX_BY_EMF(HBL48ZL400330K_EMF)))
-#endif // HBL48ZL400330K_FLUX
 
 /**
  * @brief Number of pole pairs in the motor.
  */
-#ifndef HBL48ZL400330K_POLE_PAIRS
 #define HBL48ZL400330K_POLE_PAIRS ((8))
-#endif // HBL48ZL400330K_POLE_PAIRS
 
 /**
  * @brief Rotor inertia. Unit follows the source document.
  */
-#ifndef HBL48ZL400330K_INERTIA
 #define HBL48ZL400330K_INERTIA ((0.45))
-#endif // HBL48ZL400330K_INERTIA
 
 /**
  * @brief Viscous friction coefficient. Unit follows the source document.
  */
-#ifndef HBL48ZL400330K_FRICTION
 #define HBL48ZL400330K_FRICTION ((0.55))
-#endif // HBL48ZL400330K_FRICTION
 
 /**
  * @brief Back-EMF constant.
  * @unit V/kRPM
  */
-#ifndef HBL48ZL400330K_EMF
 #define HBL48ZL400330K_EMF ((10.5))
-#endif // HBL48ZL400330K_EMF
 
 /**
  * @brief Rated operating voltage.
  * @unit V
  */
-#ifndef HBL48ZL400330K_RATED_VOLTAGE
 #define HBL48ZL400330K_RATED_VOLTAGE ((48.0))
-#endif // HBL48ZL400330K_RATED_VOLTAGE
 
 /**
  * @brief Rated phase current.
  * @unit A
  */
-#ifndef HBL48ZL400330K_RATED_CURRENT
 #define HBL48ZL400330K_RATED_CURRENT ((11.0))
-#endif // HBL48ZL400330K_RATED_CURRENT
 
 /**
  * @brief No-load phase current.
  * @unit A
  */
-#ifndef HBL48ZL400330K_NO_LOAD_CURRENT
 #define HBL48ZL400330K_NO_LOAD_CURRENT ((0.25))
-#endif // HBL48ZL400330K_NO_LOAD_CURRENT
 
 /**
  * @brief Rated operating speed.
  * @unit RPM
  */
-#ifndef HBL48ZL400330K_RATED_SPEED
 #define HBL48ZL400330K_RATED_SPEED ((3000))
-#endif // HBL48ZL400330K_RATED_SPEED
 
 /**
  * @brief Rated continuous torque.
  * @unit N*m
  */
-#ifndef HBL48ZL400330K_RATED_TORQUE
 #define HBL48ZL400330K_RATED_TORQUE ((1.27))
-#endif // HBL48ZL400330K_RATED_TORQUE
 
 /**
  * @brief Maximum allowable speed.
  * @unit RPM
  */
-#ifndef HBL48ZL400330K_MAX_SPEED
 #define HBL48ZL400330K_MAX_SPEED ((3500))
-#endif // HBL48ZL400330K_MAX_SPEED
 
 /**
  * @brief Maximum intermittent torque.
  * @unit N*m
  */
-#ifndef HBL48ZL400330K_MAX_TORQUE
 #define HBL48ZL400330K_MAX_TORQUE ((3.81))
-#endif // HBL48ZL400330K_MAX_TORQUE
 
 /**
  * @brief Maximum allowable DC bus voltage.
  * @unit V
  */
-#ifndef HBL48ZL400330K_MAX_DC_VOLTAGE
 #define HBL48ZL400330K_MAX_DC_VOLTAGE ((54.0))
-#endif // HBL48ZL400330K_MAX_DC_VOLTAGE
 
 /**
  * @brief Maximum allowable phase current.
  * @unit A
  */
-#ifndef HBL48ZL400330K_MAX_PH_CURRENT
 #define HBL48ZL400330K_MAX_PH_CURRENT ((33.0))
-#endif // HBL48ZL400330K_MAX_PH_CURRENT
 
 // Logical exports
 // rs: HBL48ZL400330K_RS

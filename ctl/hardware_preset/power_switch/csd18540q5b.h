@@ -37,78 +37,58 @@ extern "C"
 /**
  * @brief Power device part number.
  */
-#ifndef CSD18540Q5B_PART_NUMBER
 #define CSD18540Q5B_PART_NUMBER "CSD18540Q5B"
-#endif // CSD18540Q5B_PART_NUMBER
 
 /**
  * @brief MOSFET, IGBT, GaN, SiC, etc.
  */
-#ifndef CSD18540Q5B_DEVICE_TYPE
 #define CSD18540Q5B_DEVICE_TYPE "MOSFET"
-#endif // CSD18540Q5B_DEVICE_TYPE
 
 /**
  * @brief Drain-source or collector-emitter voltage rating.
  * @unit V
  */
-#ifndef CSD18540Q5B_VOLTAGE_RATING_V
 #define CSD18540Q5B_VOLTAGE_RATING_V (60.0f)
-#endif // CSD18540Q5B_VOLTAGE_RATING_V
 
 /**
  * @brief Current rating.
  * @unit A
  */
-#ifndef CSD18540Q5B_CURRENT_RATING_A
 #define CSD18540Q5B_CURRENT_RATING_A (100.0f)
-#endif // CSD18540Q5B_CURRENT_RATING_A
 
 /**
  * @brief On resistance.
  * @unit ohm
  */
-#ifndef CSD18540Q5B_RDSON_OHM
 #define CSD18540Q5B_RDSON_OHM (0.0018f)
-#endif // CSD18540Q5B_RDSON_OHM
 
 /**
  * @brief Single switch, dual switch, half bridge power block, etc.
  */
-#ifndef CSD18540Q5B_CONFIGURATION
 #define CSD18540Q5B_CONFIGURATION "single"
-#endif // CSD18540Q5B_CONFIGURATION
 
 /**
  * @brief Maximum on resistance at the documented gate voltage.
  * @unit ohm
  */
-#ifndef CSD18540Q5B_RDSON_MAX_OHM
 #define CSD18540Q5B_RDSON_MAX_OHM (0.0022f)
-#endif // CSD18540Q5B_RDSON_MAX_OHM
 
 /**
  * @brief Gate voltage associated with the resistance value.
  * @unit V
  */
-#ifndef CSD18540Q5B_GATE_VOLTAGE_V
 #define CSD18540Q5B_GATE_VOLTAGE_V (10.0f)
-#endif // CSD18540Q5B_GATE_VOLTAGE_V
 
 /**
  * @brief Typical total gate charge.
  * @unit nC
  */
-#ifndef CSD18540Q5B_GATE_CHARGE_NC
 #define CSD18540Q5B_GATE_CHARGE_NC (41.0f)
-#endif // CSD18540Q5B_GATE_CHARGE_NC
 
 /**
  * @brief Manufacturer package name.
  */
-#ifndef CSD18540Q5B_PACKAGE
 #define CSD18540Q5B_PACKAGE "SON 5x6"
-#endif // CSD18540Q5B_PACKAGE
 
 // Logical exports
 // voltage_rating: CSD18540Q5B_VOLTAGE_RATING_V

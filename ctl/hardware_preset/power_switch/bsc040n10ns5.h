@@ -37,78 +37,58 @@ extern "C"
 /**
  * @brief Power device part number.
  */
-#ifndef BSC040N10NS5_PART_NUMBER
 #define BSC040N10NS5_PART_NUMBER "BSC040N10NS5"
-#endif // BSC040N10NS5_PART_NUMBER
 
 /**
  * @brief MOSFET, IGBT, GaN, SiC, etc.
  */
-#ifndef BSC040N10NS5_DEVICE_TYPE
 #define BSC040N10NS5_DEVICE_TYPE "MOSFET"
-#endif // BSC040N10NS5_DEVICE_TYPE
 
 /**
  * @brief Drain-source or collector-emitter voltage rating.
  * @unit V
  */
-#ifndef BSC040N10NS5_VOLTAGE_RATING_V
 #define BSC040N10NS5_VOLTAGE_RATING_V (100.0f)
-#endif // BSC040N10NS5_VOLTAGE_RATING_V
 
 /**
  * @brief Current rating.
  * @unit A
  */
-#ifndef BSC040N10NS5_CURRENT_RATING_A
 #define BSC040N10NS5_CURRENT_RATING_A (120.0f)
-#endif // BSC040N10NS5_CURRENT_RATING_A
 
 /**
  * @brief On resistance.
  * @unit ohm
  */
-#ifndef BSC040N10NS5_RDSON_OHM
 #define BSC040N10NS5_RDSON_OHM (0.0034f)
-#endif // BSC040N10NS5_RDSON_OHM
 
 /**
  * @brief Single switch, dual switch, half bridge power block, etc.
  */
-#ifndef BSC040N10NS5_CONFIGURATION
 #define BSC040N10NS5_CONFIGURATION "single"
-#endif // BSC040N10NS5_CONFIGURATION
 
 /**
  * @brief Maximum on resistance at the documented gate voltage.
  * @unit ohm
  */
-#ifndef BSC040N10NS5_RDSON_MAX_OHM
 #define BSC040N10NS5_RDSON_MAX_OHM (0.004f)
-#endif // BSC040N10NS5_RDSON_MAX_OHM
 
 /**
  * @brief Gate voltage associated with the resistance value.
  * @unit V
  */
-#ifndef BSC040N10NS5_GATE_VOLTAGE_V
 #define BSC040N10NS5_GATE_VOLTAGE_V (10.0f)
-#endif // BSC040N10NS5_GATE_VOLTAGE_V
 
 /**
  * @brief Typical total gate charge.
  * @unit nC
  */
-#ifndef BSC040N10NS5_GATE_CHARGE_NC
 #define BSC040N10NS5_GATE_CHARGE_NC (0.0f)
-#endif // BSC040N10NS5_GATE_CHARGE_NC
 
 /**
  * @brief Manufacturer package name.
  */
-#ifndef BSC040N10NS5_PACKAGE
 #define BSC040N10NS5_PACKAGE "SuperSO8"
-#endif // BSC040N10NS5_PACKAGE
 
 // Logical exports
 // voltage_rating: BSC040N10NS5_VOLTAGE_RATING_V

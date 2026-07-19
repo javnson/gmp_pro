@@ -8,7 +8,7 @@
 #define _INVERTER_3PH_TI_BOOSTXL_DRV8320RS_H_
 
 #include <ctl/hardware_preset/power_switch/csd88584q5dc.h>
-#include <ctl/hardware_preset/inverter_3ph/inverter_3ph_general.h>
+#include <ctl/component/hardware_preset/inverter_3ph/inverter_3ph_general.h>
 
 // User code after includes
 // SDPE extension point: add after_includes code in the Entity Instance Code page if needed.
@@ -40,254 +40,186 @@ extern "C"
 /**
  * @brief Board name.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_BOARD_NAME
 #define TI_BOOSTXL_DRV8320RS_BOARD_NAME "BOOSTXL-DRV8320RS"
-#endif // TI_BOOSTXL_DRV8320RS_BOARD_NAME
 
 /**
  * @brief Gate driver or integrated driver.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_GATE_DRIVER
 #define TI_BOOSTXL_DRV8320RS_GATE_DRIVER "DRV8320RS"
-#endif // TI_BOOSTXL_DRV8320RS_GATE_DRIVER
 
 /**
  * @brief discrete_mosfet, discrete_igbt, ipm or integrated_power_stage.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_POWER_STAGE_KIND
 #define TI_BOOSTXL_DRV8320RS_POWER_STAGE_KIND "mosfet_half_bridge_power_block"
-#endif // TI_BOOSTXL_DRV8320RS_POWER_STAGE_KIND
 
 /**
  * @brief Minimum documented operating bus voltage; zero means unspecified.
  * @unit V
  */
-#ifndef TI_BOOSTXL_DRV8320RS_VBUS_MIN_V
 #define TI_BOOSTXL_DRV8320RS_VBUS_MIN_V (6.0f)
-#endif // TI_BOOSTXL_DRV8320RS_VBUS_MIN_V
 
 /**
  * @brief Maximum documented operating bus voltage; zero means unspecified.
  * @unit V
  */
-#ifndef TI_BOOSTXL_DRV8320RS_VBUS_MAX_V
 #define TI_BOOSTXL_DRV8320RS_VBUS_MAX_V (54.0f)
-#endif // TI_BOOSTXL_DRV8320RS_VBUS_MAX_V
 
 /**
  * @brief Board continuous RMS current; zero means unspecified.
  * @unit A
  */
-#ifndef TI_BOOSTXL_DRV8320RS_CURRENT_MAX_RMS_A
 #define TI_BOOSTXL_DRV8320RS_CURRENT_MAX_RMS_A (0.0f)
-#endif // TI_BOOSTXL_DRV8320RS_CURRENT_MAX_RMS_A
 
 /**
  * @brief Board peak current; zero means unspecified.
  * @unit A
  */
-#ifndef TI_BOOSTXL_DRV8320RS_CURRENT_MAX_PEAK_A
 #define TI_BOOSTXL_DRV8320RS_CURRENT_MAX_PEAK_A (0.0f)
-#endif // TI_BOOSTXL_DRV8320RS_CURRENT_MAX_PEAK_A
 
 /**
  * @brief PWM control inputs (3 or 6); zero means not verified.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_PWM_INPUT_COUNT
 #define TI_BOOSTXL_DRV8320RS_PWM_INPUT_COUNT (6U)
-#endif // TI_BOOSTXL_DRV8320RS_PWM_INPUT_COUNT
 
 /**
  * @brief One active-high, zero active-low.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_PWM_ACTIVE_LEVEL
 #define TI_BOOSTXL_DRV8320RS_PWM_ACTIVE_LEVEL (1U)
-#endif // TI_BOOSTXL_DRV8320RS_PWM_ACTIVE_LEVEL
 
 /**
  * @brief One only when PWM polarity was checked against a primary schematic or datasheet.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_PWM_POLARITY_VERIFIED
 #define TI_BOOSTXL_DRV8320RS_PWM_POLARITY_VERIFIED (0U)
-#endif // TI_BOOSTXL_DRV8320RS_PWM_POLARITY_VERIFIED
 
 /**
  * @brief Enable polarity; one active-high, zero active-low.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_ENABLE_ACTIVE_LEVEL
 #define TI_BOOSTXL_DRV8320RS_ENABLE_ACTIVE_LEVEL (1U)
-#endif // TI_BOOSTXL_DRV8320RS_ENABLE_ACTIVE_LEVEL
 
 /**
  * @brief Independently measurable motor phase-current channels.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_PH_CURRENT_CHANNEL_COUNT
 #define TI_BOOSTXL_DRV8320RS_PH_CURRENT_CHANNEL_COUNT (3U)
-#endif // TI_BOOSTXL_DRV8320RS_PH_CURRENT_CHANNEL_COUNT
 
 /**
  * @brief SENSOR_TYPE_* constant.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_PH_CURRENT_SENSE_TYPE
 #define TI_BOOSTXL_DRV8320RS_PH_CURRENT_SENSE_TYPE SENSOR_TYPE_SHUNT
-#endif // TI_BOOSTXL_DRV8320RS_PH_CURRENT_SENSE_TYPE
 
 /**
  * @brief CS_TOPOLOGY_* constant.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_PH_CURRENT_SENSE_TOPOLOGY
 #define TI_BOOSTXL_DRV8320RS_PH_CURRENT_SENSE_TOPOLOGY CS_TOPOLOGY_LOW_SIDE
-#endif // TI_BOOSTXL_DRV8320RS_PH_CURRENT_SENSE_TOPOLOGY
 
 /**
  * @brief Per-channel shunt resistance; zero for sensor IC or unknown.
  * @unit ohm
  */
-#ifndef TI_BOOSTXL_DRV8320RS_PH_SHUNT_RESISTANCE_OHM
 #define TI_BOOSTXL_DRV8320RS_PH_SHUNT_RESISTANCE_OHM (0.0f)
-#endif // TI_BOOSTXL_DRV8320RS_PH_SHUNT_RESISTANCE_OHM
 
 /**
  * @brief Current signal-chain gain; zero means configurable/unknown.
  * @unit V/V
  */
-#ifndef TI_BOOSTXL_DRV8320RS_PH_CSA_GAIN_V_V
 #define TI_BOOSTXL_DRV8320RS_PH_CSA_GAIN_V_V (0.0f)
-#endif // TI_BOOSTXL_DRV8320RS_PH_CSA_GAIN_V_V
 
 /**
  * @brief Zero-current ADC bias; zero may mean differential/unknown.
  * @unit V
  */
-#ifndef TI_BOOSTXL_DRV8320RS_PH_CSA_BIAS_V
 #define TI_BOOSTXL_DRV8320RS_PH_CSA_BIAS_V (0.0f)
-#endif // TI_BOOSTXL_DRV8320RS_PH_CSA_BIAS_V
 
 /**
  * @brief DC-link current measurement channels.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_DCBUS_CURRENT_CHANNEL_COUNT
 #define TI_BOOSTXL_DRV8320RS_DCBUS_CURRENT_CHANNEL_COUNT (0U)
-#endif // TI_BOOSTXL_DRV8320RS_DCBUS_CURRENT_CHANNEL_COUNT
 
 /**
  * @brief SENSOR_TYPE_* constant.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_DCBUS_CURRENT_SENSE_TYPE
 #define TI_BOOSTXL_DRV8320RS_DCBUS_CURRENT_SENSE_TYPE SENSOR_NONE
-#endif // TI_BOOSTXL_DRV8320RS_DCBUS_CURRENT_SENSE_TYPE
 
 /**
  * @brief CS_TOPOLOGY_* constant.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_DCBUS_CURRENT_SENSE_TOPOLOGY
 #define TI_BOOSTXL_DRV8320RS_DCBUS_CURRENT_SENSE_TOPOLOGY CS_TOPOLOGY_NONE
-#endif // TI_BOOSTXL_DRV8320RS_DCBUS_CURRENT_SENSE_TOPOLOGY
 
 /**
  * @brief DC-link shunt resistance.
  * @unit ohm
  */
-#ifndef TI_BOOSTXL_DRV8320RS_DCBUS_SHUNT_RESISTANCE_OHM
 #define TI_BOOSTXL_DRV8320RS_DCBUS_SHUNT_RESISTANCE_OHM (0.0f)
-#endif // TI_BOOSTXL_DRV8320RS_DCBUS_SHUNT_RESISTANCE_OHM
 
 /**
  * @brief Measured phase-voltage channels.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_PH_VOLTAGE_CHANNEL_COUNT
 #define TI_BOOSTXL_DRV8320RS_PH_VOLTAGE_CHANNEL_COUNT (3U)
-#endif // TI_BOOSTXL_DRV8320RS_PH_VOLTAGE_CHANNEL_COUNT
 
 /**
  * @brief VS_TYPE_* constant.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_PH_VOLTAGE_SENSE_TYPE
 #define TI_BOOSTXL_DRV8320RS_PH_VOLTAGE_SENSE_TYPE VS_TYPE_PHASE_GND
-#endif // TI_BOOSTXL_DRV8320RS_PH_VOLTAGE_SENSE_TYPE
 
 /**
  * @brief Phase-voltage divider or signal-chain gain; zero means unknown.
  * @unit V/V
  */
-#ifndef TI_BOOSTXL_DRV8320RS_PH_VOLTAGE_SENSE_GAIN
 #define TI_BOOSTXL_DRV8320RS_PH_VOLTAGE_SENSE_GAIN (0.0f)
-#endif // TI_BOOSTXL_DRV8320RS_PH_VOLTAGE_SENSE_GAIN
 
 /**
  * @brief Phase-voltage signal bias.
  * @unit V
  */
-#ifndef TI_BOOSTXL_DRV8320RS_PH_VOLTAGE_SENSE_BIAS_V
 #define TI_BOOSTXL_DRV8320RS_PH_VOLTAGE_SENSE_BIAS_V (0.0f)
-#endif // TI_BOOSTXL_DRV8320RS_PH_VOLTAGE_SENSE_BIAS_V
 
 /**
  * @brief DC-bus voltage channels.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_DCBUS_VOLTAGE_CHANNEL_COUNT
 #define TI_BOOSTXL_DRV8320RS_DCBUS_VOLTAGE_CHANNEL_COUNT (1U)
-#endif // TI_BOOSTXL_DRV8320RS_DCBUS_VOLTAGE_CHANNEL_COUNT
 
 /**
  * @brief VS_TYPE_* constant.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_DCBUS_VOLTAGE_SENSE_TYPE
 #define TI_BOOSTXL_DRV8320RS_DCBUS_VOLTAGE_SENSE_TYPE VS_TYPE_PHASE_GND
-#endif // TI_BOOSTXL_DRV8320RS_DCBUS_VOLTAGE_SENSE_TYPE
 
 /**
  * @brief DC-bus voltage divider or signal-chain gain; zero means unknown.
  * @unit V/V
  */
-#ifndef TI_BOOSTXL_DRV8320RS_DCBUS_VOLTAGE_SENSE_GAIN
 #define TI_BOOSTXL_DRV8320RS_DCBUS_VOLTAGE_SENSE_GAIN (0.0f)
-#endif // TI_BOOSTXL_DRV8320RS_DCBUS_VOLTAGE_SENSE_GAIN
 
 /**
  * @brief DC-bus voltage signal bias.
  * @unit V
  */
-#ifndef TI_BOOSTXL_DRV8320RS_DCBUS_VOLTAGE_SENSE_BIAS_V
 #define TI_BOOSTXL_DRV8320RS_DCBUS_VOLTAGE_SENSE_BIAS_V (0.0f)
-#endif // TI_BOOSTXL_DRV8320RS_DCBUS_VOLTAGE_SENSE_BIAS_V
 
 /**
  * @brief DC-link current sensitivity; one is the compatibility value when absent.
  * @unit V/A
  */
-#ifndef TI_BOOSTXL_DRV8320RS_DCBUS_CURRENT_SENSE_GAIN
 #define TI_BOOSTXL_DRV8320RS_DCBUS_CURRENT_SENSE_GAIN (1.0f)
-#endif // TI_BOOSTXL_DRV8320RS_DCBUS_CURRENT_SENSE_GAIN
 
 /**
  * @brief DC-link current signal bias.
  * @unit V
  */
-#ifndef TI_BOOSTXL_DRV8320RS_DCBUS_CURRENT_SENSE_BIAS_V
 #define TI_BOOSTXL_DRV8320RS_DCBUS_CURRENT_SENSE_BIAS_V (0.0f)
-#endif // TI_BOOSTXL_DRV8320RS_DCBUS_CURRENT_SENSE_BIAS_V
 
 /**
  * @brief Power-stage temperature channels.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_THERMAL_CHANNEL_COUNT
 #define TI_BOOSTXL_DRV8320RS_THERMAL_CHANNEL_COUNT (0U)
-#endif // TI_BOOSTXL_DRV8320RS_THERMAL_CHANNEL_COUNT
 
 /**
  * @brief verified, partial, schematic_required or template.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_VERIFICATION_STATUS
 #define TI_BOOSTXL_DRV8320RS_VERIFICATION_STATUS "partial_schematic_values_required"
-#endif // TI_BOOSTXL_DRV8320RS_VERIFICATION_STATUS
 
 /**
  * @brief Primary board manual, schematic or internal design reference.
  */
-#ifndef TI_BOOSTXL_DRV8320RS_SOURCE_REFERENCE
 #define TI_BOOSTXL_DRV8320RS_SOURCE_REFERENCE "TI BOOSTXL-DRV8320RS design files"
-#endif // TI_BOOSTXL_DRV8320RS_SOURCE_REFERENCE
 
 // Derived macros
 /**

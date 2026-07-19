@@ -37,83 +37,61 @@ extern "C"
 /**
  * @brief Manufacturer part number.
  */
-#ifndef STSPIN230_PART_NUMBER
 #define STSPIN230_PART_NUMBER "STSPIN230"
-#endif // STSPIN230_PART_NUMBER
 
 /**
  * @brief Integrated switch technology.
  */
-#ifndef STSPIN230_SWITCH_TECHNOLOGY
 #define STSPIN230_SWITCH_TECHNOLOGY "MOSFET"
-#endif // STSPIN230_SWITCH_TECHNOLOGY
 
 /**
  * @brief Half bridge or three-phase bridge.
  */
-#ifndef STSPIN230_CONFIGURATION
 #define STSPIN230_CONFIGURATION "three_phase_bridge"
-#endif // STSPIN230_CONFIGURATION
 
 /**
  * @brief Number of integrated phases.
  */
-#ifndef STSPIN230_PHASE_COUNT
 #define STSPIN230_PHASE_COUNT (3U)
-#endif // STSPIN230_PHASE_COUNT
 
 /**
  * @brief Maximum switch or operating voltage.
  * @unit V
  */
-#ifndef STSPIN230_VOLTAGE_RATING_V
 #define STSPIN230_VOLTAGE_RATING_V (10.0f)
-#endif // STSPIN230_VOLTAGE_RATING_V
 
 /**
  * @brief Continuous/RMS output current under datasheet conditions.
  * @unit A
  */
-#ifndef STSPIN230_CURRENT_RATING_A
 #define STSPIN230_CURRENT_RATING_A (1.3f)
-#endif // STSPIN230_CURRENT_RATING_A
 
 /**
  * @brief Peak output current.
  * @unit A
  */
-#ifndef STSPIN230_PEAK_CURRENT_A
 #define STSPIN230_PEAK_CURRENT_A (2.0f)
-#endif // STSPIN230_PEAK_CURRENT_A
 
 /**
  * @brief Documented on resistance; for a bridge this may be HS+LS.
  * @unit ohm
  */
-#ifndef STSPIN230_RDSON_OHM
 #define STSPIN230_RDSON_OHM (0.4f)
-#endif // STSPIN230_RDSON_OHM
 
 /**
  * @brief Whether the gate driver is integrated.
  */
-#ifndef STSPIN230_DRIVER_INTEGRATED
 #define STSPIN230_DRIVER_INTEGRATED (1U)
-#endif // STSPIN230_DRIVER_INTEGRATED
 
 /**
  * @brief One for active-high logic, zero for active-low.
  */
-#ifndef STSPIN230_INPUT_ACTIVE_LEVEL
 #define STSPIN230_INPUT_ACTIVE_LEVEL (1U)
-#endif // STSPIN230_INPUT_ACTIVE_LEVEL
 
 /**
  * @brief Manufacturer package.
  */
-#ifndef STSPIN230_PACKAGE
 #define STSPIN230_PACKAGE "QFN 3x3"
-#endif // STSPIN230_PACKAGE
 
 // Logical exports
 // voltage_rating: STSPIN230_VOLTAGE_RATING_V

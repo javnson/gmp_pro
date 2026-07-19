@@ -1,0 +1,32 @@
+{
+  "id": "dioscuri_f280025c",
+  "schema": "dioscuri_f280025c_board",
+  "display_name": "Dioscuri F280025C Six-Pair PWM Board",
+  "vendor": "GMP",
+  "document_url": "ctl/suite/dps_clllc/project/hw/LLC_Debug_Kit.pdf",
+  "macro_prefix": "DIOSCURI",
+  "tags": ["c2000", "f280025c", "dioscuri", "six_pwm_pairs"],
+  "parameters": {
+    "chip": "TMS320F280025C",
+    "syscfg_file": "ctl/suite/dps_clllc/project/f280025c_dioscuri/LLC_Kit_F280025.syscfg",
+    "pwm_pair1_base": "DIOSCURI_HW_PWM_PAIR1_BASE",
+    "pwm_pair2_base": "DIOSCURI_HW_PWM_PAIR2_BASE",
+    "pwm_pair3_base": "DIOSCURI_HW_PWM_PAIR3_BASE",
+    "pwm_pair4_base": "DIOSCURI_HW_PWM_PAIR4_BASE",
+    "pwm_pair5_base": "DIOSCURI_HW_PWM_PAIR5_BASE",
+    "pwm_pair6_base": "DIOSCURI_HW_PWM_PAIR6_BASE",
+    "gate_enable_gpio": "GPIO_ENABLE",
+    "gate_enable_level": 0,
+    "gate_disable_level": 1,
+    "tick_timer_base": "CLLLC_TICK_TIMER_BASE",
+    "uart_base": "UART_USB_BASE",
+    "primary_voltage_result_base": "PRIMARY_VOLTAGE_RESULT_BASE",
+    "primary_voltage_soc": "PRIMARY_VOLTAGE",
+    "primary_current_result_base": "PRIMARY_CURRENT_RESULT_BASE",
+    "primary_current_soc": "PRIMARY_CURRENT",
+    "secondary_voltage_result_base": "SECONDARY_VOLTAGE_RESULT_BASE",
+    "secondary_voltage_soc": "SECONDARY_VOLTAGE",
+    "secondary_current_result_base": "SECONDARY_CURRENT_RESULT_BASE",
+    "secondary_current_soc": "SECONDARY_CURRENT"
+  }
+}

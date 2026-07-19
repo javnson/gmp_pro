@@ -14,7 +14,8 @@ adc_bias_calibrator_t adc_calibrator;
 volatile fast_gt flag_enable_adc_calibrator = 0;
 volatile fast_gt index_adc_calibrator = 0;
 ctrl_gt g_v_out_ref_user = float2ctrl(CLLLC_VOLTAGE_TARGET_PU);
-ctrl_gt g_i_limit_user = float2ctrl(CLLLC_CURRENT_LIMIT_PU);
+ctrl_gt g_i_limit_user = float2ctrl(CLLLC_CURRENT_TARGET_PU);
+ctrl_gt g_modulation_target_user = float2ctrl(0.10f);
 ctrl_gt g_modulation_command = float2ctrl(0.0f);
 
 void ctl_init(void)
@@ -61,7 +62,7 @@ void ctl_init(void)
     ctl_init_clllc_modulator(&clllc_mod, CLLLC_TIMER_CLOCK_HZ,
                              CLLLC_F_RESONANT_HZ, CLLLC_F_MIN_HZ,
                              CLLLC_F_MAX_HZ, CLLLC_DEADBAND_S,
-                             float2ctrl(CLLLC_MAX_DAB_PHASE_PU));
+                             float2ctrl(CLLLC_MAX_PHASE_SHIFT_PU));
     init_cia402_state_machine(&cia402_sm);
     /* Keep the complete automatic commissioning sequence configurable.
        Hardware uses the conservative 100 ms default per stage; SIL reduces

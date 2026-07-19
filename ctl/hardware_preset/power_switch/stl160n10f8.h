@@ -37,78 +37,58 @@ extern "C"
 /**
  * @brief Power device part number.
  */
-#ifndef STL160N10F8_PART_NUMBER
 #define STL160N10F8_PART_NUMBER "STL160N10F8"
-#endif // STL160N10F8_PART_NUMBER
 
 /**
  * @brief MOSFET, IGBT, GaN, SiC, etc.
  */
-#ifndef STL160N10F8_DEVICE_TYPE
 #define STL160N10F8_DEVICE_TYPE "MOSFET"
-#endif // STL160N10F8_DEVICE_TYPE
 
 /**
  * @brief Drain-source or collector-emitter voltage rating.
  * @unit V
  */
-#ifndef STL160N10F8_VOLTAGE_RATING_V
 #define STL160N10F8_VOLTAGE_RATING_V (100.0f)
-#endif // STL160N10F8_VOLTAGE_RATING_V
 
 /**
  * @brief Current rating.
  * @unit A
  */
-#ifndef STL160N10F8_CURRENT_RATING_A
 #define STL160N10F8_CURRENT_RATING_A (158.0f)
-#endif // STL160N10F8_CURRENT_RATING_A
 
 /**
  * @brief On resistance.
  * @unit ohm
  */
-#ifndef STL160N10F8_RDSON_OHM
 #define STL160N10F8_RDSON_OHM (0.0027f)
-#endif // STL160N10F8_RDSON_OHM
 
 /**
  * @brief Single switch, dual switch, half bridge power block, etc.
  */
-#ifndef STL160N10F8_CONFIGURATION
 #define STL160N10F8_CONFIGURATION "single"
-#endif // STL160N10F8_CONFIGURATION
 
 /**
  * @brief Maximum on resistance at the documented gate voltage.
  * @unit ohm
  */
-#ifndef STL160N10F8_RDSON_MAX_OHM
 #define STL160N10F8_RDSON_MAX_OHM (0.0032f)
-#endif // STL160N10F8_RDSON_MAX_OHM
 
 /**
  * @brief Gate voltage associated with the resistance value.
  * @unit V
  */
-#ifndef STL160N10F8_GATE_VOLTAGE_V
 #define STL160N10F8_GATE_VOLTAGE_V (10.0f)
-#endif // STL160N10F8_GATE_VOLTAGE_V
 
 /**
  * @brief Typical total gate charge.
  * @unit nC
  */
-#ifndef STL160N10F8_GATE_CHARGE_NC
 #define STL160N10F8_GATE_CHARGE_NC (0.0f)
-#endif // STL160N10F8_GATE_CHARGE_NC
 
 /**
  * @brief Manufacturer package name.
  */
-#ifndef STL160N10F8_PACKAGE
 #define STL160N10F8_PACKAGE "PowerFLAT 5x6"
-#endif // STL160N10F8_PACKAGE
 
 // Logical exports
 // voltage_rating: STL160N10F8_VOLTAGE_RATING_V

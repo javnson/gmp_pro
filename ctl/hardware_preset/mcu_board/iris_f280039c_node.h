@@ -33,58 +33,42 @@ extern "C"
 /**
  * @brief C2000 device name.
  */
-#ifndef IRIS_F280039C_CHIP
 #define IRIS_F280039C_CHIP "TMS320F280039C"
-#endif // IRIS_F280039C_CHIP
 
 /**
  * @brief SysConfig source file used by this binding.
  */
-#ifndef IRIS_F280039C_SYSCFG_FILE
 #define IRIS_F280039C_SYSCFG_FILE "ctl/suite/dps_fsbb/project/f280039c_Iris_node/F280039_Iris_node.syscfg"
-#endif // IRIS_F280039C_SYSCFG_FILE
 
 /**
  * @brief SysConfig EPWM1 base macro.
  */
-#ifndef IRIS_F280039C_EPWM1_BASE
 #define IRIS_F280039C_EPWM1_BASE IRIS_EPWM1_BASE
-#endif // IRIS_F280039C_EPWM1_BASE
 
 /**
  * @brief SysConfig EPWM2 base macro.
  */
-#ifndef IRIS_F280039C_EPWM2_BASE
 #define IRIS_F280039C_EPWM2_BASE IRIS_EPWM2_BASE
-#endif // IRIS_F280039C_EPWM2_BASE
 
 /**
  * @brief SysConfig ADC channel 1 macro.
  */
-#ifndef IRIS_F280039C_ADC_CH1
 #define IRIS_F280039C_ADC_CH1 ADC_CH1
-#endif // IRIS_F280039C_ADC_CH1
 
 /**
  * @brief SysConfig ADC channel 2 macro.
  */
-#ifndef IRIS_F280039C_ADC_CH2
 #define IRIS_F280039C_ADC_CH2 ADC_CH2
-#endif // IRIS_F280039C_ADC_CH2
 
 /**
  * @brief SysConfig ADC channel 3 macro.
  */
-#ifndef IRIS_F280039C_ADC_CH3
 #define IRIS_F280039C_ADC_CH3 ADC_CH3
-#endif // IRIS_F280039C_ADC_CH3
 
 /**
  * @brief SysConfig ADC channel 4 macro.
  */
-#ifndef IRIS_F280039C_ADC_CH4
 #define IRIS_F280039C_ADC_CH4 ADC_CH4
-#endif // IRIS_F280039C_ADC_CH4
 
 // Logical exports
 // epwm1_base: IRIS_F280039C_EPWM1_BASE

@@ -8,7 +8,7 @@
 #define _INVERTER_3PH_ST_STEVAL_IPM20B_H_
 
 #include <ctl/hardware_preset/integrated_power_module/stgib20m60ts_l.h>
-#include <ctl/hardware_preset/inverter_3ph/inverter_3ph_general.h>
+#include <ctl/component/hardware_preset/inverter_3ph/inverter_3ph_general.h>
 
 // User code after includes
 // SDPE extension point: add after_includes code in the Entity Instance Code page if needed.
@@ -40,254 +40,186 @@ extern "C"
 /**
  * @brief Board name.
  */
-#ifndef ST_STEVAL_IPM20B_BOARD_NAME
 #define ST_STEVAL_IPM20B_BOARD_NAME "STEVAL-IPM20B"
-#endif // ST_STEVAL_IPM20B_BOARD_NAME
 
 /**
  * @brief Gate driver or integrated driver.
  */
-#ifndef ST_STEVAL_IPM20B_GATE_DRIVER
 #define ST_STEVAL_IPM20B_GATE_DRIVER "integrated in STGIB20M60TS-L"
-#endif // ST_STEVAL_IPM20B_GATE_DRIVER
 
 /**
  * @brief discrete_mosfet, discrete_igbt, ipm or integrated_power_stage.
  */
-#ifndef ST_STEVAL_IPM20B_POWER_STAGE_KIND
 #define ST_STEVAL_IPM20B_POWER_STAGE_KIND "ipm"
-#endif // ST_STEVAL_IPM20B_POWER_STAGE_KIND
 
 /**
  * @brief Minimum documented operating bus voltage; zero means unspecified.
  * @unit V
  */
-#ifndef ST_STEVAL_IPM20B_VBUS_MIN_V
 #define ST_STEVAL_IPM20B_VBUS_MIN_V (125.0f)
-#endif // ST_STEVAL_IPM20B_VBUS_MIN_V
 
 /**
  * @brief Maximum documented operating bus voltage; zero means unspecified.
  * @unit V
  */
-#ifndef ST_STEVAL_IPM20B_VBUS_MAX_V
 #define ST_STEVAL_IPM20B_VBUS_MAX_V (400.0f)
-#endif // ST_STEVAL_IPM20B_VBUS_MAX_V
 
 /**
  * @brief Board continuous RMS current; zero means unspecified.
  * @unit A
  */
-#ifndef ST_STEVAL_IPM20B_CURRENT_MAX_RMS_A
 #define ST_STEVAL_IPM20B_CURRENT_MAX_RMS_A (12.0f)
-#endif // ST_STEVAL_IPM20B_CURRENT_MAX_RMS_A
 
 /**
  * @brief Board peak current; zero means unspecified.
  * @unit A
  */
-#ifndef ST_STEVAL_IPM20B_CURRENT_MAX_PEAK_A
 #define ST_STEVAL_IPM20B_CURRENT_MAX_PEAK_A (0.0f)
-#endif // ST_STEVAL_IPM20B_CURRENT_MAX_PEAK_A
 
 /**
  * @brief PWM control inputs (3 or 6); zero means not verified.
  */
-#ifndef ST_STEVAL_IPM20B_PWM_INPUT_COUNT
 #define ST_STEVAL_IPM20B_PWM_INPUT_COUNT (6U)
-#endif // ST_STEVAL_IPM20B_PWM_INPUT_COUNT
 
 /**
  * @brief One active-high, zero active-low.
  */
-#ifndef ST_STEVAL_IPM20B_PWM_ACTIVE_LEVEL
 #define ST_STEVAL_IPM20B_PWM_ACTIVE_LEVEL (1U)
-#endif // ST_STEVAL_IPM20B_PWM_ACTIVE_LEVEL
 
 /**
  * @brief One only when PWM polarity was checked against a primary schematic or datasheet.
  */
-#ifndef ST_STEVAL_IPM20B_PWM_POLARITY_VERIFIED
 #define ST_STEVAL_IPM20B_PWM_POLARITY_VERIFIED (1U)
-#endif // ST_STEVAL_IPM20B_PWM_POLARITY_VERIFIED
 
 /**
  * @brief Enable polarity; one active-high, zero active-low.
  */
-#ifndef ST_STEVAL_IPM20B_ENABLE_ACTIVE_LEVEL
 #define ST_STEVAL_IPM20B_ENABLE_ACTIVE_LEVEL (1U)
-#endif // ST_STEVAL_IPM20B_ENABLE_ACTIVE_LEVEL
 
 /**
  * @brief Independently measurable motor phase-current channels.
  */
-#ifndef ST_STEVAL_IPM20B_PH_CURRENT_CHANNEL_COUNT
 #define ST_STEVAL_IPM20B_PH_CURRENT_CHANNEL_COUNT (3U)
-#endif // ST_STEVAL_IPM20B_PH_CURRENT_CHANNEL_COUNT
 
 /**
  * @brief SENSOR_TYPE_* constant.
  */
-#ifndef ST_STEVAL_IPM20B_PH_CURRENT_SENSE_TYPE
 #define ST_STEVAL_IPM20B_PH_CURRENT_SENSE_TYPE SENSOR_TYPE_SHUNT
-#endif // ST_STEVAL_IPM20B_PH_CURRENT_SENSE_TYPE
 
 /**
  * @brief CS_TOPOLOGY_* constant.
  */
-#ifndef ST_STEVAL_IPM20B_PH_CURRENT_SENSE_TOPOLOGY
 #define ST_STEVAL_IPM20B_PH_CURRENT_SENSE_TOPOLOGY CS_TOPOLOGY_LOW_SIDE
-#endif // ST_STEVAL_IPM20B_PH_CURRENT_SENSE_TOPOLOGY
 
 /**
  * @brief Per-channel shunt resistance; zero for sensor IC or unknown.
  * @unit ohm
  */
-#ifndef ST_STEVAL_IPM20B_PH_SHUNT_RESISTANCE_OHM
 #define ST_STEVAL_IPM20B_PH_SHUNT_RESISTANCE_OHM (0.0f)
-#endif // ST_STEVAL_IPM20B_PH_SHUNT_RESISTANCE_OHM
 
 /**
  * @brief Current signal-chain gain; zero means configurable/unknown.
  * @unit V/V
  */
-#ifndef ST_STEVAL_IPM20B_PH_CSA_GAIN_V_V
 #define ST_STEVAL_IPM20B_PH_CSA_GAIN_V_V (0.0f)
-#endif // ST_STEVAL_IPM20B_PH_CSA_GAIN_V_V
 
 /**
  * @brief Zero-current ADC bias; zero may mean differential/unknown.
  * @unit V
  */
-#ifndef ST_STEVAL_IPM20B_PH_CSA_BIAS_V
 #define ST_STEVAL_IPM20B_PH_CSA_BIAS_V (0.0f)
-#endif // ST_STEVAL_IPM20B_PH_CSA_BIAS_V
 
 /**
  * @brief DC-link current measurement channels.
  */
-#ifndef ST_STEVAL_IPM20B_DCBUS_CURRENT_CHANNEL_COUNT
 #define ST_STEVAL_IPM20B_DCBUS_CURRENT_CHANNEL_COUNT (1U)
-#endif // ST_STEVAL_IPM20B_DCBUS_CURRENT_CHANNEL_COUNT
 
 /**
  * @brief SENSOR_TYPE_* constant.
  */
-#ifndef ST_STEVAL_IPM20B_DCBUS_CURRENT_SENSE_TYPE
 #define ST_STEVAL_IPM20B_DCBUS_CURRENT_SENSE_TYPE SENSOR_TYPE_SHUNT
-#endif // ST_STEVAL_IPM20B_DCBUS_CURRENT_SENSE_TYPE
 
 /**
  * @brief CS_TOPOLOGY_* constant.
  */
-#ifndef ST_STEVAL_IPM20B_DCBUS_CURRENT_SENSE_TOPOLOGY
 #define ST_STEVAL_IPM20B_DCBUS_CURRENT_SENSE_TOPOLOGY CS_TOPOLOGY_DC_LINK
-#endif // ST_STEVAL_IPM20B_DCBUS_CURRENT_SENSE_TOPOLOGY
 
 /**
  * @brief DC-link shunt resistance.
  * @unit ohm
  */
-#ifndef ST_STEVAL_IPM20B_DCBUS_SHUNT_RESISTANCE_OHM
 #define ST_STEVAL_IPM20B_DCBUS_SHUNT_RESISTANCE_OHM (0.0f)
-#endif // ST_STEVAL_IPM20B_DCBUS_SHUNT_RESISTANCE_OHM
 
 /**
  * @brief Measured phase-voltage channels.
  */
-#ifndef ST_STEVAL_IPM20B_PH_VOLTAGE_CHANNEL_COUNT
 #define ST_STEVAL_IPM20B_PH_VOLTAGE_CHANNEL_COUNT (0U)
-#endif // ST_STEVAL_IPM20B_PH_VOLTAGE_CHANNEL_COUNT
 
 /**
  * @brief VS_TYPE_* constant.
  */
-#ifndef ST_STEVAL_IPM20B_PH_VOLTAGE_SENSE_TYPE
 #define ST_STEVAL_IPM20B_PH_VOLTAGE_SENSE_TYPE VS_TYPE_NONE
-#endif // ST_STEVAL_IPM20B_PH_VOLTAGE_SENSE_TYPE
 
 /**
  * @brief Phase-voltage divider or signal-chain gain; zero means unknown.
  * @unit V/V
  */
-#ifndef ST_STEVAL_IPM20B_PH_VOLTAGE_SENSE_GAIN
 #define ST_STEVAL_IPM20B_PH_VOLTAGE_SENSE_GAIN (0.0f)
-#endif // ST_STEVAL_IPM20B_PH_VOLTAGE_SENSE_GAIN
 
 /**
  * @brief Phase-voltage signal bias.
  * @unit V
  */
-#ifndef ST_STEVAL_IPM20B_PH_VOLTAGE_SENSE_BIAS_V
 #define ST_STEVAL_IPM20B_PH_VOLTAGE_SENSE_BIAS_V (0.0f)
-#endif // ST_STEVAL_IPM20B_PH_VOLTAGE_SENSE_BIAS_V
 
 /**
  * @brief DC-bus voltage channels.
  */
-#ifndef ST_STEVAL_IPM20B_DCBUS_VOLTAGE_CHANNEL_COUNT
 #define ST_STEVAL_IPM20B_DCBUS_VOLTAGE_CHANNEL_COUNT (1U)
-#endif // ST_STEVAL_IPM20B_DCBUS_VOLTAGE_CHANNEL_COUNT
 
 /**
  * @brief VS_TYPE_* constant.
  */
-#ifndef ST_STEVAL_IPM20B_DCBUS_VOLTAGE_SENSE_TYPE
 #define ST_STEVAL_IPM20B_DCBUS_VOLTAGE_SENSE_TYPE VS_TYPE_PHASE_GND
-#endif // ST_STEVAL_IPM20B_DCBUS_VOLTAGE_SENSE_TYPE
 
 /**
  * @brief DC-bus voltage divider or signal-chain gain; zero means unknown.
  * @unit V/V
  */
-#ifndef ST_STEVAL_IPM20B_DCBUS_VOLTAGE_SENSE_GAIN
 #define ST_STEVAL_IPM20B_DCBUS_VOLTAGE_SENSE_GAIN (0.0f)
-#endif // ST_STEVAL_IPM20B_DCBUS_VOLTAGE_SENSE_GAIN
 
 /**
  * @brief DC-bus voltage signal bias.
  * @unit V
  */
-#ifndef ST_STEVAL_IPM20B_DCBUS_VOLTAGE_SENSE_BIAS_V
 #define ST_STEVAL_IPM20B_DCBUS_VOLTAGE_SENSE_BIAS_V (0.0f)
-#endif // ST_STEVAL_IPM20B_DCBUS_VOLTAGE_SENSE_BIAS_V
 
 /**
  * @brief DC-link current sensitivity; one is the compatibility value when absent.
  * @unit V/A
  */
-#ifndef ST_STEVAL_IPM20B_DCBUS_CURRENT_SENSE_GAIN
 #define ST_STEVAL_IPM20B_DCBUS_CURRENT_SENSE_GAIN (1.0f)
-#endif // ST_STEVAL_IPM20B_DCBUS_CURRENT_SENSE_GAIN
 
 /**
  * @brief DC-link current signal bias.
  * @unit V
  */
-#ifndef ST_STEVAL_IPM20B_DCBUS_CURRENT_SENSE_BIAS_V
 #define ST_STEVAL_IPM20B_DCBUS_CURRENT_SENSE_BIAS_V (0.0f)
-#endif // ST_STEVAL_IPM20B_DCBUS_CURRENT_SENSE_BIAS_V
 
 /**
  * @brief Power-stage temperature channels.
  */
-#ifndef ST_STEVAL_IPM20B_THERMAL_CHANNEL_COUNT
 #define ST_STEVAL_IPM20B_THERMAL_CHANNEL_COUNT (1U)
-#endif // ST_STEVAL_IPM20B_THERMAL_CHANNEL_COUNT
 
 /**
  * @brief verified, partial, schematic_required or template.
  */
-#ifndef ST_STEVAL_IPM20B_VERIFICATION_STATUS
 #define ST_STEVAL_IPM20B_VERIFICATION_STATUS "partial_board_manual_required_for_population_options"
-#endif // ST_STEVAL_IPM20B_VERIFICATION_STATUS
 
 /**
  * @brief Primary board manual, schematic or internal design reference.
  */
-#ifndef ST_STEVAL_IPM20B_SOURCE_REFERENCE
 #define ST_STEVAL_IPM20B_SOURCE_REFERENCE "ST STEVAL-IPM20B product documentation and STGIB20M60TS-L datasheet"
-#endif // ST_STEVAL_IPM20B_SOURCE_REFERENCE
 
 // Derived macros
 /**

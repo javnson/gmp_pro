@@ -34,17 +34,13 @@ extern "C"
  * @brief Capacitance.
  * @unit F
  */
-#ifndef DCBUS_440UF_CAPACITANCE_F
 #define DCBUS_440UF_CAPACITANCE_F (0.00044f)
-#endif // DCBUS_440UF_CAPACITANCE_F
 
 /**
  * @brief Equivalent series resistance.
  * @unit ohm
  */
-#ifndef DCBUS_440UF_ESR_OHM
 #define DCBUS_440UF_ESR_OHM (0.1f)
-#endif // DCBUS_440UF_ESR_OHM
 
 // Logical exports
 // capacitance: DCBUS_440UF_CAPACITANCE_F

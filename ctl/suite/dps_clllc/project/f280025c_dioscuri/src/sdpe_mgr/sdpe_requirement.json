@@ -1,0 +1,377 @@
+{
+  "id": "dps_clllc_f280025c_dioscuri",
+  "macro_prefix": "DPS_CLLLC_DIOSCURI",
+  "display_name": "DPS CLLLC / DAB on F280025C Dioscuri",
+  "description": "F280025C clock, six-pair PWM routing, ADC, UART, scheduler timer and active-low SN74LVC8T245 gate-buffer bindings.",
+  "suite": "dps_clllc",
+  "version": "1.0.0",
+  "updated_at": "2026-07-20",
+  "output_header": "sdpe_dps_clllc_dioscuri_settings.h",
+  "hardware": [
+    {
+      "entity": "dioscuri_f280025c"
+    }
+  ],
+  "feature_macros": [
+    {
+      "group": "Debug Interfaces",
+      "macro": "ENABLE_GMP_DL_PIL_SIM",
+      "enabled": false,
+      "weak": false,
+      "value": "",
+      "description": "Enable communication-based PIL execution instead of direct hardware control."
+    }
+  ],
+  "option_macros": [
+    {
+      "group": "Controller Mode",
+      "macro": "BUILD_LEVEL",
+      "enabled": true,
+      "weak": false,
+      "value": "(1)",
+      "options_preset": "",
+      "options": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)"
+      ],
+      "description": "1: open loop; 2: current loop; 3: voltage loop; 4: voltage/current parallel competition loop."
+    },
+    {
+      "group": "CLLLC PWM Routing",
+      "macro": "CLLLC_PRIMARY_LEG_A_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "DIOSCURI_PWM_PAIR4_BASE",
+      "options_preset": "dioscuri_f280025c.PWM_BASE",
+      "options": [],
+      "description": "Primary PRI_P / ControlPort1 bridge leg: EPWM4 on the Dioscuri schematic. Changing bridge order changes the defined positive current direction."
+    },
+    {
+      "group": "CLLLC PWM Routing",
+      "macro": "CLLLC_PRIMARY_LEG_B_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "DIOSCURI_PWM_PAIR6_BASE",
+      "options_preset": "dioscuri_f280025c.PWM_BASE",
+      "options": [],
+      "description": "Primary PRI_N / ControlPort2 bridge leg: EPWM7 on the Dioscuri schematic."
+    },
+    {
+      "group": "CLLLC PWM Routing",
+      "macro": "CLLLC_SECONDARY_LEG_A_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "DIOSCURI_PWM_PAIR2_BASE",
+      "options_preset": "dioscuri_f280025c.PWM_BASE",
+      "options": [],
+      "description": "Secondary SEC_P / ControlPort4 bridge leg: EPWM1 on the Dioscuri schematic."
+    },
+    {
+      "group": "CLLLC PWM Routing",
+      "macro": "CLLLC_SECONDARY_LEG_B_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "DIOSCURI_PWM_PAIR1_BASE",
+      "options_preset": "dioscuri_f280025c.PWM_BASE",
+      "options": [],
+      "description": "Secondary SEC_N / ControlPort3 bridge leg: EPWM2 on the Dioscuri schematic."
+    },
+    {
+      "group": "CLLLC PWM Synchronization",
+      "macro": "CLLLC_SYNC_MASTER_PWM_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "DIOSCURI_PWM_PAIR1_BASE",
+      "options_preset": "dioscuri_f280025c.PWM_BASE",
+      "options": [],
+      "description": "Master time base that emits synchronization at counter zero. It must be one of the four selected CLLLC legs."
+    },
+    {
+      "group": "CLLLC PWM Synchronization",
+      "macro": "CLLLC_SYNC_IN_SOURCE",
+      "enabled": true,
+      "weak": false,
+      "value": "EPWM_SYNC_IN_PULSE_SRC_SYNCOUT_EPWM1",
+      "options_preset": "dioscuri_f280025c.PWM_SYNC_SOURCE",
+      "options": [],
+      "description": "Slave sync-input source corresponding to the selected master ePWM peripheral."
+    },
+    {
+      "group": "ADC Trigger",
+      "macro": "CLLLC_ADC_TRIGGER_PWM_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "DIOSCURI_PWM_PAIR1_BASE",
+      "options_preset": "dioscuri_f280025c.PWM_BASE",
+      "options": [],
+      "description": "PWM that generates ADC SOCA. Keep this consistent with the SOC trigger selected in SysConfig."
+    }
+  ],
+  "requirements": [
+    {
+      "role": "Timer Clock",
+      "macro": "CLLLC_TIMER_CLOCK_HZ",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "100000000.0"
+      },
+      "description": "F280025C ePWM and CPU Timer clock."
+    },
+    {
+      "role": "PWM Cycles per Control",
+      "macro": "CLLLC_PWM_CYCLES_PER_CONTROL",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "2"
+      },
+      "description": "PWM cycles between ADC/control interrupts."
+    },
+    {
+      "role": "Nominal Controller Frequency",
+      "macro": "CONTROLLER_FREQUENCY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(CLLLC_F_RESONANT_HZ / CLLLC_PWM_CYCLES_PER_CONTROL)"
+      },
+      "description": "Nominal controller frequency used for offline tuning."
+    },
+    {
+      "role": "Nominal PWM Period",
+      "macro": "CLLLC_NOMINAL_PERIOD_TICKS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "((uint32_t)(CLLLC_TIMER_CLOCK_HZ / CLLLC_F_RESONANT_HZ))"
+      },
+      "description": "Nominal 100 kHz period in ePWM timer ticks."
+    },
+    {
+      "role": "System Tick Frequency",
+      "macro": "CTRL_SYSTEM_TICK_HZ",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "1000"
+      },
+      "description": "PWM-independent scheduler tick generated by CPU Timer0."
+    },
+    {
+      "role": "Startup State Delay",
+      "macro": "CTRL_STARTUP_DELAY_MS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "100"
+      },
+      "description": "Minimum CiA402 delay per startup transition."
+    },
+    {
+      "role": "ADC Reference",
+      "macro": "CTRL_ADC_VOLTAGE_REF",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "3.3"
+      },
+      "description": "F280025C ADC reference voltage."
+    },
+    {
+      "role": "ADC Resolution",
+      "macro": "CTRL_ADC_BITS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "12"
+      },
+      "description": "ADC resolution in bits."
+    },
+    {
+      "role": "Primary Voltage Result Base",
+      "macro": "CLLLC_PRIMARY_V_ADC_BASE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "DIOSCURI_PRIMARY_VOLTAGE_RESULT_BASE"
+      },
+      "description": "Primary AMC1311 result register base."
+    },
+    {
+      "role": "Primary Voltage SOC",
+      "macro": "CLLLC_PRIMARY_V_ADC_SOC",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "DIOSCURI_PRIMARY_VOLTAGE_SOC"
+      },
+      "description": "Primary AMC1311 ADC SOC."
+    },
+    {
+      "role": "Primary Current Result Base",
+      "macro": "CLLLC_PRIMARY_I_ADC_BASE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "DIOSCURI_PRIMARY_CURRENT_RESULT_BASE"
+      },
+      "description": "Primary TMCS1133B5A result register base."
+    },
+    {
+      "role": "Primary Current SOC",
+      "macro": "CLLLC_PRIMARY_I_ADC_SOC",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "DIOSCURI_PRIMARY_CURRENT_SOC"
+      },
+      "description": "Primary TMCS1133B5A ADC SOC."
+    },
+    {
+      "role": "Secondary Voltage Result Base",
+      "macro": "CLLLC_SECONDARY_V_ADC_BASE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "DIOSCURI_SECONDARY_VOLTAGE_RESULT_BASE"
+      },
+      "description": "Secondary AMC1311 result register base."
+    },
+    {
+      "role": "Secondary Voltage SOC",
+      "macro": "CLLLC_SECONDARY_V_ADC_SOC",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "DIOSCURI_SECONDARY_VOLTAGE_SOC"
+      },
+      "description": "Secondary AMC1311 ADC SOC."
+    },
+    {
+      "role": "Secondary Current Result Base",
+      "macro": "CLLLC_SECONDARY_I_ADC_BASE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "DIOSCURI_SECONDARY_CURRENT_RESULT_BASE"
+      },
+      "description": "Secondary TMCS1133B5A result register base."
+    },
+    {
+      "role": "Secondary Current SOC",
+      "macro": "CLLLC_SECONDARY_I_ADC_SOC",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "DIOSCURI_SECONDARY_CURRENT_SOC"
+      },
+      "description": "Secondary TMCS1133B5A ADC SOC."
+    },
+    {
+      "role": "Gate Enable GPIO",
+      "macro": "CLLLC_GATE_ENABLE_GPIO",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "DIOSCURI_GATE_ENABLE_GPIO"
+      },
+      "description": "GPIO connected to SN74LVC8T245 OE#."
+    },
+    {
+      "role": "Gate Enable Level",
+      "macro": "CLLLC_GATE_ENABLE_ACTIVE_LEVEL",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "DIOSCURI_GATE_ENABLE_LEVEL"
+      },
+      "description": "Low level enables the PWM buffer."
+    },
+    {
+      "role": "Gate Disable Level",
+      "macro": "CLLLC_GATE_DISABLE_LEVEL",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "DIOSCURI_GATE_DISABLE_LEVEL"
+      },
+      "description": "High level disables the PWM buffer."
+    },
+    {
+      "role": "Scheduler Timer",
+      "macro": "CLLLC_SCHEDULER_TIMER_BASE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "DIOSCURI_TICK_TIMER_BASE"
+      },
+      "description": "CPU timer used for the GMP system tick."
+    },
+    {
+      "role": "Datalink UART",
+      "macro": "CLLLC_UART_BASE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "DIOSCURI_UART_BASE"
+      },
+      "description": "USB serial Datalink peripheral."
+    },
+    {
+      "role": "Status LED",
+      "macro": "CLLLC_STATUS_LED_GPIO",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "40"
+      },
+      "description": "Dioscuri status LED GPIO."
+    }
+  ],
+  "requirement_groups": [
+    {
+      "name": "Clock and Runtime",
+      "requirements": [
+        "Timer Clock",
+        "PWM Cycles per Control",
+        "Nominal Controller Frequency",
+        "Nominal PWM Period",
+        "System Tick Frequency",
+        "Startup State Delay"
+      ]
+    },
+    {
+      "name": "ADC Platform",
+      "requirements": [
+        "ADC Reference",
+        "ADC Resolution",
+        "Primary Voltage Result Base",
+        "Primary Voltage SOC",
+        "Primary Current Result Base",
+        "Primary Current SOC",
+        "Secondary Voltage Result Base",
+        "Secondary Voltage SOC",
+        "Secondary Current Result Base",
+        "Secondary Current SOC"
+      ]
+    },
+    {
+      "name": "Board GPIO and Services",
+      "requirements": [
+        "Gate Enable GPIO",
+        "Gate Enable Level",
+        "Gate Disable Level",
+        "Scheduler Timer",
+        "Datalink UART",
+        "Status LED"
+      ]
+    }
+  ],
+  "code_sections": {
+    "after_extern_open": "#include <sdpe_dps_clllc_common_settings.h>\n/* Dioscuri platform bindings follow the shared CLLLC/DAB contract. */",
+    "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 4)\n#error \"BUILD_LEVEL must be 1 (open loop), 2 (current loop), 3 (voltage loop), or 4 (parallel CC/CV).\"\n#endif\n/* PWM-resource checks live in xplt.peripheral.c, after SysConfig board.h symbols are available. */"
+  }
+}

@@ -37,83 +37,61 @@ extern "C"
 /**
  * @brief Manufacturer part number.
  */
-#ifndef L6230_PART_NUMBER
 #define L6230_PART_NUMBER "L6230"
-#endif // L6230_PART_NUMBER
 
 /**
  * @brief Integrated switch technology.
  */
-#ifndef L6230_SWITCH_TECHNOLOGY
 #define L6230_SWITCH_TECHNOLOGY "DMOS"
-#endif // L6230_SWITCH_TECHNOLOGY
 
 /**
  * @brief Half bridge or three-phase bridge.
  */
-#ifndef L6230_CONFIGURATION
 #define L6230_CONFIGURATION "three_phase_bridge"
-#endif // L6230_CONFIGURATION
 
 /**
  * @brief Number of integrated phases.
  */
-#ifndef L6230_PHASE_COUNT
 #define L6230_PHASE_COUNT (3U)
-#endif // L6230_PHASE_COUNT
 
 /**
  * @brief Maximum switch or operating voltage.
  * @unit V
  */
-#ifndef L6230_VOLTAGE_RATING_V
 #define L6230_VOLTAGE_RATING_V (52.0f)
-#endif // L6230_VOLTAGE_RATING_V
 
 /**
  * @brief Continuous/RMS output current under datasheet conditions.
  * @unit A
  */
-#ifndef L6230_CURRENT_RATING_A
 #define L6230_CURRENT_RATING_A (1.4f)
-#endif // L6230_CURRENT_RATING_A
 
 /**
  * @brief Peak output current.
  * @unit A
  */
-#ifndef L6230_PEAK_CURRENT_A
 #define L6230_PEAK_CURRENT_A (2.8f)
-#endif // L6230_PEAK_CURRENT_A
 
 /**
  * @brief Documented on resistance; for a bridge this may be HS+LS.
  * @unit ohm
  */
-#ifndef L6230_RDSON_OHM
 #define L6230_RDSON_OHM (0.73f)
-#endif // L6230_RDSON_OHM
 
 /**
  * @brief Whether the gate driver is integrated.
  */
-#ifndef L6230_DRIVER_INTEGRATED
 #define L6230_DRIVER_INTEGRATED (1U)
-#endif // L6230_DRIVER_INTEGRATED
 
 /**
  * @brief One for active-high logic, zero for active-low.
  */
-#ifndef L6230_INPUT_ACTIVE_LEVEL
 #define L6230_INPUT_ACTIVE_LEVEL (1U)
-#endif // L6230_INPUT_ACTIVE_LEVEL
 
 /**
  * @brief Manufacturer package.
  */
-#ifndef L6230_PACKAGE
 #define L6230_PACKAGE "PowerSO36 or VFQFPN32"
-#endif // L6230_PACKAGE
 
 // Logical exports
 // voltage_rating: L6230_VOLTAGE_RATING_V

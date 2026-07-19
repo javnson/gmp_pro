@@ -1,15 +1,38 @@
 {
   "id": "dps_clllc_simulate",
-  "display_name": "dps_clllc_simulate",
+  "macro_prefix": "DPS_CLLLC_SIM",
+  "display_name": "DPS CLLLC / DAB MATLAB Simulink SIL",
+  "description": "PC SIL runtime, BUILD_LEVEL and virtual advanced-PWM settings layered over the common CLLLC contract.",
   "suite": "dps_clllc",
-  "version": "0.1.0",
-  "output_header": "dps_clllc_simulate_sdpe_bindings.h",
+  "version": "1.0.0",
+  "updated_at": "2026-07-19",
+  "output_header": "sdpe_dps_clllc_simulate_settings.h",
   "hardware": [],
-  "requirements": [],
-  "feature_macros": [],
-  "option_macros": [],
+  "feature_macros": [
+    {"group":"Simulation","macro":"SPECIFY_PC_ENVIRONMENT","enabled":true,"value":"","description":"Enable PC/SIL-specific commissioning behavior."}
+  ],
+  "option_macros": [
+    {
+      "group":"Controller Mode","macro":"BUILD_LEVEL","enabled":true,"value":"(1)",
+      "options":["(1)","(2)","(3)","(4)"],
+      "description":"1: open loop; 2: current loop; 3: voltage loop; 4: voltage/current parallel competition loop."
+    }
+  ],
+  "requirements": [
+    {"role":"Timer Clock","macro":"CLLLC_TIMER_CLOCK_HZ","binding":{"float":"100000000.0"},"description":"Virtual ePWM clock."},
+    {"role":"PWM Cycles per Control","macro":"CLLLC_PWM_CYCLES_PER_CONTROL","binding":{"number":"2"},"description":"PWM periods per ADC/control update."},
+    {"role":"Nominal Controller Frequency","macro":"CONTROLLER_FREQUENCY","binding":{"literal":"(CLLLC_F_RESONANT_HZ / CLLLC_PWM_CYCLES_PER_CONTROL)"},"description":"Nominal controller frequency."},
+    {"role":"Nominal PWM Period","macro":"CLLLC_NOMINAL_PERIOD_TICKS","binding":{"literal":"((uint32_t)(CLLLC_TIMER_CLOCK_HZ / CLLLC_F_RESONANT_HZ))"},"description":"Virtual advanced-PWM base period."},
+    {"role":"System Tick Frequency","macro":"CTRL_SYSTEM_TICK_HZ","binding":{"number":"1000"},"description":"PC scheduler tick."},
+    {"role":"Startup State Delay","macro":"CTRL_STARTUP_DELAY_MS","binding":{"number":"2"},"description":"Short SIL CiA402 transition delay."},
+    {"role":"ADC Reference","macro":"CTRL_ADC_VOLTAGE_REF","binding":{"float":"3.3"},"description":"Virtual ADC reference."},
+    {"role":"ADC Resolution","macro":"CTRL_ADC_BITS","binding":{"number":"12"},"description":"Virtual ADC resolution."}
+  ],
+  "requirement_groups": [
+    {"name":"SIL Runtime","requirements":["Timer Clock","PWM Cycles per Control","Nominal Controller Frequency","Nominal PWM Period","System Tick Frequency","Startup State Delay","ADC Reference","ADC Resolution"]}
+  ],
   "code_sections": {
-    "after_extern_open": "/* Add project-specific includes here. */",
-    "before_footer": "/* Add project-specific tail macros here. */"
+    "after_extern_open":"#include <sdpe_dps_clllc_common_settings.h>\n/* Simulink/SIL platform bindings follow the shared CLLLC/DAB contract. */",
+    "before_footer":"#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 4)\n#error \"BUILD_LEVEL must be 1 (open loop), 2 (current loop), 3 (voltage loop), or 4 (parallel CC/CV).\"\n#endif"
   }
 }

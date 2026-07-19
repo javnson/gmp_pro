@@ -37,78 +37,58 @@ extern "C"
 /**
  * @brief Power device part number.
  */
-#ifndef INN100E0016A_PART_NUMBER
 #define INN100E0016A_PART_NUMBER "INN100E0016A"
-#endif // INN100E0016A_PART_NUMBER
 
 /**
  * @brief MOSFET, IGBT, GaN, SiC, etc.
  */
-#ifndef INN100E0016A_DEVICE_TYPE
 #define INN100E0016A_DEVICE_TYPE "GaN FET"
-#endif // INN100E0016A_DEVICE_TYPE
 
 /**
  * @brief Drain-source or collector-emitter voltage rating.
  * @unit V
  */
-#ifndef INN100E0016A_VOLTAGE_RATING_V
 #define INN100E0016A_VOLTAGE_RATING_V (100.0f)
-#endif // INN100E0016A_VOLTAGE_RATING_V
 
 /**
  * @brief Current rating.
  * @unit A
  */
-#ifndef INN100E0016A_CURRENT_RATING_A
 #define INN100E0016A_CURRENT_RATING_A (0.0f)
-#endif // INN100E0016A_CURRENT_RATING_A
 
 /**
  * @brief On resistance.
  * @unit ohm
  */
-#ifndef INN100E0016A_RDSON_OHM
 #define INN100E0016A_RDSON_OHM (0.016f)
-#endif // INN100E0016A_RDSON_OHM
 
 /**
  * @brief Single switch, dual switch, half bridge power block, etc.
  */
-#ifndef INN100E0016A_CONFIGURATION
 #define INN100E0016A_CONFIGURATION "single"
-#endif // INN100E0016A_CONFIGURATION
 
 /**
  * @brief Maximum on resistance at the documented gate voltage.
  * @unit ohm
  */
-#ifndef INN100E0016A_RDSON_MAX_OHM
 #define INN100E0016A_RDSON_MAX_OHM (0.0f)
-#endif // INN100E0016A_RDSON_MAX_OHM
 
 /**
  * @brief Gate voltage associated with the resistance value.
  * @unit V
  */
-#ifndef INN100E0016A_GATE_VOLTAGE_V
 #define INN100E0016A_GATE_VOLTAGE_V (0.0f)
-#endif // INN100E0016A_GATE_VOLTAGE_V
 
 /**
  * @brief Typical total gate charge.
  * @unit nC
  */
-#ifndef INN100E0016A_GATE_CHARGE_NC
 #define INN100E0016A_GATE_CHARGE_NC (0.0f)
-#endif // INN100E0016A_GATE_CHARGE_NC
 
 /**
  * @brief Manufacturer package name.
  */
-#ifndef INN100E0016A_PACKAGE
 #define INN100E0016A_PACKAGE "unknown"
-#endif // INN100E0016A_PACKAGE
 
 // Logical exports
 // voltage_rating: INN100E0016A_VOLTAGE_RATING_V

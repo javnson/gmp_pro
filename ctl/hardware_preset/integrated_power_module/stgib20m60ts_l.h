@@ -37,75 +37,55 @@ extern "C"
 /**
  * @brief Manufacturer part number.
  */
-#ifndef STGIB20M60TS_L_PART_NUMBER
 #define STGIB20M60TS_L_PART_NUMBER "STGIB20M60TS-L"
-#endif // STGIB20M60TS_L_PART_NUMBER
 
 /**
  * @brief IGBT, MOSFET, GaN, etc.
  */
-#ifndef STGIB20M60TS_L_SWITCH_TECHNOLOGY
 #define STGIB20M60TS_L_SWITCH_TECHNOLOGY "IGBT"
-#endif // STGIB20M60TS_L_SWITCH_TECHNOLOGY
 
 /**
  * @brief Integrated inverter phase count.
  */
-#ifndef STGIB20M60TS_L_PHASE_COUNT
 #define STGIB20M60TS_L_PHASE_COUNT (3U)
-#endif // STGIB20M60TS_L_PHASE_COUNT
 
 /**
  * @brief Switch blocking voltage.
  * @unit V
  */
-#ifndef STGIB20M60TS_L_VOLTAGE_RATING_V
 #define STGIB20M60TS_L_VOLTAGE_RATING_V (600.0f)
-#endif // STGIB20M60TS_L_VOLTAGE_RATING_V
 
 /**
  * @brief Continuous current per switch under datasheet conditions.
  * @unit A
  */
-#ifndef STGIB20M60TS_L_CURRENT_RATING_A
 #define STGIB20M60TS_L_CURRENT_RATING_A (25.0f)
-#endif // STGIB20M60TS_L_CURRENT_RATING_A
 
 /**
  * @brief Peak current per switch.
  * @unit A
  */
-#ifndef STGIB20M60TS_L_PEAK_CURRENT_A
 #define STGIB20M60TS_L_PEAK_CURRENT_A (50.0f)
-#endif // STGIB20M60TS_L_PEAK_CURRENT_A
 
 /**
  * @brief One for active-high logic, zero for active-low.
  */
-#ifndef STGIB20M60TS_L_INPUT_ACTIVE_LEVEL
 #define STGIB20M60TS_L_INPUT_ACTIVE_LEVEL (1U)
-#endif // STGIB20M60TS_L_INPUT_ACTIVE_LEVEL
 
 /**
  * @brief Integrated current-sense op amp availability.
  */
-#ifndef STGIB20M60TS_L_HAS_CURRENT_OPAMP
 #define STGIB20M60TS_L_HAS_CURRENT_OPAMP (1U)
-#endif // STGIB20M60TS_L_HAS_CURRENT_OPAMP
 
 /**
  * @brief Temperature signal availability.
  */
-#ifndef STGIB20M60TS_L_HAS_TEMPERATURE_OUTPUT
 #define STGIB20M60TS_L_HAS_TEMPERATURE_OUTPUT (1U)
-#endif // STGIB20M60TS_L_HAS_TEMPERATURE_OUTPUT
 
 /**
  * @brief Manufacturer package.
  */
-#ifndef STGIB20M60TS_L_PACKAGE
 #define STGIB20M60TS_L_PACKAGE "SDIP2B-26L"
-#endif // STGIB20M60TS_L_PACKAGE
 
 // Logical exports
 // voltage_rating: STGIB20M60TS_L_VOLTAGE_RATING_V

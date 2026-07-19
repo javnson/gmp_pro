@@ -37,72 +37,54 @@ extern "C"
 /**
  * @brief Main sensing IC or technology name.
  */
-#ifndef TMCS1133_B5A_CHIP
 #define TMCS1133_B5A_CHIP "TMCS1133B5A"
-#endif // TMCS1133_B5A_CHIP
 
 /**
  * @brief Current sensing technology, such as Hall, shunt, or fluxgate.
  */
-#ifndef TMCS1133_B5A_SENSOR_TYPE
 #define TMCS1133_B5A_SENSOR_TYPE "Hall"
-#endif // TMCS1133_B5A_SENSOR_TYPE
 
 /**
  * @brief Nominal measurable current range.
  * @unit A
  */
-#ifndef TMCS1133_B5A_RANGE_A
 #define TMCS1133_B5A_RANGE_A (10.3f)
-#endif // TMCS1133_B5A_RANGE_A
 
 /**
  * @brief Minimum output voltage.
  * @unit V
  */
-#ifndef TMCS1133_B5A_OUTPUT_MIN_V
 #define TMCS1133_B5A_OUTPUT_MIN_V (0.0f)
-#endif // TMCS1133_B5A_OUTPUT_MIN_V
 
 /**
  * @brief Maximum output voltage.
  * @unit V
  */
-#ifndef TMCS1133_B5A_OUTPUT_MAX_V
 #define TMCS1133_B5A_OUTPUT_MAX_V (3.3f)
-#endif // TMCS1133_B5A_OUTPUT_MAX_V
 
 /**
  * @brief Zero-current output bias.
  * @unit V
  */
-#ifndef TMCS1133_B5A_BIAS_V
 #define TMCS1133_B5A_BIAS_V (1.65f)
-#endif // TMCS1133_B5A_BIAS_V
 
 /**
  * @brief Current sensor sensitivity.
  * @unit mV/A
  */
-#ifndef TMCS1133_B5A_SENSITIVITY_MV_PER_A
 #define TMCS1133_B5A_SENSITIVITY_MV_PER_A (150.0f)
-#endif // TMCS1133_B5A_SENSITIVITY_MV_PER_A
 
 /**
  * @brief Typical small-signal bandwidth.
  * @unit Hz
  */
-#ifndef TMCS1133_B5A_BANDWIDTH_HZ
 #define TMCS1133_B5A_BANDWIDTH_HZ (300000.0f)
-#endif // TMCS1133_B5A_BANDWIDTH_HZ
 
 /**
  * @brief Sensor internal series resistance.
  * @unit ohm
  */
-#ifndef TMCS1133_B5A_INTERNAL_RESISTANCE_OHM
 #define TMCS1133_B5A_INTERNAL_RESISTANCE_OHM (0.0018f)
-#endif // TMCS1133_B5A_INTERNAL_RESISTANCE_OHM
 
 // Derived macros
 /**

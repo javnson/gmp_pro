@@ -8,7 +8,7 @@
 #define _INVERTER_3PH_ST_B_G431B_ESC1_H_
 
 #include <ctl/hardware_preset/power_switch/stl180n6f7.h>
-#include <ctl/hardware_preset/inverter_3ph/inverter_3ph_general.h>
+#include <ctl/component/hardware_preset/inverter_3ph/inverter_3ph_general.h>
 
 // User code after includes
 // SDPE extension point: add after_includes code in the Entity Instance Code page if needed.
@@ -40,254 +40,186 @@ extern "C"
 /**
  * @brief Board name.
  */
-#ifndef ST_B_G431B_ESC1_BOARD_NAME
 #define ST_B_G431B_ESC1_BOARD_NAME "B-G431B-ESC1"
-#endif // ST_B_G431B_ESC1_BOARD_NAME
 
 /**
  * @brief Gate driver or integrated driver.
  */
-#ifndef ST_B_G431B_ESC1_GATE_DRIVER
 #define ST_B_G431B_ESC1_GATE_DRIVER "L6387"
-#endif // ST_B_G431B_ESC1_GATE_DRIVER
 
 /**
  * @brief discrete_mosfet, discrete_igbt, ipm or integrated_power_stage.
  */
-#ifndef ST_B_G431B_ESC1_POWER_STAGE_KIND
 #define ST_B_G431B_ESC1_POWER_STAGE_KIND "discrete_mosfet"
-#endif // ST_B_G431B_ESC1_POWER_STAGE_KIND
 
 /**
  * @brief Minimum documented operating bus voltage; zero means unspecified.
  * @unit V
  */
-#ifndef ST_B_G431B_ESC1_VBUS_MIN_V
 #define ST_B_G431B_ESC1_VBUS_MIN_V (9.0f)
-#endif // ST_B_G431B_ESC1_VBUS_MIN_V
 
 /**
  * @brief Maximum documented operating bus voltage; zero means unspecified.
  * @unit V
  */
-#ifndef ST_B_G431B_ESC1_VBUS_MAX_V
 #define ST_B_G431B_ESC1_VBUS_MAX_V (26.0f)
-#endif // ST_B_G431B_ESC1_VBUS_MAX_V
 
 /**
  * @brief Board continuous RMS current; zero means unspecified.
  * @unit A
  */
-#ifndef ST_B_G431B_ESC1_CURRENT_MAX_RMS_A
 #define ST_B_G431B_ESC1_CURRENT_MAX_RMS_A (28.0f)
-#endif // ST_B_G431B_ESC1_CURRENT_MAX_RMS_A
 
 /**
  * @brief Board peak current; zero means unspecified.
  * @unit A
  */
-#ifndef ST_B_G431B_ESC1_CURRENT_MAX_PEAK_A
 #define ST_B_G431B_ESC1_CURRENT_MAX_PEAK_A (40.0f)
-#endif // ST_B_G431B_ESC1_CURRENT_MAX_PEAK_A
 
 /**
  * @brief PWM control inputs (3 or 6); zero means not verified.
  */
-#ifndef ST_B_G431B_ESC1_PWM_INPUT_COUNT
 #define ST_B_G431B_ESC1_PWM_INPUT_COUNT (6U)
-#endif // ST_B_G431B_ESC1_PWM_INPUT_COUNT
 
 /**
  * @brief One active-high, zero active-low.
  */
-#ifndef ST_B_G431B_ESC1_PWM_ACTIVE_LEVEL
 #define ST_B_G431B_ESC1_PWM_ACTIVE_LEVEL (1U)
-#endif // ST_B_G431B_ESC1_PWM_ACTIVE_LEVEL
 
 /**
  * @brief One only when PWM polarity was checked against a primary schematic or datasheet.
  */
-#ifndef ST_B_G431B_ESC1_PWM_POLARITY_VERIFIED
 #define ST_B_G431B_ESC1_PWM_POLARITY_VERIFIED (0U)
-#endif // ST_B_G431B_ESC1_PWM_POLARITY_VERIFIED
 
 /**
  * @brief Enable polarity; one active-high, zero active-low.
  */
-#ifndef ST_B_G431B_ESC1_ENABLE_ACTIVE_LEVEL
 #define ST_B_G431B_ESC1_ENABLE_ACTIVE_LEVEL (1U)
-#endif // ST_B_G431B_ESC1_ENABLE_ACTIVE_LEVEL
 
 /**
  * @brief Independently measurable motor phase-current channels.
  */
-#ifndef ST_B_G431B_ESC1_PH_CURRENT_CHANNEL_COUNT
 #define ST_B_G431B_ESC1_PH_CURRENT_CHANNEL_COUNT (3U)
-#endif // ST_B_G431B_ESC1_PH_CURRENT_CHANNEL_COUNT
 
 /**
  * @brief SENSOR_TYPE_* constant.
  */
-#ifndef ST_B_G431B_ESC1_PH_CURRENT_SENSE_TYPE
 #define ST_B_G431B_ESC1_PH_CURRENT_SENSE_TYPE SENSOR_TYPE_SHUNT
-#endif // ST_B_G431B_ESC1_PH_CURRENT_SENSE_TYPE
 
 /**
  * @brief CS_TOPOLOGY_* constant.
  */
-#ifndef ST_B_G431B_ESC1_PH_CURRENT_SENSE_TOPOLOGY
 #define ST_B_G431B_ESC1_PH_CURRENT_SENSE_TOPOLOGY CS_TOPOLOGY_LOW_SIDE
-#endif // ST_B_G431B_ESC1_PH_CURRENT_SENSE_TOPOLOGY
 
 /**
  * @brief Per-channel shunt resistance; zero for sensor IC or unknown.
  * @unit ohm
  */
-#ifndef ST_B_G431B_ESC1_PH_SHUNT_RESISTANCE_OHM
 #define ST_B_G431B_ESC1_PH_SHUNT_RESISTANCE_OHM (0.0f)
-#endif // ST_B_G431B_ESC1_PH_SHUNT_RESISTANCE_OHM
 
 /**
  * @brief Current signal-chain gain; zero means configurable/unknown.
  * @unit V/V
  */
-#ifndef ST_B_G431B_ESC1_PH_CSA_GAIN_V_V
 #define ST_B_G431B_ESC1_PH_CSA_GAIN_V_V (0.0f)
-#endif // ST_B_G431B_ESC1_PH_CSA_GAIN_V_V
 
 /**
  * @brief Zero-current ADC bias; zero may mean differential/unknown.
  * @unit V
  */
-#ifndef ST_B_G431B_ESC1_PH_CSA_BIAS_V
 #define ST_B_G431B_ESC1_PH_CSA_BIAS_V (0.0f)
-#endif // ST_B_G431B_ESC1_PH_CSA_BIAS_V
 
 /**
  * @brief DC-link current measurement channels.
  */
-#ifndef ST_B_G431B_ESC1_DCBUS_CURRENT_CHANNEL_COUNT
 #define ST_B_G431B_ESC1_DCBUS_CURRENT_CHANNEL_COUNT (0U)
-#endif // ST_B_G431B_ESC1_DCBUS_CURRENT_CHANNEL_COUNT
 
 /**
  * @brief SENSOR_TYPE_* constant.
  */
-#ifndef ST_B_G431B_ESC1_DCBUS_CURRENT_SENSE_TYPE
 #define ST_B_G431B_ESC1_DCBUS_CURRENT_SENSE_TYPE SENSOR_NONE
-#endif // ST_B_G431B_ESC1_DCBUS_CURRENT_SENSE_TYPE
 
 /**
  * @brief CS_TOPOLOGY_* constant.
  */
-#ifndef ST_B_G431B_ESC1_DCBUS_CURRENT_SENSE_TOPOLOGY
 #define ST_B_G431B_ESC1_DCBUS_CURRENT_SENSE_TOPOLOGY CS_TOPOLOGY_NONE
-#endif // ST_B_G431B_ESC1_DCBUS_CURRENT_SENSE_TOPOLOGY
 
 /**
  * @brief DC-link shunt resistance.
  * @unit ohm
  */
-#ifndef ST_B_G431B_ESC1_DCBUS_SHUNT_RESISTANCE_OHM
 #define ST_B_G431B_ESC1_DCBUS_SHUNT_RESISTANCE_OHM (0.0f)
-#endif // ST_B_G431B_ESC1_DCBUS_SHUNT_RESISTANCE_OHM
 
 /**
  * @brief Measured phase-voltage channels.
  */
-#ifndef ST_B_G431B_ESC1_PH_VOLTAGE_CHANNEL_COUNT
 #define ST_B_G431B_ESC1_PH_VOLTAGE_CHANNEL_COUNT (3U)
-#endif // ST_B_G431B_ESC1_PH_VOLTAGE_CHANNEL_COUNT
 
 /**
  * @brief VS_TYPE_* constant.
  */
-#ifndef ST_B_G431B_ESC1_PH_VOLTAGE_SENSE_TYPE
 #define ST_B_G431B_ESC1_PH_VOLTAGE_SENSE_TYPE VS_TYPE_PHASE_GND
-#endif // ST_B_G431B_ESC1_PH_VOLTAGE_SENSE_TYPE
 
 /**
  * @brief Phase-voltage divider or signal-chain gain; zero means unknown.
  * @unit V/V
  */
-#ifndef ST_B_G431B_ESC1_PH_VOLTAGE_SENSE_GAIN
 #define ST_B_G431B_ESC1_PH_VOLTAGE_SENSE_GAIN (0.0f)
-#endif // ST_B_G431B_ESC1_PH_VOLTAGE_SENSE_GAIN
 
 /**
  * @brief Phase-voltage signal bias.
  * @unit V
  */
-#ifndef ST_B_G431B_ESC1_PH_VOLTAGE_SENSE_BIAS_V
 #define ST_B_G431B_ESC1_PH_VOLTAGE_SENSE_BIAS_V (0.0f)
-#endif // ST_B_G431B_ESC1_PH_VOLTAGE_SENSE_BIAS_V
 
 /**
  * @brief DC-bus voltage channels.
  */
-#ifndef ST_B_G431B_ESC1_DCBUS_VOLTAGE_CHANNEL_COUNT
 #define ST_B_G431B_ESC1_DCBUS_VOLTAGE_CHANNEL_COUNT (1U)
-#endif // ST_B_G431B_ESC1_DCBUS_VOLTAGE_CHANNEL_COUNT
 
 /**
  * @brief VS_TYPE_* constant.
  */
-#ifndef ST_B_G431B_ESC1_DCBUS_VOLTAGE_SENSE_TYPE
 #define ST_B_G431B_ESC1_DCBUS_VOLTAGE_SENSE_TYPE VS_TYPE_PHASE_GND
-#endif // ST_B_G431B_ESC1_DCBUS_VOLTAGE_SENSE_TYPE
 
 /**
  * @brief DC-bus voltage divider or signal-chain gain; zero means unknown.
  * @unit V/V
  */
-#ifndef ST_B_G431B_ESC1_DCBUS_VOLTAGE_SENSE_GAIN
 #define ST_B_G431B_ESC1_DCBUS_VOLTAGE_SENSE_GAIN (0.0f)
-#endif // ST_B_G431B_ESC1_DCBUS_VOLTAGE_SENSE_GAIN
 
 /**
  * @brief DC-bus voltage signal bias.
  * @unit V
  */
-#ifndef ST_B_G431B_ESC1_DCBUS_VOLTAGE_SENSE_BIAS_V
 #define ST_B_G431B_ESC1_DCBUS_VOLTAGE_SENSE_BIAS_V (0.0f)
-#endif // ST_B_G431B_ESC1_DCBUS_VOLTAGE_SENSE_BIAS_V
 
 /**
  * @brief DC-link current sensitivity; one is the compatibility value when absent.
  * @unit V/A
  */
-#ifndef ST_B_G431B_ESC1_DCBUS_CURRENT_SENSE_GAIN
 #define ST_B_G431B_ESC1_DCBUS_CURRENT_SENSE_GAIN (1.0f)
-#endif // ST_B_G431B_ESC1_DCBUS_CURRENT_SENSE_GAIN
 
 /**
  * @brief DC-link current signal bias.
  * @unit V
  */
-#ifndef ST_B_G431B_ESC1_DCBUS_CURRENT_SENSE_BIAS_V
 #define ST_B_G431B_ESC1_DCBUS_CURRENT_SENSE_BIAS_V (0.0f)
-#endif // ST_B_G431B_ESC1_DCBUS_CURRENT_SENSE_BIAS_V
 
 /**
  * @brief Power-stage temperature channels.
  */
-#ifndef ST_B_G431B_ESC1_THERMAL_CHANNEL_COUNT
 #define ST_B_G431B_ESC1_THERMAL_CHANNEL_COUNT (0U)
-#endif // ST_B_G431B_ESC1_THERMAL_CHANNEL_COUNT
 
 /**
  * @brief verified, partial, schematic_required or template.
  */
-#ifndef ST_B_G431B_ESC1_VERIFICATION_STATUS
 #define ST_B_G431B_ESC1_VERIFICATION_STATUS "verified_board_manual"
-#endif // ST_B_G431B_ESC1_VERIFICATION_STATUS
 
 /**
  * @brief Primary board manual, schematic or internal design reference.
  */
-#ifndef ST_B_G431B_ESC1_SOURCE_REFERENCE
 #define ST_B_G431B_ESC1_SOURCE_REFERENCE "ST UM2516"
-#endif // ST_B_G431B_ESC1_SOURCE_REFERENCE
 
 // Derived macros
 /**

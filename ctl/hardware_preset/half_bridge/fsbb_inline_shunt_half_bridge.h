@@ -38,40 +38,30 @@ extern "C"
 /**
  * @brief Board or module name.
  */
-#ifndef FSBB_HB_INLINE_BOARD_NAME
 #define FSBB_HB_INLINE_BOARD_NAME "FSBB inline shunt example"
-#endif // FSBB_HB_INLINE_BOARD_NAME
 
 /**
  * @brief Number of half-bridge phases represented by this module.
  */
-#ifndef FSBB_HB_INLINE_PHASE_COUNT
 #define FSBB_HB_INLINE_PHASE_COUNT (1U)
-#endif // FSBB_HB_INLINE_PHASE_COUNT
 
 /**
  * @brief Current measurement range exported by the current sensor sub component.
  * @unit A
  */
-#ifndef FSBB_HB_INLINE_MEASURED_CURRENT_RANGE_A
 #define FSBB_HB_INLINE_MEASURED_CURRENT_RANGE_A FSBB_5M_SHUNT_RANGE_A
-#endif // FSBB_HB_INLINE_MEASURED_CURRENT_RANGE_A
 
 /**
  * @brief Recommended hardware deadtime.
  * @unit ns
  */
-#ifndef FSBB_HB_INLINE_DEADTIME_NS
 #define FSBB_HB_INLINE_DEADTIME_NS (500.0f)
-#endif // FSBB_HB_INLINE_DEADTIME_NS
 
 /**
  * @brief Optional local DC bus capacitance.
  * @unit F
  */
-#ifndef FSBB_HB_INLINE_BUS_CAPACITANCE_F
 #define FSBB_HB_INLINE_BUS_CAPACITANCE_F (0.00044f)
-#endif // FSBB_HB_INLINE_BUS_CAPACITANCE_F
 
 // Derived macros
 /**
@@ -85,57 +75,43 @@ extern "C"
 /**
  * @brief Main sensing IC or technology name.
  */
-#ifndef FSBB_5M_SHUNT_CHIP
 #define FSBB_5M_SHUNT_CHIP "5mR shunt + op amp"
-#endif // FSBB_5M_SHUNT_CHIP
 
 /**
  * @brief Nominal measurable current range.
  * @unit A
  */
-#ifndef FSBB_5M_SHUNT_RANGE_A
 #define FSBB_5M_SHUNT_RANGE_A (30.0f)
-#endif // FSBB_5M_SHUNT_RANGE_A
 
 /**
  * @brief Minimum output voltage.
  * @unit V
  */
-#ifndef FSBB_5M_SHUNT_OUTPUT_MIN_V
 #define FSBB_5M_SHUNT_OUTPUT_MIN_V (0.0f)
-#endif // FSBB_5M_SHUNT_OUTPUT_MIN_V
 
 /**
  * @brief Maximum output voltage.
  * @unit V
  */
-#ifndef FSBB_5M_SHUNT_OUTPUT_MAX_V
 #define FSBB_5M_SHUNT_OUTPUT_MAX_V (3.3f)
-#endif // FSBB_5M_SHUNT_OUTPUT_MAX_V
 
 /**
  * @brief Zero-current output bias.
  * @unit V
  */
-#ifndef FSBB_5M_SHUNT_BIAS_V
 #define FSBB_5M_SHUNT_BIAS_V (1.65f)
-#endif // FSBB_5M_SHUNT_BIAS_V
 
 /**
  * @brief Current sensor sensitivity.
  * @unit mV/A
  */
-#ifndef FSBB_5M_SHUNT_SENSITIVITY_MV_PER_A
 #define FSBB_5M_SHUNT_SENSITIVITY_MV_PER_A (50.0f)
-#endif // FSBB_5M_SHUNT_SENSITIVITY_MV_PER_A
 
 /**
  * @brief Sensor internal series resistance.
  * @unit ohm
  */
-#ifndef FSBB_5M_SHUNT_INTERNAL_RESISTANCE_OHM
 #define FSBB_5M_SHUNT_INTERNAL_RESISTANCE_OHM (0.005f)
-#endif // FSBB_5M_SHUNT_INTERNAL_RESISTANCE_OHM
 
 // Derived macros
 /**

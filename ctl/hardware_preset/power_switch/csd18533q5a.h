@@ -37,78 +37,58 @@ extern "C"
 /**
  * @brief Power device part number.
  */
-#ifndef CSD18533Q5A_PART_NUMBER
 #define CSD18533Q5A_PART_NUMBER "CSD18533Q5A"
-#endif // CSD18533Q5A_PART_NUMBER
 
 /**
  * @brief MOSFET, IGBT, GaN, SiC, etc.
  */
-#ifndef CSD18533Q5A_DEVICE_TYPE
 #define CSD18533Q5A_DEVICE_TYPE "MOSFET"
-#endif // CSD18533Q5A_DEVICE_TYPE
 
 /**
  * @brief Drain-source or collector-emitter voltage rating.
  * @unit V
  */
-#ifndef CSD18533Q5A_VOLTAGE_RATING_V
 #define CSD18533Q5A_VOLTAGE_RATING_V (60.0f)
-#endif // CSD18533Q5A_VOLTAGE_RATING_V
 
 /**
  * @brief Current rating.
  * @unit A
  */
-#ifndef CSD18533Q5A_CURRENT_RATING_A
 #define CSD18533Q5A_CURRENT_RATING_A (100.0f)
-#endif // CSD18533Q5A_CURRENT_RATING_A
 
 /**
  * @brief On resistance.
  * @unit ohm
  */
-#ifndef CSD18533Q5A_RDSON_OHM
 #define CSD18533Q5A_RDSON_OHM (0.0047f)
-#endif // CSD18533Q5A_RDSON_OHM
 
 /**
  * @brief Single switch, dual switch, half bridge power block, etc.
  */
-#ifndef CSD18533Q5A_CONFIGURATION
 #define CSD18533Q5A_CONFIGURATION "single"
-#endif // CSD18533Q5A_CONFIGURATION
 
 /**
  * @brief Maximum on resistance at the documented gate voltage.
  * @unit ohm
  */
-#ifndef CSD18533Q5A_RDSON_MAX_OHM
 #define CSD18533Q5A_RDSON_MAX_OHM (0.0059f)
-#endif // CSD18533Q5A_RDSON_MAX_OHM
 
 /**
  * @brief Gate voltage associated with the resistance value.
  * @unit V
  */
-#ifndef CSD18533Q5A_GATE_VOLTAGE_V
 #define CSD18533Q5A_GATE_VOLTAGE_V (10.0f)
-#endif // CSD18533Q5A_GATE_VOLTAGE_V
 
 /**
  * @brief Typical total gate charge.
  * @unit nC
  */
-#ifndef CSD18533Q5A_GATE_CHARGE_NC
 #define CSD18533Q5A_GATE_CHARGE_NC (29.0f)
-#endif // CSD18533Q5A_GATE_CHARGE_NC
 
 /**
  * @brief Manufacturer package name.
  */
-#ifndef CSD18533Q5A_PACKAGE
 #define CSD18533Q5A_PACKAGE "SON 5x6"
-#endif // CSD18533Q5A_PACKAGE
 
 // Logical exports
 // voltage_rating: CSD18533Q5A_VOLTAGE_RATING_V

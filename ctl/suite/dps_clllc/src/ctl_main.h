@@ -50,10 +50,13 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 
 #if (BUILD_LEVEL == 1)
     ctl_dcdc_internal_ingest_and_filter(&dcdc_core);
-    command = float2ctrl(CLLLC_OPEN_LOOP_COMMAND_PU);
+    command = dcdc_core.v_target;
 #elif (BUILD_LEVEL == 2)
+    /* i_load is intentionally attached to the primary/input current channel. */
     command = ctl_step_dcdc_output_current_loop(&dcdc_core);
-#else
+#elif (BUILD_LEVEL == 3)
+    command = ctl_step_dcdc_voltage_loop(&dcdc_core);
+#elif (BUILD_LEVEL == 4)
     command = ctl_step_dcdc_parallel(&dcdc_core);
 #endif
     g_modulation_command = command;

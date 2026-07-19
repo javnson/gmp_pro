@@ -37,75 +37,55 @@ extern "C"
 /**
  * @brief Manufacturer part number.
  */
-#ifndef STGIPQ8C60T_HZ_PART_NUMBER
 #define STGIPQ8C60T_HZ_PART_NUMBER "STGIPQ8C60T-HZ"
-#endif // STGIPQ8C60T_HZ_PART_NUMBER
 
 /**
  * @brief IGBT, MOSFET, GaN, etc.
  */
-#ifndef STGIPQ8C60T_HZ_SWITCH_TECHNOLOGY
 #define STGIPQ8C60T_HZ_SWITCH_TECHNOLOGY "IGBT"
-#endif // STGIPQ8C60T_HZ_SWITCH_TECHNOLOGY
 
 /**
  * @brief Integrated inverter phase count.
  */
-#ifndef STGIPQ8C60T_HZ_PHASE_COUNT
 #define STGIPQ8C60T_HZ_PHASE_COUNT (3U)
-#endif // STGIPQ8C60T_HZ_PHASE_COUNT
 
 /**
  * @brief Switch blocking voltage.
  * @unit V
  */
-#ifndef STGIPQ8C60T_HZ_VOLTAGE_RATING_V
 #define STGIPQ8C60T_HZ_VOLTAGE_RATING_V (600.0f)
-#endif // STGIPQ8C60T_HZ_VOLTAGE_RATING_V
 
 /**
  * @brief Continuous current per switch under datasheet conditions.
  * @unit A
  */
-#ifndef STGIPQ8C60T_HZ_CURRENT_RATING_A
 #define STGIPQ8C60T_HZ_CURRENT_RATING_A (8.0f)
-#endif // STGIPQ8C60T_HZ_CURRENT_RATING_A
 
 /**
  * @brief Peak current per switch.
  * @unit A
  */
-#ifndef STGIPQ8C60T_HZ_PEAK_CURRENT_A
 #define STGIPQ8C60T_HZ_PEAK_CURRENT_A (10.2f)
-#endif // STGIPQ8C60T_HZ_PEAK_CURRENT_A
 
 /**
  * @brief One for active-high logic, zero for active-low.
  */
-#ifndef STGIPQ8C60T_HZ_INPUT_ACTIVE_LEVEL
 #define STGIPQ8C60T_HZ_INPUT_ACTIVE_LEVEL (1U)
-#endif // STGIPQ8C60T_HZ_INPUT_ACTIVE_LEVEL
 
 /**
  * @brief Integrated current-sense op amp availability.
  */
-#ifndef STGIPQ8C60T_HZ_HAS_CURRENT_OPAMP
 #define STGIPQ8C60T_HZ_HAS_CURRENT_OPAMP (1U)
-#endif // STGIPQ8C60T_HZ_HAS_CURRENT_OPAMP
 
 /**
  * @brief Temperature signal availability.
  */
-#ifndef STGIPQ8C60T_HZ_HAS_TEMPERATURE_OUTPUT
 #define STGIPQ8C60T_HZ_HAS_TEMPERATURE_OUTPUT (1U)
-#endif // STGIPQ8C60T_HZ_HAS_TEMPERATURE_OUTPUT
 
 /**
  * @brief Manufacturer package.
  */
-#ifndef STGIPQ8C60T_HZ_PACKAGE
 #define STGIPQ8C60T_HZ_PACKAGE "N2DIP-26L type Z"
-#endif // STGIPQ8C60T_HZ_PACKAGE
 
 // Logical exports
 // voltage_rating: STGIPQ8C60T_HZ_VOLTAGE_RATING_V

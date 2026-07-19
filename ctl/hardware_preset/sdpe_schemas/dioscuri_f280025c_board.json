@@ -1,0 +1,67 @@
+{
+  "id": "dioscuri_f280025c_board",
+  "display_name": "Dioscuri F280025C Board",
+  "description": "Dioscuri six-pair PWM, ADC, UART, timer and active-low gate-buffer resource model.",
+  "category": "C2000 Power Board",
+  "output_subdir": "mcu_board",
+  "parameters": [
+    {"name":"chip","c_name":"CHIP","unit":"","required":true,"value_format":"\"{}\"","description":"C2000 device name."},
+    {"name":"syscfg_file","c_name":"SYSCFG_FILE","unit":"","required":true,"value_format":"\"{}\"","description":"SysConfig source file."},
+    {"name":"pwm_pair1_base","c_name":"PWM_PAIR1_BASE","unit":"","required":true,"value_format":"{}","description":"PWM outputs 1/2."},
+    {"name":"pwm_pair2_base","c_name":"PWM_PAIR2_BASE","unit":"","required":true,"value_format":"{}","description":"PWM outputs 3/4."},
+    {"name":"pwm_pair3_base","c_name":"PWM_PAIR3_BASE","unit":"","required":true,"value_format":"{}","description":"Reserved FSBB PWM outputs 5/6 (ePWM3)."},
+    {"name":"pwm_pair4_base","c_name":"PWM_PAIR4_BASE","unit":"","required":true,"value_format":"{}","description":"Primary PRI_P PWM outputs 7/8 (ePWM4)."},
+    {"name":"pwm_pair5_base","c_name":"PWM_PAIR5_BASE","unit":"","required":true,"value_format":"{}","description":"Reserved FSBB PWM outputs 9/10 (ePWM5)."},
+    {"name":"pwm_pair6_base","c_name":"PWM_PAIR6_BASE","unit":"","required":true,"value_format":"{}","description":"Primary PRI_N PWM outputs 11/12 (ePWM7)."},
+    {"name":"gate_enable_gpio","c_name":"GATE_ENABLE_GPIO","unit":"","required":true,"value_format":"{}","description":"SN74LVC8T245 OE# GPIO."},
+    {"name":"gate_enable_level","c_name":"GATE_ENABLE_LEVEL","unit":"","required":true,"value_format":"({}U)","description":"OE# active level."},
+    {"name":"gate_disable_level","c_name":"GATE_DISABLE_LEVEL","unit":"","required":true,"value_format":"({}U)","description":"OE# safe level."},
+    {"name":"tick_timer_base","c_name":"TICK_TIMER_BASE","unit":"","required":true,"value_format":"{}","description":"PWM-independent scheduler timer."},
+    {"name":"uart_base","c_name":"UART_BASE","unit":"","required":true,"value_format":"{}","description":"Datalink UART."},
+    {"name":"primary_voltage_result_base","c_name":"PRIMARY_VOLTAGE_RESULT_BASE","unit":"","required":true,"value_format":"{}","description":"Primary voltage ADC result base."},
+    {"name":"primary_voltage_soc","c_name":"PRIMARY_VOLTAGE_SOC","unit":"","required":true,"value_format":"{}","description":"Primary voltage ADC SOC."},
+    {"name":"primary_current_result_base","c_name":"PRIMARY_CURRENT_RESULT_BASE","unit":"","required":true,"value_format":"{}","description":"Primary current ADC result base."},
+    {"name":"primary_current_soc","c_name":"PRIMARY_CURRENT_SOC","unit":"","required":true,"value_format":"{}","description":"Primary current ADC SOC."},
+    {"name":"secondary_voltage_result_base","c_name":"SECONDARY_VOLTAGE_RESULT_BASE","unit":"","required":true,"value_format":"{}","description":"Secondary voltage ADC result base."},
+    {"name":"secondary_voltage_soc","c_name":"SECONDARY_VOLTAGE_SOC","unit":"","required":true,"value_format":"{}","description":"Secondary voltage ADC SOC."},
+    {"name":"secondary_current_result_base","c_name":"SECONDARY_CURRENT_RESULT_BASE","unit":"","required":true,"value_format":"{}","description":"Secondary current ADC result base."},
+    {"name":"secondary_current_soc","c_name":"SECONDARY_CURRENT_SOC","unit":"","required":true,"value_format":"{}","description":"Secondary current ADC SOC."}
+  ],
+  "exports": {
+    "pwm_pair1_base":{"macro":"{PREFIX}_PWM_PAIR1_BASE","description":"PWM pair 1 base."},
+    "pwm_pair2_base":{"macro":"{PREFIX}_PWM_PAIR2_BASE","description":"PWM pair 2 base."},
+    "pwm_pair3_base":{"macro":"{PREFIX}_PWM_PAIR3_BASE","description":"PWM pair 3 base."},
+    "pwm_pair4_base":{"macro":"{PREFIX}_PWM_PAIR4_BASE","description":"PWM pair 4 base."},
+    "pwm_pair5_base":{"macro":"{PREFIX}_PWM_PAIR5_BASE","description":"PWM pair 5 base."},
+    "pwm_pair6_base":{"macro":"{PREFIX}_PWM_PAIR6_BASE","description":"PWM pair 6 base."},
+    "gate_enable_gpio":{"macro":"{PREFIX}_GATE_ENABLE_GPIO","description":"Active-low gate-buffer GPIO."},
+    "tick_timer_base":{"macro":"{PREFIX}_TICK_TIMER_BASE","description":"Scheduler timer base."},
+    "uart_base":{"macro":"{PREFIX}_UART_BASE","description":"Datalink UART base."}
+  },
+  "option_sets": {
+    "PWM_BASE": {
+      "options": [
+        "DIOSCURI_PWM_PAIR1_BASE", "DIOSCURI_PWM_PAIR2_BASE",
+        "DIOSCURI_PWM_PAIR3_BASE", "DIOSCURI_PWM_PAIR4_BASE",
+        "DIOSCURI_PWM_PAIR5_BASE", "DIOSCURI_PWM_PAIR6_BASE"
+      ],
+      "description": "All six Dioscuri complementary PWM pairs. Pairs 5 and 6 are reserved for FSBB by default."
+    },
+    "PWM_SYNC_SOURCE": {
+      "options": [
+        "EPWM_SYNC_IN_PULSE_SRC_SYNCOUT_EPWM1", "EPWM_SYNC_IN_PULSE_SRC_SYNCOUT_EPWM2",
+        "EPWM_SYNC_IN_PULSE_SRC_SYNCOUT_EPWM3", "EPWM_SYNC_IN_PULSE_SRC_SYNCOUT_EPWM4",
+        "EPWM_SYNC_IN_PULSE_SRC_SYNCOUT_EPWM5", "EPWM_SYNC_IN_PULSE_SRC_SYNCOUT_EPWM7"
+      ],
+      "description": "Sync input source matching the selected time-base master."
+    }
+  },
+  "parameter_groups": [
+    {"name":"PWM Resources","parameters":["pwm_pair1_base","pwm_pair2_base","pwm_pair3_base","pwm_pair4_base","pwm_pair5_base","pwm_pair6_base","gate_enable_gpio","gate_enable_level","gate_disable_level"]},
+    {"name":"ADC Resources","parameters":["primary_voltage_result_base","primary_voltage_soc","primary_current_result_base","primary_current_soc","secondary_voltage_result_base","secondary_voltage_soc","secondary_current_result_base","secondary_current_soc"]},
+    {"name":"System Resources","parameters":["chip","syscfg_file","tick_timer_base","uart_base"]}
+  ],
+  "tags": ["c2000", "f280025c", "dioscuri", "clllc", "dab"],
+  "header_prefix": "",
+  "components": {}
+}

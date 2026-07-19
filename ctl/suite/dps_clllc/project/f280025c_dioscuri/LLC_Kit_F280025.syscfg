@@ -45,34 +45,47 @@ const sci1           = sci.addInstance();
 /**
  * Write custom configuration values to the imported modules.
  */
-adc1.$name             = "CLLLC_ADCA";
-adc1.adcClockPrescaler = "ADC_CLK_DIV_2_0";
-adc1.enabledSOCs       = ["ADC_SOC_NUMBER0","ADC_SOC_NUMBER1","ADC_SOC_NUMBER2"];
-adc1.soc0SampleWindow  = 8;
-adc1.soc0Name = "PRIMARY_CURRENT"; adc1.soc0IndependentNameMode = true;
-adc1.soc0Channel = "ADC_CH_ADCIN6"; adc1.soc0Trigger = "ADC_TRIGGER_EPWM1_SOCA";
-adc1.soc1Name = "SECONDARY_CURRENT"; adc1.soc1IndependentNameMode = true;
-adc1.soc1Channel = "ADC_CH_ADCIN2"; adc1.soc1SampleWindow = 8; adc1.soc1Trigger = "ADC_TRIGGER_EPWM1_SOCA";
-adc1.soc2Name = "SECONDARY_VOLTAGE"; adc1.soc2IndependentNameMode = true;
-adc1.soc2Channel = "ADC_CH_ADCIN3"; adc1.soc2SampleWindow = 8; adc1.soc2Trigger = "ADC_TRIGGER_EPWM1_SOCA";
-adc1.enabledInts = ["ADC_INT_NUMBER1"];
-adc1.enableInterrupt1 = true;
-adc1.registerInterrupts = ["1"];
+adc1.$name                    = "CLLLC_ADCA";
+adc1.adcClockPrescaler        = "ADC_CLK_DIV_2_0";
+adc1.enabledSOCs              = ["ADC_SOC_NUMBER0","ADC_SOC_NUMBER1","ADC_SOC_NUMBER2"];
+adc1.soc0SampleWindow         = 8;
+adc1.soc0Name                 = "PRIMARY_CURRENT";
+adc1.soc0IndependentNameMode  = true;
+adc1.soc0Channel              = "ADC_CH_ADCIN6";
+adc1.soc0Trigger              = "ADC_TRIGGER_EPWM1_SOCA";
+adc1.soc1Name                 = "SECONDARY_CURRENT";
+adc1.soc1IndependentNameMode  = true;
+adc1.soc1Channel              = "ADC_CH_ADCIN2";
+adc1.soc1SampleWindow         = 8;
+adc1.soc1Trigger              = "ADC_TRIGGER_EPWM1_SOCA";
+adc1.soc2Name                 = "SECONDARY_VOLTAGE";
+adc1.soc2IndependentNameMode  = true;
+adc1.soc2Channel              = "ADC_CH_ADCIN3";
+adc1.soc2SampleWindow         = 8;
+adc1.soc2Trigger              = "ADC_TRIGGER_EPWM1_SOCA";
+adc1.enabledInts              = ["ADC_INT_NUMBER1"];
+adc1.enableInterrupt1         = true;
+adc1.interruptPulseMode       = "ADC_PULSE_END_OF_CONV";
+adc1.interrupt1SOCSource      = "ADC_SOC_NUMBER2";
+adc1.registerInterrupts       = ["1"];
 adc1.adcInt1.interruptHandler = "MainISR";
-adc1.adcInt1.enableInterrupt = true;
+adc1.adcInt1.enableInterrupt  = true;
 
-adc2.$name             = "CLLLC_ADCC";
-adc2.adcBase           = "ADCC_BASE";
-adc2.adcClockPrescaler = "ADC_CLK_DIV_2_0";
-adc2.enabledSOCs       = ["ADC_SOC_NUMBER0"];
-adc2.soc0Name = "PRIMARY_VOLTAGE"; adc2.soc0IndependentNameMode = true;
-adc2.soc0Channel = "ADC_CH_ADCIN6"; adc2.soc0SampleWindow = 8; adc2.soc0Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+adc2.$name                   = "CLLLC_ADCC";
+adc2.adcBase                 = "ADCC_BASE";
+adc2.adcClockPrescaler       = "ADC_CLK_DIV_2_0";
+adc2.enabledSOCs             = ["ADC_SOC_NUMBER0"];
+adc2.soc0Name                = "PRIMARY_VOLTAGE";
+adc2.soc0IndependentNameMode = true;
+adc2.soc0Channel             = "ADC_CH_ADCIN6";
+adc2.soc0SampleWindow        = 8;
+adc2.soc0Trigger             = "ADC_TRIGGER_EPWM1_SOCA";
 
 analog1.$name            = "myANALOGPinMux0";
 adc1.analog              = analog1;
 adc2.analog              = analog1;
 analog1.useCase          = "CUSTOM";
-analog1.useInterfacePins = ["A0/C15","A1","A10/C10","A11/C0","A12/C1","A14/C4","A15/C7","A2/C9","A3/C5/VDAC","A4/C14","A5/C2","A6","A7/C3","A8/C11","A9/C8","C6"];
+analog1.useInterfacePins = ["A2/C9","A3/C5/VDAC","A6","C6"];
 
 can1.$name                   = "COMM_CAN";
 can1.enableAutoBusOn         = true;
@@ -81,35 +94,88 @@ can1.enableInterrupt         = true;
 can1.registerInterrupts      = true;
 can1.interruptFlags          = ["CAN_INT_IE0"];
 can1.interruptLine           = ["CAN_GLOBAL_INT_CANINT0"];
-/* F280025 CANA is only muxable to GPIO33/32 in this package.  The schematic
- * labels GPIO30/31 at the transceiver, which cannot be selected as CANA by
- * the device pinmux and must be corrected in the next PCB revision. */
 can1.can.can_rxPin.$assign   = "GPIO33";
 can1.can.can_txPin.$assign   = "GPIO32";
 can1.can0Int.enableInterrupt = true;
 
-epwm1.$name                  = "CLLLC_EPWM3";
+cputimer1.$name       = "CLLLC_TICK_TIMER";
+cputimer1.timerPeriod = 1000;
+
+/*
+ * Dioscuri uses UCC21520 isolated gate drivers.  EPWMA is the positive
+ * command and EPWMB is its active-high complementary command.  Configure a
+ * complete, safe 100 kHz baseline here; xplt.peripheral.c subsequently
+ * updates period, phase and dead time at run time for CLLLC/DAB modulation.
+ */
+function configureDioscuriPwm(instance, phaseEnable)
+{
+    instance.epwmTimebase_clockDiv                                    = "EPWM_CLOCK_DIVIDER_1";
+    instance.epwmTimebase_hsClockDiv                                  = "EPWM_HSCLOCK_DIVIDER_1";
+    instance.epwmTimebase_counterMode                                 = "EPWM_COUNTER_MODE_UP";
+    instance.epwmTimebase_counterModeAfterSync                        = "EPWM_COUNT_MODE_UP_AFTER_SYNC";
+    instance.epwmTimebase_periodLoadMode                              = "EPWM_PERIOD_SHADOW_LOAD";
+    instance.epwmTimebase_periodLoadEvent                             = "EPWM_SHADOW_LOAD_MODE_COUNTER_ZERO";
+    instance.epwmTimebase_period                                      = 1000;
+    instance.epwmTimebase_phaseEnable                                 = phaseEnable;
+    instance.epwmTimebase_phaseShift                                  = 0;
+    instance.epwmCounterCompare_cmpA                                  = 500;
+    instance.epwmCounterCompare_shadowLoadModeCMPA                    = "EPWM_COMP_LOAD_ON_CNTR_ZERO";
+    instance.epwmActionQualifier_EPWM_AQ_OUTPUT_A_ON_TIMEBASE_ZERO    = "EPWM_AQ_OUTPUT_HIGH";
+    instance.epwmActionQualifier_EPWM_AQ_OUTPUT_A_ON_TIMEBASE_UP_CMPA = "EPWM_AQ_OUTPUT_LOW";
+    instance.epwmDeadband_inputRED                                    = "EPWM_DB_INPUT_EPWMA";
+    instance.epwmDeadband_inputFED                                    = "EPWM_DB_INPUT_EPWMA";
+    instance.epwmDeadband_polarityRED                                 = "EPWM_DB_POLARITY_ACTIVE_HIGH";
+    instance.epwmDeadband_polarityFED                                 = "EPWM_DB_POLARITY_ACTIVE_LOW";
+    instance.epwmDeadband_enableRED                                   = true;
+    instance.epwmDeadband_enableFED                                   = true;
+    instance.epwmDeadband_delayRED                                    = 20;
+    instance.epwmDeadband_delayFED                                    = 20;
+    instance.epwmTripZone_EPWM_TZ_ACTION_EVENT_TZA                    = "EPWM_TZ_ACTION_LOW";
+    instance.epwmTripZone_EPWM_TZ_ACTION_EVENT_TZB                    = "EPWM_TZ_ACTION_LOW";
+}
+
+configureDioscuriPwm(epwm1, true);
+configureDioscuriPwm(epwm2, true);
+configureDioscuriPwm(epwm3, false); /* EPWM1 is the hardware sync master. */
+configureDioscuriPwm(epwm4, true);
+configureDioscuriPwm(epwm5, true);
+configureDioscuriPwm(epwm6, true);
+
+epwm3.epwmTimebase_syncOutPulseMode                     = ["EPWM_SYNC_OUT_PULSE_ON_CNTR_ZERO"];
+epwm3.epwmCounterCompare_cmpC                           = 750;
+epwm3.epwmEventTrigger_EPWM_SOC_A_triggerEnable         = true;
+/* Sample at 75% of the cycle: midway through the low interval of the
+ * 50%-duty master leg and away from both switching edges. */
+epwm3.epwmEventTrigger_EPWM_SOC_A_triggerSource         = "EPWM_SOC_TBCTR_U_CMPC";
+epwm3.epwmEventTrigger_EPWM_SOC_A_triggerEventPrescalar = "2";
+
+epwm1.$name                  = "DIOSCURI_HW_PWM_PAIR3";
 epwm1.epwm.$assign           = "EPWM3";
 epwm1.epwm.epwm_aPin.$assign = "GPIO4";
 epwm1.epwm.epwm_bPin.$assign = "GPIO5";
 
-epwm2.$name                  = "CLLLC_EPWM2";
+epwm2.$name                  = "DIOSCURI_HW_PWM_PAIR2";
 epwm2.epwm.$assign           = "EPWM2";
 epwm2.epwm.epwm_aPin.$assign = "GPIO2";
 epwm2.epwm.epwm_bPin.$assign = "GPIO3";
 
-epwm3.$name        = "CLLLC_EPWM1";
-epwm3.epwm.$assign = "EPWM1";
+epwm3.$name                  = "DIOSCURI_HW_PWM_PAIR1";
+epwm3.epwm.$assign           = "EPWM1";
+epwm3.epwm.epwm_aPin.$assign = "GPIO0";
+epwm3.epwm.epwm_bPin.$assign = "GPIO1";
 
-epwm4.$name                  = "myEPWM3";
+epwm4.$name                  = "DIOSCURI_HW_PWM_PAIR5";
+epwm4.epwm.$assign           = "EPWM5";
 epwm4.epwm.epwm_aPin.$assign = "GPIO8";
 epwm4.epwm.epwm_bPin.$assign = "GPIO9";
 
-epwm5.$name                  = "CLLLC_EPWM4";
+epwm5.$name                  = "DIOSCURI_HW_PWM_PAIR4";
+epwm5.epwm.$assign           = "EPWM4";
 epwm5.epwm.epwm_aPin.$assign = "GPIO22";
 epwm5.epwm.epwm_bPin.$assign = "GPIO23";
 
-epwm6.$name                  = "myEPWM5";
+epwm6.$name                  = "DIOSCURI_HW_PWM_PAIR6";
+epwm6.epwm.$assign           = "EPWM7";
 epwm6.epwm.epwm_aPin.$assign = "GPIO28";
 epwm6.epwm.epwm_bPin.$assign = "GPIO29";
 
@@ -120,17 +186,21 @@ eqep1.eqep.eqep_aPin.$assign     = "GPIO6";
 eqep1.eqep.eqep_bPin.$assign     = "GPIO7";
 eqep1.eqep.eqep_indexPin.$assign = "GPIO13";
 
-gpio1.$name = "myGPIO0";
+gpio1.$name = "GPIO_KEY1";
 
-gpio2.$name = "myGPIO1";
+gpio2.$name = "GPIO_KEY2";
 
 gpio3.$name = "myGPIO2";
 
 gpio4.$name = "myGPIO3";
 
-gpio5.$name = "myGPIO4";
+gpio5.$name     = "GPIO_SYS_LED";
+gpio5.direction = "GPIO_DIR_MODE_OUT";
 
-gpio6.$name = "myGPIO5";
+gpio6.$name             = "GPIO_ENABLE";
+gpio6.direction         = "GPIO_DIR_MODE_OUT";
+gpio6.writeInitialValue = true;
+gpio6.initialValue      = 1;
 
 i2c1.$name = "myI2C0";
 
@@ -147,37 +217,17 @@ sci1.sci.sci_txPin.$assign      = "GPIO16";
 sci1.rxQual.$name               = "myGPIOQUAL0";
 sci1.txQual.$name               = "myGPIOQUAL1";
 
-cputimer1.$name = "CLLLC_TICK_TIMER";
-cputimer1.timerPeriod = 1000;
-
 /**
  * Pinmux solution for unlocked pins/peripherals. This ensures that minor changes to the automatic solver in a future
  * version of the tool will not impact the pinmux you originally saw.  These lines can be completely deleted in order to
  * re-solve from scratch.
  */
 analog1.analog.$suggestSolution                  = "ANALOG";
-analog1.analog["a0/c15Pin"].$suggestSolution     = "A0/C15";
-analog1.analog.a1Pin.$suggestSolution            = "A1";
-analog1.analog["a10/c10Pin"].$suggestSolution    = "A10/C10";
-analog1.analog["a11/c0Pin"].$suggestSolution     = "A11/C0";
-analog1.analog["a12/c1Pin"].$suggestSolution     = "A12/C1";
-analog1.analog["a14/c4Pin"].$suggestSolution     = "A14/C4";
-analog1.analog["a15/c7Pin"].$suggestSolution     = "A15/C7";
 analog1.analog["a2/c9Pin"].$suggestSolution      = "A2/C9";
 analog1.analog["a3/c5/vdacPin"].$suggestSolution = "A3/C5/VDAC";
-analog1.analog["a4/c14Pin"].$suggestSolution     = "A4/C14";
-analog1.analog["a5/c2Pin"].$suggestSolution      = "A5/C2";
 analog1.analog.a6Pin.$suggestSolution            = "A6";
-analog1.analog["a7/c3Pin"].$suggestSolution      = "A7/C3";
-analog1.analog["a8/c11Pin"].$suggestSolution     = "A8/C11";
-analog1.analog["a9/c8Pin"].$suggestSolution      = "A9/C8";
 analog1.analog.c6Pin.$suggestSolution            = "C6";
 can1.can.$suggestSolution                        = "CANA";
-epwm3.epwm.epwm_aPin.$suggestSolution            = "GPIO0";
-epwm3.epwm.epwm_bPin.$suggestSolution            = "GPIO1";
-epwm4.epwm.$suggestSolution                      = "EPWM5";
-epwm5.epwm.$suggestSolution                      = "EPWM4";
-epwm6.epwm.$suggestSolution                      = "EPWM7";
 gpio1.gpioPin.$suggestSolution                   = "GPIO12";
 gpio2.gpioPin.$suggestSolution                   = "GPIO11";
 gpio3.gpioPin.$suggestSolution                   = "GPIO24";
