@@ -14,6 +14,10 @@
             "module": "dev|_internal"
         },
         {
+            "root": "core",
+            "module": "dev|can"
+        },
+        {
             "root": "csp",
             "module": "rp_pico"
         }
