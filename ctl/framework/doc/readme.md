@@ -1,5 +1,7 @@
 # CTL Framework Quick Start Guide
 
+**English** | [简体中文](readme_cn.md)
+
 In addition to providing a rich set of motor control algorithm modules, the CTL library also offers a high-level application framework called **CTL-Nano** to manage the entire lifecycle and task scheduling of the controller. Understanding this framework is key to successfully using this library.
 
 The framework is primarily defined by two files, `ctl_nano.h` and `ctl_dispatch.h`, and its core ideas are **"State Machine Management"** and **"Time-Division Scheduling"**.

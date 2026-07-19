@@ -1,0 +1,8 @@
+{
+  "schema_version":1,"id":"intrinsic.discrete.low_pass_filter","display_name":"GMP Basic Discrete Low-Pass Filter","description":"Lightweight GMP exponential low-pass filter.","category":["Intrinsic","Discrete","Filters"],"system_type":"siso","template":"generic_stateful_v1",
+  "implementation":{"instance_type":"ctl_low_pass_filter_t","headers":["ctl/component/intrinsic/discrete/discrete_filter.h"],"sources":["ctl/component/intrinsic/discrete/src/ctl_discrete_filter.c"]},"inputs":[{"id":"input","label":"Input","width":1,"type":"double"}],"outputs":[{"id":"output","label":"Output","width":1,"type":"double"}],
+  "parameters":[{"id":"fs","label":"Initialization frequency","type":"number","group":"Design","externalizable":false,"default":10000.0,"unit":"Hz","description":"Coefficient design frequency"},{"id":"fc","label":"Cutoff frequency","type":"number","group":"Design","externalizable":true,"default":100.0,"unit":"Hz","description":"Low-pass cutoff"}],
+  "initializers":[{"id":"lpf","label":"Exponential low-pass","function":"ctl_init_lp_filter","step_function":"ctl_step_lowpass_filter","arguments":["$instance","fs","fc"],"reference_model":"measured"}],
+  "execution":{"initialize_code":[],"parameter_update_code":["ctl_low_pass_filter_t fresh{};","ctl_init_lp_filter(&fresh, fs, fc);","runtime->pending.a = fresh.a;"],"step_code":["output_output = ctrl2float(ctl_step_lowpass_filter(&runtime->pending, float2ctrl(input_input)));"],"terminate_code":[]},
+  "analysis":{"default_frequency_hz":[1.0,4000.0],"default_points":60,"excitation_amplitude":0.001,"settling_periods":16,"measurement_periods":16}
+}

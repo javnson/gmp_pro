@@ -127,12 +127,12 @@ void setup_peripheral(void)
 // ADC interrupt
 interrupt void MainISR(void)
 {
-#if !defined ENBALE_GMP_DL_PIL_SIM
+#if !defined ENABLE_GMP_DL_PIL_SIM
     //
     // call GMP ISR  Controller operation callback function
     //
     gmp_base_ctl_step();
-#endif // !defined ENBALE_GMP_DL_PIL_SIM
+#endif // !defined ENABLE_GMP_DL_PIL_SIM
 
     //
     // Call GMP Timer
@@ -176,7 +176,7 @@ interrupt void MainISR(void)
 // 32 bit union
 typedef union {
     int32_t i32;
-    uint16_t u16[2]; // C2000ÖĞuint16_tÕ¼1¸öword£¬32Î»Õ¼ÓÃ2¸öword
+    uint16_t u16[2]; // C2000ä¸­uint16_tå 1ä¸ªwordï¼Œ32ä½å ç”¨2ä¸ªword
 } can_data_t;
 
 // CAN interrupt

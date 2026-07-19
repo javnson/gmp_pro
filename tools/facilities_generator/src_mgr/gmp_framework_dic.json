@@ -159,6 +159,45 @@
                 ],
                 "help_docs": []
             },
+            "dev|can": {
+                "type": "module",
+                "description": "Static asynchronous CAN service and CSP hook contract",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/core/dev/can/gmp_can_service.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/core/dev/can/can.h",
+                    "${GMP_PRO_LOCATION}/core/dev/can/can_hook.h"
+                ],
+                "depends_on": [
+                    "core|dev|_internal"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-07-19",
+                        "reply": "Built with ARM GCC in the Pico GMP demo."
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
             "dev|app|_internal": {
                 "type": "module",
                 "description": "",

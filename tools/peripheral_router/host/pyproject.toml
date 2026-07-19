@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gmp-peripheral-router"
+version = "0.1.0"
+description = "Host API and service for GMP physical peripheral routers"
+requires-python = ">=3.10"
+dependencies = ["pyserial>=3.5"]
+
+[project.scripts]
+gmp-peripheral-router-service = "gmp_router.service:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["gmp_router*"]

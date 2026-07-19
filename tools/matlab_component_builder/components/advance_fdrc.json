@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "id": "intrinsic.advance.fdrc",
+  "display_name": "GMP Frequency-Adaptive Repetitive Controller",
+  "description": "Frequency-adaptive repetitive controller with biquad Q filter and managed double-buffered delay memory.",
+  "category": ["Intrinsic", "Advanced", "Repetitive Control"],
+  "system_type": "mimo",
+  "template": "generic_stateful_v1",
+  "implementation": {"instance_type": "ctl_fdrc_t", "headers": ["ctl/component/intrinsic/advance/fdrc.h"], "sources": ["ctl/component/intrinsic/advance/src/ctl_adv_fdrc.c", "ctl/component/intrinsic/discrete/src/ctl_discrete_biquad_filter.c"]},
+  "inputs": [
+    {"id": "error", "label": "Error", "width": 1, "type": "double"},
+    {"id": "frequency", "label": "Measured frequency", "width": 1, "type": "double"}
+  ],
+  "outputs": [{"id": "output", "label": "Compensation", "width": 1, "type": "double"}],
+  "parameters": [
+    {"id": "capacity", "label": "Delay buffer capacity", "type": "number", "group": "Memory", "externalizable": false, "default": 256, "unit": "samples", "description": "Must exceed fs/f_min plus margin"},
+    {"id": "fs", "label": "Initialization frequency", "type": "number", "group": "Frequency", "externalizable": false, "default": 10000.0, "unit": "Hz", "description": "Controller coefficient frequency"},
+    {"id": "f_min", "label": "Minimum fundamental frequency", "type": "number", "group": "Frequency", "externalizable": false, "default": 45.0, "unit": "Hz", "description": "Lowest supported measured frequency"},
+    {"id": "q_fc", "label": "Q-filter cutoff", "type": "number", "group": "Q Filter", "externalizable": false, "default": 1000.0, "unit": "Hz", "description": "Internal biquad low-pass cutoff"},
+    {"id": "k_rc", "label": "Learning gain", "type": "number", "group": "Learning", "externalizable": true, "default": 0.8, "unit": "", "description": "Repetitive learning gain"},
+    {"id": "phase_lead_k", "label": "Phase lead", "type": "number", "group": "Phase", "externalizable": true, "default": 4, "unit": "samples", "description": "Integer phase-lead samples"},
+    {"id": "integrating_enable", "label": "Enable learning", "type": "number", "group": "Learning", "externalizable": true, "default": 1, "unit": "0/1", "description": "Enable absorption of new error"},
+    {"id": "out_min", "label": "Output minimum", "type": "number", "group": "Limits", "externalizable": true, "default": -1.0, "unit": "", "description": "Lower authority limit"},
+    {"id": "out_max", "label": "Output maximum", "type": "number", "group": "Limits", "externalizable": true, "default": 1.0, "unit": "", "description": "Upper authority limit"}
+  ],
+  "memory": [{"id": "delay", "element_type": "ctrl_gt", "length_parameter": "capacity", "state_pointer_field": "buffer"}],
+  "initializers": [{"id": "biquad_q", "label": "Biquad Q filter", "function": "ctl_init_fdrc", "step_function": "ctl_step_fdrc", "arguments": ["$instance", "$memory:delay", "capacity", "fs", "f_min", "q_fc", "k_rc", "phase_lead_k"], "reference_model": "fdrc"}],
+  "execution": {
+    "initialize_code": ["ctl_set_fdrc_limit(&runtime->current, float2ctrl(out_min), float2ctrl(out_max));"],
+    "parameter_update_code": ["runtime->pending.k_rc = float2ctrl(k_rc);", "runtime->pending.phase_lead_k = static_cast<int32_t>(phase_lead_k);", "runtime->pending.flag_enable_rc_integrating = static_cast<fast_gt>(integrating_enable != 0.0);", "ctl_set_fdrc_limit(&runtime->pending, float2ctrl(out_min), float2ctrl(out_max));"],
+    "step_code": ["output_output = ctrl2float(ctl_step_fdrc(&runtime->pending, float2ctrl(input_error), input_frequency));"],
+    "terminate_code": []
+  },
+  "analysis": {"default_frequency_hz": [1.0, 500.0], "default_points": 60, "excitation_amplitude": 0.001, "settling_periods": 80, "measurement_periods": 20, "default_operating_values": [0.0, 50.0], "settling_reference_input": "frequency"}
+}

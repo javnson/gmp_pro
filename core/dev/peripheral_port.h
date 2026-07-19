@@ -747,6 +747,9 @@ ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, s
 //////////////////////////////////////////////////////////////////////////
 // CAN interface
 
+/* Preserve the historical draft API unless the new asynchronous service is selected. */
+#if !defined(SPECIFY_ENABLE_GMP_CAN_SERVICE)
+
 /* ========================================================================= */
 /* ==================== CAN MESSAGE STRUCTURE ============================== */
 /* ========================================================================= */
@@ -995,6 +998,13 @@ typedef enum
 } gmp_can_priority_et;
 
 ec_gt gmp_hal_can_bus_write(can_halt hcan, const gmp_can_msg_t* msg);
+
+#endif /* !SPECIFY_ENABLE_GMP_CAN_SERVICE */
+
+/* The asynchronous CAN service is an opt-in source-manager module. */
+#if defined SPECIFY_ENABLE_GMP_CAN_SERVICE
+#include <core/dev/can/can.h>
+#endif
 
 #ifdef __cplusplus
 }

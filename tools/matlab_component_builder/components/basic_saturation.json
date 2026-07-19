@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "id": "intrinsic.basic.saturation",
+  "display_name": "GMP Saturation",
+  "description": "Standard GMP hard saturation block with optionally scheduled limits.",
+  "category": ["Intrinsic", "Basic"],
+  "system_type": "siso",
+  "template": "generic_stateful_v1",
+  "implementation": {"instance_type": "ctl_saturation_t", "headers": ["ctl/component/intrinsic/basic/saturation.h"], "sources": ["ctl/component/intrinsic/basic/src/ctl_saturation.c"]},
+  "inputs": [{"id": "input", "label": "Input", "width": 1, "type": "double"}],
+  "outputs": [{"id": "output", "label": "Output", "width": 1, "type": "double"}],
+  "parameters": [
+    {"id": "out_min", "label": "Minimum", "type": "number", "group": "Limits", "externalizable": true, "default": -1.0, "unit": "", "description": "Lower saturation limit"},
+    {"id": "out_max", "label": "Maximum", "type": "number", "group": "Limits", "externalizable": true, "default": 1.0, "unit": "", "description": "Upper saturation limit"}
+  ],
+  "initializers": [{"id": "standard", "label": "Standard", "function": "ctl_init_saturation", "step_function": "ctl_step_saturation", "arguments": ["$instance", "out_min", "out_max"], "reference_model": "nonlinear"}],
+  "execution": {
+    "parameter_update_code": ["ctl_set_saturation_limits(&runtime->pending, float2ctrl(out_min), float2ctrl(out_max));"],
+    "step_code": ["output_output = ctrl2float(ctl_step_saturation(&runtime->pending, float2ctrl(input_input)));"],
+    "initialize_code": [], "terminate_code": []
+  },
+  "analysis": {"default_frequency_hz": [1.0, 1000.0], "default_points": 40, "excitation_amplitude": 0.1, "settling_periods": 1, "measurement_periods": 8}
+}

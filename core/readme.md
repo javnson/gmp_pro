@@ -1,5 +1,7 @@
 # Core of GMP
 
+**English** | [简体中文](readme_cn.md)
+
 This folder contain all core functions of GMP.
 
 

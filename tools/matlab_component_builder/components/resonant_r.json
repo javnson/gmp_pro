@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "id": "intrinsic.discrete.resonant_r",
+  "display_name": "GMP Ideal Resonant (R)",
+  "description": "Pure ideal resonant controller using the real GMP Tustin implementation.",
+  "category": ["Intrinsic", "Discrete", "Resonant"],
+  "system_type": "siso",
+  "template": "resonant_siso_v1",
+  "variant": "r",
+  "implementation": {
+    "instance_type": "resonant_ctrl_t",
+    "headers": ["ctl/component/intrinsic/discrete/proportional_resonant.h"],
+    "sources": ["ctl/component/intrinsic/discrete/src/ctl_discrete_pr.c"]
+  },
+  "inputs": [{"id": "error", "label": "Error", "width": 1, "type": "double"}],
+  "outputs": [{"id": "output", "label": "Output", "width": 1, "type": "double", "source": "step_return"}],
+  "parameters": [
+    {"id": "kr", "label": "Kr", "type": "number", "group": "Gains", "externalizable": true, "default": 100.0, "unit": "", "description": "Resonant gain"},
+    {"id": "freq_resonant", "label": "Resonant frequency", "type": "number", "group": "Frequency", "externalizable": true, "default": 50.0, "unit": "Hz", "description": "Resonant center frequency"},
+    {"id": "fs", "label": "Initialization frequency", "type": "number", "group": "Initialization", "externalizable": false, "default": 10000.0, "unit": "Hz", "description": "Frequency used to calculate discrete coefficients"}
+  ],
+  "initializers": [
+    {"id": "tustin", "label": "Standard Tustin", "function": "ctl_init_resonant_controller", "step_function": "ctl_step_resonant_controller", "arguments": ["$instance", "kr", "freq_resonant", "fs"], "reference_model": "resonant_r"}
+  ],
+  "analysis": {"default_frequency_hz": [5.0, 500.0], "default_points": 80, "excitation_amplitude": 0.0001, "settling_periods": 8, "measurement_periods": 8}
+}

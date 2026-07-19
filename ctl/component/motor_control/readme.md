@@ -1,5 +1,7 @@
 # CTL (Control Template Library) Motor Control Library - Documentation
 
+**English** | [ç®€ä½“ä¸­æ–‡](readme_cn.md)
+
 ## Introduction
 
 The CTL (Control Template Library) Motor Control Library is a high-performance, modular motor control algorithm library designed for embedded systems. It aims to provide a standardized, reusable set of components for the rapid development and deployment of control systems for various motors, such as Permanent Magnet Synchronous Motors (PMSM) and AC Induction Motors (ACM).
@@ -27,10 +29,10 @@ Core modules are the foundation upon which all advanced controllers are built. T
 * **Universal Motor Interface (`motor_universal_interface.h`)**: Defines standardized sensor and actuator interfaces (e.g., `rotation_ift`, `velocity_ift`) and unifies them through an aggregator structure `mtr_ift`, decoupling high-level algorithms from underlying hardware.
 * **Encoder Processing (`encoder.h`)**: Provides data processing for various encoders (single-turn/multi-turn absolute, auto-turn-counting) and includes a tool for calculating speed by differentiating position.
 * **Encoder Calibration (`encoder_calibrate.h`)**: Implements an automated state machine that injects a d-axis current to align the rotor, used for calibrating the electrical zero offset of an absolute position encoder.
-* **SVPWM Generation (`svpwm.h`)**: Implements the Space Vector Pulse Width Modulation algorithm, which converts a voltage command vector in the stationary ¦Á-¦Â frame into three-phase PWM duty cycles.
+* **SVPWM Generation (`svpwm.h`)**: Implements the Space Vector Pulse Width Modulation algorithm, which converts a voltage command vector in the stationary Î±-Î² frame into three-phase PWM duty cycles.
 * **Voltage Decoupling (`decouple.h`)**: Provides the cross-coupling feed-forward voltage calculation required for the d-q axis current loops in FOC, supporting both PMSM and ACM.
 * **V/F Curve Generation (`vf_generator.h`)**: Used for implementing open-loop V/F (Voltage/Frequency) control, including generators for constant frequency, sloped frequency, and a complete V/F profile.
-* **Voltage Reconstruction (`voltage_calculator.h`)**: Reconstructs the three-phase AC voltages and ¦Á-¦Â frame voltages applied to the motor based on the DC bus voltage and SVPWM duty cycles.
+* **Voltage Reconstruction (`voltage_calculator.h`)**: Reconstructs the three-phase AC voltages and Î±-Î² frame voltages applied to the motor based on the DC bus voltage and SVPWM duty cycles.
 * **Software-in-the-Loop (SIL) Interface (`std_sil_motor_interface.h`)**: Defines standard interface structures for data exchange with simulation environments like Simulink, ensuring cross-platform data compatibility with `#pragma pack(1)`.
 
 ---

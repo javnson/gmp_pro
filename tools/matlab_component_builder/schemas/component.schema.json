@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gmp-matlab-component-builder/component-v1",
+  "title": "GMP MATLAB component definition",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "id",
+    "display_name",
+    "system_type",
+    "template",
+    "implementation",
+    "inputs",
+    "outputs",
+    "parameters",
+    "initializers"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]*$"},
+    "display_name": {"type": "string"},
+    "system_type": {"enum": ["siso", "mimo"]},
+    "template": {"enum": ["pid_siso_v2", "resonant_siso_v1", "generic_stateful_v1"]},
+    "variant": {"enum": ["r", "pr", "qr", "qpr"]},
+    "implementation": {
+      "type": "object",
+      "required": ["instance_type", "headers", "sources"]
+    },
+    "inputs": {"type": "array", "minItems": 1},
+    "outputs": {"type": "array", "minItems": 1},
+    "parameters": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "type", "default"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+          "label": {"type": "string"},
+          "group": {"type": "string"},
+          "type": {"type": "string"},
+          "externalizable": {"type": "boolean"}
+        }
+      }
+    },
+    "initializers": {"type": "array", "minItems": 1}
+  }
+}

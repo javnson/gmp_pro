@@ -148,14 +148,14 @@ GMP_STATIC_INLINE fast_gt gmp_base_is_delay_elapsed(time_gt t0, uint32_t delay_t
  * If this function is not implemented correctly, protection module would work incorrectly.
  * * @return  time_gt     The current system tick point (typically in milliseconds).
  */
-#if !defined ENBALE_GMP_DL_PIL_SIM
+#if !defined ENABLE_GMP_DL_PIL_SIM
 GMP_STATIC_INLINE time_gt gmp_base_get_ctrl_tick(void)
 {
     return gmp_base_get_system_tick();
 }
 #else  // Simulation mode
 time_gt gmp_base_get_ctrl_tick(void);
-#endif // !defined ENBALE_GMP_DL_PIL_SIM
+#endif // !defined ENABLE_GMP_DL_PIL_SIM
 
 /**
  * @brief   Calculate the time difference from the specified past time to now.

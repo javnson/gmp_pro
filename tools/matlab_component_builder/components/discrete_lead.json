@@ -1,0 +1,19 @@
+{
+  "schema_version": 1, "id": "intrinsic.discrete.lead", "display_name": "GMP Lead Compensator",
+  "description": "First-order discrete lead compensator with three GMP initialization forms.",
+  "category": ["Intrinsic", "Discrete", "Compensators"], "system_type": "siso", "template": "generic_stateful_v1",
+  "implementation": {"instance_type": "ctrl_lead_t", "headers": ["ctl/component/intrinsic/discrete/lead_lag.h"], "sources": ["ctl/component/intrinsic/discrete/src/ctl_discrete_lead_lag.c"]},
+  "inputs": [{"id":"input","label":"Input","width":1,"type":"double"}], "outputs": [{"id":"output","label":"Output","width":1,"type":"double"}],
+  "parameters": [
+    {"id":"p1","label":"K_D / alpha / angle","type":"number","group":"Design","externalizable":true,"default":2.0,"unit":"","description":"First initializer-specific parameter"},
+    {"id":"p2","label":"tau_D / T / fc","type":"number","group":"Design","externalizable":true,"default":0.001,"unit":"s or Hz","description":"Second initializer-specific parameter"},
+    {"id":"fs","label":"Initialization frequency","type":"number","group":"Initialization","externalizable":false,"default":10000.0,"unit":"Hz","description":"Coefficient design frequency"}
+  ],
+  "initializers": [
+    {"id":"kd_tau","label":"K_D and tau_D","function":"ctl_init_lead","step_function":"ctl_step_lead","arguments":["$instance","p1","p2","fs"],"reference_model":"measured"},
+    {"id":"alpha_t","label":"alpha and T","function":"ctl_init_lead_form2","step_function":"ctl_step_lead","arguments":["$instance","p1","p2","fs"],"reference_model":"measured"},
+    {"id":"angle_fc","label":"angle [rad] and fc [Hz]","function":"ctl_init_lead_form3","step_function":"ctl_step_lead","arguments":["$instance","p1","p2","fs"],"reference_model":"measured"}
+  ],
+  "execution": {"initialize_code":[], "parameter_update_code":["ctrl_lead_t fresh{};","if (mode == 1) ctl_init_lead(&fresh, p1, p2, fs); else if (mode == 2) ctl_init_lead_form2(&fresh, p1, p2, fs); else ctl_init_lead_form3(&fresh, p1, p2, fs);","runtime->pending.b0 = fresh.b0; runtime->pending.b1 = fresh.b1; runtime->pending.a1 = fresh.a1;"], "step_code":["output_output = ctrl2float(ctl_step_lead(&runtime->pending, float2ctrl(input_input)));"], "terminate_code":[]},
+  "analysis": {"default_frequency_hz":[1.0,4000.0],"default_points":60,"excitation_amplitude":0.001,"settling_periods":12,"measurement_periods":12}
+}

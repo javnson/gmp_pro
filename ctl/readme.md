@@ -1,5 +1,7 @@
 # General Motor Platform (GMP) Controller Template Library (CTL) module
 
+**English** | [简体中文](readme_cn.md)
+
  Welcome to GMP CTL! 
 
 ## Generally

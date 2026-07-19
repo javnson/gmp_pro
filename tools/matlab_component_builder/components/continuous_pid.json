@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "id": "intrinsic.continuous.pid",
+  "display_name": "GMP Continuous-Form Discrete PID",
+  "description": "Real GMP PID implementation with parallel-gain and time-constant initialization modes.",
+  "category": [
+    "Intrinsic",
+    "Continuous-form"
+  ],
+  "system_type": "siso",
+  "template": "pid_siso_v2",
+  "implementation": {
+    "instance_type": "ctl_pid_t",
+    "headers": [
+      "ctl/component/intrinsic/continuous/continuous_pid.h"
+    ],
+    "sources": [
+      "ctl/component/intrinsic/continuous/src/ctl_continuous_pid.c"
+    ]
+  },
+  "inputs": [
+    {
+      "id": "error",
+      "label": "Error",
+      "width": 1,
+      "type": "double"
+    }
+  ],
+  "outputs": [
+    {
+      "id": "output",
+      "label": "Output",
+      "width": 1,
+      "type": "double",
+      "source": "step_return"
+    }
+  ],
+  "parameters": [
+    {
+      "id": "kp",
+      "label": "Kp",
+      "type": "number",
+      "group": "Gains",
+      "externalizable": true,
+      "default": 0.4,
+      "unit": "",
+      "description": "Proportional gain"
+    },
+    {
+      "id": "ki_or_ti",
+      "label": "Ki or Ti",
+      "type": "number",
+      "group": "Gains",
+      "externalizable": true,
+      "default": 20.0,
+      "unit": "Hz or s",
+      "description": "Ki in parallel mode; Ti in time-constant mode"
+    },
+    {
+      "id": "kd_or_td",
+      "label": "Kd or Td",
+      "type": "number",
+      "group": "Gains",
+      "externalizable": true,
+      "default": 0.0001,
+      "unit": "s",
+      "description": "Kd in parallel mode; Td in time-constant mode"
+    },
+    {
+      "id": "fs",
+      "label": "Controller parameter frequency",
+      "type": "number",
+      "group": "Initialization",
+      "externalizable": false,
+      "default": 10000.0,
+      "unit": "Hz",
+      "description": "Passed to GMP initialization; scheduling remains inherited from Simulink"
+    },
+    {
+      "id": "out_max",
+      "label": "Output maximum",
+      "type": "number",
+      "group": "Output limits",
+      "externalizable": true,
+      "default": 1000000.0,
+      "unit": "",
+      "description": "Output saturation maximum"
+    },
+    {
+      "id": "out_min",
+      "label": "Output minimum",
+      "type": "number",
+      "group": "Output limits",
+      "externalizable": true,
+      "default": -1000000.0,
+      "unit": "",
+      "description": "Output saturation minimum"
+    },
+    {
+      "id": "integral_max",
+      "label": "Integral maximum",
+      "type": "number",
+      "group": "Integrator limits",
+      "externalizable": true,
+      "default": 1000000.0,
+      "unit": "",
+      "description": "Integrator saturation maximum"
+    },
+    {
+      "id": "integral_min",
+      "label": "Integral minimum",
+      "type": "number",
+      "group": "Integrator limits",
+      "externalizable": true,
+      "default": -1000000.0,
+      "unit": "",
+      "description": "Integrator saturation minimum"
+    }
+  ],
+  "initializers": [
+    {
+      "id": "parallel",
+      "label": "Parallel gains (Kp, Ki, Kd)",
+      "function": "ctl_init_pid",
+      "step_function": "ctl_step_pid_par",
+      "arguments": [
+        "$instance",
+        "kp",
+        "ki_or_ti",
+        "kd_or_td",
+        "fs"
+      ],
+      "reference_model": "pid_parallel"
+    },
+    {
+      "id": "time_constant",
+      "label": "Time constants (Kp, Ti, Td)",
+      "function": "ctl_init_pid_Tmode",
+      "step_function": "ctl_step_pid_ser",
+      "arguments": [
+        "$instance",
+        "kp",
+        "ki_or_ti",
+        "kd_or_td",
+        "fs"
+      ],
+      "reference_model": "pid_time_constant"
+    }
+  ],
+  "analysis": {
+    "default_frequency_hz": [
+      1.0,
+      2000.0
+    ],
+    "default_points": 40,
+    "excitation_amplitude": 0.001,
+    "settling_periods": 8,
+    "measurement_periods": 8
+  }
+}

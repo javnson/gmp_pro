@@ -16,6 +16,10 @@ rmpath(simulink_lib_path);
 m_file_path = append(simulink_lib_path, '/src');
 rmpath(m_file_path);
 
+% Persist the removal so deleted GMP paths are not restored in the next
+% MATLAB session.
+savepath;
+
 %% remove files
 disp('Remove Simlink Related files.');
 rmdir(simulink_lib_path, 's');

@@ -14,6 +14,7 @@ endif()
 
 set(GMP_GENERATED_SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/crc16.c"
+    "${CMAKE_CURRENT_LIST_DIR}/gmp_src/gmp_can_service.c"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/gmp_dev_util.c"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/gmp_process_mgr.c"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/gmp_std_error_code.c"

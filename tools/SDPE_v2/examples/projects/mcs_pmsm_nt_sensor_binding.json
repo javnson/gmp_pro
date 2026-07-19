@@ -56,7 +56,7 @@
       "description": "Enable SMO observer."
     },
     {
-      "macro": "ENBALE_GMP_DL_PIL_SIM",
+      "macro": "ENABLE_GMP_DL_PIL_SIM",
       "enabled": false,
       "value": "",
       "description": "Enable PIL simulation output lockout."
