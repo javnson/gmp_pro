@@ -150,39 +150,108 @@ GMP_STATIC_INLINE void ctl_vector2_normalize(ctl_vector2_t* result, const ctl_ve
 }
 
 /**
+ * @brief Saturates a 2D vector using a squared circle radius.
+ * @details Vectors outside the circle are scaled without changing direction.
+ * The scale is calculated as
+ * `radius_sq * isqrt(radius_sq * magnitude_sq)`, combining square root and
+ * reciprocal operations. `result` may alias `vec`.
+ * @param[out] result The saturated vector.
+ * @param[in]  vec The input vector.
+ * @param[in]  radius_sq Non-negative squared circle radius.
+ */
+GMP_STATIC_INLINE void ctl_vector2_sat_circle_sq(ctl_vector2_t* result, const ctl_vector2_t* vec,
+                                                 ctrl_gt radius_sq)
+{
+    ctrl_gt x = vec->dat[0];
+    ctrl_gt y = vec->dat[1];
+    ctrl_gt mag_sq;
+
+    gmp_base_assert(radius_sq >= float2ctrl(0.0f));
+
+    mag_sq = ctl_mul(x, x) + ctl_mul(y, y);
+
+    if (mag_sq > radius_sq)
+    {
+        if (radius_sq > CTL_EPSILON)
+        {
+            ctrl_gt scale = ctl_mul(radius_sq, ctl_isqrt(ctl_mul(radius_sq, mag_sq)));
+            result->dat[0] = ctl_mul(x, scale);
+            result->dat[1] = ctl_mul(y, scale);
+            return;
+        }
+        ctl_vector2_clear(result);
+        return;
+    }
+
+    result->dat[0] = x;
+    result->dat[1] = y;
+}
+
+/**
+ * @brief Conservatively saturates a 2D vector using a first-order approximation.
+ * @details For `ratio = magnitude_sq / radius_sq`, this function approximates
+ * `isqrt(ratio)` by its first-order Taylor expansion at the circle boundary:
+ * `1.5 - 0.5 * ratio`. Because inverse square root is convex, this tangent is
+ * no greater than the exact scale for `ratio >= 1`, so the result remains inside
+ * the requested circle. Ratios greater than or equal to 3 produce a zero vector
+ * instead of a negative scale. This version uses no square-root operation.
+ * `result` may alias `vec`.
+ * @param[out] result The conservatively saturated vector.
+ * @param[in]  vec The input vector.
+ * @param[in]  radius_sq Non-negative squared circle radius.
+ */
+GMP_STATIC_INLINE void ctl_vector2_sat_circle_sq_taylor(ctl_vector2_t* result, const ctl_vector2_t* vec,
+                                                        ctrl_gt radius_sq)
+{
+    ctrl_gt x = vec->dat[0];
+    ctrl_gt y = vec->dat[1];
+    ctrl_gt mag_sq;
+
+    gmp_base_assert(radius_sq >= float2ctrl(0.0f));
+
+    mag_sq = ctl_mul(x, x) + ctl_mul(y, y);
+
+    if (mag_sq > radius_sq)
+    {
+        ctrl_gt ratio;
+        ctrl_gt scale;
+
+        if (radius_sq <= CTL_EPSILON)
+        {
+            ctl_vector2_clear(result);
+            return;
+        }
+
+        ratio = ctl_div(mag_sq, radius_sq);
+        if (ratio >= float2ctrl(3.0f))
+        {
+            ctl_vector2_clear(result);
+            return;
+        }
+
+        scale = CTL_CTRL_CONST_3_OVER_2 - ctl_div2(ratio);
+        result->dat[0] = ctl_mul(x, scale);
+        result->dat[1] = ctl_mul(y, scale);
+        return;
+    }
+
+    result->dat[0] = x;
+    result->dat[1] = y;
+}
+
+/**
  * @brief Saturates a 2D vector to a circle centered at the origin.
- * @details Vectors inside the circle are copied unchanged. Vectors outside the
- * circle are scaled without changing direction. `result` may alias `vec`.
+ * @details This compatibility interface calculates the squared radius once and
+ * delegates to `ctl_vector2_sat_circle_sq`. Repeated real-time calls should cache
+ * the squared radius and call the `_sq` interface directly.
  * @param[out] result The saturated vector.
  * @param[in]  vec The input vector.
  * @param[in]  radius Non-negative circle radius.
  */
 GMP_STATIC_INLINE void ctl_vector2_sat_circle(ctl_vector2_t* result, const ctl_vector2_t* vec, ctrl_gt radius)
 {
-    ctrl_gt x = vec->dat[0];
-    ctrl_gt y = vec->dat[1];
-    ctrl_gt mag_sq;
-    ctrl_gt radius_sq;
-
     gmp_base_assert(radius >= float2ctrl(0.0f));
-
-    mag_sq = ctl_mul(x, x) + ctl_mul(y, y);
-    radius_sq = ctl_mul(radius, radius);
-
-    if (mag_sq > radius_sq)
-    {
-        ctrl_gt mag = ctl_sqrt(mag_sq);
-        if (mag > CTL_EPSILON)
-        {
-            ctrl_gt scale = ctl_div(radius, mag);
-            result->dat[0] = ctl_mul(x, scale);
-            result->dat[1] = ctl_mul(y, scale);
-            return;
-        }
-    }
-
-    result->dat[0] = x;
-    result->dat[1] = y;
+    ctl_vector2_sat_circle_sq(result, vec, ctl_mul(radius, radius));
 }
 
 /**

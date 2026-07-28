@@ -33,7 +33,7 @@ typedef struct _tag_ctl_dq_pi_t
     ctl_vector2_t ff_out;   //!< Feedforward selected by the enable switch.
     ctl_vector2_t out;      //!< Final limited d-q output.
 
-    ctrl_gt circle_limit;         //!< Radius used by the circular limiter.
+    ctrl_gt circle_limit_sq;      //!< Squared radius used by the circular limiter.
     ctl_vector2_t rect_limit_max; //!< Per-axis rectangular upper limits.
     ctl_vector2_t rect_limit_min; //!< Per-axis rectangular lower limits.
 
@@ -99,7 +99,7 @@ GMP_STATIC_INLINE void ctl_step_dq_pi(ctl_dq_pi_t* dq, const ctl_vector2_t* targ
     ctl_vector2_add(&command, &dq->ctrl_out, &dq->ff_out);
 
     if (dq->flag_enable_circle_limit)
-        ctl_vector2_sat_circle(&command, &command, dq->circle_limit);
+        ctl_vector2_sat_circle_sq(&command, &command, dq->circle_limit_sq);
 
     if (dq->flag_enable_rect_limit)
         ctl_vector2_sat_rect(&command, &command, &dq->rect_limit_max, &dq->rect_limit_min);
@@ -120,7 +120,13 @@ GMP_STATIC_INLINE void ctl_step_dq_pi(ctl_dq_pi_t* dq, const ctl_vector2_t* targ
 GMP_STATIC_INLINE void ctl_set_dq_pi_circle_limit(ctl_dq_pi_t* dq, ctrl_gt radius)
 {
     gmp_base_assert(radius >= float2ctrl(0.0f));
-    dq->circle_limit = radius;
+    dq->circle_limit_sq = ctl_mul(radius, radius);
+}
+
+GMP_STATIC_INLINE void ctl_set_dq_pi_circle_limit_sq(ctl_dq_pi_t* dq, ctrl_gt radius_sq)
+{
+    gmp_base_assert(radius_sq >= float2ctrl(0.0f));
+    dq->circle_limit_sq = radius_sq;
 }
 
 GMP_STATIC_INLINE void ctl_set_dq_pi_rect_limit(ctl_dq_pi_t* dq, const ctl_vector2_t* limit_max,

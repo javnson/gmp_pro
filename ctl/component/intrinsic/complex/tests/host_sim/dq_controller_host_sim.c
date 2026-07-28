@@ -14,23 +14,39 @@ static int near_value(ctrl_gt actual, ctrl_gt expected, ctrl_gt tolerance)
 static int test_vector_limiters(void)
 {
     ctl_vector2_t vec = {{float2ctrl(3.0f), float2ctrl(4.0f)}};
+    ctl_vector2_t approx_vec = {{float2ctrl(1.2f), float2ctrl(1.6f)}};
+    ctl_vector2_t far_vec = {{float2ctrl(2.0f), float2ctrl(0.0f)}};
+    ctl_vector2_t zero_limit_vec = {{float2ctrl(1.0f), float2ctrl(0.0f)}};
     ctl_vector2_t max = {{float2ctrl(1.0f), float2ctrl(2.0f)}};
     ctl_vector2_t min = {{float2ctrl(-1.0f), float2ctrl(-2.0f)}};
 
-    ctl_vector2_sat_circle(&vec, &vec, float2ctrl(2.0f));
+    ctl_vector2_sat_circle_sq(&vec, &vec, float2ctrl(4.0f));
     if (!near_value(vec.dat[0], float2ctrl(1.2f), float2ctrl(1e-5f)) ||
         !near_value(vec.dat[1], float2ctrl(1.6f), float2ctrl(1e-5f)))
         return 1;
 
+    ctl_vector2_sat_circle_sq_taylor(&approx_vec, &approx_vec, float2ctrl(3.24f));
+    if (ctl_vector2_mag_sq(&approx_vec) > float2ctrl(3.24f) + float2ctrl(1e-5f) ||
+        approx_vec.dat[0] <= float2ctrl(0.0f) ||
+        !near_value(ctl_div(approx_vec.dat[1], approx_vec.dat[0]),
+                    float2ctrl(4.0f / 3.0f), float2ctrl(1e-5f)))
+        return 2;
+
+    ctl_vector2_sat_circle_sq_taylor(&far_vec, &far_vec, float2ctrl(1.0f));
+    ctl_vector2_sat_circle_sq(&zero_limit_vec, &zero_limit_vec, float2ctrl(0.0f));
+    if (!near_value(far_vec.dat[0], float2ctrl(0.0f), float2ctrl(1e-5f)) ||
+        !near_value(zero_limit_vec.dat[0], float2ctrl(0.0f), float2ctrl(1e-5f)))
+        return 3;
+
     ctl_vector2_sat_rect(&vec, &vec, &max, &min);
     if (!near_value(vec.dat[0], float2ctrl(1.0f), float2ctrl(1e-5f)) ||
         !near_value(vec.dat[1], float2ctrl(1.6f), float2ctrl(1e-5f)))
-        return 2;
+        return 4;
 
     ctl_vector2_sat_square(&vec, &vec, float2ctrl(0.5f));
     if (!near_value(vec.dat[0], float2ctrl(0.5f), float2ctrl(1e-5f)) ||
         !near_value(vec.dat[1], float2ctrl(0.5f), float2ctrl(1e-5f)))
-        return 3;
+        return 5;
 
     return 0;
 }
@@ -65,7 +81,7 @@ static int test_dq_pi(void)
     ctl_init_dq_pi(&dq, 1.0f, 0.0f, 1.0f, 0.0f, 10000.0f);
     ctl_set_pid_int_limit(&dq.axis[0], float2ctrl(10.0f), float2ctrl(-10.0f));
     ctl_set_pid_int_limit(&dq.axis[1], float2ctrl(10.0f), float2ctrl(-10.0f));
-    ctl_set_dq_pi_circle_limit(&dq, float2ctrl(2.0f));
+    ctl_set_dq_pi_circle_limit_sq(&dq, float2ctrl(4.0f));
     ctl_set_dq_pi_rect_limit(&dq, &max, &min);
     ctl_enable_dq_pi_feedforward(&dq);
     ctl_enable_dq_pi_circle_limit(&dq);
