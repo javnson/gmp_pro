@@ -103,6 +103,14 @@
         },
         {
             "root": "ctl",
+            "module": "component|digital_power|inv|voltage_ctrl"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|inv|zero_ctrl"
+        },
+        {
+            "root": "ctl",
             "module": "component|digital_power|inv|pll_ddsrf"
         },
         {
@@ -336,6 +344,10 @@
         {
             "root": "ctl",
             "module": "component|intrinsic|discrete|pr"
+        },
+        {
+            "root": "ctl",
+            "module": "component|intrinsic|discrete|pr_tuner"
         },
         {
             "root": "ctl",

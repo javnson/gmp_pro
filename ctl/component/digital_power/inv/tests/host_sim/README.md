@@ -4,6 +4,7 @@ This focused host test validates:
 
 - four-leg 3D-SVPWM duty bounds and alpha-beta-zero reconstruction;
 - stand-alone LC capacitor-voltage regulation, including switchable coupling feed-forward;
+- voltage-loop output saturation and back-calculation recovery after reference reversal;
 - QPR zero-sequence current rejection and control-boundary tuner deployment.
 
 Configure and run from a Visual Studio developer shell:

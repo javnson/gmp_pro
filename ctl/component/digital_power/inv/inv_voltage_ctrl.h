@@ -11,7 +11,7 @@
 #include <ctl/component/interface/interface_base.h>
 
 #include <ctl/component/intrinsic/basic/saturation.h>
-#include <ctl/component/intrinsic/continuous/continuous_pid.h>
+#include <ctl/component/intrinsic/continuous/continuous_pid_aw.h>
 #include <ctl/component/intrinsic/discrete/biquad_filter.h>
 
 #include <ctl/component/digital_power/inv/gfl_core.h>
@@ -41,7 +41,7 @@ typedef struct _tag_inv_voltage_ctrl
     ctl_vector2_t idq_ff_decouple; //!< Capacitor cross-coupling feed-forward.
     ctl_vector2_t idq_out;         //!< Limited output current reference.
 
-    ctl_pid_t pid_vdq[2]; //!< Capacitor-voltage PI controllers.
+    ctl_pid_aw_t pid_vdq[2]; //!< Capacitor-voltage PI controllers with back-calculation anti-windup.
 
     ctrl_gt coef_ff_decouple; //!< omega*C*Vbase/Ibase in per-unit.
     ctrl_gt current_limit_max;
@@ -75,8 +75,8 @@ void ctl_init_voltage_inv(inv_voltage_ctrl_t* voltage, const inv_voltage_ctrl_in
 
 GMP_STATIC_INLINE void ctl_clear_voltage_inv(inv_voltage_ctrl_t* voltage)
 {
-    ctl_clear_pid(&voltage->pid_vdq[phase_d]);
-    ctl_clear_pid(&voltage->pid_vdq[phase_q]);
+    ctl_clear_pid_aw(&voltage->pid_vdq[phase_d]);
+    ctl_clear_pid_aw(&voltage->pid_vdq[phase_q]);
     ctl_vector2_clear(&voltage->vdq);
     ctl_vector2_clear(&voltage->idq_pi);
     ctl_vector2_clear(&voltage->idq_ff_decouple);
@@ -108,11 +108,6 @@ GMP_STATIC_INLINE void ctl_step_voltage_inv_ctrl(inv_voltage_ctrl_t* voltage)
 
     ctl_ct_park2(voltage->vab, voltage->phasor, &voltage->vdq);
 
-    voltage->idq_pi.dat[phase_d] =
-        ctl_step_pid_par(&voltage->pid_vdq[phase_d], voltage->vdq_set.dat[phase_d] - voltage->vdq.dat[phase_d]);
-    voltage->idq_pi.dat[phase_q] =
-        ctl_step_pid_par(&voltage->pid_vdq[phase_q], voltage->vdq_set.dat[phase_q] - voltage->vdq.dat[phase_q]);
-
     if (voltage->flag_enable_decouple)
     {
         /*
@@ -128,6 +123,27 @@ GMP_STATIC_INLINE void ctl_step_voltage_inv_ctrl(inv_voltage_ctrl_t* voltage)
     {
         ctl_vector2_clear(&voltage->idq_ff_decouple);
     }
+
+    /*
+     * Apply the output limit to the complete PI + feed-forward command.  Moving
+     * the feed-forward term into the PID limits makes the back-calculation see
+     * the actual actuator saturation instead of only the PI contribution.
+     */
+    voltage->pid_vdq[phase_d].out_max =
+        voltage->current_limit_max - voltage->idq_ff_decouple.dat[phase_d];
+    voltage->pid_vdq[phase_d].out_min =
+        voltage->current_limit_min - voltage->idq_ff_decouple.dat[phase_d];
+    voltage->pid_vdq[phase_q].out_max =
+        voltage->current_limit_max - voltage->idq_ff_decouple.dat[phase_q];
+    voltage->pid_vdq[phase_q].out_min =
+        voltage->current_limit_min - voltage->idq_ff_decouple.dat[phase_q];
+
+    voltage->idq_pi.dat[phase_d] =
+        ctl_step_pid_aw_par(&voltage->pid_vdq[phase_d],
+                            voltage->vdq_set.dat[phase_d] - voltage->vdq.dat[phase_d]);
+    voltage->idq_pi.dat[phase_q] =
+        ctl_step_pid_aw_par(&voltage->pid_vdq[phase_q],
+                            voltage->vdq_set.dat[phase_q] - voltage->vdq.dat[phase_q]);
 
     voltage->idq_out.dat[phase_d] =
         ctl_sat(voltage->idq_pi.dat[phase_d] + voltage->idq_ff_decouple.dat[phase_d],

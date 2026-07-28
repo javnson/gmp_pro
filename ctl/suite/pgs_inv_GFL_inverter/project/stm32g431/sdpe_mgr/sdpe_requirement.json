@@ -20,7 +20,7 @@
   ],
   "code_sections": {
     "after_extern_open": "#include <sdpe_pgs_inv_gfl_common_settings.h>",
-    "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 5)\n#error BUILD_LEVEL_must_be_between_1_and_5\n#endif"
+    "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 6)\n#error BUILD_LEVEL_must_be_between_1_and_6\n#endif\n#if defined(USING_3D_SVPWM) && defined(USING_NPC_MODULATOR)\n#error USING_3D_SVPWM_and_USING_NPC_MODULATOR_are_mutually_exclusive\n#endif"
   },
   "feature_macros": [],
   "option_macros": [
@@ -34,9 +34,10 @@
         "(2)",
         "(3)",
         "(4)",
-        "(5)"
+        "(5)",
+        "(6)"
       ],
-      "description": "Incremental control level; level 5 enables the cascaded P/Q power loop."
+      "description": "BUILD_LEVEL descriptor: 1=open-loop standalone voltage/PWM sensing check; 2=standalone d-q current loop with internal RG; 3=grid PLL plus positive/negative-sequence current control; 4=level 3 plus decoupling, active damping and lead compensation; 5=grid P/Q outer loop over level 4; 6=standalone LC capacitor-voltage outer loop with anti-windup PI over the current loop. USING_3D_SVPWM additionally requires a mapped fourth neutral-leg PWM."
     },
     {
       "group": "Sampling",

@@ -61,8 +61,8 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
     iuvw_src[phase_V] = 0;
     iuvw_src[phase_W] = 0;
 
-    udc_src = simulink_rx_buffer.adc_result[INV_ADC_ID_IDC];
-    idc_src = simulink_rx_buffer.adc_result[INV_ADC_ID_VDC];
+    idc_src = simulink_rx_buffer.adc_result[INV_ADC_ID_IDC];
+    udc_src = simulink_rx_buffer.adc_result[INV_ADC_ID_VDC];
 
     // invoke ADC p.u. routine
     ctl_step_tri_ptr_adc_channel(&iabc);
@@ -79,9 +79,17 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     //
     // PWM channel
     //
+#if defined USING_3D_SVPWM
+    simulink_tx_buffer.pwm_cmp[0] = pwm_3d_out[phase_A];
+    simulink_tx_buffer.pwm_cmp[1] = pwm_3d_out[phase_B];
+    simulink_tx_buffer.pwm_cmp[2] = pwm_3d_out[phase_C];
+    simulink_tx_buffer.pwm_cmp[3] = pwm_3d_out[phase_N];
+#else
     simulink_tx_buffer.pwm_cmp[0] = spwm.pwm_out[phase_U];
     simulink_tx_buffer.pwm_cmp[1] = spwm.pwm_out[phase_V];
     simulink_tx_buffer.pwm_cmp[2] = spwm.pwm_out[phase_W];
+    simulink_tx_buffer.pwm_cmp[3] = CTRL_PWM_CMP_MAX / 2;
+#endif
 
     //
     // monitor
@@ -92,8 +100,8 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     simulink_tx_buffer.monitor[1] = inv_ctrl.iabc.dat[phase_B];
 
     // Scope 2
-    simulink_tx_buffer.monitor[2] = inv_ctrl.iabc.dat[phase_A];
-    simulink_tx_buffer.monitor[3] = 0;
+    simulink_tx_buffer.monitor[2] = inv_ctrl.iab0.dat[phase_0];
+    simulink_tx_buffer.monitor[3] = neg_current_ctrl.idqn.dat[phase_d];
 
     // Scope 3
     simulink_tx_buffer.monitor[4] = inv_ctrl.vab0.dat[phase_alpha];
@@ -119,6 +127,16 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     // Scope 7
     simulink_tx_buffer.monitor[12] = inv_ctrl.vdq.dat[phase_d];
     simulink_tx_buffer.monitor[13] = inv_ctrl.vdq.dat[phase_q];
+#if BUILD_LEVEL == 6
+    simulink_tx_buffer.monitor[14] = gfl_voltage_ctrl.idq_out.dat[phase_d];
+    simulink_tx_buffer.monitor[15] = gfl_zero_ctrl.v0_out;
+#elif BUILD_LEVEL == 5
+    simulink_tx_buffer.monitor[14] = pq_ctrl.idq_set_out.dat[phase_d];
+    simulink_tx_buffer.monitor[15] = pq_ctrl.pq_meas.dat[0];
+#else
+    simulink_tx_buffer.monitor[14] = inv_ctrl.idq_set.dat[phase_d];
+    simulink_tx_buffer.monitor[15] = inv_ctrl.idq_set.dat[phase_q];
+#endif
 }
 
 // Enable Motor Controller

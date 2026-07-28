@@ -4,13 +4,13 @@
   "display_name": "PGS Grid-Following Inverter Common Settings",
   "description": "Platform-independent control contract shared by all pgs_inv_GFL_inverter projects. Hardware timing, sensing, board resources and BUILD_LEVEL selection remain in each platform requirement.",
   "suite": "pgs_inv_GFL_inverter",
-  "version": "1.0.0",
-  "updated_at": "2026-07-15",
+  "version": "1.1.0",
+  "updated_at": "2026-07-28",
   "output_header": "sdpe_pgs_inv_gfl_common_settings.h",
   "hardware": [],
   "code_sections": {
     "after_extern_open": "/* Platform-independent GFL controller settings. */",
-    "before_footer": "/* Accept the historical PIL spelling while new projects use the canonical switch. */\n#if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM\n#define ENABLE_GMP_DL_PIL_SIM\n#endif"
+    "before_footer": "/* Accept the historical PIL spelling while new projects use the canonical switch. */\n#if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM\n#define ENABLE_GMP_DL_PIL_SIM\n#endif\n/* Four-leg hardware must explicitly acknowledge that A/B/C/N PWM and protection are mapped. */\n#if defined(USING_3D_SVPWM) && !defined(SPECIFY_PC_ENVIRONMENT) && !defined(GFL_3D_SVPWM_PLATFORM_MAPPED)\n#error Define_GFL_3D_SVPWM_PLATFORM_MAPPED_only_after_mapping_all_four_PWM_legs\n#endif"
   },
   "feature_macros": [
     {
@@ -33,6 +33,20 @@
       "enabled": false,
       "value": "",
       "description": "Use the three-level NPC modulator instead of the two-level SPWM modulator."
+    },
+    {
+      "group": "Control Algorithm",
+      "macro": "USING_3D_SVPWM",
+      "enabled": false,
+      "value": "",
+      "description": "Use four-leg 3D-SVPWM. This enables an independently controlled neutral-leg duty and permits zero-sequence QPR control; the selected board must provide a fourth PWM bridge leg."
+    },
+    {
+      "group": "Control Algorithm",
+      "macro": "GFL_ENABLE_VOLTAGE_DECOUPLE",
+      "enabled": true,
+      "value": "",
+      "description": "Enable omega*C cross-coupling feed-forward in the BUILD_LEVEL 6 capacitor-voltage loop. Disable this switch to commission the voltage PI loop without decoupling."
     },
     {
       "group": "Runtime",
@@ -224,6 +238,78 @@
       "description": "BUILD_LEVEL 4 q-axis current command."
     },
     {
+      "role": "standalone_voltage_vd",
+      "macro": "GFL_STANDALONE_VD_PU",
+      "binding": {
+        "float": "0.50"
+      },
+      "description": "BUILD_LEVEL 6 positive-sequence d-axis capacitor phase-voltage reference in per unit."
+    },
+    {
+      "role": "standalone_voltage_vq",
+      "macro": "GFL_STANDALONE_VQ_PU",
+      "binding": {
+        "float": "0.0"
+      },
+      "description": "BUILD_LEVEL 6 positive-sequence q-axis capacitor phase-voltage reference in per unit."
+    },
+    {
+      "role": "standalone_voltage_bw",
+      "macro": "GFL_VOLTAGE_LOOP_BW_HZ",
+      "binding": {
+        "float": "100.0"
+      },
+      "description": "BUILD_LEVEL 6 capacitor-voltage outer-loop bandwidth in hertz; keep it well below the inner current-loop bandwidth."
+    },
+    {
+      "role": "standalone_voltage_zero",
+      "macro": "GFL_VOLTAGE_LOOP_ZERO_HZ",
+      "binding": {
+        "float": "20.0"
+      },
+      "description": "BUILD_LEVEL 6 anti-windup PI zero frequency in hertz."
+    },
+    {
+      "role": "standalone_current_limit",
+      "macro": "GFL_VOLTAGE_CURRENT_LIMIT_PU",
+      "binding": {
+        "float": "0.80"
+      },
+      "description": "Symmetric d/q current-reference limit for the BUILD_LEVEL 6 voltage loop. The PID back-calculation acts on this complete PI plus feed-forward limit."
+    },
+    {
+      "role": "zero_qpr_kp",
+      "macro": "GFL_ZERO_QPR_KP",
+      "binding": {
+        "float": "0.10"
+      },
+      "description": "Zero-sequence current QPR proportional gain used when 3D-SVPWM is enabled."
+    },
+    {
+      "role": "zero_qpr_kr",
+      "macro": "GFL_ZERO_QPR_KR",
+      "binding": {
+        "float": "50.0"
+      },
+      "description": "Zero-sequence current QPR resonant gain used when 3D-SVPWM is enabled."
+    },
+    {
+      "role": "zero_qpr_cutoff",
+      "macro": "GFL_ZERO_QPR_CUTOFF_HZ",
+      "binding": {
+        "float": "5.0"
+      },
+      "description": "Zero-sequence QPR resonant bandwidth/cutoff frequency in hertz."
+    },
+    {
+      "role": "zero_voltage_limit",
+      "macro": "GFL_ZERO_VOLTAGE_LIMIT_PU",
+      "binding": {
+        "float": "0.20"
+      },
+      "description": "Symmetric zero-axis voltage-command limit for four-wire operation."
+    },
+    {
       "role": "adc_calibrator_cutoff",
       "macro": "GFL_ADC_CALIBRATOR_FC_HZ",
       "binding": {
@@ -283,7 +369,16 @@
         "level3_id",
         "level3_iq",
         "level4_id",
-        "level4_iq"
+        "level4_iq",
+        "standalone_voltage_vd",
+        "standalone_voltage_vq",
+        "standalone_voltage_bw",
+        "standalone_voltage_zero",
+        "standalone_current_limit",
+        "zero_qpr_kp",
+        "zero_qpr_kr",
+        "zero_qpr_cutoff",
+        "zero_voltage_limit"
       ]
     },
     {

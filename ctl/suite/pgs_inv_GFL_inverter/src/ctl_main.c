@@ -33,6 +33,10 @@ cia402_sm_t cia402_sm;
 gfl_pq_ctrl_t pq_ctrl;
 inv_neg_ctrl_init_t gfl_neg_init;
 inv_neg_ctrl_t neg_current_ctrl;
+inv_voltage_ctrl_init_t gfl_voltage_init;
+inv_voltage_ctrl_t gfl_voltage_ctrl;
+inv_zero_ctrl_init_t gfl_zero_init;
+inv_zero_ctrl_t gfl_zero_ctrl;
 gfl_inv_ctrl_init_t gfl_init;
 gfl_inv_ctrl_t inv_ctrl;
 
@@ -44,6 +48,10 @@ npc_modulator_t spwm;
 #else
 spwm_modulator_t spwm;
 #endif // USING_NPC_MODULATOR
+#if defined USING_3D_SVPWM
+ctl_vector4_t pwm_3d_duty;
+pwm_gt pwm_3d_out[4];
+#endif
 
 // Protection module
 
@@ -87,6 +95,23 @@ void ctl_init()
     ctl_auto_tuning_neg_inv(&gfl_neg_init, &gfl_init);
     ctl_init_neg_inv(&neg_current_ctrl, &gfl_neg_init);
     ctl_attach_neg_inv_to_gfl(&neg_current_ctrl, &inv_ctrl);
+
+    ctl_auto_tuning_voltage_inv(&gfl_voltage_init, &gfl_init);
+    gfl_voltage_init.voltage_loop_bw = GFL_VOLTAGE_LOOP_BW_HZ;
+    gfl_voltage_init.voltage_loop_zero = GFL_VOLTAGE_LOOP_ZERO_HZ;
+    gfl_voltage_init.current_limit_max = GFL_VOLTAGE_CURRENT_LIMIT_PU;
+    gfl_voltage_init.current_limit_min = -GFL_VOLTAGE_CURRENT_LIMIT_PU;
+    ctl_init_voltage_inv(&gfl_voltage_ctrl, &gfl_voltage_init);
+    ctl_attach_voltage_inv_to_gfl(&gfl_voltage_ctrl, &inv_ctrl);
+
+    ctl_auto_tuning_zero_inv(&gfl_zero_init, &gfl_init);
+    gfl_zero_init.kp = GFL_ZERO_QPR_KP;
+    gfl_zero_init.kr = GFL_ZERO_QPR_KR;
+    gfl_zero_init.freq_cut = GFL_ZERO_QPR_CUTOFF_HZ;
+    gfl_zero_init.output_limit_max = GFL_ZERO_VOLTAGE_LIMIT_PU;
+    gfl_zero_init.output_limit_min = -GFL_ZERO_VOLTAGE_LIMIT_PU;
+    ctl_init_zero_inv(&gfl_zero_ctrl, &gfl_zero_init);
+    ctl_attach_zero_inv(&gfl_zero_ctrl, &inv_ctrl.iab0.dat[phase_0], &gfl_zero_ctrl.v0_out);
 
     //
     // init SPWM modulator
@@ -138,9 +163,9 @@ void ctl_init()
     ctl_enable_gfl_inv_pll(&inv_ctrl);
     ctl_set_gfl_inv_grid_connect(&inv_ctrl);
 
-    ctl_enable_gfl_inv_decouple(&inv_ctrl);
-    ctl_enable_gfl_inv_active_damp(&inv_ctrl);
-    ctl_enable_gfl_inv_lead_compensator(&inv_ctrl);
+    inv_ctrl.flag_enable_decouple = 1;
+    inv_ctrl.flag_enable_active_damping = 1;
+    inv_ctrl.flag_enable_lead_compensator = 1;
 
 #elif BUILD_LEVEL == 5
     // Cascaded P/Q power loop -> d/q current loop, grid connected.
@@ -150,12 +175,35 @@ void ctl_init()
     ctl_enable_neg_current_inv(&neg_current_ctrl);
     ctl_enable_gfl_inv_pll(&inv_ctrl);
     ctl_set_gfl_inv_grid_connect(&inv_ctrl);
-    ctl_enable_gfl_inv_decouple(&inv_ctrl);
-    ctl_enable_gfl_inv_active_damp(&inv_ctrl);
-    ctl_enable_gfl_inv_lead_compensator(&inv_ctrl);
+    inv_ctrl.flag_enable_decouple = 1;
+    inv_ctrl.flag_enable_active_damping = 1;
+    inv_ctrl.flag_enable_lead_compensator = 1;
     ctl_enable_gfl_pq_ctrl(&pq_ctrl);
 
+#elif BUILD_LEVEL == 6
+    // Stand-alone LC-filter capacitor-voltage loop -> d/q current loop.
+    ctl_set_gfl_inv_current_mode(&inv_ctrl);
+    ctl_set_gfl_inv_current(&inv_ctrl, 0, 0);
+    ctl_set_voltage_inv_reference(&gfl_voltage_ctrl, float2ctrl(GFL_STANDALONE_VD_PU),
+                                  float2ctrl(GFL_STANDALONE_VQ_PU));
+    ctl_enable_voltage_inv(&gfl_voltage_ctrl);
+#if defined GFL_ENABLE_VOLTAGE_DECOUPLE
+    ctl_enable_voltage_inv_decouple(&gfl_voltage_ctrl);
+#else
+    ctl_disable_voltage_inv_decouple(&gfl_voltage_ctrl);
+#endif
+
+#if defined USING_3D_SVPWM
+    // Suppress negative-sequence capacitor voltage and zero-sequence current.
+    ctl_enable_neg_voltage_inv(&neg_current_ctrl);
+    ctl_enable_zero_inv(&gfl_zero_ctrl);
+#endif
+
 #endif // BUILD_LEVEL
+
+#if defined USING_3D_SVPWM && (BUILD_LEVEL >= 3) && (BUILD_LEVEL <= 5)
+    ctl_enable_zero_inv(&gfl_zero_ctrl);
+#endif
 
     //
     // init and config CiA402 standard state machine
@@ -168,7 +216,7 @@ void ctl_init()
     cia402_sm.current_cmd = CIA402_CMD_ENABLE_OPERATION;
 #endif // SPECIFY_PC_ENVIRONMENT
 
-#if BUILD_LEVEL >= 3
+#if (BUILD_LEVEL >= 3) && (BUILD_LEVEL <= 5)
 
     // NOTICE:
     // if grid connect is request disable switch delay from CIA402_SM_SWITCH_ON_DISABLED to CIA402_SM_SWITCHED_ON
@@ -222,6 +270,27 @@ time_gt gmp_base_get_ctrl_tick(void)
 
 void ctl_enable_pwm()
 {
+    /*
+     * CiA402 clears dynamic controller state while output is disabled. Restore
+     * commissioning references at the enable edge so BUILD_LEVEL 2-4 current
+     * commands are not lost during the startup state transitions.
+     */
+#if BUILD_LEVEL == 1
+    ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl(GFL_OPEN_LOOP_VD_PU),
+                                     float2ctrl(GFL_OPEN_LOOP_VQ_PU));
+#elif BUILD_LEVEL == 2
+    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFL_CURRENT_LEVEL2_ID_PU),
+                            float2ctrl(GFL_CURRENT_LEVEL2_IQ_PU));
+#elif BUILD_LEVEL == 3
+    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFL_CURRENT_LEVEL3_ID_PU),
+                            float2ctrl(GFL_CURRENT_LEVEL3_IQ_PU));
+#elif BUILD_LEVEL == 4
+    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFL_CURRENT_LEVEL4_ID_PU),
+                            float2ctrl(GFL_CURRENT_LEVEL4_IQ_PU));
+#elif BUILD_LEVEL == 5
+    ctl_set_gfl_inv_current(&inv_ctrl, 0, 0);
+#endif
+
     ctl_fast_enable_output();
 }
 
@@ -232,6 +301,8 @@ void ctl_disable_pwm()
     // clear controller here
     ctl_clear_gfl_inv(&inv_ctrl);
     ctl_clear_neg_inv(&neg_current_ctrl);
+    ctl_clear_voltage_inv(&gfl_voltage_ctrl);
+    ctl_clear_zero_inv(&gfl_zero_ctrl);
     ctl_clear_gfl_pq(&pq_ctrl);
     pq_loop_tick = 0;
 }

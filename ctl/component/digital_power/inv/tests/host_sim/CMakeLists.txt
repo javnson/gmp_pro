@@ -9,7 +9,7 @@ add_executable(gmp_inv_host_sim
     inv_host_sim.c
     ${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_voltage_ctrl.c
     ${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_zero_ctrl.c
-    ${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/src/ctl_continuous_pid.c
+    ${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/src/ctl_continuous_pid_aw.c
     ${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_pr.c
     ${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_pr_tuner.c
 )

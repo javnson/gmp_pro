@@ -25,8 +25,8 @@ extern "C"
 
 #define PGS_INV_GFL_SIM_SDPE_PROJECT_ID "pgs_inv_gfl_simulate"
 #define PGS_INV_GFL_SIM_SDPE_PROJECT_SUITE "pgs_inv_GFL_inverter"
-#define PGS_INV_GFL_SIM_SDPE_PROJECT_VERSION "1.0.0"
-#define PGS_INV_GFL_SIM_SDPE_PROJECT_UPDATED_AT "2026-07-15"
+#define PGS_INV_GFL_SIM_SDPE_PROJECT_VERSION "1.1.0"
+#define PGS_INV_GFL_SIM_SDPE_PROJECT_UPDATED_AT "2026-07-28"
 
 //=================================================================================================
 /**
@@ -34,10 +34,10 @@ extern "C"
  */
 
 /**
- * @brief Incremental control level; level 5 enables the cascaded P/Q power loop.
- *        Options: (1), (2), (3), (4), (5)
+ * @brief BUILD_LEVEL descriptor: 1=open-loop standalone voltage/PWM sensing check; 2=standalone d-q current loop with internal RG; 3=grid PLL plus positive/negative-sequence current control; 4=level 3 plus decoupling, active damping and lead compensation; 5=grid P/Q outer loop over level 4; 6=standalone LC capacitor-voltage outer loop with anti-windup PI over the current loop. With USING_3D_SVPWM, levels 3-6 also enable zero-sequence QPR control and a fourth neutral-leg PWM.
+ *        Options: (1), (2), (3), (4), (5), (6)
  */
-#define BUILD_LEVEL (2)
+#define BUILD_LEVEL (6)
 
 //=================================================================================================
 /**
@@ -51,10 +51,10 @@ extern "C"
 #define GFL_CURRENT_SAMPLE_PHASE_MODE (3)
 
 /**
- * @brief Simulation supplies two independent phase-voltage samples.
- *        Options: (2), (3)
+ * @brief Voltage sampling topology: 1=two line-to-line samples (Uab/Ubc), 2=two phase-to-neutral samples, 3=three phase-to-neutral samples. The supplied SIL models use mode 1.
+ *        Options: (1), (2), (3)
  */
-#define GFL_VOLTAGE_SAMPLE_PHASE_MODE (2)
+#define GFL_VOLTAGE_SAMPLE_PHASE_MODE (1)
 
 //=================================================================================================
 /**
@@ -172,8 +172,11 @@ extern "C"
 #define CTRL_DC_VOLTAGE_BIAS (0.0f)
 
 // User project tail code
-#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 5)
-#error BUILD_LEVEL_must_be_between_1_and_5
+#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 6)
+#error BUILD_LEVEL_must_be_between_1_and_6
+#endif
+#if defined(USING_3D_SVPWM) && defined(USING_NPC_MODULATOR)
+#error USING_3D_SVPWM_and_USING_NPC_MODULATOR_are_mutually_exclusive
 #endif
 
 #ifdef __cplusplus

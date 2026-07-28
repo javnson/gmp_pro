@@ -22,8 +22,8 @@ extern "C"
 
 #define PGS_INV_GFL_COMMON_SDPE_PROJECT_ID "pgs_inv_gfl_common"
 #define PGS_INV_GFL_COMMON_SDPE_PROJECT_SUITE "pgs_inv_GFL_inverter"
-#define PGS_INV_GFL_COMMON_SDPE_PROJECT_VERSION "1.0.0"
-#define PGS_INV_GFL_COMMON_SDPE_PROJECT_UPDATED_AT "2026-07-15"
+#define PGS_INV_GFL_COMMON_SDPE_PROJECT_VERSION "1.1.0"
+#define PGS_INV_GFL_COMMON_SDPE_PROJECT_UPDATED_AT "2026-07-28"
 
 //=================================================================================================
 /**
@@ -44,6 +44,16 @@ extern "C"
  * @brief Use the three-level NPC modulator instead of the two-level SPWM modulator.
  */
 // #define USING_NPC_MODULATOR
+
+/**
+ * @brief Use four-leg 3D-SVPWM. This enables an independently controlled neutral-leg duty and permits zero-sequence QPR control; the selected board must provide a fourth PWM bridge leg.
+ */
+// #define USING_3D_SVPWM
+
+/**
+ * @brief Enable omega*C cross-coupling feed-forward in the BUILD_LEVEL 6 capacitor-voltage loop. Disable this switch to commission the voltage PI loop without decoupling.
+ */
+#define GFL_ENABLE_VOLTAGE_DECOUPLE
 
 //=================================================================================================
 /**
@@ -177,6 +187,51 @@ extern "C"
 #define GFL_CURRENT_LEVEL4_IQ_PU (0.6f)
 
 /**
+ * @brief BUILD_LEVEL 6 positive-sequence d-axis capacitor phase-voltage reference in per unit.
+ */
+#define GFL_STANDALONE_VD_PU (0.50f)
+
+/**
+ * @brief BUILD_LEVEL 6 positive-sequence q-axis capacitor phase-voltage reference in per unit.
+ */
+#define GFL_STANDALONE_VQ_PU (0.0f)
+
+/**
+ * @brief BUILD_LEVEL 6 capacitor-voltage outer-loop bandwidth in hertz; keep it well below the inner current-loop bandwidth.
+ */
+#define GFL_VOLTAGE_LOOP_BW_HZ (100.0f)
+
+/**
+ * @brief BUILD_LEVEL 6 anti-windup PI zero frequency in hertz.
+ */
+#define GFL_VOLTAGE_LOOP_ZERO_HZ (20.0f)
+
+/**
+ * @brief Symmetric d/q current-reference limit for the BUILD_LEVEL 6 voltage loop. The PID back-calculation acts on this complete PI plus feed-forward limit.
+ */
+#define GFL_VOLTAGE_CURRENT_LIMIT_PU (0.80f)
+
+/**
+ * @brief Zero-sequence current QPR proportional gain used when 3D-SVPWM is enabled.
+ */
+#define GFL_ZERO_QPR_KP (0.10f)
+
+/**
+ * @brief Zero-sequence current QPR resonant gain used when 3D-SVPWM is enabled.
+ */
+#define GFL_ZERO_QPR_KR (50.0f)
+
+/**
+ * @brief Zero-sequence QPR resonant bandwidth/cutoff frequency in hertz.
+ */
+#define GFL_ZERO_QPR_CUTOFF_HZ (5.0f)
+
+/**
+ * @brief Symmetric zero-axis voltage-command limit for four-wire operation.
+ */
+#define GFL_ZERO_VOLTAGE_LIMIT_PU (0.20f)
+
+/**
  * @brief ADC offset calibrator filter cutoff frequency.
  */
 #define GFL_ADC_CALIBRATOR_FC_HZ (20.0f)
@@ -200,6 +255,10 @@ extern "C"
 /* Accept the historical PIL spelling while new projects use the canonical switch. */
 #if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM
 #define ENABLE_GMP_DL_PIL_SIM
+#endif
+/* Four-leg hardware must explicitly acknowledge that A/B/C/N PWM and protection are mapped. */
+#if defined(USING_3D_SVPWM) && !defined(SPECIFY_PC_ENVIRONMENT) && !defined(GFL_3D_SVPWM_PLATFORM_MAPPED)
+#error Define_GFL_3D_SVPWM_PLATFORM_MAPPED_only_after_mapping_all_four_PWM_legs
 #endif
 
 #ifdef __cplusplus

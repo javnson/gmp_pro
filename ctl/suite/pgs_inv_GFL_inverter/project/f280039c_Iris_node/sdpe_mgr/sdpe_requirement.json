@@ -20,7 +20,7 @@
   ],
   "code_sections": {
     "after_extern_open": "#include <sdpe_pgs_inv_gfl_common_settings.h>\n\n/* Existing IRIS SysConfig resource names assigned to GFL application roles. */\n#define PHASE_U_BASE IRIS_EPWM1_BASE\n#define PHASE_V_BASE IRIS_EPWM2_BASE\n#define PHASE_W_BASE IRIS_EPWM3_BASE\n#define PWM_ENABLE_PORT IRIS_GPIO1\n#define PWM_RESET_PORT IRIS_GPIO3\n#define INV_UA_RESULT_BASE ADC_CH1_RESULT_BASE\n#define INV_UA ADC_CH1\n#define INV_UB_RESULT_BASE ADC_CH2_RESULT_BASE\n#define INV_UB ADC_CH2\n#define INV_UC_RESULT_BASE ADC_CH3_RESULT_BASE\n#define INV_UC ADC_CH3\n#define INV_IA_RESULT_BASE ADC_CH4_RESULT_BASE\n#define INV_IA ADC_CH4\n#define INV_IB_RESULT_BASE ADC_CH5_RESULT_BASE\n#define INV_IB ADC_CH5\n#define INV_IC_RESULT_BASE ADC_CH6_RESULT_BASE\n#define INV_IC ADC_CH6\n#define INV_UU_RESULT_BASE ADC_CH9_RESULT_BASE\n#define INV_UU ADC_CH9\n#define INV_UV_RESULT_BASE ADC_CH10_RESULT_BASE\n#define INV_UV ADC_CH10\n#define INV_UW_RESULT_BASE ADC_CH11_RESULT_BASE\n#define INV_UW ADC_CH11\n#define INV_IU_RESULT_BASE ADC_CH4_RESULT_BASE\n#define INV_IU ADC_CH4\n#define INV_IV_RESULT_BASE ADC_CH5_RESULT_BASE\n#define INV_IV ADC_CH5\n#define INV_IW_RESULT_BASE ADC_CH6_RESULT_BASE\n#define INV_IW ADC_CH6\n#define INV_VBUS_RESULT_BASE ADC_CH7_RESULT_BASE\n#define INV_VBUS ADC_CH7\n#define INV_IBUS_RESULT_BASE ADC_CH8_RESULT_BASE\n#define INV_IBUS ADC_CH8\n#define SYSTEM_LED IRIS_LED1\n#define CONTROLLER_LED IRIS_LED2",
-    "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 5)\n#error BUILD_LEVEL_must_be_between_1_and_5\n#endif"
+    "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 6)\n#error BUILD_LEVEL_must_be_between_1_and_6\n#endif\n#if defined(USING_3D_SVPWM) && defined(USING_NPC_MODULATOR)\n#error USING_3D_SVPWM_and_USING_NPC_MODULATOR_are_mutually_exclusive\n#endif"
   },
   "feature_macros": [
     {
@@ -42,9 +42,10 @@
         "(2)",
         "(3)",
         "(4)",
-        "(5)"
+        "(5)",
+        "(6)"
       ],
-      "description": "Incremental control level; level 5 enables the cascaded P/Q power loop."
+      "description": "BUILD_LEVEL descriptor: 1=open-loop standalone voltage/PWM sensing check; 2=standalone d-q current loop with internal RG; 3=grid PLL plus positive/negative-sequence current control; 4=level 3 plus decoupling, active damping and lead compensation; 5=grid P/Q outer loop over level 4; 6=standalone LC capacitor-voltage outer loop with anti-windup PI over the current loop. USING_3D_SVPWM additionally requires a mapped fourth neutral-leg PWM."
     },
     {
       "group": "Sampling",

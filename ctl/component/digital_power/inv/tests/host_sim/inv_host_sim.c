@@ -156,6 +156,54 @@ static int check_voltage_loop(void)
              (decoupled.q_rms < coupled.q_rms));
 }
 
+static int check_voltage_anti_windup(void)
+{
+    inv_voltage_ctrl_init_t init;
+    inv_voltage_ctrl_t controller;
+    ctl_vector2_t vab = {{0.0f, 0.0f}};
+    ctl_vector2_t phasor = {{0.0f, 1.0f}};
+    ctl_vector2_t idq_ref;
+    int recovery_steps = -1;
+    int k;
+
+    init.fs = 20000.0f;
+    init.freq_base = 50.0f;
+    init.v_base = 325.0f;
+    init.i_base = 20.0f;
+    init.filter_C = 20.0e-6f;
+    init.voltage_loop_bw = 200.0f;
+    init.voltage_loop_zero = 40.0f;
+    init.current_limit_max = 0.2f;
+    init.current_limit_min = -0.2f;
+
+    ctl_init_voltage_inv(&controller, &init);
+    ctl_attach_voltage_inv(&controller, &vab, &phasor, &idq_ref);
+    ctl_disable_voltage_inv_decouple(&controller);
+    ctl_enable_voltage_inv(&controller);
+    ctl_set_voltage_inv_reference(&controller, float2ctrl(2.0f), 0);
+
+    for (k = 0; k < 5000; ++k)
+        ctl_step_voltage_inv_ctrl(&controller);
+
+    if (fabsf(ctrl2float(idq_ref.dat[phase_d]) - 0.2f) > 1.0e-5f)
+        return 1;
+
+    ctl_set_voltage_inv_reference(&controller, float2ctrl(-2.0f), 0);
+    for (k = 0; k < 500; ++k)
+    {
+        ctl_step_voltage_inv_ctrl(&controller);
+        if (idq_ref.dat[phase_d] < 0)
+        {
+            recovery_steps = k + 1;
+            break;
+        }
+    }
+
+    printf("voltage_anti_windup: reversal_recovery_steps=%d integrator=%.6g\n",
+           recovery_steps, ctrl2float(controller.pid_vdq[phase_d].sn));
+    return !((recovery_steps > 0) && (recovery_steps < 100));
+}
+
 static parameter_gt simulate_zero_loop(fast_gt enabled)
 {
     const parameter_gt fs = 20000.0f;
@@ -239,6 +287,7 @@ int main(void)
 
     failures += check_svpwm_3d();
     failures += check_voltage_loop();
+    failures += check_voltage_anti_windup();
     failures += check_zero_loop();
 
     if (failures != 0)

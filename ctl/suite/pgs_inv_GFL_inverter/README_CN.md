@@ -40,7 +40,7 @@ IRIS 和 LaunchXL-F280049C 平台均在 SDPE 中选择以下功率硬件：
 |---|---:|---:|---|
 | F280039C IRIS Node | 3 | 20 kHz | 已调通，保持原默认值 |
 | LaunchXL-F280049C | 1 | 10 kHz | 已调通，保持原默认值 |
-| PC simulate | 2 | 20 kHz | 可编译仿真 |
+| PC simulate | 6 | 20 kHz | 独立逆变电压环 SIL 已验证 |
 | STM32G431 | 1 | 10 kHz | 待实机增量验证 |
 
 ## 增量调试级别
@@ -52,6 +52,12 @@ IRIS 和 LaunchXL-F280049C 平台均在 SDPE 中选择以下功率硬件：
 3. PLL 并网与正/负序电流闭环。
 4. 在级别 3 的基础上启用解耦、主动阻尼和超前补偿。
 5. 完整功率闭环：P/Q 外环生成 dq 电流给定，内层电流环继续按 PWM 频率执行。
+6. 独立逆变 LC 电容电压闭环：带回算抗饱和的 dq 电压 PI 生成电流给定，电流内环使用内部 RG 角度。`GFL_ENABLE_VOLTAGE_DECOUPLE` 可关闭 `ωC` 耦合前馈。
+
+公共 SDPE 的 `USING_3D_SVPWM` 可切换四桥臂 3D-SVPWM。启用后控制器输出
+`A/B/C/N` 四路比较值，并启用基于可调 QPR 的零序电流抑制；BUILD_LEVEL 6
+同时使用负序电压外环，使不对称负载下的正序、负序和零序通道能够分别控制。
+硬件平台启用该选项前必须完成第四桥臂 PWM 与保护映射。
 
 严禁在未完成前一级保护与波形检查时直接切换到更高等级。启用 `SPECIFY_ENABLE_ADC_CALIBRATE` 时，必须保证被校准的功率输入处于已知零状态；并网带电输入下不应进行零偏校准。
 
@@ -84,6 +90,9 @@ Q = vq*id - vd*iq
 4. 再由 CCS、Keil 或 Visual Studio 编译目标工程。
 
 PC 仿真工程已用 Visual Studio 2022 的 `Debug|x64` 配置完成编译验证。构建时若不需要自动恢复 vcpkg，可传入 `VcpkgEnableManifest=false`。
+`project/simulate/run_build_level_matrix.ps1` 可自动完成 SDPE 生成、BUILD_LEVEL
+1–6 重编译、Simulink SIL 和 JSON/波形结果保存，具体用法见
+`project/simulate/README.md`。
 
 ## 目录结构
 
