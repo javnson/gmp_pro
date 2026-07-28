@@ -4811,6 +4811,80 @@
                     }
                 ]
             },
+            "component|digital_power|inv|gfm_droop_ctrl": {
+                "type": "module",
+                "description": "Replaceable P-f/Q-V droop reference generator decoupled from voltage and current loops.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_gfm_droop_ctrl.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/inv_gfm_droop_ctrl.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [
+                    "ctl|component|intrinsic|discrete|discrete_filter"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|inv|gfm_transition": {
+                "type": "module",
+                "description": "Generic bumpless PLL-to-grid-forming phasor transition.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_gfm_transition.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/inv_gfm_transition.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
             "component|digital_power|inv|hcm": {
                 "type": "module",
                 "description": "",
