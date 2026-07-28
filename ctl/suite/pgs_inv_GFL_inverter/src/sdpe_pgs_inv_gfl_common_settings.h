@@ -22,7 +22,7 @@ extern "C"
 
 #define PGS_INV_GFL_COMMON_SDPE_PROJECT_ID "pgs_inv_gfl_common"
 #define PGS_INV_GFL_COMMON_SDPE_PROJECT_SUITE "pgs_inv_GFL_inverter"
-#define PGS_INV_GFL_COMMON_SDPE_PROJECT_VERSION "1.1.0"
+#define PGS_INV_GFL_COMMON_SDPE_PROJECT_VERSION "1.2.0"
 #define PGS_INV_GFL_COMMON_SDPE_PROJECT_UPDATED_AT "2026-07-28"
 
 //=================================================================================================
@@ -54,6 +54,16 @@ extern "C"
  * @brief Enable omega*C cross-coupling feed-forward in the BUILD_LEVEL 6 capacitor-voltage loop. Disable this switch to commission the voltage PI loop without decoupling.
  */
 #define GFL_ENABLE_VOLTAGE_DECOUPLE
+
+/**
+ * @brief Enable circular magnitude limiting of the complete BUILD_LEVEL 6 d-q current reference.
+ */
+#define GFL_ENABLE_VOLTAGE_CIRCLE_LIMIT
+
+/**
+ * @brief Enable independent symmetric d/q-axis limiting of the complete BUILD_LEVEL 6 current reference.
+ */
+// #define GFL_ENABLE_VOLTAGE_SQUARE_LIMIT
 
 //=================================================================================================
 /**
@@ -202,14 +212,19 @@ extern "C"
 #define GFL_VOLTAGE_LOOP_BW_HZ (100.0f)
 
 /**
- * @brief BUILD_LEVEL 6 anti-windup PI zero frequency in hertz.
+ * @brief BUILD_LEVEL 6 ordinary PI zero frequency in hertz.
  */
 #define GFL_VOLTAGE_LOOP_ZERO_HZ (20.0f)
 
 /**
- * @brief Symmetric d/q current-reference limit for the BUILD_LEVEL 6 voltage loop. The PID back-calculation acts on this complete PI plus feed-forward limit.
+ * @brief Circular magnitude limit for the complete BUILD_LEVEL 6 PI plus feed-forward current reference. The final limited output is returned to the ordinary PID integrators by clamping correction.
  */
-#define GFL_VOLTAGE_CURRENT_LIMIT_PU (0.80f)
+#define GFL_VOLTAGE_CIRCLE_LIMIT_PU (0.80f)
+
+/**
+ * @brief Independent symmetric d/q-axis limit for the complete BUILD_LEVEL 6 PI plus feed-forward current reference.
+ */
+#define GFL_VOLTAGE_SQUARE_LIMIT_PU (0.80f)
 
 /**
  * @brief Zero-sequence current QPR proportional gain used when 3D-SVPWM is enabled.

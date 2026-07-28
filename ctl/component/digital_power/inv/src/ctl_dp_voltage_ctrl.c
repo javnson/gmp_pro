@@ -18,14 +18,17 @@ void ctl_auto_tuning_voltage_inv(inv_voltage_ctrl_init_t* voltage_init, const gf
     /* Keep the outer loop comfortably below the existing current loop. */
     voltage_init->voltage_loop_bw = gfl_init->current_loop_bw / 5.0f;
     voltage_init->voltage_loop_zero = voltage_init->voltage_loop_bw / 5.0f;
-    voltage_init->current_limit_max = 1.0f;
-    voltage_init->current_limit_min = -1.0f;
+    voltage_init->current_circle_limit = 1.0f;
+    voltage_init->current_square_limit = 1.0f;
+    voltage_init->flag_enable_circle_limit = 1;
+    voltage_init->flag_enable_square_limit = 0;
 }
 
 void ctl_update_voltage_inv_coeff(inv_voltage_ctrl_t* voltage, const inv_voltage_ctrl_init_t* init)
 {
     parameter_gt kp;
-    parameter_gt ti;
+    parameter_gt ki;
+    parameter_gt integral_limit;
 
     gmp_base_assert(voltage);
     gmp_base_assert(init);
@@ -33,26 +36,32 @@ void ctl_update_voltage_inv_coeff(inv_voltage_ctrl_t* voltage, const inv_voltage
     gmp_base_assert(init->v_base > 0.0f);
     gmp_base_assert(init->i_base > 0.0f);
     gmp_base_assert(init->filter_C > 0.0f);
-    gmp_base_assert(init->current_limit_max >= init->current_limit_min);
+    gmp_base_assert(init->current_circle_limit > 0.0f);
+    gmp_base_assert(init->current_square_limit > 0.0f);
 
     /*
      * Capacitor plant: G(s) = 1/(C*s).
      * Convert the physical A/V gain to per-unit current / per-unit voltage.
      */
     kp = CTL_PARAM_CONST_2PI * init->voltage_loop_bw * init->filter_C * init->v_base / init->i_base;
-    ti = 1.0f / (CTL_PARAM_CONST_2PI * init->voltage_loop_zero);
+    ki = kp * CTL_PARAM_CONST_2PI * init->voltage_loop_zero;
+    integral_limit = init->current_circle_limit > init->current_square_limit
+                         ? init->current_circle_limit
+                         : init->current_square_limit;
 
-    ctl_init_pid_aw_par(&voltage->pid_vdq[phase_d], kp, ti, 0.0f, 0.0f, init->fs);
-    ctl_init_pid_aw_par(&voltage->pid_vdq[phase_q], kp, ti, 0.0f, 0.0f, init->fs);
-    voltage->pid_vdq[phase_d].out_max = float2ctrl(init->current_limit_max);
-    voltage->pid_vdq[phase_d].out_min = float2ctrl(init->current_limit_min);
-    voltage->pid_vdq[phase_q].out_max = float2ctrl(init->current_limit_max);
-    voltage->pid_vdq[phase_q].out_min = float2ctrl(init->current_limit_min);
+    ctl_init_pid(&voltage->pid_vdq[phase_d], kp, ki, 0.0f, init->fs);
+    ctl_init_pid(&voltage->pid_vdq[phase_q], kp, ki, 0.0f, init->fs);
+    ctl_set_pid_int_limit(&voltage->pid_vdq[phase_d], float2ctrl(integral_limit),
+                          float2ctrl(-integral_limit));
+    ctl_set_pid_int_limit(&voltage->pid_vdq[phase_q], float2ctrl(integral_limit),
+                          float2ctrl(-integral_limit));
 
     voltage->coef_ff_decouple =
         float2ctrl(CTL_PARAM_CONST_2PI * init->freq_base * init->filter_C * init->v_base / init->i_base);
-    voltage->current_limit_max = float2ctrl(init->current_limit_max);
-    voltage->current_limit_min = float2ctrl(init->current_limit_min);
+    voltage->current_circle_limit = float2ctrl(init->current_circle_limit);
+    voltage->current_square_limit = float2ctrl(init->current_square_limit);
+    voltage->flag_enable_circle_limit = init->flag_enable_circle_limit;
+    voltage->flag_enable_square_limit = init->flag_enable_square_limit;
 }
 
 void ctl_init_voltage_inv(inv_voltage_ctrl_t* voltage, const inv_voltage_ctrl_init_t* init)

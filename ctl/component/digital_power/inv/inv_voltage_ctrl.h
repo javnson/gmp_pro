@@ -10,8 +10,7 @@
 
 #include <ctl/component/interface/interface_base.h>
 
-#include <ctl/component/intrinsic/basic/saturation.h>
-#include <ctl/component/intrinsic/continuous/continuous_pid_aw.h>
+#include <ctl/component/intrinsic/continuous/continuous_pid.h>
 #include <ctl/component/intrinsic/discrete/biquad_filter.h>
 
 #include <ctl/component/digital_power/inv/gfl_core.h>
@@ -39,16 +38,19 @@ typedef struct _tag_inv_voltage_ctrl
     ctl_vector2_t vdq;             //!< Measured capacitor voltage in d-q.
     ctl_vector2_t idq_pi;          //!< PI contribution to the current reference.
     ctl_vector2_t idq_ff_decouple; //!< Capacitor cross-coupling feed-forward.
+    ctl_vector2_t idq_unlimited;   //!< Complete PI plus feed-forward command before vector limiting.
     ctl_vector2_t idq_out;         //!< Limited output current reference.
 
-    ctl_pid_aw_t pid_vdq[2]; //!< Capacitor-voltage PI controllers with back-calculation anti-windup.
+    ctl_pid_t pid_vdq[2]; //!< Ordinary capacitor-voltage PI controllers.
 
     ctrl_gt coef_ff_decouple; //!< omega*C*Vbase/Ibase in per-unit.
-    ctrl_gt current_limit_max;
-    ctrl_gt current_limit_min;
+    ctrl_gt current_circle_limit; //!< D-q current-vector magnitude limit (p.u.).
+    ctrl_gt current_square_limit; //!< Independent absolute d/q-axis limit (p.u.).
 
     fast_gt flag_enable;
     fast_gt flag_enable_decouple;
+    fast_gt flag_enable_circle_limit;
+    fast_gt flag_enable_square_limit;
 } inv_voltage_ctrl_t;
 
 /**
@@ -65,8 +67,10 @@ typedef struct _tag_inv_voltage_ctrl_init
     parameter_gt voltage_loop_bw;   //!< Desired voltage-loop bandwidth (Hz).
     parameter_gt voltage_loop_zero; //!< PI zero frequency (Hz).
 
-    parameter_gt current_limit_max; //!< Maximum d/q current reference (p.u.).
-    parameter_gt current_limit_min; //!< Minimum d/q current reference (p.u.).
+    parameter_gt current_circle_limit; //!< D-q current-vector magnitude limit (p.u.).
+    parameter_gt current_square_limit; //!< Independent absolute d/q-axis limit (p.u.).
+    fast_gt flag_enable_circle_limit;  //!< Enables circular current limiting.
+    fast_gt flag_enable_square_limit;  //!< Enables square current limiting.
 } inv_voltage_ctrl_init_t;
 
 void ctl_auto_tuning_voltage_inv(inv_voltage_ctrl_init_t* voltage_init, const gfl_inv_ctrl_init_t* gfl_init);
@@ -75,11 +79,12 @@ void ctl_init_voltage_inv(inv_voltage_ctrl_t* voltage, const inv_voltage_ctrl_in
 
 GMP_STATIC_INLINE void ctl_clear_voltage_inv(inv_voltage_ctrl_t* voltage)
 {
-    ctl_clear_pid_aw(&voltage->pid_vdq[phase_d]);
-    ctl_clear_pid_aw(&voltage->pid_vdq[phase_q]);
+    ctl_clear_pid(&voltage->pid_vdq[phase_d]);
+    ctl_clear_pid(&voltage->pid_vdq[phase_q]);
     ctl_vector2_clear(&voltage->vdq);
     ctl_vector2_clear(&voltage->idq_pi);
     ctl_vector2_clear(&voltage->idq_ff_decouple);
+    ctl_vector2_clear(&voltage->idq_unlimited);
     ctl_vector2_clear(&voltage->idq_out);
 }
 
@@ -96,6 +101,7 @@ GMP_STATIC_INLINE void ctl_step_voltage_inv_ctrl(inv_voltage_ctrl_t* voltage)
     {
         ctl_vector2_clear(&voltage->idq_pi);
         ctl_vector2_clear(&voltage->idq_ff_decouple);
+        ctl_vector2_clear(&voltage->idq_unlimited);
         ctl_vector2_clear(&voltage->idq_out);
         if (voltage->idq_sink != NULL)
             ctl_vector2_clear(voltage->idq_sink);
@@ -124,33 +130,38 @@ GMP_STATIC_INLINE void ctl_step_voltage_inv_ctrl(inv_voltage_ctrl_t* voltage)
         ctl_vector2_clear(&voltage->idq_ff_decouple);
     }
 
-    /*
-     * Apply the output limit to the complete PI + feed-forward command.  Moving
-     * the feed-forward term into the PID limits makes the back-calculation see
-     * the actual actuator saturation instead of only the PI contribution.
-     */
-    voltage->pid_vdq[phase_d].out_max =
-        voltage->current_limit_max - voltage->idq_ff_decouple.dat[phase_d];
-    voltage->pid_vdq[phase_d].out_min =
-        voltage->current_limit_min - voltage->idq_ff_decouple.dat[phase_d];
-    voltage->pid_vdq[phase_q].out_max =
-        voltage->current_limit_max - voltage->idq_ff_decouple.dat[phase_q];
-    voltage->pid_vdq[phase_q].out_min =
-        voltage->current_limit_min - voltage->idq_ff_decouple.dat[phase_q];
-
     voltage->idq_pi.dat[phase_d] =
-        ctl_step_pid_aw_par(&voltage->pid_vdq[phase_d],
-                            voltage->vdq_set.dat[phase_d] - voltage->vdq.dat[phase_d]);
+        ctl_step_pid_par_raw(&voltage->pid_vdq[phase_d],
+                             voltage->vdq_set.dat[phase_d] - voltage->vdq.dat[phase_d]);
     voltage->idq_pi.dat[phase_q] =
-        ctl_step_pid_aw_par(&voltage->pid_vdq[phase_q],
-                            voltage->vdq_set.dat[phase_q] - voltage->vdq.dat[phase_q]);
+        ctl_step_pid_par_raw(&voltage->pid_vdq[phase_q],
+                             voltage->vdq_set.dat[phase_q] - voltage->vdq.dat[phase_q]);
 
-    voltage->idq_out.dat[phase_d] =
-        ctl_sat(voltage->idq_pi.dat[phase_d] + voltage->idq_ff_decouple.dat[phase_d],
-                voltage->current_limit_max, voltage->current_limit_min);
-    voltage->idq_out.dat[phase_q] =
-        ctl_sat(voltage->idq_pi.dat[phase_q] + voltage->idq_ff_decouple.dat[phase_q],
-                voltage->current_limit_max, voltage->current_limit_min);
+    ctl_vector2_add(&voltage->idq_unlimited, &voltage->idq_pi, &voltage->idq_ff_decouple);
+    ctl_vector2_copy(&voltage->idq_out, &voltage->idq_unlimited);
+
+    /* Limit the complete command so circular limiting retains the d-q direction. */
+    if (voltage->flag_enable_circle_limit)
+        ctl_vector2_sat_circle(&voltage->idq_out, &voltage->idq_out, voltage->current_circle_limit);
+
+    if (voltage->flag_enable_square_limit)
+        ctl_vector2_sat_square(&voltage->idq_out, &voltage->idq_out, voltage->current_square_limit);
+
+    /*
+     * Return the final actuator result (with feed-forward removed) to each
+     * ordinary PID integrator. This supports either limiter and their
+     * intersection without imposing an early per-axis PID saturation.
+     */
+    ctl_pid_clamping_correction_using_real_output(
+        &voltage->pid_vdq[phase_d],
+        voltage->idq_out.dat[phase_d] - voltage->idq_ff_decouple.dat[phase_d]);
+    ctl_pid_clamping_correction_using_real_output(
+        &voltage->pid_vdq[phase_q],
+        voltage->idq_out.dat[phase_q] - voltage->idq_ff_decouple.dat[phase_q]);
+    voltage->pid_vdq[phase_d].out =
+        voltage->idq_out.dat[phase_d] - voltage->idq_ff_decouple.dat[phase_d];
+    voltage->pid_vdq[phase_q].out =
+        voltage->idq_out.dat[phase_q] - voltage->idq_ff_decouple.dat[phase_q];
 
     ctl_vector2_copy(voltage->idq_sink, &voltage->idq_out);
 }
@@ -203,6 +214,38 @@ GMP_STATIC_INLINE void ctl_enable_voltage_inv_decouple(inv_voltage_ctrl_t* volta
 GMP_STATIC_INLINE void ctl_disable_voltage_inv_decouple(inv_voltage_ctrl_t* voltage)
 {
     voltage->flag_enable_decouple = 0;
+}
+
+GMP_STATIC_INLINE void ctl_set_voltage_inv_circle_limit(inv_voltage_ctrl_t* voltage, ctrl_gt limit)
+{
+    gmp_base_assert(limit >= float2ctrl(0.0f));
+    voltage->current_circle_limit = limit;
+}
+
+GMP_STATIC_INLINE void ctl_set_voltage_inv_square_limit(inv_voltage_ctrl_t* voltage, ctrl_gt limit)
+{
+    gmp_base_assert(limit >= float2ctrl(0.0f));
+    voltage->current_square_limit = limit;
+}
+
+GMP_STATIC_INLINE void ctl_enable_voltage_inv_circle_limit(inv_voltage_ctrl_t* voltage)
+{
+    voltage->flag_enable_circle_limit = 1;
+}
+
+GMP_STATIC_INLINE void ctl_disable_voltage_inv_circle_limit(inv_voltage_ctrl_t* voltage)
+{
+    voltage->flag_enable_circle_limit = 0;
+}
+
+GMP_STATIC_INLINE void ctl_enable_voltage_inv_square_limit(inv_voltage_ctrl_t* voltage)
+{
+    voltage->flag_enable_square_limit = 1;
+}
+
+GMP_STATIC_INLINE void ctl_disable_voltage_inv_square_limit(inv_voltage_ctrl_t* voltage)
+{
+    voltage->flag_enable_square_limit = 0;
 }
 
 #ifdef __cplusplus

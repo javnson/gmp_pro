@@ -4,7 +4,7 @@
   "display_name": "PGS Grid-Following Inverter Common Settings",
   "description": "Platform-independent control contract shared by all pgs_inv_GFL_inverter projects. Hardware timing, sensing, board resources and BUILD_LEVEL selection remain in each platform requirement.",
   "suite": "pgs_inv_GFL_inverter",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "updated_at": "2026-07-28",
   "output_header": "sdpe_pgs_inv_gfl_common_settings.h",
   "hardware": [],
@@ -47,6 +47,20 @@
       "enabled": true,
       "value": "",
       "description": "Enable omega*C cross-coupling feed-forward in the BUILD_LEVEL 6 capacitor-voltage loop. Disable this switch to commission the voltage PI loop without decoupling."
+    },
+    {
+      "group": "Control Algorithm",
+      "macro": "GFL_ENABLE_VOLTAGE_CIRCLE_LIMIT",
+      "enabled": true,
+      "value": "",
+      "description": "Enable circular magnitude limiting of the complete BUILD_LEVEL 6 d-q current reference."
+    },
+    {
+      "group": "Control Algorithm",
+      "macro": "GFL_ENABLE_VOLTAGE_SQUARE_LIMIT",
+      "enabled": false,
+      "value": "",
+      "description": "Enable independent symmetric d/q-axis limiting of the complete BUILD_LEVEL 6 current reference."
     },
     {
       "group": "Runtime",
@@ -267,15 +281,23 @@
       "binding": {
         "float": "20.0"
       },
-      "description": "BUILD_LEVEL 6 anti-windup PI zero frequency in hertz."
+      "description": "BUILD_LEVEL 6 ordinary PI zero frequency in hertz."
     },
     {
-      "role": "standalone_current_limit",
-      "macro": "GFL_VOLTAGE_CURRENT_LIMIT_PU",
+      "role": "standalone_circle_current_limit",
+      "macro": "GFL_VOLTAGE_CIRCLE_LIMIT_PU",
       "binding": {
         "float": "0.80"
       },
-      "description": "Symmetric d/q current-reference limit for the BUILD_LEVEL 6 voltage loop. The PID back-calculation acts on this complete PI plus feed-forward limit."
+      "description": "Circular magnitude limit for the complete BUILD_LEVEL 6 PI plus feed-forward current reference. The final limited output is returned to the ordinary PID integrators by clamping correction."
+    },
+    {
+      "role": "standalone_square_current_limit",
+      "macro": "GFL_VOLTAGE_SQUARE_LIMIT_PU",
+      "binding": {
+        "float": "0.80"
+      },
+      "description": "Independent symmetric d/q-axis limit for the complete BUILD_LEVEL 6 PI plus feed-forward current reference."
     },
     {
       "role": "zero_qpr_kp",
@@ -374,7 +396,8 @@
         "standalone_voltage_vq",
         "standalone_voltage_bw",
         "standalone_voltage_zero",
-        "standalone_current_limit",
+        "standalone_circle_current_limit",
+        "standalone_square_current_limit",
         "zero_qpr_kp",
         "zero_qpr_kr",
         "zero_qpr_cutoff",

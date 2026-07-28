@@ -52,7 +52,7 @@ IRIS 和 LaunchXL-F280049C 平台均在 SDPE 中选择以下功率硬件：
 3. PLL 并网与正/负序电流闭环。
 4. 在级别 3 的基础上启用解耦、主动阻尼和超前补偿。
 5. 完整功率闭环：P/Q 外环生成 dq 电流给定，内层电流环继续按 PWM 频率执行。
-6. 独立逆变 LC 电容电压闭环：带回算抗饱和的 dq 电压 PI 生成电流给定，电流内环使用内部 RG 角度。`GFL_ENABLE_VOLTAGE_DECOUPLE` 可关闭 `ωC` 耦合前馈。
+6. 独立逆变 LC 电容电压闭环：普通 dq 电压 PI 生成电流给定，最终电流矢量经过可独立启用的圆/方限幅，并以实际限幅结果执行积分 clamping 修正；电流内环使用内部 RG 角度。`GFL_ENABLE_VOLTAGE_DECOUPLE` 可关闭 `ωC` 耦合前馈。
 
 公共 SDPE 的 `USING_3D_SVPWM` 可切换四桥臂 3D-SVPWM。启用后控制器输出
 `A/B/C/N` 四路比较值，并启用基于可调 QPR 的零序电流抑制；BUILD_LEVEL 6

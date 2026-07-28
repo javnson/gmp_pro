@@ -99,8 +99,18 @@ void ctl_init()
     ctl_auto_tuning_voltage_inv(&gfl_voltage_init, &gfl_init);
     gfl_voltage_init.voltage_loop_bw = GFL_VOLTAGE_LOOP_BW_HZ;
     gfl_voltage_init.voltage_loop_zero = GFL_VOLTAGE_LOOP_ZERO_HZ;
-    gfl_voltage_init.current_limit_max = GFL_VOLTAGE_CURRENT_LIMIT_PU;
-    gfl_voltage_init.current_limit_min = -GFL_VOLTAGE_CURRENT_LIMIT_PU;
+    gfl_voltage_init.current_circle_limit = GFL_VOLTAGE_CIRCLE_LIMIT_PU;
+    gfl_voltage_init.current_square_limit = GFL_VOLTAGE_SQUARE_LIMIT_PU;
+#if defined GFL_ENABLE_VOLTAGE_CIRCLE_LIMIT
+    gfl_voltage_init.flag_enable_circle_limit = 1;
+#else
+    gfl_voltage_init.flag_enable_circle_limit = 0;
+#endif
+#if defined GFL_ENABLE_VOLTAGE_SQUARE_LIMIT
+    gfl_voltage_init.flag_enable_square_limit = 1;
+#else
+    gfl_voltage_init.flag_enable_square_limit = 0;
+#endif
     ctl_init_voltage_inv(&gfl_voltage_ctrl, &gfl_voltage_init);
     ctl_attach_voltage_inv_to_gfl(&gfl_voltage_ctrl, &inv_ctrl);
 

@@ -34,7 +34,7 @@
         "(5)",
         "(6)"
       ],
-      "description": "BUILD_LEVEL descriptor: 1=open-loop standalone voltage/PWM sensing check; 2=standalone d-q current loop with internal RG; 3=grid PLL plus positive/negative-sequence current control; 4=level 3 plus decoupling, active damping and lead compensation; 5=grid P/Q outer loop over level 4; 6=standalone LC capacitor-voltage outer loop with anti-windup PI over the current loop. With USING_3D_SVPWM, levels 3-6 also enable zero-sequence QPR control and a fourth neutral-leg PWM."
+      "description": "BUILD_LEVEL descriptor: 1=open-loop standalone voltage/PWM sensing check; 2=standalone d-q current loop with internal RG; 3=grid PLL plus positive/negative-sequence current control; 4=level 3 plus decoupling, active damping and lead compensation; 5=grid P/Q outer loop over level 4; 6=standalone LC capacitor-voltage outer loop using ordinary PI, final vector limiting and clamping correction over the current loop. With USING_3D_SVPWM, levels 3-6 also enable zero-sequence QPR control and a fourth neutral-leg PWM."
     },
     {
       "group": "Sampling",

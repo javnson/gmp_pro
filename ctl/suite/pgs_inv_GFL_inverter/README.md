@@ -11,9 +11,11 @@ This suite implements a three-phase, two-level grid-following converter. Its sha
 - `BUILD_LEVEL=3`: grid synchronization with PLL and sequence-current control.
 - `BUILD_LEVEL=4`: decoupling, damping, and lead compensation.
 - `BUILD_LEVEL=5`: complete active/reactive-power control.
-- `BUILD_LEVEL=6`: stand-alone LC capacitor-voltage control. A
-  back-calculation anti-windup PI generates the d-q current reference, and the
-  current loop uses its internal reference generator. The omega-C coupling
+- `BUILD_LEVEL=6`: stand-alone LC capacitor-voltage control. An ordinary PI
+  generates the d-q current reference; independently selectable
+  circular/square limits act on the complete command and final-output clamping
+  corrects the integrators, while the current loop uses its internal reference
+  generator. The omega-C coupling
   feed-forward is independently switchable.
 
 `USING_3D_SVPWM` selects four-leg A/B/C/N modulation and enables the tunable
