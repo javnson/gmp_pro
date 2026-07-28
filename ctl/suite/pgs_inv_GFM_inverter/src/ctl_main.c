@@ -40,8 +40,14 @@ gfl_inv_ctrl_init_t gfl_init;
 gfl_inv_ctrl_t inv_ctrl;
 inv_gfm_droop_init_t gfm_droop_init;
 inv_gfm_droop_ctrl_t gfm_droop_ctrl;
+inv_gfm_vsm_init_t gfm_vsm_init;
+inv_gfm_vsm_ctrl_t gfm_vsm_ctrl;
+inv_gfm_virtual_impedance_init_t gfm_virtual_impedance_init;
+inv_gfm_virtual_impedance_t gfm_virtual_impedance;
 inv_gfm_transition_init_t gfm_transition_init;
 inv_gfm_transition_t gfm_transition;
+ctrl_gt gfm_frequency_ref_hz;
+ctl_vector2_t gfm_voltage_ref;
 ctl_vector2_t gfm_voltage_idq_ref;
 ctl_vector2_t gfm_sync_idq_ref;
 uint32_t gfm_sync_lock_ticks = 0;
@@ -136,6 +142,35 @@ void ctl_init()
         &gfm_droop_ctrl, float2ctrl(GFM_DROOP_ACTIVE_POWER_REF_PU),
         float2ctrl(GFM_DROOP_REACTIVE_POWER_REF_PU));
 
+    gfm_vsm_init.fs = CONTROLLER_FREQUENCY;
+    gfm_vsm_init.frequency_nominal_hz = GFM_GRID_FREQUENCY_HZ;
+    gfm_vsm_init.voltage_nominal = GFM_VOLTAGE_VD_PU;
+    gfm_vsm_init.power_lpf_hz = GFM_VSM_POWER_LPF_HZ;
+    gfm_vsm_init.inertia_s = GFM_VSM_INERTIA_S;
+    gfm_vsm_init.damping_pu_per_hz = GFM_VSM_DAMPING_PU_PER_HZ;
+    gfm_vsm_init.q_droop_v_per_pu = GFM_VSM_Q_DROOP_V_PER_PU;
+    gfm_vsm_init.frequency_delta_limit_hz = GFM_DROOP_FREQUENCY_DELTA_LIMIT_HZ;
+    gfm_vsm_init.voltage_min = GFM_DROOP_VOLTAGE_MIN_PU;
+    gfm_vsm_init.voltage_max = GFM_DROOP_VOLTAGE_MAX_PU;
+    ctl_init_inv_gfm_vsm(&gfm_vsm_ctrl, &gfm_vsm_init);
+    ctl_attach_inv_gfm_vsm(&gfm_vsm_ctrl, &inv_ctrl.vdq, &inv_ctrl.idq);
+    ctl_set_inv_gfm_vsm_power_reference(
+        &gfm_vsm_ctrl, float2ctrl(GFM_DROOP_ACTIVE_POWER_REF_PU),
+        float2ctrl(GFM_DROOP_REACTIVE_POWER_REF_PU));
+
+    gfm_virtual_impedance_init.resistance_pu = GFM_VIRTUAL_IMPEDANCE_R_PU;
+    gfm_virtual_impedance_init.reactance_pu = GFM_VIRTUAL_IMPEDANCE_X_PU;
+    gfm_virtual_impedance_init.voltage_limit = GFM_VIRTUAL_IMPEDANCE_VOLTAGE_LIMIT_PU;
+    ctl_init_inv_gfm_virtual_impedance(&gfm_virtual_impedance,
+                                       &gfm_virtual_impedance_init);
+    ctl_attach_inv_gfm_virtual_impedance(&gfm_virtual_impedance, &inv_ctrl.idq);
+    ctl_set_inv_gfm_virtual_impedance_base(
+        &gfm_virtual_impedance, float2ctrl(GFM_VOLTAGE_VD_PU),
+        float2ctrl(GFM_VOLTAGE_VQ_PU));
+    gfm_frequency_ref_hz = float2ctrl(GFM_GRID_FREQUENCY_HZ);
+    gfm_voltage_ref.dat[phase_d] = float2ctrl(GFM_VOLTAGE_VD_PU);
+    gfm_voltage_ref.dat[phase_q] = float2ctrl(GFM_VOLTAGE_VQ_PU);
+
     gfm_transition_init.fs = CONTROLLER_FREQUENCY;
     gfm_transition_init.transfer_time_s = GFM_TRANSITION_TIME_S;
     gfm_transition_init.frequency_nominal_hz = GFM_GRID_FREQUENCY_HZ;
@@ -208,7 +243,14 @@ void ctl_init()
     inv_ctrl.phasor_ext = &gfm_transition.phasor_out;
     inv_ctrl.flag_enable_external_phasor = 1;
     ctl_enable_voltage_inv(&gfl_voltage_ctrl);
+#if GFM_CONTROL_TECHNOLOGY == GFM_TECH_VSM
+    ctl_enable_inv_gfm_vsm(&gfm_vsm_ctrl);
+#elif GFM_CONTROL_TECHNOLOGY == GFM_TECH_VIRTUAL_IMPEDANCE
     ctl_enable_inv_gfm_droop(&gfm_droop_ctrl);
+    ctl_enable_inv_gfm_virtual_impedance(&gfm_virtual_impedance);
+#else
+    ctl_enable_inv_gfm_droop(&gfm_droop_ctrl);
+#endif
 
 #endif // BUILD_LEVEL
 
@@ -322,6 +364,11 @@ void ctl_disable_pwm()
     ctl_clear_voltage_inv(&gfl_voltage_ctrl);
     ctl_clear_zero_inv(&gfl_zero_ctrl);
     ctl_clear_inv_gfm_droop(&gfm_droop_ctrl);
+    ctl_clear_inv_gfm_vsm(&gfm_vsm_ctrl);
+    ctl_clear_inv_gfm_virtual_impedance(&gfm_virtual_impedance);
+    gfm_frequency_ref_hz = float2ctrl(GFM_GRID_FREQUENCY_HZ);
+    gfm_voltage_ref.dat[phase_d] = float2ctrl(GFM_VOLTAGE_VD_PU);
+    gfm_voltage_ref.dat[phase_q] = float2ctrl(GFM_VOLTAGE_VQ_PU);
     ctl_track_pll_inv_gfm_transition(&gfm_transition);
     ctl_vector2_clear(&gfm_voltage_idq_ref);
     gfm_sync_lock_ticks = 0;

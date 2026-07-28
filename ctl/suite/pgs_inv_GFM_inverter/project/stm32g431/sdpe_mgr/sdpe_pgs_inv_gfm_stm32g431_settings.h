@@ -35,7 +35,7 @@ extern "C"
  */
 
 /**
- * @brief BUILD_LEVEL descriptor: 1=open-loop voltage; 2=current loop with internal RG; 3=stand-alone LC capacitor-voltage loop; 4=PLL-oriented grid current loop; 5=PLL synchronization followed by bumpless transfer to replaceable GFM droop plus voltage loop. USING_3D_SVPWM additionally requires a mapped fourth neutral-leg PWM.
+ * @brief BUILD_LEVEL descriptor: 1=open-loop voltage; 2=current loop with internal RG; 3=stand-alone LC capacitor-voltage loop; 4=PLL-oriented grid current loop; 5=PLL synchronization followed by bumpless transfer to the SDPE-selected droop, VSM, or virtual-impedance GFM outer loop plus voltage loop. USING_3D_SVPWM additionally requires a mapped fourth neutral-leg PWM.
  *        Options: (1), (2), (3), (4), (5), (6)
  */
 #define BUILD_LEVEL (1)

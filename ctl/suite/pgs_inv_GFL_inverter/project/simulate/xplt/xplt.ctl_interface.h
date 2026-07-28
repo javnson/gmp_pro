@@ -131,8 +131,8 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     simulink_tx_buffer.monitor[14] = gfl_voltage_ctrl.idq_out.dat[phase_d];
     simulink_tx_buffer.monitor[15] = gfl_zero_ctrl.v0_out;
 #elif BUILD_LEVEL == 5
-    simulink_tx_buffer.monitor[14] = pq_ctrl.idq_set_out.dat[phase_d];
-    simulink_tx_buffer.monitor[15] = pq_ctrl.pq_meas.dat[0];
+    simulink_tx_buffer.monitor[14] = pq_droop_ctrl.pq_ref.dat[0];
+    simulink_tx_buffer.monitor[15] = pq_droop_ctrl.pq_ref.dat[1];
 #else
     simulink_tx_buffer.monitor[14] = inv_ctrl.idq_set.dat[phase_d];
     simulink_tx_buffer.monitor[15] = inv_ctrl.idq_set.dat[phase_q];

@@ -63,6 +63,13 @@
       "description": "Enable independent symmetric d/q-axis limiting of the complete BUILD_LEVEL 6 current reference."
     },
     {
+      "group": "Control Algorithm",
+      "macro": "GFL_ENABLE_PQ_DROOP",
+      "enabled": true,
+      "value": "",
+      "description": "Enable frequency-P and voltage-Q droop reference generation ahead of the BUILD_LEVEL 5 P/Q controller."
+    },
+    {
       "group": "Runtime",
       "macro": "SPECIFY_ENABLE_ADC_CALIBRATE",
       "enabled": false,
@@ -186,6 +193,48 @@
         "float": "0.0"
       },
       "description": "Default reactive-power reference using Q = vq*id - vd*iq."
+    },
+    {
+      "role": "pq_droop_lpf",
+      "macro": "GFL_PQ_DROOP_LPF_HZ",
+      "binding": {"float": "10.0"},
+      "description": "PQ droop frequency and voltage measurement low-pass cutoff."
+    },
+    {
+      "role": "pq_droop_p_gain",
+      "macro": "GFL_PQ_DROOP_P_GAIN_PU_PER_HZ",
+      "binding": {"float": "0.10"},
+      "description": "Additional active-power command per hertz of frequency deficit."
+    },
+    {
+      "role": "pq_droop_q_gain",
+      "macro": "GFL_PQ_DROOP_Q_GAIN_PU_PER_V_PU",
+      "binding": {"float": "0.50"},
+      "description": "Additional reactive-power command per PU of voltage deficit."
+    },
+    {
+      "role": "pq_droop_p_min",
+      "macro": "GFL_PQ_DROOP_P_MIN_PU",
+      "binding": {"float": "-0.80"},
+      "description": "Minimum active-power reference after PQ droop."
+    },
+    {
+      "role": "pq_droop_p_max",
+      "macro": "GFL_PQ_DROOP_P_MAX_PU",
+      "binding": {"float": "0.80"},
+      "description": "Maximum active-power reference after PQ droop."
+    },
+    {
+      "role": "pq_droop_q_min",
+      "macro": "GFL_PQ_DROOP_Q_MIN_PU",
+      "binding": {"float": "-0.80"},
+      "description": "Minimum reactive-power reference after PQ droop."
+    },
+    {
+      "role": "pq_droop_q_max",
+      "macro": "GFL_PQ_DROOP_Q_MAX_PU",
+      "binding": {"float": "0.80"},
+      "description": "Maximum reactive-power reference after PQ droop."
     },
     {
       "role": "open_loop_vd",
@@ -376,6 +425,13 @@
         "pq_reactive_kp",
         "pq_reactive_ki",
         "pq_current_limit",
+        "pq_droop_lpf",
+        "pq_droop_p_gain",
+        "pq_droop_q_gain",
+        "pq_droop_p_min",
+        "pq_droop_p_max",
+        "pq_droop_q_min",
+        "pq_droop_q_max",
         "open_loop_vd",
         "open_loop_vq",
         "pll_lock_epsilon"

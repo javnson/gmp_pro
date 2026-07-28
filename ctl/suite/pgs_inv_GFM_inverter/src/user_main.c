@@ -35,7 +35,7 @@ const gmp_param_item_t dict_m1[] = {
     {&gfm_droop_ctrl.pq_set.dat[1], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
     {&gfm_droop_ctrl.pq_filt.dat[0], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
     {&gfm_droop_ctrl.pq_filt.dat[1], GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
-    {&gfm_droop_ctrl.frequency_ref_hz, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
+    {&gfm_frequency_ref_hz, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
     {&gfm_transition.blend, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
 };
 const uint16_t var_tunable_count = sizeof(dict_m1) / sizeof(dict_m1[0]);

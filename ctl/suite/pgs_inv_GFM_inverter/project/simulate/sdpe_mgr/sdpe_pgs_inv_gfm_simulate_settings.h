@@ -34,7 +34,7 @@ extern "C"
  */
 
 /**
- * @brief BUILD_LEVEL descriptor: 1=open-loop voltage; 2=current loop with internal RG; 3=LC capacitor-voltage loop; 4=PLL-oriented grid current loop; 5=PLL synchronization followed by bumpless transfer to replaceable grid-forming droop plus voltage loop.
+ * @brief BUILD_LEVEL descriptor: 1=open-loop voltage; 2=current loop with internal RG; 3=LC capacitor-voltage loop; 4=PLL-oriented grid current loop; 5=PLL synchronization followed by bumpless transfer to the SDPE-selected droop, VSM, or virtual-impedance grid-forming outer loop plus voltage loop.
  *        Options: (1), (2), (3), (4), (5)
  */
 #define BUILD_LEVEL (5)

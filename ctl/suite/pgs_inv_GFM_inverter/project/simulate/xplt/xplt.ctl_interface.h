@@ -117,8 +117,8 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
 
     // Scope 5
 #if BUILD_LEVEL == 5
-    simulink_tx_buffer.monitor[8] = gfm_droop_ctrl.vdq_ref.dat[phase_d];
-    simulink_tx_buffer.monitor[9] = gfm_droop_ctrl.frequency_ref_hz;
+    simulink_tx_buffer.monitor[8] = gfm_voltage_ref.dat[phase_d];
+    simulink_tx_buffer.monitor[9] = gfm_frequency_ref_hz;
 #else
 #ifdef USING_DSOGI_PLL
     simulink_tx_buffer.monitor[8] = inv_ctrl.pll.srf_pll.phasor.dat[phasor_sin];

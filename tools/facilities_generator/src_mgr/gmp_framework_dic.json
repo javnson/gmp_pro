@@ -4811,6 +4811,26 @@
                     }
                 ]
             },
+            "component|digital_power|inv|gfl_pq_droop_ctrl": {
+                "type": "module",
+                "description": "Grid-following frequency-P and voltage-Q droop power-reference generator.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_gfl_pq_droop_ctrl.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/gfl_pq_droop_ctrl.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [
+                    "ctl|component|intrinsic|discrete|discrete_filter"
+                ],
+                "tasks": [
+                    {"id": "sys_compile", "summary": "Compilation Passed", "completed": false, "date": "", "reply": ""},
+                    {"id": "sys_sim", "summary": "Simulation / Principle Verified", "completed": false, "date": "", "reply": ""},
+                    {"id": "sys_hw", "summary": "Physical Hardware Verified", "completed": false, "date": "", "reply": ""}
+                ]
+            },
             "component|digital_power|inv|gfm_droop_ctrl": {
                 "type": "module",
                 "description": "Replaceable P-f/Q-V droop reference generator decoupled from voltage and current loops.",
@@ -4883,6 +4903,44 @@
                         "date": "",
                         "reply": ""
                     }
+                ]
+            },
+            "component|digital_power|inv|gfm_virtual_impedance": {
+                "type": "module",
+                "description": "Synchronous-frame virtual impedance voltage-reference conditioner.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_gfm_virtual_impedance.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/inv_gfm_virtual_impedance.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {"id": "sys_compile", "summary": "Compilation Passed", "completed": false, "date": "", "reply": ""},
+                    {"id": "sys_sim", "summary": "Simulation / Principle Verified", "completed": false, "date": "", "reply": ""},
+                    {"id": "sys_hw", "summary": "Physical Hardware Verified", "completed": false, "date": "", "reply": ""}
+                ]
+            },
+            "component|digital_power|inv|gfm_vsm_ctrl": {
+                "type": "module",
+                "description": "Virtual synchronous machine swing-equation frequency and Q-V reference generator.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_gfm_vsm_ctrl.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/inv_gfm_vsm_ctrl.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [
+                    "ctl|component|intrinsic|discrete|discrete_filter"
+                ],
+                "tasks": [
+                    {"id": "sys_compile", "summary": "Compilation Passed", "completed": false, "date": "", "reply": ""},
+                    {"id": "sys_sim", "summary": "Simulation / Principle Verified", "completed": false, "date": "", "reply": ""},
+                    {"id": "sys_hw", "summary": "Physical Hardware Verified", "completed": false, "date": "", "reply": ""}
                 ]
             },
             "component|digital_power|inv|hcm": {

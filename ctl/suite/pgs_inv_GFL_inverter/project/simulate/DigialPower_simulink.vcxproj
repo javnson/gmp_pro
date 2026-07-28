@@ -203,6 +203,7 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_basic.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_gfl_core.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_gfl_pq.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_gfl_pq_droop_ctrl.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_gfm_droop.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_hcm.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_mppt_inc.c" />

@@ -11,12 +11,16 @@ plant layout as `pgs_sinv_rc/project/simulate`.
 - `run_build_level_matrix.ps1` regenerates SDPE, rebuilds Debug x64, and runs
   BUILD_LEVEL 1 through 6. It restores the checked-in SDPE selection even if a
   case fails.
+- `run_pq_droop_validation.ps1` selects BUILD_LEVEL 5, enables PQ droop,
+  rebuilds, validates the droop reference change and closed-loop response, and
+  restores both SDPE files afterward.
 
 Run the complete matrix from PowerShell:
 
 ```powershell
 $env:GMP_PRO_LOCATION = 'E:\lib\gmp_pro'
 .\run_build_level_matrix.ps1
+.\run_pq_droop_validation.ps1
 ```
 
 BUILD_LEVEL mapping:

@@ -22,9 +22,11 @@ current limits act on the complete d-q command, and
 actuator result to both integrators. The omega-C capacitor coupling
 feed-forward can be disabled independently.
 
-`inv_gfm_droop_ctrl` currently implements the replaceable P-f/Q-V outer loop;
-it owns neither the voltage PI nor the angle source, so VSM, virtual impedance,
-inertia synchronization, or other GFM algorithms can replace it.
+BUILD_LEVEL 5 selects `GFM_CONTROL_TECHNOLOGY` in common SDPE: `1` is P-f/Q-V
+droop, `2` is a damped swing-equation VSM, and `3` combines the droop frequency
+source with synchronous-frame virtual impedance. Virtual impedance conditions
+the voltage reference and does not generate phase by itself. None of the three
+outer-loop choices owns the voltage PI.
 `inv_gfm_transition` tracks the PLL, initializes the forming angle from it,
 normalizes the blended phasor, and ramps both the phasor and current command.
 
@@ -36,4 +38,3 @@ The automated MATLAB R2024b SIL workflow is documented in
 [`project/simulate`](project/simulate/README.md). The current evidence is
 software simulation and host testing only; no new GFM hardware validation is
 claimed.
-

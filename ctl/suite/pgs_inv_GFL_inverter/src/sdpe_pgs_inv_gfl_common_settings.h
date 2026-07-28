@@ -65,6 +65,11 @@ extern "C"
  */
 // #define GFL_ENABLE_VOLTAGE_SQUARE_LIMIT
 
+/**
+ * @brief Enable frequency-P and voltage-Q droop reference generation ahead of the BUILD_LEVEL 5 P/Q controller.
+ */
+#define GFL_ENABLE_PQ_DROOP
+
 //=================================================================================================
 /**
  * @brief Runtime.
@@ -155,6 +160,41 @@ extern "C"
  * @brief Default reactive-power reference using Q = vq*id - vd*iq.
  */
 #define GFL_REACTIVE_POWER_REF_PU (0.0f)
+
+/**
+ * @brief PQ droop frequency and voltage measurement low-pass cutoff.
+ */
+#define GFL_PQ_DROOP_LPF_HZ (10.0f)
+
+/**
+ * @brief Additional active-power command per hertz of frequency deficit.
+ */
+#define GFL_PQ_DROOP_P_GAIN_PU_PER_HZ (0.10f)
+
+/**
+ * @brief Additional reactive-power command per PU of voltage deficit.
+ */
+#define GFL_PQ_DROOP_Q_GAIN_PU_PER_V_PU (0.50f)
+
+/**
+ * @brief Minimum active-power reference after PQ droop.
+ */
+#define GFL_PQ_DROOP_P_MIN_PU (-0.80f)
+
+/**
+ * @brief Maximum active-power reference after PQ droop.
+ */
+#define GFL_PQ_DROOP_P_MAX_PU (0.80f)
+
+/**
+ * @brief Minimum reactive-power reference after PQ droop.
+ */
+#define GFL_PQ_DROOP_Q_MIN_PU (-0.80f)
+
+/**
+ * @brief Maximum reactive-power reference after PQ droop.
+ */
+#define GFL_PQ_DROOP_Q_MAX_PU (0.80f)
 
 /**
  * @brief BUILD_LEVEL 1 d-axis open-loop voltage command.

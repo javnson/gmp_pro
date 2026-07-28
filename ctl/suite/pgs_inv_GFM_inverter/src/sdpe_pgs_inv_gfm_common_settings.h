@@ -77,6 +77,17 @@ extern "C"
 
 //=================================================================================================
 /**
+ * @brief Control Algorithm.
+ */
+
+/**
+ * @brief BUILD_LEVEL 5 grid-forming technique: 1=P-f/Q-V droop, 2=virtual synchronous machine, 3=droop angle source plus virtual impedance.
+ *        Options: (1), (2), (3)
+ */
+#define GFM_CONTROL_TECHNOLOGY (1)
+
+//=================================================================================================
+/**
  * @brief Requirement bindings.
  */
 
@@ -189,6 +200,41 @@ extern "C"
  * @brief Default reactive-power reference for the droop algorithm.
  */
 #define GFM_DROOP_REACTIVE_POWER_REF_PU (0.0f)
+
+/**
+ * @brief VSM normalized swing-equation inertia in seconds.
+ */
+#define GFM_VSM_INERTIA_S (1.0f)
+
+/**
+ * @brief VSM damping power coefficient in power PU per hertz.
+ */
+#define GFM_VSM_DAMPING_PU_PER_HZ (2.0f)
+
+/**
+ * @brief VSM reactive-power voltage droop in voltage PU per reactive-power PU.
+ */
+#define GFM_VSM_Q_DROOP_V_PER_PU (0.05f)
+
+/**
+ * @brief VSM active/reactive-power measurement low-pass cutoff.
+ */
+#define GFM_VSM_POWER_LPF_HZ (10.0f)
+
+/**
+ * @brief Virtual resistance used to condition the voltage-loop reference.
+ */
+#define GFM_VIRTUAL_IMPEDANCE_R_PU (0.03f)
+
+/**
+ * @brief Virtual reactance used to condition the voltage-loop reference.
+ */
+#define GFM_VIRTUAL_IMPEDANCE_X_PU (0.03f)
+
+/**
+ * @brief Circular voltage-reference limit after virtual-impedance compensation.
+ */
+#define GFM_VIRTUAL_IMPEDANCE_VOLTAGE_LIMIT_PU (0.60f)
 
 /**
  * @brief PLL-to-grid-forming phasor and current-command blend duration.

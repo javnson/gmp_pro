@@ -20,6 +20,8 @@
 #include <ctl/component/digital_power/inv/gfl_core.h>
 #include <ctl/component/digital_power/inv/inv_gfm_droop_ctrl.h>
 #include <ctl/component/digital_power/inv/inv_gfm_transition.h>
+#include <ctl/component/digital_power/inv/inv_gfm_virtual_impedance.h>
+#include <ctl/component/digital_power/inv/inv_gfm_vsm_ctrl.h>
 #include <ctl/component/digital_power/inv/inv_neg_ctrl.h>
 #include <ctl/component/digital_power/inv/inv_voltage_ctrl.h>
 #include <ctl/component/digital_power/inv/inv_zero_ctrl.h>
@@ -36,6 +38,15 @@
 extern "C"
 {
 #endif // __cplusplus
+
+#define GFM_TECH_DROOP (1)
+#define GFM_TECH_VSM (2)
+#define GFM_TECH_VIRTUAL_IMPEDANCE (3)
+
+#if (GFM_CONTROL_TECHNOLOGY < GFM_TECH_DROOP) || \
+    (GFM_CONTROL_TECHNOLOGY > GFM_TECH_VIRTUAL_IMPEDANCE)
+#error GFM_CONTROL_TECHNOLOGY_must_select_DROOP_VSM_or_VIRTUAL_IMPEDANCE
+#endif
 
 //=================================================================================================
 // extern controller modules
@@ -54,8 +65,14 @@ extern inv_zero_ctrl_init_t gfl_zero_init;
 extern inv_zero_ctrl_t gfl_zero_ctrl;
 extern inv_gfm_droop_init_t gfm_droop_init;
 extern inv_gfm_droop_ctrl_t gfm_droop_ctrl;
+extern inv_gfm_vsm_init_t gfm_vsm_init;
+extern inv_gfm_vsm_ctrl_t gfm_vsm_ctrl;
+extern inv_gfm_virtual_impedance_init_t gfm_virtual_impedance_init;
+extern inv_gfm_virtual_impedance_t gfm_virtual_impedance;
 extern inv_gfm_transition_init_t gfm_transition_init;
 extern inv_gfm_transition_t gfm_transition;
+extern ctrl_gt gfm_frequency_ref_hz;
+extern ctl_vector2_t gfm_voltage_ref;
 extern ctl_vector2_t gfm_voltage_idq_ref;
 extern ctl_vector2_t gfm_sync_idq_ref;
 extern uint32_t gfm_sync_lock_ticks;
@@ -129,7 +146,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
          * finally the free-running grid-forming phasor.
          */
 #if BUILD_LEVEL == 5
-        ctl_step_inv_gfm_transition(&gfm_transition, gfm_droop_ctrl.frequency_ref_hz);
+        ctl_step_inv_gfm_transition(&gfm_transition, gfm_frequency_ref_hz);
 #endif
 
         // run controller body
@@ -141,10 +158,26 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         ctl_step_voltage_inv_ctrl(&gfl_voltage_ctrl);
         ctl_vector2_copy(&inv_ctrl.idq_set, &gfm_voltage_idq_ref);
 #elif BUILD_LEVEL == 5
+#if GFM_CONTROL_TECHNOLOGY == GFM_TECH_VSM
+        ctl_step_inv_gfm_vsm(&gfm_vsm_ctrl);
+        gfm_frequency_ref_hz = gfm_vsm_ctrl.frequency_ref_hz;
+        ctl_vector2_copy(&gfm_vsm_ctrl.vdq_ref, &gfm_voltage_ref);
+#elif GFM_CONTROL_TECHNOLOGY == GFM_TECH_VIRTUAL_IMPEDANCE
         ctl_step_inv_gfm_droop(&gfm_droop_ctrl);
+        gfm_frequency_ref_hz = gfm_droop_ctrl.frequency_ref_hz;
+        ctl_set_inv_gfm_virtual_impedance_base(
+            &gfm_virtual_impedance, gfm_droop_ctrl.vdq_ref.dat[phase_d],
+            gfm_droop_ctrl.vdq_ref.dat[phase_q]);
+        ctl_step_inv_gfm_virtual_impedance(&gfm_virtual_impedance);
+        ctl_vector2_copy(&gfm_virtual_impedance.vdq_ref, &gfm_voltage_ref);
+#else
+        ctl_step_inv_gfm_droop(&gfm_droop_ctrl);
+        gfm_frequency_ref_hz = gfm_droop_ctrl.frequency_ref_hz;
+        ctl_vector2_copy(&gfm_droop_ctrl.vdq_ref, &gfm_voltage_ref);
+#endif
         ctl_set_voltage_inv_reference(&gfl_voltage_ctrl,
-                                      gfm_droop_ctrl.vdq_ref.dat[phase_d],
-                                      gfm_droop_ctrl.vdq_ref.dat[phase_q]);
+                                      gfm_voltage_ref.dat[phase_d],
+                                      gfm_voltage_ref.dat[phase_q]);
         ctl_step_voltage_inv_ctrl(&gfl_voltage_ctrl);
 
         if (gfm_transition.mode == INV_GFM_TRANSITION_TRACK_PLL)

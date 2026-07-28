@@ -123,6 +123,9 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_gfl_pq.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_gfl_pq_droop_ctrl.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_gfm_droop.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>

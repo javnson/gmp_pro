@@ -31,6 +31,9 @@ cia402_sm_t cia402_sm;
 // Control Law Core
 // Current controller, Power controller / Voltage controller
 gfl_pq_ctrl_t pq_ctrl;
+gfl_pq_droop_init_t pq_droop_init;
+gfl_pq_droop_ctrl_t pq_droop_ctrl;
+ctrl_gt gfl_pll_frequency_hz;
 inv_neg_ctrl_init_t gfl_neg_init;
 inv_neg_ctrl_t neg_current_ctrl;
 inv_voltage_ctrl_init_t gfl_voltage_init;
@@ -141,6 +144,27 @@ void ctl_init()
                     GFL_PQ_CURRENT_LIMIT_PU, GFL_PQ_LOOP_FREQUENCY_HZ);
     ctl_attach_gfl_pq_to_core(&pq_ctrl, &inv_ctrl);
     ctl_set_gfl_pq_ref(&pq_ctrl, float2ctrl(GFL_ACTIVE_POWER_REF_PU), float2ctrl(GFL_REACTIVE_POWER_REF_PU));
+
+    pq_droop_init.fs = GFL_PQ_LOOP_FREQUENCY_HZ;
+    pq_droop_init.lpf_hz = GFL_PQ_DROOP_LPF_HZ;
+    pq_droop_init.frequency_nominal_hz = GFL_GRID_FREQUENCY_HZ;
+    pq_droop_init.voltage_nominal = GFL_GRID_VOLTAGE_PU;
+    pq_droop_init.p_gain_pu_per_hz = GFL_PQ_DROOP_P_GAIN_PU_PER_HZ;
+    pq_droop_init.q_gain_pu_per_v_pu = GFL_PQ_DROOP_Q_GAIN_PU_PER_V_PU;
+    pq_droop_init.p_min = GFL_PQ_DROOP_P_MIN_PU;
+    pq_droop_init.p_max = GFL_PQ_DROOP_P_MAX_PU;
+    pq_droop_init.q_min = GFL_PQ_DROOP_Q_MIN_PU;
+    pq_droop_init.q_max = GFL_PQ_DROOP_Q_MAX_PU;
+    ctl_init_gfl_pq_droop(&pq_droop_ctrl, &pq_droop_init);
+    gfl_pll_frequency_hz = float2ctrl(GFL_GRID_FREQUENCY_HZ);
+    ctl_attach_gfl_pq_droop(&pq_droop_ctrl, &gfl_pll_frequency_hz,
+                            &inv_ctrl.vdq);
+    ctl_set_gfl_pq_droop_base(
+        &pq_droop_ctrl, float2ctrl(GFL_ACTIVE_POWER_REF_PU),
+        float2ctrl(GFL_REACTIVE_POWER_REF_PU));
+#if defined GFL_ENABLE_PQ_DROOP
+    ctl_enable_gfl_pq_droop(&pq_droop_ctrl);
+#endif
     pq_loop_tick = 0;
 
 #if BUILD_LEVEL == 1
@@ -314,6 +338,8 @@ void ctl_disable_pwm()
     ctl_clear_voltage_inv(&gfl_voltage_ctrl);
     ctl_clear_zero_inv(&gfl_zero_ctrl);
     ctl_clear_gfl_pq(&pq_ctrl);
+    ctl_clear_gfl_pq_droop(&pq_droop_ctrl);
+    gfl_pll_frequency_hz = float2ctrl(GFL_GRID_FREQUENCY_HZ);
     pq_loop_tick = 0;
 }
 

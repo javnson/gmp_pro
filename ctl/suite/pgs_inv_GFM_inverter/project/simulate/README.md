@@ -10,6 +10,9 @@ The scripts follow the controller-process plus Simulink plant layout used by
 - `run_build_level_matrix.ps1` regenerates target SDPE, builds Debug x64, and
   validates BUILD_LEVEL 1 through 5. It restores and rebuilds the checked-in
   BUILD_LEVEL 5 selection even when a case fails.
+- `run_gfm_technology_matrix.ps1` holds BUILD_LEVEL 5 and validates droop, VSM,
+  and droop-plus-virtual-impedance against the same PMSG island/load-step case.
+  It restores the common and target SDPE selections afterward.
 - `prepare_gfm_pmsg_grid_model.m` reproducibly builds the BL5 plant from the
   checked-in grid-connected model and the MATLAB R2024b Specialized Power
   Systems permanent-magnet synchronous-machine block operated as a PMSG.
@@ -18,6 +21,7 @@ Run the matrix from PowerShell:
 
 ```powershell
 .\run_build_level_matrix.ps1
+.\run_gfm_technology_matrix.ps1
 ```
 
 BL1-3 use the resistive-load plant, BL4 uses the ideal grid plant, and BL5 uses
@@ -39,4 +43,3 @@ tracking, q-axis voltage, command step, and actual/command current peaks.
 `USING_3D_SVPWM` selects the fourth neutral-leg command and zero-sequence QPR
 path. The supplied three-leg plants do not constitute a full four-leg power
 stage validation.
-

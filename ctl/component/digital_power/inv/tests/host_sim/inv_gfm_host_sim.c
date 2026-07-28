@@ -5,6 +5,9 @@
 
 #include <ctl/component/digital_power/inv/inv_gfm_droop_ctrl.h>
 #include <ctl/component/digital_power/inv/inv_gfm_transition.h>
+#include <ctl/component/digital_power/inv/inv_gfm_virtual_impedance.h>
+#include <ctl/component/digital_power/inv/inv_gfm_vsm_ctrl.h>
+#include <ctl/component/digital_power/inv/gfl_pq_droop_ctrl.h>
 
 static int near_value(ctrl_gt actual, float expected, float tolerance)
 {
@@ -75,6 +78,72 @@ static int test_bumpless_transition(void)
     return 0;
 }
 
+static int test_vsm_reference_generator(void)
+{
+    inv_gfm_vsm_ctrl_t vsm;
+    inv_gfm_vsm_init_t init = {
+        1000.0f, 50.0f, 0.5f, 50.0f, 0.2f, 2.0f, 0.1f, 2.0f, 0.4f, 0.6f};
+    ctl_vector2_t vdq = {{float2ctrl(0.5f), 0}};
+    ctl_vector2_t idq = {{float2ctrl(0.2f), float2ctrl(-0.2f)}};
+    int k;
+
+    ctl_init_inv_gfm_vsm(&vsm, &init);
+    ctl_attach_inv_gfm_vsm(&vsm, &vdq, &idq);
+    ctl_set_inv_gfm_vsm_power_reference(&vsm, 0, 0);
+    ctl_enable_inv_gfm_vsm(&vsm);
+    for (k = 0; k < 2000; ++k)
+        ctl_step_inv_gfm_vsm(&vsm);
+
+    if (!near_value(vsm.frequency_ref_hz, 49.95f, 3e-3f))
+        return 1;
+    if (!near_value(vsm.vdq_ref.dat[phase_d], 0.49f, 3e-3f))
+        return 2;
+    return 0;
+}
+
+static int test_virtual_impedance(void)
+{
+    inv_gfm_virtual_impedance_t impedance;
+    inv_gfm_virtual_impedance_init_t init = {0.1f, 0.2f, 1.0f};
+    ctl_vector2_t idq = {{float2ctrl(0.2f), float2ctrl(-0.1f)}};
+
+    ctl_init_inv_gfm_virtual_impedance(&impedance, &init);
+    ctl_attach_inv_gfm_virtual_impedance(&impedance, &idq);
+    ctl_set_inv_gfm_virtual_impedance_base(&impedance, float2ctrl(0.5f), 0);
+    ctl_enable_inv_gfm_virtual_impedance(&impedance);
+    ctl_step_inv_gfm_virtual_impedance(&impedance);
+
+    if (!near_value(impedance.vdq_ref.dat[phase_d], 0.46f, 2e-3f))
+        return 1;
+    if (!near_value(impedance.vdq_ref.dat[phase_q], -0.03f, 2e-3f))
+        return 2;
+    return 0;
+}
+
+static int test_gfl_pq_droop(void)
+{
+    gfl_pq_droop_ctrl_t droop;
+    gfl_pq_droop_init_t init = {
+        1000.0f, 50.0f, 50.0f, 0.5f, 0.1f, 0.5f,
+        -0.8f, 0.8f, -0.8f, 0.8f};
+    ctrl_gt frequency_hz = float2ctrl(49.0f);
+    ctl_vector2_t vdq = {{float2ctrl(0.3f), 0}};
+    int k;
+
+    ctl_init_gfl_pq_droop(&droop, &init);
+    ctl_attach_gfl_pq_droop(&droop, &frequency_hz, &vdq);
+    ctl_set_gfl_pq_droop_base(&droop, float2ctrl(0.1f), 0);
+    ctl_enable_gfl_pq_droop(&droop);
+    for (k = 0; k < 1000; ++k)
+        ctl_step_gfl_pq_droop(&droop);
+
+    if (!near_value(droop.pq_ref.dat[0], 0.2f, 2e-3f))
+        return 1;
+    if (!near_value(droop.pq_ref.dat[1], 0.1f, 2e-3f))
+        return 2;
+    return 0;
+}
+
 int main(void)
 {
     int result = test_droop_reference_generator();
@@ -91,6 +160,27 @@ int main(void)
         return 20 + result;
     }
 
-    puts("GFM droop and transition host tests passed.");
+    result = test_vsm_reference_generator();
+    if (result != 0)
+    {
+        fprintf(stderr, "VSM test failed: %d\n", result);
+        return 30 + result;
+    }
+
+    result = test_virtual_impedance();
+    if (result != 0)
+    {
+        fprintf(stderr, "virtual impedance test failed: %d\n", result);
+        return 40 + result;
+    }
+
+    result = test_gfl_pq_droop();
+    if (result != 0)
+    {
+        fprintf(stderr, "GFL PQ droop test failed: %d\n", result);
+        return 50 + result;
+    }
+
+    puts("GFM/GFL outer-loop host tests passed.");
     return 0;
 }

@@ -26,6 +26,10 @@ and protect the fourth bridge leg before enabling this option.
 
 The suite uses a two-layer SDPE model: common control settings are kept in `sdpe_general/`, while sampling, PWM, protection, and board mappings remain target-specific. The validated hardware combination includes the Helios three-phase GaN inverter and Harmonia LC filter.
 
+With `GFL_ENABLE_PQ_DROOP`, BUILD_LEVEL 5 generates the power commands as
+`P*=P0+Kf(f0-f)` and `Q*=Q0+Kv(V0-|Vdq|)` before the existing P/Q PI. Both
+measurements are filtered and both references are independently limited.
+
 Grid-connected commissioning involves hazardous voltage and energy. Complete isolated low-voltage tests, polarity checks, protection tests, and the lower build levels before connection to a live grid. See the [Chinese guide](README_CN.md) for detailed configuration and validation notes.
 
 The PC project includes automated SDPE/build/SIL scripts in

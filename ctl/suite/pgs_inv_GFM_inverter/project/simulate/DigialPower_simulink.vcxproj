@@ -203,6 +203,8 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_basic.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_gfl_core.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_gfm_droop_ctrl.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_gfm_vsm_ctrl.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_gfm_virtual_impedance.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_gfm_transition.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_hcm.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_mppt_inc.c" />

@@ -21,8 +21,10 @@ PC 仿真、F280039C Iris、LaunchXL-F280049C 和 STM32G431 目标复用。
 `ctl_pid_clamping_correction_using_real_output()` 返回积分器。电容
 \(\omega C\) 耦合前馈可单独关闭。
 
-`inv_gfm_droop_ctrl` 是当前的 P-f/Q-V 构网外环。它不拥有电压 PI 和角度源，
-因此后续可替换为虚拟同步机、虚拟阻抗、惯性同步或其他构网算法。
+BUILD_LEVEL 5 通过公共 SDPE 宏 `GFM_CONTROL_TECHNOLOGY` 选择构网技术：
+`1` 为 P-f/Q-V droop，`2` 为带摆动方程和阻尼的 VSM，`3` 为 droop
+角频率源加同步坐标系虚拟阻抗。虚拟阻抗只整形电压参考，本身不产生相位，
+因此模式 3 保留 P-f droop 作为自主角度源。三类外环均不拥有电压 PI。
 `inv_gfm_transition` 负责跟踪 PLL、以 PLL 角度初始化构网角度、归一化相量混合，
 并同步渐变电流指令。
 
@@ -32,4 +34,3 @@ PC 仿真、F280039C Iris、LaunchXL-F280049C 和 STM32G431 目标复用。
 MATLAB R2024b 自动化 SIL 流程见
 [`project/simulate`](project/simulate/README.md)。当前结论来自软件仿真与主机
 单元测试，不代表新增 GFM 功能已经完成硬件验证。
-

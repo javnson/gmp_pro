@@ -18,6 +18,7 @@
 #include <ctl/component/interface/pwm_channel.h>
 
 #include <ctl/component/digital_power/inv/gfl_core.h>
+#include <ctl/component/digital_power/inv/gfl_pq_droop_ctrl.h>
 #include <ctl/component/digital_power/inv/gfl_pq_ctrl.h>
 #include <ctl/component/digital_power/inv/inv_hcm.h>
 #include <ctl/component/digital_power/inv/inv_neg_ctrl.h>
@@ -47,6 +48,9 @@ extern cia402_sm_t cia402_sm;
 extern gfl_inv_ctrl_init_t gfl_init;
 extern gfl_inv_ctrl_t inv_ctrl;
 extern gfl_pq_ctrl_t pq_ctrl;
+extern gfl_pq_droop_init_t pq_droop_init;
+extern gfl_pq_droop_ctrl_t pq_droop_ctrl;
+extern ctrl_gt gfl_pll_frequency_hz;
 extern inv_neg_ctrl_init_t gfl_neg_init;
 extern inv_neg_ctrl_t neg_current_ctrl;
 extern inv_voltage_ctrl_init_t gfl_voltage_init;
@@ -121,14 +125,27 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
                                 float2ctrl(GFL_CURRENT_LEVEL4_IQ_PU));
 #elif BUILD_LEVEL == 5
         ctl_enable_gfl_pq_ctrl(&pq_ctrl);
+#if defined GFL_ENABLE_PQ_DROOP
+        ctl_set_gfl_pq_ref(&pq_ctrl, pq_droop_ctrl.pq_ref.dat[0],
+                           pq_droop_ctrl.pq_ref.dat[1]);
+#else
         ctl_set_gfl_pq_ref(&pq_ctrl, float2ctrl(GFL_ACTIVE_POWER_REF_PU),
                            float2ctrl(GFL_REACTIVE_POWER_REF_PU));
+#endif
         ctl_set_gfl_inv_current(&inv_ctrl, pq_ctrl.idq_set_out.dat[phase_d],
                                 pq_ctrl.idq_set_out.dat[phase_q]);
 #endif
 
         // run controller body
         ctl_step_gfl_inv_ctrl(&inv_ctrl);
+#ifdef USING_DSOGI_PLL
+        gfl_pll_frequency_hz =
+            ctl_mul(inv_ctrl.pll.srf_pll.freq_pu,
+                    float2ctrl(GFL_GRID_FREQUENCY_HZ));
+#else
+        gfl_pll_frequency_hz =
+            ctl_mul(inv_ctrl.pll.freq_pu, float2ctrl(GFL_GRID_FREQUENCY_HZ));
+#endif
         ctl_step_neg_inv_ctrl(&neg_current_ctrl);
         ctl_step_voltage_inv_ctrl(&gfl_voltage_ctrl);
         ctl_step_zero_inv_ctrl(&gfl_zero_ctrl);
@@ -139,6 +156,11 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         if (pq_loop_tick >= GFL_PQ_LOOP_DIVIDER)
         {
             pq_loop_tick = 0;
+#if defined GFL_ENABLE_PQ_DROOP
+            ctl_step_gfl_pq_droop(&pq_droop_ctrl);
+            ctl_set_gfl_pq_ref(&pq_ctrl, pq_droop_ctrl.pq_ref.dat[0],
+                               pq_droop_ctrl.pq_ref.dat[1]);
+#endif
             ctl_step_gfl_pq(&pq_ctrl);
 
             if (pq_ctrl.flag_enable)

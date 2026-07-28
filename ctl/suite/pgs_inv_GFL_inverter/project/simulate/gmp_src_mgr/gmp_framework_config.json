@@ -87,6 +87,10 @@
         },
         {
             "root": "ctl",
+            "module": "component|digital_power|inv|gfl_pq_droop_ctrl"
+        },
+        {
+            "root": "ctl",
             "module": "component|digital_power|inv|gfm_droop"
         },
         {

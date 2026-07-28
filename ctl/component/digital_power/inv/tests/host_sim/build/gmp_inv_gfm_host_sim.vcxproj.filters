@@ -7,6 +7,15 @@
     <ClCompile Include="E:\lib\gmp_pro\ctl\component\digital_power\inv\src\ctl_dp_gfm_droop_ctrl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\ctl\component\digital_power\inv\src\ctl_dp_gfm_vsm_ctrl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\ctl\component\digital_power\inv\src\ctl_dp_gfm_virtual_impedance.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\ctl\component\digital_power\inv\src\ctl_dp_gfl_pq_droop_ctrl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="E:\lib\gmp_pro\ctl\component\digital_power\inv\src\ctl_dp_gfm_transition.c">
       <Filter>Source Files</Filter>
     </ClCompile>

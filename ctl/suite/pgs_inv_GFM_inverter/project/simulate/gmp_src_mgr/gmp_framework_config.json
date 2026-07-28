@@ -87,6 +87,14 @@
         },
         {
             "root": "ctl",
+            "module": "component|digital_power|inv|gfm_vsm_ctrl"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|inv|gfm_virtual_impedance"
+        },
+        {
+            "root": "ctl",
             "module": "component|digital_power|inv|gfm_transition"
         },
         {
