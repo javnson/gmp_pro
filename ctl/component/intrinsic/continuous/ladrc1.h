@@ -73,7 +73,7 @@ void ctl_upgrade_ladrc1(ctl_ladrc1_t* ladrc, parameter_gt b0, parameter_gt fc, p
 
 /**
  * @brief Initializes the 1st-order LADRC controller.
- * @details Sets up default limits (¡À1) and clears internal states.
+ * @details Sets up default limits (+/-1) and clears internal states.
  * @param[out] ladrc Pointer to the LADRC instance.
  * @param[in]  b0    Estimated system gain.
  * @param[in]  fc    Controller bandwidth (Hz).
@@ -112,14 +112,15 @@ GMP_STATIC_INLINE void ctl_set_ladrc1_states(ctl_ladrc1_t* ladrc, ctrl_gt curren
 }
 
 /**
- * @brief Executes one step of the 1st-Order LADRC.
- * @details Executed purely with additions and pre-scaled multiplications.
+ * @brief Executes one unsaturated step of the 1st-Order LADRC.
+ * @details Intended for composite controllers that apply a shared multi-axis
+ * limiter and then store the command actually applied to the plant.
  * @param[in,out] ladrc Pointer to the LADRC instance.
  * @param[in]     ref   The target reference value.
  * @param[in]     fbk   The current actual feedback value.
- * @return ctrl_gt The calculated controller output.
+ * @return ctrl_gt The calculated output before output saturation.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_step_ladrc1(ctl_ladrc1_t* ladrc, ctrl_gt ref, ctrl_gt fbk)
+GMP_STATIC_INLINE ctrl_gt ctl_step_ladrc1_raw(ctl_ladrc1_t* ladrc, ctrl_gt ref, ctrl_gt fbk)
 {
     // 1. LESO (Linear Extended State Observer) Update
     // e = z1 - y
@@ -141,12 +142,28 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_ladrc1(ctl_ladrc1_t* ladrc, ctrl_gt ref, ctrl
     ctrl_gt u0 = ctl_mul(ladrc->kp_b0, ref - ladrc->z1);
     ctrl_gt u = u0 - ladrc->z2_u;
 
-    // 3. Output Saturation (Implicit Anti-Windup)
-    // By saving the saturated output to u_prev, the observer naturally understands
-    // the system bounds and prevents integral windup of the disturbance state.
-    ladrc->out = ctl_sat(u, ladrc->out_max, ladrc->out_min);
-    ladrc->u_prev = ladrc->out;
+    ladrc->out = u;
 
+    return ladrc->out;
+}
+
+/**
+ * @brief Executes one step of the 1st-Order LADRC.
+ * @details Applies scalar output limits and stores the actual applied command
+ * for the observer's next update.
+ * @param[in,out] ladrc Pointer to the LADRC instance.
+ * @param[in] ref The target reference value.
+ * @param[in] fbk The current actual feedback value.
+ * @return ctrl_gt The saturated controller output.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_step_ladrc1(ctl_ladrc1_t* ladrc, ctrl_gt ref, ctrl_gt fbk)
+{
+    ctrl_gt out = ctl_step_ladrc1_raw(ladrc, ref, fbk);
+
+    // By saving the saturated output to u_prev, the observer naturally understands
+    // the system bounds and prevents windup of the disturbance state.
+    ladrc->out = ctl_sat(out, ladrc->out_max, ladrc->out_min);
+    ladrc->u_prev = ladrc->out;
     return ladrc->out;
 }
 

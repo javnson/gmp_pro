@@ -38,9 +38,10 @@ configure_sinv_models
 | 2 | `PGS_STD_SINV_MODEL_RLOAD.slx` | 电阻负载，正弦电流闭环、输出电压锁相和 FDRC |
 | 3 | `PGS_STD_SINV_MODEL_Grid.slx` | 并网电流闭环；有符号 P/Q 指令，正 P 为逆变送电、负 P 为整流吸收 |
 | 4 | `PGS_STD_SINV_MODEL_Grid.slx` | 并网有功功率外环，经电流内环向电网注入指定功率 |
-| 5 | `PGS_STD_SINV_MODEL_Rectifier.slx` | 整流运行，直流母线电压外环产生负有功指令 |
+| 5 | `PGS_STD_SINV_MODEL_Rectifier.slx` | 整流运行，直流母线电压外环从不控整流实测功率无扰接管并产生负有功指令 |
 
 仿真目标启动后会自动给 CiA402 状态机发送 `ENABLE_OPERATION`，完整经历等待、ADC 校准、锁相/预充条件检查后才使能 PWM。FDRC 在进入运行态 300 ms 后投入，避免学习启动暂态。
+公共 SDPE 中的 `SINV_ENABLE_REPETITIVE_CONTROL` 是 FDRC 总开关；取消选中后控制器会在所有运行状态显式保持 `flag_enable_fdrc=0`。
 
 BL1/2 的交流侧电阻为 `SINV_RLOAD_OHM=12 Ω`。BL5 的直流侧负载独立使用 `SINV_RECTIFIER_RLOAD_OHM=30 Ω`：60 V 时为 120 W，处于当前 0.9 pu 峰值限流范围；若误用 12 Ω，则负载需要 300 W/12.5 Arms，控制器必然限幅，不能作为电压环整定依据。
 
@@ -82,18 +83,21 @@ x64\Debug\Motor_Control_Suite_SIL_Env.exe
 run_sinv_validation(5, 5.0, 'build_level_5')
 ```
 
+验证报告还记录接管时刻、接管后首个基波周期的有功功率与电流指令。BL5
+首周期数据用于确认控制器从不控整流工作点接管，而不是从零功率斜率起步。
+
 切换 BUILD_LEVEL 后必须重新生成项目层 SDPE 文件并重新编译，否则脚本会拒绝运行，避免模型与控制器级别不一致。
 
 ## 已完成的仿真结果
 
 | 级别 | 关键结果 | 电流 THD |
 | --- | --- | --- |
-| BL1 | 13.629 Vrms，1.181 Arms，PWM 正常，无活动故障 | 3.83% |
+| BL1 | 13.634 Vrms，1.181 Arms，PWM 正常，无活动故障 | 2.51% |
 | BL2，FDRC 关闭 | 2.000 Arms，指令 1.999 Arms，PLL 49.875 Hz | 0.8868% |
 | BL2，FDRC 开启 | 2.000 Arms，指令 1.999 Arms，PLL 49.875 Hz | 0.8766% |
-| BL3 | P=0.1000 pu，Q=0.0001 pu，PLL 50.000 Hz | 1.89% |
-| BL4 | P=0.1499 pu（目标 0.15 pu），Q=0.0001 pu | 1.59% |
-| BL5 | Vdc=60.008 V（目标 60 V），5.167 Arms，P=-0.2555 pu | 3.02% |
+| BL3 | P=0.0999 pu，Q=0.0002 pu，PLL 50.000 Hz | 5.01% |
+| BL4 | P=0.1499 pu（目标 0.15 pu），Q=0.0002 pu | 3.53% |
+| BL5 | Vdc=60.007 V（目标 60 V），5.168 Arms，P=-0.2555 pu；接管首周期指令 5.167 Arms | 2.80% |
 
 全部正式结果均为 `output_enable=1`、CiA402 `OPERATION_ENABLED`、活动故障为 0。BL2 使用相同 3 s 仿真窗口进行 RC 开/关公平对比；在线性电阻负载、QPR 基准 THD 已低于 0.9% 的情况下，FDRC 提供了小幅进一步改善。非线性负载或含周期性死区畸变的硬件上，RC 的作用通常会更明显，但需要重新核定学习增益、Q 滤波器截止频率和相位超前步数。
 

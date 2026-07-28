@@ -23,7 +23,7 @@ extern "C"
 #define PGS_SINV_RC_COMMON_SDPE_PROJECT_ID "pgs_sinv_rc_common"
 #define PGS_SINV_RC_COMMON_SDPE_PROJECT_SUITE "pgs_sinv_rc"
 #define PGS_SINV_RC_COMMON_SDPE_PROJECT_VERSION "1.0.0"
-#define PGS_SINV_RC_COMMON_SDPE_PROJECT_UPDATED_AT "2026-07-15"
+#define PGS_SINV_RC_COMMON_SDPE_PROJECT_UPDATED_AT "2026-07-28"
 
 //=================================================================================================
 /**
@@ -31,7 +31,7 @@ extern "C"
  */
 
 /**
- * @brief Enable delayed insertion of the frequency-adaptive repetitive controller.
+ * @brief FDRC master switch. Select this switch to enable delayed insertion of the frequency-adaptive repetitive controller; clear it to keep FDRC disabled at every BUILD_LEVEL.
  */
 #define SINV_ENABLE_REPETITIVE_CONTROL
 

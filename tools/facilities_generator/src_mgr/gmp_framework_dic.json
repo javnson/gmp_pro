@@ -1548,6 +1548,44 @@
                     }
                 ]
             },
+            "math_block|coordinate|svpwm_3d": {
+                "type": "module",
+                "description": "Four-leg three-dimensional SVPWM for three-phase four-wire converters.",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/svpwm_3d.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/tests/host_sim/README.md"
+                ],
+                "depends_on": [
+                    "ctl|math_block|coordinate"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-07-28",
+                        "reply": "MSVC host build."
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-07-28",
+                        "reply": "20,000-point alpha-beta-zero reconstruction sweep."
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
             "math_block|matrix_lite": {
                 "type": "module",
                 "description": "",
@@ -1836,6 +1874,91 @@
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|complex|_internal": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|intrinsic|complex|dq_pi": {
+                "type": "module",
+                "description": "Decoupled d-q PI controller with feedforward and vector limiting.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/complex/src/ctl_dq_pi.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/complex/dq_pi.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [
+                    "component|intrinsic|continuous|pid"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|complex|dq_ladrc1": {
+                "type": "module",
+                "description": "Decoupled d-q LADRC1 controller with feedforward and vector limiting.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/complex/src/ctl_dq_ladrc1.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/complex/dq_ladrc1.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [
+                    "component|intrinsic|continuous|ladrc1"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2408,6 +2531,44 @@
                         "completed": false,
                         "date": "",
                         "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|discrete|pr_tuner": {
+                "type": "module",
+                "description": "Background coefficient tuner for resonant and quasi-resonant controllers.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_pr_tuner.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/proportional_resonant_tuner.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [
+                    "ctl|component|intrinsic|discrete|pr"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-07-28",
+                        "reply": "MSVC host build."
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-07-28",
+                        "reply": "QPR shadow coefficient deployment verified at the control boundary."
                     },
                     {
                         "id": "sys_hw",
@@ -4712,6 +4873,92 @@
                         "completed": false,
                         "date": "",
                         "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|inv|voltage_ctrl": {
+                "type": "module",
+                "description": "LC-filter capacitor-voltage outer loop for stand-alone three-phase inverters.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_voltage_ctrl.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/inv_voltage_ctrl.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/tests/host_sim/README.md"
+                ],
+                "depends_on": [
+                    "ctl|component|digital_power|inv|inv_3ph_core",
+                    "ctl|component|interface|_internal",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|intrinsic|discrete|biquad_filter"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-07-28",
+                        "reply": "MSVC host build."
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-07-28",
+                        "reply": "LC plant host simulation with switchable capacitor coupling feed-forward."
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|inv|zero_ctrl": {
+                "type": "module",
+                "description": "Tunable QPR zero-sequence current controller for four-wire inverters.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_zero_ctrl.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/inv_zero_ctrl.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/tests/host_sim/README.md"
+                ],
+                "depends_on": [
+                    "ctl|component|digital_power|inv|inv_3ph_core",
+                    "ctl|component|interface|_internal",
+                    "ctl|component|intrinsic|discrete|biquad_filter",
+                    "ctl|component|intrinsic|discrete|pr_tuner"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-07-28",
+                        "reply": "MSVC host build."
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-07-28",
+                        "reply": "Fundamental zero-sequence disturbance rejection host simulation."
                     },
                     {
                         "id": "sys_hw",

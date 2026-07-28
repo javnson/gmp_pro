@@ -148,6 +148,82 @@ GMP_STATIC_INLINE void ctl_vector2_normalize(ctl_vector2_t* result, const ctl_ve
         ctl_vector2_clear(result);
     }
 }
+
+/**
+ * @brief Saturates a 2D vector to a circle centered at the origin.
+ * @details Vectors inside the circle are copied unchanged. Vectors outside the
+ * circle are scaled without changing direction. `result` may alias `vec`.
+ * @param[out] result The saturated vector.
+ * @param[in]  vec The input vector.
+ * @param[in]  radius Non-negative circle radius.
+ */
+GMP_STATIC_INLINE void ctl_vector2_sat_circle(ctl_vector2_t* result, const ctl_vector2_t* vec, ctrl_gt radius)
+{
+    ctrl_gt x = vec->dat[0];
+    ctrl_gt y = vec->dat[1];
+    ctrl_gt mag_sq;
+    ctrl_gt radius_sq;
+
+    gmp_base_assert(radius >= float2ctrl(0.0f));
+
+    mag_sq = ctl_mul(x, x) + ctl_mul(y, y);
+    radius_sq = ctl_mul(radius, radius);
+
+    if (mag_sq > radius_sq)
+    {
+        ctrl_gt mag = ctl_sqrt(mag_sq);
+        if (mag > CTL_EPSILON)
+        {
+            ctrl_gt scale = ctl_div(radius, mag);
+            result->dat[0] = ctl_mul(x, scale);
+            result->dat[1] = ctl_mul(y, scale);
+            return;
+        }
+    }
+
+    result->dat[0] = x;
+    result->dat[1] = y;
+}
+
+/**
+ * @brief Saturates each component of a 2D vector to an axis-aligned rectangle.
+ * @details `result` may alias any input vector.
+ * @param[out] result The saturated vector.
+ * @param[in]  vec The input vector.
+ * @param[in]  limit_max Per-axis upper limits.
+ * @param[in]  limit_min Per-axis lower limits.
+ */
+GMP_STATIC_INLINE void ctl_vector2_sat_rect(ctl_vector2_t* result, const ctl_vector2_t* vec,
+                                            const ctl_vector2_t* limit_max, const ctl_vector2_t* limit_min)
+{
+    ctrl_gt x = vec->dat[0];
+    ctrl_gt y = vec->dat[1];
+
+    gmp_base_assert(limit_max->dat[0] >= limit_min->dat[0]);
+    gmp_base_assert(limit_max->dat[1] >= limit_min->dat[1]);
+
+    result->dat[0] = ctl_sat(x, limit_max->dat[0], limit_min->dat[0]);
+    result->dat[1] = ctl_sat(y, limit_max->dat[1], limit_min->dat[1]);
+}
+
+/**
+ * @brief Saturates each component of a 2D vector to a symmetric square.
+ * @details This is a convenience form of rectangular saturation with identical
+ * limits on both axes. `result` may alias `vec`.
+ * @param[out] result The saturated vector.
+ * @param[in]  vec The input vector.
+ * @param[in]  limit Non-negative component magnitude limit.
+ */
+GMP_STATIC_INLINE void ctl_vector2_sat_square(ctl_vector2_t* result, const ctl_vector2_t* vec, ctrl_gt limit)
+{
+    ctrl_gt x = vec->dat[0];
+    ctrl_gt y = vec->dat[1];
+
+    gmp_base_assert(limit >= float2ctrl(0.0f));
+    result->dat[0] = ctl_sat(x, limit, -limit);
+    result->dat[1] = ctl_sat(y, limit, -limit);
+}
+
 /** 
  * @} 
  */ // end of MC_VECTOR2 group

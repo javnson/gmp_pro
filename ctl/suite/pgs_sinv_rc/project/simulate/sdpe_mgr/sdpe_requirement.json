@@ -5,7 +5,7 @@
   "description": "Windows SIL platform, plant and sensing settings for all SINV commissioning models.",
   "suite": "pgs_sinv_rc",
   "version": "1.0.0",
-  "updated_at": "2026-07-15",
+  "updated_at": "2026-07-28",
   "output_header": "sdpe_pgs_sinv_rc_simulate_settings.h",
   "hardware": [],
   "code_sections": {
@@ -48,7 +48,7 @@
         "(4)",
         "(5)"
       ],
-      "description": "1 open-loop R load; 2 current-loop R load; 3 grid current loop; 4 grid power loop; 5 DC-bus rectifier loop."
+      "description": "Single-phase converter commissioning level.\nBUILD_LEVEL 1: open-loop sinusoidal H-bridge voltage on an isolated resistive load; validates ADC polarity, PWM mapping and the power stage without a current loop.\nBUILD_LEVEL 2: closed AC-current loop on an isolated resistive load; validates QPR tracking, grid-voltage feedforward and optional FDRC.\nBUILD_LEVEL 3: grid-connected signed P/Q command through the current loop; positive P exports power and negative P rectifies.\nBUILD_LEVEL 4: grid-connected measured-active-power outer loop feeding the current loop.\nBUILD_LEVEL 5: active-front-end rectifier with a DC-bus voltage outer loop; takeover is initialized from the measured passive-rectifier power."
     }
   ],
   "requirements": [

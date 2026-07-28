@@ -41,6 +41,8 @@ volatile fast_gt flag_enable_adc_calibrator = 1;
 #else
 volatile fast_gt flag_enable_adc_calibrator = 0;
 #endif
+volatile fast_gt flag_rectifier_takeover_initialized = 0;
+ctrl_gt g_rectifier_takeover_power = float2ctrl(0.0f);
 
 // User commands
 ctrl_gt g_p_ref_user = float2ctrl(0.0f);
@@ -192,6 +194,8 @@ void ctl_mainloop(void)
     {
         rc_core.flag_enable_fdrc = 0;
     }
+#else
+    rc_core.flag_enable_fdrc = 0;
 #endif
 }
 
@@ -331,11 +335,29 @@ fast_gt ctl_exec_adc_calibration(void)
 
 void clear_all_controllers(void)
 {
+#if BUILD_LEVEL == 5
+    /*
+     * ctl_fast_enable_output() clears controller histories immediately before
+     * enabling PWM. Preserve the passive-rectifier power measured in the
+     * Switched On state so the DC-bus loop can use it on its first active step.
+     */
+    if (cia402_sm.current_state == CIA402_SM_OPERATION_ENABLED)
+    {
+        g_rectifier_takeover_power = ctl_sat(pq_meter.active_power_p,
+                                             float2ctrl(0.0f),
+                                             -outer_loop.output_limit);
+    }
+    else
+    {
+        g_rectifier_takeover_power = float2ctrl(0.0f);
+    }
+#endif
     ctl_clear_single_phase_pll(&pll);
     ctl_clear_sms_pq(&pq_meter);
     ctl_clear_sinv_rc_core(&rc_core);
     ctl_clear_sinv_ref_gen(&ref_gen);
     ctl_clear_sinv_outer_loop(&outer_loop);
+    flag_rectifier_takeover_initialized = 0;
     ctl_clear_single_phase_H_modulation(&hpwm);
 }
 

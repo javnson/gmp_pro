@@ -60,6 +60,15 @@ fdrc = out.get('fdrc_output'); fdrc_enabled = out.get('fdrc_enabled');
 enable = out.get('output_enable'); state = out.get('cia402_state');
 active_errors = out.get('active_errors'); diverge_fault = out.get('diverge_fault_value');
 tail = 0.6 * stop_time;
+enable_index = find(double(enable.Data(:)) > 0.5, 1, 'first');
+takeover_time = NaN;
+takeover_power_pu = NaN;
+takeover_iref_rms_a = NaN;
+if ~isempty(enable_index)
+    takeover_time = double(enable.Time(enable_index));
+    takeover_power_pu = window_mean(p_pu, takeover_time, takeover_time + 0.02);
+    takeover_iref_rms_a = window_rms(iref, takeover_time, takeover_time + 0.02);
+end
 
 metrics = struct('build_level', build_level, 'model', model, ...
     'stop_time_s', stop_time, 'output_enable_final', double(enable.Data(end)), ...
@@ -73,6 +82,9 @@ metrics = struct('build_level', build_level, 'model', model, ...
     'pll_frequency_hz', tail_mean(pll_hz, tail), ...
     'fdrc_enabled_final', double(fdrc_enabled.Data(end)), ...
     'fdrc_output_rms_pu', tail_rms(fdrc, tail), ...
+    'takeover_time_s', takeover_time, ...
+    'active_power_first_cycle_pu', takeover_power_pu, ...
+    'iref_first_cycle_rms_a', takeover_iref_rms_a, ...
     'iac_thd_percent', signal_thd(iac, tail, 50.0));
 
 result_dir = fullfile(root, 'validation');
@@ -114,6 +126,16 @@ end
 
 function value = tail_rms(series, start_time)
 d = double(series.Data(series.Time >= start_time,:)); value = sqrt(mean(d.^2,'all'));
+end
+
+function value = window_mean(series, start_time, end_time)
+d = double(series.Data(series.Time >= start_time & series.Time < end_time,:));
+if isempty(d), value = NaN; else, value = mean(d,'all'); end
+end
+
+function value = window_rms(series, start_time, end_time)
+d = double(series.Data(series.Time >= start_time & series.Time < end_time,:));
+if isempty(d), value = NaN; else, value = sqrt(mean(d.^2,'all')); end
 end
 
 function thd_percent = signal_thd(series, start_time, fundamental)

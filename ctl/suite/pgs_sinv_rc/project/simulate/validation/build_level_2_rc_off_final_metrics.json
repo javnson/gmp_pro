@@ -16,5 +16,8 @@
   "pll_frequency_hz": 49.874926346485758,
   "fdrc_enabled_final": 0,
   "fdrc_output_rms_pu": 0,
+  "takeover_time_s": 1.765069,
+  "active_power_first_cycle_pu": 0.095853180988634573,
+  "iref_first_cycle_rms_a": 1.9983367686631532,
   "iac_thd_percent": 0.88677170963698326
 }

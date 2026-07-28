@@ -3,8 +3,8 @@
   "display_name": "PGS SINV RC F280039C IRIS Node",
   "description": "Single-phase inverter project requirement prepared from ctl/suite/pgs_sinv_rc/project/f280039c_Iris_node/xplt/ctrl_settings.h.\nThis requirement introduces the GMP LVFB 150V 2-phase inverter board as the switching stage and the GMP Harmonia 3-phase LC filter as the grid filter. IRIS F280039C is included as the peripheral option provider.",
   "suite": "pgs_sinv_rc",
-  "version": "0.1.0",
-  "updated_at": "2026-07-10",
+  "version": "0.2.0",
+  "updated_at": "2026-07-28",
   "output_header": "sdpe_pgs_sinv_rc_iris_bindings.h",
   "hardware": [
     {
@@ -56,9 +56,11 @@
       "options": [
         "(1)",
         "(2)",
-        "(3)"
+        "(3)",
+        "(4)",
+        "(5)"
       ],
-      "description": "Single-phase inverter incremental debug build level.\nBUILD_LEVEL 1: modulator and resistive-load validation.\nBUILD_LEVEL 2: voltage closed-loop validation.\nBUILD_LEVEL 3: current-loop and full controller validation."
+      "description": "Single-phase converter commissioning level.\nBUILD_LEVEL 1: open-loop sinusoidal H-bridge voltage on an isolated resistive load; validates ADC polarity, PWM mapping and the power stage without a current loop.\nBUILD_LEVEL 2: closed AC-current loop on an isolated resistive load; validates QPR tracking, grid-voltage feedforward and optional FDRC.\nBUILD_LEVEL 3: grid-connected signed P/Q command through the current loop; positive P exports power and negative P rectifies.\nBUILD_LEVEL 4: grid-connected measured-active-power outer loop feeding the current loop.\nBUILD_LEVEL 5: active-front-end rectifier with a DC-bus voltage outer loop; takeover is initialized from the measured passive-rectifier power."
     },
     {
       "macro": "PWM_MODULATOR_USING_NEGATIVE_LOGIC",

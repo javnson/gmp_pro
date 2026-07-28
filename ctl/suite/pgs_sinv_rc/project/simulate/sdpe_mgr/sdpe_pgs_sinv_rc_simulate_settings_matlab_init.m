@@ -12,7 +12,7 @@ PGS_SINV_RC_SIM_SDPE_PROJECT_SUITE = 'pgs_sinv_rc';
 
 PGS_SINV_RC_SIM_SDPE_PROJECT_VERSION = '1.0.0';
 
-PGS_SINV_RC_SIM_SDPE_PROJECT_UPDATED_AT = '2026-07-15';
+PGS_SINV_RC_SIM_SDPE_PROJECT_UPDATED_AT = '2026-07-28';
 
 %% SIL Runtime
 % Automatically request CiA402 ENABLE_OPERATION in the simulation executable.
@@ -25,7 +25,12 @@ SINV_SIM_AUTO_ENABLE = true;
 % ENABLE_GMP_DL_PIL_SIM = true;
 
 %% Commissioning
-% 1 open-loop R load; 2 current-loop R load; 3 grid current loop; 4 grid power loop; 5 DC-bus rectifier loop.
+% Single-phase converter commissioning level.
+% BUILD_LEVEL 1: open-loop sinusoidal H-bridge voltage on an isolated resistive load; validates ADC polarity, PWM mapping and the power stage without a current loop.
+% BUILD_LEVEL 2: closed AC-current loop on an isolated resistive load; validates QPR tracking, grid-voltage feedforward and optional FDRC.
+% BUILD_LEVEL 3: grid-connected signed P/Q command through the current loop; positive P exports power and negative P rectifies.
+% BUILD_LEVEL 4: grid-connected measured-active-power outer loop feeding the current loop.
+% BUILD_LEVEL 5: active-front-end rectifier with a DC-bus voltage outer loop; takeover is initialized from the measured passive-rectifier power.
 % Options: (1), (2), (3), (4), (5)
 BUILD_LEVEL = 5;
 

@@ -18,7 +18,7 @@ extern "C"
 #endif
 
 // User project prefix code
-/* Original ctrl_settings.h includes are intentionally ignored during this SDPE migration trial. */
+#include <sdpe_pgs_sinv_rc_common_settings.h>
 
 //=================================================================================================
 /**
@@ -28,7 +28,7 @@ extern "C"
 #define SDPE_PROJECT_ID "pgs_sinv_rc_iris_node"
 #define SDPE_PROJECT_SUITE "pgs_sinv_rc"
 #define SDPE_PROJECT_VERSION "0.2.0"
-#define SDPE_PROJECT_UPDATED_AT "2026-07-15"
+#define SDPE_PROJECT_UPDATED_AT "2026-07-28"
 
 //=================================================================================================
 /**
@@ -71,11 +71,13 @@ extern "C"
  */
 
 /**
- * @brief Single-phase inverter incremental debug build level.
- *        BUILD_LEVEL 1: modulator and resistive-load validation.
- *        BUILD_LEVEL 2: voltage closed-loop validation.
- *        BUILD_LEVEL 3: current-loop and full controller validation.
- *        Options: (1), (2), (3)
+ * @brief Single-phase converter commissioning level.
+ *        BUILD_LEVEL 1: open-loop sinusoidal H-bridge voltage on an isolated resistive load; validates ADC polarity, PWM mapping and the power stage without a current loop.
+ *        BUILD_LEVEL 2: closed AC-current loop on an isolated resistive load; validates QPR tracking, grid-voltage feedforward and optional FDRC.
+ *        BUILD_LEVEL 3: grid-connected signed P/Q command through the current loop; positive P exports power and negative P rectifies.
+ *        BUILD_LEVEL 4: grid-connected measured-active-power outer loop feeding the current loop.
+ *        BUILD_LEVEL 5: active-front-end rectifier with a DC-bus voltage outer loop; takeover is initialized from the measured passive-rectifier power.
+ *        Options: (1), (2), (3), (4), (5)
  */
 #define BUILD_LEVEL (1)
 
@@ -393,6 +395,9 @@ extern "C"
 #define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
 
 // User project tail code
+#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 5)
+#error BUILD_LEVEL_must_be_between_1_and_5
+#endif
 /* Compatibility with framework revisions that use the historical misspelling. */
 #if defined(ENABLE_GMP_DL_PIL_SIM) && !defined(ENBALE_GMP_DL_PIL_SIM)
 #define ENBALE_GMP_DL_PIL_SIM

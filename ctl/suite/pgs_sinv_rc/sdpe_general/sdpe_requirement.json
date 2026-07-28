@@ -5,7 +5,7 @@
   "description": "Platform-independent control contract shared by all pgs_sinv_rc projects.",
   "suite": "pgs_sinv_rc",
   "version": "1.0.0",
-  "updated_at": "2026-07-15",
+  "updated_at": "2026-07-28",
   "output_header": "sdpe_pgs_sinv_rc_common_settings.h",
   "hardware": [],
   "feature_macros": [
@@ -14,7 +14,7 @@
       "macro": "SINV_ENABLE_REPETITIVE_CONTROL",
       "enabled": true,
       "value": "",
-      "description": "Enable delayed insertion of the frequency-adaptive repetitive controller."
+      "description": "FDRC master switch. Select this switch to enable delayed insertion of the frequency-adaptive repetitive controller; clear it to keep FDRC disabled at every BUILD_LEVEL."
     },
     {
       "group": "Control Features",
