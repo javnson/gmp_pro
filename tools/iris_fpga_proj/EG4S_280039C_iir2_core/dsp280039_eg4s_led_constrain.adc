@@ -1,0 +1,39 @@
+
+set_pin_assignment	{ rst_n }	{ LOCATION = P45; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ clk_in }	{ LOCATION = P57; IOSTANDARD = LVCMOS33; }
+
+set_pin_assignment  { spi_sclk } { LOCATION = P64; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { spi_csn } { LOCATION = P63; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { spi_mosi } { LOCATION = P62; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { spi_miso } { LOCATION = P61; IOSTANDARD = LVCMOS33; }
+
+set_pin_assignment	{ led[0] }	{ LOCATION = P66; IOSTANDARD = LVCMOS33; SLEWRATE = MED; }
+set_pin_assignment	{ led[1] }	{ LOCATION = P70; IOSTANDARD = LVCMOS33; SLEWRATE = MED; }
+set_pin_assignment	{ led[2] }	{ LOCATION = P71; IOSTANDARD = LVCMOS33; SLEWRATE = MED; }
+set_pin_assignment	{ led[3] }	{ LOCATION = P72; IOSTANDARD = LVCMOS33; SLEWRATE = MED; }
+
+set_pin_assignment  { encoder[0] } { LOCATION = P60; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { encoder[1] } { LOCATION = P52; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { encoder[2] } { LOCATION = P49; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { encoder[3] } { LOCATION = P50; IOSTANDARD = LVCMOS33; }
+
+set_pin_assignment  { dac_din[0] } { LOCATION = P79; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { dac_din[1] } { LOCATION = P75; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { dac_sclk[0] } { LOCATION = P78; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { dac_sclk[1] } { LOCATION = P74; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { dac_ldac[0] } { LOCATION = P87; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { dac_ldac[1] } { LOCATION = P76; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { dac_sync } { LOCATION = P77; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { dac_clr } { LOCATION = P86; IOSTANDARD = LVCMOS33; }
+
+set_pin_assignment  { adc_sdi } { LOCATION = P3; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { adc_sdo } { LOCATION = P10; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { adc_sclk } { LOCATION = P5; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { adc_cs } { LOCATION = P4; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { adc_rst } { LOCATION = P2; IOSTANDARD = LVCMOS33; }
+
+
+set_pin_assignment  { gpio[0] } { LOCATION = P42; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { gpio[1] } { LOCATION = P41; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { gpio[2] } { LOCATION = P40; IOSTANDARD = LVCMOS33; }
+set_pin_assignment  { gpio[3] } { LOCATION = P39; IOSTANDARD = LVCMOS33; }
