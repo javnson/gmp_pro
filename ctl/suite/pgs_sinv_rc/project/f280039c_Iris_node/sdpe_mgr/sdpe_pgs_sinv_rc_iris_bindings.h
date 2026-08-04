@@ -28,7 +28,7 @@ extern "C"
 #define SDPE_PROJECT_ID "pgs_sinv_rc_iris_node"
 #define SDPE_PROJECT_SUITE "pgs_sinv_rc"
 #define SDPE_PROJECT_VERSION "0.2.0"
-#define SDPE_PROJECT_UPDATED_AT "2026-07-28"
+#define SDPE_PROJECT_UPDATED_AT "2026-08-04"
 
 //=================================================================================================
 /**
@@ -39,6 +39,11 @@ extern "C"
  * @brief Enable Discrete PID controller anti-saturation algorithm.
  */
 #define _USE_DEBUG_DISCRETE_PID
+
+/**
+ * @brief Enable the dead zone compensation mechanism of the modulator
+ */
+// #define ENABLE_DEADBAND_COMP
 
 //=================================================================================================
 /**
@@ -200,11 +205,6 @@ extern "C"
  */
 
 /**
- * @brief Startup delay in ms.
- */
-#define CTRL_STARTUP_DELAY (100)
-
-/**
  * @brief Controller ISR frequency.
  */
 #define CONTROLLER_FREQUENCY (20e3)
@@ -255,11 +255,6 @@ extern "C"
 #define CTRL_CURRENT_BASE (14.14f)
 
 /**
- * @brief Nominal AC grid/fundamental frequency in Hz.
- */
-#define CTRL_GRID_FREQUENCY (50.0f)
-
-/**
  * @brief Total AC-side filter/grid inductance in H.
  */
 #define CTRL_AC_INDUCTANCE (0.003f)
@@ -270,54 +265,14 @@ extern "C"
 #define CTRL_AC_RESISTANCE (0.1f)
 
 /**
- * @brief Single-phase PLL proportional gain.
+ * @brief DC bus voltage sensing gain from the LVFB inverter voltage sensor.
  */
-#define CTRL_PLL_KP (10.0f)
+#define CTRL_DC_VOLTAGE_SENSITIVITY GMP_LVFB_VOLTAGE_SENSITIVITY
 
 /**
- * @brief Single-phase PLL integral time constant in seconds.
+ * @brief DC bus voltage sensing ADC bias from the LVFB inverter voltage sensor.
  */
-#define CTRL_PLL_TI (0.02f)
-
-/**
- * @brief PLL q-axis error low-pass cutoff in Hz.
- */
-#define CTRL_PLL_LPF_FC (20.0f)
-
-/**
- * @brief Measured active/reactive power low-pass cutoff in Hz.
- */
-#define CTRL_PQ_LPF_FC (200.0f)
-
-/**
- * @brief Peak current-reference limit in per unit.
- */
-#define CTRL_CURRENT_LIMIT_PU (1.5f)
-
-/**
- * @brief Minimum PLL voltage magnitude used by P/Q reference division.
- */
-#define CTRL_GRID_VMIN_PU (0.1f)
-
-/**
- * @brief Active-power command slew limit in PU/s.
- */
-#define CTRL_P_SLEW_PU_S (10.0f)
-
-/**
- * @brief Reactive-power command slew limit in PU/s.
- */
-#define CTRL_Q_SLEW_PU_S (20.0f)
-
-/**
- * @brief Current polarity deadband for PWM dead-time compensation.
- */
-#define CTRL_CURRENT_DB_PU (0.01f)
-
-/**
- * @brief Minimum fundamental frequency tracked by the repetitive controller in Hz.
- */
-#define CTRL_FDRC_MIN_FREQ (45.0f)
+#define CTRL_DC_VOLTAGE_BIAS GMP_LVFB_VOLTAGE_BIAS_V
 
 /**
  * @brief AC voltage sensing gain from the grid LC filter voltage sense path.
@@ -340,14 +295,9 @@ extern "C"
 #define CTRL_AC_CURRENT_BIAS GMP_LVFB_CURRENT_BIAS_V
 
 /**
- * @brief DC bus voltage sensing gain from the LVFB inverter voltage sensor.
+ * @brief Minimum PLL voltage magnitude used by P/Q reference division.
  */
-#define CTRL_DC_VOLTAGE_SENSITIVITY GMP_LVFB_VOLTAGE_SENSITIVITY
-
-/**
- * @brief DC bus voltage sensing ADC bias from the LVFB inverter voltage sensor.
- */
-#define CTRL_DC_VOLTAGE_BIAS GMP_LVFB_VOLTAGE_BIAS_V
+#define CTRL_GRID_VMIN_PU (0.1f)
 
 /**
  * @brief Maximum hardware DC bus voltage from the LVFB inverter board.
@@ -385,6 +335,51 @@ extern "C"
 #define CTRL_DCBUS_READY_MAX (CTRL_PROT_VBUS_MAX)
 
 /**
+ * @brief Single-phase PLL proportional gain.
+ */
+#define CTRL_PLL_KP (10.0f)
+
+/**
+ * @brief Single-phase PLL integral time constant in seconds.
+ */
+#define CTRL_PLL_TI (0.02f)
+
+/**
+ * @brief PLL q-axis error low-pass cutoff in Hz.
+ */
+#define CTRL_PLL_LPF_FC (20.0f)
+
+/**
+ * @brief Measured active/reactive power low-pass cutoff in Hz.
+ */
+#define CTRL_PQ_LPF_FC (200.0f)
+
+/**
+ * @brief Peak current-reference limit in per unit.
+ */
+#define CTRL_CURRENT_LIMIT_PU (1.5f)
+
+/**
+ * @brief Active-power command slew limit in PU/s.
+ */
+#define CTRL_P_SLEW_PU_S (10.0f)
+
+/**
+ * @brief Reactive-power command slew limit in PU/s.
+ */
+#define CTRL_Q_SLEW_PU_S (20.0f)
+
+/**
+ * @brief Current polarity deadband for PWM dead-time compensation.
+ */
+#define CTRL_CURRENT_DB_PU (0.01f)
+
+/**
+ * @brief Minimum fundamental frequency tracked by the repetitive controller in Hz.
+ */
+#define CTRL_FDRC_MIN_FREQ (45.0f)
+
+/**
  * @brief ADC calibration timeout in ms.
  */
 #define TIMEOUT_ADC_CALIB_MS (3000)
@@ -393,6 +388,16 @@ extern "C"
  * @brief SPLL close-loop convergence criterion.
  */
 #define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
+
+/**
+ * @brief Startup delay in ms.
+ */
+#define CTRL_STARTUP_DELAY (100)
+
+/**
+ * @brief Nominal AC grid/fundamental frequency in Hz.
+ */
+#define CTRL_GRID_FREQUENCY (50.0f)
 
 // User project tail code
 #if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 5)

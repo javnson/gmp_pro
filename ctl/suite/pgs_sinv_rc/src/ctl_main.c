@@ -108,7 +108,9 @@ void ctl_init(void)
     //
     ctl_init_single_phase_H_modulation(&hpwm, CTRL_PWM_CMP_MAX + 1, CTRL_PWM_DEADBAND_CMP,
                                        float2ctrl(CTRL_CURRENT_DB_PU));
-    //hpwm.flag_enable_dbcomp = 1; // 开启死区补偿
+#ifdef ENABLE_DEADBAND_COMP
+    hpwm.flag_enable_dbcomp = 1;
+#endif // ENABLE_DEADBAND_COMP
 
     //
     // init and config CiA402 standard state machine
@@ -255,9 +257,10 @@ fast_gt ctl_check_pll_locked(void)
     // Bench/open-loop build levels intentionally use the free-running angle.
     return 1;
 #else
-    // 准入条件：
-    // 1. 电网电压幅值在 0.8pu ~ 1.2pu 之间 (防止断路器未闭合或严重欠压)
-    // 2. PLL 内部频率误差必须小于系统设定的容忍度 (例如 0.005 PU)
+    // Grid access conditions:
+    // 1.  The amplitude of the grid voltage is between 0.8pu and 1.2pu
+    //     (to prevent the circuit breaker from not closing or experiencing severe undervoltage)
+    // 2.  The internal frequency error of the PLL must be less than the tolerance set by the system (e.g., 0.005 PU)
     ctrl_gt v_mag_pu = ctl_abs(pll.v_mag);
     ctrl_gt f_err_abs = ctl_abs(pll.freq_error);
 
