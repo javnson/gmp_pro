@@ -13,7 +13,7 @@ from typing import Any
 
 try:
     from PyQt6.QtCore import QTimer, Qt
-    from PyQt6.QtGui import QAction, QColor, QKeySequence, QPen, QShortcut, QTextCursor, QTextDocument
+    from PyQt6.QtGui import QAction, QColor, QKeySequence, QShortcut, QTextCursor, QTextDocument
     from PyQt6.QtWidgets import (
         QApplication,
         QCheckBox,
@@ -35,7 +35,6 @@ try:
         QMessageBox,
         QPushButton,
         QSplitter,
-        QStyledItemDelegate,
         QTableWidget,
         QTableWidgetItem,
         QTabWidget,
@@ -49,7 +48,7 @@ try:
 except ImportError:  # pragma: no cover - depends on local desktop environment.
     try:
         from PySide6.QtCore import QTimer, Qt
-        from PySide6.QtGui import QAction, QColor, QKeySequence, QPen, QShortcut, QTextCursor, QTextDocument
+        from PySide6.QtGui import QAction, QColor, QKeySequence, QShortcut, QTextCursor, QTextDocument
         from PySide6.QtWidgets import (
             QApplication,
             QCheckBox,
@@ -71,7 +70,6 @@ except ImportError:  # pragma: no cover - depends on local desktop environment.
             QMessageBox,
             QPushButton,
             QSplitter,
-            QStyledItemDelegate,
             QTableWidget,
             QTableWidgetItem,
             QTabWidget,
@@ -95,38 +93,14 @@ from sdpe_v2.library import SDPELibrary
 from sdpe_v2.model import HardwareEntity, HardwareSchema, SDPEError
 from sdpe_v2.util import read_json
 from gui_pyqt.dialogs import choose_item, choose_tree_item, confirm_delete, edit_multiline, prompt_identifier
-
-
-VALIDATION_BORDER_ROLE = Qt.ItemDataRole.UserRole.value + 101
-
-
-class SDPEComboBox(QComboBox):
-    """Combo box that does not steal mouse-wheel scrolling unless focused."""
-
-    def __init__(self):
-        super().__init__()
-        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-
-    def wheelEvent(self, event) -> None:  # noqa: N802 - Qt override name.
-        if QApplication.focusWidget() is self:
-            super().wheelEvent(event)
-        else:
-            event.ignore()
-
-
-class ValidationBorderDelegate(QStyledItemDelegate):
-    """Draw a validation outline without changing themed text/background colors."""
-
-    def paint(self, painter, option, index) -> None:  # noqa: ANN001, N802 - Qt override signature.
-        super().paint(painter, option, index)
-        if not index.data(VALIDATION_BORDER_ROLE):
-            return
-        painter.save()
-        pen = QPen(QColor(220, 40, 40))
-        pen.setWidth(2)
-        painter.setPen(pen)
-        painter.drawRect(option.rect.adjusted(1, 1, -2, -2))
-        painter.restore()
+from gui_pyqt.sdpe_widgets import (
+    SDPEComboBox,
+    SDPETableWidget,
+    SDPETreeWidget,
+    VALIDATION_BORDER_ROLE,
+    ValidationBorderDelegate,
+    unique_tree_items,
+)
 
 
 def pretty_json(data: Any) -> str:
@@ -1116,7 +1090,7 @@ class TemplatePage(SDPEPage):
     """Template/schema object editor."""
 
     def create_items_widget(self):
-        widget = QTreeWidget()
+        widget = SDPETreeWidget()
         widget.setHeaderHidden(True)
         fit_tree_key_columns(widget)
         widget.currentItemChanged.connect(lambda current, _previous: self.on_current_changed(current))
@@ -1133,7 +1107,7 @@ class TemplatePage(SDPEPage):
         self.description_edit = QTextEdit()
         self.output_edit = QLineEdit()
         self.header_prefix_edit = QLineEdit()
-        self.params = QTreeWidget()
+        self.params = SDPETreeWidget()
         self.params.setHeaderLabels(["Name", "Macro Name", "Default", "Unit", "Required", "Format", "Description"])
         self.params.setAlternatingRowColors(True)
         self.params.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
@@ -1143,20 +1117,20 @@ class TemplatePage(SDPEPage):
         self.params.model().rowsInserted.connect(lambda *_args: self.after_template_parameter_tree_changed())
         self.params.model().rowsRemoved.connect(lambda *_args: self.after_template_parameter_tree_changed())
         self.params.itemDoubleClicked.connect(self.on_template_param_double_clicked)
-        self.slots = QTableWidget()
+        self.slots = SDPETableWidget()
         set_table_headers(
             self.slots,
             ["Slot", "Mode", "Entity or Inline JSON", "Overrides JSON"],
             QHeaderView.ResizeMode.Interactive,
         )
         self.slots.cellDoubleClicked.connect(self.on_component_cell_double_clicked)
-        self.feature_macros = QTableWidget()
+        self.feature_macros = SDPETableWidget()
         setup_feature_macro_table(self.feature_macros)
         self.feature_macros.cellDoubleClicked.connect(self.on_template_macro_double_clicked)
-        self.option_macros = QTableWidget()
+        self.option_macros = SDPETableWidget()
         setup_option_macro_table(self.option_macros)
         self.option_macros.cellDoubleClicked.connect(self.on_template_macro_double_clicked)
-        self.option_sets = QTableWidget()
+        self.option_sets = SDPETableWidget()
         setup_option_set_table(self.option_sets)
         self.option_sets.cellDoubleClicked.connect(self.on_option_set_double_clicked)
         for widget in [
@@ -1701,7 +1675,7 @@ class EntityPage(SDPEPage):
     """Hardware entity editor and per-entity header generation."""
 
     def create_items_widget(self):
-        widget = QTreeWidget()
+        widget = SDPETreeWidget()
         widget.setHeaderHidden(True)
         fit_tree_key_columns(widget)
         widget.currentItemChanged.connect(lambda current, _previous: self.on_current_changed(current))
@@ -1723,29 +1697,29 @@ class EntityPage(SDPEPage):
         self.prefix_code_edit = QTextEdit()
         self.tail_code_edit = QTextEdit()
         self.output_edit = QLineEdit()
-        self.params = QTreeWidget()
+        self.params = SDPETreeWidget()
         self.params.setHeaderLabels(["Parameter", "En", "Wk", "Value", "Unit", "Description"])
         self.set_parameter_header_tooltips(self.params)
         self.params.setAlternatingRowColors(True)
         self.params.itemChanged.connect(lambda _item, _col: self.mark_current_dirty())
         self.params.itemDoubleClicked.connect(self.on_entity_param_double_clicked)
-        self.components = QTableWidget()
+        self.components = SDPETableWidget()
         set_table_headers(
             self.components,
             ["Slot", "Mode", "Entity or Inline JSON", "Overrides JSON"],
             QHeaderView.ResizeMode.Interactive,
         )
         self.components.cellDoubleClicked.connect(self.on_entity_component_cell_double_clicked)
-        self.feature_macros = QTableWidget()
+        self.feature_macros = SDPETableWidget()
         setup_feature_macro_table(self.feature_macros)
         self.feature_macros.cellDoubleClicked.connect(self.on_entity_macro_double_clicked)
-        self.option_macros = QTableWidget()
+        self.option_macros = SDPETableWidget()
         setup_option_macro_table(self.option_macros)
         self.option_macros.cellDoubleClicked.connect(self.on_entity_macro_double_clicked)
-        self.option_sets = QTableWidget()
+        self.option_sets = SDPETableWidget()
         setup_option_set_table(self.option_sets)
         self.option_sets.cellDoubleClicked.connect(self.on_entity_option_set_double_clicked)
-        self.conditional_macros = QTableWidget()
+        self.conditional_macros = SDPETableWidget()
         set_table_headers(self.conditional_macros, ["Condition", "Macros JSON", "Description"], QHeaderView.ResizeMode.Interactive)
         self.conditional_macros.cellDoubleClicked.connect(self.on_entity_conditional_double_clicked)
         for widget in [
@@ -2405,20 +2379,20 @@ class ProjectPage(SDPEPage):
 
         self.hardware_view = QComboBox()
         self.hardware_view.addItems(["Tree", "Table"])
-        self.hardware_tree = QTreeWidget()
+        self.hardware_tree = SDPETreeWidget()
         self.hardware_tree.setHeaderLabels(["Hardware", "Description"])
         fit_tree_key_columns(self.hardware_tree, description_col=1)
         install_tree_status_descriptions(self.hardware_tree, description_col=1)
         self.hardware_tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.hardware_tree.customContextMenuRequested.connect(self.show_hardware_context_menu)
         self.hardware_tree.itemDoubleClicked.connect(self.on_hardware_tree_double_clicked)
-        self.hardware = QTableWidget()
+        self.hardware = SDPETableWidget()
         set_table_headers(self.hardware, ["Entity", "Name", "Template", "Category", "Description"], QHeaderView.ResizeMode.Interactive)
         self.hardware.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.hardware.customContextMenuRequested.connect(self.show_hardware_table_context_menu)
         self.hardware.cellDoubleClicked.connect(self.on_hardware_cell_double_clicked)
 
-        self.requirements = QTreeWidget()
+        self.requirements = SDPETreeWidget()
         self.requirements.setHeaderLabels(["Name", "Macro", "En", "Wk", "Binding Type", "Binding Value", "Description"])
         self.set_parameter_header_tooltips(self.requirements)
         self.requirements.setAlternatingRowColors(True)
@@ -2451,7 +2425,7 @@ class ProjectPage(SDPEPage):
         self.requirements_delete_shortcut = QShortcut(QKeySequence("Del"), self.requirements)
         self.requirements_delete_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
         self.requirements_delete_shortcut.activated.connect(self.remove_requirement_item)
-        self.feature_macros = QTreeWidget()
+        self.feature_macros = SDPETreeWidget()
         self.feature_macros.setHeaderLabels(["Macro", "En", "Wk", "Value", "Description"])
         self.set_macro_header_tooltips(self.feature_macros)
         self.feature_macros.setItemDelegate(ValidationBorderDelegate(self.feature_macros))
@@ -2461,7 +2435,7 @@ class ProjectPage(SDPEPage):
         self.feature_macros.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.feature_macros.customContextMenuRequested.connect(lambda pos: self.show_macro_tree_context_menu(self.feature_macros, "feature", pos))
         self.install_macro_tree_shortcuts(self.feature_macros, "feature")
-        self.enum_macros = QTreeWidget()
+        self.enum_macros = SDPETreeWidget()
         self.enum_macros.setHeaderLabels(["Macro", "En", "Wk", "Value", "Options Preset", "Options CSV", "Description"])
         self.set_macro_header_tooltips(self.enum_macros)
         self.enum_macros.setItemDelegate(ValidationBorderDelegate(self.enum_macros))
@@ -3020,7 +2994,7 @@ class ProjectPage(SDPEPage):
         current = tree.currentItem()
         if not items and current is not None and current.data(0, Qt.ItemDataRole.UserRole) in {"feature_macro", "option_macro"}:
             items = [current]
-        return items
+        return unique_tree_items(items)
 
     def iter_macro_items(self, tree: QTreeWidget) -> list[QTreeWidgetItem]:
         items: list[QTreeWidgetItem] = []
@@ -3200,7 +3174,7 @@ class ProjectPage(SDPEPage):
         if not items and current is not None and current.data(0, Qt.ItemDataRole.UserRole) == "requirement":
             items = [current]
         order = {id(item): index for index, item in enumerate(self.iter_requirement_items())}
-        return sorted(dict.fromkeys(items), key=lambda item: order.get(id(item), 10**9))
+        return sorted(unique_tree_items(items), key=lambda item: order.get(id(item), 10**9))
 
     def requirement_item_to_data(self, item: QTreeWidgetItem) -> dict[str, Any]:
         return {
@@ -4045,7 +4019,7 @@ class BindingPage(SDPEPage):
 
     def __init__(self, window: "MainWindow"):
         super().__init__(window, "SDPE Project Overview", has_code=True)
-        self.overview = QTreeWidget()
+        self.overview = SDPETreeWidget()
         self.overview.setHeaderLabels(["Item", "Macro", "Value", "Source", "Description"])
         self.overview.setAlternatingRowColors(True)
         self.overview.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
