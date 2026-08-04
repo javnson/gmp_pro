@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Project Version="3" Minor="2" Path="E:/lib/gmp_pro/tools/iris_fpga_proj/EG4S_280039C">
+<Project Version="3" Minor="2" Path=".">
     <Project_Created_Time></Project_Created_Time>
     <TD_Version>6.2.178840</TD_Version>
     <UCode>01100011</UCode>
-    <Name>EG4S_280039C_TEST_LED</Name>
+    <Name>EG4S_280039C_IIR2_CORE</Name>
     <HardWare>
         <Family>EG4</Family>
         <Device>EG4S20NG88</Device>
@@ -43,12 +43,22 @@
                     <Attr Name="CompileOrder" Val="4"/>
                 </FileInfo>
             </File>
+            <File Path="src/iir2_operator.v"><FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="5"/></FileInfo></File>
+            <File Path="src/iir2_pipeline_container.v"><FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="6"/></FileInfo></File>
+            <File Path="src/iir2_axi_lite_regs.v"><FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="7"/></FileInfo></File>
+            <File Path="src/iir2_control_core.v"><FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="8"/></FileInfo></File>
+            <File Path="src/adc_axis_adapter.v"><FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="9"/></FileInfo></File>
+            <File Path="src/fixed_to_dac.v"><FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="10"/></FileInfo></File>
+            <File Path="src/epwm_modulator.v"><FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="11"/></FileInfo></File>
+            <File Path="src/spi_axi_lite_bridge.v"><FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="12"/></FileInfo></File>
+            <File Path="src/axi4_stream_dma.v"><FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="13"/></FileInfo></File>
+            <File Path="src/iir2_external_memory_system.v"><FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="14"/></FileInfo></File>
             <File Path="src/spi_top.v">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="5"/>
+                    <Attr Name="CompileOrder" Val="15"/>
                 </FileInfo>
             </File>
         </Verilog>
@@ -70,8 +80,8 @@
         </FileSet>
     </FileSets>
     <TOP_MODULE>
-        <LABEL>top_soc</LABEL>
-        <MODULE>top_soc</MODULE>
+        <LABEL>td_iir2_control_top</LABEL>
+        <MODULE>td_iir2_control_top</MODULE>
         <CREATEINDEX>user</CREATEINDEX>
     </TOP_MODULE>
     <Property>

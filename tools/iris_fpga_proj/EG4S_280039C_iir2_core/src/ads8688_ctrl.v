@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module ads8688_masked_ctrl (
     input  wire        clk,          // FPGA系统时钟 (例如 100MHz)
     input  wire        rst_n,        // 异步复位，低电平有效
