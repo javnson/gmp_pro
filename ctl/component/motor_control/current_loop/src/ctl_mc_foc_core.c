@@ -109,3 +109,16 @@ void ctl_init_foc_core(mc_foc_core_t* mc, mc_foc_init_t* init)
     // 7. Clear all states
     ctl_clear_foc_core(mc);
 }
+
+void ctl_set_foc_core_saturation(mc_foc_core_t* mc, parameter_gt volt_rect_saturation, parameter_gt volt_cir_saturation)
+{
+    mc->max_vs_mag = float2ctrl(volt_cir_saturation);
+
+    ctl_set_pid_int_limit(&mc->idq_ctrl[phase_d], float2ctrl(volt_rect_saturation * 0.8f),
+                          float2ctrl(-volt_rect_saturation * 0.8f));
+    ctl_set_pid_int_limit(&mc->idq_ctrl[phase_q], float2ctrl(volt_rect_saturation * 0.8f),
+                          float2ctrl(-volt_rect_saturation * 0.8f));
+
+    ctl_set_pid_limit(&mc->idq_ctrl[phase_d], float2ctrl(volt_rect_saturation), float2ctrl(-volt_rect_saturation));
+    ctl_set_pid_limit(&mc->idq_ctrl[phase_q], float2ctrl(volt_rect_saturation), float2ctrl(-volt_rect_saturation));
+}

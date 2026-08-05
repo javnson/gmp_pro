@@ -244,6 +244,18 @@ void ctl_init_foc_core_basic(mc_foc_core_t* mc, parameter_gt kp, parameter_gt ki
                                      parameter_gt fs);
 
 /**
+ * @brief Sets the output voltage saturation limits for the FOC controller.
+ * @details Configures both circular and rectangular voltage limits. The circular limit
+ * restricts the overall maximum voltage vector magnitude, while the rectangular limit
+ * bounds the individual d/q axis PI controller outputs (with integral limits scaled
+ * to 80% of the rectangular limit).
+ * @param[in,out] mc                   Pointer to the motor current controller instance.
+ * @param[in]     volt_rect_saturation Rectangular saturation limit for d/q axes in per-unit (pu).
+ * @param[in]     volt_cir_saturation  Circular saturation limit for voltage vector magnitude in per-unit (pu).
+ */
+void ctl_set_foc_core_saturation(mc_foc_core_t* mc, parameter_gt volt_rect_saturation, parameter_gt volt_cir_saturation);
+
+/**
  * @brief Executes one step of the FOC current control loop.
  * @param[out] mc      Pointer to the current controller structure.
  * @param[in]  theta   The current electrical angle of the rotor (0.0 to 1.0).

@@ -62,11 +62,17 @@ Items can be moved from a private project into a selected common file, or from a
 common file into one or more selected private projects.
 
 Common requirements and macros remain editable in the merged project view and
-are saved back to their owning Common JSON files. `Override in project` creates
-a private row with the same macro. The private row is then the tree parent, each
+are saved back to their owning Common JSON files. The Requirements context menu
+creates Private and Common rows explicitly. `Cover with private requirement`
+creates a private row with the same macro. The private row is then the tree parent, each
 matching Common row is a child, and the Common definition is forced weak. The C
 header therefore emits the private definition before including Common fallback
 headers whose matching macros are guarded by `#ifndef`.
+
+Save commits an active cell editor before writing every affected source file.
+Delete removes the selected row even when focus is on a permanent checkbox; a
+real text editor keeps normal character deletion. Deleting a group removes its
+complete subtree, while deleting only a Private cover preserves its Common child.
 
 Generated MATLAB initialization scripts finish with a console summary of the
 project identity, suite/version, selected hardware, bound Common files, enabled

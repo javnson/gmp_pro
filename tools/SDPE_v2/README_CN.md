@@ -40,10 +40,15 @@ v2 当前采用“核心 CLI + PyQt 图形化管理器”的结构。CLI 负责�
 私有工程。不带参数运行 `gmp_sdpe_deploy_project_mgr.bat` 会发现并更新仓库中的全部
 `sdpe_mgr` 和 `sdpe_general` 工具脚本。
 
-合并页面中的 Common 项可以直接编辑并写回其源文件。右键选择 `Override in project`
-后，软件会创建同名的 Project Private 项，并强制以 Private 为父节点、Common 为子节点；
+合并页面中的 Common 项可以直接编辑并写回其源文件。Requirements 右键菜单可以明确
+选择创建 Private 或 Common 项。选择 `Cover with private requirement` 后，软件会创建
+同名的 Project Private 项，并强制以 Private 为父节点、Common 为子节点；
 Common 项自动成为 Weak 宏。生成头文件时 Private 定义位于 Common include 之前，
 Common 同名宏由 `#ifndef` 保护，因此可以作为默认值且不会覆盖工程专用配置。
+
+保存前会先提交仍处于编辑状态的单元格，并分别写回 Private 与 Common 文件。Delete 在
+Checkbox 等单元格控件获得焦点时仍删除整行；文本编辑器内仍只删除字符。删除 Group
+会删除完整子树，单独删除 Private Cover 则保留对应的 Common 子项。
 
 生成的 MATLAB Init Script 会在赋值完成后打印工程信息、硬件清单、Common 来源、
 已使能变量的最终值和禁用宏清单，方便在启动 Simulink 仿真前检查配置。

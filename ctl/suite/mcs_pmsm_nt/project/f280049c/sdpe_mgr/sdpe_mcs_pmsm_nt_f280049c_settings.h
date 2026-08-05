@@ -17,8 +17,6 @@ extern "C"
 #endif
 
 // User project prefix code
-#include <sdpe_mcs_pmsm_nt_common_settings.h>
-
 /* The inverter is selected as an SDPE hardware entity. */
 
 /* Compatibility names consumed by the existing PMSM controller. */
@@ -54,7 +52,7 @@ extern "C"
 #define MCS_PMSM_NT_F280049C_SDPE_PROJECT_ID "mcs_pmsm_nt_f280049c"
 #define MCS_PMSM_NT_F280049C_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
 #define MCS_PMSM_NT_F280049C_SDPE_PROJECT_VERSION "1.2.0"
-#define MCS_PMSM_NT_F280049C_SDPE_PROJECT_UPDATED_AT "2026-07-15"
+#define MCS_PMSM_NT_F280049C_SDPE_PROJECT_UPDATED_AT "2026-08-05"
 
 //=================================================================================================
 /**
@@ -297,9 +295,24 @@ extern "C"
 #define CTRL_POS_ENC_BIAS (0.0207000002f)
 
 /**
- * @brief Mechanical speed and position division factor.
+ * @brief DC-bus voltage sensing gain in ADC volts per measured volt.
  */
-#define CTRL_MECH_DIV (5)
+#define CTRL_DC_VOLTAGE_SENSITIVITY (TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_GAIN)
+
+/**
+ * @brief DC-bus voltage sensor bias in volts.
+ */
+#define CTRL_DC_VOLTAGE_BIAS (TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_BIAS_V)
+
+/**
+ * @brief DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path.
+ */
+#define CTRL_DC_CURRENT_SENSITIVITY (TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_GAIN)
+
+/**
+ * @brief DC-bus current sensor bias.
+ */
+#define CTRL_DC_CURRENT_BIAS (TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_BIAS_V)
 
 /**
  * @brief Phase-current sensor sensitivity in volts per ampere.
@@ -322,27 +335,51 @@ extern "C"
 #define CTRL_INVERTER_VOLTAGE_BIAS (TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V)
 
 /**
- * @brief DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path.
+ * @brief Mechanical speed and position division factor.
  */
-#define CTRL_DC_CURRENT_SENSITIVITY (TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_GAIN)
+#define CTRL_MECH_DIV (5)
 
 /**
- * @brief DC-bus current sensor bias.
+ * @brief Electrical frequency command in hertz used by the BUILD_LEVEL 1 V/f path and the BUILD_LEVEL 2 synthetic-angle current-loop path.
  */
-#define CTRL_DC_CURRENT_BIAS (TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_BIAS_V)
+#define MCS_OPEN_LOOP_FREQ_HZ (20.0f)
 
 /**
- * @brief DC-bus voltage sensing gain in ADC volts per measured volt.
+ * @brief Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator.
  */
-#define CTRL_DC_VOLTAGE_SENSITIVITY (TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_GAIN)
+#define MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S (20.0f)
 
 /**
- * @brief DC-bus voltage sensor bias in volts.
+ * @brief The current limit value at which the machine must be shut down.
  */
-#define CTRL_DC_VOLTAGE_BIAS (TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_BIAS_V)
+#ifndef MCS_MAX_SHUTDOWN_CURRENT_A
+#define MCS_MAX_SHUTDOWN_CURRENT_A (10.0f)
+#endif // MCS_MAX_SHUTDOWN_CURRENT_A
+
+/**
+ * @brief Circular saturation limit for voltage vector magnitude in V.
+ */
+#define MCS_MAX_CIR_SATURATION_VOLTAGE_V (10.0f)
+
+//=================================================================================================
+/**
+ * @brief Common requirement fallbacks.
+ */
+
+#include "sdpe_mcs_pmsm_nt_common_settings.h"
 
 // User project tail code
 /* No additional platform-specific tail definitions. */
+
+/**
+ * @brief Unit convert from V into phase voltage pu.
+ */
+#define VOLT_PU(_X_X_) (((_X_X_)/CTRL_VOLTAGE_BASE))
+
+/**
+ * @brief Unit convert from A into phase current pu.
+ */
+#define CURR_PU(_X_X_) (((_X_X_)/CTRL_CURRENT_BASE))
 
 #ifdef __cplusplus
 }

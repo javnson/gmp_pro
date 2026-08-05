@@ -5,7 +5,7 @@
   "description": "Platform-independent controller contract shared by every mcs_pmsm_nt implementation. Hardware timing, sensing and peripheral bindings remain in each project SDPE requirement.",
   "suite": "mcs_pmsm_nt",
   "version": "1.0.0",
-  "updated_at": "2026-07-15",
+  "updated_at": "2026-08-05",
   "output_header": "sdpe_mcs_pmsm_nt_common_settings.h",
   "hardware": [],
   "code_sections": {
@@ -17,6 +17,7 @@
       "group": "Control Algorithm",
       "macro": "PMSM_CTRL_USING_DISCRETE_CTRL",
       "enabled": false,
+      "weak": false,
       "value": "",
       "description": "Use the discrete controller implementation instead of the default continuous controller path."
     },
@@ -24,6 +25,7 @@
       "group": "Control Algorithm",
       "macro": "_USE_DEBUG_DISCRETE_PID",
       "enabled": true,
+      "weak": false,
       "value": "",
       "description": "Enable the existing discrete-PID anti-saturation debug path."
     },
@@ -31,6 +33,7 @@
       "group": "Control Algorithm",
       "macro": "ENABLE_SMO",
       "enabled": false,
+      "weak": false,
       "value": "",
       "description": "Enable the sliding-mode observer path. Disabled to preserve the current sensored-control build."
     },
@@ -38,6 +41,7 @@
       "group": "Control Algorithm",
       "macro": "ENABLE_MOTOR_FAULT_PROTECTION",
       "enabled": false,
+      "weak": false,
       "value": "",
       "description": "Enable motor fault protection processing."
     },
@@ -45,6 +49,7 @@
       "group": "Controller Runtime",
       "macro": "SPECIFY_ENABLE_ADC_CALIBRATE",
       "enabled": true,
+      "weak": false,
       "value": "",
       "description": "Calibrate ADC offsets before enabling normal control."
     },
@@ -52,6 +57,7 @@
       "group": "Controller Runtime",
       "macro": "ENABLE_GMP_DL_PIL_SIM",
       "enabled": false,
+      "weak": false,
       "value": "",
       "description": "Enable processor-in-the-loop mode and suppress direct PWM controller output."
     },
@@ -59,6 +65,7 @@
       "group": "Controller Runtime",
       "macro": "GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO",
       "enabled": false,
+      "weak": false,
       "value": "",
       "description": "Enable CiA402/GMP framework debug information."
     },
@@ -66,6 +73,7 @@
       "group": "PWM Modulator",
       "macro": "PWM_MODULATOR_USING_NEGATIVE_LOGIC",
       "enabled": true,
+      "weak": false,
       "value": "(1)",
       "description": "Use active-low PWM modulation for the selected inverter gate path."
     },
@@ -73,6 +81,7 @@
       "group": "PWM Modulator",
       "macro": "USING_NPC_MODULATOR",
       "enabled": false,
+      "weak": false,
       "value": "",
       "description": "Use the three-level NPC modulator. Disabled for the two-level three-phase inverter."
     }
@@ -82,6 +91,7 @@
       "group": "Controller Options",
       "macro": "BUILD_LEVEL",
       "enabled": true,
+      "weak": false,
       "value": "(2)",
       "options_preset": "",
       "options": [
@@ -95,56 +105,50 @@
   ],
   "requirements": [
     {
-      "role": "Startup Delay",
-      "macro": "CTRL_STARTUP_DELAY",
-      "binding": {
-        "number": "100"
-      },
-      "description": "Controller startup delay in milliseconds."
-    },
-    {
       "role": "Controller Frequency",
       "macro": "CONTROLLER_FREQUENCY",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "20e3"
       },
       "description": "Main motor-control ISR frequency in hertz."
     },
     {
-      "role": "Pwm Dtc Current Deadband",
+      "role": "PWM DT Current Deadband",
       "macro": "MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "0.2"
       },
       "description": "Minimum absolute phase current in amperes before PWM dead-time compensation selects a current direction. Converted to PU with CTRL_CURRENT_BASE at initialization."
     },
     {
-      "role": "Pwm Dtc Current Hysteresis",
+      "role": "PWM DT Current Hysteresis",
       "macro": "MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "0.05"
       },
       "description": "Phase-current hysteresis band in amperes used to prevent dead-time compensation direction chatter around zero current."
     },
     {
-      "role": "Open Loop Frequency",
-      "macro": "MCS_OPEN_LOOP_FREQ_HZ",
+      "role": "Encoder Speed Filter Cutoff",
+      "macro": "MCS_ENCODER_SPEED_FILTER_FC_HZ",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "20.0"
       },
-      "description": "Electrical frequency command in hertz used by the BUILD_LEVEL 1 V/f path and the BUILD_LEVEL 2 synthetic-angle current-loop path."
-    },
-    {
-      "role": "Open Loop Frequency Slope",
-      "macro": "MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S",
-      "binding": {
-        "float": "20.0"
-      },
-      "description": "Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator."
+      "description": "Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed."
     },
     {
       "role": "Mech Position Kp",
       "macro": "MCS_MECH_POSITION_KP_PU",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "5.0"
       },
@@ -153,6 +157,8 @@
     {
       "role": "Mech Position Ki",
       "macro": "MCS_MECH_POSITION_KI_PU_S",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "1.0"
       },
@@ -161,6 +167,8 @@
     {
       "role": "Mech Velocity Kp",
       "macro": "MCS_MECH_VELOCITY_KP_PU",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "5.0"
       },
@@ -169,46 +177,18 @@
     {
       "role": "Mech Velocity Ki",
       "macro": "MCS_MECH_VELOCITY_KI_PU_S",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "1.0"
       },
       "description": "Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally."
     },
     {
-      "role": "Mech Speed Limit",
-      "macro": "MCS_MECH_SPEED_LIMIT_RPM",
-      "binding": {
-        "float": "3000.0"
-      },
-      "description": "Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit."
-    },
-    {
-      "role": "Mech Speed Slope Limit",
-      "macro": "MCS_MECH_SPEED_SLOPE_RPM_S",
-      "binding": {
-        "float": "3000.0"
-      },
-      "description": "Maximum mechanical speed-command slew rate in rpm/s. The configured value corresponds to 1 PU/s for the selected 3000 rpm motor."
-    },
-    {
-      "role": "Mech Current Limit",
-      "macro": "MCS_MECH_CURRENT_LIMIT_A",
-      "binding": {
-        "float": "3.0"
-      },
-      "description": "Absolute q-axis current/torque command limit in amperes. It is divided by CTRL_CURRENT_BASE to obtain the controller PU limit; 3 A corresponds to the previous 0.3 PU setting."
-    },
-    {
-      "role": "Encoder Speed Filter Cutoff",
-      "macro": "MCS_ENCODER_SPEED_FILTER_FC_HZ",
-      "binding": {
-        "float": "20.0"
-      },
-      "description": "Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed."
-    },
-    {
       "role": "Commissioning Id Reference",
       "macro": "MCS_COMMISSIONING_ID_REF_A",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "1.0"
       },
@@ -217,6 +197,8 @@
     {
       "role": "Commissioning Iq Reference",
       "macro": "MCS_COMMISSIONING_IQ_REF_A",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "1.0"
       },
@@ -225,14 +207,88 @@
     {
       "role": "Commissioning Speed Reference",
       "macro": "MCS_COMMISSIONING_SPEED_REF_RPM",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "300.0"
       },
       "description": "Mechanical speed reference in rpm used by BUILD_LEVEL 4 commissioning. Converted to PU using MOTOR_PARAM_MAX_SPEED."
     },
     {
+      "role": "Mech Speed Limit",
+      "macro": "MCS_MECH_SPEED_LIMIT_RPM",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "3000.0"
+      },
+      "description": "Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit."
+    },
+    {
+      "role": "Mech Speed Slope Limit",
+      "macro": "MCS_MECH_SPEED_SLOPE_RPM_S",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "3000.0"
+      },
+      "description": "Maximum mechanical speed-command slew rate in rpm/s. The configured value corresponds to 1 PU/s for the selected 3000 rpm motor."
+    },
+    {
+      "role": "Mech Current Limit",
+      "macro": "MCS_MECH_CURRENT_LIMIT_A",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "3.0"
+      },
+      "description": "Absolute q-axis current/torque command limit in amperes. It is divided by CTRL_CURRENT_BASE to obtain the controller PU limit; 3 A corresponds to the previous 0.3 PU setting."
+    },
+    {
+      "role": "Max Voltage For Rect Saturation",
+      "macro": "MCS_MAX_RECT_SATURATION_VOLTAGE_V",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "10.0"
+      },
+      "description": "Rectangular saturation limit for d/q axes in V."
+    },
+    {
+      "role": "Max DC Bus Voltage",
+      "macro": "MCS_MAX_DC_BUS_VOLTAGE_V",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(CTRL_DCBUS_VOLTAGE*1.2f)"
+      },
+      "description": ""
+    },
+    {
+      "role": "Max DC Bus Voltage",
+      "macro": "MCS_MIN_DC_BUS_VOLTAGE_V",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(CTRL_DCBUS_VOLTAGE*0.2f)"
+      },
+      "description": ""
+    },
+    {
+      "role": "Startup Delay",
+      "macro": "CTRL_STARTUP_DELAY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "100"
+      },
+      "description": "Controller startup delay in milliseconds."
+    },
+    {
       "role": "Cia402 Operation Enable Delay",
       "macro": "MCS_CIA402_OPERATION_ENABLE_DELAY_MS",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "100"
       },
@@ -241,6 +297,8 @@
     {
       "role": "Adc Calibrator Cutoff",
       "macro": "MCS_ADC_CALIBRATOR_FC_HZ",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "20.0"
       },
@@ -249,18 +307,12 @@
     {
       "role": "Adc Calibrator Quality Factor",
       "macro": "MCS_ADC_CALIBRATOR_Q",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "0.707"
       },
       "description": "Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response."
-    },
-    {
-      "role": "Spll Epsilon",
-      "macro": "CTRL_SPLL_EPSILON",
-      "binding": {
-        "literal": "((float2ctrl(0.005)))"
-      },
-      "description": "Legacy loop-convergence epsilon retained for controller compatibility."
     }
   ],
   "requirement_groups": [
@@ -268,8 +320,8 @@
       "name": "Peripheral Parameters",
       "requirements": [
         "Controller Frequency",
-        "Pwm Dtc Current Deadband",
-        "Pwm Dtc Current Hysteresis"
+        "PWM DT Current Deadband",
+        "PWM DT Current Hysteresis"
       ]
     },
     {
@@ -279,23 +331,12 @@
       ]
     },
     {
-      "name": "Protection Parameters",
-      "requirements": [
-        "Mech Speed Limit",
-        "Mech Speed Slope Limit",
-        "Mech Current Limit"
-      ]
-    },
-    {
       "name": "Control Loop Parameters",
       "requirements": [
-        "Open Loop Frequency",
-        "Open Loop Frequency Slope",
         "Mech Position Kp",
         "Mech Position Ki",
         "Mech Velocity Kp",
-        "Mech Velocity Ki",
-        "Spll Epsilon"
+        "Mech Velocity Ki"
       ]
     },
     {
@@ -307,6 +348,17 @@
       ]
     },
     {
+      "name": "Protection Parameters",
+      "requirements": [
+        "Mech Speed Limit",
+        "Mech Speed Slope Limit",
+        "Mech Current Limit",
+        "Max Voltage For Rect Saturation",
+        "Max DC Bus Voltage",
+        "Max DC Bus Voltage"
+      ]
+    },
+    {
       "name": "Runtime Parameters",
       "requirements": [
         "Startup Delay",
@@ -315,5 +367,13 @@
         "Adc Calibrator Quality Factor"
       ]
     }
+  ],
+  "feature_macro_groups": [
+    "Control Algorithm",
+    "Controller Runtime",
+    "PWM Modulator"
+  ],
+  "option_macro_groups": [
+    "Controller Options"
   ]
 }

@@ -101,6 +101,14 @@ typedef struct _tag_mtr_protect
 // Core Functions
 // ==========================================
 
+/**
+ * @brief Clears all motor protection faults and resets error counters.
+ * @details Resets the overall error code flag to none and clears individual
+ * fault counters for overvoltage (ov), undervoltage (uv), overcurrent (oc),
+ * current deviation (dev), motor over-temperature (mtr_ot), and inverter
+ * over-temperature (inv_ot).
+ * @param[in,out] prot Pointer to the motor protection controller instance.
+ */
 GMP_STATIC_INLINE void ctl_clear_mtr_protect(ctl_mtr_protect_t* prot)
 {
     prot->error_code.all = MTR_PROT_NONE;
@@ -113,10 +121,61 @@ GMP_STATIC_INLINE void ctl_clear_mtr_protect(ctl_mtr_protect_t* prot)
     prot->cnt_inv_ot = 0;
 }
 
+/**
+ * @brief Initializes the motor protection controller.
+ * @details Sets up the internal states, default thresholds, and timer configurations
+ * based on the system's execution frequency.
+ * @param[out]    prot Pointer to the motor protection controller instance.
+ * @param[in]     fs   Execution frequency of the protection task/loop (Hz).
+ */
 void ctl_init_mtr_protect(ctl_mtr_protect_t* prot, parameter_gt fs);
 
+/**
+ * @brief Attaches observation ports (measurements and references) to the protection module.
+ * @details Links external data pointers to the protection structure so it can monitor
+ * system states (voltage, current, temperature) without copying data continuously.
+ * @param[in,out] prot     Pointer to the motor protection controller instance.
+ * @param[in]     u_dc     Pointer to the measured DC bus voltage.
+ * @param[in]     i_meas   Pointer to the measured current vector (e.g., alpha/beta or d/q).
+ * @param[in]     i_ref    Pointer to the reference current vector (d/q).
+ * @param[in]     mtr_temp Pointer to the motor temperature ADC interface/value.
+ * @param[in]     inv_temp Pointer to the inverter temperature ADC interface/value.
+ */
 void ctl_attach_mtr_protect_port(ctl_mtr_protect_t* prot, ctrl_gt* u_dc, ctl_vector2_t* i_meas, ctl_vector2_t* i_ref,
                                  adc_ift* mtr_temp, adc_ift* inv_temp);
+
+/**
+ * @brief Sets the overvoltage (OV) protection threshold.
+ * @param[in,out] prot Pointer to the motor protection controller instance.
+ * @param[in]     ov   Overvoltage limit in per-unit (pu).
+ */
+GMP_STATIC_INLINE void ctl_set_mtr_protect_ov(ctl_mtr_protect_t* prot, ctrl_gt ov)
+{
+    prot->limit_ov_pu = ov;
+}
+
+/**
+ * @brief Sets the undervoltage (UV) protection threshold.
+ * @param[in,out] prot Pointer to the motor protection controller instance.
+ * @param[in]     uv   Undervoltage limit in per-unit (pu).
+ */
+GMP_STATIC_INLINE void ctl_set_mtr_protect_uv(ctl_mtr_protect_t* prot, ctrl_gt uv)
+{
+    prot->limit_uv_pu = uv;
+}
+
+/**
+ * @brief Sets the overcurrent (OC) protection threshold.
+ * @details The input threshold is squared internally and stored as limit_oc_sq_pu.
+ * This allows direct comparison against the squared magnitude of the current vector
+ * ($I^2 = I_d^2 + I_q^2$), saving MCU execution time by avoiding square root calculations.
+ * @param[in,out] prot Pointer to the motor protection controller instance.
+ * @param[in]     oc   Overcurrent limit magnitude in per-unit (pu).
+ */
+GMP_STATIC_INLINE void ctl_set_mtr_protect_oc(ctl_mtr_protect_t* prot, ctrl_gt oc)
+{
+    prot->limit_oc_sq_pu = ctl_mul(oc, oc);
+}
 
 // ==========================================
 // Helper Functions (Static Inline)

@@ -8,7 +8,7 @@ from typing import Any, Callable
 from uuid import uuid4
 
 try:
-    from PyQt6.QtCore import QByteArray, QMimeData, Qt, pyqtSignal as Signal
+    from PyQt6.QtCore import QByteArray, QEvent, QMimeData, Qt, pyqtSignal as Signal
     from PyQt6.QtGui import QAction, QColor, QKeySequence, QPen
     from PyQt6.QtWidgets import (
         QAbstractItemView,
@@ -17,6 +17,7 @@ try:
         QComboBox,
         QHBoxLayout,
         QHeaderView,
+        QLineEdit,
         QMenu,
         QStyle,
         QStyledItemDelegate,
@@ -27,7 +28,7 @@ try:
         QWidget,
     )
 except ImportError:  # pragma: no cover - depends on local desktop environment.
-    from PySide6.QtCore import QByteArray, QMimeData, Qt, Signal
+    from PySide6.QtCore import QByteArray, QEvent, QMimeData, Qt, Signal
     from PySide6.QtGui import QAction, QColor, QKeySequence, QPen
     from PySide6.QtWidgets import (
         QAbstractItemView,
@@ -36,6 +37,7 @@ except ImportError:  # pragma: no cover - depends on local desktop environment.
         QComboBox,
         QHBoxLayout,
         QHeaderView,
+        QLineEdit,
         QMenu,
         QStyle,
         QStyledItemDelegate,
@@ -280,6 +282,26 @@ class SDPEDataViewMixin:
     def run_action(self, name: str) -> None:
         self._run_standard_action(name)
 
+    def _watch_item_widget(self, widget: QWidget) -> None:
+        """Forward row shortcuts from permanent cell widgets to the data view."""
+
+        widget.installEventFilter(self)
+        for child in widget.findChildren(QWidget):
+            child.installEventFilter(self)
+
+    def eventFilter(self, watched, event) -> bool:  # noqa: ANN001, N802 - Qt override signature.
+        if (
+            event.type() == QEvent.Type.KeyPress
+            and event.key() == Qt.Key.Key_Delete
+            and not isinstance(watched, QLineEdit)
+            and not (isinstance(watched, QComboBox) and watched.isEditable())
+            and self.state() != QAbstractItemView.State.EditingState
+        ):
+            self._run_standard_action("delete")
+            event.accept()
+            return True
+        return super().eventFilter(watched, event)
+
     def header_labels(self) -> list[str]:
         raise NotImplementedError
 
@@ -382,6 +404,10 @@ class SDPETableWidget(SDPEDataViewMixin, QTableWidget):
         self.verticalHeader().setVisible(False)
         self.resizeColumnsToContents()
         self._install_description_status()
+
+    def setCellWidget(self, row: int, column: int, widget: QWidget) -> None:  # noqa: N802 - Qt override name.
+        super().setCellWidget(row, column, widget)
+        self._watch_item_widget(widget)
 
     def set_row_drag_enabled(self, enabled: bool) -> None:
         self.setDragEnabled(enabled)
@@ -757,6 +783,10 @@ class SDPETreeWidget(SDPEDataViewMixin, QTreeWidget):
             self.enable_default_context_menu()
         if description_col is not None:
             self.install_description_status(description_col)
+
+    def setItemWidget(self, item: QTreeWidgetItem, column: int, widget: QWidget) -> None:  # noqa: N802 - Qt override name.
+        super().setItemWidget(item, column, widget)
+        self._watch_item_widget(widget)
 
     def set_tree_drag_enabled(self, enabled: bool) -> None:
         self.setDragEnabled(enabled)

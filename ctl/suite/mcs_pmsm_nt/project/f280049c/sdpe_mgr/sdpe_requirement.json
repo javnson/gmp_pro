@@ -5,7 +5,7 @@
   "description": "PMSM sensored-control settings and project bindings for the LaunchXL-F280049C. Board resources remain physical BOOSTXL connector resources and are assigned application roles here.",
   "suite": "mcs_pmsm_nt",
   "version": "1.2.0",
-  "updated_at": "2026-07-15",
+  "updated_at": "2026-08-05",
   "output_header": "sdpe_mcs_pmsm_nt_f280049c_settings.h",
   "hardware": [
     {
@@ -20,7 +20,7 @@
   ],
   "code_sections": {
     "after_extern_open": "/* The inverter is selected as an SDPE hardware entity. */\n\n/* Compatibility names consumed by the existing PMSM controller. */\n#define MOTOR_TYPE                     SM060R20B30MNAD_MOTOR_TYPE\n#define MOTOR_PARAM_RS                 SM060R20B30MNAD_RS\n#define MOTOR_PARAM_LS                 SM060R20B30MNAD_LD\n#define MOTOR_PARAM_LD                 SM060R20B30MNAD_LD\n#define MOTOR_PARAM_LQ                 SM060R20B30MNAD_LQ\n#define MOTOR_PARAM_FLUX               SM060R20B30MNAD_FLUX\n#define MOTOR_PARAM_POLE_PAIRS         SM060R20B30MNAD_POLE_PAIRS\n#define MOTOR_PARAM_INERTIA            SM060R20B30MNAD_INERTIA\n#define MOTOR_PARAM_FRICTION           SM060R20B30MNAD_FRICTION\n#define MOTOR_PARAM_KV                 SM060R20B30MNAD_KV\n#define MOTOR_PARAM_EMF                SM060R20B30MNAD_EMF\n#define MOTOR_PARAM_RATED_VOLTAGE      SM060R20B30MNAD_RATED_VOLTAGE\n#define MOTOR_PARAM_RATED_CURRENT      SM060R20B30MNAD_RATED_CURRENT\n#define MOTOR_PARAM_NO_LOAD_CURRENT    SM060R20B30MNAD_NO_LOAD_CURRENT\n#define MOTOR_PARAM_RATED_FREQUENCY    SM060R20B30MNAD_RATED_FREQUENCY\n#define MOTOR_PARAM_MAX_SPEED          SM060R20B30MNAD_MAX_SPEED\n#define MOTOR_PARAM_MAX_TORQUE         SM060R20B30MNAD_MAX_TORQUE\n#define MOTOR_PARAM_MAX_DC_VOLTAGE     SM060R20B30MNAD_MAX_DC_VOLTAGE\n#define MOTOR_PARAM_MAX_PH_CURRENT     SM060R20B30MNAD_MAX_PH_CURRENT\n\n#define LAUNCHPAD 1\n#define GMP_IRIS  0\n#define BOARD_SELECTION LAUNCHPAD",
-    "before_footer": "/* No additional platform-specific tail definitions. */"
+    "before_footer": "/* No additional platform-specific tail definitions. */\n\n/**\n * @brief Unit convert from V into phase voltage pu.\n */\n#define VOLT_PU(_X_X_) (((_X_X_)/CTRL_VOLTAGE_BASE))\n\n/**\n * @brief Unit convert from A into phase current pu.\n */\n#define CURR_PU(_X_X_) (((_X_X_)/CTRL_CURRENT_BASE))"
   },
   "feature_macros": [],
   "option_macros": [
@@ -28,6 +28,7 @@
       "group": "Controller Options",
       "macro": "MC_CURRENT_SAMPLE_PHASE_MODE",
       "enabled": true,
+      "weak": false,
       "value": "(3)",
       "options_preset": "",
       "options": [
@@ -40,6 +41,7 @@
       "group": "Board GPIO",
       "macro": "PWM_ENABLE_PORT",
       "enabled": true,
+      "weak": false,
       "value": "ENABLE_GATE",
       "options_preset": "launchxl_f280049c.GATE_GPIO",
       "options": [],
@@ -49,6 +51,7 @@
       "group": "Board GPIO",
       "macro": "PWM_RESET_PORT",
       "enabled": true,
+      "weak": false,
       "value": "RESET_GATE",
       "options_preset": "launchxl_f280049c.GATE_GPIO",
       "options": [],
@@ -58,6 +61,7 @@
       "group": "Board GPIO",
       "macro": "SYSTEM_LED",
       "enabled": true,
+      "weak": false,
       "value": "LED_R",
       "options_preset": "launchxl_f280049c.BOARD_LED",
       "options": [],
@@ -67,6 +71,7 @@
       "group": "Board GPIO",
       "macro": "CONTROLLER_LED",
       "enabled": true,
+      "weak": false,
       "value": "LED_G",
       "options_preset": "launchxl_f280049c.BOARD_LED",
       "options": [],
@@ -76,6 +81,7 @@
       "group": "PWM Channel",
       "macro": "PHASE_U_BASE",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J4_PWM1_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_PWM_BASE",
       "options": [],
@@ -85,6 +91,7 @@
       "group": "PWM Channel",
       "macro": "PHASE_V_BASE",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J4_PWM2_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_PWM_BASE",
       "options": [],
@@ -94,6 +101,7 @@
       "group": "PWM Channel",
       "macro": "PHASE_W_BASE",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J4_PWM3_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_PWM_BASE",
       "options": [],
@@ -103,6 +111,7 @@
       "group": "Encoder",
       "macro": "EQEP_Encoder_BASE",
       "enabled": true,
+      "weak": false,
       "value": "EQEP2_J13_BASE",
       "options_preset": "launchxl_f280049c.EQEP_BASE",
       "options": [],
@@ -112,6 +121,7 @@
       "group": "ADC DC Bus",
       "macro": "INV_VBUS",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J3_AIN1",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
       "options": [],
@@ -121,6 +131,7 @@
       "group": "ADC DC Bus",
       "macro": "INV_VBUS_RESULT_BASE",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J3_AIN1_RESULT_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
       "options": [],
@@ -130,6 +141,7 @@
       "group": "ADC DC Bus",
       "macro": "INV_IBUS",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J3_AIN8",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
       "options": [],
@@ -139,6 +151,7 @@
       "group": "ADC DC Bus",
       "macro": "INV_IBUS_RESULT_BASE",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J3_AIN8_RESULT_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
       "options": [],
@@ -148,6 +161,7 @@
       "group": "ADC Phase Current",
       "macro": "INV_IU",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J3_AIN5",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
       "options": [],
@@ -157,6 +171,7 @@
       "group": "ADC Phase Current",
       "macro": "INV_IU_RESULT_BASE",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J3_AIN5_RESULT_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
       "options": [],
@@ -166,6 +181,7 @@
       "group": "ADC Phase Current",
       "macro": "INV_IV",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J3_AIN6",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
       "options": [],
@@ -175,6 +191,7 @@
       "group": "ADC Phase Current",
       "macro": "INV_IV_RESULT_BASE",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J3_AIN6_RESULT_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
       "options": [],
@@ -184,6 +201,7 @@
       "group": "ADC Phase Current",
       "macro": "INV_IW",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J3_AIN7",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
       "options": [],
@@ -193,6 +211,7 @@
       "group": "ADC Phase Current",
       "macro": "INV_IW_RESULT_BASE",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J3_AIN7_RESULT_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
       "options": [],
@@ -202,6 +221,7 @@
       "group": "ADC Phase Voltage",
       "macro": "INV_UU",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J3_AIN2",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
       "options": [],
@@ -211,6 +231,7 @@
       "group": "ADC Phase Voltage",
       "macro": "INV_UU_RESULT_BASE",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J3_AIN2_RESULT_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
       "options": [],
@@ -220,6 +241,7 @@
       "group": "ADC Phase Voltage",
       "macro": "INV_UV",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J3_AIN3",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
       "options": [],
@@ -229,6 +251,7 @@
       "group": "ADC Phase Voltage",
       "macro": "INV_UV_RESULT_BASE",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J3_AIN3_RESULT_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
       "options": [],
@@ -238,6 +261,7 @@
       "group": "ADC Phase Voltage",
       "macro": "INV_UW",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J3_AIN4",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
       "options": [],
@@ -247,6 +271,7 @@
       "group": "ADC Phase Voltage",
       "macro": "INV_UW_RESULT_BASE",
       "enabled": true,
+      "weak": false,
       "value": "BOOSTXL_J3_AIN4_RESULT_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
       "options": [],
@@ -255,16 +280,20 @@
   ],
   "requirements": [
     {
-      "role": "Pwm Compare Max",
+      "role": "PWM Compare Max",
       "macro": "CTRL_PWM_CMP_MAX",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "2500 - 1"
       },
       "description": "Maximum compare count of the platform PWM peripheral at the configured controller switching frequency."
     },
     {
-      "role": "Pwm Deadband",
+      "role": "PWM Deadband",
       "macro": "CTRL_PWM_DEADBAND_CMP",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "100"
       },
@@ -273,6 +302,8 @@
     {
       "role": "System Frequency",
       "macro": "CTRL_SYS_FREQUENCY",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "100e6"
       },
@@ -281,22 +312,28 @@
     {
       "role": "System Time Divider",
       "macro": "DSP_C2000_DSP_TIME_DIV",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "CTRL_SYS_FREQUENCY / 1000 / CTRL_PWM_CMP_MAX / 2"
       },
       "description": "C2000 millisecond system-tick divider derived from the CPU clock and ePWM period."
     },
     {
-      "role": "Adc Voltage Reference",
+      "role": "ADC Voltage Reference",
       "macro": "CTRL_ADC_VOLTAGE_REF",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "3.3"
       },
       "description": "ADC reference voltage used by all sensor conversions."
     },
     {
-      "role": "Dc Bus Voltage Base",
+      "role": "DC Bus Voltage Base",
       "macro": "CTRL_DCBUS_VOLTAGE",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "80.0"
       },
@@ -305,6 +342,8 @@
     {
       "role": "Phase Voltage Base",
       "macro": "CTRL_VOLTAGE_BASE",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "literal": "(CTRL_DCBUS_VOLTAGE / 1.73205081f)"
       },
@@ -313,6 +352,8 @@
     {
       "role": "Current Base",
       "macro": "CTRL_CURRENT_BASE",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "10.0"
       },
@@ -321,6 +362,8 @@
     {
       "role": "Encoder Full Scale",
       "macro": "CTRL_POS_ENC_FS",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "10000"
       },
@@ -329,22 +372,58 @@
     {
       "role": "Encoder Bias",
       "macro": "CTRL_POS_ENC_BIAS",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "0.0207000002"
       },
       "description": "Mechanical encoder position bias in per unit."
     },
     {
-      "role": "Mechanical Division",
-      "macro": "CTRL_MECH_DIV",
+      "role": "DC Voltage Sensitivity",
+      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
       "binding": {
-        "number": "5"
+        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_GAIN)"
       },
-      "description": "Mechanical speed and position division factor."
+      "description": "DC-bus voltage sensing gain in ADC volts per measured volt."
+    },
+    {
+      "role": "DC Voltage Bias",
+      "macro": "CTRL_DC_VOLTAGE_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "DC-bus voltage sensor bias in volts."
+    },
+    {
+      "role": "DC Current Sensitivity",
+      "macro": "CTRL_DC_CURRENT_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_GAIN)"
+      },
+      "description": "DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path."
+    },
+    {
+      "role": "DC Current Bias",
+      "macro": "CTRL_DC_CURRENT_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_BIAS_V)"
+      },
+      "description": "DC-bus current sensor bias."
     },
     {
       "role": "Phase Current Sensitivity",
       "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "literal": "(TI_BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM * TI_BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V)"
       },
@@ -353,6 +432,8 @@
     {
       "role": "Phase Current Bias",
       "macro": "CTRL_INVERTER_CURRENT_BIAS",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "literal": "(TI_BOOSTXL_3PHGANINV_PH_CSA_BIAS_V)"
       },
@@ -361,6 +442,8 @@
     {
       "role": "Phase Voltage Sensitivity",
       "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "literal": "(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN)"
       },
@@ -369,59 +452,79 @@
     {
       "role": "Phase Voltage Bias",
       "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "literal": "(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V)"
       },
       "description": "Phase-voltage sensor bias in volts."
     },
     {
-      "role": "Dc Current Sensitivity",
-      "macro": "CTRL_DC_CURRENT_SENSITIVITY",
+      "role": "Mechanical Division",
+      "macro": "CTRL_MECH_DIV",
+      "enabled": true,
+      "weak": false,
       "binding": {
-        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_GAIN)"
+        "number": "5"
       },
-      "description": "DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path."
+      "description": "Mechanical speed and position division factor."
     },
     {
-      "role": "Dc Current Bias",
-      "macro": "CTRL_DC_CURRENT_BIAS",
+      "role": "Open Loop Frequency",
+      "macro": "MCS_OPEN_LOOP_FREQ_HZ",
+      "enabled": true,
+      "weak": false,
       "binding": {
-        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_BIAS_V)"
+        "float": "20.0"
       },
-      "description": "DC-bus current sensor bias."
+      "description": "Electrical frequency command in hertz used by the BUILD_LEVEL 1 V/f path and the BUILD_LEVEL 2 synthetic-angle current-loop path."
     },
     {
-      "role": "Dc Voltage Sensitivity",
-      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
+      "role": "Open Loop Frequency Slope",
+      "macro": "MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S",
+      "enabled": true,
+      "weak": false,
       "binding": {
-        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_GAIN)"
+        "float": "20.0"
       },
-      "description": "DC-bus voltage sensing gain in ADC volts per measured volt."
+      "description": "Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator."
     },
     {
-      "role": "Dc Voltage Bias",
-      "macro": "CTRL_DC_VOLTAGE_BIAS",
+      "role": "Max Shutdown Current",
+      "macro": "MCS_MAX_SHUTDOWN_CURRENT_A",
+      "enabled": true,
+      "weak": true,
       "binding": {
-        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_BIAS_V)"
+        "float": "10.0"
       },
-      "description": "DC-bus voltage sensor bias in volts."
+      "description": "The current limit value at which the machine must be shut down."
+    },
+    {
+      "role": "Max Voltage For Circular Saturation",
+      "macro": "MCS_MAX_CIR_SATURATION_VOLTAGE_V",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "10.0"
+      },
+      "description": "Circular saturation limit for voltage vector magnitude in V."
     }
   ],
   "requirement_groups": [
     {
       "name": "Peripheral Parameters",
       "requirements": [
-        "Pwm Compare Max",
-        "Pwm Deadband",
+        "PWM Compare Max",
+        "PWM Deadband",
         "System Frequency",
         "System Time Divider",
-        "Adc Voltage Reference"
+        "ADC Voltage Reference"
       ]
     },
     {
       "name": "Per-Unit Base Parameters",
       "requirements": [
-        "Dc Bus Voltage Base",
+        "DC Bus Voltage Base",
         "Phase Voltage Base",
         "Current Base"
       ]
@@ -430,40 +533,69 @@
       "name": "Position Sensor Parameters",
       "requirements": [
         "Encoder Full Scale",
-        "Encoder Bias",
-        "Mechanical Division"
+        "Encoder Bias"
       ]
     },
     {
-      "name": "DC Bus Voltage Sensor",
+      "name": "Voltage & Current Sensor / DC Bus Voltage Sensor",
       "requirements": [
-        "Dc Voltage Sensitivity",
-        "Dc Voltage Bias"
+        "DC Voltage Sensitivity",
+        "DC Voltage Bias"
       ]
     },
     {
-      "name": "Inverter Phase Voltage Sensor",
+      "name": "Voltage & Current Sensor / DC Current Sensor",
+      "requirements": [
+        "DC Current Sensitivity",
+        "DC Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Inverter Phase Current Sensor",
+      "requirements": [
+        "Phase Current Sensitivity",
+        "Phase Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Inverter Phase Voltage Sensor",
       "requirements": [
         "Phase Voltage Sensitivity",
         "Phase Voltage Bias"
       ]
     },
     {
-      "name": "DC Current Sensor",
+      "name": "Control Loop Parameters",
       "requirements": [
-        "Dc Current Sensitivity",
-        "Dc Current Bias"
+        "Mechanical Division"
       ]
     },
     {
-      "name": "Inverter Phase Current Sensor",
+      "name": "Commissioning Defaults",
       "requirements": [
-        "Phase Current Sensitivity",
-        "Phase Current Bias"
+        "Open Loop Frequency",
+        "Open Loop Frequency Slope"
+      ]
+    },
+    {
+      "name": "Protection Parameters",
+      "requirements": [
+        "Max Shutdown Current",
+        "Max Voltage For Circular Saturation"
       ]
     }
   ],
   "common_requirements": [
     "../../../sdpe_general/sdpe_requirement.json"
+  ],
+  "feature_macro_groups": [],
+  "option_macro_groups": [
+    "Controller Options",
+    "Board GPIO",
+    "PWM Channel",
+    "Encoder",
+    "ADC DC Bus",
+    "ADC Phase Current",
+    "ADC Phase Voltage"
   ]
 }

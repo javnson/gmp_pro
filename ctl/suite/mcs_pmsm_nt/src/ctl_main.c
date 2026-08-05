@@ -108,6 +108,8 @@ void ctl_init()
     ctl_auto_tuning_foc_core(&mtr_ctrl_init);
     ctl_init_foc_core(&mtr_ctrl, &mtr_ctrl_init);
 
+    ctl_set_foc_core_saturation(&mtr_ctrl, VOLT_PU(MCS_MAX_CIR_SATURATION_VOLTAGE_V) , VOLT_PU(MCS_MAX_RECT_SATURATION_VOLTAGE_V));
+
     //
     // init SPWM modulator
     //
@@ -226,6 +228,11 @@ void ctl_init()
     // init and config Motor Protection module
     //
     ctl_init_mtr_protect(&protection, CONTROLLER_FREQUENCY);
+
+    ctl_set_mtr_protect_ov(&protection, float2ctrl(MCS_MAX_DC_BUS_VOLTAGE_V/CTRL_DCBUS_VOLTAGE));
+    ctl_set_mtr_protect_uv(&protection, float2ctrl(MCS_MIN_DC_BUS_VOLTAGE_V/CTRL_DCBUS_VOLTAGE));
+    ctl_set_mtr_protect_oc(&protection, float2ctrl(MCS_MAX_SHUTDOWN_CURRENT_A/CTRL_CURRENT_BASE));
+
     ctl_attach_mtr_protect_port(&protection, &mtr_ctrl.udc, (ctl_vector2_t*)&mtr_ctrl.idq0, &mtr_ctrl.idq_ref, NULL,
                                 NULL);
     ctl_set_mtr_protect_mask(&protection, MTR_PROT_DEVIATION);

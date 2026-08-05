@@ -15,6 +15,7 @@ try:
     from PyQt6.QtCore import QTimer, Qt
     from PyQt6.QtGui import QAction, QColor, QKeySequence, QPalette, QShortcut, QTextCursor, QTextDocument
     from PyQt6.QtWidgets import (
+        QAbstractItemView,
         QApplication,
         QCheckBox,
         QComboBox,
@@ -49,6 +50,7 @@ except ImportError:  # pragma: no cover - depends on local desktop environment.
         from PySide6.QtCore import QTimer, Qt
         from PySide6.QtGui import QAction, QColor, QKeySequence, QPalette, QShortcut, QTextCursor, QTextDocument
         from PySide6.QtWidgets import (
+            QAbstractItemView,
             QApplication,
             QCheckBox,
             QComboBox,
@@ -826,6 +828,20 @@ class SDPEPage(QWidget):
     def path_for_id(self, item_id: str) -> Path:
         raise NotImplementedError
 
+    def commit_active_cell_editor(self) -> None:
+        """Commit a delegate editor before Save reads the underlying item model."""
+
+        focus = QApplication.focusWidget()
+        if focus is None:
+            return
+        for view in [*self.findChildren(SDPETableWidget), *self.findChildren(SDPETreeWidget)]:
+            if view is self.list_widget:
+                continue
+            if view is focus or view.isAncestorOf(focus):
+                if view.state() == QAbstractItemView.State.EditingState:
+                    view.setFocus(Qt.FocusReason.OtherFocusReason)
+                return
+
     def mark_current_dirty(self) -> None:
         if self.loading or self.restoring_undo or not self.current_id:
             return
@@ -948,6 +964,7 @@ class SDPEPage(QWidget):
         return [(item_id, self.path_for_id(item_id)) for item_id in sorted(self.dirty_ids)]
 
     def save_dirty(self) -> int:
+        self.commit_active_cell_editor()
         if self.current_id in self.dirty_ids:
             self.store_current_draft()
         saved = 0
@@ -2394,8 +2411,8 @@ class ProjectPage(SDPEPage):
         self.hardware_tree.set_insert_handlers(add_item=self.add_hardware, item_label="Add hardware")
         self.hardware.set_insert_handlers(add_item=self.add_hardware, item_label="Add hardware")
         self.requirements.set_insert_handlers(
-            add_item=self.add_requirement,
-            item_label="Add requirement",
+            add_item=self.add_private_requirement,
+            item_label="Create private requirement",
             add_group=self.add_requirement_group,
         )
         self.feature_macros.set_insert_handlers(
@@ -2906,6 +2923,7 @@ class ProjectPage(SDPEPage):
 
     def save_current(self) -> None:
         try:
+            self.commit_active_cell_editor()
             path = self.window.project_path(self.current_id)
             data = self.collect_current_data()
             if data is None:
@@ -3239,10 +3257,7 @@ class ProjectPage(SDPEPage):
         removable = [
             item
             for item in items
-            if (
-                item.data(0, Qt.ItemDataRole.UserRole) == "group"
-                and not self.group_has_common_items(tree, item)
-            )
+            if item.data(0, Qt.ItemDataRole.UserRole) == "group"
             or (
                 item.data(0, Qt.ItemDataRole.UserRole) != "group"
                 and bool(self.project_item_source(item))
@@ -3326,7 +3341,7 @@ class ProjectPage(SDPEPage):
             kind = "option_macros" if macro_type == "option" else "feature_macros"
             if self.project_item_source(item).startswith("common:"):
                 menu.addAction(
-                    "Override in project",
+                    "Cover with private macro",
                     lambda: self.override_common_item(kind, tree, item),
                 )
                 menu.addAction(
@@ -3348,11 +3363,83 @@ class ProjectPage(SDPEPage):
         tree.set_action_handler("paste", lambda t=tree, mt=macro_type: self.paste_macro_items(t, mt))
         tree.set_action_handler("delete", lambda t=tree: self.remove_macro_items(t))
 
+    def next_requirement_macro(self, base: str) -> str:
+        existing = {tree_cell_text(self.requirements, item, 1) for item in self.iter_requirement_items()}
+        if base not in existing:
+            return base
+        index = 2
+        while f"{base}_{index}" in existing:
+            index += 1
+        return f"{base}_{index}"
+
     def add_requirement(self) -> None:
+        """Compatibility alias for the default private requirement action."""
+
+        self.add_private_requirement()
+
+    def add_private_requirement(self) -> None:
         group = self.current_requirement_group()
-        item = self.add_requirement_item(group, {"role": "New Requirement", "macro": "NEW_REQUIREMENT", "binding": {"number": "0"}})
+        item = self.add_requirement_item(
+            group,
+            {
+                "role": "New Private Requirement",
+                "macro": self.next_requirement_macro("NEW_PRIVATE_REQUIREMENT"),
+                "binding": {"number": "0"},
+                SOURCE_KEY: "project private",
+            },
+        )
         group.setExpanded(True)
-        self.requirements.setCurrentItem(item)
+        self.requirements.setCurrentItem(item, 0)
+        self.requirements.editItem(item, 0)
+        self.mark_current_dirty()
+
+    def common_source_choices(self) -> dict[str, str]:
+        return {
+            f"{data.get('display_name', data.get('id', path.stem))} | {path}": f"common:{data.get('id', index + 1)}"
+            for index, (path, data) in enumerate(self.current_common_requirements)
+        }
+
+    def preferred_common_source(self) -> str | None:
+        current = self.requirements.currentItem()
+        if current is not None:
+            source = self.project_item_source(current)
+            if source.startswith("common:"):
+                return source
+            descendant_sources = list(
+                dict.fromkeys(
+                    self.project_item_source(child)
+                    for child in self.requirements.iter_items(current)
+                    if self.project_item_source(child).startswith("common:")
+                )
+            )
+            if len(descendant_sources) == 1:
+                return descendant_sources[0]
+        choices = self.common_source_choices()
+        if len(choices) == 1:
+            return next(iter(choices.values()))
+        if not choices:
+            return None
+        selected = choose_item(self, "Create Common requirement", list(choices))
+        return choices.get(selected) if selected else None
+
+    def add_common_requirement(self) -> None:
+        source = self.preferred_common_source()
+        if source is None:
+            self.message("Create Common requirement", "Bind at least one Common requirement file first.")
+            return
+        group = self.current_requirement_group()
+        item = self.add_requirement_item(
+            group,
+            {
+                "role": "New Common Requirement",
+                "macro": self.next_requirement_macro("NEW_COMMON_REQUIREMENT"),
+                "binding": {"number": "0"},
+                SOURCE_KEY: source,
+            },
+        )
+        group.setExpanded(True)
+        self.requirements.setCurrentItem(item, 0)
+        self.requirements.editItem(item, 0)
         self.mark_current_dirty()
 
     def add_requirement_group(self) -> None:
@@ -3412,10 +3499,7 @@ class ProjectPage(SDPEPage):
         items = [
             item
             for item in self.requirements.selected_top_level_items()
-            if (
-                item.data(0, Qt.ItemDataRole.UserRole) == "group"
-                and not self.group_has_common_items(self.requirements, item)
-            )
+            if item.data(0, Qt.ItemDataRole.UserRole) == "group"
             or (
                 item.data(0, Qt.ItemDataRole.UserRole) != "group"
                 and bool(self.project_item_source(item))
@@ -3432,13 +3516,6 @@ class ProjectPage(SDPEPage):
                 parent.takeChild(parent.indexOfChild(item))
         self.enforce_override_hierarchy()
         self.mark_current_dirty()
-
-    def group_has_common_items(self, tree: SDPETreeWidget, group: QTreeWidgetItem) -> bool:
-        return any(
-            child.data(0, Qt.ItemDataRole.UserRole) != "group"
-            and self.project_item_source(child).startswith("common:")
-            for child in tree.iter_items(group)
-        )
 
     def selected_requirement_items(self) -> list[QTreeWidgetItem]:
         items = [
@@ -3830,6 +3907,7 @@ class ProjectPage(SDPEPage):
         return saved
 
     def save_dirty(self) -> int:
+        self.commit_active_cell_editor()
         if self.current_id in self.dirty_ids:
             self.store_current_draft()
         saved = 0
@@ -4315,7 +4393,12 @@ class ProjectPage(SDPEPage):
             self.requirements.setCurrentItem(item, max(0, col))
         menu = QMenu(self)
         is_requirement = item is not None and item.data(0, Qt.ItemDataRole.UserRole) == "requirement"
-        self.requirements.add_standard_actions_to_menu(menu)
+        menu.addAction("Create private requirement", self.add_private_requirement)
+        menu.addAction("Create Common requirement", self.add_common_requirement)
+        menu.addAction(self.requirements.action("add_group"))
+        menu.addSeparator()
+        for action_name in ("copy", "cut", "paste", "delete"):
+            menu.addAction(self.requirements.action(action_name))
         menu.addSeparator()
         if is_requirement and col == 6:
             menu.addAction("Edit in cell", lambda: self.edit_requirement_value_in_cell(item))
@@ -4327,7 +4410,7 @@ class ProjectPage(SDPEPage):
             menu.addSeparator()
             if self.project_item_source(item).startswith("common:"):
                 menu.addAction(
-                    "Override in project",
+                    "Cover with private requirement",
                     lambda: self.override_common_item("requirements", self.requirements, item),
                 )
                 menu.addAction(

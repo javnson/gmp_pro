@@ -16,11 +16,11 @@ if str(ROOT) not in sys.path:
 try:
     from PyQt6.QtCore import Qt
     from PyQt6.QtTest import QTest
-    from PyQt6.QtWidgets import QApplication, QStyleOptionViewItem, QTableWidgetItem, QTreeWidgetItem
+    from PyQt6.QtWidgets import QApplication, QCheckBox, QStyleOptionViewItem, QTableWidgetItem, QTreeWidgetItem
 except ImportError:  # pragma: no cover - depends on the installed Qt binding.
     from PySide6.QtCore import Qt
     from PySide6.QtTest import QTest
-    from PySide6.QtWidgets import QApplication, QStyleOptionViewItem, QTableWidgetItem, QTreeWidgetItem
+    from PySide6.QtWidgets import QApplication, QCheckBox, QStyleOptionViewItem, QTableWidgetItem, QTreeWidgetItem
 
 from gui_pyqt.sdpe_widgets import SDPEComboBox, SDPETableWidget, SDPETreeWidget
 from gui_pyqt.sdpe_gui import MainWindow, ProjectPage
@@ -129,6 +129,20 @@ class SDPEWidgetTests(unittest.TestCase):
         self.assertEqual(tree.topLevelItemCount(), 1)
         self.assertEqual(tree.topLevelItem(0).text(0), "Second")
 
+    def test_delete_key_from_permanent_cell_widget_removes_tree_row(self) -> None:
+        tree = SDPETreeWidget()
+        tree.configure(["Name", "En"])
+        item = QTreeWidgetItem(["First", ""])
+        tree.addTopLevelItem(item)
+        checkbox = QCheckBox()
+        tree.setItemWidget(item, 1, checkbox)
+        tree.setCurrentItem(item, 1)
+        checkbox.setFocus()
+
+        QTest.keyClick(checkbox, Qt.Key.Key_Delete)
+
+        self.assertEqual(tree.topLevelItemCount(), 0)
+
     def test_structural_action_emits_one_undo_transaction(self) -> None:
         table = SDPETableWidget()
         table.configure(["Name"])
@@ -212,6 +226,117 @@ class SDPEWidgetTests(unittest.TestCase):
 
             self.assertNotIn(page.current_id, page.dirty_ids)
             self.assertFalse(page.list_widget.currentItem().text().endswith(" *"))
+            window.deleteLater()
+            self.app.processEvents()
+
+    def test_common_create_cover_delete_and_ctrl_s_write_the_common_file(self) -> None:
+        examples = ROOT / "examples"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            common_path = root / "common.json"
+            project_path = root / "private.json"
+            common_path.write_text(
+                json.dumps({"id": "base", "output_header": "base.h", "requirements": []}),
+                encoding="utf-8",
+            )
+            project_path.write_text(
+                json.dumps(
+                    {
+                        "id": "private",
+                        "output_header": "private.h",
+                        "common_requirements": ["common.json"],
+                        "requirements": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            window = MainWindow(
+                examples,
+                mode="project",
+                project_dirs=[project_path],
+                default_output_dir=root / "out",
+            )
+            window.show()
+            page = next(item for item in window.pages if isinstance(item, ProjectPage))
+            page.current_id = "private"
+            page.refresh_list()
+            page.load_current()
+            tabs = page.form_layout.itemAt(0).widget()
+            tabs.setCurrentIndex(2)
+            self.app.processEvents()
+
+            page.add_common_requirement()
+            common_item = page.requirements.currentItem()
+            self.assertTrue(page.project_item_source(common_item).startswith("common:"))
+            editor = QApplication.focusWidget()
+            editor.selectAll()
+            QTest.keyClicks(editor, "Saved Common Requirement")
+            QTest.keyClick(editor, Qt.Key.Key_S, Qt.KeyboardModifier.ControlModifier)
+            self.app.processEvents()
+
+            saved_common = json.loads(common_path.read_text(encoding="utf-8"))
+            saved_private = json.loads(project_path.read_text(encoding="utf-8"))
+            self.assertEqual(saved_common["requirements"][0]["role"], "Saved Common Requirement")
+            self.assertEqual(saved_private["requirements"], [])
+
+            common_item = next(
+                item
+                for item in page.iter_requirement_items()
+                if page.project_item_source(item).startswith("common:")
+            )
+            page.override_common_item("requirements", page.requirements, common_item)
+            page.save_current()
+            saved_common = json.loads(common_path.read_text(encoding="utf-8"))
+            saved_private = json.loads(project_path.read_text(encoding="utf-8"))
+            self.assertTrue(saved_common["requirements"][0]["weak"])
+            self.assertEqual(saved_private["requirements"][0]["macro"], "NEW_COMMON_REQUIREMENT")
+
+            common_item = next(
+                item
+                for item in page.iter_requirement_items()
+                if page.project_item_source(item).startswith("common:")
+            )
+            page.requirements.setCurrentItem(common_item, 0)
+            page.requirements.editItem(common_item, 0)
+            self.app.processEvents()
+            editor = QApplication.focusWidget()
+            editor.selectAll()
+            QTest.keyClicks(editor, "Covered Common Updated")
+            QTest.keyClick(editor, Qt.Key.Key_S, Qt.KeyboardModifier.ControlModifier)
+            self.app.processEvents()
+            self.assertEqual(
+                json.loads(common_path.read_text(encoding="utf-8"))["requirements"][0]["role"],
+                "Covered Common Updated",
+            )
+            self.assertEqual(
+                json.loads(project_path.read_text(encoding="utf-8"))["requirements"][0]["role"],
+                "Saved Common Requirement",
+            )
+
+            common_item = next(
+                item
+                for item in page.iter_requirement_items()
+                if page.project_item_source(item).startswith("common:")
+            )
+            page.requirements.setCurrentItem(common_item, 2)
+            checkbox = page.requirements.itemWidget(common_item, 2)._sdpe_checkbox
+            checkbox.setFocus()
+            QTest.keyClick(checkbox, Qt.Key.Key_Delete)
+            page.save_current()
+            self.assertEqual(json.loads(common_path.read_text(encoding="utf-8"))["requirements"], [])
+            self.assertEqual(len(json.loads(project_path.read_text(encoding="utf-8"))["requirements"]), 1)
+
+            page.add_common_requirement()
+            new_common = page.requirements.currentItem()
+            owning_group = page.item_group_ancestor(new_common)
+            page.requirements.clearSelection()
+            page.requirements.setCurrentItem(owning_group, 0)
+            owning_group.setSelected(True)
+            page.remove_requirement_item()
+            self.assertEqual(page.iter_requirement_items(), [])
+            page.save_current()
+            self.assertEqual(json.loads(common_path.read_text(encoding="utf-8"))["requirements"], [])
+            self.assertEqual(json.loads(project_path.read_text(encoding="utf-8"))["requirements"], [])
             window.deleteLater()
             self.app.processEvents()
 

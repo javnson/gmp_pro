@@ -242,11 +242,18 @@ Project JSON 的路径、绝对路径，或包含 `%VAR%`、`$VAR`、`${VAR}` �
 Script 自动引用对应的公共输出。
 
 合并视图中的 Common Requirement、Selection Macro 和 Option Macro 可以直接编辑，
-保存时写回各自的 Common JSON。对 Common 项执行 `Override in project` 会创建同名的
-Project Private 项；界面强制将 Project Private 项作为父节点，将所有同名 Common 项
+保存时写回各自的 Common JSON。Requirements 右键菜单分别提供
+`Create private requirement` 和 `Create Common requirement`。对 Common 项执行
+`Cover with private requirement` 会创建同名的 Project Private 项；界面强制将
+Project Private 项作为父节点，将所有同名 Common 项
 作为子节点，并强制 Common 项启用 `weak`。生成 C 头文件时先输出 Project Private
 定义，再 include Common 头文件；Common 中的同名定义使用 `#ifndef` 保护，因此可作为
 安全的默认值。Project 与 Common 的 `enabled` 状态仍可分别设置。
+
+`Ctrl+S` 和 Save All 会先提交当前活动的单元格编辑器，再分别保存所有受影响的
+Private/Common JSON。Delete 默认删除所选行，焦点位于 Checkbox 等永久控件时行为一致；
+进入文本编辑器后 Delete 只编辑文本。删除 Group 会删除完整子树，删除单独的 Private
+Cover 项则会把 Common 子项移回所属 Group。
 
 MATLAB Init Script 在完成赋值后会向控制台打印工程名称、ID、Suite、版本、硬件清单、
 Common 清单、所有已使能变量的最终值以及被禁用的宏，便于启动仿真前核对配置。
