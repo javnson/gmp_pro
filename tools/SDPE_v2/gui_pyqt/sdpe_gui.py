@@ -116,6 +116,7 @@ from gui_pyqt.dialogs import (
 from gui_pyqt.sdpe_widgets import (
     SDPEComboBox,
     SDPEDataViewMixin,
+    READ_ONLY_CELL_ROLE,
     SDPETableWidget,
     SDPETreeWidget,
     VALIDATION_BORDER_ROLE,
@@ -125,6 +126,7 @@ from gui_pyqt.sdpe_widgets import (
 
 
 PROJECT_SOURCE_ROLE = Qt.ItemDataRole.UserRole.value + 120
+PROJECT_COMMON_SNAPSHOT_KEY = "__sdpe_common_documents"
 
 
 def pretty_json(data: Any) -> str:
@@ -2348,7 +2350,9 @@ class ProjectPage(SDPEPage):
         self.requirements.setColumnWidth(4, 46)
         self.requirements.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.requirements.customContextMenuRequested.connect(self.show_requirement_context_menu)
-        self.requirements.itemChanged.connect(lambda _item, _col: self.mark_current_dirty())
+        self.requirements.itemChanged.connect(
+            lambda item, col: self.on_project_tree_item_changed(self.requirements, item, col)
+        )
         self.requirements.itemDoubleClicked.connect(self.on_requirement_cell_double_clicked)
         self.requirements.currentItemChanged.connect(lambda current, _previous: self.jump_from_requirement_item(current))
         self.requirements.contentChanged.connect(self.mark_current_dirty)
@@ -2412,8 +2416,15 @@ class ProjectPage(SDPEPage):
             widget.textChanged.connect(self.mark_current_dirty)
         self.hardware.cellChanged.connect(lambda _row, _col: self.mark_current_dirty())
         self.hardware.contentChanged.connect(self.refresh_hardware_status)
-        self.feature_macros.itemChanged.connect(lambda _item, _col: self.mark_current_dirty())
-        self.enum_macros.itemChanged.connect(lambda item, col: (self.mark_current_dirty(), self.on_enum_macro_item_changed(item, col)))
+        self.feature_macros.itemChanged.connect(
+            lambda item, col: self.on_project_tree_item_changed(self.feature_macros, item, col)
+        )
+        self.enum_macros.itemChanged.connect(
+            lambda item, col: (
+                self.on_project_tree_item_changed(self.enum_macros, item, col),
+                self.on_enum_macro_item_changed(item, col),
+            )
+        )
         self.hardware.cellChanged.connect(lambda _row, _col: self.refresh_hardware_status())
         self.hardware_view.currentTextChanged.connect(self.update_hardware_view)
 
@@ -2547,6 +2558,7 @@ class ProjectPage(SDPEPage):
         if not target:
             return
         data = self.collect_current_data() or read_json(source)
+        data.pop(PROJECT_COMMON_SNAPSHOT_KEY, None)
         data["id"] = Path(target).stem
         data["display_name"] = f"{data.get('display_name', self.current_id)} Copy"
         self.window.write_json(Path(target), data)
@@ -2564,9 +2576,15 @@ class ProjectPage(SDPEPage):
         if not self.current_id:
             return
         project_path = self.window.project_path(self.current_id)
-        data = self.data_for_id(self.current_id, project_path)
+        snapshot = self.data_for_id(self.current_id, project_path)
+        embedded_commons = snapshot.get(PROJECT_COMMON_SNAPSHOT_KEY, {})
+        data = {key: value for key, value in snapshot.items() if key != PROJECT_COMMON_SNAPSHOT_KEY}
         common_paths = resolve_common_requirement_paths(project_path, data)
-        self.current_common_requirements = [(path, read_json(path)) for path in common_paths]
+        self.current_common_requirements = []
+        for path in common_paths:
+            key = str(path.resolve())
+            common = embedded_commons[key] if key in embedded_commons else read_json(path)
+            self.current_common_requirements.append((path, self.clone_data(common)))
         merged = merged_project_view(data, [item for _path, item in self.current_common_requirements])
         self.loading = True
         self.path_edit.setText(str(project_path))
@@ -2586,12 +2604,15 @@ class ProjectPage(SDPEPage):
         self.load_hardware(merged)
         self.load_requirements(merged)
         self.load_macro_tables(merged)
+        self.enforce_override_hierarchy()
         self.set_professional_text(pretty_json(data))
+        effective_snapshot = self.collect_current_data() or data
+        effective_commons = list(effective_snapshot.get(PROJECT_COMMON_SNAPSHOT_KEY, {}).values())
         try:
             self.set_code_text(
                 self.window.generator().render_project_header(
                     data,
-                    [item for _path, item in self.current_common_requirements],
+                    effective_commons,
                 ),
                 reveal=False,
             )
@@ -2601,7 +2622,7 @@ class ProjectPage(SDPEPage):
             self.set_matlab_text(
                 self.window.generator().render_project_matlab_script(
                     data,
-                    [item for _path, item in self.current_common_requirements],
+                    effective_commons,
                 ),
                 reveal=False,
             )
@@ -2632,10 +2653,14 @@ class ProjectPage(SDPEPage):
     def common_data_for_current(self, data: dict[str, Any]) -> list[dict[str, Any]]:
         if not self.current_id:
             return []
-        return [
-            read_json(path)
-            for path in resolve_common_requirement_paths(self.window.project_path(self.current_id), data)
-        ]
+        embedded = data.get(PROJECT_COMMON_SNAPSHOT_KEY, {})
+        private = {key: value for key, value in data.items() if key != PROJECT_COMMON_SNAPSHOT_KEY}
+        commons: list[dict[str, Any]] = []
+        for path in resolve_common_requirement_paths(self.window.project_path(self.current_id), private):
+            key = str(path.resolve())
+            common = embedded[key] if key in embedded else read_json(path)
+            commons.append(self.clone_data(common))
+        return commons
 
     def load_hardware(self, data: dict[str, Any]) -> None:
         self.hardware.setRowCount(0)
@@ -2710,6 +2735,7 @@ class ProjectPage(SDPEPage):
             self.requirements.setColumnWidth(2, 46)
             self.requirements.setColumnWidth(3, 46)
             self.requirements.setColumnWidth(4, 46)
+            self.enforce_tree_override_hierarchy(self.requirements, {"requirement"}, 1, 3)
             return
         by_name = {req.get("role", req.get("macro", "")): req for req in requirements if req.get("role") or req.get("macro")}
         used: set[str] = set()
@@ -2800,24 +2826,24 @@ class ProjectPage(SDPEPage):
         self.enum_macros.setColumnWidth(2, 46)
         self.enum_macros.setColumnWidth(3, 46)
 
-    def collect_feature_macro_tree(self) -> list[dict[str, Any]]:
+    def collect_feature_macro_tree(self, source: str = "project private") -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
         for item in self.feature_macros.iter_items():
             if item.data(0, Qt.ItemDataRole.UserRole) != "feature_macro":
                 continue
-            if self.project_item_source(item) != "project private":
+            if self.project_item_source(item) != source:
                 continue
             data = self.macro_item_to_data(self.feature_macros, item, "feature")
             if data.get("macro"):
                 rows.append(data)
         return rows
 
-    def collect_option_macro_tree(self) -> list[dict[str, Any]]:
+    def collect_option_macro_tree(self, source: str = "project private") -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
         for item in self.enum_macros.iter_items():
             if item.data(0, Qt.ItemDataRole.UserRole) != "option_macro":
                 continue
-            if self.project_item_source(item) != "project private":
+            if self.project_item_source(item) != source:
                 continue
             data = self.macro_item_to_data(self.enum_macros, item, "option")
             if data.get("macro"):
@@ -2860,6 +2886,22 @@ class ProjectPage(SDPEPage):
             data["code_sections"] = sections
         else:
             data.pop("code_sections", None)
+        common_documents: dict[str, dict[str, Any]] = {}
+        for index, (common_path, common_base) in enumerate(self.current_common_requirements):
+            source = f"common:{common_base.get('id', index + 1)}"
+            common = self.clone_data(common_base)
+            common["requirements"] = self._table_requirements(source)
+            common["requirement_groups"] = self._requirement_groups(source)
+            common["feature_macros"] = self.collect_feature_macro_tree(source)
+            common["option_macros"] = self.collect_option_macro_tree(source)
+            feature_groups = self._macro_group_paths(self.feature_macros, source)
+            option_groups = self._macro_group_paths(self.enum_macros, source)
+            if feature_groups:
+                common["feature_macro_groups"] = feature_groups
+            if option_groups:
+                common["option_macro_groups"] = option_groups
+            common_documents[str(common_path.resolve())] = common
+        data[PROJECT_COMMON_SNAPSHOT_KEY] = common_documents
         return data
 
     def save_current(self) -> None:
@@ -2868,9 +2910,8 @@ class ProjectPage(SDPEPage):
             data = self.collect_current_data()
             if data is None:
                 return
-            data["updated_at"] = date.today().isoformat()
-            self.updated_edit.setText(data["updated_at"])
-            self.window.write_json(path, data)
+            self.write_project_snapshot(self.current_id, data)
+            self.updated_edit.setText(date.today().isoformat())
             self.dirty_ids.discard(self.current_id)
             self.drafts.pop(self.current_id, None)
             self.window.reload()
@@ -2913,32 +2954,30 @@ class ProjectPage(SDPEPage):
                 )
         return rows
 
-    def _table_requirements(self) -> list[dict[str, Any]]:
+    def _table_requirements(self, source: str = "project private") -> list[dict[str, Any]]:
         rows = []
         for item in self.requirements.iter_items():
             if item.data(0, Qt.ItemDataRole.UserRole) != "requirement":
                 continue
-            if self.project_item_source(item) != "project private":
+            if self.project_item_source(item) != source:
                 continue
             macro = tree_cell_text(self.requirements, item, 1)
             if macro:
                 rows.append(self.requirement_item_to_data(item))
         return rows
 
-    def _requirement_groups(self) -> list[dict[str, Any]]:
-        groups = []
-        for group in self.requirements.iter_items():
-            if group.data(0, Qt.ItemDataRole.UserRole) != "group":
+    def _requirement_groups(self, source: str = "project private") -> list[dict[str, Any]]:
+        groups: dict[str, list[str]] = {}
+        for item in self.iter_requirement_items():
+            if self.project_item_source(item) != source:
                 continue
-            names = [
-                tree_cell_text(self.requirements, child, 0)
-                for child in self.requirements.source_children(group)
-                if child.data(0, Qt.ItemDataRole.UserRole) == "requirement"
-                and self.project_item_source(child) == "project private"
-                and tree_cell_text(self.requirements, child, 0)
-            ]
-            groups.append({"name": self.requirements.group_path(group) or "Requirements", "requirements": names})
-        return groups
+            name = tree_cell_text(self.requirements, item, 0)
+            if not name:
+                continue
+            group = self.item_group_ancestor(item)
+            path = self.requirements.group_path(group) if group is not None else "Requirements"
+            groups.setdefault(path or "Requirements", []).append(name)
+        return [{"name": path, "requirements": names} for path, names in groups.items()]
 
     def _table_feature_macros(self) -> list[dict[str, Any]]:
         return self.collect_feature_macro_tree()
@@ -2946,7 +2985,7 @@ class ProjectPage(SDPEPage):
     def _table_option_macros(self) -> list[dict[str, Any]]:
         return self.collect_option_macro_tree()
 
-    def _macro_group_paths(self, tree: SDPETreeWidget) -> list[str]:
+    def _macro_group_paths(self, tree: SDPETreeWidget, source: str = "project private") -> list[str]:
         """Persist empty groups and nested group order independently of macro rows."""
 
         return [
@@ -2960,7 +2999,7 @@ class ProjectPage(SDPEPage):
                 )
                 or any(
                     child.data(0, Qt.ItemDataRole.UserRole) in {"feature_macro", "option_macro"}
-                    and self.project_item_source(child) == "project private"
+                    and self.project_item_source(child) == source
                     for child in tree.iter_items(item)
                 )
             )
@@ -2969,6 +3008,113 @@ class ProjectPage(SDPEPage):
 
     def project_item_source(self, item: QTreeWidgetItem) -> str:
         return str(item.data(0, PROJECT_SOURCE_ROLE) or "project private")
+
+    def on_project_tree_item_changed(self, tree: SDPETreeWidget, item: QTreeWidgetItem, col: int) -> None:
+        self.mark_current_dirty()
+        macro_col = 1 if tree is self.requirements else 0
+        if item.data(0, Qt.ItemDataRole.UserRole) != "group" and col == macro_col:
+            QTimer.singleShot(0, self.enforce_override_hierarchy)
+
+    def item_group_ancestor(self, item: QTreeWidgetItem | None) -> QTreeWidgetItem | None:
+        current = item
+        while current is not None:
+            if current.data(0, Qt.ItemDataRole.UserRole) == "group":
+                return current
+            current = current.parent()
+        return None
+
+    def release_common_children(self, item: QTreeWidgetItem) -> None:
+        """Keep inherited rows when their private override parent is removed."""
+
+        group = self.item_group_ancestor(item)
+        if group is None:
+            return
+        children = [item.child(index) for index in range(item.childCount())]
+        for child in children:
+            if self.project_item_source(child).startswith("common:"):
+                self.reparent_project_item(child, group)
+
+    def reparent_project_item(self, item: QTreeWidgetItem, parent: QTreeWidgetItem) -> None:
+        if item.parent() is parent:
+            return
+        tree = item.treeWidget()
+        widget_snapshot = tree._snapshot_item(item) if isinstance(tree, SDPETreeWidget) else None
+        if tree is not None:
+            for col in range(tree.columnCount()):
+                if tree.itemWidget(item, col) is not None:
+                    # QAbstractItemView owns index widgets and may delete them
+                    # later. Never attach the old QWidget to a new model index.
+                    tree.removeItemWidget(item, col)
+        old_parent = item.parent()
+        if old_parent is None:
+            if tree is not None:
+                tree.takeTopLevelItem(tree.indexOfTopLevelItem(item))
+        else:
+            old_parent.takeChild(old_parent.indexOfChild(item))
+        parent.addChild(item)
+        if isinstance(tree, SDPETreeWidget) and widget_snapshot is not None:
+            tree._restore_item_widgets(item, widget_snapshot)
+        parent.setExpanded(True)
+
+    def set_override_weak_state(
+        self,
+        tree: SDPETreeWidget,
+        item: QTreeWidgetItem,
+        weak_col: int,
+        forced: bool,
+    ) -> None:
+        panel = tree.itemWidget(item, weak_col)
+        box = getattr(panel, "_sdpe_checkbox", None) if panel is not None else None
+        if not isinstance(box, QCheckBox):
+            set_tree_check(item, weak_col, forced or tree_checked(item, weak_col, False))
+            panel = tree.itemWidget(item, weak_col)
+            box = getattr(panel, "_sdpe_checkbox", None) if panel is not None else None
+        if isinstance(box, QCheckBox):
+            if forced and not box.isChecked():
+                box.setChecked(True)
+            box.setEnabled(not forced)
+            box.setToolTip("Weak is required while a private override exists." if forced else "")
+        if forced:
+            item.setData(weak_col, Qt.ItemDataRole.UserRole, True)
+
+    def enforce_tree_override_hierarchy(
+        self,
+        tree: SDPETreeWidget,
+        item_roles: set[str],
+        macro_col: int,
+        weak_col: int,
+    ) -> None:
+        items = [item for item in tree.iter_items() if item.data(0, Qt.ItemDataRole.UserRole) in item_roles]
+        private_by_macro: dict[str, QTreeWidgetItem] = {}
+        for item in items:
+            macro = tree_cell_text(tree, item, macro_col)
+            if macro and self.project_item_source(item) == "project private":
+                private_by_macro.setdefault(macro, item)
+        for item in items:
+            if not self.project_item_source(item).startswith("common:"):
+                continue
+            macro = tree_cell_text(tree, item, macro_col)
+            target = private_by_macro.get(macro)
+            group = self.item_group_ancestor(item)
+            if target is not None:
+                self.reparent_project_item(item, target)
+                self.set_override_weak_state(tree, item, weak_col, True)
+            else:
+                if item.parent() is not None and item.parent().data(0, Qt.ItemDataRole.UserRole) != "group" and group is not None:
+                    self.reparent_project_item(item, group)
+                self.set_override_weak_state(tree, item, weak_col, False)
+
+    def enforce_override_hierarchy(self) -> None:
+        if not self.current_id:
+            return
+        old_loading = self.loading
+        self.loading = True
+        try:
+            self.enforce_tree_override_hierarchy(self.requirements, {"requirement"}, 1, 3)
+            self.enforce_tree_override_hierarchy(self.feature_macros, {"feature_macro"}, 0, 2)
+            self.enforce_tree_override_hierarchy(self.enum_macros, {"option_macro"}, 0, 2)
+        finally:
+            self.loading = old_loading
 
     def add_feature_macro(self) -> None:
         self.add_macro_item(self.feature_macros, "feature")
@@ -3006,8 +3152,9 @@ class ProjectPage(SDPEPage):
         if item is not None:
             if item.data(0, Qt.ItemDataRole.UserRole) == "group":
                 return item
-            if item.parent() is not None:
-                return item.parent()
+            group = self.item_group_ancestor(item)
+            if group is not None:
+                return group
         if tree.topLevelItemCount() == 0:
             tree.addTopLevelItem(self.create_macro_group_item(default_group))
         return tree.topLevelItem(0)
@@ -3048,12 +3195,10 @@ class ProjectPage(SDPEPage):
             set_tree_check(item, 3, source == "project private", enabled=False)
         item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsDragEnabled)
         item.setData(0, PROJECT_SOURCE_ROLE, source)
+        item.setData(3, READ_ONLY_CELL_ROLE, True)
+        item.setData(tree.columnCount() - 1, READ_ONLY_CELL_ROLE, True)
         if source.startswith("common:"):
-            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable & ~Qt.ItemFlag.ItemIsDragEnabled)
-            for col in (1, 2, 4):
-                widget = tree.itemWidget(item, col)
-                if widget is not None:
-                    widget.setEnabled(False)
+            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsDragEnabled)
         if not self.loading:
             tree.setCurrentItem(item, 0)
             self.mark_current_dirty()
@@ -3100,10 +3245,11 @@ class ProjectPage(SDPEPage):
             )
             or (
                 item.data(0, Qt.ItemDataRole.UserRole) != "group"
-                and self.project_item_source(item) == "project private"
+                and bool(self.project_item_source(item))
             )
         ]
         for item in reversed(removable):
+            self.release_common_children(item)
             parent = item.parent()
             if parent is None:
                 index = tree.indexOfTopLevelItem(item)
@@ -3111,6 +3257,7 @@ class ProjectPage(SDPEPage):
             else:
                 parent.removeChild(item)
         if removable:
+            self.enforce_override_hierarchy()
             self.mark_current_dirty()
 
     def macro_item_to_data(self, tree: QTreeWidget, item: QTreeWidgetItem, macro_type: str) -> dict[str, Any]:
@@ -3179,6 +3326,10 @@ class ProjectPage(SDPEPage):
             kind = "option_macros" if macro_type == "option" else "feature_macros"
             if self.project_item_source(item).startswith("common:"):
                 menu.addAction(
+                    "Override in project",
+                    lambda: self.override_common_item(kind, tree, item),
+                )
+                menu.addAction(
                     "Deploy common item to private projects...",
                     lambda: self.deploy_common_item_to_projects(kind, tree, item),
                 )
@@ -3234,17 +3385,15 @@ class ProjectPage(SDPEPage):
         item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsDragEnabled)
         item.setData(0, Qt.ItemDataRole.UserRole, "requirement")
         item.setData(0, PROJECT_SOURCE_ROLE, source)
+        item.setData(4, READ_ONLY_CELL_ROLE, True)
+        item.setData(8, READ_ONLY_CELL_ROLE, True)
         group.insertChild(max(0, min(index, group.childCount())), item)
         set_tree_check(item, 2, bool(req.get("enabled", True)))
         set_tree_check(item, 3, bool(req.get("weak", False)))
         set_tree_check(item, 4, source == "project private", enabled=False)
         set_tree_combo(self.requirements, item, 5, binding_type_options(), btype)
         if source.startswith("common:"):
-            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable & ~Qt.ItemFlag.ItemIsDragEnabled)
-            for col in (2, 3, 5):
-                widget = self.requirements.itemWidget(item, col)
-                if widget is not None:
-                    widget.setEnabled(False)
+            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsDragEnabled)
         return item
 
     def current_requirement_group(self) -> QTreeWidgetItem:
@@ -3252,8 +3401,9 @@ class ProjectPage(SDPEPage):
         if item is not None:
             if item.data(0, Qt.ItemDataRole.UserRole) == "group":
                 return item
-            if item.parent() is not None:
-                return item.parent()
+            group = self.item_group_ancestor(item)
+            if group is not None:
+                return group
         if self.requirements.topLevelItemCount() == 0:
             self.add_requirement_group()
         return self.requirements.topLevelItem(0)
@@ -3268,17 +3418,19 @@ class ProjectPage(SDPEPage):
             )
             or (
                 item.data(0, Qt.ItemDataRole.UserRole) != "group"
-                and self.project_item_source(item) == "project private"
+                and bool(self.project_item_source(item))
             )
         ]
         if not items:
             return
         for item in reversed(items):
+            self.release_common_children(item)
             parent = item.parent()
             if parent is None:
                 self.requirements.takeTopLevelItem(self.requirements.indexOfTopLevelItem(item))
             else:
                 parent.takeChild(parent.indexOfChild(item))
+        self.enforce_override_hierarchy()
         self.mark_current_dirty()
 
     def group_has_common_items(self, tree: SDPETreeWidget, group: QTreeWidgetItem) -> bool:
@@ -3334,10 +3486,12 @@ class ProjectPage(SDPEPage):
         self.remove_requirement_items(items)
 
     def remove_requirement_items(self, items: list[QTreeWidgetItem]) -> None:
-        for item in reversed([item for item in items if self.project_item_source(item) == "project private"]):
+        for item in reversed(items):
+            self.release_common_children(item)
             parent = item.parent()
             if parent is not None:
                 parent.removeChild(item)
+        self.enforce_override_hierarchy()
         self.mark_current_dirty()
 
     def parse_requirement_clipboard(self, text: str) -> list[dict[str, Any]]:
@@ -3384,9 +3538,10 @@ class ProjectPage(SDPEPage):
 
     def requirement_paste_target(self) -> tuple[QTreeWidgetItem, int]:
         item = self.requirements.currentItem()
-        if item is not None and item.data(0, Qt.ItemDataRole.UserRole) == "requirement" and item.parent() is not None:
-            group = item.parent()
-            return group, group.indexOfChild(item) + 1
+        if item is not None and item.data(0, Qt.ItemDataRole.UserRole) == "requirement":
+            group = self.item_group_ancestor(item)
+            if group is not None:
+                return group, group.childCount()
         group = self.current_requirement_group()
         return group, group.childCount()
 
@@ -3426,11 +3581,7 @@ class ProjectPage(SDPEPage):
                 if not isinstance(self.requirements.itemWidget(item, 5), QComboBox):
                     set_tree_combo(self.requirements, item, 5, binding_type_options(), btype)
                 if self.project_item_source(item).startswith("common:"):
-                    item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable & ~Qt.ItemFlag.ItemIsDragEnabled)
-                    for col in (2, 3, 5):
-                        widget = self.requirements.itemWidget(item, col)
-                        if widget is not None:
-                            widget.setEnabled(False)
+                    item.setFlags((item.flags() | Qt.ItemFlag.ItemIsEditable) & ~Qt.ItemFlag.ItemIsDragEnabled)
             header = self.requirements.header()
             header.setStretchLastSection(False)
             for col in range(self.requirements.columnCount()):
@@ -3466,16 +3617,14 @@ class ProjectPage(SDPEPage):
                     if not isinstance(tree.itemWidget(item, 4), QComboBox):
                         set_tree_combo(tree, item, 4, options or [value], value)
                 if self.project_item_source(item).startswith("common:"):
-                    item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable & ~Qt.ItemFlag.ItemIsDragEnabled)
-                    for col in (1, 2, 4):
-                        widget = tree.itemWidget(item, col)
-                        if widget is not None:
-                            widget.setEnabled(False)
+                    item.setFlags((item.flags() | Qt.ItemFlag.ItemIsEditable) & ~Qt.ItemFlag.ItemIsDragEnabled)
             description_col = 7 if tree is self.enum_macros else 5
             fit_tree_key_columns(tree, description_col=description_col, interactive=True)
             tree.setColumnWidth(1, 46)
             tree.setColumnWidth(2, 46)
             tree.setColumnWidth(3, 46)
+            roles = {"option_macro"} if tree is self.enum_macros else {"feature_macro"}
+            self.enforce_tree_override_hierarchy(tree, roles, 0, 2)
         finally:
             self.loading = False
 
@@ -3592,7 +3741,7 @@ class ProjectPage(SDPEPage):
         duplicates = {
             macro: rows
             for macro, rows in occurrences.items()
-            if len(rows) > 1 or macro in reserved
+            if (len(rows) > 1 and not self.is_valid_override_rows(rows)) or macro in reserved
         }
         if not duplicates:
             self.message("Validate Macros", "No duplicate project macros found.")
@@ -3605,14 +3754,36 @@ class ProjectPage(SDPEPage):
         extra = "" if len(duplicates) <= 8 else f" (+{len(duplicates) - 8} more)"
         self.message("Validate Macros", f"Duplicate macro(s): {names}{extra}")
 
+    def is_valid_override_rows(
+        self,
+        rows: list[tuple[QTreeWidget, QTreeWidgetItem, str]],
+    ) -> bool:
+        trees = {id(tree) for tree, _item, _label in rows}
+        private = [(tree, item) for tree, item, _label in rows if self.project_item_source(item) == "project private"]
+        common = [
+            (tree, item)
+            for tree, item, _label in rows
+            if self.project_item_source(item).startswith("common:")
+        ]
+        if len(trees) != 1 or len(private) != 1 or len(common) != len(rows) - 1:
+            return False
+        private_item = private[0][1]
+        weak_col = 3 if private[0][0] is self.requirements else 2
+        return all(item.parent() is private_item and tree_checked(item, weak_col, False) for _tree, item in common)
+
     def duplicate_source_documents(self) -> list[tuple[str, dict[str, Any]]]:
-        private = self.collect_current_data()
-        if private is None:
+        snapshot = self.collect_current_data()
+        if snapshot is None:
             return []
+        private = self.clone_data(snapshot)
+        common_documents = private.pop(PROJECT_COMMON_SNAPSHOT_KEY, {})
         documents = [("project private", private)]
         documents.extend(
-            (f"common:{data.get('id', index + 1)}", data)
-            for index, (_path, data) in enumerate(self.current_common_requirements)
+            (
+                f"common:{data.get('id', index + 1)}",
+                common_documents.get(str(path.resolve()), data),
+            )
+            for index, (path, data) in enumerate(self.current_common_requirements)
         )
         return documents
 
@@ -3643,6 +3814,34 @@ class ProjectPage(SDPEPage):
             self.finish_project_migration(f"Removed {removed} duplicate macro occurrence(s).")
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
+
+    def write_project_snapshot(self, item_id: str, snapshot: dict[str, Any]) -> int:
+        """Write one private document and every edited Common source atomically by file."""
+
+        private = self.clone_data(snapshot)
+        common_documents = private.pop(PROJECT_COMMON_SNAPSHOT_KEY, {})
+        private["updated_at"] = date.today().isoformat()
+        self.window.write_json(self.path_for_id(item_id), private)
+        saved = 1
+        for path_text, common in common_documents.items():
+            common["updated_at"] = date.today().isoformat()
+            self.window.write_json(Path(path_text), common)
+            saved += 1
+        return saved
+
+    def save_dirty(self) -> int:
+        if self.current_id in self.dirty_ids:
+            self.store_current_draft()
+        saved = 0
+        for item_id in list(self.dirty_ids):
+            snapshot = self.drafts.get(item_id)
+            if snapshot is None:
+                continue
+            saved += self.write_project_snapshot(item_id, snapshot)
+            self.clean_snapshots[item_id] = self.clone_data(snapshot)
+        self.dirty_ids.clear()
+        self.drafts.clear()
+        return saved
 
     def add_hardware(self, category_hint: str = "") -> None:
         selected = self.choose_entity(category_hint)
@@ -4128,6 +4327,10 @@ class ProjectPage(SDPEPage):
             menu.addSeparator()
             if self.project_item_source(item).startswith("common:"):
                 menu.addAction(
+                    "Override in project",
+                    lambda: self.override_common_item("requirements", self.requirements, item),
+                )
+                menu.addAction(
                     "Deploy common item to private projects...",
                     lambda: self.deploy_common_item_to_projects("requirements", self.requirements, item),
                 )
@@ -4143,6 +4346,41 @@ class ProjectPage(SDPEPage):
         if text is not None:
             item.setText(7, text)
             self.mark_current_dirty()
+
+    def override_common_item(self, kind: str, tree: SDPETreeWidget, item: QTreeWidgetItem) -> None:
+        if not self.project_item_source(item).startswith("common:"):
+            return
+        macro_col = 1 if kind == "requirements" else 0
+        macro = tree_cell_text(tree, item, macro_col)
+        existing = next(
+            (
+                candidate
+                for candidate in tree.iter_items()
+                if candidate.data(0, Qt.ItemDataRole.UserRole) != "group"
+                and self.project_item_source(candidate) == "project private"
+                and tree_cell_text(tree, candidate, macro_col) == macro
+            ),
+            None,
+        )
+        if existing is not None:
+            tree.setCurrentItem(existing)
+            self.enforce_override_hierarchy()
+            return
+        group = self.item_group_ancestor(item)
+        if group is None:
+            self.error("The Common item has no owning group.")
+            return
+        payload, _group_name = self.project_item_payload(kind, tree, item)
+        payload[SOURCE_KEY] = "project private"
+        payload["weak"] = False
+        if kind == "requirements":
+            private_item = self.add_requirement_item(group, payload)
+        else:
+            macro_type = "option" if kind == "option_macros" else "feature"
+            private_item = self.add_macro_item(tree, macro_type, group, payload)
+        self.enforce_override_hierarchy()
+        tree.setCurrentItem(private_item)
+        self.mark_current_dirty()
 
     def common_path_for_source(self, source: str) -> Path | None:
         for index, (path, data) in enumerate(self.current_common_requirements):
@@ -4211,8 +4449,10 @@ class ProjectPage(SDPEPage):
         data = self.collect_current_data()
         if data is None:
             raise SDPEError("No project requirement is open.")
-        self.window.write_json(project_path, data)
-        return project_path, data
+        self.write_project_snapshot(self.current_id, data)
+        private = self.clone_data(data)
+        private.pop(PROJECT_COMMON_SNAPSHOT_KEY, None)
+        return project_path, private
 
     def finish_project_migration(self, message: str) -> None:
         self.dirty_ids.discard(self.current_id)
@@ -4315,8 +4555,10 @@ class ProjectPage(SDPEPage):
         try:
             data = self.collect_current_data()
             if data is not None:
+                private = self.clone_data(data)
+                private.pop(PROJECT_COMMON_SNAPSHOT_KEY, None)
                 self.set_code_text(
-                    self.window.generator().render_project_header(data, self.common_data_for_current(data))
+                    self.window.generator().render_project_header(private, self.common_data_for_current(data))
                 )
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))

@@ -221,10 +221,26 @@ def duplicate_macro_occurrences(documents: list[tuple[str, dict[str, Any]]]) -> 
                         "macro": macro,
                         "name": name,
                         "group": group,
+                        "weak": bool(row.get("weak", False)),
                         "description": str(row.get("description", "")),
                     }
                 )
-    return {macro: rows for macro, rows in occurrences.items() if len(rows) > 1}
+    def valid_override(rows: list[dict[str, Any]]) -> bool:
+        collections = {str(row["collection"]) for row in rows}
+        private = [row for row in rows if row["source"] == "project private"]
+        common = [row for row in rows if str(row["source"]).startswith("common:")]
+        return (
+            len(collections) == 1
+            and len(private) == 1
+            and len(common) == len(rows) - 1
+            and all(bool(row.get("weak")) for row in common)
+        )
+
+    return {
+        macro: rows
+        for macro, rows in occurrences.items()
+        if len(rows) > 1 and not valid_override(rows)
+    }
 
 
 def resolve_duplicate_macros(

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import json
 import sys
 import tempfile
 import unittest
@@ -211,6 +212,157 @@ class SDPEWidgetTests(unittest.TestCase):
 
             self.assertNotIn(page.current_id, page.dirty_ids)
             self.assertFalse(page.list_widget.currentItem().text().endswith(" *"))
+            window.deleteLater()
+            self.app.processEvents()
+
+    def test_common_requirement_is_editable_saved_and_nested_under_private_override(self) -> None:
+        examples = ROOT / "examples"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            common_path = root / "common.json"
+            project_path = root / "private.json"
+            common_path.write_text(
+                json.dumps(
+                    {
+                        "id": "base",
+                        "output_header": "base.h",
+                        "requirements": [
+                            {
+                                "role": "Common Gain",
+                                "macro": "CTRL_GAIN",
+                                "enabled": True,
+                                "binding": {"number": "1"},
+                            },
+                            {
+                                "role": "Common Limit",
+                                "macro": "CTRL_LIMIT",
+                                "binding": {"number": "3"},
+                            },
+                        ],
+                        "requirement_groups": [
+                            {"name": "Control", "requirements": ["Common Gain", "Common Limit"]}
+                        ],
+                        "feature_macros": [
+                            {"macro": "CTRL_MODE", "value": "1", "group": "Control", "enabled": True}
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            project_path.write_text(
+                json.dumps(
+                    {
+                        "id": "private",
+                        "output_header": "private.h",
+                        "common_requirements": ["common.json"],
+                        "requirements": [
+                            {"role": "Private Gain", "macro": "CTRL_GAIN", "binding": {"number": "2"}}
+                        ],
+                        "requirement_groups": [{"name": "Control", "requirements": ["Private Gain"]}],
+                        "feature_macros": [
+                            {"macro": "CTRL_MODE", "value": "2", "group": "Control", "enabled": True}
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            window = MainWindow(
+                examples,
+                mode="project",
+                project_dirs=[project_path],
+                default_output_dir=root / "out",
+            )
+            page = next(item for item in window.pages if isinstance(item, ProjectPage))
+            page.current_id = "private"
+            page.refresh_list()
+            page.load_current()
+            private_item = next(
+                item for item in page.iter_requirement_items() if page.project_item_source(item) == "project private"
+            )
+            common_item = next(
+                item for item in page.iter_requirement_items() if page.project_item_source(item).startswith("common:")
+            )
+
+            self.assertIs(common_item.parent(), private_item)
+            self.assertTrue(common_item.flags() & Qt.ItemFlag.ItemIsEditable)
+            self.assertTrue(common_item.data(3, Qt.ItemDataRole.UserRole))
+            old_enable_widget = page.requirements.itemWidget(common_item, 2)
+            owning_group = page.item_group_ancestor(common_item)
+            page.reparent_project_item(common_item, owning_group)
+            self.assertIsNot(page.requirements.itemWidget(common_item, 2), old_enable_widget)
+            page.enforce_override_hierarchy()
+            self.assertIs(common_item.parent(), private_item)
+            common_item.setText(0, "Edited Common Gain")
+            common_checkbox = page.requirements.itemWidget(common_item, 2)._sdpe_checkbox
+            common_checkbox.setChecked(False)
+            private_macro = next(
+                item
+                for item in page.iter_macro_items(page.feature_macros)
+                if page.project_item_source(item) == "project private" and item.text(0) == "CTRL_MODE"
+            )
+            common_macro = next(
+                item
+                for item in page.iter_macro_items(page.feature_macros)
+                if page.project_item_source(item).startswith("common:") and item.text(0) == "CTRL_MODE"
+            )
+            self.assertIs(common_macro.parent(), private_macro)
+            self.assertTrue(common_macro.flags() & Qt.ItemFlag.ItemIsEditable)
+            page.feature_macros.itemWidget(common_macro, 1)._sdpe_checkbox.setChecked(False)
+            common_limit = next(
+                item
+                for item in page.iter_requirement_items()
+                if page.project_item_source(item).startswith("common:") and item.text(1) == "CTRL_LIMIT"
+            )
+            page.override_common_item("requirements", page.requirements, common_limit)
+            private_limit = next(
+                item
+                for item in page.iter_requirement_items()
+                if page.project_item_source(item) == "project private" and item.text(1) == "CTRL_LIMIT"
+            )
+            self.assertIs(common_limit.parent(), private_limit)
+            page.save_current()
+
+            saved_common = json.loads(common_path.read_text(encoding="utf-8"))
+            saved_private = json.loads(project_path.read_text(encoding="utf-8"))
+            self.assertEqual(saved_common["requirements"][0]["role"], "Edited Common Gain")
+            self.assertFalse(saved_common["requirements"][0]["enabled"])
+            self.assertTrue(saved_common["requirements"][0]["weak"])
+            self.assertTrue(saved_common["requirements"][1]["weak"])
+            self.assertFalse(saved_common["feature_macros"][0]["enabled"])
+            self.assertTrue(saved_common["feature_macros"][0]["weak"])
+            self.assertIn("CTRL_LIMIT", {row["macro"] for row in saved_private["requirements"]})
+            self.assertNotIn("__sdpe_common_documents", saved_private)
+
+            private_limit = next(
+                item
+                for item in page.iter_requirement_items()
+                if page.project_item_source(item) == "project private" and item.text(1) == "CTRL_LIMIT"
+            )
+            common_limit = next(
+                item
+                for item in page.iter_requirement_items()
+                if page.project_item_source(item).startswith("common:") and item.text(1) == "CTRL_LIMIT"
+            )
+            page.remove_requirement_items([private_limit])
+            self.assertIn(common_limit, page.iter_requirement_items())
+            self.assertEqual(common_limit.parent().data(0, Qt.ItemDataRole.UserRole), "group")
+            self.assertTrue(page.requirements.itemWidget(common_limit, 3)._sdpe_checkbox.isEnabled())
+
+            nested_group = page.requirements.ensure_group_path(
+                "Control / Limits",
+                page.create_requirement_group_item,
+            )
+            nested_item = page.add_requirement_item(
+                nested_group,
+                {"role": "Nested Limit", "macro": "CTRL_NESTED_LIMIT", "binding": {"number": "4"}},
+            )
+            groups = page._requirement_groups()
+            memberships = [
+                group["name"]
+                for group in groups
+                if nested_item.text(0) in group["requirements"]
+            ]
+            self.assertEqual(memberships, ["Control / Limits"])
             window.deleteLater()
             self.app.processEvents()
 

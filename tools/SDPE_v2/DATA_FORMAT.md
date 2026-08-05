@@ -241,6 +241,16 @@ Project JSON 的路径、绝对路径，或包含 `%VAR%`、`$VAR`、`${VAR}` �
 生成器先输出私有工程，再按数组顺序输出 Common，并让私有 C Header 与 MATLAB Init
 Script 自动引用对应的公共输出。
 
+合并视图中的 Common Requirement、Selection Macro 和 Option Macro 可以直接编辑，
+保存时写回各自的 Common JSON。对 Common 项执行 `Override in project` 会创建同名的
+Project Private 项；界面强制将 Project Private 项作为父节点，将所有同名 Common 项
+作为子节点，并强制 Common 项启用 `weak`。生成 C 头文件时先输出 Project Private
+定义，再 include Common 头文件；Common 中的同名定义使用 `#ifndef` 保护，因此可作为
+安全的默认值。Project 与 Common 的 `enabled` 状态仍可分别设置。
+
+MATLAB Init Script 在完成赋值后会向控制台打印工程名称、ID、Suite、版本、硬件清单、
+Common 清单、所有已使能变量的最终值以及被禁用的宏，便于启动仿真前核对配置。
+
 Binding 支持三种形式：
 
 ```json

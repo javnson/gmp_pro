@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -565,7 +566,7 @@ class HeaderGenerator:
         data, commons = load_project_requirements(project_path)
         generated: list[GeneratedFile] = []
         seen: set[Path] = set()
-        common_data = [item for _path, item in commons]
+        common_data = self.effective_common_overrides(data, [item for _path, item in commons])
         for project_data, inherited in [(data, common_data), *((item, []) for item in common_data)]:
             for entity_id in self._project_entity_ids(project_data):
                 for item in self.generate_entity_tree(entity_id, skip_system=True):
@@ -596,6 +597,27 @@ class HeaderGenerator:
             generated.append(GeneratedFile(out_path, changed))
         return generated
 
+    def effective_common_overrides(
+        self,
+        private: dict[str, Any],
+        commons: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Force Common duplicates to weak definitions beneath private overrides."""
+
+        private_macros = {
+            str(item.get("macro", "")).strip()
+            for key in ("requirements", "feature_macros", "option_macros")
+            for item in private.get(key, [])
+            if str(item.get("macro", "")).strip()
+        }
+        effective = copy.deepcopy(commons)
+        for common in effective:
+            for key in ("requirements", "feature_macros", "option_macros"):
+                for item in common.get(key, []):
+                    if str(item.get("macro", "")).strip() in private_macros:
+                        item["weak"] = True
+        return effective
+
     def project_header_path(self, data: dict[str, Any]) -> Path:
         """Return the generated project header path."""
 
@@ -618,12 +640,14 @@ class HeaderGenerator:
 
         project_id = data.get("id", "sdpe_project")
         guard = header_guard(f"project/{data.get('output_header', 'sdpe_project_bindings.h')}")
-        hardware_ids = self._project_entity_ids(data)
+        effective_commons = self.effective_common_overrides(data, common_data or [])
+        hardware_ids = list(self._project_entity_ids(data))
+        for common in effective_commons:
+            hardware_ids.extend(self._project_entity_ids(common))
+        hardware_ids = list(dict.fromkeys(hardware_ids))
         out_path = self.project_header_path(data)
         includes = [self.entity_include_path(self.library.entity(entity_id), out_path) for entity_id in hardware_ids]
-        for common in common_data or []:
-            if common.get("output_header"):
-                includes.append(str(common["output_header"]))
+        common_headers = [str(common["output_header"]) for common in effective_commons if common.get("output_header")]
 
         lines = [
             "/**",
@@ -716,6 +740,12 @@ class HeaderGenerator:
                 lines.append(f"#define {macro} {value}")
                 lines.append("")
 
+        if common_headers:
+            self._append_project_section_header(lines, "Common requirement fallbacks")
+            for header in dict.fromkeys(common_headers):
+                lines.append(self.include_directive(header))
+            lines.append("")
+
         self._append_project_code_section(lines, data, "before_footer", "User project tail code", True)
         lines.extend(["#ifdef __cplusplus", "}", "#endif", "", f"#endif // {guard}", ""])
         return "\n".join(lines)
@@ -746,7 +776,10 @@ class HeaderGenerator:
             lines.append("")
 
         emitted: set[str] = set()
+        disabled: list[str] = []
         known_macros = self._project_matlab_macro_names(data)
+        for common in common_data or []:
+            known_macros.update(self._project_matlab_macro_names(common))
 
         def emit(name: str, value: Any, description: str = "") -> None:
             macro = macro_name(name)
@@ -784,6 +817,7 @@ class HeaderGenerator:
                 if item.get("enabled", True):
                     emit(macro, value, item.get("description", ""))
                 else:
+                    disabled.append(macro_name(macro))
                     lines.append(f"% {macro} is disabled in the SDPE project requirement.")
                     lines.append(f"% {macro} = {self._matlab_value(value, known_macros)};")
                     lines.append("")
@@ -802,6 +836,7 @@ class HeaderGenerator:
                         desc = f"{desc}\nOptions: {', '.join(str(v) for v in options)}".strip()
                     emit(macro, value, desc)
                 else:
+                    disabled.append(macro_name(macro))
                     lines.append(f"% {macro} is disabled in the SDPE project requirement.")
                     lines.append(f"% {macro} = {self._matlab_value(value, known_macros)};")
                     lines.append("")
@@ -815,9 +850,46 @@ class HeaderGenerator:
             if req.get("enabled", True):
                 emit(macro, value, req.get("description", req.get("role", macro)))
             else:
+                disabled.append(macro_name(macro))
                 lines.append(f"% {macro} is disabled in the SDPE project requirement.")
                 lines.append(f"% {macro} = {self._matlab_value(value, known_macros)};")
                 lines.append("")
+
+        summary_hardware = list(hardware_ids)
+        for common in common_data or []:
+            summary_hardware.extend(self._project_entity_ids(common))
+        summary_hardware = list(dict.fromkeys(summary_hardware))
+        display_name = self._matlab_string(data.get("display_name", project_id))
+        lines.extend(
+            [
+                "%% SDPE project summary",
+                "fprintf('\\n============================================================\\n');",
+                f"fprintf('SDPE Project : %s\\n', {display_name});",
+                f"fprintf('Project ID   : %s\\n', {self._matlab_string(project_id)});",
+                f"fprintf('Suite        : %s\\n', {self._matlab_string(data.get('suite', ''))});",
+                f"fprintf('Version      : %s\\n', {self._matlab_string(data.get('version', ''))});",
+                f"fprintf('Hardware ({len(summary_hardware)}):\\n');",
+            ]
+        )
+        for entity_id in summary_hardware:
+            lines.append(f"fprintf('  - %s\\n', {self._matlab_string(entity_id)});")
+        lines.append(f"fprintf('Common requirements ({len(common_data or [])}):\\n');")
+        for common in common_data or []:
+            common_name = common.get("display_name", common.get("id", "common"))
+            lines.append(f"fprintf('  - %s\\n', {self._matlab_string(common_name)});")
+        summary_variables = set(emitted)
+        summary_disabled = set(disabled)
+        for common in common_data or []:
+            common_disabled = self._project_disabled_matlab_macro_names(common)
+            summary_variables.update(self._project_matlab_macro_names(common) - common_disabled)
+            summary_disabled.update(common_disabled)
+        lines.append(f"fprintf('Enabled variables ({len(summary_variables)}):\\n');")
+        for macro in sorted(summary_variables):
+            lines.append(f"fprintf('  {macro} = '); disp({macro});")
+        lines.append(f"fprintf('Disabled macros ({len(summary_disabled)}):\\n');")
+        for macro in sorted(summary_disabled):
+            lines.append(f"fprintf('  - {macro}\\n');")
+        lines.extend(["fprintf('============================================================\\n');", ""])
 
         lines.extend(
             [
@@ -962,6 +1034,14 @@ class HeaderGenerator:
                 names.add(macro_name(req["macro"]))
         return names
 
+    def _project_disabled_matlab_macro_names(self, data: dict[str, Any]) -> set[str]:
+        return {
+            macro_name(item["macro"])
+            for key in ("feature_macros", "option_macros", "requirements")
+            for item in data.get(key, [])
+            if item.get("macro") and not item.get("enabled", True)
+        }
+
     def _collect_entity_matlab_macro_names(
         self, entity: HardwareEntity, names: set[str], seen: set[str] | None = None
     ) -> None:
@@ -990,8 +1070,10 @@ class HeaderGenerator:
             value = str(item.get("value", ""))
             if re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", value):
                 names.add(f"{macro}_{macro_name(value)}")
-        for pspec in schema.parameters.values():
-            names.add(f"{prefix}_{pspec.c_name}")
+        for pname, pspec in schema.parameters.items():
+            found, _value = self._entity_parameter_value(entity, pname, pspec.c_name)
+            if found or pspec.default is not None:
+                names.add(f"{prefix}_{pspec.c_name}")
         for item in schema.derived_macros:
             names.add(f"{prefix}_{item.name}")
         for comp in entity.components.values():

@@ -61,6 +61,17 @@ the configured order. The private outputs include or run their common outputs.
 Items can be moved from a private project into a selected common file, or from a
 common file into one or more selected private projects.
 
+Common requirements and macros remain editable in the merged project view and
+are saved back to their owning Common JSON files. `Override in project` creates
+a private row with the same macro. The private row is then the tree parent, each
+matching Common row is a child, and the Common definition is forced weak. The C
+header therefore emits the private definition before including Common fallback
+headers whose matching macros are guarded by `#ifndef`.
+
+Generated MATLAB initialization scripts finish with a console summary of the
+project identity, suite/version, selected hardware, bound Common files, enabled
+variable values, and disabled macro names.
+
 ## Development
 
 The Python CLI owns validation and generation. The PyQt manager edits the same

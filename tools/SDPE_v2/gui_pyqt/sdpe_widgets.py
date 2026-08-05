@@ -48,6 +48,7 @@ except ImportError:  # pragma: no cover - depends on local desktop environment.
 
 
 VALIDATION_BORDER_ROLE = Qt.ItemDataRole.UserRole.value + 101
+READ_ONLY_CELL_ROLE = Qt.ItemDataRole.UserRole.value + 102
 _WIDGET_KEY_ROLE = Qt.ItemDataRole.UserRole.value + 102
 _SOURCE_ORDER_ROLE = Qt.ItemDataRole.UserRole.value + 23
 _TABLE_MIME = "application/x-sdpe-table-rows-v1"
@@ -912,6 +913,8 @@ class SDPETreeWidget(SDPEDataViewMixin, QTreeWidget):
 
     def edit(self, index, trigger, event) -> bool:  # noqa: ANN001, N802 - Qt override signature.
         if index.isValid():
+            if bool(index.data(READ_ONLY_CELL_ROLE)):
+                return False
             item = self.itemFromIndex(index)
             if item is not None and self.itemWidget(item, index.column()) is not None:
                 return False

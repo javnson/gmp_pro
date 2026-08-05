@@ -18,7 +18,7 @@ extern "C"
 #endif
 
 // User project prefix code
-#include <sdpe_pgs_sinv_rc_common_settings.h>
+// SDPE extension point: add after_extern_open code in the Project Requirement Code page if needed.
 
 //=================================================================================================
 /**
@@ -28,7 +28,7 @@ extern "C"
 #define SDPE_PROJECT_ID "pgs_sinv_rc_iris_node"
 #define SDPE_PROJECT_SUITE "pgs_sinv_rc"
 #define SDPE_PROJECT_VERSION "0.2.0"
-#define SDPE_PROJECT_UPDATED_AT "2026-08-04"
+#define SDPE_PROJECT_UPDATED_AT "2026-08-05"
 
 //=================================================================================================
 /**
@@ -255,44 +255,19 @@ extern "C"
 #define CTRL_CURRENT_BASE (14.14f)
 
 /**
+ * @brief Nominal AC grid/fundamental frequency in Hz.
+ */
+#define CTRL_GRID_FREQUENCY (50.0f)
+
+/**
  * @brief Total AC-side filter/grid inductance in H.
  */
-#define CTRL_AC_INDUCTANCE (0.003f)
+#define CTRL_AC_INDUCTANCE (0.0015f)
 
 /**
  * @brief Total AC-side series resistance in Ohm.
  */
-#define CTRL_AC_RESISTANCE (0.1f)
-
-/**
- * @brief DC bus voltage sensing gain from the LVFB inverter voltage sensor.
- */
-#define CTRL_DC_VOLTAGE_SENSITIVITY GMP_LVFB_VOLTAGE_SENSITIVITY
-
-/**
- * @brief DC bus voltage sensing ADC bias from the LVFB inverter voltage sensor.
- */
-#define CTRL_DC_VOLTAGE_BIAS GMP_LVFB_VOLTAGE_BIAS_V
-
-/**
- * @brief AC voltage sensing gain from the grid LC filter voltage sense path.
- */
-#define CTRL_AC_VOLTAGE_SENSITIVITY HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_GAIN
-
-/**
- * @brief AC voltage sensing ADC bias from the grid LC filter.
- */
-#define CTRL_AC_VOLTAGE_BIAS HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_BIAS_V
-
-/**
- * @brief AC current sensing sensitivity from the LVFB inverter current sensor.
- */
-#define CTRL_AC_CURRENT_SENSITIVITY GMP_LVFB_CURRENT_SENSITIVITY
-
-/**
- * @brief AC current sensing ADC bias from the LVFB inverter current sensor.
- */
-#define CTRL_AC_CURRENT_BIAS GMP_LVFB_CURRENT_BIAS_V
+#define CTRL_AC_RESISTANCE (0.05f)
 
 /**
  * @brief Minimum PLL voltage magnitude used by P/Q reference division.
@@ -337,7 +312,7 @@ extern "C"
 /**
  * @brief Single-phase PLL proportional gain.
  */
-#define CTRL_PLL_KP (10.0f)
+#define CTRL_PLL_KP (2.0f)
 
 /**
  * @brief Single-phase PLL integral time constant in seconds.
@@ -350,14 +325,39 @@ extern "C"
 #define CTRL_PLL_LPF_FC (20.0f)
 
 /**
- * @brief Measured active/reactive power low-pass cutoff in Hz.
+ * @brief SPLL close-loop convergence criterion.
  */
-#define CTRL_PQ_LPF_FC (200.0f)
+#define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
 
 /**
- * @brief Peak current-reference limit in per unit.
+ * @brief DC-bus outer-loop proportional gain.
  */
-#define CTRL_CURRENT_LIMIT_PU (1.5f)
+#define SINV_DC_BUS_LOOP_KP (0.8f)
+
+/**
+ * @brief DC-bus outer-loop integral gain per second.
+ */
+#define SINV_DC_BUS_LOOP_KI (12.0f)
+
+/**
+ * @brief Symmetric outer-loop active-power command limit.
+ */
+#define SINV_OUTER_LOOP_POWER_LIMIT_PU (0.65f)
+
+/**
+ * @brief Power and DC-bus outer-loop execution frequency.
+ */
+#define SINV_OUTER_LOOP_FREQUENCY_HZ (1000.0f)
+
+/**
+ * @brief Current polarity deadband for PWM dead-time compensation.
+ */
+#define CTRL_CURRENT_DB_PU (0.01f)
+
+/**
+ * @brief ADC calibration timeout in ms.
+ */
+#define TIMEOUT_ADC_CALIB_MS (3000)
 
 /**
  * @brief Active-power command slew limit in PU/s.
@@ -370,9 +370,24 @@ extern "C"
 #define CTRL_Q_SLEW_PU_S (20.0f)
 
 /**
- * @brief Current polarity deadband for PWM dead-time compensation.
+ * @brief Active-power outer-loop proportional gain.
  */
-#define CTRL_CURRENT_DB_PU (0.01f)
+#define SINV_POWER_LOOP_KP (0.6f)
+
+/**
+ * @brief Active-power outer-loop integral gain per second.
+ */
+#define SINV_POWER_LOOP_KI (8.0f)
+
+/**
+ * @brief Peak current-reference limit in per unit.
+ */
+#define CTRL_CURRENT_LIMIT_PU (1.5f)
+
+/**
+ * @brief Measured active/reactive power low-pass cutoff in Hz.
+ */
+#define CTRL_PQ_LPF_FC (200.0f)
 
 /**
  * @brief Minimum fundamental frequency tracked by the repetitive controller in Hz.
@@ -380,14 +395,29 @@ extern "C"
 #define CTRL_FDRC_MIN_FREQ (45.0f)
 
 /**
- * @brief ADC calibration timeout in ms.
+ * @brief Repetitive-control learning gain.
  */
-#define TIMEOUT_ADC_CALIB_MS (3000)
+#define SINV_FDRC_LEARNING_GAIN (0.10f)
 
 /**
- * @brief SPLL close-loop convergence criterion.
+ * @brief FDRC robustness-filter cutoff frequency.
  */
-#define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
+#define SINV_FDRC_Q_FILTER_HZ (1000.0f)
+
+/**
+ * @brief Plant-delay compensation in controller samples.
+ */
+#define SINV_FDRC_LEAD_STEPS (3.0f)
+
+/**
+ * @brief Current-error threshold above which RC learning is frozen.
+ */
+#define SINV_FDRC_FREEZE_ERROR_PU (0.05f)
+
+/**
+ * @brief Settling time before repetitive control starts learning.
+ */
+#define SINV_FDRC_ENABLE_DELAY_MS (300)
 
 /**
  * @brief Startup delay in ms.
@@ -395,9 +425,41 @@ extern "C"
 #define CTRL_STARTUP_DELAY (100)
 
 /**
- * @brief Nominal AC grid/fundamental frequency in Hz.
+ * @brief DC bus voltage sensing gain from the LVFB inverter voltage sensor.
  */
-#define CTRL_GRID_FREQUENCY (50.0f)
+#define CTRL_DC_VOLTAGE_SENSITIVITY GMP_LVFB_VOLTAGE_SENSITIVITY
+
+/**
+ * @brief DC bus voltage sensing ADC bias from the LVFB inverter voltage sensor.
+ */
+#define CTRL_DC_VOLTAGE_BIAS GMP_LVFB_VOLTAGE_BIAS_V
+
+/**
+ * @brief AC voltage sensing gain from the grid LC filter voltage sense path.
+ */
+#define CTRL_AC_VOLTAGE_SENSITIVITY HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_GAIN
+
+/**
+ * @brief AC voltage sensing ADC bias from the grid LC filter.
+ */
+#define CTRL_AC_VOLTAGE_BIAS HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_BIAS_V
+
+/**
+ * @brief AC current sensing sensitivity from the LVFB inverter current sensor.
+ */
+#define CTRL_AC_CURRENT_SENSITIVITY GMP_LVFB_CURRENT_SENSITIVITY
+
+/**
+ * @brief AC current sensing ADC bias from the LVFB inverter current sensor.
+ */
+#define CTRL_AC_CURRENT_BIAS GMP_LVFB_CURRENT_BIAS_V
+
+//=================================================================================================
+/**
+ * @brief Common requirement fallbacks.
+ */
+
+#include "sdpe_pgs_sinv_rc_common_settings.h"
 
 // User project tail code
 #if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 5)

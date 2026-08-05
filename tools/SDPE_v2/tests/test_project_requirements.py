@@ -100,14 +100,26 @@ class ProjectRequirementCompositionTests(unittest.TestCase):
             common_a = root / "common_a.json"
             common_b = root / "common_b.json"
             project = root / "private.json"
-            write_json(common_a, {"id": "common_a", "output_header": "common_a.h", "requirements": []})
+            write_json(
+                common_a,
+                {
+                    "id": "common_a",
+                    "output_header": "common_a.h",
+                    "requirements": [
+                        {"role": "Gain", "macro": "CTRL_GAIN", "binding": {"number": "1"}},
+                        {"role": "Common Only", "macro": "CTRL_COMMON_ONLY", "binding": {"number": "7"}},
+                    ],
+                },
+            )
             write_json(common_b, {"id": "common_b", "output_header": "common_b.h", "requirements": []})
             write_json(
                 project,
                 {
                     "id": "private",
                     "output_header": "private.h",
-                    "requirements": [],
+                    "requirements": [
+                        {"role": "Gain", "macro": "CTRL_GAIN", "binding": {"number": "2"}}
+                    ],
                     "common_requirements": ["common_a.json", str(common_b.resolve())],
                 },
             )
@@ -122,6 +134,9 @@ class ProjectRequirementCompositionTests(unittest.TestCase):
             private_header = (root / "out" / "private.h").read_text(encoding="utf-8")
             self.assertIn("#include <common_a.h>", private_header)
             self.assertIn("#include <common_b.h>", private_header)
+            self.assertLess(private_header.index("#define CTRL_GAIN (2)"), private_header.index("#include <common_a.h>"))
+            common_header = (root / "out" / "common_a.h").read_text(encoding="utf-8")
+            self.assertIn("#ifndef CTRL_GAIN", common_header)
 
             scripts = generator.generate_project_matlab_scripts(project)
             self.assertEqual(
@@ -131,6 +146,9 @@ class ProjectRequirementCompositionTests(unittest.TestCase):
             private_script = scripts[0].path.read_text(encoding="utf-8")
             self.assertIn("common_a_matlab_init.m", private_script)
             self.assertIn("common_b_matlab_init.m", private_script)
+            self.assertIn("%% SDPE project summary", private_script)
+            self.assertIn("disp(CTRL_GAIN)", private_script)
+            self.assertIn("disp(CTRL_COMMON_ONLY)", private_script)
 
     def test_common_deployment_candidates_only_include_bound_private_projects(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -166,6 +184,14 @@ class ProjectRequirementCompositionTests(unittest.TestCase):
         self.assertEqual(resolved["project private"]["requirements"], [])
         self.assertEqual(resolved["project private"]["requirement_groups"][0]["requirements"], [])
         self.assertEqual(resolved["common:base"]["feature_macros"][0]["macro"], "CTRL_GAIN")
+
+    def test_private_plus_weak_common_is_an_intentional_override(self) -> None:
+        documents = [
+            ("project private", {"requirements": [{"role": "Gain", "macro": "CTRL_GAIN"}]}),
+            ("common:base", {"requirements": [{"role": "Gain", "macro": "CTRL_GAIN", "weak": True}]}),
+        ]
+
+        self.assertEqual(duplicate_macro_occurrences(documents), {})
 
     def test_requirement_name_title_case_preserves_acronyms(self) -> None:
         self.assertEqual(title_case_name("input_PWM_frequency"), "Input PWM Frequency")
