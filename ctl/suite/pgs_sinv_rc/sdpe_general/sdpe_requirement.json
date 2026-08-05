@@ -37,7 +37,7 @@
   "option_macros": [],
   "requirements": [
     {
-      "role": "grid_min",
+      "role": "Grid Min",
       "macro": "CTRL_GRID_VMIN_PU",
       "enabled": true,
       "weak": false,
@@ -47,7 +47,7 @@
       "description": "Minimum voltage magnitude used by the P/Q reference generator."
     },
     {
-      "role": "pll_kp",
+      "role": "Pll Kp",
       "macro": "CTRL_PLL_KP",
       "enabled": true,
       "weak": false,
@@ -57,7 +57,7 @@
       "description": "SOGI PLL proportional gain."
     },
     {
-      "role": "pll_ti",
+      "role": "Pll Ti",
       "macro": "CTRL_PLL_TI",
       "enabled": true,
       "weak": false,
@@ -67,7 +67,7 @@
       "description": "SOGI PLL integral time constant in seconds."
     },
     {
-      "role": "pll_lpf",
+      "role": "Pll Lpf",
       "macro": "CTRL_PLL_LPF_FC",
       "enabled": true,
       "weak": false,
@@ -77,7 +77,7 @@
       "description": "PLL error-filter cutoff frequency in Hz."
     },
     {
-      "role": "pll_epsilon",
+      "role": "Pll Epsilon",
       "macro": "CTRL_SPLL_EPSILON",
       "enabled": true,
       "weak": false,
@@ -87,7 +87,7 @@
       "description": "PLL frequency-error lock threshold in PU."
     },
     {
-      "role": "pq_lpf",
+      "role": "Pq Lpf",
       "macro": "CTRL_PQ_LPF_FC",
       "enabled": true,
       "weak": false,
@@ -97,7 +97,7 @@
       "description": "Power measurement low-pass cutoff frequency in Hz."
     },
     {
-      "role": "current_limit",
+      "role": "Current Limit",
       "macro": "CTRL_CURRENT_LIMIT_PU",
       "enabled": true,
       "weak": false,
@@ -107,7 +107,7 @@
       "description": "Peak current command limit in PU."
     },
     {
-      "role": "p_slew",
+      "role": "P Slew",
       "macro": "CTRL_P_SLEW_PU_S",
       "enabled": true,
       "weak": false,
@@ -117,7 +117,7 @@
       "description": "Active-power command slew limit in PU/s."
     },
     {
-      "role": "q_slew",
+      "role": "Q Slew",
       "macro": "CTRL_Q_SLEW_PU_S",
       "enabled": true,
       "weak": false,
@@ -127,7 +127,7 @@
       "description": "Reactive-power command slew limit in PU/s."
     },
     {
-      "role": "current_deadband",
+      "role": "Current Deadband",
       "macro": "CTRL_CURRENT_DB_PU",
       "enabled": true,
       "weak": false,
@@ -137,7 +137,7 @@
       "description": "Current deadband used by PWM dead-time compensation."
     },
     {
-      "role": "current_bandwidth",
+      "role": "Current Bandwidth",
       "macro": "SINV_CURRENT_LOOP_BANDWIDTH_HZ",
       "enabled": true,
       "weak": false,
@@ -147,7 +147,7 @@
       "description": "QPR current-loop crossover target in Hz."
     },
     {
-      "role": "fdrc_min_frequency",
+      "role": "Fdrc Min Frequency",
       "macro": "CTRL_FDRC_MIN_FREQ",
       "enabled": true,
       "weak": false,
@@ -157,7 +157,7 @@
       "description": "Minimum fundamental tracked by FDRC in Hz."
     },
     {
-      "role": "fdrc_delay",
+      "role": "Fdrc Delay",
       "macro": "SINV_FDRC_ENABLE_DELAY_MS",
       "enabled": true,
       "weak": false,
@@ -167,7 +167,7 @@
       "description": "Settling time before repetitive control starts learning."
     },
     {
-      "role": "fdrc_gain",
+      "role": "Fdrc Gain",
       "macro": "SINV_FDRC_LEARNING_GAIN",
       "enabled": true,
       "weak": false,
@@ -177,7 +177,7 @@
       "description": "Repetitive-control learning gain."
     },
     {
-      "role": "fdrc_filter",
+      "role": "Fdrc Filter",
       "macro": "SINV_FDRC_Q_FILTER_HZ",
       "enabled": true,
       "weak": false,
@@ -187,7 +187,7 @@
       "description": "FDRC robustness-filter cutoff frequency."
     },
     {
-      "role": "fdrc_lead",
+      "role": "Fdrc Lead",
       "macro": "SINV_FDRC_LEAD_STEPS",
       "enabled": true,
       "weak": false,
@@ -197,7 +197,7 @@
       "description": "Plant-delay compensation in controller samples."
     },
     {
-      "role": "fdrc_error",
+      "role": "Fdrc Error",
       "macro": "SINV_FDRC_FREEZE_ERROR_PU",
       "enabled": true,
       "weak": false,
@@ -207,7 +207,7 @@
       "description": "Current-error threshold above which RC learning is frozen."
     },
     {
-      "role": "power_kp",
+      "role": "Power Kp",
       "macro": "SINV_POWER_LOOP_KP",
       "enabled": true,
       "weak": false,
@@ -217,7 +217,7 @@
       "description": "Active-power outer-loop proportional gain."
     },
     {
-      "role": "power_ki",
+      "role": "Power Ki",
       "macro": "SINV_POWER_LOOP_KI",
       "enabled": true,
       "weak": false,
@@ -227,7 +227,7 @@
       "description": "Active-power outer-loop integral gain per second."
     },
     {
-      "role": "bus_kp",
+      "role": "Bus Kp",
       "macro": "SINV_DC_BUS_LOOP_KP",
       "enabled": true,
       "weak": false,
@@ -237,7 +237,7 @@
       "description": "DC-bus outer-loop proportional gain."
     },
     {
-      "role": "bus_ki",
+      "role": "Bus Ki",
       "macro": "SINV_DC_BUS_LOOP_KI",
       "enabled": true,
       "weak": false,
@@ -247,7 +247,7 @@
       "description": "DC-bus outer-loop integral gain per second."
     },
     {
-      "role": "outer_limit",
+      "role": "Outer Limit",
       "macro": "SINV_OUTER_LOOP_POWER_LIMIT_PU",
       "enabled": true,
       "weak": false,
@@ -257,7 +257,7 @@
       "description": "Symmetric outer-loop active-power command limit."
     },
     {
-      "role": "outer_frequency",
+      "role": "Outer Frequency",
       "macro": "SINV_OUTER_LOOP_FREQUENCY_HZ",
       "enabled": true,
       "weak": false,
@@ -267,7 +267,7 @@
       "description": "Power and DC-bus outer-loop execution frequency."
     },
     {
-      "role": "openloop_voltage",
+      "role": "Openloop Voltage",
       "macro": "SINV_LEVEL1_VOLTAGE_REF_PU",
       "enabled": true,
       "weak": false,
@@ -277,7 +277,7 @@
       "description": "BUILD_LEVEL 1 sinusoidal H-bridge voltage amplitude."
     },
     {
-      "role": "level2_current",
+      "role": "Level2 Current",
       "macro": "SINV_LEVEL2_CURRENT_REF_PEAK_PU",
       "enabled": true,
       "weak": false,
@@ -287,7 +287,7 @@
       "description": "BUILD_LEVEL 2 peak current command with a resistive load."
     },
     {
-      "role": "level3_power",
+      "role": "Level3 Power",
       "macro": "SINV_LEVEL3_ACTIVE_POWER_REF_PU",
       "enabled": true,
       "weak": false,
@@ -297,7 +297,7 @@
       "description": "BUILD_LEVEL 3 signed grid active-power command; positive exports power."
     },
     {
-      "role": "level3_reactive",
+      "role": "Level3 Reactive",
       "macro": "SINV_LEVEL3_REACTIVE_POWER_REF_PU",
       "enabled": true,
       "weak": false,
@@ -307,7 +307,7 @@
       "description": "BUILD_LEVEL 3 grid reactive-power command."
     },
     {
-      "role": "level4_power",
+      "role": "Level4 Power",
       "macro": "SINV_LEVEL4_ACTIVE_POWER_REF_PU",
       "enabled": true,
       "weak": false,
@@ -317,7 +317,7 @@
       "description": "BUILD_LEVEL 4 measured active-power closed-loop target."
     },
     {
-      "role": "bus_ref",
+      "role": "Bus Ref",
       "macro": "SINV_DC_BUS_REF_V",
       "enabled": true,
       "weak": false,
@@ -327,7 +327,7 @@
       "description": "BUILD_LEVEL 5 physical DC bus voltage target."
     },
     {
-      "role": "startup_delay",
+      "role": "Startup Delay",
       "macro": "SINV_CIA402_OPERATION_ENABLE_DELAY_MS",
       "enabled": true,
       "weak": false,
@@ -337,7 +337,7 @@
       "description": "Minimum operation-enabled transition delay."
     },
     {
-      "role": "grid_frequency",
+      "role": "Grid Frequency",
       "macro": "CTRL_GRID_FREQUENCY",
       "enabled": true,
       "weak": false,
@@ -351,57 +351,57 @@
     {
       "name": "Protection Parameters",
       "requirements": [
-        "grid_min"
+        "Grid Min"
       ]
     },
     {
       "name": "Control Loop Parameters",
       "requirements": [
-        "pll_kp",
-        "pll_ti",
-        "pll_lpf",
-        "pll_epsilon",
-        "pq_lpf",
-        "current_limit",
-        "p_slew",
-        "q_slew",
-        "current_deadband",
-        "current_bandwidth",
-        "fdrc_min_frequency",
-        "fdrc_delay",
-        "fdrc_gain",
-        "fdrc_filter",
-        "fdrc_lead",
-        "fdrc_error",
-        "power_kp",
-        "power_ki",
-        "bus_kp",
-        "bus_ki",
-        "outer_limit",
-        "outer_frequency"
+        "Pll Kp",
+        "Pll Ti",
+        "Pll Lpf",
+        "Pll Epsilon",
+        "Pq Lpf",
+        "Current Limit",
+        "P Slew",
+        "Q Slew",
+        "Current Deadband",
+        "Current Bandwidth",
+        "Fdrc Min Frequency",
+        "Fdrc Delay",
+        "Fdrc Gain",
+        "Fdrc Filter",
+        "Fdrc Lead",
+        "Fdrc Error",
+        "Power Kp",
+        "Power Ki",
+        "Bus Kp",
+        "Bus Ki",
+        "Outer Limit",
+        "Outer Frequency"
       ]
     },
     {
       "name": "Commissioning Defaults",
       "requirements": [
-        "openloop_voltage",
-        "level2_current",
-        "level3_power",
-        "level3_reactive",
-        "level4_power",
-        "bus_ref"
+        "Openloop Voltage",
+        "Level2 Current",
+        "Level3 Power",
+        "Level3 Reactive",
+        "Level4 Power",
+        "Bus Ref"
       ]
     },
     {
       "name": "Runtime Parameters",
       "requirements": [
-        "startup_delay"
+        "Startup Delay"
       ]
     },
     {
       "name": "Default Parameters",
       "requirements": [
-        "grid_frequency"
+        "Grid Frequency"
       ]
     }
   ],

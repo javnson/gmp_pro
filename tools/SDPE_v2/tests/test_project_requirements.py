@@ -11,10 +11,13 @@ from sdpe_v2.library import SDPELibrary
 from sdpe_v2.project_requirements import (
     SOURCE_KEY,
     common_requirement_reference,
+    duplicate_macro_occurrences,
     load_project_requirements,
     merged_project_view,
     project_requirement_paths,
+    resolve_duplicate_macros,
     resolve_common_requirement_paths,
+    title_case_name,
 )
 
 
@@ -145,6 +148,27 @@ class ProjectRequirementCompositionTests(unittest.TestCase):
                 project_requirement_paths(common_a, [root / "projects"]),
                 [private_a.resolve()],
             )
+
+    def test_duplicate_resolution_keeps_selected_source_and_cleans_groups(self) -> None:
+        private = {
+            "requirements": [{"role": "private gain", "macro": "CTRL_GAIN"}],
+            "requirement_groups": [{"name": "Private", "requirements": ["private gain"]}],
+        }
+        common = {
+            "feature_macros": [{"macro": "CTRL_GAIN", "value": "2", "group": "Control"}],
+        }
+        documents = [("project private", private), ("common:base", common)]
+        duplicates = duplicate_macro_occurrences(documents)
+        keep = duplicates["CTRL_GAIN"][1]["token"]
+
+        resolved = dict(resolve_duplicate_macros(documents, {"CTRL_GAIN": keep}))
+
+        self.assertEqual(resolved["project private"]["requirements"], [])
+        self.assertEqual(resolved["project private"]["requirement_groups"][0]["requirements"], [])
+        self.assertEqual(resolved["common:base"]["feature_macros"][0]["macro"], "CTRL_GAIN")
+
+    def test_requirement_name_title_case_preserves_acronyms(self) -> None:
+        self.assertEqual(title_case_name("input_PWM_frequency"), "Input PWM Frequency")
 
 
 if __name__ == "__main__":

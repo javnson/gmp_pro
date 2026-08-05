@@ -94,7 +94,7 @@
   ],
   "requirements": [
     {
-      "role": "pwm_compare_max",
+      "role": "Pwm Compare Max",
       "macro": "CTRL_PWM_CMP_MAX",
       "binding": {
         "number": "34000"
@@ -102,7 +102,7 @@
       "description": "Maximum compare count of the platform PWM peripheral at the configured controller switching frequency."
     },
     {
-      "role": "pwm_deadband",
+      "role": "Pwm Deadband",
       "macro": "CTRL_PWM_DEADBAND_CMP",
       "binding": {
         "number": "100"
@@ -110,7 +110,7 @@
       "description": "Dead-time count interpreted in the selected PWM peripheral clock domain."
     },
     {
-      "role": "system_frequency",
+      "role": "System Frequency",
       "macro": "CTRL_SYS_FREQUENCY",
       "binding": {
         "number": "170e6"
@@ -118,7 +118,7 @@
       "description": "Platform CPU or system clock frequency in hertz."
     },
     {
-      "role": "adc_voltage_reference",
+      "role": "Adc Voltage Reference",
       "macro": "CTRL_ADC_VOLTAGE_REF",
       "binding": {
         "float": "3.3"
@@ -126,7 +126,7 @@
       "description": "ADC reference voltage used by all sensor conversions."
     },
     {
-      "role": "dc_bus_voltage_base",
+      "role": "Dc Bus Voltage Base",
       "macro": "CTRL_DCBUS_VOLTAGE",
       "binding": {
         "float": "80.0"
@@ -134,7 +134,7 @@
       "description": "Configured DC-bus voltage base."
     },
     {
-      "role": "phase_voltage_base",
+      "role": "Phase Voltage Base",
       "macro": "CTRL_VOLTAGE_BASE",
       "binding": {
         "literal": "(CTRL_DCBUS_VOLTAGE / 1.73205081f)"
@@ -142,7 +142,7 @@
       "description": "Phase-voltage per-unit base derived from the DC-bus base."
     },
     {
-      "role": "current_base",
+      "role": "Current Base",
       "macro": "CTRL_CURRENT_BASE",
       "binding": {
         "float": "10.0"
@@ -150,7 +150,7 @@
       "description": "Phase-current per-unit base in amperes."
     },
     {
-      "role": "encoder_full_scale",
+      "role": "Encoder Full Scale",
       "macro": "CTRL_POS_ENC_FS",
       "binding": {
         "number": "10000"
@@ -158,7 +158,7 @@
       "description": "Encoder counts per mechanical revolution."
     },
     {
-      "role": "encoder_bias",
+      "role": "Encoder Bias",
       "macro": "CTRL_POS_ENC_BIAS",
       "binding": {
         "float": "0.0207000002"
@@ -166,7 +166,7 @@
       "description": "Mechanical encoder position bias in per unit."
     },
     {
-      "role": "mechanical_division",
+      "role": "Mechanical Division",
       "macro": "CTRL_MECH_DIV",
       "binding": {
         "number": "5"
@@ -174,7 +174,7 @@
       "description": "Mechanical speed and position division factor."
     },
     {
-      "role": "phase_current_sensitivity",
+      "role": "Phase Current Sensitivity",
       "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
       "binding": {
         "literal": "(ST_X_NUCLEO_IHM08M1_PH_SHUNT_RESISTANCE_OHM * ST_X_NUCLEO_IHM08M1_PH_CSA_GAIN_V_V)"
@@ -182,7 +182,7 @@
       "description": "Phase-current sensor sensitivity in volts per ampere."
     },
     {
-      "role": "phase_current_bias",
+      "role": "Phase Current Bias",
       "macro": "CTRL_INVERTER_CURRENT_BIAS",
       "binding": {
         "literal": "(ST_X_NUCLEO_IHM08M1_PH_CSA_BIAS_V)"
@@ -190,7 +190,7 @@
       "description": "Phase-current sensor zero-current bias in volts."
     },
     {
-      "role": "phase_voltage_sensitivity",
+      "role": "Phase Voltage Sensitivity",
       "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
       "binding": {
         "literal": "(ST_X_NUCLEO_IHM08M1_PH_VOLTAGE_SENSE_GAIN)"
@@ -198,7 +198,7 @@
       "description": "Phase-voltage sensing gain in ADC volts per measured volt."
     },
     {
-      "role": "phase_voltage_bias",
+      "role": "Phase Voltage Bias",
       "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
       "binding": {
         "literal": "(ST_X_NUCLEO_IHM08M1_PH_VOLTAGE_SENSE_BIAS_V)"
@@ -206,7 +206,7 @@
       "description": "Phase-voltage sensor bias in volts."
     },
     {
-      "role": "dc_current_sensitivity",
+      "role": "Dc Current Sensitivity",
       "macro": "CTRL_DC_CURRENT_SENSITIVITY",
       "binding": {
         "literal": "(ST_X_NUCLEO_IHM08M1_DCBUS_CURRENT_SENSE_GAIN)"
@@ -214,7 +214,7 @@
       "description": "DC-link current scaling is not consumed in the selected phase-current sampling mode."
     },
     {
-      "role": "dc_current_bias",
+      "role": "Dc Current Bias",
       "macro": "CTRL_DC_CURRENT_BIAS",
       "binding": {
         "literal": "(ST_X_NUCLEO_IHM08M1_DCBUS_CURRENT_SENSE_BIAS_V)"
@@ -222,7 +222,7 @@
       "description": "DC-bus current sensor bias."
     },
     {
-      "role": "dc_voltage_sensitivity",
+      "role": "Dc Voltage Sensitivity",
       "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
       "binding": {
         "literal": "(ST_X_NUCLEO_IHM08M1_DCBUS_VOLTAGE_SENSE_GAIN)"
@@ -230,7 +230,7 @@
       "description": "DC-bus voltage sensing gain in ADC volts per measured volt."
     },
     {
-      "role": "dc_voltage_bias",
+      "role": "Dc Voltage Bias",
       "macro": "CTRL_DC_VOLTAGE_BIAS",
       "binding": {
         "literal": "(ST_X_NUCLEO_IHM08M1_DCBUS_VOLTAGE_SENSE_BIAS_V)"
@@ -238,7 +238,7 @@
       "description": "DC-bus voltage sensor bias in volts."
     },
     {
-      "role": "uart_rx_buffer_size",
+      "role": "Uart Rx Buffer Size",
       "macro": "MCS_UART_RX_BUFFER_SIZE",
       "binding": {
         "number": "64"
@@ -250,55 +250,55 @@
     {
       "name": "Peripheral Parameters",
       "requirements": [
-        "pwm_compare_max",
-        "pwm_deadband",
-        "system_frequency",
-        "adc_voltage_reference",
-        "uart_rx_buffer_size"
+        "Pwm Compare Max",
+        "Pwm Deadband",
+        "System Frequency",
+        "Adc Voltage Reference",
+        "Uart Rx Buffer Size"
       ]
     },
     {
       "name": "Per-Unit Base Parameters",
       "requirements": [
-        "dc_bus_voltage_base",
-        "phase_voltage_base",
-        "current_base"
+        "Dc Bus Voltage Base",
+        "Phase Voltage Base",
+        "Current Base"
       ]
     },
     {
       "name": "Position Sensor Parameters",
       "requirements": [
-        "encoder_full_scale",
-        "encoder_bias",
-        "mechanical_division"
+        "Encoder Full Scale",
+        "Encoder Bias",
+        "Mechanical Division"
       ]
     },
     {
       "name": "DC Bus Voltage Sensor",
       "requirements": [
-        "dc_voltage_sensitivity",
-        "dc_voltage_bias"
+        "Dc Voltage Sensitivity",
+        "Dc Voltage Bias"
       ]
     },
     {
       "name": "Inverter Phase Voltage Sensor",
       "requirements": [
-        "phase_voltage_sensitivity",
-        "phase_voltage_bias"
+        "Phase Voltage Sensitivity",
+        "Phase Voltage Bias"
       ]
     },
     {
       "name": "DC Current Sensor",
       "requirements": [
-        "dc_current_sensitivity",
-        "dc_current_bias"
+        "Dc Current Sensitivity",
+        "Dc Current Bias"
       ]
     },
     {
       "name": "Inverter Phase Current Sensor",
       "requirements": [
-        "phase_current_sensitivity",
-        "phase_current_bias"
+        "Phase Current Sensitivity",
+        "Phase Current Bias"
       ]
     }
   ],

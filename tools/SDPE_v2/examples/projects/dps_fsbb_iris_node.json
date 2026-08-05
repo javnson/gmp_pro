@@ -16,7 +16,7 @@
   ],
   "requirements": [
     {
-      "role": "input_voltage_sensor_sensitivity",
+      "role": "Input Voltage Sensor Sensitivity",
       "macro": "CTRL_VIN_VOLTAGE_SENSITIVITY",
       "binding": {
         "export": "fsbb_inline_shunt_half_bridge.voltage_sensor.sensitivity"
@@ -24,7 +24,7 @@
       "description": "Voltage sensor sensitivity for FSBB input voltage ADC channel."
     },
     {
-      "role": "input_voltage_sensor_bias",
+      "role": "Input Voltage Sensor Bias",
       "macro": "CTRL_VIN_VOLTAGE_BIAS",
       "binding": {
         "export": "fsbb_inline_shunt_half_bridge.voltage_sensor.bias"
@@ -32,7 +32,7 @@
       "description": "Voltage sensor bias for FSBB input voltage ADC channel."
     },
     {
-      "role": "inductor_current_sensitivity",
+      "role": "Inductor Current Sensitivity",
       "macro": "CTRL_INDUCTOR_CURRENT_SENSITIVITY",
       "binding": {
         "export": "fsbb_inline_shunt_half_bridge.current_sensor.sensitivity"
@@ -40,7 +40,7 @@
       "description": "Current sensor sensitivity for FSBB inductor current ADC channel."
     },
     {
-      "role": "inductor_current_bias",
+      "role": "Inductor Current Bias",
       "macro": "CTRL_INDUCTOR_CURRENT_BIAS",
       "binding": {
         "export": "fsbb_inline_shunt_half_bridge.current_sensor.bias"
@@ -48,7 +48,7 @@
       "description": "Current sensor bias for FSBB inductor current ADC channel."
     },
     {
-      "role": "output_voltage_sensor_sensitivity",
+      "role": "Output Voltage Sensor Sensitivity",
       "macro": "CTRL_VOUT_VOLTAGE_SENSITIVITY",
       "binding": {
         "export": "lvfb_half_bridge_phase_a.voltage_sensor.sensitivity"
@@ -56,7 +56,7 @@
       "description": "Voltage sensor sensitivity for FSBB output voltage ADC channel."
     },
     {
-      "role": "output_voltage_sensor_bias",
+      "role": "Output Voltage Sensor Bias",
       "macro": "CTRL_VOUT_VOLTAGE_BIAS",
       "binding": {
         "export": "lvfb_half_bridge_phase_a.voltage_sensor.bias"
@@ -64,7 +64,7 @@
       "description": "Voltage sensor bias for FSBB output voltage ADC channel."
     },
     {
-      "role": "tmcs1133_b2a_range_for_reference",
+      "role": "Tmcs1133 B2a Range For Reference",
       "macro": "CTRL_REFERENCE_CURRENT_RANGE_A",
       "binding": {
         "export": "tmcs1133_b2a.range_a"
@@ -72,7 +72,7 @@
       "description": "Direct parameter binding example using scope-style entity.parameter syntax."
     },
     {
-      "role": "manual_input_voltage_adc_offset",
+      "role": "Manual Input Voltage Adc Offset",
       "macro": "CTRL_VIN_ADC_OFFSET_MANUAL",
       "binding": {
         "literal": "(2048U)"
@@ -140,14 +140,14 @@
     {
       "name": "Requirements",
       "requirements": [
-        "input_voltage_sensor_sensitivity",
-        "input_voltage_sensor_bias",
-        "inductor_current_sensitivity",
-        "inductor_current_bias",
-        "output_voltage_sensor_sensitivity",
-        "output_voltage_sensor_bias",
-        "tmcs1133_b2a_range_for_reference",
-        "manual_input_voltage_adc_offset"
+        "Input Voltage Sensor Sensitivity",
+        "Input Voltage Sensor Bias",
+        "Inductor Current Sensitivity",
+        "Inductor Current Bias",
+        "Output Voltage Sensor Sensitivity",
+        "Output Voltage Sensor Bias",
+        "Tmcs1133 B2a Range For Reference",
+        "Manual Input Voltage Adc Offset"
       ]
     }
   ]

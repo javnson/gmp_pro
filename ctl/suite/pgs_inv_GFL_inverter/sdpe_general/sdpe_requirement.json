@@ -107,7 +107,7 @@
   ],
   "requirements": [
     {
-      "role": "grid_voltage_pu",
+      "role": "Grid Voltage Pu",
       "macro": "GFL_GRID_VOLTAGE_PU",
       "binding": {
         "float": "0.33"
@@ -115,7 +115,7 @@
       "description": "Nominal grid phase-voltage magnitude in controller per unit."
     },
     {
-      "role": "grid_frequency",
+      "role": "Grid Frequency",
       "macro": "GFL_GRID_FREQUENCY_HZ",
       "binding": {
         "float": "50.0"
@@ -123,7 +123,7 @@
       "description": "Nominal grid frequency in hertz."
     },
     {
-      "role": "pq_loop_frequency",
+      "role": "Pq Loop Frequency",
       "macro": "GFL_PQ_LOOP_FREQUENCY_HZ",
       "binding": {
         "float": "1000.0"
@@ -131,7 +131,7 @@
       "description": "P/Q outer-loop execution frequency in hertz."
     },
     {
-      "role": "pq_loop_divider",
+      "role": "Pq Loop Divider",
       "macro": "GFL_PQ_LOOP_DIVIDER",
       "binding": {
         "literal": "((uint32_t)(CONTROLLER_FREQUENCY / GFL_PQ_LOOP_FREQUENCY_HZ))"
@@ -139,7 +139,7 @@
       "description": "Current-ISR to P/Q-loop execution divider."
     },
     {
-      "role": "pq_active_kp",
+      "role": "Pq Active Kp",
       "macro": "GFL_PQ_ACTIVE_KP",
       "binding": {
         "float": "0.75"
@@ -147,7 +147,7 @@
       "description": "Active-power loop proportional gain from P error PU to d-axis current PU."
     },
     {
-      "role": "pq_active_ki",
+      "role": "Pq Active Ki",
       "macro": "GFL_PQ_ACTIVE_KI",
       "binding": {
         "float": "0.001"
@@ -155,7 +155,7 @@
       "description": "Active-power loop integral gain in inverse seconds."
     },
     {
-      "role": "pq_reactive_kp",
+      "role": "Pq Reactive Kp",
       "macro": "GFL_PQ_REACTIVE_KP",
       "binding": {
         "float": "0.75"
@@ -163,7 +163,7 @@
       "description": "Reactive-power loop proportional gain from Q error PU to q-axis current PU."
     },
     {
-      "role": "pq_reactive_ki",
+      "role": "Pq Reactive Ki",
       "macro": "GFL_PQ_REACTIVE_KI",
       "binding": {
         "float": "0.001"
@@ -171,7 +171,7 @@
       "description": "Reactive-power loop integral gain in inverse seconds."
     },
     {
-      "role": "pq_current_limit",
+      "role": "Pq Current Limit",
       "macro": "GFL_PQ_CURRENT_LIMIT_PU",
       "binding": {
         "float": "1.0"
@@ -179,7 +179,7 @@
       "description": "Circular magnitude limit applied to the d/q current reference produced by the P/Q loop."
     },
     {
-      "role": "active_power_ref",
+      "role": "Active Power Ref",
       "macro": "GFL_ACTIVE_POWER_REF_PU",
       "binding": {
         "float": "0.1"
@@ -187,7 +187,7 @@
       "description": "Default active-power reference. Positive power exports energy to the grid."
     },
     {
-      "role": "reactive_power_ref",
+      "role": "Reactive Power Ref",
       "macro": "GFL_REACTIVE_POWER_REF_PU",
       "binding": {
         "float": "0.0"
@@ -195,49 +195,63 @@
       "description": "Default reactive-power reference using Q = vq*id - vd*iq."
     },
     {
-      "role": "pq_droop_lpf",
+      "role": "Pq Droop Lpf",
       "macro": "GFL_PQ_DROOP_LPF_HZ",
-      "binding": {"float": "10.0"},
+      "binding": {
+        "float": "10.0"
+      },
       "description": "PQ droop frequency and voltage measurement low-pass cutoff."
     },
     {
-      "role": "pq_droop_p_gain",
+      "role": "Pq Droop P Gain",
       "macro": "GFL_PQ_DROOP_P_GAIN_PU_PER_HZ",
-      "binding": {"float": "0.10"},
+      "binding": {
+        "float": "0.10"
+      },
       "description": "Additional active-power command per hertz of frequency deficit."
     },
     {
-      "role": "pq_droop_q_gain",
+      "role": "Pq Droop Q Gain",
       "macro": "GFL_PQ_DROOP_Q_GAIN_PU_PER_V_PU",
-      "binding": {"float": "0.50"},
+      "binding": {
+        "float": "0.50"
+      },
       "description": "Additional reactive-power command per PU of voltage deficit."
     },
     {
-      "role": "pq_droop_p_min",
+      "role": "Pq Droop P Min",
       "macro": "GFL_PQ_DROOP_P_MIN_PU",
-      "binding": {"float": "-0.80"},
+      "binding": {
+        "float": "-0.80"
+      },
       "description": "Minimum active-power reference after PQ droop."
     },
     {
-      "role": "pq_droop_p_max",
+      "role": "Pq Droop P Max",
       "macro": "GFL_PQ_DROOP_P_MAX_PU",
-      "binding": {"float": "0.80"},
+      "binding": {
+        "float": "0.80"
+      },
       "description": "Maximum active-power reference after PQ droop."
     },
     {
-      "role": "pq_droop_q_min",
+      "role": "Pq Droop Q Min",
       "macro": "GFL_PQ_DROOP_Q_MIN_PU",
-      "binding": {"float": "-0.80"},
+      "binding": {
+        "float": "-0.80"
+      },
       "description": "Minimum reactive-power reference after PQ droop."
     },
     {
-      "role": "pq_droop_q_max",
+      "role": "Pq Droop Q Max",
       "macro": "GFL_PQ_DROOP_Q_MAX_PU",
-      "binding": {"float": "0.80"},
+      "binding": {
+        "float": "0.80"
+      },
       "description": "Maximum reactive-power reference after PQ droop."
     },
     {
-      "role": "open_loop_vd",
+      "role": "Open Loop Vd",
       "macro": "GFL_OPEN_LOOP_VD_PU",
       "binding": {
         "float": "0.6"
@@ -245,7 +259,7 @@
       "description": "BUILD_LEVEL 1 d-axis open-loop voltage command."
     },
     {
-      "role": "open_loop_vq",
+      "role": "Open Loop Vq",
       "macro": "GFL_OPEN_LOOP_VQ_PU",
       "binding": {
         "float": "0.6"
@@ -253,7 +267,7 @@
       "description": "BUILD_LEVEL 1 q-axis open-loop voltage command."
     },
     {
-      "role": "level2_id",
+      "role": "Level2 Id",
       "macro": "GFL_CURRENT_LEVEL2_ID_PU",
       "binding": {
         "float": "0.1"
@@ -261,7 +275,7 @@
       "description": "BUILD_LEVEL 2 d-axis current command."
     },
     {
-      "role": "level2_iq",
+      "role": "Level2 Iq",
       "macro": "GFL_CURRENT_LEVEL2_IQ_PU",
       "binding": {
         "float": "0.1"
@@ -269,7 +283,7 @@
       "description": "BUILD_LEVEL 2 q-axis current command."
     },
     {
-      "role": "level3_id",
+      "role": "Level3 Id",
       "macro": "GFL_CURRENT_LEVEL3_ID_PU",
       "binding": {
         "float": "0.1"
@@ -277,7 +291,7 @@
       "description": "BUILD_LEVEL 3 grid-connected d-axis current command."
     },
     {
-      "role": "level3_iq",
+      "role": "Level3 Iq",
       "macro": "GFL_CURRENT_LEVEL3_IQ_PU",
       "binding": {
         "float": "0.0"
@@ -285,7 +299,7 @@
       "description": "BUILD_LEVEL 3 grid-connected q-axis current command."
     },
     {
-      "role": "level4_id",
+      "role": "Level4 Id",
       "macro": "GFL_CURRENT_LEVEL4_ID_PU",
       "binding": {
         "float": "0.6"
@@ -293,7 +307,7 @@
       "description": "BUILD_LEVEL 4 d-axis current command."
     },
     {
-      "role": "level4_iq",
+      "role": "Level4 Iq",
       "macro": "GFL_CURRENT_LEVEL4_IQ_PU",
       "binding": {
         "float": "0.6"
@@ -301,7 +315,7 @@
       "description": "BUILD_LEVEL 4 q-axis current command."
     },
     {
-      "role": "standalone_voltage_vd",
+      "role": "Standalone Voltage Vd",
       "macro": "GFL_STANDALONE_VD_PU",
       "binding": {
         "float": "0.50"
@@ -309,7 +323,7 @@
       "description": "BUILD_LEVEL 6 positive-sequence d-axis capacitor phase-voltage reference in per unit."
     },
     {
-      "role": "standalone_voltage_vq",
+      "role": "Standalone Voltage Vq",
       "macro": "GFL_STANDALONE_VQ_PU",
       "binding": {
         "float": "0.0"
@@ -317,7 +331,7 @@
       "description": "BUILD_LEVEL 6 positive-sequence q-axis capacitor phase-voltage reference in per unit."
     },
     {
-      "role": "standalone_voltage_bw",
+      "role": "Standalone Voltage Bw",
       "macro": "GFL_VOLTAGE_LOOP_BW_HZ",
       "binding": {
         "float": "100.0"
@@ -325,7 +339,7 @@
       "description": "BUILD_LEVEL 6 capacitor-voltage outer-loop bandwidth in hertz; keep it well below the inner current-loop bandwidth."
     },
     {
-      "role": "standalone_voltage_zero",
+      "role": "Standalone Voltage Zero",
       "macro": "GFL_VOLTAGE_LOOP_ZERO_HZ",
       "binding": {
         "float": "20.0"
@@ -333,7 +347,7 @@
       "description": "BUILD_LEVEL 6 ordinary PI zero frequency in hertz."
     },
     {
-      "role": "standalone_circle_current_limit",
+      "role": "Standalone Circle Current Limit",
       "macro": "GFL_VOLTAGE_CIRCLE_LIMIT_PU",
       "binding": {
         "float": "0.80"
@@ -341,7 +355,7 @@
       "description": "Circular magnitude limit for the complete BUILD_LEVEL 6 PI plus feed-forward current reference. The final limited output is returned to the ordinary PID integrators by clamping correction."
     },
     {
-      "role": "standalone_square_current_limit",
+      "role": "Standalone Square Current Limit",
       "macro": "GFL_VOLTAGE_SQUARE_LIMIT_PU",
       "binding": {
         "float": "0.80"
@@ -349,7 +363,7 @@
       "description": "Independent symmetric d/q-axis limit for the complete BUILD_LEVEL 6 PI plus feed-forward current reference."
     },
     {
-      "role": "zero_qpr_kp",
+      "role": "Zero Qpr Kp",
       "macro": "GFL_ZERO_QPR_KP",
       "binding": {
         "float": "0.10"
@@ -357,7 +371,7 @@
       "description": "Zero-sequence current QPR proportional gain used when 3D-SVPWM is enabled."
     },
     {
-      "role": "zero_qpr_kr",
+      "role": "Zero Qpr Kr",
       "macro": "GFL_ZERO_QPR_KR",
       "binding": {
         "float": "50.0"
@@ -365,7 +379,7 @@
       "description": "Zero-sequence current QPR resonant gain used when 3D-SVPWM is enabled."
     },
     {
-      "role": "zero_qpr_cutoff",
+      "role": "Zero Qpr Cutoff",
       "macro": "GFL_ZERO_QPR_CUTOFF_HZ",
       "binding": {
         "float": "5.0"
@@ -373,7 +387,7 @@
       "description": "Zero-sequence QPR resonant bandwidth/cutoff frequency in hertz."
     },
     {
-      "role": "zero_voltage_limit",
+      "role": "Zero Voltage Limit",
       "macro": "GFL_ZERO_VOLTAGE_LIMIT_PU",
       "binding": {
         "float": "0.20"
@@ -381,7 +395,7 @@
       "description": "Symmetric zero-axis voltage-command limit for four-wire operation."
     },
     {
-      "role": "adc_calibrator_cutoff",
+      "role": "Adc Calibrator Cutoff",
       "macro": "GFL_ADC_CALIBRATOR_FC_HZ",
       "binding": {
         "float": "20.0"
@@ -389,7 +403,7 @@
       "description": "ADC offset calibrator filter cutoff frequency."
     },
     {
-      "role": "adc_calibrator_q",
+      "role": "Adc Calibrator Q",
       "macro": "GFL_ADC_CALIBRATOR_Q",
       "binding": {
         "float": "0.707"
@@ -397,7 +411,7 @@
       "description": "ADC offset calibrator second-order filter quality factor."
     },
     {
-      "role": "cia402_enable_delay",
+      "role": "Cia402 Enable Delay",
       "macro": "GFL_CIA402_OPERATION_ENABLE_DELAY_MS",
       "binding": {
         "number": "100"
@@ -405,7 +419,7 @@
       "description": "Minimum CiA402 delay before Operation Enabled."
     },
     {
-      "role": "pll_lock_epsilon",
+      "role": "Pll Lock Epsilon",
       "macro": "CTRL_SPLL_EPSILON",
       "binding": {
         "literal": "((float2ctrl(0.005)))"
@@ -417,61 +431,61 @@
     {
       "name": "Control Loop Parameters",
       "requirements": [
-        "grid_voltage_pu",
-        "pq_loop_frequency",
-        "pq_loop_divider",
-        "pq_active_kp",
-        "pq_active_ki",
-        "pq_reactive_kp",
-        "pq_reactive_ki",
-        "pq_current_limit",
-        "pq_droop_lpf",
-        "pq_droop_p_gain",
-        "pq_droop_q_gain",
-        "pq_droop_p_min",
-        "pq_droop_p_max",
-        "pq_droop_q_min",
-        "pq_droop_q_max",
-        "open_loop_vd",
-        "open_loop_vq",
-        "pll_lock_epsilon"
+        "Grid Voltage Pu",
+        "Pq Loop Frequency",
+        "Pq Loop Divider",
+        "Pq Active Kp",
+        "Pq Active Ki",
+        "Pq Reactive Kp",
+        "Pq Reactive Ki",
+        "Pq Current Limit",
+        "Pq Droop Lpf",
+        "Pq Droop P Gain",
+        "Pq Droop Q Gain",
+        "Pq Droop P Min",
+        "Pq Droop P Max",
+        "Pq Droop Q Min",
+        "Pq Droop Q Max",
+        "Open Loop Vd",
+        "Open Loop Vq",
+        "Pll Lock Epsilon"
       ]
     },
     {
       "name": "Commissioning Defaults",
       "requirements": [
-        "active_power_ref",
-        "reactive_power_ref",
-        "level2_id",
-        "level2_iq",
-        "level3_id",
-        "level3_iq",
-        "level4_id",
-        "level4_iq",
-        "standalone_voltage_vd",
-        "standalone_voltage_vq",
-        "standalone_voltage_bw",
-        "standalone_voltage_zero",
-        "standalone_circle_current_limit",
-        "standalone_square_current_limit",
-        "zero_qpr_kp",
-        "zero_qpr_kr",
-        "zero_qpr_cutoff",
-        "zero_voltage_limit"
+        "Active Power Ref",
+        "Reactive Power Ref",
+        "Level2 Id",
+        "Level2 Iq",
+        "Level3 Id",
+        "Level3 Iq",
+        "Level4 Id",
+        "Level4 Iq",
+        "Standalone Voltage Vd",
+        "Standalone Voltage Vq",
+        "Standalone Voltage Bw",
+        "Standalone Voltage Zero",
+        "Standalone Circle Current Limit",
+        "Standalone Square Current Limit",
+        "Zero Qpr Kp",
+        "Zero Qpr Kr",
+        "Zero Qpr Cutoff",
+        "Zero Voltage Limit"
       ]
     },
     {
       "name": "Runtime Parameters",
       "requirements": [
-        "adc_calibrator_cutoff",
-        "adc_calibrator_q",
-        "cia402_enable_delay"
+        "Adc Calibrator Cutoff",
+        "Adc Calibrator Q",
+        "Cia402 Enable Delay"
       ]
     },
     {
       "name": "Default Parameters",
       "requirements": [
-        "grid_frequency"
+        "Grid Frequency"
       ]
     }
   ]

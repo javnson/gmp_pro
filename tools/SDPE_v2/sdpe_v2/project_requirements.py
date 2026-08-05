@@ -8,13 +8,20 @@ import re
 from pathlib import Path
 from typing import Any
 
-from .util import read_json
+from .util import macro_name, read_json
 
 
 COMMON_REQUIREMENTS_KEY = "common_requirements"
 LEGACY_COMMON_REQUIREMENT_KEY = "common_requirement"
 SOURCE_KEY = "__sdpe_source"
 GROUP_KEY = "__sdpe_group"
+
+
+def title_case_name(value: Any) -> str:
+    """Format a human-facing Name while preserving existing acronym casing."""
+
+    words = re.split(r"\s+", str(value).replace("_", " ").strip())
+    return " ".join(word[:1].upper() + word[1:] for word in words if word)
 
 
 def _expanded_path(value: str) -> Path:
@@ -179,3 +186,76 @@ def project_requirement_paths(common_path: Path, search_roots: list[Path] | None
             except (OSError, ValueError):
                 continue
     return sorted(candidates)
+
+
+def duplicate_macro_occurrences(documents: list[tuple[str, dict[str, Any]]]) -> dict[str, list[dict[str, Any]]]:
+    """Return duplicate project macros with stable source/collection tokens."""
+
+    occurrences: dict[str, list[dict[str, Any]]] = {}
+    collections = (
+        ("requirements", "Requirement"),
+        ("feature_macros", "Selection Macro"),
+        ("option_macros", "Option Macro"),
+    )
+    for source, data in documents:
+        requirement_groups = {
+            str(name): str(group.get("name", "Requirements"))
+            for group in data.get("requirement_groups", [])
+            for name in group.get("requirements", [])
+        }
+        for collection, kind in collections:
+            for index, row in enumerate(data.get(collection, [])):
+                macro = str(row.get("macro", "")).strip()
+                key = macro_name(macro)
+                if not key:
+                    continue
+                name = title_case_name(row.get("role", macro)) if collection == "requirements" else macro
+                group = requirement_groups.get(name, "Ungrouped") if collection == "requirements" else str(row.get("group", "Macros"))
+                occurrences.setdefault(key, []).append(
+                    {
+                        "token": f"{source}\x1f{collection}\x1f{index}",
+                        "source": source,
+                        "collection": collection,
+                        "kind": kind,
+                        "index": index,
+                        "macro": macro,
+                        "name": name,
+                        "group": group,
+                        "description": str(row.get("description", "")),
+                    }
+                )
+    return {macro: rows for macro, rows in occurrences.items() if len(rows) > 1}
+
+
+def resolve_duplicate_macros(
+    documents: list[tuple[str, dict[str, Any]]],
+    keep_tokens: dict[str, str],
+) -> list[tuple[str, dict[str, Any]]]:
+    """Remove every duplicate occurrence except the selected token for each macro."""
+
+    resolved = [(source, copy.deepcopy(data)) for source, data in documents]
+    duplicate_keys = set(keep_tokens)
+    for source, data in resolved:
+        for collection in ("requirements", "feature_macros", "option_macros"):
+            retained = []
+            for index, row in enumerate(data.get(collection, [])):
+                key = macro_name(str(row.get("macro", "")).strip())
+                token = f"{source}\x1f{collection}\x1f{index}"
+                if key not in duplicate_keys or keep_tokens.get(key) == token:
+                    retained.append(row)
+            data[collection] = retained
+
+        valid_names = {
+            str(row.get("role", row.get("macro", "")))
+            for row in data.get("requirements", [])
+        }
+        grouped_names: set[str] = set()
+        for group in data.get("requirement_groups", []):
+            names = []
+            for name in group.get("requirements", []):
+                name = str(name)
+                if name in valid_names and name not in grouped_names:
+                    names.append(name)
+                    grouped_names.add(name)
+            group["requirements"] = names
+    return resolved

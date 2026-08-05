@@ -121,7 +121,7 @@
       "description": "F280025C ePWM and CPU Timer clock."
     },
     {
-      "role": "PWM Cycles per Control",
+      "role": "PWM Cycles Per Control",
       "macro": "CLLLC_PWM_CYCLES_PER_CONTROL",
       "enabled": true,
       "weak": false,
@@ -336,7 +336,7 @@
       "name": "Clock and Runtime",
       "requirements": [
         "Timer Clock",
-        "PWM Cycles per Control",
+        "PWM Cycles Per Control",
         "Nominal Controller Frequency",
         "Nominal PWM Period",
         "System Tick Frequency",

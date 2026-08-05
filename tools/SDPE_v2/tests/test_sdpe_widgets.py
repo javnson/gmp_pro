@@ -14,9 +14,11 @@ if str(ROOT) not in sys.path:
 
 try:
     from PyQt6.QtCore import Qt
+    from PyQt6.QtTest import QTest
     from PyQt6.QtWidgets import QApplication, QStyleOptionViewItem, QTableWidgetItem, QTreeWidgetItem
 except ImportError:  # pragma: no cover - depends on the installed Qt binding.
     from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
     from PySide6.QtWidgets import QApplication, QStyleOptionViewItem, QTableWidgetItem, QTreeWidgetItem
 
 from gui_pyqt.sdpe_widgets import SDPEComboBox, SDPETableWidget, SDPETreeWidget
@@ -79,6 +81,52 @@ class SDPEWidgetTests(unittest.TestCase):
         tree.copy()
 
         self.assertEqual(calls, ["copy"])
+
+    def test_delete_key_removes_selected_row_outside_cell_editor(self) -> None:
+        table = SDPETableWidget()
+        table.configure(["Name"])
+        for row, name in enumerate(("First", "Second")):
+            table.insertRow(row)
+            table.setItem(row, 0, QTableWidgetItem(name))
+        table.setCurrentCell(0, 0)
+        table.setFocus()
+
+        QTest.keyClick(table, Qt.Key.Key_Delete)
+
+        self.assertEqual(table.rowCount(), 1)
+        self.assertEqual(table.item(0, 0).text(), "Second")
+
+    def test_delete_key_inside_editor_does_not_remove_row(self) -> None:
+        table = SDPETableWidget()
+        table.configure(["Name"])
+        table.insertRow(0)
+        item = QTableWidgetItem("Editable")
+        table.setItem(0, 0, item)
+        table.show()
+        table.setCurrentItem(item)
+        table.setFocus()
+        table.editItem(item)
+        self.app.processEvents()
+        editor = QApplication.focusWidget()
+        self.assertIsNotNone(editor)
+
+        QTest.keyClick(editor, Qt.Key.Key_Delete)
+
+        self.assertEqual(table.rowCount(), 1)
+
+    def test_delete_key_removes_selected_tree_row(self) -> None:
+        tree = SDPETreeWidget()
+        tree.configure(["Name"])
+        first = QTreeWidgetItem(["First"])
+        second = QTreeWidgetItem(["Second"])
+        tree.addTopLevelItems([first, second])
+        tree.setCurrentItem(first)
+        tree.setFocus()
+
+        QTest.keyClick(tree, Qt.Key.Key_Delete)
+
+        self.assertEqual(tree.topLevelItemCount(), 1)
+        self.assertEqual(tree.topLevelItem(0).text(0), "Second")
 
     def test_structural_action_emits_one_undo_transaction(self) -> None:
         table = SDPETableWidget()
@@ -154,8 +202,8 @@ class SDPEWidgetTests(unittest.TestCase):
             page.list_widget.setCurrentRow(0)
             self.app.processEvents()
             item = page.iter_requirement_items()[0]
-            original = item.text(6)
-            item.setText(6, original + " changed")
+            original = item.text(7)
+            item.setText(7, original + " changed")
             page.capture_undo_snapshot()
             self.assertIn(page.current_id, page.dirty_ids)
 

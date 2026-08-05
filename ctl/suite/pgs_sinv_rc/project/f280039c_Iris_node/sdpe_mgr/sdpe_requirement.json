@@ -331,7 +331,7 @@
   ],
   "requirements": [
     {
-      "role": "controller_frequency",
+      "role": "Controller Frequency",
       "macro": "CONTROLLER_FREQUENCY",
       "enabled": true,
       "weak": false,
@@ -341,7 +341,7 @@
       "description": "Controller ISR frequency."
     },
     {
-      "role": "pwm_cmp_max",
+      "role": "Pwm Cmp Max",
       "macro": "CTRL_PWM_CMP_MAX",
       "enabled": true,
       "weak": false,
@@ -351,7 +351,7 @@
       "description": "PWM compare maximum."
     },
     {
-      "role": "pwm_deadband",
+      "role": "Pwm Deadband",
       "macro": "CTRL_PWM_DEADBAND_CMP",
       "enabled": true,
       "weak": false,
@@ -361,7 +361,7 @@
       "description": "PWM deadband compare value."
     },
     {
-      "role": "system_tick_divider",
+      "role": "System Tick Divider",
       "macro": "DSP_C2000_DSP_TIME_DIV",
       "enabled": true,
       "weak": false,
@@ -371,7 +371,7 @@
       "description": "System tick divider derived from PWM period."
     },
     {
-      "role": "adc_voltage_reference",
+      "role": "Adc Voltage Reference",
       "macro": "CTRL_ADC_VOLTAGE_REF",
       "enabled": true,
       "weak": false,
@@ -381,7 +381,7 @@
       "description": "ADC voltage reference."
     },
     {
-      "role": "dc_bus_voltage",
+      "role": "Dc Bus Voltage",
       "macro": "CTRL_DCBUS_VOLTAGE",
       "enabled": true,
       "weak": false,
@@ -391,7 +391,7 @@
       "description": "Rated DC bus voltage."
     },
     {
-      "role": "grid_voltage_rms",
+      "role": "Grid Voltage Rms",
       "macro": "CTRL_GRID_VOLTAGE_RMS",
       "enabled": true,
       "weak": false,
@@ -401,7 +401,7 @@
       "description": "Rated AC grid/load RMS voltage."
     },
     {
-      "role": "rated_current_rms",
+      "role": "Rated Current Rms",
       "macro": "CTRL_RATED_CURRENT_RMS",
       "enabled": true,
       "weak": false,
@@ -411,7 +411,7 @@
       "description": "Rated AC output RMS current."
     },
     {
-      "role": "voltage_base",
+      "role": "Voltage Base",
       "macro": "CTRL_VOLTAGE_BASE",
       "enabled": true,
       "weak": false,
@@ -421,7 +421,7 @@
       "description": "Voltage per-unit base, using peak value."
     },
     {
-      "role": "current_base",
+      "role": "Current Base",
       "macro": "CTRL_CURRENT_BASE",
       "enabled": true,
       "weak": false,
@@ -431,7 +431,7 @@
       "description": "Current per-unit base, using peak value."
     },
     {
-      "role": "ac_inductance",
+      "role": "Ac Inductance",
       "macro": "CTRL_AC_INDUCTANCE",
       "enabled": true,
       "weak": false,
@@ -441,7 +441,7 @@
       "description": "Total AC-side filter/grid inductance in H."
     },
     {
-      "role": "ac_resistance",
+      "role": "Ac Resistance",
       "macro": "CTRL_AC_RESISTANCE",
       "enabled": true,
       "weak": false,
@@ -451,7 +451,7 @@
       "description": "Total AC-side series resistance in Ohm."
     },
     {
-      "role": "dc_voltage_sensitivity",
+      "role": "Dc Voltage Sensitivity",
       "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
       "enabled": true,
       "weak": false,
@@ -461,7 +461,7 @@
       "description": "DC bus voltage sensing gain from the LVFB inverter voltage sensor."
     },
     {
-      "role": "dc_voltage_bias",
+      "role": "Dc Voltage Bias",
       "macro": "CTRL_DC_VOLTAGE_BIAS",
       "enabled": true,
       "weak": false,
@@ -471,7 +471,7 @@
       "description": "DC bus voltage sensing ADC bias from the LVFB inverter voltage sensor."
     },
     {
-      "role": "ac_voltage_sensitivity",
+      "role": "Ac Voltage Sensitivity",
       "macro": "CTRL_AC_VOLTAGE_SENSITIVITY",
       "enabled": true,
       "weak": false,
@@ -481,7 +481,7 @@
       "description": "AC voltage sensing gain from the grid LC filter voltage sense path."
     },
     {
-      "role": "ac_voltage_bias",
+      "role": "Ac Voltage Bias",
       "macro": "CTRL_AC_VOLTAGE_BIAS",
       "enabled": true,
       "weak": false,
@@ -491,7 +491,7 @@
       "description": "AC voltage sensing ADC bias from the grid LC filter."
     },
     {
-      "role": "ac_current_sensitivity",
+      "role": "Ac Current Sensitivity",
       "macro": "CTRL_AC_CURRENT_SENSITIVITY",
       "enabled": true,
       "weak": false,
@@ -501,7 +501,7 @@
       "description": "AC current sensing sensitivity from the LVFB inverter current sensor."
     },
     {
-      "role": "ac_current_bias",
+      "role": "Ac Current Bias",
       "macro": "CTRL_AC_CURRENT_BIAS",
       "enabled": true,
       "weak": false,
@@ -511,7 +511,7 @@
       "description": "AC current sensing ADC bias from the LVFB inverter current sensor."
     },
     {
-      "role": "grid_vmin_pu",
+      "role": "Grid Vmin Pu",
       "macro": "CTRL_GRID_VMIN_PU",
       "enabled": true,
       "weak": false,
@@ -521,7 +521,7 @@
       "description": "Minimum PLL voltage magnitude used by P/Q reference division."
     },
     {
-      "role": "max_hw_voltage",
+      "role": "Max Hw Voltage",
       "macro": "CTRL_MAX_HW_VOLTAGE",
       "enabled": true,
       "weak": false,
@@ -531,7 +531,7 @@
       "description": "Maximum hardware DC bus voltage from the LVFB inverter board."
     },
     {
-      "role": "max_hw_current",
+      "role": "Max Hw Current",
       "macro": "CTRL_MAX_HW_CURRENT",
       "enabled": true,
       "weak": false,
@@ -541,7 +541,7 @@
       "description": "Maximum continuous RMS hardware current from the LVFB inverter board."
     },
     {
-      "role": "protection_vbus_max",
+      "role": "Protection Vbus Max",
       "macro": "CTRL_PROT_VBUS_MAX",
       "enabled": true,
       "weak": false,
@@ -551,7 +551,7 @@
       "description": "Project DC bus over-voltage protection threshold."
     },
     {
-      "role": "protection_iac_peak_max",
+      "role": "Protection Iac Peak Max",
       "macro": "CTRL_PROT_IAC_PEAK_MAX",
       "enabled": true,
       "weak": false,
@@ -561,7 +561,7 @@
       "description": "Fast AC peak-current trip threshold in A."
     },
     {
-      "role": "protection_controller_max_pu",
+      "role": "Protection Controller Max Pu",
       "macro": "CTRL_PROT_VCTRL_MAX_PU",
       "enabled": true,
       "weak": false,
@@ -571,7 +571,7 @@
       "description": "Maximum unsaturated modulation command before controller-divergence trip."
     },
     {
-      "role": "dc_bus_ready_min",
+      "role": "Dc Bus Ready Min",
       "macro": "CTRL_DCBUS_READY_MIN",
       "enabled": true,
       "weak": false,
@@ -581,7 +581,7 @@
       "description": "Minimum physical DC-bus voltage accepted by the startup state machine."
     },
     {
-      "role": "dc_bus_ready_max",
+      "role": "Dc Bus Ready Max",
       "macro": "CTRL_DCBUS_READY_MAX",
       "enabled": true,
       "weak": false,
@@ -591,7 +591,7 @@
       "description": "Maximum physical DC-bus voltage accepted by the startup state machine."
     },
     {
-      "role": "pll_kp",
+      "role": "Pll Kp",
       "macro": "CTRL_PLL_KP",
       "enabled": true,
       "weak": false,
@@ -601,7 +601,7 @@
       "description": "Single-phase PLL proportional gain."
     },
     {
-      "role": "pll_ti",
+      "role": "Pll Ti",
       "macro": "CTRL_PLL_TI",
       "enabled": true,
       "weak": false,
@@ -611,7 +611,7 @@
       "description": "Single-phase PLL integral time constant in seconds."
     },
     {
-      "role": "pll_lpf_fc",
+      "role": "Pll Lpf Fc",
       "macro": "CTRL_PLL_LPF_FC",
       "enabled": true,
       "weak": false,
@@ -621,7 +621,7 @@
       "description": "PLL q-axis error low-pass cutoff in Hz."
     },
     {
-      "role": "pq_lpf_fc",
+      "role": "Pq Lpf Fc",
       "macro": "CTRL_PQ_LPF_FC",
       "enabled": true,
       "weak": false,
@@ -631,7 +631,7 @@
       "description": "Measured active/reactive power low-pass cutoff in Hz."
     },
     {
-      "role": "current_limit_pu",
+      "role": "Current Limit Pu",
       "macro": "CTRL_CURRENT_LIMIT_PU",
       "enabled": true,
       "weak": false,
@@ -641,7 +641,7 @@
       "description": "Peak current-reference limit in per unit."
     },
     {
-      "role": "p_slew_pu_s",
+      "role": "P Slew Pu S",
       "macro": "CTRL_P_SLEW_PU_S",
       "enabled": true,
       "weak": false,
@@ -651,7 +651,7 @@
       "description": "Active-power command slew limit in PU/s."
     },
     {
-      "role": "q_slew_pu_s",
+      "role": "Q Slew Pu/S",
       "macro": "CTRL_Q_SLEW_PU_S",
       "enabled": true,
       "weak": false,
@@ -661,7 +661,7 @@
       "description": "Reactive-power command slew limit in PU/s."
     },
     {
-      "role": "current_deadband_pu",
+      "role": "Current Deadband Pu",
       "macro": "CTRL_CURRENT_DB_PU",
       "enabled": true,
       "weak": false,
@@ -671,7 +671,7 @@
       "description": "Current polarity deadband for PWM dead-time compensation."
     },
     {
-      "role": "fdrc_min_frequency",
+      "role": "Fdrc Min Frequency",
       "macro": "CTRL_FDRC_MIN_FREQ",
       "enabled": true,
       "weak": false,
@@ -681,7 +681,7 @@
       "description": "Minimum fundamental frequency tracked by the repetitive controller in Hz."
     },
     {
-      "role": "adc_calibration_timeout",
+      "role": "Adc Calibration Timeout",
       "macro": "TIMEOUT_ADC_CALIB_MS",
       "enabled": true,
       "weak": false,
@@ -691,7 +691,7 @@
       "description": "ADC calibration timeout in ms."
     },
     {
-      "role": "spll_epsilon",
+      "role": "Spll Epsilon",
       "macro": "CTRL_SPLL_EPSILON",
       "enabled": true,
       "weak": false,
@@ -701,7 +701,7 @@
       "description": "SPLL close-loop convergence criterion."
     },
     {
-      "role": "startup_delay",
+      "role": "Startup Delay",
       "macro": "CTRL_STARTUP_DELAY",
       "enabled": true,
       "weak": false,
@@ -711,7 +711,7 @@
       "description": "Startup delay in ms."
     },
     {
-      "role": "grid_frequency",
+      "role": "Grid Frequency",
       "macro": "CTRL_GRID_FREQUENCY",
       "enabled": true,
       "weak": false,
@@ -725,95 +725,115 @@
     {
       "name": "Peripheral Parameters",
       "requirements": [
-        "controller_frequency",
-        "pwm_cmp_max",
-        "pwm_deadband",
-        "system_tick_divider",
-        "adc_voltage_reference"
+        "Controller Frequency",
+        "Pwm Cmp Max",
+        "Pwm Deadband",
+        "System Tick Divider",
+        "Adc Voltage Reference"
       ]
     },
     {
       "name": "Per-Unit Base Parameters",
       "requirements": [
-        "dc_bus_voltage",
-        "grid_voltage_rms",
-        "rated_current_rms",
-        "voltage_base",
-        "current_base"
+        "Dc Bus Voltage",
+        "Grid Voltage Rms",
+        "Rated Current Rms",
+        "Voltage Base",
+        "Current Base"
       ]
     },
     {
       "name": "Main Element Parameters",
       "requirements": [
-        "ac_inductance",
-        "ac_resistance"
+        "Ac Inductance",
+        "Ac Resistance"
       ]
     },
     {
       "name": "DC Bus Voltage Sensor",
       "requirements": [
-        "dc_voltage_sensitivity",
-        "dc_voltage_bias"
+        "Dc Voltage Sensitivity",
+        "Dc Voltage Bias"
       ]
     },
     {
       "name": "AC Voltage Sensor",
       "requirements": [
-        "ac_voltage_sensitivity",
-        "ac_voltage_bias"
+        "Ac Voltage Sensitivity",
+        "Ac Voltage Bias"
       ]
     },
     {
       "name": "AC Current Sensor",
       "requirements": [
-        "ac_current_sensitivity",
-        "ac_current_bias"
+        "Ac Current Sensitivity",
+        "Ac Current Bias"
       ]
     },
     {
       "name": "Protection Parameters",
       "requirements": [
-        "grid_vmin_pu",
-        "max_hw_voltage",
-        "max_hw_current",
-        "protection_vbus_max",
-        "protection_iac_peak_max",
-        "protection_controller_max_pu",
-        "dc_bus_ready_min",
-        "dc_bus_ready_max"
+        "Grid Vmin Pu",
+        "Max Hw Voltage",
+        "Max Hw Current",
+        "Protection Vbus Max",
+        "Protection Iac Peak Max",
+        "Protection Controller Max Pu",
+        "Dc Bus Ready Min",
+        "Dc Bus Ready Max"
       ]
     },
     {
       "name": "Control Loop Parameters",
       "requirements": [
-        "pll_kp",
-        "pll_ti",
-        "pll_lpf_fc",
-        "pq_lpf_fc",
-        "current_limit_pu",
-        "p_slew_pu_s",
-        "q_slew_pu_s",
-        "current_deadband_pu",
-        "fdrc_min_frequency",
-        "adc_calibration_timeout",
-        "spll_epsilon"
+        "Pll Kp",
+        "Pll Ti",
+        "Pll Lpf Fc",
+        "Pq Lpf Fc",
+        "Current Limit Pu",
+        "P Slew Pu S",
+        "Q Slew Pu/S",
+        "Current Deadband Pu",
+        "Fdrc Min Frequency",
+        "Adc Calibration Timeout",
+        "Spll Epsilon"
       ]
     },
     {
       "name": "Runtime Parameters",
       "requirements": [
-        "startup_delay"
+        "Startup Delay"
       ]
     },
     {
       "name": "Default Parameters",
       "requirements": [
-        "grid_frequency"
+        "Grid Frequency"
       ]
+    },
+    {
+      "name": "Commissioning Defaults",
+      "requirements": []
     }
   ],
   "macro_prefix": "",
   "common_requirements": [
     "../../../sdpe_general/sdpe_requirement.json"
+  ],
+  "feature_macro_groups": [
+    "Controller Features",
+    "Sensing and Calibration",
+    "Diagnostics and Simulation"
+  ],
+  "option_macro_groups": [
+    "Option Macros",
+    "Control Mode",
+    "PWM Modulator",
+    "PWM Channel Mapping",
+    "Gate Driver GPIO",
+    "Status GPIO",
+    "AC Current Sensing",
+    "AC Voltage Sensing",
+    "DC Bus Sensing"
   ]
 }

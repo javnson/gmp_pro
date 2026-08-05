@@ -86,7 +86,7 @@
   ],
   "requirements": [
     {
-      "role": "grid_voltage_pu",
+      "role": "Grid Voltage Pu",
       "macro": "GFM_GRID_VOLTAGE_PU",
       "binding": {
         "float": "0.33"
@@ -94,7 +94,7 @@
       "description": "Nominal grid phase-voltage magnitude in controller per unit."
     },
     {
-      "role": "grid_frequency",
+      "role": "Grid Frequency",
       "macro": "GFM_GRID_FREQUENCY_HZ",
       "binding": {
         "float": "50.0"
@@ -102,7 +102,7 @@
       "description": "Nominal grid-forming and synchronization frequency."
     },
     {
-      "role": "open_loop_vd",
+      "role": "Open Loop Vd",
       "macro": "GFM_OPEN_LOOP_VD_PU",
       "binding": {
         "float": "0.50"
@@ -110,7 +110,7 @@
       "description": "BUILD_LEVEL 1 d-axis open-loop voltage command."
     },
     {
-      "role": "open_loop_vq",
+      "role": "Open Loop Vq",
       "macro": "GFM_OPEN_LOOP_VQ_PU",
       "binding": {
         "float": "0.0"
@@ -118,7 +118,7 @@
       "description": "BUILD_LEVEL 1 q-axis open-loop voltage command."
     },
     {
-      "role": "island_current_id",
+      "role": "Island Current Id",
       "macro": "GFM_CURRENT_LEVEL2_ID_PU",
       "binding": {
         "float": "0.10"
@@ -126,7 +126,7 @@
       "description": "BUILD_LEVEL 2 d-axis current command using the internal ramp angle."
     },
     {
-      "role": "island_current_iq",
+      "role": "Island Current Iq",
       "macro": "GFM_CURRENT_LEVEL2_IQ_PU",
       "binding": {
         "float": "0.10"
@@ -134,7 +134,7 @@
       "description": "BUILD_LEVEL 2 q-axis current command using the internal ramp angle."
     },
     {
-      "role": "pll_current_id",
+      "role": "Pll Current Id",
       "macro": "GFM_CURRENT_LEVEL4_ID_PU",
       "binding": {
         "float": "0.10"
@@ -142,7 +142,7 @@
       "description": "BUILD_LEVEL 4 PLL-oriented d-axis grid current command."
     },
     {
-      "role": "pll_current_iq",
+      "role": "Pll Current Iq",
       "macro": "GFM_CURRENT_LEVEL4_IQ_PU",
       "binding": {
         "float": "0.0"
@@ -150,7 +150,7 @@
       "description": "BUILD_LEVEL 4 PLL-oriented q-axis grid current command."
     },
     {
-      "role": "voltage_vd",
+      "role": "Voltage Vd",
       "macro": "GFM_VOLTAGE_VD_PU",
       "binding": {
         "float": "0.50"
@@ -158,7 +158,7 @@
       "description": "BUILD_LEVEL 3 fixed voltage reference and BUILD_LEVEL 5 nominal droop voltage."
     },
     {
-      "role": "voltage_vq",
+      "role": "Voltage Vq",
       "macro": "GFM_VOLTAGE_VQ_PU",
       "binding": {
         "float": "0.0"
@@ -166,7 +166,7 @@
       "description": "BUILD_LEVEL 3 fixed q-axis voltage reference."
     },
     {
-      "role": "voltage_bw",
+      "role": "Voltage Bw",
       "macro": "GFM_VOLTAGE_LOOP_BW_HZ",
       "binding": {
         "float": "100.0"
@@ -174,7 +174,7 @@
       "description": "LC capacitor-voltage loop bandwidth."
     },
     {
-      "role": "voltage_zero",
+      "role": "Voltage Zero",
       "macro": "GFM_VOLTAGE_LOOP_ZERO_HZ",
       "binding": {
         "float": "20.0"
@@ -182,7 +182,7 @@
       "description": "LC capacitor-voltage ordinary PI zero frequency."
     },
     {
-      "role": "voltage_circle_limit",
+      "role": "Voltage Circle Limit",
       "macro": "GFM_VOLTAGE_CIRCLE_LIMIT_PU",
       "binding": {
         "float": "0.80"
@@ -190,7 +190,7 @@
       "description": "Circular magnitude limit of the complete voltage-loop current reference."
     },
     {
-      "role": "voltage_square_limit",
+      "role": "Voltage Square Limit",
       "macro": "GFM_VOLTAGE_SQUARE_LIMIT_PU",
       "binding": {
         "float": "0.80"
@@ -198,7 +198,7 @@
       "description": "Independent symmetric d/q-axis voltage-loop current-reference limit."
     },
     {
-      "role": "droop_p",
+      "role": "Droop P",
       "macro": "GFM_DROOP_P_HZ_PER_PU",
       "binding": {
         "float": "0.50"
@@ -206,7 +206,7 @@
       "description": "Active-power to frequency droop slope in Hz per power PU."
     },
     {
-      "role": "droop_q",
+      "role": "Droop Q",
       "macro": "GFM_DROOP_Q_V_PER_PU",
       "binding": {
         "float": "0.05"
@@ -214,7 +214,7 @@
       "description": "Reactive-power to voltage droop slope in voltage PU per reactive-power PU."
     },
     {
-      "role": "droop_power_lpf",
+      "role": "Droop Power Lpf",
       "macro": "GFM_DROOP_POWER_LPF_HZ",
       "binding": {
         "float": "10.0"
@@ -222,7 +222,7 @@
       "description": "Droop active/reactive-power measurement low-pass cutoff."
     },
     {
-      "role": "droop_freq_limit",
+      "role": "Droop Freq Limit",
       "macro": "GFM_DROOP_FREQUENCY_DELTA_LIMIT_HZ",
       "binding": {
         "float": "2.0"
@@ -230,7 +230,7 @@
       "description": "Maximum absolute droop frequency deviation from nominal."
     },
     {
-      "role": "droop_voltage_min",
+      "role": "Droop Voltage Min",
       "macro": "GFM_DROOP_VOLTAGE_MIN_PU",
       "binding": {
         "float": "0.40"
@@ -238,7 +238,7 @@
       "description": "Minimum voltage magnitude requested by the droop module."
     },
     {
-      "role": "droop_voltage_max",
+      "role": "Droop Voltage Max",
       "macro": "GFM_DROOP_VOLTAGE_MAX_PU",
       "binding": {
         "float": "0.60"
@@ -246,7 +246,7 @@
       "description": "Maximum voltage magnitude requested by the droop module."
     },
     {
-      "role": "droop_p_ref",
+      "role": "Droop P Ref",
       "macro": "GFM_DROOP_ACTIVE_POWER_REF_PU",
       "binding": {
         "float": "0.0"
@@ -254,7 +254,7 @@
       "description": "Default active-power reference for the droop algorithm."
     },
     {
-      "role": "droop_q_ref",
+      "role": "Droop Q Ref",
       "macro": "GFM_DROOP_REACTIVE_POWER_REF_PU",
       "binding": {
         "float": "0.0"
@@ -262,7 +262,7 @@
       "description": "Default reactive-power reference for the droop algorithm."
     },
     {
-      "role": "vsm_inertia",
+      "role": "Vsm Inertia",
       "macro": "GFM_VSM_INERTIA_S",
       "binding": {
         "float": "1.0"
@@ -270,7 +270,7 @@
       "description": "VSM normalized swing-equation inertia in seconds."
     },
     {
-      "role": "vsm_damping",
+      "role": "Vsm Damping",
       "macro": "GFM_VSM_DAMPING_PU_PER_HZ",
       "binding": {
         "float": "2.0"
@@ -278,7 +278,7 @@
       "description": "VSM damping power coefficient in power PU per hertz."
     },
     {
-      "role": "vsm_q_droop",
+      "role": "Vsm Q Droop",
       "macro": "GFM_VSM_Q_DROOP_V_PER_PU",
       "binding": {
         "float": "0.05"
@@ -286,7 +286,7 @@
       "description": "VSM reactive-power voltage droop in voltage PU per reactive-power PU."
     },
     {
-      "role": "vsm_power_lpf",
+      "role": "Vsm Power Lpf",
       "macro": "GFM_VSM_POWER_LPF_HZ",
       "binding": {
         "float": "10.0"
@@ -294,7 +294,7 @@
       "description": "VSM active/reactive-power measurement low-pass cutoff."
     },
     {
-      "role": "virtual_impedance_r",
+      "role": "Virtual Impedance R",
       "macro": "GFM_VIRTUAL_IMPEDANCE_R_PU",
       "binding": {
         "float": "0.03"
@@ -302,7 +302,7 @@
       "description": "Virtual resistance used to condition the voltage-loop reference."
     },
     {
-      "role": "virtual_impedance_x",
+      "role": "Virtual Impedance X",
       "macro": "GFM_VIRTUAL_IMPEDANCE_X_PU",
       "binding": {
         "float": "0.03"
@@ -310,7 +310,7 @@
       "description": "Virtual reactance used to condition the voltage-loop reference."
     },
     {
-      "role": "virtual_impedance_voltage_limit",
+      "role": "Virtual Impedance Voltage Limit",
       "macro": "GFM_VIRTUAL_IMPEDANCE_VOLTAGE_LIMIT_PU",
       "binding": {
         "float": "0.60"
@@ -318,7 +318,7 @@
       "description": "Circular voltage-reference limit after virtual-impedance compensation."
     },
     {
-      "role": "transition_time",
+      "role": "Transition Time",
       "macro": "GFM_TRANSITION_TIME_S",
       "binding": {
         "float": "0.10"
@@ -326,7 +326,7 @@
       "description": "PLL-to-grid-forming phasor and current-command blend duration."
     },
     {
-      "role": "sync_hold",
+      "role": "Sync Hold",
       "macro": "GFM_SYNC_HOLD_TIME_S",
       "binding": {
         "float": "0.20"
@@ -334,7 +334,7 @@
       "description": "Continuous PLL-lock duration required before requesting grid-forming takeover."
     },
     {
-      "role": "sync_pll_error",
+      "role": "Sync Pll Error",
       "macro": "GFM_SYNC_PLL_ERROR_PU",
       "binding": {
         "float": "0.08"
@@ -342,7 +342,7 @@
       "description": "Maximum instantaneous PLL q-axis error during the continuous grid-forming synchronization hold."
     },
     {
-      "role": "sync_current_id",
+      "role": "Sync Current Id",
       "macro": "GFM_SYNC_ID_PU",
       "binding": {
         "float": "0.0"
@@ -350,7 +350,7 @@
       "description": "Tracking-mode d-axis current command before grid-forming takeover."
     },
     {
-      "role": "sync_current_iq",
+      "role": "Sync Current Iq",
       "macro": "GFM_SYNC_IQ_PU",
       "binding": {
         "float": "0.0"
@@ -358,7 +358,7 @@
       "description": "Tracking-mode q-axis current command before grid-forming takeover."
     },
     {
-      "role": "zero_qpr_kp",
+      "role": "Zero Qpr Kp",
       "macro": "GFM_ZERO_QPR_KP",
       "binding": {
         "float": "0.10"
@@ -366,7 +366,7 @@
       "description": "Zero-sequence current QPR proportional gain for four-wire operation."
     },
     {
-      "role": "zero_qpr_kr",
+      "role": "Zero Qpr Kr",
       "macro": "GFM_ZERO_QPR_KR",
       "binding": {
         "float": "50.0"
@@ -374,7 +374,7 @@
       "description": "Zero-sequence current QPR resonant gain."
     },
     {
-      "role": "zero_qpr_cutoff",
+      "role": "Zero Qpr Cutoff",
       "macro": "GFM_ZERO_QPR_CUTOFF_HZ",
       "binding": {
         "float": "5.0"
@@ -382,7 +382,7 @@
       "description": "Zero-sequence QPR resonant bandwidth."
     },
     {
-      "role": "zero_voltage_limit",
+      "role": "Zero Voltage Limit",
       "macro": "GFM_ZERO_VOLTAGE_LIMIT_PU",
       "binding": {
         "float": "0.20"
@@ -390,7 +390,7 @@
       "description": "Symmetric zero-axis voltage-command limit."
     },
     {
-      "role": "adc_calibrator_cutoff",
+      "role": "Adc Calibrator Cutoff",
       "macro": "GFM_ADC_CALIBRATOR_FC_HZ",
       "binding": {
         "float": "20.0"
@@ -398,7 +398,7 @@
       "description": "ADC offset calibrator cutoff."
     },
     {
-      "role": "adc_calibrator_q",
+      "role": "Adc Calibrator Q",
       "macro": "GFM_ADC_CALIBRATOR_Q",
       "binding": {
         "float": "0.707"
@@ -406,7 +406,7 @@
       "description": "ADC offset calibrator quality factor."
     },
     {
-      "role": "cia402_enable_delay",
+      "role": "Cia402 Enable Delay",
       "macro": "GFM_CIA402_OPERATION_ENABLE_DELAY_MS",
       "binding": {
         "number": "100"
@@ -414,7 +414,7 @@
       "description": "Minimum CiA402 delay before Operation Enabled."
     },
     {
-      "role": "pll_lock_epsilon",
+      "role": "Pll Lock Epsilon",
       "macro": "CTRL_SPLL_EPSILON",
       "binding": {
         "literal": "((float2ctrl(0.005)))"
@@ -426,57 +426,57 @@
     {
       "name": "Commissioning Levels",
       "requirements": [
-        "open_loop_vd",
-        "open_loop_vq",
-        "island_current_id",
-        "island_current_iq",
-        "pll_current_id",
-        "pll_current_iq",
-        "voltage_vd",
-        "voltage_vq"
+        "Open Loop Vd",
+        "Open Loop Vq",
+        "Island Current Id",
+        "Island Current Iq",
+        "Pll Current Id",
+        "Pll Current Iq",
+        "Voltage Vd",
+        "Voltage Vq"
       ]
     },
     {
       "name": "Voltage and Grid-Forming Loops",
       "requirements": [
-        "voltage_bw",
-        "voltage_zero",
-        "voltage_circle_limit",
-        "voltage_square_limit",
-        "droop_p",
-        "droop_q",
-        "droop_power_lpf",
-        "droop_freq_limit",
-        "droop_voltage_min",
-        "droop_voltage_max",
-        "droop_p_ref",
-        "droop_q_ref",
-        "vsm_inertia",
-        "vsm_damping",
-        "vsm_q_droop",
-        "vsm_power_lpf",
-        "virtual_impedance_r",
-        "virtual_impedance_x",
-        "virtual_impedance_voltage_limit",
-        "transition_time",
-        "sync_hold",
-        "sync_current_id",
-        "sync_current_iq",
-        "pll_lock_epsilon"
+        "Voltage Bw",
+        "Voltage Zero",
+        "Voltage Circle Limit",
+        "Voltage Square Limit",
+        "Droop P",
+        "Droop Q",
+        "Droop Power Lpf",
+        "Droop Freq Limit",
+        "Droop Voltage Min",
+        "Droop Voltage Max",
+        "Droop P Ref",
+        "Droop Q Ref",
+        "Vsm Inertia",
+        "Vsm Damping",
+        "Vsm Q Droop",
+        "Vsm Power Lpf",
+        "Virtual Impedance R",
+        "Virtual Impedance X",
+        "Virtual Impedance Voltage Limit",
+        "Transition Time",
+        "Sync Hold",
+        "Sync Current Id",
+        "Sync Current Iq",
+        "Pll Lock Epsilon"
       ]
     },
     {
       "name": "System and Four-Wire",
       "requirements": [
-        "grid_voltage_pu",
-        "grid_frequency",
-        "zero_qpr_kp",
-        "zero_qpr_kr",
-        "zero_qpr_cutoff",
-        "zero_voltage_limit",
-        "adc_calibrator_cutoff",
-        "adc_calibrator_q",
-        "cia402_enable_delay"
+        "Grid Voltage Pu",
+        "Grid Frequency",
+        "Zero Qpr Kp",
+        "Zero Qpr Kr",
+        "Zero Qpr Cutoff",
+        "Zero Voltage Limit",
+        "Adc Calibrator Cutoff",
+        "Adc Calibrator Q",
+        "Cia402 Enable Delay"
       ]
     }
   ]

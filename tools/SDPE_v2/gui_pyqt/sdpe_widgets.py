@@ -208,7 +208,7 @@ class SDPEDataViewMixin:
             "copy": QKeySequence.StandardKey.Copy,
             "cut": QKeySequence.StandardKey.Cut,
             "paste": QKeySequence.StandardKey.Paste,
-            "delete": QKeySequence("Del"),
+            "delete": None,
         }
         for name, label in self._ACTION_LABELS.items():
             action = QAction(label, self)
@@ -528,6 +528,13 @@ class SDPETableWidget(SDPEDataViewMixin, QTableWidget):
         if index.isValid() and self.cellWidget(index.row(), index.column()) is not None:
             return False
         return super().edit(index, trigger, event)
+
+    def keyPressEvent(self, event) -> None:  # noqa: N802 - Qt override name.
+        if event.key() == Qt.Key.Key_Delete and self.state() != QAbstractItemView.State.EditingState:
+            self._run_standard_action("delete")
+            event.accept()
+            return
+        super().keyPressEvent(event)
 
     def selected_row_numbers(self) -> list[int]:
         rows = sorted({index.row() for index in self.selectedIndexes()})
@@ -909,6 +916,13 @@ class SDPETreeWidget(SDPEDataViewMixin, QTreeWidget):
             if item is not None and self.itemWidget(item, index.column()) is not None:
                 return False
         return super().edit(index, trigger, event)
+
+    def keyPressEvent(self, event) -> None:  # noqa: N802 - Qt override name.
+        if event.key() == Qt.Key.Key_Delete and self.state() != QAbstractItemView.State.EditingState:
+            self._run_standard_action("delete")
+            event.accept()
+            return
+        super().keyPressEvent(event)
 
     def iter_items(self, parent: QTreeWidgetItem | None = None):
         """Yield every item recursively, allowing arbitrary group depth."""

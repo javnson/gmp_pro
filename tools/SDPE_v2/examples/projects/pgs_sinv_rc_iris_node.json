@@ -182,7 +182,7 @@
   ],
   "requirements": [
     {
-      "role": "startup_delay",
+      "role": "Startup Delay",
       "macro": "CTRL_STARTUP_DELAY",
       "binding": {
         "number": "100"
@@ -190,7 +190,7 @@
       "description": "Startup delay in ms."
     },
     {
-      "role": "controller_frequency",
+      "role": "Controller Frequency",
       "macro": "CONTROLLER_FREQUENCY",
       "binding": {
         "number": "20e3"
@@ -198,7 +198,7 @@
       "description": "Controller ISR frequency."
     },
     {
-      "role": "pwm_cmp_max",
+      "role": "Pwm Cmp Max",
       "macro": "CTRL_PWM_CMP_MAX",
       "binding": {
         "number": "3000 - 1"
@@ -206,7 +206,7 @@
       "description": "PWM compare maximum."
     },
     {
-      "role": "pwm_deadband",
+      "role": "Pwm Deadband",
       "macro": "CTRL_PWM_DEADBAND_CMP",
       "binding": {
         "number": "50"
@@ -214,7 +214,7 @@
       "description": "PWM deadband compare value."
     },
     {
-      "role": "system_tick_divider",
+      "role": "System Tick Divider",
       "macro": "DSP_C2000_DSP_TIME_DIV",
       "binding": {
         "number": "120000 / CTRL_PWM_CMP_MAX / 2"
@@ -222,7 +222,7 @@
       "description": "System tick divider derived from PWM period."
     },
     {
-      "role": "adc_voltage_reference",
+      "role": "Adc Voltage Reference",
       "macro": "CTRL_ADC_VOLTAGE_REF",
       "binding": {
         "float": "3.3"
@@ -230,7 +230,7 @@
       "description": "ADC voltage reference."
     },
     {
-      "role": "dc_bus_voltage",
+      "role": "Dc Bus Voltage",
       "macro": "CTRL_DCBUS_VOLTAGE",
       "binding": {
         "float": "60.0"
@@ -238,7 +238,7 @@
       "description": "Rated DC bus voltage."
     },
     {
-      "role": "grid_voltage_rms",
+      "role": "Grid Voltage Rms",
       "macro": "CTRL_GRID_VOLTAGE_RMS",
       "binding": {
         "float": "24.0"
@@ -246,7 +246,7 @@
       "description": "Rated AC grid/load RMS voltage."
     },
     {
-      "role": "rated_current_rms",
+      "role": "Rated Current Rms",
       "macro": "CTRL_RATED_CURRENT_RMS",
       "binding": {
         "float": "10.0"
@@ -254,7 +254,7 @@
       "description": "Rated AC output RMS current."
     },
     {
-      "role": "voltage_base",
+      "role": "Voltage Base",
       "macro": "CTRL_VOLTAGE_BASE",
       "binding": {
         "float": "34.0"
@@ -262,7 +262,7 @@
       "description": "Voltage per-unit base, using peak value."
     },
     {
-      "role": "current_base",
+      "role": "Current Base",
       "macro": "CTRL_CURRENT_BASE",
       "binding": {
         "float": "14.14"
@@ -270,7 +270,7 @@
       "description": "Current per-unit base, using peak value."
     },
     {
-      "role": "ac_voltage_sensitivity",
+      "role": "Ac Voltage Sensitivity",
       "macro": "CTRL_AC_VOLTAGE_SENSITIVITY",
       "binding": {
         "export": "gmp_harmonia_3ph_lc_filter.ph_voltage_sense_gain"
@@ -278,7 +278,7 @@
       "description": "AC voltage sensing gain from the grid LC filter voltage sense path."
     },
     {
-      "role": "ac_voltage_bias",
+      "role": "Ac Voltage Bias",
       "macro": "CTRL_AC_VOLTAGE_BIAS",
       "binding": {
         "export": "gmp_harmonia_3ph_lc_filter.ph_voltage_sense_bias_v"
@@ -286,7 +286,7 @@
       "description": "AC voltage sensing ADC bias from the grid LC filter."
     },
     {
-      "role": "ac_current_sensitivity",
+      "role": "Ac Current Sensitivity",
       "macro": "CTRL_AC_CURRENT_SENSITIVITY",
       "binding": {
         "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
@@ -294,7 +294,7 @@
       "description": "AC current sensing sensitivity from the LVFB inverter current sensor."
     },
     {
-      "role": "ac_current_bias",
+      "role": "Ac Current Bias",
       "macro": "CTRL_AC_CURRENT_BIAS",
       "binding": {
         "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
@@ -302,7 +302,7 @@
       "description": "AC current sensing ADC bias from the LVFB inverter current sensor."
     },
     {
-      "role": "dc_voltage_sensitivity",
+      "role": "Dc Voltage Sensitivity",
       "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
       "binding": {
         "export": "gmp_lvfb_150_2ph_v2.voltage_sensitivity"
@@ -310,7 +310,7 @@
       "description": "DC bus voltage sensing gain from the LVFB inverter voltage sensor."
     },
     {
-      "role": "dc_voltage_bias",
+      "role": "Dc Voltage Bias",
       "macro": "CTRL_DC_VOLTAGE_BIAS",
       "binding": {
         "export": "gmp_lvfb_150_2ph_v2.voltage_bias_v"
@@ -318,7 +318,7 @@
       "description": "DC bus voltage sensing ADC bias from the LVFB inverter voltage sensor."
     },
     {
-      "role": "max_hw_voltage",
+      "role": "Max Hw Voltage",
       "macro": "CTRL_MAX_HW_VOLTAGE",
       "binding": {
         "export": "gmp_lvfb_150_2ph_v2.vbus_max_v"
@@ -326,7 +326,7 @@
       "description": "Maximum hardware DC bus voltage from the LVFB inverter board."
     },
     {
-      "role": "max_hw_current",
+      "role": "Max Hw Current",
       "macro": "CTRL_MAX_HW_CURRENT",
       "binding": {
         "export": "gmp_lvfb_150_2ph_v2.current_max_rms_a"
@@ -334,7 +334,7 @@
       "description": "Maximum continuous RMS hardware current from the LVFB inverter board."
     },
     {
-      "role": "protection_vbus_max",
+      "role": "Protection Vbus Max",
       "macro": "CTRL_PROT_VBUS_MAX",
       "binding": {
         "float": "100.0"
@@ -342,7 +342,7 @@
       "description": "Project DC bus over-voltage protection threshold."
     },
     {
-      "role": "adc_calibration_timeout",
+      "role": "Adc Calibration Timeout",
       "macro": "TIMEOUT_ADC_CALIB_MS",
       "binding": {
         "number": "3000"
@@ -350,7 +350,7 @@
       "description": "ADC calibration timeout in ms."
     },
     {
-      "role": "spll_epsilon",
+      "role": "Spll Epsilon",
       "macro": "CTRL_SPLL_EPSILON",
       "binding": {
         "literal": "((float2ctrl(0.005)))"
@@ -362,48 +362,48 @@
     {
       "name": "Controller Basic Parameters",
       "requirements": [
-        "startup_delay",
-        "controller_frequency",
-        "pwm_cmp_max",
-        "pwm_deadband",
-        "system_tick_divider",
-        "adc_voltage_reference"
+        "Startup Delay",
+        "Controller Frequency",
+        "Pwm Cmp Max",
+        "Pwm Deadband",
+        "System Tick Divider",
+        "Adc Voltage Reference"
       ]
     },
     {
       "name": "Power System Ratings",
       "requirements": [
-        "dc_bus_voltage",
-        "grid_voltage_rms",
-        "rated_current_rms",
-        "voltage_base",
-        "current_base"
+        "Dc Bus Voltage",
+        "Grid Voltage Rms",
+        "Rated Current Rms",
+        "Voltage Base",
+        "Current Base"
       ]
     },
     {
       "name": "Hardware Abstraction Mapping",
       "requirements": [
-        "ac_voltage_sensitivity",
-        "ac_voltage_bias",
-        "ac_current_sensitivity",
-        "ac_current_bias",
-        "dc_voltage_sensitivity",
-        "dc_voltage_bias"
+        "Ac Voltage Sensitivity",
+        "Ac Voltage Bias",
+        "Ac Current Sensitivity",
+        "Ac Current Bias",
+        "Dc Voltage Sensitivity",
+        "Dc Voltage Bias"
       ]
     },
     {
       "name": "System Protection Bounds",
       "requirements": [
-        "max_hw_voltage",
-        "max_hw_current",
-        "protection_vbus_max"
+        "Max Hw Voltage",
+        "Max Hw Current",
+        "Protection Vbus Max"
       ]
     },
     {
       "name": "Controller Settings",
       "requirements": [
-        "adc_calibration_timeout",
-        "spll_epsilon"
+        "Adc Calibration Timeout",
+        "Spll Epsilon"
       ]
     }
   ]
