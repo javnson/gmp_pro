@@ -23,7 +23,7 @@ extern "C"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_ID "mcs_pmsm_nt_common"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION "1.0.0"
-#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-05"
+#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-06"
 
 //=================================================================================================
 /**
@@ -187,6 +187,46 @@ extern "C"
 #define MCS_MIN_DC_BUS_VOLTAGE_V (CTRL_DCBUS_VOLTAGE*0.2f)
 
 /**
+ * @brief 
+ */
+#define MOTOR_PARAM_INERTIA SM060R20B30MNAD_INERTIA
+
+/**
+ * @brief 
+ */
+#define MOTOR_PARAM_FLUX SM060R20B30MNAD_FLUX
+
+/**
+ * @brief 
+ */
+#define MOTOR_PARAM_LD SM060R20B30MNAD_LD
+
+/**
+ * @brief 
+ */
+#define MOTOR_PARAM_RS SM060R20B30MNAD_RS
+
+/**
+ * @brief 
+ */
+#define MOTOR_PARAM_LQ SM060R20B30MNAD_LQ
+
+/**
+ * @brief 
+ */
+#define MOTOR_PARAM_LS SM060R20B30MNAD_LD
+
+/**
+ * @brief 
+ */
+#define MOTOR_PARAM_FRICTION SM060R20B30MNAD_FRICTION
+
+/**
+ * @brief 
+ */
+#define MOTOR_PARAM_POLE_PAIRS SM060R20B30MNAD_POLE_PAIRS
+
+/**
  * @brief Controller startup delay in milliseconds.
  */
 #define CTRL_STARTUP_DELAY (100)
@@ -205,6 +245,21 @@ extern "C"
  * @brief Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
  */
 #define MCS_ADC_CALIBRATOR_Q (0.707f)
+
+/**
+ * @brief 
+ */
+#define CTRL_SPEED_RPM_BASE ${sm060r20b30mnad.Max Speed}
+
+/**
+ * @brief 
+ */
+#define MOTOR_PARAM_MAX_SPEED ${sm060r20b30mnad.Max Speed}
+
+/**
+ * @brief 
+ */
+#define MOTOR_PARAM_RATED_FREQUENCY ${sm060r20b30mnad.Rated Frequency}
 
 // User project tail code
 /* Accept the historical misspelling while all source code uses the canonical switch. */

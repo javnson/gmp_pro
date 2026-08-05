@@ -5,7 +5,7 @@
   "description": "PMSM sensored-control settings and project bindings for the LaunchXL-F280049C. Board resources remain physical BOOSTXL connector resources and are assigned application roles here.",
   "suite": "mcs_pmsm_nt",
   "version": "1.2.0",
-  "updated_at": "2026-08-05",
+  "updated_at": "2026-08-06",
   "output_header": "sdpe_mcs_pmsm_nt_f280049c_settings.h",
   "hardware": [
     {
@@ -19,7 +19,7 @@
     }
   ],
   "code_sections": {
-    "after_extern_open": "/* The inverter is selected as an SDPE hardware entity. */\n\n/* Compatibility names consumed by the existing PMSM controller. */\n#define MOTOR_TYPE                     SM060R20B30MNAD_MOTOR_TYPE\n#define MOTOR_PARAM_RS                 SM060R20B30MNAD_RS\n#define MOTOR_PARAM_LS                 SM060R20B30MNAD_LD\n#define MOTOR_PARAM_LD                 SM060R20B30MNAD_LD\n#define MOTOR_PARAM_LQ                 SM060R20B30MNAD_LQ\n#define MOTOR_PARAM_FLUX               SM060R20B30MNAD_FLUX\n#define MOTOR_PARAM_POLE_PAIRS         SM060R20B30MNAD_POLE_PAIRS\n#define MOTOR_PARAM_INERTIA            SM060R20B30MNAD_INERTIA\n#define MOTOR_PARAM_FRICTION           SM060R20B30MNAD_FRICTION\n#define MOTOR_PARAM_KV                 SM060R20B30MNAD_KV\n#define MOTOR_PARAM_EMF                SM060R20B30MNAD_EMF\n#define MOTOR_PARAM_RATED_VOLTAGE      SM060R20B30MNAD_RATED_VOLTAGE\n#define MOTOR_PARAM_RATED_CURRENT      SM060R20B30MNAD_RATED_CURRENT\n#define MOTOR_PARAM_NO_LOAD_CURRENT    SM060R20B30MNAD_NO_LOAD_CURRENT\n#define MOTOR_PARAM_RATED_FREQUENCY    SM060R20B30MNAD_RATED_FREQUENCY\n#define MOTOR_PARAM_MAX_SPEED          SM060R20B30MNAD_MAX_SPEED\n#define MOTOR_PARAM_MAX_TORQUE         SM060R20B30MNAD_MAX_TORQUE\n#define MOTOR_PARAM_MAX_DC_VOLTAGE     SM060R20B30MNAD_MAX_DC_VOLTAGE\n#define MOTOR_PARAM_MAX_PH_CURRENT     SM060R20B30MNAD_MAX_PH_CURRENT\n\n#define LAUNCHPAD 1\n#define GMP_IRIS  0\n#define BOARD_SELECTION LAUNCHPAD",
+    "after_extern_open": "/* The inverter is selected as an SDPE hardware entity. */\n\n#define LAUNCHPAD 1\n#define GMP_IRIS  0\n#define BOARD_SELECTION LAUNCHPAD",
     "before_footer": "/* No additional platform-specific tail definitions. */\n\n/**\n * @brief Unit convert from V into phase voltage pu.\n */\n#define VOLT_PU(_X_X_) (((_X_X_)/CTRL_VOLTAGE_BASE))\n\n/**\n * @brief Unit convert from A into phase current pu.\n */\n#define CURR_PU(_X_X_) (((_X_X_)/CTRL_CURRENT_BASE))"
   },
   "feature_macros": [],
@@ -44,7 +44,11 @@
       "weak": false,
       "value": "ENABLE_GATE",
       "options_preset": "launchxl_f280049c.GATE_GPIO",
-      "options": [],
+      "options": [
+        "ENABLE_GATE",
+        "RESET_GATE",
+        "MONITOR_IO"
+      ],
       "description": "Gate-driver enable GPIO."
     },
     {
@@ -54,7 +58,11 @@
       "weak": false,
       "value": "RESET_GATE",
       "options_preset": "launchxl_f280049c.GATE_GPIO",
-      "options": [],
+      "options": [
+        "ENABLE_GATE",
+        "RESET_GATE",
+        "MONITOR_IO"
+      ],
       "description": "Gate-driver reset GPIO."
     },
     {
@@ -64,7 +72,10 @@
       "weak": false,
       "value": "LED_R",
       "options_preset": "launchxl_f280049c.BOARD_LED",
-      "options": [],
+      "options": [
+        "LED_R",
+        "LED_G"
+      ],
       "description": "System status LED."
     },
     {
@@ -74,7 +85,10 @@
       "weak": false,
       "value": "LED_G",
       "options_preset": "launchxl_f280049c.BOARD_LED",
-      "options": [],
+      "options": [
+        "LED_R",
+        "LED_G"
+      ],
       "description": "Controller-running LED."
     },
     {
@@ -84,7 +98,14 @@
       "weak": false,
       "value": "BOOSTXL_J4_PWM1_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_PWM_BASE",
-      "options": [],
+      "options": [
+        "BOOSTXL_J4_PWM1_BASE",
+        "BOOSTXL_J4_PWM2_BASE",
+        "BOOSTXL_J4_PWM3_BASE",
+        "BOOSTXL_J8_PWM1_BASE",
+        "BOOSTXL_J8_PWM2_BASE",
+        "BOOSTXL_J8_PWM3_BASE"
+      ],
       "description": "U-phase PWM pair."
     },
     {
@@ -94,7 +115,14 @@
       "weak": false,
       "value": "BOOSTXL_J4_PWM2_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_PWM_BASE",
-      "options": [],
+      "options": [
+        "BOOSTXL_J4_PWM1_BASE",
+        "BOOSTXL_J4_PWM2_BASE",
+        "BOOSTXL_J4_PWM3_BASE",
+        "BOOSTXL_J8_PWM1_BASE",
+        "BOOSTXL_J8_PWM2_BASE",
+        "BOOSTXL_J8_PWM3_BASE"
+      ],
       "description": "V-phase PWM pair."
     },
     {
@@ -104,7 +132,14 @@
       "weak": false,
       "value": "BOOSTXL_J4_PWM3_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_PWM_BASE",
-      "options": [],
+      "options": [
+        "BOOSTXL_J4_PWM1_BASE",
+        "BOOSTXL_J4_PWM2_BASE",
+        "BOOSTXL_J4_PWM3_BASE",
+        "BOOSTXL_J8_PWM1_BASE",
+        "BOOSTXL_J8_PWM2_BASE",
+        "BOOSTXL_J8_PWM3_BASE"
+      ],
       "description": "W-phase PWM pair."
     },
     {
@@ -114,7 +149,10 @@
       "weak": false,
       "value": "EQEP2_J13_BASE",
       "options_preset": "launchxl_f280049c.EQEP_BASE",
-      "options": [],
+      "options": [
+        "EQEP1_J12_BASE",
+        "EQEP2_J13_BASE"
+      ],
       "description": "Rotor encoder connector."
     },
     {
@@ -124,7 +162,24 @@
       "weak": false,
       "value": "BOOSTXL_J3_AIN1",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
-      "options": [],
+      "options": [
+        "BOOSTXL_J3_AIN1",
+        "BOOSTXL_J3_AIN2",
+        "BOOSTXL_J3_AIN3",
+        "BOOSTXL_J3_AIN4",
+        "BOOSTXL_J3_AIN5",
+        "BOOSTXL_J3_AIN6",
+        "BOOSTXL_J3_AIN7",
+        "BOOSTXL_J3_AIN8",
+        "BOOSTXL_J7_AIN1",
+        "BOOSTXL_J7_AIN2",
+        "BOOSTXL_J7_AIN3",
+        "BOOSTXL_J7_AIN4",
+        "BOOSTXL_J7_AIN5",
+        "BOOSTXL_J7_AIN6",
+        "BOOSTXL_J7_AIN7",
+        "BOOSTXL_J7_AIN8"
+      ],
       "description": "DC-bus voltage SOC."
     },
     {
@@ -134,7 +189,24 @@
       "weak": false,
       "value": "BOOSTXL_J3_AIN1_RESULT_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
-      "options": [],
+      "options": [
+        "BOOSTXL_J3_AIN1_RESULT_BASE",
+        "BOOSTXL_J3_AIN2_RESULT_BASE",
+        "BOOSTXL_J3_AIN3_RESULT_BASE",
+        "BOOSTXL_J3_AIN4_RESULT_BASE",
+        "BOOSTXL_J3_AIN5_RESULT_BASE",
+        "BOOSTXL_J3_AIN6_RESULT_BASE",
+        "BOOSTXL_J3_AIN7_RESULT_BASE",
+        "BOOSTXL_J3_AIN8_RESULT_BASE",
+        "BOOSTXL_J7_AIN1_RESULT_BASE",
+        "BOOSTXL_J7_AIN2_RESULT_BASE",
+        "BOOSTXL_J7_AIN3_RESULT_BASE",
+        "BOOSTXL_J7_AIN4_RESULT_BASE",
+        "BOOSTXL_J7_AIN5_RESULT_BASE",
+        "BOOSTXL_J7_AIN6_RESULT_BASE",
+        "BOOSTXL_J7_AIN7_RESULT_BASE",
+        "BOOSTXL_J7_AIN8_RESULT_BASE"
+      ],
       "description": "DC-bus voltage result base."
     },
     {
@@ -144,7 +216,24 @@
       "weak": false,
       "value": "BOOSTXL_J3_AIN8",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
-      "options": [],
+      "options": [
+        "BOOSTXL_J3_AIN1",
+        "BOOSTXL_J3_AIN2",
+        "BOOSTXL_J3_AIN3",
+        "BOOSTXL_J3_AIN4",
+        "BOOSTXL_J3_AIN5",
+        "BOOSTXL_J3_AIN6",
+        "BOOSTXL_J3_AIN7",
+        "BOOSTXL_J3_AIN8",
+        "BOOSTXL_J7_AIN1",
+        "BOOSTXL_J7_AIN2",
+        "BOOSTXL_J7_AIN3",
+        "BOOSTXL_J7_AIN4",
+        "BOOSTXL_J7_AIN5",
+        "BOOSTXL_J7_AIN6",
+        "BOOSTXL_J7_AIN7",
+        "BOOSTXL_J7_AIN8"
+      ],
       "description": "DC-bus current SOC."
     },
     {
@@ -154,7 +243,24 @@
       "weak": false,
       "value": "BOOSTXL_J3_AIN8_RESULT_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
-      "options": [],
+      "options": [
+        "BOOSTXL_J3_AIN1_RESULT_BASE",
+        "BOOSTXL_J3_AIN2_RESULT_BASE",
+        "BOOSTXL_J3_AIN3_RESULT_BASE",
+        "BOOSTXL_J3_AIN4_RESULT_BASE",
+        "BOOSTXL_J3_AIN5_RESULT_BASE",
+        "BOOSTXL_J3_AIN6_RESULT_BASE",
+        "BOOSTXL_J3_AIN7_RESULT_BASE",
+        "BOOSTXL_J3_AIN8_RESULT_BASE",
+        "BOOSTXL_J7_AIN1_RESULT_BASE",
+        "BOOSTXL_J7_AIN2_RESULT_BASE",
+        "BOOSTXL_J7_AIN3_RESULT_BASE",
+        "BOOSTXL_J7_AIN4_RESULT_BASE",
+        "BOOSTXL_J7_AIN5_RESULT_BASE",
+        "BOOSTXL_J7_AIN6_RESULT_BASE",
+        "BOOSTXL_J7_AIN7_RESULT_BASE",
+        "BOOSTXL_J7_AIN8_RESULT_BASE"
+      ],
       "description": "DC-bus current result base."
     },
     {
@@ -164,7 +270,24 @@
       "weak": false,
       "value": "BOOSTXL_J3_AIN5",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
-      "options": [],
+      "options": [
+        "BOOSTXL_J3_AIN1",
+        "BOOSTXL_J3_AIN2",
+        "BOOSTXL_J3_AIN3",
+        "BOOSTXL_J3_AIN4",
+        "BOOSTXL_J3_AIN5",
+        "BOOSTXL_J3_AIN6",
+        "BOOSTXL_J3_AIN7",
+        "BOOSTXL_J3_AIN8",
+        "BOOSTXL_J7_AIN1",
+        "BOOSTXL_J7_AIN2",
+        "BOOSTXL_J7_AIN3",
+        "BOOSTXL_J7_AIN4",
+        "BOOSTXL_J7_AIN5",
+        "BOOSTXL_J7_AIN6",
+        "BOOSTXL_J7_AIN7",
+        "BOOSTXL_J7_AIN8"
+      ],
       "description": "U-phase current SOC."
     },
     {
@@ -174,7 +297,24 @@
       "weak": false,
       "value": "BOOSTXL_J3_AIN5_RESULT_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
-      "options": [],
+      "options": [
+        "BOOSTXL_J3_AIN1_RESULT_BASE",
+        "BOOSTXL_J3_AIN2_RESULT_BASE",
+        "BOOSTXL_J3_AIN3_RESULT_BASE",
+        "BOOSTXL_J3_AIN4_RESULT_BASE",
+        "BOOSTXL_J3_AIN5_RESULT_BASE",
+        "BOOSTXL_J3_AIN6_RESULT_BASE",
+        "BOOSTXL_J3_AIN7_RESULT_BASE",
+        "BOOSTXL_J3_AIN8_RESULT_BASE",
+        "BOOSTXL_J7_AIN1_RESULT_BASE",
+        "BOOSTXL_J7_AIN2_RESULT_BASE",
+        "BOOSTXL_J7_AIN3_RESULT_BASE",
+        "BOOSTXL_J7_AIN4_RESULT_BASE",
+        "BOOSTXL_J7_AIN5_RESULT_BASE",
+        "BOOSTXL_J7_AIN6_RESULT_BASE",
+        "BOOSTXL_J7_AIN7_RESULT_BASE",
+        "BOOSTXL_J7_AIN8_RESULT_BASE"
+      ],
       "description": "U-phase current result base."
     },
     {
@@ -184,7 +324,24 @@
       "weak": false,
       "value": "BOOSTXL_J3_AIN6",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
-      "options": [],
+      "options": [
+        "BOOSTXL_J3_AIN1",
+        "BOOSTXL_J3_AIN2",
+        "BOOSTXL_J3_AIN3",
+        "BOOSTXL_J3_AIN4",
+        "BOOSTXL_J3_AIN5",
+        "BOOSTXL_J3_AIN6",
+        "BOOSTXL_J3_AIN7",
+        "BOOSTXL_J3_AIN8",
+        "BOOSTXL_J7_AIN1",
+        "BOOSTXL_J7_AIN2",
+        "BOOSTXL_J7_AIN3",
+        "BOOSTXL_J7_AIN4",
+        "BOOSTXL_J7_AIN5",
+        "BOOSTXL_J7_AIN6",
+        "BOOSTXL_J7_AIN7",
+        "BOOSTXL_J7_AIN8"
+      ],
       "description": "V-phase current SOC."
     },
     {
@@ -194,7 +351,24 @@
       "weak": false,
       "value": "BOOSTXL_J3_AIN6_RESULT_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
-      "options": [],
+      "options": [
+        "BOOSTXL_J3_AIN1_RESULT_BASE",
+        "BOOSTXL_J3_AIN2_RESULT_BASE",
+        "BOOSTXL_J3_AIN3_RESULT_BASE",
+        "BOOSTXL_J3_AIN4_RESULT_BASE",
+        "BOOSTXL_J3_AIN5_RESULT_BASE",
+        "BOOSTXL_J3_AIN6_RESULT_BASE",
+        "BOOSTXL_J3_AIN7_RESULT_BASE",
+        "BOOSTXL_J3_AIN8_RESULT_BASE",
+        "BOOSTXL_J7_AIN1_RESULT_BASE",
+        "BOOSTXL_J7_AIN2_RESULT_BASE",
+        "BOOSTXL_J7_AIN3_RESULT_BASE",
+        "BOOSTXL_J7_AIN4_RESULT_BASE",
+        "BOOSTXL_J7_AIN5_RESULT_BASE",
+        "BOOSTXL_J7_AIN6_RESULT_BASE",
+        "BOOSTXL_J7_AIN7_RESULT_BASE",
+        "BOOSTXL_J7_AIN8_RESULT_BASE"
+      ],
       "description": "V-phase current result base."
     },
     {
@@ -204,7 +378,24 @@
       "weak": false,
       "value": "BOOSTXL_J3_AIN7",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
-      "options": [],
+      "options": [
+        "BOOSTXL_J3_AIN1",
+        "BOOSTXL_J3_AIN2",
+        "BOOSTXL_J3_AIN3",
+        "BOOSTXL_J3_AIN4",
+        "BOOSTXL_J3_AIN5",
+        "BOOSTXL_J3_AIN6",
+        "BOOSTXL_J3_AIN7",
+        "BOOSTXL_J3_AIN8",
+        "BOOSTXL_J7_AIN1",
+        "BOOSTXL_J7_AIN2",
+        "BOOSTXL_J7_AIN3",
+        "BOOSTXL_J7_AIN4",
+        "BOOSTXL_J7_AIN5",
+        "BOOSTXL_J7_AIN6",
+        "BOOSTXL_J7_AIN7",
+        "BOOSTXL_J7_AIN8"
+      ],
       "description": "W-phase current SOC."
     },
     {
@@ -214,7 +405,24 @@
       "weak": false,
       "value": "BOOSTXL_J3_AIN7_RESULT_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
-      "options": [],
+      "options": [
+        "BOOSTXL_J3_AIN1_RESULT_BASE",
+        "BOOSTXL_J3_AIN2_RESULT_BASE",
+        "BOOSTXL_J3_AIN3_RESULT_BASE",
+        "BOOSTXL_J3_AIN4_RESULT_BASE",
+        "BOOSTXL_J3_AIN5_RESULT_BASE",
+        "BOOSTXL_J3_AIN6_RESULT_BASE",
+        "BOOSTXL_J3_AIN7_RESULT_BASE",
+        "BOOSTXL_J3_AIN8_RESULT_BASE",
+        "BOOSTXL_J7_AIN1_RESULT_BASE",
+        "BOOSTXL_J7_AIN2_RESULT_BASE",
+        "BOOSTXL_J7_AIN3_RESULT_BASE",
+        "BOOSTXL_J7_AIN4_RESULT_BASE",
+        "BOOSTXL_J7_AIN5_RESULT_BASE",
+        "BOOSTXL_J7_AIN6_RESULT_BASE",
+        "BOOSTXL_J7_AIN7_RESULT_BASE",
+        "BOOSTXL_J7_AIN8_RESULT_BASE"
+      ],
       "description": "W-phase current result base."
     },
     {
@@ -224,7 +432,24 @@
       "weak": false,
       "value": "BOOSTXL_J3_AIN2",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
-      "options": [],
+      "options": [
+        "BOOSTXL_J3_AIN1",
+        "BOOSTXL_J3_AIN2",
+        "BOOSTXL_J3_AIN3",
+        "BOOSTXL_J3_AIN4",
+        "BOOSTXL_J3_AIN5",
+        "BOOSTXL_J3_AIN6",
+        "BOOSTXL_J3_AIN7",
+        "BOOSTXL_J3_AIN8",
+        "BOOSTXL_J7_AIN1",
+        "BOOSTXL_J7_AIN2",
+        "BOOSTXL_J7_AIN3",
+        "BOOSTXL_J7_AIN4",
+        "BOOSTXL_J7_AIN5",
+        "BOOSTXL_J7_AIN6",
+        "BOOSTXL_J7_AIN7",
+        "BOOSTXL_J7_AIN8"
+      ],
       "description": "U-phase voltage SOC."
     },
     {
@@ -234,7 +459,24 @@
       "weak": false,
       "value": "BOOSTXL_J3_AIN2_RESULT_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
-      "options": [],
+      "options": [
+        "BOOSTXL_J3_AIN1_RESULT_BASE",
+        "BOOSTXL_J3_AIN2_RESULT_BASE",
+        "BOOSTXL_J3_AIN3_RESULT_BASE",
+        "BOOSTXL_J3_AIN4_RESULT_BASE",
+        "BOOSTXL_J3_AIN5_RESULT_BASE",
+        "BOOSTXL_J3_AIN6_RESULT_BASE",
+        "BOOSTXL_J3_AIN7_RESULT_BASE",
+        "BOOSTXL_J3_AIN8_RESULT_BASE",
+        "BOOSTXL_J7_AIN1_RESULT_BASE",
+        "BOOSTXL_J7_AIN2_RESULT_BASE",
+        "BOOSTXL_J7_AIN3_RESULT_BASE",
+        "BOOSTXL_J7_AIN4_RESULT_BASE",
+        "BOOSTXL_J7_AIN5_RESULT_BASE",
+        "BOOSTXL_J7_AIN6_RESULT_BASE",
+        "BOOSTXL_J7_AIN7_RESULT_BASE",
+        "BOOSTXL_J7_AIN8_RESULT_BASE"
+      ],
       "description": "U-phase voltage result base."
     },
     {
@@ -244,7 +486,24 @@
       "weak": false,
       "value": "BOOSTXL_J3_AIN3",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
-      "options": [],
+      "options": [
+        "BOOSTXL_J3_AIN1",
+        "BOOSTXL_J3_AIN2",
+        "BOOSTXL_J3_AIN3",
+        "BOOSTXL_J3_AIN4",
+        "BOOSTXL_J3_AIN5",
+        "BOOSTXL_J3_AIN6",
+        "BOOSTXL_J3_AIN7",
+        "BOOSTXL_J3_AIN8",
+        "BOOSTXL_J7_AIN1",
+        "BOOSTXL_J7_AIN2",
+        "BOOSTXL_J7_AIN3",
+        "BOOSTXL_J7_AIN4",
+        "BOOSTXL_J7_AIN5",
+        "BOOSTXL_J7_AIN6",
+        "BOOSTXL_J7_AIN7",
+        "BOOSTXL_J7_AIN8"
+      ],
       "description": "V-phase voltage SOC."
     },
     {
@@ -254,7 +513,24 @@
       "weak": false,
       "value": "BOOSTXL_J3_AIN3_RESULT_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
-      "options": [],
+      "options": [
+        "BOOSTXL_J3_AIN1_RESULT_BASE",
+        "BOOSTXL_J3_AIN2_RESULT_BASE",
+        "BOOSTXL_J3_AIN3_RESULT_BASE",
+        "BOOSTXL_J3_AIN4_RESULT_BASE",
+        "BOOSTXL_J3_AIN5_RESULT_BASE",
+        "BOOSTXL_J3_AIN6_RESULT_BASE",
+        "BOOSTXL_J3_AIN7_RESULT_BASE",
+        "BOOSTXL_J3_AIN8_RESULT_BASE",
+        "BOOSTXL_J7_AIN1_RESULT_BASE",
+        "BOOSTXL_J7_AIN2_RESULT_BASE",
+        "BOOSTXL_J7_AIN3_RESULT_BASE",
+        "BOOSTXL_J7_AIN4_RESULT_BASE",
+        "BOOSTXL_J7_AIN5_RESULT_BASE",
+        "BOOSTXL_J7_AIN6_RESULT_BASE",
+        "BOOSTXL_J7_AIN7_RESULT_BASE",
+        "BOOSTXL_J7_AIN8_RESULT_BASE"
+      ],
       "description": "V-phase voltage result base."
     },
     {
@@ -264,7 +540,24 @@
       "weak": false,
       "value": "BOOSTXL_J3_AIN4",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
-      "options": [],
+      "options": [
+        "BOOSTXL_J3_AIN1",
+        "BOOSTXL_J3_AIN2",
+        "BOOSTXL_J3_AIN3",
+        "BOOSTXL_J3_AIN4",
+        "BOOSTXL_J3_AIN5",
+        "BOOSTXL_J3_AIN6",
+        "BOOSTXL_J3_AIN7",
+        "BOOSTXL_J3_AIN8",
+        "BOOSTXL_J7_AIN1",
+        "BOOSTXL_J7_AIN2",
+        "BOOSTXL_J7_AIN3",
+        "BOOSTXL_J7_AIN4",
+        "BOOSTXL_J7_AIN5",
+        "BOOSTXL_J7_AIN6",
+        "BOOSTXL_J7_AIN7",
+        "BOOSTXL_J7_AIN8"
+      ],
       "description": "W-phase voltage SOC."
     },
     {
@@ -274,7 +567,24 @@
       "weak": false,
       "value": "BOOSTXL_J3_AIN4_RESULT_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
-      "options": [],
+      "options": [
+        "BOOSTXL_J3_AIN1_RESULT_BASE",
+        "BOOSTXL_J3_AIN2_RESULT_BASE",
+        "BOOSTXL_J3_AIN3_RESULT_BASE",
+        "BOOSTXL_J3_AIN4_RESULT_BASE",
+        "BOOSTXL_J3_AIN5_RESULT_BASE",
+        "BOOSTXL_J3_AIN6_RESULT_BASE",
+        "BOOSTXL_J3_AIN7_RESULT_BASE",
+        "BOOSTXL_J3_AIN8_RESULT_BASE",
+        "BOOSTXL_J7_AIN1_RESULT_BASE",
+        "BOOSTXL_J7_AIN2_RESULT_BASE",
+        "BOOSTXL_J7_AIN3_RESULT_BASE",
+        "BOOSTXL_J7_AIN4_RESULT_BASE",
+        "BOOSTXL_J7_AIN5_RESULT_BASE",
+        "BOOSTXL_J7_AIN6_RESULT_BASE",
+        "BOOSTXL_J7_AIN7_RESULT_BASE",
+        "BOOSTXL_J7_AIN8_RESULT_BASE"
+      ],
       "description": "W-phase voltage result base."
     }
   ],

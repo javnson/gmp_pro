@@ -5,7 +5,7 @@
   "description": "Platform-independent controller contract shared by every mcs_pmsm_nt implementation. Hardware timing, sensing and peripheral bindings remain in each project SDPE requirement.",
   "suite": "mcs_pmsm_nt",
   "version": "1.0.0",
-  "updated_at": "2026-08-05",
+  "updated_at": "2026-08-06",
   "output_header": "sdpe_mcs_pmsm_nt_common_settings.h",
   "hardware": [],
   "code_sections": {
@@ -275,6 +275,86 @@
       "description": ""
     },
     {
+      "role": "Load Inertia",
+      "macro": "MOTOR_PARAM_INERTIA",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "${sm060r20b30mnad.Inertia}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Flux",
+      "macro": "MOTOR_PARAM_FLUX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "${sm060r20b30mnad.flux}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Ld",
+      "macro": "MOTOR_PARAM_LD",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "${sm060r20b30mnad.ld}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Rs",
+      "macro": "MOTOR_PARAM_RS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "${sm060r20b30mnad.rs}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Lq",
+      "macro": "MOTOR_PARAM_LQ",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "${sm060r20b30mnad.lq}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Ls",
+      "macro": "MOTOR_PARAM_LS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "${sm060r20b30mnad.ld}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Friction",
+      "macro": "MOTOR_PARAM_FRICTION",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "${sm060r20b30mnad.Friction}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Pole Pairs",
+      "macro": "MOTOR_PARAM_POLE_PAIRS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "${sm060r20b30mnad.pole_pairs}"
+      },
+      "description": ""
+    },
+    {
       "role": "Startup Delay",
       "macro": "CTRL_STARTUP_DELAY",
       "enabled": true,
@@ -313,6 +393,36 @@
         "float": "0.707"
       },
       "description": "Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response."
+    },
+    {
+      "role": "Rated Speed Rpm",
+      "macro": "CTRL_SPEED_RPM_BASE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "${sm060r20b30mnad.Max Speed}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Max Speed",
+      "macro": "MOTOR_PARAM_MAX_SPEED",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "${sm060r20b30mnad.Max Speed}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Rated Frequency",
+      "macro": "MOTOR_PARAM_RATED_FREQUENCY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "${sm060r20b30mnad.Rated Frequency}"
+      },
+      "description": ""
     }
   ],
   "requirement_groups": [
@@ -359,12 +469,33 @@
       ]
     },
     {
+      "name": "Motor Parameters",
+      "requirements": [
+        "Load Inertia",
+        "Motor Flux",
+        "Motor Ld",
+        "Motor Rs",
+        "Motor Lq",
+        "Motor Ls",
+        "Motor Friction",
+        "Motor Pole Pairs"
+      ]
+    },
+    {
       "name": "Runtime Parameters",
       "requirements": [
         "Startup Delay",
         "Cia402 Operation Enable Delay",
         "Adc Calibrator Cutoff",
         "Adc Calibrator Quality Factor"
+      ]
+    },
+    {
+      "name": "Ungrouped",
+      "requirements": [
+        "Rated Speed Rpm",
+        "Motor Max Speed",
+        "Motor Rated Frequency"
       ]
     }
   ],

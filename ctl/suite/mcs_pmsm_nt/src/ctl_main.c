@@ -95,10 +95,10 @@ void ctl_init()
 
     // Physical DC-link voltage used by the bus-voltage compensator.
     mtr_ctrl_init.v_bus = CTRL_DCBUS_VOLTAGE;
-    mtr_ctrl_init.v_phase_limit = MOTOR_PARAM_RATED_VOLTAGE;
+    mtr_ctrl_init.v_phase_limit = MCS_MAX_CIR_SATURATION_VOLTAGE_V;
 
     mtr_ctrl_init.freq_base = MOTOR_PARAM_RATED_FREQUENCY;
-    mtr_ctrl_init.spd_base = MOTOR_PARAM_MAX_SPEED / 1000;
+    mtr_ctrl_init.spd_base = CTRL_SPEED_RPM_BASE / 1000;
     mtr_ctrl_init.pole_pairs = MOTOR_PARAM_POLE_PAIRS;
 
     mtr_ctrl_init.mtr_Ld = MOTOR_PARAM_LS;
@@ -132,7 +132,7 @@ void ctl_init()
         // target frequency (Hz), target frequency slope (Hz/s)
         MCS_OPEN_LOOP_FREQ_HZ, MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S,
         // rated krpm, pole pairs
-        MOTOR_PARAM_MAX_SPEED / 1000.0f, mtr_ctrl_init.pole_pairs,
+        CTRL_SPEED_RPM_BASE / 1000.0f, mtr_ctrl_init.pole_pairs,
         // ISR frequency
         CONTROLLER_FREQUENCY);
 
@@ -147,8 +147,8 @@ void ctl_init()
     mech_init.vel_kp = MCS_MECH_VELOCITY_KP_PU;
     mech_init.vel_ki = MCS_MECH_VELOCITY_KI_PU_S;
 
-    mech_init.speed_limit = MCS_MECH_SPEED_LIMIT_RPM / MOTOR_PARAM_MAX_SPEED;
-    mech_init.speed_slope_limit = MCS_MECH_SPEED_SLOPE_RPM_S / MOTOR_PARAM_MAX_SPEED;
+    mech_init.speed_limit = MCS_MECH_SPEED_LIMIT_RPM / CTRL_SPEED_RPM_BASE;
+    mech_init.speed_slope_limit = MCS_MECH_SPEED_SLOPE_RPM_S / CTRL_SPEED_RPM_BASE;
     mech_init.cur_limit = MCS_MECH_CURRENT_LIMIT_A / CTRL_CURRENT_BASE;
 
     mech_init.mech_division = CTRL_MECH_DIV;
@@ -161,7 +161,7 @@ void ctl_init()
     ctl_init_autoturn_pos_encoder(&pos_enc, mtr_ctrl_init.pole_pairs, CTRL_POS_ENC_FS);
     ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, float2ctrl(CTRL_POS_ENC_BIAS));
 
-    ctl_init_spd_calculator(&spd_enc, &pos_enc.encif, CONTROLLER_FREQUENCY, CTRL_MECH_DIV, MOTOR_PARAM_MAX_SPEED,
+    ctl_init_spd_calculator(&spd_enc, &pos_enc.encif, CONTROLLER_FREQUENCY, CTRL_MECH_DIV, CTRL_SPEED_RPM_BASE,
                             MCS_ENCODER_SPEED_FILTER_FC_HZ);
 
 #ifdef ENABLE_SMO
@@ -209,7 +209,7 @@ void ctl_init()
     ctl_enable_foc_core_current_ctrl(&mtr_ctrl);
     ctl_set_mech_ctrl_mode(&mech_ctrl, MECH_MODE_VELOCITY);
     ctl_set_mech_target_velocity(&mech_ctrl,
-                                 float2ctrl(MCS_COMMISSIONING_SPEED_REF_RPM / MOTOR_PARAM_MAX_SPEED));
+                                 float2ctrl(MCS_COMMISSIONING_SPEED_REF_RPM / CTRL_SPEED_RPM_BASE));
 
 #endif // BUILD_LEVEL
 
