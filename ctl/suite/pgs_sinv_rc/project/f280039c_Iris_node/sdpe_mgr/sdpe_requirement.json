@@ -4,7 +4,7 @@
   "description": "Single-phase inverter project requirement prepared from xplt/ctrl_settings.h.\nThis requirement introduces the GMP LVFB 150V 2-phase inverter board as the switching stage and the GMP Harmonia 3-phase LC filter as the grid filter. IRIS F280039C is included as the peripheral option provider.",
   "suite": "pgs_sinv_rc",
   "version": "0.2.0",
-  "updated_at": "2026-08-04",
+  "updated_at": "2026-08-05",
   "output_header": "sdpe_pgs_sinv_rc_iris_bindings.h",
   "hardware": [
     {

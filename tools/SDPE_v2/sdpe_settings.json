@@ -26,6 +26,7 @@
     "project_subdir": ""
   },
   "gui": {
-    "default_out": "%GMP_PRO_LOCATION%/tools/SDPE_v2/build_gui_pyqt"
+    "default_out": "%GMP_PRO_LOCATION%/tools/SDPE_v2/build_gui_pyqt",
+    "theme": "system"
   }
 }
