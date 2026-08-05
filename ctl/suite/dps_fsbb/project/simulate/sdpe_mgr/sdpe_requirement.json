@@ -170,7 +170,7 @@
     }
   ],
   "code_sections": {
-    "after_extern_open": "#include <sdpe_dps_fsbb_common_settings.h>\n/* MATLAB/Simulink SIL project settings. */",
+    "after_extern_open": "/* MATLAB/Simulink SIL project settings. */",
     "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 3)\n#error \"BUILD_LEVEL must be 1, 2, or 3.\"\n#endif"
   },
   "requirement_groups": [
@@ -209,5 +209,8 @@
   ],
   "macro_prefix": "DPS_FSBB_SIM",
   "description": "",
-  "updated_at": "2026-07-16"
+  "updated_at": "2026-07-16",
+  "common_requirements": [
+    "../../../sdpe_general/sdpe_requirement.json"
+  ]
 }

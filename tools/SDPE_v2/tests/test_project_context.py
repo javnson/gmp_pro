@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+import json
 from pathlib import Path
 
 from project_context import related_requirements
@@ -37,6 +38,25 @@ class ProjectContextTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             current = self.requirement(Path(temporary) / "project" / "sdpe_mgr")
             self.assertEqual(related_requirements(current.parent), [current])
+
+    def test_project_opens_all_explicit_common_requirements(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            common_a = self.requirement(root / "library" / "common_a")
+            common_b = self.requirement(root / "library" / "common_b")
+            current = self.requirement(root / "project" / "sdpe_mgr")
+            current.write_text(
+                json.dumps(
+                    {
+                        "common_requirements": [
+                            str(common_a),
+                            str(common_b),
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual(related_requirements(current.parent), [common_a, common_b, current])
 
 
 if __name__ == "__main__":

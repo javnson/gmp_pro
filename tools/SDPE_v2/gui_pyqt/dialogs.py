@@ -11,6 +11,7 @@ try:
         QHeaderView,
         QLineEdit,
         QListWidget,
+        QListWidgetItem,
         QMessageBox,
         QTextEdit,
         QTreeWidget,
@@ -27,6 +28,7 @@ except ImportError:  # pragma: no cover - depends on local desktop environment.
         QHeaderView,
         QLineEdit,
         QListWidget,
+        QListWidgetItem,
         QMessageBox,
         QTextEdit,
         QTreeWidget,
@@ -157,6 +159,52 @@ def choose_item(parent: QWidget, title: str, items: list[str]) -> str | None:
     layout.addWidget(buttons)
     if dialog.exec() == QDialog.DialogCode.Accepted and list_widget.currentItem():
         return list_widget.currentItem().text()
+    return None
+
+
+def choose_multiple_items(parent: QWidget, title: str, items: list[str]) -> list[str] | None:
+    """Choose zero or more searchable entries using persistent check boxes."""
+
+    dialog = QDialog(parent)
+    dialog.setWindowTitle(title)
+    dialog.resize(680, 520)
+    search = QLineEdit()
+    search.setPlaceholderText("Search keywords")
+    list_widget = QListWidget()
+    checked: set[str] = set()
+
+    def remember(item: QListWidgetItem) -> None:
+        if item.checkState() == Qt.CheckState.Checked:
+            checked.add(item.text())
+        else:
+            checked.discard(item.text())
+
+    def populate() -> None:
+        query = search.text().strip().lower()
+        parts = query.split()
+        list_widget.blockSignals(True)
+        list_widget.clear()
+        for value in items:
+            if parts and not all(part in value.lower() for part in parts):
+                continue
+            item = QListWidgetItem(value)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(Qt.CheckState.Checked if value in checked else Qt.CheckState.Unchecked)
+            list_widget.addItem(item)
+        list_widget.blockSignals(False)
+
+    list_widget.itemChanged.connect(remember)
+    search.textChanged.connect(populate)
+    populate()
+    buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+    buttons.accepted.connect(dialog.accept)
+    buttons.rejected.connect(dialog.reject)
+    layout = QVBoxLayout(dialog)
+    layout.addWidget(search)
+    layout.addWidget(list_widget)
+    layout.addWidget(buttons)
+    if dialog.exec() == QDialog.DialogCode.Accepted:
+        return [value for value in items if value in checked]
     return None
 
 

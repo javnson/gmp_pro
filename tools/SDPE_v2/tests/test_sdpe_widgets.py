@@ -127,6 +127,45 @@ class SDPEWidgetTests(unittest.TestCase):
 
         self.assertEqual(status, ["Current feedback sensor"])
 
+    def test_search_and_display_sort_preserve_source_row_order(self) -> None:
+        table = SDPETableWidget()
+        table.configure(["Name", "Macro"])
+        for row, values in enumerate((("Zulu", "CTRL_Z"), ("Alpha", "CTRL_A"))):
+            table.insertRow(row)
+            for col, value in enumerate(values):
+                table.setItem(row, col, QTableWidgetItem(value))
+
+        table.apply_display_sort(0, ascending=True)
+        self.assertEqual(table.item(0, 0).text(), "Alpha")
+        self.assertEqual(
+            [table.item(row, 0).text() for row in table.source_row_numbers()],
+            ["Zulu", "Alpha"],
+        )
+        self.assertTrue(table.apply_text_filter(r"CTRL_[AZ]", regex=True))
+        self.assertTrue(table.find_text("ctrl_a", case_sensitive=False))
+        self.assertFalse(table.apply_text_filter("[", regex=True))
+
+    def test_undo_back_to_clean_snapshot_clears_dirty_state(self) -> None:
+        examples = ROOT / "examples"
+        with tempfile.TemporaryDirectory() as output:
+            window = MainWindow(examples, mode="project", default_output_dir=Path(output))
+            page = next(item for item in window.pages if isinstance(item, ProjectPage))
+            window.tabs.setCurrentWidget(page)
+            page.list_widget.setCurrentRow(0)
+            self.app.processEvents()
+            item = page.iter_requirement_items()[0]
+            original = item.text(6)
+            item.setText(6, original + " changed")
+            page.capture_undo_snapshot()
+            self.assertIn(page.current_id, page.dirty_ids)
+
+            page.undo_current_change()
+
+            self.assertNotIn(page.current_id, page.dirty_ids)
+            self.assertFalse(page.list_widget.currentItem().text().endswith(" *"))
+            window.deleteLater()
+            self.app.processEvents()
+
     def test_main_window_tracks_one_active_view_and_undoes_group_creation(self) -> None:
         examples = ROOT / "examples"
         with tempfile.TemporaryDirectory() as output:

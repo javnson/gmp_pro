@@ -18,7 +18,6 @@
     }
   ],
   "code_sections": {
-    "after_extern_open": "#include <sdpe_pgs_sinv_rc_common_settings.h>",
     "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 5)\n#error BUILD_LEVEL_must_be_between_1_and_5\n#endif\n/* Compatibility with framework revisions that use the historical misspelling. */\n#if defined(ENABLE_GMP_DL_PIL_SIM) && !defined(ENBALE_GMP_DL_PIL_SIM)\n#define ENBALE_GMP_DL_PIL_SIM\n#endif\n#if defined(ENBALE_GMP_DL_PIL_SIM) && !defined(ENABLE_GMP_DL_PIL_SIM)\n#define ENABLE_GMP_DL_PIL_SIM\n#endif"
   },
   "feature_macros": [
@@ -813,5 +812,8 @@
       ]
     }
   ],
-  "macro_prefix": ""
+  "macro_prefix": "",
+  "common_requirements": [
+    "../../../sdpe_general/sdpe_requirement.json"
+  ]
 }

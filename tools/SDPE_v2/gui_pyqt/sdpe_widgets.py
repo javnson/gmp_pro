@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any, Callable
 from uuid import uuid4
 
@@ -48,6 +49,7 @@ except ImportError:  # pragma: no cover - depends on local desktop environment.
 
 VALIDATION_BORDER_ROLE = Qt.ItemDataRole.UserRole.value + 101
 _WIDGET_KEY_ROLE = Qt.ItemDataRole.UserRole.value + 102
+_SOURCE_ORDER_ROLE = Qt.ItemDataRole.UserRole.value + 23
 _TABLE_MIME = "application/x-sdpe-table-rows-v1"
 _TREE_MIME = "application/x-sdpe-tree-items-v1"
 _DATA_ROLE_COUNT = 24
@@ -59,6 +61,20 @@ def _json_value(value: Any) -> Any:
     if value is None or isinstance(value, (bool, int, float, str, list, dict)):
         return value
     return str(value)
+
+
+def _text_matcher(pattern: str, case_sensitive: bool, regex: bool) -> Callable[[str], bool] | None:
+    if not pattern:
+        return lambda _text: True
+    flags = 0 if case_sensitive else re.IGNORECASE
+    if regex:
+        try:
+            expression = re.compile(pattern, flags)
+        except re.error:
+            return None
+        return lambda text: expression.search(text) is not None
+    needle = pattern if case_sensitive else pattern.lower()
+    return lambda text: needle in (text if case_sensitive else text.lower())
 
 
 def _flag_enabled(flags, flag) -> bool:  # noqa: ANN001 - Qt flags vary by binding.
@@ -208,6 +224,7 @@ class SDPEDataViewMixin:
     def _run_standard_action(self, name: str) -> None:
         mutating = name in {"add_group", "add_item", "cut", "paste", "delete"}
         if mutating:
+            self.clear_display_sort()
             self.mutationStarted.emit()
         try:
             handler = self._sdpe_action_handlers.get(name)
@@ -261,6 +278,21 @@ class SDPEDataViewMixin:
 
     def run_action(self, name: str) -> None:
         self._run_standard_action(name)
+
+    def header_labels(self) -> list[str]:
+        raise NotImplementedError
+
+    def apply_text_filter(self, pattern: str, case_sensitive: bool = False, regex: bool = False) -> bool:
+        raise NotImplementedError
+
+    def find_text(self, pattern: str, forward: bool = True, case_sensitive: bool = False, regex: bool = False) -> bool:
+        raise NotImplementedError
+
+    def apply_display_sort(self, column: int, ascending: bool = True) -> None:
+        raise NotImplementedError
+
+    def clear_display_sort(self) -> None:
+        raise NotImplementedError
 
     def add_standard_actions_to_menu(self, menu: QMenu) -> None:
         """Append the shared row actions to a page-specific context menu."""
@@ -397,6 +429,91 @@ class SDPETableWidget(SDPEDataViewMixin, QTableWidget):
         text = self.current_status_text()
         if text:
             self.statusTextChanged.emit(text)
+
+    def header_labels(self) -> list[str]:
+        return [
+            self.horizontalHeaderItem(col).text() if self.horizontalHeaderItem(col) else str(col)
+            for col in range(self.columnCount())
+        ]
+
+    def capture_source_order(self, force: bool = False) -> None:
+        for row in range(self.rowCount()):
+            item = self.item(row, 0)
+            if item is None:
+                item = QTableWidgetItem("")
+                self.setItem(row, 0, item)
+            if force or item.data(_SOURCE_ORDER_ROLE) is None:
+                item.setData(_SOURCE_ORDER_ROLE, row)
+
+    def source_row_numbers(self) -> list[int]:
+        blocked = self.blockSignals(True)
+        try:
+            self.capture_source_order()
+        finally:
+            self.blockSignals(blocked)
+        return sorted(
+            range(self.rowCount()),
+            key=lambda row: int(self.item(row, 0).data(_SOURCE_ORDER_ROLE)),
+        )
+
+    def apply_text_filter(self, pattern: str, case_sensitive: bool = False, regex: bool = False) -> bool:
+        matcher = _text_matcher(pattern, case_sensitive, regex)
+        if matcher is None:
+            return False
+        blocked = self.blockSignals(True)
+        try:
+            for row in range(self.rowCount()):
+                text = "\t".join(self._cell_text(row, col) for col in range(self.columnCount()))
+                self.setRowHidden(row, not matcher(text))
+        finally:
+            self.blockSignals(blocked)
+        return True
+
+    def find_text(self, pattern: str, forward: bool = True, case_sensitive: bool = False, regex: bool = False) -> bool:
+        matcher = _text_matcher(pattern, case_sensitive, regex)
+        if matcher is None or not pattern or not self.rowCount():
+            return False
+        start = self.currentRow()
+        offsets = range(1, self.rowCount() + 1) if forward else range(-1, -self.rowCount() - 1, -1)
+        for offset in offsets:
+            row = (start + offset) % self.rowCount()
+            text = "\t".join(self._cell_text(row, col) for col in range(self.columnCount()))
+            if matcher(text):
+                self.setRowHidden(row, False)
+                self.setCurrentCell(row, 0)
+                self.selectRow(row)
+                self.scrollToItem(self.item(row, 0))
+                return True
+        return False
+
+    def apply_display_sort(self, column: int, ascending: bool = True) -> None:
+        if not 0 <= column < self.columnCount():
+            return
+        blocked = self.blockSignals(True)
+        try:
+            self.capture_source_order()
+            self._sdpe_display_sort_active = True
+            self.setSortingEnabled(True)
+            order = Qt.SortOrder.AscendingOrder if ascending else Qt.SortOrder.DescendingOrder
+            self.sortItems(column, order)
+        finally:
+            self.blockSignals(blocked)
+
+    def clear_display_sort(self) -> None:
+        if not getattr(self, "_sdpe_display_sort_active", False):
+            return
+        snapshots = [self._snapshot_row(row) for row in self.source_row_numbers()]
+        headers = self.header_labels()
+        blocked = self.blockSignals(True)
+        try:
+            self.setSortingEnabled(False)
+            self.setRowCount(0)
+            for row, cells in enumerate(snapshots):
+                self._insert_snapshot_row(row, cells, headers)
+            self.capture_source_order(force=True)
+            self._sdpe_display_sort_active = False
+        finally:
+            self.blockSignals(blocked)
 
     def focusInEvent(self, event) -> None:  # noqa: N802 - Qt override name.
         super().focusInEvent(event)
@@ -553,6 +670,7 @@ class SDPETableWidget(SDPEDataViewMixin, QTableWidget):
         self.contentChanged.emit()
 
     def dropEvent(self, event) -> None:  # noqa: N802 - Qt override name.
+        self.clear_display_sort()
         if event.source() is not self or not self.selected_row_numbers():
             super().dropEvent(event)
             return
@@ -579,6 +697,7 @@ class SDPETableWidget(SDPEDataViewMixin, QTableWidget):
             self.selectRow(row)
         self.setCurrentCell(target, 0)
         event.acceptProposedAction()
+        self.capture_source_order(force=True)
         self.rowsReordered.emit()
         self.contentChanged.emit()
         self.mutationFinished.emit()
@@ -670,6 +789,111 @@ class SDPETreeWidget(SDPEDataViewMixin, QTreeWidget):
         if text:
             self.statusTextChanged.emit(text)
 
+    def header_labels(self) -> list[str]:
+        return [self.headerItem().text(col) for col in range(self.columnCount())]
+
+    def _children(self, parent: QTreeWidgetItem | None) -> list[QTreeWidgetItem]:
+        count = parent.childCount() if parent is not None else self.topLevelItemCount()
+        return [parent.child(index) if parent is not None else self.topLevelItem(index) for index in range(count)]
+
+    def source_children(self, parent: QTreeWidgetItem | None) -> list[QTreeWidgetItem]:
+        items = self._children(parent)
+        if any(item.data(0, _SOURCE_ORDER_ROLE) is not None for item in items):
+            items.sort(key=lambda item: int(item.data(0, _SOURCE_ORDER_ROLE) or 0))
+        return items
+
+    def capture_source_order(self, force: bool = False, parent: QTreeWidgetItem | None = None) -> None:
+        for index, item in enumerate(self._children(parent)):
+            if force or item.data(0, _SOURCE_ORDER_ROLE) is None:
+                item.setData(0, _SOURCE_ORDER_ROLE, index)
+            self.capture_source_order(force, item)
+
+    def apply_text_filter(self, pattern: str, case_sensitive: bool = False, regex: bool = False) -> bool:
+        matcher = _text_matcher(pattern, case_sensitive, regex)
+        if matcher is None:
+            return False
+
+        def visit(item: QTreeWidgetItem) -> bool:
+            own = matcher("\t".join(self.cell_text(item, col) for col in range(self.columnCount())))
+            child_match = any(visit(item.child(index)) for index in range(item.childCount()))
+            visible = own or child_match
+            item.setHidden(not visible)
+            if child_match and pattern:
+                item.setExpanded(True)
+            return visible
+
+        blocked = self.blockSignals(True)
+        try:
+            for item in self._children(None):
+                visit(item)
+        finally:
+            self.blockSignals(blocked)
+        return True
+
+    def find_text(self, pattern: str, forward: bool = True, case_sensitive: bool = False, regex: bool = False) -> bool:
+        matcher = _text_matcher(pattern, case_sensitive, regex)
+        if matcher is None or not pattern:
+            return False
+        items = list(self.iter_items())
+        if not items:
+            return False
+        current = self.currentItem()
+        start = items.index(current) if current in items else -1
+        offsets = range(1, len(items) + 1) if forward else range(-1, -len(items) - 1, -1)
+        for offset in offsets:
+            item = items[(start + offset) % len(items)]
+            text = "\t".join(self.cell_text(item, col) for col in range(self.columnCount()))
+            if matcher(text):
+                item.setHidden(False)
+                self.setCurrentItem(item, 0)
+                self.scrollToItem(item)
+                return True
+        return False
+
+    def apply_display_sort(self, column: int, ascending: bool = True) -> None:
+        if not 0 <= column < self.columnCount():
+            return
+        blocked = self.blockSignals(True)
+        try:
+            self.capture_source_order()
+            self._sdpe_display_sort_active = True
+            self.setSortingEnabled(True)
+            order = Qt.SortOrder.AscendingOrder if ascending else Qt.SortOrder.DescendingOrder
+            self.sortItems(column, order)
+        finally:
+            self.blockSignals(blocked)
+
+    def clear_display_sort(self) -> None:
+        if not getattr(self, "_sdpe_display_sort_active", False):
+            return
+        states = self._capture_drop_widgets()
+        blocked = self.blockSignals(True)
+        try:
+            self.setSortingEnabled(False)
+
+            def restore(parent: QTreeWidgetItem | None) -> None:
+                items = self._children(parent)
+                items.sort(key=lambda item: int(item.data(0, _SOURCE_ORDER_ROLE) or 0))
+                if parent is None:
+                    while self.topLevelItemCount():
+                        self.takeTopLevelItem(0)
+                    for item in items:
+                        self.addTopLevelItem(item)
+                else:
+                    while parent.childCount():
+                        parent.takeChild(0)
+                    for item in items:
+                        parent.addChild(item)
+                for item in items:
+                    restore(item)
+
+            restore(None)
+            self._restore_drop_widgets(states)
+            self.capture_source_order(force=True)
+            self._sdpe_display_sort_active = False
+        finally:
+            self.blockSignals(blocked)
+
     def focusInEvent(self, event) -> None:  # noqa: N802 - Qt override name.
         super().focusInEvent(event)
         self.activated.emit(self)
@@ -689,9 +913,7 @@ class SDPETreeWidget(SDPEDataViewMixin, QTreeWidget):
     def iter_items(self, parent: QTreeWidgetItem | None = None):
         """Yield every item recursively, allowing arbitrary group depth."""
 
-        count = parent.childCount() if parent is not None else self.topLevelItemCount()
-        for index in range(count):
-            item = parent.child(index) if parent is not None else self.topLevelItem(index)
+        for item in self.source_children(parent):
             yield item
             yield from self.iter_items(item)
 
@@ -974,6 +1196,7 @@ class SDPETreeWidget(SDPEDataViewMixin, QTreeWidget):
             self._restore_item_widgets(item, {"cells": [{"widget": state} for state in states[key]]})
 
     def dropEvent(self, event) -> None:  # noqa: N802 - Qt override name.
+        self.clear_display_sort()
         self.mutationStarted.emit()
         states = self._capture_drop_widgets() if event.source() is self else {}
         super().dropEvent(event)
@@ -981,6 +1204,7 @@ class SDPETreeWidget(SDPEDataViewMixin, QTreeWidget):
             self._restore_drop_widgets(states)
         self.structureChanged.emit()
         self.contentChanged.emit()
+        self.capture_source_order(force=True)
         self.mutationFinished.emit()
 
 

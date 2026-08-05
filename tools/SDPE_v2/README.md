@@ -46,12 +46,20 @@ repository. When a project is copied into an independent repository, commit
 those generated outputs together with the project-local tools so the exported
 project remains directly buildable.
 
-## Layered suite configuration
+## Composed suite configuration
 
-Opening `sdpe_edit.bat` from `sdpe_general` loads the common layer and every
-project layer in that suite. Opening it from one target `sdpe_mgr` loads that
-target together with `sdpe_general`. Generate both layers after changes; a
-Simulink target should resolve one MATLAB initialization script from each layer.
+Each private project stores zero or more common requirement references in its
+`common_requirements` array. A reference may be relative to the private JSON,
+absolute, or use environment-variable syntax such as
+`%GMP_PRO_LOCATION%/...`, `$GMP_PRO_LOCATION/...`, or
+`${GMP_PRO_LOCATION}/...`. The editor presents the private data and every bound
+common file as one view, identifies each item's source, and validates macro
+duplicates across the complete composition.
+
+Generation writes the private header/script first and then each common output in
+the configured order. The private outputs include or run their common outputs.
+Items can be moved from a private project into a selected common file, or from a
+common file into one or more selected private projects.
 
 ## Development
 

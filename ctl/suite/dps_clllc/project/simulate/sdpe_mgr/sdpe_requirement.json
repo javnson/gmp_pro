@@ -32,7 +32,10 @@
     {"name":"SIL Runtime","requirements":["Timer Clock","PWM Cycles per Control","Nominal Controller Frequency","Nominal PWM Period","System Tick Frequency","Startup State Delay","ADC Reference","ADC Resolution"]}
   ],
   "code_sections": {
-    "after_extern_open":"#include <sdpe_dps_clllc_common_settings.h>\n/* Simulink/SIL platform bindings follow the shared CLLLC/DAB contract. */",
-    "before_footer":"#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 4)\n#error \"BUILD_LEVEL must be 1 (open loop), 2 (current loop), 3 (voltage loop), or 4 (parallel CC/CV).\"\n#endif"
-  }
+    "after_extern_open": "/* Simulink/SIL platform bindings follow the shared CLLLC/DAB contract. */",
+    "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 4)\n#error \"BUILD_LEVEL must be 1 (open loop), 2 (current loop), 3 (voltage loop), or 4 (parallel CC/CV).\"\n#endif"
+  },
+  "common_requirements": [
+    "../../../sdpe_general/sdpe_requirement.json"
+  ]
 }

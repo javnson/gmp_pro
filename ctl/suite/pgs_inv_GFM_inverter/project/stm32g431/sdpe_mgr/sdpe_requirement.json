@@ -19,7 +19,6 @@
     }
   ],
   "code_sections": {
-    "after_extern_open": "#include <sdpe_pgs_inv_gfm_common_settings.h>",
     "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 5)\n#error BUILD_LEVEL_must_be_between_1_and_5\n#endif\n#if defined(USING_3D_SVPWM) && defined(USING_NPC_MODULATOR)\n#error USING_3D_SVPWM_and_USING_NPC_MODULATOR_are_mutually_exclusive\n#endif"
   },
   "feature_macros": [],
@@ -313,5 +312,8 @@
         "startup_delay"
       ]
     }
+  ],
+  "common_requirements": [
+    "../../../sdpe_general/sdpe_requirement.json"
   ]
 }

@@ -9,7 +9,7 @@
   "output_header": "sdpe_pgs_sinv_rc_simulate_settings.h",
   "hardware": [],
   "code_sections": {
-    "after_extern_open": "#include <sdpe_pgs_sinv_rc_common_settings.h>\n#define SPECIFY_PC_ENVIRONMENT",
+    "after_extern_open": "#define SPECIFY_PC_ENVIRONMENT",
     "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 5)\n#error BUILD_LEVEL_must_be_between_1_and_5\n#endif"
   },
   "feature_macros": [
@@ -401,5 +401,8 @@
         "cal_timeout"
       ]
     }
+  ],
+  "common_requirements": [
+    "../../../sdpe_general/sdpe_requirement.json"
   ]
 }

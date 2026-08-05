@@ -207,6 +207,10 @@ Project 文件放在 `projects/` 下。
   "display_name": "DPS FSBB on F280039C IRIS Node",
   "suite": "dps_fsbb",
   "output_header": "sdpe_dps_fsbb_iris_bindings.h",
+  "common_requirements": [
+    "../../../sdpe_general/sdpe_requirement.json",
+    "%GMP_PRO_LOCATION%/extensions/site_common/sdpe_requirement.json"
+  ],
   "hardware": [
     {"role": "mcu_board", "entity": "iris_f280039c_node"},
     {"role": "buck_half_bridge", "entity": "fsbb_inline_shunt_half_bridge"}
@@ -230,6 +234,12 @@ Project 文件放在 `projects/` 下。
 `macro_prefix` 是可选的 Project 元数据命名空间，可在 Project Requirement 的 Basic 页面编辑。设置后，生成器会输出
 `DPS_FSBB_IRIS_SDPE_PROJECT_ID`、`DPS_FSBB_IRIS_SDPE_PROJECT_SUITE` 等元数据宏；未设置时继续输出旧的
 `SDPE_PROJECT_*` 名称。这样同一个 C/C++ 工程可以同时包含多个 SDPE Project 头文件。
+
+`common_requirements` 按顺序绑定零个或多个公共需求清单。每一项可以是相对于当前
+Project JSON 的路径、绝对路径，或包含 `%VAR%`、`$VAR`、`${VAR}` 的环境变量路径。
+该字段只保存在私有工程中；编辑器合并显示全部来源，但保存时仍分别写回原文件。
+生成器先输出私有工程，再按数组顺序输出 Common，并让私有 C Header 与 MATLAB Init
+Script 自动引用对应的公共输出。
 
 Binding 支持三种形式：
 

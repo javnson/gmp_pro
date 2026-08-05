@@ -29,10 +29,16 @@ v2 当前采用“核心 CLI + PyQt 图形化管理器”的结构。CLI 负责�
 %GMP_PRO_LOCATION%\ctl\suite\pgs_sinv_rc\project\f280039c_Iris_node\sdpe_mgr\sdpe_generate.bat
 ```
 
-两层工程可以直接双击任意 `sdpe_edit.bat`：从 `sdpe_general` 打开时会同时载入
-该 suite 下所有 `project/**/sdpe_mgr`；从某个目标的 `sdpe_mgr` 打开时会同时载入
-它自身和 `sdpe_general`。不带参数运行 `gmp_sdpe_deploy_project_mgr.bat` 会发现并更新
-仓库中的全部 `sdpe_mgr` 和 `sdpe_general` 工具脚本。
+每个私有工程通过 `sdpe_requirement.json` 的 `common_requirements` 数组显式绑定零个或
+多个公共需求清单。路径可以是相对于私有 JSON 的相对路径、绝对路径，也可以使用
+`%GMP_PRO_LOCATION%`、`$GMP_PRO_LOCATION` 或 `${GMP_PRO_LOCATION}` 环境变量形式。
+编辑器把私有内容与全部 Common 合并显示，并标明每一项来自 `project private` 还是
+具体 Common；重复宏检查也覆盖完整的合并结果。生成时先生成私有文件，再按配置顺序
+生成各 Common 文件，私有头文件和 MATLAB 脚本会自动引用对应的公共输出。
+
+右键菜单可以把私有项目移动到选定的 Common，也可以把 Common 项目下发到一个或多个
+私有工程。不带参数运行 `gmp_sdpe_deploy_project_mgr.bat` 会发现并更新仓库中的全部
+`sdpe_mgr` 和 `sdpe_general` 工具脚本。
 
 ## 1. 核心概念
 
