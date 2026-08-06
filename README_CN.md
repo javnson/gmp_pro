@@ -270,6 +270,14 @@ GMP 还提供 Processor-in-the-Loop 和 Datalink 调试机制：
 
 英文资料和英文工程指南统一收录在 [English README](README.md) 中。
 
+## 10. 重要更新
+
+由于TI的多种不同芯片都需要受到GMP的支持，在GMP根目录下引入GMP库的支持可能会带来混乱，所以后续，我们将把TI Product的目录放置在对应芯片的芯片支持包处。
+
+对于C28x系列芯片，需要导入的Product路径为：gmp_pro\csp\c28x_syscfg
+
+对于C29x系列芯片，需要导入的Product路径为：gmp_pro\csp\c29x_syscfg
+
 ## 9. 许可证
 
 GMP 使用 [Apache License 2.0](LICENSE.txt)。第三方组件的版权和许可证信息见 [NOTICE](NOTICE) 及各组件目录中的声明。
