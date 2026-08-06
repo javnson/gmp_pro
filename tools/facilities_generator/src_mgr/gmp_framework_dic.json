@@ -1519,7 +1519,8 @@
                     "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/coordinate.h",
                     "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/Park.h",
                     "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/Park_neg.h",
-                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/svpwm.h"
+                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/svpwm.h",
+                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/svpwm_3d.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
@@ -2703,7 +2704,8 @@
                     "${GMP_PRO_LOCATION}/ctl/component/intrinsic/protection/src/ctl_protection.c"
                 ],
                 "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/protection/protection.h"
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/protection/protection.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/protection/protection_slot.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
@@ -3036,7 +3038,8 @@
                     "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/src/ctl_adv_rc.c"
                 ],
                 "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/repetitive_controller.h"
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/repetitive_controller.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/fdrc.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
@@ -4278,7 +4281,8 @@
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/boost.h",
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/buck.h",
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/fsbb.h",
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/clllc.h"
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/clllc.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/dcdc_core.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
@@ -4826,9 +4830,27 @@
                     "ctl|component|intrinsic|discrete|discrete_filter"
                 ],
                 "tasks": [
-                    {"id": "sys_compile", "summary": "Compilation Passed", "completed": false, "date": "", "reply": ""},
-                    {"id": "sys_sim", "summary": "Simulation / Principle Verified", "completed": false, "date": "", "reply": ""},
-                    {"id": "sys_hw", "summary": "Physical Hardware Verified", "completed": false, "date": "", "reply": ""}
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
                 ]
             },
             "component|digital_power|inv|gfm_droop_ctrl": {
@@ -4918,9 +4940,27 @@
                 "help_docs": [],
                 "depends_on": [],
                 "tasks": [
-                    {"id": "sys_compile", "summary": "Compilation Passed", "completed": false, "date": "", "reply": ""},
-                    {"id": "sys_sim", "summary": "Simulation / Principle Verified", "completed": false, "date": "", "reply": ""},
-                    {"id": "sys_hw", "summary": "Physical Hardware Verified", "completed": false, "date": "", "reply": ""}
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
                 ]
             },
             "component|digital_power|inv|gfm_vsm_ctrl": {
@@ -4938,9 +4978,27 @@
                     "ctl|component|intrinsic|discrete|discrete_filter"
                 ],
                 "tasks": [
-                    {"id": "sys_compile", "summary": "Compilation Passed", "completed": false, "date": "", "reply": ""},
-                    {"id": "sys_sim", "summary": "Simulation / Principle Verified", "completed": false, "date": "", "reply": ""},
-                    {"id": "sys_hw", "summary": "Physical Hardware Verified", "completed": false, "date": "", "reply": ""}
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
                 ]
             },
             "component|digital_power|inv|hcm": {
@@ -5613,6 +5671,83 @@
                         "reply": ""
                     }
                 ]
+            },
+            "math_block|coordinate|_internal": {
+                "type": "module",
+                "description": "Auto-generated internal config",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|interface|adv_adc": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/interface/adv_adc_channel.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|interface|adv_pwm": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/interface/adv_pwm_channel.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             }
         },
         "csp": {
@@ -5787,6 +5922,44 @@
                 ],
                 "inc_dirs": [
                     "${GMP_PRO_LOCATION}/csp/zynq7"
+                ],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "nation32_h47x": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/csp/nation32_h47x/src/*"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/csp/nation32_h47x/*"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/csp/nation32_h47x/"
                 ],
                 "help_docs": [],
                 "depends_on": [],

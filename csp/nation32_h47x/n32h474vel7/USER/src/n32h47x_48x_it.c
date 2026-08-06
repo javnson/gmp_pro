@@ -9,6 +9,8 @@
 #include "n32h47x_48x.h"
 /* NTFx CODE END */
 
+#include <gmp_core.h>
+
 /* NTFx CODE START */
 extern __IO uint32_t mwTick;
 /**
@@ -99,3 +101,26 @@ void SysTick_Handler(void)
 /* NTFx CODE END */
 
 }
+/* NTFx CODE START(GTIM10_IRQHandler)*/
+/**
+    * @brief  This function handles GTIM10_IRQHandler.
+    */
+void GTIM10_IRQHandler(void)
+{
+/* NTFx CODE END */
+	
+	gmp_step_system_tick();
+	
+/* NTFx CODE START */
+    if (TIM_GetIntStatus(GTIM10, TIM_INT_UPDATE))
+    {
+        /*clear IT flag*/
+        TIM_ClrIntPendingBit(GTIM10, TIM_INT_UPDATE);
+/* NTFx CODE END */
+
+    }
+    
+/* NTFx CODE START */
+}
+/* NTFx CODE END(GTIM10_IRQHandler)*/
+

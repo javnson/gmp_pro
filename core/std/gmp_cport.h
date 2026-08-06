@@ -190,7 +190,9 @@ void gmp_base_system_stuck(void);
 // This function has a basic version in gmp_std_port.c
 
 #if defined USE_GMP_SELF_BASE_ASSERT
-void gmp_base_assert(void* condition);
+//void gmp_base_assert(int condition);
+void _gmp_base_assert(int condition);
+#define gmp_base_assert(_X_X_) _gmp_base_assert(!!(_X_X_))
 
 #elif defined DISABLE_GMP_BASE_ASSERT
 #define gmp_base_assert(assert_condition) (void)(assert_condition)

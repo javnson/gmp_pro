@@ -36,7 +36,7 @@ void ctl_auto_tuning_gfl_inv(gfl_inv_ctrl_init_t* init)
     parameter_gt control_delay;
     parameter_gt filter_delay;
 
-    assert(init->grid_filter_L > 1e-9f);
+    gmp_base_assert(init->grid_filter_L > 1e-9f);
 
     // Select proper ADC digital filter cut frequency
     init->current_adc_fc = init->fs / 3;

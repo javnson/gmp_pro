@@ -30,6 +30,7 @@ extern bool CORDIC_Configuration(void);
 extern bool CRC_Configuration(void);
 extern bool FMAC_Configuration(void);
 extern bool SHRTIM_Configuration(void);
+extern bool TIM_Configuration(void);
 /* NTFx CODE END Extern*/
 
 #ifdef __cplusplus

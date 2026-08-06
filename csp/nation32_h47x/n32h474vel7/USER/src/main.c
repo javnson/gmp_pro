@@ -11,6 +11,8 @@
 #include <stdint.h>
 /* NTFx CODE END Include*/
 
+#include <gmp_core.h>
+
 /**
  * @brief  Main program.
  */
@@ -30,8 +32,14 @@ int main(void)
     CRC_Configuration();
     FMAC_Configuration();
     SHRTIM_Configuration();
+    TIM_Configuration();
     DMA_Configuration();
     /* NTFx CODE END Config*/
+	
+	//
+	// Call GMP STARTUP function here
+	//
+	gmp_base_entry();
     while(1)
     {
 

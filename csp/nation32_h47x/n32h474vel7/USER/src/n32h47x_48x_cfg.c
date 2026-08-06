@@ -118,7 +118,7 @@ void RCC_InitSHRTPLL(uint32_t SHRTPLL_source, uint32_t CLKF, uint32_t CLKR, uint
 
 }
 /* NTFx CODE END */
-   
+     
 /* NTFx CODE START */
 /**
  *@brief Initializes the clock tree
@@ -190,6 +190,8 @@ bool RCC_Configuration(void)
     RCC_ConfigTrng1mClk(RCC_TRNG1MCLK_SRC_HSI, RCC_TRNG1MCLK_DIV8);
     RCC_EnableTrng1mClk(ENABLE);
     RCC_ConfigRngcClk(RCC_RNGCCLK_SYSCLK_DIV1);
+    /*config GTIM8/9/10 clock*/
+    RCC_ConfigGTimClk(RCC_GTIM_CLKSRC_PCLK);
      
     /*config RTC clock*/
     RCC_ConfigRtcClk(RCC_RTCCLK_SRC_LSE);
@@ -220,6 +222,7 @@ bool RCC_Configuration(void)
  */
 bool NVIC_Configuration(void)
 {
+    NVIC_InitType NVIC_InitStructure;
     /*Configure the preemption priority and subpriority:
     - 4 bits for pre-emption priority: possible value are 0..15
     - 0 bits for subpriority: possible value are 0
@@ -227,6 +230,13 @@ bool NVIC_Configuration(void)
     */
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     NVIC_SetPriority(SysTick_IRQn,NVIC_EncodePriority(4,15,0));
+    
+    /*Set GTIM10_IRQ  interrupt priority*/
+    NVIC_InitStructure.NVIC_IRQChannel                   =GTIM10_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority =0;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority        =0;
+    NVIC_InitStructure.NVIC_IRQChannelCmd                = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
 
 /* NTFx CODE END */
 
@@ -341,12 +351,12 @@ bool USART_Configuration(void)
     USART_StructInit(&USART_InitStructure);
     /* EnableUART5clock */
     RCC_EnableAPB1PeriphClk(RCC_APB1_PERIPH_UART5,ENABLE);
-    /* EnableUART7clock */
-    RCC_EnableAPB2PeriphClk(RCC_APB2_PERIPH_UART7,ENABLE);
+    /* EnableUSART1|UART7clock */
+    RCC_EnableAPB2PeriphClk(RCC_APB2_PERIPH_USART1|RCC_APB2_PERIPH_UART7,ENABLE);
      
      
-    /*********initialize the UART5************/
-    USART_DeInit(UART5);
+    /*********initialize the USART1************/
+    USART_DeInit(USART1);
     USART_InitStructure.BaudRate            = 115200;
     USART_InitStructure.WordLength          = USART_WL_8B;
     USART_InitStructure.StopBits            = USART_STPB_1;
@@ -354,6 +364,15 @@ bool USART_Configuration(void)
     USART_InitStructure.HardwareFlowControl = USART_HFCTRL_NONE; 
     USART_InitStructure.Mode                = USART_MODE_RX | USART_MODE_TX; 
     USART_InitStructure.OverSampling        = USART_16OVER ; 
+    /* Configure USART1 */
+    USART_Init(USART1, &USART_InitStructure);
+     
+     
+    /* Enable the USART1 */
+    USART_Enable(USART1, ENABLE);
+     
+    /*********initialize the UART5************/
+    USART_DeInit(UART5);
     /* Configure UART5 */
     USART_Init(UART5, &USART_InitStructure);
      
@@ -369,6 +388,7 @@ bool USART_Configuration(void)
      
     /* Enable the UART7 */
     USART_Enable(UART7, ENABLE);
+
 /* NTFx CODE END */
 
     return true;
@@ -381,6 +401,7 @@ bool USART_Configuration(void)
  */
 bool FDCAN_Configuration(void)
 {
+
 /* NTFx CODE END */
 
     return true;
@@ -403,6 +424,7 @@ bool I2C_Configuration(void)
     //I2C_SendData(I2C1, *sendBufferPtr++);
     //I2C_GenerateStop(I2C1, ENABLE);
      
+
 /* NTFx CODE END */
 
     return true;
@@ -456,6 +478,7 @@ bool DAC_Configuration(void)
     DAC_Init(DAC4, &DAC_InitStructure);
     /* Enable DAC4. */
     DAC_Enable(DAC4, ENABLE);
+
 /* NTFx CODE END */
 
     return true;
@@ -468,6 +491,7 @@ bool DAC_Configuration(void)
  */
 bool RTC_Configuration(void)
 {
+
 /* NTFx CODE END */
 
     return true;
@@ -590,6 +614,7 @@ bool ADC_Configuration(void)
     /* Check the end of ADC4 calibration */
     while (ADC_GetCalibrationStatus(ADC4,ADC_CALIBRATION_SINGLE_MODE))
         ;
+
 /* NTFx CODE END */
 
     return true;
@@ -604,6 +629,7 @@ bool CORDIC_Configuration(void)
 {
     /* Enable CORDIC clock */
     RCC_EnableAHBPeriphClk(RCC_AHB_PERIPHEN_CORDIC, ENABLE);
+
 /* NTFx CODE END */
 
     return true;
@@ -622,6 +648,7 @@ bool CRC_Configuration(void)
      
     //Use reference:
     // Use this function to get CRC value : uint32_t CRC32_CalcBufCrc(const uint32_t pBuffer[],  uint32_t BufferLength) 
+
 /* NTFx CODE END */
 
     return true;
@@ -634,6 +661,7 @@ bool CRC_Configuration(void)
  */
 bool FMAC_Configuration(void)
 {
+
 /* NTFx CODE END */
 
     return true;
@@ -666,7 +694,7 @@ bool SHRTIM_Configuration(void)
     SHRTIM_TIM_SetPeriod(SHRTIM1, SHRTIM_TIMER_A, 96);
     SHRTIM_TIM_SetRepetition(SHRTIM1, SHRTIM_TIMER_A, 0);
     SHRTIM_TIM_SetCounterMode(SHRTIM1, SHRTIM_TIMER_A, SHRTIM_MODE_CONTINUOUS);
-    SHRTIM_TIM_SetCountingMode(SHRTIM1, SHRTIM_TIMER_A, SHRTIM_COUNTING_MODE_UP);
+    SHRTIM_TIM_SetCountingMode(SHRTIM1, SHRTIM_TIMER_A, SHRTIM_COUNTING_MODE_UP_DOWN);
     SHRTIM_TIM_SetInterleavedMode(SHRTIM1, SHRTIM_TIMER_A, SHRTIM_INTERLEAVED_MODE_DISABLED);
     SHRTIM_TIM_DisableStartOnSync(SHRTIM1,SHRTIM_TIMER_A);
     SHRTIM_TIM_DisableResetOnSync(SHRTIM1,SHRTIM_TIMER_A);
@@ -687,7 +715,7 @@ bool SHRTIM_Configuration(void)
     SHRTIM_TIM_SetPeriod(SHRTIM1, SHRTIM_TIMER_B, 96);
     SHRTIM_TIM_SetRepetition(SHRTIM1, SHRTIM_TIMER_B, 0);
     SHRTIM_TIM_SetCounterMode(SHRTIM1, SHRTIM_TIMER_B, SHRTIM_MODE_CONTINUOUS);
-    SHRTIM_TIM_SetCountingMode(SHRTIM1, SHRTIM_TIMER_B, SHRTIM_COUNTING_MODE_UP);
+    SHRTIM_TIM_SetCountingMode(SHRTIM1, SHRTIM_TIMER_B, SHRTIM_COUNTING_MODE_UP_DOWN);
     SHRTIM_TIM_SetInterleavedMode(SHRTIM1, SHRTIM_TIMER_B, SHRTIM_INTERLEAVED_MODE_DISABLED);
     SHRTIM_TIM_DisableStartOnSync(SHRTIM1,SHRTIM_TIMER_B);
     SHRTIM_TIM_DisableResetOnSync(SHRTIM1,SHRTIM_TIMER_B);
@@ -708,7 +736,7 @@ bool SHRTIM_Configuration(void)
     SHRTIM_TIM_SetPeriod(SHRTIM1, SHRTIM_TIMER_C, 96);
     SHRTIM_TIM_SetRepetition(SHRTIM1, SHRTIM_TIMER_C, 0);
     SHRTIM_TIM_SetCounterMode(SHRTIM1, SHRTIM_TIMER_C, SHRTIM_MODE_CONTINUOUS);
-    SHRTIM_TIM_SetCountingMode(SHRTIM1, SHRTIM_TIMER_C, SHRTIM_COUNTING_MODE_UP);
+    SHRTIM_TIM_SetCountingMode(SHRTIM1, SHRTIM_TIMER_C, SHRTIM_COUNTING_MODE_UP_DOWN);
     SHRTIM_TIM_SetInterleavedMode(SHRTIM1, SHRTIM_TIMER_C, SHRTIM_INTERLEAVED_MODE_DISABLED);
     SHRTIM_TIM_DisableStartOnSync(SHRTIM1,SHRTIM_TIMER_C);
     SHRTIM_TIM_DisableResetOnSync(SHRTIM1,SHRTIM_TIMER_C);
@@ -729,7 +757,7 @@ bool SHRTIM_Configuration(void)
     SHRTIM_TIM_SetPeriod(SHRTIM1, SHRTIM_TIMER_D, 96);
     SHRTIM_TIM_SetRepetition(SHRTIM1, SHRTIM_TIMER_D, 0);
     SHRTIM_TIM_SetCounterMode(SHRTIM1, SHRTIM_TIMER_D, SHRTIM_MODE_CONTINUOUS);
-    SHRTIM_TIM_SetCountingMode(SHRTIM1, SHRTIM_TIMER_D, SHRTIM_COUNTING_MODE_UP);
+    SHRTIM_TIM_SetCountingMode(SHRTIM1, SHRTIM_TIMER_D, SHRTIM_COUNTING_MODE_UP_DOWN);
     SHRTIM_TIM_SetInterleavedMode(SHRTIM1, SHRTIM_TIMER_D, SHRTIM_INTERLEAVED_MODE_DISABLED);
     SHRTIM_TIM_DisableStartOnSync(SHRTIM1,SHRTIM_TIMER_D);
     SHRTIM_TIM_DisableResetOnSync(SHRTIM1,SHRTIM_TIMER_D);
@@ -787,7 +815,47 @@ bool SHRTIM_Configuration(void)
     SHRTIM_OUT_Config(SHRTIM1,SHRTIM_OUTPUT_TF2,SHRTIM_OUT_POSITIVE_POLARITY | SHRTIM_OUT_IDLELEVEL_INACTIVE | SHRTIM_OUT_FAULTSTATE_INACTIVE | SHRTIM_OUT_CHOPPERMODE_DISABLED | SHRTIM_OUT_BM_ENTRYMODE_REGULAR);
     SHRTIM_ForceUpdate(SHRTIM1, SHRTIM_TIMER_F);
     /* Use its enable : SHRTIM_EnableOutput(SHRTIM_Module *SHRTIMx, uint32_t Outputs) */
+    SHRTIM_SetADCTrigSrc(SHRTIM1,SHRTIM_ADCTRIG1_SOURCE_GROUP1,SHRTIM_ADTG13_SOURCE_GROUP1_MPRD);
+    SHRTIM_SetADCTrigUpdate(SHRTIM1,SHRTIM_ADCTRIG_1,SHRTIM_ADCTRIG_UPDATE_TIMER_A);
+    SHRTIM_SetADCPostScaler(SHRTIM1, SHRTIM_ADCTRIG_1, 0);
     /*Use its enable :  SHRTIM_TIM_CounterEnable(SHRTIM_Module *SHRTIMx, uint32_t Timers) */
+
+/* NTFx CODE END */
+
+    return true;
+}
+/* NTFx CODE START */
+/**
+ *@brief Initializes the TIM
+ *@param null
+ *@return status
+ */
+bool TIM_Configuration(void)
+{
+    TIM_TimeBaseInitType TIM_TimeBaseStructure;
+    /* GTIM10 configuration */
+    RCC_EnableAPB2PeriphClk(RCC_APB2_PERIPH_GTIM10, ENABLE);
+    /* GTIM10 base configuration */
+    TIM_InitTimBaseStruct(&TIM_TimeBaseStructure);
+    TIM_TimeBaseStructure.Period = 59999;
+    TIM_TimeBaseStructure.Prescaler = 0;
+    TIM_TimeBaseStructure.ClkDiv = TIM_CLK_DIV4;
+    TIM_TimeBaseStructure.CounterMode = TIM_CNT_MODE_UP;
+    TIM_TimeBaseStructure.RepetCnt = 0;
+    TIM_InitTimeBase(GTIM10, &TIM_TimeBaseStructure);
+    TIM_ConfigArPreload(GTIM10,DISABLE);
+    /* Events on the trigger input (TRGI) are deferred to allow perfect synchronization between the current timer (via TRGO) and its slave timers. */
+    TIM_SelectMasterSlaveMode(GTIM10,TIM_MASTER_SLAVE_MODE_DISABLE);
+    TIM_SelectOutputTrig(GTIM10,TIM_TRGO_SRC_RESET);
+    TIM_SelectOutputTrig2(GTIM10,TIM_TRGO2_SRC_RESET);
+    /* Clear GTIM10 interrupt flag*/
+    TIM_ClearFlag(GTIM10,TIM_FLAG_UPDATE);
+    /* Enable GTIM10 interrupt*/
+    TIM_ConfigInt(GTIM10,TIM_INT_UPDATE,ENABLE);
+     
+    /* GTIM10 enable counter */
+    TIM_Enable(GTIM10, ENABLE);
+
 /* NTFx CODE END */
 
     return true;
