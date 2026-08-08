@@ -23,14 +23,21 @@ repository and built without `GMP_PRO_LOCATION` or any absolute GMP path.
 
 ## Data Link and DSA services
 
-The firmware exposes target information (`0x02`), ECHO (`0x00`), four read/write
-Tunable values (`0x30`/`0x31`), and Memory Perspective (`0x50`/`0x51`).
+The firmware exposes target information (`0x02`), ECHO (`0x00`), four named
+read/write Tunable values (`0x30`/`0x31`), one named Memory Perspective region
+(`0x50`/`0x51`), and an independent Data Link Scope service (`0x60`). Memory
+and Tunable descriptor queries reuse `base + 1` with a one-byte indexed payload.
 
 TIM3 samples at 1 kHz and generates a 50 Hz sine/cosine pair. The GMP DSA
 Trigger arms a coherent acquisition and DSA Scope stores 400 samples per
 channel, covering 20 signal periods. The 800-float, 3200-byte structure-of-arrays
-buffer is exposed as a read-only Memory Perspective region. Use the debugger's
-`DSA Trigger/Scope` tab to arm, fetch, and plot it.
+buffer is registered only with Data Link Scope. Use the debugger's `Data Link
+Scope` tab to discover it, select trigger mode/channel/level/position, arm it,
+and plot the snapshot. Continuous display automatically re-arms and refreshes
+snapshots for immediate or edge-triggered acquisition. Optional waveform
+persistence retains age-faded history frames for jitter and stability analysis.
+The Scope page does not require or expose a physical
+address.
 
 ## Regenerate project-local GMP files
 
@@ -61,5 +68,6 @@ python smoke_test.py
 
 Flash either the CMake ELF or Keil HEX, reset the board, and run the smoke test.
 It auto-detects the NUCLEO ST-Link VCP and validates frame escaping, CRC,
-full-MTU DMA ECHO, Tunable and Memory Perspective access, DSA metadata, the
-400-point sine/cosine snapshot, and read-only protection.
+full-MTU DMA ECHO, target-reported Tunable and Memory descriptors, read/write
+access, Scope discovery and configuration, a 25-percent pre-trigger position,
+and the 400-point sine/cosine snapshot.

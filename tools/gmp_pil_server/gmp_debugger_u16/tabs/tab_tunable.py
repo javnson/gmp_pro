@@ -10,8 +10,9 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGroupBox,
                              QComboBox, QMenu)
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from core_datalink import HermesDatalinkQt
+from resource_discovery import ResourceDiscovery
 
-# 变量类型对应的 struct 解析格式与字节大小
+# Parameter types and their little-endian wire formats.
 TYPE_MAP = {
     'GMP_PARAM_TYPE_U16': ('<H', 2),
     'GMP_PARAM_TYPE_I16': ('<h', 2),
@@ -21,29 +22,29 @@ TYPE_MAP = {
 }
 
 # =========================================================
-# 内部辅助：C 语言注释清除器
+# C source parsing helpers.
 # =========================================================
 def strip_c_comments(text: str) -> str:
-    """彻底清除 C 语言代码中的块注释 /* */ 和行注释 //"""
+    """Remove C block and line comments before dictionary parsing."""
     text = re.sub(r'/\*.*?\*/', '', text, flags=re.DOTALL)
     text = re.sub(r'//.*', '', text)
     return text
 
 # =========================================================
-# 对话框：C 语言 Tunable 字典解析器
+# C tunable dictionary parser dialog.
 # =========================================================
 class CCodeParserDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("从 C 代码解析 Tunable 字典")
+        self.setWindowTitle("Import Tunable Dictionary from C")
         self.resize(600, 400)
         self.parsed_data = []
         
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel("请粘贴下位机的 const gmp_param_item_t 数组定义："))
+        layout.addWidget(QLabel("Paste a target const gmp_param_item_t array definition:"))
         
         self.txt_code = QTextEdit()
-        self.txt_code.setPlaceholderText("""例如：
+        self.txt_code.setPlaceholderText("""Example:
 const gmp_param_item_t dict_m1[] = {
     { &m1.kp, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW },
     { &m1.speed, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO },
@@ -51,7 +52,7 @@ const gmp_param_item_t dict_m1[] = {
         layout.addWidget(self.txt_code)
         
         btn_layout = QHBoxLayout()
-        self.btn_parse = QPushButton("🔍 解析并生成字典")
+        self.btn_parse = QPushButton("Parse Dictionary")
         self.btn_parse.clicked.connect(self.parse_code)
         btn_layout.addStretch()
         btn_layout.addWidget(self.btn_parse)
@@ -61,44 +62,47 @@ const gmp_param_item_t dict_m1[] = {
         code = self.txt_code.toPlainText()
         code = strip_c_comments(code)
         
-        pattern = r'\{\s*&\s*([^,]+?)\s*,\s*(GMP_PARAM_TYPE_[A-Z0-9_]+)\s*,\s*(GMP_PARAM_PERM_[A-Z]+)\s*\}'
+        pattern = (r'\{\s*&\s*([^,]+?)\s*,\s*(GMP_PARAM_TYPE_[A-Z0-9_]+)\s*,'
+                   r'\s*(GMP_PARAM_PERM_[A-Z]+)'
+                   r'(?:\s*,\s*"([^"]*)"\s*,\s*"([^"]*)")?\s*\}')
         matches = re.findall(pattern, code)
         
         if not matches:
-            QMessageBox.warning(self, "解析失败", "未检测到符合规则的字典项，请检查语法格式。")
+            QMessageBox.warning(self, "Parse Failed", "No supported dictionary entries were found.")
             return
             
         self.parsed_data = []
         for i, match in enumerate(matches):
-            var_name, var_type, var_perm = match
+            var_name, var_type, var_perm, display_name, unit = match
             if var_type not in TYPE_MAP:
-                QMessageBox.warning(self, "类型错误", f"不支持的变量类型: {var_type}")
+                QMessageBox.warning(self, "Unsupported Type", f"Unsupported parameter type: {var_type}")
                 return
                 
             self.parsed_data.append({
                 "id": i,
-                "name": var_name.strip(),
+                "name": display_name or var_name.strip(),
+                "unit": unit,
                 "type": var_type,
                 "perm": var_perm,
                 "display_hex": False, 
                 "enum_map": None      
             })
             
-        QMessageBox.information(self, "解析成功", f"成功解析出 {len(self.parsed_data)} 个变量！")
+        QMessageBox.information(self, "Import Complete", f"Imported {len(self.parsed_data)} parameters.")
         self.accept()
 
 # =========================================================
-# 对话框：C 语言 Enum 枚举解析器
+# C enum parser dialog.
 # =========================================================
 class CEnumParserDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("绑定 C 语言枚举定义")
+        self.setWindowTitle("Bind a C Enum")
         self.resize(500, 400)
         self.parsed_map = {}
         
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel("请粘贴 C 语言的 enum 定义块 (支持 CiA402 等自增格式)："))
+        layout.addWidget(QLabel("Paste a C enum definition, including implicit incremented values:"))
         
         self.txt_code = QTextEdit()
         self.txt_code.setPlaceholderText("""typedef enum {
@@ -110,7 +114,7 @@ class CEnumParserDialog(QDialog):
         layout.addWidget(self.txt_code)
         
         btn_layout = QHBoxLayout()
-        self.btn_parse = QPushButton("🔍 解析并应用映射")
+        self.btn_parse = QPushButton("Parse and Apply")
         self.btn_parse.clicked.connect(self.parse_code)
         btn_layout.addStretch()
         btn_layout.addWidget(self.btn_parse)
@@ -122,7 +126,7 @@ class CEnumParserDialog(QDialog):
         
         match = re.search(r'\{([^}]+)\}', code)
         if not match:
-            QMessageBox.warning(self, "解析失败", "未找到大括号 {} 包含的枚举内容！")
+            QMessageBox.warning(self, "Parse Failed", "No enum body enclosed by braces was found.")
             return
         
         body = match.group(1)
@@ -147,13 +151,13 @@ class CEnumParserDialog(QDialog):
             current_val += 1
             
         if not self.parsed_map:
-            QMessageBox.warning(self, "解析为空", "未能解析出任何有效的枚举项！")
+            QMessageBox.warning(self, "Empty Enum", "No valid enum entries were parsed.")
             return
             
         self.accept()
 
 # =========================================================
-# 交互增强型控件库 (组件化状态机与防频闪引擎)
+# Guarded parameter editing controls.
 # =========================================================
 
 class ParamLineEdit(QLineEdit):
@@ -167,10 +171,10 @@ class ParamLineEdit(QLineEdit):
         self.is_permanently_ro = is_ro
         self.is_dirty = False 
         
-        # 初始始终锁定为只读，阻挡单击误编辑
+        # A double-click is required before a writable value can be edited.
         self.setReadOnly(True) 
         
-        # 【性能引擎】独立托管本组件的样式恢复定时器
+        # Each editor owns its status-color timer.
         self.fade_timer = QTimer(self)
         self.fade_timer.setSingleShot(True)
         self.fade_timer.timeout.connect(self._restore_style)
@@ -182,7 +186,7 @@ class ParamLineEdit(QLineEdit):
             self.returnPressed.connect(self._on_return_pressed)
 
     def mouseDoubleClickEvent(self, event):
-        """【体验优化】双击才允许编辑，单机只做焦点选取"""
+        """Unlock writable values only on a deliberate double-click."""
         if not self.is_permanently_ro:
             self.setReadOnly(False)
             self.setStyleSheet("background-color: #E3F2FD; color: #0D47A1; font-weight: bold;")
@@ -198,7 +202,7 @@ class ParamLineEdit(QLineEdit):
             self.sig_edit_aborted.emit() 
             
         if not self.is_permanently_ro:
-            self.setReadOnly(True) # 失去焦点立即恢复护盾
+            self.setReadOnly(True)  # Restore the guard after focus is lost.
         self._restore_style()
 
     def _on_text_edited(self):
@@ -224,15 +228,15 @@ class ParamLineEdit(QLineEdit):
             self.setStyleSheet("")
 
     def flash_status(self, changed):
-        """【防频闪机制】刷新时间重叠时，直接延期定时器，杜绝闪烁"""
+        """Extend the status timer when refreshes overlap."""
         if self.hasFocus() and not self.isReadOnly(): return
         
         if changed:
-            self.setStyleSheet("background-color: #FFF59D; color: #D32F2F; font-weight: bold;") # 突变：黄底红字
+            self.setStyleSheet("background-color: #FFF59D; color: #D32F2F; font-weight: bold;")
         else:
-            self.setStyleSheet("background-color: #C8E6C9; color: black;") # 持续刷新：静谧绿底
+            self.setStyleSheet("background-color: #C8E6C9; color: black;")
             
-        self.fade_timer.start(1000) # 保持 1s
+        self.fade_timer.start(1000)
 
     def update_display_value(self, val, is_float=False, is_hex=False):
         if self.hasFocus() and not self.isReadOnly(): return False
@@ -275,11 +279,11 @@ class ParamComboBox(QComboBox):
             self.activated.connect(self._on_activated)
 
     def mousePressEvent(self, event):
-        """【体验优化】拦截鼠标单击，让事件穿透给表格，实现选中行而防误下拉"""
+        """Let a single click select the table row without opening the list."""
         event.ignore()
 
     def mouseDoubleClickEvent(self, event):
-        """双击才强制展开下拉列表"""
+        """Open the enum list only on a deliberate double-click."""
         if not self.is_ro:
             self.showPopup()
 
@@ -341,19 +345,24 @@ class ParamComboBox(QComboBox):
 
 
 # =========================================================
-# 单个可调对象实例面板
+# One tunable service instance.
 # =========================================================
 class TunableInstanceWidget(QWidget):
     sig_bus_busy = pyqtSignal(bool)
 
-    def __init__(self, hermes: HermesDatalinkQt, instance_name: str, base_cmd: int = 0x30):
+    def __init__(self, hermes: HermesDatalinkQt, discovery: ResourceDiscovery,
+                 instance_name: str, base_cmd: int = 0x30):
         super().__init__()
         self.hermes = hermes
+        self.discovery = discovery
         self.instance_name = instance_name
         self.base_cmd = base_cmd
         
         self.current_params = [] 
         self.last_values = {} 
+        self.pending_read_batches = []
+        self.awaiting_discovery = False
+        self.discovery.tunable_items_changed.connect(self._on_tunable_items_changed)
         
         self.auto_timer = QTimer()
         self.auto_timer.timeout.connect(self.cmd_read_all)
@@ -373,12 +382,12 @@ class TunableInstanceWidget(QWidget):
 
     def _force_release_bus(self):
         self.sig_bus_busy.emit(False)
-        self.log("⚠️ 总线锁定超时，已强制释放 (可能发生了丢包)", "orange")
+        self.log("Bus ownership timed out; a response may have been lost.", "orange")
 
     def _setup_ui(self):
         main_layout = QVBoxLayout(self)
 
-        ctrl_group = QGroupBox(f"【{self.instance_name}】对象属性与配置")
+        ctrl_group = QGroupBox(f"{self.instance_name} Configuration")
         ctrl_layout = QHBoxLayout()
         
         ctrl_layout.addWidget(QLabel("Base CMD (Hex):"))
@@ -387,21 +396,25 @@ class TunableInstanceWidget(QWidget):
         self.edit_cmd.textChanged.connect(self._update_base_cmd)
         ctrl_layout.addWidget(self.edit_cmd)
         
-        self.btn_import_c = QPushButton("📝 从 C 代码提取")
+        self.btn_import_c = QPushButton("Import C")
         self.btn_import_c.clicked.connect(self.action_import_c)
         ctrl_layout.addWidget(self.btn_import_c)
+
+        self.btn_discover = QPushButton("Discover from Target")
+        self.btn_discover.clicked.connect(self.action_discover_target)
+        ctrl_layout.addWidget(self.btn_discover)
         
-        self.btn_load_json = QPushButton("📂 载入 JSON")
+        self.btn_load_json = QPushButton("Load JSON")
         self.btn_load_json.clicked.connect(self.action_load_json)
         ctrl_layout.addWidget(self.btn_load_json)
         
-        self.btn_save_json = QPushButton("💾 导出 JSON")
+        self.btn_save_json = QPushButton("Save JSON")
         self.btn_save_json.clicked.connect(self.action_save_json)
         ctrl_layout.addWidget(self.btn_save_json)
         
         ctrl_layout.addStretch()
         
-        self.cb_auto_refresh = QCheckBox("启用全局定时刷新")
+        self.cb_auto_refresh = QCheckBox("Automatic refresh")
         self.cb_auto_refresh.stateChanged.connect(self._toggle_auto_refresh)
         ctrl_layout.addWidget(self.cb_auto_refresh)
         
@@ -416,7 +429,7 @@ class TunableInstanceWidget(QWidget):
         main_layout.addWidget(ctrl_group)
 
         self.table = QTableWidget(0, 6)
-        self.table.setHorizontalHeaderLabels(["ID", "变量名称", "数据类型", "读写权限", "当前数值", "操作"])
+        self.table.setHorizontalHeaderLabels(["ID", "Parameter", "Type", "Permission", "Current Value", "Actions"])
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
         
@@ -426,13 +439,47 @@ class TunableInstanceWidget(QWidget):
         main_layout.addWidget(self.table)
 
         btn_layout = QHBoxLayout()
-        self.btn_read_all = QPushButton("🔄 全局读取当前对象 (Read All)")
+        self.btn_read_all = QPushButton("Read All Parameters")
         self.btn_read_all.setMinimumHeight(40)
         self.btn_read_all.setStyleSheet("background-color: #E3F2FD; font-weight: bold;")
         self.btn_read_all.clicked.connect(lambda: self.cmd_read_all(False))
         
         btn_layout.addWidget(self.btn_read_all)
         main_layout.addLayout(btn_layout)
+
+    def action_discover_target(self):
+        """Import the tunable dictionary reported by the connected target."""
+        self._update_base_cmd()
+        self.awaiting_discovery = True
+        self.discovery.discover_tunables(self.base_cmd)
+
+    def _on_tunable_items_changed(self, items):
+        """Replace this instance dictionary with discovered target metadata."""
+        if not self.awaiting_discovery:
+            return
+        self.awaiting_discovery = False
+        type_names = {
+            0: "GMP_PARAM_TYPE_U16",
+            1: "GMP_PARAM_TYPE_I16",
+            2: "GMP_PARAM_TYPE_U32",
+            3: "GMP_PARAM_TYPE_I32",
+            4: "GMP_PARAM_TYPE_F32",
+        }
+        self.current_params = [
+            {
+                "id": item.item_id,
+                "name": item.name,
+                "unit": item.unit,
+                "type": type_names.get(item.data_type, "GMP_PARAM_TYPE_U16"),
+                "perm": "GMP_PARAM_PERM_RW" if item.permission else "GMP_PARAM_PERM_RO",
+                "display_hex": False,
+                "enum_map": None,
+            }
+            for item in items
+        ]
+        self.last_values.clear()
+        self._render_table()
+        self.log(f"Discovered {len(items)} target tunable parameters.", "green")
 
     def log(self, msg, color="black"):
         if hasattr(self.hermes, 'sig_log_msg'):
@@ -455,21 +502,21 @@ class TunableInstanceWidget(QWidget):
         
         if not is_float:
             is_hex = param_info.get('display_hex', False)
-            hex_action = menu.addAction("✅ 16 进制显示 (Hex Mode)" if is_hex else "🔲 16 进制显示 (Hex Mode)")
+            hex_action = menu.addAction("Disable Hexadecimal Display" if is_hex else "Enable Hexadecimal Display")
             hex_action.triggered.connect(lambda: self.toggle_hex_display(param_id))
             menu.addSeparator()
 
-        enum_action = menu.addAction("📜 绑定 C 语言枚举表 (Bind Enum)")
+        enum_action = menu.addAction("Bind C Enum")
         enum_action.triggered.connect(lambda: self.bind_enum(param_id))
         
         if param_info.get('enum_map'):
-            clear_enum_action = menu.addAction("❌ 解除枚举绑定 (Remove Enum)")
+            clear_enum_action = menu.addAction("Remove Enum Binding")
             clear_enum_action.triggered.connect(lambda: self.clear_enum(param_id))
 
         menu.exec_(self.table.viewport().mapToGlobal(pos))
 
     # =========================================================
-    # 安全锁机制：在重建 UI 的操作前暂停轮询
+    # Pause polling while rebuilding editor widgets.
     # =========================================================
     def toggle_hex_display(self, param_id):
         param_info = next((p for p in self.current_params if p['id'] == param_id), None)
@@ -479,7 +526,7 @@ class TunableInstanceWidget(QWidget):
             
             param_info['display_hex'] = not param_info.get('display_hex', False)
             self._render_table()
-            self.log(f"变量 [{param_info['name']}] 显示模式已切换", "blue")
+            self.log(f"Changed the display mode for [{param_info['name']}].", "blue")
             
             if was_running and self.cb_auto_refresh.isChecked():
                 self.auto_timer.start(int(self.spin_interval.value() * 1000))
@@ -496,7 +543,7 @@ class TunableInstanceWidget(QWidget):
             param_info['enum_map'] = dialog.parsed_map
             param_info['display_hex'] = False 
             self._render_table()
-            self.log(f"变量 [{param_info['name']}] 已成功绑定 {len(dialog.parsed_map)} 项枚举映射", "green")
+            self.log(f"Bound {len(dialog.parsed_map)} enum values to [{param_info['name']}].", "green")
             
         if was_running and self.cb_auto_refresh.isChecked():
             self.auto_timer.start(int(self.spin_interval.value() * 1000))
@@ -509,7 +556,7 @@ class TunableInstanceWidget(QWidget):
             
             param_info['enum_map'] = None
             self._render_table()
-            self.log(f"变量 [{param_info['name']}] 已移除枚举映射", "gray")
+            self.log(f"Removed the enum binding from [{param_info['name']}].", "gray")
             
             if was_running and self.cb_auto_refresh.isChecked():
                 self.auto_timer.start(int(self.spin_interval.value() * 1000))
@@ -531,7 +578,7 @@ class TunableInstanceWidget(QWidget):
         was_running = self.auto_timer.isActive()
         if was_running: self.auto_timer.stop()
         
-        path, _ = QFileDialog.getOpenFileName(self, "载入 Tunable 配置", "", "JSON Files (*.json)")
+        path, _ = QFileDialog.getOpenFileName(self, "Load Tunable Configuration", "", "JSON Files (*.json)")
         if path:
             try:
                 with open(path, 'r', encoding='utf-8') as f:
@@ -548,9 +595,9 @@ class TunableInstanceWidget(QWidget):
                             
                     self.last_values.clear()
                     self._render_table()
-                self.log(f"已加载配置: {os.path.basename(path)}", "green")
+                self.log(f"Loaded configuration: {os.path.basename(path)}", "green")
             except Exception as e:
-                self.log(f"加载 JSON 失败: {e}", "red")
+                self.log(f"Failed to load JSON: {e}", "red")
                 
         if was_running and self.cb_auto_refresh.isChecked():
             self.auto_timer.start(int(self.spin_interval.value() * 1000))
@@ -567,10 +614,10 @@ class TunableInstanceWidget(QWidget):
     def _toggle_auto_refresh(self, state):
         if state == Qt.Checked:
             self.auto_timer.start(int(self.spin_interval.value() * 1000))
-            self.log(f"已启动定时刷新 ({self.spin_interval.value()}s)", "blue")
+            self.log(f"Automatic refresh started ({self.spin_interval.value()} s).", "blue")
         else:
             self.auto_timer.stop()
-            self.log("已停止定时刷新", "gray")
+            self.log("Automatic refresh stopped.", "gray")
 
     def stop_timers(self):
         if self.auto_timer.isActive():
@@ -578,10 +625,10 @@ class TunableInstanceWidget(QWidget):
 
     def action_save_json(self):
         if not self.current_params:
-            QMessageBox.warning(self, "为空", "没有可导出的参数字典！")
+            QMessageBox.warning(self, "No Parameters", "There is no parameter dictionary to export.")
             return
         default_name = f"tunable_{self.instance_name.replace(' ', '_').replace('/', '_')}.json"
-        path, _ = QFileDialog.getSaveFileName(self, "导出 Tunable 配置", default_name, "JSON Files (*.json)")
+        path, _ = QFileDialog.getSaveFileName(self, "Save Tunable Configuration", default_name, "JSON Files (*.json)")
         if path:
             data = {
                 "base_cmd": self.base_cmd,
@@ -591,7 +638,7 @@ class TunableInstanceWidget(QWidget):
             }
             with open(path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=4)
-            self.log(f"配置已导出至: {os.path.basename(path)}", "green")
+            self.log(f"Configuration saved to: {os.path.basename(path)}", "green")
 
     def _render_table(self):
         self.table.clearContents()
@@ -603,7 +650,10 @@ class TunableInstanceWidget(QWidget):
             item_id.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
             self.table.setItem(row, 0, item_id)
             
-            item_name = QTableWidgetItem(p['name'])
+            display_name = p['name']
+            if p.get('unit'):
+                display_name += f" [{p['unit']}]"
+            item_name = QTableWidgetItem(display_name)
             item_name.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
             self.table.setItem(row, 1, item_name)
             
@@ -656,16 +706,31 @@ class TunableInstanceWidget(QWidget):
             self.auto_timer.start(int(self.spin_interval.value() * 1000))
 
     def cmd_read_all(self, keep_bus=False):
-        if not self.hermes.running or not self.current_params: return
+        if (not self.hermes.running or not self.current_params or
+                self.pending_read_batches):
+            return
         if not keep_bus:
             self._set_bus_occupied(True) 
-            
-        payload = bytearray([len(self.current_params)])
-        for p in self.current_params: payload.append(p['id'])
-        self.hermes.send_frame(0x01, self.base_cmd, bytes(payload), priority=0)
+
+        parameter_ids = [parameter['id'] for parameter in self.current_params]
+        self.pending_read_batches = [
+            parameter_ids[index:index + 40]
+            for index in range(0, len(parameter_ids), 40)
+        ]
+        self._send_next_read_batch()
+
+    def _send_next_read_batch(self):
+        """Send one bounded batch so its worst-case response remains below the MTU."""
+        if not self.pending_read_batches:
+            self._set_bus_occupied(False)
+            return
+        parameter_ids = self.pending_read_batches.pop(0)
+        payload = bytes((len(parameter_ids), *parameter_ids))
+        self.hermes.send_frame(0x01, self.base_cmd, payload, priority=0)
 
     def cmd_read_single(self, param_id):
         if not self.hermes.running: return
+        self.pending_read_batches = []
         self._set_bus_occupied(True)
         
         payload = bytes([1, param_id])
@@ -689,9 +754,9 @@ class TunableInstanceWidget(QWidget):
             payload.extend(struct.pack(fmt, val))
             self.hermes.send_frame(0x01, self.base_cmd + 1, bytes(payload), priority=0)
         except ValueError:
-            self.log(f"写入失败：格式错误 ({val_str})", "red")
+            self.log(f"Write failed because the value is invalid: {val_str}", "red")
         except struct.error:
-            self.log(f"写入失败：数值越界 ({val_str})", "red")
+            self.log(f"Write failed because the value is out of range: {val_str}", "red")
 
     def process_bus_event(self, ev: dict):
         if ev.get('type') != 'DL' or ev.get('dir') != 'RX' or not ev.get('dl_crc_ok'):
@@ -701,8 +766,6 @@ class TunableInstanceWidget(QWidget):
         payload = ev['dl_payload']
         
         if cmd == self.base_cmd:
-            self._set_bus_occupied(False) 
-
             if len(payload) < 1: return
             valid_cnt, idx = payload[0], 1
             
@@ -736,29 +799,34 @@ class TunableInstanceWidget(QWidget):
                         is_hex = param_info.get('display_hex', False)
                         updated = w.update_display_value(val, is_float, is_hex)
                         
-                        # 【核心解耦】：视觉渲染彻底下放给组件自己管理，拒绝 Lambda 闭包灾难
+                        # Each editor owns its transient value-change presentation.
                         if updated:
                             w.flash_status(changed)
                         break
+            if self.pending_read_batches:
+                self._send_next_read_batch()
+            else:
+                self._set_bus_occupied(False)
         
         elif cmd == self.base_cmd + 1:
-            if len(payload) >= 1:
+            if len(payload) == 1:
                 status = payload[0]
                 if status == 0:
-                    self.log(f"✅ 参数写入成功", "green")
+                    self.log("Parameter write completed.", "green")
                     self.cmd_read_all(keep_bus=True)
                 else:
                     self._set_bus_occupied(False) 
-                    self.log(f"❌ 参数被下位机拦截拒绝", "red")
+                    self.log("The target rejected the parameter write.", "red")
             else:
                 self._set_bus_occupied(False)
 
 class TabTunableManager(QWidget):
     sig_global_bus_busy = pyqtSignal(bool)
 
-    def __init__(self, hermes: HermesDatalinkQt):
+    def __init__(self, hermes: HermesDatalinkQt, discovery: ResourceDiscovery):
         super().__init__()
         self.hermes = hermes
+        self.discovery = discovery
         self._setup_ui()
         self.hermes.sig_bus_event.connect(self.dispatch_bus_event)
 
@@ -766,7 +834,7 @@ class TabTunableManager(QWidget):
         layout = QVBoxLayout(self)
         
         toolbar = QHBoxLayout()
-        self.btn_add_tab = QPushButton("➕ 添加可调对象 (New Tunable Target)")
+        self.btn_add_tab = QPushButton("Add Tunable Target")
         self.btn_add_tab.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; padding: 5px;")
         self.btn_add_tab.clicked.connect(self.add_new_instance)
         
@@ -784,11 +852,11 @@ class TabTunableManager(QWidget):
     def add_new_instance(self, checked=False, default_name=None, default_cmd=0x30):
         name = default_name
         if not name:
-            name, ok = QInputDialog.getText(self, "添加对象", "请输入调参对象名称 (如: Axis B):")
+            name, ok = QInputDialog.getText(self, "Add Tunable Target", "Target name, for example Axis B:")
             if not ok or not name.strip(): return
                 
         suggested_cmd = default_cmd + (self.tab_widget.count() * 0x10)
-        new_instance = TunableInstanceWidget(self.hermes, name, suggested_cmd)
+        new_instance = TunableInstanceWidget(self.hermes, self.discovery, name, suggested_cmd)
 
         new_instance.sig_bus_busy.connect(self.sig_global_bus_busy.emit)
 

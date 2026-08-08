@@ -72,15 +72,88 @@ void gmp_param_tunable_init(gmp_param_tunable_t* ctx, gmp_datalink_t* dl, uint16
     ctx->dict_size = (dict_size > 255) ? 255 : dict_size;
 }
 
+/**
+ * @brief Reply with one indexed tunable-parameter descriptor.
+ * @param ctx Tunable service containing the parameter dictionary.
+ */
+static void tunable_u16_reply_discovery(gmp_param_tunable_t* ctx)
+{
+    gmp_datalink_t* dl = ctx->dl_ctx;
+    fast16_gt item_id = 0;
+    fast16_gt total = ctx->dict_size;
+    const gmp_param_item_t* item = NULL;
+    const char* name = NULL;
+    const char* unit = NULL;
+    size_gt name_length = 0U;
+    size_gt unit_length = 0U;
+    size_gt capacity;
+    size_gt index;
+
+    if (dl->expected_payload_len > 0U)
+        item_id = dl->payload_buf[0] & 0xFF;
+    if (item_id < total)
+        item = &ctx->dict[item_id];
+
+    gmp_dev_dl_tx_request_cmd(dl, dl->rx_head.seq_id, dl->rx_head.cmd);
+    gmp_dev_dl_tx_append_u8(dl, 1U);
+    gmp_dev_dl_tx_append_u8(dl, (item == NULL) ? 1U : 0U);
+    gmp_dev_dl_tx_append_u8(dl, total);
+    gmp_dev_dl_tx_append_u8(dl, item_id);
+    if (item != NULL)
+    {
+        gmp_dev_dl_tx_append_u8(dl, item->type);
+        gmp_dev_dl_tx_append_u8(dl, item->perm);
+        name = item->name;
+        unit = item->unit;
+        capacity = gmp_dev_dl_get_tx_capacity(dl);
+        if (name != NULL && capacity > 2U)
+        {
+            name_length = strlen(name);
+            if (name_length > 63U)
+                name_length = 63U;
+        }
+        if (unit != NULL && capacity > name_length + 2U)
+        {
+            unit_length = strlen(unit);
+            if (unit_length > 31U)
+                unit_length = 31U;
+        }
+        if (name_length + unit_length + 2U > capacity)
+        {
+            if (name_length + 2U > capacity)
+                name_length = capacity - 2U;
+            unit_length = capacity - name_length - 2U;
+        }
+        gmp_dev_dl_tx_append_u8(dl, name_length);
+        gmp_dev_dl_tx_append_u8(dl, unit_length);
+        for (index = 0U; index < name_length; ++index)
+            gmp_dev_dl_tx_append_u8(dl, name[index]);
+        for (index = 0U; index < unit_length; ++index)
+            gmp_dev_dl_tx_append_u8(dl, unit[index]);
+    }
+    gmp_dev_dl_tx_ready(dl);
+    gmp_dev_dl_msg_handled(dl);
+}
+
 fast_gt gmp_param_tunable_rx_cb(gmp_param_tunable_t* ctx)
 {
     gmp_datalink_t* dl = ctx->dl_ctx;
     uint16_t cmd = dl->rx_head.cmd;
 
     // Verify if the incoming command targets this specific tunable service instance
-    if (cmd != ctx->base_cmd && cmd != (ctx->base_cmd + 1))
+    if (cmd != ctx->base_cmd && cmd != (ctx->base_cmd + 1) &&
+        cmd != (ctx->base_cmd + GMP_PARAM_DISCOVERY_CMD_OFFSET))
     {
         return 0;
+    }
+
+    /* A one-unit payload on base + 1 is an indexed discovery query.
+     * A useful write request is longer, so legacy writes remain compatible. */
+    if (cmd == (ctx->base_cmd + GMP_PARAM_DISCOVERY_CMD_OFFSET) &&
+        dl->expected_payload_len == 1U)
+    {
+        tunable_u16_reply_discovery(ctx);
+        return 1;
     }
 
     uint16_t len = dl->expected_payload_len;

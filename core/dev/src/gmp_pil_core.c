@@ -13,7 +13,7 @@
  * @param max_len Number of valid protocol octets in @p buf.
  * @return Decoded value, or zero when fewer than two octets remain.
  */
-static inline uint16_t sim_unpack_u16(const gmp_dl_octet_t* buf, uint16_t* idx, uint16_t max_len)
+static inline uint16_t sim_unpack_u16(const data_gt* buf, uint16_t* idx, uint16_t max_len)
 {
     if (*idx + 2 > max_len)
         return 0;
@@ -30,7 +30,7 @@ static inline uint16_t sim_unpack_u16(const gmp_dl_octet_t* buf, uint16_t* idx, 
  * @param max_len Number of valid protocol octets in @p buf.
  * @return Decoded value, or zero when fewer than four octets remain.
  */
-static inline uint32_t sim_unpack_u32(const gmp_dl_octet_t* buf, uint16_t* idx, uint16_t max_len)
+static inline uint32_t sim_unpack_u32(const data_gt* buf, uint16_t* idx, uint16_t max_len)
 {
     if (*idx + 4 > max_len)
         return 0;
@@ -49,7 +49,7 @@ static inline uint32_t sim_unpack_u32(const gmp_dl_octet_t* buf, uint16_t* idx, 
  */
 static void sim_deserialize_inputs(gmp_pil_sim_t* ctx)
 {
-    const gmp_dl_octet_t* pld = ctx->dl_ctx->payload_buf;
+    const data_gt* pld = ctx->dl_ctx->payload_buf;
     uint16_t pld_len = ctx->dl_ctx->expected_payload_len;
     uint16_t idx = 0;
     size_gt i;

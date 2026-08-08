@@ -7,14 +7,14 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                              QGridLayout, QCheckBox, QScrollArea, QApplication)
 from core_datalink import HermesDatalinkQt
 
-# 与 C 语言端完全对齐的内部相对偏移量
+# Relative operation offsets shared with the target C implementation.
 REL_OFFSET_SET_MASK   = 1
 REL_OFFSET_STEP       = 2
 REL_OFFSET_SET_INPUT  = 3
 REL_OFFSET_GET_OUTPUT = 4
 
 class CheckboxDragFilter(QObject):
-    """滑动拖拽批量勾选/取消"""
+    """Support drag selection across consecutive mask checkboxes."""
     def __init__(self, parent_sync_func):
         super().__init__()
         self.dragging = False
@@ -46,7 +46,7 @@ class TabSim(QWidget):
         self.current_mask_tx = 0xFFFFFFFF
         self.current_mask_rx = 0xFFFFFFFF
 
-        # 显式记录 Mask 同步状态
+        # Track whether local masks were acknowledged by the target.
         self.is_mask_synced = False 
         
         self.rx_widgets = {} 
@@ -61,9 +61,9 @@ class TabSim(QWidget):
         main_layout = QVBoxLayout(self)
 
         # ==========================================
-        # 1. 顶部配置：Base CMD
+        # Base command configuration.
         # ==========================================
-        config_group = QGroupBox("仿真引擎协议配置")
+        config_group = QGroupBox("Simulation Protocol Configuration")
         config_layout = QHBoxLayout()
         
         config_layout.addWidget(QLabel("Datalink Base CMD:"))
@@ -71,9 +71,9 @@ class TabSim(QWidget):
         self.input_base_cmd.setMaximumWidth(80)
         config_layout.addWidget(self.input_base_cmd)
         
-        self.btn_set_mask = QPushButton("同步 Mask 状态至下位机")
+        self.btn_set_mask = QPushButton("Synchronize Masks to Target")
         self.btn_set_mask.clicked.connect(self.cmd_set_mask)
-        self.set_mask_button_state(False) # 初始化为未同步状态
+        self.set_mask_button_state(False)
         
         config_layout.addStretch()
         config_layout.addWidget(self.btn_set_mask)
@@ -82,7 +82,7 @@ class TabSim(QWidget):
         main_layout.addWidget(config_group)
 
         # ==========================================
-        # 2. 核心数据区 (左右半屏分栏)
+        # Split input and output data panels.
         # ==========================================
         data_scroll = QScrollArea()
         data_scroll.setWidgetResizable(True)
@@ -92,23 +92,23 @@ class TabSim(QWidget):
         self.tx_mask_boxes = []
         self.rx_mask_boxes = []
 
-        # 左半屏：RX (输入，PC -> MCU)
+        # Receive variables are simulation inputs sent from PC to target.
         left_vbox = QVBoxLayout()
-        left_vbox.addWidget(self._build_mask_group("RX Mask (仿真输入)", 
+        left_vbox.addWidget(self._build_mask_group("RX Mask (Simulation Inputs)",
                             [("ADC Results", 24), ("Panel Inputs", 8)], self.rx_mask_boxes))
         
-        rx_data_group = QGroupBox("RX 寄存器数值配置")
+        rx_data_group = QGroupBox("RX Register Values")
         rx_data_vbox = QVBoxLayout(rx_data_group)
         self._build_rx_data_table(rx_data_vbox)
         left_vbox.addWidget(rx_data_group, stretch=1)
         data_grid_main.addLayout(left_vbox, stretch=1)
 
-        # 右半屏：TX (输出，MCU -> PC)
+        # Transmit variables are algorithm outputs returned by the target.
         right_vbox = QVBoxLayout()
-        right_vbox.addWidget(self._build_mask_group("TX Mask (算法输出)", 
+        right_vbox.addWidget(self._build_mask_group("TX Mask (Algorithm Outputs)",
                             [("PWM Compares", 8), ("DAC Outs", 8), ("Monitors", 16)], self.tx_mask_boxes))
         
-        tx_data_group = QGroupBox("TX 寄存器数值监视")
+        tx_data_group = QGroupBox("TX Register Monitor")
         tx_data_vbox = QVBoxLayout(tx_data_group)
         self._build_tx_data_table(tx_data_vbox)
         right_vbox.addWidget(tx_data_group, stretch=1)
@@ -118,19 +118,19 @@ class TabSim(QWidget):
         main_layout.addWidget(data_scroll, stretch=1)
 
         # ==========================================
-        # 3. 动作按钮区
+        # Simulation actions.
         # ==========================================
         btn_layout = QHBoxLayout()
         
-        self.btn_set_input = QPushButton("1. 仅设输入 (SET INPUT)")
+        self.btn_set_input = QPushButton("1. Set Inputs Only")
         self.btn_set_input.setFixedHeight(50)
         self.btn_set_input.clicked.connect(self.cmd_set_input)
         
-        self.btn_get_out = QPushButton("2. 仅拉状态 (GET OUTPUT)")
+        self.btn_get_out = QPushButton("2. Get Outputs Only")
         self.btn_get_out.setFixedHeight(50)
         self.btn_get_out.clicked.connect(self.cmd_get_output)
         
-        self.btn_step = QPushButton("⚡ 执行单步闭环仿真 (STEP)")
+        self.btn_step = QPushButton("Run One Closed-Loop Step")
         self.btn_step.setFixedHeight(50)
         self.btn_step.setStyleSheet("background-color: #C8E6C9; font-weight: bold; font-size: 16px; border: 2px solid #4CAF50; border-radius: 4px;")
         self.btn_step.clicked.connect(self.cmd_step)
@@ -141,17 +141,17 @@ class TabSim(QWidget):
         main_layout.addLayout(btn_layout)
 
     # ------------------------------------------------------
-    # 辅助工具：补齐由于隔离可能缺少的日志方法
+    # Logging helper.
     # ------------------------------------------------------
     def log(self, msg: str, color: str = "black"):
-        """通过 Hermes 统一发送富文本格式的日志"""
+        """Send a rich-text message through the shared Hermes log."""
         if hasattr(self.hermes, 'sig_log_msg'):
             self.hermes.sig_log_msg.emit(f"<span style='color:{color}; font-weight:bold;'>{msg}</span>")
         else:
             print(msg)
 
     # ------------------------------------------------------
-    # UI 构建辅助
+    # User interface helpers.
     # ------------------------------------------------------
     def _build_mask_group(self, title, config, box_list):
         group = QGroupBox(title)
@@ -238,17 +238,17 @@ class TabSim(QWidget):
         layout.addLayout(grid_m)
 
     # =========================================================
-    # 状态控制与交互反馈
+    # State controls and feedback.
     # =========================================================
     def set_mask_button_state(self, is_synced: bool):
-        # 保存状态供外部读取
+        # Preserve the synchronization state for bridge clients.
         self.is_mask_synced = is_synced  
 
         if is_synced:
-            self.btn_set_mask.setText("✅ Mask 已同步")
+            self.btn_set_mask.setText("Masks Synchronized")
             self.btn_set_mask.setStyleSheet("background-color: #C8E6C9; color: #2E7D32; font-weight: bold; height: 30px; padding: 0 15px; border: 1px solid #4CAF50; border-radius: 4px;")
         else:
-            self.btn_set_mask.setText("同步 Mask 状态至下位机")
+            self.btn_set_mask.setText("Synchronize Masks to Target")
             self.btn_set_mask.setStyleSheet("background-color: #FFF9C4; color: black; font-weight: bold; height: 30px; padding: 0 15px; border: 1px solid #FBC02D; border-radius: 4px;")
 
     def apply_base_style(self, w: QLineEdit, is_tx=False):
@@ -295,7 +295,7 @@ class TabSim(QWidget):
             self.tx_widgets[f'mon_{i}'].setReadOnly(True)
 
     # =========================================================
-    # 核心封包与指令交互
+    # Protocol request and response handling.
     # =========================================================
     def _get_target_cmd(self, rel_offset):
         try: return int(self.input_base_cmd.text(), 16) + rel_offset
@@ -340,29 +340,29 @@ class TabSim(QWidget):
         if ev['type'] != 'DL' or ev['dir'] != 'RX' or not ev['dl_crc_ok']: return
         cmd, payload = ev['dl_cmd'], ev['dl_payload']
 
-        # 1. 处理 Mask 设置的回传校验：解析 8 字节的镜像数据并比对
+        # Validate the eight-byte mask acknowledgement.
         if cmd == self._get_target_cmd(REL_OFFSET_SET_MASK):
             if len(payload) >= 8:
-                # 解析 TX_Mask (4B) + RX_Mask (4B)
+                # Decode TX mask followed by RX mask.
                 ack_tx, ack_rx = struct.unpack_from('<II', payload, 0)
                 
-                # 校验：收到的掩码和本机期望的完全一致
+                # Require an exact match with the local requested masks.
                 if ack_tx == self.current_mask_tx and ack_rx == self.current_mask_rx:
                     self.set_mask_button_state(True)
-                    self.log(f"✅ MASK 闭环同步成功! (TX: 0x{ack_tx:08X}, RX: 0x{ack_rx:08X})", "green")
+                    self.log(f"Mask synchronization complete (TX 0x{ack_tx:08X}, RX 0x{ack_rx:08X}).", "green")
                 else:
-                    self.log(f"⚠️ MASK 同步比对失败!<br>期望 -> TX: 0x{self.current_mask_tx:08X}, RX: 0x{self.current_mask_rx:08X}<br>实际 -> TX: 0x{ack_tx:08X}, RX: 0x{ack_rx:08X}", "red")
+                    self.log(f"Mask acknowledgement mismatch.<br>Expected TX 0x{self.current_mask_tx:08X}, RX 0x{self.current_mask_rx:08X}<br>Received TX 0x{ack_tx:08X}, RX 0x{ack_rx:08X}", "red")
             else:
-                self.log(f"❌ 收到无效的 MASK ACK，期望 8 字节，实际长度: {len(payload)} 字节", "red")
+                self.log(f"Invalid mask acknowledgement: expected 8 bytes, received {len(payload)}.", "red")
 
-        # 2. 处理 STEP 和 GET_OUTPUT 的数据回传
+        # Decode STEP and GET OUTPUT responses.
         elif cmd in (self._get_target_cmd(REL_OFFSET_STEP), self._get_target_cmd(REL_OFFSET_GET_OUTPUT)):
-            # C 语言端返回：digital_out (4B) + [条件掩码数据...]
+            # Target response: digital output followed by masked values.
             if len(payload) < 4: 
-                self.log(f"⚠️ 收到的数据包太短，无法解析状态", "orange")
+                self.log("The response is too short to contain simulation state.", "orange")
                 return
             
-            # C 端只负责发数据，并不前置发送 mask_tx，上位机使用自己保存的同步 Mask 解包
+            # Decode values using the synchronized local TX mask.
             dig_out = struct.unpack_from('<I', payload, 0)[0]
             idx = 4
             mask_tx = self.current_mask_tx 
@@ -393,18 +393,18 @@ class TabSim(QWidget):
                         self.highlight_widget(w, True)
                         idx += 4
             except struct.error:
-                self.log(f"⚠️ 数据包长度 ({len(payload)}B) 与当前 Mask 期望长度不匹配，可能失步！", "red")
+                self.log(f"Payload length {len(payload)} B does not match the active mask.", "red")
 
-        # 3. 处理单纯设值 (SET_INPUT) 的空包回应
+        # SET INPUT returns an empty acknowledgement.
         elif cmd == self._get_target_cmd(REL_OFFSET_SET_INPUT):
             if len(payload) == 0:
-                self.log(f"✅ 输入变量注入成功!", "green")
+                self.log("Input variables updated.", "green")
 
     # ------------------------------------------------------
-    # 外部网桥接管 UI
+    # External bridge integration.
     # ------------------------------------------------------
     def update_rx_ui_from_bridge(self, data: dict):
-        """接收来自网桥的 UDP 解析数据，并强行更新界面"""
+        """Apply parsed UDP bridge values to the simulation view."""
         self.rx_widgets['isr_ticks'].setText(str(data.get('isr_ticks', 0)))
         self.rx_widgets['dig_in'].setText(f"0x{data.get('dig_in', 0):08X}")
         
@@ -417,17 +417,16 @@ class TabSim(QWidget):
                 self.rx_widgets[f'panel_{i}'].setText(f"{val:.4f}")
 
     # ------------------------------------------------------
-    # 外部网桥接管 UI 锁定接口
+    # Lock manual controls while an external bridge owns the engine.
     # ------------------------------------------------------
     def set_action_buttons_enabled(self, enabled: bool):
-        """【新增】：提供给网桥调用，用于在自动化运行时锁定手动控制"""
+        """Enable or disable manual controls for automated bridge operation."""
         self.btn_set_input.setEnabled(enabled)
         self.btn_get_out.setEnabled(enabled)
         self.btn_step.setEnabled(enabled)
-        self.btn_set_mask.setEnabled(enabled) # 连同 Mask 同步按钮一起锁定更安全
+        self.btn_set_mask.setEnabled(enabled)
         
         if enabled:
             self.btn_step.setStyleSheet("background-color: #C8E6C9; font-weight: bold; font-size: 16px; border: 2px solid #4CAF50; border-radius: 4px;")
         else:
             self.btn_step.setStyleSheet("background-color: #F5F5F5; color: #BDBDBD; font-weight: bold; font-size: 16px; border: 2px solid #E0E0E0; border-radius: 4px;")
-            

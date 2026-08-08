@@ -4,8 +4,8 @@
  */
 
 /** @brief Read an unsigned 8-bit value from a protocol payload. */
-static fast_gt mem_u8_read(const gmp_dl_octet_t* buffer, uint16_t length,
-                           uint16_t* index, gmp_dl_octet_t* value)
+static fast_gt mem_u8_read(const uint8_t* buffer, uint16_t length,
+                           uint16_t* index, uint8_t* value)
 {
     if (*index >= length)
         return 0;
@@ -15,7 +15,7 @@ static fast_gt mem_u8_read(const gmp_dl_octet_t* buffer, uint16_t length,
 }
 
 /** @brief Read a little-endian unsigned 16-bit value from a protocol payload. */
-static fast_gt mem_u8_read_u16(const gmp_dl_octet_t* buffer, uint16_t length,
+static fast_gt mem_u8_read_u16(const uint8_t* buffer, uint16_t length,
                                uint16_t* index, uint16_t* value)
 {
     if ((uint32_t)*index + 2U > length)
@@ -27,7 +27,7 @@ static fast_gt mem_u8_read_u16(const gmp_dl_octet_t* buffer, uint16_t length,
 }
 
 /** @brief Read a little-endian unsigned 32-bit value from a protocol payload. */
-static fast_gt mem_u8_read_u32(const gmp_dl_octet_t* buffer, uint16_t length,
+static fast_gt mem_u8_read_u32(const uint8_t* buffer, uint16_t length,
                                uint16_t* index, uint32_t* value)
 {
     if ((uint32_t)*index + 4U > length)
@@ -83,11 +83,11 @@ static fast_gt mem_u8_sandbox_allows(const gmp_mem_persp_t* ctx, uintptr_t addre
  * @param address Native byte address.
  * @param item_size Item size in bytes; supported values are 1, 2, and 4.
  */
-static void mem_u8_append_item(gmp_datalink_t* dl, uintptr_t address, gmp_dl_octet_t item_size)
+static void mem_u8_append_item(gmp_datalink_t* dl, uintptr_t address, uint8_t item_size)
 {
     if (item_size == 1U)
     {
-        gmp_dl_octet_t value;
+        uint8_t value;
         memcpy(&value, (const void*)address, sizeof(value));
         gmp_dev_dl_tx_append_u8(dl, value);
     }
@@ -105,6 +105,61 @@ static void mem_u8_append_item(gmp_datalink_t* dl, uintptr_t address, gmp_dl_oct
     }
 }
 
+/**
+ * @brief Reply with one indexed memory-region descriptor.
+ * @param ctx Memory Perspective service containing the region table.
+ */
+static void mem_u8_reply_discovery(gmp_mem_persp_t* ctx)
+{
+    gmp_datalink_t* dl = ctx->dl_ctx;
+    uint8_t region_id = 0U;
+    uint8_t total = (uint8_t)ctx->region_count;
+    const gmp_mem_region_t* region = NULL;
+    const char* name = NULL;
+    size_gt name_length = 0U;
+    size_gt capacity;
+    size_gt index;
+
+    if (dl->expected_payload_len > 0U)
+        region_id = dl->payload_buf[0];
+    if (region_id < total)
+        region = &ctx->regions[region_id];
+
+    gmp_dev_dl_tx_request_cmd(dl, dl->rx_head.seq_id, dl->rx_head.cmd);
+    gmp_dev_dl_tx_append_u8(dl, 1U);
+    gmp_dev_dl_tx_append_u8(dl, (region == NULL) ? 1U : 0U);
+    gmp_dev_dl_tx_append_u8(dl, total);
+    gmp_dev_dl_tx_append_u8(dl, region_id);
+    if (region != NULL)
+    {
+        gmp_dev_dl_tx_append_u32(dl, (uint32_t)(uintptr_t)region->base_addr);
+        gmp_dev_dl_tx_append_u32(dl, region->byte_length);
+        gmp_dev_dl_tx_append_u8(dl, (uint8_t)region->perm);
+        gmp_dev_dl_tx_append_u8(dl, (uint8_t)region->data_type);
+        gmp_dev_dl_tx_append_u8(dl, (uint8_t)region->layout);
+        gmp_dev_dl_tx_append_u16(dl, region->channels);
+        gmp_dev_dl_tx_append_u16(dl, region->depth);
+        gmp_dev_dl_tx_append_u32(dl, region->sample_rate_hz);
+        gmp_dev_dl_tx_append_u8(dl, (uint8_t)region->flags);
+
+        name = region->name;
+        capacity = gmp_dev_dl_get_tx_capacity(dl);
+        if (name != NULL && capacity > 1U)
+        {
+            name_length = strlen(name);
+            if (name_length > capacity - 1U)
+                name_length = capacity - 1U;
+            if (name_length > 63U)
+                name_length = 63U;
+        }
+        gmp_dev_dl_tx_append_u8(dl, (uint8_t)name_length);
+        for (index = 0U; index < name_length; ++index)
+            gmp_dev_dl_tx_append_u8(dl, (uint8_t)name[index]);
+    }
+    gmp_dev_dl_tx_ready(dl);
+    gmp_dev_dl_msg_handled(dl);
+}
+
 void gmp_mem_persp_init(gmp_mem_persp_t* ctx, gmp_datalink_t* dl, uint16_t base_cmd,
                         const gmp_mem_region_t* regions, fast16_gt region_count)
 {
@@ -113,27 +168,39 @@ void gmp_mem_persp_init(gmp_mem_persp_t* ctx, gmp_datalink_t* dl, uint16_t base_
     ctx->dl_ctx = dl;
     ctx->base_cmd = base_cmd;
     ctx->regions = regions;
-    ctx->region_count = region_count;
+    ctx->region_count = (region_count > 255) ? 255 : region_count;
 }
 
 fast_gt gmp_mem_persp_rx_cb(gmp_mem_persp_t* ctx)
 {
     gmp_datalink_t* dl;
-    const gmp_dl_octet_t* payload;
+    const uint8_t* payload;
     uint16_t index = 0;
     uint16_t item_count;
     uint32_t address32;
     uint32_t total_bytes;
     uintptr_t address;
-    gmp_dl_octet_t item_size;
-    gmp_dl_octet_t status = 0;
+    uint8_t item_size;
+    uint8_t status = 0;
     uint16_t item;
 
     if (ctx == NULL || ctx->dl_ctx == NULL)
         return 0;
     dl = ctx->dl_ctx;
-    if (dl->rx_head.cmd != ctx->base_cmd && dl->rx_head.cmd != (ctx->base_cmd + 1U))
+    if (dl->rx_head.cmd != ctx->base_cmd &&
+        dl->rx_head.cmd != (ctx->base_cmd + 1U) &&
+        dl->rx_head.cmd != (ctx->base_cmd + GMP_MEM_DISCOVERY_CMD_OFFSET))
         return 0;
+
+    /* A one-byte payload on base + 1 is an indexed discovery query.
+     * Normal write requests are at least eight bytes long, so legacy writes
+     * remain unambiguous without consuming another command identifier. */
+    if (dl->rx_head.cmd == (ctx->base_cmd + GMP_MEM_DISCOVERY_CMD_OFFSET) &&
+        dl->expected_payload_len == 1U)
+    {
+        mem_u8_reply_discovery(ctx);
+        return 1;
+    }
 
     payload = dl->payload_buf;
     if (!mem_u8_read_u32(payload, dl->expected_payload_len, &index, &address32) ||
@@ -181,7 +248,7 @@ fast_gt gmp_mem_persp_rx_cb(gmp_mem_persp_t* ctx)
                 uintptr_t item_address = address + (uintptr_t)item * item_size;
                 if (item_size == 1U)
                 {
-                    gmp_dl_octet_t value;
+                    uint8_t value;
                     mem_u8_read(payload, dl->expected_payload_len, &index, &value);
                     memcpy((void*)item_address, &value, sizeof(value));
                 }

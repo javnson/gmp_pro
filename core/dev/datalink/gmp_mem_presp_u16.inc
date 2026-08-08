@@ -32,7 +32,63 @@ void gmp_mem_persp_init(gmp_mem_persp_t* ctx, gmp_datalink_t* dl, uint16_t base_
     ctx->dl_ctx = dl;
     ctx->base_cmd = base_cmd;
     ctx->regions = regions;
-    ctx->region_count = region_count;
+    ctx->region_count = (region_count > 255) ? 255 : region_count;
+}
+
+/**
+ * @brief Reply with one indexed memory-region descriptor.
+ * @param ctx Memory Perspective service containing the region table.
+ */
+static void mem_u16_reply_discovery(gmp_mem_persp_t* ctx)
+{
+    gmp_datalink_t* dl = ctx->dl_ctx;
+    fast16_gt region_id = 0;
+    fast16_gt total = ctx->region_count;
+    const gmp_mem_region_t* region = NULL;
+    const char* name = NULL;
+    size_gt name_length = 0U;
+    size_gt capacity;
+    size_gt index;
+
+    if (dl->expected_payload_len > 0U)
+        region_id = dl->payload_buf[0] & 0xFF;
+    if (region_id < total)
+        region = &ctx->regions[region_id];
+
+    gmp_dev_dl_tx_request_cmd(dl, dl->rx_head.seq_id, dl->rx_head.cmd);
+    gmp_dev_dl_tx_append_u8(dl, 1U);
+    gmp_dev_dl_tx_append_u8(dl, (region == NULL) ? 1U : 0U);
+    gmp_dev_dl_tx_append_u8(dl, total);
+    gmp_dev_dl_tx_append_u8(dl, region_id);
+    if (region != NULL)
+    {
+        uint32_t wire_address = (uint32_t)region->base_addr * GMP_PORT_DATA_SIZE_PER_BYTES;
+        gmp_dev_dl_tx_append_u32(dl, wire_address);
+        gmp_dev_dl_tx_append_u32(dl, region->byte_length);
+        gmp_dev_dl_tx_append_u8(dl, region->perm);
+        gmp_dev_dl_tx_append_u8(dl, region->data_type);
+        gmp_dev_dl_tx_append_u8(dl, region->layout);
+        gmp_dev_dl_tx_append_u16(dl, region->channels);
+        gmp_dev_dl_tx_append_u16(dl, region->depth);
+        gmp_dev_dl_tx_append_u32(dl, region->sample_rate_hz);
+        gmp_dev_dl_tx_append_u8(dl, region->flags);
+
+        name = region->name;
+        capacity = gmp_dev_dl_get_tx_capacity(dl);
+        if (name != NULL && capacity > 1U)
+        {
+            name_length = strlen(name);
+            if (name_length > capacity - 1U)
+                name_length = capacity - 1U;
+            if (name_length > 63U)
+                name_length = 63U;
+        }
+        gmp_dev_dl_tx_append_u8(dl, name_length);
+        for (index = 0U; index < name_length; ++index)
+            gmp_dev_dl_tx_append_u8(dl, name[index]);
+    }
+    gmp_dev_dl_tx_ready(dl);
+    gmp_dev_dl_msg_handled(dl);
 }
 
 /**
@@ -70,8 +126,19 @@ fast_gt gmp_mem_persp_rx_cb(gmp_mem_persp_t* ctx)
     gmp_datalink_t* dl = ctx->dl_ctx;
     uint16_t cmd = dl->rx_head.cmd;
 
-    if (cmd != ctx->base_cmd && cmd != (ctx->base_cmd + 1))
+    if (cmd != ctx->base_cmd && cmd != (ctx->base_cmd + 1) &&
+        cmd != (ctx->base_cmd + GMP_MEM_DISCOVERY_CMD_OFFSET))
         return 0;
+
+    /* A one-unit payload on base + 1 is an indexed discovery query.
+     * Normal write requests are longer, so legacy writes remain unambiguous
+     * without consuming another command identifier. */
+    if (cmd == (ctx->base_cmd + GMP_MEM_DISCOVERY_CMD_OFFSET) &&
+        dl->expected_payload_len == 1U)
+    {
+        mem_u16_reply_discovery(ctx);
+        return 1;
+    }
 
     uint16_t len = dl->expected_payload_len;
     uint16_t idx = 0;

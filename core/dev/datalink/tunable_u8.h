@@ -36,6 +36,9 @@ typedef enum
 /** @brief Read-write parameter permission */
 #define GMP_PARAM_PERM_RW 0x01
 
+/** @brief Command offset used to discover registered tunable parameters. */
+#define GMP_PARAM_DISCOVERY_CMD_OFFSET 1U
+
 /**
  * @brief Data dictionary entry structure.
  * @details Represents a single tunable parameter. Typically stored in static memory.
@@ -45,6 +48,8 @@ typedef struct
     void* addr;            /**< Physical memory address of the variable */
     gmp_param_type_t type; /**< Data type of the variable */
     fast16_gt perm;        /**< Permission attribute (DSP 16-bit alignment compatible) */
+    const char* name;      /**< Stable English display name, or NULL for a generated name */
+    const char* unit;      /**< Engineering unit string, or NULL when dimensionless */
 } gmp_param_item_t;
 
 /**
@@ -54,7 +59,7 @@ typedef struct
 typedef struct
 {
     gmp_datalink_t* dl_ctx;       /**< Bound datalink communication object */
-    uint16_t base_cmd;            /**< Base command ID occupied (Read = base_cmd, Write = base_cmd + 1) */
+    uint16_t base_cmd;            /**< Base command ID; base + 1 multiplexes writes and one-byte discovery queries */
     const gmp_param_item_t* dict; /**< Pointer to the bound data dictionary array */
     fast16_gt dict_size;          /**< Maximum capacity of the dictionary (Max supported: 255) */
 } gmp_param_tunable_t;

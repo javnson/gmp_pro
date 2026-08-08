@@ -9,7 +9,7 @@ from PyQt5.QtGui import QPainter, QPen, QColor
 from core_datalink import HermesDatalinkQt
 
 # =========================================================
-# 现代化浅色系曲线绘制组件
+# Light-theme waveform widget.
 # =========================================================
 class TickPlotter(QWidget):
     def __init__(self, parent=None):
@@ -76,7 +76,7 @@ class TickPlotter(QWidget):
         painter.drawText(10, 10, 150, 100, Qt.AlignTop | Qt.AlignLeft, text)
 
 # =========================================================
-# PIL 桥接页面主控
+# PIL bridge page.
 # =========================================================
 class TabPilBridge(QWidget):
     sig_rx_parsed = pyqtSignal(dict)
@@ -110,7 +110,7 @@ class TabPilBridge(QWidget):
         self.stat_rx_pkts = 0       
         self.stat_retransmits = 0   
         
-        # UI 刷新节流阀：控制向 GUI 发信号的频率
+        # Throttle GUI signals independently from transport processing.
         self.last_ui_emit_time = 0  
         
         self.watchdog_timer = QTimer()
@@ -124,17 +124,17 @@ class TabPilBridge(QWidget):
         self._setup_ui()
         self.hermes.sig_bus_event.connect(self.on_serial_rx)
 
-        # 记录总线是否被外部模块抢占，用于冻结超时看门狗
+        # Freeze watchdog accounting while another service owns the bus.
         self.is_bus_preempted = False 
 
-    # 外部控制接口，接收 Tunable 发来的锁定信号
+    # Bus-ownership input from the Tunable page.
     def set_bus_preempted(self, state: bool):
         self.is_bus_preempted = state
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
 
-        net_group = QGroupBox("MATLAB / UDP 节点与双重容错配置")
+        net_group = QGroupBox("MATLAB / UDP Endpoints and Watchdogs")
         net_layout = QFormLayout()
         
         self.edit_ip = QLineEdit("127.0.0.1")
@@ -144,29 +144,29 @@ class TabPilBridge(QWidget):
         self.edit_mcu_timeout = QLineEdit("0.2") 
         self.edit_matlab_timeout = QLineEdit("5.0") 
         
-        net_layout.addRow("MATLAB 目标 IP:", self.edit_ip)
-        net_layout.addRow("本地监听端口 (MATLAB TX):", self.edit_recv_port)
-        net_layout.addRow("目标发送端口 (MATLAB RX):", self.edit_trans_port)
-        net_layout.addRow("仿真步长 (Step Size, s):", self.edit_step_size)
-        net_layout.addRow("MCU 重传触发阈值 (s):", self.edit_mcu_timeout)
-        net_layout.addRow("MATLAB UI挂起警告阈值 (s):", self.edit_matlab_timeout)
+        net_layout.addRow("MATLAB target IP:", self.edit_ip)
+        net_layout.addRow("Local receive port (MATLAB TX):", self.edit_recv_port)
+        net_layout.addRow("Target send port (MATLAB RX):", self.edit_trans_port)
+        net_layout.addRow("Simulation step size (s):", self.edit_step_size)
+        net_layout.addRow("MCU retry timeout (s):", self.edit_mcu_timeout)
+        net_layout.addRow("MATLAB UI warning timeout (s):", self.edit_matlab_timeout)
         
-        info_label = QLabel("ℹ️ 提示：启动前请确保 3 号页面的 MASK 已同步，启动后将自动接管其界面。")
+        info_label = QLabel("Synchronize the masks on page 3 before starting; the bridge will then own its controls.")
         info_label.setStyleSheet("color: #1565C0; font-style: italic;")
         net_layout.addRow("", info_label)
         
-        self.cb_test_mode = QCheckBox("开启 UDP 测试模式 (旁路串口直接回环，不检查 Mask 锁定)")
+        self.cb_test_mode = QCheckBox("UDP test mode (loop back without serial transport or mask lock)")
         self.cb_test_mode.setStyleSheet("color: #E65100; font-weight: bold;")
         net_layout.addRow("", self.cb_test_mode)
         
         net_group.setLayout(net_layout)
         layout.addWidget(net_group)
 
-        stats_group = QGroupBox("在环实时监控指标")
+        stats_group = QGroupBox("Real-Time PIL Metrics")
         stats_layout = QVBoxLayout()
         
-        self.lbl_traffic = QLabel("流量: RX 0.0 kB (0.0 kB/s) | TX 0.0 kB (0.0 kB/s)")
-        self.lbl_pkts = QLabel("质量: 收到 0 包 | 重传 0 包 | 丢包率 0.00%")
+        self.lbl_traffic = QLabel("Traffic: RX 0.0 kB (0.0 kB/s) | TX 0.0 kB (0.0 kB/s)")
+        self.lbl_pkts = QLabel("Quality: 0 packets | 0 retries | 0.00% loss")
         
         self.lbl_traffic.setStyleSheet("font-weight: bold; color: #283593;")
         self.lbl_pkts.setStyleSheet("font-weight: bold; color: #D32F2F;")
@@ -180,7 +180,7 @@ class TabPilBridge(QWidget):
         stats_group.setLayout(stats_layout)
         layout.addWidget(stats_group)
 
-        self.btn_toggle = QPushButton("🚀 启动 PIL 桥接服务")
+        self.btn_toggle = QPushButton("Start PIL Bridge")
         self.btn_toggle.setMinimumHeight(60)
         self.btn_toggle.setStyleSheet("font-weight: bold; font-size: 14px;")
         self.btn_toggle.clicked.connect(self.toggle_bridge)
@@ -190,7 +190,7 @@ class TabPilBridge(QWidget):
 
     def log(self, msg, color="black"):
         if hasattr(self.hermes, 'sig_log_msg'):
-            self.hermes.sig_log_msg.emit(f"<span style='color:{color}; font-weight:bold;'>[桥接器] {msg}</span>")
+            self.hermes.sig_log_msg.emit(f"<span style='color:{color}; font-weight:bold;'>[PIL Bridge] {msg}</span>")
         else:
             print(msg)
             
@@ -206,7 +206,7 @@ class TabPilBridge(QWidget):
     def toggle_bridge(self):
         if not self.running:
             if not self.cb_test_mode.isChecked() and not self.tab_sim.is_mask_synced:
-                self.log("❌ 启动被拒绝：请先在 '3. PIL 在环仿真引擎' 页面同步 Mask！", "red")
+                self.log("Start rejected: synchronize masks on the PIL Simulation Engine page first.", "red")
                 return
 
             try:
@@ -228,20 +228,20 @@ class TabPilBridge(QWidget):
                 
                 if not self.cb_test_mode.isChecked():
                     self.tab_sim.set_action_buttons_enabled(False)
-                    self.log("🔒 已接管并锁定 3 号页面的手动控制按钮", "orange")
+                    self.log("Manual simulation controls are locked while the bridge is active.", "orange")
                 self._set_ui_enabled(False) 
                 
-                self.btn_toggle.setText("🛑 停止 PIL 桥接服务")
+                self.btn_toggle.setText("Stop PIL Bridge")
                 self.btn_toggle.setStyleSheet("background-color: #FFEBEE; color: #D32F2F; font-weight: bold;")
-                self.log(f"服务已启动，监听 UDP 端口: {self.edit_recv_port.text()}", "green")
+                self.log(f"Bridge listening on UDP port {self.edit_recv_port.text()}.", "green")
                 
                 dummy_tx = bytes(self.MATLAB_TX_SIZE)
                 self.sock.sendto(dummy_tx, self.target_addr)
                 self.total_tx_bytes += self.MATLAB_TX_SIZE
-                self.log("已发出标准的初始空包，准备迎接同步信号", "blue")
+                self.log("Initial empty synchronization datagram sent.", "blue")
                 
             except Exception as e:
-                self.log(f"启动错误: {str(e)}", "red")
+                self.log(f"Bridge startup failed: {str(e)}", "red")
         else:
             self.running = False
             if self.thread: self.thread.join()
@@ -249,27 +249,27 @@ class TabPilBridge(QWidget):
             
             self.tab_sim.set_action_buttons_enabled(True)
             self._set_ui_enabled(True)
-            self.log("🔓 已归还 3 号页面的手动控制权限", "green")
+            self.log("Manual simulation controls were released.", "green")
             
-            self.btn_toggle.setText("🚀 启动 PIL 桥接服务")
+            self.btn_toggle.setText("Start PIL Bridge")
             self.btn_toggle.setStyleSheet("")
-            self.log("服务已正常关闭", "gray")
+            self.log("Bridge stopped.", "gray")
 
     def _update_stats(self):
         if not self.running: return
         rx_speed = (self.total_rx_bytes - self.last_rx_bytes) / 1024.0
         tx_speed = (self.total_tx_bytes - self.last_tx_bytes) / 1024.0
         
-        self.lbl_traffic.setText(f"流量: 收到(MATLAB) {self.total_rx_bytes/1024:.1f} kB ({rx_speed:.1f} kB/s)  |  "
-                                 f"发给(MATLAB) {self.total_tx_bytes/1024:.1f} kB ({tx_speed:.1f} kB/s)")
+        self.lbl_traffic.setText(f"Traffic: from MATLAB {self.total_rx_bytes/1024:.1f} kB ({rx_speed:.1f} kB/s)  |  "
+                                 f"to MATLAB {self.total_tx_bytes/1024:.1f} kB ({tx_speed:.1f} kB/s)")
         
         loss_rate = 0.0
         if (self.stat_rx_pkts + self.stat_retransmits) > 0:
             loss_rate = self.stat_retransmits / (self.stat_rx_pkts + self.stat_retransmits) * 100.0
             
-        self.lbl_pkts.setText(f"质量: 解析通过 {self.stat_rx_pkts} 包  |  "
-                              f"超时重传 {self.stat_retransmits} 次  |  "
-                              f"丢包率 {loss_rate:.2f}%")
+        self.lbl_pkts.setText(f"Quality: {self.stat_rx_pkts} valid packets  |  "
+                              f"{self.stat_retransmits} timeout retries  |  "
+                              f"{loss_rate:.2f}% loss")
         
         self.plotter.add_value(self.tick_counter)
         
@@ -281,7 +281,7 @@ class TabPilBridge(QWidget):
         if not self.running: return
         now = time.time()
 
-        # 看门狗冻结：如果总线被 Tunable 占用，不计算超时
+        # Do not count a timeout while Tunable intentionally owns the bus.
         if self.is_bus_preempted and self.is_waiting_ack:
             self.last_step_time = now 
             return
@@ -292,18 +292,18 @@ class TabPilBridge(QWidget):
                 self.stat_retransmits += 1 
                 self.last_step_time = now
                 if self.hermes.running:
-                    # 明确配置 priority=1 (普通优先级)，不会阻挡高优先级的调参任务
+                    # Retries use normal priority below urgent parameter writes.
                     self.hermes.send_frame(0x01, self.CMD_STEP, self.last_step_payload, priority=1)
-                    self.log(f"⚠️ 串口应答超时，触发自动重传", "#FF9800")
+                    self.log("Serial response timed out; retrying automatically.", "#FF9800")
 
         if self.last_matlab_rx_time > 0:
             elapsed_matlab = now - self.last_matlab_rx_time
             if elapsed_matlab > self.matlab_timeout_th and not self.matlab_timeout_flag:
                 self.matlab_timeout_flag = True
-                self.log(f"⏸️ MATLAB 超过 {self.matlab_timeout_th}s 未响应，可能在 UI 拖拽...", "red")
+                self.log(f"MATLAB has not advanced for {self.matlab_timeout_th} s; its UI may be busy.", "red")
             elif elapsed_matlab <= self.matlab_timeout_th and self.matlab_timeout_flag:
                 self.matlab_timeout_flag = False
-                self.log(f"▶️ MATLAB 恢复，重新开始接收仿真推进信号", "green")
+                self.log("MATLAB resumed simulation advances.", "green")
 
     def _bridge_worker(self):
         fmt = '<d24I16d8i'
@@ -339,7 +339,7 @@ class TabPilBridge(QWidget):
                     self.last_step_time = current_time
                     self.is_waiting_ack = True
                     
-                    # GUI 节流阀：最大 20fps 刷新 3 号监视窗口
+                    # Limit the page-3 monitor to twenty GUI updates per second.
                     if current_time - self.last_ui_emit_time > 0.05:
                         self.sig_rx_parsed.emit({
                             'isr_ticks': isr_ticks, 'dig_in': digital_in,
@@ -348,7 +348,7 @@ class TabPilBridge(QWidget):
                         self.last_ui_emit_time = current_time
                     
                     if self.hermes.running:
-                        # 指定常规优先级 priority=1，交由底层的仲裁发送队列调度
+                        # Submit the simulation request at normal priority.
                         self.hermes.send_frame(0x01, self.CMD_STEP, self.last_step_payload, priority=1)
                         
                     if self.cb_test_mode.isChecked():
@@ -364,7 +364,7 @@ class TabPilBridge(QWidget):
             except OSError as e:
                 if hasattr(e, 'winerror') and e.winerror == 10054:
                     continue
-                if self.running: self.log(f"网络底层错误: {e}", "red")
+                if self.running: self.log(f"Network transport error: {e}", "red")
 
     def on_serial_rx(self, ev: dict):
         if not self.running or ev['type'] != 'DL' or ev['dir'] != 'RX' or not ev['dl_crc_ok']: return
@@ -405,6 +405,6 @@ class TabPilBridge(QWidget):
                 self.total_tx_bytes += len(udp_data)
                 
             except struct.error:
-                self.log(f"串口解包越界，请确保已在 '3. PIL 页面' 将 Mask 同步至下位机！", "red")
+                self.log("Serial payload exceeded the synchronized mask layout.", "red")
             except Exception as e:
-                self.log(f"数据回传格式异常: {e}", "red")
+                self.log(f"Invalid returned data format: {e}", "red")

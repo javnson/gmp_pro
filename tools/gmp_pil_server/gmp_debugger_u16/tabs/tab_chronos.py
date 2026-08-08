@@ -17,19 +17,19 @@ from PyQt5.QtGui import QColor
 import pyqtgraph as pg
 from core_datalink import HermesDatalinkQt
 
-# 全局 pyqtgraph 样式配置 (工业风白底黑字)
+# Global light-theme pyqtgraph styling.
 pg.setConfigOption('background', '#F8F9FA')
 pg.setConfigOption('foreground', '#212529')
 pg.setConfigOption('antialias', True)
 
-# 支持的类型解析字典
+# Supported sample formats.
 TYPE_FORMATS = {
     'F32': ('<f', 4), 'I32': ('<i', 4), 'U32': ('<I', 4),
     'I16': ('<h', 2), 'U16': ('<H', 2), 'I8': ('<b', 1), 'U8': ('<B', 1)
 }
 
 # =========================================================
-# 第三层：单个波形通道配置 (Waveform Configuration)
+# Waveform channel configuration.
 # =========================================================
 class WaveformConfigWidget(QFrame):
     sig_removed = pyqtSignal(object)
@@ -45,21 +45,21 @@ class WaveformConfigWidget(QFrame):
         
         self.color = QColor(random.randint(0, 200), random.randint(0, 200), random.randint(0, 200))
         
-        # 轮询状态机参数
+        # Polling state.
         self.last_req_time = 0.0
         self.waiting_for_ack = False 
         
-        # 状态备份（用于用户取消修改时回滚）
+        # Configuration backup used when edits are cancelled.
         self._committed_state = {}
         
         self._setup_ui()
-        self.commit_target() # 初始状态锁定
+        self.commit_target()
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)
 
-        # 第一行：颜色、名字、删除按钮
+        # Color, name, and removal controls.
         row1 = QHBoxLayout()
         self.btn_color = QPushButton()
         self.btn_color.setFixedSize(14, 14)
@@ -68,7 +68,7 @@ class WaveformConfigWidget(QFrame):
         row1.addWidget(self.btn_color)
 
         self.edit_name = QLineEdit(f"CH {self.wave_id}")
-        self.edit_name.setPlaceholderText("波形名称")
+        self.edit_name.setPlaceholderText("Waveform name")
         self.edit_name.setStyleSheet("border: none; font-weight: bold; background: transparent;")
         self.edit_name.editingFinished.connect(self.sig_name_changed.emit)
         row1.addWidget(self.edit_name)
@@ -80,10 +80,10 @@ class WaveformConfigWidget(QFrame):
         row1.addWidget(self.btn_del)
         layout.addLayout(row1)
 
-        # 第二行：数据源配置
+        # Data source configuration.
         row2 = QHBoxLayout()
         self.cb_mode = QComboBox()
-        self.cb_mode.addItems(["变量字典 (Tunable)", "绝对地址 (Memory)"])
+        self.cb_mode.addItems(["Tunable Dictionary", "Absolute Memory Address"])
         self.cb_mode.currentIndexChanged.connect(self._on_target_ui_interacted)
         row2.addWidget(self.cb_mode)
 
@@ -101,28 +101,28 @@ class WaveformConfigWidget(QFrame):
         row2.addWidget(self.cb_type)
         layout.addLayout(row2)
         
-        # 第三行：指令与频率 (提升UI饱满度)
+        # Command and polling rate.
         row3 = QHBoxLayout()
         row3.addWidget(QLabel("CMD:"))
         self.edit_cmd = QLineEdit("0x30")
         row3.addWidget(self.edit_cmd, stretch=1)
         
-        row3.addWidget(QLabel("频率:"))
+        row3.addWidget(QLabel("Rate:"))
         self.cb_rate = QComboBox()
-        self.cb_rate.setEditable(True) # 允许手动输入
-        self.cb_rate.addItems(["连续实时", "1000 Hz", "500 Hz", "300 Hz", "250 Hz", "200 Hz", "100 Hz", "50 Hz", "20 Hz", "10 Hz", "5 Hz", "1 Hz"])
+        self.cb_rate.setEditable(True)
+        self.cb_rate.addItems(["Continuous", "1000 Hz", "500 Hz", "300 Hz", "250 Hz", "200 Hz", "100 Hz", "50 Hz", "20 Hz", "10 Hz", "5 Hz", "1 Hz"])
         row3.addWidget(self.cb_rate, stretch=2)
         layout.addLayout(row3)
 
         self._update_mode_ui_state()
 
     def _on_target_ui_interacted(self):
-        """核心防丢锁：捕捉配置变更请求"""
+        """Begin a guarded configuration change."""
         self._update_mode_ui_state()
         self.sig_target_changed_attempt.emit(self)
 
     def commit_target(self):
-        """确认修改，保存当前状态为安全基准"""
+        """Commit the current configuration as the rollback baseline."""
         self._committed_state = {
             'mode': self.cb_mode.currentIndex(),
             'target': self.edit_target.text(),
@@ -130,7 +130,7 @@ class WaveformConfigWidget(QFrame):
         }
 
     def revert_target(self):
-        """用户取消修改，回滚UI到安全基准，防止误发信号死循环"""
+        """Restore the last committed configuration after cancellation."""
         self.cb_mode.blockSignals(True)
         self.edit_target.blockSignals(True)
         self.cb_type.blockSignals(True)
@@ -147,12 +147,12 @@ class WaveformConfigWidget(QFrame):
     def _update_mode_ui_state(self):
         is_mem = self.cb_mode.currentIndex() == 1
         self.cb_type.setEnabled(is_mem)
-        # 如果用户未自定义过CMD，自动切
+        # Update the default command when the source mode changes.
         if self.edit_cmd.text() in ["0x30", "0x50"]:
             self.edit_cmd.setText("0x50" if is_mem else "0x30")
 
     def _choose_color(self):
-        color = QColorDialog.getColor(self.color, self, "选择波形颜色")
+        color = QColorDialog.getColor(self.color, self, "Select Waveform Color")
         if color.isValid():
             self.color = color
             self._update_color_btn()
@@ -163,15 +163,15 @@ class WaveformConfigWidget(QFrame):
 
     def get_rate_ms(self):
         txt = self.cb_rate.currentText()
-        if "连续" in txt or "实时" in txt: return 0
+        if "Continuous" in txt: return 0
         
-        # 智能正则解析用户输入的任意数字 (提取 Hz 或 ms)
+        # Extract a numeric rate from editable Hz or millisecond text.
         nums = re.findall(r"[-+]?\d*\.\d+|\d+", txt)
         if nums:
             val = float(nums[0])
             if val <= 0: return 100
             if "ms" in txt.lower(): return val
-            return 1000.0 / val # 默认按 Hz 算
+            return 1000.0 / val  # Treat a bare value as hertz.
         return 100
 
     def serialize(self):
@@ -196,7 +196,7 @@ class WaveformConfigWidget(QFrame):
 
 
 # =========================================================
-# 第二层：单个 Plot 窗口配置 (Plot Window Configuration)
+# Plot-window configuration.
 # =========================================================
 class PlotConfigWidget(QGroupBox):
     sig_plot_removed = pyqtSignal(object)
@@ -204,7 +204,7 @@ class PlotConfigWidget(QGroupBox):
     sig_wave_target_changed = pyqtSignal(object)
 
     def __init__(self, plot_id):
-        super().__init__(f"📊 示波器窗口 {plot_id}")
+        super().__init__(f"Plot Window {plot_id}")
         self.plot_id = plot_id
         self.waveforms = []
         self.wave_counter = 0
@@ -214,14 +214,14 @@ class PlotConfigWidget(QGroupBox):
         self.setStyleSheet("QGroupBox { font-weight: bold; border: 1px solid #B0BEC5; border-radius: 6px; margin-top: 10px; }")
         self.layout = QVBoxLayout(self)
         
-        # 行 1: 标题与操作
+        # Title and actions.
         header = QHBoxLayout()
-        header.addWidget(QLabel("标题:"))
+        header.addWidget(QLabel("Title:"))
         self.edit_title = QLineEdit(f"Oscilloscope {self.plot_id}")
         self.edit_title.textChanged.connect(self.sig_structure_changed.emit)
         header.addWidget(self.edit_title)
         
-        self.btn_add_wave = QPushButton("➕ 添加波形")
+        self.btn_add_wave = QPushButton("Add Waveform")
         self.btn_add_wave.clicked.connect(self.add_waveform)
         header.addWidget(self.btn_add_wave)
         
@@ -230,11 +230,11 @@ class PlotConfigWidget(QGroupBox):
         header.addWidget(self.btn_del_plot)
         self.layout.addLayout(header)
 
-        # 行 2: 坐标轴控制面板 (X滑窗 + Y定标)
+        # X sliding window and Y scaling.
         axis_ctrl = QHBoxLayout()
         axis_ctrl.setContentsMargins(0, 0, 0, 0)
         
-        self.cb_slide_x = QCheckBox("X滑窗(s):")
+        self.cb_slide_x = QCheckBox("X window (s):")
         self.cb_slide_x.setChecked(True)
         self.edit_slide_x = QLineEdit("5.0")
         self.edit_slide_x.setMaximumWidth(40)
@@ -242,7 +242,7 @@ class PlotConfigWidget(QGroupBox):
         axis_ctrl.addWidget(self.edit_slide_x)
         
         axis_ctrl.addStretch()
-        self.cb_auto_y = QCheckBox("Y自适应")
+        self.cb_auto_y = QCheckBox("Auto Y")
         self.cb_auto_y.setChecked(True)
         self.edit_y_min = QLineEdit("-10")
         self.edit_y_min.setMaximumWidth(40)
@@ -305,7 +305,7 @@ class PlotConfigWidget(QGroupBox):
 
 
 # =========================================================
-# 第一层：Chronos 独立记录页 (Page) 核心引擎
+# One Chronos recording page.
 # =========================================================
 class ChronosPage(QWidget):
     def __init__(self, hermes: HermesDatalinkQt, page_name: str):
@@ -317,7 +317,7 @@ class ChronosPage(QWidget):
         
         self.graphics_items = {} 
         self.data_buffers = {}
-        self.MAX_POINTS = 50000 # 放开缓存池应对高频
+        self.MAX_POINTS = 50000  # Retain enough history for high-rate channels.
         
         self.is_running = False
         self.start_time = 0.0
@@ -337,30 +337,30 @@ class ChronosPage(QWidget):
         layout = QVBoxLayout(self)
         
         toolbar = QHBoxLayout()
-        self.btn_add_plot = QPushButton("🪟 增加波形窗口")
+        self.btn_add_plot = QPushButton("Add Plot Window")
         self.btn_add_plot.setStyleSheet("background-color: #BBDEFB; font-weight: bold; padding: 6px;")
         self.btn_add_plot.clicked.connect(self.add_plot_window)
         toolbar.addWidget(self.btn_add_plot)
         
-        self.btn_clear = QPushButton("🧹 清空画布")
+        self.btn_clear = QPushButton("Clear Plots")
         self.btn_clear.clicked.connect(self.clear_buffers)
         toolbar.addWidget(self.btn_clear)
         
-        self.btn_export_csv = QPushButton("📊 导出为 CSV")
+        self.btn_export_csv = QPushButton("Export CSV")
         self.btn_export_csv.clicked.connect(self.export_to_csv)
         toolbar.addWidget(self.btn_export_csv)
         
-        self.btn_import_cfg = QPushButton("📂 导入配置")
+        self.btn_import_cfg = QPushButton("Import Configuration")
         self.btn_import_cfg.clicked.connect(self.action_load_json)
         toolbar.addWidget(self.btn_import_cfg)
         
-        self.btn_export_cfg = QPushButton("💾 导出配置")
+        self.btn_export_cfg = QPushButton("Export Configuration")
         self.btn_export_cfg.clicked.connect(self.action_save_json)
         toolbar.addWidget(self.btn_export_cfg)
         
         toolbar.addStretch()
         
-        self.btn_run = QPushButton("▶️ 启动实时 DAQ 引擎")
+        self.btn_run = QPushButton("Start Real-Time DAQ")
         self.btn_run.setStyleSheet("background-color: #C8E6C9; font-weight: bold; font-size: 14px; padding-left: 15px; padding-right: 15px;")
         self.btn_run.clicked.connect(self.toggle_running)
         toolbar.addWidget(self.btn_run)
@@ -404,19 +404,19 @@ class ChronosPage(QWidget):
         self.rebuild_graphics_layout()
 
     def handle_wave_target_changed(self, w_conf):
-        """核心防丢锁：验证是否需要抛弃数据"""
+        """Confirm a channel edit when it would discard acquired data."""
         if self._is_loading_json: return
         
         buf_key = (w_conf.plot_id, w_conf.wave_id)
         has_data = buf_key in self.data_buffers and len(self.data_buffers[buf_key][0]) > 0
         
         if has_data:
-            reply = QMessageBox.question(self, "警告", "修改采样通道将彻底放弃当前的波形数据，是否继续？", QMessageBox.Yes | QMessageBox.No)
+            reply = QMessageBox.question(self, "Discard Data?", "Changing this channel will discard its waveform data. Continue?", QMessageBox.Yes | QMessageBox.No)
             if reply == QMessageBox.No:
                 w_conf.revert_target()
                 return
             
-            # 清空该通道数据
+            # Clear data associated with the modified channel.
             self.data_buffers[buf_key][0].clear()
             self.data_buffers[buf_key][1].clear()
             
@@ -434,11 +434,11 @@ class ChronosPage(QWidget):
             plot_item = self.graphics_layout.addPlot(title=p_conf.edit_title.text())
             plot_item.showGrid(x=True, y=True, alpha=0.3)
             plot_item.addLegend(offset=(10, 10))
-            plot_item.setLabel('bottom', "时间 (s)")
+            plot_item.setLabel('bottom', "Time (s)")
             
             curves = {}
             for w_conf in p_conf.waveforms:
-                # 仅更新视觉和名字，不触碰数据缓冲池
+                # Update presentation without replacing the data buffer.
                 curve = plot_item.plot(pen=pg.mkPen(color=w_conf.color, width=1.5), name=w_conf.edit_name.text())
                 curves[w_conf.wave_id] = curve
                 
@@ -460,15 +460,15 @@ class ChronosPage(QWidget):
             self.is_running = False
             self.daq_timer.stop()
             self.gui_timer.stop()
-            self.btn_run.setText("▶️ 启动实时 DAQ 引擎")
+            self.btn_run.setText("Start Real-Time DAQ")
             self.btn_run.setStyleSheet("background-color: #C8E6C9; font-weight: bold; font-size: 14px; padding-left: 15px; padding-right: 15px;")
         else:
             if not self.hermes.running:
-                QMessageBox.warning(self, "错误", "底层串口未连接！")
+                QMessageBox.warning(self, "Not Connected", "Open the serial port before starting DAQ.")
                 return
             self.is_running = True
             
-            # 如果是刚开始跑，同步下起跑线
+            # Synchronize channel deadlines when acquisition starts.
             all_empty = all(len(bx) == 0 for bx, by in self.data_buffers.values())
             if all_empty: self.start_time = time.time()
                 
@@ -478,13 +478,13 @@ class ChronosPage(QWidget):
                     w.last_req_time = 0
                     w.waiting_for_ack = False
                     
-            self.daq_timer.start(5)   # DAQ 扫描频率：5ms 极速轮询
-            self.gui_timer.start(33)  # GUI 渲染频率：约 30 FPS
-            self.btn_run.setText("⏸️ 停止数据采集")
+            self.daq_timer.start(5)   # Scan pending channels every five milliseconds.
+            self.gui_timer.start(33)  # Render at approximately thirty frames per second.
+            self.btn_run.setText("Stop Data Acquisition")
             self.btn_run.setStyleSheet("background-color: #FFF59D; font-weight: bold; font-size: 14px; padding-left: 15px; padding-right: 15px;")
 
     # =========================================================
-    # DAQ 调度引擎与路由
+    # DAQ scheduler and response routing.
     # =========================================================
     def _daq_scheduler_tick(self):
         if not self.is_running: return
@@ -568,7 +568,7 @@ class ChronosPage(QWidget):
             y_buf.append(y_val)
 
     # =========================================================
-    # 多态坐标轴与异步GUI渲染器
+    # Asynchronous plots and per-window axis policies.
     # =========================================================
     def _render_tick(self):
         for p_conf in self.plot_configs:
@@ -586,14 +586,14 @@ class ChronosPage(QWidget):
                         max_x_in_plot = max(max_x_in_plot, x_buf[-1])
                         curves[w_conf.wave_id].setData(np.array(x_buf), np.array(y_buf))
             
-            # X轴滑窗定标逻辑
+            # Sliding X-axis window.
             if p_conf.cb_slide_x.isChecked():
                 try:
                     win_s = float(p_conf.edit_slide_x.text())
                     plot_item.setXRange(max(0, max_x_in_plot - win_s), max_x_in_plot, padding=0)
                 except: pass
             
-            # Y轴自动定标逻辑
+            # Automatic Y-axis scaling.
             if not p_conf.cb_auto_y.isChecked():
                 try:
                     y_min = float(p_conf.edit_y_min.text())
@@ -604,18 +604,18 @@ class ChronosPage(QWidget):
                 plot_item.enableAutoRange(axis=pg.ViewBox.YAxis)
 
     # =========================================================
-    # 导入导出生态 (JSON / CSV)
+    # JSON configuration and CSV data exchange.
     # =========================================================
     def action_save_json(self):
-        path, _ = QFileDialog.getSaveFileName(self, "导出 Chronos 记录仪配置", f"chronos_{self.page_name}.json", "JSON Files (*.json)")
+        path, _ = QFileDialog.getSaveFileName(self, "Export Chronos Configuration", f"chronos_{self.page_name}.json", "JSON Files (*.json)")
         if path:
             data = {'plots': [p.serialize() for p in self.plot_configs]}
             with open(path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=4)
-            QMessageBox.information(self, "成功", "配置导出成功！")
+            QMessageBox.information(self, "Export Complete", "Configuration exported successfully.")
 
     def action_load_json(self):
-        path, _ = QFileDialog.getOpenFileName(self, "载入 Chronos 配置", "", "JSON Files (*.json)")
+        path, _ = QFileDialog.getOpenFileName(self, "Load Chronos Configuration", "", "JSON Files (*.json)")
         if path:
             try:
                 with open(path, 'r', encoding='utf-8') as f:
@@ -623,14 +623,14 @@ class ChronosPage(QWidget):
                     
                 self._is_loading_json = True
                 
-                # 清理旧视图
+                # Remove existing plot windows.
                 for p_conf in self.plot_configs:
                     self.config_layout.removeWidget(p_conf)
                     p_conf.deleteLater()
                 self.plot_configs.clear()
                 self.data_buffers.clear()
                 
-                # 重建视图
+                # Rebuild the configured plot windows.
                 for p_data in data.get('plots', []):
                     p_conf = PlotConfigWidget(p_data['plot_id'])
                     p_conf.deserialize(p_data)
@@ -643,18 +643,18 @@ class ChronosPage(QWidget):
                 
                 self._is_loading_json = False
                 self.rebuild_graphics_layout()
-                QMessageBox.information(self, "成功", "配置载入成功！")
+                QMessageBox.information(self, "Load Complete", "Configuration loaded successfully.")
             except Exception as e:
                 self._is_loading_json = False
-                QMessageBox.critical(self, "错误", f"载入失败: {e}")
+                QMessageBox.critical(self, "Load Failed", f"Failed to load configuration: {e}")
 
     def export_to_csv(self):
-        """异步总线下的健壮型多列 CSV 导出引擎"""
+        """Export asynchronous channels into a robust multi-column CSV file."""
         if not self.data_buffers:
-            QMessageBox.warning(self, "为空", "没有可导出的数据！")
+            QMessageBox.warning(self, "No Data", "There is no acquired data to export.")
             return
             
-        path, _ = QFileDialog.getSaveFileName(self, "导出为 CSV", f"chronos_data.csv", "CSV Files (*.csv)")
+        path, _ = QFileDialog.getSaveFileName(self, "Export CSV", f"chronos_data.csv", "CSV Files (*.csv)")
         if path:
             try:
                 headers = []
@@ -674,7 +674,7 @@ class ChronosPage(QWidget):
                                 max_rows = max(max_rows, len(x_buf))
                 
                 if max_rows == 0:
-                    QMessageBox.warning(self, "为空", "所有通道都没有接收到数据！")
+                    QMessageBox.warning(self, "No Data", "No channel has received data.")
                     return
 
                 with open(path, 'w', newline='', encoding='utf-8') as f:
@@ -685,12 +685,12 @@ class ChronosPage(QWidget):
                         for col in data_columns:
                             row.append(col[i] if i < len(col) else "")
                         writer.writerow(row)
-                QMessageBox.information(self, "成功", "CSV 导出成功！")
+                QMessageBox.information(self, "Export Complete", "CSV exported successfully.")
             except Exception as e:
-                QMessageBox.critical(self, "错误", f"CSV 导出失败: {e}")
+                QMessageBox.critical(self, "Export Failed", f"CSV export failed: {e}")
 
 # =========================================================
-# 容器管理面板 (TabChronosManager) 
+# Chronos page manager.
 # =========================================================
 class TabChronosManager(QWidget):
     def __init__(self, hermes: HermesDatalinkQt):
@@ -702,7 +702,7 @@ class TabChronosManager(QWidget):
         layout = QVBoxLayout(self)
         
         toolbar = QHBoxLayout()
-        self.btn_add_tab = QPushButton("➕ 新建记录页 (New Chronos Page)")
+        self.btn_add_tab = QPushButton("New Chronos Page")
         self.btn_add_tab.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; padding: 5px;")
         self.btn_add_tab.clicked.connect(self.add_new_page)
         
@@ -720,7 +720,7 @@ class TabChronosManager(QWidget):
     def add_new_page(self, checked=False, default_name=None):
         name = default_name
         if not name:
-            name, ok = QInputDialog.getText(self, "新建页面", "请输入记录页名称:")
+            name, ok = QInputDialog.getText(self, "New Chronos Page", "Page name:")
             if not ok or not name.strip(): return
                 
         new_page = ChronosPage(self.hermes, name)

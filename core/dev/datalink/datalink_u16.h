@@ -69,8 +69,6 @@
 #endif
 
 #define GMP_DL_BACKEND_U16 1
-typedef data_gt gmp_dl_octet_t;
-
 // =========================================================
 // 1. Configurable Macros
 // =========================================================

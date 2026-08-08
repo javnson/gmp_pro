@@ -18,16 +18,16 @@ class TabRaw(QWidget):
         self._needs_update = False
         self.update_timer = QTimer()
         self.update_timer.timeout.connect(self._render_html)
-        self.update_timer.start(50) # 20 FPS 防卡死渲染
+        self.update_timer.start(50)  # Limit rendering to 20 frames per second.
         
         self._setup_ui()
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
         
-        # --- 接收控制栏 ---
+        # Receive controls.
         rx_ctrl_layout = QHBoxLayout()
-        rx_ctrl_layout.addWidget(QLabel("<b>全局总线监控:</b>"))
+        rx_ctrl_layout.addWidget(QLabel("<b>Global Bus Monitor:</b>"))
         
         self.rb_rx_ascii = QRadioButton("ASCII")
         self.rb_rx_hex = QRadioButton("HEX")
@@ -36,7 +36,7 @@ class TabRaw(QWidget):
         
         self.chk_raw_rx = QCheckBox("RAW RX")
         self.chk_raw_tx = QCheckBox("RAW TX")
-        self.chk_dl     = QCheckBox("DL 协议帧")
+        self.chk_dl     = QCheckBox("Data Link frames")
         self.chk_raw_rx.setChecked(True)
         self.chk_raw_tx.setChecked(True)
         self.chk_dl.setChecked(True)
@@ -44,11 +44,11 @@ class TabRaw(QWidget):
             cb.stateChanged.connect(self.request_render)
         
         rx_ctrl_layout.addSpacing(10)
-        rx_ctrl_layout.addWidget(QLabel("视图:"))
+        rx_ctrl_layout.addWidget(QLabel("View:"))
         rx_ctrl_layout.addWidget(self.rb_rx_ascii)
         rx_ctrl_layout.addWidget(self.rb_rx_hex)
         rx_ctrl_layout.addSpacing(15)
-        rx_ctrl_layout.addWidget(QLabel("筛选:"))
+        rx_ctrl_layout.addWidget(QLabel("Filter:"))
         rx_ctrl_layout.addWidget(self.chk_raw_rx)
         rx_ctrl_layout.addWidget(self.chk_raw_tx)
         rx_ctrl_layout.addWidget(self.chk_dl)
@@ -58,21 +58,21 @@ class TabRaw(QWidget):
         self.lbl_counters.setStyleSheet("color: blue; font-weight: bold;")
         rx_ctrl_layout.addWidget(self.lbl_counters)
         
-        self.btn_clear_rx = QPushButton("清空")
+        self.btn_clear_rx = QPushButton("Clear")
         self.btn_clear_rx.clicked.connect(self.clear_history)
         rx_ctrl_layout.addWidget(self.btn_clear_rx)
         layout.addLayout(rx_ctrl_layout)
         
-        # --- 接收显示区 ---
+        # Receive display.
         self.rx_view = QTextBrowser()
         self.rx_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.rx_view.setStyleSheet("background-color: #FAFAFA; font-size: 13px;")
         layout.addWidget(self.rx_view, stretch=3)
         
-        # --- 发送控制栏 ---
+        # Transmit controls.
         tx_ctrl_layout = QHBoxLayout()
-        self.rb_tx_ascii = QRadioButton("盲发 ASCII")
-        self.rb_tx_hex = QRadioButton("盲发 HEX")
+        self.rb_tx_ascii = QRadioButton("Raw ASCII")
+        self.rb_tx_hex = QRadioButton("Raw HEX")
         self.rb_tx_ascii.setChecked(True)
         self.rb_tx_ascii.toggled.connect(self.update_tx_status)
         self.rb_tx_hex.toggled.connect(self.update_tx_status)
@@ -85,14 +85,14 @@ class TabRaw(QWidget):
         tx_ctrl_layout.addWidget(self.lbl_tx_len)
         layout.addLayout(tx_ctrl_layout)
         
-        # --- 发送输入区 ---
+        # Transmit editor.
         tx_input_layout = QHBoxLayout()
         self.tx_input = QPlainTextEdit()
-        self.tx_input.setPlaceholderText("原生串口盲发 (不带协议封装)。\nHEX 模式兼容性极强: 1A, 0x2b, 3C 4d 均可识别。")
+        self.tx_input.setPlaceholderText("Send raw serial bytes without framing.\nHEX accepts forms such as 1A, 0x2b, and 3C 4d.")
         self.tx_input.setMaximumHeight(100)
         self.tx_input.textChanged.connect(self.update_tx_status)
         
-        self.btn_send = QPushButton("盲发 RAW\n(不带头部)")
+        self.btn_send = QPushButton("Send RAW\n(no framing)")
         self.btn_send.setMinimumHeight(70)
         self.btn_send.setMinimumWidth(120)
         self.btn_send.setStyleSheet("background-color: #E3F2FD; font-weight: bold;")
@@ -122,11 +122,11 @@ class TabRaw(QWidget):
         else:
             payload = self._parse_friendly_hex(text)
             if payload is None:
-                self.lbl_tx_len.setText("HEX 长度必须为偶数!")
+                self.lbl_tx_len.setText("HEX requires an even digit count.")
                 self.lbl_tx_len.setStyleSheet("color: red;")
                 self.btn_send.setEnabled(False)
             else:
-                self.lbl_tx_len.setText(f"解析成功: {len(payload)} B")
+                self.lbl_tx_len.setText(f"Parsed: {len(payload)} B")
                 self.lbl_tx_len.setStyleSheet("color: green;")
                 self.btn_send.setEnabled(True)
 
@@ -136,15 +136,14 @@ class TabRaw(QWidget):
         payload = text.encode('utf-8') if self.rb_tx_ascii.isChecked() else self._parse_friendly_hex(text)
         if not payload: return
         
-        # 【核心优化】：明确赋予底层引擎 priority=2（最低优先级）
-        # 确保你在页面上狂点发送时，绝对不会阻塞后台正跑得火热的 PIL 或 Tunable 任务
+        # Manual raw transfers use background priority and cannot starve services.
         self.hermes.send_raw(payload, priority=2)
 
     def on_bus_event(self, ev: dict):
         if ev['dir'] == 'RX': self.rx_total_bytes += len(ev['data'])
         else: self.tx_total_bytes += len(ev['data'])
         
-        # 智能合并连续同向 RAW 字节流 (终端级效果的核心)
+        # Merge adjacent raw events in the same direction for terminal-like output.
         if self.history and self.history[-1]['type'] == 'RAW' and ev['type'] == 'RAW' and self.history[-1]['dir'] == ev['dir']:
             self.history[-1]['data'] += ev['data']
         else:
@@ -183,11 +182,11 @@ class TabRaw(QWidget):
             else:      text_str = html.escape(ev['data'].decode('utf-8', errors='replace')).replace('\n', '<br>')
                 
             if ev['type'] == 'RAW':
-                # 绿色 和 蓝色
+                # Green and blue for raw traffic.
                 color = '#00796B' if ev['dir'] == 'RX' else '#1976D2' 
                 header = f"[{ev['dir']}: {ev['time']}] >>>"
             else:
-                # 深紫 和 橙色 (特殊高亮协议帧)
+                # Purple and orange emphasize framed traffic.
                 color = '#E65100' if ev['dir'] == 'RX' else '#4527A0' 
                 crc_str = "OK" if ev['dl_crc_ok'] else f"FAIL ({ev['error']})"
                 header = f"[{ev['dir']} DL_FRAME: {ev['time']} | CMD:0x{ev['dl_cmd']:02X} | Index:0x{ev['dl_target']:02X} | CRC:{crc_str}] >>>"

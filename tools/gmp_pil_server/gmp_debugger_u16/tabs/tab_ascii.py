@@ -9,7 +9,7 @@ class TabAscii(QWidget):
     def __init__(self, hermes: HermesDatalinkQt):
         super().__init__()
         self.hermes = hermes
-        # 统一使用总线事件，只过滤 DL 帧
+        # Consume shared bus events and retain only Data Link frames.
         self.hermes.sig_bus_event.connect(self.on_bus_event)
         
         self.history = []
@@ -26,9 +26,9 @@ class TabAscii(QWidget):
     def _setup_ui(self):
         layout = QVBoxLayout(self)
         
-        # --- RX 控制区 ---
+        # Receive controls.
         rx_ctrl_layout = QHBoxLayout()
-        rx_ctrl_layout.addWidget(QLabel("<b>协议 Payload 记录:</b>"))
+        rx_ctrl_layout.addWidget(QLabel("<b>Protocol Payload Log:</b>"))
         
         self.rb_rx_ascii = QRadioButton("ASCII")
         self.rb_rx_hex = QRadioButton("HEX")
@@ -36,7 +36,7 @@ class TabAscii(QWidget):
         self.rb_rx_ascii.toggled.connect(self.request_render)
         
         rx_ctrl_layout.addSpacing(20)
-        rx_ctrl_layout.addWidget(QLabel("视图:"))
+        rx_ctrl_layout.addWidget(QLabel("View:"))
         rx_ctrl_layout.addWidget(self.rb_rx_ascii)
         rx_ctrl_layout.addWidget(self.rb_rx_hex)
         rx_ctrl_layout.addStretch()
@@ -45,21 +45,21 @@ class TabAscii(QWidget):
         self.lbl_counters.setStyleSheet("color: blue; font-weight: bold;")
         rx_ctrl_layout.addWidget(self.lbl_counters)
         
-        self.btn_clear_rx = QPushButton("清空")
+        self.btn_clear_rx = QPushButton("Clear")
         self.btn_clear_rx.clicked.connect(self.clear_history)
         rx_ctrl_layout.addWidget(self.btn_clear_rx)
         layout.addLayout(rx_ctrl_layout)
         
-        # --- RX 显示区 ---
+        # Receive display.
         self.rx_view = QTextBrowser()
         self.rx_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.rx_view.setStyleSheet("background-color: #FAFAFA; font-size: 13px;")
         layout.addWidget(self.rx_view, stretch=3)
         
-        # --- TX 控制与选项区 ---
+        # Transmit controls and format options.
         tx_ctrl_layout = QHBoxLayout()
-        self.rb_tx_ascii = QRadioButton("Payload 填 ASCII")
-        self.rb_tx_hex = QRadioButton("Payload 填 HEX")
+        self.rb_tx_ascii = QRadioButton("ASCII payload")
+        self.rb_tx_hex = QRadioButton("HEX payload")
         self.rb_tx_ascii.setChecked(True)
         self.rb_tx_ascii.toggled.connect(self.update_tx_status)
         self.rb_tx_hex.toggled.connect(self.update_tx_status)
@@ -68,7 +68,7 @@ class TabAscii(QWidget):
         tx_ctrl_layout.addWidget(self.rb_tx_hex)
         tx_ctrl_layout.addSpacing(20)
         
-        # Seq/ID 输入框
+        # Sequence identifier.
         tx_ctrl_layout.addWidget(QLabel("Seq/ID:"))
         self.tx_id_input = QLineEdit("0x01")
         self.tx_id_input.setMaximumWidth(50)
@@ -76,9 +76,9 @@ class TabAscii(QWidget):
 
         tx_ctrl_layout.addSpacing(10)
 
-        # CMD 输入框
+        # Command identifier.
         tx_ctrl_layout.addWidget(QLabel("CMD:"))
-        self.tx_cmd_input = QLineEdit("0x00") # 默认 0x00 方便测试 ECHO
+        self.tx_cmd_input = QLineEdit("0x00")  # ECHO is the convenient default.
         self.tx_cmd_input.setMaximumWidth(50)
         tx_ctrl_layout.addWidget(self.tx_cmd_input)
         
@@ -88,14 +88,14 @@ class TabAscii(QWidget):
         tx_ctrl_layout.addWidget(self.lbl_tx_len)
         layout.addLayout(tx_ctrl_layout)
         
-        # --- TX 输入与发送区 ---
+        # Payload editor and send action.
         tx_input_layout = QHBoxLayout()
         self.tx_input = QPlainTextEdit()
-        self.tx_input.setPlaceholderText("输入要装入 Payload 的数据...")
+        self.tx_input.setPlaceholderText("Enter payload data...")
         self.tx_input.setMaximumHeight(100)
         self.tx_input.textChanged.connect(self.update_tx_status)
         
-        self.btn_send = QPushButton("封包发送\n(加入协议头尾)")
+        self.btn_send = QPushButton("Send Framed\n(Data Link)")
         self.btn_send.setMinimumHeight(70)
         self.btn_send.setMinimumWidth(120)
         self.btn_send.setStyleSheet("background-color: #E8F5E9; font-weight: bold;")
@@ -126,7 +126,7 @@ class TabAscii(QWidget):
         else:
             payload = self._parse_friendly_hex(text)
             if payload is None:
-                self.lbl_tx_len.setText("HEX 不完整")
+                self.lbl_tx_len.setText("Incomplete HEX")
                 self.lbl_tx_len.setStyleSheet("color: red;")
                 self.btn_send.setEnabled(False)
             else:
@@ -138,35 +138,35 @@ class TabAscii(QWidget):
     def send_data(self):
         text = self.tx_input.toPlainText()
         
-        # 允许发送空包（比如纯命令或 ACK）
+        # Empty payloads are valid for command-only requests and acknowledgements.
         if not text:
             payload = b''
         else:
             payload = text.encode('utf-8') if self.rb_tx_ascii.isChecked() else self._parse_friendly_hex(text)
             if payload is None: return
         
-        # 安全获取用户输入的自定义 ID (Seq)
+        # Parse the user-supplied sequence identifier.
         try:
             seq_id = int(self.tx_id_input.text(), 16)
         except ValueError:
             seq_id = 0x01
             self.tx_id_input.setText("0x01")
 
-        # 安全获取用户输入的自定义 CMD
+        # Parse the user-supplied command identifier.
         try:
             cmd = int(self.tx_cmd_input.text(), 16)
         except ValueError:
             cmd = 0x00
             self.tx_cmd_input.setText("0x00")
             
-        # 【核心优化】：分配 priority=2（最低级），确保手动调试不影响 PIL 和 Tunable 的高频运作
+        # Manual protocol tests use background priority.
         self.hermes.send_frame(target_id=seq_id, cmd=cmd, payload=payload, priority=2)
 
     def on_bus_event(self, ev: dict):
-        # DL 页面只关心 DL 帧
+        # This page consumes framed traffic only.
         if ev['type'] != 'DL': return
         
-        # 仅统计 Payload 字节
+        # Report payload bytes without framing overhead.
         self.rx_total_bytes += len(ev['dl_payload']) if ev['dir'] == 'RX' else 0
         self.tx_total_bytes += len(ev['dl_payload']) if ev['dir'] == 'TX' else 0
         
@@ -199,26 +199,26 @@ class TabAscii(QWidget):
                 text_str = html.escape(payload_bytes.decode('utf-8', errors='replace')).replace('\n', '<br>')
             
             if ev['dir'] == 'TX':
-                color = '#4527A0' # 深紫
+                color = '#4527A0'  # Purple transmit highlight.
                 header = f"[{ev['dir']}: {ev['time']} | Payload -> Seq:0x{ev['dl_target']:02X} CMD:0x{ev['dl_cmd']:02X}] >>>"
             else:
                 crc_str = "OK" if ev['dl_crc_ok'] else "FAIL"
                 
-                # 单独识别并高亮 NACK 消息 (CMD == 0x01)
+                # Decode and highlight NACK responses.
                 if ev['dl_cmd'] == 0x01:
-                    color = '#E91E63' # 醒目的粉红色/紫红色
+                    color = '#E91E63'
                     header = f"[{ev['dir']}: {ev['time']} | Payload <- Seq:0x{ev['dl_target']:02X} CMD:0x{ev['dl_cmd']:02X} (NACK) | CRC:{crc_str}] >>>"
                     
-                    # 尝试解析 NACK 的具体内容 (Byte 0: 被拒 CMD, Byte 1: 错误码)
+                    # NACK payload: rejected command followed by the error code.
                     if len(payload_bytes) >= 2:
                         rejected_cmd = payload_bytes[0]
                         err_code = payload_bytes[1]
-                        nack_notice = f"<b>[系统提示] 收到 NACK！对方拒绝了指令 0x{rejected_cmd:02X} (错误码: 0x{err_code:02X})</b><br>"
+                        nack_notice = f"<b>[System] NACK rejected command 0x{rejected_cmd:02X} (error 0x{err_code:02X}).</b><br>"
                         text_str = nack_notice + text_str
                     else:
-                        text_str = "<b>[系统提示] 收到 NACK (未知原因)</b><br>" + text_str
+                        text_str = "<b>[System] NACK received without a decoded reason.</b><br>" + text_str
                 else:
-                    color = '#E65100' if ev['dl_crc_ok'] else '#D32F2F' # 橙色正常，红色报错
+                    color = '#E65100' if ev['dl_crc_ok'] else '#D32F2F'
                     header = f"[{ev['dir']}: {ev['time']} | Payload <- Seq:0x{ev['dl_target']:02X} CMD:0x{ev['dl_cmd']:02X} | CRC:{crc_str}] >>>"
                 
             html_parts.append(f"<div style='color:{color}; font-family:Consolas, monospace; margin-bottom:8px; line-height: 1.4;'><b>{header}</b><br>{text_str}</div>")

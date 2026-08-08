@@ -2,7 +2,7 @@
  * @file datalink_u8.h
  * @brief GMP Data Link backend for byte-addressed CPUs.
  *
- * This backend makes a protocol octet explicitly uint8_t. Buffer lengths,
+ * This backend uses uint8_t directly for every protocol byte. Buffer lengths,
  * pointer increments, CRC input lengths, and hardware-transfer lengths are
  * therefore all physical byte counts, independent of data_gt.
  */
@@ -15,8 +15,6 @@
 #endif
 
 #define GMP_DL_BACKEND_U8 1
-typedef uint8_t gmp_dl_octet_t;
-
 #ifndef GMP_DL_MTU
 #define GMP_DL_MTU 256
 #endif
@@ -29,10 +27,10 @@ typedef uint8_t gmp_dl_octet_t;
 #define GMP_DL_OVERTIME 50
 #endif
 
-#define GMP_DL_SOF      ((gmp_dl_octet_t)0x7B)
-#define GMP_DL_EOF      ((gmp_dl_octet_t)0x7D)
-#define GMP_DL_ESC      ((gmp_dl_octet_t)0x25)
-#define GMP_DL_XOR      ((gmp_dl_octet_t)0x20)
+#define GMP_DL_SOF      ((uint8_t)0x7B)
+#define GMP_DL_EOF      ((uint8_t)0x7D)
+#define GMP_DL_ESC      ((uint8_t)0x25)
+#define GMP_DL_XOR      ((uint8_t)0x20)
 #define GMP_DL_HDR_SIZE 6
 
 #define GMP_DL_CMD_ECHO  0x00
@@ -77,28 +75,28 @@ typedef struct
 /** @brief Complete state and storage for one byte-addressed Data Link. */
 typedef struct
 {
-    gmp_dl_octet_t rx_fifo[GMP_DL_RX_FIFO_SIZE];
+    uint8_t rx_fifo[GMP_DL_RX_FIFO_SIZE];
     volatile uint16_t rx_fifo_head;
     volatile uint16_t rx_fifo_tail;
 
     gmp_dl_rx_state_t rx_state;
     time_gt last_rx_tick;
     uint16_t rx_hdr_idx;
-    gmp_dl_octet_t rx_hdr_buf[16];
+    uint8_t rx_hdr_buf[16];
 
     gmp_dl_head rx_head;
     uint16_t expected_payload_len;
     uint16_t payload_idx;
-    gmp_dl_octet_t payload_buf[GMP_DL_MTU + 2];
+    uint8_t payload_buf[GMP_DL_MTU + 2];
 
     fast_gt flag_reply_handled;
 
     volatile gmp_dl_tx_state_t tx_state;
     gmp_dl_head tx_head;
     size_gt tx_hdr_len;
-    gmp_dl_octet_t tx_hdr_buf[16];
+    uint8_t tx_hdr_buf[16];
     size_gt tx_len;
-    gmp_dl_octet_t tx_buf[GMP_DL_MTU + 3];
+    uint8_t tx_buf[GMP_DL_MTU + 3];
 
     uint32_t err_fifo_ovf_cnt;
     uint32_t err_hdr_crc_cnt;
@@ -109,9 +107,9 @@ typedef struct
 /** @brief Initialize one Data Link instance. */
 void gmp_dev_dl_init(gmp_datalink_t* ctx);
 /** @brief Queue one received protocol octet, typically from an ISR. */
-void gmp_dev_dl_push_byte(gmp_datalink_t* ctx, gmp_dl_octet_t raw_data);
+void gmp_dev_dl_push_byte(gmp_datalink_t* ctx, uint8_t raw_data);
 /** @brief Queue a sequence of received protocol octets. */
-void gmp_dev_dl_push_str(gmp_datalink_t* ctx, const gmp_dl_octet_t* str, size_gt size);
+void gmp_dev_dl_push_str(gmp_datalink_t* ctx, const uint8_t* str, size_gt size);
 /** @brief Advance the state machine and return at most one application event. */
 gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx);
 /** @brief Apply the default ECHO, NACK, stray, and unsupported-command policy. */
@@ -120,10 +118,10 @@ void gmp_dev_dl_default_rx_handler(gmp_datalink_t* ctx);
 /** @brief Start building a response with the specified sequence and command. */
 void gmp_dev_dl_tx_request_cmd(gmp_datalink_t* ctx, uint16_t seq, uint16_t cmd);
 /** @brief Append raw payload octets to a response under construction. */
-void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, const gmp_dl_octet_t* data,
+void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, const uint8_t* data,
                                   size_gt actual_payload_len);
 /** @brief Append one unsigned 8-bit value. */
-void gmp_dev_dl_tx_append_u8(gmp_datalink_t* ctx, gmp_dl_octet_t val);
+void gmp_dev_dl_tx_append_u8(gmp_datalink_t* ctx, uint8_t val);
 /** @brief Append one little-endian unsigned 16-bit value. */
 void gmp_dev_dl_tx_append_u16(gmp_datalink_t* ctx, uint16_t val);
 /** @brief Append one little-endian unsigned 32-bit value. */
@@ -132,18 +130,18 @@ void gmp_dev_dl_tx_append_u32(gmp_datalink_t* ctx, uint32_t val);
 void gmp_dev_dl_tx_ready(gmp_datalink_t* ctx);
 /** @brief Build a complete response from an existing payload. */
 void gmp_dev_dl_tx_request(gmp_datalink_t* ctx, uint16_t seq, uint16_t cmd,
-                           size_gt actual_payload_len, const gmp_dl_octet_t* data);
+                           size_gt actual_payload_len, const uint8_t* data);
 
 /** @brief Return the remaining payload capacity. */
 size_gt gmp_dev_dl_get_tx_capacity(gmp_datalink_t* ctx);
 /** @brief Return the writable payload insertion pointer. */
-gmp_dl_octet_t* gmp_dev_dl_get_tx_payload_ptr(gmp_datalink_t* ctx);
+uint8_t* gmp_dev_dl_get_tx_payload_ptr(gmp_datalink_t* ctx);
 /** @brief Return the framed header and optionally its octet length. */
-const gmp_dl_octet_t* gmp_dev_dl_get_tx_hw_hdr(gmp_datalink_t* ctx, size_gt* out_len);
+const uint8_t* gmp_dev_dl_get_tx_hw_hdr(gmp_datalink_t* ctx, size_gt* out_len);
 /** @brief Return the framed payload and optionally its octet length. */
-const gmp_dl_octet_t* gmp_dev_dl_get_tx_hw_pld(gmp_datalink_t* ctx, size_gt* out_len);
+const uint8_t* gmp_dev_dl_get_tx_hw_pld(gmp_datalink_t* ctx, size_gt* out_len);
 
-GMP_STATIC_INLINE const gmp_dl_octet_t* gmp_dev_dl_get_tx_hw_hdr_ptr(gmp_datalink_t* ctx)
+GMP_STATIC_INLINE const uint8_t* gmp_dev_dl_get_tx_hw_hdr_ptr(gmp_datalink_t* ctx)
 {
     return ctx->tx_hdr_buf;
 }
@@ -153,7 +151,7 @@ GMP_STATIC_INLINE size_gt gmp_dev_dl_get_tx_hw_hdr_size(gmp_datalink_t* ctx)
     return ctx->tx_hdr_len;
 }
 
-GMP_STATIC_INLINE const gmp_dl_octet_t* gmp_dev_dl_get_tx_hw_pld_ptr(gmp_datalink_t* ctx)
+GMP_STATIC_INLINE const uint8_t* gmp_dev_dl_get_tx_hw_pld_ptr(gmp_datalink_t* ctx)
 {
     return ctx->tx_buf;
 }

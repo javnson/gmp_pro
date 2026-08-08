@@ -15,7 +15,7 @@ extern UART_HandleTypeDef huart2;
 extern TIM_HandleTypeDef htim3;
 
 static gmp_datalink_t* bound_datalink;
-static gmp_dl_octet_t uart_rx_dma_buffer[XPLT_DL_UART_RX_DMA_SIZE];
+static data_gt uart_rx_dma_buffer[XPLT_DL_UART_RX_DMA_SIZE];
 static volatile uint16_t uart_rx_dma_position;
 static gpio_model_stm32_t user_led_entity;
 static gpio_halt user_led;

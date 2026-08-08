@@ -35,6 +35,10 @@
       "module": "dev|datalink|mem_monitor"
     },
     {
+      "root": "core",
+      "module": "dev|datalink|scope"
+    },
+    {
       "root": "ctl",
       "module": "math_block|_internal"
     },

@@ -8,6 +8,10 @@ processor-in-the-loop workflows on DSP targets where
 target communication, variable inspection, parameter updates, memory views,
 and project-specific debug tools.
 
+The maintained UI is English-only. Memory Perspective and Tunable pages can
+import named descriptors reported by the target. The Data Link Scope page uses
+the independent single-command Scope service rather than Memory Perspective.
+
 Run the guarded launcher in this directory after installing GMP. The launcher
 automatically selects the repository-private Python environment when its
 completion marker exists; Python packages are maintained centrally in

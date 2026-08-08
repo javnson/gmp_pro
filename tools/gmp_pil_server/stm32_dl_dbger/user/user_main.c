@@ -8,6 +8,7 @@
 #include "user_main.h"
 #include <core/dev/datalink.h>
 #include <core/dev/mem_presp.h>
+#include <core/dev/scope.h>
 #include <core/dev/tunable.h>
 #include <ctl/component/dsa/dsa_scope.h>
 #include <ctl/component/dsa/dsa_trigger.h>
@@ -18,15 +19,13 @@
 #endif
 
 #define USER_DL_CMD_INFO          0x02U
-#define USER_DL_DSA_CMD_INFO      0x03U
-#define USER_DL_DSA_CMD_ARM       0x04U
 #define USER_DL_TUNABLE_CMD       0x30U
 #define USER_DL_MEMORY_CMD        0x50U
+#define USER_DL_SCOPE_CMD         0x60U
 #define USER_DSA_SAMPLE_RATE      1000UL
 #define USER_DSA_SIGNAL_RATE      50UL
 #define USER_DSA_DEPTH            400UL
 #define USER_DSA_CHANNELS         2U
-#define USER_DSA_FORMAT_F32       1U
 
 /** @brief DSA acquisition states exported to the desktop debugger. */
 typedef enum
@@ -40,83 +39,159 @@ static gmp_scheduler_t scheduler;
 static gmp_datalink_t datalink;
 static gmp_param_tunable_t tunable;
 static gmp_mem_persp_t memory_perspective;
+static gmp_scope_service_t scope_service;
 static ctl_dsa_trigger_t dsa_trigger;
 static ctl_dsa_scope_t dsa_scope;
 static volatile user_dsa_state_t dsa_state;
 static volatile uint32_t dsa_generation;
+static volatile uint16_t dsa_history_write;
+static volatile uint16_t dsa_history_count;
+static volatile uint16_t dsa_trigger_position_permille = 500U;
+static volatile uint8_t dsa_trigger_channel;
+static volatile ctl_dsa_trigger_option_t dsa_trigger_mode = DSA_TRIGGER_OPTION_RISING_EDGE;
+static volatile uint32_t dsa_auto_timeout_ms = 1000UL;
+static volatile parameter_gt dsa_trigger_level;
 
 static uint16_t tunable_u16 = 0x1234U;
 static int16_t tunable_i16 = -1234;
 static uint32_t tunable_u32 = 0x89ABCDEFUL;
 static float tunable_f32 = 3.1415926F;
-static gmp_dl_octet_t memory_window[128];
+static data_gt memory_window[128];
 static ctrl_gt dsa_buffer[USER_DSA_DEPTH * USER_DSA_CHANNELS];
+static ctrl_gt dsa_history[USER_DSA_DEPTH * USER_DSA_CHANNELS];
 static ctrl_gt oscillator_sine;
 static ctrl_gt oscillator_cosine;
 static uint16_t oscillator_index;
 
+static fast_gt user_scope_configure(void* user_context,
+                                    const gmp_scope_config_t* config);
+static fast_gt user_scope_arm(void* user_context);
+static gmp_scope_capture_state_t user_scope_status(void* user_context,
+                                                   uint32_t* generation);
+
 static const gmp_param_item_t tunable_dictionary[] = {
-    {&tunable_u16, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RW},
-    {&tunable_i16, GMP_PARAM_TYPE_I16, GMP_PARAM_PERM_RW},
-    {&tunable_u32, GMP_PARAM_TYPE_U32, GMP_PARAM_PERM_RW},
-    {&tunable_f32, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
+    {&tunable_u16, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RW, "Test Unsigned 16-bit", "count"},
+    {&tunable_i16, GMP_PARAM_TYPE_I16, GMP_PARAM_PERM_RW, "Test Signed 16-bit", "count"},
+    {&tunable_u32, GMP_PARAM_TYPE_U32, GMP_PARAM_PERM_RW, "Test Unsigned 32-bit", "count"},
+    {&tunable_f32, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW, "Pi Estimate", ""},
 };
 
 static const gmp_mem_region_t memory_regions[] = {
-    {memory_window, sizeof(memory_window), GMP_MEM_PERM_RW},
-    {dsa_buffer, sizeof(dsa_buffer), GMP_MEM_PERM_RO},
+    {memory_window, sizeof(memory_window), GMP_MEM_PERM_RW, "Scratch Memory",
+     GMP_MEM_TYPE_U8, 1U, 128U, GMP_MEM_LAYOUT_LINEAR, 0U, 0U},
 };
+
+static const gmp_scope_resource_t scope_resources[] = {
+    {"Sine and Cosine Scope", dsa_buffer, sizeof(dsa_buffer),
+     GMP_SCOPE_SAMPLE_F32, GMP_SCOPE_LAYOUT_SOA, USER_DSA_CHANNELS,
+     USER_DSA_DEPTH, USER_DSA_SAMPLE_RATE, user_scope_configure,
+     user_scope_arm, user_scope_status, NULL},
+};
+
+/** @brief Return the requested number of pre-trigger samples. */
+static uint16_t user_dsa_pretrigger_samples(void)
+{
+    uint32_t samples = (USER_DSA_DEPTH * dsa_trigger_position_permille) / 1000U;
+    if (samples >= USER_DSA_DEPTH)
+        samples = USER_DSA_DEPTH - 1U;
+    return (uint16_t)samples;
+}
+
+/** @brief Store one two-channel sample in the circular pre-trigger history. */
+static void user_dsa_store_history(ctrl_gt channel_0, ctrl_gt channel_1)
+{
+    dsa_history[dsa_history_write] = channel_0;
+    dsa_history[USER_DSA_DEPTH + dsa_history_write] = channel_1;
+    dsa_history_write++;
+    if (dsa_history_write >= USER_DSA_DEPTH)
+        dsa_history_write = 0U;
+    if (dsa_history_count < USER_DSA_DEPTH)
+        dsa_history_count++;
+}
+
+/** @brief Copy the chronological pre-trigger history into the scope buffer. */
+static void user_dsa_copy_history(uint16_t sample_count)
+{
+    uint16_t index;
+    uint16_t source = (uint16_t)((dsa_history_write + USER_DSA_DEPTH - sample_count) %
+                                 USER_DSA_DEPTH);
+    for (index = 0U; index < sample_count; ++index)
+    {
+        dsa_buffer[index] = dsa_history[source];
+        dsa_buffer[USER_DSA_DEPTH + index] = dsa_history[USER_DSA_DEPTH + source];
+        source++;
+        if (source >= USER_DSA_DEPTH)
+            source = 0U;
+    }
+}
 
 /** @brief Reset the trigger and arm one coherent DSA snapshot. */
 static void user_arm_dsa(void)
 {
+    uint32_t timeout_ticks;
     gmp_base_enter_critical();
     ctl_clear_dsa_trigger(&dsa_trigger);
+    dsa_trigger.option = dsa_trigger_mode;
+    dsa_trigger.trigger_level = float2ctrl(dsa_trigger_level);
+    timeout_ticks = (dsa_auto_timeout_ms * USER_DSA_SAMPLE_RATE) / 1000U;
+    dsa_trigger.auto_timeout_ticks = (timeout_ticks == 0U) ? 1U : timeout_ticks;
     dsa_trigger.flag_is_force_trigger = 0;
     ctl_reset_dsa_scope_tracker(&dsa_scope);
+    dsa_history_write = 0U;
+    dsa_history_count = 0U;
     dsa_state = USER_DSA_WAITING;
     gmp_base_leave_critical();
+}
+
+/** @brief Apply one validated Data Link Scope configuration. */
+static fast_gt user_scope_configure(void* user_context,
+                                    const gmp_scope_config_t* config)
+{
+    GMP_UNUSED_VAR(user_context);
+    if (config == NULL ||
+        config->mode > DSA_TRIGGER_OPTION_FALLING_EDGE_AUTO ||
+        config->channel >= USER_DSA_CHANNELS ||
+        config->position_permille > 1000U)
+        return 0;
+    dsa_trigger_mode = (ctl_dsa_trigger_option_t)config->mode;
+    dsa_trigger_channel = (uint8_t)config->channel;
+    dsa_trigger_position_permille = config->position_permille;
+    dsa_trigger_level = config->level;
+    dsa_auto_timeout_ms = config->auto_timeout_ms;
+    return 1;
+}
+
+/** @brief Arm the demo capture through the generic Scope service callback. */
+static fast_gt user_scope_arm(void* user_context)
+{
+    GMP_UNUSED_VAR(user_context);
+    user_arm_dsa();
+    return 1;
+}
+
+/** @brief Export the current demo capture state and generation. */
+static gmp_scope_capture_state_t user_scope_status(void* user_context,
+                                                   uint32_t* generation)
+{
+    GMP_UNUSED_VAR(user_context);
+    if (generation != NULL)
+        *generation = dsa_generation;
+    return (gmp_scope_capture_state_t)dsa_state;
 }
 
 /** @brief Queue the target and backend discovery response. */
 static void user_reply_info(void)
 {
     gmp_dev_dl_tx_request_cmd(&datalink, datalink.rx_head.seq_id, USER_DL_CMD_INFO);
-    gmp_dev_dl_tx_append_u8(&datalink, 1U);
+    gmp_dev_dl_tx_append_u8(&datalink, 2U);
     gmp_dev_dl_tx_append_u8(&datalink, GMP_PORT_DATA_SIZE_PER_BYTES);
     gmp_dev_dl_tx_append_u8(&datalink, sizeof(data_gt));
     gmp_dev_dl_tx_append_u8(&datalink, 8U);
     gmp_dev_dl_tx_append_u8(&datalink, USER_DL_TUNABLE_CMD);
     gmp_dev_dl_tx_append_u8(&datalink, USER_DL_MEMORY_CMD);
+    gmp_dev_dl_tx_append_u8(&datalink, USER_DL_SCOPE_CMD);
     gmp_dev_dl_tx_append_u32(&datalink, (uint32_t)(uintptr_t)memory_window);
     gmp_dev_dl_tx_append_u16(&datalink, (uint16_t)sizeof(memory_window));
-    gmp_dev_dl_tx_ready(&datalink);
-    gmp_dev_dl_msg_handled(&datalink);
-}
-
-/** @brief Return DSA snapshot metadata required for Memory Perspective reads. */
-static void user_reply_dsa_info(void)
-{
-    gmp_dev_dl_tx_request_cmd(&datalink, datalink.rx_head.seq_id, USER_DL_DSA_CMD_INFO);
-    gmp_dev_dl_tx_append_u8(&datalink, 1U);
-    gmp_dev_dl_tx_append_u8(&datalink, (uint8_t)dsa_state);
-    gmp_dev_dl_tx_append_u8(&datalink, USER_DSA_FORMAT_F32);
-    gmp_dev_dl_tx_append_u8(&datalink, USER_DSA_CHANNELS);
-    gmp_dev_dl_tx_append_u16(&datalink, (uint16_t)USER_DSA_DEPTH);
-    gmp_dev_dl_tx_append_u32(&datalink, USER_DSA_SAMPLE_RATE);
-    gmp_dev_dl_tx_append_u32(&datalink, (uint32_t)(uintptr_t)dsa_buffer);
-    gmp_dev_dl_tx_append_u16(&datalink, (uint16_t)sizeof(dsa_buffer));
-    gmp_dev_dl_tx_append_u32(&datalink, dsa_generation);
-    gmp_dev_dl_tx_ready(&datalink);
-    gmp_dev_dl_msg_handled(&datalink);
-}
-
-/** @brief Arm a new DSA snapshot and acknowledge the command. */
-static void user_reply_dsa_arm(void)
-{
-    user_arm_dsa();
-    gmp_dev_dl_tx_request_cmd(&datalink, datalink.rx_head.seq_id, USER_DL_DSA_CMD_ARM);
-    gmp_dev_dl_tx_append_u8(&datalink, 0U);
     gmp_dev_dl_tx_ready(&datalink);
     gmp_dev_dl_msg_handled(&datalink);
 }
@@ -136,12 +211,9 @@ static gmp_task_status_t user_task_datalink(gmp_task_t* task)
     {
         if (datalink.rx_head.cmd == USER_DL_CMD_INFO)
             user_reply_info();
-        else if (datalink.rx_head.cmd == USER_DL_DSA_CMD_INFO)
-            user_reply_dsa_info();
-        else if (datalink.rx_head.cmd == USER_DL_DSA_CMD_ARM)
-            user_reply_dsa_arm();
         else if (!gmp_param_tunable_rx_cb(&tunable) &&
-                 !gmp_mem_persp_rx_cb(&memory_perspective))
+                 !gmp_mem_persp_rx_cb(&memory_perspective) &&
+                 !gmp_scope_rx_cb(&scope_service))
             gmp_dev_dl_default_rx_handler(&datalink);
     }
     return GMP_TASK_DONE;
@@ -167,7 +239,7 @@ void init(void)
     size_gt task_index;
 
     for (index = 0; index < sizeof(memory_window); ++index)
-        memory_window[index] = (gmp_dl_octet_t)index;
+        memory_window[index] = (data_gt)index;
 
     gmp_scheduler_init(&scheduler);
     for (task_index = 0; task_index < sizeof(tasks) / sizeof(tasks[0]); ++task_index)
@@ -181,6 +253,9 @@ void init(void)
     gmp_mem_persp_init(&memory_perspective, &datalink, USER_DL_MEMORY_CMD,
                        memory_regions,
                        (fast16_gt)(sizeof(memory_regions) / sizeof(memory_regions[0])));
+    gmp_scope_init(&scope_service, &datalink, USER_DL_SCOPE_CMD,
+                   scope_resources,
+                   (fast16_gt)(sizeof(scope_resources) / sizeof(scope_resources[0])));
 
     ctl_init_dsa_trigger(&dsa_trigger, DSA_TRIGGER_OPTION_RISING_EDGE,
                          0.0F, 1.0F, (parameter_gt)USER_DSA_SAMPLE_RATE);
@@ -192,6 +267,7 @@ void init(void)
     oscillator_cosine = float2ctrl(1.0F);
     oscillator_index = 0U;
     dsa_generation = 0U;
+    dsa_trigger_level = 0.0F;
     user_arm_dsa();
 
     xplt_dl_bind(&datalink);
@@ -207,12 +283,36 @@ void user_dsa_timer_step(void)
 {
     ctrl_gt sine_sample = oscillator_sine;
     ctrl_gt cosine_sample = oscillator_cosine;
+    ctrl_gt trigger_sample = (dsa_trigger_channel == 0U) ? sine_sample : cosine_sample;
+    uint16_t pretrigger_samples = user_dsa_pretrigger_samples();
 
-    if (dsa_state == USER_DSA_WAITING &&
-        ctl_step_dsa_trigger(&dsa_trigger, sine_sample))
-        dsa_state = USER_DSA_CAPTURING;
+    if (dsa_state == USER_DSA_WAITING)
+    {
+        fast_gt is_triggered = ctl_step_dsa_trigger(&dsa_trigger, trigger_sample);
+        if (is_triggered && dsa_history_count >= pretrigger_samples)
+        {
+            user_dsa_copy_history(pretrigger_samples);
+            dsa_buffer[pretrigger_samples] = sine_sample;
+            dsa_buffer[USER_DSA_DEPTH + pretrigger_samples] = cosine_sample;
+            dsa_scope.current_idx = (uint32_t)pretrigger_samples + 1U;
+            ctl_clear_divider(&dsa_scope.divider);
+            if (dsa_scope.current_idx >= dsa_scope.depth)
+            {
+                dsa_generation++;
+                dsa_state = USER_DSA_READY;
+            }
+            else
+            {
+                dsa_state = USER_DSA_CAPTURING;
+            }
+        }
+        else
+        {
+            user_dsa_store_history(sine_sample, cosine_sample);
+        }
+    }
 
-    if (dsa_state == USER_DSA_CAPTURING)
+    else if (dsa_state == USER_DSA_CAPTURING)
     {
         (void)ctl_step_dsa_scope_2ch(&dsa_scope, sine_sample, cosine_sample);
         if (dsa_scope.current_idx >= dsa_scope.depth)

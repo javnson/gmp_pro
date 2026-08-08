@@ -38,7 +38,7 @@ static const uint16_t gmp_dl_u8_crc16_table[256] = {
     0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0
 };
 
-static uint16_t dl_u8_crc16(const gmp_dl_octet_t* data, size_gt len)
+static uint16_t dl_u8_crc16(const uint8_t* data, size_gt len)
 {
     uint16_t crc = 0xFFFF;
     size_gt i;
@@ -63,7 +63,7 @@ void gmp_dev_dl_init(gmp_datalink_t* ctx)
     ctx->tx_state = GMP_DL_TX_STATE_IDLE;
 }
 
-void gmp_dev_dl_push_byte(gmp_datalink_t* ctx, gmp_dl_octet_t raw_data)
+void gmp_dev_dl_push_byte(gmp_datalink_t* ctx, uint8_t raw_data)
 {
     uint16_t next_head;
     if (ctx == NULL)
@@ -82,7 +82,7 @@ void gmp_dev_dl_push_byte(gmp_datalink_t* ctx, gmp_dl_octet_t raw_data)
     }
 }
 
-void gmp_dev_dl_push_str(gmp_datalink_t* ctx, const gmp_dl_octet_t* str, size_gt size)
+void gmp_dev_dl_push_str(gmp_datalink_t* ctx, const uint8_t* str, size_gt size)
 {
     size_gt i;
     if (ctx == NULL || str == NULL)
@@ -120,7 +120,7 @@ gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
 
     while (ctx->rx_fifo_tail != ctx->rx_fifo_head)
     {
-        gmp_dl_octet_t byte = ctx->rx_fifo[ctx->rx_fifo_tail];
+        uint8_t byte = ctx->rx_fifo[ctx->rx_fifo_tail];
         ctx->rx_fifo_tail = (uint16_t)(ctx->rx_fifo_tail + 1U);
         if (ctx->rx_fifo_tail >= GMP_DL_RX_FIFO_SIZE)
             ctx->rx_fifo_tail = 0;
@@ -198,7 +198,7 @@ gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
 
         case GMP_DL_STATE_HEADER_ESCAPE:
             if (ctx->rx_hdr_idx < sizeof(ctx->rx_hdr_buf))
-                ctx->rx_hdr_buf[ctx->rx_hdr_idx++] = (gmp_dl_octet_t)(byte ^ GMP_DL_XOR);
+                ctx->rx_hdr_buf[ctx->rx_hdr_idx++] = (uint8_t)(byte ^ GMP_DL_XOR);
             ctx->rx_state = GMP_DL_STATE_HEADER_RECV;
             break;
 
@@ -270,7 +270,7 @@ void gmp_dev_dl_tx_request_cmd(gmp_datalink_t* ctx, uint16_t seq, uint16_t cmd)
     ctx->tx_state = GMP_DL_TX_STATE_BUILDING;
 }
 
-void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, const gmp_dl_octet_t* data,
+void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, const uint8_t* data,
                                   size_gt actual_payload_len)
 {
     if (ctx == NULL || ctx->tx_state != GMP_DL_TX_STATE_BUILDING || data == NULL ||
@@ -280,7 +280,7 @@ void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, const gmp_dl_octet_t* dat
     ctx->tx_len += actual_payload_len;
 }
 
-void gmp_dev_dl_tx_append_u8(gmp_datalink_t* ctx, gmp_dl_octet_t val)
+void gmp_dev_dl_tx_append_u8(gmp_datalink_t* ctx, uint8_t val)
 {
     if (ctx != NULL && ctx->tx_state == GMP_DL_TX_STATE_BUILDING && ctx->tx_len < GMP_DL_MTU)
         ctx->tx_buf[ctx->tx_len++] = val;
@@ -290,18 +290,18 @@ void gmp_dev_dl_tx_append_u16(gmp_datalink_t* ctx, uint16_t val)
 {
     if (ctx == NULL || ctx->tx_state != GMP_DL_TX_STATE_BUILDING || ctx->tx_len + 2U > GMP_DL_MTU)
         return;
-    ctx->tx_buf[ctx->tx_len++] = (gmp_dl_octet_t)val;
-    ctx->tx_buf[ctx->tx_len++] = (gmp_dl_octet_t)(val >> 8);
+    ctx->tx_buf[ctx->tx_len++] = (uint8_t)val;
+    ctx->tx_buf[ctx->tx_len++] = (uint8_t)(val >> 8);
 }
 
 void gmp_dev_dl_tx_append_u32(gmp_datalink_t* ctx, uint32_t val)
 {
     if (ctx == NULL || ctx->tx_state != GMP_DL_TX_STATE_BUILDING || ctx->tx_len + 4U > GMP_DL_MTU)
         return;
-    ctx->tx_buf[ctx->tx_len++] = (gmp_dl_octet_t)val;
-    ctx->tx_buf[ctx->tx_len++] = (gmp_dl_octet_t)(val >> 8);
-    ctx->tx_buf[ctx->tx_len++] = (gmp_dl_octet_t)(val >> 16);
-    ctx->tx_buf[ctx->tx_len++] = (gmp_dl_octet_t)(val >> 24);
+    ctx->tx_buf[ctx->tx_len++] = (uint8_t)val;
+    ctx->tx_buf[ctx->tx_len++] = (uint8_t)(val >> 8);
+    ctx->tx_buf[ctx->tx_len++] = (uint8_t)(val >> 16);
+    ctx->tx_buf[ctx->tx_len++] = (uint8_t)(val >> 24);
 }
 
 void gmp_dev_dl_tx_ready(gmp_datalink_t* ctx)
@@ -311,7 +311,7 @@ void gmp_dev_dl_tx_ready(gmp_datalink_t* ctx)
 }
 
 void gmp_dev_dl_tx_request(gmp_datalink_t* ctx, uint16_t seq, uint16_t cmd,
-                           size_gt actual_payload_len, const gmp_dl_octet_t* data)
+                           size_gt actual_payload_len, const uint8_t* data)
 {
     gmp_dev_dl_tx_request_cmd(ctx, seq, cmd);
     gmp_dev_dl_tx_append_payload(ctx, data, actual_payload_len);
@@ -324,20 +324,20 @@ size_gt gmp_dev_dl_get_tx_capacity(gmp_datalink_t* ctx)
         (GMP_DL_MTU - ctx->tx_len) : 0;
 }
 
-gmp_dl_octet_t* gmp_dev_dl_get_tx_payload_ptr(gmp_datalink_t* ctx)
+uint8_t* gmp_dev_dl_get_tx_payload_ptr(gmp_datalink_t* ctx)
 {
     return (ctx != NULL && ctx->tx_state == GMP_DL_TX_STATE_BUILDING) ?
         &ctx->tx_buf[ctx->tx_len] : NULL;
 }
 
-const gmp_dl_octet_t* gmp_dev_dl_get_tx_hw_hdr(gmp_datalink_t* ctx, size_gt* out_len)
+const uint8_t* gmp_dev_dl_get_tx_hw_hdr(gmp_datalink_t* ctx, size_gt* out_len)
 {
     if (out_len != NULL)
         *out_len = (ctx != NULL) ? ctx->tx_hdr_len : 0;
     return (ctx != NULL) ? ctx->tx_hdr_buf : NULL;
 }
 
-const gmp_dl_octet_t* gmp_dev_dl_get_tx_hw_pld(gmp_datalink_t* ctx, size_gt* out_len)
+const uint8_t* gmp_dev_dl_get_tx_hw_pld(gmp_datalink_t* ctx, size_gt* out_len)
 {
     if (out_len != NULL)
         *out_len = (ctx != NULL) ? ctx->tx_len : 0;
@@ -346,7 +346,7 @@ const gmp_dl_octet_t* gmp_dev_dl_get_tx_hw_pld(gmp_datalink_t* ctx, size_gt* out
 
 void gmp_dev_dl_tx_warp(gmp_datalink_t* ctx)
 {
-    gmp_dl_octet_t raw_hdr[GMP_DL_HDR_SIZE];
+    uint8_t raw_hdr[GMP_DL_HDR_SIZE];
     uint16_t payload_len;
     uint16_t crc;
     size_gt i;
@@ -358,17 +358,17 @@ void gmp_dev_dl_tx_warp(gmp_datalink_t* ctx)
     if (payload_len > 0)
     {
         crc = dl_u8_crc16(ctx->tx_buf, payload_len);
-        ctx->tx_buf[ctx->tx_len++] = (gmp_dl_octet_t)crc;
-        ctx->tx_buf[ctx->tx_len++] = (gmp_dl_octet_t)(crc >> 8);
+        ctx->tx_buf[ctx->tx_len++] = (uint8_t)crc;
+        ctx->tx_buf[ctx->tx_len++] = (uint8_t)(crc >> 8);
     }
 
-    raw_hdr[0] = (gmp_dl_octet_t)ctx->tx_head.seq_id;
-    raw_hdr[1] = (gmp_dl_octet_t)ctx->tx_head.cmd;
-    raw_hdr[2] = (gmp_dl_octet_t)payload_len;
-    raw_hdr[3] = (gmp_dl_octet_t)(payload_len >> 8);
+    raw_hdr[0] = (uint8_t)ctx->tx_head.seq_id;
+    raw_hdr[1] = (uint8_t)ctx->tx_head.cmd;
+    raw_hdr[2] = (uint8_t)payload_len;
+    raw_hdr[3] = (uint8_t)(payload_len >> 8);
     crc = dl_u8_crc16(raw_hdr, 4);
-    raw_hdr[4] = (gmp_dl_octet_t)crc;
-    raw_hdr[5] = (gmp_dl_octet_t)(crc >> 8);
+    raw_hdr[4] = (uint8_t)crc;
+    raw_hdr[5] = (uint8_t)(crc >> 8);
 
     ctx->tx_hdr_buf[header_index++] = GMP_DL_SOF;
     for (i = 0; i < GMP_DL_HDR_SIZE; ++i)
@@ -376,7 +376,7 @@ void gmp_dev_dl_tx_warp(gmp_datalink_t* ctx)
         if (raw_hdr[i] == GMP_DL_SOF || raw_hdr[i] == GMP_DL_EOF || raw_hdr[i] == GMP_DL_ESC)
         {
             ctx->tx_hdr_buf[header_index++] = GMP_DL_ESC;
-            ctx->tx_hdr_buf[header_index++] = (gmp_dl_octet_t)(raw_hdr[i] ^ GMP_DL_XOR);
+            ctx->tx_hdr_buf[header_index++] = (uint8_t)(raw_hdr[i] ^ GMP_DL_XOR);
         }
         else
         {
@@ -406,11 +406,11 @@ void gmp_dev_dl_reply_ack_null(gmp_datalink_t* ctx)
 
 void gmp_dev_dl_reply_nack(gmp_datalink_t* ctx, uint16_t error_code)
 {
-    gmp_dl_octet_t payload[2];
+    uint8_t payload[2];
     if (ctx == NULL)
         return;
-    payload[0] = (gmp_dl_octet_t)ctx->rx_head.cmd;
-    payload[1] = (gmp_dl_octet_t)error_code;
+    payload[0] = (uint8_t)ctx->rx_head.cmd;
+    payload[1] = (uint8_t)error_code;
     gmp_dev_dl_tx_request(ctx, ctx->rx_head.seq_id, GMP_DL_CMD_NACK, 2, payload);
     ctx->flag_reply_handled = 1;
 }

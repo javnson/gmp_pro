@@ -13,6 +13,7 @@ GMP Data Link（DL）是 PIL、Tunable Parameters 和 Memory Perspective 共用�
 #include <core/dev/datalink.h>
 #include <core/dev/tunable.h>
 #include <core/dev/mem_presp.h>
+#include <core/dev/scope.h>
 ```
 
 使用这些服务的工程始终编译同一组源文件：
@@ -21,6 +22,7 @@ GMP Data Link（DL）是 PIL、Tunable Parameters 和 Memory Perspective 共用�
 core/dev/src/gmp_datalink.c
 core/dev/src/gmp_tunable.c
 core/dev/src/gmp_mem_presp.c
+core/dev/src/gmp_scope.c
 ```
 
 ## 后端自动选择
@@ -34,9 +36,9 @@ core/dev/src/gmp_mem_presp.c
 
 其他值会触发编译错误。实际后端位于 `core/dev/datalink/`，应用层不应直接包含其中的文件。
 
-`gmp_dl_octet_t` 表示一个物理协议字节：u8 后端中它是 `uint8_t`，u16 后端中保留原有
-`data_gt` 表示。UART 收发代码应使用该类型或公共缓冲区访问函数，不应假设 `data_gt`
-总是一个物理字节。
+u8 后端直接使用 `uint8_t` 表示协议字节，不再引入额外的字节类型别名。平台无关的用户
+代码和外设适配代码使用 GMP 基本单元 `data_gt`：它在 STM32 上自然为 8 位，在 C28x 上
+自然为 16 位。后端选择器会阻止 u8 实现在非字节寻址平台上编译。
 
 ## 线协议
 
@@ -67,7 +69,8 @@ DMA 可以将帧头与载荷串联为两次发送。循环 RX DMA 应在半传�
 ## Tunable 与 Memory Perspective
 
 Tunable 通过静态字典开放离散变量，并为每项指定原生类型和 RO/RW 权限。读命令为
-`base_cmd`，写命令为 `base_cmd + 1`。
+`base_cmd`，写命令为 `base_cmd + 1`。在 `base_cmd + 1` 上发送一个基本单元的载荷表示
+按索引查询目标上报的参数描述符，有效写请求长度更长，因此两者不会产生歧义。
 
 Memory Perspective 只允许访问显式注册的沙箱区域，请求格式为：
 
@@ -78,6 +81,15 @@ Memory Perspective 只允许访问显式注册的沙箱区域，请求格式为�
 协议地址和长度始终以字节表示。u8 目标直接使用原生字节地址；C28x/u16 目标继续使用历史
 字节地址约定，并由后端换算为本机字地址。仅允许 1、2、4 字节元素，完整访问必须落在同一
 沙箱区域内并满足权限。
+
+Memory Perspective 同样在 `base_cmd + 1` 上使用一个基本单元的载荷查询区域描述符，
+描述符包含名称、地址、长度、权限、数据类型、布局、通道数、深度和采样率。
+
+## Data Link Scope
+
+Data Link Scope 与 Memory Perspective 相互独立。目标注册具名波形资源及配置、启动、状态
+回调，上位机无需获知物理地址。一个 Scope 命令通过载荷首字节区分 Discover、Configure、
+Arm、Status 和 Read 操作，从而以一个命令号完成一整页示波器工具的功能。
 
 ## 配套工具
 

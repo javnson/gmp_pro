@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<Project noNamespaceSchemaLocation="project_projx.xsd">
+<Project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="project_projx.xsd">
   <SchemaVersion>2.1</SchemaVersion>
   <Header>### uVision Project, (C) Keil Software</Header>
   <Targets>
@@ -13,6 +13,8 @@
         <TargetCommonOption>
           <Device>STM32C092RCTx</Device>
           <Vendor>STMicroelectronics</Vendor>
+          <PackID>Keil.STM32C0xx_DFP.2.3.0</PackID>
+          <PackURL>https://www.keil.com/pack/</PackURL>
           <Cpu>IRAM(0x20000000-0x200077FF) IROM(0x8000000-0x803FFFF) CLOCK(8000000) CPUTYPE("Cortex-M0+") TZ</Cpu>
           <FlashUtilSpec />
           <StartupFile />
@@ -28,7 +30,7 @@
           <SLE66CMisc />
           <SLE66AMisc />
           <SLE66LinkerMisc />
-          <SFDFile />
+          <SFDFile>$$Device:STM32C092RCTx$CMSIS\SVD\STM32C092.svd</SFDFile>
           <bCustSvd>0</bCustSvd>
           <UseEnv>0</UseEnv>
           <BinPath />
@@ -50,7 +52,7 @@
           <CreateHexFile>1</CreateHexFile>
           <DebugInformation>1</DebugInformation>
           <BrowseInformation>1</BrowseInformation>
-          <ListingPath>./stm32_dl_dbger/</ListingPath>
+          <ListingPath />
           <HexFormatSelection>1</HexFormatSelection>
           <Merge32K>0</Merge32K>
           <CreateBatchFile>0</CreateBatchFile>
@@ -178,11 +180,12 @@
             <hadIRAM>1</hadIRAM>
             <hadXRAM>0</hadXRAM>
             <uocXRam>0</uocXRam>
-            <RvdsVP>1</RvdsVP>
+            <RvdsVP>0</RvdsVP>
             <RvdsMve>0</RvdsMve>
             <RvdsCdeCp>0</RvdsCdeCp>
+            <nBranchProt>0</nBranchProt>
             <hadIRAM2>0</hadIRAM2>
-            <hadIROM2>1</hadIROM2>
+            <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
             <useUlib>0</useUlib>
             <EndSel>0</EndSel>
@@ -240,13 +243,13 @@
               </Ocm6>
               <IRAM>
                 <Type>0</Type>
-                <StartAddress>0x0</StartAddress>
-                <Size>0x0</Size>
+                <StartAddress>0x20000000</StartAddress>
+                <Size>0x7800</Size>
               </IRAM>
               <IROM>
                 <Type>1</Type>
-                <StartAddress>0x0</StartAddress>
-                <Size>0x0</Size>
+                <StartAddress>0x8000000</StartAddress>
+                <Size>0x40000</Size>
               </IROM>
               <XRAM>
                 <Type>0</Type>
@@ -270,8 +273,8 @@
               </OCR_RVCT3>
               <OCR_RVCT4>
                 <Type>1</Type>
-                <StartAddress />
-                <Size />
+                <StartAddress>0x8000000</StartAddress>
+                <Size>0x40000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
                 <Type>1</Type>
@@ -295,8 +298,8 @@
               </OCR_RVCT8>
               <OCR_RVCT9>
                 <Type>0</Type>
-                <StartAddress />
-                <Size />
+                <StartAddress>0x20000000</StartAddress>
+                <Size>0x7800</Size>
               </OCR_RVCT9>
               <OCR_RVCT10>
                 <Type>0</Type>
@@ -526,6 +529,9 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>::CMSIS</GroupName>
+        </Group>
+        <Group>
           <GroupName>Application/GMP User</GroupName>
           <Files>
             <File>
@@ -612,6 +618,11 @@
               <FileName>gmp_process_mgr.c</FileName>
               <FileType>1</FileType>
               <FilePath>../gmp_src_mgr/gmp_src/gmp_process_mgr.c</FilePath>
+            </File>
+            <File>
+              <FileName>gmp_scope.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../gmp_src_mgr/gmp_src/gmp_scope.c</FilePath>
             </File>
             <File>
               <FileName>gmp_std_error_code.c</FileName>

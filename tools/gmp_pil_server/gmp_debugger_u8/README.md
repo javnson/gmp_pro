@@ -15,5 +15,9 @@ Memory Perspective addresses are ordinary byte addresses. For the included
 NUCLEO-C092RC validation firmware, select the ST-Link virtual COM port and use
 `921600 8-N-1`.
 
-The `DSA Trigger/Scope` tab can arm the C092 target, read its 400-point
-sine/cosine snapshot through Memory Perspective, and plot both channels.
+The `Data Link Scope` tab discovers the C092 scope resource and can configure
+trigger mode, source channel, level, position, and auto timeout before plotting
+its 400-point sine/cosine snapshot. Continuous display automatically re-arms
+and refreshes completed acquisitions. Configurable waveform persistence overlays
+age-faded history frames as an oscilloscope-style afterglow. It uses the independent Scope service and
+does not require a physical memory address.

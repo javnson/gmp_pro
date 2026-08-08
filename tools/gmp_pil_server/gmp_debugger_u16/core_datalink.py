@@ -8,7 +8,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 SOF, EOF, ESC, XOR = 0x7B, 0x7D, 0x25, 0x20
 
-# 预计算 CRC 表以极速校验
+# Precompute the CRC table for low-overhead frame validation.
 crc16_table = []
 for i in range(256):
     crc = i << 8
@@ -26,7 +26,7 @@ def calculate_crc16_ccitt(data: bytes) -> int:
     return crc
 
 def get_time_str():
-    """获取当前时间的毫秒级字符串"""
+    """Return the current local time with millisecond precision."""
     return datetime.now().strftime('%H:%M:%S.%f')[:-3]
 
 class HermesDatalinkQt(QObject):
@@ -34,7 +34,7 @@ class HermesDatalinkQt(QObject):
     sig_log_msg = pyqtSignal(str)
     sig_conn_state = pyqtSignal(bool)
     
-    # 全局总线事件，携带丰富的时间戳和解析信息
+    # Shared bus events include timestamps and decoded frame metadata.
     sig_bus_event = pyqtSignal(dict) 
 
     def __init__(self, local_id=0xFF):
@@ -46,9 +46,9 @@ class HermesDatalinkQt(QObject):
         self.rx_thread = None
         self.tx_thread = None
         
-        # 【核心架构】：线程安全的优先级调度队列
+        # Thread-safe priority queue shared by all feature pages.
         self.tx_queue = queue.PriorityQueue()
-        self._tx_seq = 0 # 自增序列号，确保相同优先级时的先进先出(FIFO)稳定性
+        self._tx_seq = 0  # Preserve FIFO order among requests with equal priority.
         self._seq_lock = threading.Lock()
 
     def connect_serial(self, port, baudrate, bytesize, parity, stopbits):
@@ -64,22 +64,22 @@ class HermesDatalinkQt(QObject):
             
             self.running = True
             
-            # 清空历史残留的脏队列
+            # Discard stale requests from a previous connection.
             while not self.tx_queue.empty():
                 try: self.tx_queue.get_nowait()
                 except queue.Empty: break
 
-            # 启动收发双擎
+            # Start independent receive and transmit workers.
             self.rx_thread = threading.Thread(target=self._rx_task, daemon=True)
             self.tx_thread = threading.Thread(target=self._tx_task, daemon=True)
             self.rx_thread.start()
             self.tx_thread.start()
             
-            self.sig_log_msg.emit(f"✅ 串口 {port} 已打开 (启动双核调度队列)")
+            self.sig_log_msg.emit(f"Serial port {port} opened with queued I/O workers.")
             self.sig_conn_state.emit(True)
             return True
         except Exception as e:
-            self.sig_log_msg.emit(f"❌ 打开串口失败: {str(e)}")
+            self.sig_log_msg.emit(f"Failed to open the serial port: {str(e)}")
             self.sig_conn_state.emit(False)
             return False
 
@@ -88,16 +88,16 @@ class HermesDatalinkQt(QObject):
         if self.rx_thread: self.rx_thread.join(timeout=0.2)
         if self.tx_thread: self.tx_thread.join(timeout=0.2)
         if self.serial.is_open: self.serial.close()
-        self.sig_log_msg.emit("🔌 串口已断开")
+        self.sig_log_msg.emit("Serial port disconnected.")
         self.sig_conn_state.emit(False)
 
     # =========================================================
-    # 发送接口层：只负责拼装与投递，绝不触碰物理串口
+    # Public transmit API: frame and enqueue without touching hardware directly.
     # =========================================================
     def send_raw(self, data: bytes, priority: int = 1):
         """
-        盲发纯净字节 (默认普通优先级 1)
-        priority: 0=最高级(插队), 1=普通级, 2=低级
+        Enqueue unframed bytes with normal priority by default.
+        Priority 0 is urgent, 1 is normal, and 2 is background.
         """
         if not self.serial.is_open: return
         
@@ -106,12 +106,12 @@ class HermesDatalinkQt(QObject):
             seq = self._tx_seq
             
         event_dict = {'dir': 'TX', 'type': 'RAW', 'data': data}
-        # 将打包好的任务推入优先级队列
+        # Submit the immutable transfer to the priority queue.
         self.tx_queue.put((priority, seq, data, event_dict))
 
     def send_frame(self, target_id: int, cmd: int, payload: bytes, priority: int = 1):
         """
-        封装并投递协议帧 (加入 Priority 仲裁参数)
+        Encode and enqueue one Data Link frame with explicit priority.
         """
         if not self.serial.is_open: return
         
@@ -139,41 +139,41 @@ class HermesDatalinkQt(QObject):
             'dl_payload': payload, 'dl_crc_ok': True, 'error': ''
         }
         
-        # 投递：元组的第一个元素 priority 决定了发出的先后顺序
+        # The first tuple field controls dispatch order.
         self.tx_queue.put((priority, seq, bytes(tx_buf), event_dict))
 
     # =========================================================
-    # 物理层任务：发送引擎 (Tx Task)
+    # Physical transmit worker.
     # =========================================================
     def _tx_task(self):
-        """冷酷的物理层发牌员，严格按照优先级消化队列"""
+        """Drain queued transfers strictly by priority and FIFO sequence."""
         while self.running:
             try:
-                # 阻塞式拿取任务，超时 0.1s 用于响应退出信号
+                # A short timeout keeps shutdown responsive.
                 priority, seq, tx_data, ev_dict = self.tx_queue.get(timeout=0.1)
                 
                 if not self.running or not self.serial.is_open:
                     continue
                 
-                # 物理写入，并打上最精确的发包时间戳
+                # Timestamp the event immediately after the physical write.
                 self.serial.write(tx_data)
                 
                 ev_dict['time'] = get_time_str()
                 ev_dict['data'] = tx_data
                 self.sig_bus_event.emit(ev_dict)
                 
-                # 标记该任务已被处理完成
+                # Mark the queued transfer complete.
                 self.tx_queue.task_done()
                 
             except queue.Empty:
                 continue
             except Exception as e:
                 if self.running:
-                    self.sig_log_msg.emit(f"❌ 物理发送管线崩溃: {str(e)}")
+                    self.sig_log_msg.emit(f"Serial transmit worker failed: {str(e)}")
                     self.close()
 
     # =========================================================
-    # 物理层任务：接收引擎 (Rx Task) - 保持极速响应
+    # Low-latency physical receive worker.
     # =========================================================
     def _rx_task(self):
         STATE_WAIT, STATE_HDR, STATE_ESC, STATE_PLD = 0, 1, 2, 3
@@ -189,7 +189,7 @@ class HermesDatalinkQt(QObject):
                 raw_bytes = self.serial.read(self.serial.in_waiting or 1)
             except Exception as e:
                 if self.running:
-                    self.sig_log_msg.emit(f"❌ 串口硬件断开！({str(e)})")
+                    self.sig_log_msg.emit(f"Serial hardware disconnected: {str(e)}")
                     self.close()
                 break
                 
