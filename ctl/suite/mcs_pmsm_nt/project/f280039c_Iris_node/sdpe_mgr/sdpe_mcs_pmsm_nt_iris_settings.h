@@ -216,6 +216,11 @@ extern "C"
  */
 
 /**
+ * @brief Number of samples stored per channel by the four-channel hardware Data Link Scope.
+ */
+#define GMP_DL_SCOPE_DEPTH (100)
+
+/**
  * @brief Maximum compare count of the platform PWM peripheral at the configured controller switching frequency.
  */
 #define CTRL_PWM_CMP_MAX (3000 - 1)
@@ -504,7 +509,9 @@ extern "C"
 /**
  * @brief
  */
-#define CTRL_SPEED_RPM_BASE SM060R20B30MNAD_MAX_SPEED
+#ifndef CTRL_SPEED_RPM_BASE
+#define CTRL_SPEED_RPM_BASE MOTOR_PARAM_MAX_SPEED
+#endif // CTRL_SPEED_RPM_BASE
 
 /**
  * @brief

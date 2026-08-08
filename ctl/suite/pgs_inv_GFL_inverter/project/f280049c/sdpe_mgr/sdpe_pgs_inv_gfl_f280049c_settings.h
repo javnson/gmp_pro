@@ -316,6 +316,11 @@ extern "C"
  */
 
 /**
+ * @brief Number of samples stored per channel by the four-channel hardware Data Link Scope.
+ */
+#define GMP_DL_SCOPE_DEPTH (100)
+
+/**
  * @brief Current-loop and PWM update frequency in hertz.
  */
 #define CONTROLLER_FREQUENCY (10e3)

@@ -62,6 +62,16 @@
   ],
   "requirements": [
     {
+      "role": "Data Link Scope Depth",
+      "macro": "GMP_DL_SCOPE_DEPTH",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "100"
+      },
+      "description": "Number of samples stored per channel by the four-channel hardware Data Link Scope."
+    },
+    {
       "role": "Startup Delay",
       "macro": "CTRL_STARTUP_DELAY",
       "binding": {
@@ -242,6 +252,7 @@
     {
       "name": "Peripheral Parameters",
       "requirements": [
+        "Data Link Scope Depth",
         "Controller Frequency",
         "Pwm Compare Max",
         "Pwm Deadband",

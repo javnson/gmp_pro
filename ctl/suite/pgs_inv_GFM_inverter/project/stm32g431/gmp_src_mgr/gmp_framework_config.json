@@ -1,5 +1,5 @@
 {
-    "sync_mode": "src_only",
+    "sync_mode": "all",
     "selected_modules": [
         {
             "root": "core",
@@ -39,22 +39,6 @@
         },
         {
             "root": "core",
-            "module": "dev|display|_internal"
-        },
-        {
-            "root": "core",
-            "module": "dev|display|ht16k33"
-        },
-        {
-            "root": "core",
-            "module": "dev|gpio|_internal"
-        },
-        {
-            "root": "core",
-            "module": "dev|gpio|pca9555"
-        },
-        {
-            "root": "core",
             "module": "dev|software|_internal"
         },
         {
@@ -79,7 +63,7 @@
         },
         {
             "root": "csp",
-            "module": "c28x_syscfg"
+            "module": "stm32"
         },
         {
             "root": "ctl",

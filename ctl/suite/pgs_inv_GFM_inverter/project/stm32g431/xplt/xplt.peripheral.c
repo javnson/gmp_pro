@@ -10,9 +10,12 @@
 
 // GMP basic core header
 #include <gmp_core.h>
+#include <ctl/component/dsa/dsa_dl_scope.h>
 
 #include "user_main.h"
 #include <xplt.peripheral.h>
+
+CTL_DSA_DL_SCOPE_DEFINE_PLATFORM("Control Scope")
 
 //=================================================================================================
 // definitions of peripheral
@@ -154,9 +157,6 @@ void setup_peripheral(void)
 
     // Enable UART Receive DMA
     HAL_UARTEx_ReceiveToIdle_DMA(&huart2, uart_rx_dma_buffer, UART_RX_DMA_BUFFER_SIZE);
-
-    // Close half-full interrupt
-    __HAL_DMA_DISABLE_IT(&hdma_usart2_rx, DMA_IT_HT);
 }
 
 //=================================================================================================
@@ -173,6 +173,7 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc)
     if (hadc == &hadc1)
     {
         gmp_base_ctl_step();
+        xplt_step_dl_scope();
 
         counter++;
         if (counter >= 1000)
@@ -192,7 +193,7 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc)
 //// 32 bit union
 //typedef union {
 //    int32_t i32;
-//    uint16_t u16[2]; // C2000中uint16_t占1个word，32位占用2个word
+//    uint16_t u16[2]; /**< C2000 stores each 16-bit value in one addressable word. */
 //} can_data_t;
 
 //// CAN interrupt
@@ -291,10 +292,23 @@ void send_monitor_data(void)
 //    CAN_sendMessage(IRIS_CAN_BASE, 10, 8, (uint16_t*)tran_content);
 }
 
-void at_device_flush_rx_buffer()
+extern gmp_datalink_t dl;
+
+/** @brief Transmit the pending Data Link frame through the debug UART. */
+void flush_dl_tx_buffer(void)
 {
-    // for STM32 no need to flush rx buffer in Mainloop
+    gmp_hal_uart_write(debug_uart, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl),
+                       gmp_dev_dl_get_tx_hw_hdr_size(&dl), 10);
+    if (gmp_dev_dl_get_tx_hw_pld_size(&dl) > 0)
+    {
+        gmp_hal_uart_write(debug_uart, gmp_dev_dl_get_tx_hw_pld_ptr(&dl),
+                           gmp_dev_dl_get_tx_hw_pld_size(&dl), 10);
+    }
 }
+
+/** @brief Polling hook retained for the shared Data Link task. */
+void flush_dl_rx_buffer(void)
+{}
 
 /**
   * @brief  Reception Event Callback (Rx event notification called after use of advanced reception service).
@@ -305,22 +319,23 @@ void at_device_flush_rx_buffer()
   */
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef* huart, uint16_t Size)
 {
-
     if (huart == &huart2)
     {
-        // Stop UART DMA Receive
-        HAL_UART_DMAStop(huart);
+        static uint16_t last_position = 0;
+        HAL_UART_RxEventTypeTypeDef event = HAL_UARTEx_GetRxEventType(huart);
 
-        // Copy Data from DMA buffer
-        at_device_rx_isr(&at_dev, (char*)uart_rx_dma_buffer, Size);
+        if (Size > last_position)
+        {
+            gmp_dev_dl_push_str(&dl, (data_gt*)&uart_rx_dma_buffer[last_position],
+                                (uint16_t)(Size - last_position));
+            last_position = Size;
+        }
 
-        // Clear buffer
-        memset(uart_rx_dma_buffer, 0, UART_RX_DMA_BUFFER_SIZE);
-
-        // Enable UART Receive DMA
-        HAL_UARTEx_ReceiveToIdle_DMA(&huart2, uart_rx_dma_buffer, UART_RX_DMA_BUFFER_SIZE);
-
-        // Close half-full interrupt
-        __HAL_DMA_DISABLE_IT(&hdma_usart2_rx, DMA_IT_HT);
+        /** Idle and full events terminate normal-mode DMA and require rearming. */
+        if (event != HAL_UART_RXEVENT_HT)
+        {
+            last_position = 0;
+            HAL_UARTEx_ReceiveToIdle_DMA(&huart2, uart_rx_dma_buffer, UART_RX_DMA_BUFFER_SIZE);
+        }
     }
 }

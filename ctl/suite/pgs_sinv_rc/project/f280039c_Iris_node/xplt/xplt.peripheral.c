@@ -8,11 +8,14 @@
 
 // GMP basic core header
 #include <gmp_core.h>
+#include <ctl/component/dsa/dsa_dl_scope.h>
 
 #include "ctl_main.h" // Includes SINV modules, ADC structures, and ctrl_settings.h
 #include "user_main.h"
 #include <ctl/component/dsa/dsa_trigger.h>
 #include <xplt.peripheral.h>
+
+CTL_DSA_DL_SCOPE_DEFINE_PLATFORM("Control Scope")
 
 //=================================================================================================
 // Definitions of Peripheral
@@ -103,6 +106,7 @@ interrupt void MainISR(void)
 {
     // Call GMP ISR Controller operation callback function (invokes ctl_dispatch)
     gmp_base_ctl_step();
+    xplt_step_dl_scope();
 
     // Call GMP Timer
     gmp_step_system_tick();

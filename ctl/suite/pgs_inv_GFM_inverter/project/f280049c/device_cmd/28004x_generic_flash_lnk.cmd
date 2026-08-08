@@ -18,20 +18,7 @@ PAGE 0 :
    /* BANK 0 */
    FLASH_BANK0_SEC0  : origin = 0x080002, length = 0x000FFE	/* on-chip Flash */
    FLASH_BANK0_SEC1  : origin = 0x081000, length = 0x001000	/* on-chip Flash */
-   FLASH_BANK0_SEC2  : origin = 0x082000, length = 0x001000	/* on-chip Flash */
-   FLASH_BANK0_SEC3  : origin = 0x083000, length = 0x001000	/* on-chip Flash */
-   FLASH_BANK0_SEC4  : origin = 0x084000, length = 0x001000	/* on-chip Flash */
-   FLASH_BANK0_SEC5  : origin = 0x085000, length = 0x001000	/* on-chip Flash */
-   FLASH_BANK0_SEC6  : origin = 0x086000, length = 0x001000	/* on-chip Flash */
-   FLASH_BANK0_SEC7  : origin = 0x087000, length = 0x001000	/* on-chip Flash */
-   FLASH_BANK0_SEC8  : origin = 0x088000, length = 0x001000	/* on-chip Flash */
-   FLASH_BANK0_SEC9  : origin = 0x089000, length = 0x001000	/* on-chip Flash */
-   FLASH_BANK0_SEC10 : origin = 0x08A000, length = 0x001000	/* on-chip Flash */
-   FLASH_BANK0_SEC11 : origin = 0x08B000, length = 0x001000	/* on-chip Flash */
-   FLASH_BANK0_SEC12 : origin = 0x08C000, length = 0x001000	/* on-chip Flash */
-   FLASH_BANK0_SEC13 : origin = 0x08D000, length = 0x001000	/* on-chip Flash */
-   FLASH_BANK0_SEC14 : origin = 0x08E000, length = 0x001000	/* on-chip Flash */
-   FLASH_BANK0_SEC15 : origin = 0x08F000, length = 0x001000	/* on-chip Flash */
+   FLASH_BANK0_SEC2_15 : origin = 0x082000, length = 0x00E000 /* on-chip Flash */
 
    /* BANK 1 */
    //FLASH_BANK1_SEC0  : origin = 0x090000, length = 0x001000	/* on-chip Flash */
@@ -103,10 +90,10 @@ SECTIONS
    .bss             : > RAMLS5_7,       PAGE = 1
    .bss:output      : > RAMLS3,       PAGE = 0
    .bss:cio         : > RAMLS0,       PAGE = 0
-   .data            : > RAMLS5_7,       PAGE = 1
-   .sysmem          : > RAMLS5_7,       PAGE = 1
+   .data            : > RAMGS2,         PAGE = 1
+   .sysmem          : > RAMGS3,         PAGE = 1
    /* Initalized sections go in Flash */
-   .const           : >> FLASH_BANK0_SEC4 | FLASH_BANK0_SEC5 | FLASH_BANK0_SEC6 | FLASH_BANK0_SEC7,       PAGE = 0,       ALIGN(4)
+   .const           : > FLASH_BANK0_SEC2_15, PAGE = 0, ALIGN(4)
 #else
    .pinit           : > FLASH_BANK0_SEC1,       PAGE = 0,       ALIGN(4)
    .ebss            : > RAMLS5_7,       PAGE = 1

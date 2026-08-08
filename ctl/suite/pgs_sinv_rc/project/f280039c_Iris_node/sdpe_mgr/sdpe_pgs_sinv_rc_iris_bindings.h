@@ -205,6 +205,11 @@ extern "C"
  */
 
 /**
+ * @brief Number of samples stored per channel by the four-channel hardware Data Link Scope.
+ */
+#define GMP_DL_SCOPE_DEPTH (100)
+
+/**
  * @brief Controller ISR frequency.
  */
 #define CONTROLLER_FREQUENCY (20e3)

@@ -199,6 +199,11 @@ extern "C"
  */
 
 /**
+ * @brief Number of samples stored per channel by the four-channel hardware Data Link Scope.
+ */
+#define GMP_DL_SCOPE_DEPTH (100)
+
+/**
  * @brief PWM compare maximum value for the configured ePWM time base.
  */
 #define CTRL_PWM_CMP_MAX (3000 - 1)

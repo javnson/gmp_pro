@@ -15,6 +15,15 @@
 #include <core/dev/mem_presp.h>
 #include <core/dev/pil_core.h>
 #include <core/dev/tunable.h>
+#if !defined SPECIFY_PC_ENVIRONMENT
+#include <ctl/component/dsa/dsa_dl_scope.h>
+#endif
+
+/** @brief Flush received Data Link bytes from the platform transport. */
+void flush_dl_rx_buffer(void);
+
+/** @brief Flush pending Data Link bytes to the platform transport. */
+void flush_dl_tx_buffer(void);
 
 //=================================================================================================
 // Datalink protocol online Debug module
@@ -90,6 +99,10 @@ gmp_task_status_t tsk_dl_debug_device(gmp_task_t* tsk)
 
         // Ack memory perspective message
         if (gmp_mem_persp_rx_cb(&mem_persp_server))
+            break;
+
+        /** Dispatch the independent four-channel Scope service. */
+        if (xplt_dispatch_dl_scope())
             break;
 
         // Echo Command
@@ -203,6 +216,9 @@ GMP_NO_OPT_PREFIX void init(void) GMP_NO_OPT_SUFFIX
     // Band DL module with tunable and persp module.
     gmp_param_tunable_init(&tunable, &dl, 0x30, dict_m1, var_tunable_count);
     gmp_mem_persp_init(&mem_persp_server, &dl, 0x50, mem_regions, mem_regions_count);
+#if !defined SPECIFY_PC_ENVIRONMENT
+    xplt_init_dl_scope(&dl);
+#endif
 }
 
 // Initialization tasks after all peripherals have been initialized
@@ -230,3 +246,14 @@ void mainloop(void) GMP_NO_OPT_SUFFIX
     // run task scheduler
     gmp_scheduler_dispatch(&sched);
 }
+
+#if !defined SPECIFY_PC_ENVIRONMENT
+/** @brief Provide four power-stage measurements to the platform Scope. */
+void user_get_scope_channels(ctrl_gt channels[4])
+{
+    channels[0] = adc_v_primary.control_port.value;
+    channels[1] = adc_i_primary.control_port.value;
+    channels[2] = adc_v_secondary.control_port.value;
+    channels[3] = adc_i_secondary.control_port.value;
+}
+#endif

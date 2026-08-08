@@ -34,7 +34,7 @@ extern "C"
 #define MCS_PMSM_NT_F280049C_SDPE_PROJECT_ID "mcs_pmsm_nt_f280049c"
 #define MCS_PMSM_NT_F280049C_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
 #define MCS_PMSM_NT_F280049C_SDPE_PROJECT_VERSION "1.2.0"
-#define MCS_PMSM_NT_F280049C_SDPE_PROJECT_UPDATED_AT "2026-08-08"
+#define MCS_PMSM_NT_F280049C_SDPE_PROJECT_UPDATED_AT "2026-08-09"
 
 //=================================================================================================
 /**
@@ -225,6 +225,11 @@ extern "C"
 /**
  * @brief Requirement bindings.
  */
+
+/**
+ * @brief Number of samples stored per channel by the four-channel hardware Data Link Scope.
+ */
+#define GMP_DL_SCOPE_DEPTH (100)
 
 /**
  * @brief Maximum compare count of the platform PWM peripheral at the configured controller switching frequency.
@@ -490,7 +495,7 @@ extern "C"
  * @brief Incremental commissioning level. 1: V/f voltage open loop; 2: current loop with synthetic electrical angle; 3: current loop with encoder angle; 4: speed loop with encoder feedback.
  *        Options: (1), (2), (3), (4)
  */
-#define BUILD_LEVEL (2)
+#define BUILD_LEVEL (1)
 
 //=================================================================================================
 /**
@@ -515,7 +520,9 @@ extern "C"
 /**
  * @brief
  */
-#define CTRL_SPEED_RPM_BASE SM060R20B30MNAD_MAX_SPEED
+#ifndef CTRL_SPEED_RPM_BASE
+#define CTRL_SPEED_RPM_BASE MOTOR_PARAM_MAX_SPEED
+#endif // CTRL_SPEED_RPM_BASE
 
 /**
  * @brief

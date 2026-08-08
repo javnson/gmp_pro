@@ -3,6 +3,22 @@
     "selected_modules": [
         {
             "root": "core",
+            "module": "dev|datalink|scope"
+        },
+        {
+            "root": "ctl",
+            "module": "component|dsa|dsa_scope"
+        },
+        {
+            "root": "ctl",
+            "module": "component|dsa|dsa_trigger"
+        },
+        {
+            "root": "ctl",
+            "module": "component|dsa|dsa_dl_scope"
+        },
+        {
+            "root": "core",
             "module": "dev|_internal"
         },
         {

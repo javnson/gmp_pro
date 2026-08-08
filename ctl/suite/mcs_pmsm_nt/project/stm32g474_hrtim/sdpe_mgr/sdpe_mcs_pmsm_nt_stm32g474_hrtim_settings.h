@@ -95,6 +95,11 @@ extern "C"
  */
 
 /**
+ * @brief Number of samples stored per channel by the four-channel hardware Data Link Scope.
+ */
+#define GMP_DL_SCOPE_DEPTH (100)
+
+/**
  * @brief Maximum compare count of the platform PWM peripheral at the configured controller switching frequency.
  */
 #define CTRL_PWM_CMP_MAX (34000)
@@ -381,44 +386,82 @@ extern "C"
 #define MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A (0.05f)
 
 /**
+ * @brief
+ */
+#ifndef CTRL_SPEED_RPM_BASE
+#define CTRL_SPEED_RPM_BASE MOTOR_PARAM_MAX_SPEED
+#endif // CTRL_SPEED_RPM_BASE
+
+/**
+ * @brief
+ */
+#ifndef MOTOR_PARAM_RS
+#define MOTOR_PARAM_RS SM060R20B30MNAD_RS
+#endif // MOTOR_PARAM_RS
+
+/**
+ * @brief
+ */
+#ifndef MOTOR_PARAM_LS
+#define MOTOR_PARAM_LS SM060R20B30MNAD_LD
+#endif // MOTOR_PARAM_LS
+
+/**
+ * @brief
+ */
+#ifndef MOTOR_PARAM_LD
+#define MOTOR_PARAM_LD SM060R20B30MNAD_LD
+#endif // MOTOR_PARAM_LD
+
+/**
+ * @brief
+ */
+#ifndef MOTOR_PARAM_LQ
+#define MOTOR_PARAM_LQ SM060R20B30MNAD_LQ
+#endif // MOTOR_PARAM_LQ
+
+/**
+ * @brief
+ */
+#ifndef MOTOR_PARAM_FLUX
+#define MOTOR_PARAM_FLUX SM060R20B30MNAD_FLUX
+#endif // MOTOR_PARAM_FLUX
+
+/**
+ * @brief
+ */
+#ifndef MOTOR_PARAM_POLE_PAIRS
+#define MOTOR_PARAM_POLE_PAIRS SM060R20B30MNAD_POLE_PAIRS
+#endif // MOTOR_PARAM_POLE_PAIRS
+
+/**
+ * @brief
+ */
+#ifndef MOTOR_PARAM_INERTIA
+#define MOTOR_PARAM_INERTIA SM060R20B30MNAD_INERTIA
+#endif // MOTOR_PARAM_INERTIA
+
+/**
+ * @brief
+ */
+#ifndef MOTOR_PARAM_FRICTION
+#define MOTOR_PARAM_FRICTION SM060R20B30MNAD_FRICTION
+#endif // MOTOR_PARAM_FRICTION
+
+/**
  * @brief Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
  */
 #define MCS_ENCODER_SPEED_FILTER_FC_HZ (20.0f)
 
 /**
- * @brief Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu.
+ * @brief Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets.
  */
-#define MCS_MECH_POSITION_KP_PU (5.0f)
+#define MCS_ADC_CALIBRATOR_FC_HZ (20.0f)
 
 /**
- * @brief Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
+ * @brief Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
  */
-#define MCS_MECH_POSITION_KI_PU_S (1.0f)
-
-/**
- * @brief Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu.
- */
-#define MCS_MECH_VELOCITY_KP_PU (5.0f)
-
-/**
- * @brief Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
- */
-#define MCS_MECH_VELOCITY_KI_PU_S (1.0f)
-
-/**
- * @brief D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
- */
-#define MCS_COMMISSIONING_ID_REF_A (1.0f)
-
-/**
- * @brief Q-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
- */
-#define MCS_COMMISSIONING_IQ_REF_A (1.0f)
-
-/**
- * @brief Mechanical speed reference in rpm used by BUILD_LEVEL 4 commissioning. Converted to PU using MOTOR_PARAM_MAX_SPEED.
- */
-#define MCS_COMMISSIONING_SPEED_REF_RPM (300.0f)
+#define MCS_ADC_CALIBRATOR_Q (0.707f)
 
 /**
  * @brief Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
@@ -446,65 +489,61 @@ extern "C"
 #define MCS_MAX_DC_BUS_VOLTAGE_V (CTRL_DCBUS_VOLTAGE*1.2f)
 
 /**
- * @brief
+ * @brief The current limit value at which the machine must be shut down.
  */
-#define MCS_MIN_DC_BUS_VOLTAGE_V (CTRL_DCBUS_VOLTAGE*0.2f)
+#ifndef MCS_MAX_SHUTDOWN_CURRENT_A
+#define MCS_MAX_SHUTDOWN_CURRENT_A (10.0f)
+#endif // MCS_MAX_SHUTDOWN_CURRENT_A
 
 /**
- * @brief
+ * @brief Circular saturation limit for voltage vector magnitude in V.
  */
-#ifndef MOTOR_PARAM_INERTIA
-#define MOTOR_PARAM_INERTIA SM060R20B30MNAD_INERTIA
-#endif // MOTOR_PARAM_INERTIA
+#define MCS_MAX_CIR_SATURATION_VOLTAGE_V (10.0f)
 
 /**
- * @brief
+ * @brief D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
  */
-#ifndef MOTOR_PARAM_FLUX
-#define MOTOR_PARAM_FLUX SM060R20B30MNAD_FLUX
-#endif // MOTOR_PARAM_FLUX
+#define MCS_COMMISSIONING_ID_REF_A (1.0f)
 
 /**
- * @brief
+ * @brief Q-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
  */
-#ifndef MOTOR_PARAM_LD
-#define MOTOR_PARAM_LD SM060R20B30MNAD_LD
-#endif // MOTOR_PARAM_LD
+#define MCS_COMMISSIONING_IQ_REF_A (1.0f)
 
 /**
- * @brief
+ * @brief Mechanical speed reference in rpm used by BUILD_LEVEL 4 commissioning. Converted to PU using MOTOR_PARAM_MAX_SPEED.
  */
-#ifndef MOTOR_PARAM_RS
-#define MOTOR_PARAM_RS SM060R20B30MNAD_RS
-#endif // MOTOR_PARAM_RS
+#define MCS_COMMISSIONING_SPEED_REF_RPM (300.0f)
 
 /**
- * @brief
+ * @brief Electrical frequency command in hertz used by the BUILD_LEVEL 1 V/f path and the BUILD_LEVEL 2 synthetic-angle current-loop path.
  */
-#ifndef MOTOR_PARAM_LQ
-#define MOTOR_PARAM_LQ SM060R20B30MNAD_LQ
-#endif // MOTOR_PARAM_LQ
+#define MCS_OPEN_LOOP_FREQ_HZ (20.0f)
 
 /**
- * @brief
+ * @brief Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator.
  */
-#ifndef MOTOR_PARAM_LS
-#define MOTOR_PARAM_LS SM060R20B30MNAD_LD
-#endif // MOTOR_PARAM_LS
+#define MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S (20.0f)
 
 /**
- * @brief
+ * @brief Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu.
  */
-#ifndef MOTOR_PARAM_FRICTION
-#define MOTOR_PARAM_FRICTION SM060R20B30MNAD_FRICTION
-#endif // MOTOR_PARAM_FRICTION
+#define MCS_MECH_POSITION_KP_PU (5.0f)
 
 /**
- * @brief
+ * @brief Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
  */
-#ifndef MOTOR_PARAM_POLE_PAIRS
-#define MOTOR_PARAM_POLE_PAIRS SM060R20B30MNAD_POLE_PAIRS
-#endif // MOTOR_PARAM_POLE_PAIRS
+#define MCS_MECH_POSITION_KI_PU_S (1.0f)
+
+/**
+ * @brief Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu.
+ */
+#define MCS_MECH_VELOCITY_KP_PU (5.0f)
+
+/**
+ * @brief Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
+ */
+#define MCS_MECH_VELOCITY_KI_PU_S (1.0f)
 
 /**
  * @brief Controller startup delay in milliseconds.
@@ -517,14 +556,9 @@ extern "C"
 #define MCS_CIA402_OPERATION_ENABLE_DELAY_MS (100)
 
 /**
- * @brief Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets.
+ * @brief
  */
-#define MCS_ADC_CALIBRATOR_FC_HZ (20.0f)
-
-/**
- * @brief Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
- */
-#define MCS_ADC_CALIBRATOR_Q (0.707f)
+#define MCS_MIN_DC_BUS_VOLTAGE_V (CTRL_DCBUS_VOLTAGE*0.2f)
 
 // Common tail code: MCS PMSM NT Common Controller Settings
 /* Accept the historical misspelling while all source code uses the canonical switch. */

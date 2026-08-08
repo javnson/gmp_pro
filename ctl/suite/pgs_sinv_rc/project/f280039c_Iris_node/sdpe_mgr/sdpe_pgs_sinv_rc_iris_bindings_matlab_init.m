@@ -431,6 +431,9 @@ INV_VBUS_RESULT_BASE = 'ADC_CH3_RESULT_BASE';
 INV_VBUS = 'ADC_CH3';
 
 %% Requirement bindings
+% Number of samples stored per channel by the four-channel hardware Data Link Scope.
+GMP_DL_SCOPE_DEPTH = 100;
+
 % Controller ISR frequency.
 CONTROLLER_FREQUENCY = 20e3;
 
@@ -593,7 +596,7 @@ fprintf('  - %s\n', 'gmp_lvfb_150_2ph_v2');
 fprintf('  - %s\n', 'gmp_harmonia_3ph_lc_filter');
 fprintf('Common requirements (1):\n');
 fprintf('  - %s\n', 'PGS Single-Phase Inverter Common Control');
-fprintf('Enabled variables (200):\n');
+fprintf('Enabled variables (201):\n');
 fprintf('  BSC093N15NS5_CONFIGURATION = '); disp(BSC093N15NS5_CONFIGURATION);
 fprintf('  BSC093N15NS5_CURRENT_RATING_A = '); disp(BSC093N15NS5_CURRENT_RATING_A);
 fprintf('  BSC093N15NS5_DEVICE_TYPE = '); disp(BSC093N15NS5_DEVICE_TYPE);
@@ -648,6 +651,7 @@ fprintf('  CTRL_SPLL_EPSILON = '); disp(CTRL_SPLL_EPSILON);
 fprintf('  CTRL_STARTUP_DELAY = '); disp(CTRL_STARTUP_DELAY);
 fprintf('  CTRL_VOLTAGE_BASE = '); disp(CTRL_VOLTAGE_BASE);
 fprintf('  DSP_C2000_DSP_TIME_DIV = '); disp(DSP_C2000_DSP_TIME_DIV);
+fprintf('  GMP_DL_SCOPE_DEPTH = '); disp(GMP_DL_SCOPE_DEPTH);
 fprintf('  GMP_LVFB_BOARD_NAME = '); disp(GMP_LVFB_BOARD_NAME);
 fprintf('  GMP_LVFB_BUS_CAPACITANCE_F = '); disp(GMP_LVFB_BUS_CAPACITANCE_F);
 fprintf('  GMP_LVFB_CURRENT_BIAS_V = '); disp(GMP_LVFB_CURRENT_BIAS_V);

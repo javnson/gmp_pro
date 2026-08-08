@@ -185,6 +185,9 @@ CLLLC_UART_BASE = DIOSCURI_UART_BASE;
 CLLLC_STATUS_LED_GPIO = DIOSCURI_STATUS_LED_GPIO;
 
 %% Requirement bindings
+% Number of samples stored per channel by the four-channel hardware Data Link Scope.
+GMP_DL_SCOPE_DEPTH = 100;
+
 % F280025C ePWM and CPU Timer clock.
 CLLLC_TIMER_CLOCK_HZ = 100000000.0;
 
@@ -228,7 +231,7 @@ fprintf('  - %s\n', 'dioscuri_voltage_sensor');
 fprintf('  - %s\n', 'dioscuri_clllc_resonant_tank');
 fprintf('Common requirements (1):\n');
 fprintf('  - %s\n', 'DPS CLLLC / DAB Common Control');
-fprintf('Enabled variables (130):\n');
+fprintf('Enabled variables (131):\n');
 fprintf('  BUILD_LEVEL = '); disp(BUILD_LEVEL);
 fprintf('  CLLLC_ADC_TRIGGER_PWM_BASE = '); disp(CLLLC_ADC_TRIGGER_PWM_BASE);
 fprintf('  CLLLC_COUT_F = '); disp(CLLLC_COUT_F);
@@ -343,6 +346,7 @@ fprintf('  DPS_CLLLC_DIOSCURI_SDPE_PROJECT_ID = '); disp(DPS_CLLLC_DIOSCURI_SDPE
 fprintf('  DPS_CLLLC_DIOSCURI_SDPE_PROJECT_SUITE = '); disp(DPS_CLLLC_DIOSCURI_SDPE_PROJECT_SUITE);
 fprintf('  DPS_CLLLC_DIOSCURI_SDPE_PROJECT_UPDATED_AT = '); disp(DPS_CLLLC_DIOSCURI_SDPE_PROJECT_UPDATED_AT);
 fprintf('  DPS_CLLLC_DIOSCURI_SDPE_PROJECT_VERSION = '); disp(DPS_CLLLC_DIOSCURI_SDPE_PROJECT_VERSION);
+fprintf('  GMP_DL_SCOPE_DEPTH = '); disp(GMP_DL_SCOPE_DEPTH);
 fprintf('  SPECIFY_ENABLE_ADC_CALIBRATE = '); disp(SPECIFY_ENABLE_ADC_CALIBRATE);
 fprintf('  TIMEOUT_ADC_CALIB_MS = '); disp(TIMEOUT_ADC_CALIB_MS);
 fprintf('  TMCS1133_B5A_BANDWIDTH_HZ = '); disp(TMCS1133_B5A_BANDWIDTH_HZ);

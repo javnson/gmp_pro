@@ -326,6 +326,11 @@ extern "C"
  */
 
 /**
+ * @brief Number of samples stored per channel by the four-channel hardware Data Link Scope.
+ */
+#define GMP_DL_SCOPE_DEPTH (100)
+
+/**
  * @brief DC-link voltage sensing gain.
  */
 #define CTRL_DC_VOLTAGE_SENSITIVITY (0.02738589f)

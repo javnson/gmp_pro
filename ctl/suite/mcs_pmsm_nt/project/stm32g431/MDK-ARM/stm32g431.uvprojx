@@ -545,6 +545,11 @@
           <GroupName>GMP/source</GroupName>
           <Files>
             <File>
+              <FileName>crc16.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\crc16.c</FilePath>
+            </File>
+            <File>
               <FileName>ctl_adv_back_stepping.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\gmp_src_mgr\gmp_src\ctl_adv_back_stepping.c</FilePath>
@@ -625,14 +630,14 @@
               <FilePath>..\gmp_src_mgr\gmp_src\ctl_continuous_pi.c</FilePath>
             </File>
             <File>
-              <FileName>ctl_continuous_pid.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\gmp_src_mgr\gmp_src\ctl_continuous_pid.c</FilePath>
-            </File>
-            <File>
               <FileName>ctl_continuous_pid_aw.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\gmp_src_mgr\gmp_src\ctl_continuous_pid_aw.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_continuous_pid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_continuous_pid.c</FilePath>
             </File>
             <File>
               <FileName>ctl_discrete_biquad_filter.c</FileName>
@@ -698,6 +703,16 @@
               <FileName>ctl_dp_basic.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\gmp_src_mgr\gmp_src\ctl_dp_basic.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_dq_ladrc1.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_dq_ladrc1.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_dq_pi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_dq_pi.c</FilePath>
             </File>
             <File>
               <FileName>ctl_hysteresis_controller.c</FileName>
@@ -778,6 +793,11 @@
               <FileName>ctl_mc_dtc_svm_core.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_dtc_svm_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_mc_encoder_switcher.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_mc_encoder_switcher.c</FilePath>
             </File>
             <File>
               <FileName>ctl_mc_encoder.c</FileName>
@@ -935,6 +955,41 @@
               <FilePath>..\gmp_src_mgr\gmp_src\ctl_track_pid.c</FilePath>
             </File>
             <File>
+              <FileName>dcdc_boost_hw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\dcdc_boost_hw.c</FilePath>
+            </File>
+            <File>
+              <FileName>dcdc_buck_hw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\dcdc_buck_hw.c</FilePath>
+            </File>
+            <File>
+              <FileName>dcdc_clllc_hw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\dcdc_clllc_hw.c</FilePath>
+            </File>
+            <File>
+              <FileName>dcdc_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\dcdc_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>dcdc_fsbb_hw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\dcdc_fsbb_hw.c</FilePath>
+            </File>
+            <File>
+              <FileName>dsa_dl_scope.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\dsa_dl_scope.c</FilePath>
+            </File>
+            <File>
+              <FileName>dsa_scope.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\dsa_scope.c</FilePath>
+            </File>
+            <File>
               <FileName>dsa_trigger.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\gmp_src_mgr\gmp_src\dsa_trigger.c</FilePath>
@@ -945,9 +1000,19 @@
               <FilePath>..\gmp_src_mgr\gmp_src\gmp_at_device.c</FilePath>
             </File>
             <File>
+              <FileName>gmp_datalink.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\gmp_datalink.c</FilePath>
+            </File>
+            <File>
               <FileName>gmp_dev_util.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\gmp_src_mgr\gmp_src\gmp_dev_util.c</FilePath>
+            </File>
+            <File>
+              <FileName>gmp_mem_presp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\gmp_mem_presp.c</FilePath>
             </File>
             <File>
               <FileName>gmp_mm_block_memory.c</FileName>
@@ -955,9 +1020,19 @@
               <FilePath>..\gmp_src_mgr\gmp_src\gmp_mm_block_memory.c</FilePath>
             </File>
             <File>
+              <FileName>gmp_pil_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\gmp_pil_core.c</FilePath>
+            </File>
+            <File>
               <FileName>gmp_process_mgr.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\gmp_src_mgr\gmp_src\gmp_process_mgr.c</FilePath>
+            </File>
+            <File>
+              <FileName>gmp_scope.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\gmp_scope.c</FilePath>
             </File>
             <File>
               <FileName>gmp_std_error_code.c</FileName>
@@ -968,6 +1043,11 @@
               <FileName>gmp_std_port.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\gmp_src_mgr\gmp_src\gmp_std_port.c</FilePath>
+            </File>
+            <File>
+              <FileName>gmp_tunable.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\gmp_tunable.c</FilePath>
             </File>
             <File>
               <FileName>stm32_chip_common.c</FileName>

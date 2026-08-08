@@ -219,6 +219,11 @@ extern "C"
  */
 
 /**
+ * @brief Number of samples stored per channel by the four-channel hardware Data Link Scope.
+ */
+#define GMP_DL_SCOPE_DEPTH (100)
+
+/**
  * @brief F280025C ePWM and CPU Timer clock.
  */
 #define CLLLC_TIMER_CLOCK_HZ (100000000.0f)

@@ -141,6 +141,9 @@ FSBB_IOUT_ADC_BASE = 'ADC_CH5_RESULT_BASE';
 FSBB_IOUT = 'ADC_CH5';
 
 %% Requirement bindings
+% Number of samples stored per channel by the four-channel hardware Data Link Scope.
+GMP_DL_SCOPE_DEPTH = 100;
+
 % PWM compare maximum value for the configured ePWM time base.
 CTRL_PWM_CMP_MAX = 3000 - 1;
 
@@ -164,7 +167,7 @@ fprintf('  - %s\n', 'iris_f280039c_node');
 fprintf('  - %s\n', 'gmp_lvfb_150_2ph_v2');
 fprintf('Common requirements (1):\n');
 fprintf('  - %s\n', 'DPS FSBB Common Control');
-fprintf('Enabled variables (145):\n');
+fprintf('Enabled variables (146):\n');
 fprintf('  BSC093N15NS5_CONFIGURATION = '); disp(BSC093N15NS5_CONFIGURATION);
 fprintf('  BSC093N15NS5_CURRENT_RATING_A = '); disp(BSC093N15NS5_CURRENT_RATING_A);
 fprintf('  BSC093N15NS5_DEVICE_TYPE = '); disp(BSC093N15NS5_DEVICE_TYPE);
@@ -240,6 +243,7 @@ fprintf('  FSBB_VOLTAGE_LOOP_BANDWIDTH = '); disp(FSBB_VOLTAGE_LOOP_BANDWIDTH);
 fprintf('  FSBB_VOLTAGE_RAMP_PU_S = '); disp(FSBB_VOLTAGE_RAMP_PU_S);
 fprintf('  FSBB_VOUT = '); disp(FSBB_VOUT);
 fprintf('  FSBB_VOUT_ADC_BASE = '); disp(FSBB_VOUT_ADC_BASE);
+fprintf('  GMP_DL_SCOPE_DEPTH = '); disp(GMP_DL_SCOPE_DEPTH);
 fprintf('  GMP_LVFB_BOARD_NAME = '); disp(GMP_LVFB_BOARD_NAME);
 fprintf('  GMP_LVFB_BUS_CAPACITANCE_F = '); disp(GMP_LVFB_BUS_CAPACITANCE_F);
 fprintf('  GMP_LVFB_CURRENT_BIAS_V = '); disp(GMP_LVFB_CURRENT_BIAS_V);

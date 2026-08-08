@@ -1,5 +1,5 @@
 {
-    "sync_mode": "src_only",
+    "sync_mode": "all",
     "selected_modules": [
         {
             "root": "core",
@@ -39,22 +39,6 @@
         },
         {
             "root": "core",
-            "module": "dev|display|_internal"
-        },
-        {
-            "root": "core",
-            "module": "dev|display|ht16k33"
-        },
-        {
-            "root": "core",
-            "module": "dev|gpio|_internal"
-        },
-        {
-            "root": "core",
-            "module": "dev|gpio|pca9555"
-        },
-        {
-            "root": "core",
             "module": "dev|software|_internal"
         },
         {
@@ -79,7 +63,7 @@
         },
         {
             "root": "csp",
-            "module": "c28x_syscfg"
+            "module": "stm32"
         },
         {
             "root": "ctl",
@@ -99,19 +83,15 @@
         },
         {
             "root": "ctl",
-            "module": "component|digital_power|inv|gfm_droop_ctrl"
+            "module": "component|digital_power|inv|gfl_pq_ctrl"
         },
         {
             "root": "ctl",
-            "module": "component|digital_power|inv|gfm_vsm_ctrl"
+            "module": "component|digital_power|inv|gfl_pq_droop_ctrl"
         },
         {
             "root": "ctl",
-            "module": "component|digital_power|inv|gfm_virtual_impedance"
-        },
-        {
-            "root": "ctl",
-            "module": "component|digital_power|inv|gfm_transition"
+            "module": "component|digital_power|inv|gfm_droop"
         },
         {
             "root": "ctl",

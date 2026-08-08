@@ -10,9 +10,12 @@
 
 // GMP basic core header
 #include <gmp_core.h>
+#include <ctl/component/dsa/dsa_dl_scope.h>
 
 #include "user_main.h"
 #include <xplt.peripheral.h>
+
+CTL_DSA_DL_SCOPE_DEFINE_PLATFORM("Control Scope")
 
 #include <core/dev/datalink.h>
 
@@ -132,6 +135,7 @@ interrupt void MainISR(void)
     // call GMP ISR  Controller operation callback function
     //
     gmp_base_ctl_step();
+    xplt_step_dl_scope();
 #endif // !defined ENABLE_GMP_DL_PIL_SIM
 
     //
@@ -176,7 +180,7 @@ interrupt void MainISR(void)
 // 32 bit union
 typedef union {
     int32_t i32;
-    uint16_t u16[2]; // C2000中uint16_t占1个word，32位占用2个word
+    uint16_t u16[2]; /**< C2000 stores each 16-bit value in one addressable word. */
 } can_data_t;
 
 // CAN interrupt

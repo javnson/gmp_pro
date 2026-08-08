@@ -280,6 +280,16 @@
   ],
   "requirements": [
     {
+      "role": "Data Link Scope Depth",
+      "macro": "GMP_DL_SCOPE_DEPTH",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "100"
+      },
+      "description": "Number of samples stored per channel by the four-channel hardware Data Link Scope."
+    },
+    {
       "role": "Timer Clock",
       "macro": "CLLLC_TIMER_CLOCK_HZ",
       "enabled": true,
@@ -384,6 +394,7 @@
     {
       "name": "Peripheral Parameters",
       "requirements": [
+        "Data Link Scope Depth",
         "Timer Clock",
         "PWM Cycles Per Control",
         "Nominal Controller Frequency",

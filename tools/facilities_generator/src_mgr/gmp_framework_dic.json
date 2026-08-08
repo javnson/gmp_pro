@@ -5514,7 +5514,47 @@
                     }
                 ]
             },
-        "component|dsa|dsa_trigger": {
+            "component|dsa|dsa_dl_scope": {
+                "type": "module",
+                "description": "Four-channel DSA capture adapter for the GMP Data Link Scope service",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/dsa/src/dsa_dl_scope.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/dsa/dsa_dl_scope.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [
+                    "core|dev|datalink|scope",
+                    "ctl|component|dsa|dsa_scope",
+                    "ctl|component|dsa|dsa_trigger"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|dsa|dsa_trigger": {
                 "type": "module",
                 "description": "",
                 "src_patterns": [

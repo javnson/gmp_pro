@@ -5,7 +5,7 @@
   "description": "PMSM sensored-control settings and project bindings for the LaunchXL-F280049C. Board resources remain physical BOOSTXL connector resources and are assigned application roles here.",
   "suite": "mcs_pmsm_nt",
   "version": "1.2.0",
-  "updated_at": "2026-08-08",
+  "updated_at": "2026-08-09",
   "output_header": "sdpe_mcs_pmsm_nt_f280049c_settings.h",
   "hardware": [
     {
@@ -590,6 +590,16 @@
   ],
   "requirements": [
     {
+      "role": "Data Link Scope Depth",
+      "macro": "GMP_DL_SCOPE_DEPTH",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "100"
+      },
+      "description": "Number of samples stored per channel by the four-channel hardware Data Link Scope."
+    },
+    {
       "role": "PWM Compare Max",
       "macro": "CTRL_PWM_CMP_MAX",
       "enabled": true,
@@ -974,6 +984,7 @@
     {
       "name": "Peripheral Parameters",
       "requirements": [
+        "Data Link Scope Depth",
         "PWM Compare Max",
         "PWM Deadband",
         "System Frequency",

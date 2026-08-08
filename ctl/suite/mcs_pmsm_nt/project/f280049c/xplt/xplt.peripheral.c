@@ -10,9 +10,12 @@
 
 // GMP basic core header
 #include <gmp_core.h>
+#include <ctl/component/dsa/dsa_dl_scope.h>
 
 #include "user_main.h"
 #include <xplt.peripheral.h>
+
+CTL_DSA_DL_SCOPE_DEFINE_PLATFORM("Control Scope")
 
 #include <ctl/component/dsa/dsa_trigger.h>
 
@@ -117,6 +120,7 @@ interrupt void MainISR(void)
     // call GMP ISR  Controller operation callback function
     //
     gmp_base_ctl_step();
+    xplt_step_dl_scope();
 
     //
     // Call GMP Timer
