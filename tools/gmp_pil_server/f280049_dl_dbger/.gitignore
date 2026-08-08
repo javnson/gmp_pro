@@ -1,0 +1,14 @@
+/CPU1_LAUNCHXL_FLASH/
+/.ccs_workspace/
+/.settings/
+/.launches/
+*.launch
+*.log
+*.map
+*.out
+*.obj
+*.d
+*.mk
+*.opt
+__pycache__/
+*.pyc
