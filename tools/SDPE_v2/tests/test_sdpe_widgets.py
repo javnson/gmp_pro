@@ -269,6 +269,80 @@ class SDPEWidgetTests(unittest.TestCase):
             window.deleteLater()
             self.app.processEvents()
 
+    def test_search_toolbar_has_default_columns_and_enter_finds_active_requirement(self) -> None:
+        examples = ROOT / "examples"
+        with tempfile.TemporaryDirectory() as output:
+            window = MainWindow(examples, mode="project", default_output_dir=Path(output))
+            window.show()
+            page = next(item for item in window.pages if isinstance(item, ProjectPage))
+            window.tabs.setCurrentWidget(page)
+            page.list_widget.setCurrentRow(0)
+            tabs = page.form_layout.itemAt(0).widget()
+            tabs.setCurrentIndex(2)
+            page.requirements.setFocus()
+            self.app.processEvents()
+
+            self.assertGreater(window.data_sort_column.count(), 0)
+            window.data_search.setText("CTRL_INDUCTOR_CURRENT_SENSITIVITY")
+            QTest.keyClick(window.data_search, Qt.Key.Key_Return)
+            self.app.processEvents()
+            self.assertEqual(page.requirements.currentItem().text(1), "CTRL_INDUCTOR_CURRENT_SENSITIVITY")
+            window.deleteLater()
+            self.app.processEvents()
+
+    def test_project_code_page_edits_single_bound_common_code_sections(self) -> None:
+        examples = ROOT / "examples"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            common_path = root / "common.json"
+            project_path = root / "private.json"
+            common_path.write_text(
+                json.dumps(
+                    {
+                        "id": "common",
+                        "output_header": "common.h",
+                        "code_sections": {
+                            "after_extern_open": "#include <common_prefix.h>",
+                            "before_footer": "#define COMMON_TAIL 1",
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            project_path.write_text(
+                json.dumps(
+                    {
+                        "id": "private",
+                        "output_header": "private.h",
+                        "common_requirements": ["common.json"],
+                        "code_sections": {
+                            "after_extern_open": "#include <project_prefix.h>",
+                            "before_footer": "#define PROJECT_TAIL 1",
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            window = MainWindow(examples, mode="project", project_dirs=[project_path], default_output_dir=root / "out")
+            page = next(item for item in window.pages if isinstance(item, ProjectPage))
+            page.current_id = "private"
+            page.refresh_list()
+            page.load_current()
+
+            self.assertFalse(page.common_prefix_code.isReadOnly())
+            self.assertEqual(page.common_prefix_code.toPlainText(), "#include <common_prefix.h>")
+            self.assertEqual(page.common_tail_code.toPlainText(), "#define COMMON_TAIL 1")
+            self.assertEqual(page.prefix_code.toPlainText(), "#include <project_prefix.h>")
+            self.assertEqual(page.tail_code.toPlainText(), "#define PROJECT_TAIL 1")
+            page.common_tail_code.setPlainText("#define COMMON_TAIL 2")
+            snapshot = page.collect_current_data()
+            self.assertEqual(
+                snapshot["__sdpe_common_documents"][str(common_path.resolve())]["code_sections"]["before_footer"],
+                "#define COMMON_TAIL 2",
+            )
+            window.deleteLater()
+            self.app.processEvents()
+
     def test_undo_back_to_clean_snapshot_clears_dirty_state(self) -> None:
         examples = ROOT / "examples"
         with tempfile.TemporaryDirectory() as output:

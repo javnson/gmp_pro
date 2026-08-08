@@ -2326,6 +2326,8 @@ class ProjectPage(SDPEPage):
         self.matlab_file_edit.setReadOnly(True)
         self.description_edit = QTextEdit()
         self.description_edit.setFixedHeight(92)
+        self.common_prefix_code = QTextEdit()
+        self.common_tail_code = QTextEdit()
         self.prefix_code = QTextEdit()
         self.tail_code = QTextEdit()
 
@@ -2429,7 +2431,14 @@ class ProjectPage(SDPEPage):
         for widget in [self.id_edit, self.macro_prefix_edit, self.name_edit, self.suite_edit, self.version_edit, self.header_edit]:
             widget.textChanged.connect(self.mark_current_dirty)
         self.header_edit.textChanged.connect(lambda _text: self.update_matlab_script_name())
-        for widget in [self.description_edit, self.common_requirements_edit, self.prefix_code, self.tail_code]:
+        for widget in [
+            self.description_edit,
+            self.common_requirements_edit,
+            self.common_prefix_code,
+            self.common_tail_code,
+            self.prefix_code,
+            self.tail_code,
+        ]:
             widget.textChanged.connect(self.mark_current_dirty)
         self.hardware.cellChanged.connect(lambda _row, _col: self.mark_current_dirty())
         self.hardware.contentChanged.connect(self.refresh_hardware_status)
@@ -2484,18 +2493,25 @@ class ProjectPage(SDPEPage):
 
         code_tab = QWidget()
         code_layout = QVBoxLayout(code_tab)
-        code_splitter = QSplitter(Qt.Orientation.Vertical)
-        prefix_panel = QWidget()
-        prefix_layout = QVBoxLayout(prefix_panel)
-        prefix_layout.addWidget(QLabel("Prefix code"))
-        prefix_layout.addWidget(self.prefix_code)
-        tail_panel = QWidget()
-        tail_layout = QVBoxLayout(tail_panel)
-        tail_layout.addWidget(QLabel("Tail code"))
-        tail_layout.addWidget(self.tail_code)
-        code_splitter.addWidget(prefix_panel)
-        code_splitter.addWidget(tail_panel)
-        code_splitter.setSizes([360, 360])
+        common_splitter = QSplitter(Qt.Orientation.Vertical)
+        project_splitter = QSplitter(Qt.Orientation.Vertical)
+        for splitter, label, editor in (
+            (common_splitter, "Common Prefix Code", self.common_prefix_code),
+            (common_splitter, "Common Tail Code", self.common_tail_code),
+            (project_splitter, "Project Prefix Code", self.prefix_code),
+            (project_splitter, "Project Tail Code", self.tail_code),
+        ):
+            panel = QWidget()
+            panel_layout = QVBoxLayout(panel)
+            panel_layout.addWidget(QLabel(label))
+            panel_layout.addWidget(editor)
+            splitter.addWidget(panel)
+        common_splitter.setSizes([360, 360])
+        project_splitter.setSizes([360, 360])
+        code_splitter = QSplitter(Qt.Orientation.Horizontal)
+        code_splitter.addWidget(common_splitter)
+        code_splitter.addWidget(project_splitter)
+        code_splitter.setSizes([480, 480])
         code_layout.addWidget(code_splitter)
 
         tabs.addTab(basic_tab, "Basic")
@@ -2503,8 +2519,6 @@ class ProjectPage(SDPEPage):
         tabs.addTab(req_tab, "Requirements")
         tabs.addTab(macro_tab, "Macros")
         tabs.addTab(code_tab, "Code")
-        preview = QPushButton("Preview header")
-        preview.clicked.connect(self.preview_project_header)
         generate_header = QPushButton("Generate project header")
         generate_header.clicked.connect(self.generate_project_header)
         validate_macros = QPushButton("Validate Macros")
@@ -2514,7 +2528,7 @@ class ProjectPage(SDPEPage):
         save = QPushButton("Save project")
         save.clicked.connect(self.save_current)
         self.form_layout.addWidget(tabs)
-        self.form_layout.addLayout(row_buttons([preview, generate_header, validate_macros, matlab, save]))
+        self.form_layout.addLayout(row_buttons([generate_header, validate_macros, matlab, save]))
         self.update_hardware_view()
 
     def refresh_list(self) -> None:
@@ -2618,6 +2632,7 @@ class ProjectPage(SDPEPage):
         sections = data.get("code_sections", {})
         self.prefix_code.setPlainText(sections.get("after_extern_open", ""))
         self.tail_code.setPlainText(sections.get("before_footer", ""))
+        self.update_common_code_editors()
         self.load_hardware(merged)
         self.load_requirements(merged)
         self.load_macro_tables(merged)
@@ -2652,6 +2667,32 @@ class ProjectPage(SDPEPage):
     def update_matlab_script_name(self) -> None:
         header_name = Path(self.header_edit.text().strip() or "sdpe_project_bindings.h")
         self.matlab_file_edit.setText(f"{header_name.stem}_matlab_init.m")
+
+    def update_common_code_editors(self) -> None:
+        """Present bound Common code without ambiguously editing multiple sources."""
+
+        editable = len(self.current_common_requirements) == 1
+        for editor, section in (
+            (self.common_prefix_code, "after_extern_open"),
+            (self.common_tail_code, "before_footer"),
+        ):
+            values: list[str] = []
+            for path, common in self.current_common_requirements:
+                text = str(common.get("code_sections", {}).get(section, ""))
+                if not text.strip():
+                    continue
+                if editable:
+                    values.append(text)
+                else:
+                    label = common.get("display_name", common.get("id", path.stem))
+                    values.append(f"/* {label} ({path.name}) */\n{text}")
+            editor.setReadOnly(not editable)
+            editor.setToolTip(
+                "Edit the owning Common Requirement directly when more than one Common source is bound."
+                if not editable
+                else "Code stored in the bound Common Requirement."
+            )
+            editor.setPlainText("\n\n".join(values))
 
     def browse_common_requirements(self) -> None:
         selected, _filter = QFileDialog.getOpenFileNames(
@@ -2911,6 +2952,14 @@ class ProjectPage(SDPEPage):
             common["requirement_groups"] = self._requirement_groups(source)
             common["feature_macros"] = self.collect_feature_macro_tree(source)
             common["option_macros"] = self.collect_option_macro_tree(source)
+            if len(self.current_common_requirements) == 1:
+                common_sections = dict(common.get("code_sections", {}))
+                self._set_optional_section(common_sections, "after_extern_open", self.common_prefix_code.toPlainText())
+                self._set_optional_section(common_sections, "before_footer", self.common_tail_code.toPlainText())
+                if common_sections:
+                    common["code_sections"] = common_sections
+                else:
+                    common.pop("code_sections", None)
             feature_groups = self._macro_group_paths(self.feature_macros, source)
             option_groups = self._macro_group_paths(self.enum_macros, source)
             if feature_groups:
@@ -4652,11 +4701,11 @@ class ProjectPage(SDPEPage):
             if not self.current_id:
                 return
             project_path = self.window.project_path(self.current_id)
-            files = self.window.generator().generate_project(project_path)
+            self.window.generator().generate_project(project_path)
             header_path = self.window.generator().project_header_path(read_json(project_path))
             if header_path.is_file():
-                self.set_code_text(header_path.read_text(encoding="utf-8"))
-            self.message("Generated", "\n".join(str(item.path) for item in files))
+                self.set_code_text(header_path.read_text(encoding="utf-8"), reveal=False)
+            self.message("Generated project header", str(header_path))
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
 
@@ -4688,14 +4737,12 @@ class BindingPage(SDPEPage):
             self.overview.set_action_enabled(action_name, False)
         fit_tree_key_columns(self.overview, description_col=4, interactive=True)
 
-        preview = QPushButton("Preview project header")
-        preview.clicked.connect(self.preview_project)
         generate = QPushButton("Generate project header")
         generate.clicked.connect(self.generate_project)
         generate_matlab = QPushButton("Generate MATLAB Init Script")
         generate_matlab.clicked.connect(self.generate_matlab_init_script)
 
-        self.form_layout.addLayout(row_buttons([preview, generate, generate_matlab]))
+        self.form_layout.addLayout(row_buttons([generate, generate_matlab]))
         self.form_layout.addWidget(QLabel("Supported project macros"))
         self.form_layout.addWidget(self.overview)
 
@@ -4901,11 +4948,11 @@ class BindingPage(SDPEPage):
     def generate_project(self) -> None:
         try:
             project_path = self.window.project_path(self.current_id)
-            files = self.generator().generate_project(project_path)
+            self.generator().generate_project(project_path)
             header_path = self.generator().project_header_path(read_json(project_path))
             if header_path.is_file():
-                self.set_code_text(header_path.read_text(encoding="utf-8"))
-            self.message("Generated", "\n".join(str(item.path) for item in files))
+                self.set_code_text(header_path.read_text(encoding="utf-8"), reveal=False)
+            self.message("Generated project header", str(header_path))
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
 
@@ -5030,6 +5077,7 @@ class MainWindow(QMainWindow):
         self.tabs.currentChanged.connect(self.on_tab_changed)
         self.update_menu_actions()
         self.refresh_pages()
+        self.update_data_tools(self.default_data_view(self.current_sdpe_page()))
         self.refresh_status_bar()
 
     def apply_theme(self, theme: str) -> None:
@@ -5206,6 +5254,7 @@ class MainWindow(QMainWindow):
         self.data_sort_order.currentIndexChanged.connect(lambda _index: self.apply_data_sort())
 
     def update_data_tools(self, view: SDPEDataViewMixin | None) -> None:
+        view = view or self.default_data_view(self.current_sdpe_page())
         self.data_sort_column.blockSignals(True)
         self.data_sort_order.blockSignals(True)
         self.data_sort_column.clear()
@@ -5227,8 +5276,20 @@ class MainWindow(QMainWindow):
         self.data_sort_order.blockSignals(False)
         self.apply_data_filter()
 
+    def default_data_view(self, page: SDPEPage | None) -> SDPEDataViewMixin | None:
+        """Return a visible table for search/sort before the user selects a row."""
+
+        views = self.data_views_for_page(page)
+        if not views:
+            return None
+        visible = [view for view in views if view.isVisible()]
+        return visible[0] if visible else views[0]
+
+    def search_data_view(self) -> SDPEDataViewMixin | None:
+        return self.current_active_data_view() or self.default_data_view(self.current_sdpe_page())
+
     def apply_data_filter(self) -> None:
-        view = self.current_active_data_view()
+        view = self.search_data_view()
         if view is None:
             return
         valid = view.apply_text_filter(
@@ -5240,9 +5301,12 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("Invalid regular expression.", 2600)
 
     def find_data_text(self, forward: bool) -> None:
-        view = self.current_active_data_view()
+        view = self.search_data_view()
         if view is None:
+            self.statusBar().showMessage("No SDPE data table is available for search.", 2200)
             return
+        if self.active_data_view is not view:
+            self.activate_data_view(view)
         found = view.find_text(
             self.data_search.text(),
             forward,
@@ -5265,7 +5329,7 @@ class MainWindow(QMainWindow):
     def sync_data_sort_controls(self, view: SDPEDataViewMixin, column: int, state: int) -> None:
         """Reflect a column-header sort gesture in the shared toolbar."""
 
-        if view is not self.current_active_data_view():
+        if view is not self.search_data_view():
             return
         self.data_sort_column.blockSignals(True)
         self.data_sort_order.blockSignals(True)
@@ -5388,7 +5452,7 @@ class MainWindow(QMainWindow):
         self.active_data_view = None
         self.update_menu_actions()
         self.update_edit_menu_actions()
-        self.update_data_tools(None)
+        self.update_data_tools(self.default_data_view(self.current_sdpe_page()))
         self.refresh_status_bar()
 
     def show_data_status(self, view: SDPEDataViewMixin, text: str) -> None:
