@@ -21,8 +21,11 @@ fork the host codec. Target-side C selection remains automatic through
 Memory Perspective and Tunable pages can import named descriptors reported by
 the target. Data Link Scope is an independent service with editable trigger
 mode, source, level, and pre-trigger position. Continuous Display repeatedly
-configures and re-arms the target after complete snapshots. Waveform
-Persistence retains faded history frames in a separate display group.
+configures and starts the target as soon as it is enabled, then re-arms after
+complete snapshots. Disabling it stops future re-arming without replacing the
+currently displayed frame. Waveform Persistence retains faded history frames
+in a separate display group. Waveform Export can save either the current frame
+or every retained persistence frame plus the current frame as CSV.
 
 System Log assigns a stable accent color to every page. Its Log Sources
 dropdown contains checkable entries that can hide or restore each page's

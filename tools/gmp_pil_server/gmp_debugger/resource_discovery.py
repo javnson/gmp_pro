@@ -19,12 +19,6 @@ class MemoryRegion:
     address: int
     byte_length: int
     permission: int
-    data_type: int
-    layout: int
-    channels: int
-    depth: int
-    sample_rate_hz: int
-    flags: int
     name: str
 
 
@@ -46,8 +40,10 @@ class ResourceDiscovery(QObject):
     tunable_items_changed = pyqtSignal(object)
     discovery_error = pyqtSignal(str)
 
-    _MEMORY_HEADER = struct.Struct("<BBBBIIBBBHHIBB")
-    _TUNABLE_HEADER = struct.Struct("<BBBBBBBB")
+    _MEMORY_HEADER_V1 = struct.Struct("<BBBBIIBBBHHIBB")
+    _MEMORY_HEADER_V2 = struct.Struct("<BBBBIIBB")
+    _TUNABLE_HEADER_V1 = struct.Struct("<BBBBBBBB")
+    _TUNABLE_HEADER_V2 = struct.Struct("<BBBBBBB")
 
     def __init__(self, hermes: HermesDatalinkQt) -> None:
         super().__init__()
@@ -108,19 +104,20 @@ class ResourceDiscovery(QObject):
 
     @classmethod
     def parse_memory_descriptor(cls, payload: bytes) -> tuple[int, int, MemoryRegion | None]:
-        """Parse a version-one memory descriptor response."""
+        """Parse a minimal v2 or legacy v1 memory descriptor response."""
         if len(payload) < 4:
             raise ValueError("Memory discovery response is too short.")
         version, status, total, region_id = payload[:4]
-        if version != 1:
+        if version not in (1, 2):
             raise ValueError(f"Unsupported memory discovery version {version}.")
         if status != 0:
             return total, region_id, None
-        if len(payload) < cls._MEMORY_HEADER.size:
+        header = cls._MEMORY_HEADER_V2 if version == 2 else cls._MEMORY_HEADER_V1
+        if len(payload) < header.size:
             raise ValueError("Memory descriptor is truncated.")
-        fields = cls._MEMORY_HEADER.unpack_from(payload)
+        fields = header.unpack_from(payload)
         name_length = fields[-1]
-        name_start = cls._MEMORY_HEADER.size
+        name_start = header.size
         name_end = name_start + name_length
         if name_end > len(payload):
             raise ValueError("Memory descriptor name is truncated.")
@@ -130,32 +127,27 @@ class ResourceDiscovery(QObject):
             address=fields[4],
             byte_length=fields[5],
             permission=fields[6],
-            data_type=fields[7],
-            layout=fields[8],
-            channels=fields[9],
-            depth=fields[10],
-            sample_rate_hz=fields[11],
-            flags=fields[12],
             name=name or f"Memory Region {fields[3]}",
         )
         return total, region_id, descriptor
 
     @classmethod
     def parse_tunable_descriptor(cls, payload: bytes) -> tuple[int, int, TunableItem | None]:
-        """Parse a version-one tunable descriptor response."""
+        """Parse a compact v2 or legacy v1 tunable descriptor response."""
         if len(payload) < 4:
             raise ValueError("Tunable discovery response is too short.")
         version, status, total, item_id = payload[:4]
-        if version != 1:
+        if version not in (1, 2):
             raise ValueError(f"Unsupported tunable discovery version {version}.")
         if status != 0:
             return total, item_id, None
-        if len(payload) < cls._TUNABLE_HEADER.size:
+        header = cls._TUNABLE_HEADER_V2 if version == 2 else cls._TUNABLE_HEADER_V1
+        if len(payload) < header.size:
             raise ValueError("Tunable descriptor is truncated.")
-        fields = cls._TUNABLE_HEADER.unpack_from(payload)
+        fields = header.unpack_from(payload)
         name_length = fields[6]
-        unit_length = fields[7]
-        text_start = cls._TUNABLE_HEADER.size
+        unit_length = fields[7] if version == 1 else 0
+        text_start = header.size
         name_end = text_start + name_length
         unit_end = name_end + unit_length
         if unit_end > len(payload):

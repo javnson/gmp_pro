@@ -56,7 +56,7 @@ static void mem_u16_reply_discovery(gmp_mem_persp_t* ctx)
         region = &ctx->regions[region_id];
 
     gmp_dev_dl_tx_request_cmd(dl, dl->rx_head.seq_id, dl->rx_head.cmd);
-    gmp_dev_dl_tx_append_u8(dl, 1U);
+    gmp_dev_dl_tx_append_u8(dl, 2U);
     gmp_dev_dl_tx_append_u8(dl, (region == NULL) ? 1U : 0U);
     gmp_dev_dl_tx_append_u8(dl, total);
     gmp_dev_dl_tx_append_u8(dl, region_id);
@@ -66,12 +66,6 @@ static void mem_u16_reply_discovery(gmp_mem_persp_t* ctx)
         gmp_dev_dl_tx_append_u32(dl, wire_address);
         gmp_dev_dl_tx_append_u32(dl, region->byte_length);
         gmp_dev_dl_tx_append_u8(dl, region->perm);
-        gmp_dev_dl_tx_append_u8(dl, region->data_type);
-        gmp_dev_dl_tx_append_u8(dl, region->layout);
-        gmp_dev_dl_tx_append_u16(dl, region->channels);
-        gmp_dev_dl_tx_append_u16(dl, region->depth);
-        gmp_dev_dl_tx_append_u32(dl, region->sample_rate_hz);
-        gmp_dev_dl_tx_append_u8(dl, region->flags);
 
         name = region->name;
         capacity = gmp_dev_dl_get_tx_capacity(dl);

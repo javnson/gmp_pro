@@ -84,16 +84,15 @@ static gmp_scope_capture_state_t user_scope_status(void* user_context,
 
 static const gmp_param_item_t tunable_dictionary[] = {
     {&signal_frequency_hz, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW,
-     "Signal Frequency", "Hz"},
+     "Signal Frequency (Hz)"},
     {&signal_gain, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW,
-     "Signal Gain", "x"},
+     "Signal Gain (x)"},
     {&signal_dc_offset, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW,
-     "Signal DC Offset", "V"},
+     "Signal DC Offset (V)"},
 };
 
 static const gmp_mem_region_t memory_regions[] = {
-    {memory_window, sizeof(memory_window), GMP_MEM_PERM_RW, "Scratch Memory",
-     GMP_MEM_TYPE_U8, 1U, 128U, GMP_MEM_LAYOUT_LINEAR, 0U, 0U},
+    {memory_window, sizeof(memory_window), GMP_MEM_PERM_RW, "Scratch Memory"},
 };
 
 static const gmp_scope_resource_t scope_resources[] = {

@@ -22,31 +22,6 @@
 /** @brief Command offset used to discover registered memory regions. */
 #define GMP_MEM_DISCOVERY_CMD_OFFSET 1U
 
-/** @brief Memory element types exported by region discovery. */
-typedef enum
-{
-    GMP_MEM_TYPE_RAW = 0,
-    GMP_MEM_TYPE_U8,
-    GMP_MEM_TYPE_I8,
-    GMP_MEM_TYPE_U16,
-    GMP_MEM_TYPE_I16,
-    GMP_MEM_TYPE_U32,
-    GMP_MEM_TYPE_I32,
-    GMP_MEM_TYPE_F32,
-    GMP_MEM_TYPE_F64
-} gmp_mem_data_type_t;
-
-/** @brief Memory layouts exported by region discovery. */
-typedef enum
-{
-    GMP_MEM_LAYOUT_LINEAR = 0,
-    GMP_MEM_LAYOUT_SOA,
-    GMP_MEM_LAYOUT_INTERLEAVED
-} gmp_mem_layout_t;
-
-/** @brief Marks a memory region as a configurable DSA scope buffer. */
-#define GMP_MEM_REGION_FLAG_SCOPE 0x01U
-
 /**
  * @brief Memory Sandbox Region definition.
  * @details Defines a safe memory boundary for external access.
@@ -56,13 +31,7 @@ typedef struct
     void* base_addr;      /**< Native physical base pointer (avoids link-time multiplication issues) */
     uint32_t byte_length; /**< Allowed access length in bytes */
     fast16_gt perm;       /**< Permission attribute (GMP_MEM_PERM_RO or GMP_MEM_PERM_RW) */
-    const char* name;     /**< Stable English display name, or NULL for a generated name */
-    gmp_mem_data_type_t data_type; /**< Element type stored in the region */
-    uint16_t channels;    /**< Logical channel count, or zero when unspecified */
-    uint16_t depth;       /**< Elements per channel, or zero when unspecified */
-    gmp_mem_layout_t layout; /**< Logical arrangement of multi-channel data */
-    uint32_t sample_rate_hz; /**< Sample rate for waveform regions, or zero */
-    fast16_gt flags;      /**< Region capabilities such as GMP_MEM_REGION_FLAG_SCOPE */
+    const char* name;     /**< Optional English display name; NULL or empty selects a generated name */
 } gmp_mem_region_t;
 
 /**

@@ -83,9 +83,7 @@ static void tunable_u16_reply_discovery(gmp_param_tunable_t* ctx)
     fast16_gt total = ctx->dict_size;
     const gmp_param_item_t* item = NULL;
     const char* name = NULL;
-    const char* unit = NULL;
     size_gt name_length = 0U;
-    size_gt unit_length = 0U;
     size_gt capacity;
     size_gt index;
 
@@ -95,7 +93,7 @@ static void tunable_u16_reply_discovery(gmp_param_tunable_t* ctx)
         item = &ctx->dict[item_id];
 
     gmp_dev_dl_tx_request_cmd(dl, dl->rx_head.seq_id, dl->rx_head.cmd);
-    gmp_dev_dl_tx_append_u8(dl, 1U);
+    gmp_dev_dl_tx_append_u8(dl, 2U);
     gmp_dev_dl_tx_append_u8(dl, (item == NULL) ? 1U : 0U);
     gmp_dev_dl_tx_append_u8(dl, total);
     gmp_dev_dl_tx_append_u8(dl, item_id);
@@ -104,32 +102,18 @@ static void tunable_u16_reply_discovery(gmp_param_tunable_t* ctx)
         gmp_dev_dl_tx_append_u8(dl, item->type);
         gmp_dev_dl_tx_append_u8(dl, item->perm);
         name = item->name;
-        unit = item->unit;
         capacity = gmp_dev_dl_get_tx_capacity(dl);
-        if (name != NULL && capacity > 2U)
+        if (name != NULL && capacity > 1U)
         {
             name_length = strlen(name);
             if (name_length > 63U)
                 name_length = 63U;
-        }
-        if (unit != NULL && capacity > name_length + 2U)
-        {
-            unit_length = strlen(unit);
-            if (unit_length > 31U)
-                unit_length = 31U;
-        }
-        if (name_length + unit_length + 2U > capacity)
-        {
-            if (name_length + 2U > capacity)
-                name_length = capacity - 2U;
-            unit_length = capacity - name_length - 2U;
+            if (name_length > capacity - 1U)
+                name_length = capacity - 1U;
         }
         gmp_dev_dl_tx_append_u8(dl, name_length);
-        gmp_dev_dl_tx_append_u8(dl, unit_length);
         for (index = 0U; index < name_length; ++index)
             gmp_dev_dl_tx_append_u8(dl, name[index]);
-        for (index = 0U; index < unit_length; ++index)
-            gmp_dev_dl_tx_append_u8(dl, unit[index]);
     }
     gmp_dev_dl_tx_ready(dl);
     gmp_dev_dl_msg_handled(dl);

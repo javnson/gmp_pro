@@ -28,8 +28,8 @@ read/write Tunable signal parameters (`0x30`/`0x31`), one named Memory Perspecti
 (`0x50`/`0x51`), and an independent Data Link Scope service (`0x60`). Memory
 and Tunable descriptor queries reuse `base + 1` with a one-byte indexed payload.
 
-The Tunable workbench reports `Signal Frequency` in Hz, `Signal Gain` as a
-multiplier, and `Signal DC Offset` in volts. Changes feed the waveform generator
+The Tunable workbench reports `Signal Frequency (Hz)`, `Signal Gain (x)`, and
+`Signal DC Offset (V)`. Changes feed the waveform generator
 directly, so their frequency, peak amplitude, and center line are immediately
 visible in Data Link Scope. Values are bounded to safe demonstration ranges.
 
@@ -41,8 +41,9 @@ Scope` tab to discover it, select trigger mode/channel/level/position, arm it,
 and plot the snapshot. Continuous display automatically re-arms and refreshes
 snapshots for immediate or edge-triggered acquisition. Optional waveform
 persistence retains age-faded history frames for jitter and stability analysis.
-The Scope page does not require or expose a physical
-address.
+Continuous Display starts immediately when selected and stops future re-arming
+when cleared. The current frame and all retained persistence frames can be
+exported as CSV. The Scope page does not require or expose a physical address.
 
 ## Regenerate project-local GMP files
 

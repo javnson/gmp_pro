@@ -24,15 +24,16 @@ Keil 与 CMake 仅引用该工程目录内的文件。完成一次 `gmp_src_mgr`
 固件提供目标信息（`0x02`）、ECHO（`0x00`）、三个可读写 Tunable 信号参数
 （`0x30`/`0x31`）和 Memory Perspective（`0x50`/`0x51`）。
 
-Tunable 工作台会上报以 Hz 表示的 `Signal Frequency`、作为倍率的 `Signal Gain`
-以及以伏特表示的 `Signal DC Offset`。修改后可直接从 Scope 中观察频率、幅值和中心线变化。
+Tunable 工作台会上报 `Signal Frequency (Hz)`、`Signal Gain (x)` 和
+`Signal DC Offset (V)`。修改后可直接从 Scope 中观察频率、幅值和中心线变化。
 
 TIM3 以 1 kHz 采样并默认产生 50 Hz 正弦/余弦信号。GMP DSA Trigger 负责触发一次一致性
 采集，DSA Scope 每通道记录 400 点，即连续 20 个信号周期。两通道采用 SoA 布局，
 共 800 个 float、3200 字节，并且只通过独立的 Data Link Scope 服务读取，不暴露物理
 地址。上位机的 `Data Link Scope` 页面可以设置触发模式、通道、Level 和触发位置。
-Continuous Display 会自动重新布防并刷新；Waveform Persistence 可以保留逐渐衰减的
-历史波形。
+Continuous Display 打开后立即采集并自动重新布防；关闭时停止后续重触发并保留当前帧。
+Waveform Persistence 可以保留逐渐衰减的历史波形，当前帧及仍保留的所有余晖帧均可
+导出为 CSV。
 
 ## 重新生成工程内 GMP 文件
 

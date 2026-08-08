@@ -142,22 +142,17 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
             raise AssertionError("DMA stress ECHO payload mismatch")
 
         tunable_names = []
-        tunable_units = []
         for item_id in range(3):
             sequence += 1
             descriptor = transact(port, sequence, 0x31, bytes((item_id,)))
-            if len(descriptor) < 8 or descriptor[:4] != bytes((1, 0, 3, item_id)):
+            if len(descriptor) < 7 or descriptor[:4] != bytes((2, 0, 3, item_id)):
                 raise AssertionError(f"Invalid Tunable descriptor {item_id}: {descriptor.hex(' ')}")
-            name_length, unit_length = descriptor[6:8]
-            if len(descriptor) != 8 + name_length + unit_length:
+            name_length = descriptor[6]
+            if len(descriptor) != 7 + name_length:
                 raise AssertionError("Tunable descriptor text length mismatch")
-            tunable_names.append(descriptor[8:8 + name_length].decode("ascii"))
-            unit_start = 8 + name_length
-            tunable_units.append(descriptor[unit_start:unit_start + unit_length].decode("ascii"))
-        if tunable_names != ["Signal Frequency", "Signal Gain", "Signal DC Offset"]:
+            tunable_names.append(descriptor[7:7 + name_length].decode("ascii"))
+        if tunable_names != ["Signal Frequency (Hz)", "Signal Gain (x)", "Signal DC Offset (V)"]:
             raise AssertionError(f"Unexpected Tunable discovery names: {tunable_names}")
-        if tunable_units != ["Hz", "x", "V"]:
-            raise AssertionError(f"Unexpected Tunable discovery units: {tunable_units}")
 
         sequence += 1
         tunable = transact(port, sequence, 0x30, bytes((3, 0, 1, 2)))
@@ -187,11 +182,14 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
 
         sequence += 1
         memory_descriptor = transact(port, sequence, 0x51, b"\x00")
-        if len(memory_descriptor) < 25 or memory_descriptor[:4] != bytes((1, 0, 1, 0)):
+        memory_header = struct.Struct("<BBBBIIBB")
+        if len(memory_descriptor) < memory_header.size or memory_descriptor[:4] != bytes((2, 0, 1, 0)):
             raise AssertionError(f"Invalid Memory descriptor: {memory_descriptor.hex(' ')}")
-        discovered_address, discovered_length = struct.unpack_from("<II", memory_descriptor, 4)
-        name_length = memory_descriptor[24]
-        memory_name = memory_descriptor[25:25 + name_length].decode("ascii")
+        memory_fields = memory_header.unpack_from(memory_descriptor)
+        discovered_address, discovered_length = memory_fields[4:6]
+        name_length = memory_fields[-1]
+        name_start = memory_header.size
+        memory_name = memory_descriptor[name_start:name_start + name_length].decode("ascii")
         if (discovered_address, discovered_length, memory_name) != (
             memory_address, memory_length, "Scratch Memory"
         ):

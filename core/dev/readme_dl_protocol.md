@@ -103,17 +103,38 @@ idle gap.
 Tunable Parameters maps small integer IDs to a static whitelist. Read is
 `base_cmd`; write is `base_cmd + 1`. A one-unit request on `base_cmd + 1` is an
 indexed descriptor query; useful write requests are longer and remain
-unambiguous. Dictionary descriptors report ID, name, engineering unit, native
-type, and read-only or read-write permission. The u8 backend uses `memcpy` for
-native values so unaligned or strict-aliasing-sensitive CPUs remain safe.
+unambiguous. Version 2 dictionary descriptors report only ID, native type,
+read-only or read-write permission, and name:
+
+```text
+[version=2:u8][status:u8][total:u8][id:u8][type:u8][permission:u8]
+[name-length:u8][name...]
+```
+
+Put an engineering unit in the optional display name when it is useful, for
+example `Signal Frequency (Hz)`. This avoids one pointer per registered item on
+the embedded target. A `NULL`, `0`, or empty name is valid and the host generates
+`Parameter N` automatically. The host also accepts legacy version 1 descriptors. The
+u8 backend uses `memcpy` for native values so unaligned or
+strict-aliasing-sensitive CPUs remain safe.
 
 ## Memory Perspective
 
 Memory Perspective exposes only explicitly registered regions. Read is
 `base_cmd`; write is `base_cmd + 1`. A one-unit request on `base_cmd + 1` is an
 indexed descriptor query. Region descriptors report name, address, byte length,
-permission, element type, layout, channels, depth, and sample rate. Normal
-read/write requests use:
+and permission only:
+
+```text
+[version=2:u8][status:u8][total:u8][id:u8][address:u32][byte-length:u32]
+[permission:u8][name-length:u8][name...]
+```
+
+The host also accepts legacy version 1 descriptors but ignores their obsolete
+display metadata. Data interpretation is selected in the Memory page, while
+waveform shape and sample metadata belong exclusively to Data Link Scope.
+A `NULL`, `0`, or empty region name is valid and appears as `Memory Region N`.
+Normal read/write requests use:
 
 ```text
 [address:u32][item-size:u8][item-count:u16][write-data...]

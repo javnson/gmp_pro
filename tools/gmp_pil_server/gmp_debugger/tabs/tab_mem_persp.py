@@ -152,7 +152,7 @@ class TabMemPersp(QWidget):
         self.log(f"Discovered {len(regions)} target memory regions.", "green")
 
     def _apply_selected_region(self):
-        """Apply one discovered descriptor to the read and cast controls."""
+        """Apply one discovered descriptor without changing the user's cast."""
         region = self.cb_regions.currentData()
         if not isinstance(region, MemoryRegion):
             return
@@ -160,12 +160,6 @@ class TabMemPersp(QWidget):
         self.edit_len.setText(str(region.byte_length))
         self.target_addr = region.address
         self.total_length = region.byte_length
-        cast_name = {
-            1: "U8", 2: "I8", 3: "U16", 4: "I16",
-            5: "U32", 6: "I32", 7: "F32",
-        }.get(region.data_type)
-        if cast_name is not None:
-            self.apply_global_cast(cast_name)
 
     def log(self, msg, color="black"):
         if hasattr(self.hermes, "emit_log"):

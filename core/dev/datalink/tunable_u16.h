@@ -48,8 +48,7 @@ typedef struct
     void* addr;            /**< Physical memory address of the variable */
     gmp_param_type_t type; /**< Data type of the variable */
     fast16_gt perm;        /**< Permission attribute (DSP 16-bit alignment compatible) */
-    const char* name;      /**< Stable English display name, or NULL for a generated name */
-    const char* unit;      /**< Engineering unit string, or NULL when dimensionless */
+    const char* name;      /**< Optional English display name; NULL or empty selects a generated name */
 } gmp_param_item_t;
 
 /**

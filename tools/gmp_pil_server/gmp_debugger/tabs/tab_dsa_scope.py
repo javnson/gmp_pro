@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import struct
 import time
 from dataclasses import dataclass
@@ -13,6 +14,7 @@ from PyQt5.QtWidgets import (
     QComboBox,
     QCheckBox,
     QDoubleSpinBox,
+    QFileDialog,
     QGridLayout,
     QGroupBox,
     QLabel,
@@ -40,6 +42,15 @@ class ScopeResource:
     name: str
 
 
+@dataclass(frozen=True)
+class ScopeFrame:
+    """One decoded Scope frame retained for plotting or CSV export."""
+
+    time_ms: np.ndarray
+    channel_data: np.ndarray
+    generation: int | None
+
+
 class TabDsaScope(QWidget):
     """Discover, configure, acquire, and plot target scope resources."""
 
@@ -58,7 +69,6 @@ class TabDsaScope(QWidget):
     PHASE_DOWNLOADING = "downloading"
     AUTO_TIMEOUT_MS = 1000
     CONTINUOUS_REARM_DELAY_MS = 50
-    BUTTON_HEIGHT = 32
     MAX_BYTES_PER_READ = 180
     DISCOVERY_HEADER = struct.Struct("<BBBBBBBHIIIB")
     READ_HEADER = struct.Struct("<BBBIH")
@@ -96,6 +106,8 @@ class TabDsaScope(QWidget):
         self.poll_count = 0
         self.curves: list[pg.PlotDataItem] = []
         self.afterglow_groups: list[list[pg.PlotDataItem]] = []
+        self.persistence_frames: list[ScopeFrame] = []
+        self.current_frame: ScopeFrame | None = None
 
         self.poll_timer = QTimer(self)
         self.poll_timer.setInterval(50)
@@ -119,7 +131,6 @@ class TabDsaScope(QWidget):
         self.resource_combo = QComboBox()
         self.resource_combo.currentIndexChanged.connect(self._apply_selected_resource)
         self.refresh_button = QPushButton("Discover Scopes")
-        self.refresh_button.setFixedHeight(self.BUTTON_HEIGHT)
         self.refresh_button.clicked.connect(self.discover_scopes)
         resource_layout.addWidget(QLabel("Scope:"), 0, 0)
         resource_layout.addWidget(self.resource_combo, 0, 1, 1, 4)
@@ -152,6 +163,8 @@ class TabDsaScope(QWidget):
         self.mode_combo.addItem("Falling edge", 2)
         self.mode_combo.addItem("Rising edge (1 s auto)", 3)
         self.mode_combo.addItem("Falling edge (1 s auto)", 4)
+        control_height = self.mode_combo.sizeHint().height()
+        self.refresh_button.setFixedHeight(control_height)
         self.trigger_channel_spin = QSpinBox()
         self.trigger_channel_spin.setRange(0, 0)
         self.level_spin = QDoubleSpinBox()
@@ -185,19 +198,19 @@ class TabDsaScope(QWidget):
         acquisition_group = QGroupBox("Acquisition")
         acquisition_layout = QGridLayout(acquisition_group)
         self.continuous_checkbox = QCheckBox("Enabled")
-        self.continuous_checkbox.setFixedHeight(self.BUTTON_HEIGHT)
         self.continuous_checkbox.setToolTip(
-            "Automatically configure and re-arm the target after each completed snapshot."
+            "Enable to configure and capture immediately, then re-arm after each completed "
+            "snapshot. Disable to stop future re-arming without starting another capture."
         )
         self.continuous_checkbox.toggled.connect(self._on_continuous_toggled)
-        self.capture_button = QPushButton("Configure & Capture")
-        self.capture_button.setFixedHeight(self.BUTTON_HEIGHT)
+        self.capture_button = QPushButton("Configure && Capture")
+        self.capture_button.setFixedHeight(control_height)
         self.capture_button.clicked.connect(self.start_capture)
         self.read_button = QPushButton("Read Current Snapshot")
-        self.read_button.setFixedHeight(self.BUTTON_HEIGHT)
+        self.read_button.setFixedHeight(control_height)
         self.read_button.clicked.connect(self.read_current_snapshot)
         self.status_label = QLabel("Idle")
-        self.status_label.setFixedHeight(self.BUTTON_HEIGHT)
+        self.status_label.setFixedHeight(control_height)
         self.status_label.setAlignment(Qt.AlignCenter)
         self.status_label.setStyleSheet(
             "background: #ECEFF1; border: 1px solid #CFD8DC; border-radius: 3px;"
@@ -217,19 +230,20 @@ class TabDsaScope(QWidget):
         persistence_group = QGroupBox("Waveform Persistence")
         persistence_layout = QGridLayout(persistence_group)
         self.afterglow_checkbox = QCheckBox("Enabled")
-        self.afterglow_checkbox.setFixedHeight(self.BUTTON_HEIGHT)
         self.afterglow_checkbox.toggled.connect(self._on_afterglow_toggled)
         self.afterglow_depth_spin = QSpinBox()
         self.afterglow_depth_spin.setRange(1, 20)
         self.afterglow_depth_spin.setValue(5)
         self.afterglow_depth_spin.setSuffix(" history frames")
+        self.afterglow_depth_spin.valueChanged.connect(self._trim_persistence)
         self.afterglow_opacity_spin = QDoubleSpinBox()
         self.afterglow_opacity_spin.setRange(0.05, 0.90)
         self.afterglow_opacity_spin.setSingleStep(0.05)
         self.afterglow_opacity_spin.setValue(0.30)
         self.afterglow_opacity_spin.setSuffix(" max opacity")
+        self.afterglow_opacity_spin.valueChanged.connect(self._refresh_afterglow_opacity)
         self.clear_afterglow_button = QPushButton("Clear Persistence")
-        self.clear_afterglow_button.setFixedHeight(self.BUTTON_HEIGHT)
+        self.clear_afterglow_button.setFixedHeight(control_height)
         self.clear_afterglow_button.clicked.connect(self.clear_afterglow)
         persistence_controls = (
             (QLabel("Afterglow"), self.afterglow_checkbox),
@@ -242,6 +256,25 @@ class TabDsaScope(QWidget):
             persistence_layout.addWidget(control, 1, column)
             persistence_layout.setColumnStretch(column, 1)
         layout.addWidget(persistence_group)
+
+        export_group = QGroupBox("Waveform Export")
+        export_layout = QGridLayout(export_group)
+        self.save_current_button = QPushButton("Save Current Frame")
+        self.save_current_button.setFixedHeight(control_height)
+        self.save_current_button.setEnabled(False)
+        self.save_current_button.clicked.connect(self.save_current_frame)
+        self.save_persistence_button = QPushButton("Save Persistence Frames")
+        self.save_persistence_button.setFixedHeight(control_height)
+        self.save_persistence_button.setEnabled(False)
+        self.save_persistence_button.setToolTip(
+            "Save every retained afterglow frame and the current bold frame to one CSV file."
+        )
+        self.save_persistence_button.clicked.connect(self.save_persistence_frames)
+        export_layout.addWidget(self.save_current_button, 0, 0, 1, 2)
+        export_layout.addWidget(self.save_persistence_button, 0, 2, 1, 2)
+        for column in range(4):
+            export_layout.setColumnStretch(column, 1)
+        layout.addWidget(export_group)
 
         self.plot = pg.PlotWidget()
         self.plot.setBackground("#F8F9FA")
@@ -300,6 +333,13 @@ class TabDsaScope(QWidget):
         resource = self._selected_resource()
         if resource is None:
             return
+        if self.current_frame is not None:
+            self.current_frame = None
+            self.clear_afterglow()
+            for curve in self.curves:
+                curve.setData([], [])
+            self.save_current_button.setEnabled(False)
+            self.save_persistence_button.setEnabled(False)
         self.type_label.setText(self.DATA_TYPES.get(resource.sample_type, ("Unknown", None))[0])
         self.layout_label.setText(self.LAYOUT_NAMES.get(resource.layout, "Unknown"))
         self.channels_label.setText(str(resource.channels))
@@ -455,6 +495,8 @@ class TabDsaScope(QWidget):
                 self._apply_selected_resource()
             self.status_label.setText(f"Discovered {len(self.resources)} scope(s)")
             self._log(f"Discovered {len(self.resources)} Scope resources.")
+            if self.continuous_checkbox.isChecked():
+                QTimer.singleShot(0, self._start_continuous_if_enabled)
 
     def _finish_discovery(self, error: str) -> None:
         """Stop a failed discovery sequence and report its reason."""
@@ -513,6 +555,9 @@ class TabDsaScope(QWidget):
         if len(self.curves) == channels:
             return
         self.clear_afterglow()
+        self.current_frame = None
+        self.save_current_button.setEnabled(False)
+        self.save_persistence_button.setEnabled(False)
         for curve in self.curves:
             self.plot.removeItem(curve)
         self.curves = [
@@ -525,23 +570,32 @@ class TabDsaScope(QWidget):
         ]
 
     def _capture_afterglow(self) -> None:
-        """Preserve the current curves as one age-faded persistence frame."""
-        if not self.afterglow_checkbox.isChecked() or not self.curves:
+        """Preserve the current decoded frame as age-faded persistence data."""
+        if not self.afterglow_checkbox.isChecked() or self.current_frame is None:
             return
         group = []
-        for index, curve in enumerate(self.curves):
-            x_values, y_values = curve.getData()
-            if x_values is None or y_values is None or len(x_values) == 0:
-                return
-            item = self.plot.plot(x_values.copy(), y_values.copy())
+        for channel_data in self.current_frame.channel_data:
+            item = self.plot.plot(self.current_frame.time_ms, channel_data)
             group.append(item)
         self.afterglow_groups.append(group)
+        self.persistence_frames.append(self.current_frame)
+        self._trim_persistence()
+        self._refresh_afterglow_opacity()
+
+    def _trim_persistence(self, *_args) -> None:
+        """Trim retained plot items and export data to the configured history depth."""
         maximum_groups = self.afterglow_depth_spin.value()
         while len(self.afterglow_groups) > maximum_groups:
             oldest = self.afterglow_groups.pop(0)
             for item in oldest:
                 self.plot.removeItem(item)
+            self.persistence_frames.pop(0)
+
+    def _refresh_afterglow_opacity(self, *_args) -> None:
+        """Apply an age-dependent opacity to every retained waveform frame."""
         group_count = len(self.afterglow_groups)
+        if group_count == 0:
+            return
         maximum_alpha = int(round(self.afterglow_opacity_spin.value() * 255.0))
         for age_index, history_group in enumerate(self.afterglow_groups):
             age_ratio = (age_index + 1) / group_count
@@ -557,11 +611,75 @@ class TabDsaScope(QWidget):
             for item in group:
                 self.plot.removeItem(item)
         self.afterglow_groups = []
+        self.persistence_frames = []
 
     def _on_afterglow_toggled(self, enabled: bool) -> None:
         """Clear retained frames when waveform persistence is disabled."""
         if not enabled:
             self.clear_afterglow()
+
+    def _suggest_export_name(self, suffix: str) -> str:
+        """Return a filesystem-friendly default name for a Scope CSV export."""
+        resource = self._selected_resource()
+        base_name = resource.name if resource is not None else "scope"
+        safe_name = "_".join(base_name.lower().split())
+        safe_name = "".join(character for character in safe_name if character.isalnum() or character == "_")
+        return f"{safe_name or 'scope'}_{suffix}.csv"
+
+    def save_current_frame(self) -> None:
+        """Save the currently displayed bold waveform frame to CSV."""
+        if self.current_frame is None:
+            self._log("No Scope frame is available to save.")
+            return
+        path, _selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "Save Current Scope Frame",
+            self._suggest_export_name("current"),
+            "CSV Files (*.csv)",
+        )
+        if path:
+            self._write_frames_csv(path, [self.current_frame])
+
+    def save_persistence_frames(self) -> None:
+        """Save retained afterglow frames and the current frame to one CSV file."""
+        if self.current_frame is None:
+            self._log("No Scope frames are available to save.")
+            return
+        frames = [*self.persistence_frames, self.current_frame]
+        path, _selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "Save Scope Persistence Frames",
+            self._suggest_export_name("persistence"),
+            "CSV Files (*.csv)",
+        )
+        if path:
+            self._write_frames_csv(path, frames)
+
+    def _write_frames_csv(self, path: str, frames: list[ScopeFrame]) -> None:
+        """Write one or more compatible Scope frames in long-form CSV rows."""
+        channel_count = frames[0].channel_data.shape[0]
+        if any(frame.channel_data.shape[0] != channel_count for frame in frames):
+            self._log("Persistence frames have incompatible channel counts.")
+            return
+        try:
+            with open(path, "w", newline="", encoding="utf-8") as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerow(
+                    ["frame_index", "generation", "time_ms"] +
+                    [f"channel_{index}" for index in range(channel_count)]
+                )
+                for frame_index, frame in enumerate(frames):
+                    generation = "" if frame.generation is None else frame.generation
+                    for sample_index, time_value in enumerate(frame.time_ms):
+                        writer.writerow(
+                            [frame_index, generation, float(time_value)] +
+                            [float(frame.channel_data[channel, sample_index])
+                             for channel in range(channel_count)]
+                        )
+        except OSError as error:
+            self._log(f"Failed to save Scope CSV: {error}")
+            return
+        self._log(f"Saved {len(frames)} Scope frame(s) to {path}.")
 
     def _render_snapshot(self) -> None:
         """Decode the reported layout and update all waveform curves."""
@@ -578,12 +696,19 @@ class TabDsaScope(QWidget):
         time_ms = np.arange(resource.depth, dtype=np.float64) * (1000.0 / resource.sample_rate_hz)
         self._ensure_curves(resource.channels)
         self._capture_afterglow()
+        generation = self.metadata["generation"]
+        self.current_frame = ScopeFrame(
+            time_ms=time_ms.copy(),
+            channel_data=channel_data.copy(),
+            generation=generation,
+        )
         for index, curve in enumerate(self.curves):
             curve.setData(time_ms, channel_data[index])
         trigger_sample = int(round(resource.depth * self.position_spin.value() / 100.0))
         self.trigger_line.setValue(trigger_sample * 1000.0 / resource.sample_rate_hz)
         self.plot.enableAutoRange()
-        generation = self.metadata["generation"]
+        self.save_current_button.setEnabled(True)
+        self.save_persistence_button.setEnabled(True)
         suffix = "" if generation is None else f", generation {generation}"
         should_repeat = self.repeat_after_capture and self.continuous_checkbox.isChecked()
         self.status_label.setText("Capture complete; re-arming" if should_repeat else "Capture complete")
@@ -598,13 +723,25 @@ class TabDsaScope(QWidget):
             self.start_capture()
 
     def _on_continuous_toggled(self, enabled: bool) -> None:
-        """Apply a continuous-display change immediately to the active sequence."""
-        if self.capture_active:
-            self.repeat_after_capture = enabled
-        if not enabled:
-            self.repeat_timer.stop()
-            if self.status_label.text().endswith("re-arming"):
-                self.status_label.setText("Capture complete")
+        """Start continuous capture on enable and stop future re-arming on disable."""
+        self.repeat_after_capture = enabled
+        if enabled:
+            QTimer.singleShot(0, self._start_continuous_if_enabled)
+            return
+        self.repeat_timer.stop()
+        if self.status_label.text().endswith("re-arming"):
+            self.status_label.setText("Capture complete")
+
+    def _start_continuous_if_enabled(self) -> None:
+        """Start the first continuous acquisition when configuration is available."""
+        if (
+            self.continuous_checkbox.isChecked()
+            and not self.capture_active
+            and self.capture_button.isEnabled()
+            and self.hermes.running
+            and self._selected_resource() is not None
+        ):
+            self.start_capture()
 
     def _on_connection_state(self, connected: bool) -> None:
         """Cancel timers and release controls when the transport disconnects."""

@@ -14,8 +14,10 @@ u16 目标使用相同的串行线协议，因此共享全部协议编解码、�
 `GMP_PORT_DATA_SIZE_PER_BYTES` 自动选择。
 
 Memory Perspective 和 Tunable 页面可以导入目标上报的具名资源。Data Link Scope
-是独立服务，可设置触发模式、源、Level 和预触发位置。Continuous Display 会在每次
-完整快照后自动重新配置和布防；Waveform Persistence 在独立分组中显示衰减的历史波形。
+是独立服务，可设置触发模式、源、Level 和预触发位置。Continuous Display 打开后会
+立即配置并启动采集，并在每次完整快照后自动重新布防；关闭时只停止后续重触发，保留
+当前画面。Waveform Persistence 在独立分组中显示衰减的历史波形。Waveform Export
+可以将当前帧，或仍被保留的所有余晖帧连同当前帧保存为 CSV。
 
 System Log 为每个页面分配固定配色，并在 Log Sources 下拉列表中提供可勾选过滤项。
 
