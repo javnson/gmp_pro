@@ -1,0 +1,78 @@
+{
+  "sync_mode": "all",
+  "emit_external_include_paths": false,
+  "local_include_dirs": [
+    "gmp_inc",
+    "gmp_inc/csp/stm32"
+  ],
+  "selected_modules": [
+    {
+      "root": "core",
+      "module": "std"
+    },
+    {
+      "root": "core",
+      "module": "mm"
+    },
+    {
+      "root": "core",
+      "module": "dev|_internal"
+    },
+    {
+      "root": "core",
+      "module": "pm|function_scheduler"
+    },
+    {
+      "root": "core",
+      "module": "dev|datalink|_internal"
+    },
+    {
+      "root": "core",
+      "module": "dev|datalink|variable_monitor"
+    },
+    {
+      "root": "core",
+      "module": "dev|datalink|mem_monitor"
+    },
+    {
+      "root": "ctl",
+      "module": "math_block|_internal"
+    },
+    {
+      "root": "ctl",
+      "module": "math_block|matrix_lite"
+    },
+    {
+      "root": "ctl",
+      "module": "math_block|vector_lite"
+    },
+    {
+      "root": "ctl",
+      "module": "math_block|complex_lite"
+    },
+    {
+      "root": "ctl",
+      "module": "math_block|coordinate"
+    },
+    {
+      "root": "ctl",
+      "module": "framework|_internal"
+    },
+    {
+      "root": "ctl",
+      "module": "component|intrinsic|_internal"
+    },
+    {
+      "root": "ctl",
+      "module": "component|dsa|dsa_scope"
+    },
+    {
+      "root": "ctl",
+      "module": "component|dsa|dsa_trigger"
+    },
+    {
+      "root": "csp",
+      "module": "stm32"
+    }
+  ]
+}

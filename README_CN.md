@@ -241,7 +241,8 @@ GMP 还提供 Processor-in-the-Loop 和 Datalink 调试机制：
 
 - PIL 在真实 MCU 上执行控制程序，并把仿真输入输出与上位机交换。
 - Datalink 提供变量观察、参数在线调整、Memory Perspective、PIL 数据交换等服务。
-- 调试器入口位于 `tools/gmp_pil_server/gmp_debugger_v2`。
+- 字节寻址 CPU 使用 `tools/gmp_pil_server/gmp_debugger_u8`，16 位寻址 DSP
+  使用 `tools/gmp_pil_server/gmp_debugger_u16`。
 - 通信和后台任务通常在 suite 的 `user_main.c` 中组织，UART 等物理接口在目标 `xplt` 中实现。
 
 高频控制中断中不应执行阻塞式串口或界面通信；调试数据应交给后台调度任务处理。

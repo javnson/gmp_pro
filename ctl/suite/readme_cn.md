@@ -365,10 +365,13 @@ user_main.c
 上位机调试器位于：
 
 ```text
-tools/gmp_pil_server/gmp_debugger_v2/run.bat
+tools/gmp_pil_server/gmp_debugger_u8/run.bat
 ```
 
-这是一个基于 PyQt 的调试程序。相关实现可参考 `tools/gmp_pil_server/gmp_debugger_v2`，其中包含 Datalink 核心、PIL、tunable、memory perspective、曲线观察等页面或功能。
+这是一个基于 PyQt 的调试程序。字节寻址 CPU 的相关实现可参考
+`tools/gmp_pil_server/gmp_debugger_u8`；16 位寻址 DSP 使用
+`tools/gmp_pil_server/gmp_debugger_u16`。工具包含 Datalink 核心、PIL、
+tunable、memory perspective、曲线观察等页面或功能。
 
 使用建议：
 

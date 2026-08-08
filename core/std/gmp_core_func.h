@@ -7,6 +7,15 @@ extern "C"
 {
 #endif // __cplusplus
 
+/** @brief Initialize platform-owned peripherals required by GMP. */
+void setup_peripheral(void);
+
+/** @brief Initialize the user application after platform startup. */
+void init(void);
+
+/** @brief Execute one user application background iteration. */
+void mainloop(void);
+
 // extern ctl_object_nano_t *ctl_nano_handle;
 
 // This function is the basic init part of GMP entry.

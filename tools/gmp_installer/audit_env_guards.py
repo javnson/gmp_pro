@@ -22,7 +22,8 @@ def main() -> int:
     for directory in (
         root / "tools" / "SDPE_v2",
         root / "tools" / "facilities_generator" / "src_mgr",
-        root / "tools" / "gmp_pil_server" / "gmp_debugger_v2",
+        root / "tools" / "gmp_pil_server" / "gmp_debugger_u8",
+        root / "tools" / "gmp_pil_server" / "gmp_debugger_u16",
     ):
         targets.update(directory.rglob("*.bat"))
 

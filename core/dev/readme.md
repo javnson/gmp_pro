@@ -1,5 +1,8 @@
 # GMP 跨平台硬件抽象层 (HAL) 移植开发指南
 
+Data Link protocol documentation: [English](readme_dl_protocol.md) |
+[简体中文](readme_dl_protocol_cn.md)
+
 ## 1. 架构设计哲学 (Design Philosophy)
 
 GMP (Generic Motor Platform) HAL 层的核心目标是：**为上层应用（如 FOC 电机控制算法、CANopen 协议栈）提供绝对统一、内存安全、无死锁隐患的物理外设接口，同时彻底抹平不同芯片架构（如 ARM 的 8-bit Byte 与 DSP 的 16-bit Byte）之间的硬件鸿沟。**

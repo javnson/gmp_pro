@@ -1,3 +1,4 @@
+import os
 import sys
 import serial
 import serial.tools.list_ports
@@ -18,6 +19,7 @@ from tabs.tab_pil import TabPilBridge
 from tabs.tab_tunable import TabTunableManager
 from tabs.tab_mem_persp import TabMemPersp
 from tabs.tab_chronos import TabChronosManager
+from tabs.tab_dsa_scope import TabDsaScope
 
 DATA_BITS_MAP = {'8': serial.EIGHTBITS, '7': serial.SEVENBITS, '6': serial.SIXBITS, '5': serial.FIVEBITS}
 STOP_BITS_MAP = {'1': serial.STOPBITS_ONE, '1.5': serial.STOPBITS_ONE_POINT_FIVE, '2': serial.STOPBITS_TWO}
@@ -29,7 +31,8 @@ PARITY_MAP = {
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("GMP Datalink Debugger / PIL Server")
+        target_unit_bytes = os.environ.get("GMP_DATALINK_TARGET_UNIT_BYTES", "2")
+        self.setWindowTitle(f"GMP Datalink Debugger u{int(target_unit_bytes) * 8} / PIL Server")
         self.resize(1100, 650)
         
         # =========================================================
@@ -75,6 +78,9 @@ class MainWindow(QMainWindow):
 
         self.tab_chronos = TabChronosManager(self.hermes)
         self.tabs.addTab(self.tab_chronos, "7. Chronos 波形记录仪")
+
+        self.tab_dsa_scope = TabDsaScope(self.hermes)
+        self.tabs.addTab(self.tab_dsa_scope, "8. DSA Trigger/Scope")
 
         # =========================================================
         # 3. 跨模块信号互锁连线

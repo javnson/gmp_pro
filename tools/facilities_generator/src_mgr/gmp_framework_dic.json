@@ -806,16 +806,22 @@
             },
             "dev|datalink|_internal": {
                 "type": "module",
-                "description": "",
+                "description": "GMP Data Link with compile-time u8/u16 backend selection",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/core/dev/src/gmp_datalink.c"
                 ],
                 "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/core/dev/datalink.h"
+                    "${GMP_PRO_LOCATION}/core/dev/datalink.h",
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/datalink_*.h",
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/gmp_datalink_*.inc"
                 ],
                 "inc_dirs": [],
-                "help_docs": [],
-                "depends_on": []
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/core/dev/readme_dl_protocol.md"
+                ],
+                "depends_on": [
+                    "core|std"
+                ]
             },
             "dev|datalink|pil": {
                 "type": "module",
@@ -855,16 +861,20 @@
             },
             "dev|datalink|variable_monitor": {
                 "type": "module",
-                "description": "",
+                "description": "Datalink tunable-variable service with u8/u16 backends",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/core/dev/src/gmp_tunable.c"
                 ],
                 "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/core/dev/tunable.h"
+                    "${GMP_PRO_LOCATION}/core/dev/tunable.h",
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/tunable_*.h",
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/gmp_tunable_*.inc"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "core|dev|datalink|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -891,16 +901,20 @@
             },
             "dev|datalink|mem_monitor": {
                 "type": "module",
-                "description": "",
+                "description": "Sandboxed memory perspective service with u8/u16 backends",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/core/dev/src/gmp_mem_presp.c"
                 ],
                 "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/core/dev/mem_presp.h"
+                    "${GMP_PRO_LOCATION}/core/dev/mem_presp.h",
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/mem_presp_*.h",
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/gmp_mem_presp_*.inc"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "core|dev|datalink|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5423,15 +5437,17 @@
                 "inc_dirs": [],
                 "help_docs": []
             },
-            "component|dsa|dsa_scope": {
+        "component|dsa|dsa_scope": {
                 "type": "module",
                 "description": "",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/dsa/src/dsa_scope.c"
                 ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/dsa/dsa_scope.h"
-                ],
+          "inc_patterns": [
+            "${GMP_PRO_LOCATION}/ctl/component/dsa/dsa_scope.h",
+            "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/divider.h",
+            "${GMP_PRO_LOCATION}/ctl/math_block/utilities/mem_view.h"
+          ],
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [],
@@ -5459,15 +5475,18 @@
                     }
                 ]
             },
-            "component|dsa|dsa_trigger": {
+        "component|dsa|dsa_trigger": {
                 "type": "module",
                 "description": "",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/dsa/src/dsa_trigger.c"
                 ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/dsa/dsa_trigger.h"
-                ],
+          "inc_patterns": [
+            "${GMP_PRO_LOCATION}/ctl/component/dsa/dsa_trigger.h",
+            "${GMP_PRO_LOCATION}/ctl/component/dsa/sine_analyzer.h",
+            "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/divider.h",
+            "${GMP_PRO_LOCATION}/ctl/math_block/utilities/mem_view.h"
+          ],
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [],

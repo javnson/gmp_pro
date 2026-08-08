@@ -31,6 +31,8 @@ def run_inc_sync():
         local_config = json.load(f)
 
     sync_mode = local_config.get("sync_mode", "all")
+    emit_external_include_paths = local_config.get("emit_external_include_paths", True)
+    local_include_dirs = local_config.get("local_include_dirs", [dest_inc_dir.name])
     if sync_mode not in ("all", "inc_only"):
         print("[SKIP] Current configuration mode does not require header file synchronization.")
         return True
@@ -136,9 +138,11 @@ def run_inc_sync():
     try:
         with open(dest_inc_txt, 'w', encoding='utf-8') as f:
             f.write("========== GMP Compiler Include Paths Summary ==========\n")
-            f.write("1. Local mirror base path:\n")
-            f.write(f".\\{dest_inc_dir.name}\n\n")
-            if inc_dirs_list:
+            f.write("1. Local mirror include paths:\n")
+            for directory in local_include_dirs:
+                f.write(f".\\{Path(directory).as_posix()}\n")
+            f.write("\n")
+            if inc_dirs_list and emit_external_include_paths:
                 f.write("2. External macro dependency paths (-I):\n")
                 for d in sorted(list(inc_dirs_list)):
                     f.write(f"{d}\n")
