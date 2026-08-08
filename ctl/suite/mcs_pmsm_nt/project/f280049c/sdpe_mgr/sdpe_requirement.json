@@ -5,7 +5,7 @@
   "description": "PMSM sensored-control settings and project bindings for the LaunchXL-F280049C. Board resources remain physical BOOSTXL connector resources and are assigned application roles here.",
   "suite": "mcs_pmsm_nt",
   "version": "1.2.0",
-  "updated_at": "2026-08-06",
+  "updated_at": "2026-08-08",
   "output_header": "sdpe_mcs_pmsm_nt_f280049c_settings.h",
   "hardware": [
     {
@@ -670,6 +670,26 @@
       "description": "Phase-current per-unit base in amperes."
     },
     {
+      "role": "Rated Speed Rpm",
+      "macro": "CTRL_SPEED_RPM_BASE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "${sm060r20b30mnad.Max Speed}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Rated Frequency",
+      "macro": "MOTOR_PARAM_RATED_FREQUENCY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "${sm060r20b30mnad.Rated Frequency}"
+      },
+      "description": ""
+    },
+    {
       "role": "Encoder Full Scale",
       "macro": "CTRL_POS_ENC_FS",
       "enabled": true,
@@ -818,6 +838,16 @@
         "float": "10.0"
       },
       "description": "Circular saturation limit for voltage vector magnitude in V."
+    },
+    {
+      "role": "Motor Max Speed",
+      "macro": "MOTOR_PARAM_MAX_SPEED",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "${sm060r20b30mnad.Max Speed}"
+      },
+      "description": ""
     }
   ],
   "requirement_groups": [
@@ -836,7 +866,9 @@
       "requirements": [
         "DC Bus Voltage Base",
         "Phase Voltage Base",
-        "Current Base"
+        "Current Base",
+        "Rated Speed Rpm",
+        "Motor Rated Frequency"
       ]
     },
     {
@@ -891,7 +923,8 @@
       "name": "Protection Parameters",
       "requirements": [
         "Max Shutdown Current",
-        "Max Voltage For Circular Saturation"
+        "Max Voltage For Circular Saturation",
+        "Motor Max Speed"
       ]
     }
   ],

@@ -26,7 +26,7 @@ extern "C"
 //=================================================================================================
 // definitions of peripheral
 
-extern uart_halt debug_uart;
+
 
 
 void flush_dl_tx_buffer();

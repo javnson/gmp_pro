@@ -5,7 +5,7 @@
   "description": "Platform-independent controller contract shared by every mcs_pmsm_nt implementation. Hardware timing, sensing and peripheral bindings remain in each project SDPE requirement.",
   "suite": "mcs_pmsm_nt",
   "version": "1.0.0",
-  "updated_at": "2026-08-06",
+  "updated_at": "2026-08-08",
   "output_header": "sdpe_mcs_pmsm_nt_common_settings.h",
   "hardware": [],
   "code_sections": {
@@ -393,36 +393,6 @@
         "float": "0.707"
       },
       "description": "Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response."
-    },
-    {
-      "role": "Rated Speed Rpm",
-      "macro": "CTRL_SPEED_RPM_BASE",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "export": "${sm060r20b30mnad.Max Speed}"
-      },
-      "description": ""
-    },
-    {
-      "role": "Motor Max Speed",
-      "macro": "MOTOR_PARAM_MAX_SPEED",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "export": "${sm060r20b30mnad.Max Speed}"
-      },
-      "description": ""
-    },
-    {
-      "role": "Motor Rated Frequency",
-      "macro": "MOTOR_PARAM_RATED_FREQUENCY",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "export": "${sm060r20b30mnad.Rated Frequency}"
-      },
-      "description": ""
     }
   ],
   "requirement_groups": [
@@ -488,14 +458,6 @@
         "Cia402 Operation Enable Delay",
         "Adc Calibrator Cutoff",
         "Adc Calibrator Quality Factor"
-      ]
-    },
-    {
-      "name": "Ungrouped",
-      "requirements": [
-        "Rated Speed Rpm",
-        "Motor Max Speed",
-        "Motor Rated Frequency"
       ]
     }
   ],

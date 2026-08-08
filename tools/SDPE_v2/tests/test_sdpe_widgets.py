@@ -16,11 +16,11 @@ if str(ROOT) not in sys.path:
 try:
     from PyQt6.QtCore import Qt
     from PyQt6.QtTest import QTest
-    from PyQt6.QtWidgets import QApplication, QCheckBox, QStyleOptionViewItem, QTableWidgetItem, QTreeWidgetItem
+    from PyQt6.QtWidgets import QApplication, QAbstractItemView, QCheckBox, QStyleOptionViewItem, QTableWidgetItem, QTreeWidgetItem
 except ImportError:  # pragma: no cover - depends on the installed Qt binding.
     from PySide6.QtCore import Qt
     from PySide6.QtTest import QTest
-    from PySide6.QtWidgets import QApplication, QCheckBox, QStyleOptionViewItem, QTableWidgetItem, QTreeWidgetItem
+    from PySide6.QtWidgets import QApplication, QAbstractItemView, QCheckBox, QStyleOptionViewItem, QTableWidgetItem, QTreeWidgetItem
 
 from gui_pyqt.sdpe_widgets import SDPEComboBox, SDPETableWidget, SDPETreeWidget
 from gui_pyqt.sdpe_gui import MainWindow, ProjectPage
@@ -207,6 +207,67 @@ class SDPEWidgetTests(unittest.TestCase):
         self.assertTrue(table.apply_text_filter(r"CTRL_[AZ]", regex=True))
         self.assertTrue(table.find_text("ctrl_a", case_sensitive=False))
         self.assertFalse(table.apply_text_filter("[", regex=True))
+
+    def test_column_sort_cycles_and_cut_preserves_the_selected_source_row(self) -> None:
+        table = SDPETableWidget()
+        table.configure(["Name", "Macro"])
+        for row, values in enumerate((("Beta", "CTRL_B"), ("Alpha", "CTRL_A"), ("Gamma", "CTRL_G"))):
+            table.insertRow(row)
+            for col, value in enumerate(values):
+                table.setItem(row, col, QTableWidgetItem(value))
+
+        table.cycle_display_sort(0)
+        self.assertEqual([table.item(row, 0).text() for row in range(table.rowCount())], ["Alpha", "Beta", "Gamma"])
+        table.cycle_display_sort(0)
+        self.assertEqual([table.item(row, 0).text() for row in range(table.rowCount())], ["Gamma", "Beta", "Alpha"])
+        table.cycle_display_sort(0)
+        self.assertEqual([table.item(row, 0).text() for row in range(table.rowCount())], ["Beta", "Alpha", "Gamma"])
+
+        table.cycle_display_sort(0)
+        table.setCurrentCell(0, 0)
+        table.selectRow(0)
+        table.cut()
+        self.assertEqual(table.rowCount(), 2)
+        self.assertEqual(QApplication.clipboard().text().split("\t", 1)[0], "Alpha")
+        self.assertEqual([table.item(row, 0).text() for row in range(table.rowCount())], ["Beta", "Gamma"])
+
+    def test_single_click_selects_while_double_click_is_the_edit_trigger(self) -> None:
+        table = SDPETableWidget()
+        table.configure(["Name"])
+        tree = SDPETreeWidget()
+        tree.configure(["Name"])
+        self.assertFalse(bool(table.editTriggers() & QAbstractItemView.EditTrigger.SelectedClicked))
+        self.assertFalse(bool(tree.editTriggers() & QAbstractItemView.EditTrigger.SelectedClicked))
+        self.assertTrue(bool(table.editTriggers() & QAbstractItemView.EditTrigger.DoubleClicked))
+        self.assertTrue(bool(tree.editTriggers() & QAbstractItemView.EditTrigger.DoubleClicked))
+
+    def test_project_requirement_ctrl_x_cuts_the_sorted_selected_requirement(self) -> None:
+        examples = ROOT / "examples"
+        with tempfile.TemporaryDirectory() as output:
+            window = MainWindow(examples, mode="project", default_output_dir=Path(output))
+            window.show()
+            page = next(item for item in window.pages if isinstance(item, ProjectPage))
+            window.tabs.setCurrentWidget(page)
+            page.list_widget.setCurrentRow(0)
+            self.app.processEvents()
+
+            target = next(
+                item
+                for item in page.iter_requirement_items()
+                if page.project_item_source(item) == "project private"
+            )
+            macro = target.text(1)
+            page.requirements.apply_display_sort(1, ascending=True)
+            page.requirements.setCurrentItem(target, 1)
+            target.setSelected(True)
+            page.requirements.setFocus()
+            QTest.keyClick(page.requirements, Qt.Key.Key_X, Qt.KeyboardModifier.ControlModifier)
+            self.app.processEvents()
+
+            self.assertNotIn(macro, [item.text(1) for item in page.iter_requirement_items()])
+            self.assertIn(macro, QApplication.clipboard().text())
+            window.deleteLater()
+            self.app.processEvents()
 
     def test_undo_back_to_clean_snapshot_clears_dirty_state(self) -> None:
         examples = ROOT / "examples"

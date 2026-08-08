@@ -56,18 +56,21 @@ absolute, or use environment-variable syntax such as
 common file as one view, identifies each item's source, and validates macro
 duplicates across the complete composition.
 
-Generation writes the private header/script first and then each common output in
-the configured order. The private outputs include or run their common outputs.
-Items can be moved from a private project into a selected common file, or from a
-common file into one or more selected private projects.
+Generation writes one final C header named by the private project's
+`output_header`. It directly contains the private configuration followed by all
+bound Common fallbacks, so Code preview, search, and source jumps always target
+one file. MATLAB initialization scripts remain a Common-then-private chain to
+preserve the existing Simulink loading contract. Items can be moved from a
+private project into a selected common file, or from a common file into one or
+more selected private projects.
 
 Common requirements and macros remain editable in the merged project view and
 are saved back to their owning Common JSON files. The Requirements context menu
 creates Private and Common rows explicitly. `Cover with private requirement`
 creates a private row with the same macro. The private row is then the tree parent, each
-matching Common row is a child, and the Common definition is forced weak. The C
-header therefore emits the private definition before including Common fallback
-headers whose matching macros are guarded by `#ifndef`.
+matching Common row is a child, and the Common definition is forced weak. The
+final C header therefore emits the private definition before its Common fallback
+definition, whose matching macro is guarded by `#ifndef`.
 
 Save commits an active cell editor before writing every affected source file.
 Delete removes the selected row even when focus is on a permanent checkbox; a

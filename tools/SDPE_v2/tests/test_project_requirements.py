@@ -93,7 +93,7 @@ class ProjectRequirementCompositionTests(unittest.TestCase):
         self.assertEqual(merged["hardware"][0]["entity"], "legacy_entity")
         self.assertEqual(merged["hardware"][0][SOURCE_KEY], "project private")
 
-    def test_generator_emits_private_then_all_common_outputs(self) -> None:
+    def test_generator_emits_one_merged_header_for_private_and_common_inputs(self) -> None:
         library = SDPELibrary(EXAMPLES).load()
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -128,15 +128,26 @@ class ProjectRequirementCompositionTests(unittest.TestCase):
             self.assertEqual([data["id"] for _path, data in commons], ["common_a", "common_b"])
 
             generator = HeaderGenerator(library, root / "out", project_subdir="")
+            legacy_common_header = root / "out" / "common_a.h"
+            legacy_common_header.parent.mkdir(parents=True, exist_ok=True)
+            legacy_common_header.write_text(
+                "/**\n"
+                " * @file common_a.h\n"
+                " * @brief SDPE project bindings for common_a.\n"
+                " */\n",
+                encoding="utf-8",
+            )
             generated = generator.generate_project(project)
             headers = [item.path.name for item in generated if item.path.suffix == ".h"]
-            self.assertEqual(headers, ["private.h", "common_a.h", "common_b.h"])
+            self.assertEqual(headers, ["private.h"])
             private_header = (root / "out" / "private.h").read_text(encoding="utf-8")
-            self.assertIn("#include <common_a.h>", private_header)
-            self.assertIn("#include <common_b.h>", private_header)
-            self.assertLess(private_header.index("#define CTRL_GAIN (2)"), private_header.index("#include <common_a.h>"))
-            common_header = (root / "out" / "common_a.h").read_text(encoding="utf-8")
-            self.assertIn("#ifndef CTRL_GAIN", common_header)
+            self.assertNotIn("#include <common_a.h>", private_header)
+            self.assertNotIn("#include <common_b.h>", private_header)
+            self.assertIn("#define CTRL_COMMON_ONLY (7)", private_header)
+            self.assertIn("#ifndef CTRL_GAIN", private_header)
+            self.assertLess(private_header.index("#define CTRL_GAIN (2)"), private_header.index("#ifndef CTRL_GAIN"))
+            self.assertFalse(legacy_common_header.exists())
+            self.assertFalse((root / "out" / "common_b.h").exists())
 
             scripts = generator.generate_project_matlab_scripts(project)
             self.assertEqual(

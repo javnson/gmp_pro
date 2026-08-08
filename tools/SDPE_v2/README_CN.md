@@ -33,8 +33,10 @@ v2 当前采用“核心 CLI + PyQt 图形化管理器”的结构。CLI 负责�
 多个公共需求清单。路径可以是相对于私有 JSON 的相对路径、绝对路径，也可以使用
 `%GMP_PRO_LOCATION%`、`$GMP_PRO_LOCATION` 或 `${GMP_PRO_LOCATION}` 环境变量形式。
 编辑器把私有内容与全部 Common 合并显示，并标明每一项来自 `project private` 还是
-具体 Common；重复宏检查也覆盖完整的合并结果。生成时先生成私有文件，再按配置顺序
-生成各 Common 文件，私有头文件和 MATLAB 脚本会自动引用对应的公共输出。
+具体 Common；重复宏检查也覆盖完整的合并结果。C 头文件生成时只生成 Private 工程
+`output_header` 指定的唯一最终文件；其中先放置私有内容，再直接放置各 Common 的
+Weak fallback 内容，因此 Code 预览、搜索和行定位始终面对同一个文件。MATLAB Init
+Script 仍保持 Common 后 Private 的调用链，以兼容现有 Simulink 加载流程。
 
 右键菜单可以把私有项目移动到选定的 Common，也可以把 Common 项目下发到一个或多个
 私有工程。不带参数运行 `gmp_sdpe_deploy_project_mgr.bat` 会发现并更新仓库中的全部
@@ -43,7 +45,7 @@ v2 当前采用“核心 CLI + PyQt 图形化管理器”的结构。CLI 负责�
 合并页面中的 Common 项可以直接编辑并写回其源文件。Requirements 右键菜单可以明确
 选择创建 Private 或 Common 项。选择 `Cover with private requirement` 后，软件会创建
 同名的 Project Private 项，并强制以 Private 为父节点、Common 为子节点；
-Common 项自动成为 Weak 宏。生成头文件时 Private 定义位于 Common include 之前，
+Common 项自动成为 Weak 宏。生成头文件时 Private 定义位于 Common fallback 定义之前，
 Common 同名宏由 `#ifndef` 保护，因此可以作为默认值且不会覆盖工程专用配置。
 
 保存前会先提交仍处于编辑状态的单元格，并分别写回 Private 与 Common 文件。Delete 在

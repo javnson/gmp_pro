@@ -23,7 +23,7 @@ extern "C"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_ID "mcs_pmsm_nt_common"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION "1.0.0"
-#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-06"
+#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-08"
 
 //=================================================================================================
 /**
@@ -249,17 +249,17 @@ extern "C"
 /**
  * @brief 
  */
-#define CTRL_SPEED_RPM_BASE ${sm060r20b30mnad.Max Speed}
+#define CTRL_SPEED_RPM_BASE SM060R20B30MNAD_MAX_SPEED
 
 /**
  * @brief 
  */
-#define MOTOR_PARAM_MAX_SPEED ${sm060r20b30mnad.Max Speed}
+#define MOTOR_PARAM_MAX_SPEED SM060R20B30MNAD_MAX_SPEED
 
 /**
  * @brief 
  */
-#define MOTOR_PARAM_RATED_FREQUENCY ${sm060r20b30mnad.Rated Frequency}
+#define MOTOR_PARAM_RATED_FREQUENCY SM060R20B30MNAD_RATED_FREQUENCY
 
 // User project tail code
 /* Accept the historical misspelling while all source code uses the canonical switch. */

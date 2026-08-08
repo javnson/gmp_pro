@@ -53,6 +53,7 @@ VALIDATION_BORDER_ROLE = Qt.ItemDataRole.UserRole.value + 101
 READ_ONLY_CELL_ROLE = Qt.ItemDataRole.UserRole.value + 102
 _WIDGET_KEY_ROLE = Qt.ItemDataRole.UserRole.value + 102
 _SOURCE_ORDER_ROLE = Qt.ItemDataRole.UserRole.value + 23
+_SELECTION_KEY_ROLE = Qt.ItemDataRole.UserRole.value + 22
 _TABLE_MIME = "application/x-sdpe-table-rows-v1"
 _TREE_MIME = "application/x-sdpe-tree-items-v1"
 _DATA_ROLE_COUNT = 24
@@ -290,17 +291,31 @@ class SDPEDataViewMixin:
             child.installEventFilter(self)
 
     def eventFilter(self, watched, event) -> bool:  # noqa: ANN001, N802 - Qt override signature.
-        if (
-            event.type() == QEvent.Type.KeyPress
-            and event.key() == Qt.Key.Key_Delete
-            and not isinstance(watched, QLineEdit)
-            and not (isinstance(watched, QComboBox) and watched.isEditable())
-            and self.state() != QAbstractItemView.State.EditingState
-        ):
-            self._run_standard_action("delete")
-            event.accept()
-            return True
+        if event.type() == QEvent.Type.KeyPress:
+            if isinstance(watched, QLineEdit) or (isinstance(watched, QComboBox) and watched.isEditable()):
+                return super().eventFilter(watched, event)
+            if self.handle_standard_key(event):
+                return True
         return super().eventFilter(watched, event)
+
+    def handle_standard_key(self, event) -> bool:  # noqa: ANN001 - accepts QKeyEvent from either Qt binding.
+        """Dispatch row shortcuts even when Qt's QAction resolver is ambiguous."""
+
+        if self.state() == QAbstractItemView.State.EditingState:
+            return False
+        if event.key() == Qt.Key.Key_Delete:
+            action = "delete"
+        elif event.matches(QKeySequence.StandardKey.Copy):
+            action = "copy"
+        elif event.matches(QKeySequence.StandardKey.Cut):
+            action = "cut"
+        elif event.matches(QKeySequence.StandardKey.Paste):
+            action = "paste"
+        else:
+            return False
+        self._run_standard_action(action)
+        event.accept()
+        return True
 
     def header_labels(self) -> list[str]:
         raise NotImplementedError
@@ -316,6 +331,22 @@ class SDPEDataViewMixin:
 
     def clear_display_sort(self) -> None:
         raise NotImplementedError
+
+    def cycle_display_sort(self, column: int) -> None:
+        """Cycle a column through ascending, descending, then source order."""
+
+        current_column = getattr(self, "_sdpe_sort_column", None)
+        current_ascending = getattr(self, "_sdpe_sort_ascending", None)
+        if current_column != column or current_ascending is None:
+            self.apply_display_sort(column, ascending=True)
+        elif current_ascending:
+            self.apply_display_sort(column, ascending=False)
+        else:
+            self.clear_display_sort()
+        signal = getattr(self, "displaySortChanged", None)
+        if signal is not None:
+            state = 0 if getattr(self, "_sdpe_sort_ascending", None) is None else (1 if self._sdpe_sort_ascending else 2)
+            signal.emit(column, state)
 
     def add_standard_actions_to_menu(self, menu: QMenu) -> None:
         """Append the shared row actions to a page-specific context menu."""
@@ -360,6 +391,7 @@ class SDPETableWidget(SDPEDataViewMixin, QTableWidget):
     mutationStarted = Signal()
     mutationFinished = Signal()
     statusTextChanged = Signal(str)
+    displaySortChanged = Signal(int, int)
 
     def __init__(self):
         super().__init__()
@@ -369,14 +401,14 @@ class SDPETableWidget(SDPEDataViewMixin, QTableWidget):
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.setEditTriggers(
-            QAbstractItemView.EditTrigger.SelectedClicked
-            | QAbstractItemView.EditTrigger.DoubleClicked
+            QAbstractItemView.EditTrigger.DoubleClicked
             | QAbstractItemView.EditTrigger.EditKeyPressed
         )
         self.setAlternatingRowColors(True)
         self.setItemDelegate(ValidationBorderDelegate(self))
         self.setDragDropOverwriteMode(False)
         self.set_row_drag_enabled(True)
+        self.horizontalHeader().sectionClicked.connect(self.cycle_display_sort)
         self.model().rowsInserted.connect(lambda *_args: self.contentChanged.emit())
         self.model().rowsRemoved.connect(lambda *_args: self.contentChanged.emit())
         self.model().rowsMoved.connect(lambda *_args: self.contentChanged.emit())
@@ -520,15 +552,25 @@ class SDPETableWidget(SDPEDataViewMixin, QTableWidget):
         try:
             self.capture_source_order()
             self._sdpe_display_sort_active = True
-            self.setSortingEnabled(True)
+            self._sdpe_sort_column = column
+            self._sdpe_sort_ascending = ascending
+            # sortItems is an explicit display operation.  Keeping Qt's live
+            # sorting disabled prevents a later edit from moving a row away.
+            self.setSortingEnabled(False)
             order = Qt.SortOrder.AscendingOrder if ascending else Qt.SortOrder.DescendingOrder
             self.sortItems(column, order)
+            self.horizontalHeader().setSortIndicator(column, order)
+            self.horizontalHeader().setSortIndicatorShown(True)
         finally:
             self.blockSignals(blocked)
 
     def clear_display_sort(self) -> None:
         if not getattr(self, "_sdpe_display_sort_active", False):
+            self._sdpe_sort_column = None
+            self._sdpe_sort_ascending = None
+            self.horizontalHeader().setSortIndicatorShown(False)
             return
+        selected_keys, current_key, current_column = self._capture_sort_selection()
         snapshots = [self._snapshot_row(row) for row in self.source_row_numbers()]
         headers = self.header_labels()
         blocked = self.blockSignals(True)
@@ -539,8 +581,44 @@ class SDPETableWidget(SDPEDataViewMixin, QTableWidget):
                 self._insert_snapshot_row(row, cells, headers)
             self.capture_source_order(force=True)
             self._sdpe_display_sort_active = False
+            self._sdpe_sort_column = None
+            self._sdpe_sort_ascending = None
+            self.horizontalHeader().setSortIndicatorShown(False)
+            self._restore_sort_selection(selected_keys, current_key, current_column)
         finally:
             self.blockSignals(blocked)
+
+    def _capture_sort_selection(self) -> tuple[set[str], str | None, int]:
+        """Give selected rows a temporary identity before rebuilding source order."""
+
+        selected_keys: set[str] = set()
+        current_key = None
+        for row in self.selected_row_numbers():
+            item = self.item(row, 0)
+            if item is None:
+                continue
+            key = uuid4().hex
+            item.setData(_SELECTION_KEY_ROLE, key)
+            selected_keys.add(key)
+            if row == self.currentRow():
+                current_key = key
+        return selected_keys, current_key, self.currentColumn()
+
+    def _restore_sort_selection(self, selected_keys: set[str], current_key: str | None, current_column: int) -> None:
+        self.clearSelection()
+        current_row = -1
+        for row in range(self.rowCount()):
+            item = self.item(row, 0)
+            if item is None:
+                continue
+            key = item.data(_SELECTION_KEY_ROLE)
+            item.setData(_SELECTION_KEY_ROLE, None)
+            if key in selected_keys:
+                self.selectRow(row)
+            if key == current_key:
+                current_row = row
+        if current_row >= 0:
+            self.setCurrentCell(current_row, min(max(current_column, 0), max(self.columnCount() - 1, 0)))
 
     def focusInEvent(self, event) -> None:  # noqa: N802 - Qt override name.
         super().focusInEvent(event)
@@ -557,9 +635,7 @@ class SDPETableWidget(SDPEDataViewMixin, QTableWidget):
         return super().edit(index, trigger, event)
 
     def keyPressEvent(self, event) -> None:  # noqa: N802 - Qt override name.
-        if event.key() == Qt.Key.Key_Delete and self.state() != QAbstractItemView.State.EditingState:
-            self._run_standard_action("delete")
-            event.accept()
+        if self.handle_standard_key(event):
             return
         super().keyPressEvent(event)
 
@@ -746,6 +822,7 @@ class SDPETreeWidget(SDPEDataViewMixin, QTreeWidget):
     mutationStarted = Signal()
     mutationFinished = Signal()
     statusTextChanged = Signal(str)
+    displaySortChanged = Signal(int, int)
 
     def __init__(self):
         super().__init__()
@@ -753,7 +830,7 @@ class SDPETreeWidget(SDPEDataViewMixin, QTreeWidget):
         self._sdpe_default_leaf_role: str | None = None
         self._sdpe_description_col: int | None = None
         self.setEditTriggers(
-            QAbstractItemView.EditTrigger.SelectedClicked
+            QAbstractItemView.EditTrigger.DoubleClicked
             | QAbstractItemView.EditTrigger.EditKeyPressed
         )
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -761,6 +838,7 @@ class SDPETreeWidget(SDPEDataViewMixin, QTreeWidget):
         self.setAlternatingRowColors(True)
         self.setItemDelegate(ValidationBorderDelegate(self))
         self.set_tree_drag_enabled(False)
+        self.header().sectionClicked.connect(self.cycle_display_sort)
 
     def configure(
         self,
@@ -895,15 +973,24 @@ class SDPETreeWidget(SDPEDataViewMixin, QTreeWidget):
         try:
             self.capture_source_order()
             self._sdpe_display_sort_active = True
-            self.setSortingEnabled(True)
+            self._sdpe_sort_column = column
+            self._sdpe_sort_ascending = ascending
+            # Do not let the model re-sort while a user is editing a row.
+            self.setSortingEnabled(False)
             order = Qt.SortOrder.AscendingOrder if ascending else Qt.SortOrder.DescendingOrder
             self.sortItems(column, order)
+            self.header().setSortIndicator(column, order)
+            self.header().setSortIndicatorShown(True)
         finally:
             self.blockSignals(blocked)
 
     def clear_display_sort(self) -> None:
         if not getattr(self, "_sdpe_display_sort_active", False):
+            self._sdpe_sort_column = None
+            self._sdpe_sort_ascending = None
+            self.header().setSortIndicatorShown(False)
             return
+        selected_keys, current_key, current_column = self._capture_sort_selection()
         states = self._capture_drop_widgets()
         blocked = self.blockSignals(True)
         try:
@@ -929,8 +1016,42 @@ class SDPETreeWidget(SDPEDataViewMixin, QTreeWidget):
             self._restore_drop_widgets(states)
             self.capture_source_order(force=True)
             self._sdpe_display_sort_active = False
+            self._sdpe_sort_column = None
+            self._sdpe_sort_ascending = None
+            self.header().setSortIndicatorShown(False)
+            self._restore_sort_selection(selected_keys, current_key, current_column)
         finally:
             self.blockSignals(blocked)
+
+    def _capture_sort_selection(self) -> tuple[set[str], str | None, int]:
+        selected_keys: set[str] = set()
+        current = self.currentItem()
+        current_key = None
+        for item in unique_tree_items(self.selectedItems()):
+            key = uuid4().hex
+            item.setData(0, _SELECTION_KEY_ROLE, key)
+            selected_keys.add(key)
+            if item is current:
+                current_key = key
+        if current is not None and current_key is None:
+            key = uuid4().hex
+            current.setData(0, _SELECTION_KEY_ROLE, key)
+            selected_keys.add(key)
+            current_key = key
+        return selected_keys, current_key, self.currentColumn()
+
+    def _restore_sort_selection(self, selected_keys: set[str], current_key: str | None, current_column: int) -> None:
+        self.clearSelection()
+        current_item = None
+        for item in self.iter_items():
+            key = item.data(0, _SELECTION_KEY_ROLE)
+            item.setData(0, _SELECTION_KEY_ROLE, None)
+            if key in selected_keys:
+                item.setSelected(True)
+            if key == current_key:
+                current_item = item
+        if current_item is not None:
+            self.setCurrentItem(current_item, min(max(current_column, 0), max(self.columnCount() - 1, 0)))
 
     def focusInEvent(self, event) -> None:  # noqa: N802 - Qt override name.
         super().focusInEvent(event)
@@ -951,9 +1072,7 @@ class SDPETreeWidget(SDPEDataViewMixin, QTreeWidget):
         return super().edit(index, trigger, event)
 
     def keyPressEvent(self, event) -> None:  # noqa: N802 - Qt override name.
-        if event.key() == Qt.Key.Key_Delete and self.state() != QAbstractItemView.State.EditingState:
-            self._run_standard_action("delete")
-            event.accept()
+        if self.handle_standard_key(event):
             return
         super().keyPressEvent(event)
 

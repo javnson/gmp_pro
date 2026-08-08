@@ -238,8 +238,9 @@ Project 文件放在 `projects/` 下。
 `common_requirements` 按顺序绑定零个或多个公共需求清单。每一项可以是相对于当前
 Project JSON 的路径、绝对路径，或包含 `%VAR%`、`$VAR`、`${VAR}` 的环境变量路径。
 该字段只保存在私有工程中；编辑器合并显示全部来源，但保存时仍分别写回原文件。
-生成器先输出私有工程，再按数组顺序输出 Common，并让私有 C Header 与 MATLAB Init
-Script 自动引用对应的公共输出。
+生成器只输出 Private 工程 `output_header` 指定的 C Header，并将所有 Common 内容直接
+合并到该文件中；Private 内容在前，Common 内容作为 Weak fallback 在后。MATLAB Init
+Script 仍按 Common 后 Private 的调用链生成，以兼容现有 Simulink 初始化流程。
 
 合并视图中的 Common Requirement、Selection Macro 和 Option Macro 可以直接编辑，
 保存时写回各自的 Common JSON。Requirements 右键菜单分别提供

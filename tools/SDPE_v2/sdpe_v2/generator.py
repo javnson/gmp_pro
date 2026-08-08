@@ -346,8 +346,8 @@ class HeaderGenerator:
     def _format_binding_text(self, value: str) -> str:
         text = str(value).strip()
         return re.sub(
-            r"\$\{([A-Za-z0-9_][A-Za-z0-9_.]*)\}",
-            lambda match: self._resolve_export(match.group(1)),
+            r"\$\{([^{}]+)\}",
+            lambda match: self._resolve_export(match.group(1).strip()),
             text,
         )
 
@@ -561,24 +561,48 @@ class HeaderGenerator:
         return f"{self.prefix(parent, parent_schema)}_{macro_name(comp.slot)}"
 
     def generate_project(self, project_path: Path) -> list[GeneratedFile]:
-        """Generate private output first, followed by its bound common output."""
+        """Generate one merged header for a private project and all of its Common inputs."""
 
         data, commons = load_project_requirements(project_path)
         generated: list[GeneratedFile] = []
         seen: set[Path] = set()
         common_data = self.effective_common_overrides(data, [item for _path, item in commons])
-        for project_data, inherited in [(data, common_data), *((item, []) for item in common_data)]:
+        hardware_data = [data, *common_data]
+        for project_data in hardware_data:
             for entity_id in self._project_entity_ids(project_data):
                 for item in self.generate_entity_tree(entity_id, skip_system=True):
                     if item.path not in seen:
                         seen.add(item.path)
                         generated.append(item)
-            out_path = self.project_header_path(project_data)
-            changed = write_if_changed(out_path, self.render_project_header(project_data, inherited))
-            if out_path not in seen:
-                seen.add(out_path)
-                generated.append(GeneratedFile(out_path, changed))
+        out_path = self.project_header_path(data)
+        changed = write_if_changed(out_path, self.render_project_header(data, common_data))
+        generated.append(GeneratedFile(out_path, changed))
+        self._remove_legacy_common_headers(common_data, out_path)
         return generated
+
+    def _remove_legacy_common_headers(
+        self,
+        commons: list[dict[str, Any]],
+        private_path: Path,
+    ) -> None:
+        """Remove only old SDPE-generated Common headers from the target output folder."""
+
+        for common in commons:
+            path = self.project_header_path(common)
+            if path == private_path or not path.is_file():
+                continue
+            try:
+                content = path.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            header_name = str(common.get("output_header", ""))
+            generated_prefix = (
+                "/**\n"
+                f" * @file {header_name}\n"
+                " * @brief SDPE project bindings for "
+            )
+            if header_name and content.startswith(generated_prefix):
+                path.unlink()
 
     def generate_project_matlab_script(self, project_path: Path) -> GeneratedFile:
         """Generate private and bound common scripts, returning the private output."""
@@ -647,7 +671,6 @@ class HeaderGenerator:
         hardware_ids = list(dict.fromkeys(hardware_ids))
         out_path = self.project_header_path(data)
         includes = [self.entity_include_path(self.library.entity(entity_id), out_path) for entity_id in hardware_ids]
-        common_headers = [str(common["output_header"]) for common in effective_commons if common.get("output_header")]
 
         lines = [
             "/**",
@@ -666,6 +689,9 @@ class HeaderGenerator:
 
         lines.extend(["#ifdef __cplusplus", 'extern "C"', "{", "#endif", ""])
         self._append_project_code_section(lines, data, "after_extern_open", "User project prefix code", True)
+        for common in effective_commons:
+            common_name = common.get("display_name", common.get("id", "Common requirement"))
+            self._append_project_code_section(lines, common, "after_extern_open", f"Common prefix code: {common_name}")
 
         self._append_project_section_header(lines, "Project metadata")
         lines.append(f"#define {self.project_metadata_macro(data, 'SDPE_PROJECT_ID')} \"{project_id}\"")
@@ -676,6 +702,36 @@ class HeaderGenerator:
         if data.get("updated_at"):
             lines.append(f"#define {self.project_metadata_macro(data, 'SDPE_PROJECT_UPDATED_AT')} \"{data['updated_at']}\"")
         lines.append("")
+
+        self._append_project_config_items(lines, data)
+        for common in effective_commons:
+            common_name = common.get("display_name", common.get("id", "Common requirement"))
+            self._append_project_section_header(lines, f"Common fallbacks: {common_name}")
+            self._append_project_config_items(lines, common)
+
+        if data.get("peripheral_bindings"):
+            self._append_project_section_header(lines, "Board peripheral mapping")
+            for macro, value in data["peripheral_bindings"].items():
+                self._append_doc_comment(lines, macro)
+                lines.append(f"#define {macro} {value}")
+                lines.append("")
+
+        if data.get("global_macros"):
+            self._append_project_section_header(lines, "Global project macros")
+            for macro, value in data["global_macros"].items():
+                self._append_doc_comment(lines, macro)
+                lines.append(f"#define {macro} {value}")
+                lines.append("")
+
+        for common in effective_commons:
+            common_name = common.get("display_name", common.get("id", "Common requirement"))
+            self._append_project_code_section(lines, common, "before_footer", f"Common tail code: {common_name}")
+        self._append_project_code_section(lines, data, "before_footer", "User project tail code", True)
+        lines.extend(["#ifdef __cplusplus", "}", "#endif", "", f"#endif // {guard}", ""])
+        return "\n".join(lines)
+
+    def _append_project_config_items(self, lines: list[str], data: dict[str, Any]) -> None:
+        """Append one requirement source into an already-open project header."""
 
         for group, items in self._group_project_macros(data.get("feature_macros", []), "Selection macros"):
             self._append_project_section_header(lines, group)
@@ -706,15 +762,22 @@ class HeaderGenerator:
                 if options:
                     comment_lines.append(f"Options: {', '.join(str(v) for v in options)}")
                 self._append_doc_comment(lines, "\n".join(comment_lines))
-                value = str(item.get("value", ""))
-                enabled = item.get("enabled", True)
-                self._append_config_macro(lines, macro, value, enabled=enabled, weak=item.get("weak", False))
+                self._append_config_macro(
+                    lines,
+                    macro,
+                    str(item.get("value", "")),
+                    enabled=item.get("enabled", True),
+                    weak=item.get("weak", False),
+                )
                 lines.append("")
 
-        self._append_project_section_header(lines, "Requirement bindings")
+        if data.get("requirements"):
+            self._append_project_section_header(lines, "Requirement bindings")
         for req in data.get("requirements", []):
-            macro = req["macro"]
-            value = self._resolve_binding_value(req["binding"])
+            macro = req.get("macro", "")
+            if not macro:
+                continue
+            value = self._resolve_binding_value(req.get("binding", {}))
             desc = req.get("description", req.get("role", macro))
             self._append_doc_comment(lines, desc)
             self._append_config_macro(
@@ -725,30 +788,6 @@ class HeaderGenerator:
                 weak=req.get("weak", False),
             )
             lines.append("")
-
-        if data.get("peripheral_bindings"):
-            self._append_project_section_header(lines, "Board peripheral mapping")
-            for macro, value in data["peripheral_bindings"].items():
-                self._append_doc_comment(lines, macro)
-                lines.append(f"#define {macro} {value}")
-                lines.append("")
-
-        if data.get("global_macros"):
-            self._append_project_section_header(lines, "Global project macros")
-            for macro, value in data["global_macros"].items():
-                self._append_doc_comment(lines, macro)
-                lines.append(f"#define {macro} {value}")
-                lines.append("")
-
-        if common_headers:
-            self._append_project_section_header(lines, "Common requirement fallbacks")
-            for header in dict.fromkeys(common_headers):
-                lines.append(self.include_directive(header))
-            lines.append("")
-
-        self._append_project_code_section(lines, data, "before_footer", "User project tail code", True)
-        lines.extend(["#ifdef __cplusplus", "}", "#endif", "", f"#endif // {guard}", ""])
-        return "\n".join(lines)
 
     def render_project_matlab_script(self, data: dict[str, Any], common_data: list[dict[str, Any]] | None = None) -> str:
         """Render a MATLAB script that mirrors project-visible SDPE macros."""
@@ -1272,14 +1311,14 @@ class HeaderGenerator:
     def _resolve_binding_value(self, binding: Any) -> str:
         if isinstance(binding, dict):
             if "literal" in binding:
-                return self._format_binding_text(str(binding["literal"]))
+                # Literal bindings deliberately bypass SDPE reference expansion.
+                return str(binding["literal"]).strip()
             if "macro" in binding:
-                return self._format_binding_text(str(binding["macro"]))
+                return str(binding["macro"]).strip()
             if "export" in binding:
                 value = str(binding["export"])
-                if value.strip().startswith("${"):
-                    return self._format_binding_text(value)
-                return self._resolve_export(value)
+                match = re.fullmatch(r"\$\{([^{}]+)\}", value.strip())
+                return self._resolve_export(match.group(1).strip() if match else value.strip())
             if "expr" in binding:
                 return self._format_binding_text(str(binding["expr"]))
             if "string" in binding:

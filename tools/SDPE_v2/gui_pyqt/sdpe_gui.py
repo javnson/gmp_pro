@@ -4651,11 +4651,11 @@ class ProjectPage(SDPEPage):
             self.save_current()
             if not self.current_id:
                 return
-            files = self.window.generator().generate_project(self.window.project_path(self.current_id))
-            for item in files:
-                if item.path.suffix.lower() == ".h" and item.path.exists():
-                    self.set_code_text(item.path.read_text(encoding="utf-8"))
-                    break
+            project_path = self.window.project_path(self.current_id)
+            files = self.window.generator().generate_project(project_path)
+            header_path = self.window.generator().project_header_path(read_json(project_path))
+            if header_path.is_file():
+                self.set_code_text(header_path.read_text(encoding="utf-8"))
             self.message("Generated", "\n".join(str(item.path) for item in files))
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
@@ -4900,7 +4900,11 @@ class BindingPage(SDPEPage):
 
     def generate_project(self) -> None:
         try:
-            files = self.generator().generate_project(self.window.project_path(self.current_id))
+            project_path = self.window.project_path(self.current_id)
+            files = self.generator().generate_project(project_path)
+            header_path = self.generator().project_header_path(read_json(project_path))
+            if header_path.is_file():
+                self.set_code_text(header_path.read_text(encoding="utf-8"))
             self.message("Generated", "\n".join(str(item.path) for item in files))
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
@@ -5191,7 +5195,7 @@ class MainWindow(QMainWindow):
         toolbar.addWidget(QLabel("Sort"))
         self.data_sort_column = QComboBox()
         self.data_sort_order = QComboBox()
-        self.data_sort_order.addItems(["A to Z", "Z to A"])
+        self.data_sort_order.addItems(["Default order", "A to Z", "Z to A"])
         toolbar.addWidget(self.data_sort_column)
         toolbar.addWidget(self.data_sort_order)
         self.data_search.textChanged.connect(lambda _text: self.apply_data_filter())
@@ -5203,18 +5207,25 @@ class MainWindow(QMainWindow):
 
     def update_data_tools(self, view: SDPEDataViewMixin | None) -> None:
         self.data_sort_column.blockSignals(True)
+        self.data_sort_order.blockSignals(True)
         self.data_sort_column.clear()
         if view is not None:
             self.data_sort_column.addItems(view.header_labels())
             labels = view.header_labels()
-            preferred = next(
-                (index for index, label in enumerate(labels) if label.lower() == "name"),
-                next((index for index, label in enumerate(labels) if label.lower() == "macro"), 0),
-            )
-            self.data_sort_column.setCurrentIndex(preferred)
+            active_column = getattr(view, "_sdpe_sort_column", None)
+            if active_column is None:
+                active_column = next(
+                    (index for index, label in enumerate(labels) if label.lower() == "name"),
+                    next((index for index, label in enumerate(labels) if label.lower() == "macro"), 0),
+                )
+            self.data_sort_column.setCurrentIndex(active_column)
+            ascending = getattr(view, "_sdpe_sort_ascending", None)
+            self.data_sort_order.setCurrentIndex(0 if ascending is None else (1 if ascending else 2))
+        else:
+            self.data_sort_order.setCurrentIndex(0)
         self.data_sort_column.blockSignals(False)
+        self.data_sort_order.blockSignals(False)
         self.apply_data_filter()
-        self.apply_data_sort()
 
     def apply_data_filter(self) -> None:
         view = self.current_active_data_view()
@@ -5245,10 +5256,25 @@ class MainWindow(QMainWindow):
         view = self.current_active_data_view()
         if view is None or self.data_sort_column.currentIndex() < 0:
             return
-        view.apply_display_sort(
-            self.data_sort_column.currentIndex(),
-            self.data_sort_order.currentIndex() == 0,
-        )
+        sort_order = self.data_sort_order.currentIndex()
+        if sort_order == 0:
+            view.clear_display_sort()
+            return
+        view.apply_display_sort(self.data_sort_column.currentIndex(), sort_order == 1)
+
+    def sync_data_sort_controls(self, view: SDPEDataViewMixin, column: int, state: int) -> None:
+        """Reflect a column-header sort gesture in the shared toolbar."""
+
+        if view is not self.current_active_data_view():
+            return
+        self.data_sort_column.blockSignals(True)
+        self.data_sort_order.blockSignals(True)
+        try:
+            self.data_sort_column.setCurrentIndex(column)
+            self.data_sort_order.setCurrentIndex(state)
+        finally:
+            self.data_sort_column.blockSignals(False)
+            self.data_sort_order.blockSignals(False)
 
     def add_menu_action(self, menu: QMenu, text: str, callback, shortcut: QKeySequence | QKeySequence.StandardKey | None = None) -> QAction:
         action = QAction(text, self)
@@ -5275,6 +5301,9 @@ class MainWindow(QMainWindow):
                 view.mutationStarted.connect(page.begin_undo_transaction)
                 view.mutationFinished.connect(page.finish_undo_transaction)
                 view.statusTextChanged.connect(lambda text, v=view: self.show_data_status(v, text))
+                view.displaySortChanged.connect(
+                    lambda column, state, v=view: self.sync_data_sort_controls(v, column, state)
+                )
 
     def data_views_for_page(self, page: SDPEPage | None) -> list[SDPEDataViewMixin]:
         if page is None:

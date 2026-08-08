@@ -5,7 +5,7 @@
   "description": "F280039C IRIS hardware timing, sensing and peripheral bindings. Platform-independent controller settings are supplied by src/sdpe_mcs_pmsm_nt_common_settings.h.",
   "suite": "mcs_pmsm_nt",
   "version": "1.2.0",
-  "updated_at": "2026-07-15",
+  "updated_at": "2026-08-08",
   "output_header": "sdpe_mcs_pmsm_nt_iris_settings.h",
   "hardware": [
     {
@@ -19,7 +19,7 @@
     }
   ],
   "code_sections": {
-    "after_extern_open": "/* The inverter is selected as an SDPE hardware entity. */\n\n/* Compatibility names consumed by the existing PMSM controller. */\n#define MOTOR_TYPE                     SM060R20B30MNAD_MOTOR_TYPE\n#define MOTOR_PARAM_RS                 SM060R20B30MNAD_RS\n#define MOTOR_PARAM_LS                 SM060R20B30MNAD_LD\n#define MOTOR_PARAM_LD                 SM060R20B30MNAD_LD\n#define MOTOR_PARAM_LQ                 SM060R20B30MNAD_LQ\n#define MOTOR_PARAM_FLUX               SM060R20B30MNAD_FLUX\n#define MOTOR_PARAM_POLE_PAIRS         SM060R20B30MNAD_POLE_PAIRS\n#define MOTOR_PARAM_INERTIA            SM060R20B30MNAD_INERTIA\n#define MOTOR_PARAM_FRICTION           SM060R20B30MNAD_FRICTION\n#define MOTOR_PARAM_KV                 SM060R20B30MNAD_KV\n#define MOTOR_PARAM_EMF                SM060R20B30MNAD_EMF\n#define MOTOR_PARAM_RATED_VOLTAGE      SM060R20B30MNAD_RATED_VOLTAGE\n#define MOTOR_PARAM_RATED_CURRENT      SM060R20B30MNAD_RATED_CURRENT\n#define MOTOR_PARAM_NO_LOAD_CURRENT    SM060R20B30MNAD_NO_LOAD_CURRENT\n#define MOTOR_PARAM_RATED_FREQUENCY    SM060R20B30MNAD_RATED_FREQUENCY\n#define MOTOR_PARAM_MAX_SPEED          SM060R20B30MNAD_MAX_SPEED\n#define MOTOR_PARAM_MAX_TORQUE         SM060R20B30MNAD_MAX_TORQUE\n#define MOTOR_PARAM_MAX_DC_VOLTAGE     SM060R20B30MNAD_MAX_DC_VOLTAGE\n#define MOTOR_PARAM_MAX_PH_CURRENT     SM060R20B30MNAD_MAX_PH_CURRENT\n\n/* Compatibility identifiers for code that still checks the fixed board target. */\n#define LAUNCHPAD 0\n#define GMP_IRIS  1\n#define BOARD_SELECTION GMP_IRIS",
+    "after_extern_open": "/* The inverter is selected as an SDPE hardware entity. */\n\n/* Compatibility identifiers for code that still checks the fixed board target. */\n#define LAUNCHPAD 0\n#define GMP_IRIS  1\n#define BOARD_SELECTION GMP_IRIS",
     "before_footer": "/* No additional platform-specific tail definitions. */"
   },
   "feature_macros": [],
@@ -28,7 +28,9 @@
       "group": "ADC",
       "macro": "MC_CURRENT_SAMPLE_PHASE_MODE",
       "enabled": true,
+      "weak": false,
       "value": "(3)",
+      "options_preset": "",
       "options": [
         "(2)",
         "(3)"
@@ -39,6 +41,7 @@
       "group": "Board GPIO",
       "macro": "PWM_ENABLE_PORT",
       "enabled": true,
+      "weak": false,
       "value": "IRIS_GPIO1",
       "options_preset": "iris_f280039c_node.IRIS_GPIO",
       "options": [],
@@ -48,6 +51,7 @@
       "group": "Board GPIO",
       "macro": "PWM_RESET_PORT",
       "enabled": true,
+      "weak": false,
       "value": "IRIS_GPIO3",
       "options_preset": "iris_f280039c_node.IRIS_GPIO",
       "options": [],
@@ -57,6 +61,7 @@
       "group": "Board GPIO",
       "macro": "SYSTEM_LED",
       "enabled": true,
+      "weak": false,
       "value": "IRIS_LED1",
       "options_preset": "",
       "options": [
@@ -69,6 +74,7 @@
       "group": "Board GPIO",
       "macro": "CONTROLLER_LED",
       "enabled": true,
+      "weak": false,
       "value": "IRIS_LED2",
       "options_preset": "",
       "options": [
@@ -81,6 +87,7 @@
       "group": "PWM Channel",
       "macro": "PHASE_U_BASE",
       "enabled": true,
+      "weak": false,
       "value": "IRIS_EPWM1_BASE",
       "options_preset": "iris_f280039c_node.IRIS_EPWM",
       "options": [],
@@ -90,6 +97,7 @@
       "group": "PWM Channel",
       "macro": "PHASE_V_BASE",
       "enabled": true,
+      "weak": false,
       "value": "IRIS_EPWM2_BASE",
       "options_preset": "iris_f280039c_node.IRIS_EPWM",
       "options": [],
@@ -99,6 +107,7 @@
       "group": "PWM Channel",
       "macro": "PHASE_W_BASE",
       "enabled": true,
+      "weak": false,
       "value": "IRIS_EPWM3_BASE",
       "options_preset": "iris_f280039c_node.IRIS_EPWM",
       "options": [],
@@ -108,6 +117,7 @@
       "group": "Encoder",
       "macro": "EQEP_Encoder_BASE",
       "enabled": true,
+      "weak": false,
       "value": "IRIS_EQEP1_BASE",
       "options_preset": "",
       "options": [
@@ -119,6 +129,7 @@
       "group": "ADC Voltage Channels",
       "macro": "INV_UU_RESULT_BASE",
       "enabled": true,
+      "weak": false,
       "value": "ADC_CH1_RESULT_BASE",
       "options_preset": "iris_f280039c_node.ADC_RESULT_REG",
       "options": [],
@@ -128,6 +139,7 @@
       "group": "ADC Voltage Channels",
       "macro": "INV_UU",
       "enabled": true,
+      "weak": false,
       "value": "ADC_CH1",
       "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
       "options": [],
@@ -137,6 +149,7 @@
       "group": "ADC Voltage Channels",
       "macro": "INV_UV_RESULT_BASE",
       "enabled": true,
+      "weak": false,
       "value": "ADC_CH2_RESULT_BASE",
       "options_preset": "iris_f280039c_node.ADC_RESULT_REG",
       "options": [],
@@ -146,6 +159,7 @@
       "group": "ADC Voltage Channels",
       "macro": "INV_UV",
       "enabled": true,
+      "weak": false,
       "value": "ADC_CH2",
       "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
       "options": [],
@@ -155,6 +169,7 @@
       "group": "ADC Voltage Channels",
       "macro": "INV_UW_RESULT_BASE",
       "enabled": true,
+      "weak": false,
       "value": "ADC_CH3_RESULT_BASE",
       "options_preset": "iris_f280039c_node.ADC_RESULT_REG",
       "options": [],
@@ -164,6 +179,7 @@
       "group": "ADC Voltage Channels",
       "macro": "INV_UW",
       "enabled": true,
+      "weak": false,
       "value": "ADC_CH3",
       "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
       "options": [],
@@ -173,6 +189,7 @@
       "group": "ADC Current Channels",
       "macro": "INV_IU_RESULT_BASE",
       "enabled": true,
+      "weak": false,
       "value": "ADC_CH4_RESULT_BASE",
       "options_preset": "iris_f280039c_node.ADC_RESULT_REG",
       "options": [],
@@ -182,6 +199,7 @@
       "group": "ADC Current Channels",
       "macro": "INV_IU",
       "enabled": true,
+      "weak": false,
       "value": "ADC_CH4",
       "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
       "options": [],
@@ -191,6 +209,7 @@
       "group": "ADC Current Channels",
       "macro": "INV_IV_RESULT_BASE",
       "enabled": true,
+      "weak": false,
       "value": "ADC_CH5_RESULT_BASE",
       "options_preset": "iris_f280039c_node.ADC_RESULT_REG",
       "options": [],
@@ -200,6 +219,7 @@
       "group": "ADC Current Channels",
       "macro": "INV_IV",
       "enabled": true,
+      "weak": false,
       "value": "ADC_CH5",
       "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
       "options": [],
@@ -209,6 +229,7 @@
       "group": "ADC Current Channels",
       "macro": "INV_IW_RESULT_BASE",
       "enabled": true,
+      "weak": false,
       "value": "ADC_CH6_RESULT_BASE",
       "options_preset": "iris_f280039c_node.ADC_RESULT_REG",
       "options": [],
@@ -218,6 +239,7 @@
       "group": "ADC Current Channels",
       "macro": "INV_IW",
       "enabled": true,
+      "weak": false,
       "value": "ADC_CH6",
       "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
       "options": [],
@@ -227,6 +249,7 @@
       "group": "ADC DC Bus Channel",
       "macro": "INV_VBUS_RESULT_BASE",
       "enabled": true,
+      "weak": false,
       "value": "ADC_CH7_RESULT_BASE",
       "options_preset": "iris_f280039c_node.ADC_RESULT_REG",
       "options": [],
@@ -236,6 +259,7 @@
       "group": "ADC DC Bus Channel",
       "macro": "INV_VBUS",
       "enabled": true,
+      "weak": false,
       "value": "ADC_CH7",
       "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
       "options": [],
@@ -246,6 +270,8 @@
     {
       "role": "Pwm Compare Max",
       "macro": "CTRL_PWM_CMP_MAX",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "3000 - 1"
       },
@@ -254,6 +280,8 @@
     {
       "role": "Pwm Deadband",
       "macro": "CTRL_PWM_DEADBAND_CMP",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "50"
       },
@@ -262,6 +290,8 @@
     {
       "role": "System Frequency",
       "macro": "CTRL_SYS_FREQUENCY",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "120e6"
       },
@@ -270,6 +300,8 @@
     {
       "role": "System Time Divider",
       "macro": "DSP_C2000_DSP_TIME_DIV",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "CTRL_SYS_FREQUENCY / 1000 / CTRL_PWM_CMP_MAX / 2"
       },
@@ -278,6 +310,8 @@
     {
       "role": "Adc Voltage Reference",
       "macro": "CTRL_ADC_VOLTAGE_REF",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "3.3"
       },
@@ -286,6 +320,8 @@
     {
       "role": "Dc Bus Voltage Base",
       "macro": "CTRL_DCBUS_VOLTAGE",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "80.0"
       },
@@ -294,6 +330,8 @@
     {
       "role": "Phase Voltage Base",
       "macro": "CTRL_VOLTAGE_BASE",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "literal": "(CTRL_DCBUS_VOLTAGE / 1.73205081f)"
       },
@@ -302,6 +340,8 @@
     {
       "role": "Current Base",
       "macro": "CTRL_CURRENT_BASE",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "10.0"
       },
@@ -310,6 +350,8 @@
     {
       "role": "Encoder Full Scale",
       "macro": "CTRL_POS_ENC_FS",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "10000"
       },
@@ -318,6 +360,8 @@
     {
       "role": "Encoder Bias",
       "macro": "CTRL_POS_ENC_BIAS",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "float": "0.0207000002"
       },
@@ -326,62 +370,18 @@
     {
       "role": "Mechanical Division",
       "macro": "CTRL_MECH_DIV",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "5"
       },
       "description": "Mechanical speed and position division factor."
     },
     {
-      "role": "Phase Current Sensitivity",
-      "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
-      "binding": {
-        "literal": "(GMP_3PH_2136SINV_DUAL_PH_SHUNT_RESISTANCE_OHM * GMP_3PH_2136SINV_DUAL_PH_CSA_GAIN_V_V)"
-      },
-      "description": "Phase-current sensor sensitivity in volts per ampere."
-    },
-    {
-      "role": "Phase Current Bias",
-      "macro": "CTRL_INVERTER_CURRENT_BIAS",
-      "binding": {
-        "literal": "(GMP_3PH_2136SINV_DUAL_PH_CSA_BIAS_V)"
-      },
-      "description": "Phase-current sensor zero-current bias in volts."
-    },
-    {
-      "role": "Phase Voltage Sensitivity",
-      "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
-      "binding": {
-        "literal": "(GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_GAIN)"
-      },
-      "description": "Phase-voltage sensing gain in ADC volts per measured volt."
-    },
-    {
-      "role": "Phase Voltage Bias",
-      "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
-      "binding": {
-        "literal": "(GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_BIAS_V)"
-      },
-      "description": "Phase-voltage sensor bias in volts."
-    },
-    {
-      "role": "Dc Current Sensitivity",
-      "macro": "CTRL_DC_CURRENT_SENSITIVITY",
-      "binding": {
-        "literal": "(GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_GAIN)"
-      },
-      "description": "DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path."
-    },
-    {
-      "role": "Dc Current Bias",
-      "macro": "CTRL_DC_CURRENT_BIAS",
-      "binding": {
-        "literal": "(GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_BIAS_V)"
-      },
-      "description": "DC-bus current sensor bias."
-    },
-    {
       "role": "Dc Voltage Sensitivity",
       "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "literal": "(GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_GAIN)"
       },
@@ -390,10 +390,72 @@
     {
       "role": "Dc Voltage Bias",
       "macro": "CTRL_DC_VOLTAGE_BIAS",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "literal": "(GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_BIAS_V)"
       },
       "description": "DC-bus voltage sensor bias in volts."
+    },
+    {
+      "role": "Phase Voltage Sensitivity",
+      "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_GAIN)"
+      },
+      "description": "Phase-voltage sensing gain in ADC volts per measured volt."
+    },
+    {
+      "role": "Phase Voltage Bias",
+      "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "Phase-voltage sensor bias in volts."
+    },
+    {
+      "role": "Dc Current Sensitivity",
+      "macro": "CTRL_DC_CURRENT_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_GAIN)"
+      },
+      "description": "DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path."
+    },
+    {
+      "role": "Dc Current Bias",
+      "macro": "CTRL_DC_CURRENT_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_BIAS_V)"
+      },
+      "description": "DC-bus current sensor bias."
+    },
+    {
+      "role": "Phase Current Sensitivity",
+      "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(GMP_3PH_2136SINV_DUAL_PH_SHUNT_RESISTANCE_OHM * GMP_3PH_2136SINV_DUAL_PH_CSA_GAIN_V_V)"
+      },
+      "description": "Phase-current sensor sensitivity in volts per ampere."
+    },
+    {
+      "role": "Phase Current Bias",
+      "macro": "CTRL_INVERTER_CURRENT_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(GMP_3PH_2136SINV_DUAL_PH_CSA_BIAS_V)"
+      },
+      "description": "Phase-current sensor zero-current bias in volts."
     }
   ],
   "requirement_groups": [
@@ -454,5 +516,15 @@
   ],
   "common_requirements": [
     "../../../sdpe_general/sdpe_requirement.json"
+  ],
+  "feature_macro_groups": [],
+  "option_macro_groups": [
+    "ADC",
+    "Board GPIO",
+    "PWM Channel",
+    "Encoder",
+    "ADC Voltage Channels",
+    "ADC Current Channels",
+    "ADC DC Bus Channel"
   ]
 }
