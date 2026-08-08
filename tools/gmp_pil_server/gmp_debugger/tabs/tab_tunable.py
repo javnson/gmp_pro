@@ -359,7 +359,7 @@ class TunableInstanceWidget(QWidget):
         self.base_cmd = base_cmd
         
         self.current_params = [] 
-        self.last_values = {} 
+        self.last_values = {}
         self.pending_read_batches = []
         self.awaiting_discovery = False
         self.discovery.tunable_items_changed.connect(self._on_tunable_items_changed)
@@ -482,8 +482,8 @@ class TunableInstanceWidget(QWidget):
         self.log(f"Discovered {len(items)} target tunable parameters.", "green")
 
     def log(self, msg, color="black"):
-        if hasattr(self.hermes, 'sig_log_msg'):
-            self.hermes.sig_log_msg.emit(f"<span style='color:{color};'>[{self.instance_name}] {msg}</span>")
+        if hasattr(self.hermes, "emit_log"):
+            self.hermes.emit_log("Tunable", f"[{self.instance_name}] {msg}")
         else:
             print(msg)
 
@@ -710,7 +710,7 @@ class TunableInstanceWidget(QWidget):
                 self.pending_read_batches):
             return
         if not keep_bus:
-            self._set_bus_occupied(True) 
+            self._set_bus_occupied(True)
 
         parameter_ids = [parameter['id'] for parameter in self.current_params]
         self.pending_read_batches = [

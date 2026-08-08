@@ -270,8 +270,9 @@ currently available Chinese validation reports.
   output with the host.
 - Datalink supports variable monitoring, online parameter changes, Memory
   Perspective, and PIL data exchange.
-- Use `tools/gmp_pil_server/gmp_debugger_u8` for byte-addressed CPUs and
-  `tools/gmp_pil_server/gmp_debugger_u16` for 16-bit-addressed DSP targets.
+- Use `tools/gmp_pil_server/gmp_debugger/run_u8.bat` for byte-addressed CPUs and
+  `tools/gmp_pil_server/gmp_debugger/run_u16.bat` for 16-bit-addressed DSP
+  targets. Both launch the same maintained frontend and wire codec.
 - Suite `user_main.c` files normally organize communication and background
   tasks; the target `xplt` owns UART and other physical interfaces.
 

@@ -1,12 +1,15 @@
+import html
 import os
 import sys
+from datetime import datetime
+
 import serial
 import serial.tools.list_ports
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
-                             QHBoxLayout, QTabWidget, QGroupBox, QComboBox, 
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
+                             QHBoxLayout, QTabWidget, QGroupBox, QComboBox,
                              QPushButton, QTextBrowser, QLabel, QFormLayout,
-                             QProgressBar, QSizePolicy) 
-from PyQt5.QtCore import Qt, QTimer
+                             QProgressBar, QSizePolicy, QMenu, QToolButton)
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 
 # Shared communication engine.
 from core_datalink import HermesDatalinkQt
@@ -29,19 +32,74 @@ PARITY_MAP = {
     'Odd': serial.PARITY_ODD, 'Mark': serial.PARITY_MARK, 'Space': serial.PARITY_SPACE
 }
 
+LOG_SOURCE_COLORS = {
+    "System": "#455A64",
+    "Serial Terminal": "#546E7A",
+    "Loop Test": "#00897B",
+    "PIL Simulation": "#3949AB",
+    "PIL Bridge": "#7B1FA2",
+    "Tunable": "#2E7D32",
+    "Memory": "#EF6C00",
+    "Chronos": "#0277BD",
+    "Scope": "#C62828",
+}
+
+
+class LogFilterMenu(QToolButton):
+    """Dropdown checklist controlling which page logs remain visible."""
+
+    visibility_changed = pyqtSignal()
+
+    def __init__(self, sources: list[str], parent=None) -> None:
+        super().__init__(parent)
+        self.setPopupMode(QToolButton.InstantPopup)
+        self.setToolButtonStyle(Qt.ToolButtonTextOnly)
+        self._actions = {}
+        menu = QMenu(self)
+        for source in sources:
+            action = menu.addAction(source)
+            action.setCheckable(True)
+            action.setChecked(True)
+            action.toggled.connect(self._on_filter_toggled)
+            self._actions[source] = action
+        self.setMenu(menu)
+        self._update_caption()
+
+    def visible_sources(self) -> set[str]:
+        """Return the source names currently selected for display."""
+        return {name for name, action in self._actions.items() if action.isChecked()}
+
+    def _on_filter_toggled(self, _checked: bool) -> None:
+        """Refresh the summary caption and notify the log view."""
+        self._update_caption()
+        self.visibility_changed.emit()
+
+    def _update_caption(self) -> None:
+        """Summarize the number of visible page sources."""
+        visible_count = len(self.visible_sources())
+        self.setText(f"Sources: {visible_count}/{len(self._actions)}  ▾")
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        target_unit_bytes = os.environ.get("GMP_DATALINK_TARGET_UNIT_BYTES", "2")
-        self.setWindowTitle(f"GMP Datalink Debugger u{int(target_unit_bytes) * 8} / PIL Server")
+        target_unit_bytes = int(os.environ.get("GMP_DATALINK_TARGET_UNIT_BYTES", "1"))
+        if target_unit_bytes not in (1, 2):
+            target_unit_bytes = 1
+        self.setWindowTitle(
+            f"GMP Data Link Debugger / PIL Server — u{target_unit_bytes * 8} Target Profile"
+        )
         self.resize(1100, 650)
         
         # Create the single shared communication and discovery services.
         self.hermes = HermesDatalinkQt()
         self.discovery = ResourceDiscovery(self.hermes)
-        self.hermes.sig_log_msg.connect(self.log_message)
-        self.hermes.sig_conn_state.connect(self.update_ui_connection_state) 
-        self.discovery.discovery_error.connect(self.log_message)
+        self.hermes.sig_log_event.connect(self.log_message)
+        self.hermes.sig_log_msg.connect(lambda message: self.log_message("System", message))
+        self.hermes.sig_conn_state.connect(self.update_ui_connection_state)
+        self.discovery.discovery_error.connect(
+            lambda message: self.log_message("System", message)
+        )
+        self.log_entries: list[tuple[str, str, str]] = []
         
         self.total_tx_bytes = 0
         self.total_rx_bytes = 0
@@ -94,12 +152,7 @@ class MainWindow(QMainWindow):
         # Fixed-height transmit and receive statistics.
         self._build_stats_panel(right_panel) 
         
-        # The system log consumes the remaining vertical space.
-        self.sys_log = QTextBrowser()
-        self.sys_log.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn) 
-        
-        right_panel.addWidget(QLabel("<b>System Log:</b>"))
-        right_panel.addWidget(self.sys_log, stretch=1)
+        self._build_log_panel(right_panel)
 
         self.update_ui_connection_state(False)
 
@@ -208,6 +261,29 @@ class MainWindow(QMainWindow):
         stats_group.setLayout(vbox)
         layout.addWidget(stats_group)
 
+    def _build_log_panel(self, layout: QVBoxLayout) -> None:
+        """Build the source-colored system log and its page filter menu."""
+        title_row = QHBoxLayout()
+        title_row.addWidget(QLabel("<b>System Log:</b>"))
+        title_row.addStretch()
+        self.log_filter = LogFilterMenu(list(LOG_SOURCE_COLORS))
+        self.log_filter.setToolTip("Uncheck a page to hide its messages from System Log.")
+        self.log_filter.visibility_changed.connect(self._refresh_system_log)
+        title_row.addWidget(self.log_filter)
+        clear_button = QPushButton("Clear")
+        clear_button.setMaximumWidth(55)
+        clear_button.clicked.connect(self._clear_system_log)
+        title_row.addWidget(clear_button)
+        layout.addLayout(title_row)
+
+        self.sys_log = QTextBrowser()
+        self.sys_log.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.sys_log.setStyleSheet(
+            "QTextBrowser { background: #FAFBFC; border: 1px solid #CFD8DC; "
+            "color: #263238; selection-background-color: #B0BEC5; }"
+        )
+        layout.addWidget(self.sys_log, stretch=1)
+
     # ---------------------------------------------------------
     # Serial control and data-rate accounting.
     # ---------------------------------------------------------
@@ -291,7 +367,7 @@ class MainWindow(QMainWindow):
         if not self.hermes.running:
             port = self.cb_ports.currentData()
             if not port:
-                self.log_message("Select a valid serial port first.")
+                self.log_message("System", "Select a valid serial port first.")
                 return
             baud = int(self.cb_baud.currentText())
             data_bits = DATA_BITS_MAP[self.cb_data_bits.currentText()]
@@ -326,13 +402,45 @@ class MainWindow(QMainWindow):
         self.cb_parity.setEnabled(state)
         self.btn_refresh.setEnabled(state)
 
-    def log_message(self, msg: str):
-        self.sys_log.append(msg)
+    def log_message(self, source: str, message: str) -> None:
+        """Store and render one plain-text message using its page accent color."""
+        if source not in LOG_SOURCE_COLORS:
+            message = f"[{source}] {message}"
+            source = "System"
+        timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+        self.log_entries.append((timestamp, source, str(message)))
+        if len(self.log_entries) > 2000:
+            del self.log_entries[:len(self.log_entries) - 2000]
+        if source in self.log_filter.visible_sources():
+            self._append_log_entry(timestamp, source, str(message))
+
+    def _append_log_entry(self, timestamp: str, source: str, message: str) -> None:
+        """Append one escaped and consistently styled entry to System Log."""
+        color = LOG_SOURCE_COLORS[source]
+        safe_message = html.escape(message).replace("\n", "<br>")
+        self.sys_log.append(
+            f"<span style='color:#90A4AE;'>{timestamp}</span> "
+            f"<span style='color:{color}; font-weight:600;'>[{source}]</span> "
+            f"<span style='color:#263238;'>{safe_message}</span>"
+        )
         scrollbar = self.sys_log.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
 
+    def _refresh_system_log(self) -> None:
+        """Rebuild the log when one or more page filters change."""
+        visible_sources = self.log_filter.visible_sources()
+        self.sys_log.clear()
+        for timestamp, source, message in self.log_entries:
+            if source in visible_sources:
+                self._append_log_entry(timestamp, source, message)
+
+    def _clear_system_log(self) -> None:
+        """Discard the retained log history and clear the view."""
+        self.log_entries.clear()
+        self.sys_log.clear()
+
     def closeEvent(self, event):
-        self.log_message("Closing the communication engine...")
+        self.log_message("System", "Closing the communication engine...")
         
         if hasattr(self.tab_tunable, 'tab_widget'):
             for i in range(self.tab_tunable.tab_widget.count()):

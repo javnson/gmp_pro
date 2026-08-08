@@ -31,7 +31,12 @@ def get_time_str():
 
 class HermesDatalinkQt(QObject):
     sig_frame_received = pyqtSignal(int, int, bytes)
+    sig_log_event = pyqtSignal(str, str)
+    """Structured log event containing a source name and plain-text message."""
+
     sig_log_msg = pyqtSignal(str)
+    """Legacy unclassified log signal retained for external page compatibility."""
+
     sig_conn_state = pyqtSignal(bool)
     
     # Shared bus events include timestamps and decoded frame metadata.
@@ -50,6 +55,10 @@ class HermesDatalinkQt(QObject):
         self.tx_queue = queue.PriorityQueue()
         self._tx_seq = 0  # Preserve FIFO order among requests with equal priority.
         self._seq_lock = threading.Lock()
+
+    def emit_log(self, source: str, message: str) -> None:
+        """Publish one source-classified message to the application log."""
+        self.sig_log_event.emit(source, message)
 
     def connect_serial(self, port, baudrate, bytesize, parity, stopbits):
         if self.serial.is_open: self.close()
@@ -75,11 +84,11 @@ class HermesDatalinkQt(QObject):
             self.rx_thread.start()
             self.tx_thread.start()
             
-            self.sig_log_msg.emit(f"Serial port {port} opened with queued I/O workers.")
+            self.emit_log("System", f"Serial port {port} opened with queued I/O workers.")
             self.sig_conn_state.emit(True)
             return True
         except Exception as e:
-            self.sig_log_msg.emit(f"Failed to open the serial port: {str(e)}")
+            self.emit_log("System", f"Failed to open the serial port: {str(e)}")
             self.sig_conn_state.emit(False)
             return False
 
@@ -88,7 +97,7 @@ class HermesDatalinkQt(QObject):
         if self.rx_thread: self.rx_thread.join(timeout=0.2)
         if self.tx_thread: self.tx_thread.join(timeout=0.2)
         if self.serial.is_open: self.serial.close()
-        self.sig_log_msg.emit("Serial port disconnected.")
+        self.emit_log("System", "Serial port disconnected.")
         self.sig_conn_state.emit(False)
 
     # =========================================================
@@ -169,7 +178,7 @@ class HermesDatalinkQt(QObject):
                 continue
             except Exception as e:
                 if self.running:
-                    self.sig_log_msg.emit(f"Serial transmit worker failed: {str(e)}")
+                    self.emit_log("System", f"Serial transmit worker failed: {str(e)}")
                     self.close()
 
     # =========================================================
@@ -189,7 +198,7 @@ class HermesDatalinkQt(QObject):
                 raw_bytes = self.serial.read(self.serial.in_waiting or 1)
             except Exception as e:
                 if self.running:
-                    self.sig_log_msg.emit(f"Serial hardware disconnected: {str(e)}")
+                    self.emit_log("System", f"Serial hardware disconnected: {str(e)}")
                     self.close()
                 break
                 

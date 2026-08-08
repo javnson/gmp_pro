@@ -138,6 +138,7 @@ class TabRaw(QWidget):
         
         # Manual raw transfers use background priority and cannot starve services.
         self.hermes.send_raw(payload, priority=2)
+        self.hermes.emit_log("Serial Terminal", f"Sent {len(payload)} raw serial bytes.")
 
     def on_bus_event(self, ev: dict):
         if ev['dir'] == 'RX': self.rx_total_bytes += len(ev['data'])

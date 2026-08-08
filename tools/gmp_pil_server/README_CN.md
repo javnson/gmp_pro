@@ -2,14 +2,12 @@
 
 [English](README.md) | **简体中文**
 
-请根据目标系统的最小寻址单元选择调试器：
+上位机统一位于 `gmp_debugger`，请根据目标系统的最小寻址单元选择入口：
 
-- `gmp_debugger_u8`：用于字节寻址的 STM32、x86 和现代 CPU，要求
-  `GMP_PORT_DATA_SIZE_PER_BYTES == 1`，也是新工程的默认选择。
-- `gmp_debugger_u16`：用于 16 位寻址的传统 DSP，主要服务于 TI C28x，要求
-  `GMP_PORT_DATA_SIZE_PER_BYTES == 2`。
+- `gmp_debugger/run_u8.bat`：字节寻址的 STM32、x86 和现代 CPU。
+- `gmp_debugger/run_u16.bat`：16 位寻址的传统 DSP，主要服务于 TI C28x。
 
-两套工具使用相同的 DL 线协议，区别在于下位机缓冲区存储和原生地址契约。
-新的字节寻址工程应运行 `gmp_debugger_u8/run.bat`。
+两个入口使用同一套上位机代码和 DL 线协议。下位机缓冲区存储和原生地址仍由
+`GMP_PORT_DATA_SIZE_PER_BYTES` 选择对应的 C 后端。
 
 `stm32_dl_dbger` 保存用于验证 u8 后端的 NUCLEO-C092RC 固件工程。

@@ -168,8 +168,8 @@ class TabMemPersp(QWidget):
             self.apply_global_cast(cast_name)
 
     def log(self, msg, color="black"):
-        if hasattr(self.hermes, 'sig_log_msg'):
-            self.hermes.sig_log_msg.emit(f"<span style='color:{color};'>[Argos Mem] {msg}</span>")
+        if hasattr(self.hermes, "emit_log"):
+            self.hermes.emit_log("Memory", msg)
         else:
             print(msg)
 

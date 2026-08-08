@@ -161,6 +161,10 @@ class TabAscii(QWidget):
             
         # Manual protocol tests use background priority.
         self.hermes.send_frame(target_id=seq_id, cmd=cmd, payload=payload, priority=2)
+        self.hermes.emit_log(
+            "Loop Test",
+            f"Sent command 0x{cmd:02X} with {len(payload)} payload bytes.",
+        )
 
     def on_bus_event(self, ev: dict):
         # This page consumes framed traffic only.

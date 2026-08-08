@@ -3,18 +3,18 @@
 from __future__ import annotations
 
 import struct
+import time
 from dataclasses import dataclass
 
 import numpy as np
 import pyqtgraph as pg
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import (
     QComboBox,
     QCheckBox,
     QDoubleSpinBox,
     QGridLayout,
     QGroupBox,
-    QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
@@ -51,6 +51,14 @@ class TabDsaScope(QWidget):
     STATE_WAITING = 0
     STATE_CAPTURING = 1
     STATE_READY = 2
+    PHASE_IDLE = "idle"
+    PHASE_CONFIGURING = "configuring"
+    PHASE_ARMING = "arming"
+    PHASE_POLLING = "polling"
+    PHASE_DOWNLOADING = "downloading"
+    AUTO_TIMEOUT_MS = 1000
+    CONTINUOUS_REARM_DELAY_MS = 50
+    BUTTON_HEIGHT = 32
     MAX_BYTES_PER_READ = 180
     DISCOVERY_HEADER = struct.Struct("<BBBBBBBHIIIB")
     READ_HEADER = struct.Struct("<BBBIH")
@@ -80,7 +88,11 @@ class TabDsaScope(QWidget):
         self.memory_buffer = bytearray()
         self.read_offset = 0
         self.capture_active = False
+        self.capture_phase = self.PHASE_IDLE
+        self.capture_mode = 0
         self.repeat_after_capture = False
+        self.status_request_pending = False
+        self.status_request_started = 0.0
         self.poll_count = 0
         self.curves: list[pg.PlotDataItem] = []
         self.afterglow_groups: list[list[pg.PlotDataItem]] = []
@@ -88,7 +100,12 @@ class TabDsaScope(QWidget):
         self.poll_timer = QTimer(self)
         self.poll_timer.setInterval(50)
         self.poll_timer.timeout.connect(self._request_scope_status)
+        self.repeat_timer = QTimer(self)
+        self.repeat_timer.setSingleShot(True)
+        self.repeat_timer.setInterval(self.CONTINUOUS_REARM_DELAY_MS)
+        self.repeat_timer.timeout.connect(self._repeat_capture_if_enabled)
         self.hermes.sig_bus_event.connect(self.on_bus_event)
+        self.hermes.sig_conn_state.connect(self._on_connection_state)
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -102,11 +119,10 @@ class TabDsaScope(QWidget):
         self.resource_combo = QComboBox()
         self.resource_combo.currentIndexChanged.connect(self._apply_selected_resource)
         self.refresh_button = QPushButton("Discover Scopes")
+        self.refresh_button.setFixedHeight(self.BUTTON_HEIGHT)
         self.refresh_button.clicked.connect(self.discover_scopes)
-        resource_layout.addWidget(QLabel("Base command:"), 0, 0)
-        resource_layout.addWidget(self.command_edit, 0, 1)
-        resource_layout.addWidget(QLabel("Scope:"), 0, 2)
-        resource_layout.addWidget(self.resource_combo, 0, 3, 1, 2)
+        resource_layout.addWidget(QLabel("Scope:"), 0, 0)
+        resource_layout.addWidget(self.resource_combo, 0, 1, 1, 4)
         resource_layout.addWidget(self.refresh_button, 0, 5)
 
         self.type_label = QLabel("-")
@@ -114,10 +130,12 @@ class TabDsaScope(QWidget):
         self.channels_label = QLabel("-")
         self.depth_label = QLabel("-")
         self.rate_label = QLabel("-")
-        resource_layout.addWidget(QLabel("Data type:"), 1, 0)
-        resource_layout.addWidget(self.type_label, 1, 1)
-        resource_layout.addWidget(QLabel("Layout:"), 1, 2)
-        resource_layout.addWidget(self.layout_label, 1, 3)
+        resource_layout.addWidget(QLabel("Base command:"), 1, 0)
+        resource_layout.addWidget(self.command_edit, 1, 1)
+        resource_layout.addWidget(QLabel("Data type:"), 1, 2)
+        resource_layout.addWidget(self.type_label, 1, 3)
+        resource_layout.addWidget(QLabel("Layout:"), 1, 4)
+        resource_layout.addWidget(self.layout_label, 1, 5)
         resource_layout.addWidget(QLabel("Channels:"), 2, 0)
         resource_layout.addWidget(self.channels_label, 2, 1)
         resource_layout.addWidget(QLabel("Samples/channel:"), 2, 2)
@@ -132,8 +150,8 @@ class TabDsaScope(QWidget):
         self.mode_combo.addItem("Continuous / immediate", 0)
         self.mode_combo.addItem("Rising edge", 1)
         self.mode_combo.addItem("Falling edge", 2)
-        self.mode_combo.addItem("Rising edge with auto timeout", 3)
-        self.mode_combo.addItem("Falling edge with auto timeout", 4)
+        self.mode_combo.addItem("Rising edge (1 s auto)", 3)
+        self.mode_combo.addItem("Falling edge (1 s auto)", 4)
         self.trigger_channel_spin = QSpinBox()
         self.trigger_channel_spin.setRange(0, 0)
         self.level_spin = QDoubleSpinBox()
@@ -143,17 +161,63 @@ class TabDsaScope(QWidget):
         self.position_spin.setRange(0.0, 99.9)
         self.position_spin.setValue(50.0)
         self.position_spin.setSuffix(" %")
-        self.timeout_spin = QSpinBox()
-        self.timeout_spin.setRange(1, 600000)
-        self.timeout_spin.setValue(1000)
-        self.timeout_spin.setSuffix(" ms")
-        self.continuous_checkbox = QCheckBox("Continuous display (re-arm automatically)")
+        position_tooltip = (
+            "The target continuously stores pre-trigger samples in a circular history "
+            "buffer. When the selected edge occurs, it preserves the requested history "
+            "and records the remaining samples after the trigger. For example, 50% "
+            "places the trigger event at the center of the displayed record."
+        )
+        position_label = QLabel("Trigger position")
+        position_label.setToolTip(position_tooltip)
+        self.position_spin.setToolTip(position_tooltip)
+        trigger_controls = (
+            (QLabel("Mode"), self.mode_combo),
+            (QLabel("Source channel"), self.trigger_channel_spin),
+            (QLabel("Level"), self.level_spin),
+            (position_label, self.position_spin),
+        )
+        for column, (label, control) in enumerate(trigger_controls):
+            trigger_layout.addWidget(label, 0, column)
+            trigger_layout.addWidget(control, 1, column)
+            trigger_layout.setColumnStretch(column, 1)
+        layout.addWidget(trigger_group)
+
+        acquisition_group = QGroupBox("Acquisition")
+        acquisition_layout = QGridLayout(acquisition_group)
+        self.continuous_checkbox = QCheckBox("Enabled")
+        self.continuous_checkbox.setFixedHeight(self.BUTTON_HEIGHT)
+        self.continuous_checkbox.setToolTip(
+            "Automatically configure and re-arm the target after each completed snapshot."
+        )
         self.continuous_checkbox.toggled.connect(self._on_continuous_toggled)
-        self.repeat_delay_spin = QSpinBox()
-        self.repeat_delay_spin.setRange(0, 5000)
-        self.repeat_delay_spin.setValue(50)
-        self.repeat_delay_spin.setSuffix(" ms between captures")
-        self.afterglow_checkbox = QCheckBox("Waveform persistence (afterglow)")
+        self.capture_button = QPushButton("Configure & Capture")
+        self.capture_button.setFixedHeight(self.BUTTON_HEIGHT)
+        self.capture_button.clicked.connect(self.start_capture)
+        self.read_button = QPushButton("Read Current Snapshot")
+        self.read_button.setFixedHeight(self.BUTTON_HEIGHT)
+        self.read_button.clicked.connect(self.read_current_snapshot)
+        self.status_label = QLabel("Idle")
+        self.status_label.setFixedHeight(self.BUTTON_HEIGHT)
+        self.status_label.setAlignment(Qt.AlignCenter)
+        self.status_label.setStyleSheet(
+            "background: #ECEFF1; border: 1px solid #CFD8DC; border-radius: 3px;"
+        )
+        acquisition_controls = (
+            (QLabel("Continuous display"), self.continuous_checkbox),
+            (QLabel("Acquisition"), self.capture_button),
+            (QLabel("Snapshot"), self.read_button),
+            (QLabel("Status"), self.status_label),
+        )
+        for column, (label, control) in enumerate(acquisition_controls):
+            acquisition_layout.addWidget(label, 0, column)
+            acquisition_layout.addWidget(control, 1, column)
+            acquisition_layout.setColumnStretch(column, 1)
+        layout.addWidget(acquisition_group)
+
+        persistence_group = QGroupBox("Waveform Persistence")
+        persistence_layout = QGridLayout(persistence_group)
+        self.afterglow_checkbox = QCheckBox("Enabled")
+        self.afterglow_checkbox.setFixedHeight(self.BUTTON_HEIGHT)
         self.afterglow_checkbox.toggled.connect(self._on_afterglow_toggled)
         self.afterglow_depth_spin = QSpinBox()
         self.afterglow_depth_spin.setRange(1, 20)
@@ -165,38 +229,19 @@ class TabDsaScope(QWidget):
         self.afterglow_opacity_spin.setValue(0.30)
         self.afterglow_opacity_spin.setSuffix(" max opacity")
         self.clear_afterglow_button = QPushButton("Clear Persistence")
+        self.clear_afterglow_button.setFixedHeight(self.BUTTON_HEIGHT)
         self.clear_afterglow_button.clicked.connect(self.clear_afterglow)
-        trigger_layout.addWidget(QLabel("Mode:"), 0, 0)
-        trigger_layout.addWidget(self.mode_combo, 0, 1)
-        trigger_layout.addWidget(QLabel("Source channel:"), 0, 2)
-        trigger_layout.addWidget(self.trigger_channel_spin, 0, 3)
-        trigger_layout.addWidget(QLabel("Level:"), 0, 4)
-        trigger_layout.addWidget(self.level_spin, 0, 5)
-        trigger_layout.addWidget(QLabel("Trigger position:"), 1, 0)
-        trigger_layout.addWidget(self.position_spin, 1, 1)
-        trigger_layout.addWidget(QLabel("Auto timeout:"), 1, 2)
-        trigger_layout.addWidget(self.timeout_spin, 1, 3)
-        trigger_layout.addWidget(self.continuous_checkbox, 1, 4)
-        trigger_layout.addWidget(self.repeat_delay_spin, 1, 5)
-        trigger_layout.addWidget(self.afterglow_checkbox, 2, 0, 1, 2)
-        trigger_layout.addWidget(self.afterglow_depth_spin, 2, 2)
-        trigger_layout.addWidget(self.afterglow_opacity_spin, 2, 3)
-        trigger_layout.addWidget(self.clear_afterglow_button, 2, 4, 1, 2)
-
-        button_row = QHBoxLayout()
-        self.capture_button = QPushButton("Configure, Arm, and Capture")
-        self.capture_button.setMinimumHeight(38)
-        self.capture_button.clicked.connect(self.start_capture)
-        self.read_button = QPushButton("Read Current Snapshot")
-        self.read_button.setMinimumHeight(38)
-        self.read_button.clicked.connect(self.read_current_snapshot)
-        self.status_label = QLabel("Idle")
-        button_row.addWidget(self.capture_button)
-        button_row.addWidget(self.read_button)
-        button_row.addWidget(self.status_label)
-        button_row.addStretch()
-        trigger_layout.addLayout(button_row, 3, 0, 1, 6)
-        layout.addWidget(trigger_group)
+        persistence_controls = (
+            (QLabel("Afterglow"), self.afterglow_checkbox),
+            (QLabel("History depth"), self.afterglow_depth_spin),
+            (QLabel("Maximum opacity"), self.afterglow_opacity_spin),
+            (QLabel("History"), self.clear_afterglow_button),
+        )
+        for column, (label, control) in enumerate(persistence_controls):
+            persistence_layout.addWidget(label, 0, column)
+            persistence_layout.addWidget(control, 1, column)
+            persistence_layout.setColumnStretch(column, 1)
+        layout.addWidget(persistence_group)
 
         self.plot = pg.PlotWidget()
         self.plot.setBackground("#F8F9FA")
@@ -210,7 +255,7 @@ class TabDsaScope(QWidget):
 
     def _log(self, message: str) -> None:
         """Forward a scope-specific message to the shared system log."""
-        self.hermes.sig_log_msg.emit(f"[Data Link Scope] {message}")
+        self.hermes.emit_log("Scope", message)
 
     def _sync_command(self) -> bool:
         """Parse and validate the editable Scope command identifier."""
@@ -269,7 +314,12 @@ class TabDsaScope(QWidget):
             self._log("Discover and select a Scope resource first.")
             return
         self.capture_active = True
+        self.capture_phase = self.PHASE_CONFIGURING
+        self.capture_mode = int(self.mode_combo.currentData())
         self.repeat_after_capture = self.continuous_checkbox.isChecked()
+        self.repeat_timer.stop()
+        self.status_request_pending = False
+        self.status_request_started = 0.0
         self.poll_count = 0
         self._set_acquisition_controls(False)
         self.status_label.setText("Configuring")
@@ -277,11 +327,11 @@ class TabDsaScope(QWidget):
             "<BBBBHfI",
             self.OP_CONFIGURE,
             resource.resource_id,
-            self.mode_combo.currentData(),
+            self.capture_mode,
             self.trigger_channel_spin.value(),
             int(round(self.position_spin.value() * 10.0)),
             self.level_spin.value(),
-            self.timeout_spin.value(),
+            self.AUTO_TIMEOUT_MS,
         )
         self.hermes.send_frame(0x01, self.base_command, payload, priority=0)
 
@@ -291,20 +341,37 @@ class TabDsaScope(QWidget):
         if not self.hermes.running or self.capture_active or resource is None:
             return
         self.capture_active = True
+        self.capture_phase = self.PHASE_DOWNLOADING
         self.repeat_after_capture = False
+        self.repeat_timer.stop()
+        self.status_request_pending = False
+        self.status_request_started = 0.0
         self._set_acquisition_controls(False)
         self._prepare_download(resource, generation=None)
 
     def _request_scope_status(self) -> None:
         """Poll the target capture state until a snapshot is ready."""
         resource = self._selected_resource()
-        if not self.capture_active or resource is None:
+        if (
+            not self.capture_active
+            or self.capture_phase != self.PHASE_POLLING
+            or resource is None
+        ):
             self.poll_timer.stop()
             return
+        if self.status_request_pending:
+            if time.monotonic() - self.status_request_started < 0.25:
+                return
+            self.status_request_pending = False
         self.poll_count += 1
-        if self.poll_count > 100:
+        if self.capture_mode == 0 and self.poll_count > 100:
             self._finish_with_error("Capture timed out.")
             return
+        if self.capture_mode in (3, 4) and self.poll_count > 80:
+            self._finish_with_error("Automatic trigger timed out without a completed snapshot.")
+            return
+        self.status_request_pending = True
+        self.status_request_started = time.monotonic()
         self.hermes.send_frame(
             0x01,
             self.base_command,
@@ -323,6 +390,9 @@ class TabDsaScope(QWidget):
             self._finish_with_error("Scope metadata exceeds the registered buffer capacity.")
             return
         self.metadata = {"resource": resource, "generation": generation}
+        self.capture_phase = self.PHASE_DOWNLOADING
+        self.status_request_pending = False
+        self.status_request_started = 0.0
         self.memory_buffer = bytearray(expected_bytes)
         self.read_offset = 0
         self.status_label.setText("Downloading snapshot")
@@ -395,6 +465,8 @@ class TabDsaScope(QWidget):
 
     def _handle_status(self, payload: bytes) -> None:
         """Process a capture-state response and start reading when ready."""
+        self.status_request_pending = False
+        self.status_request_started = 0.0
         if len(payload) != 8:
             self._finish_with_error("Invalid Scope status response.")
             return
@@ -518,7 +590,7 @@ class TabDsaScope(QWidget):
         self._finish_capture()
         self._log(f"Displayed {resource.depth} samples on {resource.channels} channels{suffix}.")
         if should_repeat:
-            QTimer.singleShot(self.repeat_delay_spin.value(), self._repeat_capture_if_enabled)
+            self.repeat_timer.start()
 
     def _repeat_capture_if_enabled(self) -> None:
         """Start the next snapshot only while continuous display remains selected."""
@@ -529,8 +601,23 @@ class TabDsaScope(QWidget):
         """Apply a continuous-display change immediately to the active sequence."""
         if self.capture_active:
             self.repeat_after_capture = enabled
-        elif not enabled and self.status_label.text().endswith("re-arming"):
-            self.status_label.setText("Capture complete")
+        if not enabled:
+            self.repeat_timer.stop()
+            if self.status_label.text().endswith("re-arming"):
+                self.status_label.setText("Capture complete")
+
+    def _on_connection_state(self, connected: bool) -> None:
+        """Cancel timers and release controls when the transport disconnects."""
+        if connected:
+            return
+        self.poll_timer.stop()
+        self.repeat_timer.stop()
+        self.capture_active = False
+        self.capture_phase = self.PHASE_IDLE
+        self.status_request_pending = False
+        self.status_request_started = 0.0
+        self.repeat_after_capture = False
+        self._set_acquisition_controls(True)
 
     def _set_acquisition_controls(self, enabled: bool) -> None:
         """Enable or disable controls that can start another acquisition."""
@@ -542,10 +629,15 @@ class TabDsaScope(QWidget):
         """Release acquisition controls after a completed operation."""
         self.poll_timer.stop()
         self.capture_active = False
+        self.capture_phase = self.PHASE_IDLE
+        self.status_request_pending = False
+        self.status_request_started = 0.0
         self._set_acquisition_controls(True)
 
     def _finish_with_error(self, message: str) -> None:
         """Stop acquisition and report a user-visible error."""
+        self.repeat_after_capture = False
+        self.repeat_timer.stop()
         self._finish_capture()
         self.status_label.setText(message)
         self._log(message)
@@ -565,27 +657,29 @@ class TabDsaScope(QWidget):
         operation = payload[0]
         if operation == self.OP_DISCOVER and self.discovery_active:
             self._handle_discovery(payload)
-        elif operation == self.OP_CONFIGURE and self.capture_active:
+        elif operation == self.OP_CONFIGURE and self.capture_phase == self.PHASE_CONFIGURING:
             resource = self._selected_resource()
             if len(payload) != 3 or payload[1] != 0 or resource is None or payload[2] != resource.resource_id:
                 self._finish_with_error("Target rejected the Scope configuration.")
                 return
             self.status_label.setText("Arming")
+            self.capture_phase = self.PHASE_ARMING
             self.hermes.send_frame(
                 0x01,
                 self.base_command,
                 bytes((self.OP_ARM, resource.resource_id)),
                 priority=0,
             )
-        elif operation == self.OP_ARM and self.capture_active:
+        elif operation == self.OP_ARM and self.capture_phase == self.PHASE_ARMING:
             resource = self._selected_resource()
             if len(payload) != 3 or payload[1] != 0 or resource is None or payload[2] != resource.resource_id:
                 self._finish_with_error("Target rejected the Scope arm request.")
                 return
             self.status_label.setText("Armed")
+            self.capture_phase = self.PHASE_POLLING
             self.poll_timer.start()
             self._request_scope_status()
-        elif operation == self.OP_STATUS and self.capture_active:
+        elif operation == self.OP_STATUS and self.capture_phase == self.PHASE_POLLING:
             self._handle_status(payload)
-        elif operation == self.OP_READ and self.capture_active:
+        elif operation == self.OP_READ and self.capture_phase == self.PHASE_DOWNLOADING:
             self._handle_read(payload)

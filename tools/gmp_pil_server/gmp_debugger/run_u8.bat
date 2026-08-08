@@ -15,13 +15,14 @@ if errorlevel 1 (
 
 python -c "import PyQt5, serial, pyqtgraph, numpy"
 if errorlevel 1 (
-    echo [ERROR] GMP Debugger u8 dependencies are incomplete.
+    echo [ERROR] GMP Debugger dependencies are incomplete.
     echo         Re-run install_gmp.bat or install_gmp_virtual_env.bat.
     pause
     exit /b 1
 )
 
-echo [GMP] Starting GMP Debugger u8 with the %GMP_ENV_MODE% environment.
+set "GMP_DATALINK_TARGET_UNIT_BYTES=1"
+echo [GMP] Starting the GMP Debugger with the u8 target profile.
 pushd "%~dp0"
 if errorlevel 1 exit /b 1
 python "%~dp0main.py" %*

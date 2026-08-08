@@ -462,6 +462,7 @@ class ChronosPage(QWidget):
             self.gui_timer.stop()
             self.btn_run.setText("Start Real-Time DAQ")
             self.btn_run.setStyleSheet("background-color: #C8E6C9; font-weight: bold; font-size: 14px; padding-left: 15px; padding-right: 15px;")
+            self.hermes.emit_log("Chronos", f"Stopped real-time acquisition for {self.page_name}.")
         else:
             if not self.hermes.running:
                 QMessageBox.warning(self, "Not Connected", "Open the serial port before starting DAQ.")
@@ -482,6 +483,7 @@ class ChronosPage(QWidget):
             self.gui_timer.start(33)  # Render at approximately thirty frames per second.
             self.btn_run.setText("Stop Data Acquisition")
             self.btn_run.setStyleSheet("background-color: #FFF59D; font-weight: bold; font-size: 14px; padding-left: 15px; padding-right: 15px;")
+            self.hermes.emit_log("Chronos", f"Started real-time acquisition for {self.page_name}.")
 
     # =========================================================
     # DAQ scheduler and response routing.

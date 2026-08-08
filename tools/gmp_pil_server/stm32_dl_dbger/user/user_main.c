@@ -5,6 +5,8 @@
 
 #include <gmp_core.h>
 
+#include <math.h>
+
 #include "user_main.h"
 #include <core/dev/datalink.h>
 #include <core/dev/mem_presp.h>
@@ -23,9 +25,14 @@
 #define USER_DL_MEMORY_CMD        0x50U
 #define USER_DL_SCOPE_CMD         0x60U
 #define USER_DSA_SAMPLE_RATE      1000UL
-#define USER_DSA_SIGNAL_RATE      50UL
 #define USER_DSA_DEPTH            400UL
 #define USER_DSA_CHANNELS         2U
+#define USER_SIGNAL_MIN_RATE_HZ   1.0F
+#define USER_SIGNAL_MAX_RATE_HZ   200.0F
+#define USER_SIGNAL_MAX_GAIN      10.0F
+#define USER_SIGNAL_MAX_OFFSET    10.0F
+#define USER_SIGNAL_TWO_PI        6.2831853071795864769F
+#define USER_OSC_NORMALIZE_PERIOD 256U
 
 /** @brief DSA acquisition states exported to the desktop debugger. */
 typedef enum
@@ -52,15 +59,21 @@ static volatile ctl_dsa_trigger_option_t dsa_trigger_mode = DSA_TRIGGER_OPTION_R
 static volatile uint32_t dsa_auto_timeout_ms = 1000UL;
 static volatile parameter_gt dsa_trigger_level;
 
-static uint16_t tunable_u16 = 0x1234U;
-static int16_t tunable_i16 = -1234;
-static uint32_t tunable_u32 = 0x89ABCDEFUL;
-static float tunable_f32 = 3.1415926F;
+static float signal_frequency_hz = 50.0F;
+static float signal_gain = 1.0F;
+static float signal_dc_offset = 0.0F;
+static float applied_frequency_hz = -1.0F;
+static float applied_signal_gain = -1.0F;
+static float applied_signal_dc_offset = -100.0F;
 static data_gt memory_window[128];
 static ctrl_gt dsa_buffer[USER_DSA_DEPTH * USER_DSA_CHANNELS];
 static ctrl_gt dsa_history[USER_DSA_DEPTH * USER_DSA_CHANNELS];
-static ctrl_gt oscillator_sine;
-static ctrl_gt oscillator_cosine;
+static volatile ctrl_gt oscillator_sine;
+static volatile ctrl_gt oscillator_cosine;
+static volatile ctrl_gt oscillator_step_sine;
+static volatile ctrl_gt oscillator_step_cosine;
+static volatile ctrl_gt active_signal_gain;
+static volatile ctrl_gt active_signal_dc_offset;
 static uint16_t oscillator_index;
 
 static fast_gt user_scope_configure(void* user_context,
@@ -70,10 +83,12 @@ static gmp_scope_capture_state_t user_scope_status(void* user_context,
                                                    uint32_t* generation);
 
 static const gmp_param_item_t tunable_dictionary[] = {
-    {&tunable_u16, GMP_PARAM_TYPE_U16, GMP_PARAM_PERM_RW, "Test Unsigned 16-bit", "count"},
-    {&tunable_i16, GMP_PARAM_TYPE_I16, GMP_PARAM_PERM_RW, "Test Signed 16-bit", "count"},
-    {&tunable_u32, GMP_PARAM_TYPE_U32, GMP_PARAM_PERM_RW, "Test Unsigned 32-bit", "count"},
-    {&tunable_f32, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW, "Pi Estimate", ""},
+    {&signal_frequency_hz, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW,
+     "Signal Frequency", "Hz"},
+    {&signal_gain, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW,
+     "Signal Gain", "x"},
+    {&signal_dc_offset, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW,
+     "Signal DC Offset", "V"},
 };
 
 static const gmp_mem_region_t memory_regions[] = {
@@ -87,6 +102,58 @@ static const gmp_scope_resource_t scope_resources[] = {
      USER_DSA_DEPTH, USER_DSA_SAMPLE_RATE, user_scope_configure,
      user_scope_arm, user_scope_status, NULL},
 };
+
+/**
+ * @brief Clamp and apply the user-visible waveform parameters.
+ *
+ * @details The trigonometric step is recalculated only when the frequency
+ * changes. The 1 kHz timer ISR then advances the oscillator with a two-term
+ * rotation, avoiding a sine-library call on every sample.
+ */
+static void user_apply_signal_parameters(void)
+{
+    float frequency_hz = signal_frequency_hz;
+    float gain = signal_gain;
+    float dc_offset = signal_dc_offset;
+    float angle;
+    ctrl_gt step_sine;
+    ctrl_gt step_cosine;
+
+    if (frequency_hz < USER_SIGNAL_MIN_RATE_HZ)
+        frequency_hz = USER_SIGNAL_MIN_RATE_HZ;
+    else if (frequency_hz > USER_SIGNAL_MAX_RATE_HZ)
+        frequency_hz = USER_SIGNAL_MAX_RATE_HZ;
+    if (gain < 0.0F)
+        gain = 0.0F;
+    else if (gain > USER_SIGNAL_MAX_GAIN)
+        gain = USER_SIGNAL_MAX_GAIN;
+    if (dc_offset < -USER_SIGNAL_MAX_OFFSET)
+        dc_offset = -USER_SIGNAL_MAX_OFFSET;
+    else if (dc_offset > USER_SIGNAL_MAX_OFFSET)
+        dc_offset = USER_SIGNAL_MAX_OFFSET;
+
+    signal_frequency_hz = frequency_hz;
+    signal_gain = gain;
+    signal_dc_offset = dc_offset;
+    if (frequency_hz == applied_frequency_hz &&
+        gain == applied_signal_gain &&
+        dc_offset == applied_signal_dc_offset)
+        return;
+
+    angle = USER_SIGNAL_TWO_PI * frequency_hz / (float)USER_DSA_SAMPLE_RATE;
+    step_sine = float2ctrl(sinf(angle));
+    step_cosine = float2ctrl(cosf(angle));
+    gmp_base_enter_critical();
+    oscillator_step_sine = step_sine;
+    oscillator_step_cosine = step_cosine;
+    active_signal_gain = float2ctrl(gain);
+    active_signal_dc_offset = float2ctrl(dc_offset);
+    gmp_base_leave_critical();
+
+    applied_frequency_hz = frequency_hz;
+    applied_signal_gain = gain;
+    applied_signal_dc_offset = dc_offset;
+}
 
 /** @brief Return the requested number of pre-trigger samples. */
 static uint16_t user_dsa_pretrigger_samples(void)
@@ -216,6 +283,7 @@ static gmp_task_status_t user_task_datalink(gmp_task_t* task)
                  !gmp_scope_rx_cb(&scope_service))
             gmp_dev_dl_default_rx_handler(&datalink);
     }
+    user_apply_signal_parameters();
     return GMP_TASK_DONE;
 }
 
@@ -266,6 +334,7 @@ void init(void)
     oscillator_sine = float2ctrl(0.0F);
     oscillator_cosine = float2ctrl(1.0F);
     oscillator_index = 0U;
+    user_apply_signal_parameters();
     dsa_generation = 0U;
     dsa_trigger_level = 0.0F;
     user_arm_dsa();
@@ -281,8 +350,14 @@ void mainloop(void)
 
 void user_dsa_timer_step(void)
 {
-    ctrl_gt sine_sample = oscillator_sine;
-    ctrl_gt cosine_sample = oscillator_cosine;
+    ctrl_gt unit_sine = oscillator_sine;
+    ctrl_gt unit_cosine = oscillator_cosine;
+    ctrl_gt step_sine = oscillator_step_sine;
+    ctrl_gt step_cosine = oscillator_step_cosine;
+    ctrl_gt gain = active_signal_gain;
+    ctrl_gt dc_offset = active_signal_dc_offset;
+    ctrl_gt sine_sample = unit_sine * gain + dc_offset;
+    ctrl_gt cosine_sample = unit_cosine * gain + dc_offset;
     ctrl_gt trigger_sample = (dsa_trigger_channel == 0U) ? sine_sample : cosine_sample;
     uint16_t pretrigger_samples = user_dsa_pretrigger_samples();
 
@@ -322,18 +397,18 @@ void user_dsa_timer_step(void)
         }
     }
 
+    oscillator_sine = unit_sine * step_cosine + unit_cosine * step_sine;
+    oscillator_cosine = unit_cosine * step_cosine - unit_sine * step_sine;
     oscillator_index++;
-    if (oscillator_index >= (USER_DSA_SAMPLE_RATE / USER_DSA_SIGNAL_RATE))
+    if (oscillator_index >= USER_OSC_NORMALIZE_PERIOD)
     {
+        ctrl_gt magnitude_squared;
+        ctrl_gt correction;
         oscillator_index = 0U;
-        oscillator_sine = float2ctrl(0.0F);
-        oscillator_cosine = float2ctrl(1.0F);
-    }
-    else
-    {
-        oscillator_sine = sine_sample * float2ctrl(0.9510565163F) +
-                          cosine_sample * float2ctrl(0.3090169944F);
-        oscillator_cosine = cosine_sample * float2ctrl(0.9510565163F) -
-                            sine_sample * float2ctrl(0.3090169944F);
+        magnitude_squared = oscillator_sine * oscillator_sine +
+                            oscillator_cosine * oscillator_cosine;
+        correction = float2ctrl(1.5F) - float2ctrl(0.5F) * magnitude_squared;
+        oscillator_sine *= correction;
+        oscillator_cosine *= correction;
     }
 }

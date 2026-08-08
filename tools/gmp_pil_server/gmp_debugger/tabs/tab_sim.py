@@ -144,9 +144,9 @@ class TabSim(QWidget):
     # Logging helper.
     # ------------------------------------------------------
     def log(self, msg: str, color: str = "black"):
-        """Send a rich-text message through the shared Hermes log."""
-        if hasattr(self.hermes, 'sig_log_msg'):
-            self.hermes.sig_log_msg.emit(f"<span style='color:{color}; font-weight:bold;'>{msg}</span>")
+        """Send a page-classified message through the shared Hermes log."""
+        if hasattr(self.hermes, "emit_log"):
+            self.hermes.emit_log("PIL Simulation", msg)
         else:
             print(msg)
 

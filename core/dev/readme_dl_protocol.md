@@ -147,12 +147,13 @@ one host page and one target module per tool.
 
 ## Host tools and validation target
 
-- `tools/gmp_pil_server/gmp_debugger_u8` is the normal debugger entry point for
-  byte-addressed processors.
-- `tools/gmp_pil_server/gmp_debugger_u16` preserves the DSP/C28x address model.
+- `tools/gmp_pil_server/gmp_debugger/run_u8.bat` selects the byte-addressed
+  target profile.
+- `tools/gmp_pil_server/gmp_debugger/run_u16.bat` selects the DSP/C28x target
+  profile.
 - `tools/gmp_pil_server/stm32_dl_dbger` is the NUCLEO-C092RC u8 validation
   firmware and hardware smoke test.
 
-The two debuggers share the stable wire codec. Their distinction documents and
-enforces the target memory-address model rather than defining a different wire
-protocol.
+The two launchers share one debugger and stable wire codec. Their distinction
+documents the target memory-address model rather than defining a different
+wire protocol.

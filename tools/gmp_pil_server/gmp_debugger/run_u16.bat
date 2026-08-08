@@ -15,13 +15,14 @@ if errorlevel 1 (
 
 python -c "import PyQt5, serial, pyqtgraph, numpy"
 if errorlevel 1 (
-    echo [ERROR] GMP Debugger v2 dependencies are incomplete.
+    echo [ERROR] GMP Debugger dependencies are incomplete.
     echo         Re-run install_gmp.bat or install_gmp_virtual_env.bat.
     pause
     exit /b 1
 )
 
-echo [GMP] Starting GMP Debugger v2 with the %GMP_ENV_MODE% environment.
+set "GMP_DATALINK_TARGET_UNIT_BYTES=2"
+echo [GMP] Starting the GMP Debugger with the u16 target profile.
 pushd "%~dp0"
 if errorlevel 1 exit /b 1
 python "%~dp0main.py" %*
@@ -29,6 +30,6 @@ set "RESULT=%ERRORLEVEL%"
 popd
 
 if "%RESULT%"=="0" exit /b 0
-echo [ERROR] GMP Debugger v2 exited with code %RESULT%.
+echo [ERROR] GMP Debugger u16 exited with code %RESULT%.
 pause
 exit /b %RESULT%

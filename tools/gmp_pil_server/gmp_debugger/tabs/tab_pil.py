@@ -189,8 +189,8 @@ class TabPilBridge(QWidget):
         layout.addStretch()
 
     def log(self, msg, color="black"):
-        if hasattr(self.hermes, 'sig_log_msg'):
-            self.hermes.sig_log_msg.emit(f"<span style='color:{color}; font-weight:bold;'>[PIL Bridge] {msg}</span>")
+        if hasattr(self.hermes, "emit_log"):
+            self.hermes.emit_log("PIL Bridge", msg)
         else:
             print(msg)
             

@@ -142,33 +142,48 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
             raise AssertionError("DMA stress ECHO payload mismatch")
 
         tunable_names = []
-        for item_id in range(4):
+        tunable_units = []
+        for item_id in range(3):
             sequence += 1
             descriptor = transact(port, sequence, 0x31, bytes((item_id,)))
-            if len(descriptor) < 8 or descriptor[:4] != bytes((1, 0, 4, item_id)):
+            if len(descriptor) < 8 or descriptor[:4] != bytes((1, 0, 3, item_id)):
                 raise AssertionError(f"Invalid Tunable descriptor {item_id}: {descriptor.hex(' ')}")
             name_length, unit_length = descriptor[6:8]
             if len(descriptor) != 8 + name_length + unit_length:
                 raise AssertionError("Tunable descriptor text length mismatch")
             tunable_names.append(descriptor[8:8 + name_length].decode("ascii"))
-        if tunable_names[-1] != "Pi Estimate":
+            unit_start = 8 + name_length
+            tunable_units.append(descriptor[unit_start:unit_start + unit_length].decode("ascii"))
+        if tunable_names != ["Signal Frequency", "Signal Gain", "Signal DC Offset"]:
             raise AssertionError(f"Unexpected Tunable discovery names: {tunable_names}")
+        if tunable_units != ["Hz", "x", "V"]:
+            raise AssertionError(f"Unexpected Tunable discovery units: {tunable_units}")
 
         sequence += 1
-        tunable = transact(port, sequence, 0x30, bytes((4, 0, 1, 2, 3)))
-        if len(tunable) != 17 or tunable[0] != 4:
+        tunable = transact(port, sequence, 0x30, bytes((3, 0, 1, 2)))
+        if len(tunable) != 16 or tunable[0] != 3:
             raise AssertionError(f"Unexpected Tunable response: {tunable.hex(' ')}")
-        original_u16 = struct.unpack_from("<H", tunable, 2)[0]
-        replacement_u16 = original_u16 ^ 0xFFFF
+        defaults = (
+            struct.unpack_from("<f", tunable, 2)[0],
+            struct.unpack_from("<f", tunable, 7)[0],
+            struct.unpack_from("<f", tunable, 12)[0],
+        )
+        test_settings = (25.0, 0.5, 0.25)
         sequence += 1
-        if transact(port, sequence, 0x31, struct.pack("<BBH", 1, 0, replacement_u16)) != b"\x00":
+        write_payload = struct.pack(
+            "<BBfBfBf", 3, 0, test_settings[0], 1, test_settings[1], 2, test_settings[2]
+        )
+        if transact(port, sequence, 0x31, write_payload) != b"\x00":
             raise AssertionError("Tunable write failed")
         sequence += 1
-        changed = transact(port, sequence, 0x30, bytes((1, 0)))
-        if struct.unpack_from("<H", changed, 2)[0] != replacement_u16:
+        changed = transact(port, sequence, 0x30, bytes((3, 0, 1, 2)))
+        changed_values = (
+            struct.unpack_from("<f", changed, 2)[0],
+            struct.unpack_from("<f", changed, 7)[0],
+            struct.unpack_from("<f", changed, 12)[0],
+        )
+        if any(abs(actual - expected) > 1.0e-6 for actual, expected in zip(changed_values, test_settings)):
             raise AssertionError("Tunable readback mismatch")
-        sequence += 1
-        transact(port, sequence, 0x31, struct.pack("<BBH", 1, 0, original_u16))
 
         sequence += 1
         memory_descriptor = transact(port, sequence, 0x51, b"\x00")
@@ -213,7 +228,7 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
             raise AssertionError("Unexpected Scope resource metadata")
 
         sequence += 1
-        config = struct.pack("<BBBBHfI", 1, 0, 1, 0, 250, 0.0, 1000)
+        config = struct.pack("<BBBBHfI", 1, 0, 1, 0, 250, test_settings[2], 1000)
         if transact(port, sequence, 0x60, config) != bytes((1, 0, 0)):
             raise AssertionError("Scope configuration failed")
         sequence += 1
@@ -249,24 +264,38 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
             scope_raw[offset:offset + length] = response[read_header.size:]
             offset += length
 
+        sequence += 1
+        restore_payload = struct.pack(
+            "<BBfBfBf", 3, 0, defaults[0], 1, defaults[1], 2, defaults[2]
+        )
+        if transact(port, sequence, 0x31, restore_payload) != b"\x00":
+            raise AssertionError("Failed to restore default signal parameters")
+
         values = struct.unpack(f"<{channels * depth}f", scope_raw)
         sine = values[:depth]
         cosine = values[depth:]
-        sine_rms = math.sqrt(sum(value * value for value in sine) / depth)
-        cosine_rms = math.sqrt(sum(value * value for value in cosine) / depth)
-        quadrature_error = abs(sum(a * b for a, b in zip(sine, cosine)) / depth)
-        periodic_error = max(abs(sine[index] - sine[index + 20]) for index in range(depth - 20))
-        if not (0.69 < sine_rms < 0.72 and 0.69 < cosine_rms < 0.72):
+        dc_offset = test_settings[2]
+        centered_sine = [value - dc_offset for value in sine]
+        centered_cosine = [value - dc_offset for value in cosine]
+        sine_rms = math.sqrt(sum(value * value for value in centered_sine) / depth)
+        cosine_rms = math.sqrt(sum(value * value for value in centered_cosine) / depth)
+        quadrature_error = abs(sum(a * b for a, b in zip(centered_sine, centered_cosine)) / depth)
+        periodic_error = max(abs(sine[index] - sine[index + 40]) for index in range(depth - 40))
+        mean_error = abs(sum(sine) / depth - dc_offset)
+        if not (0.34 < sine_rms < 0.36 and 0.34 < cosine_rms < 0.36):
             raise AssertionError("Scope waveform RMS is outside the expected range")
-        if quadrature_error > 0.01 or periodic_error > 0.001:
+        if quadrature_error > 0.005 or periodic_error > 0.001 or mean_error > 0.001:
             raise AssertionError("Scope sine/cosine waveform validation failed")
-        if not (sine[99] < 0.0 and abs(sine[100]) < 0.001):
+        if not (sine[99] < dc_offset <= sine[100]):
             raise AssertionError("Scope pre-trigger position does not match the configured 25 percent")
 
     print(f"PASS: u8 Data Link validated on {port_name} at {baudrate} baud")
     print(f"      Memory discovery: {memory_name}, 0x{memory_address:08X}, {memory_length} bytes")
-    print(f"      Tunable discovery: {len(tunable_names)} named parameters")
-    print(f"      Scope: {scope_name}, generation {generation}, {depth} x {channels} float32")
+    print(f"      Tunable discovery: {len(tunable_names)} physical signal parameters")
+    print(
+        f"      Scope: {scope_name}, generation {generation}, {depth} x {channels} float32, "
+        f"validated at {test_settings[0]:.0f} Hz / {test_settings[1]:.2f}x / {test_settings[2]:.2f} V"
+    )
 
 
 def main() -> None:

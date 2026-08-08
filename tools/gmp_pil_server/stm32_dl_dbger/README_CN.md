@@ -21,13 +21,18 @@ Keil 与 CMake 仅引用该工程目录内的文件。完成一次 `gmp_src_mgr`
 
 ## Data Link 与 DSA 服务
 
-固件提供目标信息（`0x02`）、ECHO（`0x00`）、四个可读写 Tunable 变量
+固件提供目标信息（`0x02`）、ECHO（`0x00`）、三个可读写 Tunable 信号参数
 （`0x30`/`0x31`）和 Memory Perspective（`0x50`/`0x51`）。
 
-TIM3 以 1 kHz 采样并产生 50 Hz 正弦/余弦信号。GMP DSA Trigger 负责触发一次一致性
+Tunable 工作台会上报以 Hz 表示的 `Signal Frequency`、作为倍率的 `Signal Gain`
+以及以伏特表示的 `Signal DC Offset`。修改后可直接从 Scope 中观察频率、幅值和中心线变化。
+
+TIM3 以 1 kHz 采样并默认产生 50 Hz 正弦/余弦信号。GMP DSA Trigger 负责触发一次一致性
 采集，DSA Scope 每通道记录 400 点，即连续 20 个信号周期。两通道采用 SoA 布局，
-共 800 个 float、3200 字节，并作为只读 Memory Perspective 区域暴露。上位机的
-`DSA Trigger/Scope` 页可以完成触发、读取和绘图。
+共 800 个 float、3200 字节，并且只通过独立的 Data Link Scope 服务读取，不暴露物理
+地址。上位机的 `Data Link Scope` 页面可以设置触发模式、通道、Level 和触发位置。
+Continuous Display 会自动重新布防并刷新；Waveform Persistence 可以保留逐渐衰减的
+历史波形。
 
 ## 重新生成工程内 GMP 文件
 
@@ -55,4 +60,4 @@ python smoke_test.py
 
 烧写 CMake ELF 或 Keil HEX 并复位后运行测试。测试会自动识别 NUCLEO 的 ST-Link
 虚拟串口，并验证转义、CRC、满 MTU DMA ECHO、Tunable、Memory Perspective、DSA
-元数据、400 点正弦/余弦快照以及只读保护。
+元数据、Tunable 参数对波形的实际作用、25% 预触发位置以及 400 点正弦/余弦快照。
