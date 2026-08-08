@@ -157,6 +157,166 @@
         "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_BIAS_V)"
       },
       "description": "DC-bus voltage sensor bias in volts."
+    },
+    {
+      "role": "Motor Type",
+      "macro": "MOTOR_TYPE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.motor_type"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Stator Resistance",
+      "macro": "MOTOR_PARAM_RS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.rs"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Stator Inductance",
+      "macro": "MOTOR_PARAM_LS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.ld"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor D-axis Inductance",
+      "macro": "MOTOR_PARAM_LD",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.ld"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Q-axis Inductance",
+      "macro": "MOTOR_PARAM_LQ",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.lq"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Flux Linkage",
+      "macro": "MOTOR_PARAM_FLUX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.flux"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Pole Pairs",
+      "macro": "MOTOR_PARAM_POLE_PAIRS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.pole_pairs"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Velocity Constant",
+      "macro": "MOTOR_PARAM_KV",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.kv"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Back EMF",
+      "macro": "MOTOR_PARAM_EMF",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.emf"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Rated Voltage",
+      "macro": "MOTOR_PARAM_RATED_VOLTAGE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.rated_voltage"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor No-load Current",
+      "macro": "MOTOR_PARAM_NO_LOAD_CURRENT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.no_load_current"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Rated Frequency",
+      "macro": "MOTOR_PARAM_RATED_FREQUENCY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.rated_frequency"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Maximum Speed",
+      "macro": "MOTOR_PARAM_MAX_SPEED",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.max_speed"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Maximum Torque",
+      "macro": "MOTOR_PARAM_MAX_TORQUE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.max_torque"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Maximum DC Voltage",
+      "macro": "MOTOR_PARAM_MAX_DC_VOLTAGE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.max_dc_voltage"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Maximum Phase Current",
+      "macro": "MOTOR_PARAM_MAX_PH_CURRENT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.max_ph_current"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
     }
   ],
   "feature_macros": [],
@@ -174,11 +334,10 @@
     }
   ],
   "code_sections": {
-    "after_extern_open": "/* Preserve the validated SIL motor and inverter models while using SDPE as the settings source. */\n/* Motor and inverter headers are emitted from the SDPE hardware list. */\n#define MOTOR_TYPE TYI_5008_KV335_MOTOR_TYPE\n#define MOTOR_PARAM_RS TYI_5008_KV335_RS\n#define MOTOR_PARAM_LS TYI_5008_KV335_LD\n#define MOTOR_PARAM_LD TYI_5008_KV335_LD\n#define MOTOR_PARAM_LQ TYI_5008_KV335_LQ\n#define MOTOR_PARAM_FLUX TYI_5008_KV335_FLUX\n#define MOTOR_PARAM_POLE_PAIRS TYI_5008_KV335_POLE_PAIRS\n#define MOTOR_PARAM_KV TYI_5008_KV335_KV\n#define MOTOR_PARAM_EMF TYI_5008_KV335_EMF\n#define MOTOR_PARAM_RATED_VOLTAGE TYI_5008_KV335_RATED_VOLTAGE\n#define MOTOR_PARAM_NO_LOAD_CURRENT TYI_5008_KV335_NO_LOAD_CURRENT\n#define MOTOR_PARAM_RATED_FREQUENCY TYI_5008_KV335_RATED_FREQUENCY\n#define MOTOR_PARAM_MAX_SPEED TYI_5008_KV335_MAX_SPEED\n#define MOTOR_PARAM_MAX_TORQUE TYI_5008_KV335_MAX_TORQUE\n#define MOTOR_PARAM_MAX_DC_VOLTAGE TYI_5008_KV335_MAX_DC_VOLTAGE\n#define MOTOR_PARAM_MAX_PH_CURRENT TYI_5008_KV335_MAX_PH_CURRENT",
     "before_footer": "/* No additional platform-specific tail definitions. */"
   },
   "description": "Windows/Simulink SIL implementation of the common mcs_pmsm_nt controller requirement contract.",
-  "updated_at": "2026-07-15",
+  "updated_at": "2026-08-08",
   "requirement_groups": [
     {
       "name": "Peripheral Parameters",
@@ -198,43 +357,68 @@
       ]
     },
     {
-      "name": "Position Sensor Parameters",
+      "name": "Main Element Parameters / Motor",
       "requirements": [
-        "Encoder Full Scale",
-        "Encoder Bias",
-        "Mechanical Division"
+        "Motor Type",
+        "Motor Stator Resistance",
+        "Motor Stator Inductance",
+        "Motor D-axis Inductance",
+        "Motor Q-axis Inductance",
+        "Motor Flux Linkage",
+        "Motor Pole Pairs",
+        "Motor Velocity Constant",
+        "Motor Back EMF",
+        "Motor Rated Voltage",
+        "Motor No-load Current",
+        "Motor Rated Frequency",
+        "Motor Maximum Speed",
+        "Motor Maximum Torque",
+        "Motor Maximum DC Voltage",
+        "Motor Maximum Phase Current"
       ]
     },
     {
-      "name": "DC Bus Voltage Sensor",
+      "name": "Voltage & Current Sensor / DC Bus Voltage Sensor",
       "requirements": [
         "Dc Voltage Sensitivity",
         "Dc Voltage Bias"
       ]
     },
     {
-      "name": "Inverter Phase Voltage Sensor",
-      "requirements": [
-        "Phase Voltage Sensitivity",
-        "Phase Voltage Bias"
-      ]
-    },
-    {
-      "name": "DC Current Sensor",
+      "name": "Voltage & Current Sensor / DC Current Sensor",
       "requirements": [
         "Dc Current Sensitivity",
         "Dc Current Bias"
       ]
     },
     {
-      "name": "Inverter Phase Current Sensor",
+      "name": "Voltage & Current Sensor / Inverter Phase Current Sensor",
       "requirements": [
         "Phase Current Sensitivity",
         "Phase Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Inverter Phase Voltage Sensor",
+      "requirements": [
+        "Phase Voltage Sensitivity",
+        "Phase Voltage Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Position Sensor",
+      "requirements": [
+        "Encoder Full Scale",
+        "Encoder Bias",
+        "Mechanical Division"
       ]
     }
   ],
   "common_requirements": [
     "../../../sdpe_general/sdpe_requirement.json"
+  ],
+  "feature_macro_groups": [],
+  "option_macro_groups": [
+    "ADC"
   ]
 }

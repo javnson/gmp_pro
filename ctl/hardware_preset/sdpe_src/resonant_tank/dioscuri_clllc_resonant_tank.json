@@ -1,0 +1,26 @@
+{
+  "id": "dioscuri_clllc_resonant_tank",
+  "schema": "clllc_resonant_tank",
+  "display_name": "Dioscuri CLLLC Debug-Kit Resonant Tank",
+  "description": "Nominal CLLLC resonant network and load envelope used by the Dioscuri debug kit and its SIL model.",
+  "vendor": "GMP",
+  "document_url": "ctl/suite/dps_clllc/project/hw/LLC_Debug_Kit.pdf",
+  "macro_prefix": "DIOSCURI_CLLLC_TANK",
+  "tags": [
+    "clllc",
+    "dioscuri",
+    "resonant_tank"
+  ],
+  "parameters": {
+    "resonant_frequency_hz": 100000.0,
+    "magnetizing_inductance_h": "120e-6",
+    "primary_resonant_inductance_h": "20e-6",
+    "secondary_resonant_inductance_h": "20e-6",
+    "primary_resonant_capacitance_f": "120e-9",
+    "secondary_resonant_capacitance_f": "120e-9",
+    "transformer_ratio_ns_np": 1.0,
+    "output_capacitance_f": "440e-6",
+    "minimum_load_resistance_ohm": 10.0,
+    "tank_esr_ohm": 0.1
+  }
+}

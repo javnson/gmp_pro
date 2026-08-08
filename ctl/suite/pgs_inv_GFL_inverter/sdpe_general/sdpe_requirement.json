@@ -5,7 +5,7 @@
   "description": "Platform-independent control contract shared by all pgs_inv_GFL_inverter projects. Hardware timing, sensing, board resources and BUILD_LEVEL selection remain in each platform requirement.",
   "suite": "pgs_inv_GFL_inverter",
   "version": "1.2.0",
-  "updated_at": "2026-08-06",
+  "updated_at": "2026-08-08",
   "output_header": "sdpe_pgs_inv_gfl_common_settings.h",
   "hardware": [],
   "code_sections": {
@@ -522,17 +522,20 @@
   ],
   "requirement_groups": [
     {
-      "name": "Runtime Parameters",
+      "name": "Per-Unit Base Parameters",
       "requirements": [
-        "Adc Calibrator Cutoff",
-        "Adc Calibrator Q",
-        "Cia402 Enable Delay"
+        "Grid Frequency"
       ]
     },
     {
-      "name": "Control Loop Parameters",
+      "name": "Control Loop / PLL Controller",
       "requirements": [
-        "Grid Voltage Pu",
+        "Pll Lock Epsilon"
+      ]
+    },
+    {
+      "name": "Control Loop / Power Controller",
+      "requirements": [
         "Pq Loop Frequency",
         "Pq Loop Divider",
         "Pq Active Kp",
@@ -546,10 +549,34 @@
         "Pq Droop P Min",
         "Pq Droop P Max",
         "Pq Droop Q Min",
-        "Pq Droop Q Max",
-        "Open Loop Vd",
-        "Open Loop Vq",
-        "Pll Lock Epsilon"
+        "Pq Droop Q Max"
+      ]
+    },
+    {
+      "name": "Control Loop / Voltage Controller",
+      "requirements": [
+        "Grid Voltage Pu"
+      ]
+    },
+    {
+      "name": "Control Loop / Zero-Sequence Controller",
+      "requirements": [
+        "Zero Qpr Kp",
+        "Zero Qpr Kr",
+        "Zero Qpr Cutoff"
+      ]
+    },
+    {
+      "name": "Runtime Parameters",
+      "requirements": [
+        "Cia402 Enable Delay"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Calibration",
+      "requirements": [
+        "Adc Calibrator Cutoff",
+        "Adc Calibrator Q"
       ]
     },
     {
@@ -569,16 +596,9 @@
         "Standalone Voltage Zero",
         "Standalone Circle Current Limit",
         "Standalone Square Current Limit",
-        "Zero Qpr Kp",
-        "Zero Qpr Kr",
-        "Zero Qpr Cutoff",
-        "Zero Voltage Limit"
-      ]
-    },
-    {
-      "name": "Default Parameters",
-      "requirements": [
-        "Grid Frequency"
+        "Zero Voltage Limit",
+        "Open Loop Vd",
+        "Open Loop Vq"
       ]
     }
   ],

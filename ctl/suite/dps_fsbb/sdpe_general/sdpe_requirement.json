@@ -5,7 +5,7 @@
   "description": "Platform-independent FSBB topology, sensing, protection and control contract shared by all hardware and SIL targets.",
   "suite": "dps_fsbb",
   "version": "1.0.0",
-  "updated_at": "2026-07-16",
+  "updated_at": "2026-08-08",
   "output_header": "sdpe_dps_fsbb_common_settings.h",
   "hardware": [
     {
@@ -364,34 +364,6 @@
       ]
     },
     {
-      "name": "Input Voltage Sensor",
-      "requirements": [
-        "Input Voltage Sensitivity",
-        "Input Voltage Bias"
-      ]
-    },
-    {
-      "name": "Output Voltage Sensor",
-      "requirements": [
-        "Output Voltage Sensitivity",
-        "Output Voltage Bias"
-      ]
-    },
-    {
-      "name": "Output Current Sensor",
-      "requirements": [
-        "Output Current Sensitivity",
-        "Output Current Bias"
-      ]
-    },
-    {
-      "name": "Inductor Current Sensor",
-      "requirements": [
-        "Inductor Current Sensitivity",
-        "Inductor Current Bias"
-      ]
-    },
-    {
       "name": "Protection Parameters",
       "requirements": [
         "Maximum Input Voltage",
@@ -409,14 +381,28 @@
       ]
     },
     {
-      "name": "Control Loop Parameters",
+      "name": "Control Loop / Current Controller",
       "requirements": [
-        "Open-loop Voltage Command",
-        "Current-loop Bandwidth",
-        "Voltage-loop Bandwidth",
-        "Low Transition Ratio",
-        "High Transition Ratio",
+        "Current-loop Bandwidth"
+      ]
+    },
+    {
+      "name": "Control Loop / PLL Controller",
+      "requirements": [
         "SPLL Epsilon"
+      ]
+    },
+    {
+      "name": "Control Loop / Synchronization Controller",
+      "requirements": [
+        "Low Transition Ratio",
+        "High Transition Ratio"
+      ]
+    },
+    {
+      "name": "Control Loop / Voltage Controller",
+      "requirements": [
+        "Voltage-loop Bandwidth"
       ]
     },
     {
@@ -426,8 +412,37 @@
       ]
     },
     {
-      "name": "Default Parameters",
+      "name": "Voltage & Current Sensor / Inductor Current Sensor",
       "requirements": [
+        "Inductor Current Sensitivity",
+        "Inductor Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Input Voltage Sensor",
+      "requirements": [
+        "Input Voltage Sensitivity",
+        "Input Voltage Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Output Current Sensor",
+      "requirements": [
+        "Output Current Sensitivity",
+        "Output Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Output Voltage Sensor",
+      "requirements": [
+        "Output Voltage Sensitivity",
+        "Output Voltage Bias"
+      ]
+    },
+    {
+      "name": "Commissioning Defaults",
+      "requirements": [
+        "Open-loop Voltage Command",
         "Voltage Ramp Rate",
         "Current Ramp Rate"
       ]
@@ -436,5 +451,7 @@
   "code_sections": {
     "after_extern_open": "/* Shared FSBB control contract. */",
     "before_footer": "/* FSBB common extension point. */"
-  }
+  },
+  "feature_macro_groups": [],
+  "option_macro_groups": []
 }

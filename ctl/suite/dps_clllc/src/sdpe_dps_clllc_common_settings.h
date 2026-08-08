@@ -8,6 +8,7 @@
 #define _PROJECT_SDPE_DPS_CLLLC_COMMON_SETTINGS_H_
 
 #include <ctl/hardware_preset/current_sensor/tmcs1133_b5a.h>
+#include <ctl/hardware_preset/resonant_tank/dioscuri_clllc_resonant_tank.h>
 #include <ctl/hardware_preset/voltage_sensor/dioscuri_voltage_sensor.h>
 
 #ifdef __cplusplus
@@ -26,7 +27,7 @@ extern "C"
 #define DPS_CLLLC_COMMON_SDPE_PROJECT_ID "dps_clllc_common"
 #define DPS_CLLLC_COMMON_SDPE_PROJECT_SUITE "dps_clllc"
 #define DPS_CLLLC_COMMON_SDPE_PROJECT_VERSION "1.0.0"
-#define DPS_CLLLC_COMMON_SDPE_PROJECT_UPDATED_AT "2026-07-19"
+#define DPS_CLLLC_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-08"
 
 //=================================================================================================
 /**
@@ -46,7 +47,7 @@ extern "C"
 /**
  * @brief Nominal tank resonant frequency.
  */
-#define CLLLC_F_RESONANT_HZ (100000.0f)
+#define CLLLC_F_RESONANT_HZ DIOSCURI_CLLLC_TANK_RESONANT_FREQUENCY_HZ
 
 /**
  * @brief Lowest allowed hybrid modulation frequency.
@@ -71,47 +72,47 @@ extern "C"
 /**
  * @brief Transformer magnetizing inductance.
  */
-#define CLLLC_LM_H (120e-6f)
+#define CLLLC_LM_H DIOSCURI_CLLLC_TANK_MAGNETIZING_INDUCTANCE_H
 
 /**
  * @brief Primary resonant inductance.
  */
-#define CLLLC_LR_PRIMARY_H (20e-6f)
+#define CLLLC_LR_PRIMARY_H DIOSCURI_CLLLC_TANK_PRIMARY_RESONANT_INDUCTANCE_H
 
 /**
  * @brief Secondary resonant inductance.
  */
-#define CLLLC_LR_SECONDARY_H (20e-6f)
+#define CLLLC_LR_SECONDARY_H DIOSCURI_CLLLC_TANK_SECONDARY_RESONANT_INDUCTANCE_H
 
 /**
  * @brief Primary resonant capacitance.
  */
-#define CLLLC_CR_PRIMARY_F (120e-9f)
+#define CLLLC_CR_PRIMARY_F DIOSCURI_CLLLC_TANK_PRIMARY_RESONANT_CAPACITANCE_F
 
 /**
  * @brief Secondary resonant capacitance.
  */
-#define CLLLC_CR_SECONDARY_F (120e-9f)
+#define CLLLC_CR_SECONDARY_F DIOSCURI_CLLLC_TANK_SECONDARY_RESONANT_CAPACITANCE_F
 
 /**
  * @brief Secondary-to-primary turns ratio.
  */
-#define CLLLC_TRANSFORMER_NS_NP (1.0f)
+#define CLLLC_TRANSFORMER_NS_NP DIOSCURI_CLLLC_TANK_TRANSFORMER_RATIO_NS_NP
 
 /**
  * @brief Equivalent output capacitance.
  */
-#define CLLLC_COUT_F (440e-6f)
+#define CLLLC_COUT_F DIOSCURI_CLLLC_TANK_OUTPUT_CAPACITANCE_F
 
 /**
  * @brief Minimum resistive load used for conservative tuning.
  */
-#define CLLLC_RLOAD_MIN_OHM (10.0f)
+#define CLLLC_RLOAD_MIN_OHM DIOSCURI_CLLLC_TANK_MINIMUM_LOAD_RESISTANCE_OHM
 
 /**
  * @brief Equivalent resonant-tank series resistance.
  */
-#define CLLLC_TANK_ESR_OHM (0.10f)
+#define CLLLC_TANK_ESR_OHM DIOSCURI_CLLLC_TANK_TANK_ESR_OHM
 
 /**
  * @brief Voltage per-unit base.

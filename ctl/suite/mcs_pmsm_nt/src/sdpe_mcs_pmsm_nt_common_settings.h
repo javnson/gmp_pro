@@ -23,7 +23,7 @@ extern "C"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_ID "mcs_pmsm_nt_common"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION "1.0.0"
-#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT "2026-07-15"
+#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-08"
 
 //=================================================================================================
 /**
@@ -102,11 +102,6 @@ extern "C"
  */
 
 /**
- * @brief Controller startup delay in milliseconds.
- */
-#define CTRL_STARTUP_DELAY (100)
-
-/**
  * @brief Main motor-control ISR frequency in hertz.
  */
 #define CONTROLLER_FREQUENCY (20e3f)
@@ -122,14 +117,9 @@ extern "C"
 #define MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A (0.05f)
 
 /**
- * @brief Electrical frequency command in hertz used by the BUILD_LEVEL 1 V/f path and the BUILD_LEVEL 2 synthetic-angle current-loop path.
+ * @brief Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
  */
-#define MCS_OPEN_LOOP_FREQ_HZ (20.0f)
-
-/**
- * @brief Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator.
- */
-#define MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S (20.0f)
+#define MCS_ENCODER_SPEED_FILTER_FC_HZ (20.0f)
 
 /**
  * @brief Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu.
@@ -152,26 +142,6 @@ extern "C"
 #define MCS_MECH_VELOCITY_KI_PU_S (1.0f)
 
 /**
- * @brief Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
- */
-#define MCS_MECH_SPEED_LIMIT_RPM (3000.0f)
-
-/**
- * @brief Maximum mechanical speed-command slew rate in rpm/s. The configured value corresponds to 1 PU/s for the selected 3000 rpm motor.
- */
-#define MCS_MECH_SPEED_SLOPE_RPM_S (3000.0f)
-
-/**
- * @brief Absolute q-axis current/torque command limit in amperes. It is divided by CTRL_CURRENT_BASE to obtain the controller PU limit; 3 A corresponds to the previous 0.3 PU setting.
- */
-#define MCS_MECH_CURRENT_LIMIT_A (3.0f)
-
-/**
- * @brief Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
- */
-#define MCS_ENCODER_SPEED_FILTER_FC_HZ (20.0f)
-
-/**
  * @brief D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
  */
 #define MCS_COMMISSIONING_ID_REF_A (1.0f)
@@ -187,6 +157,81 @@ extern "C"
 #define MCS_COMMISSIONING_SPEED_REF_RPM (300.0f)
 
 /**
+ * @brief Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
+ */
+#define MCS_MECH_SPEED_LIMIT_RPM (3000.0f)
+
+/**
+ * @brief Maximum mechanical speed-command slew rate in rpm/s. The configured value corresponds to 1 PU/s for the selected 3000 rpm motor.
+ */
+#define MCS_MECH_SPEED_SLOPE_RPM_S (3000.0f)
+
+/**
+ * @brief Absolute q-axis current/torque command limit in amperes. It is divided by CTRL_CURRENT_BASE to obtain the controller PU limit; 3 A corresponds to the previous 0.3 PU setting.
+ */
+#define MCS_MECH_CURRENT_LIMIT_A (3.0f)
+
+/**
+ * @brief Rectangular saturation limit for d/q axes in V.
+ */
+#define MCS_MAX_RECT_SATURATION_VOLTAGE_V (10.0f)
+
+/**
+ * @brief
+ */
+#define MCS_MAX_DC_BUS_VOLTAGE_V (CTRL_DCBUS_VOLTAGE*1.2f)
+
+/**
+ * @brief
+ */
+#define MCS_MIN_DC_BUS_VOLTAGE_V (CTRL_DCBUS_VOLTAGE*0.2f)
+
+/**
+ * @brief
+ */
+#define MOTOR_PARAM_INERTIA SM060R20B30MNAD_INERTIA
+
+/**
+ * @brief
+ */
+#define MOTOR_PARAM_FLUX SM060R20B30MNAD_FLUX
+
+/**
+ * @brief
+ */
+#define MOTOR_PARAM_LD SM060R20B30MNAD_LD
+
+/**
+ * @brief
+ */
+#define MOTOR_PARAM_RS SM060R20B30MNAD_RS
+
+/**
+ * @brief
+ */
+#define MOTOR_PARAM_LQ SM060R20B30MNAD_LQ
+
+/**
+ * @brief
+ */
+#define MOTOR_PARAM_LS SM060R20B30MNAD_LD
+
+/**
+ * @brief
+ */
+#define MOTOR_PARAM_FRICTION SM060R20B30MNAD_FRICTION
+
+/**
+ * @brief
+ */
+#define MOTOR_PARAM_POLE_PAIRS SM060R20B30MNAD_POLE_PAIRS
+
+/**
+ * @brief Controller startup delay in milliseconds.
+ */
+#define CTRL_STARTUP_DELAY (100)
+
+/**
  * @brief Minimum delay in milliseconds before the CiA402 state machine enters Operation Enabled. The project control tick is expressed in milliseconds.
  */
 #define MCS_CIA402_OPERATION_ENABLE_DELAY_MS (100)
@@ -200,11 +245,6 @@ extern "C"
  * @brief Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
  */
 #define MCS_ADC_CALIBRATOR_Q (0.707f)
-
-/**
- * @brief Legacy loop-convergence epsilon retained for controller compatibility.
- */
-#define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
 
 // User project tail code
 /* Accept the historical misspelling while all source code uses the canonical switch. */

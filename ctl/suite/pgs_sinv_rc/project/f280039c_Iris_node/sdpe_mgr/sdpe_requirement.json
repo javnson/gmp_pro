@@ -4,7 +4,7 @@
   "description": "Single-phase inverter project requirement prepared from xplt/ctrl_settings.h.\nThis requirement introduces the GMP LVFB 150V 2-phase inverter board as the switching stage and the GMP Harmonia 3-phase LC filter as the grid filter. IRIS F280039C is included as the peripheral option provider.",
   "suite": "pgs_sinv_rc",
   "version": "0.2.0",
-  "updated_at": "2026-08-05",
+  "updated_at": "2026-08-08",
   "output_header": "sdpe_pgs_sinv_rc_iris_bindings.h",
   "hardware": [
     {
@@ -874,39 +874,16 @@
       ]
     },
     {
-      "name": "Control Loop / PLL Parameters",
+      "name": "Control Loop / Current Controller",
       "requirements": [
-        "PLL Kp",
-        "PLL Ti",
-        "PLL Lpf Fc",
-        "SPLL Epsilon"
+        "Current Deadband Pu"
       ]
     },
     {
-      "name": "Control Loop / Outer Loop",
+      "name": "Control Loop / DC Bus Voltage Controller",
       "requirements": [
         "DC Bus Kp",
-        "DC Bus Ki",
-        "Outer Limit",
-        "Outer Frequency"
-      ]
-    },
-    {
-      "name": "Control Loop",
-      "requirements": [
-        "Current Deadband Pu",
-        "Adc Calibration Timeout"
-      ]
-    },
-    {
-      "name": "Control Loop / Power Controller",
-      "requirements": [
-        "P Slew Pu/S",
-        "Q Slew Pu/S",
-        "Power Kp",
-        "Power Ki",
-        "Current Limit Pu",
-        "PQ Power Measurement Lpf Fc"
+        "DC Bus Ki"
       ]
     },
     {
@@ -921,27 +898,55 @@
       ]
     },
     {
+      "name": "Control Loop / Outer-Loop Controller",
+      "requirements": [
+        "Outer Limit",
+        "Outer Frequency"
+      ]
+    },
+    {
+      "name": "Control Loop / PLL Controller",
+      "requirements": [
+        "PLL Kp",
+        "PLL Ti",
+        "PLL Lpf Fc",
+        "SPLL Epsilon"
+      ]
+    },
+    {
+      "name": "Control Loop / Power Controller",
+      "requirements": [
+        "P Slew Pu/S",
+        "Q Slew Pu/S",
+        "Power Kp",
+        "Power Ki",
+        "Current Limit Pu",
+        "PQ Power Measurement Lpf Fc"
+      ]
+    },
+    {
       "name": "Runtime Parameters",
       "requirements": [
-        "Startup Delay"
+        "Startup Delay",
+        "Adc Calibration Timeout"
       ]
     },
     {
-      "name": "Voltage Current Sensor / DC Bus Voltage Sensor",
-      "requirements": [
-        "Dc Voltage Sensitivity",
-        "Dc Voltage Bias"
-      ]
-    },
-    {
-      "name": "Voltage Current Sensor / AC Voltage Sensor",
+      "name": "Voltage & Current Sensor / AC Voltage Sensor",
       "requirements": [
         "Ac Voltage Sensitivity",
         "Ac Voltage Bias"
       ]
     },
     {
-      "name": "Voltage Current Sensor / AC Current Sensor",
+      "name": "Voltage & Current Sensor / DC Bus Voltage Sensor",
+      "requirements": [
+        "Dc Voltage Sensitivity",
+        "Dc Voltage Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Voltage Sensor",
       "requirements": [
         "Ac Current Sensitivity",
         "Ac Current Bias"
@@ -958,7 +963,6 @@
     "Diagnostics and Simulation"
   ],
   "option_macro_groups": [
-    "Option Macros",
     "Control Mode",
     "PWM Modulator",
     "PWM Channel Mapping",

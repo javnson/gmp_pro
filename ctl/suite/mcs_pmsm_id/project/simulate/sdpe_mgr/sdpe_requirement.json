@@ -1,15 +1,526 @@
 {
   "id": "mcs_pmsm_id_simulate",
-  "display_name": "mcs_pmsm_id_simulate",
+  "macro_prefix": "MCS_PMSM_ID_SIMULATE",
+  "display_name": "MCS PMSM Identification simulate",
   "suite": "mcs_pmsm_id",
-  "version": "0.1.0",
-  "output_header": "mcs_pmsm_id_simulate_sdpe_bindings.h",
-  "hardware": [],
-  "requirements": [],
-  "feature_macros": [],
-  "option_macros": [],
+  "version": "1.0.0",
+  "output_header": "sdpe_mcs_pmsm_id_simulate_settings.h",
+  "hardware": [
+    {
+      "entity": "tyi_5008_kv335"
+    },
+    {
+      "entity": "ti_boostxl_3phganinv"
+    }
+  ],
+  "requirements": [
+    {
+      "role": "Pwm Compare Max",
+      "macro": "CTRL_PWM_CMP_MAX",
+      "binding": {
+        "literal": "(2500 - 1)"
+      },
+      "description": "Maximum compare count of the platform PWM peripheral at the configured controller switching frequency."
+    },
+    {
+      "role": "Pwm Deadband",
+      "macro": "CTRL_PWM_DEADBAND_CMP",
+      "binding": {
+        "number": "100"
+      },
+      "description": "Dead-time count interpreted in the selected PWM peripheral clock domain."
+    },
+    {
+      "role": "System Frequency",
+      "macro": "CTRL_SYS_FREQUENCY",
+      "binding": {
+        "literal": "(CONTROLLER_FREQUENCY)"
+      },
+      "description": "Platform CPU or system clock frequency in hertz."
+    },
+    {
+      "role": "Adc Voltage Reference",
+      "macro": "CTRL_ADC_VOLTAGE_REF",
+      "binding": {
+        "float": "3.3"
+      },
+      "description": "ADC reference voltage used by all sensor conversions."
+    },
+    {
+      "role": "Dc Bus Voltage Base",
+      "macro": "CTRL_DCBUS_VOLTAGE",
+      "binding": {
+        "float": "80.0"
+      },
+      "description": "Configured DC-bus voltage base."
+    },
+    {
+      "role": "Phase Voltage Base",
+      "macro": "CTRL_VOLTAGE_BASE",
+      "binding": {
+        "literal": "(CTRL_DCBUS_VOLTAGE / 1.73205081f)"
+      },
+      "description": "Phase-voltage per-unit base derived from the DC-bus base."
+    },
+    {
+      "role": "Current Base",
+      "macro": "CTRL_CURRENT_BASE",
+      "binding": {
+        "float": "10.0"
+      },
+      "description": "Phase-current per-unit base in amperes."
+    },
+    {
+      "role": "Encoder Full Scale",
+      "macro": "CTRL_POS_ENC_FS",
+      "binding": {
+        "number": "16384"
+      },
+      "description": "Encoder counts per mechanical revolution."
+    },
+    {
+      "role": "Encoder Bias",
+      "macro": "CTRL_POS_ENC_BIAS",
+      "binding": {
+        "float": "0.0999145508"
+      },
+      "description": "Mechanical encoder position bias in per unit."
+    },
+    {
+      "role": "Mechanical Division",
+      "macro": "CTRL_MECH_DIV",
+      "binding": {
+        "number": "5"
+      },
+      "description": "Mechanical speed and position division factor."
+    },
+    {
+      "role": "Phase Current Sensitivity",
+      "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
+      "binding": {
+        "literal": "(MY_BOARD_PH_SHUNT_RESISTANCE_OHM * MY_BOARD_PH_CSA_GAIN_V_V)"
+      },
+      "description": "Phase-current sensor sensitivity in volts per ampere."
+    },
+    {
+      "role": "Phase Current Bias",
+      "macro": "CTRL_INVERTER_CURRENT_BIAS",
+      "binding": {
+        "literal": "(MY_BOARD_PH_CSA_BIAS_V)"
+      },
+      "description": "Phase-current sensor zero-current bias in volts."
+    },
+    {
+      "role": "Phase Voltage Sensitivity",
+      "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "literal": "(MY_BOARD_PH_VOLTAGE_SENSE_GAIN)"
+      },
+      "description": "Phase-voltage sensing gain in ADC volts per measured volt."
+    },
+    {
+      "role": "Phase Voltage Bias",
+      "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
+      "binding": {
+        "literal": "(MY_BOARD_PH_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "Phase-voltage sensor bias in volts."
+    },
+    {
+      "role": "Dc Current Sensitivity",
+      "macro": "CTRL_DC_CURRENT_SENSITIVITY",
+      "binding": {
+        "literal": "(MY_BOARD_DCBUS_CURRENT_SENSE_GAIN)"
+      },
+      "description": "DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path."
+    },
+    {
+      "role": "Dc Current Bias",
+      "macro": "CTRL_DC_CURRENT_BIAS",
+      "binding": {
+        "literal": "(MY_BOARD_DCBUS_CURRENT_SENSE_BIAS_V)"
+      },
+      "description": "DC-bus current sensor bias."
+    },
+    {
+      "role": "Dc Voltage Sensitivity",
+      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "literal": "(MY_BOARD_DCBUS_VOLTAGE_SENSE_GAIN)"
+      },
+      "description": "DC-bus voltage sensing gain in ADC volts per measured volt."
+    },
+    {
+      "role": "Dc Voltage Bias",
+      "macro": "CTRL_DC_VOLTAGE_BIAS",
+      "binding": {
+        "literal": "(MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "DC-bus voltage sensor bias in volts."
+    },
+    {
+      "role": "Motor Type",
+      "macro": "MOTOR_TYPE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.motor_type"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Stator Resistance",
+      "macro": "MOTOR_PARAM_RS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.rs"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Stator Inductance",
+      "macro": "MOTOR_PARAM_LS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.ld"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor D-axis Inductance",
+      "macro": "MOTOR_PARAM_LD",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.ld"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Q-axis Inductance",
+      "macro": "MOTOR_PARAM_LQ",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.lq"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Flux Linkage",
+      "macro": "MOTOR_PARAM_FLUX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.flux"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Pole Pairs",
+      "macro": "MOTOR_PARAM_POLE_PAIRS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.pole_pairs"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Velocity Constant",
+      "macro": "MOTOR_PARAM_KV",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.kv"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Back EMF",
+      "macro": "MOTOR_PARAM_EMF",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.emf"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Rated Voltage",
+      "macro": "MOTOR_PARAM_RATED_VOLTAGE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.rated_voltage"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor No-load Current",
+      "macro": "MOTOR_PARAM_NO_LOAD_CURRENT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.no_load_current"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Rated Frequency",
+      "macro": "MOTOR_PARAM_RATED_FREQUENCY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.rated_frequency"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Maximum Speed",
+      "macro": "MOTOR_PARAM_MAX_SPEED",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.max_speed"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Maximum Torque",
+      "macro": "MOTOR_PARAM_MAX_TORQUE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.max_torque"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Maximum DC Voltage",
+      "macro": "MOTOR_PARAM_MAX_DC_VOLTAGE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.max_dc_voltage"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Maximum Phase Current",
+      "macro": "MOTOR_PARAM_MAX_PH_CURRENT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "tyi_5008_kv335.max_ph_current"
+      },
+      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Controller Frequency",
+      "macro": "CONTROLLER_FREQUENCY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "20e3"
+      },
+      "description": "Main motor-control ISR frequency in hertz."
+    },
+    {
+      "role": "Startup Delay",
+      "macro": "CTRL_STARTUP_DELAY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "100"
+      },
+      "description": "Controller startup delay in milliseconds."
+    },
+    {
+      "role": "ADC Calibration Timeout",
+      "macro": "TIMEOUT_ADC_CALIB_MS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "10000"
+      },
+      "description": "Migrated from simulate/xplt/ctrl_settings.h."
+    }
+  ],
+  "feature_macros": [
+    {
+      "group": "Control Algorithm",
+      "macro": "_USE_DEBUG_DISCRETE_PID",
+      "enabled": true,
+      "weak": false,
+      "value": "",
+      "description": "Migrated from simulate/xplt/ctrl_settings.h."
+    },
+    {
+      "group": "Control Algorithm",
+      "macro": "ENABLE_SMO",
+      "enabled": true,
+      "weak": false,
+      "value": "",
+      "description": "Migrated from simulate/xplt/ctrl_settings.h."
+    },
+    {
+      "group": "Protection",
+      "macro": "ENABLE_MOTOR_FAULT_PROTECTION",
+      "enabled": true,
+      "weak": false,
+      "value": "",
+      "description": "Migrated from simulate/xplt/ctrl_settings.h."
+    },
+    {
+      "group": "Sensing and Calibration",
+      "macro": "SPECIFY_ENABLE_ADC_CALIBRATE",
+      "enabled": true,
+      "weak": false,
+      "value": "",
+      "description": "Migrated from simulate/xplt/ctrl_settings.h."
+    },
+    {
+      "group": "PWM Modulator",
+      "macro": "PWM_MODULATOR_USING_NEGATIVE_LOGIC",
+      "enabled": true,
+      "weak": false,
+      "value": "(1)",
+      "description": "Migrated from simulate/xplt/ctrl_settings.h."
+    }
+  ],
+  "option_macros": [
+    {
+      "group": "Commissioning",
+      "macro": "BUILD_LEVEL",
+      "enabled": true,
+      "weak": false,
+      "value": "(2)",
+      "options_preset": "",
+      "options": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)",
+        "(5)",
+        "(6)"
+      ],
+      "description": "1=open-loop hardware validation; 2=current loop; 3=measured-angle current loop; 4=speed loop; 5=position loop; 6=communication mode."
+    },
+    {
+      "group": "ADC",
+      "macro": "MC_CURRENT_SAMPLE_PHASE_MODE",
+      "enabled": true,
+      "value": "(2)",
+      "options": [
+        "(2)",
+        "(3)"
+      ],
+      "description": "Directly sampled phase-current count."
+    }
+  ],
   "code_sections": {
-    "after_extern_open": "/* Add project-specific includes here. */",
-    "before_footer": "/* Add project-specific tail macros here. */"
-  }
+    "before_footer": "/* No additional platform-specific tail definitions. */"
+  },
+  "description": "Structured SDPE hardware, peripheral and control settings migrated from simulate/xplt/ctrl_settings.h.",
+  "updated_at": "2026-08-08",
+  "requirement_groups": [
+    {
+      "name": "Peripheral Parameters",
+      "requirements": [
+        "Pwm Compare Max",
+        "Pwm Deadband",
+        "System Frequency",
+        "Adc Voltage Reference",
+        "Controller Frequency"
+      ]
+    },
+    {
+      "name": "Per-Unit Base Parameters",
+      "requirements": [
+        "Dc Bus Voltage Base",
+        "Phase Voltage Base",
+        "Current Base"
+      ]
+    },
+    {
+      "name": "Main Element Parameters / Motor",
+      "requirements": [
+        "Motor Type",
+        "Motor Stator Resistance",
+        "Motor Stator Inductance",
+        "Motor D-axis Inductance",
+        "Motor Q-axis Inductance",
+        "Motor Flux Linkage",
+        "Motor Pole Pairs",
+        "Motor Velocity Constant",
+        "Motor Back EMF",
+        "Motor Rated Voltage",
+        "Motor No-load Current",
+        "Motor Rated Frequency",
+        "Motor Maximum Speed",
+        "Motor Maximum Torque",
+        "Motor Maximum DC Voltage",
+        "Motor Maximum Phase Current"
+      ]
+    },
+    {
+      "name": "Runtime Parameters",
+      "requirements": [
+        "ADC Calibration Timeout",
+        "Startup Delay"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / DC Bus Voltage Sensor",
+      "requirements": [
+        "Dc Voltage Sensitivity",
+        "Dc Voltage Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / DC Current Sensor",
+      "requirements": [
+        "Dc Current Sensitivity",
+        "Dc Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Inverter Phase Current Sensor",
+      "requirements": [
+        "Phase Current Sensitivity",
+        "Phase Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Inverter Phase Voltage Sensor",
+      "requirements": [
+        "Phase Voltage Sensitivity",
+        "Phase Voltage Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Position Sensor",
+      "requirements": [
+        "Encoder Full Scale",
+        "Encoder Bias",
+        "Mechanical Division"
+      ]
+    }
+  ],
+  "common_requirements": [
+    "../../../sdpe_general/sdpe_requirement.json"
+  ],
+  "feature_macro_groups": [
+    "Control Algorithm",
+    "Protection",
+    "Sensing and Calibration",
+    "PWM Modulator"
+  ],
+  "option_macro_groups": [
+    "Commissioning",
+    "ADC"
+  ]
 }

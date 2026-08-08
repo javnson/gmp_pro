@@ -5,9 +5,18 @@
   "description": "Windows SIL platform, plant and sensing settings for all SINV commissioning models.",
   "suite": "pgs_sinv_rc",
   "version": "1.0.0",
-  "updated_at": "2026-07-28",
+  "updated_at": "2026-08-08",
   "output_header": "sdpe_pgs_sinv_rc_simulate_settings.h",
-  "hardware": [],
+  "hardware": [
+    {
+      "role": "power_stage",
+      "entity": "gmp_lvfb_150_2ph_v2"
+    },
+    {
+      "role": "grid_filter",
+      "entity": "gmp_harmonia_3ph_lc_filter"
+    }
+  ],
   "code_sections": {
     "after_extern_open": "#define SPECIFY_PC_ENVIRONMENT",
     "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 5)\n#error BUILD_LEVEL_must_be_between_1_and_5\n#endif"
@@ -347,42 +356,16 @@
         "Filter C",
         "Filter C Esr",
         "Load R",
-        "Rectifier Load R"
-      ]
-    },
-    {
-      "name": "DC Link Parameters",
-      "requirements": [
-        "Dc Cap"
-      ]
-    },
-    {
-      "name": "DC Bus Voltage Sensor",
-      "requirements": [
-        "Dc Voltage Gain",
-        "Dc Voltage Bias"
-      ]
-    },
-    {
-      "name": "AC Voltage Sensor",
-      "requirements": [
-        "Ac Voltage Gain",
-        "Ac Voltage Bias"
-      ]
-    },
-    {
-      "name": "AC Current Sensor",
-      "requirements": [
-        "Ac Current Gain",
-        "Ac Current Bias"
-      ]
-    },
-    {
-      "name": "MOSFET Parameters",
-      "requirements": [
+        "Rectifier Load R",
         "Mosfet Ron",
         "Diode Ron",
         "Diode Vf"
+      ]
+    },
+    {
+      "name": "Main Element Parameters / DC Link",
+      "requirements": [
+        "Dc Cap"
       ]
     },
     {
@@ -400,9 +383,36 @@
       "requirements": [
         "Cal Timeout"
       ]
+    },
+    {
+      "name": "Voltage & Current Sensor / AC Current Sensor",
+      "requirements": [
+        "Ac Current Gain",
+        "Ac Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / AC Voltage Sensor",
+      "requirements": [
+        "Ac Voltage Gain",
+        "Ac Voltage Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / DC Bus Voltage Sensor",
+      "requirements": [
+        "Dc Voltage Gain",
+        "Dc Voltage Bias"
+      ]
     }
   ],
   "common_requirements": [
     "../../../sdpe_general/sdpe_requirement.json"
+  ],
+  "feature_macro_groups": [
+    "SIL Runtime"
+  ],
+  "option_macro_groups": [
+    "Commissioning"
   ]
 }

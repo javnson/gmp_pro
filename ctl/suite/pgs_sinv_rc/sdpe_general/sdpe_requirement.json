@@ -5,7 +5,7 @@
   "description": "Platform-independent control contract shared by all pgs_sinv_rc projects.",
   "suite": "pgs_sinv_rc",
   "version": "1.0.0",
-  "updated_at": "2026-08-05",
+  "updated_at": "2026-08-08",
   "output_header": "sdpe_pgs_sinv_rc_common_settings.h",
   "hardware": [],
   "feature_macros": [
@@ -251,19 +251,25 @@
       ]
     },
     {
-      "name": "Control Loop / PLL Parameters",
+      "name": "Control Loop / Current Controller",
+      "requirements": [
+        "Current Deadband",
+        "Current Bandwidth"
+      ]
+    },
+    {
+      "name": "Control Loop / FDRC Controller",
+      "requirements": [
+        "Fdrc Min Frequency"
+      ]
+    },
+    {
+      "name": "Control Loop / PLL Controller",
       "requirements": [
         "Pll Kp",
         "Pll Ti",
         "Pll Lpf",
         "Pll Epsilon"
-      ]
-    },
-    {
-      "name": "Control Loop",
-      "requirements": [
-        "Current Deadband",
-        "Current Bandwidth"
       ]
     },
     {
@@ -273,12 +279,6 @@
         "Q Slew",
         "Current Limit",
         "Pq Lpf"
-      ]
-    },
-    {
-      "name": "Control Loop / FDRC Controller",
-      "requirements": [
-        "Fdrc Min Frequency"
       ]
     },
     {
@@ -303,7 +303,5 @@
     "Control Features",
     "Runtime"
   ],
-  "option_macro_groups": [
-    "Option Macros"
-  ]
+  "option_macro_groups": []
 }

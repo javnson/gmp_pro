@@ -12,7 +12,7 @@ PGS_INV_GFM_COMMON_SDPE_PROJECT_SUITE = 'pgs_inv_GFM_inverter';
 
 PGS_INV_GFM_COMMON_SDPE_PROJECT_VERSION = '1.0.0';
 
-PGS_INV_GFM_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-07-28';
+PGS_INV_GFM_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-08-08';
 
 %% Control Algorithm
 % Enable the established discrete controller anti-saturation path.
@@ -39,6 +39,11 @@ GFM_ENABLE_VOLTAGE_CIRCLE_LIMIT = true;
 
 % ENABLE_GMP_DL_PIL_SIM is disabled in the SDPE project requirement.
 % ENABLE_GMP_DL_PIL_SIM = true;
+
+%% Control Algorithm
+% BUILD_LEVEL 5 grid-forming technique: 1=P-f/Q-V droop, 2=virtual synchronous machine, 3=droop angle source plus virtual impedance.
+% Options: (1), (2), (3)
+GFM_CONTROL_TECHNOLOGY = 1;
 
 %% Requirement bindings
 % Nominal grid phase-voltage magnitude in controller per unit.
@@ -107,6 +112,27 @@ GFM_DROOP_ACTIVE_POWER_REF_PU = 0.0;
 % Default reactive-power reference for the droop algorithm.
 GFM_DROOP_REACTIVE_POWER_REF_PU = 0.0;
 
+% VSM normalized swing-equation inertia in seconds.
+GFM_VSM_INERTIA_S = 1.0;
+
+% VSM damping power coefficient in power PU per hertz.
+GFM_VSM_DAMPING_PU_PER_HZ = 2.0;
+
+% VSM reactive-power voltage droop in voltage PU per reactive-power PU.
+GFM_VSM_Q_DROOP_V_PER_PU = 0.05;
+
+% VSM active/reactive-power measurement low-pass cutoff.
+GFM_VSM_POWER_LPF_HZ = 10.0;
+
+% Virtual resistance used to condition the voltage-loop reference.
+GFM_VIRTUAL_IMPEDANCE_R_PU = 0.03;
+
+% Virtual reactance used to condition the voltage-loop reference.
+GFM_VIRTUAL_IMPEDANCE_X_PU = 0.03;
+
+% Circular voltage-reference limit after virtual-impedance compensation.
+GFM_VIRTUAL_IMPEDANCE_VOLTAGE_LIMIT_PU = 0.60;
+
 % PLL-to-grid-forming phasor and current-command blend duration.
 GFM_TRANSITION_TIME_S = 0.10;
 
@@ -145,6 +171,73 @@ GFM_CIA402_OPERATION_ENABLE_DELAY_MS = 100;
 
 % PLL lock-error threshold used before grid-forming takeover.
 CTRL_SPLL_EPSILON = float2ctrl(0.005);
+
+%% SDPE project summary
+fprintf('\n============================================================\n');
+fprintf('SDPE Project : %s\n', 'PGS Grid-Forming Inverter Common Settings');
+fprintf('Project ID   : %s\n', 'pgs_inv_gfm_common');
+fprintf('Suite        : %s\n', 'pgs_inv_GFM_inverter');
+fprintf('Version      : %s\n', '1.0.0');
+fprintf('Hardware (0):\n');
+fprintf('Common requirements (0):\n');
+fprintf('Enabled variables (50):\n');
+fprintf('  CTRL_SPLL_EPSILON = '); disp(CTRL_SPLL_EPSILON);
+fprintf('  GFM_ADC_CALIBRATOR_FC_HZ = '); disp(GFM_ADC_CALIBRATOR_FC_HZ);
+fprintf('  GFM_ADC_CALIBRATOR_Q = '); disp(GFM_ADC_CALIBRATOR_Q);
+fprintf('  GFM_CIA402_OPERATION_ENABLE_DELAY_MS = '); disp(GFM_CIA402_OPERATION_ENABLE_DELAY_MS);
+fprintf('  GFM_CONTROL_TECHNOLOGY = '); disp(GFM_CONTROL_TECHNOLOGY);
+fprintf('  GFM_CURRENT_LEVEL2_ID_PU = '); disp(GFM_CURRENT_LEVEL2_ID_PU);
+fprintf('  GFM_CURRENT_LEVEL2_IQ_PU = '); disp(GFM_CURRENT_LEVEL2_IQ_PU);
+fprintf('  GFM_CURRENT_LEVEL4_ID_PU = '); disp(GFM_CURRENT_LEVEL4_ID_PU);
+fprintf('  GFM_CURRENT_LEVEL4_IQ_PU = '); disp(GFM_CURRENT_LEVEL4_IQ_PU);
+fprintf('  GFM_DROOP_ACTIVE_POWER_REF_PU = '); disp(GFM_DROOP_ACTIVE_POWER_REF_PU);
+fprintf('  GFM_DROOP_FREQUENCY_DELTA_LIMIT_HZ = '); disp(GFM_DROOP_FREQUENCY_DELTA_LIMIT_HZ);
+fprintf('  GFM_DROOP_POWER_LPF_HZ = '); disp(GFM_DROOP_POWER_LPF_HZ);
+fprintf('  GFM_DROOP_P_HZ_PER_PU = '); disp(GFM_DROOP_P_HZ_PER_PU);
+fprintf('  GFM_DROOP_Q_V_PER_PU = '); disp(GFM_DROOP_Q_V_PER_PU);
+fprintf('  GFM_DROOP_REACTIVE_POWER_REF_PU = '); disp(GFM_DROOP_REACTIVE_POWER_REF_PU);
+fprintf('  GFM_DROOP_VOLTAGE_MAX_PU = '); disp(GFM_DROOP_VOLTAGE_MAX_PU);
+fprintf('  GFM_DROOP_VOLTAGE_MIN_PU = '); disp(GFM_DROOP_VOLTAGE_MIN_PU);
+fprintf('  GFM_ENABLE_VOLTAGE_CIRCLE_LIMIT = '); disp(GFM_ENABLE_VOLTAGE_CIRCLE_LIMIT);
+fprintf('  GFM_ENABLE_VOLTAGE_DECOUPLE = '); disp(GFM_ENABLE_VOLTAGE_DECOUPLE);
+fprintf('  GFM_GRID_FREQUENCY_HZ = '); disp(GFM_GRID_FREQUENCY_HZ);
+fprintf('  GFM_GRID_VOLTAGE_PU = '); disp(GFM_GRID_VOLTAGE_PU);
+fprintf('  GFM_OPEN_LOOP_VD_PU = '); disp(GFM_OPEN_LOOP_VD_PU);
+fprintf('  GFM_OPEN_LOOP_VQ_PU = '); disp(GFM_OPEN_LOOP_VQ_PU);
+fprintf('  GFM_SYNC_HOLD_TIME_S = '); disp(GFM_SYNC_HOLD_TIME_S);
+fprintf('  GFM_SYNC_ID_PU = '); disp(GFM_SYNC_ID_PU);
+fprintf('  GFM_SYNC_IQ_PU = '); disp(GFM_SYNC_IQ_PU);
+fprintf('  GFM_SYNC_PLL_ERROR_PU = '); disp(GFM_SYNC_PLL_ERROR_PU);
+fprintf('  GFM_TRANSITION_TIME_S = '); disp(GFM_TRANSITION_TIME_S);
+fprintf('  GFM_VIRTUAL_IMPEDANCE_R_PU = '); disp(GFM_VIRTUAL_IMPEDANCE_R_PU);
+fprintf('  GFM_VIRTUAL_IMPEDANCE_VOLTAGE_LIMIT_PU = '); disp(GFM_VIRTUAL_IMPEDANCE_VOLTAGE_LIMIT_PU);
+fprintf('  GFM_VIRTUAL_IMPEDANCE_X_PU = '); disp(GFM_VIRTUAL_IMPEDANCE_X_PU);
+fprintf('  GFM_VOLTAGE_CIRCLE_LIMIT_PU = '); disp(GFM_VOLTAGE_CIRCLE_LIMIT_PU);
+fprintf('  GFM_VOLTAGE_LOOP_BW_HZ = '); disp(GFM_VOLTAGE_LOOP_BW_HZ);
+fprintf('  GFM_VOLTAGE_LOOP_ZERO_HZ = '); disp(GFM_VOLTAGE_LOOP_ZERO_HZ);
+fprintf('  GFM_VOLTAGE_SQUARE_LIMIT_PU = '); disp(GFM_VOLTAGE_SQUARE_LIMIT_PU);
+fprintf('  GFM_VOLTAGE_VD_PU = '); disp(GFM_VOLTAGE_VD_PU);
+fprintf('  GFM_VOLTAGE_VQ_PU = '); disp(GFM_VOLTAGE_VQ_PU);
+fprintf('  GFM_VSM_DAMPING_PU_PER_HZ = '); disp(GFM_VSM_DAMPING_PU_PER_HZ);
+fprintf('  GFM_VSM_INERTIA_S = '); disp(GFM_VSM_INERTIA_S);
+fprintf('  GFM_VSM_POWER_LPF_HZ = '); disp(GFM_VSM_POWER_LPF_HZ);
+fprintf('  GFM_VSM_Q_DROOP_V_PER_PU = '); disp(GFM_VSM_Q_DROOP_V_PER_PU);
+fprintf('  GFM_ZERO_QPR_CUTOFF_HZ = '); disp(GFM_ZERO_QPR_CUTOFF_HZ);
+fprintf('  GFM_ZERO_QPR_KP = '); disp(GFM_ZERO_QPR_KP);
+fprintf('  GFM_ZERO_QPR_KR = '); disp(GFM_ZERO_QPR_KR);
+fprintf('  GFM_ZERO_VOLTAGE_LIMIT_PU = '); disp(GFM_ZERO_VOLTAGE_LIMIT_PU);
+fprintf('  PGS_INV_GFM_COMMON_SDPE_PROJECT_ID = '); disp(PGS_INV_GFM_COMMON_SDPE_PROJECT_ID);
+fprintf('  PGS_INV_GFM_COMMON_SDPE_PROJECT_SUITE = '); disp(PGS_INV_GFM_COMMON_SDPE_PROJECT_SUITE);
+fprintf('  PGS_INV_GFM_COMMON_SDPE_PROJECT_UPDATED_AT = '); disp(PGS_INV_GFM_COMMON_SDPE_PROJECT_UPDATED_AT);
+fprintf('  PGS_INV_GFM_COMMON_SDPE_PROJECT_VERSION = '); disp(PGS_INV_GFM_COMMON_SDPE_PROJECT_VERSION);
+fprintf('  USE_DEBUG_DISCRETE_PID = '); disp(USE_DEBUG_DISCRETE_PID);
+fprintf('Disabled macros (5):\n');
+fprintf('  - ENABLE_GMP_DL_PIL_SIM\n');
+fprintf('  - GFM_ENABLE_VOLTAGE_SQUARE_LIMIT\n');
+fprintf('  - SPECIFY_ENABLE_ADC_CALIBRATE\n');
+fprintf('  - USING_3D_SVPWM\n');
+fprintf('  - USING_DSOGI_PLL\n');
+fprintf('============================================================\n');
 
 %% Local helpers
 function value = sdpe_select(condition, true_value, false_value)

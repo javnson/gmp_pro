@@ -23,7 +23,7 @@ extern "C"
 #define PGS_SINV_RC_COMMON_SDPE_PROJECT_ID "pgs_sinv_rc_common"
 #define PGS_SINV_RC_COMMON_SDPE_PROJECT_SUITE "pgs_sinv_rc"
 #define PGS_SINV_RC_COMMON_SDPE_PROJECT_VERSION "1.0.0"
-#define PGS_SINV_RC_COMMON_SDPE_PROJECT_UPDATED_AT "2026-07-28"
+#define PGS_SINV_RC_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-08"
 
 //=================================================================================================
 /**
@@ -58,57 +58,86 @@ extern "C"
 /**
  * @brief Nominal grid frequency in Hz.
  */
+#ifndef CTRL_GRID_FREQUENCY
 #define CTRL_GRID_FREQUENCY (50.0f)
-
-/**
- * @brief SOGI PLL proportional gain.
- */
-#define CTRL_PLL_KP (10.0f)
-
-/**
- * @brief SOGI PLL integral time constant in seconds.
- */
-#define CTRL_PLL_TI (0.02f)
-
-/**
- * @brief PLL error-filter cutoff frequency in Hz.
- */
-#define CTRL_PLL_LPF_FC (20.0f)
-
-/**
- * @brief PLL frequency-error lock threshold in PU.
- */
-#define CTRL_SPLL_EPSILON (0.005f)
-
-/**
- * @brief Power measurement low-pass cutoff frequency in Hz.
- */
-#define CTRL_PQ_LPF_FC (200.0f)
-
-/**
- * @brief Peak current command limit in PU.
- */
-#define CTRL_CURRENT_LIMIT_PU (0.9f)
+#endif // CTRL_GRID_FREQUENCY
 
 /**
  * @brief Minimum voltage magnitude used by the P/Q reference generator.
  */
+#ifndef CTRL_GRID_VMIN_PU
 #define CTRL_GRID_VMIN_PU (0.1f)
+#endif // CTRL_GRID_VMIN_PU
 
 /**
- * @brief Active-power command slew limit in PU/s.
+ * @brief SOGI PLL proportional gain.
  */
-#define CTRL_P_SLEW_PU_S (5.0f)
+#ifndef CTRL_PLL_KP
+#define CTRL_PLL_KP (10.0f)
+#endif // CTRL_PLL_KP
 
 /**
- * @brief Reactive-power command slew limit in PU/s.
+ * @brief SOGI PLL integral time constant in seconds.
  */
-#define CTRL_Q_SLEW_PU_S (5.0f)
+#ifndef CTRL_PLL_TI
+#define CTRL_PLL_TI (0.02f)
+#endif // CTRL_PLL_TI
+
+/**
+ * @brief PLL error-filter cutoff frequency in Hz.
+ */
+#ifndef CTRL_PLL_LPF_FC
+#define CTRL_PLL_LPF_FC (20.0f)
+#endif // CTRL_PLL_LPF_FC
+
+/**
+ * @brief PLL frequency-error lock threshold in PU.
+ */
+#ifndef CTRL_SPLL_EPSILON
+#define CTRL_SPLL_EPSILON (0.005f)
+#endif // CTRL_SPLL_EPSILON
 
 /**
  * @brief Current deadband used by PWM dead-time compensation.
  */
+#ifndef CTRL_CURRENT_DB_PU
 #define CTRL_CURRENT_DB_PU (0.01f)
+#endif // CTRL_CURRENT_DB_PU
+
+/**
+ * @brief Active-power command slew limit in PU/s.
+ */
+#ifndef CTRL_P_SLEW_PU_S
+#define CTRL_P_SLEW_PU_S (5.0f)
+#endif // CTRL_P_SLEW_PU_S
+
+/**
+ * @brief Reactive-power command slew limit in PU/s.
+ */
+#ifndef CTRL_Q_SLEW_PU_S
+#define CTRL_Q_SLEW_PU_S (5.0f)
+#endif // CTRL_Q_SLEW_PU_S
+
+/**
+ * @brief Peak current command limit in PU.
+ */
+#ifndef CTRL_CURRENT_LIMIT_PU
+#define CTRL_CURRENT_LIMIT_PU (0.9f)
+#endif // CTRL_CURRENT_LIMIT_PU
+
+/**
+ * @brief Power measurement low-pass cutoff frequency in Hz.
+ */
+#ifndef CTRL_PQ_LPF_FC
+#define CTRL_PQ_LPF_FC (200.0f)
+#endif // CTRL_PQ_LPF_FC
+
+/**
+ * @brief Minimum fundamental tracked by FDRC in Hz.
+ */
+#ifndef CTRL_FDRC_MIN_FREQ
+#define CTRL_FDRC_MIN_FREQ (45.0f)
+#endif // CTRL_FDRC_MIN_FREQ
 
 /**
  * @brief QPR current-loop crossover target in Hz.
@@ -116,34 +145,9 @@ extern "C"
 #define SINV_CURRENT_LOOP_BANDWIDTH_HZ (600.0f)
 
 /**
- * @brief Minimum fundamental tracked by FDRC in Hz.
+ * @brief Minimum operation-enabled transition delay.
  */
-#define CTRL_FDRC_MIN_FREQ (45.0f)
-
-/**
- * @brief Settling time before repetitive control starts learning.
- */
-#define SINV_FDRC_ENABLE_DELAY_MS (300)
-
-/**
- * @brief Repetitive-control learning gain.
- */
-#define SINV_FDRC_LEARNING_GAIN (0.10f)
-
-/**
- * @brief FDRC robustness-filter cutoff frequency.
- */
-#define SINV_FDRC_Q_FILTER_HZ (1000.0f)
-
-/**
- * @brief Plant-delay compensation in controller samples.
- */
-#define SINV_FDRC_LEAD_STEPS (3.0f)
-
-/**
- * @brief Current-error threshold above which RC learning is frozen.
- */
-#define SINV_FDRC_FREEZE_ERROR_PU (0.05f)
+#define SINV_CIA402_OPERATION_ENABLE_DELAY_MS (100)
 
 /**
  * @brief BUILD_LEVEL 1 sinusoidal H-bridge voltage amplitude.
@@ -171,44 +175,9 @@ extern "C"
 #define SINV_LEVEL4_ACTIVE_POWER_REF_PU (0.15f)
 
 /**
- * @brief Active-power outer-loop proportional gain.
- */
-#define SINV_POWER_LOOP_KP (0.6f)
-
-/**
- * @brief Active-power outer-loop integral gain per second.
- */
-#define SINV_POWER_LOOP_KI (8.0f)
-
-/**
  * @brief BUILD_LEVEL 5 physical DC bus voltage target.
  */
 #define SINV_DC_BUS_REF_V (60.0f)
-
-/**
- * @brief DC-bus outer-loop proportional gain.
- */
-#define SINV_DC_BUS_LOOP_KP (0.8f)
-
-/**
- * @brief DC-bus outer-loop integral gain per second.
- */
-#define SINV_DC_BUS_LOOP_KI (12.0f)
-
-/**
- * @brief Symmetric outer-loop active-power command limit.
- */
-#define SINV_OUTER_LOOP_POWER_LIMIT_PU (0.65f)
-
-/**
- * @brief Power and DC-bus outer-loop execution frequency.
- */
-#define SINV_OUTER_LOOP_FREQUENCY_HZ (1000.0f)
-
-/**
- * @brief Minimum operation-enabled transition delay.
- */
-#define SINV_CIA402_OPERATION_ENABLE_DELAY_MS (100)
 
 // User project tail code
 // SDPE extension point: add before_footer code in the Project Requirement Code page if needed.

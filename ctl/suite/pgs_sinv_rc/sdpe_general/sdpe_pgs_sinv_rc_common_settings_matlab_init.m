@@ -12,7 +12,7 @@ PGS_SINV_RC_COMMON_SDPE_PROJECT_SUITE = 'pgs_sinv_rc';
 
 PGS_SINV_RC_COMMON_SDPE_PROJECT_VERSION = '1.0.0';
 
-PGS_SINV_RC_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-07-28';
+PGS_SINV_RC_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-08-08';
 
 %% Control Features
 % FDRC master switch. Select this switch to enable delayed insertion of the frequency-adaptive repetitive controller; clear it to keep FDRC disabled at every BUILD_LEVEL.
@@ -29,6 +29,9 @@ CIA402_CONFIG_ENABLE_SEQUENCE_SWITCH = true;
 % Nominal grid frequency in Hz.
 CTRL_GRID_FREQUENCY = 50.0;
 
+% Minimum voltage magnitude used by the P/Q reference generator.
+CTRL_GRID_VMIN_PU = 0.1;
+
 % SOGI PLL proportional gain.
 CTRL_PLL_KP = 10.0;
 
@@ -41,14 +44,8 @@ CTRL_PLL_LPF_FC = 20.0;
 % PLL frequency-error lock threshold in PU.
 CTRL_SPLL_EPSILON = 0.005;
 
-% Power measurement low-pass cutoff frequency in Hz.
-CTRL_PQ_LPF_FC = 200.0;
-
-% Peak current command limit in PU.
-CTRL_CURRENT_LIMIT_PU = 0.9;
-
-% Minimum voltage magnitude used by the P/Q reference generator.
-CTRL_GRID_VMIN_PU = 0.1;
+% Current deadband used by PWM dead-time compensation.
+CTRL_CURRENT_DB_PU = 0.01;
 
 % Active-power command slew limit in PU/s.
 CTRL_P_SLEW_PU_S = 5.0;
@@ -56,29 +53,20 @@ CTRL_P_SLEW_PU_S = 5.0;
 % Reactive-power command slew limit in PU/s.
 CTRL_Q_SLEW_PU_S = 5.0;
 
-% Current deadband used by PWM dead-time compensation.
-CTRL_CURRENT_DB_PU = 0.01;
+% Peak current command limit in PU.
+CTRL_CURRENT_LIMIT_PU = 0.9;
 
-% QPR current-loop crossover target in Hz.
-SINV_CURRENT_LOOP_BANDWIDTH_HZ = 600.0;
+% Power measurement low-pass cutoff frequency in Hz.
+CTRL_PQ_LPF_FC = 200.0;
 
 % Minimum fundamental tracked by FDRC in Hz.
 CTRL_FDRC_MIN_FREQ = 45.0;
 
-% Settling time before repetitive control starts learning.
-SINV_FDRC_ENABLE_DELAY_MS = 300;
+% QPR current-loop crossover target in Hz.
+SINV_CURRENT_LOOP_BANDWIDTH_HZ = 600.0;
 
-% Repetitive-control learning gain.
-SINV_FDRC_LEARNING_GAIN = 0.10;
-
-% FDRC robustness-filter cutoff frequency.
-SINV_FDRC_Q_FILTER_HZ = 1000.0;
-
-% Plant-delay compensation in controller samples.
-SINV_FDRC_LEAD_STEPS = 3.0;
-
-% Current-error threshold above which RC learning is frozen.
-SINV_FDRC_FREEZE_ERROR_PU = 0.05;
+% Minimum operation-enabled transition delay.
+SINV_CIA402_OPERATION_ENABLE_DELAY_MS = 100;
 
 % BUILD_LEVEL 1 sinusoidal H-bridge voltage amplitude.
 SINV_LEVEL1_VOLTAGE_REF_PU = 0.35;
@@ -95,29 +83,47 @@ SINV_LEVEL3_REACTIVE_POWER_REF_PU = 0.0;
 % BUILD_LEVEL 4 measured active-power closed-loop target.
 SINV_LEVEL4_ACTIVE_POWER_REF_PU = 0.15;
 
-% Active-power outer-loop proportional gain.
-SINV_POWER_LOOP_KP = 0.6;
-
-% Active-power outer-loop integral gain per second.
-SINV_POWER_LOOP_KI = 8.0;
-
 % BUILD_LEVEL 5 physical DC bus voltage target.
 SINV_DC_BUS_REF_V = 60.0;
 
-% DC-bus outer-loop proportional gain.
-SINV_DC_BUS_LOOP_KP = 0.8;
-
-% DC-bus outer-loop integral gain per second.
-SINV_DC_BUS_LOOP_KI = 12.0;
-
-% Symmetric outer-loop active-power command limit.
-SINV_OUTER_LOOP_POWER_LIMIT_PU = 0.65;
-
-% Power and DC-bus outer-loop execution frequency.
-SINV_OUTER_LOOP_FREQUENCY_HZ = 1000.0;
-
-% Minimum operation-enabled transition delay.
-SINV_CIA402_OPERATION_ENABLE_DELAY_MS = 100;
+%% SDPE project summary
+fprintf('\n============================================================\n');
+fprintf('SDPE Project : %s\n', 'PGS Single-Phase Inverter Common Control');
+fprintf('Project ID   : %s\n', 'pgs_sinv_rc_common');
+fprintf('Suite        : %s\n', 'pgs_sinv_rc');
+fprintf('Version      : %s\n', '1.0.0');
+fprintf('Hardware (0):\n');
+fprintf('Common requirements (0):\n');
+fprintf('Enabled variables (27):\n');
+fprintf('  CIA402_CONFIG_ENABLE_SEQUENCE_SWITCH = '); disp(CIA402_CONFIG_ENABLE_SEQUENCE_SWITCH);
+fprintf('  CTRL_CURRENT_DB_PU = '); disp(CTRL_CURRENT_DB_PU);
+fprintf('  CTRL_CURRENT_LIMIT_PU = '); disp(CTRL_CURRENT_LIMIT_PU);
+fprintf('  CTRL_FDRC_MIN_FREQ = '); disp(CTRL_FDRC_MIN_FREQ);
+fprintf('  CTRL_GRID_FREQUENCY = '); disp(CTRL_GRID_FREQUENCY);
+fprintf('  CTRL_GRID_VMIN_PU = '); disp(CTRL_GRID_VMIN_PU);
+fprintf('  CTRL_PLL_KP = '); disp(CTRL_PLL_KP);
+fprintf('  CTRL_PLL_LPF_FC = '); disp(CTRL_PLL_LPF_FC);
+fprintf('  CTRL_PLL_TI = '); disp(CTRL_PLL_TI);
+fprintf('  CTRL_PQ_LPF_FC = '); disp(CTRL_PQ_LPF_FC);
+fprintf('  CTRL_P_SLEW_PU_S = '); disp(CTRL_P_SLEW_PU_S);
+fprintf('  CTRL_Q_SLEW_PU_S = '); disp(CTRL_Q_SLEW_PU_S);
+fprintf('  CTRL_SPLL_EPSILON = '); disp(CTRL_SPLL_EPSILON);
+fprintf('  PGS_SINV_RC_COMMON_SDPE_PROJECT_ID = '); disp(PGS_SINV_RC_COMMON_SDPE_PROJECT_ID);
+fprintf('  PGS_SINV_RC_COMMON_SDPE_PROJECT_SUITE = '); disp(PGS_SINV_RC_COMMON_SDPE_PROJECT_SUITE);
+fprintf('  PGS_SINV_RC_COMMON_SDPE_PROJECT_UPDATED_AT = '); disp(PGS_SINV_RC_COMMON_SDPE_PROJECT_UPDATED_AT);
+fprintf('  PGS_SINV_RC_COMMON_SDPE_PROJECT_VERSION = '); disp(PGS_SINV_RC_COMMON_SDPE_PROJECT_VERSION);
+fprintf('  SINV_CIA402_OPERATION_ENABLE_DELAY_MS = '); disp(SINV_CIA402_OPERATION_ENABLE_DELAY_MS);
+fprintf('  SINV_CURRENT_LOOP_BANDWIDTH_HZ = '); disp(SINV_CURRENT_LOOP_BANDWIDTH_HZ);
+fprintf('  SINV_DC_BUS_REF_V = '); disp(SINV_DC_BUS_REF_V);
+fprintf('  SINV_ENABLE_GRID_VOLTAGE_FEEDFORWARD = '); disp(SINV_ENABLE_GRID_VOLTAGE_FEEDFORWARD);
+fprintf('  SINV_ENABLE_REPETITIVE_CONTROL = '); disp(SINV_ENABLE_REPETITIVE_CONTROL);
+fprintf('  SINV_LEVEL1_VOLTAGE_REF_PU = '); disp(SINV_LEVEL1_VOLTAGE_REF_PU);
+fprintf('  SINV_LEVEL2_CURRENT_REF_PEAK_PU = '); disp(SINV_LEVEL2_CURRENT_REF_PEAK_PU);
+fprintf('  SINV_LEVEL3_ACTIVE_POWER_REF_PU = '); disp(SINV_LEVEL3_ACTIVE_POWER_REF_PU);
+fprintf('  SINV_LEVEL3_REACTIVE_POWER_REF_PU = '); disp(SINV_LEVEL3_REACTIVE_POWER_REF_PU);
+fprintf('  SINV_LEVEL4_ACTIVE_POWER_REF_PU = '); disp(SINV_LEVEL4_ACTIVE_POWER_REF_PU);
+fprintf('Disabled macros (0):\n');
+fprintf('============================================================\n');
 
 %% Local helpers
 function value = sdpe_select(condition, true_value, false_value)

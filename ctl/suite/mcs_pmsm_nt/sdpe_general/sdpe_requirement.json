@@ -135,6 +135,96 @@
       "description": "Phase-current hysteresis band in amperes used to prevent dead-time compensation direction chatter around zero current."
     },
     {
+      "role": "Rated Speed Rpm",
+      "macro": "CTRL_SPEED_RPM_BASE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "${sm060r20b30mnad.Max Speed}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Rs",
+      "macro": "MOTOR_PARAM_RS",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "export": "${sm060r20b30mnad.rs}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Ls",
+      "macro": "MOTOR_PARAM_LS",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "export": "${sm060r20b30mnad.ld}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Ld",
+      "macro": "MOTOR_PARAM_LD",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "export": "${sm060r20b30mnad.ld}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Lq",
+      "macro": "MOTOR_PARAM_LQ",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "export": "${sm060r20b30mnad.lq}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Flux",
+      "macro": "MOTOR_PARAM_FLUX",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "export": "${sm060r20b30mnad.flux}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Pole Pairs",
+      "macro": "MOTOR_PARAM_POLE_PAIRS",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "export": "${sm060r20b30mnad.pole_pairs}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Load Inertia",
+      "macro": "MOTOR_PARAM_INERTIA",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "export": "${sm060r20b30mnad.Inertia}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Friction",
+      "macro": "MOTOR_PARAM_FRICTION",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "export": "${sm060r20b30mnad.Friction}"
+      },
+      "description": ""
+    },
+    {
       "role": "Encoder Speed Filter Cutoff",
       "macro": "MCS_ENCODER_SPEED_FILTER_FC_HZ",
       "enabled": true,
@@ -145,74 +235,24 @@
       "description": "Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed."
     },
     {
-      "role": "Mech Position Kp",
-      "macro": "MCS_MECH_POSITION_KP_PU",
+      "role": "Adc Calibrator Cutoff",
+      "macro": "MCS_ADC_CALIBRATOR_FC_HZ",
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "5.0"
+        "float": "20.0"
       },
-      "description": "Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu."
+      "description": "Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets."
     },
     {
-      "role": "Mech Position Ki",
-      "macro": "MCS_MECH_POSITION_KI_PU_S",
+      "role": "Adc Calibrator Quality Factor",
+      "macro": "MCS_ADC_CALIBRATOR_Q",
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "1.0"
+        "float": "0.707"
       },
-      "description": "Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally."
-    },
-    {
-      "role": "Mech Velocity Kp",
-      "macro": "MCS_MECH_VELOCITY_KP_PU",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "float": "5.0"
-      },
-      "description": "Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu."
-    },
-    {
-      "role": "Mech Velocity Ki",
-      "macro": "MCS_MECH_VELOCITY_KI_PU_S",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "float": "1.0"
-      },
-      "description": "Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally."
-    },
-    {
-      "role": "Commissioning Id Reference",
-      "macro": "MCS_COMMISSIONING_ID_REF_A",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "float": "1.0"
-      },
-      "description": "D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE."
-    },
-    {
-      "role": "Commissioning Iq Reference",
-      "macro": "MCS_COMMISSIONING_IQ_REF_A",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "float": "1.0"
-      },
-      "description": "Q-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE."
-    },
-    {
-      "role": "Commissioning Speed Reference",
-      "macro": "MCS_COMMISSIONING_SPEED_REF_RPM",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "float": "300.0"
-      },
-      "description": "Mechanical speed reference in rpm used by BUILD_LEVEL 4 commissioning. Converted to PU using MOTOR_PARAM_MAX_SPEED."
+      "description": "Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response."
     },
     {
       "role": "Mech Speed Limit",
@@ -265,94 +305,114 @@
       "description": ""
     },
     {
-      "role": "Max DC Bus Voltage",
-      "macro": "MCS_MIN_DC_BUS_VOLTAGE_V",
+      "role": "Max Shutdown Current",
+      "macro": "MCS_MAX_SHUTDOWN_CURRENT_A",
       "enabled": true,
-      "weak": false,
+      "weak": true,
       "binding": {
-        "literal": "(CTRL_DCBUS_VOLTAGE*0.2f)"
+        "float": "10.0"
       },
-      "description": ""
+      "description": "The current limit value at which the machine must be shut down."
     },
     {
-      "role": "Load Inertia",
-      "macro": "MOTOR_PARAM_INERTIA",
+      "role": "Max Voltage For Circular Saturation",
+      "macro": "MCS_MAX_CIR_SATURATION_VOLTAGE_V",
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "${sm060r20b30mnad.Inertia}"
+        "float": "10.0"
       },
-      "description": ""
+      "description": "Circular saturation limit for voltage vector magnitude in V."
     },
     {
-      "role": "Motor Flux",
-      "macro": "MOTOR_PARAM_FLUX",
+      "role": "Commissioning Id Reference",
+      "macro": "MCS_COMMISSIONING_ID_REF_A",
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "${sm060r20b30mnad.flux}"
+        "float": "1.0"
       },
-      "description": ""
+      "description": "D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE."
     },
     {
-      "role": "Motor Ld",
-      "macro": "MOTOR_PARAM_LD",
+      "role": "Commissioning Iq Reference",
+      "macro": "MCS_COMMISSIONING_IQ_REF_A",
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "${sm060r20b30mnad.ld}"
+        "float": "1.0"
       },
-      "description": ""
+      "description": "Q-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE."
     },
     {
-      "role": "Motor Rs",
-      "macro": "MOTOR_PARAM_RS",
+      "role": "Commissioning Speed Reference",
+      "macro": "MCS_COMMISSIONING_SPEED_REF_RPM",
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "${sm060r20b30mnad.rs}"
+        "float": "300.0"
       },
-      "description": ""
+      "description": "Mechanical speed reference in rpm used by BUILD_LEVEL 4 commissioning. Converted to PU using MOTOR_PARAM_MAX_SPEED."
     },
     {
-      "role": "Motor Lq",
-      "macro": "MOTOR_PARAM_LQ",
+      "role": "Open Loop Frequency",
+      "macro": "MCS_OPEN_LOOP_FREQ_HZ",
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "${sm060r20b30mnad.lq}"
+        "float": "20.0"
       },
-      "description": ""
+      "description": "Electrical frequency command in hertz used by the BUILD_LEVEL 1 V/f path and the BUILD_LEVEL 2 synthetic-angle current-loop path."
     },
     {
-      "role": "Motor Ls",
-      "macro": "MOTOR_PARAM_LS",
+      "role": "Open Loop Frequency Slope",
+      "macro": "MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S",
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "${sm060r20b30mnad.ld}"
+        "float": "20.0"
       },
-      "description": ""
+      "description": "Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator."
     },
     {
-      "role": "Motor Friction",
-      "macro": "MOTOR_PARAM_FRICTION",
+      "role": "Mech Position Kp",
+      "macro": "MCS_MECH_POSITION_KP_PU",
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "${sm060r20b30mnad.Friction}"
+        "float": "5.0"
       },
-      "description": ""
+      "description": "Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu."
     },
     {
-      "role": "Motor Pole Pairs",
-      "macro": "MOTOR_PARAM_POLE_PAIRS",
+      "role": "Mech Position Ki",
+      "macro": "MCS_MECH_POSITION_KI_PU_S",
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "${sm060r20b30mnad.pole_pairs}"
+        "float": "1.0"
       },
-      "description": ""
+      "description": "Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally."
+    },
+    {
+      "role": "Mech Velocity Kp",
+      "macro": "MCS_MECH_VELOCITY_KP_PU",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "5.0"
+      },
+      "description": "Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu."
+    },
+    {
+      "role": "Mech Velocity Ki",
+      "macro": "MCS_MECH_VELOCITY_KI_PU_S",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "1.0"
+      },
+      "description": "Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally."
     },
     {
       "role": "Startup Delay",
@@ -375,24 +435,14 @@
       "description": "Minimum delay in milliseconds before the CiA402 state machine enters Operation Enabled. The project control tick is expressed in milliseconds."
     },
     {
-      "role": "Adc Calibrator Cutoff",
-      "macro": "MCS_ADC_CALIBRATOR_FC_HZ",
+      "role": "Max DC Bus Voltage",
+      "macro": "MCS_MIN_DC_BUS_VOLTAGE_V",
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "20.0"
+        "literal": "(CTRL_DCBUS_VOLTAGE*0.2f)"
       },
-      "description": "Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets."
-    },
-    {
-      "role": "Adc Calibrator Quality Factor",
-      "macro": "MCS_ADC_CALIBRATOR_Q",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "float": "0.707"
-      },
-      "description": "Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response."
+      "description": ""
     }
   ],
   "requirement_groups": [
@@ -405,26 +455,35 @@
       ]
     },
     {
-      "name": "Position Sensor Parameters",
+      "name": "Per-Unit Base Parameters",
+      "requirements": [
+        "Rated Speed Rpm"
+      ]
+    },
+    {
+      "name": "Main Element Parameters / Motor",
+      "requirements": [
+        "Motor Rs",
+        "Motor Ls",
+        "Motor Ld",
+        "Motor Lq",
+        "Motor Flux",
+        "Motor Pole Pairs",
+        "Load Inertia",
+        "Motor Friction"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Position Sensor",
       "requirements": [
         "Encoder Speed Filter Cutoff"
       ]
     },
     {
-      "name": "Control Loop Parameters",
+      "name": "Voltage & Current Sensor / Calibration",
       "requirements": [
-        "Mech Position Kp",
-        "Mech Position Ki",
-        "Mech Velocity Kp",
-        "Mech Velocity Ki"
-      ]
-    },
-    {
-      "name": "Commissioning Defaults",
-      "requirements": [
-        "Commissioning Id Reference",
-        "Commissioning Iq Reference",
-        "Commissioning Speed Reference"
+        "Adc Calibrator Cutoff",
+        "Adc Calibrator Quality Factor"
       ]
     },
     {
@@ -435,29 +494,45 @@
         "Mech Current Limit",
         "Max Voltage For Rect Saturation",
         "Max DC Bus Voltage",
-        "Max DC Bus Voltage"
+        "Max Shutdown Current",
+        "Max Voltage For Circular Saturation"
       ]
     },
     {
-      "name": "Motor Parameters",
+      "name": "Commissioning Defaults",
       "requirements": [
-        "Load Inertia",
-        "Motor Flux",
-        "Motor Ld",
-        "Motor Rs",
-        "Motor Lq",
-        "Motor Ls",
-        "Motor Friction",
-        "Motor Pole Pairs"
+        "Commissioning Id Reference",
+        "Commissioning Iq Reference",
+        "Commissioning Speed Reference",
+        "Open Loop Frequency",
+        "Open Loop Frequency Slope"
+      ]
+    },
+    {
+      "name": "Control Loop / Position Controller",
+      "requirements": [
+        "Mech Position Kp",
+        "Mech Position Ki"
+      ]
+    },
+    {
+      "name": "Control Loop / Speed Controller",
+      "requirements": [
+        "Mech Velocity Kp",
+        "Mech Velocity Ki"
       ]
     },
     {
       "name": "Runtime Parameters",
       "requirements": [
         "Startup Delay",
-        "Cia402 Operation Enable Delay",
-        "Adc Calibrator Cutoff",
-        "Adc Calibrator Quality Factor"
+        "Cia402 Operation Enable Delay"
+      ]
+    },
+    {
+      "name": "Ungrouped",
+      "requirements": [
+        "Max DC Bus Voltage"
       ]
     }
   ],

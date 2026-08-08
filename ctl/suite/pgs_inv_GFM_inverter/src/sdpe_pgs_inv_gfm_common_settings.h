@@ -23,7 +23,7 @@ extern "C"
 #define PGS_INV_GFM_COMMON_SDPE_PROJECT_ID "pgs_inv_gfm_common"
 #define PGS_INV_GFM_COMMON_SDPE_PROJECT_SUITE "pgs_inv_GFM_inverter"
 #define PGS_INV_GFM_COMMON_SDPE_PROJECT_VERSION "1.0.0"
-#define PGS_INV_GFM_COMMON_SDPE_PROJECT_UPDATED_AT "2026-07-28"
+#define PGS_INV_GFM_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-08"
 
 //=================================================================================================
 /**

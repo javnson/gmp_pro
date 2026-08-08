@@ -25,7 +25,8 @@
     {"name":"secondary_voltage_result_base","c_name":"SECONDARY_VOLTAGE_RESULT_BASE","unit":"","required":true,"value_format":"{}","description":"Secondary voltage ADC result base."},
     {"name":"secondary_voltage_soc","c_name":"SECONDARY_VOLTAGE_SOC","unit":"","required":true,"value_format":"{}","description":"Secondary voltage ADC SOC."},
     {"name":"secondary_current_result_base","c_name":"SECONDARY_CURRENT_RESULT_BASE","unit":"","required":true,"value_format":"{}","description":"Secondary current ADC result base."},
-    {"name":"secondary_current_soc","c_name":"SECONDARY_CURRENT_SOC","unit":"","required":true,"value_format":"{}","description":"Secondary current ADC SOC."}
+    {"name":"secondary_current_soc","c_name":"SECONDARY_CURRENT_SOC","unit":"","required":true,"value_format":"{}","description":"Secondary current ADC SOC."},
+    {"name":"status_led_gpio","c_name":"STATUS_LED_GPIO","unit":"","required":true,"value_format":"({}U)","description":"Status LED GPIO number."}
   ],
   "exports": {
     "pwm_pair1_base":{"macro":"{PREFIX}_PWM_PAIR1_BASE","description":"PWM pair 1 base."},
@@ -36,7 +37,8 @@
     "pwm_pair6_base":{"macro":"{PREFIX}_PWM_PAIR6_BASE","description":"PWM pair 6 base."},
     "gate_enable_gpio":{"macro":"{PREFIX}_GATE_ENABLE_GPIO","description":"Active-low gate-buffer GPIO."},
     "tick_timer_base":{"macro":"{PREFIX}_TICK_TIMER_BASE","description":"Scheduler timer base."},
-    "uart_base":{"macro":"{PREFIX}_UART_BASE","description":"Datalink UART base."}
+    "uart_base":{"macro":"{PREFIX}_UART_BASE","description":"Datalink UART base."},
+    "status_led_gpio":{"macro":"{PREFIX}_STATUS_LED_GPIO","description":"Status LED GPIO number."}
   },
   "option_sets": {
     "PWM_BASE": {
@@ -54,12 +56,42 @@
         "EPWM_SYNC_IN_PULSE_SRC_SYNCOUT_EPWM5", "EPWM_SYNC_IN_PULSE_SRC_SYNCOUT_EPWM7"
       ],
       "description": "Sync input source matching the selected time-base master."
+    },
+    "ADC_RESULT_BASE": {
+      "options": [
+        "DIOSCURI_PRIMARY_VOLTAGE_RESULT_BASE", "DIOSCURI_PRIMARY_CURRENT_RESULT_BASE",
+        "DIOSCURI_SECONDARY_VOLTAGE_RESULT_BASE", "DIOSCURI_SECONDARY_CURRENT_RESULT_BASE"
+      ],
+      "description": "Dioscuri CLLLC ADC result-register assignments."
+    },
+    "ADC_SOC": {
+      "options": [
+        "DIOSCURI_PRIMARY_VOLTAGE_SOC", "DIOSCURI_PRIMARY_CURRENT_SOC",
+        "DIOSCURI_SECONDARY_VOLTAGE_SOC", "DIOSCURI_SECONDARY_CURRENT_SOC"
+      ],
+      "description": "Dioscuri CLLLC ADC SOC assignments."
+    },
+    "GATE_ENABLE_GPIO": {
+      "options": ["DIOSCURI_GATE_ENABLE_GPIO"],
+      "description": "Dioscuri gate-buffer enable GPIO."
+    },
+    "SYSTEM_TIMER_BASE": {
+      "options": ["DIOSCURI_TICK_TIMER_BASE"],
+      "description": "Dioscuri scheduler timer assignment."
+    },
+    "UART_BASE": {
+      "options": ["DIOSCURI_UART_BASE"],
+      "description": "Dioscuri datalink UART assignment."
+    },
+    "STATUS_LED_GPIO": {
+      "options": ["DIOSCURI_STATUS_LED_GPIO", "41"],
+      "description": "Dioscuri user LED GPIO assignment."
     }
   },
   "parameter_groups": [
     {"name":"PWM Resources","parameters":["pwm_pair1_base","pwm_pair2_base","pwm_pair3_base","pwm_pair4_base","pwm_pair5_base","pwm_pair6_base","gate_enable_gpio","gate_enable_level","gate_disable_level"]},
     {"name":"ADC Resources","parameters":["primary_voltage_result_base","primary_voltage_soc","primary_current_result_base","primary_current_soc","secondary_voltage_result_base","secondary_voltage_soc","secondary_current_result_base","secondary_current_soc"]},
-    {"name":"System Resources","parameters":["chip","syscfg_file","tick_timer_base","uart_base"]}
+    {"name":"System Resources","parameters":["chip","syscfg_file","tick_timer_base","uart_base","status_led_gpio"]}
   ],
   "tags": ["c2000", "f280025c", "dioscuri", "clllc", "dab"],
   "header_prefix": "",

@@ -185,19 +185,7 @@
     {
       "name": "Main Element Parameters",
       "requirements": [
-        "Input Capacitor ESR"
-      ]
-    },
-    {
-      "name": "Input Current Sensor",
-      "requirements": [
-        "Input Current Sensitivity",
-        "Input Current Bias"
-      ]
-    },
-    {
-      "name": "MOSFET Parameters",
-      "requirements": [
+        "Input Capacitor ESR",
         "MOSFET On Resistance",
         "MOSFET Snubber Resistance",
         "MOSFET Snubber Capacitance",
@@ -205,12 +193,28 @@
         "Diode On Resistance",
         "Switch Inductance"
       ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Input Current Sensor",
+      "requirements": [
+        "Input Current Sensitivity",
+        "Input Current Bias"
+      ]
     }
   ],
   "macro_prefix": "DPS_FSBB_SIM",
   "description": "",
-  "updated_at": "2026-07-16",
+  "updated_at": "2026-08-08",
   "common_requirements": [
     "../../../sdpe_general/sdpe_requirement.json"
+  ],
+  "feature_macro_groups": [
+    "SIL",
+    "Sampling",
+    "PWM",
+    "Controller Settings"
+  ],
+  "option_macro_groups": [
+    "Controller"
   ]
 }

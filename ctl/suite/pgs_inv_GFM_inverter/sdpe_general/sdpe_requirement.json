@@ -5,7 +5,7 @@
   "description": "Platform-independent control contract for the replaceable grid-forming outer loop, voltage loop, GFL-derived current core, and PLL-to-GFM transition.",
   "suite": "pgs_inv_GFM_inverter",
   "version": "1.0.0",
-  "updated_at": "2026-07-28",
+  "updated_at": "2026-08-08",
   "output_header": "sdpe_pgs_inv_gfm_common_settings.h",
   "hardware": [],
   "code_sections": {
@@ -424,7 +424,91 @@
   ],
   "requirement_groups": [
     {
-      "name": "Commissioning Levels",
+      "name": "Per-Unit Base Parameters",
+      "requirements": [
+        "Grid Frequency"
+      ]
+    },
+    {
+      "name": "Control Loop / PLL Controller",
+      "requirements": [
+        "Pll Lock Epsilon",
+        "Sync Pll Error"
+      ]
+    },
+    {
+      "name": "Control Loop / Power Controller",
+      "requirements": [
+        "Droop P",
+        "Droop Q",
+        "Droop Power Lpf",
+        "Droop Freq Limit",
+        "Droop Voltage Min",
+        "Droop Voltage Max",
+        "Droop P Ref",
+        "Droop Q Ref"
+      ]
+    },
+    {
+      "name": "Control Loop / Synchronization Controller",
+      "requirements": [
+        "Transition Time"
+      ]
+    },
+    {
+      "name": "Control Loop / VSM Controller",
+      "requirements": [
+        "Vsm Inertia",
+        "Vsm Damping",
+        "Vsm Q Droop",
+        "Vsm Power Lpf"
+      ]
+    },
+    {
+      "name": "Control Loop / Virtual Impedance Controller",
+      "requirements": [
+        "Virtual Impedance R",
+        "Virtual Impedance X",
+        "Virtual Impedance Voltage Limit"
+      ]
+    },
+    {
+      "name": "Control Loop / Voltage Controller",
+      "requirements": [
+        "Voltage Bw",
+        "Voltage Zero",
+        "Voltage Circle Limit",
+        "Voltage Square Limit",
+        "Sync Hold",
+        "Sync Current Id",
+        "Sync Current Iq",
+        "Grid Voltage Pu",
+        "Zero Voltage Limit"
+      ]
+    },
+    {
+      "name": "Control Loop / Zero-Sequence Controller",
+      "requirements": [
+        "Zero Qpr Kp",
+        "Zero Qpr Kr",
+        "Zero Qpr Cutoff"
+      ]
+    },
+    {
+      "name": "Runtime Parameters",
+      "requirements": [
+        "Cia402 Enable Delay"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Calibration",
+      "requirements": [
+        "Adc Calibrator Cutoff",
+        "Adc Calibrator Q"
+      ]
+    },
+    {
+      "name": "Commissioning Defaults",
       "requirements": [
         "Open Loop Vd",
         "Open Loop Vq",
@@ -435,49 +519,13 @@
         "Voltage Vd",
         "Voltage Vq"
       ]
-    },
-    {
-      "name": "Voltage and Grid-Forming Loops",
-      "requirements": [
-        "Voltage Bw",
-        "Voltage Zero",
-        "Voltage Circle Limit",
-        "Voltage Square Limit",
-        "Droop P",
-        "Droop Q",
-        "Droop Power Lpf",
-        "Droop Freq Limit",
-        "Droop Voltage Min",
-        "Droop Voltage Max",
-        "Droop P Ref",
-        "Droop Q Ref",
-        "Vsm Inertia",
-        "Vsm Damping",
-        "Vsm Q Droop",
-        "Vsm Power Lpf",
-        "Virtual Impedance R",
-        "Virtual Impedance X",
-        "Virtual Impedance Voltage Limit",
-        "Transition Time",
-        "Sync Hold",
-        "Sync Current Id",
-        "Sync Current Iq",
-        "Pll Lock Epsilon"
-      ]
-    },
-    {
-      "name": "System and Four-Wire",
-      "requirements": [
-        "Grid Voltage Pu",
-        "Grid Frequency",
-        "Zero Qpr Kp",
-        "Zero Qpr Kr",
-        "Zero Qpr Cutoff",
-        "Zero Voltage Limit",
-        "Adc Calibrator Cutoff",
-        "Adc Calibrator Q",
-        "Cia402 Enable Delay"
-      ]
     }
+  ],
+  "feature_macro_groups": [
+    "Control Algorithm",
+    "Runtime"
+  ],
+  "option_macro_groups": [
+    "Control Algorithm"
   ]
 }

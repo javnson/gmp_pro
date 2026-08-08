@@ -1,0 +1,483 @@
+{
+  "id": "mcs_pmsm_id_common",
+  "macro_prefix": "MCS_PMSM_ID_COMMON",
+  "display_name": "MCS PMSM Identification Common Control",
+  "description": "Platform-independent motor-control, protection, commissioning and runtime defaults shared by mcs_pmsm_id targets.",
+  "suite": "mcs_pmsm_id",
+  "version": "1.0.0",
+  "updated_at": "2026-08-08",
+  "output_header": "sdpe_mcs_pmsm_id_common_settings.h",
+  "hardware": [],
+  "code_sections": {
+    "after_extern_open": "/* Platform-independent settings only. Project hardware is supplied by the including project header. */",
+    "before_footer": "/* Accept the historical misspelling while all source code uses the canonical switch. */\n#if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM\n#define ENABLE_GMP_DL_PIL_SIM\n#endif\n\n/* Reject unsupported incremental build levels at preprocessing time. */\n#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 4)\n#error \"BUILD_LEVEL must be 1 (V/f), 2 (current loop/synthetic angle), 3 (current loop/encoder), or 4 (speed loop).\"\n#endif"
+  },
+  "feature_macros": [
+    {
+      "group": "Control Algorithm",
+      "macro": "PMSM_CTRL_USING_DISCRETE_CTRL",
+      "enabled": false,
+      "weak": true,
+      "value": "",
+      "description": "Use the discrete controller implementation instead of the default continuous controller path."
+    },
+    {
+      "group": "Control Algorithm",
+      "macro": "_USE_DEBUG_DISCRETE_PID",
+      "enabled": false,
+      "weak": true,
+      "value": "",
+      "description": "Enable the existing discrete-PID anti-saturation debug path."
+    },
+    {
+      "group": "Control Algorithm",
+      "macro": "ENABLE_SMO",
+      "enabled": false,
+      "weak": true,
+      "value": "",
+      "description": "Enable the sliding-mode observer path. Disabled to preserve the current sensored-control build."
+    },
+    {
+      "group": "Control Algorithm",
+      "macro": "ENABLE_MOTOR_FAULT_PROTECTION",
+      "enabled": false,
+      "weak": true,
+      "value": "",
+      "description": "Enable motor fault protection processing."
+    },
+    {
+      "group": "Controller Runtime",
+      "macro": "SPECIFY_ENABLE_ADC_CALIBRATE",
+      "enabled": false,
+      "weak": true,
+      "value": "",
+      "description": "Calibrate ADC offsets before enabling normal control."
+    },
+    {
+      "group": "Controller Runtime",
+      "macro": "ENABLE_GMP_DL_PIL_SIM",
+      "enabled": false,
+      "weak": true,
+      "value": "",
+      "description": "Enable processor-in-the-loop mode and suppress direct PWM controller output."
+    },
+    {
+      "group": "Controller Runtime",
+      "macro": "GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO",
+      "enabled": false,
+      "weak": true,
+      "value": "",
+      "description": "Enable CiA402/GMP framework debug information."
+    },
+    {
+      "group": "PWM Modulator",
+      "macro": "PWM_MODULATOR_USING_NEGATIVE_LOGIC",
+      "enabled": false,
+      "weak": true,
+      "value": "(1)",
+      "description": "Use active-low PWM modulation for the selected inverter gate path."
+    },
+    {
+      "group": "PWM Modulator",
+      "macro": "USING_NPC_MODULATOR",
+      "enabled": false,
+      "weak": true,
+      "value": "",
+      "description": "Use the three-level NPC modulator. Disabled for the two-level three-phase inverter."
+    }
+  ],
+  "option_macros": [
+    {
+      "group": "Controller Options",
+      "macro": "BUILD_LEVEL",
+      "enabled": true,
+      "weak": true,
+      "value": "(2)",
+      "options_preset": "",
+      "options": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)",
+        "(5)",
+        "(6)"
+      ],
+      "description": "Incremental commissioning level. 1: V/f voltage open loop; 2: current loop with synthetic electrical angle; 3: current loop with encoder angle; 4: speed loop with encoder feedback."
+    }
+  ],
+  "requirements": [
+    {
+      "role": "Controller Frequency",
+      "macro": "CONTROLLER_FREQUENCY",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "float": "20e3"
+      },
+      "description": "Main motor-control ISR frequency in hertz."
+    },
+    {
+      "role": "PWM DT Current Deadband",
+      "macro": "MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "float": "0.2"
+      },
+      "description": "Minimum absolute phase current in amperes before PWM dead-time compensation selects a current direction. Converted to PU with CTRL_CURRENT_BASE at initialization."
+    },
+    {
+      "role": "PWM DT Current Hysteresis",
+      "macro": "MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "float": "0.05"
+      },
+      "description": "Phase-current hysteresis band in amperes used to prevent dead-time compensation direction chatter around zero current."
+    },
+    {
+      "role": "Encoder Speed Filter Cutoff",
+      "macro": "MCS_ENCODER_SPEED_FILTER_FC_HZ",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "float": "20.0"
+      },
+      "description": "Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed."
+    },
+    {
+      "role": "Mech Position Kp",
+      "macro": "MCS_MECH_POSITION_KP_PU",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "float": "5.0"
+      },
+      "description": "Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu."
+    },
+    {
+      "role": "Mech Position Ki",
+      "macro": "MCS_MECH_POSITION_KI_PU_S",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "float": "1.0"
+      },
+      "description": "Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally."
+    },
+    {
+      "role": "Mech Velocity Kp",
+      "macro": "MCS_MECH_VELOCITY_KP_PU",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "float": "5.0"
+      },
+      "description": "Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu."
+    },
+    {
+      "role": "Mech Velocity Ki",
+      "macro": "MCS_MECH_VELOCITY_KI_PU_S",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "float": "1.0"
+      },
+      "description": "Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally."
+    },
+    {
+      "role": "Commissioning Id Reference",
+      "macro": "MCS_COMMISSIONING_ID_REF_A",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "float": "1.0"
+      },
+      "description": "D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE."
+    },
+    {
+      "role": "Commissioning Iq Reference",
+      "macro": "MCS_COMMISSIONING_IQ_REF_A",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "float": "1.0"
+      },
+      "description": "Q-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE."
+    },
+    {
+      "role": "Commissioning Speed Reference",
+      "macro": "MCS_COMMISSIONING_SPEED_REF_RPM",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "float": "300.0"
+      },
+      "description": "Mechanical speed reference in rpm used by BUILD_LEVEL 4 commissioning. Converted to PU using MOTOR_PARAM_MAX_SPEED."
+    },
+    {
+      "role": "Mech Speed Limit",
+      "macro": "MCS_MECH_SPEED_LIMIT_RPM",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "float": "3000.0"
+      },
+      "description": "Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit."
+    },
+    {
+      "role": "Mech Speed Slope Limit",
+      "macro": "MCS_MECH_SPEED_SLOPE_RPM_S",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "float": "3000.0"
+      },
+      "description": "Maximum mechanical speed-command slew rate in rpm/s. The configured value corresponds to 1 PU/s for the selected 3000 rpm motor."
+    },
+    {
+      "role": "Mech Current Limit",
+      "macro": "MCS_MECH_CURRENT_LIMIT_A",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "float": "3.0"
+      },
+      "description": "Absolute q-axis current/torque command limit in amperes. It is divided by CTRL_CURRENT_BASE to obtain the controller PU limit; 3 A corresponds to the previous 0.3 PU setting."
+    },
+    {
+      "role": "Max Voltage For Rect Saturation",
+      "macro": "MCS_MAX_RECT_SATURATION_VOLTAGE_V",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "float": "10.0"
+      },
+      "description": "Rectangular saturation limit for d/q axes in V."
+    },
+    {
+      "role": "Max DC Bus Voltage",
+      "macro": "MCS_MAX_DC_BUS_VOLTAGE_V",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "literal": "(CTRL_DCBUS_VOLTAGE*1.2f)"
+      },
+      "description": ""
+    },
+    {
+      "role": "Max DC Bus Voltage",
+      "macro": "MCS_MIN_DC_BUS_VOLTAGE_V",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "literal": "(CTRL_DCBUS_VOLTAGE*0.2f)"
+      },
+      "description": ""
+    },
+    {
+      "role": "Load Inertia",
+      "macro": "MOTOR_PARAM_INERTIA",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "export": "${sm060r20b30mnad.Inertia}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Flux",
+      "macro": "MOTOR_PARAM_FLUX",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "export": "${sm060r20b30mnad.flux}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Ld",
+      "macro": "MOTOR_PARAM_LD",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "export": "${sm060r20b30mnad.ld}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Rs",
+      "macro": "MOTOR_PARAM_RS",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "export": "${sm060r20b30mnad.rs}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Lq",
+      "macro": "MOTOR_PARAM_LQ",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "export": "${sm060r20b30mnad.lq}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Ls",
+      "macro": "MOTOR_PARAM_LS",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "export": "${sm060r20b30mnad.ld}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Friction",
+      "macro": "MOTOR_PARAM_FRICTION",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "export": "${sm060r20b30mnad.Friction}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Pole Pairs",
+      "macro": "MOTOR_PARAM_POLE_PAIRS",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "export": "${sm060r20b30mnad.pole_pairs}"
+      },
+      "description": ""
+    },
+    {
+      "role": "Startup Delay",
+      "macro": "CTRL_STARTUP_DELAY",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "number": "100"
+      },
+      "description": "Controller startup delay in milliseconds."
+    },
+    {
+      "role": "Cia402 Operation Enable Delay",
+      "macro": "MCS_CIA402_OPERATION_ENABLE_DELAY_MS",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "number": "100"
+      },
+      "description": "Minimum delay in milliseconds before the CiA402 state machine enters Operation Enabled. The project control tick is expressed in milliseconds."
+    },
+    {
+      "role": "Adc Calibrator Cutoff",
+      "macro": "MCS_ADC_CALIBRATOR_FC_HZ",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "float": "20.0"
+      },
+      "description": "Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets."
+    },
+    {
+      "role": "Adc Calibrator Quality Factor",
+      "macro": "MCS_ADC_CALIBRATOR_Q",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "float": "0.707"
+      },
+      "description": "Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response."
+    }
+  ],
+  "requirement_groups": [
+    {
+      "name": "Peripheral Parameters",
+      "requirements": [
+        "Controller Frequency",
+        "PWM DT Current Deadband",
+        "PWM DT Current Hysteresis"
+      ]
+    },
+    {
+      "name": "Main Element Parameters / Motor",
+      "requirements": [
+        "Load Inertia",
+        "Motor Flux",
+        "Motor Ld",
+        "Motor Rs",
+        "Motor Lq",
+        "Motor Ls",
+        "Motor Friction",
+        "Motor Pole Pairs"
+      ]
+    },
+    {
+      "name": "Protection Parameters",
+      "requirements": [
+        "Mech Speed Limit",
+        "Mech Speed Slope Limit",
+        "Mech Current Limit",
+        "Max Voltage For Rect Saturation",
+        "Max DC Bus Voltage"
+      ]
+    },
+    {
+      "name": "Control Loop / Position Controller",
+      "requirements": [
+        "Mech Position Kp",
+        "Mech Position Ki"
+      ]
+    },
+    {
+      "name": "Control Loop / Speed Controller",
+      "requirements": [
+        "Mech Velocity Kp",
+        "Mech Velocity Ki"
+      ]
+    },
+    {
+      "name": "Runtime Parameters",
+      "requirements": [
+        "Startup Delay",
+        "Cia402 Operation Enable Delay"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Calibration",
+      "requirements": [
+        "Adc Calibrator Cutoff",
+        "Adc Calibrator Quality Factor"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Position Sensor",
+      "requirements": [
+        "Encoder Speed Filter Cutoff"
+      ]
+    },
+    {
+      "name": "Commissioning Defaults",
+      "requirements": [
+        "Commissioning Id Reference",
+        "Commissioning Iq Reference",
+        "Commissioning Speed Reference"
+      ]
+    }
+  ],
+  "feature_macro_groups": [
+    "Control Algorithm",
+    "Controller Runtime",
+    "PWM Modulator"
+  ],
+  "option_macro_groups": [
+    "Controller Options"
+  ]
+}

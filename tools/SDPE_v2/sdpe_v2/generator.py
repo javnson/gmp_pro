@@ -328,8 +328,9 @@ class HeaderGenerator:
         lines.append("/**")
         parts = str(brief).splitlines() or [""]
         for index, part in enumerate(parts):
-            tag = "@brief " if index == 0 else "       "
-            lines.append(f" * {tag}{part}")
+            tag = "@brief" if index == 0 else "      "
+            suffix = f" {part}" if part else ""
+            lines.append(f" * {tag}{suffix}")
         if unit:
             lines.append(f" * @unit {unit}")
         lines.append(" */")

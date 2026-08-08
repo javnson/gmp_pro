@@ -214,6 +214,14 @@ class SDPEV2Tests(unittest.TestCase):
             self.assertIn("%% Debug Switches", matlab)
             self.assertIn("%% Build Options", matlab)
 
+    def test_empty_project_description_does_not_emit_trailing_whitespace(self) -> None:
+        lib = self.load_library()
+        data = read_project("dps_fsbb_iris_node")
+        data["requirements"][0]["description"] = ""
+        with tempfile.TemporaryDirectory() as tmp:
+            header = HeaderGenerator(lib, Path(tmp)).render_project_header(data)
+            self.assertTrue(all(line.rstrip() == line for line in header.splitlines()))
+
     def test_project_macros_can_be_weak(self) -> None:
         lib = self.load_library()
         data = read_project("dps_fsbb_iris_node")

@@ -139,6 +139,11 @@ extern "C"
  */
 #define DIOSCURI_SECONDARY_CURRENT_SOC SECONDARY_CURRENT
 
+/**
+ * @brief Status LED GPIO number.
+ */
+#define DIOSCURI_STATUS_LED_GPIO (40U)
+
 // Logical exports
 // pwm_pair1_base: DIOSCURI_PWM_PAIR1_BASE
 // pwm_pair2_base: DIOSCURI_PWM_PAIR2_BASE
@@ -149,6 +154,7 @@ extern "C"
 // gate_enable_gpio: DIOSCURI_GATE_ENABLE_GPIO
 // tick_timer_base: DIOSCURI_TICK_TIMER_BASE
 // uart_base: DIOSCURI_UART_BASE
+// status_led_gpio: DIOSCURI_STATUS_LED_GPIO
 
 // User code before footer
 // SDPE extension point: add before_footer code in the Entity Instance Code page if needed.

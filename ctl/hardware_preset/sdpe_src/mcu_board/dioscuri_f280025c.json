@@ -27,6 +27,7 @@
     "secondary_voltage_result_base": "SECONDARY_VOLTAGE_RESULT_BASE",
     "secondary_voltage_soc": "SECONDARY_VOLTAGE",
     "secondary_current_result_base": "SECONDARY_CURRENT_RESULT_BASE",
-    "secondary_current_soc": "SECONDARY_CURRENT"
+    "secondary_current_soc": "SECONDARY_CURRENT",
+    "status_led_gpio": 40
   }
 }

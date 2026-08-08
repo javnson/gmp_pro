@@ -5,7 +5,7 @@
   "description": "F280025C clock, six-pair PWM routing, ADC, UART, scheduler timer and active-low SN74LVC8T245 gate-buffer bindings.",
   "suite": "dps_clllc",
   "version": "1.0.0",
-  "updated_at": "2026-07-20",
+  "updated_at": "2026-08-08",
   "output_header": "sdpe_dps_clllc_dioscuri_settings.h",
   "hardware": [
     {
@@ -107,6 +107,175 @@
       "options_preset": "dioscuri_f280025c.PWM_BASE",
       "options": [],
       "description": "PWM that generates ADC SOCA. Keep this consistent with the SOC trigger selected in SysConfig."
+    },
+    {
+      "group": "ADC Voltage Channel Mapping",
+      "macro": "CLLLC_PRIMARY_V_ADC_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "DIOSCURI_PRIMARY_VOLTAGE_RESULT_BASE",
+      "options_preset": "dioscuri_f280025c.ADC_RESULT_BASE",
+      "options": [
+        "DIOSCURI_PRIMARY_VOLTAGE_RESULT_BASE",
+        "DIOSCURI_PRIMARY_CURRENT_RESULT_BASE",
+        "DIOSCURI_SECONDARY_VOLTAGE_RESULT_BASE",
+        "DIOSCURI_SECONDARY_CURRENT_RESULT_BASE"
+      ],
+      "description": "Primary AMC1311 result register base."
+    },
+    {
+      "group": "ADC Voltage Channel Mapping",
+      "macro": "CLLLC_PRIMARY_V_ADC_SOC",
+      "enabled": true,
+      "weak": false,
+      "value": "DIOSCURI_PRIMARY_VOLTAGE_SOC",
+      "options_preset": "dioscuri_f280025c.ADC_SOC",
+      "options": [
+        "DIOSCURI_PRIMARY_VOLTAGE_SOC",
+        "DIOSCURI_PRIMARY_CURRENT_SOC",
+        "DIOSCURI_SECONDARY_VOLTAGE_SOC",
+        "DIOSCURI_SECONDARY_CURRENT_SOC"
+      ],
+      "description": "Primary AMC1311 ADC SOC."
+    },
+    {
+      "group": "ADC Current Channel Mapping",
+      "macro": "CLLLC_PRIMARY_I_ADC_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "DIOSCURI_PRIMARY_CURRENT_RESULT_BASE",
+      "options_preset": "dioscuri_f280025c.ADC_RESULT_BASE",
+      "options": [
+        "DIOSCURI_PRIMARY_VOLTAGE_RESULT_BASE",
+        "DIOSCURI_PRIMARY_CURRENT_RESULT_BASE",
+        "DIOSCURI_SECONDARY_VOLTAGE_RESULT_BASE",
+        "DIOSCURI_SECONDARY_CURRENT_RESULT_BASE"
+      ],
+      "description": "Primary TMCS1133B5A result register base."
+    },
+    {
+      "group": "ADC Current Channel Mapping",
+      "macro": "CLLLC_PRIMARY_I_ADC_SOC",
+      "enabled": true,
+      "weak": false,
+      "value": "DIOSCURI_PRIMARY_CURRENT_SOC",
+      "options_preset": "dioscuri_f280025c.ADC_SOC",
+      "options": [
+        "DIOSCURI_PRIMARY_VOLTAGE_SOC",
+        "DIOSCURI_PRIMARY_CURRENT_SOC",
+        "DIOSCURI_SECONDARY_VOLTAGE_SOC",
+        "DIOSCURI_SECONDARY_CURRENT_SOC"
+      ],
+      "description": "Primary TMCS1133B5A ADC SOC."
+    },
+    {
+      "group": "ADC Voltage Channel Mapping",
+      "macro": "CLLLC_SECONDARY_V_ADC_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "DIOSCURI_SECONDARY_VOLTAGE_RESULT_BASE",
+      "options_preset": "dioscuri_f280025c.ADC_RESULT_BASE",
+      "options": [
+        "DIOSCURI_PRIMARY_VOLTAGE_RESULT_BASE",
+        "DIOSCURI_PRIMARY_CURRENT_RESULT_BASE",
+        "DIOSCURI_SECONDARY_VOLTAGE_RESULT_BASE",
+        "DIOSCURI_SECONDARY_CURRENT_RESULT_BASE"
+      ],
+      "description": "Secondary AMC1311 result register base."
+    },
+    {
+      "group": "ADC Voltage Channel Mapping",
+      "macro": "CLLLC_SECONDARY_V_ADC_SOC",
+      "enabled": true,
+      "weak": false,
+      "value": "DIOSCURI_SECONDARY_VOLTAGE_SOC",
+      "options_preset": "dioscuri_f280025c.ADC_SOC",
+      "options": [
+        "DIOSCURI_PRIMARY_VOLTAGE_SOC",
+        "DIOSCURI_PRIMARY_CURRENT_SOC",
+        "DIOSCURI_SECONDARY_VOLTAGE_SOC",
+        "DIOSCURI_SECONDARY_CURRENT_SOC"
+      ],
+      "description": "Secondary AMC1311 ADC SOC."
+    },
+    {
+      "group": "ADC Current Channel Mapping",
+      "macro": "CLLLC_SECONDARY_I_ADC_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "DIOSCURI_SECONDARY_CURRENT_RESULT_BASE",
+      "options_preset": "dioscuri_f280025c.ADC_RESULT_BASE",
+      "options": [
+        "DIOSCURI_PRIMARY_VOLTAGE_RESULT_BASE",
+        "DIOSCURI_PRIMARY_CURRENT_RESULT_BASE",
+        "DIOSCURI_SECONDARY_VOLTAGE_RESULT_BASE",
+        "DIOSCURI_SECONDARY_CURRENT_RESULT_BASE"
+      ],
+      "description": "Secondary TMCS1133B5A result register base."
+    },
+    {
+      "group": "ADC Current Channel Mapping",
+      "macro": "CLLLC_SECONDARY_I_ADC_SOC",
+      "enabled": true,
+      "weak": false,
+      "value": "DIOSCURI_SECONDARY_CURRENT_SOC",
+      "options_preset": "dioscuri_f280025c.ADC_SOC",
+      "options": [
+        "DIOSCURI_PRIMARY_VOLTAGE_SOC",
+        "DIOSCURI_PRIMARY_CURRENT_SOC",
+        "DIOSCURI_SECONDARY_VOLTAGE_SOC",
+        "DIOSCURI_SECONDARY_CURRENT_SOC"
+      ],
+      "description": "Secondary TMCS1133B5A ADC SOC."
+    },
+    {
+      "group": "Gate Driver GPIO",
+      "macro": "CLLLC_GATE_ENABLE_GPIO",
+      "enabled": true,
+      "weak": false,
+      "value": "DIOSCURI_GATE_ENABLE_GPIO",
+      "options_preset": "dioscuri_f280025c.GATE_ENABLE_GPIO",
+      "options": [
+        "DIOSCURI_GATE_ENABLE_GPIO"
+      ],
+      "description": "GPIO connected to SN74LVC8T245 OE#."
+    },
+    {
+      "group": "System Timer",
+      "macro": "CLLLC_SCHEDULER_TIMER_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "DIOSCURI_TICK_TIMER_BASE",
+      "options_preset": "dioscuri_f280025c.SYSTEM_TIMER_BASE",
+      "options": [
+        "DIOSCURI_TICK_TIMER_BASE"
+      ],
+      "description": "CPU timer used for the GMP system tick."
+    },
+    {
+      "group": "Communication Peripheral",
+      "macro": "CLLLC_UART_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "DIOSCURI_UART_BASE",
+      "options_preset": "dioscuri_f280025c.UART_BASE",
+      "options": [
+        "DIOSCURI_UART_BASE"
+      ],
+      "description": "USB serial Datalink peripheral."
+    },
+    {
+      "group": "Status GPIO",
+      "macro": "CLLLC_STATUS_LED_GPIO",
+      "enabled": true,
+      "weak": false,
+      "value": "DIOSCURI_STATUS_LED_GPIO",
+      "options_preset": "dioscuri_f280025c.STATUS_LED_GPIO",
+      "options": [
+        "DIOSCURI_STATUS_LED_GPIO",
+        "41"
+      ],
+      "description": "Dioscuri status LED GPIO."
     }
   ],
   "requirements": [
@@ -191,96 +360,6 @@
       "description": "ADC resolution in bits."
     },
     {
-      "role": "Primary Voltage Result Base",
-      "macro": "CLLLC_PRIMARY_V_ADC_BASE",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "DIOSCURI_PRIMARY_VOLTAGE_RESULT_BASE"
-      },
-      "description": "Primary AMC1311 result register base."
-    },
-    {
-      "role": "Primary Voltage SOC",
-      "macro": "CLLLC_PRIMARY_V_ADC_SOC",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "DIOSCURI_PRIMARY_VOLTAGE_SOC"
-      },
-      "description": "Primary AMC1311 ADC SOC."
-    },
-    {
-      "role": "Primary Current Result Base",
-      "macro": "CLLLC_PRIMARY_I_ADC_BASE",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "DIOSCURI_PRIMARY_CURRENT_RESULT_BASE"
-      },
-      "description": "Primary TMCS1133B5A result register base."
-    },
-    {
-      "role": "Primary Current SOC",
-      "macro": "CLLLC_PRIMARY_I_ADC_SOC",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "DIOSCURI_PRIMARY_CURRENT_SOC"
-      },
-      "description": "Primary TMCS1133B5A ADC SOC."
-    },
-    {
-      "role": "Secondary Voltage Result Base",
-      "macro": "CLLLC_SECONDARY_V_ADC_BASE",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "DIOSCURI_SECONDARY_VOLTAGE_RESULT_BASE"
-      },
-      "description": "Secondary AMC1311 result register base."
-    },
-    {
-      "role": "Secondary Voltage SOC",
-      "macro": "CLLLC_SECONDARY_V_ADC_SOC",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "DIOSCURI_SECONDARY_VOLTAGE_SOC"
-      },
-      "description": "Secondary AMC1311 ADC SOC."
-    },
-    {
-      "role": "Secondary Current Result Base",
-      "macro": "CLLLC_SECONDARY_I_ADC_BASE",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "DIOSCURI_SECONDARY_CURRENT_RESULT_BASE"
-      },
-      "description": "Secondary TMCS1133B5A result register base."
-    },
-    {
-      "role": "Secondary Current SOC",
-      "macro": "CLLLC_SECONDARY_I_ADC_SOC",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "DIOSCURI_SECONDARY_CURRENT_SOC"
-      },
-      "description": "Secondary TMCS1133B5A ADC SOC."
-    },
-    {
-      "role": "Gate Enable GPIO",
-      "macro": "CLLLC_GATE_ENABLE_GPIO",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "DIOSCURI_GATE_ENABLE_GPIO"
-      },
-      "description": "GPIO connected to SN74LVC8T245 OE#."
-    },
-    {
       "role": "Gate Enable Level",
       "macro": "CLLLC_GATE_ENABLE_ACTIVE_LEVEL",
       "enabled": true,
@@ -299,74 +378,27 @@
         "literal": "DIOSCURI_GATE_DISABLE_LEVEL"
       },
       "description": "High level disables the PWM buffer."
-    },
-    {
-      "role": "Scheduler Timer",
-      "macro": "CLLLC_SCHEDULER_TIMER_BASE",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "DIOSCURI_TICK_TIMER_BASE"
-      },
-      "description": "CPU timer used for the GMP system tick."
-    },
-    {
-      "role": "Datalink UART",
-      "macro": "CLLLC_UART_BASE",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "DIOSCURI_UART_BASE"
-      },
-      "description": "USB serial Datalink peripheral."
-    },
-    {
-      "role": "Status LED",
-      "macro": "CLLLC_STATUS_LED_GPIO",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "number": "40"
-      },
-      "description": "Dioscuri status LED GPIO."
     }
   ],
   "requirement_groups": [
     {
-      "name": "Clock and Runtime",
+      "name": "Peripheral Parameters",
       "requirements": [
         "Timer Clock",
         "PWM Cycles Per Control",
         "Nominal Controller Frequency",
+        "ADC Reference",
+        "ADC Resolution",
+        "Gate Enable Level",
+        "Gate Disable Level"
+      ]
+    },
+    {
+      "name": "Runtime Parameters",
+      "requirements": [
         "Nominal PWM Period",
         "System Tick Frequency",
         "Startup State Delay"
-      ]
-    },
-    {
-      "name": "ADC Platform",
-      "requirements": [
-        "ADC Reference",
-        "ADC Resolution",
-        "Primary Voltage Result Base",
-        "Primary Voltage SOC",
-        "Primary Current Result Base",
-        "Primary Current SOC",
-        "Secondary Voltage Result Base",
-        "Secondary Voltage SOC",
-        "Secondary Current Result Base",
-        "Secondary Current SOC"
-      ]
-    },
-    {
-      "name": "Board GPIO and Services",
-      "requirements": [
-        "Gate Enable GPIO",
-        "Gate Enable Level",
-        "Gate Disable Level",
-        "Scheduler Timer",
-        "Datalink UART",
-        "Status LED"
       ]
     }
   ],
@@ -376,5 +408,20 @@
   },
   "common_requirements": [
     "../../../../sdpe_general/sdpe_requirement.json"
+  ],
+  "feature_macro_groups": [
+    "Debug Interfaces"
+  ],
+  "option_macro_groups": [
+    "Controller Mode",
+    "CLLLC PWM Routing",
+    "CLLLC PWM Synchronization",
+    "ADC Trigger",
+    "ADC Voltage Channel Mapping",
+    "ADC Current Channel Mapping",
+    "Gate Driver GPIO",
+    "System Timer",
+    "Communication Peripheral",
+    "Status GPIO"
   ]
 }

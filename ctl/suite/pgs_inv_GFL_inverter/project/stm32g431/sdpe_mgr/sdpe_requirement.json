@@ -5,7 +5,7 @@
   "description": "Nucleo-G431 platform timing and sensing settings for the common GFL controller.",
   "suite": "pgs_inv_GFL_inverter",
   "version": "1.0.0",
-  "updated_at": "2026-07-15",
+  "updated_at": "2026-08-08",
   "output_header": "sdpe_pgs_inv_gfl_stm32g431_settings.h",
   "hardware": [
     {
@@ -258,52 +258,10 @@
       ]
     },
     {
-      "name": "Grid Filter Parameters",
+      "name": "Main Element Parameters / Grid Filter",
       "requirements": [
         "Grid Filter Inductance",
         "Grid Filter Capacitance"
-      ]
-    },
-    {
-      "name": "DC Bus Voltage Sensor",
-      "requirements": [
-        "Dc Voltage Sensitivity",
-        "Dc Voltage Bias"
-      ]
-    },
-    {
-      "name": "Grid Voltage Sensor",
-      "requirements": [
-        "Grid Voltage Sensitivity",
-        "Grid Voltage Bias"
-      ]
-    },
-    {
-      "name": "Inverter Phase Voltage Sensor",
-      "requirements": [
-        "Inverter Voltage Sensitivity",
-        "Inverter Voltage Bias"
-      ]
-    },
-    {
-      "name": "DC Current Sensor",
-      "requirements": [
-        "Dc Current Sensitivity",
-        "Dc Current Bias"
-      ]
-    },
-    {
-      "name": "Grid Current Sensor",
-      "requirements": [
-        "Grid Current Sensitivity",
-        "Grid Current Bias"
-      ]
-    },
-    {
-      "name": "Inverter Phase Current Sensor",
-      "requirements": [
-        "Inverter Current Sensitivity",
-        "Inverter Current Bias"
       ]
     },
     {
@@ -311,9 +269,56 @@
       "requirements": [
         "Startup Delay"
       ]
+    },
+    {
+      "name": "Voltage & Current Sensor / DC Bus Voltage Sensor",
+      "requirements": [
+        "Dc Voltage Sensitivity",
+        "Dc Voltage Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / DC Current Sensor",
+      "requirements": [
+        "Dc Current Sensitivity",
+        "Dc Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Grid Current Sensor",
+      "requirements": [
+        "Grid Current Sensitivity",
+        "Grid Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Grid Voltage Sensor",
+      "requirements": [
+        "Grid Voltage Sensitivity",
+        "Grid Voltage Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Inverter Phase Current Sensor",
+      "requirements": [
+        "Inverter Current Sensitivity",
+        "Inverter Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Inverter Phase Voltage Sensor",
+      "requirements": [
+        "Inverter Voltage Sensitivity",
+        "Inverter Voltage Bias"
+      ]
     }
   ],
   "common_requirements": [
     "../../../sdpe_general/sdpe_requirement.json"
+  ],
+  "feature_macro_groups": [],
+  "option_macro_groups": [
+    "Commissioning",
+    "Sampling"
   ]
 }

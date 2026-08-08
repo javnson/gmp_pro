@@ -23,7 +23,7 @@ extern "C"
 #define PGS_INV_GFL_COMMON_SDPE_PROJECT_ID "pgs_inv_gfl_common"
 #define PGS_INV_GFL_COMMON_SDPE_PROJECT_SUITE "pgs_inv_GFL_inverter"
 #define PGS_INV_GFL_COMMON_SDPE_PROJECT_VERSION "1.2.0"
-#define PGS_INV_GFL_COMMON_SDPE_PROJECT_UPDATED_AT "2026-07-28"
+#define PGS_INV_GFL_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-08"
 
 //=================================================================================================
 /**
@@ -107,14 +107,24 @@ extern "C"
  */
 
 /**
+ * @brief ADC offset calibrator filter cutoff frequency.
+ */
+#define GFL_ADC_CALIBRATOR_FC_HZ (20.0f)
+
+/**
+ * @brief ADC offset calibrator second-order filter quality factor.
+ */
+#define GFL_ADC_CALIBRATOR_Q (0.707f)
+
+/**
+ * @brief Minimum CiA402 delay before Operation Enabled.
+ */
+#define GFL_CIA402_OPERATION_ENABLE_DELAY_MS (100)
+
+/**
  * @brief Nominal grid phase-voltage magnitude in controller per unit.
  */
 #define GFL_GRID_VOLTAGE_PU (0.33f)
-
-/**
- * @brief Nominal grid frequency in hertz.
- */
-#define GFL_GRID_FREQUENCY_HZ (50.0f)
 
 /**
  * @brief P/Q outer-loop execution frequency in hertz.
@@ -150,16 +160,6 @@ extern "C"
  * @brief Circular magnitude limit applied to the d/q current reference produced by the P/Q loop.
  */
 #define GFL_PQ_CURRENT_LIMIT_PU (1.0f)
-
-/**
- * @brief Default active-power reference. Positive power exports energy to the grid.
- */
-#define GFL_ACTIVE_POWER_REF_PU (0.1f)
-
-/**
- * @brief Default reactive-power reference using Q = vq*id - vd*iq.
- */
-#define GFL_REACTIVE_POWER_REF_PU (0.0f)
 
 /**
  * @brief PQ droop frequency and voltage measurement low-pass cutoff.
@@ -205,6 +205,21 @@ extern "C"
  * @brief BUILD_LEVEL 1 q-axis open-loop voltage command.
  */
 #define GFL_OPEN_LOOP_VQ_PU (0.6f)
+
+/**
+ * @brief PLL lock-error threshold in controller per unit.
+ */
+#define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
+
+/**
+ * @brief Default active-power reference. Positive power exports energy to the grid.
+ */
+#define GFL_ACTIVE_POWER_REF_PU (0.1f)
+
+/**
+ * @brief Default reactive-power reference using Q = vq*id - vd*iq.
+ */
+#define GFL_REACTIVE_POWER_REF_PU (0.0f)
 
 /**
  * @brief BUILD_LEVEL 2 d-axis current command.
@@ -287,24 +302,9 @@ extern "C"
 #define GFL_ZERO_VOLTAGE_LIMIT_PU (0.20f)
 
 /**
- * @brief ADC offset calibrator filter cutoff frequency.
+ * @brief Nominal grid frequency in hertz.
  */
-#define GFL_ADC_CALIBRATOR_FC_HZ (20.0f)
-
-/**
- * @brief ADC offset calibrator second-order filter quality factor.
- */
-#define GFL_ADC_CALIBRATOR_Q (0.707f)
-
-/**
- * @brief Minimum CiA402 delay before Operation Enabled.
- */
-#define GFL_CIA402_OPERATION_ENABLE_DELAY_MS (100)
-
-/**
- * @brief PLL lock-error threshold in controller per unit.
- */
-#define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
+#define GFL_GRID_FREQUENCY_HZ (50.0f)
 
 // User project tail code
 /* Accept the historical PIL spelling while new projects use the canonical switch. */

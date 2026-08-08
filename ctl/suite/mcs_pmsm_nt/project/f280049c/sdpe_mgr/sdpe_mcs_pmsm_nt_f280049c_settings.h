@@ -23,6 +23,9 @@ extern "C"
 #define GMP_IRIS  0
 #define BOARD_SELECTION LAUNCHPAD
 
+// Common prefix code: MCS PMSM NT Common Controller Settings
+/* Platform-independent settings only. Project hardware is supplied by the including project header. */
+
 //=================================================================================================
 /**
  * @brief Project metadata.
@@ -264,14 +267,99 @@ extern "C"
 #define CTRL_CURRENT_BASE (10.0f)
 
 /**
- * @brief Encoder counts per mechanical revolution.
+ * @brief
  */
-#define CTRL_POS_ENC_FS (10000)
+#define MOTOR_PARAM_RATED_FREQUENCY SM060R20B30MNAD_RATED_FREQUENCY
 
 /**
- * @brief Mechanical encoder position bias in per unit.
+ * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.
  */
-#define CTRL_POS_ENC_BIAS (0.0207000002f)
+#define MOTOR_TYPE SM060R20B30MNAD_MOTOR_TYPE
+
+/**
+ * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.
+ */
+#define MOTOR_PARAM_RS SM060R20B30MNAD_RS
+
+/**
+ * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.
+ */
+#define MOTOR_PARAM_LS SM060R20B30MNAD_LD
+
+/**
+ * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.
+ */
+#define MOTOR_PARAM_LD SM060R20B30MNAD_LD
+
+/**
+ * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.
+ */
+#define MOTOR_PARAM_LQ SM060R20B30MNAD_LQ
+
+/**
+ * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.
+ */
+#define MOTOR_PARAM_FLUX SM060R20B30MNAD_FLUX
+
+/**
+ * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.
+ */
+#define MOTOR_PARAM_POLE_PAIRS SM060R20B30MNAD_POLE_PAIRS
+
+/**
+ * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.
+ */
+#define MOTOR_PARAM_INERTIA SM060R20B30MNAD_INERTIA
+
+/**
+ * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.
+ */
+#define MOTOR_PARAM_FRICTION SM060R20B30MNAD_FRICTION
+
+/**
+ * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.
+ */
+#define MOTOR_PARAM_KV SM060R20B30MNAD_KV
+
+/**
+ * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.
+ */
+#define MOTOR_PARAM_EMF SM060R20B30MNAD_EMF
+
+/**
+ * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.
+ */
+#define MOTOR_PARAM_RATED_VOLTAGE SM060R20B30MNAD_RATED_VOLTAGE
+
+/**
+ * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.
+ */
+#define MOTOR_PARAM_RATED_CURRENT SM060R20B30MNAD_RATED_CURRENT
+
+/**
+ * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.
+ */
+#define MOTOR_PARAM_NO_LOAD_CURRENT SM060R20B30MNAD_NO_LOAD_CURRENT
+
+/**
+ * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.
+ */
+#define MOTOR_PARAM_MAX_TORQUE SM060R20B30MNAD_MAX_TORQUE
+
+/**
+ * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.
+ */
+#define MOTOR_PARAM_MAX_DC_VOLTAGE SM060R20B30MNAD_MAX_DC_VOLTAGE
+
+/**
+ * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.
+ */
+#define MOTOR_PARAM_MAX_PH_CURRENT SM060R20B30MNAD_MAX_PH_CURRENT
+
+/**
+ * @brief
+ */
+#define MOTOR_PARAM_MAX_SPEED SM060R20B30MNAD_MAX_SPEED
 
 /**
  * @brief DC-bus voltage sensing gain in ADC volts per measured volt.
@@ -282,6 +370,31 @@ extern "C"
  * @brief DC-bus voltage sensor bias in volts.
  */
 #define CTRL_DC_VOLTAGE_BIAS (TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_BIAS_V)
+
+/**
+ * @brief Phase-voltage sensing gain in ADC volts per measured volt.
+ */
+#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN)
+
+/**
+ * @brief Phase-voltage sensor bias in volts.
+ */
+#define CTRL_INVERTER_VOLTAGE_BIAS (TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V)
+
+/**
+ * @brief Encoder counts per mechanical revolution.
+ */
+#define CTRL_POS_ENC_FS (10000)
+
+/**
+ * @brief Mechanical encoder position bias in per unit.
+ */
+#define CTRL_POS_ENC_BIAS (0.0207000002f)
+
+/**
+ * @brief Mechanical speed and position division factor.
+ */
+#define CTRL_MECH_DIV (5)
 
 /**
  * @brief DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path.
@@ -303,30 +416,187 @@ extern "C"
  */
 #define CTRL_INVERTER_CURRENT_BIAS (TI_BOOSTXL_3PHGANINV_PH_CSA_BIAS_V)
 
+//=================================================================================================
 /**
- * @brief Phase-voltage sensing gain in ADC volts per measured volt.
+ * @brief Common fallbacks: MCS PMSM NT Common Controller Settings.
  */
-#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN)
+
+//=================================================================================================
+/**
+ * @brief Control Algorithm.
+ */
 
 /**
- * @brief Phase-voltage sensor bias in volts.
+ * @brief Use the discrete controller implementation instead of the default continuous controller path.
  */
-#define CTRL_INVERTER_VOLTAGE_BIAS (TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V)
+// #define PMSM_CTRL_USING_DISCRETE_CTRL
 
 /**
- * @brief Mechanical speed and position division factor.
+ * @brief Enable the existing discrete-PID anti-saturation debug path.
  */
-#define CTRL_MECH_DIV (5)
+#define _USE_DEBUG_DISCRETE_PID
 
 /**
- * @brief Electrical frequency command in hertz used by the BUILD_LEVEL 1 V/f path and the BUILD_LEVEL 2 synthetic-angle current-loop path.
+ * @brief Enable the sliding-mode observer path. Disabled to preserve the current sensored-control build.
  */
-#define MCS_OPEN_LOOP_FREQ_HZ (20.0f)
+// #define ENABLE_SMO
 
 /**
- * @brief Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator.
+ * @brief Enable motor fault protection processing.
  */
-#define MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S (20.0f)
+// #define ENABLE_MOTOR_FAULT_PROTECTION
+
+//=================================================================================================
+/**
+ * @brief Controller Runtime.
+ */
+
+/**
+ * @brief Calibrate ADC offsets before enabling normal control.
+ */
+#define SPECIFY_ENABLE_ADC_CALIBRATE
+
+/**
+ * @brief Enable processor-in-the-loop mode and suppress direct PWM controller output.
+ */
+// #define ENABLE_GMP_DL_PIL_SIM
+
+/**
+ * @brief Enable CiA402/GMP framework debug information.
+ */
+// #define GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
+
+//=================================================================================================
+/**
+ * @brief PWM Modulator.
+ */
+
+/**
+ * @brief Use active-low PWM modulation for the selected inverter gate path.
+ */
+#define PWM_MODULATOR_USING_NEGATIVE_LOGIC (1)
+
+/**
+ * @brief Use the three-level NPC modulator. Disabled for the two-level three-phase inverter.
+ */
+// #define USING_NPC_MODULATOR
+
+//=================================================================================================
+/**
+ * @brief Controller Options.
+ */
+
+/**
+ * @brief Incremental commissioning level. 1: V/f voltage open loop; 2: current loop with synthetic electrical angle; 3: current loop with encoder angle; 4: speed loop with encoder feedback.
+ *        Options: (1), (2), (3), (4)
+ */
+#define BUILD_LEVEL (2)
+
+//=================================================================================================
+/**
+ * @brief Requirement bindings.
+ */
+
+/**
+ * @brief Main motor-control ISR frequency in hertz.
+ */
+#define CONTROLLER_FREQUENCY (20e3f)
+
+/**
+ * @brief Minimum absolute phase current in amperes before PWM dead-time compensation selects a current direction. Converted to PU with CTRL_CURRENT_BASE at initialization.
+ */
+#define MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A (0.2f)
+
+/**
+ * @brief Phase-current hysteresis band in amperes used to prevent dead-time compensation direction chatter around zero current.
+ */
+#define MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A (0.05f)
+
+/**
+ * @brief
+ */
+#define CTRL_SPEED_RPM_BASE SM060R20B30MNAD_MAX_SPEED
+
+/**
+ * @brief
+ */
+#ifndef MOTOR_PARAM_RS
+#define MOTOR_PARAM_RS SM060R20B30MNAD_RS
+#endif // MOTOR_PARAM_RS
+
+/**
+ * @brief
+ */
+#ifndef MOTOR_PARAM_LS
+#define MOTOR_PARAM_LS SM060R20B30MNAD_LD
+#endif // MOTOR_PARAM_LS
+
+/**
+ * @brief
+ */
+#ifndef MOTOR_PARAM_LD
+#define MOTOR_PARAM_LD SM060R20B30MNAD_LD
+#endif // MOTOR_PARAM_LD
+
+/**
+ * @brief
+ */
+#ifndef MOTOR_PARAM_LQ
+#define MOTOR_PARAM_LQ SM060R20B30MNAD_LQ
+#endif // MOTOR_PARAM_LQ
+
+/**
+ * @brief
+ */
+#ifndef MOTOR_PARAM_FLUX
+#define MOTOR_PARAM_FLUX SM060R20B30MNAD_FLUX
+#endif // MOTOR_PARAM_FLUX
+
+/**
+ * @brief
+ */
+#ifndef MOTOR_PARAM_POLE_PAIRS
+#define MOTOR_PARAM_POLE_PAIRS SM060R20B30MNAD_POLE_PAIRS
+#endif // MOTOR_PARAM_POLE_PAIRS
+
+/**
+ * @brief
+ */
+#ifndef MOTOR_PARAM_INERTIA
+#define MOTOR_PARAM_INERTIA SM060R20B30MNAD_INERTIA
+#endif // MOTOR_PARAM_INERTIA
+
+/**
+ * @brief
+ */
+#ifndef MOTOR_PARAM_FRICTION
+#define MOTOR_PARAM_FRICTION SM060R20B30MNAD_FRICTION
+#endif // MOTOR_PARAM_FRICTION
+
+/**
+ * @brief Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
+ */
+#define MCS_MECH_SPEED_LIMIT_RPM (3000.0f)
+
+/**
+ * @brief Maximum mechanical speed-command slew rate in rpm/s. The configured value corresponds to 1 PU/s for the selected 3000 rpm motor.
+ */
+#define MCS_MECH_SPEED_SLOPE_RPM_S (3000.0f)
+
+/**
+ * @brief Absolute q-axis current/torque command limit in amperes. It is divided by CTRL_CURRENT_BASE to obtain the controller PU limit; 3 A corresponds to the previous 0.3 PU setting.
+ */
+#define MCS_MECH_CURRENT_LIMIT_A (3.0f)
+
+/**
+ * @brief Rectangular saturation limit for d/q axes in V.
+ */
+#define MCS_MAX_RECT_SATURATION_VOLTAGE_V (10.0f)
+
+/**
+ * @brief
+ */
+#define MCS_MAX_DC_BUS_VOLTAGE_V (CTRL_DCBUS_VOLTAGE*1.2f)
 
 /**
  * @brief The current limit value at which the machine must be shut down.
@@ -340,12 +610,91 @@ extern "C"
  */
 #define MCS_MAX_CIR_SATURATION_VOLTAGE_V (10.0f)
 
-//=================================================================================================
 /**
- * @brief Common requirement fallbacks.
+ * @brief Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
  */
+#define MCS_ENCODER_SPEED_FILTER_FC_HZ (20.0f)
 
-#include "sdpe_mcs_pmsm_nt_common_settings.h"
+/**
+ * @brief Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets.
+ */
+#define MCS_ADC_CALIBRATOR_FC_HZ (20.0f)
+
+/**
+ * @brief Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
+ */
+#define MCS_ADC_CALIBRATOR_Q (0.707f)
+
+/**
+ * @brief D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
+ */
+#define MCS_COMMISSIONING_ID_REF_A (1.0f)
+
+/**
+ * @brief Q-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
+ */
+#define MCS_COMMISSIONING_IQ_REF_A (1.0f)
+
+/**
+ * @brief Mechanical speed reference in rpm used by BUILD_LEVEL 4 commissioning. Converted to PU using MOTOR_PARAM_MAX_SPEED.
+ */
+#define MCS_COMMISSIONING_SPEED_REF_RPM (300.0f)
+
+/**
+ * @brief Electrical frequency command in hertz used by the BUILD_LEVEL 1 V/f path and the BUILD_LEVEL 2 synthetic-angle current-loop path.
+ */
+#define MCS_OPEN_LOOP_FREQ_HZ (20.0f)
+
+/**
+ * @brief Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator.
+ */
+#define MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S (20.0f)
+
+/**
+ * @brief Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu.
+ */
+#define MCS_MECH_POSITION_KP_PU (5.0f)
+
+/**
+ * @brief Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
+ */
+#define MCS_MECH_POSITION_KI_PU_S (1.0f)
+
+/**
+ * @brief Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu.
+ */
+#define MCS_MECH_VELOCITY_KP_PU (5.0f)
+
+/**
+ * @brief Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
+ */
+#define MCS_MECH_VELOCITY_KI_PU_S (1.0f)
+
+/**
+ * @brief Controller startup delay in milliseconds.
+ */
+#define CTRL_STARTUP_DELAY (100)
+
+/**
+ * @brief Minimum delay in milliseconds before the CiA402 state machine enters Operation Enabled. The project control tick is expressed in milliseconds.
+ */
+#define MCS_CIA402_OPERATION_ENABLE_DELAY_MS (100)
+
+/**
+ * @brief
+ */
+#define MCS_MIN_DC_BUS_VOLTAGE_V (CTRL_DCBUS_VOLTAGE*0.2f)
+
+// Common tail code: MCS PMSM NT Common Controller Settings
+/* Accept the historical misspelling while all source code uses the canonical switch. */
+#if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM
+#define ENABLE_GMP_DL_PIL_SIM
+#endif
+
+/* Reject unsupported incremental build levels at preprocessing time. */
+#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 4)
+#error "BUILD_LEVEL must be 1 (V/f), 2 (current loop/synthetic angle), 3 (current loop/encoder), or 4 (speed loop)."
+#endif
 
 // User project tail code
 /* No additional platform-specific tail definitions. */

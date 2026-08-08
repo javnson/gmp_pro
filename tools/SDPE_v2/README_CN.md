@@ -498,6 +498,27 @@ SDPE v2 不直接替代 `xplt/ctrl_settings.h`，而是为它生成更小、更�
 4. 在 `xplt/ctrl_settings.h` 中 include 生成的 project binding header。
 5. 控制工程继续使用 `CTRL_*` 等既有宏初始化 ADC、PWM 和接口对象。
 
+### 7.1 Suite 全局布局约定
+
+所有 Suite 的 Requirement 顶层分类统一按以下顺序组织：`Peripheral Parameters`、
+`Per-Unit Base Parameters`、`Main Element Parameters`、`Protection Parameters`、
+`Control Loop`、`Runtime Parameters`、`Voltage & Current Sensor`、
+`Commissioning Defaults`。控制器参数必须继续使用子组划分，例如
+`Control Loop / PLL Controller`、`Control Loop / Current Controller`，不应把多个
+无关控制器堆在同一个通用页面中。
+
+PWM、ADC、GPIO、定时器、编码器和通信外设的分配应放在 Option Macro，并尽量绑定
+硬件 Entity 的 `options_preset`；不得把可选择的外设分配隐藏在 `code_sections` 中。
+电机、并网滤波器、谐振腔等主元件应列在 `hardware`，工程宏通过 Entity export 或
+parameter 绑定，不在 Project Requirement 中重复手写元件数值。
+
+批量编辑后可用以下命令统一布局并检查：
+
+```powershell
+python .\normalize_suite_sdpe_layout.py --write
+python .\normalize_suite_sdpe_layout.py --check
+```
+
 ## 8. 测试
 
 运行：

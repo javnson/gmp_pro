@@ -81,6 +81,28 @@ Generated MATLAB initialization scripts finish with a console summary of the
 project identity, suite/version, selected hardware, bound Common files, enabled
 variable values, and disabled macro names.
 
+## Suite layout contract
+
+Suite requirements use one repository-wide top-level order: `Peripheral
+Parameters`, `Per-Unit Base Parameters`, `Main Element Parameters`,
+`Protection Parameters`, `Control Loop`, `Runtime Parameters`, `Voltage &
+Current Sensor`, and `Commissioning Defaults`. Controller settings use a child
+group such as `Control Loop / PLL Controller` or `Control Loop / Current
+Controller`; do not collect unrelated controllers into one generic page.
+
+PWM, ADC, GPIO, timer, encoder, and communication assignments belong in Option
+Macros with the applicable hardware entity `options_preset`. Do not hide
+selectable peripheral assignments in `code_sections`. Motors, grid filters,
+resonant tanks, and other main components belong in `hardware`; project macros
+bind to entity exports or parameters instead of duplicating component values.
+
+Normalize and verify the layout after editing suite requirements:
+
+```powershell
+python .\normalize_suite_sdpe_layout.py --write
+python .\normalize_suite_sdpe_layout.py --check
+```
+
 ## Development
 
 The Python CLI owns validation and generation. The PyQt manager edits the same

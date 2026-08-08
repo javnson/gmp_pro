@@ -5,7 +5,7 @@
   "description": "LaunchXL-F280049C timing, sensing and BOOSTXL resource bindings for the common GFM controller.",
   "suite": "pgs_inv_GFM_inverter",
   "version": "1.0.0",
-  "updated_at": "2026-07-16",
+  "updated_at": "2026-08-08",
   "output_header": "sdpe_pgs_inv_gfm_f280049c_settings.h",
   "hardware": [
     {
@@ -19,7 +19,6 @@
     }
   ],
   "code_sections": {
-    "after_extern_open": "/* Existing LaunchPad SysConfig resource names assigned to GFL roles. */\n#define PHASE_U_BASE EPWM_J4_PHASE_U_BASE\n#define PHASE_V_BASE EPWM_J4_PHASE_V_BASE\n#define PHASE_W_BASE EPWM_J4_PHASE_W_BASE\n#define PWM_ENABLE_PORT ENABLE_GATE\n#define PWM_RESET_PORT RESET_GATE\n#define INV_VBUS_RESULT_BASE J3_VDC_RESULT_BASE\n#define INV_VBUS J3_VDC\n#define INV_IBUS_RESULT_BASE J7_VDC_RESULT_BASE\n#define INV_IBUS J7_VDC\n#define INV_UA_RESULT_BASE J7_VU_RESULT_BASE\n#define INV_UA J7_VU\n#define INV_UB_RESULT_BASE J7_VV_RESULT_BASE\n#define INV_UB J7_VV\n#define INV_UC_RESULT_BASE J7_VW_RESULT_BASE\n#define INV_UC J7_VW\n#define INV_IA_RESULT_BASE J7_IU_RESULT_BASE\n#define INV_IA J7_IU\n#define INV_IB_RESULT_BASE J7_IV_RESULT_BASE\n#define INV_IB J7_IV\n#define INV_IC_RESULT_BASE J7_IW_RESULT_BASE\n#define INV_IC J7_IW\n#define INV_UU_RESULT_BASE J3_VU_RESULT_BASE\n#define INV_UU J3_VU\n#define INV_UV_RESULT_BASE J3_VV_RESULT_BASE\n#define INV_UV J3_VV\n#define INV_UW_RESULT_BASE J3_VW_RESULT_BASE\n#define INV_UW J3_VW\n#define INV_IU_RESULT_BASE J3_IU_RESULT_BASE\n#define INV_IU J3_IU\n#define INV_IV_RESULT_BASE J3_IV_RESULT_BASE\n#define INV_IV J3_IV\n#define INV_IW_RESULT_BASE J3_IW_RESULT_BASE\n#define INV_IW J3_IW\n#define SYSTEM_LED LED_R\n#define CONTROLLER_LED LED_G",
     "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 5)\n#error BUILD_LEVEL_must_be_between_1_and_5\n#endif\n#if defined(USING_3D_SVPWM) && defined(USING_NPC_MODULATOR)\n#error USING_3D_SVPWM_and_USING_NPC_MODULATOR_are_mutually_exclusive\n#endif"
   },
   "feature_macros": [],
@@ -35,8 +34,7 @@
         "(2)",
         "(3)",
         "(4)",
-        "(5)",
-        "(6)"
+        "(5)"
       ],
       "description": "BUILD_LEVEL descriptor: 1=open-loop voltage; 2=current loop with internal RG; 3=stand-alone LC capacitor-voltage loop; 4=PLL-oriented grid current loop; 5=PLL synchronization followed by bumpless transfer to the SDPE-selected droop, VSM, or virtual-impedance GFM outer loop plus voltage loop. USING_3D_SVPWM additionally requires a mapped fourth neutral-leg PWM."
     },
@@ -63,6 +61,800 @@
         "(3)"
       ],
       "description": "Number of directly sampled phase voltages."
+    },
+    {
+      "group": "PWM Channel Mapping",
+      "macro": "PHASE_U_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "EPWM_J4_PHASE_U_BASE",
+      "options_preset": "",
+      "options": [
+        "EPWM_J4_PHASE_U_BASE",
+        "EPWM_J4_PHASE_V_BASE",
+        "EPWM_J4_PHASE_W_BASE"
+      ],
+      "description": "PWM base assigned to inverter phase U."
+    },
+    {
+      "group": "PWM Channel Mapping",
+      "macro": "PHASE_V_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "EPWM_J4_PHASE_V_BASE",
+      "options_preset": "",
+      "options": [
+        "EPWM_J4_PHASE_U_BASE",
+        "EPWM_J4_PHASE_V_BASE",
+        "EPWM_J4_PHASE_W_BASE"
+      ],
+      "description": "PWM base assigned to inverter phase V."
+    },
+    {
+      "group": "PWM Channel Mapping",
+      "macro": "PHASE_W_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "EPWM_J4_PHASE_W_BASE",
+      "options_preset": "",
+      "options": [
+        "EPWM_J4_PHASE_U_BASE",
+        "EPWM_J4_PHASE_V_BASE",
+        "EPWM_J4_PHASE_W_BASE"
+      ],
+      "description": "PWM base assigned to inverter phase W."
+    },
+    {
+      "group": "Gate Driver GPIO",
+      "macro": "PWM_ENABLE_PORT",
+      "enabled": true,
+      "weak": false,
+      "value": "ENABLE_GATE",
+      "options_preset": "",
+      "options": [
+        "ENABLE_GATE",
+        "RESET_GATE"
+      ],
+      "description": "Gate-driver enable GPIO assignment."
+    },
+    {
+      "group": "Gate Driver GPIO",
+      "macro": "PWM_RESET_PORT",
+      "enabled": true,
+      "weak": false,
+      "value": "RESET_GATE",
+      "options_preset": "",
+      "options": [
+        "ENABLE_GATE",
+        "RESET_GATE"
+      ],
+      "description": "Gate-driver reset GPIO assignment."
+    },
+    {
+      "group": "ADC DC Bus Sensing",
+      "macro": "INV_VBUS_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_VDC_RESULT_BASE",
+      "options_preset": "",
+      "options": [
+        "J3_VDC_RESULT_BASE",
+        "J7_VDC_RESULT_BASE",
+        "J7_VU_RESULT_BASE",
+        "J7_VV_RESULT_BASE",
+        "J7_VW_RESULT_BASE",
+        "J7_IU_RESULT_BASE",
+        "J7_IV_RESULT_BASE",
+        "J7_IW_RESULT_BASE",
+        "J3_VU_RESULT_BASE",
+        "J3_VV_RESULT_BASE",
+        "J3_VW_RESULT_BASE",
+        "J3_IU_RESULT_BASE",
+        "J3_IV_RESULT_BASE",
+        "J3_IW_RESULT_BASE"
+      ],
+      "description": "INV_VBUS ADC result register base."
+    },
+    {
+      "group": "ADC DC Bus Sensing",
+      "macro": "INV_VBUS",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_VDC",
+      "options_preset": "",
+      "options": [
+        "J3_VDC",
+        "J7_VDC",
+        "J7_VU",
+        "J7_VV",
+        "J7_VW",
+        "J7_IU",
+        "J7_IV",
+        "J7_IW",
+        "J3_VU",
+        "J3_VV",
+        "J3_VW",
+        "J3_IU",
+        "J3_IV",
+        "J3_IW"
+      ],
+      "description": "INV_VBUS ADC channel assignment."
+    },
+    {
+      "group": "ADC DC Bus Sensing",
+      "macro": "INV_IBUS_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J7_VDC_RESULT_BASE",
+      "options_preset": "",
+      "options": [
+        "J3_VDC_RESULT_BASE",
+        "J7_VDC_RESULT_BASE",
+        "J7_VU_RESULT_BASE",
+        "J7_VV_RESULT_BASE",
+        "J7_VW_RESULT_BASE",
+        "J7_IU_RESULT_BASE",
+        "J7_IV_RESULT_BASE",
+        "J7_IW_RESULT_BASE",
+        "J3_VU_RESULT_BASE",
+        "J3_VV_RESULT_BASE",
+        "J3_VW_RESULT_BASE",
+        "J3_IU_RESULT_BASE",
+        "J3_IV_RESULT_BASE",
+        "J3_IW_RESULT_BASE"
+      ],
+      "description": "INV_IBUS ADC result register base."
+    },
+    {
+      "group": "ADC DC Bus Sensing",
+      "macro": "INV_IBUS",
+      "enabled": true,
+      "weak": false,
+      "value": "J7_VDC",
+      "options_preset": "",
+      "options": [
+        "J3_VDC",
+        "J7_VDC",
+        "J7_VU",
+        "J7_VV",
+        "J7_VW",
+        "J7_IU",
+        "J7_IV",
+        "J7_IW",
+        "J3_VU",
+        "J3_VV",
+        "J3_VW",
+        "J3_IU",
+        "J3_IV",
+        "J3_IW"
+      ],
+      "description": "INV_IBUS ADC channel assignment."
+    },
+    {
+      "group": "ADC Grid Voltage Sensing",
+      "macro": "INV_UA_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J7_VU_RESULT_BASE",
+      "options_preset": "",
+      "options": [
+        "J3_VDC_RESULT_BASE",
+        "J7_VDC_RESULT_BASE",
+        "J7_VU_RESULT_BASE",
+        "J7_VV_RESULT_BASE",
+        "J7_VW_RESULT_BASE",
+        "J7_IU_RESULT_BASE",
+        "J7_IV_RESULT_BASE",
+        "J7_IW_RESULT_BASE",
+        "J3_VU_RESULT_BASE",
+        "J3_VV_RESULT_BASE",
+        "J3_VW_RESULT_BASE",
+        "J3_IU_RESULT_BASE",
+        "J3_IV_RESULT_BASE",
+        "J3_IW_RESULT_BASE"
+      ],
+      "description": "INV_UA ADC result register base."
+    },
+    {
+      "group": "ADC Grid Voltage Sensing",
+      "macro": "INV_UA",
+      "enabled": true,
+      "weak": false,
+      "value": "J7_VU",
+      "options_preset": "",
+      "options": [
+        "J3_VDC",
+        "J7_VDC",
+        "J7_VU",
+        "J7_VV",
+        "J7_VW",
+        "J7_IU",
+        "J7_IV",
+        "J7_IW",
+        "J3_VU",
+        "J3_VV",
+        "J3_VW",
+        "J3_IU",
+        "J3_IV",
+        "J3_IW"
+      ],
+      "description": "INV_UA ADC channel assignment."
+    },
+    {
+      "group": "ADC Grid Voltage Sensing",
+      "macro": "INV_UB_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J7_VV_RESULT_BASE",
+      "options_preset": "",
+      "options": [
+        "J3_VDC_RESULT_BASE",
+        "J7_VDC_RESULT_BASE",
+        "J7_VU_RESULT_BASE",
+        "J7_VV_RESULT_BASE",
+        "J7_VW_RESULT_BASE",
+        "J7_IU_RESULT_BASE",
+        "J7_IV_RESULT_BASE",
+        "J7_IW_RESULT_BASE",
+        "J3_VU_RESULT_BASE",
+        "J3_VV_RESULT_BASE",
+        "J3_VW_RESULT_BASE",
+        "J3_IU_RESULT_BASE",
+        "J3_IV_RESULT_BASE",
+        "J3_IW_RESULT_BASE"
+      ],
+      "description": "INV_UB ADC result register base."
+    },
+    {
+      "group": "ADC Grid Voltage Sensing",
+      "macro": "INV_UB",
+      "enabled": true,
+      "weak": false,
+      "value": "J7_VV",
+      "options_preset": "",
+      "options": [
+        "J3_VDC",
+        "J7_VDC",
+        "J7_VU",
+        "J7_VV",
+        "J7_VW",
+        "J7_IU",
+        "J7_IV",
+        "J7_IW",
+        "J3_VU",
+        "J3_VV",
+        "J3_VW",
+        "J3_IU",
+        "J3_IV",
+        "J3_IW"
+      ],
+      "description": "INV_UB ADC channel assignment."
+    },
+    {
+      "group": "ADC Grid Voltage Sensing",
+      "macro": "INV_UC_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J7_VW_RESULT_BASE",
+      "options_preset": "",
+      "options": [
+        "J3_VDC_RESULT_BASE",
+        "J7_VDC_RESULT_BASE",
+        "J7_VU_RESULT_BASE",
+        "J7_VV_RESULT_BASE",
+        "J7_VW_RESULT_BASE",
+        "J7_IU_RESULT_BASE",
+        "J7_IV_RESULT_BASE",
+        "J7_IW_RESULT_BASE",
+        "J3_VU_RESULT_BASE",
+        "J3_VV_RESULT_BASE",
+        "J3_VW_RESULT_BASE",
+        "J3_IU_RESULT_BASE",
+        "J3_IV_RESULT_BASE",
+        "J3_IW_RESULT_BASE"
+      ],
+      "description": "INV_UC ADC result register base."
+    },
+    {
+      "group": "ADC Grid Voltage Sensing",
+      "macro": "INV_UC",
+      "enabled": true,
+      "weak": false,
+      "value": "J7_VW",
+      "options_preset": "",
+      "options": [
+        "J3_VDC",
+        "J7_VDC",
+        "J7_VU",
+        "J7_VV",
+        "J7_VW",
+        "J7_IU",
+        "J7_IV",
+        "J7_IW",
+        "J3_VU",
+        "J3_VV",
+        "J3_VW",
+        "J3_IU",
+        "J3_IV",
+        "J3_IW"
+      ],
+      "description": "INV_UC ADC channel assignment."
+    },
+    {
+      "group": "ADC Grid Current Sensing",
+      "macro": "INV_IA_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J7_IU_RESULT_BASE",
+      "options_preset": "",
+      "options": [
+        "J3_VDC_RESULT_BASE",
+        "J7_VDC_RESULT_BASE",
+        "J7_VU_RESULT_BASE",
+        "J7_VV_RESULT_BASE",
+        "J7_VW_RESULT_BASE",
+        "J7_IU_RESULT_BASE",
+        "J7_IV_RESULT_BASE",
+        "J7_IW_RESULT_BASE",
+        "J3_VU_RESULT_BASE",
+        "J3_VV_RESULT_BASE",
+        "J3_VW_RESULT_BASE",
+        "J3_IU_RESULT_BASE",
+        "J3_IV_RESULT_BASE",
+        "J3_IW_RESULT_BASE"
+      ],
+      "description": "INV_IA ADC result register base."
+    },
+    {
+      "group": "ADC Grid Current Sensing",
+      "macro": "INV_IA",
+      "enabled": true,
+      "weak": false,
+      "value": "J7_IU",
+      "options_preset": "",
+      "options": [
+        "J3_VDC",
+        "J7_VDC",
+        "J7_VU",
+        "J7_VV",
+        "J7_VW",
+        "J7_IU",
+        "J7_IV",
+        "J7_IW",
+        "J3_VU",
+        "J3_VV",
+        "J3_VW",
+        "J3_IU",
+        "J3_IV",
+        "J3_IW"
+      ],
+      "description": "INV_IA ADC channel assignment."
+    },
+    {
+      "group": "ADC Grid Current Sensing",
+      "macro": "INV_IB_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J7_IV_RESULT_BASE",
+      "options_preset": "",
+      "options": [
+        "J3_VDC_RESULT_BASE",
+        "J7_VDC_RESULT_BASE",
+        "J7_VU_RESULT_BASE",
+        "J7_VV_RESULT_BASE",
+        "J7_VW_RESULT_BASE",
+        "J7_IU_RESULT_BASE",
+        "J7_IV_RESULT_BASE",
+        "J7_IW_RESULT_BASE",
+        "J3_VU_RESULT_BASE",
+        "J3_VV_RESULT_BASE",
+        "J3_VW_RESULT_BASE",
+        "J3_IU_RESULT_BASE",
+        "J3_IV_RESULT_BASE",
+        "J3_IW_RESULT_BASE"
+      ],
+      "description": "INV_IB ADC result register base."
+    },
+    {
+      "group": "ADC Grid Current Sensing",
+      "macro": "INV_IB",
+      "enabled": true,
+      "weak": false,
+      "value": "J7_IV",
+      "options_preset": "",
+      "options": [
+        "J3_VDC",
+        "J7_VDC",
+        "J7_VU",
+        "J7_VV",
+        "J7_VW",
+        "J7_IU",
+        "J7_IV",
+        "J7_IW",
+        "J3_VU",
+        "J3_VV",
+        "J3_VW",
+        "J3_IU",
+        "J3_IV",
+        "J3_IW"
+      ],
+      "description": "INV_IB ADC channel assignment."
+    },
+    {
+      "group": "ADC Grid Current Sensing",
+      "macro": "INV_IC_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J7_IW_RESULT_BASE",
+      "options_preset": "",
+      "options": [
+        "J3_VDC_RESULT_BASE",
+        "J7_VDC_RESULT_BASE",
+        "J7_VU_RESULT_BASE",
+        "J7_VV_RESULT_BASE",
+        "J7_VW_RESULT_BASE",
+        "J7_IU_RESULT_BASE",
+        "J7_IV_RESULT_BASE",
+        "J7_IW_RESULT_BASE",
+        "J3_VU_RESULT_BASE",
+        "J3_VV_RESULT_BASE",
+        "J3_VW_RESULT_BASE",
+        "J3_IU_RESULT_BASE",
+        "J3_IV_RESULT_BASE",
+        "J3_IW_RESULT_BASE"
+      ],
+      "description": "INV_IC ADC result register base."
+    },
+    {
+      "group": "ADC Grid Current Sensing",
+      "macro": "INV_IC",
+      "enabled": true,
+      "weak": false,
+      "value": "J7_IW",
+      "options_preset": "",
+      "options": [
+        "J3_VDC",
+        "J7_VDC",
+        "J7_VU",
+        "J7_VV",
+        "J7_VW",
+        "J7_IU",
+        "J7_IV",
+        "J7_IW",
+        "J3_VU",
+        "J3_VV",
+        "J3_VW",
+        "J3_IU",
+        "J3_IV",
+        "J3_IW"
+      ],
+      "description": "INV_IC ADC channel assignment."
+    },
+    {
+      "group": "ADC Inverter Phase Voltage Sensing",
+      "macro": "INV_UU_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_VU_RESULT_BASE",
+      "options_preset": "",
+      "options": [
+        "J3_VDC_RESULT_BASE",
+        "J7_VDC_RESULT_BASE",
+        "J7_VU_RESULT_BASE",
+        "J7_VV_RESULT_BASE",
+        "J7_VW_RESULT_BASE",
+        "J7_IU_RESULT_BASE",
+        "J7_IV_RESULT_BASE",
+        "J7_IW_RESULT_BASE",
+        "J3_VU_RESULT_BASE",
+        "J3_VV_RESULT_BASE",
+        "J3_VW_RESULT_BASE",
+        "J3_IU_RESULT_BASE",
+        "J3_IV_RESULT_BASE",
+        "J3_IW_RESULT_BASE"
+      ],
+      "description": "INV_UU ADC result register base."
+    },
+    {
+      "group": "ADC Inverter Phase Voltage Sensing",
+      "macro": "INV_UU",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_VU",
+      "options_preset": "",
+      "options": [
+        "J3_VDC",
+        "J7_VDC",
+        "J7_VU",
+        "J7_VV",
+        "J7_VW",
+        "J7_IU",
+        "J7_IV",
+        "J7_IW",
+        "J3_VU",
+        "J3_VV",
+        "J3_VW",
+        "J3_IU",
+        "J3_IV",
+        "J3_IW"
+      ],
+      "description": "INV_UU ADC channel assignment."
+    },
+    {
+      "group": "ADC Inverter Phase Voltage Sensing",
+      "macro": "INV_UV_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_VV_RESULT_BASE",
+      "options_preset": "",
+      "options": [
+        "J3_VDC_RESULT_BASE",
+        "J7_VDC_RESULT_BASE",
+        "J7_VU_RESULT_BASE",
+        "J7_VV_RESULT_BASE",
+        "J7_VW_RESULT_BASE",
+        "J7_IU_RESULT_BASE",
+        "J7_IV_RESULT_BASE",
+        "J7_IW_RESULT_BASE",
+        "J3_VU_RESULT_BASE",
+        "J3_VV_RESULT_BASE",
+        "J3_VW_RESULT_BASE",
+        "J3_IU_RESULT_BASE",
+        "J3_IV_RESULT_BASE",
+        "J3_IW_RESULT_BASE"
+      ],
+      "description": "INV_UV ADC result register base."
+    },
+    {
+      "group": "ADC Inverter Phase Voltage Sensing",
+      "macro": "INV_UV",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_VV",
+      "options_preset": "",
+      "options": [
+        "J3_VDC",
+        "J7_VDC",
+        "J7_VU",
+        "J7_VV",
+        "J7_VW",
+        "J7_IU",
+        "J7_IV",
+        "J7_IW",
+        "J3_VU",
+        "J3_VV",
+        "J3_VW",
+        "J3_IU",
+        "J3_IV",
+        "J3_IW"
+      ],
+      "description": "INV_UV ADC channel assignment."
+    },
+    {
+      "group": "ADC Inverter Phase Voltage Sensing",
+      "macro": "INV_UW_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_VW_RESULT_BASE",
+      "options_preset": "",
+      "options": [
+        "J3_VDC_RESULT_BASE",
+        "J7_VDC_RESULT_BASE",
+        "J7_VU_RESULT_BASE",
+        "J7_VV_RESULT_BASE",
+        "J7_VW_RESULT_BASE",
+        "J7_IU_RESULT_BASE",
+        "J7_IV_RESULT_BASE",
+        "J7_IW_RESULT_BASE",
+        "J3_VU_RESULT_BASE",
+        "J3_VV_RESULT_BASE",
+        "J3_VW_RESULT_BASE",
+        "J3_IU_RESULT_BASE",
+        "J3_IV_RESULT_BASE",
+        "J3_IW_RESULT_BASE"
+      ],
+      "description": "INV_UW ADC result register base."
+    },
+    {
+      "group": "ADC Inverter Phase Voltage Sensing",
+      "macro": "INV_UW",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_VW",
+      "options_preset": "",
+      "options": [
+        "J3_VDC",
+        "J7_VDC",
+        "J7_VU",
+        "J7_VV",
+        "J7_VW",
+        "J7_IU",
+        "J7_IV",
+        "J7_IW",
+        "J3_VU",
+        "J3_VV",
+        "J3_VW",
+        "J3_IU",
+        "J3_IV",
+        "J3_IW"
+      ],
+      "description": "INV_UW ADC channel assignment."
+    },
+    {
+      "group": "ADC Inverter Phase Current Sensing",
+      "macro": "INV_IU_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_IU_RESULT_BASE",
+      "options_preset": "",
+      "options": [
+        "J3_VDC_RESULT_BASE",
+        "J7_VDC_RESULT_BASE",
+        "J7_VU_RESULT_BASE",
+        "J7_VV_RESULT_BASE",
+        "J7_VW_RESULT_BASE",
+        "J7_IU_RESULT_BASE",
+        "J7_IV_RESULT_BASE",
+        "J7_IW_RESULT_BASE",
+        "J3_VU_RESULT_BASE",
+        "J3_VV_RESULT_BASE",
+        "J3_VW_RESULT_BASE",
+        "J3_IU_RESULT_BASE",
+        "J3_IV_RESULT_BASE",
+        "J3_IW_RESULT_BASE"
+      ],
+      "description": "INV_IU ADC result register base."
+    },
+    {
+      "group": "ADC Inverter Phase Current Sensing",
+      "macro": "INV_IU",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_IU",
+      "options_preset": "",
+      "options": [
+        "J3_VDC",
+        "J7_VDC",
+        "J7_VU",
+        "J7_VV",
+        "J7_VW",
+        "J7_IU",
+        "J7_IV",
+        "J7_IW",
+        "J3_VU",
+        "J3_VV",
+        "J3_VW",
+        "J3_IU",
+        "J3_IV",
+        "J3_IW"
+      ],
+      "description": "INV_IU ADC channel assignment."
+    },
+    {
+      "group": "ADC Inverter Phase Current Sensing",
+      "macro": "INV_IV_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_IV_RESULT_BASE",
+      "options_preset": "",
+      "options": [
+        "J3_VDC_RESULT_BASE",
+        "J7_VDC_RESULT_BASE",
+        "J7_VU_RESULT_BASE",
+        "J7_VV_RESULT_BASE",
+        "J7_VW_RESULT_BASE",
+        "J7_IU_RESULT_BASE",
+        "J7_IV_RESULT_BASE",
+        "J7_IW_RESULT_BASE",
+        "J3_VU_RESULT_BASE",
+        "J3_VV_RESULT_BASE",
+        "J3_VW_RESULT_BASE",
+        "J3_IU_RESULT_BASE",
+        "J3_IV_RESULT_BASE",
+        "J3_IW_RESULT_BASE"
+      ],
+      "description": "INV_IV ADC result register base."
+    },
+    {
+      "group": "ADC Inverter Phase Current Sensing",
+      "macro": "INV_IV",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_IV",
+      "options_preset": "",
+      "options": [
+        "J3_VDC",
+        "J7_VDC",
+        "J7_VU",
+        "J7_VV",
+        "J7_VW",
+        "J7_IU",
+        "J7_IV",
+        "J7_IW",
+        "J3_VU",
+        "J3_VV",
+        "J3_VW",
+        "J3_IU",
+        "J3_IV",
+        "J3_IW"
+      ],
+      "description": "INV_IV ADC channel assignment."
+    },
+    {
+      "group": "ADC Inverter Phase Current Sensing",
+      "macro": "INV_IW_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_IW_RESULT_BASE",
+      "options_preset": "",
+      "options": [
+        "J3_VDC_RESULT_BASE",
+        "J7_VDC_RESULT_BASE",
+        "J7_VU_RESULT_BASE",
+        "J7_VV_RESULT_BASE",
+        "J7_VW_RESULT_BASE",
+        "J7_IU_RESULT_BASE",
+        "J7_IV_RESULT_BASE",
+        "J7_IW_RESULT_BASE",
+        "J3_VU_RESULT_BASE",
+        "J3_VV_RESULT_BASE",
+        "J3_VW_RESULT_BASE",
+        "J3_IU_RESULT_BASE",
+        "J3_IV_RESULT_BASE",
+        "J3_IW_RESULT_BASE"
+      ],
+      "description": "INV_IW ADC result register base."
+    },
+    {
+      "group": "ADC Inverter Phase Current Sensing",
+      "macro": "INV_IW",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_IW",
+      "options_preset": "",
+      "options": [
+        "J3_VDC",
+        "J7_VDC",
+        "J7_VU",
+        "J7_VV",
+        "J7_VW",
+        "J7_IU",
+        "J7_IV",
+        "J7_IW",
+        "J3_VU",
+        "J3_VV",
+        "J3_VW",
+        "J3_IU",
+        "J3_IV",
+        "J3_IW"
+      ],
+      "description": "INV_IW ADC channel assignment."
+    },
+    {
+      "group": "Status GPIO",
+      "macro": "SYSTEM_LED",
+      "enabled": true,
+      "weak": false,
+      "value": "LED_R",
+      "options_preset": "",
+      "options": [
+        "LED_R",
+        "LED_G"
+      ],
+      "description": "System status LED assignment."
+    },
+    {
+      "group": "Status GPIO",
+      "macro": "CONTROLLER_LED",
+      "enabled": true,
+      "weak": false,
+      "value": "LED_G",
+      "options_preset": "",
+      "options": [
+        "LED_R",
+        "LED_G"
+      ],
+      "description": "Controller status LED assignment."
     }
   ],
   "requirements": [
@@ -280,52 +1072,10 @@
       ]
     },
     {
-      "name": "Grid Filter Parameters",
+      "name": "Main Element Parameters / Grid Filter",
       "requirements": [
         "Grid Filter Inductance",
         "Grid Filter Capacitance"
-      ]
-    },
-    {
-      "name": "DC Bus Voltage Sensor",
-      "requirements": [
-        "Dc Voltage Sensitivity",
-        "Dc Voltage Bias"
-      ]
-    },
-    {
-      "name": "Grid Voltage Sensor",
-      "requirements": [
-        "Grid Voltage Sensitivity",
-        "Grid Voltage Bias"
-      ]
-    },
-    {
-      "name": "Inverter Phase Voltage Sensor",
-      "requirements": [
-        "Inverter Voltage Sensitivity",
-        "Inverter Voltage Bias"
-      ]
-    },
-    {
-      "name": "DC Current Sensor",
-      "requirements": [
-        "Dc Current Sensitivity",
-        "Dc Current Bias"
-      ]
-    },
-    {
-      "name": "Grid Current Sensor",
-      "requirements": [
-        "Grid Current Sensitivity",
-        "Grid Current Bias"
-      ]
-    },
-    {
-      "name": "Inverter Phase Current Sensor",
-      "requirements": [
-        "Inverter Current Sensitivity",
-        "Inverter Current Bias"
       ]
     },
     {
@@ -333,9 +1083,64 @@
       "requirements": [
         "Startup Delay"
       ]
+    },
+    {
+      "name": "Voltage & Current Sensor / DC Bus Voltage Sensor",
+      "requirements": [
+        "Dc Voltage Sensitivity",
+        "Dc Voltage Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / DC Current Sensor",
+      "requirements": [
+        "Dc Current Sensitivity",
+        "Dc Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Grid Current Sensor",
+      "requirements": [
+        "Grid Current Sensitivity",
+        "Grid Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Grid Voltage Sensor",
+      "requirements": [
+        "Grid Voltage Sensitivity",
+        "Grid Voltage Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Inverter Phase Current Sensor",
+      "requirements": [
+        "Inverter Current Sensitivity",
+        "Inverter Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Inverter Phase Voltage Sensor",
+      "requirements": [
+        "Inverter Voltage Sensitivity",
+        "Inverter Voltage Bias"
+      ]
     }
   ],
   "common_requirements": [
     "../../../sdpe_general/sdpe_requirement.json"
+  ],
+  "feature_macro_groups": [],
+  "option_macro_groups": [
+    "Commissioning",
+    "Sampling",
+    "PWM Channel Mapping",
+    "Gate Driver GPIO",
+    "ADC DC Bus Sensing",
+    "ADC Grid Voltage Sensing",
+    "ADC Grid Current Sensing",
+    "ADC Inverter Phase Voltage Sensing",
+    "ADC Inverter Phase Current Sensing",
+    "Status GPIO"
   ]
 }

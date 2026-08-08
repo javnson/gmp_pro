@@ -670,16 +670,6 @@
       "description": "Phase-current per-unit base in amperes."
     },
     {
-      "role": "Rated Speed Rpm",
-      "macro": "CTRL_SPEED_RPM_BASE",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "export": "${sm060r20b30mnad.Max Speed}"
-      },
-      "description": ""
-    },
-    {
       "role": "Motor Rated Frequency",
       "macro": "MOTOR_PARAM_RATED_FREQUENCY",
       "enabled": true,
@@ -688,6 +678,226 @@
         "export": "${sm060r20b30mnad.Rated Frequency}"
       },
       "description": ""
+    },
+    {
+      "role": "Motor Type",
+      "macro": "MOTOR_TYPE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.motor_type"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Stator Resistance",
+      "macro": "MOTOR_PARAM_RS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.rs"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Stator Inductance",
+      "macro": "MOTOR_PARAM_LS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.ld"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor D-axis Inductance",
+      "macro": "MOTOR_PARAM_LD",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.ld"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Q-axis Inductance",
+      "macro": "MOTOR_PARAM_LQ",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.lq"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Flux Linkage",
+      "macro": "MOTOR_PARAM_FLUX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.flux"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Pole Pairs",
+      "macro": "MOTOR_PARAM_POLE_PAIRS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.pole_pairs"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Inertia",
+      "macro": "MOTOR_PARAM_INERTIA",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.inertia"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Friction",
+      "macro": "MOTOR_PARAM_FRICTION",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.friction"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Velocity Constant",
+      "macro": "MOTOR_PARAM_KV",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.kv"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Back EMF",
+      "macro": "MOTOR_PARAM_EMF",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.emf"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Rated Voltage",
+      "macro": "MOTOR_PARAM_RATED_VOLTAGE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.rated_voltage"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Rated Current",
+      "macro": "MOTOR_PARAM_RATED_CURRENT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.rated_current"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor No-load Current",
+      "macro": "MOTOR_PARAM_NO_LOAD_CURRENT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.no_load_current"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Maximum Torque",
+      "macro": "MOTOR_PARAM_MAX_TORQUE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.max_torque"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Maximum DC Voltage",
+      "macro": "MOTOR_PARAM_MAX_DC_VOLTAGE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.max_dc_voltage"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Maximum Phase Current",
+      "macro": "MOTOR_PARAM_MAX_PH_CURRENT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.max_ph_current"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Max Speed",
+      "macro": "MOTOR_PARAM_MAX_SPEED",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "${sm060r20b30mnad.Max Speed}"
+      },
+      "description": ""
+    },
+    {
+      "role": "DC Voltage Sensitivity",
+      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_GAIN)"
+      },
+      "description": "DC-bus voltage sensing gain in ADC volts per measured volt."
+    },
+    {
+      "role": "DC Voltage Bias",
+      "macro": "CTRL_DC_VOLTAGE_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "DC-bus voltage sensor bias in volts."
+    },
+    {
+      "role": "Phase Voltage Sensitivity",
+      "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN)"
+      },
+      "description": "Phase-voltage sensing gain in ADC volts per measured volt."
+    },
+    {
+      "role": "Phase Voltage Bias",
+      "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "Phase-voltage sensor bias in volts."
     },
     {
       "role": "Encoder Full Scale",
@@ -710,24 +920,14 @@
       "description": "Mechanical encoder position bias in per unit."
     },
     {
-      "role": "DC Voltage Sensitivity",
-      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
+      "role": "Mechanical Division",
+      "macro": "CTRL_MECH_DIV",
       "enabled": true,
       "weak": false,
       "binding": {
-        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_GAIN)"
+        "number": "5"
       },
-      "description": "DC-bus voltage sensing gain in ADC volts per measured volt."
-    },
-    {
-      "role": "DC Voltage Bias",
-      "macro": "CTRL_DC_VOLTAGE_BIAS",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_BIAS_V)"
-      },
-      "description": "DC-bus voltage sensor bias in volts."
+      "description": "Mechanical speed and position division factor."
     },
     {
       "role": "DC Current Sensitivity",
@@ -768,86 +968,6 @@
         "literal": "(TI_BOOSTXL_3PHGANINV_PH_CSA_BIAS_V)"
       },
       "description": "Phase-current sensor zero-current bias in volts."
-    },
-    {
-      "role": "Phase Voltage Sensitivity",
-      "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN)"
-      },
-      "description": "Phase-voltage sensing gain in ADC volts per measured volt."
-    },
-    {
-      "role": "Phase Voltage Bias",
-      "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V)"
-      },
-      "description": "Phase-voltage sensor bias in volts."
-    },
-    {
-      "role": "Mechanical Division",
-      "macro": "CTRL_MECH_DIV",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "number": "5"
-      },
-      "description": "Mechanical speed and position division factor."
-    },
-    {
-      "role": "Open Loop Frequency",
-      "macro": "MCS_OPEN_LOOP_FREQ_HZ",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "float": "20.0"
-      },
-      "description": "Electrical frequency command in hertz used by the BUILD_LEVEL 1 V/f path and the BUILD_LEVEL 2 synthetic-angle current-loop path."
-    },
-    {
-      "role": "Open Loop Frequency Slope",
-      "macro": "MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "float": "20.0"
-      },
-      "description": "Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator."
-    },
-    {
-      "role": "Max Shutdown Current",
-      "macro": "MCS_MAX_SHUTDOWN_CURRENT_A",
-      "enabled": true,
-      "weak": true,
-      "binding": {
-        "float": "10.0"
-      },
-      "description": "The current limit value at which the machine must be shut down."
-    },
-    {
-      "role": "Max Voltage For Circular Saturation",
-      "macro": "MCS_MAX_CIR_SATURATION_VOLTAGE_V",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "float": "10.0"
-      },
-      "description": "Circular saturation limit for voltage vector magnitude in V."
-    },
-    {
-      "role": "Motor Max Speed",
-      "macro": "MOTOR_PARAM_MAX_SPEED",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "export": "${sm060r20b30mnad.Max Speed}"
-      },
-      "description": ""
     }
   ],
   "requirement_groups": [
@@ -867,15 +987,35 @@
         "DC Bus Voltage Base",
         "Phase Voltage Base",
         "Current Base",
-        "Rated Speed Rpm",
         "Motor Rated Frequency"
       ]
     },
     {
-      "name": "Position Sensor Parameters",
+      "name": "Main Element Parameters / Motor",
       "requirements": [
-        "Encoder Full Scale",
-        "Encoder Bias"
+        "Motor Type",
+        "Motor Stator Resistance",
+        "Motor Stator Inductance",
+        "Motor D-axis Inductance",
+        "Motor Q-axis Inductance",
+        "Motor Flux Linkage",
+        "Motor Pole Pairs",
+        "Motor Inertia",
+        "Motor Friction",
+        "Motor Velocity Constant",
+        "Motor Back EMF",
+        "Motor Rated Voltage",
+        "Motor Rated Current",
+        "Motor No-load Current",
+        "Motor Maximum Torque",
+        "Motor Maximum DC Voltage",
+        "Motor Maximum Phase Current"
+      ]
+    },
+    {
+      "name": "Protection Parameters",
+      "requirements": [
+        "Motor Max Speed"
       ]
     },
     {
@@ -886,20 +1026,6 @@
       ]
     },
     {
-      "name": "Voltage & Current Sensor / DC Current Sensor",
-      "requirements": [
-        "DC Current Sensitivity",
-        "DC Current Bias"
-      ]
-    },
-    {
-      "name": "Voltage & Current Sensor / Inverter Phase Current Sensor",
-      "requirements": [
-        "Phase Current Sensitivity",
-        "Phase Current Bias"
-      ]
-    },
-    {
       "name": "Voltage & Current Sensor / Inverter Phase Voltage Sensor",
       "requirements": [
         "Phase Voltage Sensitivity",
@@ -907,24 +1033,20 @@
       ]
     },
     {
-      "name": "Control Loop Parameters",
+      "name": "Voltage & Current Sensor / Position Sensor",
       "requirements": [
+        "Encoder Full Scale",
+        "Encoder Bias",
         "Mechanical Division"
       ]
     },
     {
-      "name": "Commissioning Defaults",
+      "name": "Voltage & Current Sensor / Voltage Sensor",
       "requirements": [
-        "Open Loop Frequency",
-        "Open Loop Frequency Slope"
-      ]
-    },
-    {
-      "name": "Protection Parameters",
-      "requirements": [
-        "Max Shutdown Current",
-        "Max Voltage For Circular Saturation",
-        "Motor Max Speed"
+        "DC Current Sensitivity",
+        "DC Current Bias",
+        "Phase Current Sensitivity",
+        "Phase Current Bias"
       ]
     }
   ],
