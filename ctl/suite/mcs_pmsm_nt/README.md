@@ -14,3 +14,18 @@ This is the recommended GMP permanent-magnet synchronous motor vector-control te
 Supported project directories currently include `f280039c_Iris_node`, `f280049c`, `simulate`, `stm32f405`, `stm32g431`, and `stm32g474_hrtim`. New PMSM applications should normally start from this suite and retain the shared `src/` plus per-target `project/` structure.
 
 Begin at the lowest build level and confirm current offsets, phase order, encoder direction, PWM polarity, and protection behavior before enabling the current, speed, or position loops. The [Chinese guide](README_CN.md) contains the detailed architecture, build-level procedure, and platform notes.
+
+## Equal-bandwidth DQ-PI and DQ-LADRC1 simulation record (2026-08-08)
+
+The FOC current loop uses DQ-PI by default. Uncomment `#define ENABLE_FOC_LADRC_CTRL` in `foc_core.h`, or define the same compiler macro, to select DQ-LADRC1. Both selections use `ctl_auto_tuning_foc_core()` and `ctl_init_foc_core()`.
+
+The reproducible comparison is `ctl/component/intrinsic/complex/tests/host_sim/foc_current_loop_compare.c`. Conditions: 20 kHz sampling, `Ld=Lq=50 uH`, `Rs=0.13 ohm`, `24/sqrt(3) V` voltage base, `10 A` current base, a q-axis step from 0 to 0.3 pu, and a 0.9 pu circular limit. PI crossover bandwidth and LADRC `fc` are both 707.355 Hz; LADRC uses `fo=2*fc`. Feedforward and cross-coupling are disabled.
+
+| Controller | Bandwidth (Hz) | 10%-90% rise (ms) | 2% settling (ms) | Overshoot (%) | IAE | Final iq (pu) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| DQ-PI | 707.355 | 0.450 | 0.950 | -0.000010 | 0.000052500 | 0.300000 |
+| DQ-LADRC1 | 707.355 | 1.000 | 1.700 | -0.000020 | 0.000116859 | 0.300000 |
+
+PI is faster for this nominal first-order plant; both controllers converge without visible overshoot. This is a regression comparison, not a robustness claim under parameter error or disturbance.
+
+The Windows x64 Debug SIL projects for both `mcs_pmsm_nt` and `mcs_pmsm_id` were also built in default PI and `ENABLE_FOC_LADRC_CTRL` configurations. Both `MCS_STD_PMSM_MODEL.slx` models established their UDP link and ran without errors to 0.1 s in each configuration.

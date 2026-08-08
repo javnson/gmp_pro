@@ -168,6 +168,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\ctl_main.c" />
+    <ClCompile Include="..\..\src\pmsm_offline_id_if.c" />
     <ClCompile Include="..\..\src\user_main.c" />
     <ClCompile Include="DigialPower_simulink.cpp" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_back_stepping.c" />
@@ -187,6 +188,12 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_component_interface.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pi.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pid.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dq_pi.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dq_ladrc1.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_pmsm_offline_id_sm.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_encoder_switcher.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\dsa_scope.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\dsa_trigger.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pid_aw.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_biquad_filter.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_df.c" />
@@ -248,7 +255,6 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_slope_limiter.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_sogi.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_track_pid.c" />
-    <ClCompile Include="gmp_src_mgr\gmp_src\dsa_trigger.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\gmp_at_device.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\gmp_dev_util.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\gmp_mm_block_memory.c" />

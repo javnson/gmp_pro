@@ -59,29 +59,32 @@ MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A = 0.2;
 % Phase-current hysteresis band in amperes used to prevent dead-time compensation direction chatter around zero current.
 MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A = 0.05;
 
+CTRL_SPEED_RPM_BASE = 'MOTOR_PARAM_MAX_SPEED';
+
+MOTOR_PARAM_RS = 'SM060R20B30MNAD_RS';
+
+MOTOR_PARAM_LS = 'SM060R20B30MNAD_LD';
+
+MOTOR_PARAM_LD = 'SM060R20B30MNAD_LD';
+
+MOTOR_PARAM_LQ = 'SM060R20B30MNAD_LQ';
+
+MOTOR_PARAM_FLUX = 'SM060R20B30MNAD_FLUX';
+
+MOTOR_PARAM_POLE_PAIRS = 'SM060R20B30MNAD_POLE_PAIRS';
+
+MOTOR_PARAM_INERTIA = 'SM060R20B30MNAD_INERTIA';
+
+MOTOR_PARAM_FRICTION = 'SM060R20B30MNAD_FRICTION';
+
 % Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
 MCS_ENCODER_SPEED_FILTER_FC_HZ = 20.0;
 
-% Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu.
-MCS_MECH_POSITION_KP_PU = 5.0;
+% Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets.
+MCS_ADC_CALIBRATOR_FC_HZ = 20.0;
 
-% Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
-MCS_MECH_POSITION_KI_PU_S = 1.0;
-
-% Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu.
-MCS_MECH_VELOCITY_KP_PU = 5.0;
-
-% Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
-MCS_MECH_VELOCITY_KI_PU_S = 1.0;
-
-% D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
-MCS_COMMISSIONING_ID_REF_A = 1.0;
-
-% Q-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
-MCS_COMMISSIONING_IQ_REF_A = 1.0;
-
-% Mechanical speed reference in rpm used by BUILD_LEVEL 4 commissioning. Converted to PU using MOTOR_PARAM_MAX_SPEED.
-MCS_COMMISSIONING_SPEED_REF_RPM = 300.0;
+% Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
+MCS_ADC_CALIBRATOR_Q = 0.707;
 
 % Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
 MCS_MECH_SPEED_LIMIT_RPM = 3000.0;
@@ -97,23 +100,38 @@ MCS_MAX_RECT_SATURATION_VOLTAGE_V = 10.0;
 
 MCS_MAX_DC_BUS_VOLTAGE_V = CTRL_DCBUS_VOLTAGE*1.2;
 
-MCS_MIN_DC_BUS_VOLTAGE_V = CTRL_DCBUS_VOLTAGE*0.2;
+% The current limit value at which the machine must be shut down.
+MCS_MAX_SHUTDOWN_CURRENT_A = 10.0;
 
-MOTOR_PARAM_INERTIA = 'SM060R20B30MNAD_INERTIA';
+% Circular saturation limit for voltage vector magnitude in V.
+MCS_MAX_CIR_SATURATION_VOLTAGE_V = 10.0;
 
-MOTOR_PARAM_FLUX = 'SM060R20B30MNAD_FLUX';
+% D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
+MCS_COMMISSIONING_ID_REF_A = 1.0;
 
-MOTOR_PARAM_LD = 'SM060R20B30MNAD_LD';
+% Q-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
+MCS_COMMISSIONING_IQ_REF_A = 1.0;
 
-MOTOR_PARAM_RS = 'SM060R20B30MNAD_RS';
+% Mechanical speed reference in rpm used by BUILD_LEVEL 4 commissioning. Converted to PU using MOTOR_PARAM_MAX_SPEED.
+MCS_COMMISSIONING_SPEED_REF_RPM = 300.0;
 
-MOTOR_PARAM_LQ = 'SM060R20B30MNAD_LQ';
+% Electrical frequency command in hertz used by the BUILD_LEVEL 1 V/f path and the BUILD_LEVEL 2 synthetic-angle current-loop path.
+MCS_OPEN_LOOP_FREQ_HZ = 20.0;
 
-MOTOR_PARAM_LS = 'SM060R20B30MNAD_LD';
+% Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator.
+MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S = 20.0;
 
-MOTOR_PARAM_FRICTION = 'SM060R20B30MNAD_FRICTION';
+% Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu.
+MCS_MECH_POSITION_KP_PU = 5.0;
 
-MOTOR_PARAM_POLE_PAIRS = 'SM060R20B30MNAD_POLE_PAIRS';
+% Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
+MCS_MECH_POSITION_KI_PU_S = 1.0;
+
+% Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu.
+MCS_MECH_VELOCITY_KP_PU = 5.0;
+
+% Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
+MCS_MECH_VELOCITY_KI_PU_S = 1.0;
 
 % Controller startup delay in milliseconds.
 CTRL_STARTUP_DELAY = 100;
@@ -121,11 +139,7 @@ CTRL_STARTUP_DELAY = 100;
 % Minimum delay in milliseconds before the CiA402 state machine enters Operation Enabled. The project control tick is expressed in milliseconds.
 MCS_CIA402_OPERATION_ENABLE_DELAY_MS = 100;
 
-% Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets.
-MCS_ADC_CALIBRATOR_FC_HZ = 20.0;
-
-% Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
-MCS_ADC_CALIBRATOR_Q = 0.707;
+MCS_MIN_DC_BUS_VOLTAGE_V = CTRL_DCBUS_VOLTAGE*0.2;
 
 %% SDPE project summary
 fprintf('\n============================================================\n');
@@ -135,9 +149,10 @@ fprintf('Suite        : %s\n', 'mcs_pmsm_nt');
 fprintf('Version      : %s\n', '1.0.0');
 fprintf('Hardware (0):\n');
 fprintf('Common requirements (0):\n');
-fprintf('Enabled variables (37):\n');
+fprintf('Enabled variables (42):\n');
 fprintf('  BUILD_LEVEL = '); disp(BUILD_LEVEL);
 fprintf('  CONTROLLER_FREQUENCY = '); disp(CONTROLLER_FREQUENCY);
+fprintf('  CTRL_SPEED_RPM_BASE = '); disp(CTRL_SPEED_RPM_BASE);
 fprintf('  CTRL_STARTUP_DELAY = '); disp(CTRL_STARTUP_DELAY);
 fprintf('  MCS_ADC_CALIBRATOR_FC_HZ = '); disp(MCS_ADC_CALIBRATOR_FC_HZ);
 fprintf('  MCS_ADC_CALIBRATOR_Q = '); disp(MCS_ADC_CALIBRATOR_Q);
@@ -146,8 +161,10 @@ fprintf('  MCS_COMMISSIONING_ID_REF_A = '); disp(MCS_COMMISSIONING_ID_REF_A);
 fprintf('  MCS_COMMISSIONING_IQ_REF_A = '); disp(MCS_COMMISSIONING_IQ_REF_A);
 fprintf('  MCS_COMMISSIONING_SPEED_REF_RPM = '); disp(MCS_COMMISSIONING_SPEED_REF_RPM);
 fprintf('  MCS_ENCODER_SPEED_FILTER_FC_HZ = '); disp(MCS_ENCODER_SPEED_FILTER_FC_HZ);
+fprintf('  MCS_MAX_CIR_SATURATION_VOLTAGE_V = '); disp(MCS_MAX_CIR_SATURATION_VOLTAGE_V);
 fprintf('  MCS_MAX_DC_BUS_VOLTAGE_V = '); disp(MCS_MAX_DC_BUS_VOLTAGE_V);
 fprintf('  MCS_MAX_RECT_SATURATION_VOLTAGE_V = '); disp(MCS_MAX_RECT_SATURATION_VOLTAGE_V);
+fprintf('  MCS_MAX_SHUTDOWN_CURRENT_A = '); disp(MCS_MAX_SHUTDOWN_CURRENT_A);
 fprintf('  MCS_MECH_CURRENT_LIMIT_A = '); disp(MCS_MECH_CURRENT_LIMIT_A);
 fprintf('  MCS_MECH_POSITION_KI_PU_S = '); disp(MCS_MECH_POSITION_KI_PU_S);
 fprintf('  MCS_MECH_POSITION_KP_PU = '); disp(MCS_MECH_POSITION_KP_PU);
@@ -156,6 +173,8 @@ fprintf('  MCS_MECH_SPEED_SLOPE_RPM_S = '); disp(MCS_MECH_SPEED_SLOPE_RPM_S);
 fprintf('  MCS_MECH_VELOCITY_KI_PU_S = '); disp(MCS_MECH_VELOCITY_KI_PU_S);
 fprintf('  MCS_MECH_VELOCITY_KP_PU = '); disp(MCS_MECH_VELOCITY_KP_PU);
 fprintf('  MCS_MIN_DC_BUS_VOLTAGE_V = '); disp(MCS_MIN_DC_BUS_VOLTAGE_V);
+fprintf('  MCS_OPEN_LOOP_FREQ_HZ = '); disp(MCS_OPEN_LOOP_FREQ_HZ);
+fprintf('  MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S = '); disp(MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S);
 fprintf('  MCS_PMSM_NT_COMMON_SDPE_PROJECT_ID = '); disp(MCS_PMSM_NT_COMMON_SDPE_PROJECT_ID);
 fprintf('  MCS_PMSM_NT_COMMON_SDPE_PROJECT_SUITE = '); disp(MCS_PMSM_NT_COMMON_SDPE_PROJECT_SUITE);
 fprintf('  MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT = '); disp(MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT);

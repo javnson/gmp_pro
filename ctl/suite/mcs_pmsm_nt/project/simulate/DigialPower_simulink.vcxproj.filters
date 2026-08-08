@@ -213,6 +213,12 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pid.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dq_pi.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dq_ladrc1.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pid_aw.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>

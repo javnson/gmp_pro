@@ -138,9 +138,9 @@
       "role": "Rated Speed Rpm",
       "macro": "CTRL_SPEED_RPM_BASE",
       "enabled": true,
-      "weak": false,
+      "weak": true,
       "binding": {
-        "export": "${sm060r20b30mnad.Max Speed}"
+        "macro": "MOTOR_PARAM_MAX_SPEED"
       },
       "description": ""
     },

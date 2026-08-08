@@ -188,6 +188,8 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_component_interface.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pi.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pid.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dq_pi.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dq_ladrc1.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pid_aw.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_biquad_filter.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_df.c" />

@@ -15,7 +15,18 @@ add_executable(gmp_dq_controller_host_sim
 
 add_executable(gmp_dq_controller_header_cpp_smoke header_cpp_smoke.cpp)
 
-foreach(target gmp_dq_controller_host_sim gmp_dq_controller_header_cpp_smoke)
+add_executable(gmp_foc_current_loop_compare
+    foc_current_loop_compare.c
+    ${GMP_PRO_LOCATION}/ctl/component/motor_control/current_loop/src/ctl_mc_foc_core.c
+    ${GMP_PRO_LOCATION}/ctl/component/intrinsic/complex/src/ctl_dq_pi.c
+    ${GMP_PRO_LOCATION}/ctl/component/intrinsic/complex/src/ctl_dq_ladrc1.c
+    ${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/src/ctl_continuous_pid.c
+    ${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/src/ctl_internal_ladrc1.c
+    ${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_filter.c
+    ${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_lead_lag.c
+)
+
+foreach(target gmp_dq_controller_host_sim gmp_dq_controller_header_cpp_smoke gmp_foc_current_loop_compare)
     target_include_directories(${target} PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/config
         ${GMP_PRO_LOCATION}
@@ -25,13 +36,17 @@ endforeach()
 if(MSVC)
     target_compile_options(gmp_dq_controller_host_sim PRIVATE /W4)
     target_compile_options(gmp_dq_controller_header_cpp_smoke PRIVATE /W4)
+    target_compile_options(gmp_foc_current_loop_compare PRIVATE /W4)
 else()
     target_compile_options(gmp_dq_controller_host_sim PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(gmp_dq_controller_header_cpp_smoke PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(gmp_foc_current_loop_compare PRIVATE -Wall -Wextra -Wpedantic)
     target_link_libraries(gmp_dq_controller_host_sim PRIVATE m)
     target_link_libraries(gmp_dq_controller_header_cpp_smoke PRIVATE m)
+    target_link_libraries(gmp_foc_current_loop_compare PRIVATE m)
 endif()
 
 enable_testing()
 add_test(NAME dq_controller_host_sim COMMAND gmp_dq_controller_host_sim)
 add_test(NAME dq_controller_header_cpp_smoke COMMAND gmp_dq_controller_header_cpp_smoke)
+add_test(NAME foc_current_loop_compare COMMAND gmp_foc_current_loop_compare)

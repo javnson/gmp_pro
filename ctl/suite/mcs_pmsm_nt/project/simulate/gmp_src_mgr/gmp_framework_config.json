@@ -179,6 +179,14 @@
         },
         {
             "root": "ctl",
+            "module": "component|intrinsic|complex|dq_pi"
+        },
+        {
+            "root": "ctl",
+            "module": "component|intrinsic|complex|dq_ladrc1"
+        },
+        {
+            "root": "ctl",
             "module": "component|intrinsic|continuous|ladrc1"
         },
         {

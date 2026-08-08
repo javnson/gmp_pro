@@ -108,7 +108,8 @@ void ctl_init()
     ctl_auto_tuning_foc_core(&mtr_ctrl_init);
     ctl_init_foc_core(&mtr_ctrl, &mtr_ctrl_init);
 
-    ctl_set_foc_core_saturation(&mtr_ctrl, VOLT_PU(MCS_MAX_CIR_SATURATION_VOLTAGE_V) , VOLT_PU(MCS_MAX_RECT_SATURATION_VOLTAGE_V));
+    ctl_set_foc_core_saturation(&mtr_ctrl, MCS_MAX_RECT_SATURATION_VOLTAGE_V / CTRL_VOLTAGE_BASE,
+                                MCS_MAX_CIR_SATURATION_VOLTAGE_V / CTRL_VOLTAGE_BASE);
 
     //
     // init SPWM modulator

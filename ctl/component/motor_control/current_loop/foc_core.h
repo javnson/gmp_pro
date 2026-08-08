@@ -12,7 +12,14 @@
 
 #include <ctl/component/motor_control/interface/motor_universal_interface.h>
 
-#include <ctl/component/intrinsic/continuous/continuous_pid.h>
+/* Uncomment to use DQ-LADRC1. When it is not defined, DQ-PI is used. */
+// #define ENABLE_FOC_LADRC_CTRL
+
+#ifndef ENABLE_FOC_LADRC_CTRL
+#include <ctl/component/intrinsic/complex/dq_pi.h>
+#else
+#include <ctl/component/intrinsic/complex/dq_ladrc1.h>
+#endif
 #include <ctl/math_block/coordinate/coord_trans.h>
 
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
@@ -42,7 +49,7 @@ extern "C"
  * The controller implements the PMSM voltage equations in the d-q frame:
  * @f[ v_d = R_s i_d + L_d \frac{di_d}{dt} - \omega_e L_q i_q @f]
  * @f[ v_q = R_s i_q + L_q \frac{di_q}{dt} + \omega_e L_d i_d + \omega_e \psi_f @f]
- * The PI controllers regulate i_d and i_q to their reference values.
+ * The selected DQ controller regulates i_d and i_q to their references.
  * @{
  */
 
@@ -53,10 +60,6 @@ extern "C"
 #ifndef MC_CURRENT_SAMPLE_PHASE_MODE
 #define MC_CURRENT_SAMPLE_PHASE_MODE (3)
 #endif // MC_CURRENT_SAMPLE_PHASE_MODE
-
-#ifndef MC_CURRENT_OUTPUT_LIMIT_BY_SQRT
-#define MC_CURRENT_OUTPUT_LIMIT_BY_SQRT (0)
-#endif // MC_CURRENT_OUTPUT_LIMIT_BY_SQRT
 
 /**
  * @brief Main structure for the FOC current controller.
@@ -96,7 +99,7 @@ typedef struct _tag_current_controller
     ctl_vector3_t iab0; //!< The 3-phase currents in the alpha-beta stationary frame.
     ctl_vector3_t idq0; //!< The 3-phase currents in the d-q rotating frame.
 
-    ctl_vector2_t vdq_ctrl_out; //!< PID Controller result
+    ctl_vector2_t vdq_ctrl_out; //!< DQ controller result before feedforward and limiting.
     ctl_vector2_t vdq_decouple; //!< Decoupling
 
     ctl_vector3_t vdq_out;                 //!< vdq output = vdq_ref + vdq_ff
@@ -116,18 +119,24 @@ typedef struct _tag_current_controller
     ctl_filter_IIR1_t filter_iuvw[3]; //!< CTRL: current input filter
     ctl_filter_IIR1_t filter_udc;     //!< CTRL: DC bus voltage input filter
 
-    ctl_pid_t idq_ctrl[2];           //!< PI controllers for d-axis and q-axis currents.
+#ifndef ENABLE_FOC_LADRC_CTRL
+    ctl_dq_pi_t idq_ctrl; //!< DQ-PI current controller (default).
+#else
+    ctl_dq_ladrc1_t idq_ctrl; //!< DQ-LADRC1 current controller.
+#endif
     ctrl_lead_t lead_compensator[2]; //!< output lead compensator
 
     //
     // --- Feed-forward & Parameters ---
     //
     ctrl_gt coef_ff_decouple[2]; //!< CTRL: current feed-foreword
-    ctrl_gt max_vs_mag;          //!< output voltage limit
+    ctrl_gt max_vs_mag;          //!< Circular output voltage limit.
+    ctrl_gt max_vs_mag_sq;       //!< Cached squared circular limit.
+    ctrl_gt max_vs_rect;         //!< Per-axis rectangular output voltage limit.
     ctrl_gt max_dcbus_voltage;   //!< output voltage under 1 pu Vbus, default is 1.732 when Vbus = Vbase.
 
     // --- State ---
-    fast_gt flag_enable_current_ctrl; //!< Flag to enable or disable the PI controller action.
+    fast_gt flag_enable_current_ctrl; //!< Enables or disables closed-loop current control.
     fast_gt
         flag_enable_theta_calc; //!< Flag to enable theta -> phasor calculation. If this flag is disabled using phasor directly.
     fast_gt flag_enable_lead_compensator; //!< Enables the output lead compensator.
@@ -148,14 +157,17 @@ typedef struct _tag_current_controller
 GMP_STATIC_INLINE void ctl_clear_foc_core(mc_foc_core_t* mc)
 {
     // 1. Clear Filters
-    ctl_clear_filter_iir1(&mc->filter_iuvw[phase_U]); // 修正命名 iabc -> iuvw
+    ctl_clear_filter_iir1(&mc->filter_iuvw[phase_U]);
     ctl_clear_filter_iir1(&mc->filter_iuvw[phase_V]);
     ctl_clear_filter_iir1(&mc->filter_iuvw[phase_W]);
     ctl_clear_filter_iir1(&mc->filter_udc);
 
     // 2. Clear Controllers
-    ctl_clear_pid(&mc->idq_ctrl[phase_d]);
-    ctl_clear_pid(&mc->idq_ctrl[phase_q]);
+#ifndef ENABLE_FOC_LADRC_CTRL
+    ctl_clear_dq_pi(&mc->idq_ctrl);
+#else
+    ctl_clear_dq_ladrc1(&mc->idq_ctrl);
+#endif
 
     ctl_clear_lead(&mc->lead_compensator[phase_d]);
     ctl_clear_lead(&mc->lead_compensator[phase_q]);
@@ -180,8 +192,8 @@ GMP_STATIC_INLINE void ctl_clear_foc_core(mc_foc_core_t* mc)
     mc->isr_tick = 0;
 }
 
-// 注意电压基值应当按照变流器输出最大电压即Udc/SQRT(3)来计算
-// 电流基值应当按照变流器最大允许输出电流来计算，这样最合理
+// Use the converter maximum output voltage, Udc/SQRT(3), as the voltage base.
+// Use the converter maximum permitted output current as the current base.
 
 typedef struct _tag_mtr_current_ctrl
 {
@@ -214,6 +226,14 @@ typedef struct _tag_mtr_current_ctrl
     parameter_gt kpq;
     parameter_gt kiq;
 
+    // the following parameters would be calculated by LADRC1 auto-tuning.
+    parameter_gt ladrc_b0d;
+    parameter_gt ladrc_fcd;
+    parameter_gt ladrc_fod;
+    parameter_gt ladrc_b0q;
+    parameter_gt ladrc_fcq;
+    parameter_gt ladrc_foq;
+
 } mc_foc_init_t;
 
 /**
@@ -221,22 +241,29 @@ typedef struct _tag_mtr_current_ctrl
  * @param[in,out] init Pointer to the `mtr_current_init_t` structure.
  */
 void ctl_auto_tuning_foc_core(mc_foc_init_t* init);
+void ctl_auto_tuning_foc_core_pi(mc_foc_init_t* init);
+void ctl_auto_tuning_foc_core_ladrc1(mc_foc_init_t* init);
 
 /**
- * @brief Sets up the parameters for the d-q axis PI controllers.
+ * @brief Initializes the compile-time selected d-q current controller.
  * @param[out] mc Pointer to the current controller structure.
  * @param[in]  init initialize object for Motor controller.
  */
 void ctl_init_foc_core(mc_foc_core_t* mc, mc_foc_init_t* init);
+#ifndef ENABLE_FOC_LADRC_CTRL
+void ctl_init_foc_core_pi(mc_foc_core_t* mc, const mc_foc_init_t* init);
+#else
+void ctl_init_foc_core_ladrc1(mc_foc_core_t* mc, const mc_foc_init_t* init);
+#endif
 
 /**
  * @brief Initializes the basic motor current controller (FOC Core).
- * @details Sets up IIR filters for currents and bus voltage, initializes PI controllers 
+ * @details Sets up IIR filters for currents and bus voltage, initializes the selected DQ controller,
  * for d/q axes, configures lead compensators, sets voltage limits, and establishes safe 
  * default execution flags.
  * * @param[out] mc        Pointer to the motor current controller instance.
- * @param[in]  kp        Proportional gain for the d/q axis PI controllers.
- * @param[in]  ki        Integral gain for the d/q axis PI controllers.
+ * @param[in]  kp        PI proportional gain, or LADRC b0 when LADRC is selected.
+ * @param[in]  ki        PI integral gain, or LADRC fc when LADRC is selected.
  * @param[in]  max_vs_pu Maximum stator voltage magnitude in per-unit (e.g., 0.577f for SVPWM).
  * @param[in]  fs        Sampling/execution frequency of the control loop (Hz).
  */
@@ -247,8 +274,8 @@ void ctl_init_foc_core_basic(mc_foc_core_t* mc, parameter_gt kp, parameter_gt ki
  * @brief Sets the output voltage saturation limits for the FOC controller.
  * @details Configures both circular and rectangular voltage limits. The circular limit
  * restricts the overall maximum voltage vector magnitude, while the rectangular limit
- * bounds the individual d/q axis PI controller outputs (with integral limits scaled
- * to 80% of the rectangular limit).
+ * bounds the individual d/q axis controller outputs. PI integral limits are scaled
+ * to 80% of the rectangular limit.
  * @param[in,out] mc                   Pointer to the motor current controller instance.
  * @param[in]     volt_rect_saturation Rectangular saturation limit for d/q axes in per-unit (pu).
  * @param[in]     volt_cir_saturation  Circular saturation limit for voltage vector magnitude in per-unit (pu).
@@ -306,134 +333,77 @@ GMP_STATIC_INLINE void ctl_step_foc_core(mc_foc_core_t* mc)
     //
     ctl_ct_park(&mc->iab0, &mc->phasor, &mc->idq0);
 
-    //
-    // 4. Controller kernel, current loop
-    //
-    if (mc->flag_enable_current_ctrl)
+    // 4. Compose decoupling and user feedforward before the DQ controller.
+    ctl_vector2_clear(&mc->vdq_decouple);
+    if (mc->flag_enable_decouple)
     {
-        //
-        // 4.1 Calculate error and step the PI controllers
-        //
-        ctrl_gt err_d = mc->idq_ref.dat[phase_d] - mc->idq0.dat[phase_d];
-        ctrl_gt err_q = mc->idq_ref.dat[phase_q] - mc->idq0.dat[phase_q];
-
-        // d axis controller limited by Vs,max, q axis controller limited by vd
-        //ctl_set_pid_limit(&mc->idq_ctrl[phase_d], mc->max_vs_mag, -mc->max_vs_mag);
-        //ctl_set_pid_limit(&mc->idq_ctrl[phase_q], mc->max_vq_mag, -mc->max_vq_mag);
-
-        mc->vdq_ctrl_out.dat[phase_d] = ctl_step_pid_ser(&mc->idq_ctrl[phase_d], err_d);
-        mc->vdq_ctrl_out.dat[phase_q] = ctl_step_pid_ser(&mc->idq_ctrl[phase_q], err_q);
-
-        //
-        // 4.2 Calculate feed forward decoupling
-        //
-        if (mc->flag_enable_decouple)
-        {
-            // decoupling
-            mc->vdq_decouple.dat[phase_d] =
-                -ctl_mul(mc->spd_if->speed, ctl_mul(mc->coef_ff_decouple[phase_d], mc->idq0.dat[phase_q]));
-            mc->vdq_decouple.dat[phase_q] =
-                ctl_mul(mc->spd_if->speed, ctl_mul(mc->coef_ff_decouple[phase_q], mc->idq0.dat[phase_d]));
-
-            mc->vdq_ctrl_out.dat[phase_d] += mc->vdq_decouple.dat[phase_d];
-            mc->vdq_ctrl_out.dat[phase_q] += mc->vdq_decouple.dat[phase_q];
-        }
-
-        //
-        // 4.3 lead compensator
-        //
-        if (mc->flag_enable_lead_compensator)
-        {
-            mc->vdq_ref.dat[phase_d] = ctl_step_lead(&mc->lead_compensator[phase_d], mc->vdq0.dat[phase_d]);
-            mc->vdq_ref.dat[phase_q] = ctl_step_lead(&mc->lead_compensator[phase_q], mc->vdq0.dat[phase_q]);
-        }
-        else
-        {
-            ctl_vector2_copy(&mc->vdq_ref, &mc->vdq_ctrl_out);
-        }
+        mc->vdq_decouple.dat[phase_d] =
+            -ctl_mul(mc->spd_if->speed, ctl_mul(mc->coef_ff_decouple[phase_d], mc->idq0.dat[phase_q]));
+        mc->vdq_decouple.dat[phase_q] =
+            ctl_mul(mc->spd_if->speed, ctl_mul(mc->coef_ff_decouple[phase_q], mc->idq0.dat[phase_d]));
     }
 
-    //
-    // 5. vdq feed forward
-    //
+    ctl_vector2_t total_ff;
+    ctl_vector2_copy(&total_ff, &mc->vdq_decouple);
     if (mc->flag_enable_vdq_feedforward)
+        ctl_vector2_add(&total_ff, &total_ff, &mc->vdq_ff);
+
+    // 5. Closed-loop control. The DQ module owns feedforward, vector limits,
+    // and anti-windup/observer applied-command feedback as one atomic pipeline.
+    if (mc->flag_enable_current_ctrl)
     {
-        ctl_vector2_add((ctl_vector2_t*)&mc->vdq_out, &mc->vdq_ref, &mc->vdq_ff);
+#ifndef ENABLE_FOC_LADRC_CTRL
+        ctl_step_dq_pi(&mc->idq_ctrl, &mc->idq_ref, (ctl_vector2_t*)&mc->idq0, &total_ff, &mc->vdq_ref);
+        ctl_vector2_copy(&mc->vdq_ctrl_out, &mc->idq_ctrl.ctrl_out);
+#else
+        ctl_step_dq_ladrc1(&mc->idq_ctrl, &mc->idq_ref, (ctl_vector2_t*)&mc->idq0, &total_ff, &mc->vdq_ref);
+        ctl_vector2_copy(&mc->vdq_ctrl_out, &mc->idq_ctrl.ctrl_out);
+#endif
     }
     else
     {
-        ctl_vector2_copy((ctl_vector2_t*)&mc->vdq_out, &mc->vdq_ref);
+        // Open-loop voltage command keeps the same feedforward semantics.
+        ctl_vector2_add((ctl_vector2_t*)&mc->vdq_out, &mc->vdq_ref, &total_ff);
+        ctl_vector2_sat_circle_sq((ctl_vector2_t*)&mc->vdq_out, (ctl_vector2_t*)&mc->vdq_out,
+                                  mc->max_vs_mag_sq);
+        ctl_vector2_t limit_max = {{mc->max_vs_rect, mc->max_vs_rect}};
+        ctl_vector2_t limit_min = {{-mc->max_vs_rect, -mc->max_vs_rect}};
+        ctl_vector2_sat_rect((ctl_vector2_t*)&mc->vdq_out, (ctl_vector2_t*)&mc->vdq_out, &limit_max, &limit_min);
+        ctl_vector2_copy(&mc->vdq_ref, (ctl_vector2_t*)&mc->vdq_out);
     }
 
-    //
-    // 6. Bus Voltage Compensation, and vdq feed forward
-    //
+    // 6. Optional phase-lead and bus-voltage compensation.
+    if (mc->flag_enable_lead_compensator)
+    {
+        mc->vdq_out.dat[phase_d] = ctl_step_lead(&mc->lead_compensator[phase_d], mc->vdq_ref.dat[phase_d]);
+        mc->vdq_out.dat[phase_q] = ctl_step_lead(&mc->lead_compensator[phase_q], mc->vdq_ref.dat[phase_q]);
+    }
+    else
+        ctl_vector2_copy((ctl_vector2_t*)&mc->vdq_out, &mc->vdq_ref);
+
+    ctrl_gt v_scale = float2ctrl(1.0f);
     if (mc->flag_enable_bus_compensation)
     {
-        ctrl_gt v_scale;
-        if (mc->udc > float2ctrl(0.5f))                // prevent div 0
-            v_scale = mc->max_dcbus_voltage / mc->udc; // udc is per unit value
+        if (mc->udc > float2ctrl(0.5f))
+            v_scale = mc->max_dcbus_voltage / mc->udc;
         else
             v_scale = mc->max_dcbus_voltage;
-
-        mc->vdq_out_bus_compensator.dat[phase_d] = ctl_mul(mc->vdq_out.dat[phase_d], v_scale);
-        mc->vdq_out_bus_compensator.dat[phase_q] = ctl_mul(mc->vdq_out.dat[phase_q], v_scale);
     }
-    else
-    {
-        ctl_vector2_copy(&mc->vdq_out_bus_compensator, (ctl_vector2_t*)&mc->vdq_out);
-    }
+    mc->vdq_out_bus_compensator.dat[phase_d] = ctl_mul(mc->vdq_out.dat[phase_d], v_scale);
+    mc->vdq_out_bus_compensator.dat[phase_q] = ctl_mul(mc->vdq_out.dat[phase_q], v_scale);
 
-    //
-    // 6. output Circular Saturation
-    //
+    // Guard the actual modulator command as well (notably after bus compensation).
+    ctl_vector2_copy(&mc->vdq_out_sat, &mc->vdq_out_bus_compensator);
+    ctl_vector2_sat_circle_sq(&mc->vdq_out_sat, &mc->vdq_out_sat, mc->max_vs_mag_sq);
+    ctl_vector2_t limit_max = {{mc->max_vs_rect, mc->max_vs_rect}};
+    ctl_vector2_t limit_min = {{-mc->max_vs_rect, -mc->max_vs_rect}};
+    ctl_vector2_sat_rect(&mc->vdq_out_sat, &mc->vdq_out_sat, &limit_max, &limit_min);
 
-    // 6.1 Saturation output
-    mc->vdq_out_sat.dat[phase_d] = ctl_sat(mc->vdq_out_bus_compensator.dat[phase_d], mc->max_vs_mag, -mc->max_vs_mag);
+    mc->vdq_out.dat[phase_d] = mc->vdq_out_sat.dat[phase_d];
+    mc->vdq_out.dat[phase_q] = mc->vdq_out_sat.dat[phase_q];
+    mc->vdq_out.dat[phase_0] = float2ctrl(0.0f);
 
-    // q axis controller is limited by d axis output
-#if MC_CURRENT_OUTPUT_LIMIT_BY_SQRT == 1
-    ctrl_gt val_sq =
-        ctl_mul(mc->max_vs_mag, mc->max_vs_mag) - ctl_mul(mc->vdq_out_sat.dat[phase_d], mc->vdq_out_sat.dat[phase_d]);
-
-    if (val_sq < 0)
-        mc->max_vq_mag = 0;
-    else
-        mc->max_vq_mag = ctl_sqrt(val_sq);
-#else  // default case
-    mc->max_vq_mag = mc->max_vs_mag - mc->vdq_out_sat.dat[phase_d];
-#endif // MC_CURRENT_OUTPUT_LIMIT_BY_SQRT
-
-    mc->vdq_out_sat.dat[phase_q] =
-        ctl_sat(mc->vdq_out.dat[phase_q] + mc->vdq_ff.dat[phase_q], mc->max_vq_mag, -mc->max_vq_mag);
-
-    // 6.2 PID Anti-Windup Back-calculation
-    if (mc->flag_enable_current_ctrl)
-    {
-        // 逻辑：PID real output = vdq_out_sat - all feed forward items
-
-        // --- D Axis Correction ---
-        ctrl_gt v_pid_d_real = mc->vdq_out_sat.dat[phase_d];
-        if (mc->flag_enable_decouple)
-            v_pid_d_real -= mc->vdq_decouple.dat[phase_d];
-        if (mc->flag_enable_vdq_feedforward)
-            v_pid_d_real -= mc->vdq_ff.dat[phase_d];
-
-        ctl_pid_clamping_correction_using_real_output(&mc->idq_ctrl[phase_d], v_pid_d_real);
-
-        // --- Q Axis Correction ---
-        ctrl_gt v_pid_q_real = mc->vdq_out_sat.dat[phase_q];
-        if (mc->flag_enable_decouple)
-            v_pid_q_real -= mc->vdq_decouple.dat[phase_q];
-        if (mc->flag_enable_vdq_feedforward)
-            v_pid_q_real -= mc->vdq_ff.dat[phase_q];
-
-        ctl_pid_clamping_correction_using_real_output(&mc->idq_ctrl[phase_q], v_pid_q_real);
-    }
-
-    mc->vdq_out.dat[phase_0] = 0;
-
-    // 7. iPark: d-q -> alpha-beta
+    // 7. iPark: d-q -> alpha-beta, using the command actually applied.
     ctl_ct_ipark(&mc->vdq_out, &mc->phasor, &mc->vab0);
 }
 
@@ -462,7 +432,7 @@ GMP_STATIC_INLINE void ctl_set_foc_core_vdq_ref(mc_foc_core_t* mc, ctrl_gt vd_ff
 }
 
 /**
- * @brief Enables the closed-loop PI current controller action.
+ * @brief Enables closed-loop DQ current control.
  * @param[in,out] mc Pointer to the FOC core structure.
  */
 GMP_STATIC_INLINE void ctl_enable_foc_core_current_ctrl(mc_foc_core_t* mc)
@@ -471,8 +441,8 @@ GMP_STATIC_INLINE void ctl_enable_foc_core_current_ctrl(mc_foc_core_t* mc)
 }
 
 /**
- * @brief Disables the closed-loop PI current controller action.
- * @details When disabled, the PI controller output will be zero, but explicit voltage 
+ * @brief Disables closed-loop DQ current control.
+ * @details When disabled, explicit voltage
  * commands or feedforward terms (if enabled) will still be applied to the plant.
  * @param[in,out] mc Pointer to the FOC core structure.
  */
@@ -556,7 +526,7 @@ GMP_STATIC_INLINE void ctl_disable_foc_core_vdq_ff(mc_foc_core_t* mc)
 /**
  * @brief Enables the Vd/Vq voltage feedforward control.
  * @details Adds pre-calculated open-loop feedforward voltages directly to the 
- * PI controller outputs. Essential for high-performance dynamic tracking.
+ * DQ controller outputs. Essential for high-performance dynamic tracking.
  * @param[in,out] mc Pointer to the FOC core structure.
  */
 GMP_STATIC_INLINE void ctl_enable_foc_core_vdq_ff(mc_foc_core_t* mc)
