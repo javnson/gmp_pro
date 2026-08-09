@@ -550,13 +550,6 @@ extern "C"
 // #endif // SPECIFY_ENABLE_ADC_CALIBRATE
 
 /**
- * @brief Enable processor-in-the-loop mode and suppress direct PWM controller output.
- */
-// #ifndef ENABLE_GMP_DL_PIL_SIM
-// #define ENABLE_GMP_DL_PIL_SIM
-// #endif // ENABLE_GMP_DL_PIL_SIM
-
-/**
  * @brief Enable CiA402/GMP framework debug information.
  */
 // #ifndef GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
@@ -599,6 +592,20 @@ extern "C"
 /**
  * @brief Requirement bindings.
  */
+
+/**
+ * @brief Enable the seven ADC slots used by the PMSM SIL input ABI.
+ */
+#ifndef GMP_PIL_RX_MASK
+#define GMP_PIL_RX_MASK (127)
+#endif // GMP_PIL_RX_MASK
+
+/**
+ * @brief Enable three PWM slots and six monitor slots used by the PMSM SIL output ABI.
+ */
+#ifndef GMP_PIL_TX_MASK
+#define GMP_PIL_TX_MASK (4128775)
+#endif // GMP_PIL_TX_MASK
 
 /**
  * @brief Main motor-control ISR frequency in hertz.
@@ -803,6 +810,98 @@ extern "C"
 #define MCS_ADC_CALIBRATOR_Q (0.707f)
 #endif // MCS_ADC_CALIBRATOR_Q
 
+//=================================================================================================
+/**
+ * @brief Common fallbacks: GMP Suite PIL Common Transport.
+ */
+
+//=================================================================================================
+/**
+ * @brief PIL Runtime.
+ */
+
+/**
+ * @brief Run control steps only from Data Link PIL transactions while physical control dispatch and power-stage enable remain isolated.
+ */
+// #ifndef ENABLE_GMP_DL_PIL_SIM
+// #define ENABLE_GMP_DL_PIL_SIM
+// #endif // ENABLE_GMP_DL_PIL_SIM
+
+//=================================================================================================
+/**
+ * @brief Requirement bindings.
+ */
+
+/**
+ * @brief Base command followed by mask, step, status, and abort subcommands.
+ */
+#ifndef GMP_PIL_DL_BASE_COMMAND
+#define GMP_PIL_DL_BASE_COMMAND (16)
+#endif // GMP_PIL_DL_BASE_COMMAND
+
+/**
+ * @brief Portable commissioning rate used unless a hardware project overrides it.
+ */
+#ifndef GMP_DL_UART_BAUDRATE
+#define GMP_DL_UART_BAUDRATE (115200)
+#endif // GMP_DL_UART_BAUDRATE
+
+/**
+ * @brief Host running Simulink and the GMP PIL bridge.
+ */
+#ifndef GMP_PIL_UDP_HOST
+#define GMP_PIL_UDP_HOST "127.0.0.1"
+#endif // GMP_PIL_UDP_HOST
+
+/**
+ * @brief Bridge port receiving plant samples from Simulink.
+ */
+#ifndef GMP_PIL_BRIDGE_UDP_LISTEN_PORT
+#define GMP_PIL_BRIDGE_UDP_LISTEN_PORT (12501)
+#endif // GMP_PIL_BRIDGE_UDP_LISTEN_PORT
+
+/**
+ * @brief Simulink port receiving controller results from the bridge.
+ */
+#ifndef GMP_PIL_MATLAB_UDP_LISTEN_PORT
+#define GMP_PIL_MATLAB_UDP_LISTEN_PORT (12500)
+#endif // GMP_PIL_MATLAB_UDP_LISTEN_PORT
+
+/**
+ * @brief Bridge port receiving out-of-band Simulink commands.
+ */
+#ifndef GMP_PIL_MATLAB_COMMAND_TX_PORT
+#define GMP_PIL_MATLAB_COMMAND_TX_PORT (12502)
+#endif // GMP_PIL_MATLAB_COMMAND_TX_PORT
+
+/**
+ * @brief Simulink port receiving command acknowledgements.
+ */
+#ifndef GMP_PIL_MATLAB_COMMAND_RX_PORT
+#define GMP_PIL_MATLAB_COMMAND_RX_PORT (12503)
+#endif // GMP_PIL_MATLAB_COMMAND_RX_PORT
+
+/**
+ * @brief Maximum wait for one target Data Link response.
+ */
+#ifndef GMP_PIL_MCU_TIMEOUT_MS
+#define GMP_PIL_MCU_TIMEOUT_MS (200)
+#endif // GMP_PIL_MCU_TIMEOUT_MS
+
+/**
+ * @brief Maximum wait for the next Simulink plant sample.
+ */
+#ifndef GMP_PIL_MATLAB_TIMEOUT_MS
+#define GMP_PIL_MATLAB_TIMEOUT_MS (5000)
+#endif // GMP_PIL_MATLAB_TIMEOUT_MS
+
+/**
+ * @brief Digital input slot packed into the standard Data Link PIL request.
+ */
+#ifndef GMP_PIL_UDP_DIGITAL_INDEX
+#define GMP_PIL_UDP_DIGITAL_INDEX (0)
+#endif // GMP_PIL_UDP_DIGITAL_INDEX
+
 // Common tail code: MCS PMSM Identification Common Control
 /* Accept the historical misspelling while all source code uses the canonical switch. */
 #if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM
@@ -812,6 +911,15 @@ extern "C"
 /* Reject unsupported incremental build levels at preprocessing time. */
 #if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 4)
 #error "BUILD_LEVEL must be 1 (V/f), 2 (current loop/synthetic angle), 3 (current loop/encoder), or 4 (speed loop)."
+#endif
+
+// Common tail code: GMP Suite PIL Common Transport
+/** Validate the shared PIL command allocation. */
+#if (GMP_PIL_DL_BASE_COMMAND > 251U)
+#error "GMP_PIL_DL_BASE_COMMAND must leave room for four PIL subcommands."
+#endif
+#if (GMP_PIL_UDP_DIGITAL_INDEX >= 8U)
+#error "GMP_PIL_UDP_DIGITAL_INDEX must be in the range [0, 7]."
 #endif
 
 // User project tail code

@@ -36,7 +36,9 @@ CTL_DSA_DL_SCOPE_DEFINE_USER("Control Scope")
 //
 // PIL (processor in loop module)
 //
+#if defined ENABLE_GMP_DL_PIL_SIM
 gmp_pil_sim_t pil;
+#endif
 
 //
 // Tunable Dictionary (Mapped for SINV)
@@ -102,8 +104,10 @@ gmp_task_status_t tsk_dl_debug_device(gmp_task_t* tsk)
 
     case GMP_DL_EVENT_RX_OK:
         // Ack PIL simulation message
+#if defined ENABLE_GMP_DL_PIL_SIM
         if (gmp_pil_sim_rx_cb(&pil))
             break;
+#endif
 
         // Ack parameter tunable message
         if (gmp_param_tunable_rx_cb(&tunable))
@@ -204,13 +208,21 @@ GMP_NO_OPT_PREFIX void init(void) GMP_NO_OPT_SUFFIX
     gmp_scheduler_init(&sched);
 
     for (i = 0; i < sizeof(tasks) / sizeof(gmp_task_t); ++i)
+    {
+#if defined ENABLE_GMP_DL_PIL_SIM
+        if (tasks[i].handler == tsk_dl_debug_device)
+            tasks[i].is_enabled = 0;
+#endif
         gmp_scheduler_add_task(&sched, &tasks[i]);
+    }
 
     // init datalink protocol
     gmp_dev_dl_init(&dl);
 
-    // enable PIL simulation environment
-    gmp_pil_sim_init(&pil, &dl, 0x10);
+#if defined ENABLE_GMP_DL_PIL_SIM
+    gmp_pil_sim_init(&pil, &dl, GMP_PIL_DL_BASE_COMMAND);
+    gmp_pil_sim_set_masks(&pil, GMP_PIL_TX_MASK, GMP_PIL_RX_MASK);
+#endif
 
     // Band DL module with tunable and persp module.
     gmp_param_tunable_init(&tunable, &dl, 0x30, dict_m1, var_tunable_count);
@@ -244,6 +256,9 @@ gmp_task_status_t tsk_startup(gmp_task_t* tsk)
 GMP_NO_OPT_PREFIX
 void mainloop(void) GMP_NO_OPT_SUFFIX
 {
+#if defined ENABLE_GMP_DL_PIL_SIM
+    (void)tsk_dl_debug_device(NULL);
+#endif
     // run task scheduler
     gmp_scheduler_dispatch(&sched);
 }

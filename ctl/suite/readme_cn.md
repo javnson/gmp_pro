@@ -26,12 +26,30 @@ Suite 名称通常使用应用类别前缀：
 | --- | --- | --- | --- |
 | [`dps_clllc`](dps_clllc/README_CN.md) | Digital Power Suite, CLLLC / DAB | 正式工程 | 双向隔离谐振变换器控制。 |
 | [`dps_fsbb`](dps_fsbb/README_CN.md) | Digital Power Suite, four-switch full bridge | 推荐结构 | 四开关全桥电源/变流器控制。 |
-| `mcs_acm` | Motor Control Suite, asynchronous motor | 历史结构 | 异步电动机控制，目前仍使用 `implement` 旧结构。 |
-| `mcs_pmsm` | Motor Control Suite, PMSM | 已弃用 | 永磁同步电机旧工程，不建议新项目继续基于它开发。 |
+| `mcs_acm` | Motor Control Suite, asynchronous motor | 历史结构 | 使用 `implement` 旧结构，已明确跳过全套件 PIL 部署。 |
+| `mcs_acm_nt` | Motor Control Suite, asynchronous motor new template | 仅仿真 | 当前没有硬件目标，不参与硬件 PIL 部署。 |
+| `mcs_pmsm` | Motor Control Suite, PMSM | 已弃用 | 永磁同步电机旧工程，已明确跳过全套件 PIL 部署。 |
 | [`mcs_pmsm_nt`](mcs_pmsm_nt/README_CN.md) | Motor Control Suite, PMSM new template | 正式工程 | 永磁同步电机正式工程，新 PMSM 应优先基于它开发。 |
 | [`mcs_pmsm_id`](mcs_pmsm_id/README_CN.md) | Motor Control Suite, PMSM identification | 正式工程 | PMSM 参数识别工程，用于识别电机参数。 |
 | [`pgs_inv_GFL_inverter`](pgs_inv_GFL_inverter/README_CN.md) | Power Grid Suite, grid-following inverter | 正式工程 | GFL 跟网型变流器/逆变器控制。 |
+| [`pgs_inv_GFM_inverter`](pgs_inv_GFM_inverter/README.md) | Power Grid Suite, grid-forming inverter | 正式工程 | GFM 构网型变流器/逆变器控制。 |
 | [`pgs_sinv_rc`](pgs_sinv_rc/readme_cn.md) | Power Grid Suite, single-phase inverter with repetitive control | 正式工程 | SINV 单相变流器/逆变器控制。 |
+
+### PIL 部署边界
+
+现代工程统一绑定 [`sdpe_pil`](sdpe_pil/sdpe_requirement.json) 公共传输契约，
+由 SDPE 生成 UART 波特率、DL 命令、UDP 端口、超时和套件通道掩码。
+`ENABLE_GMP_DL_PIL_SIM` 默认关闭；需要 PIL 时应在目标工程中创建 private
+覆盖项。PIL 开启后，硬件中断仍负责清中断和维护时基，但
+`gmp_base_ctl_step()` 不推进控制器，控制步只由 DL 事务触发，同时禁止物理功率级使能。
+
+当前部署范围是 7 个现代 suite 的 19 个硬件工程。所有 `simulate` 工程保持原有
+SIL 契约，不绑定硬件 PIL 公共传输配置。`mcs_acm` 与 `mcs_pmsm` 属于旧一代
+`implement` 布局，已标注并直接跳过，后续可整体弃用或删除。
+
+修改目标工程后，应在仓库根目录运行
+`python ctl/suite/validate_pil_deployment.py`。该检查覆盖维护目标清单、SDPE
+组合关系、PIL 生成源码、通道掩码、ISR 隔离，以及 SIL/PIL 工程边界。
 
 术语：
 

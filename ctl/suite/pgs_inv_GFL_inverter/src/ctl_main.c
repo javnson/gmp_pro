@@ -284,14 +284,91 @@ void ctl_mainloop(void)
     return;
 }
 
+#if defined ENABLE_GMP_DL_PIL_SIM
+/** @brief Apply one three-phase inverter SIL/PIL input frame. */
+static void ctl_apply_pil_input(const gmp_sim_rx_buf_t* rx)
+{
+    vabc_src[phase_A] = rx->adc_result[2];
+    vabc_src[phase_B] = rx->adc_result[3];
+    vabc_src[phase_C] = 0;
+    iabc_src[phase_A] = rx->adc_result[4];
+    iabc_src[phase_B] = rx->adc_result[5];
+    iabc_src[phase_C] = rx->adc_result[6];
+    uuvw_src[phase_U] = 0;
+    uuvw_src[phase_V] = 0;
+    uuvw_src[phase_W] = 0;
+    iuvw_src[phase_U] = 0;
+    iuvw_src[phase_V] = 0;
+    iuvw_src[phase_W] = 0;
+    idc_src = rx->adc_result[0];
+    udc_src = rx->adc_result[1];
+    ctl_step_tri_ptr_adc_channel(&iabc);
+    ctl_step_tri_ptr_adc_channel(&vabc);
+    ctl_step_tri_ptr_adc_channel(&iuvw);
+    ctl_step_tri_ptr_adc_channel(&uuvw);
+    ctl_step_ptr_adc_channel(&idc);
+    ctl_step_ptr_adc_channel(&udc);
+}
+
+/** @brief Export one GFL controller result using the established SIL ABI. */
+static void ctl_collect_pil_output(gmp_sim_tx_buf_t* tx)
+{
+#if defined USING_3D_SVPWM
+    tx->pwm_cmp[0] = pwm_3d_out[phase_A];
+    tx->pwm_cmp[1] = pwm_3d_out[phase_B];
+    tx->pwm_cmp[2] = pwm_3d_out[phase_C];
+    tx->pwm_cmp[3] = pwm_3d_out[phase_N];
+#else
+    tx->pwm_cmp[0] = spwm.pwm_out[phase_U];
+    tx->pwm_cmp[1] = spwm.pwm_out[phase_V];
+    tx->pwm_cmp[2] = spwm.pwm_out[phase_W];
+    tx->pwm_cmp[3] = CTRL_PWM_CMP_MAX / 2;
+#endif
+    tx->monitor[0] = inv_ctrl.iabc.dat[phase_A];
+    tx->monitor[1] = inv_ctrl.iabc.dat[phase_B];
+    tx->monitor[2] = inv_ctrl.iab0.dat[phase_0];
+    tx->monitor[3] = neg_current_ctrl.idqn.dat[phase_d];
+    tx->monitor[4] = inv_ctrl.vab0.dat[phase_alpha];
+    tx->monitor[5] = inv_ctrl.vab0.dat[phase_beta];
+    tx->monitor[6] = ctl_get_gfl_pll_error(&inv_ctrl);
+    tx->monitor[7] = inv_ctrl.angle;
+#ifdef USING_DSOGI_PLL
+    tx->monitor[8] = inv_ctrl.pll.srf_pll.phasor.dat[phasor_sin];
+    tx->monitor[9] = inv_ctrl.pll.srf_pll.phasor.dat[phasor_cos];
+#else
+    tx->monitor[8] = inv_ctrl.pll.phasor.dat[phasor_sin];
+    tx->monitor[9] = inv_ctrl.pll.phasor.dat[phasor_cos];
+#endif
+    tx->monitor[10] = inv_ctrl.idq.dat[phase_d];
+    tx->monitor[11] = inv_ctrl.idq.dat[phase_q];
+    tx->monitor[12] = inv_ctrl.vdq.dat[phase_d];
+    tx->monitor[13] = inv_ctrl.vdq.dat[phase_q];
+#if BUILD_LEVEL == 6
+    tx->monitor[14] = gfl_voltage_ctrl.idq_out.dat[phase_d];
+    tx->monitor[15] = gfl_zero_ctrl.v0_out;
+#elif BUILD_LEVEL == 5
+    tx->monitor[14] = pq_droop_ctrl.pq_ref.dat[0];
+    tx->monitor[15] = pq_droop_ctrl.pq_ref.dat[1];
+#else
+    tx->monitor[14] = inv_ctrl.idq_set.dat[phase_d];
+    tx->monitor[15] = inv_ctrl.idq_set.dat[phase_q];
+#endif
+}
+
+#endif // defined ENABLE_GMP_DL_PIL_SIM
+
+/** @brief Execute one controller step requested by the Data Link PIL service. */
 void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
 {
 #if defined ENABLE_GMP_DL_PIL_SIM
-    ctl_input_callback_pil(rx);
+    ctl_apply_pil_input(rx);
 
     ctl_dispatch();
 
-    ctl_output_callback_pil(tx);
+    ctl_collect_pil_output(tx);
+#else
+    GMP_UNUSED_VAR(rx);
+    GMP_UNUSED_VAR(tx);
 #endif // defined ENABLE_GMP_DL_PIL_SIM
 }
 
@@ -328,7 +405,11 @@ void ctl_enable_pwm()
     ctl_set_gfl_inv_current(&inv_ctrl, 0, 0);
 #endif
 
+#if defined ENABLE_GMP_DL_PIL_SIM
+    clear_all_controllers();
+#else
     ctl_fast_enable_output();
+#endif
 }
 
 void ctl_disable_pwm()

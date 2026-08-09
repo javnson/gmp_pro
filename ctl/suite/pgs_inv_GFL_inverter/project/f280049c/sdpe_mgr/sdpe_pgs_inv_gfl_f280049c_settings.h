@@ -501,11 +501,6 @@ extern "C"
 // #define SPECIFY_ENABLE_ADC_CALIBRATE
 
 /**
- * @brief Enable processor-in-the-loop input/output handling.
- */
-// #define ENABLE_GMP_DL_PIL_SIM
-
-/**
  * @brief Enable CiA402/GMP framework debug information.
  */
 // #define GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
@@ -525,6 +520,20 @@ extern "C"
 /**
  * @brief Requirement bindings.
  */
+
+/**
+ * @brief Enable the seven ADC slots used by the three-phase inverter SIL input ABI.
+ */
+#ifndef GMP_PIL_RX_MASK
+#define GMP_PIL_RX_MASK (127)
+#endif // GMP_PIL_RX_MASK
+
+/**
+ * @brief Enable four PWM slots and all sixteen monitor slots used by the GFL SIL output ABI.
+ */
+#ifndef GMP_PIL_TX_MASK
+#define GMP_PIL_TX_MASK (4294901775)
+#endif // GMP_PIL_TX_MASK
 
 /**
  * @brief ADC offset calibrator filter cutoff frequency.
@@ -726,6 +735,98 @@ extern "C"
  */
 #define GFL_GRID_FREQUENCY_HZ (50.0f)
 
+//=================================================================================================
+/**
+ * @brief Common fallbacks: GMP Suite PIL Common Transport.
+ */
+
+//=================================================================================================
+/**
+ * @brief PIL Runtime.
+ */
+
+/**
+ * @brief Run control steps only from Data Link PIL transactions while physical control dispatch and power-stage enable remain isolated.
+ */
+// #ifndef ENABLE_GMP_DL_PIL_SIM
+// #define ENABLE_GMP_DL_PIL_SIM
+// #endif // ENABLE_GMP_DL_PIL_SIM
+
+//=================================================================================================
+/**
+ * @brief Requirement bindings.
+ */
+
+/**
+ * @brief Base command followed by mask, step, status, and abort subcommands.
+ */
+#ifndef GMP_PIL_DL_BASE_COMMAND
+#define GMP_PIL_DL_BASE_COMMAND (16)
+#endif // GMP_PIL_DL_BASE_COMMAND
+
+/**
+ * @brief Portable commissioning rate used unless a hardware project overrides it.
+ */
+#ifndef GMP_DL_UART_BAUDRATE
+#define GMP_DL_UART_BAUDRATE (115200)
+#endif // GMP_DL_UART_BAUDRATE
+
+/**
+ * @brief Host running Simulink and the GMP PIL bridge.
+ */
+#ifndef GMP_PIL_UDP_HOST
+#define GMP_PIL_UDP_HOST "127.0.0.1"
+#endif // GMP_PIL_UDP_HOST
+
+/**
+ * @brief Bridge port receiving plant samples from Simulink.
+ */
+#ifndef GMP_PIL_BRIDGE_UDP_LISTEN_PORT
+#define GMP_PIL_BRIDGE_UDP_LISTEN_PORT (12501)
+#endif // GMP_PIL_BRIDGE_UDP_LISTEN_PORT
+
+/**
+ * @brief Simulink port receiving controller results from the bridge.
+ */
+#ifndef GMP_PIL_MATLAB_UDP_LISTEN_PORT
+#define GMP_PIL_MATLAB_UDP_LISTEN_PORT (12500)
+#endif // GMP_PIL_MATLAB_UDP_LISTEN_PORT
+
+/**
+ * @brief Bridge port receiving out-of-band Simulink commands.
+ */
+#ifndef GMP_PIL_MATLAB_COMMAND_TX_PORT
+#define GMP_PIL_MATLAB_COMMAND_TX_PORT (12502)
+#endif // GMP_PIL_MATLAB_COMMAND_TX_PORT
+
+/**
+ * @brief Simulink port receiving command acknowledgements.
+ */
+#ifndef GMP_PIL_MATLAB_COMMAND_RX_PORT
+#define GMP_PIL_MATLAB_COMMAND_RX_PORT (12503)
+#endif // GMP_PIL_MATLAB_COMMAND_RX_PORT
+
+/**
+ * @brief Maximum wait for one target Data Link response.
+ */
+#ifndef GMP_PIL_MCU_TIMEOUT_MS
+#define GMP_PIL_MCU_TIMEOUT_MS (200)
+#endif // GMP_PIL_MCU_TIMEOUT_MS
+
+/**
+ * @brief Maximum wait for the next Simulink plant sample.
+ */
+#ifndef GMP_PIL_MATLAB_TIMEOUT_MS
+#define GMP_PIL_MATLAB_TIMEOUT_MS (5000)
+#endif // GMP_PIL_MATLAB_TIMEOUT_MS
+
+/**
+ * @brief Digital input slot packed into the standard Data Link PIL request.
+ */
+#ifndef GMP_PIL_UDP_DIGITAL_INDEX
+#define GMP_PIL_UDP_DIGITAL_INDEX (0)
+#endif // GMP_PIL_UDP_DIGITAL_INDEX
+
 // Common tail code: PGS Grid-Following Inverter Common Settings
 /* Accept the historical PIL spelling while new projects use the canonical switch. */
 #if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM
@@ -734,6 +835,15 @@ extern "C"
 /* Four-leg hardware must explicitly acknowledge that A/B/C/N PWM and protection are mapped. */
 #if defined(USING_3D_SVPWM) && !defined(SPECIFY_PC_ENVIRONMENT) && !defined(GFL_3D_SVPWM_PLATFORM_MAPPED)
 #error Define_GFL_3D_SVPWM_PLATFORM_MAPPED_only_after_mapping_all_four_PWM_legs
+#endif
+
+// Common tail code: GMP Suite PIL Common Transport
+/** Validate the shared PIL command allocation. */
+#if (GMP_PIL_DL_BASE_COMMAND > 251U)
+#error "GMP_PIL_DL_BASE_COMMAND must leave room for four PIL subcommands."
+#endif
+#if (GMP_PIL_UDP_DIGITAL_INDEX >= 8U)
+#error "GMP_PIL_UDP_DIGITAL_INDEX must be in the range [0, 7]."
 #endif
 
 // User project tail code

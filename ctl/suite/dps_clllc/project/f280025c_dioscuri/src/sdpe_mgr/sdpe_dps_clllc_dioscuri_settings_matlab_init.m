@@ -5,6 +5,9 @@
 % Load the explicitly bound common requirement first.
 run(fullfile(fileparts(mfilename('fullpath')), 'sdpe_dps_clllc_common_settings_matlab_init.m'));
 
+% Load the explicitly bound common requirement first.
+run(fullfile(fileparts(mfilename('fullpath')), 'sdpe_gmp_suite_pil_common_settings_matlab_init.m'));
+
 % Notes:
 %   F280025C clock, six-pair PWM routing, ADC, UART, scheduler timer and active-low SN74LVC8T245 gate-buffer bindings.
 
@@ -229,9 +232,10 @@ fprintf('  - %s\n', 'dioscuri_f280025c');
 fprintf('  - %s\n', 'tmcs1133_b5a');
 fprintf('  - %s\n', 'dioscuri_voltage_sensor');
 fprintf('  - %s\n', 'dioscuri_clllc_resonant_tank');
-fprintf('Common requirements (1):\n');
+fprintf('Common requirements (2):\n');
 fprintf('  - %s\n', 'DPS CLLLC / DAB Common Control');
-fprintf('Enabled variables (131):\n');
+fprintf('  - %s\n', 'GMP Suite PIL Common Transport');
+fprintf('Enabled variables (147):\n');
 fprintf('  BUILD_LEVEL = '); disp(BUILD_LEVEL);
 fprintf('  CLLLC_ADC_TRIGGER_PWM_BASE = '); disp(CLLLC_ADC_TRIGGER_PWM_BASE);
 fprintf('  CLLLC_COUT_F = '); disp(CLLLC_COUT_F);
@@ -347,6 +351,22 @@ fprintf('  DPS_CLLLC_DIOSCURI_SDPE_PROJECT_SUITE = '); disp(DPS_CLLLC_DIOSCURI_S
 fprintf('  DPS_CLLLC_DIOSCURI_SDPE_PROJECT_UPDATED_AT = '); disp(DPS_CLLLC_DIOSCURI_SDPE_PROJECT_UPDATED_AT);
 fprintf('  DPS_CLLLC_DIOSCURI_SDPE_PROJECT_VERSION = '); disp(DPS_CLLLC_DIOSCURI_SDPE_PROJECT_VERSION);
 fprintf('  GMP_DL_SCOPE_DEPTH = '); disp(GMP_DL_SCOPE_DEPTH);
+fprintf('  GMP_DL_UART_BAUDRATE = '); disp(GMP_DL_UART_BAUDRATE);
+fprintf('  GMP_PIL_BRIDGE_UDP_LISTEN_PORT = '); disp(GMP_PIL_BRIDGE_UDP_LISTEN_PORT);
+fprintf('  GMP_PIL_DL_BASE_COMMAND = '); disp(GMP_PIL_DL_BASE_COMMAND);
+fprintf('  GMP_PIL_MATLAB_COMMAND_RX_PORT = '); disp(GMP_PIL_MATLAB_COMMAND_RX_PORT);
+fprintf('  GMP_PIL_MATLAB_COMMAND_TX_PORT = '); disp(GMP_PIL_MATLAB_COMMAND_TX_PORT);
+fprintf('  GMP_PIL_MATLAB_TIMEOUT_MS = '); disp(GMP_PIL_MATLAB_TIMEOUT_MS);
+fprintf('  GMP_PIL_MATLAB_UDP_LISTEN_PORT = '); disp(GMP_PIL_MATLAB_UDP_LISTEN_PORT);
+fprintf('  GMP_PIL_MCU_TIMEOUT_MS = '); disp(GMP_PIL_MCU_TIMEOUT_MS);
+fprintf('  GMP_PIL_RX_MASK = '); disp(GMP_PIL_RX_MASK);
+fprintf('  GMP_PIL_TX_MASK = '); disp(GMP_PIL_TX_MASK);
+fprintf('  GMP_PIL_UDP_DIGITAL_INDEX = '); disp(GMP_PIL_UDP_DIGITAL_INDEX);
+fprintf('  GMP_PIL_UDP_HOST = '); disp(GMP_PIL_UDP_HOST);
+fprintf('  GMP_SUITE_PIL_SDPE_PROJECT_ID = '); disp(GMP_SUITE_PIL_SDPE_PROJECT_ID);
+fprintf('  GMP_SUITE_PIL_SDPE_PROJECT_SUITE = '); disp(GMP_SUITE_PIL_SDPE_PROJECT_SUITE);
+fprintf('  GMP_SUITE_PIL_SDPE_PROJECT_UPDATED_AT = '); disp(GMP_SUITE_PIL_SDPE_PROJECT_UPDATED_AT);
+fprintf('  GMP_SUITE_PIL_SDPE_PROJECT_VERSION = '); disp(GMP_SUITE_PIL_SDPE_PROJECT_VERSION);
 fprintf('  SPECIFY_ENABLE_ADC_CALIBRATE = '); disp(SPECIFY_ENABLE_ADC_CALIBRATE);
 fprintf('  TIMEOUT_ADC_CALIB_MS = '); disp(TIMEOUT_ADC_CALIB_MS);
 fprintf('  TMCS1133_B5A_BANDWIDTH_HZ = '); disp(TMCS1133_B5A_BANDWIDTH_HZ);

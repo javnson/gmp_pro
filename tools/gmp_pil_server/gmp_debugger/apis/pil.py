@@ -48,6 +48,16 @@ def _integer(values: dict[str, object], macro: str) -> int:
         raise ValueError(f"Required SDPE macro {macro} is missing.") from error
 
 
+def _semantic_indices(values: dict[str, object], prefix: str) -> dict[str, int]:
+    """Collect optional suite-specific channel names from SDPE macros."""
+    indices: dict[str, int] = {}
+    for macro, value in values.items():
+        if macro.startswith(prefix) and macro.endswith("_INDEX"):
+            name = macro[len(prefix) : -len("_INDEX")].lower()
+            indices[name] = int(value)
+    return indices
+
+
 @dataclass(frozen=True)
 class PilConfiguration:
     """Resolved target-local SDPE contract for one PIL bridge."""
@@ -87,66 +97,63 @@ class PilConfiguration:
         target_path = Path(target_requirement).resolve()
         target = _read_json(target_path)
         if common_requirement is None:
-            common_path = target_path.parents[3] / "sdpe_general" / "sdpe_requirement.json"
+            references = target.get("common_requirements", [])
+            if isinstance(references, str):
+                references = [references]
+            common_paths = [
+                (target_path.parent / str(reference)).resolve()
+                for reference in references
+            ]
+            if not common_paths:
+                common_paths = [target_path.parents[3] / "sdpe_general" / "sdpe_requirement.json"]
         else:
-            common_path = Path(common_requirement).resolve()
-        common = _read_json(common_path)
+            common_paths = [Path(common_requirement).resolve()]
+        commons = [_read_json(path) for path in common_paths]
+        common_values: dict[str, object] = {}
+        for common in commons:
+            common_values.update(_macro_values(common))
         target_values = _macro_values(target)
-        common_values = _macro_values(common)
+        values = {**common_values, **target_values}
 
-        features = {item["macro"]: bool(item.get("enabled")) for item in target.get("feature_macros", [])}
+        features = {
+            item["macro"]: bool(item.get("enabled"))
+            for document in (*commons, target)
+            for item in document.get("feature_macros", [])
+        }
         enabled = features.get("ENABLE_GMP_DL_PIL_SIM", False)
-        levels = {item["macro"]: item.get("value", "") for item in target.get("option_macros", [])}
+        levels = {
+            item["macro"]: item.get("value", "")
+            for document in (*commons, target)
+            for item in document.get("option_macros", [])
+        }
         build_level = int(str(levels.get("BUILD_LEVEL", "0")).strip("() "))
+
+        digital_index_macro = (
+            "GMP_PIL_UDP_DIGITAL_INDEX"
+            if "GMP_PIL_UDP_DIGITAL_INDEX" in values
+            else "GMP_PIL_UDP_ENCODER_INDEX"
+        )
 
         config = cls(
             requirement_path=target_path,
             enabled=enabled,
             build_level=build_level,
-            controller_frequency_hz=float(common_values["CONTROLLER_FREQUENCY"]),
-            serial_baudrate=_integer(target_values, "GMP_DL_UART_BAUDRATE"),
-            base_command=_integer(target_values, "GMP_PIL_DL_BASE_COMMAND"),
-            udp_host=str(target_values["GMP_PIL_UDP_HOST"]),
-            bridge_listen_port=_integer(target_values, "GMP_PIL_BRIDGE_UDP_LISTEN_PORT"),
-            matlab_listen_port=_integer(target_values, "GMP_PIL_MATLAB_UDP_LISTEN_PORT"),
-            command_tx_port=_integer(target_values, "GMP_PIL_MATLAB_COMMAND_TX_PORT"),
-            command_rx_port=_integer(target_values, "GMP_PIL_MATLAB_COMMAND_RX_PORT"),
-            rx_mask=_integer(target_values, "GMP_PIL_RX_MASK"),
-            tx_mask=_integer(target_values, "GMP_PIL_TX_MASK"),
-            mcu_timeout_s=_integer(target_values, "GMP_PIL_MCU_TIMEOUT_MS") / 1000.0,
-            matlab_timeout_s=_integer(target_values, "GMP_PIL_MATLAB_TIMEOUT_MS") / 1000.0,
-            encoder_udp_index=_integer(target_values, "GMP_PIL_UDP_ENCODER_INDEX"),
-            adc_indices={
-                name: _integer(target_values, macro)
-                for name, macro in {
-                    "udc": "GMP_PIL_RX_ADC_UDC_INDEX",
-                    "uu": "GMP_PIL_RX_ADC_UU_INDEX",
-                    "uv": "GMP_PIL_RX_ADC_UV_INDEX",
-                    "uw": "GMP_PIL_RX_ADC_UW_INDEX",
-                    "iu": "GMP_PIL_RX_ADC_IU_INDEX",
-                    "iv": "GMP_PIL_RX_ADC_IV_INDEX",
-                    "iw": "GMP_PIL_RX_ADC_IW_INDEX",
-                }.items()
-            },
-            pwm_indices={
-                name: _integer(target_values, macro)
-                for name, macro in {
-                    "u": "GMP_PIL_TX_PWM_U_INDEX",
-                    "v": "GMP_PIL_TX_PWM_V_INDEX",
-                    "w": "GMP_PIL_TX_PWM_W_INDEX",
-                }.items()
-            },
-            monitor_indices={
-                name: _integer(target_values, macro)
-                for name, macro in {
-                    "iu": "GMP_PIL_TX_MONITOR_IU_INDEX",
-                    "iv": "GMP_PIL_TX_MONITOR_IV_INDEX",
-                    "id": "GMP_PIL_TX_MONITOR_ID_INDEX",
-                    "iq": "GMP_PIL_TX_MONITOR_IQ_INDEX",
-                    "position": "GMP_PIL_TX_MONITOR_POSITION_INDEX",
-                    "speed": "GMP_PIL_TX_MONITOR_SPEED_INDEX",
-                }.items()
-            },
+            controller_frequency_hz=float(values["CONTROLLER_FREQUENCY"]),
+            serial_baudrate=_integer(values, "GMP_DL_UART_BAUDRATE"),
+            base_command=_integer(values, "GMP_PIL_DL_BASE_COMMAND"),
+            udp_host=str(values["GMP_PIL_UDP_HOST"]),
+            bridge_listen_port=_integer(values, "GMP_PIL_BRIDGE_UDP_LISTEN_PORT"),
+            matlab_listen_port=_integer(values, "GMP_PIL_MATLAB_UDP_LISTEN_PORT"),
+            command_tx_port=_integer(values, "GMP_PIL_MATLAB_COMMAND_TX_PORT"),
+            command_rx_port=_integer(values, "GMP_PIL_MATLAB_COMMAND_RX_PORT"),
+            rx_mask=_integer(values, "GMP_PIL_RX_MASK"),
+            tx_mask=_integer(values, "GMP_PIL_TX_MASK"),
+            mcu_timeout_s=_integer(values, "GMP_PIL_MCU_TIMEOUT_MS") / 1000.0,
+            matlab_timeout_s=_integer(values, "GMP_PIL_MATLAB_TIMEOUT_MS") / 1000.0,
+            encoder_udp_index=_integer(values, digital_index_macro),
+            adc_indices=_semantic_indices(values, "GMP_PIL_RX_ADC_"),
+            pwm_indices=_semantic_indices(values, "GMP_PIL_TX_PWM_"),
+            monitor_indices=_semantic_indices(values, "GMP_PIL_TX_MONITOR_"),
         )
         config.validate()
         return config
@@ -155,14 +162,14 @@ class PilConfiguration:
         """Reject an unsafe or internally inconsistent PIL mapping."""
         if not self.enabled:
             raise ValueError("ENABLE_GMP_DL_PIL_SIM is disabled in the target SDPE requirement.")
-        if self.build_level not in range(1, 5):
-            raise ValueError("BUILD_LEVEL must be between 1 and 4.")
+        if self.build_level < 1:
+            raise ValueError("BUILD_LEVEL must be positive.")
         if self.controller_frequency_hz <= 0.0:
             raise ValueError("CONTROLLER_FREQUENCY must be positive.")
         if not 0 <= self.base_command <= 251:
             raise ValueError("The PIL base command must be in the range [0, 251].")
         if not 0 <= self.encoder_udp_index < 8:
-            raise ValueError("The UDP encoder index must be in the range [0, 7].")
+            raise ValueError("The UDP digital-input index must be in the range [0, 7].")
         for index in self.adc_indices.values():
             if not 0 <= index < 24 or not self.rx_mask & (1 << index):
                 raise ValueError(f"ADC index {index} is outside or disabled by GMP_PIL_RX_MASK.")

@@ -26,7 +26,7 @@
     {
       "group": "PIL Runtime",
       "macro": "ENABLE_GMP_DL_PIL_SIM",
-      "enabled": true,
+      "enabled": false,
       "weak": false,
       "value": "",
       "description": "Run controller steps only from Data Link PIL requests. Physical ADC ISR control dispatch and physical PWM enable remain isolated while this switch is enabled."
@@ -1399,7 +1399,8 @@
     }
   ],
   "common_requirements": [
-    "../../../sdpe_general/sdpe_requirement.json"
+    "../../../sdpe_general/sdpe_requirement.json",
+    "../../../../sdpe_pil/sdpe_requirement.json"
   ],
   "feature_macro_groups": [
     "PIL Runtime"

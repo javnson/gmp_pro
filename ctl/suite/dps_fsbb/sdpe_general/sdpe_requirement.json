@@ -16,6 +16,20 @@
   "option_macros": [],
   "requirements": [
     {
+      "role": "PIL input channel mask",
+      "macro": "GMP_PIL_RX_MASK",
+      "weak": true,
+      "binding": {"number": "15"},
+      "description": "Enable the four ADC slots used by the FSBB SIL input ABI."
+    },
+    {
+      "role": "PIL output channel mask",
+      "macro": "GMP_PIL_TX_MASK",
+      "weak": true,
+      "binding": {"number": "16711683"},
+      "description": "Enable two PWM slots and eight monitor slots used by the FSBB SIL output ABI."
+    },
+    {
       "role": "PWM Frequency",
       "macro": "PWM_FREQ",
       "binding": {

@@ -36,7 +36,9 @@ CTL_DSA_DL_SCOPE_DEFINE_USER("Control Scope")
 //
 // PIL (processor in loop module)
 //
+#if defined ENABLE_GMP_DL_PIL_SIM
 gmp_pil_sim_t pil;
+#endif
 
 //
 // Tunable Dictionary (Mapped for SINV)
@@ -209,7 +211,8 @@ gmp_task_status_t tsk_startup(gmp_task_t* tsk);
 // All tasks must be non blocking tasks
 gmp_task_t tasks[] = {
     // name,          task,                period(ms),  init_phase, is_enabled, pParam
-    {"blink_led", tsk_blink, 1000, 0, 1, NULL},    {"dl_online", tsk_dl_debug_device, 2, 0, 1, NULL},
+    {"blink_led", tsk_blink, 1000, 0, 1, NULL},
+    {"dl_online", tsk_dl_debug_device, 2, 0, 1, NULL},
     {"monitor_data", tsk_monitor, 5, 0, 1, NULL},  // 5ms -> 200Hz refresh rate
     {"ctl_mainloop", tsk_ctl_main, 1, 0, 1, NULL}, // 1ms state machine tick
     {"slow_protect", tsk_protect, 10, 0, 1, NULL}, // 10ms thermal/RMS protection
@@ -227,14 +230,21 @@ GMP_NO_OPT_PREFIX void init(void) GMP_NO_OPT_SUFFIX
     gmp_scheduler_init(&sched);
 
     for (i = 0; i < sizeof(tasks) / sizeof(gmp_task_t); ++i)
+    {
+#if defined ENABLE_GMP_DL_PIL_SIM
+        if (tasks[i].handler == tsk_dl_debug_device)
+            tasks[i].is_enabled = 0;
+#endif
         gmp_scheduler_add_task(&sched, &tasks[i]);
+    }
 
     // init datalink protocol
     gmp_dev_dl_init(&dl);
 
     // Enable PIL only when selected by the SDPE project setting.
 #if defined ENABLE_GMP_DL_PIL_SIM
-    gmp_pil_sim_init(&pil, &dl, 0x10);
+    gmp_pil_sim_init(&pil, &dl, GMP_PIL_DL_BASE_COMMAND);
+    gmp_pil_sim_set_masks(&pil, GMP_PIL_TX_MASK, GMP_PIL_RX_MASK);
 #endif
 
     // Band DL module with tunable and persp module.
@@ -271,6 +281,9 @@ gmp_task_status_t tsk_startup(gmp_task_t* tsk)
 GMP_NO_OPT_PREFIX
 void mainloop(void) GMP_NO_OPT_SUFFIX
 {
+#if defined ENABLE_GMP_DL_PIL_SIM
+    (void)tsk_dl_debug_device(NULL);
+#endif
     // run task scheduler
     gmp_scheduler_dispatch(&sched);
 }

@@ -451,11 +451,6 @@ extern "C"
 #define SPECIFY_ENABLE_ADC_CALIBRATE
 
 /**
- * @brief Enable processor-in-the-loop mode and suppress direct PWM controller output.
- */
-// #define ENABLE_GMP_DL_PIL_SIM
-
-/**
  * @brief Enable CiA402/GMP framework debug information.
  */
 // #define GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
@@ -484,12 +479,28 @@ extern "C"
  * @brief Incremental commissioning level. 1: V/f voltage open loop; 2: current loop with synthetic electrical angle; 3: current loop with encoder angle; 4: speed loop with encoder feedback.
  *        Options: (1), (2), (3), (4)
  */
-#define BUILD_LEVEL (2)
+#ifndef BUILD_LEVEL
+#define BUILD_LEVEL (1)
+#endif // BUILD_LEVEL
 
 //=================================================================================================
 /**
  * @brief Requirement bindings.
  */
+
+/**
+ * @brief Enable the seven ADC slots used by the PMSM SIL input ABI.
+ */
+#ifndef GMP_PIL_RX_MASK
+#define GMP_PIL_RX_MASK (127)
+#endif // GMP_PIL_RX_MASK
+
+/**
+ * @brief Enable three PWM slots and six monitor slots used by the PMSM SIL output ABI.
+ */
+#ifndef GMP_PIL_TX_MASK
+#define GMP_PIL_TX_MASK (4128775)
+#endif // GMP_PIL_TX_MASK
 
 /**
  * @brief Main motor-control ISR frequency in hertz.
@@ -509,80 +520,72 @@ extern "C"
 /**
  * @brief
  */
-#ifndef CTRL_SPEED_RPM_BASE
-#define CTRL_SPEED_RPM_BASE MOTOR_PARAM_MAX_SPEED
-#endif // CTRL_SPEED_RPM_BASE
-
-/**
- * @brief
- */
 #ifndef MOTOR_PARAM_RS
-#define MOTOR_PARAM_RS SM060R20B30MNAD_RS
+#define MOTOR_PARAM_RS (0.165f)
 #endif // MOTOR_PARAM_RS
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_LS
-#define MOTOR_PARAM_LS SM060R20B30MNAD_LD
+#define MOTOR_PARAM_LS (0.45e-3f)
 #endif // MOTOR_PARAM_LS
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_LD
-#define MOTOR_PARAM_LD SM060R20B30MNAD_LD
+#define MOTOR_PARAM_LD (0.45e-3f)
 #endif // MOTOR_PARAM_LD
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_LQ
-#define MOTOR_PARAM_LQ SM060R20B30MNAD_LQ
+#define MOTOR_PARAM_LQ (0.45e-3f)
 #endif // MOTOR_PARAM_LQ
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_FLUX
-#define MOTOR_PARAM_FLUX SM060R20B30MNAD_FLUX
+#define MOTOR_PARAM_FLUX (0.0066843949493427743f)
 #endif // MOTOR_PARAM_FLUX
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_POLE_PAIRS
-#define MOTOR_PARAM_POLE_PAIRS SM060R20B30MNAD_POLE_PAIRS
+#define MOTOR_PARAM_POLE_PAIRS (4)
 #endif // MOTOR_PARAM_POLE_PAIRS
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_INERTIA
-#define MOTOR_PARAM_INERTIA SM060R20B30MNAD_INERTIA
+#define MOTOR_PARAM_INERTIA (497.0f)
 #endif // MOTOR_PARAM_INERTIA
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_FRICTION
-#define MOTOR_PARAM_FRICTION SM060R20B30MNAD_FRICTION
+#define MOTOR_PARAM_FRICTION (755.0f)
 #endif // MOTOR_PARAM_FRICTION
 
 /**
- * @brief Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
+ * @brief Maximum mechanical speed of the common reference motor in rpm.
  */
-#define MCS_ENCODER_SPEED_FILTER_FC_HZ (20.0f)
+#ifndef MOTOR_PARAM_MAX_SPEED
+#define MOTOR_PARAM_MAX_SPEED (3000.0f)
+#endif // MOTOR_PARAM_MAX_SPEED
 
 /**
- * @brief Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets.
+ * @brief Mechanical speed base in rpm.
  */
-#define MCS_ADC_CALIBRATOR_FC_HZ (20.0f)
-
-/**
- * @brief Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
- */
-#define MCS_ADC_CALIBRATOR_Q (0.707f)
+#ifndef CTRL_SPEED_RPM_BASE
+#define CTRL_SPEED_RPM_BASE MOTOR_PARAM_MAX_SPEED
+#endif // CTRL_SPEED_RPM_BASE
 
 /**
  * @brief Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
@@ -605,9 +608,14 @@ extern "C"
 #define MCS_MAX_RECT_SATURATION_VOLTAGE_V (10.0f)
 
 /**
+ * @brief Nominal DC-bus voltage used by common protection thresholds and target per-unit bases.
+ */
+#define MCS_NOMINAL_DC_BUS_VOLTAGE_V (80.0f)
+
+/**
  * @brief
  */
-#define MCS_MAX_DC_BUS_VOLTAGE_V (CTRL_DCBUS_VOLTAGE*1.2f)
+#define MCS_MAX_DC_BUS_VOLTAGE_V (MCS_NOMINAL_DC_BUS_VOLTAGE_V*1.2f)
 
 /**
  * @brief The current limit value at which the machine must be shut down.
@@ -620,6 +628,21 @@ extern "C"
  * @brief Circular saturation limit for voltage vector magnitude in V.
  */
 #define MCS_MAX_CIR_SATURATION_VOLTAGE_V (10.0f)
+
+/**
+ * @brief Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
+ */
+#define MCS_ENCODER_SPEED_FILTER_FC_HZ (20.0f)
+
+/**
+ * @brief Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets.
+ */
+#define MCS_ADC_CALIBRATOR_FC_HZ (20.0f)
+
+/**
+ * @brief Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
+ */
+#define MCS_ADC_CALIBRATOR_Q (0.707f)
 
 /**
  * @brief D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
@@ -679,7 +702,99 @@ extern "C"
 /**
  * @brief
  */
-#define MCS_MIN_DC_BUS_VOLTAGE_V (CTRL_DCBUS_VOLTAGE*0.2f)
+#define MCS_MIN_DC_BUS_VOLTAGE_V (MCS_NOMINAL_DC_BUS_VOLTAGE_V*0.2f)
+
+//=================================================================================================
+/**
+ * @brief Common fallbacks: GMP Suite PIL Common Transport.
+ */
+
+//=================================================================================================
+/**
+ * @brief PIL Runtime.
+ */
+
+/**
+ * @brief Run control steps only from Data Link PIL transactions while physical control dispatch and power-stage enable remain isolated.
+ */
+// #ifndef ENABLE_GMP_DL_PIL_SIM
+// #define ENABLE_GMP_DL_PIL_SIM
+// #endif // ENABLE_GMP_DL_PIL_SIM
+
+//=================================================================================================
+/**
+ * @brief Requirement bindings.
+ */
+
+/**
+ * @brief Base command followed by mask, step, status, and abort subcommands.
+ */
+#ifndef GMP_PIL_DL_BASE_COMMAND
+#define GMP_PIL_DL_BASE_COMMAND (16)
+#endif // GMP_PIL_DL_BASE_COMMAND
+
+/**
+ * @brief Portable commissioning rate used unless a hardware project overrides it.
+ */
+#ifndef GMP_DL_UART_BAUDRATE
+#define GMP_DL_UART_BAUDRATE (115200)
+#endif // GMP_DL_UART_BAUDRATE
+
+/**
+ * @brief Host running Simulink and the GMP PIL bridge.
+ */
+#ifndef GMP_PIL_UDP_HOST
+#define GMP_PIL_UDP_HOST "127.0.0.1"
+#endif // GMP_PIL_UDP_HOST
+
+/**
+ * @brief Bridge port receiving plant samples from Simulink.
+ */
+#ifndef GMP_PIL_BRIDGE_UDP_LISTEN_PORT
+#define GMP_PIL_BRIDGE_UDP_LISTEN_PORT (12501)
+#endif // GMP_PIL_BRIDGE_UDP_LISTEN_PORT
+
+/**
+ * @brief Simulink port receiving controller results from the bridge.
+ */
+#ifndef GMP_PIL_MATLAB_UDP_LISTEN_PORT
+#define GMP_PIL_MATLAB_UDP_LISTEN_PORT (12500)
+#endif // GMP_PIL_MATLAB_UDP_LISTEN_PORT
+
+/**
+ * @brief Bridge port receiving out-of-band Simulink commands.
+ */
+#ifndef GMP_PIL_MATLAB_COMMAND_TX_PORT
+#define GMP_PIL_MATLAB_COMMAND_TX_PORT (12502)
+#endif // GMP_PIL_MATLAB_COMMAND_TX_PORT
+
+/**
+ * @brief Simulink port receiving command acknowledgements.
+ */
+#ifndef GMP_PIL_MATLAB_COMMAND_RX_PORT
+#define GMP_PIL_MATLAB_COMMAND_RX_PORT (12503)
+#endif // GMP_PIL_MATLAB_COMMAND_RX_PORT
+
+/**
+ * @brief Maximum wait for one target Data Link response.
+ */
+#ifndef GMP_PIL_MCU_TIMEOUT_MS
+#define GMP_PIL_MCU_TIMEOUT_MS (200)
+#endif // GMP_PIL_MCU_TIMEOUT_MS
+
+/**
+ * @brief Maximum wait for the next Simulink plant sample.
+ */
+#ifndef GMP_PIL_MATLAB_TIMEOUT_MS
+#define GMP_PIL_MATLAB_TIMEOUT_MS (5000)
+#endif // GMP_PIL_MATLAB_TIMEOUT_MS
+
+/**
+ * @brief Digital input slot packed into the standard Data Link PIL request.
+ */
+#ifndef GMP_PIL_UDP_DIGITAL_INDEX
+#define GMP_PIL_UDP_DIGITAL_INDEX (0)
+#endif // GMP_PIL_UDP_DIGITAL_INDEX
 
 // Common tail code: MCS PMSM NT Common Controller Settings
 /* Accept the historical misspelling while all source code uses the canonical switch. */
@@ -690,6 +805,15 @@ extern "C"
 /* Reject unsupported incremental build levels at preprocessing time. */
 #if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 4)
 #error "BUILD_LEVEL must be 1 (V/f), 2 (current loop/synthetic angle), 3 (current loop/encoder), or 4 (speed loop)."
+#endif
+
+// Common tail code: GMP Suite PIL Common Transport
+/** Validate the shared PIL command allocation. */
+#if (GMP_PIL_DL_BASE_COMMAND > 251U)
+#error "GMP_PIL_DL_BASE_COMMAND must leave room for four PIL subcommands."
+#endif
+#if (GMP_PIL_UDP_DIGITAL_INDEX >= 8U)
+#error "GMP_PIL_UDP_DIGITAL_INDEX must be in the range [0, 7]."
 #endif
 
 // User project tail code

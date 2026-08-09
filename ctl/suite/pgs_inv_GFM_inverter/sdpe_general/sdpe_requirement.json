@@ -61,13 +61,6 @@
       "enabled": false,
       "value": "",
       "description": "Enable startup ADC offset calibration only with known zero inputs."
-    },
-    {
-      "group": "Runtime",
-      "macro": "ENABLE_GMP_DL_PIL_SIM",
-      "enabled": false,
-      "value": "",
-      "description": "Enable processor-in-the-loop input/output handling."
     }
   ],
   "option_macros": [
@@ -85,6 +78,20 @@
     }
   ],
   "requirements": [
+    {
+      "role": "PIL input channel mask",
+      "macro": "GMP_PIL_RX_MASK",
+      "weak": true,
+      "binding": {"number": "127"},
+      "description": "Enable the seven ADC slots used by the three-phase inverter SIL input ABI."
+    },
+    {
+      "role": "PIL output channel mask",
+      "macro": "GMP_PIL_TX_MASK",
+      "weak": true,
+      "binding": {"number": "4294901775"},
+      "description": "Enable four PWM slots and all sixteen monitor slots used by the GFM SIL output ABI."
+    },
     {
       "role": "Grid Voltage Pu",
       "macro": "GFM_GRID_VOLTAGE_PU",

@@ -495,6 +495,97 @@ extern "C"
  */
 
 /**
+ * @brief DC-bus outer-loop proportional gain.
+ */
+#ifndef SINV_DC_BUS_LOOP_KP
+#define SINV_DC_BUS_LOOP_KP (0.8f)
+#endif // SINV_DC_BUS_LOOP_KP
+
+/**
+ * @brief DC-bus outer-loop integral gain per second.
+ */
+#ifndef SINV_DC_BUS_LOOP_KI
+#define SINV_DC_BUS_LOOP_KI (12.0f)
+#endif // SINV_DC_BUS_LOOP_KI
+
+/**
+ * @brief Symmetric outer-loop active-power command limit.
+ */
+#ifndef SINV_OUTER_LOOP_POWER_LIMIT_PU
+#define SINV_OUTER_LOOP_POWER_LIMIT_PU (0.65f)
+#endif // SINV_OUTER_LOOP_POWER_LIMIT_PU
+
+/**
+ * @brief Power and DC-bus outer-loop execution frequency.
+ */
+#ifndef SINV_OUTER_LOOP_FREQUENCY_HZ
+#define SINV_OUTER_LOOP_FREQUENCY_HZ (1000.0f)
+#endif // SINV_OUTER_LOOP_FREQUENCY_HZ
+
+/**
+ * @brief Active-power outer-loop proportional gain.
+ */
+#ifndef SINV_POWER_LOOP_KP
+#define SINV_POWER_LOOP_KP (0.6f)
+#endif // SINV_POWER_LOOP_KP
+
+/**
+ * @brief Active-power outer-loop integral gain per second.
+ */
+#ifndef SINV_POWER_LOOP_KI
+#define SINV_POWER_LOOP_KI (8.0f)
+#endif // SINV_POWER_LOOP_KI
+
+/**
+ * @brief Repetitive-control learning gain.
+ */
+#ifndef SINV_FDRC_LEARNING_GAIN
+#define SINV_FDRC_LEARNING_GAIN (0.10f)
+#endif // SINV_FDRC_LEARNING_GAIN
+
+/**
+ * @brief FDRC robustness-filter cutoff frequency.
+ */
+#ifndef SINV_FDRC_Q_FILTER_HZ
+#define SINV_FDRC_Q_FILTER_HZ (1000.0f)
+#endif // SINV_FDRC_Q_FILTER_HZ
+
+/**
+ * @brief Plant-delay compensation in controller samples.
+ */
+#ifndef SINV_FDRC_LEAD_STEPS
+#define SINV_FDRC_LEAD_STEPS (3.0f)
+#endif // SINV_FDRC_LEAD_STEPS
+
+/**
+ * @brief Current-error threshold above which RC learning is frozen.
+ */
+#ifndef SINV_FDRC_FREEZE_ERROR_PU
+#define SINV_FDRC_FREEZE_ERROR_PU (0.05f)
+#endif // SINV_FDRC_FREEZE_ERROR_PU
+
+/**
+ * @brief Settling time before repetitive control starts learning.
+ */
+#ifndef SINV_FDRC_ENABLE_DELAY_MS
+#define SINV_FDRC_ENABLE_DELAY_MS (300)
+#endif // SINV_FDRC_ENABLE_DELAY_MS
+
+/**
+ * @brief Enable the three sparse ADC slots used by the single-phase inverter SIL input ABI.
+ */
+#ifndef GMP_PIL_RX_MASK
+#define GMP_PIL_RX_MASK (21)
+#endif // GMP_PIL_RX_MASK
+
+/**
+ * @brief Enable two PWM slots and all sixteen monitor slots used by the single-phase inverter SIL output ABI.
+ */
+#ifndef GMP_PIL_TX_MASK
+#define GMP_PIL_TX_MASK (4294901763)
+#endif // GMP_PIL_TX_MASK
+
+/**
  * @brief Nominal grid frequency in Hz.
  */
 #ifndef CTRL_GRID_FREQUENCY
@@ -617,6 +708,107 @@ extern "C"
  * @brief BUILD_LEVEL 5 physical DC bus voltage target.
  */
 #define SINV_DC_BUS_REF_V (60.0f)
+
+//=================================================================================================
+/**
+ * @brief Common fallbacks: GMP Suite PIL Common Transport.
+ */
+
+//=================================================================================================
+/**
+ * @brief PIL Runtime.
+ */
+
+/**
+ * @brief Run control steps only from Data Link PIL transactions while physical control dispatch and power-stage enable remain isolated.
+ */
+// #ifndef ENABLE_GMP_DL_PIL_SIM
+// #define ENABLE_GMP_DL_PIL_SIM
+// #endif // ENABLE_GMP_DL_PIL_SIM
+
+//=================================================================================================
+/**
+ * @brief Requirement bindings.
+ */
+
+/**
+ * @brief Base command followed by mask, step, status, and abort subcommands.
+ */
+#ifndef GMP_PIL_DL_BASE_COMMAND
+#define GMP_PIL_DL_BASE_COMMAND (16)
+#endif // GMP_PIL_DL_BASE_COMMAND
+
+/**
+ * @brief Portable commissioning rate used unless a hardware project overrides it.
+ */
+#ifndef GMP_DL_UART_BAUDRATE
+#define GMP_DL_UART_BAUDRATE (115200)
+#endif // GMP_DL_UART_BAUDRATE
+
+/**
+ * @brief Host running Simulink and the GMP PIL bridge.
+ */
+#ifndef GMP_PIL_UDP_HOST
+#define GMP_PIL_UDP_HOST "127.0.0.1"
+#endif // GMP_PIL_UDP_HOST
+
+/**
+ * @brief Bridge port receiving plant samples from Simulink.
+ */
+#ifndef GMP_PIL_BRIDGE_UDP_LISTEN_PORT
+#define GMP_PIL_BRIDGE_UDP_LISTEN_PORT (12501)
+#endif // GMP_PIL_BRIDGE_UDP_LISTEN_PORT
+
+/**
+ * @brief Simulink port receiving controller results from the bridge.
+ */
+#ifndef GMP_PIL_MATLAB_UDP_LISTEN_PORT
+#define GMP_PIL_MATLAB_UDP_LISTEN_PORT (12500)
+#endif // GMP_PIL_MATLAB_UDP_LISTEN_PORT
+
+/**
+ * @brief Bridge port receiving out-of-band Simulink commands.
+ */
+#ifndef GMP_PIL_MATLAB_COMMAND_TX_PORT
+#define GMP_PIL_MATLAB_COMMAND_TX_PORT (12502)
+#endif // GMP_PIL_MATLAB_COMMAND_TX_PORT
+
+/**
+ * @brief Simulink port receiving command acknowledgements.
+ */
+#ifndef GMP_PIL_MATLAB_COMMAND_RX_PORT
+#define GMP_PIL_MATLAB_COMMAND_RX_PORT (12503)
+#endif // GMP_PIL_MATLAB_COMMAND_RX_PORT
+
+/**
+ * @brief Maximum wait for one target Data Link response.
+ */
+#ifndef GMP_PIL_MCU_TIMEOUT_MS
+#define GMP_PIL_MCU_TIMEOUT_MS (200)
+#endif // GMP_PIL_MCU_TIMEOUT_MS
+
+/**
+ * @brief Maximum wait for the next Simulink plant sample.
+ */
+#ifndef GMP_PIL_MATLAB_TIMEOUT_MS
+#define GMP_PIL_MATLAB_TIMEOUT_MS (5000)
+#endif // GMP_PIL_MATLAB_TIMEOUT_MS
+
+/**
+ * @brief Digital input slot packed into the standard Data Link PIL request.
+ */
+#ifndef GMP_PIL_UDP_DIGITAL_INDEX
+#define GMP_PIL_UDP_DIGITAL_INDEX (0)
+#endif // GMP_PIL_UDP_DIGITAL_INDEX
+
+// Common tail code: GMP Suite PIL Common Transport
+/** Validate the shared PIL command allocation. */
+#if (GMP_PIL_DL_BASE_COMMAND > 251U)
+#error "GMP_PIL_DL_BASE_COMMAND must leave room for four PIL subcommands."
+#endif
+#if (GMP_PIL_UDP_DIGITAL_INDEX >= 8U)
+#error "GMP_PIL_UDP_DIGITAL_INDEX must be in the range [0, 7]."
+#endif
 
 // User project tail code
 #if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 5)

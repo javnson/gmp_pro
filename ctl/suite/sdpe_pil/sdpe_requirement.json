@@ -1,0 +1,114 @@
+{
+  "id": "gmp_suite_pil_common",
+  "macro_prefix": "GMP_SUITE_PIL",
+  "display_name": "GMP Suite PIL Common Transport",
+  "description": "Hardware-independent Data Link and UDP transport defaults shared by modern GMP suite hardware projects.",
+  "suite": "ctl_suite",
+  "version": "1.0.0",
+  "updated_at": "2026-08-09",
+  "output_header": "sdpe_gmp_suite_pil_common_settings.h",
+  "hardware": [],
+  "code_sections": {
+    "before_footer": "/** Validate the shared PIL command allocation. */\n#if (GMP_PIL_DL_BASE_COMMAND > 251U)\n#error \"GMP_PIL_DL_BASE_COMMAND must leave room for four PIL subcommands.\"\n#endif\n#if (GMP_PIL_UDP_DIGITAL_INDEX >= 8U)\n#error \"GMP_PIL_UDP_DIGITAL_INDEX must be in the range [0, 7].\"\n#endif"
+  },
+  "feature_macros": [
+    {
+      "group": "PIL Runtime",
+      "macro": "ENABLE_GMP_DL_PIL_SIM",
+      "enabled": false,
+      "weak": true,
+      "value": "",
+      "description": "Run control steps only from Data Link PIL transactions while physical control dispatch and power-stage enable remain isolated."
+    }
+  ],
+  "option_macros": [],
+  "requirements": [
+    {
+      "role": "PIL Data Link base command",
+      "macro": "GMP_PIL_DL_BASE_COMMAND",
+      "weak": true,
+      "binding": {"number": "16"},
+      "description": "Base command followed by mask, step, status, and abort subcommands."
+    },
+    {
+      "role": "Data Link UART baud rate",
+      "macro": "GMP_DL_UART_BAUDRATE",
+      "weak": true,
+      "binding": {"number": "115200"},
+      "description": "Portable commissioning rate used unless a hardware project overrides it."
+    },
+    {
+      "role": "PIL UDP host",
+      "macro": "GMP_PIL_UDP_HOST",
+      "weak": true,
+      "binding": {"string": "127.0.0.1"},
+      "description": "Host running Simulink and the GMP PIL bridge."
+    },
+    {
+      "role": "PIL bridge UDP listen port",
+      "macro": "GMP_PIL_BRIDGE_UDP_LISTEN_PORT",
+      "weak": true,
+      "binding": {"number": "12501"},
+      "description": "Bridge port receiving plant samples from Simulink."
+    },
+    {
+      "role": "PIL MATLAB UDP listen port",
+      "macro": "GMP_PIL_MATLAB_UDP_LISTEN_PORT",
+      "weak": true,
+      "binding": {"number": "12500"},
+      "description": "Simulink port receiving controller results from the bridge."
+    },
+    {
+      "role": "PIL MATLAB command transmit port",
+      "macro": "GMP_PIL_MATLAB_COMMAND_TX_PORT",
+      "weak": true,
+      "binding": {"number": "12502"},
+      "description": "Bridge port receiving out-of-band Simulink commands."
+    },
+    {
+      "role": "PIL MATLAB command receive port",
+      "macro": "GMP_PIL_MATLAB_COMMAND_RX_PORT",
+      "weak": true,
+      "binding": {"number": "12503"},
+      "description": "Simulink port receiving command acknowledgements."
+    },
+    {
+      "role": "PIL target timeout milliseconds",
+      "macro": "GMP_PIL_MCU_TIMEOUT_MS",
+      "weak": true,
+      "binding": {"number": "200"},
+      "description": "Maximum wait for one target Data Link response."
+    },
+    {
+      "role": "PIL MATLAB timeout milliseconds",
+      "macro": "GMP_PIL_MATLAB_TIMEOUT_MS",
+      "weak": true,
+      "binding": {"number": "5000"},
+      "description": "Maximum wait for the next Simulink plant sample."
+    },
+    {
+      "role": "PIL UDP digital input index",
+      "macro": "GMP_PIL_UDP_DIGITAL_INDEX",
+      "weak": true,
+      "binding": {"number": "0"},
+      "description": "Digital input slot packed into the standard Data Link PIL request."
+    }
+  ],
+  "requirement_groups": [
+    {
+      "name": "PIL Transport",
+      "requirements": [
+        "PIL Data Link base command",
+        "Data Link UART baud rate",
+        "PIL UDP host",
+        "PIL bridge UDP listen port",
+        "PIL MATLAB UDP listen port",
+        "PIL MATLAB command transmit port",
+        "PIL MATLAB command receive port",
+        "PIL target timeout milliseconds",
+        "PIL MATLAB timeout milliseconds",
+        "PIL UDP digital input index"
+      ]
+    }
+  ]
+}

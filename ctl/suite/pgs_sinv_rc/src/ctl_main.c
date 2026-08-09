@@ -201,14 +201,52 @@ void ctl_mainloop(void)
 #endif
 }
 
+#if defined ENABLE_GMP_DL_PIL_SIM
+/** @brief Apply one single-phase inverter SIL/PIL input frame. */
+static void ctl_apply_pil_input(const gmp_sim_rx_buf_t* rx)
+{
+    ctl_step_adc_channel(&adc_i_ac, rx->adc_result[0]);
+    ctl_step_adc_channel(&adc_v_bus, rx->adc_result[2]);
+    ctl_step_adc_channel(&adc_v_grid, rx->adc_result[4]);
+}
+
+/** @brief Export one single-phase controller result using the SIL ABI. */
+static void ctl_collect_pil_output(gmp_sim_tx_buf_t* tx)
+{
+    tx->pwm_cmp[0] = ctl_get_single_phase_modulation_L_phase(&hpwm);
+    tx->pwm_cmp[1] = ctl_get_single_phase_modulation_N_phase(&hpwm);
+    tx->monitor[0] = ctrl2float(adc_v_grid.control_port.value) * CTRL_VOLTAGE_BASE;
+    tx->monitor[1] = ctrl2float(adc_i_ac.control_port.value) * CTRL_CURRENT_BASE;
+    tx->monitor[2] = ctrl2float(adc_v_bus.control_port.value) * CTRL_VOLTAGE_BASE;
+    tx->monitor[3] = ctrl2float(ref_gen.i_ref_inst) * CTRL_CURRENT_BASE;
+    tx->monitor[4] = ctrl2float(rc_core.v_out_ref);
+    tx->monitor[5] = ctrl2float(pll.frequency) * CTRL_GRID_FREQUENCY;
+    tx->monitor[6] = ctrl2float(pq_meter.active_power_p);
+    tx->monitor[7] = ctrl2float(pq_meter.reactive_power_q);
+    tx->monitor[8] = ctrl2float(rc_core.current_error);
+    tx->monitor[9] = ctrl2float(rc_core.u_qpr);
+    tx->monitor[10] = ctrl2float(rc_core.u_fdrc);
+    tx->monitor[11] = (double)rc_core.flag_enable_fdrc;
+    tx->monitor[12] = (double)cia402_sm.current_state;
+    tx->monitor[13] = (double)cia402_sm.current_cmd;
+    tx->monitor[14] = (double)protection.active_errors;
+    tx->monitor[15] = ctrl2float(protection.node_ctrl_diverge.fault_record_val);
+}
+
+#endif // defined ENABLE_GMP_DL_PIL_SIM
+
+/** @brief Execute one controller step requested by the Data Link PIL service. */
 void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
 {
 #if defined ENABLE_GMP_DL_PIL_SIM
-    ctl_input_callback_pil(rx);
+    ctl_apply_pil_input(rx);
 
     ctl_dispatch();
 
-    ctl_output_callback_pil(tx);
+    ctl_collect_pil_output(tx);
+#else
+    GMP_UNUSED_VAR(rx);
+    GMP_UNUSED_VAR(tx);
 #endif // defined ENABLE_GMP_DL_PIL_SIM
 }
 
@@ -366,7 +404,11 @@ void clear_all_controllers(void)
 
 void ctl_enable_pwm(void)
 {
+#if defined ENABLE_GMP_DL_PIL_SIM
+    clear_all_controllers();
+#else
     ctl_fast_enable_output();
+#endif
 }
 
 void ctl_disable_pwm(void)

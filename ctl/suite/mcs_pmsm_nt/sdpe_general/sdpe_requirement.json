@@ -55,14 +55,6 @@
     },
     {
       "group": "Controller Runtime",
-      "macro": "ENABLE_GMP_DL_PIL_SIM",
-      "enabled": false,
-      "weak": false,
-      "value": "",
-      "description": "Enable processor-in-the-loop mode and suppress direct PWM controller output."
-    },
-    {
-      "group": "Controller Runtime",
       "macro": "GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO",
       "enabled": false,
       "weak": false,
@@ -104,6 +96,20 @@
     }
   ],
   "requirements": [
+    {
+      "role": "PIL input channel mask",
+      "macro": "GMP_PIL_RX_MASK",
+      "weak": true,
+      "binding": {"number": "127"},
+      "description": "Enable the seven ADC slots used by the PMSM SIL input ABI."
+    },
+    {
+      "role": "PIL output channel mask",
+      "macro": "GMP_PIL_TX_MASK",
+      "weak": true,
+      "binding": {"number": "4128775"},
+      "description": "Enable three PWM slots and six monitor slots used by the PMSM SIL output ABI."
+    },
     {
       "role": "Controller Frequency",
       "macro": "CONTROLLER_FREQUENCY",

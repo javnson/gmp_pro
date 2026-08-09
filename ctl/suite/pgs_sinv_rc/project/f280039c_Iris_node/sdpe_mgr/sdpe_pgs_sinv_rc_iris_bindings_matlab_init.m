@@ -5,6 +5,9 @@
 % Load the explicitly bound common requirement first.
 run(fullfile(fileparts(mfilename('fullpath')), 'sdpe_pgs_sinv_rc_common_settings_matlab_init.m'));
 
+% Load the explicitly bound common requirement first.
+run(fullfile(fileparts(mfilename('fullpath')), 'sdpe_gmp_suite_pil_common_settings_matlab_init.m'));
+
 % Notes:
 %   Single-phase inverter project requirement prepared from xplt/ctrl_settings.h.
 %   This requirement introduces the GMP LVFB 150V 2-phase inverter board as the switching stage and the GMP Harmonia 3-phase LC filter as the grid filter. IRIS F280039C is included as the peripheral option provider.
@@ -594,9 +597,10 @@ fprintf('Hardware (3):\n');
 fprintf('  - %s\n', 'iris_f280039c_node');
 fprintf('  - %s\n', 'gmp_lvfb_150_2ph_v2');
 fprintf('  - %s\n', 'gmp_harmonia_3ph_lc_filter');
-fprintf('Common requirements (1):\n');
+fprintf('Common requirements (2):\n');
 fprintf('  - %s\n', 'PGS Single-Phase Inverter Common Control');
-fprintf('Enabled variables (201):\n');
+fprintf('  - %s\n', 'GMP Suite PIL Common Transport');
+fprintf('Enabled variables (217):\n');
 fprintf('  BSC093N15NS5_CONFIGURATION = '); disp(BSC093N15NS5_CONFIGURATION);
 fprintf('  BSC093N15NS5_CURRENT_RATING_A = '); disp(BSC093N15NS5_CURRENT_RATING_A);
 fprintf('  BSC093N15NS5_DEVICE_TYPE = '); disp(BSC093N15NS5_DEVICE_TYPE);
@@ -652,6 +656,7 @@ fprintf('  CTRL_STARTUP_DELAY = '); disp(CTRL_STARTUP_DELAY);
 fprintf('  CTRL_VOLTAGE_BASE = '); disp(CTRL_VOLTAGE_BASE);
 fprintf('  DSP_C2000_DSP_TIME_DIV = '); disp(DSP_C2000_DSP_TIME_DIV);
 fprintf('  GMP_DL_SCOPE_DEPTH = '); disp(GMP_DL_SCOPE_DEPTH);
+fprintf('  GMP_DL_UART_BAUDRATE = '); disp(GMP_DL_UART_BAUDRATE);
 fprintf('  GMP_LVFB_BOARD_NAME = '); disp(GMP_LVFB_BOARD_NAME);
 fprintf('  GMP_LVFB_BUS_CAPACITANCE_F = '); disp(GMP_LVFB_BUS_CAPACITANCE_F);
 fprintf('  GMP_LVFB_CURRENT_BIAS_V = '); disp(GMP_LVFB_CURRENT_BIAS_V);
@@ -678,6 +683,21 @@ fprintf('  GMP_LVFB_VOLTAGE_R_HIGH_OHM = '); disp(GMP_LVFB_VOLTAGE_R_HIGH_OHM);
 fprintf('  GMP_LVFB_VOLTAGE_R_LOW_OHM = '); disp(GMP_LVFB_VOLTAGE_R_LOW_OHM);
 fprintf('  GMP_LVFB_VOLTAGE_SENSITIVITY = '); disp(GMP_LVFB_VOLTAGE_SENSITIVITY);
 fprintf('  GMP_LVFB_VOLTAGE_SENSOR_NAME = '); disp(GMP_LVFB_VOLTAGE_SENSOR_NAME);
+fprintf('  GMP_PIL_BRIDGE_UDP_LISTEN_PORT = '); disp(GMP_PIL_BRIDGE_UDP_LISTEN_PORT);
+fprintf('  GMP_PIL_DL_BASE_COMMAND = '); disp(GMP_PIL_DL_BASE_COMMAND);
+fprintf('  GMP_PIL_MATLAB_COMMAND_RX_PORT = '); disp(GMP_PIL_MATLAB_COMMAND_RX_PORT);
+fprintf('  GMP_PIL_MATLAB_COMMAND_TX_PORT = '); disp(GMP_PIL_MATLAB_COMMAND_TX_PORT);
+fprintf('  GMP_PIL_MATLAB_TIMEOUT_MS = '); disp(GMP_PIL_MATLAB_TIMEOUT_MS);
+fprintf('  GMP_PIL_MATLAB_UDP_LISTEN_PORT = '); disp(GMP_PIL_MATLAB_UDP_LISTEN_PORT);
+fprintf('  GMP_PIL_MCU_TIMEOUT_MS = '); disp(GMP_PIL_MCU_TIMEOUT_MS);
+fprintf('  GMP_PIL_RX_MASK = '); disp(GMP_PIL_RX_MASK);
+fprintf('  GMP_PIL_TX_MASK = '); disp(GMP_PIL_TX_MASK);
+fprintf('  GMP_PIL_UDP_DIGITAL_INDEX = '); disp(GMP_PIL_UDP_DIGITAL_INDEX);
+fprintf('  GMP_PIL_UDP_HOST = '); disp(GMP_PIL_UDP_HOST);
+fprintf('  GMP_SUITE_PIL_SDPE_PROJECT_ID = '); disp(GMP_SUITE_PIL_SDPE_PROJECT_ID);
+fprintf('  GMP_SUITE_PIL_SDPE_PROJECT_SUITE = '); disp(GMP_SUITE_PIL_SDPE_PROJECT_SUITE);
+fprintf('  GMP_SUITE_PIL_SDPE_PROJECT_UPDATED_AT = '); disp(GMP_SUITE_PIL_SDPE_PROJECT_UPDATED_AT);
+fprintf('  GMP_SUITE_PIL_SDPE_PROJECT_VERSION = '); disp(GMP_SUITE_PIL_SDPE_PROJECT_VERSION);
 fprintf('  HARMONIA_3PH_LC_FILTER_BOARD_NAME = '); disp(HARMONIA_3PH_LC_FILTER_BOARD_NAME);
 fprintf('  HARMONIA_3PH_LC_FILTER_CAPACITANCE_F = '); disp(HARMONIA_3PH_LC_FILTER_CAPACITANCE_F);
 fprintf('  HARMONIA_3PH_LC_FILTER_CURRENT_MAX_PEAK_A = '); disp(HARMONIA_3PH_LC_FILTER_CURRENT_MAX_PEAK_A);

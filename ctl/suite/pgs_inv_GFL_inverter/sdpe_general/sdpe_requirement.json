@@ -87,14 +87,6 @@
     },
     {
       "group": "Runtime",
-      "macro": "ENABLE_GMP_DL_PIL_SIM",
-      "enabled": false,
-      "weak": false,
-      "value": "",
-      "description": "Enable processor-in-the-loop input/output handling."
-    },
-    {
-      "group": "Runtime",
       "macro": "GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO",
       "enabled": false,
       "weak": false,
@@ -119,6 +111,20 @@
     }
   ],
   "requirements": [
+    {
+      "role": "PIL input channel mask",
+      "macro": "GMP_PIL_RX_MASK",
+      "weak": true,
+      "binding": {"number": "127"},
+      "description": "Enable the seven ADC slots used by the three-phase inverter SIL input ABI."
+    },
+    {
+      "role": "PIL output channel mask",
+      "macro": "GMP_PIL_TX_MASK",
+      "weak": true,
+      "binding": {"number": "4294901775"},
+      "description": "Enable four PWM slots and all sixteen monitor slots used by the GFL SIL output ABI."
+    },
     {
       "role": "Adc Calibrator Cutoff",
       "macro": "GFL_ADC_CALIBRATOR_FC_HZ",

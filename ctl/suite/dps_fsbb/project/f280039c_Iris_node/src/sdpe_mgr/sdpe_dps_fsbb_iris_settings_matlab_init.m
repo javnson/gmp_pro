@@ -5,6 +5,9 @@
 % Load the explicitly bound common requirement first.
 run(fullfile(fileparts(mfilename('fullpath')), 'sdpe_dps_fsbb_common_settings_matlab_init.m'));
 
+% Load the explicitly bound common requirement first.
+run(fullfile(fileparts(mfilename('fullpath')), 'sdpe_gmp_suite_pil_common_settings_matlab_init.m'));
+
 % Notes:
 %   Four-switch buck-boost converter SDPE project requirement prepared from ctl/suite/dps_fsbb/project/f280039c_Iris_node/xplt/ctrl_settings.h.
 %   The requirement introduces the GMP LVFB 150V 2-phase board as the switching stage and sensor source, and IRIS F280039C Node as the peripheral option provider.
@@ -165,9 +168,10 @@ fprintf('Version      : %s\n', '0.1.0');
 fprintf('Hardware (2):\n');
 fprintf('  - %s\n', 'iris_f280039c_node');
 fprintf('  - %s\n', 'gmp_lvfb_150_2ph_v2');
-fprintf('Common requirements (1):\n');
+fprintf('Common requirements (2):\n');
 fprintf('  - %s\n', 'DPS FSBB Common Control');
-fprintf('Enabled variables (146):\n');
+fprintf('  - %s\n', 'GMP Suite PIL Common Transport');
+fprintf('Enabled variables (162):\n');
 fprintf('  BSC093N15NS5_CONFIGURATION = '); disp(BSC093N15NS5_CONFIGURATION);
 fprintf('  BSC093N15NS5_CURRENT_RATING_A = '); disp(BSC093N15NS5_CURRENT_RATING_A);
 fprintf('  BSC093N15NS5_DEVICE_TYPE = '); disp(BSC093N15NS5_DEVICE_TYPE);
@@ -244,6 +248,7 @@ fprintf('  FSBB_VOLTAGE_RAMP_PU_S = '); disp(FSBB_VOLTAGE_RAMP_PU_S);
 fprintf('  FSBB_VOUT = '); disp(FSBB_VOUT);
 fprintf('  FSBB_VOUT_ADC_BASE = '); disp(FSBB_VOUT_ADC_BASE);
 fprintf('  GMP_DL_SCOPE_DEPTH = '); disp(GMP_DL_SCOPE_DEPTH);
+fprintf('  GMP_DL_UART_BAUDRATE = '); disp(GMP_DL_UART_BAUDRATE);
 fprintf('  GMP_LVFB_BOARD_NAME = '); disp(GMP_LVFB_BOARD_NAME);
 fprintf('  GMP_LVFB_BUS_CAPACITANCE_F = '); disp(GMP_LVFB_BUS_CAPACITANCE_F);
 fprintf('  GMP_LVFB_CURRENT_BIAS_V = '); disp(GMP_LVFB_CURRENT_BIAS_V);
@@ -270,6 +275,21 @@ fprintf('  GMP_LVFB_VOLTAGE_R_HIGH_OHM = '); disp(GMP_LVFB_VOLTAGE_R_HIGH_OHM);
 fprintf('  GMP_LVFB_VOLTAGE_R_LOW_OHM = '); disp(GMP_LVFB_VOLTAGE_R_LOW_OHM);
 fprintf('  GMP_LVFB_VOLTAGE_SENSITIVITY = '); disp(GMP_LVFB_VOLTAGE_SENSITIVITY);
 fprintf('  GMP_LVFB_VOLTAGE_SENSOR_NAME = '); disp(GMP_LVFB_VOLTAGE_SENSOR_NAME);
+fprintf('  GMP_PIL_BRIDGE_UDP_LISTEN_PORT = '); disp(GMP_PIL_BRIDGE_UDP_LISTEN_PORT);
+fprintf('  GMP_PIL_DL_BASE_COMMAND = '); disp(GMP_PIL_DL_BASE_COMMAND);
+fprintf('  GMP_PIL_MATLAB_COMMAND_RX_PORT = '); disp(GMP_PIL_MATLAB_COMMAND_RX_PORT);
+fprintf('  GMP_PIL_MATLAB_COMMAND_TX_PORT = '); disp(GMP_PIL_MATLAB_COMMAND_TX_PORT);
+fprintf('  GMP_PIL_MATLAB_TIMEOUT_MS = '); disp(GMP_PIL_MATLAB_TIMEOUT_MS);
+fprintf('  GMP_PIL_MATLAB_UDP_LISTEN_PORT = '); disp(GMP_PIL_MATLAB_UDP_LISTEN_PORT);
+fprintf('  GMP_PIL_MCU_TIMEOUT_MS = '); disp(GMP_PIL_MCU_TIMEOUT_MS);
+fprintf('  GMP_PIL_RX_MASK = '); disp(GMP_PIL_RX_MASK);
+fprintf('  GMP_PIL_TX_MASK = '); disp(GMP_PIL_TX_MASK);
+fprintf('  GMP_PIL_UDP_DIGITAL_INDEX = '); disp(GMP_PIL_UDP_DIGITAL_INDEX);
+fprintf('  GMP_PIL_UDP_HOST = '); disp(GMP_PIL_UDP_HOST);
+fprintf('  GMP_SUITE_PIL_SDPE_PROJECT_ID = '); disp(GMP_SUITE_PIL_SDPE_PROJECT_ID);
+fprintf('  GMP_SUITE_PIL_SDPE_PROJECT_SUITE = '); disp(GMP_SUITE_PIL_SDPE_PROJECT_SUITE);
+fprintf('  GMP_SUITE_PIL_SDPE_PROJECT_UPDATED_AT = '); disp(GMP_SUITE_PIL_SDPE_PROJECT_UPDATED_AT);
+fprintf('  GMP_SUITE_PIL_SDPE_PROJECT_VERSION = '); disp(GMP_SUITE_PIL_SDPE_PROJECT_VERSION);
 fprintf('  IRIS_F280039C_ADC_CH1 = '); disp(IRIS_F280039C_ADC_CH1);
 fprintf('  IRIS_F280039C_ADC_CH2 = '); disp(IRIS_F280039C_ADC_CH2);
 fprintf('  IRIS_F280039C_ADC_CH3 = '); disp(IRIS_F280039C_ADC_CH3);

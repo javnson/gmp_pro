@@ -5,6 +5,14 @@
             "root": "core",
             "module": "dev|_internal"
         },
+        {"root": "core", "module": "dev|datalink|_internal"},
+        {"root": "core", "module": "dev|datalink|mem_monitor"},
+        {"root": "core", "module": "dev|datalink|pil"},
+        {"root": "core", "module": "dev|datalink|scope"},
+        {"root": "core", "module": "dev|datalink|variable_monitor"},
+        {"root": "ctl", "module": "component|dsa|dsa_scope"},
+        {"root": "ctl", "module": "component|dsa|dsa_trigger"},
+        {"root": "ctl", "module": "component|dsa|dsa_dl_scope"},
         {
             "root": "core",
             "module": "dev|display|_internal"

@@ -418,7 +418,8 @@
     "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 4)\n#error \"BUILD_LEVEL must be 1 (open loop), 2 (current loop), 3 (voltage loop), or 4 (parallel CC/CV).\"\n#endif\n/* PWM-resource checks live in xplt.peripheral.c, after SysConfig board.h symbols are available. */"
   },
   "common_requirements": [
-    "../../../../sdpe_general/sdpe_requirement.json"
+    "../../../../sdpe_general/sdpe_requirement.json",
+    "../../../../../sdpe_pil/sdpe_requirement.json"
   ],
   "feature_macro_groups": [
     "Debug Interfaces"

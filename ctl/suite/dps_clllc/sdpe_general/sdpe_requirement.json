@@ -31,6 +31,20 @@
   "option_macros": [],
   "requirements": [
     {
+      "role": "PIL input channel mask",
+      "macro": "GMP_PIL_RX_MASK",
+      "weak": true,
+      "binding": {"number": "31"},
+      "description": "Enable the five ADC slots used by the CLLLC SIL input ABI."
+    },
+    {
+      "role": "PIL output channel mask",
+      "macro": "GMP_PIL_TX_MASK",
+      "weak": true,
+      "binding": {"number": "8323327"},
+      "description": "Enable eight modulation slots and seven monitor slots used by the CLLLC SIL output ABI."
+    },
+    {
       "role": "Resonant Frequency",
       "macro": "CLLLC_F_RESONANT_HZ",
       "binding": {

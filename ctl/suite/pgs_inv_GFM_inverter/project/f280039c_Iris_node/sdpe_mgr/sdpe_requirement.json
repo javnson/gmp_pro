@@ -1109,7 +1109,8 @@
     }
   ],
   "common_requirements": [
-    "../../../sdpe_general/sdpe_requirement.json"
+    "../../../sdpe_general/sdpe_requirement.json",
+    "../../../../sdpe_pil/sdpe_requirement.json"
   ],
   "feature_macro_groups": [
     "PWM"
