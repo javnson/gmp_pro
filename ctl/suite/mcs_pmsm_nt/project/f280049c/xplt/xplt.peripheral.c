@@ -15,9 +15,6 @@
 #include "user_main.h"
 #include <xplt.peripheral.h>
 
-CTL_DSA_DL_SCOPE_DEFINE_PLATFORM("Control Scope")
-
-#include <ctl/component/dsa/dsa_trigger.h>
 
 //=================================================================================================
 // definitions of peripheral
@@ -36,13 +33,6 @@ adc_gt udc_src;
 ptr_adc_channel_t idc;
 adc_gt idc_src;
 
-// dlog DSA objects
-basic_trigger_t trigger;
-
-// dlog variables
-ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];
-ctrl_gt dlog_mem2[DLOG_MEM_LENGTH];
-
 // GPIO port
 extern gpio_halt user_led;
 
@@ -54,6 +44,7 @@ void setup_peripheral(void)
 {
     // Setup Debug Uart
     debug_uart = LAUNCHXL_UART_USB_BASE;
+    SCI_enableInterrupt(LAUNCHXL_UART_USB_BASE, SCI_INT_RXFF | SCI_INT_RXERR);
 
     // Test print function
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
@@ -103,9 +94,6 @@ void setup_peripheral(void)
     ctl_attach_foc_core_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &pos_enc.encif, &spd_enc.encif);
 #endif // BUILD_LEVEL
 
-    // dlog module
-    dsa_init_basic_trigger(&trigger, DLOG_MEM_LENGTH);
-
 }
 
 //=================================================================================================
@@ -120,25 +108,12 @@ interrupt void MainISR(void)
     // call GMP ISR  Controller operation callback function
     //
     gmp_base_ctl_step();
-    xplt_step_dl_scope();
+    user_step_dl_scope();
 
     //
     // Call GMP Timer
     //
     gmp_step_system_tick();
-
-    //
-    // Call dlog module
-    //
-
-    // pass trigger source here
-    if (dsa_step_trigger(&trigger, mtr_ctrl.iab0.dat[phase_alpha]))
-    {
-        uint32_t index = dsa_get_trigger_index(&trigger);
-
-        dlog_mem1[index] = mtr_ctrl.iab0.dat[phase_alpha];
-        dlog_mem2[index] = mtr_ctrl.iab0.dat[phase_beta];
-    }
 
     //
     // Blink LED
@@ -320,12 +295,38 @@ static void drain_dl_rx_fifo_nonblocking(void)
     }
 }
 
+/**
+ * @brief Restore SCI reception after a framing, parity, break, or overrun error.
+ * @details Error data is discarded before the receiver and FIFO are reset.
+ *          Interrupt enables are restored explicitly because malformed baud
+ *          traffic may assert several receiver error sources at once.
+ */
+static void recover_dl_rx_transport(void)
+{
+    SCI_disableInterrupt(LAUNCHXL_UART_USB_BASE, SCI_INT_RXFF | SCI_INT_RXERR);
+    while (SCI_getRxFIFOStatus(LAUNCHXL_UART_USB_BASE) != SCI_FIFO_RX0)
+    {
+        (void)SCI_readCharNonBlocking(LAUNCHXL_UART_USB_BASE);
+    }
+    (void)SCI_readCharNonBlocking(LAUNCHXL_UART_USB_BASE);
+    LAUNCHXL_UART_USB_init();
+    SCI_enableInterrupt(LAUNCHXL_UART_USB_BASE, SCI_INT_RXFF | SCI_INT_RXERR);
+    gmp_dev_dl_request_rx_reset(&dl);
+}
+
 /** @brief Poll the SCI receive FIFO from the Data Link background task. */
 void flush_dl_rx_buffer(void)
 {
     /* Keep the RX ISR from consuming a FIFO depth observed by this task. */
     gmp_base_enter_critical();
-    drain_dl_rx_fifo_nonblocking();
+    if ((SCI_getRxStatus(LAUNCHXL_UART_USB_BASE) & SCI_RXSTATUS_ERROR) != 0U)
+    {
+        recover_dl_rx_transport();
+    }
+    else
+    {
+        drain_dl_rx_fifo_nonblocking();
+    }
     gmp_base_leave_critical();
 }
 
@@ -335,18 +336,14 @@ interrupt void INT_LAUNCHXL_UART_USB_RX_ISR(void)
 
     if ((rx_status & SCI_RXSTATUS_ERROR) != 0U)
     {
-        /* Discard the corrupted burst and recover both hardware and parser. */
-        SCI_performSoftwareReset(LAUNCHXL_UART_USB_BASE);
-        SCI_resetRxFIFO(LAUNCHXL_UART_USB_BASE);
-        SCI_clearOverflowStatus(LAUNCHXL_UART_USB_BASE);
-        gmp_dev_dl_request_rx_reset(&dl);
+        recover_dl_rx_transport();
     }
     else
     {
         drain_dl_rx_fifo_nonblocking();
+        SCI_clearInterruptStatus(LAUNCHXL_UART_USB_BASE, SCI_INT_RXFF);
     }
 
-    SCI_clearInterruptStatus(LAUNCHXL_UART_USB_BASE, SCI_INT_RXFF | SCI_INT_RXERR);
     Interrupt_clearACKGroup(INT_LAUNCHXL_UART_USB_RX_INTERRUPT_ACK_GROUP);
 }
 

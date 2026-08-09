@@ -33,6 +33,7 @@ class ScopeResource:
     """One target-reported Data Link Scope resource."""
 
     resource_id: int
+    protocol_version: int
     sample_type: int
     layout: int
     channels: int
@@ -113,6 +114,8 @@ class TabDsaScope(QWidget):
         self.afterglow_groups: list[list[pg.PlotDataItem]] = []
         self.persistence_frames: list[ScopeFrame] = []
         self.current_frame: ScopeFrame | None = None
+        self.active_sample_dividers: dict[int, int] = {}
+        self.pending_sample_divider = 0
 
         self.poll_timer = QTimer(self)
         self.poll_timer.setInterval(50)
@@ -206,6 +209,14 @@ class TabDsaScope(QWidget):
 
         acquisition_group = QGroupBox("Acquisition")
         acquisition_layout = QGridLayout(acquisition_group)
+        self.sample_divider_spin = QSpinBox()
+        self.sample_divider_spin.setRange(0, 65535)
+        self.sample_divider_spin.setValue(0)
+        self.sample_divider_spin.setToolTip(
+            "The target records one sample every divider + 1 control ticks. "
+            "A value of 0 disables division and samples every control tick."
+        )
+        self.sample_divider_spin.valueChanged.connect(self._update_rate_label)
         self.continuous_checkbox = QCheckBox("Enabled")
         self.continuous_checkbox.setToolTip(
             "Enable to configure and capture immediately, then re-arm after each completed "
@@ -225,15 +236,16 @@ class TabDsaScope(QWidget):
             "background: #ECEFF1; border: 1px solid #CFD8DC; border-radius: 3px;"
         )
         acquisition_controls = (
+            (QLabel("Sampling divider"), self.sample_divider_spin),
             (QLabel("Continuous display"), self.continuous_checkbox),
             (QLabel("Acquisition"), self.capture_button),
             (QLabel("Snapshot"), self.read_button),
-            (QLabel("Status"), self.status_label),
         )
         for column, (label, control) in enumerate(acquisition_controls):
             acquisition_layout.addWidget(label, 0, column)
             acquisition_layout.addWidget(control, 1, column)
             acquisition_layout.setColumnStretch(column, 1)
+        acquisition_layout.addWidget(self.status_label, 2, 0, 1, 4)
         layout.addWidget(acquisition_group)
 
         persistence_group = QGroupBox("Waveform Persistence")
@@ -353,8 +365,33 @@ class TabDsaScope(QWidget):
         self.layout_label.setText(self.LAYOUT_NAMES.get(resource.layout, "Unknown"))
         self.channels_label.setText(str(resource.channels))
         self.depth_label.setText(str(resource.depth))
-        self.rate_label.setText(f"{resource.sample_rate_hz} Hz")
+        self.sample_divider_spin.setEnabled(resource.protocol_version >= 2)
+        self.sample_divider_spin.setValue(
+            self.active_sample_dividers.get(resource.resource_id, 0)
+            if resource.protocol_version >= 2 else 0
+        )
+        self._update_rate_label()
         self.trigger_channel_spin.setMaximum(max(0, resource.channels - 1))
+
+    @staticmethod
+    def _effective_sample_rate_hz(resource: ScopeResource, divider: int) -> float:
+        """Return the configured per-channel sample rate."""
+        return resource.sample_rate_hz / float(divider + 1)
+
+    def _update_rate_label(self, *_args) -> None:
+        """Show the base and configured Scope sample rates."""
+        resource = self._selected_resource()
+        if resource is None:
+            self.rate_label.setText("-")
+            return
+        divider = self.sample_divider_spin.value() if resource.protocol_version >= 2 else 0
+        effective_rate = self._effective_sample_rate_hz(resource, divider)
+        if divider == 0:
+            self.rate_label.setText(f"{resource.sample_rate_hz} Hz (no division)")
+        else:
+            self.rate_label.setText(
+                f"{resource.sample_rate_hz} Hz / {divider + 1} = {effective_rate:g} Hz"
+            )
 
     def start_capture(self) -> None:
         """Configure and arm the selected target scope resource."""
@@ -380,8 +417,7 @@ class TabDsaScope(QWidget):
 
     def _build_configuration_payload(self, resource: ScopeResource) -> bytes:
         """Build a target configuration from the currently editable controls."""
-        return struct.pack(
-            "<BBBBHfI",
+        fields = (
             self.OP_CONFIGURE,
             resource.resource_id,
             int(self.mode_combo.currentData()),
@@ -390,12 +426,18 @@ class TabDsaScope(QWidget):
             self.level_spin.value(),
             self.AUTO_TIMEOUT_MS,
         )
+        if resource.protocol_version >= 2:
+            return struct.pack("<BBBBHfIH", *fields, self.sample_divider_spin.value())
+        return struct.pack("<BBBBHfI", *fields)
 
     def _begin_configuration(self, payload: bytes) -> None:
         """Start or restart configuration after all serial activity is quiescent."""
         self.capture_active = True
         self.capture_phase = self.PHASE_CONFIGURING
         self.capture_mode = payload[2]
+        self.pending_sample_divider = (
+            struct.unpack_from("<H", payload, 14)[0] if len(payload) >= 16 else 0
+        )
         self.repeat_after_capture = self.continuous_checkbox.isChecked()
         self.repeat_timer.stop()
         self.poll_timer.stop()
@@ -501,7 +543,13 @@ class TabDsaScope(QWidget):
         if expected_bytes > resource.byte_length:
             self._finish_with_error("Scope metadata exceeds the registered buffer capacity.")
             return
-        self.metadata = {"resource": resource, "generation": generation}
+        self.metadata = {
+            "resource": resource,
+            "generation": generation,
+            "sample_rate_hz": self._effective_sample_rate_hz(
+                resource, self.active_sample_dividers.get(resource.resource_id, 0)
+            ),
+        }
         self.capture_phase = self.PHASE_DOWNLOADING
         self.status_request_pending = False
         self.status_request_started = 0.0
@@ -528,7 +576,7 @@ class TabDsaScope(QWidget):
             self._finish_discovery("Scope discovery response is too short.")
             return
         operation, status, version, total, resource_id = payload[:5]
-        if operation != self.OP_DISCOVER or version != 1 or status != 0:
+        if operation != self.OP_DISCOVER or version not in (1, 2) or status != 0:
             self._finish_discovery("Target rejected Scope discovery.")
             return
         if len(payload) < self.DISCOVERY_HEADER.size:
@@ -543,6 +591,7 @@ class TabDsaScope(QWidget):
         self.resources.append(
             ScopeResource(
                 resource_id=fields[4],
+                protocol_version=version,
                 sample_type=fields[5],
                 layout=fields[6],
                 channels=fields[7],
@@ -772,7 +821,8 @@ class TabDsaScope(QWidget):
             channel_data = values.reshape(resource.depth, resource.channels).T
         else:
             channel_data = values.reshape(resource.channels, resource.depth)
-        time_ms = np.arange(resource.depth, dtype=np.float64) * (1000.0 / resource.sample_rate_hz)
+        sample_rate_hz = self.metadata["sample_rate_hz"]
+        time_ms = np.arange(resource.depth, dtype=np.float64) * (1000.0 / sample_rate_hz)
         self._ensure_curves(resource.channels)
         self._capture_afterglow()
         generation = self.metadata["generation"]
@@ -784,7 +834,7 @@ class TabDsaScope(QWidget):
         for index, curve in enumerate(self.curves):
             curve.setData(time_ms, channel_data[index])
         trigger_sample = int(round(resource.depth * self.position_spin.value() / 100.0))
-        self.trigger_line.setValue(trigger_sample * 1000.0 / resource.sample_rate_hz)
+        self.trigger_line.setValue(trigger_sample * 1000.0 / sample_rate_hz)
         self.plot.enableAutoRange()
         self.save_current_button.setEnabled(True)
         self.save_persistence_button.setEnabled(True)
@@ -887,6 +937,7 @@ class TabDsaScope(QWidget):
                 self._finish_with_error("Target rejected the Scope configuration.")
                 return
             self._complete_capture_request(self.OP_CONFIGURE)
+            self.active_sample_dividers[resource.resource_id] = self.pending_sample_divider
             self.status_label.setText("Arming")
             self.capture_phase = self.PHASE_ARMING
             self._send_capture_request(bytes((self.OP_ARM, resource.resource_id)))

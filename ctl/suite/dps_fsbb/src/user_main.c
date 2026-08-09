@@ -29,6 +29,9 @@ void flush_dl_tx_buffer(void);
 // Datalink protocol online Debug module
 
 gmp_datalink_t dl;
+#if !defined SPECIFY_PC_ENVIRONMENT
+CTL_DSA_DL_SCOPE_DEFINE_USER("Control Scope")
+#endif
 
 //
 // PIL (processor in loop module)
@@ -112,7 +115,7 @@ gmp_task_status_t tsk_dl_debug_device(gmp_task_t* tsk)
             break;
 
         /** Dispatch the independent four-channel Scope service. */
-        if (xplt_dispatch_dl_scope())
+        if (user_dispatch_dl_scope())
             break;
 
         // Echo Command
@@ -238,7 +241,7 @@ GMP_NO_OPT_PREFIX void init(void) GMP_NO_OPT_SUFFIX
     gmp_param_tunable_init(&tunable, &dl, 0x30, dict_m1, var_tunable_count);
     gmp_mem_persp_init(&mem_persp_server, &dl, 0x50, mem_regions, mem_regions_count);
 #if !defined SPECIFY_PC_ENVIRONMENT
-    xplt_init_dl_scope(&dl);
+    user_init_dl_scope(&dl);
 #endif
 
 #if defined SPECIFY_PC_ENVIRONMENT

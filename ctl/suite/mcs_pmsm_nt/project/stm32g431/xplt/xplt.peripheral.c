@@ -16,7 +16,6 @@
 #include "user_main.h"
 #include <xplt.peripheral.h>
 
-CTL_DSA_DL_SCOPE_DEFINE_PLATFORM("Control Scope")
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -217,7 +216,7 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 	if (hadc == &hadc1)
     {
     gmp_base_ctl_step();
-    xplt_step_dl_scope();
+    user_step_dl_scope();
         counter++;
         if(counter >= 1000)   
         {

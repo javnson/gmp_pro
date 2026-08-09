@@ -15,10 +15,6 @@
 #include "user_main.h"
 #include <xplt.peripheral.h>
 
-CTL_DSA_DL_SCOPE_DEFINE_PLATFORM("Control Scope")
-
-#include <ctl/component/dsa/dsa_trigger.h>
-
 
 //=================================================================================================
 // definitions of peripheral
@@ -36,14 +32,6 @@ ptr_adc_channel_t udc;
 adc_gt udc_src;
 ptr_adc_channel_t idc;
 adc_gt idc_src;
-
-// dlog DSA objects
-basic_trigger_t trigger;
-#define DLOG_MEM_LENGTH 100
-
-// dlog variables
-ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];
-ctrl_gt dlog_mem2[DLOG_MEM_LENGTH];
 
 // GPIO port
 extern gpio_halt user_led;
@@ -106,8 +94,6 @@ void setup_peripheral(void)
     ctl_attach_foc_core_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &pos_enc.encif, &spd_enc.encif);
 #endif // BUILD_LEVEL
 
-       // dlog module
-       dsa_init_basic_trigger(&trigger, DLOG_MEM_LENGTH);
 }
 
 //=================================================================================================
@@ -120,7 +106,7 @@ interrupt void MainISR(void)
     // call GMP ISR  Controller operation callback function
     //
     gmp_base_ctl_step();
-    xplt_step_dl_scope();
+    user_step_dl_scope();
 
     //
     // Call GMP Timer

@@ -82,8 +82,8 @@ PAGE 1 :
 
    RAMGS0      : origin = 0x00C000, length = 0x002000
    RAMGS1      : origin = 0x00E000, length = 0x002000
-   RAMGS2      : origin = 0x010000, length = 0x002000
-   RAMGS3      : origin = 0x012000, length = 0x001FF8
+   RAMGS2_3      : origin = 0x010000, length = 0x003FF8
+//   RAMGS3      : origin = 0x012000, length = 0x001FF8
 //   RAMGS3_RSVD : origin = 0x013FF8, length = 0x000008     /* Reserve and do not use for code as per the errata advisory "Memory: Prefetching Beyond Valid Memory" */
 }
 
@@ -117,6 +117,7 @@ SECTIONS
 
    ramgs0           : > RAMGS0,    PAGE = 1
    ramgs1           : > RAMGS1,    PAGE = 1
+   ramgs2_3         : > RAMGS2_3,  PAGE = 1
 
  
 #if defined(__TI_EABI__) 

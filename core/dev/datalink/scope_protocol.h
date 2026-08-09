@@ -7,7 +7,7 @@
 #define _FILE_GMP_SCOPE_PROTOCOL_H
 
 /** @brief Current wire-format version returned by Scope discovery. */
-#define GMP_SCOPE_PROTOCOL_VERSION 1U
+#define GMP_SCOPE_PROTOCOL_VERSION 2U
 
 /** @brief Scope request operation codes carried by one service command. */
 typedef enum
@@ -57,6 +57,7 @@ typedef struct
     uint16_t position_permille;     /**< Samples before the trigger, in tenths of a percent */
     parameter_gt level;             /**< Trigger comparison level */
     uint32_t auto_timeout_ms;       /**< Auto-trigger timeout in milliseconds */
+    uint16_t sample_divider;        /**< Sample every divider plus one control ticks */
 } gmp_scope_config_t;
 
 /** @brief Apply a new trigger configuration to one target scope. */

@@ -144,18 +144,22 @@ static void scope_reply_configure(gmp_scope_service_t* ctx)
     uint16_t position = 0U;
     uint32_t level_bits = 0U;
     uint32_t timeout_ms = 0U;
+    uint16_t sample_divider = 0U;
     float level_f32 = 0.0F;
     fast16_gt status = 0;
     gmp_scope_config_t config;
     const gmp_scope_resource_t* resource = NULL;
 
-    if (dl->expected_payload_len != 14U ||
+    if ((dl->expected_payload_len != 14U && dl->expected_payload_len != 16U) ||
         !scope_read_u8(payload, dl->expected_payload_len, &index, &resource_id) ||
         !scope_read_u8(payload, dl->expected_payload_len, &index, &mode) ||
         !scope_read_u8(payload, dl->expected_payload_len, &index, &channel) ||
         !scope_read_u16(payload, dl->expected_payload_len, &index, &position) ||
         !scope_read_u32(payload, dl->expected_payload_len, &index, &level_bits) ||
         !scope_read_u32(payload, dl->expected_payload_len, &index, &timeout_ms))
+        status = 1;
+    if (status == 0 && dl->expected_payload_len == 16U &&
+        !scope_read_u16(payload, dl->expected_payload_len, &index, &sample_divider))
         status = 1;
     if (status == 0 && resource_id < ctx->resource_count)
         resource = &ctx->resources[resource_id];
@@ -169,6 +173,7 @@ static void scope_reply_configure(gmp_scope_service_t* ctx)
         config.position_permille = position;
         config.level = (parameter_gt)level_f32;
         config.auto_timeout_ms = timeout_ms;
+        config.sample_divider = sample_divider;
         if (!resource->configure(resource->user_context, &config))
             status = 3;
     }

@@ -69,16 +69,20 @@ static void ctl_dsa_dl_scope_copy_history(ctl_dsa_dl_scope_t* scope,
 static void ctl_dsa_dl_scope_arm_internal(ctl_dsa_dl_scope_t* scope)
 {
     uint32_t timeout_ticks;
+    uint32_t effective_sample_rate_hz;
 
     ctl_clear_dsa_trigger(&scope->trigger);
     scope->trigger.option = scope->trigger_mode;
     scope->trigger.trigger_level = float2ctrl(scope->trigger_level);
-    timeout_ticks = (scope->auto_timeout_ms * scope->sample_rate_hz) / 1000U;
+    effective_sample_rate_hz = scope->sample_rate_hz /
+                               ((uint32_t)scope->sample_divider + 1U);
+    timeout_ticks = (scope->auto_timeout_ms * effective_sample_rate_hz) / 1000U;
     scope->trigger.auto_timeout_ticks = (timeout_ticks == 0U) ? 1U : timeout_ticks;
     scope->trigger.flag_is_force_trigger = 0;
     ctl_reset_dsa_scope_tracker(&scope->recorder);
     scope->history_write = 0U;
     scope->history_count = 0U;
+    scope->sample_divider_counter = 0U;
     scope->state = GMP_SCOPE_STATE_WAITING;
 }
 
@@ -99,6 +103,8 @@ static fast_gt ctl_dsa_dl_scope_configure(void* user_context,
     scope->position_permille = config->position_permille;
     scope->trigger_level = config->level;
     scope->auto_timeout_ms = config->auto_timeout_ms;
+    scope->sample_divider = config->sample_divider;
+    scope->sample_divider_counter = 0U;
     gmp_base_leave_critical();
     return 1;
 }
@@ -146,6 +152,8 @@ void ctl_init_dsa_dl_scope(ctl_dsa_dl_scope_t* scope, gmp_datalink_t* dl,
     scope->trigger_channel = 0;
     scope->trigger_mode = DSA_TRIGGER_OPTION_RISING_EDGE_AUTO;
     scope->auto_timeout_ms = 1000U;
+    scope->sample_divider = 0U;
+    scope->sample_divider_counter = 0U;
     scope->trigger_level = 0.0F;
 
     scope->resource.name = (name == NULL) ? "Control Scope" : name;
@@ -183,6 +191,13 @@ void ctl_step_dsa_dl_scope_4ch(ctl_dsa_dl_scope_t* scope,
 
     if (scope == NULL || scope->buffer == NULL || scope->history == NULL)
         return;
+
+    if (scope->sample_divider_counter < scope->sample_divider)
+    {
+        scope->sample_divider_counter++;
+        return;
+    }
+    scope->sample_divider_counter = 0U;
 
     channels[0] = channel_0;
     channels[1] = channel_1;

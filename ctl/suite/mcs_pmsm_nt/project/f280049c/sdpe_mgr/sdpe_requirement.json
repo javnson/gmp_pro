@@ -595,7 +595,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "number": "100"
+        "number": "400"
       },
       "description": "Number of samples stored per channel by the four-channel hardware Data Link Scope."
     },

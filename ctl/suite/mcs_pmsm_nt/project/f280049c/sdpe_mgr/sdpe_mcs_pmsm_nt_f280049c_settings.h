@@ -229,7 +229,7 @@ extern "C"
 /**
  * @brief Number of samples stored per channel by the four-channel hardware Data Link Scope.
  */
-#define GMP_DL_SCOPE_DEPTH (100)
+#define GMP_DL_SCOPE_DEPTH (400)
 
 /**
  * @brief Maximum compare count of the platform PWM peripheral at the configured controller switching frequency.

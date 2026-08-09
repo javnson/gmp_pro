@@ -167,13 +167,20 @@ One service command carries an operation byte:
 | Operation | Value | Purpose |
 | --- | ---: | --- |
 | Discover | 0 | Query one indexed named scope resource |
-| Configure | 1 | Set mode, channel, level, trigger position, and auto timeout |
+| Configure | 1 | Set mode, channel, level, trigger position, auto timeout, and sampling divider |
 | Arm | 2 | Reset and start one capture |
 | Status | 3 | Read waiting/capturing/ready state and generation |
 | Read | 4 | Read a bounded byte range from the registered snapshot |
 
 This single-command design keeps command allocation compact while maintaining
 one host page and one target module per tool.
+
+Scope protocol version 2 appends a little-endian 16-bit sampling divider to the
+Configure request. The effective sample rate is the reported base rate divided
+by `divider + 1`; consequently, the default value `0` samples every control
+tick. Targets accept the version 1 Configure request without this field and
+apply a divider of zero, while the host emits the older request for a target
+that reports Scope protocol version 1.
 
 The snapshot buffer is readable only in the ready state. It remains owned by
 the host throughout all chunked reads, and the target does not capture into it

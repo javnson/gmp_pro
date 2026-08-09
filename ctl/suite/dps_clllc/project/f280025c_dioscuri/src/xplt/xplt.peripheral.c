@@ -5,7 +5,6 @@
 #include "ctl_main.h"
 #include <xplt.peripheral.h>
 
-CTL_DSA_DL_SCOPE_DEFINE_PLATFORM("Control Scope")
 
 #if (CLLLC_PRIMARY_LEG_A_BASE == CLLLC_PRIMARY_LEG_B_BASE) || \
     (CLLLC_PRIMARY_LEG_A_BASE == CLLLC_SECONDARY_LEG_A_BASE) || \
@@ -186,7 +185,7 @@ void setup_peripheral(void)
 interrupt void MainISR(void)
 {
     gmp_base_ctl_step();
-    xplt_step_dl_scope();
+    user_step_dl_scope();
     ADC_clearInterruptStatus(ADCA_BASE, ADC_INT_NUMBER1);
     if (ADC_getInterruptOverflowStatus(ADCA_BASE, ADC_INT_NUMBER1))
     {
