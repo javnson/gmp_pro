@@ -44,3 +44,20 @@ PIL 固件不能用于带功率运行。恢复物理控制前，必须在 SDPE �
 [`results/20260809_hardware_pil`](results/20260809_hardware_pil/README.md)。PIL 开启
 和关闭的目标工程均已完成编译验证；当前连接板卡最终烧录的是隔离输出的 PIL
 `BUILD_LEVEL=1` 配置。
+
+## XDS110 延迟
+
+PIL 是存在因果依赖的请求/响应闭环，因此其墙钟运行速度受单步往返延迟限制，而不是
+受控制算法本身 20 kHz 的执行能力限制。TI 的测试表明，XDS110 虚拟串口在约
+230400 baud 以上会将小数据包聚合 14～16 ms。一次 PIL 单步包含两个 USB 方向，因而
+可以解释 256000 baud 下测得的约 30 ms 目标往返时间。
+
+F280049C 的 SDPE 配置现使用标准的 115200 baud，远低于该 XDS110 阈值。PIL 构建还会让
+Data Link 服务直接在后台循环中运行，不再等待普通的 2 ms 周期任务；关闭 PIL 后的
+物理控制调度路径完全不变。如需亚毫秒级往返，应使用可调低延迟计时器的 USB-UART
+适配器，或使用原生 USB/bulk 传输替代 XDS110 VCOM。
+
+连接实板的 BUILD_LEVEL 1 验证在 115200 baud 下完成了 100 个 Simulink 联合控制步，
+执行时间为 0.8454 s（118.3 步/s）。目标平均往返时间为 7.24 ms，而 256000 baud 下约为
+30 ms。记录的 trace、MATLAB 输出和时序摘要位于
+[`results/20260809_latency_115200`](results/20260809_latency_115200/README.md)。

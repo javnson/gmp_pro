@@ -44,3 +44,24 @@ The saved traces, MATLAB results, manifests, logs, and metric summary are in
 [`results/20260809_hardware_pil`](results/20260809_hardware_pil/README.md).
 Both PIL-enabled and PIL-disabled target builds were compiled; the final
 connected-board image is the isolated PIL `BUILD_LEVEL=1` configuration.
+
+## XDS110 latency
+
+PIL is a causal request/response loop, so its wall-clock speed is limited by
+round-trip latency rather than by the 20 kHz execution capability of the control
+algorithm. TI reports that XDS110 virtual UART transfers above approximately
+230400 baud can aggregate small packets for 14–16 ms. Two such USB directions
+explain the approximately 30 ms target round trip observed at 256000 baud.
+
+The F280049C SDPE configuration therefore uses the standard 115200 baud rate,
+well below that XDS110 threshold. In PIL builds the Data Link service also runs directly
+from the background loop instead of waiting for its normal 2 ms scheduled task;
+the scheduled physical-control path is unchanged when PIL is disabled. For
+sub-millisecond round trips, use a low-latency USB-UART adapter with a tunable
+latency timer or a native USB/bulk transport instead of the XDS110 VCOM path.
+
+The connected-board BUILD_LEVEL 1 validation at 115200 baud completed 100
+Simulink-coupled controller steps in 0.8454 s (118.3 steps/s). The target RTT
+was 7.24 ms on average, compared with approximately 30 ms at 256000 baud. The
+recorded trace, MATLAB output, and timing summary are in
+[`results/20260809_latency_115200`](results/20260809_latency_115200/README.md).

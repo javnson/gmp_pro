@@ -141,6 +141,7 @@ class MainWindow(QMainWindow):
 
         # Cross-page bus ownership signals.
         self.tab_pil_bridge.sig_rx_parsed.connect(self.tab_sim.update_rx_ui_from_bridge)
+        self.tab_pil_bridge.sig_serial_baud_requested.connect(self.apply_pil_serial_baudrate)
         self.tab_tunable.sig_global_bus_busy.connect(self.tab_pil_bridge.set_bus_preempted)
         
         # Global serial controls, statistics, and log panel.
@@ -184,7 +185,7 @@ class MainWindow(QMainWindow):
         
         self.cb_baud = QComboBox()
         self.cb_baud.setEditable(True) 
-        self.cb_baud.addItems(["9600", "115200", "256000", "460800", "921600", "2000000"])
+        self.cb_baud.addItems(["9600", "115200", "230399", "256000", "460800", "921600", "2000000"])
         self.cb_baud.setCurrentText("921600") 
         
         self.cb_data_bits = QComboBox()
@@ -377,6 +378,20 @@ class MainWindow(QMainWindow):
             self.hermes.connect_serial(port, baud, data_bits, parity, stop_bits)
         else:
             self.hermes.close()
+
+    def apply_pil_serial_baudrate(self, baudrate: int) -> None:
+        """Apply the SDPE baud rate to the next serial connection."""
+        if self.hermes.running:
+            active_baudrate = int(self.hermes.serial.baudrate)
+            if active_baudrate != baudrate:
+                self.log_message(
+                    "PIL Bridge",
+                    f"SDPE requests {baudrate} baud, but the open port uses {active_baudrate}. "
+                    "Close and reopen the serial port before starting PIL.",
+                )
+            return
+        self.cb_baud.setCurrentText(str(baudrate))
+        self.log_message("PIL Bridge", f"Serial baud rate loaded from SDPE: {baudrate}.")
 
     def update_ui_connection_state(self, is_connected: bool):
         if is_connected:

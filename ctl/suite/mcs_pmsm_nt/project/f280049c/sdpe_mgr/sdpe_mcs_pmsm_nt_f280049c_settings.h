@@ -253,9 +253,9 @@ extern "C"
 #define GMP_PIL_DL_BASE_COMMAND (16)
 
 /**
- * @brief UART baud rate shared by the F280049C Data Link transport and the host PIL bridge.
+ * @brief UART baud rate shared by the F280049C Data Link transport and the host PIL bridge. The standard 115200 baud rate avoids the XDS110 high-baud small-packet aggregation behavior.
  */
-#define GMP_DL_UART_BAUDRATE (256000)
+#define GMP_DL_UART_BAUDRATE (115200)
 
 /**
  * @brief IPv4 host used by the local Simulink PIL bridge.

@@ -210,8 +210,11 @@ class SerialDataLinkTransport:
             frame = encode_frame(sequence, command, payload)
             try:
                 for attempt in range(self.retries + 1):
-                    self.serial.write(frame)
-                    self.serial.flush()
+                    written = self.serial.write(frame)
+                    if written != len(frame):
+                        raise GmpDlError(
+                            f"Serial write accepted {written} of {len(frame)} Data Link bytes."
+                        )
                     deadline = time.monotonic() + self.timeout
                     try:
                         while time.monotonic() < deadline:

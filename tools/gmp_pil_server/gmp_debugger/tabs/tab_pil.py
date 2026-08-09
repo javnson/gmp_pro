@@ -81,6 +81,7 @@ class TickPlotter(QWidget):
 # =========================================================
 class TabPilBridge(QWidget):
     sig_rx_parsed = pyqtSignal(dict)
+    sig_serial_baud_requested = pyqtSignal(int)
 
     def __init__(self, hermes: HermesDatalinkQt, tab_sim):
         super().__init__()
@@ -232,6 +233,7 @@ class TabPilBridge(QWidget):
             self.edit_mcu_timeout.setText(f"{config.mcu_timeout_s:.12g}")
             self.edit_matlab_timeout.setText(f"{config.matlab_timeout_s:.12g}")
             self.tab_sim.apply_protocol_config(config.base_command, config.tx_mask, config.rx_mask)
+            self.sig_serial_baud_requested.emit(config.serial_baudrate)
             self.btn_load_sdpe.setText(
                 f"BUILD_LEVEL {config.build_level} / {config.serial_baudrate} baud"
             )
