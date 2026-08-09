@@ -27,6 +27,14 @@ from .protocol import (
     TunableDataType,
     TunableParameter,
 )
+from .pil import (
+    PilApi,
+    PilBridge,
+    PilConfiguration,
+    PilInput,
+    PilOutput,
+    PilTraceWriter,
+)
 
 __all__ = [
     "AccessPermission",
@@ -37,6 +45,12 @@ __all__ = [
     "GmpDlTimeout",
     "MemoryApi",
     "MemoryRegion",
+    "PilApi",
+    "PilBridge",
+    "PilConfiguration",
+    "PilInput",
+    "PilOutput",
+    "PilTraceWriter",
     "ScopeApi",
     "ScopeCaptureState",
     "ScopeConfiguration",

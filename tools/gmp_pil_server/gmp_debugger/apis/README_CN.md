@@ -2,7 +2,7 @@
 
 [English](README.md) | **简体中文**
 
-本目录提供 GMP Data Link Tunable、Memory Perspective 和 Scope 服务的无界面
+本目录提供 GMP Data Link Tunable、Memory Perspective、Scope 和处理器在环服务的无界面
 Python 接口，适用于测试脚本、自动化验证、实验室工具以及 AI 辅助硬件调试。API 与
 图形化调试器共用协议和资源描述符编解码逻辑，因此下位机不需要分别维护 GUI 与 API
 两套固件。
@@ -15,6 +15,7 @@ Python 接口，适用于测试脚本、自动化验证、实验室工具以及 
 | Tunable | `client.tunables` | 发现、读取和修改注册参数 |
 | Memory Perspective | `client.memory` | 发现、读取和修改白名单内存段 |
 | Data Link Scope | `client.scope` | 发现、配置、布防、等待并下载波形 |
+| 处理器在环 | `PilApi` / `PilBridge` | 严格执行控制器单步，并桥接标准 Simulink UDP 向量 |
 
 ## 安装与导入
 
@@ -182,6 +183,30 @@ with GmpDatalinkClient("COM5", 256000) as dl:
 新的触发配置，或改用立即/自动触发。高级代码也可以显式调用 `configure()`、`arm()`、
 `status()` 和 `read_snapshot()`。
 
+## 处理器在环（PIL）
+
+`PilConfiguration` 会加载目标工程本地的 SDPE requirement，并校验 PIL 开关、命令
+分配、通道掩码与索引、UART 波特率和 UDP 端点。因此，固件和上位机共用 SDPE 这一
+唯一连接配置源。
+
+在 `tools/gmp_pil_server/gmp_debugger` 下启动标准桥接器：
+
+```powershell
+python -m apis.examples.pil_bridge `
+  --sdpe ../../../ctl/suite/mcs_pmsm_nt/project/f280049c/sdpe_mgr/sdpe_requirement.json `
+  --port COM5 `
+  --trace ../../../ctl/suite/mcs_pmsm_nt/project/f280049c/pil/results/manual/bridge_trace.csv
+```
+
+Simulink 侧使用标准的 264-byte 输入向量和 200-byte 输出向量。每一个被接受的 UDP
+输入严格对应一次 Data Link STEP 事务和一次控制器执行。STEP 不会自动重试：如果
+目标已经执行但响应丢失，重试会让同一输入推进控制器两次。CSV 会记录仿真时间、所选
+编码器输入、全部 ADC/PWM/Monitor 通道、输出使能状态和目标往返时间。
+
+`ENABLE_GMP_DL_PIL_SIM` 必须是目标工程本地、独立的 SDPE 功能开关。关闭时，普通
+ADC 中断和物理 PWM 路径应按原逻辑编译与运行；开启时，目标必须隔离全部物理输出，
+并且只允许经过完整校验的 PIL STEP 请求调度控制器。PIL 固件不得用于带功率运行。
+
 ## 异常与底层扩展
 
 公共异常层次如下：
@@ -223,7 +248,7 @@ response = dl.transact(command=0x70, payload=b"\x01\x02")
 
 ```powershell
 python -m unittest discover -s apis/tests -v
-python -m py_compile apis/__init__.py apis/client.py apis/protocol.py
+python -m py_compile apis/__init__.py apis/client.py apis/protocol.py apis/pil.py apis/examples/pil_bridge.py
 ```
 
 完整可运行示例位于

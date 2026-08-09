@@ -33,8 +33,29 @@ extern "C"
 
 #define MCS_PMSM_NT_F280049C_SDPE_PROJECT_ID "mcs_pmsm_nt_f280049c"
 #define MCS_PMSM_NT_F280049C_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
-#define MCS_PMSM_NT_F280049C_SDPE_PROJECT_VERSION "1.2.0"
+#define MCS_PMSM_NT_F280049C_SDPE_PROJECT_VERSION "1.3.0"
 #define MCS_PMSM_NT_F280049C_SDPE_PROJECT_UPDATED_AT "2026-08-09"
+
+//=================================================================================================
+/**
+ * @brief PIL Runtime.
+ */
+
+/**
+ * @brief Run controller steps only from Data Link PIL requests. Physical ADC ISR control dispatch and physical PWM enable remain isolated while this switch is enabled.
+ */
+#define ENABLE_GMP_DL_PIL_SIM
+
+//=================================================================================================
+/**
+ * @brief PIL Commissioning.
+ */
+
+/**
+ * @brief Target-local incremental level used for both PIL deployment and physical commissioning.
+ *        Options: (1), (2), (3), (4)
+ */
+#define BUILD_LEVEL (1)
 
 //=================================================================================================
 /**
@@ -225,6 +246,146 @@ extern "C"
 /**
  * @brief Requirement bindings.
  */
+
+/**
+ * @brief Base Data Link command allocated to the PIL service.
+ */
+#define GMP_PIL_DL_BASE_COMMAND (16)
+
+/**
+ * @brief UART baud rate shared by the F280049C Data Link transport and the host PIL bridge.
+ */
+#define GMP_DL_UART_BAUDRATE (256000)
+
+/**
+ * @brief IPv4 host used by the local Simulink PIL bridge.
+ */
+#define GMP_PIL_UDP_HOST "127.0.0.1"
+
+/**
+ * @brief UDP port on which the bridge receives the Simulink packed input datagram.
+ */
+#define GMP_PIL_BRIDGE_UDP_LISTEN_PORT (12501)
+
+/**
+ * @brief UDP port on which Simulink receives the packed controller output datagram.
+ */
+#define GMP_PIL_MATLAB_UDP_LISTEN_PORT (12500)
+
+/**
+ * @brief Command transmit port configured by the standard GMP Simulink block.
+ */
+#define GMP_PIL_MATLAB_COMMAND_TX_PORT (12502)
+
+/**
+ * @brief Command receive port configured by the standard GMP Simulink block.
+ */
+#define GMP_PIL_MATLAB_COMMAND_RX_PORT (12503)
+
+/**
+ * @brief Receive mask enabling the seven ADC slots used by the PMSM controller; panel slots remain disabled.
+ */
+#define GMP_PIL_RX_MASK (127)
+
+/**
+ * @brief Transmit mask enabling three PWM compares and six controller monitor values.
+ */
+#define GMP_PIL_TX_MASK (4128775)
+
+/**
+ * @brief Maximum host wait for one target PIL transaction before the transport retries.
+ */
+#define GMP_PIL_MCU_TIMEOUT_MS (200)
+
+/**
+ * @brief Maximum idle time while waiting for the next Simulink input datagram.
+ */
+#define GMP_PIL_MATLAB_TIMEOUT_MS (5000)
+
+/**
+ * @brief PIL ADC slot carrying DC-bus voltage feedback.
+ */
+#define GMP_PIL_RX_ADC_UDC_INDEX (0)
+
+/**
+ * @brief PIL ADC slot carrying phase-U voltage feedback.
+ */
+#define GMP_PIL_RX_ADC_UU_INDEX (1)
+
+/**
+ * @brief PIL ADC slot carrying phase-V voltage feedback.
+ */
+#define GMP_PIL_RX_ADC_UV_INDEX (2)
+
+/**
+ * @brief PIL ADC slot carrying phase-W voltage feedback.
+ */
+#define GMP_PIL_RX_ADC_UW_INDEX (3)
+
+/**
+ * @brief PIL ADC slot carrying phase-U current feedback.
+ */
+#define GMP_PIL_RX_ADC_IU_INDEX (4)
+
+/**
+ * @brief PIL ADC slot carrying phase-V current feedback.
+ */
+#define GMP_PIL_RX_ADC_IV_INDEX (5)
+
+/**
+ * @brief PIL ADC slot carrying phase-W current feedback.
+ */
+#define GMP_PIL_RX_ADC_IW_INDEX (6)
+
+/**
+ * @brief Index of the encoder count inside the standard eight-channel Simulink digital vector.
+ */
+#define GMP_PIL_UDP_ENCODER_INDEX (0)
+
+/**
+ * @brief PIL PWM output slot for phase U.
+ */
+#define GMP_PIL_TX_PWM_U_INDEX (0)
+
+/**
+ * @brief PIL PWM output slot for phase V.
+ */
+#define GMP_PIL_TX_PWM_V_INDEX (1)
+
+/**
+ * @brief PIL PWM output slot for phase W.
+ */
+#define GMP_PIL_TX_PWM_W_INDEX (2)
+
+/**
+ * @brief PIL monitor slot for normalized phase-U current.
+ */
+#define GMP_PIL_TX_MONITOR_IU_INDEX (0)
+
+/**
+ * @brief PIL monitor slot for normalized phase-V current.
+ */
+#define GMP_PIL_TX_MONITOR_IV_INDEX (1)
+
+/**
+ * @brief PIL monitor slot for normalized d-axis current.
+ */
+#define GMP_PIL_TX_MONITOR_ID_INDEX (2)
+
+/**
+ * @brief PIL monitor slot for normalized q-axis current.
+ */
+#define GMP_PIL_TX_MONITOR_IQ_INDEX (3)
+
+/**
+ * @brief PIL monitor slot for normalized electrical position.
+ */
+#define GMP_PIL_TX_MONITOR_POSITION_INDEX (4)
+
+/**
+ * @brief PIL monitor slot for normalized mechanical speed.
+ */
+#define GMP_PIL_TX_MONITOR_SPEED_INDEX (5)
 
 /**
  * @brief Number of samples stored per channel by the four-channel hardware Data Link Scope.
@@ -464,7 +625,9 @@ extern "C"
 /**
  * @brief Enable processor-in-the-loop mode and suppress direct PWM controller output.
  */
+// #ifndef ENABLE_GMP_DL_PIL_SIM
 // #define ENABLE_GMP_DL_PIL_SIM
+// #endif // ENABLE_GMP_DL_PIL_SIM
 
 /**
  * @brief Enable CiA402/GMP framework debug information.
@@ -495,7 +658,9 @@ extern "C"
  * @brief Incremental commissioning level. 1: V/f voltage open loop; 2: current loop with synthetic electrical angle; 3: current loop with encoder angle; 4: speed loop with encoder feedback.
  *        Options: (1), (2), (3), (4)
  */
+#ifndef BUILD_LEVEL
 #define BUILD_LEVEL (1)
+#endif // BUILD_LEVEL
 
 //=================================================================================================
 /**
@@ -520,65 +685,72 @@ extern "C"
 /**
  * @brief
  */
-#ifndef CTRL_SPEED_RPM_BASE
-#define CTRL_SPEED_RPM_BASE MOTOR_PARAM_MAX_SPEED
-#endif // CTRL_SPEED_RPM_BASE
-
-/**
- * @brief
- */
 #ifndef MOTOR_PARAM_RS
-#define MOTOR_PARAM_RS SM060R20B30MNAD_RS
+#define MOTOR_PARAM_RS (0.165f)
 #endif // MOTOR_PARAM_RS
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_LS
-#define MOTOR_PARAM_LS SM060R20B30MNAD_LD
+#define MOTOR_PARAM_LS (0.45e-3f)
 #endif // MOTOR_PARAM_LS
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_LD
-#define MOTOR_PARAM_LD SM060R20B30MNAD_LD
+#define MOTOR_PARAM_LD (0.45e-3f)
 #endif // MOTOR_PARAM_LD
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_LQ
-#define MOTOR_PARAM_LQ SM060R20B30MNAD_LQ
+#define MOTOR_PARAM_LQ (0.45e-3f)
 #endif // MOTOR_PARAM_LQ
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_FLUX
-#define MOTOR_PARAM_FLUX SM060R20B30MNAD_FLUX
+#define MOTOR_PARAM_FLUX (0.0066843949493427743f)
 #endif // MOTOR_PARAM_FLUX
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_POLE_PAIRS
-#define MOTOR_PARAM_POLE_PAIRS SM060R20B30MNAD_POLE_PAIRS
+#define MOTOR_PARAM_POLE_PAIRS (4)
 #endif // MOTOR_PARAM_POLE_PAIRS
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_INERTIA
-#define MOTOR_PARAM_INERTIA SM060R20B30MNAD_INERTIA
+#define MOTOR_PARAM_INERTIA (497.0f)
 #endif // MOTOR_PARAM_INERTIA
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_FRICTION
-#define MOTOR_PARAM_FRICTION SM060R20B30MNAD_FRICTION
+#define MOTOR_PARAM_FRICTION (755.0f)
 #endif // MOTOR_PARAM_FRICTION
+
+/**
+ * @brief Maximum mechanical speed of the common reference motor in rpm.
+ */
+#ifndef MOTOR_PARAM_MAX_SPEED
+#define MOTOR_PARAM_MAX_SPEED (3000.0f)
+#endif // MOTOR_PARAM_MAX_SPEED
+
+/**
+ * @brief Mechanical speed base in rpm.
+ */
+#ifndef CTRL_SPEED_RPM_BASE
+#define CTRL_SPEED_RPM_BASE MOTOR_PARAM_MAX_SPEED
+#endif // CTRL_SPEED_RPM_BASE
 
 /**
  * @brief Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
@@ -601,9 +773,14 @@ extern "C"
 #define MCS_MAX_RECT_SATURATION_VOLTAGE_V (10.0f)
 
 /**
+ * @brief Nominal DC-bus voltage used by common protection thresholds and target per-unit bases.
+ */
+#define MCS_NOMINAL_DC_BUS_VOLTAGE_V (80.0f)
+
+/**
  * @brief
  */
-#define MCS_MAX_DC_BUS_VOLTAGE_V (CTRL_DCBUS_VOLTAGE*1.2f)
+#define MCS_MAX_DC_BUS_VOLTAGE_V (MCS_NOMINAL_DC_BUS_VOLTAGE_V*1.2f)
 
 /**
  * @brief The current limit value at which the machine must be shut down.
@@ -690,7 +867,7 @@ extern "C"
 /**
  * @brief
  */
-#define MCS_MIN_DC_BUS_VOLTAGE_V (CTRL_DCBUS_VOLTAGE*0.2f)
+#define MCS_MIN_DC_BUS_VOLTAGE_V (MCS_NOMINAL_DC_BUS_VOLTAGE_V*0.2f)
 
 // Common tail code: MCS PMSM NT Common Controller Settings
 /* Accept the historical misspelling while all source code uses the canonical switch. */
@@ -704,15 +881,30 @@ extern "C"
 #endif
 
 // User project tail code
-/* No additional platform-specific tail definitions. */
+/** Validate the target-local PIL command allocation and channel map. */
+#if (GMP_PIL_DL_BASE_COMMAND > 251U)
+#error "GMP_PIL_DL_BASE_COMMAND must leave room for the four PIL subcommands."
+#endif
+#if (GMP_PIL_RX_ADC_UDC_INDEX >= 24U) || (GMP_PIL_RX_ADC_UU_INDEX >= 24U) || (GMP_PIL_RX_ADC_UV_INDEX >= 24U) || (GMP_PIL_RX_ADC_UW_INDEX >= 24U) || (GMP_PIL_RX_ADC_IU_INDEX >= 24U) || (GMP_PIL_RX_ADC_IV_INDEX >= 24U) || (GMP_PIL_RX_ADC_IW_INDEX >= 24U)
+#error "Every PIL ADC index must be in the range [0, 23]."
+#endif
+#if (GMP_PIL_UDP_ENCODER_INDEX >= 8U)
+#error "GMP_PIL_UDP_ENCODER_INDEX must be in the range [0, 7]."
+#endif
+#if (GMP_PIL_TX_PWM_U_INDEX >= 8U) || (GMP_PIL_TX_PWM_V_INDEX >= 8U) || (GMP_PIL_TX_PWM_W_INDEX >= 8U)
+#error "Every PIL PWM index must be in the range [0, 7]."
+#endif
+#if (GMP_PIL_TX_MONITOR_IU_INDEX >= 16U) || (GMP_PIL_TX_MONITOR_IV_INDEX >= 16U) || (GMP_PIL_TX_MONITOR_ID_INDEX >= 16U) || (GMP_PIL_TX_MONITOR_IQ_INDEX >= 16U) || (GMP_PIL_TX_MONITOR_POSITION_INDEX >= 16U) || (GMP_PIL_TX_MONITOR_SPEED_INDEX >= 16U)
+#error "Every PIL monitor index must be in the range [0, 15]."
+#endif
 
 /**
- * @brief Unit convert from V into phase voltage pu.
+ * @brief Convert volts to normalized phase voltage.
  */
 #define VOLT_PU(_X_X_) (((_X_X_)/CTRL_VOLTAGE_BASE))
 
 /**
- * @brief Unit convert from A into phase current pu.
+ * @brief Convert amperes to normalized phase current.
  */
 #define CURR_PU(_X_X_) (((_X_X_)/CTRL_CURRENT_BASE))
 

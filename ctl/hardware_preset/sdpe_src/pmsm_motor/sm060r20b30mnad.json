@@ -16,9 +16,7 @@
     "Stator Resistance": "0.165f",
     "D-axis Inductance": "0.45e-3f",
     "Q-axis Inductance": "0.45e-3f",
-    "Flux Linkage": {
-      "expr": "((MOTOR_PARAM_CALCULATE_FLUX_BY_KV({KV}, {POLE_PAIRS})))"
-    },
+    "Flux Linkage": "0.0066843949493427743f",
     "Pole Pairs": 4,
     "Inertia": "497.0f",
     "Friction": "755.0f",
@@ -36,9 +34,7 @@
     "rs": "0.165f",
     "ld": "0.45e-3f",
     "lq": "0.45e-3f",
-    "flux": {
-      "expr": "((MOTOR_PARAM_CALCULATE_FLUX_BY_KV({KV}, {POLE_PAIRS})))"
-    },
+    "flux": "0.0066843949493427743f",
     "pole_pairs": 4,
     "inertia": "497.0f",
     "friction": "755.0f",

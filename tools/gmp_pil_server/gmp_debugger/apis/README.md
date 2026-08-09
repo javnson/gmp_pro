@@ -3,7 +3,7 @@
 **English** | [简体中文](README_CN.md)
 
 This package is the supported headless interface to the GMP Data Link Tunable,
-Memory Perspective, and Scope services. It is intended for test scripts,
+Memory Perspective, Scope, and Processor-in-the-Loop services. It is intended for test scripts,
 automated validation, laboratory tooling, and AI-assisted hardware debugging.
 It uses the same wire protocol and descriptor codecs as the graphical debugger,
 so a target does not need separate firmware for GUI and API clients.
@@ -16,6 +16,7 @@ request/response transport and exposes three service objects:
 | Tunable | `client.tunables` | Discover, read, and write registered parameters |
 | Memory Perspective | `client.memory` | Discover, read, and write whitelisted byte ranges |
 | Data Link Scope | `client.scope` | Discover, configure, arm, wait, and download waveforms |
+| Processor-in-the-Loop | `PilApi` / `PilBridge` | Execute exact controller steps and bridge standard Simulink UDP vectors |
 
 ## Installation and import
 
@@ -215,6 +216,36 @@ use an immediate/auto trigger.
 Advanced code may control the sequence explicitly with `configure()`, `arm()`,
 `status()`, and `read_snapshot()`.
 
+## Processor-in-the-Loop
+
+`PilConfiguration` loads the target-local SDPE requirement and validates the
+PIL enable switch, command allocation, channel masks, channel indices, UART
+rate, and UDP endpoints. This makes SDPE the connection source of truth for
+both firmware and host tooling.
+
+From `tools/gmp_pil_server/gmp_debugger`, start the standard bridge with:
+
+```powershell
+python -m apis.examples.pil_bridge `
+  --sdpe ../../../ctl/suite/mcs_pmsm_nt/project/f280049c/sdpe_mgr/sdpe_requirement.json `
+  --port COM5 `
+  --trace ../../../ctl/suite/mcs_pmsm_nt/project/f280049c/pil/results/manual/bridge_trace.csv
+```
+
+The Simulink side uses the standard 264-byte input vector and 200-byte output
+vector. Each accepted UDP input causes exactly one Data Link STEP transaction
+and one controller execution. A STEP transaction is never automatically
+retried: if a response is lost after the target executes, retrying the same
+request would advance the controller twice. The CSV trace records simulation
+time, selected encoder input, all ADC/PWM/monitor channels, output-enable state,
+and target round-trip time.
+
+`ENABLE_GMP_DL_PIL_SIM` must be an independent target-local SDPE feature. When
+it is disabled, the normal ADC ISR and physical PWM path compile and operate as
+before. A target that enables it must isolate physical outputs and allow only a
+validated PIL STEP request to dispatch the controller. Never use a PIL firmware
+image to drive connected power hardware.
+
 ## Errors and low-level extension
 
 The public exception hierarchy is:
@@ -259,7 +290,7 @@ From `tools/gmp_pil_server/gmp_debugger` run:
 
 ```powershell
 python -m unittest discover -s apis/tests -v
-python -m py_compile apis/__init__.py apis/client.py apis/protocol.py
+python -m py_compile apis/__init__.py apis/client.py apis/protocol.py apis/pil.py apis/examples/pil_bridge.py
 ```
 
 The complete runnable example is

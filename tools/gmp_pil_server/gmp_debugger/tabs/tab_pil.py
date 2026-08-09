@@ -3,10 +3,11 @@ import socket
 import threading
 import time
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QGroupBox, QLineEdit, 
-                             QPushButton, QLabel, QFormLayout, QCheckBox)
+                             QPushButton, QLabel, QFormLayout, QCheckBox, QFileDialog)
 from PyQt5.QtCore import pyqtSignal, Qt, QTimer
 from PyQt5.QtGui import QPainter, QPen, QColor
 from core_datalink import HermesDatalinkQt
+from apis import PilConfiguration
 
 # =========================================================
 # Light-theme waveform widget.
@@ -94,6 +95,7 @@ class TabPilBridge(QWidget):
         self.CMD_STEP = self.CMD_BASE + 2
         self.MATLAB_RX_SIZE = 264
         self.MATLAB_TX_SIZE = 200
+        self.sdpe_config = None
 
         self.last_step_payload = None
         self.last_step_time = 0
@@ -140,7 +142,7 @@ class TabPilBridge(QWidget):
         self.edit_ip = QLineEdit("127.0.0.1")
         self.edit_recv_port = QLineEdit("12501")
         self.edit_trans_port = QLineEdit("12500") 
-        self.edit_step_size = QLineEdit("0.0001")
+        self.edit_step_size = QLineEdit("0.00005")
         self.edit_mcu_timeout = QLineEdit("0.2") 
         self.edit_matlab_timeout = QLineEdit("5.0") 
         
@@ -148,8 +150,12 @@ class TabPilBridge(QWidget):
         net_layout.addRow("Local receive port (MATLAB TX):", self.edit_recv_port)
         net_layout.addRow("Target send port (MATLAB RX):", self.edit_trans_port)
         net_layout.addRow("Simulation step size (s):", self.edit_step_size)
-        net_layout.addRow("MCU retry timeout (s):", self.edit_mcu_timeout)
+        net_layout.addRow("MCU response timeout (s):", self.edit_mcu_timeout)
         net_layout.addRow("MATLAB UI warning timeout (s):", self.edit_matlab_timeout)
+
+        self.btn_load_sdpe = QPushButton("Load Target SDPE Configuration")
+        self.btn_load_sdpe.clicked.connect(self.load_sdpe_configuration)
+        net_layout.addRow("Target contract:", self.btn_load_sdpe)
         
         info_label = QLabel("Synchronize the masks on page 3 before starting; the bridge will then own its controls.")
         info_label.setStyleSheet("color: #1565C0; font-style: italic;")
@@ -202,6 +208,36 @@ class TabPilBridge(QWidget):
         self.edit_mcu_timeout.setEnabled(enabled)
         self.edit_matlab_timeout.setEnabled(enabled)
         self.cb_test_mode.setEnabled(enabled)
+        self.btn_load_sdpe.setEnabled(enabled)
+
+    def load_sdpe_configuration(self):
+        """Load bridge endpoints, timing, masks, and commands from target SDPE."""
+        path, _selected_filter = QFileDialog.getOpenFileName(
+            self,
+            "Select Target SDPE Requirement",
+            "",
+            "SDPE Requirement (sdpe_requirement.json);;JSON Files (*.json)",
+        )
+        if not path:
+            return
+        try:
+            config = PilConfiguration.from_sdpe(path)
+            self.sdpe_config = config
+            self.CMD_BASE = config.base_command
+            self.CMD_STEP = self.CMD_BASE + 2
+            self.edit_ip.setText(config.udp_host)
+            self.edit_recv_port.setText(str(config.bridge_listen_port))
+            self.edit_trans_port.setText(str(config.matlab_listen_port))
+            self.edit_step_size.setText(f"{config.sample_time_s:.12g}")
+            self.edit_mcu_timeout.setText(f"{config.mcu_timeout_s:.12g}")
+            self.edit_matlab_timeout.setText(f"{config.matlab_timeout_s:.12g}")
+            self.tab_sim.apply_protocol_config(config.base_command, config.tx_mask, config.rx_mask)
+            self.btn_load_sdpe.setText(
+                f"BUILD_LEVEL {config.build_level} / {config.serial_baudrate} baud"
+            )
+            self.log("Target-local PIL connection contract loaded from SDPE.", "green")
+        except Exception as error:
+            self.log(f"Cannot load the target SDPE contract: {error}", "red")
 
     def toggle_bridge(self):
         if not self.running:
@@ -268,8 +304,8 @@ class TabPilBridge(QWidget):
             loss_rate = self.stat_retransmits / (self.stat_rx_pkts + self.stat_retransmits) * 100.0
             
         self.lbl_pkts.setText(f"Quality: {self.stat_rx_pkts} valid packets  |  "
-                              f"{self.stat_retransmits} timeout retries  |  "
-                              f"{loss_rate:.2f}% loss")
+                              f"{self.stat_retransmits} timeout stops  |  "
+                              f"{loss_rate:.2f}% interrupted")
         
         self.plotter.add_value(self.tick_counter)
         
@@ -289,12 +325,20 @@ class TabPilBridge(QWidget):
         if self.is_waiting_ack and self.last_step_payload:
             elapsed_mcu = now - self.last_step_time
             if elapsed_mcu > self.mcu_timeout_th:
-                self.stat_retransmits += 1 
-                self.last_step_time = now
-                if self.hermes.running:
-                    # Retries use normal priority below urgent parameter writes.
-                    self.hermes.send_frame(0x01, self.CMD_STEP, self.last_step_payload, priority=1)
-                    self.log("Serial response timed out; retrying automatically.", "#FF9800")
+                self.stat_retransmits += 1
+                self.running = False
+                self.is_waiting_ack = False
+                if self.sock:
+                    self.sock.close()
+                self.tab_sim.set_action_buttons_enabled(True)
+                self._set_ui_enabled(True)
+                self.btn_toggle.setText("Start PIL Bridge")
+                self.btn_toggle.setStyleSheet("")
+                self.log(
+                    "PIL stopped after a target timeout. STEP requests are never retried because "
+                    "an ambiguous retry could execute the controller twice.",
+                    "red",
+                )
 
         if self.last_matlab_rx_time > 0:
             elapsed_matlab = now - self.last_matlab_rx_time

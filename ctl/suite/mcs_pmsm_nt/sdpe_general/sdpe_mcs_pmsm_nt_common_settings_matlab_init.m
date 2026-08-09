@@ -10,7 +10,7 @@ MCS_PMSM_NT_COMMON_SDPE_PROJECT_ID = 'mcs_pmsm_nt_common';
 
 MCS_PMSM_NT_COMMON_SDPE_PROJECT_SUITE = 'mcs_pmsm_nt';
 
-MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION = '1.0.0';
+MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION = '1.1.0';
 
 MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-08-09';
 
@@ -59,23 +59,27 @@ MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A = 0.2;
 % Phase-current hysteresis band in amperes used to prevent dead-time compensation direction chatter around zero current.
 MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A = 0.05;
 
-CTRL_SPEED_RPM_BASE = 'MOTOR_PARAM_MAX_SPEED';
+MOTOR_PARAM_RS = 0.165;
 
-MOTOR_PARAM_RS = 'SM060R20B30MNAD_RS';
+MOTOR_PARAM_LS = 0.45e-3;
 
-MOTOR_PARAM_LS = 'SM060R20B30MNAD_LD';
+MOTOR_PARAM_LD = 0.45e-3;
 
-MOTOR_PARAM_LD = 'SM060R20B30MNAD_LD';
+MOTOR_PARAM_LQ = 0.45e-3;
 
-MOTOR_PARAM_LQ = 'SM060R20B30MNAD_LQ';
+MOTOR_PARAM_FLUX = 0.0066843949493427743;
 
-MOTOR_PARAM_FLUX = 'SM060R20B30MNAD_FLUX';
+MOTOR_PARAM_POLE_PAIRS = 4;
 
-MOTOR_PARAM_POLE_PAIRS = 'SM060R20B30MNAD_POLE_PAIRS';
+MOTOR_PARAM_INERTIA = 497.0;
 
-MOTOR_PARAM_INERTIA = 'SM060R20B30MNAD_INERTIA';
+MOTOR_PARAM_FRICTION = 755.0;
 
-MOTOR_PARAM_FRICTION = 'SM060R20B30MNAD_FRICTION';
+% Maximum mechanical speed of the common reference motor in rpm.
+MOTOR_PARAM_MAX_SPEED = 3000.0;
+
+% Mechanical speed base in rpm.
+CTRL_SPEED_RPM_BASE = MOTOR_PARAM_MAX_SPEED;
 
 % Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
 MCS_MECH_SPEED_LIMIT_RPM = 3000.0;
@@ -89,7 +93,10 @@ MCS_MECH_CURRENT_LIMIT_A = 3.0;
 % Rectangular saturation limit for d/q axes in V.
 MCS_MAX_RECT_SATURATION_VOLTAGE_V = 10.0;
 
-MCS_MAX_DC_BUS_VOLTAGE_V = CTRL_DCBUS_VOLTAGE*1.2;
+% Nominal DC-bus voltage used by common protection thresholds and target per-unit bases.
+MCS_NOMINAL_DC_BUS_VOLTAGE_V = 80.0;
+
+MCS_MAX_DC_BUS_VOLTAGE_V = MCS_NOMINAL_DC_BUS_VOLTAGE_V*1.2;
 
 % The current limit value at which the machine must be shut down.
 MCS_MAX_SHUTDOWN_CURRENT_A = 10.0;
@@ -139,17 +146,17 @@ CTRL_STARTUP_DELAY = 100;
 % Minimum delay in milliseconds before the CiA402 state machine enters Operation Enabled. The project control tick is expressed in milliseconds.
 MCS_CIA402_OPERATION_ENABLE_DELAY_MS = 100;
 
-MCS_MIN_DC_BUS_VOLTAGE_V = CTRL_DCBUS_VOLTAGE*0.2;
+MCS_MIN_DC_BUS_VOLTAGE_V = MCS_NOMINAL_DC_BUS_VOLTAGE_V*0.2;
 
 %% SDPE project summary
 fprintf('\n============================================================\n');
 fprintf('SDPE Project : %s\n', 'MCS PMSM NT Common Controller Settings');
 fprintf('Project ID   : %s\n', 'mcs_pmsm_nt_common');
 fprintf('Suite        : %s\n', 'mcs_pmsm_nt');
-fprintf('Version      : %s\n', '1.0.0');
+fprintf('Version      : %s\n', '1.1.0');
 fprintf('Hardware (0):\n');
 fprintf('Common requirements (0):\n');
-fprintf('Enabled variables (42):\n');
+fprintf('Enabled variables (44):\n');
 fprintf('  BUILD_LEVEL = '); disp(BUILD_LEVEL);
 fprintf('  CONTROLLER_FREQUENCY = '); disp(CONTROLLER_FREQUENCY);
 fprintf('  CTRL_SPEED_RPM_BASE = '); disp(CTRL_SPEED_RPM_BASE);
@@ -173,6 +180,7 @@ fprintf('  MCS_MECH_SPEED_SLOPE_RPM_S = '); disp(MCS_MECH_SPEED_SLOPE_RPM_S);
 fprintf('  MCS_MECH_VELOCITY_KI_PU_S = '); disp(MCS_MECH_VELOCITY_KI_PU_S);
 fprintf('  MCS_MECH_VELOCITY_KP_PU = '); disp(MCS_MECH_VELOCITY_KP_PU);
 fprintf('  MCS_MIN_DC_BUS_VOLTAGE_V = '); disp(MCS_MIN_DC_BUS_VOLTAGE_V);
+fprintf('  MCS_NOMINAL_DC_BUS_VOLTAGE_V = '); disp(MCS_NOMINAL_DC_BUS_VOLTAGE_V);
 fprintf('  MCS_OPEN_LOOP_FREQ_HZ = '); disp(MCS_OPEN_LOOP_FREQ_HZ);
 fprintf('  MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S = '); disp(MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S);
 fprintf('  MCS_PMSM_NT_COMMON_SDPE_PROJECT_ID = '); disp(MCS_PMSM_NT_COMMON_SDPE_PROJECT_ID);
@@ -187,6 +195,7 @@ fprintf('  MOTOR_PARAM_INERTIA = '); disp(MOTOR_PARAM_INERTIA);
 fprintf('  MOTOR_PARAM_LD = '); disp(MOTOR_PARAM_LD);
 fprintf('  MOTOR_PARAM_LQ = '); disp(MOTOR_PARAM_LQ);
 fprintf('  MOTOR_PARAM_LS = '); disp(MOTOR_PARAM_LS);
+fprintf('  MOTOR_PARAM_MAX_SPEED = '); disp(MOTOR_PARAM_MAX_SPEED);
 fprintf('  MOTOR_PARAM_POLE_PAIRS = '); disp(MOTOR_PARAM_POLE_PAIRS);
 fprintf('  MOTOR_PARAM_RS = '); disp(MOTOR_PARAM_RS);
 fprintf('  PWM_MODULATOR_USING_NEGATIVE_LOGIC = '); disp(PWM_MODULATOR_USING_NEGATIVE_LOGIC);

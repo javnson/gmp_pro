@@ -29,3 +29,15 @@ The reproducible comparison is `ctl/component/intrinsic/complex/tests/host_sim/f
 PI is faster for this nominal first-order plant; both controllers converge without visible overshoot. This is a regression comparison, not a robustness claim under parameter error or disturbance.
 
 The Windows x64 Debug SIL projects for both `mcs_pmsm_nt` and `mcs_pmsm_id` were also built in default PI and `ENABLE_FOC_LADRC_CTRL` configurations. Both `MCS_STD_PMSM_MODEL.slx` models established their UDP link and ran without errors to 0.1 s in each configuration.
+
+## F280049C Processor-in-the-Loop
+
+The F280049C target provides a target-local SDPE feature named
+`ENABLE_GMP_DL_PIL_SIM`. It is independent of the shared suite configuration:
+disabled builds retain the normal physical ADC/PWM control path, while enabled
+builds run controller steps only from validated Data Link PIL requests and keep
+the physical gate/PWM outputs forced safe. The UART/UDP endpoints, command base,
+masks, and every plant channel mapping are also managed by the target SDPE file.
+
+The reproducible staged workflow, MATLAB runner, safety contract, and recorded
+hardware results are in [`project/f280049c/pil`](project/f280049c/pil/README.md).

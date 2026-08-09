@@ -22,7 +22,7 @@ extern "C"
 
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_ID "mcs_pmsm_nt_common"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
-#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION "1.0.0"
+#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION "1.1.0"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-09"
 
 //=================================================================================================
@@ -94,7 +94,9 @@ extern "C"
  * @brief Incremental commissioning level. 1: V/f voltage open loop; 2: current loop with synthetic electrical angle; 3: current loop with encoder angle; 4: speed loop with encoder feedback.
  *        Options: (1), (2), (3), (4)
  */
+#ifndef BUILD_LEVEL
 #define BUILD_LEVEL (1)
+#endif // BUILD_LEVEL
 
 //=================================================================================================
 /**
@@ -119,65 +121,72 @@ extern "C"
 /**
  * @brief
  */
-#ifndef CTRL_SPEED_RPM_BASE
-#define CTRL_SPEED_RPM_BASE MOTOR_PARAM_MAX_SPEED
-#endif // CTRL_SPEED_RPM_BASE
-
-/**
- * @brief
- */
 #ifndef MOTOR_PARAM_RS
-#define MOTOR_PARAM_RS SM060R20B30MNAD_RS
+#define MOTOR_PARAM_RS (0.165f)
 #endif // MOTOR_PARAM_RS
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_LS
-#define MOTOR_PARAM_LS SM060R20B30MNAD_LD
+#define MOTOR_PARAM_LS (0.45e-3f)
 #endif // MOTOR_PARAM_LS
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_LD
-#define MOTOR_PARAM_LD SM060R20B30MNAD_LD
+#define MOTOR_PARAM_LD (0.45e-3f)
 #endif // MOTOR_PARAM_LD
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_LQ
-#define MOTOR_PARAM_LQ SM060R20B30MNAD_LQ
+#define MOTOR_PARAM_LQ (0.45e-3f)
 #endif // MOTOR_PARAM_LQ
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_FLUX
-#define MOTOR_PARAM_FLUX SM060R20B30MNAD_FLUX
+#define MOTOR_PARAM_FLUX (0.0066843949493427743f)
 #endif // MOTOR_PARAM_FLUX
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_POLE_PAIRS
-#define MOTOR_PARAM_POLE_PAIRS SM060R20B30MNAD_POLE_PAIRS
+#define MOTOR_PARAM_POLE_PAIRS (4)
 #endif // MOTOR_PARAM_POLE_PAIRS
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_INERTIA
-#define MOTOR_PARAM_INERTIA SM060R20B30MNAD_INERTIA
+#define MOTOR_PARAM_INERTIA (497.0f)
 #endif // MOTOR_PARAM_INERTIA
 
 /**
  * @brief
  */
 #ifndef MOTOR_PARAM_FRICTION
-#define MOTOR_PARAM_FRICTION SM060R20B30MNAD_FRICTION
+#define MOTOR_PARAM_FRICTION (755.0f)
 #endif // MOTOR_PARAM_FRICTION
+
+/**
+ * @brief Maximum mechanical speed of the common reference motor in rpm.
+ */
+#ifndef MOTOR_PARAM_MAX_SPEED
+#define MOTOR_PARAM_MAX_SPEED (3000.0f)
+#endif // MOTOR_PARAM_MAX_SPEED
+
+/**
+ * @brief Mechanical speed base in rpm.
+ */
+#ifndef CTRL_SPEED_RPM_BASE
+#define CTRL_SPEED_RPM_BASE MOTOR_PARAM_MAX_SPEED
+#endif // CTRL_SPEED_RPM_BASE
 
 /**
  * @brief Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
@@ -200,9 +209,14 @@ extern "C"
 #define MCS_MAX_RECT_SATURATION_VOLTAGE_V (10.0f)
 
 /**
+ * @brief Nominal DC-bus voltage used by common protection thresholds and target per-unit bases.
+ */
+#define MCS_NOMINAL_DC_BUS_VOLTAGE_V (80.0f)
+
+/**
  * @brief
  */
-#define MCS_MAX_DC_BUS_VOLTAGE_V (CTRL_DCBUS_VOLTAGE*1.2f)
+#define MCS_MAX_DC_BUS_VOLTAGE_V (MCS_NOMINAL_DC_BUS_VOLTAGE_V*1.2f)
 
 /**
  * @brief The current limit value at which the machine must be shut down.
@@ -289,7 +303,7 @@ extern "C"
 /**
  * @brief
  */
-#define MCS_MIN_DC_BUS_VOLTAGE_V (CTRL_DCBUS_VOLTAGE*0.2f)
+#define MCS_MIN_DC_BUS_VOLTAGE_V (MCS_NOMINAL_DC_BUS_VOLTAGE_V*0.2f)
 
 // User project tail code
 /* Accept the historical misspelling while all source code uses the canonical switch. */

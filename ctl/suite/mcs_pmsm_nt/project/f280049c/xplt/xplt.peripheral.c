@@ -36,6 +36,11 @@ adc_gt idc_src;
 // GPIO port
 extern gpio_halt user_led;
 
+#if defined ENABLE_GMP_DL_PIL_SIM
+/** @brief Virtual enable state sent to the Simulink plant without energizing hardware. */
+volatile fast_gt pil_output_enabled = 0;
+#endif
+
 //=================================================================================================
 // peripheral setup function
 
@@ -44,6 +49,7 @@ void setup_peripheral(void)
 {
     // Setup Debug Uart
     debug_uart = LAUNCHXL_UART_USB_BASE;
+    SCI_setBaud(LAUNCHXL_UART_USB_BASE, DEVICE_LSPCLK_FREQ, GMP_DL_UART_BAUDRATE);
     SCI_enableInterrupt(LAUNCHXL_UART_USB_BASE, SCI_INT_RXFF | SCI_INT_RXERR);
 
     // Test print function
@@ -104,11 +110,14 @@ interrupt void MainISR(void)
 {
     GPIO_WritePin(MONITOR_IO, 0);
 
-    //
-    // call GMP ISR  Controller operation callback function
-    //
+    /**
+     * Keep physical control entirely outside an SDPE-enabled PIL build.
+     * The PIL Data Link STEP request is the sole owner of ctl_dispatch().
+     */
+#if !defined ENABLE_GMP_DL_PIL_SIM
     gmp_base_ctl_step();
     user_step_dl_scope();
+#endif
 
     //
     // Call GMP Timer
@@ -310,6 +319,7 @@ static void recover_dl_rx_transport(void)
     }
     (void)SCI_readCharNonBlocking(LAUNCHXL_UART_USB_BASE);
     LAUNCHXL_UART_USB_init();
+    SCI_setBaud(LAUNCHXL_UART_USB_BASE, DEVICE_LSPCLK_FREQ, GMP_DL_UART_BAUDRATE);
     SCI_enableInterrupt(LAUNCHXL_UART_USB_BASE, SCI_INT_RXFF | SCI_INT_RXERR);
     gmp_dev_dl_request_rx_reset(&dl);
 }

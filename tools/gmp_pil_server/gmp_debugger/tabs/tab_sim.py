@@ -294,6 +294,19 @@ class TabSim(QWidget):
             self.apply_base_style(self.tx_widgets[f'mon_{i}'], True)
             self.tx_widgets[f'mon_{i}'].setReadOnly(True)
 
+    def apply_protocol_config(self, base_command: int, tx_mask: int, rx_mask: int):
+        """Apply an SDPE-resolved command allocation and channel masks."""
+        self.input_base_cmd.setText(f"0x{base_command:02X}")
+        for index, checkbox in enumerate(self.tx_mask_boxes):
+            checkbox.blockSignals(True)
+            checkbox.setChecked(bool(tx_mask & (1 << index)))
+            checkbox.blockSignals(False)
+        for index, checkbox in enumerate(self.rx_mask_boxes):
+            checkbox.blockSignals(True)
+            checkbox.setChecked(bool(rx_mask & (1 << index)))
+            checkbox.blockSignals(False)
+        self.sync_local_masks()
+
     # =========================================================
     # Protocol request and response handling.
     # =========================================================

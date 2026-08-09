@@ -1,16 +1,12 @@
 /**
- * @file tunable_sim.h
- * @brief GMP Tunable Simulation Layer - PIL Engine with 8-bit Stream Logic.
- * @details Optimized for DSP/ARM with weak-linkage callbacks and dynamic masking.
- * Provides a standardized memory-aligned interface for Processor-in-the-Loop simulations.
- * * HOW TO USE:
- * 1. Declare a `gmp_pil_sim_t` instance and call `gmp_tunable_sim_init()`.
- * 2. In your Datalink RX_OK event dispatcher, pass the context to `gmp_tunable_sim_rx_cb()`.
- * 3. Implement the user-level algorithm inside `gmp_sim_step()`.
+ * @file pil_core.h
+ * @brief GMP Processor-in-the-Loop service over Data Link.
+ * @details The module transfers a masked, fixed-layout controller input and
+ * output contract without depending on the target memory access unit.
  */
 
-#ifndef _FILE_GMP_TUNABLE_SIM_H
-#define _FILE_GMP_TUNABLE_SIM_H
+#ifndef _FILE_GMP_PIL_CORE_H_
+#define _FILE_GMP_PIL_CORE_H_
 
 #include <core/dev/datalink.h> // Dependency on the Datalink layer
 
@@ -126,6 +122,14 @@ typedef struct
 void gmp_pil_sim_init(gmp_pil_sim_t* ctx, gmp_datalink_t* dl_ctx, uint16_t base_cmd);
 
 /**
+ * @brief Configure the optional output and input channel masks.
+ * @param ctx Pointer to an initialized PIL context.
+ * @param tx_mask Output mask using PWM, DAC, and monitor bit assignments.
+ * @param rx_mask Input mask using ADC and panel bit assignments.
+ */
+void gmp_pil_sim_set_masks(gmp_pil_sim_t* ctx, uint32_t tx_mask, uint32_t rx_mask);
+
+/**
  * @brief  Receive callback dispatcher for the simulation module.
  * @details Checks if the current command in `dl_ctx` belongs to this PIL subsystem. 
  * If matched, it unpacks data, executes steps, and queues replies accordingly.
@@ -144,4 +148,4 @@ fast_gt gmp_pil_sim_rx_cb(gmp_pil_sim_t* ctx);
  */
 extern void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx);
 
-#endif // _FILE_GMP_TUNABLE_SIM_H
+#endif // _FILE_GMP_PIL_CORE_H_

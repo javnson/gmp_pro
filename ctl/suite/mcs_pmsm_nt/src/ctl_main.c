@@ -67,7 +67,10 @@ ctl_mtr_protect_t protection;
 
 // ADC Calibrator
 adc_bias_calibrator_t adc_calibrator;
-#if defined SPECIFY_ENABLE_ADC_CALIBRATE
+#if defined ENABLE_GMP_DL_PIL_SIM
+/** Simulated ADC channels are already calibrated by the plant model. */
+volatile fast_gt flag_enable_adc_calibrator = 0;
+#elif defined SPECIFY_ENABLE_ADC_CALIBRATE
 volatile fast_gt flag_enable_adc_calibrator = 1;
 #else
 volatile fast_gt flag_enable_adc_calibrator = 0;
@@ -218,12 +221,21 @@ void ctl_init()
     // init and config CiA402 standard state machine
     //
     init_cia402_state_machine(&cia402_sm);
+#if defined ENABLE_GMP_DL_PIL_SIM
+    /** Start every virtual power-state transition immediately. */
+    cia402_sm.minimum_transit_delay[0] = 0;
+    cia402_sm.minimum_transit_delay[1] = 0;
+    cia402_sm.minimum_transit_delay[2] = 0;
+    cia402_sm.minimum_transit_delay[3] = 0;
+#else
     cia402_sm.minimum_transit_delay[3] = MCS_CIA402_OPERATION_ENABLE_DELAY_MS;
+#endif
 
-#if defined SPECIFY_PC_ENVIRONMENT
+#if defined SPECIFY_PC_ENVIRONMENT || defined ENABLE_GMP_DL_PIL_SIM
+    /** PIL follows the SIL auto-enable behavior while physical PWM stays tripped. */
     cia402_sm.flag_enable_control_word = 0;
     cia402_sm.current_cmd = CIA402_CMD_ENABLE_OPERATION;
-#endif // SPECIFY_PC_ENVIRONMENT
+#endif // defined SPECIFY_PC_ENVIRONMENT || defined ENABLE_GMP_DL_PIL_SIM
 
     //
     // init and config Motor Protection module
