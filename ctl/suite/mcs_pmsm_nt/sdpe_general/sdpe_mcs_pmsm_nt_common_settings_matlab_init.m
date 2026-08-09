@@ -12,7 +12,7 @@ MCS_PMSM_NT_COMMON_SDPE_PROJECT_SUITE = 'mcs_pmsm_nt';
 
 MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION = '1.0.0';
 
-MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-08-08';
+MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-08-09';
 
 %% Control Algorithm
 % PMSM_CTRL_USING_DISCRETE_CTRL is disabled in the SDPE project requirement.
@@ -47,7 +47,7 @@ PWM_MODULATOR_USING_NEGATIVE_LOGIC = 1;
 %% Controller Options
 % Incremental commissioning level. 1: V/f voltage open loop; 2: current loop with synthetic electrical angle; 3: current loop with encoder angle; 4: speed loop with encoder feedback.
 % Options: (1), (2), (3), (4)
-BUILD_LEVEL = 2;
+BUILD_LEVEL = 1;
 
 %% Requirement bindings
 % Main motor-control ISR frequency in hertz.
@@ -77,15 +77,6 @@ MOTOR_PARAM_INERTIA = 'SM060R20B30MNAD_INERTIA';
 
 MOTOR_PARAM_FRICTION = 'SM060R20B30MNAD_FRICTION';
 
-% Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
-MCS_ENCODER_SPEED_FILTER_FC_HZ = 20.0;
-
-% Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets.
-MCS_ADC_CALIBRATOR_FC_HZ = 20.0;
-
-% Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
-MCS_ADC_CALIBRATOR_Q = 0.707;
-
 % Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
 MCS_MECH_SPEED_LIMIT_RPM = 3000.0;
 
@@ -105,6 +96,15 @@ MCS_MAX_SHUTDOWN_CURRENT_A = 10.0;
 
 % Circular saturation limit for voltage vector magnitude in V.
 MCS_MAX_CIR_SATURATION_VOLTAGE_V = 10.0;
+
+% Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
+MCS_ENCODER_SPEED_FILTER_FC_HZ = 20.0;
+
+% Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets.
+MCS_ADC_CALIBRATOR_FC_HZ = 20.0;
+
+% Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
+MCS_ADC_CALIBRATOR_Q = 0.707;
 
 % D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
 MCS_COMMISSIONING_ID_REF_A = 1.0;

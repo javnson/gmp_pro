@@ -23,3 +23,11 @@ System Log 为每个页面分配固定配色，并在 Log Sources 下拉列表�
 
 Memory Perspective 在线协议中始终使用字节地址。从 C28x map 文件取得原生字地址后，
 手动输入前需要乘以 2。
+
+## 无界面 API
+
+自动化脚本、测试程序和 AI 调试 Agent 可以在不打开 PyQt 界面的情况下使用相同服务。
+公共同步 Python API 支持资源发现、带类型的 Tunable 访问、白名单分块内存访问、触发
+或连续 Scope 采集以及 CSV 波形导出。
+
+请参阅[英文 API 手册](apis/README.md)或[中文 API 手册](apis/README_CN.md)。

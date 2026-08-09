@@ -196,6 +196,8 @@ locked into an unreachable trigger condition.
   target profile.
 - `tools/gmp_pil_server/gmp_debugger/run_u16.bat` selects the DSP/C28x target
   profile.
+- `tools/gmp_pil_server/gmp_debugger/apis` provides the documented headless
+  Python API for automation and AI-assisted hardware debugging.
 - `tools/gmp_pil_server/stm32_dl_dbger` is the NUCLEO-C092RC u8 validation
   firmware and hardware smoke test.
 

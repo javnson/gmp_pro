@@ -100,6 +100,8 @@ Arm、Status 和 Read 操作，从而以一个命令号完成一整页示波器�
 
 - `tools/gmp_pil_server/gmp_debugger/run_u8.bat`：字节寻址 CPU 入口。
 - `tools/gmp_pil_server/gmp_debugger/run_u16.bat`：DSP/C28x 入口。
+- `tools/gmp_pil_server/gmp_debugger/apis`：用于自动化与 AI 辅助硬件调试的无界面
+  Python API 及中英文手册。
 - `tools/gmp_pil_server/stm32_dl_dbger`：NUCLEO-C092RC u8 固件与硬件冒烟测试。
 
 两个入口共享同一个调试器和线协议编解码器，其区别仅用于标识目标内存地址模型。

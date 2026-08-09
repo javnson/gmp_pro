@@ -41,3 +41,13 @@ retained messages.
 Memory Perspective always uses byte addresses on the wire. Convert a C28x
 native word address from a linker map to a byte address by multiplying it by
 two before entering it manually.
+
+## Headless API
+
+Automation, test scripts, and AI debugging agents can use the same services
+without opening the PyQt interface. The public synchronous Python API supports
+resource discovery, typed Tunable access, whitelisted and chunked memory
+access, triggered or continuous Scope acquisition, and CSV waveform export.
+
+See the [English API manual](apis/README.md) or the
+[Chinese API manual](apis/README_CN.md).

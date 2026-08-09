@@ -26,21 +26,12 @@ from PyQt5.QtWidgets import (
 )
 
 from core_datalink import HermesDatalinkQt
-
-
-@dataclass(frozen=True)
-class ScopeResource:
-    """One target-reported Data Link Scope resource."""
-
-    resource_id: int
-    protocol_version: int
-    sample_type: int
-    layout: int
-    channels: int
-    depth: int
-    sample_rate_hz: int
-    byte_length: int
-    name: str
+from apis.protocol import (
+    ScopeConfiguration,
+    ScopeResource,
+    encode_scope_configuration,
+    parse_scope_descriptor,
+)
 
 
 @dataclass(frozen=True)
@@ -73,7 +64,6 @@ class TabDsaScope(QWidget):
     REQUEST_TIMEOUT_MS = 500
     MAX_REQUEST_RETRIES = 2
     MAX_BYTES_PER_READ = 180
-    DISCOVERY_HEADER = struct.Struct("<BBBBBBBHIIIB")
     READ_HEADER = struct.Struct("<BBBIH")
     CURVE_COLORS = ["#1565C0", "#D84315", "#2E7D32", "#6A1B9A", "#00838F", "#C62828"]
     DATA_TYPES = {
@@ -417,18 +407,17 @@ class TabDsaScope(QWidget):
 
     def _build_configuration_payload(self, resource: ScopeResource) -> bytes:
         """Build a target configuration from the currently editable controls."""
-        fields = (
-            self.OP_CONFIGURE,
-            resource.resource_id,
-            int(self.mode_combo.currentData()),
-            self.trigger_channel_spin.value(),
-            int(round(self.position_spin.value() * 10.0)),
-            self.level_spin.value(),
-            self.AUTO_TIMEOUT_MS,
+        return encode_scope_configuration(
+            resource,
+            ScopeConfiguration(
+                mode=self.mode_combo.currentData(),
+                trigger_channel=self.trigger_channel_spin.value(),
+                trigger_level=self.level_spin.value(),
+                trigger_position_percent=self.position_spin.value(),
+                auto_timeout_ms=self.AUTO_TIMEOUT_MS,
+                sample_divider=self.sample_divider_spin.value(),
+            ),
         )
-        if resource.protocol_version >= 2:
-            return struct.pack("<BBBBHfIH", *fields, self.sample_divider_spin.value())
-        return struct.pack("<BBBBHfI", *fields)
 
     def _begin_configuration(self, payload: bytes) -> None:
         """Start or restart configuration after all serial activity is quiescent."""
@@ -572,35 +561,15 @@ class TabDsaScope(QWidget):
 
     def _handle_discovery(self, payload: bytes) -> None:
         """Parse one descriptor and continue the indexed discovery sequence."""
-        if len(payload) < 5:
-            self._finish_discovery("Scope discovery response is too short.")
+        try:
+            total, resource_id, resource = parse_scope_descriptor(payload)
+        except ValueError as error:
+            self._finish_discovery(str(error))
             return
-        operation, status, version, total, resource_id = payload[:5]
-        if operation != self.OP_DISCOVER or version not in (1, 2) or status != 0:
-            self._finish_discovery("Target rejected Scope discovery.")
-            return
-        if len(payload) < self.DISCOVERY_HEADER.size:
-            self._finish_discovery("Scope descriptor is truncated.")
-            return
-        fields = self.DISCOVERY_HEADER.unpack_from(payload)
-        name_end = self.DISCOVERY_HEADER.size + fields[11]
-        if name_end > len(payload) or resource_id != self.discovery_next_id:
+        if resource_id != self.discovery_next_id or resource is None:
             self._finish_discovery("Scope descriptor sequence is invalid.")
             return
-        name = payload[self.DISCOVERY_HEADER.size:name_end].decode("utf-8", errors="replace")
-        self.resources.append(
-            ScopeResource(
-                resource_id=fields[4],
-                protocol_version=version,
-                sample_type=fields[5],
-                layout=fields[6],
-                channels=fields[7],
-                depth=fields[8],
-                sample_rate_hz=fields[9],
-                byte_length=fields[10],
-                name=name or f"Scope {fields[4]}",
-            )
-        )
+        self.resources.append(resource)
         self.discovery_total = total
         self.discovery_next_id += 1
         if self.discovery_next_id < self.discovery_total:

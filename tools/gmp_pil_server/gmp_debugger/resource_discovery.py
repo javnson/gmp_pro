@@ -2,35 +2,19 @@
 
 from __future__ import annotations
 
-import struct
-from dataclasses import dataclass
 from typing import List
 
 from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 
 from core_datalink import HermesDatalinkQt
+from apis.protocol import (
+    MemoryRegion,
+    TunableParameter,
+    parse_memory_descriptor,
+    parse_tunable_descriptor,
+)
 
-
-@dataclass(frozen=True)
-class MemoryRegion:
-    """One target-registered Memory Perspective region."""
-
-    region_id: int
-    address: int
-    byte_length: int
-    permission: int
-    name: str
-
-
-@dataclass(frozen=True)
-class TunableItem:
-    """One target-registered tunable parameter."""
-
-    item_id: int
-    data_type: int
-    permission: int
-    name: str
-    unit: str
+TunableItem = TunableParameter
 
 
 class ResourceDiscovery(QObject):
@@ -39,11 +23,6 @@ class ResourceDiscovery(QObject):
     memory_regions_changed = pyqtSignal(object)
     tunable_items_changed = pyqtSignal(object)
     discovery_error = pyqtSignal(str)
-
-    _MEMORY_HEADER_V1 = struct.Struct("<BBBBIIBBBHHIBB")
-    _MEMORY_HEADER_V2 = struct.Struct("<BBBBIIBB")
-    _TUNABLE_HEADER_V1 = struct.Struct("<BBBBBBBB")
-    _TUNABLE_HEADER_V2 = struct.Struct("<BBBBBBB")
 
     def __init__(self, hermes: HermesDatalinkQt) -> None:
         super().__init__()
@@ -105,63 +84,12 @@ class ResourceDiscovery(QObject):
     @classmethod
     def parse_memory_descriptor(cls, payload: bytes) -> tuple[int, int, MemoryRegion | None]:
         """Parse a minimal v2 or legacy v1 memory descriptor response."""
-        if len(payload) < 4:
-            raise ValueError("Memory discovery response is too short.")
-        version, status, total, region_id = payload[:4]
-        if version not in (1, 2):
-            raise ValueError(f"Unsupported memory discovery version {version}.")
-        if status != 0:
-            return total, region_id, None
-        header = cls._MEMORY_HEADER_V2 if version == 2 else cls._MEMORY_HEADER_V1
-        if len(payload) < header.size:
-            raise ValueError("Memory descriptor is truncated.")
-        fields = header.unpack_from(payload)
-        name_length = fields[-1]
-        name_start = header.size
-        name_end = name_start + name_length
-        if name_end > len(payload):
-            raise ValueError("Memory descriptor name is truncated.")
-        name = payload[name_start:name_end].decode("utf-8", errors="replace")
-        descriptor = MemoryRegion(
-            region_id=fields[3],
-            address=fields[4],
-            byte_length=fields[5],
-            permission=fields[6],
-            name=name or f"Memory Region {fields[3]}",
-        )
-        return total, region_id, descriptor
+        return parse_memory_descriptor(payload)
 
     @classmethod
     def parse_tunable_descriptor(cls, payload: bytes) -> tuple[int, int, TunableItem | None]:
         """Parse a compact v2 or legacy v1 tunable descriptor response."""
-        if len(payload) < 4:
-            raise ValueError("Tunable discovery response is too short.")
-        version, status, total, item_id = payload[:4]
-        if version not in (1, 2):
-            raise ValueError(f"Unsupported tunable discovery version {version}.")
-        if status != 0:
-            return total, item_id, None
-        header = cls._TUNABLE_HEADER_V2 if version == 2 else cls._TUNABLE_HEADER_V1
-        if len(payload) < header.size:
-            raise ValueError("Tunable descriptor is truncated.")
-        fields = header.unpack_from(payload)
-        name_length = fields[6]
-        unit_length = fields[7] if version == 1 else 0
-        text_start = header.size
-        name_end = text_start + name_length
-        unit_end = name_end + unit_length
-        if unit_end > len(payload):
-            raise ValueError("Tunable descriptor text is truncated.")
-        name = payload[text_start:name_end].decode("utf-8", errors="replace")
-        unit = payload[name_end:unit_end].decode("utf-8", errors="replace")
-        descriptor = TunableItem(
-            item_id=fields[3],
-            data_type=fields[4],
-            permission=fields[5],
-            name=name or f"Parameter {fields[3]}",
-            unit=unit,
-        )
-        return total, item_id, descriptor
+        return parse_tunable_descriptor(payload)
 
     def _on_bus_event(self, event: dict) -> None:
         """Advance active discovery sequences from valid Data Link responses."""

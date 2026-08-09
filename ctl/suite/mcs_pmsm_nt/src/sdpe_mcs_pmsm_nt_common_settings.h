@@ -23,7 +23,7 @@ extern "C"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_ID "mcs_pmsm_nt_common"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION "1.0.0"
-#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-08"
+#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-09"
 
 //=================================================================================================
 /**
@@ -94,7 +94,7 @@ extern "C"
  * @brief Incremental commissioning level. 1: V/f voltage open loop; 2: current loop with synthetic electrical angle; 3: current loop with encoder angle; 4: speed loop with encoder feedback.
  *        Options: (1), (2), (3), (4)
  */
-#define BUILD_LEVEL (2)
+#define BUILD_LEVEL (1)
 
 //=================================================================================================
 /**
@@ -180,21 +180,6 @@ extern "C"
 #endif // MOTOR_PARAM_FRICTION
 
 /**
- * @brief Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
- */
-#define MCS_ENCODER_SPEED_FILTER_FC_HZ (20.0f)
-
-/**
- * @brief Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets.
- */
-#define MCS_ADC_CALIBRATOR_FC_HZ (20.0f)
-
-/**
- * @brief Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
- */
-#define MCS_ADC_CALIBRATOR_Q (0.707f)
-
-/**
  * @brief Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
  */
 #define MCS_MECH_SPEED_LIMIT_RPM (3000.0f)
@@ -230,6 +215,21 @@ extern "C"
  * @brief Circular saturation limit for voltage vector magnitude in V.
  */
 #define MCS_MAX_CIR_SATURATION_VOLTAGE_V (10.0f)
+
+/**
+ * @brief Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
+ */
+#define MCS_ENCODER_SPEED_FILTER_FC_HZ (20.0f)
+
+/**
+ * @brief Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets.
+ */
+#define MCS_ADC_CALIBRATOR_FC_HZ (20.0f)
+
+/**
+ * @brief Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
+ */
+#define MCS_ADC_CALIBRATOR_Q (0.707f)
 
 /**
  * @brief D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.

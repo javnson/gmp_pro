@@ -241,6 +241,10 @@ GMP 还提供 Processor-in-the-Loop 和 Datalink 调试机制：
 
 - PIL 在真实 MCU 上执行控制程序，并把仿真输入输出与上位机交换。
 - Datalink 提供变量观察、参数在线调整、Memory Perspective、PIL 数据交换等服务。
+- [Data Link 无界面 Python API](tools/gmp_pil_server/gmp_debugger/apis/README_CN.md)
+  可供测试程序和 AI Agent 发现 Tunable 参数表及内存白名单，执行带类型的参数访问和
+  有界内存访问，配置 Scope 触发、连续采集波形并导出 CSV；同时提供
+  [英文 API 手册](tools/gmp_pil_server/gmp_debugger/apis/README.md)。
 - 字节寻址 CPU 使用 `tools/gmp_pil_server/gmp_debugger/run_u8.bat`，16 位寻址
   DSP 使用 `tools/gmp_pil_server/gmp_debugger/run_u16.bat`；两个入口共用同一套上位机代码。
 - 通信和后台任务通常在 suite 的 `user_main.c` 中组织，UART 等物理接口在目标 `xplt` 中实现。
