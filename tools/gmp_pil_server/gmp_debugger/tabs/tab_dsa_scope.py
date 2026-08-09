@@ -69,6 +69,8 @@ class TabDsaScope(QWidget):
     PHASE_DOWNLOADING = "downloading"
     AUTO_TIMEOUT_MS = 1000
     CONTINUOUS_REARM_DELAY_MS = 50
+    REQUEST_TIMEOUT_MS = 500
+    MAX_REQUEST_RETRIES = 2
     MAX_BYTES_PER_READ = 180
     DISCOVERY_HEADER = struct.Struct("<BBBBBBBHIIIB")
     READ_HEADER = struct.Struct("<BBBIH")
@@ -103,6 +105,9 @@ class TabDsaScope(QWidget):
         self.repeat_after_capture = False
         self.status_request_pending = False
         self.status_request_started = 0.0
+        self.queued_configuration: bytes | None = None
+        self.pending_request: bytes | None = None
+        self.pending_request_retries = 0
         self.poll_count = 0
         self.curves: list[pg.PlotDataItem] = []
         self.afterglow_groups: list[list[pg.PlotDataItem]] = []
@@ -116,6 +121,10 @@ class TabDsaScope(QWidget):
         self.repeat_timer.setSingleShot(True)
         self.repeat_timer.setInterval(self.CONTINUOUS_REARM_DELAY_MS)
         self.repeat_timer.timeout.connect(self._repeat_capture_if_enabled)
+        self.request_timer = QTimer(self)
+        self.request_timer.setSingleShot(True)
+        self.request_timer.setInterval(self.REQUEST_TIMEOUT_MS)
+        self.request_timer.timeout.connect(self._retry_pending_request)
         self.hermes.sig_bus_event.connect(self.on_bus_event)
         self.hermes.sig_conn_state.connect(self._on_connection_state)
         self._setup_ui()
@@ -350,30 +359,93 @@ class TabDsaScope(QWidget):
     def start_capture(self) -> None:
         """Configure and arm the selected target scope resource."""
         resource = self._selected_resource()
-        if not self.hermes.running or self.capture_active or resource is None:
+        if not self.hermes.running or resource is None:
             self._log("Discover and select a Scope resource first.")
             return
-        self.capture_active = True
-        self.capture_phase = self.PHASE_CONFIGURING
-        self.capture_mode = int(self.mode_combo.currentData())
-        self.repeat_after_capture = self.continuous_checkbox.isChecked()
-        self.repeat_timer.stop()
-        self.status_request_pending = False
-        self.status_request_started = 0.0
-        self.poll_count = 0
-        self._set_acquisition_controls(False)
-        self.status_label.setText("Configuring")
-        payload = struct.pack(
+        payload = self._build_configuration_payload(resource)
+        if self.capture_active:
+            if self.capture_phase == self.PHASE_POLLING:
+                self.queued_configuration = payload
+                self.poll_timer.stop()
+                self.capture_button.setEnabled(False)
+                self.status_label.setText("Trigger update queued")
+                if not self.status_request_pending:
+                    self._apply_queued_configuration()
+                else:
+                    QTimer.singleShot(300, self._apply_queued_configuration)
+            else:
+                self._log("Wait for the current Scope transfer to complete before reconfiguring.")
+            return
+        self._begin_configuration(payload)
+
+    def _build_configuration_payload(self, resource: ScopeResource) -> bytes:
+        """Build a target configuration from the currently editable controls."""
+        return struct.pack(
             "<BBBBHfI",
             self.OP_CONFIGURE,
             resource.resource_id,
-            self.capture_mode,
+            int(self.mode_combo.currentData()),
             self.trigger_channel_spin.value(),
             int(round(self.position_spin.value() * 10.0)),
             self.level_spin.value(),
             self.AUTO_TIMEOUT_MS,
         )
+
+    def _begin_configuration(self, payload: bytes) -> None:
+        """Start or restart configuration after all serial activity is quiescent."""
+        self.capture_active = True
+        self.capture_phase = self.PHASE_CONFIGURING
+        self.capture_mode = payload[2]
+        self.repeat_after_capture = self.continuous_checkbox.isChecked()
+        self.repeat_timer.stop()
+        self.poll_timer.stop()
+        self.queued_configuration = None
+        self.status_request_pending = False
+        self.status_request_started = 0.0
+        self.poll_count = 0
+        self._set_acquisition_controls(False)
+        self.status_label.setText("Configuring")
+        self._send_capture_request(payload)
+
+    def _apply_queued_configuration(self) -> None:
+        """Apply a trigger edit queued while the target was waiting for an edge."""
+        if self.queued_configuration is None or self.capture_phase != self.PHASE_POLLING:
+            return
+        if self.status_request_pending and time.monotonic() - self.status_request_started < 0.25:
+            QTimer.singleShot(100, self._apply_queued_configuration)
+            return
+        payload = self.queued_configuration
+        self.status_request_pending = False
+        self._begin_configuration(payload)
+
+    def _send_capture_request(self, payload: bytes, retry: bool = False) -> None:
+        """Send one capture transaction and arm its packet-loss watchdog."""
+        if not retry:
+            self.pending_request = payload
+            self.pending_request_retries = 0
         self.hermes.send_frame(0x01, self.base_command, payload, priority=0)
+        self.request_timer.start()
+
+    def _complete_capture_request(self, operation: int) -> None:
+        """Acknowledge the response matching the outstanding operation."""
+        if self.pending_request is not None and self.pending_request[0] == operation:
+            self.request_timer.stop()
+            self.pending_request = None
+            self.pending_request_retries = 0
+
+    def _retry_pending_request(self) -> None:
+        """Retry a lost capture packet or release the UI after a bounded wait."""
+        if not self.capture_active or self.pending_request is None:
+            return
+        if self.pending_request_retries >= self.MAX_REQUEST_RETRIES:
+            self._finish_with_error("Scope request timed out; controls were released safely.")
+            return
+        self.pending_request_retries += 1
+        self._log(
+            f"Retrying Scope operation {self.pending_request[0]} "
+            f"({self.pending_request_retries}/{self.MAX_REQUEST_RETRIES})."
+        )
+        self._send_capture_request(self.pending_request, retry=True)
 
     def read_current_snapshot(self) -> None:
         """Read the selected scope buffer without changing target capture state."""
@@ -448,7 +520,7 @@ class TabDsaScope(QWidget):
         payload = struct.pack(
             "<BBIH", self.OP_READ, resource.resource_id, self.read_offset, length
         )
-        self.hermes.send_frame(0x01, self.base_command, payload, priority=0)
+        self._send_capture_request(payload)
 
     def _handle_discovery(self, payload: bytes) -> None:
         """Parse one descriptor and continue the indexed discovery sequence."""
@@ -517,6 +589,9 @@ class TabDsaScope(QWidget):
         if operation != self.OP_STATUS or status != 0 or resource is None or resource_id != resource.resource_id:
             self._finish_with_error("Target rejected the Scope status query.")
             return
+        if self.queued_configuration is not None:
+            self._apply_queued_configuration()
+            return
         state_names = {
             self.STATE_WAITING: "Waiting for trigger",
             self.STATE_CAPTURING: "Capturing",
@@ -535,6 +610,9 @@ class TabDsaScope(QWidget):
         operation, status, resource_id, offset, length = self.READ_HEADER.unpack_from(payload)
         resource = self.metadata["resource"] if self.metadata else None
         data = payload[self.READ_HEADER.size:]
+        if operation == self.OP_READ and offset < self.read_offset:
+            # A delayed response to a retried read is harmless and can be ignored.
+            return
         if (
             operation != self.OP_READ
             or status != 0
@@ -546,6 +624,7 @@ class TabDsaScope(QWidget):
         ):
             self._finish_with_error("Target returned an invalid Scope data chunk.")
             return
+        self._complete_capture_request(self.OP_READ)
         self.memory_buffer[offset:offset + length] = data
         self.read_offset += length
         self._request_next_chunk()
@@ -749,10 +828,14 @@ class TabDsaScope(QWidget):
             return
         self.poll_timer.stop()
         self.repeat_timer.stop()
+        self.request_timer.stop()
         self.capture_active = False
         self.capture_phase = self.PHASE_IDLE
         self.status_request_pending = False
         self.status_request_started = 0.0
+        self.queued_configuration = None
+        self.pending_request = None
+        self.pending_request_retries = 0
         self.repeat_after_capture = False
         self._set_acquisition_controls(True)
 
@@ -765,10 +848,14 @@ class TabDsaScope(QWidget):
     def _finish_capture(self) -> None:
         """Release acquisition controls after a completed operation."""
         self.poll_timer.stop()
+        self.request_timer.stop()
         self.capture_active = False
         self.capture_phase = self.PHASE_IDLE
         self.status_request_pending = False
         self.status_request_started = 0.0
+        self.queued_configuration = None
+        self.pending_request = None
+        self.pending_request_retries = 0
         self._set_acquisition_controls(True)
 
     def _finish_with_error(self, message: str) -> None:
@@ -799,21 +886,19 @@ class TabDsaScope(QWidget):
             if len(payload) != 3 or payload[1] != 0 or resource is None or payload[2] != resource.resource_id:
                 self._finish_with_error("Target rejected the Scope configuration.")
                 return
+            self._complete_capture_request(self.OP_CONFIGURE)
             self.status_label.setText("Arming")
             self.capture_phase = self.PHASE_ARMING
-            self.hermes.send_frame(
-                0x01,
-                self.base_command,
-                bytes((self.OP_ARM, resource.resource_id)),
-                priority=0,
-            )
+            self._send_capture_request(bytes((self.OP_ARM, resource.resource_id)))
         elif operation == self.OP_ARM and self.capture_phase == self.PHASE_ARMING:
             resource = self._selected_resource()
             if len(payload) != 3 or payload[1] != 0 or resource is None or payload[2] != resource.resource_id:
                 self._finish_with_error("Target rejected the Scope arm request.")
                 return
+            self._complete_capture_request(self.OP_ARM)
             self.status_label.setText("Armed")
             self.capture_phase = self.PHASE_POLLING
+            self.capture_button.setEnabled(True)
             self.poll_timer.start()
             self._request_scope_status()
         elif operation == self.OP_STATUS and self.capture_phase == self.PHASE_POLLING:

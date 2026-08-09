@@ -246,14 +246,3 @@ void mainloop(void) GMP_NO_OPT_SUFFIX
     // run task scheduler
     gmp_scheduler_dispatch(&sched);
 }
-
-#if !defined SPECIFY_PC_ENVIRONMENT
-/** @brief Provide four power-stage measurements to the platform Scope. */
-void user_get_scope_channels(ctrl_gt channels[4])
-{
-    channels[0] = adc_v_primary.control_port.value;
-    channels[1] = adc_i_primary.control_port.value;
-    channels[2] = adc_v_secondary.control_port.value;
-    channels[3] = adc_i_secondary.control_port.value;
-}
-#endif

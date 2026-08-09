@@ -249,3 +249,14 @@ void ctl_disable_pwm(void)
     ctl_fast_disable_output();
     g_fsbb_output_enabled = 0;
 }
+
+#if !defined SPECIFY_PC_ENVIRONMENT
+/** @brief Provide four converter measurements to the platform Scope. */
+void user_get_scope_channels(ctrl_gt channels[4])
+{
+    channels[0] = adc_v_in.control_port.value;
+    channels[1] = adc_v_out.control_port.value;
+    channels[2] = adc_i_L.control_port.value;
+    channels[3] = adc_i_load.control_port.value;
+}
+#endif

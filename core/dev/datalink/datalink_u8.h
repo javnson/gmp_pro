@@ -78,6 +78,7 @@ typedef struct
     uint8_t rx_fifo[GMP_DL_RX_FIFO_SIZE];
     volatile uint16_t rx_fifo_head;
     volatile uint16_t rx_fifo_tail;
+    volatile fast_gt rx_reset_pending;
 
     gmp_dl_rx_state_t rx_state;
     time_gt last_rx_tick;
@@ -110,6 +111,13 @@ void gmp_dev_dl_init(gmp_datalink_t* ctx);
 void gmp_dev_dl_push_byte(gmp_datalink_t* ctx, uint8_t raw_data);
 /** @brief Queue a sequence of received protocol octets. */
 void gmp_dev_dl_push_str(gmp_datalink_t* ctx, const uint8_t* str, size_gt size);
+/**
+ * @brief Request asynchronous receive-state recovery.
+ * @details The protocol task discards queued input and resets its parser before
+ *          processing another frame. This function is safe to call from a UART
+ *          error interrupt without modifying parser-owned state directly.
+ */
+void gmp_dev_dl_request_rx_reset(gmp_datalink_t* ctx);
 /** @brief Advance the state machine and return at most one application event. */
 gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx);
 /** @brief Apply the default ECHO, NACK, stray, and unsupported-command policy. */

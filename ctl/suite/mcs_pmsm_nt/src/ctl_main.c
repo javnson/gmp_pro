@@ -427,3 +427,14 @@ fast_gt ctl_exec_adc_calibration(void)
     // skip calibrate routine
     return 1;
 }
+
+#if !defined SPECIFY_PC_ENVIRONMENT
+/** @brief Provide current-loop signals to the platform Scope. */
+void user_get_scope_channels(ctrl_gt channels[4])
+{
+    channels[0] = spwm.vabc_out.dat[phase_A];
+    channels[1] = spwm.vabc_out.dat[phase_B];
+    channels[2] = spwm.vabc_out.dat[phase_C];
+    channels[3] = mtr_ctrl.idq0.dat[phase_q];
+}
+#endif

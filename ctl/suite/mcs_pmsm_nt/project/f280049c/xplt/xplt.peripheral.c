@@ -247,7 +247,6 @@ interrupt void INT_LAUNCHXL_CAN_1_ISR(void)
 
 void send_monitor_data(void)
 {
-    uint16_t rx_raw[4];
     can_data_t tran_content[2];
 
     // 0x201: Monitor Motor Current
@@ -289,57 +288,65 @@ void send_monitor_data(void)
 //=================================================================================================
 // Debug interface
 
-// a local small cache size, capable of covering the depth of the hardware FIFO (typically 16 bytes)
-#define ISR_LOCAL_BUF_SIZE 16
-
 extern gmp_datalink_t dl;
 
-void flush_dl_tx_buffer()
+/** @brief Bounded time allowed for each framed UART segment. */
+#define DL_UART_TX_TIMEOUT_MS 50U
+
+void flush_dl_tx_buffer(void)
 {
     // Send head
-    gmp_hal_uart_write(LAUNCHXL_UART_USB_BASE, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl), gmp_dev_dl_get_tx_hw_hdr_size(&dl), 10);
+    gmp_hal_uart_write(LAUNCHXL_UART_USB_BASE, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl),
+                       gmp_dev_dl_get_tx_hw_hdr_size(&dl), DL_UART_TX_TIMEOUT_MS);
 
     // Send data body, if necessary
     if (gmp_dev_dl_get_tx_hw_pld_size(&dl) > 0)
     {
-        gmp_hal_uart_write(LAUNCHXL_UART_USB_BASE, gmp_dev_dl_get_tx_hw_pld_ptr(&dl), gmp_dev_dl_get_tx_hw_pld_size(&dl),
-                           10);
+        gmp_hal_uart_write(LAUNCHXL_UART_USB_BASE, gmp_dev_dl_get_tx_hw_pld_ptr(&dl),
+                           gmp_dev_dl_get_tx_hw_pld_size(&dl), DL_UART_TX_TIMEOUT_MS);
     }
 }
 
-void flush_dl_rx_buffer()
+/**
+ * @brief Drain every currently available SCI receive unit without blocking.
+ * @details The caller must prevent the background task and the receive ISR
+ *          from entering this function concurrently.
+ */
+static void drain_dl_rx_fifo_nonblocking(void)
 {
-    uint16_t fifoLevel;
-    data_gt rxBuf[ISR_LOCAL_BUF_SIZE];
-
-    // read all FIFO messages
-    fifoLevel = SCI_getRxFIFOStatus(LAUNCHXL_UART_USB_BASE);
-
-    if (fifoLevel > 0)
+    while (SCI_getRxFIFOStatus(LAUNCHXL_UART_USB_BASE) != SCI_FIFO_RX0)
     {
-        SCI_readCharArray(LAUNCHXL_UART_USB_BASE, (uint16_t*)rxBuf, fifoLevel);
-
-        // Lock-free ring queue pushed into the protocol stack (very fast, O(1))
-        gmp_dev_dl_push_str(&dl, rxBuf, fifoLevel);
+        gmp_dev_dl_push_byte(&dl, (data_gt)SCI_readCharNonBlocking(LAUNCHXL_UART_USB_BASE));
     }
+}
+
+/** @brief Poll the SCI receive FIFO from the Data Link background task. */
+void flush_dl_rx_buffer(void)
+{
+    /* Keep the RX ISR from consuming a FIFO depth observed by this task. */
+    gmp_base_enter_critical();
+    drain_dl_rx_fifo_nonblocking();
+    gmp_base_leave_critical();
 }
 
 interrupt void INT_LAUNCHXL_UART_USB_RX_ISR(void)
 {
-    flush_dl_rx_buffer();
+    uint32_t rx_status = SCI_getRxStatus(LAUNCHXL_UART_USB_BASE);
 
-    //
-    // deal with overrun
-    //
-    if (SCI_getRxStatus(LAUNCHXL_UART_USB_BASE) & SCI_RXSTATUS_OVERRUN)
+    if ((rx_status & SCI_RXSTATUS_ERROR) != 0U)
     {
+        /* Discard the corrupted burst and recover both hardware and parser. */
+        SCI_performSoftwareReset(LAUNCHXL_UART_USB_BASE);
+        SCI_resetRxFIFO(LAUNCHXL_UART_USB_BASE);
         SCI_clearOverflowStatus(LAUNCHXL_UART_USB_BASE);
+        gmp_dev_dl_request_rx_reset(&dl);
+    }
+    else
+    {
+        drain_dl_rx_fifo_nonblocking();
     }
 
-    //
-    // Clear interrupt flags
-    //
-    SCI_clearInterruptStatus(LAUNCHXL_UART_USB_BASE, SCI_INT_RXFF);
+    SCI_clearInterruptStatus(LAUNCHXL_UART_USB_BASE, SCI_INT_RXFF | SCI_INT_RXERR);
     Interrupt_clearACKGroup(INT_LAUNCHXL_UART_USB_RX_INTERRUPT_ACK_GROUP);
 }
 

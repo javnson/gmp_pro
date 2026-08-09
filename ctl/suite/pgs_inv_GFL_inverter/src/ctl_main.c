@@ -494,3 +494,14 @@ fast_gt ctl_exec_adc_calibration(void)
     // skip calibrate routine
     return 1;
 }
+
+#if !defined SPECIFY_PC_ENVIRONMENT
+/** @brief Provide GFL current references and feedback to the platform Scope. */
+void user_get_scope_channels(ctrl_gt channels[4])
+{
+    channels[0] = inv_ctrl.idq_set.dat[phase_d];
+    channels[1] = inv_ctrl.idq_set.dat[phase_q];
+    channels[2] = inv_ctrl.idq.dat[phase_d];
+    channels[3] = inv_ctrl.idq.dat[phase_q];
+}
+#endif

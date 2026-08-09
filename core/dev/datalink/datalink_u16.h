@@ -159,6 +159,7 @@ typedef struct
     data_gt rx_fifo[GMP_DL_RX_FIFO_SIZE]; ///< Ring buffer storing raw bytes from the hardware RX interrupt
     volatile uint16_t rx_fifo_head;       ///< Index where the next ISR byte will be written
     volatile uint16_t rx_fifo_tail;       ///< Index where the loop_cb will read the next byte
+    volatile fast_gt rx_reset_pending;    ///< Deferred parser reset requested by the transport ISR
 
     // --- RX State Machine ---
     gmp_dl_rx_state_t rx_state; ///< Current active state of the RX Finite State Machine
@@ -217,6 +218,15 @@ void gmp_dev_dl_push_byte(gmp_datalink_t* ctx, data_gt raw_data);
  * @param size Number of bytes in the block.
  */
 void gmp_dev_dl_push_str(gmp_datalink_t* ctx, const data_gt* str, size_gt size);
+
+/**
+ * @brief Request asynchronous receive-state recovery.
+ * @details The protocol task discards queued input and resets its parser before
+ *          processing another frame. This function is safe to call from a UART
+ *          error interrupt without modifying parser-owned state directly.
+ * @param ctx Pointer to the Data Link context.
+ */
+void gmp_dev_dl_request_rx_reset(gmp_datalink_t* ctx);
 
 /**
  * @brief Core event dispatcher. Must be called periodically in the main loop.

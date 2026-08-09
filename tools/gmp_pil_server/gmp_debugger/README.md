@@ -27,6 +27,13 @@ currently displayed frame. Waveform Persistence retains faded history frames
 in a separate display group. Waveform Export can save either the current frame
 or every retained persistence frame plus the current frame as CSV.
 
+Configure, Arm, and chunked Read operations use bounded retries. If a response
+is lost, the page either resumes or releases its controls with an explicit
+timeout instead of remaining busy indefinitely. While the target is waiting for
+an edge, **Configure & Capture** stays available so a user can queue a different
+trigger condition. The target keeps a ready snapshot frozen during download and
+starts a new capture only after the next Arm request.
+
 System Log assigns a stable accent color to every page. Its Log Sources
 dropdown contains checkable entries that can hide or restore each page's
 retained messages.

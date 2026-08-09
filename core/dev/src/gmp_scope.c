@@ -240,6 +240,13 @@ static void scope_reply_read(gmp_scope_service_t* ctx)
     if (resource == NULL || resource->buffer == NULL || length == 0U ||
         offset > resource->byte_length || length > resource->byte_length - offset)
         status = 2;
+    if (status == 0 &&
+        (resource->get_status == NULL ||
+         resource->get_status(resource->user_context, NULL) != GMP_SCOPE_STATE_READY))
+    {
+        /* A readable snapshot owns the buffer until a later ARM request. */
+        status = 4;
+    }
 
     scope_begin_response(ctx, GMP_SCOPE_OP_READ, status);
     gmp_dev_dl_tx_append_u8(dl, (data_gt)resource_id);

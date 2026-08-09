@@ -373,3 +373,14 @@ void ctl_disable_pwm(void)
 {
     ctl_fast_disable_output();
 }
+
+#if !defined SPECIFY_PC_ENVIRONMENT
+/** @brief Provide grid and DC-link measurements to the platform Scope. */
+void user_get_scope_channels(ctrl_gt channels[4])
+{
+    channels[0] = pll.v_mag;
+    channels[1] = pll.frequency;
+    channels[2] = pq_meter.active_power_p;
+    channels[3] = adc_v_bus.control_port.value;
+}
+#endif

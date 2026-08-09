@@ -247,18 +247,3 @@ void mainloop(void) GMP_NO_OPT_SUFFIX
     // run task scheduler
     gmp_scheduler_dispatch(&sched);
 }
-
-#if !defined SPECIFY_PC_ENVIRONMENT
-/** @brief Provide current-loop and speed signals to the platform Scope. */
-void user_get_scope_channels(ctrl_gt channels[4])
-{
-    channels[0] = spwm.vabc_out.dat[phase_A];
-    channels[1] = spwm.vabc_out.dat[phase_B];
-    channels[2] = spwm.vabc_out.dat[phase_C];
-
-//    channels[0] = mtr_ctrl.idq_ref.dat[phase_d];
-//    channels[1] = mtr_ctrl.idq_ref.dat[phase_q];
-//    channels[2] = mtr_ctrl.idq0.dat[phase_d];
-    channels[3] = mtr_ctrl.idq0.dat[phase_q];
-}
-#endif

@@ -7,6 +7,10 @@ from datetime import datetime
 from PyQt5.QtCore import QObject, pyqtSignal
 
 SOF, EOF, ESC, XOR = 0x7B, 0x7D, 0x25, 0x20
+MAX_DL_PAYLOAD = 256
+RX_INTERBYTE_TIMEOUT_SECONDS = 0.25
+RAW_EVENT_INTERVAL_SECONDS = 0.10
+RAW_EVENT_MAX_BYTES = 2048
 
 # Precompute the CRC table for low-overhead frame validation.
 crc16_table = []
@@ -55,6 +59,7 @@ class HermesDatalinkQt(QObject):
         self.tx_queue = queue.PriorityQueue()
         self._tx_seq = 0  # Preserve FIFO order among requests with equal priority.
         self._seq_lock = threading.Lock()
+        self._close_lock = threading.Lock()
 
     def emit_log(self, source: str, message: str) -> None:
         """Publish one source-classified message to the application log."""
@@ -93,12 +98,20 @@ class HermesDatalinkQt(QObject):
             return False
 
     def close(self):
-        self.running = False
-        if self.rx_thread: self.rx_thread.join(timeout=0.2)
-        if self.tx_thread: self.tx_thread.join(timeout=0.2)
-        if self.serial.is_open: self.serial.close()
-        self.emit_log("System", "Serial port disconnected.")
-        self.sig_conn_state.emit(False)
+        """Stop both workers without attempting to join the calling worker."""
+        with self._close_lock:
+            current_thread = threading.current_thread()
+            was_connected = self.running or self.serial.is_open
+            self.running = False
+            if self.rx_thread and self.rx_thread is not current_thread:
+                self.rx_thread.join(timeout=0.2)
+            if self.tx_thread and self.tx_thread is not current_thread:
+                self.tx_thread.join(timeout=0.2)
+            if self.serial.is_open:
+                self.serial.close()
+            if was_connected:
+                self.emit_log("System", "Serial port disconnected.")
+                self.sig_conn_state.emit(False)
 
     # =========================================================
     # Public transmit API: frame and enqueue without touching hardware directly.
@@ -192,6 +205,8 @@ class HermesDatalinkQt(QObject):
         frame_raw_buf = bytearray() 
         bypass_buf = bytearray()    
         expected_len, current_cmd, current_target = 0, 0, 0
+        last_byte_time = time.monotonic()
+        last_raw_event_time = last_byte_time
 
         while self.running:
             try:
@@ -202,13 +217,31 @@ class HermesDatalinkQt(QObject):
                     self.close()
                 break
                 
-            if not raw_bytes: continue
+            now = time.monotonic()
+            if not raw_bytes:
+                if state != STATE_WAIT and now - last_byte_time >= RX_INTERBYTE_TIMEOUT_SECONDS:
+                    self.sig_bus_event.emit({
+                        'dir': 'RX', 'type': 'DL', 'time': get_time_str(),
+                        'data': bytes(frame_raw_buf), 'dl_target': current_target,
+                        'dl_cmd': current_cmd, 'dl_payload': b'', 'dl_crc_ok': False,
+                        'error': 'Receive timeout'
+                    })
+                    state = STATE_WAIT
+                    hdr_buf.clear()
+                    pld_buf.clear()
+                    frame_raw_buf.clear()
+                if bypass_buf and now - last_raw_event_time >= RAW_EVENT_INTERVAL_SECONDS:
+                    self.sig_bus_event.emit({
+                        'dir': 'RX', 'type': 'RAW', 'time': get_time_str(),
+                        'data': bytes(bypass_buf)
+                    })
+                    bypass_buf.clear()
+                    last_raw_event_time = now
+                continue
             
             for byte in raw_bytes:
+                last_byte_time = time.monotonic()
                 if byte == SOF and state != STATE_PLD:
-                    if bypass_buf:
-                        self.sig_bus_event.emit({'dir': 'RX', 'type': 'RAW', 'time': get_time_str(), 'data': bytes(bypass_buf)})
-                        bypass_buf.clear()
                     state = STATE_HDR
                     hdr_buf.clear()
                     frame_raw_buf.clear()
@@ -216,7 +249,8 @@ class HermesDatalinkQt(QObject):
                     continue
                 
                 if state == STATE_WAIT:
-                    bypass_buf.append(byte)
+                    if len(bypass_buf) < RAW_EVENT_MAX_BYTES:
+                        bypass_buf.append(byte)
                     
                 elif state == STATE_HDR:
                     frame_raw_buf.append(byte)
@@ -241,6 +275,16 @@ class HermesDatalinkQt(QObject):
                             continue
                         
                         current_target, current_cmd, expected_len = struct.unpack('<BBH', hdr_buf[0:4])
+
+                        if expected_len > MAX_DL_PAYLOAD:
+                            self.sig_bus_event.emit({
+                                'dir': 'RX', 'type': 'DL', 'time': get_time_str(),
+                                'data': bytes(frame_raw_buf), 'dl_target': current_target,
+                                'dl_cmd': current_cmd, 'dl_payload': b'', 'dl_crc_ok': False,
+                                'error': 'Payload length exceeds MTU'
+                            })
+                            state = STATE_WAIT
+                            continue
                         
                         if expected_len == 0:
                             self.sig_bus_event.emit({
@@ -253,12 +297,22 @@ class HermesDatalinkQt(QObject):
                             state = STATE_PLD
                             pld_buf.clear()
                     else:
-                        hdr_buf.append(byte)
+                        if len(hdr_buf) < 6:
+                            hdr_buf.append(byte)
+                        else:
+                            state = STATE_WAIT
+                            hdr_buf.clear()
+                            frame_raw_buf.clear()
                         
                 elif state == STATE_ESC:
                     frame_raw_buf.append(byte)
-                    hdr_buf.append(byte ^ XOR)
-                    state = STATE_HDR
+                    if len(hdr_buf) < 6:
+                        hdr_buf.append(byte ^ XOR)
+                        state = STATE_HDR
+                    else:
+                        state = STATE_WAIT
+                        hdr_buf.clear()
+                        frame_raw_buf.clear()
                     
                 elif state == STATE_PLD:
                     frame_raw_buf.append(byte)
@@ -278,6 +332,8 @@ class HermesDatalinkQt(QObject):
                             self.sig_frame_received.emit(current_target, current_cmd, bytes(actual_pld))
                         state = STATE_WAIT
 
-            if bypass_buf:
+            now = time.monotonic()
+            if bypass_buf and now - last_raw_event_time >= RAW_EVENT_INTERVAL_SECONDS:
                 self.sig_bus_event.emit({'dir': 'RX', 'type': 'RAW', 'time': get_time_str(), 'data': bytes(bypass_buf)})
                 bypass_buf.clear()
+                last_raw_event_time = now

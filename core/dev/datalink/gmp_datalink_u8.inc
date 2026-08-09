@@ -79,6 +79,7 @@ void gmp_dev_dl_push_byte(gmp_datalink_t* ctx, uint8_t raw_data)
     else
     {
         ctx->err_fifo_ovf_cnt++;
+        ctx->rx_reset_pending = 1;
     }
 }
 
@@ -95,6 +96,7 @@ void gmp_dev_dl_push_str(gmp_datalink_t* ctx, const uint8_t* str, size_gt size)
         if (next_head == ctx->rx_fifo_tail)
         {
             ctx->err_fifo_ovf_cnt += (uint32_t)(size - i);
+            ctx->rx_reset_pending = 1;
             break;
         }
         ctx->rx_fifo[ctx->rx_fifo_head] = str[i];
@@ -102,10 +104,23 @@ void gmp_dev_dl_push_str(gmp_datalink_t* ctx, const uint8_t* str, size_gt size)
     }
 }
 
+void gmp_dev_dl_request_rx_reset(gmp_datalink_t* ctx)
+{
+    if (ctx != NULL)
+        ctx->rx_reset_pending = 1;
+}
+
 gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
 {
     if (ctx == NULL)
         return GMP_DL_EVENT_IDLE;
+
+    if (ctx->rx_reset_pending)
+    {
+        ctx->rx_reset_pending = 0;
+        ctx->rx_fifo_tail = ctx->rx_fifo_head;
+        dl_u8_reset_rx(ctx);
+    }
 
     if (ctx->tx_state == GMP_DL_TX_STATE_READY_TO_WARP)
     {
@@ -140,15 +155,6 @@ gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
             if (byte == GMP_DL_SOF)
             {
                 ctx->rx_state = GMP_DL_STATE_HEADER_RECV;
-            }
-            else
-            {
-                ctx->rx_head.seq_id = 0;
-                ctx->rx_head.cmd = GMP_DL_CMD_STRAY;
-                ctx->payload_buf[0] = byte;
-                ctx->expected_payload_len = 1;
-                ctx->flag_reply_handled = 0;
-                return GMP_DL_EVENT_RX_OK;
             }
             break;
 
@@ -190,16 +196,26 @@ gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
                 }
                 ctx->rx_state = GMP_DL_STATE_PAYLOAD_RECV;
             }
-            else if (ctx->rx_hdr_idx < sizeof(ctx->rx_hdr_buf))
+            else if (ctx->rx_hdr_idx < GMP_DL_HDR_SIZE)
             {
                 ctx->rx_hdr_buf[ctx->rx_hdr_idx++] = byte;
+            }
+            else
+            {
+                dl_u8_reset_rx(ctx);
             }
             break;
 
         case GMP_DL_STATE_HEADER_ESCAPE:
-            if (ctx->rx_hdr_idx < sizeof(ctx->rx_hdr_buf))
+            if (ctx->rx_hdr_idx < GMP_DL_HDR_SIZE)
+            {
                 ctx->rx_hdr_buf[ctx->rx_hdr_idx++] = (uint8_t)(byte ^ GMP_DL_XOR);
-            ctx->rx_state = GMP_DL_STATE_HEADER_RECV;
+                ctx->rx_state = GMP_DL_STATE_HEADER_RECV;
+            }
+            else
+            {
+                dl_u8_reset_rx(ctx);
+            }
             break;
 
         case GMP_DL_STATE_PAYLOAD_RECV:

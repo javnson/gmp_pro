@@ -41,6 +41,7 @@ void gmp_dev_dl_push_byte(gmp_datalink_t* ctx, data_gt raw_data)
     else
     {
         ctx->err_fifo_ovf_cnt++;
+        ctx->rx_reset_pending = 1;
     }
 }
 
@@ -68,8 +69,17 @@ void gmp_dev_dl_push_str(gmp_datalink_t* ctx, const data_gt* str, size_gt size)
         {
             /* Count all remaining units as dropped when the FIFO is full. */
             ctx->err_fifo_ovf_cnt += (size - i);
+            ctx->rx_reset_pending = 1;
             break;
         }
+    }
+}
+
+void gmp_dev_dl_request_rx_reset(gmp_datalink_t* ctx)
+{
+    if (ctx != NULL)
+    {
+        ctx->rx_reset_pending = 1;
     }
 }
 
@@ -77,6 +87,13 @@ void gmp_dev_dl_push_str(gmp_datalink_t* ctx, const data_gt* str, size_gt size)
 
 gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
 {
+    if (ctx->rx_reset_pending)
+    {
+        ctx->rx_reset_pending = 0;
+        ctx->rx_fifo_tail = ctx->rx_fifo_head;
+        datalink_reset_rx(ctx);
+    }
+
     /* Finish deferred framing before accepting another request. */
     if (ctx->tx_state == GMP_DL_TX_STATE_READY_TO_WARP)
     {
@@ -124,16 +141,6 @@ gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
                 ctx->rx_state = GMP_DL_STATE_HEADER_RECV;
                 ctx->rx_hdr_idx = 0;
                 ctx->payload_idx = 0;
-            }
-            else
-            {
-                /* Route a non-framed unit to the stray-data handler. */
-                ctx->rx_head.seq_id = 0;
-                ctx->rx_head.cmd = GMP_DL_CMD_STRAY;
-                ctx->payload_buf[0] = byte;
-                ctx->expected_payload_len = 1;
-                ctx->flag_reply_handled = 0;
-                return GMP_DL_EVENT_RX_OK;
             }
             break;
 
@@ -184,21 +191,26 @@ gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
                     ctx->rx_state = GMP_DL_STATE_PAYLOAD_RECV;
                 }
             }
+            else if (ctx->rx_hdr_idx < GMP_DL_HDR_SIZE)
+            {
+                ctx->rx_hdr_buf[ctx->rx_hdr_idx++] = byte;
+            }
             else
             {
-                if (ctx->rx_hdr_idx < sizeof(ctx->rx_hdr_buf) / sizeof(ctx->rx_hdr_buf[0]))
-                {
-                    ctx->rx_hdr_buf[ctx->rx_hdr_idx++] = byte;
-                }
+                datalink_reset_rx(ctx);
             }
             break;
 
         case GMP_DL_STATE_HEADER_ESCAPE:
-            if (ctx->rx_hdr_idx < sizeof(ctx->rx_hdr_buf) / sizeof(ctx->rx_hdr_buf[0]))
+            if (ctx->rx_hdr_idx < GMP_DL_HDR_SIZE)
             {
                 ctx->rx_hdr_buf[ctx->rx_hdr_idx++] = byte ^ GMP_DL_XOR;
+                ctx->rx_state = GMP_DL_STATE_HEADER_RECV;
             }
-            ctx->rx_state = GMP_DL_STATE_HEADER_RECV;
+            else
+            {
+                datalink_reset_rx(ctx);
+            }
             break;
 
         case GMP_DL_STATE_PAYLOAD_RECV:

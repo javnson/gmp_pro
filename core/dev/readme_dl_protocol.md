@@ -98,6 +98,15 @@ transfers. Circular RX DMA should forward every new span at half-transfer,
 transfer-complete, and/or idle events so continuous streams do not depend on an
 idle gap.
 
+An interrupt-driven transport must have exactly one owner of the hardware RX
+FIFO at a time. If both a background poll and an RX interrupt drain the FIFO,
+serialize them with a short critical section and use non-blocking hardware
+reads. Never snapshot a FIFO depth and then perform a blocking read: the other
+context can consume that depth first and leave the control application blocked.
+On framing, parity, break, or overrun errors, reset the peripheral FIFO and call
+`gmp_dev_dl_request_rx_reset()` from the ISR. The protocol task then discards
+the incomplete software queue and resumes searching for the next start marker.
+
 ## Tunable Parameters
 
 Tunable Parameters maps small integer IDs to a static whitelist. Read is
@@ -165,6 +174,14 @@ One service command carries an operation byte:
 
 This single-command design keeps command allocation compact while maintaining
 one host page and one target module per tool.
+
+The snapshot buffer is readable only in the ready state. It remains owned by
+the host throughout all chunked reads, and the target does not capture into it
+again until a later Arm request. Host implementations should bound and retry
+Configure, Arm, and Read transactions because packet loss is permitted. While
+an edge-triggered capture is waiting, a new configuration may be queued and
+applied after the outstanding status transaction finishes; the user must not be
+locked into an unreachable trigger condition.
 
 ## Host tools and validation target
 
