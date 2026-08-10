@@ -30,9 +30,18 @@ uses small causal request/response transfers.
 
 ## Failure contract
 
-- Connect, accept, read, and write operations have finite configurable
-  timeouts. A silent or disconnected peer returns an explicit error instead of
-  blocking indefinitely.
+- Connect and accept use a short connection timeout. Data operations use a
+  short startup timeout until a configured number of complete frames arrive,
+  then automatically use a long established-link timeout. The defaults switch
+  from 5 seconds to 2,000 seconds after one complete frame, matching the UDP
+  helper's debugger-pause intent.
+- Only a complete header plus payload advances the link-state counter. A
+  partial frame cannot incorrectly promote a broken link.
+- `abort()` is the non-waiting active-stop entry point for a simulation stop
+  callback or another thread. It interrupts an outstanding connect, accept,
+  read, or write with `error_code::aborted`, so normal completion never needs
+  to wait for the long timeout. It sends no application frame, so a stalled
+  network or peer cannot prevent local termination.
 - A timeout or partial frame closes the stream. Continuing on that stream would
   make the next frame boundary ambiguous.
 - Payload size is checked before allocation.
@@ -58,7 +67,9 @@ not for several concurrent requests in flight.
   "bind_address": "0.0.0.0",
   "port": 12510,
   "connect_timeout_ms": 5000,
-  "io_timeout_ms": 5000,
+  "startup_io_timeout_ms": 5000,
+  "established_io_timeout_ms": 2000000,
+  "established_after_frames": 1,
   "max_payload": 16777216,
   "no_delay": true,
   "keep_alive": true
@@ -67,7 +78,14 @@ not for several concurrent requests in flight.
 
 The server uses `bind_address`; the client uses `target_address`. IPv4 numeric
 addresses are required in this prototype so that name-resolution behavior
-cannot add an unbounded external dependency.
+cannot add an unbounded external dependency. Set `established_after_frames` to
+`0` to use the long timeout immediately after connection; the default `1`
+still exposes startup failures quickly.
+
+On normal simulation completion, the control thread should call
+`helper.abort()`. If another thread is blocked in `receive()`, it wakes with
+`error_code::aborted`, which the caller should treat as an expected stop rather
+than a network fault.
 
 ## Build and test
 
@@ -83,8 +101,9 @@ ctest --test-dir tools/gmp_sil/tcp_helper_v2/build -C Release --output-on-failur
 ```
 
 Tests cover stable header encoding, 512 binary SIL-sized request/response
-transactions, intentionally fragmented TCP writes, bounded timeout, partial
-disconnect, oversized-frame rejection, heartbeat, and JSON parsing.
+transactions, intentionally fragmented TCP writes, bounded startup timeout,
+established-link long timeout, cross-thread active abort, partial disconnect,
+oversized-frame rejection, heartbeat, and JSON parsing.
 Transaction sequence mismatch and malformed frame magic are rejected as well.
 
 ## Integration boundary
