@@ -39,7 +39,7 @@ void ctl_init_pmsm_hfi(ctl_pmsm_hfi_t* hfi, const ctl_pmsm_hfi_init_t* init)
     ctl_init_filter_iir1_lpf(&hfi->lpf_demod, fs_safe, f_demod_lpf);
 
     // Initialize ATO (Limits are usually small since HFI operates near zero speed)
-    ctl_init_ato_pll(&hfi->ato_pll, init->ato_bw_hz, 1.0f, 1.0f, fs_safe, 0.2f, -0.2f); // Restrict speed to 20% PU max
+    ctl_init_ato_pll(&hfi->ato_pll, init->ato_bw_hz, 1.0f, init->omega_base, fs_safe, 0.2f, -0.2f);
 
     // 3. Finalize Initialization
     ctl_clear_pmsm_hfi(hfi);
@@ -56,6 +56,7 @@ void ctl_init_pmsm_hfi_consultant(ctl_pmsm_hfi_t* hfi, const ctl_consultant_pmsm
     bare_init.f_inj_hz = f_inj_hz;
     bare_init.v_inj_pu = v_inj_v / pu->V_base;
     bare_init.ato_bw_hz = ato_bw_hz;
+    bare_init.omega_base = pu->W_base;
 
     // Auto-configure LPFs based on injection frequency
     bare_init.f_lpf_iq_hz = f_inj_hz / 10.0f; // Typical empirical value

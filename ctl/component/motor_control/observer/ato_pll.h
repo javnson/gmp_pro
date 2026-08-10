@@ -2,6 +2,10 @@
  * @file ato_pll.h
  * @brief Implements an industrial Angle Tracking Observer (Closed-loop PLL).
  * @details Extracts noise-free velocity and position from phase error signals.
+ * The input error is expressed in electrical revolutions (1.0 PU = 2*pi rad),
+ * the speed output is normalized by `omega_base`, and the angle output is in
+ * electrical revolutions modulo one. The auto-tuner supplies continuous-time
+ * PI gains; `ctl_init_pid()` discretizes the integral gain exactly once.
  * Un-nested, pure mathematical engine utilizing standard PID components.
  *
  * @version 1.3
@@ -38,6 +42,13 @@ typedef struct _tag_ato_pll_t
 
 /**
  * @brief Auto-tunes and initializes the Angle Tracking Observer.
+ * @param[out] pll ATO instance.
+ * @param[in] bandwidth_hz Closed-loop natural-frequency target in Hz.
+ * @param[in] damping_ratio Second-order damping ratio (normally 0.7 to 1.0).
+ * @param[in] omega_base Electrical angular-speed base in rad/s.
+ * @param[in] fs Execution rate in Hz.
+ * @param[in] spd_limit_max Maximum electrical speed in PU.
+ * @param[in] spd_limit_min Minimum electrical speed in PU.
  */
 void ctl_init_ato_pll(ctl_ato_pll_t* pll, parameter_gt bandwidth_hz, parameter_gt damping_ratio,
                       parameter_gt omega_base, parameter_gt fs, parameter_gt spd_limit_max, parameter_gt spd_limit_min);

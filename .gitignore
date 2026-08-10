@@ -566,3 +566,4 @@ tools/gmp_sil/udp_helper_v2/mdl_asio_helper_linux/build/**
 
 # debug temp
 tmp/**
+ctl\component\motor_control\observer\tests

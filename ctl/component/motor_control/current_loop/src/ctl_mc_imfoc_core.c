@@ -1,147 +1,101 @@
+/** @file ctl_mc_imfoc_core.c @brief Initialization for the standalone ACIM current loop. */
 
 #include <gmp_core.h>
-
 #include <ctl/component/motor_control/current_loop/imfoc_core.h>
 
+//=================================================================================================
+// Output limiting
 
-/**
- * @brief Auto-tunes and initializes the IM IFOC controller.
- * @details 
- * **1. Transient Inductance (The Plant):**
- * For an IM, the current loop sees the transient inductance:
- * $\sigma L_s = L_s - \frac{L_m^2}{L_r}$
- * * **2. PI Tuning:**
- * $K_p = \sigma L_s \cdot \text{BW}$
- * $K_i = R_{eq} \cdot \text{BW}$ (where $R_{eq} = R_s + R_r (\frac{L_m}{L_r})^2$)
- * * **3. PU Slip Constant:**
- * $\omega_{slip} = \frac{R_r}{L_r} \frac{I_q}{I_d}$. 
- * We absorb the sampling time to calculate the per-tick angle increment:
- * $K_{slip\_calc} = \frac{R_r}{L_r \cdot 2\pi \cdot f_s}$
- */
-/**
- * @brief Auto-tunes and initializes the IM IFOC controller using raw parameters.
- */
-void ctl_autotune_and_init_im_ifoc(im_ifoc_ctrl_t* mc, const im_ifoc_init_t* init)
+void ctl_set_im_ifoc_saturation(im_ifoc_ctrl_t* mc, parameter_gt volt_rect_pu, parameter_gt volt_circle_pu)
 {
-    parameter_gt fs_safe = (init->fs > 1e-6f) ? init->fs : 10000.0f;
-    parameter_gt lr_safe = (init->mtr_Lr > 1e-9f) ? init->mtr_Lr : 1.0f;
-
-    // 1. IM Physical Equivalents
-    parameter_gt sigma_ls = init->mtr_Ls - (init->mtr_Lm * init->mtr_Lm) / lr_safe;
-    parameter_gt req = init->mtr_Rs + init->mtr_Rr * (init->mtr_Lm * init->mtr_Lm) / (lr_safe * lr_safe);
-
-    // 2. PI Gains Calculation (Plant: sigma*Ls)
-    parameter_gt bw_rad = CTL_PARAM_CONST_2PI * init->current_loop_bw;
-    parameter_gt scale_kp = init->i_base / init->v_base;
-
-    parameter_gt kp_pu = (sigma_ls * bw_rad) * scale_kp;
-    parameter_gt ki_pu = (req * bw_rad) * scale_kp;
-
-    // 3. Initialize Independent Slip & Position Calculator
-    ctl_im_pos_calc_init_t calc_init;
-    parameter_gt tau_r = lr_safe / init->mtr_Rr;
-
-    // Spd base is KRPM -> rad/s
-    parameter_gt w_base = (init->spd_base * 1000.0f) * CTL_PARAM_CONST_PI / 30.0f * init->pole_pairs;
-
-    calc_init.sf_lpf_kr = (1.0f / fs_safe) / tau_r;
-    calc_init.sf_slip_const = 1.0f / (tau_r * w_base);
-    calc_init.sf_mech_to_elec = 1.0f; // Assumes mechanical speed is already normalized to W_base
-    calc_init.sf_w_to_angle = (w_base / fs_safe) / CTL_PARAM_CONST_2PI;
-    calc_init.i_md_min_limit_pu = 0.05f;
-
-    ctl_init_im_pos_calc(&mc->pos_calc, &calc_init);
-
-    // 4. Decoupling Feedforward Constants (PU Space)
-    parameter_gt scale_fac = w_base * init->i_base / init->v_base;
-    mc->sf_dec_lsigma = float2ctrl(sigma_ls * scale_fac);
-    mc->sf_dec_backemf = float2ctrl(((init->mtr_Lm * init->mtr_Lm) / lr_safe) * scale_fac);
-
-    // 5. Limits & PID Init
-    mc->max_vs_mag = float2ctrl((init->v_phase_limit * 1.4142f) / init->v_base);
-    mc->max_dcbus_voltage = float2ctrl(init->v_bus / init->v_base);
-
-    ctl_init_pid(&mc->idq_ctrl[phase_d], float2ctrl(kp_pu), float2ctrl(ki_pu), float2ctrl(0.0f), fs_safe);
-    ctl_init_pid(&mc->idq_ctrl[phase_q], float2ctrl(kp_pu), float2ctrl(ki_pu), float2ctrl(0.0f), fs_safe);
-    ctl_set_pid_limit(&mc->idq_ctrl[phase_d], mc->max_vs_mag, -mc->max_vs_mag);
-    ctl_set_pid_int_limit(&mc->idq_ctrl[phase_d], mc->max_vs_mag, -mc->max_vs_mag);
-    ctl_set_pid_limit(&mc->idq_ctrl[phase_q], mc->max_vs_mag, -mc->max_vs_mag);
-    ctl_set_pid_int_limit(&mc->idq_ctrl[phase_q], mc->max_vs_mag, -mc->max_vs_mag);
-
-    // 6. Init Filters
-    ctl_init_filter_iir1_lpf(&mc->filter_iuvw[phase_U], fs_safe, fs_safe / 3.0f);
-    ctl_init_filter_iir1_lpf(&mc->filter_iuvw[phase_V], fs_safe, fs_safe / 3.0f);
-    ctl_init_filter_iir1_lpf(&mc->filter_iuvw[phase_W], fs_safe, fs_safe / 3.0f);
-    ctl_init_filter_iir1_lpf(&mc->filter_udc, fs_safe, fs_safe / 5.0f);
-
-    // 7. Clear States
-    mc->isr_tick = 0;
-    ctl_vector2_clear(&mc->idq_ref);
-    ctl_vector2_clear(&mc->vdq_ctrl_out);
-    ctl_vector2_clear(&mc->vdq_decouple);
-    ctl_vector3_clear(&mc->vdq_out);
-    ctl_vector2_clear(&mc->vdq_out_sat);
-
-    mc->flag_enable_current_ctrl = 0;
-    mc->flag_enable_decouple = 1;
-    mc->flag_enable_bus_compensation = 1;
+    ctl_vector2_t max;
+    ctl_vector2_t min;
+    gmp_base_assert(mc && volt_rect_pu >= 0.0f && volt_circle_pu >= 0.0f);
+    mc->max_vs_rect = float2ctrl(volt_rect_pu);
+    mc->max_vs_mag = float2ctrl(volt_circle_pu);
+    mc->max_vs_mag_sq = ctl_mul(mc->max_vs_mag, mc->max_vs_mag);
+    max.dat[0] = max.dat[1] = mc->max_vs_rect;
+    min.dat[0] = min.dat[1] = -mc->max_vs_rect;
+    ctl_set_dq_pi_circle_limit_sq(&mc->idq_ctrl, mc->max_vs_mag_sq);
+    ctl_set_dq_pi_rect_limit(&mc->idq_ctrl, &max, &min);
+    ctl_set_pid_int_limit(&mc->idq_ctrl.axis[phase_d], ctl_mul(float2ctrl(0.8f), mc->max_vs_rect),
+                          -ctl_mul(float2ctrl(0.8f), mc->max_vs_rect));
+    ctl_set_pid_int_limit(&mc->idq_ctrl.axis[phase_q], ctl_mul(float2ctrl(0.8f), mc->max_vs_rect),
+                          -ctl_mul(float2ctrl(0.8f), mc->max_vs_rect));
 }
 
-/**
- * @brief Advanced initialization function utilizing the Consultant models.
- */
+//=================================================================================================
+// Consultant-based initialization and auto-tuning
+
 void ctl_autotune_and_init_im_ifoc_consultant(im_ifoc_ctrl_t* mc, const ctl_consultant_im_t* motor,
-                                              const ctl_consultant_pu_im_t* pu, parameter_gt fs, parameter_gt v_bus,
-                                              parameter_gt v_phase_limit, parameter_gt current_loop_bw)
+                                              const ctl_consultant_pu_im_t* pu, parameter_gt fs,
+                                              parameter_gt v_bus, parameter_gt v_phase_limit,
+                                              parameter_gt current_loop_bw)
 {
-    parameter_gt fs_safe = (fs > 1e-6f) ? fs : 10000.0f;
+    parameter_gt fs_safe = (fs > 1.0f) ? fs : 10000.0f;
+    parameter_gt bw = current_loop_bw;
+    parameter_gt omega_bw;
+    parameter_gt gain_scale;
+    parameter_gt voltage_limit_pu;
+    parameter_gt ff_scale;
 
-    // 1. Delegate Slip & Angle Calculus Initialization to the Consultant
-    ctl_init_im_pos_calc_consultant(&mc->pos_calc, motor, pu, fs_safe);
+    gmp_base_assert(mc && motor && pu);
+    gmp_base_assert(pu->V_s_base > 0.0f && pu->I_s_base > 0.0f && pu->W_base > 0.0f);
+    if (bw <= 0.0f) bw = fs_safe / (9.0f * CTL_PARAM_CONST_PI);
+    omega_bw = CTL_PARAM_CONST_2PI * bw;
+    gain_scale = pu->I_s_base / pu->V_s_base;
 
-    // 2. PI Gains Auto-tuning (Leveraging derived R_eq and sigma_Ls from the Consultant)
-    parameter_gt bw_rad = CTL_PARAM_CONST_2PI * current_loop_bw;
-
-    // Kp_pu = (sigma_Ls * BW) * (I_base / V_base) = (sigma_Ls / L_base) * (BW / W_base)
-    parameter_gt kp_pu = (motor->sigma_Ls / pu->L_s_base) * (bw_rad / pu->W_base);
-
-    // Ki_pu = (R_eq * BW) * (I_base / V_base) = (R_eq / Z_s_base) * (BW / W_base) * W_base
-    // Simplified: (R_eq / Z_s_base) * bw_rad. Need to multiply by Ts for T-mode integration
-    parameter_gt ki_pu = (motor->R_eq / pu->Z_s_base) * bw_rad;
-
-    // 3. Decoupling Constants
-    // In PU: Decoupling = omega_e_pu * (sigma_Ls / L_base) * Iq_pu
-    mc->sf_dec_lsigma = float2ctrl(motor->sigma_Ls / pu->L_s_base);
-
-    // Decoupling EMF = omega_e_pu * ((Lm^2/Lr) / L_base) * Imd_pu
-    mc->sf_dec_backemf = float2ctrl(motor->Lm_sq_over_Lr / pu->L_s_base);
-
-    // 4. Limits & Controllers Setup
-    mc->max_vs_mag = float2ctrl((v_phase_limit * 1.4142f) / pu->V_s_base);
-    mc->max_dcbus_voltage = float2ctrl(v_bus / pu->V_s_base);
-
-    ctl_init_pid(&mc->idq_ctrl[phase_d], float2ctrl(kp_pu), float2ctrl(ki_pu), float2ctrl(0.0f), fs_safe);
-    ctl_init_pid(&mc->idq_ctrl[phase_q], float2ctrl(kp_pu), float2ctrl(ki_pu), float2ctrl(0.0f), fs_safe);
-    ctl_set_pid_limit(&mc->idq_ctrl[phase_d], mc->max_vs_mag, -mc->max_vs_mag);
-    ctl_set_pid_int_limit(&mc->idq_ctrl[phase_d], mc->max_vs_mag, -mc->max_vs_mag);
-    ctl_set_pid_limit(&mc->idq_ctrl[phase_q], mc->max_vs_mag, -mc->max_vs_mag);
-    ctl_set_pid_int_limit(&mc->idq_ctrl[phase_q], mc->max_vs_mag, -mc->max_vs_mag);
-
-    // 5. Init Filters
     ctl_init_filter_iir1_lpf(&mc->filter_iuvw[phase_U], fs_safe, fs_safe / 3.0f);
     ctl_init_filter_iir1_lpf(&mc->filter_iuvw[phase_V], fs_safe, fs_safe / 3.0f);
     ctl_init_filter_iir1_lpf(&mc->filter_iuvw[phase_W], fs_safe, fs_safe / 3.0f);
-    ctl_init_filter_iir1_lpf(&mc->filter_udc, fs_safe, fs_safe / 5.0f);
+    ctl_init_filter_iir1_lpf(&mc->filter_udc, fs_safe, fs_safe / 3.0f);
 
-    // 6. Clear States
-    mc->isr_tick = 0;
-    ctl_vector2_clear(&mc->idq_ref);
-    ctl_vector2_clear(&mc->vdq_ctrl_out);
-    ctl_vector2_clear(&mc->vdq_decouple);
-    ctl_vector3_clear(&mc->vdq_out);
-    ctl_vector2_clear(&mc->vdq_out_sat);
+    ctl_init_dq_pi(&mc->idq_ctrl,
+                   motor->sigma_Ls * omega_bw * gain_scale,
+                   motor->R_eq * omega_bw * gain_scale,
+                   motor->sigma_Ls * omega_bw * gain_scale,
+                   motor->R_eq * omega_bw * gain_scale, fs_safe);
+    ctl_enable_dq_pi_feedforward(&mc->idq_ctrl);
+    ctl_enable_dq_pi_circle_limit(&mc->idq_ctrl);
+    ctl_enable_dq_pi_rect_limit(&mc->idq_ctrl);
 
+    voltage_limit_pu = v_phase_limit * 1.41421356237f / pu->V_s_base;
+    ctl_set_im_ifoc_saturation(mc, voltage_limit_pu, voltage_limit_pu);
+    mc->max_dcbus_voltage = float2ctrl(v_bus / pu->V_s_base);
+
+    ff_scale = pu->W_base * pu->I_s_base / pu->V_s_base;
+    mc->sf_dec_lsigma = float2ctrl(motor->sigma_Ls * ff_scale);
+    mc->sf_dec_backemf = float2ctrl(motor->Lm_sq_over_Lr * ff_scale);
+
+    mc->adc_iuvw = NULL;
+    mc->adc_udc = NULL;
+    mc->field_pos_if = NULL;
+    mc->synchronous_spd_if = NULL;
     mc->flag_enable_current_ctrl = 0;
     mc->flag_enable_decouple = 1;
-    mc->flag_enable_bus_compensation = 1;
+    mc->flag_enable_bus_compensation = 0;
+    mc->flag_enable_vdq_feedforward = 0;
+    ctl_vector2_clear(&mc->idq_ref);
+    ctl_vector2_clear(&mc->vdq_ref);
+    ctl_clear_im_ifoc(mc);
+}
+
+//=================================================================================================
+// Raw motor-parameter compatibility initializer
+
+void ctl_autotune_and_init_im_ifoc(im_ifoc_ctrl_t* mc, const im_ifoc_init_t* init)
+{
+    ctl_consultant_im_t motor;
+    ctl_consultant_pu_im_t pu;
+    parameter_gt omega_base;
+    gmp_base_assert(mc && init);
+    omega_base = (init->freq_base > 0.0f)
+                     ? CTL_PARAM_CONST_2PI * init->freq_base
+                     : init->spd_base * 1000.0f * CTL_PARAM_CONST_PI / 30.0f * init->pole_pairs;
+    ctl_consultant_im_init(&motor, (uint32_t)init->pole_pairs, init->mtr_Rs, init->mtr_Rr,
+                           init->mtr_Ls, init->mtr_Lr, init->mtr_Lm);
+    ctl_consultant_pu_im_init(&pu, init->v_base, init->i_base, omega_base,
+                              (uint32_t)init->pole_pairs, 1.0f);
+    ctl_autotune_and_init_im_ifoc_consultant(mc, &motor, &pu, init->fs, init->v_bus,
+                                             init->v_phase_limit, init->current_loop_bw);
 }

@@ -1,13 +1,18 @@
 /**
  * @file im_pos_calc.h
  * @author Javnson (javnson@zju.edu.cn)
- * @brief Implements the Rotor Flux Position & Slip Estimator for ACIM (IFOC).
+ * @brief Implements the rotor-flux position and slip calculator for sensored ACIM IFOC.
  * @details This module computes the slip frequency and electrical synchronous 
- * angle required for Indirect Field-Oriented Control (IFOC) when a physical 
- * speed sensor is available. It utilizes the motor's d-q axis currents and 
- * mechanical speed.
+ * angle required for Indirect Field-Oriented Control (IFOC) when a physical
+ * rotor-speed sensor is available.
+ *
+ * @warning An induction motor has two distinct positions. The encoder reports
+ * mechanical rotor position, while `enc_out` reports synchronous rotor-flux
+ * position. Park/iPark and the current controller must use `enc_out`; attaching
+ * the raw rotor encoder angle to the FOC core is physically incorrect because
+ * it omits slip angle.
  * * * **Core Mathematical Architecture (Per-Unitized):**
- * - **Magnetizing Current LPF:** @f$ i_{md}[k] = i_{md}[k-1] + \frac{T_s}{\tau_r} (i_{sd}[k] - i_{md}[k-1]) @f$
+ * - **Magnetizing Current LPF:** @f$ i_{md}[k] = i_{md}[k-1] + (1-e^{-T_s/\tau_r})(i_{sd}[k]-i_{md}[k-1]) @f$
  * - **Slip Frequency:** @f$ \omega_{slip} = \frac{i_{sq}}{\tau_r \cdot i_{md} \cdot \Omega_{base}} @f$
  * - **Synchronous Frequency:** @f$ \omega_{sync} = \omega_{r\_elec} + \omega_{slip} @f$
  * - **Angle Integration:** @f$ \theta_e[k] = \theta_e[k-1] + \omega_{sync} \cdot \frac{\Omega_{base} T_s}{2\pi} @f$
@@ -50,7 +55,7 @@ typedef struct _tag_im_pos_calc_init_t
 {
     /** * @name Core Scale Factors (Derived from physical PU bases) */
     ///@{
-    parameter_gt sf_lpf_kr;       //!< LPF constant for magnetizing current: @f$ T_s / \tau_r @f$.
+    parameter_gt sf_lpf_kr;       //!< Exact LPF constant: @f$ 1-e^{-T_s/\tau_r} @f$.
     parameter_gt sf_slip_const;   //!< Slip calculation constant: @f$ 1 / (\tau_r \cdot \Omega_{base}) @f$.
     parameter_gt sf_mech_to_elec; //!< Ratio converting PU mechanical speed to PU electrical speed.
     parameter_gt sf_w_to_angle;   //!< Integration constant: @f$ \Omega_{base} T_s / 2\pi @f$.
@@ -66,7 +71,8 @@ typedef struct _tag_im_pos_calc_init_t
 typedef struct _tag_im_pos_calc_t
 {
     // --- Outputs ---
-    rotation_ift enc_out; //!< Output interface providing the estimated synchronous angle.
+    rotation_ift enc_out;       //!< Synchronous rotor-flux position; never the mechanical rotor position.
+    velocity_ift sync_spd_out;  //!< Synchronous electrical speed in PU, paired with `enc_out`.
     ctrl_gt w_slip_pu;    //!< Calculated motor slip speed (PU).
     ctrl_gt w_sync_pu;    //!< Calculated stator electrical (synchronous) frequency (PU).
 
@@ -116,6 +122,7 @@ GMP_STATIC_INLINE void ctl_clear_im_pos_calc(ctl_im_pos_calc_t* calc)
     calc->i_md_pu = float2ctrl(0.0f);
     calc->w_slip_pu = float2ctrl(0.0f);
     calc->w_sync_pu = float2ctrl(0.0f);
+    calc->sync_spd_out.speed = float2ctrl(0.0f);
     calc->enc_out.elec_position = float2ctrl(0.0f);
 }
 
@@ -132,7 +139,9 @@ GMP_STATIC_INLINE void ctl_disable_im_pos_calc(ctl_im_pos_calc_t* calc)
  * @brief Executes one high-frequency step of the IFOC Slip and Angle calculation.
  * @param[in,out] calc          Pointer to the calculator instance.
  * @param[in]     i_sd          Measured d-axis stator current (PU).
- * @param[in]     i_sq          Measured q-axis stator current (PU).
+ * @param[in]     i_sq          q-axis stator current (PU). A limited reference
+ *                              may be used by IFOC to reduce slip-angle noise;
+ *                              measured current is preferred for diagnostics.
  * @param[in]     omega_mech_pu Measured mechanical rotor speed from encoder (PU).
  * @return The newly calculated electrical synchronous angle (PU).
  */
@@ -145,7 +154,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_im_pos_calc(ctl_im_pos_calc_t* calc, ctrl_gt 
     // ========================================================================
     // 1. Magnetizing Current Estimation (Rotor Flux Proxy)
     // ========================================================================
-    // Low-pass filter: i_md[k] = i_md[k-1] + (Ts/tau_r) * (i_sd - i_md[k-1])
+    // Exact discrete LPF: i_md[k] += (1-exp(-Ts/tau_r))*(i_sd-i_md[k]).
     calc->i_md_pu += ctl_mul(calc->sf_lpf_kr, i_sd - calc->i_md_pu);
 
     // ========================================================================
@@ -173,6 +182,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_im_pos_calc(ctl_im_pos_calc_t* calc, ctrl_gt 
 
     // Synchronous speed = Rotor Electrical Speed + Slip
     calc->w_sync_pu = w_r_elec + calc->w_slip_pu;
+    calc->sync_spd_out.speed = calc->w_sync_pu;
 
     // ========================================================================
     // 4. Flux Angle Integration

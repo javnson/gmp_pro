@@ -1,0 +1,53 @@
+{
+  "id": "mcs_acim_nt_simulate",
+  "macro_prefix": "MCS_ACIM_NT_SIMULATE",
+  "display_name": "MCS ACIM NT Windows/Simulink SIL",
+  "description": "Windows SIL bindings for MCS_STD_ACM_MODEL.slx.",
+  "suite": "mcs_acim_nt",
+  "version": "0.1.0",
+  "updated_at": "2026-08-09",
+  "output_header": "sdpe_mcs_acim_nt_simulate_settings.h",
+  "hardware": [{"entity":"acm_4p24v"},{"entity":"ti_boostxl_3phganinv"}],
+  "requirements": [
+    {"role":"Pwm Compare Max","macro":"CTRL_PWM_CMP_MAX","binding":{"literal":"(2500 - 1)"}},
+    {"role":"Pwm Deadband","macro":"CTRL_PWM_DEADBAND_CMP","binding":{"number":"50"}},
+    {"role":"System Frequency","macro":"CTRL_SYS_FREQUENCY","binding":{"literal":"(CONTROLLER_FREQUENCY)"}},
+    {"role":"Adc Voltage Reference","macro":"CTRL_ADC_VOLTAGE_REF","binding":{"float":"3.3"}},
+    {"role":"Dc Bus Voltage Base","macro":"CTRL_DCBUS_VOLTAGE","binding":{"literal":"(MCS_NOMINAL_DC_BUS_VOLTAGE_V)"}},
+    {"role":"Phase Voltage Base","macro":"CTRL_VOLTAGE_BASE","binding":{"literal":"(CTRL_DCBUS_VOLTAGE / 1.73205081f)"}},
+    {"role":"Current Base","macro":"CTRL_CURRENT_BASE","binding":{"float":"10.0"}},
+    {"role":"Encoder Full Scale","macro":"CTRL_POS_ENC_FS","binding":{"number":"16384"}},
+    {"role":"Encoder Bias","macro":"CTRL_POS_ENC_BIAS","binding":{"float":"0.0"}},
+    {"role":"Mechanical Division","macro":"CTRL_MECH_DIV","binding":{"number":"5"}},
+    {"role":"Flux Observer Command Voltage Scale","macro":"MCS_FO_COMMAND_VOLTAGE_SCALE","binding":{"float":"0.5"},"description":"Center-aligned bridge reconstruction: phase voltage equals one half of DC-bus voltage times the centered alpha-beta command."},
+    {"role":"Phase Current Sensitivity","macro":"CTRL_INVERTER_CURRENT_SENSITIVITY","binding":{"literal":"(TI_BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM * TI_BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V)"}},
+    {"role":"Phase Current Bias","macro":"CTRL_INVERTER_CURRENT_BIAS","binding":{"literal":"(TI_BOOSTXL_3PHGANINV_PH_CSA_BIAS_V)"}},
+    {"role":"Phase Voltage Sensitivity","macro":"CTRL_INVERTER_VOLTAGE_SENSITIVITY","binding":{"literal":"(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN)"}},
+    {"role":"Phase Voltage Bias","macro":"CTRL_INVERTER_VOLTAGE_BIAS","binding":{"literal":"(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V)"}},
+    {"role":"Dc Current Sensitivity","macro":"CTRL_DC_CURRENT_SENSITIVITY","binding":{"literal":"(TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_GAIN)"}},
+    {"role":"Dc Current Bias","macro":"CTRL_DC_CURRENT_BIAS","binding":{"literal":"(TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_BIAS_V)"}},
+    {"role":"Dc Voltage Sensitivity","macro":"CTRL_DC_VOLTAGE_SENSITIVITY","binding":{"literal":"(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_GAIN)"}},
+    {"role":"Dc Voltage Bias","macro":"CTRL_DC_VOLTAGE_BIAS","binding":{"literal":"(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_BIAS_V)"}},
+    {"role":"Motor Rs","macro":"MOTOR_PARAM_RS","binding":{"export":"acm_4p24v.rs"}},
+    {"role":"Motor Rr","macro":"MOTOR_PARAM_RR","binding":{"export":"acm_4p24v.rr"}},
+    {"role":"Motor L1s","macro":"MOTOR_PARAM_L1S","binding":{"export":"acm_4p24v.l1s"}},
+    {"role":"Motor L1r","macro":"MOTOR_PARAM_L1R","binding":{"export":"acm_4p24v.l1r"}},
+    {"role":"Motor Lm","macro":"MOTOR_PARAM_LM","binding":{"export":"acm_4p24v.lm"}},
+    {"role":"Motor Pole Pairs","macro":"MOTOR_PARAM_POLE_PAIRS","binding":{"export":"acm_4p24v.pole_pairs"}},
+    {"role":"Motor Rated Frequency","macro":"MOTOR_PARAM_RATED_FREQUENCY","binding":{"export":"acm_4p24v.rated_frequency"}},
+    {"role":"Motor Maximum Speed","macro":"MOTOR_PARAM_MAX_SPEED","binding":{"export":"acm_4p24v.max_speed"}}
+  ],
+  "feature_macros": [],
+  "option_macros": [
+    {"group":"ADC","macro":"MC_CURRENT_SAMPLE_PHASE_MODE","enabled":true,"value":"(3)","options":["(2)","(3)"],"description":"Directly sampled phase-current count."},
+    {"group":"PWM","macro":"PWM_MODULATOR_USING_NEGATIVE_LOGIC","enabled":true,"value":"(0)","options":["(0)","(1)"],"description":"PWM compare polarity. MCS_STD_ACM_MODEL uses positive compare logic; hardware targets must select their own gate-driver polarity."}
+  ],
+  "code_sections": {
+    "after_extern_open": "/* Target-specific controller definitions are emitted from SDPE options. */",
+    "before_footer": "/* No additional simulation-specific tail definitions. */"
+  },
+  "common_requirements": ["../../../sdpe_general/sdpe_requirement.json"],
+  "requirement_groups": [],
+  "feature_macro_groups": [],
+  "option_macro_groups": ["ADC", "PWM"]
+}

@@ -345,8 +345,9 @@ extern "C"
 		//                      = sin(theta)cos(theta_hat) - cos(theta)sin(theta_hat)
 		// Substitute EMF : err = (-E_alpha/|E|)*cos(theta_hat) - (E_beta/|E|)*sin(theta_hat)
 		//
-		// Dropping the |E| magnitude (absorbed by PLL PI gains), the error voltage is:
-		// e_err_voltage  = -E_alpha * cos(theta_hat) - E_beta * sin(theta_hat)
+		// Normalize by |E| so the auto-tuned PLL bandwidth does not vary with
+		// speed or DC-bus voltage. ATO_PLL accepts electrical revolutions, so
+		// the normalized sine phase detector is additionally divided by 2*pi.
 		//
 		// Array Mapping:
 		// e_est.dat[0]  -> E_alpha
@@ -358,6 +359,13 @@ extern "C"
 
 		ctrl_gt e_err_voltage =
 			-ctl_mul(esmo->e_est.dat[0], esmo->phasor.dat[1]) - ctl_mul(esmo->e_est.dat[1], esmo->phasor.dat[0]);
+		ctrl_gt e_mag_sq = ctl_mul(esmo->e_est.dat[0], esmo->e_est.dat[0]) +
+		                       ctl_mul(esmo->e_est.dat[1], esmo->e_est.dat[1]);
+		ctrl_gt e_mag = ctl_sqrt(e_mag_sq);
+		if (e_mag > float2ctrl(0.01f))
+			e_err_voltage = ctl_mul(ctl_div(e_err_voltage, e_mag), CTL_CTRL_CONST_1_OVER_2PI);
+		else
+			e_err_voltage = float2ctrl(0.0f);
 
 
 		// ========================================================================
@@ -379,7 +387,7 @@ extern "C"
 
 		if (esmo->ato_pll.elec_speed_pu < float2ctrl(0.0f))
 		{
-			// 加上 180 度 (在标幺值 PU 下，180 度就是 0.5f)
+			// Add 180 electrical degrees (0.5 turn in angle PU).
 			comp_angle_pu += float2ctrl(0.5f);
 
 			if (esmo->flag_enable_bias)
