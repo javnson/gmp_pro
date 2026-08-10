@@ -20,6 +20,8 @@
 | 有感磁场角计算 | `ctl/component/motor_control/observer/acim_pos_calc.h` | 根据机械速度、`id/iq` 和滑差计算同步磁链角 |
 | 无感磁链观测 | `ctl/component/motor_control/observer/acim_fo.h` | 电流/电压复合磁链、PLL 磁场角、同步速度、滑差和机械速度 |
 | 通用角度 PLL | `ctl/component/motor_control/observer/ato_pll.h` | 由周标幺相位误差输出周标幺角度和速度 |
+| 角度切换 | `ctl/component/motor_control/interface/encoder_switcher.h` | 速度容差、滞环、去抖和相位偏差衰减，不拥有任何观测器 |
+| 启动交接 | `ctl/component/motor_control/interface/sensorless_handover.h` | 组合角度切换与 Id 调度，同步完成 I/F→FO/SMO 或 HFI→SMO 交接 |
 
 这些模块处于同一层级。`imfoc_core` 不包含位置计算器、磁链观测器或 PMSM `foc_core`，更换观测器不会改变电流内核结构。
 
@@ -60,9 +62,13 @@ MSBuild GMP_Motor_Control_simulink.sln /t:Build /p:Configuration=Release /p:Plat
 1. I/F 强制磁化并初始化 PLL；
 2. 到达捕获频率后，电流环仍使用 I/F 磁场角，而 PLL 独立捕获；
 3. 磁链健康、角度和速度连续满足条件后才交接；
-4. 交接后若同步速度失配，锁存失败并退回 I/F，直到控制器重新清零。
+4. 速度判据使用进入/退出两级容差和持续时间去抖，避免噪声造成反复切换；
+5. 切换权重在消除两角度源相位差的同时，把启动 Id 平滑降到闭环 Id；
+6. 交接后若同步速度失配，锁存失败并退回 I/F，直到控制器重新清零。
 
-当前 SIL 已通过 Level 1、Level 2、Level 3 有感和 Level 4 有感验证。无感交接保护已验证，但所提供模型上的交接后闭环尚未通过，因此不能直接用于硬件闭环。详见 [调试记录](doc/commissioning_record_cn.md)。
+ACIM 的闭环 Id 通常不能降为零，因为转子磁链仍需励磁；PMSM 则可把闭环 Id 交给零 Id 或 MTPA 策略。
+
+当前 SIL 已通过 Level 1、Level 2、Level 3 有感和 Level 4 有感验证。无感交接保护已验证，但所提供模型上的交接后闭环尚未通过，因此不能直接用于硬件闭环。F280049C 的隔离 PIL Level 1 已完成实板通信验证；Level 2～4 仍须依次验收。详见 [调试记录](doc/commissioning_record_cn.md)。
 
 ## TI controlSUITE 对照
 
@@ -78,5 +84,6 @@ MSBuild GMP_Motor_Control_simulink.sln /t:Build /p:Configuration=Release /p:Plat
 - 从 `BUILD_LEVEL=1` 开始，不跨级调试。
 - 核对相电压峰值、电流峰值和电气角速度基值。
 - 核对 PWM 命令到相电压的比例 `MCS_FO_COMMAND_VOLTAGE_SCALE`。
+- 命令电压观测必须补偿实际死区和器件压降；实测相电压只有在偏置、增益、极性和延迟校准后才能替代命令重构。
 - 有感模式先确认编码器机械方向，再确认位置计算器磁链角方向。
 - 无感模式必须记录交接前后磁链幅值、磁链角、同步速度、滑差和回退锁存状态。

@@ -7,9 +7,6 @@
   "output_header": "sdpe_mcs_pmsm_id_simulate_settings.h",
   "hardware": [
     {
-      "entity": "tyi_5008_kv335"
-    },
-    {
       "entity": "ti_boostxl_3phganinv"
     }
   ],
@@ -50,7 +47,7 @@
       "role": "Dc Bus Voltage Base",
       "macro": "CTRL_DCBUS_VOLTAGE",
       "binding": {
-        "float": "80.0"
+        "float": "24.0"
       },
       "description": "Configured DC-bus voltage base."
     },
@@ -98,65 +95,65 @@
       "role": "Phase Current Sensitivity",
       "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
       "binding": {
-        "literal": "(MY_BOARD_PH_SHUNT_RESISTANCE_OHM * MY_BOARD_PH_CSA_GAIN_V_V)"
+        "float": "0.1"
       },
-      "description": "Phase-current sensor sensitivity in volts per ampere."
+      "description": "Match the simulation ADC current path: 5 mOhm shunt times 20 V/V gain."
     },
     {
       "role": "Phase Current Bias",
       "macro": "CTRL_INVERTER_CURRENT_BIAS",
       "binding": {
-        "literal": "(MY_BOARD_PH_CSA_BIAS_V)"
+        "float": "1.65"
       },
-      "description": "Phase-current sensor zero-current bias in volts."
+      "description": "Match the 1.65 V zero-current bias configured in MCS_STD_PMSM_MODEL.slx."
     },
     {
       "role": "Phase Voltage Sensitivity",
       "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
       "binding": {
-        "literal": "(MY_BOARD_PH_VOLTAGE_SENSE_GAIN)"
+        "float": "0.04049127"
       },
-      "description": "Phase-voltage sensing gain in ADC volts per measured volt."
+      "description": "Match the phase-voltage gain configured in MCS_STD_PMSM_MODEL.slx."
     },
     {
       "role": "Phase Voltage Bias",
       "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
       "binding": {
-        "literal": "(MY_BOARD_PH_VOLTAGE_SENSE_BIAS_V)"
+        "float": "0.0"
       },
-      "description": "Phase-voltage sensor bias in volts."
+      "description": "The simulation phase-voltage path has zero bias."
     },
     {
       "role": "Dc Current Sensitivity",
       "macro": "CTRL_DC_CURRENT_SENSITIVITY",
       "binding": {
-        "literal": "(MY_BOARD_DCBUS_CURRENT_SENSE_GAIN)"
+        "float": "1.0"
       },
-      "description": "DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path."
+      "description": "Unity placeholder for the unused simulation DC-current path."
     },
     {
       "role": "Dc Current Bias",
       "macro": "CTRL_DC_CURRENT_BIAS",
       "binding": {
-        "literal": "(MY_BOARD_DCBUS_CURRENT_SENSE_BIAS_V)"
+        "float": "0.0"
       },
-      "description": "DC-bus current sensor bias."
+      "description": "The unused simulation DC-current path has zero bias."
     },
     {
       "role": "Dc Voltage Sensitivity",
       "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
       "binding": {
-        "literal": "(MY_BOARD_DCBUS_VOLTAGE_SENSE_GAIN)"
+        "float": "0.04049127"
       },
-      "description": "DC-bus voltage sensing gain in ADC volts per measured volt."
+      "description": "Match the DC-bus voltage gain configured in MCS_STD_PMSM_MODEL.slx."
     },
     {
       "role": "Dc Voltage Bias",
       "macro": "CTRL_DC_VOLTAGE_BIAS",
       "binding": {
-        "literal": "(MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)"
+        "float": "0.0"
       },
-      "description": "DC-bus voltage sensor bias in volts."
+      "description": "The simulation DC-bus voltage path has zero bias."
     },
     {
       "role": "Motor Type",
@@ -164,9 +161,9 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "tyi_5008_kv335.motor_type"
+        "literal": "(PMSM_MOTOR)"
       },
-      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+      "description": "Match the PMSM type configured in MCS_STD_PMSM_MODEL.slx."
     },
     {
       "role": "Motor Stator Resistance",
@@ -174,9 +171,9 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "tyi_5008_kv335.rs"
+        "float": "4.7"
       },
-      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+      "description": "Match the per-phase resistance configured in the Simulink PMSM block."
     },
     {
       "role": "Motor Stator Inductance",
@@ -184,9 +181,9 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "tyi_5008_kv335.ld"
+        "float": "8.5e-3"
       },
-      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+      "description": "Match the per-phase inductance configured in the Simulink PMSM block."
     },
     {
       "role": "Motor D-axis Inductance",
@@ -194,9 +191,9 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "tyi_5008_kv335.ld"
+        "float": "8.5e-3"
       },
-      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+      "description": "Match the d-axis inductance configured in the Simulink PMSM block."
     },
     {
       "role": "Motor Q-axis Inductance",
@@ -204,9 +201,9 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "tyi_5008_kv335.lq"
+        "float": "8.5e-3"
       },
-      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+      "description": "Match the q-axis inductance configured in the Simulink PMSM block."
     },
     {
       "role": "Motor Flux Linkage",
@@ -214,9 +211,9 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "tyi_5008_kv335.flux"
+        "float": "0.0038197"
       },
-      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+      "description": "Match the flux linkage configured in the Simulink PMSM block."
     },
     {
       "role": "Motor Pole Pairs",
@@ -224,9 +221,9 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "tyi_5008_kv335.pole_pairs"
+        "number": "4"
       },
-      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+      "description": "Match the pole-pair count configured in the Simulink PMSM block."
     },
     {
       "role": "Motor Velocity Constant",
@@ -234,9 +231,9 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "tyi_5008_kv335.kv"
+        "float": "206.2"
       },
-      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+      "description": "Velocity constant corresponding to the Simulink PMSM mask."
     },
     {
       "role": "Motor Back EMF",
@@ -244,9 +241,9 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "tyi_5008_kv335.emf"
+        "literal": "(1000.0f / 206.2f)"
       },
-      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+      "description": "Line-line peak back-EMF constant configured in the Simulink PMSM mask."
     },
     {
       "role": "Motor Rated Voltage",
@@ -254,9 +251,9 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "tyi_5008_kv335.rated_voltage"
+        "literal": "(24.0f / 1.73205081f)"
       },
-      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+      "description": "Available phase-voltage limit for the 24 V simulated DC bus."
     },
     {
       "role": "Motor No-load Current",
@@ -264,9 +261,9 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "tyi_5008_kv335.no_load_current"
+        "float": "0.0"
       },
-      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+      "description": "No-load current default for the idealized Simulink plant."
     },
     {
       "role": "Motor Rated Frequency",
@@ -274,9 +271,9 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "tyi_5008_kv335.rated_frequency"
+        "float": "200.0"
       },
-      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+      "description": "Electrical base frequency at 3000 rpm and four pole pairs."
     },
     {
       "role": "Motor Maximum Speed",
@@ -284,9 +281,9 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "tyi_5008_kv335.max_speed"
+        "float": "3000.0"
       },
-      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+      "description": "Mechanical speed base used by the simulated encoder and controller."
     },
     {
       "role": "Motor Maximum Torque",
@@ -294,9 +291,9 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "tyi_5008_kv335.max_torque"
+        "float": "0.2"
       },
-      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+      "description": "Conservative torque limit for the small simulated PMSM."
     },
     {
       "role": "Motor Maximum DC Voltage",
@@ -304,9 +301,9 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "tyi_5008_kv335.max_dc_voltage"
+        "float": "24.0"
       },
-      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+      "description": "DC-bus voltage configured by the model source."
     },
     {
       "role": "Motor Maximum Phase Current",
@@ -314,9 +311,9 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "tyi_5008_kv335.max_ph_current"
+        "float": "10.0"
       },
-      "description": "Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract."
+      "description": "Phase-current base and conservative simulated current limit."
     },
     {
       "role": "Controller Frequency",

@@ -579,11 +579,10 @@ void ctl_loop_oid_ldq(ctl_pmsm_offline_id_t* ctx)
             // All arrays are already filled with PU inductances!
             // We just need to do physical base conversion.
             parameter_gt Z_base = ctx->identified_pu.V_base / ctx->identified_pu.I_base;
-            parameter_gt L_base = Z_base / ctx->identified_pu.W_base;
 
-            // Store Nominal L (at 0A bias, i.e., index 0)
-            ctx->pmsm_param.Ld = sub->ld_array[0] * L_base / 2.0f;
-            ctx->pmsm_param.Lq = sub->lq_array[0] * L_base / 2.0f;
+            // The fitted tau is already in seconds: L = tau * R.
+            ctx->pmsm_param.Ld = sub->ld_array[0] * Z_base / 2.0f;
+            ctx->pmsm_param.Lq = sub->lq_array[0] * Z_base / 2.0f;
 
             ctx->pmsm_param.saliency_ratio = ctx->pmsm_param.Lq / ctx->pmsm_param.Ld;
             ctx->pmsm_param.is_ipm = (ctx->pmsm_param.saliency_ratio > 1.05f) ? 1 : 0;
@@ -771,6 +770,12 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
         break;
 
     case PMSM_ID_FLUX_RAMP_SPEED: {
+        // Set the target idempotently in the background state. On tightly
+        // coupled SIL scheduling, the loop may observe and consume the
+        // sequencer FIRST_ENTRY before the next ISR can update the target.
+        sub->target_w_pu = float2ctrl(cfg->min_target_speed_pu +
+                                          sub->step_idx * sub->step_size_pu);
+        ctl_id_set_vf_target_speed(ctx, sub->target_w_pu);
         ctrl_gt err = sub->target_w_pu - ctx->vf_gen.current_freq_pu;
         if (err < float2ctrl(0.001f) && err > float2ctrl(-0.001f))
         {
@@ -873,8 +878,11 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
                 }
 
                 // 计算真实的电枢电压
-                parameter_gt ud_real = ud - ud_comp;
-                parameter_gt uq_real = uq - uq_comp;
+                // Rs/DT records the two-phase voltage convention and divides
+                // by two when publishing phase resistance. Convert the measured
+                // voltage to the same phase convention used by physical Rs/L.
+                parameter_gt ud_real = 0.5f * (ud - ud_comp);
+                parameter_gt uq_real = 0.5f * (uq - uq_comp);
 
                 // 使用真实电压计算反电势
                 parameter_gt ed = ud_real - (rs_pu * id) + (w * lq_pu * iq);

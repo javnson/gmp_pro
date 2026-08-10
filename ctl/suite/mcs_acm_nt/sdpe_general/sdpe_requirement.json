@@ -9,8 +9,8 @@
   "output_header": "sdpe_mcs_acim_nt_common_settings.h",
   "hardware": [],
   "code_sections": {
-    "after_extern_open": "#define MCS_ACIM_FEEDBACK_SENSORED (1)\n#define MCS_ACIM_FEEDBACK_SENSORLESS (2)",
-    "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 4)\n#error \"BUILD_LEVEL must be in the range 1..4.\"\n#endif\n#if (MCS_ACIM_FEEDBACK_MODE != MCS_ACIM_FEEDBACK_SENSORED) && (MCS_ACIM_FEEDBACK_MODE != MCS_ACIM_FEEDBACK_SENSORLESS)\n#error \"MCS_ACIM_FEEDBACK_MODE must select sensored or sensorless feedback.\"\n#endif"
+    "after_extern_open": "#define MCS_ACIM_FEEDBACK_SENSORED (1)\n#define MCS_ACIM_FEEDBACK_SENSORLESS (2)\n#define MCS_FO_VOLTAGE_FROM_COMMAND (1)\n#define MCS_FO_VOLTAGE_FROM_MEASUREMENT (2)",
+    "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 4)\n#error \"BUILD_LEVEL must be in the range 1..4.\"\n#endif\n#if (MCS_ACIM_FEEDBACK_MODE != MCS_ACIM_FEEDBACK_SENSORED) && (MCS_ACIM_FEEDBACK_MODE != MCS_ACIM_FEEDBACK_SENSORLESS)\n#error \"MCS_ACIM_FEEDBACK_MODE must select sensored or sensorless feedback.\"\n#endif\n#if (MCS_FO_VOLTAGE_SOURCE != MCS_FO_VOLTAGE_FROM_COMMAND) && (MCS_FO_VOLTAGE_SOURCE != MCS_FO_VOLTAGE_FROM_MEASUREMENT)\n#error \"MCS_FO_VOLTAGE_SOURCE must select command reconstruction or phase-voltage measurement.\"\n#endif"
   },
   "feature_macros": [
     {
@@ -20,6 +20,14 @@
       "weak": false,
       "value": "",
       "description": "Apply ACIM-specific cross-coupling through the generic FOC feedforward port."
+    },
+    {
+      "group": "Control Algorithm",
+      "macro": "ENABLE_PWM_DEADTIME_COMPENSATION",
+      "enabled": false,
+      "weak": true,
+      "value": "",
+      "description": "Enable current-polarity PWM compare compensation for physical inverter dead time. Keep disabled for an ideal SIL bridge; identify the required count and current polarity on hardware."
     },
     {
       "group": "Protection",
@@ -48,6 +56,15 @@
       "value": "MCS_ACIM_FEEDBACK_SENSORED",
       "options": ["MCS_ACIM_FEEDBACK_SENSORED", "MCS_ACIM_FEEDBACK_SENSORLESS"],
       "description": "Select speed-feedback IFOC or the voltage/current flux observer."
+    },
+    {
+      "group": "Controller Options",
+      "macro": "MCS_FO_VOLTAGE_SOURCE",
+      "enabled": true,
+      "weak": true,
+      "value": "MCS_FO_VOLTAGE_FROM_COMMAND",
+      "options": ["MCS_FO_VOLTAGE_FROM_COMMAND", "MCS_FO_VOLTAGE_FROM_MEASUREMENT"],
+      "description": "Select pre-dead-time controller command reconstruction or sampled phase voltage for the ACIM voltage model."
     }
   ],
   "requirements": [
@@ -70,7 +87,11 @@
     {"role":"Open Loop Frequency Slope","macro":"MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S","binding":{"float":"20.0"}},
     {"role":"Open Loop Vd","macro":"MCS_OPEN_LOOP_VD_REF_V","binding":{"float":"0.0"},"description":"Optional constant d-axis voltage boost for BUILD_LEVEL 1, in volts."},
     {"role":"Open Loop Vq","macro":"MCS_OPEN_LOOP_VQ_REF_V","binding":{"float":"6.0"},"description":"BUILD_LEVEL 1 q-axis voltage at MCS_OPEN_LOOP_FREQ_HZ. Runtime command is ramped proportionally with frequency (V/f)."},
-    {"role":"Commissioning Id","macro":"MCS_COMMISSIONING_ID_REF_A","binding":{"float":"3.0"}},
+    {"role":"Commissioning Id","macro":"MCS_COMMISSIONING_ID_REF_A","binding":{"float":"3.0"},"description":"Closed-loop ACIM magnetizing-current reference; unlike PMSM this normally must remain nonzero."},
+    {"role":"Sensorless Startup Id","macro":"MCS_SENSORLESS_STARTUP_ID_REF_A","binding":{"float":"4.0"},"description":"High I/F startup excitation current before the observer is sufficiently observable."},
+    {"role":"Sensorless Handover Id","macro":"MCS_SENSORLESS_HANDOVER_ID_REF_A","binding":{"float":"3.0"},"description":"I/F excitation reached at the angle-handover speed."},
+    {"role":"Startup Id Fade Start","macro":"MCS_STARTUP_ID_FADE_START_HZ","binding":{"float":"5.0"},"description":"Absolute I/F electrical frequency where startup Id begins to decrease."},
+    {"role":"Startup Id Fade End","macro":"MCS_STARTUP_ID_FADE_END_HZ","binding":{"float":"25.0"},"description":"Absolute I/F electrical frequency where startup Id reaches the handover value."},
     {"role":"Commissioning Iq","macro":"MCS_COMMISSIONING_IQ_REF_A","binding":{"float":"1.0"}},
     {"role":"Commissioning Speed","macro":"MCS_COMMISSIONING_SPEED_REF_RPM","binding":{"float":"300.0"}},
     {"role":"Magnetizing Time","macro":"MCS_MAGNETIZING_TIME_MS","binding":{"float":"300.0"}},
@@ -92,7 +113,9 @@
     {"role":"Sensorless Handover Frequency","macro":"MCS_FO_HANDOVER_FREQ_HZ","binding":{"float":"25.0"},"description":"Minimum I/F electrical frequency before a qualified flux observer may take ownership of field angle. Keep this well above MCS_FO_COMP_BW_HZ so the voltage model has directional authority."},
     {"role":"Sensorless Handover Angle Error","macro":"MCS_FO_HANDOVER_ANGLE_ERR_PU","binding":{"float":"0.08"},"description":"Maximum wrapped angle mismatch in electrical-turn PU (1 pu = 360 degrees)."},
     {"role":"Sensorless Handover Speed Error","macro":"MCS_FO_HANDOVER_SPEED_ERR_PU","binding":{"float":"0.10"},"description":"Maximum observer-versus-I/F synchronous-speed mismatch in PU before the enforced startup synchronization is applied."},
+    {"role":"Sensorless Handover Speed Exit Error","macro":"MCS_FO_HANDOVER_SPEED_EXIT_ERR_PU","binding":{"float":"0.15"},"description":"Larger speed mismatch that resets handover qualification; the gap above the enter tolerance is noise hysteresis."},
     {"role":"Sensorless Handover Debounce","macro":"MCS_FO_HANDOVER_DEBOUNCE_MS","binding":{"float":"100.0"},"description":"Continuous qualification time before the sensorless field-angle handover."},
+    {"role":"Sensorless Handover Transition","macro":"MCS_FO_HANDOVER_TRANSITION_MS","binding":{"float":"100.0"},"description":"Time used to decay captured angle offset and synchronously blend startup Id to closed-loop Id."},
     {"role":"Sensorless Loss Speed Error","macro":"MCS_FO_LOSS_SPEED_ERR_PU","binding":{"float":"0.15"},"description":"Maximum post-handover synchronous-speed deviation from the continuing I/F reference before fallback qualification."},
     {"role":"Sensorless Loss Debounce","macro":"MCS_FO_LOSS_DEBOUNCE_MS","binding":{"float":"20.0"},"description":"Post-handover observer-loss debounce time. A confirmed loss latches I/F fallback until controllers are cleared."},
     {"role":"Maximum DC Bus Voltage","macro":"MCS_MAX_DC_BUS_VOLTAGE_V","binding":{"literal":"(MCS_NOMINAL_DC_BUS_VOLTAGE_V * 1.2f)"}},

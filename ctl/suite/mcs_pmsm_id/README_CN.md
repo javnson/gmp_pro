@@ -8,6 +8,41 @@
 
 开发者可以通过 `BUILD_LEVEL` 宏进行底层逻辑的增量调试，也可以通过上层接口一键启动参数辨识。
 
+## PC 仿真 / SIL 联调入口
+
+`project/simulate` 现在提供两条使用同一个 Windows 原生控制器 EXE、同一套 200/264 字节 UDP ABI 的联调链路：
+
+- **快速平均值 SIL**：用于每天完整跑通 READY → Rs/死区 → Ld/Lq → 磁链 → COMPLETE，约 3 秒仿真时间可在数秒内完成。
+- **Simulink 详细开关模型**：保留 20 kHz PWM、1 us 死区、MOSFET/二极管压降和连续机械模型，用于最终波形与死区相关性确认。
+
+在 PowerShell 中进入 `project/simulate` 后，快速回归只需：
+
+```powershell
+python .\run_pmsm_id_sil_fast.py --build
+```
+
+脚本会生成 `pmsm_id_sil_fast_result.json` 和 `pmsm_id_sil_fast_trace.csv`。当前仿真模型真值及 2026-08-10 回归结果如下：
+
+| 参数 | 模型真值 | SIL 结果 | 相对误差 |
+| --- | ---: | ---: | ---: |
+| Rs | 4.7 Ω | 4.79042 Ω | +1.92% |
+| Ld | 8.5 mH | 8.39169 mH | -1.27% |
+| Lq | 8.5 mH | 8.56327 mH | +0.74% |
+| 磁链 | 3.8197 mWb | 3.73800 mWb | -2.14% |
+| 等效死区补偿 | 1.312 V | 1.32268 V | +0.81% |
+
+详细模型由 MATLAB 调用：
+
+```matlab
+cd(fullfile(getenv('GMP_PRO_LOCATION'), 'ctl', 'suite', 'mcs_pmsm_id', 'project', 'simulate'));
+result = run_pmsm_id_sil('StopTime', 0.35, 'Build', true, ...
+    'SimulationMode', 'accelerator', 'PlantSampleTime', 1e-5, 'Plot', false);
+```
+
+上面的 0.35 s 冒烟回归会稳定进入 `PMSM_OFFLINE_ID_RS_DT (4)`。日常参数回归建议使用快速 SIL；最终死区验证应将 `PlantSampleTime` 改为 `1e-6`，并预留较长运行时间。详细模型的 10 us 快速模式无法解析 1 us 死区，脚本会明确提示这一点。
+
+16 个 SIL monitor 通道依次为：OID 主状态、Rs、Ld、Lq、磁链、死区补偿电压、Rs 子状态、Ld/Lq 子状态、磁链子状态、id、iq、vd、vq、速度、udc、系统运行标志。控制器侧状态变化同时记录在 `pmsm_id_sil_state.log`。
+
 
 
 ---

@@ -347,10 +347,6 @@
         },
         {
             "root": "ctl",
-            "module": "component|motor_control|current_loop|imfoc"
-        },
-        {
-            "root": "ctl",
             "module": "component|motor_control|current_loop|pmsm_dbptc"
         },
         {

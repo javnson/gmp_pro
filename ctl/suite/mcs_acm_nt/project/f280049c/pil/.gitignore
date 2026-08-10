@@ -1,0 +1,7 @@
+# MATLAB/Simulink generated cache files.
+slprj/
+*.slxc
+network.json
+results/
+bridge_*.csv
+bridge_*.log

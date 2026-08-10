@@ -30,12 +30,11 @@ ctrl_gt acim_sync_speed_pu;
 ctrl_gt acim_magnetizing_current_pu;
 ctrl_gt acim_open_loop_vq_per_freq_pu;
 uint32_t acim_magnetizing_ticks;
-rotation_ift acim_field_pos_if;
-velocity_ift acim_field_spd_if;
+velocity_ift acim_if_field_spd;
+ctl_sensorless_handover_t acim_handover;
 fast_gt acim_sensorless_handover;
 fast_gt acim_sensorless_observer_released;
 fast_gt acim_sensorless_fault_latched;
-uint32_t acim_sensorless_handover_ticks;
 uint32_t acim_sensorless_loss_ticks;
 
 //=================================================================================================
@@ -66,6 +65,9 @@ void ctl_init(void)
     ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &mtr_ctrl.iuvw,
                             float2ctrl(MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A / CTRL_CURRENT_BASE),
                             float2ctrl(MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A / CTRL_CURRENT_BASE));
+#ifdef ENABLE_PWM_DEADTIME_COMPENSATION
+    ctl_enable_spwm_deadtime_compensation(&spwm);
+#endif
     ctl_init_const_slope_f_pu_controller(&rg, MCS_OPEN_LOOP_FREQ_HZ, MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S,
                                          CTRL_SPEED_RPM_BASE / 1000.0f, MOTOR_PARAM_POLE_PAIRS,
                                          CONTROLLER_FREQUENCY);
@@ -81,6 +83,20 @@ void ctl_init(void)
     ctl_init_im_fo_consultant(&acim_fo, &acim_motor, &acim_pu, CONTROLLER_FREQUENCY,
                               MCS_FO_COMP_BW_HZ, MCS_FO_ATO_BW_HZ, MCS_FO_FAULT_TIME_MS);
     ctl_set_im_fo_voltage_model_leak(&acim_fo, MCS_FO_VM_LEAK_HZ, CONTROLLER_FREQUENCY);
+
+    ctl_init_sensorless_handover(
+        &acim_handover, MCS_FO_HANDOVER_TRANSITION_MS / 1000.0f, CONTROLLER_FREQUENCY,
+        float2ctrl(MCS_SENSORLESS_STARTUP_ID_REF_A / CTRL_CURRENT_BASE),
+        float2ctrl(MCS_SENSORLESS_HANDOVER_ID_REF_A / CTRL_CURRENT_BASE),
+        float2ctrl(MCS_COMMISSIONING_ID_REF_A / CTRL_CURRENT_BASE),
+        float2ctrl(MCS_STARTUP_ID_FADE_START_HZ / MOTOR_PARAM_RATED_FREQUENCY),
+        float2ctrl(MCS_STARTUP_ID_FADE_END_HZ / MOTOR_PARAM_RATED_FREQUENCY));
+    ctl_attach_sensorless_handover(&acim_handover, &rg.enc, &acim_if_field_spd,
+                                   &acim_fo.pos_out, &acim_fo.sync_spd_out);
+    ctl_configure_sensorless_handover_speed_qualification(
+        &acim_handover, MCS_FO_HANDOVER_SPEED_ERR_PU,
+        MCS_FO_HANDOVER_SPEED_EXIT_ERR_PU,
+        MCS_FO_HANDOVER_DEBOUNCE_MS / 1000.0f, CONTROLLER_FREQUENCY);
 
     mech_init.fs = CONTROLLER_FREQUENCY;
     mech_init.pos_kp = MCS_MECH_POSITION_KP_PU;
@@ -105,7 +121,8 @@ void ctl_init(void)
 #else
     ctl_enable_im_fo(&acim_fo);
     ctl_attach_im_ifoc_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port,
-                            &acim_field_pos_if, &acim_field_spd_if);
+                            ctl_get_sensorless_handover_position(&acim_handover),
+                            ctl_get_sensorless_handover_speed(&acim_handover));
     ctl_attach_mech_ctrl(&mech_ctrl, &acim_fo.rotor_pos_out, &acim_fo.spd_out);
 #endif
 
@@ -162,12 +179,11 @@ void clear_all_controllers(void)
     acim_sync_speed_pu = float2ctrl(0.0f);
     acim_magnetizing_current_pu = float2ctrl(0.0f);
     acim_magnetizing_ticks = 0;
-    acim_field_pos_if.elec_position = float2ctrl(0.0f);
-    acim_field_spd_if.speed = float2ctrl(0.0f);
+    acim_if_field_spd.speed = float2ctrl(0.0f);
+    ctl_clear_sensorless_handover(&acim_handover);
     acim_sensorless_handover = 0;
     acim_sensorless_observer_released = 0;
     acim_sensorless_fault_latched = 0;
-    acim_sensorless_handover_ticks = 0;
     acim_sensorless_loss_ticks = 0;
 }
 
@@ -178,8 +194,66 @@ fast_gt ctl_exec_adc_calibration(void) { return 1; }
 //=================================================================================================
 // PIL transport hook
 
+#if defined ENABLE_GMP_DL_PIL_SIM
+/** @brief Apply one SDPE-mapped ACIM PIL sample to the controller ports. */
+static void ctl_apply_pil_input(const gmp_sim_rx_buf_t* rx)
+{
+    uuvw_src[phase_U] = rx->adc_result[GMP_PIL_RX_ADC_UU_INDEX];
+    uuvw_src[phase_V] = rx->adc_result[GMP_PIL_RX_ADC_UV_INDEX];
+    uuvw_src[phase_W] = rx->adc_result[GMP_PIL_RX_ADC_UW_INDEX];
+    iuvw_src[phase_U] = rx->adc_result[GMP_PIL_RX_ADC_IU_INDEX];
+    iuvw_src[phase_V] = rx->adc_result[GMP_PIL_RX_ADC_IV_INDEX];
+    iuvw_src[phase_W] = rx->adc_result[GMP_PIL_RX_ADC_IW_INDEX];
+    udc_src = rx->adc_result[GMP_PIL_RX_ADC_UDC_INDEX];
+
+    ctl_step_autoturn_pos_encoder(&pos_enc, rx->digital_input);
+    ctl_step_tri_ptr_adc_channel(&iuvw);
+    ctl_step_tri_ptr_adc_channel(&uuvw);
+    ctl_step_ptr_adc_channel(&idc);
+    ctl_step_ptr_adc_channel(&udc);
+}
+
+/** @brief Export ACIM control results through the shared SIL/PIL ABI. */
+static void ctl_collect_pil_output(gmp_sim_tx_buf_t* tx)
+{
+    tx->pwm_cmp[GMP_PIL_TX_PWM_U_INDEX] = spwm.pwm_out[phase_U];
+    tx->pwm_cmp[GMP_PIL_TX_PWM_V_INDEX] = spwm.pwm_out[phase_V];
+    tx->pwm_cmp[GMP_PIL_TX_PWM_W_INDEX] = spwm.pwm_out[phase_W];
+    tx->monitor[GMP_PIL_TX_MONITOR_IU_INDEX] = mtr_ctrl.iuvw.dat[phase_U];
+    tx->monitor[GMP_PIL_TX_MONITOR_IV_INDEX] = mtr_ctrl.iuvw.dat[phase_V];
+    tx->monitor[GMP_PIL_TX_MONITOR_ID_INDEX] = mtr_ctrl.idq0.dat[phase_d];
+    tx->monitor[GMP_PIL_TX_MONITOR_IQ_INDEX] = mtr_ctrl.idq0.dat[phase_q];
+    tx->monitor[GMP_PIL_TX_MONITOR_POSITION_INDEX] = mtr_ctrl.field_pos_if->elec_position;
+    tx->monitor[GMP_PIL_TX_MONITOR_SPEED_INDEX] = spd_enc.encif.speed;
+}
+#endif
+
 void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
 {
+#if defined ENABLE_GMP_DL_PIL_SIM
+    ctl_apply_pil_input(rx);
+    ctl_dispatch();
+    ctl_collect_pil_output(tx);
+#else
     GMP_UNUSED_VAR(rx);
     GMP_UNUSED_VAR(tx);
+#endif
 }
+
+#if defined ENABLE_GMP_DL_PIL_SIM
+time_gt gmp_base_get_ctrl_tick(void)
+{
+    return mtr_ctrl.isr_tick / ((uint32_t)CONTROLLER_FREQUENCY / 1000U);
+}
+#endif
+
+#if !defined SPECIFY_PC_ENVIRONMENT
+/** @brief Expose field-oriented ACIM commissioning signals to Data Link Scope. */
+void user_get_scope_channels(ctrl_gt channels[4])
+{
+    channels[0] = mtr_ctrl.idq_ref.dat[phase_d];
+    channels[1] = mtr_ctrl.idq0.dat[phase_d];
+    channels[2] = mtr_ctrl.idq_ref.dat[phase_q];
+    channels[3] = mtr_ctrl.idq0.dat[phase_q];
+}
+#endif

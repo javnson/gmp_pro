@@ -790,6 +790,10 @@ static void mdlStart(SimStruct* S)
         return;
     }
 
+    // Simulink may evaluate mdlOutputs repeatedly at minor solver steps.  Keep
+    // the cached output deterministic until the first real controller step.
+    memset(recvBuffer, 0, desired_unpacked_width);
+
     ssSetPWorkValue(S, 1, tranBuffer);
     ssSetPWorkValue(S, 2, recvBuffer);
 
@@ -962,6 +966,21 @@ static void mdlOutputs(SimStruct* S, int_T tid)
 
     uint8_T* tranBuffer = (uint8_T*)ssGetPWorkValue(S, 1);
     uint8_T* recvBuffer = (uint8_T*)ssGetPWorkValue(S, 2);
+
+    // UDP exchange advances the remote controller and is therefore stateful.
+    // Variable-step solvers can call mdlOutputs several times at minor steps;
+    // reusing the last target response there prevents one plant sample from
+    // executing several target control ticks.
+    if (!ssIsMajorTimeStep(S))
+    {
+        for (j = 0; j < unpacked_ports; j++)
+        {
+            memcpy((void*)ssGetOutputPortSignal(S, j),
+                   (const void*)((const uint8_T*)recvBuffer + ssGetIWorkValue(S, unpacked_ports + j)),
+                   ssGetIWorkValue(S, j));
+        }
+        return;
+    }
 
     // Get transmit(input, pack) data
     //

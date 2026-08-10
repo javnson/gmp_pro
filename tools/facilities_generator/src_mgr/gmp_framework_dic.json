@@ -1195,7 +1195,9 @@
                     "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/encoder.h",
                     "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/motor_universal_interface.h",
                     "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/std_sil_motor_interface.h",
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/encoder_switcher.h"
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/encoder_switcher.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/startup_excitation.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/sensorless_handover.h"
                 ],
                 "depends_on": [],
                 "inc_dirs": [

@@ -96,6 +96,18 @@ GMP_STATIC_INLINE void ctl_clear_spwm_modulator(spwm_modulator_t* mod)
 void ctl_init_spwm_modulator(spwm_modulator_t* mod, pwm_gt pwm_full_scale, pwm_gt pwm_deadband_comp_val,
                              ctl_vector3_t* iuvw, ctrl_gt current_deadband, ctrl_gt current_hysteresis);
 
+/** Enable current-polarity dead-time compensation in the compare output. */
+GMP_STATIC_INLINE void ctl_enable_spwm_deadtime_compensation(spwm_modulator_t* mod)
+{
+    mod->flag_enable_deadband_compensator = 1;
+}
+
+/** Disable current-polarity dead-time compensation in the compare output. */
+GMP_STATIC_INLINE void ctl_disable_spwm_deadtime_compensation(spwm_modulator_t* mod)
+{
+    mod->flag_enable_deadband_compensator = 0;
+}
+
 /**
  * @brief Executes one step of the three-phase modulation algorithm.
  * @ingroup CTL_TP_MODULATION_API

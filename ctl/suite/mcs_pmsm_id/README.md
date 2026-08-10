@@ -16,6 +16,19 @@ The shared implementation is centered on `src/`, including the `pmsm_offline_id_
 
 Parameter identification can deliberately energize or rotate the motor. Verify current scaling, phase order, protection limits, rotor freedom, and emergency-stop behavior at a low build level before starting an identification sequence. The [Chinese guide](README_CN.md) documents the state flow, parameters, and detailed operating procedure.
 
+## PC SIL workflow
+
+The simulation target now has two complementary runners that use the same native controller executable and packed UDP ABI:
+
+```powershell
+cd ctl\suite\mcs_pmsm_id\project\simulate
+python .\run_pmsm_id_sil_fast.py --build
+```
+
+The averaged-plant runner completes the full identification state machine in a few seconds and writes JSON/CSV results. The 2026-08-10 regression reached `COMPLETE (8)` at 2.69505 simulated seconds with errors of +1.92% Rs, -1.27% Ld, +0.74% Lq, -2.14% flux linkage, and +0.81% equivalent dead-time voltage.
+
+Use `run_pmsm_id_sil.m` for the detailed Simulink switching plant. A 0.35 s, 10 us accelerator smoke run enters the Rs/dead-time state without a protection fault. Use a 1 us plant step for final correlation of the model's 1 us inverter dead time; this high-fidelity path is intentionally much slower. See the [Chinese guide](README_CN.md) for commands, monitor-channel mapping, and model truth values.
+
 ## Equal-bandwidth DQ-PI and DQ-LADRC1 simulation record (2026-08-08)
 
 The FOC current loop uses DQ-PI by default. Uncomment `#define ENABLE_FOC_LADRC_CTRL` in `foc_core.h`, or define the same compiler macro, to select DQ-LADRC1. Both selections use `ctl_auto_tuning_foc_core()` and `ctl_init_foc_core()`.

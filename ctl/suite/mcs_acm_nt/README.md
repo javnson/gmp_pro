@@ -14,6 +14,8 @@ The central interface rule is that shaft position/speed belong to the mechanical
 | `observer/acim_pos_calc.h` | Sensored slip and synchronous rotor-flux angle calculation |
 | `observer/acim_fo.h` | Composite flux observer, PLL field angle, slip, and mechanical-speed estimate |
 | `observer/ato_pll.h` | Shared turns-PU angle-tracking PLL |
+| `interface/encoder_switcher.h` | Observer-agnostic angle transfer with speed hysteresis and debounce |
+| `interface/sensorless_handover.h` | Coordinated angle ownership transfer and startup-to-closed-loop Id fade |
 
 `imfoc_core` embeds none of the observers and does not wrap the PMSM FOC core.
 
@@ -28,6 +30,6 @@ The central interface rule is that shaft position/speed belong to the mechanical
 
 Generate both common and target SDPE headers before building. The simulation project accepts `/p:BuildLevel=1..4` and `/p:AcimFeedbackMode=1|2` MSBuild overrides. Use `project/simulate/commissioning/run_build_level_sil.m` with `MCS_STD_ACM_MODEL.slx` for repeatable captures.
 
-The SIL campaign has passed Levels 1, 2, sensored Level 3, and sensored Level 4. Sensorless acquisition and loss fallback are operational, but post-handover sensorless closure on the supplied model is not yet accepted for hardware use. See [the Chinese commissioning record](doc/commissioning_record_cn.md) for evidence and remaining work.
+The SIL campaign has passed Levels 1, 2, sensored Level 3, and sensored Level 4. Sensorless acquisition and loss fallback are operational, but post-handover sensorless closure on the supplied model is not yet accepted for hardware use. Isolated F280049C PIL Level 1 has also passed on hardware; Levels 2 through 4 remain staged work. See [the Chinese commissioning record](doc/commissioning_record_cn.md) for evidence and remaining work.
 
 The observer equations were compared with TI controlSUITE ACIFE/ACISE. GMP deliberately replaces direct `atan2` angle extraction with a PLL for better hardware robustness, while retaining the TI current model, voltage model, trapezoidal integration, and slip-equation lineage.

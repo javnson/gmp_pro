@@ -21,6 +21,8 @@ extern "C"
 // Common prefix code: MCS ACIM NT Common Controller Settings
 #define MCS_ACIM_FEEDBACK_SENSORED (1)
 #define MCS_ACIM_FEEDBACK_SENSORLESS (2)
+#define MCS_FO_VOLTAGE_FROM_COMMAND (1)
+#define MCS_FO_VOLTAGE_FROM_MEASUREMENT (2)
 
 //=================================================================================================
 /**
@@ -209,6 +211,13 @@ extern "C"
  */
 #define ENABLE_ACIM_DECOUPLING
 
+/**
+ * @brief Enable current-polarity PWM compare compensation for physical inverter dead time. Keep disabled for an ideal SIL bridge; identify the required count and current polarity on hardware.
+ */
+// #ifndef ENABLE_PWM_DEADTIME_COMPENSATION
+// #define ENABLE_PWM_DEADTIME_COMPENSATION
+// #endif // ENABLE_PWM_DEADTIME_COMPENSATION
+
 //=================================================================================================
 /**
  * @brief Protection.
@@ -239,6 +248,14 @@ extern "C"
 #ifndef MCS_ACIM_FEEDBACK_MODE
 #define MCS_ACIM_FEEDBACK_MODE MCS_ACIM_FEEDBACK_SENSORED
 #endif // MCS_ACIM_FEEDBACK_MODE
+
+/**
+ * @brief Select pre-dead-time controller command reconstruction or sampled phase voltage for the ACIM voltage model.
+ *        Options: MCS_FO_VOLTAGE_FROM_COMMAND, MCS_FO_VOLTAGE_FROM_MEASUREMENT
+ */
+#ifndef MCS_FO_VOLTAGE_SOURCE
+#define MCS_FO_VOLTAGE_SOURCE MCS_FO_VOLTAGE_FROM_COMMAND
+#endif // MCS_FO_VOLTAGE_SOURCE
 
 //=================================================================================================
 /**
@@ -357,9 +374,29 @@ extern "C"
 #define MCS_OPEN_LOOP_VQ_REF_V (6.0f)
 
 /**
- * @brief Commissioning Id
+ * @brief Closed-loop ACIM magnetizing-current reference; unlike PMSM this normally must remain nonzero.
  */
 #define MCS_COMMISSIONING_ID_REF_A (3.0f)
+
+/**
+ * @brief High I/F startup excitation current before the observer is sufficiently observable.
+ */
+#define MCS_SENSORLESS_STARTUP_ID_REF_A (4.0f)
+
+/**
+ * @brief I/F excitation reached at the angle-handover speed.
+ */
+#define MCS_SENSORLESS_HANDOVER_ID_REF_A (3.0f)
+
+/**
+ * @brief Absolute I/F electrical frequency where startup Id begins to decrease.
+ */
+#define MCS_STARTUP_ID_FADE_START_HZ (5.0f)
+
+/**
+ * @brief Absolute I/F electrical frequency where startup Id reaches the handover value.
+ */
+#define MCS_STARTUP_ID_FADE_END_HZ (25.0f)
 
 /**
  * @brief Commissioning Iq
@@ -469,9 +506,19 @@ extern "C"
 #define MCS_FO_HANDOVER_SPEED_ERR_PU (0.10f)
 
 /**
+ * @brief Larger speed mismatch that resets handover qualification; the gap above the enter tolerance is noise hysteresis.
+ */
+#define MCS_FO_HANDOVER_SPEED_EXIT_ERR_PU (0.15f)
+
+/**
  * @brief Continuous qualification time before the sensorless field-angle handover.
  */
 #define MCS_FO_HANDOVER_DEBOUNCE_MS (100.0f)
+
+/**
+ * @brief Time used to decay captured angle offset and synchronously blend startup Id to closed-loop Id.
+ */
+#define MCS_FO_HANDOVER_TRANSITION_MS (100.0f)
 
 /**
  * @brief Maximum post-handover synchronous-speed deviation from the continuing I/F reference before fallback qualification.
@@ -509,6 +556,9 @@ extern "C"
 #endif
 #if (MCS_ACIM_FEEDBACK_MODE != MCS_ACIM_FEEDBACK_SENSORED) && (MCS_ACIM_FEEDBACK_MODE != MCS_ACIM_FEEDBACK_SENSORLESS)
 #error "MCS_ACIM_FEEDBACK_MODE must select sensored or sensorless feedback."
+#endif
+#if (MCS_FO_VOLTAGE_SOURCE != MCS_FO_VOLTAGE_FROM_COMMAND) && (MCS_FO_VOLTAGE_SOURCE != MCS_FO_VOLTAGE_FROM_MEASUREMENT)
+#error "MCS_FO_VOLTAGE_SOURCE must select command reconstruction or phase-voltage measurement."
 #endif
 
 // User project tail code

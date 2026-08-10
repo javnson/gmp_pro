@@ -18,6 +18,9 @@ MCS_ACIM_NT_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-08-09';
 % Apply ACIM-specific cross-coupling through the generic FOC feedforward port.
 ENABLE_ACIM_DECOUPLING = true;
 
+% ENABLE_PWM_DEADTIME_COMPENSATION is disabled in the SDPE project requirement.
+% ENABLE_PWM_DEADTIME_COMPENSATION = true;
+
 %% Protection
 % ENABLE_MOTOR_FAULT_PROTECTION is disabled in the SDPE project requirement.
 % ENABLE_MOTOR_FAULT_PROTECTION = true;
@@ -30,6 +33,10 @@ BUILD_LEVEL = 1;
 % Select speed-feedback IFOC or the voltage/current flux observer.
 % Options: MCS_ACIM_FEEDBACK_SENSORED, MCS_ACIM_FEEDBACK_SENSORLESS
 MCS_ACIM_FEEDBACK_MODE = 'MCS_ACIM_FEEDBACK_SENSORED';
+
+% Select pre-dead-time controller command reconstruction or sampled phase voltage for the ACIM voltage model.
+% Options: MCS_FO_VOLTAGE_FROM_COMMAND, MCS_FO_VOLTAGE_FROM_MEASUREMENT
+MCS_FO_VOLTAGE_SOURCE = 'MCS_FO_VOLTAGE_FROM_COMMAND';
 
 %% Requirement bindings
 % Fast-loop frequency in hertz.
@@ -89,8 +96,20 @@ MCS_OPEN_LOOP_VD_REF_V = 0.0;
 % BUILD_LEVEL 1 q-axis voltage at MCS_OPEN_LOOP_FREQ_HZ. Runtime command is ramped proportionally with frequency (V/f).
 MCS_OPEN_LOOP_VQ_REF_V = 6.0;
 
-% Commissioning Id
+% Closed-loop ACIM magnetizing-current reference; unlike PMSM this normally must remain nonzero.
 MCS_COMMISSIONING_ID_REF_A = 3.0;
+
+% High I/F startup excitation current before the observer is sufficiently observable.
+MCS_SENSORLESS_STARTUP_ID_REF_A = 4.0;
+
+% I/F excitation reached at the angle-handover speed.
+MCS_SENSORLESS_HANDOVER_ID_REF_A = 3.0;
+
+% Absolute I/F electrical frequency where startup Id begins to decrease.
+MCS_STARTUP_ID_FADE_START_HZ = 5.0;
+
+% Absolute I/F electrical frequency where startup Id reaches the handover value.
+MCS_STARTUP_ID_FADE_END_HZ = 25.0;
 
 % Commissioning Iq
 MCS_COMMISSIONING_IQ_REF_A = 1.0;
@@ -155,8 +174,14 @@ MCS_FO_HANDOVER_ANGLE_ERR_PU = 0.08;
 % Maximum observer-versus-I/F synchronous-speed mismatch in PU before the enforced startup synchronization is applied.
 MCS_FO_HANDOVER_SPEED_ERR_PU = 0.10;
 
+% Larger speed mismatch that resets handover qualification; the gap above the enter tolerance is noise hysteresis.
+MCS_FO_HANDOVER_SPEED_EXIT_ERR_PU = 0.15;
+
 % Continuous qualification time before the sensorless field-angle handover.
 MCS_FO_HANDOVER_DEBOUNCE_MS = 100.0;
+
+% Time used to decay captured angle offset and synchronously blend startup Id to closed-loop Id.
+MCS_FO_HANDOVER_TRANSITION_MS = 100.0;
 
 % Maximum post-handover synchronous-speed deviation from the continuing I/F reference before fallback qualification.
 MCS_FO_LOSS_SPEED_ERR_PU = 0.15;
@@ -184,7 +209,7 @@ fprintf('Suite        : %s\n', 'mcs_acim_nt');
 fprintf('Version      : %s\n', '0.1.0');
 fprintf('Hardware (0):\n');
 fprintf('Common requirements (0):\n');
-fprintf('Enabled variables (55):\n');
+fprintf('Enabled variables (62):\n');
 fprintf('  BUILD_LEVEL = '); disp(BUILD_LEVEL);
 fprintf('  CONTROLLER_FREQUENCY = '); disp(CONTROLLER_FREQUENCY);
 fprintf('  CTRL_SPEED_RPM_BASE = '); disp(CTRL_SPEED_RPM_BASE);
@@ -208,10 +233,13 @@ fprintf('  MCS_FO_HANDOVER_ANGLE_ERR_PU = '); disp(MCS_FO_HANDOVER_ANGLE_ERR_PU)
 fprintf('  MCS_FO_HANDOVER_DEBOUNCE_MS = '); disp(MCS_FO_HANDOVER_DEBOUNCE_MS);
 fprintf('  MCS_FO_HANDOVER_FREQ_HZ = '); disp(MCS_FO_HANDOVER_FREQ_HZ);
 fprintf('  MCS_FO_HANDOVER_SPEED_ERR_PU = '); disp(MCS_FO_HANDOVER_SPEED_ERR_PU);
+fprintf('  MCS_FO_HANDOVER_SPEED_EXIT_ERR_PU = '); disp(MCS_FO_HANDOVER_SPEED_EXIT_ERR_PU);
+fprintf('  MCS_FO_HANDOVER_TRANSITION_MS = '); disp(MCS_FO_HANDOVER_TRANSITION_MS);
 fprintf('  MCS_FO_LOSS_DEBOUNCE_MS = '); disp(MCS_FO_LOSS_DEBOUNCE_MS);
 fprintf('  MCS_FO_LOSS_SPEED_ERR_PU = '); disp(MCS_FO_LOSS_SPEED_ERR_PU);
 fprintf('  MCS_FO_RUN_COMP_BW_HZ = '); disp(MCS_FO_RUN_COMP_BW_HZ);
 fprintf('  MCS_FO_VM_LEAK_HZ = '); disp(MCS_FO_VM_LEAK_HZ);
+fprintf('  MCS_FO_VOLTAGE_SOURCE = '); disp(MCS_FO_VOLTAGE_SOURCE);
 fprintf('  MCS_MAGNETIZING_TIME_MS = '); disp(MCS_MAGNETIZING_TIME_MS);
 fprintf('  MCS_MAX_CIR_SATURATION_VOLTAGE_V = '); disp(MCS_MAX_CIR_SATURATION_VOLTAGE_V);
 fprintf('  MCS_MAX_DC_BUS_VOLTAGE_V = '); disp(MCS_MAX_DC_BUS_VOLTAGE_V);
@@ -232,6 +260,10 @@ fprintf('  MCS_OPEN_LOOP_VD_REF_V = '); disp(MCS_OPEN_LOOP_VD_REF_V);
 fprintf('  MCS_OPEN_LOOP_VQ_REF_V = '); disp(MCS_OPEN_LOOP_VQ_REF_V);
 fprintf('  MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A = '); disp(MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A);
 fprintf('  MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A = '); disp(MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A);
+fprintf('  MCS_SENSORLESS_HANDOVER_ID_REF_A = '); disp(MCS_SENSORLESS_HANDOVER_ID_REF_A);
+fprintf('  MCS_SENSORLESS_STARTUP_ID_REF_A = '); disp(MCS_SENSORLESS_STARTUP_ID_REF_A);
+fprintf('  MCS_STARTUP_ID_FADE_END_HZ = '); disp(MCS_STARTUP_ID_FADE_END_HZ);
+fprintf('  MCS_STARTUP_ID_FADE_START_HZ = '); disp(MCS_STARTUP_ID_FADE_START_HZ);
 fprintf('  MOTOR_PARAM_L1R = '); disp(MOTOR_PARAM_L1R);
 fprintf('  MOTOR_PARAM_L1S = '); disp(MOTOR_PARAM_L1S);
 fprintf('  MOTOR_PARAM_LM = '); disp(MOTOR_PARAM_LM);
@@ -240,8 +272,9 @@ fprintf('  MOTOR_PARAM_POLE_PAIRS = '); disp(MOTOR_PARAM_POLE_PAIRS);
 fprintf('  MOTOR_PARAM_RATED_FREQUENCY = '); disp(MOTOR_PARAM_RATED_FREQUENCY);
 fprintf('  MOTOR_PARAM_RR = '); disp(MOTOR_PARAM_RR);
 fprintf('  MOTOR_PARAM_RS = '); disp(MOTOR_PARAM_RS);
-fprintf('Disabled macros (1):\n');
+fprintf('Disabled macros (2):\n');
 fprintf('  - ENABLE_MOTOR_FAULT_PROTECTION\n');
+fprintf('  - ENABLE_PWM_DEADTIME_COMPENSATION\n');
 fprintf('============================================================\n');
 
 %% Local helpers

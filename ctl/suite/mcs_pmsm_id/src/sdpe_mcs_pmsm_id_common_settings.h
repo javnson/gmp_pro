@@ -71,13 +71,6 @@ extern "C"
 // #endif // SPECIFY_ENABLE_ADC_CALIBRATE
 
 /**
- * @brief Enable processor-in-the-loop mode and suppress direct PWM controller output.
- */
-// #ifndef ENABLE_GMP_DL_PIL_SIM
-// #define ENABLE_GMP_DL_PIL_SIM
-// #endif // ENABLE_GMP_DL_PIL_SIM
-
-/**
  * @brief Enable CiA402/GMP framework debug information.
  */
 // #ifndef GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
@@ -120,6 +113,20 @@ extern "C"
 /**
  * @brief Requirement bindings.
  */
+
+/**
+ * @brief Enable the seven ADC slots used by the PMSM SIL input ABI.
+ */
+#ifndef GMP_PIL_RX_MASK
+#define GMP_PIL_RX_MASK (127)
+#endif // GMP_PIL_RX_MASK
+
+/**
+ * @brief Enable three PWM slots and six monitor slots used by the PMSM SIL output ABI.
+ */
+#ifndef GMP_PIL_TX_MASK
+#define GMP_PIL_TX_MASK (4128775)
+#endif // GMP_PIL_TX_MASK
 
 /**
  * @brief Main motor-control ISR frequency in hertz.

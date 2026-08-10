@@ -8,7 +8,6 @@
 #define _PROJECT_SDPE_MCS_PMSM_ID_SIMULATE_SETTINGS_H_
 
 #include <ctl/hardware_preset/inverter_3ph/ti_boostxl_3phganinv.h>
-#include <ctl/hardware_preset/pmsm_motor/tyi_5008_kv335.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -126,7 +125,7 @@ extern "C"
 /**
  * @brief Configured DC-bus voltage base.
  */
-#define CTRL_DCBUS_VOLTAGE (80.0f)
+#define CTRL_DCBUS_VOLTAGE (24.0f)
 
 /**
  * @brief Phase-voltage per-unit base derived from the DC-bus base.
@@ -154,124 +153,124 @@ extern "C"
 #define CTRL_MECH_DIV (5)
 
 /**
- * @brief Phase-current sensor sensitivity in volts per ampere.
+ * @brief Match the simulation ADC current path: 5 mOhm shunt times 20 V/V gain.
  */
-#define CTRL_INVERTER_CURRENT_SENSITIVITY (MY_BOARD_PH_SHUNT_RESISTANCE_OHM * MY_BOARD_PH_CSA_GAIN_V_V)
+#define CTRL_INVERTER_CURRENT_SENSITIVITY (0.1f)
 
 /**
- * @brief Phase-current sensor zero-current bias in volts.
+ * @brief Match the 1.65 V zero-current bias configured in MCS_STD_PMSM_MODEL.slx.
  */
-#define CTRL_INVERTER_CURRENT_BIAS (MY_BOARD_PH_CSA_BIAS_V)
+#define CTRL_INVERTER_CURRENT_BIAS (1.65f)
 
 /**
- * @brief Phase-voltage sensing gain in ADC volts per measured volt.
+ * @brief Match the phase-voltage gain configured in MCS_STD_PMSM_MODEL.slx.
  */
-#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (MY_BOARD_PH_VOLTAGE_SENSE_GAIN)
+#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (0.04049127f)
 
 /**
- * @brief Phase-voltage sensor bias in volts.
+ * @brief The simulation phase-voltage path has zero bias.
  */
-#define CTRL_INVERTER_VOLTAGE_BIAS (MY_BOARD_PH_VOLTAGE_SENSE_BIAS_V)
+#define CTRL_INVERTER_VOLTAGE_BIAS (0.0f)
 
 /**
- * @brief DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path.
+ * @brief Unity placeholder for the unused simulation DC-current path.
  */
-#define CTRL_DC_CURRENT_SENSITIVITY (MY_BOARD_DCBUS_CURRENT_SENSE_GAIN)
+#define CTRL_DC_CURRENT_SENSITIVITY (1.0f)
 
 /**
- * @brief DC-bus current sensor bias.
+ * @brief The unused simulation DC-current path has zero bias.
  */
-#define CTRL_DC_CURRENT_BIAS (MY_BOARD_DCBUS_CURRENT_SENSE_BIAS_V)
+#define CTRL_DC_CURRENT_BIAS (0.0f)
 
 /**
- * @brief DC-bus voltage sensing gain in ADC volts per measured volt.
+ * @brief Match the DC-bus voltage gain configured in MCS_STD_PMSM_MODEL.slx.
  */
-#define CTRL_DC_VOLTAGE_SENSITIVITY (MY_BOARD_DCBUS_VOLTAGE_SENSE_GAIN)
+#define CTRL_DC_VOLTAGE_SENSITIVITY (0.04049127f)
 
 /**
- * @brief DC-bus voltage sensor bias in volts.
+ * @brief The simulation DC-bus voltage path has zero bias.
  */
-#define CTRL_DC_VOLTAGE_BIAS (MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)
+#define CTRL_DC_VOLTAGE_BIAS (0.0f)
 
 /**
- * @brief Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract.
+ * @brief Match the PMSM type configured in MCS_STD_PMSM_MODEL.slx.
  */
-#define MOTOR_TYPE TYI_5008_KV335_MOTOR_TYPE
+#define MOTOR_TYPE (PMSM_MOTOR)
 
 /**
- * @brief Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract.
+ * @brief Match the per-phase resistance configured in the Simulink PMSM block.
  */
-#define MOTOR_PARAM_RS TYI_5008_KV335_RS
+#define MOTOR_PARAM_RS (4.7f)
 
 /**
- * @brief Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract.
+ * @brief Match the per-phase inductance configured in the Simulink PMSM block.
  */
-#define MOTOR_PARAM_LS TYI_5008_KV335_LD
+#define MOTOR_PARAM_LS (8.5e-3f)
 
 /**
- * @brief Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract.
+ * @brief Match the d-axis inductance configured in the Simulink PMSM block.
  */
-#define MOTOR_PARAM_LD TYI_5008_KV335_LD
+#define MOTOR_PARAM_LD (8.5e-3f)
 
 /**
- * @brief Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract.
+ * @brief Match the q-axis inductance configured in the Simulink PMSM block.
  */
-#define MOTOR_PARAM_LQ TYI_5008_KV335_LQ
+#define MOTOR_PARAM_LQ (8.5e-3f)
 
 /**
- * @brief Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract.
+ * @brief Match the flux linkage configured in the Simulink PMSM block.
  */
-#define MOTOR_PARAM_FLUX TYI_5008_KV335_FLUX
+#define MOTOR_PARAM_FLUX (0.0038197f)
 
 /**
- * @brief Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract.
+ * @brief Match the pole-pair count configured in the Simulink PMSM block.
  */
-#define MOTOR_PARAM_POLE_PAIRS TYI_5008_KV335_POLE_PAIRS
+#define MOTOR_PARAM_POLE_PAIRS (4)
 
 /**
- * @brief Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract.
+ * @brief Velocity constant corresponding to the Simulink PMSM mask.
  */
-#define MOTOR_PARAM_KV TYI_5008_KV335_KV
+#define MOTOR_PARAM_KV (206.2f)
 
 /**
- * @brief Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract.
+ * @brief Line-line peak back-EMF constant configured in the Simulink PMSM mask.
  */
-#define MOTOR_PARAM_EMF TYI_5008_KV335_EMF
+#define MOTOR_PARAM_EMF (1000.0f / 206.2f)
 
 /**
- * @brief Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract.
+ * @brief Available phase-voltage limit for the 24 V simulated DC bus.
  */
-#define MOTOR_PARAM_RATED_VOLTAGE TYI_5008_KV335_RATED_VOLTAGE
+#define MOTOR_PARAM_RATED_VOLTAGE (24.0f / 1.73205081f)
 
 /**
- * @brief Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract.
+ * @brief No-load current default for the idealized Simulink plant.
  */
-#define MOTOR_PARAM_NO_LOAD_CURRENT TYI_5008_KV335_NO_LOAD_CURRENT
+#define MOTOR_PARAM_NO_LOAD_CURRENT (0.0f)
 
 /**
- * @brief Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract.
+ * @brief Electrical base frequency at 3000 rpm and four pole pairs.
  */
-#define MOTOR_PARAM_RATED_FREQUENCY TYI_5008_KV335_RATED_FREQUENCY
+#define MOTOR_PARAM_RATED_FREQUENCY (200.0f)
 
 /**
- * @brief Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract.
+ * @brief Mechanical speed base used by the simulated encoder and controller.
  */
-#define MOTOR_PARAM_MAX_SPEED TYI_5008_KV335_MAX_SPEED
+#define MOTOR_PARAM_MAX_SPEED (3000.0f)
 
 /**
- * @brief Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract.
+ * @brief Conservative torque limit for the small simulated PMSM.
  */
-#define MOTOR_PARAM_MAX_TORQUE TYI_5008_KV335_MAX_TORQUE
+#define MOTOR_PARAM_MAX_TORQUE (0.2f)
 
 /**
- * @brief Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract.
+ * @brief DC-bus voltage configured by the model source.
  */
-#define MOTOR_PARAM_MAX_DC_VOLTAGE TYI_5008_KV335_MAX_DC_VOLTAGE
+#define MOTOR_PARAM_MAX_DC_VOLTAGE (24.0f)
 
 /**
- * @brief Alias the selected tyi_5008_kv335 hardware parameter into the MCS control contract.
+ * @brief Phase-current base and conservative simulated current limit.
  */
-#define MOTOR_PARAM_MAX_PH_CURRENT TYI_5008_KV335_MAX_PH_CURRENT
+#define MOTOR_PARAM_MAX_PH_CURRENT (10.0f)
 
 /**
  * @brief Main motor-control ISR frequency in hertz.
@@ -339,13 +338,6 @@ extern "C"
 // #endif // SPECIFY_ENABLE_ADC_CALIBRATE
 
 /**
- * @brief Enable processor-in-the-loop mode and suppress direct PWM controller output.
- */
-// #ifndef ENABLE_GMP_DL_PIL_SIM
-// #define ENABLE_GMP_DL_PIL_SIM
-// #endif // ENABLE_GMP_DL_PIL_SIM
-
-/**
  * @brief Enable CiA402/GMP framework debug information.
  */
 // #ifndef GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO
@@ -388,6 +380,20 @@ extern "C"
 /**
  * @brief Requirement bindings.
  */
+
+/**
+ * @brief Enable the seven ADC slots used by the PMSM SIL input ABI.
+ */
+#ifndef GMP_PIL_RX_MASK
+#define GMP_PIL_RX_MASK (127)
+#endif // GMP_PIL_RX_MASK
+
+/**
+ * @brief Enable three PWM slots and six monitor slots used by the PMSM SIL output ABI.
+ */
+#ifndef GMP_PIL_TX_MASK
+#define GMP_PIL_TX_MASK (4128775)
+#endif // GMP_PIL_TX_MASK
 
 /**
  * @brief Main motor-control ISR frequency in hertz.

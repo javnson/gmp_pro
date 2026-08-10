@@ -15,6 +15,7 @@ add_executable(gmp_acim_observer_host_sim
     ${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/src/ctl_mc_pmsm_esmo.c
     ${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/src/ctl_mc_pmsm_fo.c
     ${GMP_PRO_LOCATION}/ctl/component/motor_control/observer/src/ctl_mc_pmsm_hfi.c
+    ${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/src/ctl_mc_encoder_switcher.c
     ${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/src/ctl_continuous_pid.c
     ${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_filter.c
 )

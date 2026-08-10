@@ -6,6 +6,8 @@
 #include <ctl/component/motor_control/consultant/pu_consultant.h>
 #include <ctl/component/motor_control/observer/acim_fo.h>
 #include <ctl/component/motor_control/observer/acim_pos_calc.h>
+#include <ctl/component/motor_control/interface/sensorless_handover.h>
+#include <ctl/component/motor_control/observer/pmsm_esmo.h>
 
 #define TEST_FS (20000.0f)
 #define TEST_W_BASE (CTL_PARAM_CONST_2PI * 50.0f)
@@ -158,6 +160,61 @@ static int test_flux_observer_steady_state(void)
     return 0;
 }
 
+static int test_sensorless_handover(void)
+{
+    ctl_sensorless_handover_t handover;
+    rotation_ift pos_a = {float2ctrl(0.0f), float2ctrl(0.99f), 0};
+    rotation_ift pos_b = {float2ctrl(0.0f), float2ctrl(0.01f), 0};
+    velocity_ift spd_a = {float2ctrl(0.30f)};
+    velocity_ift spd_b = {float2ctrl(0.36f)};
+    float previous_angle;
+    int k;
+
+    ctl_init_sensorless_handover(&handover, 0.1f, 1000.0f,
+                                 float2ctrl(0.4f), float2ctrl(0.3f),
+                                 float2ctrl(0.1f), float2ctrl(0.1f),
+                                 float2ctrl(0.3f));
+    ctl_attach_sensorless_handover(&handover, &pos_a, &spd_a, &pos_b, &spd_b);
+    ctl_configure_sensorless_handover_speed_qualification(
+        &handover, 0.01f, 0.02f, 0.005f, 1000.0f);
+    ctl_request_sensorless_handover(&handover, 1);
+
+    for (k = 0; k < 10; ++k)
+        ctl_step_sensorless_handover(&handover, spd_a.speed);
+    if (handover.angle.state != ANGLE_SWITCH_IDLE_A) return 1;
+
+    spd_b.speed = float2ctrl(0.305f);
+    for (k = 0; k < 3; ++k)
+        ctl_step_sensorless_handover(&handover, spd_a.speed);
+    spd_b.speed = float2ctrl(0.315f); /* Hysteresis band: retain count. */
+    ctl_step_sensorless_handover(&handover, spd_a.speed);
+    spd_b.speed = float2ctrl(0.305f);
+    previous_angle = ctrl2float(handover.angle.out_enc.elec_position);
+    ctl_step_sensorless_handover(&handover, spd_a.speed);
+    ctl_step_sensorless_handover(&handover, spd_a.speed);
+    if (handover.angle.state != ANGLE_SWITCH_TRANS_A2B) return 2;
+    if (fabsf(wrapped_error(ctrl2float(handover.angle.out_enc.elec_position),
+                            previous_angle)) > 0.001f) return 3;
+
+    for (k = 0; k < 110; ++k)
+    {
+        pos_b.elec_position = float2ctrl(fmodf(ctrl2float(pos_b.elec_position) + 0.0003f, 1.0f));
+        ctl_step_sensorless_handover(&handover, spd_a.speed);
+    }
+    if (handover.angle.state != ANGLE_SWITCH_IDLE_B) return 4;
+    if (fabsf(ctrl2float(handover.id_ref_out) - 0.1f) > 1e-5f) return 5;
+    return 0;
+}
+
+static int test_esmo_normalization_flag(void)
+{
+    ctl_pmsm_esmo_t esmo = {0};
+    ctl_enable_pmsm_esmo_emf_normalization(&esmo);
+    if (!esmo.flag_emf_normalize) return 1;
+    ctl_disable_pmsm_esmo_emf_normalization(&esmo);
+    return esmo.flag_emf_normalize ? 2 : 0;
+}
+
 int main(void)
 {
     int result = test_position_calculator();
@@ -171,6 +228,12 @@ int main(void)
 
     result = test_flux_observer_steady_state();
     if (result) { printf("ACIM flux observer test failed: %d\n", result); return 30 + result; }
+
+    result = test_sensorless_handover();
+    if (result) { printf("Sensorless handover test failed: %d\n", result); return 40 + result; }
+
+    result = test_esmo_normalization_flag();
+    if (result) { printf("ESMO normalization flag test failed: %d\n", result); return 50 + result; }
 
     puts("ACIM observer host tests passed");
     return 0;

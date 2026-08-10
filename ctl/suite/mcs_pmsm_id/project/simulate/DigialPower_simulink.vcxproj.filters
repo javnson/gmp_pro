@@ -72,9 +72,6 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_foc_core.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_imfoc_core.c">
-      <Filter>GMP Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_inverter_consultant.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
