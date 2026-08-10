@@ -63,6 +63,7 @@ ctl_pmsm_esmo_t smo;
 
 //
 volatile fast_gt flag_system_running = 0;
+volatile fast_gt flag_oid_pwm_inhibit = 0;
 volatile fast_gt flag_error = 0;
 
 // adc calibrator flags
@@ -366,13 +367,17 @@ void ctl_mainloop(void)
     static fast_gt last_rs_dt_state = 0;
     static fast_gt last_ldq_state = 0;
     static fast_gt last_flux_state = 0;
+    static fast_gt last_encoder_state = 0;
+    static fast_gt last_mech_state = 0;
     fast_gt cia402_state_changed =
         !state_diag_initialized || last_cia402_state != (fast_gt)cia402_sm.current_state;
     fast_gt oid_state_changed = !state_diag_initialized || last_oid_state != (fast_gt)pmsm_oid.sm;
     fast_gt oid_substate_changed = !state_diag_initialized ||
         last_rs_dt_state != (fast_gt)pmsm_oid.sub_rs_dt.sm ||
         last_ldq_state != (fast_gt)pmsm_oid.sub_ldq.sm ||
-        last_flux_state != (fast_gt)pmsm_oid.sub_flux.sm;
+        last_flux_state != (fast_gt)pmsm_oid.sub_flux.sm ||
+        last_encoder_state != (fast_gt)pmsm_oid.sub_encoder.sm ||
+        last_mech_state != (fast_gt)pmsm_oid.sub_mech.sm;
     if (cia402_state_changed)
     {
         last_cia402_state = (fast_gt)cia402_sm.current_state;
@@ -381,15 +386,18 @@ void ctl_mainloop(void)
     if (oid_state_changed)
     {
         last_oid_state = (fast_gt)pmsm_oid.sm;
-        gmp_base_print("[SIL] OID state=%d, sub=%d/%d/%d\r\n", last_oid_state,
+        gmp_base_print("[SIL] OID state=%d, sub=%d/%d/%d enc=%d/%d mech=%d\r\n", last_oid_state,
                        (fast_gt)pmsm_oid.sub_rs_dt.sm, (fast_gt)pmsm_oid.sub_ldq.sm,
-                       (fast_gt)pmsm_oid.sub_flux.sm);
+                       (fast_gt)pmsm_oid.sub_flux.sm, (fast_gt)pmsm_oid.sub_encoder.sm,
+                       (fast_gt)pmsm_oid.sub_encoder.fault, (fast_gt)pmsm_oid.sub_mech.sm);
     }
     if (oid_substate_changed)
     {
         last_rs_dt_state = (fast_gt)pmsm_oid.sub_rs_dt.sm;
         last_ldq_state = (fast_gt)pmsm_oid.sub_ldq.sm;
         last_flux_state = (fast_gt)pmsm_oid.sub_flux.sm;
+        last_encoder_state = (fast_gt)pmsm_oid.sub_encoder.sm;
+        last_mech_state = (fast_gt)pmsm_oid.sub_mech.sm;
     }
     if (cia402_state_changed || oid_state_changed || oid_substate_changed)
     {
@@ -406,10 +414,12 @@ void ctl_mainloop(void)
                         (double)MOTOR_PARAM_FLUX, (fast_gt)MOTOR_PARAM_POLE_PAIRS);
             }
             fprintf(trace_file,
-                    "tick=%llu cia402=%d oid=%d sub=%d/%d/%d err=0x%08x raw_i=%u/%u/%u raw_udc=%u i=%.6g/%.6g/%.6g udc=%.6g\n",
+                    "tick=%llu cia402=%d oid=%d sub=%d/%d/%d enc=%d/%d mech=%d err=0x%08x raw_i=%u/%u/%u raw_udc=%u i=%.6g/%.6g/%.6g udc=%.6g\n",
                     (unsigned long long)cia402_sm.current_tick, last_cia402_state, last_oid_state,
                     (fast_gt)pmsm_oid.sub_rs_dt.sm, (fast_gt)pmsm_oid.sub_ldq.sm,
-                    (fast_gt)pmsm_oid.sub_flux.sm, (unsigned int)protection.error_code.all,
+                    (fast_gt)pmsm_oid.sub_flux.sm, (fast_gt)pmsm_oid.sub_encoder.sm,
+                    (fast_gt)pmsm_oid.sub_encoder.fault, (fast_gt)pmsm_oid.sub_mech.sm,
+                    (unsigned int)protection.error_code.all,
                     (unsigned int)iuvw_src[phase_U], (unsigned int)iuvw_src[phase_V],
                     (unsigned int)iuvw_src[phase_W], (unsigned int)udc_src,
                     (double)mtr_ctrl.iuvw.dat[phase_U], (double)mtr_ctrl.iuvw.dat[phase_V],
@@ -482,7 +492,8 @@ void ctl_enable_pwm()
 #if defined ENABLE_GMP_DL_PIL_SIM
     clear_all_controllers();
 #else
-    ctl_fast_enable_output();
+    if (!flag_oid_pwm_inhibit)
+        ctl_fast_enable_output();
 #endif
 }
 

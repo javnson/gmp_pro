@@ -98,16 +98,16 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     simulink_tx_buffer.monitor[4] = (double)pmsm_oid.pmsm_param.flux_linkage;
     simulink_tx_buffer.monitor[5] = (double)pmsm_oid.V_comp_volts;
 
-    // Detailed progress and controller diagnostics.
-    simulink_tx_buffer.monitor[6] = (double)pmsm_oid.sub_rs_dt.sm;
-    simulink_tx_buffer.monitor[7] = (double)pmsm_oid.sub_ldq.sm;
-    simulink_tx_buffer.monitor[8] = (double)pmsm_oid.sub_flux.sm;
-    simulink_tx_buffer.monitor[9] = (double)mtr_ctrl.idq0.dat[phase_d];
-    simulink_tx_buffer.monitor[10] = (double)mtr_ctrl.idq0.dat[phase_q];
-    simulink_tx_buffer.monitor[11] = (double)mtr_ctrl.vdq_ref.dat[phase_d];
-    simulink_tx_buffer.monitor[12] = (double)mtr_ctrl.vdq_ref.dat[phase_q];
-    simulink_tx_buffer.monitor[13] = (double)mtr_ctrl.spd_if->speed;
-    simulink_tx_buffer.monitor[14] = (double)mtr_ctrl.udc;
+    // Sensored encoder/mechanical identification progress and results.
+    simulink_tx_buffer.monitor[6] = (double)pmsm_oid.sub_encoder.sm;
+    simulink_tx_buffer.monitor[7] = (double)pmsm_oid.sub_encoder.fault;
+    simulink_tx_buffer.monitor[8] = (double)pmsm_oid.sub_mech.sm;
+    simulink_tx_buffer.monitor[9] = (double)pmsm_oid.sub_encoder.identified_pole_pairs;
+    simulink_tx_buffer.monitor[10] = (double)pmsm_oid.sub_encoder.encoder_offset_pu;
+    simulink_tx_buffer.monitor[11] = (double)pmsm_oid.pmsm_mech_param.J_total;
+    simulink_tx_buffer.monitor[12] = (double)pmsm_oid.pmsm_mech_param.B_viscous;
+    simulink_tx_buffer.monitor[13] = (double)pmsm_oid.sub_mech.load_torque_Nm;
+    simulink_tx_buffer.monitor[14] = (double)mtr_ctrl.spd_if->speed;
     simulink_tx_buffer.monitor[15] = (double)flag_system_running;
 }
 

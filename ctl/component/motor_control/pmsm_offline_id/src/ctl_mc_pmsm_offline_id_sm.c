@@ -938,6 +938,8 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
 
 #pragma region MECH
 
+#if 0 /* Replaced by ctl_mc_pmsm_offline_id_sensored.c. */
+
 /**
  * @brief Initializes the Mechanical Parameters identification sub-task.
  * @param[in,out] ctx Pointer to the master offline ID context.
@@ -1244,6 +1246,8 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
         break;
     }
 }
+#endif
+
 #pragma endregion
 
 //

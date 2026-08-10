@@ -219,6 +219,9 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_pmsm_offline_id_sm.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_pmsm_offline_id_sensored.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_encoder_switcher.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>

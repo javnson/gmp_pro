@@ -10,6 +10,8 @@ This suite extends the GMP PMSM vector-control template with an offline identifi
 - Permanent-magnet flux linkage.
 - Inverter dead-time compensation.
 - Mechanical inertia and friction.
+- Sensored encoder offset and pole-pair calibration with fault diagnostics.
+- Directional static/load torque.
 - Initial current-loop PI tuning.
 
 The shared implementation is centered on `src/`, including the `pmsm_offline_id_if` interface and the normal `ctl_main` control entry. Project targets include C2000, STM32, and PC simulation variants.
@@ -25,9 +27,11 @@ cd ctl\suite\mcs_pmsm_id\project\simulate
 python .\run_pmsm_id_sil_fast.py --build
 ```
 
-The averaged-plant runner completes the full identification state machine in a few seconds and writes JSON/CSV results. The 2026-08-10 regression reached `COMPLETE (8)` at 2.69505 simulated seconds with errors of +1.92% Rs, -1.27% Ld, +0.74% Lq, -2.14% flux linkage, and +0.81% equivalent dead-time voltage.
+The averaged-plant runner completes encoder calibration, electrical identification, constant-Iq acceleration, and PWM-off coast-down, then writes JSON/CSV results. The current regression reaches `COMPLETE (8)` at 14.2535 simulated seconds. It detects four pole pairs and the encoder offset exactly to the simulated encoder LSB; errors are -2.45% inertia, -1.95% viscous friction, and -9.21% static load torque. Electrical-result errors remain within 2.4%.
 
-Use `run_pmsm_id_sil.m` for the detailed Simulink switching plant. A 0.35 s, 10 us accelerator smoke run enters the Rs/dead-time state without a protection fault. Use a 1 us plant step for final correlation of the model's 1 us inverter dead time; this high-fidelity path is intentionally much slower. See the [Chinese guide](README_CN.md) for commands, monitor-channel mapping, and model truth values.
+The encoder safety paths are reproducible with `--encoder-fault random`, `stuck`, and `nonuniform`. They diagnose random jumps, missing shaft motion, and nonuniform electrical-cycle anchors respectively, and physically inhibit PWM on fault.
+
+Use `run_pmsm_id_sil.m` for the detailed Simulink switching plant. Short smoke runs now exercise the encoder preparation stage first. Use a 1 us plant step for final correlation of the model's 1 us inverter dead time and allow enough time for the mechanical coast-down; this high-fidelity path is intentionally much slower. All identification stimuli, timings, speed ratios, and encoder fault thresholds are owned by the common `sdpe_general/sdpe_requirement.json` source. See the [Chinese guide](README_CN.md) for commands, monitor-channel mapping, and model truth values.
 
 ## Equal-bandwidth DQ-PI and DQ-LADRC1 simulation record (2026-08-08)
 

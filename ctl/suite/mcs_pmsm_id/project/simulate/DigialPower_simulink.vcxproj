@@ -191,6 +191,7 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dq_pi.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dq_ladrc1.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_pmsm_offline_id_sm.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_pmsm_offline_id_sensored.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_encoder_switcher.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\dsa_scope.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\dsa_trigger.c" />

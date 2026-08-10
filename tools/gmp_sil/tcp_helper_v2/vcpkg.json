@@ -1,0 +1,9 @@
+{
+  "name": "gmp-sil-tcp-helper-v2",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "asio",
+    "nlohmann-json"
+  ]
+}
+

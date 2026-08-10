@@ -7,8 +7,8 @@ function result = run_pmsm_id_sil(varargin)
 %
 % The function starts the native Windows controller, runs the existing
 % Simulink plant, logs all 16 SIL monitor channels without changing the SLX
-% file, and compares the identified electrical parameters with the motor
-% values configured in the model mask.
+% file, and compares the identified electrical and sensored mechanical
+% parameters with values configured in the model mask when available.
 
 parser = inputParser;
 parser.addParameter('StopTime', 40, @(x) isnumeric(x) && isscalar(x) && x > 0);
@@ -103,6 +103,16 @@ result.stop_time = options.StopTime;
 result.final_state = final_values(1);
 result.completed = (round(result.final_state) == 8);
 result.comparison = comparison;
+result.encoder = struct( ...
+    'substate', final_values(7), ...
+    'fault', final_values(8), ...
+    'pole_pairs', final_values(10), ...
+    'offset_pu', final_values(11));
+result.mechanical = struct( ...
+    'substate', final_values(9), ...
+    'inertia_kg_m2', final_values(12), ...
+    'viscous_friction_Nm_s', final_values(13), ...
+    'load_torque_Nm', final_values(14));
 result.monitor_names = monitor_names;
 result.monitor = monitor;
 result.model_truth = truth;
@@ -127,7 +137,7 @@ end
 if ~result.completed
     warning('GMP:IdentificationIncomplete', ...
         ['Identification did not reach COMPLETE (8). Increase StopTime or ' ...
-         'inspect monitor channels 7-9 for the active sub-state.']);
+         'inspect encoder substate/fault channels 7-8 and mechanical substate channel 9.']);
 end
 
 if options.Plot
@@ -220,6 +230,9 @@ truth.Rs = str2double(get_param(motor_block, 'Resistance'));
 truth.Ld = dq_inductances(1);
 truth.Lq = dq_inductances(2);
 truth.FluxLinkage = str2double(get_param(motor_block, 'Flux'));
+truth.Inertia = optional_mask_number(motor_block, 'Inertia');
+truth.ViscousFriction = optional_mask_number(motor_block, 'Friction');
+truth.PolePairs = optional_mask_number(motor_block, 'PolePairs');
 truth.DeadbandSeconds = 1e-6 * str2double(get_param( ...
     [model_name '/Three Phase Driver Model (Universal)1'], 'Deadband_us'));
 truth.DcBusVoltage = str2double(get_param([model_name '/Constant3'], 'Value'));
@@ -231,6 +244,14 @@ truth.DiodeForwardVoltage = str2double(get_param(driver, 'Vf'));
 truth.ExpectedDeadTimeCompensation = (8.0 / 3.0) * ...
     (truth.DcBusVoltage + 2.0 * truth.DiodeForwardVoltage) * ...
     truth.DeadbandSeconds * truth.SwitchingFrequency;
+end
+
+function value = optional_mask_number(block, parameter)
+try
+    value = str2double(get_param(block, parameter));
+catch
+    value = NaN;
+end
 end
 
 function configure_adc_initial_conditions(model_name, truth)
@@ -303,7 +324,7 @@ end
 
 function plot_sil_result(monitor, truth)
 figure('Name', 'PMSM Offline Identification SIL');
-tiledlayout(2, 1);
+tiledlayout(3, 1);
 
 nexttile;
 stairs(monitor{1}.Time, monitor{1}.Data, 'LineWidth', 1.2);
@@ -326,6 +347,17 @@ xlabel('Time (s)');
 ylabel('Value (mixed displayed units)');
 legend('Location', 'best');
 title('SIL estimates and model truth');
+
+nexttile;
+yyaxis left;
+plot(monitor{15}.Time, monitor{15}.Data, 'DisplayName', 'Speed (pu)');
+ylabel('Mechanical speed (pu)');
+yyaxis right;
+stairs(monitor{16}.Time, monitor{16}.Data, 'DisplayName', 'PWM enabled');
+ylabel('PWM enabled');
+grid on;
+xlabel('Time (s)');
+title('Sensored acceleration and PWM-off coast-down');
 end
 
 function tf = is_absolute_path(path_value)

@@ -5401,7 +5401,8 @@
                 "type": "module",
                 "description": "PMSM offline id module",
                 "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/pmsm_offline_id/src/ctl_mc_pmsm_offline_id_sm.c"
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/pmsm_offline_id/src/ctl_mc_pmsm_offline_id_sm.c",
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/pmsm_offline_id/src/ctl_mc_pmsm_offline_id_sensored.c"
                 ],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/motor_control/pmsm_offline_id/pmsm_offline_id_sm.h"

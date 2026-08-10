@@ -401,6 +401,366 @@
         "float": "0.707"
       },
       "description": "Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response."
+    },
+    {
+      "role": "Enable Prepare Stage",
+      "macro": "MCS_PMSM_ID_ENABLE_PREPARE",
+      "enabled": true,
+      "weak": true,
+      "binding": {"number": "1"},
+      "description": "Enable the target ADC-calibration preparation handshake."
+    },
+    {
+      "role": "Enable Rs Deadtime Identification",
+      "macro": "MCS_PMSM_ID_ENABLE_RS_DT",
+      "enabled": true,
+      "weak": true,
+      "binding": {"number": "1"},
+      "description": "Enable stator-resistance and inverter dead-time voltage identification."
+    },
+    {
+      "role": "Enable Ld Lq Identification",
+      "macro": "MCS_PMSM_ID_ENABLE_LDQ",
+      "enabled": true,
+      "weak": true,
+      "binding": {"number": "1"},
+      "description": "Enable d/q-axis inductance pulse identification."
+    },
+    {
+      "role": "Enable Flux Identification",
+      "macro": "MCS_PMSM_ID_ENABLE_FLUX",
+      "enabled": true,
+      "weak": true,
+      "binding": {"number": "1"},
+      "description": "Enable PM flux-linkage identification."
+    },
+    {
+      "role": "Rs Deadtime Maximum Current",
+      "macro": "MCS_PMSM_ID_RSDT_MAX_CURRENT_A",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "5.0"},
+      "description": "Maximum closed-loop current in amperes used by the Rs/dead-time sweep."
+    },
+    {
+      "role": "Rs Deadtime Minimum Current",
+      "macro": "MCS_PMSM_ID_RSDT_MIN_CURRENT_A",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "1.0"},
+      "description": "Minimum closed-loop current in amperes used by the Rs/dead-time sweep."
+    },
+    {
+      "role": "Rs Deadtime Steps",
+      "macro": "MCS_PMSM_ID_RSDT_STEPS",
+      "enabled": true,
+      "weak": true,
+      "binding": {"number": "5"},
+      "description": "Number of positive current points in the Rs/dead-time regression."
+    },
+    {
+      "role": "Rs Deadtime Alignment Time",
+      "macro": "MCS_PMSM_ID_RSDT_ALIGN_TIME_S",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "1.0"},
+      "description": "Rotor alignment dwell in seconds before the Rs/dead-time sweep."
+    },
+    {
+      "role": "Rs Deadtime Measurement Delay",
+      "macro": "MCS_PMSM_ID_RSDT_MEASURE_DELAY_S",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "0.2"},
+      "description": "Settling delay in seconds after changing each Rs/dead-time current point."
+    },
+    {
+      "role": "Rs Deadtime Measurement Points",
+      "macro": "MCS_PMSM_ID_RSDT_MEASURE_POINTS",
+      "enabled": true,
+      "weak": true,
+      "binding": {"number": "100"},
+      "description": "Number of ISR samples averaged at each Rs/dead-time current point."
+    },
+    {
+      "role": "Ld Lq Pulse Voltage",
+      "macro": "MCS_PMSM_ID_LDQ_PULSE_VOLTAGE_V",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "0.277128"},
+      "description": "Physical d/q pulse voltage in volts used for inductance identification."
+    },
+    {
+      "role": "Ld Lq Maximum Bias Current",
+      "macro": "MCS_PMSM_ID_LDQ_MAX_BIAS_CURRENT_A",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "5.0"},
+      "description": "Maximum current bias in amperes used for the inductance profile."
+    },
+    {
+      "role": "Ld Lq Bias Steps",
+      "macro": "MCS_PMSM_ID_LDQ_BIAS_STEPS",
+      "enabled": true,
+      "weak": true,
+      "binding": {"number": "12"},
+      "description": "Number of bias points recorded for each inductance axis."
+    },
+    {
+      "role": "Ld Lq Alignment Current",
+      "macro": "MCS_PMSM_ID_LDQ_ALIGN_CURRENT_A",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "5.0"},
+      "description": "D-axis alignment current in amperes used before inductance pulses."
+    },
+    {
+      "role": "Ld Lq Settle Time",
+      "macro": "MCS_PMSM_ID_LDQ_SETTLE_TIME_S",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "0.2"},
+      "description": "Bias-current settling time in seconds before each inductance pulse."
+    },
+    {
+      "role": "Ld Lq Pulse Time",
+      "macro": "MCS_PMSM_ID_LDQ_PULSE_TIME_S",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "0.002"},
+      "description": "Inductance voltage-pulse duration in seconds."
+    },
+    {
+      "role": "Ld Lq Cooldown Time",
+      "macro": "MCS_PMSM_ID_LDQ_COOLDOWN_TIME_S",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "0.05"},
+      "description": "Zero-voltage cooldown time in seconds between inductance pulses."
+    },
+    {
+      "role": "Flux Minimum Speed",
+      "macro": "MCS_PMSM_ID_FLUX_MIN_SPEED_RPM",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "300.0"},
+      "description": "Minimum mechanical speed in rpm used by the flux-linkage regression."
+    },
+    {
+      "role": "Flux Maximum Speed",
+      "macro": "MCS_PMSM_ID_FLUX_MAX_SPEED_RPM",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "1800.0"},
+      "description": "Maximum mechanical speed in rpm used by the flux-linkage regression."
+    },
+    {
+      "role": "Flux Speed Steps",
+      "macro": "MCS_PMSM_ID_FLUX_STEPS",
+      "enabled": true,
+      "weak": true,
+      "binding": {"number": "6"},
+      "description": "Number of speed points used by the flux-linkage regression."
+    },
+    {
+      "role": "Flux IF Current",
+      "macro": "MCS_PMSM_ID_FLUX_IF_CURRENT_A",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "4.0"},
+      "description": "Current magnitude in amperes used for I/F flux-linkage rotation."
+    },
+    {
+      "role": "Flux Settle Time",
+      "macro": "MCS_PMSM_ID_FLUX_SETTLE_TIME_S",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "2.0"},
+      "description": "Settling time in seconds at each flux-identification speed."
+    },
+    {
+      "role": "Flux Measurement Points",
+      "macro": "MCS_PMSM_ID_FLUX_MEASURE_POINTS",
+      "enabled": true,
+      "weak": true,
+      "binding": {"number": "2000"},
+      "description": "Number of ISR samples averaged at each flux-identification speed."
+    },
+    {
+      "role": "Enable Encoder Calibration",
+      "macro": "MCS_PMSM_ID_ENABLE_ENCODER_CALIBRATION",
+      "enabled": true,
+      "weak": true,
+      "binding": {"number": "1"},
+      "description": "Enable sensored phase-A alignment, pole-pair detection and encoder-offset calibration before electrical/mechanical identification."
+    },
+    {
+      "role": "Enable Mechanical Identification",
+      "macro": "MCS_PMSM_ID_ENABLE_MECHANICAL_ID",
+      "enabled": true,
+      "weak": true,
+      "binding": {"number": "1"},
+      "description": "Enable the sensored constant-Iq acceleration and PWM-off coast-down mechanical identification stage."
+    },
+    {
+      "role": "Encoder Alignment Current",
+      "macro": "MCS_PMSM_ID_ENCODER_ALIGN_CURRENT_A",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "1.0"},
+      "description": "Closed-loop d-axis current in amperes used to lock the rotor to phase A during encoder calibration."
+    },
+    {
+      "role": "Encoder Noise Check Time",
+      "macro": "MCS_PMSM_ID_ENCODER_NOISE_CHECK_TIME_S",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "0.10"},
+      "description": "PWM-off observation time in seconds used to detect a randomly jumping encoder."
+    },
+    {
+      "role": "Encoder Alignment Settle Time",
+      "macro": "MCS_PMSM_ID_ENCODER_ALIGN_SETTLE_TIME_S",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "0.30"},
+      "description": "Time in seconds allowed for the rotor to settle at the phase-A electrical zero."
+    },
+    {
+      "role": "Encoder Sweep Electrical Frequency",
+      "macro": "MCS_PMSM_ID_ENCODER_SWEEP_ELEC_HZ",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "1.0"},
+      "description": "Electrical revolutions per second used while rotating the alignment current vector."
+    },
+    {
+      "role": "Encoder Anchor Settle Time",
+      "macro": "MCS_PMSM_ID_ENCODER_ANCHOR_SETTLE_TIME_S",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "0.10"},
+      "description": "Dwell time in seconds at phase A after each complete electrical revolution."
+    },
+    {
+      "role": "Encoder Maximum Sample Jump",
+      "macro": "MCS_PMSM_ID_ENCODER_MAX_SAMPLE_JUMP_PU",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "0.02"},
+      "description": "Maximum wrapped mechanical-position change accepted in one control ISR sample."
+    },
+    {
+      "role": "Encoder Maximum Stationary Span",
+      "macro": "MCS_PMSM_ID_ENCODER_MAX_STATIONARY_SPAN_PU",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "0.002"},
+      "description": "Maximum unwrapped position span accepted during the PWM-off encoder noise test."
+    },
+    {
+      "role": "Encoder Minimum Cycle Motion",
+      "macro": "MCS_PMSM_ID_ENCODER_MIN_CYCLE_MOTION_PU",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "0.02"},
+      "description": "Minimum net mechanical motion required during one electrical revolution; below this reports an uncoupled/stuck encoder."
+    },
+    {
+      "role": "Encoder Maximum Cycle Deviation",
+      "macro": "MCS_PMSM_ID_ENCODER_MAX_CYCLE_DEVIATION_PU",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "0.03"},
+      "description": "Maximum absolute deviation of each electrical-cycle mechanical motion from the measured mean."
+    },
+    {
+      "role": "Encoder Zero Return Tolerance",
+      "macro": "MCS_PMSM_ID_ENCODER_ZERO_RETURN_TOLERANCE_PU",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "0.02"},
+      "description": "Maximum wrapped mechanical-position error accepted when returning to the first phase-A anchor."
+    },
+    {
+      "role": "Encoder Maximum Pole Pairs",
+      "macro": "MCS_PMSM_ID_ENCODER_MAX_POLE_PAIRS",
+      "enabled": true,
+      "weak": true,
+      "binding": {"number": "16"},
+      "description": "Maximum pole-pair count searched before encoder calibration stops with a zero-return fault."
+    },
+    {
+      "role": "Mechanical ID Target Speed",
+      "macro": "MCS_PMSM_ID_MECH_TARGET_SPEED_RPM",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "1000.0"},
+      "description": "User-selected mechanical target speed in rpm for the identification test."
+    },
+    {
+      "role": "Mechanical ID Acceleration Current",
+      "macro": "MCS_PMSM_ID_MECH_ACCEL_CURRENT_A",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "1.0"},
+      "description": "User-selected q-axis current in amperes applied by the real current loop during acceleration."
+    },
+    {
+      "role": "Mechanical ID Fit Low Ratio",
+      "macro": "MCS_PMSM_ID_MECH_FIT_LOW_RATIO",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "0.30"},
+      "description": "Lower acceleration/coast fitting boundary relative to the selected target speed."
+    },
+    {
+      "role": "Mechanical ID Fit High Ratio",
+      "macro": "MCS_PMSM_ID_MECH_FIT_HIGH_RATIO",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "0.70"},
+      "description": "Upper acceleration/coast fitting boundary relative to the selected target speed."
+    },
+    {
+      "role": "Mechanical ID PWM Off Ratio",
+      "macro": "MCS_PMSM_ID_MECH_PWM_OFF_RATIO",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "0.75"},
+      "description": "Target-speed ratio at which PWM is physically disabled to start free coast-down."
+    },
+    {
+      "role": "Mechanical ID Maximum Test Time",
+      "macro": "MCS_PMSM_ID_MECH_MAX_TEST_TIME_S",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "20.0"},
+      "description": "Safety timeout in seconds covering acceleration and free coast-down."
+    },
+    {
+      "role": "Mechanical ID Record Time",
+      "macro": "MCS_PMSM_ID_MECH_RECORD_TIME_S",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "10.0"},
+      "description": "Expected maximum combined duration of the two recorded 30%-70% speed curves."
+    },
+    {
+      "role": "Mechanical ID Minimum Fit R2",
+      "macro": "MCS_PMSM_ID_MECH_MIN_FIT_R2",
+      "enabled": true,
+      "weak": true,
+      "binding": {"float": "0.80"},
+      "description": "Minimum coefficient of determination accepted for acceleration-versus-speed regression."
+    },
+    {
+      "role": "Mechanical ID Minimum Fit Samples",
+      "macro": "MCS_PMSM_ID_MECH_MIN_FIT_SAMPLES",
+      "enabled": true,
+      "weak": true,
+      "binding": {"number": "30"},
+      "description": "Minimum differentiated samples required in each acceleration and coast curve."
     }
   ],
   "requirement_groups": [
@@ -464,9 +824,49 @@
       ]
     },
     {
+      "name": "Offline Identification / Electrical",
+      "requirements": [
+        "Enable Prepare Stage",
+        "Enable Rs Deadtime Identification",
+        "Rs Deadtime Maximum Current",
+        "Rs Deadtime Minimum Current",
+        "Rs Deadtime Steps",
+        "Rs Deadtime Alignment Time",
+        "Rs Deadtime Measurement Delay",
+        "Rs Deadtime Measurement Points",
+        "Enable Ld Lq Identification",
+        "Ld Lq Pulse Voltage",
+        "Ld Lq Maximum Bias Current",
+        "Ld Lq Bias Steps",
+        "Ld Lq Alignment Current",
+        "Ld Lq Settle Time",
+        "Ld Lq Pulse Time",
+        "Ld Lq Cooldown Time",
+        "Enable Flux Identification",
+        "Flux Minimum Speed",
+        "Flux Maximum Speed",
+        "Flux Speed Steps",
+        "Flux IF Current",
+        "Flux Settle Time",
+        "Flux Measurement Points"
+      ]
+    },
+    {
       "name": "Voltage & Current Sensor / Position Sensor",
       "requirements": [
-        "Encoder Speed Filter Cutoff"
+        "Encoder Speed Filter Cutoff",
+        "Enable Encoder Calibration",
+        "Encoder Alignment Current",
+        "Encoder Noise Check Time",
+        "Encoder Alignment Settle Time",
+        "Encoder Sweep Electrical Frequency",
+        "Encoder Anchor Settle Time",
+        "Encoder Maximum Sample Jump",
+        "Encoder Maximum Stationary Span",
+        "Encoder Minimum Cycle Motion",
+        "Encoder Maximum Cycle Deviation",
+        "Encoder Zero Return Tolerance",
+        "Encoder Maximum Pole Pairs"
       ]
     },
     {
@@ -475,6 +875,21 @@
         "Commissioning Id Reference",
         "Commissioning Iq Reference",
         "Commissioning Speed Reference"
+      ]
+    },
+    {
+      "name": "Offline Identification / Mechanical",
+      "requirements": [
+        "Enable Mechanical Identification",
+        "Mechanical ID Target Speed",
+        "Mechanical ID Acceleration Current",
+        "Mechanical ID Fit Low Ratio",
+        "Mechanical ID Fit High Ratio",
+        "Mechanical ID PWM Off Ratio",
+        "Mechanical ID Maximum Test Time",
+        "Mechanical ID Record Time",
+        "Mechanical ID Minimum Fit R2",
+        "Mechanical ID Minimum Fit Samples"
       ]
     }
   ],

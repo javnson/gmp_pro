@@ -598,6 +598,321 @@ extern "C"
 #define MCS_ADC_CALIBRATOR_Q (0.707f)
 #endif // MCS_ADC_CALIBRATOR_Q
 
+/**
+ * @brief Enable the target ADC-calibration preparation handshake.
+ */
+#ifndef MCS_PMSM_ID_ENABLE_PREPARE
+#define MCS_PMSM_ID_ENABLE_PREPARE (1)
+#endif // MCS_PMSM_ID_ENABLE_PREPARE
+
+/**
+ * @brief Enable stator-resistance and inverter dead-time voltage identification.
+ */
+#ifndef MCS_PMSM_ID_ENABLE_RS_DT
+#define MCS_PMSM_ID_ENABLE_RS_DT (1)
+#endif // MCS_PMSM_ID_ENABLE_RS_DT
+
+/**
+ * @brief Enable d/q-axis inductance pulse identification.
+ */
+#ifndef MCS_PMSM_ID_ENABLE_LDQ
+#define MCS_PMSM_ID_ENABLE_LDQ (1)
+#endif // MCS_PMSM_ID_ENABLE_LDQ
+
+/**
+ * @brief Enable PM flux-linkage identification.
+ */
+#ifndef MCS_PMSM_ID_ENABLE_FLUX
+#define MCS_PMSM_ID_ENABLE_FLUX (1)
+#endif // MCS_PMSM_ID_ENABLE_FLUX
+
+/**
+ * @brief Maximum closed-loop current in amperes used by the Rs/dead-time sweep.
+ */
+#ifndef MCS_PMSM_ID_RSDT_MAX_CURRENT_A
+#define MCS_PMSM_ID_RSDT_MAX_CURRENT_A (5.0f)
+#endif // MCS_PMSM_ID_RSDT_MAX_CURRENT_A
+
+/**
+ * @brief Minimum closed-loop current in amperes used by the Rs/dead-time sweep.
+ */
+#ifndef MCS_PMSM_ID_RSDT_MIN_CURRENT_A
+#define MCS_PMSM_ID_RSDT_MIN_CURRENT_A (1.0f)
+#endif // MCS_PMSM_ID_RSDT_MIN_CURRENT_A
+
+/**
+ * @brief Number of positive current points in the Rs/dead-time regression.
+ */
+#ifndef MCS_PMSM_ID_RSDT_STEPS
+#define MCS_PMSM_ID_RSDT_STEPS (5)
+#endif // MCS_PMSM_ID_RSDT_STEPS
+
+/**
+ * @brief Rotor alignment dwell in seconds before the Rs/dead-time sweep.
+ */
+#ifndef MCS_PMSM_ID_RSDT_ALIGN_TIME_S
+#define MCS_PMSM_ID_RSDT_ALIGN_TIME_S (1.0f)
+#endif // MCS_PMSM_ID_RSDT_ALIGN_TIME_S
+
+/**
+ * @brief Settling delay in seconds after changing each Rs/dead-time current point.
+ */
+#ifndef MCS_PMSM_ID_RSDT_MEASURE_DELAY_S
+#define MCS_PMSM_ID_RSDT_MEASURE_DELAY_S (0.2f)
+#endif // MCS_PMSM_ID_RSDT_MEASURE_DELAY_S
+
+/**
+ * @brief Number of ISR samples averaged at each Rs/dead-time current point.
+ */
+#ifndef MCS_PMSM_ID_RSDT_MEASURE_POINTS
+#define MCS_PMSM_ID_RSDT_MEASURE_POINTS (100)
+#endif // MCS_PMSM_ID_RSDT_MEASURE_POINTS
+
+/**
+ * @brief Physical d/q pulse voltage in volts used for inductance identification.
+ */
+#ifndef MCS_PMSM_ID_LDQ_PULSE_VOLTAGE_V
+#define MCS_PMSM_ID_LDQ_PULSE_VOLTAGE_V (0.277128f)
+#endif // MCS_PMSM_ID_LDQ_PULSE_VOLTAGE_V
+
+/**
+ * @brief Maximum current bias in amperes used for the inductance profile.
+ */
+#ifndef MCS_PMSM_ID_LDQ_MAX_BIAS_CURRENT_A
+#define MCS_PMSM_ID_LDQ_MAX_BIAS_CURRENT_A (5.0f)
+#endif // MCS_PMSM_ID_LDQ_MAX_BIAS_CURRENT_A
+
+/**
+ * @brief Number of bias points recorded for each inductance axis.
+ */
+#ifndef MCS_PMSM_ID_LDQ_BIAS_STEPS
+#define MCS_PMSM_ID_LDQ_BIAS_STEPS (12)
+#endif // MCS_PMSM_ID_LDQ_BIAS_STEPS
+
+/**
+ * @brief D-axis alignment current in amperes used before inductance pulses.
+ */
+#ifndef MCS_PMSM_ID_LDQ_ALIGN_CURRENT_A
+#define MCS_PMSM_ID_LDQ_ALIGN_CURRENT_A (5.0f)
+#endif // MCS_PMSM_ID_LDQ_ALIGN_CURRENT_A
+
+/**
+ * @brief Bias-current settling time in seconds before each inductance pulse.
+ */
+#ifndef MCS_PMSM_ID_LDQ_SETTLE_TIME_S
+#define MCS_PMSM_ID_LDQ_SETTLE_TIME_S (0.2f)
+#endif // MCS_PMSM_ID_LDQ_SETTLE_TIME_S
+
+/**
+ * @brief Inductance voltage-pulse duration in seconds.
+ */
+#ifndef MCS_PMSM_ID_LDQ_PULSE_TIME_S
+#define MCS_PMSM_ID_LDQ_PULSE_TIME_S (0.002f)
+#endif // MCS_PMSM_ID_LDQ_PULSE_TIME_S
+
+/**
+ * @brief Zero-voltage cooldown time in seconds between inductance pulses.
+ */
+#ifndef MCS_PMSM_ID_LDQ_COOLDOWN_TIME_S
+#define MCS_PMSM_ID_LDQ_COOLDOWN_TIME_S (0.05f)
+#endif // MCS_PMSM_ID_LDQ_COOLDOWN_TIME_S
+
+/**
+ * @brief Minimum mechanical speed in rpm used by the flux-linkage regression.
+ */
+#ifndef MCS_PMSM_ID_FLUX_MIN_SPEED_RPM
+#define MCS_PMSM_ID_FLUX_MIN_SPEED_RPM (300.0f)
+#endif // MCS_PMSM_ID_FLUX_MIN_SPEED_RPM
+
+/**
+ * @brief Maximum mechanical speed in rpm used by the flux-linkage regression.
+ */
+#ifndef MCS_PMSM_ID_FLUX_MAX_SPEED_RPM
+#define MCS_PMSM_ID_FLUX_MAX_SPEED_RPM (1800.0f)
+#endif // MCS_PMSM_ID_FLUX_MAX_SPEED_RPM
+
+/**
+ * @brief Number of speed points used by the flux-linkage regression.
+ */
+#ifndef MCS_PMSM_ID_FLUX_STEPS
+#define MCS_PMSM_ID_FLUX_STEPS (6)
+#endif // MCS_PMSM_ID_FLUX_STEPS
+
+/**
+ * @brief Current magnitude in amperes used for I/F flux-linkage rotation.
+ */
+#ifndef MCS_PMSM_ID_FLUX_IF_CURRENT_A
+#define MCS_PMSM_ID_FLUX_IF_CURRENT_A (4.0f)
+#endif // MCS_PMSM_ID_FLUX_IF_CURRENT_A
+
+/**
+ * @brief Settling time in seconds at each flux-identification speed.
+ */
+#ifndef MCS_PMSM_ID_FLUX_SETTLE_TIME_S
+#define MCS_PMSM_ID_FLUX_SETTLE_TIME_S (2.0f)
+#endif // MCS_PMSM_ID_FLUX_SETTLE_TIME_S
+
+/**
+ * @brief Number of ISR samples averaged at each flux-identification speed.
+ */
+#ifndef MCS_PMSM_ID_FLUX_MEASURE_POINTS
+#define MCS_PMSM_ID_FLUX_MEASURE_POINTS (2000)
+#endif // MCS_PMSM_ID_FLUX_MEASURE_POINTS
+
+/**
+ * @brief Enable sensored phase-A alignment, pole-pair detection and encoder-offset calibration before electrical/mechanical identification.
+ */
+#ifndef MCS_PMSM_ID_ENABLE_ENCODER_CALIBRATION
+#define MCS_PMSM_ID_ENABLE_ENCODER_CALIBRATION (1)
+#endif // MCS_PMSM_ID_ENABLE_ENCODER_CALIBRATION
+
+/**
+ * @brief Enable the sensored constant-Iq acceleration and PWM-off coast-down mechanical identification stage.
+ */
+#ifndef MCS_PMSM_ID_ENABLE_MECHANICAL_ID
+#define MCS_PMSM_ID_ENABLE_MECHANICAL_ID (1)
+#endif // MCS_PMSM_ID_ENABLE_MECHANICAL_ID
+
+/**
+ * @brief Closed-loop d-axis current in amperes used to lock the rotor to phase A during encoder calibration.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_ALIGN_CURRENT_A
+#define MCS_PMSM_ID_ENCODER_ALIGN_CURRENT_A (1.0f)
+#endif // MCS_PMSM_ID_ENCODER_ALIGN_CURRENT_A
+
+/**
+ * @brief PWM-off observation time in seconds used to detect a randomly jumping encoder.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_NOISE_CHECK_TIME_S
+#define MCS_PMSM_ID_ENCODER_NOISE_CHECK_TIME_S (0.10f)
+#endif // MCS_PMSM_ID_ENCODER_NOISE_CHECK_TIME_S
+
+/**
+ * @brief Time in seconds allowed for the rotor to settle at the phase-A electrical zero.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_ALIGN_SETTLE_TIME_S
+#define MCS_PMSM_ID_ENCODER_ALIGN_SETTLE_TIME_S (0.30f)
+#endif // MCS_PMSM_ID_ENCODER_ALIGN_SETTLE_TIME_S
+
+/**
+ * @brief Electrical revolutions per second used while rotating the alignment current vector.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_SWEEP_ELEC_HZ
+#define MCS_PMSM_ID_ENCODER_SWEEP_ELEC_HZ (1.0f)
+#endif // MCS_PMSM_ID_ENCODER_SWEEP_ELEC_HZ
+
+/**
+ * @brief Dwell time in seconds at phase A after each complete electrical revolution.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_ANCHOR_SETTLE_TIME_S
+#define MCS_PMSM_ID_ENCODER_ANCHOR_SETTLE_TIME_S (0.10f)
+#endif // MCS_PMSM_ID_ENCODER_ANCHOR_SETTLE_TIME_S
+
+/**
+ * @brief Maximum wrapped mechanical-position change accepted in one control ISR sample.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_MAX_SAMPLE_JUMP_PU
+#define MCS_PMSM_ID_ENCODER_MAX_SAMPLE_JUMP_PU (0.02f)
+#endif // MCS_PMSM_ID_ENCODER_MAX_SAMPLE_JUMP_PU
+
+/**
+ * @brief Maximum unwrapped position span accepted during the PWM-off encoder noise test.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_MAX_STATIONARY_SPAN_PU
+#define MCS_PMSM_ID_ENCODER_MAX_STATIONARY_SPAN_PU (0.002f)
+#endif // MCS_PMSM_ID_ENCODER_MAX_STATIONARY_SPAN_PU
+
+/**
+ * @brief Minimum net mechanical motion required during one electrical revolution; below this reports an uncoupled/stuck encoder.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_MIN_CYCLE_MOTION_PU
+#define MCS_PMSM_ID_ENCODER_MIN_CYCLE_MOTION_PU (0.02f)
+#endif // MCS_PMSM_ID_ENCODER_MIN_CYCLE_MOTION_PU
+
+/**
+ * @brief Maximum absolute deviation of each electrical-cycle mechanical motion from the measured mean.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_MAX_CYCLE_DEVIATION_PU
+#define MCS_PMSM_ID_ENCODER_MAX_CYCLE_DEVIATION_PU (0.03f)
+#endif // MCS_PMSM_ID_ENCODER_MAX_CYCLE_DEVIATION_PU
+
+/**
+ * @brief Maximum wrapped mechanical-position error accepted when returning to the first phase-A anchor.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_ZERO_RETURN_TOLERANCE_PU
+#define MCS_PMSM_ID_ENCODER_ZERO_RETURN_TOLERANCE_PU (0.02f)
+#endif // MCS_PMSM_ID_ENCODER_ZERO_RETURN_TOLERANCE_PU
+
+/**
+ * @brief Maximum pole-pair count searched before encoder calibration stops with a zero-return fault.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_MAX_POLE_PAIRS
+#define MCS_PMSM_ID_ENCODER_MAX_POLE_PAIRS (16)
+#endif // MCS_PMSM_ID_ENCODER_MAX_POLE_PAIRS
+
+/**
+ * @brief User-selected mechanical target speed in rpm for the identification test.
+ */
+#ifndef MCS_PMSM_ID_MECH_TARGET_SPEED_RPM
+#define MCS_PMSM_ID_MECH_TARGET_SPEED_RPM (1000.0f)
+#endif // MCS_PMSM_ID_MECH_TARGET_SPEED_RPM
+
+/**
+ * @brief User-selected q-axis current in amperes applied by the real current loop during acceleration.
+ */
+#ifndef MCS_PMSM_ID_MECH_ACCEL_CURRENT_A
+#define MCS_PMSM_ID_MECH_ACCEL_CURRENT_A (1.0f)
+#endif // MCS_PMSM_ID_MECH_ACCEL_CURRENT_A
+
+/**
+ * @brief Lower acceleration/coast fitting boundary relative to the selected target speed.
+ */
+#ifndef MCS_PMSM_ID_MECH_FIT_LOW_RATIO
+#define MCS_PMSM_ID_MECH_FIT_LOW_RATIO (0.30f)
+#endif // MCS_PMSM_ID_MECH_FIT_LOW_RATIO
+
+/**
+ * @brief Upper acceleration/coast fitting boundary relative to the selected target speed.
+ */
+#ifndef MCS_PMSM_ID_MECH_FIT_HIGH_RATIO
+#define MCS_PMSM_ID_MECH_FIT_HIGH_RATIO (0.70f)
+#endif // MCS_PMSM_ID_MECH_FIT_HIGH_RATIO
+
+/**
+ * @brief Target-speed ratio at which PWM is physically disabled to start free coast-down.
+ */
+#ifndef MCS_PMSM_ID_MECH_PWM_OFF_RATIO
+#define MCS_PMSM_ID_MECH_PWM_OFF_RATIO (0.75f)
+#endif // MCS_PMSM_ID_MECH_PWM_OFF_RATIO
+
+/**
+ * @brief Safety timeout in seconds covering acceleration and free coast-down.
+ */
+#ifndef MCS_PMSM_ID_MECH_MAX_TEST_TIME_S
+#define MCS_PMSM_ID_MECH_MAX_TEST_TIME_S (20.0f)
+#endif // MCS_PMSM_ID_MECH_MAX_TEST_TIME_S
+
+/**
+ * @brief Expected maximum combined duration of the two recorded 30%-70% speed curves.
+ */
+#ifndef MCS_PMSM_ID_MECH_RECORD_TIME_S
+#define MCS_PMSM_ID_MECH_RECORD_TIME_S (10.0f)
+#endif // MCS_PMSM_ID_MECH_RECORD_TIME_S
+
+/**
+ * @brief Minimum coefficient of determination accepted for acceleration-versus-speed regression.
+ */
+#ifndef MCS_PMSM_ID_MECH_MIN_FIT_R2
+#define MCS_PMSM_ID_MECH_MIN_FIT_R2 (0.80f)
+#endif // MCS_PMSM_ID_MECH_MIN_FIT_R2
+
+/**
+ * @brief Minimum differentiated samples required in each acceleration and coast curve.
+ */
+#ifndef MCS_PMSM_ID_MECH_MIN_FIT_SAMPLES
+#define MCS_PMSM_ID_MECH_MIN_FIT_SAMPLES (30)
+#endif // MCS_PMSM_ID_MECH_MIN_FIT_SAMPLES
+
 // Common tail code: MCS PMSM Identification Common Control
 /* Accept the historical misspelling while all source code uses the canonical switch. */
 #if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM

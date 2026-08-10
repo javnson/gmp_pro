@@ -1,0 +1,355 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineSystem.cmake:205 (message)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      The system is: Windows - 10.0.22631 - AMD64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler:  
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      适用于 .NET Framework MSBuild 版本 17.11.9+a69bbaaf5
+      生成启动时间为 2026/8/10 17:26:23。
+      
+      节点 1 上的项目“E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\3.31.5\\CompilerIdCXX\\CompilerIdCXX.vcxproj”(默认目标)。
+      PrepareForBuild:
+        正在创建目录“Debug\\”。
+        已启用结构化输出。编译器诊断的格式设置将反映错误层次结构。有关详细信息，请参阅 https://aka.ms/cpp/structured-output。
+        正在创建目录“Debug\\CompilerIdCXX.tlog\\”。
+      InitializeBuildStatus:
+        正在创建“Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild”，因为已指定“AlwaysCreate”。
+        正在对“Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild”执行 Touch 任务。
+      VcpkgTripletSelection:
+        Using triplet "x64-windows" from "C:\\Users\\javnson\\scoop\\apps\\vcpkg\\current\\installed\\x64-windows\\"
+        Using normalized configuration "Release"
+      VcpkgCheckManifestRoot:
+        The vcpkg manifest was disabled, but we found a manifest file in E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\. You may want to enable vcpkg manifests in your properties page or pass /p:VcpkgEnableManifest=true to the msbuild invocation.
+      ClCompile:
+        C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\javnson\\scoop\\apps\\vcpkg\\current\\installed\\x64-windows\\include" /nologo /W0 /WX- /diagnostics:column /Od /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\\\" /Fd"Debug\\vc143.pdb" /external:W0 /Gd /TP /FC /errorReport:queue CMakeCXXCompilerId.cpp
+        CMakeCXXCompilerId.cpp
+      Link:
+        C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:".\\CompilerIdCXX.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\\Users\\javnson\\scoop\\apps\\vcpkg\\current\\installed\\x64-windows\\lib" /LIBPATH:"C:\\Users\\javnson\\scoop\\apps\\vcpkg\\current\\installed\\x64-windows\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib "C:\\Users\\javnson\\scoop\\apps\\vcpkg\\current\\installed\\x64-windows\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\\CompilerIdCXX.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\\CompilerIdCXX.lib" /MACHINE:X64 Debug\\CMakeCXXCompilerId.obj
+        CompilerIdCXX.vcxproj -> E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\3.31.5\\CompilerIdCXX\\CompilerIdCXX.exe
+      AppLocalFromInstalled:
+        pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\javnson\\scoop\\apps\\vcpkg\\current\\scripts\\buildsystems\\msbuild\\applocal.ps1" "E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\3.31.5\\CompilerIdCXX\\CompilerIdCXX.exe" "C:\\Users\\javnson\\scoop\\apps\\vcpkg\\current\\installed\\x64-windows\\bin" "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.write.1u.tlog" "Debug\\vcpkg.applocal.log"
+      PostBuildEvent:
+        for %%i in (cl.exe) do @echo CMAKE_CXX_COMPILER=%%~$PATH:i
+        :VCEnd
+        CMAKE_CXX_COMPILER=C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC\\14.41.34120\\bin\\Hostx64\\x64\\cl.exe
+      FinalizeBuildStatus:
+        正在删除文件“Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild”。
+        正在对“Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.lastbuildstate”执行 Touch 任务。
+      已完成生成项目“E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\3.31.5\\CompilerIdCXX\\CompilerIdCXX.vcxproj”(默认目标)的操作。
+      
+      已成功生成。
+          0 个警告
+          0 个错误
+      
+      已用时间 00:00:01.30
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.vcxproj"
+      
+      The CXX compiler identification is MSVC, found in:
+        E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/3.31.5/CompilerIdCXX/CompilerIdCXX.exe
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/CMakeScratch/TryCompile-kcf7qn"
+      binary: "E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/CMakeScratch/TryCompile-kcf7qn"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      VCPKG_INSTALLED_DIR: "E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/vcpkg_installed"
+      VCPKG_PREFER_SYSTEM_LIBS: "OFF"
+      VCPKG_TARGET_TRIPLET: "x64-windows"
+      Z_VCPKG_ROOT_DIR: "E:/lib/gmp_pro/bin/vcpkg"
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: 'E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/CMakeScratch/TryCompile-kcf7qn'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Professional/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_09c8e.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        适用于 .NET Framework MSBuild 版本 17.11.9+a69bbaaf5
+        生成启动时间为 2026/8/10 17:26:24。
+        
+        节点 1 上的项目“E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-kcf7qn\\cmTC_09c8e.vcxproj”(默认目标)。
+        PrepareForBuild:
+          正在创建目录“cmTC_09c8e.dir\\Debug\\”。
+          已启用结构化输出。编译器诊断的格式设置将反映错误层次结构。有关详细信息，请参阅 https://aka.ms/cpp/structured-output。
+          正在创建目录“E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-kcf7qn\\Debug\\”。
+          正在创建目录“cmTC_09c8e.dir\\Debug\\cmTC_09c8e.tlog\\”。
+        InitializeBuildStatus:
+          正在创建“cmTC_09c8e.dir\\Debug\\cmTC_09c8e.tlog\\unsuccessfulbuild”，因为已指定“AlwaysCreate”。
+          正在对“cmTC_09c8e.dir\\Debug\\cmTC_09c8e.tlog\\unsuccessfulbuild”执行 Touch 任务。
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_09c8e.dir\\Debug\\\\" /Fd"cmTC_09c8e.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
+          用于 x64 的 Microsoft (R) C/C++ 优化编译器 19.41.34123 版
+          版权所有(C) Microsoft Corporation。保留所有权利。
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_09c8e.dir\\Debug\\\\" /Fd"cmTC_09c8e.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
+          CMakeCXXCompilerABI.cpp
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-kcf7qn\\Debug\\cmTC_09c8e.exe" /INCREMENTAL /ILK:"cmTC_09c8e.dir\\Debug\\cmTC_09c8e.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/CMakeScratch/TryCompile-kcf7qn/Debug/cmTC_09c8e.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/CMakeScratch/TryCompile-kcf7qn/Debug/cmTC_09c8e.lib" /MACHINE:X64  /machine:x64 cmTC_09c8e.dir\\Debug\\CMakeCXXCompilerABI.obj
+          cmTC_09c8e.vcxproj -> E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-kcf7qn\\Debug\\cmTC_09c8e.exe
+        FinalizeBuildStatus:
+          正在删除文件“cmTC_09c8e.dir\\Debug\\cmTC_09c8e.tlog\\unsuccessfulbuild”。
+          正在对“cmTC_09c8e.dir\\Debug\\cmTC_09c8e.tlog\\cmTC_09c8e.lastbuildstate”执行 Touch 任务。
+        已完成生成项目“E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-kcf7qn\\cmTC_09c8e.vcxproj”(默认目标)的操作。
+        
+        已成功生成。
+            0 个警告
+            0 个错误
+        
+        已用时间 00:00:00.39
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Parsed CXX implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?))("|,| |$)]
+        linker tool for 'CXX': C:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/link.exe
+        implicit libs: []
+        implicit objs: []
+        implicit dirs: []
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Running the CXX compiler's linker: "C:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/link.exe" "-v"
+      Microsoft (R) Incremental Linker Version 14.41.34123.0
+      Copyright (C) Microsoft Corporation.  All rights reserved.
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake:108 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CheckCXXSourceCompiles.cmake:58 (cmake_check_source_compiles)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:99 (CHECK_CXX_SOURCE_COMPILES)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:163 (_threads_check_libc)"
+      - "E:/lib/gmp_pro/bin/vcpkg/scripts/buildsystems/vcpkg.cmake:908 (_find_package)"
+      - "build/vcpkg_installed/x64-windows/share/asio/asio-config.cmake:1 (find_package)"
+      - "E:/lib/gmp_pro/bin/vcpkg/scripts/buildsystems/vcpkg.cmake:908 (_find_package)"
+      - "CMakeLists.txt:5 (find_package)"
+    checks:
+      - "Performing Test CMAKE_HAVE_LIBC_PTHREAD"
+    directories:
+      source: "E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/CMakeScratch/TryCompile-x55wtc"
+      binary: "E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/CMakeScratch/TryCompile-x55wtc"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      VCPKG_INSTALLED_DIR: "E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/vcpkg_installed"
+      VCPKG_PREFER_SYSTEM_LIBS: "OFF"
+      VCPKG_TARGET_TRIPLET: "x64-windows"
+      Z_VCPKG_ROOT_DIR: "E:/lib/gmp_pro/bin/vcpkg"
+    buildResult:
+      variable: "CMAKE_HAVE_LIBC_PTHREAD"
+      cached: true
+      stdout: |
+        Change Dir: 'E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/CMakeScratch/TryCompile-x55wtc'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Professional/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_fae91.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        适用于 .NET Framework MSBuild 版本 17.11.9+a69bbaaf5
+        生成启动时间为 2026/8/10 17:26:25。
+        
+        节点 1 上的项目“E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-x55wtc\\cmTC_fae91.vcxproj”(默认目标)。
+        PrepareForBuild:
+          正在创建目录“cmTC_fae91.dir\\Debug\\”。
+          已启用结构化输出。编译器诊断的格式设置将反映错误层次结构。有关详细信息，请参阅 https://aka.ms/cpp/structured-output。
+          正在创建目录“E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-x55wtc\\Debug\\”。
+          正在创建目录“cmTC_fae91.dir\\Debug\\cmTC_fae91.tlog\\”。
+        InitializeBuildStatus:
+          正在创建“cmTC_fae91.dir\\Debug\\cmTC_fae91.tlog\\unsuccessfulbuild”，因为已指定“AlwaysCreate”。
+          正在对“cmTC_fae91.dir\\Debug\\cmTC_fae91.tlog\\unsuccessfulbuild”执行 Touch 任务。
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_fae91.dir\\Debug\\\\" /Fd"cmTC_fae91.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-x55wtc\\src.cxx"
+          用于 x64 的 Microsoft (R) C/C++ 优化编译器 19.41.34123 版
+          版权所有(C) Microsoft Corporation。保留所有权利。
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_fae91.dir\\Debug\\\\" /Fd"cmTC_fae91.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-x55wtc\\src.cxx"
+          src.cxx
+        E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-x55wtc\\src.cxx(1,10): error C1083: 无法打开包括文件: “pthread.h”: No such file or directory [E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-x55wtc\\cmTC_fae91.vcxproj]
+        已完成生成项目“E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-x55wtc\\cmTC_fae91.vcxproj”(默认目标)的操作 - 失败。
+        
+        生成失败。
+        
+        “E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-x55wtc\\cmTC_fae91.vcxproj”(默认目标) (1) ->
+        (ClCompile 目标) -> 
+          E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-x55wtc\\src.cxx(1,10): error C1083: 无法打开包括文件: “pthread.h”: No such file or directory [E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-x55wtc\\cmTC_fae91.vcxproj]
+        
+            0 个警告
+            1 个错误
+        
+        已用时间 00:00:00.26
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CheckLibraryExists.cmake:78 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:112 (CHECK_LIBRARY_EXISTS)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:175 (_threads_check_lib)"
+      - "E:/lib/gmp_pro/bin/vcpkg/scripts/buildsystems/vcpkg.cmake:908 (_find_package)"
+      - "build/vcpkg_installed/x64-windows/share/asio/asio-config.cmake:1 (find_package)"
+      - "E:/lib/gmp_pro/bin/vcpkg/scripts/buildsystems/vcpkg.cmake:908 (_find_package)"
+      - "CMakeLists.txt:5 (find_package)"
+    checks:
+      - "Looking for pthread_create in pthreads"
+    directories:
+      source: "E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/CMakeScratch/TryCompile-xn4gv9"
+      binary: "E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/CMakeScratch/TryCompile-xn4gv9"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      VCPKG_INSTALLED_DIR: "E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/vcpkg_installed"
+      VCPKG_PREFER_SYSTEM_LIBS: "OFF"
+      VCPKG_TARGET_TRIPLET: "x64-windows"
+      Z_VCPKG_ROOT_DIR: "E:/lib/gmp_pro/bin/vcpkg"
+    buildResult:
+      variable: "CMAKE_HAVE_PTHREADS_CREATE"
+      cached: true
+      stdout: |
+        Change Dir: 'E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/CMakeScratch/TryCompile-xn4gv9'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Professional/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_8d9ac.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        适用于 .NET Framework MSBuild 版本 17.11.9+a69bbaaf5
+        生成启动时间为 2026/8/10 17:26:25。
+        
+        节点 1 上的项目“E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-xn4gv9\\cmTC_8d9ac.vcxproj”(默认目标)。
+        PrepareForBuild:
+          正在创建目录“cmTC_8d9ac.dir\\Debug\\”。
+          已启用结构化输出。编译器诊断的格式设置将反映错误层次结构。有关详细信息，请参阅 https://aka.ms/cpp/structured-output。
+          正在创建目录“E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-xn4gv9\\Debug\\”。
+          正在创建目录“cmTC_8d9ac.dir\\Debug\\cmTC_8d9ac.tlog\\”。
+        InitializeBuildStatus:
+          正在创建“cmTC_8d9ac.dir\\Debug\\cmTC_8d9ac.tlog\\unsuccessfulbuild”，因为已指定“AlwaysCreate”。
+          正在对“cmTC_8d9ac.dir\\Debug\\cmTC_8d9ac.tlog\\unsuccessfulbuild”执行 Touch 任务。
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_8d9ac.dir\\Debug\\\\" /Fd"cmTC_8d9ac.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-xn4gv9\\CheckFunctionExists.cxx"
+          用于 x64 的 Microsoft (R) C/C++ 优化编译器 19.41.34123 版
+          版权所有(C) Microsoft Corporation。保留所有权利。
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_8d9ac.dir\\Debug\\\\" /Fd"cmTC_8d9ac.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-xn4gv9\\CheckFunctionExists.cxx"
+          CheckFunctionExists.cxx
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-xn4gv9\\Debug\\cmTC_8d9ac.exe" /INCREMENTAL /ILK:"cmTC_8d9ac.dir\\Debug\\cmTC_8d9ac.ilk" /NOLOGO pthreads.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/CMakeScratch/TryCompile-xn4gv9/Debug/cmTC_8d9ac.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/CMakeScratch/TryCompile-xn4gv9/Debug/cmTC_8d9ac.lib" /MACHINE:X64  /machine:x64 cmTC_8d9ac.dir\\Debug\\CheckFunctionExists.obj
+        LINK : fatal error LNK1104: 无法打开文件“pthreads.lib” [E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-xn4gv9\\cmTC_8d9ac.vcxproj]
+        已完成生成项目“E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-xn4gv9\\cmTC_8d9ac.vcxproj”(默认目标)的操作 - 失败。
+        
+        生成失败。
+        
+        “E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-xn4gv9\\cmTC_8d9ac.vcxproj”(默认目标) (1) ->
+        (Link 目标) -> 
+          LINK : fatal error LNK1104: 无法打开文件“pthreads.lib” [E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-xn4gv9\\cmTC_8d9ac.vcxproj]
+        
+            0 个警告
+            1 个错误
+        
+        已用时间 00:00:00.28
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CheckLibraryExists.cmake:78 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:112 (CHECK_LIBRARY_EXISTS)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:176 (_threads_check_lib)"
+      - "E:/lib/gmp_pro/bin/vcpkg/scripts/buildsystems/vcpkg.cmake:908 (_find_package)"
+      - "build/vcpkg_installed/x64-windows/share/asio/asio-config.cmake:1 (find_package)"
+      - "E:/lib/gmp_pro/bin/vcpkg/scripts/buildsystems/vcpkg.cmake:908 (_find_package)"
+      - "CMakeLists.txt:5 (find_package)"
+    checks:
+      - "Looking for pthread_create in pthread"
+    directories:
+      source: "E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/CMakeScratch/TryCompile-9ixoum"
+      binary: "E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/CMakeScratch/TryCompile-9ixoum"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      VCPKG_INSTALLED_DIR: "E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/vcpkg_installed"
+      VCPKG_PREFER_SYSTEM_LIBS: "OFF"
+      VCPKG_TARGET_TRIPLET: "x64-windows"
+      Z_VCPKG_ROOT_DIR: "E:/lib/gmp_pro/bin/vcpkg"
+    buildResult:
+      variable: "CMAKE_HAVE_PTHREAD_CREATE"
+      cached: true
+      stdout: |
+        Change Dir: 'E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/CMakeScratch/TryCompile-9ixoum'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Professional/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_d96fc.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        适用于 .NET Framework MSBuild 版本 17.11.9+a69bbaaf5
+        生成启动时间为 2026/8/10 17:26:26。
+        
+        节点 1 上的项目“E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9ixoum\\cmTC_d96fc.vcxproj”(默认目标)。
+        PrepareForBuild:
+          正在创建目录“cmTC_d96fc.dir\\Debug\\”。
+          已启用结构化输出。编译器诊断的格式设置将反映错误层次结构。有关详细信息，请参阅 https://aka.ms/cpp/structured-output。
+          正在创建目录“E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9ixoum\\Debug\\”。
+          正在创建目录“cmTC_d96fc.dir\\Debug\\cmTC_d96fc.tlog\\”。
+        InitializeBuildStatus:
+          正在创建“cmTC_d96fc.dir\\Debug\\cmTC_d96fc.tlog\\unsuccessfulbuild”，因为已指定“AlwaysCreate”。
+          正在对“cmTC_d96fc.dir\\Debug\\cmTC_d96fc.tlog\\unsuccessfulbuild”执行 Touch 任务。
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_d96fc.dir\\Debug\\\\" /Fd"cmTC_d96fc.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9ixoum\\CheckFunctionExists.cxx"
+          用于 x64 的 Microsoft (R) C/C++ 优化编译器 19.41.34123 版
+          版权所有(C) Microsoft Corporation。保留所有权利。
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_d96fc.dir\\Debug\\\\" /Fd"cmTC_d96fc.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9ixoum\\CheckFunctionExists.cxx"
+          CheckFunctionExists.cxx
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9ixoum\\Debug\\cmTC_d96fc.exe" /INCREMENTAL /ILK:"cmTC_d96fc.dir\\Debug\\cmTC_d96fc.ilk" /NOLOGO pthread.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/CMakeScratch/TryCompile-9ixoum/Debug/cmTC_d96fc.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"E:/lib/gmp_pro/tools/gmp_sil/tcp_helper_v2/build/CMakeFiles/CMakeScratch/TryCompile-9ixoum/Debug/cmTC_d96fc.lib" /MACHINE:X64  /machine:x64 cmTC_d96fc.dir\\Debug\\CheckFunctionExists.obj
+        LINK : fatal error LNK1104: 无法打开文件“pthread.lib” [E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9ixoum\\cmTC_d96fc.vcxproj]
+        已完成生成项目“E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9ixoum\\cmTC_d96fc.vcxproj”(默认目标)的操作 - 失败。
+        
+        生成失败。
+        
+        “E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9ixoum\\cmTC_d96fc.vcxproj”(默认目标) (1) ->
+        (Link 目标) -> 
+          LINK : fatal error LNK1104: 无法打开文件“pthread.lib” [E:\\lib\\gmp_pro\\tools\\gmp_sil\\tcp_helper_v2\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9ixoum\\cmTC_d96fc.vcxproj]
+        
+            0 个警告
+            1 个错误
+        
+        已用时间 00:00:00.26
+        
+      exitCode: 1
+...
