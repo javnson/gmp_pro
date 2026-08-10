@@ -1,116 +1,37 @@
-// This file will implement a Runge-Kutta Solver.
+#ifndef CCTL_NUMERICAL_SOLVER_RUNGE_KUTTA_4_HPP
+#define CCTL_NUMERICAL_SOLVER_RUNGE_KUTTA_4_HPP
 
-#ifndef _FILE_RUNGE_KUTTA_4_HPP_
-#define _FILE_RUNGE_KUTTA_4_HPP_
+#include <stdexcept>
 
-
-// In order to solve a equation user should implement a class which
-// provide a `operator +=` to implement a integral and
-// a `operator()` to get diff item.
-
-// _T to specify a type which means the accuracy.
-template <typename template_type> class st_rlc_resonance
+namespace cctl
 {
-  public:
-    typedef template_type _T;
 
-  public:
-    _T uc;
-    _T il;
-
-  public:
-    st_rlc_resonance() : uc(0), il(0)
-    {
-    }
-
-    // ctor & dtor
-    st_rlc_resonance(_T uc, _T il) : uc(uc), il(il)
-    {
-    }
-
-  public:
-    st_rlc_resonance operator*(const _T &num) const
-    {
-        return st_rlc_resonance(uc * num, il * num);
-    }
-
-    st_rlc_resonance operator+(const st_rlc_resonance &num) const
-    {
-        return st_rlc_resonance(uc + num.uc, il + num.il);
-    }
-
-    st_rlc_resonance &operator+=(const st_rlc_resonance &&num)
-    {
-        this->uc = this->uc + num.uc;
-        this->il = this->il + num.il;
-        return *this;
-    }
-};
-
-template <typename template_type> class diff_rlc_resonance
+/**
+ * @brief Advance a zero-order-held model by one classical fourth-order RK step.
+ *
+ * Input is held constant across k1..k4, while state-dependent effects inside
+ * Model::derivative are recalculated at every intermediate state.
+ */
+template <typename Model>
+inline void runge_kutta_4_step(const Model &model, typename Model::scalar_type time,
+                               typename Model::scalar_type dt, typename Model::state_type &state,
+                               const typename Model::input_type &input)
 {
-  public:
-    typedef typename template_type _T;
-    typedef typename st_rlc_resonance<_T> _st;
+    typedef typename Model::scalar_type scalar_type;
+    typedef typename Model::state_type state_type;
 
-  public:
-    _T *U_in;
+    if (!(dt > scalar_type(0)))
+        throw std::invalid_argument("Runge-Kutta step must be positive");
 
-  public:
-    // system parameters
-    _T C;
-    _T L;
-    _T R;
+    const scalar_type half_dt = dt * scalar_type(0.5);
+    const state_type k1 = model.derivative(time, state, input);
+    const state_type k2 = model.derivative(time + half_dt, state + k1 * half_dt, input);
+    const state_type k3 = model.derivative(time + half_dt, state + k2 * half_dt, input);
+    const state_type k4 = model.derivative(time + dt, state + k3 * dt, input);
 
-  public:
-    void bind(_T *U_in)
-    {
-        this->U_in = U_in;
-    }
+    state += (k1 + k2 * scalar_type(2) + k3 * scalar_type(2) + k4) * (dt / scalar_type(6));
+}
 
-    _st operator()(const _st &st)
-    {
-        _st diff;
-        diff.uc = st.il / C;
-        diff.il = -st.uc / L - R / L * st.il + (*U_in) / L;
+} // namespace cctl
 
-        return diff;
-    }
-};
-
-// _T    is a number which has +-*/ calculation
-// _diff owns a operator() to give a differential result
-// _st   owns a operator+ to provide a integral process
-template <typename _diff, typename _T = typename _diff::_T> class RungeKutta
-{
-  public:
-    typedef typename _diff::_st _st;
-
-  public:
-    _T time;
-
-    _T dt;
-    _T half_dt;
-    _diff diff;
-    _st st;
-
-  public:
-    RungeKutta(_T _dt) : dt(_dt), half_dt(_dt * 0.5), time(0),diff(){};
-
-    _st &operator()()
-    {
-        _st k1 = diff(st);
-        _st k2 = diff(st + k1 * half_dt);
-        _st k3 = diff(st + k2 * half_dt);
-        _st k4 = diff(st + k3 * dt);
-
-        time += dt;
-        st += (k1 + k2 * 2.0 + k3 * 2.0 + k4) * (dt / 6.0);
-        return st;
-    }
-};
-
-
-
-
-#endif // _FILE_RUNGE_KUTTA_4_HPP_
+#endif // CCTL_NUMERICAL_SOLVER_RUNGE_KUTTA_4_HPP

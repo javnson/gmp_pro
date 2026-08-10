@@ -71,20 +71,20 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(ProjectDir)/../../../third_party/eigen;$(ProjectDir)/../../../;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <ExternalIncludePath>$(ProjectDir)/../../../third_party/eigen;$(ProjectDir)/../../../;$(VC_IncludePath);$(WindowsSDK_IncludePath);</ExternalIncludePath>
+    <IncludePath>$(GMP_PRO_LOCATION);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <ExternalIncludePath>$(GMP_PRO_LOCATION);$(VC_IncludePath);$(WindowsSDK_IncludePath);</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(ProjectDir)/../../../third_party/eigen;$(ProjectDir)/../../../;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <ExternalIncludePath>$(ProjectDir)/../../../third_party/eigen;$(ProjectDir)/../../../;$(VC_IncludePath);$(WindowsSDK_IncludePath);</ExternalIncludePath>
+    <IncludePath>$(GMP_PRO_LOCATION);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <ExternalIncludePath>$(GMP_PRO_LOCATION);$(VC_IncludePath);$(WindowsSDK_IncludePath);</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(GMP_PRO_LOCATION)/third_party/eigen;$(GMP_PRO_LOCATION);$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <ExternalIncludePath>$(GMP_PRO_LOCATION)/third_party/eigen;$(GMP_PRO_LOCATION);$(VC_IncludePath);$(WindowsSDK_IncludePath)</ExternalIncludePath>
+    <IncludePath>$(GMP_PRO_LOCATION);$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <ExternalIncludePath>$(GMP_PRO_LOCATION);$(VC_IncludePath);$(WindowsSDK_IncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)/../../../third_party/eigen;$(ProjectDir)/../../../;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <ExternalIncludePath>$(ProjectDir)/../../../third_party/eigen;$(ProjectDir)/../../../;$(VC_IncludePath);$(WindowsSDK_IncludePath);</ExternalIncludePath>
+    <IncludePath>$(GMP_PRO_LOCATION);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <ExternalIncludePath>$(GMP_PRO_LOCATION);$(VC_IncludePath);$(WindowsSDK_IncludePath);</ExternalIncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

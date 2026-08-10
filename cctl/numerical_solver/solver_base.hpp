@@ -1,6 +1,8 @@
 
-#ifndef _FILE_SOLVER_BASE_HPP_
-#define _FILE_SOLVER_BASE_HPP_
+#ifndef CCTL_NUMERICAL_SOLVER_SOLVER_BASE_HPP
+#define CCTL_NUMERICAL_SOLVER_SOLVER_BASE_HPP
+
+#include <cctl/numerical_solver/fixed_vector.hpp>
 
 template <typename template_type> class st_null
 {
@@ -22,10 +24,10 @@ template <typename template_type> class st_null
         return st_null();
     }
 
-    st_null &operator+=(const st_null &&num)
+    st_null &operator+=(const st_null &num)
     {
         return *this;
     }
 };
 
-#endif // _FILE_SOLVER_BASE_HPP_
+#endif // CCTL_NUMERICAL_SOLVER_SOLVER_BASE_HPP

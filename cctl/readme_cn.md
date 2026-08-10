@@ -12,3 +12,9 @@
 | [`power_electronics_objects`](power_electronics_objects/readme_cn.md) | 变换器和被控对象的 C++ 模型 |
 
 当前硬件 suite 默认仍采用 `ctl`。正式嵌入式控制工程应优先从 `ctl/component` 和 `ctl/suite` 开始；只有在确实需要 C++ 类型或上位机数值模型时再使用 CCTL。
+
+## 已验证的 PMSM 平均值仿真核心
+
+`cctl.hpp` 汇总了当前通过离线测试的固定维度向量、Euler/RK4 求解器、三相平均逆变器和 PMSM 平均模型。模型为纯 C++11 头文件，不依赖 Eigen，也不包含 UDP/TCP 或控制器算法耦合。
+
+独立验证入口位于 `tb/pmsm_average_model_test`。它检查求解器收敛阶、锁轴 RL 解析响应、自由减速解析响应、abc/dq 功率不变性、转矩公式和死区平均压降。
