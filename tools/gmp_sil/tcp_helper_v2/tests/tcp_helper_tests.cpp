@@ -46,7 +46,8 @@ transport::configuration server_config()
     config.bind_address = "127.0.0.1";
     config.port = 0U;
     config.connect_timeout = 2s;
-    config.io_timeout = 2s;
+    config.startup_io_timeout = 2s;
+    config.established_io_timeout = 2s;
     config.max_payload = 4096U;
     return config;
 }
@@ -58,7 +59,8 @@ transport::configuration client_config(std::uint16_t port)
     config.target_address = "127.0.0.1";
     config.port = port;
     config.connect_timeout = 2s;
-    config.io_timeout = 2s;
+    config.startup_io_timeout = 2s;
+    config.established_io_timeout = 2s;
     config.max_payload = 4096U;
     return config;
 }
@@ -204,7 +206,7 @@ void test_receive_timeout_is_bounded()
     });
 
     auto config = client_config(port);
-    config.io_timeout = 100ms;
+    config.startup_io_timeout = 100ms;
     transport::asio_tcp_helper client(config);
     client.connect();
     const auto started = std::chrono::steady_clock::now();
@@ -214,6 +216,107 @@ void test_receive_timeout_is_bounded()
     require(elapsed >= 80ms && elapsed < 1s, "receive timeout was not bounded as configured");
     require(!client.connected(), "timed-out stream must be closed because framing is ambiguous");
     raw_server.join();
+}
+
+void test_established_link_uses_long_timeout()
+{
+    asio::io_context io;
+    asio::ip::tcp::acceptor acceptor(io, {asio::ip::make_address("127.0.0.1"), 0U});
+    const auto port = acceptor.local_endpoint().port();
+    std::exception_ptr server_failure;
+    std::thread raw_server([&]() {
+        try
+        {
+            asio::ip::tcp::socket socket(io);
+            acceptor.accept(socket);
+            for (std::uint64_t sequence = 1U; sequence <= 2U; ++sequence)
+            {
+                if (sequence == 2U)
+                    std::this_thread::sleep_for(250ms);
+                transport::frame_header header;
+                header.kind = transport::frame_kind::data_response;
+                header.sequence = sequence;
+                header.payload_size = 1U;
+                const auto encoded = transport::encode_header(header);
+                const std::uint8_t payload = static_cast<std::uint8_t>(sequence);
+                asio::write(socket, asio::buffer(encoded));
+                asio::write(socket, asio::buffer(&payload, 1U));
+            }
+        }
+        catch (...)
+        {
+            server_failure = std::current_exception();
+        }
+    });
+
+    auto config = client_config(port);
+    config.startup_io_timeout = 100ms;
+    config.established_io_timeout = 500ms;
+    config.established_after_frames = 1U;
+    transport::asio_tcp_helper client(config);
+    client.connect();
+    const auto first = client.receive();
+    require(first.payload == std::vector<std::uint8_t>{1U}, "first complete frame was corrupted");
+    require(client.established_timeout_active() && client.effective_io_timeout() == 500ms,
+            "first complete frame did not enable established-link timeout");
+    const auto second = client.receive();
+    require(second.payload == std::vector<std::uint8_t>{2U},
+            "established-link timeout did not tolerate a debugger-sized pause");
+    require(client.completed_receive_frames() == 2U, "complete receive frame counter is incorrect");
+
+    const auto abort_started = std::chrono::steady_clock::now();
+    client.abort();
+    require(std::chrono::steady_clock::now() - abort_started < 100ms && !client.connected(),
+            "end-of-transfer abort did not close an idle connection immediately");
+
+    raw_server.join();
+    if (server_failure)
+        std::rethrow_exception(server_failure);
+}
+
+void test_active_abort_interrupts_receive()
+{
+    asio::io_context io;
+    asio::ip::tcp::acceptor acceptor(io, {asio::ip::make_address("127.0.0.1"), 0U});
+    const auto port = acceptor.local_endpoint().port();
+    std::thread raw_server([&]() {
+        asio::ip::tcp::socket socket(io);
+        acceptor.accept(socket);
+        std::uint8_t byte = 0U;
+        std::error_code ignored;
+        socket.read_some(asio::buffer(&byte, 1U), ignored);
+    });
+
+    auto config = client_config(port);
+    config.startup_io_timeout = 5s;
+    config.established_io_timeout = 30s;
+    transport::asio_tcp_helper client(config);
+    client.connect();
+
+    bool caught = false;
+    transport::error_code observed = transport::error_code::io_error;
+    const auto started = std::chrono::steady_clock::now();
+    std::thread receiver([&]() {
+        try
+        {
+            (void)client.receive();
+        }
+        catch (const transport::transport_error& exception)
+        {
+            caught = true;
+            observed = exception.code();
+        }
+    });
+    std::this_thread::sleep_for(100ms);
+    client.abort();
+    receiver.join();
+    raw_server.join();
+    const auto elapsed = std::chrono::steady_clock::now() - started;
+
+    require(caught && observed == transport::error_code::aborted,
+            "active abort did not report the dedicated aborted status");
+    require(elapsed < 1s, "active abort waited for the configured receive timeout");
+    require(!client.connected(), "actively aborted stream remained connected");
 }
 
 void test_partial_payload_disconnect()
@@ -317,14 +420,16 @@ void test_json_configuration()
     {
         std::ofstream stream(path);
         stream << R"({"transport":"tcp","role":"server","bind_address":"127.0.0.1","port":0,)"
-                  R"("connect_timeout_ms":250,"io_timeout_ms":125,"max_payload":8192,)"
+                  R"("connect_timeout_ms":250,"startup_io_timeout_ms":125,)"
+                  R"("established_io_timeout_ms":900000,"established_after_frames":3,"max_payload":8192,)"
                   R"("no_delay":true,"keep_alive":false})";
     }
     const auto config = transport::parse_configuration(path.string());
     std::filesystem::remove(path);
     require(config.endpoint_role == transport::role::server && config.port == 0U &&
-                config.connect_timeout == 250ms && config.io_timeout == 125ms && config.max_payload == 8192U &&
-                config.no_delay && !config.keep_alive,
+                config.connect_timeout == 250ms && config.startup_io_timeout == 125ms &&
+                config.established_io_timeout == 900000ms && config.established_after_frames == 3U &&
+                config.max_payload == 8192U && config.no_delay && !config.keep_alive,
             "JSON configuration did not preserve values");
 }
 
@@ -337,6 +442,8 @@ int main()
         {"request/response stress", test_request_response_stress},
         {"fragmented stream receive", test_fragmented_stream_receive},
         {"bounded receive timeout", test_receive_timeout_is_bounded},
+        {"established-link long timeout", test_established_link_uses_long_timeout},
+        {"active abort", test_active_abort_interrupts_receive},
         {"partial payload disconnect", test_partial_payload_disconnect},
         {"oversized frame", test_oversized_frame_is_rejected_before_allocation},
         {"sequence mismatch", test_sequence_mismatch_closes_stream},

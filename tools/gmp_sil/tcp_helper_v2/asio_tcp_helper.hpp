@@ -61,6 +61,7 @@ enum class frame_kind : std::uint16_t
 enum class error_code
 {
     timeout,
+    aborted,
     disconnected,
     protocol_error,
     payload_too_large,
@@ -107,7 +108,9 @@ struct configuration
     std::string bind_address = "0.0.0.0";
     std::uint16_t port = 12510U;
     std::chrono::milliseconds connect_timeout{5000};
-    std::chrono::milliseconds io_timeout{5000};
+    std::chrono::milliseconds startup_io_timeout{5000};       //!< Detect startup/link errors quickly.
+    std::chrono::milliseconds established_io_timeout{2000000}; //!< Permit long debugger pauses (2000 s).
+    std::uint64_t established_after_frames = 1U;              //!< Complete receive frames before long timeout.
     std::uint32_t max_payload = default_max_payload;
     bool no_delay = true;
     bool keep_alive = true;
@@ -234,17 +237,25 @@ inline configuration parse_configuration(const std::string& config_file)
         result.bind_address = document.value("bind_address", result.bind_address);
         const auto configured_port = document.value("port", static_cast<unsigned>(result.port));
         const auto connect_timeout_ms = document.value("connect_timeout_ms", result.connect_timeout.count());
-        const auto io_timeout_ms = document.value("io_timeout_ms", result.io_timeout.count());
+        const auto startup_io_timeout_ms =
+            document.value("startup_io_timeout_ms", result.startup_io_timeout.count());
+        const auto established_io_timeout_ms =
+            document.value("established_io_timeout_ms", result.established_io_timeout.count());
+        const auto established_after_frames =
+            document.value("established_after_frames", result.established_after_frames);
         const auto configured_max_payload = document.value("max_payload", result.max_payload);
 
         if (configured_port > 65535U || (configured_port == 0U && result.endpoint_role == role::client))
             throw transport_error(error_code::configuration_error, "TCP port is outside the valid range.");
-        if (connect_timeout_ms <= 0 || io_timeout_ms <= 0 || configured_max_payload == 0U)
+        if (connect_timeout_ms <= 0 || startup_io_timeout_ms <= 0 || established_io_timeout_ms <= 0 ||
+            configured_max_payload == 0U)
             throw transport_error(error_code::configuration_error, "TCP timeouts and max_payload must be positive.");
 
         result.port = static_cast<std::uint16_t>(configured_port);
         result.connect_timeout = std::chrono::milliseconds(connect_timeout_ms);
-        result.io_timeout = std::chrono::milliseconds(io_timeout_ms);
+        result.startup_io_timeout = std::chrono::milliseconds(startup_io_timeout_ms);
+        result.established_io_timeout = std::chrono::milliseconds(established_io_timeout_ms);
+        result.established_after_frames = established_after_frames;
         result.max_payload = configured_max_payload;
         result.no_delay = document.value("no_delay", result.no_delay);
         result.keep_alive = document.value("keep_alive", result.keep_alive);
@@ -267,7 +278,8 @@ class asio_tcp_helper
     explicit asio_tcp_helper(configuration config)
         : config_(std::move(config)), socket_(io_), next_sequence_(1U)
     {
-        if (config_.connect_timeout.count() <= 0 || config_.io_timeout.count() <= 0 || config_.max_payload == 0U)
+        if (config_.connect_timeout.count() <= 0 || config_.startup_io_timeout.count() <= 0 ||
+            config_.established_io_timeout.count() <= 0 || config_.max_payload == 0U)
             throw transport_error(error_code::configuration_error,
                                   "TCP timeouts and max_payload must be positive.");
     }
@@ -316,6 +328,7 @@ class asio_tcp_helper
         if (!acceptor_ || !acceptor_->is_open())
             throw transport_error(error_code::configuration_error, "listen() must be called before accept().");
 
+        reset_connection_state();
         close_socket_noexcept();
         socket_ = asio::ip::tcp::socket(io_);
         run_timed_control(
@@ -343,6 +356,7 @@ class asio_tcp_helper
         if (ec || !address.is_v4())
             throw transport_error(error_code::configuration_error, "target_address must be a valid IPv4 address.");
 
+        reset_connection_state();
         close_socket_noexcept();
         socket_ = asio::ip::tcp::socket(io_);
         const asio::ip::tcp::endpoint endpoint(address, config_.port);
@@ -354,7 +368,44 @@ class asio_tcp_helper
 
     void close() noexcept
     {
+        abort();
         std::scoped_lock lock(operation_mutex_);
+        close_socket_noexcept();
+        close_acceptor_noexcept();
+    }
+
+    /**
+     * @brief Immediately interrupt an outstanding connect/accept/read/write.
+     *
+     * Unlike close(), this function does not wait for operation_mutex_.  It is
+     * intended for a simulation stop callback or a debugger-side stop command
+     * while another thread is blocked in receive().  No application frame is
+     * sent: a stalled peer must not be able to prevent local termination.
+     */
+    void abort() noexcept
+    {
+        abort_requested_.store(true);
+        connected_.store(false);
+
+        // When io_.run() owns the socket, perform cancellation in its handler
+        // thread.  If no operation is running, close synchronously so a normal
+        // end-of-simulation abort releases the connection immediately.
+        if (operation_active_.load())
+        {
+            asio::post(io_, [this]() {
+                if (abort_requested_.load())
+                {
+                    close_socket_noexcept();
+                    close_acceptor_noexcept();
+                }
+            });
+            if (!operation_active_.load())
+            {
+                close_socket_noexcept();
+                close_acceptor_noexcept();
+            }
+            return;
+        }
         close_socket_noexcept();
         close_acceptor_noexcept();
     }
@@ -367,6 +418,21 @@ class asio_tcp_helper
     [[nodiscard]] bool listening() const noexcept
     {
         return acceptor_ && acceptor_->is_open();
+    }
+
+    [[nodiscard]] std::uint64_t completed_receive_frames() const noexcept
+    {
+        return completed_receive_frames_.load();
+    }
+
+    [[nodiscard]] bool established_timeout_active() const noexcept
+    {
+        return completed_receive_frames_.load() >= config_.established_after_frames;
+    }
+
+    [[nodiscard]] std::chrono::milliseconds effective_io_timeout() const noexcept
+    {
+        return established_timeout_active() ? config_.established_io_timeout : config_.startup_io_timeout;
     }
 
     [[nodiscard]] std::uint16_t local_port() const
@@ -442,13 +508,22 @@ class asio_tcp_helper
         asio::steady_timer timer(io_);
         timer.expires_after(timeout);
 
-        start_operation([&](const std::error_code& ec, std::size_t count) {
-            operation_error = ec;
-            transferred = count;
-            completed = true;
-            std::error_code ignored;
-            timer.cancel(ignored);
-        });
+        operation_active_.store(true);
+        try
+        {
+            start_operation([&](const std::error_code& ec, std::size_t count) {
+                operation_error = ec;
+                transferred = count;
+                completed = true;
+                std::error_code ignored;
+                timer.cancel(ignored);
+            });
+        }
+        catch (...)
+        {
+            operation_active_.store(false);
+            throw;
+        }
         timer.async_wait([&](const std::error_code& ec) {
             if (!ec && !completed)
             {
@@ -459,6 +534,12 @@ class asio_tcp_helper
 
         io_.restart();
         io_.run();
+        operation_active_.store(false);
+        if (abort_requested_.load())
+        {
+            close_socket_noexcept();
+            throw transport_error(error_code::aborted, std::string(operation_name) + " was actively aborted.");
+        }
         if (timed_out)
         {
             close_socket_noexcept();
@@ -479,12 +560,21 @@ class asio_tcp_helper
         asio::steady_timer timer(io_);
         timer.expires_after(timeout);
 
-        start_operation([&](const std::error_code& ec) {
-            operation_error = ec;
-            completed = true;
-            std::error_code ignored;
-            timer.cancel(ignored);
-        });
+        operation_active_.store(true);
+        try
+        {
+            start_operation([&](const std::error_code& ec) {
+                operation_error = ec;
+                completed = true;
+                std::error_code ignored;
+                timer.cancel(ignored);
+            });
+        }
+        catch (...)
+        {
+            operation_active_.store(false);
+            throw;
+        }
         timer.async_wait([&](const std::error_code& ec) {
             if (!ec && !completed)
             {
@@ -495,6 +585,12 @@ class asio_tcp_helper
 
         io_.restart();
         io_.run();
+        operation_active_.store(false);
+        if (abort_requested_.load())
+        {
+            close_socket_noexcept();
+            throw transport_error(error_code::aborted, std::string(operation_name) + " was actively aborted.");
+        }
         if (timed_out)
         {
             close_socket_noexcept();
@@ -542,7 +638,7 @@ class asio_tcp_helper
                 std::error_code ignored;
                 socket_.cancel(ignored);
             },
-            config_.io_timeout, "TCP write");
+            effective_io_timeout(), "TCP write");
     }
 
     frame receive_unlocked()
@@ -557,7 +653,7 @@ class asio_tcp_helper
                 std::error_code ignored;
                 socket_.cancel(ignored);
             },
-            config_.io_timeout, "TCP header read");
+            effective_io_timeout(), "TCP header read");
 
         frame incoming;
         try
@@ -586,9 +682,17 @@ class asio_tcp_helper
                     std::error_code ignored;
                     socket_.cancel(ignored);
                 },
-                config_.io_timeout, "TCP payload read");
+                effective_io_timeout(), "TCP payload read");
         }
+        completed_receive_frames_.fetch_add(1U);
         return incoming;
+    }
+
+    void reset_connection_state() noexcept
+    {
+        abort_requested_.store(false);
+        completed_receive_frames_.store(0U);
+        next_sequence_.store(1U);
     }
 
     void require_connection() const
@@ -600,6 +704,8 @@ class asio_tcp_helper
     [[noreturn]] void throw_io_error(const std::error_code& ec, const char* operation_name)
     {
         close_socket_noexcept();
+        if (abort_requested_.load())
+            throw transport_error(error_code::aborted, std::string(operation_name) + " was actively aborted.");
         const bool disconnected = ec == asio::error::eof || ec == asio::error::connection_reset ||
                                   ec == asio::error::connection_aborted || ec == asio::error::broken_pipe ||
                                   ec == asio::error::not_connected || ec == asio::error::operation_aborted;
@@ -635,6 +741,9 @@ class asio_tcp_helper
     asio::ip::tcp::socket socket_;
     std::unique_ptr<asio::ip::tcp::acceptor> acceptor_;
     std::atomic<bool> connected_{false};
+    std::atomic<bool> abort_requested_{false};
+    std::atomic<bool> operation_active_{false};
+    std::atomic<std::uint64_t> completed_receive_frames_{0U};
     std::atomic<std::uint64_t> next_sequence_;
 };
 

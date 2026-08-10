@@ -5,7 +5,9 @@
   "bind_address": "0.0.0.0",
   "port": 12510,
   "connect_timeout_ms": 5000,
-  "io_timeout_ms": 5000,
+  "startup_io_timeout_ms": 5000,
+  "established_io_timeout_ms": 2000000,
+  "established_after_frames": 1,
   "max_payload": 16777216,
   "no_delay": true,
   "keep_alive": true
