@@ -64,6 +64,8 @@ extern ctl_sinv_protect_t protection;
 // ADC Calibrator
 extern adc_bias_calibrator_t adc_calibrator;
 extern volatile fast_gt flag_enable_adc_calibrator;
+extern volatile fast_gt flag_rectifier_takeover_initialized;
+extern ctrl_gt g_rectifier_takeover_power;
 
 // User commands
 extern ctrl_gt g_p_ref_user;
@@ -135,6 +137,20 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
                 ctl_step_sinv_power_loop(&outer_loop, g_p_ref_user, pq_meter.active_power_p),
                 g_q_ref_user, ctl_abs(pll.v_mag), &pll.phasor);
 #elif BUILD_LEVEL == 5
+            if (!flag_rectifier_takeover_initialized)
+            {
+                /*
+                 * The disabled bridge is already carrying the DC load through
+                 * its body diodes. Start the active rectifier from that measured
+                 * passive-rectifier power instead of ramping from zero.
+                 */
+                ctl_preset_sinv_dc_bus_loop(&outer_loop, g_vbus_ref_user,
+                    adc_v_bus.control_port.value, float2ctrl(-1.0f),
+                    g_rectifier_takeover_power);
+                ctl_set_slope_limiter_current(&ref_gen.p_slope_lim,
+                                              g_rectifier_takeover_power);
+                flag_rectifier_takeover_initialized = 1;
+            }
             ctl_step_sinv_ref_gen_pq(&ref_gen,
                 ctl_step_sinv_dc_bus_loop(&outer_loop, g_vbus_ref_user,
                     adc_v_bus.control_port.value, float2ctrl(-1.0f)),
@@ -145,6 +161,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         {
             ctl_clear_sinv_ref_gen(&ref_gen);
             ctl_clear_sinv_outer_loop(&outer_loop);
+            flag_rectifier_takeover_initialized = 0;
         }
 
         // 4. Inner Current Controller (RC Core)

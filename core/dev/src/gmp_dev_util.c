@@ -188,6 +188,7 @@ size_gt ringbuf_get_array(ringbuf_t* rb, data_gt* dest, size_gt len)
 // Print default function
 
 #ifndef SPECIFY_PC_ENVIRONMENT
+#ifndef DISABLE_GMP_DEV_PRINT_DEFAULT
 // implement the gmp_debug_print routine.
 size_gt gmp_base_print_default(const char* p_fmt, ...)
 {
@@ -213,6 +214,7 @@ size_gt gmp_base_print_default(const char* p_fmt, ...)
 
     return length;
 }
+#endif // DISABLE_GMP_DEV_PRINT_DEFAULT
 #endif // SPECIFY_PC_ENVIRONMENT
 
 /////////////////////////////////////////////////////////////////

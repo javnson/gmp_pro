@@ -180,6 +180,7 @@ def default_requirement(project_dir: Path, project_id: str, suite: str) -> dict:
         "suite": suite,
         "version": "0.1.0",
         "output_header": f"{project_id}_sdpe_bindings.h",
+        "common_requirements": [],
         "hardware": [],
         "requirements": [],
         "feature_macros": [],
@@ -220,7 +221,7 @@ This folder is the project-local SDPE manager.
 
 - `sdpe_requirement.json`: project requirement and hardware bindings.
 - `sdpe_settings.bat`: project-local paths and output settings.
-- `sdpe_edit.bat`: open this requirement plus its related two-layer SDPE requirements.
+- `sdpe_edit.bat`: open this requirement together with every explicitly bound common requirement.
 - `sdpe_generate.bat`: generate SDPE headers for this project.
 - `sdpe_validate.bat`: validate the central SDPE library and read this requirement file.
 
@@ -236,10 +237,10 @@ sdpe_mgr\\
 
 Project-local generated headers use relative include paths, so the generated project header can include the generated hardware headers without depending on the global `ctl\\hardware_preset` output.
 
-When a suite has `sdpe_general`, opening its editor also loads every target
-requirement below `project`; opening a target manager loads that target and the
-common requirement. The common C header is generated into the suite `src`
-directory, while its MATLAB initialization script remains in `sdpe_general`.
+Use `common_requirements` in `sdpe_requirement.json` to bind zero or more common
+requirement files. Each entry may be relative to this manager, absolute, or based
+on an environment variable. The editor merges their hardware, requirements, and
+macros with this private project while retaining the source of every item.
 
 Project id: `{project_id}`
 Suite: `{suite}`

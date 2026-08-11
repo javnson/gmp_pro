@@ -1,0 +1,21 @@
+{
+  "build_level": 1,
+  "model": "DP_STD_MDL_DCAC_3ph_2level_resload",
+  "stop_time_s": 0.8,
+  "output_enable_final": 1,
+  "phase_current_rms_pu": 0.13974926244403937,
+  "zero_current_rms_pu": 0.000867070816498973,
+  "voltage_alpha_rms_pu": 0.42096481650374512,
+  "voltage_beta_rms_pu": 0.41437143924726977,
+  "voltage_d_mean_pu": 0.4530214627305108,
+  "voltage_q_rms_pu": 0.37059375500800978,
+  "current_d_mean_pu": 0.14561617924105238,
+  "current_q_mean_pu": 0.13389839079118673,
+  "pll_error_rms_pu": 0,
+  "voltage_loop_current_ref_peak_pu": 0,
+  "zero_voltage_rms_pu": 0,
+  "command_d_mean_pu": 0,
+  "command_q_mean_pu": 0,
+  "finite": true,
+  "pass": true
+}

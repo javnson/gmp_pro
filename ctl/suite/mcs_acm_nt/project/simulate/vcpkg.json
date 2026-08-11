@@ -1,0 +1,9 @@
+{
+  "name": "general-motor-platform",
+  "version-string": "1.0.5",
+    "dependencies": [
+        "asio",
+        "fmt",
+        "nlohmann-json"
+    ]
+}

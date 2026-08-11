@@ -37,78 +37,58 @@ extern "C"
 /**
  * @brief Power device part number.
  */
-#ifndef STL220N6F7_PART_NUMBER
 #define STL220N6F7_PART_NUMBER "STL220N6F7"
-#endif // STL220N6F7_PART_NUMBER
 
 /**
  * @brief MOSFET, IGBT, GaN, SiC, etc.
  */
-#ifndef STL220N6F7_DEVICE_TYPE
 #define STL220N6F7_DEVICE_TYPE "MOSFET"
-#endif // STL220N6F7_DEVICE_TYPE
 
 /**
  * @brief Drain-source or collector-emitter voltage rating.
  * @unit V
  */
-#ifndef STL220N6F7_VOLTAGE_RATING_V
 #define STL220N6F7_VOLTAGE_RATING_V (60.0f)
-#endif // STL220N6F7_VOLTAGE_RATING_V
 
 /**
  * @brief Current rating.
  * @unit A
  */
-#ifndef STL220N6F7_CURRENT_RATING_A
 #define STL220N6F7_CURRENT_RATING_A (120.0f)
-#endif // STL220N6F7_CURRENT_RATING_A
 
 /**
  * @brief On resistance.
  * @unit ohm
  */
-#ifndef STL220N6F7_RDSON_OHM
 #define STL220N6F7_RDSON_OHM (0.0012f)
-#endif // STL220N6F7_RDSON_OHM
 
 /**
  * @brief Single switch, dual switch, half bridge power block, etc.
  */
-#ifndef STL220N6F7_CONFIGURATION
 #define STL220N6F7_CONFIGURATION "single"
-#endif // STL220N6F7_CONFIGURATION
 
 /**
  * @brief Maximum on resistance at the documented gate voltage.
  * @unit ohm
  */
-#ifndef STL220N6F7_RDSON_MAX_OHM
 #define STL220N6F7_RDSON_MAX_OHM (0.0014f)
-#endif // STL220N6F7_RDSON_MAX_OHM
 
 /**
  * @brief Gate voltage associated with the resistance value.
  * @unit V
  */
-#ifndef STL220N6F7_GATE_VOLTAGE_V
 #define STL220N6F7_GATE_VOLTAGE_V (10.0f)
-#endif // STL220N6F7_GATE_VOLTAGE_V
 
 /**
  * @brief Typical total gate charge.
  * @unit nC
  */
-#ifndef STL220N6F7_GATE_CHARGE_NC
 #define STL220N6F7_GATE_CHARGE_NC (0.0f)
-#endif // STL220N6F7_GATE_CHARGE_NC
 
 /**
  * @brief Manufacturer package name.
  */
-#ifndef STL220N6F7_PACKAGE
 #define STL220N6F7_PACKAGE "PowerFLAT 5x6"
-#endif // STL220N6F7_PACKAGE
 
 // Logical exports
 // voltage_rating: STL220N6F7_VOLTAGE_RATING_V

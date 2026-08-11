@@ -22,8 +22,8 @@ extern "C"
 
 #define PGS_INV_GFL_COMMON_SDPE_PROJECT_ID "pgs_inv_gfl_common"
 #define PGS_INV_GFL_COMMON_SDPE_PROJECT_SUITE "pgs_inv_GFL_inverter"
-#define PGS_INV_GFL_COMMON_SDPE_PROJECT_VERSION "1.0.0"
-#define PGS_INV_GFL_COMMON_SDPE_PROJECT_UPDATED_AT "2026-07-15"
+#define PGS_INV_GFL_COMMON_SDPE_PROJECT_VERSION "1.2.0"
+#define PGS_INV_GFL_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-08"
 
 //=================================================================================================
 /**
@@ -44,6 +44,31 @@ extern "C"
  * @brief Use the three-level NPC modulator instead of the two-level SPWM modulator.
  */
 // #define USING_NPC_MODULATOR
+
+/**
+ * @brief Use four-leg 3D-SVPWM. This enables an independently controlled neutral-leg duty and permits zero-sequence QPR control; the selected board must provide a fourth PWM bridge leg.
+ */
+// #define USING_3D_SVPWM
+
+/**
+ * @brief Enable omega*C cross-coupling feed-forward in the BUILD_LEVEL 6 capacitor-voltage loop. Disable this switch to commission the voltage PI loop without decoupling.
+ */
+#define GFL_ENABLE_VOLTAGE_DECOUPLE
+
+/**
+ * @brief Enable circular magnitude limiting of the complete BUILD_LEVEL 6 d-q current reference.
+ */
+#define GFL_ENABLE_VOLTAGE_CIRCLE_LIMIT
+
+/**
+ * @brief Enable independent symmetric d/q-axis limiting of the complete BUILD_LEVEL 6 current reference.
+ */
+// #define GFL_ENABLE_VOLTAGE_SQUARE_LIMIT
+
+/**
+ * @brief Enable frequency-P and voltage-Q droop reference generation ahead of the BUILD_LEVEL 5 P/Q controller.
+ */
+#define GFL_ENABLE_PQ_DROOP
 
 //=================================================================================================
 /**
@@ -82,14 +107,24 @@ extern "C"
  */
 
 /**
+ * @brief ADC offset calibrator filter cutoff frequency.
+ */
+#define GFL_ADC_CALIBRATOR_FC_HZ (20.0f)
+
+/**
+ * @brief ADC offset calibrator second-order filter quality factor.
+ */
+#define GFL_ADC_CALIBRATOR_Q (0.707f)
+
+/**
+ * @brief Minimum CiA402 delay before Operation Enabled.
+ */
+#define GFL_CIA402_OPERATION_ENABLE_DELAY_MS (100)
+
+/**
  * @brief Nominal grid phase-voltage magnitude in controller per unit.
  */
 #define GFL_GRID_VOLTAGE_PU (0.33f)
-
-/**
- * @brief Nominal grid frequency in hertz.
- */
-#define GFL_GRID_FREQUENCY_HZ (50.0f)
 
 /**
  * @brief P/Q outer-loop execution frequency in hertz.
@@ -127,14 +162,39 @@ extern "C"
 #define GFL_PQ_CURRENT_LIMIT_PU (1.0f)
 
 /**
- * @brief Default active-power reference. Positive power exports energy to the grid.
+ * @brief PQ droop frequency and voltage measurement low-pass cutoff.
  */
-#define GFL_ACTIVE_POWER_REF_PU (0.1f)
+#define GFL_PQ_DROOP_LPF_HZ (10.0f)
 
 /**
- * @brief Default reactive-power reference using Q = vq*id - vd*iq.
+ * @brief Additional active-power command per hertz of frequency deficit.
  */
-#define GFL_REACTIVE_POWER_REF_PU (0.0f)
+#define GFL_PQ_DROOP_P_GAIN_PU_PER_HZ (0.10f)
+
+/**
+ * @brief Additional reactive-power command per PU of voltage deficit.
+ */
+#define GFL_PQ_DROOP_Q_GAIN_PU_PER_V_PU (0.50f)
+
+/**
+ * @brief Minimum active-power reference after PQ droop.
+ */
+#define GFL_PQ_DROOP_P_MIN_PU (-0.80f)
+
+/**
+ * @brief Maximum active-power reference after PQ droop.
+ */
+#define GFL_PQ_DROOP_P_MAX_PU (0.80f)
+
+/**
+ * @brief Minimum reactive-power reference after PQ droop.
+ */
+#define GFL_PQ_DROOP_Q_MIN_PU (-0.80f)
+
+/**
+ * @brief Maximum reactive-power reference after PQ droop.
+ */
+#define GFL_PQ_DROOP_Q_MAX_PU (0.80f)
 
 /**
  * @brief BUILD_LEVEL 1 d-axis open-loop voltage command.
@@ -145,6 +205,21 @@ extern "C"
  * @brief BUILD_LEVEL 1 q-axis open-loop voltage command.
  */
 #define GFL_OPEN_LOOP_VQ_PU (0.6f)
+
+/**
+ * @brief PLL lock-error threshold in controller per unit.
+ */
+#define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
+
+/**
+ * @brief Default active-power reference. Positive power exports energy to the grid.
+ */
+#define GFL_ACTIVE_POWER_REF_PU (0.1f)
+
+/**
+ * @brief Default reactive-power reference using Q = vq*id - vd*iq.
+ */
+#define GFL_REACTIVE_POWER_REF_PU (0.0f)
 
 /**
  * @brief BUILD_LEVEL 2 d-axis current command.
@@ -177,29 +252,68 @@ extern "C"
 #define GFL_CURRENT_LEVEL4_IQ_PU (0.6f)
 
 /**
- * @brief ADC offset calibrator filter cutoff frequency.
+ * @brief BUILD_LEVEL 6 positive-sequence d-axis capacitor phase-voltage reference in per unit.
  */
-#define GFL_ADC_CALIBRATOR_FC_HZ (20.0f)
+#define GFL_STANDALONE_VD_PU (0.50f)
 
 /**
- * @brief ADC offset calibrator second-order filter quality factor.
+ * @brief BUILD_LEVEL 6 positive-sequence q-axis capacitor phase-voltage reference in per unit.
  */
-#define GFL_ADC_CALIBRATOR_Q (0.707f)
+#define GFL_STANDALONE_VQ_PU (0.0f)
 
 /**
- * @brief Minimum CiA402 delay before Operation Enabled.
+ * @brief BUILD_LEVEL 6 capacitor-voltage outer-loop bandwidth in hertz; keep it well below the inner current-loop bandwidth.
  */
-#define GFL_CIA402_OPERATION_ENABLE_DELAY_MS (100)
+#define GFL_VOLTAGE_LOOP_BW_HZ (100.0f)
 
 /**
- * @brief PLL lock-error threshold in controller per unit.
+ * @brief BUILD_LEVEL 6 ordinary PI zero frequency in hertz.
  */
-#define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
+#define GFL_VOLTAGE_LOOP_ZERO_HZ (20.0f)
+
+/**
+ * @brief Circular magnitude limit for the complete BUILD_LEVEL 6 PI plus feed-forward current reference. The final limited output is returned to the ordinary PID integrators by clamping correction.
+ */
+#define GFL_VOLTAGE_CIRCLE_LIMIT_PU (0.80f)
+
+/**
+ * @brief Independent symmetric d/q-axis limit for the complete BUILD_LEVEL 6 PI plus feed-forward current reference.
+ */
+#define GFL_VOLTAGE_SQUARE_LIMIT_PU (0.80f)
+
+/**
+ * @brief Zero-sequence current QPR proportional gain used when 3D-SVPWM is enabled.
+ */
+#define GFL_ZERO_QPR_KP (0.10f)
+
+/**
+ * @brief Zero-sequence current QPR resonant gain used when 3D-SVPWM is enabled.
+ */
+#define GFL_ZERO_QPR_KR (50.0f)
+
+/**
+ * @brief Zero-sequence QPR resonant bandwidth/cutoff frequency in hertz.
+ */
+#define GFL_ZERO_QPR_CUTOFF_HZ (5.0f)
+
+/**
+ * @brief Symmetric zero-axis voltage-command limit for four-wire operation.
+ */
+#define GFL_ZERO_VOLTAGE_LIMIT_PU (0.20f)
+
+/**
+ * @brief Nominal grid frequency in hertz.
+ */
+#define GFL_GRID_FREQUENCY_HZ (50.0f)
 
 // User project tail code
 /* Accept the historical PIL spelling while new projects use the canonical switch. */
 #if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM
 #define ENABLE_GMP_DL_PIL_SIM
+#endif
+/* Four-leg hardware must explicitly acknowledge that A/B/C/N PWM and protection are mapped. */
+#if defined(USING_3D_SVPWM) && !defined(SPECIFY_PC_ENVIRONMENT) && !defined(GFL_3D_SVPWM_PLATFORM_MAPPED)
+#error Define_GFL_3D_SVPWM_PLATFORM_MAPPED_only_after_mapping_all_four_PWM_legs
 #endif
 
 #ifdef __cplusplus

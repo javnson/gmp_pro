@@ -72,9 +72,6 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_foc_core.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_imfoc_core.c">
-      <Filter>GMP Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_inverter_consultant.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
@@ -147,9 +144,6 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_slope_limiter.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="gmp_src_mgr\gmp_src\dsa_trigger.c">
-      <Filter>GMP Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="gmp_src_mgr\gmp_src\gmp_at_device.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
@@ -214,6 +208,27 @@
       <Filter>GMP Source Files</Filter>
     </ClCompile>
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pid.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dq_pi.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dq_ladrc1.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_pmsm_offline_id_sm.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_pmsm_offline_id_sensored.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_encoder_switcher.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\dsa_scope.c">
+      <Filter>GMP Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmp_src_mgr\gmp_src\dsa_trigger.c">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pid_aw.c">
@@ -289,6 +304,9 @@
       <Filter>GMP Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\ctl_main.c">
+      <Filter>implement_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\pmsm_offline_id_if.c">
       <Filter>implement_common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\user_main.c">

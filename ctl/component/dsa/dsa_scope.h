@@ -166,7 +166,7 @@ GMP_STATIC_INLINE fast_gt ctl_step_dsa_scope_4ch(ctl_dsa_scope_t* scope, ctrl_gt
  * If `ctrl_gt` is an integer/fixed-point type, this function will FAIL silently due to type misalignment.
  * Use 1ch~4ch functions whenever possible!
  */
-GMP_STATIC_INLINE fast_gt ctl_step_dsa_scope_varargs(ctl_dsa_scope_t* scope, uint16_t arg_count, ...)
+GMP_STATIC_INLINE fast_gt ctl_step_dsa_scope_varargs(ctl_dsa_scope_t* scope, unsigned int arg_count, ...)
 {
     uint16_t i;
 

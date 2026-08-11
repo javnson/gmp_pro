@@ -14,12 +14,44 @@ build dependencies together.
 | --- | --- | --- |
 | [`dps_clllc`](dps_clllc) | Bidirectional isolated CLLLC / DAB control | Active |
 | [`dps_fsbb`](dps_fsbb) | Four-switch buck-boost converter | Active |
-| `mcs_acm` | Asynchronous motor control | Legacy layout |
-| `mcs_pmsm` | Original PMSM control project | Deprecated for new work |
+| `mcs_acm` | Asynchronous motor control | Legacy; skipped by fleet PIL deployment |
+| `mcs_acm_nt` | Asynchronous motor simulation prototype | Simulation only; no hardware deployment |
+| `mcs_pmsm` | Original PMSM control project | Deprecated; skipped by fleet PIL deployment |
 | [`mcs_pmsm_nt`](mcs_pmsm_nt) | Current PMSM control template | Recommended |
 | [`mcs_pmsm_id`](mcs_pmsm_id) | PMSM parameter identification | Active |
 | [`pgs_inv_GFL_inverter`](pgs_inv_GFL_inverter) | Three-phase grid-following inverter | Active |
+| [`pgs_inv_GFM_inverter`](pgs_inv_GFM_inverter) | Three-phase grid-forming inverter | Active |
 | [`pgs_sinv_rc`](pgs_sinv_rc) | Single-phase converter with repetitive control | Active |
+
+## Processor-in-the-loop deployment
+
+The maintained hardware fleet uses the common
+[`sdpe_pil`](sdpe_pil/sdpe_requirement.json) transport contract. Each target
+combines it with its suite SDPE contract, so UART rate, command allocation, UDP
+ports, timeouts, and channel masks are generated without absolute paths. The
+`ENABLE_GMP_DL_PIL_SIM` selection is disabled by default and may be covered by
+a target-private SDPE selection when PIL is required.
+
+PIL mode has two safety invariants:
+
+- Hardware interrupts acknowledge peripherals and maintain time, but
+  `gmp_base_ctl_step()` does not advance the controller.
+- Controller output-enable callbacks do not energize the physical power stage;
+  control steps are owned by Data Link transactions.
+
+The deployed modern fleet contains 19 hardware projects in `dps_clllc`,
+`dps_fsbb`, `mcs_pmsm_id`, `mcs_pmsm_nt`, `pgs_inv_GFL_inverter`,
+`pgs_inv_GFM_inverter`, and `pgs_sinv_rc`. Their existing `simulate` projects
+remain SIL-only and do not bind the hardware PIL transport contract.
+
+`mcs_acm` and `mcs_pmsm` retain their historical `implement` layouts and are
+explicitly excluded from this deployment. Do not use them as PIL templates;
+they are candidates for later removal.
+
+After changing a suite target, run `python ctl/suite/validate_pil_deployment.py`
+from the repository root. The check covers the maintained-target inventory,
+SDPE composition, generated PIL source, channel masks, ISR isolation, and the
+SIL/PIL project boundary.
 
 ## Recommended layout
 

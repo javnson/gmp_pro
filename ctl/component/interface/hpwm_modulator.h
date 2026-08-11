@@ -1,9 +1,7 @@
 /**
- * @file sp_modulation.h
+ * @file hpwm_modulator.h
  * @author javnson (javnson@zju.edu.cn)
  * @brief Implements single-phase, unipolar SPWM for an H-bridge with dead-time compensation.
- * @note **Positive Current (inverter_current > 0):**
- * 
  * @version 1.05
  * @date 2025-05-28
  *
@@ -26,11 +24,12 @@ extern "C"
  * @brief Generates PWM signals for a single-phase H-bridge inverter.
  * @details This module generates two PWM compare values for a standard single-phase
  * H-bridge inverter using unipolar Sine Pulse Width Modulation (SPWM). It accepts a
- * modulation signal from -1.0 to 1.0.
+ * modulation signal from -1.0 to 1.0, where a positive target commands a
+ * positive L-to-N bridge voltage.
  *
- * It also includes a dead-time compensation feature that adjusts the PWM duty cycles
- * based on the direction of the output current. This minimizes voltage distortion
- * caused by the blanking time inserted by the PWM hardware.
+ * It also includes a dead-time compensation feature that adjusts the PWM compare
+ * commands based on the direction of the output current. This minimizes voltage
+ * distortion caused by the blanking time inserted by the PWM hardware.
 
  * @{
  * @ingroup CTL_DP_LIB
@@ -42,8 +41,8 @@ extern "C"
 typedef struct _tag_single_phase_H_modulation
 {
     /*-- Outputs --*/
-    pwm_gt phase_L; /**< The calculated PWM compare value for the 'L' phase leg. */
-    pwm_gt phase_N; /**< The calculated PWM compare value for the 'N' phase leg. */
+    pwm_gt phase_L; /**< PWM timer compare command for the 'L' phase leg. */
+    pwm_gt phase_N; /**< PWM timer compare command for the 'N' phase leg. */
 
     /*-- Parameters --*/
     pwm_gt pwm_full_scale;    /**< The maximum value of the PWM counter (e.g., timer period). */
@@ -83,15 +82,18 @@ GMP_STATIC_INLINE void ctl_clear_single_phase_H_modulation(single_phase_H_modula
  * @brief Executes one step of the modulation calculation with dead-time compensation.
  * 
  * @note **Current Direction & Dead-Time Convention:**
- * - **Positive Current (inverter_current > 0):** Defined as current flowing OUT of the 
- *   'N' phase leg and INTO the 'L' phase leg (i.e., Inverter sourcing power to the load/grid).
- * - **Compensation Logic:** When current flows OUT of a leg, the freewheeling diode of the 
- *   lower switch conducts during the dead-time, clamping the output to the negative bus. 
- *   This causes the actual output voltage pulse to be narrower than the ideal pulse. 
- *   Therefore, the algorithm INCREASES the duty cycle of the sourcing leg (Phase N) 
- *   and DECREASES the duty cycle of the sinking leg (Phase L) to compensate for the lost volt-seconds.
- * - **PWM Logic:** Assumes standard positive logic where a larger compare value (duty cycle) 
- *   results in a wider high-level output pulse.
+ * - **Voltage Convention:** Positive bridge voltage is the L terminal voltage relative to N.
+ * - **Positive Current (inverter_current > 0):** Current leaves the inverter through the L
+ *   terminal, flows into the load/grid, and returns through the N terminal.
+ * - **Compare Convention:** `phase_L` and `phase_N` are timer compare commands, not abstract
+ *   high-side duty ratios. This implementation assumes the center-aligned action-qualifier
+ *   convention used by the supported SINV targets: decreasing CMP widens the corresponding
+ *   high-side pulse, while increasing CMP narrows it. A platform with the opposite timer
+ *   polarity must invert the compare mapping in its peripheral binding.
+ * - **Compensation Logic:** For positive current, Phase L is the sourcing leg and Phase N is
+ *   the returning leg. The algorithm decreases the L compare command and increases the N
+ *   compare command to restore positive L-to-N volt-seconds lost during dead time. The
+ *   adjustments are reversed for negative current.
  * 
  * @param[out] bridge Handle of the modulation object.
  * @param[in] u_target The target output voltage modulation index (-1.0 to 1.0).
@@ -111,9 +113,9 @@ GMP_STATIC_INLINE void ctl_step_single_phase_H_modulation(single_phase_H_modulat
     }
     // If within the deadband, keep the previous direction.
 
-    // 2. Calculate ideal unipolar PWM duty cycles for each leg.
-    // Duty_L = (1 - u_target) / 2
-    // Duty_N = (1 + u_target) / 2
+    // 2. Calculate normalized unipolar PWM compare commands for each leg.
+    // Compare_L = (1 - u_target) / 2
+    // Compare_N = (1 + u_target) / 2
     ctrl_gt modulate_target_L = ctl_sat(ctl_div2(-u_target + float2ctrl(1)), float2ctrl(1), 0);
     ctrl_gt modulate_target_N = ctl_sat(ctl_div2(u_target + float2ctrl(1)), float2ctrl(1), 0);
 
@@ -124,15 +126,15 @@ GMP_STATIC_INLINE void ctl_step_single_phase_H_modulation(single_phase_H_modulat
 
     if (bridge->flag_enable_dbcomp)
     {
-        if (bridge->current_dir == 1) // Positive current: Phase N is sourcing, Phase L is sinking
+        if (bridge->current_dir == 1) // Positive current: Phase L is sourcing, Phase N is returning
         {
-            calc_L -= deadband; // L needs less duty
-            calc_N += deadband; // N needs more duty
+            calc_L -= deadband; // Smaller L compare widens its high-side pulse
+            calc_N += deadband; // Larger N compare narrows its high-side pulse
         }
-        else if (bridge->current_dir == -1) // Negative current: Phase L is sourcing, Phase N is sinking
+        else if (bridge->current_dir == -1) // Negative current: Phase N is sourcing, Phase L is returning
         {
-            calc_L += deadband; // L needs more duty
-            calc_N -= deadband; // N needs less duty
+            calc_L += deadband; // Larger L compare narrows its high-side pulse
+            calc_N -= deadband; // Smaller N compare widens its high-side pulse
         }
     }
 

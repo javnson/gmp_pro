@@ -42,6 +42,7 @@ extern "C"
 // controller modules with extern
 
 extern volatile fast_gt flag_system_running;
+extern volatile fast_gt flag_oid_pwm_inhibit;
 
 extern adc_bias_calibrator_t adc_calibrator;
 extern volatile fast_gt flag_enable_adc_calibrator;
@@ -105,6 +106,12 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 
         // Calculate Motor Speed
         ctl_step_spd_calc(&spd_enc);
+
+        // Encoder calibration is hosted by the suite because PREPARE retains
+        // the target-specific ADC handshake.  The shared master state machine
+        // still owns all other identification ISR dispatch.
+        if (pmsm_oid.sm == PMSM_OFFLINE_ID_ENCODER_CALIB)
+            ctl_step_oid_encoder_isr(&pmsm_oid);
 
         // call for PMSM offline identify
         ctl_step_pmsm_offline_id(&pmsm_oid);

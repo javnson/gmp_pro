@@ -32,6 +32,7 @@ extern "C"
 	#include <ctl/math_block/coordinate/Park.h>
 	#include <ctl/math_block/coordinate/Park_neg.h>
 	#include <ctl/math_block/coordinate/svpwm.h>
+	#include <ctl/math_block/coordinate/svpwm_3d.h>
 
 
 /** @} */ // end of MC_COORD_TRANSFORMATIONS group

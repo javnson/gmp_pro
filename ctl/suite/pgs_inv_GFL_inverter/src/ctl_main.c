@@ -31,8 +31,15 @@ cia402_sm_t cia402_sm;
 // Control Law Core
 // Current controller, Power controller / Voltage controller
 gfl_pq_ctrl_t pq_ctrl;
+gfl_pq_droop_init_t pq_droop_init;
+gfl_pq_droop_ctrl_t pq_droop_ctrl;
+ctrl_gt gfl_pll_frequency_hz;
 inv_neg_ctrl_init_t gfl_neg_init;
 inv_neg_ctrl_t neg_current_ctrl;
+inv_voltage_ctrl_init_t gfl_voltage_init;
+inv_voltage_ctrl_t gfl_voltage_ctrl;
+inv_zero_ctrl_init_t gfl_zero_init;
+inv_zero_ctrl_t gfl_zero_ctrl;
 gfl_inv_ctrl_init_t gfl_init;
 gfl_inv_ctrl_t inv_ctrl;
 
@@ -44,6 +51,10 @@ npc_modulator_t spwm;
 #else
 spwm_modulator_t spwm;
 #endif // USING_NPC_MODULATOR
+#if defined USING_3D_SVPWM
+ctl_vector4_t pwm_3d_duty;
+pwm_gt pwm_3d_out[4];
+#endif
 
 // Protection module
 
@@ -88,6 +99,36 @@ void ctl_init()
     ctl_init_neg_inv(&neg_current_ctrl, &gfl_neg_init);
     ctl_attach_neg_inv_to_gfl(&neg_current_ctrl, &inv_ctrl);
 
+    ctl_auto_tuning_voltage_inv(&gfl_voltage_init, &gfl_init);
+    gfl_voltage_init.voltage_loop_bw = GFL_VOLTAGE_LOOP_BW_HZ;
+    gfl_voltage_init.voltage_loop_zero = GFL_VOLTAGE_LOOP_ZERO_HZ;
+    gfl_voltage_init.current_circle_limit = GFL_VOLTAGE_CIRCLE_LIMIT_PU;
+    gfl_voltage_init.current_square_limit = GFL_VOLTAGE_SQUARE_LIMIT_PU;
+
+#if defined GFL_ENABLE_VOLTAGE_CIRCLE_LIMIT
+    gfl_voltage_init.flag_enable_circle_limit = 1;
+#else
+    gfl_voltage_init.flag_enable_circle_limit = 0;
+#endif
+
+#if defined GFL_ENABLE_VOLTAGE_SQUARE_LIMIT
+    gfl_voltage_init.flag_enable_square_limit = 1;
+#else
+    gfl_voltage_init.flag_enable_square_limit = 0;
+#endif
+
+    ctl_init_voltage_inv(&gfl_voltage_ctrl, &gfl_voltage_init);
+    ctl_attach_voltage_inv_to_gfl(&gfl_voltage_ctrl, &inv_ctrl);
+
+    ctl_auto_tuning_zero_inv(&gfl_zero_init, &gfl_init);
+    gfl_zero_init.kp = GFL_ZERO_QPR_KP;
+    gfl_zero_init.kr = GFL_ZERO_QPR_KR;
+    gfl_zero_init.freq_cut = GFL_ZERO_QPR_CUTOFF_HZ;
+    gfl_zero_init.output_limit_max = GFL_ZERO_VOLTAGE_LIMIT_PU;
+    gfl_zero_init.output_limit_min = -GFL_ZERO_VOLTAGE_LIMIT_PU;
+    ctl_init_zero_inv(&gfl_zero_ctrl, &gfl_zero_init);
+    ctl_attach_zero_inv(&gfl_zero_ctrl, &inv_ctrl.iab0.dat[phase_0], &gfl_zero_ctrl.v0_out);
+
     //
     // init SPWM modulator
     //
@@ -106,6 +147,27 @@ void ctl_init()
                     GFL_PQ_CURRENT_LIMIT_PU, GFL_PQ_LOOP_FREQUENCY_HZ);
     ctl_attach_gfl_pq_to_core(&pq_ctrl, &inv_ctrl);
     ctl_set_gfl_pq_ref(&pq_ctrl, float2ctrl(GFL_ACTIVE_POWER_REF_PU), float2ctrl(GFL_REACTIVE_POWER_REF_PU));
+
+    pq_droop_init.fs = GFL_PQ_LOOP_FREQUENCY_HZ;
+    pq_droop_init.lpf_hz = GFL_PQ_DROOP_LPF_HZ;
+    pq_droop_init.frequency_nominal_hz = GFL_GRID_FREQUENCY_HZ;
+    pq_droop_init.voltage_nominal = GFL_GRID_VOLTAGE_PU;
+    pq_droop_init.p_gain_pu_per_hz = GFL_PQ_DROOP_P_GAIN_PU_PER_HZ;
+    pq_droop_init.q_gain_pu_per_v_pu = GFL_PQ_DROOP_Q_GAIN_PU_PER_V_PU;
+    pq_droop_init.p_min = GFL_PQ_DROOP_P_MIN_PU;
+    pq_droop_init.p_max = GFL_PQ_DROOP_P_MAX_PU;
+    pq_droop_init.q_min = GFL_PQ_DROOP_Q_MIN_PU;
+    pq_droop_init.q_max = GFL_PQ_DROOP_Q_MAX_PU;
+    ctl_init_gfl_pq_droop(&pq_droop_ctrl, &pq_droop_init);
+    gfl_pll_frequency_hz = float2ctrl(GFL_GRID_FREQUENCY_HZ);
+    ctl_attach_gfl_pq_droop(&pq_droop_ctrl, &gfl_pll_frequency_hz,
+                            &inv_ctrl.vdq);
+    ctl_set_gfl_pq_droop_base(
+        &pq_droop_ctrl, float2ctrl(GFL_ACTIVE_POWER_REF_PU),
+        float2ctrl(GFL_REACTIVE_POWER_REF_PU));
+#if defined GFL_ENABLE_PQ_DROOP
+    ctl_enable_gfl_pq_droop(&pq_droop_ctrl);
+#endif
     pq_loop_tick = 0;
 
 #if BUILD_LEVEL == 1
@@ -138,9 +200,9 @@ void ctl_init()
     ctl_enable_gfl_inv_pll(&inv_ctrl);
     ctl_set_gfl_inv_grid_connect(&inv_ctrl);
 
-    ctl_enable_gfl_inv_decouple(&inv_ctrl);
-    ctl_enable_gfl_inv_active_damp(&inv_ctrl);
-    ctl_enable_gfl_inv_lead_compensator(&inv_ctrl);
+    inv_ctrl.flag_enable_decouple = 1;
+    inv_ctrl.flag_enable_active_damping = 1;
+    inv_ctrl.flag_enable_lead_compensator = 1;
 
 #elif BUILD_LEVEL == 5
     // Cascaded P/Q power loop -> d/q current loop, grid connected.
@@ -150,12 +212,35 @@ void ctl_init()
     ctl_enable_neg_current_inv(&neg_current_ctrl);
     ctl_enable_gfl_inv_pll(&inv_ctrl);
     ctl_set_gfl_inv_grid_connect(&inv_ctrl);
-    ctl_enable_gfl_inv_decouple(&inv_ctrl);
-    ctl_enable_gfl_inv_active_damp(&inv_ctrl);
-    ctl_enable_gfl_inv_lead_compensator(&inv_ctrl);
+    inv_ctrl.flag_enable_decouple = 1;
+    inv_ctrl.flag_enable_active_damping = 1;
+    inv_ctrl.flag_enable_lead_compensator = 1;
     ctl_enable_gfl_pq_ctrl(&pq_ctrl);
 
+#elif BUILD_LEVEL == 6
+    // Stand-alone LC-filter capacitor-voltage loop -> d/q current loop.
+    ctl_set_gfl_inv_current_mode(&inv_ctrl);
+    ctl_set_gfl_inv_current(&inv_ctrl, 0, 0);
+    ctl_set_voltage_inv_reference(&gfl_voltage_ctrl, float2ctrl(GFL_STANDALONE_VD_PU),
+                                  float2ctrl(GFL_STANDALONE_VQ_PU));
+    ctl_enable_voltage_inv(&gfl_voltage_ctrl);
+#if defined GFL_ENABLE_VOLTAGE_DECOUPLE
+    ctl_enable_voltage_inv_decouple(&gfl_voltage_ctrl);
+#else
+    ctl_disable_voltage_inv_decouple(&gfl_voltage_ctrl);
+#endif
+
+#if defined USING_3D_SVPWM
+    // Suppress negative-sequence capacitor voltage and zero-sequence current.
+    ctl_enable_neg_voltage_inv(&neg_current_ctrl);
+    ctl_enable_zero_inv(&gfl_zero_ctrl);
+#endif
+
 #endif // BUILD_LEVEL
+
+#if defined USING_3D_SVPWM && (BUILD_LEVEL >= 3) && (BUILD_LEVEL <= 5)
+    ctl_enable_zero_inv(&gfl_zero_ctrl);
+#endif
 
     //
     // init and config CiA402 standard state machine
@@ -168,7 +253,7 @@ void ctl_init()
     cia402_sm.current_cmd = CIA402_CMD_ENABLE_OPERATION;
 #endif // SPECIFY_PC_ENVIRONMENT
 
-#if BUILD_LEVEL >= 3
+#if (BUILD_LEVEL >= 3) && (BUILD_LEVEL <= 5)
 
     // NOTICE:
     // if grid connect is request disable switch delay from CIA402_SM_SWITCH_ON_DISABLED to CIA402_SM_SWITCHED_ON
@@ -199,14 +284,91 @@ void ctl_mainloop(void)
     return;
 }
 
+#if defined ENABLE_GMP_DL_PIL_SIM
+/** @brief Apply one three-phase inverter SIL/PIL input frame. */
+static void ctl_apply_pil_input(const gmp_sim_rx_buf_t* rx)
+{
+    vabc_src[phase_A] = rx->adc_result[2];
+    vabc_src[phase_B] = rx->adc_result[3];
+    vabc_src[phase_C] = 0;
+    iabc_src[phase_A] = rx->adc_result[4];
+    iabc_src[phase_B] = rx->adc_result[5];
+    iabc_src[phase_C] = rx->adc_result[6];
+    uuvw_src[phase_U] = 0;
+    uuvw_src[phase_V] = 0;
+    uuvw_src[phase_W] = 0;
+    iuvw_src[phase_U] = 0;
+    iuvw_src[phase_V] = 0;
+    iuvw_src[phase_W] = 0;
+    idc_src = rx->adc_result[0];
+    udc_src = rx->adc_result[1];
+    ctl_step_tri_ptr_adc_channel(&iabc);
+    ctl_step_tri_ptr_adc_channel(&vabc);
+    ctl_step_tri_ptr_adc_channel(&iuvw);
+    ctl_step_tri_ptr_adc_channel(&uuvw);
+    ctl_step_ptr_adc_channel(&idc);
+    ctl_step_ptr_adc_channel(&udc);
+}
+
+/** @brief Export one GFL controller result using the established SIL ABI. */
+static void ctl_collect_pil_output(gmp_sim_tx_buf_t* tx)
+{
+#if defined USING_3D_SVPWM
+    tx->pwm_cmp[0] = pwm_3d_out[phase_A];
+    tx->pwm_cmp[1] = pwm_3d_out[phase_B];
+    tx->pwm_cmp[2] = pwm_3d_out[phase_C];
+    tx->pwm_cmp[3] = pwm_3d_out[phase_N];
+#else
+    tx->pwm_cmp[0] = spwm.pwm_out[phase_U];
+    tx->pwm_cmp[1] = spwm.pwm_out[phase_V];
+    tx->pwm_cmp[2] = spwm.pwm_out[phase_W];
+    tx->pwm_cmp[3] = CTRL_PWM_CMP_MAX / 2;
+#endif
+    tx->monitor[0] = inv_ctrl.iabc.dat[phase_A];
+    tx->monitor[1] = inv_ctrl.iabc.dat[phase_B];
+    tx->monitor[2] = inv_ctrl.iab0.dat[phase_0];
+    tx->monitor[3] = neg_current_ctrl.idqn.dat[phase_d];
+    tx->monitor[4] = inv_ctrl.vab0.dat[phase_alpha];
+    tx->monitor[5] = inv_ctrl.vab0.dat[phase_beta];
+    tx->monitor[6] = ctl_get_gfl_pll_error(&inv_ctrl);
+    tx->monitor[7] = inv_ctrl.angle;
+#ifdef USING_DSOGI_PLL
+    tx->monitor[8] = inv_ctrl.pll.srf_pll.phasor.dat[phasor_sin];
+    tx->monitor[9] = inv_ctrl.pll.srf_pll.phasor.dat[phasor_cos];
+#else
+    tx->monitor[8] = inv_ctrl.pll.phasor.dat[phasor_sin];
+    tx->monitor[9] = inv_ctrl.pll.phasor.dat[phasor_cos];
+#endif
+    tx->monitor[10] = inv_ctrl.idq.dat[phase_d];
+    tx->monitor[11] = inv_ctrl.idq.dat[phase_q];
+    tx->monitor[12] = inv_ctrl.vdq.dat[phase_d];
+    tx->monitor[13] = inv_ctrl.vdq.dat[phase_q];
+#if BUILD_LEVEL == 6
+    tx->monitor[14] = gfl_voltage_ctrl.idq_out.dat[phase_d];
+    tx->monitor[15] = gfl_zero_ctrl.v0_out;
+#elif BUILD_LEVEL == 5
+    tx->monitor[14] = pq_droop_ctrl.pq_ref.dat[0];
+    tx->monitor[15] = pq_droop_ctrl.pq_ref.dat[1];
+#else
+    tx->monitor[14] = inv_ctrl.idq_set.dat[phase_d];
+    tx->monitor[15] = inv_ctrl.idq_set.dat[phase_q];
+#endif
+}
+
+#endif // defined ENABLE_GMP_DL_PIL_SIM
+
+/** @brief Execute one controller step requested by the Data Link PIL service. */
 void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
 {
 #if defined ENABLE_GMP_DL_PIL_SIM
-    ctl_input_callback_pil(rx);
+    ctl_apply_pil_input(rx);
 
     ctl_dispatch();
 
-    ctl_output_callback_pil(tx);
+    ctl_collect_pil_output(tx);
+#else
+    GMP_UNUSED_VAR(rx);
+    GMP_UNUSED_VAR(tx);
 #endif // defined ENABLE_GMP_DL_PIL_SIM
 }
 
@@ -222,7 +384,32 @@ time_gt gmp_base_get_ctrl_tick(void)
 
 void ctl_enable_pwm()
 {
+    /*
+     * CiA402 clears dynamic controller state while output is disabled. Restore
+     * commissioning references at the enable edge so BUILD_LEVEL 2-4 current
+     * commands are not lost during the startup state transitions.
+     */
+#if BUILD_LEVEL == 1
+    ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl(GFL_OPEN_LOOP_VD_PU),
+                                     float2ctrl(GFL_OPEN_LOOP_VQ_PU));
+#elif BUILD_LEVEL == 2
+    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFL_CURRENT_LEVEL2_ID_PU),
+                            float2ctrl(GFL_CURRENT_LEVEL2_IQ_PU));
+#elif BUILD_LEVEL == 3
+    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFL_CURRENT_LEVEL3_ID_PU),
+                            float2ctrl(GFL_CURRENT_LEVEL3_IQ_PU));
+#elif BUILD_LEVEL == 4
+    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFL_CURRENT_LEVEL4_ID_PU),
+                            float2ctrl(GFL_CURRENT_LEVEL4_IQ_PU));
+#elif BUILD_LEVEL == 5
+    ctl_set_gfl_inv_current(&inv_ctrl, 0, 0);
+#endif
+
+#if defined ENABLE_GMP_DL_PIL_SIM
+    clear_all_controllers();
+#else
     ctl_fast_enable_output();
+#endif
 }
 
 void ctl_disable_pwm()
@@ -232,7 +419,11 @@ void ctl_disable_pwm()
     // clear controller here
     ctl_clear_gfl_inv(&inv_ctrl);
     ctl_clear_neg_inv(&neg_current_ctrl);
+    ctl_clear_voltage_inv(&gfl_voltage_ctrl);
+    ctl_clear_zero_inv(&gfl_zero_ctrl);
     ctl_clear_gfl_pq(&pq_ctrl);
+    ctl_clear_gfl_pq_droop(&pq_droop_ctrl);
+    gfl_pll_frequency_hz = float2ctrl(GFL_GRID_FREQUENCY_HZ);
     pq_loop_tick = 0;
 }
 
@@ -384,3 +575,14 @@ fast_gt ctl_exec_adc_calibration(void)
     // skip calibrate routine
     return 1;
 }
+
+#if !defined SPECIFY_PC_ENVIRONMENT
+/** @brief Provide GFL current references and feedback to the platform Scope. */
+void user_get_scope_channels(ctrl_gt channels[4])
+{
+    channels[0] = inv_ctrl.idq_set.dat[phase_d];
+    channels[1] = inv_ctrl.idq_set.dat[phase_q];
+    channels[2] = inv_ctrl.idq.dat[phase_d];
+    channels[3] = inv_ctrl.idq.dat[phase_q];
+}
+#endif

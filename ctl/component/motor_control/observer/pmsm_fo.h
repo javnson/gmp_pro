@@ -38,7 +38,7 @@ extern "C"
  *
  * @details This module calculates the stator flux and electromagnetic torque based on the motor's
  * currents and rotor angle. It uses a sensored model, meaning it requires rotor position feedback.
- * The calculations are performed in the stationary ¦Á-¦Â reference frame using per-unit values.
+ * The calculations are performed in the stationary alpha-beta reference frame using per-unit values.
 
  * This observer uses the following per-unit equations:
  *
@@ -84,7 +84,7 @@ typedef struct _tag_pmsm_fo_init_t
 
     // --- Observer PI Gains (PU Space) ---
     parameter_gt kp_fo_pu; //!< Proportional gain for EMF state feedback (PU).
-    parameter_gt ki_fo_pu; //!< Integral gain for EMF state feedback (PU, absorbs Ts).
+    parameter_gt ki_fo_pu; //!< Continuous integral gain for EMF state feedback; PID applies Ts once.
 
     // --- Margins & Limits ---
     parameter_gt current_err_limit_pu; //!< Max absolute current tracking error (PU) before triggering divergence.
@@ -110,7 +110,7 @@ typedef struct _tag_pmsm_fo_t
     // --- State Variables ---
     ctl_vector2_t i_est;  //!< Estimated stator current vector [alpha, beta] (PU).
     ctl_vector2_t e_est;  //!< Directly estimated Back-EMF vector [alpha, beta] (PU).
-    ctl_vector2_t phasor; //!< Estimated rotor phasor [cos(theta), sin(theta)].
+    ctl_vector2_t phasor; //!< Estimated rotor phasor indexed by `phasor_sin`/`phasor_cos`.
 
     // --- Pre-calculated Physical Constants (Plant Model) ---
     ctrl_gt k1; //!< Voltage integration coefficient: (Ts * V_base) / (Ld * I_base).
@@ -277,9 +277,19 @@ GMP_STATIC_INLINE void ctl_step_pmsm_fo(ctl_pmsm_fo_t* fo, ctrl_gt v_alpha, ctrl
     // ========================================================================
     ctl_set_phasor_via_angle(fo->ato_pll.elec_angle_pu, &fo->phasor);
 
-    // Raw voltage tracking error. Gain scheduling is handled externally.
+    // For PMSM back-EMF E=[-|E|sin(theta), |E|cos(theta)], this cross
+    // projection is |E|sin(theta-theta_hat). Normalize it so the ATO's
+    // auto-tuned bandwidth is independent of speed/EMF magnitude.
     ctrl_gt e_err_voltage =
-        -ctl_mul(fo->e_est.dat[0], fo->phasor.dat[1]) + ctl_mul(fo->e_est.dat[1], fo->phasor.dat[0]);
+        -ctl_mul(fo->e_est.dat[0], fo->phasor.dat[phasor_cos]) -
+        ctl_mul(fo->e_est.dat[1], fo->phasor.dat[phasor_sin]);
+    ctrl_gt e_mag_sq = ctl_mul(fo->e_est.dat[0], fo->e_est.dat[0]) +
+                       ctl_mul(fo->e_est.dat[1], fo->e_est.dat[1]);
+    ctrl_gt e_mag = ctl_sqrt(e_mag_sq);
+    if (e_mag > float2ctrl(0.01f))
+        e_err_voltage = ctl_mul(ctl_div(e_err_voltage, e_mag), CTL_CTRL_CONST_1_OVER_2PI);
+    else
+        e_err_voltage = float2ctrl(0.0f);
 
     ctl_step_ato_pll(&fo->ato_pll, e_err_voltage);
 

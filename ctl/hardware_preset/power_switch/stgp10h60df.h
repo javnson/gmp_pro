@@ -37,78 +37,58 @@ extern "C"
 /**
  * @brief Power device part number.
  */
-#ifndef STGP10H60DF_PART_NUMBER
 #define STGP10H60DF_PART_NUMBER "STGP10H60DF"
-#endif // STGP10H60DF_PART_NUMBER
 
 /**
  * @brief MOSFET, IGBT, GaN, SiC, etc.
  */
-#ifndef STGP10H60DF_DEVICE_TYPE
 #define STGP10H60DF_DEVICE_TYPE "IGBT"
-#endif // STGP10H60DF_DEVICE_TYPE
 
 /**
  * @brief Drain-source or collector-emitter voltage rating.
  * @unit V
  */
-#ifndef STGP10H60DF_VOLTAGE_RATING_V
 #define STGP10H60DF_VOLTAGE_RATING_V (600.0f)
-#endif // STGP10H60DF_VOLTAGE_RATING_V
 
 /**
  * @brief Current rating.
  * @unit A
  */
-#ifndef STGP10H60DF_CURRENT_RATING_A
 #define STGP10H60DF_CURRENT_RATING_A (10.0f)
-#endif // STGP10H60DF_CURRENT_RATING_A
 
 /**
  * @brief On resistance.
  * @unit ohm
  */
-#ifndef STGP10H60DF_RDSON_OHM
 #define STGP10H60DF_RDSON_OHM (0.0f)
-#endif // STGP10H60DF_RDSON_OHM
 
 /**
  * @brief Single switch, dual switch, half bridge power block, etc.
  */
-#ifndef STGP10H60DF_CONFIGURATION
 #define STGP10H60DF_CONFIGURATION "single"
-#endif // STGP10H60DF_CONFIGURATION
 
 /**
  * @brief Maximum on resistance at the documented gate voltage.
  * @unit ohm
  */
-#ifndef STGP10H60DF_RDSON_MAX_OHM
 #define STGP10H60DF_RDSON_MAX_OHM (0.0f)
-#endif // STGP10H60DF_RDSON_MAX_OHM
 
 /**
  * @brief Gate voltage associated with the resistance value.
  * @unit V
  */
-#ifndef STGP10H60DF_GATE_VOLTAGE_V
 #define STGP10H60DF_GATE_VOLTAGE_V (0.0f)
-#endif // STGP10H60DF_GATE_VOLTAGE_V
 
 /**
  * @brief Typical total gate charge.
  * @unit nC
  */
-#ifndef STGP10H60DF_GATE_CHARGE_NC
 #define STGP10H60DF_GATE_CHARGE_NC (0.0f)
-#endif // STGP10H60DF_GATE_CHARGE_NC
 
 /**
  * @brief Manufacturer package name.
  */
-#ifndef STGP10H60DF_PACKAGE
 #define STGP10H60DF_PACKAGE "TO-220"
-#endif // STGP10H60DF_PACKAGE
 
 // Logical exports
 // voltage_rating: STGP10H60DF_VOLTAGE_RATING_V

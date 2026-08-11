@@ -38,149 +38,111 @@ extern "C"
 /**
  * @brief Human-readable motor model name.
  */
-#ifndef PMSRM_4P_15KW520V_MOTOR_NAME
 #define PMSRM_4P_15KW520V_MOTOR_NAME "PMSRM 4P 15kW 520V"
-#endif // PMSRM_4P_15KW520V_MOTOR_NAME
 
 /**
  * @brief GMP motor type macro.
  */
-#ifndef PMSRM_4P_15KW520V_MOTOR_TYPE
 #define PMSRM_4P_15KW520V_MOTOR_TYPE PMSM_MOTOR
-#endif // PMSRM_4P_15KW520V_MOTOR_TYPE
 
 /**
  * @brief Optional encoder type macro.
  */
-#ifndef PMSRM_4P_15KW520V_ENCODER_TYPE
 #define PMSRM_4P_15KW520V_ENCODER_TYPE RS485_ABS
-#endif // PMSRM_4P_15KW520V_ENCODER_TYPE
 
 /**
  * @brief Stator resistance per phase.
  * @unit ohm
  */
-#ifndef PMSRM_4P_15KW520V_RS
 #define PMSRM_4P_15KW520V_RS ((0.1215))
-#endif // PMSRM_4P_15KW520V_RS
 
 /**
  * @brief D-axis stator inductance.
  * @unit H
  */
-#ifndef PMSRM_4P_15KW520V_LD
 #define PMSRM_4P_15KW520V_LD ((0.00303))
-#endif // PMSRM_4P_15KW520V_LD
 
 /**
  * @brief Q-axis stator inductance.
  * @unit H
  */
-#ifndef PMSRM_4P_15KW520V_LQ
 #define PMSRM_4P_15KW520V_LQ ((0.02019))
-#endif // PMSRM_4P_15KW520V_LQ
 
 /**
  * @brief Permanent magnet flux linkage.
  * @unit Wb
  */
-#ifndef PMSRM_4P_15KW520V_FLUX
 #define PMSRM_4P_15KW520V_FLUX ((0.44))
-#endif // PMSRM_4P_15KW520V_FLUX
 
 /**
  * @brief Number of pole pairs in the motor.
  */
-#ifndef PMSRM_4P_15KW520V_POLE_PAIRS
 #define PMSRM_4P_15KW520V_POLE_PAIRS ((2))
-#endif // PMSRM_4P_15KW520V_POLE_PAIRS
 
 /**
  * @brief Rotor inertia. Unit follows the source document.
  */
-#ifndef PMSRM_4P_15KW520V_INERTIA
 #define PMSRM_4P_15KW520V_INERTIA ((0.018))
-#endif // PMSRM_4P_15KW520V_INERTIA
 
 /**
  * @brief Motor velocity constant.
  * @unit RPM/V
  */
-#ifndef PMSRM_4P_15KW520V_KV
 #define PMSRM_4P_15KW520V_KV ((MOTOR_PARAM_CALCULATE_KV_BY_FLUX(PMSRM_4P_15KW520V_FLUX, PMSRM_4P_15KW520V_POLE_PAIRS)))
-#endif // PMSRM_4P_15KW520V_KV
 
 /**
  * @brief Back-EMF constant.
  * @unit V/kRPM
  */
-#ifndef PMSRM_4P_15KW520V_EMF
 #define PMSRM_4P_15KW520V_EMF ((MOTOR_PARAM_CALCULATE_EMF_BY_FLUX(PMSRM_4P_15KW520V_FLUX, PMSRM_4P_15KW520V_POLE_PAIRS)))
-#endif // PMSRM_4P_15KW520V_EMF
 
 /**
  * @brief Rated operating voltage.
  * @unit V
  */
-#ifndef PMSRM_4P_15KW520V_RATED_VOLTAGE
 #define PMSRM_4P_15KW520V_RATED_VOLTAGE ((500.0))
-#endif // PMSRM_4P_15KW520V_RATED_VOLTAGE
 
 /**
  * @brief Rated phase current.
  * @unit A
  */
-#ifndef PMSRM_4P_15KW520V_RATED_CURRENT
 #define PMSRM_4P_15KW520V_RATED_CURRENT ((32.09))
-#endif // PMSRM_4P_15KW520V_RATED_CURRENT
 
 /**
  * @brief Rated operating frequency.
  * @unit Hz
  */
-#ifndef PMSRM_4P_15KW520V_RATED_FREQUENCY
 #define PMSRM_4P_15KW520V_RATED_FREQUENCY ((100.0))
-#endif // PMSRM_4P_15KW520V_RATED_FREQUENCY
 
 /**
  * @brief Rated operating speed.
  * @unit RPM
  */
-#ifndef PMSRM_4P_15KW520V_RATED_SPEED
 #define PMSRM_4P_15KW520V_RATED_SPEED ((3000))
-#endif // PMSRM_4P_15KW520V_RATED_SPEED
 
 /**
  * @brief Rated continuous torque.
  * @unit N*m
  */
-#ifndef PMSRM_4P_15KW520V_RATED_TORQUE
 #define PMSRM_4P_15KW520V_RATED_TORQUE ((47.8))
-#endif // PMSRM_4P_15KW520V_RATED_TORQUE
 
 /**
  * @brief Maximum allowable speed.
  * @unit RPM
  */
-#ifndef PMSRM_4P_15KW520V_MAX_SPEED
 #define PMSRM_4P_15KW520V_MAX_SPEED ((3000))
-#endif // PMSRM_4P_15KW520V_MAX_SPEED
 
 /**
  * @brief Maximum allowable DC bus voltage.
  * @unit V
  */
-#ifndef PMSRM_4P_15KW520V_MAX_DC_VOLTAGE
 #define PMSRM_4P_15KW520V_MAX_DC_VOLTAGE ((150.0))
-#endif // PMSRM_4P_15KW520V_MAX_DC_VOLTAGE
 
 /**
  * @brief Maximum allowable phase current.
  * @unit A
  */
-#ifndef PMSRM_4P_15KW520V_MAX_PH_CURRENT
 #define PMSRM_4P_15KW520V_MAX_PH_CURRENT ((20.0))
-#endif // PMSRM_4P_15KW520V_MAX_PH_CURRENT
 
 // Logical exports
 // rs: PMSRM_4P_15KW520V_RS

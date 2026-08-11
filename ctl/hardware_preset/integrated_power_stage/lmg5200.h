@@ -37,83 +37,61 @@ extern "C"
 /**
  * @brief Manufacturer part number.
  */
-#ifndef LMG5200_PART_NUMBER
 #define LMG5200_PART_NUMBER "LMG5200"
-#endif // LMG5200_PART_NUMBER
 
 /**
  * @brief Integrated switch technology.
  */
-#ifndef LMG5200_SWITCH_TECHNOLOGY
 #define LMG5200_SWITCH_TECHNOLOGY "GaN FET"
-#endif // LMG5200_SWITCH_TECHNOLOGY
 
 /**
  * @brief Half bridge or three-phase bridge.
  */
-#ifndef LMG5200_CONFIGURATION
 #define LMG5200_CONFIGURATION "half_bridge"
-#endif // LMG5200_CONFIGURATION
 
 /**
  * @brief Number of integrated phases.
  */
-#ifndef LMG5200_PHASE_COUNT
 #define LMG5200_PHASE_COUNT (1U)
-#endif // LMG5200_PHASE_COUNT
 
 /**
  * @brief Maximum switch or operating voltage.
  * @unit V
  */
-#ifndef LMG5200_VOLTAGE_RATING_V
 #define LMG5200_VOLTAGE_RATING_V (80.0f)
-#endif // LMG5200_VOLTAGE_RATING_V
 
 /**
  * @brief Continuous/RMS output current under datasheet conditions.
  * @unit A
  */
-#ifndef LMG5200_CURRENT_RATING_A
 #define LMG5200_CURRENT_RATING_A (10.0f)
-#endif // LMG5200_CURRENT_RATING_A
 
 /**
  * @brief Peak output current.
  * @unit A
  */
-#ifndef LMG5200_PEAK_CURRENT_A
 #define LMG5200_PEAK_CURRENT_A (0.0f)
-#endif // LMG5200_PEAK_CURRENT_A
 
 /**
  * @brief Documented on resistance; for a bridge this may be HS+LS.
  * @unit ohm
  */
-#ifndef LMG5200_RDSON_OHM
 #define LMG5200_RDSON_OHM (0.015f)
-#endif // LMG5200_RDSON_OHM
 
 /**
  * @brief Whether the gate driver is integrated.
  */
-#ifndef LMG5200_DRIVER_INTEGRATED
 #define LMG5200_DRIVER_INTEGRATED (1U)
-#endif // LMG5200_DRIVER_INTEGRATED
 
 /**
  * @brief One for active-high logic, zero for active-low.
  */
-#ifndef LMG5200_INPUT_ACTIVE_LEVEL
 #define LMG5200_INPUT_ACTIVE_LEVEL (1U)
-#endif // LMG5200_INPUT_ACTIVE_LEVEL
 
 /**
  * @brief Manufacturer package.
  */
-#ifndef LMG5200_PACKAGE
 #define LMG5200_PACKAGE "QFM 8x6"
-#endif // LMG5200_PACKAGE
 
 // Logical exports
 // voltage_rating: LMG5200_VOLTAGE_RATING_V

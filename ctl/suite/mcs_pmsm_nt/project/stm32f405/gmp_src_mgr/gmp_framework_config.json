@@ -1,6 +1,22 @@
 {
-    "sync_mode": "inc_only",
+    "sync_mode": "all",
     "selected_modules": [
+        {
+            "root": "core",
+            "module": "dev|datalink|scope"
+        },
+        {
+            "root": "ctl",
+            "module": "component|dsa|dsa_scope"
+        },
+        {
+            "root": "ctl",
+            "module": "component|dsa|dsa_trigger"
+        },
+        {
+            "root": "ctl",
+            "module": "component|dsa|dsa_dl_scope"
+        },
         {
             "root": "core",
             "module": "dev|_internal"
@@ -180,6 +196,14 @@
         {
             "root": "ctl",
             "module": "component|intrinsic|continuous|_internal"
+        },
+        {
+            "root": "ctl",
+            "module": "component|intrinsic|complex|dq_pi"
+        },
+        {
+            "root": "ctl",
+            "module": "component|intrinsic|complex|dq_ladrc1"
         },
         {
             "root": "ctl",

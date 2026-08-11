@@ -37,78 +37,58 @@ extern "C"
 /**
  * @brief Power device part number.
  */
-#ifndef CSD88584Q5DC_PART_NUMBER
 #define CSD88584Q5DC_PART_NUMBER "CSD88584Q5DC"
-#endif // CSD88584Q5DC_PART_NUMBER
 
 /**
  * @brief MOSFET, IGBT, GaN, SiC, etc.
  */
-#ifndef CSD88584Q5DC_DEVICE_TYPE
 #define CSD88584Q5DC_DEVICE_TYPE "MOSFET"
-#endif // CSD88584Q5DC_DEVICE_TYPE
 
 /**
  * @brief Drain-source or collector-emitter voltage rating.
  * @unit V
  */
-#ifndef CSD88584Q5DC_VOLTAGE_RATING_V
 #define CSD88584Q5DC_VOLTAGE_RATING_V (40.0f)
-#endif // CSD88584Q5DC_VOLTAGE_RATING_V
 
 /**
  * @brief Current rating.
  * @unit A
  */
-#ifndef CSD88584Q5DC_CURRENT_RATING_A
 #define CSD88584Q5DC_CURRENT_RATING_A (50.0f)
-#endif // CSD88584Q5DC_CURRENT_RATING_A
 
 /**
  * @brief On resistance.
  * @unit ohm
  */
-#ifndef CSD88584Q5DC_RDSON_OHM
 #define CSD88584Q5DC_RDSON_OHM (0.0017f)
-#endif // CSD88584Q5DC_RDSON_OHM
 
 /**
  * @brief Single switch, dual switch, half bridge power block, etc.
  */
-#ifndef CSD88584Q5DC_CONFIGURATION
 #define CSD88584Q5DC_CONFIGURATION "half_bridge_power_block"
-#endif // CSD88584Q5DC_CONFIGURATION
 
 /**
  * @brief Maximum on resistance at the documented gate voltage.
  * @unit ohm
  */
-#ifndef CSD88584Q5DC_RDSON_MAX_OHM
 #define CSD88584Q5DC_RDSON_MAX_OHM (0.0f)
-#endif // CSD88584Q5DC_RDSON_MAX_OHM
 
 /**
  * @brief Gate voltage associated with the resistance value.
  * @unit V
  */
-#ifndef CSD88584Q5DC_GATE_VOLTAGE_V
 #define CSD88584Q5DC_GATE_VOLTAGE_V (10.0f)
-#endif // CSD88584Q5DC_GATE_VOLTAGE_V
 
 /**
  * @brief Typical total gate charge.
  * @unit nC
  */
-#ifndef CSD88584Q5DC_GATE_CHARGE_NC
 #define CSD88584Q5DC_GATE_CHARGE_NC (0.0f)
-#endif // CSD88584Q5DC_GATE_CHARGE_NC
 
 /**
  * @brief Manufacturer package name.
  */
-#ifndef CSD88584Q5DC_PACKAGE
 #define CSD88584Q5DC_PACKAGE "DualCool SON 5x6"
-#endif // CSD88584Q5DC_PACKAGE
 
 // Logical exports
 // voltage_rating: CSD88584Q5DC_VOLTAGE_RATING_V

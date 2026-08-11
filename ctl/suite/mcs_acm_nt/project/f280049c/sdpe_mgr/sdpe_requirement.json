@@ -1,0 +1,1315 @@
+{
+  "id": "mcs_acim_nt_f280049c",
+  "macro_prefix": "MCS_ACIM_NT_F280049C",
+  "display_name": "MCS ACIM NT LaunchXL-F280049C",
+  "description": "ACIM sensored/sensorless controller and PIL bindings for LaunchXL-F280049C with BOOSTXL-3PHGANINV.",
+  "suite": "mcs_acm_nt",
+  "version": "0.1.0",
+  "updated_at": "2026-08-10",
+  "output_header": "sdpe_mcs_acim_nt_f280049c_settings.h",
+  "hardware": [
+    {
+      "entity": "launchxl_f280049c"
+    },
+    {
+      "entity": "acm_4p24v"
+    },
+    {
+      "entity": "ti_boostxl_3phganinv"
+    }
+  ],
+  "code_sections": {
+    "after_extern_open": "/* The inverter is selected as an SDPE hardware entity. */\n\n#define LAUNCHPAD 1\n#define GMP_IRIS  0\n#define BOARD_SELECTION LAUNCHPAD",
+    "before_footer": "/** Validate the target-local PIL command allocation and channel map. */\n#if (GMP_PIL_DL_BASE_COMMAND > 251U)\n#error \"GMP_PIL_DL_BASE_COMMAND must leave room for the four PIL subcommands.\"\n#endif\n#if (GMP_PIL_RX_ADC_UDC_INDEX >= 24U) || (GMP_PIL_RX_ADC_UU_INDEX >= 24U) || (GMP_PIL_RX_ADC_UV_INDEX >= 24U) || (GMP_PIL_RX_ADC_UW_INDEX >= 24U) || (GMP_PIL_RX_ADC_IU_INDEX >= 24U) || (GMP_PIL_RX_ADC_IV_INDEX >= 24U) || (GMP_PIL_RX_ADC_IW_INDEX >= 24U)\n#error \"Every PIL ADC index must be in the range [0, 23].\"\n#endif\n#if (GMP_PIL_UDP_ENCODER_INDEX >= 8U)\n#error \"GMP_PIL_UDP_ENCODER_INDEX must be in the range [0, 7].\"\n#endif\n#if (GMP_PIL_TX_PWM_U_INDEX >= 8U) || (GMP_PIL_TX_PWM_V_INDEX >= 8U) || (GMP_PIL_TX_PWM_W_INDEX >= 8U)\n#error \"Every PIL PWM index must be in the range [0, 7].\"\n#endif\n#if (GMP_PIL_TX_MONITOR_IU_INDEX >= 16U) || (GMP_PIL_TX_MONITOR_IV_INDEX >= 16U) || (GMP_PIL_TX_MONITOR_ID_INDEX >= 16U) || (GMP_PIL_TX_MONITOR_IQ_INDEX >= 16U) || (GMP_PIL_TX_MONITOR_POSITION_INDEX >= 16U) || (GMP_PIL_TX_MONITOR_SPEED_INDEX >= 16U)\n#error \"Every PIL monitor index must be in the range [0, 15].\"\n#endif\n\n/**\n * @brief Convert volts to normalized phase voltage.\n */\n#define VOLT_PU(_X_X_) (((_X_X_)/CTRL_VOLTAGE_BASE))\n\n/**\n * @brief Convert amperes to normalized phase current.\n */\n#define CURR_PU(_X_X_) (((_X_X_)/CTRL_CURRENT_BASE))"
+  },
+  "feature_macros": [
+    {
+      "group": "PIL Runtime",
+      "macro": "ENABLE_GMP_DL_PIL_SIM",
+      "enabled": true,
+      "weak": false,
+      "value": "",
+      "description": "Run controller steps only from Data Link PIL requests. Physical ADC ISR control dispatch and physical PWM enable remain isolated while this switch is enabled."
+    }
+  ],
+  "option_macros": [
+    {
+      "group": "PIL Commissioning",
+      "macro": "BUILD_LEVEL",
+      "enabled": true,
+      "weak": false,
+      "value": "(1)",
+      "options_preset": "",
+      "options": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)"
+      ],
+      "description": "Target-local incremental level used for both PIL deployment and physical commissioning."
+    },
+    {
+      "group": "Controller Options",
+      "macro": "MC_CURRENT_SAMPLE_PHASE_MODE",
+      "enabled": true,
+      "weak": false,
+      "value": "(3)",
+      "options_preset": "",
+      "options": [
+        "(2)",
+        "(3)"
+      ],
+      "description": "Number of directly sampled phase currents."
+    },
+    {
+      "group": "Board GPIO",
+      "macro": "PWM_ENABLE_PORT",
+      "enabled": true,
+      "weak": false,
+      "value": "ENABLE_GATE",
+      "options_preset": "launchxl_f280049c.GATE_GPIO",
+      "options": [
+        "ENABLE_GATE",
+        "RESET_GATE",
+        "MONITOR_IO"
+      ],
+      "description": "Gate-driver enable GPIO."
+    },
+    {
+      "group": "Board GPIO",
+      "macro": "PWM_RESET_PORT",
+      "enabled": true,
+      "weak": false,
+      "value": "RESET_GATE",
+      "options_preset": "launchxl_f280049c.GATE_GPIO",
+      "options": [
+        "ENABLE_GATE",
+        "RESET_GATE",
+        "MONITOR_IO"
+      ],
+      "description": "Gate-driver reset GPIO."
+    },
+    {
+      "group": "Board GPIO",
+      "macro": "SYSTEM_LED",
+      "enabled": true,
+      "weak": false,
+      "value": "LED_R",
+      "options_preset": "launchxl_f280049c.BOARD_LED",
+      "options": [
+        "LED_R",
+        "LED_G"
+      ],
+      "description": "System status LED."
+    },
+    {
+      "group": "Board GPIO",
+      "macro": "CONTROLLER_LED",
+      "enabled": true,
+      "weak": false,
+      "value": "LED_G",
+      "options_preset": "launchxl_f280049c.BOARD_LED",
+      "options": [
+        "LED_R",
+        "LED_G"
+      ],
+      "description": "Controller-running LED."
+    },
+    {
+      "group": "PWM Channel",
+      "macro": "PHASE_U_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J4_PWM1_BASE",
+      "options_preset": "launchxl_f280049c.BOOSTXL_PWM_BASE",
+      "options": [
+        "BOOSTXL_J4_PWM1_BASE",
+        "BOOSTXL_J4_PWM2_BASE",
+        "BOOSTXL_J4_PWM3_BASE",
+        "BOOSTXL_J8_PWM1_BASE",
+        "BOOSTXL_J8_PWM2_BASE",
+        "BOOSTXL_J8_PWM3_BASE"
+      ],
+      "description": "U-phase PWM pair."
+    },
+    {
+      "group": "PWM Channel",
+      "macro": "PHASE_V_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J4_PWM2_BASE",
+      "options_preset": "launchxl_f280049c.BOOSTXL_PWM_BASE",
+      "options": [
+        "BOOSTXL_J4_PWM1_BASE",
+        "BOOSTXL_J4_PWM2_BASE",
+        "BOOSTXL_J4_PWM3_BASE",
+        "BOOSTXL_J8_PWM1_BASE",
+        "BOOSTXL_J8_PWM2_BASE",
+        "BOOSTXL_J8_PWM3_BASE"
+      ],
+      "description": "V-phase PWM pair."
+    },
+    {
+      "group": "PWM Channel",
+      "macro": "PHASE_W_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J4_PWM3_BASE",
+      "options_preset": "launchxl_f280049c.BOOSTXL_PWM_BASE",
+      "options": [
+        "BOOSTXL_J4_PWM1_BASE",
+        "BOOSTXL_J4_PWM2_BASE",
+        "BOOSTXL_J4_PWM3_BASE",
+        "BOOSTXL_J8_PWM1_BASE",
+        "BOOSTXL_J8_PWM2_BASE",
+        "BOOSTXL_J8_PWM3_BASE"
+      ],
+      "description": "W-phase PWM pair."
+    },
+    {
+      "group": "Encoder",
+      "macro": "EQEP_Encoder_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "EQEP2_J13_BASE",
+      "options_preset": "launchxl_f280049c.EQEP_BASE",
+      "options": [
+        "EQEP1_J12_BASE",
+        "EQEP2_J13_BASE"
+      ],
+      "description": "Rotor encoder connector."
+    },
+    {
+      "group": "ADC DC Bus",
+      "macro": "INV_VBUS",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J3_AIN1",
+      "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
+      "options": [
+        "BOOSTXL_J3_AIN1",
+        "BOOSTXL_J3_AIN2",
+        "BOOSTXL_J3_AIN3",
+        "BOOSTXL_J3_AIN4",
+        "BOOSTXL_J3_AIN5",
+        "BOOSTXL_J3_AIN6",
+        "BOOSTXL_J3_AIN7",
+        "BOOSTXL_J3_AIN8",
+        "BOOSTXL_J7_AIN1",
+        "BOOSTXL_J7_AIN2",
+        "BOOSTXL_J7_AIN3",
+        "BOOSTXL_J7_AIN4",
+        "BOOSTXL_J7_AIN5",
+        "BOOSTXL_J7_AIN6",
+        "BOOSTXL_J7_AIN7",
+        "BOOSTXL_J7_AIN8"
+      ],
+      "description": "DC-bus voltage SOC."
+    },
+    {
+      "group": "ADC DC Bus",
+      "macro": "INV_VBUS_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J3_AIN1_RESULT_BASE",
+      "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
+      "options": [
+        "BOOSTXL_J3_AIN1_RESULT_BASE",
+        "BOOSTXL_J3_AIN2_RESULT_BASE",
+        "BOOSTXL_J3_AIN3_RESULT_BASE",
+        "BOOSTXL_J3_AIN4_RESULT_BASE",
+        "BOOSTXL_J3_AIN5_RESULT_BASE",
+        "BOOSTXL_J3_AIN6_RESULT_BASE",
+        "BOOSTXL_J3_AIN7_RESULT_BASE",
+        "BOOSTXL_J3_AIN8_RESULT_BASE",
+        "BOOSTXL_J7_AIN1_RESULT_BASE",
+        "BOOSTXL_J7_AIN2_RESULT_BASE",
+        "BOOSTXL_J7_AIN3_RESULT_BASE",
+        "BOOSTXL_J7_AIN4_RESULT_BASE",
+        "BOOSTXL_J7_AIN5_RESULT_BASE",
+        "BOOSTXL_J7_AIN6_RESULT_BASE",
+        "BOOSTXL_J7_AIN7_RESULT_BASE",
+        "BOOSTXL_J7_AIN8_RESULT_BASE"
+      ],
+      "description": "DC-bus voltage result base."
+    },
+    {
+      "group": "ADC DC Bus",
+      "macro": "INV_IBUS",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J3_AIN8",
+      "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
+      "options": [
+        "BOOSTXL_J3_AIN1",
+        "BOOSTXL_J3_AIN2",
+        "BOOSTXL_J3_AIN3",
+        "BOOSTXL_J3_AIN4",
+        "BOOSTXL_J3_AIN5",
+        "BOOSTXL_J3_AIN6",
+        "BOOSTXL_J3_AIN7",
+        "BOOSTXL_J3_AIN8",
+        "BOOSTXL_J7_AIN1",
+        "BOOSTXL_J7_AIN2",
+        "BOOSTXL_J7_AIN3",
+        "BOOSTXL_J7_AIN4",
+        "BOOSTXL_J7_AIN5",
+        "BOOSTXL_J7_AIN6",
+        "BOOSTXL_J7_AIN7",
+        "BOOSTXL_J7_AIN8"
+      ],
+      "description": "DC-bus current SOC."
+    },
+    {
+      "group": "ADC DC Bus",
+      "macro": "INV_IBUS_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J3_AIN8_RESULT_BASE",
+      "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
+      "options": [
+        "BOOSTXL_J3_AIN1_RESULT_BASE",
+        "BOOSTXL_J3_AIN2_RESULT_BASE",
+        "BOOSTXL_J3_AIN3_RESULT_BASE",
+        "BOOSTXL_J3_AIN4_RESULT_BASE",
+        "BOOSTXL_J3_AIN5_RESULT_BASE",
+        "BOOSTXL_J3_AIN6_RESULT_BASE",
+        "BOOSTXL_J3_AIN7_RESULT_BASE",
+        "BOOSTXL_J3_AIN8_RESULT_BASE",
+        "BOOSTXL_J7_AIN1_RESULT_BASE",
+        "BOOSTXL_J7_AIN2_RESULT_BASE",
+        "BOOSTXL_J7_AIN3_RESULT_BASE",
+        "BOOSTXL_J7_AIN4_RESULT_BASE",
+        "BOOSTXL_J7_AIN5_RESULT_BASE",
+        "BOOSTXL_J7_AIN6_RESULT_BASE",
+        "BOOSTXL_J7_AIN7_RESULT_BASE",
+        "BOOSTXL_J7_AIN8_RESULT_BASE"
+      ],
+      "description": "DC-bus current result base."
+    },
+    {
+      "group": "ADC Phase Current",
+      "macro": "INV_IU",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J3_AIN5",
+      "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
+      "options": [
+        "BOOSTXL_J3_AIN1",
+        "BOOSTXL_J3_AIN2",
+        "BOOSTXL_J3_AIN3",
+        "BOOSTXL_J3_AIN4",
+        "BOOSTXL_J3_AIN5",
+        "BOOSTXL_J3_AIN6",
+        "BOOSTXL_J3_AIN7",
+        "BOOSTXL_J3_AIN8",
+        "BOOSTXL_J7_AIN1",
+        "BOOSTXL_J7_AIN2",
+        "BOOSTXL_J7_AIN3",
+        "BOOSTXL_J7_AIN4",
+        "BOOSTXL_J7_AIN5",
+        "BOOSTXL_J7_AIN6",
+        "BOOSTXL_J7_AIN7",
+        "BOOSTXL_J7_AIN8"
+      ],
+      "description": "U-phase current SOC."
+    },
+    {
+      "group": "ADC Phase Current",
+      "macro": "INV_IU_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J3_AIN5_RESULT_BASE",
+      "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
+      "options": [
+        "BOOSTXL_J3_AIN1_RESULT_BASE",
+        "BOOSTXL_J3_AIN2_RESULT_BASE",
+        "BOOSTXL_J3_AIN3_RESULT_BASE",
+        "BOOSTXL_J3_AIN4_RESULT_BASE",
+        "BOOSTXL_J3_AIN5_RESULT_BASE",
+        "BOOSTXL_J3_AIN6_RESULT_BASE",
+        "BOOSTXL_J3_AIN7_RESULT_BASE",
+        "BOOSTXL_J3_AIN8_RESULT_BASE",
+        "BOOSTXL_J7_AIN1_RESULT_BASE",
+        "BOOSTXL_J7_AIN2_RESULT_BASE",
+        "BOOSTXL_J7_AIN3_RESULT_BASE",
+        "BOOSTXL_J7_AIN4_RESULT_BASE",
+        "BOOSTXL_J7_AIN5_RESULT_BASE",
+        "BOOSTXL_J7_AIN6_RESULT_BASE",
+        "BOOSTXL_J7_AIN7_RESULT_BASE",
+        "BOOSTXL_J7_AIN8_RESULT_BASE"
+      ],
+      "description": "U-phase current result base."
+    },
+    {
+      "group": "ADC Phase Current",
+      "macro": "INV_IV",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J3_AIN6",
+      "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
+      "options": [
+        "BOOSTXL_J3_AIN1",
+        "BOOSTXL_J3_AIN2",
+        "BOOSTXL_J3_AIN3",
+        "BOOSTXL_J3_AIN4",
+        "BOOSTXL_J3_AIN5",
+        "BOOSTXL_J3_AIN6",
+        "BOOSTXL_J3_AIN7",
+        "BOOSTXL_J3_AIN8",
+        "BOOSTXL_J7_AIN1",
+        "BOOSTXL_J7_AIN2",
+        "BOOSTXL_J7_AIN3",
+        "BOOSTXL_J7_AIN4",
+        "BOOSTXL_J7_AIN5",
+        "BOOSTXL_J7_AIN6",
+        "BOOSTXL_J7_AIN7",
+        "BOOSTXL_J7_AIN8"
+      ],
+      "description": "V-phase current SOC."
+    },
+    {
+      "group": "ADC Phase Current",
+      "macro": "INV_IV_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J3_AIN6_RESULT_BASE",
+      "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
+      "options": [
+        "BOOSTXL_J3_AIN1_RESULT_BASE",
+        "BOOSTXL_J3_AIN2_RESULT_BASE",
+        "BOOSTXL_J3_AIN3_RESULT_BASE",
+        "BOOSTXL_J3_AIN4_RESULT_BASE",
+        "BOOSTXL_J3_AIN5_RESULT_BASE",
+        "BOOSTXL_J3_AIN6_RESULT_BASE",
+        "BOOSTXL_J3_AIN7_RESULT_BASE",
+        "BOOSTXL_J3_AIN8_RESULT_BASE",
+        "BOOSTXL_J7_AIN1_RESULT_BASE",
+        "BOOSTXL_J7_AIN2_RESULT_BASE",
+        "BOOSTXL_J7_AIN3_RESULT_BASE",
+        "BOOSTXL_J7_AIN4_RESULT_BASE",
+        "BOOSTXL_J7_AIN5_RESULT_BASE",
+        "BOOSTXL_J7_AIN6_RESULT_BASE",
+        "BOOSTXL_J7_AIN7_RESULT_BASE",
+        "BOOSTXL_J7_AIN8_RESULT_BASE"
+      ],
+      "description": "V-phase current result base."
+    },
+    {
+      "group": "ADC Phase Current",
+      "macro": "INV_IW",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J3_AIN7",
+      "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
+      "options": [
+        "BOOSTXL_J3_AIN1",
+        "BOOSTXL_J3_AIN2",
+        "BOOSTXL_J3_AIN3",
+        "BOOSTXL_J3_AIN4",
+        "BOOSTXL_J3_AIN5",
+        "BOOSTXL_J3_AIN6",
+        "BOOSTXL_J3_AIN7",
+        "BOOSTXL_J3_AIN8",
+        "BOOSTXL_J7_AIN1",
+        "BOOSTXL_J7_AIN2",
+        "BOOSTXL_J7_AIN3",
+        "BOOSTXL_J7_AIN4",
+        "BOOSTXL_J7_AIN5",
+        "BOOSTXL_J7_AIN6",
+        "BOOSTXL_J7_AIN7",
+        "BOOSTXL_J7_AIN8"
+      ],
+      "description": "W-phase current SOC."
+    },
+    {
+      "group": "ADC Phase Current",
+      "macro": "INV_IW_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J3_AIN7_RESULT_BASE",
+      "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
+      "options": [
+        "BOOSTXL_J3_AIN1_RESULT_BASE",
+        "BOOSTXL_J3_AIN2_RESULT_BASE",
+        "BOOSTXL_J3_AIN3_RESULT_BASE",
+        "BOOSTXL_J3_AIN4_RESULT_BASE",
+        "BOOSTXL_J3_AIN5_RESULT_BASE",
+        "BOOSTXL_J3_AIN6_RESULT_BASE",
+        "BOOSTXL_J3_AIN7_RESULT_BASE",
+        "BOOSTXL_J3_AIN8_RESULT_BASE",
+        "BOOSTXL_J7_AIN1_RESULT_BASE",
+        "BOOSTXL_J7_AIN2_RESULT_BASE",
+        "BOOSTXL_J7_AIN3_RESULT_BASE",
+        "BOOSTXL_J7_AIN4_RESULT_BASE",
+        "BOOSTXL_J7_AIN5_RESULT_BASE",
+        "BOOSTXL_J7_AIN6_RESULT_BASE",
+        "BOOSTXL_J7_AIN7_RESULT_BASE",
+        "BOOSTXL_J7_AIN8_RESULT_BASE"
+      ],
+      "description": "W-phase current result base."
+    },
+    {
+      "group": "ADC Phase Voltage",
+      "macro": "INV_UU",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J3_AIN2",
+      "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
+      "options": [
+        "BOOSTXL_J3_AIN1",
+        "BOOSTXL_J3_AIN2",
+        "BOOSTXL_J3_AIN3",
+        "BOOSTXL_J3_AIN4",
+        "BOOSTXL_J3_AIN5",
+        "BOOSTXL_J3_AIN6",
+        "BOOSTXL_J3_AIN7",
+        "BOOSTXL_J3_AIN8",
+        "BOOSTXL_J7_AIN1",
+        "BOOSTXL_J7_AIN2",
+        "BOOSTXL_J7_AIN3",
+        "BOOSTXL_J7_AIN4",
+        "BOOSTXL_J7_AIN5",
+        "BOOSTXL_J7_AIN6",
+        "BOOSTXL_J7_AIN7",
+        "BOOSTXL_J7_AIN8"
+      ],
+      "description": "U-phase voltage SOC."
+    },
+    {
+      "group": "ADC Phase Voltage",
+      "macro": "INV_UU_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J3_AIN2_RESULT_BASE",
+      "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
+      "options": [
+        "BOOSTXL_J3_AIN1_RESULT_BASE",
+        "BOOSTXL_J3_AIN2_RESULT_BASE",
+        "BOOSTXL_J3_AIN3_RESULT_BASE",
+        "BOOSTXL_J3_AIN4_RESULT_BASE",
+        "BOOSTXL_J3_AIN5_RESULT_BASE",
+        "BOOSTXL_J3_AIN6_RESULT_BASE",
+        "BOOSTXL_J3_AIN7_RESULT_BASE",
+        "BOOSTXL_J3_AIN8_RESULT_BASE",
+        "BOOSTXL_J7_AIN1_RESULT_BASE",
+        "BOOSTXL_J7_AIN2_RESULT_BASE",
+        "BOOSTXL_J7_AIN3_RESULT_BASE",
+        "BOOSTXL_J7_AIN4_RESULT_BASE",
+        "BOOSTXL_J7_AIN5_RESULT_BASE",
+        "BOOSTXL_J7_AIN6_RESULT_BASE",
+        "BOOSTXL_J7_AIN7_RESULT_BASE",
+        "BOOSTXL_J7_AIN8_RESULT_BASE"
+      ],
+      "description": "U-phase voltage result base."
+    },
+    {
+      "group": "ADC Phase Voltage",
+      "macro": "INV_UV",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J3_AIN3",
+      "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
+      "options": [
+        "BOOSTXL_J3_AIN1",
+        "BOOSTXL_J3_AIN2",
+        "BOOSTXL_J3_AIN3",
+        "BOOSTXL_J3_AIN4",
+        "BOOSTXL_J3_AIN5",
+        "BOOSTXL_J3_AIN6",
+        "BOOSTXL_J3_AIN7",
+        "BOOSTXL_J3_AIN8",
+        "BOOSTXL_J7_AIN1",
+        "BOOSTXL_J7_AIN2",
+        "BOOSTXL_J7_AIN3",
+        "BOOSTXL_J7_AIN4",
+        "BOOSTXL_J7_AIN5",
+        "BOOSTXL_J7_AIN6",
+        "BOOSTXL_J7_AIN7",
+        "BOOSTXL_J7_AIN8"
+      ],
+      "description": "V-phase voltage SOC."
+    },
+    {
+      "group": "ADC Phase Voltage",
+      "macro": "INV_UV_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J3_AIN3_RESULT_BASE",
+      "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
+      "options": [
+        "BOOSTXL_J3_AIN1_RESULT_BASE",
+        "BOOSTXL_J3_AIN2_RESULT_BASE",
+        "BOOSTXL_J3_AIN3_RESULT_BASE",
+        "BOOSTXL_J3_AIN4_RESULT_BASE",
+        "BOOSTXL_J3_AIN5_RESULT_BASE",
+        "BOOSTXL_J3_AIN6_RESULT_BASE",
+        "BOOSTXL_J3_AIN7_RESULT_BASE",
+        "BOOSTXL_J3_AIN8_RESULT_BASE",
+        "BOOSTXL_J7_AIN1_RESULT_BASE",
+        "BOOSTXL_J7_AIN2_RESULT_BASE",
+        "BOOSTXL_J7_AIN3_RESULT_BASE",
+        "BOOSTXL_J7_AIN4_RESULT_BASE",
+        "BOOSTXL_J7_AIN5_RESULT_BASE",
+        "BOOSTXL_J7_AIN6_RESULT_BASE",
+        "BOOSTXL_J7_AIN7_RESULT_BASE",
+        "BOOSTXL_J7_AIN8_RESULT_BASE"
+      ],
+      "description": "V-phase voltage result base."
+    },
+    {
+      "group": "ADC Phase Voltage",
+      "macro": "INV_UW",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J3_AIN4",
+      "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
+      "options": [
+        "BOOSTXL_J3_AIN1",
+        "BOOSTXL_J3_AIN2",
+        "BOOSTXL_J3_AIN3",
+        "BOOSTXL_J3_AIN4",
+        "BOOSTXL_J3_AIN5",
+        "BOOSTXL_J3_AIN6",
+        "BOOSTXL_J3_AIN7",
+        "BOOSTXL_J3_AIN8",
+        "BOOSTXL_J7_AIN1",
+        "BOOSTXL_J7_AIN2",
+        "BOOSTXL_J7_AIN3",
+        "BOOSTXL_J7_AIN4",
+        "BOOSTXL_J7_AIN5",
+        "BOOSTXL_J7_AIN6",
+        "BOOSTXL_J7_AIN7",
+        "BOOSTXL_J7_AIN8"
+      ],
+      "description": "W-phase voltage SOC."
+    },
+    {
+      "group": "ADC Phase Voltage",
+      "macro": "INV_UW_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_J3_AIN4_RESULT_BASE",
+      "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
+      "options": [
+        "BOOSTXL_J3_AIN1_RESULT_BASE",
+        "BOOSTXL_J3_AIN2_RESULT_BASE",
+        "BOOSTXL_J3_AIN3_RESULT_BASE",
+        "BOOSTXL_J3_AIN4_RESULT_BASE",
+        "BOOSTXL_J3_AIN5_RESULT_BASE",
+        "BOOSTXL_J3_AIN6_RESULT_BASE",
+        "BOOSTXL_J3_AIN7_RESULT_BASE",
+        "BOOSTXL_J3_AIN8_RESULT_BASE",
+        "BOOSTXL_J7_AIN1_RESULT_BASE",
+        "BOOSTXL_J7_AIN2_RESULT_BASE",
+        "BOOSTXL_J7_AIN3_RESULT_BASE",
+        "BOOSTXL_J7_AIN4_RESULT_BASE",
+        "BOOSTXL_J7_AIN5_RESULT_BASE",
+        "BOOSTXL_J7_AIN6_RESULT_BASE",
+        "BOOSTXL_J7_AIN7_RESULT_BASE",
+        "BOOSTXL_J7_AIN8_RESULT_BASE"
+      ],
+      "description": "W-phase voltage result base."
+    },
+    {
+      "group": "Controller Options",
+      "macro": "MCS_ACIM_FEEDBACK_MODE",
+      "enabled": true,
+      "weak": false,
+      "value": "MCS_ACIM_FEEDBACK_SENSORED",
+      "options": [
+        "MCS_ACIM_FEEDBACK_SENSORED",
+        "MCS_ACIM_FEEDBACK_SENSORLESS"
+      ],
+      "description": "Select sensored IFOC or sensorless flux-observer feedback."
+    },
+    {
+      "group": "Controller Options",
+      "macro": "MCS_FO_VOLTAGE_SOURCE",
+      "enabled": true,
+      "weak": false,
+      "value": "MCS_FO_VOLTAGE_FROM_COMMAND",
+      "options": [
+        "MCS_FO_VOLTAGE_FROM_COMMAND",
+        "MCS_FO_VOLTAGE_FROM_MEASUREMENT"
+      ],
+      "description": "Select pre-dead-time command voltage or calibrated phase-voltage ADC feedback."
+    }
+  ],
+  "requirements": [
+    {
+      "role": "PIL Data Link Base Command",
+      "macro": "GMP_PIL_DL_BASE_COMMAND",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "16"
+      },
+      "description": "Base Data Link command allocated to the PIL service."
+    },
+    {
+      "role": "Data Link UART Baud Rate",
+      "macro": "GMP_DL_UART_BAUDRATE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "115200"
+      },
+      "description": "UART baud rate shared by the F280049C Data Link transport and the host PIL bridge. The standard 115200 baud rate avoids the XDS110 high-baud small-packet aggregation behavior."
+    },
+    {
+      "role": "PIL UDP Host",
+      "macro": "GMP_PIL_UDP_HOST",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "string": "127.0.0.1"
+      },
+      "description": "IPv4 host used by the local Simulink PIL bridge."
+    },
+    {
+      "role": "PIL Bridge UDP Listen Port",
+      "macro": "GMP_PIL_BRIDGE_UDP_LISTEN_PORT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "12501"
+      },
+      "description": "UDP port on which the bridge receives the Simulink packed input datagram."
+    },
+    {
+      "role": "PIL MATLAB UDP Listen Port",
+      "macro": "GMP_PIL_MATLAB_UDP_LISTEN_PORT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "12500"
+      },
+      "description": "UDP port on which Simulink receives the packed controller output datagram."
+    },
+    {
+      "role": "PIL MATLAB Command TX Port",
+      "macro": "GMP_PIL_MATLAB_COMMAND_TX_PORT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "12502"
+      },
+      "description": "Command transmit port configured by the standard GMP Simulink block."
+    },
+    {
+      "role": "PIL MATLAB Command RX Port",
+      "macro": "GMP_PIL_MATLAB_COMMAND_RX_PORT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "12503"
+      },
+      "description": "Command receive port configured by the standard GMP Simulink block."
+    },
+    {
+      "role": "PIL RX Mask",
+      "macro": "GMP_PIL_RX_MASK",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "127"
+      },
+      "description": "Receive mask enabling the seven ADC slots used by the ACIM controller; panel slots remain disabled."
+    },
+    {
+      "role": "PIL TX Mask",
+      "macro": "GMP_PIL_TX_MASK",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "4128775"
+      },
+      "description": "Transmit mask enabling three PWM compares and six controller monitor values."
+    },
+    {
+      "role": "PIL MCU Timeout",
+      "macro": "GMP_PIL_MCU_TIMEOUT_MS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "200"
+      },
+      "description": "Maximum host wait for one target PIL transaction before the transport retries."
+    },
+    {
+      "role": "PIL MATLAB Timeout",
+      "macro": "GMP_PIL_MATLAB_TIMEOUT_MS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "5000"
+      },
+      "description": "Maximum idle time while waiting for the next Simulink input datagram."
+    },
+    {
+      "role": "PIL ADC DC Bus Index",
+      "macro": "GMP_PIL_RX_ADC_UDC_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "0"
+      },
+      "description": "PIL ADC slot carrying DC-bus voltage feedback."
+    },
+    {
+      "role": "PIL ADC Phase U Voltage Index",
+      "macro": "GMP_PIL_RX_ADC_UU_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "1"
+      },
+      "description": "PIL ADC slot carrying phase-U voltage feedback."
+    },
+    {
+      "role": "PIL ADC Phase V Voltage Index",
+      "macro": "GMP_PIL_RX_ADC_UV_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "2"
+      },
+      "description": "PIL ADC slot carrying phase-V voltage feedback."
+    },
+    {
+      "role": "PIL ADC Phase W Voltage Index",
+      "macro": "GMP_PIL_RX_ADC_UW_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "3"
+      },
+      "description": "PIL ADC slot carrying phase-W voltage feedback."
+    },
+    {
+      "role": "PIL ADC Phase U Current Index",
+      "macro": "GMP_PIL_RX_ADC_IU_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "4"
+      },
+      "description": "PIL ADC slot carrying phase-U current feedback."
+    },
+    {
+      "role": "PIL ADC Phase V Current Index",
+      "macro": "GMP_PIL_RX_ADC_IV_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "5"
+      },
+      "description": "PIL ADC slot carrying phase-V current feedback."
+    },
+    {
+      "role": "PIL ADC Phase W Current Index",
+      "macro": "GMP_PIL_RX_ADC_IW_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "6"
+      },
+      "description": "PIL ADC slot carrying phase-W current feedback."
+    },
+    {
+      "role": "PIL UDP Encoder Index",
+      "macro": "GMP_PIL_UDP_ENCODER_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "0"
+      },
+      "description": "Index of the encoder count inside the standard eight-channel Simulink digital vector."
+    },
+    {
+      "role": "PIL PWM Phase U Index",
+      "macro": "GMP_PIL_TX_PWM_U_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "0"
+      },
+      "description": "PIL PWM output slot for phase U."
+    },
+    {
+      "role": "PIL PWM Phase V Index",
+      "macro": "GMP_PIL_TX_PWM_V_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "1"
+      },
+      "description": "PIL PWM output slot for phase V."
+    },
+    {
+      "role": "PIL PWM Phase W Index",
+      "macro": "GMP_PIL_TX_PWM_W_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "2"
+      },
+      "description": "PIL PWM output slot for phase W."
+    },
+    {
+      "role": "PIL Monitor Phase U Current Index",
+      "macro": "GMP_PIL_TX_MONITOR_IU_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "0"
+      },
+      "description": "PIL monitor slot for normalized phase-U current."
+    },
+    {
+      "role": "PIL Monitor Phase V Current Index",
+      "macro": "GMP_PIL_TX_MONITOR_IV_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "1"
+      },
+      "description": "PIL monitor slot for normalized phase-V current."
+    },
+    {
+      "role": "PIL Monitor D Current Index",
+      "macro": "GMP_PIL_TX_MONITOR_ID_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "2"
+      },
+      "description": "PIL monitor slot for normalized d-axis current."
+    },
+    {
+      "role": "PIL Monitor Q Current Index",
+      "macro": "GMP_PIL_TX_MONITOR_IQ_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "3"
+      },
+      "description": "PIL monitor slot for normalized q-axis current."
+    },
+    {
+      "role": "PIL Monitor Electrical Position Index",
+      "macro": "GMP_PIL_TX_MONITOR_POSITION_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "4"
+      },
+      "description": "PIL monitor slot for normalized electrical position."
+    },
+    {
+      "role": "PIL Monitor Speed Index",
+      "macro": "GMP_PIL_TX_MONITOR_SPEED_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "5"
+      },
+      "description": "PIL monitor slot for normalized mechanical speed."
+    },
+    {
+      "role": "Data Link Scope Depth",
+      "macro": "GMP_DL_SCOPE_DEPTH",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "400"
+      },
+      "description": "Number of samples stored per channel by the four-channel hardware Data Link Scope."
+    },
+    {
+      "role": "PWM Compare Max",
+      "macro": "CTRL_PWM_CMP_MAX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "2500 - 1"
+      },
+      "description": "Maximum compare count of the platform PWM peripheral at the configured controller switching frequency."
+    },
+    {
+      "role": "PWM Deadband",
+      "macro": "CTRL_PWM_DEADBAND_CMP",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "100"
+      },
+      "description": "Dead-time count interpreted in the selected PWM peripheral clock domain."
+    },
+    {
+      "role": "System Frequency",
+      "macro": "CTRL_SYS_FREQUENCY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "100e6"
+      },
+      "description": "Platform CPU or system clock frequency in hertz."
+    },
+    {
+      "role": "System Time Divider",
+      "macro": "DSP_C2000_DSP_TIME_DIV",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "CTRL_SYS_FREQUENCY / 1000 / CTRL_PWM_CMP_MAX / 2"
+      },
+      "description": "C2000 millisecond system-tick divider derived from the CPU clock and ePWM period."
+    },
+    {
+      "role": "ADC Voltage Reference",
+      "macro": "CTRL_ADC_VOLTAGE_REF",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "3.3"
+      },
+      "description": "ADC reference voltage used by all sensor conversions."
+    },
+    {
+      "role": "DC Bus Voltage Base",
+      "macro": "CTRL_DCBUS_VOLTAGE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "48.0"
+      },
+      "description": "Configured DC-bus voltage base."
+    },
+    {
+      "role": "Phase Voltage Base",
+      "macro": "CTRL_VOLTAGE_BASE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(CTRL_DCBUS_VOLTAGE / 1.73205081f)"
+      },
+      "description": "Phase-voltage per-unit base derived from the DC-bus base."
+    },
+    {
+      "role": "Current Base",
+      "macro": "CTRL_CURRENT_BASE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "10.0"
+      },
+      "description": "Phase-current per-unit base in amperes."
+    },
+    {
+      "role": "DC Voltage Sensitivity",
+      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_GAIN)"
+      },
+      "description": "DC-bus voltage sensing gain in ADC volts per measured volt."
+    },
+    {
+      "role": "DC Voltage Bias",
+      "macro": "CTRL_DC_VOLTAGE_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "DC-bus voltage sensor bias in volts."
+    },
+    {
+      "role": "Phase Voltage Sensitivity",
+      "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN)"
+      },
+      "description": "Phase-voltage sensing gain in ADC volts per measured volt."
+    },
+    {
+      "role": "Phase Voltage Bias",
+      "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "Phase-voltage sensor bias in volts."
+    },
+    {
+      "role": "Encoder Full Scale",
+      "macro": "CTRL_POS_ENC_FS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "16384"
+      },
+      "description": "Encoder counts per mechanical revolution."
+    },
+    {
+      "role": "Encoder Bias",
+      "macro": "CTRL_POS_ENC_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "0.0"
+      },
+      "description": "Mechanical encoder position bias in per unit."
+    },
+    {
+      "role": "Mechanical Division",
+      "macro": "CTRL_MECH_DIV",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "5"
+      },
+      "description": "Mechanical speed and position division factor."
+    },
+    {
+      "role": "DC Current Sensitivity",
+      "macro": "CTRL_DC_CURRENT_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_GAIN)"
+      },
+      "description": "DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path."
+    },
+    {
+      "role": "DC Current Bias",
+      "macro": "CTRL_DC_CURRENT_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_BIAS_V)"
+      },
+      "description": "DC-bus current sensor bias."
+    },
+    {
+      "role": "Phase Current Sensitivity",
+      "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM * TI_BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V)"
+      },
+      "description": "Phase-current sensor sensitivity in volts per ampere."
+    },
+    {
+      "role": "Phase Current Bias",
+      "macro": "CTRL_INVERTER_CURRENT_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(TI_BOOSTXL_3PHGANINV_PH_CSA_BIAS_V)"
+      },
+      "description": "Phase-current sensor zero-current bias in volts."
+    },
+    {
+      "role": "Motor Rs",
+      "macro": "MOTOR_PARAM_RS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "acm_4p24v.rs"
+      },
+      "description": "ACIM stator resistance."
+    },
+    {
+      "role": "Motor Rr",
+      "macro": "MOTOR_PARAM_RR",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "acm_4p24v.rr"
+      },
+      "description": "ACIM rotor resistance referred to stator."
+    },
+    {
+      "role": "Motor L1s",
+      "macro": "MOTOR_PARAM_L1S",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "acm_4p24v.l1s"
+      },
+      "description": "ACIM stator leakage inductance."
+    },
+    {
+      "role": "Motor L1r",
+      "macro": "MOTOR_PARAM_L1R",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "acm_4p24v.l1r"
+      },
+      "description": "ACIM rotor leakage inductance referred to stator."
+    },
+    {
+      "role": "Motor Lm",
+      "macro": "MOTOR_PARAM_LM",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "acm_4p24v.lm"
+      },
+      "description": "ACIM magnetizing inductance."
+    },
+    {
+      "role": "Motor Pole Pairs",
+      "macro": "MOTOR_PARAM_POLE_PAIRS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "acm_4p24v.pole_pairs"
+      },
+      "description": "ACIM pole pairs."
+    },
+    {
+      "role": "Motor Rated Frequency",
+      "macro": "MOTOR_PARAM_RATED_FREQUENCY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "acm_4p24v.rated_frequency"
+      },
+      "description": "ACIM rated electrical frequency."
+    },
+    {
+      "role": "Motor Max Speed",
+      "macro": "MOTOR_PARAM_MAX_SPEED",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "acm_4p24v.max_speed"
+      },
+      "description": "ACIM maximum mechanical speed."
+    },
+    {
+      "role": "Flux Observer Command Voltage Scale",
+      "macro": "MCS_FO_COMMAND_VOLTAGE_SCALE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "0.5"
+      },
+      "description": "Centered bridge command-to-phase voltage scale; command is taken before digital dead-time compare compensation."
+    }
+  ],
+  "requirement_groups": [
+    {
+      "name": "PIL Connection",
+      "requirements": [
+        "PIL Data Link Base Command",
+        "Data Link UART Baud Rate",
+        "PIL UDP Host",
+        "PIL Bridge UDP Listen Port",
+        "PIL MATLAB UDP Listen Port",
+        "PIL MATLAB Command TX Port",
+        "PIL MATLAB Command RX Port",
+        "PIL RX Mask",
+        "PIL TX Mask",
+        "PIL MCU Timeout",
+        "PIL MATLAB Timeout",
+        "PIL ADC DC Bus Index",
+        "PIL ADC Phase U Voltage Index",
+        "PIL ADC Phase V Voltage Index",
+        "PIL ADC Phase W Voltage Index",
+        "PIL ADC Phase U Current Index",
+        "PIL ADC Phase V Current Index",
+        "PIL ADC Phase W Current Index",
+        "PIL UDP Encoder Index",
+        "PIL PWM Phase U Index",
+        "PIL PWM Phase V Index",
+        "PIL PWM Phase W Index",
+        "PIL Monitor Phase U Current Index",
+        "PIL Monitor Phase V Current Index",
+        "PIL Monitor D Current Index",
+        "PIL Monitor Q Current Index",
+        "PIL Monitor Electrical Position Index",
+        "PIL Monitor Speed Index"
+      ]
+    },
+    {
+      "name": "Peripheral Parameters",
+      "requirements": [
+        "Data Link Scope Depth",
+        "PWM Compare Max",
+        "PWM Deadband",
+        "System Frequency",
+        "System Time Divider",
+        "ADC Voltage Reference"
+      ]
+    },
+    {
+      "name": "Per-Unit Base Parameters",
+      "requirements": [
+        "DC Bus Voltage Base",
+        "Phase Voltage Base",
+        "Current Base",
+        "Motor Rated Frequency"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / DC Bus Voltage Sensor",
+      "requirements": [
+        "DC Voltage Sensitivity",
+        "DC Voltage Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Inverter Phase Voltage Sensor",
+      "requirements": [
+        "Phase Voltage Sensitivity",
+        "Phase Voltage Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Position Sensor",
+      "requirements": [
+        "Encoder Full Scale",
+        "Encoder Bias",
+        "Mechanical Division"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Voltage Sensor",
+      "requirements": [
+        "DC Current Sensitivity",
+        "DC Current Bias",
+        "Phase Current Sensitivity",
+        "Phase Current Bias"
+      ]
+    }
+  ],
+  "common_requirements": [
+    "../../../sdpe_general/sdpe_requirement.json",
+    "../../../../sdpe_pil/sdpe_requirement.json"
+  ],
+  "feature_macro_groups": [
+    "PIL Runtime",
+    "Control Algorithm"
+  ],
+  "option_macro_groups": [
+    "PIL Commissioning",
+    "Controller Options",
+    "Board GPIO",
+    "PWM Channel",
+    "Encoder",
+    "ADC DC Bus",
+    "ADC Phase Current",
+    "ADC Phase Voltage"
+  ]
+}

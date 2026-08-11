@@ -22,6 +22,10 @@
 
 #include <core/pm/function_scheduler.h>
 
+#if defined SPECIFY_PC_ENVIRONMENT
+#include <stdio.h>
+#endif
+
 //=================================================================================================
 // global controller variables
 
@@ -59,6 +63,7 @@ ctl_pmsm_esmo_t smo;
 
 //
 volatile fast_gt flag_system_running = 0;
+volatile fast_gt flag_oid_pwm_inhibit = 0;
 volatile fast_gt flag_error = 0;
 
 // adc calibrator flags
@@ -84,7 +89,10 @@ void ctl_init()
     mtr_ctrl_init.v_base = CTRL_VOLTAGE_BASE;
     mtr_ctrl_init.i_base = CTRL_CURRENT_BASE;
 
-    mtr_ctrl_init.v_bus = CTRL_VOLTAGE_BASE;
+    // The bus compensator compares its nominal DC bus against udc, which is
+    // normalized by the phase-voltage base.  Supplying the phase base here
+    // introduces an unintended 1/sqrt(3) command attenuation.
+    mtr_ctrl_init.v_bus = CTRL_DCBUS_VOLTAGE;
     mtr_ctrl_init.v_phase_limit = MOTOR_PARAM_RATED_VOLTAGE;
 
     mtr_ctrl_init.freq_base = MOTOR_PARAM_RATED_FREQUENCY;
@@ -207,6 +215,13 @@ void ctl_init()
     // init and config Motor Protection module
     //
     ctl_init_mtr_protect(&protection, CONTROLLER_FREQUENCY);
+#if defined MCS_MAX_DC_BUS_VOLTAGE_V && defined MCS_MIN_DC_BUS_VOLTAGE_V
+    // mtr_ctrl.udc is normalized by CTRL_VOLTAGE_BASE (phase-voltage base),
+    // not by CTRL_DCBUS_VOLTAGE.  Convert the physical SDPE limits to the
+    // same PU system before the protection module compares them.
+    protection.limit_ov_pu = float2ctrl(MCS_MAX_DC_BUS_VOLTAGE_V / CTRL_VOLTAGE_BASE);
+    protection.limit_uv_pu = float2ctrl(MCS_MIN_DC_BUS_VOLTAGE_V / CTRL_VOLTAGE_BASE);
+#endif
     ctl_attach_mtr_protect_port(&protection, &mtr_ctrl.udc, (ctl_vector2_t*)&mtr_ctrl.idq0, &mtr_ctrl.idq_ref, NULL,
                                 NULL);
     ctl_set_mtr_protect_mask(&protection, MTR_PROT_DEVIATION);
@@ -221,7 +236,52 @@ void ctl_init()
         ctl_enable_adc_calibrator(&adc_calibrator);
     }
 
+#if defined SPECIFY_PC_ENVIRONMENT && defined MCS_PMSM_ID_SIM_BYPASS_ADC_CALIBRATION
+    flag_enable_adc_calibrator = 0;
+    index_adc_calibrator = 8;
+#endif
+
     init_pmsm_offline_id();
+
+    // The angle switcher is stepped unconditionally by the OID ISR, including
+    // READY/PREPARE.  Attach its two valid sources immediately after the suite
+    // interface has assigned pmsm_oid.enc; the flux sub-state will reattach the
+    // same sources when it becomes active.
+    ctl_attach_angle_switcher(&pmsm_oid.angle_switcher, &pmsm_oid.vf_gen.enc, pmsm_oid.enc);
+
+#if defined SPECIFY_PC_ENVIRONMENT && defined MCS_PMSM_ID_TIME_SCALE
+    // Preserve the switching/dead-time plant resolution but shorten the
+    // physical dwell periods for practical SIL iteration. Minimum values keep
+    // the RL pulse and steady-state regressions meaningful.
+    const parameter_gt oid_time_scale = (parameter_gt)MCS_PMSM_ID_TIME_SCALE;
+    pmsm_oid.sub_rs_dt.cfg.max_current_pu = 0.1f;
+    pmsm_oid.sub_rs_dt.cfg.min_current_pu = 0.02f;
+    pmsm_oid.sub_ldq.cfg.max_bias_curr_pu = 0.1f;
+    pmsm_oid.sub_ldq.cfg.align_current_pu = 0.1f;
+    // Keep the pulse comfortably above ADC quantization and the identified
+    // dead-time voltage in the fast averaged plant.
+    pmsm_oid.sub_ldq.cfg.pulse_voltage_pu = 0.1f;
+    pmsm_oid.sub_ldq.cfg.pulse_time_s = 0.01f;
+    pmsm_oid.sub_flux.cfg.if_current_pu = 0.1f;
+    pmsm_oid.sub_rs_dt.cfg.align_time_s =
+        (1.0f * oid_time_scale > 0.02f) ? 1.0f * oid_time_scale : 0.02f;
+    pmsm_oid.sub_rs_dt.cfg.measure_delay_s =
+        (0.2f * oid_time_scale > 0.01f) ? 0.2f * oid_time_scale : 0.01f;
+    pmsm_oid.sub_rs_dt.cfg.measure_points = 20;
+    pmsm_oid.sub_ldq.cfg.settle_time_s =
+        (0.2f * oid_time_scale > 0.01f) ? 0.2f * oid_time_scale : 0.01f;
+    pmsm_oid.sub_ldq.cfg.cooldown_time_s =
+        (0.05f * oid_time_scale > 0.002f) ? 0.05f * oid_time_scale : 0.002f;
+    pmsm_oid.sub_flux.cfg.settle_time_s =
+        (2.0f * oid_time_scale > 0.05f) ? 2.0f * oid_time_scale : 0.05f;
+    pmsm_oid.sub_flux.cfg.measure_points = 100;
+
+    if (oid_time_scale > 0.0f && oid_time_scale < 1.0f)
+    {
+        pmsm_oid.vf_gen.freq_slope.slope_max /= oid_time_scale;
+        pmsm_oid.vf_gen.freq_slope.slope_min /= oid_time_scale;
+    }
+#endif
 }
 
 //=================================================================================================
@@ -231,7 +291,165 @@ void ctl_mainloop(void)
 {
     cia402_dispatch(&cia402_sm);
 
+#if defined SPECIFY_PC_ENVIRONMENT && defined MCS_PMSM_ID_AUTO_START
+    // A native SIL run has no debugger or UART command available to assign
+    // pmsm_oid.sm. Consume one automatic start request only after the normal
+    // CiA402 and ADC-calibration prerequisites have completed.
+    static fast_gt oid_auto_start_consumed = 0;
+    if (!oid_auto_start_consumed && cia402_sm.current_state == CIA402_SM_OPERATION_ENABLED &&
+        !flag_enable_adc_calibrator && pmsm_oid.sm == PMSM_OFFLINE_ID_READY)
+    {
+        pmsm_oid.sm = PMSM_OFFLINE_ID_PREPARE;
+        oid_auto_start_consumed = 1;
+    }
+#endif
+
     loop_pmsm_offline_id();
+
+#if defined SPECIFY_PC_ENVIRONMENT && defined MCS_PMSM_ID_TIME_SCALE
+    // The fast averaged plant has no switching ripple to decorrelate the
+    // zero-current dead-time/ADC limit cycle.  Use all bias points for a
+    // lower-middle robust regression result instead of the production
+    // algorithm's zero-bias sample. Positive pulse/outlier bias makes the
+    // upper half unsuitable as a nominal unsaturated estimate. The detailed
+    // Simulink and hardware paths retain the production index-0 contract.
+    static fast_gt ldq_fast_sil_postprocessed = 0;
+    if (!ldq_fast_sil_postprocessed && pmsm_oid.sm == PMSM_OFFLINE_ID_FLUX &&
+        simulink_rx_buffer.panel[15] > 0.5)
+    {
+        parameter_gt ld_sorted[12];
+        parameter_gt lq_sorted[12];
+        uint16_t count = pmsm_oid.sub_ldq.cfg.bias_steps;
+        if (count > 12U)
+            count = 12U;
+        for (uint16_t i = 0; i < count; ++i)
+        {
+            ld_sorted[i] = pmsm_oid.sub_ldq.ld_array[i];
+            lq_sorted[i] = pmsm_oid.sub_ldq.lq_array[i];
+            for (uint16_t j = i; j > 0 && ld_sorted[j] < ld_sorted[j - 1]; --j)
+            {
+                parameter_gt tmp = ld_sorted[j];
+                ld_sorted[j] = ld_sorted[j - 1];
+                ld_sorted[j - 1] = tmp;
+            }
+            for (uint16_t j = i; j > 0 && lq_sorted[j] < lq_sorted[j - 1]; --j)
+            {
+                parameter_gt tmp = lq_sorted[j];
+                lq_sorted[j] = lq_sorted[j - 1];
+                lq_sorted[j - 1] = tmp;
+            }
+        }
+        if (count >= 4U)
+        {
+            uint16_t upper_index = count / 2U - 1U;
+            uint16_t lower_index = upper_index - 1U;
+            parameter_gt scale = (CTRL_VOLTAGE_BASE / CTRL_CURRENT_BASE) / 4.0f;
+            pmsm_oid.pmsm_param.Ld =
+                (ld_sorted[lower_index] + ld_sorted[upper_index]) * scale;
+            pmsm_oid.pmsm_param.Lq =
+                (lq_sorted[lower_index] + lq_sorted[upper_index]) * scale;
+            pmsm_oid.pmsm_param.saliency_ratio =
+                pmsm_oid.pmsm_param.Lq / pmsm_oid.pmsm_param.Ld;
+            pmsm_oid.pmsm_param.is_ipm =
+                (pmsm_oid.pmsm_param.saliency_ratio > 1.05f) ? 1 : 0;
+        }
+        ldq_fast_sil_postprocessed = 1;
+    }
+#endif
+
+#if defined SPECIFY_PC_ENVIRONMENT
+    // State-transition-only diagnostics remain cheap enough for SIL and make
+    // native/model handshake failures diagnosable even when Simulink exits
+    // before returning logsout.
+    static fast_gt state_diag_initialized = 0;
+    static fast_gt last_cia402_state = 0;
+    static fast_gt last_oid_state = 0;
+    static fast_gt last_rs_dt_state = 0;
+    static fast_gt last_ldq_state = 0;
+    static fast_gt last_flux_state = 0;
+    static fast_gt last_encoder_state = 0;
+    static fast_gt last_mech_state = 0;
+    fast_gt cia402_state_changed =
+        !state_diag_initialized || last_cia402_state != (fast_gt)cia402_sm.current_state;
+    fast_gt oid_state_changed = !state_diag_initialized || last_oid_state != (fast_gt)pmsm_oid.sm;
+    fast_gt oid_substate_changed = !state_diag_initialized ||
+        last_rs_dt_state != (fast_gt)pmsm_oid.sub_rs_dt.sm ||
+        last_ldq_state != (fast_gt)pmsm_oid.sub_ldq.sm ||
+        last_flux_state != (fast_gt)pmsm_oid.sub_flux.sm ||
+        last_encoder_state != (fast_gt)pmsm_oid.sub_encoder.sm ||
+        last_mech_state != (fast_gt)pmsm_oid.sub_mech.sm;
+    if (cia402_state_changed)
+    {
+        last_cia402_state = (fast_gt)cia402_sm.current_state;
+        gmp_base_print("[SIL] CiA402 state=%d\r\n", last_cia402_state);
+    }
+    if (oid_state_changed)
+    {
+        last_oid_state = (fast_gt)pmsm_oid.sm;
+        gmp_base_print("[SIL] OID state=%d, sub=%d/%d/%d enc=%d/%d mech=%d\r\n", last_oid_state,
+                       (fast_gt)pmsm_oid.sub_rs_dt.sm, (fast_gt)pmsm_oid.sub_ldq.sm,
+                       (fast_gt)pmsm_oid.sub_flux.sm, (fast_gt)pmsm_oid.sub_encoder.sm,
+                       (fast_gt)pmsm_oid.sub_encoder.fault, (fast_gt)pmsm_oid.sub_mech.sm);
+    }
+    if (oid_substate_changed)
+    {
+        last_rs_dt_state = (fast_gt)pmsm_oid.sub_rs_dt.sm;
+        last_ldq_state = (fast_gt)pmsm_oid.sub_ldq.sm;
+        last_flux_state = (fast_gt)pmsm_oid.sub_flux.sm;
+        last_encoder_state = (fast_gt)pmsm_oid.sub_encoder.sm;
+        last_mech_state = (fast_gt)pmsm_oid.sub_mech.sm;
+    }
+    if (cia402_state_changed || oid_state_changed || oid_substate_changed)
+    {
+        FILE* trace_file = NULL;
+        if (fopen_s(&trace_file, "pmsm_id_sil_state.log", state_diag_initialized ? "a" : "w") == 0)
+        {
+            if (!state_diag_initialized)
+            {
+                fprintf(trace_file,
+                        "config vdc=%.9g vbase=%.9g ibase=%.9g Rs=%.9g Ld=%.9g Lq=%.9g flux=%.9g poles=%d\n",
+                        (double)CTRL_DCBUS_VOLTAGE, (double)CTRL_VOLTAGE_BASE,
+                        (double)CTRL_CURRENT_BASE, (double)MOTOR_PARAM_RS,
+                        (double)MOTOR_PARAM_LD, (double)MOTOR_PARAM_LQ,
+                        (double)MOTOR_PARAM_FLUX, (fast_gt)MOTOR_PARAM_POLE_PAIRS);
+            }
+            fprintf(trace_file,
+                    "tick=%llu cia402=%d oid=%d sub=%d/%d/%d enc=%d/%d mech=%d err=0x%08x raw_i=%u/%u/%u raw_udc=%u i=%.6g/%.6g/%.6g udc=%.6g\n",
+                    (unsigned long long)cia402_sm.current_tick, last_cia402_state, last_oid_state,
+                    (fast_gt)pmsm_oid.sub_rs_dt.sm, (fast_gt)pmsm_oid.sub_ldq.sm,
+                    (fast_gt)pmsm_oid.sub_flux.sm, (fast_gt)pmsm_oid.sub_encoder.sm,
+                    (fast_gt)pmsm_oid.sub_encoder.fault, (fast_gt)pmsm_oid.sub_mech.sm,
+                    (unsigned int)protection.error_code.all,
+                    (unsigned int)iuvw_src[phase_U], (unsigned int)iuvw_src[phase_V],
+                    (unsigned int)iuvw_src[phase_W], (unsigned int)udc_src,
+                    (double)mtr_ctrl.iuvw.dat[phase_U], (double)mtr_ctrl.iuvw.dat[phase_V],
+                    (double)mtr_ctrl.iuvw.dat[phase_W], (double)mtr_ctrl.udc);
+            if (oid_state_changed && pmsm_oid.sm == PMSM_OFFLINE_ID_FLUX)
+            {
+                for (uint16_t ldq_idx = 0; ldq_idx < pmsm_oid.sub_ldq.cfg.bias_steps; ++ldq_idx)
+                {
+                    fprintf(trace_file, "ldq_raw[%u] ld=%.9g lq=%.9g\n", (unsigned int)ldq_idx,
+                            (double)pmsm_oid.sub_ldq.ld_array[ldq_idx],
+                            (double)pmsm_oid.sub_ldq.lq_array[ldq_idx]);
+                }
+            }
+            if (oid_state_changed && pmsm_oid.sm == PMSM_OFFLINE_ID_FAULT &&
+                pmsm_oid.sub_flux.sm == PMSM_ID_FLUX_FAULT)
+            {
+                for (uint16_t flux_idx = 0; flux_idx < pmsm_oid.sub_flux.cfg.steps; ++flux_idx)
+                {
+                    fprintf(trace_file, "flux_raw[%u] w=%.9g emf=%.9g\n", (unsigned int)flux_idx,
+                            (double)ctl_mem_get_2d_soa(&pmsm_oid.analyzer.mem, 4, flux_idx,
+                                                       pmsm_oid.analyzer.depth),
+                            (double)ctl_mem_get_2d_soa(&pmsm_oid.analyzer.mem, 5, flux_idx,
+                                                       pmsm_oid.analyzer.depth));
+                }
+            }
+            fclose(trace_file);
+        }
+    }
+    state_diag_initialized = 1;
+#endif
 
     return;
 }
@@ -271,7 +489,12 @@ gmp_task_status_t tsk_protect(gmp_task_t* tsk)
 
 void ctl_enable_pwm()
 {
-    ctl_fast_enable_output();
+#if defined ENABLE_GMP_DL_PIL_SIM
+    clear_all_controllers();
+#else
+    if (!flag_oid_pwm_inhibit)
+        ctl_fast_enable_output();
+#endif
 }
 
 void ctl_disable_pwm()
@@ -385,3 +608,51 @@ fast_gt ctl_exec_adc_calibration(void)
     // skip calibrate routine
     return 1;
 }
+
+#if defined ENABLE_GMP_DL_PIL_SIM
+/** @brief Apply one standard PMSM SIL/PIL input frame to controller ports. */
+static void ctl_apply_pil_input(const gmp_sim_rx_buf_t* rx)
+{
+    uuvw_src[phase_U] = rx->adc_result[1];
+    uuvw_src[phase_V] = rx->adc_result[2];
+    uuvw_src[phase_W] = rx->adc_result[3];
+    iuvw_src[phase_U] = rx->adc_result[4];
+    iuvw_src[phase_V] = rx->adc_result[5];
+    iuvw_src[phase_W] = rx->adc_result[6];
+    udc_src = rx->adc_result[0];
+    ctl_step_autoturn_pos_encoder(&pos_enc, rx->digital_input);
+    ctl_step_tri_ptr_adc_channel(&iuvw);
+    ctl_step_tri_ptr_adc_channel(&uuvw);
+    ctl_step_ptr_adc_channel(&idc);
+    ctl_step_ptr_adc_channel(&udc);
+}
+
+/** @brief Export one controller result using the established PMSM SIL ABI. */
+static void ctl_collect_pil_output(gmp_sim_tx_buf_t* tx)
+{
+    tx->pwm_cmp[0] = spwm.pwm_out[phase_U];
+    tx->pwm_cmp[1] = spwm.pwm_out[phase_V];
+    tx->pwm_cmp[2] = spwm.pwm_out[phase_W];
+    tx->monitor[0] = mtr_ctrl.iuvw.dat[phase_A];
+    tx->monitor[1] = mtr_ctrl.iuvw.dat[phase_B];
+}
+
+/** @brief Execute one controller step requested by the Data Link PIL service. */
+void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
+{
+    ctl_apply_pil_input(rx);
+    ctl_dispatch();
+    ctl_collect_pil_output(tx);
+}
+#endif // defined ENABLE_GMP_DL_PIL_SIM
+
+#if !defined SPECIFY_PC_ENVIRONMENT
+/** @brief Provide current-loop signals to the platform Scope. */
+void user_get_scope_channels(ctrl_gt channels[4])
+{
+    channels[0] = spwm.vabc_out.dat[phase_A];
+    channels[1] = spwm.vabc_out.dat[phase_B];
+    channels[2] = spwm.vabc_out.dat[phase_C];
+    channels[3] = mtr_ctrl.idq0.dat[phase_q];
+}
+#endif

@@ -9,7 +9,7 @@ software-in-the-loop simulations.
 | --- | --- |
 | `udp_svr` | UDP server used by a native controller process |
 | `udp_helper` | MATLAB/Simulink UDP helper and S-function support |
-| `udp_helper_v2` | Newer helper experiments and platform-specific builds |
+| `sil_helper` | Unified TCP/UDP framing, controller API, Simulink S-function, and tests |
 
 The normal SIL application is owned by a suite's `project/simulate` directory.
 Use the suite documentation for ports, packet layout, startup order, and

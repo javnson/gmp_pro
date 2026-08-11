@@ -104,7 +104,7 @@ in the same outgoing UDP frame.
 
 Build `GMP_Motor_Control_simulink.sln` as `Debug|x64`. The required UDP S-function is
 loaded by the model callback from
-`tools/gmp_sil/udp_helper_v2/mdl_asio_helper/bin/x64/Debug`.
+`slib/install_path/<MATLAB Release>/src`（由 `slib/install_gmp_simulink_lib.m` 安装）。
 
 For a normal run with the currently generated BUILD_LEVEL:
 

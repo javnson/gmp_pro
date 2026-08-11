@@ -174,7 +174,7 @@
   ],
   "requirements": [
     {
-      "role": "startup_delay",
+      "role": "Startup Delay",
       "macro": "CTRL_STARTUP_DELAY",
       "binding": {
         "number": "100"
@@ -182,7 +182,7 @@
       "description": "Startup delay in ms."
     },
     {
-      "role": "controller_frequency",
+      "role": "Controller Frequency",
       "macro": "CONTROLLER_FREQUENCY",
       "binding": {
         "number": "20e3"
@@ -190,7 +190,7 @@
       "description": "Controller ISR frequency."
     },
     {
-      "role": "pwm_cmp_max",
+      "role": "Pwm Cmp Max",
       "macro": "CTRL_PWM_CMP_MAX",
       "binding": {
         "number": "2500 - 1"
@@ -198,7 +198,7 @@
       "description": "PWM compare maximum."
     },
     {
-      "role": "pwm_deadband",
+      "role": "Pwm Deadband",
       "macro": "CTRL_PWM_DEADBAND_CMP",
       "binding": {
         "number": "100"
@@ -206,7 +206,7 @@
       "description": "PWM dead band compare value."
     },
     {
-      "role": "adc_voltage_reference",
+      "role": "Adc Voltage Reference",
       "macro": "CTRL_ADC_VOLTAGE_REF",
       "binding": {
         "float": "3.3"
@@ -214,7 +214,7 @@
       "description": "ADC voltage reference."
     },
     {
-      "role": "mechanical_division",
+      "role": "Mechanical Division",
       "macro": "CTRL_MECH_DIV",
       "binding": {
         "literal": "5"
@@ -222,7 +222,7 @@
       "description": "Speed and position mechanical division."
     },
     {
-      "role": "dc_bus_voltage",
+      "role": "Dc Bus Voltage",
       "macro": "CTRL_DCBUS_VOLTAGE",
       "binding": {
         "float": "80.0"
@@ -230,7 +230,7 @@
       "description": "DC bus base voltage."
     },
     {
-      "role": "phase_voltage_base",
+      "role": "Phase Voltage Base",
       "macro": "CTRL_VOLTAGE_BASE",
       "binding": {
         "literal": "(CTRL_DCBUS_VOLTAGE / 1.73205081f)"
@@ -238,7 +238,7 @@
       "description": "Phase voltage base for SVPWM modulation."
     },
     {
-      "role": "current_base",
+      "role": "Current Base",
       "macro": "CTRL_CURRENT_BASE",
       "binding": {
         "float": "10.0"
@@ -246,7 +246,7 @@
       "description": "Current base value."
     },
     {
-      "role": "inverter_current_sensitivity",
+      "role": "Inverter Current Sensitivity",
       "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
       "binding": {
         "expr": "${gmp_lvfb_150_2ph_v2.current_sensitivity}/2"
@@ -254,7 +254,7 @@
       "description": "Inverter side current sensor sensitivity."
     },
     {
-      "role": "inverter_current_bias",
+      "role": "Inverter Current Bias",
       "macro": "CTRL_INVERTER_CURRENT_BIAS",
       "binding": {
         "export": "${gmp_lvfb_150_2ph_v2.voltage_sensor.bias}"
@@ -262,7 +262,7 @@
       "description": "Inverter side current sensor bias."
     },
     {
-      "role": "inverter_voltage_sensitivity",
+      "role": "Inverter Voltage Sensitivity",
       "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
       "binding": {
         "export": "${gmp_lvfb_150_2ph_v2.voltage_sensitivity}"
@@ -270,7 +270,7 @@
       "description": "Inverter side voltage sensor sensitivity."
     },
     {
-      "role": "inverter_voltage_bias",
+      "role": "Inverter Voltage Bias",
       "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
       "binding": {
         "export": "${gmp_lvfb_150_2ph_v2.voltage_sensor.bias_v}"
@@ -278,7 +278,7 @@
       "description": "Inverter side voltage sensor bias."
     },
     {
-      "role": "motor_rs",
+      "role": "Motor Rs",
       "macro": "CTRL_MOTOR_RS",
       "binding": {
         "export": "${sm060r20b30mnad.rs}"
@@ -286,7 +286,7 @@
       "description": "Selected PMSM stator resistance."
     },
     {
-      "role": "motor_ld",
+      "role": "Motor Ld",
       "macro": "CTRL_MOTOR_LD",
       "binding": {
         "export": "${sm060r20b30mnad.ld}"
@@ -294,7 +294,7 @@
       "description": "Selected PMSM d-axis inductance."
     },
     {
-      "role": "motor_lq",
+      "role": "Motor Lq",
       "macro": "CTRL_MOTOR_LQ",
       "binding": {
         "export": "${sm060r20b30mnad.lq}"
@@ -302,7 +302,7 @@
       "description": "Selected PMSM q-axis inductance."
     },
     {
-      "role": "encoder_bias",
+      "role": "Encoder Bias",
       "macro": "CTRL_POS_ENC_BIAS",
       "binding": {
         "float": "0.0207000002"
@@ -341,23 +341,23 @@
     {
       "name": "Requirements",
       "requirements": [
-        "startup_delay",
-        "controller_frequency",
-        "pwm_cmp_max",
-        "pwm_deadband",
-        "adc_voltage_reference",
-        "mechanical_division",
-        "dc_bus_voltage",
-        "phase_voltage_base",
-        "current_base",
-        "inverter_current_sensitivity",
-        "inverter_current_bias",
-        "inverter_voltage_sensitivity",
-        "inverter_voltage_bias",
-        "motor_rs",
-        "motor_ld",
-        "motor_lq",
-        "encoder_bias"
+        "Startup Delay",
+        "Controller Frequency",
+        "Pwm Cmp Max",
+        "Pwm Deadband",
+        "Adc Voltage Reference",
+        "Mechanical Division",
+        "Dc Bus Voltage",
+        "Phase Voltage Base",
+        "Current Base",
+        "Inverter Current Sensitivity",
+        "Inverter Current Bias",
+        "Inverter Voltage Sensitivity",
+        "Inverter Voltage Bias",
+        "Motor Rs",
+        "Motor Ld",
+        "Motor Lq",
+        "Encoder Bias"
       ]
     }
   ]

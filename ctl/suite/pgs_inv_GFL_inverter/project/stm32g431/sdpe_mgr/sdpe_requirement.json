@@ -5,7 +5,7 @@
   "description": "Nucleo-G431 platform timing and sensing settings for the common GFL controller.",
   "suite": "pgs_inv_GFL_inverter",
   "version": "1.0.0",
-  "updated_at": "2026-07-15",
+  "updated_at": "2026-08-08",
   "output_header": "sdpe_pgs_inv_gfl_stm32g431_settings.h",
   "hardware": [
     {
@@ -19,8 +19,7 @@
     }
   ],
   "code_sections": {
-    "after_extern_open": "#include <sdpe_pgs_inv_gfl_common_settings.h>",
-    "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 5)\n#error BUILD_LEVEL_must_be_between_1_and_5\n#endif"
+    "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 6)\n#error BUILD_LEVEL_must_be_between_1_and_6\n#endif\n#if defined(USING_3D_SVPWM) && defined(USING_NPC_MODULATOR)\n#error USING_3D_SVPWM_and_USING_NPC_MODULATOR_are_mutually_exclusive\n#endif"
   },
   "feature_macros": [],
   "option_macros": [
@@ -34,9 +33,10 @@
         "(2)",
         "(3)",
         "(4)",
-        "(5)"
+        "(5)",
+        "(6)"
       ],
-      "description": "Incremental control level; level 5 enables the cascaded P/Q power loop."
+      "description": "BUILD_LEVEL descriptor: 1=open-loop standalone voltage/PWM sensing check; 2=standalone d-q current loop with internal RG; 3=grid PLL plus positive/negative-sequence current control; 4=level 3 plus decoupling, active damping and lead compensation; 5=grid P/Q outer loop over level 4; 6=standalone LC capacitor-voltage outer loop using ordinary PI, final vector limiting and clamping correction over the current loop. USING_3D_SVPWM additionally requires a mapped fourth neutral-leg PWM."
     },
     {
       "group": "Sampling",
@@ -63,7 +63,17 @@
   ],
   "requirements": [
     {
-      "role": "startup_delay",
+      "role": "Data Link Scope Depth",
+      "macro": "GMP_DL_SCOPE_DEPTH",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "100"
+      },
+      "description": "Number of samples stored per channel by the four-channel hardware Data Link Scope."
+    },
+    {
+      "role": "Startup Delay",
       "macro": "CTRL_STARTUP_DELAY",
       "binding": {
         "number": "100"
@@ -71,7 +81,7 @@
       "description": "Startup delay in milliseconds."
     },
     {
-      "role": "controller_frequency",
+      "role": "Controller Frequency",
       "macro": "CONTROLLER_FREQUENCY",
       "binding": {
         "number": "10e3"
@@ -79,7 +89,7 @@
       "description": "Control interrupt frequency."
     },
     {
-      "role": "pwm_compare_max",
+      "role": "Pwm Compare Max",
       "macro": "CTRL_PWM_CMP_MAX",
       "binding": {
         "number": "8500 - 1"
@@ -87,7 +97,7 @@
       "description": "TIM compare range."
     },
     {
-      "role": "pwm_deadband",
+      "role": "Pwm Deadband",
       "macro": "CTRL_PWM_DEADBAND_CMP",
       "binding": {
         "number": "100"
@@ -95,7 +105,7 @@
       "description": "TIM dead-time count."
     },
     {
-      "role": "adc_voltage_reference",
+      "role": "Adc Voltage Reference",
       "macro": "CTRL_ADC_VOLTAGE_REF",
       "binding": {
         "float": "3.3"
@@ -103,7 +113,7 @@
       "description": "ADC reference."
     },
     {
-      "role": "dc_bus_voltage_base",
+      "role": "Dc Bus Voltage Base",
       "macro": "CTRL_DCBUS_VOLTAGE",
       "binding": {
         "float": "80.0"
@@ -111,7 +121,7 @@
       "description": "DC-bus voltage base."
     },
     {
-      "role": "phase_voltage_base",
+      "role": "Phase Voltage Base",
       "macro": "CTRL_VOLTAGE_BASE",
       "binding": {
         "literal": "(CTRL_DCBUS_VOLTAGE / 1.73205081f)"
@@ -119,7 +129,7 @@
       "description": "SVPWM phase-voltage base."
     },
     {
-      "role": "current_base",
+      "role": "Current Base",
       "macro": "CTRL_CURRENT_BASE",
       "binding": {
         "float": "10.0"
@@ -127,7 +137,7 @@
       "description": "Phase-current base."
     },
     {
-      "role": "grid_filter_inductance",
+      "role": "Grid Filter Inductance",
       "macro": "GFL_GRID_FILTER_INDUCTANCE_H",
       "binding": {
         "literal": "(HARMONIA_3PH_LC_FILTER_INDUCTANCE_H)"
@@ -135,7 +145,7 @@
       "description": "Harmonia inductance."
     },
     {
-      "role": "grid_filter_capacitance",
+      "role": "Grid Filter Capacitance",
       "macro": "GFL_GRID_FILTER_CAPACITANCE_F",
       "binding": {
         "literal": "(HARMONIA_3PH_LC_FILTER_CAPACITANCE_F)"
@@ -143,7 +153,7 @@
       "description": "Harmonia capacitance."
     },
     {
-      "role": "grid_current_sensitivity",
+      "role": "Grid Current Sensitivity",
       "macro": "CTRL_GRID_CURRENT_SENSITIVITY",
       "binding": {
         "literal": "(HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSITIVITY_MV_A * 0.001f)"
@@ -151,7 +161,7 @@
       "description": "Grid-current sensitivity."
     },
     {
-      "role": "grid_current_bias",
+      "role": "Grid Current Bias",
       "macro": "CTRL_GRID_CURRENT_BIAS",
       "binding": {
         "literal": "(HARMONIA_3PH_LC_FILTER_PH_CURRENT_ZERO_BIAS_V)"
@@ -159,7 +169,7 @@
       "description": "Grid-current bias."
     },
     {
-      "role": "grid_voltage_sensitivity",
+      "role": "Grid Voltage Sensitivity",
       "macro": "CTRL_GRID_VOLTAGE_SENSITIVITY",
       "binding": {
         "literal": "(HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_GAIN)"
@@ -167,7 +177,7 @@
       "description": "Grid-voltage gain."
     },
     {
-      "role": "grid_voltage_bias",
+      "role": "Grid Voltage Bias",
       "macro": "CTRL_GRID_VOLTAGE_BIAS",
       "binding": {
         "literal": "(HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_BIAS_V)"
@@ -175,7 +185,7 @@
       "description": "Grid-voltage bias."
     },
     {
-      "role": "inverter_current_sensitivity",
+      "role": "Inverter Current Sensitivity",
       "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
       "binding": {
         "float": "0.05"
@@ -183,7 +193,7 @@
       "description": "Converter current sensitivity."
     },
     {
-      "role": "inverter_current_bias",
+      "role": "Inverter Current Bias",
       "macro": "CTRL_INVERTER_CURRENT_BIAS",
       "binding": {
         "float": "1.65"
@@ -191,7 +201,7 @@
       "description": "Converter current bias."
     },
     {
-      "role": "inverter_voltage_sensitivity",
+      "role": "Inverter Voltage Sensitivity",
       "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
       "binding": {
         "float": "0.02738589"
@@ -199,7 +209,7 @@
       "description": "Converter voltage gain."
     },
     {
-      "role": "inverter_voltage_bias",
+      "role": "Inverter Voltage Bias",
       "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
       "binding": {
         "float": "0.0"
@@ -207,7 +217,7 @@
       "description": "Converter voltage bias."
     },
     {
-      "role": "dc_current_sensitivity",
+      "role": "Dc Current Sensitivity",
       "macro": "CTRL_DC_CURRENT_SENSITIVITY",
       "binding": {
         "float": "0.02475"
@@ -215,7 +225,7 @@
       "description": "DC current sensitivity."
     },
     {
-      "role": "dc_current_bias",
+      "role": "Dc Current Bias",
       "macro": "CTRL_DC_CURRENT_BIAS",
       "binding": {
         "float": "1.65"
@@ -223,7 +233,7 @@
       "description": "DC current bias."
     },
     {
-      "role": "dc_voltage_sensitivity",
+      "role": "Dc Voltage Sensitivity",
       "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
       "binding": {
         "float": "0.02738589"
@@ -231,7 +241,7 @@
       "description": "DC voltage gain."
     },
     {
-      "role": "dc_voltage_bias",
+      "role": "Dc Voltage Bias",
       "macro": "CTRL_DC_VOLTAGE_BIAS",
       "binding": {
         "float": "0.0"
@@ -243,74 +253,84 @@
     {
       "name": "Peripheral Parameters",
       "requirements": [
-        "controller_frequency",
-        "pwm_compare_max",
-        "pwm_deadband",
-        "adc_voltage_reference"
+        "Data Link Scope Depth",
+        "Controller Frequency",
+        "Pwm Compare Max",
+        "Pwm Deadband",
+        "Adc Voltage Reference"
       ]
     },
     {
       "name": "Per-Unit Base Parameters",
       "requirements": [
-        "dc_bus_voltage_base",
-        "phase_voltage_base",
-        "current_base"
+        "Dc Bus Voltage Base",
+        "Phase Voltage Base",
+        "Current Base"
       ]
     },
     {
-      "name": "Grid Filter Parameters",
+      "name": "Main Element Parameters / Grid Filter",
       "requirements": [
-        "grid_filter_inductance",
-        "grid_filter_capacitance"
-      ]
-    },
-    {
-      "name": "DC Bus Voltage Sensor",
-      "requirements": [
-        "dc_voltage_sensitivity",
-        "dc_voltage_bias"
-      ]
-    },
-    {
-      "name": "Grid Voltage Sensor",
-      "requirements": [
-        "grid_voltage_sensitivity",
-        "grid_voltage_bias"
-      ]
-    },
-    {
-      "name": "Inverter Phase Voltage Sensor",
-      "requirements": [
-        "inverter_voltage_sensitivity",
-        "inverter_voltage_bias"
-      ]
-    },
-    {
-      "name": "DC Current Sensor",
-      "requirements": [
-        "dc_current_sensitivity",
-        "dc_current_bias"
-      ]
-    },
-    {
-      "name": "Grid Current Sensor",
-      "requirements": [
-        "grid_current_sensitivity",
-        "grid_current_bias"
-      ]
-    },
-    {
-      "name": "Inverter Phase Current Sensor",
-      "requirements": [
-        "inverter_current_sensitivity",
-        "inverter_current_bias"
+        "Grid Filter Inductance",
+        "Grid Filter Capacitance"
       ]
     },
     {
       "name": "Runtime Parameters",
       "requirements": [
-        "startup_delay"
+        "Startup Delay"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / DC Bus Voltage Sensor",
+      "requirements": [
+        "Dc Voltage Sensitivity",
+        "Dc Voltage Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / DC Current Sensor",
+      "requirements": [
+        "Dc Current Sensitivity",
+        "Dc Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Grid Current Sensor",
+      "requirements": [
+        "Grid Current Sensitivity",
+        "Grid Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Grid Voltage Sensor",
+      "requirements": [
+        "Grid Voltage Sensitivity",
+        "Grid Voltage Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Inverter Phase Current Sensor",
+      "requirements": [
+        "Inverter Current Sensitivity",
+        "Inverter Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Inverter Phase Voltage Sensor",
+      "requirements": [
+        "Inverter Voltage Sensitivity",
+        "Inverter Voltage Bias"
       ]
     }
+  ],
+  "common_requirements": [
+    "../../../sdpe_general/sdpe_requirement.json",
+    "../../../../sdpe_pil/sdpe_requirement.json"
+  ],
+  "feature_macro_groups": [],
+  "option_macro_groups": [
+    "Commissioning",
+    "Sampling"
   ]
 }

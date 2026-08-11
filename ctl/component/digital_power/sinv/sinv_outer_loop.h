@@ -50,6 +50,40 @@ GMP_STATIC_INLINE void ctl_clear_sinv_outer_loop(ctl_sinv_outer_loop_t* loop)
     loop->active_power_cmd = float2ctrl(0.0f);
 }
 
+/**
+ * @brief Preload the DC-bus loop for a bumpless transition into active rectification.
+ * @details The requested active-power command is converted back through the
+ * rectifier polarity and used to initialize the PI integrator. This lets an
+ * active rectifier take over from the measured passive-rectifier operating
+ * point instead of forcing its power command to ramp from zero.
+ *
+ * @param[in,out] loop DC-bus outer-loop object.
+ * @param[in] bus_ref DC-bus reference in per unit.
+ * @param[in] bus_feedback Measured DC-bus voltage in per unit.
+ * @param[in] rectifier_polarity Active-power polarity, normally -1 for rectification.
+ * @param[in] active_power_cmd Initial signed active-power command in per unit.
+ */
+GMP_STATIC_INLINE void ctl_preset_sinv_dc_bus_loop(ctl_sinv_outer_loop_t* loop,
+                                                   ctrl_gt bus_ref, ctrl_gt bus_feedback,
+                                                   ctrl_gt rectifier_polarity,
+                                                   ctrl_gt active_power_cmd)
+{
+    ctrl_gt command = ctl_sat(active_power_cmd, loop->output_limit, -loop->output_limit);
+    ctrl_gt magnitude = ctl_div(command, rectifier_polarity);
+    ctrl_gt error = bus_ref - bus_feedback;
+    ctrl_gt p_term = ctl_mul(error, loop->dc_bus_pi.kp);
+    ctrl_gt i_term = ctl_sat(magnitude - p_term,
+                            loop->dc_bus_pi.integral_max, loop->dc_bus_pi.integral_min);
+
+    loop->dc_bus_ref = bus_ref;
+    loop->active_power_cmd = command;
+    loop->execution_tick = 0U;
+    loop->dc_bus_pi.p_term = p_term;
+    loop->dc_bus_pi.i_term = i_term;
+    loop->dc_bus_pi.out = ctl_sat(p_term + i_term,
+                                  loop->dc_bus_pi.out_max, loop->dc_bus_pi.out_min);
+}
+
 GMP_STATIC_INLINE fast_gt ctl_sinv_outer_loop_due(ctl_sinv_outer_loop_t* loop)
 {
     if (++loop->execution_tick >= loop->execution_divider) {

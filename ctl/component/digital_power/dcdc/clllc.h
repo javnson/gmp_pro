@@ -51,7 +51,7 @@ typedef struct _tag_clllc_modulator
     parameter_gt f_min_hz;
     parameter_gt f_max_hz;
     ctrl_gt deadband_pu;
-    ctrl_gt max_dab_phase_pu;
+    ctrl_gt max_phase_shift_pu;
 } clllc_modulator_t;
 
 GMP_STATIC_INLINE void ctl_init_clllc_modulator(clllc_modulator_t* mod,
@@ -60,7 +60,7 @@ GMP_STATIC_INLINE void ctl_init_clllc_modulator(clllc_modulator_t* mod,
                                                  parameter_gt f_min_hz,
                                                  parameter_gt f_max_hz,
                                                  parameter_gt deadband_s,
-                                                 ctrl_gt max_dab_phase_pu)
+                                                 ctrl_gt max_phase_shift_pu)
 {
     int i;
     pwm_gt nominal_period = (pwm_gt)(timer_clock_hz / f_nominal_hz);
@@ -71,33 +71,28 @@ GMP_STATIC_INLINE void ctl_init_clllc_modulator(clllc_modulator_t* mod,
     mod->f_min_hz = f_min_hz;
     mod->f_max_hz = f_max_hz;
     mod->deadband_pu = float2ctrl(deadband_s * f_nominal_hz);
-    mod->max_dab_phase_pu = max_dab_phase_pu;
+    mod->max_phase_shift_pu = max_phase_shift_pu;
 }
 
 /**
- * @brief Convert the signed formal command into variable-frequency CLLLC or DAB modulation.
- * @details Positive commands use frequency modulation (0 => fmax, 1 => fmin).
- * Negative commands run at resonance and phase-shift the secondary bridge; this
- * makes the sign of the command explicitly represent reverse power flow.
+ * @brief Convert a signed formal command into joint frequency/phase modulation.
+ * @details Command magnitude moves the switching frequency from fmax toward
+ * fmin, while command sign and magnitude set the secondary-bridge phase shift.
+ * Reversing the sign therefore reverses the requested power-flow direction
+ * without abandoning frequency control.  The physical sign is selected by the
+ * SDPE logical-leg ordering so a wiring change does not require an algorithm edit.
  */
 GMP_STATIC_INLINE void ctl_step_clllc_modulator(clllc_modulator_t* mod, ctrl_gt formal_cmd)
 {
     ctrl_gt mag = ctl_abs(formal_cmd);
     ctrl_gt period_pu;
-    ctrl_gt secondary_phase = float2ctrl(0.0f);
+    ctrl_gt secondary_phase;
     parameter_gt f_cmd;
     adv_pwm_ift cmd;
 
     mag = ctl_sat(mag, float2ctrl(1.0f), float2ctrl(0.0f));
-    if (formal_cmd >= float2ctrl(0.0f))
-    {
-        f_cmd = mod->f_max_hz - ctrl2float(mag) * (mod->f_max_hz - mod->f_min_hz);
-    }
-    else
-    {
-        f_cmd = mod->f_nominal_hz;
-        secondary_phase = -ctl_mul(mag, mod->max_dab_phase_pu);
-    }
+    f_cmd = mod->f_max_hz - ctrl2float(mag) * (mod->f_max_hz - mod->f_min_hz);
+    secondary_phase = ctl_mul(formal_cmd, mod->max_phase_shift_pu);
     period_pu = float2ctrl(mod->f_nominal_hz / f_cmd);
 
     cmd.period = period_pu;

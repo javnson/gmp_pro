@@ -13,9 +13,9 @@
 
 #include <ctl/component/motor_control/observer/acim_fo.h>
 
-/**
- * @brief Core initialization function using explicit scale factors.
- */
+//=================================================================================================
+// Explicit-coefficient initialization
+
 void ctl_init_im_fo(ctl_im_fo_t* fo, const ctl_im_fo_init_t* init)
 {
     // 1. Assign Pre-calculated Scale Factors
@@ -26,8 +26,10 @@ void ctl_init_im_fo(ctl_im_fo_t* fo, const ctl_im_fo_init_t* init)
     fo->sf_sigma_ls = float2ctrl(init->sf_sigma_ls);
     fo->sf_lr_over_lm = float2ctrl(init->sf_lr_over_lm);
     fo->sf_v_int = float2ctrl(init->sf_v_int);
+    fo->sf_vm_leak = float2ctrl(0.0f);
     fo->sf_slip_const = float2ctrl(init->sf_slip_const);
     fo->sf_torque_const = float2ctrl(init->sf_torque_const);
+    fo->sf_mech_w_to_angle = float2ctrl(init->sf_mech_w_to_angle);
 
     // 2. Sub-module Initialization (PI Compensators for Voltage Model)
     parameter_gt fs_safe = (init->fs > 1e-6f) ? init->fs : 10000.0f;
@@ -45,23 +47,25 @@ void ctl_init_im_fo(ctl_im_fo_t* fo, const ctl_im_fo_init_t* init)
 
     // Initialize ATO for flux vector tracking.
     // Limits max synchronous speed to +/- 2.0 PU (sufficient for deep field weakening).
-    ctl_init_ato_pll(&fo->ato_pll, init->ato_bw_hz, 1.0f, 1.0f, fs_safe, 2.0f, -2.0f);
+    ctl_init_ato_pll(&fo->ato_pll, init->ato_bw_hz, 1.0f, init->omega_base, fs_safe, 2.0f, -2.0f);
 
     // 3. Safety Mechanisms Setup
-    fo->flux_min_limit = float2ctrl(0.1f); // 10% of nominal flux is the lowest valid limit
+    fo->flux_min_limit = float2ctrl((init->flux_min_pu > 1e-6f) ? init->flux_min_pu : 0.001f);
+    fo->flux_max_limit = float2ctrl((init->flux_max_pu > init->flux_min_pu) ? init->flux_max_pu : 1.5f);
 
     fo->diverge_limit = (uint32_t)(init->fault_time_ms * fs_safe / 1000.0f);
     if (fo->diverge_limit < 1)
         fo->diverge_limit = 1;
 
     // 4. Finalize Initialization
+    fo->flag_enable_compensation = 1;
     ctl_clear_im_fo(fo);
     ctl_disable_im_fo(fo);
 }
 
-/**
- * @brief Advanced initialization function utilizing the IM Consultant models.
- */
+//=================================================================================================
+// Motor/PU consultant auto-tuning
+
 void ctl_init_im_fo_consultant(ctl_im_fo_t* fo, const ctl_consultant_im_t* motor, const ctl_consultant_pu_im_t* pu,
                                parameter_gt fs, parameter_gt comp_bw_hz, parameter_gt ato_bw_hz,
                                parameter_gt fault_time_ms)
@@ -72,6 +76,9 @@ void ctl_init_im_fo_consultant(ctl_im_fo_t* fo, const ctl_consultant_im_t* motor
     bare_init.fs = fs;
     bare_init.ato_bw_hz = ato_bw_hz;
     bare_init.fault_time_ms = fault_time_ms;
+    bare_init.omega_base = pu->W_base;
+    bare_init.sf_mech_w_to_angle = pu->W_base * Ts /
+                                   (CTL_PARAM_CONST_2PI * (parameter_gt)motor->pole_pairs);
 
     // ========================================================================
     // Physical Parameter PU Derivations (Calculating all 'sf_' constants)
@@ -111,17 +118,50 @@ void ctl_init_im_fo_consultant(ctl_im_fo_t* fo, const ctl_consultant_im_t* motor
     // and voltage model. Above comp_bw_hz, the voltage model dominates.
     parameter_gt w_comp = CTL_PARAM_CONST_2PI * comp_bw_hz;
 
-    // PI mapping: Kp roughly determines the bandwidth (rad/s)
-    // Scale to PU: output is voltage correction PU, input is flux error PU
-    // Kp_pu = w_comp * (Flux_base / V_base) = w_comp / W_base
-    bare_init.kp_comp_pu = w_comp / pu->W_base;
+    // With d(psi_pu)/dt = W_base*(v_pu-u_comp_pu), these gains place
+    // s^2 + 2*w_comp*s + w_comp^2 (critical damping). ctl_init_pid()
+    // performs the single required Ki/fs discretization.
+    bare_init.kp_comp_pu = 2.0f * w_comp / pu->W_base;
 
-    // Ki_pu = w_comp^2 / W_base * Ts
-    bare_init.ki_comp_pu = (w_comp * w_comp / pu->W_base) * Ts;
+    bare_init.ki_comp_pu = w_comp * w_comp / pu->W_base;
 
     // Allow compensation to reach up to 50% of nominal voltage to handle deep parameter drift
     bare_init.u_comp_limit_pu = 0.5f;
 
+    // Rotor flux base is V_base/W_base = L_base*I_base. A threshold equal
+    // to 2% of the flux produced by 1 PU magnetizing current avoids imposing
+    // a PMSM-like 0.1 PU floor on low-inductance ACIM parameter sets.
+    bare_init.flux_min_pu = (lm_pu * 0.02f > 1e-4f) ? lm_pu * 0.02f : 1e-4f;
+    bare_init.flux_max_pu = 1.5f;
+
     // Invoke core initialization
     ctl_init_im_fo(fo, &bare_init);
+}
+
+//=================================================================================================
+// Runtime observer gain scheduling
+
+void ctl_set_im_fo_compensation_bw(ctl_im_fo_t* fo, parameter_gt comp_bw_hz,
+                                   parameter_gt omega_base, parameter_gt fs)
+{
+    parameter_gt w_base = (omega_base > 1e-6f) ? omega_base : 1.0f;
+    parameter_gt fs_safe = (fs > 1e-6f) ? fs : 10000.0f;
+    parameter_gt w_comp = CTL_PARAM_CONST_2PI * comp_bw_hz;
+    parameter_gt kp = 2.0f * w_comp / w_base;
+    parameter_gt ki_per_sample = (w_comp * w_comp / w_base) / fs_safe;
+    int axis;
+
+    for (axis = 0; axis < 2; ++axis)
+    {
+        fo->pi_comp[axis].kp = float2ctrl(kp);
+        fo->pi_comp[axis].ki = float2ctrl(ki_per_sample);
+        fo->pi_comp[axis].kd = float2ctrl(0.0f);
+    }
+}
+
+void ctl_set_im_fo_voltage_model_leak(ctl_im_fo_t* fo, parameter_gt cutoff_hz, parameter_gt fs)
+{
+    parameter_gt fs_safe = (fs > 1e-6f) ? fs : 10000.0f;
+    parameter_gt cutoff = (cutoff_hz > 0.0f) ? cutoff_hz : 0.0f;
+    fo->sf_vm_leak = float2ctrl(1.0f - expf(-CTL_PARAM_CONST_2PI * cutoff / fs_safe));
 }

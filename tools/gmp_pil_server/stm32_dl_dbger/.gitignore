@@ -1,0 +1,8 @@
+/build/
+/MXTmpFiles/
+/.mxproject
+*.launch
+*.log
+/MDK-ARM/stm32_dl_dbger/
+/MDK-ARM/*.uvguix.*
+/Drivers/

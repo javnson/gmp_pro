@@ -445,3 +445,28 @@ undefined reference to 'ctl_init_mtr_current_ctrl'
 **版本历史：**
 - v1.0 (2024-09-30): 初始版本
 - v1.1 (2026-01-27): 添加完整文档和BUILD_LEVEL说明
+
+## DQ-PI 与 DQ-LADRC1 同带宽仿真记录（2026-08-08）
+
+FOC 电流环默认使用 DQ-PI。在 `foc_core.h` 中取消注释 `#define ENABLE_FOC_LADRC_CTRL`，或在编译器中定义同名宏，可切换为 DQ-LADRC1。两种配置调用同一个 `ctl_auto_tuning_foc_core()` 和 `ctl_init_foc_core()`。
+
+可重复的同带宽对比程序位于 `ctl/component/intrinsic/complex/tests/host_sim/foc_current_loop_compare.c`。测试采用 20 kHz 采样、`Ld=Lq=50 uH`、`Rs=0.13 ohm`、电压基值 `24/sqrt(3) V`、电流基值 `10 A`，q 轴参考从 0 跳变至 0.3 pu，圆限幅为 0.9 pu。PI 交越带宽与 LADRC 控制器带宽 `fc` 均为 707.355 Hz；LADRC 观测器带宽 `fo=2*fc`。前馈与交叉耦合均关闭。
+
+| 控制器 | 带宽 (Hz) | 10%–90% 上升时间 (ms) | 2% 调节时间 (ms) | 超调量 (%) | IAE | 最终 iq (pu) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| DQ-PI | 707.355 | 0.450 | 0.950 | -0.000010 | 0.000052500 | 0.300000 |
+| DQ-LADRC1 | 707.355 | 1.000 | 1.700 | -0.000020 | 0.000116859 | 0.300000 |
+
+该名义一阶对象下 PI 响应更快；两种控制器均无可见超调并正确收敛。此记录用于回归比较，不表示 LADRC 在参数摄动或外扰条件下的鲁棒性结论。
+
+此外，`mcs_pmsm_nt` 与 `mcs_pmsm_id` 的 Windows x64 Debug SIL 工程均分别以默认 PI 和 `ENABLE_FOC_LADRC_CTRL` 配置完成编译与链接；两套 `MCS_STD_PMSM_MODEL.slx` 均通过 UDP 建立连接并无错误运行至 0.1 s。
+
+## F280049C 处理器在环
+
+F280049C 目标工程提供本地 SDPE 功能开关 `ENABLE_GMP_DL_PIL_SIM`，它独立于公共
+套件配置。关闭时保留原有物理 ADC/PWM 控制路径；开启时只有经过校验的 Data Link
+PIL 请求能够执行控制器，物理门极与 PWM 始终被强制保持安全。UART/UDP 端点、命令
+基址、掩码及所有对象通道映射也全部由目标 SDPE 管理。
+
+可复现的分级流程、MATLAB 运行器、安全约束和实板测试结果见
+[`project/f280049c/pil`](project/f280049c/pil/README_CN.md)。

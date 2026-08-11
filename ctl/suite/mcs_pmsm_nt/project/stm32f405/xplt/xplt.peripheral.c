@@ -10,10 +10,12 @@
 
 // GMP basic core header
 #include <gmp_core.h>
+#include <ctl/component/dsa/dsa_dl_scope.h>
 
 // user main header
 #include "user_main.h"
 #include <xplt.peripheral.h>
+
 
 //////////////////////////////////////////////////////////////////////////
 // definitions of peripheral
@@ -164,7 +166,8 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
     if (hadc == &hadc1)
     {
-        gmp_base_ctl_step();
+    gmp_base_ctl_step();
+    user_step_dl_scope();
         counter++;
         if (counter >= 1000)
         {

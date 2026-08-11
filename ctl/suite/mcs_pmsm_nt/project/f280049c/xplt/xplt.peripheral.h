@@ -25,6 +25,9 @@ extern "C"
 
 #include <core/dev/datalink.h>
 
+/** @brief Place the application-owned Scope storage in combined GS2/GS3 RAM. */
+#define GMP_DL_SCOPE_STORAGE_RAMGS2_3
+
 //=================================================================================================
 // definitions of peripheral
 
@@ -41,10 +44,6 @@ extern ptr_adc_channel_t udc;
 extern adc_gt udc_src;
 extern ptr_adc_channel_t idc;
 extern adc_gt idc_src;
-
-#define DLOG_MEM_LENGTH 100
-extern ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];
-extern ctrl_gt dlog_mem2[DLOG_MEM_LENGTH];
 
 #ifdef __cplusplus
 }

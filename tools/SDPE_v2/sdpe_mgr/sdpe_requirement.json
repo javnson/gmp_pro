@@ -14,21 +14,21 @@
     {
       "name": "Current Sensor",
       "requirements": [
-        "current_sensor_sensitivity",
-        "current_sensor_bias",
-        "current_sensor_range"
+        "Current Sensor Sensitivity",
+        "Current Sensor Bias",
+        "Current Sensor Range"
       ]
     },
     {
       "name": "Manual Constants",
       "requirements": [
-        "adc_reference_voltage"
+        "Adc Reference Voltage"
       ]
     }
   ],
   "requirements": [
     {
-      "role": "current_sensor_sensitivity",
+      "role": "Current Sensor Sensitivity",
       "macro": "CTRL_DEMO_CURRENT_SENSITIVITY",
       "binding": {
         "export": "${tmcs1133_b2a.sensitivity}"
@@ -36,7 +36,7 @@
       "description": "Current sensor sensitivity used by the demo ADC scaling logic."
     },
     {
-      "role": "current_sensor_bias",
+      "role": "Current Sensor Bias",
       "macro": "CTRL_DEMO_CURRENT_BIAS",
       "binding": {
         "export": "${tmcs1133_b2a.bias}"
@@ -44,7 +44,7 @@
       "description": "Current sensor bias voltage."
     },
     {
-      "role": "current_sensor_range",
+      "role": "Current Sensor Range",
       "macro": "CTRL_DEMO_CURRENT_RANGE_A",
       "binding": {
         "export": "${tmcs1133_b2a.range_a}"
@@ -52,7 +52,7 @@
       "description": "Current sensor measurable current range."
     },
     {
-      "role": "adc_reference_voltage",
+      "role": "Adc Reference Voltage",
       "macro": "CTRL_DEMO_ADC_REF_V",
       "binding": {
         "float": "3.3"

@@ -7,7 +7,7 @@
 #ifndef _INVERTER_3PH_ZR_DRV8301_H_
 #define _INVERTER_3PH_ZR_DRV8301_H_
 
-#include <ctl/hardware_preset/inverter_3ph/inverter_3ph_general.h>
+#include <ctl/component/hardware_preset/inverter_3ph/inverter_3ph_general.h>
 
 // User code after includes
 // SDPE extension point: add after_includes code in the Entity Instance Code page if needed.
@@ -39,254 +39,186 @@ extern "C"
 /**
  * @brief Board name.
  */
-#ifndef ZR_DRV8301_BOARD_NAME
 #define ZR_DRV8301_BOARD_NAME "ZonRi DRV8301"
-#endif // ZR_DRV8301_BOARD_NAME
 
 /**
  * @brief Gate driver or integrated driver.
  */
-#ifndef ZR_DRV8301_GATE_DRIVER
 #define ZR_DRV8301_GATE_DRIVER "DRV8301"
-#endif // ZR_DRV8301_GATE_DRIVER
 
 /**
  * @brief discrete_mosfet, discrete_igbt, ipm or integrated_power_stage.
  */
-#ifndef ZR_DRV8301_POWER_STAGE_KIND
 #define ZR_DRV8301_POWER_STAGE_KIND "unknown_discrete_switch"
-#endif // ZR_DRV8301_POWER_STAGE_KIND
 
 /**
  * @brief Minimum documented operating bus voltage; zero means unspecified.
  * @unit V
  */
-#ifndef ZR_DRV8301_VBUS_MIN_V
 #define ZR_DRV8301_VBUS_MIN_V (5.5f)
-#endif // ZR_DRV8301_VBUS_MIN_V
 
 /**
  * @brief Maximum documented operating bus voltage; zero means unspecified.
  * @unit V
  */
-#ifndef ZR_DRV8301_VBUS_MAX_V
 #define ZR_DRV8301_VBUS_MAX_V (45.0f)
-#endif // ZR_DRV8301_VBUS_MAX_V
 
 /**
  * @brief Board continuous RMS current; zero means unspecified.
  * @unit A
  */
-#ifndef ZR_DRV8301_CURRENT_MAX_RMS_A
 #define ZR_DRV8301_CURRENT_MAX_RMS_A (10.6f)
-#endif // ZR_DRV8301_CURRENT_MAX_RMS_A
 
 /**
  * @brief Board peak current; zero means unspecified.
  * @unit A
  */
-#ifndef ZR_DRV8301_CURRENT_MAX_PEAK_A
 #define ZR_DRV8301_CURRENT_MAX_PEAK_A (15.0f)
-#endif // ZR_DRV8301_CURRENT_MAX_PEAK_A
 
 /**
  * @brief PWM control inputs (3 or 6); zero means not verified.
  */
-#ifndef ZR_DRV8301_PWM_INPUT_COUNT
 #define ZR_DRV8301_PWM_INPUT_COUNT (6U)
-#endif // ZR_DRV8301_PWM_INPUT_COUNT
 
 /**
  * @brief One active-high, zero active-low.
  */
-#ifndef ZR_DRV8301_PWM_ACTIVE_LEVEL
 #define ZR_DRV8301_PWM_ACTIVE_LEVEL (1U)
-#endif // ZR_DRV8301_PWM_ACTIVE_LEVEL
 
 /**
  * @brief One only when PWM polarity was checked against a primary schematic or datasheet.
  */
-#ifndef ZR_DRV8301_PWM_POLARITY_VERIFIED
 #define ZR_DRV8301_PWM_POLARITY_VERIFIED (0U)
-#endif // ZR_DRV8301_PWM_POLARITY_VERIFIED
 
 /**
  * @brief Enable polarity; one active-high, zero active-low.
  */
-#ifndef ZR_DRV8301_ENABLE_ACTIVE_LEVEL
 #define ZR_DRV8301_ENABLE_ACTIVE_LEVEL (1U)
-#endif // ZR_DRV8301_ENABLE_ACTIVE_LEVEL
 
 /**
  * @brief Independently measurable motor phase-current channels.
  */
-#ifndef ZR_DRV8301_PH_CURRENT_CHANNEL_COUNT
 #define ZR_DRV8301_PH_CURRENT_CHANNEL_COUNT (3U)
-#endif // ZR_DRV8301_PH_CURRENT_CHANNEL_COUNT
 
 /**
  * @brief SENSOR_TYPE_* constant.
  */
-#ifndef ZR_DRV8301_PH_CURRENT_SENSE_TYPE
 #define ZR_DRV8301_PH_CURRENT_SENSE_TYPE SENSOR_TYPE_SHUNT
-#endif // ZR_DRV8301_PH_CURRENT_SENSE_TYPE
 
 /**
  * @brief CS_TOPOLOGY_* constant.
  */
-#ifndef ZR_DRV8301_PH_CURRENT_SENSE_TOPOLOGY
 #define ZR_DRV8301_PH_CURRENT_SENSE_TOPOLOGY CS_TOPOLOGY_NONE
-#endif // ZR_DRV8301_PH_CURRENT_SENSE_TOPOLOGY
 
 /**
  * @brief Per-channel shunt resistance; zero for sensor IC or unknown.
  * @unit ohm
  */
-#ifndef ZR_DRV8301_PH_SHUNT_RESISTANCE_OHM
 #define ZR_DRV8301_PH_SHUNT_RESISTANCE_OHM (0.0f)
-#endif // ZR_DRV8301_PH_SHUNT_RESISTANCE_OHM
 
 /**
  * @brief Current signal-chain gain; zero means configurable/unknown.
  * @unit V/V
  */
-#ifndef ZR_DRV8301_PH_CSA_GAIN_V_V
 #define ZR_DRV8301_PH_CSA_GAIN_V_V (0.0f)
-#endif // ZR_DRV8301_PH_CSA_GAIN_V_V
 
 /**
  * @brief Zero-current ADC bias; zero may mean differential/unknown.
  * @unit V
  */
-#ifndef ZR_DRV8301_PH_CSA_BIAS_V
 #define ZR_DRV8301_PH_CSA_BIAS_V (0.0f)
-#endif // ZR_DRV8301_PH_CSA_BIAS_V
 
 /**
  * @brief DC-link current measurement channels.
  */
-#ifndef ZR_DRV8301_DCBUS_CURRENT_CHANNEL_COUNT
 #define ZR_DRV8301_DCBUS_CURRENT_CHANNEL_COUNT (0U)
-#endif // ZR_DRV8301_DCBUS_CURRENT_CHANNEL_COUNT
 
 /**
  * @brief SENSOR_TYPE_* constant.
  */
-#ifndef ZR_DRV8301_DCBUS_CURRENT_SENSE_TYPE
 #define ZR_DRV8301_DCBUS_CURRENT_SENSE_TYPE SENSOR_NONE
-#endif // ZR_DRV8301_DCBUS_CURRENT_SENSE_TYPE
 
 /**
  * @brief CS_TOPOLOGY_* constant.
  */
-#ifndef ZR_DRV8301_DCBUS_CURRENT_SENSE_TOPOLOGY
 #define ZR_DRV8301_DCBUS_CURRENT_SENSE_TOPOLOGY CS_TOPOLOGY_NONE
-#endif // ZR_DRV8301_DCBUS_CURRENT_SENSE_TOPOLOGY
 
 /**
  * @brief DC-link shunt resistance.
  * @unit ohm
  */
-#ifndef ZR_DRV8301_DCBUS_SHUNT_RESISTANCE_OHM
 #define ZR_DRV8301_DCBUS_SHUNT_RESISTANCE_OHM (0.0f)
-#endif // ZR_DRV8301_DCBUS_SHUNT_RESISTANCE_OHM
 
 /**
  * @brief Measured phase-voltage channels.
  */
-#ifndef ZR_DRV8301_PH_VOLTAGE_CHANNEL_COUNT
 #define ZR_DRV8301_PH_VOLTAGE_CHANNEL_COUNT (3U)
-#endif // ZR_DRV8301_PH_VOLTAGE_CHANNEL_COUNT
 
 /**
  * @brief VS_TYPE_* constant.
  */
-#ifndef ZR_DRV8301_PH_VOLTAGE_SENSE_TYPE
 #define ZR_DRV8301_PH_VOLTAGE_SENSE_TYPE VS_TYPE_PHASE_GND
-#endif // ZR_DRV8301_PH_VOLTAGE_SENSE_TYPE
 
 /**
  * @brief Phase-voltage divider or signal-chain gain; zero means unknown.
  * @unit V/V
  */
-#ifndef ZR_DRV8301_PH_VOLTAGE_SENSE_GAIN
 #define ZR_DRV8301_PH_VOLTAGE_SENSE_GAIN (0.0f)
-#endif // ZR_DRV8301_PH_VOLTAGE_SENSE_GAIN
 
 /**
  * @brief Phase-voltage signal bias.
  * @unit V
  */
-#ifndef ZR_DRV8301_PH_VOLTAGE_SENSE_BIAS_V
 #define ZR_DRV8301_PH_VOLTAGE_SENSE_BIAS_V (0.0f)
-#endif // ZR_DRV8301_PH_VOLTAGE_SENSE_BIAS_V
 
 /**
  * @brief DC-bus voltage channels.
  */
-#ifndef ZR_DRV8301_DCBUS_VOLTAGE_CHANNEL_COUNT
 #define ZR_DRV8301_DCBUS_VOLTAGE_CHANNEL_COUNT (1U)
-#endif // ZR_DRV8301_DCBUS_VOLTAGE_CHANNEL_COUNT
 
 /**
  * @brief VS_TYPE_* constant.
  */
-#ifndef ZR_DRV8301_DCBUS_VOLTAGE_SENSE_TYPE
 #define ZR_DRV8301_DCBUS_VOLTAGE_SENSE_TYPE VS_TYPE_PHASE_GND
-#endif // ZR_DRV8301_DCBUS_VOLTAGE_SENSE_TYPE
 
 /**
  * @brief DC-bus voltage divider or signal-chain gain; zero means unknown.
  * @unit V/V
  */
-#ifndef ZR_DRV8301_DCBUS_VOLTAGE_SENSE_GAIN
 #define ZR_DRV8301_DCBUS_VOLTAGE_SENSE_GAIN (0.0f)
-#endif // ZR_DRV8301_DCBUS_VOLTAGE_SENSE_GAIN
 
 /**
  * @brief DC-bus voltage signal bias.
  * @unit V
  */
-#ifndef ZR_DRV8301_DCBUS_VOLTAGE_SENSE_BIAS_V
 #define ZR_DRV8301_DCBUS_VOLTAGE_SENSE_BIAS_V (0.0f)
-#endif // ZR_DRV8301_DCBUS_VOLTAGE_SENSE_BIAS_V
 
 /**
  * @brief DC-link current sensitivity; one is the compatibility value when absent.
  * @unit V/A
  */
-#ifndef ZR_DRV8301_DCBUS_CURRENT_SENSE_GAIN
 #define ZR_DRV8301_DCBUS_CURRENT_SENSE_GAIN (1.0f)
-#endif // ZR_DRV8301_DCBUS_CURRENT_SENSE_GAIN
 
 /**
  * @brief DC-link current signal bias.
  * @unit V
  */
-#ifndef ZR_DRV8301_DCBUS_CURRENT_SENSE_BIAS_V
 #define ZR_DRV8301_DCBUS_CURRENT_SENSE_BIAS_V (0.0f)
-#endif // ZR_DRV8301_DCBUS_CURRENT_SENSE_BIAS_V
 
 /**
  * @brief Power-stage temperature channels.
  */
-#ifndef ZR_DRV8301_THERMAL_CHANNEL_COUNT
 #define ZR_DRV8301_THERMAL_CHANNEL_COUNT (0U)
-#endif // ZR_DRV8301_THERMAL_CHANNEL_COUNT
 
 /**
  * @brief verified, partial, schematic_required or template.
  */
-#ifndef ZR_DRV8301_VERIFICATION_STATUS
 #define ZR_DRV8301_VERIFICATION_STATUS "schematic_required"
-#endif // ZR_DRV8301_VERIFICATION_STATUS
 
 /**
  * @brief Primary board manual, schematic or internal design reference.
  */
-#ifndef ZR_DRV8301_SOURCE_REFERENCE
 #define ZR_DRV8301_SOURCE_REFERENCE "Legacy ZR_DRV8301.h; switch identity, shunt placement and PWM polarity are not verified"
-#endif // ZR_DRV8301_SOURCE_REFERENCE
 
 // Derived macros
 /**

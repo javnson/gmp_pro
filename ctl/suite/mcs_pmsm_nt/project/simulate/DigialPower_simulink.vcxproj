@@ -188,6 +188,8 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_component_interface.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pi.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pid.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dq_pi.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dq_ladrc1.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pid_aw.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_biquad_filter.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_df.c" />
@@ -269,7 +271,6 @@
     <ClInclude Include="..\..\src\ctl_main.h" />
     <ClInclude Include="..\..\src\user_main.h" />
     <ClInclude Include="sdpe_mgr\sdpe_mcs_pmsm_nt_simulate_settings.h" />
-    <ClInclude Include="xplt\pc_simulate_buffer.h" />
     <ClInclude Include="xplt\xplt.config.h" />
     <ClInclude Include="xplt\xplt.ctl_interface.h" />
     <ClInclude Include="xplt\xplt.peripheral.h" />

@@ -15,16 +15,30 @@
 #include <core/dev/mem_presp.h>
 #include <core/dev/pil_core.h>
 #include <core/dev/tunable.h>
+#if !defined SPECIFY_PC_ENVIRONMENT
+#include <ctl/component/dsa/dsa_dl_scope.h>
+#endif
+
+/** @brief Flush received Data Link bytes from the platform transport. */
+void flush_dl_rx_buffer(void);
+
+/** @brief Flush pending Data Link bytes to the platform transport. */
+void flush_dl_tx_buffer(void);
 
 //=================================================================================================
 // Datalink protocol online Debug module
 
 gmp_datalink_t dl;
+#if !defined SPECIFY_PC_ENVIRONMENT
+CTL_DSA_DL_SCOPE_DEFINE_USER("Control Scope")
+#endif
 
 //
 // PIL (processor in loop module)
 //
+#if defined ENABLE_GMP_DL_PIL_SIM
 gmp_pil_sim_t pil;
+#endif
 
 //
 // Tunable Dictionary
@@ -36,6 +50,7 @@ const gmp_param_item_t dict_m1[] = {
 
     {&g_v_out_ref_user, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
     {&g_i_limit_user, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
+//    {&g_modulation_target_user, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW},
     {&g_modulation_command, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
     {&adc_v_primary.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
     {&adc_i_primary.control_port.value, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO},
@@ -80,8 +95,10 @@ gmp_task_status_t tsk_dl_debug_device(gmp_task_t* tsk)
 
     case GMP_DL_EVENT_RX_OK:
         // Ack PIL simulation message
+#if defined ENABLE_GMP_DL_PIL_SIM
         if (gmp_pil_sim_rx_cb(&pil))
             break;
+#endif
 
         // Ack parameter tunable message
         if (gmp_param_tunable_rx_cb(&tunable))
@@ -89,6 +106,10 @@ gmp_task_status_t tsk_dl_debug_device(gmp_task_t* tsk)
 
         // Ack memory perspective message
         if (gmp_mem_persp_rx_cb(&mem_persp_server))
+            break;
+
+        /** Dispatch the independent four-channel Scope service. */
+        if (user_dispatch_dl_scope())
             break;
 
         // Echo Command
@@ -170,7 +191,9 @@ gmp_task_status_t tsk_startup(gmp_task_t* tsk);
 // All tasks must be non blocking tasks
 gmp_task_t tasks[] = {
     // name,          task,                period(ms),  init_phase, is_enabled, pParam
-    {"blink_led", tsk_blink, 1000, 0, 1, NULL},    {"dl_online", tsk_dl_debug_device, 2, 0, 1, NULL},
+    /* Toggle every 500 ms: one complete SYS_LED on/off period is 1 s. */
+    {"blink_led", tsk_blink, 500, 0, 1, NULL},
+    {"dl_online", tsk_dl_debug_device, 2, 0, 1, NULL},
     {"monitor_data", tsk_monitor, 5, 0, 1, NULL},  // 5ms -> 200Hz refresh rate
     {"ctl_mainloop", tsk_ctl_main, 1, 0, 1, NULL}, // 1ms state machine tick
     {"slow_protect", tsk_protect, 10, 0, 1, NULL}, // 10ms thermal/RMS protection
@@ -190,17 +213,28 @@ GMP_NO_OPT_PREFIX void init(void) GMP_NO_OPT_SUFFIX
     gmp_scheduler_init(&sched);
 
     for (i = 0; i < sizeof(tasks) / sizeof(gmp_task_t); ++i)
+    {
+#if defined ENABLE_GMP_DL_PIL_SIM
+        if (tasks[i].handler == tsk_dl_debug_device)
+            tasks[i].is_enabled = 0;
+#endif
         gmp_scheduler_add_task(&sched, &tasks[i]);
+    }
 
     // init datalink protocol
     gmp_dev_dl_init(&dl);
 
-    // enable PIL simulation environment
-    gmp_pil_sim_init(&pil, &dl, 0x10);
+#if defined ENABLE_GMP_DL_PIL_SIM
+    gmp_pil_sim_init(&pil, &dl, GMP_PIL_DL_BASE_COMMAND);
+    gmp_pil_sim_set_masks(&pil, GMP_PIL_TX_MASK, GMP_PIL_RX_MASK);
+#endif
 
     // Band DL module with tunable and persp module.
     gmp_param_tunable_init(&tunable, &dl, 0x30, dict_m1, var_tunable_count);
     gmp_mem_persp_init(&mem_persp_server, &dl, 0x50, mem_regions, mem_regions_count);
+#if !defined SPECIFY_PC_ENVIRONMENT
+    user_init_dl_scope(&dl);
+#endif
 }
 
 // Initialization tasks after all peripherals have been initialized
@@ -225,6 +259,9 @@ gmp_task_status_t tsk_startup(gmp_task_t* tsk)
 GMP_NO_OPT_PREFIX
 void mainloop(void) GMP_NO_OPT_SUFFIX
 {
+#if defined ENABLE_GMP_DL_PIL_SIM
+    (void)tsk_dl_debug_device(NULL);
+#endif
     // run task scheduler
     gmp_scheduler_dispatch(&sched);
 }

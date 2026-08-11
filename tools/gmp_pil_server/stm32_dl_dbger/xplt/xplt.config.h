@@ -1,0 +1,14 @@
+/**
+ * @file xplt.config.h
+ * @brief GMP configuration for the NUCLEO-C092RC Data Link target.
+ */
+
+#ifndef GMP_STM32_DL_DBGER_XPLT_CONFIG_H
+#define GMP_STM32_DL_DBGER_XPLT_CONFIG_H
+
+#define SPECIFY_ENABLE_GMP_CTL
+#define SPECIFY_CTRL_GT_TYPE USING_FLOAT_FPU
+#define SPECIFY_DISABLE_GMP_LOGO
+#define SPECIFY_BASE_PRINT_NOT_IMPL
+
+#endif // GMP_STM32_DL_DBGER_XPLT_CONFIG_H

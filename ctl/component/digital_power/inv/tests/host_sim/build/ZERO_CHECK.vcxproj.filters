@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="E:\lib\gmp_pro\ctl\component\digital_power\inv\tests\host_sim\build\CMakeFiles\4a55d60eee912f0a49c1e6e0ea11a3d4\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{62CFBAFC-68BE-33D4-8EB8-695D84EA3A5E}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

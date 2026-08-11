@@ -36,150 +36,112 @@ extern "C"
 /**
  * @brief Human-readable motor model name.
  */
-#ifndef ACM_4P24V_MOTOR_NAME
 #define ACM_4P24V_MOTOR_NAME "ACM 4P 24V"
-#endif // ACM_4P24V_MOTOR_NAME
 
 /**
  * @brief GMP motor type macro.
  */
-#ifndef ACM_4P24V_MOTOR_TYPE
 #define ACM_4P24V_MOTOR_TYPE INDUCTION_MOTOR
-#endif // ACM_4P24V_MOTOR_TYPE
 
 /**
  * @brief Optional encoder type macro.
  */
-#ifndef ACM_4P24V_ENCODER_TYPE
 #define ACM_4P24V_ENCODER_TYPE QEP_INC_ENCODER
-#endif // ACM_4P24V_ENCODER_TYPE
 
 /**
  * @brief Stator resistance per phase.
  * @unit ohm
  */
-#ifndef ACM_4P24V_RS
 #define ACM_4P24V_RS ((0.329))
-#endif // ACM_4P24V_RS
 
 /**
  * @brief Stator leakage inductance.
  * @unit H
  */
-#ifndef ACM_4P24V_L1S
 #define ACM_4P24V_L1S ((0.0003))
-#endif // ACM_4P24V_L1S
 
 /**
  * @brief Rotor resistance per phase referred to stator.
  * @unit ohm
  */
-#ifndef ACM_4P24V_RR
 #define ACM_4P24V_RR ((0.44))
-#endif // ACM_4P24V_RR
 
 /**
  * @brief Rotor leakage inductance referred to stator.
  * @unit H
  */
-#ifndef ACM_4P24V_L1R
 #define ACM_4P24V_L1R ((0.0005))
-#endif // ACM_4P24V_L1R
 
 /**
  * @brief Main magnetizing inductance.
  * @unit H
  */
-#ifndef ACM_4P24V_LM
 #define ACM_4P24V_LM ((0.0012))
-#endif // ACM_4P24V_LM
 
 /**
  * @brief Number of pole pairs.
  */
-#ifndef ACM_4P24V_POLE_PAIRS
 #define ACM_4P24V_POLE_PAIRS ((2))
-#endif // ACM_4P24V_POLE_PAIRS
 
 /**
  * @brief Rotor inertia.
  * @unit kg*m^2
  */
-#ifndef ACM_4P24V_INERTIA
 #define ACM_4P24V_INERTIA ((0.001))
-#endif // ACM_4P24V_INERTIA
 
 /**
  * @brief Viscous friction coefficient.
  * @unit N*m*s/rad
  */
-#ifndef ACM_4P24V_FRICTION
 #define ACM_4P24V_FRICTION ((1e-05))
-#endif // ACM_4P24V_FRICTION
 
 /**
  * @brief Rated line-to-line voltage.
  * @unit V
  */
-#ifndef ACM_4P24V_RATED_VOLTAGE
 #define ACM_4P24V_RATED_VOLTAGE ((24.0))
-#endif // ACM_4P24V_RATED_VOLTAGE
 
 /**
  * @brief Rated phase current.
  * @unit A
  */
-#ifndef ACM_4P24V_RATED_CURRENT
 #define ACM_4P24V_RATED_CURRENT ((8.5))
-#endif // ACM_4P24V_RATED_CURRENT
 
 /**
  * @brief No-load phase current.
  * @unit A
  */
-#ifndef ACM_4P24V_NO_LOAD_CURRENT
 #define ACM_4P24V_NO_LOAD_CURRENT ((0.5))
-#endif // ACM_4P24V_NO_LOAD_CURRENT
 
 /**
  * @brief Rated operating frequency.
  * @unit Hz
  */
-#ifndef ACM_4P24V_RATED_FREQUENCY
 #define ACM_4P24V_RATED_FREQUENCY ((50.0))
-#endif // ACM_4P24V_RATED_FREQUENCY
 
 /**
  * @brief Rated or maximum continuous speed.
  * @unit RPM
  */
-#ifndef ACM_4P24V_MAX_SPEED
 #define ACM_4P24V_MAX_SPEED ((1450))
-#endif // ACM_4P24V_MAX_SPEED
 
 /**
  * @brief Maximum intermittent torque.
  * @unit N*m
  */
-#ifndef ACM_4P24V_MAX_TORQUE
 #define ACM_4P24V_MAX_TORQUE ((0.981))
-#endif // ACM_4P24V_MAX_TORQUE
 
 /**
  * @brief Maximum allowable DC bus voltage.
  * @unit V
  */
-#ifndef ACM_4P24V_MAX_DC_VOLTAGE
 #define ACM_4P24V_MAX_DC_VOLTAGE ((36.0))
-#endif // ACM_4P24V_MAX_DC_VOLTAGE
 
 /**
  * @brief Maximum allowable phase current.
  * @unit A
  */
-#ifndef ACM_4P24V_MAX_PH_CURRENT
 #define ACM_4P24V_MAX_PH_CURRENT ((10.0))
-#endif // ACM_4P24V_MAX_PH_CURRENT
 
 // Logical exports
 // rs: ACM_4P24V_RS

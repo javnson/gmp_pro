@@ -337,35 +337,99 @@ typedef struct _tag_pmsm_offline_id_flux
 
 // ============================================================================
 
+#ifndef PMSM_ID_ENCODER_MAX_ANCHORS
+#define PMSM_ID_ENCODER_MAX_ANCHORS (32U)
+#endif
+
+/** @brief Encoder calibration sub-state machine. */
+typedef enum _tag_pmsm_offline_id_encoder_sm
+{
+    PMSM_ID_ENCODER_DISABLED = 0,
+    PMSM_ID_ENCODER_INIT,
+    PMSM_ID_ENCODER_NOISE_CHECK,
+    PMSM_ID_ENCODER_ALIGN_ZERO,
+    PMSM_ID_ENCODER_SWEEP,
+    PMSM_ID_ENCODER_ANCHOR_SETTLE,
+    PMSM_ID_ENCODER_CALCULATE,
+    PMSM_ID_ENCODER_COMPLETE,
+    PMSM_ID_ENCODER_FAULT
+} pmsm_offline_id_encoder_sm_t;
+
+/** @brief Diagnosed encoder failure reason. */
+typedef enum _tag_pmsm_offline_id_encoder_fault
+{
+    PMSM_ID_ENCODER_FAULT_NONE = 0,
+    PMSM_ID_ENCODER_FAULT_INVALID_CONFIG,
+    PMSM_ID_ENCODER_FAULT_RANDOM_JUMP,
+    PMSM_ID_ENCODER_FAULT_NO_MOTION,
+    PMSM_ID_ENCODER_FAULT_NONUNIFORM,
+    PMSM_ID_ENCODER_FAULT_ZERO_RETURN,
+    PMSM_ID_ENCODER_FAULT_TIMEOUT
+} pmsm_offline_id_encoder_fault_t;
+
+/** @brief User settings for sensored encoder calibration. */
+typedef struct _tag_pmsm_oid_cfg_encoder
+{
+    parameter_gt align_current_pu;          /*!< Closed-loop Id used to lock the rotor to phase A. */
+    parameter_gt noise_check_time_s;        /*!< PWM-off observation time before energizing the motor. */
+    parameter_gt align_settle_time_s;       /*!< Initial phase-A alignment dwell time. */
+    parameter_gt sweep_elec_hz;             /*!< Electrical revolutions per second during each sweep. */
+    parameter_gt anchor_settle_time_s;      /*!< Dwell at phase A after each electrical revolution. */
+    parameter_gt max_sample_jump_pu;        /*!< Maximum wrapped encoder step accepted per ISR sample. */
+    parameter_gt max_stationary_span_pu;    /*!< Maximum position span accepted during the PWM-off check. */
+    parameter_gt min_cycle_motion_pu;       /*!< Minimum net mechanical motion per electrical revolution. */
+    parameter_gt max_cycle_deviation_pu;    /*!< Maximum absolute deviation of cycle motion from its mean. */
+    parameter_gt zero_return_tolerance_pu;  /*!< Maximum wrapped error when returning to the first anchor. */
+    uint16_t max_pole_pairs;                /*!< Search limit and safety bound for detected pole pairs. */
+} pmsm_oid_cfg_encoder_t;
+
+/** @brief Runtime and result storage for sensored encoder calibration. */
+typedef struct _tag_pmsm_offline_id_encoder
+{
+    pmsm_offline_id_encoder_sm_t sm;
+    pmsm_offline_id_encoder_fault_t fault;
+    pmsm_oid_cfg_encoder_t cfg;
+
+    uint32_t noise_ticks;
+    uint32_t align_ticks;
+    uint32_t anchor_ticks;
+    uint32_t sweep_timeout_ticks;
+    uint32_t cycle_count;
+    uint32_t sweep_tick;
+
+    ctrl_gt last_position_pu;
+    ctrl_gt first_anchor_pu;
+    ctrl_gt stationary_min_pu;
+    ctrl_gt stationary_max_pu;
+    ctrl_gt cycle_net_motion_pu;
+    ctrl_gt command_angle_pu;
+    fast_gt cycle_ready;
+
+    parameter_gt cycle_motion_pu[PMSM_ID_ENCODER_MAX_ANCHORS];
+    parameter_gt encoder_offset_pu;
+    uint16_t identified_pole_pairs;
+} pmsm_offline_id_encoder_t;
+
+// ============================================================================
+
 /**
  * @brief State enumeration for the Mechanical Parameters (J, B) sub-state machine.
- * @details Execution flow:
- * INIT -> IF_START -> HANDOVER_TO_CLOSED -> STEADY_LOW -> ACCEL_TEST -> STEADY_HIGH -> DECEL_TEST -> HANDOVER_TO_IF -> IF_STOP -> CALCULATE -> COMPLETE
+ * @details Uses a real encoder and the real FOC current loop.  It records the
+ * 30%-70% acceleration curve under constant Iq, disables PWM at 75%, then
+ * records the 70%-30% free-coast curve.
  */
 typedef enum _tag_pmsm_offline_id_mech_sm
 {
-    PMSM_ID_MECH_DISABLED = 0, /*!< 0: Disabled/Bypass. Safe state. */
-
-    PMSM_ID_MECH_INIT, /*!< 1: Initialize. Pre-calculate ticks and limits in the background loop. */
-
-    // --- Stage 1: Spin up & Closed-loop Transition ---
-    PMSM_ID_MECH_IF_START,           /*!< 2: Open-loop start. Drive motor in I/F mode up to W_low. */
-    PMSM_ID_MECH_HANDOVER_TO_CLOSED, /*!< 3: Bumpless Transfer to Closed-Loop. Transition angle from VF to Real/SMO. */
-    PMSM_ID_MECH_STEADY_LOW,         /*!< 4: Stabilize at W_low. Accumulate Iq to calculate low-speed friction. */
-
-    // --- Stage 2: Acceleration Test ---
-    PMSM_ID_MECH_ACCEL_TEST,  /*!< 5: Inject constant +Iq. Record (Time, Speed) into Data Analyzer until W >= W_high. */
-    PMSM_ID_MECH_STEADY_HIGH, /*!< 6: Stabilize at W_high. Accumulate Iq to calculate high-speed friction. */
-
-    // --- Stage 3: Deceleration Test & Safe Shutdown ---
-    PMSM_ID_MECH_DECEL_TEST, /*!< 7: Inject constant -Iq. Record (Time, Speed) into DA until W <= W_low. Monitors OVP. */
-    PMSM_ID_MECH_HANDOVER_TO_IF, /*!< 8: Transition back to I/F mode to ensure safe shutdown as SMO fails at low speed. */
-    PMSM_ID_MECH_IF_STOP,        /*!< 9: Ramp V/F target to 0 and gracefully stop the motor. */
-
-    // --- Stage 4: Calculation ---
-    PMSM_ID_MECH_CALCULATE, /*!< 10: Trigger Math library. Fit J and B from DA buffers in the background loop. */
-    PMSM_ID_MECH_COMPLETE,  /*!< 11: Update ctl_consultant_mech1_t structure. Signal Main SM. */
-    PMSM_ID_MECH_FAULT      /*!< 12: Fault (OVP, Timeout, DA overflow). */
+    PMSM_ID_MECH_DISABLED = 0,
+    PMSM_ID_MECH_INIT,
+    PMSM_ID_MECH_ACCEL_TO_WINDOW,
+    PMSM_ID_MECH_ACCEL_RECORD,
+    PMSM_ID_MECH_ACCEL_TO_PWM_OFF,
+    PMSM_ID_MECH_COAST_TO_WINDOW,
+    PMSM_ID_MECH_COAST_RECORD,
+    PMSM_ID_MECH_CALCULATE,
+    PMSM_ID_MECH_COMPLETE,
+    PMSM_ID_MECH_FAULT
 
 } pmsm_offline_id_mech_sm_t;
 
@@ -374,14 +438,15 @@ typedef enum _tag_pmsm_offline_id_mech_sm
  */
 typedef struct _tag_pmsm_oid_cfg_mech
 {
-    parameter_gt low_speed_pu;      /*!< Lower speed threshold for evaluation (e.g., 0.2pu). */
-    parameter_gt high_speed_pu;     /*!< Upper speed threshold for evaluation (e.g., 0.8pu). */
-    parameter_gt accel_iq_pu;       /*!< Constant q-axis current applied for acceleration (+). */
-    parameter_gt decel_iq_pu;       /*!< Constant q-axis current applied for deceleration (-). */
-    parameter_gt max_vbus_pu;       /*!< DC Bus over-voltage protection limit during deceleration. */
-    parameter_gt if_current_pu;     /*!< Constant current used for I/F dragging (e.g., 0.2pu). */
-    parameter_gt settle_time_s;     /*!< Time to maintain steady speeds for friction measurement (s). */
-    parameter_gt transition_time_s; /*!< Time duration for angle handover blending (s). */
+    parameter_gt target_speed_pu;       /*!< User-selected target mechanical speed in PU. */
+    parameter_gt fit_low_ratio;         /*!< Lower fitting threshold relative to target speed. */
+    parameter_gt fit_high_ratio;        /*!< Upper fitting threshold relative to target speed. */
+    parameter_gt pwm_off_ratio;         /*!< Speed ratio at which PWM is disabled. */
+    parameter_gt accel_iq_pu;           /*!< User-selected constant q-axis acceleration current. */
+    parameter_gt max_test_time_s;       /*!< Overall acceleration/coast timeout. */
+    parameter_gt record_time_s;         /*!< Expected maximum combined recording duration. */
+    parameter_gt min_fit_r2;            /*!< Minimum R-squared accepted for both alpha-vs-speed fits. */
+    uint32_t min_fit_samples;            /*!< Minimum samples required in each curve. */
 } pmsm_oid_cfg_mech_t;
 
 /**
@@ -392,25 +457,22 @@ typedef struct _tag_pmsm_offline_id_mech
     pmsm_offline_id_mech_sm_t sm; /*!< Sub-SM: Current state of Mechanical identification. */
     pmsm_oid_cfg_mech_t cfg;      /*!< Configuration specific to this module. */
 
-    // --- Pre-calculated Context (Computed in Loop to save ISR time) ---
-    uint32_t settle_ticks;     /*!< ISR ticks corresponding to settle_time_s. */
-    uint32_t transition_ticks; /*!< ISR ticks corresponding to transition_time_s. */
-    ctrl_gt inv_settle_ticks;  /*!< 1.0f / settle_ticks for fast averaging. */
+    uint32_t timeout_ticks;
+    uint32_t elapsed_ticks;
 
-    // --- Runtime Context (Managed by Loop, consumed by ISR) ---
-    ctrl_gt active_iq_ref_pu; /*!< The active torque current applied during accel/decel/steady. */
-    ctrl_gt active_id_ref_pu; /*!< The active dragging current applied during handover. */
-
-    // --- Measurement Accumulators (Pure ctrl_gt for ISR) ---
-    ctrl_gt sum_iq_steady;          /*!< Accumulator for steady-state friction current. */
-    parameter_gt iq_steady_low_pu;  /*!< Resulting average Iq at low speed. */
-    parameter_gt iq_steady_high_pu; /*!< Resulting average Iq at high speed. */
-
-    // --- DSA Slicing Indices ---
     uint32_t da_idx_accel_start; /*!< DA start index for acceleration phase. */
     uint32_t da_idx_accel_end;   /*!< DA end index for acceleration phase. */
     uint32_t da_idx_decel_start; /*!< DA start index for deceleration phase. */
     uint32_t da_idx_decel_end;   /*!< DA end index for deceleration phase. */
+
+    parameter_gt accel_slope;
+    parameter_gt accel_intercept;
+    parameter_gt accel_r2;
+    parameter_gt coast_slope;
+    parameter_gt coast_intercept;
+    parameter_gt coast_r2;
+    parameter_gt average_accel_iq_pu;
+    parameter_gt load_torque_Nm;
 
 } pmsm_offline_id_mech_t;
 
@@ -452,7 +514,9 @@ typedef enum _tag_pmsm_offline_id_sm
     PMSM_OFFLINE_ID_COMPLETE, /*!< 8: Identification Complete. Motor is safely powered off.
                                            System holds in this state for the user to extract data/results. */
 
-    PMSM_OFFLINE_ID_FAULT /*!< 9: Fault. Triggered by external protection or math singularity. */
+    PMSM_OFFLINE_ID_FAULT, /*!< 9: Fault. Triggered by external protection or math singularity. */
+
+    PMSM_OFFLINE_ID_ENCODER_CALIB = 10 /*!< Sensored encoder offset/pole-pair calibration. */
 
 } pmsm_offline_id_sm_t;
 
@@ -466,6 +530,7 @@ typedef struct _tag_pmsm_oid_cfg_basic
 
     // --- Feature Options (1 to enable, 0 to skip) ---
     fast_gt flag_enable_prepare; /*!< Enables the PREPARE stage for custom calibration. */
+    fast_gt flag_enable_encoder_calibration; /*!< Enables sensored encoder calibration. */
     fast_gt flag_enable_rs_dt;   /*!< Enables Rs & DT identification. */
     fast_gt flag_enable_ldq;     /*!< Enables Ld & Lq identification. */
     fast_gt flag_enable_flux;    /*!< Enables Flux Linkage identification. */
@@ -492,6 +557,7 @@ typedef struct _tag_ctl_pmsm_offline_id_init
     pmsm_oid_cfg_rs_dt_t cfg_rs_dt; /*!< Config: Resistance & Dead-time. */
     pmsm_oid_cfg_ld_lq_t cfg_ld_lq; /*!< Config: Inductance saturation. */
     pmsm_oid_cfg_flux_t cfg_flux;   /*!< Config: Flux linkage. */
+    pmsm_oid_cfg_encoder_t cfg_encoder; /*!< Config: sensored encoder calibration. */
     pmsm_oid_cfg_mech_t cfg_mech;   /*!< Config: Mechanical parameters. */
 
 } ctl_pmsm_offline_id_init_t;
@@ -523,6 +589,7 @@ typedef struct _tag_ctl_pmsm_offline_id
     pmsm_offline_id_rs_dt_t sub_rs_dt; /*!< Context for Rs & DT identification. */
     pmsm_offline_id_ldq_t sub_ldq;     /*!< Context for Ld & Lq identification. */
     pmsm_offline_id_flux_t sub_flux;   /*!< Context for Flux identification. */
+    pmsm_offline_id_encoder_t sub_encoder; /*!< Context for encoder calibration. */
     pmsm_offline_id_mech_t sub_mech;   /*!< Context for Mechanical parameter ID. */
 
     // =========================================================================
@@ -611,6 +678,10 @@ void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx);
  * @param[in,out] ctx Pointer to the master offline ID context.
  */
 void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx);
+
+void ctl_init_oid_encoder(ctl_pmsm_offline_id_t* ctx);
+void ctl_step_oid_encoder_isr(ctl_pmsm_offline_id_t* ctx);
+void ctl_loop_oid_encoder(ctl_pmsm_offline_id_t* ctx);
 
 //
 // --- Mechanical Parameters (MECH) ---
@@ -747,6 +818,13 @@ ctrl_gt ctl_id_get_speed(ctl_pmsm_offline_id_t* ctx);
  */
 void ctl_id_disable_output(ctl_pmsm_offline_id_t* ctx);
 
+/** @brief Enables or physically disables the PWM bridge for coast testing. */
+void ctl_id_set_pwm_output(ctl_pmsm_offline_id_t* ctx, fast_gt enable);
+
+/** @brief Commits measured pole pairs and mechanical encoder offset to the host encoder. */
+void ctl_id_commit_encoder_calibration(ctl_pmsm_offline_id_t* ctx, uint16_t pole_pairs,
+                                       ctrl_gt encoder_offset_pu);
+
 /**
  * @brief Applies a constant closed-loop DC current vector.
  * @details Re-enables the FOC PI controllers if they were disabled, and tracks the target Id/Iq.
@@ -827,6 +905,10 @@ GMP_STATIC_INLINE pmsm_offline_id_sm_t ctl_oid_get_next_state(ctl_pmsm_offline_i
             return PMSM_OFFLINE_ID_PREPARE;
         // fallthrough
     case PMSM_OFFLINE_ID_PREPARE:
+        if (ctx->cfg_basic.flag_enable_encoder_calibration && !ctx->cfg_basic.is_sensorless)
+            return PMSM_OFFLINE_ID_ENCODER_CALIB;
+        // fallthrough
+    case PMSM_OFFLINE_ID_ENCODER_CALIB:
         if (ctx->cfg_basic.flag_enable_rs_dt)
             return PMSM_OFFLINE_ID_RS_DT;
         // fallthrough
@@ -860,6 +942,9 @@ static void ctl_oid_init_target_state(ctl_pmsm_offline_id_t* ctx)
     {
     case PMSM_OFFLINE_ID_PREPARE:
         // Placeholder: Call user's external prepare init if needed
+        break;
+    case PMSM_OFFLINE_ID_ENCODER_CALIB:
+        ctl_init_oid_encoder(ctx);
         break;
     case PMSM_OFFLINE_ID_RS_DT:
         ctl_init_oid_rs_dt(ctx);
@@ -915,6 +1000,7 @@ GMP_STATIC_INLINE void ctl_clear_pmsm_offline_id(ctl_pmsm_offline_id_t* ctx)
     ctx->sub_rs_dt.sm = PMSM_ID_RSDT_DISABLED;
     ctx->sub_ldq.sm = PMSM_ID_LDQ_DISABLED;
     ctx->sub_flux.sm = PMSM_ID_FLUX_DISABLED;
+    ctx->sub_encoder.sm = PMSM_ID_ENCODER_DISABLED;
     ctx->sub_mech.sm = PMSM_ID_MECH_DISABLED;
 
     // 4. Return to Staging Ground

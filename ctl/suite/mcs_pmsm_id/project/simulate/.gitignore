@@ -77,3 +77,8 @@ __pycache__/
 .DS_Store
 *~
 # END GMP MANAGED PROJECT IGNORE RULES
+
+# PMSM identification SIL run artifacts
+pmsm_id_sil_fast_result.json
+pmsm_id_sil_fast_trace.csv
+pmsm_id_sil_*.mat

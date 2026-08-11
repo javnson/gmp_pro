@@ -241,7 +241,12 @@ GMP 还提供 Processor-in-the-Loop 和 Datalink 调试机制：
 
 - PIL 在真实 MCU 上执行控制程序，并把仿真输入输出与上位机交换。
 - Datalink 提供变量观察、参数在线调整、Memory Perspective、PIL 数据交换等服务。
-- 调试器入口位于 `tools/gmp_pil_server/gmp_debugger_v2`。
+- [Data Link 无界面 Python API](tools/gmp_pil_server/gmp_debugger/apis/README_CN.md)
+  可供测试程序和 AI Agent 发现 Tunable 参数表及内存白名单，执行带类型的参数访问和
+  有界内存访问，配置 Scope 触发、连续采集波形并导出 CSV；同时提供
+  [英文 API 手册](tools/gmp_pil_server/gmp_debugger/apis/README.md)。
+- 字节寻址 CPU 使用 `tools/gmp_pil_server/gmp_debugger/run_u8.bat`，16 位寻址
+  DSP 使用 `tools/gmp_pil_server/gmp_debugger/run_u16.bat`；两个入口共用同一套上位机代码。
 - 通信和后台任务通常在 suite 的 `user_main.c` 中组织，UART 等物理接口在目标 `xplt` 中实现。
 
 高频控制中断中不应执行阻塞式串口或界面通信；调试数据应交给后台调度任务处理。
@@ -269,6 +274,14 @@ GMP 还提供 Processor-in-the-Loop 和 Datalink 调试机制：
 - [面向 AI 的仓库维护技能](.agents/skills/maintain-gmp-repository/SKILL.md)
 
 英文资料和英文工程指南统一收录在 [English README](README.md) 中。
+
+## 10. 重要更新
+
+由于TI的多种不同芯片都需要受到GMP的支持，在GMP根目录下引入GMP库的支持可能会带来混乱，所以后续，我们将把TI Product的目录放置在对应芯片的芯片支持包处。
+
+对于C28x系列芯片，需要导入的Product路径为：gmp_pro\csp\c28x_syscfg
+
+对于C29x系列芯片，需要导入的Product路径为：gmp_pro\csp\c29x_syscfg
 
 ## 9. 许可证
 

@@ -1,0 +1,247 @@
+/**
+ * These arguments were used when this file was generated. They will be automatically applied on subsequent loads
+ * via the GUI or CLI. Run CLI with '--help' for additional information on how to override these arguments.
+ * @cliArgs --device "F29H85x" --part "F29H850TU9RFS" --package "144RFS" --context "CPU1" --product "MCU_SDK_F29H85x@26.00.00"
+ * @v2CliArgs --device "F29H850TU" --package "144RFS" --variant "TMS320F29H850TU9" --context "CPU1" --product "MCU_SDK_F29H85x@26.00.00"
+ * @versions {"tool":"1.27.1+4634"}
+ */
+
+/**
+ * Import the modules used in this configuration.
+ */
+const adc              = scripting.addModule("/driverlib/adc.js", {}, false);
+const adc1             = adc.addInstance();
+const adc2             = adc.addInstance();
+const adc3             = adc.addInstance();
+const adc4             = adc.addInstance();
+const adc5             = adc.addInstance();
+const epwm             = scripting.addModule("/driverlib/epwm.js", {}, false);
+const epwm1            = epwm.addInstance();
+const epwm2            = epwm.addInstance();
+const epwm3            = epwm.addInstance();
+const epwm4            = epwm.addInstance();
+const epwm5            = epwm.addInstance();
+const epwm6            = epwm.addInstance();
+const eqep             = scripting.addModule("/driverlib/eqep.js", {}, false);
+const eqep1            = eqep.addInstance();
+const eqep2            = eqep.addInstance();
+const gpio             = scripting.addModule("/driverlib/gpio.js", {}, false);
+const gpio1            = gpio.addInstance();
+const gpio2            = gpio.addInstance();
+const inputxbar_input  = scripting.addModule("/driverlib/inputxbar_input.js", {}, false);
+const inputxbar_input1 = inputxbar_input.addInstance();
+const inputxbar_input2 = inputxbar_input.addInstance();
+const inputxbar_input3 = inputxbar_input.addInstance();
+const inputxbar_input4 = inputxbar_input.addInstance();
+const inputxbar_input5 = inputxbar_input.addInstance();
+const inputxbar_input6 = inputxbar_input.addInstance();
+const jtag             = scripting.addModule("/driverlib/jtag.js");
+const mcan             = scripting.addModule("/driverlib/mcan.js", {}, false);
+const mcan1            = mcan.addInstance();
+const uart             = scripting.addModule("/driverlib/uart.js", {}, false);
+const uart1            = uart.addInstance();
+
+/**
+ * Write custom configuration values to the imported modules.
+ */
+adc1.$name              = "myADC0";
+adc1.periphClock.$name  = "driverlib_perClock6";
+adc1.periphConfig.$name = "driverlib_perConfig6";
+
+adc2.$name                               = "myADC1";
+adc2.adcBase                             = "ADCB_BASE";
+adc2.periphClock.$name                   = "driverlib_perClock7";
+adc2.periphClock.pinmuxPeripheralModule  = scripting.forceWrite("");
+adc2.periphConfig.$name                  = "driverlib_perConfig7";
+adc2.periphConfig.cpuSel                 = scripting.forceWrite("CPU1");
+adc2.periphConfig.pinmuxPeripheralModule = scripting.forceWrite("");
+
+adc3.$name                               = "myADC2";
+adc3.adcBase                             = "ADCC_BASE";
+adc3.periphClock.$name                   = "driverlib_perClock8";
+adc3.periphClock.pinmuxPeripheralModule  = scripting.forceWrite("");
+adc3.periphConfig.$name                  = "driverlib_perConfig8";
+adc3.periphConfig.cpuSel                 = scripting.forceWrite("CPU1");
+adc3.periphConfig.pinmuxPeripheralModule = scripting.forceWrite("");
+
+adc4.$name                               = "myADC3";
+adc4.adcBase                             = "ADCD_BASE";
+adc4.periphClock.$name                   = "driverlib_perClock9";
+adc4.periphClock.pinmuxPeripheralModule  = scripting.forceWrite("");
+adc4.periphConfig.$name                  = "driverlib_perConfig9";
+adc4.periphConfig.cpuSel                 = scripting.forceWrite("CPU1");
+adc4.periphConfig.pinmuxPeripheralModule = scripting.forceWrite("");
+
+adc5.$name                               = "myADC4";
+adc5.adcBase                             = "ADCE_BASE";
+adc5.periphClock.$name                   = "driverlib_perClock10";
+adc5.periphClock.pinmuxPeripheralModule  = scripting.forceWrite("");
+adc5.periphConfig.$name                  = "driverlib_perConfig10";
+adc5.periphConfig.cpuSel                 = scripting.forceWrite("CPU1");
+adc5.periphConfig.pinmuxPeripheralModule = scripting.forceWrite("");
+
+const analog  = scripting.addModule("/driverlib/analog.js", {}, false);
+const analog1 = analog.addInstance({}, false);
+analog1.$name = "myANALOGPinMux0";
+adc1.analog   = analog1;
+adc2.analog   = analog1;
+adc3.analog   = analog1;
+adc4.analog   = analog1;
+adc5.analog   = analog1;
+
+epwm1.$name                  = "myEPWM0";
+epwm1.epwm.$assign           = "EPWM1";
+epwm1.epwm.epwm_aPin.$assign = "GPIO0";
+epwm1.epwm.epwm_bPin.$assign = "GPIO1";
+epwm1.periphClock.$name      = "driverlib_perClock0";
+epwm1.periphConfig.$name     = "driverlib_perConfig0";
+
+epwm2.$name                  = "myEPWM1";
+epwm2.epwm.$assign           = "EPWM2";
+epwm2.epwm.epwm_aPin.$assign = "GPIO2";
+epwm2.epwm.epwm_bPin.$assign = "GPIO3";
+epwm2.periphClock.$name      = "driverlib_perClock1";
+epwm2.periphConfig.$name     = "driverlib_perConfig1";
+
+epwm3.$name                  = "myEPWM2";
+epwm3.epwm.$assign           = "EPWM3";
+epwm3.epwm.epwm_aPin.$assign = "GPIO4";
+epwm3.epwm.epwm_bPin.$assign = "GPIO5";
+epwm3.periphClock.$name      = "driverlib_perClock2";
+epwm3.periphConfig.$name     = "driverlib_perConfig2";
+
+epwm4.$name                  = "myEPWM3";
+epwm4.epwm.$assign           = "EPWM4";
+epwm4.epwm.epwm_aPin.$assign = "GPIO6";
+epwm4.epwm.epwm_bPin.$assign = "GPIO7";
+epwm4.periphClock.$name      = "driverlib_perClock3";
+epwm4.periphConfig.$name     = "driverlib_perConfig3";
+
+epwm5.$name                  = "myEPWM4";
+epwm5.epwm.$assign           = "EPWM5";
+epwm5.epwm.epwm_aPin.$assign = "GPIO8";
+epwm5.epwm.epwm_bPin.$assign = "GPIO9";
+epwm5.periphClock.$name      = "driverlib_perClock4";
+epwm5.periphConfig.$name     = "driverlib_perConfig4";
+
+epwm6.$name                  = "myEPWM5";
+epwm6.epwm.$assign           = "EPWM7";
+epwm6.epwm.epwm_aPin.$assign = "GPIO12";
+epwm6.epwm.epwm_bPin.$assign = "GPIO13";
+epwm6.periphClock.$name      = "driverlib_perClock5";
+epwm6.periphConfig.$name     = "driverlib_perConfig5";
+
+eqep1.$name              = "myEQEP0";
+eqep1.periphClock.$name  = "driverlib_perClock12";
+eqep1.periphConfig.$name = "driverlib_perConfig12";
+
+eqep2.$name                               = "myEQEP1";
+eqep2.eqepBase                            = "EQEP2_BASE";
+eqep2.periphClock.$name                   = "driverlib_perClock13";
+eqep2.periphClock.pinmuxPeripheralModule  = scripting.forceWrite("");
+eqep2.periphConfig.$name                  = "driverlib_perConfig13";
+eqep2.periphConfig.cpuSel                 = scripting.forceWrite("CPU1");
+eqep2.periphConfig.pinmuxPeripheralModule = scripting.forceWrite("");
+
+gpio1.$name           = "LED_R";
+gpio1.direction       = "GPIO_DIR_MODE_OUT";
+gpio1.gpioPin.$assign = "GPIO19";
+
+gpio2.$name           = "LED_G";
+gpio2.direction       = "GPIO_DIR_MODE_OUT";
+gpio2.gpioPin.$assign = "GPIO62";
+
+inputxbar_input1.$name          = "myINPUTXBARINPUT0";
+inputxbar_input1.inputxbarGpio  = "GPIO84";
+inputxbar_input1.inputxbarInput = "XBAR_INPUT33";
+
+inputxbar_input2.$name          = "myINPUTXBARINPUT1";
+inputxbar_input2.inputxbarGpio  = "GPIO17";
+inputxbar_input2.inputxbarInput = "XBAR_INPUT34";
+
+inputxbar_input3.$name          = "myINPUTXBARINPUT2";
+inputxbar_input3.inputxbarGpio  = "GPIO34";
+inputxbar_input3.inputxbarInput = "XBAR_INPUT35";
+
+inputxbar_input4.$name          = "myINPUTXBARINPUT3";
+inputxbar_input4.inputxbarInput = "XBAR_INPUT37";
+inputxbar_input4.inputxbarGpio  = "GPIO11";
+
+inputxbar_input5.$name          = "myINPUTXBARINPUT4";
+inputxbar_input5.inputxbarInput = "XBAR_INPUT38";
+inputxbar_input5.inputxbarGpio  = "GPIO10";
+
+inputxbar_input6.$name          = "myINPUTXBARINPUT5";
+inputxbar_input6.inputxbarInput = "XBAR_INPUT39";
+inputxbar_input6.inputxbarGpio  = "GPIO32";
+
+
+mcan1.$name                   = "myMCAN0";
+mcan1.mcan.$assign            = "MCANA";
+mcan1.mcan.mcan_rxPin.$assign = "GPIO65";
+mcan1.mcan.mcan_txPin.$assign = "GPIO64";
+mcan1.periphClock.$name       = "driverlib_perClock11";
+mcan1.periphConfig.$name      = "driverlib_perConfig11";
+
+uart1.$name              = "myUART0";
+uart1.txQual.$name       = "myGPIOQUAL0";
+uart1.rxQual.$name       = "myGPIOQUAL1";
+uart1.periphClock.$name  = "driverlib_perClock14";
+uart1.periphConfig.$name = "driverlib_perConfig14";
+
+/**
+ * Pinmux solution for unlocked pins/peripherals. This ensures that minor changes to the automatic solver in a future
+ * version of the tool will not impact the pinmux you originally saw.  These lines can be completely deleted in order to
+ * re-solve from scratch.
+ */
+analog1.analog.$suggestSolution                           = "ANALOG";
+analog1.analog.c4Pin.$suggestSolution                     = "C4";
+analog1.analog.c5Pin.$suggestSolution                     = "C5";
+analog1.analog["a8, gpio226Pin"].$suggestSolution         = "A8, GPIO226";
+analog1.analog["b8, gpio232Pin"].$suggestSolution         = "B8, GPIO232";
+analog1.analog["b9, gpio233Pin"].$suggestSolution         = "B9, GPIO233";
+analog1.analog["b10, gpio234Pin"].$suggestSolution        = "B10, GPIO234";
+analog1.analog["b11, gpio235Pin"].$suggestSolution        = "B11, GPIO235";
+analog1.analog["c8, gpio238Pin"].$suggestSolution         = "C8, GPIO238";
+analog1.analog["c9, gpio239Pin"].$suggestSolution         = "C9, GPIO239";
+analog1.analog["a14/b14/c14/d14/e14Pin"].$suggestSolution = "A14/B14/C14/D14/E14";
+analog1.analog["a15/b15/c15/d15/e15Pin"].$suggestSolution = "A15/B15/C15/D15/E15";
+analog1.analog["a0/c24/daca_outPin"].$suggestSolution     = "A0/C24/DACA_OUT";
+analog1.analog["a1/c25Pin"].$suggestSolution              = "A1/C25";
+analog1.analog["a2/d24Pin"].$suggestSolution              = "A2/D24";
+analog1.analog["a3/d25Pin"].$suggestSolution              = "A3/D25";
+analog1.analog["a4/d28Pin"].$suggestSolution              = "A4/D28";
+analog1.analog["a5/d29Pin"].$suggestSolution              = "A5/D29";
+analog1.analog["a6/e24, gpio224Pin"].$suggestSolution     = "A6/E24, GPIO224";
+analog1.analog["a7/e25, gpio225Pin"].$suggestSolution     = "A7/E25, GPIO225";
+analog1.analog["b0/c26/vdacPin"].$suggestSolution         = "B0/C26/VDAC";
+analog1.analog["b1/c27Pin"].$suggestSolution              = "B1/C27";
+analog1.analog["b2/d26Pin"].$suggestSolution              = "B2/D26";
+analog1.analog["b3/d27Pin"].$suggestSolution              = "B3/D27";
+analog1.analog["b4/d30Pin"].$suggestSolution              = "B4/D30";
+analog1.analog["b5/d31Pin"].$suggestSolution              = "B5/D31";
+analog1.analog["c0/e28Pin"].$suggestSolution              = "C0/E28";
+analog1.analog["c1/e29Pin"].$suggestSolution              = "C1/E29";
+analog1.analog["c2/e30Pin"].$suggestSolution              = "C2/E30";
+analog1.analog["c3/e31Pin"].$suggestSolution              = "C3/E31";
+analog1.analog["d0/b24Pin"].$suggestSolution              = "D0/B24";
+analog1.analog["d1/b25Pin"].$suggestSolution              = "D1/B25";
+analog1.analog["d2/b26Pin"].$suggestSolution              = "D2/B26";
+analog1.analog["d3/b27Pin"].$suggestSolution              = "D3/B27";
+analog1.analog["d5/b29, gpio241Pin"].$suggestSolution     = "D5/B29, GPIO241";
+analog1.analog["d6/b30, gpio242Pin"].$suggestSolution     = "D6/B30, GPIO242";
+analog1.analog["d7/b31, gpio243Pin"].$suggestSolution     = "D7/B31, GPIO243";
+analog1.analog["e0/a24/dacb_outPin"].$suggestSolution     = "E0/A24/DACB_OUT";
+analog1.analog["e1/a25Pin"].$suggestSolution              = "E1/A25";
+analog1.analog["e2/a26Pin"].$suggestSolution              = "E2/A26";
+analog1.analog["e3/a27Pin"].$suggestSolution              = "E3/A27";
+analog1.analog["e4/a28, gpio246Pin"].$suggestSolution     = "E4/A28, GPIO246";
+analog1.analog["e5/a29, gpio247Pin"].$suggestSolution     = "E5/A29, GPIO247";
+analog1.analog["e6/a30, gpio248Pin"].$suggestSolution     = "E6/A30, GPIO248";
+analog1.analog["e7/a31, gpio249Pin"].$suggestSolution     = "E7/A31, GPIO249";
+jtag.JTAG.$suggestSolution                                = "JTAG";
+jtag.JTAG.tdoPin.$suggestSolution                         = "GPIO223/TDO";
+jtag.JTAG.tdiPin.$suggestSolution                         = "GPIO222/TDI";
+uart1.uart.$suggestSolution                               = "UARTA";
+uart1.uart.uart_txPin.$suggestSolution                    = "GPIO38";
+uart1.uart.uart_rxPin.$suggestSolution                    = "GPIO43";

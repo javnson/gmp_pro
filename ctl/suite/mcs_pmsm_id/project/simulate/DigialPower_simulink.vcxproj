@@ -80,20 +80,20 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(ProjectDir)..\..\implement\common;$(ProjectDir)..\..\implement\simulate;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)sdpe_mgr;$(ProjectDir)..\..\src;$(ProjectDir)xplt\;$(IncludePath)</IncludePath>
     <ExternalIncludePath>$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_common;$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_simulink;$(ProjectDir);$(GMP_PRO_LOCATION);$(GMP_PRO_LOCATION)/third_party/asio/include;$(GMP_PRO_LOCATION)/third_party/eigen/Eigen;$(GMP_PRO_LOCATION)/csp/windows_simulink;$(GMP_PRO_LOCATION)/third_party/fmt/include/fmt;$(VC_IncludePath);$(WindowsSDK_IncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(ProjectDir)..\..\implement\common;$(ProjectDir)..\..\implement\simulate;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)sdpe_mgr;$(ProjectDir)..\..\src;$(ProjectDir)xplt\;$(IncludePath)</IncludePath>
     <ExternalIncludePath>$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_common;$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_simulink;$(ProjectDir);$(GMP_PRO_LOCATION);$(GMP_PRO_LOCATION)/third_party/asio/include;$(GMP_PRO_LOCATION)/third_party/eigen/Eigen;$(GMP_PRO_LOCATION)/csp/windows_simulink;$(GMP_PRO_LOCATION)/third_party/fmt/include/fmt;$(VC_IncludePath);$(WindowsSDK_IncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)..\..\src;$(ProjectDir)xplt\;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)sdpe_mgr;$(ProjectDir)..\..\src;$(ProjectDir)xplt\;$(IncludePath)</IncludePath>
     <ExternalIncludePath>$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_common;$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_simulink;$(ProjectDir);$(GMP_PRO_LOCATION);$(GMP_PRO_LOCATION)/third_party/asio/include;$(GMP_PRO_LOCATION)/third_party/eigen/Eigen;$(GMP_PRO_LOCATION)/csp/windows_simulink;$(GMP_PRO_LOCATION)/third_party/fmt/include/fmt;$(VC_IncludePath);$(WindowsSDK_IncludePath)</ExternalIncludePath>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)..\..\implement\common;$(ProjectDir)..\..\implement\simulate;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)sdpe_mgr;$(ProjectDir)..\..\src;$(ProjectDir)xplt\;$(IncludePath)</IncludePath>
     <ExternalIncludePath>$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_common;$(GMP_PRO_LOCATION)\ctl\suite\motor_control\pmsm\implement\user_simulink;$(ProjectDir);$(GMP_PRO_LOCATION);$(GMP_PRO_LOCATION)/third_party/asio/include;$(GMP_PRO_LOCATION)/third_party/eigen/Eigen;$(GMP_PRO_LOCATION)/csp/windows_simulink;$(GMP_PRO_LOCATION)/third_party/fmt/include/fmt;$(VC_IncludePath);$(WindowsSDK_IncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
@@ -168,6 +168,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\ctl_main.c" />
+    <ClCompile Include="..\..\src\pmsm_offline_id_if.c" />
     <ClCompile Include="..\..\src\user_main.c" />
     <ClCompile Include="DigialPower_simulink.cpp" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_adv_back_stepping.c" />
@@ -187,6 +188,13 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_component_interface.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pi.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pid.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dq_pi.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dq_ladrc1.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_pmsm_offline_id_sm.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_pmsm_offline_id_sensored.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_encoder_switcher.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\dsa_scope.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\dsa_trigger.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_continuous_pid_aw.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_biquad_filter.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_df.c" />
@@ -219,7 +227,6 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_dtc_svm_core.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_encoder.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_foc_core.c" />
-    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_imfoc_core.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_inverter_consultant.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_ipm_fw.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_ladrc_pos_ctrl.c" />
@@ -248,7 +255,6 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_slope_limiter.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_sogi.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_track_pid.c" />
-    <ClCompile Include="gmp_src_mgr\gmp_src\dsa_trigger.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\gmp_at_device.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\gmp_dev_util.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\gmp_mm_block_memory.c" />

@@ -16,56 +16,76 @@ void init_pmsm_offline_id()
     pmsm_oid_cfg.i_base = CTRL_CURRENT_BASE;
     pmsm_oid_cfg.w_base = MOTOR_PARAM_RATED_FREQUENCY * 2.0f * 3.1415926f;
 
-    // 基础开关配置
+    // Basic execution configuration
     pmsm_oid_cfg.cfg_basic.isr_freq_hz = CONTROLLER_FREQUENCY;
     pmsm_oid_cfg.cfg_basic.pole_pairs = MOTOR_PARAM_POLE_PAIRS;
     pmsm_oid_cfg.cfg_basic.is_sensorless = 0;
 
-    // 使能辨识的流程 (全开)
-    pmsm_oid_cfg.cfg_basic.flag_enable_prepare = 1; // 打开准备阶段 (连接 ADC 校准)
-    pmsm_oid_cfg.cfg_basic.flag_enable_rs_dt = 1;
-    pmsm_oid_cfg.cfg_basic.flag_enable_ldq = 1;
-    pmsm_oid_cfg.cfg_basic.flag_enable_flux = 1;
-    pmsm_oid_cfg.cfg_basic.flag_enable_mech_id = 0;
+    // Identification stage enables
+    pmsm_oid_cfg.cfg_basic.flag_enable_prepare = MCS_PMSM_ID_ENABLE_PREPARE;
+    pmsm_oid_cfg.cfg_basic.flag_enable_encoder_calibration = MCS_PMSM_ID_ENABLE_ENCODER_CALIBRATION;
+    pmsm_oid_cfg.cfg_basic.flag_enable_rs_dt = MCS_PMSM_ID_ENABLE_RS_DT;
+    pmsm_oid_cfg.cfg_basic.flag_enable_ldq = MCS_PMSM_ID_ENABLE_LDQ;
+    pmsm_oid_cfg.cfg_basic.flag_enable_flux = MCS_PMSM_ID_ENABLE_FLUX;
+    pmsm_oid_cfg.cfg_basic.flag_enable_mech_id = MCS_PMSM_ID_ENABLE_MECHANICAL_ID;
 
-    // --- 子模块具体参数配置 (示例) ---
+    // Identification submodule settings
     // Rs & DT
-    pmsm_oid_cfg.cfg_rs_dt.max_current_pu = 0.5f;
-    pmsm_oid_cfg.cfg_rs_dt.min_current_pu = 0.1f;
-    pmsm_oid_cfg.cfg_rs_dt.steps = 5;
-    pmsm_oid_cfg.cfg_rs_dt.align_time_s = 1.0f;
-    pmsm_oid_cfg.cfg_rs_dt.measure_delay_s = 0.2f;
-    pmsm_oid_cfg.cfg_rs_dt.measure_points = 100; // 采集 100 点求平均
+    pmsm_oid_cfg.cfg_rs_dt.max_current_pu = MCS_PMSM_ID_RSDT_MAX_CURRENT_A / CTRL_CURRENT_BASE;
+    pmsm_oid_cfg.cfg_rs_dt.min_current_pu = MCS_PMSM_ID_RSDT_MIN_CURRENT_A / CTRL_CURRENT_BASE;
+    pmsm_oid_cfg.cfg_rs_dt.steps = MCS_PMSM_ID_RSDT_STEPS;
+    pmsm_oid_cfg.cfg_rs_dt.align_time_s = MCS_PMSM_ID_RSDT_ALIGN_TIME_S;
+    pmsm_oid_cfg.cfg_rs_dt.measure_delay_s = MCS_PMSM_ID_RSDT_MEASURE_DELAY_S;
+    pmsm_oid_cfg.cfg_rs_dt.measure_points = MCS_PMSM_ID_RSDT_MEASURE_POINTS;
 
     // Ld & Lq
-    pmsm_oid_cfg.cfg_ld_lq.pulse_voltage_pu = 0.02f;
-    pmsm_oid_cfg.cfg_ld_lq.max_bias_curr_pu = 0.5f;
-    pmsm_oid_cfg.cfg_ld_lq.bias_steps = 12;
-    pmsm_oid_cfg.cfg_ld_lq.align_current_pu = 0.5f;
-    pmsm_oid_cfg.cfg_ld_lq.settle_time_s = 0.2f;
-    pmsm_oid_cfg.cfg_ld_lq.pulse_time_s = 0.002f; // 2ms 极短脉冲
-    pmsm_oid_cfg.cfg_ld_lq.cooldown_time_s = 0.05f;
+    pmsm_oid_cfg.cfg_ld_lq.pulse_voltage_pu = MCS_PMSM_ID_LDQ_PULSE_VOLTAGE_V / CTRL_VOLTAGE_BASE;
+    pmsm_oid_cfg.cfg_ld_lq.max_bias_curr_pu = MCS_PMSM_ID_LDQ_MAX_BIAS_CURRENT_A / CTRL_CURRENT_BASE;
+    pmsm_oid_cfg.cfg_ld_lq.bias_steps = MCS_PMSM_ID_LDQ_BIAS_STEPS;
+    pmsm_oid_cfg.cfg_ld_lq.align_current_pu = MCS_PMSM_ID_LDQ_ALIGN_CURRENT_A / CTRL_CURRENT_BASE;
+    pmsm_oid_cfg.cfg_ld_lq.settle_time_s = MCS_PMSM_ID_LDQ_SETTLE_TIME_S;
+    pmsm_oid_cfg.cfg_ld_lq.pulse_time_s = MCS_PMSM_ID_LDQ_PULSE_TIME_S;
+    pmsm_oid_cfg.cfg_ld_lq.cooldown_time_s = MCS_PMSM_ID_LDQ_COOLDOWN_TIME_S;
 
     // Flux Linkage
-    pmsm_oid_cfg.cfg_flux.min_target_speed_pu = 0.1f;
-    pmsm_oid_cfg.cfg_flux.max_target_speed_pu = 0.6f;
-    pmsm_oid_cfg.cfg_flux.steps = 6;
-    pmsm_oid_cfg.cfg_flux.if_current_pu = 0.4f;
-    pmsm_oid_cfg.cfg_flux.settle_time_s = 2.0f;
-    pmsm_oid_cfg.cfg_flux.measure_points = 2000;
+    pmsm_oid_cfg.cfg_flux.min_target_speed_pu = MCS_PMSM_ID_FLUX_MIN_SPEED_RPM / MOTOR_PARAM_MAX_SPEED;
+    pmsm_oid_cfg.cfg_flux.max_target_speed_pu = MCS_PMSM_ID_FLUX_MAX_SPEED_RPM / MOTOR_PARAM_MAX_SPEED;
+    pmsm_oid_cfg.cfg_flux.steps = MCS_PMSM_ID_FLUX_STEPS;
+    pmsm_oid_cfg.cfg_flux.if_current_pu = MCS_PMSM_ID_FLUX_IF_CURRENT_A / CTRL_CURRENT_BASE;
+    pmsm_oid_cfg.cfg_flux.settle_time_s = MCS_PMSM_ID_FLUX_SETTLE_TIME_S;
+    pmsm_oid_cfg.cfg_flux.measure_points = MCS_PMSM_ID_FLUX_MEASURE_POINTS;
 
-    // Mechanical
-    pmsm_oid_cfg.cfg_mech.low_speed_pu = 0.2f;
-    pmsm_oid_cfg.cfg_mech.high_speed_pu = 0.6f;
-    pmsm_oid_cfg.cfg_mech.accel_iq_pu = 0.5f;
-    pmsm_oid_cfg.cfg_mech.decel_iq_pu = -0.5f;
-    pmsm_oid_cfg.cfg_mech.max_vbus_pu = 1.2f; // 120% OV 保护
-    pmsm_oid_cfg.cfg_mech.if_current_pu = 0.2f;
-    pmsm_oid_cfg.cfg_mech.settle_time_s = 2.0f;
-    pmsm_oid_cfg.cfg_mech.transition_time_s = 0.5f;
+    // Mechanical identification (real encoder + real current loop)
+    pmsm_oid_cfg.cfg_mech.target_speed_pu = MCS_PMSM_ID_MECH_TARGET_SPEED_RPM / MOTOR_PARAM_MAX_SPEED;
+    pmsm_oid_cfg.cfg_mech.fit_low_ratio = MCS_PMSM_ID_MECH_FIT_LOW_RATIO;
+    pmsm_oid_cfg.cfg_mech.fit_high_ratio = MCS_PMSM_ID_MECH_FIT_HIGH_RATIO;
+    pmsm_oid_cfg.cfg_mech.pwm_off_ratio = MCS_PMSM_ID_MECH_PWM_OFF_RATIO;
+    pmsm_oid_cfg.cfg_mech.accel_iq_pu = MCS_PMSM_ID_MECH_ACCEL_CURRENT_A / CTRL_CURRENT_BASE;
+    pmsm_oid_cfg.cfg_mech.max_test_time_s = MCS_PMSM_ID_MECH_MAX_TEST_TIME_S;
+    pmsm_oid_cfg.cfg_mech.record_time_s = MCS_PMSM_ID_MECH_RECORD_TIME_S;
+    pmsm_oid_cfg.cfg_mech.min_fit_r2 = MCS_PMSM_ID_MECH_MIN_FIT_R2;
+    pmsm_oid_cfg.cfg_mech.min_fit_samples = MCS_PMSM_ID_MECH_MIN_FIT_SAMPLES;
 
-    // 初始化辨识引擎
+    // Sensored encoder calibration
+    pmsm_oid_cfg.cfg_encoder.align_current_pu = MCS_PMSM_ID_ENCODER_ALIGN_CURRENT_A / CTRL_CURRENT_BASE;
+    pmsm_oid_cfg.cfg_encoder.noise_check_time_s = MCS_PMSM_ID_ENCODER_NOISE_CHECK_TIME_S;
+    pmsm_oid_cfg.cfg_encoder.align_settle_time_s = MCS_PMSM_ID_ENCODER_ALIGN_SETTLE_TIME_S;
+    pmsm_oid_cfg.cfg_encoder.sweep_elec_hz = MCS_PMSM_ID_ENCODER_SWEEP_ELEC_HZ;
+    pmsm_oid_cfg.cfg_encoder.anchor_settle_time_s = MCS_PMSM_ID_ENCODER_ANCHOR_SETTLE_TIME_S;
+    pmsm_oid_cfg.cfg_encoder.max_sample_jump_pu = MCS_PMSM_ID_ENCODER_MAX_SAMPLE_JUMP_PU;
+    pmsm_oid_cfg.cfg_encoder.max_stationary_span_pu = MCS_PMSM_ID_ENCODER_MAX_STATIONARY_SPAN_PU;
+    pmsm_oid_cfg.cfg_encoder.min_cycle_motion_pu = MCS_PMSM_ID_ENCODER_MIN_CYCLE_MOTION_PU;
+    pmsm_oid_cfg.cfg_encoder.max_cycle_deviation_pu = MCS_PMSM_ID_ENCODER_MAX_CYCLE_DEVIATION_PU;
+    pmsm_oid_cfg.cfg_encoder.zero_return_tolerance_pu = MCS_PMSM_ID_ENCODER_ZERO_RETURN_TOLERANCE_PU;
+    pmsm_oid_cfg.cfg_encoder.max_pole_pairs = MCS_PMSM_ID_ENCODER_MAX_POLE_PAIRS;
+
+    // Initialize the identification engine.
     ctl_init_pmsm_offline_id_sm(&pmsm_oid, &pmsm_oid_cfg, dsa_buffer, DSA_BUFFER_SIZE);
+
+    // The encoder stage is hosted by the suite while the legacy master source
+    // retains the target-specific PREPARE/ADC handshake.
+    pmsm_oid.sub_encoder.cfg = pmsm_oid_cfg.cfg_encoder;
+    pmsm_oid.sub_encoder.sm = PMSM_ID_ENCODER_DISABLED;
 
     pmsm_oid.enc = &pos_enc.encif;
 }
@@ -78,13 +98,25 @@ void loop_pmsm_offline_id()
     if (pmsm_oid.sm == PMSM_OFFLINE_ID_PREPARE)
     {
 
-        // 监控 ADC 校准是否彻底完成 (根据你代码里 index > 13 就清零 flag 的逻辑)
+        // Wait for the target ADC calibration handshake.
         if (flag_enable_adc_calibrator == 0 && index_adc_calibrator > 7)
         {
-            // 校准完成，手动将状态机推入下一个环节！
+            // Calibration completed; advance to the next enabled stage.
             pmsm_oid.sm = ctl_oid_get_next_state(&pmsm_oid, PMSM_OFFLINE_ID_PREPARE);
-            // 这里声明一个外部可以调用的 ctl_oid_init_target_state
-            extern void ctl_oid_init_target_state(ctl_pmsm_offline_id_t * ctx);
+            ctl_oid_init_target_state(&pmsm_oid);
+        }
+    }
+
+    if (pmsm_oid.sm == PMSM_OFFLINE_ID_ENCODER_CALIB)
+    {
+        ctl_loop_oid_encoder(&pmsm_oid);
+        if (pmsm_oid.sub_encoder.sm == PMSM_ID_ENCODER_FAULT)
+        {
+            pmsm_oid.sm = PMSM_OFFLINE_ID_FAULT;
+        }
+        else if (pmsm_oid.sub_encoder.sm == PMSM_ID_ENCODER_COMPLETE)
+        {
+            pmsm_oid.sm = ctl_oid_get_next_state(&pmsm_oid, PMSM_OFFLINE_ID_ENCODER_CALIB);
             ctl_oid_init_target_state(&pmsm_oid);
         }
     }
@@ -209,6 +241,29 @@ void ctl_id_disable_output(ctl_pmsm_offline_id_t* ctx)
     ctl_disable_foc_core_current_ctrl(&mtr_ctrl);
     ctl_set_foc_core_idq_ref(&mtr_ctrl, float2ctrl(0.0f), float2ctrl(0.0f));
     ctl_set_foc_core_vdq_ref(&mtr_ctrl, float2ctrl(0.0f), float2ctrl(0.0f));
+}
+
+void ctl_id_set_pwm_output(ctl_pmsm_offline_id_t* ctx, fast_gt enable)
+{
+    GMP_UNUSED_VAR(ctx);
+    if (enable)
+    {
+        flag_oid_pwm_inhibit = 0;
+        ctl_fast_enable_output();
+    }
+    else
+    {
+        flag_oid_pwm_inhibit = 1;
+        ctl_fast_disable_output();
+    }
+}
+
+void ctl_id_commit_encoder_calibration(ctl_pmsm_offline_id_t* ctx, uint16_t pole_pairs,
+                                       ctrl_gt encoder_offset_pu)
+{
+    GMP_UNUSED_VAR(ctx);
+    pos_enc.pole_pairs = pole_pairs;
+    ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, encoder_offset_pu);
 }
 
 /**

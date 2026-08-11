@@ -136,6 +136,19 @@ class SDPEV2Tests(unittest.TestCase):
             self.assertIn("#include <ctl/component/hardware_preset/half_bridge/fsbb_inline_shunt_half_bridge.h>", header)
             self.assertIn("#include <ctl/component/hardware_preset/current_sensor/tmcs1133_b2a.h>", header)
 
+    def test_export_binding_expands_braced_entity_symbols_with_spaces(self) -> None:
+        lib = self.load_library()
+        with tempfile.TemporaryDirectory() as tmp:
+            generator = HeaderGenerator(lib, Path(tmp))
+            self.assertEqual(
+                generator._resolve_binding_value({"export": "${sm060r20b30mnad.Max Speed}"}),
+                "SM060R20B30MNAD_MAX_SPEED",
+            )
+            self.assertEqual(
+                generator._resolve_binding_value({"literal": "${sm060r20b30mnad.Max Speed}"}),
+                "${sm060r20b30mnad.Max Speed}",
+            )
+
     def test_project_header_renders_metadata_and_macro_options(self) -> None:
         lib = self.load_library()
         data = read_project("mcs_pmsm_nt_sensor_binding")
@@ -200,6 +213,14 @@ class SDPEV2Tests(unittest.TestCase):
             self.assertIn("@brief Build Options.", header)
             self.assertIn("%% Debug Switches", matlab)
             self.assertIn("%% Build Options", matlab)
+
+    def test_empty_project_description_does_not_emit_trailing_whitespace(self) -> None:
+        lib = self.load_library()
+        data = read_project("dps_fsbb_iris_node")
+        data["requirements"][0]["description"] = ""
+        with tempfile.TemporaryDirectory() as tmp:
+            header = HeaderGenerator(lib, Path(tmp)).render_project_header(data)
+            self.assertTrue(all(line.rstrip() == line for line in header.splitlines()))
 
     def test_project_macros_can_be_weak(self) -> None:
         lib = self.load_library()

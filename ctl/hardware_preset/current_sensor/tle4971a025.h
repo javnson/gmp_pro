@@ -38,72 +38,54 @@ extern "C"
 /**
  * @brief Main sensing IC or technology name.
  */
-#ifndef TLE4971A025_CHIP
 #define TLE4971A025_CHIP "TLE4971A025"
-#endif // TLE4971A025_CHIP
 
 /**
  * @brief Current sensing technology, such as Hall, shunt, or fluxgate.
  */
-#ifndef TLE4971A025_SENSOR_TYPE
 #define TLE4971A025_SENSOR_TYPE "Coreless Hall"
-#endif // TLE4971A025_SENSOR_TYPE
 
 /**
  * @brief Nominal measurable current range.
  * @unit A
  */
-#ifndef TLE4971A025_RANGE_A
 #define TLE4971A025_RANGE_A (25.0f)
-#endif // TLE4971A025_RANGE_A
 
 /**
  * @brief Minimum output voltage.
  * @unit V
  */
-#ifndef TLE4971A025_OUTPUT_MIN_V
 #define TLE4971A025_OUTPUT_MIN_V (0.0f)
-#endif // TLE4971A025_OUTPUT_MIN_V
 
 /**
  * @brief Maximum output voltage.
  * @unit V
  */
-#ifndef TLE4971A025_OUTPUT_MAX_V
 #define TLE4971A025_OUTPUT_MAX_V (3.3f)
-#endif // TLE4971A025_OUTPUT_MAX_V
 
 /**
  * @brief Zero-current output bias.
  * @unit V
  */
-#ifndef TLE4971A025_BIAS_V
 #define TLE4971A025_BIAS_V (1.65f)
-#endif // TLE4971A025_BIAS_V
 
 /**
  * @brief Current sensor sensitivity.
  * @unit mV/A
  */
-#ifndef TLE4971A025_SENSITIVITY_MV_PER_A
 #define TLE4971A025_SENSITIVITY_MV_PER_A (48.0f)
-#endif // TLE4971A025_SENSITIVITY_MV_PER_A
 
 /**
  * @brief Typical small-signal bandwidth.
  * @unit Hz
  */
-#ifndef TLE4971A025_BANDWIDTH_HZ
 #define TLE4971A025_BANDWIDTH_HZ (210000.0f)
-#endif // TLE4971A025_BANDWIDTH_HZ
 
 /**
  * @brief Sensor internal series resistance.
  * @unit ohm
  */
-#ifndef TLE4971A025_INTERNAL_RESISTANCE_OHM
 #define TLE4971A025_INTERNAL_RESISTANCE_OHM (0.0f)
-#endif // TLE4971A025_INTERNAL_RESISTANCE_OHM
 
 // Derived macros
 /**

@@ -1,0 +1,18 @@
+{
+  "id": "dioscuri_voltage_sensor",
+  "schema": "voltage_sensor",
+  "display_name": "Dioscuri AMC1311 Unidirectional Voltage Sensor",
+  "vendor": "GMP / Texas Instruments",
+  "datasheet_url": "https://www.ti.com/lit/ds/symlink/amc1311.pdf",
+  "document_url": "ctl/suite/dps_clllc/project/hw/LLC_Debug_Kit.pdf",
+  "macro_prefix": "DIOSCURI_VOLTAGE_SENSOR",
+  "tags": ["voltage_sensor", "isolated", "unidirectional", "amc1311", "dioscuri"],
+  "parameters": {
+    "chip": "AMC1311BDWVR + 3x300k/15k divider + 1.65 differential stage",
+    "rated_voltage_v": 122.0,
+    "bias_v": 0.0,
+    "sensitivity_v_per_v": 0.02705,
+    "input_resistance_ohm": 915000.0,
+    "bandwidth_hz": 100000.0
+  }
+}

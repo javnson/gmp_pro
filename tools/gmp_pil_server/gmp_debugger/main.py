@@ -1,18 +1,29 @@
+import html
+import os
 import sys
+from datetime import datetime
+
 import serial
 import serial.tools.list_ports
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
-                             QHBoxLayout, QTabWidget, QGroupBox, QComboBox, 
-                             QPushButton, QTextBrowser, QLabel, QFormLayout)
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
+                             QHBoxLayout, QTabWidget, QGroupBox, QComboBox,
+                             QPushButton, QTextBrowser, QLabel, QFormLayout,
+                             QProgressBar, QSizePolicy, QMenu, QToolButton)
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 
+# Shared communication engine.
 from core_datalink import HermesDatalinkQt
+from resource_discovery import ResourceDiscovery
+
+# Decoupled feature pages.
 from tabs.tab_ascii import TabAscii
 from tabs.tab_raw import TabRaw
 from tabs.tab_sim import TabSim
 from tabs.tab_pil import TabPilBridge
 from tabs.tab_tunable import TabTunableManager
-
+from tabs.tab_mem_persp import TabMemPersp
+from tabs.tab_chronos import TabChronosManager
+from tabs.tab_dsa_scope import TabDsaScope
 
 DATA_BITS_MAP = {'8': serial.EIGHTBITS, '7': serial.SEVENBITS, '6': serial.SIXBITS, '5': serial.FIVEBITS}
 STOP_BITS_MAP = {'1': serial.STOPBITS_ONE, '1.5': serial.STOPBITS_ONE_POINT_FIVE, '2': serial.STOPBITS_TWO}
@@ -21,15 +32,80 @@ PARITY_MAP = {
     'Odd': serial.PARITY_ODD, 'Mark': serial.PARITY_MARK, 'Space': serial.PARITY_SPACE
 }
 
+LOG_SOURCE_COLORS = {
+    "System": "#455A64",
+    "Serial Terminal": "#546E7A",
+    "Loop Test": "#00897B",
+    "PIL Simulation": "#3949AB",
+    "PIL Bridge": "#7B1FA2",
+    "Tunable": "#2E7D32",
+    "Memory": "#EF6C00",
+    "Chronos": "#0277BD",
+    "Scope": "#C62828",
+}
+
+
+class LogFilterMenu(QToolButton):
+    """Dropdown checklist controlling which page logs remain visible."""
+
+    visibility_changed = pyqtSignal()
+
+    def __init__(self, sources: list[str], parent=None) -> None:
+        super().__init__(parent)
+        self.setPopupMode(QToolButton.InstantPopup)
+        self.setToolButtonStyle(Qt.ToolButtonTextOnly)
+        self._actions = {}
+        menu = QMenu(self)
+        for source in sources:
+            action = menu.addAction(source)
+            action.setCheckable(True)
+            action.setChecked(True)
+            action.toggled.connect(self._on_filter_toggled)
+            self._actions[source] = action
+        self.setMenu(menu)
+        self._update_caption()
+
+    def visible_sources(self) -> set[str]:
+        """Return the source names currently selected for display."""
+        return {name for name, action in self._actions.items() if action.isChecked()}
+
+    def _on_filter_toggled(self, _checked: bool) -> None:
+        """Refresh the summary caption and notify the log view."""
+        self._update_caption()
+        self.visibility_changed.emit()
+
+    def _update_caption(self) -> None:
+        """Summarize the number of visible page sources."""
+        visible_count = len(self.visible_sources())
+        self.setText(f"Sources: {visible_count}/{len(self._actions)}  ▾")
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("GMP Datalink Debugger / PIL Server")
-        self.resize(1100, 650) # 稍微加宽一点窗口
+        target_unit_bytes = int(os.environ.get("GMP_DATALINK_TARGET_UNIT_BYTES", "1"))
+        if target_unit_bytes not in (1, 2):
+            target_unit_bytes = 1
+        self.setWindowTitle(
+            f"GMP Data Link Debugger / PIL Server — u{target_unit_bytes * 8} Target Profile"
+        )
+        self.resize(1100, 650)
         
+        # Create the single shared communication and discovery services.
         self.hermes = HermesDatalinkQt()
-        self.hermes.sig_log_msg.connect(self.log_message)
-        self.hermes.sig_conn_state.connect(self.update_ui_connection_state) 
+        self.discovery = ResourceDiscovery(self.hermes)
+        self.hermes.sig_log_event.connect(self.log_message)
+        self.hermes.sig_log_msg.connect(lambda message: self.log_message("System", message))
+        self.hermes.sig_conn_state.connect(self.update_ui_connection_state)
+        self.discovery.discovery_error.connect(
+            lambda message: self.log_message("System", message)
+        )
+        self.log_entries: list[tuple[str, str, str]] = []
+        
+        self.total_tx_bytes = 0
+        self.total_rx_bytes = 0
+        self.last_tx_bytes = 0
+        self.last_rx_bytes = 0
+        self.hermes.sig_bus_event.connect(self._on_bus_event_for_stats)
         
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -38,56 +114,67 @@ class MainWindow(QMainWindow):
         self.tabs = QTabWidget()
         main_layout.addWidget(self.tabs, stretch=4)
 
-	    # 挂载 Tab 1: 纯串口助手
+        # Mount feature pages and inject their shared services.
         self.tab_raw = TabRaw(self.hermes)
-        self.tabs.addTab(self.tab_raw, "1. 标准串口调试助手 (RAW)")
+        self.tabs.addTab(self.tab_raw, "1. Serial Terminal (RAW)")
         
-        # 挂载 Tab 2: GMP 协议测试
         self.tab_ascii = TabAscii(self.hermes)
-        self.tabs.addTab(self.tab_ascii, "2. GMP DL协议在环测试 (ECHO)")
+        self.tabs.addTab(self.tab_ascii, "2. Data Link Loop Test (ECHO)")
 
-        # 【新增】挂载 Tab 3: PIL 仿真仪表盘
         self.tab_sim = TabSim(self.hermes)
-        self.tabs.addTab(self.tab_sim, "3. PIL 在环仿真引擎")
+        self.tabs.addTab(self.tab_sim, "3. PIL Simulation Engine")
 
-        # 挂载 Tab 4: PIL 仿真网桥 (替代原有的 TabSim 或作为 Tab 4)
         self.tab_pil_bridge = TabPilBridge(self.hermes, self.tab_sim)
-        self.tabs.addTab(self.tab_pil_bridge, "4. Simulink-PIL 网桥")
+        self.tabs.addTab(self.tab_pil_bridge, "4. Simulink-PIL Bridge")
 
-        # 挂载 Tab 5: 在线可调参数工作台
-        self.tab_tunable = TabTunableManager(self.hermes)
-        self.tabs.addTab(self.tab_tunable, "5. 参数在线整定工作台")
+        self.tab_tunable = TabTunableManager(self.hermes, self.discovery)
+        self.tabs.addTab(self.tab_tunable, "5. Online Tunable Workbench")
 
-        # 连线：让网桥吐出的数据流，直接灌进仿真引擎的 UI 更新函数里
+        self.tab_mem_persp = TabMemPersp(self.hermes, self.discovery)
+        self.tabs.addTab(self.tab_mem_persp, "6. Argos Memory Perspective")
+
+        self.tab_chronos = TabChronosManager(self.hermes)
+        self.tabs.addTab(self.tab_chronos, "7. Chronos Waveform Recorder")
+
+        self.tab_dsa_scope = TabDsaScope(self.hermes)
+        self.tabs.addTab(self.tab_dsa_scope, "8. Data Link Scope")
+
+        # Cross-page bus ownership signals.
         self.tab_pil_bridge.sig_rx_parsed.connect(self.tab_sim.update_rx_ui_from_bridge)
-
-        # 连线：让 Tunable 的霸道总线锁，直接控制 PIL 的发送节流阀
+        self.tab_pil_bridge.sig_serial_baud_requested.connect(self.apply_pil_serial_baudrate)
         self.tab_tunable.sig_global_bus_busy.connect(self.tab_pil_bridge.set_bus_preempted)
         
+        # Global serial controls, statistics, and log panel.
         right_panel = QVBoxLayout()
         main_layout.addLayout(right_panel, stretch=1)
         
+        # Fixed-height serial configuration.
         self._build_serial_panel(right_panel)
+        # Fixed-height transmit and receive statistics.
+        self._build_stats_panel(right_panel) 
         
-        self.sys_log = QTextBrowser()
-        self.sys_log.setMaximumHeight(200)
-        # 【新增】强制显示系统日志的滚动条
-        self.sys_log.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn) 
-        right_panel.addWidget(QLabel("系统日志:"))
-        right_panel.addWidget(self.sys_log)
+        self._build_log_panel(right_panel)
 
-        # 初始状态设置（红条断开状态）
         self.update_ui_connection_state(False)
 
+        self.stats_timer = QTimer()
+        self.stats_timer.timeout.connect(self._update_bus_stats)
+        self.stats_timer.start(1000)
+
+    # ---------------------------------------------------------
+    # User interface construction and basic interaction.
+    # ---------------------------------------------------------
     def _build_serial_panel(self, layout: QVBoxLayout):
-        group_box = QGroupBox("串口配置")
+        group_box = QGroupBox("Serial Configuration")
+        # Keep the compact control group at its preferred height.
+        group_box.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum) 
+        
         form_layout = QFormLayout()
         form_layout.setLabelAlignment(Qt.AlignRight)
         
         port_hlayout = QHBoxLayout()
         self.cb_ports = QComboBox()
         self.cb_ports.setMinimumWidth(150)
-        # 【新增】关键：让下拉列表弹出时可以突破框本身的宽度，显示超长设备名！
         self.cb_ports.view().setMinimumWidth(350) 
         
         self.btn_refresh = QPushButton("↻")
@@ -98,7 +185,7 @@ class MainWindow(QMainWindow):
         
         self.cb_baud = QComboBox()
         self.cb_baud.setEditable(True) 
-        self.cb_baud.addItems(["9600", "115200", "256000", "460800", "921600", "2000000"])
+        self.cb_baud.addItems(["9600", "115200", "230399", "256000", "460800", "921600", "2000000"])
         self.cb_baud.setCurrentText("921600") 
         
         self.cb_data_bits = QComboBox()
@@ -113,15 +200,14 @@ class MainWindow(QMainWindow):
         self.cb_parity.addItems(list(PARITY_MAP.keys()))
         self.cb_parity.setCurrentText("None")
 
-        form_layout.addRow("串口选择:", port_hlayout)
-        form_layout.addRow("波特率:", self.cb_baud)
-        form_layout.addRow("数据位:", self.cb_data_bits)
-        form_layout.addRow("停止位:", self.cb_stop_bits)
-        form_layout.addRow("校验位:", self.cb_parity)
+        form_layout.addRow("Port:", port_hlayout)
+        form_layout.addRow("Baud rate:", self.cb_baud)
+        form_layout.addRow("Data bits:", self.cb_data_bits)
+        form_layout.addRow("Stop bits:", self.cb_stop_bits)
+        form_layout.addRow("Parity:", self.cb_parity)
         
-        self.btn_connect = QPushButton("打开串口")
-        self.btn_connect.setMinimumHeight(45)
-        # 字体加粗
+        self.btn_connect = QPushButton("Open Port")
+        self.btn_connect.setMinimumHeight(40)
         font = self.btn_connect.font()
         font.setBold(True)
         self.btn_connect.setFont(font)
@@ -129,14 +215,146 @@ class MainWindow(QMainWindow):
         
         vbox = QVBoxLayout()
         vbox.addLayout(form_layout)
-        vbox.addSpacing(15)
+        vbox.addSpacing(5)
         vbox.addWidget(self.btn_connect)
-        vbox.addStretch()
         
         group_box.setLayout(vbox)
         layout.addWidget(group_box)
         
         self.refresh_ports()
+
+    def _build_stats_panel(self, layout: QVBoxLayout):
+        """Build independent transmit and receive bus-load indicators."""
+        stats_group = QGroupBox("Bus Load")
+        # Keep the statistics group compact.
+        stats_group.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+        vbox = QVBoxLayout()
+        vbox.setSpacing(8)
+        
+        # Transfer-rate labels.
+        h_speeds = QHBoxLayout()
+        self.lbl_speed_tx = QLabel("TX: 0.0 kB/s")
+        self.lbl_speed_rx = QLabel("RX: 0.0 kB/s")
+        self.lbl_speed_tx.setStyleSheet("color: #4527A0; font-weight: bold;")
+        self.lbl_speed_rx.setStyleSheet("color: #00796B; font-weight: bold;")
+        h_speeds.addWidget(self.lbl_speed_tx)
+        h_speeds.addWidget(self.lbl_speed_rx)
+        vbox.addLayout(h_speeds)
+        
+        # Transmit utilization.
+        self.bar_tx = QProgressBar()
+        self.bar_tx.setFixedHeight(18)
+        self.bar_tx.setRange(0, 100)
+        self.bar_tx.setValue(0)
+        self.bar_tx.setFormat("TX load: %p%")
+        self.bar_tx.setStyleSheet(self._get_bar_stylesheet("#E0E0E0", "gray"))
+        vbox.addWidget(self.bar_tx)
+
+        # Receive utilization.
+        self.bar_rx = QProgressBar()
+        self.bar_rx.setFixedHeight(18)
+        self.bar_rx.setRange(0, 100)
+        self.bar_rx.setValue(0)
+        self.bar_rx.setFormat("RX load: %p%")
+        self.bar_rx.setStyleSheet(self._get_bar_stylesheet("#E0E0E0", "gray"))
+        vbox.addWidget(self.bar_rx)
+        
+        stats_group.setLayout(vbox)
+        layout.addWidget(stats_group)
+
+    def _build_log_panel(self, layout: QVBoxLayout) -> None:
+        """Build the source-colored system log and its page filter menu."""
+        title_row = QHBoxLayout()
+        title_row.addWidget(QLabel("<b>System Log:</b>"))
+        title_row.addStretch()
+        self.log_filter = LogFilterMenu(list(LOG_SOURCE_COLORS))
+        self.log_filter.setToolTip("Uncheck a page to hide its messages from System Log.")
+        self.log_filter.visibility_changed.connect(self._refresh_system_log)
+        title_row.addWidget(self.log_filter)
+        clear_button = QPushButton("Clear")
+        clear_button.setMaximumWidth(55)
+        clear_button.clicked.connect(self._clear_system_log)
+        title_row.addWidget(clear_button)
+        layout.addLayout(title_row)
+
+        self.sys_log = QTextBrowser()
+        self.sys_log.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.sys_log.setStyleSheet(
+            "QTextBrowser { background: #FAFBFC; border: 1px solid #CFD8DC; "
+            "color: #263238; selection-background-color: #B0BEC5; }"
+        )
+        layout.addWidget(self.sys_log, stretch=1)
+
+    # ---------------------------------------------------------
+    # Serial control and data-rate accounting.
+    # ---------------------------------------------------------
+    def _on_bus_event_for_stats(self, ev: dict):
+        if ev['dir'] == 'TX':
+            self.total_tx_bytes += len(ev['data'])
+        else:
+            self.total_rx_bytes += len(ev['data'])
+
+    def _get_bar_stylesheet(self, color: str, text_color: str = "black") -> str:
+        """Return a progress-bar style for the requested load color."""
+        return f"""
+            QProgressBar {{
+                border: 1px solid #BDBDBD;
+                border-radius: 4px;
+                text-align: center;
+                font-weight: bold;
+                background-color: #F5F5F5;
+                color: {text_color};
+                font-size: 11px;
+            }}
+            QProgressBar::chunk {{ background-color: {color}; width: 6px; margin: 0.5px; }}
+        """
+
+    def _update_bus_stats(self):
+        """Update independent transmit and receive rates once per second."""
+        if not self.hermes.running:
+            self.lbl_speed_tx.setText("TX: 0.0 kB/s")
+            self.lbl_speed_rx.setText("RX: 0.0 kB/s")
+            self.bar_tx.setValue(0)
+            self.bar_rx.setValue(0)
+            self.bar_tx.setStyleSheet(self._get_bar_stylesheet("#E0E0E0", "gray"))
+            self.bar_rx.setStyleSheet(self._get_bar_stylesheet("#E0E0E0", "gray"))
+            return
+
+        tx_diff = self.total_tx_bytes - self.last_tx_bytes
+        rx_diff = self.total_rx_bytes - self.last_rx_bytes
+        
+        self.last_tx_bytes = self.total_tx_bytes
+        self.last_rx_bytes = self.total_rx_bytes
+
+        tx_kbs = tx_diff / 1024.0
+        rx_kbs = rx_diff / 1024.0
+
+        self.lbl_speed_tx.setText(f"TX: {tx_kbs:.1f} kB/s")
+        self.lbl_speed_rx.setText(f"RX: {rx_kbs:.1f} kB/s")
+
+        # Approximate UART capacity as ten wire bits per payload byte.
+        try:
+            baud_rate = int(self.cb_baud.currentText())
+            max_bytes_per_sec = baud_rate / 10.0
+            
+            tx_util = (tx_diff / max_bytes_per_sec) * 100.0 if max_bytes_per_sec > 0 else 0.0
+            rx_util = (rx_diff / max_bytes_per_sec) * 100.0 if max_bytes_per_sec > 0 else 0.0
+        except ValueError:
+            tx_util, rx_util = 0.0, 0.0
+
+        # Clamp display values to the progress-bar range.
+        tx_int = int(min(100, max(0, tx_util)))
+        rx_int = int(min(100, max(0, rx_util)))
+
+        self.bar_tx.setValue(tx_int)
+        self.bar_rx.setValue(rx_int)
+
+        # Apply warning colors as utilization increases.
+        tx_color = "#E53935" if tx_int > 80 else ("#FF9800" if tx_int > 50 else "#7E57C2")
+        rx_color = "#E53935" if rx_int > 80 else ("#FF9800" if rx_int > 50 else "#26A69A")
+
+        self.bar_tx.setStyleSheet(self._get_bar_stylesheet(tx_color))
+        self.bar_rx.setStyleSheet(self._get_bar_stylesheet(rx_color))
 
     def refresh_ports(self):
         self.cb_ports.clear()
@@ -150,42 +368,43 @@ class MainWindow(QMainWindow):
         if not self.hermes.running:
             port = self.cb_ports.currentData()
             if not port:
-                self.log_message("⚠️ 请先选择一个有效的串口")
+                self.log_message("System", "Select a valid serial port first.")
                 return
             baud = int(self.cb_baud.currentText())
             data_bits = DATA_BITS_MAP[self.cb_data_bits.currentText()]
             stop_bits = STOP_BITS_MAP[self.cb_stop_bits.currentText()]
             parity = PARITY_MAP[self.cb_parity.currentText()]
             
-            # connect_serial 成功后会自动发射 sig_conn_state(True)
             self.hermes.connect_serial(port, baud, data_bits, parity, stop_bits)
         else:
-            # close 会自动发射 sig_conn_state(False)
             self.hermes.close()
 
+    def apply_pil_serial_baudrate(self, baudrate: int) -> None:
+        """Apply the SDPE baud rate to the next serial connection."""
+        if self.hermes.running:
+            active_baudrate = int(self.hermes.serial.baudrate)
+            if active_baudrate != baudrate:
+                self.log_message(
+                    "PIL Bridge",
+                    f"SDPE requests {baudrate} baud, but the open port uses {active_baudrate}. "
+                    "Close and reopen the serial port before starting PIL.",
+                )
+            return
+        self.cb_baud.setCurrentText(str(baudrate))
+        self.log_message("PIL Bridge", f"Serial baud rate loaded from SDPE: {baudrate}.")
+
     def update_ui_connection_state(self, is_connected: bool):
-        """【新增】统一管理连接状态 UI，防止状态不一致"""
         if is_connected:
-            self.btn_connect.setText("关闭串口")
-            # 绿色左边框指示器，浅绿背景
+            self.btn_connect.setText("Close Port")
             self.btn_connect.setStyleSheet("""
-                QPushButton {
-                    border-left: 6px solid #4CAF50;
-                    background-color: #E8F5E9;
-                    border-radius: 3px;
-                }
+                QPushButton { border-left: 6px solid #4CAF50; background-color: #E8F5E9; border-radius: 3px; }
                 QPushButton:hover { background-color: #C8E6C9; }
             """)
             self._set_combos_enabled(False)
         else:
-            self.btn_connect.setText("打开串口")
-            # 红色左边框指示器，标准背景
+            self.btn_connect.setText("Open Port")
             self.btn_connect.setStyleSheet("""
-                QPushButton {
-                    border-left: 6px solid #F44336;
-                    background-color: #FAFAFA;
-                    border-radius: 3px;
-                }
+                QPushButton { border-left: 6px solid #F44336; background-color: #FAFAFA; border-radius: 3px; }
                 QPushButton:hover { background-color: #EEEEEE; }
             """)
             self._set_combos_enabled(True)
@@ -198,14 +417,62 @@ class MainWindow(QMainWindow):
         self.cb_parity.setEnabled(state)
         self.btn_refresh.setEnabled(state)
 
-    def log_message(self, msg: str):
-        self.sys_log.append(msg)
+    def log_message(self, source: str, message: str) -> None:
+        """Store and render one plain-text message using its page accent color."""
+        if source not in LOG_SOURCE_COLORS:
+            message = f"[{source}] {message}"
+            source = "System"
+        timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+        self.log_entries.append((timestamp, source, str(message)))
+        if len(self.log_entries) > 2000:
+            del self.log_entries[:len(self.log_entries) - 2000]
+        if source in self.log_filter.visible_sources():
+            self._append_log_entry(timestamp, source, str(message))
+
+    def _append_log_entry(self, timestamp: str, source: str, message: str) -> None:
+        """Append one escaped and consistently styled entry to System Log."""
+        color = LOG_SOURCE_COLORS[source]
+        safe_message = html.escape(message).replace("\n", "<br>")
+        self.sys_log.append(
+            f"<span style='color:#90A4AE;'>{timestamp}</span> "
+            f"<span style='color:{color}; font-weight:600;'>[{source}]</span> "
+            f"<span style='color:#263238;'>{safe_message}</span>"
+        )
         scrollbar = self.sys_log.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
 
+    def _refresh_system_log(self) -> None:
+        """Rebuild the log when one or more page filters change."""
+        visible_sources = self.log_filter.visible_sources()
+        self.sys_log.clear()
+        for timestamp, source, message in self.log_entries:
+            if source in visible_sources:
+                self._append_log_entry(timestamp, source, message)
+
+    def _clear_system_log(self) -> None:
+        """Discard the retained log history and clear the view."""
+        self.log_entries.clear()
+        self.sys_log.clear()
+
+    def closeEvent(self, event):
+        self.log_message("System", "Closing the communication engine...")
+        
+        if hasattr(self.tab_tunable, 'tab_widget'):
+            for i in range(self.tab_tunable.tab_widget.count()):
+                widget = self.tab_tunable.tab_widget.widget(i)
+                if hasattr(widget, 'stop_timers'):
+                    widget.stop_timers()
+                    
+        if hasattr(self.tab_pil_bridge, 'running') and self.tab_pil_bridge.running:
+            self.tab_pil_bridge.toggle_bridge()
+            
+        if self.hermes.running:
+            self.hermes.close()
+            
+        event.accept()
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    # 给整体应用换个顺眼的风格
     app.setStyle("Fusion") 
     window = MainWindow()
     window.show()

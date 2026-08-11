@@ -270,7 +270,16 @@ currently available Chinese validation reports.
   output with the host.
 - Datalink supports variable monitoring, online parameter changes, Memory
   Perspective, and PIL data exchange.
-- The debugger entry point is `tools/gmp_pil_server/gmp_debugger_v2`.
+- The [headless Data Link Python API](tools/gmp_pil_server/gmp_debugger/apis/README.md)
+  lets test programs and AI agents discover the Tunable table and memory
+  whitelist, perform typed parameter and bounded memory access, configure Scope
+  triggers, acquire continuous waveforms, execute exact PIL controller steps,
+  bridge the standard Simulink UDP vectors, and export evidence to CSV. A
+  [Chinese API manual](tools/gmp_pil_server/gmp_debugger/apis/README_CN.md) is
+  provided alongside the English reference.
+- Use `tools/gmp_pil_server/gmp_debugger/run_u8.bat` for byte-addressed CPUs and
+  `tools/gmp_pil_server/gmp_debugger/run_u16.bat` for 16-bit-addressed DSP
+  targets. Both launch the same maintained frontend and wire codec.
 - Suite `user_main.c` files normally organize communication and background
   tasks; the target `xplt` owns UART and other physical interfaces.
 

@@ -19,12 +19,14 @@
 #define GMP_DBG_SWBP __asm volatile("BKPT #0")
 
 
-GMP_STATIC_INLINE void gmp_base_enter_critical()
+/** @brief Enter a global interrupt critical section. */
+GMP_STATIC_INLINE void gmp_base_enter_critical(void)
 {
     __disable_irq();
 }
 
-GMP_STATIC_INLINE void gmp_base_leave_critical()
+/** @brief Leave a global interrupt critical section. */
+GMP_STATIC_INLINE void gmp_base_leave_critical(void)
 {
     __enable_irq();
 }

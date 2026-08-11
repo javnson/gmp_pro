@@ -1,0 +1,167 @@
+{
+  "id": "clllc_resonant_tank",
+  "display_name": "CLLLC Resonant Tank",
+  "description": "Physical transformer, resonant network, output capacitor and load envelope used by a CLLLC converter.",
+  "category": "Resonant Converter Main Element",
+  "output_subdir": "resonant_tank",
+  "parameters": [
+    {
+      "name": "resonant_frequency_hz",
+      "c_name": "RESONANT_FREQUENCY_HZ",
+      "unit": "Hz",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Nominal tank resonant frequency."
+    },
+    {
+      "name": "magnetizing_inductance_h",
+      "c_name": "MAGNETIZING_INDUCTANCE_H",
+      "unit": "H",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Transformer magnetizing inductance."
+    },
+    {
+      "name": "primary_resonant_inductance_h",
+      "c_name": "PRIMARY_RESONANT_INDUCTANCE_H",
+      "unit": "H",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Primary-side resonant inductance."
+    },
+    {
+      "name": "secondary_resonant_inductance_h",
+      "c_name": "SECONDARY_RESONANT_INDUCTANCE_H",
+      "unit": "H",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Secondary-side resonant inductance."
+    },
+    {
+      "name": "primary_resonant_capacitance_f",
+      "c_name": "PRIMARY_RESONANT_CAPACITANCE_F",
+      "unit": "F",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Primary-side resonant capacitance."
+    },
+    {
+      "name": "secondary_resonant_capacitance_f",
+      "c_name": "SECONDARY_RESONANT_CAPACITANCE_F",
+      "unit": "F",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Secondary-side resonant capacitance."
+    },
+    {
+      "name": "transformer_ratio_ns_np",
+      "c_name": "TRANSFORMER_RATIO_NS_NP",
+      "unit": "",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Transformer secondary-to-primary turns ratio."
+    },
+    {
+      "name": "output_capacitance_f",
+      "c_name": "OUTPUT_CAPACITANCE_F",
+      "unit": "F",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Output capacitance."
+    },
+    {
+      "name": "minimum_load_resistance_ohm",
+      "c_name": "MINIMUM_LOAD_RESISTANCE_OHM",
+      "unit": "ohm",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Minimum supported load resistance."
+    },
+    {
+      "name": "tank_esr_ohm",
+      "c_name": "TANK_ESR_OHM",
+      "unit": "ohm",
+      "required": true,
+      "value_format": "({}f)",
+      "description": "Aggregate resonant-tank series resistance used by the plant model."
+    }
+  ],
+  "exports": {
+    "resonant_frequency": {
+      "macro": "{PREFIX}_RESONANT_FREQUENCY_HZ",
+      "unit": "Hz",
+      "description": "Nominal tank resonant frequency."
+    },
+    "magnetizing_inductance": {
+      "macro": "{PREFIX}_MAGNETIZING_INDUCTANCE_H",
+      "unit": "H",
+      "description": "Transformer magnetizing inductance."
+    },
+    "primary_resonant_inductance": {
+      "macro": "{PREFIX}_PRIMARY_RESONANT_INDUCTANCE_H",
+      "unit": "H",
+      "description": "Primary resonant inductance."
+    },
+    "secondary_resonant_inductance": {
+      "macro": "{PREFIX}_SECONDARY_RESONANT_INDUCTANCE_H",
+      "unit": "H",
+      "description": "Secondary resonant inductance."
+    },
+    "primary_resonant_capacitance": {
+      "macro": "{PREFIX}_PRIMARY_RESONANT_CAPACITANCE_F",
+      "unit": "F",
+      "description": "Primary resonant capacitance."
+    },
+    "secondary_resonant_capacitance": {
+      "macro": "{PREFIX}_SECONDARY_RESONANT_CAPACITANCE_F",
+      "unit": "F",
+      "description": "Secondary resonant capacitance."
+    },
+    "transformer_ratio": {
+      "macro": "{PREFIX}_TRANSFORMER_RATIO_NS_NP",
+      "description": "Transformer turns ratio Ns/Np."
+    },
+    "output_capacitance": {
+      "macro": "{PREFIX}_OUTPUT_CAPACITANCE_F",
+      "unit": "F",
+      "description": "Output capacitance."
+    },
+    "minimum_load_resistance": {
+      "macro": "{PREFIX}_MINIMUM_LOAD_RESISTANCE_OHM",
+      "unit": "ohm",
+      "description": "Minimum load resistance."
+    },
+    "tank_esr": {
+      "macro": "{PREFIX}_TANK_ESR_OHM",
+      "unit": "ohm",
+      "description": "Aggregate tank ESR."
+    }
+  },
+  "parameter_groups": [
+    {
+      "name": "Resonant Network",
+      "parameters": [
+        "resonant_frequency_hz",
+        "magnetizing_inductance_h",
+        "primary_resonant_inductance_h",
+        "secondary_resonant_inductance_h",
+        "primary_resonant_capacitance_f",
+        "secondary_resonant_capacitance_f",
+        "tank_esr_ohm"
+      ]
+    },
+    {
+      "name": "Transformer and Load",
+      "parameters": [
+        "transformer_ratio_ns_np",
+        "output_capacitance_f",
+        "minimum_load_resistance_ohm"
+      ]
+    }
+  ],
+  "tags": [
+    "clllc",
+    "resonant_tank",
+    "transformer"
+  ]
+}

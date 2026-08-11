@@ -64,6 +64,7 @@ void ctl_init_pmsm_esmo_consultant(ctl_pmsm_esmo_t* esmo, const ctl_consultant_p
 
     // 6. Finalize Initialization
     ctl_clear_pmsm_esmo(esmo);
+    ctl_enable_pmsm_esmo_emf_normalization(esmo);
     ctl_disable_pmsm_esmo(esmo);
 }
 
@@ -114,6 +115,7 @@ void ctl_init_pmsm_esmo(ctl_pmsm_esmo_t* esmo, const ctl_pmsm_esmo_init_t* init)
 
     // 6. Finalize Initialization
     ctl_clear_pmsm_esmo(esmo);
+    ctl_enable_pmsm_esmo_emf_normalization(esmo);
     ctl_disable_pmsm_esmo(esmo);
 }
 
@@ -129,14 +131,14 @@ void ctl_init_pmsm_esmo(ctl_pmsm_esmo_t* esmo, const ctl_pmsm_esmo_init_t* init)
 void ctl_autotune_esmo_init_from_mtr(ctl_pmsm_esmo_init_t* esmo_init, const mc_foc_init_t* cur_init,
                                      parameter_gt flux_linkage)
 {
-    // ·À´ô±£»¤£ºÈ·±£´«ÈëµÄÖ¸ÕëÓÐÐ§ÇÒ»ù´¡ÆµÂÊºÏ·¨
+    // é˜²å‘†ä¿æŠ¤ï¼šç¡®ä¿ä¼ å…¥çš„æŒ‡é’ˆæœ‰æ•ˆä¸”åŸºç¡€é¢‘çŽ‡åˆæ³•
     if (esmo_init == 0 || cur_init == 0 || cur_init->fs < 1e-6f || cur_init->freq_base < 1e-6f)
     {
         return;
     }
 
     // -------------------------------------------------------------------------
-    // 1. Direct Physical Parameter Mapping (ÎïÀí²ÎÊýÖ±½ÓÓ³Éä)
+    // 1. Direct Physical Parameter Mapping (ç‰©ç†å‚æ•°ç›´æŽ¥æ˜ å°„)
     // -------------------------------------------------------------------------
     esmo_init->Rs = cur_init->mtr_Rs;
     esmo_init->Ld = cur_init->mtr_Ld;
@@ -145,41 +147,41 @@ void ctl_autotune_esmo_init_from_mtr(ctl_pmsm_esmo_init_t* esmo_init, const mc_f
     esmo_init->fs = cur_init->fs;
 
     // -------------------------------------------------------------------------
-    // 2. Per-Unit Base Values Conversion (±êçÛ»¯»ù×¼Öµ»»Ëã)
+    // 2. Per-Unit Base Values Conversion (æ ‡å¹ºåŒ–åŸºå‡†å€¼æ¢ç®—)
     // -------------------------------------------------------------------------
     esmo_init->V_base = cur_init->v_base;
     esmo_init->I_base = cur_init->i_base;
 
-    // W_base = 2 * pi * f_base (½«±ê³ÆµçÆµÂÊ Hz ×ª»»Îª ½ÇËÙ¶È rad/s)
+    // W_base = 2 * pi * f_base (å°†æ ‡ç§°ç”µé¢‘çŽ‡ Hz è½¬æ¢ä¸º è§’é€Ÿåº¦ rad/s)
     esmo_init->W_base = CTL_PARAM_CONST_2PI * cur_init->freq_base;
 
     // -------------------------------------------------------------------------
-    // 3. Observer Execution & Tuning Heuristics (¹Û²âÆ÷´ø¿íÓëÂË²¨¾­Ñé¹«Ê½Õû¶¨)
+    // 3. Observer Execution & Tuning Heuristics (è§‚æµ‹å™¨å¸¦å®½ä¸Žæ»¤æ³¢ç»éªŒå…¬å¼æ•´å®š)
     // -------------------------------------------------------------------------
 
     // Back-EMF Low-Pass Filter Cutoff Frequency (fc_emf)
-    // ¹æÔò£º»¬Ä£µÄ¿ª¹Ø¶¶Õñ·¢ÉúÔÚ fs ¼¶±ð¡£ÎªÁËÓÐÐ§ÂË³ý¸ßÆµ¶¶Õñ£¬Í¬Ê±ÓÖ²»»á¶Ô
-    // »ù²¨·´µç¶¯ÊÆÔì³ÉÌ«´óµÄË¥¼õºÍÏàÎ»ÖÍºó£¬Í¨³£½«½ØÖ¹ÆµÂÊÉèÎª fs µÄ 1/10 µ½ 1/20¡£
+    // è§„åˆ™ï¼šæ»‘æ¨¡çš„å¼€å…³æŠ–æŒ¯å‘ç”Ÿåœ¨ fs çº§åˆ«ã€‚ä¸ºäº†æœ‰æ•ˆæ»¤é™¤é«˜é¢‘æŠ–æŒ¯ï¼ŒåŒæ—¶åˆä¸ä¼šå¯¹
+    // åŸºæ³¢åç”µåŠ¨åŠ¿é€ æˆå¤ªå¤§çš„è¡°å‡å’Œç›¸ä½æ»žåŽï¼Œé€šå¸¸å°†æˆªæ­¢é¢‘çŽ‡è®¾ä¸º fs çš„ 1/10 åˆ° 1/20ã€‚
     esmo_init->fc_emf = cur_init->fs / 10.0f;
 
     // ATO/PLL Tracking Loop Bandwidth (ato_bw_hz)
-    // ¹æÔò£ºATO ËøÏà»·µÄ´ø¿í¾ö¶¨ÁË×·×Ù×ª×Ó¶¯Ì¬ÏìÓ¦µÄËÙ¶È¡£
-    // Ëü±ØÐëÔ¶µÍÓÚ fc_emf ÒÔÒÖÖÆÔëÉù£¬µ«ÓÖÒª×ã¹»¿ìÒÔ¸ú×Ùµç»ú¼ÓËÙ¡£
-    // ¾­µäÉè¶¨Îªµç»ú±ê³ÆµçÆµÂÊµÄ 0.5 µ½ 1.0 ±¶ (ÀýÈç 50Hz µç»ú¶ÔÓ¦ 25Hz ´ø¿í)¡£
+    // è§„åˆ™ï¼šATO é”ç›¸çŽ¯çš„å¸¦å®½å†³å®šäº†è¿½è¸ªè½¬å­åŠ¨æ€å“åº”çš„é€Ÿåº¦ã€‚
+    // å®ƒå¿…é¡»è¿œä½ŽäºŽ fc_emf ä»¥æŠ‘åˆ¶å™ªå£°ï¼Œä½†åˆè¦è¶³å¤Ÿå¿«ä»¥è·Ÿè¸ªç”µæœºåŠ é€Ÿã€‚
+    // ç»å…¸è®¾å®šä¸ºç”µæœºæ ‡ç§°ç”µé¢‘çŽ‡çš„ 0.5 åˆ° 1.0 å€ (ä¾‹å¦‚ 50Hz ç”µæœºå¯¹åº” 25Hz å¸¦å®½)ã€‚
     esmo_init->ato_bw_hz = cur_init->freq_base * 0.5f;
 
     // -------------------------------------------------------------------------
-    // 4. Protection Margins & Limits (±£»¤Óë±ß½çÔ£¶È)
+    // 4. Protection Margins & Limits (ä¿æŠ¤ä¸Žè¾¹ç•Œè£•åº¦)
     // -------------------------------------------------------------------------
 
-    // Divergence confirmation time (¹ÊÕÏÈ·Ö¤·À¶¶Ê±¼ä)
-    // ÔÊÐí ESMO ÔÚ´ó¶¯Ì¬Í»±äÊ±ÓÐ¶ÌÔÝµÄÊ§Ëø£¬Ò»°ãÉè¶¨Îª 50ms ~ 100ms
+    // Divergence confirmation time (æ•…éšœç¡®è¯é˜²æŠ–æ—¶é—´)
+    // å…è®¸ ESMO åœ¨å¤§åŠ¨æ€çªå˜æ—¶æœ‰çŸ­æš‚çš„å¤±é”ï¼Œä¸€èˆ¬è®¾å®šä¸º 50ms ~ 100ms
     esmo_init->fault_time_ms = 50.0f;
 
-    // ×î´óÔÊÐíµçÁ÷×·×ÙÎó²î (PU)£¬³¬¹ý´ËÖµ¼´ÈÏÎª¹Û²âÆ÷·¢É¢
+    // æœ€å¤§å…è®¸ç”µæµè¿½è¸ªè¯¯å·® (PU)ï¼Œè¶…è¿‡æ­¤å€¼å³è®¤ä¸ºè§‚æµ‹å™¨å‘æ•£
     esmo_init->current_err_limit_pu = 0.3f; // 30% of base current
 
-    // »¬Ä£¿ØÖÆÆ÷µÄ±ß½ç²ãºñ¶È (Boundary layer margin)
-    // ÓÃÓÚ Quasi-SMC ·À¶¶Õñ£¬Í¨³£ÉèÖÃÔÚ 5% ×óÓÒ
+    // æ»‘æ¨¡æŽ§åˆ¶å™¨çš„è¾¹ç•Œå±‚åŽšåº¦ (Boundary layer margin)
+    // ç”¨äºŽ Quasi-SMC é˜²æŠ–æŒ¯ï¼Œé€šå¸¸è®¾ç½®åœ¨ 5% å·¦å³
     esmo_init->z_margin_pu = 0.05f;
 }

@@ -36,41 +36,37 @@ extern "C"
 /**
  * @brief Main sensing IC or front-end topology.
  */
-#ifndef QUAD_SENSOR_VCH_CHIP
 #define QUAD_SENSOR_VCH_CHIP "AMC1350 + TLV9061"
-#endif // QUAD_SENSOR_VCH_CHIP
 
 /**
  * @brief Nominal measurable voltage.
  * @unit V
  */
-#ifndef QUAD_SENSOR_VCH_RATED_VOLTAGE_V
 #define QUAD_SENSOR_VCH_RATED_VOLTAGE_V (100.0f)
-#endif // QUAD_SENSOR_VCH_RATED_VOLTAGE_V
 
 /**
  * @brief Output bias voltage.
  * @unit V
  */
-#ifndef QUAD_SENSOR_VCH_BIAS_V
 #define QUAD_SENSOR_VCH_BIAS_V (1.65f)
-#endif // QUAD_SENSOR_VCH_BIAS_V
 
 /**
  * @brief Voltage sensor sensitivity.
  * @unit V/V
  */
-#ifndef QUAD_SENSOR_VCH_SENSITIVITY_V_PER_V
 #define QUAD_SENSOR_VCH_SENSITIVITY_V_PER_V (0.01454f)
-#endif // QUAD_SENSOR_VCH_SENSITIVITY_V_PER_V
 
 /**
  * @brief Equivalent input resistance.
  * @unit ohm
  */
-#ifndef QUAD_SENSOR_VCH_INPUT_RESISTANCE_OHM
 #define QUAD_SENSOR_VCH_INPUT_RESISTANCE_OHM (444600.0f)
-#endif // QUAD_SENSOR_VCH_INPUT_RESISTANCE_OHM
+
+/**
+ * @brief Small-signal sensing bandwidth.
+ * @unit Hz
+ */
+#define QUAD_SENSOR_VCH_BANDWIDTH_HZ (0.0f)
 
 // Derived macros
 /**
@@ -83,6 +79,7 @@ extern "C"
 // sensitivity: QUAD_SENSOR_VCH_SENSITIVITY_V_PER_V
 // bias: QUAD_SENSOR_VCH_BIAS_V
 // range: QUAD_SENSOR_VCH_RATED_VOLTAGE_V
+// bandwidth: QUAD_SENSOR_VCH_BANDWIDTH_HZ
 
 // User code before footer
 // SDPE extension point: add before_footer code in the Entity Instance Code page if needed.

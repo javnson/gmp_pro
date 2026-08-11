@@ -148,6 +148,151 @@ GMP_STATIC_INLINE void ctl_vector2_normalize(ctl_vector2_t* result, const ctl_ve
         ctl_vector2_clear(result);
     }
 }
+
+/**
+ * @brief Saturates a 2D vector using a squared circle radius.
+ * @details Vectors outside the circle are scaled without changing direction.
+ * The scale is calculated as
+ * `radius_sq * isqrt(radius_sq * magnitude_sq)`, combining square root and
+ * reciprocal operations. `result` may alias `vec`.
+ * @param[out] result The saturated vector.
+ * @param[in]  vec The input vector.
+ * @param[in]  radius_sq Non-negative squared circle radius.
+ */
+GMP_STATIC_INLINE void ctl_vector2_sat_circle_sq(ctl_vector2_t* result, const ctl_vector2_t* vec,
+                                                 ctrl_gt radius_sq)
+{
+    ctrl_gt x = vec->dat[0];
+    ctrl_gt y = vec->dat[1];
+    ctrl_gt mag_sq;
+
+    gmp_base_assert(radius_sq >= float2ctrl(0.0f));
+
+    mag_sq = ctl_mul(x, x) + ctl_mul(y, y);
+
+    if (mag_sq > radius_sq)
+    {
+        if (radius_sq > CTL_EPSILON)
+        {
+            ctrl_gt scale = ctl_mul(radius_sq, ctl_isqrt(ctl_mul(radius_sq, mag_sq)));
+            result->dat[0] = ctl_mul(x, scale);
+            result->dat[1] = ctl_mul(y, scale);
+            return;
+        }
+        ctl_vector2_clear(result);
+        return;
+    }
+
+    result->dat[0] = x;
+    result->dat[1] = y;
+}
+
+/**
+ * @brief Conservatively saturates a 2D vector using a first-order approximation.
+ * @details For `ratio = magnitude_sq / radius_sq`, this function approximates
+ * `isqrt(ratio)` by its first-order Taylor expansion at the circle boundary:
+ * `1.5 - 0.5 * ratio`. Because inverse square root is convex, this tangent is
+ * no greater than the exact scale for `ratio >= 1`, so the result remains inside
+ * the requested circle. Ratios greater than or equal to 3 produce a zero vector
+ * instead of a negative scale. This version uses no square-root operation.
+ * `result` may alias `vec`.
+ * @param[out] result The conservatively saturated vector.
+ * @param[in]  vec The input vector.
+ * @param[in]  radius_sq Non-negative squared circle radius.
+ */
+GMP_STATIC_INLINE void ctl_vector2_sat_circle_sq_taylor(ctl_vector2_t* result, const ctl_vector2_t* vec,
+                                                        ctrl_gt radius_sq)
+{
+    ctrl_gt x = vec->dat[0];
+    ctrl_gt y = vec->dat[1];
+    ctrl_gt mag_sq;
+
+    gmp_base_assert(radius_sq >= float2ctrl(0.0f));
+
+    mag_sq = ctl_mul(x, x) + ctl_mul(y, y);
+
+    if (mag_sq > radius_sq)
+    {
+        ctrl_gt ratio;
+        ctrl_gt scale;
+
+        if (radius_sq <= CTL_EPSILON)
+        {
+            ctl_vector2_clear(result);
+            return;
+        }
+
+        ratio = ctl_div(mag_sq, radius_sq);
+        if (ratio >= float2ctrl(3.0f))
+        {
+            ctl_vector2_clear(result);
+            return;
+        }
+
+        scale = CTL_CTRL_CONST_3_OVER_2 - ctl_div2(ratio);
+        result->dat[0] = ctl_mul(x, scale);
+        result->dat[1] = ctl_mul(y, scale);
+        return;
+    }
+
+    result->dat[0] = x;
+    result->dat[1] = y;
+}
+
+/**
+ * @brief Saturates a 2D vector to a circle centered at the origin.
+ * @details This compatibility interface calculates the squared radius once and
+ * delegates to `ctl_vector2_sat_circle_sq`. Repeated real-time calls should cache
+ * the squared radius and call the `_sq` interface directly.
+ * @param[out] result The saturated vector.
+ * @param[in]  vec The input vector.
+ * @param[in]  radius Non-negative circle radius.
+ */
+GMP_STATIC_INLINE void ctl_vector2_sat_circle(ctl_vector2_t* result, const ctl_vector2_t* vec, ctrl_gt radius)
+{
+    gmp_base_assert(radius >= float2ctrl(0.0f));
+    ctl_vector2_sat_circle_sq(result, vec, ctl_mul(radius, radius));
+}
+
+/**
+ * @brief Saturates each component of a 2D vector to an axis-aligned rectangle.
+ * @details `result` may alias any input vector.
+ * @param[out] result The saturated vector.
+ * @param[in]  vec The input vector.
+ * @param[in]  limit_max Per-axis upper limits.
+ * @param[in]  limit_min Per-axis lower limits.
+ */
+GMP_STATIC_INLINE void ctl_vector2_sat_rect(ctl_vector2_t* result, const ctl_vector2_t* vec,
+                                            const ctl_vector2_t* limit_max, const ctl_vector2_t* limit_min)
+{
+    ctrl_gt x = vec->dat[0];
+    ctrl_gt y = vec->dat[1];
+
+    gmp_base_assert(limit_max->dat[0] >= limit_min->dat[0]);
+    gmp_base_assert(limit_max->dat[1] >= limit_min->dat[1]);
+
+    result->dat[0] = ctl_sat(x, limit_max->dat[0], limit_min->dat[0]);
+    result->dat[1] = ctl_sat(y, limit_max->dat[1], limit_min->dat[1]);
+}
+
+/**
+ * @brief Saturates each component of a 2D vector to a symmetric square.
+ * @details This is a convenience form of rectangular saturation with identical
+ * limits on both axes. `result` may alias `vec`.
+ * @param[out] result The saturated vector.
+ * @param[in]  vec The input vector.
+ * @param[in]  limit Non-negative component magnitude limit.
+ */
+GMP_STATIC_INLINE void ctl_vector2_sat_square(ctl_vector2_t* result, const ctl_vector2_t* vec, ctrl_gt limit)
+{
+    ctrl_gt x = vec->dat[0];
+    ctrl_gt y = vec->dat[1];
+
+    gmp_base_assert(limit >= float2ctrl(0.0f));
+    result->dat[0] = ctl_sat(x, limit, -limit);
+    result->dat[1] = ctl_sat(y, limit, -limit);
+}
+
 /** 
  * @} 
  */ // end of MC_VECTOR2 group

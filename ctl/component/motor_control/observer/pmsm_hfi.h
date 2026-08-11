@@ -69,6 +69,7 @@ typedef struct _tag_pmsm_hfi_init_t
     parameter_gt f_lpf_iq_hz;    //!< Cutoff freq for extracting fundamental Iq (Hz). Used for HPF equivalence.
     parameter_gt f_lpf_demod_hz; //!< Cutoff freq for the demodulated error signal (Hz).
     parameter_gt ato_bw_hz;      //!< Bandwidth for the ATO/PLL (Hz).
+    parameter_gt omega_base;     //!< Electrical angular-speed base (rad/s).
 
     // --- Compensation & Scaling ---
     parameter_gt delay_comp_rad; //!< Phase delay compensation for the demodulation carrier (Radians).
@@ -168,7 +169,7 @@ GMP_STATIC_INLINE void ctl_step_pmsm_hfi(ctl_pmsm_hfi_t* hfi, ctrl_gt i_alpha, c
 
     // Generate injection phasor and output voltage: Vd_inj = V_inj * cos(w_h * t)
     ctl_set_phasor_via_angle(hfi->carrier_angle_pu, &hfi->carrier_phasor);
-    hfi->v_d_inj_out = ctl_mul(hfi->v_inj_amp, hfi->carrier_phasor.dat[0]); // cos is dat[0]
+    hfi->v_d_inj_out = ctl_mul(hfi->v_inj_amp, hfi->carrier_phasor.dat[phasor_cos]);
 
     // ========================================================================
     // 2. High-Frequency Current Extraction (Equivalent HPF)
@@ -176,7 +177,8 @@ GMP_STATIC_INLINE void ctl_step_pmsm_hfi(ctl_pmsm_hfi_t* hfi, ctrl_gt i_alpha, c
     // Park Transform to get i_q in the estimated synchronous frame
     ctl_vector2_t rotor_phasor;
     ctl_set_phasor_via_angle(hfi->ato_pll.elec_angle_pu, &rotor_phasor);
-    ctrl_gt i_q_est = -ctl_mul(i_alpha, rotor_phasor.dat[1]) + ctl_mul(i_beta, rotor_phasor.dat[0]);
+    ctrl_gt i_q_est = -ctl_mul(i_alpha, rotor_phasor.dat[phasor_sin]) +
+                      ctl_mul(i_beta, rotor_phasor.dat[phasor_cos]);
 
     // Fast HPF implementation: HPF(x) = x - LPF(x). Isolates the HF current from the torque current.
     ctrl_gt i_q_lf = ctl_step_filter_iir1(&hfi->lpf_iq, i_q_est);
@@ -191,7 +193,7 @@ GMP_STATIC_INLINE void ctl_step_pmsm_hfi(ctl_pmsm_hfi_t* hfi, ctrl_gt i_alpha, c
 
     // Multiply HF current by sin(w_h * t + phi_delay).
     // Theory: i_q_hf ~ sin(2*delta_theta) * sin(w_h * t). Demodulating with sin gives DC error.
-    ctrl_gt err_raw = ctl_mul(i_q_hf, hfi->demod_phasor.dat[1]); // sin is dat[1]
+    ctrl_gt err_raw = ctl_mul(i_q_hf, hfi->demod_phasor.dat[phasor_sin]);
 
     // Normalize error magnitude based on motor saliency (improves PLL robustness)
     err_raw = ctl_mul(err_raw, hfi->sf_err_gain);
@@ -204,7 +206,9 @@ GMP_STATIC_INLINE void ctl_step_pmsm_hfi(ctl_pmsm_hfi_t* hfi, ctrl_gt i_alpha, c
     // ========================================================================
     // Note: HFI error curve is sin(2*delta_theta), meaning it has two zero-crossings per electrical cycle.
     // N/S pole ambiguity must be resolved by initial polarity checks, but tracking works for either once locked.
-    ctl_step_ato_pll(&hfi->ato_pll, err_dc);
+    // err_dc is normalized to sin(2*delta). Its small-signal slope is twice
+    // the fundamental phase error, while ATO_PLL expects electrical cycles.
+    ctl_step_ato_pll(&hfi->ato_pll, ctl_mul(err_dc, ctl_div2(CTL_CTRL_CONST_1_OVER_2PI)));
 
     // ========================================================================
     // 5. Output to Top-Level Interfaces

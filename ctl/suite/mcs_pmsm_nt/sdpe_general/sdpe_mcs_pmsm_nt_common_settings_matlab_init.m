@@ -10,9 +10,9 @@ MCS_PMSM_NT_COMMON_SDPE_PROJECT_ID = 'mcs_pmsm_nt_common';
 
 MCS_PMSM_NT_COMMON_SDPE_PROJECT_SUITE = 'mcs_pmsm_nt';
 
-MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION = '1.0.0';
+MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION = '1.1.0';
 
-MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-07-15';
+MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-08-09';
 
 %% Control Algorithm
 % PMSM_CTRL_USING_DISCRETE_CTRL is disabled in the SDPE project requirement.
@@ -47,12 +47,9 @@ PWM_MODULATOR_USING_NEGATIVE_LOGIC = 1;
 %% Controller Options
 % Incremental commissioning level. 1: V/f voltage open loop; 2: current loop with synthetic electrical angle; 3: current loop with encoder angle; 4: speed loop with encoder feedback.
 % Options: (1), (2), (3), (4)
-BUILD_LEVEL = 2;
+BUILD_LEVEL = 1;
 
 %% Requirement bindings
-% Controller startup delay in milliseconds.
-CTRL_STARTUP_DELAY = 100;
-
 % Main motor-control ISR frequency in hertz.
 CONTROLLER_FREQUENCY = 20e3;
 
@@ -61,6 +58,69 @@ MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A = 0.2;
 
 % Phase-current hysteresis band in amperes used to prevent dead-time compensation direction chatter around zero current.
 MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A = 0.05;
+
+MOTOR_PARAM_RS = 0.165;
+
+MOTOR_PARAM_LS = 0.45e-3;
+
+MOTOR_PARAM_LD = 0.45e-3;
+
+MOTOR_PARAM_LQ = 0.45e-3;
+
+MOTOR_PARAM_FLUX = 0.0066843949493427743;
+
+MOTOR_PARAM_POLE_PAIRS = 4;
+
+MOTOR_PARAM_INERTIA = 497.0;
+
+MOTOR_PARAM_FRICTION = 755.0;
+
+% Maximum mechanical speed of the common reference motor in rpm.
+MOTOR_PARAM_MAX_SPEED = 3000.0;
+
+% Mechanical speed base in rpm.
+CTRL_SPEED_RPM_BASE = MOTOR_PARAM_MAX_SPEED;
+
+% Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
+MCS_MECH_SPEED_LIMIT_RPM = 3000.0;
+
+% Maximum mechanical speed-command slew rate in rpm/s. The configured value corresponds to 1 PU/s for the selected 3000 rpm motor.
+MCS_MECH_SPEED_SLOPE_RPM_S = 3000.0;
+
+% Absolute q-axis current/torque command limit in amperes. It is divided by CTRL_CURRENT_BASE to obtain the controller PU limit; 3 A corresponds to the previous 0.3 PU setting.
+MCS_MECH_CURRENT_LIMIT_A = 3.0;
+
+% Rectangular saturation limit for d/q axes in V.
+MCS_MAX_RECT_SATURATION_VOLTAGE_V = 10.0;
+
+% Nominal DC-bus voltage used by common protection thresholds and target per-unit bases.
+MCS_NOMINAL_DC_BUS_VOLTAGE_V = 80.0;
+
+MCS_MAX_DC_BUS_VOLTAGE_V = MCS_NOMINAL_DC_BUS_VOLTAGE_V*1.2;
+
+% The current limit value at which the machine must be shut down.
+MCS_MAX_SHUTDOWN_CURRENT_A = 10.0;
+
+% Circular saturation limit for voltage vector magnitude in V.
+MCS_MAX_CIR_SATURATION_VOLTAGE_V = 10.0;
+
+% Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
+MCS_ENCODER_SPEED_FILTER_FC_HZ = 20.0;
+
+% Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets.
+MCS_ADC_CALIBRATOR_FC_HZ = 20.0;
+
+% Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
+MCS_ADC_CALIBRATOR_Q = 0.707;
+
+% D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
+MCS_COMMISSIONING_ID_REF_A = 1.0;
+
+% Q-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
+MCS_COMMISSIONING_IQ_REF_A = 1.0;
+
+% Mechanical speed reference in rpm used by BUILD_LEVEL 4 commissioning. Converted to PU using MOTOR_PARAM_MAX_SPEED.
+MCS_COMMISSIONING_SPEED_REF_RPM = 300.0;
 
 % Electrical frequency command in hertz used by the BUILD_LEVEL 1 V/f path and the BUILD_LEVEL 2 synthetic-angle current-loop path.
 MCS_OPEN_LOOP_FREQ_HZ = 20.0;
@@ -80,38 +140,75 @@ MCS_MECH_VELOCITY_KP_PU = 5.0;
 % Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
 MCS_MECH_VELOCITY_KI_PU_S = 1.0;
 
-% Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
-MCS_MECH_SPEED_LIMIT_RPM = 3000.0;
-
-% Maximum mechanical speed-command slew rate in rpm/s. The configured value corresponds to 1 PU/s for the selected 3000 rpm motor.
-MCS_MECH_SPEED_SLOPE_RPM_S = 3000.0;
-
-% Absolute q-axis current/torque command limit in amperes. It is divided by CTRL_CURRENT_BASE to obtain the controller PU limit; 3 A corresponds to the previous 0.3 PU setting.
-MCS_MECH_CURRENT_LIMIT_A = 3.0;
-
-% Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
-MCS_ENCODER_SPEED_FILTER_FC_HZ = 20.0;
-
-% D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
-MCS_COMMISSIONING_ID_REF_A = 1.0;
-
-% Q-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
-MCS_COMMISSIONING_IQ_REF_A = 1.0;
-
-% Mechanical speed reference in rpm used by BUILD_LEVEL 4 commissioning. Converted to PU using MOTOR_PARAM_MAX_SPEED.
-MCS_COMMISSIONING_SPEED_REF_RPM = 300.0;
+% Controller startup delay in milliseconds.
+CTRL_STARTUP_DELAY = 100;
 
 % Minimum delay in milliseconds before the CiA402 state machine enters Operation Enabled. The project control tick is expressed in milliseconds.
 MCS_CIA402_OPERATION_ENABLE_DELAY_MS = 100;
 
-% Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets.
-MCS_ADC_CALIBRATOR_FC_HZ = 20.0;
+MCS_MIN_DC_BUS_VOLTAGE_V = MCS_NOMINAL_DC_BUS_VOLTAGE_V*0.2;
 
-% Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
-MCS_ADC_CALIBRATOR_Q = 0.707;
-
-% Legacy loop-convergence epsilon retained for controller compatibility.
-CTRL_SPLL_EPSILON = float2ctrl(0.005);
+%% SDPE project summary
+fprintf('\n============================================================\n');
+fprintf('SDPE Project : %s\n', 'MCS PMSM NT Common Controller Settings');
+fprintf('Project ID   : %s\n', 'mcs_pmsm_nt_common');
+fprintf('Suite        : %s\n', 'mcs_pmsm_nt');
+fprintf('Version      : %s\n', '1.1.0');
+fprintf('Hardware (0):\n');
+fprintf('Common requirements (0):\n');
+fprintf('Enabled variables (44):\n');
+fprintf('  BUILD_LEVEL = '); disp(BUILD_LEVEL);
+fprintf('  CONTROLLER_FREQUENCY = '); disp(CONTROLLER_FREQUENCY);
+fprintf('  CTRL_SPEED_RPM_BASE = '); disp(CTRL_SPEED_RPM_BASE);
+fprintf('  CTRL_STARTUP_DELAY = '); disp(CTRL_STARTUP_DELAY);
+fprintf('  MCS_ADC_CALIBRATOR_FC_HZ = '); disp(MCS_ADC_CALIBRATOR_FC_HZ);
+fprintf('  MCS_ADC_CALIBRATOR_Q = '); disp(MCS_ADC_CALIBRATOR_Q);
+fprintf('  MCS_CIA402_OPERATION_ENABLE_DELAY_MS = '); disp(MCS_CIA402_OPERATION_ENABLE_DELAY_MS);
+fprintf('  MCS_COMMISSIONING_ID_REF_A = '); disp(MCS_COMMISSIONING_ID_REF_A);
+fprintf('  MCS_COMMISSIONING_IQ_REF_A = '); disp(MCS_COMMISSIONING_IQ_REF_A);
+fprintf('  MCS_COMMISSIONING_SPEED_REF_RPM = '); disp(MCS_COMMISSIONING_SPEED_REF_RPM);
+fprintf('  MCS_ENCODER_SPEED_FILTER_FC_HZ = '); disp(MCS_ENCODER_SPEED_FILTER_FC_HZ);
+fprintf('  MCS_MAX_CIR_SATURATION_VOLTAGE_V = '); disp(MCS_MAX_CIR_SATURATION_VOLTAGE_V);
+fprintf('  MCS_MAX_DC_BUS_VOLTAGE_V = '); disp(MCS_MAX_DC_BUS_VOLTAGE_V);
+fprintf('  MCS_MAX_RECT_SATURATION_VOLTAGE_V = '); disp(MCS_MAX_RECT_SATURATION_VOLTAGE_V);
+fprintf('  MCS_MAX_SHUTDOWN_CURRENT_A = '); disp(MCS_MAX_SHUTDOWN_CURRENT_A);
+fprintf('  MCS_MECH_CURRENT_LIMIT_A = '); disp(MCS_MECH_CURRENT_LIMIT_A);
+fprintf('  MCS_MECH_POSITION_KI_PU_S = '); disp(MCS_MECH_POSITION_KI_PU_S);
+fprintf('  MCS_MECH_POSITION_KP_PU = '); disp(MCS_MECH_POSITION_KP_PU);
+fprintf('  MCS_MECH_SPEED_LIMIT_RPM = '); disp(MCS_MECH_SPEED_LIMIT_RPM);
+fprintf('  MCS_MECH_SPEED_SLOPE_RPM_S = '); disp(MCS_MECH_SPEED_SLOPE_RPM_S);
+fprintf('  MCS_MECH_VELOCITY_KI_PU_S = '); disp(MCS_MECH_VELOCITY_KI_PU_S);
+fprintf('  MCS_MECH_VELOCITY_KP_PU = '); disp(MCS_MECH_VELOCITY_KP_PU);
+fprintf('  MCS_MIN_DC_BUS_VOLTAGE_V = '); disp(MCS_MIN_DC_BUS_VOLTAGE_V);
+fprintf('  MCS_NOMINAL_DC_BUS_VOLTAGE_V = '); disp(MCS_NOMINAL_DC_BUS_VOLTAGE_V);
+fprintf('  MCS_OPEN_LOOP_FREQ_HZ = '); disp(MCS_OPEN_LOOP_FREQ_HZ);
+fprintf('  MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S = '); disp(MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S);
+fprintf('  MCS_PMSM_NT_COMMON_SDPE_PROJECT_ID = '); disp(MCS_PMSM_NT_COMMON_SDPE_PROJECT_ID);
+fprintf('  MCS_PMSM_NT_COMMON_SDPE_PROJECT_SUITE = '); disp(MCS_PMSM_NT_COMMON_SDPE_PROJECT_SUITE);
+fprintf('  MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT = '); disp(MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT);
+fprintf('  MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION = '); disp(MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION);
+fprintf('  MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A = '); disp(MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A);
+fprintf('  MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A = '); disp(MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A);
+fprintf('  MOTOR_PARAM_FLUX = '); disp(MOTOR_PARAM_FLUX);
+fprintf('  MOTOR_PARAM_FRICTION = '); disp(MOTOR_PARAM_FRICTION);
+fprintf('  MOTOR_PARAM_INERTIA = '); disp(MOTOR_PARAM_INERTIA);
+fprintf('  MOTOR_PARAM_LD = '); disp(MOTOR_PARAM_LD);
+fprintf('  MOTOR_PARAM_LQ = '); disp(MOTOR_PARAM_LQ);
+fprintf('  MOTOR_PARAM_LS = '); disp(MOTOR_PARAM_LS);
+fprintf('  MOTOR_PARAM_MAX_SPEED = '); disp(MOTOR_PARAM_MAX_SPEED);
+fprintf('  MOTOR_PARAM_POLE_PAIRS = '); disp(MOTOR_PARAM_POLE_PAIRS);
+fprintf('  MOTOR_PARAM_RS = '); disp(MOTOR_PARAM_RS);
+fprintf('  PWM_MODULATOR_USING_NEGATIVE_LOGIC = '); disp(PWM_MODULATOR_USING_NEGATIVE_LOGIC);
+fprintf('  SPECIFY_ENABLE_ADC_CALIBRATE = '); disp(SPECIFY_ENABLE_ADC_CALIBRATE);
+fprintf('  USE_DEBUG_DISCRETE_PID = '); disp(USE_DEBUG_DISCRETE_PID);
+fprintf('Disabled macros (6):\n');
+fprintf('  - ENABLE_GMP_DL_PIL_SIM\n');
+fprintf('  - ENABLE_MOTOR_FAULT_PROTECTION\n');
+fprintf('  - ENABLE_SMO\n');
+fprintf('  - GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO\n');
+fprintf('  - PMSM_CTRL_USING_DISCRETE_CTRL\n');
+fprintf('  - USING_NPC_MODULATOR\n');
+fprintf('============================================================\n');
 
 %% Local helpers
 function value = sdpe_select(condition, true_value, false_value)

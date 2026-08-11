@@ -10,9 +10,9 @@ PGS_INV_GFL_COMMON_SDPE_PROJECT_ID = 'pgs_inv_gfl_common';
 
 PGS_INV_GFL_COMMON_SDPE_PROJECT_SUITE = 'pgs_inv_GFL_inverter';
 
-PGS_INV_GFL_COMMON_SDPE_PROJECT_VERSION = '1.0.0';
+PGS_INV_GFL_COMMON_SDPE_PROJECT_VERSION = '1.2.0';
 
-PGS_INV_GFL_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-07-15';
+PGS_INV_GFL_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-08-08';
 
 %% Control Algorithm
 % Enable the existing discrete PID anti-saturation path.
@@ -23,6 +23,21 @@ USE_DEBUG_DISCRETE_PID = true;
 
 % USING_NPC_MODULATOR is disabled in the SDPE project requirement.
 % USING_NPC_MODULATOR = true;
+
+% USING_3D_SVPWM is disabled in the SDPE project requirement.
+% USING_3D_SVPWM = true;
+
+% Enable omega*C cross-coupling feed-forward in the BUILD_LEVEL 6 capacitor-voltage loop. Disable this switch to commission the voltage PI loop without decoupling.
+GFL_ENABLE_VOLTAGE_DECOUPLE = true;
+
+% Enable circular magnitude limiting of the complete BUILD_LEVEL 6 d-q current reference.
+GFL_ENABLE_VOLTAGE_CIRCLE_LIMIT = true;
+
+% GFL_ENABLE_VOLTAGE_SQUARE_LIMIT is disabled in the SDPE project requirement.
+% GFL_ENABLE_VOLTAGE_SQUARE_LIMIT = true;
+
+% Enable frequency-P and voltage-Q droop reference generation ahead of the BUILD_LEVEL 5 P/Q controller.
+GFL_ENABLE_PQ_DROOP = true;
 
 %% Runtime
 % SPECIFY_ENABLE_ADC_CALIBRATE is disabled in the SDPE project requirement.
@@ -40,11 +55,17 @@ USE_DEBUG_DISCRETE_PID = true;
 GFL_CAPACITOR_CURRENT_CALCULATE_MODE = 3;
 
 %% Requirement bindings
+% ADC offset calibrator filter cutoff frequency.
+GFL_ADC_CALIBRATOR_FC_HZ = 20.0;
+
+% ADC offset calibrator second-order filter quality factor.
+GFL_ADC_CALIBRATOR_Q = 0.707;
+
+% Minimum CiA402 delay before Operation Enabled.
+GFL_CIA402_OPERATION_ENABLE_DELAY_MS = 100;
+
 % Nominal grid phase-voltage magnitude in controller per unit.
 GFL_GRID_VOLTAGE_PU = 0.33;
-
-% Nominal grid frequency in hertz.
-GFL_GRID_FREQUENCY_HZ = 50.0;
 
 % P/Q outer-loop execution frequency in hertz.
 GFL_PQ_LOOP_FREQUENCY_HZ = 1000.0;
@@ -67,17 +88,41 @@ GFL_PQ_REACTIVE_KI = 0.001;
 % Circular magnitude limit applied to the d/q current reference produced by the P/Q loop.
 GFL_PQ_CURRENT_LIMIT_PU = 1.0;
 
-% Default active-power reference. Positive power exports energy to the grid.
-GFL_ACTIVE_POWER_REF_PU = 0.1;
+% PQ droop frequency and voltage measurement low-pass cutoff.
+GFL_PQ_DROOP_LPF_HZ = 10.0;
 
-% Default reactive-power reference using Q = vq*id - vd*iq.
-GFL_REACTIVE_POWER_REF_PU = 0.0;
+% Additional active-power command per hertz of frequency deficit.
+GFL_PQ_DROOP_P_GAIN_PU_PER_HZ = 0.10;
+
+% Additional reactive-power command per PU of voltage deficit.
+GFL_PQ_DROOP_Q_GAIN_PU_PER_V_PU = 0.50;
+
+% Minimum active-power reference after PQ droop.
+GFL_PQ_DROOP_P_MIN_PU = -0.80;
+
+% Maximum active-power reference after PQ droop.
+GFL_PQ_DROOP_P_MAX_PU = 0.80;
+
+% Minimum reactive-power reference after PQ droop.
+GFL_PQ_DROOP_Q_MIN_PU = -0.80;
+
+% Maximum reactive-power reference after PQ droop.
+GFL_PQ_DROOP_Q_MAX_PU = 0.80;
 
 % BUILD_LEVEL 1 d-axis open-loop voltage command.
 GFL_OPEN_LOOP_VD_PU = 0.6;
 
 % BUILD_LEVEL 1 q-axis open-loop voltage command.
 GFL_OPEN_LOOP_VQ_PU = 0.6;
+
+% PLL lock-error threshold in controller per unit.
+CTRL_SPLL_EPSILON = float2ctrl(0.005);
+
+% Default active-power reference. Positive power exports energy to the grid.
+GFL_ACTIVE_POWER_REF_PU = 0.1;
+
+% Default reactive-power reference using Q = vq*id - vd*iq.
+GFL_REACTIVE_POWER_REF_PU = 0.0;
 
 % BUILD_LEVEL 2 d-axis current command.
 GFL_CURRENT_LEVEL2_ID_PU = 0.1;
@@ -97,17 +142,106 @@ GFL_CURRENT_LEVEL4_ID_PU = 0.6;
 % BUILD_LEVEL 4 q-axis current command.
 GFL_CURRENT_LEVEL4_IQ_PU = 0.6;
 
-% ADC offset calibrator filter cutoff frequency.
-GFL_ADC_CALIBRATOR_FC_HZ = 20.0;
+% BUILD_LEVEL 6 positive-sequence d-axis capacitor phase-voltage reference in per unit.
+GFL_STANDALONE_VD_PU = 0.50;
 
-% ADC offset calibrator second-order filter quality factor.
-GFL_ADC_CALIBRATOR_Q = 0.707;
+% BUILD_LEVEL 6 positive-sequence q-axis capacitor phase-voltage reference in per unit.
+GFL_STANDALONE_VQ_PU = 0.0;
 
-% Minimum CiA402 delay before Operation Enabled.
-GFL_CIA402_OPERATION_ENABLE_DELAY_MS = 100;
+% BUILD_LEVEL 6 capacitor-voltage outer-loop bandwidth in hertz; keep it well below the inner current-loop bandwidth.
+GFL_VOLTAGE_LOOP_BW_HZ = 100.0;
 
-% PLL lock-error threshold in controller per unit.
-CTRL_SPLL_EPSILON = float2ctrl(0.005);
+% BUILD_LEVEL 6 ordinary PI zero frequency in hertz.
+GFL_VOLTAGE_LOOP_ZERO_HZ = 20.0;
+
+% Circular magnitude limit for the complete BUILD_LEVEL 6 PI plus feed-forward current reference. The final limited output is returned to the ordinary PID integrators by clamping correction.
+GFL_VOLTAGE_CIRCLE_LIMIT_PU = 0.80;
+
+% Independent symmetric d/q-axis limit for the complete BUILD_LEVEL 6 PI plus feed-forward current reference.
+GFL_VOLTAGE_SQUARE_LIMIT_PU = 0.80;
+
+% Zero-sequence current QPR proportional gain used when 3D-SVPWM is enabled.
+GFL_ZERO_QPR_KP = 0.10;
+
+% Zero-sequence current QPR resonant gain used when 3D-SVPWM is enabled.
+GFL_ZERO_QPR_KR = 50.0;
+
+% Zero-sequence QPR resonant bandwidth/cutoff frequency in hertz.
+GFL_ZERO_QPR_CUTOFF_HZ = 5.0;
+
+% Symmetric zero-axis voltage-command limit for four-wire operation.
+GFL_ZERO_VOLTAGE_LIMIT_PU = 0.20;
+
+% Nominal grid frequency in hertz.
+GFL_GRID_FREQUENCY_HZ = 50.0;
+
+%% SDPE project summary
+fprintf('\n============================================================\n');
+fprintf('SDPE Project : %s\n', 'PGS Grid-Following Inverter Common Settings');
+fprintf('Project ID   : %s\n', 'pgs_inv_gfl_common');
+fprintf('Suite        : %s\n', 'pgs_inv_GFL_inverter');
+fprintf('Version      : %s\n', '1.2.0');
+fprintf('Hardware (0):\n');
+fprintf('Common requirements (0):\n');
+fprintf('Enabled variables (49):\n');
+fprintf('  CTRL_SPLL_EPSILON = '); disp(CTRL_SPLL_EPSILON);
+fprintf('  GFL_ACTIVE_POWER_REF_PU = '); disp(GFL_ACTIVE_POWER_REF_PU);
+fprintf('  GFL_ADC_CALIBRATOR_FC_HZ = '); disp(GFL_ADC_CALIBRATOR_FC_HZ);
+fprintf('  GFL_ADC_CALIBRATOR_Q = '); disp(GFL_ADC_CALIBRATOR_Q);
+fprintf('  GFL_CAPACITOR_CURRENT_CALCULATE_MODE = '); disp(GFL_CAPACITOR_CURRENT_CALCULATE_MODE);
+fprintf('  GFL_CIA402_OPERATION_ENABLE_DELAY_MS = '); disp(GFL_CIA402_OPERATION_ENABLE_DELAY_MS);
+fprintf('  GFL_CURRENT_LEVEL2_ID_PU = '); disp(GFL_CURRENT_LEVEL2_ID_PU);
+fprintf('  GFL_CURRENT_LEVEL2_IQ_PU = '); disp(GFL_CURRENT_LEVEL2_IQ_PU);
+fprintf('  GFL_CURRENT_LEVEL3_ID_PU = '); disp(GFL_CURRENT_LEVEL3_ID_PU);
+fprintf('  GFL_CURRENT_LEVEL3_IQ_PU = '); disp(GFL_CURRENT_LEVEL3_IQ_PU);
+fprintf('  GFL_CURRENT_LEVEL4_ID_PU = '); disp(GFL_CURRENT_LEVEL4_ID_PU);
+fprintf('  GFL_CURRENT_LEVEL4_IQ_PU = '); disp(GFL_CURRENT_LEVEL4_IQ_PU);
+fprintf('  GFL_ENABLE_PQ_DROOP = '); disp(GFL_ENABLE_PQ_DROOP);
+fprintf('  GFL_ENABLE_VOLTAGE_CIRCLE_LIMIT = '); disp(GFL_ENABLE_VOLTAGE_CIRCLE_LIMIT);
+fprintf('  GFL_ENABLE_VOLTAGE_DECOUPLE = '); disp(GFL_ENABLE_VOLTAGE_DECOUPLE);
+fprintf('  GFL_GRID_FREQUENCY_HZ = '); disp(GFL_GRID_FREQUENCY_HZ);
+fprintf('  GFL_GRID_VOLTAGE_PU = '); disp(GFL_GRID_VOLTAGE_PU);
+fprintf('  GFL_OPEN_LOOP_VD_PU = '); disp(GFL_OPEN_LOOP_VD_PU);
+fprintf('  GFL_OPEN_LOOP_VQ_PU = '); disp(GFL_OPEN_LOOP_VQ_PU);
+fprintf('  GFL_PQ_ACTIVE_KI = '); disp(GFL_PQ_ACTIVE_KI);
+fprintf('  GFL_PQ_ACTIVE_KP = '); disp(GFL_PQ_ACTIVE_KP);
+fprintf('  GFL_PQ_CURRENT_LIMIT_PU = '); disp(GFL_PQ_CURRENT_LIMIT_PU);
+fprintf('  GFL_PQ_DROOP_LPF_HZ = '); disp(GFL_PQ_DROOP_LPF_HZ);
+fprintf('  GFL_PQ_DROOP_P_GAIN_PU_PER_HZ = '); disp(GFL_PQ_DROOP_P_GAIN_PU_PER_HZ);
+fprintf('  GFL_PQ_DROOP_P_MAX_PU = '); disp(GFL_PQ_DROOP_P_MAX_PU);
+fprintf('  GFL_PQ_DROOP_P_MIN_PU = '); disp(GFL_PQ_DROOP_P_MIN_PU);
+fprintf('  GFL_PQ_DROOP_Q_GAIN_PU_PER_V_PU = '); disp(GFL_PQ_DROOP_Q_GAIN_PU_PER_V_PU);
+fprintf('  GFL_PQ_DROOP_Q_MAX_PU = '); disp(GFL_PQ_DROOP_Q_MAX_PU);
+fprintf('  GFL_PQ_DROOP_Q_MIN_PU = '); disp(GFL_PQ_DROOP_Q_MIN_PU);
+fprintf('  GFL_PQ_LOOP_DIVIDER = '); disp(GFL_PQ_LOOP_DIVIDER);
+fprintf('  GFL_PQ_LOOP_FREQUENCY_HZ = '); disp(GFL_PQ_LOOP_FREQUENCY_HZ);
+fprintf('  GFL_PQ_REACTIVE_KI = '); disp(GFL_PQ_REACTIVE_KI);
+fprintf('  GFL_PQ_REACTIVE_KP = '); disp(GFL_PQ_REACTIVE_KP);
+fprintf('  GFL_REACTIVE_POWER_REF_PU = '); disp(GFL_REACTIVE_POWER_REF_PU);
+fprintf('  GFL_STANDALONE_VD_PU = '); disp(GFL_STANDALONE_VD_PU);
+fprintf('  GFL_STANDALONE_VQ_PU = '); disp(GFL_STANDALONE_VQ_PU);
+fprintf('  GFL_VOLTAGE_CIRCLE_LIMIT_PU = '); disp(GFL_VOLTAGE_CIRCLE_LIMIT_PU);
+fprintf('  GFL_VOLTAGE_LOOP_BW_HZ = '); disp(GFL_VOLTAGE_LOOP_BW_HZ);
+fprintf('  GFL_VOLTAGE_LOOP_ZERO_HZ = '); disp(GFL_VOLTAGE_LOOP_ZERO_HZ);
+fprintf('  GFL_VOLTAGE_SQUARE_LIMIT_PU = '); disp(GFL_VOLTAGE_SQUARE_LIMIT_PU);
+fprintf('  GFL_ZERO_QPR_CUTOFF_HZ = '); disp(GFL_ZERO_QPR_CUTOFF_HZ);
+fprintf('  GFL_ZERO_QPR_KP = '); disp(GFL_ZERO_QPR_KP);
+fprintf('  GFL_ZERO_QPR_KR = '); disp(GFL_ZERO_QPR_KR);
+fprintf('  GFL_ZERO_VOLTAGE_LIMIT_PU = '); disp(GFL_ZERO_VOLTAGE_LIMIT_PU);
+fprintf('  PGS_INV_GFL_COMMON_SDPE_PROJECT_ID = '); disp(PGS_INV_GFL_COMMON_SDPE_PROJECT_ID);
+fprintf('  PGS_INV_GFL_COMMON_SDPE_PROJECT_SUITE = '); disp(PGS_INV_GFL_COMMON_SDPE_PROJECT_SUITE);
+fprintf('  PGS_INV_GFL_COMMON_SDPE_PROJECT_UPDATED_AT = '); disp(PGS_INV_GFL_COMMON_SDPE_PROJECT_UPDATED_AT);
+fprintf('  PGS_INV_GFL_COMMON_SDPE_PROJECT_VERSION = '); disp(PGS_INV_GFL_COMMON_SDPE_PROJECT_VERSION);
+fprintf('  USE_DEBUG_DISCRETE_PID = '); disp(USE_DEBUG_DISCRETE_PID);
+fprintf('Disabled macros (7):\n');
+fprintf('  - ENABLE_GMP_DL_PIL_SIM\n');
+fprintf('  - GFL_ENABLE_VOLTAGE_SQUARE_LIMIT\n');
+fprintf('  - GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO\n');
+fprintf('  - SPECIFY_ENABLE_ADC_CALIBRATE\n');
+fprintf('  - USING_3D_SVPWM\n');
+fprintf('  - USING_DSOGI_PLL\n');
+fprintf('  - USING_NPC_MODULATOR\n');
+fprintf('============================================================\n');
 
 %% Local helpers
 function value = sdpe_select(condition, true_value, false_value)

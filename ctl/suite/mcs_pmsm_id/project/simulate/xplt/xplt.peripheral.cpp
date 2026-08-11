@@ -42,6 +42,9 @@ adc_gt udc_src;
 ptr_adc_channel_t idc;
 adc_gt idc_src;
 
+// Offline-identification waveform capture buffer.
+ctrl_gt dsa_buffer[DSA_BUFFER_SIZE];
+
 // Trace RT objects
 typedef enum _tag_trace_rt_nodes
 {
@@ -98,9 +101,9 @@ void setup_peripheral(void)
     // attach
     //
 #if BUILD_LEVEL <= 2
-    ctl_attach_mtr_current_ctrl_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &rg.enc, &spd_enc.encif);
+    ctl_attach_foc_core_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &rg.enc, &spd_enc.encif);
 #else  // BUILD_LEVEL
-    ctl_attach_mtr_current_ctrl_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &pos_enc.encif, &spd_enc.encif);
+    ctl_attach_foc_core_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &pos_enc.encif, &spd_enc.encif);
 #endif // BUILD_LEVEL
 
     //
@@ -112,7 +115,7 @@ void setup_peripheral(void)
 //=================================================================================================
 // communication functions and interrupt functions here
 
-// 为了防止卡住，在Windows平台上的buffer留大一些
+// Use a local buffer to keep Windows console input non-blocking.
 #define ISR_LOCAL_BUF_SIZE 1024
 
 // Using Windows console to simulate UART
@@ -121,28 +124,28 @@ void at_device_flush_rx_buffer()
     uint16_t fifoLevel = 0;
     uint16_t rxBuf[ISR_LOCAL_BUF_SIZE];
 
-    // 使用while一次性读取FIFO中的所有内容
+    // Drain all currently available console characters.
     while (_kbhit())
     {
-        //_getch() 读取字符但不回显，也不等待回车
+        // _getch() reads one character without waiting for Enter.
         int ch = _getch();
 
-        // 处理特殊键 (例如方向键会产生两个码: 0/0xE0 和 键码)
-        // 这里我们简单处理，只接收普通 ASCII
+        // Discard the second byte of an extended key sequence.
+        // Only ordinary ASCII input is forwarded.
         if (ch == 0 || ch == 0xE0)
         {
-            _getch(); // 读走无效部分
+            _getch();
             continue;
         }
 
-        // 【重要】Windows控制台输入不自动回显，手动回显以便用户看到自己打的字
+        // Echo the character because console input does not echo automatically.
         putchar(ch);
 
-        // 读取数据
+        // Store the received character.
         rxBuf[fifoLevel++] = (uint16_t)ch;
     }
 
-    // 推送给设备
+    // Forward the accumulated characters to the AT device.
     if (fifoLevel > 0)
     {
         at_device_rx_isr(&at_dev, (char*)rxBuf, fifoLevel);

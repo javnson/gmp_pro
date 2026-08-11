@@ -10,11 +10,11 @@
 
 // GMP basic core header
 #include <gmp_core.h>
+#include <ctl/component/dsa/dsa_dl_scope.h>
 
 #include "user_main.h"
 #include <xplt.peripheral.h>
 
-#include <ctl/component/dsa/dsa_trigger.h>
 
 //=================================================================================================
 // definitions of peripheral
@@ -33,15 +33,13 @@ adc_gt udc_src;
 ptr_adc_channel_t idc;
 adc_gt idc_src;
 
-// dlog DSA objects
-basic_trigger_t trigger;
-
-// dlog variables
-ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];
-ctrl_gt dlog_mem2[DLOG_MEM_LENGTH];
-
 // GPIO port
 extern gpio_halt user_led;
+
+#if defined ENABLE_GMP_DL_PIL_SIM
+/** @brief Virtual enable state sent to the Simulink plant without energizing hardware. */
+volatile fast_gt pil_output_enabled = 0;
+#endif
 
 //=================================================================================================
 // peripheral setup function
@@ -51,6 +49,8 @@ void setup_peripheral(void)
 {
     // Setup Debug Uart
     debug_uart = LAUNCHXL_UART_USB_BASE;
+    SCI_setBaud(LAUNCHXL_UART_USB_BASE, DEVICE_LSPCLK_FREQ, GMP_DL_UART_BAUDRATE);
+    SCI_enableInterrupt(LAUNCHXL_UART_USB_BASE, SCI_INT_RXFF | SCI_INT_RXERR);
 
     // Test print function
     gmp_base_print(TEXT_STRING("Hello World!\r\n"));
@@ -100,9 +100,6 @@ void setup_peripheral(void)
     ctl_attach_foc_core_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &pos_enc.encif, &spd_enc.encif);
 #endif // BUILD_LEVEL
 
-    // dlog module
-    dsa_init_basic_trigger(&trigger, DLOG_MEM_LENGTH);
-
 }
 
 //=================================================================================================
@@ -113,28 +110,19 @@ interrupt void MainISR(void)
 {
     GPIO_WritePin(MONITOR_IO, 0);
 
-    //
-    // call GMP ISR  Controller operation callback function
-    //
+    /**
+     * Keep physical control entirely outside an SDPE-enabled PIL build.
+     * The PIL Data Link STEP request is the sole owner of ctl_dispatch().
+     */
+#if !defined ENABLE_GMP_DL_PIL_SIM
     gmp_base_ctl_step();
+    user_step_dl_scope();
+#endif
 
     //
     // Call GMP Timer
     //
     gmp_step_system_tick();
-
-    //
-    // Call dlog module
-    //
-
-    // pass trigger source here
-    if (dsa_step_trigger(&trigger, mtr_ctrl.iab0.dat[phase_alpha]))
-    {
-        uint32_t index = dsa_get_trigger_index(&trigger);
-
-        dlog_mem1[index] = mtr_ctrl.iab0.dat[phase_alpha];
-        dlog_mem2[index] = mtr_ctrl.iab0.dat[phase_beta];
-    }
 
     //
     // Blink LED
@@ -243,7 +231,6 @@ interrupt void INT_LAUNCHXL_CAN_1_ISR(void)
 
 void send_monitor_data(void)
 {
-    uint16_t rx_raw[4];
     can_data_t tran_content[2];
 
     // 0x201: Monitor Motor Current
@@ -285,57 +272,88 @@ void send_monitor_data(void)
 //=================================================================================================
 // Debug interface
 
-// a local small cache size, capable of covering the depth of the hardware FIFO (typically 16 bytes)
-#define ISR_LOCAL_BUF_SIZE 16
-
 extern gmp_datalink_t dl;
 
-void flush_dl_tx_buffer()
+/** @brief Bounded time allowed for each framed UART segment. */
+#define DL_UART_TX_TIMEOUT_MS 50U
+
+void flush_dl_tx_buffer(void)
 {
     // Send head
-    gmp_hal_uart_write(LAUNCHXL_UART_USB_BASE, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl), gmp_dev_dl_get_tx_hw_hdr_size(&dl), 10);
+    gmp_hal_uart_write(LAUNCHXL_UART_USB_BASE, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl),
+                       gmp_dev_dl_get_tx_hw_hdr_size(&dl), DL_UART_TX_TIMEOUT_MS);
 
     // Send data body, if necessary
     if (gmp_dev_dl_get_tx_hw_pld_size(&dl) > 0)
     {
-        gmp_hal_uart_write(LAUNCHXL_UART_USB_BASE, gmp_dev_dl_get_tx_hw_pld_ptr(&dl), gmp_dev_dl_get_tx_hw_pld_size(&dl),
-                           10);
+        gmp_hal_uart_write(LAUNCHXL_UART_USB_BASE, gmp_dev_dl_get_tx_hw_pld_ptr(&dl),
+                           gmp_dev_dl_get_tx_hw_pld_size(&dl), DL_UART_TX_TIMEOUT_MS);
     }
 }
 
-void flush_dl_rx_buffer()
+/**
+ * @brief Drain every currently available SCI receive unit without blocking.
+ * @details The caller must prevent the background task and the receive ISR
+ *          from entering this function concurrently.
+ */
+static void drain_dl_rx_fifo_nonblocking(void)
 {
-    uint16_t fifoLevel;
-    data_gt rxBuf[ISR_LOCAL_BUF_SIZE];
-
-    // read all FIFO messages
-    fifoLevel = SCI_getRxFIFOStatus(LAUNCHXL_UART_USB_BASE);
-
-    if (fifoLevel > 0)
+    while (SCI_getRxFIFOStatus(LAUNCHXL_UART_USB_BASE) != SCI_FIFO_RX0)
     {
-        SCI_readCharArray(LAUNCHXL_UART_USB_BASE, (uint16_t*)rxBuf, fifoLevel);
-
-        // Lock-free ring queue pushed into the protocol stack (very fast, O(1))
-        gmp_dev_dl_push_str(&dl, rxBuf, fifoLevel);
+        gmp_dev_dl_push_byte(&dl, (data_gt)SCI_readCharNonBlocking(LAUNCHXL_UART_USB_BASE));
     }
+}
+
+/**
+ * @brief Restore SCI reception after a framing, parity, break, or overrun error.
+ * @details Error data is discarded before the receiver and FIFO are reset.
+ *          Interrupt enables are restored explicitly because malformed baud
+ *          traffic may assert several receiver error sources at once.
+ */
+static void recover_dl_rx_transport(void)
+{
+    SCI_disableInterrupt(LAUNCHXL_UART_USB_BASE, SCI_INT_RXFF | SCI_INT_RXERR);
+    while (SCI_getRxFIFOStatus(LAUNCHXL_UART_USB_BASE) != SCI_FIFO_RX0)
+    {
+        (void)SCI_readCharNonBlocking(LAUNCHXL_UART_USB_BASE);
+    }
+    (void)SCI_readCharNonBlocking(LAUNCHXL_UART_USB_BASE);
+    LAUNCHXL_UART_USB_init();
+    SCI_setBaud(LAUNCHXL_UART_USB_BASE, DEVICE_LSPCLK_FREQ, GMP_DL_UART_BAUDRATE);
+    SCI_enableInterrupt(LAUNCHXL_UART_USB_BASE, SCI_INT_RXFF | SCI_INT_RXERR);
+    gmp_dev_dl_request_rx_reset(&dl);
+}
+
+/** @brief Poll the SCI receive FIFO from the Data Link background task. */
+void flush_dl_rx_buffer(void)
+{
+    /* Keep the RX ISR from consuming a FIFO depth observed by this task. */
+    gmp_base_enter_critical();
+    if ((SCI_getRxStatus(LAUNCHXL_UART_USB_BASE) & SCI_RXSTATUS_ERROR) != 0U)
+    {
+        recover_dl_rx_transport();
+    }
+    else
+    {
+        drain_dl_rx_fifo_nonblocking();
+    }
+    gmp_base_leave_critical();
 }
 
 interrupt void INT_LAUNCHXL_UART_USB_RX_ISR(void)
 {
-    flush_dl_rx_buffer();
+    uint32_t rx_status = SCI_getRxStatus(LAUNCHXL_UART_USB_BASE);
 
-    //
-    // deal with overrun
-    //
-    if (SCI_getRxStatus(LAUNCHXL_UART_USB_BASE) & SCI_RXSTATUS_OVERRUN)
+    if ((rx_status & SCI_RXSTATUS_ERROR) != 0U)
     {
-        SCI_clearOverflowStatus(LAUNCHXL_UART_USB_BASE);
+        recover_dl_rx_transport();
+    }
+    else
+    {
+        drain_dl_rx_fifo_nonblocking();
+        SCI_clearInterruptStatus(LAUNCHXL_UART_USB_BASE, SCI_INT_RXFF);
     }
 
-    //
-    // Clear interrupt flags
-    //
-    SCI_clearInterruptStatus(LAUNCHXL_UART_USB_BASE, SCI_INT_RXFF);
     Interrupt_clearACKGroup(INT_LAUNCHXL_UART_USB_RX_INTERRUPT_ACK_GROUP);
 }
 

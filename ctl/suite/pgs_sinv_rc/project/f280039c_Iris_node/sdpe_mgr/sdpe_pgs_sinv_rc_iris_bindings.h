@@ -18,7 +18,7 @@ extern "C"
 #endif
 
 // User project prefix code
-/* Original ctrl_settings.h includes are intentionally ignored during this SDPE migration trial. */
+// SDPE extension point: add after_extern_open code in the Project Requirement Code page if needed.
 
 //=================================================================================================
 /**
@@ -28,7 +28,7 @@ extern "C"
 #define SDPE_PROJECT_ID "pgs_sinv_rc_iris_node"
 #define SDPE_PROJECT_SUITE "pgs_sinv_rc"
 #define SDPE_PROJECT_VERSION "0.2.0"
-#define SDPE_PROJECT_UPDATED_AT "2026-07-15"
+#define SDPE_PROJECT_UPDATED_AT "2026-08-08"
 
 //=================================================================================================
 /**
@@ -39,6 +39,11 @@ extern "C"
  * @brief Enable Discrete PID controller anti-saturation algorithm.
  */
 #define _USE_DEBUG_DISCRETE_PID
+
+/**
+ * @brief Enable the dead zone compensation mechanism of the modulator
+ */
+// #define ENABLE_DEADBAND_COMP
 
 //=================================================================================================
 /**
@@ -71,11 +76,13 @@ extern "C"
  */
 
 /**
- * @brief Single-phase inverter incremental debug build level.
- *        BUILD_LEVEL 1: modulator and resistive-load validation.
- *        BUILD_LEVEL 2: voltage closed-loop validation.
- *        BUILD_LEVEL 3: current-loop and full controller validation.
- *        Options: (1), (2), (3)
+ * @brief Single-phase converter commissioning level.
+ *        BUILD_LEVEL 1: open-loop sinusoidal H-bridge voltage on an isolated resistive load; validates ADC polarity, PWM mapping and the power stage without a current loop.
+ *        BUILD_LEVEL 2: closed AC-current loop on an isolated resistive load; validates QPR tracking, grid-voltage feedforward and optional FDRC.
+ *        BUILD_LEVEL 3: grid-connected signed P/Q command through the current loop; positive P exports power and negative P rectifies.
+ *        BUILD_LEVEL 4: grid-connected measured-active-power outer loop feeding the current loop.
+ *        BUILD_LEVEL 5: active-front-end rectifier with a DC-bus voltage outer loop; takeover is initialized from the measured passive-rectifier power.
+ *        Options: (1), (2), (3), (4), (5)
  */
 #define BUILD_LEVEL (1)
 
@@ -198,9 +205,9 @@ extern "C"
  */
 
 /**
- * @brief Startup delay in ms.
+ * @brief Number of samples stored per channel by the four-channel hardware Data Link Scope.
  */
-#define CTRL_STARTUP_DELAY (100)
+#define GMP_DL_SCOPE_DEPTH (100)
 
 /**
  * @brief Controller ISR frequency.
@@ -260,92 +267,17 @@ extern "C"
 /**
  * @brief Total AC-side filter/grid inductance in H.
  */
-#define CTRL_AC_INDUCTANCE (0.003f)
+#define CTRL_AC_INDUCTANCE (0.0015f)
 
 /**
  * @brief Total AC-side series resistance in Ohm.
  */
-#define CTRL_AC_RESISTANCE (0.1f)
-
-/**
- * @brief Single-phase PLL proportional gain.
- */
-#define CTRL_PLL_KP (10.0f)
-
-/**
- * @brief Single-phase PLL integral time constant in seconds.
- */
-#define CTRL_PLL_TI (0.02f)
-
-/**
- * @brief PLL q-axis error low-pass cutoff in Hz.
- */
-#define CTRL_PLL_LPF_FC (20.0f)
-
-/**
- * @brief Measured active/reactive power low-pass cutoff in Hz.
- */
-#define CTRL_PQ_LPF_FC (200.0f)
-
-/**
- * @brief Peak current-reference limit in per unit.
- */
-#define CTRL_CURRENT_LIMIT_PU (1.5f)
+#define CTRL_AC_RESISTANCE (0.05f)
 
 /**
  * @brief Minimum PLL voltage magnitude used by P/Q reference division.
  */
 #define CTRL_GRID_VMIN_PU (0.1f)
-
-/**
- * @brief Active-power command slew limit in PU/s.
- */
-#define CTRL_P_SLEW_PU_S (10.0f)
-
-/**
- * @brief Reactive-power command slew limit in PU/s.
- */
-#define CTRL_Q_SLEW_PU_S (20.0f)
-
-/**
- * @brief Current polarity deadband for PWM dead-time compensation.
- */
-#define CTRL_CURRENT_DB_PU (0.01f)
-
-/**
- * @brief Minimum fundamental frequency tracked by the repetitive controller in Hz.
- */
-#define CTRL_FDRC_MIN_FREQ (45.0f)
-
-/**
- * @brief AC voltage sensing gain from the grid LC filter voltage sense path.
- */
-#define CTRL_AC_VOLTAGE_SENSITIVITY HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_GAIN
-
-/**
- * @brief AC voltage sensing ADC bias from the grid LC filter.
- */
-#define CTRL_AC_VOLTAGE_BIAS HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_BIAS_V
-
-/**
- * @brief AC current sensing sensitivity from the LVFB inverter current sensor.
- */
-#define CTRL_AC_CURRENT_SENSITIVITY GMP_LVFB_CURRENT_SENSITIVITY
-
-/**
- * @brief AC current sensing ADC bias from the LVFB inverter current sensor.
- */
-#define CTRL_AC_CURRENT_BIAS GMP_LVFB_CURRENT_BIAS_V
-
-/**
- * @brief DC bus voltage sensing gain from the LVFB inverter voltage sensor.
- */
-#define CTRL_DC_VOLTAGE_SENSITIVITY GMP_LVFB_VOLTAGE_SENSITIVITY
-
-/**
- * @brief DC bus voltage sensing ADC bias from the LVFB inverter voltage sensor.
- */
-#define CTRL_DC_VOLTAGE_BIAS GMP_LVFB_VOLTAGE_BIAS_V
 
 /**
  * @brief Maximum hardware DC bus voltage from the LVFB inverter board.
@@ -383,16 +315,505 @@ extern "C"
 #define CTRL_DCBUS_READY_MAX (CTRL_PROT_VBUS_MAX)
 
 /**
- * @brief ADC calibration timeout in ms.
+ * @brief Single-phase PLL proportional gain.
  */
-#define TIMEOUT_ADC_CALIB_MS (3000)
+#define CTRL_PLL_KP (2.0f)
+
+/**
+ * @brief Single-phase PLL integral time constant in seconds.
+ */
+#define CTRL_PLL_TI (0.02f)
+
+/**
+ * @brief PLL q-axis error low-pass cutoff in Hz.
+ */
+#define CTRL_PLL_LPF_FC (20.0f)
 
 /**
  * @brief SPLL close-loop convergence criterion.
  */
 #define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
 
+/**
+ * @brief DC-bus outer-loop proportional gain.
+ */
+#define SINV_DC_BUS_LOOP_KP (0.8f)
+
+/**
+ * @brief DC-bus outer-loop integral gain per second.
+ */
+#define SINV_DC_BUS_LOOP_KI (12.0f)
+
+/**
+ * @brief Symmetric outer-loop active-power command limit.
+ */
+#define SINV_OUTER_LOOP_POWER_LIMIT_PU (0.65f)
+
+/**
+ * @brief Power and DC-bus outer-loop execution frequency.
+ */
+#define SINV_OUTER_LOOP_FREQUENCY_HZ (1000.0f)
+
+/**
+ * @brief Current polarity deadband for PWM dead-time compensation.
+ */
+#define CTRL_CURRENT_DB_PU (0.01f)
+
+/**
+ * @brief ADC calibration timeout in ms.
+ */
+#define TIMEOUT_ADC_CALIB_MS (3000)
+
+/**
+ * @brief Active-power command slew limit in PU/s.
+ */
+#define CTRL_P_SLEW_PU_S (10.0f)
+
+/**
+ * @brief Reactive-power command slew limit in PU/s.
+ */
+#define CTRL_Q_SLEW_PU_S (20.0f)
+
+/**
+ * @brief Active-power outer-loop proportional gain.
+ */
+#define SINV_POWER_LOOP_KP (0.6f)
+
+/**
+ * @brief Active-power outer-loop integral gain per second.
+ */
+#define SINV_POWER_LOOP_KI (8.0f)
+
+/**
+ * @brief Peak current-reference limit in per unit.
+ */
+#define CTRL_CURRENT_LIMIT_PU (1.5f)
+
+/**
+ * @brief Measured active/reactive power low-pass cutoff in Hz.
+ */
+#define CTRL_PQ_LPF_FC (200.0f)
+
+/**
+ * @brief Minimum fundamental frequency tracked by the repetitive controller in Hz.
+ */
+#define CTRL_FDRC_MIN_FREQ (45.0f)
+
+/**
+ * @brief Repetitive-control learning gain.
+ */
+#define SINV_FDRC_LEARNING_GAIN (0.10f)
+
+/**
+ * @brief FDRC robustness-filter cutoff frequency.
+ */
+#define SINV_FDRC_Q_FILTER_HZ (1000.0f)
+
+/**
+ * @brief Plant-delay compensation in controller samples.
+ */
+#define SINV_FDRC_LEAD_STEPS (3.0f)
+
+/**
+ * @brief Current-error threshold above which RC learning is frozen.
+ */
+#define SINV_FDRC_FREEZE_ERROR_PU (0.05f)
+
+/**
+ * @brief Settling time before repetitive control starts learning.
+ */
+#define SINV_FDRC_ENABLE_DELAY_MS (300)
+
+/**
+ * @brief Startup delay in ms.
+ */
+#define CTRL_STARTUP_DELAY (100)
+
+/**
+ * @brief DC bus voltage sensing gain from the LVFB inverter voltage sensor.
+ */
+#define CTRL_DC_VOLTAGE_SENSITIVITY GMP_LVFB_VOLTAGE_SENSITIVITY
+
+/**
+ * @brief DC bus voltage sensing ADC bias from the LVFB inverter voltage sensor.
+ */
+#define CTRL_DC_VOLTAGE_BIAS GMP_LVFB_VOLTAGE_BIAS_V
+
+/**
+ * @brief AC voltage sensing gain from the grid LC filter voltage sense path.
+ */
+#define CTRL_AC_VOLTAGE_SENSITIVITY HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_GAIN
+
+/**
+ * @brief AC voltage sensing ADC bias from the grid LC filter.
+ */
+#define CTRL_AC_VOLTAGE_BIAS HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_BIAS_V
+
+/**
+ * @brief AC current sensing sensitivity from the LVFB inverter current sensor.
+ */
+#define CTRL_AC_CURRENT_SENSITIVITY GMP_LVFB_CURRENT_SENSITIVITY
+
+/**
+ * @brief AC current sensing ADC bias from the LVFB inverter current sensor.
+ */
+#define CTRL_AC_CURRENT_BIAS GMP_LVFB_CURRENT_BIAS_V
+
+//=================================================================================================
+/**
+ * @brief Common fallbacks: PGS Single-Phase Inverter Common Control.
+ */
+
+//=================================================================================================
+/**
+ * @brief Control Features.
+ */
+
+/**
+ * @brief FDRC master switch. Select this switch to enable delayed insertion of the frequency-adaptive repetitive controller; clear it to keep FDRC disabled at every BUILD_LEVEL.
+ */
+#define SINV_ENABLE_REPETITIVE_CONTROL
+
+/**
+ * @brief Enable grid-voltage feedforward for closed-current-loop build levels.
+ */
+#define SINV_ENABLE_GRID_VOLTAGE_FEEDFORWARD
+
+//=================================================================================================
+/**
+ * @brief Runtime.
+ */
+
+/**
+ * @brief Allow ENABLE_OPERATION to advance through the complete CiA402 startup sequence.
+ */
+#define CIA402_CONFIG_ENABLE_SEQUENCE_SWITCH
+
+//=================================================================================================
+/**
+ * @brief Requirement bindings.
+ */
+
+/**
+ * @brief DC-bus outer-loop proportional gain.
+ */
+#ifndef SINV_DC_BUS_LOOP_KP
+#define SINV_DC_BUS_LOOP_KP (0.8f)
+#endif // SINV_DC_BUS_LOOP_KP
+
+/**
+ * @brief DC-bus outer-loop integral gain per second.
+ */
+#ifndef SINV_DC_BUS_LOOP_KI
+#define SINV_DC_BUS_LOOP_KI (12.0f)
+#endif // SINV_DC_BUS_LOOP_KI
+
+/**
+ * @brief Symmetric outer-loop active-power command limit.
+ */
+#ifndef SINV_OUTER_LOOP_POWER_LIMIT_PU
+#define SINV_OUTER_LOOP_POWER_LIMIT_PU (0.65f)
+#endif // SINV_OUTER_LOOP_POWER_LIMIT_PU
+
+/**
+ * @brief Power and DC-bus outer-loop execution frequency.
+ */
+#ifndef SINV_OUTER_LOOP_FREQUENCY_HZ
+#define SINV_OUTER_LOOP_FREQUENCY_HZ (1000.0f)
+#endif // SINV_OUTER_LOOP_FREQUENCY_HZ
+
+/**
+ * @brief Active-power outer-loop proportional gain.
+ */
+#ifndef SINV_POWER_LOOP_KP
+#define SINV_POWER_LOOP_KP (0.6f)
+#endif // SINV_POWER_LOOP_KP
+
+/**
+ * @brief Active-power outer-loop integral gain per second.
+ */
+#ifndef SINV_POWER_LOOP_KI
+#define SINV_POWER_LOOP_KI (8.0f)
+#endif // SINV_POWER_LOOP_KI
+
+/**
+ * @brief Repetitive-control learning gain.
+ */
+#ifndef SINV_FDRC_LEARNING_GAIN
+#define SINV_FDRC_LEARNING_GAIN (0.10f)
+#endif // SINV_FDRC_LEARNING_GAIN
+
+/**
+ * @brief FDRC robustness-filter cutoff frequency.
+ */
+#ifndef SINV_FDRC_Q_FILTER_HZ
+#define SINV_FDRC_Q_FILTER_HZ (1000.0f)
+#endif // SINV_FDRC_Q_FILTER_HZ
+
+/**
+ * @brief Plant-delay compensation in controller samples.
+ */
+#ifndef SINV_FDRC_LEAD_STEPS
+#define SINV_FDRC_LEAD_STEPS (3.0f)
+#endif // SINV_FDRC_LEAD_STEPS
+
+/**
+ * @brief Current-error threshold above which RC learning is frozen.
+ */
+#ifndef SINV_FDRC_FREEZE_ERROR_PU
+#define SINV_FDRC_FREEZE_ERROR_PU (0.05f)
+#endif // SINV_FDRC_FREEZE_ERROR_PU
+
+/**
+ * @brief Settling time before repetitive control starts learning.
+ */
+#ifndef SINV_FDRC_ENABLE_DELAY_MS
+#define SINV_FDRC_ENABLE_DELAY_MS (300)
+#endif // SINV_FDRC_ENABLE_DELAY_MS
+
+/**
+ * @brief Enable the three sparse ADC slots used by the single-phase inverter SIL input ABI.
+ */
+#ifndef GMP_PIL_RX_MASK
+#define GMP_PIL_RX_MASK (21)
+#endif // GMP_PIL_RX_MASK
+
+/**
+ * @brief Enable two PWM slots and all sixteen monitor slots used by the single-phase inverter SIL output ABI.
+ */
+#ifndef GMP_PIL_TX_MASK
+#define GMP_PIL_TX_MASK (4294901763)
+#endif // GMP_PIL_TX_MASK
+
+/**
+ * @brief Nominal grid frequency in Hz.
+ */
+#ifndef CTRL_GRID_FREQUENCY
+#define CTRL_GRID_FREQUENCY (50.0f)
+#endif // CTRL_GRID_FREQUENCY
+
+/**
+ * @brief Minimum voltage magnitude used by the P/Q reference generator.
+ */
+#ifndef CTRL_GRID_VMIN_PU
+#define CTRL_GRID_VMIN_PU (0.1f)
+#endif // CTRL_GRID_VMIN_PU
+
+/**
+ * @brief SOGI PLL proportional gain.
+ */
+#ifndef CTRL_PLL_KP
+#define CTRL_PLL_KP (10.0f)
+#endif // CTRL_PLL_KP
+
+/**
+ * @brief SOGI PLL integral time constant in seconds.
+ */
+#ifndef CTRL_PLL_TI
+#define CTRL_PLL_TI (0.02f)
+#endif // CTRL_PLL_TI
+
+/**
+ * @brief PLL error-filter cutoff frequency in Hz.
+ */
+#ifndef CTRL_PLL_LPF_FC
+#define CTRL_PLL_LPF_FC (20.0f)
+#endif // CTRL_PLL_LPF_FC
+
+/**
+ * @brief PLL frequency-error lock threshold in PU.
+ */
+#ifndef CTRL_SPLL_EPSILON
+#define CTRL_SPLL_EPSILON (0.005f)
+#endif // CTRL_SPLL_EPSILON
+
+/**
+ * @brief Current deadband used by PWM dead-time compensation.
+ */
+#ifndef CTRL_CURRENT_DB_PU
+#define CTRL_CURRENT_DB_PU (0.01f)
+#endif // CTRL_CURRENT_DB_PU
+
+/**
+ * @brief Active-power command slew limit in PU/s.
+ */
+#ifndef CTRL_P_SLEW_PU_S
+#define CTRL_P_SLEW_PU_S (5.0f)
+#endif // CTRL_P_SLEW_PU_S
+
+/**
+ * @brief Reactive-power command slew limit in PU/s.
+ */
+#ifndef CTRL_Q_SLEW_PU_S
+#define CTRL_Q_SLEW_PU_S (5.0f)
+#endif // CTRL_Q_SLEW_PU_S
+
+/**
+ * @brief Peak current command limit in PU.
+ */
+#ifndef CTRL_CURRENT_LIMIT_PU
+#define CTRL_CURRENT_LIMIT_PU (0.9f)
+#endif // CTRL_CURRENT_LIMIT_PU
+
+/**
+ * @brief Power measurement low-pass cutoff frequency in Hz.
+ */
+#ifndef CTRL_PQ_LPF_FC
+#define CTRL_PQ_LPF_FC (200.0f)
+#endif // CTRL_PQ_LPF_FC
+
+/**
+ * @brief Minimum fundamental tracked by FDRC in Hz.
+ */
+#ifndef CTRL_FDRC_MIN_FREQ
+#define CTRL_FDRC_MIN_FREQ (45.0f)
+#endif // CTRL_FDRC_MIN_FREQ
+
+/**
+ * @brief QPR current-loop crossover target in Hz.
+ */
+#define SINV_CURRENT_LOOP_BANDWIDTH_HZ (600.0f)
+
+/**
+ * @brief Minimum operation-enabled transition delay.
+ */
+#define SINV_CIA402_OPERATION_ENABLE_DELAY_MS (100)
+
+/**
+ * @brief BUILD_LEVEL 1 sinusoidal H-bridge voltage amplitude.
+ */
+#define SINV_LEVEL1_VOLTAGE_REF_PU (0.35f)
+
+/**
+ * @brief BUILD_LEVEL 2 peak current command with a resistive load.
+ */
+#define SINV_LEVEL2_CURRENT_REF_PEAK_PU (0.20f)
+
+/**
+ * @brief BUILD_LEVEL 3 signed grid active-power command; positive exports power.
+ */
+#define SINV_LEVEL3_ACTIVE_POWER_REF_PU (0.10f)
+
+/**
+ * @brief BUILD_LEVEL 3 grid reactive-power command.
+ */
+#define SINV_LEVEL3_REACTIVE_POWER_REF_PU (0.0f)
+
+/**
+ * @brief BUILD_LEVEL 4 measured active-power closed-loop target.
+ */
+#define SINV_LEVEL4_ACTIVE_POWER_REF_PU (0.15f)
+
+/**
+ * @brief BUILD_LEVEL 5 physical DC bus voltage target.
+ */
+#define SINV_DC_BUS_REF_V (60.0f)
+
+//=================================================================================================
+/**
+ * @brief Common fallbacks: GMP Suite PIL Common Transport.
+ */
+
+//=================================================================================================
+/**
+ * @brief PIL Runtime.
+ */
+
+/**
+ * @brief Run control steps only from Data Link PIL transactions while physical control dispatch and power-stage enable remain isolated.
+ */
+// #ifndef ENABLE_GMP_DL_PIL_SIM
+// #define ENABLE_GMP_DL_PIL_SIM
+// #endif // ENABLE_GMP_DL_PIL_SIM
+
+//=================================================================================================
+/**
+ * @brief Requirement bindings.
+ */
+
+/**
+ * @brief Base command followed by mask, step, status, and abort subcommands.
+ */
+#ifndef GMP_PIL_DL_BASE_COMMAND
+#define GMP_PIL_DL_BASE_COMMAND (16)
+#endif // GMP_PIL_DL_BASE_COMMAND
+
+/**
+ * @brief Portable commissioning rate used unless a hardware project overrides it.
+ */
+#ifndef GMP_DL_UART_BAUDRATE
+#define GMP_DL_UART_BAUDRATE (115200)
+#endif // GMP_DL_UART_BAUDRATE
+
+/**
+ * @brief Host running Simulink and the GMP PIL bridge.
+ */
+#ifndef GMP_PIL_UDP_HOST
+#define GMP_PIL_UDP_HOST "127.0.0.1"
+#endif // GMP_PIL_UDP_HOST
+
+/**
+ * @brief Bridge port receiving plant samples from Simulink.
+ */
+#ifndef GMP_PIL_BRIDGE_UDP_LISTEN_PORT
+#define GMP_PIL_BRIDGE_UDP_LISTEN_PORT (12501)
+#endif // GMP_PIL_BRIDGE_UDP_LISTEN_PORT
+
+/**
+ * @brief Simulink port receiving controller results from the bridge.
+ */
+#ifndef GMP_PIL_MATLAB_UDP_LISTEN_PORT
+#define GMP_PIL_MATLAB_UDP_LISTEN_PORT (12500)
+#endif // GMP_PIL_MATLAB_UDP_LISTEN_PORT
+
+/**
+ * @brief Bridge port receiving out-of-band Simulink commands.
+ */
+#ifndef GMP_PIL_MATLAB_COMMAND_TX_PORT
+#define GMP_PIL_MATLAB_COMMAND_TX_PORT (12502)
+#endif // GMP_PIL_MATLAB_COMMAND_TX_PORT
+
+/**
+ * @brief Simulink port receiving command acknowledgements.
+ */
+#ifndef GMP_PIL_MATLAB_COMMAND_RX_PORT
+#define GMP_PIL_MATLAB_COMMAND_RX_PORT (12503)
+#endif // GMP_PIL_MATLAB_COMMAND_RX_PORT
+
+/**
+ * @brief Maximum wait for one target Data Link response.
+ */
+#ifndef GMP_PIL_MCU_TIMEOUT_MS
+#define GMP_PIL_MCU_TIMEOUT_MS (200)
+#endif // GMP_PIL_MCU_TIMEOUT_MS
+
+/**
+ * @brief Maximum wait for the next Simulink plant sample.
+ */
+#ifndef GMP_PIL_MATLAB_TIMEOUT_MS
+#define GMP_PIL_MATLAB_TIMEOUT_MS (5000)
+#endif // GMP_PIL_MATLAB_TIMEOUT_MS
+
+/**
+ * @brief Digital input slot packed into the standard Data Link PIL request.
+ */
+#ifndef GMP_PIL_UDP_DIGITAL_INDEX
+#define GMP_PIL_UDP_DIGITAL_INDEX (0)
+#endif // GMP_PIL_UDP_DIGITAL_INDEX
+
+// Common tail code: GMP Suite PIL Common Transport
+/** Validate the shared PIL command allocation. */
+#if (GMP_PIL_DL_BASE_COMMAND > 251U)
+#error "GMP_PIL_DL_BASE_COMMAND must leave room for four PIL subcommands."
+#endif
+#if (GMP_PIL_UDP_DIGITAL_INDEX >= 8U)
+#error "GMP_PIL_UDP_DIGITAL_INDEX must be in the range [0, 7]."
+#endif
+
 // User project tail code
+#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 5)
+#error BUILD_LEVEL_must_be_between_1_and_5
+#endif
 /* Compatibility with framework revisions that use the historical misspelling. */
 #if defined(ENABLE_GMP_DL_PIL_SIM) && !defined(ENBALE_GMP_DL_PIL_SIM)
 #define ENBALE_GMP_DL_PIL_SIM

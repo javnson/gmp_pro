@@ -81,13 +81,15 @@ void ctl_init_pid_Tmode(ctl_pid_t* hpid, parameter_gt kp, parameter_gt Ti, param
 void ctl_init_pid(ctl_pid_t* hpid, parameter_gt kp, parameter_gt ki, parameter_gt kd, parameter_gt fs);
 
 /**
- * @brief Executes one step of the parallel-form PID controller.
- * @details Output = Kp*e(n) + Ki*sum(e(n)) + Kd*(e(n)-e(n-1)).
+ * @brief Executes one unsaturated step of the parallel-form PID controller.
+ * @details Intended for composite controllers that apply a shared multi-axis
+ * limiter and then back-calculate the individual integrators. The integrator's
+ * own limits remain active.
  * @param[in,out] hpid Pointer to the PID controller instance.
  * @param[in] input The current input error, e(n).
- * @return ctrl_gt The calculated controller output.
+ * @return ctrl_gt The calculated output before output saturation.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_step_pid_par(ctl_pid_t* hpid, ctrl_gt input)
+GMP_STATIC_INLINE ctrl_gt ctl_step_pid_par_raw(ctl_pid_t* hpid, ctrl_gt input)
 {
     // update p term
     hpid->p_term = ctl_mul(input, hpid->kp);
@@ -101,12 +103,23 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_pid_par(ctl_pid_t* hpid, ctrl_gt input)
     // Output = P_term + I_term + D_term
     hpid->out = hpid->p_term + hpid->i_term + hpid->d_term;
 
-    // Saturate final output
-    hpid->out = ctl_sat(hpid->out, hpid->out_max, hpid->out_min);
-
     // Store current input for next derivative calculation
     hpid->dn = input;
 
+    return hpid->out;
+}
+
+/**
+ * @brief Executes one step of the parallel-form PID controller.
+ * @details Output = Kp*e(n) + Ki*sum(e(n)) + Kd*(e(n)-e(n-1)).
+ * @param[in,out] hpid Pointer to the PID controller instance.
+ * @param[in] input The current input error, e(n).
+ * @return ctrl_gt The calculated controller output.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_step_pid_par(ctl_pid_t* hpid, ctrl_gt input)
+{
+    ctrl_gt out = ctl_step_pid_par_raw(hpid, input);
+    hpid->out = ctl_sat(out, hpid->out_max, hpid->out_min);
     return hpid->out;
 }
 

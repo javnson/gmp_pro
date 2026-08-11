@@ -194,6 +194,7 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_pid.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_pole_zero.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_pr.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_pr_tuner.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_sg.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_sogi.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_discrete_track_pid.c" />
@@ -202,11 +203,14 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_basic.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_gfl_core.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_gfl_pq.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_gfl_pq_droop_ctrl.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_gfm_droop.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_hcm.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_mppt_inc.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_mppt_po.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_neg_ctrl.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_voltage_ctrl.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_zero_ctrl.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_pll_ddsrf.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_pll_dsogi.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dp_pll_srf.c" />

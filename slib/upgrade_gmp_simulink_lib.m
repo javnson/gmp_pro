@@ -103,12 +103,6 @@ generate_single_slx_lib('gmp_component_model');
 
 warning('on','all')
 
-%% Compiling MEX Library
-
-disp('Compiling MEX_UDP_Helper.');
-
-% compile_cmd = sprintf('mex ''-I"E:\lib\gmp_pro\core\util\udp_helper"''')
-
 %% Copy 3D Models for SIL 
 
 % copy all m files
@@ -126,14 +120,20 @@ disp('GMP Simulink Library: Other necessary files are copying.');
 target_file = append('install_path/',matlab_version.Release,'/slblocks.m');
 copyfile('simulink_lib_src/slblocks.m', target_file, 'f');
 
-% copy all m files
-if (~exist(append(simulink_lib_path,'/src')))
-    mkdir(append(simulink_lib_path,'/src'));
+% Recreate the generated helper directory so removed compatibility files do
+% not survive a later installation. The only native SIL artifact copied from
+% the source package is the MEX built by install_gmp_simulink_lib.
+release_src_path = fullfile(simulink_lib_path, 'src');
+if isfolder(release_src_path)
+    path_entries = strsplit(path, pathsep);
+    if any(strcmpi(path_entries, release_src_path))
+        rmpath(release_src_path);
+    end
+    rmdir(release_src_path, 's');
 end
-
+mkdir(release_src_path);
 
 clear GMP_SIL_Core
-clear MEX_UDP_Helper
 
 copyfile('simulink_lib_src/src', append(simulink_lib_path,'/src'), 'f');
 

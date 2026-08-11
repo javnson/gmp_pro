@@ -100,4 +100,9 @@ typedef struct _tag_gpio_model_stm32_t
 #define GMP_PORT_SPI_T SPI_HandleTypeDef *
 #endif // HAL_SPI_MODULE_ENABLED
 
+// IIC interface
+#ifdef HAL_I2C_MODULE_ENABLED
+#define GMP_PORT_I2C_T I2C_HandleTypeDef*
+#endif // HAL_I2C_MODULE_ENABLED
+
 #endif

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -9,6 +10,7 @@ from typing import Any
 
 from .library import SDPELibrary
 from .model import ComponentRef, HardwareEntity, HardwareSchema, SDPEError
+from .project_requirements import load_project_requirements
 from .util import c_literal, header_guard, macro_name, read_json, write_if_changed
 
 
@@ -326,8 +328,9 @@ class HeaderGenerator:
         lines.append("/**")
         parts = str(brief).splitlines() or [""]
         for index, part in enumerate(parts):
-            tag = "@brief " if index == 0 else "       "
-            lines.append(f" * {tag}{part}")
+            tag = "@brief" if index == 0 else "      "
+            suffix = f" {part}" if part else ""
+            lines.append(f" * {tag}{suffix}")
         if unit:
             lines.append(f" * @unit {unit}")
         lines.append(" */")
@@ -344,8 +347,8 @@ class HeaderGenerator:
     def _format_binding_text(self, value: str) -> str:
         text = str(value).strip()
         return re.sub(
-            r"\$\{([A-Za-z0-9_][A-Za-z0-9_.]*)\}",
-            lambda match: self._resolve_export(match.group(1)),
+            r"\$\{([^{}]+)\}",
+            lambda match: self._resolve_export(match.group(1).strip()),
             text,
         )
 
@@ -559,30 +562,86 @@ class HeaderGenerator:
         return f"{self.prefix(parent, parent_schema)}_{macro_name(comp.slot)}"
 
     def generate_project(self, project_path: Path) -> list[GeneratedFile]:
-        """Generate a project binding header."""
+        """Generate one merged header for a private project and all of its Common inputs."""
 
-        data = read_json(project_path)
+        data, commons = load_project_requirements(project_path)
         generated: list[GeneratedFile] = []
         seen: set[Path] = set()
-        included_entities = self._project_entity_ids(data)
-        for entity_id in included_entities:
-            for item in self.generate_entity_tree(entity_id, skip_system=True):
-                if item.path not in seen:
-                    seen.add(item.path)
-                    generated.append(item)
-
+        common_data = self.effective_common_overrides(data, [item for _path, item in commons])
+        hardware_data = [data, *common_data]
+        for project_data in hardware_data:
+            for entity_id in self._project_entity_ids(project_data):
+                for item in self.generate_entity_tree(entity_id, skip_system=True):
+                    if item.path not in seen:
+                        seen.add(item.path)
+                        generated.append(item)
         out_path = self.project_header_path(data)
-        changed = write_if_changed(out_path, self.render_project_header(data))
+        changed = write_if_changed(out_path, self.render_project_header(data, common_data))
         generated.append(GeneratedFile(out_path, changed))
+        self._remove_legacy_common_headers(common_data, out_path)
         return generated
 
-    def generate_project_matlab_script(self, project_path: Path) -> GeneratedFile:
-        """Generate a MATLAB initialization script for project bindings."""
+    def _remove_legacy_common_headers(
+        self,
+        commons: list[dict[str, Any]],
+        private_path: Path,
+    ) -> None:
+        """Remove only old SDPE-generated Common headers from the target output folder."""
 
-        data = read_json(project_path)
-        out_path = self.project_matlab_script_path(data)
-        changed = write_if_changed(out_path, self.render_project_matlab_script(data))
-        return GeneratedFile(out_path, changed)
+        for common in commons:
+            path = self.project_header_path(common)
+            if path == private_path or not path.is_file():
+                continue
+            try:
+                content = path.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            header_name = str(common.get("output_header", ""))
+            generated_prefix = (
+                "/**\n"
+                f" * @file {header_name}\n"
+                " * @brief SDPE project bindings for "
+            )
+            if header_name and content.startswith(generated_prefix):
+                path.unlink()
+
+    def generate_project_matlab_script(self, project_path: Path) -> GeneratedFile:
+        """Generate private and bound common scripts, returning the private output."""
+
+        return self.generate_project_matlab_scripts(project_path)[0]
+
+    def generate_project_matlab_scripts(self, project_path: Path) -> list[GeneratedFile]:
+        """Generate private output first, followed by its bound common output."""
+
+        data, commons = load_project_requirements(project_path)
+        generated: list[GeneratedFile] = []
+        common_data = [item for _path, item in commons]
+        for project_data, inherited in [(data, common_data), *((item, []) for item in common_data)]:
+            out_path = self.project_matlab_script_path(project_data)
+            changed = write_if_changed(out_path, self.render_project_matlab_script(project_data, inherited))
+            generated.append(GeneratedFile(out_path, changed))
+        return generated
+
+    def effective_common_overrides(
+        self,
+        private: dict[str, Any],
+        commons: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Force Common duplicates to weak definitions beneath private overrides."""
+
+        private_macros = {
+            str(item.get("macro", "")).strip()
+            for key in ("requirements", "feature_macros", "option_macros")
+            for item in private.get(key, [])
+            if str(item.get("macro", "")).strip()
+        }
+        effective = copy.deepcopy(commons)
+        for common in effective:
+            for key in ("requirements", "feature_macros", "option_macros"):
+                for item in common.get(key, []):
+                    if str(item.get("macro", "")).strip() in private_macros:
+                        item["weak"] = True
+        return effective
 
     def project_header_path(self, data: dict[str, Any]) -> Path:
         """Return the generated project header path."""
@@ -601,12 +660,16 @@ class HeaderGenerator:
             return self.out_dir / self.project_subdir / script_name
         return self.out_dir / script_name
 
-    def render_project_header(self, data: dict[str, Any]) -> str:
+    def render_project_header(self, data: dict[str, Any], common_data: list[dict[str, Any]] | None = None) -> str:
         """Render project requirement binding header."""
 
         project_id = data.get("id", "sdpe_project")
         guard = header_guard(f"project/{data.get('output_header', 'sdpe_project_bindings.h')}")
-        hardware_ids = self._project_entity_ids(data)
+        effective_commons = self.effective_common_overrides(data, common_data or [])
+        hardware_ids = list(self._project_entity_ids(data))
+        for common in effective_commons:
+            hardware_ids.extend(self._project_entity_ids(common))
+        hardware_ids = list(dict.fromkeys(hardware_ids))
         out_path = self.project_header_path(data)
         includes = [self.entity_include_path(self.library.entity(entity_id), out_path) for entity_id in hardware_ids]
 
@@ -627,6 +690,9 @@ class HeaderGenerator:
 
         lines.extend(["#ifdef __cplusplus", 'extern "C"', "{", "#endif", ""])
         self._append_project_code_section(lines, data, "after_extern_open", "User project prefix code", True)
+        for common in effective_commons:
+            common_name = common.get("display_name", common.get("id", "Common requirement"))
+            self._append_project_code_section(lines, common, "after_extern_open", f"Common prefix code: {common_name}")
 
         self._append_project_section_header(lines, "Project metadata")
         lines.append(f"#define {self.project_metadata_macro(data, 'SDPE_PROJECT_ID')} \"{project_id}\"")
@@ -637,6 +703,36 @@ class HeaderGenerator:
         if data.get("updated_at"):
             lines.append(f"#define {self.project_metadata_macro(data, 'SDPE_PROJECT_UPDATED_AT')} \"{data['updated_at']}\"")
         lines.append("")
+
+        self._append_project_config_items(lines, data)
+        for common in effective_commons:
+            common_name = common.get("display_name", common.get("id", "Common requirement"))
+            self._append_project_section_header(lines, f"Common fallbacks: {common_name}")
+            self._append_project_config_items(lines, common)
+
+        if data.get("peripheral_bindings"):
+            self._append_project_section_header(lines, "Board peripheral mapping")
+            for macro, value in data["peripheral_bindings"].items():
+                self._append_doc_comment(lines, macro)
+                lines.append(f"#define {macro} {value}")
+                lines.append("")
+
+        if data.get("global_macros"):
+            self._append_project_section_header(lines, "Global project macros")
+            for macro, value in data["global_macros"].items():
+                self._append_doc_comment(lines, macro)
+                lines.append(f"#define {macro} {value}")
+                lines.append("")
+
+        for common in effective_commons:
+            common_name = common.get("display_name", common.get("id", "Common requirement"))
+            self._append_project_code_section(lines, common, "before_footer", f"Common tail code: {common_name}")
+        self._append_project_code_section(lines, data, "before_footer", "User project tail code", True)
+        lines.extend(["#ifdef __cplusplus", "}", "#endif", "", f"#endif // {guard}", ""])
+        return "\n".join(lines)
+
+    def _append_project_config_items(self, lines: list[str], data: dict[str, Any]) -> None:
+        """Append one requirement source into an already-open project header."""
 
         for group, items in self._group_project_macros(data.get("feature_macros", []), "Selection macros"):
             self._append_project_section_header(lines, group)
@@ -667,15 +763,22 @@ class HeaderGenerator:
                 if options:
                     comment_lines.append(f"Options: {', '.join(str(v) for v in options)}")
                 self._append_doc_comment(lines, "\n".join(comment_lines))
-                value = str(item.get("value", ""))
-                enabled = item.get("enabled", True)
-                self._append_config_macro(lines, macro, value, enabled=enabled, weak=item.get("weak", False))
+                self._append_config_macro(
+                    lines,
+                    macro,
+                    str(item.get("value", "")),
+                    enabled=item.get("enabled", True),
+                    weak=item.get("weak", False),
+                )
                 lines.append("")
 
-        self._append_project_section_header(lines, "Requirement bindings")
+        if data.get("requirements"):
+            self._append_project_section_header(lines, "Requirement bindings")
         for req in data.get("requirements", []):
-            macro = req["macro"]
-            value = self._resolve_binding_value(req["binding"])
+            macro = req.get("macro", "")
+            if not macro:
+                continue
+            value = self._resolve_binding_value(req.get("binding", {}))
             desc = req.get("description", req.get("role", macro))
             self._append_doc_comment(lines, desc)
             self._append_config_macro(
@@ -687,25 +790,7 @@ class HeaderGenerator:
             )
             lines.append("")
 
-        if data.get("peripheral_bindings"):
-            self._append_project_section_header(lines, "Board peripheral mapping")
-            for macro, value in data["peripheral_bindings"].items():
-                self._append_doc_comment(lines, macro)
-                lines.append(f"#define {macro} {value}")
-                lines.append("")
-
-        if data.get("global_macros"):
-            self._append_project_section_header(lines, "Global project macros")
-            for macro, value in data["global_macros"].items():
-                self._append_doc_comment(lines, macro)
-                lines.append(f"#define {macro} {value}")
-                lines.append("")
-
-        self._append_project_code_section(lines, data, "before_footer", "User project tail code", True)
-        lines.extend(["#ifdef __cplusplus", "}", "#endif", "", f"#endif // {guard}", ""])
-        return "\n".join(lines)
-
-    def render_project_matlab_script(self, data: dict[str, Any]) -> str:
+    def render_project_matlab_script(self, data: dict[str, Any], common_data: list[dict[str, Any]] | None = None) -> str:
         """Render a MATLAB script that mirrors project-visible SDPE macros."""
 
         project_id = data.get("id", "sdpe_project")
@@ -715,6 +800,15 @@ class HeaderGenerator:
             "% Generated by tools/SDPE_v2. Do not edit generated variables directly.",
             "",
         ]
+        for common in common_data or []:
+            common_script = self.project_matlab_script_path(common).name
+            lines.extend(
+                [
+                    "% Load the explicitly bound common requirement first.",
+                    f"run(fullfile(fileparts(mfilename('fullpath')), '{common_script}'));",
+                    "",
+                ]
+            )
         if data.get("description"):
             lines.append("% Notes:")
             for part in str(data["description"]).splitlines():
@@ -722,7 +816,10 @@ class HeaderGenerator:
             lines.append("")
 
         emitted: set[str] = set()
+        disabled: list[str] = []
         known_macros = self._project_matlab_macro_names(data)
+        for common in common_data or []:
+            known_macros.update(self._project_matlab_macro_names(common))
 
         def emit(name: str, value: Any, description: str = "") -> None:
             macro = macro_name(name)
@@ -760,6 +857,7 @@ class HeaderGenerator:
                 if item.get("enabled", True):
                     emit(macro, value, item.get("description", ""))
                 else:
+                    disabled.append(macro_name(macro))
                     lines.append(f"% {macro} is disabled in the SDPE project requirement.")
                     lines.append(f"% {macro} = {self._matlab_value(value, known_macros)};")
                     lines.append("")
@@ -778,6 +876,7 @@ class HeaderGenerator:
                         desc = f"{desc}\nOptions: {', '.join(str(v) for v in options)}".strip()
                     emit(macro, value, desc)
                 else:
+                    disabled.append(macro_name(macro))
                     lines.append(f"% {macro} is disabled in the SDPE project requirement.")
                     lines.append(f"% {macro} = {self._matlab_value(value, known_macros)};")
                     lines.append("")
@@ -791,9 +890,46 @@ class HeaderGenerator:
             if req.get("enabled", True):
                 emit(macro, value, req.get("description", req.get("role", macro)))
             else:
+                disabled.append(macro_name(macro))
                 lines.append(f"% {macro} is disabled in the SDPE project requirement.")
                 lines.append(f"% {macro} = {self._matlab_value(value, known_macros)};")
                 lines.append("")
+
+        summary_hardware = list(hardware_ids)
+        for common in common_data or []:
+            summary_hardware.extend(self._project_entity_ids(common))
+        summary_hardware = list(dict.fromkeys(summary_hardware))
+        display_name = self._matlab_string(data.get("display_name", project_id))
+        lines.extend(
+            [
+                "%% SDPE project summary",
+                "fprintf('\\n============================================================\\n');",
+                f"fprintf('SDPE Project : %s\\n', {display_name});",
+                f"fprintf('Project ID   : %s\\n', {self._matlab_string(project_id)});",
+                f"fprintf('Suite        : %s\\n', {self._matlab_string(data.get('suite', ''))});",
+                f"fprintf('Version      : %s\\n', {self._matlab_string(data.get('version', ''))});",
+                f"fprintf('Hardware ({len(summary_hardware)}):\\n');",
+            ]
+        )
+        for entity_id in summary_hardware:
+            lines.append(f"fprintf('  - %s\\n', {self._matlab_string(entity_id)});")
+        lines.append(f"fprintf('Common requirements ({len(common_data or [])}):\\n');")
+        for common in common_data or []:
+            common_name = common.get("display_name", common.get("id", "common"))
+            lines.append(f"fprintf('  - %s\\n', {self._matlab_string(common_name)});")
+        summary_variables = set(emitted)
+        summary_disabled = set(disabled)
+        for common in common_data or []:
+            common_disabled = self._project_disabled_matlab_macro_names(common)
+            summary_variables.update(self._project_matlab_macro_names(common) - common_disabled)
+            summary_disabled.update(common_disabled)
+        lines.append(f"fprintf('Enabled variables ({len(summary_variables)}):\\n');")
+        for macro in sorted(summary_variables):
+            lines.append(f"fprintf('  {macro} = '); disp({macro});")
+        lines.append(f"fprintf('Disabled macros ({len(summary_disabled)}):\\n');")
+        for macro in sorted(summary_disabled):
+            lines.append(f"fprintf('  - {macro}\\n');")
+        lines.extend(["fprintf('============================================================\\n');", ""])
 
         lines.extend(
             [
@@ -938,6 +1074,14 @@ class HeaderGenerator:
                 names.add(macro_name(req["macro"]))
         return names
 
+    def _project_disabled_matlab_macro_names(self, data: dict[str, Any]) -> set[str]:
+        return {
+            macro_name(item["macro"])
+            for key in ("feature_macros", "option_macros", "requirements")
+            for item in data.get(key, [])
+            if item.get("macro") and not item.get("enabled", True)
+        }
+
     def _collect_entity_matlab_macro_names(
         self, entity: HardwareEntity, names: set[str], seen: set[str] | None = None
     ) -> None:
@@ -966,8 +1110,10 @@ class HeaderGenerator:
             value = str(item.get("value", ""))
             if re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", value):
                 names.add(f"{macro}_{macro_name(value)}")
-        for pspec in schema.parameters.values():
-            names.add(f"{prefix}_{pspec.c_name}")
+        for pname, pspec in schema.parameters.items():
+            found, _value = self._entity_parameter_value(entity, pname, pspec.c_name)
+            if found or pspec.default is not None:
+                names.add(f"{prefix}_{pspec.c_name}")
         for item in schema.derived_macros:
             names.add(f"{prefix}_{item.name}")
         for comp in entity.components.values():
@@ -1166,14 +1312,14 @@ class HeaderGenerator:
     def _resolve_binding_value(self, binding: Any) -> str:
         if isinstance(binding, dict):
             if "literal" in binding:
-                return self._format_binding_text(str(binding["literal"]))
+                # Literal bindings deliberately bypass SDPE reference expansion.
+                return str(binding["literal"]).strip()
             if "macro" in binding:
-                return self._format_binding_text(str(binding["macro"]))
+                return str(binding["macro"]).strip()
             if "export" in binding:
                 value = str(binding["export"])
-                if value.strip().startswith("${"):
-                    return self._format_binding_text(value)
-                return self._resolve_export(value)
+                match = re.fullmatch(r"\$\{([^{}]+)\}", value.strip())
+                return self._resolve_export(match.group(1).strip() if match else value.strip())
             if "expr" in binding:
                 return self._format_binding_text(str(binding["expr"]))
             if "string" in binding:

@@ -22,15 +22,16 @@ void ctl_init_ato_pll(ctl_ato_pll_t* pll, parameter_gt bandwidth_hz, parameter_g
     parameter_gt kp_phy = 2.0f * zeta * wn;
     parameter_gt ki_phy = wn * wn;
 
-    // 3. Map to PU and absorb Discrete Sampling Time
+    // 3. Map speed output to PU. ctl_init_pid() performs the continuous-Ki
+    //    to per-sample conversion, so Ki must not contain Ts here.
     parameter_gt pu_scale = CTL_PARAM_CONST_2PI / w_base;
     parameter_gt kp_pu_val = kp_phy * pu_scale;
-    parameter_gt ki_pu_val = ki_phy * pu_scale * ts;
+    parameter_gt ki_pu_val = ki_phy * pu_scale;
 
     // 4. Initialize underlying PID object
     ctl_init_pid(&pll->pi_ctrl, float2ctrl(kp_pu_val), float2ctrl(ki_pu_val), float2ctrl(0.0f), fs_safe);
     ctl_set_pid_limit(&pll->pi_ctrl, float2ctrl(spd_limit_max), float2ctrl(spd_limit_min));
-    // 同样约束积分器的边界，防止深深度饱和
+    // Keep the integrator inside the same speed limits to prevent windup.
     ctl_set_pid_int_limit(&pll->pi_ctrl, float2ctrl(spd_limit_max), float2ctrl(spd_limit_min));
 
     // 5. Angle Integration Scale Factor

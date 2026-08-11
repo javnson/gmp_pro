@@ -215,6 +215,7 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_if_pwm_npc.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_if_pwm_spwm.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_internal_ladrc1.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\ctl_dq_pi.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_internal_ladrc2.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_itoc_protection.c" />
     <ClCompile Include="gmp_src_mgr\gmp_src\ctl_mc_acim_consultant.c" />

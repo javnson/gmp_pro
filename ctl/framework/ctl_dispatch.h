@@ -102,9 +102,16 @@ GMP_STATIC_INLINE void ctl_fm_periodic_dispatch(ctl_object_nano_t* pctl_obj)
  * @details This function is the primary entry point intended to be invoked by the
  * user in the main control ISR. It conditionally compiles the appropriate
  * dispatch logic based on the selected framework.
+ *
+ * When Data Link PIL is enabled, hardware interrupts still acknowledge their
+ * peripheral events but this entry point deliberately performs no controller
+ * work. Each controller step is then owned exclusively by gmp_pil_sim_step(),
+ * which prevents an ISR and a host transaction from advancing shared state
+ * concurrently.
  */
 GMP_STATIC_INLINE void gmp_base_ctl_step(void)
 {
+#if !defined ENABLE_GMP_DL_PIL_SIM
 #ifdef SPECIFY_ENABLE_GMP_CTL
 #ifdef SPECIFY_ENABLE_CTL_FRAMEWORK_NANO
 
@@ -129,6 +136,7 @@ GMP_STATIC_INLINE void gmp_base_ctl_step(void)
 
 #endif // SPECIFY_ENABLE_CTL_FRAMEWORK_NANO
 #endif // SPECIFY_ENABLE_GMP_CTL
+#endif // !defined ENABLE_GMP_DL_PIL_SIM
 }
 
 /** @} */ // end of CTL_FRAMEWORK_DISPATCHER group

@@ -11,10 +11,10 @@
 
 #include <gmp_core.h>
 
-//////////////////////////////////////////////////////////////////////////
-// acm speed calculator (slip observer)
-
 #include <ctl/component/motor_control/observer/acim_pos_calc.h>
+
+//=================================================================================================
+// Explicit-coefficient initialization
 
 void ctl_init_im_pos_calc(ctl_im_pos_calc_t* calc, const ctl_im_pos_calc_init_t* init)
 {
@@ -31,11 +31,15 @@ void ctl_init_im_pos_calc(ctl_im_pos_calc_t* calc, const ctl_im_pos_calc_init_t*
     ctl_disable_im_pos_calc(calc);
 }
 
+//=================================================================================================
+// Motor/PU consultant auto-tuning
+
 void ctl_init_im_pos_calc_consultant(ctl_im_pos_calc_t* calc, const ctl_consultant_im_t* motor,
                                      const ctl_consultant_pu_im_t* pu, parameter_gt fs)
 {
     ctl_im_pos_calc_init_t bare_init;
-    parameter_gt Ts = 1.0f / fs;
+    parameter_gt fs_safe = (fs > 1e-6f) ? fs : 10000.0f;
+    parameter_gt Ts = 1.0f / fs_safe;
 
     // ========================================================================
     // Physical Parameter PU Derivations
@@ -43,8 +47,8 @@ void ctl_init_im_pos_calc_consultant(ctl_im_pos_calc_t* calc, const ctl_consulta
     parameter_gt tau_r = motor->tau_r; // Lr / Rr from the IM Consultant
 
     // 1. Magnetizing Current Filter Constant
-    // LPF equation: T_s / tau_r
-    bare_init.sf_lpf_kr = Ts / tau_r;
+    // Exact zero-order-hold discretization of 1 / (tau_r*s + 1).
+    bare_init.sf_lpf_kr = 1.0f - expf(-Ts / tau_r);
 
     // 2. Slip Equation Constant
     // Physical: w_slip = i_sq / (tau_r * i_md)

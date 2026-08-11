@@ -16,4 +16,5 @@ void ctl_init_spwm_modulator(spwm_modulator_t* mod, pwm_gt pwm_full_scale, pwm_g
     mod->current_hysteresis_band = current_hysteresis;
 
     ctl_clear_spwm_modulator(mod);
+    ctl_disable_spwm_deadtime_compensation(mod);
 }

@@ -56,17 +56,25 @@ ctl_attach_sinv_rc(&rc_core,
 
 ### 第三步：分级安全测试 (Phased Testing via BUILD_LEVEL)
 
-修改 `ctrl_settings.h` 中的 `BUILD_LEVEL` 宏，逐步验证您的逆变器：
+在目标项目的 `sdpe_mgr/sdpe_requirement.json` 中选择 `BUILD_LEVEL`，依次生成
+`sdpe_general` 与项目层配置、重新编译后，再逐级验证变流器：
 
 - **`BUILD_LEVEL 1` (离网校验)**：
   - 强制关闭 FDRC 与电网前馈。
-  - 目标：验证 ADC 采样方向、极性，单极性 SPWM 发波逻辑是否正常。可在交流侧挂载纯电阻负载进行恒压或开环电流测试。
-- **`BUILD_LEVEL 2` (基础并网)**：
-  - 开启电网电压前馈 (Lead Compensation)，关闭 FDRC。
-  - 目标：通过 CAN 或上位机下发 P 和 Q 指令，验证逆变器/整流器能否将电流无偏差地注入电网（观察相位是否对齐）。
-- **`BUILD_LEVEL 3` (全功能并网)**：
-  - CiA 402 状态机允许 Operation Enabled 后，自动延时（如 200 个控制周期）平滑切入 FDRC。
-  - 目标：观察电流 THD，验证系统抗电网背景谐波的能力与极致波形。
+  - 目标：在隔离电阻负载下输出开环正弦电压，验证 ADC 方向、PWM 映射和功率级。
+- **`BUILD_LEVEL 2` (电流闭环离网校验)**：
+  - 在隔离电阻负载下运行交流电流闭环，验证 QPR、电网电压前馈和可选 FDRC。
+- **`BUILD_LEVEL 3` (并网 P/Q 指令)**：
+  - 通过电流内环执行有符号 P/Q 指令；正 P 向电网送电，负 P 从电网整流吸收。
+- **`BUILD_LEVEL 4` (并网功率闭环)**：
+  - 由实测有功功率外环产生电流内环指令，验证功率闭环稳态精度。
+- **`BUILD_LEVEL 5` (直流母线整流闭环)**：
+  - 直流母线电压外环产生负有功指令。进入运行态时以不控整流阶段的实测有功功率预置 PI
+    与功率斜率器，再由该工作点平滑升压，避免从零功率重新施加斜率。
+
+公共层 `sdpe_general/sdpe_requirement.json` 中的
+`SINV_ENABLE_REPETITIVE_CONTROL` 是 FDRC 总开关：选中时在进入运行态并延时后投入；
+取消选中时所有 BUILD_LEVEL 都保持 FDRC 关闭。
 
 ------
 

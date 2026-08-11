@@ -7,11 +7,15 @@ try:
     from PyQt6.QtWidgets import (
         QDialog,
         QDialogButtonBox,
+        QButtonGroup,
+        QHBoxLayout,
         QInputDialog,
         QHeaderView,
         QLineEdit,
         QListWidget,
+        QListWidgetItem,
         QMessageBox,
+        QRadioButton,
         QTextEdit,
         QTreeWidget,
         QTreeWidgetItem,
@@ -23,11 +27,15 @@ except ImportError:  # pragma: no cover - depends on local desktop environment.
     from PySide6.QtWidgets import (
         QDialog,
         QDialogButtonBox,
+        QButtonGroup,
+        QHBoxLayout,
         QInputDialog,
         QHeaderView,
         QLineEdit,
         QListWidget,
+        QListWidgetItem,
         QMessageBox,
+        QRadioButton,
         QTextEdit,
         QTreeWidget,
         QTreeWidgetItem,
@@ -158,6 +166,121 @@ def choose_item(parent: QWidget, title: str, items: list[str]) -> str | None:
     if dialog.exec() == QDialog.DialogCode.Accepted and list_widget.currentItem():
         return list_widget.currentItem().text()
     return None
+
+
+def choose_multiple_items(parent: QWidget, title: str, items: list[str]) -> list[str] | None:
+    """Choose zero or more searchable entries using persistent check boxes."""
+
+    dialog = QDialog(parent)
+    dialog.setWindowTitle(title)
+    dialog.resize(680, 520)
+    search = QLineEdit()
+    search.setPlaceholderText("Search keywords")
+    list_widget = QListWidget()
+    checked: set[str] = set()
+
+    def remember(item: QListWidgetItem) -> None:
+        if item.checkState() == Qt.CheckState.Checked:
+            checked.add(item.text())
+        else:
+            checked.discard(item.text())
+
+    def populate() -> None:
+        query = search.text().strip().lower()
+        parts = query.split()
+        list_widget.blockSignals(True)
+        list_widget.clear()
+        for value in items:
+            if parts and not all(part in value.lower() for part in parts):
+                continue
+            item = QListWidgetItem(value)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(Qt.CheckState.Checked if value in checked else Qt.CheckState.Unchecked)
+            list_widget.addItem(item)
+        list_widget.blockSignals(False)
+
+    list_widget.itemChanged.connect(remember)
+    search.textChanged.connect(populate)
+    populate()
+    buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+    buttons.accepted.connect(dialog.accept)
+    buttons.rejected.connect(dialog.reject)
+    layout = QVBoxLayout(dialog)
+    layout.addWidget(search)
+    layout.addWidget(list_widget)
+    layout.addWidget(buttons)
+    if dialog.exec() == QDialog.DialogCode.Accepted:
+        return [value for value in items if value in checked]
+    return None
+
+
+def choose_duplicate_macros(
+    parent: QWidget,
+    duplicates: dict[str, list[dict[str, object]]],
+) -> dict[str, str] | None:
+    """Choose exactly one retained occurrence for every duplicate macro."""
+
+    dialog = QDialog(parent)
+    dialog.setWindowTitle("Resolve Duplicate Macros")
+    dialog.resize(1080, 620)
+    tree = QTreeWidget()
+    tree.setHeaderLabels(["Keep", "Macro", "Kind", "Name", "Source", "Group", "Description"])
+    tree.setAlternatingRowColors(True)
+    button_groups: list[QButtonGroup] = []
+    radios: dict[str, list[tuple[QRadioButton, str]]] = {}
+
+    for macro, occurrences in sorted(duplicates.items()):
+        root = QTreeWidgetItem(["", f"{macro} ({len(occurrences)})"])
+        root.setFlags(root.flags() & ~Qt.ItemFlag.ItemIsSelectable)
+        tree.addTopLevelItem(root)
+        button_group = QButtonGroup(dialog)
+        button_group.setExclusive(True)
+        button_groups.append(button_group)
+        radios[macro] = []
+        preferred = next(
+            (index for index, row in enumerate(occurrences) if row.get("source") == "project private"),
+            0,
+        )
+        for index, occurrence in enumerate(occurrences):
+            child = QTreeWidgetItem(
+                [
+                    "",
+                    str(occurrence.get("macro", macro)),
+                    str(occurrence.get("kind", "")),
+                    str(occurrence.get("name", "")),
+                    str(occurrence.get("source", "")),
+                    str(occurrence.get("group", "")),
+                    str(occurrence.get("description", "")),
+                ]
+            )
+            root.addChild(child)
+            radio = QRadioButton()
+            panel = QWidget()
+            layout = QHBoxLayout(panel)
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(radio)
+            tree.setItemWidget(child, 0, panel)
+            button_group.addButton(radio)
+            token = str(occurrence.get("token", ""))
+            radios[macro].append((radio, token))
+            radio.setChecked(index == preferred)
+        root.setExpanded(True)
+
+    tree.header().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+    tree.header().setSectionResizeMode(6, QHeaderView.ResizeMode.Stretch)
+    buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Apply | QDialogButtonBox.StandardButton.Cancel)
+    buttons.accepted.connect(dialog.accept)
+    buttons.rejected.connect(dialog.reject)
+    layout = QVBoxLayout(dialog)
+    layout.addWidget(tree)
+    layout.addWidget(buttons)
+    if dialog.exec() != QDialog.DialogCode.Accepted:
+        return None
+    return {
+        macro: next(token for radio, token in entries if radio.isChecked())
+        for macro, entries in radios.items()
+    }
 
 
 def prompt_identifier(parent: QWidget, title: str, label: str) -> str:

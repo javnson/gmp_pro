@@ -207,6 +207,10 @@ Project 文件放在 `projects/` 下。
   "display_name": "DPS FSBB on F280039C IRIS Node",
   "suite": "dps_fsbb",
   "output_header": "sdpe_dps_fsbb_iris_bindings.h",
+  "common_requirements": [
+    "../../../sdpe_general/sdpe_requirement.json",
+    "%GMP_PRO_LOCATION%/extensions/site_common/sdpe_requirement.json"
+  ],
   "hardware": [
     {"role": "mcu_board", "entity": "iris_f280039c_node"},
     {"role": "buck_half_bridge", "entity": "fsbb_inline_shunt_half_bridge"}
@@ -231,6 +235,30 @@ Project 文件放在 `projects/` 下。
 `DPS_FSBB_IRIS_SDPE_PROJECT_ID`、`DPS_FSBB_IRIS_SDPE_PROJECT_SUITE` 等元数据宏；未设置时继续输出旧的
 `SDPE_PROJECT_*` 名称。这样同一个 C/C++ 工程可以同时包含多个 SDPE Project 头文件。
 
+`common_requirements` 按顺序绑定零个或多个公共需求清单。每一项可以是相对于当前
+Project JSON 的路径、绝对路径，或包含 `%VAR%`、`$VAR`、`${VAR}` 的环境变量路径。
+该字段只保存在私有工程中；编辑器合并显示全部来源，但保存时仍分别写回原文件。
+生成器只输出 Private 工程 `output_header` 指定的 C Header，并将所有 Common 内容直接
+合并到该文件中；Private 内容在前，Common 内容作为 Weak fallback 在后。MATLAB Init
+Script 仍按 Common 后 Private 的调用链生成，以兼容现有 Simulink 初始化流程。
+
+合并视图中的 Common Requirement、Selection Macro 和 Option Macro 可以直接编辑，
+保存时写回各自的 Common JSON。Requirements 右键菜单分别提供
+`Create private requirement` 和 `Create Common requirement`。对 Common 项执行
+`Cover with private requirement` 会创建同名的 Project Private 项；界面强制将
+Project Private 项作为父节点，将所有同名 Common 项
+作为子节点，并强制 Common 项启用 `weak`。生成 C 头文件时先输出 Project Private
+定义，再 include Common 头文件；Common 中的同名定义使用 `#ifndef` 保护，因此可作为
+安全的默认值。Project 与 Common 的 `enabled` 状态仍可分别设置。
+
+`Ctrl+S` 和 Save All 会先提交当前活动的单元格编辑器，再分别保存所有受影响的
+Private/Common JSON。Delete 默认删除所选行，焦点位于 Checkbox 等永久控件时行为一致；
+进入文本编辑器后 Delete 只编辑文本。删除 Group 会删除完整子树，删除单独的 Private
+Cover 项则会把 Common 子项移回所属 Group。
+
+MATLAB Init Script 在完成赋值后会向控制台打印工程名称、ID、Suite、版本、硬件清单、
+Common 清单、所有已使能变量的最终值以及被禁用的宏，便于启动仿真前核对配置。
+
 Binding 支持三种形式：
 
 ```json
@@ -247,6 +275,12 @@ Binding 支持三种形式：
 ```
 
 这类路径会解析到对应作用域下的 C 宏。如果中间组件使用了 `overrides`，解析结果会指向父对象槽位作用域宏；否则解析到原始子元件宏。
+
+Requirement 的 `role` 对应 GUI 中的 Name，是面向用户的说明名称，不是 C 标识符。
+Name 可以包含空格，并统一采用每个单词首字母大写的显示风格；C 标识符仍由独立的
+`macro` 字段保存。Project 合并视图中的 `Pri` 是由 Source 自动派生的只读状态，
+不会写入 JSON。Tools 菜单中的重复修正工具可以在 Private 和多个 Common 之间为
+每个重复宏选择唯一保留项。
 
 ## 4. 生成约定
 

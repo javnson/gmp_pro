@@ -1,15 +1,835 @@
 {
-  "id": "mcs_pmsm_id_f280039c_Iris_node",
-  "display_name": "mcs_pmsm_id_f280039c_Iris_node",
+  "id": "mcs_pmsm_id_f280039c_iris_node",
+  "macro_prefix": "MCS_PMSM_ID_F280039C_IRIS_NODE",
+  "display_name": "MCS PMSM Identification f280039c_Iris_node",
+  "description": "Structured SDPE hardware, peripheral and control settings migrated from f280039c_Iris_node/xplt/ctrl_settings.h.",
   "suite": "mcs_pmsm_id",
-  "version": "0.1.0",
-  "output_header": "mcs_pmsm_id_f280039c_Iris_node_sdpe_bindings.h",
-  "hardware": [],
-  "requirements": [],
-  "feature_macros": [],
-  "option_macros": [],
+  "version": "1.0.0",
+  "updated_at": "2026-08-08",
+  "output_header": "sdpe_mcs_pmsm_id_f280039c_iris_node_settings.h",
+  "hardware": [
+    {
+      "entity": "iris_f280039c_node"
+    },
+    {
+      "entity": "sm060r20b30mnad"
+    },
+    {
+      "entity": "gmp_3ph_2136sinv_dual"
+    }
+  ],
   "code_sections": {
-    "after_extern_open": "/* Add project-specific includes here. */",
-    "before_footer": "/* Add project-specific tail macros here. */"
-  }
+    "after_extern_open": "/* The inverter is selected as an SDPE hardware entity. */\n\n/* Compatibility identifiers for code that still checks the fixed board target. */\n#define LAUNCHPAD 0\n#define GMP_IRIS  1\n#define BOARD_SELECTION GMP_IRIS",
+    "before_footer": "/* No additional platform-specific tail definitions. */"
+  },
+  "feature_macros": [
+    {
+      "group": "Control Algorithm",
+      "macro": "_USE_DEBUG_DISCRETE_PID",
+      "enabled": true,
+      "weak": false,
+      "value": "",
+      "description": "Migrated from f280039c_Iris_node/xplt/ctrl_settings.h."
+    },
+    {
+      "group": "Sensing and Calibration",
+      "macro": "SPECIFY_ENABLE_ADC_CALIBRATE",
+      "enabled": true,
+      "weak": false,
+      "value": "",
+      "description": "Migrated from f280039c_Iris_node/xplt/ctrl_settings.h."
+    },
+    {
+      "group": "PWM Modulator",
+      "macro": "PWM_MODULATOR_USING_NEGATIVE_LOGIC",
+      "enabled": true,
+      "weak": false,
+      "value": "(1)",
+      "description": "Migrated from f280039c_Iris_node/xplt/ctrl_settings.h."
+    }
+  ],
+  "option_macros": [
+    {
+      "group": "Commissioning",
+      "macro": "BUILD_LEVEL",
+      "enabled": true,
+      "weak": false,
+      "value": "(2)",
+      "options_preset": "",
+      "options": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)",
+        "(5)",
+        "(6)"
+      ],
+      "description": "1=open-loop hardware validation; 2=current loop; 3=measured-angle current loop; 4=speed loop; 5=position loop; 6=communication mode."
+    },
+    {
+      "group": "ADC",
+      "macro": "MC_CURRENT_SAMPLE_PHASE_MODE",
+      "enabled": true,
+      "weak": false,
+      "value": "(3)",
+      "options_preset": "",
+      "options": [
+        "(2)",
+        "(3)"
+      ],
+      "description": "Directly sampled phase-current count; the selected 2136SINV preset provides three low-side channels."
+    },
+    {
+      "group": "Board GPIO",
+      "macro": "PWM_ENABLE_PORT",
+      "enabled": true,
+      "weak": false,
+      "value": "IRIS_GPIO1",
+      "options_preset": "iris_f280039c_node.IRIS_GPIO",
+      "options": [],
+      "description": "Gate-driver enable GPIO."
+    },
+    {
+      "group": "Board GPIO",
+      "macro": "PWM_RESET_PORT",
+      "enabled": true,
+      "weak": false,
+      "value": "IRIS_GPIO3",
+      "options_preset": "iris_f280039c_node.IRIS_GPIO",
+      "options": [],
+      "description": "Gate-driver reset GPIO."
+    },
+    {
+      "group": "Board GPIO",
+      "macro": "SYSTEM_LED",
+      "enabled": true,
+      "weak": false,
+      "value": "IRIS_LED1",
+      "options_preset": "",
+      "options": [
+        "IRIS_LED1",
+        "IRIS_LED2"
+      ],
+      "description": "System status LED."
+    },
+    {
+      "group": "Board GPIO",
+      "macro": "CONTROLLER_LED",
+      "enabled": true,
+      "weak": false,
+      "value": "IRIS_LED2",
+      "options_preset": "",
+      "options": [
+        "IRIS_LED1",
+        "IRIS_LED2"
+      ],
+      "description": "Controller-running status LED."
+    },
+    {
+      "group": "PWM Channel",
+      "macro": "PHASE_U_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "IRIS_EPWM1_BASE",
+      "options_preset": "iris_f280039c_node.IRIS_EPWM",
+      "options": [],
+      "description": "U-phase ePWM base."
+    },
+    {
+      "group": "PWM Channel",
+      "macro": "PHASE_V_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "IRIS_EPWM2_BASE",
+      "options_preset": "iris_f280039c_node.IRIS_EPWM",
+      "options": [],
+      "description": "V-phase ePWM base."
+    },
+    {
+      "group": "PWM Channel",
+      "macro": "PHASE_W_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "IRIS_EPWM3_BASE",
+      "options_preset": "iris_f280039c_node.IRIS_EPWM",
+      "options": [],
+      "description": "W-phase ePWM base."
+    },
+    {
+      "group": "Encoder",
+      "macro": "EQEP_Encoder_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "IRIS_EQEP1_BASE",
+      "options_preset": "",
+      "options": [
+        "IRIS_EQEP1_BASE"
+      ],
+      "description": "Rotor encoder eQEP base."
+    },
+    {
+      "group": "ADC Voltage Channels",
+      "macro": "INV_UU_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_VU_RESULT_BASE",
+      "options_preset": "iris_f280039c_node.ADC_RESULT_REG",
+      "options": [],
+      "description": "U-phase voltage ADC result base."
+    },
+    {
+      "group": "ADC Voltage Channels",
+      "macro": "INV_UU",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_VU",
+      "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
+      "options": [],
+      "description": "U-phase voltage ADC SOC index."
+    },
+    {
+      "group": "ADC Voltage Channels",
+      "macro": "INV_UV_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_VV_RESULT_BASE",
+      "options_preset": "iris_f280039c_node.ADC_RESULT_REG",
+      "options": [],
+      "description": "V-phase voltage ADC result base."
+    },
+    {
+      "group": "ADC Voltage Channels",
+      "macro": "INV_UV",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_VV",
+      "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
+      "options": [],
+      "description": "V-phase voltage ADC SOC index."
+    },
+    {
+      "group": "ADC Voltage Channels",
+      "macro": "INV_UW_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_VW_RESULT_BASE",
+      "options_preset": "iris_f280039c_node.ADC_RESULT_REG",
+      "options": [],
+      "description": "W-phase voltage ADC result base."
+    },
+    {
+      "group": "ADC Voltage Channels",
+      "macro": "INV_UW",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_VW",
+      "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
+      "options": [],
+      "description": "W-phase voltage ADC SOC index."
+    },
+    {
+      "group": "ADC Current Channels",
+      "macro": "INV_IU_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_IU_RESULT_BASE",
+      "options_preset": "iris_f280039c_node.ADC_RESULT_REG",
+      "options": [],
+      "description": "U-phase current ADC result base."
+    },
+    {
+      "group": "ADC Current Channels",
+      "macro": "INV_IU",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_IU",
+      "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
+      "options": [],
+      "description": "U-phase current ADC SOC index."
+    },
+    {
+      "group": "ADC Current Channels",
+      "macro": "INV_IV_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_IV_RESULT_BASE",
+      "options_preset": "iris_f280039c_node.ADC_RESULT_REG",
+      "options": [],
+      "description": "V-phase current ADC result base."
+    },
+    {
+      "group": "ADC Current Channels",
+      "macro": "INV_IV",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_IV",
+      "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
+      "options": [],
+      "description": "V-phase current ADC SOC index."
+    },
+    {
+      "group": "ADC Current Channels",
+      "macro": "INV_IW_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_IW_RESULT_BASE",
+      "options_preset": "iris_f280039c_node.ADC_RESULT_REG",
+      "options": [],
+      "description": "W-phase current ADC result base."
+    },
+    {
+      "group": "ADC Current Channels",
+      "macro": "INV_IW",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_IW",
+      "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
+      "options": [],
+      "description": "W-phase current ADC SOC index."
+    },
+    {
+      "group": "ADC DC Bus Channel",
+      "macro": "INV_VBUS_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_VDC_RESULT_BASE",
+      "options_preset": "iris_f280039c_node.ADC_RESULT_REG",
+      "options": [],
+      "description": "DC-bus voltage ADC result base."
+    },
+    {
+      "group": "ADC DC Bus Channel",
+      "macro": "INV_VBUS",
+      "enabled": true,
+      "weak": false,
+      "value": "J3_VDC",
+      "options_preset": "iris_f280039c_node.ADC_CHANNEL_INDEX",
+      "options": [],
+      "description": "DC-bus voltage ADC SOC index."
+    }
+  ],
+  "requirements": [
+    {
+      "role": "Pwm Compare Max",
+      "macro": "CTRL_PWM_CMP_MAX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "3000 - 1"
+      },
+      "description": "Maximum compare count of the platform PWM peripheral at the configured controller switching frequency."
+    },
+    {
+      "role": "Pwm Deadband",
+      "macro": "CTRL_PWM_DEADBAND_CMP",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "50"
+      },
+      "description": "Dead-time count interpreted in the selected PWM peripheral clock domain."
+    },
+    {
+      "role": "System Frequency",
+      "macro": "CTRL_SYS_FREQUENCY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "120e6"
+      },
+      "description": "Platform CPU or system clock frequency in hertz."
+    },
+    {
+      "role": "System Time Divider",
+      "macro": "DSP_C2000_DSP_TIME_DIV",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "120000 / CTRL_PWM_CMP_MAX / 2"
+      },
+      "description": "C2000 millisecond system-tick divider derived from the CPU clock and ePWM period."
+    },
+    {
+      "role": "Adc Voltage Reference",
+      "macro": "CTRL_ADC_VOLTAGE_REF",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "3.3"
+      },
+      "description": "ADC reference voltage used by all sensor conversions."
+    },
+    {
+      "role": "Dc Bus Voltage Base",
+      "macro": "CTRL_DCBUS_VOLTAGE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "80.0"
+      },
+      "description": "Configured DC-bus voltage base."
+    },
+    {
+      "role": "Phase Voltage Base",
+      "macro": "CTRL_VOLTAGE_BASE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(CTRL_DCBUS_VOLTAGE / 1.73205081f)"
+      },
+      "description": "Phase-voltage per-unit base derived from the DC-bus base."
+    },
+    {
+      "role": "Current Base",
+      "macro": "CTRL_CURRENT_BASE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "10.0"
+      },
+      "description": "Phase-current per-unit base in amperes."
+    },
+    {
+      "role": "Encoder Full Scale",
+      "macro": "CTRL_POS_ENC_FS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "10000"
+      },
+      "description": "Encoder counts per mechanical revolution."
+    },
+    {
+      "role": "Encoder Bias",
+      "macro": "CTRL_POS_ENC_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "0.0207000002"
+      },
+      "description": "Mechanical encoder position bias in per unit."
+    },
+    {
+      "role": "Mechanical Division",
+      "macro": "CTRL_MECH_DIV",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "5"
+      },
+      "description": "Mechanical speed and position division factor."
+    },
+    {
+      "role": "Dc Voltage Sensitivity",
+      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(MY_BOARD_DCBUS_VOLTAGE_SENSE_GAIN)"
+      },
+      "description": "DC-bus voltage sensing gain in ADC volts per measured volt."
+    },
+    {
+      "role": "Dc Voltage Bias",
+      "macro": "CTRL_DC_VOLTAGE_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "DC-bus voltage sensor bias in volts."
+    },
+    {
+      "role": "Phase Voltage Sensitivity",
+      "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(MY_BOARD_PH_VOLTAGE_SENSE_GAIN)"
+      },
+      "description": "Phase-voltage sensing gain in ADC volts per measured volt."
+    },
+    {
+      "role": "Phase Voltage Bias",
+      "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(MY_BOARD_PH_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "Phase-voltage sensor bias in volts."
+    },
+    {
+      "role": "Dc Current Sensitivity",
+      "macro": "CTRL_DC_CURRENT_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(MY_BOARD_DCBUS_CURRENT_SENSE_GAIN)"
+      },
+      "description": "DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path."
+    },
+    {
+      "role": "Dc Current Bias",
+      "macro": "CTRL_DC_CURRENT_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(MY_BOARD_DCBUS_CURRENT_SENSE_BIAS_V)"
+      },
+      "description": "DC-bus current sensor bias."
+    },
+    {
+      "role": "Phase Current Sensitivity",
+      "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(MY_BOARD_PH_SHUNT_RESISTANCE_OHM * MY_BOARD_PH_CSA_GAIN_V_V)"
+      },
+      "description": "Phase-current sensor sensitivity in volts per ampere."
+    },
+    {
+      "role": "Phase Current Bias",
+      "macro": "CTRL_INVERTER_CURRENT_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(MY_BOARD_PH_CSA_BIAS_V)"
+      },
+      "description": "Phase-current sensor zero-current bias in volts."
+    },
+    {
+      "role": "Motor Type",
+      "macro": "MOTOR_TYPE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.motor_type"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Stator Resistance",
+      "macro": "MOTOR_PARAM_RS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.rs"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Stator Inductance",
+      "macro": "MOTOR_PARAM_LS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.ld"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor D-axis Inductance",
+      "macro": "MOTOR_PARAM_LD",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.ld"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Q-axis Inductance",
+      "macro": "MOTOR_PARAM_LQ",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.lq"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Flux Linkage",
+      "macro": "MOTOR_PARAM_FLUX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.flux"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Pole Pairs",
+      "macro": "MOTOR_PARAM_POLE_PAIRS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.pole_pairs"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Inertia",
+      "macro": "MOTOR_PARAM_INERTIA",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.inertia"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Friction",
+      "macro": "MOTOR_PARAM_FRICTION",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.friction"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Velocity Constant",
+      "macro": "MOTOR_PARAM_KV",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.kv"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Back EMF",
+      "macro": "MOTOR_PARAM_EMF",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.emf"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Rated Voltage",
+      "macro": "MOTOR_PARAM_RATED_VOLTAGE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.rated_voltage"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Rated Current",
+      "macro": "MOTOR_PARAM_RATED_CURRENT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.rated_current"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor No-load Current",
+      "macro": "MOTOR_PARAM_NO_LOAD_CURRENT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.no_load_current"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Rated Frequency",
+      "macro": "MOTOR_PARAM_RATED_FREQUENCY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.rated_frequency"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Maximum Speed",
+      "macro": "MOTOR_PARAM_MAX_SPEED",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.max_speed"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Maximum Torque",
+      "macro": "MOTOR_PARAM_MAX_TORQUE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.max_torque"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Maximum DC Voltage",
+      "macro": "MOTOR_PARAM_MAX_DC_VOLTAGE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.max_dc_voltage"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Motor Maximum Phase Current",
+      "macro": "MOTOR_PARAM_MAX_PH_CURRENT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.max_ph_current"
+      },
+      "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
+    },
+    {
+      "role": "Controller Frequency",
+      "macro": "CONTROLLER_FREQUENCY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "20e3"
+      },
+      "description": "Main motor-control ISR frequency in hertz."
+    },
+    {
+      "role": "Startup Delay",
+      "macro": "CTRL_STARTUP_DELAY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "100"
+      },
+      "description": "Controller startup delay in milliseconds."
+    },
+    {
+      "role": "PLL Lock Threshold",
+      "macro": "CTRL_SPLL_EPSILON",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "((float2ctrl(0.005)))"
+      },
+      "description": "Migrated from f280039c_Iris_node/xplt/ctrl_settings.h."
+    }
+  ],
+  "requirement_groups": [
+    {
+      "name": "Peripheral Parameters",
+      "requirements": [
+        "Pwm Compare Max",
+        "Pwm Deadband",
+        "System Frequency",
+        "System Time Divider",
+        "Adc Voltage Reference",
+        "Controller Frequency"
+      ]
+    },
+    {
+      "name": "Per-Unit Base Parameters",
+      "requirements": [
+        "Dc Bus Voltage Base",
+        "Phase Voltage Base",
+        "Current Base"
+      ]
+    },
+    {
+      "name": "Main Element Parameters / Motor",
+      "requirements": [
+        "Motor Type",
+        "Motor Stator Resistance",
+        "Motor Stator Inductance",
+        "Motor D-axis Inductance",
+        "Motor Q-axis Inductance",
+        "Motor Flux Linkage",
+        "Motor Pole Pairs",
+        "Motor Inertia",
+        "Motor Friction",
+        "Motor Velocity Constant",
+        "Motor Back EMF",
+        "Motor Rated Voltage",
+        "Motor Rated Current",
+        "Motor No-load Current",
+        "Motor Rated Frequency",
+        "Motor Maximum Speed",
+        "Motor Maximum Torque",
+        "Motor Maximum DC Voltage",
+        "Motor Maximum Phase Current"
+      ]
+    },
+    {
+      "name": "Protection Parameters",
+      "requirements": [
+        "PLL Lock Threshold"
+      ]
+    },
+    {
+      "name": "Runtime Parameters",
+      "requirements": [
+        "Startup Delay"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / DC Bus Voltage Sensor",
+      "requirements": [
+        "Dc Voltage Sensitivity",
+        "Dc Voltage Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / DC Current Sensor",
+      "requirements": [
+        "Dc Current Sensitivity",
+        "Dc Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Inverter Phase Current Sensor",
+      "requirements": [
+        "Phase Current Sensitivity",
+        "Phase Current Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Inverter Phase Voltage Sensor",
+      "requirements": [
+        "Phase Voltage Sensitivity",
+        "Phase Voltage Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Position Sensor",
+      "requirements": [
+        "Encoder Full Scale",
+        "Encoder Bias",
+        "Mechanical Division"
+      ]
+    }
+  ],
+  "common_requirements": [
+    "../../../sdpe_general/sdpe_requirement.json",
+    "../../../../sdpe_pil/sdpe_requirement.json"
+  ],
+  "feature_macro_groups": [
+    "Control Algorithm",
+    "Sensing and Calibration",
+    "PWM Modulator"
+  ],
+  "option_macro_groups": [
+    "Commissioning",
+    "ADC",
+    "Board GPIO",
+    "PWM Channel",
+    "Encoder",
+    "ADC Voltage Channels",
+    "ADC Current Channels",
+    "ADC DC Bus Channel"
+  ]
 }

@@ -1,0 +1,21 @@
+{
+  "build_level": 4,
+  "model": "DP_STD_MDL_DCAC_3ph_2level_gridconn",
+  "stop_time_s": 0.8,
+  "output_enable_final": 1,
+  "phase_current_rms_pu": 0.59986867817360079,
+  "zero_current_rms_pu": 0.00086826949973897749,
+  "voltage_alpha_rms_pu": 0.251882091308761,
+  "voltage_beta_rms_pu": 0.25191527770571681,
+  "voltage_d_mean_pu": 0.35623800947312134,
+  "voltage_q_rms_pu": 0.00025319447921924658,
+  "current_d_mean_pu": 0.60009960546534347,
+  "current_q_mean_pu": 0.60002570427672619,
+  "pll_error_rms_pu": 0.00025319447921924658,
+  "voltage_loop_current_ref_peak_pu": 0,
+  "zero_voltage_rms_pu": 0,
+  "command_d_mean_pu": 0,
+  "command_q_mean_pu": 0,
+  "finite": true,
+  "pass": true
+}

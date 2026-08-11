@@ -235,8 +235,15 @@ void ctl_init_dsa_logger(ctl_dsa_logger_t* logger, ctrl_gt* mem_pool, uint32_t c
 //    logger->flag_single_trigger = 0;
 //}
 
-void ctl_set_dsa_logger_trigger(ctl_dsa_logger_t* logger, ctl_dsa_trigger_option_t trigger_option,
-                                parameter_gt trigger_level)
+/**
+ * @brief Update the trigger mode and level for a DSA logger.
+ * @param logger Logger instance to configure.
+ * @param trigger_option Trigger comparison mode.
+ * @param trigger_level Trigger threshold in controller units.
+ */
+GMP_STATIC_INLINE void ctl_set_dsa_logger_trigger(ctl_dsa_logger_t* logger,
+                                                  ctl_dsa_trigger_option_t trigger_option,
+                                                  parameter_gt trigger_level)
 {
     logger->trigger.option = trigger_option;
     logger->trigger.trigger_level = trigger_level;

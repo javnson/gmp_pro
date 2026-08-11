@@ -806,16 +806,22 @@
             },
             "dev|datalink|_internal": {
                 "type": "module",
-                "description": "",
+                "description": "GMP Data Link with compile-time u8/u16 backend selection",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/core/dev/src/gmp_datalink.c"
                 ],
                 "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/core/dev/datalink.h"
+                    "${GMP_PRO_LOCATION}/core/dev/datalink.h",
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/datalink_*.h",
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/gmp_datalink_*.inc"
                 ],
                 "inc_dirs": [],
-                "help_docs": [],
-                "depends_on": []
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/core/dev/readme_dl_protocol.md"
+                ],
+                "depends_on": [
+                    "core|std"
+                ]
             },
             "dev|datalink|pil": {
                 "type": "module",
@@ -855,16 +861,20 @@
             },
             "dev|datalink|variable_monitor": {
                 "type": "module",
-                "description": "",
+                "description": "Datalink tunable-variable service with u8/u16 backends",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/core/dev/src/gmp_tunable.c"
                 ],
                 "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/core/dev/tunable.h"
+                    "${GMP_PRO_LOCATION}/core/dev/tunable.h",
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/tunable_*.h",
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/gmp_tunable_*.inc"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "core|dev|datalink|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -891,16 +901,59 @@
             },
             "dev|datalink|mem_monitor": {
                 "type": "module",
-                "description": "",
+                "description": "Sandboxed memory perspective service with u8/u16 backends",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/core/dev/src/gmp_mem_presp.c"
                 ],
                 "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/core/dev/mem_presp.h"
+                    "${GMP_PRO_LOCATION}/core/dev/mem_presp.h",
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/mem_presp_*.h",
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/gmp_mem_presp_*.inc"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "core|dev|datalink|_internal"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "dev|datalink|scope": {
+                "type": "module",
+                "description": "Discoverable Data Link oscilloscope service with target-controlled capture",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/core/dev/src/gmp_scope.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/core/dev/scope.h",
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/scope_*.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [
+                    "core|dev|datalink|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -1142,7 +1195,9 @@
                     "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/encoder.h",
                     "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/motor_universal_interface.h",
                     "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/std_sil_motor_interface.h",
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/encoder_switcher.h"
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/encoder_switcher.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/startup_excitation.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/sensorless_handover.h"
                 ],
                 "depends_on": [],
                 "inc_dirs": [
@@ -1519,7 +1574,8 @@
                     "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/coordinate.h",
                     "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/Park.h",
                     "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/Park_neg.h",
-                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/svpwm.h"
+                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/svpwm.h",
+                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/svpwm_3d.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
@@ -1544,6 +1600,44 @@
                         "summary": "Physical Hardware Verified",
                         "completed": true,
                         "date": "2026-03-14",
+                        "reply": ""
+                    }
+                ]
+            },
+            "math_block|coordinate|svpwm_3d": {
+                "type": "module",
+                "description": "Four-leg three-dimensional SVPWM for three-phase four-wire converters.",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/svpwm_3d.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/tests/host_sim/README.md"
+                ],
+                "depends_on": [
+                    "ctl|math_block|coordinate"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-07-28",
+                        "reply": "MSVC host build."
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-07-28",
+                        "reply": "20,000-point alpha-beta-zero reconstruction sweep."
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
                         "reply": ""
                     }
                 ]
@@ -1836,6 +1930,91 @@
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|complex|_internal": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|intrinsic|complex|dq_pi": {
+                "type": "module",
+                "description": "Decoupled d-q PI controller with feedforward and vector limiting.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/complex/src/ctl_dq_pi.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/complex/dq_pi.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [
+                    "component|intrinsic|continuous|pid"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|intrinsic|complex|dq_ladrc1": {
+                "type": "module",
+                "description": "Decoupled d-q LADRC1 controller with feedforward and vector limiting.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/complex/src/ctl_dq_ladrc1.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/complex/dq_ladrc1.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [
+                    "component|intrinsic|continuous|ladrc1"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2418,6 +2597,44 @@
                     }
                 ]
             },
+            "component|intrinsic|discrete|pr_tuner": {
+                "type": "module",
+                "description": "Background coefficient tuner for resonant and quasi-resonant controllers.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_pr_tuner.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/proportional_resonant_tuner.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [
+                    "ctl|component|intrinsic|discrete|pr"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-07-28",
+                        "reply": "MSVC host build."
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-07-28",
+                        "reply": "QPR shadow coefficient deployment verified at the control boundary."
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
             "component|intrinsic|discrete|signal_generator": {
                 "type": "module",
                 "description": "",
@@ -2542,7 +2759,8 @@
                     "${GMP_PRO_LOCATION}/ctl/component/intrinsic/protection/src/ctl_protection.c"
                 ],
                 "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/protection/protection.h"
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/protection/protection.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/protection/protection_slot.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
@@ -2875,7 +3093,8 @@
                     "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/src/ctl_adv_rc.c"
                 ],
                 "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/repetitive_controller.h"
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/repetitive_controller.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/fdrc.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
@@ -3286,7 +3505,10 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "component|intrinsic|complex|dq_pi",
+                    "component|intrinsic|complex|dq_ladrc1"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4117,7 +4339,8 @@
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/boost.h",
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/buck.h",
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/fsbb.h",
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/clllc.h"
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/clllc.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/dcdc/dcdc_core.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
@@ -4650,6 +4873,192 @@
                     }
                 ]
             },
+            "component|digital_power|inv|gfl_pq_droop_ctrl": {
+                "type": "module",
+                "description": "Grid-following frequency-P and voltage-Q droop power-reference generator.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_gfl_pq_droop_ctrl.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/gfl_pq_droop_ctrl.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [
+                    "ctl|component|intrinsic|discrete|discrete_filter"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|inv|gfm_droop_ctrl": {
+                "type": "module",
+                "description": "Replaceable P-f/Q-V droop reference generator decoupled from voltage and current loops.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_gfm_droop_ctrl.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/inv_gfm_droop_ctrl.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [
+                    "ctl|component|intrinsic|discrete|discrete_filter"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|inv|gfm_transition": {
+                "type": "module",
+                "description": "Generic bumpless PLL-to-grid-forming phasor transition.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_gfm_transition.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/inv_gfm_transition.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|inv|gfm_virtual_impedance": {
+                "type": "module",
+                "description": "Synchronous-frame virtual impedance voltage-reference conditioner.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_gfm_virtual_impedance.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/inv_gfm_virtual_impedance.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|inv|gfm_vsm_ctrl": {
+                "type": "module",
+                "description": "Virtual synchronous machine swing-equation frequency and Q-V reference generator.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_gfm_vsm_ctrl.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/inv_gfm_vsm_ctrl.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [
+                    "ctl|component|intrinsic|discrete|discrete_filter"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
             "component|digital_power|inv|hcm": {
                 "type": "module",
                 "description": "",
@@ -4712,6 +5121,92 @@
                         "completed": false,
                         "date": "",
                         "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|inv|voltage_ctrl": {
+                "type": "module",
+                "description": "LC-filter capacitor-voltage outer loop for stand-alone three-phase inverters.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_voltage_ctrl.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/inv_voltage_ctrl.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/tests/host_sim/README.md"
+                ],
+                "depends_on": [
+                    "ctl|component|digital_power|inv|inv_3ph_core",
+                    "ctl|component|interface|_internal",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|intrinsic|discrete|biquad_filter"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-07-28",
+                        "reply": "MSVC host build."
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-07-28",
+                        "reply": "LC plant host simulation with switchable capacitor coupling feed-forward."
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|digital_power|inv|zero_ctrl": {
+                "type": "module",
+                "description": "Tunable QPR zero-sequence current controller for four-wire inverters.",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/src/ctl_dp_zero_ctrl.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/inv_zero_ctrl.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/tests/host_sim/README.md"
+                ],
+                "depends_on": [
+                    "ctl|component|digital_power|inv|inv_3ph_core",
+                    "ctl|component|interface|_internal",
+                    "ctl|component|intrinsic|discrete|biquad_filter",
+                    "ctl|component|intrinsic|discrete|pr_tuner"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-07-28",
+                        "reply": "MSVC host build."
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-07-28",
+                        "reply": "Fundamental zero-sequence disturbance rejection host simulation."
                     },
                     {
                         "id": "sys_hw",
@@ -4906,7 +5401,8 @@
                 "type": "module",
                 "description": "PMSM offline id module",
                 "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/pmsm_offline_id/src/ctl_mc_pmsm_offline_id_sm.c"
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/pmsm_offline_id/src/ctl_mc_pmsm_offline_id_sm.c",
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/pmsm_offline_id/src/ctl_mc_pmsm_offline_id_sensored.c"
                 ],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/motor_control/pmsm_offline_id/pmsm_offline_id_sm.h"
@@ -4983,18 +5479,60 @@
                 "inc_dirs": [],
                 "help_docs": []
             },
-            "component|dsa|dsa_scope": {
+        "component|dsa|dsa_scope": {
                 "type": "module",
                 "description": "",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/dsa/src/dsa_scope.c"
                 ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/dsa/dsa_scope.h"
-                ],
+          "inc_patterns": [
+            "${GMP_PRO_LOCATION}/ctl/component/dsa/dsa_scope.h",
+            "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/divider.h",
+            "${GMP_PRO_LOCATION}/ctl/math_block/utilities/mem_view.h"
+          ],
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|dsa|dsa_dl_scope": {
+                "type": "module",
+                "description": "Four-channel DSA capture adapter for the GMP Data Link Scope service",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/dsa/src/dsa_dl_scope.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/dsa/dsa_dl_scope.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [
+                    "core|dev|datalink|scope",
+                    "ctl|component|dsa|dsa_scope",
+                    "ctl|component|dsa|dsa_trigger"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5025,9 +5563,12 @@
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/dsa/src/dsa_trigger.c"
                 ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/dsa/dsa_trigger.h"
-                ],
+          "inc_patterns": [
+            "${GMP_PRO_LOCATION}/ctl/component/dsa/dsa_trigger.h",
+            "${GMP_PRO_LOCATION}/ctl/component/dsa/sine_analyzer.h",
+            "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/divider.h",
+            "${GMP_PRO_LOCATION}/ctl/math_block/utilities/mem_view.h"
+          ],
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [],
@@ -5234,6 +5775,83 @@
                         "reply": ""
                     }
                 ]
+            },
+            "math_block|coordinate|_internal": {
+                "type": "module",
+                "description": "Auto-generated internal config",
+                "src_patterns": [],
+                "inc_patterns": [],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|interface|adv_adc": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/interface/adv_adc_channel.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|interface|adv_pwm": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/interface/adv_pwm_channel.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
             }
         },
         "csp": {
@@ -5408,6 +6026,44 @@
                 ],
                 "inc_dirs": [
                     "${GMP_PRO_LOCATION}/csp/zynq7"
+                ],
+                "help_docs": [],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "nation32_h47x": {
+                "type": "module",
+                "description": "",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/csp/nation32_h47x/src/*"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/csp/nation32_h47x/*"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/csp/nation32_h47x/"
                 ],
                 "help_docs": [],
                 "depends_on": [],

@@ -38,149 +38,111 @@ extern "C"
 /**
  * @brief Human-readable motor model name.
  */
-#ifndef GBM2804H_100T_MOTOR_NAME
 #define GBM2804H_100T_MOTOR_NAME "GBM2804H-100T"
-#endif // GBM2804H_100T_MOTOR_NAME
 
 /**
  * @brief GMP motor type macro.
  */
-#ifndef GBM2804H_100T_MOTOR_TYPE
 #define GBM2804H_100T_MOTOR_TYPE PMSM_MOTOR
-#endif // GBM2804H_100T_MOTOR_TYPE
 
 /**
  * @brief Stator resistance per phase.
  * @unit ohm
  */
-#ifndef GBM2804H_100T_RS
 #define GBM2804H_100T_RS ((4.7f))
-#endif // GBM2804H_100T_RS
 
 /**
  * @brief D-axis stator inductance.
  * @unit H
  */
-#ifndef GBM2804H_100T_LD
 #define GBM2804H_100T_LD ((0.96e-3f))
-#endif // GBM2804H_100T_LD
 
 /**
  * @brief Q-axis stator inductance.
  * @unit H
  */
-#ifndef GBM2804H_100T_LQ
 #define GBM2804H_100T_LQ ((0.96e-3f))
-#endif // GBM2804H_100T_LQ
 
 /**
  * @brief Permanent magnet flux linkage.
  * @unit Wb
  */
-#ifndef GBM2804H_100T_FLUX
 #define GBM2804H_100T_FLUX ((MOTOR_PARAM_CALCULATE_FLUX_BY_KV(GBM2804H_100T_KV, GBM2804H_100T_POLE_PAIRS)))
-#endif // GBM2804H_100T_FLUX
 
 /**
  * @brief Number of pole pairs in the motor.
  */
-#ifndef GBM2804H_100T_POLE_PAIRS
 #define GBM2804H_100T_POLE_PAIRS ((7))
-#endif // GBM2804H_100T_POLE_PAIRS
 
 /**
  * @brief Rotor inertia. Unit follows the source document.
  */
-#ifndef GBM2804H_100T_INERTIA
 #define GBM2804H_100T_INERTIA ((497.0f))
-#endif // GBM2804H_100T_INERTIA
 
 /**
  * @brief Viscous friction coefficient. Unit follows the source document.
  */
-#ifndef GBM2804H_100T_FRICTION
 #define GBM2804H_100T_FRICTION ((755.0f))
-#endif // GBM2804H_100T_FRICTION
 
 /**
  * @brief Motor velocity constant.
  * @unit RPM/V
  */
-#ifndef GBM2804H_100T_KV
 #define GBM2804H_100T_KV ((206.2f))
-#endif // GBM2804H_100T_KV
 
 /**
  * @brief Back-EMF constant.
  * @unit V/kRPM
  */
-#ifndef GBM2804H_100T_EMF
 #define GBM2804H_100T_EMF ((4.85f))
-#endif // GBM2804H_100T_EMF
 
 /**
  * @brief Rated operating voltage.
  * @unit V
  */
-#ifndef GBM2804H_100T_RATED_VOLTAGE
 #define GBM2804H_100T_RATED_VOLTAGE ((10.0f))
-#endif // GBM2804H_100T_RATED_VOLTAGE
 
 /**
  * @brief Rated phase current.
  * @unit A
  */
-#ifndef GBM2804H_100T_RATED_CURRENT
 #define GBM2804H_100T_RATED_CURRENT ((4.5f))
-#endif // GBM2804H_100T_RATED_CURRENT
 
 /**
  * @brief No-load phase current.
  * @unit A
  */
-#ifndef GBM2804H_100T_NO_LOAD_CURRENT
 #define GBM2804H_100T_NO_LOAD_CURRENT ((0.01f))
-#endif // GBM2804H_100T_NO_LOAD_CURRENT
 
 /**
  * @brief Rated operating frequency.
  * @unit Hz
  */
-#ifndef GBM2804H_100T_RATED_FREQUENCY
 #define GBM2804H_100T_RATED_FREQUENCY ((250.0f))
-#endif // GBM2804H_100T_RATED_FREQUENCY
 
 /**
  * @brief Maximum allowable speed.
  * @unit RPM
  */
-#ifndef GBM2804H_100T_MAX_SPEED
 #define GBM2804H_100T_MAX_SPEED ((2180.0f))
-#endif // GBM2804H_100T_MAX_SPEED
 
 /**
  * @brief Maximum intermittent torque.
  * @unit N*m
  */
-#ifndef GBM2804H_100T_MAX_TORQUE
 #define GBM2804H_100T_MAX_TORQUE ((0.981f))
-#endif // GBM2804H_100T_MAX_TORQUE
 
 /**
  * @brief Maximum allowable DC bus voltage.
  * @unit V
  */
-#ifndef GBM2804H_100T_MAX_DC_VOLTAGE
 #define GBM2804H_100T_MAX_DC_VOLTAGE ((14.2f))
-#endif // GBM2804H_100T_MAX_DC_VOLTAGE
 
 /**
  * @brief Maximum allowable phase current.
  * @unit A
  */
-#ifndef GBM2804H_100T_MAX_PH_CURRENT
 #define GBM2804H_100T_MAX_PH_CURRENT ((5.0f))
-#endif // GBM2804H_100T_MAX_PH_CURRENT
 
 // Logical exports
 // rs: GBM2804H_100T_RS

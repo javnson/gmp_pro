@@ -257,6 +257,24 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_output_current_loop(ctl_dcdc_core_t* cor
 }
 
 /**
+ * @brief Executes one step of direct output-voltage closed-loop control.
+ * @param[in,out] core Pointer to the DCDC core instance.
+ * @return ctrl_gt The bounded formal modulation command.
+ */
+GMP_STATIC_INLINE ctrl_gt ctl_step_dcdc_voltage_loop(ctl_dcdc_core_t* core)
+{
+    ctl_dcdc_internal_ingest_and_filter(core);
+    core->is_current_dominant = 0;
+
+    core->v_ramp_ref = ctl_step_slope_limiter(&core->ramp_v, core->v_target);
+    ctrl_gt error_v = core->v_ramp_ref - core->filter_v_out.out;
+
+    core->v_out_formal = ctl_step_pid_ser(&core->voltage_pid, error_v);
+    core->v_out_formal = ctl_sat(core->v_out_formal, core->out_max, core->out_min);
+    return core->v_out_formal;
+}
+
+/**
  * @brief Executes one step of dual-loop Cascade Control (Voltage Outer -> Current Inner).
  * @param[in,out] core Pointer to the DCDC core instance.
  * @return ctrl_gt The calculated formal voltage output.

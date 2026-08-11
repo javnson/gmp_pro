@@ -39,127 +39,95 @@ extern "C"
 /**
  * @brief Human-readable motor model name.
  */
-#ifndef TYI_5008_KV335_MOTOR_NAME
 #define TYI_5008_KV335_MOTOR_NAME "TYI-5008 KV335"
-#endif // TYI_5008_KV335_MOTOR_NAME
 
 /**
  * @brief GMP motor type macro.
  */
-#ifndef TYI_5008_KV335_MOTOR_TYPE
 #define TYI_5008_KV335_MOTOR_TYPE PMSM_MOTOR
-#endif // TYI_5008_KV335_MOTOR_TYPE
 
 /**
  * @brief Stator resistance per phase.
  * @unit ohm
  */
-#ifndef TYI_5008_KV335_RS
 #define TYI_5008_KV335_RS ((130.0e-3f))
-#endif // TYI_5008_KV335_RS
 
 /**
  * @brief D-axis stator inductance.
  * @unit H
  */
-#ifndef TYI_5008_KV335_LD
 #define TYI_5008_KV335_LD ((50.0e-6f))
-#endif // TYI_5008_KV335_LD
 
 /**
  * @brief Q-axis stator inductance.
  * @unit H
  */
-#ifndef TYI_5008_KV335_LQ
 #define TYI_5008_KV335_LQ ((50.0e-6f))
-#endif // TYI_5008_KV335_LQ
 
 /**
  * @brief Permanent magnet flux linkage.
  * @unit Wb
  */
-#ifndef TYI_5008_KV335_FLUX
 #define TYI_5008_KV335_FLUX ((0.0023f))
-#endif // TYI_5008_KV335_FLUX
 
 /**
  * @brief Number of pole pairs in the motor.
  */
-#ifndef TYI_5008_KV335_POLE_PAIRS
 #define TYI_5008_KV335_POLE_PAIRS ((7))
-#endif // TYI_5008_KV335_POLE_PAIRS
 
 /**
  * @brief Motor velocity constant.
  * @unit RPM/V
  */
-#ifndef TYI_5008_KV335_KV
 #define TYI_5008_KV335_KV ((335.0f))
-#endif // TYI_5008_KV335_KV
 
 /**
  * @brief Back-EMF constant.
  * @unit V/kRPM
  */
-#ifndef TYI_5008_KV335_EMF
 #define TYI_5008_KV335_EMF ((4.85f))
-#endif // TYI_5008_KV335_EMF
 
 /**
  * @brief Rated operating voltage.
  * @unit V
  */
-#ifndef TYI_5008_KV335_RATED_VOLTAGE
 #define TYI_5008_KV335_RATED_VOLTAGE ((24.0f/1.732f))
-#endif // TYI_5008_KV335_RATED_VOLTAGE
 
 /**
  * @brief No-load phase current.
  * @unit A
  */
-#ifndef TYI_5008_KV335_NO_LOAD_CURRENT
 #define TYI_5008_KV335_NO_LOAD_CURRENT ((0.5f))
-#endif // TYI_5008_KV335_NO_LOAD_CURRENT
 
 /**
  * @brief Rated operating frequency.
  * @unit Hz
  */
-#ifndef TYI_5008_KV335_RATED_FREQUENCY
 #define TYI_5008_KV335_RATED_FREQUENCY ((700.0f))
-#endif // TYI_5008_KV335_RATED_FREQUENCY
 
 /**
  * @brief Maximum allowable speed.
  * @unit RPM
  */
-#ifndef TYI_5008_KV335_MAX_SPEED
 #define TYI_5008_KV335_MAX_SPEED ((6000))
-#endif // TYI_5008_KV335_MAX_SPEED
 
 /**
  * @brief Maximum intermittent torque.
  * @unit N*m
  */
-#ifndef TYI_5008_KV335_MAX_TORQUE
 #define TYI_5008_KV335_MAX_TORQUE ((0.4))
-#endif // TYI_5008_KV335_MAX_TORQUE
 
 /**
  * @brief Maximum allowable DC bus voltage.
  * @unit V
  */
-#ifndef TYI_5008_KV335_MAX_DC_VOLTAGE
 #define TYI_5008_KV335_MAX_DC_VOLTAGE ((25.2))
-#endif // TYI_5008_KV335_MAX_DC_VOLTAGE
 
 /**
  * @brief Maximum allowable phase current.
  * @unit A
  */
-#ifndef TYI_5008_KV335_MAX_PH_CURRENT
 #define TYI_5008_KV335_MAX_PH_CURRENT ((27.0))
-#endif // TYI_5008_KV335_MAX_PH_CURRENT
 
 // Logical exports
 // rs: TYI_5008_KV335_RS

@@ -41,172 +41,128 @@ extern "C"
 /**
  * @brief Board or module name.
  */
-#ifndef GMP_LVFB_BOARD_NAME
 #define GMP_LVFB_BOARD_NAME "GMP LVFB 2ph V6.1"
-#endif // GMP_LVFB_BOARD_NAME
 
 /**
  * @brief Integrated gate driver part number.
  */
-#ifndef GMP_LVFB_GATE_DRIVER
 #define GMP_LVFB_GATE_DRIVER "UCC21520DWR"
-#endif // GMP_LVFB_GATE_DRIVER
 
 /**
  * @brief Power MOSFET part number.
  */
-#ifndef GMP_LVFB_MOSFET
 #define GMP_LVFB_MOSFET "BSC093N15NS5"
-#endif // GMP_LVFB_MOSFET
 
 /**
  * @brief On-board current sensing device.
  */
-#ifndef GMP_LVFB_CURRENT_SENSOR_NAME
 #define GMP_LVFB_CURRENT_SENSOR_NAME "TMCS1133B5A"
-#endif // GMP_LVFB_CURRENT_SENSOR_NAME
 
 /**
  * @brief On-board voltage sensing device.
  */
-#ifndef GMP_LVFB_VOLTAGE_SENSOR_NAME
 #define GMP_LVFB_VOLTAGE_SENSOR_NAME "AMC1311BDWVR"
-#endif // GMP_LVFB_VOLTAGE_SENSOR_NAME
 
 /**
  * @brief Number of half-bridge phases represented by this module.
  */
-#ifndef GMP_LVFB_PHASE_COUNT
 #define GMP_LVFB_PHASE_COUNT (2U)
-#endif // GMP_LVFB_PHASE_COUNT
 
 /**
  * @brief Current measurement range exported by the current sensor sub component.
  * @unit A
  */
-#ifndef GMP_LVFB_MEASURED_CURRENT_RANGE_A
 #define GMP_LVFB_MEASURED_CURRENT_RANGE_A TMCS1133_B5A_RANGE_A
-#endif // GMP_LVFB_MEASURED_CURRENT_RANGE_A
 
 /**
  * @brief Maximum allowable DC bus voltage.
  * @unit V
  */
-#ifndef GMP_LVFB_VBUS_MAX_V
 #define GMP_LVFB_VBUS_MAX_V (120.0f)
-#endif // GMP_LVFB_VBUS_MAX_V
 
 /**
  * @brief Maximum instantaneous peak phase current.
  * @unit A
  */
-#ifndef GMP_LVFB_CURRENT_MAX_PEAK_A
 #define GMP_LVFB_CURRENT_MAX_PEAK_A (55.0f)
-#endif // GMP_LVFB_CURRENT_MAX_PEAK_A
 
 /**
  * @brief Maximum continuous RMS phase current.
  * @unit A
  */
-#ifndef GMP_LVFB_CURRENT_MAX_RMS_A
 #define GMP_LVFB_CURRENT_MAX_RMS_A (35.0f)
-#endif // GMP_LVFB_CURRENT_MAX_RMS_A
 
 /**
  * @brief Recommended hardware deadtime.
  * @unit ns
  */
-#ifndef GMP_LVFB_DEADTIME_NS
 #define GMP_LVFB_DEADTIME_NS (523.0f)
-#endif // GMP_LVFB_DEADTIME_NS
 
 /**
  * @brief Current sensing signal bandwidth.
  * @unit Hz
  */
-#ifndef GMP_LVFB_CURRENT_BW_HZ
 #define GMP_LVFB_CURRENT_BW_HZ (300.0e3f)
-#endif // GMP_LVFB_CURRENT_BW_HZ
 
 /**
  * @brief Current sensor ADC bias voltage.
  * @unit V
  */
-#ifndef GMP_LVFB_CURRENT_BIAS_V
 #define GMP_LVFB_CURRENT_BIAS_V (1.65f)
-#endif // GMP_LVFB_CURRENT_BIAS_V
 
 /**
  * @brief Configured current sensitivity.
  * @unit V/A
  */
-#ifndef GMP_LVFB_CURRENT_SENSITIVITY
 #define GMP_LVFB_CURRENT_SENSITIVITY TMCS1133_B5A_SENSITIVITY_V_PER_A
-#endif // GMP_LVFB_CURRENT_SENSITIVITY
 
 /**
  * @brief ADC reference scale voltage.
  * @unit V
  */
-#ifndef GMP_LVFB_VOLTAGE_BASE_V
 #define GMP_LVFB_VOLTAGE_BASE_V (3.3f)
-#endif // GMP_LVFB_VOLTAGE_BASE_V
 
 /**
  * @brief Voltage sensing ADC bias voltage.
  * @unit V
  */
-#ifndef GMP_LVFB_VOLTAGE_BIAS_V
 #define GMP_LVFB_VOLTAGE_BIAS_V (0.0f)
-#endif // GMP_LVFB_VOLTAGE_BIAS_V
 
 /**
  * @brief Voltage sensing bandwidth.
  * @unit Hz
  */
-#ifndef GMP_LVFB_VOLTAGE_BW_HZ
 #define GMP_LVFB_VOLTAGE_BW_HZ (114.47e3f)
-#endif // GMP_LVFB_VOLTAGE_BW_HZ
 
 /**
  * @brief Default low-side voltage divider resistance.
  * @unit ohm
  */
-#ifndef GMP_LVFB_VOLTAGE_R_LOW_OHM
-#define GMP_LVFB_VOLTAGE_R_LOW_OHM ((15e3))
-#endif // GMP_LVFB_VOLTAGE_R_LOW_OHM
+#define GMP_LVFB_VOLTAGE_R_LOW_OHM ((15000.0))
 
 /**
  * @brief Default high-side voltage divider resistance.
  * @unit ohm
  */
-#ifndef GMP_LVFB_VOLTAGE_R_HIGH_OHM
-#define GMP_LVFB_VOLTAGE_R_HIGH_OHM ((300e3))
-#endif // GMP_LVFB_VOLTAGE_R_HIGH_OHM
+#define GMP_LVFB_VOLTAGE_R_HIGH_OHM ((300000.0))
 
 /**
  * @brief Configured voltage sensing gain.
  * @unit V/V
  */
-#ifndef GMP_LVFB_VOLTAGE_SENSITIVITY
 #define GMP_LVFB_VOLTAGE_SENSITIVITY ((15e3) / ((15e3) + ((300e3) * 3)) * 1.65f)
-#endif // GMP_LVFB_VOLTAGE_SENSITIVITY
 
 /**
  * @brief Configured maximum measurable voltage.
  * @unit V
  */
-#ifndef GMP_LVFB_VOLTAGE_MAX
 #define GMP_LVFB_VOLTAGE_MAX (3.3f / ((15e3) / ((15e3) + ((300e3) * 3)) * 1.65f))
-#endif // GMP_LVFB_VOLTAGE_MAX
 
 /**
  * @brief Optional local DC bus capacitance.
  * @unit F
  */
-#ifndef GMP_LVFB_BUS_CAPACITANCE_F
 #define GMP_LVFB_BUS_CAPACITANCE_F (0.0f)
-#endif // GMP_LVFB_BUS_CAPACITANCE_F
 
 // Derived macros
 /**

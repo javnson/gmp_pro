@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Resolve and open the related two-layer SDPE project requirements."""
+"""Resolve and open related private and common SDPE project requirements."""
 
 from __future__ import annotations
 
@@ -7,6 +7,9 @@ import argparse
 import subprocess
 import sys
 from pathlib import Path
+
+from sdpe_v2.project_requirements import resolve_common_requirement_paths
+from sdpe_v2.util import read_json
 
 
 ROOT = Path(__file__).resolve().parent
@@ -31,7 +34,8 @@ def related_requirements(manager: Path) -> list[Path]:
         raise FileNotFoundError(f"No sdpe_requirement.json in {manager}")
     suite_root = find_suite_root(manager)
     if suite_root is None:
-        return [current]
+        commons = resolve_common_requirement_paths(current, read_json(current))
+        return list(dict.fromkeys([*commons, current]))
     general = (suite_root / "sdpe_general" / "sdpe_requirement.json").resolve()
     if manager.name == "sdpe_general":
         project_root = suite_root / "project"
@@ -41,7 +45,8 @@ def related_requirements(manager: Path) -> list[Path]:
             if path.is_file()
         )
         return list(dict.fromkeys([general, *projects]))
-    return list(dict.fromkeys([general, current]))
+    commons = resolve_common_requirement_paths(current, read_json(current))
+    return list(dict.fromkeys([*commons, current]))
 
 
 def main(argv: list[str] | None = None) -> int:

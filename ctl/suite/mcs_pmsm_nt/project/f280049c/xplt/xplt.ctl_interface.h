@@ -20,6 +20,10 @@ extern "C"
 {
 #endif // __cplusplus
 
+#if defined ENABLE_GMP_DL_PIL_SIM
+/** @brief Virtual plant-enable state exported through the PIL digital word. */
+extern volatile fast_gt pil_output_enabled;
+#endif
 
 
 //=================================================================================================
@@ -81,13 +85,19 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
 #endif // ENABLE_SMO
 
 #elif BUILD_LEVEL == 3
-    // SMO angle
+#ifdef ENABLE_SMO
     DAC_setShadowValue(LAUNCHXL_DACA_BASE, smo.pos_out.elec_position * 2048 + 2048);
+#else
+    DAC_setShadowValue(LAUNCHXL_DACA_BASE, rg.enc.elec_position * 2048 + 2048);
+#endif
     DAC_setShadowValue(LAUNCHXL_DACB_BASE, pos_enc.encif.elec_position * 2048 + 2048);
 
 #elif BUILD_LEVEL == 4
-    // SMO angle
+#ifdef ENABLE_SMO
     DAC_setShadowValue(LAUNCHXL_DACA_BASE, smo.pos_out.elec_position * 2048 + 2048);
+#else
+    DAC_setShadowValue(LAUNCHXL_DACA_BASE, spd_enc.encif.speed * 2048 + 2048);
+#endif
     DAC_setShadowValue(LAUNCHXL_DACB_BASE, pos_enc.encif.elec_position * 2048 + 2048);
 #endif // BUILD_LEVEL
 }
@@ -95,10 +105,28 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
 // function prototype
 void GPIO_WritePin(uint16_t gpioNumber, uint16_t outVal);
 
-// Enable Motor Controller
-// Enable Output
+/**
+ * @brief Force every physical inverter output into its safe state.
+ * @details This helper is also used when PIL is enabled so that simulated
+ * control state transitions can never energize the disconnected power stage.
+ */
+GMP_STATIC_INLINE void ctl_force_physical_output_safe(void)
+{
+    EPWM_forceTripZoneEvent(PHASE_U_BASE, EPWM_TZ_FORCE_EVENT_OST);
+    EPWM_forceTripZoneEvent(PHASE_V_BASE, EPWM_TZ_FORCE_EVENT_OST);
+    EPWM_forceTripZoneEvent(PHASE_W_BASE, EPWM_TZ_FORCE_EVENT_OST);
+    GPIO_WritePin(PWM_ENABLE_PORT, 0);
+    GPIO_WritePin(CONTROLLER_LED, 1);
+}
+
+/** @brief Enable physical PWM output unless this is an isolated PIL build. */
 GMP_STATIC_INLINE void ctl_fast_enable_output()
 {
+#if defined ENABLE_GMP_DL_PIL_SIM
+    pil_output_enabled = 1;
+    ctl_force_physical_output_safe();
+    clear_all_controllers();
+#else
     // Clear any Trip Zone flag
     EPWM_clearTripZoneFlag(PHASE_U_BASE, EPWM_TZ_FORCE_EVENT_OST);
     EPWM_clearTripZoneFlag(PHASE_V_BASE, EPWM_TZ_FORCE_EVENT_OST);
@@ -110,63 +138,36 @@ GMP_STATIC_INLINE void ctl_fast_enable_output()
     GPIO_WritePin(PWM_ENABLE_PORT, 1);
 
     GPIO_WritePin(CONTROLLER_LED, 0);
+#endif
 }
 
-// Disable Output
+/** @brief Disable physical PWM output in every operating mode. */
 GMP_STATIC_INLINE void ctl_fast_disable_output()
 {
-    // Disables the PWM device
-    EPWM_forceTripZoneEvent(PHASE_U_BASE, EPWM_TZ_FORCE_EVENT_OST);
-    EPWM_forceTripZoneEvent(PHASE_V_BASE, EPWM_TZ_FORCE_EVENT_OST);
-    EPWM_forceTripZoneEvent(PHASE_W_BASE, EPWM_TZ_FORCE_EVENT_OST);
-
-//    clear_all_controllers();
-
-    // PWM disable
-    GPIO_WritePin(PWM_ENABLE_PORT, 0);
-
-    GPIO_WritePin(CONTROLLER_LED, 1);
+#if defined ENABLE_GMP_DL_PIL_SIM
+    pil_output_enabled = 0;
+#endif
+    ctl_force_physical_output_safe();
 }
 
 //=================================================================================================
 // Controller interface for PIL simulation
 
-typedef enum _tag_adc_index_items
-{
-    INV_ADC_ID_UDC = 0,
+#if defined ENABLE_GMP_DL_PIL_SIM
 
-    INV_ADC_ID_UA = 1,
-    INV_ADC_ID_UB = 2,
-    INV_ADC_ID_UC = 3,
-
-    INV_ADC_ID_IA = 4,
-    INV_ADC_ID_IB = 5,
-    INV_ADC_ID_IC = 6,
-    INV_ADC_SENSOR_NUMBER = 7
-
-} inv_adc_index_items;
-
-typedef enum _tag_digital_index_items
-{
-    MTR1_ENCODER_OUTPUT = 0,
-    MTR1_ENCODER_TURNS = 1,
-
-    DIGITAL_INDEX_NUMBER = 2
-} digital_index_items;
-
-// Input Callback
+/** @brief Apply one SDPE-mapped PIL input sample to the controller ports. */
 GMP_STATIC_INLINE void ctl_input_callback_pil(const gmp_sim_rx_buf_t* rx)
 {
     // copy source ADC data
-    uuvw_src[phase_U] = rx->adc_result[INV_ADC_ID_UA];
-    uuvw_src[phase_V] = rx->adc_result[INV_ADC_ID_UB];
-    uuvw_src[phase_W] = rx->adc_result[INV_ADC_ID_UC];
+    uuvw_src[phase_U] = rx->adc_result[GMP_PIL_RX_ADC_UU_INDEX];
+    uuvw_src[phase_V] = rx->adc_result[GMP_PIL_RX_ADC_UV_INDEX];
+    uuvw_src[phase_W] = rx->adc_result[GMP_PIL_RX_ADC_UW_INDEX];
 
-    iuvw_src[phase_U] = rx->adc_result[INV_ADC_ID_IA];
-    iuvw_src[phase_V] = rx->adc_result[INV_ADC_ID_IB];
-    iuvw_src[phase_W] = rx->adc_result[INV_ADC_ID_IC];
+    iuvw_src[phase_U] = rx->adc_result[GMP_PIL_RX_ADC_IU_INDEX];
+    iuvw_src[phase_V] = rx->adc_result[GMP_PIL_RX_ADC_IV_INDEX];
+    iuvw_src[phase_W] = rx->adc_result[GMP_PIL_RX_ADC_IW_INDEX];
 
-    udc_src = rx->adc_result[INV_ADC_ID_UDC];
+    udc_src = rx->adc_result[GMP_PIL_RX_ADC_UDC_INDEX];
 
     // Step auto turn pos encoder
     ctl_step_autoturn_pos_encoder(&pos_enc, rx->digital_input);
@@ -178,24 +179,31 @@ GMP_STATIC_INLINE void ctl_input_callback_pil(const gmp_sim_rx_buf_t* rx)
     ctl_step_ptr_adc_channel(&udc);
 }
 
-// Output Callback
+/** @brief Export one controller result through the SDPE-mapped PIL channels. */
 GMP_STATIC_INLINE void ctl_output_callback_pil(gmp_sim_tx_buf_t* tx)
 {
+    tx->digital_out = pil_output_enabled ? 1U : 0U;
+
     //
     // PWM channel
     //
-    tx->pwm_cmp[0] = spwm.pwm_out[phase_U];
-    tx->pwm_cmp[1] = spwm.pwm_out[phase_V];
-    tx->pwm_cmp[2] = spwm.pwm_out[phase_W];
+    tx->pwm_cmp[GMP_PIL_TX_PWM_U_INDEX] = spwm.pwm_out[phase_U];
+    tx->pwm_cmp[GMP_PIL_TX_PWM_V_INDEX] = spwm.pwm_out[phase_V];
+    tx->pwm_cmp[GMP_PIL_TX_PWM_W_INDEX] = spwm.pwm_out[phase_W];
 
     //
     // monitor
     //
 
-    // Scope 1
-    tx->monitor[0] = mtr_ctrl.iuvw.dat[phase_A];
-    tx->monitor[1] = mtr_ctrl.iuvw.dat[phase_B];
+    tx->monitor[GMP_PIL_TX_MONITOR_IU_INDEX] = mtr_ctrl.iuvw.dat[phase_U];
+    tx->monitor[GMP_PIL_TX_MONITOR_IV_INDEX] = mtr_ctrl.iuvw.dat[phase_V];
+    tx->monitor[GMP_PIL_TX_MONITOR_ID_INDEX] = mtr_ctrl.idq0.dat[phase_d];
+    tx->monitor[GMP_PIL_TX_MONITOR_IQ_INDEX] = mtr_ctrl.idq0.dat[phase_q];
+    tx->monitor[GMP_PIL_TX_MONITOR_POSITION_INDEX] = pos_enc.encif.elec_position;
+    tx->monitor[GMP_PIL_TX_MONITOR_SPEED_INDEX] = spd_enc.encif.speed;
 }
+
+#endif // defined ENABLE_GMP_DL_PIL_SIM
 
 #ifdef __cplusplus
 }

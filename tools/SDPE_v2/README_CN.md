@@ -29,10 +29,31 @@ v2 当前采用“核心 CLI + PyQt 图形化管理器”的结构。CLI 负责�
 %GMP_PRO_LOCATION%\ctl\suite\pgs_sinv_rc\project\f280039c_Iris_node\sdpe_mgr\sdpe_generate.bat
 ```
 
-两层工程可以直接双击任意 `sdpe_edit.bat`：从 `sdpe_general` 打开时会同时载入
-该 suite 下所有 `project/**/sdpe_mgr`；从某个目标的 `sdpe_mgr` 打开时会同时载入
-它自身和 `sdpe_general`。不带参数运行 `gmp_sdpe_deploy_project_mgr.bat` 会发现并更新
-仓库中的全部 `sdpe_mgr` 和 `sdpe_general` 工具脚本。
+每个私有工程通过 `sdpe_requirement.json` 的 `common_requirements` 数组显式绑定零个或
+多个公共需求清单。路径可以是相对于私有 JSON 的相对路径、绝对路径，也可以使用
+`%GMP_PRO_LOCATION%`、`$GMP_PRO_LOCATION` 或 `${GMP_PRO_LOCATION}` 环境变量形式。
+编辑器把私有内容与全部 Common 合并显示，并标明每一项来自 `project private` 还是
+具体 Common；重复宏检查也覆盖完整的合并结果。C 头文件生成时只生成 Private 工程
+`output_header` 指定的唯一最终文件；其中先放置私有内容，再直接放置各 Common 的
+Weak fallback 内容，因此 Code 预览、搜索和行定位始终面对同一个文件。MATLAB Init
+Script 仍保持 Common 后 Private 的调用链，以兼容现有 Simulink 加载流程。
+
+右键菜单可以把私有项目移动到选定的 Common，也可以把 Common 项目下发到一个或多个
+私有工程。不带参数运行 `gmp_sdpe_deploy_project_mgr.bat` 会发现并更新仓库中的全部
+`sdpe_mgr` 和 `sdpe_general` 工具脚本。
+
+合并页面中的 Common 项可以直接编辑并写回其源文件。Requirements 右键菜单可以明确
+选择创建 Private 或 Common 项。选择 `Cover with private requirement` 后，软件会创建
+同名的 Project Private 项，并强制以 Private 为父节点、Common 为子节点；
+Common 项自动成为 Weak 宏。生成头文件时 Private 定义位于 Common fallback 定义之前，
+Common 同名宏由 `#ifndef` 保护，因此可以作为默认值且不会覆盖工程专用配置。
+
+保存前会先提交仍处于编辑状态的单元格，并分别写回 Private 与 Common 文件。Delete 在
+Checkbox 等单元格控件获得焦点时仍删除整行；文本编辑器内仍只删除字符。删除 Group
+会删除完整子树，单独删除 Private Cover 则保留对应的 Common 子项。
+
+生成的 MATLAB Init Script 会在赋值完成后打印工程信息、硬件清单、Common 来源、
+已使能变量的最终值和禁用宏清单，方便在启动 Simulink 仿真前检查配置。
 
 ## 1. 核心概念
 
@@ -476,6 +497,27 @@ SDPE v2 不直接替代 `xplt/ctrl_settings.h`，而是为它生成更小、更�
 3. 生成硬件预设头文件和工程绑定头文件。
 4. 在 `xplt/ctrl_settings.h` 中 include 生成的 project binding header。
 5. 控制工程继续使用 `CTRL_*` 等既有宏初始化 ADC、PWM 和接口对象。
+
+### 7.1 Suite 全局布局约定
+
+所有 Suite 的 Requirement 顶层分类统一按以下顺序组织：`Peripheral Parameters`、
+`Per-Unit Base Parameters`、`Main Element Parameters`、`Protection Parameters`、
+`Control Loop`、`Runtime Parameters`、`Voltage & Current Sensor`、
+`Commissioning Defaults`。控制器参数必须继续使用子组划分，例如
+`Control Loop / PLL Controller`、`Control Loop / Current Controller`，不应把多个
+无关控制器堆在同一个通用页面中。
+
+PWM、ADC、GPIO、定时器、编码器和通信外设的分配应放在 Option Macro，并尽量绑定
+硬件 Entity 的 `options_preset`；不得把可选择的外设分配隐藏在 `code_sections` 中。
+电机、并网滤波器、谐振腔等主元件应列在 `hardware`，工程宏通过 Entity export 或
+parameter 绑定，不在 Project Requirement 中重复手写元件数值。
+
+批量编辑后可用以下命令统一布局并检查：
+
+```powershell
+python .\normalize_suite_sdpe_layout.py --write
+python .\normalize_suite_sdpe_layout.py --check
+```
 
 ## 8. 测试
 

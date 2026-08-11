@@ -8,6 +8,58 @@
 
 开发者可以通过 `BUILD_LEVEL` 宏进行底层逻辑的增量调试，也可以通过上层接口一键启动参数辨识。
 
+## PC 仿真 / SIL 联调入口
+
+`project/simulate` 现在提供两条使用同一个 Windows 原生控制器 EXE、同一套 200/264 字节 UDP ABI 的联调链路：
+
+- **快速平均值 SIL**：用于每天完整跑通 READY → 编码器校准 → Rs/死区 → Ld/Lq → 磁链 → 有感机械辨识 → COMPLETE；默认约 14.3 秒仿真时间。
+- **Simulink 详细开关模型**：保留 20 kHz PWM、1 us 死区、MOSFET/二极管压降和连续机械模型，用于最终波形与死区相关性确认。
+
+在 PowerShell 中进入 `project/simulate` 后，快速回归只需：
+
+```powershell
+python .\run_pmsm_id_sil_fast.py --build
+```
+
+脚本会生成 `pmsm_id_sil_fast_result.json` 和 `pmsm_id_sil_fast_trace.csv`。当前仿真模型真值及 2026-08-10 回归结果如下：
+
+| 参数 | 模型真值 | SIL 结果 | 相对误差 |
+| --- | ---: | ---: | ---: |
+| Rs | 4.7 Ω | 4.79733 Ω | +2.07% |
+| Ld | 8.5 mH | 8.33556 mH | -1.93% |
+| Lq | 8.5 mH | 8.50666 mH | +0.08% |
+| 磁链 | 3.8197 mWb | 3.72968 mWb | -2.36% |
+| 等效死区补偿 | 1.312 V | 1.32040 V | +0.64% |
+| 编码器极对数 | 4 | 4 | 0 |
+| 编码器偏置 | 0.0999146 pu | 0.0999146 pu | < 1 LSB |
+| 总惯量 J | 5.0e-4 kg·m² | 4.87770e-4 kg·m² | -2.45% |
+| 黏性阻尼 B | 1.0e-4 N·m/(rad/s) | 9.80485e-5 | -1.95% |
+| 静负载转矩 | 2.0e-4 N·m | 1.81571e-4 N·m | -9.21% |
+
+编码器安全诊断可独立回归，三个命令均应以退出码 0 结束：
+
+```powershell
+python .\run_pmsm_id_sil_fast.py --duration 2 --encoder-fault random
+python .\run_pmsm_id_sil_fast.py --duration 3 --encoder-fault stuck
+python .\run_pmsm_id_sil_fast.py --duration 7 --encoder-fault nonuniform
+```
+
+对应故障码依次为 2（随机跳变）、3（无机械运动/轴脱开）、4（逐电周期位置不均匀）。所有故障都会立即撤销电流给定并设置 PWM inhibit，防止 CiA402 使能回调重新打开功率输出。
+
+详细模型由 MATLAB 调用：
+
+```matlab
+cd(fullfile(getenv('GMP_PRO_LOCATION'), 'ctl', 'suite', 'mcs_pmsm_id', 'project', 'simulate'));
+result = run_pmsm_id_sil('StopTime', 0.35, 'Build', true, ...
+    'SimulationMode', 'accelerator', 'PlantSampleTime', 1e-5, 'Plot', false);
+```
+
+上面的短时冒烟回归会进入编码器检查/校准阶段。日常参数回归建议使用快速 SIL；完整机械曲线和最终死区验证应将 `PlantSampleTime` 改为 `1e-6`，并预留较长运行时间。详细模型的 10 us 快速模式无法解析 1 us 死区，脚本会明确提示这一点。
+
+16 个 SIL monitor 通道依次为：OID 主状态、Rs、Ld、Lq、磁链、死区补偿电压、编码器子状态、编码器故障码、机械子状态、识别极对数、编码器偏置、惯量 J、黏性阻尼 B、静负载转矩、机械速度、PWM 运行标志。控制器侧状态变化同时记录在 `pmsm_id_sil_state.log`。
+
+所有识别开关、激励量、速度区间、采样时间和编码器故障阈值均由 `sdpe_general/sdpe_requirement.json` 管理。修改后必须依次运行 common 和目标 `sdpe_generate.bat`，再重新编译固件或 SIL EXE；不要直接修改生成头文件。
+
 
 
 ---
@@ -77,7 +129,7 @@ mcs_pmsm_nt/
 
 3. **等待状态机完成**：
 
-   系统将自动依次进行：ADC 偏置校准 $\rightarrow$ 定子电阻与死区测量 $\rightarrow$ 交直轴电感测量 $\rightarrow$ 磁链测量 $\rightarrow$ 机械参数测量。
+   系统将自动依次进行：ADC 偏置校准 $\rightarrow$ 有感编码器校准 $\rightarrow$ 定子电阻与死区测量 $\rightarrow$ 交直轴电感测量 $\rightarrow$ 磁链测量 $\rightarrow$ 机械参数测量。编码器校准通过 `Id` 将转子吸合到 A 轴，逐电周期旋转并观测机械位置；回到首个吸合点前的电周期数即极对数，首个吸合点即机械偏置。
 
    通过监控 `pmsm_oid.sm` 变量，当其达到 `PMSM_OFFLINE_ID_COMPLETE (8)` 时，代表辨识圆满结束。
 
@@ -90,6 +142,8 @@ mcs_pmsm_nt/
    - `pmsm_oid.pmsm_param.flux_linkage`：永磁体磁链 (Wb) / 可推算 KV 值
    - `pmsm_oid.pmsm_param.V_comp_pu`：**死区与管压降综合补偿参数** (标幺值)
    - `pmsm_oid.pmsm_mech_param.J_total` / `B_viscous`：转动惯量与黏性摩擦系数
+   - `pmsm_oid.sub_mech.load_torque_Nm`：正转方向的静负载转矩
+   - `pmsm_oid.sub_encoder.identified_pole_pairs` / `encoder_offset_pu`：校准后的极对数与编码器机械偏置
 
 ### 2. 异常中断与排查 (重要)
 
@@ -99,8 +153,8 @@ mcs_pmsm_nt/
 
 **排查与解决：**
 
-1. **检查母线电压：** 在减速阶段（DECEL_TEST），动能回馈容易导致母线过压（OVP）。如果频繁在此停机，请在 `pmsm_offline_id_if.c` 中减小 `cfg_mech.decel_iq_pu` 的绝对值，或提高 `max_vbus_pu` 的容忍度。
-2. **检查测试电流：** 如果电机内阻极小，配置的 `pulse_voltage_pu`（测试电压脉冲）过大可能会瞬间触发过流（OCP）。请适当调低注入电压。
+1. **检查编码器故障码：** `sub_encoder.fault=2/3/4/5` 分别表示随机跳变、无运动、周期不均匀、超过最大极对数仍未回零。先处理编码器接线、机械联轴器和零漂，再重试。
+2. **检查测试电流：** 如果电机内阻极小，SDPE 中配置的 `MCS_PMSM_ID_LDQ_PULSE_VOLTAGE_V` 过大可能会瞬间触发过流（OCP）。请适当调低注入电压。
 3. **失步振荡：** 确保在 `FLUX` 初始化中已经启用了基于已辨识 $R/L$ 的电流环 PI 参数自动整定（Auto-Tuning），防止动态拖拽时电流环崩溃。
 
 ## 参数辨识算法核心思路揭秘
@@ -116,9 +170,9 @@ mcs_pmsm_nt/
 3. **永磁体磁链 ($\psi_m$)**
    - **思路：** 采用 V/F 开环与电流闭环结合的 I/F 拖拽模式，使电机稳定运行在不同转速梯度。
    - **算法：** 读取多组转速下的稳态交直轴电压、电流。在计算反电势 $E$ 时，**强耦合扣除了第一阶段辨识出的电阻压降和 $V_{comp}$ 死区压降**，随后通过反电势对电角速度的线性回归，极其精准地提取出永磁体磁链（反推 KV 值）。
-4. **机械惯量 ($J$) 与摩擦系数 ($B$)**
-   - **思路：** 包含平滑切换的加减速测试。从开环平滑切入闭环后，分别施加正向和反向恒定转矩电流。
-   - **算法：** 记录加速段和减速段的速度-时间曲线。利用 DSA 引擎算出实际角加速度，通过电磁转矩差与角加速度差的联立方程，消去未知摩擦力，解析出转动惯量 $J$；再结合稳态速度下的拖拽电流，解析出黏性阻尼 $B$。
+4. **机械惯量 ($J$)、摩擦系数 ($B$) 与静负载 ($T_L$)**
+   - **思路：** 校准编码器后直接使用真实编码器电角度和真实 FOC 电流闭环；施加用户设定的恒定 `Iq`，在目标转速的 30%–70% 记录加速曲线，达到 75% 后物理关闭 PWM，再记录 70%–30% 自由减速曲线。
+   - **算法：** 对 $\dot\omega=-(B/J)\omega+c$ 采用积分形式的双变量线性最小二乘，避免直接微分放大编码器量化噪声。加速与自由减速截距之差给出 $T_e/J$，公共斜率给出 $-B/J$，自由减速截距给出 $-T_L/J$，从而同时求得 $J$、$B$ 和 $T_L$。
 
 ## 核心功能模块
 
@@ -527,3 +581,18 @@ undefined reference to 'ctl_init_mtr_current_ctrl'
 **版本历史：**
 - v1.0 (2024-09-30): 初始版本
 - v1.1 (2026-01-27): 添加完整文档和BUILD_LEVEL说明
+
+## DQ-PI 与 DQ-LADRC1 同带宽仿真记录（2026-08-08）
+
+FOC 电流环默认使用 DQ-PI。在 `foc_core.h` 中取消注释 `#define ENABLE_FOC_LADRC_CTRL`，或在编译器中定义同名宏，可切换为 DQ-LADRC1。两种配置调用同一个 `ctl_auto_tuning_foc_core()` 和 `ctl_init_foc_core()`。
+
+可重复的同带宽对比程序位于 `ctl/component/intrinsic/complex/tests/host_sim/foc_current_loop_compare.c`。测试采用 20 kHz 采样、`Ld=Lq=50 uH`、`Rs=0.13 ohm`、电压基值 `24/sqrt(3) V`、电流基值 `10 A`，q 轴参考从 0 跳变至 0.3 pu，圆限幅为 0.9 pu。PI 交越带宽与 LADRC 控制器带宽 `fc` 均为 707.355 Hz；LADRC 观测器带宽 `fo=2*fc`。前馈与交叉耦合均关闭。
+
+| 控制器 | 带宽 (Hz) | 10%–90% 上升时间 (ms) | 2% 调节时间 (ms) | 超调量 (%) | IAE | 最终 iq (pu) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| DQ-PI | 707.355 | 0.450 | 0.950 | -0.000010 | 0.000052500 | 0.300000 |
+| DQ-LADRC1 | 707.355 | 1.000 | 1.700 | -0.000020 | 0.000116859 | 0.300000 |
+
+该名义一阶对象下 PI 响应更快；两种控制器均无可见超调并正确收敛。此记录用于回归比较，不表示 LADRC 在参数摄动或外扰条件下的鲁棒性结论。
+
+此外，`mcs_pmsm_nt` 与 `mcs_pmsm_id` 的 Windows x64 Debug SIL 工程均分别以默认 PI 和 `ENABLE_FOC_LADRC_CTRL` 配置完成编译与链接；两套 `MCS_STD_PMSM_MODEL.slx` 均通过 UDP 建立连接并无错误运行至 0.1 s。

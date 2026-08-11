@@ -8,11 +8,12 @@
 
 // GMP basic core header
 #include <gmp_core.h>
+#include <ctl/component/dsa/dsa_dl_scope.h>
 
 #include "ctl_main.h" // Includes SINV modules, ADC structures, and ctrl_settings.h
 #include "user_main.h"
-#include <ctl/component/dsa/dsa_trigger.h>
 #include <xplt.peripheral.h>
+
 
 //=================================================================================================
 // Definitions of Peripheral
@@ -25,13 +26,6 @@ adc_channel_t adc_i_ac;
 
 // DC Bus Voltage Feedback
 adc_channel_t adc_v_bus;
-
-// dlog DSA objects
-//basic_trigger_t trigger;
-
-// dlog variables
-ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];
-ctrl_gt dlog_mem2[DLOG_MEM_LENGTH];
 
 // GPIO port
 extern gpio_halt user_led;
@@ -91,8 +85,6 @@ void setup_peripheral(void)
     // fetch the ADC values from the control_port without parameter passing.
     ctl_attach_sinv_rc(&rc_core, &adc_v_bus.control_port, &adc_v_grid.control_port, &adc_i_ac.control_port);
 
-    // Initialize data logger module
-//    dsa_init_basic_trigger(&trigger, DLOG_MEM_LENGTH);
 }
 
 //=================================================================================================
@@ -103,6 +95,7 @@ interrupt void MainISR(void)
 {
     // Call GMP ISR Controller operation callback function (invokes ctl_dispatch)
     gmp_base_ctl_step();
+    user_step_dl_scope();
 
     // Call GMP Timer
     gmp_step_system_tick();

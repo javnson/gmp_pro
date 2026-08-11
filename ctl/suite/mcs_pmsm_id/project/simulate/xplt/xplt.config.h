@@ -56,5 +56,19 @@
 #define gmp_pc_simulink_rx_buffer_t dp_sil_rx_buf_t
 #define gmp_pc_simulink_tx_buffer_t dp_sil_tx_buf_t
 
-// Invoke Controller Settings
-#include <ctrl_settings.h>
+// Start the offline-identification sequence automatically after the simulated
+// drive reaches Operation Enabled and ADC calibration has completed. Hardware
+// targets keep the explicit user-command start contract.
+#define MCS_PMSM_ID_AUTO_START
+
+// The simulated ADC offsets are deterministic mask parameters. Skip the
+// hardware-oriented multi-channel zero-offset acquisition during SIL.
+#define MCS_PMSM_ID_SIM_BYPASS_ADC_CALIBRATION
+
+// Retain the 1 us switching/dead-time plant resolution while shortening only
+// identification dwell times and the V/F ramp for practical SIL iteration.
+// Set to 1.0f for a timing-identical final correlation run.
+#define MCS_PMSM_ID_TIME_SCALE (0.05f)
+
+// Invoke generated project and common controller settings.
+#include <sdpe_mcs_pmsm_id_simulate_settings.h>

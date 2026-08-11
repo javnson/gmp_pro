@@ -40,6 +40,10 @@
 #define SPECIFY_CTRL_GT_TYPE USING_FLOAT_FPU
 // #define SPECIFY_CTRL_GT_TYPE USING_FIXED_TI_IQ_LIBRARY
 
+// CPU Timer0 already calls gmp_step_system_tick() at 1 kHz.  Do not divide
+// that scheduler tick again in the C2000 SysConfig adapter.
+#define DSP_C2000_DSP_TIME_DIV (1)
+
 
 // Invoke Controller Settings
 #include <ctrl_settings.h>

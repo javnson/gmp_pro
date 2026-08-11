@@ -20,6 +20,12 @@
  */
 
 /**
+ * @defgroup CTL_INTRINSIC_COMPLEX Complex Components
+ * @ingroup CTL_INTRINSIC_LIB
+ * @brief Composite multi-axis control building blocks.
+ */
+
+/**
  * @defgroup CTL_INTRINSIC_DISCRETE Discrete Components
  * @ingroup CTL_INTRINSIC_LIB
  * @brief Fundamental, reusable building discrete blocks for control template library.
@@ -194,6 +200,22 @@
  * @brief An IIR filter module designed from S-domain pole-zero locations.
  */
 #include <ctl/component/intrinsic/continuous/s_function.h>
+
+//
+// ----------------- Complex Components -----------------
+//
+
+/**
+ * @defgroup dq_pi_controller Decoupled D-Q PI Controller
+ * @ingroup CTL_INTRINSIC_COMPLEX
+ */
+#include <ctl/component/intrinsic/complex/dq_pi.h>
+
+/**
+ * @defgroup dq_ladrc1_controller Decoupled D-Q LADRC1 Controller
+ * @ingroup CTL_INTRINSIC_COMPLEX
+ */
+#include <ctl/component/intrinsic/complex/dq_ladrc1.h>
 
 //
 // ----------------- Advance Components -----------------

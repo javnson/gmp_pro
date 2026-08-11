@@ -14,7 +14,8 @@ adc_bias_calibrator_t adc_calibrator;
 volatile fast_gt flag_enable_adc_calibrator = 0;
 volatile fast_gt index_adc_calibrator = 0;
 ctrl_gt g_v_out_ref_user = float2ctrl(CLLLC_VOLTAGE_TARGET_PU);
-ctrl_gt g_i_limit_user = float2ctrl(CLLLC_CURRENT_LIMIT_PU);
+ctrl_gt g_i_limit_user = float2ctrl(CLLLC_CURRENT_TARGET_PU);
+ctrl_gt g_modulation_target_user = float2ctrl(0.10f);
 ctrl_gt g_modulation_command = float2ctrl(0.0f);
 
 void ctl_init(void)
@@ -61,7 +62,7 @@ void ctl_init(void)
     ctl_init_clllc_modulator(&clllc_mod, CLLLC_TIMER_CLOCK_HZ,
                              CLLLC_F_RESONANT_HZ, CLLLC_F_MIN_HZ,
                              CLLLC_F_MAX_HZ, CLLLC_DEADBAND_S,
-                             float2ctrl(CLLLC_MAX_DAB_PHASE_PU));
+                             float2ctrl(CLLLC_MAX_PHASE_SHIFT_PU));
     init_cia402_state_machine(&cia402_sm);
     /* Keep the complete automatic commissioning sequence configurable.
        Hardware uses the conservative 100 ms default per stage; SIL reduces
@@ -81,7 +82,15 @@ void ctl_mainloop(void)
 }
 
 void clear_all_controllers(void) { ctl_clear_dcdc_core(&dcdc_core); }
-void ctl_enable_pwm(void) { clear_all_controllers(); ctl_fast_enable_output(); }
+void ctl_enable_pwm(void)
+{
+#if defined ENABLE_GMP_DL_PIL_SIM
+    clear_all_controllers();
+#else
+    clear_all_controllers();
+    ctl_fast_enable_output();
+#endif
+}
 void ctl_disable_pwm(void) { ctl_fast_disable_output(); }
 
 fast_gt ctl_exec_adc_calibration(void)
@@ -109,13 +118,56 @@ gmp_task_status_t tsk_protect(gmp_task_t* tsk)
     return GMP_TASK_DONE;
 }
 
+#if defined ENABLE_GMP_DL_PIL_SIM
+/** @brief Apply one CLLLC SIL/PIL input frame to the measurement ports. */
+static void ctl_apply_pil_input(const gmp_sim_rx_buf_t* rx)
+{
+    ctl_step_adc_channel(&adc_v_primary, rx->adc_result[0]);
+    ctl_step_adc_channel(&adc_i_primary, rx->adc_result[1]);
+    ctl_step_adc_channel(&adc_v_secondary, rx->adc_result[2]);
+    ctl_step_adc_channel(&adc_i_secondary, rx->adc_result[3]);
+    ctl_step_adc_channel(&adc_i_resonant, rx->adc_result[4]);
+}
+
+/** @brief Export one CLLLC controller result using the established SIL ABI. */
+static void ctl_collect_pil_output(gmp_sim_tx_buf_t* tx)
+{
+    int i;
+    for (i = 0; i < 4; ++i)
+    {
+        tx->pwm_cmp[i] = clllc_mod.leg[i].duty;
+        tx->pwm_cmp[i + 4] = clllc_mod.leg[i].phase;
+    }
+    tx->monitor[0] = ctrl2float(clllc_mod.leg[0].raw.period);
+    tx->monitor[1] = ctrl2float(clllc_mod.leg[0].raw.deadband);
+    tx->monitor[2] = ctrl2float(adc_v_primary.control_port.value) * CTRL_VOLTAGE_BASE;
+    tx->monitor[3] = ctrl2float(adc_i_primary.control_port.value) * CTRL_CURRENT_BASE;
+    tx->monitor[4] = ctrl2float(adc_v_secondary.control_port.value) * CTRL_VOLTAGE_BASE;
+    tx->monitor[5] = ctrl2float(adc_i_resonant.control_port.value) * CTRL_CURRENT_BASE;
+    tx->monitor[6] = ctrl2float(g_modulation_command);
+}
+
+#endif // defined ENABLE_GMP_DL_PIL_SIM
+
+/** @brief Execute one controller step requested by the Data Link PIL service. */
 void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
 {
 #if defined ENABLE_GMP_DL_PIL_SIM
-    ctl_input_callback_pil(rx);
+    ctl_apply_pil_input(rx);
     ctl_dispatch();
-    ctl_output_callback_pil(tx);
+    ctl_collect_pil_output(tx);
 #else
     GMP_UNUSED_VAR(rx); GMP_UNUSED_VAR(tx);
 #endif
 }
+
+#if !defined SPECIFY_PC_ENVIRONMENT
+/** @brief Provide four power-stage measurements to the platform Scope. */
+void user_get_scope_channels(ctrl_gt channels[4])
+{
+    channels[0] = adc_v_primary.control_port.value;
+    channels[1] = adc_i_primary.control_port.value;
+    channels[2] = adc_v_secondary.control_port.value;
+    channels[3] = adc_i_secondary.control_port.value;
+}
+#endif

@@ -10,11 +10,10 @@
 
 // GMP basic core header
 #include <gmp_core.h>
+#include <ctl/component/dsa/dsa_dl_scope.h>
 
 #include "user_main.h"
 #include <xplt.peripheral.h>
-
-#include <ctl/component/dsa/dsa_trigger.h>
 
 
 //=================================================================================================
@@ -33,14 +32,6 @@ ptr_adc_channel_t udc;
 adc_gt udc_src;
 ptr_adc_channel_t idc;
 adc_gt idc_src;
-
-// dlog DSA objects
-basic_trigger_t trigger;
-#define DLOG_MEM_LENGTH 100
-
-// dlog variables
-ctrl_gt dlog_mem1[DLOG_MEM_LENGTH];
-ctrl_gt dlog_mem2[DLOG_MEM_LENGTH];
 
 // GPIO port
 extern gpio_halt user_led;
@@ -103,8 +94,6 @@ void setup_peripheral(void)
     ctl_attach_foc_core_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &pos_enc.encif, &spd_enc.encif);
 #endif // BUILD_LEVEL
 
-       // dlog module
-       dsa_init_basic_trigger(&trigger, DLOG_MEM_LENGTH);
 }
 
 //=================================================================================================
@@ -117,6 +106,7 @@ interrupt void MainISR(void)
     // call GMP ISR  Controller operation callback function
     //
     gmp_base_ctl_step();
+    user_step_dl_scope();
 
     //
     // Call GMP Timer
@@ -172,7 +162,7 @@ void reset_controller(void)
 // 32 bit union
 typedef union {
     int32_t i32;
-    uint16_t u16[2]; // C2000中uint16_t占1个word，32位占用2个word
+    uint16_t u16[2]; /**< C2000 stores each 16-bit value in one addressable word. */
 } can_data_t;
 
 // CAN interrupt

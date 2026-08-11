@@ -13,8 +13,9 @@ from typing import Any
 
 try:
     from PyQt6.QtCore import QTimer, Qt
-    from PyQt6.QtGui import QAction, QColor, QKeySequence, QPen, QShortcut, QTextCursor, QTextDocument
+    from PyQt6.QtGui import QAction, QColor, QKeySequence, QPalette, QShortcut, QTextCursor, QTextDocument
     from PyQt6.QtWidgets import (
+        QAbstractItemView,
         QApplication,
         QCheckBox,
         QComboBox,
@@ -24,7 +25,6 @@ try:
         QFormLayout,
         QHBoxLayout,
         QHeaderView,
-        QAbstractItemView,
         QInputDialog,
         QLabel,
         QLineEdit,
@@ -35,7 +35,6 @@ try:
         QMessageBox,
         QPushButton,
         QSplitter,
-        QStyledItemDelegate,
         QTableWidget,
         QTableWidgetItem,
         QTabWidget,
@@ -49,8 +48,9 @@ try:
 except ImportError:  # pragma: no cover - depends on local desktop environment.
     try:
         from PySide6.QtCore import QTimer, Qt
-        from PySide6.QtGui import QAction, QColor, QKeySequence, QPen, QShortcut, QTextCursor, QTextDocument
+        from PySide6.QtGui import QAction, QColor, QKeySequence, QPalette, QShortcut, QTextCursor, QTextDocument
         from PySide6.QtWidgets import (
+            QAbstractItemView,
             QApplication,
             QCheckBox,
             QComboBox,
@@ -60,7 +60,6 @@ except ImportError:  # pragma: no cover - depends on local desktop environment.
             QFormLayout,
             QHBoxLayout,
             QHeaderView,
-            QAbstractItemView,
             QInputDialog,
             QLabel,
             QLineEdit,
@@ -71,7 +70,6 @@ except ImportError:  # pragma: no cover - depends on local desktop environment.
             QMessageBox,
             QPushButton,
             QSplitter,
-            QStyledItemDelegate,
             QTableWidget,
             QTableWidgetItem,
             QTabWidget,
@@ -93,40 +91,44 @@ if str(ROOT) not in sys.path:
 from sdpe_v2.generator import HeaderGenerator, macro_name
 from sdpe_v2.library import SDPELibrary
 from sdpe_v2.model import HardwareEntity, HardwareSchema, SDPEError
+from sdpe_v2.project_requirements import (
+    COMMON_REQUIREMENTS_KEY,
+    GROUP_KEY,
+    SOURCE_KEY,
+    common_requirement_reference,
+    common_requirement_references,
+    duplicate_macro_occurrences,
+    load_project_requirements,
+    merged_project_view,
+    project_requirement_paths,
+    resolve_duplicate_macros,
+    resolve_common_requirement_paths,
+    title_case_name,
+)
 from sdpe_v2.util import read_json
-from gui_pyqt.dialogs import choose_item, choose_tree_item, confirm_delete, edit_multiline, prompt_identifier
+from gui_pyqt.dialogs import (
+    choose_item,
+    choose_multiple_items,
+    choose_duplicate_macros,
+    choose_tree_item,
+    confirm_delete,
+    edit_multiline,
+    prompt_identifier,
+)
+from gui_pyqt.sdpe_widgets import (
+    SDPEComboBox,
+    SDPEDataViewMixin,
+    READ_ONLY_CELL_ROLE,
+    SDPETableWidget,
+    SDPETreeWidget,
+    VALIDATION_BORDER_ROLE,
+    ValidationBorderDelegate,
+    unique_tree_items,
+)
 
 
-VALIDATION_BORDER_ROLE = Qt.ItemDataRole.UserRole.value + 101
-
-
-class SDPEComboBox(QComboBox):
-    """Combo box that does not steal mouse-wheel scrolling unless focused."""
-
-    def __init__(self):
-        super().__init__()
-        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-
-    def wheelEvent(self, event) -> None:  # noqa: N802 - Qt override name.
-        if QApplication.focusWidget() is self:
-            super().wheelEvent(event)
-        else:
-            event.ignore()
-
-
-class ValidationBorderDelegate(QStyledItemDelegate):
-    """Draw a validation outline without changing themed text/background colors."""
-
-    def paint(self, painter, option, index) -> None:  # noqa: ANN001, N802 - Qt override signature.
-        super().paint(painter, option, index)
-        if not index.data(VALIDATION_BORDER_ROLE):
-            return
-        painter.save()
-        pen = QPen(QColor(220, 40, 40))
-        pen.setWidth(2)
-        painter.setPen(pen)
-        painter.drawRect(option.rect.adjusted(1, 1, -2, -2))
-        painter.restore()
+PROJECT_SOURCE_ROLE = Qt.ItemDataRole.UserRole.value + 120
+PROJECT_COMMON_SNAPSHOT_KEY = "__sdpe_common_documents"
 
 
 def pretty_json(data: Any) -> str:
@@ -266,33 +268,12 @@ def parse_parameter_value(text: str) -> Any:
 def set_table_headers(
     table: QTableWidget, headers: list[str], mode: QHeaderView.ResizeMode = QHeaderView.ResizeMode.Stretch
 ) -> None:
-    table.setColumnCount(len(headers))
-    table.setHorizontalHeaderLabels(headers)
-    for col, header in enumerate(headers):
-        header_item = table.horizontalHeaderItem(col)
-        if header_item is None:
-            continue
-        if header == "En":
-            header_item.setToolTip("Enable: checked macros are emitted normally; unchecked macros are commented out.")
-        elif header == "Wk":
-            header_item.setToolTip("Weak macro: checked macros are wrapped by #ifndef / #define / #endif.")
-    table.horizontalHeader().setSectionResizeMode(mode)
-    table.horizontalHeader().setStretchLastSection(mode != QHeaderView.ResizeMode.Interactive)
-    table.verticalHeader().setVisible(False)
-    table.setAlternatingRowColors(True)
-    table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-    table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-    table.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
-    table.setDragDropOverwriteMode(False)
-    table.setEditTriggers(
-        QAbstractItemView.EditTrigger.SelectedClicked
-        | QAbstractItemView.EditTrigger.DoubleClicked
-        | QAbstractItemView.EditTrigger.EditKeyPressed
-    )
-    install_table_clipboard_shortcuts(table)
-    install_table_change_hooks(table)
-    install_table_status_descriptions(table)
-    table.resizeColumnsToContents()
+    if not isinstance(table, SDPETableWidget):
+        raise TypeError("SDPE data tables must use SDPETableWidget.")
+    table.configure(headers, mode)
+    if not getattr(table, "_sdpe_page_change_connected", False):
+        table._sdpe_page_change_connected = True
+        table.contentChanged.connect(lambda t=table: notify_table_changed(t))
 
 
 def page_for_widget(widget: QWidget) -> QWidget | None:
@@ -308,14 +289,6 @@ def notify_table_changed(table: QTableWidget) -> None:
     page = page_for_widget(table)
     if page is not None:
         page.mark_current_dirty()
-
-
-def install_table_change_hooks(table: QTableWidget) -> None:
-    model = table.model()
-    model.rowsInserted.connect(lambda *_args, t=table: notify_table_changed(t))
-    model.rowsRemoved.connect(lambda *_args, t=table: notify_table_changed(t))
-    model.rowsMoved.connect(lambda *_args, t=table: notify_table_changed(t))
-    model.layoutChanged.connect(lambda *_args, t=table: notify_table_changed(t))
 
 
 def fit_table_columns(table: QTableWidget, max_width: int = 360) -> None:
@@ -379,7 +352,7 @@ def set_tree_combo(tree: QTreeWidget, item: QTreeWidgetItem, col: int, values: l
     tree.setItemWidget(item, col, combo)
 
 
-def set_tree_check(item: QTreeWidgetItem, col: int, checked: bool) -> None:
+def set_tree_check(item: QTreeWidgetItem, col: int, checked: bool, enabled: bool = True) -> None:
     item.setText(col, "")
     item.setData(col, Qt.ItemDataRole.UserRole, bool(checked))
     tree = item.treeWidget()
@@ -390,7 +363,13 @@ def set_tree_check(item: QTreeWidgetItem, col: int, checked: bool) -> None:
                 i.setData(c, Qt.ItemDataRole.UserRole, current)
             notify_tree_changed(t)
 
-        tree.setItemWidget(item, col, centered_checkbox(checked, changed))
+        panel = centered_checkbox(checked, changed if enabled else None)
+        box = getattr(panel, "_sdpe_checkbox", None)
+        if isinstance(box, QCheckBox):
+            box.setEnabled(enabled)
+            if not enabled:
+                box.setToolTip("Private: checked when this item belongs to the current project.")
+        tree.setItemWidget(item, col, panel)
 
 
 def tree_checked(item: QTreeWidgetItem, col: int, default: bool = False) -> bool:
@@ -407,55 +386,6 @@ def tree_checked(item: QTreeWidgetItem, col: int, default: bool = False) -> bool
     if state == Qt.CheckState.Unchecked:
         return False
     return default
-
-
-def show_status_description(widget: QWidget, text: str) -> None:
-    text = text.strip()
-    if not text:
-        return
-    window = widget.window()
-    if hasattr(window, "statusBar"):
-        window.statusBar().showMessage(text)
-
-
-def description_column(headers: list[str]) -> int | None:
-    for index, header in enumerate(headers):
-        if "description" in header.lower():
-            return index
-    return None
-
-
-def install_table_status_descriptions(table: QTableWidget) -> None:
-    headers = [table.horizontalHeaderItem(col).text() if table.horizontalHeaderItem(col) else "" for col in range(table.columnCount())]
-    desc_col = description_column(headers)
-    if desc_col is None:
-        return
-    table.setMouseTracking(True)
-
-    def show_row(row: int) -> None:
-        if row < 0 or row >= table.rowCount():
-            return
-        show_status_description(table, item_text(table, row, desc_col))
-
-    table.cellEntered.connect(lambda row, _col: show_row(row))
-    table.currentCellChanged.connect(lambda row, _col, _previous_row, _previous_col: show_row(row))
-
-
-def install_tree_status_descriptions(tree: QTreeWidget, description_col: int | None = None) -> None:
-    if description_col is None:
-        headers = [tree.headerItem().text(col) for col in range(tree.columnCount())]
-        description_col = description_column(headers)
-    if description_col is None:
-        return
-    tree.setMouseTracking(True)
-
-    def show_item(item: QTreeWidgetItem | None) -> None:
-        if item is None:
-            return
-        show_status_description(tree, tree_cell_text(tree, item, description_col))
-
-    tree.itemEntered.connect(lambda item, _col: show_item(item))
-    tree.currentItemChanged.connect(lambda current, _previous: show_item(current))
 
 
 def notify_tree_changed(tree: QTreeWidget) -> None:
@@ -479,55 +409,10 @@ def item_text(table: QTableWidget, row: int, col: int) -> str:
     return item.text().strip()
 
 
-def selected_rows(table: QTableWidget) -> list[int]:
-    rows = sorted({index.row() for index in table.selectedIndexes()})
-    if not rows and table.currentRow() >= 0:
-        rows = [table.currentRow()]
-    return rows
-
-
-def table_rows_to_text(table: QTableWidget, rows: list[int]) -> str:
-    return "\n".join("\t".join(item_text(table, row, col) for col in range(table.columnCount())) for row in rows)
-
-
-def paste_text_to_table(table: QTableWidget, text: str) -> None:
-    lines = [line for line in text.splitlines() if line.strip()]
-    if not lines:
-        return
-    row = table.currentRow()
-    insert_at = table.rowCount() if row < 0 else row + 1
-    for offset, line in enumerate(lines):
-        table.insertRow(insert_at + offset)
-        values = line.split("\t")
-        for col, value in enumerate(values[: table.columnCount()]):
-            set_item(table, insert_at + offset, col, value)
-
-
-def install_table_clipboard_shortcuts(table: QTableWidget) -> None:
-    def copy_rows() -> None:
-        rows = selected_rows(table)
-        if rows:
-            QApplication.clipboard().setText(table_rows_to_text(table, rows))
-
-    def cut_rows() -> None:
-        notify_table_changed(table)
-        rows = selected_rows(table)
-        if not rows:
-            return
-        QApplication.clipboard().setText(table_rows_to_text(table, rows))
-        for row in reversed(rows):
-            table.removeRow(row)
-
-    def paste_rows() -> None:
-        notify_table_changed(table)
-        paste_text_to_table(table, QApplication.clipboard().text())
-
-    table._sdpe_copy_shortcut = QShortcut(QKeySequence.StandardKey.Copy, table)
-    table._sdpe_copy_shortcut.activated.connect(copy_rows)
-    table._sdpe_cut_shortcut = QShortcut(QKeySequence.StandardKey.Cut, table)
-    table._sdpe_cut_shortcut.activated.connect(cut_rows)
-    table._sdpe_paste_shortcut = QShortcut(QKeySequence.StandardKey.Paste, table)
-    table._sdpe_paste_shortcut.activated.connect(paste_rows)
+def table_source_rows(table: QTableWidget) -> list[int]:
+    if isinstance(table, SDPETableWidget):
+        return table.source_row_numbers()
+    return list(range(table.rowCount()))
 
 
 def set_item(table: QTableWidget, row: int, col: int, value: Any) -> None:
@@ -667,7 +552,7 @@ def load_option_set_table(table: QTableWidget, option_sets: dict[str, Any]) -> N
 
 def collect_feature_macro_table(table: QTableWidget) -> list[dict[str, Any]]:
     rows = []
-    for row in range(table.rowCount()):
+    for row in table_source_rows(table):
         macro = item_text(table, row, 0)
         if macro:
             rows.append(
@@ -684,7 +569,7 @@ def collect_feature_macro_table(table: QTableWidget) -> list[dict[str, Any]]:
 
 def collect_option_macro_table(table: QTableWidget) -> list[dict[str, Any]]:
     rows = []
-    for row in range(table.rowCount()):
+    for row in table_source_rows(table):
         macro = item_text(table, row, 0)
         if macro:
             rows.append(
@@ -703,7 +588,7 @@ def collect_option_macro_table(table: QTableWidget) -> list[dict[str, Any]]:
 
 def collect_option_set_table(table: QTableWidget) -> dict[str, Any]:
     rows: dict[str, Any] = {}
-    for row in range(table.rowCount()):
+    for row in table_source_rows(table):
         name = item_text(table, row, 0)
         if not name:
             continue
@@ -739,6 +624,7 @@ class SDPEPage(QWidget):
         self.restoring_undo = False
         self.drafts: dict[str, dict[str, Any]] = {}
         self.dirty_ids: set[str] = set()
+        self.clean_snapshots: dict[str, dict[str, Any]] = {}
         self.undo_limit = 20
         self.undo_stack: list[dict[str, Any]] = []
         self.undo_timer = QTimer(self)
@@ -908,6 +794,8 @@ class SDPEPage(QWidget):
                 tree.headerItem().setToolTip(col, "Enable: checked macros are emitted normally; unchecked macros are commented out.")
             elif header == "Wk":
                 tree.headerItem().setToolTip(col, "Weak macro: checked macros are wrapped by #ifndef / #define / #endif.")
+            elif header == "Pri":
+                tree.headerItem().setToolTip(col, "Private: read-only ownership flag for the current project.")
 
     def create_items_widget(self):
         widget = QListWidget()
@@ -940,6 +828,20 @@ class SDPEPage(QWidget):
     def path_for_id(self, item_id: str) -> Path:
         raise NotImplementedError
 
+    def commit_active_cell_editor(self) -> None:
+        """Commit a delegate editor before Save reads the underlying item model."""
+
+        focus = QApplication.focusWidget()
+        if focus is None:
+            return
+        for view in [*self.findChildren(SDPETableWidget), *self.findChildren(SDPETreeWidget)]:
+            if view is self.list_widget:
+                continue
+            if view is focus or view.isAncestorOf(focus):
+                if view.state() == QAbstractItemView.State.EditingState:
+                    view.setFocus(Qt.FocusReason.OtherFocusReason)
+                return
+
     def mark_current_dirty(self) -> None:
         if self.loading or self.restoring_undo or not self.current_id:
             return
@@ -956,6 +858,29 @@ class SDPEPage(QWidget):
                     current.setText(f"{text} *")
         self.schedule_undo_snapshot()
 
+    def set_dirty_state(self, item_id: str, dirty: bool) -> None:
+        """Update dirty bookkeeping and the visible item marker together."""
+
+        if dirty:
+            self.dirty_ids.add(item_id)
+        else:
+            self.dirty_ids.discard(item_id)
+            self.drafts.pop(item_id, None)
+        current = self.list_widget.currentItem()
+        if current is None or item_id != self.current_id:
+            return
+        if isinstance(current, QTreeWidgetItem):
+            text = current.text(0).removesuffix(" *")
+            current.setText(0, f"{text} *" if dirty else text)
+        else:
+            text = current.text().removesuffix(" *")
+            current.setText(f"{text} *" if dirty else text)
+
+    def update_dirty_from_snapshot(self, snapshot: dict[str, Any]) -> None:
+        clean = self.clean_snapshots.get(self.current_id)
+        dirty = clean is None or pretty_json(snapshot) != pretty_json(clean)
+        self.set_dirty_state(self.current_id, dirty)
+
     def schedule_undo_snapshot(self) -> None:
         if self.loading or self.restoring_undo or not self.current_id:
             return
@@ -968,6 +893,26 @@ class SDPEPage(QWidget):
         if data is None:
             data = self.collect_current_data()
         self.undo_stack = [self.clone_data(data)] if data is not None else []
+        if data is not None and self.current_id and self.current_id not in self.dirty_ids:
+            self.clean_snapshots[self.current_id] = self.clone_data(data)
+            self.set_dirty_state(self.current_id, False)
+
+    def begin_undo_transaction(self) -> None:
+        """Capture the state before one structural data-view operation."""
+
+        if self.loading or self.restoring_undo or not self.current_id:
+            return
+        self.undo_timer.stop()
+        self.capture_undo_snapshot()
+
+    def finish_undo_transaction(self) -> None:
+        """Commit one structural operation as an immediately undoable step."""
+
+        if self.loading or self.restoring_undo or not self.current_id:
+            return
+        self.mark_current_dirty()
+        self.undo_timer.stop()
+        self.capture_undo_snapshot()
 
     def capture_undo_snapshot(self) -> None:
         if self.loading or self.restoring_undo or not self.current_id:
@@ -977,11 +922,13 @@ class SDPEPage(QWidget):
             return
         snapshot = self.clone_data(data)
         if self.undo_stack and pretty_json(self.undo_stack[-1]) == pretty_json(snapshot):
+            self.update_dirty_from_snapshot(snapshot)
             return
         self.undo_stack.append(snapshot)
         if len(self.undo_stack) > self.undo_limit:
             self.undo_stack = self.undo_stack[-self.undo_limit :]
         self.drafts[self.current_id] = snapshot
+        self.update_dirty_from_snapshot(snapshot)
 
     def undo_current_change(self) -> None:
         if self.loading or self.restoring_undo or not self.current_id:
@@ -997,12 +944,7 @@ class SDPEPage(QWidget):
         try:
             self.drafts[self.current_id] = previous
             self.load_current()
-            path = self.path_for_id(self.current_id)
-            old = read_json(path) if path.exists() else {}
-            if pretty_json(previous) != pretty_json(old):
-                self.dirty_ids.add(self.current_id)
-            else:
-                self.dirty_ids.discard(self.current_id)
+            self.update_dirty_from_snapshot(previous)
             self.message("Undo", "Restored previous change.")
         finally:
             self.restoring_undo = False
@@ -1014,10 +956,7 @@ class SDPEPage(QWidget):
         if data is None:
             return
         self.drafts[self.current_id] = data
-        path = self.path_for_id(self.current_id)
-        old = read_json(path) if path.exists() else {}
-        if pretty_json(data) != pretty_json(old):
-            self.dirty_ids.add(self.current_id)
+        self.update_dirty_from_snapshot(self.clone_data(data))
 
     def dirty_items(self) -> list[tuple[str, Path]]:
         if self.current_id in self.dirty_ids:
@@ -1025,6 +964,7 @@ class SDPEPage(QWidget):
         return [(item_id, self.path_for_id(item_id)) for item_id in sorted(self.dirty_ids)]
 
     def save_dirty(self) -> int:
+        self.commit_active_cell_editor()
         if self.current_id in self.dirty_ids:
             self.store_current_draft()
         saved = 0
@@ -1033,12 +973,16 @@ class SDPEPage(QWidget):
             if data is None:
                 continue
             self.window.write_json(self.path_for_id(item_id), data)
+            self.clean_snapshots[item_id] = self.clone_data(data)
             saved += 1
         self.dirty_ids.clear()
         self.drafts.clear()
         return saved
 
     def data_for_id(self, item_id: str, path: Path) -> dict[str, Any]:
+        for view in [*self.findChildren(SDPETableWidget), *self.findChildren(SDPETreeWidget)]:
+            if view is not self.list_widget:
+                view.clear_display_sort()
         if item_id in self.drafts:
             return self.drafts[item_id]
         return read_json(path)
@@ -1116,7 +1060,7 @@ class TemplatePage(SDPEPage):
     """Template/schema object editor."""
 
     def create_items_widget(self):
-        widget = QTreeWidget()
+        widget = SDPETreeWidget()
         widget.setHeaderHidden(True)
         fit_tree_key_columns(widget)
         widget.currentItemChanged.connect(lambda current, _previous: self.on_current_changed(current))
@@ -1133,32 +1077,49 @@ class TemplatePage(SDPEPage):
         self.description_edit = QTextEdit()
         self.output_edit = QLineEdit()
         self.header_prefix_edit = QLineEdit()
-        self.params = QTreeWidget()
-        self.params.setHeaderLabels(["Name", "Macro Name", "Default", "Unit", "Required", "Format", "Description"])
-        self.params.setAlternatingRowColors(True)
-        self.params.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
-        self.params.setDefaultDropAction(Qt.DropAction.MoveAction)
+        self.params = SDPETreeWidget()
+        self.params.configure(
+            ["Name", "Macro Name", "Default", "Unit", "Required", "Format", "Description"],
+            description_col=6,
+            draggable=True,
+            leaf_role="parameter",
+        )
+        self.params.set_action_handler("delete", self.remove_template_parameter_item)
         self.params.itemChanged.connect(lambda _item, _col: self.mark_current_dirty())
-        self.params.model().rowsMoved.connect(lambda *_args: self.after_template_parameter_tree_changed())
-        self.params.model().rowsInserted.connect(lambda *_args: self.after_template_parameter_tree_changed())
-        self.params.model().rowsRemoved.connect(lambda *_args: self.after_template_parameter_tree_changed())
+        self.params.contentChanged.connect(self.mark_current_dirty)
+        self.params.structureChanged.connect(self.after_template_parameter_tree_changed)
         self.params.itemDoubleClicked.connect(self.on_template_param_double_clicked)
-        self.slots = QTableWidget()
+        self.slots = SDPETableWidget()
         set_table_headers(
             self.slots,
             ["Slot", "Mode", "Entity or Inline JSON", "Overrides JSON"],
             QHeaderView.ResizeMode.Interactive,
         )
         self.slots.cellDoubleClicked.connect(self.on_component_cell_double_clicked)
-        self.feature_macros = QTableWidget()
+        self.feature_macros = SDPETableWidget()
         setup_feature_macro_table(self.feature_macros)
         self.feature_macros.cellDoubleClicked.connect(self.on_template_macro_double_clicked)
-        self.option_macros = QTableWidget()
+        self.option_macros = SDPETableWidget()
         setup_option_macro_table(self.option_macros)
         self.option_macros.cellDoubleClicked.connect(self.on_template_macro_double_clicked)
-        self.option_sets = QTableWidget()
+        self.option_sets = SDPETableWidget()
         setup_option_set_table(self.option_sets)
         self.option_sets.cellDoubleClicked.connect(self.on_option_set_double_clicked)
+        self.params.set_insert_handlers(
+            add_item=self.add_template_parameter,
+            item_label="Add parameter",
+            add_group=self.add_parameter_group,
+        )
+        self.slots.set_insert_handlers(add_item=self.add_template_component, item_label="Add sub module")
+        self.feature_macros.set_insert_handlers(
+            add_item=lambda: self.add_macro_row(self.feature_macros, "feature"),
+            item_label="Add selection macro",
+        )
+        self.option_macros.set_insert_handlers(
+            add_item=lambda: self.add_macro_row(self.option_macros, "option"),
+            item_label="Add option macro",
+        )
+        self.option_sets.set_insert_handlers(add_item=self.add_option_set, item_label="Add option preset")
         for widget in [
             self.id_edit,
             self.name_edit,
@@ -1183,28 +1144,6 @@ class TemplatePage(SDPEPage):
         form.addRow("Default Macro Prefix", self.header_prefix_edit)
         form.addRow("Description", self.description_edit)
 
-        add_param = QPushButton("Add parameter")
-        add_param.clicked.connect(self.add_template_parameter)
-        add_group = QPushButton("Add group")
-        add_group.clicked.connect(self.add_parameter_group)
-        del_param = QPushButton("Remove parameter")
-        del_param.clicked.connect(self.remove_template_parameter_item)
-        add_slot = QPushButton("Add sub module")
-        add_slot.clicked.connect(self.add_template_component)
-        del_slot = QPushButton("Remove slot")
-        del_slot.clicked.connect(lambda: self.slots.removeRow(max(0, self.slots.currentRow())))
-        add_feature = QPushButton("Add selection macro")
-        add_feature.clicked.connect(lambda: self.add_macro_row(self.feature_macros, "feature"))
-        del_feature = QPushButton("Remove selection macro")
-        del_feature.clicked.connect(lambda: self.feature_macros.removeRow(max(0, self.feature_macros.currentRow())))
-        add_option = QPushButton("Add option macro")
-        add_option.clicked.connect(lambda: self.add_macro_row(self.option_macros, "option"))
-        del_option = QPushButton("Remove option macro")
-        del_option.clicked.connect(lambda: self.option_macros.removeRow(max(0, self.option_macros.currentRow())))
-        add_option_set = QPushButton("Add option set")
-        add_option_set.clicked.connect(self.add_option_set)
-        del_option_set = QPushButton("Remove option set")
-        del_option_set.clicked.connect(lambda: self.option_sets.removeRow(max(0, self.option_sets.currentRow())))
         new_template = QPushButton("New")
         new_template.clicked.connect(self.new_template)
         copy_template = QPushButton("Copy")
@@ -1225,22 +1164,17 @@ class TemplatePage(SDPEPage):
         param_tab = QWidget()
         param_layout = QVBoxLayout(param_tab)
         param_layout.addWidget(self.params)
-        param_layout.addLayout(row_buttons([add_group, add_param, del_param, save]))
         comp_tab = QWidget()
         comp_layout = QVBoxLayout(comp_tab)
         comp_layout.addWidget(self.slots)
-        comp_layout.addLayout(row_buttons([add_slot, del_slot, save]))
         macro_tab = QWidget()
         macro_layout = QVBoxLayout(macro_tab)
         macro_layout.addWidget(QLabel("Selection macros"))
         macro_layout.addWidget(self.feature_macros)
-        macro_layout.addLayout(row_buttons([add_feature, del_feature]))
         macro_layout.addWidget(QLabel("Option macros"))
         macro_layout.addWidget(self.option_macros)
-        macro_layout.addLayout(row_buttons([add_option, del_option]))
         macro_layout.addWidget(QLabel("Option presets"))
         macro_layout.addWidget(self.option_sets)
-        macro_layout.addLayout(row_buttons([add_option_set, del_option_set, save]))
         tabs.addTab(basic_tab, "Basic")
         tabs.addTab(param_tab, "Parameters")
         tabs.addTab(comp_tab, "Sub Components")
@@ -1338,6 +1272,7 @@ class TemplatePage(SDPEPage):
                 "header_prefix": self.header_prefix_edit.text().strip(),
             }
         )
+        data.pop("common_requirement", None)
         data["parameters"] = self._table_parameters()
         data["parameter_groups"] = self._parameter_groups()
         data["components"] = self._table_slots()
@@ -1438,37 +1373,38 @@ class TemplatePage(SDPEPage):
 
     def _table_parameters(self) -> list[dict[str, Any]]:
         rows = []
-        for group_index in range(self.params.topLevelItemCount()):
-            group = self.params.topLevelItem(group_index)
-            for child_index in range(group.childCount()):
-                child = group.child(child_index)
-                name = tree_cell_text(self.params, child, 0)
-                if not name:
-                    continue
-                item = {
-                    "name": name,
-                    "c_name": tree_cell_text(self.params, child, 1) or name.upper(),
-                    "unit": tree_cell_text(self.params, child, 3),
-                    "required": tree_cell_text(self.params, child, 4).lower() in {"1", "true", "yes"},
-                    "value_format": format_value(tree_cell_text(self.params, child, 5)),
-                    "description": tree_cell_text(self.params, child, 6),
-                }
-                default_text = tree_cell_text(self.params, child, 2)
-                if default_text:
-                    item["default"] = parse_json_text(default_text, default_text)
-                rows.append(item)
+        for child in self.params.iter_items():
+            if child.data(0, Qt.ItemDataRole.UserRole) != "parameter":
+                continue
+            name = tree_cell_text(self.params, child, 0)
+            if not name:
+                continue
+            item = {
+                "name": name,
+                "c_name": tree_cell_text(self.params, child, 1) or name.upper(),
+                "unit": tree_cell_text(self.params, child, 3),
+                "required": tree_cell_text(self.params, child, 4).lower() in {"1", "true", "yes"},
+                "value_format": format_value(tree_cell_text(self.params, child, 5)),
+                "description": tree_cell_text(self.params, child, 6),
+            }
+            default_text = tree_cell_text(self.params, child, 2)
+            if default_text:
+                item["default"] = parse_json_text(default_text, default_text)
+            rows.append(item)
         return rows
 
     def _parameter_groups(self) -> list[dict[str, Any]]:
         groups = []
-        for group_index in range(self.params.topLevelItemCount()):
-            group = self.params.topLevelItem(group_index)
+        for group in self.params.iter_items():
+            if group.data(0, Qt.ItemDataRole.UserRole) != "group":
+                continue
             names = [
                 tree_cell_text(self.params, group.child(child_index), 0)
                 for child_index in range(group.childCount())
-                if tree_cell_text(self.params, group.child(child_index), 0)
+                if group.child(child_index).data(0, Qt.ItemDataRole.UserRole) == "parameter"
+                and tree_cell_text(self.params, group.child(child_index), 0)
             ]
-            groups.append({"name": group.text(0).strip() or "Parameters", "parameters": names})
+            groups.append({"name": self.params.group_path(group) or "Parameters", "parameters": names})
         return groups
 
     def load_template_parameter_tree(self, data: dict[str, Any]) -> None:
@@ -1483,8 +1419,10 @@ class TemplatePage(SDPEPage):
                 grouped.setdefault(param.get("group", "Parameters") or "Parameters", []).append(param.get("name", ""))
             groups = [{"name": name, "parameters": names} for name, names in grouped.items()] or [{"name": "Parameters", "parameters": []}]
         for group in groups:
-            group_item = self.create_parameter_group_item(group.get("name", "Parameters"))
-            self.params.addTopLevelItem(group_item)
+            group_item = self.params.ensure_group_path(
+                group.get("name", "Parameters"),
+                self.create_parameter_group_item,
+            )
             for name in group.get("parameters", []):
                 if name in by_name:
                     self.add_parameter_item(group_item, by_name[name])
@@ -1500,7 +1438,12 @@ class TemplatePage(SDPEPage):
 
     def create_parameter_group_item(self, name: str) -> QTreeWidgetItem:
         item = QTreeWidgetItem([name])
-        item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsDropEnabled)
+        item.setFlags(
+            item.flags()
+            | Qt.ItemFlag.ItemIsEditable
+            | Qt.ItemFlag.ItemIsDragEnabled
+            | Qt.ItemFlag.ItemIsDropEnabled
+        )
         item.setData(0, Qt.ItemDataRole.UserRole, "group")
         for col in range(1, self.params.columnCount()):
             item.setText(col, "")
@@ -1534,20 +1477,14 @@ class TemplatePage(SDPEPage):
         return item
 
     def iter_parameter_items(self) -> list[QTreeWidgetItem]:
-        items: list[QTreeWidgetItem] = []
-        for group_index in range(self.params.topLevelItemCount()):
-            group = self.params.topLevelItem(group_index)
-            if group.data(0, Qt.ItemDataRole.UserRole) == "parameter":
-                items.append(group)
-                continue
-            for child_index in range(group.childCount()):
-                child = group.child(child_index)
-                if child.data(0, Qt.ItemDataRole.UserRole) == "parameter":
-                    items.append(child)
-        return items
+        return [
+            item
+            for item in self.params.iter_items()
+            if item.data(0, Qt.ItemDataRole.UserRole) == "parameter"
+        ]
 
     def after_template_parameter_tree_changed(self) -> None:
-        QTimer.singleShot(0, self.restore_template_parameter_widgets)
+        self.restore_template_parameter_widgets()
         self.mark_current_dirty()
 
     def restore_template_parameter_widgets(self) -> None:
@@ -1627,26 +1564,26 @@ class TemplatePage(SDPEPage):
 
     def add_parameter_group(self) -> None:
         item = self.create_parameter_group_item("New Group")
-        self.params.addTopLevelItem(item)
+        self.params.insert_group_near_current(item)
         self.params.setCurrentItem(item)
         self.params.editItem(item, 0)
         self.mark_current_dirty()
 
     def remove_template_parameter_item(self) -> None:
-        item = self.params.currentItem()
-        if item is None:
+        items = self.params.selected_top_level_items()
+        if not items:
             return
-        parent = item.parent()
-        if parent is None:
-            index = self.params.indexOfTopLevelItem(item)
-            self.params.takeTopLevelItem(index)
-        else:
-            parent.removeChild(item)
+        for item in reversed(items):
+            parent = item.parent()
+            if parent is None:
+                self.params.takeTopLevelItem(self.params.indexOfTopLevelItem(item))
+            else:
+                parent.takeChild(parent.indexOfChild(item))
         self.mark_current_dirty()
 
     def _table_slots(self) -> dict[str, dict[str, Any]]:
         components = {}
-        for row in range(self.slots.rowCount()):
+        for row in table_source_rows(self.slots):
             slot = item_text(self.slots, row, 0)
             if not slot:
                 continue
@@ -1701,7 +1638,7 @@ class EntityPage(SDPEPage):
     """Hardware entity editor and per-entity header generation."""
 
     def create_items_widget(self):
-        widget = QTreeWidget()
+        widget = SDPETreeWidget()
         widget.setHeaderHidden(True)
         fit_tree_key_columns(widget)
         widget.currentItemChanged.connect(lambda current, _previous: self.on_current_changed(current))
@@ -1723,31 +1660,51 @@ class EntityPage(SDPEPage):
         self.prefix_code_edit = QTextEdit()
         self.tail_code_edit = QTextEdit()
         self.output_edit = QLineEdit()
-        self.params = QTreeWidget()
-        self.params.setHeaderLabels(["Parameter", "En", "Wk", "Value", "Unit", "Description"])
+        self.params = SDPETreeWidget()
+        self.params.configure(
+            ["Parameter", "En", "Wk", "Value", "Unit", "Description"],
+            description_col=5,
+            draggable=False,
+        )
+        for action_name in ("cut", "paste", "delete"):
+            self.params.set_action_enabled(action_name, False)
         self.set_parameter_header_tooltips(self.params)
-        self.params.setAlternatingRowColors(True)
+        self.params.contentChanged.connect(self.mark_current_dirty)
         self.params.itemChanged.connect(lambda _item, _col: self.mark_current_dirty())
         self.params.itemDoubleClicked.connect(self.on_entity_param_double_clicked)
-        self.components = QTableWidget()
+        self.components = SDPETableWidget()
         set_table_headers(
             self.components,
             ["Slot", "Mode", "Entity or Inline JSON", "Overrides JSON"],
             QHeaderView.ResizeMode.Interactive,
         )
         self.components.cellDoubleClicked.connect(self.on_entity_component_cell_double_clicked)
-        self.feature_macros = QTableWidget()
+        self.feature_macros = SDPETableWidget()
         setup_feature_macro_table(self.feature_macros)
         self.feature_macros.cellDoubleClicked.connect(self.on_entity_macro_double_clicked)
-        self.option_macros = QTableWidget()
+        self.option_macros = SDPETableWidget()
         setup_option_macro_table(self.option_macros)
         self.option_macros.cellDoubleClicked.connect(self.on_entity_macro_double_clicked)
-        self.option_sets = QTableWidget()
+        self.option_sets = SDPETableWidget()
         setup_option_set_table(self.option_sets)
         self.option_sets.cellDoubleClicked.connect(self.on_entity_option_set_double_clicked)
-        self.conditional_macros = QTableWidget()
+        self.conditional_macros = SDPETableWidget()
         set_table_headers(self.conditional_macros, ["Condition", "Macros JSON", "Description"], QHeaderView.ResizeMode.Interactive)
         self.conditional_macros.cellDoubleClicked.connect(self.on_entity_conditional_double_clicked)
+        self.components.set_insert_handlers(add_item=self.add_entity_component, item_label="Add component")
+        self.feature_macros.set_insert_handlers(
+            add_item=lambda: self.add_macro_row(self.feature_macros, "feature"),
+            item_label="Add selection macro",
+        )
+        self.option_macros.set_insert_handlers(
+            add_item=lambda: self.add_macro_row(self.option_macros, "option"),
+            item_label="Add option macro",
+        )
+        self.option_sets.set_insert_handlers(add_item=self.add_option_set, item_label="Add option preset")
+        self.conditional_macros.set_insert_handlers(
+            add_item=self.add_conditional_macro,
+            item_label="Add conditional macro",
+        )
         for widget in [
             self.id_edit,
             self.name_edit,
@@ -1795,26 +1752,6 @@ class EntityPage(SDPEPage):
         save.clicked.connect(self.save_current)
         save_all = QPushButton("Save All")
         save_all.clicked.connect(self.save_all)
-        add_comp = QPushButton("Add component")
-        add_comp.clicked.connect(self.add_entity_component)
-        del_comp = QPushButton("Remove component")
-        del_comp.clicked.connect(lambda: self.components.removeRow(max(0, self.components.currentRow())))
-        add_feature = QPushButton("Add selection macro")
-        add_feature.clicked.connect(lambda: self.add_macro_row(self.feature_macros, "feature"))
-        del_feature = QPushButton("Remove selection macro")
-        del_feature.clicked.connect(lambda: self.feature_macros.removeRow(max(0, self.feature_macros.currentRow())))
-        add_option = QPushButton("Add option macro")
-        add_option.clicked.connect(lambda: self.add_macro_row(self.option_macros, "option"))
-        del_option = QPushButton("Remove option macro")
-        del_option.clicked.connect(lambda: self.option_macros.removeRow(max(0, self.option_macros.currentRow())))
-        add_option_set = QPushButton("Add option preset")
-        add_option_set.clicked.connect(self.add_option_set)
-        del_option_set = QPushButton("Remove option preset")
-        del_option_set.clicked.connect(lambda: self.option_sets.removeRow(max(0, self.option_sets.currentRow())))
-        add_conditional = QPushButton("Add conditional macro")
-        add_conditional.clicked.connect(self.add_conditional_macro)
-        del_conditional = QPushButton("Remove conditional macro")
-        del_conditional.clicked.connect(lambda: self.conditional_macros.removeRow(max(0, self.conditional_macros.currentRow())))
         generate = QPushButton("Generate entity header")
         generate.clicked.connect(self.generate_header)
         preview_header = QPushButton("Preview header")
@@ -1833,21 +1770,16 @@ class EntityPage(SDPEPage):
         comp_tab = QWidget()
         comp_layout = QVBoxLayout(comp_tab)
         comp_layout.addWidget(self.components)
-        comp_layout.addLayout(row_buttons([add_comp, del_comp, save]))
         macro_tab = QWidget()
         macro_layout = QVBoxLayout(macro_tab)
         macro_layout.addWidget(QLabel("Selection macros"))
         macro_layout.addWidget(self.feature_macros)
-        macro_layout.addLayout(row_buttons([add_feature, del_feature]))
         macro_layout.addWidget(QLabel("Option macros"))
         macro_layout.addWidget(self.option_macros)
-        macro_layout.addLayout(row_buttons([add_option, del_option]))
         macro_layout.addWidget(QLabel("Option presets"))
         macro_layout.addWidget(self.option_sets)
-        macro_layout.addLayout(row_buttons([add_option_set, del_option_set]))
         macro_layout.addWidget(QLabel("Conditional macros"))
         macro_layout.addWidget(self.conditional_macros)
-        macro_layout.addLayout(row_buttons([add_conditional, del_conditional, save]))
         code_tab = QWidget()
         code_layout = QVBoxLayout(code_tab)
         code_splitter = QSplitter(Qt.Orientation.Vertical)
@@ -1977,8 +1909,10 @@ class EntityPage(SDPEPage):
         if not groups:
             groups = [{"name": "Parameters", "parameters": list(schema.parameters)}]
         for group in groups:
-            group_item = self.create_entity_parameter_group_item(group.get("name", "Parameters"))
-            self.params.addTopLevelItem(group_item)
+            group_item = self.params.ensure_group_path(
+                group.get("name", "Parameters"),
+                self.create_entity_parameter_group_item,
+            )
             for name in group.get("parameters", []):
                 if name not in schema.parameters:
                     continue
@@ -2030,13 +1964,7 @@ class EntityPage(SDPEPage):
         return item
 
     def ensure_entity_parameter_group(self, name: str) -> QTreeWidgetItem:
-        for index in range(self.params.topLevelItemCount()):
-            item = self.params.topLevelItem(index)
-            if item.text(0) == name:
-                return item
-        item = self.create_entity_parameter_group_item(name)
-        self.params.addTopLevelItem(item)
-        return item
+        return self.params.ensure_group_path(name, self.create_entity_parameter_group_item)
 
     def add_entity_parameter_item(
         self, group: QTreeWidgetItem, name: str, pspec: Any, data: dict[str, Any]
@@ -2202,39 +2130,33 @@ class EntityPage(SDPEPage):
     def _table_parameters(self) -> dict[str, Any]:
         params = {}
         schema = self.window.library.schema(self.schema_combo.currentText().strip())
-        for group_index in range(self.params.topLevelItemCount()):
-            group = self.params.topLevelItem(group_index)
-            for child_index in range(group.childCount()):
-                item = group.child(child_index)
-                if item.data(0, Qt.ItemDataRole.UserRole) != "parameter":
-                    continue
-                name = tree_cell_text(self.params, item, 0)
-                value = tree_cell_text(self.params, item, 3)
-                if not name or not value.strip():
-                    continue
-                parsed = parse_parameter_value(value)
-                if parsed == "":
-                    continue
-                if name in schema.parameters:
-                    validate_value_for_format(name, parsed, schema.parameters[name].value_format)
-                params[name] = parsed
+        for item in self.params.iter_items():
+            if item.data(0, Qt.ItemDataRole.UserRole) != "parameter":
+                continue
+            name = tree_cell_text(self.params, item, 0)
+            value = tree_cell_text(self.params, item, 3)
+            if not name or not value.strip():
+                continue
+            parsed = parse_parameter_value(value)
+            if parsed == "":
+                continue
+            if name in schema.parameters:
+                validate_value_for_format(name, parsed, schema.parameters[name].value_format)
+            params[name] = parsed
         return params
 
     def _table_parameter_macros(self) -> dict[str, dict[str, bool]]:
         modifiers: dict[str, dict[str, bool]] = {}
-        for group_index in range(self.params.topLevelItemCount()):
-            group = self.params.topLevelItem(group_index)
-            for child_index in range(group.childCount()):
-                item = group.child(child_index)
-                if item.data(0, Qt.ItemDataRole.UserRole) != "parameter":
-                    continue
-                name = tree_cell_text(self.params, item, 0)
-                if not name:
-                    continue
-                modifiers[name] = {
-                    "enabled": tree_checked(item, 1, True),
-                    "weak": tree_checked(item, 2, False),
-                }
+        for item in self.params.iter_items():
+            if item.data(0, Qt.ItemDataRole.UserRole) != "parameter":
+                continue
+            name = tree_cell_text(self.params, item, 0)
+            if not name:
+                continue
+            modifiers[name] = {
+                "enabled": tree_checked(item, 1, True),
+                "weak": tree_checked(item, 2, False),
+            }
         return modifiers
 
     def select_parameter_symbol(self, item: QTreeWidgetItem) -> None:
@@ -2288,7 +2210,7 @@ class EntityPage(SDPEPage):
 
     def _table_conditional_macros(self) -> list[dict[str, Any]]:
         rows = []
-        for row in range(self.conditional_macros.rowCount()):
+        for row in table_source_rows(self.conditional_macros):
             condition = item_text(self.conditional_macros, row, 0)
             if condition:
                 rows.append(
@@ -2328,7 +2250,7 @@ class EntityPage(SDPEPage):
 
     def _table_components(self) -> dict[str, Any]:
         components = {}
-        for row in range(self.components.rowCount()):
+        for row in table_source_rows(self.components):
             slot = item_text(self.components, row, 0)
             if not slot:
                 continue
@@ -2386,6 +2308,7 @@ class ProjectPage(SDPEPage):
 
     def __init__(self, window: "MainWindow"):
         super().__init__(window, "Project Requirement", has_code=True)
+        self.current_common_requirements: list[tuple[Path, dict[str, Any]]] = []
         self.id_edit = QLineEdit()
         self.macro_prefix_edit = QLineEdit()
         self.path_edit = QLineEdit()
@@ -2396,90 +2319,138 @@ class ProjectPage(SDPEPage):
         self.updated_edit = QLineEdit()
         self.updated_edit.setReadOnly(True)
         self.header_edit = QLineEdit()
+        self.common_requirements_edit = QTextEdit()
+        self.common_requirements_edit.setFixedHeight(72)
+        self.common_requirements_edit.setPlaceholderText("One relative, absolute, or environment-variable path per line")
         self.matlab_file_edit = QLineEdit()
         self.matlab_file_edit.setReadOnly(True)
         self.description_edit = QTextEdit()
         self.description_edit.setFixedHeight(92)
+        self.common_prefix_code = QTextEdit()
+        self.common_tail_code = QTextEdit()
         self.prefix_code = QTextEdit()
         self.tail_code = QTextEdit()
 
         self.hardware_view = QComboBox()
         self.hardware_view.addItems(["Tree", "Table"])
-        self.hardware_tree = QTreeWidget()
-        self.hardware_tree.setHeaderLabels(["Hardware", "Description"])
+        self.hardware_tree = SDPETreeWidget()
+        self.hardware_tree.configure(
+            ["Hardware", "Description", "Source"],
+            description_col=1,
+            editable=False,
+            draggable=False,
+            default_context_menu=False,
+        )
+        self.hardware_tree.set_action_enabled("cut", False)
+        self.hardware_tree.set_action_enabled("paste", False)
+        self.hardware_tree.set_action_handler("delete", self.remove_tree_root_hardware)
         fit_tree_key_columns(self.hardware_tree, description_col=1)
-        install_tree_status_descriptions(self.hardware_tree, description_col=1)
         self.hardware_tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.hardware_tree.customContextMenuRequested.connect(self.show_hardware_context_menu)
         self.hardware_tree.itemDoubleClicked.connect(self.on_hardware_tree_double_clicked)
-        self.hardware = QTableWidget()
-        set_table_headers(self.hardware, ["Entity", "Name", "Template", "Category", "Description"], QHeaderView.ResizeMode.Interactive)
+        self.hardware = SDPETableWidget()
+        set_table_headers(self.hardware, ["Entity", "Name", "Template", "Category", "Description", "Source"], QHeaderView.ResizeMode.Interactive)
         self.hardware.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.hardware.customContextMenuRequested.connect(self.show_hardware_table_context_menu)
         self.hardware.cellDoubleClicked.connect(self.on_hardware_cell_double_clicked)
 
-        self.requirements = QTreeWidget()
-        self.requirements.setHeaderLabels(["Name", "Macro", "En", "Wk", "Binding Type", "Binding Value", "Description"])
+        self.requirements = SDPETreeWidget()
+        self.requirements.configure(
+            ["Name", "Macro", "En", "Wk", "Pri", "Binding Type", "Binding Value", "Description", "Source"],
+            description_col=7,
+            draggable=True,
+            default_context_menu=False,
+        )
         self.set_parameter_header_tooltips(self.requirements)
-        self.requirements.setAlternatingRowColors(True)
-        self.requirements.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.requirements.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.requirements.setItemDelegate(ValidationBorderDelegate(self.requirements))
-        fit_tree_key_columns(self.requirements, description_col=6, interactive=True)
+        fit_tree_key_columns(self.requirements, description_col=7, interactive=True)
         self.requirements.setColumnWidth(2, 46)
         self.requirements.setColumnWidth(3, 46)
-        install_tree_status_descriptions(self.requirements, description_col=6)
+        self.requirements.setColumnWidth(4, 46)
         self.requirements.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.requirements.customContextMenuRequested.connect(self.show_requirement_context_menu)
-        self.requirements.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
-        self.requirements.setDefaultDropAction(Qt.DropAction.MoveAction)
-        self.requirements.itemChanged.connect(lambda _item, _col: self.mark_current_dirty())
+        self.requirements.itemChanged.connect(
+            lambda item, col: self.on_project_tree_item_changed(self.requirements, item, col)
+        )
         self.requirements.itemDoubleClicked.connect(self.on_requirement_cell_double_clicked)
         self.requirements.currentItemChanged.connect(lambda current, _previous: self.jump_from_requirement_item(current))
-        self.requirements.model().rowsMoved.connect(lambda *_args: self.after_requirement_tree_changed())
-        self.requirements.model().rowsInserted.connect(lambda *_args: self.after_requirement_tree_changed())
-        self.requirements.model().rowsRemoved.connect(lambda *_args: self.after_requirement_tree_changed())
-        self.requirements_copy_shortcut = QShortcut(QKeySequence.StandardKey.Copy, self.requirements)
-        self.requirements_copy_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
-        self.requirements_copy_shortcut.activated.connect(self.copy_selected_requirements)
-        self.requirements_cut_shortcut = QShortcut(QKeySequence.StandardKey.Cut, self.requirements)
-        self.requirements_cut_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
-        self.requirements_cut_shortcut.activated.connect(self.cut_selected_requirements)
-        self.requirements_paste_shortcut = QShortcut(QKeySequence.StandardKey.Paste, self.requirements)
-        self.requirements_paste_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
-        self.requirements_paste_shortcut.activated.connect(self.paste_requirements)
-        self.requirements_delete_shortcut = QShortcut(QKeySequence("Del"), self.requirements)
-        self.requirements_delete_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
-        self.requirements_delete_shortcut.activated.connect(self.remove_requirement_item)
-        self.feature_macros = QTreeWidget()
-        self.feature_macros.setHeaderLabels(["Macro", "En", "Wk", "Value", "Description"])
+        self.requirements.contentChanged.connect(self.mark_current_dirty)
+        self.requirements.structureChanged.connect(self.after_requirement_tree_changed)
+        self.requirements.set_action_handler("copy", self.copy_selected_requirements)
+        self.requirements.set_action_handler("cut", self.cut_selected_requirements)
+        self.requirements.set_action_handler("paste", self.paste_requirements)
+        self.requirements.set_action_handler("delete", self.remove_requirement_item)
+        self.feature_macros = SDPETreeWidget()
+        self.feature_macros.configure(
+            ["Macro", "En", "Wk", "Pri", "Value", "Description", "Source"],
+            description_col=5,
+            draggable=True,
+            default_context_menu=False,
+        )
         self.set_macro_header_tooltips(self.feature_macros)
         self.feature_macros.setItemDelegate(ValidationBorderDelegate(self.feature_macros))
-        self.setup_macro_tree(self.feature_macros, description_col=4)
+        self.setup_macro_tree(self.feature_macros, description_col=5)
         self.feature_macros.itemDoubleClicked.connect(self.on_macro_tree_double_clicked)
         self.feature_macros.currentItemChanged.connect(lambda current, _previous: self.jump_from_macro_item(self.feature_macros, current))
         self.feature_macros.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.feature_macros.customContextMenuRequested.connect(lambda pos: self.show_macro_tree_context_menu(self.feature_macros, "feature", pos))
         self.install_macro_tree_shortcuts(self.feature_macros, "feature")
-        self.enum_macros = QTreeWidget()
-        self.enum_macros.setHeaderLabels(["Macro", "En", "Wk", "Value", "Options Preset", "Options CSV", "Description"])
+        self.enum_macros = SDPETreeWidget()
+        self.enum_macros.configure(
+            ["Macro", "En", "Wk", "Pri", "Value", "Options Preset", "Options CSV", "Description", "Source"],
+            description_col=7,
+            draggable=True,
+            default_context_menu=False,
+        )
         self.set_macro_header_tooltips(self.enum_macros)
         self.enum_macros.setItemDelegate(ValidationBorderDelegate(self.enum_macros))
-        self.setup_macro_tree(self.enum_macros, description_col=6)
+        self.setup_macro_tree(self.enum_macros, description_col=7)
         self.enum_macros.itemDoubleClicked.connect(self.on_macro_tree_double_clicked)
         self.enum_macros.currentItemChanged.connect(lambda current, _previous: self.jump_from_macro_item(self.enum_macros, current))
         self.enum_macros.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.enum_macros.customContextMenuRequested.connect(lambda pos: self.show_macro_tree_context_menu(self.enum_macros, "option", pos))
         self.install_macro_tree_shortcuts(self.enum_macros, "option")
+        self.hardware_tree.set_insert_handlers(add_item=self.add_hardware, item_label="Add hardware")
+        self.hardware.set_insert_handlers(add_item=self.add_hardware, item_label="Add hardware")
+        self.requirements.set_insert_handlers(
+            add_item=self.add_private_requirement,
+            item_label="Create private requirement",
+            add_group=self.add_requirement_group,
+        )
+        self.feature_macros.set_insert_handlers(
+            add_item=self.add_feature_macro,
+            item_label="Add selection macro",
+            add_group=lambda: self.add_macro_group(self.feature_macros, "feature"),
+        )
+        self.enum_macros.set_insert_handlers(
+            add_item=self.add_enum_macro,
+            item_label="Add option macro",
+            add_group=lambda: self.add_macro_group(self.enum_macros, "option"),
+        )
 
         for widget in [self.id_edit, self.macro_prefix_edit, self.name_edit, self.suite_edit, self.version_edit, self.header_edit]:
             widget.textChanged.connect(self.mark_current_dirty)
         self.header_edit.textChanged.connect(lambda _text: self.update_matlab_script_name())
-        for widget in [self.description_edit, self.prefix_code, self.tail_code]:
+        for widget in [
+            self.description_edit,
+            self.common_requirements_edit,
+            self.common_prefix_code,
+            self.common_tail_code,
+            self.prefix_code,
+            self.tail_code,
+        ]:
             widget.textChanged.connect(self.mark_current_dirty)
         self.hardware.cellChanged.connect(lambda _row, _col: self.mark_current_dirty())
-        self.feature_macros.itemChanged.connect(lambda _item, _col: self.mark_current_dirty())
-        self.enum_macros.itemChanged.connect(lambda item, col: (self.mark_current_dirty(), self.on_enum_macro_item_changed(item, col)))
+        self.hardware.contentChanged.connect(self.refresh_hardware_status)
+        self.feature_macros.itemChanged.connect(
+            lambda item, col: self.on_project_tree_item_changed(self.feature_macros, item, col)
+        )
+        self.enum_macros.itemChanged.connect(
+            lambda item, col: (
+                self.on_project_tree_item_changed(self.enum_macros, item, col),
+                self.on_enum_macro_item_changed(item, col),
+            )
+        )
         self.hardware.cellChanged.connect(lambda _row, _col: self.refresh_hardware_status())
         self.hardware_view.currentTextChanged.connect(self.update_hardware_view)
 
@@ -2495,66 +2466,52 @@ class ProjectPage(SDPEPage):
         basic_form.addRow("Last Updated", self.updated_edit)
         basic_form.addRow("C Header File", self.header_edit)
         basic_form.addRow("MATLAB Init Script", self.matlab_file_edit)
+        browse_common = QPushButton("Browse...")
+        browse_common.clicked.connect(self.browse_common_requirements)
+        basic_form.addRow("Common Requirements", self.common_requirements_edit)
+        basic_form.addRow("", browse_common)
         basic_form.addRow("Description / @note", self.description_edit)
 
         hw_tab = QWidget()
         hw_layout = QVBoxLayout(hw_tab)
-        add_hw = QPushButton("Add hardware")
-        add_hw.clicked.connect(self.add_hardware)
         replace_hw = QPushButton("Replace hardware")
         replace_hw.clicked.connect(self.replace_selected_hardware)
-        del_hw = QPushButton("Remove hardware")
-        del_hw.clicked.connect(self.remove_hardware)
-        hw_layout.addLayout(row_buttons([QLabel("View"), self.hardware_view, add_hw, replace_hw, del_hw]))
+        hw_layout.addLayout(row_buttons([QLabel("View"), self.hardware_view, replace_hw]))
         hw_layout.addWidget(self.hardware_tree)
         hw_layout.addWidget(self.hardware)
 
         req_tab = QWidget()
         req_layout = QVBoxLayout(req_tab)
-        add_req_group = QPushButton("Add group")
-        add_req_group.clicked.connect(self.add_requirement_group)
-        add_req = QPushButton("Add requirement")
-        add_req.clicked.connect(self.add_requirement)
-        del_req = QPushButton("Remove requirement")
-        del_req.clicked.connect(self.remove_requirement_item)
         req_layout.addWidget(self.requirements)
-        req_layout.addLayout(row_buttons([add_req_group, add_req, del_req]))
 
         macro_tab = QWidget()
         macro_layout = QVBoxLayout(macro_tab)
-        add_feature_group = QPushButton("Add group")
-        add_feature_group.clicked.connect(lambda: self.add_macro_group(self.feature_macros, "feature"))
-        add_feature = QPushButton("Add selection macro")
-        add_feature.clicked.connect(self.add_feature_macro)
-        del_feature = QPushButton("Remove selection macro")
-        del_feature.clicked.connect(lambda: self.remove_macro_items(self.feature_macros))
-        add_enum_group = QPushButton("Add group")
-        add_enum_group.clicked.connect(lambda: self.add_macro_group(self.enum_macros, "option"))
-        add_enum = QPushButton("Add option macro")
-        add_enum.clicked.connect(self.add_enum_macro)
-        del_enum = QPushButton("Remove option macro")
-        del_enum.clicked.connect(lambda: self.remove_macro_items(self.enum_macros))
         macro_layout.addWidget(QLabel("Selection macros"))
         macro_layout.addWidget(self.feature_macros)
-        macro_layout.addLayout(row_buttons([add_feature_group, add_feature, del_feature]))
         macro_layout.addWidget(QLabel("Option macros"))
         macro_layout.addWidget(self.enum_macros)
-        macro_layout.addLayout(row_buttons([add_enum_group, add_enum, del_enum]))
 
         code_tab = QWidget()
         code_layout = QVBoxLayout(code_tab)
-        code_splitter = QSplitter(Qt.Orientation.Vertical)
-        prefix_panel = QWidget()
-        prefix_layout = QVBoxLayout(prefix_panel)
-        prefix_layout.addWidget(QLabel("Prefix code"))
-        prefix_layout.addWidget(self.prefix_code)
-        tail_panel = QWidget()
-        tail_layout = QVBoxLayout(tail_panel)
-        tail_layout.addWidget(QLabel("Tail code"))
-        tail_layout.addWidget(self.tail_code)
-        code_splitter.addWidget(prefix_panel)
-        code_splitter.addWidget(tail_panel)
-        code_splitter.setSizes([360, 360])
+        common_splitter = QSplitter(Qt.Orientation.Vertical)
+        project_splitter = QSplitter(Qt.Orientation.Vertical)
+        for splitter, label, editor in (
+            (common_splitter, "Common Prefix Code", self.common_prefix_code),
+            (common_splitter, "Common Tail Code", self.common_tail_code),
+            (project_splitter, "Project Prefix Code", self.prefix_code),
+            (project_splitter, "Project Tail Code", self.tail_code),
+        ):
+            panel = QWidget()
+            panel_layout = QVBoxLayout(panel)
+            panel_layout.addWidget(QLabel(label))
+            panel_layout.addWidget(editor)
+            splitter.addWidget(panel)
+        common_splitter.setSizes([360, 360])
+        project_splitter.setSizes([360, 360])
+        code_splitter = QSplitter(Qt.Orientation.Horizontal)
+        code_splitter.addWidget(common_splitter)
+        code_splitter.addWidget(project_splitter)
+        code_splitter.setSizes([480, 480])
         code_layout.addWidget(code_splitter)
 
         tabs.addTab(basic_tab, "Basic")
@@ -2562,8 +2519,6 @@ class ProjectPage(SDPEPage):
         tabs.addTab(req_tab, "Requirements")
         tabs.addTab(macro_tab, "Macros")
         tabs.addTab(code_tab, "Code")
-        preview = QPushButton("Preview header")
-        preview.clicked.connect(self.preview_project_header)
         generate_header = QPushButton("Generate project header")
         generate_header.clicked.connect(self.generate_project_header)
         validate_macros = QPushButton("Validate Macros")
@@ -2573,19 +2528,28 @@ class ProjectPage(SDPEPage):
         save = QPushButton("Save project")
         save.clicked.connect(self.save_current)
         self.form_layout.addWidget(tabs)
-        self.form_layout.addLayout(row_buttons([preview, generate_header, validate_macros, matlab, save]))
+        self.form_layout.addLayout(row_buttons([generate_header, validate_macros, matlab, save]))
         self.update_hardware_view()
 
     def refresh_list(self) -> None:
         current = self.current_id
         self.list_widget.clear()
-        for path in self.window.project_paths():
+        paths = self.window.project_paths()
+        private_paths = [
+            path
+            for path in paths
+            if "sdpe_general" not in {part.lower() for part in path.parts}
+        ]
+        visible_paths = private_paths or paths
+        for path in visible_paths:
             data = read_json(path)
             tags = [data.get("id", ""), data.get("display_name", ""), data.get("suite", ""), data.get("version", "")]
             if not self.filter_match(tags):
                 continue
-            item = QListWidgetItem(f"{data.get('id', path.stem)}  ({data.get('suite', '')})")
-            item.setData(Qt.ItemDataRole.UserRole, data.get("id", path.stem))
+            item_id = data.get("id", path.stem)
+            suffix = " *" if item_id in self.dirty_ids else ""
+            item = QListWidgetItem(f"{item_id}  ({data.get('suite', '')}){suffix}")
+            item.setData(Qt.ItemDataRole.UserRole, item_id)
             self.list_widget.addItem(item)
             if data.get("id") == current:
                 self.list_widget.setCurrentItem(item)
@@ -2625,6 +2589,7 @@ class ProjectPage(SDPEPage):
         if not target:
             return
         data = self.collect_current_data() or read_json(source)
+        data.pop(PROJECT_COMMON_SNAPSHOT_KEY, None)
         data["id"] = Path(target).stem
         data["display_name"] = f"{data.get('display_name', self.current_id)} Copy"
         self.window.write_json(Path(target), data)
@@ -2641,9 +2606,19 @@ class ProjectPage(SDPEPage):
     def load_current(self) -> None:
         if not self.current_id:
             return
-        data = self.data_for_id(self.current_id, self.window.project_path(self.current_id))
+        project_path = self.window.project_path(self.current_id)
+        snapshot = self.data_for_id(self.current_id, project_path)
+        embedded_commons = snapshot.get(PROJECT_COMMON_SNAPSHOT_KEY, {})
+        data = {key: value for key, value in snapshot.items() if key != PROJECT_COMMON_SNAPSHOT_KEY}
+        common_paths = resolve_common_requirement_paths(project_path, data)
+        self.current_common_requirements = []
+        for path in common_paths:
+            key = str(path.resolve())
+            common = embedded_commons[key] if key in embedded_commons else read_json(path)
+            self.current_common_requirements.append((path, self.clone_data(common)))
+        merged = merged_project_view(data, [item for _path, item in self.current_common_requirements])
         self.loading = True
-        self.path_edit.setText(str(self.window.project_path(self.current_id)))
+        self.path_edit.setText(str(project_path))
         self.id_edit.setText(data.get("id", ""))
         self.macro_prefix_edit.setText(data.get("macro_prefix", ""))
         self.name_edit.setText(data.get("display_name", ""))
@@ -2651,21 +2626,38 @@ class ProjectPage(SDPEPage):
         self.version_edit.setText(data.get("version", "0.1.0"))
         self.updated_edit.setText(data.get("updated_at", ""))
         self.header_edit.setText(data.get("output_header", "sdpe_project_bindings.h"))
+        self.common_requirements_edit.setPlainText("\n".join(common_requirement_references(data)))
         self.update_matlab_script_name()
         self.description_edit.setPlainText(data.get("description", ""))
         sections = data.get("code_sections", {})
         self.prefix_code.setPlainText(sections.get("after_extern_open", ""))
         self.tail_code.setPlainText(sections.get("before_footer", ""))
-        self.load_hardware(data)
-        self.load_requirements(data)
-        self.load_macro_tables(data)
+        self.update_common_code_editors()
+        self.load_hardware(merged)
+        self.load_requirements(merged)
+        self.load_macro_tables(merged)
+        self.enforce_override_hierarchy()
         self.set_professional_text(pretty_json(data))
+        effective_snapshot = self.collect_current_data() or data
+        effective_commons = list(effective_snapshot.get(PROJECT_COMMON_SNAPSHOT_KEY, {}).values())
         try:
-            self.set_code_text(self.window.generator().render_project_header(data), reveal=False)
+            self.set_code_text(
+                self.window.generator().render_project_header(
+                    data,
+                    effective_commons,
+                ),
+                reveal=False,
+            )
         except Exception:
             self.code_panel.clear()
         try:
-            self.set_matlab_text(self.window.generator().render_project_matlab_script(data), reveal=False)
+            self.set_matlab_text(
+                self.window.generator().render_project_matlab_script(
+                    data,
+                    effective_commons,
+                ),
+                reveal=False,
+            )
         except Exception:
             self.matlab_panel.clear()
         self.loading = False
@@ -2676,28 +2668,81 @@ class ProjectPage(SDPEPage):
         header_name = Path(self.header_edit.text().strip() or "sdpe_project_bindings.h")
         self.matlab_file_edit.setText(f"{header_name.stem}_matlab_init.m")
 
+    def update_common_code_editors(self) -> None:
+        """Present bound Common code without ambiguously editing multiple sources."""
+
+        editable = len(self.current_common_requirements) == 1
+        for editor, section in (
+            (self.common_prefix_code, "after_extern_open"),
+            (self.common_tail_code, "before_footer"),
+        ):
+            values: list[str] = []
+            for path, common in self.current_common_requirements:
+                text = str(common.get("code_sections", {}).get(section, ""))
+                if not text.strip():
+                    continue
+                if editable:
+                    values.append(text)
+                else:
+                    label = common.get("display_name", common.get("id", path.stem))
+                    values.append(f"/* {label} ({path.name}) */\n{text}")
+            editor.setReadOnly(not editable)
+            editor.setToolTip(
+                "Edit the owning Common Requirement directly when more than one Common source is bound."
+                if not editable
+                else "Code stored in the bound Common Requirement."
+            )
+            editor.setPlainText("\n\n".join(values))
+
+    def browse_common_requirements(self) -> None:
+        selected, _filter = QFileDialog.getOpenFileNames(
+            self,
+            "Select common requirement files",
+            str(self.window.project_path(self.current_id).parent if self.current_id else self.window.library_root),
+            "SDPE requirement (sdpe_requirement.json);;JSON (*.json)",
+        )
+        if not selected:
+            return
+        project_path = self.window.project_path(self.current_id)
+        existing = [line.strip() for line in self.common_requirements_edit.toPlainText().splitlines() if line.strip()]
+        existing.extend(common_requirement_reference(project_path, Path(path)) for path in selected)
+        self.common_requirements_edit.setPlainText("\n".join(dict.fromkeys(existing)))
+
+    def common_data_for_current(self, data: dict[str, Any]) -> list[dict[str, Any]]:
+        if not self.current_id:
+            return []
+        embedded = data.get(PROJECT_COMMON_SNAPSHOT_KEY, {})
+        private = {key: value for key, value in data.items() if key != PROJECT_COMMON_SNAPSHOT_KEY}
+        commons: list[dict[str, Any]] = []
+        for path in resolve_common_requirement_paths(self.window.project_path(self.current_id), private):
+            key = str(path.resolve())
+            common = embedded[key] if key in embedded else read_json(path)
+            commons.append(self.clone_data(common))
+        return commons
+
     def load_hardware(self, data: dict[str, Any]) -> None:
         self.hardware.setRowCount(0)
         for hw in project_hardware_items(data):
             entity_id = project_hardware_entity_id(hw)
             if not entity_id:
                 continue
-            self.add_hardware_row(entity_id, inherited=False)
-        for entity_id in self.inherited_hardware_entity_ids(data):
-            if entity_id and not self.hardware_entity_in_table(entity_id):
-                self.add_hardware_row(entity_id, inherited=True)
+            source = str(hw.get(SOURCE_KEY, "project private")) if isinstance(hw, dict) else "project private"
+            self.add_hardware_row(entity_id, inherited=source.startswith("common:"), source=source)
         self.refresh_hardware_status()
         fit_table_columns(self.hardware)
 
-    def add_hardware_row(self, entity_id: str, inherited: bool = False) -> None:
+    def add_hardware_row(self, entity_id: str, inherited: bool = False, source: str = "project private") -> None:
         row = self.hardware.rowCount()
         self.hardware.insertRow(row)
         set_item(self.hardware, row, 0, entity_id)
         item = self.hardware.item(row, 0)
+        if item is not None:
+            item.setData(PROJECT_SOURCE_ROLE, source)
         if item is not None and inherited:
             item.setData(Qt.ItemDataRole.UserRole + 10, "inherited")
             item.setToolTip("Inherited from a related SDPE requirement. It will not be saved into this project file.")
         self.populate_hardware_info(row, entity_id)
+        set_item(self.hardware, row, 5, source)
         if inherited:
             for col in range(self.hardware.columnCount()):
                 cell = self.hardware.item(row, col)
@@ -2705,7 +2750,7 @@ class ProjectPage(SDPEPage):
                     cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
 
     def hardware_entity_in_table(self, entity_id: str) -> bool:
-        for row in range(self.hardware.rowCount()):
+        for row in table_source_rows(self.hardware):
             if item_text(self.hardware, row, 0) == entity_id:
                 return True
         return False
@@ -2734,14 +2779,32 @@ class ProjectPage(SDPEPage):
     def load_requirements(self, data: dict[str, Any]) -> None:
         self.requirements.clear()
         requirements = list(data.get("requirements", []))
+        if any(SOURCE_KEY in req or GROUP_KEY in req for req in requirements):
+            for req in requirements:
+                group_item = self.requirements.ensure_group_path(
+                    str(req.get(GROUP_KEY) or "Ungrouped"),
+                    self.create_requirement_group_item,
+                )
+                self.add_requirement_item(group_item, req)
+            if not requirements:
+                self.requirements.addTopLevelItem(self.create_requirement_group_item("Requirements"))
+            self.requirements.expandAll()
+            fit_tree_key_columns(self.requirements, description_col=7, interactive=True)
+            self.requirements.setColumnWidth(2, 46)
+            self.requirements.setColumnWidth(3, 46)
+            self.requirements.setColumnWidth(4, 46)
+            self.enforce_tree_override_hierarchy(self.requirements, {"requirement"}, 1, 3)
+            return
         by_name = {req.get("role", req.get("macro", "")): req for req in requirements if req.get("role") or req.get("macro")}
         used: set[str] = set()
         groups = data.get("requirement_groups", [])
         if not groups:
             groups = [{"name": "Requirements", "requirements": [req.get("role", req.get("macro", "")) for req in requirements]}]
         for group in groups:
-            group_item = self.create_requirement_group_item(group.get("name", "Requirements"))
-            self.requirements.addTopLevelItem(group_item)
+            group_item = self.requirements.ensure_group_path(
+                group.get("name", "Requirements"),
+                self.create_requirement_group_item,
+            )
             for name in group.get("requirements", []):
                 if name in by_name:
                     self.add_requirement_item(group_item, by_name[name])
@@ -2753,79 +2816,96 @@ class ProjectPage(SDPEPage):
             for req in missing:
                 self.add_requirement_item(group_item, req)
         self.requirements.expandAll()
-        fit_tree_key_columns(self.requirements, description_col=6, interactive=True)
+        fit_tree_key_columns(self.requirements, description_col=7, interactive=True)
         self.requirements.setColumnWidth(2, 46)
         self.requirements.setColumnWidth(3, 46)
+        self.requirements.setColumnWidth(4, 46)
 
     def load_macro_tables(self, data: dict[str, Any]) -> None:
-        self.load_feature_macro_tree(data.get("feature_macros", []))
-        self.load_option_macro_tree(data.get("option_macros", []))
+        self.load_feature_macro_tree(
+            data.get("feature_macros", []),
+            data.get("feature_macro_groups", []),
+        )
+        self.load_option_macro_tree(
+            data.get("option_macros", []),
+            data.get("option_macro_groups", []),
+        )
 
     def macro_group_map(self, tree: QTreeWidget, default_group: str) -> dict[str, QTreeWidgetItem]:
+        if not isinstance(tree, SDPETreeWidget):
+            raise TypeError("SDPE macro groups require SDPETreeWidget.")
         groups: dict[str, QTreeWidgetItem] = {}
-        for index in range(tree.topLevelItemCount()):
-            group = tree.topLevelItem(index)
-            groups[group.text(0).strip() or default_group] = group
+        for group in tree.iter_items():
+            if group.data(0, Qt.ItemDataRole.UserRole) == "group":
+                groups[tree.group_path(group) or default_group] = group
         return groups
 
-    def load_feature_macro_tree(self, items: list[dict[str, Any]]) -> None:
+    def load_feature_macro_tree(self, items: list[dict[str, Any]], group_paths: list[str] | None = None) -> None:
         self.feature_macros.clear()
         groups: dict[str, QTreeWidgetItem] = {}
+        for group_name in group_paths or []:
+            if group_name:
+                groups[group_name] = self.feature_macros.ensure_group_path(group_name, self.create_macro_group_item)
         for item in items:
             group_name = item.get("group") or "Selection Macros"
             group = groups.get(group_name)
             if group is None:
-                group = self.create_macro_group_item(group_name)
-                self.feature_macros.addTopLevelItem(group)
+                group = self.feature_macros.ensure_group_path(group_name, self.create_macro_group_item)
                 groups[group_name] = group
             self.add_macro_item(self.feature_macros, "feature", group, item)
         if not groups:
             self.feature_macros.addTopLevelItem(self.create_macro_group_item("Selection Macros"))
         self.feature_macros.expandAll()
         self.feature_macros.clearSelection()
-        fit_tree_key_columns(self.feature_macros, description_col=4, interactive=True)
+        fit_tree_key_columns(self.feature_macros, description_col=5, interactive=True)
         self.feature_macros.setColumnWidth(1, 46)
         self.feature_macros.setColumnWidth(2, 46)
+        self.feature_macros.setColumnWidth(3, 46)
 
-    def load_option_macro_tree(self, items: list[dict[str, Any]]) -> None:
+    def load_option_macro_tree(self, items: list[dict[str, Any]], group_paths: list[str] | None = None) -> None:
         self.enum_macros.clear()
         groups: dict[str, QTreeWidgetItem] = {}
+        for group_name in group_paths or []:
+            if group_name:
+                groups[group_name] = self.enum_macros.ensure_group_path(group_name, self.create_macro_group_item)
         for item in items:
             group_name = item.get("group") or "Option Macros"
             group = groups.get(group_name)
             if group is None:
-                group = self.create_macro_group_item(group_name)
-                self.enum_macros.addTopLevelItem(group)
+                group = self.enum_macros.ensure_group_path(group_name, self.create_macro_group_item)
                 groups[group_name] = group
             self.add_macro_item(self.enum_macros, "option", group, item)
         if not groups:
             self.enum_macros.addTopLevelItem(self.create_macro_group_item("Option Macros"))
         self.enum_macros.expandAll()
         self.enum_macros.clearSelection()
-        fit_tree_key_columns(self.enum_macros, description_col=6, interactive=True)
+        fit_tree_key_columns(self.enum_macros, description_col=7, interactive=True)
         self.enum_macros.setColumnWidth(1, 46)
         self.enum_macros.setColumnWidth(2, 46)
+        self.enum_macros.setColumnWidth(3, 46)
 
-    def collect_feature_macro_tree(self) -> list[dict[str, Any]]:
+    def collect_feature_macro_tree(self, source: str = "project private") -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
-        for group_index in range(self.feature_macros.topLevelItemCount()):
-            group = self.feature_macros.topLevelItem(group_index)
-            for child_index in range(group.childCount()):
-                item = group.child(child_index)
-                data = self.macro_item_to_data(self.feature_macros, item, "feature")
-                if data.get("macro"):
-                    rows.append(data)
+        for item in self.feature_macros.iter_items():
+            if item.data(0, Qt.ItemDataRole.UserRole) != "feature_macro":
+                continue
+            if self.project_item_source(item) != source:
+                continue
+            data = self.macro_item_to_data(self.feature_macros, item, "feature")
+            if data.get("macro"):
+                rows.append(data)
         return rows
 
-    def collect_option_macro_tree(self) -> list[dict[str, Any]]:
+    def collect_option_macro_tree(self, source: str = "project private") -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
-        for group_index in range(self.enum_macros.topLevelItemCount()):
-            group = self.enum_macros.topLevelItem(group_index)
-            for child_index in range(group.childCount()):
-                item = group.child(child_index)
-                data = self.macro_item_to_data(self.enum_macros, item, "option")
-                if data.get("macro"):
-                    rows.append(data)
+        for item in self.enum_macros.iter_items():
+            if item.data(0, Qt.ItemDataRole.UserRole) != "option_macro":
+                continue
+            if self.project_item_source(item) != source:
+                continue
+            data = self.macro_item_to_data(self.enum_macros, item, "option")
+            if data.get("macro"):
+                rows.append(data)
         return rows
 
     def collect_current_data(self) -> dict[str, Any] | None:
@@ -2846,28 +2926,59 @@ class ProjectPage(SDPEPage):
                 "version": self.version_edit.text().strip(),
                 "updated_at": self.updated_edit.text().strip() or date.today().isoformat(),
                 "output_header": self.header_edit.text().strip(),
+                COMMON_REQUIREMENTS_KEY: [
+                    line.strip()
+                    for line in self.common_requirements_edit.toPlainText().splitlines()
+                    if line.strip()
+                ],
                 "hardware": self._table_hardware(),
                 "requirements": self._table_requirements(),
                 "requirement_groups": self._requirement_groups(),
                 "feature_macros": self._table_feature_macros(),
+                "feature_macro_groups": self._macro_group_paths(self.feature_macros),
                 "option_macros": self._table_option_macros(),
+                "option_macro_groups": self._macro_group_paths(self.enum_macros),
             }
         )
         if sections:
             data["code_sections"] = sections
         else:
             data.pop("code_sections", None)
+        common_documents: dict[str, dict[str, Any]] = {}
+        for index, (common_path, common_base) in enumerate(self.current_common_requirements):
+            source = f"common:{common_base.get('id', index + 1)}"
+            common = self.clone_data(common_base)
+            common["requirements"] = self._table_requirements(source)
+            common["requirement_groups"] = self._requirement_groups(source)
+            common["feature_macros"] = self.collect_feature_macro_tree(source)
+            common["option_macros"] = self.collect_option_macro_tree(source)
+            if len(self.current_common_requirements) == 1:
+                common_sections = dict(common.get("code_sections", {}))
+                self._set_optional_section(common_sections, "after_extern_open", self.common_prefix_code.toPlainText())
+                self._set_optional_section(common_sections, "before_footer", self.common_tail_code.toPlainText())
+                if common_sections:
+                    common["code_sections"] = common_sections
+                else:
+                    common.pop("code_sections", None)
+            feature_groups = self._macro_group_paths(self.feature_macros, source)
+            option_groups = self._macro_group_paths(self.enum_macros, source)
+            if feature_groups:
+                common["feature_macro_groups"] = feature_groups
+            if option_groups:
+                common["option_macro_groups"] = option_groups
+            common_documents[str(common_path.resolve())] = common
+        data[PROJECT_COMMON_SNAPSHOT_KEY] = common_documents
         return data
 
     def save_current(self) -> None:
         try:
+            self.commit_active_cell_editor()
             path = self.window.project_path(self.current_id)
             data = self.collect_current_data()
             if data is None:
                 return
-            data["updated_at"] = date.today().isoformat()
-            self.updated_edit.setText(data["updated_at"])
-            self.window.write_json(path, data)
+            self.write_project_snapshot(self.current_id, data)
+            self.updated_edit.setText(date.today().isoformat())
             self.dirty_ids.discard(self.current_id)
             self.drafts.pop(self.current_id, None)
             self.window.reload()
@@ -2888,7 +2999,7 @@ class ProjectPage(SDPEPage):
 
     def _table_hardware(self) -> list[dict[str, str]]:
         rows = []
-        for row in range(self.hardware.rowCount()):
+        for row in table_source_rows(self.hardware):
             if is_inherited_hardware_row(self.hardware, row):
                 continue
             entity = item_text(self.hardware, row, 0)
@@ -2901,39 +3012,176 @@ class ProjectPage(SDPEPage):
         for row in range(self.hardware.rowCount()):
             entity = item_text(self.hardware, row, 0)
             if entity:
-                rows.append({"entity": entity, "inherited": "1" if is_inherited_hardware_row(self.hardware, row) else ""})
+                rows.append(
+                    {
+                        "entity": entity,
+                        "inherited": "1" if is_inherited_hardware_row(self.hardware, row) else "",
+                        "source": item_text(self.hardware, row, 5) or "project private",
+                    }
+                )
         return rows
 
-    def _table_requirements(self) -> list[dict[str, Any]]:
+    def _table_requirements(self, source: str = "project private") -> list[dict[str, Any]]:
         rows = []
-        for group_index in range(self.requirements.topLevelItemCount()):
-            group = self.requirements.topLevelItem(group_index)
-            for child_index in range(group.childCount()):
-                item = group.child(child_index)
-                if item.data(0, Qt.ItemDataRole.UserRole) != "requirement":
-                    continue
-                macro = tree_cell_text(self.requirements, item, 1)
-                if macro:
-                    rows.append(self.requirement_item_to_data(item))
+        for item in self.requirements.iter_items():
+            if item.data(0, Qt.ItemDataRole.UserRole) != "requirement":
+                continue
+            if self.project_item_source(item) != source:
+                continue
+            macro = tree_cell_text(self.requirements, item, 1)
+            if macro:
+                rows.append(self.requirement_item_to_data(item))
         return rows
 
-    def _requirement_groups(self) -> list[dict[str, Any]]:
-        groups = []
-        for group_index in range(self.requirements.topLevelItemCount()):
-            group = self.requirements.topLevelItem(group_index)
-            names = [
-                tree_cell_text(self.requirements, group.child(child_index), 0)
-                for child_index in range(group.childCount())
-                if tree_cell_text(self.requirements, group.child(child_index), 0)
-            ]
-            groups.append({"name": group.text(0).strip() or "Requirements", "requirements": names})
-        return groups
+    def _requirement_groups(self, source: str = "project private") -> list[dict[str, Any]]:
+        groups: dict[str, list[str]] = {}
+        for item in self.iter_requirement_items():
+            if self.project_item_source(item) != source:
+                continue
+            name = tree_cell_text(self.requirements, item, 0)
+            if not name:
+                continue
+            group = self.item_group_ancestor(item)
+            path = self.requirements.group_path(group) if group is not None else "Requirements"
+            groups.setdefault(path or "Requirements", []).append(name)
+        return [{"name": path, "requirements": names} for path, names in groups.items()]
 
     def _table_feature_macros(self) -> list[dict[str, Any]]:
         return self.collect_feature_macro_tree()
 
     def _table_option_macros(self) -> list[dict[str, Any]]:
         return self.collect_option_macro_tree()
+
+    def _macro_group_paths(self, tree: SDPETreeWidget, source: str = "project private") -> list[str]:
+        """Persist empty groups and nested group order independently of macro rows."""
+
+        return [
+            path
+            for item in tree.iter_items()
+            if item.data(0, Qt.ItemDataRole.UserRole) == "group"
+            and (
+                not any(
+                    child.data(0, Qt.ItemDataRole.UserRole) in {"feature_macro", "option_macro"}
+                    for child in tree.iter_items(item)
+                )
+                or any(
+                    child.data(0, Qt.ItemDataRole.UserRole) in {"feature_macro", "option_macro"}
+                    and self.project_item_source(child) == source
+                    for child in tree.iter_items(item)
+                )
+            )
+            and (path := tree.group_path(item))
+        ]
+
+    def project_item_source(self, item: QTreeWidgetItem) -> str:
+        return str(item.data(0, PROJECT_SOURCE_ROLE) or "project private")
+
+    def on_project_tree_item_changed(self, tree: SDPETreeWidget, item: QTreeWidgetItem, col: int) -> None:
+        self.mark_current_dirty()
+        macro_col = 1 if tree is self.requirements else 0
+        if item.data(0, Qt.ItemDataRole.UserRole) != "group" and col == macro_col:
+            QTimer.singleShot(0, self.enforce_override_hierarchy)
+
+    def item_group_ancestor(self, item: QTreeWidgetItem | None) -> QTreeWidgetItem | None:
+        current = item
+        while current is not None:
+            if current.data(0, Qt.ItemDataRole.UserRole) == "group":
+                return current
+            current = current.parent()
+        return None
+
+    def release_common_children(self, item: QTreeWidgetItem) -> None:
+        """Keep inherited rows when their private override parent is removed."""
+
+        group = self.item_group_ancestor(item)
+        if group is None:
+            return
+        children = [item.child(index) for index in range(item.childCount())]
+        for child in children:
+            if self.project_item_source(child).startswith("common:"):
+                self.reparent_project_item(child, group)
+
+    def reparent_project_item(self, item: QTreeWidgetItem, parent: QTreeWidgetItem) -> None:
+        if item.parent() is parent:
+            return
+        tree = item.treeWidget()
+        widget_snapshot = tree._snapshot_item(item) if isinstance(tree, SDPETreeWidget) else None
+        if tree is not None:
+            for col in range(tree.columnCount()):
+                if tree.itemWidget(item, col) is not None:
+                    # QAbstractItemView owns index widgets and may delete them
+                    # later. Never attach the old QWidget to a new model index.
+                    tree.removeItemWidget(item, col)
+        old_parent = item.parent()
+        if old_parent is None:
+            if tree is not None:
+                tree.takeTopLevelItem(tree.indexOfTopLevelItem(item))
+        else:
+            old_parent.takeChild(old_parent.indexOfChild(item))
+        parent.addChild(item)
+        if isinstance(tree, SDPETreeWidget) and widget_snapshot is not None:
+            tree._restore_item_widgets(item, widget_snapshot)
+        parent.setExpanded(True)
+
+    def set_override_weak_state(
+        self,
+        tree: SDPETreeWidget,
+        item: QTreeWidgetItem,
+        weak_col: int,
+        forced: bool,
+    ) -> None:
+        panel = tree.itemWidget(item, weak_col)
+        box = getattr(panel, "_sdpe_checkbox", None) if panel is not None else None
+        if not isinstance(box, QCheckBox):
+            set_tree_check(item, weak_col, forced or tree_checked(item, weak_col, False))
+            panel = tree.itemWidget(item, weak_col)
+            box = getattr(panel, "_sdpe_checkbox", None) if panel is not None else None
+        if isinstance(box, QCheckBox):
+            if forced and not box.isChecked():
+                box.setChecked(True)
+            box.setEnabled(not forced)
+            box.setToolTip("Weak is required while a private override exists." if forced else "")
+        if forced:
+            item.setData(weak_col, Qt.ItemDataRole.UserRole, True)
+
+    def enforce_tree_override_hierarchy(
+        self,
+        tree: SDPETreeWidget,
+        item_roles: set[str],
+        macro_col: int,
+        weak_col: int,
+    ) -> None:
+        items = [item for item in tree.iter_items() if item.data(0, Qt.ItemDataRole.UserRole) in item_roles]
+        private_by_macro: dict[str, QTreeWidgetItem] = {}
+        for item in items:
+            macro = tree_cell_text(tree, item, macro_col)
+            if macro and self.project_item_source(item) == "project private":
+                private_by_macro.setdefault(macro, item)
+        for item in items:
+            if not self.project_item_source(item).startswith("common:"):
+                continue
+            macro = tree_cell_text(tree, item, macro_col)
+            target = private_by_macro.get(macro)
+            group = self.item_group_ancestor(item)
+            if target is not None:
+                self.reparent_project_item(item, target)
+                self.set_override_weak_state(tree, item, weak_col, True)
+            else:
+                if item.parent() is not None and item.parent().data(0, Qt.ItemDataRole.UserRole) != "group" and group is not None:
+                    self.reparent_project_item(item, group)
+                self.set_override_weak_state(tree, item, weak_col, False)
+
+    def enforce_override_hierarchy(self) -> None:
+        if not self.current_id:
+            return
+        old_loading = self.loading
+        self.loading = True
+        try:
+            self.enforce_tree_override_hierarchy(self.requirements, {"requirement"}, 1, 3)
+            self.enforce_tree_override_hierarchy(self.feature_macros, {"feature_macro"}, 0, 2)
+            self.enforce_tree_override_hierarchy(self.enum_macros, {"option_macro"}, 0, 2)
+        finally:
+            self.loading = old_loading
 
     def add_feature_macro(self) -> None:
         self.add_macro_item(self.feature_macros, "feature")
@@ -2945,22 +3193,24 @@ class ProjectPage(SDPEPage):
                 tree.headerItem().setToolTip(col, "Enable: checked macros are emitted normally; unchecked macros are commented out.")
             elif header == "Wk":
                 tree.headerItem().setToolTip(col, "Weak macro: checked macros are wrapped by #ifndef / #define / #endif.")
+            elif header == "Pri":
+                tree.headerItem().setToolTip(col, "Private: read-only ownership flag for the current project.")
 
     def setup_macro_tree(self, tree: QTreeWidget, description_col: int) -> None:
-        tree.setAlternatingRowColors(True)
-        tree.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        tree.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        tree.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
-        tree.setDefaultDropAction(Qt.DropAction.MoveAction)
-        tree.model().rowsMoved.connect(lambda *_args, t=tree: self.after_macro_tree_changed(t))
-        tree.model().rowsInserted.connect(lambda *_args, t=tree: self.after_macro_tree_changed(t))
-        tree.model().rowsRemoved.connect(lambda *_args, t=tree: self.after_macro_tree_changed(t))
+        if not isinstance(tree, SDPETreeWidget):
+            raise TypeError("SDPE hierarchical data must use SDPETreeWidget.")
+        tree.contentChanged.connect(self.mark_current_dirty)
+        tree.structureChanged.connect(lambda t=tree: self.after_macro_tree_changed(t))
         fit_tree_key_columns(tree, description_col=description_col, interactive=True)
-        install_tree_status_descriptions(tree, description_col=description_col)
 
     def create_macro_group_item(self, name: str) -> QTreeWidgetItem:
         item = QTreeWidgetItem([name])
-        item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsDropEnabled)
+        item.setFlags(
+            item.flags()
+            | Qt.ItemFlag.ItemIsEditable
+            | Qt.ItemFlag.ItemIsDragEnabled
+            | Qt.ItemFlag.ItemIsDropEnabled
+        )
         item.setData(0, Qt.ItemDataRole.UserRole, "group")
         return item
 
@@ -2969,14 +3219,16 @@ class ProjectPage(SDPEPage):
         if item is not None:
             if item.data(0, Qt.ItemDataRole.UserRole) == "group":
                 return item
-            if item.parent() is not None:
-                return item.parent()
+            group = self.item_group_ancestor(item)
+            if group is not None:
+                return group
         if tree.topLevelItemCount() == 0:
             tree.addTopLevelItem(self.create_macro_group_item(default_group))
         return tree.topLevelItem(0)
 
     def add_macro_item(self, tree: QTreeWidget, macro_type: str, group: QTreeWidgetItem | None = None, data: dict[str, Any] | None = None) -> QTreeWidgetItem:
         data = data or {}
+        source = str(data.get(SOURCE_KEY, "project private"))
         default_group = "Option Macros" if macro_type == "option" else "Selection Macros"
         parent = group or self.current_macro_group(tree, default_group)
         parent.setExpanded(True)
@@ -2985,24 +3237,35 @@ class ProjectPage(SDPEPage):
                 data.get("macro", ""),
                 "",
                 "",
+                "",
                 str(data.get("value", "")),
                 data.get("options_preset", data.get("preset", "")),
                 ", ".join(str(v) for v in data.get("options", [])),
                 data.get("description", ""),
+                source,
             ])
             item.setData(0, Qt.ItemDataRole.UserRole, "option_macro")
             parent.addChild(item)
             set_tree_check(item, 1, bool(data.get("enabled", True)))
             set_tree_check(item, 2, bool(data.get("weak", False)))
-            options = [item.strip() for item in tree_cell_text(tree, item, 5).split(",") if item.strip()]
-            set_tree_combo(tree, item, 3, options or [tree_cell_text(tree, item, 3) or "1"], tree_cell_text(tree, item, 3) or (options[0] if options else "1"))
+            set_tree_check(item, 3, source == "project private", enabled=False)
+            options = [item.strip() for item in tree_cell_text(tree, item, 6).split(",") if item.strip()]
+            set_tree_combo(tree, item, 4, options or [tree_cell_text(tree, item, 4) or "1"], tree_cell_text(tree, item, 4) or (options[0] if options else "1"))
         else:
-            item = QTreeWidgetItem([data.get("macro", ""), "", "", str(data.get("value", "")), data.get("description", "")])
+            item = QTreeWidgetItem(
+                [data.get("macro", ""), "", "", "", str(data.get("value", "")), data.get("description", ""), source]
+            )
             item.setData(0, Qt.ItemDataRole.UserRole, "feature_macro")
             parent.addChild(item)
             set_tree_check(item, 1, bool(data.get("enabled", True)))
             set_tree_check(item, 2, bool(data.get("weak", False)))
+            set_tree_check(item, 3, source == "project private", enabled=False)
         item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsDragEnabled)
+        item.setData(0, PROJECT_SOURCE_ROLE, source)
+        item.setData(3, READ_ONLY_CELL_ROLE, True)
+        item.setData(tree.columnCount() - 1, READ_ONLY_CELL_ROLE, True)
+        if source.startswith("common:"):
+            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsDragEnabled)
         if not self.loading:
             tree.setCurrentItem(item, 0)
             self.mark_current_dirty()
@@ -3010,7 +3273,10 @@ class ProjectPage(SDPEPage):
 
     def add_macro_group(self, tree: QTreeWidget, macro_type: str) -> None:
         group_item = self.create_macro_group_item("New Group")
-        tree.addTopLevelItem(group_item)
+        if isinstance(tree, SDPETreeWidget):
+            tree.insert_group_near_current(group_item)
+        else:
+            tree.addTopLevelItem(group_item)
         tree.setCurrentItem(group_item, 0)
         tree.editItem(group_item, 0)
         self.mark_current_dirty()
@@ -3020,50 +3286,66 @@ class ProjectPage(SDPEPage):
         current = tree.currentItem()
         if not items and current is not None and current.data(0, Qt.ItemDataRole.UserRole) in {"feature_macro", "option_macro"}:
             items = [current]
-        return items
+        return unique_tree_items(items)
 
     def iter_macro_items(self, tree: QTreeWidget) -> list[QTreeWidgetItem]:
-        items: list[QTreeWidgetItem] = []
-        for group_index in range(tree.topLevelItemCount()):
-            group = tree.topLevelItem(group_index)
-            for child_index in range(group.childCount()):
-                item = group.child(child_index)
-                if item.data(0, Qt.ItemDataRole.UserRole) in {"feature_macro", "option_macro"}:
-                    items.append(item)
-        return items
+        if isinstance(tree, SDPETreeWidget):
+            return [
+                item
+                for item in tree.iter_items()
+                if item.data(0, Qt.ItemDataRole.UserRole) in {"feature_macro", "option_macro"}
+            ]
+        return []
 
     def remove_macro_items(self, tree: QTreeWidget) -> None:
-        items = tree.selectedItems() or ([tree.currentItem()] if tree.currentItem() is not None else [])
-        for item in reversed(items):
+        items = (
+            tree.selected_top_level_items()
+            if isinstance(tree, SDPETreeWidget)
+            else tree.selectedItems() or ([tree.currentItem()] if tree.currentItem() is not None else [])
+        )
+        removable = [
+            item
+            for item in items
+            if item.data(0, Qt.ItemDataRole.UserRole) == "group"
+            or (
+                item.data(0, Qt.ItemDataRole.UserRole) != "group"
+                and bool(self.project_item_source(item))
+            )
+        ]
+        for item in reversed(removable):
+            self.release_common_children(item)
             parent = item.parent()
             if parent is None:
                 index = tree.indexOfTopLevelItem(item)
                 tree.takeTopLevelItem(index)
             else:
                 parent.removeChild(item)
-        if items:
+        if removable:
+            self.enforce_override_hierarchy()
             self.mark_current_dirty()
 
     def macro_item_to_data(self, tree: QTreeWidget, item: QTreeWidgetItem, macro_type: str) -> dict[str, Any]:
-        group = item.parent().text(0) if item.parent() is not None else ("Option Macros" if macro_type == "option" else "Selection Macros")
+        default_group = "Option Macros" if macro_type == "option" else "Selection Macros"
+        group = tree.group_path(item) if isinstance(tree, SDPETreeWidget) else default_group
+        group = group or default_group
         if macro_type == "option":
             return {
                 "group": group,
                 "macro": tree_cell_text(tree, item, 0),
                 "enabled": tree_checked(item, 1, True),
                 "weak": tree_checked(item, 2, False),
-                "value": tree_cell_text(tree, item, 3),
-                "options_preset": tree_cell_text(tree, item, 4),
-                "options": [part.strip() for part in tree_cell_text(tree, item, 5).split(",") if part.strip()],
-                "description": tree_cell_text(tree, item, 6),
+                "value": tree_cell_text(tree, item, 4),
+                "options_preset": tree_cell_text(tree, item, 5),
+                "options": [part.strip() for part in tree_cell_text(tree, item, 6).split(",") if part.strip()],
+                "description": tree_cell_text(tree, item, 7),
             }
         return {
             "group": group,
             "macro": tree_cell_text(tree, item, 0),
             "enabled": tree_checked(item, 1, True),
             "weak": tree_checked(item, 2, False),
-            "value": tree_cell_text(tree, item, 3),
-            "description": tree_cell_text(tree, item, 4),
+            "value": tree_cell_text(tree, item, 4),
+            "description": tree_cell_text(tree, item, 5),
         }
 
     def copy_macro_items(self, tree: QTreeWidget, macro_type: str) -> None:
@@ -3091,8 +3373,7 @@ class ProjectPage(SDPEPage):
             group_name = row.get("group") or ("Option Macros" if macro_type == "option" else "Selection Macros")
             group = groups.get(group_name)
             if group is None:
-                group = self.create_macro_group_item(group_name)
-                tree.addTopLevelItem(group)
+                group = tree.ensure_group_path(group_name, self.create_macro_group_item)
                 groups[group_name] = group
             self.add_macro_item(tree, macro_type, group, row)
         self.mark_current_dirty()
@@ -3102,50 +3383,129 @@ class ProjectPage(SDPEPage):
         if item is not None and not item.isSelected():
             tree.setCurrentItem(item, max(0, tree.indexAt(pos).column()))
         menu = QMenu(self)
-        copy_action = menu.addAction("Copy selected rows", lambda: self.copy_macro_items(tree, macro_type))
-        copy_action.setEnabled(bool(self.selected_macro_items(tree)))
-        cut_action = menu.addAction("Cut selected rows", lambda: self.cut_macro_items(tree, macro_type))
-        cut_action.setEnabled(bool(self.selected_macro_items(tree)))
-        paste_action = menu.addAction("Paste rows", lambda: self.paste_macro_items(tree, macro_type))
-        paste_action.setEnabled(bool(QApplication.clipboard().text().strip()))
-        menu.addSeparator()
-        menu.addAction("Add group", lambda: self.add_macro_group(tree, macro_type))
-        menu.addAction("Add macro", lambda: self.add_macro_item(tree, macro_type))
-        remove_action = menu.addAction("Remove selected", lambda: self.remove_macro_items(tree))
-        remove_action.setEnabled(item is not None)
+        if isinstance(tree, SDPETreeWidget):
+            tree.add_standard_actions_to_menu(menu)
+        if item is not None and item.data(0, Qt.ItemDataRole.UserRole) in {"feature_macro", "option_macro"}:
+            menu.addSeparator()
+            kind = "option_macros" if macro_type == "option" else "feature_macros"
+            if self.project_item_source(item).startswith("common:"):
+                menu.addAction(
+                    "Cover with private macro",
+                    lambda: self.override_common_item(kind, tree, item),
+                )
+                menu.addAction(
+                    "Deploy common item to private projects...",
+                    lambda: self.deploy_common_item_to_projects(kind, tree, item),
+                )
+            else:
+                menu.addAction(
+                    "Move project item to common...",
+                    lambda: self.move_private_item_to_common(kind, tree, item),
+                )
         menu.exec(tree.viewport().mapToGlobal(pos))
 
     def install_macro_tree_shortcuts(self, tree: QTreeWidget, macro_type: str) -> None:
-        tree._sdpe_copy_shortcut = QShortcut(QKeySequence.StandardKey.Copy, tree)
-        tree._sdpe_copy_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
-        tree._sdpe_copy_shortcut.activated.connect(lambda t=tree, mt=macro_type: self.copy_macro_items(t, mt))
-        tree._sdpe_cut_shortcut = QShortcut(QKeySequence.StandardKey.Cut, tree)
-        tree._sdpe_cut_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
-        tree._sdpe_cut_shortcut.activated.connect(lambda t=tree, mt=macro_type: self.cut_macro_items(t, mt))
-        tree._sdpe_paste_shortcut = QShortcut(QKeySequence.StandardKey.Paste, tree)
-        tree._sdpe_paste_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
-        tree._sdpe_paste_shortcut.activated.connect(lambda t=tree, mt=macro_type: self.paste_macro_items(t, mt))
-        tree._sdpe_delete_shortcut = QShortcut(QKeySequence("Del"), tree)
-        tree._sdpe_delete_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
-        tree._sdpe_delete_shortcut.activated.connect(lambda t=tree: self.remove_macro_items(t))
+        if not isinstance(tree, SDPETreeWidget):
+            raise TypeError("SDPE macro trees must use SDPETreeWidget.")
+        tree.set_action_handler("copy", lambda t=tree, mt=macro_type: self.copy_macro_items(t, mt))
+        tree.set_action_handler("cut", lambda t=tree, mt=macro_type: self.cut_macro_items(t, mt))
+        tree.set_action_handler("paste", lambda t=tree, mt=macro_type: self.paste_macro_items(t, mt))
+        tree.set_action_handler("delete", lambda t=tree: self.remove_macro_items(t))
+
+    def next_requirement_macro(self, base: str) -> str:
+        existing = {tree_cell_text(self.requirements, item, 1) for item in self.iter_requirement_items()}
+        if base not in existing:
+            return base
+        index = 2
+        while f"{base}_{index}" in existing:
+            index += 1
+        return f"{base}_{index}"
 
     def add_requirement(self) -> None:
+        """Compatibility alias for the default private requirement action."""
+
+        self.add_private_requirement()
+
+    def add_private_requirement(self) -> None:
         group = self.current_requirement_group()
-        item = self.add_requirement_item(group, {"role": "new_requirement", "macro": "NEW_REQUIREMENT", "binding": {"number": "0"}})
+        item = self.add_requirement_item(
+            group,
+            {
+                "role": "New Private Requirement",
+                "macro": self.next_requirement_macro("NEW_PRIVATE_REQUIREMENT"),
+                "binding": {"number": "0"},
+                SOURCE_KEY: "project private",
+            },
+        )
         group.setExpanded(True)
-        self.requirements.setCurrentItem(item)
+        self.requirements.setCurrentItem(item, 0)
+        self.requirements.editItem(item, 0)
+        self.mark_current_dirty()
+
+    def common_source_choices(self) -> dict[str, str]:
+        return {
+            f"{data.get('display_name', data.get('id', path.stem))} | {path}": f"common:{data.get('id', index + 1)}"
+            for index, (path, data) in enumerate(self.current_common_requirements)
+        }
+
+    def preferred_common_source(self) -> str | None:
+        current = self.requirements.currentItem()
+        if current is not None:
+            source = self.project_item_source(current)
+            if source.startswith("common:"):
+                return source
+            descendant_sources = list(
+                dict.fromkeys(
+                    self.project_item_source(child)
+                    for child in self.requirements.iter_items(current)
+                    if self.project_item_source(child).startswith("common:")
+                )
+            )
+            if len(descendant_sources) == 1:
+                return descendant_sources[0]
+        choices = self.common_source_choices()
+        if len(choices) == 1:
+            return next(iter(choices.values()))
+        if not choices:
+            return None
+        selected = choose_item(self, "Create Common requirement", list(choices))
+        return choices.get(selected) if selected else None
+
+    def add_common_requirement(self) -> None:
+        source = self.preferred_common_source()
+        if source is None:
+            self.message("Create Common requirement", "Bind at least one Common requirement file first.")
+            return
+        group = self.current_requirement_group()
+        item = self.add_requirement_item(
+            group,
+            {
+                "role": "New Common Requirement",
+                "macro": self.next_requirement_macro("NEW_COMMON_REQUIREMENT"),
+                "binding": {"number": "0"},
+                SOURCE_KEY: source,
+            },
+        )
+        group.setExpanded(True)
+        self.requirements.setCurrentItem(item, 0)
+        self.requirements.editItem(item, 0)
         self.mark_current_dirty()
 
     def add_requirement_group(self) -> None:
         item = self.create_requirement_group_item("New Group")
-        self.requirements.addTopLevelItem(item)
+        self.requirements.insert_group_near_current(item)
         self.requirements.setCurrentItem(item)
         self.requirements.editItem(item, 0)
         self.mark_current_dirty()
 
     def create_requirement_group_item(self, name: str) -> QTreeWidgetItem:
         item = QTreeWidgetItem([name])
-        item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsDropEnabled)
+        item.setFlags(
+            item.flags()
+            | Qt.ItemFlag.ItemIsEditable
+            | Qt.ItemFlag.ItemIsDragEnabled
+            | Qt.ItemFlag.ItemIsDropEnabled
+        )
         item.setData(0, Qt.ItemDataRole.UserRole, "group")
         return item
 
@@ -3154,13 +3514,22 @@ class ProjectPage(SDPEPage):
 
     def insert_requirement_item(self, group: QTreeWidgetItem, index: int, req: dict[str, Any]) -> QTreeWidgetItem:
         btype, bvalue = binding_to_cells(req.get("binding", {}))
-        item = QTreeWidgetItem([req.get("role", ""), req.get("macro", ""), "", "", "", bvalue, req.get("description", "")])
+        source = str(req.get(SOURCE_KEY, "project private"))
+        item = QTreeWidgetItem(
+            [title_case_name(req.get("role", "")), req.get("macro", ""), "", "", "", "", bvalue, req.get("description", ""), source]
+        )
         item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsDragEnabled)
         item.setData(0, Qt.ItemDataRole.UserRole, "requirement")
+        item.setData(0, PROJECT_SOURCE_ROLE, source)
+        item.setData(4, READ_ONLY_CELL_ROLE, True)
+        item.setData(8, READ_ONLY_CELL_ROLE, True)
         group.insertChild(max(0, min(index, group.childCount())), item)
         set_tree_check(item, 2, bool(req.get("enabled", True)))
         set_tree_check(item, 3, bool(req.get("weak", False)))
-        set_tree_combo(self.requirements, item, 4, binding_type_options(), btype)
+        set_tree_check(item, 4, source == "project private", enabled=False)
+        set_tree_combo(self.requirements, item, 5, binding_type_options(), btype)
+        if source.startswith("common:"):
+            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsDragEnabled)
         return item
 
     def current_requirement_group(self) -> QTreeWidgetItem:
@@ -3168,26 +3537,33 @@ class ProjectPage(SDPEPage):
         if item is not None:
             if item.data(0, Qt.ItemDataRole.UserRole) == "group":
                 return item
-            if item.parent() is not None:
-                return item.parent()
+            group = self.item_group_ancestor(item)
+            if group is not None:
+                return group
         if self.requirements.topLevelItemCount() == 0:
             self.add_requirement_group()
         return self.requirements.topLevelItem(0)
 
     def remove_requirement_item(self) -> None:
-        selected = self.selected_requirement_items()
-        if selected:
-            self.remove_requirement_items(selected)
+        items = [
+            item
+            for item in self.requirements.selected_top_level_items()
+            if item.data(0, Qt.ItemDataRole.UserRole) == "group"
+            or (
+                item.data(0, Qt.ItemDataRole.UserRole) != "group"
+                and bool(self.project_item_source(item))
+            )
+        ]
+        if not items:
             return
-        item = self.requirements.currentItem()
-        if item is None:
-            return
-        parent = item.parent()
-        if parent is None:
-            index = self.requirements.indexOfTopLevelItem(item)
-            self.requirements.takeTopLevelItem(index)
-        else:
-            parent.removeChild(item)
+        for item in reversed(items):
+            self.release_common_children(item)
+            parent = item.parent()
+            if parent is None:
+                self.requirements.takeTopLevelItem(self.requirements.indexOfTopLevelItem(item))
+            else:
+                parent.takeChild(parent.indexOfChild(item))
+        self.enforce_override_hierarchy()
         self.mark_current_dirty()
 
     def selected_requirement_items(self) -> list[QTreeWidgetItem]:
@@ -3200,19 +3576,19 @@ class ProjectPage(SDPEPage):
         if not items and current is not None and current.data(0, Qt.ItemDataRole.UserRole) == "requirement":
             items = [current]
         order = {id(item): index for index, item in enumerate(self.iter_requirement_items())}
-        return sorted(dict.fromkeys(items), key=lambda item: order.get(id(item), 10**9))
+        return sorted(unique_tree_items(items), key=lambda item: order.get(id(item), 10**9))
 
     def requirement_item_to_data(self, item: QTreeWidgetItem) -> dict[str, Any]:
         return {
-            "role": tree_cell_text(self.requirements, item, 0),
+            "role": title_case_name(tree_cell_text(self.requirements, item, 0)),
             "macro": tree_cell_text(self.requirements, item, 1),
             "enabled": tree_checked(item, 2, True),
             "weak": tree_checked(item, 3, False),
             "binding": cells_to_binding(
-                tree_cell_text(self.requirements, item, 4),
                 tree_cell_text(self.requirements, item, 5),
+                tree_cell_text(self.requirements, item, 6),
             ),
-            "description": tree_cell_text(self.requirements, item, 6),
+            "description": tree_cell_text(self.requirements, item, 7),
         }
 
     def copy_selected_requirements(self) -> None:
@@ -3237,9 +3613,11 @@ class ProjectPage(SDPEPage):
 
     def remove_requirement_items(self, items: list[QTreeWidgetItem]) -> None:
         for item in reversed(items):
+            self.release_common_children(item)
             parent = item.parent()
             if parent is not None:
                 parent.removeChild(item)
+        self.enforce_override_hierarchy()
         self.mark_current_dirty()
 
     def parse_requirement_clipboard(self, text: str) -> list[dict[str, Any]]:
@@ -3286,9 +3664,10 @@ class ProjectPage(SDPEPage):
 
     def requirement_paste_target(self) -> tuple[QTreeWidgetItem, int]:
         item = self.requirements.currentItem()
-        if item is not None and item.data(0, Qt.ItemDataRole.UserRole) == "requirement" and item.parent() is not None:
-            group = item.parent()
-            return group, group.indexOfChild(item) + 1
+        if item is not None and item.data(0, Qt.ItemDataRole.UserRole) == "requirement":
+            group = self.item_group_ancestor(item)
+            if group is not None:
+                return group, group.childCount()
         group = self.current_requirement_group()
         return group, group.childCount()
 
@@ -3308,7 +3687,7 @@ class ProjectPage(SDPEPage):
         self.mark_current_dirty()
 
     def after_requirement_tree_changed(self) -> None:
-        QTimer.singleShot(0, self.restore_requirement_widgets)
+        self.restore_requirement_widgets()
         self.mark_current_dirty()
 
     def restore_requirement_widgets(self) -> None:
@@ -3322,22 +3701,27 @@ class ProjectPage(SDPEPage):
                     set_tree_check(item, 2, tree_checked(item, 2, True))
                 if checkbox_widget_checked(self.requirements.itemWidget(item, 3)) is None:
                     set_tree_check(item, 3, tree_checked(item, 3, False))
-                btype = tree_cell_text(self.requirements, item, 4) or "number"
-                if not isinstance(self.requirements.itemWidget(item, 4), QComboBox):
-                    set_tree_combo(self.requirements, item, 4, binding_type_options(), btype)
+                if checkbox_widget_checked(self.requirements.itemWidget(item, 4)) is None:
+                    set_tree_check(item, 4, self.project_item_source(item) == "project private", enabled=False)
+                btype = tree_cell_text(self.requirements, item, 5) or "number"
+                if not isinstance(self.requirements.itemWidget(item, 5), QComboBox):
+                    set_tree_combo(self.requirements, item, 5, binding_type_options(), btype)
+                if self.project_item_source(item).startswith("common:"):
+                    item.setFlags((item.flags() | Qt.ItemFlag.ItemIsEditable) & ~Qt.ItemFlag.ItemIsDragEnabled)
             header = self.requirements.header()
             header.setStretchLastSection(False)
             for col in range(self.requirements.columnCount()):
                 header.setSectionResizeMode(col, QHeaderView.ResizeMode.Interactive)
             self.requirements.setColumnWidth(2, 46)
             self.requirements.setColumnWidth(3, 46)
+            self.requirements.setColumnWidth(4, 46)
         finally:
             self.loading = False
 
     def after_macro_tree_changed(self, tree: QTreeWidget) -> None:
         if self.loading:
             return
-        QTimer.singleShot(0, lambda t=tree: self.restore_macro_widgets(t))
+        self.restore_macro_widgets(tree)
         self.mark_current_dirty()
 
     def restore_macro_widgets(self, tree: QTreeWidget) -> None:
@@ -3351,15 +3735,22 @@ class ProjectPage(SDPEPage):
                 if not (item.flags() & Qt.ItemFlag.ItemIsUserCheckable):
                     set_tree_check(item, 1, tree_checked(item, 1, True))
                     set_tree_check(item, 2, tree_checked(item, 2, False))
+                if checkbox_widget_checked(tree.itemWidget(item, 3)) is None:
+                    set_tree_check(item, 3, self.project_item_source(item) == "project private", enabled=False)
                 if macro_type == "option":
-                    options = [part.strip() for part in tree_cell_text(tree, item, 5).split(",") if part.strip()]
-                    value = tree_cell_text(tree, item, 3) or (options[0] if options else "1")
-                    if not isinstance(tree.itemWidget(item, 3), QComboBox):
-                        set_tree_combo(tree, item, 3, options or [value], value)
-            description_col = 6 if tree is self.enum_macros else 4
+                    options = [part.strip() for part in tree_cell_text(tree, item, 6).split(",") if part.strip()]
+                    value = tree_cell_text(tree, item, 4) or (options[0] if options else "1")
+                    if not isinstance(tree.itemWidget(item, 4), QComboBox):
+                        set_tree_combo(tree, item, 4, options or [value], value)
+                if self.project_item_source(item).startswith("common:"):
+                    item.setFlags((item.flags() | Qt.ItemFlag.ItemIsEditable) & ~Qt.ItemFlag.ItemIsDragEnabled)
+            description_col = 7 if tree is self.enum_macros else 5
             fit_tree_key_columns(tree, description_col=description_col, interactive=True)
             tree.setColumnWidth(1, 46)
             tree.setColumnWidth(2, 46)
+            tree.setColumnWidth(3, 46)
+            roles = {"option_macro"} if tree is self.enum_macros else {"feature_macro"}
+            self.enforce_tree_override_hierarchy(tree, roles, 0, 2)
         finally:
             self.loading = False
 
@@ -3392,17 +3783,11 @@ class ProjectPage(SDPEPage):
         ungrouped.setExpanded(True)
 
     def iter_requirement_items(self) -> list[QTreeWidgetItem]:
-        items: list[QTreeWidgetItem] = []
-        for group_index in range(self.requirements.topLevelItemCount()):
-            group = self.requirements.topLevelItem(group_index)
-            if group.data(0, Qt.ItemDataRole.UserRole) == "requirement":
-                items.append(group)
-                continue
-            for child_index in range(group.childCount()):
-                child = group.child(child_index)
-                if child.data(0, Qt.ItemDataRole.UserRole) == "requirement":
-                    items.append(child)
-        return items
+        return [
+            item
+            for item in self.requirements.iter_items()
+            if item.data(0, Qt.ItemDataRole.UserRole) == "requirement"
+        ]
 
     def normalize_requirement_groups(self) -> None:
         if self.requirements.topLevelItemCount() == 0:
@@ -3462,7 +3847,7 @@ class ProjectPage(SDPEPage):
         for item in self.iter_macro_items(self.enum_macros):
             macro = tree_cell_text(self.enum_macros, item, 0)
             add(macro, self.enum_macros, item, "option macro")
-            value = tree_cell_text(self.enum_macros, item, 3)
+            value = tree_cell_text(self.enum_macros, item, 4)
             if macro and re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", value):
                 add(f"{macro}_{macro_name(value)}", self.enum_macros, item, "option marker")
         return occurrences
@@ -3482,7 +3867,7 @@ class ProjectPage(SDPEPage):
         duplicates = {
             macro: rows
             for macro, rows in occurrences.items()
-            if len(rows) > 1 or macro in reserved
+            if (len(rows) > 1 and not self.is_valid_override_rows(rows)) or macro in reserved
         }
         if not duplicates:
             self.message("Validate Macros", "No duplicate project macros found.")
@@ -3495,13 +3880,100 @@ class ProjectPage(SDPEPage):
         extra = "" if len(duplicates) <= 8 else f" (+{len(duplicates) - 8} more)"
         self.message("Validate Macros", f"Duplicate macro(s): {names}{extra}")
 
+    def is_valid_override_rows(
+        self,
+        rows: list[tuple[QTreeWidget, QTreeWidgetItem, str]],
+    ) -> bool:
+        trees = {id(tree) for tree, _item, _label in rows}
+        private = [(tree, item) for tree, item, _label in rows if self.project_item_source(item) == "project private"]
+        common = [
+            (tree, item)
+            for tree, item, _label in rows
+            if self.project_item_source(item).startswith("common:")
+        ]
+        if len(trees) != 1 or len(private) != 1 or len(common) != len(rows) - 1:
+            return False
+        private_item = private[0][1]
+        weak_col = 3 if private[0][0] is self.requirements else 2
+        return all(item.parent() is private_item and tree_checked(item, weak_col, False) for _tree, item in common)
+
+    def duplicate_source_documents(self) -> list[tuple[str, dict[str, Any]]]:
+        snapshot = self.collect_current_data()
+        if snapshot is None:
+            return []
+        private = self.clone_data(snapshot)
+        common_documents = private.pop(PROJECT_COMMON_SNAPSHOT_KEY, {})
+        documents = [("project private", private)]
+        documents.extend(
+            (
+                f"common:{data.get('id', index + 1)}",
+                common_documents.get(str(path.resolve()), data),
+            )
+            for index, (path, data) in enumerate(self.current_common_requirements)
+        )
+        return documents
+
+    def resolve_project_duplicate_macros(self) -> None:
+        """Resolve duplicate macro ownership across private and common documents."""
+
+        try:
+            documents = self.duplicate_source_documents()
+            duplicates = duplicate_macro_occurrences(documents)
+            if not duplicates:
+                self.message("Resolve Duplicates", "No duplicate project macros found.")
+                return
+            selected = choose_duplicate_macros(self, duplicates)
+            if selected is None:
+                return
+            resolved = dict(resolve_duplicate_macros(documents, selected))
+            project_path = self.window.project_path(self.current_id).resolve()
+            private = resolved.pop("project private")
+            private["updated_at"] = date.today().isoformat()
+            self.window.write_json(project_path, private)
+            for source, common in resolved.items():
+                common_path = self.common_path_for_source(source)
+                if common_path is None:
+                    raise SDPEError(f"Cannot resolve duplicate source: {source}")
+                common["updated_at"] = date.today().isoformat()
+                self.window.write_json(common_path, common)
+            removed = sum(len(rows) - 1 for rows in duplicates.values())
+            self.finish_project_migration(f"Removed {removed} duplicate macro occurrence(s).")
+        except Exception as exc:  # pragma: no cover - GUI guard.
+            self.error(str(exc))
+
+    def write_project_snapshot(self, item_id: str, snapshot: dict[str, Any]) -> int:
+        """Write one private document and every edited Common source atomically by file."""
+
+        private = self.clone_data(snapshot)
+        common_documents = private.pop(PROJECT_COMMON_SNAPSHOT_KEY, {})
+        private["updated_at"] = date.today().isoformat()
+        self.window.write_json(self.path_for_id(item_id), private)
+        saved = 1
+        for path_text, common in common_documents.items():
+            common["updated_at"] = date.today().isoformat()
+            self.window.write_json(Path(path_text), common)
+            saved += 1
+        return saved
+
+    def save_dirty(self) -> int:
+        self.commit_active_cell_editor()
+        if self.current_id in self.dirty_ids:
+            self.store_current_draft()
+        saved = 0
+        for item_id in list(self.dirty_ids):
+            snapshot = self.drafts.get(item_id)
+            if snapshot is None:
+                continue
+            saved += self.write_project_snapshot(item_id, snapshot)
+            self.clean_snapshots[item_id] = self.clone_data(snapshot)
+        self.dirty_ids.clear()
+        self.drafts.clear()
+        return saved
+
     def add_hardware(self, category_hint: str = "") -> None:
         selected = self.choose_entity(category_hint)
         if selected:
-            row = self.hardware.rowCount()
-            self.hardware.insertRow(row)
-            set_item(self.hardware, row, 0, selected)
-            self.populate_hardware_info(row, selected)
+            self.add_hardware_row(selected)
             self.refresh_hardware_status()
 
     def remove_hardware(self) -> None:
@@ -3584,12 +4056,12 @@ class ProjectPage(SDPEPage):
     def on_requirement_cell_double_clicked(self, item: QTreeWidgetItem, col: int) -> None:
         if item.data(0, Qt.ItemDataRole.UserRole) != "requirement":
             return
-        if col == 6:
+        if col == 7:
             self.edit_requirement_description(item)
             return
-        if col != 5:
+        if col != 6:
             return
-        btype = tree_cell_text(self.requirements, item, 4)
+        btype = tree_cell_text(self.requirements, item, 5)
         if btype == "export":
             self.select_requirement_hardware_parameter(item)
         elif btype in {"float", "number", "string", "macro"}:
@@ -3598,13 +4070,13 @@ class ProjectPage(SDPEPage):
             self.edit_requirement_value_dialog(item)
 
     def edit_requirement_value_in_cell(self, item: QTreeWidgetItem) -> None:
-        self.requirements.setCurrentItem(item, 5)
-        self.requirements.editItem(item, 5)
+        self.requirements.setCurrentItem(item, 6)
+        self.requirements.editItem(item, 6)
 
     def edit_requirement_value_dialog(self, item: QTreeWidgetItem) -> None:
-        text = edit_multiline(self, "Requirement Binding Value", tree_cell_text(self.requirements, item, 5))
+        text = edit_multiline(self, "Requirement Binding Value", tree_cell_text(self.requirements, item, 6))
         if text is not None:
-            item.setText(5, text)
+            item.setText(6, text)
             self.mark_current_dirty()
 
     def select_requirement_hardware_parameter(self, item: QTreeWidgetItem) -> None:
@@ -3616,9 +4088,9 @@ class ProjectPage(SDPEPage):
                 continue
         selected = choose_tree_item(self, "Select Requirement Binding", sorted(dict.fromkeys(symbols)))
         if selected:
-            if tree_cell_text(self.requirements, item, 4) != "expr":
-                set_tree_combo(self.requirements, item, 4, binding_type_options(), "export")
-            item.setText(5, f"${{{selected}}}")
+            if tree_cell_text(self.requirements, item, 5) != "expr":
+                set_tree_combo(self.requirements, item, 5, binding_type_options(), "export")
+            item.setText(6, f"${{{selected}}}")
             self.mark_current_dirty()
 
     def on_macro_tree_double_clicked(self, item: QTreeWidgetItem, col: int) -> None:
@@ -3627,24 +4099,24 @@ class ProjectPage(SDPEPage):
             if col == 0:
                 tree.editItem(item, 0)
             return
-        if tree is self.feature_macros and col == 4:
+        if tree is self.feature_macros and col == 5:
             text = edit_multiline(self, "Selection Macro Description", tree_cell_text(self.feature_macros, item, col))
             if text is not None:
                 item.setText(col, text)
                 self.mark_current_dirty()
-        elif tree is self.enum_macros and col == 4:
+        elif tree is self.enum_macros and col == 5:
             presets = self.option_preset_labels()
             selected = choose_item(self, "Select Option Preset", presets)
             if selected:
                 item.setText(col, selected.split("|", 1)[0].strip())
                 self.sync_option_macro_preset_item(item, prefer_preset=True)
-        elif tree is self.enum_macros and col == 5:
+        elif tree is self.enum_macros and col == 6:
             text = edit_multiline(self, "Option Macro Options", tree_cell_text(self.enum_macros, item, col))
             if text is not None:
                 item.setText(col, text)
                 self.sync_option_macro_value_combo_item(item)
                 self.mark_current_dirty()
-        elif tree is self.enum_macros and col == 6:
+        elif tree is self.enum_macros and col == 7:
             text = edit_multiline(self, "Option Macro Description", tree_cell_text(self.enum_macros, item, col))
             if text is not None:
                 item.setText(col, text)
@@ -3655,40 +4127,40 @@ class ProjectPage(SDPEPage):
             return
         if item.data(0, Qt.ItemDataRole.UserRole) != "option_macro":
             return
-        if col == 4:
+        if col == 5:
             self.sync_option_macro_preset_item(item, prefer_preset=True)
-        elif col == 5:
+        elif col == 6:
             self.sync_option_macro_value_combo_item(item)
 
     def sync_option_macro_preset_item(self, item: QTreeWidgetItem, prefer_preset: bool = True) -> None:
-        preset = tree_cell_text(self.enum_macros, item, 4)
+        preset = tree_cell_text(self.enum_macros, item, 5)
         options = self.option_preset_options(preset) if preset else []
         if not options and not prefer_preset:
             return
         old_state = self.enum_macros.blockSignals(True)
         try:
             if options:
-                item.setText(5, ", ".join(str(option) for option in options))
+                item.setText(6, ", ".join(str(option) for option in options))
             self.sync_option_macro_value_combo_item(item)
         finally:
             self.enum_macros.blockSignals(old_state)
 
     def sync_option_macro_value_combo_item(self, item: QTreeWidgetItem) -> None:
-        options = [part.strip() for part in tree_cell_text(self.enum_macros, item, 5).split(",") if part.strip()]
+        options = [part.strip() for part in tree_cell_text(self.enum_macros, item, 6).split(",") if part.strip()]
         if not options:
             return
-        current = tree_cell_text(self.enum_macros, item, 3)
+        current = tree_cell_text(self.enum_macros, item, 4)
         if current not in options:
             current = options[0]
-        set_tree_combo(self.enum_macros, item, 3, options, current)
+        set_tree_combo(self.enum_macros, item, 4, options, current)
 
     def replace_requirement_entity(self, old_entity: str, new_entity: str) -> None:
         if not old_entity or old_entity == new_entity:
             return
         for item in self.iter_requirement_items():
-            value = tree_cell_text(self.requirements, item, 5)
+            value = tree_cell_text(self.requirements, item, 6)
             if value == old_entity or value.startswith(f"{old_entity}."):
-                item.setText(5, new_entity + value[len(old_entity):])
+                item.setText(6, new_entity + value[len(old_entity):])
 
     def replace_project_entity_references(self, old_entity: str, new_entity: str, aliases: list[str] | None = None) -> None:
         if not old_entity or old_entity == new_entity:
@@ -3769,12 +4241,13 @@ class ProjectPage(SDPEPage):
                 self.hardware_tree.addTopLevelItem(node)
                 categories[category] = node
             label = f"{entity_id} (inherited)" if hw.get("inherited") else entity_id
-            entity_node = QTreeWidgetItem([label, self.entity_description(entity_id)])
+            source = hw.get("source", "project private")
+            entity_node = QTreeWidgetItem([label, self.entity_description(entity_id), source])
             entity_node.setData(0, Qt.ItemDataRole.UserRole, entity_id)
             entity_node.setData(0, Qt.ItemDataRole.UserRole + 1, "root")
             entity_node.setData(0, Qt.ItemDataRole.UserRole + 2, entity_id)
             categories[category].addChild(entity_node)
-            self.add_component_nodes(entity_node, entity_id, set(), entity_id, entity_id)
+            self.add_component_nodes(entity_node, entity_id, set(), entity_id, entity_id, source)
         self.hardware_tree.expandAll()
         fit_tree_key_columns(self.hardware_tree, description_col=1)
 
@@ -3785,6 +4258,7 @@ class ProjectPage(SDPEPage):
         seen: set[str],
         root_entity: str,
         path: str,
+        source: str,
     ) -> None:
         if entity_id in seen:
             return
@@ -3795,14 +4269,14 @@ class ProjectPage(SDPEPage):
             return
         for slot, comp in entity.components.items():
             child_path = f"{path}.{slot}"
-            child = QTreeWidgetItem([f"{slot}: {comp.entity.id}", comp.entity.description])
+            child = QTreeWidgetItem([f"{slot}: {comp.entity.id}", comp.entity.description, source])
             child.setData(0, Qt.ItemDataRole.UserRole, comp.entity.id)
             child.setData(0, Qt.ItemDataRole.UserRole + 1, "component")
             child.setData(0, Qt.ItemDataRole.UserRole + 2, root_entity)
             child.setData(0, Qt.ItemDataRole.UserRole + 3, slot)
             child.setData(0, Qt.ItemDataRole.UserRole + 4, child_path)
             parent.addChild(child)
-            self.add_component_nodes(child, comp.entity.id, seen, root_entity, child_path)
+            self.add_component_nodes(child, comp.entity.id, seen, root_entity, child_path, source)
 
     def entity_description(self, entity_id: str) -> str:
         try:
@@ -3894,13 +4368,12 @@ class ProjectPage(SDPEPage):
         root_item = self.hardware_root_item(item)
         is_component = item is not None and item.data(0, Qt.ItemDataRole.UserRole + 1) == "component"
         menu = QMenu(self)
-        menu.addAction("Insert hardware", lambda: self.add_hardware(category))
+        self.hardware_tree.add_standard_actions_to_menu(menu)
+        menu.addSeparator()
         replace_action = menu.addAction("Replace with same template", lambda: self.replace_tree_root_hardware(root_item))
         replace_action.setEnabled(root_item is not None)
         replace_component_action = menu.addAction("Replace selected submodule", lambda: self.replace_tree_submodule(item))
         replace_component_action.setEnabled(is_component)
-        delete_action = menu.addAction("Delete selected root hardware", self.remove_tree_root_hardware)
-        delete_action.setEnabled(root_item is not None)
         menu.exec(self.hardware_tree.viewport().mapToGlobal(pos))
 
     def show_hardware_table_context_menu(self, pos) -> None:
@@ -3908,10 +4381,10 @@ class ProjectPage(SDPEPage):
         menu = QMenu(self)
         if row >= 0:
             self.hardware.setCurrentCell(row, max(0, self.hardware.currentColumn()))
+        self.hardware.add_standard_actions_to_menu(menu)
+        menu.addSeparator()
         replace_action = menu.addAction("Replace with same template", lambda: self.replace_hardware_row(row))
         replace_action.setEnabled(row >= 0)
-        remove_action = menu.addAction("Remove hardware", self.remove_hardware)
-        remove_action.setEnabled(row >= 0)
         menu.exec(self.hardware.viewport().mapToGlobal(pos))
 
     def hardware_root_item(self, item: QTreeWidgetItem | None) -> QTreeWidgetItem | None:
@@ -3939,7 +4412,7 @@ class ProjectPage(SDPEPage):
         if item is None:
             return
         entity_id = item.data(0, Qt.ItemDataRole.UserRole)
-        for row in range(self.hardware.rowCount()):
+        for row in table_source_rows(self.hardware):
             if item_text(self.hardware, row, 0) == entity_id:
                 self.replace_hardware_row(row)
                 return
@@ -3969,31 +4442,235 @@ class ProjectPage(SDPEPage):
             self.requirements.setCurrentItem(item, max(0, col))
         menu = QMenu(self)
         is_requirement = item is not None and item.data(0, Qt.ItemDataRole.UserRole) == "requirement"
-        copy_action = menu.addAction("Copy selected rows", self.copy_selected_requirements)
-        copy_action.setEnabled(bool(self.selected_requirement_items()))
-        cut_action = menu.addAction("Cut selected rows", self.cut_selected_requirements)
-        cut_action.setEnabled(bool(self.selected_requirement_items()))
-        paste_action = menu.addAction("Paste rows", self.paste_requirements)
-        paste_action.setEnabled(bool(QApplication.clipboard().text().strip()))
+        menu.addAction("Create private requirement", self.add_private_requirement)
+        menu.addAction("Create Common requirement", self.add_common_requirement)
+        menu.addAction(self.requirements.action("add_group"))
         menu.addSeparator()
-        if is_requirement and col == 5:
+        for action_name in ("copy", "cut", "paste", "delete"):
+            menu.addAction(self.requirements.action(action_name))
+        menu.addSeparator()
+        if is_requirement and col == 6:
             menu.addAction("Edit in cell", lambda: self.edit_requirement_value_in_cell(item))
             menu.addAction("Edit in dialog", lambda: self.edit_requirement_value_dialog(item))
             menu.addAction("Select hardware parameter", lambda: self.select_requirement_hardware_parameter(item))
-        elif is_requirement and col == 6:
+        elif is_requirement and col == 7:
             menu.addAction("Edit description", lambda: self.edit_requirement_description(item))
-        else:
-            menu.addAction("Add group", self.add_requirement_group)
-            menu.addAction("Add requirement", self.add_requirement)
-            remove_action = menu.addAction("Remove selected", self.remove_requirement_item)
-            remove_action.setEnabled(is_requirement or item is not None)
+        if is_requirement:
+            menu.addSeparator()
+            if self.project_item_source(item).startswith("common:"):
+                menu.addAction(
+                    "Cover with private requirement",
+                    lambda: self.override_common_item("requirements", self.requirements, item),
+                )
+                menu.addAction(
+                    "Deploy common item to private projects...",
+                    lambda: self.deploy_common_item_to_projects("requirements", self.requirements, item),
+                )
+            else:
+                menu.addAction(
+                    "Move project item to common...",
+                    lambda: self.move_private_item_to_common("requirements", self.requirements, item),
+                )
         menu.exec(self.requirements.viewport().mapToGlobal(pos))
 
     def edit_requirement_description(self, item: QTreeWidgetItem) -> None:
-        text = edit_multiline(self, "Requirement Description", tree_cell_text(self.requirements, item, 6))
+        text = edit_multiline(self, "Requirement Description", tree_cell_text(self.requirements, item, 7))
         if text is not None:
-            item.setText(6, text)
+            item.setText(7, text)
             self.mark_current_dirty()
+
+    def override_common_item(self, kind: str, tree: SDPETreeWidget, item: QTreeWidgetItem) -> None:
+        if not self.project_item_source(item).startswith("common:"):
+            return
+        macro_col = 1 if kind == "requirements" else 0
+        macro = tree_cell_text(tree, item, macro_col)
+        existing = next(
+            (
+                candidate
+                for candidate in tree.iter_items()
+                if candidate.data(0, Qt.ItemDataRole.UserRole) != "group"
+                and self.project_item_source(candidate) == "project private"
+                and tree_cell_text(tree, candidate, macro_col) == macro
+            ),
+            None,
+        )
+        if existing is not None:
+            tree.setCurrentItem(existing)
+            self.enforce_override_hierarchy()
+            return
+        group = self.item_group_ancestor(item)
+        if group is None:
+            self.error("The Common item has no owning group.")
+            return
+        payload, _group_name = self.project_item_payload(kind, tree, item)
+        payload[SOURCE_KEY] = "project private"
+        payload["weak"] = False
+        if kind == "requirements":
+            private_item = self.add_requirement_item(group, payload)
+        else:
+            macro_type = "option" if kind == "option_macros" else "feature"
+            private_item = self.add_macro_item(tree, macro_type, group, payload)
+        self.enforce_override_hierarchy()
+        tree.setCurrentItem(private_item)
+        self.mark_current_dirty()
+
+    def common_path_for_source(self, source: str) -> Path | None:
+        for index, (path, data) in enumerate(self.current_common_requirements):
+            if source == f"common:{data.get('id', index + 1)}":
+                return path
+        return None
+
+    def project_item_payload(
+        self,
+        kind: str,
+        tree: QTreeWidget,
+        item: QTreeWidgetItem,
+    ) -> tuple[dict[str, Any], str]:
+        if kind == "requirements":
+            payload = self.requirement_item_to_data(item)
+        else:
+            payload = self.macro_item_to_data(tree, item, "option" if kind == "option_macros" else "feature")
+        return payload, tree.group_path(item) or ("Requirements" if kind == "requirements" else "Macros")
+
+    def remove_item_from_project_data(self, data: dict[str, Any], kind: str, payload: dict[str, Any]) -> None:
+        rows = data.setdefault(kind, [])
+        key = "role" if kind == "requirements" else "macro"
+        value = payload.get(key, payload.get("macro", ""))
+        removed = False
+        retained = []
+        for row in rows:
+            if not removed and row.get(key, row.get("macro", "")) == value:
+                removed = True
+                continue
+            retained.append(row)
+        data[kind] = retained
+        if kind == "requirements":
+            for group in data.get("requirement_groups", []):
+                names = list(group.get("requirements", []))
+                if value in names:
+                    names.remove(value)
+                group["requirements"] = names
+
+    def append_item_to_project_data(
+        self,
+        data: dict[str, Any],
+        kind: str,
+        payload: dict[str, Any],
+        group_name: str,
+    ) -> None:
+        clean = {key: value for key, value in payload.items() if not key.startswith("__sdpe_")}
+        if kind == "requirements":
+            data.setdefault("requirements", []).append(clean)
+            groups = data.setdefault("requirement_groups", [])
+            group = next((entry for entry in groups if entry.get("name") == group_name), None)
+            if group is None:
+                group = {"name": group_name, "requirements": []}
+                groups.append(group)
+            name = clean.get("role", clean.get("macro", ""))
+            group.setdefault("requirements", []).append(name)
+        else:
+            clean["group"] = group_name
+            data.setdefault(kind, []).append(clean)
+            group_key = "option_macro_groups" if kind == "option_macros" else "feature_macro_groups"
+            groups = data.setdefault(group_key, [])
+            if group_name not in groups:
+                groups.append(group_name)
+
+    def save_private_before_migration(self) -> tuple[Path, dict[str, Any]]:
+        project_path = self.window.project_path(self.current_id).resolve()
+        data = self.collect_current_data()
+        if data is None:
+            raise SDPEError("No project requirement is open.")
+        self.write_project_snapshot(self.current_id, data)
+        private = self.clone_data(data)
+        private.pop(PROJECT_COMMON_SNAPSHOT_KEY, None)
+        return project_path, private
+
+    def finish_project_migration(self, message: str) -> None:
+        self.dirty_ids.discard(self.current_id)
+        self.drafts.pop(self.current_id, None)
+        self.window.reload()
+        self.refresh_list()
+        self.load_current()
+        self.message("Requirement deployment", message)
+
+    def move_private_item_to_common(self, kind: str, tree: QTreeWidget, item: QTreeWidgetItem) -> None:
+        if not self.current_common_requirements:
+            self.message("Requirement deployment", "Bind at least one common requirement first.")
+            return
+        choices = {
+            f"{data.get('display_name', data.get('id', path.stem))} | {path}": path
+            for path, data in self.current_common_requirements
+        }
+        selected = choose_item(self, "Move project item to common", list(choices))
+        if not selected:
+            return
+        try:
+            project_path, private = self.save_private_before_migration()
+            common_path = choices[selected]
+            common = read_json(common_path)
+            payload, group_name = self.project_item_payload(kind, tree, item)
+            self.remove_item_from_project_data(private, kind, payload)
+            self.append_item_to_project_data(common, kind, payload, group_name)
+            private["updated_at"] = date.today().isoformat()
+            common["updated_at"] = date.today().isoformat()
+            self.window.write_json(project_path, private)
+            self.window.write_json(common_path, common)
+            self.finish_project_migration(f"Moved item to {common_path}")
+        except Exception as exc:  # pragma: no cover - GUI guard.
+            self.error(str(exc))
+
+    def private_projects_for_common(self, common_path: Path) -> list[Path]:
+        candidates = list(project_requirement_paths(common_path))
+        paths = self.window.project_paths()
+        private_paths = [path for path in paths if "sdpe_general" not in {part.lower() for part in path.parts}]
+        for path in private_paths or paths:
+            if path.resolve() == common_path.resolve():
+                continue
+            try:
+                if common_path.resolve() in resolve_common_requirement_paths(path, read_json(path)):
+                    candidates.append(path.resolve())
+            except Exception:
+                continue
+        return sorted(dict.fromkeys(candidates))
+
+    def deploy_common_item_to_projects(self, kind: str, tree: QTreeWidget, item: QTreeWidgetItem) -> None:
+        common_path = self.common_path_for_source(self.project_item_source(item))
+        if common_path is None:
+            self.message("Requirement deployment", "The common source file could not be resolved.")
+            return
+        choices = {
+            f"{read_json(path).get('display_name', read_json(path).get('id', path.stem))} | {path}": path
+            for path in self.private_projects_for_common(common_path)
+        }
+        selected = choose_multiple_items(self, "Deploy common item to private projects", list(choices))
+        if not selected:
+            return
+        try:
+            self.save_private_before_migration()
+            payload, group_name = self.project_item_payload(kind, tree, item)
+            common = read_json(common_path)
+            self.remove_item_from_project_data(common, kind, payload)
+            common["updated_at"] = date.today().isoformat()
+            self.window.write_json(common_path, common)
+            for label in selected:
+                project_path = choices[label]
+                private = read_json(project_path)
+                self.append_item_to_project_data(private, kind, payload, group_name)
+                references = common_requirement_references(private)
+                reference = common_requirement_reference(project_path, common_path)
+                if not any(
+                    resolved == common_path.resolve()
+                    for resolved in resolve_common_requirement_paths(project_path, private)
+                ):
+                    references.append(reference)
+                private[COMMON_REQUIREMENTS_KEY] = list(dict.fromkeys(references))
+                private.pop("common_requirement", None)
+                private["updated_at"] = date.today().isoformat()
+                self.window.write_json(project_path, private)
+            self.finish_project_migration(f"Deployed item to {len(selected)} private project(s).")
+        except Exception as exc:  # pragma: no cover - GUI guard.
+            self.error(str(exc))
 
     def jump_from_requirement_item(self, item: QTreeWidgetItem | None) -> None:
         if self.loading or item is None or item.data(0, Qt.ItemDataRole.UserRole) != "requirement":
@@ -4010,7 +4687,11 @@ class ProjectPage(SDPEPage):
         try:
             data = self.collect_current_data()
             if data is not None:
-                self.set_code_text(self.window.generator().render_project_header(data))
+                private = self.clone_data(data)
+                private.pop(PROJECT_COMMON_SNAPSHOT_KEY, None)
+                self.set_code_text(
+                    self.window.generator().render_project_header(private, self.common_data_for_current(data))
+                )
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
 
@@ -4019,12 +4700,12 @@ class ProjectPage(SDPEPage):
             self.save_current()
             if not self.current_id:
                 return
-            files = self.window.generator().generate_project(self.window.project_path(self.current_id))
-            for item in files:
-                if item.path.suffix.lower() == ".h" and item.path.exists():
-                    self.set_code_text(item.path.read_text(encoding="utf-8"))
-                    break
-            self.message("Generated", "\n".join(str(item.path) for item in files))
+            project_path = self.window.project_path(self.current_id)
+            self.window.generator().generate_project(project_path)
+            header_path = self.window.generator().project_header_path(read_json(project_path))
+            if header_path.is_file():
+                self.set_code_text(header_path.read_text(encoding="utf-8"), reveal=False)
+            self.message("Generated project header", str(header_path))
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
 
@@ -4045,28 +4726,32 @@ class BindingPage(SDPEPage):
 
     def __init__(self, window: "MainWindow"):
         super().__init__(window, "SDPE Project Overview", has_code=True)
-        self.overview = QTreeWidget()
-        self.overview.setHeaderLabels(["Item", "Macro", "Value", "Source", "Description"])
-        self.overview.setAlternatingRowColors(True)
-        self.overview.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.overview = SDPETreeWidget()
+        self.overview.configure(
+            ["Item", "Macro", "Value", "Source", "Description"],
+            description_col=4,
+            editable=False,
+            draggable=False,
+        )
+        for action_name in ("cut", "paste", "delete"):
+            self.overview.set_action_enabled(action_name, False)
         fit_tree_key_columns(self.overview, description_col=4, interactive=True)
-        install_tree_status_descriptions(self.overview, description_col=4)
 
-        preview = QPushButton("Preview project header")
-        preview.clicked.connect(self.preview_project)
         generate = QPushButton("Generate project header")
         generate.clicked.connect(self.generate_project)
         generate_matlab = QPushButton("Generate MATLAB Init Script")
         generate_matlab.clicked.connect(self.generate_matlab_init_script)
 
-        self.form_layout.addLayout(row_buttons([preview, generate, generate_matlab]))
+        self.form_layout.addLayout(row_buttons([generate, generate_matlab]))
         self.form_layout.addWidget(QLabel("Supported project macros"))
         self.form_layout.addWidget(self.overview)
 
     def refresh_list(self) -> None:
         current = self.current_id
         self.list_widget.clear()
-        for path in self.window.project_paths():
+        paths = self.window.project_paths()
+        private_paths = [path for path in paths if "sdpe_general" not in {part.lower() for part in path.parts}]
+        for path in private_paths or paths:
             data = read_json(path)
             if not self.filter_match([data.get("id", ""), data.get("display_name", ""), data.get("suite", "")]):
                 continue
@@ -4081,15 +4766,19 @@ class BindingPage(SDPEPage):
         if not self.current_id:
             return
         self.loading = True
-        data = self.data_for_id(self.current_id, self.window.project_path(self.current_id))
-        self.populate_overview(data)
+        project_path = self.window.project_path(self.current_id)
+        data = self.data_for_id(self.current_id, project_path)
+        common_pairs = [(path, read_json(path)) for path in resolve_common_requirement_paths(project_path, data)]
+        commons = [item for _path, item in common_pairs]
+        merged = merged_project_view(data, commons)
+        self.populate_overview(merged)
         self.set_professional_text(pretty_json(data))
         try:
-            self.set_code_text(self.generator().render_project_header(data), reveal=False)
+            self.set_code_text(self.generator().render_project_header(data, commons), reveal=False)
         except Exception as exc:
             self.code_panel.setPlainText(f"// Failed to render project header preview:\n// {exc}")
         try:
-            self.set_matlab_text(self.generator().render_project_matlab_script(data), reveal=False)
+            self.set_matlab_text(self.generator().render_project_matlab_script(data, commons), reveal=False)
         except Exception as exc:
             self.matlab_panel.setPlainText(f"% Failed to render MATLAB init preview:\n% {exc}")
         self.loading = False
@@ -4249,15 +4938,21 @@ class BindingPage(SDPEPage):
 
     def preview_project(self) -> None:
         try:
-            data = read_json(self.window.project_path(self.current_id))
-            self.set_code_text(self.generator().render_project_header(data))
+            project_path = self.window.project_path(self.current_id)
+            data = read_json(project_path)
+            commons = [read_json(path) for path in resolve_common_requirement_paths(project_path, data)]
+            self.set_code_text(self.generator().render_project_header(data, commons))
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
 
     def generate_project(self) -> None:
         try:
-            files = self.generator().generate_project(self.window.project_path(self.current_id))
-            self.message("Generated", "\n".join(str(item.path) for item in files))
+            project_path = self.window.project_path(self.current_id)
+            self.generator().generate_project(project_path)
+            header_path = self.generator().project_header_path(read_json(project_path))
+            if header_path.is_file():
+                self.set_code_text(header_path.read_text(encoding="utf-8"), reveal=False)
+            self.message("Generated project header", str(header_path))
         except Exception as exc:  # pragma: no cover - GUI guard.
             self.error(str(exc))
 
@@ -4282,6 +4977,9 @@ class SettingsPage(QWidget):
         self.entity_dirs = QTextEdit()
         self.project_dirs = QTextEdit()
         self.out_dir = QLineEdit(str(window.default_output_dir))
+        self.theme_combo = QComboBox()
+        self.theme_combo.addItems(["System", "Light", "Dark"])
+        self.theme_combo.setCurrentText(window.theme.title())
 
         self.schema_dirs.setPlainText("\n".join(str(path) for path in window.schema_dirs))
         self.entity_dirs.setPlainText("\n".join(str(path) for path in window.entity_dirs))
@@ -4292,6 +4990,7 @@ class SettingsPage(QWidget):
         form.addRow("Entity Paths", self.entity_dirs)
         form.addRow("Project Paths", self.project_dirs)
         form.addRow("Header Output", self.out_dir)
+        form.addRow("Appearance", self.theme_combo)
 
         apply_btn = QPushButton("Apply Settings")
         apply_btn.clicked.connect(self.apply_settings)
@@ -4304,9 +5003,11 @@ class SettingsPage(QWidget):
         self.window.entity_dirs = parse_path_lines(self.entity_dirs.toPlainText()) or self.window.entity_dirs
         self.window.project_dirs = parse_path_lines(self.project_dirs.toPlainText()) or self.window.project_dirs
         self.window.default_output_dir = Path(self.out_dir.text()).resolve()
+        self.window.apply_theme(self.theme_combo.currentText().lower())
+        self.window.save_theme_preference()
         self.window.reload()
         self.window.refresh_pages()
-        QMessageBox.information(self, "Settings", "Settings applied.")
+        self.window.statusBar().showMessage("Settings applied.", 2600)
 
 
 class MainWindow(QMainWindow):
@@ -4326,8 +5027,16 @@ class MainWindow(QMainWindow):
         system_entity_dirs: list[Path] | None = None,
         system_out_dir: Path | None = None,
         system_include_prefix: str = "ctl",
+        settings_path: Path | None = None,
+        theme: str = "system",
     ):
         super().__init__()
+        app = QApplication.instance()
+        self._system_palette = QPalette(app.palette()) if app is not None else QPalette()
+        self._system_style_name = app.style().objectName() if app is not None else ""
+        self.settings_path = settings_path
+        self.theme = "system"
+        self.apply_theme(theme)
         self.library_root = library_root
         self.mode = mode
         self.schema_dirs = schema_dirs or [library_root / "schemas"]
@@ -4344,6 +5053,8 @@ class MainWindow(QMainWindow):
         self.library = self.load_library()
         self.setWindowTitle(f"SDPE v2 Manager - {mode} - {library_root}")
         self.resize(1360, 820)
+        self.active_data_view: SDPEDataViewMixin | None = None
+        self._activating_data_view = False
         self.tabs = QTabWidget()
         self.pages: list[SDPEPage] = []
         if mode in {"all", "library"}:
@@ -4357,10 +5068,81 @@ class MainWindow(QMainWindow):
             self.tabs.addTab(page, page.title)
         self.tabs.addTab(self.settings_page, self.settings_page.title)
         self.setCentralWidget(self.tabs)
+        self.status_context = QLabel()
+        self.status_context.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        self.statusBar().addPermanentWidget(self.status_context, 1)
         self.create_menus()
-        self.tabs.currentChanged.connect(lambda _index: self.update_menu_actions())
+        self.create_data_tools()
+        self.register_data_views()
+        self.tabs.currentChanged.connect(self.on_tab_changed)
         self.update_menu_actions()
         self.refresh_pages()
+        self.update_data_tools(self.default_data_view(self.current_sdpe_page()))
+        self.refresh_status_bar()
+
+    def apply_theme(self, theme: str) -> None:
+        """Apply the selected system, light, or dark application palette."""
+
+        app = QApplication.instance()
+        if app is None:
+            return
+        theme = theme.strip().lower()
+        if theme not in {"system", "light", "dark"}:
+            theme = "system"
+        self.theme = theme
+        app.setStyleSheet("")
+        if theme == "system":
+            if self._system_style_name:
+                app.setStyle(self._system_style_name)
+            app.setPalette(QPalette(self._system_palette))
+            return
+
+        app.setStyle("Fusion")
+        palette = QPalette()
+        if theme == "light":
+            colors = {
+                QPalette.ColorRole.Window: QColor(244, 246, 248),
+                QPalette.ColorRole.WindowText: QColor(24, 28, 32),
+                QPalette.ColorRole.Base: QColor(255, 255, 255),
+                QPalette.ColorRole.AlternateBase: QColor(240, 243, 246),
+                QPalette.ColorRole.ToolTipBase: QColor(255, 255, 255),
+                QPalette.ColorRole.ToolTipText: QColor(24, 28, 32),
+                QPalette.ColorRole.Text: QColor(24, 28, 32),
+                QPalette.ColorRole.Button: QColor(236, 239, 242),
+                QPalette.ColorRole.ButtonText: QColor(24, 28, 32),
+                QPalette.ColorRole.Highlight: QColor(0, 105, 170),
+                QPalette.ColorRole.HighlightedText: QColor(255, 255, 255),
+                QPalette.ColorRole.PlaceholderText: QColor(105, 112, 120),
+            }
+        else:
+            colors = {
+                QPalette.ColorRole.Window: QColor(38, 41, 45),
+                QPalette.ColorRole.WindowText: QColor(232, 235, 238),
+                QPalette.ColorRole.Base: QColor(27, 30, 33),
+                QPalette.ColorRole.AlternateBase: QColor(45, 49, 53),
+                QPalette.ColorRole.ToolTipBase: QColor(49, 53, 57),
+                QPalette.ColorRole.ToolTipText: QColor(239, 241, 243),
+                QPalette.ColorRole.Text: QColor(232, 235, 238),
+                QPalette.ColorRole.Button: QColor(52, 56, 61),
+                QPalette.ColorRole.ButtonText: QColor(232, 235, 238),
+                QPalette.ColorRole.Highlight: QColor(42, 130, 190),
+                QPalette.ColorRole.HighlightedText: QColor(255, 255, 255),
+                QPalette.ColorRole.PlaceholderText: QColor(160, 166, 172),
+            }
+        for role, color in colors.items():
+            palette.setColor(role, color)
+        palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, QColor(128, 133, 138))
+        palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, QColor(128, 133, 138))
+        app.setPalette(palette)
+
+    def save_theme_preference(self) -> None:
+        if self.settings_path is None:
+            return
+        data = read_json(self.settings_path) if self.settings_path.exists() else {}
+        gui = dict(data.get("gui", {}))
+        gui["theme"] = self.theme
+        data["gui"] = gui
+        self.write_json(self.settings_path, data)
 
     def load_library(self) -> SDPELibrary:
         return SDPELibrary(self.library_root, self.schema_dirs, self.entity_dirs).load()
@@ -4413,10 +5195,22 @@ class MainWindow(QMainWindow):
         edit_menu = self.menuBar().addMenu("&Edit")
         self.action_undo = self.add_menu_action(edit_menu, "Undo", self.undo_current_page)
         edit_menu.addSeparator()
-        self.add_menu_action(edit_menu, "Copy", lambda: self.call_focused_edit("copy"))
-        self.add_menu_action(edit_menu, "Cut", lambda: self.call_focused_edit("cut"))
-        self.add_menu_action(edit_menu, "Paste", lambda: self.call_focused_edit("paste"))
-        self.add_menu_action(edit_menu, "Select all", lambda: self.call_focused_edit("selectAll"))
+        self.action_add_group = self.add_menu_action(edit_menu, "Add group", lambda: self.call_active_data_action("add_group"))
+        self.action_add_item = self.add_menu_action(edit_menu, "Add item", lambda: self.call_active_data_action("add_item"))
+        edit_menu.addSeparator()
+        self.action_copy = self.add_menu_action(edit_menu, "Copy", lambda: self.call_focused_edit("copy"))
+        self.action_cut = self.add_menu_action(edit_menu, "Cut", lambda: self.call_focused_edit("cut"))
+        self.action_paste = self.add_menu_action(edit_menu, "Paste", lambda: self.call_focused_edit("paste"))
+        self.action_delete = self.add_menu_action(edit_menu, "Delete selected rows", lambda: self.call_active_data_action("delete"))
+        self.action_select_all = self.add_menu_action(edit_menu, "Select all", lambda: self.call_focused_edit("selectAll"))
+        edit_menu.aboutToShow.connect(self.update_edit_menu_actions)
+
+        tools_menu = self.menuBar().addMenu("&Tools")
+        self.action_resolve_duplicates = self.add_menu_action(
+            tools_menu,
+            "Resolve duplicate macros...",
+            lambda: self.call_page_action("resolve_project_duplicate_macros"),
+        )
 
         generate_menu = self.menuBar().addMenu("&Generate")
         self.action_preview_header = self.add_menu_action(generate_menu, "Preview header", self.preview_current_header)
@@ -4424,6 +5218,127 @@ class MainWindow(QMainWindow):
         self.action_generate_matlab = self.add_menu_action(generate_menu, "Generate MATLAB init script", self.generate_current_matlab_init)
         generate_menu.addSeparator()
         self.action_validate_macros = self.add_menu_action(generate_menu, "Validate macros", self.validate_current_macros)
+
+    def create_data_tools(self) -> None:
+        toolbar = QToolBar("Data search and sort", self)
+        toolbar.setObjectName("sdpe_data_search_sort")
+        self.addToolBar(toolbar)
+        toolbar.addWidget(QLabel("Find"))
+        self.data_search = QLineEdit()
+        self.data_search.setPlaceholderText("Filter active table")
+        self.data_search.setClearButtonEnabled(True)
+        self.data_search.setMinimumWidth(220)
+        toolbar.addWidget(self.data_search)
+        previous = QPushButton("Prev")
+        next_ = QPushButton("Next")
+        previous.clicked.connect(lambda: self.find_data_text(False))
+        next_.clicked.connect(lambda: self.find_data_text(True))
+        toolbar.addWidget(previous)
+        toolbar.addWidget(next_)
+        self.data_match_case = QCheckBox("Match case")
+        self.data_regex = QCheckBox("Regex")
+        toolbar.addWidget(self.data_match_case)
+        toolbar.addWidget(self.data_regex)
+        toolbar.addSeparator()
+        toolbar.addWidget(QLabel("Sort"))
+        self.data_sort_column = QComboBox()
+        self.data_sort_order = QComboBox()
+        self.data_sort_order.addItems(["Default order", "A to Z", "Z to A"])
+        toolbar.addWidget(self.data_sort_column)
+        toolbar.addWidget(self.data_sort_order)
+        self.data_search.textChanged.connect(lambda _text: self.apply_data_filter())
+        self.data_search.returnPressed.connect(lambda: self.find_data_text(True))
+        self.data_match_case.toggled.connect(lambda _checked: self.apply_data_filter())
+        self.data_regex.toggled.connect(lambda _checked: self.apply_data_filter())
+        self.data_sort_column.currentIndexChanged.connect(lambda _index: self.apply_data_sort())
+        self.data_sort_order.currentIndexChanged.connect(lambda _index: self.apply_data_sort())
+
+    def update_data_tools(self, view: SDPEDataViewMixin | None) -> None:
+        view = view or self.default_data_view(self.current_sdpe_page())
+        self.data_sort_column.blockSignals(True)
+        self.data_sort_order.blockSignals(True)
+        self.data_sort_column.clear()
+        if view is not None:
+            self.data_sort_column.addItems(view.header_labels())
+            labels = view.header_labels()
+            active_column = getattr(view, "_sdpe_sort_column", None)
+            if active_column is None:
+                active_column = next(
+                    (index for index, label in enumerate(labels) if label.lower() == "name"),
+                    next((index for index, label in enumerate(labels) if label.lower() == "macro"), 0),
+                )
+            self.data_sort_column.setCurrentIndex(active_column)
+            ascending = getattr(view, "_sdpe_sort_ascending", None)
+            self.data_sort_order.setCurrentIndex(0 if ascending is None else (1 if ascending else 2))
+        else:
+            self.data_sort_order.setCurrentIndex(0)
+        self.data_sort_column.blockSignals(False)
+        self.data_sort_order.blockSignals(False)
+        self.apply_data_filter()
+
+    def default_data_view(self, page: SDPEPage | None) -> SDPEDataViewMixin | None:
+        """Return a visible table for search/sort before the user selects a row."""
+
+        views = self.data_views_for_page(page)
+        if not views:
+            return None
+        visible = [view for view in views if view.isVisible()]
+        return visible[0] if visible else views[0]
+
+    def search_data_view(self) -> SDPEDataViewMixin | None:
+        return self.current_active_data_view() or self.default_data_view(self.current_sdpe_page())
+
+    def apply_data_filter(self) -> None:
+        view = self.search_data_view()
+        if view is None:
+            return
+        valid = view.apply_text_filter(
+            self.data_search.text(),
+            self.data_match_case.isChecked(),
+            self.data_regex.isChecked(),
+        )
+        if not valid:
+            self.statusBar().showMessage("Invalid regular expression.", 2600)
+
+    def find_data_text(self, forward: bool) -> None:
+        view = self.search_data_view()
+        if view is None:
+            self.statusBar().showMessage("No SDPE data table is available for search.", 2200)
+            return
+        if self.active_data_view is not view:
+            self.activate_data_view(view)
+        found = view.find_text(
+            self.data_search.text(),
+            forward,
+            self.data_match_case.isChecked(),
+            self.data_regex.isChecked(),
+        )
+        if not found:
+            self.statusBar().showMessage("No matching table item found.", 2200)
+
+    def apply_data_sort(self) -> None:
+        view = self.current_active_data_view()
+        if view is None or self.data_sort_column.currentIndex() < 0:
+            return
+        sort_order = self.data_sort_order.currentIndex()
+        if sort_order == 0:
+            view.clear_display_sort()
+            return
+        view.apply_display_sort(self.data_sort_column.currentIndex(), sort_order == 1)
+
+    def sync_data_sort_controls(self, view: SDPEDataViewMixin, column: int, state: int) -> None:
+        """Reflect a column-header sort gesture in the shared toolbar."""
+
+        if view is not self.search_data_view():
+            return
+        self.data_sort_column.blockSignals(True)
+        self.data_sort_order.blockSignals(True)
+        try:
+            self.data_sort_column.setCurrentIndex(column)
+            self.data_sort_order.setCurrentIndex(state)
+        finally:
+            self.data_sort_column.blockSignals(False)
+            self.data_sort_order.blockSignals(False)
 
     def add_menu_action(self, menu: QMenu, text: str, callback, shortcut: QKeySequence | QKeySequence.StandardKey | None = None) -> QAction:
         action = QAction(text, self)
@@ -4436,6 +5351,124 @@ class MainWindow(QMainWindow):
     def current_sdpe_page(self) -> SDPEPage | None:
         widget = self.tabs.currentWidget()
         return widget if isinstance(widget, SDPEPage) else None
+
+    def register_data_views(self) -> None:
+        """Connect every editable data view to focus, undo, and status services."""
+
+        for page in self.pages:
+            views = [*page.findChildren(SDPETableWidget), *page.findChildren(SDPETreeWidget)]
+            for view in views:
+                if view is page.list_widget:
+                    continue
+                view.activated.connect(self.activate_data_view)
+                view.itemSelectionChanged.connect(lambda v=view: self.activate_data_view(v))
+                view.mutationStarted.connect(page.begin_undo_transaction)
+                view.mutationFinished.connect(page.finish_undo_transaction)
+                view.statusTextChanged.connect(lambda text, v=view: self.show_data_status(v, text))
+                view.displaySortChanged.connect(
+                    lambda column, state, v=view: self.sync_data_sort_controls(v, column, state)
+                )
+
+    def data_views_for_page(self, page: SDPEPage | None) -> list[SDPEDataViewMixin]:
+        if page is None:
+            return []
+        return [
+            view
+            for view in [*page.findChildren(SDPETableWidget), *page.findChildren(SDPETreeWidget)]
+            if view is not page.list_widget
+        ]
+
+    def activate_data_view(self, view: SDPEDataViewMixin) -> None:
+        if self._activating_data_view:
+            return
+        page = self.current_sdpe_page()
+        if page is None or view not in self.data_views_for_page(page):
+            return
+        if self.active_data_view is view:
+            view.publish_current_status()
+            return
+        self._activating_data_view = True
+        try:
+            previous = self.active_data_view
+            if previous is not None and previous is not view:
+                previous.apply_text_filter("")
+            for other in self.data_views_for_page(page):
+                if other is not view:
+                    other.clearSelection()
+            self.active_data_view = view
+        finally:
+            self._activating_data_view = False
+        self.update_edit_menu_actions()
+        self.update_data_tools(view)
+        view.publish_current_status()
+
+    def current_active_data_view(self) -> SDPEDataViewMixin | None:
+        page = self.current_sdpe_page()
+        views = self.data_views_for_page(page)
+        if self.active_data_view in views:
+            return self.active_data_view
+        focus = QApplication.focusWidget()
+        current = focus
+        while current is not None:
+            if current in views:
+                self.active_data_view = current
+                return current
+            current = current.parentWidget()
+        selected = [view for view in views if view.selectedIndexes()]
+        if len(selected) == 1:
+            self.active_data_view = selected[0]
+            return selected[0]
+        return None
+
+    def call_active_data_action(self, action_name: str) -> None:
+        view = self.current_active_data_view()
+        if view is None:
+            self.statusBar().showMessage("Select a data table before using this edit action.", 2600)
+            return
+        view.run_action(action_name)
+
+    def update_edit_menu_actions(self) -> None:
+        view = self.current_active_data_view()
+        for name, menu_action, fallback in (
+            ("add_group", self.action_add_group, "Add group"),
+            ("add_item", self.action_add_item, "Add item"),
+        ):
+            source = view.action(name) if view is not None else None
+            menu_action.setText(source.text() if source is not None else fallback)
+            menu_action.setEnabled(bool(source is not None and source.isVisible() and source.isEnabled()))
+        for name, menu_action in (
+            ("copy", self.action_copy),
+            ("cut", self.action_cut),
+            ("paste", self.action_paste),
+            ("delete", self.action_delete),
+        ):
+            source = view.action(name) if view is not None else None
+            menu_action.setEnabled(bool(source is not None and source.isEnabled()))
+        self.action_select_all.setEnabled(view is not None)
+
+    def on_tab_changed(self, _index: int) -> None:
+        if self.active_data_view is not None:
+            self.active_data_view.apply_text_filter("")
+        self.active_data_view = None
+        self.update_menu_actions()
+        self.update_edit_menu_actions()
+        self.update_data_tools(self.default_data_view(self.current_sdpe_page()))
+        self.refresh_status_bar()
+
+    def show_data_status(self, view: SDPEDataViewMixin, text: str) -> None:
+        if view is self.current_active_data_view() and text.strip():
+            page = self.current_sdpe_page()
+            prefix = f"{page.title}: " if page is not None else ""
+            self.status_context.setText(prefix + text.strip())
+
+    def refresh_status_bar(self) -> None:
+        page = self.current_sdpe_page()
+        view = self.current_active_data_view()
+        text = view.current_status_text() if view is not None else ""
+        if text:
+            self.show_data_status(view, text)
+        else:
+            self.status_context.setText(f"Ready | {page.title if page is not None else 'Settings'}")
 
     def call_page_action(self, action_name: str) -> bool:
         page = self.current_sdpe_page()
@@ -4490,6 +5523,11 @@ class MainWindow(QMainWindow):
         if callable(method):
             method()
             return
+        view = self.current_active_data_view()
+        method = getattr(view, method_name, None) if view is not None else None
+        if callable(method):
+            method()
+            return
         self.statusBar().showMessage("The focused control does not support this edit action.", 2600)
 
     def update_menu_actions(self) -> None:
@@ -4517,6 +5555,10 @@ class MainWindow(QMainWindow):
         )
         self.action_generate_matlab.setEnabled(has_page and callable(getattr(page, "generate_matlab_init_script", None)))
         self.action_validate_macros.setEnabled(has_page and callable(getattr(page, "validate_project_macros", None)))
+        self.action_resolve_duplicates.setEnabled(
+            has_page and callable(getattr(page, "resolve_project_duplicate_macros", None))
+        )
+        self.update_edit_menu_actions()
 
     def closeEvent(self, event) -> None:  # noqa: N802 - Qt override
         dirty: list[tuple[SDPEPage, str, Path]] = []
@@ -4709,6 +5751,8 @@ def main(argv: list[str] | None = None) -> int:
         system_entity_dirs=[expand_settings_path(path) for path in system_cfg.get("entity_dirs", [])],
         system_out_dir=expand_settings_path(system_cfg["out"]) if system_cfg.get("out") else None,
         system_include_prefix=str(system_cfg.get("include_prefix", "ctl")),
+        settings_path=args.settings.resolve(),
+        theme=str(settings.get("gui", {}).get("theme", "system")),
     )
     window.show()
     return app.exec()

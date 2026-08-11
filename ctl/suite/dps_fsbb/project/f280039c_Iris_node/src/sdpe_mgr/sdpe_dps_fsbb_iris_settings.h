@@ -8,6 +8,7 @@
 #ifndef _PROJECT_SDPE_DPS_FSBB_IRIS_SETTINGS_H_
 #define _PROJECT_SDPE_DPS_FSBB_IRIS_SETTINGS_H_
 
+#include <ctl/hardware_preset/half_bridge/gmp_lvfb_150_2ph_v2.h>
 #include <ctl/hardware_preset/mcu_board/iris_f280039c_node.h>
 
 #ifdef __cplusplus
@@ -16,8 +17,10 @@ extern "C"
 #endif
 
 // User project prefix code
-#include <sdpe_dps_fsbb_common_settings.h>
 /* Project-specific includes can be added here if the migrated project needs extra headers. */
+
+// Common prefix code: DPS FSBB Common Control
+/* Shared FSBB control contract. */
 
 //=================================================================================================
 /**
@@ -27,7 +30,7 @@ extern "C"
 #define DPS_FSBB_IRIS_SDPE_PROJECT_ID "dps_fsbb_f280039c_Iris_node"
 #define DPS_FSBB_IRIS_SDPE_PROJECT_SUITE "dps_fsbb"
 #define DPS_FSBB_IRIS_SDPE_PROJECT_VERSION "0.1.0"
-#define DPS_FSBB_IRIS_SDPE_PROJECT_UPDATED_AT "2026-07-16"
+#define DPS_FSBB_IRIS_SDPE_PROJECT_UPDATED_AT "2026-08-08"
 
 //=================================================================================================
 /**
@@ -196,6 +199,11 @@ extern "C"
  */
 
 /**
+ * @brief Number of samples stored per channel by the four-channel hardware Data Link Scope.
+ */
+#define GMP_DL_SCOPE_DEPTH (100)
+
+/**
  * @brief PWM compare maximum value for the configured ePWM time base.
  */
 #define CTRL_PWM_CMP_MAX (3000 - 1)
@@ -214,6 +222,334 @@ extern "C"
  * @brief C2000 system tick divider derived from PWM period.
  */
 #define DSP_C2000_DSP_TIME_DIV (CTRL_SYS_FREQUENCY / 1000 / CTRL_PWM_CMP_MAX / 2)
+
+//=================================================================================================
+/**
+ * @brief Common fallbacks: DPS FSBB Common Control.
+ */
+
+//=================================================================================================
+/**
+ * @brief Requirement bindings.
+ */
+
+/**
+ * @brief Enable the four ADC slots used by the FSBB SIL input ABI.
+ */
+#ifndef GMP_PIL_RX_MASK
+#define GMP_PIL_RX_MASK (15)
+#endif // GMP_PIL_RX_MASK
+
+/**
+ * @brief Enable two PWM slots and eight monitor slots used by the FSBB SIL output ABI.
+ */
+#ifndef GMP_PIL_TX_MASK
+#define GMP_PIL_TX_MASK (16711683)
+#endif // GMP_PIL_TX_MASK
+
+/**
+ * @brief FSBB switching frequency.
+ */
+#define PWM_FREQ (20e3f)
+
+/**
+ * @brief SIL controller sample frequency.
+ */
+#define CONTROLLER_FREQUENCY (20e3f)
+
+/**
+ * @brief ADC reference voltage.
+ */
+#define CTRL_ADC_VOLTAGE_REF (3.3f)
+
+/**
+ * @brief Voltage per-unit base.
+ */
+#define CTRL_VOLTAGE_BASE (34.0f)
+
+/**
+ * @brief Current per-unit base.
+ */
+#define CTRL_CURRENT_BASE (14.14f)
+
+/**
+ * @brief Minimum load resistance.
+ */
+#define FSBB_PARAM_RLOAD_MIN (20.0f)
+
+/**
+ * @brief Input capacitance.
+ */
+#define FSBB_PARAM_CIN (440e-6f)
+
+/**
+ * @brief Output capacitance.
+ */
+#define FSBB_PARAM_COUT (440e-6f)
+
+/**
+ * @brief Output capacitor ESR.
+ */
+#define FSBB_PARAM_COUT_ESR (0.1f)
+
+/**
+ * @brief Main FSBB inductance.
+ */
+#define FSBB_PARAM_L (1.5e-3f)
+
+/**
+ * @brief Main inductor ESR.
+ */
+#define FSBB_PARAM_L_ESR (0.05f)
+
+/**
+ * @brief Input-voltage sensor sensitivity in V/V.
+ */
+#define CTRL_FSBB_VIN_SENSITIVITY GMP_LVFB_VOLTAGE_SENSITIVITY
+
+/**
+ * @brief Input-voltage sensor bias in V.
+ */
+#define CTRL_FSBB_VIN_BIAS GMP_LVFB_VOLTAGE_BIAS_V
+
+/**
+ * @brief Output-voltage sensor sensitivity in V/V.
+ */
+#define CTRL_FSBB_VOUT_SENSITIVITY GMP_LVFB_VOLTAGE_SENSITIVITY
+
+/**
+ * @brief Output-voltage sensor bias in V.
+ */
+#define CTRL_FSBB_VOUT_BIAS GMP_LVFB_VOLTAGE_BIAS_V
+
+/**
+ * @brief Boost-side output-current sensor sensitivity in V/A.
+ */
+#define CTRL_FSBB_IOUT_SENSITIVITY GMP_LVFB_CURRENT_SENSITIVITY
+
+/**
+ * @brief Boost-side output-current sensor bias in V.
+ */
+#define CTRL_FSBB_IOUT_BIAS GMP_LVFB_CURRENT_BIAS_V
+
+/**
+ * @brief Inductor-current sensor sensitivity in V/A.
+ */
+#define CTRL_FSBB_IL_SENSITIVITY GMP_LVFB_CURRENT_SENSITIVITY
+
+/**
+ * @brief Inductor-current sensor bias in V.
+ */
+#define CTRL_FSBB_IL_BIAS GMP_LVFB_CURRENT_BIAS_V
+
+/**
+ * @brief Maximum input voltage.
+ */
+#define FSBB_INPUT_VOLTAGE_MAX (60.0f)
+
+/**
+ * @brief Minimum input voltage.
+ */
+#define FSBB_INPUT_VOLTAGE_MIN (12.0f)
+
+/**
+ * @brief Nominal model source voltage.
+ */
+#define FSBB_INPUT_VOLTAGE_NOMINAL (24.0f)
+
+/**
+ * @brief Maximum output voltage.
+ */
+#define FSBB_OUTPUT_VOLTAGE_MAX (72.0f)
+
+/**
+ * @brief Minimum output voltage.
+ */
+#define FSBB_OUTPUT_VOLTAGE_MIN (3.0f)
+
+/**
+ * @brief Output current limit.
+ */
+#define FSBB_OUTPUT_CURRENT_LIM (10.0f)
+
+/**
+ * @brief Default voltage-loop command.
+ */
+#define FSBB_DEFAULT_OUTPUT_VOLTAGE (24.0f)
+
+/**
+ * @brief Default current limit.
+ */
+#define FSBB_DEFAULT_CURRENT_LIMIT (5.0f)
+
+/**
+ * @brief Maximum leg duty.
+ */
+#define FSBB_DUTY_MAX (0.95f)
+
+/**
+ * @brief Minimum leg duty.
+ */
+#define FSBB_DUTY_MIN (0.05f)
+
+/**
+ * @brief Positive inductor-current protection threshold.
+ */
+#define FSBB_PROTECT_IL_MAX (25.0f)
+
+/**
+ * @brief Negative inductor-current protection threshold.
+ */
+#define FSBB_PROTECT_IL_MIN (-2.0f)
+
+/**
+ * @brief Open-loop equivalent voltage command.
+ */
+#define FSBB_OPEN_LOOP_VOLTAGE_COMMAND (12.0f)
+
+/**
+ * @brief Current-loop crossover frequency.
+ */
+#define FSBB_CURRENT_LOOP_BANDWIDTH (800.0f)
+
+/**
+ * @brief Voltage-loop crossover frequency.
+ */
+#define FSBB_VOLTAGE_LOOP_BANDWIDTH (40.0f)
+
+/**
+ * @brief Buck-to-transition boundary.
+ */
+#define FSBB_TRANSITION_RATIO_LOW (0.90f)
+
+/**
+ * @brief Transition-to-boost boundary.
+ */
+#define FSBB_TRANSITION_RATIO_HIGH (1.10f)
+
+/**
+ * @brief Compatibility setting used by the suite framework.
+ */
+#define CTRL_SPLL_EPSILON (0.005f)
+
+/**
+ * @brief ADC calibration timeout.
+ */
+#define TIMEOUT_ADC_CALIB_MS (3000)
+
+/**
+ * @brief Voltage command ramp in pu/s.
+ */
+#define FSBB_VOLTAGE_RAMP_PU_S (1.0f)
+
+/**
+ * @brief Current command ramp in pu/s.
+ */
+#define FSBB_CURRENT_RAMP_PU_S (1.0f)
+
+//=================================================================================================
+/**
+ * @brief Common fallbacks: GMP Suite PIL Common Transport.
+ */
+
+//=================================================================================================
+/**
+ * @brief PIL Runtime.
+ */
+
+/**
+ * @brief Run control steps only from Data Link PIL transactions while physical control dispatch and power-stage enable remain isolated.
+ */
+// #ifndef ENABLE_GMP_DL_PIL_SIM
+// #define ENABLE_GMP_DL_PIL_SIM
+// #endif // ENABLE_GMP_DL_PIL_SIM
+
+//=================================================================================================
+/**
+ * @brief Requirement bindings.
+ */
+
+/**
+ * @brief Base command followed by mask, step, status, and abort subcommands.
+ */
+#ifndef GMP_PIL_DL_BASE_COMMAND
+#define GMP_PIL_DL_BASE_COMMAND (16)
+#endif // GMP_PIL_DL_BASE_COMMAND
+
+/**
+ * @brief Portable commissioning rate used unless a hardware project overrides it.
+ */
+#ifndef GMP_DL_UART_BAUDRATE
+#define GMP_DL_UART_BAUDRATE (115200)
+#endif // GMP_DL_UART_BAUDRATE
+
+/**
+ * @brief Host running Simulink and the GMP PIL bridge.
+ */
+#ifndef GMP_PIL_UDP_HOST
+#define GMP_PIL_UDP_HOST "127.0.0.1"
+#endif // GMP_PIL_UDP_HOST
+
+/**
+ * @brief Bridge port receiving plant samples from Simulink.
+ */
+#ifndef GMP_PIL_BRIDGE_UDP_LISTEN_PORT
+#define GMP_PIL_BRIDGE_UDP_LISTEN_PORT (12501)
+#endif // GMP_PIL_BRIDGE_UDP_LISTEN_PORT
+
+/**
+ * @brief Simulink port receiving controller results from the bridge.
+ */
+#ifndef GMP_PIL_MATLAB_UDP_LISTEN_PORT
+#define GMP_PIL_MATLAB_UDP_LISTEN_PORT (12500)
+#endif // GMP_PIL_MATLAB_UDP_LISTEN_PORT
+
+/**
+ * @brief Bridge port receiving out-of-band Simulink commands.
+ */
+#ifndef GMP_PIL_MATLAB_COMMAND_TX_PORT
+#define GMP_PIL_MATLAB_COMMAND_TX_PORT (12502)
+#endif // GMP_PIL_MATLAB_COMMAND_TX_PORT
+
+/**
+ * @brief Simulink port receiving command acknowledgements.
+ */
+#ifndef GMP_PIL_MATLAB_COMMAND_RX_PORT
+#define GMP_PIL_MATLAB_COMMAND_RX_PORT (12503)
+#endif // GMP_PIL_MATLAB_COMMAND_RX_PORT
+
+/**
+ * @brief Maximum wait for one target Data Link response.
+ */
+#ifndef GMP_PIL_MCU_TIMEOUT_MS
+#define GMP_PIL_MCU_TIMEOUT_MS (200)
+#endif // GMP_PIL_MCU_TIMEOUT_MS
+
+/**
+ * @brief Maximum wait for the next Simulink plant sample.
+ */
+#ifndef GMP_PIL_MATLAB_TIMEOUT_MS
+#define GMP_PIL_MATLAB_TIMEOUT_MS (5000)
+#endif // GMP_PIL_MATLAB_TIMEOUT_MS
+
+/**
+ * @brief Digital input slot packed into the standard Data Link PIL request.
+ */
+#ifndef GMP_PIL_UDP_DIGITAL_INDEX
+#define GMP_PIL_UDP_DIGITAL_INDEX (0)
+#endif // GMP_PIL_UDP_DIGITAL_INDEX
+
+// Common tail code: DPS FSBB Common Control
+/* FSBB common extension point. */
+
+// Common tail code: GMP Suite PIL Common Transport
+/** Validate the shared PIL command allocation. */
+#if (GMP_PIL_DL_BASE_COMMAND > 251U)
+#error "GMP_PIL_DL_BASE_COMMAND must leave room for four PIL subcommands."
+#endif
+#if (GMP_PIL_UDP_DIGITAL_INDEX >= 8U)
+#error "GMP_PIL_UDP_DIGITAL_INDEX must be in the range [0, 7]."
+#endif
 
 // User project tail code
 /* Backward compatibility for the historical misspelled PIL switch. */

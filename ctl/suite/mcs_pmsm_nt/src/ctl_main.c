@@ -67,7 +67,10 @@ ctl_mtr_protect_t protection;
 
 // ADC Calibrator
 adc_bias_calibrator_t adc_calibrator;
-#if defined SPECIFY_ENABLE_ADC_CALIBRATE
+#if defined ENABLE_GMP_DL_PIL_SIM
+/** Simulated ADC channels are already calibrated by the plant model. */
+volatile fast_gt flag_enable_adc_calibrator = 0;
+#elif defined SPECIFY_ENABLE_ADC_CALIBRATE
 volatile fast_gt flag_enable_adc_calibrator = 1;
 #else
 volatile fast_gt flag_enable_adc_calibrator = 0;
@@ -95,10 +98,10 @@ void ctl_init()
 
     // Physical DC-link voltage used by the bus-voltage compensator.
     mtr_ctrl_init.v_bus = CTRL_DCBUS_VOLTAGE;
-    mtr_ctrl_init.v_phase_limit = MOTOR_PARAM_RATED_VOLTAGE;
+    mtr_ctrl_init.v_phase_limit = MCS_MAX_CIR_SATURATION_VOLTAGE_V;
 
     mtr_ctrl_init.freq_base = MOTOR_PARAM_RATED_FREQUENCY;
-    mtr_ctrl_init.spd_base = MOTOR_PARAM_MAX_SPEED / 1000;
+    mtr_ctrl_init.spd_base = CTRL_SPEED_RPM_BASE / 1000;
     mtr_ctrl_init.pole_pairs = MOTOR_PARAM_POLE_PAIRS;
 
     mtr_ctrl_init.mtr_Ld = MOTOR_PARAM_LS;
@@ -107,6 +110,9 @@ void ctl_init()
 
     ctl_auto_tuning_foc_core(&mtr_ctrl_init);
     ctl_init_foc_core(&mtr_ctrl, &mtr_ctrl_init);
+
+    ctl_set_foc_core_saturation(&mtr_ctrl, MCS_MAX_RECT_SATURATION_VOLTAGE_V / CTRL_VOLTAGE_BASE,
+                                MCS_MAX_CIR_SATURATION_VOLTAGE_V / CTRL_VOLTAGE_BASE);
 
     //
     // init SPWM modulator
@@ -130,7 +136,7 @@ void ctl_init()
         // target frequency (Hz), target frequency slope (Hz/s)
         MCS_OPEN_LOOP_FREQ_HZ, MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S,
         // rated krpm, pole pairs
-        MOTOR_PARAM_MAX_SPEED / 1000.0f, mtr_ctrl_init.pole_pairs,
+        CTRL_SPEED_RPM_BASE / 1000.0f, mtr_ctrl_init.pole_pairs,
         // ISR frequency
         CONTROLLER_FREQUENCY);
 
@@ -145,8 +151,8 @@ void ctl_init()
     mech_init.vel_kp = MCS_MECH_VELOCITY_KP_PU;
     mech_init.vel_ki = MCS_MECH_VELOCITY_KI_PU_S;
 
-    mech_init.speed_limit = MCS_MECH_SPEED_LIMIT_RPM / MOTOR_PARAM_MAX_SPEED;
-    mech_init.speed_slope_limit = MCS_MECH_SPEED_SLOPE_RPM_S / MOTOR_PARAM_MAX_SPEED;
+    mech_init.speed_limit = MCS_MECH_SPEED_LIMIT_RPM / CTRL_SPEED_RPM_BASE;
+    mech_init.speed_slope_limit = MCS_MECH_SPEED_SLOPE_RPM_S / CTRL_SPEED_RPM_BASE;
     mech_init.cur_limit = MCS_MECH_CURRENT_LIMIT_A / CTRL_CURRENT_BASE;
 
     mech_init.mech_division = CTRL_MECH_DIV;
@@ -159,7 +165,7 @@ void ctl_init()
     ctl_init_autoturn_pos_encoder(&pos_enc, mtr_ctrl_init.pole_pairs, CTRL_POS_ENC_FS);
     ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, float2ctrl(CTRL_POS_ENC_BIAS));
 
-    ctl_init_spd_calculator(&spd_enc, &pos_enc.encif, CONTROLLER_FREQUENCY, CTRL_MECH_DIV, MOTOR_PARAM_MAX_SPEED,
+    ctl_init_spd_calculator(&spd_enc, &pos_enc.encif, CONTROLLER_FREQUENCY, CTRL_MECH_DIV, CTRL_SPEED_RPM_BASE,
                             MCS_ENCODER_SPEED_FILTER_FC_HZ);
 
 #ifdef ENABLE_SMO
@@ -207,7 +213,7 @@ void ctl_init()
     ctl_enable_foc_core_current_ctrl(&mtr_ctrl);
     ctl_set_mech_ctrl_mode(&mech_ctrl, MECH_MODE_VELOCITY);
     ctl_set_mech_target_velocity(&mech_ctrl,
-                                 float2ctrl(MCS_COMMISSIONING_SPEED_REF_RPM / MOTOR_PARAM_MAX_SPEED));
+                                 float2ctrl(MCS_COMMISSIONING_SPEED_REF_RPM / CTRL_SPEED_RPM_BASE));
 
 #endif // BUILD_LEVEL
 
@@ -215,17 +221,31 @@ void ctl_init()
     // init and config CiA402 standard state machine
     //
     init_cia402_state_machine(&cia402_sm);
+#if defined ENABLE_GMP_DL_PIL_SIM
+    /** Start every virtual power-state transition immediately. */
+    cia402_sm.minimum_transit_delay[0] = 0;
+    cia402_sm.minimum_transit_delay[1] = 0;
+    cia402_sm.minimum_transit_delay[2] = 0;
+    cia402_sm.minimum_transit_delay[3] = 0;
+#else
     cia402_sm.minimum_transit_delay[3] = MCS_CIA402_OPERATION_ENABLE_DELAY_MS;
+#endif
 
-#if defined SPECIFY_PC_ENVIRONMENT
+#if defined SPECIFY_PC_ENVIRONMENT || defined ENABLE_GMP_DL_PIL_SIM
+    /** PIL follows the SIL auto-enable behavior while physical PWM stays tripped. */
     cia402_sm.flag_enable_control_word = 0;
     cia402_sm.current_cmd = CIA402_CMD_ENABLE_OPERATION;
-#endif // SPECIFY_PC_ENVIRONMENT
+#endif // defined SPECIFY_PC_ENVIRONMENT || defined ENABLE_GMP_DL_PIL_SIM
 
     //
     // init and config Motor Protection module
     //
     ctl_init_mtr_protect(&protection, CONTROLLER_FREQUENCY);
+
+    ctl_set_mtr_protect_ov(&protection, float2ctrl(MCS_MAX_DC_BUS_VOLTAGE_V/CTRL_DCBUS_VOLTAGE));
+    ctl_set_mtr_protect_uv(&protection, float2ctrl(MCS_MIN_DC_BUS_VOLTAGE_V/CTRL_DCBUS_VOLTAGE));
+    ctl_set_mtr_protect_oc(&protection, float2ctrl(MCS_MAX_SHUTDOWN_CURRENT_A/CTRL_CURRENT_BASE));
+
     ctl_attach_mtr_protect_port(&protection, &mtr_ctrl.udc, (ctl_vector2_t*)&mtr_ctrl.idq0, &mtr_ctrl.idq_ref, NULL,
                                 NULL);
     ctl_set_mtr_protect_mask(&protection, MTR_PROT_DEVIATION);
@@ -252,14 +272,48 @@ void ctl_mainloop(void)
     return;
 }
 
+#if defined ENABLE_GMP_DL_PIL_SIM
+/** @brief Apply one standard PMSM SIL/PIL input frame to controller ports. */
+static void ctl_apply_pil_input(const gmp_sim_rx_buf_t* rx)
+{
+    uuvw_src[phase_U] = rx->adc_result[1];
+    uuvw_src[phase_V] = rx->adc_result[2];
+    uuvw_src[phase_W] = rx->adc_result[3];
+    iuvw_src[phase_U] = rx->adc_result[4];
+    iuvw_src[phase_V] = rx->adc_result[5];
+    iuvw_src[phase_W] = rx->adc_result[6];
+    udc_src = rx->adc_result[0];
+    ctl_step_autoturn_pos_encoder(&pos_enc, rx->digital_input);
+    ctl_step_tri_ptr_adc_channel(&iuvw);
+    ctl_step_tri_ptr_adc_channel(&uuvw);
+    ctl_step_ptr_adc_channel(&idc);
+    ctl_step_ptr_adc_channel(&udc);
+}
+
+/** @brief Export one controller result using the established PMSM SIL ABI. */
+static void ctl_collect_pil_output(gmp_sim_tx_buf_t* tx)
+{
+    tx->pwm_cmp[0] = spwm.pwm_out[phase_U];
+    tx->pwm_cmp[1] = spwm.pwm_out[phase_V];
+    tx->pwm_cmp[2] = spwm.pwm_out[phase_W];
+    tx->monitor[0] = mtr_ctrl.iuvw.dat[phase_A];
+    tx->monitor[1] = mtr_ctrl.iuvw.dat[phase_B];
+}
+
+#endif // defined ENABLE_GMP_DL_PIL_SIM
+
+/** @brief Execute one controller step requested by the Data Link PIL service. */
 void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
 {
 #if defined ENABLE_GMP_DL_PIL_SIM
-    ctl_input_callback_pil(rx);
+    ctl_apply_pil_input(rx);
 
     ctl_dispatch();
 
-    ctl_output_callback_pil(tx);
+    ctl_collect_pil_output(tx);
+#else
+    GMP_UNUSED_VAR(rx);
+    GMP_UNUSED_VAR(tx);
 #endif // defined ENABLE_GMP_DL_PIL_SIM
 }
 
@@ -305,7 +359,11 @@ gmp_task_status_t tsk_protect(gmp_task_t* tsk)
 
 void ctl_enable_pwm()
 {
+#if defined ENABLE_GMP_DL_PIL_SIM
+    clear_all_controllers();
+#else
     ctl_fast_enable_output();
+#endif
 }
 
 void ctl_disable_pwm()
@@ -419,3 +477,14 @@ fast_gt ctl_exec_adc_calibration(void)
     // skip calibrate routine
     return 1;
 }
+
+#if !defined SPECIFY_PC_ENVIRONMENT
+/** @brief Provide current-loop signals to the platform Scope. */
+void user_get_scope_channels(ctrl_gt channels[4])
+{
+    channels[0] = spwm.vabc_out.dat[phase_A];
+    channels[1] = spwm.vabc_out.dat[phase_B];
+    channels[2] = spwm.vabc_out.dat[phase_C];
+    channels[3] = mtr_ctrl.idq0.dat[phase_q];
+}
+#endif

@@ -50,6 +50,15 @@
       "value_format": "({}f)",
       "description": "Equivalent input resistance.",
       "default": 0.0
+    },
+    {
+      "name": "bandwidth_hz",
+      "c_name": "BANDWIDTH_HZ",
+      "unit": "Hz",
+      "required": false,
+      "value_format": "({}f)",
+      "description": "Small-signal sensing bandwidth.",
+      "default": 0.0
     }
   ],
   "derived_macros": [
@@ -75,6 +84,11 @@
       "macro": "{PREFIX}_RATED_VOLTAGE_V",
       "unit": "V",
       "description": "Voltage range."
+    },
+    "bandwidth": {
+      "macro": "{PREFIX}_BANDWIDTH_HZ",
+      "unit": "Hz",
+      "description": "Small-signal sensing bandwidth."
     }
   },
   "header_prefix": "",

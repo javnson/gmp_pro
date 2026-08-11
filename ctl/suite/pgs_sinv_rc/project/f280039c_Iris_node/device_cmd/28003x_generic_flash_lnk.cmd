@@ -104,12 +104,12 @@ SECTIONS
 
 #if defined(__TI_EABI__)
    .init_array      : > FLASH_BANK0_SEC3,  ALIGN(8)
-   .bss             : >> RAMLS5 | RAMLS6 | RAMLS7
+   .bss             : >> RAMLS5 | RAMLS6 | RAMLS7 | RAMGS1 | RAMGS2 | RAMGS3
    .bss:output      : > RAMLS3
    .bss:cio         : > RAMLS0
-   .data            : >> RAMLS5 | RAMLS6 | RAMLS7
-   .sysmem          : > RAMLS5 /* heap */
-   .const           : >> FLASH_BANK0_SEC4 | FLASH_BANK0_SEC5 | FLASH_BANK0_SEC6,  ALIGN(8)
+   .data            : >> RAMLS5 | RAMLS6 | RAMLS7 | RAMGS1 | RAMGS2 | RAMGS3
+   .sysmem          : > RAMGS0 /* heap */
+   .const           : > FLASH_BANK2,  ALIGN(8)
 #else
    .pinit           : > FLASH_BANK0_SEC3,  ALIGN(8)
    .ebss            : > RAMLS5

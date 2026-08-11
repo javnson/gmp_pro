@@ -46,12 +46,62 @@ repository. When a project is copied into an independent repository, commit
 those generated outputs together with the project-local tools so the exported
 project remains directly buildable.
 
-## Layered suite configuration
+## Composed suite configuration
 
-Opening `sdpe_edit.bat` from `sdpe_general` loads the common layer and every
-project layer in that suite. Opening it from one target `sdpe_mgr` loads that
-target together with `sdpe_general`. Generate both layers after changes; a
-Simulink target should resolve one MATLAB initialization script from each layer.
+Each private project stores zero or more common requirement references in its
+`common_requirements` array. A reference may be relative to the private JSON,
+absolute, or use environment-variable syntax such as
+`%GMP_PRO_LOCATION%/...`, `$GMP_PRO_LOCATION/...`, or
+`${GMP_PRO_LOCATION}/...`. The editor presents the private data and every bound
+common file as one view, identifies each item's source, and validates macro
+duplicates across the complete composition.
+
+Generation writes one final C header named by the private project's
+`output_header`. It directly contains the private configuration followed by all
+bound Common fallbacks, so Code preview, search, and source jumps always target
+one file. MATLAB initialization scripts remain a Common-then-private chain to
+preserve the existing Simulink loading contract. Items can be moved from a
+private project into a selected common file, or from a common file into one or
+more selected private projects.
+
+Common requirements and macros remain editable in the merged project view and
+are saved back to their owning Common JSON files. The Requirements context menu
+creates Private and Common rows explicitly. `Cover with private requirement`
+creates a private row with the same macro. The private row is then the tree parent, each
+matching Common row is a child, and the Common definition is forced weak. The
+final C header therefore emits the private definition before its Common fallback
+definition, whose matching macro is guarded by `#ifndef`.
+
+Save commits an active cell editor before writing every affected source file.
+Delete removes the selected row even when focus is on a permanent checkbox; a
+real text editor keeps normal character deletion. Deleting a group removes its
+complete subtree, while deleting only a Private cover preserves its Common child.
+
+Generated MATLAB initialization scripts finish with a console summary of the
+project identity, suite/version, selected hardware, bound Common files, enabled
+variable values, and disabled macro names.
+
+## Suite layout contract
+
+Suite requirements use one repository-wide top-level order: `Peripheral
+Parameters`, `Per-Unit Base Parameters`, `Main Element Parameters`,
+`Protection Parameters`, `Control Loop`, `Runtime Parameters`, `Voltage &
+Current Sensor`, and `Commissioning Defaults`. Controller settings use a child
+group such as `Control Loop / PLL Controller` or `Control Loop / Current
+Controller`; do not collect unrelated controllers into one generic page.
+
+PWM, ADC, GPIO, timer, encoder, and communication assignments belong in Option
+Macros with the applicable hardware entity `options_preset`. Do not hide
+selectable peripheral assignments in `code_sections`. Motors, grid filters,
+resonant tanks, and other main components belong in `hardware`; project macros
+bind to entity exports or parameters instead of duplicating component values.
+
+Normalize and verify the layout after editing suite requirements:
+
+```powershell
+python .\normalize_suite_sdpe_layout.py --write
+python .\normalize_suite_sdpe_layout.py --check
+```
 
 ## Development
 

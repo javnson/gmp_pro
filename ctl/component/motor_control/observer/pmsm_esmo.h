@@ -107,6 +107,7 @@ extern "C"
 		fast_gt flag_observer_locked; //!< Status flag: 1 if tracking is stable, 0 if observer has diverged.
 		fast_gt flag_lpf_compensate;  //!< Status flag: 1 if enable LPF compensate, 0 if LPF compensate is disabled.
 		fast_gt flag_enable_bias;     //!< Status flag: 1 if enable angle fixed angle, 0 if fixed angle bias is disabled.
+		fast_gt flag_emf_normalize;   //!< Normalize the PLL phase detector by |E|. Disable to save sqrt/div cost.
 
 	} ctl_pmsm_esmo_t;
 
@@ -254,6 +255,28 @@ extern "C"
 		esmo->flag_enable_bias = 0;
 	}
 
+	/**
+	 * @brief Enables back-EMF magnitude normalization in the PLL phase detector.
+	 * @details This makes the configured ATO bandwidth nearly independent of
+	 * speed and DC-bus voltage, at the cost of one square root and one division
+	 * per observer step.
+	 */
+	GMP_STATIC_INLINE void ctl_enable_pmsm_esmo_emf_normalization(ctl_pmsm_esmo_t* esmo)
+	{
+		esmo->flag_emf_normalize = 1;
+	}
+
+	/**
+	 * @brief Disables back-EMF magnitude normalization to reduce execution cost.
+	 * @warning The raw phase-detector gain is then proportional to |E|. Retune
+	 * the ATO at the intended operating speed; its bandwidth is no longer
+	 * invariant with speed or DC-bus voltage.
+	 */
+	GMP_STATIC_INLINE void ctl_disable_pmsm_esmo_emf_normalization(ctl_pmsm_esmo_t* esmo)
+	{
+		esmo->flag_emf_normalize = 0;
+	}
+
 
 	/**
 	 * @brief Executes one high-frequency step of the Extended-EMF Sliding Mode Observer.
@@ -345,8 +368,11 @@ extern "C"
 		//                      = sin(theta)cos(theta_hat) - cos(theta)sin(theta_hat)
 		// Substitute EMF : err = (-E_alpha/|E|)*cos(theta_hat) - (E_beta/|E|)*sin(theta_hat)
 		//
-		// Dropping the |E| magnitude (absorbed by PLL PI gains), the error voltage is:
-		// e_err_voltage  = -E_alpha * cos(theta_hat) - E_beta * sin(theta_hat)
+		// Optional normalization by |E| makes the auto-tuned PLL bandwidth
+		// independent of speed and DC-bus voltage. It can be disabled on a
+		// compute-limited target; in that mode tune the ATO for the raw,
+		// voltage-dependent detector gain. ATO_PLL accepts electrical turns,
+		// hence the normalized detector is divided by 2*pi.
 		//
 		// Array Mapping:
 		// e_est.dat[0]  -> E_alpha
@@ -358,6 +384,16 @@ extern "C"
 
 		ctrl_gt e_err_voltage =
 			-ctl_mul(esmo->e_est.dat[0], esmo->phasor.dat[1]) - ctl_mul(esmo->e_est.dat[1], esmo->phasor.dat[0]);
+		if (esmo->flag_emf_normalize)
+		{
+			ctrl_gt e_mag_sq = ctl_mul(esmo->e_est.dat[0], esmo->e_est.dat[0]) +
+			                       ctl_mul(esmo->e_est.dat[1], esmo->e_est.dat[1]);
+			ctrl_gt e_mag = ctl_sqrt(e_mag_sq);
+			if (e_mag > float2ctrl(0.01f))
+				e_err_voltage = ctl_mul(ctl_div(e_err_voltage, e_mag), CTL_CTRL_CONST_1_OVER_2PI);
+			else
+				e_err_voltage = float2ctrl(0.0f);
+		}
 
 
 		// ========================================================================
@@ -379,7 +415,7 @@ extern "C"
 
 		if (esmo->ato_pll.elec_speed_pu < float2ctrl(0.0f))
 		{
-			// 加上 180 度 (在标幺值 PU 下，180 度就是 0.5f)
+			// Add 180 electrical degrees (0.5 turn in angle PU).
 			comp_angle_pu += float2ctrl(0.5f);
 
 			if (esmo->flag_enable_bias)

@@ -48,7 +48,8 @@ void ctl_init_pmsm_fo(ctl_pmsm_fo_t* fo, const ctl_pmsm_fo_init_t* init)
     ctl_set_pid_limit(&fo->pi_emf[1], float2ctrl(e_limit), float2ctrl(-e_limit));
     ctl_set_pid_int_limit(&fo->pi_emf[1], float2ctrl(e_limit), float2ctrl(-e_limit));
 
-    // Initialize ATO. Gains should be scheduled externally if normalized error isn't used.
+    // The step function normalizes the phase detector, so the requested ATO
+    // bandwidth is independent of back-EMF magnitude.
     ctl_init_ato_pll(&fo->ato_pll, init->ato_bw_hz, 1.0f, init->W_base, fs_safe, 1.5f, -1.5f);
 
     // 3. Protection Mechanisms Setup
@@ -105,8 +106,8 @@ void ctl_init_pmsm_fo_consultant(ctl_pmsm_fo_t* fo, const ctl_consultant_pmsm_t*
     parameter_gt scale_p = pu->I_base / pu->V_base;
     bare_init.kp_fo_pu = kp_phy * scale_p;
 
-    // Ki_pu maps current_err_pu to voltage_pu * dt: Ki_pu = Ki_phy * (I_base / V_base) * Ts
-    bare_init.ki_fo_pu = ki_phy * scale_p * (1.0f / fs);
+    // ctl_init_pid() performs the one required Ki/fs discretization.
+    bare_init.ki_fo_pu = ki_phy * scale_p;
 
     // Default robust margins and limits
     bare_init.e_max_limit_pu = 1.5f;
