@@ -1,0 +1,11 @@
+{
+    "period_ms": 1.0,
+    "signals": [
+        {
+            "filename": "crt_bin/rt_trace_pwm_out_A.crt_bin",
+            "name": "pwm_out_A",
+            "size": 8,
+            "type": "double"
+        }
+    ]
+}

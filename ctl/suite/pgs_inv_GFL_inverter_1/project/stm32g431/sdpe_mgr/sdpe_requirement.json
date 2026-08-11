@@ -1,0 +1,316 @@
+{
+  "id": "pgs_inv_gfl_stm32g431",
+  "macro_prefix": "PGS_INV_GFL_STM32G431",
+  "display_name": "PGS GFL Inverter STM32G431",
+  "description": "Nucleo-G431 platform timing and sensing settings for the common GFL controller.",
+  "suite": "pgs_inv_GFL_inverter",
+  "version": "1.0.0",
+  "updated_at": "2026-07-15",
+  "output_header": "sdpe_pgs_inv_gfl_stm32g431_settings.h",
+  "hardware": [
+    {
+      "entity": "nucleo_g431rb_motor_board"
+    },
+    {
+      "entity": "gmp_helios_3phganinv_lv"
+    },
+    {
+      "entity": "gmp_harmonia_3ph_lc_filter"
+    }
+  ],
+  "code_sections": {
+    "after_extern_open": "#include <sdpe_pgs_inv_gfl_common_settings.h>",
+    "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 5)\n#error BUILD_LEVEL_must_be_between_1_and_5\n#endif"
+  },
+  "feature_macros": [],
+  "option_macros": [
+    {
+      "group": "Commissioning",
+      "macro": "BUILD_LEVEL",
+      "enabled": true,
+      "value": "(1)",
+      "options": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)",
+        "(5)"
+      ],
+      "description": "Incremental control level; level 5 enables the cascaded P/Q power loop."
+    },
+    {
+      "group": "Sampling",
+      "macro": "GFL_CURRENT_SAMPLE_PHASE_MODE",
+      "enabled": true,
+      "value": "(3)",
+      "options": [
+        "(2)",
+        "(3)"
+      ],
+      "description": "Number of directly sampled phase currents."
+    },
+    {
+      "group": "Sampling",
+      "macro": "GFL_VOLTAGE_SAMPLE_PHASE_MODE",
+      "enabled": true,
+      "value": "(3)",
+      "options": [
+        "(2)",
+        "(3)"
+      ],
+      "description": "Number of directly sampled phase voltages."
+    }
+  ],
+  "requirements": [
+    {
+      "role": "startup_delay",
+      "macro": "CTRL_STARTUP_DELAY",
+      "binding": {
+        "number": "100"
+      },
+      "description": "Startup delay in milliseconds."
+    },
+    {
+      "role": "controller_frequency",
+      "macro": "CONTROLLER_FREQUENCY",
+      "binding": {
+        "number": "10e3"
+      },
+      "description": "Control interrupt frequency."
+    },
+    {
+      "role": "pwm_compare_max",
+      "macro": "CTRL_PWM_CMP_MAX",
+      "binding": {
+        "number": "8500 - 1"
+      },
+      "description": "TIM compare range."
+    },
+    {
+      "role": "pwm_deadband",
+      "macro": "CTRL_PWM_DEADBAND_CMP",
+      "binding": {
+        "number": "100"
+      },
+      "description": "TIM dead-time count."
+    },
+    {
+      "role": "adc_voltage_reference",
+      "macro": "CTRL_ADC_VOLTAGE_REF",
+      "binding": {
+        "float": "3.3"
+      },
+      "description": "ADC reference."
+    },
+    {
+      "role": "dc_bus_voltage_base",
+      "macro": "CTRL_DCBUS_VOLTAGE",
+      "binding": {
+        "float": "80.0"
+      },
+      "description": "DC-bus voltage base."
+    },
+    {
+      "role": "phase_voltage_base",
+      "macro": "CTRL_VOLTAGE_BASE",
+      "binding": {
+        "literal": "(CTRL_DCBUS_VOLTAGE / 1.73205081f)"
+      },
+      "description": "SVPWM phase-voltage base."
+    },
+    {
+      "role": "current_base",
+      "macro": "CTRL_CURRENT_BASE",
+      "binding": {
+        "float": "10.0"
+      },
+      "description": "Phase-current base."
+    },
+    {
+      "role": "grid_filter_inductance",
+      "macro": "GFL_GRID_FILTER_INDUCTANCE_H",
+      "binding": {
+        "literal": "(HARMONIA_3PH_LC_FILTER_INDUCTANCE_H)"
+      },
+      "description": "Harmonia inductance."
+    },
+    {
+      "role": "grid_filter_capacitance",
+      "macro": "GFL_GRID_FILTER_CAPACITANCE_F",
+      "binding": {
+        "literal": "(HARMONIA_3PH_LC_FILTER_CAPACITANCE_F)"
+      },
+      "description": "Harmonia capacitance."
+    },
+    {
+      "role": "grid_current_sensitivity",
+      "macro": "CTRL_GRID_CURRENT_SENSITIVITY",
+      "binding": {
+        "literal": "(HARMONIA_3PH_LC_FILTER_PH_CURRENT_SENSITIVITY_MV_A * 0.001f)"
+      },
+      "description": "Grid-current sensitivity."
+    },
+    {
+      "role": "grid_current_bias",
+      "macro": "CTRL_GRID_CURRENT_BIAS",
+      "binding": {
+        "literal": "(HARMONIA_3PH_LC_FILTER_PH_CURRENT_ZERO_BIAS_V)"
+      },
+      "description": "Grid-current bias."
+    },
+    {
+      "role": "grid_voltage_sensitivity",
+      "macro": "CTRL_GRID_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "literal": "(HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_GAIN)"
+      },
+      "description": "Grid-voltage gain."
+    },
+    {
+      "role": "grid_voltage_bias",
+      "macro": "CTRL_GRID_VOLTAGE_BIAS",
+      "binding": {
+        "literal": "(HARMONIA_3PH_LC_FILTER_PH_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "Grid-voltage bias."
+    },
+    {
+      "role": "inverter_current_sensitivity",
+      "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
+      "binding": {
+        "float": "0.05"
+      },
+      "description": "Converter current sensitivity."
+    },
+    {
+      "role": "inverter_current_bias",
+      "macro": "CTRL_INVERTER_CURRENT_BIAS",
+      "binding": {
+        "float": "1.65"
+      },
+      "description": "Converter current bias."
+    },
+    {
+      "role": "inverter_voltage_sensitivity",
+      "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "float": "0.02738589"
+      },
+      "description": "Converter voltage gain."
+    },
+    {
+      "role": "inverter_voltage_bias",
+      "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
+      "binding": {
+        "float": "0.0"
+      },
+      "description": "Converter voltage bias."
+    },
+    {
+      "role": "dc_current_sensitivity",
+      "macro": "CTRL_DC_CURRENT_SENSITIVITY",
+      "binding": {
+        "float": "0.02475"
+      },
+      "description": "DC current sensitivity."
+    },
+    {
+      "role": "dc_current_bias",
+      "macro": "CTRL_DC_CURRENT_BIAS",
+      "binding": {
+        "float": "1.65"
+      },
+      "description": "DC current bias."
+    },
+    {
+      "role": "dc_voltage_sensitivity",
+      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "float": "0.02738589"
+      },
+      "description": "DC voltage gain."
+    },
+    {
+      "role": "dc_voltage_bias",
+      "macro": "CTRL_DC_VOLTAGE_BIAS",
+      "binding": {
+        "float": "0.0"
+      },
+      "description": "DC voltage bias."
+    }
+  ],
+  "requirement_groups": [
+    {
+      "name": "Peripheral Parameters",
+      "requirements": [
+        "controller_frequency",
+        "pwm_compare_max",
+        "pwm_deadband",
+        "adc_voltage_reference"
+      ]
+    },
+    {
+      "name": "Per-Unit Base Parameters",
+      "requirements": [
+        "dc_bus_voltage_base",
+        "phase_voltage_base",
+        "current_base"
+      ]
+    },
+    {
+      "name": "Grid Filter Parameters",
+      "requirements": [
+        "grid_filter_inductance",
+        "grid_filter_capacitance"
+      ]
+    },
+    {
+      "name": "DC Bus Voltage Sensor",
+      "requirements": [
+        "dc_voltage_sensitivity",
+        "dc_voltage_bias"
+      ]
+    },
+    {
+      "name": "Grid Voltage Sensor",
+      "requirements": [
+        "grid_voltage_sensitivity",
+        "grid_voltage_bias"
+      ]
+    },
+    {
+      "name": "Inverter Phase Voltage Sensor",
+      "requirements": [
+        "inverter_voltage_sensitivity",
+        "inverter_voltage_bias"
+      ]
+    },
+    {
+      "name": "DC Current Sensor",
+      "requirements": [
+        "dc_current_sensitivity",
+        "dc_current_bias"
+      ]
+    },
+    {
+      "name": "Grid Current Sensor",
+      "requirements": [
+        "grid_current_sensitivity",
+        "grid_current_bias"
+      ]
+    },
+    {
+      "name": "Inverter Phase Current Sensor",
+      "requirements": [
+        "inverter_current_sensitivity",
+        "inverter_current_bias"
+      ]
+    },
+    {
+      "name": "Runtime Parameters",
+      "requirements": [
+        "startup_delay"
+      ]
+    }
+  ]
+}
