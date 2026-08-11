@@ -275,6 +275,16 @@ void test_udp_client_times_out_without_controller()
     require(elapsed >= 75ms && elapsed < 2s, "UDP startup timeout was not bounded as configured");
 }
 
+void test_frame_kind_diagnostics()
+{
+    require(std::string(sil::protocol::frame_kind_name(
+                sil::protocol::frame_kind::session_hello)) == "session_hello",
+            "session hello diagnostic name is incorrect");
+    require(std::string(sil::protocol::frame_kind_name(
+                static_cast<sil::protocol::frame_kind>(0xFFFFU))) == "unknown",
+            "unknown frame diagnostic name is incorrect");
+}
+
 } // namespace
 
 int main()
@@ -295,6 +305,8 @@ int main()
         std::cout << "[PASS] asymmetric controller-wait/client-timeout startup policy\n";
         test_abi_rejected_before_network();
         std::cout << "[PASS] ABI validation\n";
+        test_frame_kind_diagnostics();
+        std::cout << "[PASS] frame-kind diagnostics\n";
         return 0;
     }
     catch (const std::exception& exception)

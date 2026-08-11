@@ -27,7 +27,8 @@ TCP 保证连接内字节有序和重传，但不保留应用报文边界；UDP 
 
 - 常用顺序是控制器先启动并阻塞等待，Simulink 启动后先发送 `hello`/首帧。
 - 控制器服务端默认不启用启动超时，可以先启动并一直等待 Simulink；等待前会输出监听协议和端口。
-- Simulink MEX 客户端始终启用 5 秒连接/启动握手超时，超时会释放连接并终止模型初始化。
+- Simulink MEX 客户端在第一个有效仿真主步才建立连接，并启用 5 秒连接/启动握手超时；
+  超时会释放连接并终止仿真。
 - Simulink 收到的前 10 个完整有效帧使用短超时；第 10 帧通过后才切换到长调试超时。
   半帧、错误连接 ID、错误 ABI 或错误序号不会推进计数。
 - 正常结束由显式仿真状态帧通知，不依赖超时。`abort()`可主动打断阻塞的网络操作。
@@ -90,6 +91,8 @@ ctest --test-dir tools/gmp_sil/sil_helper/build -C Release --output-on-failure
 测试覆盖 TCP/UDP 请求响应、分片 TCP 帧、连接 ID/ABI/序号拒绝、显式结束、主动中止、
 启动超时策略，以及两个并行独立会话。
 
-Simulink 快速加速构建阶段可能探测 S-function。`GMP_SIL_Core` 会在 Rapid target
-构建阶段跳过网络连接，在真正的定步长仿真进程中再建立会话，避免构建探测提前消耗
-控制器连接。Windows 和 Linux 都应使用各自 MATLAB Release 的 MEX。
+Simulink 快速加速构建阶段可能执行一次 S-function 的 `mdlStart`/`mdlTerminate` 生命周期
+探测。`GMP_SIL_Core` 的 `mdlStart` 只分配缓冲区；第一个有效主步的 `mdlOutputs` 才建立
+会话并发送 `session_hello`。因此构建探测不会提前消耗控制器的唯一会话，也不会发送虚假的
+结束状态。若仍收到异常帧，错误信息会给出帧类型、序号、标志和负载长度。Windows 和
+Linux 都应使用各自 MATLAB Release 的 MEX。

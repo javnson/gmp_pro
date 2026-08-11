@@ -678,6 +678,94 @@ static void mdlSetDefaultPortDataTypes(SimStruct* S)
     //}
 }
 
+/**
+ * Open the controller session at the first real major simulation step.
+ *
+ * Rapid Accelerator can execute mdlStart/mdlTerminate in a MATLAB-hosted
+ * target probe before launching the standalone target. Connecting from
+ * mdlStart would consume the controller's single session and make the real
+ * target's session_hello look like an illegal second handshake. mdlOutputs
+ * is the first callback that proves the plant is actually advancing.
+ */
+static gmp::sil::gmp_sil_helper* StartSilSession(SimStruct* S, int_T desired_packed_width,
+                                                 int_T desired_unpacked_width)
+{
+    uint32_t ip_addr[4];
+    for (int_T index = 0; index < 4; ++index)
+    {
+        ip_addr[index] = (int_T)GetVectorParam(S_NETWORK_HOST, index);
+        if (ip_addr[index] > 255)
+        {
+            std::snprintf(msg, sizeof(msg), "%s: ASIO helper, wrong IP host address: %u", DRIVER,
+                          ip_addr[index]);
+            ssSetErrorStatus(S, msg);
+            return nullptr;
+        }
+    }
+    std::stringstream ipaddr;
+    ipaddr << ip_addr[0] << "." << ip_addr[1] << "." << ip_addr[2] << "." << ip_addr[3];
+
+    const uint32_t trans_port = (int_T)GetVectorParam(S_NETWORK_TARGET_PORT, 0);
+    const uint32_t recv_port = (int_T)GetVectorParam(S_NETWORK_TARGET_PORT, 1);
+    std::snprintf(msg, sizeof(msg), "%s: starting %s session with %s (remote %u, local %u).\r\n", DRIVER,
+                  GetScalarParam(S_TRANSPORT) == 0.0 ? "UDP" : "TCP", ipaddr.str().c_str(), trans_port,
+                  recv_port);
+    ssPrintf(msg);
+
+    gmp::sil::configuration sil_config;
+    sil_config.transport = GetScalarParam(S_TRANSPORT) == 0.0 ? gmp::sil::transport_kind::udp
+                                                              : gmp::sil::transport_kind::tcp;
+    sil_config.role = gmp::sil::endpoint_role::client;
+    sil_config.target_address = ipaddr.str();
+    sil_config.bind_address = "0.0.0.0";
+    sil_config.transmit_port = static_cast<std::uint16_t>(trans_port);
+    sil_config.receive_port = static_cast<std::uint16_t>(recv_port);
+    sil_config.connect_timeout =
+        std::chrono::milliseconds(GMP_SIL_SIMULINK_STARTUP_TIMEOUT_MS);
+    sil_config.startup_io_timeout =
+        std::chrono::milliseconds(GMP_SIL_SIMULINK_STARTUP_TIMEOUT_MS);
+    // The first ten valid responses use the short timeout before the
+    // debugger-friendly established timeout becomes active.
+    sil_config.startup_timeout_enabled = true;
+    sil_config.established_after_frames = gmp::sil::protocol::startup_qualification_frames;
+    sil_config.session.request_payload_size = static_cast<std::uint32_t>(desired_packed_width);
+    sil_config.session.response_payload_size = static_cast<std::uint32_t>(desired_unpacked_width);
+    for (std::size_t index = 0U; index < sil_config.session.id.size(); ++index)
+    {
+        const double value = GetVectorParam(S_CONNECTION_ID, index);
+        if (value < 0.0 || value > 255.0 || value != static_cast<double>(static_cast<std::uint8_t>(value)))
+        {
+            std::snprintf(msg, sizeof(msg), "%s: connection_id element %llu is not an integer byte.", DRIVER,
+                          static_cast<unsigned long long>(index));
+            ssSetErrorStatus(S, msg);
+            return nullptr;
+        }
+        sil_config.session.id[index] = static_cast<std::uint8_t>(value);
+    }
+
+    gmp::sil::gmp_sil_helper* sil_helper = nullptr;
+    try
+    {
+        sil_helper = new gmp::sil::gmp_sil_helper(sil_config);
+        sil_helper->connect();
+        sil_helper->notify_state(gmp::sil::protocol::simulation_state::running, 0U);
+        return sil_helper;
+    }
+    catch (const std::exception& exception)
+    {
+        if (sil_helper != nullptr)
+        {
+            sil_helper->close();
+            delete sil_helper;
+        }
+        std::snprintf(msg, sizeof(msg),
+                      "%s: Cannot establish GMP SIL session within %d ms; simulation was stopped: %s", DRIVER,
+                      GMP_SIL_SIMULINK_STARTUP_TIMEOUT_MS, exception.what());
+        ssSetErrorStatus(S, msg);
+        return nullptr;
+    }
+}
+
 // Initialize the state vectors of this C MEX S-function
 // The Simulink® engine invokes this optional method at the beginning of a simulation.
 // The method performs initialization activities that this S-function requires only once,
@@ -692,6 +780,17 @@ static void mdlStart(SimStruct* S)
     uint_T alignment = (uint_T)GetScalarParam(S_ALIGNMENT);
     int_T unpacked_ports = (int_T)GetScalarParam(S_NUMBER_UNPACKED_PORTS);
     int_T packed_ports = (int_T)GetScalarParam(S_NUMBER_PACKED_PORTS);
+
+    // A reused/Fast-Restart block must not retain a previous session. Network
+    // creation is intentionally deferred to the first major mdlOutputs call.
+    auto* previous_helper = static_cast<gmp::sil::gmp_sil_helper*>(ssGetPWorkValue(S, 0));
+    if (previous_helper != nullptr)
+    {
+        previous_helper->close();
+        delete previous_helper;
+        ssWarning(S, "GMP_SIL_Core: previous SIL helper was released during mdlStart.");
+    }
+    ssSetPWorkValue(S, 0, nullptr);
 
     // input pack width validate, 需要恢复
     desired_packed_width = CalculatePackedWidth(S);
@@ -805,111 +904,8 @@ static void mdlStart(SimStruct* S)
     ssSetPWorkValue(S, 1, tranBuffer);
     ssSetPWorkValue(S, 2, recvBuffer);
 
-    // Rapid Accelerator invokes the MEX S-function once while generating
-    // the standalone target. That host-side probe is code generation, not a
-    // controller time step. Opening the SIL session here would consume the
-    // controller's one session before the real Rapid executable starts.
-    if (ssIsRapidAcceleratorActive(S) && ssGetSimMode(S) == SS_SIMMODE_RTWGEN)
-    {
-        ssPrintf("GMP_SIL_Core: skipping network setup during Rapid Accelerator target build.\r\n");
-        return;
-    }
-
-    // Setup Network Communication
-    sprintf(msg, "%s: mdlStart is invoked\r\n", DRIVER);
-    ssPrintf(msg);
-
-    uint32_t ip_addr[4];
-    for (j = 0; j < 4; ++j)
-    {
-        ip_addr[j] = (int_T)GetVectorParam(S_NETWORK_HOST, j);
-        if (ip_addr[j] > 255)
-        {
-            sprintf(msg, "%s: ASIO helper, Wrong IP host address: %d", DRIVER, ip_addr[j]);
-            ssSetErrorStatus(S, msg);
-        }
-    }
-    std::stringstream ipaddr;
-    ipaddr << ip_addr[0] << "." << ip_addr[1] << "." << ip_addr[2] << "." << ip_addr[3];
-
-    sprintf(msg, "%s: Host IP address:%s.\r\n", DRIVER, ipaddr.str().c_str());
-    ssPrintf(msg);
-
-    const uint32_t trans_port = (int_T)GetVectorParam(S_NETWORK_TARGET_PORT, 0);
-    const uint32_t recv_port = (int_T)GetVectorParam(S_NETWORK_TARGET_PORT, 1);
-
-    sprintf(msg, "%s: Remote receive port: %d, local receive port: %d.\r\n", DRIVER, trans_port, recv_port);
-    ssPrintf(msg);
-
-    gmp::sil::gmp_sil_helper* sil_helper =
-        static_cast<gmp::sil::gmp_sil_helper*>(ssGetPWorkValue(S, 0));
-    if (sil_helper != nullptr)
-    {
-        sil_helper->close();
-        delete sil_helper;
-        sprintf(msg, "%s: Previous SIL helper object was not released.", DRIVER);
-        ssWarning(S, msg);
-    }
-
-    gmp::sil::configuration sil_config;
-    sil_config.transport = GetScalarParam(S_TRANSPORT) == 0.0 ? gmp::sil::transport_kind::udp
-                                                              : gmp::sil::transport_kind::tcp;
-    sil_config.role = gmp::sil::endpoint_role::client;
-    sil_config.target_address = ipaddr.str();
-    sil_config.bind_address = "0.0.0.0";
-    sil_config.transmit_port = static_cast<std::uint16_t>(trans_port);
-    sil_config.receive_port = static_cast<std::uint16_t>(recv_port);
-    sil_config.connect_timeout =
-        std::chrono::milliseconds(GMP_SIL_SIMULINK_STARTUP_TIMEOUT_MS);
-    sil_config.startup_io_timeout =
-        std::chrono::milliseconds(GMP_SIL_SIMULINK_STARTUP_TIMEOUT_MS);
-    // This side is always the Simulink client. A missing controller must stop
-    // model initialization instead of blocking MATLAB indefinitely. The first
-    // ten valid responses remain qualified with the same short timeout before
-    // the transport changes to its debugger-friendly established timeout.
-    sil_config.startup_timeout_enabled = true;
-    sil_config.established_after_frames = gmp::sil::protocol::startup_qualification_frames;
-    sil_config.session.request_payload_size = static_cast<std::uint32_t>(desired_packed_width);
-    sil_config.session.response_payload_size = static_cast<std::uint32_t>(desired_unpacked_width);
-    for (std::size_t index = 0U; index < sil_config.session.id.size(); ++index)
-    {
-        const double value = GetVectorParam(S_CONNECTION_ID, index);
-        if (value < 0.0 || value > 255.0 || value != static_cast<double>(static_cast<std::uint8_t>(value)))
-        {
-            sprintf(msg, "%s: connection_id element %llu is not an integer byte.", DRIVER,
-                    static_cast<unsigned long long>(index));
-            ssSetErrorStatus(S, msg);
-            return;
-        }
-        sil_config.session.id[index] = static_cast<std::uint8_t>(value);
-    }
-
-    try
-    {
-        sprintf(msg, "%s: Connecting to %s target: %s.\r\n", DRIVER,
-                sil_config.transport == gmp::sil::transport_kind::udp ? "UDP" : "TCP", ipaddr.str().c_str());
-        ssPrintf(msg);
-        sil_helper = new gmp::sil::gmp_sil_helper(sil_config);
-        sil_helper->connect();
-        sil_helper->notify_state(gmp::sil::protocol::simulation_state::running, 0U);
-    }
-    catch (const std::exception& exception)
-    {
-        if (sil_helper != nullptr)
-        {
-            sil_helper->close();
-            delete sil_helper;
-            sil_helper = nullptr;
-        }
-        ssSetPWorkValue(S, 0, nullptr);
-        std::snprintf(msg, sizeof(msg),
-                      "%s: Cannot establish GMP SIL session within %d ms; simulation initialization was stopped: %s",
-                      DRIVER, GMP_SIL_SIMULINK_STARTUP_TIMEOUT_MS, exception.what());
-        ssSetErrorStatus(S, msg);
-        return;
-    }
-
-    ssSetPWorkValue(S, 0, sil_helper);
+    if (ssIsRapidAcceleratorActive(S))
+        ssPrintf("GMP_SIL_Core: Rapid lifecycle probe initialized resources; network start is deferred.\r\n");
 }
 
 // Compute the signals that this block emits
@@ -950,7 +946,9 @@ static void mdlOutputs(SimStruct* S, int_T tid)
                (const void*)ssGetInputPortSignal(S, j), ssGetIWorkValue(S, unpack_bias + j));
     }
 
-    // Get the transport-independent SIL handle.
+    // Open the transport only after Simulink reaches a real major step. Rapid
+    // target build probes execute mdlStart/mdlTerminate without reaching here,
+    // so they cannot consume the controller session.
     auto* sil_helper = static_cast<gmp::sil::gmp_sil_helper*>(ssGetPWorkValue(S, 0));
     if (sil_helper == nullptr)
     {
@@ -964,8 +962,12 @@ static void mdlOutputs(SimStruct* S, int_T tid)
             }
             return;
         }
-        ssSetErrorStatus(S, "GMP_SIL_Core: SIL helper is not initialized.");
-        return;
+        const int_T desired_packed_width = CalculatePackedWidth(S);
+        const int_T desired_unpacked_width = CalculateUnpackedWidth(S);
+        sil_helper = StartSilSession(S, desired_packed_width, desired_unpacked_width);
+        if (sil_helper == nullptr)
+            return;
+        ssSetPWorkValue(S, 0, sil_helper);
     }
 
     // Communication

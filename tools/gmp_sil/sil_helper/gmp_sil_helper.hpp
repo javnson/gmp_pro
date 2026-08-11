@@ -216,7 +216,12 @@ class gmp_sil_helper
         if (frame.header.kind != protocol::frame_kind::data_request &&
             frame.header.kind != protocol::frame_kind::simulation_state &&
             frame.header.kind != protocol::frame_kind::heartbeat)
-            throw sil_error("Unexpected GMP SIL frame after session establishment.");
+            throw sil_error("Unexpected GMP SIL frame after session establishment: kind=" +
+                            std::string(protocol::frame_kind_name(frame.header.kind)) + "(" +
+                            std::to_string(static_cast<std::uint16_t>(frame.header.kind)) + "), sequence=" +
+                            std::to_string(frame.header.sequence) + ", flags=" +
+                            std::to_string(frame.header.flags) + ", payload_bytes=" +
+                            std::to_string(frame.payload.size()) + ".");
         return {frame.header.kind, frame.header.sequence, frame.header.flags, frame.payload};
     }
 

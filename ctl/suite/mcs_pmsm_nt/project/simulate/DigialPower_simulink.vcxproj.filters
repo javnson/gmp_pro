@@ -329,9 +329,6 @@
     <ClInclude Include="sdpe_mgr\sdpe_mcs_pmsm_nt_simulate_settings.h">
       <Filter>implement_interface</Filter>
     </ClInclude>
-    <ClInclude Include="xplt\pc_simulate_buffer.h">
-      <Filter>implement_interface</Filter>
-    </ClInclude>
     <ClInclude Include="xplt\xplt.config.h">
       <Filter>implement_interface</Filter>
     </ClInclude>

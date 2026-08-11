@@ -93,10 +93,12 @@ connection IDs; the IDs also reject crossed sessions.
 
 The normal startup order is controller first. The controller waits indefinitely
 for Simulink and prints its listening transport/port. The Simulink MEX client
-uses a fixed five-second connect/handshake timeout; a missing controller, bad
-address, or rejected handshake releases the network resources and stops model
-initialization. Completion still uses an explicit simulation-state frame. The
-first ten complete valid responses must pass before Simulink switches to the
+connects at the first real major simulation step and uses a fixed five-second
+connect/handshake timeout; a missing controller, bad address, or rejected
+handshake releases the network resources and stops the simulation. A Rapid
+Accelerator build probe only allocates and releases buffers; it does not open a
+session. Completion still uses an explicit simulation-state frame. The first
+ten complete valid responses must pass before Simulink switches to the
 debugger-friendly established timeout.
 
 ## Development and validation
@@ -125,7 +127,7 @@ Recommended SIL library workflow:
 | `GMP_SIL_Core` is missing | Re-run the installer and check the platform MEX in the installed `src`. |
 | TCP/UDP cannot connect | Check address, both ports, startup order, firewall, and JSON ABI lengths. |
 | Concurrent SIL sessions cross | Assign distinct port pairs and verify connection IDs. |
-| Rapid Accelerator does not communicate | Use fixed-step execution, a current-Release MEX, and inspect the Rapid target build log. |
+| Rapid Accelerator does not communicate | Use fixed-step execution and a current-Release MEX; the build log should report deferred networking and the controller should receive exactly one `session_hello`. |
 | Published source has the wrong Release | Re-export from R2024b and verify it with `Simulink.MDLInfo`. |
 
 Run `slib/uninstall_gmp_simulink_lib.m` to remove the current Release installation.

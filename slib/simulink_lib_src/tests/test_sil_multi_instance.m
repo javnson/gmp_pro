@@ -96,9 +96,10 @@ pause(0.1);
 matlabs = cell(1, 2);
 for index = 1:2
     idText = lower(reshape(dec2hex(ids(index, :), 2).', 1, []));
-    command = sprintf(["setenv('GMP_PRO_LOCATION','%s');", ...
-        "addpath('%s');addpath('%s');", ...
-        "run_sil_single_model_child(%d,%d,'%s',%d);"], ...
+    command = sprintf([ ...
+        'setenv(''GMP_PRO_LOCATION'',''%s'');' ...
+        'addpath(''%s'');addpath(''%s'');' ...
+        'run_sil_single_model_child(%d,%d,''%s'',%d);'], ...
         strrep(char(getenv('GMP_PRO_LOCATION')), '\', '/'), ...
         strrep(char(testCase.TestData.Source), '\', '/'), ...
         strrep(fileparts(mfilename('fullpath')), '\', '/'), ...
@@ -165,6 +166,99 @@ fprintf('GMP SIL missing-controller initialization stopped after %.3f s.\n', ela
 
 clear cleanupModel;
 close_system(model, 0);
+end
+
+function testRapidTargetBuildDoesNotOpenNetwork(testCase)
+assumeTrue(testCase, isfile(fullfile(testCase.TestData.Source, ...
+    ['GMP_SIL_Core.' mexext])), ...
+    'Install or build GMP_SIL_Core before running the Rapid build test.');
+
+temporaryDirectory = tempname;
+mkdir(temporaryDirectory);
+originalDirectory = pwd;
+originalFileGen = Simulink.fileGenControl('getConfig');
+model = 'gmp_sil_rapid_build_probe_test';
+cleanup = onCleanup(@() releaseRapidBuildResources( ...
+    model, temporaryDirectory, originalDirectory, originalFileGen));
+Simulink.fileGenControl('set', ...
+    'CacheFolder', fullfile(temporaryDirectory, 'cache'), ...
+    'CodeGenFolder', fullfile(temporaryDirectory, 'codegen'), ...
+    'createDir', true);
+cd(temporaryDirectory);
+
+new_system(model);
+add_block('simulink/Sources/Constant', [model '/input'], ...
+    'Value', 'uint8(1:32)', 'OutDataTypeStr', 'uint8', ...
+    'SampleTime', '1e-4');
+add_block('simulink/User-Defined Functions/S-Function', [model '/core'], ...
+    'FunctionName', 'GMP_SIL_Core', ...
+    'Parameters', parameterText(49100, 49101, uint8(96:111)));
+add_block('simulink/Sinks/Terminator', [model '/output']);
+add_line(model, 'input/1', 'core/1');
+add_line(model, 'core/1', 'output/1');
+set_param(model, 'SolverType', 'Fixed-step', 'Solver', ...
+    'FixedStepDiscrete', 'FixedStep', '1e-4', 'StopTime', '4e-4');
+save_system(model, fullfile(temporaryDirectory, [model '.slx']));
+
+% No controller peer is running. Before lazy session start, the Rapid host
+% probe called mdlStart and failed here after consuming/waiting for a session.
+Simulink.BlockDiagram.buildRapidAcceleratorTarget(model);
+verifyTrue(testCase, isfile(fullfile(temporaryDirectory, ...
+    [model '.slx'])), 'Rapid target build did not complete.');
+
+clear cleanup;
+end
+
+function testRapidSimulationUsesSingleControllerSession(testCase)
+assumeTrue(testCase, ispc && isfile(testCase.TestData.Peer) && ...
+    isfile(fullfile(testCase.TestData.Source, ['GMP_SIL_Core.' mexext])) && ...
+    usejava('desktop'), ...
+    ['Build the SIL peer and MEX and run this test in desktop MATLAB. ', ...
+     'On this host, the Rapid executable also crashes for the Constant-Gain ', ...
+     'baseline when MATLAB is launched with -batch.']);
+
+temporaryDirectory = tempname;
+mkdir(temporaryDirectory);
+originalDirectory = pwd;
+originalFileGen = Simulink.fileGenControl('getConfig');
+model = 'gmp_sil_rapid_single_session_test';
+cleanup = onCleanup(@() releaseRapidBuildResources( ...
+    model, temporaryDirectory, originalDirectory, originalFileGen));
+Simulink.fileGenControl('set', ...
+    'CacheFolder', fullfile(temporaryDirectory, 'cache'), ...
+    'CodeGenFolder', fullfile(temporaryDirectory, 'codegen'), ...
+    'createDir', true);
+cd(temporaryDirectory);
+
+ports = uniqueUdpPorts(2);
+connectionId = uint8(112:127);
+config = fullfile(temporaryDirectory, 'rapid_peer.json');
+writeConfig(config, ports(1), ports(2), connectionId);
+peer = startPeer(testCase.TestData.Peer, config);
+cleanupPeer = onCleanup(@() stopPeers({peer}));
+pause(0.1);
+
+new_system(model);
+add_block('simulink/Sources/Constant', [model '/input'], ...
+    'Value', 'uint8(1:32)', 'OutDataTypeStr', 'uint8', ...
+    'SampleTime', '1e-4');
+add_block('simulink/User-Defined Functions/S-Function', [model '/core'], ...
+    'FunctionName', 'GMP_SIL_Core', ...
+    'Parameters', parameterText(ports(1), ports(2), connectionId));
+add_block('simulink/Sinks/Terminator', [model '/output']);
+add_line(model, 'input/1', 'core/1');
+add_line(model, 'core/1', 'output/1');
+set_param(model, 'SolverType', 'Fixed-step', 'Solver', ...
+    'FixedStepDiscrete', 'FixedStep', '1e-4', 'StopTime', '4e-4');
+save_system(model, fullfile(temporaryDirectory, [model '.slx']));
+
+sim(model, 'SimulationMode', 'rapid');
+verifyTrue(testCase, peer.WaitForExit(5000), ...
+    'Rapid simulation did not publish its explicit terminal state.');
+verifyEqual(testCase, peer.ExitCode, int32(0), ...
+    'The controller rejected the Rapid simulation session.');
+
+clear cleanupPeer cleanup;
 end
 
 function text = parameterText(serverPort, clientPort, id)
@@ -242,6 +336,31 @@ for index = 1:numel(peers)
         end
         peers{index}.Dispose();
     catch
+    end
+end
+end
+
+function releaseRapidBuildResources(model, temporaryDirectory, ...
+    originalDirectory, originalFileGen)
+if bdIsLoaded(model)
+    close_system(model, 0);
+end
+Simulink.fileGenControl('setConfig', 'config', originalFileGen);
+cd(originalDirectory);
+for attempt = 1:5
+    if ~isfolder(temporaryDirectory)
+        break;
+    end
+    try
+        rmdir(temporaryDirectory, 's');
+    catch cleanupError
+        if attempt == 5
+            warning('GMP:SIL:RapidTestCleanup', ...
+                'Cannot remove Rapid test directory %s: %s', ...
+                temporaryDirectory, cleanupError.message);
+        else
+            pause(0.2);
+        end
     end
 end
 end
