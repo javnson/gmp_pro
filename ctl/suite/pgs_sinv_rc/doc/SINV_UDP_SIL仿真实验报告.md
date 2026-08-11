@@ -37,7 +37,7 @@ E:\lib\gmp_pro\ctl\suite\pgs_sinv_rc\project\simulate
 已验证环境为 Windows、MATLAB/Simulink R2024b 和 Visual Studio C++ x64 工具链。MATLAB 需要模型所用的 Simscape Electrical/电力电子模块，并能加载：
 
 ```text
-E:\lib\gmp_pro\tools\gmp_sil\udp_helper_v2\mdl_asio_helper\bin\x64\Debug
+E:\lib\gmp_pro\slib\install_path\R2024b\src
 ```
 
 模型回调会自动加入 UDP S-function、公共 SDPE MATLAB 脚本和项目 SDPE MATLAB 脚本。SDPE 生成依赖可用的 Python 环境。
@@ -281,7 +281,7 @@ BL5 启动前段由功率级体二极管形成被动整流，随后控制器接�
 | 运行了错误模型 | 使用 `run_sinv_cosim`/`run_sinv_validation` 自动选模；BL1/2=RLOAD，BL3/4=Grid，BL5=Rectifier |
 | UDP 连接失败 | 关闭旧控制器和旧仿真，检查 12500–12503 端口 |
 | 模型无法保存 | 同一 `.slx` 被另一个 MATLAB 会话占用 |
-| 找不到 UDP S-function | 检查 `mdl_asio_helper/bin/x64/Debug` 是否存在并与 MATLAB 架构一致 |
+| 找不到 SIL S-function | 重新运行 `slib/install_gmp_simulink_lib.m`，并检查当前 MATLAB 版本的 `slib/install_path/<Release>/src` |
 | Enable 一直为 0 | 检查 ADC 校准、Vdc ready、PLL lock、保护位和 CiA402 状态，不要强制旁路状态机 |
 | BL3/4 功率方向错误 | 核对 P 符号、PLL alpha/beta 定义和交流电流正方向；正 P 应向电网送电 |
 | BL5 母线达不到 60 V | 先算负载功率和所需网侧电流；确认使用 30 Ω，而不是盲目提高 PI 增益 |

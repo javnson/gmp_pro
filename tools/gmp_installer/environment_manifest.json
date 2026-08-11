@@ -62,6 +62,8 @@
     "repository_version": "2026.04.27",
     "repository_url": "https://github.com/microsoft/vcpkg/archive/refs/tags/2026.04.27.zip",
     "triplet": "x64-windows",
-    "projects": []
+    "projects": [
+      "slib/simulink_lib_src"
+    ]
   }
 }

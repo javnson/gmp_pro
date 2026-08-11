@@ -288,7 +288,7 @@ SIL 的关键机制：
 - 使用专用 CSP 将电脑抽象成一个芯片。
 - 相关 CSP 位于 `csp/windows_simulink`。
 - 控制程序按照 Simulink 时间感知物理时间，从而与模型同步运行。
-- Simulink 与 SIL 程序之间的通信辅助工具位于 `tools/gmp_sil/udp_helper_v2`。
+- Simulink 与 SIL 程序之间的统一通信辅助工具位于 `tools/gmp_sil/sil_helper`。
 - 当前默认使用 UDP 协议传输仿真数据。
 
 SIL 典型结构：
