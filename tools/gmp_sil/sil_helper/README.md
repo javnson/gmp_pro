@@ -26,8 +26,9 @@ reported by an explicit simulation-state frame rather than by timeout.
 
 The controller/server has no startup timeout by default: it may be launched
 first and wait indefinitely for Simulink, with an explicit listening message.
-The Simulink MEX client always applies a five-second connect/handshake timeout;
-failure releases the transport and stops model initialization. Its first ten
+The Simulink MEX client opens the connection at its first real major step and
+applies a five-second connect/handshake timeout; failure releases the transport
+and stops the simulation. Its first ten
 complete valid responses use the short timeout before the session switches to
 the debugger-friendly established timeout. Invalid IDs, ABI lengths, sequences,
 or partial frames do not advance the count.
@@ -74,8 +75,10 @@ validation, explicit completion, active abort, startup timeout policy, and two
 concurrent isolated sessions. See `network.example.json` for the complete JSON
 schema.
 
-Rapid Accelerator may probe the S-function while building its target.
-`GMP_SIL_Core` skips network setup during that build phase and opens the
-session only in the real fixed-step simulation process, so the build probe
-cannot consume the controller connection. Use a MEX built by the matching
-MATLAB Release on both Windows and Linux.
+Rapid Accelerator may probe the S-function with an `mdlStart`/`mdlTerminate`
+lifecycle while building its target. `GMP_SIL_Core` only allocates buffers in
+`mdlStart`; its first real major-step `mdlOutputs` opens the session and sends
+`session_hello`. The build probe therefore cannot consume the controller's
+single session or send a false terminal state. Unexpected-frame diagnostics
+include frame kind, sequence, flags, and payload length. Use a MEX built by the
+matching MATLAB Release on both Windows and Linux.

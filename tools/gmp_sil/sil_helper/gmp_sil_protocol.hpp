@@ -41,6 +41,25 @@ enum class frame_kind : std::uint16_t
     session_hello_response = 11U
 };
 
+inline const char* frame_kind_name(frame_kind kind) noexcept
+{
+    switch (kind)
+    {
+    case frame_kind::data_request: return "data_request";
+    case frame_kind::data_response: return "data_response";
+    case frame_kind::command: return "command";
+    case frame_kind::command_response: return "command_response";
+    case frame_kind::heartbeat: return "heartbeat";
+    case frame_kind::heartbeat_response: return "heartbeat_response";
+    case frame_kind::error: return "error";
+    case frame_kind::simulation_state: return "simulation_state";
+    case frame_kind::simulation_state_response: return "simulation_state_response";
+    case frame_kind::session_hello: return "session_hello";
+    case frame_kind::session_hello_response: return "session_hello_response";
+    default: return "unknown";
+    }
+}
+
 enum class simulation_state : std::uint16_t
 {
     starting = 1U,
