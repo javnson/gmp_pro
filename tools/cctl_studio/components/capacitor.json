@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "spice.capacitor",
+  "display_name": "Capacitor",
+  "instance_prefix": "C",
+  "ports": [
+    { "name": "p", "domain": "electrical" },
+    { "name": "n", "domain": "electrical" }
+  ],
+  "parameters": {
+    "capacitance": { "type": "spice_scalar", "required": true },
+    "initial_condition": { "type": "spice_scalar", "default": "0" }
+  },
+  "xyce": {
+    "netlist_template": "$instance $port_p $port_n $param_capacitance IC=$param_initial_condition"
+  }
+}

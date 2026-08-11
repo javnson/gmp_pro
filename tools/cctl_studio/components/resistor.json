@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "id": "spice.resistor",
+  "display_name": "Resistor",
+  "instance_prefix": "R",
+  "ports": [
+    { "name": "p", "domain": "electrical" },
+    { "name": "n", "domain": "electrical" }
+  ],
+  "parameters": {
+    "resistance": { "type": "spice_scalar", "required": true }
+  },
+  "xyce": {
+    "netlist_template": "$instance $port_p $port_n $param_resistance"
+  }
+}

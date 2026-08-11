@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "spice.voltage_pulse",
+  "display_name": "Pulse Voltage Source",
+  "instance_prefix": "V",
+  "ports": [
+    { "name": "p", "domain": "electrical" },
+    { "name": "n", "domain": "electrical" }
+  ],
+  "parameters": {
+    "initial": { "type": "spice_scalar", "required": true },
+    "pulsed": { "type": "spice_scalar", "required": true },
+    "delay": { "type": "spice_scalar", "default": "0" },
+    "rise": { "type": "spice_scalar", "required": true },
+    "fall": { "type": "spice_scalar", "required": true },
+    "width": { "type": "spice_scalar", "required": true },
+    "period": { "type": "spice_scalar", "required": true }
+  },
+  "xyce": {
+    "netlist_template": "$instance $port_p $port_n PULSE($param_initial $param_pulsed $param_delay $param_rise $param_fall $param_width $param_period)"
+  }
+}

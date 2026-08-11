@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "spice.inductor",
+  "display_name": "Inductor",
+  "instance_prefix": "L",
+  "ports": [
+    { "name": "p", "domain": "electrical" },
+    { "name": "n", "domain": "electrical" }
+  ],
+  "parameters": {
+    "inductance": { "type": "spice_scalar", "required": true },
+    "initial_condition": { "type": "spice_scalar", "default": "0" }
+  },
+  "xyce": {
+    "netlist_template": "$instance $port_p $port_n $param_inductance IC=$param_initial_condition"
+  }
+}

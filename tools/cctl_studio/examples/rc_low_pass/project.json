@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "title": "CCTL Studio RC low-pass step response",
+  "analysis": {
+    "type": "tran",
+    "step": "10us",
+    "stop": "5ms",
+    "start": "0"
+  },
+  "instances": [
+    {
+      "name": "VSTEP",
+      "module": "spice.voltage_pulse",
+      "ports": { "p": "vin", "n": "0" },
+      "parameters": {
+        "initial": "0",
+        "pulsed": "10",
+        "rise": "1us",
+        "fall": "1us",
+        "width": "5ms",
+        "period": "10ms"
+      }
+    },
+    {
+      "name": "R1",
+      "module": "spice.resistor",
+      "ports": { "p": "vin", "n": "out" },
+      "parameters": { "resistance": "1k" }
+    },
+    {
+      "name": "C1",
+      "module": "spice.capacitor",
+      "ports": { "p": "out", "n": "0" },
+      "parameters": { "capacitance": "1u" }
+    }
+  ],
+  "probes": [
+    { "expression": "V(vin)" },
+    { "expression": "V(out)" },
+    { "expression": "I(VSTEP)" }
+  ],
+  "output": {
+    "format": "CSV",
+    "file": "waveforms.csv"
+  }
+}
