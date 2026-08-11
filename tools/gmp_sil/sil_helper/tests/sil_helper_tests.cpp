@@ -192,7 +192,7 @@ void test_abi_rejected_before_network()
     require(caught, "JSON ABI larger than max_payload was accepted");
 }
 
-void test_first_frame_waits_without_timeout(sil::transport_kind transport)
+void test_server_waits_without_timeout(sil::transport_kind transport)
 {
     const bool tcp = transport == sil::transport_kind::tcp;
     const auto server_port = free_port(tcp);
@@ -203,11 +203,11 @@ void test_first_frame_waits_without_timeout(sil::transport_kind transport)
     auto server_config = make_config(transport, sil::endpoint_role::server, server_port, client_port);
     auto client_config = make_config(transport, sil::endpoint_role::client, server_port, client_port);
     server_config.startup_io_timeout = 25ms;
-    client_config.startup_io_timeout = 25ms;
+    client_config.startup_io_timeout = 500ms;
     server_config.connect_timeout = 25ms;
-    client_config.connect_timeout = 25ms;
+    client_config.connect_timeout = 500ms;
     server_config.startup_timeout_enabled = false;
-    client_config.startup_timeout_enabled = false;
+    client_config.startup_timeout_enabled = true;
 
     sil::gmp_sil_helper server(server_config);
     std::exception_ptr server_failure;
@@ -223,8 +223,9 @@ void test_first_frame_waits_without_timeout(sil::transport_kind transport)
         }
     });
 
-    // Deliberately exceed the configured short timeout.  With the policy bit
-    // disabled, the session hello must still establish successfully.
+    // Deliberately exceed the server's configured short timeout. The
+    // controller/server must continue waiting, while the Simulink/client side
+    // keeps its own bounded startup policy.
     std::this_thread::sleep_for(150ms);
     std::exception_ptr client_failure;
     try
@@ -245,6 +246,35 @@ void test_first_frame_waits_without_timeout(sil::transport_kind transport)
         std::rethrow_exception(server_failure);
 }
 
+void test_udp_client_times_out_without_controller()
+{
+    const auto server_port = free_port(false);
+    auto client_port = free_port(false);
+    while (client_port == server_port)
+        client_port = free_port(false);
+
+    auto client_config = make_config(sil::transport_kind::udp, sil::endpoint_role::client,
+                                     server_port, client_port);
+    client_config.startup_io_timeout = 100ms;
+    client_config.connect_timeout = 100ms;
+    client_config.startup_timeout_enabled = true;
+
+    const auto started = std::chrono::steady_clock::now();
+    bool caught_timeout = false;
+    try
+    {
+        sil::gmp_sil_helper client(client_config);
+        client.connect();
+    }
+    catch (const std::exception& exception)
+    {
+        caught_timeout = std::string(exception.what()).find("timed out") != std::string::npos;
+    }
+    const auto elapsed = std::chrono::steady_clock::now() - started;
+    require(caught_timeout, "UDP Simulink client did not report a missing-controller timeout");
+    require(elapsed >= 75ms && elapsed < 2s, "UDP startup timeout was not bounded as configured");
+}
+
 } // namespace
 
 int main()
@@ -259,9 +289,10 @@ int main()
         test_two_independent_sessions(sil::transport_kind::udp);
         test_two_independent_sessions(sil::transport_kind::tcp);
         std::cout << "[PASS] two isolated concurrent sessions\n";
-        test_first_frame_waits_without_timeout(sil::transport_kind::udp);
-        test_first_frame_waits_without_timeout(sil::transport_kind::tcp);
-        std::cout << "[PASS] optional first-frame timeout\n";
+        test_server_waits_without_timeout(sil::transport_kind::udp);
+        test_server_waits_without_timeout(sil::transport_kind::tcp);
+        test_udp_client_times_out_without_controller();
+        std::cout << "[PASS] asymmetric controller-wait/client-timeout startup policy\n";
         test_abi_rejected_before_network();
         std::cout << "[PASS] ABI validation\n";
         return 0;

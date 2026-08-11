@@ -96,8 +96,8 @@ pause(0.1);
 matlabs = cell(1, 2);
 for index = 1:2
     idText = lower(reshape(dec2hex(ids(index, :), 2).', 1, []));
-    command = sprintf(["setenv('GMP_PRO_LOCATION','%s');" + ...
-        "addpath('%s');addpath('%s');" + ...
+    command = sprintf(["setenv('GMP_PRO_LOCATION','%s');", ...
+        "addpath('%s');addpath('%s');", ...
         "run_sil_single_model_child(%d,%d,'%s',%d);"], ...
         strrep(char(getenv('GMP_PRO_LOCATION')), '\', '/'), ...
         strrep(char(testCase.TestData.Source), '\', '/'), ...
@@ -118,6 +118,53 @@ for index = 1:numel(peers)
 end
 
 clear cleanupMatlabs cleanupPeers cleanupDirectory;
+end
+
+function testSimulinkStartupStopsWhenControllerIsMissing(testCase)
+assumeTrue(testCase, ispc && isfile(fullfile(testCase.TestData.Source, ...
+    ['GMP_SIL_Core.' mexext])), ...
+    'Install or build GMP_SIL_Core before running the integration test.');
+
+ports = uniqueUdpPorts(2);
+connectionId = uint8(80:95);
+model = 'gmp_sil_missing_controller_test';
+new_system(model);
+cleanupModel = onCleanup(@() close_system(model, 0));
+add_block('simulink/Sources/Constant', [model '/input'], ...
+    'Value', 'uint8(1:32)', 'OutDataTypeStr', 'uint8', ...
+    'SampleTime', '1e-4');
+add_block('simulink/User-Defined Functions/S-Function', [model '/core'], ...
+    'FunctionName', 'GMP_SIL_Core', ...
+    'Parameters', parameterText(ports(1), ports(2), connectionId));
+add_block('simulink/Sinks/Terminator', [model '/output']);
+add_line(model, 'input/1', 'core/1');
+add_line(model, 'core/1', 'output/1');
+set_param(model, 'SolverType', 'Fixed-step', 'Solver', ...
+    'FixedStepDiscrete', 'FixedStep', '1e-4', 'StopTime', '4e-4');
+
+started = tic;
+failure = [];
+try
+    sim(model, 'SimulationMode', 'normal');
+catch simulationError
+    failure = simulationError;
+end
+elapsed = toc(started);
+
+verifyNotEmpty(testCase, failure, ...
+    'Simulation unexpectedly started without a SIL controller.');
+verifyGreaterThanOrEqual(testCase, elapsed, 4.5, ...
+    'The startup guard fired before the configured five-second interval.');
+verifyLessThan(testCase, elapsed, 7.5, ...
+    'Simulink remained blocked after the five-second startup guard.');
+details = getReport(failure, 'extended', 'hyperlinks', 'off');
+verifyTrue(testCase, contains(details, 'within 5000 ms') || ...
+    contains(details, 'timed out'), ...
+    'The initialization error did not identify the SIL startup timeout.');
+fprintf('GMP SIL missing-controller initialization stopped after %.3f s.\n', elapsed);
+
+clear cleanupModel;
+close_system(model, 0);
 end
 
 function text = parameterText(serverPort, clientPort, id)
