@@ -31,89 +31,88 @@
       "id": "output",
       "label": "Output",
       "width": 1,
-      "type": "double",
-      "source": "step_return"
+      "type": "double"
     }
   ],
   "parameters": [
     {
       "id": "kp",
       "label": "Kp",
-      "type": "number",
       "group": "Gains",
-      "externalizable": true,
+      "type": "number",
       "default": 0.4,
       "unit": "",
+      "externalizable": true,
       "description": "Proportional gain"
     },
     {
       "id": "ki_or_ti",
       "label": "Ki or Ti",
-      "type": "number",
       "group": "Gains",
-      "externalizable": true,
+      "type": "number",
       "default": 20.0,
       "unit": "Hz or s",
+      "externalizable": true,
       "description": "Ki in parallel mode; Ti in time-constant mode"
     },
     {
       "id": "kd_or_td",
       "label": "Kd or Td",
-      "type": "number",
       "group": "Gains",
-      "externalizable": true,
+      "type": "number",
       "default": 0.0001,
       "unit": "s",
+      "externalizable": true,
       "description": "Kd in parallel mode; Td in time-constant mode"
     },
     {
       "id": "fs",
       "label": "Controller parameter frequency",
-      "type": "number",
       "group": "Initialization",
-      "externalizable": false,
+      "type": "number",
       "default": 10000.0,
       "unit": "Hz",
+      "externalizable": false,
       "description": "Passed to GMP initialization; scheduling remains inherited from Simulink"
     },
     {
       "id": "out_max",
       "label": "Output maximum",
-      "type": "number",
       "group": "Output limits",
-      "externalizable": true,
+      "type": "number",
       "default": 1000000.0,
       "unit": "",
+      "externalizable": true,
       "description": "Output saturation maximum"
     },
     {
       "id": "out_min",
       "label": "Output minimum",
-      "type": "number",
       "group": "Output limits",
-      "externalizable": true,
+      "type": "number",
       "default": -1000000.0,
       "unit": "",
+      "externalizable": true,
       "description": "Output saturation minimum"
     },
     {
       "id": "integral_max",
       "label": "Integral maximum",
-      "type": "number",
       "group": "Integrator limits",
-      "externalizable": true,
+      "type": "number",
       "default": 1000000.0,
       "unit": "",
+      "externalizable": true,
       "description": "Integrator saturation maximum"
     },
     {
       "id": "integral_min",
       "label": "Integral minimum",
-      "type": "number",
       "group": "Integrator limits",
-      "externalizable": true,
+      "type": "number",
       "default": -1000000.0,
       "unit": "",
+      "externalizable": true,
       "description": "Integrator saturation minimum"
     }
   ],
@@ -154,6 +153,7 @@
     ],
     "default_points": 40,
     "excitation_amplitude": 0.001,
+    "excitation_bias": 0.0,
     "settling_periods": 8,
     "measurement_periods": 8
   }

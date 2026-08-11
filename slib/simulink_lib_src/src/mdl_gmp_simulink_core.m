@@ -7,7 +7,7 @@
 function ...
     [NumberUnpackedPorts, UnpackedDataTypes, UnpackedDataSizes, ...
      NumberPackedPorts, PackedDataTypes, PackedDataSizes, ...
-     Alignment] = mdl_gmp_simulink_core( ...
+     Alignment, PackedBytes, UnpackedBytes] = mdl_gmp_simulink_core( ...
      MaskUnpackedDataTypes, MaskUnpackedDataSizes, ... 
      MaskPackedDataTypes, MaskPackedDataSizes,...
      MaskAlignment)
@@ -188,6 +188,19 @@ switch MaskAlignment
         Alignment = 8;
     otherwise
         error(message('slrealtime:BytePacking:Align'));
+end
+
+%% Packed ABI byte lengths used by the session handshake and network.json.
+typeBytes = [8, 4, 1, 1, 2, 2, 4, 4, 1, 8, 8];
+PackedBytes = 0;
+for j = 1:NumberPackedPorts
+    portBytes = prod(PackedDataSizes((j - 1) * 2 + (1:2))) * typeBytes(PackedDataTypes(j) + 1);
+    PackedBytes = PackedBytes + portBytes + mod(-portBytes, Alignment);
+end
+UnpackedBytes = 0;
+for j = 1:NumberUnpackedPorts
+    portBytes = prod(UnpackedDataSizes((j - 1) * 2 + (1:2))) * typeBytes(UnpackedDataTypes(j) + 1);
+    UnpackedBytes = UnpackedBytes + portBytes + mod(-portBytes, Alignment);
 end
 
 end

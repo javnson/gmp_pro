@@ -2,154 +2,122 @@
 
 [English](readme.md) | **简体中文**
 
-`slib` 是 GMP MATLAB/Simulink 集成的源码和发行构建目录，包含可复用的功率级与虚拟外设模型、与 GMP 数值语义一致的控制辅助模块、UDP 软件在环（SIL）桥接、标准模型以及由 SDPE 参数驱动的 MATLAB 初始化工具。
+`slib` 提供 GMP 的 Simulink 库、标准模型、SDPE 初始化工具，以及统一 TCP/UDP
+软件在环（SIL）接口。SIL 的 C++ 源码只在
+`tools/gmp_sil/sil_helper` 维护，`slib` 只发布 MATLAB 脚本、模型和安装时编译的
+`GMP_SIL_Core` MEX。
 
-## 依赖和支持边界
+## 支持范围
 
-- `upgrade_gmp_simulink_lib.m` 要求 MATLAB/Simulink R2022b 或更新版本。
-- 现有功率级模型依赖 Simscape Electrical Specialized Power Systems 及其 `powerlib`。
-- 当前安装器会拒绝 R2026a 及更新版本，因为这些版本不再包含 Specialized Power Systems。现有模型应使用 R2025b 或更早版本。
-- Linux SIL 属于正式支持方向，但当前实现尚不完整：仓库已有 Linux x64 `GMP_SIL_Core`，目前还没有 Linux UDP-helper 二进制文件。在完成后续适配与验证前保持现有 Linux 代码不变。
-- SLX 与 MEX 文件必须与 MATLAB Release 和操作系统兼容，不能默认复用其他 Release 的生成目录。
+- 支持 MATLAB/Simulink R2022b 至 R2025b。
+- 功率级模型需要 Simscape Electrical Specialized Power Systems 及 `powerlib`。
+- R2026a 起不再提供上述产品，因此当前安装器会拒绝 R2026a 及更高版本。
+- MEX 必须由目标 MATLAB Release 和操作系统自己的 `mex` 编译器构建，不能跨平台复制。
+- Windows 和 Linux 均支持统一 TCP/UDP SIL；快速加速验证必须使用定步长模型。
 
-安装器会实际尝试加载 `powerlib`。仅仅在 MATLAB 产品信息中看到相关产品，并不能证明文件和许可证都可用。
-
-## 目录结构
+## 源码与生成物边界
 
 | 路径 | 作用 | 维护规则 |
 | --- | --- | --- |
-| `simulink_lib_src/*.slx` | Simulink 库的权威源码模型 | 修改这些模型。 |
-| `simulink_lib_src/src/` | MATLAB 辅助函数和已编译 MEX 文件 | 在此修改和测试脚本；MEX 应从对应原生工程重新编译。 |
-| `simulink_lib_src/tests/` | MATLAB 回归测试 | 为辅助函数和路径无关初始化补充测试。 |
-| `simulink_lib_src/icon/` | Library Browser 图标 | 模型中保持相对路径引用。 |
-| `simulink_lib_src/avatars/` | STEP/SolidWorks 可视化资源 | 作为源资源维护。 |
-| `install_path/<Release>/` | 针对一个 MATLAB Release 生成的安装目录 | 禁止直接修改，应重新生成。 |
-| `tools/` | S-Function Builder 控制器示例和构建信息 | C++、wrapper、MAT 和 MEX 应保持一致。 |
-| `future/` | 实验性机电模型 | 不属于稳定安装接口。 |
+| `install_path/R2024b/gmp_sil_core_pack.slx` | SIL 库的 R2024b 可编辑、调试版本 | 先在这里完成 Mask 和模块调试。该目录通常是本机生成物，不作为跨版本发布源。 |
+| `simulink_lib_src/gmp_sil_core_pack_src.slx` | 仓库发布的 R2022b 兼容源模型 | 只能通过 `export_gmp_simulink_lib_src` 从 R2024b 导出，不应独立手改。 |
+| `simulink_lib_src/src/` | MATLAB 辅助函数和已编译 MEX | MATLAB 脚本在此维护；MEX 由安装器从唯一 C++ 源码重新编译。 |
+| `simulink_lib_src/tests/` | MATLAB/SIL 回归测试 | 修改通信、Mask 或安装链后运行。 |
+| `tools/gmp_sil/sil_helper/` | TCP/UDP 协议、控制器对象、S-function 和测试的唯一 C++ 源码 | 不在 `slib` 复制源码。 |
+| `install_path/<Release>/` | 当前 MATLAB Release 的安装结果 | 除上述 R2024b 编辑流程外，不直接维护；由安装器重新生成。 |
 
-检出目录中可能已有 `install_path/R2022b` 和 `R2024b`，但仓库 `.gitignore` 将所有 Release 目录都视为生成物。
+其他 `_src.slx` 仍是各自库的跨版本源。SIL Core 特别采用 R2024b 编辑、R2022b
+发布的流程，是为了能够先用当前工具调试，再向较老 MATLAB 发布兼容模型。
 
-## 库模型组成
+## 导出 R2022b 发布源
 
-`slblocks.m` 将 `gmp_simulink_utilities` 注册为 Simulink Library Browser 中的 **GMP Utilities Library**。主要生成库包括：
+在 MATLAB R2024b 或更高版本中完成 R2024b SIL 库调试后执行：
 
-| 库 | 作用 |
-| --- | --- |
-| `gmp_simulink_utilities` | GMP 控制器、被控对象、SIL、外设和数值工具的顶层入口。 |
-| `gmp_fp_utilities` | GMP 浮点兼容函数、坐标变换、PWM 和测量辅助模块。 |
-| `gmp_peripheral_utilities` | 虚拟 ADC、PWM、传感器、采样和外设行为。 |
-| `gmp_sil_core_pack` | SIL 控制面板、通道打包、触发处理和 UDP 核心模块。 |
-| `gmp_std_model_pck` | 标准变换器、电机、传感器和功率级模型。 |
-| `gmp_component_model` | 部分 CTL 组件的 S-Function 封装。 |
+```matlab
+run(fullfile(getenv('GMP_PRO_LOCATION'), ...
+    'slib', 'export_gmp_simulink_lib_src.m'));
+```
 
-权威模型以 `_src.slx` 结尾。`upgrade_gmp_simulink_lib` 会在 `install_path/<Release>` 中生成去掉 `_src` 的兼容副本。
+该脚本会复制 R2024b 模型、升级统一 TCP/UDP Mask，并用
+`Simulink.exportToVersion(...,'R2022B')` 原子更新
+`simulink_lib_src/gmp_sil_core_pack_src.slx`。导出后应检查：
 
-## 安装、升级和卸载
+```matlab
+info = Simulink.MDLInfo(fullfile(getenv('GMP_PRO_LOCATION'), ...
+    'slib', 'simulink_lib_src', 'gmp_sil_core_pack_src.slx'));
+assert(strcmp(info.ReleaseName, 'R2022b'));
+```
 
-先运行 GMP 安装程序，确保 `GMP_PRO_LOCATION` 指向仓库根目录，再在 MATLAB 中执行：
+## 安装
+
+先通过 GMP 环境安装器恢复 ASIO 和 nlohmann-json 头文件，再在 MATLAB 中执行：
 
 ```matlab
 run(fullfile(getenv('GMP_PRO_LOCATION'), ...
     'slib', 'install_gmp_simulink_lib.m'));
 ```
 
-安装流程为：
+安装器按以下顺序工作：
 
-1. 检查 `powerlib` 和 MATLAB Release；
-2. 临时切换到 `slib`，避免依赖调用者的当前目录；
-3. 运行 `upgrade_gmp_simulink_lib` 生成 `install_path/<Release>`；
-4. 复制 MATLAB 函数、MEX、图标和 avatar 资源；
-5. 将 Release 目录及其 `src` 加入 MATLAB 路径；
-6. 保存路径并刷新 Simulink 自定义项。
+1. 验证 MATLAB Release、`powerlib` 和 GMP 环境中已恢复的依赖；
+2. 调用 `tools/gmp_sil/sil_helper/build_gmp_sil_mex.m`，使用 MATLAB 自带 `mex` 编译器；
+3. 只把生成的 `GMP_SIL_Core.<mexext>` 放入 `simulink_lib_src/src`；
+4. 从 R2022b 源模型生成 `install_path/<Release>` 的兼容库；
+5. 复制脚本和 MEX、注册 MATLAB 路径并刷新 Library Browser。
 
-卸载当前 Release 的生成库和 MATLAB 路径：
+MATLAB 安装阶段不会运行 vcpkg，也不会访问网络。缺少依赖时，应先从
+`gmp_env.bat` 修复 GMP 私有环境。
 
-```matlab
-run(fullfile(getenv('GMP_PRO_LOCATION'), ...
-    'slib', 'uninstall_gmp_simulink_lib.m'));
-```
+## SIL Core Mask
 
-`reg_path_gmp_simulink_lib.m` 只会重新注册已经生成的目录，不检查依赖，也不会重新构建模型。
+SIL Core 的网络配置只包含：
 
-卸载程序会移除生成目录对应的 MATLAB 路径，调用 `savepath` 永久保存这一变化，然后删除当前 Release 目录。
+- `Transport`：TCP 或 UDP；
+- `Target address`：`localhost`、`127.0.0.1` 或数值 IPv4；
+- `Target receive port`；
+- `Local receive port (UDP)`：仅 UDP 显示，TCP 自动隐藏。
 
-## SIL 结构
+本机连接选择 TCP 时会建议使用 UDP；非本机连接选择 UDP 时会建议使用 TCP。
+旧的 command TX/RX 端口、手工连接 ID、ABI 字节数和协议状态均不再作为网络 Mask
+输入。Mask 中仍保留打包/解包数据类型、尺寸和对齐参数，因为它们定义 Simulink
+信号 ABI，不属于网络连接配置。
 
-典型 GMP SIL 工程包含两个协作进程：
+连接初始化会按模型和 block 生成独立 connection ID，并在普通单控制器工程的
+`network.json` 中记录两个端口、双向 payload 长度及状态协议。一个模型内多个控制器或
+多个模型并行时，每个控制器必须使用各自的 JSON、不同端口对和对应 connection ID；
+connection ID 会进一步阻止错误会话串线。
 
-```text
-Simulink 功率级与虚拟外设
-        | ADC 码、时间、面板/数字输入
-        v
-GMP_SIL_Core / MEX_UDP_Helper  <--- UDP --->  Windows 控制器程序
-        ^                                      （复用 suite/src 控制代码）
-        | Enable、PWM compare、DAC/监视数据
-        +--------------------------------------
-```
+控制器通常先启动并等待，Simulink 再发送首帧。正常结束使用显式仿真状态帧，不依赖
+超时；默认长等待适合调试器暂停。启用 `GMP_SIL_ENABLE_STARTUP_TIMEOUT` 时，前 10 个
+完整有效帧通过后才进入长超时阶段。
 
-原生控制器采用 `csp/windows_simulink` 并定义 `SPECIFY_PC_ENVIRONMENT`。主循环接收 `gmp_pc_simulink_rx_buffer_t`，调用 `gmp_base_ctl_step()`，再发送 `gmp_pc_simulink_tx_buffer_t`。每个 suite 的 `xplt.ctl_interface.h` 决定 ADC/PWM 的具体映射；模型和控制器必须在顺序、类型、尺寸、对齐、标度、极性与 UDP 端口上完全一致。
-
-不要通过交换模型通道来掩盖平台映射错误。应在 suite 的仿真 README 中记录通道契约，并同步修改模型和 `xplt` 映射。
-
-`mdl_gmp_simulink_connection` 检查纯 IPv4 地址并生成消息 TX/RX、命令 TX/RX 四端口向量。`sl_udp_server_init_cb` 会释放旧套接字、配置 MEX、连接网络并发送 `start`；`sl_udp_server_stop_cb` 发送 `stop` 后释放网络资源。
-
-## SDPE 模型初始化
-
-当前 suite 使用两层 SDPE 生成脚本：
-
-```text
-<suite>/sdpe_general/*_matlab_init.m
-<suite>/project/<target>/sdpe_mgr/*_matlab_init.m
-```
-
-模型可调用：
+## 开发与验证
 
 ```matlab
-gmp_run_model_sdpe_init(bdroot)
+addpath(fullfile(getenv('GMP_PRO_LOCATION'), 'slib', ...
+    'simulink_lib_src', 'src'));
+results = runtests(fullfile(getenv('GMP_PRO_LOCATION'), 'slib', ...
+    'simulink_lib_src', 'tests'));
+assert(all([results.Passed]));
 ```
 
-该函数从已保存模型的位置计算路径，要求公共层和平台层各自恰好存在一个 `*_matlab_init.m`，并在 MATLAB base workspace 中先执行公共层、再执行平台层。目录缺失或脚本数量不唯一都会明确报错。
+修改 SIL 库的推荐顺序是：
 
-修改 SDPE JSON 后，应在打开或运行模型前重新生成两层配置：
-
-```bat
-sdpe_general\sdpe_generate.bat
-project\simulate\sdpe_mgr\sdpe_generate.bat
-```
-
-不要在 `PreLoadFcn`、`PostLoadFcn` 或 `InitFcn` 中保存某台电脑的绝对路径；应根据模型文件位置解析，或调用 `gmp_run_model_sdpe_init`。
-
-## 开发流程
-
-1. 修改相应 `_src.slx` 或 `simulink_lib_src/src` 中的辅助函数。
-2. 保证 block callback 和 mask 代码不依赖 MATLAB 当前工作目录。
-3. 在 `simulink_lib_src/tests` 中增加或调整回归测试。
-4. 运行测试：
-
-   ```matlab
-   addpath(fullfile(getenv('GMP_PRO_LOCATION'), 'slib', ...
-       'simulink_lib_src', 'src'));
-   results = runtests(fullfile(getenv('GMP_PRO_LOCATION'), 'slib', ...
-       'simulink_lib_src', 'tests'));
-   assert(all([results.Passed]));
-   ```
-
-5. 运行 `install_gmp_simulink_lib` 重新生成当前 Release。
-6. 打开 Library Browser，检查 block link、mask、图标和依赖库。
-7. 至少运行一个实际使用了该模块或通信契约的 suite 仿真。
-
-修改 `tools/` 中的 S-Function Builder 组件时，应保持 `.cpp`、wrapper、`SFB__*.mat`、`rtwmakecfg.m` 和 MEX 的对应关系。已编译 MEX 文件不是可编辑源码。
+1. 在 R2024b 编辑和调试 `install_path/R2024b/gmp_sil_core_pack.slx`；
+2. 运行 `export_gmp_simulink_lib_src`，检查输出确为 R2022b；
+3. 运行 `install_gmp_simulink_lib`，验证当前 Release 安装结果和 MEX；
+4. 运行 MATLAB 回归测试、定步长 SIL/快速加速测试，以及至少一个实际 suite 模型。
 
 ## 故障排查
 
 | 现象 | 检查内容 |
 | --- | --- |
-| 找不到或无法加载 `powerlib` | 安装并授权 Simscape Electrical Specialized Power Systems，使用 R2025b 或更早版本。 |
-| Library Browser 中没有 GMP | 检查当前 Release 目录和 `src` 是否在 MATLAB path 中，再运行 `sl_refresh_customizations`。 |
-| 源模型已修改但安装库仍旧 | 运行 `install_gmp_simulink_lib`，不要手工修改 `install_path`。 |
-| 找不到 `GMP_SIL_Core` 或 `MEX_UDP_Helper` | 检查生成目录的 `src` 中是否存在与平台兼容的 MEX。 |
-| UDP 超时 | 核对 `network.json`、模型 mask、进程启动顺序、防火墙和四个端口；重试前释放旧套接字。 |
-| SDPE 变量未定义 | 生成公共层和平台层，并确认模型位于 `<suite>/project/<target>`。 |
-| SIL 信号符号或通道错误 | 对照模型接线和 `xplt.ctl_interface.h`，同时检查 ADC 偏置/增益和 PWM 极性。 |
+| 找不到 `powerlib` | 使用 R2025b 或更早版本，并安装/授权 Specialized Power Systems。 |
+| 缺少 ASIO/JSON | 从 `gmp_env.bat` 修复私有环境；不要让 MATLAB 自行调用 vcpkg。 |
+| 找不到 `GMP_SIL_Core` | 重新运行安装器，并确认当前平台的 MEX 位于安装目录 `src`。 |
+| TCP/UDP 无法建立 | 核对地址、两个端口、启动顺序、防火墙和生成 JSON 中的 ABI 长度。 |
+| 两个 SIL 会话串线 | 为每个会话分配不同端口对，并核对 connection ID。 |
+| 快速加速不通信 | 确认使用定步长、当前 Release 编译的 MEX，并查看 Rapid target 的构建日志。 |
+| 源库版本错误 | 重新从 R2024b 导出，并用 `Simulink.MDLInfo` 验证 `R2022b`。 |
 
-安装后的辅助函数可通过 `get_gmp_slib_version()` 查看库标识；浮点兼容 API 使用独立的 `gmp_float_macros_version()`。
+卸载当前 Release 可运行 `slib/uninstall_gmp_simulink_lib.m`。

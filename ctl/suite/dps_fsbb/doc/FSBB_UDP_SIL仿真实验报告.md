@@ -33,7 +33,7 @@ E:\lib\gmp_pro\ctl\suite\dps_fsbb\project\simulate
 已验证环境为 Windows、MATLAB/Simulink R2024b 和 Visual Studio C++ x64 工具链。MATLAB 需要能加载模型所用的 Simscape Electrical/电力电子模块，以及以下 GMP UDP S-function：
 
 ```text
-E:\lib\gmp_pro\tools\gmp_sil\udp_helper_v2\mdl_asio_helper\bin\x64\Debug
+E:\lib\gmp_pro\slib\install_path\R2024b\src
 ```
 
 该路径会由模型回调自动加入 MATLAB 搜索路径。首次实验前确认 Python 可用，因为 SDPE 生成脚本会调用 `tools/SDPE_v2/sdpe.py`。

@@ -13,8 +13,8 @@
 
 #include <gmp_core.h>
 
-// MATLAB UDP Helper
-#include <tools/gmp_sil/udp_helper_v2/asio_udp_helper.hpp>
+// Unified TCP/UDP SIL transport.
+#include <tools/gmp_sil/sil_helper/gmp_sil_helper.hpp>
 
 // Trace RT module
 #include <ctrl_rt_trace.h>
@@ -22,8 +22,8 @@
 #include <iostream>
 #include <stdlib.h>
 
-// ASIO helper object
-asio_udp_helper* helper = nullptr;
+// SIL helper object
+gmp::sil::gmp_sil_helper* helper = nullptr;
 
 // ASIO helper will send or receive message via this structure.
 //half_duplex_ift simulink_rx;
@@ -74,23 +74,21 @@ void gmp_csp_startup(void)
     //  Specify a non-zero value to enable print.
     // default_debug_dev = &default_debug_dev_place_holder;
 
-    // Setup ASIO helper
-    helper = asio_udp_helper::parse_network_config(GMP_ASIO_CONFIG_JSON);
-
-    if (helper == nullptr)
+    try
     {
-        std::cout << "Cannot create ASIO Helper.\r\n" << std::endl;
+        auto instance = gmp::sil::gmp_sil_helper::from_json(GMP_ASIO_CONFIG_JSON);
+        const auto& session = instance->config().session;
+        if (session.request_payload_size != sizeof(simulink_rx_buffer) ||
+            session.response_payload_size != sizeof(simulink_tx_buffer))
+            throw gmp::sil::sil_error("Controller buffer sizes do not match the JSON SIL ABI contract.");
+        instance->connect();
+        helper = instance.release();
+    }
+    catch (const std::exception& exception)
+    {
+        std::cerr << "Cannot establish GMP SIL session: " << exception.what() << std::endl;
         exit(1);
     }
-
-    // Connect to Simulink Model
-    helper->connect_to_target();
-
-#ifdef GMP_ASIO_ENABLE_STOP_CMD
-    // enable this program acknowledge "Stop" Command from Simulink
-    // BUG REPORT this function may cause exception
-    // helper->server_ack_cmd();
-#endif // GMP_ASIO_ENABLE_STOP_CMD
 
     gmp_base_print("[INFO] Simulink RX buffer size: %llu\r\n", sizeof(simulink_rx_buffer));
     gmp_base_print("[INFO] Simulink TX buffer size: %llu\r\n", sizeof(simulink_tx_buffer));
@@ -119,9 +117,6 @@ void gmp_csp_startup(void)
 // This function may be called and used to initialize all the peripheral.
 void gmp_csp_post_process(void)
 {
-    // Send the first message to enable the Simulink model.
-    helper->send_msg((char*)&simulink_tx_buffer, sizeof(simulink_tx_buffer));
-
     // create & save tracert file
     gmp_trace_rt_generate_layout(&trace_rt_context);
 }
@@ -129,7 +124,12 @@ void gmp_csp_post_process(void)
 // This function is unreachable.
 void gmp_csp_exit(void)
 {
-    delete helper;
+    if (helper != nullptr)
+    {
+        helper->close();
+        delete helper;
+        helper = nullptr;
+    }
 
     gmp_trace_rt_release(&trace_rt_context);
 
@@ -167,30 +167,36 @@ void gmp_csp_loop(void)
             return;
         }
 
-        // Sync Over time configuration
-        helper->set_overtime();
-
-        // Receive message from Simulink
-        if (helper->recv_msg((char*)&simulink_rx_buffer, sizeof(simulink_rx_buffer)))
+        try
         {
-            std::cout << "receive complete." << std::endl;
-
-            std::cout << "received " << helper->recv_counter << " Bytes, aka " << (double)helper->recv_counter / 1024
-                      << "kBytes" << std::endl;
-            std::cout << "transmitted " << helper->tran_counter << " Bytes, aka " << (double)helper->tran_counter / 1024
-                      << "kBytes" << std::endl;
-
-            delete helper;
-
-            system("@pause");
-            exit(0);
+            const auto event = helper->receive_event();
+            if (event.kind == gmp::sil::protocol::frame_kind::data_request)
+            {
+                memcpy(&simulink_rx_buffer, event.payload.data(), sizeof(simulink_rx_buffer));
+                gmp_base_ctl_step();
+                helper->respond(event, &simulink_tx_buffer, sizeof(simulink_tx_buffer));
+            }
+            else if (event.kind == gmp::sil::protocol::frame_kind::simulation_state)
+            {
+                const auto status = helper->decode_state(event);
+                helper->acknowledge_state(event);
+                if (status.state == gmp::sil::protocol::simulation_state::completed ||
+                    status.state == gmp::sil::protocol::simulation_state::aborted ||
+                    status.state == gmp::sil::protocol::simulation_state::faulted)
+                {
+                    gmp_base_print("[INFO] Simulink session ended explicitly at major step %llu.\r\n",
+                                   status.major_step);
+                    gmp_csp_exit();
+                    exit(0);
+                }
+            }
         }
-
-        // Controller operation here
-        gmp_base_ctl_step();
-
-        // Send message to Simulink
-        helper->send_msg((char*)&simulink_tx_buffer, sizeof(simulink_tx_buffer));
+        catch (const std::exception& exception)
+        {
+            std::cerr << "GMP SIL communication failed: " << exception.what() << std::endl;
+            gmp_csp_exit();
+            exit(1);
+        }
     }
 }
 
