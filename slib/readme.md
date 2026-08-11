@@ -91,10 +91,13 @@ both ports, payload lengths, and protocol state. Concurrent controllers or
 models must each use their corresponding JSON, distinct port pairs, and matching
 connection IDs; the IDs also reject crossed sessions.
 
-The normal startup order is controller first, waiting for Simulink's first
-frame. Completion uses an explicit simulation-state frame. Long waits remain
-debugger-friendly; when `GMP_SIL_ENABLE_STARTUP_TIMEOUT` is enabled, ten complete
-valid frames must pass before switching to the established long timeout.
+The normal startup order is controller first. The controller waits indefinitely
+for Simulink and prints its listening transport/port. The Simulink MEX client
+uses a fixed five-second connect/handshake timeout; a missing controller, bad
+address, or rejected handshake releases the network resources and stops model
+initialization. Completion still uses an explicit simulation-state frame. The
+first ten complete valid responses must pass before Simulink switches to the
+debugger-friendly established timeout.
 
 ## Development and validation
 

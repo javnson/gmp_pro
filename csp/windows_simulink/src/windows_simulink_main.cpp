@@ -81,7 +81,13 @@ void gmp_csp_startup(void)
         if (session.request_payload_size != sizeof(simulink_rx_buffer) ||
             session.response_payload_size != sizeof(simulink_tx_buffer))
             throw gmp::sil::sil_error("Controller buffer sizes do not match the JSON SIL ABI contract.");
+
+        const auto& network = instance->config();
+        std::cout << "[INFO] GMP SIL controller is waiting for Simulink over "
+                  << (network.transport == gmp::sil::transport_kind::tcp ? "TCP" : "UDP")
+                  << " on port " << network.receive_port << "." << std::endl;
         instance->connect();
+        std::cout << "[INFO] GMP SIL session established; controller loop is starting." << std::endl;
         helper = instance.release();
     }
     catch (const std::exception& exception)

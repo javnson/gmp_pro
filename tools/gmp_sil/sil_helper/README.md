@@ -24,10 +24,13 @@ The controller normally starts first and blocks for Simulink. Simulink sends a
 hello/first frame before causal request-response exchange begins. Completion is
 reported by an explicit simulation-state frame rather than by timeout.
 
-Startup short timeouts are disabled by default for debugger-friendly operation.
-When `GMP_SIL_ENABLE_STARTUP_TIMEOUT` is defined, ten complete valid receive
-frames must pass before the session switches to its long established timeout.
-Invalid IDs, ABI lengths, sequences, or partial frames do not advance the count.
+The controller/server has no startup timeout by default: it may be launched
+first and wait indefinitely for Simulink, with an explicit listening message.
+The Simulink MEX client always applies a five-second connect/handshake timeout;
+failure releases the transport and stops model initialization. Its first ten
+complete valid responses use the short timeout before the session switches to
+the debugger-friendly established timeout. Invalid IDs, ABI lengths, sequences,
+or partial frames do not advance the count.
 
 Each helper instance owns an isolated connection. Concurrent projects must use
 unique connection IDs and port pairs. Prefer UDP for localhost and TCP for

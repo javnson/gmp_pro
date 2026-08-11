@@ -32,9 +32,20 @@
 
 #define DRIVER "GMP_SIL_Core"
 
+// Simulink owns the plant simulation and must never remain blocked forever
+// during model initialization. The controller executable is the long-lived
+// server; this MEX is its fail-fast client.
+#ifndef GMP_SIL_SIMULINK_STARTUP_TIMEOUT_MS
+#define GMP_SIL_SIMULINK_STARTUP_TIMEOUT_MS 5000
+#endif
+
+static_assert(GMP_SIL_SIMULINK_STARTUP_TIMEOUT_MS > 0,
+              "GMP_SIL_SIMULINK_STARTUP_TIMEOUT_MS must be positive.");
+
 // Headers
 #include "fixedpoint.h"
 #include "simstruc.h"
+#include <cstdio>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string>
@@ -848,15 +859,16 @@ static void mdlStart(SimStruct* S)
     sil_config.bind_address = "0.0.0.0";
     sil_config.transmit_port = static_cast<std::uint16_t>(trans_port);
     sil_config.receive_port = static_cast<std::uint16_t>(recv_port);
-#if defined(GMP_SIL_ENABLE_STARTUP_TIMEOUT)
+    sil_config.connect_timeout =
+        std::chrono::milliseconds(GMP_SIL_SIMULINK_STARTUP_TIMEOUT_MS);
+    sil_config.startup_io_timeout =
+        std::chrono::milliseconds(GMP_SIL_SIMULINK_STARTUP_TIMEOUT_MS);
+    // This side is always the Simulink client. A missing controller must stop
+    // model initialization instead of blocking MATLAB indefinitely. The first
+    // ten valid responses remain qualified with the same short timeout before
+    // the transport changes to its debugger-friendly established timeout.
     sil_config.startup_timeout_enabled = true;
     sil_config.established_after_frames = gmp::sil::protocol::startup_qualification_frames;
-#else
-    // Default laboratory workflow: launch the controller first, then allow
-    // MATLAB/Simulink to wait at session_hello until the peer responds.
-    // Define GMP_SIL_ENABLE_STARTUP_TIMEOUT for fail-fast batch deployment.
-    sil_config.startup_timeout_enabled = false;
-#endif
     sil_config.session.request_payload_size = static_cast<std::uint32_t>(desired_packed_width);
     sil_config.session.response_payload_size = static_cast<std::uint32_t>(desired_unpacked_width);
     for (std::size_t index = 0U; index < sil_config.session.id.size(); ++index)
@@ -890,7 +902,9 @@ static void mdlStart(SimStruct* S)
             sil_helper = nullptr;
         }
         ssSetPWorkValue(S, 0, nullptr);
-        sprintf(msg, "%s: Cannot establish GMP SIL session: %s", DRIVER, exception.what());
+        std::snprintf(msg, sizeof(msg),
+                      "%s: Cannot establish GMP SIL session within %d ms; simulation initialization was stopped: %s",
+                      DRIVER, GMP_SIL_SIMULINK_STARTUP_TIMEOUT_MS, exception.what());
         ssSetErrorStatus(S, msg);
         return;
     }
