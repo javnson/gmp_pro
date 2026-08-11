@@ -1,0 +1,55 @@
+{
+  "id": "gmp_ctl_portable_stm32",
+  "macro_prefix": "GMP_CTL_PORTABLE_STM32",
+  "display_name": "GMP CTL Portable for STM32",
+  "description": "SDPE-managed compile-time contract for the no-CSP STM32 CTL integration.",
+  "suite": "ctl_portable",
+  "version": "1.0.0",
+  "updated_at": "2026-08-11",
+  "output_header": "sdpe_gmp_ctl_portable_settings.h",
+  "hardware": [],
+  "feature_macros": [
+    {
+      "group": "Portable Mode",
+      "macro": "GMP_CTL_PORTABLE",
+      "enabled": true,
+      "weak": true,
+      "value": "",
+      "description": "Bypass the GMP runtime and CSP when gmp_core.h is included. Also define this symbol globally or force-include the generated SDPE header."
+    }
+  ],
+  "option_macros": [
+    {
+      "group": "Numeric Backend",
+      "macro": "SPECIFY_CTRL_GT_TYPE",
+      "enabled": true,
+      "weak": false,
+      "value": "USING_FLOAT_FPU",
+      "options": [
+        "USING_FLOAT_FPU",
+        "USING_DOUBLE_FPU",
+        "USING_FIXED_ARM_CMSIS_Q_LIBRARY"
+      ],
+      "description": "CTL real-time numeric backend. CMSIS-Q also requires CMSIS-DSP headers and library."
+    },
+    {
+      "group": "Numeric Backend",
+      "macro": "SPECIFY_PARAMETER_GT_TYPE",
+      "enabled": true,
+      "weak": false,
+      "value": "USING_FLOAT_FPU",
+      "options": [
+        "USING_FLOAT_FPU",
+        "USING_DOUBLE_FPU"
+      ],
+      "description": "Physical parameter storage type."
+    }
+  ],
+  "requirements": [],
+  "feature_macro_groups": [
+    "Portable Mode"
+  ],
+  "option_macro_groups": [
+    "Numeric Backend"
+  ]
+}

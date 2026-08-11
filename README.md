@@ -340,7 +340,24 @@ Refresh/discover Products and restart CCS before importing or rebuilding a
 project. Do not retain the obsolete `GMP-PRO-SDK` dependency. C28x targets may
 use CCS 18; C29x/F29H85x targets require CCS 21 or newer.
 
-## 10. License
+## 10. CTL Portable and Keil Pack
+
+Applications that only consume CTL algorithms can define `GMP_CTL_PORTABLE`
+globally and copy either the [TI DSP or STM32 portable template](ctl/portable/README.md).
+This path retains only CTL numeric types, math, assertions, and the optional
+system-tick hook while bypassing CSP and the GMP runtime framework.
+
+Keil users can build a CMSIS-Pack from the authoritative source-manager
+registry with:
+
+```bat
+tools\facilities_generator\keil_pack\build_keil_pack.bat
+```
+
+Artifacts are written to `build\keil_pack`. See the
+[Keil Pack generator guide](tools/facilities_generator/keil_pack/README.md).
+
+## 11. License
 
 GMP is licensed under the [Apache License 2.0](LICENSE.txt). See [NOTICE](NOTICE)
 and component directories for third-party copyright and license information.

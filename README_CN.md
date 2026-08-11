@@ -299,6 +299,22 @@ Product；不要同时引用旧的 `GMP-PRO-SDK`。C28x 工程可继续使用 CC
 工程必须使用 CCS 21 或更新版本。完整说明见
 [环境安装文档](tools/gmp_installer/README_CN.md)。
 
-## 10. 许可证
+## 10. CTL Portable 与 Keil Pack
+
+仅使用 CTL 算法、无需 CSP 和 GMP 运行框架的工程，可在全局定义
+`GMP_CTL_PORTABLE`，并复制 [TI DSP 或 STM32 portable 模板](ctl/portable/README_CN.md)。
+该模式只保留 CTL 所需的数值类型、数学层、断言和可选系统 tick 钩子。
+
+Keil 用户可通过模块字典生成 CMSIS-Pack：
+
+```bat
+tools\facilities_generator\keil_pack\build_keil_pack.bat
+```
+
+输出位于 `build\keil_pack`。生成器会将 source manager 中所有已有物理文件的
+CTL 注册项整理成可选择组件；详细规则见
+[Keil Pack 生成器说明](tools/facilities_generator/keil_pack/README_CN.md)。
+
+## 11. 许可证
 
 GMP 使用 [Apache License 2.0](LICENSE.txt)。第三方组件的版权和许可证信息见 [NOTICE](NOTICE) 及各组件目录中的声明。

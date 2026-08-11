@@ -980,6 +980,69 @@
             }
         },
         "ctl": {
+            "portable|_internal": {
+                "type": "module",
+                "description": "CTL no-CSP portable common contract",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/gmp_core.h",
+                    "${GMP_PRO_LOCATION}/core/std/cfg/options.cfg.h",
+                    "${GMP_PRO_LOCATION}/ctl/portable/gmp_ctl_portable.h",
+                    "${GMP_PRO_LOCATION}/ctl/portable/README.md",
+                    "${GMP_PRO_LOCATION}/ctl/portable/README_CN.md"
+                ],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|math_block|complex_lite",
+                    "ctl|math_block|coordinate",
+                    "ctl|math_block|matrix_lite",
+                    "ctl|math_block|vector_lite"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/"
+                ],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/ctl/portable/README_CN.md"
+                ]
+            },
+            "portable|ti_dsp": {
+                "type": "module",
+                "description": "TI C28x/C29x no-CSP portable configuration",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/portable/ti_dsp/gmp_ctl_portable_hooks.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/portable/ti_dsp/gmp_ctl_portable_config.h",
+                    "${GMP_PRO_LOCATION}/ctl/portable/ti_dsp/sdpe_gmp_ctl_portable_settings.h",
+                    "${GMP_PRO_LOCATION}/ctl/portable/ti_dsp/sdpe_requirement.json",
+                    "${GMP_PRO_LOCATION}/ctl/portable/ti_dsp/sdpe_generate.bat"
+                ],
+                "depends_on": [
+                    "ctl|portable|_internal"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/ctl/portable/ti_dsp"
+                ],
+                "help_docs": []
+            },
+            "portable|stm32": {
+                "type": "module",
+                "description": "STM32 no-CSP portable configuration",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/portable/stm32/gmp_ctl_portable_config.h",
+                    "${GMP_PRO_LOCATION}/ctl/portable/stm32/sdpe_gmp_ctl_portable_settings.h",
+                    "${GMP_PRO_LOCATION}/ctl/portable/stm32/sdpe_requirement.json",
+                    "${GMP_PRO_LOCATION}/ctl/portable/stm32/sdpe_generate.bat"
+                ],
+                "depends_on": [
+                    "ctl|portable|_internal"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/ctl/portable/stm32"
+                ],
+                "help_docs": []
+            },
             "component|kinematics": {
                 "type": "module",
                 "description": "数字运动学组件",

@@ -14,9 +14,16 @@
 
 // This file is GMP library C source header
 
+// GMP_CTL_PORTABLE is the lightweight, no-CSP entry for applications that only
+// consume CTL algorithms.  It deliberately skips xplt.config.h, csp.config.h,
+// gmp_core_func.h, peripheral management, and the GMP runtime entry framework.
+#if defined(GMP_CTL_PORTABLE)
+#include <ctl/portable/gmp_ctl_portable.h>
+#else
 // Basic GMP standard type definition
 #include <core/std/gmp.std.h>
 #include <core/std/gmp_core_func.h>
+#endif // GMP_CTL_PORTABLE
 
 // TI fixed library
 #ifdef ENABLE_IQMATH_HEADER_DIREDCT

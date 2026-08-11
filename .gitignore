@@ -524,6 +524,9 @@ slib/install_path/R2022b/**
 # GMP pro zip file
 gmp_pro.zip
 
+# Generated CMSIS/Keil Pack artifacts
+build/keil_pack/
+
 # doxygen output files
 ctl/doc/**
 

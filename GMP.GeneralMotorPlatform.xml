@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<package schemaVersion="1.7.7" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-Pack.xsd">
+<package schemaVersion="1.7.7" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="PACK.xsd">
   <vendor>GMP</vendor>
-  <name>General Motor Platform v1.0.5</name>
+  <name>GeneralMotorPlatform</name>
   <description>General Controller Solution for Free.</description>
-  <url>https://github.com/javnson/gmp_pro</url>
+  <url>https://github.com/javnson/gmp_pro/</url>
   
   <releases>
     <release version="1.0.5" date="2025-08-24">
@@ -16,9 +16,6 @@
     <keyword>Controller</keyword>
     <keyword>Utility</keyword>
   </keywords>
-
-  <apis>
-      </apis>
 
   <components>
     <component Cclass="Controller Template Library" Cgroup="Intrinsic Basic" Cversion="1.0.5">
