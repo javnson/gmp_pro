@@ -1,6 +1,86 @@
 {
-    "library_version" :  "2.10.00.00",
-    "library_name" :  "GMP Pro",
-    "display_name" :  "General Motor Platform Pro",
-    "description" :  "General Motor Platform Pro is a cross Platform software development framework for embedded controller systems."
+  "schema_version": 1,
+  "common": {
+    "library_version": "2.10.00.00",
+    "library_name": "GMP Pro",
+    "description": "General Motor Platform Pro is a cross-platform embedded control framework.",
+    "documentation_path": "manual",
+    "image_path": "manual/icon/GMP_LOGO.png",
+    "license_path": "LICENSE.txt",
+    "metadata_version": "3.1.0",
+    "gmp_root_macro": "GMP_PRO_ROOT"
+  },
+  "products": {
+    "c28x": {
+      "product_id": "GMP-Core-C28x",
+      "product_path": "csp/c28x_syscfg",
+      "display_name": "GMP Core for C28x series devices",
+      "description": "GMP core and the SysConfig chip-support package for TI C28x devices.",
+      "root_macro_name": "COM_GMP_CORE_C28X_SDK_INSTALL_DIR",
+      "csp_root_macro": "GMP_C28X_CSP_ROOT",
+      "devices": [
+        "F28004x",
+        "F2837xD",
+        "F2837xS",
+        "F2807x",
+        "F2838x",
+        "F28002x",
+        "F28003x",
+        "F28P65x",
+        "F28P55x",
+        "GMP_NULL_DEVICE"
+      ],
+      "min_tool_version": "1.21.0",
+      "compiler_include_paths": ["../..", "."],
+      "compiler_symbols": ["GMP_CSP_C28X=1"],
+      "linker_search_paths": [],
+      "linker_libraries": [],
+      "dependencies": [
+        {
+          "packageId": "C2000WARE",
+          "version": "5.03.00.00",
+          "require": "mandatory"
+        },
+        {
+          "packageId": "sysconfig",
+          "version": "1.21.0",
+          "require": "mandatory"
+        }
+      ],
+      "ccs_compatibility": {
+        "minimum_ccs_major": 18,
+        "tested_family": "CCS 18 and later"
+      }
+    },
+    "c29x": {
+      "product_id": "GMP-Core-C29x",
+      "product_path": "csp/c29x_syscfg",
+      "display_name": "GMP Core for C29x series devices",
+      "description": "GMP core and the SysConfig chip-support package for TI C29x devices.",
+      "root_macro_name": "COM_GMP_CORE_C29X_SDK_INSTALL_DIR",
+      "csp_root_macro": "GMP_C29X_CSP_ROOT",
+      "devices": ["F29H85x", "GMP_NULL_DEVICE"],
+      "min_tool_version": "1.25.0",
+      "compiler_include_paths": ["../..", "."],
+      "compiler_symbols": ["GMP_CSP_C29X=1"],
+      "linker_search_paths": [],
+      "linker_libraries": [],
+      "dependencies": [
+        {
+          "packageId": "f29h85x-sdk",
+          "version": "1.02.01.00",
+          "require": "mandatory"
+        },
+        {
+          "packageId": "sysconfig",
+          "version": "1.25.0",
+          "require": "mandatory"
+        }
+      ],
+      "ccs_compatibility": {
+        "minimum_ccs_major": 21,
+        "tested_family": "CCS 21 and later"
+      }
+    }
+  }
 }

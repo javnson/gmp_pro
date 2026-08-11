@@ -5932,6 +5932,46 @@
                     }
                 ]
             },
+            "c29x_syscfg": {
+                "type": "module",
+                "description": "TI C29x Chip Support Package",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/csp/c29x_syscfg/src/*"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/csp/c29x_syscfg/*"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/csp/c29x_syscfg/"
+                ],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/csp/c29x_syscfg/doc/README_CN.md"
+                ],
+                "depends_on": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-08-11",
+                        "reply": "F29H850TU9 LaunchPad RAM image linked with C29 Clang 2.2.0.LTS and F29H85x SDK 1.02.01.00"
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": "Not applicable to the hardware CSP"
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": "Requires LaunchPad validation"
+                    }
+                ]
+            },
             "windows_simulink": {
                 "type": "module",
                 "description": "",

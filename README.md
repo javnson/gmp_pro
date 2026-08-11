@@ -308,6 +308,7 @@ ISR. Move debug communication into scheduled background tasks.
 English documentation:
 
 - [Development environment and installer guide](tools/gmp_installer/README.md)
+- [C29x SysConfig peripheral guide](csp/c29x_syscfg/doc/readme.md)
 - [MATLAB/Simulink library and SIL guide](slib/readme.md)
 - [Start a SysConfig project using GMP](manual/Start%20a%20Sysconfig%20Project%20using%20GMP.md)
 - [Start a Simulink GMP SIL project](manual/Start%20a%20Simulation%20Project%20using%20Simulink%20GMP%20SIL%20tools.md)
@@ -317,7 +318,29 @@ English documentation:
 For Chinese guides and the Chinese suite/component documentation index, switch
 to the [简体中文说明](README_CN.md).
 
-## 9. License
+## 9. TI CCS Product installation and upgrades
+
+GMP provides one CCS Product per TI device family. Run the data-driven
+installer after initial installation, moving the repository, switching GMP
+versions, or changing Product metadata:
+
+```bat
+tools\facilities_generator\ccs_product_installer\install_ccs_products.bat
+```
+
+Close CCS, remove any obsolete GMP repository-root entry from the CCS Product
+discovery paths, and add the applicable CSP directories:
+
+| Family | Product | Discovery path | Exported project macros |
+| --- | --- | --- | --- |
+| C28x | `GMP-Core-C28x` | `gmp_pro\csp\c28x_syscfg` | `GMP_PRO_ROOT`, `GMP_C28X_CSP_ROOT` |
+| C29x | `GMP-Core-C29x` | `gmp_pro\csp\c29x_syscfg` | `GMP_PRO_ROOT`, `GMP_C29X_CSP_ROOT` |
+
+Refresh/discover Products and restart CCS before importing or rebuilding a
+project. Do not retain the obsolete `GMP-PRO-SDK` dependency. C28x targets may
+use CCS 18; C29x/F29H85x targets require CCS 21 or newer.
+
+## 10. License
 
 GMP is licensed under the [Apache License 2.0](LICENSE.txt). See [NOTICE](NOTICE)
 and component directories for third-party copyright and license information.

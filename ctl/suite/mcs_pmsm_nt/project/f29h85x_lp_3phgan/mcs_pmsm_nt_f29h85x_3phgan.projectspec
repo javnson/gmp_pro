@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectSpec>
+  <project
+      name="CTL_MC_PMSM_NT_F29H85X_3PHGAN"
+      device="F29H850TU9"
+      cgtVersion="2.2.0.LTS"
+      products="GMP-Core-C29x;f29h85x-sdk;sysconfig"
+      outputFormat="ELF"
+      toolChain="TICLANG"
+      connection="TIXDS110_Connection.xml"
+      enableSysConfigTool="true"
+      sysConfigBuildOptions="--product ${COM_TI_F29H85X_SDK_INSTALL_DIR}/.metadata/sdk.json"
+      compilerBuildOptions="-g -O1 -DDEBUG -D_LAUNCHXL_F29H85X -Qunused-arguments -I${GMP_PRO_ROOT} -I${GMP_C29X_CSP_ROOT} -I${PROJECT_ROOT}/xplt -I${PROJECT_ROOT}/sdpe_mgr -I${GMP_PRO_ROOT}/ctl/suite/mcs_pmsm_nt/src"
+      linkerBuildOptions="--entry_point code_start --stack_size=0x2000 --heap_size=0x800 --diag_suppress=10325-D --diag_suppress=10063-D -ldriverlib.lib -ldpl_nortos.lib">
+
+    <file action="link" path="${PROJECT_ROOT}/mcs_pmsm_nt_f29h85x_3phgan.syscfg"/>
+    <file action="link" path="${PROJECT_ROOT}/xplt"/>
+    <file action="link" path="${PROJECT_ROOT}/sdpe_mgr"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/suite/mcs_pmsm_nt/src/ctl_main.c" targetDirectory="user"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/suite/mcs_pmsm_nt/src/ctl_main.h" targetDirectory="user"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/suite/mcs_pmsm_nt/src/ctl_settings_defaults.h" targetDirectory="user"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/suite/mcs_pmsm_nt/src/user_main.c" targetDirectory="user"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/suite/mcs_pmsm_nt/src/user_main.h" targetDirectory="user"/>
+    <file action="link" path="${GMP_C29X_CSP_ROOT}/src/sysconfig_adapter.c" targetDirectory="gmp_csp"/>
+    <file action="link" path="${GMP_C29X_CSP_ROOT}/src/peripheral_driver.c" targetDirectory="gmp_csp"/>
+    <file action="link" path="${GMP_PRO_ROOT}/core/std/src/gmp_std_port.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/core/dev/src/gmp_datalink.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/core/dev/src/gmp_dev_util.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/core/dev/src/gmp_mem_presp.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/core/dev/src/gmp_pil_core.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/core/dev/src/gmp_scope.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/core/dev/src/gmp_tunable.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/core/pm/src/gmp_process_mgr.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/component/dsa/src/dsa_dl_scope.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/component/dsa/src/dsa_scope.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/component/dsa/src/dsa_trigger.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/component/interface/src/ctl_component_interface.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/component/interface/src/ctl_if_pwm_spwm.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/component/intrinsic/basic/src/ctl_divider.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/component/intrinsic/basic/src/ctl_slope_limiter.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/component/intrinsic/complex/src/ctl_dq_pi.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/component/intrinsic/continuous/src/ctl_continuous_pid.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/component/intrinsic/discrete/src/ctl_discrete_biquad_filter.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/component/intrinsic/discrete/src/ctl_discrete_filter.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/component/intrinsic/discrete/src/ctl_discrete_lead_lag.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/component/intrinsic/discrete/src/ctl_discrete_sg.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/component/motor_control/basic/src/ctl_mc_mtr_protection.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/component/motor_control/basic/src/ctl_mc_mtr_vf_generator.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/component/motor_control/current_loop/src/ctl_mc_foc_core.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/component/motor_control/interface/src/ctl_mc_encoder.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/component/motor_control/mechanical_loop/src/ctl_mc_basic_mech_ctrl.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/framework/src/ctl_cia402_callback_fn.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/ctl/framework/src/ctl_cia402_state_machine.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${COM_TI_F29H85X_SDK_INSTALL_DIR}/examples/device_support/source/codestartbranch.asm" targetDirectory="device"/>
+    <file action="link" path="${COM_TI_F29H85X_SDK_INSTALL_DIR}/source/bitfields/bitfield_structs.c" targetDirectory="device"/>
+    <file action="link" path="${COM_TI_MCU_SDK_GENERIC_LNK_CMD_FLASH}" targetDirectory="device"/>
+  </project>
+</projectSpec>

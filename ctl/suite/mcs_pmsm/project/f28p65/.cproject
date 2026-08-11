@@ -25,7 +25,7 @@
 								<listOptionValue builtIn="false" value="LINKER_COMMAND_FILE=28p65x_generic_flash_lnk_cpu1.cmd"/>
 								<listOptionValue builtIn="false" value="RUNTIME_SUPPORT_LIBRARY=libc.a"/>
 								<listOptionValue builtIn="false" value="CCS_MBS_VERSION=6.1.3"/>
-								<listOptionValue builtIn="false" value="PRODUCTS=C2000WARE:5.4.0.00;sysconfig:1.21.0;GMP-Core-C28x:1.0.0.05;"/>
+								<listOptionValue builtIn="false" value="PRODUCTS=C2000WARE:5.4.0.00;sysconfig:1.21.0;GMP-Core-C28x:2.10.00.00;"/>
 								<listOptionValue builtIn="false" value="PRODUCT_MACRO_IMPORTS={&quot;sysconfig&quot;:[&quot;${SYSCONFIG_TOOL_INCLUDE_PATH}&quot;,&quot;${SYSCONFIG_TOOL_LIBRARY_PATH}&quot;,&quot;${SYSCONFIG_TOOL_LIBRARIES}&quot;,&quot;${SYSCONFIG_TOOL_SYMBOLS}&quot;,&quot;${SYSCONFIG_TOOL_SYSCONFIG_MANIFEST}&quot;],&quot;GMP-Core-C28x&quot;:[&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_INCLUDE_PATH}&quot;,&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_LIBRARY_PATH}&quot;,&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_LIBRARIES}&quot;,&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_SYMBOLS}&quot;,&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_SYSCONFIG_MANIFEST}&quot;],&quot;C2000WARE&quot;:[&quot;${COM_TI_C2000WARE_INCLUDE_PATH}&quot;,&quot;${COM_TI_C2000WARE_LIBRARY_PATH}&quot;,&quot;${COM_TI_C2000WARE_LIBRARIES}&quot;,&quot;${COM_TI_C2000WARE_SYMBOLS}&quot;,&quot;${COM_TI_C2000WARE_SYSCONFIG_MANIFEST}&quot;]}"/>
 								<listOptionValue builtIn="false" value="OUTPUT_TYPE=executable"/>
 							</option>
@@ -44,8 +44,8 @@
 									<listOptionValue builtIn="false" value="${COM_TI_C2000WARE_INCLUDE_PATH}"/>
 									<listOptionValue builtIn="false" value="${SYSCONFIG_TOOL_INCLUDE_PATH}"/>
 									<listOptionValue builtIn="false" value="${COM_TI_COM_GMP_CORE_C28X_SDK_INCLUDE_PATH}"/>
-									<listOptionValue builtIn="false" value="${COM_TI_COM_GMP_CORE_C28X_SDK_INSTALL_DIR}"/>
-									<listOptionValue builtIn="false" value="${COM_TI_COM_GMP_CORE_C28X_SDK_INSTALL_DIR}/csp/c28x_syscfg"/>
+									<listOptionValue builtIn="false" value="${GMP_PRO_ROOT}"/>
+									<listOptionValue builtIn="false" value="${GMP_C28X_CSP_ROOT}"/>
 									<listOptionValue builtIn="false" value="${COM_TI_C2000WARE_INSTALL_DIR}\device_support\f28p65x\headers\include"/>
 									<listOptionValue builtIn="false" value="${COM_TI_C2000WARE_INSTALL_DIR}\device_support\f28p65x\common\include"/>
 									<listOptionValue builtIn="false" value="${COM_TI_C2000WARE_INSTALL_DIR}\driverlib\f28p65x\driverlib"/>

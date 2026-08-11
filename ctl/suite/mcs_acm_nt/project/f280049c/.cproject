@@ -24,7 +24,7 @@
 								<listOptionValue builtIn="false" value="OUTPUT_FORMAT=ELF"/>
 								<listOptionValue builtIn="false" value="RUNTIME_SUPPORT_LIBRARY=libc.a"/>
 								<listOptionValue builtIn="false" value="CCS_MBS_VERSION=6.1.3"/>
-								<listOptionValue builtIn="false" value="PRODUCTS=GMP-Core-C28x:1.0.0.05;C2000WARE:5.3.0.00;"/>
+								<listOptionValue builtIn="false" value="PRODUCTS=GMP-Core-C28x:2.10.00.00;C2000WARE:5.3.0.00;"/>
 								<listOptionValue builtIn="false" value="PRODUCT_MACRO_IMPORTS={&quot;GMP-Core-C28x&quot;:[&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_INCLUDE_PATH}&quot;,&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_LIBRARY_PATH}&quot;,&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_LIBRARIES}&quot;,&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_SYMBOLS}&quot;,&quot;${COM_TI_COM_GMP_CORE_C28X_SDK_SYSCONFIG_MANIFEST}&quot;],&quot;C2000WARE&quot;:[&quot;${COM_TI_C2000WARE_INCLUDE_PATH}&quot;,&quot;${COM_TI_C2000WARE_LIBRARY_PATH}&quot;,&quot;${COM_TI_C2000WARE_LIBRARIES}&quot;,&quot;${COM_TI_C2000WARE_SYMBOLS}&quot;,&quot;${COM_TI_C2000WARE_SYSCONFIG_MANIFEST}&quot;]}"/>
 								<listOptionValue builtIn="false" value="OUTPUT_TYPE=executable"/>
 							</option>
@@ -41,8 +41,8 @@
 								<option id="com.ti.ccstudio.buildDefinitions.C2000_22.6.compilerID.TMU_SUPPORT.1355251830" name="Specify TMU support (--tmu_support)" superClass="com.ti.ccstudio.buildDefinitions.C2000_22.6.compilerID.TMU_SUPPORT" value="com.ti.ccstudio.buildDefinitions.C2000_22.6.compilerID.TMU_SUPPORT.tmu0" valueType="enumerated"/>
 								<option id="com.ti.ccstudio.buildDefinitions.C2000_22.6.compilerID.FP_MODE.1950714594" name="Floating Point mode (--fp_mode)" superClass="com.ti.ccstudio.buildDefinitions.C2000_22.6.compilerID.FP_MODE" value="com.ti.ccstudio.buildDefinitions.C2000_22.6.compilerID.FP_MODE.relaxed" valueType="enumerated"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.ti.ccstudio.buildDefinitions.C2000_22.6.compilerID.INCLUDE_PATH.307446094" name="Add dir to #include search path (--include_path, -I)" superClass="com.ti.ccstudio.buildDefinitions.C2000_22.6.compilerID.INCLUDE_PATH" valueType="includePath">
-									<listOptionValue builtIn="false" value="${COM_TI_COM_GMP_CORE_C28X_SDK_INSTALL_DIR}"/>
-									<listOptionValue builtIn="false" value="${COM_TI_COM_GMP_CORE_C28X_SDK_INSTALL_DIR}/csp/c28x_syscfg/"/>
+									<listOptionValue builtIn="false" value="${GMP_PRO_ROOT}"/>
+									<listOptionValue builtIn="false" value="${GMP_C28X_CSP_ROOT}/"/>
 									<listOptionValue builtIn="false" value="${COM_TI_COM_GMP_CORE_C28X_SDK_INCLUDE_PATH}"/>
 									<listOptionValue builtIn="false" value="${COM_TI_C2000WARE_INCLUDE_PATH}"/>
 									<listOptionValue builtIn="false" value="${PROJECT_ROOT}"/>

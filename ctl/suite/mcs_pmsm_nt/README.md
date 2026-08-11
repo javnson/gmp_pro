@@ -11,7 +11,12 @@ This is the recommended GMP permanent-magnet synchronous motor vector-control te
 - CiA 402 state-machine integration and GMP data-link support.
 - Common SDPE configuration with target-specific peripheral mappings.
 
-Supported project directories currently include `f280039c_Iris_node`, `f280049c`, `simulate`, `stm32f405`, `stm32g431`, and `stm32g474_hrtim`. New PMSM applications should normally start from this suite and retain the shared `src/` plus per-target `project/` structure.
+Supported project directories currently include `f280039c_Iris_node`,
+`f280049c`, `f29h85x_lp_3phgan`, `simulate`, `stm32f405`, `stm32g431`, and
+`stm32g474_hrtim`. The F29H85x target requires CCS 21 or newer and uses the
+`GMP-Core-C29x` Product plus two-layer SDPE bindings for the LaunchPad and
+BOOSTXL-3PHGANINV resources. New PMSM applications should normally start from
+this suite and retain the shared `src/` plus per-target `project/` structure.
 
 Begin at the lowest build level and confirm current offsets, phase order, encoder direction, PWM polarity, and protection behavior before enabling the current, speed, or position loops. The [Chinese guide](README_CN.md) contains the detailed architecture, build-level procedure, and platform notes.
 

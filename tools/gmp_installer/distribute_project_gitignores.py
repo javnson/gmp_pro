@@ -36,6 +36,12 @@ def discover_projects() -> list[Path]:
             {"doc", "src"},
         )
     )
+    projects.update(
+        immediate_project_directories(
+            GMP_ROOT / "csp" / "c29x_syscfg",
+            {"doc", "src"},
+        )
+    )
 
     suite_root = GMP_ROOT / "ctl" / "suite"
     if suite_root.is_dir():

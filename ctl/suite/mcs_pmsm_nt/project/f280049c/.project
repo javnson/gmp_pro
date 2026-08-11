@@ -46,14 +46,4 @@
 			<locationURI>PARENT-2-PROJECT_LOC/src/user_main.h</locationURI>
 		</link>
 	</linkedResources>
-	<variableList>
-		<variable>
-			<name>copy_PARENT</name>
-			<value>file:/D:/Code/GMP/gmp_pro/ctl/suite/mcs_pmsm_nt</value>
-		</variable>
-		<variable>
-			<name>copy_PARENT1</name>
-			<value>$%7BPARENT-3-PROJECT_LOC%7D/lib/gmp_pro/ctl/suite/mcs_pmsm_nt</value>
-		</variable>
-	</variableList>
 </projectDescription>

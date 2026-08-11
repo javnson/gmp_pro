@@ -1,0 +1,34 @@
+<projectSpec>
+  <project
+        name="f29h850tu9_gmp_blinky"
+        device="F29H850TU9"
+        cgtVersion="2.2.0.LTS"
+        toolChain="TICLANG"
+        products="sysconfig;f29h85x-sdk;GMP-Core-C29x"
+        connection="TIXDS110_Connection.xml">
+
+    <configuration name="LAUNCHXL_RAM"
+        compilerBuildOptions="-O1 -g -DDEBUG -D_LAUNCHXL_F29H85X -Qunused-arguments -I${PROJECT_ROOT}/xplt -I${PROJECT_ROOT}/user"
+        linkerBuildOptions="--stack_size=0x2000 --heap_size=0x800 --diag_suppress=10325-D --diag_suppress=10063-D" />
+
+    <configuration name="LAUNCHXL_FLASH"
+        compilerBuildOptions="-O1 -g -DDEBUG -D_LAUNCHXL_F29H85X -D_FLASH -Qunused-arguments -I${PROJECT_ROOT}/xplt -I${PROJECT_ROOT}/user"
+        linkerBuildOptions="--stack_size=0x2000 --heap_size=0x800 --diag_suppress=10325-D --diag_suppress=10063-D --define=_FLASH" />
+
+    <file action="link" path="${COM_TI_MCU_SDK_INSTALL_DIR}/examples/device_support/source/codestartbranch.asm" targetDirectory="device" />
+    <file action="link" path="${COM_TI_MCU_SDK_INSTALL_DIR}/examples/device_support/include/driverlib.h" targetDirectory="device" />
+    <file action="link" path="${COM_TI_MCU_SDK_INSTALL_DIR}/source/bitfields/bitfield_structs.c" targetDirectory="device" />
+    <file action="copy" path="${COM_TI_MCU_SDK_GENERIC_LNK_CMD_RAM}" targetDirectory="" applicableConfigurations="LAUNCHXL_RAM" />
+    <file action="copy" path="${COM_TI_MCU_SDK_GENERIC_LNK_CMD_FLASH}" targetDirectory="" applicableConfigurations="LAUNCHXL_FLASH" />
+
+    <file action="link" path="${GMP_PRO_ROOT}/core/std/src/gmp_std_port.c" targetDirectory="gmp" />
+    <file action="link" path="${GMP_PRO_ROOT}/core/dev/src/gmp_datalink.c" targetDirectory="gmp" />
+    <file action="link" path="${GMP_PRO_ROOT}/csp/c29x_syscfg/src/sysconfig_adapter.c" targetDirectory="gmp" />
+    <file action="link" path="${GMP_PRO_ROOT}/csp/c29x_syscfg/src/peripheral_driver.c" targetDirectory="gmp" />
+
+    <file action="copy" path="f29h850tu9.syscfg" targetDirectory="" />
+    <file action="copy" path="xplt/xplt.config.h" targetDirectory="xplt" />
+    <file action="copy" path="user/user_main.h" targetDirectory="user" />
+    <file action="copy" path="user/user_main.c" targetDirectory="user" />
+  </project>
+</projectSpec>

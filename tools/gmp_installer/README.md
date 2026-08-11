@@ -187,6 +187,22 @@ use:
 call tools\gmp_installer\activate_env.bat
 ```
 
+## Re-register TI CCS Products
+
+Both installation modes generate the C28x and C29x Product metadata. After
+moving or updating GMP, rerun:
+
+```bat
+tools\facilities_generator\ccs_product_installer\install_ccs_products.bat
+```
+
+Close CCS, remove stale GMP entries from its Product discovery paths, add
+`<GMP_PRO_LOCATION>\csp\c28x_syscfg` for `GMP-Core-C28x` and
+`<GMP_PRO_LOCATION>\csp\c29x_syscfg` for `GMP-Core-C29x`, refresh discovery,
+and restart CCS. C28x may use CCS 18; C29x/F29H85x requires CCS 21 or newer.
+Projects use `GMP_PRO_ROOT` plus the matching `GMP_C28X_CSP_ROOT` or
+`GMP_C29X_CSP_ROOT` export.
+
 ## Automatic environment guard for repository batch files
 
 Repository BAT entry points that can use GMP-managed tools carry this marker:
@@ -543,7 +559,8 @@ not be edited directly.
 Standalone project `.gitignore` files are managed by
 `tools/gmp_installer/distribute_project_gitignores.py`. The distributor covers
 each immediate project under `csp/stm32` (excluding shared `common` and `src`),
-each project under `csp/c28x_syscfg` (excluding `doc`, `src`, and metadata), and
+each project under `csp/c28x_syscfg` or `csp/c29x_syscfg` (excluding `doc`,
+`src`, and metadata), and
 every `ctl/suite/*/project/*` directory. Its managed block is the portable,
 project-relative subset in `project_gitignore.template`; the repository root
 `.gitignore` remains authoritative and is never rewritten.

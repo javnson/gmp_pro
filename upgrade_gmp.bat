@@ -89,8 +89,9 @@ setlocal enabledelayedexpansion
 :: Call facilities generator
 cd tools/facilities_generator
 
-:: install fac for CCS
-python ./gmp_fac_install_ccs_product.py
+:: Generate the C28x and C29x CCS Product metadata from the shared registry.
+python .\ccs_product_installer\ccs_product_installer.py --root "%GMP_PRO_LOCATION%"
+if errorlevel 1 exit /b 1
 
 :: generate facility_cfg.json
 python ./gmp_fac_generate_cfg_json.py

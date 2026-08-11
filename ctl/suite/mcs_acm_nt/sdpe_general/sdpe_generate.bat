@@ -51,4 +51,3 @@ echo =======================================================
 echo [SUCCESS] SDPE project headers generated successfully.
 echo =======================================================
 exit /b 0
-

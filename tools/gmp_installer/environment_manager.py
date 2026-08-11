@@ -509,7 +509,16 @@ def configure_repository() -> None:
     python = BIN_DIR / "python" / "python.exe"
     env = private_environment()
     facilities = GMP_ROOT / "tools" / "facilities_generator"
-    run([python, facilities / "gmp_fac_install_ccs_product.py"], cwd=facilities, env=env)
+    run(
+        [
+            python,
+            facilities / "ccs_product_installer" / "ccs_product_installer.py",
+            "--root",
+            GMP_ROOT,
+        ],
+        cwd=facilities,
+        env=env,
+    )
     run([python, facilities / "gmp_fac_generate_cfg_json.py"], cwd=facilities, env=env)
     source_manager = facilities / "src_mgr"
     run([python, source_manager / "framework_distribute_tools_v3.py"], cwd=source_manager, env=env)

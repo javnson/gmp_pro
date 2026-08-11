@@ -1,0 +1,32 @@
+{
+  "sync_mode": "src_only",
+  "selected_modules": [
+    {"root": "core", "module": "std"},
+    {"root": "core", "module": "dev|_internal"},
+    {"root": "core", "module": "dev|datalink|_internal"},
+    {"root": "core", "module": "dev|datalink|scope"},
+    {"root": "core", "module": "dev|datalink|pil"},
+    {"root": "core", "module": "dev|datalink|mem_monitor"},
+    {"root": "core", "module": "dev|datalink|variable_monitor"},
+    {"root": "core", "module": "pm|function_scheduler"},
+    {"root": "csp", "module": "c29x_syscfg"},
+    {"root": "ctl", "module": "component|dsa|dsa_scope"},
+    {"root": "ctl", "module": "component|dsa|dsa_trigger"},
+    {"root": "ctl", "module": "component|dsa|dsa_dl_scope"},
+    {"root": "ctl", "module": "component|interface|_internal"},
+    {"root": "ctl", "module": "component|interface|modulator|spwm"},
+    {"root": "ctl", "module": "component|intrinsic|_internal"},
+    {"root": "ctl", "module": "component|intrinsic|complex|dq_pi"},
+    {"root": "ctl", "module": "component|intrinsic|continuous|pid"},
+    {"root": "ctl", "module": "component|intrinsic|discrete|biquad_filter"},
+    {"root": "ctl", "module": "component|intrinsic|discrete|discrete_filter"},
+    {"root": "ctl", "module": "component|intrinsic|discrete|lead_lag"},
+    {"root": "ctl", "module": "component|intrinsic|discrete|signal_generator"},
+    {"root": "ctl", "module": "component|motor_control|_internal"},
+    {"root": "ctl", "module": "component|motor_control|basic|protection"},
+    {"root": "ctl", "module": "component|motor_control|basic|vf_generator"},
+    {"root": "ctl", "module": "component|motor_control|current_loop|foc"},
+    {"root": "ctl", "module": "component|motor_control|mech_loop|pi_pi"},
+    {"root": "ctl", "module": "framework|cia402"}
+  ]
+}

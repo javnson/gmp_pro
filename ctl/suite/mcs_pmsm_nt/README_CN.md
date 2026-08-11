@@ -22,6 +22,7 @@ mcs_pmsm_nt/
 └── project/                      # 各平台的工程文件
     ├── f280039c_Iris_node/      # TI CCS 工程 (F280039C)
     ├── f280049c/                # TI CCS 工程 (F280049C)
+    ├── f29h85x_lp_3phgan/       # CCS 21 工程 (F29H85x LaunchPad + 3PHGAN)
     ├── simulate/                # Simulink 仿真工程
     ├── stm32f405/               # STM32F405 工程
     ├── stm32g431/               # STM32G431 工程
@@ -237,6 +238,7 @@ cia402_sm.minimum_transit_delay[CIA402_SM_READY_TO_SWITCH_ON] = 0;
 |----------|----------|-----|
 | TI F280039C (Iris节点) | `project/f280039c_Iris_node/` | Code Composer Studio |
 | TI F280049C LaunchPad | `project/f280049c/` | Code Composer Studio |
+| TI F29H85x LaunchPad + BOOSTXL-3PHGANINV | `project/f29h85x_lp_3phgan/` | CCS 21+ |
 | STM32F405 | `project/stm32f405/` | STM32CubeIDE / Keil MDK |
 | STM32G431 | `project/stm32g431/` | STM32CubeIDE / Keil MDK |
 | STM32G474 HRTIM | `project/stm32g474_hrtim/` | STM32CubeIDE / Keil MDK |
@@ -470,3 +472,14 @@ PIL 请求能够执行控制器，物理门极与 PWM 始终被强制保持安�
 
 可复现的分级流程、MATLAB 运行器、安全约束和实板测试结果见
 [`project/f280049c/pil`](project/f280049c/pil/README_CN.md)。
+
+## F29H85x LaunchPad + BOOSTXL-3PHGANINV
+
+`project/f29h85x_lp_3phgan` 是本套件的 C29x 目标，使用 `GMP-Core-C29x` Product 和
+正式双层 SDPE。公共控制参数来自 `sdpe_general`，板卡引脚、ADC SOC、PWM、QEP、UART、
+门极与故障资源由目标 `sdpe_mgr` 绑定到全局硬件实体
+`launchxl_f29h85x_3phgan`。所有平台代码只消费 SDPE 生成宏。
+
+该目标必须使用 CCS 21 或更新版本。实板上电前请阅读
+[`project/f29h85x_lp_3phgan/README_CN.md`](project/f29h85x_lp_3phgan/README_CN.md)，
+并从 `BUILD_LEVEL=1` 开始验证。

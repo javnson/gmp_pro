@@ -1,0 +1,10 @@
+#ifndef GMP_MCS_PMSM_NT_F29H85X_XPLT_CONFIG_H
+#define GMP_MCS_PMSM_NT_F29H85X_XPLT_CONFIG_H
+
+#define SPECIFY_ENABLE_GMP_CTL
+#define SPECIFY_CTRL_GT_TYPE USING_FLOAT_FPU
+
+#include <sdpe_mgr/sdpe_mcs_pmsm_nt_f29h85x_settings.h>
+
+#endif /* GMP_MCS_PMSM_NT_F29H85X_XPLT_CONFIG_H */
+

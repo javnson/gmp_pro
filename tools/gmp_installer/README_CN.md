@@ -108,7 +108,27 @@ set GMP_INSTALLER_PROXY_URL=http://127.0.0.1:7890
 set GMP_INSTALLER_PROXY_CHOICE=N
 ```
 
-## 7. 维护入口
+## 7. 重新添加 TI CCS Product
+
+完整安装与复制部署都会生成 C28x/C29x Product 元数据。仓库移动、GMP 更新或 Product
+版本变化后，单独重新生成可运行：
+
+```bat
+tools\facilities_generator\ccs_product_installer\install_ccs_products.bat
+```
+
+关闭 CCS，在 Product discovery path 中移除旧的 GMP 根目录或失效路径，再添加：
+
+```text
+<GMP_PRO_LOCATION>\csp\c28x_syscfg   -> GMP-Core-C28x
+<GMP_PRO_LOCATION>\csp\c29x_syscfg   -> GMP-Core-C29x
+```
+
+刷新 Product 列表并重启 CCS。C28x 可使用 CCS 18；C29x/F29H85x 必须使用 CCS 21 或
+更新版本。工程 include path 应使用 Product 导出的 `GMP_PRO_ROOT` 以及对应的
+`GMP_C28X_CSP_ROOT`/`GMP_C29X_CSP_ROOT`，不能保留旧的 `GMP-PRO-SDK` 宏。
+
+## 8. 维护入口
 
 Python 依赖统一维护在：
 
@@ -127,5 +147,7 @@ tools/gmp_installer/environment_manifest.json
 ```text
 tools/gmp_installer/project_gitignore.template
 ```
+
+分发范围包括 STM32、C28x、C29x CSP 工程和所有 `ctl/suite/*/project/*` 目标。
 
 更完整的发布、服务脚本、vcpkg、代理和回归维护规则请阅读 [英文维护手册](README.md)。

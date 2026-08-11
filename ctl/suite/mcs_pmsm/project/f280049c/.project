@@ -483,7 +483,7 @@
 		<link>
 			<name>user/as5048a.c</name>
 			<type>1</type>
-			<locationURI>COM_TI_COM_GMP_CORE_C28X_SDK_INSTALL_DIR/ext/encoder/as5048/as5048a.c</locationURI>
+			<locationURI>GMP_PRO_ROOT/ext/encoder/as5048/as5048a.c</locationURI>
 		</link>
 		<link>
 			<name>user/ctl_main.c</name>

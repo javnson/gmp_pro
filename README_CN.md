@@ -271,18 +271,34 @@ GMP 还提供 Processor-in-the-Loop 和 Datalink 调试机制：
 - [CTL Suite 指南](ctl/suite/readme_cn.md)
 - [SDPE v2 文档](tools/SDPE_v2/README_CN.md)
 - [C28x SysConfig 工程说明](csp/c28x_syscfg/doc/readme.md)
+- [C29x SysConfig 外设指南](csp/c29x_syscfg/doc/README_CN.md)
 - [面向 AI 的仓库维护技能](.agents/skills/maintain-gmp-repository/SKILL.md)
 
 英文资料和英文工程指南统一收录在 [English README](README.md) 中。
 
-## 10. 重要更新
+## 9. TI CCS Product 安装与升级
 
-由于TI的多种不同芯片都需要受到GMP的支持，在GMP根目录下引入GMP库的支持可能会带来混乱，所以后续，我们将把TI Product的目录放置在对应芯片的芯片支持包处。
+GMP 按器件系列提供独立的 CCS Product。安装器由
+`tools\facilities_generator\ccs_product_installer\GMP_CCS_Product_Info.json`
+驱动，并在对应 CSP 目录中生成 CCS 元数据：
 
-对于C28x系列芯片，需要导入的Product路径为：gmp_pro\csp\c28x_syscfg
+| 器件系列 | Product | CCS Product discovery path | 工程宏 |
+| --- | --- | --- | --- |
+| C28x | `GMP-Core-C28x` | `gmp_pro\csp\c28x_syscfg` | `GMP_PRO_ROOT`、`GMP_C28X_CSP_ROOT` |
+| C29x | `GMP-Core-C29x` | `gmp_pro\csp\c29x_syscfg` | `GMP_PRO_ROOT`、`GMP_C29X_CSP_ROOT` |
 
-对于C29x系列芯片，需要导入的Product路径为：gmp_pro\csp\c29x_syscfg
+首次安装、仓库移动、切换版本或 Product 版本更新后，都应重新运行：
 
-## 9. 许可证
+```bat
+tools\facilities_generator\ccs_product_installer\install_ccs_products.bat
+```
+
+然后关闭所有 CCS 实例，在 CCS 的 Product discovery path 设置中删除旧的 GMP 根目录条目，
+分别添加上表中的 C28x/C29x CSP 路径，执行刷新/发现并重启 CCS。工程只能选择与芯片系列匹配的
+Product；不要同时引用旧的 `GMP-PRO-SDK`。C28x 工程可继续使用 CCS 18，C29x/F29H85x
+工程必须使用 CCS 21 或更新版本。完整说明见
+[环境安装文档](tools/gmp_installer/README_CN.md)。
+
+## 10. 许可证
 
 GMP 使用 [Apache License 2.0](LICENSE.txt)。第三方组件的版权和许可证信息见 [NOTICE](NOTICE) 及各组件目录中的声明。

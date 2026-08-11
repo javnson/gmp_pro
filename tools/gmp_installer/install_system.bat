@@ -134,7 +134,7 @@ echo            Install the VS Desktop development with C++ workload later, then
 :GMP_VCPKG_PROJECT_RESTORE_DONE
 
 echo [SETUP] Registering CCS facilities product...
-python "%GMP_PRO_LOCATION%\tools\facilities_generator\gmp_fac_install_ccs_product.py"
+python "%GMP_PRO_LOCATION%\tools\facilities_generator\ccs_product_installer\ccs_product_installer.py" --root "%GMP_PRO_LOCATION%"
 if errorlevel 1 exit /b 1
 
 echo [SETUP] Generating facility configuration...

@@ -1,0 +1,26 @@
+{
+  "sync_mode": "all",
+  "emit_external_include_paths": false,
+  "local_include_dirs": [
+    "gmp_inc",
+    "gmp_inc/csp/c29x_syscfg"
+  ],
+  "selected_modules": [
+    {
+      "root": "core",
+      "module": "std"
+    },
+    {
+      "root": "core",
+      "module": "dev|_internal"
+    },
+    {
+      "root": "core",
+      "module": "dev|datalink|_internal"
+    },
+    {
+      "root": "csp",
+      "module": "c29x_syscfg"
+    }
+  ]
+}
