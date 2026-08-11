@@ -4,6 +4,11 @@
 
 GMP 是一套面向实时控制、电机驱动和电力电子系统的跨平台开发框架。仓库同时提供控制算法组件、硬件抽象、可运行控制套件、参数工程工具，以及 MATLAB/Simulink SIL 联合仿真支持。
 
+GMP 既可以作为包含 Core、CSP、CTL、Suite 和仿真工具的完整控制平台使用，也可以通过
+**CTL Portable（No CSP）**只提取控制算法所需的轻量部分，嵌入现有 TI DSP、STM32 或其他
+C/C++ 固件工程。后者不要求工程采用 GMP 的启动流程、设备层或跨平台外设框架：
+**哪里需要控制，哪里就可以部署 GMP-CTL。**
+
 ![GMP Logo](manual/img/GMP_LOGO.png)
 
 GMP 的目标不是仅提供若干独立算法，而是让同一套控制逻辑能够在 PC 仿真、TI C2000、STM32 等平台之间复用，并把以下内容清晰分离：
@@ -98,13 +103,34 @@ run(fullfile(getenv('GMP_PRO_LOCATION'), ...
 
 `mcs_pmsm` 和部分 `mcs_acm` 内容属于较早的工程结构，适合兼容维护，不建议作为新项目的首选模板。完整套件说明见 [CTL Suite 指南](ctl/suite/readme_cn.md)。
 
+### 1.5 在现有工程中轻量使用 CTL
+
+如果已有稳定的 BSP、HAL、RTOS 或厂商工程，只希望采用 PID、滤波器、坐标变换、调制器、
+观测器等 CTL 模块，不需要先移植完整 CSP。选择
+[TI DSP 或 STM32 Portable 模板](ctl/portable/README_CN.md)，然后：
+
+1. 将对应平台文件夹复制到应用工程，并把该目录和 GMP 根目录加入头文件路径；
+2. 使用模板内的 `sdpe_requirement.json` 管理数值后端等编译期选项，运行
+   `sdpe_generate.bat` 生成配置头；
+3. 全局定义 `GMP_CTL_PORTABLE`，或将 SDPE 生成头设置为编译器 forced include；
+4. 包含 `gmp_core.h` 以及所需 CTL 模块，并只编译这些模块对应的源文件。
+
+```c
+#include <gmp_core.h>
+#include <ctl/component/intrinsic/continuous/continuous_pid.h>
+```
+
+此时 `gmp_core.h` 会旁路 `xplt.config.h`、CSP、GMP 设备层和运行时入口，只保留
+CTL 使用的类型、数学运算、断言及可选 tick 接口。普通纯算法模块不要求任何外设函数；
+只有延时、校准等时间相关模块需要提供系统 tick。
+
 ## 2. 仓库结构
 
 | 目录 | 作用 |
 | --- | --- |
 | [`core`](core/readme_cn.md) | GMP 核心运行时：调度、设备、内存、通信及基础框架。 |
 | [`csp`](csp/readme_cn.md) | Chip Support Package，芯片和运行平台支持。 |
-| [`ctl`](ctl/readme_cn.md) | 控制模板库，包括数学模块、控制组件、框架和完整 suite。 |
+| [`ctl`](ctl/readme_cn.md) | 控制模板库，包括数学模块、控制组件、Portable 轻量接入、框架和完整 suite。 |
 | [`cctl`](cctl/readme_cn.md) | C++ 类形式的控制与电力电子对象。 |
 | [`vcore`](vcore/readme_cn.md) | HDL/Verilog 与相关实验性平台支持。 |
 | [`slib`](slib/readme_cn.md) | GMP MATLAB/Simulink 库的源文件、安装脚本和版本化安装目录。 |
@@ -301,9 +327,24 @@ Product；不要同时引用旧的 `GMP-PRO-SDK`。C28x 工程可继续使用 CC
 
 ## 10. CTL Portable 与 Keil Pack
 
-仅使用 CTL 算法、无需 CSP 和 GMP 运行框架的工程，可在全局定义
-`GMP_CTL_PORTABLE`，并复制 [TI DSP 或 STM32 portable 模板](ctl/portable/README_CN.md)。
-该模式只保留 CTL 所需的数值类型、数学层、断言和可选系统 tick 钩子。
+CTL Portable 是 GMP 的正式轻量化落地方式，面向“保留原有工程基础设施，只引入控制能力”的
+项目。它与完整 GMP+CSP 工程共享同一套 CTL API 和模块源码，因此算法可以先在 Portable
+工程中使用，后续再按需迁移到完整的跨平台 Suite；使用 Portable 本身并不要求进行这种迁移。
+
+| 能力 | 完整 GMP + CSP | CTL Portable（No CSP） |
+| --- | --- | --- |
+| CTL 数学与控制组件 | 支持 | 支持 |
+| `ctrl_gt`/`parameter_gt` 数值后端 | 由平台配置和 SDPE 管理 | 由 Portable SDPE 模板管理 |
+| 芯片启动、ADC/PWM/UART 抽象 | 由 CSP/xplt 提供 | 沿用用户已有 BSP/HAL |
+| GMP 生命周期、设备层、debug tool | 支持 | 不加载 |
+| 典型用途 | 跨平台 Suite、SIL/PIL、统一硬件框架 | 现有固件快速引入若干 CTL 模块 |
+
+Portable 公共契约位于 [`ctl/portable`](ctl/portable/README_CN.md)，当前提供 TI C28x/C29x
+和 STM32 模板。模板内只暴露必要配置：控制数值类型、参数类型、ADC/DAC/PWM 原始类型、
+断言映射和可选系统 tick。外设寄存器、RTOS、HAL 和应用生命周期继续由原工程负责。
+
+这也意味着 GMP-CTL 可以按模块分发，而不必把完整 GMP 仓库复制进最终工程。源代码管理器
+可根据模块字典选择源码；Keil 用户还可以将同一字典直接编译为 CMSIS-Pack。
 
 Keil 用户可通过模块字典生成 CMSIS-Pack：
 
