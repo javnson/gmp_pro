@@ -207,8 +207,9 @@ bool RCC_Configuration(void)
     RCC_ConfigSysclk(RCC_SYSCLK_SRC_PLL);
     /* Wait till PLL is used as system clock source */
     while (RCC_GetSysclkSrc() != RCC_CFG_SCLKSTS_PLL) ;
-    /*  Configure the SysTick to have interrupt in 1ms time basis*/
-    SysTick_Config(240000);
+    /* Keep CMSIS' clock model and the 1 ms SysTick reload synchronized. */
+    SystemCoreClockUpdate();
+    SysTick_Config(SystemCoreClock / 1000U);
 
 /* NTFx CODE END */
 

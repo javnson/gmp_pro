@@ -18,6 +18,8 @@
 //=================================================================================================
 // definitions of peripheral
 
+static gmp_gpio_n32h47x_t user_led_object = {GPIOA, GPIO_PIN_3};
+
 //=================================================================================================
 // peripheral setup function
 
@@ -25,8 +27,13 @@
 // User should setup all the peripheral in this function.
 void setup_peripheral(void)
 {
-    // Setup Debug Uart
-    //debug_uart = IRIS_UART_USB_BASE;
+    /* D1 is the red, active-high LED on PA3. */
+    user_led = &user_led_object;
+    (void)gmp_hal_gpio_set_dir(user_led, GMP_HAL_GPIO_DIR_OUT);
+    (void)gmp_hal_gpio_write(user_led, GMP_HAL_GPIO_LOW);
+
+    /* USART1 is wired to NS-LINK through J5: PA9 TX, PA10 RX, 115200 8N1. */
+    debug_uart = USART1;
 }
 
 //=================================================================================================
@@ -46,30 +53,27 @@ void setup_peripheral(void)
 
 void flush_dl_tx_buffer()
 {
-    //// Send head
-    //gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl), gmp_dev_dl_get_tx_hw_hdr_size(&dl), 10);
+    /* Send protocol header first. */
+    (void)gmp_hal_uart_write(debug_uart, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl), gmp_dev_dl_get_tx_hw_hdr_size(&dl), 10U);
 
-    //// Send data body, if necessary
-    //if (gmp_dev_dl_get_tx_hw_pld_size(&dl) > 0)
-    //{
-    //    gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_pld_ptr(&dl), gmp_dev_dl_get_tx_hw_pld_size(&dl),
-    //                       10);
-    //}
+    /* Then send the payload when the current frame has one. */
+    if (gmp_dev_dl_get_tx_hw_pld_size(&dl) > 0U)
+    {
+        (void)gmp_hal_uart_write(debug_uart, gmp_dev_dl_get_tx_hw_pld_ptr(&dl),
+                                 gmp_dev_dl_get_tx_hw_pld_size(&dl), 10U);
+    }
 }
 
 void flush_dl_rx_buffer()
 {
-    //uint16_t fifoLevel;
-    //data_gt rxBuf[ISR_LOCAL_BUF_SIZE];
+    data_gt rx_buf[16];
+    size_gt count = 0U;
 
-    //// read all FIFO messages
-    //fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE);
+    while ((count < (size_gt)sizeof(rx_buf)) && (gmp_hal_uart_get_rx_available(debug_uart) > 0U))
+    {
+        rx_buf[count++] = (data_gt)USART_ReceiveData(debug_uart);
+    }
 
-    //if (fifoLevel > 0)
-    //{
-    //    SCI_readCharArray(IRIS_UART_USB_BASE, (uint16_t*)rxBuf, fifoLevel);
-
-    //    // Lock-free ring queue pushed into the protocol stack (very fast, O(1))
-    //    gmp_dev_dl_push_str(&dl, rxBuf, fifoLevel);
-    //}
+    if (count > 0U)
+        gmp_dev_dl_push_str(&dl, rx_buf, count);
 }

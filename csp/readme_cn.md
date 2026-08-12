@@ -14,3 +14,5 @@ CSP 负责把 `core` 和 `ctl` 的平台无关逻辑连接到具体芯片、操�
 CSP 还必须实现 `core` 声明的 `gmp_hal_*` 平台接口。芯片外设、编译器差异和中断适配应留在 CSP 或工程 `xplt` 中，不能进入公共控制算法。
 
 支持平台和新增 CSP 的完整流程见 [CSP 使用与扩展指南](CSP_GUIDE.md)。
+
+Nations N32H47x/N32H48x 的 SysTick、GPIO、PWM、ADC、DAC、QEP、UART、I2C、SPI 和 FDCAN 用法见 [N32H47x/N32H48x CSP 与常用外设快速指南](nation32_h47x/README_CN.md)。

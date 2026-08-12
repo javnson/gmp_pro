@@ -2038,7 +2038,7 @@
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [
-                    "component|intrinsic|continuous|pid"
+                    "ctl|component|intrinsic|continuous|pid"
                 ],
                 "tasks": [
                     {
@@ -2076,7 +2076,7 @@
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [
-                    "component|intrinsic|continuous|ladrc1"
+                    "ctl|component|intrinsic|continuous|ladrc1"
                 ],
                 "tasks": [
                     {
@@ -3569,8 +3569,8 @@
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [
-                    "component|intrinsic|complex|dq_pi",
-                    "component|intrinsic|complex|dq_ladrc1"
+                    "ctl|component|intrinsic|complex|dq_pi",
+                    "ctl|component|intrinsic|complex|dq_ladrc1"
                 ],
                 "tasks": [
                     {
@@ -6158,25 +6158,28 @@
             },
             "nation32_h47x": {
                 "type": "module",
-                "description": "",
+                "description": "Nations N32H47x/N32H48x Cortex-M4 chip support package",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/csp/nation32_h47x/src/*"
                 ],
                 "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/csp/nation32_h47x/*"
+                    "${GMP_PRO_LOCATION}/csp/nation32_h47x/*",
+                    "${GMP_PRO_LOCATION}/csp/nation32_h47x/common/*"
                 ],
                 "inc_dirs": [
                     "${GMP_PRO_LOCATION}/csp/nation32_h47x/"
                 ],
-                "help_docs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/csp/nation32_h47x/README_CN.md"
+                ],
                 "depends_on": [],
                 "tasks": [
                     {
                         "id": "sys_compile",
                         "summary": "Compilation Passed",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
+                        "completed": true,
+                        "date": "2026-08-11",
+                        "reply": "Keil MDK Arm Compiler 6.23: n32h474vel7 N32Test, 0 errors and 0 warnings."
                     },
                     {
                         "id": "sys_sim",

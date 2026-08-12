@@ -1,5 +1,5 @@
 {
-    "sync_mode": "inc_only",
+    "sync_mode": "all",
     "selected_modules": [
         {
             "root": "core",
@@ -252,6 +252,18 @@
         {
             "root": "ctl",
             "module": "component|intrinsic|advance|surf_search"
+        },
+        {
+            "root": "ctl",
+            "module": "component|intrinsic|complex|_internal"
+        },
+        {
+            "root": "ctl",
+            "module": "component|intrinsic|complex|dq_pi"
+        },
+        {
+            "root": "ctl",
+            "module": "component|intrinsic|complex|dq_ladrc1"
         },
         {
             "root": "ctl",

@@ -62,6 +62,9 @@ gmp_task_status_t tsk_dl_debug_device(gmp_task_t* tsk)
 
     switch (e)
     {
+    case GMP_DL_EVENT_IDLE:
+        break;
+
     //
     // if TX data is ready, do transmit
     //
@@ -130,19 +133,10 @@ gmp_task_status_t tsk_blink(gmp_task_t* tsk)
 {
     GMP_UNUSED_VAR(tsk);
 
-    //gmp_base_print(TEXT_STRING("Hello World!\r\n"));
+    static fast_gt led_stat = GMP_HAL_GPIO_LOW;
 
-    //static fast_gt led_stat = 0;
-    //if (led_stat == 0)
-    //{
-    //    led_stat = 1;
-    //    gmp_hal_gpio_write(user_led, 0);
-    //}
-    //else
-    //{
-    //    led_stat = 0;
-    //    gmp_hal_gpio_write(user_led, 1);
-    //}
+    led_stat = (led_stat == GMP_HAL_GPIO_LOW) ? GMP_HAL_GPIO_HIGH : GMP_HAL_GPIO_LOW;
+    (void)gmp_hal_gpio_write(user_led, led_stat);
 
     return GMP_TASK_DONE;
 }
@@ -183,6 +177,8 @@ void init(void) GMP_NO_OPT_SUFFIX
     // Band DL module with tunable and persp module.
     gmp_param_tunable_init(&tunable, &dl, 0x30, dict_m1, var_tunable_count);
     gmp_mem_persp_init(&mem_persp_server, &dl, 0x50, mem_regions, mem_regions_count);
+
+    gmp_base_print(TEXT_STRING("[okay] N32H474VEL7 board demo ready; SysTick, LED and GMP debug UART are active.\r\n"));
 }
 
 // Initialization tasks after all peripherals have been initialized

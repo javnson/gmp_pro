@@ -32,7 +32,8 @@ int main(void)
     CRC_Configuration();
     FMAC_Configuration();
     SHRTIM_Configuration();
-    TIM_Configuration();
+    /* GTIM10 is intentionally left available to the application; GMP uses SysTick. */
+    /* TIM_Configuration(); */
     DMA_Configuration();
     /* NTFx CODE END Config*/
 	

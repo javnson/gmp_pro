@@ -29,6 +29,8 @@ extern "C"
 #endif // SPECIFY_PC_TEST_ENV
 
 extern volatile uint16_t flag_init_cmpt;
+extern gmp_datalink_t dl;
+extern gpio_halt user_led;
 
 //=================================================================================================
 // global functions

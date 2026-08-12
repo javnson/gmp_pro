@@ -9,6 +9,9 @@
  *
  */
 
+#ifndef _FILE_NATION32_H47X_CSP_GENERAL_H_
+#define _FILE_NATION32_H47X_CSP_GENERAL_H_
+
 #include <csp.config.h>
 
 //
@@ -16,27 +19,29 @@
 // GMP library Debug Software Break Point Macro
 // This instruction is valid in Cotex-M kernel chip.
 //
-#define GMP_DBG_SWBP __asm volatile("BKPT #0")
+#define GMP_DBG_SWBP __BKPT(0)
 
-GMP_STATIC_INLINE void gmp_base_enter_critical()
+/** Enter a global interrupt critical section. */
+GMP_STATIC_INLINE void gmp_base_enter_critical(void)
 {
     __disable_irq();
 }
 
-GMP_STATIC_INLINE void gmp_base_leave_critical()
+/** Leave a global interrupt critical section. */
+GMP_STATIC_INLINE void gmp_base_leave_critical(void)
 {
     __enable_irq();
 }
 
 //////////////////////////////////////////////////////////////////////////
-// Step II: Invoke all the STM32 general headers.
+// Step II: Invoke all the N32H47x general headers.
 //
 
-#include "n32h47x_48x.h"
-#include "n32h47x_48x_cfg.h"
+#include <csp/nation32_h47x/common/gpio_model.n32h47x.h>
+#include <csp/nation32_h47x/common/sys_model.n32h47x.h>
 
 extern uart_halt debug_uart;
 
 size_gt gmp_base_print_n32(const char* p_fmt, ...);
 
-void gmp_step_system_tick(void);
+#endif // _FILE_NATION32_H47X_CSP_GENERAL_H_

@@ -100,6 +100,9 @@ void SysTick_Handler(void)
     mwTick++;
 /* NTFx CODE END */
 
+    /* GMP shares the Cortex-M millisecond time base with N32Cube. */
+    gmp_step_system_tick();
+
 }
 /* NTFx CODE START(GTIM10_IRQHandler)*/
 /**
@@ -108,8 +111,6 @@ void SysTick_Handler(void)
 void GTIM10_IRQHandler(void)
 {
 /* NTFx CODE END */
-	
-	gmp_step_system_tick();
 	
 /* NTFx CODE START */
     if (TIM_GetIntStatus(GTIM10, TIM_INT_UPDATE))

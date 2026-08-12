@@ -999,6 +999,21 @@
               <FileType>1</FileType>
               <FilePath>..\gmp_src_mgr\gmp_src\n32_csp_adapter.c</FilePath>
             </File>
+            <File>
+              <FileName>n32_peripheral_driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\n32_peripheral_driver.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_dq_pi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_dq_pi.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctl_dq_ladrc1.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_dq_ladrc1.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1073,6 +1088,11 @@
               <FileName>n32h47x_48x_i2c.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Driver\n32h47x_48x_std_periph_driver\src\/n32h47x_48x_i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>n32h47x_48x_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Driver\n32h47x_48x_std_periph_driver\src\/n32h47x_48x_spi.c</FilePath>
             </File>
             <File>
               <FileName>n32h47x_48x_dac.c</FileName>

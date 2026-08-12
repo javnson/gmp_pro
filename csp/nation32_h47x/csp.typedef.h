@@ -9,18 +9,17 @@
  *
  */
 
-//////////////////////////////////////////////////////////////////////////
-// Step I: Select HAL library
-//
-
 #include "n32h47x_48x.h"
-#include "n32h47x_48x_cfg.h"
-
+#include "n32h47x_48x_fdcan.h"
+#include "n32h47x_48x_gpio.h"
+#include "n32h47x_48x_i2c.h"
+#include "n32h47x_48x_spi.h"
+#include "n32h47x_48x_usart.h"
 
 #ifndef _FILE_CSP_TYPE_DEF_H_
 #define _FILE_CSP_TYPE_DEF_H_
 
-// This file is for STM32 series micro controller
+// This file is for Nations N32H47x/N32H48x microcontrollers.
 
 // STM32 BASIC DATA TYPE
 #define GMP_PORT_DATA_T              unsigned char
@@ -36,28 +35,26 @@
 #define GMP_PORT_FAST16_SIZE_PER_BITS  (32)
 #define GMP_PORT_FAST16_SIZE_PER_BYTES (4)
 
-// peripheral types
+// Peripheral handle types. GPIO needs both the port and pin mask, while the
+// remaining peripherals can use the vendor register block pointer directly.
+typedef struct _tag_gmp_gpio_n32h47x_t
+{
+    GPIO_Module *port;
+    uint16_t pin;
+} gmp_gpio_n32h47x_t;
 
-//// STM32 GPIO MODEL
-//typedef struct _tag_gpio_model_stm32_t
-//{
-//    // GPIO port of STM32
-//    //
-//    GPIO_TypeDef* gpio_port;
-//
-//    // GPIO pin of STM32
-//    //
-//    uint32_t gpio_pin;
-//
-//} gpio_model_stm32_t;
-
-// specify the GPIO model to be STM32 model
-//#define GMP_PORT_GPIO_T gpio_model_stm32_t*
+#define GMP_PORT_GPIO_T gmp_gpio_n32h47x_t *
 
 // specify the UART model
 #define GMP_PORT_UART_T USART_Module*
 
 // SPI interface
 #define GMP_PORT_SPI_T SPI_Module*
+
+// I2C interface
+#define GMP_PORT_I2C_T I2C_Module*
+
+// CAN/CAN-FD interface
+#define GMP_PORT_CAN_T FDCAN_Module*
 
 #endif
