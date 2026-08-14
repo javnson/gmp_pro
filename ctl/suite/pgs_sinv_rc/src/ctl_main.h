@@ -172,10 +172,10 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 #endif
 
 #if BUILD_LEVEL >= 3
-        // PLL frequency is per-unit; FDRC requires the actual fundamental in Hz.
-        rc_core.fundamental_freq = CTRL_GRID_FREQUENCY * ctrl2float(pll.frequency);
-#else
-        rc_core.fundamental_freq = CTRL_GRID_FREQUENCY;
+        // Update the slow FDRC delay cache at 1/64 of the control rate.
+        if ((rc_core.isr_tick & 0x3FU) == 0U)
+            ctl_set_sinv_rc_fundamental_frequency(&rc_core,
+                                                  CTRL_GRID_FREQUENCY * ctrl2param(pll.frequency));
 #endif
 
         // Pass I_ref from ref generator. Fdbk ptrs (ADC) are already zero-copy bound in init()

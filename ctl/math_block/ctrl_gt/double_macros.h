@@ -77,6 +77,7 @@ GMP_STATIC_INLINE double abs_static_inline(double A)
 #define ctrl2float(x) ((double)(x)) /**< @brief Converts a `ctrl_gt` value to a standard double. */
 #define int2ctrl(x)   ((double)(x)) /**< @brief Converts an integer to `ctrl_gt`. */
 #define ctrl2int(x)   ((int)(x))    /**< @brief Converts a `ctrl_gt` value to an integer (truncates). */
+#define ctrl_fraction_to_index(x, count) ((uint32_t)((double)(x) * (uint32_t)(count)))
 
 /**
  * @brief Computes the fractional part of a `ctrl_gt` value (x mod 1).
@@ -132,30 +133,30 @@ GMP_STATIC_INLINE double abs_static_inline(double A)
 /**
  * @brief Computes the sine of an angle given in per-unit.
  * @note Assumes a `PI` constant is defined. The input is scaled by 2*PI.
- * @param A The input angle in per-unit (0.0 to 1.0 represents 0 to 2¦Ð).
+ * @param A The input angle in per-unit (0.0 to 1.0 represents 0 to 2*pi).
  * @return The sine of the angle.
  */
-#define ctl_sin(A) sin(CTL_PARAM_CONST_2PI*(A))
+#define ctl_sin(A) sin(CTL_CTRL_CONST_2_PI * (A))
 
 /**
  * @brief Computes the cosine of an angle given in per-unit.
  * @note Assumes a `PI` constant is defined. The input is scaled by 2*PI.
- * @param A The input angle in per-unit (0.0 to 1.0 represents 0 to 2¦Ð).
+ * @param A The input angle in per-unit (0.0 to 1.0 represents 0 to 2*pi).
  * @return The cosine of the angle.
  */
-#define ctl_cos(A) cos(CTL_PARAM_CONST_2PI*(A))
+#define ctl_cos(A) cos(CTL_CTRL_CONST_2_PI * (A))
 
 /**
  * @brief Computes the tangent of an angle given in per-unit.
  * @note Assumes a `PI` constant is defined. The input is scaled by 2*PI.
- * @param A The input angle in per-unit (0.0 to 1.0 represents 0 to 2¦Ð).
+ * @param A The input angle in per-unit (0.0 to 1.0 represents 0 to 2*pi).
  * @return The tangent of the angle.
  */
-#define ctl_tan(A) tan(CTL_PARAM_CONST_2PI*(A))
+#define ctl_tan(A) tan(CTL_CTRL_CONST_2_PI * (A))
 
 #define ctl_atan2(Y, X)   atan2((Y), (X))     /**< @brief Computes the arc-tangent of Y/X. */
 #define ctl_exp(A)        exp((A))            /**< @brief Computes the base-e exponential of A. */
-#define ctl_pow(B, Index) exp(log(Index) * B) /**< @brief Compute the B^Index power of B */
+#define ctl_pow(B, Index) pow((B), (Index)) /**< @brief Compute B raised to Index. */
 #define ctl_ln(A)         log((A))            /**< @brief Computes the natural logarithm of A. */
 #define ctl_sqrt(A)       sqrt((A))           /**< @brief Computes the square root of A. */
 #define ctl_isqrt(A)      (1.0 / sqrt((A)))   /**< @brief Computes the inverse square root of A. */
@@ -167,10 +168,6 @@ GMP_STATIC_INLINE double abs_static_inline(double A)
  * This can be used for conditional compilation in other parts of the library.
  */
 #define CTRL_GT_IS_DOUBLE
-
-#ifndef CTL_EPSILON
-#define CTL_EPSILON (float2ctrl(1e-6f)) /**< @brief Threshold for zero-division avoidance. */
-#endif
 
 /** @} */ // end of MC_DOUBLE_MACROS group
 

@@ -14,7 +14,7 @@ void ctl_init_mrac(ctl_mrac_controller_t* mrac, const ctl_mrac_init_t* init)
     parameter_gt Ts = 1.0f / init->f_ctrl;
 
     // Discretize the reference model using Zero-Order Hold (ZOH)
-    parameter_gt a_m_d_f = expf(-(init->a_m * Ts));
+    parameter_gt a_m_d_f = param_exp(-(init->a_m * Ts));
     parameter_gt b_m_d_f = (init->b_m / init->a_m) * (1.0f - a_m_d_f);
 
     // Discretize the adaptation rates

@@ -38,7 +38,7 @@ void ctl_init_resonant_tuner_from_ctrl(ctl_resonant_tuner_t* tuner, const resona
     parameter_gt float_b2 = ctrl2float(active_ctrl->coef.b2);
 
     /* Mathematical Structural Consistency Verification */
-    if ((fabsf(float_a2 - (-1.0f)) > 1e-4f) || (fabsf(float_b0 + float_b2) > 1e-4f))
+    if ((param_abs(float_a2 - (-1.0f)) > 1e-4f) || (param_abs(float_b0 + float_b2) > 1e-4f))
     {
         tuner->target_kr = 0.0f;
         tuner->target_freq_resonant = 0.0f;
@@ -55,7 +55,7 @@ void ctl_init_resonant_tuner_from_ctrl(ctl_resonant_tuner_t* tuner, const resona
     if (wr_sq_T_sq < 0.0f)
         wr_sq_T_sq = 0.0f;
 
-    parameter_gt wr = sqrtf(wr_sq_T_sq);
+    parameter_gt wr = param_sqrt(wr_sq_T_sq);
     tuner->target_freq_resonant = wr / (CTL_PARAM_CONST_2PI * T);
 
     parameter_gt den = wr_sq_T_sq + 4.0f;
@@ -101,12 +101,12 @@ void ctl_tune_qr_compile(ctl_qr_tuner_t* tuner, parameter_gt fs)
     if (tuner->method_mode == CTL_TUNE_QR_PREWARPED)
     {
         parameter_gt half_angle = CTL_PARAM_CONST_PI * tuner->target_freq_resonant / fs;
-        if (half_angle < 1e-6f)
-            half_angle = 1e-6f;
-        if (half_angle > (CTL_PARAM_CONST_PI * 0.5f - 1e-6f))
-            half_angle = (CTL_PARAM_CONST_PI * 0.5f - 1e-6f);
+        if (half_angle < CTL_PARAM_CONST_EPSILON)
+            half_angle = CTL_PARAM_CONST_EPSILON;
+        if (half_angle > (CTL_PARAM_CONST_PI * CTL_PARAM_CONST_1_OVER_2 - CTL_PARAM_CONST_EPSILON))
+            half_angle = CTL_PARAM_CONST_PI * CTL_PARAM_CONST_1_OVER_2 - CTL_PARAM_CONST_EPSILON;
 
-        k_val = wr / tanf(half_angle);
+        k_val = wr / param_tan(half_angle);
     }
 
     /* Compile parameters safely through floating core engine */
@@ -141,7 +141,7 @@ void ctl_init_qr_tuner_from_ctrl(ctl_qr_tuner_t* tuner, const qr_ctrl_t* active_
     parameter_gt float_a2 = ctrl2float(active_ctrl->coef.a2);
 
     /* Mathematical Consistency Verification */
-    if (fabsf(float_b0 + float_b2) > 1e-4f)
+    if (param_abs(float_b0 + float_b2) > 1e-4f)
     {
         tuner->target_kr = 0.0f;
         tuner->target_freq_resonant = 0.0f;
@@ -161,32 +161,32 @@ void ctl_init_qr_tuner_from_ctrl(ctl_qr_tuner_t* tuner, const qr_ctrl_t* active_
     /* Multi-variable backward deconvolution decoupling */
     parameter_gt num_ratio = 2.0f - 2.0f * float_a2 - 2.0f * float_a1;
     parameter_gt den_ratio = 2.0f - 2.0f * float_a2 + 2.0f * float_a1;
-    if (den_ratio < 1e-9f)
-        den_ratio = 1e-9f;
+    if (den_ratio < CTL_PARAM_CONST_EPSILON)
+        den_ratio = CTL_PARAM_CONST_EPSILON;
 
     parameter_gt wr_sq_derived = (k_tustin * k_tustin) * (num_ratio / den_ratio);
     if (wr_sq_derived < 0.0f)
         wr_sq_derived = 0.0f;
-    parameter_gt wr_derived = sqrtf(wr_sq_derived);
+    parameter_gt wr_derived = param_sqrt(wr_sq_derived);
 
     if (mode == CTL_TUNE_QR_PREWARPED)
     {
         parameter_gt half_angle = wr_derived * (0.5f / fs);
-        if (half_angle < 1e-6f)
-            half_angle = 1e-6f;
-        if (half_angle > (CTL_PARAM_CONST_PI * 0.5f - 1e-6f))
-            half_angle = (CTL_PARAM_CONST_PI * 0.5f - 1e-6f);
-        k_tustin = wr_derived / tanf(half_angle);
+        if (half_angle < CTL_PARAM_CONST_EPSILON)
+            half_angle = CTL_PARAM_CONST_EPSILON;
+        if (half_angle > (CTL_PARAM_CONST_PI * CTL_PARAM_CONST_1_OVER_2 - CTL_PARAM_CONST_EPSILON))
+            half_angle = CTL_PARAM_CONST_PI * CTL_PARAM_CONST_1_OVER_2 - CTL_PARAM_CONST_EPSILON;
+        k_tustin = wr_derived / param_tan(half_angle);
 
         wr_sq_derived = (k_tustin * k_tustin) * (num_ratio / den_ratio);
         if (wr_sq_derived < 0.0f)
             wr_sq_derived = 0.0f;
-        wr_derived = sqrtf(wr_sq_derived);
+        wr_derived = param_sqrt(wr_sq_derived);
     }
     tuner->target_freq_resonant = wr_derived / CTL_PARAM_CONST_2PI;
 
     parameter_gt D0_derived = (2.0f * k_tustin * k_tustin - 2.0f * wr_sq_derived) / float_a1;
-    if (fabsf(float_a1) < 1e-6f)
+    if (param_abs(float_a1) < CTL_PARAM_CONST_EPSILON)
     {
         D0_derived = (4.0f * k_tustin * k_tustin) / (1.0f + float_a1 - float_a2);
     }
@@ -196,7 +196,7 @@ void ctl_init_qr_tuner_from_ctrl(ctl_qr_tuner_t* tuner, const qr_ctrl_t* active_
         wc_derived = 0.0f;
     tuner->target_freq_cut = wc_derived / CTL_PARAM_CONST_2PI;
 
-    if (wc_derived > 1e-6f)
+    if (wc_derived > CTL_PARAM_CONST_EPSILON)
     {
         tuner->target_kr = (float_b0 * D0_derived) / (2.0f * wc_derived * k_tustin);
     }

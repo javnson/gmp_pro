@@ -28,57 +28,45 @@
  * @{
  */
 
-#ifndef CTL_PARAM_CONST_PI
-#define CTL_PARAM_CONST_PI ((parameter_gt)(3.141592653589793)) /**< @brief The constant Pi (¦Ð). */
+#define CTL_PARAM_CONST_ZERO             real2param(0.0)
+#define CTL_PARAM_CONST_1                real2param(1.0)
+#define CTL_PARAM_CONST_2                real2param(2.0)
+#define CTL_PARAM_CONST_3                real2param(3.0)
+#define CTL_PARAM_CONST_4                real2param(4.0)
+#define CTL_PARAM_CONST_1_OVER_2         real2param(0.5)
+#define CTL_PARAM_CONST_1_OVER_3         real2param(0.333333333333333333333333333333)
+#define CTL_PARAM_CONST_1_OVER_4         real2param(0.25)
+#define CTL_PARAM_CONST_2_OVER_3         real2param(0.666666666666666666666666666667)
+#define CTL_PARAM_CONST_3_OVER_2         real2param(1.5)
+#define CTL_PARAM_CONST_PI               real2param(3.141592653589793238462643383279)
+#define CTL_PARAM_CONST_2PI              real2param(6.283185307179586476925286766559)
+#define CTL_PARAM_CONST_1_OVER_2PI       real2param(0.159154943091895335768883763373)
+#define CTL_PARAM_CONST_2_OVER_PI        real2param(0.636619772367581343075535053490)
+#define CTL_PARAM_CONST_E                real2param(2.718281828459045235360287471353)
+#define CTL_PARAM_CONST_SQRT2            real2param(1.414213562373095048801688724210)
+#define CTL_PARAM_CONST_1_OVER_SQRT2     real2param(0.707106781186547524400844362105)
+#define CTL_PARAM_CONST_SQRT3            real2param(1.732050807568877293527446341506)
+#define CTL_PARAM_CONST_1_OVER_SQRT3     real2param(0.577350269189625764509148780502)
+#define CTL_PARAM_CONST_SQRT3_OVER_2     real2param(0.866025403784438646763723170753)
+#define CTL_PARAM_CONST_SQRT3_OVER_SQRT2 real2param(1.224744871391589049098642037353)
+#define CTL_PARAM_CONST_2_SQRT_6         real2param(4.898979485566356196394568149412)
+#define CTL_PARAM_CONST_100PI_OVER_3     real2param(104.71975511965977461542144610932)
+#define CTL_PARAM_CONST_LN2              real2param(0.693147180559945309417232121458)
+#define CTL_PARAM_CONST_LN10             real2param(2.302585092994045684017991454684)
+#define CTL_PARAM_CONST_GOLDEN_RATIO     real2param(1.618033988749894848204586834366)
+
+/* Default zero-comparison threshold for the selected parameter domain. */
+#if (SPECIFY_PARAMETER_GT_TYPE == USING_DOUBLE_FPU)
+#define CTL_PARAM_CONST_EPSILON real2param(1.0e-12)
+#else
+#define CTL_PARAM_CONST_EPSILON real2param(1.0e-6)
 #endif
 
-#ifndef CTL_PARAM_CONST_2PI
-#define CTL_PARAM_CONST_2PI ((parameter_gt)(6.283185307179586476925286766559)) /**< @brief The constant 2Pi (2¦Ð). */
-#endif
-
-#ifndef CTL_PARAM_CONST_E
-#define CTL_PARAM_CONST_E ((parameter_gt)(2.718281828459045)) /**< @brief Euler's number (e). */
-#endif
-
-#ifndef CTL_CONST_PARAM_3_OVER_2
-#define CTL_CONST_PARAM_3_OVER_2 ((parameter_gt)(1.5f))  /**< @brief 1.5. */
-#endif  
-
-#ifndef CTL_PARAM_CONST_SQRT2
-#define CTL_PARAM_CONST_SQRT2 ((parameter_gt)(1.414213562373095)) /**< @brief The square root of 2. */
-#endif
-
-#ifndef CTL_PARAM_CONST_SQRT3
-#define CTL_PARAM_CONST_SQRT3 ((parameter_gt)(1.732050807568877)) /**< @brief The square root of 3. */
-#endif
-
-#ifndef CTL_PARAM_CONST_SQRT3_OVER_SQRT2
-#define CTL_PARAM_CONST_SQRT3_OVER_SQRT2 ((parameter_gt)(1.22474487139158905)) /**< @brief The square root of 3/2. */
-#endif
-
-#ifndef CTL_CONST_PARAM_2_SQRT_6
-#define CTL_CONST_PARAM_2_SQRT_6 ((parameter_gt)(4.8989794855663562)) /**< @brief 2 times the square root of 6. */
-#endif
-
-#ifndef CTL_CONST_PARAM_100PI_OVER_3
-#define CTL_CONST_PARAM_100PI_OVER_3 ((parameter_gt)(104.7197551196597746)) /**< @brief 2 times the square root of 6. */
-#endif
-
-#ifndef CTL_PARAM_CONST_1_OVER_SQRT2
-#define CTL_PARAM_CONST_1_OVER_SQRT2 ((parameter_gt)(0.7071067811865475)) /**< @brief The constant 1/sqrt(2). */
-#endif
-
-#ifndef CTL_PARAM_CONST_LN2
-#define CTL_PARAM_CONST_LN2 ((parameter_gt)(0.6931471805599453)) /**< @brief The natural logarithm of 2. */
-#endif
-
-#ifndef CTL_PARAM_CONST_LN10
-#define CTL_PARAM_CONST_LN10 ((parameter_gt)(2.302585092994046)) /**< @brief The natural logarithm of 10. */
-#endif
-
-#ifndef CTL_PARAM_CONST_GOLDEN_RATIO
-#define CTL_PARAM_CONST_GOLDEN_RATIO ((parameter_gt)(1.618033988749895)) /**< @brief The golden ratio (¦Õ). */
-#endif
+/* Historical names retained for generated and downstream projects. */
+#define CTL_CONST_PARAM_3_OVER_2     CTL_PARAM_CONST_3_OVER_2
+#define CTL_CONST_PARAM_2_SQRT_6     CTL_PARAM_CONST_2_SQRT_6
+#define CTL_CONST_PARAM_100PI_OVER_3 CTL_PARAM_CONST_100PI_OVER_3
+#define CTL_CONST_PARAM_SQRT_2       CTL_PARAM_CONST_SQRT2
 
 /** @} */ // end of MC_PARAM_CONSTANTS group
 

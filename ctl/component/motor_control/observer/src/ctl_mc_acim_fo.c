@@ -163,5 +163,5 @@ void ctl_set_im_fo_voltage_model_leak(ctl_im_fo_t* fo, parameter_gt cutoff_hz, p
 {
     parameter_gt fs_safe = (fs > 1e-6f) ? fs : 10000.0f;
     parameter_gt cutoff = (cutoff_hz > 0.0f) ? cutoff_hz : 0.0f;
-    fo->sf_vm_leak = float2ctrl(1.0f - expf(-CTL_PARAM_CONST_2PI * cutoff / fs_safe));
+    fo->sf_vm_leak = float2ctrl(1.0f - param_exp(-CTL_PARAM_CONST_2PI * cutoff / fs_safe));
 }

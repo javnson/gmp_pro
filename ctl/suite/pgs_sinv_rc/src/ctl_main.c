@@ -163,7 +163,7 @@ void ctl_init(void)
 #elif BUILD_LEVEL == 5
     g_vbus_ref_user = float2ctrl(SINV_DC_BUS_REF_V / CTRL_VOLTAGE_BASE);
 #endif
-    rc_core.flag_enable_fdrc = 0;
+    ctl_disable_sinv_rc_fdrc(&rc_core);
 #if BUILD_LEVEL >= 2 && defined(SINV_ENABLE_GRID_VOLTAGE_FEEDFORWARD)
     rc_core.flag_enable_lead_comp = 1;
 #else
@@ -190,14 +190,14 @@ void ctl_mainloop(void)
     if (cia402_sm.state_word.bits.operation_enabled &&
         gmp_base_time_sub(current_tick, cia402_sm.entry_state_tick) > SINV_FDRC_ENABLE_DELAY_MS)
     {
-        rc_core.flag_enable_fdrc = 1;
+        ctl_enable_sinv_rc_fdrc(&rc_core);
     }
     else
     {
-        rc_core.flag_enable_fdrc = 0;
+        ctl_disable_sinv_rc_fdrc(&rc_core);
     }
 #else
-    rc_core.flag_enable_fdrc = 0;
+    ctl_disable_sinv_rc_fdrc(&rc_core);
 #endif
 }
 

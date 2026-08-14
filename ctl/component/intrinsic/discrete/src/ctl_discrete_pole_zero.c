@@ -83,8 +83,8 @@ void ctl_init_1p1z(ctrl_1p1z_t* c, parameter_gt gain, parameter_gt f_z, paramete
 {
     gmp_ctl_assert(fs > 0.0f);
 
-    parameter_gt Kz = tanf(CTL_PARAM_CONST_PI * f_z / fs);
-    parameter_gt Kp = tanf(CTL_PARAM_CONST_PI * f_p / fs);
+    parameter_gt Kz = param_tan(CTL_PARAM_CONST_PI * f_z / fs);
+    parameter_gt Kp = param_tan(CTL_PARAM_CONST_PI * f_p / fs);
 
     parameter_gt den_norm = Kp + 1.0f;
     if (den_norm < 1e-9f)
@@ -341,16 +341,16 @@ void ctl_init_3p3z_complex_pair(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt 
 parameter_gt ctl_get_2p2z_gain(ctrl_2p2z_t* c, parameter_gt fs, parameter_gt f)
 {
     parameter_gt w = 2.0f * CTL_PARAM_CONST_PI * f / fs;
-    parameter_gt cos_w = cosf(w), sin_w = sinf(w);
-    parameter_gt cos_2w = cosf(2.0f * w), sin_2w = sinf(2.0f * w);
+    parameter_gt cos_w = param_cos(w), sin_w = param_sin(w);
+    parameter_gt cos_2w = param_cos(2.0f * w), sin_2w = param_sin(2.0f * w);
 
     parameter_gt num_real = c->coef_b[0] + c->coef_b[1] * cos_w + c->coef_b[2] * cos_2w;
     parameter_gt num_imag = -c->coef_b[1] * sin_w - c->coef_b[2] * sin_2w;
     parameter_gt den_real = 1.0f + c->coef_a[0] * cos_w + c->coef_a[1] * cos_2w;
     parameter_gt den_imag = -c->coef_a[0] * sin_w - c->coef_a[1] * sin_2w;
 
-    parameter_gt mag_num = sqrtf(num_real * num_real + num_imag * num_imag);
-    parameter_gt mag_den = sqrtf(den_real * den_real + den_imag * den_imag);
+    parameter_gt mag_num = param_sqrt(num_real * num_real + num_imag * num_imag);
+    parameter_gt mag_den = param_sqrt(den_real * den_real + den_imag * den_imag);
 
     return (mag_den < 1e-9f) ? 0.0f : (mag_num / mag_den);
 }
@@ -358,16 +358,16 @@ parameter_gt ctl_get_2p2z_gain(ctrl_2p2z_t* c, parameter_gt fs, parameter_gt f)
 parameter_gt ctl_get_2p2z_phase_lag(ctrl_2p2z_t* c, parameter_gt fs, parameter_gt f)
 {
     parameter_gt w = 2.0f * CTL_PARAM_CONST_PI * f / fs;
-    parameter_gt cos_w = cosf(w), sin_w = sinf(w);
-    parameter_gt cos_2w = cosf(2.0f * w), sin_2w = sinf(2.0f * w);
+    parameter_gt cos_w = param_cos(w), sin_w = param_sin(w);
+    parameter_gt cos_2w = param_cos(2.0f * w), sin_2w = param_sin(2.0f * w);
 
     parameter_gt num_real = c->coef_b[0] + c->coef_b[1] * cos_w + c->coef_b[2] * cos_2w;
     parameter_gt num_imag = -c->coef_b[1] * sin_w - c->coef_b[2] * sin_2w;
     parameter_gt den_real = 1.0f + c->coef_a[0] * cos_w + c->coef_a[1] * cos_2w;
     parameter_gt den_imag = -c->coef_a[0] * sin_w - c->coef_a[1] * sin_2w;
 
-    parameter_gt phase_num = atan2f(num_imag, num_real);
-    parameter_gt phase_den = atan2f(den_imag, den_real);
+    parameter_gt phase_num = param_atan2(num_imag, num_real);
+    parameter_gt phase_den = param_atan2(den_imag, den_real);
 
     return -(phase_num - phase_den);
 }
@@ -375,17 +375,17 @@ parameter_gt ctl_get_2p2z_phase_lag(ctrl_2p2z_t* c, parameter_gt fs, parameter_g
 parameter_gt ctl_get_3p3z_gain(ctrl_3p3z_t* c, parameter_gt fs, parameter_gt f)
 {
     parameter_gt w = 2.0f * CTL_PARAM_CONST_PI * f / fs;
-    parameter_gt cos_w = cosf(w), sin_w = sinf(w);
-    parameter_gt cos_2w = cosf(2.0f * w), sin_2w = sinf(2.0f * w);
-    parameter_gt cos_3w = cosf(3.0f * w), sin_3w = sinf(3.0f * w);
+    parameter_gt cos_w = param_cos(w), sin_w = param_sin(w);
+    parameter_gt cos_2w = param_cos(2.0f * w), sin_2w = param_sin(2.0f * w);
+    parameter_gt cos_3w = param_cos(3.0f * w), sin_3w = param_sin(3.0f * w);
 
     parameter_gt num_real = c->coef_b[0] + c->coef_b[1] * cos_w + c->coef_b[2] * cos_2w + c->coef_b[3] * cos_3w;
     parameter_gt num_imag = -c->coef_b[1] * sin_w - c->coef_b[2] * sin_2w - c->coef_b[3] * sin_3w;
     parameter_gt den_real = 1.0f + c->coef_a[0] * cos_w + c->coef_a[1] * cos_2w + c->coef_a[2] * cos_3w;
     parameter_gt den_imag = -c->coef_a[0] * sin_w - c->coef_a[1] * sin_2w - c->coef_a[2] * sin_3w;
 
-    parameter_gt mag_num = sqrtf(num_real * num_real + num_imag * num_imag);
-    parameter_gt mag_den = sqrtf(den_real * den_real + den_imag * den_imag);
+    parameter_gt mag_num = param_sqrt(num_real * num_real + num_imag * num_imag);
+    parameter_gt mag_den = param_sqrt(den_real * den_real + den_imag * den_imag);
 
     return (mag_den < 1e-9f) ? 0.0f : (mag_num / mag_den);
 }
@@ -393,17 +393,17 @@ parameter_gt ctl_get_3p3z_gain(ctrl_3p3z_t* c, parameter_gt fs, parameter_gt f)
 parameter_gt ctl_get_3p3z_phase_lag(ctrl_3p3z_t* c, parameter_gt fs, parameter_gt f)
 {
     parameter_gt w = 2.0f * CTL_PARAM_CONST_PI * f / fs;
-    parameter_gt cos_w = cosf(w), sin_w = sinf(w);
-    parameter_gt cos_2w = cosf(2.0f * w), sin_2w = sinf(2.0f * w);
-    parameter_gt cos_3w = cosf(3.0f * w), sin_3w = sinf(3.0f * w);
+    parameter_gt cos_w = param_cos(w), sin_w = param_sin(w);
+    parameter_gt cos_2w = param_cos(2.0f * w), sin_2w = param_sin(2.0f * w);
+    parameter_gt cos_3w = param_cos(3.0f * w), sin_3w = param_sin(3.0f * w);
 
     parameter_gt num_real = c->coef_b[0] + c->coef_b[1] * cos_w + c->coef_b[2] * cos_2w + c->coef_b[3] * cos_3w;
     parameter_gt num_imag = -c->coef_b[1] * sin_w - c->coef_b[2] * sin_2w - c->coef_b[3] * sin_3w;
     parameter_gt den_real = 1.0f + c->coef_a[0] * cos_w + c->coef_a[1] * cos_2w + c->coef_a[2] * cos_3w;
     parameter_gt den_imag = -c->coef_a[0] * sin_w - c->coef_a[1] * sin_2w - c->coef_a[2] * sin_3w;
 
-    parameter_gt phase_num = atan2f(num_imag, num_real);
-    parameter_gt phase_den = atan2f(den_imag, den_real);
+    parameter_gt phase_num = param_atan2(num_imag, num_real);
+    parameter_gt phase_den = param_atan2(den_imag, den_real);
 
     return -(phase_num - phase_den);
 }

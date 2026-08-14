@@ -35,18 +35,18 @@ fast_gt ctl_init_sinc_interpolator(ctl_sinc_interpolator_t* sinc, uint32_t num_t
             parameter_gt t = (parameter_gt)j - center - fractional_offset;
 
             parameter_gt sinc_val;
-            if (fabsf(t) < 1e-9f) // 避免严格的 0.0 比较
+            if (param_abs(t) < 1e-9f) // 避免严格的 0.0 比较
             {
                 sinc_val = 1.0f;
             }
             else
             {
-                sinc_val = sinf(CTL_PARAM_CONST_PI * t) / (CTL_PARAM_CONST_PI * t);
+                sinc_val = param_sin(CTL_PARAM_CONST_PI * t) / (CTL_PARAM_CONST_PI * t);
             }
 
             // Blackman window
-            parameter_gt window_val = 0.42f - 0.5f * cosf(2.0f * CTL_PARAM_CONST_PI * j / (num_taps - 1)) +
-                                      0.08f * cosf(4.0f * CTL_PARAM_CONST_PI * j / (num_taps - 1));
+            parameter_gt window_val = 0.42f - 0.5f * param_cos(2.0f * CTL_PARAM_CONST_PI * j / (num_taps - 1)) +
+                                      0.08f * param_cos(4.0f * CTL_PARAM_CONST_PI * j / (num_taps - 1));
 
             // 修复：必须使用 float2ctrl 宏安全转入控制域，并采用一维展平寻址
             sinc->sinc_table[i * num_taps + j] = float2ctrl(sinc_val * window_val);

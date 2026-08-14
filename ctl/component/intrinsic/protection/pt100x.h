@@ -32,15 +32,15 @@ typedef struct _tag_prot_pt_sensor_t
     parameter_gt temp_limit_c; //!< Upper temperature limit in Celsius (Supremum).
 
     // --- Sensor Conversion Parameters ---
-    parameter_gt adc_to_ohm_gain; //!< Gain to convert raw ADC/PU input to Resistance (Ohms).
-    parameter_gt r0;              //!< Base resistance at 0¡ãC (e.g., 100.0 for PT100).
-    parameter_gt inv_alpha_r0;    //!< Pre-calculated constant: 1 / (R0 * alpha) for fast execution.
+    parameter_gt adc_to_ohm_gain; //!< Gain to convert raw ADC/PU input to resistance (Ohms).
+    parameter_gt r0;              //!< Base resistance at 0 degrees C (e.g., 100.0 for PT100).
+    parameter_gt inv_alpha_r0;    //!< Pre-calculated constant: 1 / (R0 * alpha).
 
     // --- State & Diagnostics ---
     uint16_t trip_limit_count;     //!< Debounce limit (usually high for thermal inertia).
     uint16_t current_count;        //!< Current violation counter.
     uint32_t status_bit;           //!< Global error bitmask.
-    parameter_gt fault_record_val; //!< Recorded Peak Temperature in Celsius!
+    parameter_gt fault_record_val; //!< Recorded peak temperature in Celsius.
 
 } ctl_prot_pt_sensor_t;
 
@@ -67,13 +67,14 @@ void ctl_init_prot_pt_sensor(ctl_prot_pt_sensor_t* node, uint32_t status_bit, pa
  * @param[in] raw_adc_input The raw ADC feedback (Voltage, PU, or raw integer).
  * @return uint32_t The status bit if tripped, otherwise 0.
  */
-GMP_STATIC_INLINE uint32_t ctl_step_prot_pt_sensor(ctl_prot_pt_sensor_t* node, parameter_gt raw_adc_input)
+GMP_STATIC_INLINE uint32_t ctl_task_prot_pt_sensor(ctl_prot_pt_sensor_t* node, ctrl_gt raw_adc_input)
 {
     if (!node->is_enabled)
         return 0;
 
-    // 1. Convert ADC input to Ohms
-    parameter_gt r_sensor = raw_adc_input * node->adc_to_ohm_gain;
+    // This is a slow thermal task. Keep physical resistance in parameter_gt so
+    // PT1000 values do not overflow narrow fixed-point ctrl_gt formats.
+    parameter_gt r_sensor = ctrl2param(raw_adc_input) * node->adc_to_ohm_gain;
 
     // 2. Ultra-fast Celsius Calculation: T = (R_sensor - R0) * inv_alpha_r0
     parameter_gt current_temp_c = (r_sensor - node->r0) * node->inv_alpha_r0;
@@ -101,6 +102,11 @@ GMP_STATIC_INLINE uint32_t ctl_step_prot_pt_sensor(ctl_prot_pt_sensor_t* node, p
         node->current_count = 0;
     }
     return 0;
+}
+
+GMP_STATIC_INLINE uint32_t ctl_step_prot_pt_sensor(ctl_prot_pt_sensor_t* node, ctrl_gt raw_adc_input)
+{
+    return ctl_task_prot_pt_sensor(node, raw_adc_input);
 }
 
 

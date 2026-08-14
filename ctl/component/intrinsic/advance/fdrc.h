@@ -57,7 +57,8 @@
  *    Execute the QPR (or PI) main controller first.
  *    Feed the tracking error and the real-time grid frequency from a SOGI-PLL to the FDRC.
  *    @code
- *    ctrl_gt rc_out = ctl_step_fdrc(&rc_ctrl, error, current_pll_freq);
+ *    ctl_set_fdrc_frequency(&rc_ctrl, current_pll_freq); // slow update path
+ *    ctrl_gt rc_out = ctl_step_fdrc(&rc_ctrl, error);
  *    ctrl_gt total_out = base_out + rc_out;
  *    @endcode
  * 
@@ -104,6 +105,13 @@ extern "C"
 #define CTL_RC_CALC_MIN_CAPACITY(fs, f_min) ((uint32_t)((fs) / (f_min)) + 10U)
 #endif // CTL_RC_CALC_MIN_CAPACITY
 
+/** FDRC requires a floating-point ctrl_gt backend. */
+#if CTL_CTRL_GT_IS_FLOATING_POINT
+#define CTL_FDRC_SUPPORTED 1
+#else
+#define CTL_FDRC_SUPPORTED 0
+#endif
+
 /*---------------------------------------------------------------------------*/
 /* Repetitive Controller (RC) Core Generator                                 */
 /*---------------------------------------------------------------------------*/
@@ -123,6 +131,9 @@ typedef struct _tag_repetitive_controller_filter_t
 
     parameter_gt fs;          //!< Controller frequency, Hz
     parameter_gt f_min_rated; //!< Rated minimum frequency, Hz
+    parameter_gt tracked_freq; //!< Last frequency applied by the slow configuration path.
+    uint32_t delay_integer;    //!< Cached integer delay in samples.
+    ctrl_gt delay_fraction;    //!< Cached fractional delay used by the ISR interpolator.
 
     // Output Limits
     ctrl_gt out_max; //!< Maximum output limit for anti-windup.
@@ -205,22 +216,17 @@ GMP_STATIC_INLINE void ctl_clear_fdrc(ctl_fdrc_t* obj)
  * @param[in] measured_freq Real-time fundamental frequency measured by PLL (Hz).
  * @return ctrl_gt The clamped compensation output from the RC.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_step_fdrc(ctl_fdrc_t* obj, ctrl_gt error, parameter_gt measured_freq)
+GMP_STATIC_INLINE ctrl_gt ctl_step_fdrc(ctl_fdrc_t* obj, ctrl_gt error)
 {
-    // Protect against division by zero or extremely low frequencies
-    if (measured_freq < obj->f_min_rated)
-    {
-        measured_freq = obj->f_min_rated;
-    }
-
-    // 1. Calculate real-time fractional depth
-    parameter_gt n_real = obj->fs / measured_freq;
-    int32_t n_int = (int32_t)n_real;
-    parameter_gt d = n_real - (parameter_gt)n_int;
-
-    // Convert fractional parts to control generic type for interpolation
-    ctrl_gt d_ctrl = float2ctrl(d);
-    ctrl_gt one_minus_d = float2ctrl(1.0f) - d_ctrl;
+#if !CTL_FDRC_SUPPORTED
+    GMP_UNUSED_VAR(error);
+    obj->flag_enable_rc_integrating = 0;
+    obj->output = CTL_CTRL_CONST_ZERO;
+    return CTL_CTRL_CONST_ZERO;
+#else
+    int32_t n_int = (int32_t)obj->delay_integer;
+    ctrl_gt d_ctrl = obj->delay_fraction;
+    ctrl_gt one_minus_d = CTL_CTRL_CONST_1 - d_ctrl;
 
     // 2. Calculate target depth considering phase lead compensation
     int32_t target_depth = n_int - obj->phase_lead_k;
@@ -281,6 +287,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_fdrc(ctl_fdrc_t* obj, ctrl_gt error, paramete
     }
 
     return obj->output;
+#endif
 }
 
 /**
@@ -291,7 +298,20 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_fdrc(ctl_fdrc_t* obj, ctrl_gt error, paramete
  */
 GMP_STATIC_INLINE void ctl_enable_fdrc_integrating(ctl_fdrc_t* obj)
 {
+#if CTL_FDRC_SUPPORTED
     obj->flag_enable_rc_integrating = 1;
+#else
+    obj->flag_enable_rc_integrating = 0;
+#endif
+}
+
+/**
+ * @brief Reports whether the selected ctrl_gt backend can execute FDRC.
+ * @return Nonzero for a floating-point control backend; zero otherwise.
+ */
+GMP_STATIC_INLINE fast_gt ctl_is_fdrc_supported(void)
+{
+    return (fast_gt)CTL_FDRC_SUPPORTED;
 }
 
 /**
@@ -337,9 +357,30 @@ GMP_STATIC_INLINE void ctl_set_fdrc_limit(ctl_fdrc_t* obj, ctrl_gt out_min, ctrl
  * @param[in,out] obj Pointer to the FDRC controller instance.
  * @param[in] fs New sampling frequency in Hz.
  */
+/**
+ * @brief Update the tracked fundamental on a slow configuration path.
+ * @details The sample delay is split here because its integer part may exceed
+ * the numeric range of a high-Q fixed-point ctrl_gt representation.
+ */
+GMP_STATIC_INLINE void ctl_set_fdrc_frequency(ctl_fdrc_t* obj, parameter_gt measured_freq)
+{
+    parameter_gt n_real;
+    uint32_t n_int;
+    if (measured_freq < obj->f_min_rated)
+        measured_freq = obj->f_min_rated;
+    n_real = obj->fs / measured_freq;
+    n_int = (uint32_t)n_real;
+    if (n_int >= obj->buffer_capacity - 1U)
+        n_int = obj->buffer_capacity - 2U;
+    obj->tracked_freq = measured_freq;
+    obj->delay_integer = n_int;
+    obj->delay_fraction = real2ctrl(n_real - (parameter_gt)n_int);
+}
+
 GMP_STATIC_INLINE void ctl_set_fdrc_fs(ctl_fdrc_t* obj, parameter_gt fs)
 {
     obj->fs = fs;
+    ctl_set_fdrc_frequency(obj, obj->tracked_freq);
 }
 
 /** @} */

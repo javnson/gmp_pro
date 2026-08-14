@@ -48,7 +48,7 @@ void ctl_init_discrete_pid(
     // sample frequency, unit Hz
     parameter_gt fs)
 {
-    gmp_ctl_assert(fs > 0.0);
+    gmp_ctl_assert(fs > CTL_PARAM_CONST_ZERO);
 
     pid->input = 0;
     pid->input_1 = 0;
@@ -58,7 +58,7 @@ void ctl_init_discrete_pid(
 
     // Disable the integral term safely when Ti is effectively zero.
     parameter_gt ki = 0.0;
-    if (Ti > 1e-6)
+    if (Ti > CTL_PARAM_CONST_EPSILON)
     {
         ki = kp / Ti;
     }

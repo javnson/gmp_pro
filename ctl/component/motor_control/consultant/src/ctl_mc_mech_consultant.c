@@ -58,12 +58,12 @@ void ctl_consultant_mech2_init(ctl_consultant_mech2_t* mech, parameter_gt j_m, p
     // Anti-Resonance Frequency (w_ares)
     // The frequency at which the load acts as a dynamic vibration absorber for the motor.
     // Formula: w_ares = sqrt(K_s / J_l)
-    mech->w_ares_rads = sqrtf(k_s / jl_safe);
+    mech->w_ares_rads = param_sqrt(k_s / jl_safe);
     mech->f_ares_hz = mech->w_ares_rads / CTL_PARAM_CONST_2PI;
 
     // Resonance Frequency (w_res)
     // The frequency at which the energy violently oscillates between motor and load.
     // Formula: w_res = sqrt(K_s * (1/J_m + 1/J_l))
-    mech->w_res_rads = sqrtf(k_s * (1.0f / j_m + 1.0f / jl_safe));
+    mech->w_res_rads = param_sqrt(k_s * (1.0f / j_m + 1.0f / jl_safe));
     mech->f_res_hz = mech->w_res_rads / CTL_PARAM_CONST_2PI;
 }

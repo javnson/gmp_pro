@@ -243,13 +243,13 @@ GMP_STATIC_INLINE ctl_matrix4_t ctl_matrix4_inv(ctl_matrix4_t mat)
     ctl_matrix4_t result;
     ctrl_gt det = ctl_matrix4_det(mat);
 
-    if (fabs(det) < 1e-9) // Avoid division by zero
+    if (ctl_abs(det) < CTL_EPSILON)
     {
         ctl_matrix4_clear(&result);
         return result;
     }
 
-    ctrl_gt inv_det = 1.0f / det;
+    ctrl_gt inv_det = ctl_div(CTL_CTRL_CONST_1, det);
 
     result.dat[0] = (mat.dat[5] * (mat.dat[10] * mat.dat[15] - mat.dat[11] * mat.dat[14]) -
                      mat.dat[6] * (mat.dat[9] * mat.dat[15] - mat.dat[11] * mat.dat[13]) +

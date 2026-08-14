@@ -63,6 +63,7 @@ GMP_STATIC_INLINE float32_t saturation_static_inline(float32_t in, float32_t max
 #define ctrl2float(x) ((float32_t)(x)) /**< @brief Converts a `ctrl_gt` value to a standard float32_t. */
 #define int2ctrl(x)   ((float32_t)(x)) /**< @brief Converts an integer to `ctrl_gt`. */
 #define ctrl2int(x)   ((int)(x))       /**< @brief Converts a `ctrl_gt` value to an integer (truncates). */
+#define ctrl_fraction_to_index(x, count) ((uint32_t)((float32_t)(x) * (uint32_t)(count)))
 
 /**
  * @brief Computes the fractional part of a `ctrl_gt` value (x mod 1).
@@ -125,7 +126,7 @@ GMP_STATIC_INLINE float32_t saturation_static_inline(float32_t in, float32_t max
 #define ctl_atan2(Y, X)   (__atan2((Y), (X))) /**< @brief Computes the arc-tangent. Maps to CLA intrinsic `__atan2()`. */
 #define ctl_exp(A)        (expf((A)))         /**< @brief Computes the base-e exponential. Uses standard math lib. */
 #define ctl_ln(A)         (logf((A)))         /**< @brief Computes the natural logarithm. Uses standard math lib. */
-#define ctl_pow(B, Index) expf(logf(Index) * B) /**< @brief Compute the B^Index power of B */
+#define ctl_pow(B, Index) expf(logf(B) * (Index)) /**< @brief Compute B raised to Index. */
 #define ctl_sqrt(A)       (CLAsqrt((A)))        /**< @brief Computes the square root. Maps to `CLAsqrt()`. */
 #define ctl_isqrt(A)                                                                                                   \
     (__eisqrtf32((A))) /**< @brief Computes the inverse square root. Maps to CLA intrinsic `__eisqrtf32()`. */
@@ -137,10 +138,6 @@ GMP_STATIC_INLINE float32_t saturation_static_inline(float32_t in, float32_t max
  * This can be used for conditional compilation in other parts of the library.
  */
 #define CTRL_GT_IS_FLOAT
-
-#ifndef CTL_EPSILON
-#define CTL_EPSILON (float2ctrl(1e-6f)) /**< @brief Threshold for zero-division avoidance. */
-#endif
 
 /** @} */ // end of MC_CLA_MACROS group
 

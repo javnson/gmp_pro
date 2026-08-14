@@ -84,7 +84,7 @@ void ctl_init_sinv_rc_core(ctl_sinv_rc_core_t* core, const ctl_sinv_rc_init_t* i
     // 5. Apply Safe Limits & Thresholds
     core->v_out_max = float2ctrl(init->v_out_max_pu);
     core->fdrc_err_th = float2ctrl(init->err_threshold);
-    core->fundamental_freq = init->freq_grid;
+    ctl_set_sinv_rc_fundamental_frequency(core, init->freq_grid);
 
     // 6. Ensure everything is explicitly disabled upon init
     core->flag_enable_ctrl = 0;

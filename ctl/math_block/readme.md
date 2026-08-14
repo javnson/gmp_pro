@@ -56,6 +56,7 @@ GMP 数学计算库（Math Block）为电机驱动和数字控制算法提供全
 ```
 ctl/math_block/
 ├── gmp_math.h              # 总入口头文件
+├── gmp_math.hpp            # C++ 泛型 vector_lite/matrix_lite 入口
 │
 ├── ctrl_gt/                # ctrl_gt 类型的不同实现
 │   ├── float_macros.h     # 单精度浮点（默认）
@@ -65,6 +66,7 @@ ctl/math_block/
 │   ├── qfp_float_macros.h # QFP 软浮点库（无FPU平台）
 │   └── cla_macros.h       # TI C2000 CLA 加速器
 │
+├── parameter_gt/           # parameter_gt 非线性数学函数
 ├── const/                  # 数学常数
 │   ├── math_ctrl_const.h  # 控制用常数（π、√3等）
 │   └── math_param_const.h # 物理参数常数
@@ -97,8 +99,8 @@ ctl/math_block/
 
 ```c
 // 算法代码中统一使用 ctrl_gt
-ctrl_gt voltage = float2ctrl(48.0);
-ctrl_gt current = float2ctrl(10.5);
+ctrl_gt voltage = real2ctrl(48.0);
+ctrl_gt current = real2ctrl(10.5);
 ctrl_gt power = ctl_mul(voltage, current);  // 电压 × 电流 = 功率
 ```
 
@@ -134,11 +136,13 @@ ctrl_gt power = ctl_mul(voltage, current);  // 电压 × 电流 = 功率
 #### 类型转换
 
 ```c
-// 字面量 → ctrl_gt
-ctrl_gt val = float2ctrl(3.14);
+// 字面量/原生算术表达式 → 参数域或控制域
+parameter_gt p = real2param(3.14);
+ctrl_gt val = real2ctrl(3.14);
 
-// ctrl_gt → 标准浮点
-float f = ctrl2float(val);
+// 参数域 ↔ 控制域（原则上只在初始化/慢速路径使用）
+ctrl_gt cached = param2ctrl(p);
+parameter_gt diagnostic = ctrl2param(val);
 
 // 整数 → ctrl_gt
 ctrl_gt i = int2ctrl(100);

@@ -48,7 +48,7 @@ void ctl_init_im_pos_calc_consultant(ctl_im_pos_calc_t* calc, const ctl_consulta
 
     // 1. Magnetizing Current Filter Constant
     // Exact zero-order-hold discretization of 1 / (tau_r*s + 1).
-    bare_init.sf_lpf_kr = 1.0f - expf(-Ts / tau_r);
+    bare_init.sf_lpf_kr = 1.0f - param_exp(-Ts / tau_r);
 
     // 2. Slip Equation Constant
     // Physical: w_slip = i_sq / (tau_r * i_md)

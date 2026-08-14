@@ -10,11 +10,11 @@ void ctl_init_sine_generator(ctl_sine_generator_t* sg,
                              parameter_gt init_angle, // pu
                              parameter_gt step_angle) // pu
 {
-    sg->ph_cos = float2ctrl(cosf(init_angle));
-    sg->ph_sin = float2ctrl(sinf(init_angle));
+    sg->ph_cos = float2ctrl(param_cos(init_angle));
+    sg->ph_sin = float2ctrl(param_sin(init_angle));
 
-    sg->ph_sin_delta = float2ctrl(sinf(step_angle));
-    sg->ph_cos_delta = float2ctrl(cosf(step_angle));
+    sg->ph_sin_delta = float2ctrl(param_sin(step_angle));
+    sg->ph_cos_delta = float2ctrl(param_cos(step_angle));
 }
 
 void ctl_init_ramp_generator(ctl_ramp_generator_t* _rg, ctrl_gt slope, parameter_gt amp_pos, parameter_gt amp_neg)

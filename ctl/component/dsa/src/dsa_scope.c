@@ -83,7 +83,7 @@ fast_gt ctl_dsa_fit_vs_time(ctl_dsa_scope_t* scope, uint16_t dim_y, uint32_t sta
 
     // 3. Denominator check to prevent Division by Zero (Singular Matrix)
     parameter_gt denominator = (n * sum_xx) - (sum_x * sum_x);
-    if (denominator > -1e-6f && denominator < 1e-6f)
+    if (param_abs(denominator) < CTL_PARAM_CONST_EPSILON)
     {
         return 0; // Points form a vertical line or all X values are identical
     }
@@ -137,7 +137,7 @@ fast_gt ctl_dsa_fit_vs_dim(ctl_dsa_scope_t* scope, uint16_t dim_x, uint16_t dim_
 
     // 3. Denominator check to prevent Division by Zero
     parameter_gt denominator = (n * sum_xx) - (sum_x * sum_x);
-    if (denominator > -1e-6f && denominator < 1e-6f)
+    if (param_abs(denominator) < CTL_PARAM_CONST_EPSILON)
     {
         return 0; // Singular matrix (e.g., X values are completely constant)
     }
@@ -197,9 +197,9 @@ fast_gt ctl_dsa_fit_first_order_tau(ctl_dsa_scope_t* scope, uint16_t dim_y, uint
     }
 
     // 2. Prevent division by zero if the system didn't respond to the step input
-    if (delta_y_end < 1e-6f && delta_y_end > -1e-6f)
+    if (param_abs(delta_y_end) < CTL_PARAM_CONST_EPSILON)
     {
-        delta_y_end = (delta_y_end >= 0.0f) ? 1e-6f : -1e-6f;
+        delta_y_end = (delta_y_end >= 0.0f) ? CTL_PARAM_CONST_EPSILON : -CTL_PARAM_CONST_EPSILON;
     }
 
     // 3. Integral Equation: \tau = (target_delta_y * N * Ts - sum_delta_y * Ts) / delta_y_end

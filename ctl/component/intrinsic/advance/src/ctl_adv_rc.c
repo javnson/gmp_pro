@@ -24,42 +24,8 @@ void ctl_init_rc(ctl_rc_t* obj, ctrl_gt* buffer, uint32_t capacity, parameter_gt
 
     obj->fs = fs;
     obj->f_min_rated = f_min;
+    ctl_set_rc_frequency(obj, f_min);
 
     ctl_enable_rc_integrating(obj);
     ctl_clear_rc(obj);
-}
-
-#include <ctl/component/intrinsic/advance/fdrc.h>
-
-void ctl_init_fdrc(ctl_fdrc_t* obj, ctrl_gt* buffer, uint32_t capacity, parameter_gt fs, parameter_gt f_min,
-                   parameter_gt q_fc, parameter_gt k_rc, int32_t phase_lead_k)
-{
-    // Memory and validity assertions
-    gmp_ctl_assert(buffer != NULL);
-    gmp_ctl_assert(fs > 0.0f);
-    gmp_ctl_assert(f_min > 0.0f);
-
-    // Ensure the provided capacity is physically large enough to hold the lowest frequency cycle
-    gmp_ctl_assert(capacity >= CTL_RC_CALC_MIN_CAPACITY(fs, f_min));
-
-    // Configure structural parameters
-    obj->buffer = buffer;
-    obj->buffer_capacity = capacity;
-    obj->phase_lead_k = phase_lead_k;
-    obj->k_rc = float2ctrl(k_rc);
-
-    obj->out_max = float2ctrl(1.0f);
-    obj->out_min = float2ctrl(-1.0f);
-
-    obj->fs = fs;
-    obj->f_min_rated = f_min;
-
-    // Enable learning by default
-    ctl_enable_fdrc_integrating(obj);
-
-    // Initialize the internal Q(z) Biquad filter as a Low-Pass Filter with Butterworth response
-    ctl_init_biquad_lpf(&obj->q_filter, fs, q_fc, 0.707f);
-
-    // Reset runtime states
-    ctl_clear_fdrc(obj);
 }

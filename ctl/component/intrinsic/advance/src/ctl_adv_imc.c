@@ -8,13 +8,13 @@ int ctl_init_imc(ctl_imc_controller_t* imc, const ctl_imc_init_t* init)
 {
     // 1. 防呆与除零保护
     gmp_ctl_assert(init->f_ctrl > 0.0f);
-    gmp_ctl_assert(fabsf(init->K_p) > 1e-9f); // Kp 不能为 0，因为后续要作除数
+    gmp_ctl_assert(param_abs(init->K_p) > 1e-9f); // Kp 不能为 0，因为后续要作除数
 
     // 2. 纯物理参数域计算，严禁出现 ctrl_gt 强转！
     parameter_gt Ts = 1.0f / init->f_ctrl;
 
     // --- Discretize Plant Model (ZOH) ---
-    parameter_gt a_p_d_f = expf(-(Ts / init->tau_p));
+    parameter_gt a_p_d_f = param_exp(-(Ts / init->tau_p));
     parameter_gt b_p_d_f = init->K_p * (1.0f - a_p_d_f);
 
     // --- Calculate Dead Time ---

@@ -136,7 +136,7 @@ typedef struct _tag_lut2d_t
     ctl_lut1d_t dim2_axis; //!< 1D LUT for the second dimension (y-axis).
 
     //const ctrl_gt** surface; //!< Pointer to a 2D array of surface values.
-    const ctrl_gt* surface; // 架构升级：展平为一维连续数组，极致性能
+    const ctrl_gt* surface; // Flattened one-dimensional storage for contiguous access.
 } ctl_lut2d_t;
 
 /**
@@ -212,7 +212,7 @@ typedef struct _tag_uniform_lut2d_t
     ctrl_gt y_step_inv; //!< Inverse of the y-axis step size (1 / delta_y).
     uint32_t y_size;    //!< Number of points on the y-axis.
 
-    const ctrl_gt* surface;  // 架构升级：同样展平为一维数组
+    const ctrl_gt* surface; // Flattened one-dimensional storage for contiguous access.
     //const ctrl_gt** surface; //!< Pointer to a 2D array of surface values.
 } ctl_uniform_lut2d_t;
 
@@ -243,36 +243,31 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_interpolate_uniform_lut2d(const ctl_uniform_l
     ctrl_gt x_fidx = ctl_mul(x - lut->x_min, lut->x_step_inv);
     ctrl_gt y_fidx = ctl_mul(y - lut->y_min, lut->y_step_inv);
 
-    ctrl_gt x_max_idx_ctrl = float2ctrl((parameter_gt)(lut->x_size - 1));
-    ctrl_gt y_max_idx_ctrl = float2ctrl((parameter_gt)(lut->y_size - 1));
-    ctrl_gt zero_ctrl = float2ctrl(0.0f);
+    ctrl_gt x_max_idx_ctrl = int2ctrl(lut->x_size - 1U);
+    ctrl_gt y_max_idx_ctrl = int2ctrl(lut->y_size - 1U);
+    ctrl_gt zero_ctrl = CTL_CTRL_CONST_ZERO;
 
     // Clamp indices
     x_fidx = ctl_sat(x_fidx, x_max_idx_ctrl, zero_ctrl);
     y_fidx = ctl_sat(y_fidx, y_max_idx_ctrl, zero_ctrl);
 
-    // 修复 2 & 3：泛型安全的提取整数与小数权重的方法
-    // 通过退回到浮点域提取整数部分，保证跨平台 (float/IQmath) 均不会产生内存越界
-    parameter_gt x_fidx_flt = ctrl2float(x_fidx);
-    parameter_gt y_fidx_flt = ctrl2float(y_fidx);
-
-    // Get integer indices (lower bound)
-    uint32_t x_idx = (uint32_t)x_fidx_flt;
-    uint32_t y_idx = (uint32_t)y_fidx_flt;
+    // Extract integer indices using the selected ctrl_gt backend.
+    uint32_t x_idx = (uint32_t)ctrl2int(x_fidx);
+    uint32_t y_idx = (uint32_t)ctrl2int(y_fidx);
 
     // Get interpolation weights (fractional part)
-    ctrl_gt wx = x_fidx - float2ctrl((parameter_gt)x_idx);
-    ctrl_gt wy = y_fidx - float2ctrl((parameter_gt)y_idx);
+    ctrl_gt wx = x_fidx - int2ctrl(x_idx);
+    ctrl_gt wy = y_fidx - int2ctrl(y_idx);
 
     if (x_idx >= lut->x_size - 1)
     {
         x_idx = lut->x_size - 2;
-        wx = float2ctrl(1.0f);
+        wx = CTL_CTRL_CONST_1;
     }
     if (y_idx >= lut->y_size - 1)
     {
         y_idx = lut->y_size - 2;
-        wy = float2ctrl(1.0f);
+        wy = CTL_CTRL_CONST_1;
     }
 
     uint32_t y_size = lut->y_size;

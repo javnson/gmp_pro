@@ -119,7 +119,7 @@ void ctl_init_vir_imp(vir_imp_t* imp, const parameter_gt R_vir, const parameter_
     imp->gain_R = R_vir;
 
     // 2. Inductive Differentiator
-    if (fabsf(L_vir) > 1e-12f) // If L is non-zero
+    if (param_abs(L_vir) > CTL_PARAM_CONST_EPSILON) // Apply the shared parameter-domain zero threshold.
     {
         _ctl_init_biquad_differentiator(&imp->diff_filter, fs, L_vir, fs / 10);
     }

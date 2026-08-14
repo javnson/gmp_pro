@@ -101,7 +101,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_helper_lp_filter(parameter_gt fs, parameter_gt fc)
  */
 GMP_STATIC_INLINE parameter_gt ctl_helper_get_lp_filter_lag_phase(parameter_gt fc, parameter_gt finput)
 {
-    return atanf(finput / fc);
+    return param_atan(finput / fc);
 }
 
 /**

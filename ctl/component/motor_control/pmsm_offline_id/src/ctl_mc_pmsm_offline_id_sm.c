@@ -867,7 +867,7 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
                 parameter_gt iq = ctrl2float(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 3, i, depth));
                 parameter_gt w = ctrl2float(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 4, i, depth));
 
-                parameter_gt i_mag = sqrtf((id * id) + (iq * iq));
+                parameter_gt i_mag = param_sqrt((id * id) + (iq * iq));
                 parameter_gt ud_comp = 0.0f;
                 parameter_gt uq_comp = 0.0f;
 
@@ -888,7 +888,7 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
                 parameter_gt ed = ud_real - (rs_pu * id) + (w * lq_pu * iq);
                 parameter_gt eq = uq_real - (rs_pu * iq) - (w * ld_pu * id);
 
-                parameter_gt e_mag = sqrtf((ed * ed) + (eq * eq));
+                parameter_gt e_mag = param_sqrt((ed * ed) + (eq * eq));
                 ctl_mem_set_2d_soa(&ctx->analyzer.mem, 5, i, depth, float2ctrl(e_mag));
             }
 
@@ -1405,6 +1405,7 @@ void ctl_init_pmsm_offline_id_sm(ctl_pmsm_offline_id_t* ctx, const ctl_pmsm_offl
     ctx->sub_ldq.cfg = init_cfg->cfg_ld_lq;
     ctx->sub_flux.cfg = init_cfg->cfg_flux;
     ctx->sub_mech.cfg = init_cfg->cfg_mech;
+    ctx->sub_encoder.cfg = init_cfg->cfg_encoder;
 
     // Initialize Base Values for PU conversions
     ctl_consultant_pu_pmsm_init(&ctx->identified_pu, init_cfg->v_base, init_cfg->i_base, init_cfg->w_base,

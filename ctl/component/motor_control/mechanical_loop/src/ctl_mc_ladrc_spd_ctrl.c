@@ -28,9 +28,9 @@
 void ctl_autotuning_ladrc_spd_ctrl(ctl_ladrc_spd_init_t* init, ctl_ladrc_spd_ctrl_t* ctrl)
 {
     // 1. Safe Guards
-    parameter_gt kt = (init->torque_const > 1e-6f) ? init->torque_const : 1.0f;
-    parameter_gt i_base = (init->i_base > 1e-6f) ? init->i_base : 1.0f;
-    parameter_gt w_base = (init->omega_base > 1e-6f) ? init->omega_base : 1.0f;
+    parameter_gt kt = (init->torque_const > CTL_PARAM_CONST_EPSILON) ? init->torque_const : 1.0f;
+    parameter_gt i_base = (init->i_base > CTL_PARAM_CONST_EPSILON) ? init->i_base : 1.0f;
+    parameter_gt w_base = (init->omega_base > CTL_PARAM_CONST_EPSILON) ? init->omega_base : 1.0f;
     parameter_gt fs_mech = init->fs / (parameter_gt)init->mech_division;
 
     // 2. Calculate Per-Unit System Gain (b0_pu)

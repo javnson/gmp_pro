@@ -31,6 +31,15 @@
  */
 #define ctl_mod_1(x) ctrl_mod_1(x)
 
+/** @brief Sine with an explicitly radian-valued ctrl_gt argument. */
+#define ctl_sin_rad(value) ctl_sin(ctl_mul((value), CTL_CTRL_CONST_1_OVER_2PI))
+
+/** @brief Cosine with an explicitly radian-valued ctrl_gt argument. */
+#define ctl_cos_rad(value) ctl_cos(ctl_mul((value), CTL_CTRL_CONST_1_OVER_2PI))
+
+/** @brief Arc-tangent result converted from radians to a per-unit turn. */
+#define ctl_atan2_pu(y, x) ctl_mul(ctl_atan2((y), (x)), CTL_CTRL_CONST_1_OVER_2PI)
+
 /** @} */ // end of MC_PATCHES group
 
 #endif //_FILT_CTRL_GT_PATCH_H_

@@ -12,8 +12,8 @@
 void ctl_init_scurve_planner(ctl_scurve_planner_t* planner, const ctl_scurve_planner_init_t* init)
 {
     // Safe Guards
-    parameter_gt fs_safe = (init->fs_motion > 1e-6f) ? init->fs_motion : 1000.0f;
-    parameter_gt omega_base = (init->omega_base > 1e-6f) ? init->omega_base : 1.0f;
+    parameter_gt fs_safe = (init->fs_motion > CTL_PARAM_CONST_EPSILON) ? init->fs_motion : 1000.0f;
+    parameter_gt omega_base = (init->omega_base > CTL_PARAM_CONST_EPSILON) ? init->omega_base : 1.0f;
     parameter_gt dt_phy = 1.0f / fs_safe;
 
     // 1. Direct PU assignments

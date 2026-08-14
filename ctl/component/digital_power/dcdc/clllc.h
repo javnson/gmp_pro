@@ -51,6 +51,8 @@ typedef struct _tag_clllc_modulator
     parameter_gt f_nominal_hz;
     parameter_gt f_min_hz;
     parameter_gt f_max_hz;
+    ctrl_gt f_min_pu;
+    ctrl_gt f_max_pu;
     ctrl_gt deadband_pu;
     ctrl_gt max_phase_shift_pu;
 } clllc_modulator_t;
@@ -71,7 +73,9 @@ GMP_STATIC_INLINE void ctl_init_clllc_modulator(clllc_modulator_t* mod,
     mod->f_nominal_hz = f_nominal_hz;
     mod->f_min_hz = f_min_hz;
     mod->f_max_hz = f_max_hz;
-    mod->deadband_pu = float2ctrl(deadband_s * f_nominal_hz);
+    mod->f_min_pu = real2ctrl(f_min_hz / f_nominal_hz);
+    mod->f_max_pu = real2ctrl(f_max_hz / f_nominal_hz);
+    mod->deadband_pu = real2ctrl(deadband_s * f_nominal_hz);
     mod->max_phase_shift_pu = max_phase_shift_pu;
 }
 
@@ -88,26 +92,26 @@ GMP_STATIC_INLINE void ctl_step_clllc_modulator(clllc_modulator_t* mod, ctrl_gt 
     ctrl_gt mag = ctl_abs(formal_cmd);
     ctrl_gt period_pu;
     ctrl_gt secondary_phase;
-    parameter_gt f_cmd;
+    ctrl_gt f_cmd_pu;
     adv_pwm_ift cmd;
 
-    mag = ctl_sat(mag, float2ctrl(1.0f), float2ctrl(0.0f));
-    f_cmd = mod->f_max_hz - ctrl2float(mag) * (mod->f_max_hz - mod->f_min_hz);
+    mag = ctl_sat(mag, CTL_CTRL_CONST_1, CTL_CTRL_CONST_ZERO);
+    f_cmd_pu = mod->f_max_pu - ctl_mul(mag, mod->f_max_pu - mod->f_min_pu);
     secondary_phase = ctl_mul(formal_cmd, mod->max_phase_shift_pu);
-    period_pu = float2ctrl(mod->f_nominal_hz / f_cmd);
+    period_pu = ctl_div(CTL_CTRL_CONST_1, f_cmd_pu);
 
     cmd.period = period_pu;
-    cmd.duty = float2ctrl(0.5f);
+    cmd.duty = CTL_CTRL_CONST_1_OVER_2;
     /* dead time in seconds remains constant while frequency changes. */
     cmd.deadband = ctl_div(mod->deadband_pu, period_pu);
 
-    cmd.phase = float2ctrl(0.0f);
+    cmd.phase = CTL_CTRL_CONST_ZERO;
     ctl_step_adv_pwm_channel(&mod->leg[0], &cmd);
-    cmd.phase = float2ctrl(0.5f);
+    cmd.phase = CTL_CTRL_CONST_1_OVER_2;
     ctl_step_adv_pwm_channel(&mod->leg[1], &cmd);
     cmd.phase = secondary_phase;
     ctl_step_adv_pwm_channel(&mod->leg[2], &cmd);
-    cmd.phase = secondary_phase + float2ctrl(0.5f);
+    cmd.phase = secondary_phase + CTL_CTRL_CONST_1_OVER_2;
     ctl_step_adv_pwm_channel(&mod->leg[3], &cmd);
 
 }

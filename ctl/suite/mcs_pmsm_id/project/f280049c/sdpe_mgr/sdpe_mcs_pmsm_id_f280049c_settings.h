@@ -34,7 +34,7 @@ extern "C"
 #define MCS_PMSM_ID_F280049C_SDPE_PROJECT_ID "mcs_pmsm_id_f280049c"
 #define MCS_PMSM_ID_F280049C_SDPE_PROJECT_SUITE "mcs_pmsm_id"
 #define MCS_PMSM_ID_F280049C_SDPE_PROJECT_VERSION "1.0.0"
-#define MCS_PMSM_ID_F280049C_SDPE_PROJECT_UPDATED_AT "2026-08-08"
+#define MCS_PMSM_ID_F280049C_SDPE_PROJECT_UPDATED_AT "2026-08-14"
 
 //=================================================================================================
 /**
@@ -172,13 +172,13 @@ extern "C"
  * @brief DC-bus current SOC.
  *        Options: BOOSTXL_J3_AIN1, BOOSTXL_J3_AIN2, BOOSTXL_J3_AIN3, BOOSTXL_J3_AIN4, BOOSTXL_J3_AIN5, BOOSTXL_J3_AIN6, BOOSTXL_J3_AIN7, BOOSTXL_J3_AIN8, BOOSTXL_J7_AIN1, BOOSTXL_J7_AIN2, BOOSTXL_J7_AIN3, BOOSTXL_J7_AIN4, BOOSTXL_J7_AIN5, BOOSTXL_J7_AIN6, BOOSTXL_J7_AIN7, BOOSTXL_J7_AIN8
  */
-#define INV_IBUS
+#define INV_IBUS BOOSTXL_J3_AIN1
 
 /**
  * @brief DC-bus current result base.
  *        Options: BOOSTXL_J3_AIN1_RESULT_BASE, BOOSTXL_J3_AIN2_RESULT_BASE, BOOSTXL_J3_AIN3_RESULT_BASE, BOOSTXL_J3_AIN4_RESULT_BASE, BOOSTXL_J3_AIN5_RESULT_BASE, BOOSTXL_J3_AIN6_RESULT_BASE, BOOSTXL_J3_AIN7_RESULT_BASE, BOOSTXL_J3_AIN8_RESULT_BASE, BOOSTXL_J7_AIN1_RESULT_BASE, BOOSTXL_J7_AIN2_RESULT_BASE, BOOSTXL_J7_AIN3_RESULT_BASE, BOOSTXL_J7_AIN4_RESULT_BASE, BOOSTXL_J7_AIN5_RESULT_BASE, BOOSTXL_J7_AIN6_RESULT_BASE, BOOSTXL_J7_AIN7_RESULT_BASE, BOOSTXL_J7_AIN8_RESULT_BASE
  */
-#define INV_IBUS_RESULT_BASE
+#define INV_IBUS_RESULT_BASE BOOSTXL_J3_AIN1_RESULT_BASE
 
 //=================================================================================================
 /**
@@ -293,6 +293,11 @@ extern "C"
 #define CTRL_ADC_VOLTAGE_REF (3.3f)
 
 /**
+ * @brief Main motor-control ISR frequency in hertz.
+ */
+#define CONTROLLER_FREQUENCY (20e3f)
+
+/**
  * @brief Configured DC-bus voltage base.
  */
 #define CTRL_DCBUS_VOLTAGE (36.0f)
@@ -316,88 +321,6 @@ extern "C"
  * @brief
  */
 #define MOTOR_PARAM_RATED_FREQUENCY SM060R20B30MNAD_RATED_FREQUENCY
-
-/**
- * @brief Encoder counts per mechanical revolution.
- */
-#define CTRL_POS_ENC_FS (4096*4)
-
-/**
- * @brief Mechanical encoder position bias in per unit.
- */
-#define CTRL_POS_ENC_BIAS (0.0207000002f)
-
-/**
- * @brief DC-bus voltage sensing gain in ADC volts per measured volt.
- */
-#define CTRL_DC_VOLTAGE_SENSITIVITY (MY_BOARD_DCBUS_VOLTAGE_SENSE_GAIN)
-
-/**
- * @brief DC-bus voltage sensor bias in volts.
- */
-#define CTRL_DC_VOLTAGE_BIAS (MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)
-
-/**
- * @brief DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path.
- */
-#define CTRL_DC_CURRENT_SENSITIVITY (MY_BOARD_DCBUS_CURRENT_SENSE_GAIN)
-
-/**
- * @brief DC-bus current sensor bias.
- */
-#define CTRL_DC_CURRENT_BIAS (MY_BOARD_DCBUS_CURRENT_SENSE_BIAS_V)
-
-/**
- * @brief Phase-current sensor sensitivity in volts per ampere.
- */
-#define CTRL_INVERTER_CURRENT_SENSITIVITY (MY_BOARD_PH_SHUNT_RESISTANCE_OHM * MY_BOARD_PH_CSA_GAIN_V_V)
-
-/**
- * @brief Phase-current sensor zero-current bias in volts.
- */
-#define CTRL_INVERTER_CURRENT_BIAS (MY_BOARD_PH_CSA_BIAS_V)
-
-/**
- * @brief Phase-voltage sensing gain in ADC volts per measured volt.
- */
-#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (MY_BOARD_PH_VOLTAGE_SENSE_GAIN)
-
-/**
- * @brief Phase-voltage sensor bias in volts.
- */
-#define CTRL_INVERTER_VOLTAGE_BIAS (MY_BOARD_PH_VOLTAGE_SENSE_BIAS_V)
-
-/**
- * @brief Mechanical speed and position division factor.
- */
-#define CTRL_MECH_DIV (5)
-
-/**
- * @brief Electrical frequency command in hertz used by the BUILD_LEVEL 1 V/f path and the BUILD_LEVEL 2 synthetic-angle current-loop path.
- */
-#define MCS_OPEN_LOOP_FREQ_HZ (20.0f)
-
-/**
- * @brief Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator.
- */
-#define MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S (20.0f)
-
-/**
- * @brief The current limit value at which the machine must be shut down.
- */
-#ifndef MCS_MAX_SHUTDOWN_CURRENT_A
-#define MCS_MAX_SHUTDOWN_CURRENT_A (10.0f)
-#endif // MCS_MAX_SHUTDOWN_CURRENT_A
-
-/**
- * @brief Circular saturation limit for voltage vector magnitude in V.
- */
-#define MCS_MAX_CIR_SATURATION_VOLTAGE_V (10.0f)
-
-/**
- * @brief
- */
-#define MOTOR_PARAM_MAX_SPEED SM060R20B30MNAD_MAX_SPEED
 
 /**
  * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.
@@ -485,9 +408,26 @@ extern "C"
 #define MOTOR_PARAM_MAX_PH_CURRENT SM060R20B30MNAD_MAX_PH_CURRENT
 
 /**
- * @brief Main motor-control ISR frequency in hertz.
+ * @brief The current limit value at which the machine must be shut down.
  */
-#define CONTROLLER_FREQUENCY (20e3f)
+#ifndef MCS_MAX_SHUTDOWN_CURRENT_A
+#define MCS_MAX_SHUTDOWN_CURRENT_A (10.0f)
+#endif // MCS_MAX_SHUTDOWN_CURRENT_A
+
+/**
+ * @brief Circular saturation limit for voltage vector magnitude in V.
+ */
+#define MCS_MAX_CIR_SATURATION_VOLTAGE_V (10.0f)
+
+/**
+ * @brief
+ */
+#define MOTOR_PARAM_MAX_SPEED SM060R20B30MNAD_MAX_SPEED
+
+/**
+ * @brief Migrated from f280049c/xplt/ctrl_settings.h.
+ */
+#define TIMEOUT_ADC_CALIB_MS (10000)
 
 /**
  * @brief Controller startup delay in milliseconds.
@@ -495,9 +435,69 @@ extern "C"
 #define CTRL_STARTUP_DELAY (100)
 
 /**
- * @brief Migrated from f280049c/xplt/ctrl_settings.h.
+ * @brief DC-bus voltage sensing gain in ADC volts per measured volt.
  */
-#define TIMEOUT_ADC_CALIB_MS (10000)
+#define CTRL_DC_VOLTAGE_SENSITIVITY (MY_BOARD_DCBUS_VOLTAGE_SENSE_GAIN)
+
+/**
+ * @brief DC-bus voltage sensor bias in volts.
+ */
+#define CTRL_DC_VOLTAGE_BIAS (MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)
+
+/**
+ * @brief Phase-voltage sensing gain in ADC volts per measured volt.
+ */
+#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (MY_BOARD_PH_VOLTAGE_SENSE_GAIN)
+
+/**
+ * @brief Phase-voltage sensor bias in volts.
+ */
+#define CTRL_INVERTER_VOLTAGE_BIAS (MY_BOARD_PH_VOLTAGE_SENSE_BIAS_V)
+
+/**
+ * @brief Encoder counts per mechanical revolution.
+ */
+#define CTRL_POS_ENC_FS (4096*4)
+
+/**
+ * @brief Mechanical encoder position bias in per unit.
+ */
+#define CTRL_POS_ENC_BIAS (0.0207000002f)
+
+/**
+ * @brief Mechanical speed and position division factor.
+ */
+#define CTRL_MECH_DIV (5)
+
+/**
+ * @brief DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path.
+ */
+#define CTRL_DC_CURRENT_SENSITIVITY (MY_BOARD_DCBUS_CURRENT_SENSE_GAIN)
+
+/**
+ * @brief DC-bus current sensor bias.
+ */
+#define CTRL_DC_CURRENT_BIAS (MY_BOARD_DCBUS_CURRENT_SENSE_BIAS_V)
+
+/**
+ * @brief Phase-current sensor sensitivity in volts per ampere.
+ */
+#define CTRL_INVERTER_CURRENT_SENSITIVITY (MY_BOARD_PH_SHUNT_RESISTANCE_OHM * MY_BOARD_PH_CSA_GAIN_V_V)
+
+/**
+ * @brief Phase-current sensor zero-current bias in volts.
+ */
+#define CTRL_INVERTER_CURRENT_BIAS (MY_BOARD_PH_CSA_BIAS_V)
+
+/**
+ * @brief Electrical frequency command in hertz used by the BUILD_LEVEL 1 V/f path and the BUILD_LEVEL 2 synthetic-angle current-loop path.
+ */
+#define MCS_OPEN_LOOP_FREQ_HZ (20.0f)
+
+/**
+ * @brief Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator.
+ */
+#define MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S (20.0f)
 
 //=================================================================================================
 /**
@@ -510,13 +510,6 @@ extern "C"
  */
 
 /**
- * @brief Use the discrete controller implementation instead of the default continuous controller path.
- */
-// #ifndef PMSM_CTRL_USING_DISCRETE_CTRL
-// #define PMSM_CTRL_USING_DISCRETE_CTRL
-// #endif // PMSM_CTRL_USING_DISCRETE_CTRL
-
-/**
  * @brief Enable the existing discrete-PID anti-saturation debug path.
  */
 // #ifndef _USE_DEBUG_DISCRETE_PID
@@ -524,11 +517,23 @@ extern "C"
 // #endif // _USE_DEBUG_DISCRETE_PID
 
 /**
+ * @brief Use the discrete controller implementation instead of the default continuous controller path.
+ */
+// #ifndef PMSM_CTRL_USING_DISCRETE_CTRL
+// #define PMSM_CTRL_USING_DISCRETE_CTRL
+// #endif // PMSM_CTRL_USING_DISCRETE_CTRL
+
+/**
  * @brief Enable the sliding-mode observer path. Disabled to preserve the current sensored-control build.
  */
 // #ifndef ENABLE_SMO
 // #define ENABLE_SMO
 // #endif // ENABLE_SMO
+
+//=================================================================================================
+/**
+ * @brief Protection.
+ */
 
 /**
  * @brief Enable motor fault protection processing.
@@ -539,7 +544,7 @@ extern "C"
 
 //=================================================================================================
 /**
- * @brief Controller Runtime.
+ * @brief Sensing and Calibration.
  */
 
 /**
@@ -548,6 +553,11 @@ extern "C"
 // #ifndef SPECIFY_ENABLE_ADC_CALIBRATE
 // #define SPECIFY_ENABLE_ADC_CALIBRATE
 // #endif // SPECIFY_ENABLE_ADC_CALIBRATE
+
+//=================================================================================================
+/**
+ * @brief Controller Runtime.
+ */
 
 /**
  * @brief Enable CiA402/GMP framework debug information.
@@ -577,7 +587,7 @@ extern "C"
 
 //=================================================================================================
 /**
- * @brief Controller Options.
+ * @brief Commissioning.
  */
 
 /**
@@ -592,20 +602,6 @@ extern "C"
 /**
  * @brief Requirement bindings.
  */
-
-/**
- * @brief Enable the seven ADC slots used by the PMSM SIL input ABI.
- */
-#ifndef GMP_PIL_RX_MASK
-#define GMP_PIL_RX_MASK (127)
-#endif // GMP_PIL_RX_MASK
-
-/**
- * @brief Enable three PWM slots and six monitor slots used by the PMSM SIL output ABI.
- */
-#ifndef GMP_PIL_TX_MASK
-#define GMP_PIL_TX_MASK (4128775)
-#endif // GMP_PIL_TX_MASK
 
 /**
  * @brief Main motor-control ISR frequency in hertz.
@@ -629,60 +625,60 @@ extern "C"
 #endif // MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A
 
 /**
- * @brief Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
+ * @brief
  */
-#ifndef MCS_ENCODER_SPEED_FILTER_FC_HZ
-#define MCS_ENCODER_SPEED_FILTER_FC_HZ (20.0f)
-#endif // MCS_ENCODER_SPEED_FILTER_FC_HZ
+#ifndef MOTOR_PARAM_RS
+#define MOTOR_PARAM_RS SM060R20B30MNAD_RS
+#endif // MOTOR_PARAM_RS
 
 /**
- * @brief Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu.
+ * @brief
  */
-#ifndef MCS_MECH_POSITION_KP_PU
-#define MCS_MECH_POSITION_KP_PU (5.0f)
-#endif // MCS_MECH_POSITION_KP_PU
+#ifndef MOTOR_PARAM_LS
+#define MOTOR_PARAM_LS SM060R20B30MNAD_LD
+#endif // MOTOR_PARAM_LS
 
 /**
- * @brief Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
+ * @brief
  */
-#ifndef MCS_MECH_POSITION_KI_PU_S
-#define MCS_MECH_POSITION_KI_PU_S (1.0f)
-#endif // MCS_MECH_POSITION_KI_PU_S
+#ifndef MOTOR_PARAM_LD
+#define MOTOR_PARAM_LD SM060R20B30MNAD_LD
+#endif // MOTOR_PARAM_LD
 
 /**
- * @brief Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu.
+ * @brief
  */
-#ifndef MCS_MECH_VELOCITY_KP_PU
-#define MCS_MECH_VELOCITY_KP_PU (5.0f)
-#endif // MCS_MECH_VELOCITY_KP_PU
+#ifndef MOTOR_PARAM_LQ
+#define MOTOR_PARAM_LQ SM060R20B30MNAD_LQ
+#endif // MOTOR_PARAM_LQ
 
 /**
- * @brief Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
+ * @brief
  */
-#ifndef MCS_MECH_VELOCITY_KI_PU_S
-#define MCS_MECH_VELOCITY_KI_PU_S (1.0f)
-#endif // MCS_MECH_VELOCITY_KI_PU_S
+#ifndef MOTOR_PARAM_FLUX
+#define MOTOR_PARAM_FLUX SM060R20B30MNAD_FLUX
+#endif // MOTOR_PARAM_FLUX
 
 /**
- * @brief D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
+ * @brief
  */
-#ifndef MCS_COMMISSIONING_ID_REF_A
-#define MCS_COMMISSIONING_ID_REF_A (1.0f)
-#endif // MCS_COMMISSIONING_ID_REF_A
+#ifndef MOTOR_PARAM_POLE_PAIRS
+#define MOTOR_PARAM_POLE_PAIRS SM060R20B30MNAD_POLE_PAIRS
+#endif // MOTOR_PARAM_POLE_PAIRS
 
 /**
- * @brief Q-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
+ * @brief
  */
-#ifndef MCS_COMMISSIONING_IQ_REF_A
-#define MCS_COMMISSIONING_IQ_REF_A (1.0f)
-#endif // MCS_COMMISSIONING_IQ_REF_A
+#ifndef MOTOR_PARAM_INERTIA
+#define MOTOR_PARAM_INERTIA SM060R20B30MNAD_INERTIA
+#endif // MOTOR_PARAM_INERTIA
 
 /**
- * @brief Mechanical speed reference in rpm used by BUILD_LEVEL 4 commissioning. Converted to PU using MOTOR_PARAM_MAX_SPEED.
+ * @brief
  */
-#ifndef MCS_COMMISSIONING_SPEED_REF_RPM
-#define MCS_COMMISSIONING_SPEED_REF_RPM (300.0f)
-#endif // MCS_COMMISSIONING_SPEED_REF_RPM
+#ifndef MOTOR_PARAM_FRICTION
+#define MOTOR_PARAM_FRICTION SM060R20B30MNAD_FRICTION
+#endif // MOTOR_PARAM_FRICTION
 
 /**
  * @brief Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
@@ -720,69 +716,6 @@ extern "C"
 #endif // MCS_MAX_DC_BUS_VOLTAGE_V
 
 /**
- * @brief
- */
-#ifndef MCS_MIN_DC_BUS_VOLTAGE_V
-#define MCS_MIN_DC_BUS_VOLTAGE_V (CTRL_DCBUS_VOLTAGE*0.2f)
-#endif // MCS_MIN_DC_BUS_VOLTAGE_V
-
-/**
- * @brief
- */
-#ifndef MOTOR_PARAM_INERTIA
-#define MOTOR_PARAM_INERTIA SM060R20B30MNAD_INERTIA
-#endif // MOTOR_PARAM_INERTIA
-
-/**
- * @brief
- */
-#ifndef MOTOR_PARAM_FLUX
-#define MOTOR_PARAM_FLUX SM060R20B30MNAD_FLUX
-#endif // MOTOR_PARAM_FLUX
-
-/**
- * @brief
- */
-#ifndef MOTOR_PARAM_LD
-#define MOTOR_PARAM_LD SM060R20B30MNAD_LD
-#endif // MOTOR_PARAM_LD
-
-/**
- * @brief
- */
-#ifndef MOTOR_PARAM_RS
-#define MOTOR_PARAM_RS SM060R20B30MNAD_RS
-#endif // MOTOR_PARAM_RS
-
-/**
- * @brief
- */
-#ifndef MOTOR_PARAM_LQ
-#define MOTOR_PARAM_LQ SM060R20B30MNAD_LQ
-#endif // MOTOR_PARAM_LQ
-
-/**
- * @brief
- */
-#ifndef MOTOR_PARAM_LS
-#define MOTOR_PARAM_LS SM060R20B30MNAD_LD
-#endif // MOTOR_PARAM_LS
-
-/**
- * @brief
- */
-#ifndef MOTOR_PARAM_FRICTION
-#define MOTOR_PARAM_FRICTION SM060R20B30MNAD_FRICTION
-#endif // MOTOR_PARAM_FRICTION
-
-/**
- * @brief
- */
-#ifndef MOTOR_PARAM_POLE_PAIRS
-#define MOTOR_PARAM_POLE_PAIRS SM060R20B30MNAD_POLE_PAIRS
-#endif // MOTOR_PARAM_POLE_PAIRS
-
-/**
  * @brief Controller startup delay in milliseconds.
  */
 #ifndef CTRL_STARTUP_DELAY
@@ -797,6 +730,97 @@ extern "C"
 #endif // MCS_CIA402_OPERATION_ENABLE_DELAY_MS
 
 /**
+ * @brief Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
+ */
+#ifndef MCS_ENCODER_SPEED_FILTER_FC_HZ
+#define MCS_ENCODER_SPEED_FILTER_FC_HZ (20.0f)
+#endif // MCS_ENCODER_SPEED_FILTER_FC_HZ
+
+/**
+ * @brief Enable sensored phase-A alignment, pole-pair detection and encoder-offset calibration before electrical/mechanical identification.
+ */
+#ifndef MCS_PMSM_ID_ENABLE_ENCODER_CALIBRATION
+#define MCS_PMSM_ID_ENABLE_ENCODER_CALIBRATION (1)
+#endif // MCS_PMSM_ID_ENABLE_ENCODER_CALIBRATION
+
+/**
+ * @brief Closed-loop d-axis current in amperes used to lock the rotor to phase A during encoder calibration.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_ALIGN_CURRENT_A
+#define MCS_PMSM_ID_ENCODER_ALIGN_CURRENT_A (1.0f)
+#endif // MCS_PMSM_ID_ENCODER_ALIGN_CURRENT_A
+
+/**
+ * @brief PWM-off observation time in seconds used to detect a randomly jumping encoder.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_NOISE_CHECK_TIME_S
+#define MCS_PMSM_ID_ENCODER_NOISE_CHECK_TIME_S (0.10f)
+#endif // MCS_PMSM_ID_ENCODER_NOISE_CHECK_TIME_S
+
+/**
+ * @brief Time in seconds allowed for the rotor to settle at the phase-A electrical zero.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_ALIGN_SETTLE_TIME_S
+#define MCS_PMSM_ID_ENCODER_ALIGN_SETTLE_TIME_S (0.30f)
+#endif // MCS_PMSM_ID_ENCODER_ALIGN_SETTLE_TIME_S
+
+/**
+ * @brief Electrical revolutions per second used while rotating the alignment current vector.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_SWEEP_ELEC_HZ
+#define MCS_PMSM_ID_ENCODER_SWEEP_ELEC_HZ (1.0f)
+#endif // MCS_PMSM_ID_ENCODER_SWEEP_ELEC_HZ
+
+/**
+ * @brief Dwell time in seconds at phase A after each complete electrical revolution.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_ANCHOR_SETTLE_TIME_S
+#define MCS_PMSM_ID_ENCODER_ANCHOR_SETTLE_TIME_S (0.10f)
+#endif // MCS_PMSM_ID_ENCODER_ANCHOR_SETTLE_TIME_S
+
+/**
+ * @brief Maximum wrapped mechanical-position change accepted in one control ISR sample.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_MAX_SAMPLE_JUMP_PU
+#define MCS_PMSM_ID_ENCODER_MAX_SAMPLE_JUMP_PU (0.02f)
+#endif // MCS_PMSM_ID_ENCODER_MAX_SAMPLE_JUMP_PU
+
+/**
+ * @brief Maximum unwrapped position span accepted during the PWM-off encoder noise test.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_MAX_STATIONARY_SPAN_PU
+#define MCS_PMSM_ID_ENCODER_MAX_STATIONARY_SPAN_PU (0.002f)
+#endif // MCS_PMSM_ID_ENCODER_MAX_STATIONARY_SPAN_PU
+
+/**
+ * @brief Minimum net mechanical motion required during one electrical revolution; below this reports an uncoupled/stuck encoder.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_MIN_CYCLE_MOTION_PU
+#define MCS_PMSM_ID_ENCODER_MIN_CYCLE_MOTION_PU (0.02f)
+#endif // MCS_PMSM_ID_ENCODER_MIN_CYCLE_MOTION_PU
+
+/**
+ * @brief Maximum absolute deviation of each electrical-cycle mechanical motion from the measured mean.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_MAX_CYCLE_DEVIATION_PU
+#define MCS_PMSM_ID_ENCODER_MAX_CYCLE_DEVIATION_PU (0.03f)
+#endif // MCS_PMSM_ID_ENCODER_MAX_CYCLE_DEVIATION_PU
+
+/**
+ * @brief Maximum wrapped mechanical-position error accepted when returning to the first phase-A anchor.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_ZERO_RETURN_TOLERANCE_PU
+#define MCS_PMSM_ID_ENCODER_ZERO_RETURN_TOLERANCE_PU (0.02f)
+#endif // MCS_PMSM_ID_ENCODER_ZERO_RETURN_TOLERANCE_PU
+
+/**
+ * @brief Maximum pole-pair count searched before encoder calibration stops with a zero-return fault.
+ */
+#ifndef MCS_PMSM_ID_ENCODER_MAX_POLE_PAIRS
+#define MCS_PMSM_ID_ENCODER_MAX_POLE_PAIRS (16)
+#endif // MCS_PMSM_ID_ENCODER_MAX_POLE_PAIRS
+
+/**
  * @brief Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets.
  */
 #ifndef MCS_ADC_CALIBRATOR_FC_HZ
@@ -809,6 +833,307 @@ extern "C"
 #ifndef MCS_ADC_CALIBRATOR_Q
 #define MCS_ADC_CALIBRATOR_Q (0.707f)
 #endif // MCS_ADC_CALIBRATOR_Q
+
+/**
+ * @brief D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
+ */
+#ifndef MCS_COMMISSIONING_ID_REF_A
+#define MCS_COMMISSIONING_ID_REF_A (1.0f)
+#endif // MCS_COMMISSIONING_ID_REF_A
+
+/**
+ * @brief Q-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
+ */
+#ifndef MCS_COMMISSIONING_IQ_REF_A
+#define MCS_COMMISSIONING_IQ_REF_A (1.0f)
+#endif // MCS_COMMISSIONING_IQ_REF_A
+
+/**
+ * @brief Mechanical speed reference in rpm used by BUILD_LEVEL 4 commissioning. Converted to PU using MOTOR_PARAM_MAX_SPEED.
+ */
+#ifndef MCS_COMMISSIONING_SPEED_REF_RPM
+#define MCS_COMMISSIONING_SPEED_REF_RPM (300.0f)
+#endif // MCS_COMMISSIONING_SPEED_REF_RPM
+
+/**
+ * @brief Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu.
+ */
+#ifndef MCS_MECH_POSITION_KP_PU
+#define MCS_MECH_POSITION_KP_PU (5.0f)
+#endif // MCS_MECH_POSITION_KP_PU
+
+/**
+ * @brief Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
+ */
+#ifndef MCS_MECH_POSITION_KI_PU_S
+#define MCS_MECH_POSITION_KI_PU_S (1.0f)
+#endif // MCS_MECH_POSITION_KI_PU_S
+
+/**
+ * @brief Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu.
+ */
+#ifndef MCS_MECH_VELOCITY_KP_PU
+#define MCS_MECH_VELOCITY_KP_PU (5.0f)
+#endif // MCS_MECH_VELOCITY_KP_PU
+
+/**
+ * @brief Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
+ */
+#ifndef MCS_MECH_VELOCITY_KI_PU_S
+#define MCS_MECH_VELOCITY_KI_PU_S (1.0f)
+#endif // MCS_MECH_VELOCITY_KI_PU_S
+
+/**
+ * @brief Enable the target ADC-calibration preparation handshake.
+ */
+#ifndef MCS_PMSM_ID_ENABLE_PREPARE
+#define MCS_PMSM_ID_ENABLE_PREPARE (1)
+#endif // MCS_PMSM_ID_ENABLE_PREPARE
+
+/**
+ * @brief Enable stator-resistance and inverter dead-time voltage identification.
+ */
+#ifndef MCS_PMSM_ID_ENABLE_RS_DT
+#define MCS_PMSM_ID_ENABLE_RS_DT (1)
+#endif // MCS_PMSM_ID_ENABLE_RS_DT
+
+/**
+ * @brief Maximum closed-loop current in amperes used by the Rs/dead-time sweep.
+ */
+#ifndef MCS_PMSM_ID_RSDT_MAX_CURRENT_A
+#define MCS_PMSM_ID_RSDT_MAX_CURRENT_A (5.0f)
+#endif // MCS_PMSM_ID_RSDT_MAX_CURRENT_A
+
+/**
+ * @brief Minimum closed-loop current in amperes used by the Rs/dead-time sweep.
+ */
+#ifndef MCS_PMSM_ID_RSDT_MIN_CURRENT_A
+#define MCS_PMSM_ID_RSDT_MIN_CURRENT_A (1.0f)
+#endif // MCS_PMSM_ID_RSDT_MIN_CURRENT_A
+
+/**
+ * @brief Number of positive current points in the Rs/dead-time regression.
+ */
+#ifndef MCS_PMSM_ID_RSDT_STEPS
+#define MCS_PMSM_ID_RSDT_STEPS (5)
+#endif // MCS_PMSM_ID_RSDT_STEPS
+
+/**
+ * @brief Rotor alignment dwell in seconds before the Rs/dead-time sweep.
+ */
+#ifndef MCS_PMSM_ID_RSDT_ALIGN_TIME_S
+#define MCS_PMSM_ID_RSDT_ALIGN_TIME_S (1.0f)
+#endif // MCS_PMSM_ID_RSDT_ALIGN_TIME_S
+
+/**
+ * @brief Settling delay in seconds after changing each Rs/dead-time current point.
+ */
+#ifndef MCS_PMSM_ID_RSDT_MEASURE_DELAY_S
+#define MCS_PMSM_ID_RSDT_MEASURE_DELAY_S (0.2f)
+#endif // MCS_PMSM_ID_RSDT_MEASURE_DELAY_S
+
+/**
+ * @brief Number of ISR samples averaged at each Rs/dead-time current point.
+ */
+#ifndef MCS_PMSM_ID_RSDT_MEASURE_POINTS
+#define MCS_PMSM_ID_RSDT_MEASURE_POINTS (100)
+#endif // MCS_PMSM_ID_RSDT_MEASURE_POINTS
+
+/**
+ * @brief Enable d/q-axis inductance pulse identification.
+ */
+#ifndef MCS_PMSM_ID_ENABLE_LDQ
+#define MCS_PMSM_ID_ENABLE_LDQ (1)
+#endif // MCS_PMSM_ID_ENABLE_LDQ
+
+/**
+ * @brief Physical d/q pulse voltage in volts used for inductance identification.
+ */
+#ifndef MCS_PMSM_ID_LDQ_PULSE_VOLTAGE_V
+#define MCS_PMSM_ID_LDQ_PULSE_VOLTAGE_V (0.277128f)
+#endif // MCS_PMSM_ID_LDQ_PULSE_VOLTAGE_V
+
+/**
+ * @brief Maximum current bias in amperes used for the inductance profile.
+ */
+#ifndef MCS_PMSM_ID_LDQ_MAX_BIAS_CURRENT_A
+#define MCS_PMSM_ID_LDQ_MAX_BIAS_CURRENT_A (5.0f)
+#endif // MCS_PMSM_ID_LDQ_MAX_BIAS_CURRENT_A
+
+/**
+ * @brief Number of bias points recorded for each inductance axis.
+ */
+#ifndef MCS_PMSM_ID_LDQ_BIAS_STEPS
+#define MCS_PMSM_ID_LDQ_BIAS_STEPS (12)
+#endif // MCS_PMSM_ID_LDQ_BIAS_STEPS
+
+/**
+ * @brief D-axis alignment current in amperes used before inductance pulses.
+ */
+#ifndef MCS_PMSM_ID_LDQ_ALIGN_CURRENT_A
+#define MCS_PMSM_ID_LDQ_ALIGN_CURRENT_A (5.0f)
+#endif // MCS_PMSM_ID_LDQ_ALIGN_CURRENT_A
+
+/**
+ * @brief Bias-current settling time in seconds before each inductance pulse.
+ */
+#ifndef MCS_PMSM_ID_LDQ_SETTLE_TIME_S
+#define MCS_PMSM_ID_LDQ_SETTLE_TIME_S (0.2f)
+#endif // MCS_PMSM_ID_LDQ_SETTLE_TIME_S
+
+/**
+ * @brief Inductance voltage-pulse duration in seconds.
+ */
+#ifndef MCS_PMSM_ID_LDQ_PULSE_TIME_S
+#define MCS_PMSM_ID_LDQ_PULSE_TIME_S (0.002f)
+#endif // MCS_PMSM_ID_LDQ_PULSE_TIME_S
+
+/**
+ * @brief Zero-voltage cooldown time in seconds between inductance pulses.
+ */
+#ifndef MCS_PMSM_ID_LDQ_COOLDOWN_TIME_S
+#define MCS_PMSM_ID_LDQ_COOLDOWN_TIME_S (0.05f)
+#endif // MCS_PMSM_ID_LDQ_COOLDOWN_TIME_S
+
+/**
+ * @brief Enable PM flux-linkage identification.
+ */
+#ifndef MCS_PMSM_ID_ENABLE_FLUX
+#define MCS_PMSM_ID_ENABLE_FLUX (1)
+#endif // MCS_PMSM_ID_ENABLE_FLUX
+
+/**
+ * @brief Minimum mechanical speed in rpm used by the flux-linkage regression.
+ */
+#ifndef MCS_PMSM_ID_FLUX_MIN_SPEED_RPM
+#define MCS_PMSM_ID_FLUX_MIN_SPEED_RPM (300.0f)
+#endif // MCS_PMSM_ID_FLUX_MIN_SPEED_RPM
+
+/**
+ * @brief Maximum mechanical speed in rpm used by the flux-linkage regression.
+ */
+#ifndef MCS_PMSM_ID_FLUX_MAX_SPEED_RPM
+#define MCS_PMSM_ID_FLUX_MAX_SPEED_RPM (1800.0f)
+#endif // MCS_PMSM_ID_FLUX_MAX_SPEED_RPM
+
+/**
+ * @brief Number of speed points used by the flux-linkage regression.
+ */
+#ifndef MCS_PMSM_ID_FLUX_STEPS
+#define MCS_PMSM_ID_FLUX_STEPS (6)
+#endif // MCS_PMSM_ID_FLUX_STEPS
+
+/**
+ * @brief Current magnitude in amperes used for I/F flux-linkage rotation.
+ */
+#ifndef MCS_PMSM_ID_FLUX_IF_CURRENT_A
+#define MCS_PMSM_ID_FLUX_IF_CURRENT_A (4.0f)
+#endif // MCS_PMSM_ID_FLUX_IF_CURRENT_A
+
+/**
+ * @brief Settling time in seconds at each flux-identification speed.
+ */
+#ifndef MCS_PMSM_ID_FLUX_SETTLE_TIME_S
+#define MCS_PMSM_ID_FLUX_SETTLE_TIME_S (2.0f)
+#endif // MCS_PMSM_ID_FLUX_SETTLE_TIME_S
+
+/**
+ * @brief Number of ISR samples averaged at each flux-identification speed.
+ */
+#ifndef MCS_PMSM_ID_FLUX_MEASURE_POINTS
+#define MCS_PMSM_ID_FLUX_MEASURE_POINTS (2000)
+#endif // MCS_PMSM_ID_FLUX_MEASURE_POINTS
+
+/**
+ * @brief Enable the sensored constant-Iq acceleration and PWM-off coast-down mechanical identification stage.
+ */
+#ifndef MCS_PMSM_ID_ENABLE_MECHANICAL_ID
+#define MCS_PMSM_ID_ENABLE_MECHANICAL_ID (1)
+#endif // MCS_PMSM_ID_ENABLE_MECHANICAL_ID
+
+/**
+ * @brief User-selected mechanical target speed in rpm for the identification test.
+ */
+#ifndef MCS_PMSM_ID_MECH_TARGET_SPEED_RPM
+#define MCS_PMSM_ID_MECH_TARGET_SPEED_RPM (1000.0f)
+#endif // MCS_PMSM_ID_MECH_TARGET_SPEED_RPM
+
+/**
+ * @brief User-selected q-axis current in amperes applied by the real current loop during acceleration.
+ */
+#ifndef MCS_PMSM_ID_MECH_ACCEL_CURRENT_A
+#define MCS_PMSM_ID_MECH_ACCEL_CURRENT_A (1.0f)
+#endif // MCS_PMSM_ID_MECH_ACCEL_CURRENT_A
+
+/**
+ * @brief Lower acceleration/coast fitting boundary relative to the selected target speed.
+ */
+#ifndef MCS_PMSM_ID_MECH_FIT_LOW_RATIO
+#define MCS_PMSM_ID_MECH_FIT_LOW_RATIO (0.30f)
+#endif // MCS_PMSM_ID_MECH_FIT_LOW_RATIO
+
+/**
+ * @brief Upper acceleration/coast fitting boundary relative to the selected target speed.
+ */
+#ifndef MCS_PMSM_ID_MECH_FIT_HIGH_RATIO
+#define MCS_PMSM_ID_MECH_FIT_HIGH_RATIO (0.70f)
+#endif // MCS_PMSM_ID_MECH_FIT_HIGH_RATIO
+
+/**
+ * @brief Target-speed ratio at which PWM is physically disabled to start free coast-down.
+ */
+#ifndef MCS_PMSM_ID_MECH_PWM_OFF_RATIO
+#define MCS_PMSM_ID_MECH_PWM_OFF_RATIO (0.75f)
+#endif // MCS_PMSM_ID_MECH_PWM_OFF_RATIO
+
+/**
+ * @brief Safety timeout in seconds covering acceleration and free coast-down.
+ */
+#ifndef MCS_PMSM_ID_MECH_MAX_TEST_TIME_S
+#define MCS_PMSM_ID_MECH_MAX_TEST_TIME_S (20.0f)
+#endif // MCS_PMSM_ID_MECH_MAX_TEST_TIME_S
+
+/**
+ * @brief Expected maximum combined duration of the two recorded 30%-70% speed curves.
+ */
+#ifndef MCS_PMSM_ID_MECH_RECORD_TIME_S
+#define MCS_PMSM_ID_MECH_RECORD_TIME_S (10.0f)
+#endif // MCS_PMSM_ID_MECH_RECORD_TIME_S
+
+/**
+ * @brief Minimum coefficient of determination accepted for acceleration-versus-speed regression.
+ */
+#ifndef MCS_PMSM_ID_MECH_MIN_FIT_R2
+#define MCS_PMSM_ID_MECH_MIN_FIT_R2 (0.80f)
+#endif // MCS_PMSM_ID_MECH_MIN_FIT_R2
+
+/**
+ * @brief Minimum differentiated samples required in each acceleration and coast curve.
+ */
+#ifndef MCS_PMSM_ID_MECH_MIN_FIT_SAMPLES
+#define MCS_PMSM_ID_MECH_MIN_FIT_SAMPLES (30)
+#endif // MCS_PMSM_ID_MECH_MIN_FIT_SAMPLES
+
+/**
+ * @brief Enable the seven ADC slots used by the PMSM SIL input ABI.
+ */
+#ifndef GMP_PIL_RX_MASK
+#define GMP_PIL_RX_MASK (127)
+#endif // GMP_PIL_RX_MASK
+
+/**
+ * @brief Enable three PWM slots and six monitor slots used by the PMSM SIL output ABI.
+ */
+#ifndef GMP_PIL_TX_MASK
+#define GMP_PIL_TX_MASK (4128775)
+#endif // GMP_PIL_TX_MASK
+
+/**
+ * @brief
+ */
+#ifndef MCS_MIN_DC_BUS_VOLTAGE_V
+#define MCS_MIN_DC_BUS_VOLTAGE_V (CTRL_DCBUS_VOLTAGE*0.2f)
+#endif // MCS_MIN_DC_BUS_VOLTAGE_V
 
 //=================================================================================================
 /**

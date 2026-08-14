@@ -43,6 +43,9 @@ typedef struct _tag_repetitive_controller_t
 
     parameter_gt fs;          //!< Controller frequency, Hz
     parameter_gt f_min_rated; //!< Rated minimum frequency, Hz
+    parameter_gt tracked_freq;
+    uint32_t delay_integer;
+    ctrl_gt delay_fraction;
 
     // Output Limits
     ctrl_gt out_max; //!< Maximum output limit for anti-windup.
@@ -125,20 +128,11 @@ GMP_STATIC_INLINE void ctl_clear_rc(ctl_rc_t* obj)
 /**
  * @brief Executes one step of the Constant-Q Repetitive Controller.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_step_rc(ctl_rc_t* obj, ctrl_gt error, parameter_gt measured_freq)
+GMP_STATIC_INLINE ctrl_gt ctl_step_rc(ctl_rc_t* obj, ctrl_gt error)
 {
-    if (measured_freq < obj->f_min_rated)
-    {
-        measured_freq = obj->f_min_rated;
-    }
-
-    // 1. Calculate real-time fractional depth
-    parameter_gt n_real = obj->fs / measured_freq;
-    int32_t n_int = (int32_t)n_real;
-    parameter_gt d = n_real - (parameter_gt)n_int;
-
-    ctrl_gt d_ctrl = float2ctrl(d);
-    ctrl_gt one_minus_d = float2ctrl(1.0f) - d_ctrl;
+    int32_t n_int = (int32_t)obj->delay_integer;
+    ctrl_gt d_ctrl = obj->delay_fraction;
+    ctrl_gt one_minus_d = CTL_CTRL_CONST_1 - d_ctrl;
 
     // 2. Calculate target depth considering phase lead compensation
     int32_t target_depth = n_int - obj->phase_lead_k;
@@ -215,9 +209,25 @@ GMP_STATIC_INLINE void ctl_set_rc_saturation(ctl_rc_t* obj, ctrl_gt out_min, ctr
     obj->out_min = out_min;
     obj->out_max = out_max;
 }
+GMP_STATIC_INLINE void ctl_set_rc_frequency(ctl_rc_t* obj, parameter_gt measured_freq)
+{
+    parameter_gt n_real;
+    uint32_t n_int;
+    if (measured_freq < obj->f_min_rated)
+        measured_freq = obj->f_min_rated;
+    n_real = obj->fs / measured_freq;
+    n_int = (uint32_t)n_real;
+    if (n_int >= obj->buffer_capacity - 1U)
+        n_int = obj->buffer_capacity - 2U;
+    obj->tracked_freq = measured_freq;
+    obj->delay_integer = n_int;
+    obj->delay_fraction = real2ctrl(n_real - (parameter_gt)n_int);
+}
+
 GMP_STATIC_INLINE void ctl_set_rc_fs(ctl_rc_t* obj, parameter_gt fs)
 {
     obj->fs = fs;
+    ctl_set_rc_frequency(obj, obj->tracked_freq);
 }
 
 /**

@@ -211,6 +211,10 @@
         },
         {
             "root": "ctl",
+            "module": "math_block|iqmath"
+        },
+        {
+            "root": "ctl",
             "module": "math_block|complex_lite"
         },
         {

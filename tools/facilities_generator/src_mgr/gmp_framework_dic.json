@@ -1895,8 +1895,10 @@
                 "src_patterns": [],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/math_block/ctrl_gt/*",
+                    "${GMP_PRO_LOCATION}/ctl/math_block/parameter_gt/*",
                     "${GMP_PRO_LOCATION}/ctl/math_block/const/*",
                     "${GMP_PRO_LOCATION}/ctl/math_block/gmp_math.h",
+                    "${GMP_PRO_LOCATION}/ctl/math_block/gmp_math.hpp",
                     "${GMP_PRO_LOCATION}/ctl/ctl.config.h"
                 ],
                 "inc_dirs": [],
@@ -1906,10 +1908,27 @@
                 ],
                 "depends_on": [
                     "core|std",
+                    "ctl|math_block|iqmath",
                     "ctl|math_block|complex_lite",
                     "ctl|math_block|coordinate",
                     "ctl|math_block|matrix_lite",
                     "ctl|math_block|vector_lite"
+                ]
+            },
+            "math_block|iqmath": {
+                "type": "module",
+                "description": "Host/target implementation of the TI IQmath fixed-point backend",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/third_party/iqmath/src/*.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/third_party/iqmath/*.h",
+                    "${GMP_PRO_LOCATION}/third_party/iqmath/src/*.h"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "depends_on": [
+                    "core|std"
                 ]
             },
             "math_block|coordinate": {
@@ -3487,7 +3506,8 @@
                 "type": "module",
                 "description": "Repetitive Controller",
                 "src_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/src/ctl_adv_rc.c"
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/src/ctl_adv_rc.c",
+                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/src/ctl_adv_fdrc.c"
                 ],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/intrinsic/advance/repetitive_controller.h",

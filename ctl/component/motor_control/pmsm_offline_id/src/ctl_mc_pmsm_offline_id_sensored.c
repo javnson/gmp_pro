@@ -16,6 +16,15 @@ static parameter_gt ctl_oid_abs(parameter_gt value)
     return (value >= 0.0f) ? value : -value;
 }
 
+static ctrl_gt ctl_oid_wrap_delta_ctrl(ctrl_gt delta)
+{
+    if (delta > CTL_CTRL_CONST_1_OVER_2)
+        delta -= CTL_CTRL_CONST_1;
+    else if (delta < -CTL_CTRL_CONST_1_OVER_2)
+        delta += CTL_CTRL_CONST_1;
+    return delta;
+}
+
 static void ctl_oid_encoder_fault(ctl_pmsm_offline_id_t* ctx, pmsm_offline_id_encoder_fault_t fault)
 {
     ctx->sub_encoder.fault = fault;
@@ -38,6 +47,9 @@ void ctl_init_oid_encoder(ctl_pmsm_offline_id_t* ctx)
     sub->encoder_offset_pu = 0.0f;
     sub->cycle_net_motion_pu = float2ctrl(0.0f);
     sub->command_angle_pu = float2ctrl(0.0f);
+    sub->align_current_pu_ctrl = param2ctrl(sub->cfg.align_current_pu);
+    sub->max_sample_jump_pu_ctrl = param2ctrl(sub->cfg.max_sample_jump_pu);
+    sub->sweep_step_pu = param2ctrl(sub->cfg.sweep_elec_hz / ctx->cfg_basic.isr_freq_hz);
     for (i = 0U; i < PMSM_ID_ENCODER_MAX_ANCHORS; ++i)
         sub->cycle_motion_pu[i] = 0.0f;
     ctl_clear_state_seq(&ctx->seq, 0U);
@@ -46,9 +58,8 @@ void ctl_init_oid_encoder(ctl_pmsm_offline_id_t* ctx)
 void ctl_step_oid_encoder_isr(ctl_pmsm_offline_id_t* ctx)
 {
     pmsm_offline_id_encoder_t* sub = &ctx->sub_encoder;
-    pmsm_oid_cfg_encoder_t* cfg = &sub->cfg;
-    parameter_gt current_position;
-    parameter_gt delta;
+    ctrl_gt current_position;
+    ctrl_gt delta;
 
     (void)ctl_step_state_seq(&ctx->seq);
 
@@ -57,11 +68,11 @@ void ctl_step_oid_encoder_isr(ctl_pmsm_offline_id_t* ctx)
         sub->sm == PMSM_ID_ENCODER_FAULT || ctx->enc == NULL)
         return;
 
-    current_position = ctrl2float(ctl_get_encoder_position(ctx->enc));
-    delta = ctl_oid_wrap_delta(current_position - ctrl2float(sub->last_position_pu));
-    sub->last_position_pu = float2ctrl(current_position);
+    current_position = ctl_get_encoder_position(ctx->enc);
+    delta = ctl_oid_wrap_delta_ctrl(current_position - sub->last_position_pu);
+    sub->last_position_pu = current_position;
 
-    if (ctl_oid_abs(delta) > cfg->max_sample_jump_pu)
+    if (ctl_abs(delta) > sub->max_sample_jump_pu_ctrl)
     {
         ctl_oid_encoder_fault(ctx, PMSM_ID_ENCODER_FAULT_RANDOM_JUMP);
         return;
@@ -69,37 +80,36 @@ void ctl_step_oid_encoder_isr(ctl_pmsm_offline_id_t* ctx)
 
     if (sub->sm == PMSM_ID_ENCODER_NOISE_CHECK)
     {
-        parameter_gt unwrapped = ctrl2float(sub->cycle_net_motion_pu) + delta;
-        sub->cycle_net_motion_pu = float2ctrl(unwrapped);
-        if (unwrapped < ctrl2float(sub->stationary_min_pu))
-            sub->stationary_min_pu = float2ctrl(unwrapped);
-        if (unwrapped > ctrl2float(sub->stationary_max_pu))
-            sub->stationary_max_pu = float2ctrl(unwrapped);
+        ctrl_gt unwrapped = sub->cycle_net_motion_pu + delta;
+        sub->cycle_net_motion_pu = unwrapped;
+        if (unwrapped < sub->stationary_min_pu)
+            sub->stationary_min_pu = unwrapped;
+        if (unwrapped > sub->stationary_max_pu)
+            sub->stationary_max_pu = unwrapped;
         return;
     }
 
     if (sub->sm == PMSM_ID_ENCODER_ALIGN_ZERO || sub->sm == PMSM_ID_ENCODER_ANCHOR_SETTLE)
     {
-        ctl_id_set_static_angle(ctx, float2ctrl(0.0f));
-        ctl_id_apply_dc_current(ctx, float2ctrl(cfg->align_current_pu), float2ctrl(0.0f));
+        ctl_id_set_static_angle(ctx, CTL_CTRL_CONST_ZERO);
+        ctl_id_apply_dc_current(ctx, sub->align_current_pu_ctrl, CTL_CTRL_CONST_ZERO);
         if (sub->sm == PMSM_ID_ENCODER_ANCHOR_SETTLE)
-            sub->cycle_net_motion_pu += float2ctrl(delta);
+            sub->cycle_net_motion_pu += delta;
         return;
     }
 
     if (sub->sm == PMSM_ID_ENCODER_SWEEP)
     {
-        parameter_gt command = ctrl2float(sub->command_angle_pu);
-        parameter_gt step = cfg->sweep_elec_hz / ctx->cfg_basic.isr_freq_hz;
+        ctrl_gt command = sub->command_angle_pu;
 
-        sub->cycle_net_motion_pu += float2ctrl(delta);
+        sub->cycle_net_motion_pu += delta;
         if (!sub->cycle_ready)
         {
-            command += step;
+            command += sub->sweep_step_pu;
             sub->sweep_tick++;
-            if (command >= 1.0f)
+            if (command >= CTL_CTRL_CONST_1)
             {
-                command = 0.0f;
+                command = CTL_CTRL_CONST_ZERO;
                 sub->cycle_ready = 1;
             }
             else if (sub->sweep_tick >= sub->sweep_timeout_ticks)
@@ -107,10 +117,10 @@ void ctl_step_oid_encoder_isr(ctl_pmsm_offline_id_t* ctx)
                 ctl_oid_encoder_fault(ctx, PMSM_ID_ENCODER_FAULT_TIMEOUT);
                 return;
             }
-            sub->command_angle_pu = float2ctrl(command);
+            sub->command_angle_pu = command;
         }
         ctl_id_set_static_angle(ctx, sub->command_angle_pu);
-        ctl_id_apply_dc_current(ctx, float2ctrl(cfg->align_current_pu), float2ctrl(0.0f));
+        ctl_id_apply_dc_current(ctx, sub->align_current_pu_ctrl, CTL_CTRL_CONST_ZERO);
     }
 }
 
@@ -298,7 +308,7 @@ static fast_gt ctl_oid_fit_alpha_vs_speed(ctl_dsa_scope_t* scope, uint32_t start
         parameter_gt determinant = sum_ii * sum_tt - sum_it * sum_it;
         parameter_gt mean_y = sum_y / (parameter_gt)n;
         parameter_gt sse = 0.0f, sst = 0.0f;
-        if (ctl_oid_abs(determinant) < 1e-12f)
+        if (ctl_oid_abs(determinant) < CTL_PARAM_CONST_EPSILON)
             return 0;
         *slope = (sum_iy * sum_tt - sum_it * sum_ty) / determinant;
         *intercept = (sum_ii * sum_ty - sum_it * sum_iy) / determinant;
@@ -317,7 +327,7 @@ static fast_gt ctl_oid_fit_alpha_vs_speed(ctl_dsa_scope_t* scope, uint32_t start
             sst += (y - mean_y) * (y - mean_y);
             w_prev = wm;
         }
-        if (sst <= 1e-12f)
+        if (sst <= CTL_PARAM_CONST_EPSILON)
             return 0;
         *r2 = 1.0f - sse / sst;
     }
@@ -469,7 +479,7 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
                  sub->average_accel_iq_pu * ctrl2float(ctx->identified_pu.I_base);
         intercept_delta = sub->accel_intercept - sub->coast_intercept;
         common_slope = 0.5f * (sub->accel_slope + sub->coast_slope);
-        if (torque <= 0.0f || intercept_delta <= 1e-6f || common_slope >= 0.0f)
+        if (torque <= 0.0f || intercept_delta <= CTL_PARAM_CONST_EPSILON || common_slope >= 0.0f)
         {
             sub->sm = PMSM_ID_MECH_FAULT;
             break;

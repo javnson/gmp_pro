@@ -17,7 +17,7 @@ void ctl_init_lead(ctrl_lead_t* obj, parameter_gt K_D, parameter_gt tau_D, param
     parameter_gt inv_den;
 
     // Avoid division by zero
-    if (fabsf(den) < 1e-9f)
+    if (param_abs(den) < 1e-9f)
     {
         inv_den = 0.0f; // Or handle error appropriately
     }
@@ -53,7 +53,7 @@ void ctl_init_lead_form2(ctrl_lead_t* obj, parameter_gt alpha, parameter_gt T, p
     parameter_gt inv_den;
 
     // Avoid division by zero
-    if (fabsf(den) < 1e-9f)
+    if (param_abs(den) < 1e-9f)
     {
         inv_den = 0.0f; // Or handle error appropriately
     }
@@ -84,7 +84,7 @@ void ctl_init_lead_form3(ctrl_lead_t* obj, parameter_gt theta_rad, parameter_gt 
     //parameter_gt theta_rad = angle_deg * (CTL_PARAM_CONST_PI / 180.0f); // 确保输入是弧度或进行转换
 
     // 1. Calculate Alpha
-    parameter_gt sin_val = sinf(theta_rad);
+    parameter_gt sin_val = param_sin(theta_rad);
 
     // Prevent division by zero if theta is 90 degrees (pi/2)
     if (sin_val > 0.999999f)
@@ -95,7 +95,7 @@ void ctl_init_lead_form3(ctrl_lead_t* obj, parameter_gt theta_rad, parameter_gt 
     // 2. Calculate time constant
     // T = 1 / (omega_c * sqrt(alpha))
     parameter_gt omega_c = 2.0f * CTL_PARAM_CONST_PI * fc;
-    parameter_gt T = 1.0f / (omega_c * sqrtf(alpha));
+    parameter_gt T = 1.0f / (omega_c * param_sqrt(alpha));
 
     // 3. 调用 Form2 进行离散化
     ctl_init_lead_form2(obj, alpha, T, fs);
@@ -122,7 +122,7 @@ void ctl_init_lag(ctrl_lag_t* obj, parameter_gt tau_L, parameter_gt tau_P, param
     parameter_gt inv_den;
 
     // Avoid division by zero
-    if (fabsf(den) < 1e-9f)
+    if (param_abs(den) < 1e-9f)
     {
         inv_den = 0.0f; // Or handle error appropriately
     }

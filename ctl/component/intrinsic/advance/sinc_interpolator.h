@@ -73,7 +73,7 @@ fast_gt ctl_init_sinc_interpolator(ctl_sinc_interpolator_t* sinc, uint32_t num_t
 GMP_STATIC_INLINE void ctl_clear_sinc_interpolator(ctl_sinc_interpolator_t* sinc)
 {
     sinc->buffer_index = 0;
-    sinc->output = float2ctrl(0.0f); // 修复：强类型清零
+    sinc->output = CTL_CTRL_CONST_ZERO;
     uint32_t i;
 
     if (sinc->buffer != 0)
@@ -100,25 +100,19 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinc_interpolator(ctl_sinc_interpolator_t* si
     // 1. Update the Circular Buffer
     sinc->buffer[sinc->buffer_index] = input;
 
-    // 2. Select FIR Filter Coefficients (修复 1：安全的索引映射)
-    // 防止 fractional_delay 作为大整数直接与 table_size 相乘导致溢出
-    parameter_gt fd_flt = ctrl2float(fractional_delay);
-    if (fd_flt < 0.0)
-        fd_flt = 0.0;
-    if (fd_flt > 1.0)
-        fd_flt = 1.0;
-
-    uint32_t table_index = (uint32_t)(fd_flt * (parameter_gt)sinc->table_size);
+    // Clamp in the control domain before mapping the fraction to a table index.
+    ctrl_gt bounded_delay = ctl_sat(fractional_delay, CTL_CTRL_CONST_1, CTL_CTRL_CONST_ZERO);
+    uint32_t table_index = ctrl_fraction_to_index(bounded_delay, sinc->table_size);
     if (table_index >= sinc->table_size)
     {
         table_index = sinc->table_size - 1;
     }
 
-    // 架构升级：在展平的 1D 数组中极速定位 FIR 核的首地址
+    // Locate the selected FIR kernel in the flattened coefficient table.
     ctrl_gt* kernel = &sinc->sinc_table[table_index * sinc->num_taps];
 
-    // 3. Perform the Convolution Operation (修复 2：防止定点裸乘法溢出)
-    sinc->output = float2ctrl(0.0f);
+    // Perform the convolution entirely in the ctrl_gt domain.
+    sinc->output = CTL_CTRL_CONST_ZERO;
     uint32_t j = sinc->buffer_index;
 
     for (i = 0; i < sinc->num_taps; i++)

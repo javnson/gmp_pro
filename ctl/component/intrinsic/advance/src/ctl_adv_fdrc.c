@@ -32,6 +32,7 @@ void ctl_init_fdrc(ctl_fdrc_t* obj, ctrl_gt* buffer, uint32_t capacity, paramete
 
     obj->fs = fs;
     obj->f_min_rated = f_min;
+    ctl_set_fdrc_frequency(obj, f_min);
 
     // Enable learning by default
     ctl_enable_fdrc_integrating(obj);

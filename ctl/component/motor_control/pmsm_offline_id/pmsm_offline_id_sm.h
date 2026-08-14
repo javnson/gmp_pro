@@ -404,6 +404,9 @@ typedef struct _tag_pmsm_offline_id_encoder
     ctrl_gt stationary_max_pu;
     ctrl_gt cycle_net_motion_pu;
     ctrl_gt command_angle_pu;
+    ctrl_gt align_current_pu_ctrl;
+    ctrl_gt max_sample_jump_pu_ctrl;
+    ctrl_gt sweep_step_pu;
     fast_gt cycle_ready;
 
     parameter_gt cycle_motion_pu[PMSM_ID_ENCODER_MAX_ANCHORS];

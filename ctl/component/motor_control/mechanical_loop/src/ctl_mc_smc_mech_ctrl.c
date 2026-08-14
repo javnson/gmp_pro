@@ -34,9 +34,9 @@
 void ctl_autotuning_smc_mech_ctrl(ctl_smc_mech_init_t* init)
 {
     // Protect against division by zero
-    parameter_gt kt = (init->torque_const > 1e-6f) ? init->torque_const : 1.0f;
-    parameter_gt i_base = (init->i_base > 1e-6f) ? init->i_base : 1.0f;
-    parameter_gt w_base = (init->omega_base > 1e-6f) ? init->omega_base : 1.0f;
+    parameter_gt kt = (init->torque_const > CTL_PARAM_CONST_EPSILON) ? init->torque_const : 1.0f;
+    parameter_gt i_base = (init->i_base > CTL_PARAM_CONST_EPSILON) ? init->i_base : 1.0f;
+    parameter_gt w_base = (init->omega_base > CTL_PARAM_CONST_EPSILON) ? init->omega_base : 1.0f;
 
     // 1. Physical Target Dynamics
     parameter_gt lambda_phy = CTL_PARAM_CONST_2PI * init->target_bw;

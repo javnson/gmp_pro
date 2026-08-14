@@ -138,6 +138,20 @@
  */
 typedef GMP_PORT_CTRL_T ctrl_gt;
 
+/**
+ * @brief Compile-time capability flag for algorithms that require a floating-point ctrl_gt.
+ * @details A CSP-specific math backend may define this macro before including
+ * this header. Unknown CSP backends default to non-floating for safety.
+ */
+#ifndef CTL_CTRL_GT_IS_FLOATING_POINT
+#if (SPECIFY_CTRL_GT_TYPE == USING_FIXED_TI_IQ_LIBRARY) ||                                                     \
+    (SPECIFY_CTRL_GT_TYPE == USING_FIXED_ARM_CMSIS_Q_LIBRARY) || (SPECIFY_CTRL_GT_TYPE == USING_CSP_MATH_LIBRARY)
+#define CTL_CTRL_GT_IS_FLOATING_POINT 0
+#else
+#define CTL_CTRL_GT_IS_FLOATING_POINT 1
+#endif
+#endif
+
 #if (SPECIFY_PARAMETER_GT_TYPE == USING_DOUBLE_FPU)
 #define GMP_PORT_PARAMETER_T double
 #else // Default to float for all other types
@@ -150,6 +164,44 @@ typedef GMP_PORT_CTRL_T ctrl_gt;
  */
 typedef GMP_PORT_PARAMETER_T parameter_gt;
 
+/**
+ * @brief Convert a native C arithmetic value to the parameter domain.
+ * @details "real" denotes a C literal or native arithmetic expression at a
+ * configuration boundary; it is deliberately not another stored GMP type.
+ */
+#ifndef real2param
+#define real2param(value) ((parameter_gt)(value))
+#endif
+
+/** @brief Convert a native C arithmetic value to the real-time domain. */
+#ifndef real2ctrl
+#define real2ctrl(value) ((ctrl_gt)float2ctrl(value))
+#endif
+
+/**
+ * @brief Convert an initialization/parameter value into the real-time type.
+ * @details Perform this conversion while configuring an object and cache the
+ * result as ctrl_gt instead of converting parameter_gt in every ISR step.
+ */
+#ifndef param2ctrl
+#define param2ctrl(value) real2ctrl(value)
+#endif
+
+/** @brief Convert a real-time value for slow diagnostics or parameter tools. */
+#ifndef ctrl2param
+#define ctrl2param(value) ((parameter_gt)ctrl2float(value))
+#endif
+
+/* Compatibility spellings retained for existing applications. */
+#ifndef parameter2ctrl
+#define parameter2ctrl(value) param2ctrl(value)
+#endif
+#ifndef ctrl2parameter
+#define ctrl2parameter(value) ctrl2param(value)
+#endif
+
+#define GMP_CTL_MATH_TYPES_AVAILABLE 1
+
 /** @} */ // end of MC_CORE_TYPES group
 
 /*---------------------------------------------------------------------------*/
@@ -157,6 +209,7 @@ typedef GMP_PORT_PARAMETER_T parameter_gt;
 /*---------------------------------------------------------------------------*/
 
 // Patches and constants
+#include <ctl/math_block/parameter_gt/parameter_math.h>
 #include <ctl/math_block/const/math_ctrl_const.h>
 #include <ctl/math_block/const/math_param_const.h>
 #include <ctl/math_block/ctrl_gt/ctrl_gt_patch.h>

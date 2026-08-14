@@ -29,5 +29,5 @@ void ctl_init_prot_pt_sensor(ctl_prot_pt_sensor_t* node, uint32_t status_bit, pa
     node->trip_limit_count = trip_limit;
     node->current_count = 0;
     node->status_bit = status_bit;
-    node->fault_record_val = 0.0f;
+    node->fault_record_val = CTL_PARAM_CONST_ZERO;
 }

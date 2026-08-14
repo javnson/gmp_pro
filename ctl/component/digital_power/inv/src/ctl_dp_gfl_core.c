@@ -52,7 +52,7 @@ void ctl_auto_tuning_gfl_inv(gfl_inv_ctrl_init_t* init)
     else
     {
         // Calculate LC filter resonant frequency
-        T_res = CTL_PARAM_CONST_2PI * sqrtf(init->grid_filter_L * init->grid_filter_C);
+        T_res = CTL_PARAM_CONST_2PI * param_sqrt(init->grid_filter_L * init->grid_filter_C);
         LC_res_Hz = 1.0f / T_res;
 
         // select current loop BW
@@ -66,7 +66,7 @@ void ctl_auto_tuning_gfl_inv(gfl_inv_ctrl_init_t* init)
 
         // Calculate LC filter characteristic impedance, damping ratio is 0.5
         parameter_gt k_damping_filter = 0.2f;
-        init->active_damping_resister = k_damping_filter * sqrtf(init->grid_filter_L / init->grid_filter_C);
+        init->active_damping_resister = k_damping_filter * param_sqrt(init->grid_filter_L / init->grid_filter_C);
 
         // calculate active_damping_center_freq and active_damping_Q
         init->active_damping_center_freq = LC_res_Hz;

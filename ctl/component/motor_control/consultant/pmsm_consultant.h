@@ -98,7 +98,7 @@ GMP_STATIC_INLINE parameter_gt ctl_consultant_pmsm_calc_flux_mag(const ctl_consu
     parameter_gt psi_q = motor->Lq * iq;
 
     // Note: This is in physical float space, so standard sqrtf is used
-    return sqrtf(psi_d * psi_d + psi_q * psi_q);
+    return param_sqrt(psi_d * psi_d + psi_q * psi_q);
 }
 
 //================================================================================

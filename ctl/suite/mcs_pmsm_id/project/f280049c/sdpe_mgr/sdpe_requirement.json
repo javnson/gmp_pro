@@ -5,7 +5,7 @@
   "description": "Structured SDPE hardware, peripheral and control settings migrated from f280049c/xplt/ctrl_settings.h.",
   "suite": "mcs_pmsm_id",
   "version": "1.0.0",
-  "updated_at": "2026-08-08",
+  "updated_at": "2026-08-14",
   "output_header": "sdpe_mcs_pmsm_id_f280049c_settings.h",
   "hardware": [
     {
@@ -256,7 +256,7 @@
       "macro": "INV_IBUS",
       "enabled": true,
       "weak": false,
-      "value": "",
+      "value": "BOOSTXL_J3_AIN1",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_SOC",
       "options": [
         "BOOSTXL_J3_AIN1",
@@ -283,7 +283,7 @@
       "macro": "INV_IBUS_RESULT_BASE",
       "enabled": true,
       "weak": false,
-      "value": "",
+      "value": "BOOSTXL_J3_AIN1_RESULT_BASE",
       "options_preset": "launchxl_f280049c.BOOSTXL_ADC_RESULT_BASE",
       "options": [
         "BOOSTXL_J3_AIN1_RESULT_BASE",
@@ -682,6 +682,16 @@
       "description": "ADC reference voltage used by all sensor conversions."
     },
     {
+      "role": "Controller Frequency",
+      "macro": "CONTROLLER_FREQUENCY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "20e3"
+      },
+      "description": "Main motor-control ISR frequency in hertz."
+    },
+    {
       "role": "DC Bus Voltage Base",
       "macro": "CTRL_DCBUS_VOLTAGE",
       "enabled": true,
@@ -728,166 +738,6 @@
       "weak": false,
       "binding": {
         "export": "${sm060r20b30mnad.Rated Frequency}"
-      },
-      "description": ""
-    },
-    {
-      "role": "Encoder Full Scale",
-      "macro": "CTRL_POS_ENC_FS",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "number": "4096*4"
-      },
-      "description": "Encoder counts per mechanical revolution."
-    },
-    {
-      "role": "Encoder Bias",
-      "macro": "CTRL_POS_ENC_BIAS",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "float": "0.0207000002"
-      },
-      "description": "Mechanical encoder position bias in per unit."
-    },
-    {
-      "role": "DC Voltage Sensitivity",
-      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "(MY_BOARD_DCBUS_VOLTAGE_SENSE_GAIN)"
-      },
-      "description": "DC-bus voltage sensing gain in ADC volts per measured volt."
-    },
-    {
-      "role": "DC Voltage Bias",
-      "macro": "CTRL_DC_VOLTAGE_BIAS",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "(MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)"
-      },
-      "description": "DC-bus voltage sensor bias in volts."
-    },
-    {
-      "role": "DC Current Sensitivity",
-      "macro": "CTRL_DC_CURRENT_SENSITIVITY",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "(MY_BOARD_DCBUS_CURRENT_SENSE_GAIN)"
-      },
-      "description": "DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path."
-    },
-    {
-      "role": "DC Current Bias",
-      "macro": "CTRL_DC_CURRENT_BIAS",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "(MY_BOARD_DCBUS_CURRENT_SENSE_BIAS_V)"
-      },
-      "description": "DC-bus current sensor bias."
-    },
-    {
-      "role": "Phase Current Sensitivity",
-      "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "(MY_BOARD_PH_SHUNT_RESISTANCE_OHM * MY_BOARD_PH_CSA_GAIN_V_V)"
-      },
-      "description": "Phase-current sensor sensitivity in volts per ampere."
-    },
-    {
-      "role": "Phase Current Bias",
-      "macro": "CTRL_INVERTER_CURRENT_BIAS",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "(MY_BOARD_PH_CSA_BIAS_V)"
-      },
-      "description": "Phase-current sensor zero-current bias in volts."
-    },
-    {
-      "role": "Phase Voltage Sensitivity",
-      "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "(MY_BOARD_PH_VOLTAGE_SENSE_GAIN)"
-      },
-      "description": "Phase-voltage sensing gain in ADC volts per measured volt."
-    },
-    {
-      "role": "Phase Voltage Bias",
-      "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "(MY_BOARD_PH_VOLTAGE_SENSE_BIAS_V)"
-      },
-      "description": "Phase-voltage sensor bias in volts."
-    },
-    {
-      "role": "Mechanical Division",
-      "macro": "CTRL_MECH_DIV",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "number": "5"
-      },
-      "description": "Mechanical speed and position division factor."
-    },
-    {
-      "role": "Open Loop Frequency",
-      "macro": "MCS_OPEN_LOOP_FREQ_HZ",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "float": "20.0"
-      },
-      "description": "Electrical frequency command in hertz used by the BUILD_LEVEL 1 V/f path and the BUILD_LEVEL 2 synthetic-angle current-loop path."
-    },
-    {
-      "role": "Open Loop Frequency Slope",
-      "macro": "MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "float": "20.0"
-      },
-      "description": "Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator."
-    },
-    {
-      "role": "Max Shutdown Current",
-      "macro": "MCS_MAX_SHUTDOWN_CURRENT_A",
-      "enabled": true,
-      "weak": true,
-      "binding": {
-        "float": "10.0"
-      },
-      "description": "The current limit value at which the machine must be shut down."
-    },
-    {
-      "role": "Max Voltage For Circular Saturation",
-      "macro": "MCS_MAX_CIR_SATURATION_VOLTAGE_V",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "float": "10.0"
-      },
-      "description": "Circular saturation limit for voltage vector magnitude in V."
-    },
-    {
-      "role": "Motor Max Speed",
-      "macro": "MOTOR_PARAM_MAX_SPEED",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "export": "${sm060r20b30mnad.Max Speed}"
       },
       "description": ""
     },
@@ -1062,14 +912,44 @@
       "description": "Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract."
     },
     {
-      "role": "Controller Frequency",
-      "macro": "CONTROLLER_FREQUENCY",
+      "role": "Max Shutdown Current",
+      "macro": "MCS_MAX_SHUTDOWN_CURRENT_A",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "float": "10.0"
+      },
+      "description": "The current limit value at which the machine must be shut down."
+    },
+    {
+      "role": "Max Voltage For Circular Saturation",
+      "macro": "MCS_MAX_CIR_SATURATION_VOLTAGE_V",
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "20e3"
+        "float": "10.0"
       },
-      "description": "Main motor-control ISR frequency in hertz."
+      "description": "Circular saturation limit for voltage vector magnitude in V."
+    },
+    {
+      "role": "Motor Max Speed",
+      "macro": "MOTOR_PARAM_MAX_SPEED",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "${sm060r20b30mnad.Max Speed}"
+      },
+      "description": ""
+    },
+    {
+      "role": "ADC Calibration Timeout",
+      "macro": "TIMEOUT_ADC_CALIB_MS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "10000"
+      },
+      "description": "Migrated from f280049c/xplt/ctrl_settings.h."
     },
     {
       "role": "Startup Delay",
@@ -1082,14 +962,134 @@
       "description": "Controller startup delay in milliseconds."
     },
     {
-      "role": "ADC Calibration Timeout",
-      "macro": "TIMEOUT_ADC_CALIB_MS",
+      "role": "DC Voltage Sensitivity",
+      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
       "enabled": true,
       "weak": false,
       "binding": {
-        "number": "10000"
+        "literal": "(MY_BOARD_DCBUS_VOLTAGE_SENSE_GAIN)"
       },
-      "description": "Migrated from f280049c/xplt/ctrl_settings.h."
+      "description": "DC-bus voltage sensing gain in ADC volts per measured volt."
+    },
+    {
+      "role": "DC Voltage Bias",
+      "macro": "CTRL_DC_VOLTAGE_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "DC-bus voltage sensor bias in volts."
+    },
+    {
+      "role": "Phase Voltage Sensitivity",
+      "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(MY_BOARD_PH_VOLTAGE_SENSE_GAIN)"
+      },
+      "description": "Phase-voltage sensing gain in ADC volts per measured volt."
+    },
+    {
+      "role": "Phase Voltage Bias",
+      "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(MY_BOARD_PH_VOLTAGE_SENSE_BIAS_V)"
+      },
+      "description": "Phase-voltage sensor bias in volts."
+    },
+    {
+      "role": "Encoder Full Scale",
+      "macro": "CTRL_POS_ENC_FS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "4096*4"
+      },
+      "description": "Encoder counts per mechanical revolution."
+    },
+    {
+      "role": "Encoder Bias",
+      "macro": "CTRL_POS_ENC_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "0.0207000002"
+      },
+      "description": "Mechanical encoder position bias in per unit."
+    },
+    {
+      "role": "Mechanical Division",
+      "macro": "CTRL_MECH_DIV",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "5"
+      },
+      "description": "Mechanical speed and position division factor."
+    },
+    {
+      "role": "DC Current Sensitivity",
+      "macro": "CTRL_DC_CURRENT_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(MY_BOARD_DCBUS_CURRENT_SENSE_GAIN)"
+      },
+      "description": "DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path."
+    },
+    {
+      "role": "DC Current Bias",
+      "macro": "CTRL_DC_CURRENT_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(MY_BOARD_DCBUS_CURRENT_SENSE_BIAS_V)"
+      },
+      "description": "DC-bus current sensor bias."
+    },
+    {
+      "role": "Phase Current Sensitivity",
+      "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(MY_BOARD_PH_SHUNT_RESISTANCE_OHM * MY_BOARD_PH_CSA_GAIN_V_V)"
+      },
+      "description": "Phase-current sensor sensitivity in volts per ampere."
+    },
+    {
+      "role": "Phase Current Bias",
+      "macro": "CTRL_INVERTER_CURRENT_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(MY_BOARD_PH_CSA_BIAS_V)"
+      },
+      "description": "Phase-current sensor zero-current bias in volts."
+    },
+    {
+      "role": "Open Loop Frequency",
+      "macro": "MCS_OPEN_LOOP_FREQ_HZ",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "20.0"
+      },
+      "description": "Electrical frequency command in hertz used by the BUILD_LEVEL 1 V/f path and the BUILD_LEVEL 2 synthetic-angle current-loop path."
+    },
+    {
+      "role": "Open Loop Frequency Slope",
+      "macro": "MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "float": "20.0"
+      },
+      "description": "Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator."
     }
   ],
   "requirement_groups": [

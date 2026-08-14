@@ -93,6 +93,42 @@ CTL 公共算法头统一包含：
 
 资源受限或不使用 GMP/CSP 的场景可定义 `GMP_CTL_PORTABLE`，由 `ctl/portable/gmp_ctl_portable.h` 提供最小类型与时间契约。
 
+### 4.1 数值域与转换边界
+
+`parameter_gt` 至少为 `float`，也可为 `double`，只用于配置、调参、离线辨识和低频计算。其四则运算直接使用 C 运算符，非线性函数必须通过 `param_sin/param_cos/param_sqrt/param_exp/param_ln/param_pow/param_atan2` 等 `param_xxx` 入口，可复用组件不得直接调用 `sinf/sqrtf` 或 `sin/sqrt`。
+
+`ctrl_gt` 专用于高频控制路径，必须使用 `ctl_xxx` 后端操作。参数应在初始化或低频更新时转换并缓存，不得在每次 ISR 中重复转换。跨域转换只有四个标准入口：
+
+| 入口 | 用途 |
+| --- | --- |
+| `real2param(x)` | C 字面量/原生算术表达式进入参数域 |
+| `real2ctrl(x)` | C 字面量/原生算术表达式进入控制域 |
+| `param2ctrl(x)` | 参数域进入控制域，原则上在 init/set 路径使用 |
+| `ctrl2param(x)` | 控制值进入慢速诊断、记录或调参路径 |
+
+通用数学常数统一由 `ctl/math_block/const` 管理，并同时提供 `CTL_CTRL_CONST_*` 和 `CTL_PARAM_CONST_*` 两组类型化定义。物理参数和控制器整定值仍属于组件配置，不应伪装成全局数学常数。
+
+默认零比较阈值统一使用 `CTL_CTRL_CONST_EPSILON` 与 `CTL_PARAM_CONST_EPSILON`。TI IQmath 控制域采用一个 LSB，float 域采用 `1e-6`，double 域采用 `1e-12`。只有具有明确物理量纲或算法稳定性依据的阈值可以例外，并且必须在局部命名或说明依据。
+
+需要浮点实时域的算法必须提供编译期能力宏。FDRC 使用 `CTL_FDRC_SUPPORTED`；当 `ctrl_gt` 不是浮点类型时，enable API 保持关闭，step API 返回零，应用不能用运行时开关绕过该约束。
+
+### 4.2 角度单位契约
+
+| 函数 | 数值域 | 角度单位 |
+| --- | --- | --- |
+| `ctl_sin/ctl_cos/ctl_tan` | `ctrl_gt` | PU 角，1 PU = 2π rad |
+| `ctl_sin_rad/ctl_cos_rad` | `ctrl_gt` | 弧度 |
+| `param_sin/param_cos/param_tan` | `parameter_gt` | 弧度 |
+| `param_sin_pu/param_cos_pu` | `parameter_gt` | PU 角 |
+| `ctl_atan2` | `ctrl_gt` | 输出弧度 |
+| `ctl_atan2_pu` | `ctrl_gt` | 输出 PU 角 |
+
+函数名必须明确表达角度域。`ctl_*_rad` 在控制数值后端内完成单位变换，IQmath 路径不得因为弧度输入而退回浮点 libm。
+
+### 4.3 C++ 轻量线性代数
+
+`ctl/math_block/gmp_math.hpp` 在 C 数学契约之上提供 `ctl::math::vector_lite<T, N>` 和 `ctl::math::matrix_lite<T, Rows, Cols>`。它们只使用内联定长存储，不使用堆、异常或 STL 容器；任何提供所需算术运算的类型都可作为元素类型。
+
 ## 5. Facility 依赖规则
 
 权威注册表为 `tools/facilities_generator/src_mgr/gmp_framework_dic.json`。
@@ -202,3 +238,5 @@ DataLink Scope 的线格式触发电平固定为 F32，但目标侧字段不得�
 - 工程引用是否与源码管理器的实际输出一致？
 - README、Facility `help_docs` 和本文是否随结构变更同步更新？
 - 验证记录是否区分主机编译、原理仿真和硬件验证？
+- 权威源码是否只使用英文 ASCII 注释，且不存在中文、Unicode 标点或乱码注释？
+- 文件是否具有 `@file`/`@brief` Doxygen 文件头，公共接口是否完整记录参数方向、返回值、单位、数值域和实时性？

@@ -1,8 +1,12 @@
 #ifndef __SUPPORTH__
 #define __SUPPORTH__
 
-#include "math.h"
-#include <gmp_core.h>
+#include <math.h>
+#include <stdint.h>
+
+#ifndef __STATIC_INLINE
+#define __STATIC_INLINE static inline
+#endif
 
 /* Common value defines. */
 #define q15_ln2          0x58b9

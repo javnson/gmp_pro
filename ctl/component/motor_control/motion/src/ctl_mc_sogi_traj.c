@@ -14,8 +14,8 @@
 void ctl_init_sogi_planner(ctl_sogi_planner_t* planner, const ctl_sogi_planner_init_t* init)
 {
     // 1. Safe Guards
-    parameter_gt fs_safe = (init->fs_motion > 1e-6f) ? init->fs_motion : 1000.0f;
-    parameter_gt omega_base = (init->omega_base > 1e-6f) ? init->omega_base : 1.0f;
+    parameter_gt fs_safe = (init->fs_motion > CTL_PARAM_CONST_EPSILON) ? init->fs_motion : 1000.0f;
+    parameter_gt omega_base = (init->omega_base > CTL_PARAM_CONST_EPSILON) ? init->omega_base : 1.0f;
 
     // 2. Physics-Based Bandwidth Calculation
     // For a critically damped 2nd-order system, max slope (Accel) is reached at t=1/w0.

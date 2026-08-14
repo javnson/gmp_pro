@@ -327,6 +327,12 @@
 // #define SPECIFY_CTRL_GT_TYPE USING_FIXED_TI_IQ_LIBRARY
 #endif // SPECIFY_CTRL_GT_TYPE
 
+// Select the high-precision type used by initialization and parameter tools.
+// parameter_gt is not intended for high-frequency control-step arithmetic.
+#ifndef SPECIFY_PARAMETER_GT_TYPE
+#define SPECIFY_PARAMETER_GT_TYPE USING_FLOAT_FPU
+#endif // SPECIFY_PARAMETER_GT_TYPE
+
 // The default macro to define a string.
 #ifndef TEXT_STRING
 #define TEXT_STRING(A) (A)

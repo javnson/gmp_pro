@@ -63,6 +63,7 @@ GMP_STATIC_INLINE _iq abs_static_inline(_iq A)
 #define ctrl2float(x) (_IQtoF(x))  /**< @brief Converts an `_iq` value to a float. Maps to `_IQtoF()`. */
 #define int2ctrl(x)   (_IQ(x))     /**< @brief Converts an integer to `_iq`. Maps to `_IQ()`. */
 #define ctrl2int(x)   (_IQint(x))  /**< @brief Converts an `_iq` value to its integer part. Maps to `_IQint()`. */
+#define ctrl_fraction_to_index(x, count) ((uint32_t)_IQmpyI32int((x), (int32_t)(count)))
 #define ctrl_mod_1(x) (_IQfrac(x)) /**< @brief Computes the fractional part of an `_iq` value. Maps to `_IQfrac()`. */
 
 /** @} */ // end of MC_TYPE_CONVERSION_IQ group
@@ -111,10 +112,10 @@ GMP_STATIC_INLINE _iq abs_static_inline(_iq A)
 #define ctl_sin(A)        (_IQsinPU(A)) /**< @brief Computes sine from a per-unit angle. Maps to `_IQsinPU()`. */
 #define ctl_cos(A)        (_IQcosPU(A)) /**< @brief Computes cosine from a per-unit angle. Maps to `_IQcosPU()`. */
 #define ctl_tan(A)        (_IQdiv(_IQsinPU(A), _IQcosPU(A))) /**< @brief Computes tangent from a per-unit angle. */
-#define ctl_atan2(Y, X)   (_IQatan2PU((Y), (X))) /**< @brief Computes the per-unit arc-tangent. Maps to `_IQatan2PU()`. */
+#define ctl_atan2(Y, X)   (_IQatan2((Y), (X))) /**< @brief Computes the arc-tangent in radians. */
 #define ctl_exp(A)        (_IQexp(A))            /**< @brief Computes the base-e exponential. Maps to `_IQexp()`. */
 #define ctl_ln(A)         (_IQlog(A))            /**< @brief Computes the natural logarithm. Maps to `_IQlog()`. */
-#define ctl_pow(B, Index) (_IQexp(ctl_mul(_IQlog(Index), B))) /**< @brief Compute the B^Index power of B */
+#define ctl_pow(B, Index) (_IQexp(ctl_mul(_IQlog(B), (Index)))) /**< @brief Compute B raised to Index. */
 #define ctl_sqrt(A)       (_IQsqrt(A))  /**< @brief Computes the square root. Maps to `_IQsqrt()`. */
 #define ctl_isqrt(A)      (_IQisqrt(A)) /**< @brief Computes the inverse square root. Maps to `_IQisqrt()`. */
 
@@ -125,10 +126,6 @@ GMP_STATIC_INLINE _iq abs_static_inline(_iq A)
  * This can be used for conditional compilation in other parts of the library.
  */
 #define CTRL_GT_IS_FIXED
-
-#ifndef CTL_EPSILON
-#define CTL_EPSILON (float2ctrl(1e-6f)) /**< @brief Threshold for zero-division avoidance. */
-#endif
 
 /** @} */ // end of MC_IQMATH_MACROS group
 

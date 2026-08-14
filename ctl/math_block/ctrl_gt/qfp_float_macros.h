@@ -64,6 +64,7 @@ GMP_STATIC_INLINE float abs_static_inline(float A)
 #define int2ctrl(x)   (qfp_int2float(x)) /**< @brief Converts an integer to `ctrl_gt`. Maps to `qfp_int2float()`. */
 #define ctrl2int(x)                                                                                                    \
     (qfp_float2int(x)) /**< @brief Converts a `ctrl_gt` value to an integer. Maps to `qfp_float2int()`. */
+#define ctrl_fraction_to_index(x, count) (qfp_float2uint((x) * qfp_uint2float((uint32_t)(count))))
 
 /**
  * @brief Computes the fractional part of a `ctrl_gt` value (x mod 1).
@@ -122,7 +123,7 @@ GMP_STATIC_INLINE float abs_static_inline(float A)
 #define ctl_atan2(Y, X)   (qfp_fatan2(Y, X)) /**< @brief Computes the arc-tangent. Maps to `qfp_fatan2()`. */
 #define ctl_exp(A)        (qfp_fexp(A))      /**< @brief Computes the base-e exponential. Maps to `qfp_fexp()`. */
 #define ctl_ln(A)         (qfp_fln(A))       /**< @brief Computes the natural logarithm. Maps to `qfp_fln()`. */
-#define ctl_pow(B, Index) (qfp_fexp(ctl_mul(qfp_fln(Index), B))) /**< @brief Compute the B^Index power of B */
+#define ctl_pow(B, Index) (qfp_fexp(ctl_mul(qfp_fln(B), (Index)))) /**< @brief Compute B raised to Index. */
 #define ctl_sqrt(A)       (qfp_fsqrt(A))                 /**< @brief Computes the square root. Maps to `qfp_fsqrt()`. */
 #define ctl_isqrt(A)      (qfp_fdiv(1.0f, qfp_fsqrt(A))) /**< @brief Computes the inverse square root. */
 
@@ -135,10 +136,6 @@ GMP_STATIC_INLINE float abs_static_inline(float A)
  * This can be used for conditional compilation in other parts of the library.
  */
 #define CTRL_GT_IS_QFP_FLOAT
-
-#ifndef CTL_EPSILON
-#define CTL_EPSILON (float2ctrl(1e-6f)) /**< @brief Threshold for zero-division avoidance. */
-#endif
 
 /**  
  * @} 

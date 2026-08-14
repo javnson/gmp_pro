@@ -60,9 +60,9 @@ void ctl_calc_qr_ctrl_coef(ctl_qr_coef_t* coef, parameter_gt kr, parameter_gt wc
     parameter_gt wr_sq = wr * wr;
     parameter_gt D0 = k_sq + (2.0f * wc * k_tustin) + wr_sq;
 
-    if (D0 < 1e-9f)
+    if (D0 < CTL_PARAM_CONST_EPSILON)
     {
-        D0 = 1e-9f; /* Guard rails against math exceptions */
+        D0 = CTL_PARAM_CONST_EPSILON; /* Guard against division by zero. */
     }
     parameter_gt inv_D0 = 1.0f / D0;
 
@@ -100,12 +100,12 @@ void ctl_init_qr_controller_prewarped(qr_ctrl_t* qr, parameter_gt kr, parameter_
     parameter_gt wc = CTL_PARAM_CONST_2PI * freq_cut;
 
     parameter_gt half_angle = CTL_PARAM_CONST_PI * freq_resonant / fs;
-    if (half_angle < 1e-6f)
-        half_angle = 1e-6f;
-    if (half_angle > (CTL_PARAM_CONST_PI * 0.5f - 1e-6f))
-        half_angle = (CTL_PARAM_CONST_PI * 0.5f - 1e-6f);
+    if (half_angle < CTL_PARAM_CONST_EPSILON)
+        half_angle = CTL_PARAM_CONST_EPSILON;
+    if (half_angle > (CTL_PARAM_CONST_PI * CTL_PARAM_CONST_1_OVER_2 - CTL_PARAM_CONST_EPSILON))
+        half_angle = CTL_PARAM_CONST_PI * CTL_PARAM_CONST_1_OVER_2 - CTL_PARAM_CONST_EPSILON;
 
-    parameter_gt k_pre = wr / tanf(half_angle);
+    parameter_gt k_pre = wr / param_tan(half_angle);
 
     ctl_calc_qr_ctrl_coef(&qr->coef, kr, wc, wr, k_pre);
     ctl_clear_qr_controller(qr);

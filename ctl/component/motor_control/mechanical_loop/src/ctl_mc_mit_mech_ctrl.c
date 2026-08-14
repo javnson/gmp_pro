@@ -33,10 +33,10 @@
 void ctl_autotuning_mit_pos_ctrl(ctl_mit_pos_init_t* init)
 {
     // Protect against division by zero
-    parameter_gt kt = (init->torque_const > 1e-6f) ? init->torque_const : 1.0f;
-    parameter_gt i_base = (init->i_base > 1e-6f) ? init->i_base : 1.0f;
-    parameter_gt w_base = (init->omega_base > 1e-6f) ? init->omega_base : 1.0f;
-    parameter_gt damping = (init->damping_ratio > 1e-6f) ? init->damping_ratio : 1.0f;
+    parameter_gt kt = (init->torque_const > CTL_PARAM_CONST_EPSILON) ? init->torque_const : 1.0f;
+    parameter_gt i_base = (init->i_base > CTL_PARAM_CONST_EPSILON) ? init->i_base : 1.0f;
+    parameter_gt w_base = (init->omega_base > CTL_PARAM_CONST_EPSILON) ? init->omega_base : 1.0f;
+    parameter_gt damping = (init->damping_ratio > CTL_PARAM_CONST_EPSILON) ? init->damping_ratio : 1.0f;
 
     // 1. Calculate physical target dynamics
     parameter_gt wn = CTL_PARAM_CONST_2PI * init->target_bw;

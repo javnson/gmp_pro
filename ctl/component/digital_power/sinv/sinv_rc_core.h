@@ -108,7 +108,7 @@ typedef struct _tag_sinv_rc_core_t
     // --- Safety & Thresholds ---
     ctrl_gt v_out_max;   //!< Max output voltage limit (anti-windup limit).
     ctrl_gt fdrc_err_th; //!< Threshold for filtering absolute error to freeze FDRC learning.
-    parameter_gt fundamental_freq; //!< Measured/commanded fundamental frequency for FDRC (Hz).
+    parameter_gt fundamental_freq; //!< Last frequency applied through the slow FDRC update path (Hz).
 
     // --- State Flags ---
     fast_gt flag_enable_ctrl;      //!< Master enable flag for the inner loop.
@@ -171,6 +171,25 @@ GMP_STATIC_INLINE void ctl_clear_sinv_rc_core(ctl_sinv_rc_core_t* core)
     core->v_out_ref = float2ctrl(0.0f);
 }
 
+/**
+ * @brief Enables FDRC only when the selected ctrl_gt backend supports it.
+ * @param[in,out] core Pointer to the single-phase inverter RC core.
+ */
+GMP_STATIC_INLINE void ctl_enable_sinv_rc_fdrc(ctl_sinv_rc_core_t* core)
+{
+    core->flag_enable_fdrc = (fast_gt)CTL_FDRC_SUPPORTED;
+}
+
+/**
+ * @brief Disables FDRC output and learning.
+ * @param[in,out] core Pointer to the single-phase inverter RC core.
+ */
+GMP_STATIC_INLINE void ctl_disable_sinv_rc_fdrc(ctl_sinv_rc_core_t* core)
+{
+    core->flag_enable_fdrc = 0;
+    ctl_disable_fdrc_integrating(&core->fdrc_ctrl);
+}
+
 /*---------------------------------------------------------------------------*/
 /* Core Execution Step Function                                              */
 /*---------------------------------------------------------------------------*/
@@ -214,6 +233,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_rc_core(ctl_sinv_rc_core_t* core, ctrl_g
 
     // 4. Harmonic Rejection (Smart FDRC)
     core->u_fdrc = float2ctrl(0.0f);
+#if CTL_FDRC_SUPPORTED
     if (core->flag_enable_fdrc)
     {
         // Smart Freeze Logic: Call underlying FDRC API to pause learning if transient is large
@@ -226,10 +246,11 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_rc_core(ctl_sinv_rc_core_t* core, ctrl_g
             ctl_enable_fdrc_integrating(&core->fdrc_ctrl); // Resume memory update
         }
 
-        // Execute FDRC step, using normal freq
-        parameter_gt fdrc_freq = (core->fundamental_freq > 1.0f) ? core->fundamental_freq : 50.0f;
-        core->u_fdrc = ctl_step_fdrc(&core->fdrc_ctrl, core->current_error, fdrc_freq);
+        core->u_fdrc = ctl_step_fdrc(&core->fdrc_ctrl, core->current_error);
     }
+#else
+    core->flag_enable_fdrc = 0;
+#endif
 
     // 5. Grid Voltage Feedforward
     if (core->flag_enable_lead_comp)
@@ -252,6 +273,13 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_rc_core(ctl_sinv_rc_core_t* core, ctrl_g
     core->v_out_ref = ctl_sat(v_out_comp, core->v_out_max, -core->v_out_max);
 
     return core->v_out_ref;
+}
+
+/** Update the FDRC frequency cache outside the high-frequency control path. */
+GMP_STATIC_INLINE void ctl_set_sinv_rc_fundamental_frequency(ctl_sinv_rc_core_t* core, parameter_gt frequency_hz)
+{
+    core->fundamental_freq = frequency_hz;
+    ctl_set_fdrc_frequency(&core->fdrc_ctrl, frequency_hz);
 }
 
 #ifdef __cplusplus
