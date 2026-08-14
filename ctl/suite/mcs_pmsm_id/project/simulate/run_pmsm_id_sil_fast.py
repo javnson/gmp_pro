@@ -17,12 +17,126 @@ import socket
 import struct
 import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
 
 TX = struct.Struct("<d8I8I16d")
 RX = struct.Struct("<d24I16d8i")
+FRAME_HEADER = struct.Struct(">IHHIQI")
+SESSION_PAYLOAD = struct.Struct(">HHII16s")
+STATE_PAYLOAD = struct.Struct(">HHIQ")
+
+FRAME_MAGIC = 0x474D5054
+PROTOCOL_VERSION = 1
+DATA_REQUEST = 1
+DATA_RESPONSE = 2
+SIMULATION_STATE = 8
+SESSION_HELLO = 10
+SESSION_HELLO_RESPONSE = 11
+SIMULATION_RUNNING = 2
+SIMULATION_COMPLETED = 3
+SIMULATION_ABORTED = 4
+
+
+class SilUdpClient:
+    """Minimal unified GMP SIL UDP client used by the fast plant."""
+
+    def __init__(self, config_path: Path) -> None:
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        if config.get("transport") != "udp" or config.get("role") != "server":
+            raise ValueError("the fast runner requires a UDP controller/server configuration")
+        if config.get("protocol_version") != PROTOCOL_VERSION:
+            raise ValueError("unsupported GMP SIL protocol version")
+        self.connection_id = bytes.fromhex(config["connection_id"])
+        if len(self.connection_id) != 16:
+            raise ValueError("connection_id must contain 16 bytes")
+        self.request_size = int(config["simulink_to_controller_bytes"])
+        self.response_size = int(config["controller_to_simulink_bytes"])
+        if self.request_size != RX.size or self.response_size != TX.size:
+            raise ValueError(
+                f"network ABI is {self.request_size}/{self.response_size} bytes; "
+                f"the runner requires {RX.size}/{TX.size}"
+            )
+        self.controller = (config["target_address"], int(config["receive_port"]))
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if sys.platform == "win32" and hasattr(socket, "SIO_UDP_CONNRESET"):
+            self.sock.ioctl(socket.SIO_UDP_CONNRESET, False)
+        self.sock.bind(("127.0.0.1", int(config["transmit_port"])))
+        self.sock.settimeout(0.25)
+        self.next_sequence = 1
+        self.state_sequence = 0x8000000000000000
+        self.connected = False
+
+    @staticmethod
+    def _frame(kind: int, sequence: int, payload: bytes, flags: int = 0) -> bytes:
+        return FRAME_HEADER.pack(
+            FRAME_MAGIC, PROTOCOL_VERSION, kind, flags, sequence, len(payload)
+        ) + payload
+
+    def _receive(self) -> tuple[int, int, int, bytes]:
+        datagram, sender = self.sock.recvfrom(24 + 65536)
+        if sender != self.controller:
+            raise RuntimeError(f"received a SIL frame from unexpected peer {sender}")
+        if len(datagram) < FRAME_HEADER.size:
+            raise RuntimeError("received a SIL datagram shorter than its header")
+        magic, version, kind, flags, sequence, payload_size = FRAME_HEADER.unpack_from(datagram)
+        payload = datagram[FRAME_HEADER.size:]
+        if magic != FRAME_MAGIC or version != PROTOCOL_VERSION:
+            raise RuntimeError("received an invalid GMP SIL frame header")
+        if payload_size != len(payload):
+            raise RuntimeError("received a GMP SIL frame with an invalid payload length")
+        return kind, sequence, flags, payload
+
+    def connect(self, timeout_s: float = 10.0) -> None:
+        payload = SESSION_PAYLOAD.pack(
+            PROTOCOL_VERSION, 0, self.request_size, self.response_size, self.connection_id
+        )
+        sequence = self.next_sequence
+        self.next_sequence += 1
+        hello = self._frame(SESSION_HELLO, sequence, payload)
+        deadline = time.monotonic() + timeout_s
+        while time.monotonic() < deadline:
+            self.sock.sendto(hello, self.controller)
+            try:
+                kind, response_sequence, _, response = self._receive()
+            except (TimeoutError, socket.timeout, ConnectionResetError, OSError):
+                continue
+            if kind != SESSION_HELLO_RESPONSE or response_sequence != sequence:
+                continue
+            if response != payload:
+                raise RuntimeError("controller rejected the SIL session or ABI descriptor")
+            self.connected = True
+            self.sock.settimeout(10.0)
+            return
+        raise TimeoutError("timed out establishing the unified GMP SIL session")
+
+    def notify_state(self, state: int, major_step: int) -> None:
+        payload = STATE_PAYLOAD.pack(PROTOCOL_VERSION, state, 0, major_step)
+        frame = self._frame(SIMULATION_STATE, self.state_sequence, payload)
+        self.state_sequence += 1
+        copies = 3 if state in (SIMULATION_COMPLETED, SIMULATION_ABORTED) else 1
+        for _ in range(copies):
+            self.sock.sendto(frame, self.controller)
+
+    def exchange(self, payload: bytes) -> bytes:
+        if not self.connected or len(payload) != self.request_size:
+            raise RuntimeError("invalid GMP SIL request state or payload size")
+        sequence = self.next_sequence
+        self.next_sequence += 1
+        self.sock.sendto(self._frame(DATA_REQUEST, sequence, payload), self.controller)
+        kind, response_sequence, _, response = self._receive()
+        if kind != DATA_RESPONSE or response_sequence != sequence:
+            raise RuntimeError("controller returned an unexpected GMP SIL response")
+        if len(response) != self.response_size:
+            raise RuntimeError("controller returned an invalid GMP SIL response size")
+        return response
+
+    def close(self) -> None:
+        self.connected = False
+        self.sock.close()
 
 
 @dataclass
@@ -262,25 +376,21 @@ def run(options: argparse.Namespace) -> int:
     last_progress: tuple[int, int, int, int] | None = None
     completed_at: float | None = None
     process: subprocess.Popen[bytes] | None = None
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(("127.0.0.1", 12500))
-    sock.settimeout(10.0)
+    client = SilUdpClient(work_dir / "network.json")
+    major_step = 0
+    terminal_notified = False
     try:
         process = subprocess.Popen([str(exe)], cwd=work_dir)
-        packet, _ = sock.recvfrom(TX.size)
-        if len(packet) != TX.size:
-            raise RuntimeError(f"initial SIL packet is {len(packet)} bytes; expected {TX.size}")
+        client.connect()
+        client.notify_state(SIMULATION_RUNNING, major_step)
 
         steps = math.ceil(options.duration / options.step)
         currents = [0.0, 0.0, 0.0]
         legs = [0.0, 0.0, 0.0]
         for index in range(steps):
             time_s = index * options.step
-            sock.sendto(plant.make_rx(time_s, currents, legs), ("127.0.0.1", 12501))
-            packet, _ = sock.recvfrom(TX.size)
-            if len(packet) != TX.size:
-                raise RuntimeError(f"SIL packet is {len(packet)} bytes; expected {TX.size}")
+            packet = client.exchange(plant.make_rx(time_s, currents, legs))
+            major_step = index + 1
             values = TX.unpack(packet)
             enable = values[0]
             pwm_all = values[1:9]
@@ -308,8 +418,15 @@ def run(options: argparse.Namespace) -> int:
                 break
 
         final = monitor
+        client.notify_state(SIMULATION_COMPLETED, major_step)
+        terminal_notified = True
     finally:
-        sock.close()
+        if client.connected and not terminal_notified:
+            try:
+                client.notify_state(SIMULATION_ABORTED, major_step)
+            except OSError:
+                pass
+        client.close()
         if process is not None and process.poll() is None:
             process.terminate()
             try:
@@ -348,10 +465,36 @@ def run(options: argparse.Namespace) -> int:
     error_pct["deadtime_comp_V"] = 100.0 * (
         estimate["deadtime_comp_V"] - expected_deadtime_comp
     ) / expected_deadtime_comp
+    limits_pct = {
+        "Rs_ohm": 5.0,
+        "Ld_H": 5.0,
+        "Lq_H": 5.0,
+        "flux_Wb": 5.0,
+        "deadtime_comp_V": 5.0,
+        "inertia_kg_m2": 10.0,
+        "viscous_friction_Nm_s": 10.0,
+        "load_torque_Nm": 12.0,
+    }
+    parameter_checks = {
+        key: math.isfinite(error_pct[key]) and abs(error_pct[key]) <= limit
+        for key, limit in limits_pct.items()
+    }
+    offset_error_pu = (
+        estimate["encoder_offset_pu"] - plant.encoder_offset_pu + 0.5
+    ) % 1.0 - 0.5
+    encoder_checks = {
+        "pole_pairs": estimate["pole_pairs"] == plant.pole_pairs,
+        "offset": abs(offset_error_pu) <= (1.0 / plant.encoder_counts),
+    }
     expected_encoder_fault = {"random": 2, "stuck": 3, "nonuniform": 4}.get(options.encoder_fault)
-    passed = (round(final[0]) == 8) if expected_encoder_fault is None else (
-        round(final[0]) == 9 and round(final[7]) == expected_encoder_fault
-    )
+    if expected_encoder_fault is None:
+        passed = (
+            round(final[0]) == 8
+            and all(parameter_checks.values())
+            and all(encoder_checks.values())
+        )
+    else:
+        passed = round(final[0]) == 9 and round(final[7]) == expected_encoder_fault
     result = {
         "passed": passed,
         "completed": round(final[0]) == 8,
@@ -365,6 +508,10 @@ def run(options: argparse.Namespace) -> int:
         "expected_deadtime_comp_V": expected_deadtime_comp,
         "estimate": estimate,
         "relative_error_pct": error_pct,
+        "acceptance_limits_pct": limits_pct,
+        "parameter_checks": parameter_checks,
+        "encoder_offset_error_pu": offset_error_pu,
+        "encoder_checks": encoder_checks,
         "deadtime_s": plant.deadtime,
         "step_s": options.step,
         "trace_csv": str(options.csv.resolve()),

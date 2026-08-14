@@ -1,1 +1,19 @@
-{"command_recv_port":12502,"command_trans_port":12503,"receive_port":12500,"target_address":"127.0.0.1","transmit_port":12501}
+{
+  "schema_version": 1,
+  "protocol_version": 1,
+  "transport": "udp",
+  "role": "server",
+  "connection_id": "18c61e28ca3397de081f5f8b16132f7e",
+  "target_address": "127.0.0.1",
+  "bind_address": "0.0.0.0",
+  "transmit_port": 12501,
+  "receive_port": 12500,
+  "simulink_to_controller_bytes": 264,
+  "controller_to_simulink_bytes": 200,
+  "connect_timeout_ms": 5000,
+  "startup_io_timeout_ms": 5000,
+  "startup_timeout_enabled": false,
+  "established_io_timeout_ms": 2.0E+6,
+  "established_after_frames": 10,
+  "max_payload": 65536
+}
