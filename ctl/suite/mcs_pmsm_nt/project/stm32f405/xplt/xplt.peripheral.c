@@ -256,10 +256,10 @@ void flush_dl_rx_buffer(void)
 
     // Lock-free ring queue pushed into the protocol stack (very fast, O(1))
     if (len1 > 0)
-        gmp_dev_dl_push_str(&dl, (data_gt*)&rxBuf[start1], len1);
+        gmp_dev_dl_push_str(&dl, (byte_gt*)&rxBuf[start1], len1);
 
     if (len2 > 0)
-        gmp_dev_dl_push_str(&dl, (data_gt*)&rxBuf[start2], len2);
+        gmp_dev_dl_push_str(&dl, (byte_gt*)&rxBuf[start2], len2);
 }
 
 // DMA half-full callback

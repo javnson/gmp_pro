@@ -161,7 +161,7 @@ end
 function out = run_loaded_model(root, model, level, stop_time)
 exe = fullfile(root, 'x64', 'Debug', 'Digital_Power_simulink.exe');
 header = fileread(fullfile(root, 'sdpe_mgr', ...
-    'sdpe_pgs_inv_gfm_simulate_settings.h'));
+    'ctrl_settings.h'));
 token = regexp(header, '#define\s+BUILD_LEVEL\s+\((\d)\)', 'tokens', 'once');
 if isempty(token) || str2double(token{1}) ~= level
     error('GFM:BuildLevelMismatch', ...

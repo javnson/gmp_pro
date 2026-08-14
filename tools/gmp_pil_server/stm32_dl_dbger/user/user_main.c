@@ -65,7 +65,7 @@ static float signal_dc_offset = 0.0F;
 static float applied_frequency_hz = -1.0F;
 static float applied_signal_gain = -1.0F;
 static float applied_signal_dc_offset = -100.0F;
-static data_gt memory_window[128];
+static byte_gt memory_window[128];
 static ctrl_gt dsa_buffer[USER_DSA_DEPTH * USER_DSA_CHANNELS];
 static ctrl_gt dsa_history[USER_DSA_DEPTH * USER_DSA_CHANNELS];
 static volatile ctrl_gt oscillator_sine;
@@ -251,7 +251,7 @@ static void user_reply_info(void)
     gmp_dev_dl_tx_request_cmd(&datalink, datalink.rx_head.seq_id, USER_DL_CMD_INFO);
     gmp_dev_dl_tx_append_u8(&datalink, 2U);
     gmp_dev_dl_tx_append_u8(&datalink, GMP_PORT_DATA_SIZE_PER_BYTES);
-    gmp_dev_dl_tx_append_u8(&datalink, sizeof(data_gt));
+    gmp_dev_dl_tx_append_u8(&datalink, sizeof(byte_gt));
     gmp_dev_dl_tx_append_u8(&datalink, 8U);
     gmp_dev_dl_tx_append_u8(&datalink, USER_DL_TUNABLE_CMD);
     gmp_dev_dl_tx_append_u8(&datalink, USER_DL_MEMORY_CMD);
@@ -306,7 +306,7 @@ void init(void)
     size_gt task_index;
 
     for (index = 0; index < sizeof(memory_window); ++index)
-        memory_window[index] = (data_gt)index;
+        memory_window[index] = (byte_gt)index;
 
     gmp_scheduler_init(&scheduler);
     for (task_index = 0; task_index < sizeof(tasks) / sizeof(tasks[0]); ++task_index)

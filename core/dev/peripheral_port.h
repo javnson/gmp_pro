@@ -13,7 +13,7 @@ extern "C"
 // typedef struct _tag_ring_buffer_t
 //{
 //     // buffer
-//     data_gt *buffer;
+//     byte_gt *buffer;
 
 //    // the position to read
 //    size_gt read_pos;
@@ -31,21 +31,21 @@ extern "C"
 //////////////////////////////////////////////////////////////////////////
 // Virtual Port
 
-// void gmp_hal_make_half_duplex_if(half_duplex_ift *if, data_gt *data, size_gt length);
+// void gmp_hal_make_half_duplex_if(half_duplex_ift *if, byte_gt *data, size_gt length);
 
 //////////////////////////////////////////////////////////////////////////
 // Async Port
 
 // Write data to the ring buffer
 //GMP_STATIC_INLINE
-//void gmp_hal_buffer_write(ringbuf_t *ring, const data_gt *data, size_gt length)
+//void gmp_hal_buffer_write(ringbuf_t *ring, const byte_gt *data, size_gt length)
 //{
 //    ringbuf_put_array(ring, data, length);
 //}
 //
 //// Read data from the ring buffer
 //GMP_STATIC_INLINE
-//size_gt gmp_hal_buffer_read(ringbuf_t *ring, data_gt *data, size_gt length)
+//size_gt gmp_hal_buffer_read(ringbuf_t *ring, byte_gt *data, size_gt length)
 //{
 //    size_gt max_length = ringbuf_get_valid_size(ring);
 //    if (max_length == 0)
@@ -111,7 +111,7 @@ fast_gt gmp_hal_gpio_read(gpio_halt hgpio);
  * @param[in] timeout   Maximum timeout in milliseconds.
  * * @return  ec_gt       Error code.
  */
-ec_gt gmp_hal_spi_bus_write(spi_halt hspi, const data_gt* tx_buf, size_gt len, time_gt timeout);
+ec_gt gmp_hal_spi_bus_write(spi_halt hspi, const byte_gt* tx_buf, size_gt len, time_gt timeout);
 
 /**
  * @brief   Receive data from the physical SPI bus without CS management.
@@ -121,7 +121,7 @@ ec_gt gmp_hal_spi_bus_write(spi_halt hspi, const data_gt* tx_buf, size_gt len, t
  * @param[in]  timeout  Maximum timeout in milliseconds.
  * * @return  ec_gt       Error code.
  */
-ec_gt gmp_hal_spi_bus_read(spi_halt hspi, data_gt* rx_buf, size_gt len, time_gt timeout);
+ec_gt gmp_hal_spi_bus_read(spi_halt hspi, byte_gt* rx_buf, size_gt len, time_gt timeout);
 
 /**
  * @brief   Simultaneous Transmit and Receive (Full-Duplex) over the physical SPI bus.
@@ -132,7 +132,7 @@ ec_gt gmp_hal_spi_bus_read(spi_halt hspi, data_gt* rx_buf, size_gt len, time_gt 
  * @param[in]  timeout  Maximum timeout in milliseconds.
  * * @return  ec_gt       Error code.
  */
-ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const data_gt* tx_buf, data_gt* rx_buf, size_gt len, time_gt timeout);
+ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const byte_gt* tx_buf, byte_gt* rx_buf, size_gt len, time_gt timeout);
 
 /* ========================================================================= */
 /* ==================== LAYER 2: LOGICAL SPI DEVICE ======================== */
@@ -159,16 +159,16 @@ typedef gmp_spi_dev_t* spi_device_halt;
  * @brief   Write a 8/16/24/32-bit frame to the device.
  * @note    Automatically asserts and de-asserts the CS pin. Data is MSB-first.
  */
-GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_write_8b(spi_device_halt hdev, data_gt data, time_gt timeout)
+GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_write_8b(spi_device_halt hdev, byte_gt data, time_gt timeout)
 {
     if (hdev == NULL)
         return GMP_EC_GENERAL_ERROR;
 
     gmp_spi_dev_t* dev = (gmp_spi_dev_t*)hdev;
     ec_gt ret;
-    data_gt tx_buf[1];
+    byte_gt tx_buf[1];
 
-    tx_buf[0] = (data_gt)data;
+    tx_buf[0] = (byte_gt)data;
 
     /* 1. Assert CS (If configured for Software CS) */
     if (dev->cs_pin != NULL)
@@ -195,13 +195,13 @@ GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_write_16b(spi_device_halt hdev, uint16_t
 
     gmp_spi_dev_t* dev = (gmp_spi_dev_t*)hdev;
     ec_gt ret;
-    data_gt tx_buf[2];
+    byte_gt tx_buf[2];
 
     /* Serialize to MSB First: 
      * E.g., data = 0xABCD -> tx_buf[0] = 0xAB, tx_buf[1] = 0xCD 
      */
-    tx_buf[0] = (data_gt)((data >> 8) & 0xFF);
-    tx_buf[1] = (data_gt)(data & 0xFF);
+    tx_buf[0] = (byte_gt)((data >> 8) & 0xFF);
+    tx_buf[1] = (byte_gt)(data & 0xFF);
 
     if (dev->cs_pin != NULL)
     {
@@ -225,12 +225,12 @@ GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_write_24b(spi_device_halt hdev, uint32_t
 
     gmp_spi_dev_t* dev = (gmp_spi_dev_t*)hdev;
     ec_gt ret;
-    data_gt tx_buf[3];
+    byte_gt tx_buf[3];
 
     /* Serialize to MSB First, extracting only the lower 24 bits */
-    tx_buf[0] = (data_gt)((data >> 16) & 0xFF);
-    tx_buf[1] = (data_gt)((data >> 8) & 0xFF);
-    tx_buf[2] = (data_gt)(data & 0xFF);
+    tx_buf[0] = (byte_gt)((data >> 16) & 0xFF);
+    tx_buf[1] = (byte_gt)((data >> 8) & 0xFF);
+    tx_buf[2] = (byte_gt)(data & 0xFF);
 
     if (dev->cs_pin != NULL)
     {
@@ -254,13 +254,13 @@ GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_write_32b(spi_device_halt hdev, uint32_t
 
     gmp_spi_dev_t* dev = (gmp_spi_dev_t*)hdev;
     ec_gt ret;
-    data_gt tx_buf[4];
+    byte_gt tx_buf[4];
 
     /* Serialize to MSB First */
-    tx_buf[0] = (data_gt)((data >> 24) & 0xFF);
-    tx_buf[1] = (data_gt)((data >> 16) & 0xFF);
-    tx_buf[2] = (data_gt)((data >> 8) & 0xFF);
-    tx_buf[3] = (data_gt)(data & 0xFF);
+    tx_buf[0] = (byte_gt)((data >> 24) & 0xFF);
+    tx_buf[1] = (byte_gt)((data >> 16) & 0xFF);
+    tx_buf[2] = (byte_gt)((data >> 8) & 0xFF);
+    tx_buf[3] = (byte_gt)(data & 0xFF);
 
     if (dev->cs_pin != NULL)
     {
@@ -293,14 +293,14 @@ GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_write_32b(spi_device_halt hdev, uint32_t
  * @return  ec_gt       Error code (GMP_EC_OK on success).
  */
 GMP_STATIC_INLINE
-ec_gt gmp_hal_spi_dev_read_8b(spi_device_halt hdev, data_gt* data_ret, time_gt timeout)
+ec_gt gmp_hal_spi_dev_read_8b(spi_device_halt hdev, byte_gt* data_ret, time_gt timeout)
 {
     if ((hdev == NULL) || (data_ret == NULL))
         return GMP_EC_GENERAL_ERROR;
 
     gmp_spi_dev_t* dev = (gmp_spi_dev_t*)hdev;
     ec_gt ret;
-    data_gt rx_buf[1] = {0};
+    byte_gt rx_buf[1] = {0};
 
     /* 1. Assert CS (If configured for Software CS) */
     if (dev->cs_pin != NULL)
@@ -320,7 +320,7 @@ ec_gt gmp_hal_spi_dev_read_8b(spi_device_halt hdev, data_gt* data_ret, time_gt t
     /* 4. Assign data if successful */
     if (ret == GMP_EC_OK)
     {
-        *data_ret = (data_gt)(rx_buf[0] & 0xFFU);
+        *data_ret = (byte_gt)(rx_buf[0] & 0xFFU);
     }
 
     return ret;
@@ -337,7 +337,7 @@ GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_read_16b(spi_device_halt hdev, uint16_t*
 
     gmp_spi_dev_t* dev = (gmp_spi_dev_t*)hdev;
     ec_gt ret;
-    data_gt rx_buf[2] = {0};
+    byte_gt rx_buf[2] = {0};
 
     if (dev->cs_pin != NULL)
     {
@@ -373,7 +373,7 @@ GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_read_24b(spi_device_halt hdev, uint32_t*
 
     gmp_spi_dev_t* dev = (gmp_spi_dev_t*)hdev;
     ec_gt ret;
-    data_gt rx_buf[3] = {0};
+    byte_gt rx_buf[3] = {0};
 
     if (dev->cs_pin != NULL)
     {
@@ -406,7 +406,7 @@ GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_read_32b(spi_device_halt hdev, uint32_t*
 
     gmp_spi_dev_t* dev = (gmp_spi_dev_t*)hdev;
     ec_gt ret;
-    data_gt rx_buf[4] = {0};
+    byte_gt rx_buf[4] = {0};
 
     if (dev->cs_pin != NULL)
     {
@@ -448,7 +448,7 @@ GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_read_32b(spi_device_halt hdev, uint32_t*
  * @param[in]  timeout   Maximum timeout in milliseconds.
  * * @return  ec_gt        Error code (GMP_EC_OK on success).
  */
-GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_write_then_read(spi_device_halt hdev, const data_gt* cmd_buf, size_gt cmd_len, data_gt* rx_buf,
+GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_write_then_read(spi_device_halt hdev, const byte_gt* cmd_buf, size_gt cmd_len, byte_gt* rx_buf,
                                       size_gt rx_len, time_gt timeout)
 {
     if ((hdev == NULL) || (cmd_buf == NULL) || (rx_buf == NULL))
@@ -498,19 +498,19 @@ GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_write_reg(spi_device_halt hdev, addr32_g
 
     gmp_spi_dev_t* dev = (gmp_spi_dev_t*)hdev;
     ec_gt ret;
-    data_gt tx_buf[8] = {0}; /* Max 4 bytes address + 4 bytes data */
+    byte_gt tx_buf[8] = {0}; /* Max 4 bytes address + 4 bytes data */
     uint32_t i;
 
     /* 1. Serialize Address (MSB First) */
     for (i = 0; i < addr_len; i++)
     {
-        tx_buf[i] = (data_gt)((addr >> ((addr_len - 1 - i) * 8)) & 0xFF);
+        tx_buf[i] = (byte_gt)((addr >> ((addr_len - 1 - i) * 8)) & 0xFF);
     }
 
     /* 2. Serialize Data (MSB First) */
     for (i = 0; i < data_len; i++)
     {
-        tx_buf[addr_len + i] = (data_gt)((data >> ((data_len - 1 - i) * 8)) & 0xFF);
+        tx_buf[addr_len + i] = (byte_gt)((data >> ((data_len - 1 - i) * 8)) & 0xFF);
     }
 
     if (dev->cs_pin != NULL)
@@ -548,14 +548,14 @@ GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_read_reg(spi_device_halt hdev, addr32_gt
 
     gmp_spi_dev_t* dev = (gmp_spi_dev_t*)hdev;
     ec_gt ret;
-    data_gt tx_cmd_buf[4] = {0};
-    data_gt rx_data_buf[4] = {0};
+    byte_gt tx_cmd_buf[4] = {0};
+    byte_gt rx_data_buf[4] = {0};
     uint32_t i;
 
     /* Serialize Address (MSB First) */
     for (i = 0; i < addr_len; i++)
     {
-        tx_cmd_buf[i] = (data_gt)((addr >> ((addr_len - 1 - i) * 8)) & 0xFF);
+        tx_cmd_buf[i] = (byte_gt)((addr >> ((addr_len - 1 - i) * 8)) & 0xFF);
     }
 
     if (dev->cs_pin != NULL)
@@ -598,7 +598,7 @@ GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_read_reg(spi_device_halt hdev, addr32_gt
  * @param[in]  timeout   Maximum timeout in milliseconds.
  * * @return  ec_gt        Error code (GMP_EC_OK on success).
  */
-GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_transfer(spi_device_halt hdev, const data_gt* tx_buf, data_gt* rx_buf, size_gt len,
+GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_transfer(spi_device_halt hdev, const byte_gt* tx_buf, byte_gt* rx_buf, size_gt len,
                                time_gt timeout)
 {
     if ((hdev == NULL) || (tx_buf == NULL) || (rx_buf == NULL))
@@ -633,7 +633,7 @@ GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_transfer(spi_device_halt hdev, const dat
  * * @return ec_gt        GMP_EC_OK if all bytes are transmitted.
  * GMP_EC_TIMEOUT if the operation timed out before completion.
  */
-ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, uint32_t timeout);
+ec_gt gmp_hal_uart_write(uart_halt uart, const byte_gt* data, size_gt length, uint32_t timeout);
 
 /**
  * @brief  Receives a stream of characters from UART.
@@ -647,7 +647,7 @@ ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, ui
  * * @return ec_gt            GMP_EC_OK if exactly 'length' bytes were read.
  * GMP_EC_TIMEOUT if fewer bytes were read before timeout.
  */
-ec_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length, uint32_t timeout, size_gt* bytes_read);
+ec_gt gmp_hal_uart_read(uart_halt uart, byte_gt* data, size_gt length, uint32_t timeout, size_gt* bytes_read);
 
 size_gt gmp_base_print_default(const char* p_fmt, ...);
 
@@ -671,8 +671,8 @@ fast_gt gmp_hal_uart_is_tx_busy(uart_halt uart);
  */
 size_gt gmp_hal_uart_get_rx_available(uart_halt uart);
 
-// size_gt gmp_hal_uart_read_async(uart_halt uart, data_gt *data, size_gt length);
-//void gmp_hal_uart_write_async(uart_halt uart, const data_gt* data, size_gt length);
+// size_gt gmp_hal_uart_read_async(uart_halt uart, byte_gt *data, size_gt length);
+//void gmp_hal_uart_write_async(uart_halt uart, const byte_gt* data, size_gt length);
 
 // wait till transmit/receive complete.
 fast_gt gmp_hal_uart_is_busy(uart_halt uart);
@@ -712,11 +712,11 @@ ec_gt gmp_hal_iic_write_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, 
  * @param[in] mem_addr  Starting memory/register address.
  * @param[in] addr_len  Length of the memory address in bytes.
  * @param[in] mem       Pointer to the data buffer.
- * @param[in] mem_len   Number of data_gt elements to write.
+ * @param[in] mem_len   Number of byte_gt elements to write.
  * @param[in] timeout   Maximum timeout in milliseconds.
  * * @return  ec_gt       Error code.
  */
-ec_gt gmp_hal_iic_write_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, const data_gt* mem,
+ec_gt gmp_hal_iic_write_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, const byte_gt* mem,
                             size_gt mem_len, time_gt timeout);
 
 /**
@@ -740,11 +740,11 @@ ec_gt gmp_hal_iic_read_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, s
  * @param[in]  mem_addr  Starting memory/register address.
  * @param[in]  addr_len  Length of the memory address in bytes.
  * @param[out] mem       Pointer to the data buffer to store results.
- * @param[in]  mem_len   Number of data_gt elements to read.
+ * @param[in]  mem_len   Number of byte_gt elements to read.
  * @param[in]  timeout   Maximum timeout in milliseconds.
  * * @return  ec_gt        Error code.
  */
-ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, data_gt* mem,
+ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, byte_gt* mem,
                            size_gt mem_len, time_gt timeout);
 
 //////////////////////////////////////////////////////////////////////////
@@ -786,15 +786,15 @@ typedef struct
  * @param offset Byte offset (0 to 7).
  * @return       The 8-bit value at the specified offset.
  */
-GMP_STATIC_INLINE data_gt gmp_can_payload_get_u8(const gmp_can_msg_t* msg, fast_gt offset)
+GMP_STATIC_INLINE byte_gt gmp_can_payload_get_u8(const gmp_can_msg_t* msg, fast_gt offset)
 {
     if (offset < 4)
     {
-        return (data_gt)((msg->data_32[0] >> (offset * 8)) & 0xFFU);
+        return (byte_gt)((msg->data_32[0] >> (offset * 8)) & 0xFFU);
     }
     else if (offset < 8)
     {
-        return (data_gt)((msg->data_32[1] >> ((offset - 4) * 8)) & 0xFFU);
+        return (byte_gt)((msg->data_32[1] >> ((offset - 4) * 8)) & 0xFFU);
     }
     return 0;
 }
@@ -805,7 +805,7 @@ GMP_STATIC_INLINE data_gt gmp_can_payload_get_u8(const gmp_can_msg_t* msg, fast_
  * @param offset Byte offset (0 to 7).
  * @param val    The 8-bit value to inject.
  */
-GMP_STATIC_INLINE void gmp_can_payload_set_u8(gmp_can_msg_t* msg, fast_gt offset, data_gt val)
+GMP_STATIC_INLINE void gmp_can_payload_set_u8(gmp_can_msg_t* msg, fast_gt offset, byte_gt val)
 {
     if (offset < 4)
     {
@@ -865,8 +865,8 @@ GMP_STATIC_INLINE float gmp_can_payload_get_f32(const gmp_can_msg_t* msg, fast_g
  */
 GMP_STATIC_INLINE void gmp_can_payload_set_u16(gmp_can_msg_t* msg, fast_gt offset, uint16_t val)
 {
-    gmp_can_payload_set_u8(msg, offset, (data_gt)(val & 0xFFU));
-    gmp_can_payload_set_u8(msg, offset + 1, (data_gt)((val >> 8) & 0xFFU));
+    gmp_can_payload_set_u8(msg, offset, (byte_gt)(val & 0xFFU));
+    gmp_can_payload_set_u8(msg, offset + 1, (byte_gt)((val >> 8) & 0xFFU));
 }
 
 /**
@@ -874,10 +874,10 @@ GMP_STATIC_INLINE void gmp_can_payload_set_u16(gmp_can_msg_t* msg, fast_gt offse
  */
 GMP_STATIC_INLINE void gmp_can_payload_set_u32(gmp_can_msg_t* msg, fast_gt offset, uint32_t val)
 {
-    gmp_can_payload_set_u8(msg, offset, (data_gt)(val & 0xFFU));
-    gmp_can_payload_set_u8(msg, offset + 1, (data_gt)((val >> 8) & 0xFFU));
-    gmp_can_payload_set_u8(msg, offset + 2, (data_gt)((val >> 16) & 0xFFU));
-    gmp_can_payload_set_u8(msg, offset + 3, (data_gt)((val >> 24) & 0xFFU));
+    gmp_can_payload_set_u8(msg, offset, (byte_gt)(val & 0xFFU));
+    gmp_can_payload_set_u8(msg, offset + 1, (byte_gt)((val >> 8) & 0xFFU));
+    gmp_can_payload_set_u8(msg, offset + 2, (byte_gt)((val >> 16) & 0xFFU));
+    gmp_can_payload_set_u8(msg, offset + 3, (byte_gt)((val >> 24) & 0xFFU));
 }
 
 /**

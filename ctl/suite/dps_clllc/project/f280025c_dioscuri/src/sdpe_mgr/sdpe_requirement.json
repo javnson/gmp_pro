@@ -5,8 +5,8 @@
   "description": "F280025C clock, six-pair PWM routing, ADC, UART, scheduler timer and active-low SN74LVC8T245 gate-buffer bindings.",
   "suite": "dps_clllc",
   "version": "1.0.0",
-  "updated_at": "2026-08-08",
-  "output_header": "sdpe_dps_clllc_dioscuri_settings.h",
+  "updated_at": "2026-08-15",
+  "output_header": "ctrl_settings.h",
   "hardware": [
     {
       "entity": "dioscuri_f280025c"
@@ -295,7 +295,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "100000000.0"
+        "parameter": "100000000.0"
       },
       "description": "F280025C ePWM and CPU Timer clock."
     },
@@ -355,7 +355,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "F280025C ADC reference voltage."
     },

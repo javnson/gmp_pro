@@ -4,7 +4,7 @@
   "description": "Built-in SDPE manager demo project. It binds a concrete current sensor entity to a small project requirement header.",
   "suite": "sdpe_demo",
   "version": "0.1.0",
-  "output_header": "sdpe_demo_bindings.h",
+  "output_header": "ctrl_settings.h",
   "hardware": [
     {
       "entity": "tmcs1133_b2a"
@@ -55,7 +55,7 @@
       "role": "Adc Reference Voltage",
       "macro": "CTRL_DEMO_ADC_REF_V",
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "Manual constant example. This value is not owned by a hardware entity."
     }

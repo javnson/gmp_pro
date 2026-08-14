@@ -2,7 +2,7 @@
 #ifndef _RTSH_CMD_H_
 #define _RTSH_CMD_H_
 
-typedef data_gt rtsh_char_t ;
+typedef byte_gt rtsh_char_t ;
 
 typedef int (*command_target_t)(int ,char*[]);
 

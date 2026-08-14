@@ -25,7 +25,7 @@ of copying the complete architecture type table.
 Do not use `int8_t` or `uint8_t` as a portable state type: C28x has a 16-bit
 addressable C byte and cannot provide exact-width 8-bit integer types. Use:
 
-- `data_gt` for a value stored in the processor's smallest addressable unit;
+- `byte_gt` for a value stored in the processor's smallest addressable unit;
 - `fast_gt` for flags, small signed states, and fast arithmetic;
 - `time_gt` for system/control tick values and elapsed-tick counters;
 - `size_gt` for collection and buffer sizes.

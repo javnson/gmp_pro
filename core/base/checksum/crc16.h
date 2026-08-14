@@ -9,7 +9,7 @@
  * @param  len           Number of elements to calculate.
  * @return uint16_t      The calculated CRC16 value.
  */
-extern uint16_t gmp_base_calculate_crc16(const data_gt* data, size_gt len);
+extern uint16_t gmp_base_calculate_crc16(const byte_gt* data, size_gt len);
 
 #endif // _FILE_CRC16_H_
 

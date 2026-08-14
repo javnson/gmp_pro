@@ -5,7 +5,7 @@
   "description": "Hardware-independent Data Link and UDP transport defaults shared by modern GMP suite hardware projects.",
   "suite": "ctl_suite",
   "version": "1.0.0",
-  "updated_at": "2026-08-14",
+  "updated_at": "2026-08-15",
   "output_header": "sdpe_gmp_suite_pil_common_settings.h",
   "hardware": [],
   "code_sections": {
@@ -126,22 +126,33 @@
   ],
   "requirement_groups": [
     {
-      "name": "PIL Transport",
+      "name": "Peripheral Parameters",
       "requirements": [
-        "PIL Data Link Base Command",
         "Data Link UART Baud Rate",
         "PIL UDP Host",
         "PIL Bridge UDP Listen Port",
         "PIL MATLAB UDP Listen Port",
         "PIL MATLAB Command Transmit Port",
         "PIL MATLAB Command Receive Port",
-        "PIL Target Timeout Milliseconds",
-        "PIL MATLAB Timeout Milliseconds",
         "PIL UDP Digital Input Index"
+      ]
+    },
+    {
+      "name": "Per-Unit Base Parameters",
+      "requirements": [
+        "PIL Data Link Base Command"
+      ]
+    },
+    {
+      "name": "Runtime Parameters",
+      "requirements": [
+        "PIL Target Timeout Milliseconds",
+        "PIL MATLAB Timeout Milliseconds"
       ]
     }
   ],
   "feature_macro_groups": [
     "PIL Runtime"
-  ]
+  ],
+  "option_macro_groups": []
 }

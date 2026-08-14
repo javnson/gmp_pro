@@ -35,12 +35,12 @@ void OLED_WR_Byte(uint8_t dat, uint8_t cmd)
 void oled_set_position(uint8_t x, uint8_t y_page)
 {
     const time_gt timeout_ticks = TIMEOUT_SET;
-    static data_gt pos_cmds[4];
+    static byte_gt pos_cmds[4];
 
     pos_cmds[0] = 0x00;                           /* Control Byte: Following are commands */
-    pos_cmds[1] = (data_gt)(0xB0 + y_page);       /* Set Target Page Address */
-    pos_cmds[2] = (data_gt)((((x + 2) & 0xF0) >> 4) | 0x10); /* Higher column nibble with +2 offset */
-    pos_cmds[3] = (data_gt)((x + 2) & 0x0F);       /* Lower column nibble with +2 offset */
+    pos_cmds[1] = (byte_gt)(0xB0 + y_page);       /* Set Target Page Address */
+    pos_cmds[2] = (byte_gt)((((x + 2) & 0xF0) >> 4) | 0x10); /* Higher column nibble with +2 offset */
+    pos_cmds[3] = (byte_gt)((x + 2) & 0x0F);       /* Lower column nibble with +2 offset */
 
     /* Dispatch all 4 bytes consecutively to save bus time slices */
     gmp_hal_iic_write_mem(iic_bus, OLED_IIC_7BIT_ADDR, 0, 0, pos_cmds, 4, timeout_ticks);
@@ -53,7 +53,7 @@ void oled_set_position(uint8_t x, uint8_t y_page)
 void oled_display_on(void)
 {
     const time_gt timeout_ticks = TIMEOUT_SET;
-    static data_gt on_cmds[4];
+    static byte_gt on_cmds[4];
 
     on_cmds[0] = 0x00; /* Control Byte: Following are commands */
     on_cmds[1] = 0x8D; /* Charge Pump Command Specifier */
@@ -69,7 +69,7 @@ void oled_display_on(void)
 void oled_display_off(void)
 {
     const time_gt timeout_ticks = TIMEOUT_SET;
-    static data_gt off_cmds[4];
+    static byte_gt off_cmds[4];
 
     off_cmds[0] = 0x00; /* Control Byte: Following are commands */
     off_cmds[1] = 0x8D; /* Charge Pump Command Specifier */
@@ -88,13 +88,13 @@ void oled_clear(void)
     const time_gt timeout_ticks = TIMEOUT_SET;
 
     /* 1. Pack commands into a single packet to target Page and Column addresses */
-    static data_gt page_cmd[4];
+    static byte_gt page_cmd[4];
     page_cmd[0] = 0x00; /* Control Byte: Following are commands */
     page_cmd[2] = 0x02; /* Lower Column Start Address (Matching official 0x02) */
     page_cmd[3] = 0x10; /* Higher Column Start Address (Matching official 0x10) */
 
     /* 2. Allocate a page buffer on DSP containing 1 Control Byte + 128 Data Bytes (all zeros) */
-    static data_gt blank_page[129];
+    static byte_gt blank_page[129];
     blank_page[0] = 0x40; /* Control Byte: Following is graphic streaming data */
 
     uint16_t idx;
@@ -109,7 +109,7 @@ void oled_clear(void)
 
     for (i = 0; i < 8; i++)
     {
-        page_cmd[1] = (data_gt)(0xb0 + i); /* Update targeting Page index */
+        page_cmd[1] = (byte_gt)(0xb0 + i); /* Update targeting Page index */
 
         /* Send 4 bytes of positioning commands */
         gmp_hal_iic_write_mem(iic_bus, OLED_IIC_7BIT_ADDR, 0, 0, page_cmd, 4, timeout_ticks);
@@ -138,7 +138,7 @@ void oled_show_char(uint8_t x, uint8_t y_page, uint8_t chr)
      * Element [0] is reserved for the 0x40 Data Control Byte.
      * Max elements needed: 1 (Control) + 8 (Pixels) = 9.
      */
-    static data_gt tx_payload[9];
+    static byte_gt tx_payload[9];
     tx_payload[0] = 0x40; /* Control Byte: Following stream is graphic display RAM data */
 
     /* Auto wrap text boundaries just like your official code */
@@ -156,7 +156,7 @@ void oled_show_char(uint8_t x, uint8_t y_page, uint8_t chr)
         oled_set_position(x, y_page);
         for (i = 0; i < 8; i++)
         {
-            tx_payload[i + 1] = (data_gt)F8X16[font_index + i];
+            tx_payload[i + 1] = (byte_gt)F8X16[font_index + i];
         }
         /* Continuous push of 1 control byte + 8 data bytes via C2000 FIFO */
         gmp_hal_iic_write_mem(iic_bus, OLED_IIC_7BIT_ADDR, 0, 0, tx_payload, 9, timeout_ticks);
@@ -165,7 +165,7 @@ void oled_show_char(uint8_t x, uint8_t y_page, uint8_t chr)
         oled_set_position(x, y_page + 1);
         for (i = 0; i < 8; i++)
         {
-            tx_payload[i + 1] = (data_gt)F8X16[font_index + i + 8];
+            tx_payload[i + 1] = (byte_gt)F8X16[font_index + i + 8];
         }
         gmp_hal_iic_write_mem(iic_bus, OLED_IIC_7BIT_ADDR, 0, 0, tx_payload, 9, timeout_ticks);
     }
@@ -175,7 +175,7 @@ void oled_show_char(uint8_t x, uint8_t y_page, uint8_t chr)
         oled_set_position(x, y_page);
         for (i = 0; i < 6; i++)
         {
-            tx_payload[i + 1] = (data_gt)F6x8[c_offset][i];
+            tx_payload[i + 1] = (byte_gt)F6x8[c_offset][i];
         }
         /* Continuous push of 1 control byte + 6 data bytes */
         gmp_hal_iic_write_mem(iic_bus, OLED_IIC_7BIT_ADDR, 0, 0, tx_payload, 7, timeout_ticks);
@@ -226,7 +226,7 @@ void oled_show_bmp(unsigned char x0, unsigned char y0, unsigned char x1, unsigne
      * Element [0] is reserved for the 0x40 Data Control Byte.
      * Maximum payload size: 1 (Control) + 128 (Max columns) = 129 words.
      */
-    static data_gt page_payload[129];
+    static byte_gt page_payload[129];
     page_payload[0] = 0x40; /* Control Byte: Following stream is graphic display RAM data */
 
     /* Calculate horizontal segment width per burst */
@@ -242,7 +242,7 @@ void oled_show_bmp(unsigned char x0, unsigned char y0, unsigned char x1, unsigne
         /* 2. Assemble the current page row's pixel dataset into our linear buffer */
         for (x = 0; x < chunk_width; x++)
         {
-            page_payload[x + 1] = (data_gt)BMP[bmp_idx++];
+            page_payload[x + 1] = (byte_gt)BMP[bmp_idx++];
         }
 
         /*

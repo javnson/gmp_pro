@@ -178,7 +178,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\ctl_main.h" />
     <ClInclude Include="..\..\src\user_main.h" />
-    <ClInclude Include="xplt\ctrl_settings.h" />
+    <ClInclude Include="sdpe_mgr\ctrl_settings.h" />
     <ClInclude Include="xplt\pc_simulate_buffer.h" />
     <ClInclude Include="xplt\xplt.config.h" />
     <ClInclude Include="xplt\xplt.ctl_interface.h" />

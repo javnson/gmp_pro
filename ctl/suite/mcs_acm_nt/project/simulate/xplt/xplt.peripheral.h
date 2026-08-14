@@ -9,7 +9,7 @@ extern "C"
 #endif
 
 #include <gmp_core.h>
-#include <sdpe_mcs_acim_nt_simulate_settings.h>
+#include <ctrl_settings.h>
 #include <ctl/component/interface/adc_ptr_channel.h>
 #include <ctl/component/digital_power/basic/std_sil_dp_interface.h>
 

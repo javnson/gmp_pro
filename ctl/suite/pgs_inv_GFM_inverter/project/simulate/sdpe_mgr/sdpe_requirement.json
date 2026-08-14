@@ -5,8 +5,8 @@
   "description": "Host simulation timing and sensing settings for the replaceable grid-forming controller.",
   "suite": "pgs_inv_GFM_inverter",
   "version": "1.1.0",
-  "updated_at": "2026-08-08",
-  "output_header": "sdpe_pgs_inv_gfm_simulate_settings.h",
+  "updated_at": "2026-08-15",
+  "output_header": "ctrl_settings.h",
   "hardware": [
     {
       "entity": "gmp_helios_3phganinv_lv"
@@ -95,7 +95,7 @@
       "role": "Adc Voltage Reference",
       "macro": "CTRL_ADC_VOLTAGE_REF",
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "Virtual ADC reference."
     },
@@ -103,7 +103,7 @@
       "role": "Dc Bus Voltage Base",
       "macro": "CTRL_DCBUS_VOLTAGE",
       "binding": {
-        "float": "80.0"
+        "parameter": "80.0"
       },
       "description": "DC-bus voltage base."
     },
@@ -119,7 +119,7 @@
       "role": "Current Base",
       "macro": "CTRL_CURRENT_BASE",
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Phase-current base."
     },
@@ -175,7 +175,7 @@
       "role": "Inverter Current Sensitivity",
       "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
       "binding": {
-        "float": "0.05"
+        "parameter": "0.05"
       },
       "description": "Converter current sensitivity."
     },
@@ -183,7 +183,7 @@
       "role": "Inverter Current Bias",
       "macro": "CTRL_INVERTER_CURRENT_BIAS",
       "binding": {
-        "float": "1.65"
+        "parameter": "1.65"
       },
       "description": "Converter current bias."
     },
@@ -191,7 +191,7 @@
       "role": "Inverter Voltage Sensitivity",
       "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
       "binding": {
-        "float": "0.02738589"
+        "parameter": "0.02738589"
       },
       "description": "Converter voltage gain."
     },
@@ -199,7 +199,7 @@
       "role": "Inverter Voltage Bias",
       "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
       "binding": {
-        "float": "0.0"
+        "parameter": "0.0"
       },
       "description": "Converter voltage bias."
     },
@@ -207,7 +207,7 @@
       "role": "Dc Current Sensitivity",
       "macro": "CTRL_DC_CURRENT_SENSITIVITY",
       "binding": {
-        "float": "0.02475"
+        "parameter": "0.02475"
       },
       "description": "DC current sensitivity."
     },
@@ -215,7 +215,7 @@
       "role": "Dc Current Bias",
       "macro": "CTRL_DC_CURRENT_BIAS",
       "binding": {
-        "float": "1.65"
+        "parameter": "1.65"
       },
       "description": "DC current bias."
     },
@@ -223,7 +223,7 @@
       "role": "Dc Voltage Sensitivity",
       "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
       "binding": {
-        "float": "0.02738589"
+        "parameter": "0.02738589"
       },
       "description": "DC voltage gain."
     },
@@ -231,7 +231,7 @@
       "role": "Dc Voltage Bias",
       "macro": "CTRL_DC_VOLTAGE_BIAS",
       "binding": {
-        "float": "0.0"
+        "parameter": "0.0"
       },
       "description": "DC voltage bias."
     }

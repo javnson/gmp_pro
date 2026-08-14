@@ -33,7 +33,7 @@ size_gt gmp_base_print_default(const char* p_fmt, ...)
 
     // size_gt size = (size_gt)strlen(p_fmt);
 
-    static data_gt str[GMP_BASE_PRINT_CHAR_EXT];
+    static byte_gt str[GMP_BASE_PRINT_CHAR_EXT];
     memset(str, 0, GMP_BASE_PRINT_CHAR_EXT);
 
     va_list vArgs;
@@ -61,7 +61,7 @@ size_gt gmp_base_print_default(const char* p_fmt, ...)
 // * @param length
 // * @param capacity
 // */
-//void gmp_dev_init_half_duplex_channel(half_duplex_ift *channel, data_gt *buf, size_gt length, size_gt capacity)
+//void gmp_dev_init_half_duplex_channel(half_duplex_ift *channel, byte_gt *buf, size_gt length, size_gt capacity)
 //{
 //    channel->buf = buf;
 //    channel->length = length;
@@ -76,7 +76,7 @@ size_gt gmp_base_print_default(const char* p_fmt, ...)
 // * @param length length of transmit and receive buffer
 // * @param capacity capacity of tx and rx buffer
 // */
-//void gmp_dev_init_duplex_channel(duplex_ift *channel, data_gt *tx_buf, data_gt *rx_buf, size_gt length,
+//void gmp_dev_init_duplex_channel(duplex_ift *channel, byte_gt *tx_buf, byte_gt *rx_buf, size_gt length,
 //                                 size_gt capacity)
 //{
 //    channel->tx_buf = tx_buf;
@@ -92,7 +92,7 @@ size_gt gmp_base_print_default(const char* p_fmt, ...)
 // * @param msg msg source address
 // * @param length length of address
 // */
-//void gmp_dev_init_half_duplex_with_addr_channel(half_duplex_with_addr_ift *channel, addr32_gt address, data_gt *msg,
+//void gmp_dev_init_half_duplex_with_addr_channel(half_duplex_with_addr_ift *channel, addr32_gt address, byte_gt *msg,
 //                                                size_gt length)
 //{
 //    channel->address = address;
@@ -110,7 +110,7 @@ size_gt gmp_base_print_default(const char* p_fmt, ...)
 // * @param length length of message
 // */
 //void gmp_dev_init_iic_memory_channel(iic_memory_ift *channel, addr32_gt dev_addr, addr32_gt mem_addr,
-//                                     fast_gt mem_length, data_gt *msg, size_gt length)
+//                                     fast_gt mem_length, byte_gt *msg, size_gt length)
 //{
 //    channel->dev_addr = dev_addr;
 //    channel->mem_addr = mem_addr;

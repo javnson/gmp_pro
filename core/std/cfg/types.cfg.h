@@ -30,9 +30,8 @@
 // Step III Basic element type
 
 // ....................................................................//
-// basic element data type
-// This type is smallest unit of the chip
-// generally, it's a 8-bit number.
+// Smallest addressable unit of the target CPU.
+// A byte_gt is normally 8 bits, but it is 16 bits on C28x.
 //
 #ifndef GMP_PORT_DATA_T
 #define GMP_PORT_DATA_T              char
@@ -40,7 +39,7 @@
 #define GMP_PORT_DATA_SIZE_PER_BYTES (1)
 #endif // GMP_PORT_DATA_T
 
-typedef GMP_PORT_DATA_T data_gt;
+typedef GMP_PORT_DATA_T byte_gt;
 
 // ....................................................................//
 // basic element data type which is fast one

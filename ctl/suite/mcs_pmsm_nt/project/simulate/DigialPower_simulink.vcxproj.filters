@@ -350,7 +350,7 @@
     <ClInclude Include="xplt\xplt.peripheral.h">
       <Filter>xplt</Filter>
     </ClInclude>
-    <ClInclude Include="sdpe_mgr\sdpe_mcs_pmsm_nt_simulate_settings.h">
+    <ClInclude Include="sdpe_mgr\ctrl_settings.h">
       <Filter>xplt</Filter>
     </ClInclude>
   </ItemGroup>

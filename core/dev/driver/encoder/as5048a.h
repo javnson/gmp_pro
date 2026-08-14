@@ -141,9 +141,9 @@ GMP_STATIC_INLINE ec_gt as5048a_step(as5048a_dev_t* dev)
     }
 
     /* 2. Execute SPI Transfer (Layer 2 API handles CS automatically) */
-    data_gt tx_buf[2], rx_buf[2];
-    tx_buf[0] = (data_gt)(cmd >> 8);
-    tx_buf[1] = (data_gt)(cmd & 0xFF);
+    byte_gt tx_buf[2], rx_buf[2];
+    tx_buf[0] = (byte_gt)(cmd >> 8);
+    tx_buf[1] = (byte_gt)(cmd & 0xFF);
 
     ec_gt result = gmp_hal_spi_dev_transfer(dev->spi_node, tx_buf, rx_buf, 2, AS5048A_CFG_TIMEOUT);
     if (result != GMP_EC_OK)

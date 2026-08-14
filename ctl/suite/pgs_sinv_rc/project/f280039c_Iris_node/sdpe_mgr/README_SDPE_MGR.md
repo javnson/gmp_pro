@@ -14,7 +14,7 @@ Default generated output:
 
 ```text
 sdpe_mgr\
-  sdpe_pgs_sinv_rc_iris_bindings.h
+  ctrl_settings.h
   hardware_preset\
 ```
 

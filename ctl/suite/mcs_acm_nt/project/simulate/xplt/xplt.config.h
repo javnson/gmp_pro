@@ -12,5 +12,5 @@
 #define gmp_pc_simulink_rx_buffer_t dp_sil_rx_buf_t
 #define gmp_pc_simulink_tx_buffer_t dp_sil_tx_buf_t
 
-#include <sdpe_mcs_acim_nt_simulate_settings.h>
+#include <ctrl_settings.h>
 

@@ -28,7 +28,7 @@ static void set_assigned_flag(gmp_mem_area_head* handle,
 	size_gt length
 ) //GMP_NO_OPT
 {
-	data_gt* assigned_flag = &handle->assigned_flag;
+	byte_gt* assigned_flag = &handle->assigned_flag;
 
 	size_gt first_item_index = position / GMP_PORT_DATA_SIZE_PER_BITS;
 	size_gt first_item_subindex = position % GMP_PORT_DATA_SIZE_PER_BITS;
@@ -57,7 +57,7 @@ static void set_assigned_flag(gmp_mem_area_head* handle,
 
 	// Deal with the medium items
 	for (i = first_item_index + 1; i < last_item_index; ++i)
-		assigned_flag[i] = (data_gt)-1; // set all bits to 1
+		assigned_flag[i] = (byte_gt)-1; // set all bits to 1
 
 	return;
 }
@@ -68,7 +68,7 @@ static void* fill_block_head(gmp_mem_area_head* handle,
 ) //GMP_NO_OPT
 {
 	gmp_mem_block_head* block_head = (gmp_mem_block_head*)
-		(((data_gt*)handle->entry) + position * handle->block_size_unit);
+		(((byte_gt*)handle->entry) + position * handle->block_size_unit);
 
 	// clear the space
 	memset((void*)block_head, 0, sizeof(gmp_mem_block_head));
@@ -109,7 +109,7 @@ gmp_mem_area_head* gmp_mem_setup(	// return the memory area handle
 	size_gt capacity = memory_size / block_size_unit;
 	size_gt used = (sizeof(gmp_mem_block_head)
 		+ sizeof(gmp_mem_area_head)
-		+ capacity / sizeof(data_gt) / GMP_PORT_DATA_SIZE_PER_BITS)
+		+ capacity / sizeof(byte_gt) / GMP_PORT_DATA_SIZE_PER_BITS)
 		/ block_size_unit + 1;
 
 	gmp_mem_block_head* block_head = (gmp_mem_block_head*)memory_entry;
@@ -129,8 +129,8 @@ gmp_mem_area_head* gmp_mem_setup(	// return the memory area handle
 
 
 	// construct the memory head
-	gmp_mem_area_head* area_head = (gmp_mem_area_head*)((data_gt*)memory_entry + sizeof(gmp_mem_block_head));
-	data_gt* assigned_flag = &area_head->assigned_flag;
+	gmp_mem_area_head* area_head = (gmp_mem_area_head*)((byte_gt*)memory_entry + sizeof(gmp_mem_block_head));
+	byte_gt* assigned_flag = &area_head->assigned_flag;
 
 	area_head->entry = memory_entry;
 	area_head->block_size_unit = block_size_unit;
@@ -167,7 +167,7 @@ size_gt length
 	size_gt current_index = 0;
 	size_gt current_subindex = 0;
 
-	data_gt* assigned_flag = &handle->assigned_flag;
+	byte_gt* assigned_flag = &handle->assigned_flag;
 
 	// loop variables
 	size_gt i, j;
@@ -217,7 +217,7 @@ static void clear_assigned_flag(gmp_mem_area_head* handle,
 	size_gt length
 ) //GMP_NO_OPT
 {
-	data_gt* assigned_flag = &handle->assigned_flag;
+	byte_gt* assigned_flag = &handle->assigned_flag;
 
 	size_gt first_item_index = position / GMP_PORT_DATA_SIZE_PER_BITS;
 	size_gt first_item_subindex = position % GMP_PORT_DATA_SIZE_PER_BITS;
@@ -246,7 +246,7 @@ static void clear_assigned_flag(gmp_mem_area_head* handle,
 
 	// Deal with the medium items
 	for (i = first_item_index + 1; i < last_item_index; ++i)
-		assigned_flag[i] = (data_gt)0; // set all bits to 0
+		assigned_flag[i] = (byte_gt)0; // set all bits to 0
 
 	return;
 }

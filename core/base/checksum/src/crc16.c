@@ -39,12 +39,12 @@ static const uint16_t crc16_ccitt_table[256] = {
 };
 
 // using 
-uint16_t gmp_base_calculate_crc16(const data_gt* data, size_gt len) {
+uint16_t gmp_base_calculate_crc16(const byte_gt* data, size_gt len) {
     uint16_t crc = 0xFFFF; // 初始值
     size_gt i;
 
     for (i = 0; i < len; i++) {
-        data_gt byte = (data_gt)(data[i] & 0xFF);
+        byte_gt byte = (byte_gt)(data[i] & 0xFF);
         crc = (crc << 8) ^ crc16_ccitt_table[((crc >> 8) ^ byte) & 0xFF];
     }
     return crc;

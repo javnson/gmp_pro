@@ -67,9 +67,9 @@ uart_halt uart1;
 uart_halt uart2;
 
 duplex_ift uart1_if;
-data_gt recv_buffer[128];
-data_gt uart1_rx[128];
-data_gt uart1_tx[128];
+byte_gt recv_buffer[128];
+byte_gt uart1_rx[128];
+byte_gt uart1_tx[128];
 
 iic_halt iic;
 

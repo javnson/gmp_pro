@@ -156,7 +156,7 @@ size_gt gmp_base_print_c28xsyscfg(const char* p_fmt, ...)
 
     // size_gt size = (size_gt)strlen(p_fmt);
 
-    static data_gt str[GMP_BASE_PRINT_CHAR_EXT];
+    static byte_gt str[GMP_BASE_PRINT_CHAR_EXT];
     memset(str, 0, GMP_BASE_PRINT_CHAR_EXT);
 
     va_list vArgs;

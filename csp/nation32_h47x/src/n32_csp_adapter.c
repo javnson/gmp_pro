@@ -88,7 +88,7 @@ uart_halt debug_uart = NULL;
 // implement the gmp_debug_print routine.
 size_gt gmp_base_print_n32(const char* p_fmt, ...)
 {
-    static data_gt str[GMP_BASE_PRINT_CHAR_EXT];
+    static byte_gt str[GMP_BASE_PRINT_CHAR_EXT];
     va_list args;
     int formatted_length;
     size_gt output_length;

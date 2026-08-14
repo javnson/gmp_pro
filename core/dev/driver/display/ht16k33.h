@@ -91,7 +91,7 @@ typedef struct
 {
     iic_halt bus;
     addr16_gt dev_addr;
-    data_gt display_ram[HT16K33_CFG_DISP_RAM_SIZE];
+    byte_gt display_ram[HT16K33_CFG_DISP_RAM_SIZE];
     fast_gt last_key; /**< in order to debounce. */
     time_gt last_trigger; /**< in order to debounce. */
     fast_gt is_dirty;

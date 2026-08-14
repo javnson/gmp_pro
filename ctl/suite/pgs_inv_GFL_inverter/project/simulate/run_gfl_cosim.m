@@ -32,7 +32,7 @@ end
 
 function assert_build_level(root, level)
 header = fileread(fullfile(root, 'sdpe_mgr', ...
-    'sdpe_pgs_inv_gfl_simulate_settings.h'));
+    'ctrl_settings.h'));
 token = regexp(header, '#define\s+BUILD_LEVEL\s+\((\d)\)', ...
     'tokens', 'once');
 if isempty(token) || str2double(token{1}) ~= level

@@ -5,7 +5,7 @@
   "description": "Platform-independent motor-control, protection, commissioning and runtime defaults shared by mcs_pmsm_id targets.",
   "suite": "mcs_pmsm_id",
   "version": "1.0.0",
-  "updated_at": "2026-08-14",
+  "updated_at": "2026-08-15",
   "output_header": "sdpe_mcs_pmsm_id_common_settings.h",
   "hardware": [],
   "code_sections": {
@@ -104,7 +104,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "20e3"
+        "parameter": "20e3"
       },
       "description": "Main motor-control ISR frequency in hertz."
     },
@@ -114,7 +114,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.2"
+        "parameter": "0.2"
       },
       "description": "Minimum absolute phase current in amperes before PWM dead-time compensation selects a current direction. Converted to PU with CTRL_CURRENT_BASE at initialization."
     },
@@ -124,7 +124,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.05"
+        "parameter": "0.05"
       },
       "description": "Phase-current hysteresis band in amperes used to prevent dead-time compensation direction chatter around zero current."
     },
@@ -214,7 +214,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "3000.0"
+        "parameter": "3000.0"
       },
       "description": "Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit."
     },
@@ -224,7 +224,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "3000.0"
+        "parameter": "3000.0"
       },
       "description": "Maximum mechanical speed-command slew rate in rpm/s. The configured value corresponds to 1 PU/s for the selected 3000 rpm motor."
     },
@@ -234,7 +234,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "3.0"
+        "parameter": "3.0"
       },
       "description": "Absolute q-axis current/torque command limit in amperes. It is divided by CTRL_CURRENT_BASE to obtain the controller PU limit; 3 A corresponds to the previous 0.3 PU setting."
     },
@@ -244,7 +244,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Rectangular saturation limit for d/q axes in V."
     },
@@ -284,7 +284,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "20.0"
+        "parameter": "20.0"
       },
       "description": "Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed."
     },
@@ -304,7 +304,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "1.0"
+        "parameter": "1.0"
       },
       "description": "Closed-loop d-axis current in amperes used to lock the rotor to phase A during encoder calibration."
     },
@@ -314,7 +314,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.10"
+        "parameter": "0.10"
       },
       "description": "PWM-off observation time in seconds used to detect a randomly jumping encoder."
     },
@@ -324,7 +324,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.30"
+        "parameter": "0.30"
       },
       "description": "Time in seconds allowed for the rotor to settle at the phase-A electrical zero."
     },
@@ -334,7 +334,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "1.0"
+        "parameter": "1.0"
       },
       "description": "Electrical revolutions per second used while rotating the alignment current vector."
     },
@@ -344,7 +344,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.10"
+        "parameter": "0.10"
       },
       "description": "Dwell time in seconds at phase A after each complete electrical revolution."
     },
@@ -354,7 +354,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.02"
+        "parameter": "0.02"
       },
       "description": "Maximum wrapped mechanical-position change accepted in one control ISR sample."
     },
@@ -364,7 +364,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.002"
+        "parameter": "0.002"
       },
       "description": "Maximum unwrapped position span accepted during the PWM-off encoder noise test."
     },
@@ -374,7 +374,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.02"
+        "parameter": "0.02"
       },
       "description": "Minimum net mechanical motion required during one electrical revolution; below this reports an uncoupled/stuck encoder."
     },
@@ -384,7 +384,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.03"
+        "parameter": "0.03"
       },
       "description": "Maximum absolute deviation of each electrical-cycle mechanical motion from the measured mean."
     },
@@ -394,7 +394,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.02"
+        "parameter": "0.02"
       },
       "description": "Maximum wrapped mechanical-position error accepted when returning to the first phase-A anchor."
     },
@@ -414,7 +414,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "20.0"
+        "parameter": "20.0"
       },
       "description": "Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets."
     },
@@ -424,7 +424,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.707"
+        "parameter": "0.707"
       },
       "description": "Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response."
     },
@@ -434,7 +434,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "1.0"
+        "parameter": "1.0"
       },
       "description": "D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE."
     },
@@ -444,7 +444,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "1.0"
+        "parameter": "1.0"
       },
       "description": "Q-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE."
     },
@@ -454,7 +454,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "300.0"
+        "parameter": "300.0"
       },
       "description": "Mechanical speed reference in rpm used by BUILD_LEVEL 4 commissioning. Converted to PU using MOTOR_PARAM_MAX_SPEED."
     },
@@ -464,7 +464,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "5.0"
+        "parameter": "5.0"
       },
       "description": "Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu."
     },
@@ -474,7 +474,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "1.0"
+        "parameter": "1.0"
       },
       "description": "Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally."
     },
@@ -484,7 +484,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "5.0"
+        "parameter": "5.0"
       },
       "description": "Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu."
     },
@@ -494,7 +494,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "1.0"
+        "parameter": "1.0"
       },
       "description": "Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally."
     },
@@ -524,7 +524,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "5.0"
+        "parameter": "5.0"
       },
       "description": "Maximum closed-loop current in amperes used by the Rs/dead-time sweep."
     },
@@ -534,7 +534,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "1.0"
+        "parameter": "1.0"
       },
       "description": "Minimum closed-loop current in amperes used by the Rs/dead-time sweep."
     },
@@ -554,7 +554,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "1.0"
+        "parameter": "1.0"
       },
       "description": "Rotor alignment dwell in seconds before the Rs/dead-time sweep."
     },
@@ -564,7 +564,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.2"
+        "parameter": "0.2"
       },
       "description": "Settling delay in seconds after changing each Rs/dead-time current point."
     },
@@ -594,7 +594,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.277128"
+        "parameter": "0.277128"
       },
       "description": "Physical d/q pulse voltage in volts used for inductance identification."
     },
@@ -604,7 +604,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "5.0"
+        "parameter": "5.0"
       },
       "description": "Maximum current bias in amperes used for the inductance profile."
     },
@@ -624,7 +624,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "5.0"
+        "parameter": "5.0"
       },
       "description": "D-axis alignment current in amperes used before inductance pulses."
     },
@@ -634,7 +634,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.2"
+        "parameter": "0.2"
       },
       "description": "Bias-current settling time in seconds before each inductance pulse."
     },
@@ -644,7 +644,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.002"
+        "parameter": "0.002"
       },
       "description": "Inductance voltage-pulse duration in seconds."
     },
@@ -654,7 +654,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.05"
+        "parameter": "0.05"
       },
       "description": "Zero-voltage cooldown time in seconds between inductance pulses."
     },
@@ -674,7 +674,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "300.0"
+        "parameter": "300.0"
       },
       "description": "Minimum mechanical speed in rpm used by the flux-linkage regression."
     },
@@ -684,7 +684,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "1800.0"
+        "parameter": "1800.0"
       },
       "description": "Maximum mechanical speed in rpm used by the flux-linkage regression."
     },
@@ -704,7 +704,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "4.0"
+        "parameter": "4.0"
       },
       "description": "Current magnitude in amperes used for I/F flux-linkage rotation."
     },
@@ -714,7 +714,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "2.0"
+        "parameter": "2.0"
       },
       "description": "Settling time in seconds at each flux-identification speed."
     },
@@ -744,7 +744,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "1000.0"
+        "parameter": "1000.0"
       },
       "description": "User-selected mechanical target speed in rpm for the identification test."
     },
@@ -754,7 +754,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "1.0"
+        "parameter": "1.0"
       },
       "description": "User-selected q-axis current in amperes applied by the real current loop during acceleration."
     },
@@ -764,7 +764,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.30"
+        "parameter": "0.30"
       },
       "description": "Lower acceleration/coast fitting boundary relative to the selected target speed."
     },
@@ -774,7 +774,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.70"
+        "parameter": "0.70"
       },
       "description": "Upper acceleration/coast fitting boundary relative to the selected target speed."
     },
@@ -784,7 +784,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.75"
+        "parameter": "0.75"
       },
       "description": "Target-speed ratio at which PWM is physically disabled to start free coast-down."
     },
@@ -794,7 +794,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "20.0"
+        "parameter": "20.0"
       },
       "description": "Safety timeout in seconds covering acceleration and free coast-down."
     },
@@ -804,7 +804,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Expected maximum combined duration of the two recorded 30%-70% speed curves."
     },
@@ -814,7 +814,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.80"
+        "parameter": "0.80"
       },
       "description": "Minimum coefficient of determination accepted for acceleration-versus-speed regression."
     },
@@ -865,7 +865,32 @@
       "requirements": [
         "Controller Frequency",
         "PWM DT Current Deadband",
-        "PWM DT Current Hysteresis"
+        "PWM DT Current Hysteresis",
+        "Enable Prepare Stage",
+        "Enable Rs Deadtime Identification",
+        "Rs Deadtime Steps",
+        "Rs Deadtime Alignment Time",
+        "Rs Deadtime Measurement Points",
+        "Enable Ld Lq Identification",
+        "Ld Lq Pulse Voltage",
+        "Ld Lq Alignment Current",
+        "Ld Lq Settle Time",
+        "Ld Lq Pulse Time",
+        "Ld Lq Cooldown Time",
+        "Enable Flux Identification",
+        "Flux Speed Steps",
+        "Flux IF Current",
+        "Flux Settle Time",
+        "Flux Measurement Points",
+        "Enable Mechanical Identification",
+        "Mechanical ID Target Speed",
+        "Mechanical ID Acceleration Current",
+        "Mechanical ID Fit Low Ratio",
+        "Mechanical ID Fit High Ratio",
+        "Mechanical ID PWM Off Ratio",
+        "Mechanical ID Record Time",
+        "PIL Input Channel Mask",
+        "PIL Output Channel Mask"
       ]
     },
     {
@@ -888,14 +913,50 @@
         "Mech Speed Slope Limit",
         "Mech Current Limit",
         "Max Voltage For Rect Saturation",
-        "Max DC Bus Voltage"
+        "Max DC Bus Voltage",
+        "Rs Deadtime Maximum Current",
+        "Rs Deadtime Minimum Current",
+        "Flux Minimum Speed",
+        "Flux Maximum Speed",
+        "Mechanical ID Maximum Test Time",
+        "Mechanical ID Minimum Fit R2",
+        "Mechanical ID Minimum Fit Samples"
+      ]
+    },
+    {
+      "name": "Control Loop / Position Controller",
+      "requirements": [
+        "Mech Position Kp",
+        "Mech Position Ki"
+      ]
+    },
+    {
+      "name": "Control Loop / Speed Controller",
+      "requirements": [
+        "Mech Velocity Kp",
+        "Mech Velocity Ki"
       ]
     },
     {
       "name": "Runtime Parameters",
       "requirements": [
         "Startup Delay",
-        "Cia402 Operation Enable Delay"
+        "Cia402 Operation Enable Delay",
+        "Rs Deadtime Measurement Delay"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Calibration",
+      "requirements": [
+        "Adc Calibrator Cutoff",
+        "Adc Calibrator Quality Factor"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Current Sensor",
+      "requirements": [
+        "Ld Lq Maximum Bias Current",
+        "Ld Lq Bias Steps"
       ]
     },
     {
@@ -917,83 +978,11 @@
       ]
     },
     {
-      "name": "Voltage & Current Sensor / Calibration",
-      "requirements": [
-        "Adc Calibrator Cutoff",
-        "Adc Calibrator Quality Factor"
-      ]
-    },
-    {
       "name": "Commissioning Defaults",
       "requirements": [
         "Commissioning Id Reference",
         "Commissioning Iq Reference",
         "Commissioning Speed Reference"
-      ]
-    },
-    {
-      "name": "Control Loop / Position Controller",
-      "requirements": [
-        "Mech Position Kp",
-        "Mech Position Ki"
-      ]
-    },
-    {
-      "name": "Control Loop / Speed Controller",
-      "requirements": [
-        "Mech Velocity Kp",
-        "Mech Velocity Ki"
-      ]
-    },
-    {
-      "name": "Offline Identification / Electrical",
-      "requirements": [
-        "Enable Prepare Stage",
-        "Enable Rs Deadtime Identification",
-        "Rs Deadtime Maximum Current",
-        "Rs Deadtime Minimum Current",
-        "Rs Deadtime Steps",
-        "Rs Deadtime Alignment Time",
-        "Rs Deadtime Measurement Delay",
-        "Rs Deadtime Measurement Points",
-        "Enable Ld Lq Identification",
-        "Ld Lq Pulse Voltage",
-        "Ld Lq Maximum Bias Current",
-        "Ld Lq Bias Steps",
-        "Ld Lq Alignment Current",
-        "Ld Lq Settle Time",
-        "Ld Lq Pulse Time",
-        "Ld Lq Cooldown Time",
-        "Enable Flux Identification",
-        "Flux Minimum Speed",
-        "Flux Maximum Speed",
-        "Flux Speed Steps",
-        "Flux IF Current",
-        "Flux Settle Time",
-        "Flux Measurement Points"
-      ]
-    },
-    {
-      "name": "Offline Identification / Mechanical",
-      "requirements": [
-        "Enable Mechanical Identification",
-        "Mechanical ID Target Speed",
-        "Mechanical ID Acceleration Current",
-        "Mechanical ID Fit Low Ratio",
-        "Mechanical ID Fit High Ratio",
-        "Mechanical ID PWM Off Ratio",
-        "Mechanical ID Maximum Test Time",
-        "Mechanical ID Record Time",
-        "Mechanical ID Minimum Fit R2",
-        "Mechanical ID Minimum Fit Samples"
-      ]
-    },
-    {
-      "name": "Ungrouped",
-      "requirements": [
-        "PIL Input Channel Mask",
-        "PIL Output Channel Mask",
-        "Max DC Bus Voltage"
       ]
     }
   ],

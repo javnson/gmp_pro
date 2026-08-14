@@ -36,7 +36,7 @@ __interrupt void xplt_cpu_timer0_isr(void);
  */
 static void xplt_dl_drain_rx_fifo(void)
 {
-    data_gt local_buffer[XPLT_DL_LOCAL_RX_SIZE];
+    byte_gt local_buffer[XPLT_DL_LOCAL_RX_SIZE];
     size_gt count;
     size_gt index;
 
@@ -53,7 +53,7 @@ static void xplt_dl_drain_rx_fifo(void)
         if (count > XPLT_DL_LOCAL_RX_SIZE)
             count = XPLT_DL_LOCAL_RX_SIZE;
         for (index = 0U; index < count; ++index)
-            local_buffer[index] = (data_gt)(SCI_readCharNonBlocking(SCIA_BASE) & 0x00FFU);
+            local_buffer[index] = (byte_gt)(SCI_readCharNonBlocking(SCIA_BASE) & 0x00FFU);
         if (count > 0U)
             gmp_dev_dl_push_str(bound_datalink, local_buffer, count);
     } while (SCI_getRxFIFOStatus(SCIA_BASE) != SCI_FIFO_RX0);

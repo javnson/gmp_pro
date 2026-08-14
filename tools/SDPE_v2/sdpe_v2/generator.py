@@ -668,7 +668,7 @@ class HeaderGenerator:
     def project_header_path(self, data: dict[str, Any]) -> Path:
         """Return the generated project header path."""
 
-        header_name = data.get("output_header", "sdpe_project_bindings.h")
+        header_name = data.get("output_header", "ctrl_settings.h")
         if self.project_subdir:
             return self.out_dir / self.project_subdir / header_name
         return self.out_dir / header_name
@@ -676,7 +676,7 @@ class HeaderGenerator:
     def project_matlab_script_path(self, data: dict[str, Any]) -> Path:
         """Return the generated MATLAB initialization script path."""
 
-        header_name = Path(data.get("output_header", "sdpe_project_bindings.h"))
+        header_name = Path(data.get("output_header", "ctrl_settings.h"))
         script_name = f"{header_name.stem}_matlab_init.m"
         if self.project_subdir:
             return self.out_dir / self.project_subdir / script_name
@@ -686,7 +686,7 @@ class HeaderGenerator:
         """Render project requirement binding header."""
 
         project_id = data.get("id", "sdpe_project")
-        guard = header_guard(f"project/{data.get('output_header', 'sdpe_project_bindings.h')}")
+        guard = header_guard(f"project/{data.get('output_header', 'ctrl_settings.h')}")
         effective_commons = self.effective_common_overrides(data, common_data or [])
         hardware_ids = list(self._project_entity_ids(data))
         for common in effective_commons:
@@ -697,7 +697,7 @@ class HeaderGenerator:
 
         lines = [
             "/**",
-            f" * @file {data.get('output_header', 'sdpe_project_bindings.h')}",
+            f" * @file {data.get('output_header', 'ctrl_settings.h')}",
             f" * @brief SDPE project bindings for {data.get('display_name', project_id)}.",
         ]
         if data.get("description"):
@@ -1368,12 +1368,14 @@ class HeaderGenerator:
             if "float" in binding:
                 raw = str(binding["float"]).strip()
                 return f"real2param({raw})"
-            if "real" in binding:
-                return str(binding["real"]).strip()
-            if "parameter" in binding:
-                return f"real2param({str(binding['parameter']).strip()})"
-            if "ctrl" in binding:
-                return f"real2ctrl({str(binding['ctrl']).strip()})"
+            if "real" in binding or "real_gt" in binding:
+                return str(binding.get("real", binding.get("real_gt"))).strip()
+            if "parameter" in binding or "parameter_gt" in binding:
+                raw = binding.get("parameter", binding.get("parameter_gt"))
+                return f"real2param({str(raw).strip()})"
+            if "ctrl" in binding or "ctrl_gt" in binding:
+                raw = binding.get("ctrl", binding.get("ctrl_gt"))
+                return f"real2ctrl({str(raw).strip()})"
             if "number" in binding:
                 raw = str(binding["number"]).strip()
                 return raw if raw.startswith("(") and raw.endswith(")") else f"({raw})"

@@ -10,7 +10,7 @@
 #include <string.h>
 
 /** @brief Read one protocol byte and advance the payload cursor. */
-static fast_gt scope_read_u8(const data_gt* payload, uint16_t length,
+static fast_gt scope_read_u8(const byte_gt* payload, uint16_t length,
                              uint16_t* index, fast16_gt* value)
 {
     if (*index >= length)
@@ -21,7 +21,7 @@ static fast_gt scope_read_u8(const data_gt* payload, uint16_t length,
 }
 
 /** @brief Read one little-endian unsigned 16-bit value. */
-static fast_gt scope_read_u16(const data_gt* payload, uint16_t length,
+static fast_gt scope_read_u16(const byte_gt* payload, uint16_t length,
                               uint16_t* index, uint16_t* value)
 {
     fast16_gt low;
@@ -34,7 +34,7 @@ static fast_gt scope_read_u16(const data_gt* payload, uint16_t length,
 }
 
 /** @brief Read one little-endian unsigned 32-bit value. */
-static fast_gt scope_read_u32(const data_gt* payload, uint16_t length,
+static fast_gt scope_read_u32(const byte_gt* payload, uint16_t length,
                               uint16_t* index, uint32_t* value)
 {
     fast16_gt byte_0;
@@ -57,8 +57,8 @@ static void scope_begin_response(gmp_scope_service_t* ctx, fast16_gt operation,
 {
     gmp_datalink_t* dl = ctx->dl_ctx;
     gmp_dev_dl_tx_request_cmd(dl, dl->rx_head.seq_id, dl->rx_head.cmd);
-    gmp_dev_dl_tx_append_u8(dl, (data_gt)operation);
-    gmp_dev_dl_tx_append_u8(dl, (data_gt)status);
+    gmp_dev_dl_tx_append_u8(dl, (byte_gt)operation);
+    gmp_dev_dl_tx_append_u8(dl, (byte_gt)status);
 }
 
 /** @brief Complete the current Scope response and mark its request handled. */
@@ -69,17 +69,17 @@ static void scope_finish_response(gmp_scope_service_t* ctx)
 }
 
 /** @brief Return one byte from a native scope buffer on either platform family. */
-static data_gt scope_buffer_byte(const gmp_scope_resource_t* resource,
+static byte_gt scope_buffer_byte(const gmp_scope_resource_t* resource,
                                  uint32_t byte_offset)
 {
 #if GMP_PORT_DATA_SIZE_PER_BYTES == 1
-    const data_gt* buffer = (const data_gt*)resource->buffer;
+    const byte_gt* buffer = (const byte_gt*)resource->buffer;
     return buffer[byte_offset];
 #elif GMP_PORT_DATA_SIZE_PER_BYTES == 2
-    const data_gt* buffer = (const data_gt*)resource->buffer;
-    data_gt native_unit = buffer[byte_offset >> 1];
-    return (byte_offset & 1U) ? (data_gt)((native_unit >> 8) & 0xFF) :
-                               (data_gt)(native_unit & 0xFF);
+    const byte_gt* buffer = (const byte_gt*)resource->buffer;
+    byte_gt native_unit = buffer[byte_offset >> 1];
+    return (byte_offset & 1U) ? (byte_gt)((native_unit >> 8) & 0xFF) :
+                               (byte_gt)(native_unit & 0xFF);
 #else
 #error "Unsupported GMP Data Link Scope data unit"
 #endif
@@ -105,12 +105,12 @@ static void scope_reply_discovery(gmp_scope_service_t* ctx)
     scope_begin_response(ctx, GMP_SCOPE_OP_DISCOVER,
                          (resource == NULL) ? 1 : 0);
     gmp_dev_dl_tx_append_u8(dl, GMP_SCOPE_PROTOCOL_VERSION);
-    gmp_dev_dl_tx_append_u8(dl, (data_gt)total);
-    gmp_dev_dl_tx_append_u8(dl, (data_gt)resource_id);
+    gmp_dev_dl_tx_append_u8(dl, (byte_gt)total);
+    gmp_dev_dl_tx_append_u8(dl, (byte_gt)resource_id);
     if (resource != NULL)
     {
-        gmp_dev_dl_tx_append_u8(dl, (data_gt)resource->sample_type);
-        gmp_dev_dl_tx_append_u8(dl, (data_gt)resource->layout);
+        gmp_dev_dl_tx_append_u8(dl, (byte_gt)resource->sample_type);
+        gmp_dev_dl_tx_append_u8(dl, (byte_gt)resource->layout);
         gmp_dev_dl_tx_append_u16(dl, resource->channels);
         gmp_dev_dl_tx_append_u32(dl, resource->depth);
         gmp_dev_dl_tx_append_u32(dl, resource->sample_rate_hz);
@@ -125,9 +125,9 @@ static void scope_reply_discovery(gmp_scope_service_t* ctx)
             if (name_length > 63U)
                 name_length = 63U;
         }
-        gmp_dev_dl_tx_append_u8(dl, (data_gt)name_length);
+        gmp_dev_dl_tx_append_u8(dl, (byte_gt)name_length);
         for (index = 0U; index < name_length; ++index)
-            gmp_dev_dl_tx_append_u8(dl, (data_gt)name[index]);
+            gmp_dev_dl_tx_append_u8(dl, (byte_gt)name[index]);
     }
     scope_finish_response(ctx);
 }
@@ -136,7 +136,7 @@ static void scope_reply_discovery(gmp_scope_service_t* ctx)
 static void scope_reply_configure(gmp_scope_service_t* ctx)
 {
     gmp_datalink_t* dl = ctx->dl_ctx;
-    const data_gt* payload = dl->payload_buf;
+    const byte_gt* payload = dl->payload_buf;
     uint16_t index = 1U;
     fast16_gt resource_id = 0;
     fast16_gt mode = 0;
@@ -178,7 +178,7 @@ static void scope_reply_configure(gmp_scope_service_t* ctx)
             status = 3;
     }
     scope_begin_response(ctx, GMP_SCOPE_OP_CONFIGURE, status);
-    gmp_dev_dl_tx_append_u8(dl, (data_gt)resource_id);
+    gmp_dev_dl_tx_append_u8(dl, (byte_gt)resource_id);
     scope_finish_response(ctx);
 }
 
@@ -196,7 +196,7 @@ static void scope_reply_arm(gmp_scope_service_t* ctx)
                  ctx->resources[resource_id].user_context))
         status = 2;
     scope_begin_response(ctx, GMP_SCOPE_OP_ARM, status);
-    gmp_dev_dl_tx_append_u8(dl, (data_gt)resource_id);
+    gmp_dev_dl_tx_append_u8(dl, (byte_gt)resource_id);
     scope_finish_response(ctx);
 }
 
@@ -216,8 +216,8 @@ static void scope_reply_status(gmp_scope_service_t* ctx)
         state = ctx->resources[resource_id].get_status(
             ctx->resources[resource_id].user_context, &generation);
     scope_begin_response(ctx, GMP_SCOPE_OP_STATUS, status);
-    gmp_dev_dl_tx_append_u8(dl, (data_gt)resource_id);
-    gmp_dev_dl_tx_append_u8(dl, (data_gt)state);
+    gmp_dev_dl_tx_append_u8(dl, (byte_gt)resource_id);
+    gmp_dev_dl_tx_append_u8(dl, (byte_gt)state);
     gmp_dev_dl_tx_append_u32(dl, generation);
     scope_finish_response(ctx);
 }
@@ -226,7 +226,7 @@ static void scope_reply_status(gmp_scope_service_t* ctx)
 static void scope_reply_read(gmp_scope_service_t* ctx)
 {
     gmp_datalink_t* dl = ctx->dl_ctx;
-    const data_gt* payload = dl->payload_buf;
+    const byte_gt* payload = dl->payload_buf;
     uint16_t index = 1U;
     fast16_gt resource_id = 255;
     uint32_t offset = 0U;
@@ -254,14 +254,14 @@ static void scope_reply_read(gmp_scope_service_t* ctx)
     }
 
     scope_begin_response(ctx, GMP_SCOPE_OP_READ, status);
-    gmp_dev_dl_tx_append_u8(dl, (data_gt)resource_id);
+    gmp_dev_dl_tx_append_u8(dl, (byte_gt)resource_id);
     gmp_dev_dl_tx_append_u32(dl, offset);
     if (status == 0 && gmp_dev_dl_get_tx_capacity(dl) < (size_gt)length + 2U)
         status = 3;
     if (status != 0)
     {
         /* Update the already-emitted status field before sealing the response. */
-        dl->tx_buf[1] = (data_gt)status;
+        dl->tx_buf[1] = (byte_gt)status;
         length = 0U;
     }
     gmp_dev_dl_tx_append_u16(dl, length);

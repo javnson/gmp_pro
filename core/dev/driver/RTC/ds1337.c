@@ -80,7 +80,7 @@ ec_gt ds1337_set_time(ds1337_dev_t* dev, const ds1337_time_t* time)
     if ((dev == NULL) || (time == NULL))
         return GMP_EC_GENERAL_ERROR;
 
-    data_gt buf[7] = {0};
+    byte_gt buf[7] = {0};
 
     buf[0] = dec_to_bcd(time->seconds);
     buf[1] = dec_to_bcd(time->minutes);
@@ -99,7 +99,7 @@ ec_gt ds1337_get_time(ds1337_dev_t* dev, ds1337_time_t* time_ret)
     if ((dev == NULL) || (time_ret == NULL))
         return GMP_EC_GENERAL_ERROR;
 
-    data_gt buf[7] = {0};
+    byte_gt buf[7] = {0};
 
     ec_gt ret = gmp_hal_iic_read_mem(dev->bus, dev->dev_addr, DS1337_REG_SECONDS, 1, buf, 7, DS1337_CFG_TIMEOUT);
     if (ret != GMP_EC_OK)
@@ -121,7 +121,7 @@ ec_gt ds1337_set_alarm1(ds1337_dev_t* dev, const ds1337_time_t* alarm_time, ds13
     if ((dev == NULL) || (alarm_time == NULL))
         return GMP_EC_GENERAL_ERROR;
 
-    data_gt buf[4] = {0};
+    byte_gt buf[4] = {0};
     uint8_t m_bits = (uint8_t)rate;
 
     /* Parse mask bits into M1, M2, M3, M4 (Bit 7 of each register) */
@@ -141,7 +141,7 @@ ec_gt ds1337_set_alarm2(ds1337_dev_t* dev, const ds1337_time_t* alarm_time, ds13
     if ((dev == NULL) || (alarm_time == NULL))
         return GMP_EC_GENERAL_ERROR;
 
-    data_gt buf[3] = {0};
+    byte_gt buf[3] = {0};
     uint8_t m_bits = (uint8_t)rate;
 
     /* Alarm 2 has NO seconds register. It triggers at 00 seconds. */

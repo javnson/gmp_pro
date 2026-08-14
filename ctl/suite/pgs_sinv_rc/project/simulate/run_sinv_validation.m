@@ -14,7 +14,7 @@ else
     model = 'PGS_STD_SINV_MODEL_Rectifier';
 end
 exe = fullfile(root, 'x64', 'Debug', 'Motor_Control_Suite_SIL_Env.exe');
-header = fileread(fullfile(root, 'sdpe_mgr', 'sdpe_pgs_sinv_rc_simulate_settings.h'));
+header = fileread(fullfile(root, 'sdpe_mgr', 'ctrl_settings.h'));
 token = regexp(header, '#define\s+BUILD_LEVEL\s+\((\d)\)', 'tokens', 'once');
 if isempty(token) || str2double(token{1}) ~= build_level
     error('SINV:BuildLevelMismatch', 'Rebuild the executable with BUILD_LEVEL=%d.', build_level);

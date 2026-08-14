@@ -18,7 +18,7 @@ extern "C"
 #include <gmp_core.h>
 
 // SDPE-generated controller settings
-#include <sdpe_dps_fsbb_iris_settings.h>
+#include <ctrl_settings.h>
 
 #ifndef CONTROLLER_LED
 #define CONTROLLER_LED SYSTEM_LED

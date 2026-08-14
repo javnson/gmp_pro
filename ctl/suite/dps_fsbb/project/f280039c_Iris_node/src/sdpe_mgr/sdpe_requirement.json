@@ -3,7 +3,7 @@
   "display_name": "DPS FSBB F280039C IRIS Node",
   "suite": "dps_fsbb",
   "version": "0.1.0",
-  "output_header": "sdpe_dps_fsbb_iris_settings.h",
+  "output_header": "ctrl_settings.h",
   "hardware": [
     {
       "entity": "iris_f280039c_node"
@@ -422,7 +422,7 @@
     "before_footer": "/* Backward compatibility for the historical misspelled PIL switch. */\n#if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM\n#define ENABLE_GMP_DL_PIL_SIM\n#endif\n\n/* Project-specific compile-time validation. */\n#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 3)\n#error \"BUILD_LEVEL must be 1 (open loop), 2 (current loop), or 3 (voltage/current cascade).\"\n#endif"
   },
   "description": "Four-switch buck-boost converter SDPE project requirement prepared from ctl/suite/dps_fsbb/project/f280039c_Iris_node/xplt/ctrl_settings.h.\nThe requirement introduces the GMP LVFB 150V 2-phase board as the switching stage and sensor source, and IRIS F280039C Node as the peripheral option provider.",
-  "updated_at": "2026-08-08",
+  "updated_at": "2026-08-15",
   "requirement_groups": [
     {
       "name": "Peripheral Parameters",

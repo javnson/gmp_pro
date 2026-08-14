@@ -1080,9 +1080,9 @@
           <GroupName>xplt</GroupName>
           <Files>
             <File>
-              <FileName>sdpe_mcs_pmsm_nt_stm32g431_settings.h</FileName>
+              <FileName>ctrl_settings.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\sdpe_mgr\sdpe_mcs_pmsm_nt_stm32g431_settings.h</FilePath>
+              <FilePath>..\sdpe_mgr\ctrl_settings.h</FilePath>
             </File>
             <File>
               <FileName>xplt.config.h</FileName>

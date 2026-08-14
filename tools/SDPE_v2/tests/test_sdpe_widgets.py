@@ -23,7 +23,13 @@ except ImportError:  # pragma: no cover - depends on the installed Qt binding.
     from PySide6.QtWidgets import QApplication, QAbstractItemView, QCheckBox, QStyleOptionViewItem, QTableWidgetItem, QTreeWidgetItem
 
 from gui_pyqt.sdpe_widgets import SDPEComboBox, SDPETableWidget, SDPETreeWidget
-from gui_pyqt.sdpe_gui import MainWindow, ProjectPage
+from gui_pyqt.sdpe_gui import (
+    MainWindow,
+    ProjectPage,
+    binding_to_cells,
+    binding_type_options,
+    cells_to_binding,
+)
 
 
 class SDPEWidgetTests(unittest.TestCase):
@@ -39,6 +45,22 @@ class SDPEWidgetTests(unittest.TestCase):
             widget.deleteLater()
         cls.app.processEvents()
         cls.app.shutdown()
+
+    def test_numeric_binding_types_use_gmp_domain_names_in_the_ui(self) -> None:
+        self.assertIn("real_gt", binding_type_options())
+        self.assertIn("parameter_gt", binding_type_options())
+        self.assertIn("ctrl_gt", binding_type_options())
+        self.assertNotIn("float", binding_type_options())
+        self.assertEqual(binding_to_cells({"real": "1.25"}), ("real_gt", "1.25"))
+        self.assertEqual(binding_to_cells({"parameter": "2.5"}), ("parameter_gt", "2.5"))
+        self.assertEqual(binding_to_cells({"ctrl": "0.5"}), ("ctrl_gt", "0.5"))
+        self.assertEqual(cells_to_binding("real_gt", "1.25"), {"real": "1.25"})
+        self.assertEqual(cells_to_binding("parameter_gt", "2.5"), {"parameter": "2.5"})
+        self.assertEqual(cells_to_binding("ctrl_gt", "0.5"), {"ctrl": "0.5"})
+
+    def test_legacy_float_binding_is_migrated_to_parameter_domain(self) -> None:
+        self.assertEqual(binding_to_cells({"float": "3.5"}), ("parameter_gt", "3.5"))
+        self.assertEqual(cells_to_binding("float", "3.5"), {"parameter": "3.5"})
 
     def test_table_clipboard_preserves_cell_widgets(self) -> None:
         table = SDPETableWidget()

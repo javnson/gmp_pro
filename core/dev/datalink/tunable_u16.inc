@@ -16,7 +16,7 @@
  * @param max_len Maximum length of the payload buffer to prevent out-of-bounds access.
  * @return fast16_gt The unpacked 8-bit value (returns 0 if out of bounds).
  */
-static inline fast16_gt param_unpack_u8(const data_gt* buf, uint16_t* idx, uint16_t max_len)
+static inline fast16_gt param_unpack_u8(const byte_gt* buf, uint16_t* idx, uint16_t max_len)
 {
     if (*idx >= max_len)
         return 0;
@@ -32,7 +32,7 @@ static inline fast16_gt param_unpack_u8(const data_gt* buf, uint16_t* idx, uint1
  * @param max_len Maximum length of the payload buffer to prevent out-of-bounds access.
  * @return uint16_t The unpacked 16-bit value (returns 0 if out of bounds).
  */
-static inline uint16_t param_unpack_u16(const data_gt* buf, uint16_t* idx, uint16_t max_len)
+static inline uint16_t param_unpack_u16(const byte_gt* buf, uint16_t* idx, uint16_t max_len)
 {
     if (*idx + 2 > max_len)
         return 0;
@@ -48,7 +48,7 @@ static inline uint16_t param_unpack_u16(const data_gt* buf, uint16_t* idx, uint1
  * @param max_len Maximum length of the payload buffer to prevent out-of-bounds access.
  * @return uint32_t The unpacked 32-bit value (returns 0 if out of bounds).
  */
-static inline uint32_t param_unpack_u32(const data_gt* buf, uint16_t* idx, uint16_t max_len)
+static inline uint32_t param_unpack_u32(const byte_gt* buf, uint16_t* idx, uint16_t max_len)
 {
     if (*idx + 4 > max_len)
         return 0;
@@ -142,7 +142,7 @@ fast_gt gmp_param_tunable_rx_cb(gmp_param_tunable_t* ctx)
 
     uint16_t len = dl->expected_payload_len;
     uint16_t idx = 0;
-    const data_gt* pld = dl->payload_buf;
+    const byte_gt* pld = dl->payload_buf;
 
     size_gt i;
 

@@ -300,7 +300,7 @@ static void drain_dl_rx_fifo_nonblocking(void)
 {
     while (SCI_getRxFIFOStatus(LAUNCHXL_UART_USB_BASE) != SCI_FIFO_RX0)
     {
-        gmp_dev_dl_push_byte(&dl, (data_gt)SCI_readCharNonBlocking(LAUNCHXL_UART_USB_BASE));
+        gmp_dev_dl_push_byte(&dl, (byte_gt)SCI_readCharNonBlocking(LAUNCHXL_UART_USB_BASE));
     }
 }
 

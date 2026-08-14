@@ -66,12 +66,12 @@ void flush_dl_tx_buffer()
 
 void flush_dl_rx_buffer()
 {
-    data_gt rx_buf[16];
+    byte_gt rx_buf[16];
     size_gt count = 0U;
 
     while ((count < (size_gt)sizeof(rx_buf)) && (gmp_hal_uart_get_rx_available(debug_uart) > 0U))
     {
-        rx_buf[count++] = (data_gt)USART_ReceiveData(debug_uart);
+        rx_buf[count++] = (byte_gt)USART_ReceiveData(debug_uart);
     }
 
     if (count > 0U)

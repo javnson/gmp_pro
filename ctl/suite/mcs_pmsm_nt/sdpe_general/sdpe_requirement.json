@@ -5,7 +5,7 @@
   "description": "Platform-independent controller contract shared by every mcs_pmsm_nt implementation. Hardware timing, sensing and peripheral bindings remain in each project SDPE requirement.",
   "suite": "mcs_pmsm_nt",
   "version": "1.1.0",
-  "updated_at": "2026-08-09",
+  "updated_at": "2026-08-15",
   "output_header": "sdpe_mcs_pmsm_nt_common_settings.h",
   "hardware": [],
   "code_sections": {
@@ -100,14 +100,18 @@
       "role": "PIL input channel mask",
       "macro": "GMP_PIL_RX_MASK",
       "weak": true,
-      "binding": {"number": "127"},
+      "binding": {
+        "number": "127"
+      },
       "description": "Enable the seven ADC slots used by the PMSM SIL input ABI."
     },
     {
       "role": "PIL output channel mask",
       "macro": "GMP_PIL_TX_MASK",
       "weak": true,
-      "binding": {"number": "4128775"},
+      "binding": {
+        "number": "4128775"
+      },
       "description": "Enable three PWM slots and six monitor slots used by the PMSM SIL output ABI."
     },
     {
@@ -116,7 +120,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "20e3"
+        "parameter": "20e3"
       },
       "description": "Main motor-control ISR frequency in hertz."
     },
@@ -126,7 +130,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.2"
+        "parameter": "0.2"
       },
       "description": "Minimum absolute phase current in amperes before PWM dead-time compensation selects a current direction. Converted to PU with CTRL_CURRENT_BASE at initialization."
     },
@@ -136,7 +140,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.05"
+        "parameter": "0.05"
       },
       "description": "Phase-current hysteresis band in amperes used to prevent dead-time compensation direction chatter around zero current."
     },
@@ -146,7 +150,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.165"
+        "parameter": "0.165"
       },
       "description": ""
     },
@@ -156,7 +160,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.45e-3"
+        "parameter": "0.45e-3"
       },
       "description": ""
     },
@@ -166,7 +170,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.45e-3"
+        "parameter": "0.45e-3"
       },
       "description": ""
     },
@@ -176,7 +180,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.45e-3"
+        "parameter": "0.45e-3"
       },
       "description": ""
     },
@@ -186,7 +190,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "0.0066843949493427743"
+        "parameter": "0.0066843949493427743"
       },
       "description": ""
     },
@@ -206,7 +210,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "497.0"
+        "parameter": "497.0"
       },
       "description": ""
     },
@@ -216,7 +220,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "755.0"
+        "parameter": "755.0"
       },
       "description": ""
     },
@@ -226,7 +230,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "3000.0"
+        "parameter": "3000.0"
       },
       "description": "Maximum mechanical speed of the common reference motor in rpm."
     },
@@ -246,7 +250,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "3000.0"
+        "parameter": "3000.0"
       },
       "description": "Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit."
     },
@@ -256,7 +260,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "3000.0"
+        "parameter": "3000.0"
       },
       "description": "Maximum mechanical speed-command slew rate in rpm/s. The configured value corresponds to 1 PU/s for the selected 3000 rpm motor."
     },
@@ -266,7 +270,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "3.0"
+        "parameter": "3.0"
       },
       "description": "Absolute q-axis current/torque command limit in amperes. It is divided by CTRL_CURRENT_BASE to obtain the controller PU limit; 3 A corresponds to the previous 0.3 PU setting."
     },
@@ -276,7 +280,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Rectangular saturation limit for d/q axes in V."
     },
@@ -286,7 +290,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "80.0"
+        "parameter": "80.0"
       },
       "description": "Nominal DC-bus voltage used by common protection thresholds and target per-unit bases."
     },
@@ -306,7 +310,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "The current limit value at which the machine must be shut down."
     },
@@ -316,7 +320,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Circular saturation limit for voltage vector magnitude in V."
     },
@@ -326,7 +330,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "20.0"
+        "parameter": "20.0"
       },
       "description": "Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed."
     },
@@ -336,7 +340,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "20.0"
+        "parameter": "20.0"
       },
       "description": "Cutoff frequency in hertz of the second-order low-pass filter used while estimating ADC zero offsets."
     },
@@ -346,7 +350,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.707"
+        "parameter": "0.707"
       },
       "description": "Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response."
     },
@@ -356,7 +360,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "1.0"
+        "parameter": "1.0"
       },
       "description": "D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE."
     },
@@ -366,7 +370,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "1.0"
+        "parameter": "1.0"
       },
       "description": "Q-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE."
     },
@@ -376,7 +380,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "300.0"
+        "parameter": "300.0"
       },
       "description": "Mechanical speed reference in rpm used by BUILD_LEVEL 4 commissioning. Converted to PU using MOTOR_PARAM_MAX_SPEED."
     },
@@ -386,7 +390,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "20.0"
+        "parameter": "20.0"
       },
       "description": "Electrical frequency command in hertz used by the BUILD_LEVEL 1 V/f path and the BUILD_LEVEL 2 synthetic-angle current-loop path."
     },
@@ -396,7 +400,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "20.0"
+        "parameter": "20.0"
       },
       "description": "Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator."
     },
@@ -406,7 +410,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "5.0"
+        "parameter": "5.0"
       },
       "description": "Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu."
     },
@@ -416,7 +420,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "1.0"
+        "parameter": "1.0"
       },
       "description": "Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally."
     },
@@ -426,7 +430,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "5.0"
+        "parameter": "5.0"
       },
       "description": "Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu."
     },
@@ -436,7 +440,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "1.0"
+        "parameter": "1.0"
       },
       "description": "Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally."
     },
@@ -477,7 +481,9 @@
       "requirements": [
         "Controller Frequency",
         "PWM DT Current Deadband",
-        "PWM DT Current Hysteresis"
+        "PWM DT Current Hysteresis",
+        "PIL input channel mask",
+        "PIL output channel mask"
       ]
     },
     {
@@ -515,29 +521,6 @@
       ]
     },
     {
-      "name": "Voltage & Current Sensor / Position Sensor",
-      "requirements": [
-        "Encoder Speed Filter Cutoff"
-      ]
-    },
-    {
-      "name": "Voltage & Current Sensor / Calibration",
-      "requirements": [
-        "Adc Calibrator Cutoff",
-        "Adc Calibrator Quality Factor"
-      ]
-    },
-    {
-      "name": "Commissioning Defaults",
-      "requirements": [
-        "Commissioning Id Reference",
-        "Commissioning Iq Reference",
-        "Commissioning Speed Reference",
-        "Open Loop Frequency",
-        "Open Loop Frequency Slope"
-      ]
-    },
-    {
       "name": "Control Loop / Position Controller",
       "requirements": [
         "Mech Position Kp",
@@ -556,6 +539,29 @@
       "requirements": [
         "Startup Delay",
         "Cia402 Operation Enable Delay"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Calibration",
+      "requirements": [
+        "Adc Calibrator Cutoff",
+        "Adc Calibrator Quality Factor"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Position Sensor",
+      "requirements": [
+        "Encoder Speed Filter Cutoff"
+      ]
+    },
+    {
+      "name": "Commissioning Defaults",
+      "requirements": [
+        "Commissioning Id Reference",
+        "Commissioning Iq Reference",
+        "Commissioning Speed Reference",
+        "Open Loop Frequency",
+        "Open Loop Frequency Slope"
       ]
     }
   ],

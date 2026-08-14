@@ -31,7 +31,7 @@ extern "C"
 typedef struct _tag_ringbuf_t
 {
     // buffer pool pointer (statically allocated by user)
-    data_gt* mem_pool;
+    byte_gt* mem_pool;
 
     // length of buffer. Note: Usable size is capacity - 1
     size_gt capacity;
@@ -49,7 +49,7 @@ typedef struct _tag_ringbuf_t
  * @param[in,out] pool Statically allocated storage for buffer elements.
  * @param[in] size Total element count; the usable capacity is `size - 1`.
  */
-void ringbuf_init(ringbuf_t* rb, data_gt* pool, size_gt size);
+void ringbuf_init(ringbuf_t* rb, byte_gt* pool, size_gt size);
 
 /**
  * @brief Returns the number of elements currently stored in the buffer.
@@ -84,7 +84,7 @@ size_gt ringbuf_get_free(const ringbuf_t* rb);
  * @param[in] data Element to write.
  * @return `1` on success or `0` when the buffer is full.
  */
-fast_gt ringbuf_put_one(ringbuf_t* rb, data_gt data);
+fast_gt ringbuf_put_one(ringbuf_t* rb, byte_gt data);
 
 /**
  * @brief Reads one element from the buffer.
@@ -92,7 +92,7 @@ fast_gt ringbuf_put_one(ringbuf_t* rb, data_gt data);
  * @param[out] data Destination for the element.
  * @return `1` on success or `0` when the buffer is empty.
  */
-fast_gt ringbuf_get_one(ringbuf_t* rb, data_gt* data);
+fast_gt ringbuf_get_one(ringbuf_t* rb, byte_gt* data);
 
 /**
  * @brief Writes as many elements as the available space permits.
@@ -101,7 +101,7 @@ fast_gt ringbuf_get_one(ringbuf_t* rb, data_gt* data);
  * @param[in] len Requested element count.
  * @return Number of elements written.
  */
-size_gt ringbuf_put_array(ringbuf_t* rb, const data_gt* data, size_gt len);
+size_gt ringbuf_put_array(ringbuf_t* rb, const byte_gt* data, size_gt len);
 
 /**
  * @brief Reads up to the requested number of elements.
@@ -110,7 +110,7 @@ size_gt ringbuf_put_array(ringbuf_t* rb, const data_gt* data, size_gt len);
  * @param[in] len Requested element count.
  * @return Number of elements read.
  */
-size_gt ringbuf_get_array(ringbuf_t* rb, data_gt* dest, size_gt len);
+size_gt ringbuf_get_array(ringbuf_t* rb, byte_gt* dest, size_gt len);
 
 
 

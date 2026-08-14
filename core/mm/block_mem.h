@@ -38,10 +38,10 @@ typedef struct _tag_gmp_mem_area_head
     size_gt capacity;        // memory are separated into these parts,per block_size_unit
     size_gt used;            // per block_size_unit
     uint32_t memory_state;   // memory state
-    //	data_gt* used_flag;		// memory block used flag
+    //	byte_gt* used_flag;		// memory block used flag
     struct _tag_gmp_mem_area_head *next;  // next area
     struct _tag_gmp_mem_block_head *head; // the first item of mem-block head
-    data_gt assigned_flag;
+    byte_gt assigned_flag;
 } gmp_mem_area_head;
 
 // global variables

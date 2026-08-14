@@ -496,15 +496,17 @@ Inline 子实体会被展开到父硬件头文件中，不会生成 `fsbb_5m_shu
 
 ## 7. 和 Suite 的关系
 
-SDPE v2 不直接替代 `xplt/ctrl_settings.h`，而是为它生成更小、更结构化的输入。
+SDPE v2 直接生成工程唯一的 `sdpe_mgr/ctrl_settings.h`。`xplt` 不再维护同名兼容头，
+避免编译器因 include 搜索顺序错误地命中旧配置。
 
 推荐落地方式：
 
 1. 在 SDPE project 中定义工程需求。
 2. 引入一组 hardware entity。
-3. 生成硬件预设头文件和工程绑定头文件。
-4. 在 `xplt/ctrl_settings.h` 中 include 生成的 project binding header。
-5. 控制工程继续使用 `CTRL_*` 等既有宏初始化 ADC、PWM 和接口对象。
+3. 在 `sdpe_mgr/sdpe_requirement.json` 中把 `output_header` 固定为 `ctrl_settings.h`。
+4. 生成 `sdpe_mgr/ctrl_settings.h` 和 `sdpe_mgr/ctrl_settings_matlab_init.m`。
+5. 将 `sdpe_mgr` 加入工程 include path，控制工程统一 include `<ctrl_settings.h>`。
+6. 控制工程继续使用 `CTRL_*` 等既有宏初始化 ADC、PWM 和接口对象。
 
 ### 7.1 Suite 全局布局约定
 
@@ -551,8 +553,7 @@ python -m unittest discover -s .\tests
 建议后续迭代：
 
 - 增加 JSON Schema 文件，给 UI 和 CLI 共用。
-- 增加 `ctrl_settings.h` patch/overlay 生成模式。
 - 增加 `xplt.ctl_interface.h` 片段生成，用于 ADC/PWM 输入输出回调。
 - 从 `*.syscfg` 自动提取 IRIS/C2000 外设名称。
 - 继续增强 PyQt GUI：对象复制、批量 tag、参数绑定矩阵、差异预览。
-- 完善工程 `ctrl_settings.h` 对 `sdpe_mgr/<project_settings_header>.h` 的集成方式。
+- 增加工程检查，禁止重新引入 `xplt/ctrl_settings.h` 或非标准的私有输出文件名。

@@ -22,7 +22,7 @@
  * @param[in,out] pool Statically allocated storage for buffer elements.
  * @param[in] size Total element count; the usable capacity is `size - 1`.
  */
-void ringbuf_init(ringbuf_t* rb, data_gt* pool, size_gt size)
+void ringbuf_init(ringbuf_t* rb, byte_gt* pool, size_gt size)
 {
     if (!rb || !pool || size < 2)
         return;
@@ -50,7 +50,7 @@ size_gt ringbuf_get_free(const ringbuf_t* rb)
  * @param[in] data Element to write.
  * @return `1` on success or `0` when the buffer is full.
  */
-fast_gt ringbuf_put_one(ringbuf_t* rb, data_gt data)
+fast_gt ringbuf_put_one(ringbuf_t* rb, byte_gt data)
 {
     size_gt next_iset = (rb->iset + 1);
 
@@ -80,7 +80,7 @@ fast_gt ringbuf_put_one(ringbuf_t* rb, data_gt data)
  * @param[out] data Destination for the element.
  * @return `1` on success or `0` when the buffer is empty.
  */
-fast_gt ringbuf_get_one(ringbuf_t* rb, data_gt* data)
+fast_gt ringbuf_get_one(ringbuf_t* rb, byte_gt* data)
 {
     if (rb->iget == rb->iset)
     {
@@ -106,7 +106,7 @@ fast_gt ringbuf_get_one(ringbuf_t* rb, data_gt* data)
  * @param[in] len Requested element count.
  * @return Number of elements written.
  */
-size_gt ringbuf_put_array(ringbuf_t* rb, const data_gt* data, size_gt len)
+size_gt ringbuf_put_array(ringbuf_t* rb, const byte_gt* data, size_gt len)
 {
     size_gt free_space = ringbuf_get_free(rb);
     if (free_space == 0)
@@ -124,7 +124,7 @@ size_gt ringbuf_put_array(ringbuf_t* rb, const data_gt* data, size_gt len)
     if (len <= items_to_end)
     {
         // The requested range is contiguous.
-        memcpy(&rb->mem_pool[current_iset], data, len * sizeof(data_gt));
+        memcpy(&rb->mem_pool[current_iset], data, len * sizeof(byte_gt));
         rb->iset = (current_iset + len) % rb->capacity;
         if (rb->iset == rb->capacity)
             rb->iset = 0;
@@ -132,8 +132,8 @@ size_gt ringbuf_put_array(ringbuf_t* rb, const data_gt* data, size_gt len)
     else
     {
         // Split a wrapped transfer at the end of the backing array.
-        memcpy(&rb->mem_pool[current_iset], data, items_to_end * sizeof(data_gt));
-        memcpy(&rb->mem_pool[0], data + items_to_end, (len - items_to_end) * sizeof(data_gt));
+        memcpy(&rb->mem_pool[current_iset], data, items_to_end * sizeof(byte_gt));
+        memcpy(&rb->mem_pool[0], data + items_to_end, (len - items_to_end) * sizeof(byte_gt));
 
         rb->iset = len - items_to_end;
     }
@@ -148,7 +148,7 @@ size_gt ringbuf_put_array(ringbuf_t* rb, const data_gt* data, size_gt len)
  * @param[in] len Requested element count.
  * @return Number of elements read.
  */
-size_gt ringbuf_get_array(ringbuf_t* rb, data_gt* dest, size_gt len)
+size_gt ringbuf_get_array(ringbuf_t* rb, byte_gt* dest, size_gt len)
 {
     size_gt used_count = ringbuf_used(rb);
     if (used_count == 0)
@@ -166,7 +166,7 @@ size_gt ringbuf_get_array(ringbuf_t* rb, data_gt* dest, size_gt len)
     if (len <= items_to_end)
     {
         // The requested range is contiguous.
-        memcpy(dest, &rb->mem_pool[current_iget], len * sizeof(data_gt));
+        memcpy(dest, &rb->mem_pool[current_iget], len * sizeof(byte_gt));
         rb->iget = (current_iget + len) % rb->capacity;
         if (rb->iget == rb->capacity)
             rb->iget = 0;
@@ -174,8 +174,8 @@ size_gt ringbuf_get_array(ringbuf_t* rb, data_gt* dest, size_gt len)
     else
     {
         // Split a wrapped transfer at the end of the backing array.
-        memcpy(dest, &rb->mem_pool[current_iget], items_to_end * sizeof(data_gt));
-        memcpy(dest + items_to_end, &rb->mem_pool[0], (len - items_to_end) * sizeof(data_gt));
+        memcpy(dest, &rb->mem_pool[current_iget], items_to_end * sizeof(byte_gt));
+        memcpy(dest + items_to_end, &rb->mem_pool[0], (len - items_to_end) * sizeof(byte_gt));
 
         rb->iget = len - items_to_end;
     }

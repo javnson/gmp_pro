@@ -56,7 +56,7 @@ void gmp_csp_loop(void)
 
 size_gt gmp_base_print_c29xsyscfg(const char *format, ...)
 {
-    static data_gt buffer[GMP_BASE_PRINT_CHAR_EXT];
+    static byte_gt buffer[GMP_BASE_PRINT_CHAR_EXT];
     int formatted_length;
     size_gt write_length;
     va_list arguments;

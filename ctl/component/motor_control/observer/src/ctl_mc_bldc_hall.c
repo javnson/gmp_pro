@@ -89,7 +89,7 @@ void ctl_init_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, const ctl_pmsm_hall_obs_in
     ctl_disable_pmsm_hall_obs(obs);
 }
 
-void ctl_step_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, data_gt hall_state)
+void ctl_step_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, byte_gt hall_state)
 {
     if (!obs->flag_enable)
         return;
@@ -104,7 +104,7 @@ void ctl_step_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, data_gt hall_state)
     if (hall_state != obs->prev_hall_state)
     {
         // Calculate transition index: (prev << 3) | curr
-        data_gt trans_idx = (data_gt)((obs->prev_hall_state << 3) | hall_state);
+        byte_gt trans_idx = (byte_gt)((obs->prev_hall_state << 3) | hall_state);
         fast_gt dir = HALL_DIR_MAP[trans_idx];
 
         if (dir != 0 && obs->edge_tick_cnt > 0)

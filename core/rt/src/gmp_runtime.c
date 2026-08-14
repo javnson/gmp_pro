@@ -29,7 +29,7 @@ size_gt gmp_base_print_internal(const char *p_fmt, ...)
         return ret;
     }
 
-    static data_gt str[GMP_BASE_PRINT_CHAR_EXT];
+    static byte_gt str[GMP_BASE_PRINT_CHAR_EXT];
     memset(str, 0, GMP_BASE_PRINT_CHAR_EXT);
 
     va_list vArgs;

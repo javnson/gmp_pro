@@ -15,7 +15,7 @@ pil_directory = fileparts(mfilename('fullpath'));
 target_directory = fileparts(pil_directory);
 project_directory = fileparts(target_directory);
 settings_script = fullfile(target_directory, 'sdpe_mgr', ...
-    'sdpe_mcs_pmsm_nt_f280049c_settings_matlab_init.m');
+    'ctrl_settings_matlab_init.m');
 run(settings_script);
 
 assert(ENABLE_GMP_DL_PIL_SIM, ...

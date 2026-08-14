@@ -88,7 +88,12 @@ Schema parameters use `numeric_domain` to distinguish `real`, `parameter`,
 `parameter`; SDPE then emits `real2param(value)` without an `f` suffix so a
 double `parameter_gt` retains the JSON precision. Use `ctrl` only when a macro
 is explicitly consumed as cached real-time data. Project bindings provide the
-matching `real`, `parameter`, and `ctrl` keys.
+matching `real`, `parameter`, and `ctrl` keys. The project editor displays
+these choices as `real_gt`, `parameter_gt`, and `ctrl_gt`. Every numeric value
+entered in the Binding Value cell is treated as a real literal before SDPE
+converts it to the selected destination domain. New numeric requirements
+default to `parameter_gt`; integer and complete C-expression bindings continue
+to use `number` and `literal` explicitly.
 
 MATLAB initialization scripts define `real2param`, `real2ctrl`, `param2ctrl`,
 and `ctrl2param` function handles. Their default simulation domains are double;

@@ -43,14 +43,14 @@ size_gt gmp_hal_uart_get_rx_available(uart_halt uart)
 }
 
 /** @brief Validate and accept a hosted UART write request. */
-ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, uint32_t timeout)
+ec_gt gmp_hal_uart_write(uart_halt uart, const byte_gt* data, size_gt length, uint32_t timeout)
 {
     GMP_UNUSED_VAR(timeout);
     return (uart == NULL || data == NULL || length == 0) ? GMP_EC_GENERAL_ERROR : GMP_EC_OK;
 }
 
 /** @brief Validate a hosted UART read request and report no received bytes. */
-ec_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length, uint32_t timeout, size_gt* bytes_read)
+ec_gt gmp_hal_uart_read(uart_halt uart, byte_gt* data, size_gt length, uint32_t timeout, size_gt* bytes_read)
 {
     GMP_UNUSED_VAR(timeout);
     if (bytes_read != NULL)
@@ -86,7 +86,7 @@ ec_gt gmp_hal_iic_write_reg(iic_halt handle, addr16_gt device_address, addr32_gt
 
 /** @brief Validate and accept an unmodeled hosted I2C memory write. */
 ec_gt gmp_hal_iic_write_mem(iic_halt handle, addr16_gt device_address, addr32_gt memory_address,
-                            size_gt address_length, const data_gt* memory, size_gt memory_length, time_gt timeout)
+                            size_gt address_length, const byte_gt* memory, size_gt memory_length, time_gt timeout)
 {
     GMP_UNUSED_VAR(handle);
     GMP_UNUSED_VAR(device_address);
@@ -112,7 +112,7 @@ ec_gt gmp_hal_iic_read_reg(iic_halt handle, addr16_gt device_address, addr32_gt 
 
 /** @brief Validate an unmodeled hosted I2C memory read request. */
 ec_gt gmp_hal_iic_read_mem(iic_halt handle, addr16_gt device_address, addr32_gt memory_address,
-                           size_gt address_length, data_gt* memory, size_gt memory_length, time_gt timeout)
+                           size_gt address_length, byte_gt* memory, size_gt memory_length, time_gt timeout)
 {
     GMP_UNUSED_VAR(handle);
     GMP_UNUSED_VAR(device_address);
@@ -124,21 +124,21 @@ ec_gt gmp_hal_iic_read_mem(iic_halt handle, addr16_gt device_address, addr32_gt 
 }
 
 /** @brief Validate and accept an unmodeled hosted SPI write. */
-ec_gt gmp_hal_spi_bus_write(spi_halt spi, const data_gt* transmit_buffer, size_gt length, time_gt timeout)
+ec_gt gmp_hal_spi_bus_write(spi_halt spi, const byte_gt* transmit_buffer, size_gt length, time_gt timeout)
 {
     GMP_UNUSED_VAR(timeout);
     return (spi == NULL || transmit_buffer == NULL || length == 0) ? GMP_EC_GENERAL_ERROR : GMP_EC_OK;
 }
 
 /** @brief Validate an unmodeled hosted SPI read request. */
-ec_gt gmp_hal_spi_bus_read(spi_halt spi, data_gt* receive_buffer, size_gt length, time_gt timeout)
+ec_gt gmp_hal_spi_bus_read(spi_halt spi, byte_gt* receive_buffer, size_gt length, time_gt timeout)
 {
     GMP_UNUSED_VAR(timeout);
     return (spi == NULL || receive_buffer == NULL || length == 0) ? GMP_EC_GENERAL_ERROR : GMP_EC_OK;
 }
 
 /** @brief Validate an unmodeled hosted full-duplex SPI transfer. */
-ec_gt gmp_hal_spi_bus_transfer(spi_halt spi, const data_gt* transmit_buffer, data_gt* receive_buffer,
+ec_gt gmp_hal_spi_bus_transfer(spi_halt spi, const byte_gt* transmit_buffer, byte_gt* receive_buffer,
                                size_gt length, time_gt timeout)
 {
     GMP_UNUSED_VAR(timeout);

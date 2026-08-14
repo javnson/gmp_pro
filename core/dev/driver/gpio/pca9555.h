@@ -82,12 +82,12 @@ typedef enum
  */
 typedef struct
 {
-    data_gt cfg_port0; /**< Direction config for Port 0 (1=Input, 0=Output) */
-    data_gt cfg_port1; /**< Direction config for Port 1 */
-    data_gt out_port0; /**< Initial output state for Port 0 */
-    data_gt out_port1; /**< Initial output state for Port 1 */
-    data_gt pol_port0; /**< Polarity inversion for Port 0 (1=Inverted) */
-    data_gt pol_port1; /**< Polarity inversion for Port 1 */
+    byte_gt cfg_port0; /**< Direction config for Port 0 (1=Input, 0=Output) */
+    byte_gt cfg_port1; /**< Direction config for Port 1 */
+    byte_gt out_port0; /**< Initial output state for Port 0 */
+    byte_gt out_port1; /**< Initial output state for Port 1 */
+    byte_gt pol_port0; /**< Polarity inversion for Port 0 (1=Inverted) */
+    byte_gt pol_port1; /**< Polarity inversion for Port 1 */
 } pca9555_init_t;
 
 /**
@@ -98,9 +98,9 @@ typedef struct
 {
     iic_halt bus;
     addr16_gt dev_addr;
-    data_gt shadow_cfg[2]; /**< Cache for Direction registers */
-    data_gt shadow_out[2]; /**< Cache for Output registers */
-    data_gt shadow_pol[2]; /**< Cache for Polarity registers */
+    byte_gt shadow_cfg[2]; /**< Cache for Direction registers */
+    byte_gt shadow_out[2]; /**< Cache for Output registers */
+    byte_gt shadow_pol[2]; /**< Cache for Polarity registers */
 } pca9555_dev_t;
 
 /* ========================================================================= */

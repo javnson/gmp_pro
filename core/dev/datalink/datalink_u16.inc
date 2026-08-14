@@ -25,7 +25,7 @@ void gmp_dev_dl_init(gmp_datalink_t* ctx)
     ctx->tx_state = GMP_DL_TX_STATE_IDLE;
 }
 
-void gmp_dev_dl_push_byte(gmp_datalink_t* ctx, data_gt raw_data)
+void gmp_dev_dl_push_byte(gmp_datalink_t* ctx, byte_gt raw_data)
 {
     uint16_t next_head = ctx->rx_fifo_head + 1;
     if (next_head >= GMP_DL_RX_FIFO_SIZE)
@@ -45,7 +45,7 @@ void gmp_dev_dl_push_byte(gmp_datalink_t* ctx, data_gt raw_data)
     }
 }
 
-void gmp_dev_dl_push_str(gmp_datalink_t* ctx, const data_gt* str, size_gt size)
+void gmp_dev_dl_push_str(gmp_datalink_t* ctx, const byte_gt* str, size_gt size)
 {
     if (!ctx || !str || size == 0)
         return;
@@ -112,7 +112,7 @@ gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
     /* Parse queued receive units. */
     while (ctx->rx_fifo_tail != ctx->rx_fifo_head)
     {
-        data_gt byte = ctx->rx_fifo[ctx->rx_fifo_tail];
+        byte_gt byte = ctx->rx_fifo[ctx->rx_fifo_tail];
 
         /* Pop one addressable unit from the receive FIFO. */
         ctx->rx_fifo_tail++;
@@ -314,7 +314,7 @@ void gmp_dev_dl_tx_request_cmd(gmp_datalink_t* ctx, uint16_t seq, uint16_t cmd)
     ctx->tx_state = GMP_DL_TX_STATE_BUILDING;
 }
 
-void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, const data_gt* data, size_gt actual_payload_len)
+void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, const byte_gt* data, size_gt actual_payload_len)
 {
     if (ctx->tx_state != GMP_DL_TX_STATE_BUILDING)
         return;
@@ -324,11 +324,11 @@ void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, const data_gt* data, size
     if ((ctx->tx_len + actual_payload_len) > GMP_DL_MTU)
         return;
 
-    memcpy(&ctx->tx_buf[ctx->tx_len], data, actual_payload_len * sizeof(data_gt));
+    memcpy(&ctx->tx_buf[ctx->tx_len], data, actual_payload_len * sizeof(byte_gt));
     ctx->tx_len += actual_payload_len;
 }
 
-void gmp_dev_dl_tx_append_u8(gmp_datalink_t* ctx, data_gt val)
+void gmp_dev_dl_tx_append_u8(gmp_datalink_t* ctx, byte_gt val)
 {
     if (ctx->tx_state != GMP_DL_TX_STATE_BUILDING)
         return;
@@ -371,7 +371,7 @@ void gmp_dev_dl_tx_ready(gmp_datalink_t* ctx)
 }
 
 void gmp_dev_dl_tx_request(gmp_datalink_t* ctx, uint16_t seq, uint16_t cmd, size_gt actual_payload_len,
-                           const data_gt* data)
+                           const byte_gt* data)
 {
     gmp_dev_dl_tx_request_cmd(ctx, seq, cmd);
     gmp_dev_dl_tx_append_payload(ctx, data, actual_payload_len);
@@ -387,21 +387,21 @@ size_gt gmp_dev_dl_get_tx_capacity(gmp_datalink_t* ctx)
     return GMP_DL_MTU - ctx->tx_len;
 }
 
-data_gt* gmp_dev_dl_get_tx_payload_ptr(gmp_datalink_t* ctx)
+byte_gt* gmp_dev_dl_get_tx_payload_ptr(gmp_datalink_t* ctx)
 {
     if (ctx->tx_state != GMP_DL_TX_STATE_BUILDING)
         return NULL;
     return &ctx->tx_buf[ctx->tx_len];
 }
 
-const data_gt* gmp_dev_dl_get_tx_hw_hdr(gmp_datalink_t* ctx, size_gt* out_len)
+const byte_gt* gmp_dev_dl_get_tx_hw_hdr(gmp_datalink_t* ctx, size_gt* out_len)
 {
     if (out_len)
         *out_len = ctx->tx_hdr_len;
     return ctx->tx_hdr_buf;
 }
 
-const data_gt* gmp_dev_dl_get_tx_hw_pld(gmp_datalink_t* ctx, size_gt* out_len)
+const byte_gt* gmp_dev_dl_get_tx_hw_pld(gmp_datalink_t* ctx, size_gt* out_len)
 {
     if (out_len)
         *out_len = ctx->tx_len;
@@ -426,7 +426,7 @@ void gmp_dev_dl_tx_warp(gmp_datalink_t* ctx)
     }
 
     /* Build the unescaped six-unit header. */
-    data_gt raw_hdr[6];
+    byte_gt raw_hdr[6];
     raw_hdr[0] = ctx->tx_head.seq_id & 0xFF;
     raw_hdr[1] = ctx->tx_head.cmd & 0xFF;
     raw_hdr[2] = pld_len & 0xFF;
@@ -442,7 +442,7 @@ void gmp_dev_dl_tx_warp(gmp_datalink_t* ctx)
 
     for (i = 0; i < 6; i++)
     {
-        data_gt b = raw_hdr[i];
+        byte_gt b = raw_hdr[i];
         if (b == GMP_DL_SOF || b == GMP_DL_EOF || b == GMP_DL_ESC)
         {
             ctx->tx_hdr_buf[h_idx++] = GMP_DL_ESC;
@@ -475,7 +475,7 @@ void gmp_dev_dl_reply_ack_null(gmp_datalink_t* ctx)
 
 void gmp_dev_dl_reply_nack(gmp_datalink_t* ctx, uint16_t error_code)
 {
-    data_gt nack_payload[2];
+    byte_gt nack_payload[2];
     nack_payload[0] = ctx->rx_head.cmd & 0xFF;
     nack_payload[1] = error_code & 0xFF;
 

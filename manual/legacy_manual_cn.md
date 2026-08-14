@@ -54,9 +54,9 @@ GMP提供的基础服务由平台无关的core模块和平台相关的csp模块�
 
 为了适应不同平台的数字控制器设计/工业控制器设计，提供了以下的数据结构，供用户选用。这些数据类型以`_gt`结尾，意为 general type 表示平台无关类型。以下这些类型的默认定义在文件`core/std/types.cfg.h`中给出，为了适应不同平台的欢迎，允许在CSP中对这些类型进行重新定义，这些适应平台的定义可以在`csp/<platform>/csp.typedef.h`文件中找到。
 
-+ 基本元素`data_gt`
++ 基本元素`byte_gt`
 
-基本元素的数据用`data_gt`来表示，用于表示这款芯片中的最小存储单元。在DSP C28x环境中与其他平台存在明显的差异。用宏`GMP_PORT_DATA_SIZE_PER_BYTES`和`GMP_PORT_DATA_SIZE_PER_BITS`来描述这一最小单元的数据宽度。
+基本元素的数据用`byte_gt`来表示，用于表示这款芯片中的最小存储单元。在DSP C28x环境中与其他平台存在明显的差异。用宏`GMP_PORT_DATA_SIZE_PER_BYTES`和`GMP_PORT_DATA_SIZE_PER_BITS`来描述这一最小单元的数据宽度。
 
 + 快速类型`fast_gt`
 

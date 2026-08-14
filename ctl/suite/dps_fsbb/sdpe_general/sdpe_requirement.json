@@ -5,7 +5,7 @@
   "description": "Platform-independent FSBB topology, sensing, protection and control contract shared by all hardware and SIL targets.",
   "suite": "dps_fsbb",
   "version": "1.0.0",
-  "updated_at": "2026-08-08",
+  "updated_at": "2026-08-15",
   "output_header": "sdpe_dps_fsbb_common_settings.h",
   "hardware": [
     {
@@ -19,21 +19,25 @@
       "role": "PIL input channel mask",
       "macro": "GMP_PIL_RX_MASK",
       "weak": true,
-      "binding": {"number": "15"},
+      "binding": {
+        "number": "15"
+      },
       "description": "Enable the four ADC slots used by the FSBB SIL input ABI."
     },
     {
       "role": "PIL output channel mask",
       "macro": "GMP_PIL_TX_MASK",
       "weak": true,
-      "binding": {"number": "16711683"},
+      "binding": {
+        "number": "16711683"
+      },
       "description": "Enable two PWM slots and eight monitor slots used by the FSBB SIL output ABI."
     },
     {
       "role": "PWM Frequency",
       "macro": "PWM_FREQ",
       "binding": {
-        "float": "20e3"
+        "parameter": "20e3"
       },
       "description": "FSBB switching frequency."
     },
@@ -41,7 +45,7 @@
       "role": "Controller Frequency",
       "macro": "CONTROLLER_FREQUENCY",
       "binding": {
-        "float": "20e3"
+        "parameter": "20e3"
       },
       "description": "SIL controller sample frequency."
     },
@@ -49,7 +53,7 @@
       "role": "ADC Reference Voltage",
       "macro": "CTRL_ADC_VOLTAGE_REF",
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "ADC reference voltage."
     },
@@ -57,7 +61,7 @@
       "role": "Voltage PU Base",
       "macro": "CTRL_VOLTAGE_BASE",
       "binding": {
-        "float": "34.0"
+        "parameter": "34.0"
       },
       "description": "Voltage per-unit base."
     },
@@ -65,7 +69,7 @@
       "role": "Current PU Base",
       "macro": "CTRL_CURRENT_BASE",
       "binding": {
-        "float": "14.14"
+        "parameter": "14.14"
       },
       "description": "Current per-unit base."
     },
@@ -73,7 +77,7 @@
       "role": "Minimum Load Resistance",
       "macro": "FSBB_PARAM_RLOAD_MIN",
       "binding": {
-        "float": "20.0"
+        "parameter": "20.0"
       },
       "description": "Minimum load resistance."
     },
@@ -81,7 +85,7 @@
       "role": "Input Capacitance",
       "macro": "FSBB_PARAM_CIN",
       "binding": {
-        "float": "440e-6"
+        "parameter": "440e-6"
       },
       "description": "Input capacitance."
     },
@@ -89,7 +93,7 @@
       "role": "Output Capacitance",
       "macro": "FSBB_PARAM_COUT",
       "binding": {
-        "float": "440e-6"
+        "parameter": "440e-6"
       },
       "description": "Output capacitance."
     },
@@ -97,7 +101,7 @@
       "role": "Output Capacitor ESR",
       "macro": "FSBB_PARAM_COUT_ESR",
       "binding": {
-        "float": "0.1"
+        "parameter": "0.1"
       },
       "description": "Output capacitor ESR."
     },
@@ -105,7 +109,7 @@
       "role": "Main Inductor",
       "macro": "FSBB_PARAM_L",
       "binding": {
-        "float": "1.5e-3"
+        "parameter": "1.5e-3"
       },
       "description": "Main FSBB inductance."
     },
@@ -113,7 +117,7 @@
       "role": "Main Inductor ESR",
       "macro": "FSBB_PARAM_L_ESR",
       "binding": {
-        "float": "0.05"
+        "parameter": "0.05"
       },
       "description": "Main inductor ESR."
     },
@@ -185,7 +189,7 @@
       "role": "Maximum Input Voltage",
       "macro": "FSBB_INPUT_VOLTAGE_MAX",
       "binding": {
-        "float": "60.0"
+        "parameter": "60.0"
       },
       "description": "Maximum input voltage."
     },
@@ -193,7 +197,7 @@
       "role": "Minimum Input Voltage",
       "macro": "FSBB_INPUT_VOLTAGE_MIN",
       "binding": {
-        "float": "12.0"
+        "parameter": "12.0"
       },
       "description": "Minimum input voltage."
     },
@@ -201,7 +205,7 @@
       "role": "Nominal Input Voltage",
       "macro": "FSBB_INPUT_VOLTAGE_NOMINAL",
       "binding": {
-        "float": "24.0"
+        "parameter": "24.0"
       },
       "description": "Nominal model source voltage."
     },
@@ -209,7 +213,7 @@
       "role": "Maximum Output Voltage",
       "macro": "FSBB_OUTPUT_VOLTAGE_MAX",
       "binding": {
-        "float": "72.0"
+        "parameter": "72.0"
       },
       "description": "Maximum output voltage."
     },
@@ -217,7 +221,7 @@
       "role": "Minimum Output Voltage",
       "macro": "FSBB_OUTPUT_VOLTAGE_MIN",
       "binding": {
-        "float": "3.0"
+        "parameter": "3.0"
       },
       "description": "Minimum output voltage."
     },
@@ -225,7 +229,7 @@
       "role": "Maximum Output Current",
       "macro": "FSBB_OUTPUT_CURRENT_LIM",
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Output current limit."
     },
@@ -233,7 +237,7 @@
       "role": "Default Output Voltage",
       "macro": "FSBB_DEFAULT_OUTPUT_VOLTAGE",
       "binding": {
-        "float": "24.0"
+        "parameter": "24.0"
       },
       "description": "Default voltage-loop command."
     },
@@ -241,7 +245,7 @@
       "role": "Default Current Limit",
       "macro": "FSBB_DEFAULT_CURRENT_LIMIT",
       "binding": {
-        "float": "5.0"
+        "parameter": "5.0"
       },
       "description": "Default current limit."
     },
@@ -249,7 +253,7 @@
       "role": "Maximum Duty",
       "macro": "FSBB_DUTY_MAX",
       "binding": {
-        "float": "0.95"
+        "parameter": "0.95"
       },
       "description": "Maximum leg duty."
     },
@@ -257,7 +261,7 @@
       "role": "Minimum Duty",
       "macro": "FSBB_DUTY_MIN",
       "binding": {
-        "float": "0.05"
+        "parameter": "0.05"
       },
       "description": "Minimum leg duty."
     },
@@ -265,7 +269,7 @@
       "role": "Maximum Inductor Current",
       "macro": "FSBB_PROTECT_IL_MAX",
       "binding": {
-        "float": "25.0"
+        "parameter": "25.0"
       },
       "description": "Positive inductor-current protection threshold."
     },
@@ -273,7 +277,7 @@
       "role": "Minimum Inductor Current",
       "macro": "FSBB_PROTECT_IL_MIN",
       "binding": {
-        "float": "-2.0"
+        "parameter": "-2.0"
       },
       "description": "Negative inductor-current protection threshold."
     },
@@ -281,7 +285,7 @@
       "role": "Open-loop Voltage Command",
       "macro": "FSBB_OPEN_LOOP_VOLTAGE_COMMAND",
       "binding": {
-        "float": "12.0"
+        "parameter": "12.0"
       },
       "description": "Open-loop equivalent voltage command."
     },
@@ -289,7 +293,7 @@
       "role": "Current-loop Bandwidth",
       "macro": "FSBB_CURRENT_LOOP_BANDWIDTH",
       "binding": {
-        "float": "800.0"
+        "parameter": "800.0"
       },
       "description": "Current-loop crossover frequency."
     },
@@ -297,7 +301,7 @@
       "role": "Voltage-loop Bandwidth",
       "macro": "FSBB_VOLTAGE_LOOP_BANDWIDTH",
       "binding": {
-        "float": "40.0"
+        "parameter": "40.0"
       },
       "description": "Voltage-loop crossover frequency."
     },
@@ -305,7 +309,7 @@
       "role": "Low Transition Ratio",
       "macro": "FSBB_TRANSITION_RATIO_LOW",
       "binding": {
-        "float": "0.90"
+        "parameter": "0.90"
       },
       "description": "Buck-to-transition boundary."
     },
@@ -313,7 +317,7 @@
       "role": "High Transition Ratio",
       "macro": "FSBB_TRANSITION_RATIO_HIGH",
       "binding": {
-        "float": "1.10"
+        "parameter": "1.10"
       },
       "description": "Transition-to-boost boundary."
     },
@@ -321,7 +325,7 @@
       "role": "SPLL Epsilon",
       "macro": "CTRL_SPLL_EPSILON",
       "binding": {
-        "float": "0.005"
+        "parameter": "0.005"
       },
       "description": "Compatibility setting used by the suite framework."
     },
@@ -337,7 +341,7 @@
       "role": "Voltage Ramp Rate",
       "macro": "FSBB_VOLTAGE_RAMP_PU_S",
       "binding": {
-        "float": "1.0"
+        "parameter": "1.0"
       },
       "description": "Voltage command ramp in pu/s."
     },
@@ -345,7 +349,7 @@
       "role": "Current Ramp Rate",
       "macro": "FSBB_CURRENT_RAMP_PU_S",
       "binding": {
-        "float": "1.0"
+        "parameter": "1.0"
       },
       "description": "Current command ramp in pu/s."
     }
@@ -356,7 +360,9 @@
       "requirements": [
         "PWM Frequency",
         "Controller Frequency",
-        "ADC Reference Voltage"
+        "ADC Reference Voltage",
+        "PIL input channel mask",
+        "PIL output channel mask"
       ]
     },
     {

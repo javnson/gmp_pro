@@ -91,7 +91,7 @@ typedef struct _tag_variable_usr
 
     // name of variables
     // end string using '\0'
-    data_gt *name;
+    byte_gt *name;
 
     // point to next variable
     // type is rtsh_var_usr
@@ -124,7 +124,7 @@ typedef struct _tag_variable_intrisic
 
     // name of variables
     // end string using '\0'
-    data_gt *name;
+    byte_gt *name;
 
 }rtsh_var_intrinsic_t;
 

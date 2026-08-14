@@ -42,4 +42,4 @@
 
 
 // Invoke Controller Settings
-#include "../sdpe_mgr/sdpe_pgs_inv_gfm_iris_settings.h"
+#include "../sdpe_mgr/ctrl_settings.h"

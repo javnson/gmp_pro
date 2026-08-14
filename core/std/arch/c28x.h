@@ -2,7 +2,7 @@
 #define _FILE_ARCH_C28X_H_
 
 /* C28x has a 16-bit addressable C byte and therefore does not provide
- * int8_t/uint8_t.  Reusable code must use data_gt or fast_gt for small state
+ * int8_t/uint8_t.  Reusable code must use byte_gt or fast_gt for small state
  * values instead of assuming an 8-bit native type. */
 #ifndef ARCH_NAME
 #define ARCH_NAME "C28x"

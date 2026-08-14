@@ -15,7 +15,7 @@ model_file = fullfile(root, [model '.slx']);
 run(fullfile(root, '..', '..', 'sdpe_general', ...
     'sdpe_dps_fsbb_common_settings_matlab_init.m'));
 run(fullfile(root, 'sdpe_mgr', ...
-    'sdpe_dps_fsbb_simulate_settings_matlab_init.m'));
+    'ctrl_settings_matlab_init.m'));
 load_system(model_file);
 
 start_info = System.Diagnostics.ProcessStartInfo;

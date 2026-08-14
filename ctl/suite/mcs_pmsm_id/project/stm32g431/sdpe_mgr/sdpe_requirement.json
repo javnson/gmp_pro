@@ -5,8 +5,8 @@
   "description": "Structured SDPE hardware, peripheral and control settings migrated from stm32g431/xplt/ctrl_settings.h.",
   "suite": "mcs_pmsm_id",
   "version": "1.0.0",
-  "updated_at": "2026-08-08",
-  "output_header": "sdpe_mcs_pmsm_id_stm32g431_settings.h",
+  "updated_at": "2026-08-15",
+  "output_header": "ctrl_settings.h",
   "hardware": [
     {
       "entity": "nucleo_g431rb_motor_board"
@@ -160,7 +160,7 @@
       "role": "Adc Voltage Reference",
       "macro": "CTRL_ADC_VOLTAGE_REF",
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "ADC reference voltage used by all sensor conversions."
     },
@@ -168,7 +168,7 @@
       "role": "Dc Bus Voltage Base",
       "macro": "CTRL_DCBUS_VOLTAGE",
       "binding": {
-        "float": "80.0"
+        "parameter": "80.0"
       },
       "description": "Configured DC-bus voltage base."
     },
@@ -184,7 +184,7 @@
       "role": "Current Base",
       "macro": "CTRL_CURRENT_BASE",
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Phase-current per-unit base in amperes."
     },
@@ -200,7 +200,7 @@
       "role": "Encoder Bias",
       "macro": "CTRL_POS_ENC_BIAS",
       "binding": {
-        "float": "0.0207000002"
+        "parameter": "0.0207000002"
       },
       "description": "Mechanical encoder position bias in per unit."
     },
@@ -480,7 +480,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "20e3"
+        "parameter": "20e3"
       },
       "description": "Main motor-control ISR frequency in hertz."
     },

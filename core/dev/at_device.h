@@ -78,7 +78,7 @@ typedef struct _tag_at_device_entity
 {
     /* 接收缓冲区 */
     ringbuf_t buffer;
-    data_gt mem_pool[AT_DEVICE_RX_BUFFER];
+    byte_gt mem_pool[AT_DEVICE_RX_BUFFER];
 
     /* 解析用行缓冲区 */
     char cmd_buffer[AT_LINE_MAX_LEN];

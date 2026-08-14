@@ -123,7 +123,7 @@ ec_gt ht16k33_read_keys(ht16k33_dev_t* dev, fast_gt* key_id_ret)
     }
 
     /* Dynamically allocate array size based on user configuration */
-    data_gt key_data[HT16K33_CFG_KEY_RAM_SIZE] = {0};
+    byte_gt key_data[HT16K33_CFG_KEY_RAM_SIZE] = {0};
     uint32_t byteIdx, bitIdx;
     fast_gt current_key;
 

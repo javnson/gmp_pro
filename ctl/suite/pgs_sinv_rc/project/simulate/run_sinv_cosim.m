@@ -36,7 +36,7 @@ end
 end
 
 function assert_level(root, level)
-header = fileread(fullfile(root, 'sdpe_mgr', 'sdpe_pgs_sinv_rc_simulate_settings.h'));
+header = fileread(fullfile(root, 'sdpe_mgr', 'ctrl_settings.h'));
 token = regexp(header, '#define\s+BUILD_LEVEL\s+\((\d)\)', 'tokens', 'once');
 if isempty(token) || str2double(token{1}) ~= level
     error('SINV:BuildLevelMismatch', ...

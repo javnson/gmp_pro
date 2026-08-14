@@ -325,7 +325,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef* huart, uint16_t Size)
 
         if (Size > last_position)
         {
-            gmp_dev_dl_push_str(&dl, (data_gt*)&uart_rx_dma_buffer[last_position],
+            gmp_dev_dl_push_str(&dl, (byte_gt*)&uart_rx_dma_buffer[last_position],
                                 (uint16_t)(Size - last_position));
             last_position = Size;
         }

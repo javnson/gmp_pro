@@ -2,7 +2,7 @@
 #ifndef _FILE_SINV_SIM_XPLT_PERIPHERAL_H_
 #define _FILE_SINV_SIM_XPLT_PERIPHERAL_H_
 #include <gmp_core.h>
-#include <sdpe_pgs_sinv_rc_simulate_settings.h>
+#include <ctrl_settings.h>
 #include <ctl/component/digital_power/basic/std_sil_dp_interface.h>
 #include <ctl/component/interface/adc_channel.h>
 #ifdef __cplusplus

@@ -5,8 +5,8 @@
   "description": "C29x PMSM target using the TI-verified LAUNCHXL-F29H85X and BOOSTXL-3PHGANINV PWM, ADC, QEP, safety GPIO and UART resource map.",
   "suite": "mcs_pmsm_nt",
   "version": "1.0.0",
-  "updated_at": "2026-08-11",
-  "output_header": "sdpe_mcs_pmsm_nt_f29h85x_settings.h",
+  "updated_at": "2026-08-15",
+  "output_header": "ctrl_settings.h",
   "hardware": [
     {
       "entity": "launchxl_f29h85x_3phgan"
@@ -399,7 +399,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "ADC reference voltage used by all sensor conversions."
     },
@@ -409,7 +409,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "60.0"
+        "parameter": "60.0"
       },
       "description": "Configured DC-bus voltage base."
     },
@@ -429,7 +429,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Phase-current per-unit base in amperes."
     },
@@ -679,7 +679,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.0"
+        "parameter": "0.0"
       },
       "description": "Mechanical encoder position bias in per unit."
     },
@@ -996,9 +996,8 @@
   ],
   "requirement_groups": [
     {
-      "name": "PIL Connection",
+      "name": "Peripheral Parameters",
       "requirements": [
-        "PIL Data Link Base Command",
         "Data Link UART Baud Rate",
         "PIL UDP Host",
         "PIL Bridge UDP Listen Port",
@@ -1007,8 +1006,6 @@
         "PIL MATLAB Command RX Port",
         "PIL RX Mask",
         "PIL TX Mask",
-        "PIL MCU Timeout",
-        "PIL MATLAB Timeout",
         "PIL ADC DC Bus Index",
         "PIL ADC Phase U Voltage Index",
         "PIL ADC Phase V Voltage Index",
@@ -1025,27 +1022,48 @@
         "PIL Monitor D Current Index",
         "PIL Monitor Q Current Index",
         "PIL Monitor Electrical Position Index",
-        "PIL Monitor Speed Index"
-      ]
-    },
-    {
-      "name": "Peripheral Parameters",
-      "requirements": [
+        "PIL Monitor Speed Index",
         "Data Link Scope Depth",
         "PWM Compare Max",
         "PWM Deadband",
         "System Frequency",
         "System Time Divider",
-        "ADC Voltage Reference"
+        "ADC Voltage Reference",
+        "Gate Enable GPIO",
+        "Gate Enable Active Level",
+        "Gate Disable Safe Level",
+        "System LED GPIO",
+        "Power Fault GPIO",
+        "DC Bus Voltage SOC",
+        "Phase U Current SOC",
+        "Phase V Current SOC",
+        "Phase W Current SOC",
+        "Phase U Voltage SOC",
+        "Phase V Voltage SOC",
+        "Phase W Voltage SOC"
       ]
     },
     {
       "name": "Per-Unit Base Parameters",
       "requirements": [
+        "PIL Data Link Base Command",
         "DC Bus Voltage Base",
         "Phase Voltage Base",
         "Current Base",
-        "Motor Rated Frequency"
+        "Motor Rated Frequency",
+        "PWM Phase U Base",
+        "PWM Phase V Base",
+        "PWM Phase W Base",
+        "Rotor QEP Base",
+        "Debug UART Base",
+        "Control ISR ADC Base",
+        "DC Bus Voltage Result",
+        "Phase U Current Result",
+        "Phase V Current Result",
+        "Phase W Current Result",
+        "Phase U Voltage Result",
+        "Phase V Voltage Result",
+        "Phase W Voltage Result"
       ]
     },
     {
@@ -1077,6 +1095,19 @@
       ]
     },
     {
+      "name": "Control Loop / General Controller",
+      "requirements": [
+        "Controller LED GPIO"
+      ]
+    },
+    {
+      "name": "Runtime Parameters",
+      "requirements": [
+        "PIL MCU Timeout",
+        "PIL MATLAB Timeout"
+      ]
+    },
+    {
       "name": "Voltage & Current Sensor / DC Bus Voltage Sensor",
       "requirements": [
         "DC Voltage Sensitivity",
@@ -1105,37 +1136,6 @@
         "DC Current Bias",
         "Phase Current Sensitivity",
         "Phase Current Bias"
-      ]
-    },
-    {
-      "name": "C29x Board Bindings",
-      "requirements": [
-        "Gate Enable GPIO",
-        "Gate Enable Active Level",
-        "Gate Disable Safe Level",
-        "System LED GPIO",
-        "Controller LED GPIO",
-        "PWM Phase U Base",
-        "PWM Phase V Base",
-        "PWM Phase W Base",
-        "Rotor QEP Base",
-        "Debug UART Base",
-        "Power Fault GPIO",
-        "Control ISR ADC Base",
-        "DC Bus Voltage SOC",
-        "DC Bus Voltage Result",
-        "Phase U Current SOC",
-        "Phase U Current Result",
-        "Phase V Current SOC",
-        "Phase V Current Result",
-        "Phase W Current SOC",
-        "Phase W Current Result",
-        "Phase U Voltage SOC",
-        "Phase U Voltage Result",
-        "Phase V Voltage SOC",
-        "Phase V Voltage Result",
-        "Phase W Voltage SOC",
-        "Phase W Voltage Result"
       ]
     }
   ],

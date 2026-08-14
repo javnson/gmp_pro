@@ -67,7 +67,7 @@ gmp_type.h 基础类型与编译器契约
 
 `gmp_type.h` 是库组件获取 GMP 统一类型的最小入口。它不装配外设管理、任务框架或完整运行时。保存 tick 的 `time_gt` 由 `GMP_PORT_TIME_T` 决定，因此可由用户或 CSP 选择 32 位或 64 位实现；算法不得假设其固定宽度。
 
-`core/std/arch` 维护处理器数据模型。目前自动识别 Cortex-M、C28x、C29x、x86、x86-64 和 32-bit RISC-V。架构头只定义尚未被用户或 CSP 定义的 `GMP_PORT_*` 宏，因此 CSP 不得复制整张通用类型表，只保留外设句柄、特殊 tick 宽度等真实例外。C28x 的 C byte 为 16 bit，不存在 `int8_t/uint8_t`；可复用状态、协议字节容器和小整数应分别采用 `data_gt`、`fast_gt` 或明确的序列化逻辑。
+`core/std/arch` 维护处理器数据模型。目前自动识别 Cortex-M、C28x、C29x、x86、x86-64 和 32-bit RISC-V。架构头只定义尚未被用户或 CSP 定义的 `GMP_PORT_*` 宏，因此 CSP 不得复制整张通用类型表，只保留外设句柄、特殊 tick 宽度等真实例外。C28x 的 C byte 为 16 bit，不存在 `int8_t/uint8_t`；可复用状态、协议字节容器和小整数应分别采用 `byte_gt`、`fast_gt` 或明确的序列化逻辑。
 
 临界区进入/退出必须由 CSP 以 `GMP_STATIC_INLINE` 提供，使关中断/开中断指令在调用点展开；不得为解决链接问题改成外部函数。只使用 `gmp_type.h`/`gmp_base.h` 的平台桥接模块若需要临界区，必须显式取得 CSP 内联定义并在 Facility 中登记该装配依赖。`gmp_base_print` 的声明则由 `GMP_USER_PRINT_FUNCTION_DECLARATION` 从固定 CSP 配置送入 `gmp_base.h`，调度器等基础模块可以保留诊断输出；是否关闭输出由用户配置决定，不能通过删除调用规避依赖。
 

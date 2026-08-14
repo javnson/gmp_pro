@@ -9,7 +9,7 @@ SDPE 使用公共层与项目层两级结构：
 - 公共控制参数：`../../sdpe_general/sdpe_requirement.json`
 - 公共生成文件：`../../src/sdpe_pgs_sinv_rc_common_settings.h` 和对应 MATLAB 初始化脚本
 - 仿真平台参数：`sdpe_mgr/sdpe_requirement.json`
-- 仿真生成文件：`sdpe_mgr/sdpe_pgs_sinv_rc_simulate_settings.h` 和对应 MATLAB 初始化脚本
+- 仿真生成文件：`sdpe_mgr/ctrl_settings.h` 和对应 MATLAB 初始化脚本
 
 公共层定义基值、QPR/FDRC、PLL、功率环和直流母线环等跨平台参数；项目层定义 BUILD_LEVEL、UDP/SIL ADC、PWM、传感器和三个仿真功率级的参数。平台生成头文件直接包含公共头文件，不再依赖 `ctrl_settings.h`。
 
@@ -28,7 +28,7 @@ sdpe_generate.bat
 configure_sinv_models
 ```
 
-该脚本清空三个模型不可靠的 `PreLoadFcn`，并在 `PostLoadFcn` 和 `InitFcn` 中保存自包含的相对路径初始化代码。模型加载后、编译前都会先执行 `../../sdpe_general/sdpe_pgs_sinv_rc_common_settings_matlab_init.m`，再执行 `sdpe_mgr/sdpe_pgs_sinv_rc_simulate_settings_matlab_init.m`，因此不要求用户预先把 GMP MATLAB 辅助函数加入搜索路径。随后回调会根据模型位置加入 UDP MEX 目录。功率级 Mask 按 PWM、开关器件、交流滤波器、直流母线、ADC、电压传感器和电流传感器分组。模型中出现的 disabled library link 提示来自功率级 Mask 的项目级定制，模型更新检查已通过。
+该脚本清空三个模型不可靠的 `PreLoadFcn`，并在 `PostLoadFcn` 和 `InitFcn` 中保存自包含的相对路径初始化代码。模型加载后、编译前都会先执行 `../../sdpe_general/sdpe_pgs_sinv_rc_common_settings_matlab_init.m`，再执行 `sdpe_mgr/ctrl_settings_matlab_init.m`，因此不要求用户预先把 GMP MATLAB 辅助函数加入搜索路径。随后回调会根据模型位置加入 UDP MEX 目录。功率级 Mask 按 PWM、开关器件、交流滤波器、直流母线、ADC、电压传感器和电流传感器分组。模型中出现的 disabled library link 提示来自功率级 Mask 的项目级定制，模型更新检查已通过。
 
 ## 模型与 BUILD_LEVEL
 

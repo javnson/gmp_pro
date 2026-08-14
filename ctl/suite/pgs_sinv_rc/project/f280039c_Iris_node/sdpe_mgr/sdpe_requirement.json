@@ -4,8 +4,8 @@
   "description": "Single-phase inverter project requirement prepared from xplt/ctrl_settings.h.\nThis requirement introduces the GMP LVFB 150V 2-phase inverter board as the switching stage and the GMP Harmonia 3-phase LC filter as the grid filter. IRIS F280039C is included as the peripheral option provider.",
   "suite": "pgs_sinv_rc",
   "version": "0.2.0",
-  "updated_at": "2026-08-08",
-  "output_header": "sdpe_pgs_sinv_rc_iris_bindings.h",
+  "updated_at": "2026-08-15",
+  "output_header": "ctrl_settings.h",
   "hardware": [
     {
       "entity": "iris_f280039c_node"
@@ -386,7 +386,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "ADC voltage reference."
     },
@@ -396,7 +396,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "60.0"
+        "parameter": "60.0"
       },
       "description": "Rated DC bus voltage."
     },
@@ -406,7 +406,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "24.0"
+        "parameter": "24.0"
       },
       "description": "Rated AC grid/load RMS voltage."
     },
@@ -416,7 +416,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Rated AC output RMS current."
     },
@@ -426,7 +426,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "34.0"
+        "parameter": "34.0"
       },
       "description": "Voltage per-unit base, using peak value."
     },
@@ -436,7 +436,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "14.14"
+        "parameter": "14.14"
       },
       "description": "Current per-unit base, using peak value."
     },
@@ -446,7 +446,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "50.0"
+        "parameter": "50.0"
       },
       "description": "Nominal AC grid/fundamental frequency in Hz."
     },
@@ -456,7 +456,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.0015"
+        "parameter": "0.0015"
       },
       "description": "Total AC-side filter/grid inductance in H."
     },
@@ -466,7 +466,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.05"
+        "parameter": "0.05"
       },
       "description": "Total AC-side series resistance in Ohm."
     },
@@ -476,7 +476,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.1"
+        "parameter": "0.1"
       },
       "description": "Minimum PLL voltage magnitude used by P/Q reference division."
     },
@@ -506,7 +506,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "100.0"
+        "parameter": "100.0"
       },
       "description": "Project DC bus over-voltage protection threshold."
     },
@@ -526,7 +526,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "1.5"
+        "parameter": "1.5"
       },
       "description": "Maximum unsaturated modulation command before controller-divergence trip."
     },
@@ -556,7 +556,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "2.0"
+        "parameter": "2.0"
       },
       "description": "Single-phase PLL proportional gain."
     },
@@ -566,7 +566,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.02"
+        "parameter": "0.02"
       },
       "description": "Single-phase PLL integral time constant in seconds."
     },
@@ -576,7 +576,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "20.0"
+        "parameter": "20.0"
       },
       "description": "PLL q-axis error low-pass cutoff in Hz."
     },
@@ -596,7 +596,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.8"
+        "parameter": "0.8"
       },
       "description": "DC-bus outer-loop proportional gain."
     },
@@ -606,7 +606,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "12.0"
+        "parameter": "12.0"
       },
       "description": "DC-bus outer-loop integral gain per second."
     },
@@ -616,7 +616,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.65"
+        "parameter": "0.65"
       },
       "description": "Symmetric outer-loop active-power command limit."
     },
@@ -626,7 +626,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "1000.0"
+        "parameter": "1000.0"
       },
       "description": "Power and DC-bus outer-loop execution frequency."
     },
@@ -636,7 +636,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.01"
+        "parameter": "0.01"
       },
       "description": "Current polarity deadband for PWM dead-time compensation."
     },
@@ -656,7 +656,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Active-power command slew limit in PU/s."
     },
@@ -666,7 +666,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "20.0"
+        "parameter": "20.0"
       },
       "description": "Reactive-power command slew limit in PU/s."
     },
@@ -676,7 +676,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.6"
+        "parameter": "0.6"
       },
       "description": "Active-power outer-loop proportional gain."
     },
@@ -686,7 +686,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "8.0"
+        "parameter": "8.0"
       },
       "description": "Active-power outer-loop integral gain per second."
     },
@@ -696,7 +696,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "1.5"
+        "parameter": "1.5"
       },
       "description": "Peak current-reference limit in per unit."
     },
@@ -706,7 +706,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "200.0"
+        "parameter": "200.0"
       },
       "description": "Measured active/reactive power low-pass cutoff in Hz."
     },
@@ -716,7 +716,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "45.0"
+        "parameter": "45.0"
       },
       "description": "Minimum fundamental frequency tracked by the repetitive controller in Hz."
     },
@@ -726,7 +726,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.10"
+        "parameter": "0.10"
       },
       "description": "Repetitive-control learning gain."
     },
@@ -736,7 +736,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "1000.0"
+        "parameter": "1000.0"
       },
       "description": "FDRC robustness-filter cutoff frequency."
     },
@@ -746,7 +746,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "3.0"
+        "parameter": "3.0"
       },
       "description": "Plant-delay compensation in controller samples."
     },
@@ -756,7 +756,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.05"
+        "parameter": "0.05"
       },
       "description": "Current-error threshold above which RC learning is frozen."
     },

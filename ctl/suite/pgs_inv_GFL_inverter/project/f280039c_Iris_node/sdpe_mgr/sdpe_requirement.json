@@ -5,8 +5,8 @@
   "description": "Validated IRIS platform timing, sensing and resource bindings for the common GFL controller.",
   "suite": "pgs_inv_GFL_inverter",
   "version": "1.0.0",
-  "updated_at": "2026-08-08",
-  "output_header": "sdpe_pgs_inv_gfl_iris_settings.h",
+  "updated_at": "2026-08-15",
+  "output_header": "ctrl_settings.h",
   "hardware": [
     {
       "entity": "iris_f280039c_node"
@@ -852,7 +852,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.02738589"
+        "parameter": "0.02738589"
       },
       "description": "DC-link voltage sensing gain."
     },
@@ -862,7 +862,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.0"
+        "parameter": "0.0"
       },
       "description": "DC-link voltage sensing bias."
     },
@@ -872,7 +872,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.02475"
+        "parameter": "0.02475"
       },
       "description": "DC-link current sensitivity in volts per ampere."
     },
@@ -882,7 +882,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "1.65"
+        "parameter": "1.65"
       },
       "description": "DC-link current zero bias."
     },
@@ -892,7 +892,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.02738589"
+        "parameter": "0.02738589"
       },
       "description": "Helios phase-voltage sensing gain."
     },
@@ -902,7 +902,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.0"
+        "parameter": "0.0"
       },
       "description": "Helios phase-voltage sensing bias."
     },
@@ -952,7 +952,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.05"
+        "parameter": "0.05"
       },
       "description": "Validated Helios phase-current sensitivity in volts per ampere."
     },
@@ -962,7 +962,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "1.65"
+        "parameter": "1.65"
       },
       "description": "Helios phase-current zero bias."
     },
@@ -1022,7 +1022,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "ADC reference voltage."
     },
@@ -1032,7 +1032,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "80.0"
+        "parameter": "80.0"
       },
       "description": "DC-bus per-unit voltage base."
     },
@@ -1052,7 +1052,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Phase-current per-unit base in amperes."
     },

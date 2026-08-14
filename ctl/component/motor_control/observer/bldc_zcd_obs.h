@@ -60,7 +60,7 @@ typedef struct _tag_bldc_zcd_obs_t
 {
     // --- Standard Outputs ---
     velocity_ift spd_out;      //!< Estimated electrical speed (PU).
-    data_gt next_comm_state;   //!< The next 6-step commutation state (1-6) to be applied.
+    byte_gt next_comm_state;   //!< The next 6-step commutation state (1-6) to be applied.
     fast_gt flag_comm_trigger; //!< Goes HIGH (1) for exactly one tick when commutation should occur.
 
     // --- State Variables ---
@@ -143,7 +143,7 @@ GMP_STATIC_INLINE void ctl_disable_bldc_zcd_obs(ctl_bldc_zcd_obs_t* obs)
  * @param[in]     curr_state Current 6-step commutation state (1-6).
  */
 void ctl_step_bldc_zcd_obs(ctl_bldc_zcd_obs_t* obs, ctrl_gt v_u_pu, ctrl_gt v_v_pu, ctrl_gt v_w_pu, ctrl_gt v_bus_pu,
-                           data_gt curr_state);
+                           byte_gt curr_state);
 
 /** @} */ // end of BLDC_ZCD_OBS group
 

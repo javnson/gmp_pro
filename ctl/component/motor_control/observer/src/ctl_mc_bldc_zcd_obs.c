@@ -46,7 +46,7 @@ void ctl_init_bldc_zcd_obs(ctl_bldc_zcd_obs_t* obs, const ctl_bldc_zcd_obs_init_
 }
 
 void ctl_step_bldc_zcd_obs(ctl_bldc_zcd_obs_t* obs, ctrl_gt v_u_pu, ctrl_gt v_v_pu, ctrl_gt v_w_pu, ctrl_gt v_bus_pu,
-                           data_gt curr_state)
+                           byte_gt curr_state)
 {
     if (!obs->flag_enable)
         return;

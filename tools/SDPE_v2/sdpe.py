@@ -147,6 +147,13 @@ def cmd_generate_project_matlab_local(args) -> int:
 def build_local_project_generator(args) -> tuple[HeaderGenerator, Path]:
     settings = read_settings(getattr(args, "settings", None))
     project_path = Path(args.project).resolve()
+    if project_path.parent.name.lower() == "sdpe_mgr":
+        project_data = json.loads(project_path.read_text(encoding="utf-8-sig"))
+        output_header = str(project_data.get("output_header", "ctrl_settings.h")).strip()
+        if output_header != "ctrl_settings.h":
+            raise SDPEError(
+                "project-local sdpe_mgr requirements must set output_header to ctrl_settings.h"
+            )
     project_dir = Path(args.project_dir).resolve() if args.project_dir else project_path.parent
     local_cfg = settings.get("local_generation", {})
     out_value = args.out or local_cfg.get("out", ".")
@@ -179,7 +186,7 @@ def default_requirement(project_dir: Path, project_id: str, suite: str) -> dict:
         "display_name": project_id,
         "suite": suite,
         "version": "0.1.0",
-        "output_header": f"{project_id}_sdpe_bindings.h",
+        "output_header": "ctrl_settings.h",
         "common_requirements": [],
         "hardware": [],
         "requirements": [],
@@ -231,7 +238,7 @@ Default generated output:
 
 ```text
 sdpe_mgr\\
-  <project_settings_header>.h
+  ctrl_settings.h
   hardware_preset\\
 ```
 

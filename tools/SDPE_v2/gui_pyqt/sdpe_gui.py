@@ -796,6 +796,18 @@ class SDPEPage(QWidget):
                 tree.headerItem().setToolTip(col, "Weak macro: checked macros are wrapped by #ifndef / #define / #endif.")
             elif header == "Pri":
                 tree.headerItem().setToolTip(col, "Private: read-only ownership flag for the current project.")
+            elif header == "Binding Type":
+                tree.headerItem().setToolTip(
+                    col,
+                    "Select real_gt, parameter_gt, or ctrl_gt for numeric values. "
+                    "The Binding Value is always entered as a real literal and converted to the selected GMP domain.",
+                )
+            elif header == "Binding Value":
+                tree.headerItem().setToolTip(
+                    col,
+                    "Enter real numeric literals without an f suffix so parameter_gt can retain "
+                    "full configured precision.",
+                )
 
     def create_items_widget(self):
         widget = QListWidget()
@@ -2625,7 +2637,7 @@ class ProjectPage(SDPEPage):
         self.suite_edit.setText(data.get("suite", ""))
         self.version_edit.setText(data.get("version", "0.1.0"))
         self.updated_edit.setText(data.get("updated_at", ""))
-        self.header_edit.setText(data.get("output_header", "sdpe_project_bindings.h"))
+        self.header_edit.setText(data.get("output_header", "ctrl_settings.h"))
         self.common_requirements_edit.setPlainText("\n".join(common_requirement_references(data)))
         self.update_matlab_script_name()
         self.description_edit.setPlainText(data.get("description", ""))
@@ -2665,7 +2677,7 @@ class ProjectPage(SDPEPage):
             self.reset_undo_history(self.collect_current_data() or data)
 
     def update_matlab_script_name(self) -> None:
-        header_name = Path(self.header_edit.text().strip() or "sdpe_project_bindings.h")
+        header_name = Path(self.header_edit.text().strip() or "ctrl_settings.h")
         self.matlab_file_edit.setText(f"{header_name.stem}_matlab_init.m")
 
     def update_common_code_editors(self) -> None:
@@ -3433,7 +3445,7 @@ class ProjectPage(SDPEPage):
             {
                 "role": "New Private Requirement",
                 "macro": self.next_requirement_macro("NEW_PRIVATE_REQUIREMENT"),
-                "binding": {"number": "0"},
+                "binding": {"parameter": "0.0"},
                 SOURCE_KEY: "project private",
             },
         )
@@ -3482,7 +3494,7 @@ class ProjectPage(SDPEPage):
             {
                 "role": "New Common Requirement",
                 "macro": self.next_requirement_macro("NEW_COMMON_REQUIREMENT"),
-                "binding": {"number": "0"},
+                "binding": {"parameter": "0.0"},
                 SOURCE_KEY: source,
             },
         )
@@ -5681,21 +5693,65 @@ def parse_path_lines(text: str) -> list[Path]:
 
 def binding_to_cells(binding: Any) -> tuple[str, str]:
     if isinstance(binding, dict):
-        for key in ("export", "macro", "string", "float", "number", "expr", "literal"):
+        display_types = {
+            "real": "real_gt",
+            "real_gt": "real_gt",
+            "parameter": "parameter_gt",
+            "parameter_gt": "parameter_gt",
+            "float": "parameter_gt",
+            "ctrl": "ctrl_gt",
+            "ctrl_gt": "ctrl_gt",
+        }
+        for key in (
+            "export",
+            "macro",
+            "string",
+            "real",
+            "real_gt",
+            "parameter",
+            "parameter_gt",
+            "float",
+            "ctrl",
+            "ctrl_gt",
+            "number",
+            "expr",
+            "literal",
+        ):
             if key in binding:
-                return key, str(binding[key])
+                return display_types.get(key, key), str(binding[key])
     if isinstance(binding, str):
         return ("export" if "." in binding else "macro"), binding
     return "literal", ""
 
 
 def binding_type_options() -> list[str]:
-    return ["export", "expr", "macro", "string", "float", "number", "literal"]
+    return [
+        "export",
+        "expr",
+        "macro",
+        "string",
+        "real_gt",
+        "parameter_gt",
+        "ctrl_gt",
+        "number",
+        "literal",
+    ]
 
 
 def cells_to_binding(kind: str, value: str) -> dict[str, str]:
     key = kind.strip() or "literal"
-    if key not in set(binding_type_options()):
+    storage_types = {
+        "real_gt": "real",
+        "parameter_gt": "parameter",
+        "ctrl_gt": "ctrl",
+        "float": "parameter",
+        "real": "real",
+        "parameter": "parameter",
+        "ctrl": "ctrl",
+    }
+    if key in storage_types:
+        key = storage_types[key]
+    elif key not in set(binding_type_options()):
         key = "literal"
     return {key: value.strip()}
 

@@ -32,8 +32,8 @@
  * @code
  * if (event == GMP_DL_EVENT_TX_RDY) {
  * size_gt hdr_len, pld_len;
- * const data_gt* hdr = gmp_dev_dl_get_tx_hw_hdr(&ctx, &hdr_len);
- * const data_gt* pld = gmp_dev_dl_get_tx_hw_pld(&ctx, &pld_len);
+ * const byte_gt* hdr = gmp_dev_dl_get_tx_hw_hdr(&ctx, &hdr_len);
+ * const byte_gt* pld = gmp_dev_dl_get_tx_hw_pld(&ctx, &pld_len);
  * * HW_UART_Send(hdr, hdr_len);
  * if (pld_len > 0) HW_UART_Send(pld, pld_len);
  * * gmp_dev_dl_tx_state_done(&ctx); // Release TX channel
@@ -44,7 +44,7 @@
  * // 1. In Main Loop:
  * if (event == GMP_DL_EVENT_TX_RDY) {
  * size_gt hdr_len;
- * const data_gt* hdr = gmp_dev_dl_get_tx_hw_hdr(&ctx, &hdr_len);
+ * const byte_gt* hdr = gmp_dev_dl_get_tx_hw_hdr(&ctx, &hdr_len);
  * gmp_dev_dl_tx_state_next(&ctx); // Shift to PENDING_HW_HDR
  * HW_DMA_Start(hdr, hdr_len);     // Trigger DMA for Header
  * }
@@ -53,7 +53,7 @@
  * gmp_dl_tx_state_t next_state = gmp_dev_dl_tx_state_next(&ctx);
  * * if (next_state == GMP_DL_TX_STATE_PENDING_HW_PLD) {
  * size_gt pld_len;
- * const data_gt* pld = gmp_dev_dl_get_tx_hw_pld(&ctx, &pld_len);
+ * const byte_gt* pld = gmp_dev_dl_get_tx_hw_pld(&ctx, &pld_len);
  * HW_DMA_Start(pld, pld_len); // Trigger DMA for Payload
  * }
  * // If next_state is IDLE, transmission is fully complete!
@@ -156,7 +156,7 @@ typedef struct
 typedef struct
 {
     // --- ISR Decoupling FIFO ---
-    data_gt rx_fifo[GMP_DL_RX_FIFO_SIZE]; ///< Ring buffer storing raw bytes from the hardware RX interrupt
+    byte_gt rx_fifo[GMP_DL_RX_FIFO_SIZE]; ///< Ring buffer storing raw bytes from the hardware RX interrupt
     volatile uint16_t rx_fifo_head;       ///< Index where the next ISR byte will be written
     volatile uint16_t rx_fifo_tail;       ///< Index where the loop_cb will read the next byte
     volatile fast_gt rx_reset_pending;    ///< Deferred parser reset requested by the transport ISR
@@ -166,13 +166,13 @@ typedef struct
     time_gt last_rx_tick;       ///< Timestamp of the last valid RX byte, used for watchdog timeouts
 
     uint16_t rx_hdr_idx;    ///< Current byte index during unescaped header reconstruction
-    data_gt rx_hdr_buf[16]; ///< Temporary buffer for unescaped header verification
+    byte_gt rx_hdr_buf[16]; ///< Temporary buffer for unescaped header verification
 
     // --- Parsed RX Frame Info ---
     gmp_dl_head rx_head;                 ///< Decoded Sequence and Command of the current incoming frame
     uint16_t expected_payload_len;       ///< Expected payload length extracted from the header
     uint16_t payload_idx;                ///< Current byte index while receiving the blind payload
-    data_gt payload_buf[GMP_DL_MTU + 2]; ///< Buffer holding the pristine received payload and appended P_CRC
+    byte_gt payload_buf[GMP_DL_MTU + 2]; ///< Buffer holding the pristine received payload and appended P_CRC
 
     // --- Transaction Control ---
     fast_gt
@@ -184,10 +184,10 @@ typedef struct
     gmp_dl_head tx_head; ///< Registered Sequence and Command for the frame currently being built
 
     size_gt tx_hdr_len;     ///< Length of the physically prepared header buffer
-    data_gt tx_hdr_buf[16]; ///< Buffer containing the escaped physical header (Starts with SOF)
+    byte_gt tx_hdr_buf[16]; ///< Buffer containing the escaped physical header (Starts with SOF)
 
     size_gt tx_len;                 ///< Length of the physical payload buffer (Payload + P_CRC + EOF)
-    data_gt tx_buf[GMP_DL_MTU + 3]; ///< Buffer containing Payload. tx_warp will append P_CRC and EOF here.
+    byte_gt tx_buf[GMP_DL_MTU + 3]; ///< Buffer containing Payload. tx_warp will append P_CRC and EOF here.
 
     // --- Diagnostics ---
     uint32_t err_fifo_ovf_cnt; ///< Counter for bytes lost due to ISR RX FIFO overflows
@@ -210,14 +210,14 @@ void gmp_dev_dl_init(gmp_datalink_t* ctx);
  * @param ctx Pointer to the datalink context.
  * @param raw_data The raw byte received from the UART/Bus hardware.
  */
-void gmp_dev_dl_push_byte(gmp_datalink_t* ctx, data_gt raw_data);
+void gmp_dev_dl_push_byte(gmp_datalink_t* ctx, byte_gt raw_data);
 
 /** * @brief Fast ISR handler to push a block of data into the decoupling FIFO.
  * @param ctx Pointer to the datalink context.
  * @param str Pointer to the raw data block.
  * @param size Number of bytes in the block.
  */
-void gmp_dev_dl_push_str(gmp_datalink_t* ctx, const data_gt* str, size_gt size);
+void gmp_dev_dl_push_str(gmp_datalink_t* ctx, const byte_gt* str, size_gt size);
 
 /**
  * @brief Request asynchronous receive-state recovery.
@@ -270,7 +270,7 @@ void gmp_dev_dl_tx_request_cmd(gmp_datalink_t* ctx, uint16_t seq, uint16_t cmd);
  * @param  actual_payload_len Length of the data chunk being appended.
  * @param  data Pointer to the data chunk.
  */
-void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, const data_gt* data, size_gt actual_payload_len);
+void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, const byte_gt* data, size_gt actual_payload_len);
 
 /**
  * @brief Safely append an 8-bit unsigned integer to the TX payload.
@@ -278,7 +278,7 @@ void gmp_dev_dl_tx_append_payload(gmp_datalink_t* ctx, const data_gt* data, size
  * @param ctx Pointer to the datalink context.
  * @param val The 8-bit value to append.
  */
-void gmp_dev_dl_tx_append_u8(gmp_datalink_t* ctx, data_gt val);
+void gmp_dev_dl_tx_append_u8(gmp_datalink_t* ctx, byte_gt val);
 
 /**
  * @brief Safely append a 16-bit unsigned integer to the TX payload (Little-Endian).
@@ -310,7 +310,7 @@ void gmp_dev_dl_tx_ready(gmp_datalink_t* ctx);
  * @param  data Pointer to the data to be copied.
  */
 void gmp_dev_dl_tx_request(gmp_datalink_t* ctx, uint16_t seq, uint16_t cmd, size_gt actual_payload_len,
-                           const data_gt* data);
+                           const byte_gt* data);
 
 // ---------------------------------------------------------
 // TX Buffer Exposure APIs (For Zero-Copy & Hardware Send)
@@ -327,20 +327,20 @@ size_gt gmp_dev_dl_get_tx_capacity(gmp_datalink_t* ctx);
  * @brief  Get a direct pointer to the current append position in the TX payload buffer.
  * @note   Useful for direct snprintf() writing to avoid local stack arrays.
  * @param  ctx Pointer to the datalink context.
- * @return data_gt* Pointer to the buffer. NULL if TX is not in BUILDING state.
+ * @return byte_gt* Pointer to the buffer. NULL if TX is not in BUILDING state.
  */
-data_gt* gmp_dev_dl_get_tx_payload_ptr(gmp_datalink_t* ctx);
+byte_gt* gmp_dev_dl_get_tx_payload_ptr(gmp_datalink_t* ctx);
 
 /**
  * @brief  Retrieve the physical Header buffer for hardware transmission.
  * @note   Only valid when loop_cb returns GMP_DL_EVENT_TX_RDY.
  * @param  ctx Pointer to the datalink context.
  * @param  out_len Pointer to store the resulting physical header length.
- * @return data_gt* Pointer to the header buffer (Starts with SOF).
+ * @return byte_gt* Pointer to the header buffer (Starts with SOF).
  */
-const data_gt* gmp_dev_dl_get_tx_hw_hdr(gmp_datalink_t* ctx, size_gt* out_len);
+const byte_gt* gmp_dev_dl_get_tx_hw_hdr(gmp_datalink_t* ctx, size_gt* out_len);
 
-GMP_STATIC_INLINE const data_gt* gmp_dev_dl_get_tx_hw_hdr_ptr(gmp_datalink_t* ctx)
+GMP_STATIC_INLINE const byte_gt* gmp_dev_dl_get_tx_hw_hdr_ptr(gmp_datalink_t* ctx)
 {
     return ctx->tx_hdr_buf;
 }
@@ -355,11 +355,11 @@ GMP_STATIC_INLINE size_gt gmp_dev_dl_get_tx_hw_hdr_size(gmp_datalink_t* ctx)
  * @note   Only valid when loop_cb returns GMP_DL_EVENT_TX_RDY.
  * @param  ctx Pointer to the datalink context.
  * @param  out_len Pointer to store the resulting physical payload length (Payload + P_CRC + EOF).
- * @return data_gt* Pointer to the payload buffer.
+ * @return byte_gt* Pointer to the payload buffer.
  */
-const data_gt* gmp_dev_dl_get_tx_hw_pld(gmp_datalink_t* ctx, size_gt* out_len);
+const byte_gt* gmp_dev_dl_get_tx_hw_pld(gmp_datalink_t* ctx, size_gt* out_len);
 
-GMP_STATIC_INLINE const data_gt* gmp_dev_dl_get_tx_hw_pld_ptr(gmp_datalink_t* ctx)
+GMP_STATIC_INLINE const byte_gt* gmp_dev_dl_get_tx_hw_pld_ptr(gmp_datalink_t* ctx)
 {
     return ctx->tx_buf;
 }

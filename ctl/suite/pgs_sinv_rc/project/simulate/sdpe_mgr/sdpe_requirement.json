@@ -5,8 +5,8 @@
   "description": "Windows SIL platform, plant and sensing settings for all SINV commissioning models.",
   "suite": "pgs_sinv_rc",
   "version": "1.0.0",
-  "updated_at": "2026-08-08",
-  "output_header": "sdpe_pgs_sinv_rc_simulate_settings.h",
+  "updated_at": "2026-08-15",
+  "output_header": "ctrl_settings.h",
   "hardware": [
     {
       "role": "power_stage",
@@ -65,7 +65,7 @@
       "role": "Controller Frequency",
       "macro": "CONTROLLER_FREQUENCY",
       "binding": {
-        "float": "20e3"
+        "parameter": "20e3"
       },
       "description": "SIL controller and PWM update frequency."
     },
@@ -73,7 +73,7 @@
       "role": "Pwm Frequency",
       "macro": "SINV_PWM_FREQUENCY_HZ",
       "binding": {
-        "float": "20e3"
+        "parameter": "20e3"
       },
       "description": "Plant switching frequency."
     },
@@ -105,7 +105,7 @@
       "role": "Adc Reference",
       "macro": "CTRL_ADC_VOLTAGE_REF",
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "ADC reference voltage."
     },
@@ -113,7 +113,7 @@
       "role": "Dc Bus",
       "macro": "CTRL_DCBUS_VOLTAGE",
       "binding": {
-        "float": "60.0"
+        "parameter": "60.0"
       },
       "description": "Rated and nominal DC-bus voltage."
     },
@@ -121,7 +121,7 @@
       "role": "Grid Rms",
       "macro": "CTRL_GRID_VOLTAGE_RMS",
       "binding": {
-        "float": "24.0"
+        "parameter": "24.0"
       },
       "description": "Nominal grid/load RMS voltage."
     },
@@ -129,7 +129,7 @@
       "role": "Current Rms",
       "macro": "CTRL_RATED_CURRENT_RMS",
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Rated RMS AC current."
     },
@@ -137,7 +137,7 @@
       "role": "Voltage Base",
       "macro": "CTRL_VOLTAGE_BASE",
       "binding": {
-        "float": "34.0"
+        "parameter": "34.0"
       },
       "description": "Peak voltage PU base."
     },
@@ -145,7 +145,7 @@
       "role": "Current Base",
       "macro": "CTRL_CURRENT_BASE",
       "binding": {
-        "float": "14.14"
+        "parameter": "14.14"
       },
       "description": "Peak current PU base."
     },
@@ -153,7 +153,7 @@
       "role": "Filter L",
       "macro": "CTRL_AC_INDUCTANCE",
       "binding": {
-        "float": "480e-6"
+        "parameter": "480e-6"
       },
       "description": "AC filter series inductance."
     },
@@ -161,7 +161,7 @@
       "role": "Filter L Esr",
       "macro": "CTRL_AC_RESISTANCE",
       "binding": {
-        "float": "0.10"
+        "parameter": "0.10"
       },
       "description": "AC filter series resistance."
     },
@@ -169,7 +169,7 @@
       "role": "Filter C",
       "macro": "SINV_FILTER_CAPACITANCE_F",
       "binding": {
-        "float": "22e-6"
+        "parameter": "22e-6"
       },
       "description": "AC filter shunt capacitance."
     },
@@ -177,7 +177,7 @@
       "role": "Filter C Esr",
       "macro": "SINV_FILTER_CAP_ESR_OHM",
       "binding": {
-        "float": "0.10"
+        "parameter": "0.10"
       },
       "description": "Filter capacitor ESR."
     },
@@ -185,7 +185,7 @@
       "role": "Dc Cap",
       "macro": "SINV_DC_CAPACITANCE_F",
       "binding": {
-        "float": "2200e-6"
+        "parameter": "2200e-6"
       },
       "description": "DC-link capacitance."
     },
@@ -193,7 +193,7 @@
       "role": "Load R",
       "macro": "SINV_RLOAD_OHM",
       "binding": {
-        "float": "12.0"
+        "parameter": "12.0"
       },
       "description": "Resistive load for levels 1 and 2."
     },
@@ -201,7 +201,7 @@
       "role": "Rectifier Load R",
       "macro": "SINV_RECTIFIER_RLOAD_OHM",
       "binding": {
-        "float": "30.0"
+        "parameter": "30.0"
       },
       "description": "DC-side load for level 5. At 60 V this draws 120 W, within the configured converter current rating."
     },
@@ -209,7 +209,7 @@
       "role": "Ac Voltage Gain",
       "macro": "CTRL_AC_VOLTAGE_SENSITIVITY",
       "binding": {
-        "float": "0.020"
+        "parameter": "0.020"
       },
       "description": "AC voltage sensor sensitivity in V/V."
     },
@@ -217,7 +217,7 @@
       "role": "Ac Voltage Bias",
       "macro": "CTRL_AC_VOLTAGE_BIAS",
       "binding": {
-        "float": "1.65"
+        "parameter": "1.65"
       },
       "description": "AC voltage ADC bias."
     },
@@ -225,7 +225,7 @@
       "role": "Ac Current Gain",
       "macro": "CTRL_AC_CURRENT_SENSITIVITY",
       "binding": {
-        "float": "0.150"
+        "parameter": "0.150"
       },
       "description": "AC current sensor sensitivity in V/A."
     },
@@ -233,7 +233,7 @@
       "role": "Ac Current Bias",
       "macro": "CTRL_AC_CURRENT_BIAS",
       "binding": {
-        "float": "1.65"
+        "parameter": "1.65"
       },
       "description": "AC current ADC bias."
     },
@@ -241,7 +241,7 @@
       "role": "Dc Voltage Gain",
       "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
       "binding": {
-        "float": "0.040"
+        "parameter": "0.040"
       },
       "description": "DC bus voltage sensor sensitivity in V/V."
     },
@@ -249,7 +249,7 @@
       "role": "Dc Voltage Bias",
       "macro": "CTRL_DC_VOLTAGE_BIAS",
       "binding": {
-        "float": "0.0"
+        "parameter": "0.0"
       },
       "description": "DC bus voltage ADC bias."
     },
@@ -257,7 +257,7 @@
       "role": "Prot Vbus",
       "macro": "CTRL_PROT_VBUS_MAX",
       "binding": {
-        "float": "90.0"
+        "parameter": "90.0"
       },
       "description": "DC bus overvoltage threshold."
     },
@@ -265,7 +265,7 @@
       "role": "Prot Current",
       "macro": "CTRL_PROT_IAC_PEAK_MAX",
       "binding": {
-        "float": "18.0"
+        "parameter": "18.0"
       },
       "description": "Fast AC peak-current threshold."
     },
@@ -273,7 +273,7 @@
       "role": "Prot Control",
       "macro": "CTRL_PROT_VCTRL_MAX_PU",
       "binding": {
-        "float": "1.5"
+        "parameter": "1.5"
       },
       "description": "Controller divergence threshold; BUILD_LEVEL 5 masks it only during passive-rectifier takeover."
     },
@@ -281,7 +281,7 @@
       "role": "Bus Ready Min",
       "macro": "CTRL_DCBUS_READY_MIN",
       "binding": {
-        "float": "25.0"
+        "parameter": "25.0"
       },
       "description": "Minimum precharged DC bus accepted by startup."
     },
@@ -289,7 +289,7 @@
       "role": "Bus Ready Max",
       "macro": "CTRL_DCBUS_READY_MAX",
       "binding": {
-        "float": "90.0"
+        "parameter": "90.0"
       },
       "description": "Maximum DC bus accepted by startup."
     },
@@ -305,7 +305,7 @@
       "role": "Mosfet Ron",
       "macro": "SINV_MODEL_MOSFET_RON",
       "binding": {
-        "float": "4.6e-3"
+        "parameter": "4.6e-3"
       },
       "description": "Plant MOSFET on resistance."
     },
@@ -313,7 +313,7 @@
       "role": "Diode Ron",
       "macro": "SINV_MODEL_DIODE_RON",
       "binding": {
-        "float": "0.01"
+        "parameter": "0.01"
       },
       "description": "Body-diode on resistance."
     },
@@ -321,7 +321,7 @@
       "role": "Diode Vf",
       "macro": "SINV_MODEL_DIODE_VF",
       "binding": {
-        "float": "0.5"
+        "parameter": "0.5"
       },
       "description": "Body-diode forward voltage."
     }

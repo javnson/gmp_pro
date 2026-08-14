@@ -5,8 +5,8 @@
   "description": "ACIM sensored/sensorless controller and PIL bindings for LaunchXL-F280049C with BOOSTXL-3PHGANINV.",
   "suite": "mcs_acm_nt",
   "version": "0.1.0",
-  "updated_at": "2026-08-10",
-  "output_header": "sdpe_mcs_acim_nt_f280049c_settings.h",
+  "updated_at": "2026-08-15",
+  "output_header": "ctrl_settings.h",
   "hardware": [
     {
       "entity": "launchxl_f280049c"
@@ -973,7 +973,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "ADC reference voltage used by all sensor conversions."
     },
@@ -983,7 +983,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "48.0"
+        "parameter": "48.0"
       },
       "description": "Configured DC-bus voltage base."
     },
@@ -1003,7 +1003,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Phase-current per-unit base in amperes."
     },
@@ -1063,7 +1063,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.0"
+        "parameter": "0.0"
       },
       "description": "Mechanical encoder position bias in per unit."
     },
@@ -1203,16 +1203,15 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.5"
+        "parameter": "0.5"
       },
       "description": "Centered bridge command-to-phase voltage scale; command is taken before digital dead-time compare compensation."
     }
   ],
   "requirement_groups": [
     {
-      "name": "PIL Connection",
+      "name": "Peripheral Parameters",
       "requirements": [
-        "PIL Data Link Base Command",
         "Data Link UART Baud Rate",
         "PIL UDP Host",
         "PIL Bridge UDP Listen Port",
@@ -1221,8 +1220,6 @@
         "PIL MATLAB Command RX Port",
         "PIL RX Mask",
         "PIL TX Mask",
-        "PIL MCU Timeout",
-        "PIL MATLAB Timeout",
         "PIL ADC DC Bus Index",
         "PIL ADC Phase U Voltage Index",
         "PIL ADC Phase V Voltage Index",
@@ -1239,27 +1236,43 @@
         "PIL Monitor D Current Index",
         "PIL Monitor Q Current Index",
         "PIL Monitor Electrical Position Index",
-        "PIL Monitor Speed Index"
-      ]
-    },
-    {
-      "name": "Peripheral Parameters",
-      "requirements": [
+        "PIL Monitor Speed Index",
         "Data Link Scope Depth",
         "PWM Compare Max",
         "PWM Deadband",
         "System Frequency",
         "System Time Divider",
-        "ADC Voltage Reference"
+        "ADC Voltage Reference",
+        "Motor Rs",
+        "Motor Rr",
+        "Motor L1s",
+        "Motor L1r",
+        "Motor Lm",
+        "Motor Pole Pairs",
+        "Flux Observer Command Voltage Scale"
       ]
     },
     {
       "name": "Per-Unit Base Parameters",
       "requirements": [
+        "PIL Data Link Base Command",
         "DC Bus Voltage Base",
         "Phase Voltage Base",
         "Current Base",
         "Motor Rated Frequency"
+      ]
+    },
+    {
+      "name": "Protection Parameters",
+      "requirements": [
+        "Motor Max Speed"
+      ]
+    },
+    {
+      "name": "Runtime Parameters",
+      "requirements": [
+        "PIL MCU Timeout",
+        "PIL MATLAB Timeout"
       ]
     },
     {
@@ -1299,8 +1312,7 @@
     "../../../../sdpe_pil/sdpe_requirement.json"
   ],
   "feature_macro_groups": [
-    "PIL Runtime",
-    "Control Algorithm"
+    "PIL Runtime"
   ],
   "option_macro_groups": [
     "PIL Commissioning",

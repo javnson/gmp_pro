@@ -5,8 +5,8 @@
   "description": "Validated LaunchXL-F280049C timing, sensing and BOOSTXL resource bindings for the common GFL controller.",
   "suite": "pgs_inv_GFL_inverter",
   "version": "1.0.0",
-  "updated_at": "2026-08-08",
-  "output_header": "sdpe_pgs_inv_gfl_f280049c_settings.h",
+  "updated_at": "2026-08-15",
+  "output_header": "ctrl_settings.h",
   "hardware": [
     {
       "entity": "launchxl_f280049c"
@@ -913,7 +913,7 @@
       "role": "Adc Voltage Reference",
       "macro": "CTRL_ADC_VOLTAGE_REF",
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "ADC reference voltage."
     },
@@ -921,7 +921,7 @@
       "role": "Dc Bus Voltage Base",
       "macro": "CTRL_DCBUS_VOLTAGE",
       "binding": {
-        "float": "80.0"
+        "parameter": "80.0"
       },
       "description": "DC-bus per-unit voltage base."
     },
@@ -937,7 +937,7 @@
       "role": "Current Base",
       "macro": "CTRL_CURRENT_BASE",
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Phase-current per-unit base in amperes."
     },
@@ -961,7 +961,7 @@
       "role": "Dc Voltage Sensitivity",
       "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
       "binding": {
-        "float": "0.02738589"
+        "parameter": "0.02738589"
       },
       "description": "DC-link voltage sensing gain."
     },
@@ -969,7 +969,7 @@
       "role": "Dc Voltage Bias",
       "macro": "CTRL_DC_VOLTAGE_BIAS",
       "binding": {
-        "float": "0.0"
+        "parameter": "0.0"
       },
       "description": "DC-link voltage sensing bias."
     },
@@ -993,7 +993,7 @@
       "role": "Inverter Voltage Sensitivity",
       "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
       "binding": {
-        "float": "0.02738589"
+        "parameter": "0.02738589"
       },
       "description": "Helios voltage sensing gain."
     },
@@ -1001,7 +1001,7 @@
       "role": "Inverter Voltage Bias",
       "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
       "binding": {
-        "float": "0.0"
+        "parameter": "0.0"
       },
       "description": "Helios voltage sensing bias."
     },
@@ -1009,7 +1009,7 @@
       "role": "Dc Current Sensitivity",
       "macro": "CTRL_DC_CURRENT_SENSITIVITY",
       "binding": {
-        "float": "0.02475"
+        "parameter": "0.02475"
       },
       "description": "DC-link current sensitivity."
     },
@@ -1017,7 +1017,7 @@
       "role": "Dc Current Bias",
       "macro": "CTRL_DC_CURRENT_BIAS",
       "binding": {
-        "float": "1.65"
+        "parameter": "1.65"
       },
       "description": "DC-link current bias."
     },
@@ -1041,7 +1041,7 @@
       "role": "Inverter Current Sensitivity",
       "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
       "binding": {
-        "float": "0.05"
+        "parameter": "0.05"
       },
       "description": "Validated Helios current sensitivity."
     },
@@ -1049,7 +1049,7 @@
       "role": "Inverter Current Bias",
       "macro": "CTRL_INVERTER_CURRENT_BIAS",
       "binding": {
-        "float": "1.65"
+        "parameter": "1.65"
       },
       "description": "Helios current bias."
     },

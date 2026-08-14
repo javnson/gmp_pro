@@ -15,7 +15,7 @@ extern "C"
 #endif
 
 #include <gmp_core.h>
-#include <sdpe_mcs_acim_nt_f280049c_settings.h>
+#include <ctrl_settings.h>
 #include <ctl/component/interface/adc_ptr_channel.h>
 #include <core/dev/datalink/datalink.h>
 

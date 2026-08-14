@@ -225,7 +225,7 @@
       "role": "Adc Voltage Reference",
       "macro": "CTRL_ADC_VOLTAGE_REF",
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "ADC voltage reference."
     },
@@ -233,7 +233,7 @@
       "role": "Dc Bus Voltage",
       "macro": "CTRL_DCBUS_VOLTAGE",
       "binding": {
-        "float": "60.0"
+        "parameter": "60.0"
       },
       "description": "Rated DC bus voltage."
     },
@@ -241,7 +241,7 @@
       "role": "Grid Voltage Rms",
       "macro": "CTRL_GRID_VOLTAGE_RMS",
       "binding": {
-        "float": "24.0"
+        "parameter": "24.0"
       },
       "description": "Rated AC grid/load RMS voltage."
     },
@@ -249,7 +249,7 @@
       "role": "Rated Current Rms",
       "macro": "CTRL_RATED_CURRENT_RMS",
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Rated AC output RMS current."
     },
@@ -257,7 +257,7 @@
       "role": "Voltage Base",
       "macro": "CTRL_VOLTAGE_BASE",
       "binding": {
-        "float": "34.0"
+        "parameter": "34.0"
       },
       "description": "Voltage per-unit base, using peak value."
     },
@@ -265,7 +265,7 @@
       "role": "Current Base",
       "macro": "CTRL_CURRENT_BASE",
       "binding": {
-        "float": "14.14"
+        "parameter": "14.14"
       },
       "description": "Current per-unit base, using peak value."
     },
@@ -337,7 +337,7 @@
       "role": "Protection Vbus Max",
       "macro": "CTRL_PROT_VBUS_MAX",
       "binding": {
-        "float": "100.0"
+        "parameter": "100.0"
       },
       "description": "Project DC bus over-voltage protection threshold."
     },

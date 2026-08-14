@@ -5,8 +5,8 @@
   "description": "IRIS platform timing, sensing and resource bindings for the common GFM controller.",
   "suite": "pgs_inv_GFM_inverter",
   "version": "1.0.0",
-  "updated_at": "2026-08-08",
-  "output_header": "sdpe_pgs_inv_gfm_iris_settings.h",
+  "updated_at": "2026-08-15",
+  "output_header": "ctrl_settings.h",
   "hardware": [
     {
       "entity": "iris_f280039c_node"
@@ -890,7 +890,7 @@
       "role": "Adc Voltage Reference",
       "macro": "CTRL_ADC_VOLTAGE_REF",
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "ADC reference voltage."
     },
@@ -898,7 +898,7 @@
       "role": "Dc Bus Voltage Base",
       "macro": "CTRL_DCBUS_VOLTAGE",
       "binding": {
-        "float": "80.0"
+        "parameter": "80.0"
       },
       "description": "DC-bus per-unit voltage base."
     },
@@ -914,7 +914,7 @@
       "role": "Current Base",
       "macro": "CTRL_CURRENT_BASE",
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Phase-current per-unit base in amperes."
     },
@@ -970,7 +970,7 @@
       "role": "Inverter Current Sensitivity",
       "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
       "binding": {
-        "float": "0.05"
+        "parameter": "0.05"
       },
       "description": "Validated Helios phase-current sensitivity in volts per ampere."
     },
@@ -978,7 +978,7 @@
       "role": "Inverter Current Bias",
       "macro": "CTRL_INVERTER_CURRENT_BIAS",
       "binding": {
-        "float": "1.65"
+        "parameter": "1.65"
       },
       "description": "Helios phase-current zero bias."
     },
@@ -986,7 +986,7 @@
       "role": "Inverter Voltage Sensitivity",
       "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
       "binding": {
-        "float": "0.02738589"
+        "parameter": "0.02738589"
       },
       "description": "Helios phase-voltage sensing gain."
     },
@@ -994,7 +994,7 @@
       "role": "Inverter Voltage Bias",
       "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
       "binding": {
-        "float": "0.0"
+        "parameter": "0.0"
       },
       "description": "Helios phase-voltage sensing bias."
     },
@@ -1002,7 +1002,7 @@
       "role": "Dc Current Sensitivity",
       "macro": "CTRL_DC_CURRENT_SENSITIVITY",
       "binding": {
-        "float": "0.02475"
+        "parameter": "0.02475"
       },
       "description": "DC-link current sensitivity in volts per ampere."
     },
@@ -1010,7 +1010,7 @@
       "role": "Dc Current Bias",
       "macro": "CTRL_DC_CURRENT_BIAS",
       "binding": {
-        "float": "1.65"
+        "parameter": "1.65"
       },
       "description": "DC-link current zero bias."
     },
@@ -1018,7 +1018,7 @@
       "role": "Dc Voltage Sensitivity",
       "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
       "binding": {
-        "float": "0.02738589"
+        "parameter": "0.02738589"
       },
       "description": "DC-link voltage sensing gain."
     },
@@ -1026,7 +1026,7 @@
       "role": "Dc Voltage Bias",
       "macro": "CTRL_DC_VOLTAGE_BIAS",
       "binding": {
-        "float": "0.0"
+        "parameter": "0.0"
       },
       "description": "DC-link voltage sensing bias."
     }

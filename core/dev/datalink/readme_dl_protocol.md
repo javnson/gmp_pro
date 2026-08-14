@@ -42,7 +42,7 @@ live in `core/dev/datalink/`; applications must not include them directly.
 
 The u8 backend uses `uint8_t` directly for protocol storage and APIs; it does
 not introduce a second byte alias. Platform-neutral application and transport
-code uses `data_gt`, the GMP addressable data unit. Consequently `data_gt` is
+code uses `byte_gt`, the GMP addressable data unit. Consequently `byte_gt` is
 an 8-bit unit on STM32 and a 16-bit unit on C28x. The backend selector prevents
 the u8 implementation from compiling when the platform unit is not one byte.
 
@@ -81,7 +81,7 @@ void app_init(void)
     gmp_dev_dl_init(&dl);
 }
 
-void uart_rx_callback(const data_gt* data, size_gt count)
+void uart_rx_callback(const byte_gt* data, size_gt count)
 {
     gmp_dev_dl_push_str(&dl, data, count);
 }

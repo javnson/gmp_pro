@@ -5,8 +5,8 @@
   "description": "Structured SDPE hardware, peripheral and control settings migrated from f280049c/xplt/ctrl_settings.h.",
   "suite": "mcs_pmsm_id",
   "version": "1.0.0",
-  "updated_at": "2026-08-14",
-  "output_header": "sdpe_mcs_pmsm_id_f280049c_settings.h",
+  "updated_at": "2026-08-15",
+  "output_header": "ctrl_settings.h",
   "hardware": [
     {
       "entity": "launchxl_f280049c"
@@ -677,7 +677,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "ADC reference voltage used by all sensor conversions."
     },
@@ -687,7 +687,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "20e3"
+        "parameter": "20e3"
       },
       "description": "Main motor-control ISR frequency in hertz."
     },
@@ -697,7 +697,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "36.0"
+        "parameter": "36.0"
       },
       "description": "Configured DC-bus voltage base."
     },
@@ -717,7 +717,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Phase-current per-unit base in amperes."
     },
@@ -917,7 +917,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "The current limit value at which the machine must be shut down."
     },
@@ -927,7 +927,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Circular saturation limit for voltage vector magnitude in V."
     },
@@ -1017,7 +1017,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.0207000002"
+        "parameter": "0.0207000002"
       },
       "description": "Mechanical encoder position bias in per unit."
     },
@@ -1077,7 +1077,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "20.0"
+        "parameter": "20.0"
       },
       "description": "Electrical frequency command in hertz used by the BUILD_LEVEL 1 V/f path and the BUILD_LEVEL 2 synthetic-angle current-loop path."
     },
@@ -1087,7 +1087,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "20.0"
+        "parameter": "20.0"
       },
       "description": "Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator."
     }

@@ -128,13 +128,13 @@ void at_device_rx_isr(at_device_entity_t* dev, char* content, size_gt len)
         // 空间不足：尽可能填满，然后标记溢出
         if (free > 0)
         {
-            ringbuf_put_array(&dev->buffer, (data_gt*)content, free);
+            ringbuf_put_array(&dev->buffer, (byte_gt*)content, free);
         }
         dev->flag_overwrite = 1; // 标记 RingBuffer 溢出
     }
     else
     {
-        ringbuf_put_array(&dev->buffer, (data_gt*)content, len);
+        ringbuf_put_array(&dev->buffer, (byte_gt*)content, len);
     }
 }
 
@@ -263,7 +263,7 @@ static void process_line(at_device_entity_t* dev)
 void at_device_dispatch(at_device_entity_t* dev)
 {
     gmp_base_assert(dev);
-    data_gt byte;
+    byte_gt byte;
 
     // ------------------------------------------------
     // 0. 获取当前DMA/FIFO中的所有数据

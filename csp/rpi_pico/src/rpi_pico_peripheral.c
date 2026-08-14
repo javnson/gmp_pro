@@ -130,7 +130,7 @@ size_gt gmp_hal_uart_get_rx_available(uart_halt uart)
  * @param timeout Total timeout in milliseconds.
  * @return GMP_EC_OK, GMP_EC_TIMEOUT, or GMP_EC_GENERAL_ERROR.
  */
-ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, uint32_t timeout)
+ec_gt gmp_hal_uart_write(uart_halt uart, const byte_gt* data, size_gt length, uint32_t timeout)
 {
     if (uart == NULL || (length != 0U && data == NULL))
     {
@@ -166,7 +166,7 @@ ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, ui
  * @param bytes_read Optional number of bytes actually received.
  * @return GMP_EC_OK, GMP_EC_TIMEOUT, or GMP_EC_GENERAL_ERROR.
  */
-ec_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length, uint32_t timeout, size_gt* bytes_read)
+ec_gt gmp_hal_uart_read(uart_halt uart, byte_gt* data, size_gt length, uint32_t timeout, size_gt* bytes_read)
 {
     if (bytes_read != NULL)
     {
@@ -197,7 +197,7 @@ ec_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length, uint32_t 
             }
             tight_loop_contents();
         }
-        data[count++] = (data_gt)uart_get_hw(uart)->dr;
+        data[count++] = (byte_gt)uart_get_hw(uart)->dr;
     }
 
     if (bytes_read != NULL)
@@ -300,7 +300,7 @@ ec_gt gmp_hal_iic_write_reg(iic_halt i2c, addr16_gt dev_addr, addr32_gt reg_addr
  * @return GMP_EC_OK or a mapped Pico SDK transfer error.
  */
 ec_gt gmp_hal_iic_write_mem(iic_halt i2c, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len,
-                            const data_gt* mem, size_gt mem_len, time_gt timeout)
+                            const byte_gt* mem, size_gt mem_len, time_gt timeout)
 {
     if (addr_len > 4U || mem_len > (size_gt)(SIZE_MAX - addr_len))
     {
@@ -346,7 +346,7 @@ ec_gt gmp_hal_iic_write_mem(iic_halt i2c, addr16_gt dev_addr, addr32_gt mem_addr
  * @return GMP_EC_OK or a mapped Pico SDK transfer error.
  */
 ec_gt gmp_hal_iic_read_mem(iic_halt i2c, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len,
-                           data_gt* mem, size_gt mem_len, time_gt timeout)
+                           byte_gt* mem, size_gt mem_len, time_gt timeout)
 {
     if (addr_len > 4U || !pico_i2c_args_valid(i2c, dev_addr, mem_len, mem))
     {
@@ -411,7 +411,7 @@ ec_gt gmp_hal_iic_read_reg(iic_halt i2c, addr16_gt dev_addr, addr32_gt reg_addr,
     return GMP_EC_OK;
 }
 
-static ec_gt pico_spi_transfer(spi_halt spi, const data_gt* tx, data_gt* rx, size_gt length, time_gt timeout)
+static ec_gt pico_spi_transfer(spi_halt spi, const byte_gt* tx, byte_gt* rx, size_gt length, time_gt timeout)
 {
     if (spi == NULL || (length != 0U && tx == NULL && rx == NULL))
     {
@@ -476,7 +476,7 @@ static ec_gt pico_spi_transfer(spi_halt spi, const data_gt* tx, data_gt* rx, siz
  * @param timeout Total timeout in milliseconds.
  * @return GMP_EC_OK, GMP_EC_TIMEOUT, or GMP_EC_GENERAL_ERROR.
  */
-ec_gt gmp_hal_spi_bus_write(spi_halt spi, const data_gt* tx_buf, size_gt len, time_gt timeout)
+ec_gt gmp_hal_spi_bus_write(spi_halt spi, const byte_gt* tx_buf, size_gt len, time_gt timeout)
 {
     if (len != 0U && tx_buf == NULL)
     {
@@ -493,7 +493,7 @@ ec_gt gmp_hal_spi_bus_write(spi_halt spi, const data_gt* tx_buf, size_gt len, ti
  * @param timeout Total timeout in milliseconds.
  * @return GMP_EC_OK, GMP_EC_TIMEOUT, or GMP_EC_GENERAL_ERROR.
  */
-ec_gt gmp_hal_spi_bus_read(spi_halt spi, data_gt* rx_buf, size_gt len, time_gt timeout)
+ec_gt gmp_hal_spi_bus_read(spi_halt spi, byte_gt* rx_buf, size_gt len, time_gt timeout)
 {
     if (len != 0U && rx_buf == NULL)
     {
@@ -511,7 +511,7 @@ ec_gt gmp_hal_spi_bus_read(spi_halt spi, data_gt* rx_buf, size_gt len, time_gt t
  * @param timeout Total timeout in milliseconds.
  * @return GMP_EC_OK, GMP_EC_TIMEOUT, or GMP_EC_GENERAL_ERROR.
  */
-ec_gt gmp_hal_spi_bus_transfer(spi_halt spi, const data_gt* tx_buf, data_gt* rx_buf, size_gt len, time_gt timeout)
+ec_gt gmp_hal_spi_bus_transfer(spi_halt spi, const byte_gt* tx_buf, byte_gt* rx_buf, size_gt len, time_gt timeout)
 {
     if (len != 0U && (tx_buf == NULL || rx_buf == NULL))
     {

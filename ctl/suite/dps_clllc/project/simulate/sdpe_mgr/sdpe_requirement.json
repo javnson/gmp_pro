@@ -5,8 +5,8 @@
   "description": "PC SIL runtime, BUILD_LEVEL and virtual advanced-PWM settings layered over the common CLLLC contract.",
   "suite": "dps_clllc",
   "version": "1.0.0",
-  "updated_at": "2026-08-08",
-  "output_header": "sdpe_dps_clllc_simulate_settings.h",
+  "updated_at": "2026-08-15",
+  "output_header": "ctrl_settings.h",
   "hardware": [],
   "feature_macros": [
     {
@@ -37,7 +37,7 @@
       "role": "Timer Clock",
       "macro": "CLLLC_TIMER_CLOCK_HZ",
       "binding": {
-        "float": "100000000.0"
+        "parameter": "100000000.0"
       },
       "description": "Virtual ePWM clock."
     },
@@ -85,7 +85,7 @@
       "role": "ADC Reference",
       "macro": "CTRL_ADC_VOLTAGE_REF",
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "Virtual ADC reference."
     },

@@ -5,7 +5,7 @@
 
 /* Internal payload decoding helpers. */
 
-static inline fast16_gt mem_unpack_u8(const data_gt* buf, uint16_t* idx, uint16_t max_len)
+static inline fast16_gt mem_unpack_u8(const byte_gt* buf, uint16_t* idx, uint16_t max_len)
 {
     if (*idx >= max_len)
         return 0;
@@ -14,7 +14,7 @@ static inline fast16_gt mem_unpack_u8(const data_gt* buf, uint16_t* idx, uint16_
     return val;
 }
 
-static inline uint32_t mem_unpack_u32(const data_gt* buf, uint16_t* idx, uint16_t max_len)
+static inline uint32_t mem_unpack_u32(const byte_gt* buf, uint16_t* idx, uint16_t max_len)
 {
     if (*idx + 4 > max_len)
         return 0;
@@ -136,7 +136,7 @@ fast_gt gmp_mem_persp_rx_cb(gmp_mem_persp_t* ctx)
 
     uint16_t len = dl->expected_payload_len;
     uint16_t idx = 0;
-    const data_gt* pld = dl->payload_buf;
+    const byte_gt* pld = dl->payload_buf;
 
     /* Decode [byte address:4][item size:1][item count:2]. */
     uint32_t target_addr = mem_unpack_u32(pld, &idx, len);
@@ -144,7 +144,7 @@ fast_gt gmp_mem_persp_rx_cb(gmp_mem_persp_t* ctx)
     uint16_t item_count = mem_unpack_u8(pld, &idx, len) | (mem_unpack_u8(pld, &idx, len) << 8);
 
     uint32_t total_bytes = (uint32_t)item_size * item_count;
-    data_gt status = 0;
+    byte_gt status = 0;
 
     size_gt c;
 
@@ -191,7 +191,7 @@ fast_gt gmp_mem_persp_rx_cb(gmp_mem_persp_t* ctx)
                 uint32_t native_addr = byte_addr;
                 if (item_size == 1)
                 {
-                    gmp_dev_dl_tx_append_u8(dl, *((data_gt*)native_addr));
+                    gmp_dev_dl_tx_append_u8(dl, *((byte_gt*)native_addr));
                 }
                 else if (item_size == 2)
                 {
@@ -234,7 +234,7 @@ fast_gt gmp_mem_persp_rx_cb(gmp_mem_persp_t* ctx)
                 uint32_t native_addr = byte_addr >> 1;
                 if (item_size == 1)
                 {
-                    data_gt val = (data_gt)mem_unpack_u8(pld, &idx, len);
+                    byte_gt val = (byte_gt)mem_unpack_u8(pld, &idx, len);
                     uint16_t word = *((uint16_t*)native_addr);
                     /* Update one octet with a native 16-bit read-modify-write. */
                     if (byte_addr & 1)
@@ -259,7 +259,7 @@ fast_gt gmp_mem_persp_rx_cb(gmp_mem_persp_t* ctx)
                 uint32_t native_addr = byte_addr;
                 if (item_size == 1)
                 {
-                    *((data_gt*)native_addr) = (data_gt)mem_unpack_u8(pld, &idx, len);
+                    *((byte_gt*)native_addr) = (byte_gt)mem_unpack_u8(pld, &idx, len);
                 }
                 else if (item_size == 2)
                 {

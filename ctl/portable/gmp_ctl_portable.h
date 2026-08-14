@@ -73,12 +73,13 @@ extern "C"
 #define TEXT_STRING(value) (value)
 #endif
 
-/* Basic CTL-visible scalar types.  Every type can be replaced in the selected
- * platform configuration before this header defines its default. */
+/* Basic CTL-visible scalar types. Every type can be replaced in the selected
+ * platform configuration before this header defines its default. byte_gt is
+ * the smallest addressable unit of the target CPU. */
 #ifndef GMP_PORT_DATA_T
 #define GMP_PORT_DATA_T int8_t
 #endif
-typedef GMP_PORT_DATA_T data_gt;
+typedef GMP_PORT_DATA_T byte_gt;
 
 #ifndef GMP_PORT_FAST_T
 #define GMP_PORT_FAST_T int_fast32_t

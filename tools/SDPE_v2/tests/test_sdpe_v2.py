@@ -206,6 +206,18 @@ class SDPEV2Tests(unittest.TestCase):
             self.assertNotIn("TMCS1133_B2A_RANGE_A real2param((25.0f))", header)
             self.assertIn("GMP_SDPE_PARAMETER_TYPE = 'double'", script)
 
+    def test_project_numeric_binding_domains_convert_real_inputs(self) -> None:
+        lib = self.load_library()
+        with tempfile.TemporaryDirectory() as tmp:
+            generator = HeaderGenerator(lib, Path(tmp))
+            self.assertEqual(generator._resolve_binding_value({"real": "1.25"}), "1.25")
+            self.assertEqual(generator._resolve_binding_value({"parameter": "2.5"}), "real2param(2.5)")
+            self.assertEqual(generator._resolve_binding_value({"ctrl": "0.5"}), "real2ctrl(0.5)")
+            self.assertEqual(generator._resolve_binding_value({"real_gt": "1.25"}), "1.25")
+            self.assertEqual(generator._resolve_binding_value({"parameter_gt": "2.5"}), "real2param(2.5)")
+            self.assertEqual(generator._resolve_binding_value({"ctrl_gt": "0.5"}), "real2ctrl(0.5)")
+            self.assertEqual(generator._resolve_binding_value({"float": "3.5"}), "real2param(3.5)")
+
     def test_matlab_components_are_emitted_before_parent_references(self) -> None:
         lib = self.load_library()
         data = read_project("pgs_sinv_rc_iris_node")

@@ -98,7 +98,7 @@ size_gt gmp_hal_uart_get_rx_available(uart_halt uart)
     return 0;
 }
 
-ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, uint32_t timeout_ms)
+ec_gt gmp_hal_uart_write(uart_halt uart, const byte_gt* data, size_gt length, uint32_t timeout_ms)
 {
     if (uart == NULL || data == NULL || length == 0)
         return GMP_EC_GENERAL_ERROR;
@@ -123,7 +123,7 @@ ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, ui
     return GMP_EC_OK;
 }
 
-ec_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length, uint32_t timeout_ms, size_gt* bytes_read)
+ec_gt gmp_hal_uart_read(uart_halt uart, byte_gt* data, size_gt length, uint32_t timeout_ms, size_gt* bytes_read)
 {
     if (uart == NULL || data == NULL || length == 0)
         return GMP_EC_GENERAL_ERROR;
@@ -239,7 +239,7 @@ ec_gt gmp_hal_iic_read_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, s
     return zynq_i2c_status_to_ec(status);
 }
 
-ec_gt gmp_hal_iic_write_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, const data_gt* mem,
+ec_gt gmp_hal_iic_write_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, const byte_gt* mem,
                             size_gt mem_len, time_gt timeout)
 {
     if (h == NULL || (mem_len > 0 && mem == NULL))
@@ -274,7 +274,7 @@ ec_gt gmp_hal_iic_write_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, 
     return zynq_i2c_status_to_ec(status);
 }
 
-ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, data_gt* mem,
+ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, byte_gt* mem,
                            size_gt mem_len, time_gt timeout)
 {
     if (h == NULL || mem == NULL)
@@ -320,7 +320,7 @@ static ec_gt zynq_spi_status_to_ec(int status)
     return GMP_EC_GENERAL_ERROR;
 }
 
-ec_gt gmp_hal_spi_bus_write(spi_halt hspi, const data_gt* tx_buf, size_gt len, time_gt timeout)
+ec_gt gmp_hal_spi_bus_write(spi_halt hspi, const byte_gt* tx_buf, size_gt len, time_gt timeout)
 {
     if (hspi == NULL || tx_buf == NULL)
         return GMP_EC_GENERAL_ERROR;
@@ -334,7 +334,7 @@ ec_gt gmp_hal_spi_bus_write(spi_halt hspi, const data_gt* tx_buf, size_gt len, t
     return zynq_spi_status_to_ec(status);
 }
 
-ec_gt gmp_hal_spi_bus_read(spi_halt hspi, data_gt* rx_buf, size_gt len, time_gt timeout)
+ec_gt gmp_hal_spi_bus_read(spi_halt hspi, byte_gt* rx_buf, size_gt len, time_gt timeout)
 {
     if (hspi == NULL || rx_buf == NULL)
         return GMP_EC_GENERAL_ERROR;
@@ -347,7 +347,7 @@ ec_gt gmp_hal_spi_bus_read(spi_halt hspi, data_gt* rx_buf, size_gt len, time_gt 
     return zynq_spi_status_to_ec(status);
 }
 
-ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const data_gt* tx_buf, data_gt* rx_buf, size_gt len, time_gt timeout)
+ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const byte_gt* tx_buf, byte_gt* rx_buf, size_gt len, time_gt timeout)
 {
     if (hspi == NULL || tx_buf == NULL || rx_buf == NULL)
         return GMP_EC_GENERAL_ERROR;

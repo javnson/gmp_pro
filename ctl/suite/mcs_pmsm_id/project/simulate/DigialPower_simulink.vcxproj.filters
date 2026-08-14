@@ -323,7 +323,7 @@
     <ClInclude Include="..\..\src\user_main.h">
       <Filter>implement_common</Filter>
     </ClInclude>
-    <ClInclude Include="xplt\ctrl_settings.h">
+    <ClInclude Include="sdpe_mgr\ctrl_settings.h">
       <Filter>implement_interface</Filter>
     </ClInclude>
     <ClInclude Include="xplt\pc_simulate_buffer.h">

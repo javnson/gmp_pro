@@ -55,7 +55,7 @@ size_gt gmp_hal_uart_get_rx_available(uart_halt uart)
 /* ==================== SAFE BLOCKING I/O FUNCTIONS ======================== */
 /* ========================================================================= */
 
-ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, uint32_t timeout)
+ec_gt gmp_hal_uart_write(uart_halt uart, const byte_gt* data, size_gt length, uint32_t timeout)
 {
     GMP_UNUSED_VAR(uart);
     GMP_UNUSED_VAR(data);
@@ -68,7 +68,7 @@ ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, ui
     return GMP_EC_OK;
 }
 
-ec_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length, uint32_t timeout, size_gt* bytes_read)
+ec_gt gmp_hal_uart_read(uart_halt uart, byte_gt* data, size_gt length, uint32_t timeout, size_gt* bytes_read)
 {
     GMP_UNUSED_VAR(uart);
     GMP_UNUSED_VAR(data);
@@ -107,7 +107,7 @@ ec_gt gmp_hal_iic_write_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, 
     return GMP_EC_OK;
 }
 
-ec_gt gmp_hal_iic_write_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, const data_gt* mem,
+ec_gt gmp_hal_iic_write_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, const byte_gt* mem,
                             size_gt mem_len, time_gt timeout)
 {
     GMP_UNUSED_VAR(h);
@@ -135,7 +135,7 @@ ec_gt gmp_hal_iic_read_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, s
     return GMP_EC_OK;
 }
 
-ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, data_gt* mem,
+ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, byte_gt* mem,
                            size_gt mem_len, time_gt timeout)
 {
     GMP_UNUSED_VAR(h);
@@ -154,7 +154,7 @@ ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, s
     return GMP_EC_OK;
 }
 
-ec_gt gmp_hal_spi_bus_write(spi_halt hspi, const data_gt* tx_buf, size_gt len, time_gt timeout)
+ec_gt gmp_hal_spi_bus_write(spi_halt hspi, const byte_gt* tx_buf, size_gt len, time_gt timeout)
 {
     GMP_UNUSED_VAR(hspi);
     GMP_UNUSED_VAR(tx_buf);
@@ -169,7 +169,7 @@ ec_gt gmp_hal_spi_bus_write(spi_halt hspi, const data_gt* tx_buf, size_gt len, t
     return GMP_EC_OK;
 }
 
-ec_gt gmp_hal_spi_bus_read(spi_halt hspi, data_gt* rx_buf, size_gt len, time_gt timeout)
+ec_gt gmp_hal_spi_bus_read(spi_halt hspi, byte_gt* rx_buf, size_gt len, time_gt timeout)
 {
     GMP_UNUSED_VAR(hspi);
     GMP_UNUSED_VAR(rx_buf);
@@ -184,7 +184,7 @@ ec_gt gmp_hal_spi_bus_read(spi_halt hspi, data_gt* rx_buf, size_gt len, time_gt 
     return GMP_EC_OK;
 }
 
-ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const data_gt* tx_buf, data_gt* rx_buf, size_gt len, time_gt timeout)
+ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const byte_gt* tx_buf, byte_gt* rx_buf, size_gt len, time_gt timeout)
 {
     GMP_UNUSED_VAR(hspi);
     GMP_UNUSED_VAR(tx_buf);

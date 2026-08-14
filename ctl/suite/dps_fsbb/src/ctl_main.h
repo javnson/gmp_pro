@@ -7,7 +7,7 @@
 #define _FILE_CTRL_MAIN_H_
 
 #ifndef SDPE_FSBB_SETTINGS_HEADER
-#define SDPE_FSBB_SETTINGS_HEADER <sdpe_dps_fsbb_iris_settings.h>
+#define SDPE_FSBB_SETTINGS_HEADER <ctrl_settings.h>
 #endif
 #include SDPE_FSBB_SETTINGS_HEADER
 #include <core/pm/function_scheduler/function_scheduler.h>

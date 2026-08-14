@@ -61,7 +61,7 @@ size_gt gmp_hal_uart_get_rx_available(uart_halt uart)
     return (USART_GetFlagStatus(uart, USART_FLAG_RXDNE) == SET) ? 1U : 0U;
 }
 
-ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt *data, size_gt length, uint32_t timeout)
+ec_gt gmp_hal_uart_write(uart_halt uart, const byte_gt *data, size_gt length, uint32_t timeout)
 {
     size_gt i;
     time_gt start;
@@ -88,7 +88,7 @@ ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt *data, size_gt length, ui
     return GMP_EC_OK;
 }
 
-ec_gt gmp_hal_uart_read(uart_halt uart, data_gt *data, size_gt length, uint32_t timeout, size_gt *bytes_read)
+ec_gt gmp_hal_uart_read(uart_halt uart, byte_gt *data, size_gt length, uint32_t timeout, size_gt *bytes_read)
 {
     size_gt count = 0U;
     time_gt start;
@@ -103,7 +103,7 @@ ec_gt gmp_hal_uart_read(uart_halt uart, data_gt *data, size_gt length, uint32_t 
     {
         if (USART_GetFlagStatus(uart, USART_FLAG_RXDNE) == SET)
         {
-            data[count++] = (data_gt)USART_ReceiveData(uart);
+            data[count++] = (byte_gt)USART_ReceiveData(uart);
             continue;
         }
         if (n32_timeout_expired(start, (time_gt)timeout))
@@ -119,7 +119,7 @@ ec_gt gmp_hal_uart_read(uart_halt uart, data_gt *data, size_gt length, uint32_t 
     return GMP_EC_OK;
 }
 
-ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const data_gt *tx_buf, data_gt *rx_buf, size_gt len, time_gt timeout)
+ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const byte_gt *tx_buf, byte_gt *rx_buf, size_gt len, time_gt timeout)
 {
     size_gt i;
     time_gt start;
@@ -143,7 +143,7 @@ ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const data_gt *tx_buf, data_gt *rx
                 return GMP_EC_TIMEOUT;
         }
         if (rx_buf != NULL)
-            rx_buf[i] = (data_gt)SPI_I2S_ReceiveData(hspi);
+            rx_buf[i] = (byte_gt)SPI_I2S_ReceiveData(hspi);
         else
             (void)SPI_I2S_ReceiveData(hspi);
     }
@@ -156,12 +156,12 @@ ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const data_gt *tx_buf, data_gt *rx
     return GMP_EC_OK;
 }
 
-ec_gt gmp_hal_spi_bus_write(spi_halt hspi, const data_gt *tx_buf, size_gt len, time_gt timeout)
+ec_gt gmp_hal_spi_bus_write(spi_halt hspi, const byte_gt *tx_buf, size_gt len, time_gt timeout)
 {
     return gmp_hal_spi_bus_transfer(hspi, tx_buf, NULL, len, timeout);
 }
 
-ec_gt gmp_hal_spi_bus_read(spi_halt hspi, data_gt *rx_buf, size_gt len, time_gt timeout)
+ec_gt gmp_hal_spi_bus_read(spi_halt hspi, byte_gt *rx_buf, size_gt len, time_gt timeout)
 {
     return gmp_hal_spi_bus_transfer(hspi, NULL, rx_buf, len, timeout);
 }

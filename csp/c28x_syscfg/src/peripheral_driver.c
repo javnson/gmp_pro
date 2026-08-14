@@ -105,7 +105,7 @@ size_gt gmp_hal_uart_get_rx_available(uart_halt uart)
 /* ==================== SAFE BLOCKING I/O FUNCTIONS ======================== */
 /* ========================================================================= */
 
-ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, uint32_t timeout)
+ec_gt gmp_hal_uart_write(uart_halt uart, const byte_gt* data, size_gt length, uint32_t timeout)
 {
     uint32_t base = (uint32_t)uart;
     size_gt i = 0;
@@ -171,7 +171,7 @@ ec_gt gmp_hal_uart_write(uart_halt uart, const data_gt* data, size_gt length, ui
     return GMP_EC_OK;
 }
 
-ec_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length, uint32_t timeout, size_gt* bytes_read)
+ec_gt gmp_hal_uart_read(uart_halt uart, byte_gt* data, size_gt length, uint32_t timeout, size_gt* bytes_read)
 {
     uint32_t base = (uint32_t)uart;
     size_gt i = 0;
@@ -195,7 +195,7 @@ ec_gt gmp_hal_uart_read(uart_halt uart, data_gt* data, size_gt length, uint32_t 
         }
 
         // 此时 FIFO 必有数据，安全读取
-        data[i] = (data_gt)SCI_readCharNonBlocking(base);
+        data[i] = (byte_gt)SCI_readCharNonBlocking(base);
     }
 
     if (bytes_read != NULL)
@@ -437,7 +437,7 @@ ec_gt gmp_hal_iic_write_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, 
     return GMP_EC_OK;
 }
 
-ec_gt gmp_hal_iic_write_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, const data_gt* mem,
+ec_gt gmp_hal_iic_write_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, const byte_gt* mem,
                             size_gt mem_len, time_gt timeout)
 {
     ec_gt ret = wait_bus_idle(h, timeout);
@@ -667,7 +667,7 @@ ec_gt gmp_hal_iic_read_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, s
     return GMP_EC_OK;
 }
 
-//ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, data_gt* mem,
+//ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, byte_gt* mem,
 //                           size_gt mem_len, time_gt timeout)
 //{
 //    if (mem == NULL)
@@ -742,8 +742,8 @@ ec_gt gmp_hal_iic_read_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, s
 //    {
 //        if (I2C_getRxFIFOStatus(h) != I2C_FIFO_RX0)
 //        {
-//            // Direct mapping: 1 Byte on Bus -> 1 Element in data_gt array
-//            mem[idx] = (data_gt)I2C_getData(h);
+//            // Direct mapping: 1 Byte on Bus -> 1 Element in byte_gt array
+//            mem[idx] = (byte_gt)I2C_getData(h);
 //            idx++;
 //        }
 //        else
@@ -765,7 +765,7 @@ ec_gt gmp_hal_iic_read_reg(iic_halt h, addr16_gt dev_addr, addr32_gt reg_addr, s
 //    return GMP_EC_OK;
 //}
 
-ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, data_gt* mem,
+ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, size_gt addr_len, byte_gt* mem,
                            size_gt mem_len, time_gt timeout)
 {
     if (mem == NULL)
@@ -874,7 +874,7 @@ ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, s
 
         if (I2C_getRxFIFOStatus(h) != I2C_FIFO_RX0)
         {
-            mem[idx] = (data_gt)I2C_getData(h);
+            mem[idx] = (byte_gt)I2C_getData(h);
             idx++;
         }
         else
@@ -915,7 +915,7 @@ ec_gt gmp_hal_iic_read_mem(iic_halt h, addr16_gt dev_addr, addr32_gt mem_addr, s
 /* ==================== LAYER 1: PHYSICAL BUS APIs ========================= */
 /* ========================================================================= */
 
-ec_gt gmp_hal_spi_bus_write(spi_halt hspi, const data_gt* tx_buf, size_gt len, time_gt timeout)
+ec_gt gmp_hal_spi_bus_write(spi_halt hspi, const byte_gt* tx_buf, size_gt len, time_gt timeout)
 {
     if ((hspi == NULL) || (tx_buf == NULL))
         return GMP_EC_GENERAL_ERROR;
@@ -957,7 +957,7 @@ ec_gt gmp_hal_spi_bus_write(spi_halt hspi, const data_gt* tx_buf, size_gt len, t
     return GMP_EC_OK;
 }
 
-ec_gt gmp_hal_spi_bus_read(spi_halt hspi, data_gt* rx_buf, size_gt len, time_gt timeout)
+ec_gt gmp_hal_spi_bus_read(spi_halt hspi, byte_gt* rx_buf, size_gt len, time_gt timeout)
 {
     if ((hspi == NULL) || (rx_buf == NULL))
         return GMP_EC_GENERAL_ERROR;
@@ -991,13 +991,13 @@ ec_gt gmp_hal_spi_bus_read(spi_halt hspi, data_gt* rx_buf, size_gt len, time_gt 
         /* 4. Read Data. 
          * C2000 SPIRXBUF is right-justified, so we just mask the lower 8 bits.
          */
-        rx_buf[i] = (data_gt)(SPI_readDataNonBlocking(base) & 0x00FF);
+        rx_buf[i] = (byte_gt)(SPI_readDataNonBlocking(base) & 0x00FF);
     }
 
     return GMP_EC_OK;
 }
 
-ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const data_gt* tx_buf, data_gt* rx_buf, size_gt len, time_gt timeout)
+ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const byte_gt* tx_buf, byte_gt* rx_buf, size_gt len, time_gt timeout)
 {
     if ((hspi == NULL) || (tx_buf == NULL) || (rx_buf == NULL))
         return GMP_EC_GENERAL_ERROR;
@@ -1027,7 +1027,7 @@ ec_gt gmp_hal_spi_bus_transfer(spi_halt hspi, const data_gt* tx_buf, data_gt* rx
         }
 
         /* 4. Read actual data from bus (Right-justified) */
-        rx_buf[i] = (data_gt)(SPI_readDataNonBlocking(base) & 0x00FF);
+        rx_buf[i] = (byte_gt)(SPI_readDataNonBlocking(base) & 0x00FF);
     }
 
     return GMP_EC_OK;

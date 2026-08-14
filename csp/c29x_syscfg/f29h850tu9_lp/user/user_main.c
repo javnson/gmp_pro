@@ -13,7 +13,7 @@ static time_gt last_led_tick;
 
 static void launchpad_uart_rx_pump(void)
 {
-    data_gt byte;
+    byte_gt byte;
     size_gt bytes_read;
 
     while (gmp_hal_uart_get_rx_available(debug_uart) != 0U)
@@ -27,7 +27,7 @@ static void launchpad_uart_rx_pump(void)
 
 static void launchpad_datalink_tx(void)
 {
-    const data_gt *buffer;
+    const byte_gt *buffer;
     size_gt length;
 
     buffer = gmp_dev_dl_get_tx_hw_hdr(&launchpad_datalink, &length);

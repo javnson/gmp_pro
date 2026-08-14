@@ -16,7 +16,7 @@ if ~isfile(exe)
 end
 
 header = fileread(fullfile(root, 'sdpe_mgr', ...
-    'sdpe_dps_fsbb_simulate_settings.h'));
+    'ctrl_settings.h'));
 level_token = regexp(header, '#define\s+BUILD_LEVEL\s+\((\d)\)', 'tokens', 'once');
 if isempty(level_token) || str2double(level_token{1}) ~= build_level
     error('FSBB:BuildLevelMismatch', ...
@@ -27,7 +27,7 @@ model_file = fullfile(root, [model '.slx']);
 run(fullfile(root, '..', '..', 'sdpe_general', ...
     'sdpe_dps_fsbb_common_settings_matlab_init.m'));
 run(fullfile(root, 'sdpe_mgr', ...
-    'sdpe_dps_fsbb_simulate_settings_matlab_init.m'));
+    'ctrl_settings_matlab_init.m'));
 load_system(model_file);
 model_cleanup = onCleanup(@() close_model_without_saving(model));
 

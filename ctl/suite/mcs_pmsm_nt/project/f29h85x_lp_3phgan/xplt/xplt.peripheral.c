@@ -96,7 +96,7 @@ void flush_dl_tx_buffer(void)
 
 void flush_dl_rx_buffer(void)
 {
-    data_gt byte;
+    byte_gt byte;
     size_gt count;
     while (gmp_hal_uart_get_rx_available(DEBUG_UART_BASE) != 0U)
     {

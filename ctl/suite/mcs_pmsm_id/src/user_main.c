@@ -33,7 +33,7 @@ gmp_datalink_t dl;
 /** @brief Move bytes collected by the legacy UART ISR into the Data Link parser. */
 void flush_dl_rx_buffer(void)
 {
-    data_gt byte;
+    byte_gt byte;
     at_device_flush_rx_buffer();
     while (ringbuf_get_one(&at_dev.buffer, &byte))
         gmp_dev_dl_push_byte(&dl, byte);

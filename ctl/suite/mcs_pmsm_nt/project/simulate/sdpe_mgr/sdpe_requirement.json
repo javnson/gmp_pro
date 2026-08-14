@@ -4,7 +4,7 @@
   "display_name": "MCS PMSM NT Windows/Simulink SIL",
   "suite": "mcs_pmsm_nt",
   "version": "1.2.0",
-  "output_header": "sdpe_mcs_pmsm_nt_simulate_settings.h",
+  "output_header": "ctrl_settings.h",
   "hardware": [
     {
       "entity": "tyi_5008_kv335"
@@ -42,7 +42,7 @@
       "role": "Adc Voltage Reference",
       "macro": "CTRL_ADC_VOLTAGE_REF",
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "ADC reference voltage used by all sensor conversions."
     },
@@ -50,7 +50,7 @@
       "role": "Dc Bus Voltage Base",
       "macro": "CTRL_DCBUS_VOLTAGE",
       "binding": {
-        "float": "80.0"
+        "parameter": "80.0"
       },
       "description": "Configured DC-bus voltage base."
     },
@@ -66,7 +66,7 @@
       "role": "Current Base",
       "macro": "CTRL_CURRENT_BASE",
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Phase-current per-unit base in amperes."
     },
@@ -82,7 +82,7 @@
       "role": "Encoder Bias",
       "macro": "CTRL_POS_ENC_BIAS",
       "binding": {
-        "float": "0.0999145508"
+        "parameter": "0.0999145508"
       },
       "description": "Mechanical encoder position bias in per unit."
     },
@@ -337,7 +337,7 @@
     "before_footer": "/* No additional platform-specific tail definitions. */"
   },
   "description": "Windows/Simulink SIL implementation of the common mcs_pmsm_nt controller requirement contract.",
-  "updated_at": "2026-08-08",
+  "updated_at": "2026-08-15",
   "requirement_groups": [
     {
       "name": "Peripheral Parameters",

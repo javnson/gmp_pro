@@ -191,7 +191,7 @@ ec_gt hdc1080_read_temp_hum_sequence(hdc1080_dev_t* dev, float* temp_c_ret, floa
     hdc1080_delay_ms(20);
 
     /* 3. Read 4 continuous bytes (Temp MSB, Temp LSB, Hum MSB, Hum LSB) */
-    data_gt buf[4] = {0};
+    byte_gt buf[4] = {0};
     ret = gmp_hal_iic_read_mem(dev->bus, dev->dev_addr, 0, 0, buf, 4, HDC1080_CFG_TIMEOUT);
     if (ret != GMP_EC_OK)
         return ret;

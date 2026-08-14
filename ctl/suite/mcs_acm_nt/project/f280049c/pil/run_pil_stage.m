@@ -14,10 +14,9 @@ end
 pil_directory = fileparts(mfilename('fullpath'));
 target_directory = fileparts(pil_directory);
 project_directory = fileparts(target_directory);
-settings_directory = fullfile(target_directory, 'sdpe_mgr');
-addpath(settings_directory);
-settings_path_cleanup = onCleanup(@() rmpath(settings_directory)); %#ok<NASGU>
-sdpe_mcs_acim_nt_f280049c_settings_matlab_init;
+settings_script = fullfile(target_directory, 'sdpe_mgr', ...
+    'ctrl_settings_matlab_init.m');
+run(settings_script);
 
 assert(ENABLE_GMP_DL_PIL_SIM, ...
     'MCS:PILDisabled', 'ENABLE_GMP_DL_PIL_SIM must be enabled in target SDPE.');

@@ -71,4 +71,4 @@
 #define MCS_PMSM_ID_TIME_SCALE (0.05f)
 
 // Invoke generated project and common controller settings.
-#include <sdpe_mcs_pmsm_id_simulate_settings.h>
+#include <ctrl_settings.h>

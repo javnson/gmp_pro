@@ -57,7 +57,7 @@ size_gt gmp_hal_uart_get_rx_available(uart_halt uart)
 }
 
 ec_gt gmp_hal_uart_write(
-    uart_halt uart, const data_gt *data, size_gt length, uint32_t timeout)
+    uart_halt uart, const byte_gt *data, size_gt length, uint32_t timeout)
 {
     uint32_t base = (uint32_t)uart;
     uint32_t remaining_us;
@@ -87,7 +87,7 @@ ec_gt gmp_hal_uart_write(
 
 ec_gt gmp_hal_uart_read(
     uart_halt uart,
-    data_gt *data,
+    byte_gt *data,
     size_gt length,
     uint32_t timeout,
     size_gt *bytes_read)
@@ -121,7 +121,7 @@ ec_gt gmp_hal_uart_read(
             DEVICE_DELAY_US(1U);
             --remaining_us;
         }
-        data[index] = (data_gt)UART_readCharNonBlocking(base);
+        data[index] = (byte_gt)UART_readCharNonBlocking(base);
     }
 
     if (bytes_read != NULL)
@@ -240,7 +240,7 @@ static ec_gt gmp_c29x_i2c_write(
     addr16_gt device_address,
     const uint8_t *prefix,
     size_gt prefix_length,
-    const data_gt *data,
+    const byte_gt *data,
     size_gt data_length,
     time_gt timeout)
 {
@@ -292,7 +292,7 @@ static ec_gt gmp_c29x_i2c_read(
     addr16_gt device_address,
     uint32_t address,
     size_gt address_length,
-    data_gt *data,
+    byte_gt *data,
     size_gt data_length,
     time_gt timeout)
 {
@@ -332,7 +332,7 @@ static ec_gt gmp_c29x_i2c_read(
         status = gmp_c29x_i2c_wait_rx_data(base, timeout);
         if (status != GMP_EC_OK)
             goto fail;
-        data[index] = (data_gt)I2C_getData(base);
+        data[index] = (byte_gt)I2C_getData(base);
     }
     return gmp_c29x_i2c_wait_stop(base, timeout);
 
@@ -370,7 +370,7 @@ ec_gt gmp_hal_iic_write_reg(
 
 ec_gt gmp_hal_iic_write_mem(
     iic_halt iic, addr16_gt device_address, addr32_gt memory_address,
-    size_gt address_length, const data_gt *memory, size_gt memory_length,
+    size_gt address_length, const byte_gt *memory, size_gt memory_length,
     time_gt timeout)
 {
     uint8_t address_bytes[4];
@@ -387,7 +387,7 @@ ec_gt gmp_hal_iic_read_reg(
     size_gt address_length, uint32_t *register_data, size_gt register_length,
     time_gt timeout)
 {
-    data_gt bytes[4];
+    byte_gt bytes[4];
     size_gt index;
     ec_gt status;
     uint32_t value = 0U;
@@ -406,7 +406,7 @@ ec_gt gmp_hal_iic_read_reg(
 
 ec_gt gmp_hal_iic_read_mem(
     iic_halt iic, addr16_gt device_address, addr32_gt memory_address,
-    size_gt address_length, data_gt *memory, size_gt memory_length,
+    size_gt address_length, byte_gt *memory, size_gt memory_length,
     time_gt timeout)
 {
     return gmp_c29x_i2c_read((uint32_t)iic, device_address,
@@ -415,7 +415,7 @@ ec_gt gmp_hal_iic_read_mem(
 }
 
 static ec_gt gmp_c29x_spi_exchange(
-    uint32_t base, const data_gt *transmit, data_gt *receive,
+    uint32_t base, const byte_gt *transmit, byte_gt *receive,
     size_gt length, time_gt timeout)
 {
     size_gt index;
@@ -446,7 +446,7 @@ static ec_gt gmp_c29x_spi_exchange(
             --remaining_us;
         }
         if (receive != NULL)
-            receive[index] = (data_gt)(SPI_readDataNonBlocking(base) & 0xFFU);
+            receive[index] = (byte_gt)(SPI_readDataNonBlocking(base) & 0xFFU);
         else
             (void)SPI_readDataNonBlocking(base);
     }
@@ -454,7 +454,7 @@ static ec_gt gmp_c29x_spi_exchange(
 }
 
 ec_gt gmp_hal_spi_bus_write(
-    spi_halt spi, const data_gt *data, size_gt length, time_gt timeout)
+    spi_halt spi, const byte_gt *data, size_gt length, time_gt timeout)
 {
     if ((data == NULL) && (length != 0U))
         return GMP_EC_INVALID_PARAM;
@@ -462,7 +462,7 @@ ec_gt gmp_hal_spi_bus_write(
 }
 
 ec_gt gmp_hal_spi_bus_read(
-    spi_halt spi, data_gt *data, size_gt length, time_gt timeout)
+    spi_halt spi, byte_gt *data, size_gt length, time_gt timeout)
 {
     if ((data == NULL) && (length != 0U))
         return GMP_EC_INVALID_PARAM;
@@ -470,7 +470,7 @@ ec_gt gmp_hal_spi_bus_read(
 }
 
 ec_gt gmp_hal_spi_bus_transfer(
-    spi_halt spi, const data_gt *transmit, data_gt *receive,
+    spi_halt spi, const byte_gt *transmit, byte_gt *receive,
     size_gt length, time_gt timeout)
 {
     if (((transmit == NULL) || (receive == NULL)) && (length != 0U))

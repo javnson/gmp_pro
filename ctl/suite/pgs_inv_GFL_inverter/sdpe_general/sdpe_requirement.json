@@ -5,7 +5,7 @@
   "description": "Platform-independent control contract shared by all pgs_inv_GFL_inverter projects. Hardware timing, sensing, board resources and BUILD_LEVEL selection remain in each platform requirement.",
   "suite": "pgs_inv_GFL_inverter",
   "version": "1.2.0",
-  "updated_at": "2026-08-08",
+  "updated_at": "2026-08-15",
   "output_header": "sdpe_pgs_inv_gfl_common_settings.h",
   "hardware": [],
   "code_sections": {
@@ -115,14 +115,18 @@
       "role": "PIL input channel mask",
       "macro": "GMP_PIL_RX_MASK",
       "weak": true,
-      "binding": {"number": "127"},
+      "binding": {
+        "number": "127"
+      },
       "description": "Enable the seven ADC slots used by the three-phase inverter SIL input ABI."
     },
     {
       "role": "PIL output channel mask",
       "macro": "GMP_PIL_TX_MASK",
       "weak": true,
-      "binding": {"number": "4294901775"},
+      "binding": {
+        "number": "4294901775"
+      },
       "description": "Enable four PWM slots and all sixteen monitor slots used by the GFL SIL output ABI."
     },
     {
@@ -131,7 +135,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "20.0"
+        "parameter": "20.0"
       },
       "description": "ADC offset calibrator filter cutoff frequency."
     },
@@ -141,7 +145,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.707"
+        "parameter": "0.707"
       },
       "description": "ADC offset calibrator second-order filter quality factor."
     },
@@ -161,7 +165,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.33"
+        "parameter": "0.33"
       },
       "description": "Nominal grid phase-voltage magnitude in controller per unit."
     },
@@ -171,7 +175,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "1000.0"
+        "parameter": "1000.0"
       },
       "description": "P/Q outer-loop execution frequency in hertz."
     },
@@ -191,7 +195,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.75"
+        "parameter": "0.75"
       },
       "description": "Active-power loop proportional gain from P error PU to d-axis current PU."
     },
@@ -201,7 +205,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.001"
+        "parameter": "0.001"
       },
       "description": "Active-power loop integral gain in inverse seconds."
     },
@@ -211,7 +215,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.75"
+        "parameter": "0.75"
       },
       "description": "Reactive-power loop proportional gain from Q error PU to q-axis current PU."
     },
@@ -221,7 +225,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.001"
+        "parameter": "0.001"
       },
       "description": "Reactive-power loop integral gain in inverse seconds."
     },
@@ -231,7 +235,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "1.0"
+        "parameter": "1.0"
       },
       "description": "Circular magnitude limit applied to the d/q current reference produced by the P/Q loop."
     },
@@ -241,7 +245,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "PQ droop frequency and voltage measurement low-pass cutoff."
     },
@@ -251,7 +255,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.10"
+        "parameter": "0.10"
       },
       "description": "Additional active-power command per hertz of frequency deficit."
     },
@@ -261,7 +265,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.50"
+        "parameter": "0.50"
       },
       "description": "Additional reactive-power command per PU of voltage deficit."
     },
@@ -271,7 +275,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "-0.80"
+        "parameter": "-0.80"
       },
       "description": "Minimum active-power reference after PQ droop."
     },
@@ -281,7 +285,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.80"
+        "parameter": "0.80"
       },
       "description": "Maximum active-power reference after PQ droop."
     },
@@ -291,7 +295,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "-0.80"
+        "parameter": "-0.80"
       },
       "description": "Minimum reactive-power reference after PQ droop."
     },
@@ -301,7 +305,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.80"
+        "parameter": "0.80"
       },
       "description": "Maximum reactive-power reference after PQ droop."
     },
@@ -311,7 +315,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.6"
+        "parameter": "0.6"
       },
       "description": "BUILD_LEVEL 1 d-axis open-loop voltage command."
     },
@@ -321,7 +325,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.6"
+        "parameter": "0.6"
       },
       "description": "BUILD_LEVEL 1 q-axis open-loop voltage command."
     },
@@ -341,7 +345,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.1"
+        "parameter": "0.1"
       },
       "description": "Default active-power reference. Positive power exports energy to the grid."
     },
@@ -351,7 +355,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.0"
+        "parameter": "0.0"
       },
       "description": "Default reactive-power reference using Q = vq*id - vd*iq."
     },
@@ -361,7 +365,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.1"
+        "parameter": "0.1"
       },
       "description": "BUILD_LEVEL 2 d-axis current command."
     },
@@ -371,7 +375,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.1"
+        "parameter": "0.1"
       },
       "description": "BUILD_LEVEL 2 q-axis current command."
     },
@@ -381,7 +385,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.1"
+        "parameter": "0.1"
       },
       "description": "BUILD_LEVEL 3 grid-connected d-axis current command."
     },
@@ -391,7 +395,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.0"
+        "parameter": "0.0"
       },
       "description": "BUILD_LEVEL 3 grid-connected q-axis current command."
     },
@@ -401,7 +405,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.6"
+        "parameter": "0.6"
       },
       "description": "BUILD_LEVEL 4 d-axis current command."
     },
@@ -411,7 +415,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.6"
+        "parameter": "0.6"
       },
       "description": "BUILD_LEVEL 4 q-axis current command."
     },
@@ -421,7 +425,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.50"
+        "parameter": "0.50"
       },
       "description": "BUILD_LEVEL 6 positive-sequence d-axis capacitor phase-voltage reference in per unit."
     },
@@ -431,7 +435,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.0"
+        "parameter": "0.0"
       },
       "description": "BUILD_LEVEL 6 positive-sequence q-axis capacitor phase-voltage reference in per unit."
     },
@@ -441,7 +445,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "100.0"
+        "parameter": "100.0"
       },
       "description": "BUILD_LEVEL 6 capacitor-voltage outer-loop bandwidth in hertz; keep it well below the inner current-loop bandwidth."
     },
@@ -451,7 +455,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "20.0"
+        "parameter": "20.0"
       },
       "description": "BUILD_LEVEL 6 ordinary PI zero frequency in hertz."
     },
@@ -461,7 +465,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.80"
+        "parameter": "0.80"
       },
       "description": "Circular magnitude limit for the complete BUILD_LEVEL 6 PI plus feed-forward current reference. The final limited output is returned to the ordinary PID integrators by clamping correction."
     },
@@ -471,7 +475,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.80"
+        "parameter": "0.80"
       },
       "description": "Independent symmetric d/q-axis limit for the complete BUILD_LEVEL 6 PI plus feed-forward current reference."
     },
@@ -481,7 +485,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.10"
+        "parameter": "0.10"
       },
       "description": "Zero-sequence current QPR proportional gain used when 3D-SVPWM is enabled."
     },
@@ -491,7 +495,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "50.0"
+        "parameter": "50.0"
       },
       "description": "Zero-sequence current QPR resonant gain used when 3D-SVPWM is enabled."
     },
@@ -501,7 +505,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "5.0"
+        "parameter": "5.0"
       },
       "description": "Zero-sequence QPR resonant bandwidth/cutoff frequency in hertz."
     },
@@ -511,7 +515,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.20"
+        "parameter": "0.20"
       },
       "description": "Symmetric zero-axis voltage-command limit for four-wire operation."
     },
@@ -521,12 +525,19 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "50.0"
+        "parameter": "50.0"
       },
       "description": "Nominal grid frequency in hertz."
     }
   ],
   "requirement_groups": [
+    {
+      "name": "Peripheral Parameters",
+      "requirements": [
+        "PIL input channel mask",
+        "PIL output channel mask"
+      ]
+    },
     {
       "name": "Per-Unit Base Parameters",
       "requirements": [

@@ -42,4 +42,4 @@
 
 
 // Invoke Controller Settings
-#include <sdpe_mcs_pmsm_nt_iris_settings.h>
+#include <ctrl_settings.h>

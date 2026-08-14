@@ -4,7 +4,7 @@
  *
  * This backend uses uint8_t directly for every protocol byte. Buffer lengths,
  * pointer increments, CRC input lengths, and hardware-transfer lengths are
- * therefore all physical byte counts, independent of data_gt.
+ * therefore all physical byte counts, independent of byte_gt.
  */
 
 #ifndef _FILE_GMP_DATALINK_U8_H

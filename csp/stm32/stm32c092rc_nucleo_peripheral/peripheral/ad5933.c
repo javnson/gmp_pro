@@ -35,10 +35,10 @@ static ec_gt ad5933_write_reg_multi(ad5933_dev_t* dev, uint8_t reg_addr, uint32_
 /**
  * @brief Specific read function required by AD5933 using the 0xB0 Pointer Command.
  */
-static ec_gt ad5933_read_reg_byte(ad5933_dev_t* dev, uint8_t reg_addr, data_gt* data)
+static ec_gt ad5933_read_reg_byte(ad5933_dev_t* dev, uint8_t reg_addr, byte_gt* data)
 {
     /* 1. Set the Address Pointer */
-    data_gt ptr_cmd[2] = {AD5933_ADDR_POINTER, reg_addr};
+    byte_gt ptr_cmd[2] = {AD5933_ADDR_POINTER, reg_addr};
     ec_gt ret = gmp_hal_iic_write_mem(dev->bus, dev->dev_addr, 0, 0, ptr_cmd, 2, AD5933_CFG_TIMEOUT);
     if (ret != GMP_EC_OK)
         return ret;
@@ -54,7 +54,7 @@ static ec_gt ad5933_read_reg_multi(ad5933_dev_t* dev, uint8_t reg_addr, uint32_t
 
     for (i = 0; i < bytes; i++)
     {
-        data_gt byte_val = 0;
+        byte_gt byte_val = 0;
         ec_gt ret = ad5933_read_reg_byte(dev, reg_addr + i, &byte_val);
         if (ret != GMP_EC_OK)
             return ret;

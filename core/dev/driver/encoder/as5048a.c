@@ -22,9 +22,9 @@ static ec_gt as5048a_transfer_16b(as5048a_dev_t* dev, uint16_t tx_cmd, uint16_t*
         tx_cmd |= 0x8000;
     }
 
-    data_gt tx_buf[2], rx_buf[2];
-    tx_buf[0] = (data_gt)(tx_cmd >> 8);
-    tx_buf[1] = (data_gt)(tx_cmd & 0xFF);
+    byte_gt tx_buf[2], rx_buf[2];
+    tx_buf[0] = (byte_gt)(tx_cmd >> 8);
+    tx_buf[1] = (byte_gt)(tx_cmd & 0xFF);
 
     ec_gt ret = gmp_hal_spi_dev_transfer(dev->spi_node, tx_buf, rx_buf, 2, AS5048A_CFG_TIMEOUT);
 

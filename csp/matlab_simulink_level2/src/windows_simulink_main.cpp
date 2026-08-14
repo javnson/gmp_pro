@@ -88,15 +88,15 @@ void gmp_csp_startup(void)
     gmp_base_print("[INFO] Simulink TX buffer size: %llu\r\n", sizeof(simulink_tx_buffer));
 
     // Config send & recv buffer
-    gmp_dev_init_half_duplex_channel(&simulink_rx, (data_gt *)&simulink_rx_buffer, sizeof(simulink_rx_buffer),
+    gmp_dev_init_half_duplex_channel(&simulink_rx, (byte_gt *)&simulink_rx_buffer, sizeof(simulink_rx_buffer),
                                      sizeof(simulink_rx_buffer));
-    // simulink_rx.buf = (data_gt *)&simulink_rx_buffer;
+    // simulink_rx.buf = (byte_gt *)&simulink_rx_buffer;
     // simulink_rx.length = sizeof(simulink_rx_buffer);
     // simulink_rx.capacity = sizeof(simulink_rx_buffer);
 
-    gmp_dev_init_half_duplex_channel(&simulink_tx, (data_gt *)&simulink_tx_buffer, sizeof(simulink_tx_buffer),
+    gmp_dev_init_half_duplex_channel(&simulink_tx, (byte_gt *)&simulink_tx_buffer, sizeof(simulink_tx_buffer),
                                      sizeof(simulink_tx_buffer));
-    // simulink_tx.buf = (data_gt *)&simulink_tx_buffer;
+    // simulink_tx.buf = (byte_gt *)&simulink_tx_buffer;
     // simulink_tx.length = sizeof(simulink_tx_buffer);
     // simulink_tx.capacity = sizeof(simulink_tx_buffer);
 }

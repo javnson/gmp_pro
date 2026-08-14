@@ -5,7 +5,7 @@ model = 'MCS_STD_FSBB_MODEL';
 root = fileparts(mfilename('fullpath'));
 model_file = fullfile(root, [model '.slx']);
 common_init = 'sdpe_dps_fsbb_common_settings_matlab_init.m';
-simulate_init = 'sdpe_dps_fsbb_simulate_settings_matlab_init.m';
+simulate_init = 'ctrl_settings_matlab_init.m';
 run(fullfile(root, '..', '..', 'sdpe_general', common_init));
 run(fullfile(root, 'sdpe_mgr', simulate_init));
 load_system(model_file);

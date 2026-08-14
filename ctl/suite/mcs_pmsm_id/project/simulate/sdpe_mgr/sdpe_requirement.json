@@ -4,7 +4,7 @@
   "display_name": "MCS PMSM Identification simulate",
   "suite": "mcs_pmsm_id",
   "version": "1.0.0",
-  "output_header": "sdpe_mcs_pmsm_id_simulate_settings.h",
+  "output_header": "ctrl_settings.h",
   "hardware": [
     {
       "entity": "ti_boostxl_3phganinv"
@@ -39,7 +39,7 @@
       "role": "Adc Voltage Reference",
       "macro": "CTRL_ADC_VOLTAGE_REF",
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "ADC reference voltage used by all sensor conversions."
     },
@@ -47,7 +47,7 @@
       "role": "Dc Bus Voltage Base",
       "macro": "CTRL_DCBUS_VOLTAGE",
       "binding": {
-        "float": "24.0"
+        "parameter": "24.0"
       },
       "description": "Configured DC-bus voltage base."
     },
@@ -63,7 +63,7 @@
       "role": "Current Base",
       "macro": "CTRL_CURRENT_BASE",
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Phase-current per-unit base in amperes."
     },
@@ -79,7 +79,7 @@
       "role": "Encoder Bias",
       "macro": "CTRL_POS_ENC_BIAS",
       "binding": {
-        "float": "0.0999145508"
+        "parameter": "0.0999145508"
       },
       "description": "Mechanical encoder position bias in per unit."
     },
@@ -95,7 +95,7 @@
       "role": "Phase Current Sensitivity",
       "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
       "binding": {
-        "float": "0.1"
+        "parameter": "0.1"
       },
       "description": "Match the simulation ADC current path: 5 mOhm shunt times 20 V/V gain."
     },
@@ -103,7 +103,7 @@
       "role": "Phase Current Bias",
       "macro": "CTRL_INVERTER_CURRENT_BIAS",
       "binding": {
-        "float": "1.65"
+        "parameter": "1.65"
       },
       "description": "Match the 1.65 V zero-current bias configured in MCS_STD_PMSM_MODEL.slx."
     },
@@ -111,7 +111,7 @@
       "role": "Phase Voltage Sensitivity",
       "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
       "binding": {
-        "float": "0.04049127"
+        "parameter": "0.04049127"
       },
       "description": "Match the phase-voltage gain configured in MCS_STD_PMSM_MODEL.slx."
     },
@@ -119,7 +119,7 @@
       "role": "Phase Voltage Bias",
       "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
       "binding": {
-        "float": "0.0"
+        "parameter": "0.0"
       },
       "description": "The simulation phase-voltage path has zero bias."
     },
@@ -127,7 +127,7 @@
       "role": "Dc Current Sensitivity",
       "macro": "CTRL_DC_CURRENT_SENSITIVITY",
       "binding": {
-        "float": "1.0"
+        "parameter": "1.0"
       },
       "description": "Unity placeholder for the unused simulation DC-current path."
     },
@@ -135,7 +135,7 @@
       "role": "Dc Current Bias",
       "macro": "CTRL_DC_CURRENT_BIAS",
       "binding": {
-        "float": "0.0"
+        "parameter": "0.0"
       },
       "description": "The unused simulation DC-current path has zero bias."
     },
@@ -143,7 +143,7 @@
       "role": "Dc Voltage Sensitivity",
       "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
       "binding": {
-        "float": "0.04049127"
+        "parameter": "0.04049127"
       },
       "description": "Match the DC-bus voltage gain configured in MCS_STD_PMSM_MODEL.slx."
     },
@@ -151,7 +151,7 @@
       "role": "Dc Voltage Bias",
       "macro": "CTRL_DC_VOLTAGE_BIAS",
       "binding": {
-        "float": "0.0"
+        "parameter": "0.0"
       },
       "description": "The simulation DC-bus voltage path has zero bias."
     },
@@ -171,7 +171,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "4.7"
+        "parameter": "4.7"
       },
       "description": "Match the per-phase resistance configured in the Simulink PMSM block."
     },
@@ -181,7 +181,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "8.5e-3"
+        "parameter": "8.5e-3"
       },
       "description": "Match the per-phase inductance configured in the Simulink PMSM block."
     },
@@ -191,7 +191,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "8.5e-3"
+        "parameter": "8.5e-3"
       },
       "description": "Match the d-axis inductance configured in the Simulink PMSM block."
     },
@@ -201,7 +201,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "8.5e-3"
+        "parameter": "8.5e-3"
       },
       "description": "Match the q-axis inductance configured in the Simulink PMSM block."
     },
@@ -211,7 +211,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.0038197"
+        "parameter": "0.0038197"
       },
       "description": "Match the flux linkage configured in the Simulink PMSM block."
     },
@@ -231,7 +231,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "206.2"
+        "parameter": "206.2"
       },
       "description": "Velocity constant corresponding to the Simulink PMSM mask."
     },
@@ -261,7 +261,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.0"
+        "parameter": "0.0"
       },
       "description": "No-load current default for the idealized Simulink plant."
     },
@@ -271,7 +271,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "200.0"
+        "parameter": "200.0"
       },
       "description": "Electrical base frequency at 3000 rpm and four pole pairs."
     },
@@ -281,7 +281,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "3000.0"
+        "parameter": "3000.0"
       },
       "description": "Mechanical speed base used by the simulated encoder and controller."
     },
@@ -291,7 +291,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.2"
+        "parameter": "0.2"
       },
       "description": "Conservative torque limit for the small simulated PMSM."
     },
@@ -301,7 +301,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "24.0"
+        "parameter": "24.0"
       },
       "description": "DC-bus voltage configured by the model source."
     },
@@ -311,7 +311,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Phase-current base and conservative simulated current limit."
     },
@@ -321,7 +321,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "20e3"
+        "parameter": "20e3"
       },
       "description": "Main motor-control ISR frequency in hertz."
     },
@@ -422,7 +422,7 @@
     "before_footer": "/* No additional platform-specific tail definitions. */"
   },
   "description": "Structured SDPE hardware, peripheral and control settings migrated from simulate/xplt/ctrl_settings.h.",
-  "updated_at": "2026-08-08",
+  "updated_at": "2026-08-15",
   "requirement_groups": [
     {
       "name": "Peripheral Parameters",

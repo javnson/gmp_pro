@@ -65,8 +65,8 @@ E:\lib\gmp_pro\ctl\suite\pgs_sinv_rc\project\simulate\sdpe_mgr\sdpe_requirement.
 ```text
 src\sdpe_pgs_sinv_rc_common_settings.h
 src\sdpe_pgs_sinv_rc_common_settings_matlab_init.m
-project\simulate\sdpe_mgr\sdpe_pgs_sinv_rc_simulate_settings.h
-project\simulate\sdpe_mgr\sdpe_pgs_sinv_rc_simulate_settings_matlab_init.m
+project\simulate\sdpe_mgr\ctrl_settings.h
+project\simulate\sdpe_mgr\ctrl_settings_matlab_init.m
 ```
 
 ## 5. 接线和数据映射

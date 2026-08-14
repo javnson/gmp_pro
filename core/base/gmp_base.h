@@ -167,7 +167,7 @@ void gmp_base_not_impl(const char* file, uint32_t line);
 
 typedef struct
 {
-    data_gt* buf;
+    byte_gt* buf;
     size_gt length;
     size_gt capacity;
 } gmp_print_buffer_t;
@@ -261,7 +261,7 @@ void gmp_base_leave_critical(void);
 //
 // #if defined SPECIFY_GMP_BLOCK_MEMORY_ENABLE
 //     GMP_MEM_ALIGN
-//     extern data_gt default_heap[GMP_DEFAULT_HEAP_SIZE];
+//     extern byte_gt default_heap[GMP_DEFAULT_HEAP_SIZE];
 // #endif
 
 // #ifdef SPECIFY_ENABLE_DEFUALT_DEBUG_PRINT_FUNC

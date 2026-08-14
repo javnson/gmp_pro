@@ -66,7 +66,7 @@ Schema 文件放在 `schemas/` 下。
 | `parameter` | `real2param(value)` | 物理量、配置值和初始化参数，推荐默认选择 |
 | `ctrl` | `real2ctrl(value)` | 明确需要直接进入实时域的常量 |
 
-不要给实数字面量添加 `f` 后缀；否则在 `parameter_gt=double` 时，精度会在进入转换宏之前丢失。工程 requirement 的 binding 也可使用 `{"real": ...}`、`{"parameter": ...}` 或 `{"ctrl": ...}`。生成的 MATLAB 初始化脚本提供同名四个转换函数句柄，并允许通过 `GMP_SDPE_*_TYPE` 和转换器句柄选择仿真数值类型。
+不要给实数字面量添加 `f` 后缀；否则在 `parameter_gt=double` 时，精度会在进入转换宏之前丢失。工程 requirement 的 binding 也可使用 `{"real": ...}`、`{"parameter": ...}` 或 `{"ctrl": ...}`。UI 中对应显示为 `real_gt`、`parameter_gt` 和 `ctrl_gt`，Binding Value 始终按 real 字面量输入，再由生成器转换到目标域。生成的 MATLAB 初始化脚本提供同名四个转换函数句柄，并允许通过 `GMP_SDPE_*_TYPE` 和转换器句柄选择仿真数值类型。
 
 `default` 可以是普通 JSON 值，也可以是绑定对象：
 

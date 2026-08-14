@@ -39,4 +39,4 @@
 // #define SPECIFY_CTRL_GT_TYPE USING_FIXED_TI_IQ_LIBRARY
 
 // Invoke target and common controller settings.
-#include <sdpe_mcs_acim_nt_f280049c_settings.h>
+#include <ctrl_settings.h>

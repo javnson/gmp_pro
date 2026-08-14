@@ -5,8 +5,8 @@
   "description": "F280039C IRIS hardware timing, sensing and peripheral bindings. Platform-independent controller settings are supplied by src/sdpe_mcs_pmsm_nt_common_settings.h.",
   "suite": "mcs_pmsm_nt",
   "version": "1.2.0",
-  "updated_at": "2026-08-08",
-  "output_header": "sdpe_mcs_pmsm_nt_iris_settings.h",
+  "updated_at": "2026-08-15",
+  "output_header": "ctrl_settings.h",
   "hardware": [
     {
       "entity": "iris_f280039c_node"
@@ -323,7 +323,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "ADC reference voltage used by all sensor conversions."
     },
@@ -333,7 +333,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "80.0"
+        "parameter": "80.0"
       },
       "description": "Configured DC-bus voltage base."
     },
@@ -353,7 +353,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Phase-current per-unit base in amperes."
     },
@@ -643,7 +643,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "float": "0.0207000002"
+        "parameter": "0.0207000002"
       },
       "description": "Mechanical encoder position bias in per unit."
     },

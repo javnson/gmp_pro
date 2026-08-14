@@ -65,7 +65,7 @@ static float signal_dc_offset = 0.0F;
 static float applied_frequency_hz = -1.0F;
 static float applied_signal_gain = -1.0F;
 static float applied_signal_dc_offset = -100.0F;
-static data_gt memory_window[64];
+static byte_gt memory_window[64];
 #if defined(__TI_COMPILER_VERSION__)
 #pragma DATA_SECTION(dsa_buffer, "ramgs0")
 #endif
@@ -259,7 +259,7 @@ static void user_reply_info(void)
     gmp_dev_dl_tx_request_cmd(&datalink, datalink.rx_head.seq_id, USER_DL_CMD_INFO);
     gmp_dev_dl_tx_append_u8(&datalink, 2U);
     gmp_dev_dl_tx_append_u8(&datalink, GMP_PORT_DATA_SIZE_PER_BYTES);
-    gmp_dev_dl_tx_append_u8(&datalink, sizeof(data_gt));
+    gmp_dev_dl_tx_append_u8(&datalink, sizeof(byte_gt));
     gmp_dev_dl_tx_append_u8(&datalink, 16U);
     gmp_dev_dl_tx_append_u8(&datalink, USER_DL_TUNABLE_CMD);
     gmp_dev_dl_tx_append_u8(&datalink, USER_DL_MEMORY_CMD);
@@ -325,8 +325,8 @@ void init(void)
 
     for (index = 0; index < sizeof(memory_window); ++index)
     {
-        data_gt low_byte = (data_gt)((index * 2U) & 0xFFU);
-        data_gt high_byte = (data_gt)(((index * 2U + 1U) & 0xFFU) << 8U);
+        byte_gt low_byte = (byte_gt)((index * 2U) & 0xFFU);
+        byte_gt high_byte = (byte_gt)(((index * 2U + 1U) & 0xFFU) << 8U);
         memory_window[index] = low_byte | high_byte;
     }
 

@@ -107,7 +107,7 @@ ec_gt bh1750_read_lux(bh1750_dev_t* dev, float* lux_ret)
     if ((dev == NULL) || (lux_ret == NULL))
         return GMP_EC_GENERAL_ERROR;
 
-    data_gt buf[2] = {0};
+    byte_gt buf[2] = {0};
 
     /* * Read 2 bytes from the sensor directly.
      * Note: addr_len is set to 0. We don't send any register pointer.

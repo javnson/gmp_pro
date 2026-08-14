@@ -42,4 +42,4 @@
 
 
 // Invoke SDPE-generated project settings
-#include <sdpe_dps_fsbb_iris_settings.h>
+#include <ctrl_settings.h>

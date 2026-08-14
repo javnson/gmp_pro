@@ -2,7 +2,7 @@
 #define GMP_MCS_PMSM_NT_F29H85X_XPLT_PERIPHERAL_H
 
 #include <gmp_core.h>
-#include <sdpe_mgr/sdpe_mcs_pmsm_nt_f29h85x_settings.h>
+#include <sdpe_mgr/ctrl_settings.h>
 #include <ctl/component/interface/adc_ptr_channel.h>
 #include <core/dev/datalink/datalink.h>
 

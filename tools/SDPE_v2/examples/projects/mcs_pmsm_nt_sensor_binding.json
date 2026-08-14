@@ -209,7 +209,7 @@
       "role": "Adc Voltage Reference",
       "macro": "CTRL_ADC_VOLTAGE_REF",
       "binding": {
-        "float": "3.3"
+        "parameter": "3.3"
       },
       "description": "ADC voltage reference."
     },
@@ -225,7 +225,7 @@
       "role": "Dc Bus Voltage",
       "macro": "CTRL_DCBUS_VOLTAGE",
       "binding": {
-        "float": "80.0"
+        "parameter": "80.0"
       },
       "description": "DC bus base voltage."
     },
@@ -241,7 +241,7 @@
       "role": "Current Base",
       "macro": "CTRL_CURRENT_BASE",
       "binding": {
-        "float": "10.0"
+        "parameter": "10.0"
       },
       "description": "Current base value."
     },
@@ -305,7 +305,7 @@
       "role": "Encoder Bias",
       "macro": "CTRL_POS_ENC_BIAS",
       "binding": {
-        "float": "0.0207000002"
+        "parameter": "0.0207000002"
       },
       "description": "Encoder mechanical bias."
     }

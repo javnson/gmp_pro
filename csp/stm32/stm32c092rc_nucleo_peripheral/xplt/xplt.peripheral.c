@@ -114,7 +114,7 @@ void at_device_flush_rx_buffer()
 {
 //    uint16_t fifoLevel;
 //		size_gt rx_len;
-//    data_gt rxBuf[ISR_LOCAL_BUF_SIZE];
+//    byte_gt rxBuf[ISR_LOCAL_BUF_SIZE];
 
 //    // Read all FIFO content
 //    while ((fifoLevel = gmp_hal_uart_get_rx_available(debug_uart)) > 0)

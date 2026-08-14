@@ -216,7 +216,7 @@ void flush_dl_tx_buffer(void)
 void flush_dl_rx_buffer(void)
 {
     uint16_t level = SCI_getRxFIFOStatus(CLLLC_UART_BASE);
-    data_gt buffer[16];
+    byte_gt buffer[16];
     if (level > 16U) level = 16U;
     if (level > 0U)
     {

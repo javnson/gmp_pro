@@ -14,7 +14,7 @@ Generated platform output:
 
 ```text
 sdpe_mgr\
-  sdpe_pgs_inv_gfm_f280049c_settings.h
+  ctrl_settings.h
 ```
 
 Selected hardware entities are included from the repository-wide `ctl\hardware_preset` output.

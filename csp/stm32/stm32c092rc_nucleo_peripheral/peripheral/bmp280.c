@@ -38,7 +38,7 @@ static void bmp280_delay_ms(uint32_t ms)
  */
 static ec_gt bmp280_read_calibration(bmp280_dev_t* dev)
 {
-    data_gt buf[24] = {0};
+    byte_gt buf[24] = {0};
 
     ec_gt ret = gmp_hal_iic_read_mem(dev->bus, dev->dev_addr, BMP280_REG_CALIB_START, 1, buf, 24, BMP280_CFG_TIMEOUT);
     if (ret != GMP_EC_OK)
@@ -206,7 +206,7 @@ ec_gt bmp280_read_temp_and_pressure(bmp280_dev_t* dev, float* temp_c_ret, float*
     if ((dev == NULL) || (temp_c_ret == NULL) || (pressure_pa_ret == NULL))
         return GMP_EC_GENERAL_ERROR;
 
-    data_gt buf[6] = {0};
+    byte_gt buf[6] = {0};
 
     /* Burst read 6 bytes starting from PRESS_MSB (0xF7) */
     ec_gt ret = gmp_hal_iic_read_mem(dev->bus, dev->dev_addr, BMP280_REG_PRESS_MSB, 1, buf, 6, BMP280_CFG_TIMEOUT);
