@@ -1,4 +1,4 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <math.h>
 
@@ -10,7 +10,7 @@
 void ctl_init_saturation(ctl_saturation_t* obj, ctrl_gt out_min, ctrl_gt out_max)
 {
     // Error prevention engineering
-    gmp_base_assert(out_min < out_max);
+    gmp_ctl_assert(out_min < out_max);
 
     obj->out_min = out_min;
     obj->out_max = out_max;
@@ -19,7 +19,7 @@ void ctl_init_saturation(ctl_saturation_t* obj, ctrl_gt out_min, ctrl_gt out_max
 void ctl_init_bipolar_saturation(ctl_bipolar_saturation_t* obj, ctrl_gt out_min, ctrl_gt out_max)
 {
     // Error prevention engineering
-    gmp_base_assert(out_min < out_max);
+    gmp_ctl_assert(out_min < out_max);
 
     obj->out_min = out_min;
     obj->out_max = out_max;

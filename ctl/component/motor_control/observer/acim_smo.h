@@ -19,8 +19,9 @@
  *
  */
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
-#include <ctl/component/motor_control/consultant/im_consultant.h>
+#include <ctl/component/motor_control/consultant/acim_consultant.h>
 #include <ctl/component/motor_control/consultant/pu_consultant.h>
 #include <ctl/component/motor_control/interface/encoder.h>
 #include <ctl/component/motor_control/observer/ato_pll.h>
@@ -165,7 +166,7 @@ GMP_STATIC_INLINE void ctl_clear_im_smo(ctl_im_smo_t* smo)
     smo->diverge_cnt = 0;
     smo->flag_observer_locked = 0;
     smo->pos_out.elec_position = float2ctrl(0.0f);
-    smo->spd_out.velocity = float2ctrl(0.0f);
+    smo->spd_out.speed = float2ctrl(0.0f);
     smo->torque_est = float2ctrl(0.0f);
     smo->psi_r_mag = float2ctrl(0.0f);
 }
@@ -303,7 +304,7 @@ GMP_STATIC_INLINE void ctl_step_im_smo(ctl_im_smo_t* smo, ctrl_gt v_alpha, ctrl_
     // 8. Output Interfaces
     // ========================================================================
     smo->pos_out.elec_position = smo->ato_pll.elec_angle_pu;
-    smo->spd_out.velocity = w_mech_pu;
+    smo->spd_out.speed = w_mech_pu;
 }
 
 /** @} */ // end of ACM_SMO group

@@ -12,6 +12,8 @@
 #ifndef _FILE_BIAS_MODEL_H_
 #define _FILE_BIAS_MODEL_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -52,7 +54,7 @@ extern "C"
 GMP_STATIC_INLINE parameter_gt ctl_bias_calc_via_Vref_Vbias(parameter_gt Vref, parameter_gt Vbias)
 {
     // Ensure Vref is not zero to avoid division by zero.
-    gmp_base_assert(Vref != 0);
+    gmp_ctl_assert(Vref != 0);
     return Vbias / Vref;
 }
 
@@ -72,7 +74,7 @@ GMP_STATIC_INLINE parameter_gt ctl_bias_calc_via_res_divider(parameter_gt R1, pa
 {
     parameter_gt R_total = R1 + R2;
     // Ensure total resistance is not zero to avoid division by zero.
-    gmp_base_assert(R_total != 0);
+    gmp_ctl_assert(R_total != 0);
     return R2 / R_total;
 }
 

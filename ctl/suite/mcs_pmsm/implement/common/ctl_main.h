@@ -13,10 +13,10 @@
 #include <ctl/component/motor_control/basic/vf_generator.h>
 
 // speed encoder
-#include <ctl/component/motor_control/basic/encoder.h>
+#include <ctl/component/motor_control/interface/encoder.h>
 
 // motor controller
-#include <ctl/component/motor_control/pmsm_controller/pmsm_ctrl.h>
+#include <ctl/component/motor_control/suite_pmsm/pmsm_ctrl.h>
 
 #include <ctl/component/interface/pwm_channel.h>
 

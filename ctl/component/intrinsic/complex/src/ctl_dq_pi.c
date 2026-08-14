@@ -1,12 +1,12 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/intrinsic/complex/dq_pi.h>
 
 void ctl_init_dq_pi(ctl_dq_pi_t* dq, parameter_gt kp_d, parameter_gt ki_d, parameter_gt kp_q,
                     parameter_gt ki_q, parameter_gt fs)
 {
-    gmp_base_assert(dq);
-    gmp_base_assert(fs > 0.0f);
+    gmp_ctl_assert(dq);
+    gmp_ctl_assert(fs > 0.0f);
 
     ctl_init_pid(&dq->axis[0], kp_d, ki_d, 0.0f, fs);
     ctl_init_pid(&dq->axis[1], kp_q, ki_q, 0.0f, fs);

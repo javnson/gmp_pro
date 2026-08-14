@@ -10,7 +10,7 @@
 #ifndef _FILE_MOTOR_PARAM_TYI5010_KV360_H_
 #define _FILE_MOTOR_PARAM_TYI5010_KV360_H_
 
-#include <ctl/component/motor_control/basic/motor_unit_calculator.h>
+#include <ctl/component/motor_control/consultant/unit_consultant.h>
 
 #ifdef __cplusplus
 extern "C"

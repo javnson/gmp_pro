@@ -12,6 +12,7 @@
 #ifndef _TRACKING_CONTINUOUS_PID_H_
 #define _TRACKING_CONTINUOUS_PID_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl/component/intrinsic/basic/slope_limiter.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid_aw.h> // Éý¼¶Îª PID_AW

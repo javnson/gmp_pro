@@ -1,5 +1,5 @@
 /** @file dcdc_clllc_hw.c @brief Conservative CLLLC/DAB PI auto tuning. */
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/digital_power/dcdc/clllc.h>
 
 static parameter_gt clllc_limit_fc(parameter_gt requested, parameter_gt limit)
@@ -17,10 +17,10 @@ void ctl_dcdc_blueprint_clllc_parallel(ctl_dcdc_core_init_t* init_config,
     parameter_gt fc_v;
     parameter_gt req_reflected;
 
-    gmp_base_assert(init_config != NULL && hw != NULL);
-    gmp_base_assert(hw->fs > 0.0f && hw->f_res_hz > 0.0f);
-    gmp_base_assert(hw->lr_primary_h > 0.0f && hw->c_out_f > 0.0f);
-    gmp_base_assert(hw->v_base > 0.0f && hw->i_base > 0.0f);
+    gmp_ctl_assert(init_config != NULL && hw != NULL);
+    gmp_ctl_assert(hw->fs > 0.0f && hw->f_res_hz > 0.0f);
+    gmp_ctl_assert(hw->lr_primary_h > 0.0f && hw->c_out_f > 0.0f);
+    gmp_ctl_assert(hw->v_base > 0.0f && hw->i_base > 0.0f);
 
     lr_eq = hw->lr_primary_h + hw->lr_secondary_h /
             (hw->transformer_ratio * hw->transformer_ratio);

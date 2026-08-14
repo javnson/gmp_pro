@@ -9,7 +9,7 @@
  * @copyright Copyright GMP(c) 2024
  */
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/motor_control/observer/acim_pos_calc.h>
 

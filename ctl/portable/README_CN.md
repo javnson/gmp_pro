@@ -1,8 +1,8 @@
 # CTL Portable（No CSP）
 
 `GMP_CTL_PORTABLE` 用于只采用 CTL 算法、无需 GMP 跨平台运行框架和 CSP
-外设抽象的工程。启用后，`gmp_core.h` 不再加载 `xplt.config.h`、
-`csp.config.h`、`csp.general.h`、外设管理及 `core/rt/gmp_runtime.h`。
+外设抽象的工程。工程统一包含 `ctl/math_block/gmp_math.h`；该入口会装配
+portable 类型契约，不加载 CSP、外设管理及 `core/rt/gmp_runtime.h`。
 
 ## 接入步骤
 
@@ -11,7 +11,7 @@
 3. 使用文件夹中的 `sdpe_requirement.json` 管理 `GMP_CTL_PORTABLE` 与数值后端，
    运行 `sdpe_generate.bat` 生成配置头；同时在编译器全局预定义
    `GMP_CTL_PORTABLE`（或将生成头设为编译器 forced include）。
-4. 按需修改 `gmp_ctl_portable_config.h` 中的平台原始类型，然后包含 `gmp_core.h` 和所需 CTL
+4. 按需修改 `gmp_ctl_portable_config.h` 中的平台原始类型，然后包含 `ctl/math_block/gmp_math.h` 和所需 CTL
    模块头文件。
 5. 只有使用延时、校准等时间相关模块时才需要实现 tick：STM32 模板默认
    调用 `HAL_GetTick()`；TI DSP 可把 `gmp_ctl_portable_hooks.c` 加入工程并将
@@ -34,7 +34,7 @@ debug tool、CTL Nano 调度框架、动态内存管理或 CSP 外设实现。�
 ## 最小示例
 
 ```c
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 
 static ctl_pid_t current_pid;

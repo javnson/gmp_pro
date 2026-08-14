@@ -1,8 +1,8 @@
 
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
-#include <ctl/component/motor_control/pmsm_controller/pmsm_ctrl_mtpa.h>
+#include <ctl/component/motor_control/suite_pmsm/pmsm_ctrl_mtpa.h>
 
 // #include "peripheral.h"
 

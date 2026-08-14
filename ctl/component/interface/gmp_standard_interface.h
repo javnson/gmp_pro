@@ -12,6 +12,7 @@
 #ifndef _FILE_GMP_STANDARD_INTERFACE_H_
 #define _FILE_GMP_STANDARD_INTERFACE_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/interface/interface_base.h>
 
 #ifdef __cplusplus

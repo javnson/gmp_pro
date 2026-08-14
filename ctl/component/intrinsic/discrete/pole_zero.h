@@ -12,6 +12,8 @@
 #ifndef _POLE_ZERO_H_
 #define _POLE_ZERO_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 #ifdef __cplusplus
 extern "C"
 {

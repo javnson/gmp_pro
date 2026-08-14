@@ -1,5 +1,5 @@
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 
 
@@ -15,8 +15,8 @@
  */
 void ctl_auto_tuning_neg_inv(inv_neg_ctrl_init_t* neg_init, const gfl_inv_ctrl_init_t* _gfl_init)
 {
-    gmp_base_assert(neg_init);
-    gmp_base_assert(_gfl_init);
+    gmp_ctl_assert(neg_init);
+    gmp_ctl_assert(_gfl_init);
 
     // 1. Copy Basic System Parameters
     neg_init->fs = _gfl_init->fs;
@@ -92,8 +92,8 @@ void ctl_update_neg_inv_coeff(inv_neg_ctrl_t* neg, const inv_neg_ctrl_init_t* ne
 {
     int i;
 
-    gmp_base_assert(neg);
-    gmp_base_assert(neg_init);
+    gmp_ctl_assert(neg);
+    gmp_ctl_assert(neg_init);
     // _gfl_init is used here if we needed L/C again, but since neg_init already
     // contains the calculated Kp/Ki, we rely on neg_init.
 

@@ -13,7 +13,8 @@
 
 // Necessary support
 #include <ctl/component/interface/interface_base.h>
-#include <ctl/component/motor_control/basic/motor_universal_interface.h>
+#include <ctl/component/intrinsic/continuous/continuous_pid.h>
+#include <ctl/component/motor_control/interface/motor_universal_interface.h>
 
 //#define PMSM_CTRL_USING_DISCRETE_CTRL
 #include <ctl/component/intrinsic/discrete/track_discrete_pid.h>

@@ -10,7 +10,7 @@
 #define _FILE_CONSULTANT_MECH_H_
 
 #include <ctl/math_block/gmp_math.h>
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #ifdef __cplusplus
 extern "C"

@@ -1,4 +1,4 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/intrinsic/continuous/track_pid.h>
 
@@ -7,10 +7,10 @@ void ctl_init_tracking_continuous_pid(ctl_tracking_continuous_pid_t* tp, paramet
                                       parameter_gt slope_min, uint32_t division, parameter_gt fs)
 {
     // 1. Error prevention engineering
-    gmp_base_assert(slope_min < slope_max);
-    gmp_base_assert(sat_min < sat_max);
-    gmp_base_assert(fs > 0.0f);
-    gmp_base_assert(division >= 1);
+    gmp_ctl_assert(slope_min < slope_max);
+    gmp_ctl_assert(sat_min < sat_max);
+    gmp_ctl_assert(fs > 0.0f);
+    gmp_ctl_assert(division >= 1);
 
     // 2. Calculate EFFECTIVE execution frequency
     parameter_gt effective_fs = fs / (parameter_gt)division;

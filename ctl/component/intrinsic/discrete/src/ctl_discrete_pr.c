@@ -3,7 +3,7 @@
  * @brief Core algebraic discretization calculators and basic non-tunable initializers.
  */
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 //////////////////////////////////////////////////////////////////////////
 // PR / QPR controller
@@ -13,8 +13,8 @@
 void ctl_calc_resonant_ctrl_coef(ctl_resonant_coef_t* coef, parameter_gt target_kr, parameter_gt target_freq_resonant,
                                  parameter_gt fs)
 {
-    gmp_base_assert(coef != NULL);
-    gmp_base_assert(fs > 0.0f);
+    gmp_ctl_assert(coef != NULL);
+    gmp_ctl_assert(fs > 0.0f);
 
     /* 1. Rigid Nyquist Guardrails Enforcement */
     if ((target_freq_resonant <= 0.0f) || (target_freq_resonant >= (fs * 0.5f)) || (target_kr < 0.0f))
@@ -38,7 +38,7 @@ void ctl_calc_resonant_ctrl_coef(ctl_resonant_coef_t* coef, parameter_gt target_
 
 void ctl_init_resonant_controller(resonant_ctrl_t* r, parameter_gt kr, parameter_gt freq_resonant, parameter_gt fs)
 {
-    gmp_base_assert(r != NULL);
+    gmp_ctl_assert(r != NULL);
     ctl_calc_resonant_ctrl_coef(&r->coef, kr, freq_resonant, fs);
     ctl_clear_resonant_controller(r);
 }
@@ -46,7 +46,7 @@ void ctl_init_resonant_controller(resonant_ctrl_t* r, parameter_gt kr, parameter
 void ctl_init_pr_controller(pr_ctrl_t* pr, parameter_gt kp, parameter_gt kr, parameter_gt freq_resonant,
                             parameter_gt fs)
 {
-    gmp_base_assert(pr != NULL);
+    gmp_ctl_assert(pr != NULL);
     pr->kp = float2ctrl(kp);
     ctl_init_resonant_controller(&pr->resonant_part, kr, freq_resonant, fs);
 }
@@ -54,7 +54,7 @@ void ctl_init_pr_controller(pr_ctrl_t* pr, parameter_gt kp, parameter_gt kr, par
 void ctl_calc_qr_ctrl_coef(ctl_qr_coef_t* coef, parameter_gt kr, parameter_gt wc, parameter_gt wr,
                            parameter_gt k_tustin)
 {
-    gmp_base_assert(coef != NULL);
+    gmp_ctl_assert(coef != NULL);
 
     parameter_gt k_sq = k_tustin * k_tustin;
     parameter_gt wr_sq = wr * wr;
@@ -78,8 +78,8 @@ void ctl_calc_qr_ctrl_coef(ctl_qr_coef_t* coef, parameter_gt kr, parameter_gt wc
 void ctl_init_qr_controller(qr_ctrl_t* qr, parameter_gt kr, parameter_gt freq_resonant, parameter_gt freq_cut,
                             parameter_gt fs)
 {
-    gmp_base_assert(qr != NULL);
-    gmp_base_assert(fs > 0.0f);
+    gmp_ctl_assert(qr != NULL);
+    gmp_ctl_assert(fs > 0.0f);
 
     parameter_gt wr = CTL_PARAM_CONST_2PI * freq_resonant;
     parameter_gt wc = CTL_PARAM_CONST_2PI * freq_cut;
@@ -93,8 +93,8 @@ void ctl_init_qr_controller(qr_ctrl_t* qr, parameter_gt kr, parameter_gt freq_re
 void ctl_init_qr_controller_prewarped(qr_ctrl_t* qr, parameter_gt kr, parameter_gt freq_resonant, parameter_gt freq_cut,
                                       parameter_gt fs)
 {
-    gmp_base_assert(qr != NULL);
-    gmp_base_assert(fs > 0.0f);
+    gmp_ctl_assert(qr != NULL);
+    gmp_ctl_assert(fs > 0.0f);
 
     parameter_gt wr = CTL_PARAM_CONST_2PI * freq_resonant;
     parameter_gt wc = CTL_PARAM_CONST_2PI * freq_cut;
@@ -114,7 +114,7 @@ void ctl_init_qr_controller_prewarped(qr_ctrl_t* qr, parameter_gt kr, parameter_
 void ctl_init_qpr_controller(qpr_ctrl_t* qpr, parameter_gt kp, parameter_gt kr, parameter_gt freq_resonant,
                              parameter_gt freq_cut, parameter_gt fs)
 {
-    gmp_base_assert(qpr != NULL);
+    gmp_ctl_assert(qpr != NULL);
     qpr->kp = float2ctrl(kp);
     ctl_init_qr_controller(&qpr->resonant_part, kr, freq_resonant, freq_cut, fs);
 }
@@ -122,7 +122,7 @@ void ctl_init_qpr_controller(qpr_ctrl_t* qpr, parameter_gt kp, parameter_gt kr, 
 void ctl_init_qpr_controller_prewarped(qpr_ctrl_t* qpr, parameter_gt kp, parameter_gt kr, parameter_gt freq_resonant,
                                        parameter_gt freq_cut, parameter_gt fs)
 {
-    gmp_base_assert(qpr != NULL);
+    gmp_ctl_assert(qpr != NULL);
     qpr->kp = float2ctrl(kp);
     ctl_init_qr_controller_prewarped(&qpr->resonant_part, kr, freq_resonant, freq_cut, fs);
 }

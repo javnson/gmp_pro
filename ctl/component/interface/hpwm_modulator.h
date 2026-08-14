@@ -12,6 +12,7 @@
 #ifndef _FILE_SINGLE_PHASE_MODULATION_H_
 #define _FILE_SINGLE_PHASE_MODULATION_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/interface/interface_base.h>
 
 #ifdef __cplusplus

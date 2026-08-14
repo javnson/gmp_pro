@@ -16,6 +16,7 @@
 #ifndef _FILE_ENCODER_SWITCHER_H_
 #define _FILE_ENCODER_SWITCHER_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/motor_control/interface/motor_universal_interface.h>
 
 #ifdef __cplusplus
@@ -218,9 +219,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_angle_switcher(ctl_angle_switcher_t* ctx)
     velocity_ift* target_speed;
     fast_gt target_is_b;
 
-    gmp_base_assert(ctx != NULL);
-    gmp_base_assert(ctx->src_a != NULL);
-    gmp_base_assert(ctx->src_b != NULL);
+    gmp_ctl_assert(ctx != NULL);
+    gmp_ctl_assert(ctx->src_a != NULL);
+    gmp_ctl_assert(ctx->src_b != NULL);
 
     if (ctx->request_pending)
     {

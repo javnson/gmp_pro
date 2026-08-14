@@ -12,6 +12,8 @@
 #ifndef _DF_CONTROLLER_H_
 #define _DF_CONTROLLER_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 #ifdef __cplusplus
 extern "C"
 {

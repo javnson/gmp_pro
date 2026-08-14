@@ -1,9 +1,9 @@
 # CTL Portable (No CSP)
 
 Define `GMP_CTL_PORTABLE` when an application only needs CTL algorithms and
-does not need the GMP runtime or CSP peripheral abstraction. In this mode,
-`gmp_core.h` skips `xplt.config.h`, `csp.config.h`, `csp.general.h`, peripheral
-management, and `core/rt/gmp_runtime.h`.
+does not need the GMP runtime or CSP peripheral abstraction. Include
+`ctl/math_block/gmp_math.h` as the numeric entry; it loads the portable type
+contract and skips CSP, peripheral management, and `core/rt/gmp_runtime.h`.
 
 Copy either `ti_dsp` or `stm32` into the application, add that directory and
 the GMP root to the include path, and use its `sdpe_requirement.json` plus

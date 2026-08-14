@@ -5,7 +5,19 @@
   <PropertyGroup />
   <ItemDefinitionGroup>
     <PreBuildEvent>
-      <Command>gmp_fac_generate_srcs_example.bat</Command>
+      <Command>if exist "$(ProjectDir)gmp_src_mgr\gmp_generate_src.bat" (
+  call "$(ProjectDir)gmp_src_mgr\gmp_generate_src.bat"
+) else if exist "$(ProjectDir)gmp_src_mgr\gmp_framework_config.json" (
+  pushd "$(ProjectDir)gmp_src_mgr"
+  python "$(GMP_PRO_LOCATION)\tools\facilities_generator\src_mgr\framework_sync_src_v3.py"
+  if errorlevel 1 exit /b 1
+  popd
+) else if exist "$(ProjectDir)gmp_fac_generate_src.bat" (
+  call "$(ProjectDir)gmp_fac_generate_src.bat"
+) else (
+  echo [ERROR] GMP source-manager script was not found under $(ProjectDir)
+  exit /b 1
+)</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>

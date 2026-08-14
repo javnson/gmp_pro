@@ -12,6 +12,7 @@
 #define _FLC_CONTROLLER_H_
 
 // Include the look-up table and interpolation library.
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/advance/surf_search.h>
 
 // Include the saturation component
@@ -93,13 +94,13 @@ typedef struct _tag_flc_controller_t
  * It must be called once before using flc_run().
  */
 GMP_STATIC_INLINE void ctl_init_flc(flc_controller_t* flc, ctrl_gt x_min, ctrl_gt x_max, uint32_t x_size, ctrl_gt y_min,
-                                    ctrl_gt y_max, uint32_t y_size, const ctrl_gt** surface, ctrl_gt gain_err,
+                                    ctrl_gt y_max, uint32_t y_size, const ctrl_gt* surface, ctrl_gt gain_err,
                                     ctrl_gt gain_err_diff, ctrl_gt gain_output)
 {
     // Store the gains
-    flc->ge = ge;
-    flc->gce = gce;
-    flc->gu = gu;
+    flc->ge = gain_err;
+    flc->gce = gain_err_diff;
+    flc->gu = gain_output;
 
     // saturation
     ctl_init_saturation(&flc->sat_e, x_min, x_max);
@@ -125,7 +126,7 @@ GMP_STATIC_INLINE void ctl_init_flc(flc_controller_t* flc, ctrl_gt x_min, ctrl_g
  * @param[in] error_rate The current system error rate (ec).
  * @return ctrl_gt The calculated control output.
  */
-GMP_STATIC_INLINE ctrl_gt ctl_step_flc(const flc_controller_t* flc, ctrl_gt error, ctrl_gt error_rate)
+GMP_STATIC_INLINE ctrl_gt ctl_step_flc(flc_controller_t* flc, ctrl_gt error, ctrl_gt error_rate)
 {
     // 1. Apply input gains to normalize the inputs
     ctrl_gt norm_error = ctl_step_saturation(&flc->sat_e, ctl_mul(error, flc->ge));
@@ -149,78 +150,3 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_flc(const flc_controller_t* flc, ctrl_gt erro
 #endif // __cplusplus
 
 #endif // _FLC_CONTROLLER_H_
-
- 
-#include "flc_controller.h"
-
-        // 1. 在全局或主函数中创建一个控制器实例
-        flc_controller_t my_flc;
-
-void setup_controller()
-{
-    // 2. 定义您的控制器增益 (这些是需要调试的关键参数!)
-    //    例如: Error gain = 0.5, Error rate gain = 0.2, Output gain = 1.2
-    ctrl_gt GAIN_E = float2ctrl(0.5f);
-    ctrl_gt GAIN_CE = float2ctrl(0.2f);
-    ctrl_gt GAIN_U = float2ctrl(1.2f);
-
-    // 3. 初始化控制器 (只在启动时调用一次)
-    flc_init(&my_flc, GAIN_E, GAIN_CE, GAIN_U);
-}
-
-void control_loop()
-{
-    // 4. 在每个控制周期中:
-    //    a. 获取当前的误差和误差变化率
-    ctrl_gt current_error = get_system_error();    // 替换为您的实际函数
-    ctrl_gt current_error_rate = get_error_rate(); // 替换为您的实际函数
-
-    //    b. 调用flc_run来计算控制输出
-    ctrl_gt control_signal = flc_run(&my_flc, current_error, current_error_rate);
-
-    //    c. 将控制信号应用到您的执行器 (例如，电机)
-    set_motor_speed(control_signal); // 替换为您的实际函数
-}
-
-/**
- * @file flc.h
- * @author Javnson (javnson@zju.edu.cn)
- * @brief Provides a Fuzzy Logic controller with LUT-based  tuning.
- * @version 0.1
- * @date 2025-08-07
- *
- * @copyright Copyright GMP(c) 2024
- *
- */
-
-#ifndef _FUZZY_PID_H_
-#define _FUZZY_PID_H_
-
-#include <ctl/component/intrinsic/advance/surf_search.h>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif // __cplusplus
-
-/**
- * @defgroup fuzzy_pid_controller Fuzzy PID Controller
- * @brief A self-tuning PID controller using fuzzy logic look-up tables.
- * 这个模块在二阶低通环节（欠阻尼也适用）非常适用，当分子上有s时系统会振荡。
- * 需要调节静差可以调节增益，需要调节error增益，需要调节响应时间可以调节error diff的增益
- * @{
- */
-
-/*---------------------------------------------------------------------------*/
-/* Fuzzy Logic Controller                                                    */
-/*---------------------------------------------------------------------------*/
-
-/**
- * @}
- */ // end of fuzzy_pid_controller group
-
-#ifdef __cplusplus
-}
-#endif //__cplusplus
-
-#endif // _FUZZY_PID_H_

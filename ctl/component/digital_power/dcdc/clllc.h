@@ -5,6 +5,7 @@
 #ifndef CTL_DCDC_CLLLC_H
 #define CTL_DCDC_CLLLC_H
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/digital_power/dcdc/dcdc_core.h>
 #include <ctl/component/interface/adv_pwm_channel.h>
 

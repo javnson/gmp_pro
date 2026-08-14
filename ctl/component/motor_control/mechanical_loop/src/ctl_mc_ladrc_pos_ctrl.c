@@ -1,5 +1,5 @@
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/motor_control/mechanical_loop/ladrc_pos_ctrl.h>
 

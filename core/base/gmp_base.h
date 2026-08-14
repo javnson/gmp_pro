@@ -150,7 +150,7 @@ void _gmp_base_assert(int condition);
 // So, in controller user may add macro DISABLE_CTL_LIB_ASSERT to 
 // disable all the ASSERT in control law.
 #if defined DISABLE_CTL_LIB_ASSERT
-#define gmp_ctl_assert(assert_cond) (void)(assert_condition)
+#define gmp_ctl_assert(assert_cond) ((void)(assert_cond))
 #else // DISABLE_CTL_LIB_ASSERT
 #define gmp_ctl_assert(assert_cond) gmp_base_assert(assert_cond)
 #endif // DISABLE_CTL_LIB_ASSERT

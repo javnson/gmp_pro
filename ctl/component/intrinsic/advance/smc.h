@@ -11,6 +11,8 @@
 #ifndef _SLIDING_MODE_CONTROLLER_H_
 #define _SLIDING_MODE_CONTROLLER_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 #ifdef __cplusplus
 extern "C"
 {

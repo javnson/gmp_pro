@@ -1,5 +1,5 @@
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/motor_control/consultant/pmsm_consultant.h>
 
@@ -13,11 +13,11 @@ void ctl_consultant_pmsm_init(ctl_consultant_pmsm_t* motor, uint32_t pp, paramet
 {
     // 1. Strict Physical Validation (Gatekeeper)
     // A motor cannot have zero pole pairs, negative resistance, or negative inductance.
-    gmp_base_assert(pp > 0);
-    gmp_base_assert(rs > 0.0f);
-    gmp_base_assert(ld > 0.0f);
-    gmp_base_assert(lq > 0.0f);
-    gmp_base_assert(flux > 0.0f);
+    gmp_ctl_assert(pp > 0);
+    gmp_ctl_assert(rs > 0.0f);
+    gmp_ctl_assert(ld > 0.0f);
+    gmp_ctl_assert(lq > 0.0f);
+    gmp_ctl_assert(flux > 0.0f);
 
     // 2. Base Parameter Assignment
     motor->pole_pairs = pp;

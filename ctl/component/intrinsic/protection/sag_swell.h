@@ -12,6 +12,7 @@
 #ifndef _VOLTAGE_EVENT_DETECTOR_H_
 #define _VOLTAGE_EVENT_DETECTOR_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/discrete/discrete_sogi.h>
 #include <stdint.h>
 

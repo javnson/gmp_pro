@@ -11,7 +11,7 @@
  * MPPT controllers.
  */
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 //////////////////////////////////////////////////////////////////////////
 // INC MPPT Control

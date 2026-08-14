@@ -12,7 +12,7 @@
  * and then fill in all macro definitions according to your board's hardware manual.
  */
 
- #include <ctl/component/motor_control/controller_preset/controller_preset_general.h>
+ #include <ctl/component/hardware_preset/inverter_3ph/inverter_3ph_general.h>
 
 #ifndef MOTOR_DRIVER_HAL_TEMPLATE_H
 #define MOTOR_DRIVER_HAL_TEMPLATE_H

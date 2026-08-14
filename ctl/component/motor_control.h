@@ -61,7 +61,7 @@
  * @ingroup CTL_MC_COMPONENT
  * @brief Standardized interfaces for motor sensors and controllers.
  */
-#include <ctl/component/motor_control/basic/motor_universal_interface.h>
+#include <ctl/component/motor_control/interface/motor_universal_interface.h>
 #include <ctl/component/motor_control/basic/std_sil_motor_interface.h>
 
 /**
@@ -305,7 +305,7 @@
  * @details Implements the signal injection, demodulation, filtering, and PLL
  * required to track the rotor angle of a salient PMSM at low speeds.
  */
-#include <ctl/component/motor_control/observer/pmsm.hfi.h>
+#include <ctl/component/motor_control/observer/pmsm_hfi.h>
 
 /**
  * @defgroup PMSM_SMO PMSM SMO Estimator
@@ -314,7 +314,7 @@
  * @details Implements the observer model, sliding control law, filtering, and PLL
  * required to track the rotor angle of a PMSM.
  */
-#include <ctl/component/motor_control/observer/pmsm.smo.h>
+#include <ctl/component/motor_control/observer/pmsm_esmo.h>
 
 //
 // ----------------- Motor Estimate -----------------
@@ -347,7 +347,7 @@
  * @ingroup CTL_MC_SUITE
  * @brief A complete Field-Oriented Controller for Permanent Magnet Synchronous Motors.
  */
-#include <ctl/component/motor_control/pmsm_controller/pmsm_ctrl.h>
+#include <ctl/component/motor_control/suite_pmsm/pmsm_ctrl.h>
 
 /**
  * @defgroup PMSM_HFI_BARE_CONTROLLER PMSM HFI Controller
@@ -357,28 +357,28 @@
  * full FOC controller with cascaded control loops for position, velocity,
  * and current.
  */
-#include <ctl/component/motor_control/pmsm_controller/pmsm_ctrl_hfi.h>
+#include <ctl/component/motor_control/suite_pmsm/pmsm_ctrl_hfi.h>
 
 /**
  * @defgroup PMSM_MTPA_CONTROLLER PMSM MTPA Controller
  * @ingroup CTL_MC_SUITE
  * @brief A module for controlling a PMSM using FOC with an MTPA strategy.
  */
-#include <ctl/component/motor_control/pmsm_controller/pmsm_ctrl_mtpa.h>
+#include <ctl/component/motor_control/suite_pmsm/pmsm_ctrl_mtpa.h>
 
 /**
  * @defgroup PMSM_SMO_CONTROLLER PMSM SMO Sensorless Controller
  * @ingroup CTL_MC_SUITE
  * @brief A module for sensorless FOC of a PMSM using a Sliding Mode Observer.
  */
-#include <ctl/component/motor_control/pmsm_controller/pmsm_ctrl_smo.h>
+#include <ctl/component/motor_control/suite_pmsm/pmsm_ctrl_smo.h>
 
 /**
  * @defgroup MC_ACM_SENSORED_CONTROLLER Sensored ACM FOC Controller
  * @ingroup CTL_MC_SUITE
  * @brief A complete Field-Oriented Controller for AC Induction Motors.
  */
-#include <ctl/component/motor_control/acm_controller/acm_sensored_ctrl.h>
+#include <ctl/component/motor_control/suite_acim/acm_sensored_ctrl.h>
 
 //
 // ----------------- Motor / Inverter Preset parameters -----------------

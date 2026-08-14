@@ -9,6 +9,7 @@
  *
  */
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/math_block/vector_lite/vector2.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 

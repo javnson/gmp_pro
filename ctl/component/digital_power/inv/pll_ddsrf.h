@@ -8,7 +8,9 @@
  * @copyright Copyright GMP(c) 2025
  */
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
+#include <ctl/component/intrinsic/discrete/discrete_filter.h>
 
 /**
  * @defgroup CTL_PLL_API Phase-Locked Loop (PLL) API

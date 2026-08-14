@@ -1,6 +1,6 @@
 
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/motor_control/current_loop/pmsm_dbptc.h>
 

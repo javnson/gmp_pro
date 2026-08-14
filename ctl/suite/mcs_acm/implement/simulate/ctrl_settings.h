@@ -3,10 +3,17 @@
 #define _FILE_CTRL_SETTINGS_H_
 
 // invoke motor parameters
-#include <ctl/component/motor_control/motor_preset/GBM2804H_100T.h>
+#include <ctl/component/hardware_preset/acm_motor/ACM_4P24V.h>
 
 // invoke motor controller parameters
-#include <ctl/component/motor_control/controller_preset/TI_BOOSTXL_3PhGaNInv.h>
+#include <ctl/component/hardware_preset/inverter_3ph/TI_BOOSTXL_3PhGaNInv.h>
+
+// Legacy suite scaling aliases derived from the selected inverter parameters.
+#define ADC_REFERENCE                 (3.3f)
+#define ADC_CURRENT_REFERENCE_VOLTAGE BOOSTXL_3PHGANINV_PH_CSA_BIAS_V
+#define ADC_FULLSCALE_CURRENT                                                                        \
+    (ADC_REFERENCE / (BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM * BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V))
+#define ADC_FULLSCALE_VOLTAGE (ADC_REFERENCE / BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN)
 
 // Controller Frequency
 #define CONTROLLER_FREQUENCY (10000)
@@ -61,4 +68,3 @@
 
 
 #endif // _FILE_CTRL_SETTINGS_H_
- 

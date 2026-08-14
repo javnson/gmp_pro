@@ -1,5 +1,5 @@
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/motor_control/consultant/acim_consultant.h>
 
@@ -13,16 +13,16 @@ void ctl_consultant_im_init(ctl_consultant_im_t* motor, uint32_t pp, parameter_g
 {
     // 1. Strict Physical Validation (Gatekeeper)
     // Induction motors rely heavily on accurate inductances. They must be strictly positive.
-    gmp_base_assert(pp > 0);
-    gmp_base_assert(rs > 0.0f);
-    gmp_base_assert(rr > 0.0f);
-    gmp_base_assert(ls > 0.0f);
-    gmp_base_assert(lr > 0.0f);
-    gmp_base_assert(lm > 0.0f);
+    gmp_ctl_assert(pp > 0);
+    gmp_ctl_assert(rs > 0.0f);
+    gmp_ctl_assert(rr > 0.0f);
+    gmp_ctl_assert(ls > 0.0f);
+    gmp_ctl_assert(lr > 0.0f);
+    gmp_ctl_assert(lm > 0.0f);
 
     // Physics constraint: Mutual inductance cannot exceed self-inductance
-    gmp_base_assert(ls > lm);
-    gmp_base_assert(lr > lm);
+    gmp_ctl_assert(ls > lm);
+    gmp_ctl_assert(lr > lm);
 
     // 2. Base Parameter Assignment
     motor->pole_pairs = pp;

@@ -12,6 +12,7 @@
 #ifndef _FILE_MOTOR_UNIVERSAL_INTERFACE_H_
 #define _FILE_MOTOR_UNIVERSAL_INTERFACE_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/interface/interface_base.h>
 
 #ifdef __cplusplus
@@ -223,8 +224,8 @@ typedef struct _tag_universal_mtr_if_t
  */
 GMP_STATIC_INLINE ctrl_gt ctl_get_mtr_current_single(mtr_ift* mtr, uint32_t phase)
 {
-    gmp_base_assert(mtr->iabc);
-    gmp_base_assert(phase < 3); // Corrected from 4 to 3 for 3-phase systems
+    gmp_ctl_assert(mtr->iabc);
+    gmp_ctl_assert(phase < 3); // Corrected from 4 to 3 for 3-phase systems
     return mtr->iabc->value.dat[phase];
 }
 
@@ -235,7 +236,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_mtr_current_single(mtr_ift* mtr, uint32_t phas
  */
 GMP_STATIC_INLINE vector3_gt* ctl_get_mtr_current(mtr_ift* mtr)
 {
-    gmp_base_assert(mtr->iabc);
+    gmp_ctl_assert(mtr->iabc);
     return &mtr->iabc->value;
 }
 
@@ -246,7 +247,7 @@ GMP_STATIC_INLINE vector3_gt* ctl_get_mtr_current(mtr_ift* mtr)
  */
 GMP_STATIC_INLINE ctrl_gt ctl_get_mtr_dc_voltage(mtr_ift* mtr)
 {
-    gmp_base_assert(mtr->udc);
+    gmp_ctl_assert(mtr->udc);
     return mtr->udc->value;
 }
 
@@ -257,7 +258,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_mtr_dc_voltage(mtr_ift* mtr)
  */
 GMP_STATIC_INLINE ctrl_gt ctl_get_mtr_elec_theta(mtr_ift* mtr)
 {
-    gmp_base_assert(mtr->position);
+    gmp_ctl_assert(mtr->position);
     return mtr->position->elec_position;
 }
 
@@ -268,7 +269,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_mtr_elec_theta(mtr_ift* mtr)
  */
 GMP_STATIC_INLINE ctrl_gt ctl_get_mtr_theta(mtr_ift* mtr)
 {
-    gmp_base_assert(mtr->position);
+    gmp_ctl_assert(mtr->position);
     return mtr->position->position;
 }
 
@@ -279,7 +280,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_mtr_theta(mtr_ift* mtr)
  */
 GMP_STATIC_INLINE int32_t ctl_get_mtr_revolution(mtr_ift* mtr)
 {
-    gmp_base_assert(mtr->position);
+    gmp_ctl_assert(mtr->position);
     return mtr->position->revolutions;
 }
 
@@ -290,7 +291,7 @@ GMP_STATIC_INLINE int32_t ctl_get_mtr_revolution(mtr_ift* mtr)
  */
 GMP_STATIC_INLINE ctrl_gt ctl_get_mtr_velocity(mtr_ift* mtr)
 {
-    gmp_base_assert(mtr->velocity);
+    gmp_ctl_assert(mtr->velocity);
     return mtr->velocity->speed;
 }
 
@@ -301,7 +302,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_get_mtr_velocity(mtr_ift* mtr)
  */
 GMP_STATIC_INLINE ctrl_gt ctl_get_mtr_torque(mtr_ift* mtr)
 {
-    gmp_base_assert(mtr->torque);
+    gmp_ctl_assert(mtr->torque);
     return mtr->torque->torque;
 }
 

@@ -1,6 +1,6 @@
 
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 #include <math.h> // For atan2f during initialization
 
 #include <ctl/component/motor_control/distributor/ipm_fw_distributor.h>

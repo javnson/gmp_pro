@@ -9,6 +9,7 @@
  *
  */
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/math_block/vector_lite/vector3.h>
 
 #ifndef _FILE_VOLTAGE_CALCULATOR_H_
@@ -76,7 +77,7 @@ typedef struct _tag_voltage_calculator
 GMP_STATIC_INLINE void ctl_step_voltage_calculator(ctl_volt_calculate_t* volt_calc)
 {
     // NOTE: Assumes phase_U, phase_V, phase_W are defined elsewhere (e.g., an enum).
-    ctrl_gt temp = ctl_mul(volt_calc->ubus, GMP_CONST_1_OVER_SQRT3);
+    ctrl_gt temp = ctl_mul(volt_calc->ubus, CTL_CTRL_CONST_1_OVER_SQRT3);
 
     /* Scale the incoming modulation functions with the DC bus voltage value */
     /* and calculate the 3-phase voltages */
@@ -94,7 +95,7 @@ GMP_STATIC_INLINE void ctl_step_voltage_calculator(ctl_volt_calculate_t* volt_ca
     /* Voltage transformation (a,b,c) -> (Alpha,Beta) - Clarke Transform */
     volt_calc->u_alpha = volt_calc->uabc.dat[phase_U];
     volt_calc->u_beta =
-        ctl_mul((volt_calc->uabc.dat[phase_U] + ctl_mul2(volt_calc->uabc.dat[phase_V])), GMP_CONST_1_OVER_SQRT3);
+        ctl_mul((volt_calc->uabc.dat[phase_U] + ctl_mul2(volt_calc->uabc.dat[phase_V])), CTL_CTRL_CONST_1_OVER_SQRT3);
 }
 
 /** @} */ // end of MC_VOLTAGE_CALCULATOR group

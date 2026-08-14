@@ -1,4 +1,4 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/intrinsic/continuous/continuous_pid_aw.h>
 
@@ -7,7 +7,7 @@
 void ctl_init_pid_aw_par(ctl_pid_aw_t* hpid, parameter_gt kp, parameter_gt Ti, parameter_gt Td, parameter_gt Tf,
                          parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0f);
+    gmp_ctl_assert(fs > 0.0f);
 
     hpid->kp = float2ctrl(kp);
 
@@ -51,7 +51,7 @@ void ctl_init_pid_aw_par(ctl_pid_aw_t* hpid, parameter_gt kp, parameter_gt Ti, p
 void ctl_init_pid_aw_ser(ctl_pid_aw_t* hpid, parameter_gt kp, parameter_gt Ti, parameter_gt Td, parameter_gt Tf,
                          parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0f);
+    gmp_ctl_assert(fs > 0.0f);
 
     hpid->kp = float2ctrl(kp);
 

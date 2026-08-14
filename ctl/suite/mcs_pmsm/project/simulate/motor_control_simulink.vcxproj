@@ -191,6 +191,9 @@
     <ClCompile Include="gmp_src\windows_rt_tracer.cpp" />
     <ClCompile Include="gmp_src\windows_simulink_main.cpp" />
     <ClCompile Include="motor_control_simulink.cpp" />
+    <ClCompile Remove="gmp_src\**\*" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\*.c" />
+    <ClCompile Include="gmp_src_mgr\gmp_src\*.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\implement\common\ctl_main.h" />

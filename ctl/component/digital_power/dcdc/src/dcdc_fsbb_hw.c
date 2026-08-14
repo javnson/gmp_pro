@@ -3,7 +3,7 @@
  * @brief Unified loop tuning calculator for 4-Switch Buck-Boost topologies with linear modulation.
  */
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/digital_power/dcdc/fsbb.h>
 
@@ -27,11 +27,11 @@ static parameter_gt ctl_fsbb_calc_safe_fc(parameter_gt fs, parameter_gt target_f
 
 parameter_gt ctl_fsbb_calc_worst_rhp_zero(const ctl_4switch_buckboost_hardware_t* hw)
 {
-    gmp_base_assert(hw != NULL);
-    gmp_base_assert(hw->v_in_min > 0.0f);
-    gmp_base_assert(hw->v_out_max > 0.0f);
-    gmp_base_assert(hw->L_henry > 0.0f);
-    gmp_base_assert(hw->R_load_min > 0.0f);
+    gmp_ctl_assert(hw != NULL);
+    gmp_ctl_assert(hw->v_in_min > 0.0f);
+    gmp_ctl_assert(hw->v_out_max > 0.0f);
+    gmp_ctl_assert(hw->L_henry > 0.0f);
+    gmp_ctl_assert(hw->R_load_min > 0.0f);
 
     /* Worst-case RHPZ happens at minimum input voltage and maximum output voltage (deepest Boost mode) */
     parameter_gt max_boost_d_prime = hw->v_in_min / hw->v_out_max;
@@ -48,10 +48,10 @@ parameter_gt ctl_fsbb_calc_worst_rhp_zero(const ctl_4switch_buckboost_hardware_t
 
 void ctl_dcdc_blueprint_fsbb_cascade(ctl_dcdc_core_init_t* init_config, const ctl_4switch_buckboost_hardware_t* hw)
 {
-    gmp_base_assert(init_config != NULL);
-    gmp_base_assert(hw != NULL);
-    gmp_base_assert(hw->fs > 0.0f);
-    gmp_base_assert(hw->v_base > 0.0f && hw->i_base > 0.0f);
+    gmp_ctl_assert(init_config != NULL);
+    gmp_ctl_assert(hw != NULL);
+    gmp_ctl_assert(hw->fs > 0.0f);
+    gmp_ctl_assert(hw->v_base > 0.0f && hw->i_base > 0.0f);
 
     /* 1. Map system execution frequency */
     init_config->fs = hw->fs;

@@ -13,6 +13,7 @@
 #define _FILE_CTL_MC_ENCODER_H_
 
 //#include <core/base/gmp_base.h>
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <ctl/component/motor_control/interface/motor_universal_interface.h>

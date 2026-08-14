@@ -1,4 +1,4 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 #include <math.h>
 
 //////////////////////////////////////////////////////////////////////////
@@ -19,7 +19,7 @@ void ctl_init_sine_generator(ctl_sine_generator_t* sg,
 
 void ctl_init_ramp_generator(ctl_ramp_generator_t* _rg, ctrl_gt slope, parameter_gt amp_pos, parameter_gt amp_neg)
 {
-    gmp_base_assert(amp_neg < amp_pos);
+    gmp_ctl_assert(amp_neg < amp_pos);
 
     _rg->current = float2ctrl(0.0f);
 
@@ -39,25 +39,28 @@ void ctl_init_ramp_generator_via_freq(
     // ramp range
     parameter_gt amp_pos, parameter_gt amp_neg)
 {
-    //gmp_base_assert(target_freq > 0.0); // ·ÀÖ¹³ıÁã
-    gmp_base_assert(amp_neg < amp_pos);
+    gmp_ctl_assert(isr_freq > 0.0f);
+    gmp_ctl_assert(target_freq > 0.0f);
+    gmp_ctl_assert(amp_neg < amp_pos);
 
     _rg->current = float2ctrl(0);
 
     _rg->maximum = float2ctrl(amp_pos);
     _rg->minimum = float2ctrl(amp_neg);
 
-    parameter_gt a = isr_freq / target_freq;
-    parameter_gt b = amp_pos - amp_neg;
+    if (isr_freq <= 0.0f || target_freq <= 0.0f || amp_neg >= amp_pos)
+    {
+        _rg->slope = float2ctrl(0.0f);
+        return;
+    }
 
-    // _rg->slope = float2ctrl((amp_pos - amp_neg) / (isr_freq / target_freq));
-    _rg->slope = float2ctrl(b / a);
+    _rg->slope = float2ctrl((amp_pos - amp_neg) * target_freq / isr_freq);
 }
 
 void ctl_init_square_wave_generator(ctl_square_wave_generator_t* sq, parameter_gt fs, parameter_gt target_freq,
                                     parameter_gt amplitude, parameter_gt offset)
 {
-    gmp_base_assert(fs > 0.0f);
+    gmp_ctl_assert(fs > 0.0f);
 
     sq->high_level = float2ctrl(offset + amplitude);
     sq->low_level = float2ctrl(offset - amplitude);
@@ -70,8 +73,8 @@ void ctl_init_square_wave_generator(ctl_square_wave_generator_t* sq, parameter_g
 void ctl_init_triangle_wave_generator(ctl_triangle_wave_generator_t* tri, parameter_gt fs, parameter_gt target_freq,
                                       parameter_gt pos_peak, parameter_gt neg_peak)
 {
-    gmp_base_assert(fs > 0.0f);
-    gmp_base_assert(neg_peak < pos_peak);
+    gmp_ctl_assert(fs > 0.0f);
+    gmp_ctl_assert(neg_peak < pos_peak);
 
     tri->pos_peak = float2ctrl(pos_peak);
     tri->neg_peak = float2ctrl(neg_peak);

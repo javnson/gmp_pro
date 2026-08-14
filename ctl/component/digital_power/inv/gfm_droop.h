@@ -17,7 +17,8 @@
  * and multiple operating modes.
  */
 
-#include <ctl/component/digital_power/three_phase/three_phase_GFL.h>
+#include <ctl/math_block/gmp_math.h>
+#include <ctl/component/digital_power/inv/gfl_core.h>
 
 #ifndef _FILE_THREE_PHASE_GFM_
 #define _FILE_THREE_PHASE_GFM_
@@ -140,34 +141,36 @@ typedef struct _tag_gfm_droop_init
 
     // --- Voltage Loop Parameters ---
     parameter_gt voltage_loop_bw; //!< Voltage loop bandwidth (Hz).
+    parameter_gt kp_voltage;      //!< Voltage-loop proportional gain.
+    parameter_gt ki_voltage;      //!< Voltage-loop integral gain.
     parameter_gt cf_capacitance;  //!< Filter Capacitor value (F).
     parameter_gt current_limit;   //!< Output current reference limit (p.u.).
 
 } gfm_droop_init_t;
 
 // init gfm init parameters by GFL init struct.
-void ctl_auto_tuning_gfm_droop_ctrl(gfm_droop_init_t* gfm_init, gfl_inv_ctrl_init_t* gfl)
+GMP_STATIC_INLINE void ctl_auto_tuning_gfm_droop_ctrl(gfm_droop_init_t* gfm_init, const gfl_inv_ctrl_init_t* gfl)
 {
-    gmp_base_assert(gfm_init);
-    gmp_base_assert(gfl_init);
+    gmp_ctl_assert(gfm_init);
+    gmp_ctl_assert(gfl);
 
     // 1. Copy Basic System Params from GFL
-    gfm_init->fs = gfl_init->fs;
-    gfm_init->freq_base = gfl_init->freq_base;
-    gfm_init->v_base = gfl_init->v_base;
-    gfm_init->i_base = gfl_init->i_base;
+    gfm_init->fs = gfl->fs;
+    gfm_init->freq_base = gfl->freq_base;
+    gfm_init->v_base = gfl->v_base;
+    gfm_init->i_base = gfl->i_base;
 
     // Calculate S_base (VA)
     // S_base = V_base * I_base
     // Let's assume P.U. consistency:
-    gfm_init->s_base = gfl_init->v_base * gfl_init->i_base;
+    gfm_init->s_base = gfl->v_base * gfl->i_base;
 
     // 2. Filter Capacitor
-    gfm_init->cf_capacitance = gfl_init->grid_filter_C;
+    gfm_init->cf_capacitance = gfl->grid_filter_C;
 
     // 3. Tuning Voltage Loop
     // Bandwidth: Typically 1/5 to 1/10 of Current Loop Bandwidth
-    gfm_init->voltage_loop_bw = gfl_init->current_loop_bw / 5.0f;
+    gfm_init->voltage_loop_bw = gfl->current_loop_bw / 5.0f;
 
     // Kp Calculation: C * 2*pi*BW
     // Physical Kp = C * 2*pi*BW
@@ -194,8 +197,8 @@ void ctl_auto_tuning_gfm_droop_ctrl(gfm_droop_init_t* gfm_init, gfl_inv_ctrl_ini
 
 void ctl_init_gfm_droop(gfm_droop_ctrl_t* gfm, const gfm_droop_init_t* init)
 {
-    gmp_base_assert(gfm);
-    gmp_base_assert(init);
+    gmp_ctl_assert(gfm);
+    gmp_ctl_assert(init);
 
     // Set Setpoints Defaults
     gfm->f_nom = init->freq_base; // 50Hz
@@ -256,9 +259,9 @@ void ctl_init_gfm_droop(gfm_droop_ctrl_t* gfm, const gfm_droop_init_t* init)
 GMP_STATIC_INLINE void ctl_step_gfm_droop(gfm_droop_ctrl_t* gfm)
 {
     // Assert inputs
-    gmp_base_assert(gfm->vdq_meas);
-    gmp_base_assert(gfm->idq_meas);
-    gmp_base_assert(gfm->pll_angle);
+    gmp_ctl_assert(gfm->vdq_meas);
+    gmp_ctl_assert(gfm->idq_meas);
+    gmp_ctl_assert(gfm->pll_angle);
 
     // --- 1. Power Calculation ---
     // P = 1.5 * (Vd*Id + Vq*Iq)

@@ -9,6 +9,7 @@
  *
  */
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl/component/intrinsic/basic/slope_limiter.h>
 #include <ctl/component/intrinsic/discrete/discrete_pid.h>

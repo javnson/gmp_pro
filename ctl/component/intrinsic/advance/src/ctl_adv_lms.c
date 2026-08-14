@@ -1,5 +1,5 @@
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -12,9 +12,9 @@ fast_gt ctl_init_lms_filter(ctl_lms_filter_t* lms, uint32_t order, parameter_gt 
                             ctrl_gt* external_buffer)
 {
     // ·À´ô±£»¤
-    gmp_base_assert(order > 0);
-    gmp_base_assert(external_weights != 0);
-    gmp_base_assert(external_buffer != 0);
+    gmp_ctl_assert(order > 0);
+    gmp_ctl_assert(external_weights != 0);
+    gmp_ctl_assert(external_buffer != 0);
 
     lms->order = order;
     lms->weights = external_weights;

@@ -12,6 +12,7 @@ The basic structure of the CTL is shown as follow.
 
 | Submodule            | Folder Path | Brief Comment                                                |
 | -------------------- | ----------- | ------------------------------------------------------------ |
+| CTL math contract    | `math_block` | The single numeric entry is `ctl/math_block/gmp_math.h`. It provides CTL types and math backends without pulling in CSP, devices, or the GMP runtime. |
 | CTL component        | `component` | This folder (submodule) provide a variety of controller components. All of them are stored in several sub-folders. Each sub-folder has the same source file (for initialization function or some basic support functions), which stored in `component/src`, and named by the sub-modules' name.<br />If user will invoke some of controller components, just include these headers, and then add corresponding source file to your project compiler source list. |
 | CTL framework        | `framework` | This folder contains the predefined Controller Framework. User may use these framework to create his standard real-time controller prototype with high efficiency and easily.<br />Each framework has provide a set of function witch should be called on time by user, and another set of function prototype witch should be implemented by user. By doing this, user may insert the framework to his projects. |
 | CTL controller suite | `suite`     | This folder contains some predefined Controller Suite, and some examples for these suite.<br />User may create his real-time controller application quickly by controller suite. |
@@ -33,7 +34,7 @@ If you need to create a `ctrl_gt` type variable, you should use `float2ctrl(x)` 
 ctrl_gt a_fixed_point_number = float2ctrl(1.0f);
 ```
 
-In addition, `ctrl_gt` has plus (`+`) and minus (`-`) operation with other types, but user may do not use the product (`*`) and divisions (`/`) directly. User should use `gmp_mpy` function and `gmp_div` function instead. These definitions would be found in `ctl/component/common/gmp_math.h` file.
+In addition, `ctrl_gt` has plus (`+`) and minus (`-`) operation with other types, but user may do not use the product (`*`) and divisions (`/`) directly. User should use `gmp_mpy` function and `gmp_div` function instead. These definitions would be found in `ctl/math_block/gmp_math.h` file.
 
 `parameter_gt` means parameter containing type. for micro processor this type is at least a float number. For some high performance micro processor this type may be double. This type may use to save the source parameters of the controller, and the controller initialization function may use these variables to initialize the controller parameters. All the variables with `paramete_gt` type may support all the math operation which float number owned.
 

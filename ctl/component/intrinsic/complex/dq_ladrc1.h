@@ -8,6 +8,7 @@
 #ifndef _FILE_CTL_DQ_LADRC1_H_
 #define _FILE_CTL_DQ_LADRC1_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/continuous/ladrc1.h>
 #include <ctl/math_block/vector_lite/vector2.h>
 
@@ -75,16 +76,16 @@ GMP_STATIC_INLINE void ctl_step_dq_ladrc1(ctl_dq_ladrc1_t* dq, const ctl_vector2
     ctl_vector2_t command;
     uint_fast8_t axis;
 
-    gmp_base_assert(dq);
-    gmp_base_assert(target);
-    gmp_base_assert(feedback);
+    gmp_ctl_assert(dq);
+    gmp_ctl_assert(target);
+    gmp_ctl_assert(feedback);
 
     for (axis = 0; axis < 2; ++axis)
         dq->ctrl_out.dat[axis] = ctl_step_ladrc1_raw(&dq->axis[axis], target->dat[axis], feedback->dat[axis]);
 
     if (dq->flag_enable_feedforward)
     {
-        gmp_base_assert(feedforward);
+        gmp_ctl_assert(feedforward);
         ctl_vector2_copy(&dq->ff_out, feedforward);
     }
     else
@@ -113,23 +114,23 @@ GMP_STATIC_INLINE void ctl_step_dq_ladrc1(ctl_dq_ladrc1_t* dq, const ctl_vector2
 
 GMP_STATIC_INLINE void ctl_set_dq_ladrc1_circle_limit(ctl_dq_ladrc1_t* dq, ctrl_gt radius)
 {
-    gmp_base_assert(radius >= float2ctrl(0.0f));
+    gmp_ctl_assert(radius >= float2ctrl(0.0f));
     dq->circle_limit_sq = ctl_mul(radius, radius);
 }
 
 GMP_STATIC_INLINE void ctl_set_dq_ladrc1_circle_limit_sq(ctl_dq_ladrc1_t* dq, ctrl_gt radius_sq)
 {
-    gmp_base_assert(radius_sq >= float2ctrl(0.0f));
+    gmp_ctl_assert(radius_sq >= float2ctrl(0.0f));
     dq->circle_limit_sq = radius_sq;
 }
 
 GMP_STATIC_INLINE void ctl_set_dq_ladrc1_rect_limit(ctl_dq_ladrc1_t* dq, const ctl_vector2_t* limit_max,
                                                     const ctl_vector2_t* limit_min)
 {
-    gmp_base_assert(limit_max);
-    gmp_base_assert(limit_min);
-    gmp_base_assert(limit_max->dat[0] >= limit_min->dat[0]);
-    gmp_base_assert(limit_max->dat[1] >= limit_min->dat[1]);
+    gmp_ctl_assert(limit_max);
+    gmp_ctl_assert(limit_min);
+    gmp_ctl_assert(limit_max->dat[0] >= limit_min->dat[0]);
+    gmp_ctl_assert(limit_max->dat[1] >= limit_min->dat[1]);
     ctl_vector2_copy(&dq->rect_limit_max, limit_max);
     ctl_vector2_copy(&dq->rect_limit_min, limit_min);
 }

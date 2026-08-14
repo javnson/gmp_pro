@@ -1,17 +1,17 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/digital_power/inv/gfl_pq_droop_ctrl.h>
 
 void ctl_init_gfl_pq_droop(gfl_pq_droop_ctrl_t* droop,
                            const gfl_pq_droop_init_t* init)
 {
-    gmp_base_assert(droop);
-    gmp_base_assert(init);
-    gmp_base_assert(init->fs > 0.0f);
-    gmp_base_assert(init->lpf_hz > 0.0f);
-    gmp_base_assert(init->frequency_nominal_hz > 0.0f);
-    gmp_base_assert(init->p_max >= init->p_min);
-    gmp_base_assert(init->q_max >= init->q_min);
+    gmp_ctl_assert(droop);
+    gmp_ctl_assert(init);
+    gmp_ctl_assert(init->fs > 0.0f);
+    gmp_ctl_assert(init->lpf_hz > 0.0f);
+    gmp_ctl_assert(init->frequency_nominal_hz > 0.0f);
+    gmp_ctl_assert(init->p_max >= init->p_min);
+    gmp_ctl_assert(init->q_max >= init->q_min);
 
     droop->frequency_hz = NULL;
     droop->vdq = NULL;

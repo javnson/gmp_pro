@@ -1,6 +1,10 @@
 #ifndef _FILE_CTL_ADV_ADC_H_
 #define _FILE_CTL_ADV_ADC_H_
 
+#include <ctl/math_block/gmp_math.h>
+#include <ctl/component/interface/interface_base.h>
+#include <ctl/component/intrinsic/advance/paired_lut1d.h>
+
 /*---------------------------------------------------------------------------*/
 /* Advanced ADC Channel (Direct LUT Mapping)                                 */
 /*---------------------------------------------------------------------------*/

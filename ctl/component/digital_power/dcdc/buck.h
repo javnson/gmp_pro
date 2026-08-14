@@ -9,6 +9,7 @@
  *
  */
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/interface/pwm_channel.h>
 #include <ctl/component/digital_power/dcdc/dcdc_core.h>
 

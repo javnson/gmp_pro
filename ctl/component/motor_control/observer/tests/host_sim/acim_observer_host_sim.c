@@ -1,7 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/motor_control/consultant/acim_consultant.h>
 #include <ctl/component/motor_control/consultant/pu_consultant.h>
 #include <ctl/component/motor_control/observer/acim_fo.h>

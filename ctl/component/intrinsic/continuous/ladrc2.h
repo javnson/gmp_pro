@@ -11,6 +11,8 @@
 #ifndef _FILE_CTL_LADRC2_H_
 #define _FILE_CTL_LADRC2_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 #ifdef __cplusplus
 extern "C"
 {

@@ -19,6 +19,8 @@
 #ifndef _FILE_THREE_PHASE_MODULATION_H_
 #define _FILE_THREE_PHASE_MODULATION_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -118,9 +120,9 @@ GMP_STATIC_INLINE void ctl_disable_spwm_deadtime_compensation(spwm_modulator_t* 
  */
 GMP_STATIC_INLINE void ctl_step_spwm_modulator(spwm_modulator_t* mod)
 {
-    gmp_base_assert(mod);
-    gmp_base_assert(mod->iuvw);
-    gmp_base_assert(mod->pwm_out);
+    gmp_ctl_assert(mod);
+    gmp_ctl_assert(mod->iuvw);
+    gmp_ctl_assert(mod->pwm_out);
 
     // Temp variable to handle signed calculations safely
     pwm_gt pwm_value;
@@ -239,9 +241,9 @@ GMP_STATIC_INLINE void ctl_step_spwm_modulator(spwm_modulator_t* mod)
  */
 GMP_STATIC_INLINE void ctl_step_svpwm_modulator(spwm_modulator_t* mod)
 {
-    gmp_base_assert(mod);
-    gmp_base_assert(mod->iuvw);
-    gmp_base_assert(mod->pwm_out);
+    gmp_ctl_assert(mod);
+    gmp_ctl_assert(mod->iuvw);
+    gmp_ctl_assert(mod->pwm_out);
 
     // Temp variable to handle signed calculations safely
     pwm_gt pwm_value;

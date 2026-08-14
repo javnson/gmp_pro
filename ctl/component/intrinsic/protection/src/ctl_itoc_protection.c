@@ -1,4 +1,4 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 //////////////////////////////////////////////////////////////////////////
 // ITOC protection
@@ -8,7 +8,7 @@ void ctl_init_trip_protector(ctl_trip_protector_t* prot, const ctrl_gt* source, 
                              parameter_gt delay_ltd_ms, parameter_gt level_std, parameter_gt delay_std_ms,
                              parameter_gt level_inst, parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0f); // 防呆保护
+    gmp_ctl_assert(fs > 0.0f); // 防呆保护
 
     prot->source = source;
 

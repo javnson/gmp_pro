@@ -3,7 +3,8 @@
  * @brief Four-channel DSA capture backend for the GMP Data Link Scope service.
  */
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
+#include <core/base/gmp_base.h>
 
 #include <ctl/component/dsa/dsa_dl_scope.h>
 

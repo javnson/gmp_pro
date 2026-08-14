@@ -12,6 +12,8 @@
 #ifndef _FILE_STD_SIL_MOTOR_INTERFACE_H_
 #define _FILE_STD_SIL_MOTOR_INTERFACE_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 /*---------------------------------------------------------------------------*/
 /* Software-in-the-Loop (SIL) Interface                                      */
 /*---------------------------------------------------------------------------*/

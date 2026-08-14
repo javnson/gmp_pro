@@ -12,6 +12,8 @@
 #ifndef _CONTINUOUS_PID_H_
 #define _CONTINUOUS_PID_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 #ifdef __cplusplus
 extern "C"
 {

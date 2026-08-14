@@ -1,5 +1,5 @@
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 //////////////////////////////////////////////////////////////////////////
 // sinc interpolator
@@ -12,10 +12,10 @@ fast_gt ctl_init_sinc_interpolator(ctl_sinc_interpolator_t* sinc, uint32_t num_t
     uint32_t i, j;
 
     // ·À´ô±£»¤
-    gmp_base_assert(external_buffer != 0);
-    gmp_base_assert(external_sinc_table != 0);
-    gmp_base_assert(num_taps > 0);
-    gmp_base_assert(table_size > 0);
+    gmp_ctl_assert(external_buffer != 0);
+    gmp_ctl_assert(external_sinc_table != 0);
+    gmp_ctl_assert(num_taps > 0);
+    gmp_ctl_assert(table_size > 0);
 
     sinc->num_taps = num_taps;
     sinc->table_size = table_size;

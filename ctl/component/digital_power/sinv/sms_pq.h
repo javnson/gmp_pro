@@ -12,6 +12,7 @@
 #ifndef _CTL_SINGLE_PHASE_PQ_H_
 #define _CTL_SINGLE_PHASE_PQ_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/discrete/biquad_filter.h>
 #include <ctl/component/intrinsic/discrete/discrete_sogi.h>
 

@@ -6,6 +6,7 @@
 #ifndef _FILE_CTL_DSA_DL_SCOPE_H_
 #define _FILE_CTL_DSA_DL_SCOPE_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <core/dev/datalink/scope.h>
 #include <ctl/component/dsa/dsa_scope.h>
 #include <ctl/component/dsa/dsa_trigger.h>

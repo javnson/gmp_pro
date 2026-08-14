@@ -11,6 +11,8 @@
 #ifndef _HYSTERESIS_CONTROLLER_H_
 #define _HYSTERESIS_CONTROLLER_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 #ifdef __cplusplus
 extern "C"
 {

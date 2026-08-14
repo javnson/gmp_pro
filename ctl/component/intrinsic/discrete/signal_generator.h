@@ -12,6 +12,8 @@
 #ifndef _SIGNAL_GENERATOR_H_
 #define _SIGNAL_GENERATOR_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 #ifdef __cplusplus
 extern "C"
 {

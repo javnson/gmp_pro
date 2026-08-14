@@ -1,11 +1,14 @@
 
 
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 
+#include <ctl/component/interface/interface_base.h>
 #include <ctl/component/intrinsic/basic/saturation.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 
+#include <ctl/component/intrinsic/discrete/biquad_filter.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <ctl/component/intrinsic/discrete/lead_lag.h>
 #include <ctl/component/intrinsic/discrete/proportional_resonant.h>
@@ -295,9 +298,9 @@ void ctl_attach_gfl_inv(gfl_inv_ctrl_t* inv, adc_ift* adc_idc, adc_ift* adc_udc,
 GMP_STATIC_INLINE void ctl_step_gfl_inv_ctrl(gfl_inv_ctrl_t* gfl)
 {
     // assert critical pointer
-    gmp_base_assert(gfl);
-    gmp_base_assert(gfl->adc_iabc);
-    gmp_base_assert(gfl->adc_vabc);
+    gmp_ctl_assert(gfl);
+    gmp_ctl_assert(gfl->adc_iabc);
+    gmp_ctl_assert(gfl->adc_vabc);
 
     gfl->isr_tick += 1;
 
@@ -370,7 +373,7 @@ GMP_STATIC_INLINE void ctl_step_gfl_inv_ctrl(gfl_inv_ctrl_t* gfl)
         // using external phasor
         else if (gfl->flag_enable_external_phasor)
         {
-            gmp_base_assert(gfl->phasor_ext);
+            gmp_ctl_assert(gfl->phasor_ext);
             ctl_vector2_copy(&gfl->phasor, gfl->phasor_ext);
         }
         // using PLL phasor

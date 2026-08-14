@@ -12,6 +12,7 @@
 #ifndef _PROTECTION_MONITOR_H_
 #define _PROTECTION_MONITOR_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <stdint.h> // For uint32_t, int32_t
 
 #ifdef __cplusplus

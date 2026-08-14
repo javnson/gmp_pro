@@ -12,6 +12,8 @@
 #ifndef _FILE_SINE_ANALYZER_H_
 #define _FILE_SINE_ANALYZER_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 #ifdef __cplusplus
 extern "C"
 {

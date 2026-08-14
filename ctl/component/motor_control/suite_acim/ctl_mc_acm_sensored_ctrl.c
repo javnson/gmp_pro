@@ -1,8 +1,8 @@
 
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
-#include <ctl/component/motor_control/acm_controller/acm_sensored_ctrl.h>
+#include <ctl/component/motor_control/suite_acim/acm_sensored_ctrl.h>
 
 // init acm_sensored_bare_controller_t struct
 void ctl_init_acm_sensored_bare_controller(
@@ -81,18 +81,18 @@ void ctl_init_acm_sensored_bare_controller(
 
 #endif // ctl_init_pid_Tmode
 
-    // flux estimate
-    ctl_init_im_spd_calc(
-        // IM speed calculate object
-        &ctrl->flux_calc,
-        // rotor parameters, unit Ohm, H
-        init->Rr, init->Lr,
-        // ACM Rotor, per-unit Speed, unit rpm
-        init->base_spd,
-        // ACM pole pairs
-        init->pole_pairs,
-        // base electrical frequency(Hz), ISR frequency (Hz)
-        init->base_freq, init->fs);
+    // Flux-angle estimate.  Convert the legacy physical parameters to the
+    // explicit scale-factor contract used by ctl_im_pos_calc_t.
+    {
+        ctl_im_pos_calc_init_t flux_init;
+        flux_init.sf_lpf_kr = init->Rr / (init->Rr + init->Lr * init->fs);
+        flux_init.sf_slip_const = init->Rr / (init->Lr * CTL_PARAM_CONST_2PI * init->base_freq);
+        flux_init.sf_mech_to_elec = init->base_spd * init->pole_pairs / (60.0f * init->base_freq);
+        flux_init.sf_w_to_angle = init->base_freq / init->fs;
+        flux_init.i_md_min_limit_pu = 1.0e-3f;
+        ctl_init_im_pos_calc(&ctrl->flux_calc, &flux_init);
+        ctl_enable_im_pos_calc(&ctrl->flux_calc);
+    }
 
     // Create position encoder and speed encoder
 

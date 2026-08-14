@@ -26,7 +26,7 @@
 #ifndef _FILE_IM_POS_CALC_H_
 #define _FILE_IM_POS_CALC_H_
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 // --- Standard Math & Component Includes ---
 #include <ctl/component/motor_control/consultant/acim_consultant.h>

@@ -25,6 +25,7 @@ extern "C"
 {
 #endif // __cplusplus
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 
 #include <ctl/component/intrinsic/basic/saturation.h>
@@ -142,8 +143,8 @@ void ctl_update_dq_hcm_freq(inv_dq_hcm_t* hcm, const inv_dq_hcm_init_t* init);
 GMP_STATIC_INLINE void ctl_step_dq_hcm(inv_dq_hcm_t* hcm)
 {
     // Safety Assertions
-    gmp_base_assert(hcm->dq_meas);
-    gmp_base_assert(hcm->dq_set);
+    gmp_ctl_assert(hcm->dq_meas);
+    gmp_ctl_assert(hcm->dq_set);
 
     ctrl_gt err_d = hcm->dq_set->dat[phase_d] - hcm->dq_meas->dat[phase_d];
     ctrl_gt err_q = hcm->dq_set->dat[phase_q] - hcm->dq_meas->dat[phase_q];

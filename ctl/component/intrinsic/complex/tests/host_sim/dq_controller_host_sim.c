@@ -1,7 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/intrinsic/complex/dq_ladrc1.h>
 #include <ctl/component/intrinsic/complex/dq_pi.h>

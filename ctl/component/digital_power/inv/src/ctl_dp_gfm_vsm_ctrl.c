@@ -1,18 +1,18 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/digital_power/inv/inv_gfm_vsm_ctrl.h>
 
 void ctl_init_inv_gfm_vsm(inv_gfm_vsm_ctrl_t* vsm, const inv_gfm_vsm_init_t* init)
 {
-    gmp_base_assert(vsm);
-    gmp_base_assert(init);
-    gmp_base_assert(init->fs > 0.0f);
-    gmp_base_assert(init->frequency_nominal_hz > 0.0f);
-    gmp_base_assert(init->power_lpf_hz > 0.0f);
-    gmp_base_assert(init->inertia_s > 0.0f);
-    gmp_base_assert(init->damping_pu_per_hz >= 0.0f);
-    gmp_base_assert(init->frequency_delta_limit_hz >= 0.0f);
-    gmp_base_assert(init->voltage_max >= init->voltage_min);
+    gmp_ctl_assert(vsm);
+    gmp_ctl_assert(init);
+    gmp_ctl_assert(init->fs > 0.0f);
+    gmp_ctl_assert(init->frequency_nominal_hz > 0.0f);
+    gmp_ctl_assert(init->power_lpf_hz > 0.0f);
+    gmp_ctl_assert(init->inertia_s > 0.0f);
+    gmp_ctl_assert(init->damping_pu_per_hz >= 0.0f);
+    gmp_ctl_assert(init->frequency_delta_limit_hz >= 0.0f);
+    gmp_ctl_assert(init->voltage_max >= init->voltage_min);
 
     vsm->vdq = NULL;
     vsm->idq = NULL;

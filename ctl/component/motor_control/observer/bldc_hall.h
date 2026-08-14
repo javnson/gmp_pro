@@ -16,6 +16,7 @@
  *
  */
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <ctl/component/motor_control/interface/motor_universal_interface.h>
 #include <ctl/component/motor_control/interface/encoder.h>

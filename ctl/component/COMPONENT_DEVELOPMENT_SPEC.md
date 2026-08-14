@@ -116,7 +116,6 @@ ctl/component/<domain>/<category>/
 组件内引用头文件使用工程根目录路径：
 
 ```c
-#include <gmp_core.h>
 #include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 ```
@@ -358,7 +357,6 @@ typedef struct _example_t
 #ifndef _CTL_COMPONENT_EXAMPLE_H_
 #define _CTL_COMPONENT_EXAMPLE_H_
 
-#include <gmp_core.h>
 #include <ctl/math_block/gmp_math.h>
 
 /**

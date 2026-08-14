@@ -9,7 +9,7 @@
  *
  */
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 //////////////////////////////////////////////////////////////////////////
 // ADC channel
@@ -146,8 +146,8 @@ void ctl_init_pwm_tri_channel(pwm_tri_channel_t* pwm_obj, pwm_gt phase, pwm_gt f
 
 void ctl_init_adv_pwm_channel(adv_pwm_channel_t* pwm_obj, pwm_gt nominal_period_base)
 {
-    gmp_base_assert(pwm_obj != NULL);
-    gmp_base_assert(nominal_period_base > 0);
+    gmp_ctl_assert(pwm_obj != NULL);
+    gmp_ctl_assert(nominal_period_base > 0);
 
     /* 1. Reset input per-unit interfaces workspace to absolute safe zero states */
     pwm_obj->raw.period = float2ctrl(0.0f);
@@ -171,8 +171,8 @@ void ctl_init_adv_pwm_channel(adv_pwm_channel_t* pwm_obj, pwm_gt nominal_period_
 void ctl_init_adv_pwm_dual_channel(adv_pwm_dual_channel_t* pwm_obj, pwm_gt nominal_period_base)
 {
     fast_gt i;
-    gmp_base_assert(pwm_obj != NULL);
-    gmp_base_assert(nominal_period_base > 0);
+    gmp_ctl_assert(pwm_obj != NULL);
+    gmp_ctl_assert(nominal_period_base > 0);
 
     /* 1. Reset shared period timebase reference input */
     pwm_obj->raw.period = float2ctrl(0.0f);

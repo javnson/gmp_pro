@@ -10,6 +10,7 @@
 #ifndef _FILE_DTC_SVM_CORE_H_
 #define _FILE_DTC_SVM_CORE_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 #include <ctl/math_block/vector_lite/vector2.h>

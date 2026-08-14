@@ -1,7 +1,7 @@
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
-#include <ctl/component/interface/adv_nonlinear_adc_channel.h>
+#include <ctl/component/interface/adv_adc_channel.h>
 
 void ctl_init_adv_adc_channel(ctl_adv_adc_channel_t* adv_adc, fast_gt resolution, fast_gt iqn,
                               const ctl_lut1d_pair_t* table, uint32_t size)

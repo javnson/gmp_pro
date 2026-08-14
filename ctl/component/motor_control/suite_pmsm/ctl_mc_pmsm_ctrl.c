@@ -11,9 +11,9 @@
  * the PMSM controller.
  */
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
-#include <ctl/component/motor_control/pmsm_controller/pmsm_ctrl.h>
+#include <ctl/component/motor_control/suite_pmsm/pmsm_ctrl.h>
 
 /**
  * @ingroup MC_PMSM_FUNCTIONS

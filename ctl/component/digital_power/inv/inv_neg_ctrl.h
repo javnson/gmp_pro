@@ -25,6 +25,7 @@ extern "C"
 {
 #endif // __cplusplus
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 
 #include <ctl/component/intrinsic/basic/saturation.h>
@@ -189,8 +190,8 @@ GMP_STATIC_INLINE void ctl_step_neg_inv_ctrl(inv_neg_ctrl_t* neg)
     }
 
     // Check pointers are valid
-    gmp_base_assert(neg->iab);
-    gmp_base_assert(neg->phasor);
+    gmp_ctl_assert(neg->iab);
+    gmp_ctl_assert(neg->phasor);
 
     // --- 1. Coordinate Transformation (AlphaBeta -> Neg DQ) ---
     ctl_ct_park2_neg(neg->iab, neg->phasor, &neg->idqn_raw);
@@ -249,8 +250,8 @@ GMP_STATIC_INLINE void ctl_step_neg_inv_ctrl(inv_neg_ctrl_t* neg)
  */
 GMP_STATIC_INLINE void ctl_attach_neg_inv_to_gfl(inv_neg_ctrl_t* neg, gfl_inv_ctrl_t* gfl)
 {
-    gmp_base_assert(neg);
-    gmp_base_assert(gfl);
+    gmp_ctl_assert(neg);
+    gmp_ctl_assert(gfl);
 
     // Casting ctl_vector3_t* to ctl_vector2_t* assumes the memory layout
     // of the first two elements (alpha, beta) matches.

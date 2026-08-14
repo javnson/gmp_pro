@@ -1,6 +1,6 @@
 
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/motor_control/consultant/mech_consultant.h>
 
@@ -10,8 +10,8 @@
 void ctl_consultant_mech1_init(ctl_consultant_mech1_t* mech, parameter_gt j_tot, parameter_gt b_vis)
 {
     // 1. Strict Physical Validation
-    gmp_base_assert(j_tot > 0.0f);  // Inertia MUST be positive
-    gmp_base_assert(b_vis >= 0.0f); // Friction cannot be negative (would imply active energy injection)
+    gmp_ctl_assert(j_tot > 0.0f);  // Inertia MUST be positive
+    gmp_ctl_assert(b_vis >= 0.0f); // Friction cannot be negative (would imply active energy injection)
 
     // 2. Base Parameter Assignment
     mech->J_total = j_tot;
@@ -38,10 +38,10 @@ void ctl_consultant_mech2_init(ctl_consultant_mech2_t* mech, parameter_gt j_m, p
                                parameter_gt c_d)
 {
     // 1. Strict Physical Validation
-    gmp_base_assert(j_m > 0.0f);
-    gmp_base_assert(j_l >= 0.0f); // Load could theoretically be zero if disconnected
-    gmp_base_assert(k_s > 0.0f);  // Stiffness must exist for a 2-mass system
-    gmp_base_assert(c_d >= 0.0f);
+    gmp_ctl_assert(j_m > 0.0f);
+    gmp_ctl_assert(j_l >= 0.0f); // Load could theoretically be zero if disconnected
+    gmp_ctl_assert(k_s > 0.0f);  // Stiffness must exist for a 2-mass system
+    gmp_ctl_assert(c_d >= 0.0f);
 
     // 2. Base Parameter Assignment
     mech->J_motor = j_m;

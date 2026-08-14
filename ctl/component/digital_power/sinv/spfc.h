@@ -12,6 +12,7 @@
 #ifndef _FILE_GMP_CTL_SPFC_H_
 #define _FILE_GMP_CTL_SPFC_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/interface/interface_base.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 

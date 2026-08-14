@@ -12,7 +12,7 @@
 #ifndef _FILE_ADC_PTR_CHANNEL_H_
 #define _FILE_ADC_PTR_CHANNEL_H_
 
-// #include <gmp_core.h>
+// #include <ctl/math_block/gmp_math.h>
 #include <ctl/component/interface/interface_base.h>
 
 #include <ctl/component/interface/gain_model.h>
@@ -95,7 +95,7 @@ void ctl_init_ptr_adc_channel(ptr_adc_channel_t* adc, adc_gt* adc_target, ctrl_g
 GMP_STATIC_INLINE ctrl_gt ctl_step_ptr_adc_channel(ptr_adc_channel_t* adc_obj)
 {
     // Ensure the raw pointer is valid.
-    gmp_base_assert(adc_obj->raw);
+    gmp_ctl_assert(adc_obj->raw);
 
     adc_gt raw = *adc_obj->raw;
     ctrl_gt raw_data;
@@ -203,7 +203,7 @@ GMP_STATIC_INLINE void ctl_step_dual_ptr_adc_channel(dual_ptr_adc_channel_t* adc
 {
     int i;
 
-    gmp_base_assert(adc_obj->raw);
+    gmp_ctl_assert(adc_obj->raw);
 
     for (i = 0; i < 2; ++i)
     {
@@ -341,7 +341,7 @@ GMP_STATIC_INLINE void ctl_step_tri_ptr_adc_channel(tri_ptr_adc_channel_t* adc_o
 {
     int i;
 
-    gmp_base_assert(adc_obj->raw);
+    gmp_ctl_assert(adc_obj->raw);
 
     for (i = 0; i < 3; ++i)
     {
@@ -379,7 +379,7 @@ GMP_STATIC_INLINE void ctl_get_tri_ptr_adc_channel_via_vector3(tri_ptr_adc_chann
  */
 GMP_STATIC_INLINE void ctl_set_tri_ptr_adc_channel_bias(tri_ptr_adc_channel_t* adc, fast_gt index, ctrl_gt bias)
 {
-    gmp_base_assert(index < 3);
+    gmp_ctl_assert(index < 3);
     adc->bias[index] = bias;
 }
 
@@ -391,7 +391,7 @@ GMP_STATIC_INLINE void ctl_set_tri_ptr_adc_channel_bias(tri_ptr_adc_channel_t* a
  */
 GMP_STATIC_INLINE ctrl_gt ctl_get_tri_ptr_adc_bias(tri_ptr_adc_channel_t* adc, fast_gt index)
 {
-    gmp_base_assert(index < 3);
+    gmp_ctl_assert(index < 3);
     return adc->bias[index];
 }
 

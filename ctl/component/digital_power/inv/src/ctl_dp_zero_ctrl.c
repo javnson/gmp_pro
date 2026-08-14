@@ -1,4 +1,4 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/digital_power/inv/inv_zero_ctrl.h>
 
@@ -6,11 +6,11 @@ void ctl_auto_tuning_zero_inv(inv_zero_ctrl_init_t* zero_init, const gfl_inv_ctr
 {
     parameter_gt loop_bw;
 
-    gmp_base_assert(zero_init);
-    gmp_base_assert(gfl_init);
-    gmp_base_assert(gfl_init->fs > 0.0f);
-    gmp_base_assert(gfl_init->grid_filter_L > 0.0f);
-    gmp_base_assert(gfl_init->v_base > 0.0f);
+    gmp_ctl_assert(zero_init);
+    gmp_ctl_assert(gfl_init);
+    gmp_ctl_assert(gfl_init->fs > 0.0f);
+    gmp_ctl_assert(gfl_init->grid_filter_L > 0.0f);
+    gmp_ctl_assert(gfl_init->v_base > 0.0f);
 
     loop_bw = gfl_init->current_loop_bw;
 
@@ -27,14 +27,14 @@ void ctl_auto_tuning_zero_inv(inv_zero_ctrl_init_t* zero_init, const gfl_inv_ctr
 
 void ctl_update_zero_inv_coeff(inv_zero_ctrl_t* zero, const inv_zero_ctrl_init_t* init)
 {
-    gmp_base_assert(zero);
-    gmp_base_assert(init);
-    gmp_base_assert(init->fs > 0.0f);
-    gmp_base_assert(init->freq_resonant > 0.0f);
-    gmp_base_assert(init->freq_resonant < init->fs * 0.5f);
-    gmp_base_assert(init->freq_cut > 0.0f);
-    gmp_base_assert(init->freq_cut < init->fs * 0.5f);
-    gmp_base_assert(init->output_limit_max >= init->output_limit_min);
+    gmp_ctl_assert(zero);
+    gmp_ctl_assert(init);
+    gmp_ctl_assert(init->fs > 0.0f);
+    gmp_ctl_assert(init->freq_resonant > 0.0f);
+    gmp_ctl_assert(init->freq_resonant < init->fs * 0.5f);
+    gmp_ctl_assert(init->freq_cut > 0.0f);
+    gmp_ctl_assert(init->freq_cut < init->fs * 0.5f);
+    gmp_ctl_assert(init->output_limit_max >= init->output_limit_min);
 
     ctl_init_tunable_qr_controller(&zero->qpr.resonant_part, &zero->tuner, init->kr,
                                    init->freq_resonant, init->freq_cut, init->tune_mode, init->fs);
@@ -47,7 +47,7 @@ void ctl_update_zero_inv_coeff(inv_zero_ctrl_t* zero, const inv_zero_ctrl_init_t
 
 void ctl_init_zero_inv(inv_zero_ctrl_t* zero, const inv_zero_ctrl_init_t* init)
 {
-    gmp_base_assert(zero);
+    gmp_ctl_assert(zero);
 
     zero->i0 = NULL;
     zero->v0_sink = NULL;
@@ -62,7 +62,7 @@ void ctl_tune_zero_inv_ctrl(inv_zero_ctrl_t* zero, parameter_gt kp, parameter_gt
                             parameter_gt freq_resonant, parameter_gt freq_cut,
                             ctl_tune_qr_mode_e mode, parameter_gt fs)
 {
-    gmp_base_assert(zero);
+    gmp_ctl_assert(zero);
 
     if ((fs <= 0.0f) || (freq_resonant <= 0.0f) || (freq_resonant >= fs * 0.5f) ||
         (freq_cut <= 0.0f) || (freq_cut >= fs * 0.5f) || (kp < 0.0f) || (kr < 0.0f))

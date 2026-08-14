@@ -1,5 +1,5 @@
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/digital_power/inv/inv_hcm.h>
 
@@ -10,8 +10,8 @@
 
 void ctl_init_dq_hcm(inv_dq_hcm_t* hcm, const inv_dq_hcm_init_t* init)
 {
-    gmp_base_assert(hcm);
-    gmp_base_assert(init);
+    gmp_ctl_assert(hcm);
+    gmp_ctl_assert(init);
 
     // update controller parameters
     ctl_update_dq_hcm_freq(hcm, init);

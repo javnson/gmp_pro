@@ -10,6 +10,7 @@
 #ifndef _FILE_MOTOR_CURRENT_CTRL_H_
 #define _FILE_MOTOR_CURRENT_CTRL_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/motor_control/interface/motor_universal_interface.h>
 
 /* Uncomment to use DQ-LADRC1. When it is not defined, DQ-PI is used. */
@@ -300,7 +301,7 @@ GMP_STATIC_INLINE void ctl_step_foc_core(mc_foc_core_t* mc)
     }
     else
     {
-        gmp_base_assert(mc->phasor_input);
+        gmp_ctl_assert(mc->phasor_input);
         ctl_vector2_copy(&mc->phasor, mc->phasor_input);
     }
 

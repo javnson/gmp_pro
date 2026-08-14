@@ -6,6 +6,7 @@
 #ifndef _FILE_DP_INV_GFM_VIRTUAL_IMPEDANCE_H_
 #define _FILE_DP_INV_GFM_VIRTUAL_IMPEDANCE_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/basic/saturation.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 
@@ -39,7 +40,7 @@ void ctl_init_inv_gfm_virtual_impedance(
 GMP_STATIC_INLINE void ctl_attach_inv_gfm_virtual_impedance(
     inv_gfm_virtual_impedance_t* impedance, ctl_vector2_t* idq)
 {
-    gmp_base_assert(impedance);
+    gmp_ctl_assert(impedance);
     impedance->idq = idq;
 }
 
@@ -74,8 +75,8 @@ GMP_STATIC_INLINE void ctl_step_inv_gfm_virtual_impedance(
     ctrl_gt magnitude_sq;
     ctrl_gt scale;
 
-    gmp_base_assert(impedance);
-    gmp_base_assert(impedance->idq);
+    gmp_ctl_assert(impedance);
+    gmp_ctl_assert(impedance->idq);
 
     if (impedance->flag_enable)
     {

@@ -9,6 +9,8 @@
 #ifndef _FILE_CONSULTANT_INVERTER_H_
 #define _FILE_CONSULTANT_INVERTER_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 #ifdef __cplusplus
 extern "C"
 {

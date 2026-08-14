@@ -12,7 +12,7 @@
  * Boost, and protection modules.
  */
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 //////////////////////////////////////////////////////////////////////////
 // Protection Strategy
@@ -113,7 +113,7 @@ static void _ctl_init_biquad_differentiator(ctl_biquad_filter_t* obj, parameter_
 
 void ctl_init_vir_imp(vir_imp_t* imp, const parameter_gt R_vir, const parameter_gt L_vir, parameter_gt fs)
 {
-    gmp_base_assert(imp);
+    gmp_ctl_assert(imp);
 
     // 1. Resistive Gain
     imp->gain_R = R_vir;

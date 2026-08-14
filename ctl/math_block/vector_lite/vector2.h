@@ -166,7 +166,7 @@ GMP_STATIC_INLINE void ctl_vector2_sat_circle_sq(ctl_vector2_t* result, const ct
     ctrl_gt y = vec->dat[1];
     ctrl_gt mag_sq;
 
-    gmp_base_assert(radius_sq >= float2ctrl(0.0f));
+    gmp_ctl_assert(radius_sq >= float2ctrl(0.0f));
 
     mag_sq = ctl_mul(x, x) + ctl_mul(y, y);
 
@@ -207,7 +207,7 @@ GMP_STATIC_INLINE void ctl_vector2_sat_circle_sq_taylor(ctl_vector2_t* result, c
     ctrl_gt y = vec->dat[1];
     ctrl_gt mag_sq;
 
-    gmp_base_assert(radius_sq >= float2ctrl(0.0f));
+    gmp_ctl_assert(radius_sq >= float2ctrl(0.0f));
 
     mag_sq = ctl_mul(x, x) + ctl_mul(y, y);
 
@@ -250,7 +250,7 @@ GMP_STATIC_INLINE void ctl_vector2_sat_circle_sq_taylor(ctl_vector2_t* result, c
  */
 GMP_STATIC_INLINE void ctl_vector2_sat_circle(ctl_vector2_t* result, const ctl_vector2_t* vec, ctrl_gt radius)
 {
-    gmp_base_assert(radius >= float2ctrl(0.0f));
+    gmp_ctl_assert(radius >= float2ctrl(0.0f));
     ctl_vector2_sat_circle_sq(result, vec, ctl_mul(radius, radius));
 }
 
@@ -268,8 +268,8 @@ GMP_STATIC_INLINE void ctl_vector2_sat_rect(ctl_vector2_t* result, const ctl_vec
     ctrl_gt x = vec->dat[0];
     ctrl_gt y = vec->dat[1];
 
-    gmp_base_assert(limit_max->dat[0] >= limit_min->dat[0]);
-    gmp_base_assert(limit_max->dat[1] >= limit_min->dat[1]);
+    gmp_ctl_assert(limit_max->dat[0] >= limit_min->dat[0]);
+    gmp_ctl_assert(limit_max->dat[1] >= limit_min->dat[1]);
 
     result->dat[0] = ctl_sat(x, limit_max->dat[0], limit_min->dat[0]);
     result->dat[1] = ctl_sat(y, limit_max->dat[1], limit_min->dat[1]);
@@ -288,7 +288,7 @@ GMP_STATIC_INLINE void ctl_vector2_sat_square(ctl_vector2_t* result, const ctl_v
     ctrl_gt x = vec->dat[0];
     ctrl_gt y = vec->dat[1];
 
-    gmp_base_assert(limit >= float2ctrl(0.0f));
+    gmp_ctl_assert(limit >= float2ctrl(0.0f));
     result->dat[0] = ctl_sat(x, limit, -limit);
     result->dat[1] = ctl_sat(y, limit, -limit);
 }

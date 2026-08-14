@@ -9,9 +9,7 @@
  *
  */
 
-#include <gmp_core.h>
-
-#include <ctl/component/motor_control/param_est/pmsm_offline_est.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <math.h>   // For sqrtf
 #include <stdlib.h> // For fabsf

@@ -1,4 +1,4 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 //////////////////////////////////////////////////////////////////////////
 // PID regular
@@ -14,7 +14,7 @@ void ctl_init_pid_Tmode(
     // controller frequency
     parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0f);
+    gmp_ctl_assert(fs > 0.0f);
 
     hpid->kp = float2ctrl(kp);
 

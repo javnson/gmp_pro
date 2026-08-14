@@ -17,17 +17,18 @@
 
 // Necessary support
 #include <ctl/component/interface/interface_base.h>
-#include <ctl/component/motor_control/basic/motor_universal_interface.h>
+#include <ctl/component/motor_control/interface/motor_universal_interface.h>
 
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
 #include <ctl/component/intrinsic/discrete/track_discrete_pid.h>
 #else
+#include <ctl/component/intrinsic/continuous/continuous_pid.h>
 #include <ctl/component/intrinsic/continuous/track_pid.h>
 #endif // PMSM_CTRL_USING_DISCRETE_CTRL
 
 #include <ctl/component/motor_control/basic/decouple.h>
 #include <ctl/component/motor_control/basic/vf_generator.h>
-#include <ctl/component/motor_control/observer/acm.pos_calc.h>
+#include <ctl/component/motor_control/observer/acim_pos_calc.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 
 #ifdef __cplusplus
@@ -153,7 +154,7 @@ typedef struct _tag_acm_sensored_bare_controller
     ctl_tracking_continuous_pid_t spd_ctrl; /**< @brief Continuous tracking PID controller for speed. */
 #endif
     spd_calculator_t spd_enc;    /**< @brief Rotor speed calculator. */
-    ctl_im_spd_calc_t flux_calc; /**< @brief Flux speed and angle calculator. */
+    ctl_im_pos_calc_t flux_calc; /**< @brief Flux speed and angle calculator. */
     ctl_slope_f_controller rg;   /**< @brief Ramp generator for smooth frequency changes. */
     ctrl_gt speed_pu_rg_sf;      /**< @brief Scale factor from speed (p.u.) to ramp generator frequency. */
 
@@ -313,14 +314,14 @@ GMP_STATIC_INLINE void ctl_step_acm_sensored_ctrl(acm_sensored_bare_controller_t
         // Flux estimation
         if (ctrl->flag_enable_flux_est)
         {
-            ctl_step_im_spd_calc(&ctrl->flux_calc, ctrl->idq0.dat[phase_d], ctrl->idq0.dat[phase_q],
+            ctl_step_im_pos_calc(&ctrl->flux_calc, ctrl->idq0.dat[phase_d], ctrl->idq0.dat[phase_q],
                                  ctl_get_mtr_velocity(&ctrl->mtr_interface));
         }
 
         // Set speed target
         if (ctrl->flag_enable_velocity_ctrl)
         {
-            ctrl->rg.target_frequency = ctl_mul(ctrl->flux_calc.omega_s, ctrl->speed_pu_rg_sf);
+            ctrl->rg.target_frequency = ctl_mul(ctrl->flux_calc.w_sync_pu, ctrl->speed_pu_rg_sf);
         }
         else
         {

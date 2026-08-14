@@ -6,6 +6,7 @@
 #ifndef _FILE_DP_INV_GFL_PQ_DROOP_CTRL_H_
 #define _FILE_DP_INV_GFL_PQ_DROOP_CTRL_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/basic/saturation.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
@@ -56,7 +57,7 @@ void ctl_init_gfl_pq_droop(gfl_pq_droop_ctrl_t* droop,
 GMP_STATIC_INLINE void ctl_attach_gfl_pq_droop(
     gfl_pq_droop_ctrl_t* droop, ctrl_gt* frequency_hz, ctl_vector2_t* vdq)
 {
-    gmp_base_assert(droop);
+    gmp_ctl_assert(droop);
     droop->frequency_hz = frequency_hz;
     droop->vdq = vdq;
 }
@@ -91,9 +92,9 @@ GMP_STATIC_INLINE void ctl_step_gfl_pq_droop(gfl_pq_droop_ctrl_t* droop)
 {
     ctrl_gt voltage;
 
-    gmp_base_assert(droop);
-    gmp_base_assert(droop->frequency_hz);
-    gmp_base_assert(droop->vdq);
+    gmp_ctl_assert(droop);
+    gmp_ctl_assert(droop->frequency_hz);
+    gmp_ctl_assert(droop->vdq);
 
     voltage = ctl_vector2_mag(droop->vdq);
     droop->frequency_filt_hz =

@@ -1,4 +1,4 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 //////////////////////////////////////////////////////////////////////////
 // MRAC
@@ -7,8 +7,8 @@
 void ctl_init_mrac(ctl_mrac_controller_t* mrac, const ctl_mrac_init_t* init)
 {
     // 1. 基础防呆保护
-    gmp_base_assert(init->f_ctrl > 0.0f);
-    gmp_base_assert(init->a_m > 1e-9f); // 防除零保护
+    gmp_ctl_assert(init->f_ctrl > 0.0f);
+    gmp_ctl_assert(init->a_m > 1e-9f); // 防除零保护
 
     // 2. 在纯物理浮点域 (parameter_gt) 中进行高精度计算
     parameter_gt Ts = 1.0f / init->f_ctrl;

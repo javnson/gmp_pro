@@ -11,7 +11,7 @@
  * controller, including advanced features like harmonic compensation.
  */
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 #include <math.h>
 
 //////////////////////////////////////////////////////////////////////////

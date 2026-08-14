@@ -11,6 +11,7 @@
 #ifndef PROPORTIONAL_RESONANT_TUNER_H
 #define PROPORTIONAL_RESONANT_TUNER_H
 
+#include <ctl/math_block/gmp_math.h>
 #include "proportional_resonant.h"
 
 #ifdef __cplusplus

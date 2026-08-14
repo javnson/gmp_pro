@@ -12,6 +12,8 @@
 #ifndef _FILE_GAIN_MODEL_H_
 #define _FILE_GAIN_MODEL_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -53,8 +55,8 @@ extern "C"
 GMP_STATIC_INLINE parameter_gt ctl_gain_calc_generic(parameter_gt Vref, parameter_gt G_sensor,
                                                      parameter_gt Base_physical)
 {
-    gmp_base_assert(G_sensor != 0);
-    gmp_base_assert(Base_physical != 0);
+    gmp_ctl_assert(G_sensor != 0);
+    gmp_ctl_assert(Base_physical != 0);
     return Vref / G_sensor / Base_physical;
 }
 
@@ -72,7 +74,7 @@ GMP_STATIC_INLINE parameter_gt ctl_gain_calc_volt_divider(parameter_gt Vref, par
                                                           parameter_gt R2)
 {
     parameter_gt R_total = R1 + R2;
-    gmp_base_assert(R_total != 0);
+    gmp_ctl_assert(R_total != 0);
     parameter_gt G_sensor = R2 / R_total;
     return ctl_gain_calc_generic(Vref, G_sensor, Vbase);
 }

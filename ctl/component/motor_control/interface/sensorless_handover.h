@@ -13,6 +13,7 @@
 #ifndef _FILE_SENSORLESS_HANDOVER_H_
 #define _FILE_SENSORLESS_HANDOVER_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/motor_control/interface/encoder_switcher.h>
 #include <ctl/component/motor_control/interface/startup_excitation.h>
 

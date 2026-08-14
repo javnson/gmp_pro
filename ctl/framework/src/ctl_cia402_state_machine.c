@@ -9,7 +9,7 @@
  *
  */
 
-#include <gmp_core.h>
+#include <core/base/gmp_base.h>
 
 #include <ctl/framework/cia402_state_machine.h>
 

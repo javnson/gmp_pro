@@ -3,7 +3,7 @@
  * @brief Analytical pole-placement tuning calculator incorporating resistive loading and Nyquist bypass bounds.
  */
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/digital_power/dcdc/buck.h>
 
@@ -28,10 +28,10 @@ static parameter_gt ctl_buck_calc_safe_fc(parameter_gt fs, parameter_gt target_f
 
 void ctl_dcdc_blueprint_buck_cascade(ctl_dcdc_core_init_t* init_config, const ctl_buck_hardware_t* hw)
 {
-    gmp_base_assert(init_config != NULL);
-    gmp_base_assert(hw != NULL);
-    gmp_base_assert(hw->fs > 0.0f);
-    gmp_base_assert(hw->v_base > 0.0f && hw->i_base > 0.0f);
+    gmp_ctl_assert(init_config != NULL);
+    gmp_ctl_assert(hw != NULL);
+    gmp_ctl_assert(hw->fs > 0.0f);
+    gmp_ctl_assert(hw->v_base > 0.0f && hw->i_base > 0.0f);
 
     /* 1. Directly pipe system execution frequency */
     init_config->fs = hw->fs;

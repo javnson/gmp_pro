@@ -7,6 +7,7 @@
  * @{
  */
 
+#include <ctl/math_block/gmp_math.h>
 #include <stdarg.h>
 #include <stdint.h>
 

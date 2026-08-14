@@ -6,6 +6,7 @@
 #ifndef _FILE_DP_INV_ZERO_CTRL_H_
 #define _FILE_DP_INV_ZERO_CTRL_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/interface/interface_base.h>
 
 #include <ctl/component/intrinsic/basic/saturation.h>
@@ -91,7 +92,7 @@ GMP_STATIC_INLINE void ctl_deploy_zero_inv_tuning(inv_zero_ctrl_t* zero)
 
 GMP_STATIC_INLINE void ctl_step_zero_inv_ctrl(inv_zero_ctrl_t* zero)
 {
-    gmp_base_assert(zero);
+    gmp_ctl_assert(zero);
 
     ctl_deploy_zero_inv_tuning(zero);
 
@@ -104,8 +105,8 @@ GMP_STATIC_INLINE void ctl_step_zero_inv_ctrl(inv_zero_ctrl_t* zero)
         return;
     }
 
-    gmp_base_assert(zero->i0);
-    gmp_base_assert(zero->v0_sink);
+    gmp_ctl_assert(zero->i0);
+    gmp_ctl_assert(zero->v0_sink);
 
     zero->i0_fbk = *zero->i0;
     zero->v0_raw = ctl_step_qpr_controller(&zero->qpr, zero->i0_set - zero->i0_fbk);
@@ -115,7 +116,7 @@ GMP_STATIC_INLINE void ctl_step_zero_inv_ctrl(inv_zero_ctrl_t* zero)
 
 GMP_STATIC_INLINE void ctl_attach_zero_inv(inv_zero_ctrl_t* zero, ctrl_gt* i0, ctrl_gt* v0_sink)
 {
-    gmp_base_assert(zero);
+    gmp_ctl_assert(zero);
     zero->i0 = i0;
     zero->v0_sink = v0_sink;
 }
@@ -125,7 +126,7 @@ GMP_STATIC_INLINE void ctl_attach_zero_inv(inv_zero_ctrl_t* zero, ctrl_gt* i0, c
  */
 GMP_STATIC_INLINE void ctl_attach_zero_inv_to_gfl(inv_zero_ctrl_t* zero, gfl_inv_ctrl_t* current)
 {
-    gmp_base_assert(current);
+    gmp_ctl_assert(current);
     ctl_attach_zero_inv(zero, &current->iab0.dat[phase_0], &current->vab0_ff_external.dat[phase_0]);
 }
 

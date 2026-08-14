@@ -5,10 +5,10 @@
 
 
 // invoke motor parameters
-//#include <ctl/component/motor_control/motor_preset/GBM2804H_100T.h>
+//#include <ctl/component/hardware_preset/pmsm_motor/GBM2804H_100T.h>
 
 // invoke motor controller parameters
-//#include <ctl/component/motor_control/controller_preset/TI_BOOSTXL_3PhGaNInv.h>
+//#include <ctl/component/hardware_preset/inverter_3ph/TI_BOOSTXL_3PhGaNInv.h>
 
 // invoke motor parameters
 #include <ctl/component/hardware_preset/pmsm_motor/SM060R20B30MNAD.h>

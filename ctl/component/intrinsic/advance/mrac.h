@@ -10,6 +10,8 @@
 #ifndef _FILE_ADAPTIVE_CTRL_H_
 #define _FILE_ADAPTIVE_CTRL_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 #ifdef __cplusplus
 extern "C"
 {

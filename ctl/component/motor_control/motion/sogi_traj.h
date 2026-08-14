@@ -14,7 +14,7 @@
 #include <ctl/component/intrinsic/discrete/discrete_sogi.h>
 #include <ctl/component/motor_control/interface/encoder.h>
 #include <ctl/math_block/gmp_math.h>
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -109,9 +109,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_calc_pos_err_4param(int32_t t_revs, ctrl_gt t_ang,
 GMP_STATIC_INLINE void ctl_attach_sogi_planner(ctl_sogi_planner_t* planner, rotation_ift* pos_if,
                                                ctl_divider_t* div_shared)
 {
-    gmp_base_assert(pos_if != NULL);
-    gmp_base_assert(div_shared != NULL);
-    gmp_base_assert(div_shared->target >= 3);
+    gmp_ctl_assert(pos_if != NULL);
+    gmp_ctl_assert(div_shared != NULL);
+    gmp_ctl_assert(div_shared->target >= 3);
 
     planner->pos_if = pos_if;
     planner->div_shared = div_shared;

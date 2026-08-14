@@ -11,6 +11,8 @@
 #ifndef _SLOPE_LIMITER_H_
 #define _SLOPE_LIMITER_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 #ifdef __cplusplus
 extern "C"
 {

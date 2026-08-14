@@ -13,7 +13,7 @@
 #include <ctl/component/intrinsic/continuous/ladrc2.h>
 #include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl/component/motor_control/interface/encoder.h>
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -167,7 +167,7 @@ GMP_STATIC_INLINE void ctl_step_ladrc_pos_ctrl(ctl_ladrc_pos_ctrl_t* ctrl, int32
     if (ctl_step_divider(&ctrl->div_mech))
     {
         // ·ÀÓùÐÔ¶ÏÑÔ
-        gmp_base_assert(ctrl->pos_if != NULL);
+        gmp_ctl_assert(ctrl->pos_if != NULL);
 
         // ====================================================================
         // 1. Dynamic Local Coordinate Tracking (Zero-Cost Wrap-Around Fix)

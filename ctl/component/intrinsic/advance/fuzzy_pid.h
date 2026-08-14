@@ -12,6 +12,7 @@
 #ifndef _FUZZY_PID_H_
 #define _FUZZY_PID_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/advance/surf_search.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 

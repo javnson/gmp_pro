@@ -12,6 +12,7 @@
  * @date 2024-10-27
  */
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 
 #ifndef _FILE_ATO_PLL_H_

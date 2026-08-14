@@ -1,4 +1,4 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/digital_power/dcdc/dcdc_core.h>
 #include <ctl/component/intrinsic/basic/slope_limiter.h>
@@ -28,9 +28,9 @@ static parameter_gt ctl_dcdc_get_safe_fc(parameter_gt fs, parameter_gt fc)
  */
 void ctl_init_dcdc_core(ctl_dcdc_core_t* core, const ctl_dcdc_core_init_t* init_config)
 {
-    gmp_base_assert(core != NULL);
-    gmp_base_assert(init_config != NULL);
-    gmp_base_assert(init_config->fs > 0.0f);
+    gmp_ctl_assert(core != NULL);
+    gmp_ctl_assert(init_config != NULL);
+    gmp_ctl_assert(init_config->fs > 0.0f);
 
     /* 1. Global State Architecture Setup */
     core->mode = CTL_DCDC_MODE_OPENLOOP;

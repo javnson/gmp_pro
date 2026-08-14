@@ -34,8 +34,17 @@
 // ec_gt windows_print_function(uint32_t *handle, half_duplex_ift *port);
 
 // Simulink Disable/Enable output
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 void csp_sl_enable_output(void);
 void csp_sl_disable_output(void);
 
 // Simulink Input Panel PORT
 double csp_sl_get_panel_input(fast_gt channel);
+
+#ifdef __cplusplus
+}
+#endif

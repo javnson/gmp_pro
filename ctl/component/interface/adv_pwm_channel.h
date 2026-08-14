@@ -33,6 +33,7 @@
 #ifndef _FILE_ADV_PWM_CHANNEL_H_
 #define _FILE_ADV_PWM_CHANNEL_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/interface/interface_base.h>
 
 #ifdef __cplusplus

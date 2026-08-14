@@ -11,7 +11,7 @@
  * including the Single-Phase PLL, H-Bridge Modulation, and PFC controllers.
  */
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 #include <math.h>
 
 

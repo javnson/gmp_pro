@@ -12,7 +12,7 @@
 #ifndef _FILE_PMSRM_4P_15KW520V_H_
 #define _FILE_PMSRM_4P_15KW520V_H_
 
-#include <ctl/component/motor_control/basic/motor_unit_calculator.h>
+#include <ctl/component/motor_control/consultant/unit_consultant.h>
 
 #ifdef __cplusplus
 extern "C"

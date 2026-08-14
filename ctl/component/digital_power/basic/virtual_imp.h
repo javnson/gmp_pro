@@ -25,6 +25,7 @@ extern "C"
 {
 #endif // __cplusplus
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/discrete/biquad_filter.h>
 
 /**

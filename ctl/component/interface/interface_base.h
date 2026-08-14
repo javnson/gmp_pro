@@ -12,6 +12,7 @@
 #ifndef _FILE_CTL_INTERFACE_BASE_H_
 #define _FILE_CTL_INTERFACE_BASE_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/math_block/vector_lite/vector2.h>
 #include <ctl/math_block/vector_lite/vector3.h>
 #include <ctl/math_block/vector_lite/vector4.h>

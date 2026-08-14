@@ -10,6 +10,7 @@
 #ifndef _FILE_LADRC_SPD_CTRL_H_
 #define _FILE_LADRC_SPD_CTRL_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl/component/intrinsic/basic/slope_limiter.h>
 #include <ctl/component/intrinsic/continuous/ladrc1.h>
@@ -177,7 +178,7 @@ GMP_STATIC_INLINE void ctl_step_ladrc_spd_ctrl(ctl_ladrc_spd_ctrl_t* ctrl)
     if (ctl_step_divider(&ctrl->div_mech))
     {
         // ·ÀÓùÐÔ¶ÏÑÔ
-        gmp_base_assert(ctrl->spd_if != NULL);
+        gmp_ctl_assert(ctrl->spd_if != NULL);
 
         // 1. Smooth the velocity command
         ctrl_gt smoothed_vel_cmd_pu = ctl_step_slope_limiter(&ctrl->vel_traj, ctrl->target_velocity);

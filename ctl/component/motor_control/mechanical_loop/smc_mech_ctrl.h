@@ -10,6 +10,7 @@
 #ifndef _FILE_SMC_MECH_CTRL_H_
 #define _FILE_SMC_MECH_CTRL_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/advance/smc.h>
 #include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl/component/motor_control/interface/encoder.h>
@@ -166,8 +167,8 @@ GMP_STATIC_INLINE void ctl_step_smc_mech_ctrl(ctl_smc_mech_ctrl_t* ctrl, int32_t
     if (ctl_step_divider(&ctrl->div_mech))
     {
         // 防御性断言：SMC 控制极度依赖精确的双状态反馈
-        gmp_base_assert(ctrl->pos_if != NULL);
-        gmp_base_assert(ctrl->spd_if != NULL);
+        gmp_ctl_assert(ctrl->pos_if != NULL);
+        gmp_ctl_assert(ctrl->spd_if != NULL);
 
         // 1. Calculate Primary State Variables (PU directly)
         // x1 = Position Error (Bounded PU via robust calculation)

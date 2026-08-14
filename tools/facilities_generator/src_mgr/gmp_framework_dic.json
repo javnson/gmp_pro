@@ -1320,7 +1320,12 @@
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/basic/*"
                 ],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|interface|base",
+                    "ctl|component|intrinsic|discrete|biquad_filter",
+                    "ctl|component|intrinsic|discrete|discrete_filter"
+                ],
                 "inc_dirs": [
                     "${GMP_PRO_LOCATION}/"
                 ],
@@ -1332,16 +1337,12 @@
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/interface/src/ctl_component_interface.c"
                 ],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/interface/gain_model.h",
-                    "${GMP_PRO_LOCATION}/ctl/component/interface/bias_model.h",
-                    "${GMP_PRO_LOCATION}/ctl/component/interface/gmp_sil_std_interface.h",
-                    "${GMP_PRO_LOCATION}/ctl/component/interface/gmp_standard_interface.h",
-                    "${GMP_PRO_LOCATION}/ctl/component/interface/interface_base.h"
-                ],
+                "inc_patterns": [],
                 "depends_on": [
-                    "ctl|component|_internal",
-                    "ctl|component|kinematics"
+                    "ctl|component|interface|base",
+                    "ctl|component|interface|adc",
+                    "ctl|component|interface|pwm",
+                    "ctl|component|interface|adv_pwm"
                 ],
                 "inc_dirs": [
                     "${GMP_PRO_LOCATION}/"
@@ -1357,7 +1358,12 @@
                     "${GMP_PRO_LOCATION}/ctl/component/interface/adc_ptr_channel.h"
                 ],
                 "inc_dirs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|discrete|biquad_filter",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|interface|base"
+                ],
                 "help_docs": [],
                 "tasks": [
                     {
@@ -1391,7 +1397,10 @@
                     "${GMP_PRO_LOCATION}/ctl/component/interface/pwm_channel.h"
                 ],
                 "inc_dirs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|interface|base"
+                ],
                 "help_docs": [],
                 "tasks": [
                     {
@@ -1425,7 +1434,10 @@
                     "${GMP_PRO_LOCATION}/ctl/component/interface/dac_channel.h"
                 ],
                 "inc_dirs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|interface|base"
+                ],
                 "help_docs": [],
                 "tasks": [
                     {
@@ -1466,7 +1478,9 @@
                     "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/saturation.h",
                     "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/slope_limiter.h"
                 ],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "inc_dirs": [
                     "${GMP_PRO_LOCATION}/"
                 ],
@@ -1487,7 +1501,12 @@
                     "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/startup_excitation.h",
                     "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/sensorless_handover.h"
                 ],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|interface|base",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|component|intrinsic|discrete|discrete_filter"
+                ],
                 "inc_dirs": [
                     "${GMP_PRO_LOCATION}/"
                 ],
@@ -1496,11 +1515,25 @@
             "component|motor_control|acm_ctrl": {
                 "type": "module",
                 "description": "",
-                "src_patterns": [],
-                "inc_patterns": [],
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/suite_acim/ctl_mc_acm_sensored_ctrl.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/suite_acim/acm_sensored_ctrl.h"
+                ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|interface|base",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|intrinsic|continuous|track_pid",
+                    "ctl|component|intrinsic|discrete|track_pid",
+                    "ctl|component|motor_control|_internal",
+                    "ctl|component|motor_control|basic|decouple",
+                    "ctl|component|motor_control|basic|vf_generator",
+                    "ctl|component|motor_control|observer|acim_pos_calc"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -1560,11 +1593,23 @@
             "component|motor_control|pmsm_ctrl": {
                 "type": "module",
                 "description": "",
-                "src_patterns": [],
-                "inc_patterns": [],
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/suite_pmsm/ctl_mc_pmsm_ctrl.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/motor_control/suite_pmsm/pmsm_ctrl.h"
+                ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|interface|base",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|intrinsic|continuous|track_pid",
+                    "ctl|component|intrinsic|discrete|track_pid",
+                    "ctl|component|motor_control|_internal",
+                    "ctl|component|motor_control|basic|decouple"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -1677,7 +1722,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|component|hardware_preset|inverter_3ph"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -1711,7 +1758,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -1779,7 +1828,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|component|motor_control|consultant|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -1849,8 +1900,17 @@
                     "${GMP_PRO_LOCATION}/ctl/ctl.config.h"
                 ],
                 "inc_dirs": [],
-                "help_docs": [],
-                "depends_on": []
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/ctl/math_block/readme.md",
+                    "${GMP_PRO_LOCATION}/ctl/math_block/README_EN.md"
+                ],
+                "depends_on": [
+                    "core|std",
+                    "ctl|math_block|complex_lite",
+                    "ctl|math_block|coordinate",
+                    "ctl|math_block|matrix_lite",
+                    "ctl|math_block|vector_lite"
+                ]
             },
             "math_block|coordinate": {
                 "type": "module",
@@ -1867,65 +1927,29 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
-                "tasks": [
-                    {
-                        "id": "sys_compile",
-                        "summary": "Compilation Passed",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_sim",
-                        "summary": "Simulation / Principle Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    },
-                    {
-                        "id": "sys_hw",
-                        "summary": "Physical Hardware Verified",
-                        "completed": true,
-                        "date": "2026-03-14",
-                        "reply": ""
-                    }
-                ]
-            },
-            "math_block|coordinate|svpwm_3d": {
-                "type": "module",
-                "description": "Four-leg three-dimensional SVPWM for three-phase four-wire converters.",
-                "src_patterns": [],
-                "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/math_block/coordinate/svpwm_3d.h"
-                ],
-                "inc_dirs": [],
-                "help_docs": [
-                    "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/tests/host_sim/README.md"
-                ],
                 "depends_on": [
-                    "ctl|math_block|coordinate"
+                    "ctl|math_block|vector_lite"
                 ],
                 "tasks": [
                     {
                         "id": "sys_compile",
                         "summary": "Compilation Passed",
                         "completed": true,
-                        "date": "2026-07-28",
-                        "reply": "MSVC host build."
+                        "date": "2026-03-14",
+                        "reply": ""
                     },
                     {
                         "id": "sys_sim",
                         "summary": "Simulation / Principle Verified",
                         "completed": true,
-                        "date": "2026-07-28",
-                        "reply": "20,000-point alpha-beta-zero reconstruction sweep."
+                        "date": "2026-03-14",
+                        "reply": ""
                     },
                     {
                         "id": "sys_hw",
                         "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
+                        "completed": true,
+                        "date": "2026-03-14",
                         "reply": ""
                     }
                 ]
@@ -1939,7 +1963,10 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|complex_lite",
+                    "ctl|math_block|vector_lite"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2023,7 +2050,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "core|base|port"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2059,7 +2088,10 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "core|base|port",
+                    "ctl|component|intrinsic|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2113,7 +2145,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|interface|base",
+                    "ctl|component|intrinsic|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2147,7 +2183,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2181,7 +2219,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2217,7 +2257,12 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|component|intrinsic|discrete|signal_generator",
+                    "ctl|component|motor_control|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2263,6 +2308,7 @@
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [
+                    "ctl|math_block|_internal",
                     "ctl|component|intrinsic|continuous|pid"
                 ],
                 "tasks": [
@@ -2301,6 +2347,7 @@
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [
+                    "ctl|math_block|_internal",
                     "ctl|component|intrinsic|continuous|ladrc1"
                 ],
                 "tasks": [
@@ -2347,7 +2394,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2383,7 +2432,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2419,7 +2470,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2455,7 +2508,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2491,7 +2546,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2527,7 +2584,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2563,7 +2622,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|component|intrinsic|continuous|pid_aw"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2608,7 +2671,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2644,7 +2709,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2680,7 +2747,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2716,7 +2785,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2752,7 +2823,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2788,7 +2861,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2824,7 +2899,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2860,7 +2937,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2897,6 +2976,7 @@
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [
+                    "ctl|math_block|_internal",
                     "ctl|component|intrinsic|discrete|pr"
                 ],
                 "tasks": [
@@ -2934,7 +3014,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -2970,7 +3052,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|component|intrinsic|discrete|pid"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3015,7 +3101,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3052,7 +3140,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3088,7 +3178,10 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|discrete|sogi"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3133,7 +3226,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3169,7 +3264,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|advance|surf_search",
+                    "ctl|component|intrinsic|continuous|pid"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3205,7 +3304,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3241,7 +3342,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3277,7 +3380,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3313,7 +3418,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3349,7 +3456,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3386,7 +3495,10 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|discrete|biquad_filter"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3422,7 +3534,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3458,7 +3572,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3494,7 +3610,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3528,7 +3646,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": []
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ]
             },
             "component|motor_control|consultant|acim": {
                 "type": "module",
@@ -3541,7 +3661,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3577,7 +3699,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3613,7 +3737,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3649,7 +3775,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3685,7 +3813,12 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|motor_control|consultant|acim",
+                    "ctl|component|motor_control|consultant|pmsm",
+                    "ctl|component|motor_control|consultant|pu"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3721,7 +3854,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|motor_control|consultant|acim",
+                    "ctl|component|motor_control|consultant|pmsm"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3757,7 +3894,14 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|complex|dq_pi",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|motor_control|_internal",
+                    "ctl|component|motor_control|consultant|acim",
+                    "ctl|component|motor_control|consultant|pu"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3794,8 +3938,12 @@
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [
+                    "ctl|math_block|_internal",
                     "ctl|component|intrinsic|complex|dq_pi",
-                    "ctl|component|intrinsic|complex|dq_ladrc1"
+                    "ctl|component|intrinsic|complex|dq_ladrc1",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|intrinsic|discrete|lead_lag",
+                    "ctl|component|motor_control|_internal"
                 ],
                 "tasks": [
                     {
@@ -3832,7 +3980,10 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|motor_control|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3868,7 +4019,10 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|continuous|pid"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3904,7 +4058,10 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|continuous|pid"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3949,7 +4106,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|advance|paired_lud1d",
+                    "ctl|component|intrinsic|continuous|pid"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -3985,7 +4146,10 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|continuous|pid"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4030,7 +4194,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|component|motor_control|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4066,7 +4234,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|component|motor_control|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4102,7 +4274,12 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|component|intrinsic|discrete|sogi",
+                    "ctl|component|motor_control|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4147,7 +4324,15 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|motor_control|_internal",
+                    "ctl|component|motor_control|consultant|acim",
+                    "ctl|component|motor_control|consultant|pu",
+                    "ctl|component|motor_control|observer|ato_pll"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4183,7 +4368,12 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|motor_control|_internal",
+                    "ctl|component|motor_control|consultant|acim",
+                    "ctl|component|motor_control|consultant|pu"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4219,7 +4409,14 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|motor_control|_internal",
+                    "ctl|component|motor_control|consultant|acim",
+                    "ctl|component|motor_control|consultant|pu",
+                    "ctl|component|motor_control|observer|ato_pll"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4255,7 +4452,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|motor_control|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4291,7 +4492,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|motor_control|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4327,7 +4532,16 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|motor_control|_internal",
+                    "ctl|component|motor_control|consultant|pmsm",
+                    "ctl|component|motor_control|consultant|pu",
+                    "ctl|component|motor_control|current_loop|foc",
+                    "ctl|component|motor_control|observer|ato_pll"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4363,7 +4577,15 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|motor_control|_internal",
+                    "ctl|component|motor_control|consultant|pmsm",
+                    "ctl|component|motor_control|consultant|pu",
+                    "ctl|component|motor_control|observer|ato_pll"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4399,7 +4621,15 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|motor_control|_internal",
+                    "ctl|component|motor_control|consultant|pmsm",
+                    "ctl|component|motor_control|consultant|pu",
+                    "ctl|component|motor_control|observer|ato_pll"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4435,7 +4665,12 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|motor_control|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4480,7 +4715,12 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|component|intrinsic|continuous|ladrc2",
+                    "ctl|component|motor_control|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4516,7 +4756,12 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|component|intrinsic|continuous|ladrc1",
+                    "ctl|component|motor_control|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4552,7 +4797,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|component|motor_control|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4588,7 +4837,12 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|component|intrinsic|advance|smc",
+                    "ctl|component|motor_control|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4632,7 +4886,15 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|interface|adc",
+                    "ctl|component|interface|adv_pwm",
+                    "ctl|component|interface|pwm",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|intrinsic|discrete|discrete_filter"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4677,7 +4939,19 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|interface|base",
+                    "ctl|component|intrinsic|discrete|biquad_filter",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|digital_power|inv|pll_dsogi",
+                    "ctl|component|digital_power|inv|pll_srf",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|intrinsic|discrete|lead_lag",
+                    "ctl|component|intrinsic|discrete|pr",
+                    "ctl|component|intrinsic|discrete|signal_generator"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4722,7 +4996,10 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|interface|base"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4758,7 +5035,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|component|intrinsic|discrete|discrete_filter"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4794,7 +5075,10 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|continuous|pid"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4830,7 +5114,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4875,7 +5161,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4911,7 +5199,10 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|interface|base"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4956,7 +5247,13 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|interface|base",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|intrinsic|discrete|sogi"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -4992,7 +5289,13 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|interface|base",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|intrinsic|discrete|sogi"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5028,7 +5331,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|interface|base",
+                    "ctl|component|intrinsic|continuous|pid"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5064,7 +5371,12 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|interface|adc",
+                    "ctl|component|intrinsic|discrete|lead_lag",
+                    "ctl|component|intrinsic|discrete|pr"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5100,7 +5412,18 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|digital_power|inv|inv_3ph_core",
+                    "ctl|component|digital_power|inv|pll_dsogi",
+                    "ctl|component|digital_power|inv|pll_srf",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|intrinsic|discrete|lead_lag",
+                    "ctl|component|intrinsic|discrete|pr",
+                    "ctl|component|intrinsic|discrete|signal_generator"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5136,7 +5459,10 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|digital_power|inv|inv_3ph_core"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5173,7 +5499,9 @@
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [
-                    "ctl|component|intrinsic|discrete|discrete_filter"
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|intrinsic|_internal"
                 ],
                 "tasks": [
                     {
@@ -5211,7 +5539,9 @@
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [
-                    "ctl|component|intrinsic|discrete|discrete_filter"
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|intrinsic|_internal"
                 ],
                 "tasks": [
                     {
@@ -5248,7 +5578,10 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5284,7 +5617,10 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5321,7 +5657,9 @@
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [
-                    "ctl|component|intrinsic|discrete|discrete_filter"
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|intrinsic|_internal"
                 ],
                 "tasks": [
                     {
@@ -5358,7 +5696,14 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|intrinsic|discrete|biquad_filter",
+                    "ctl|component|intrinsic|discrete|lead_lag",
+                    "ctl|component|intrinsic|discrete|pr"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5394,7 +5739,15 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|digital_power|inv|inv_3ph_core",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|intrinsic|discrete|biquad_filter",
+                    "ctl|component|intrinsic|discrete|lead_lag",
+                    "ctl|component|intrinsic|discrete|pr"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5433,8 +5786,9 @@
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/tests/host_sim/README.md"
                 ],
                 "depends_on": [
+                    "ctl|math_block|_internal",
                     "ctl|component|digital_power|inv|inv_3ph_core",
-                    "ctl|component|interface|_internal",
+                    "ctl|component|interface|base",
                     "ctl|component|intrinsic|continuous|pid",
                     "ctl|component|intrinsic|discrete|biquad_filter"
                 ],
@@ -5476,8 +5830,9 @@
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/inv/tests/host_sim/README.md"
                 ],
                 "depends_on": [
+                    "ctl|math_block|_internal",
                     "ctl|component|digital_power|inv|inv_3ph_core",
-                    "ctl|component|interface|_internal",
+                    "ctl|component|interface|base",
                     "ctl|component|intrinsic|discrete|biquad_filter",
                     "ctl|component|intrinsic|discrete|pr_tuner"
                 ],
@@ -5516,7 +5871,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|intrinsic|discrete|sogi"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5552,7 +5911,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|continuous|pid",
+                    "ctl|component|intrinsic|discrete|discrete_filter"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5588,7 +5951,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|digital_power|inv|pll_srf",
+                    "ctl|component|intrinsic|discrete|sogi"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5624,7 +5991,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|advance|surf_search",
+                    "ctl|component|intrinsic|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5660,7 +6031,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5698,6 +6071,7 @@
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [
+                    "ctl|math_block|_internal",
                     "ctl|component|intrinsic|continuous|_internal",
                     "ctl|component|intrinsic|continuous|pid",
                     "ctl|component|intrinsic|discrete|_internal",
@@ -5723,7 +6097,9 @@
                     "ctl|component|motor_control|current_loop|_internal",
                     "ctl|component|motor_control|current_loop|foc",
                     "ctl|component|motor_control|observer|_internal",
-                    "ctl|component|motor_control|observer|pmsm_esmo"
+                    "ctl|component|motor_control|observer|pmsm_esmo",
+                    "ctl|component|dsa|dsa_scope",
+                    "ctl|component|motor_control|consultant|mechanical"
                 ],
                 "tasks": [
                     {
@@ -5774,13 +6150,15 @@
                     "${GMP_PRO_LOCATION}/ctl/component/dsa/src/dsa_scope.c"
                 ],
                 "inc_patterns": [
-                    "${GMP_PRO_LOCATION}/ctl/component/dsa/dsa_scope.h",
-                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/divider.h",
-                    "${GMP_PRO_LOCATION}/ctl/math_block/utilities/mem_view.h"
+                    "${GMP_PRO_LOCATION}/ctl/component/dsa/dsa_scope.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|math_block|utilities"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5817,6 +6195,8 @@
                 "inc_dirs": [],
                 "help_docs": [],
                 "depends_on": [
+                    "core|base|port",
+                    "ctl|math_block|_internal",
                     "core|dev|datalink|scope",
                     "ctl|component|dsa|dsa_scope",
                     "ctl|component|dsa|dsa_trigger"
@@ -5853,13 +6233,15 @@
                 ],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/dsa/dsa_trigger.h",
-                    "${GMP_PRO_LOCATION}/ctl/component/dsa/sine_analyzer.h",
-                    "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/divider.h",
-                    "${GMP_PRO_LOCATION}/ctl/math_block/utilities/mem_view.h"
+                    "${GMP_PRO_LOCATION}/ctl/component/dsa/sine_analyzer.h"
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|_internal",
+                    "ctl|math_block|utilities"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5895,7 +6277,14 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|interface|base",
+                    "ctl|component|intrinsic|advance|rc",
+                    "ctl|component|intrinsic|discrete|discrete_filter",
+                    "ctl|component|intrinsic|discrete|lead_lag",
+                    "ctl|component|intrinsic|discrete|pr"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5931,7 +6320,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|protection|basic",
+                    "ctl|component|intrinsic|protection|pt_sensor"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -5967,7 +6360,10 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -6003,7 +6399,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -6039,7 +6437,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|intrinsic|discrete|biquad_filter",
+                    "ctl|component|intrinsic|discrete|sogi"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -6082,7 +6484,11 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|interface|base",
+                    "ctl|component|intrinsic|advance|paired_lud1d"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -6116,13 +6522,94 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|interface|base"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
                         "summary": "Compilation Passed",
                         "completed": false,
                         "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "math_block|utilities": {
+                "type": "module",
+                "description": "CTL math utility types",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/math_block/utilities/mem_view.h"
+                ],
+                "depends_on": [
+                    "ctl|math_block|_internal"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-08-14",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
+            "component|interface|base": {
+                "type": "module",
+                "description": "CTL peripheral-neutral interface contracts",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/ctl/component/interface/gain_model.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/interface/bias_model.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/interface/gmp_sil_std_interface.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/interface/gmp_standard_interface.h",
+                    "${GMP_PRO_LOCATION}/ctl/component/interface/interface_base.h"
+                ],
+                "depends_on": [
+                    "ctl|math_block|_internal",
+                    "ctl|component|_internal",
+                    "ctl|component|kinematics"
+                ],
+                "inc_dirs": [],
+                "help_docs": [],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-08-14",
                         "reply": ""
                     },
                     {

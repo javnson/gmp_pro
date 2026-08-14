@@ -1,14 +1,14 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/digital_power/inv/inv_gfm_transition.h>
 
 void ctl_init_inv_gfm_transition(inv_gfm_transition_t* transition,
                                  const inv_gfm_transition_init_t* init)
 {
-    gmp_base_assert(transition);
-    gmp_base_assert(init);
-    gmp_base_assert(init->fs > 0.0f);
-    gmp_base_assert(init->transfer_time_s > 0.0f);
+    gmp_ctl_assert(transition);
+    gmp_ctl_assert(init);
+    gmp_ctl_assert(init->fs > 0.0f);
+    gmp_ctl_assert(init->transfer_time_s > 0.0f);
 
     transition->pll_angle = NULL;
     transition->pll_phasor = NULL;

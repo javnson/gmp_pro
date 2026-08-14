@@ -9,9 +9,10 @@
 
 // Necessary support
 #include <ctl/component/interface/interface_base.h>
-#include <ctl/component/motor_control/basic/motor_universal_interface.h>
+#include <ctl/component/intrinsic/continuous/continuous_pid.h>
+#include <ctl/component/motor_control/interface/motor_universal_interface.h>
 #include <ctl/component/motor_control/basic/vf_generator.h>
-#include <ctl/component/motor_control/observer/pmsm.smo.h>
+#include <ctl/component/motor_control/observer/pmsm_esmo.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL

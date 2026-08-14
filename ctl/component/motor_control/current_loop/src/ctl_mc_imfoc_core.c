@@ -1,6 +1,6 @@
 /** @file ctl_mc_imfoc_core.c @brief Initialization for the standalone ACIM current loop. */
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/motor_control/current_loop/imfoc_core.h>
 
 //=================================================================================================
@@ -10,7 +10,7 @@ void ctl_set_im_ifoc_saturation(im_ifoc_ctrl_t* mc, parameter_gt volt_rect_pu, p
 {
     ctl_vector2_t max;
     ctl_vector2_t min;
-    gmp_base_assert(mc && volt_rect_pu >= 0.0f && volt_circle_pu >= 0.0f);
+    gmp_ctl_assert(mc && volt_rect_pu >= 0.0f && volt_circle_pu >= 0.0f);
     mc->max_vs_rect = float2ctrl(volt_rect_pu);
     mc->max_vs_mag = float2ctrl(volt_circle_pu);
     mc->max_vs_mag_sq = ctl_mul(mc->max_vs_mag, mc->max_vs_mag);
@@ -39,8 +39,8 @@ void ctl_autotune_and_init_im_ifoc_consultant(im_ifoc_ctrl_t* mc, const ctl_cons
     parameter_gt voltage_limit_pu;
     parameter_gt ff_scale;
 
-    gmp_base_assert(mc && motor && pu);
-    gmp_base_assert(pu->V_s_base > 0.0f && pu->I_s_base > 0.0f && pu->W_base > 0.0f);
+    gmp_ctl_assert(mc && motor && pu);
+    gmp_ctl_assert(pu->V_s_base > 0.0f && pu->I_s_base > 0.0f && pu->W_base > 0.0f);
     if (bw <= 0.0f) bw = fs_safe / (9.0f * CTL_PARAM_CONST_PI);
     omega_bw = CTL_PARAM_CONST_2PI * bw;
     gain_scale = pu->I_s_base / pu->V_s_base;
@@ -88,7 +88,7 @@ void ctl_autotune_and_init_im_ifoc(im_ifoc_ctrl_t* mc, const im_ifoc_init_t* ini
     ctl_consultant_im_t motor;
     ctl_consultant_pu_im_t pu;
     parameter_gt omega_base;
-    gmp_base_assert(mc && init);
+    gmp_ctl_assert(mc && init);
     omega_base = (init->freq_base > 0.0f)
                      ? CTL_PARAM_CONST_2PI * init->freq_base
                      : init->spd_base * 1000.0f * CTL_PARAM_CONST_PI / 30.0f * init->pole_pairs;

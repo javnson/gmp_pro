@@ -12,6 +12,7 @@
 #ifndef _FILE_PNO_ALGORITHM_H_
 #define _FILE_PNO_ALGORITHM_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <ctl/component/intrinsic/basic/divider.h>
 

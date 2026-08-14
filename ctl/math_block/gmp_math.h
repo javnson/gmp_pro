@@ -11,12 +11,34 @@
  * It handles the selection of the underlying numerical representation (e.g.,
  * float, double, fixed-point) based on project-level definitions and
  * includes all necessary math modules.
+ *
+ * This header is deliberately independent from gmp_core.h.  It only consumes
+ * GMP's configuration/type contract, so control algorithms do not pull in
+ * CSP, peripheral services, lifecycle hooks, or the GMP runtime framework.
  */
 
 #ifndef _FILE_GMP_CTL_MATH_H_
 #define _FILE_GMP_CTL_MATH_H_
 
-#include <gmp_core.h>
+#if defined(GMP_CTL_PORTABLE)
+#include <ctl/portable/gmp_ctl_portable.h>
+#else
+#include <gmp_type.h>
+#endif
+
+#include <ctl/ctl.config.h>
+
+/* CTL assertions are part of the algorithm contract, not the GMP runtime.
+ * Full GMP builds may define this macro in gmp_base.h before reaching this
+ * header; standalone math builds use the standard assertion service exposed
+ * by gmp_type.h (or by the portable contract). */
+#ifndef gmp_ctl_assert
+#if defined(DISABLE_CTL_LIB_ASSERT)
+#define gmp_ctl_assert(assert_condition) ((void)(assert_condition))
+#else
+#define gmp_ctl_assert(assert_condition) assert(assert_condition)
+#endif
+#endif
 
 /**
  * @defgroup CTL_MATH Control Math Library

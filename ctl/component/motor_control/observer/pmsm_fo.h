@@ -18,6 +18,7 @@
 #ifndef _FILE_PMSM_FO_H_
 #define _FILE_PMSM_FO_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <ctl/component/motor_control/consultant/pmsm_consultant.h>

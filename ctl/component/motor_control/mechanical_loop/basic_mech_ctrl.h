@@ -10,6 +10,7 @@
 #ifndef _FILE_MECH_CTRL_H_
 #define _FILE_MECH_CTRL_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl/component/intrinsic/basic/slope_limiter.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>
@@ -223,13 +224,13 @@ GMP_STATIC_INLINE void ctl_step_mech_ctrl(ctl_mech_ctrl_t* ctrl)
 
     if (ctl_step_divider(&ctrl->div_mech))
     {
-        gmp_base_assert(ctrl->spd_if != NULL);
+        gmp_ctl_assert(ctrl->spd_if != NULL);
 
         ctrl_gt vel_cmd_pu = ctrl->target_velocity;
 
         if (ctrl->active_mode == MECH_MODE_POSITION)
         {
-            gmp_base_assert(ctrl->pos_if != NULL);
+            gmp_ctl_assert(ctrl->pos_if != NULL);
 
             ctrl_gt pos_error_pu = ctl_calc_position_error(ctrl->target_revs, ctrl->target_angle, ctrl->pos_if);
             vel_cmd_pu = ctl_step_pid_par(&ctrl->pos_ctrl, pos_error_pu);
@@ -255,13 +256,13 @@ GMP_STATIC_INLINE void ctl_step_mech_ctrl_pip(ctl_mech_ctrl_t* ctrl)
 
     if (ctl_step_divider(&ctrl->div_mech))
     {
-        gmp_base_assert(ctrl->spd_if != NULL);
+        gmp_ctl_assert(ctrl->spd_if != NULL);
 
         ctrl_gt vel_cmd_pu = ctrl->target_velocity;
 
         if (ctrl->active_mode == MECH_MODE_POSITION)
         {
-            gmp_base_assert(ctrl->pos_if != NULL);
+            gmp_ctl_assert(ctrl->pos_if != NULL);
 
             ctrl_gt pos_error_pu = ctl_calc_position_error(ctrl->target_revs, ctrl->target_angle, ctrl->pos_if);
             vel_cmd_pu = ctl_step_pid_par(&ctrl->pos_ctrl, pos_error_pu);

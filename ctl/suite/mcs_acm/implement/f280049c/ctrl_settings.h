@@ -4,11 +4,11 @@
 
 
 // invoke motor parameters
-#include <ctl/component/motor_control/motor_preset/ACM_4P24V.h>
+#include <ctl/component/hardware_preset/acm_motor/ACM_4P24V.h>
 
 // invoke motor controller parameters
-#include <ctl/component/motor_control/controller_preset/GMP_3PH_2136SINV_DUAL.h>
-//#include <ctl/component/motor_control/controller_preset/TI_3PH_GAN_INV.h>
+#include <ctl/component/hardware_preset/inverter_3ph/GMP_3PH_2136SINV_DUAL.h>
+//#include <ctl/component/hardware_preset/inverter_3ph/TI_3PH_GAN_INV.h>
 
 
 // Controller Frequency, unit Hz

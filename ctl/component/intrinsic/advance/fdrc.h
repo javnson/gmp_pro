@@ -76,6 +76,7 @@
  * @copyright Copyright GMP(c) 2024-2026
  */
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/discrete/biquad_filter.h>
 
 #ifndef _RC_CONTROLLER_H_

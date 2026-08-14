@@ -8,7 +8,7 @@
  * @copyright Copyright GMP(c) 2024
  *
  */
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <math.h>
 
@@ -19,7 +19,7 @@
 
 void ctl_init_lp_filter(ctl_low_pass_filter_t* lpf, parameter_gt fs, parameter_gt fc)
 {
-    gmp_base_assert(fs > 0.0f);
+    gmp_ctl_assert(fs > 0.0f);
 
     lpf->out = 0;
     lpf->a = ctl_helper_lp_filter(fs, fc);
@@ -27,8 +27,8 @@ void ctl_init_lp_filter(ctl_low_pass_filter_t* lpf, parameter_gt fs, parameter_g
 
 void ctl_init_filter_iir1_lpf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt fc)
 {
-    gmp_base_assert(fs > 0.0f);
-    gmp_base_assert(fc < fs / 2.0f); // 奈奎斯特极限保护
+    gmp_ctl_assert(fs > 0.0f);
+    gmp_ctl_assert(fc < fs / 2.0f); // 奈奎斯特极限保护
 
     parameter_gt K = tanf(CTL_PARAM_CONST_PI * fc / fs);
     parameter_gt norm = 1.0f / (K + 1.0f);
@@ -40,8 +40,8 @@ void ctl_init_filter_iir1_lpf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter
 
 void ctl_init_filter_iir1_hpf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt fc)
 {
-    gmp_base_assert(fs > 0.0f);
-    gmp_base_assert(fc < fs / 2.0f);
+    gmp_ctl_assert(fs > 0.0f);
+    gmp_ctl_assert(fc < fs / 2.0f);
 
     parameter_gt K = tanf(CTL_PARAM_CONST_PI * fc / fs);
     parameter_gt norm = 1.0f / (K + 1.0f);
@@ -53,8 +53,8 @@ void ctl_init_filter_iir1_hpf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter
 
 void ctl_init_filter_iir1_apf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt fc)
 {
-    gmp_base_assert(fs > 0.0f);
-    gmp_base_assert(fc < fs / 2.0f);
+    gmp_ctl_assert(fs > 0.0f);
+    gmp_ctl_assert(fc < fs / 2.0f);
 
     parameter_gt K = tanf(CTL_PARAM_CONST_PI * fc / fs);
     parameter_gt norm = 1.0f / (K + 1.0f);
@@ -78,8 +78,8 @@ void ctl_init_filter_iir1_apf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter
  */
 void ctl_init_filter_iir1_lag(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt fc)
 {
-    gmp_base_assert(fs > 0.0f);
-    gmp_base_assert(fc >= 0.0f);
+    gmp_ctl_assert(fs > 0.0f);
+    gmp_ctl_assert(fc >= 0.0f);
 
     // Calculate the filter coefficient a = 2 * pi * fc / fs
     parameter_gt a_val = fc * CTL_PARAM_CONST_2PI / fs;

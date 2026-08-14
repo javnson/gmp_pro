@@ -12,6 +12,8 @@
 #ifndef _PROPORTIONAL_RESONANT_H_
 #define _PROPORTIONAL_RESONANT_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 #ifdef __cplusplus
 extern "C"
 {

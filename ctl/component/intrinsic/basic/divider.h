@@ -12,6 +12,8 @@
 #ifndef _DIVIDER_H_
 #define _DIVIDER_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 #ifdef __cplusplus
 extern "C"
 {

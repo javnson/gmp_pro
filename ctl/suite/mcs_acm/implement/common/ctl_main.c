@@ -55,13 +55,7 @@ volatile fast_gt flag_enable_system = 0;
 void ctl_init()
 {
     // setup ADC calibrate
-    ctl_filter_IIR2_setup_t adc_calibrator_filter;
-    adc_calibrator_filter.filter_type = FILTER_IIR2_TYPE_LOWPASS;
-    adc_calibrator_filter.fc = 20;
-    adc_calibrator_filter.fs = CONTROLLER_FREQUENCY;
-    adc_calibrator_filter.gain = 1;
-    adc_calibrator_filter.q = 0.707f;
-    ctl_init_adc_calibrator(&adc_calibrator, &adc_calibrator_filter);
+    ctl_init_adc_calibrator(&adc_calibrator, 20.0f, 0.707f, CONTROLLER_FREQUENCY);
 
 #ifdef PMSM_CTRL_USING_QEP_ENCODER
     // init Auto - turn encoder

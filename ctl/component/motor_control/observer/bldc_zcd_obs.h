@@ -18,6 +18,7 @@
  * @copyright Copyright GMP(c) 2024
  */
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <ctl/component/motor_control/interface/encoder.h>
 

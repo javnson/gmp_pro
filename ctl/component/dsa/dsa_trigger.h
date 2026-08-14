@@ -10,6 +10,7 @@
  *
  */
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl/math_block/utilities/mem_view.h>
 

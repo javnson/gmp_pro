@@ -12,6 +12,8 @@
 #ifndef _FILE_PROTECTION_STRATEGY_H_
 #define _FILE_PROTECTION_STRATEGY_H_
 
+#include <ctl/math_block/gmp_math.h>
+#include <ctl/component/interface/interface_base.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 
 #ifdef __cplusplus

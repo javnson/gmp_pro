@@ -1,4 +1,5 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
+#include <ctl/component/intrinsic/protection/pt100x.h>
 
 /**
  * @brief Initializes a PT-series temperature protection node.

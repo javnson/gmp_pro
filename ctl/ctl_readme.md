@@ -30,7 +30,7 @@ If you need to create a `ctrl_gt` type variable, you should use `float2ctrl(x)` 
 ctrl_gt a_fixed_point_number = float2ctrl(1.0f);
 ```
 
-In addition, `ctrl_gt` has plus (`+`) and minus (`-`) operation with other types, but user may do not use the product (`*`) and divisions (`/`) directly. User should use `gmp_mpy` function and `gmp_div` function instead. These definitions would be found in `ctl/component/common/gmp_math.h` file.
+In addition, `ctrl_gt` has plus (`+`) and minus (`-`) operation with other types, but user may do not use the product (`*`) and divisions (`/`) directly. User should use `gmp_mpy` function and `gmp_div` function instead. These definitions would be found in `ctl/math_block/gmp_math.h` file.
 
 `parameter_gt` means parameter containing type. for micro processor this type is at least a float number. For some high performance micro processor this type may be double. This type may use to save the source parameters of the controller, and the controller initialization function may use these variables to initialize the controller parameters. All the variables with `paramete_gt` type may support all the math operation which float number owned.
 

@@ -7,6 +7,7 @@
  *
  */
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/math_block/vector_lite/vector2.h>
 #include <ctl/component/intrinsic/advance/paired_lut1d.h>
 #include <ctl/component/intrinsic/continuous/continuous_pid.h>

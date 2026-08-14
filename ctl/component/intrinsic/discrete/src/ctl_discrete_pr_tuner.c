@@ -3,7 +3,7 @@
  * @brief Realization of standardized tuning conversion, verification, and backward decompilation.
  */
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/intrinsic/discrete/proportional_resonant_tuner.h>
 
@@ -13,14 +13,14 @@
 
 void ctl_tune_resonant_compile(ctl_resonant_tuner_t* tuner, parameter_gt fs)
 {
-    gmp_base_assert(tuner != NULL);
+    gmp_ctl_assert(tuner != NULL);
     ctl_calc_resonant_ctrl_coef(&tuner->shadow_coef, tuner->target_kr, tuner->target_freq_resonant, fs);
     tuner->flag_update_pending = 1;
 }
 
 void ctl_tune_resonant(ctl_resonant_tuner_t* tuner, parameter_gt kr, parameter_gt freq_resonant, parameter_gt fs)
 {
-    gmp_base_assert(tuner != NULL);
+    gmp_ctl_assert(tuner != NULL);
     tuner->target_kr = kr;
     tuner->target_freq_resonant = freq_resonant;
     ctl_tune_resonant_compile(tuner, fs);
@@ -28,9 +28,9 @@ void ctl_tune_resonant(ctl_resonant_tuner_t* tuner, parameter_gt kr, parameter_g
 
 void ctl_init_resonant_tuner_from_ctrl(ctl_resonant_tuner_t* tuner, const resonant_ctrl_t* active_ctrl, parameter_gt fs)
 {
-    gmp_base_assert(tuner != NULL);
-    gmp_base_assert(active_ctrl != NULL);
-    gmp_base_assert(fs > 0.0f);
+    gmp_ctl_assert(tuner != NULL);
+    gmp_ctl_assert(active_ctrl != NULL);
+    gmp_ctl_assert(fs > 0.0f);
 
     parameter_gt float_a1 = ctrl2float(active_ctrl->coef.a1);
     parameter_gt float_a2 = ctrl2float(active_ctrl->coef.a2);
@@ -68,8 +68,8 @@ void ctl_init_resonant_tuner_from_ctrl(ctl_resonant_tuner_t* tuner, const resona
 void ctl_init_tunable_resonant_controller(resonant_ctrl_t* r, ctl_resonant_tuner_t* tuner, parameter_gt kr,
                                           parameter_gt freq_resonant, parameter_gt fs)
 {
-    gmp_base_assert(r != NULL);
-    gmp_base_assert(tuner != NULL);
+    gmp_ctl_assert(r != NULL);
+    gmp_ctl_assert(tuner != NULL);
 
     ctl_tune_resonant(tuner, kr, freq_resonant, fs);
     r->coef = tuner->shadow_coef;
@@ -83,8 +83,8 @@ void ctl_init_tunable_resonant_controller(resonant_ctrl_t* r, ctl_resonant_tuner
 
 void ctl_tune_qr_compile(ctl_qr_tuner_t* tuner, parameter_gt fs)
 {
-    gmp_base_assert(tuner != NULL);
-    gmp_base_assert(fs > 0.0f);
+    gmp_ctl_assert(tuner != NULL);
+    gmp_ctl_assert(fs > 0.0f);
 
     /* 1. Rigid Nyquist Guardrails Enforcement for QR Tuning Targets */
     if ((tuner->target_freq_resonant <= 0.0f) || (tuner->target_freq_resonant >= (fs * 0.5f)) ||
@@ -118,7 +118,7 @@ void ctl_tune_qr_compile(ctl_qr_tuner_t* tuner, parameter_gt fs)
 void ctl_tune_qr(ctl_qr_tuner_t* tuner, parameter_gt kr, parameter_gt freq_resonant, parameter_gt freq_cut,
                  ctl_tune_qr_mode_e mode, parameter_gt fs)
 {
-    gmp_base_assert(tuner != NULL);
+    gmp_ctl_assert(tuner != NULL);
 
     tuner->target_kr = kr;
     tuner->target_freq_resonant = freq_resonant;
@@ -131,9 +131,9 @@ void ctl_tune_qr(ctl_qr_tuner_t* tuner, parameter_gt kr, parameter_gt freq_reson
 void ctl_init_qr_tuner_from_ctrl(ctl_qr_tuner_t* tuner, const qr_ctrl_t* active_ctrl, ctl_tune_qr_mode_e mode,
                                  parameter_gt fs)
 {
-    gmp_base_assert(tuner != NULL);
-    gmp_base_assert(active_ctrl != NULL);
-    gmp_base_assert(fs > 0.0f);
+    gmp_ctl_assert(tuner != NULL);
+    gmp_ctl_assert(active_ctrl != NULL);
+    gmp_ctl_assert(fs > 0.0f);
 
     parameter_gt float_b0 = ctrl2float(active_ctrl->coef.b0);
     parameter_gt float_b2 = ctrl2float(active_ctrl->coef.b2);
@@ -212,8 +212,8 @@ void ctl_init_qr_tuner_from_ctrl(ctl_qr_tuner_t* tuner, const qr_ctrl_t* active_
 void ctl_init_tunable_qr_controller(qr_ctrl_t* r, ctl_qr_tuner_t* tuner, parameter_gt kr, parameter_gt freq_resonant,
                                     parameter_gt freq_cut, ctl_tune_qr_mode_e mode, parameter_gt fs)
 {
-    gmp_base_assert(r != NULL);
-    gmp_base_assert(tuner != NULL);
+    gmp_ctl_assert(r != NULL);
+    gmp_ctl_assert(tuner != NULL);
 
     ctl_tune_qr(tuner, kr, freq_resonant, freq_cut, mode, fs);
     r->coef = tuner->shadow_coef;

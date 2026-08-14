@@ -1,4 +1,4 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 //////////////////////////////////////////////////////////////////////////
 // Discrete PID controller
@@ -48,7 +48,7 @@ void ctl_init_discrete_pid(
     // sample frequency, unit Hz
     parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0);
+    gmp_ctl_assert(fs > 0.0);
 
     pid->input = 0;
     pid->input_1 = 0;

@@ -13,7 +13,7 @@
 #include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl/component/motor_control/interface/encoder.h>
 #include <ctl/math_block/gmp_math.h>
-#include <gmp_core.h> // 引入断言支持
+#include <ctl/math_block/gmp_math.h> // 引入断言支持
 
 #ifdef __cplusplus
 extern "C"
@@ -163,8 +163,8 @@ GMP_STATIC_INLINE void ctl_step_mit_pos_ctrl(ctl_mit_pos_ctrl_t* ctrl, int32_t t
 
     if (ctl_step_divider(&ctrl->div_mech))
     {
-        gmp_base_assert(ctrl->pos_if != NULL);
-        gmp_base_assert(ctrl->spd_if != NULL);
+        gmp_ctl_assert(ctrl->pos_if != NULL);
+        gmp_ctl_assert(ctrl->spd_if != NULL);
 
         // 1. Safe Position Error Calculation (PU)
         ctrl_gt pos_err_pu = ctl_calc_position_error(target_revs, target_angle_pu, ctrl->pos_if);

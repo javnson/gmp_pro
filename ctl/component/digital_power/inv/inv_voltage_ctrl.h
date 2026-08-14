@@ -6,6 +6,7 @@
 #ifndef _FILE_DP_INV_VOLTAGE_CTRL_H_
 #define _FILE_DP_INV_VOLTAGE_CTRL_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 
 #include <ctl/component/interface/interface_base.h>
@@ -95,7 +96,7 @@ GMP_STATIC_INLINE void ctl_clear_voltage_inv(inv_voltage_ctrl_t* voltage)
  */
 GMP_STATIC_INLINE void ctl_step_voltage_inv_ctrl(inv_voltage_ctrl_t* voltage)
 {
-    gmp_base_assert(voltage);
+    gmp_ctl_assert(voltage);
 
     if (!voltage->flag_enable)
     {
@@ -108,9 +109,9 @@ GMP_STATIC_INLINE void ctl_step_voltage_inv_ctrl(inv_voltage_ctrl_t* voltage)
         return;
     }
 
-    gmp_base_assert(voltage->vab);
-    gmp_base_assert(voltage->phasor);
-    gmp_base_assert(voltage->idq_sink);
+    gmp_ctl_assert(voltage->vab);
+    gmp_ctl_assert(voltage->phasor);
+    gmp_ctl_assert(voltage->idq_sink);
 
     ctl_ct_park2(voltage->vab, voltage->phasor, &voltage->vdq);
 
@@ -172,7 +173,7 @@ GMP_STATIC_INLINE void ctl_step_voltage_inv_ctrl(inv_voltage_ctrl_t* voltage)
 GMP_STATIC_INLINE void ctl_attach_voltage_inv(inv_voltage_ctrl_t* voltage, ctl_vector2_t* vab,
                                               ctl_vector2_t* phasor, ctl_vector2_t* idq_sink)
 {
-    gmp_base_assert(voltage);
+    gmp_ctl_assert(voltage);
     voltage->vab = vab;
     voltage->phasor = phasor;
     voltage->idq_sink = idq_sink;
@@ -186,7 +187,7 @@ GMP_STATIC_INLINE void ctl_attach_voltage_inv(inv_voltage_ctrl_t* voltage, ctl_v
  */
 GMP_STATIC_INLINE void ctl_attach_voltage_inv_to_gfl(inv_voltage_ctrl_t* voltage, gfl_inv_ctrl_t* current)
 {
-    gmp_base_assert(current);
+    gmp_ctl_assert(current);
     ctl_attach_voltage_inv(voltage, (ctl_vector2_t*)&current->vab0, &current->phasor, &current->idq_set);
 }
 
@@ -218,13 +219,13 @@ GMP_STATIC_INLINE void ctl_disable_voltage_inv_decouple(inv_voltage_ctrl_t* volt
 
 GMP_STATIC_INLINE void ctl_set_voltage_inv_circle_limit(inv_voltage_ctrl_t* voltage, ctrl_gt limit)
 {
-    gmp_base_assert(limit >= float2ctrl(0.0f));
+    gmp_ctl_assert(limit >= float2ctrl(0.0f));
     voltage->current_circle_limit = limit;
 }
 
 GMP_STATIC_INLINE void ctl_set_voltage_inv_square_limit(inv_voltage_ctrl_t* voltage, ctrl_gt limit)
 {
-    gmp_base_assert(limit >= float2ctrl(0.0f));
+    gmp_ctl_assert(limit >= float2ctrl(0.0f));
     voltage->current_square_limit = limit;
 }
 

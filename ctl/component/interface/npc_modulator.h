@@ -19,6 +19,8 @@
 #ifndef _FILE_THREE_PHASE_NPC_MODULATION_H_
 #define _FILE_THREE_PHASE_NPC_MODULATION_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -177,7 +179,7 @@ GMP_STATIC_INLINE int get_current_zone(ctrl_gt i_sample, ctrl_gt deadband, ctrl_
  */
 GMP_STATIC_INLINE void ctl_step_npc_modulator(npc_modulator_t* mod)
 {
-    gmp_base_assert(mod);
+    gmp_ctl_assert(mod);
 
     int i;
 
@@ -293,7 +295,7 @@ GMP_STATIC_INLINE void ctl_step_npc_modulator(npc_modulator_t* mod)
  */
 GMP_STATIC_INLINE void ctl_step_npc_svpwm_modulator(npc_modulator_t* mod)
 {
-    gmp_base_assert(mod);
+    gmp_ctl_assert(mod);
 
     int i;
 

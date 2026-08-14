@@ -19,8 +19,7 @@
 
 // Basic headers
 #include <ctl/component/intrinsic/basic/divider.h>
-#include <ctl_main.h>
-#include <gmp_core.h>
+#include <core/base/gmp_base.h>
 
 #ifdef __cplusplus
 extern "C"

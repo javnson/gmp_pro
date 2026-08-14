@@ -1,5 +1,5 @@
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 //////////////////////////////////////////////////////////////////////////
 // Sag - Swell
@@ -10,7 +10,7 @@ void ctl_init_voltage_event_detector(ctl_voltage_event_detector_t* ved, paramete
                                      parameter_gt swell_threshold, parameter_gt sag_delay_ms,
                                      parameter_gt swell_delay_ms, parameter_gt nominal_freq, parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0f); // 防呆保护
+    gmp_ctl_assert(fs > 0.0f); // 防呆保护
 
     // Initialize the SOGI. A damping factor of sqrt(2) is a common choice.
     const parameter_gt SOGI_DAMPING_FACTOR = CTL_PARAM_CONST_SQRT2;

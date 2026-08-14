@@ -1,4 +1,4 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 //////////////////////////////////////////////////////////////////////////
 // Lead Lag controller
@@ -7,7 +7,7 @@
 
 void ctl_init_lead(ctrl_lead_t* obj, parameter_gt K_D, parameter_gt tau_D, parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0f); // 防呆保护
+    gmp_ctl_assert(fs > 0.0f); // 防呆保护
 
     // Sampling period (Unified to Ts)
     parameter_gt Ts = 1.0f / fs;
@@ -43,7 +43,7 @@ void ctl_init_lead(ctrl_lead_t* obj, parameter_gt K_D, parameter_gt tau_D, param
 
 void ctl_init_lead_form2(ctrl_lead_t* obj, parameter_gt alpha, parameter_gt T, parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0f);
+    gmp_ctl_assert(fs > 0.0f);
 
     // Sampling period
     parameter_gt Ts = 1.0f / fs;
@@ -112,7 +112,7 @@ void ctl_init_lead_form3(ctrl_lead_t* obj, parameter_gt theta_rad, parameter_gt 
 
 void ctl_init_lag(ctrl_lag_t* obj, parameter_gt tau_L, parameter_gt tau_P, parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0f);
+    gmp_ctl_assert(fs > 0.0f);
 
     // Sampling period
     parameter_gt Ts = 1.0f / fs;

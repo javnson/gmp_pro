@@ -9,6 +9,7 @@
  *
  */
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/discrete/biquad_filter.h>
 
 #ifndef _REPETITIVE_CONTROLLER_H_

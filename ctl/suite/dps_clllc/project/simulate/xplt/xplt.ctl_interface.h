@@ -3,6 +3,11 @@
 #define DPS_CLLLC_SIM_CTL_INTERFACE_H
 #include <xplt.peripheral.h>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 enum { CLLLC_ADC_VPRI, CLLLC_ADC_IPRI, CLLLC_ADC_VSEC,
        CLLLC_ADC_ISEC, CLLLC_ADC_IRESONANT };
 extern fast_gt g_clllc_sim_enable_pending;
@@ -48,4 +53,8 @@ GMP_STATIC_INLINE void ctl_fast_disable_output(void)
     g_clllc_sim_enable_pending = 0;
     csp_sl_disable_output();
 }
+
+#ifdef __cplusplus
+}
+#endif
 #endif

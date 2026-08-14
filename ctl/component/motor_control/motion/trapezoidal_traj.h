@@ -12,7 +12,7 @@
 #include <ctl/component/intrinsic/basic/divider.h>
 #include <ctl/component/motor_control/interface/encoder.h>
 #include <ctl/math_block/gmp_math.h>
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -101,9 +101,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_calc_pure_pos_err(int32_t t_revs, ctrl_gt t_ang, i
 GMP_STATIC_INLINE void ctl_attach_trap_planner(ctl_trap_planner_t* planner, rotation_ift* pos_if,
                                                ctl_divider_t* div_shared)
 {
-    gmp_base_assert(pos_if != NULL);
-    gmp_base_assert(div_shared != NULL);
-    gmp_base_assert(div_shared->target >= 3);
+    gmp_ctl_assert(pos_if != NULL);
+    gmp_ctl_assert(div_shared != NULL);
+    gmp_ctl_assert(div_shared->target >= 3);
 
     planner->pos_if = pos_if;
     planner->div_shared = div_shared;

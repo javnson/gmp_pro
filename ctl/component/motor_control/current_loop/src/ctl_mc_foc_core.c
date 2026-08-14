@@ -3,7 +3,7 @@
  * @brief Initialization and auto-tuning for the PMSM FOC current loop.
  */
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/motor_control/current_loop/foc_core.h>
 
 static void ctl_auto_tuning_foc_core_common(mc_foc_init_t* init)
@@ -13,8 +13,8 @@ static void ctl_auto_tuning_foc_core_common(mc_foc_init_t* init)
     parameter_gt filter_delay;
     ctl_filter_IIR1_t temp_filter;
 
-    gmp_base_assert(init);
-    gmp_base_assert(init->fs > 0.0f);
+    gmp_ctl_assert(init);
+    gmp_ctl_assert(init->fs > 0.0f);
 
     init->current_adc_fc = init->fs / 3.0f;
     init->voltage_adc_fc = init->fs / 3.0f;
@@ -33,9 +33,9 @@ void ctl_auto_tuning_foc_core_pi(mc_foc_init_t* init)
     parameter_gt gain_scale;
 
     ctl_auto_tuning_foc_core_common(init);
-    gmp_base_assert(init->v_base > 0.0f);
-    gmp_base_assert(init->mtr_Ld > 0.0f);
-    gmp_base_assert(init->mtr_Lq > 0.0f);
+    gmp_ctl_assert(init->v_base > 0.0f);
+    gmp_ctl_assert(init->mtr_Ld > 0.0f);
+    gmp_ctl_assert(init->mtr_Lq > 0.0f);
 
     omega_bw = init->current_loop_bw * CTL_PARAM_CONST_2PI;
     gain_scale = init->i_base / init->v_base;
@@ -50,9 +50,9 @@ void ctl_auto_tuning_foc_core_pi(mc_foc_init_t* init)
 void ctl_auto_tuning_foc_core_ladrc1(mc_foc_init_t* init)
 {
     ctl_auto_tuning_foc_core_common(init);
-    gmp_base_assert(init->i_base > 0.0f);
-    gmp_base_assert(init->mtr_Ld > 0.0f);
-    gmp_base_assert(init->mtr_Lq > 0.0f);
+    gmp_ctl_assert(init->i_base > 0.0f);
+    gmp_ctl_assert(init->mtr_Ld > 0.0f);
+    gmp_ctl_assert(init->mtr_Lq > 0.0f);
 
     /* di_pu/dt = Vbase/(Ibase*L) * u_pu + total disturbance. */
     init->ladrc_b0d = init->v_base / (init->i_base * init->mtr_Ld);
@@ -78,8 +78,8 @@ static void ctl_init_foc_core_common(mc_foc_core_t* mc, const mc_foc_init_t* ini
     parameter_gt omega_base_elec;
     parameter_gt scale_fac;
 
-    gmp_base_assert(mc);
-    gmp_base_assert(init);
+    gmp_ctl_assert(mc);
+    gmp_ctl_assert(init);
 
     for (i = 0; i < 3; ++i)
         ctl_init_filter_iir1_lpf(&mc->filter_iuvw[i], init->fs, init->current_adc_fc);
@@ -187,8 +187,8 @@ void ctl_set_foc_core_saturation(mc_foc_core_t* mc, parameter_gt volt_rect_satur
     ctl_vector2_t limit_max;
     ctl_vector2_t limit_min;
 
-    gmp_base_assert(volt_rect_saturation >= 0.0f);
-    gmp_base_assert(volt_cir_saturation >= 0.0f);
+    gmp_ctl_assert(volt_rect_saturation >= 0.0f);
+    gmp_ctl_assert(volt_cir_saturation >= 0.0f);
     mc->max_vs_rect = float2ctrl(volt_rect_saturation);
     mc->max_vs_mag = float2ctrl(volt_cir_saturation);
     mc->max_vs_mag_sq = ctl_mul(mc->max_vs_mag, mc->max_vs_mag);

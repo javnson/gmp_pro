@@ -1,4 +1,4 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 //////////////////////////////////////////////////////////////////////////
 // repetitive controller
@@ -7,10 +7,10 @@
 void ctl_init_rc(ctl_rc_t* obj, ctrl_gt* buffer, uint32_t capacity, parameter_gt fs, parameter_gt f_min,
                  parameter_gt q_gain, parameter_gt k_rc, int32_t phase_lead_k)
 {
-    gmp_base_assert(buffer != NULL);
-    gmp_base_assert(fs > 0.0f);
-    gmp_base_assert(f_min > 0.0f);
-    gmp_base_assert(capacity >= CTL_RC_CALC_MIN_CAPACITY(fs, f_min));
+    gmp_ctl_assert(buffer != NULL);
+    gmp_ctl_assert(fs > 0.0f);
+    gmp_ctl_assert(f_min > 0.0f);
+    gmp_ctl_assert(capacity >= CTL_RC_CALC_MIN_CAPACITY(fs, f_min));
 
     obj->buffer = buffer;
     obj->buffer_capacity = capacity;
@@ -35,12 +35,12 @@ void ctl_init_fdrc(ctl_fdrc_t* obj, ctrl_gt* buffer, uint32_t capacity, paramete
                    parameter_gt q_fc, parameter_gt k_rc, int32_t phase_lead_k)
 {
     // Memory and validity assertions
-    gmp_base_assert(buffer != NULL);
-    gmp_base_assert(fs > 0.0f);
-    gmp_base_assert(f_min > 0.0f);
+    gmp_ctl_assert(buffer != NULL);
+    gmp_ctl_assert(fs > 0.0f);
+    gmp_ctl_assert(f_min > 0.0f);
 
     // Ensure the provided capacity is physically large enough to hold the lowest frequency cycle
-    gmp_base_assert(capacity >= CTL_RC_CALC_MIN_CAPACITY(fs, f_min));
+    gmp_ctl_assert(capacity >= CTL_RC_CALC_MIN_CAPACITY(fs, f_min));
 
     // Configure structural parameters
     obj->buffer = buffer;

@@ -1,6 +1,6 @@
 
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/motor_control/consultant/inverter_consultant.h>
 
@@ -12,12 +12,12 @@ void ctl_consultant_inverter_init(ctl_consultant_inverter_t* inv, parameter_gt v
 {
     // 1. Strict Hardware Validation (Gatekeeper)
     // Prevent lethal configuration errors (e.g., 0Hz control frequency)
-    gmp_base_assert(v_bus_nom > 0.0f);
-    gmp_base_assert(i_max_peak > 0.0f);
-    gmp_base_assert(f_pwm > 0.0f);
-    gmp_base_assert(f_ctrl > 0.0f);
-    gmp_base_assert(dt_sec >= 0.0f);
-    gmp_base_assert(m_max > 0.0f && m_max <= 1.0f); // Modulation index typically bounded
+    gmp_ctl_assert(v_bus_nom > 0.0f);
+    gmp_ctl_assert(i_max_peak > 0.0f);
+    gmp_ctl_assert(f_pwm > 0.0f);
+    gmp_ctl_assert(f_ctrl > 0.0f);
+    gmp_ctl_assert(dt_sec >= 0.0f);
+    gmp_ctl_assert(m_max > 0.0f && m_max <= 1.0f); // Modulation index typically bounded
 
     // 2. Base Parameter Assignment
     inv->nominal_v_bus = v_bus_nom;

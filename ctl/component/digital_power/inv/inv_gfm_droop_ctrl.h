@@ -6,6 +6,7 @@
 #ifndef _FILE_DP_INV_GFM_DROOP_CTRL_H_
 #define _FILE_DP_INV_GFM_DROOP_CTRL_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/basic/saturation.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
@@ -75,7 +76,7 @@ GMP_STATIC_INLINE void ctl_clear_inv_gfm_droop(inv_gfm_droop_ctrl_t* droop)
 GMP_STATIC_INLINE void ctl_attach_inv_gfm_droop(inv_gfm_droop_ctrl_t* droop,
                                                  ctl_vector2_t* vdq, ctl_vector2_t* idq)
 {
-    gmp_base_assert(droop);
+    gmp_ctl_assert(droop);
     droop->vdq = vdq;
     droop->idq = idq;
 }
@@ -102,9 +103,9 @@ GMP_STATIC_INLINE void ctl_step_inv_gfm_droop(inv_gfm_droop_ctrl_t* droop)
     ctrl_gt p_error;
     ctrl_gt q_error;
 
-    gmp_base_assert(droop);
-    gmp_base_assert(droop->vdq);
-    gmp_base_assert(droop->idq);
+    gmp_ctl_assert(droop);
+    gmp_ctl_assert(droop->vdq);
+    gmp_ctl_assert(droop->idq);
 
     droop->pq_inst.dat[0] =
         ctl_mul(droop->vdq->dat[phase_d], droop->idq->dat[phase_d]) +

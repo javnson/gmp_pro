@@ -16,6 +16,8 @@
 #ifndef _CTL_PROTECTION_H_
 #define _CTL_PROTECTION_H_
 
+#include <ctl/math_block/gmp_math.h>
+
 #ifdef __cplusplus
 extern "C"
 {

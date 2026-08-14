@@ -13,7 +13,7 @@
 #include <ctl/component/motor_control/interface/motor_universal_interface.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 #include <ctl/math_block/vector_lite/vector2.h>
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #ifdef __cplusplus
 extern "C"

@@ -16,6 +16,7 @@
 #ifndef _FILE_IM_IFOC_CORE_H_
 #define _FILE_IM_IFOC_CORE_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/complex/dq_pi.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <ctl/component/motor_control/consultant/acim_consultant.h>
@@ -108,7 +109,7 @@ GMP_STATIC_INLINE void ctl_attach_im_ifoc_port(im_ifoc_ctrl_t* mc, tri_adc_ift* 
                                                rotation_ift* field_position,
                                                velocity_ift* synchronous_speed)
 {
-    gmp_base_assert(mc && iuvw && udc && field_position);
+    gmp_ctl_assert(mc && iuvw && udc && field_position);
     mc->adc_iuvw = iuvw;
     mc->adc_udc = udc;
     mc->field_pos_if = field_position;
@@ -173,7 +174,7 @@ GMP_STATIC_INLINE void ctl_step_im_ifoc(im_ifoc_ctrl_t* mc)
     ctl_vector2_t limit_min;
     ctrl_gt v_scale = float2ctrl(1.0f);
 
-    gmp_base_assert(mc->adc_iuvw && mc->adc_udc && mc->field_pos_if);
+    gmp_ctl_assert(mc->adc_iuvw && mc->adc_udc && mc->field_pos_if);
     ++mc->isr_tick;
     ctl_set_phasor_via_angle(mc->field_pos_if->elec_position, &mc->phasor);
 
@@ -194,7 +195,7 @@ GMP_STATIC_INLINE void ctl_step_im_ifoc(im_ifoc_ctrl_t* mc)
     ctl_vector2_clear(&mc->vdq_decouple);
     if (mc->flag_enable_decouple)
     {
-        gmp_base_assert(mc->synchronous_spd_if);
+        gmp_ctl_assert(mc->synchronous_spd_if);
         mc->vdq_decouple.dat[phase_d] =
             -ctl_mul(mc->synchronous_spd_if->speed,
                      ctl_mul(mc->sf_dec_lsigma, mc->idq0.dat[phase_q]));

@@ -1149,7 +1149,7 @@ void buck_control() {
 #ifndef _MY_CUSTOM_CONTROLLER_H_
 #define _MY_CUSTOM_CONTROLLER_H_
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 // 数据结构定义
 typedef struct {

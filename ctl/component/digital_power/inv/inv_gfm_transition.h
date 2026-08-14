@@ -6,6 +6,7 @@
 #ifndef _FILE_DP_INV_GFM_TRANSITION_H_
 #define _FILE_DP_INV_GFM_TRANSITION_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/basic/saturation.h>
 #include <ctl/math_block/coordinate/coordinate.h>
 
@@ -49,7 +50,7 @@ GMP_STATIC_INLINE void ctl_attach_inv_gfm_transition(inv_gfm_transition_t* trans
                                                       ctrl_gt* pll_angle,
                                                       ctl_vector2_t* pll_phasor)
 {
-    gmp_base_assert(transition);
+    gmp_ctl_assert(transition);
     transition->pll_angle = pll_angle;
     transition->pll_phasor = pll_phasor;
 }
@@ -62,8 +63,8 @@ GMP_STATIC_INLINE void ctl_track_pll_inv_gfm_transition(inv_gfm_transition_t* tr
 
 GMP_STATIC_INLINE void ctl_request_forming_inv_gfm_transition(inv_gfm_transition_t* transition)
 {
-    gmp_base_assert(transition);
-    gmp_base_assert(transition->pll_angle);
+    gmp_ctl_assert(transition);
+    gmp_ctl_assert(transition->pll_angle);
     transition->angle_gfm = *transition->pll_angle;
     transition->blend = 0;
     transition->mode = INV_GFM_TRANSITION_RAMP;
@@ -79,10 +80,10 @@ GMP_STATIC_INLINE void ctl_blend_inv_gfm_transition(
     const inv_gfm_transition_t* transition, const ctl_vector2_t* tracking_command,
     const ctl_vector2_t* forming_command, ctl_vector2_t* output)
 {
-    gmp_base_assert(transition);
-    gmp_base_assert(tracking_command);
-    gmp_base_assert(forming_command);
-    gmp_base_assert(output);
+    gmp_ctl_assert(transition);
+    gmp_ctl_assert(tracking_command);
+    gmp_ctl_assert(forming_command);
+    gmp_ctl_assert(output);
     output->dat[0] =
         ctl_mul(float2ctrl(1.0f) - transition->blend, tracking_command->dat[0]) +
         ctl_mul(transition->blend, forming_command->dat[0]);
@@ -96,9 +97,9 @@ GMP_STATIC_INLINE void ctl_step_inv_gfm_transition(inv_gfm_transition_t* transit
 {
     ctl_vector2_t blended;
 
-    gmp_base_assert(transition);
-    gmp_base_assert(transition->pll_angle);
-    gmp_base_assert(transition->pll_phasor);
+    gmp_ctl_assert(transition);
+    gmp_ctl_assert(transition->pll_angle);
+    gmp_ctl_assert(transition->pll_phasor);
     transition->frequency_ref_hz = frequency_ref_hz;
 
     if (transition->mode == INV_GFM_TRANSITION_TRACK_PLL)

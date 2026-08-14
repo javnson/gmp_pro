@@ -1,4 +1,4 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -9,7 +9,7 @@
 void ctl_init_sogi(ctl_sogi_t* sogi, parameter_gt gain, parameter_gt freq_r, parameter_gt damp, parameter_gt fs)
 {
     // Error prevention engineering: guard against division by zero
-    gmp_base_assert(fs > 0.0f);
+    gmp_ctl_assert(fs > 0.0f);
 
     // Calculate the sampling period
     parameter_gt Ts = 1.0f / fs;

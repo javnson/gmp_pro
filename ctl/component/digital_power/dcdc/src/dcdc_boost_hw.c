@@ -3,7 +3,7 @@
  * @brief Analytical pole-placement tuning calculator incorporating resistive loading and Nyquist bypass bounds.
  */
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/digital_power/dcdc/boost.h>
 
@@ -27,10 +27,10 @@ static parameter_gt ctl_boost_calc_safe_fc(parameter_gt fs, parameter_gt target_
 
 parameter_gt ctl_boost_calc_rhp_zero(const ctl_boost_hardware_t* hw)
 {
-    gmp_base_assert(hw != NULL);
-    gmp_base_assert(hw->v_out_nominal > 0.0f);
-    gmp_base_assert(hw->L_henry > 0.0f);
-    gmp_base_assert(hw->R_load_min > 0.0f);
+    gmp_ctl_assert(hw != NULL);
+    gmp_ctl_assert(hw->v_out_nominal > 0.0f);
+    gmp_ctl_assert(hw->L_henry > 0.0f);
+    gmp_ctl_assert(hw->R_load_min > 0.0f);
 
     /* Compute maximum steady-state duty cycle D under worst-case minimum input voltage */
     /* V_in_min = (1 - D) * V_out_nominal -> (1 - D) = V_in_min / V_out_nominal */
@@ -47,10 +47,10 @@ parameter_gt ctl_boost_calc_rhp_zero(const ctl_boost_hardware_t* hw)
 
 void ctl_dcdc_blueprint_boost_cascade(ctl_dcdc_core_init_t* init_config, const ctl_boost_hardware_t* hw)
 {
-    gmp_base_assert(init_config != NULL);
-    gmp_base_assert(hw != NULL);
-    gmp_base_assert(hw->fs > 0.0f);
-    gmp_base_assert(hw->v_base > 0.0f && hw->i_base > 0.0f);
+    gmp_ctl_assert(init_config != NULL);
+    gmp_ctl_assert(hw != NULL);
+    gmp_ctl_assert(hw->fs > 0.0f);
+    gmp_ctl_assert(hw->v_base > 0.0f && hw->i_base > 0.0f);
 
     /* 1. Directly pipe system execution frequency */
     init_config->fs = hw->fs;

@@ -1,4 +1,4 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 
 #include <ctl/component/intrinsic/continuous/continuous_pi.h>
@@ -12,7 +12,7 @@ void ctl_init_pi_Tmode(
     // controller frequency
     parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0f);
+    gmp_ctl_assert(fs > 0.0f);
 
     hpi->kp = float2ctrl(kp);
 
@@ -44,7 +44,7 @@ void ctl_init_pi(
     // controller frequency
     parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0f);
+    gmp_ctl_assert(fs > 0.0f);
 
     hpi->kp = float2ctrl(kp);
     hpi->ki = float2ctrl(ki / fs);

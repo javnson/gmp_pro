@@ -25,6 +25,7 @@ extern "C"
 {
 #endif // __cplusplus
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
 
 #include <ctl/component/intrinsic/basic/saturation.h>

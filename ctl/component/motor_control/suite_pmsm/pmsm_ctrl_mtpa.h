@@ -9,8 +9,9 @@
 
 // Necessary support
 #include <ctl/component/interface/interface_base.h>
-#include <ctl/component/motor_control/basic/motor_universal_interface.h>
-#include <ctl/component/motor_control/current_loop/current_distributor.h>
+#include <ctl/component/intrinsic/continuous/continuous_pid.h>
+#include <ctl/component/motor_control/interface/motor_universal_interface.h>
+
 #include <ctl/math_block/coordinate/coord_trans.h>
 
 #ifdef PMSM_CTRL_USING_DISCRETE_CTRL
@@ -217,7 +218,9 @@ void ctl_attach_pmsm_mtpa_bare_output(pmsm_mtpa_controller_t* ctrl, tri_pwm_ift*
  * @param[out] ctrl        Pointer to the controller structure.
  * @param[in]  distributor Pointer to the initialized current distributor module.
  */
+#if defined(PMSM_CTRL_USING_CURRENT_DISTRIBUTOR)
 void ctl_attach_idq_distributor(pmsm_mtpa_controller_t* ctrl, ctl_current_distributor_t* distributor);
+#endif
 
 /**
  * @brief Resets all internal states and integrators of the PID controllers.

@@ -11,7 +11,7 @@
  * including the Three-Phase PLL and bridge modulation modules.
  */
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 #include <math.h>
 
 //////////////////////////////////////////////////////////////////////////

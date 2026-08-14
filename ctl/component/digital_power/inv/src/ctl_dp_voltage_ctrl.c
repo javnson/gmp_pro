@@ -1,13 +1,13 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/digital_power/inv/inv_voltage_ctrl.h>
 
 void ctl_auto_tuning_voltage_inv(inv_voltage_ctrl_init_t* voltage_init, const gfl_inv_ctrl_init_t* gfl_init)
 {
-    gmp_base_assert(voltage_init);
-    gmp_base_assert(gfl_init);
-    gmp_base_assert(gfl_init->fs > 0.0f);
-    gmp_base_assert(gfl_init->grid_filter_C > 0.0f);
+    gmp_ctl_assert(voltage_init);
+    gmp_ctl_assert(gfl_init);
+    gmp_ctl_assert(gfl_init->fs > 0.0f);
+    gmp_ctl_assert(gfl_init->grid_filter_C > 0.0f);
 
     voltage_init->fs = gfl_init->fs;
     voltage_init->freq_base = gfl_init->freq_base;
@@ -30,14 +30,14 @@ void ctl_update_voltage_inv_coeff(inv_voltage_ctrl_t* voltage, const inv_voltage
     parameter_gt ki;
     parameter_gt integral_limit;
 
-    gmp_base_assert(voltage);
-    gmp_base_assert(init);
-    gmp_base_assert(init->fs > 0.0f);
-    gmp_base_assert(init->v_base > 0.0f);
-    gmp_base_assert(init->i_base > 0.0f);
-    gmp_base_assert(init->filter_C > 0.0f);
-    gmp_base_assert(init->current_circle_limit > 0.0f);
-    gmp_base_assert(init->current_square_limit > 0.0f);
+    gmp_ctl_assert(voltage);
+    gmp_ctl_assert(init);
+    gmp_ctl_assert(init->fs > 0.0f);
+    gmp_ctl_assert(init->v_base > 0.0f);
+    gmp_ctl_assert(init->i_base > 0.0f);
+    gmp_ctl_assert(init->filter_C > 0.0f);
+    gmp_ctl_assert(init->current_circle_limit > 0.0f);
+    gmp_ctl_assert(init->current_square_limit > 0.0f);
 
     /*
      * Capacitor plant: G(s) = 1/(C*s).
@@ -66,7 +66,7 @@ void ctl_update_voltage_inv_coeff(inv_voltage_ctrl_t* voltage, const inv_voltage
 
 void ctl_init_voltage_inv(inv_voltage_ctrl_t* voltage, const inv_voltage_ctrl_init_t* init)
 {
-    gmp_base_assert(voltage);
+    gmp_ctl_assert(voltage);
 
     voltage->vab = NULL;
     voltage->phasor = NULL;

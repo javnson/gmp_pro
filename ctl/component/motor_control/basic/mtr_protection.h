@@ -13,6 +13,8 @@
  * @copyright Copyright GMP(c) 2024
  */
 
+#include <ctl/math_block/gmp_math.h>
+#include <ctl/component/interface/interface_base.h>
 #include <ctl/component/intrinsic/basic/divider.h>
 
 #ifndef _FILE_MTR_PROTECTION_H_

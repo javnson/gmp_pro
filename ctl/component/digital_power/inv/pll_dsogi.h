@@ -16,6 +16,7 @@
  */
 
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/discrete/discrete_sogi.h>
 #include <ctl/component/digital_power/inv/pll_srf.h>
 

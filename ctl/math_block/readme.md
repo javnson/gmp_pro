@@ -17,6 +17,17 @@
 
 GMP 数学计算库（Math Block）为电机驱动和数字控制算法提供全面的数学计算支持。该库的核心特性是**类型抽象**：通过 `ctrl_gt` 类型，可以在不修改算法代码的情况下，在浮点、定点、双精度等多种数值后端之间切换。
 
+### 统一入口与依赖边界
+
+`ctl/math_block/gmp_math.h` 是 CTL 算法唯一的数值入口。标准 GMP 模式下它只
+装配 `gmp_type.h`、CTL 数值后端、常量、轻量线性代数和坐标变换，不引入 CSP、
+设备管理或 GMP runtime。定义 `GMP_CTL_PORTABLE` 后，同一个入口改为装配 portable
+类型契约。
+
+可复用算法和组件不应再通过 `gmp_core.h` 间接获得数学类型；时间、临界区、日志和
+设备能力应由使用者显式依赖 `core/base` 或 `core/dev`。完整 suite 和应用入口仍可在
+确实需要完整 GMP 装配时包含 `gmp_core.h`。
+
 ### 核心特性
 
 - ✅ **类型抽象（ctrl_gt）**: 统一的控制类型，支持多种数值后端
@@ -30,7 +41,7 @@ GMP 数学计算库（Math Block）为电机驱动和数字控制算法提供全
 
 ```c
 // 总入口：包含所有数学模块
-#include <gmp_math.h>
+#include <ctl/math_block/gmp_math.h>
 
 // 或单独包含特定模块
 #include <ctl/math_block/coordinate/coord_trans.h>
@@ -583,7 +594,7 @@ result = ctl_qfrom_euler(roll, pitch, yaw);
 ### 场景1：PMSM FOC 电流控制
 
 ```c
-#include <gmp_math.h>
+#include <ctl/math_block/gmp_math.h>
 
 void foc_current_control() {
     // 1. 采样三相电流
@@ -632,7 +643,7 @@ void foc_current_control() {
 ### 场景2：电网电压相位检测（PLL）
 
 ```c
-#include <gmp_math.h>
+#include <ctl/math_block/gmp_math.h>
 
 void grid_pll_update() {
     // 采样电网电压
@@ -674,7 +685,7 @@ void grid_pll_update() {
 ### 场景3：姿态解算（四元数）
 
 ```c
-#include <gmp_math.h>
+#include <ctl/math_block/gmp_math.h>
 
 void attitude_update(ctrl_gt gx, ctrl_gt gy, ctrl_gt gz, ctrl_gt dt) {
     static ctl_quaternion_t q = {

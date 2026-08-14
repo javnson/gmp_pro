@@ -27,6 +27,7 @@ extern "C"
 {
 #endif // __cplusplus
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/interface/adc_channel.h>
 #include <ctl/component/intrinsic/discrete/lead_lag.h>
 #include <ctl/component/intrinsic/discrete/proportional_resonant.h>

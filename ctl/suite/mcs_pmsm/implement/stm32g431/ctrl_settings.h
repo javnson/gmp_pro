@@ -3,7 +3,7 @@
 #define _FILE_CTRL_SETTINGS_H_
 
 // invoke motor parameters
-#include <ctl/component/motor_control/motor_preset/GBM2804H_100T.h>
+#include <ctl/component/hardware_preset/pmsm_motor/GBM2804H_100T.h>
 
 // Given 3.3V voltage reference
 #define ADC_REFERENCE ((3.3))

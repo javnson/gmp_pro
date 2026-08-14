@@ -1,4 +1,4 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 //////////////////////////////////////////////////////////////////////////
 // Biquad filter
@@ -7,8 +7,8 @@
 
 void ctl_init_biquad_lpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q)
 {
-    gmp_base_assert(fs > 0.0f);
-    gmp_base_assert(Q > 0.0f);
+    gmp_ctl_assert(fs > 0.0f);
+    gmp_ctl_assert(Q > 0.0f);
 
     parameter_gt omega = CTL_PARAM_CONST_2PI * fc / fs;
     parameter_gt cos_w0 = cosf(omega);
@@ -28,8 +28,8 @@ void ctl_init_biquad_lpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt
 
 void ctl_init_biquad_hpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q)
 {
-    gmp_base_assert(fs > 0.0f);
-    gmp_base_assert(Q > 0.0f);
+    gmp_ctl_assert(fs > 0.0f);
+    gmp_ctl_assert(Q > 0.0f);
 
     parameter_gt omega = CTL_PARAM_CONST_2PI * fc / fs;
     parameter_gt cos_w0 = cosf(omega);
@@ -48,8 +48,8 @@ void ctl_init_biquad_hpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt
 
 void ctl_init_biquad_bpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q)
 {
-    gmp_base_assert(fs > 0.0f);
-    gmp_base_assert(Q > 0.0f);
+    gmp_ctl_assert(fs > 0.0f);
+    gmp_ctl_assert(Q > 0.0f);
 
     parameter_gt omega = CTL_PARAM_CONST_2PI * fc / fs;
     parameter_gt cos_w0 = cosf(omega);
@@ -68,8 +68,8 @@ void ctl_init_biquad_bpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt
 
 void ctl_init_biquad_notch(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q)
 {
-    gmp_base_assert(fs > 0.0f);
-    gmp_base_assert(Q > 0.0f);
+    gmp_ctl_assert(fs > 0.0f);
+    gmp_ctl_assert(Q > 0.0f);
 
     parameter_gt omega = CTL_PARAM_CONST_2PI * fc / fs;
     parameter_gt cos_w0 = cosf(omega);
@@ -89,8 +89,8 @@ void ctl_init_biquad_notch(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_
 void ctl_init_biquad_peaking_eq(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q,
                                 parameter_gt gain_db)
 {
-    gmp_base_assert(fs > 0.0f);
-    gmp_base_assert(Q > 0.0f);
+    gmp_ctl_assert(fs > 0.0f);
+    gmp_ctl_assert(Q > 0.0f);
 
     // 修复 2：根据 RBJ Cookbook，A 的定义应为 10^(dB/40)
     parameter_gt V0 = powf(10.0f, gain_db / 40.0f);
@@ -112,8 +112,8 @@ void ctl_init_biquad_peaking_eq(ctl_biquad_filter_t* obj, parameter_gt fs, param
 void ctl_init_biquad_lowshelf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q,
                               parameter_gt gain_db)
 {
-    gmp_base_assert(fs > 0.0f);
-    gmp_base_assert(Q > 0.0f);
+    gmp_ctl_assert(fs > 0.0f);
+    gmp_ctl_assert(Q > 0.0f);
 
     // 修复 2：根据 RBJ Cookbook，A 的定义应为 10^(dB/40)
     parameter_gt V0 = powf(10.0f, gain_db / 40.0f);
@@ -136,8 +136,8 @@ void ctl_init_biquad_lowshelf(ctl_biquad_filter_t* obj, parameter_gt fs, paramet
 void ctl_init_biquad_highshelf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt fc, parameter_gt Q,
                                parameter_gt gain_db)
 {
-    gmp_base_assert(fs > 0.0f);
-    gmp_base_assert(Q > 0.0f);
+    gmp_ctl_assert(fs > 0.0f);
+    gmp_ctl_assert(Q > 0.0f);
 
     // 修复 2：根据 RBJ Cookbook，A 的定义应为 10^(dB/40)
     parameter_gt V0 = powf(10.0f, gain_db / 40.0f);

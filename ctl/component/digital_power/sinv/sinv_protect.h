@@ -13,6 +13,7 @@
  * @copyright Copyright GMP(c) 2024-2026
  */
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/protection/protection_slot.h>
 #include <ctl/component/intrinsic/protection/pt100x.h>
 

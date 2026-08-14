@@ -11,7 +11,7 @@
  * including the Three-Phase PLL and bridge modulation modules.
  */
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 #include <math.h>
 
 //////////////////////////////////////////////////////////////////////////
@@ -58,8 +58,8 @@ void ctl_attach_gfl_pq(gfl_pq_ctrl_t* pq, ctl_vector2_t* vdq, ctl_vector2_t* idq
  */
 void ctl_attach_gfl_pq_to_core(gfl_pq_ctrl_t* pq, gfl_inv_ctrl_t* core)
 {
-    gmp_base_assert(core);
-    gmp_base_assert(pq);
+    gmp_ctl_assert(core);
+    gmp_ctl_assert(pq);
 
     pq->vdq_meas = &core->vdq;
     pq->idq_meas = &core->idq;

@@ -1,4 +1,4 @@
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 #include <math.h>
 
 //////////////////////////////////////////////////////////////////////////
@@ -9,7 +9,7 @@ void ctl_init_fuzzy_pid(ctl_fuzzy_pid_t* fp, parameter_gt base_kp, parameter_gt 
                         ctrl_gt sat_max, ctrl_gt sat_min, parameter_gt e_q_factor, parameter_gt ec_q_factor,
                         ctl_lut2d_t d_kp_lut, ctl_lut2d_t d_ki_lut, ctl_lut2d_t d_kd_lut, parameter_gt fs)
 {
-    gmp_base_assert(fs > 0.0f); // 增加防呆保护
+    gmp_ctl_assert(fs > 0.0f); // 增加防呆保护
 
     // 1. 将基于时间常数 (Ti, Td) 的输入转换为独立的 (Ki, Kd) 物理增益
     parameter_gt base_ki = 0.0f;

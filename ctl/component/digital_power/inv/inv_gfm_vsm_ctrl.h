@@ -6,6 +6,7 @@
 #ifndef _FILE_DP_INV_GFM_VSM_CTRL_H_
 #define _FILE_DP_INV_GFM_VSM_CTRL_H_
 
+#include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/basic/saturation.h>
 #include <ctl/component/intrinsic/discrete/discrete_filter.h>
 #include <ctl/math_block/coordinate/coord_trans.h>
@@ -57,7 +58,7 @@ void ctl_init_inv_gfm_vsm(inv_gfm_vsm_ctrl_t* vsm, const inv_gfm_vsm_init_t* ini
 GMP_STATIC_INLINE void ctl_attach_inv_gfm_vsm(inv_gfm_vsm_ctrl_t* vsm,
                                                ctl_vector2_t* vdq, ctl_vector2_t* idq)
 {
-    gmp_base_assert(vsm);
+    gmp_ctl_assert(vsm);
     vsm->vdq = vdq;
     vsm->idq = idq;
 }
@@ -96,9 +97,9 @@ GMP_STATIC_INLINE void ctl_step_inv_gfm_vsm(inv_gfm_vsm_ctrl_t* vsm)
     ctrl_gt acceleration_hz_s;
     ctrl_gt q_error;
 
-    gmp_base_assert(vsm);
-    gmp_base_assert(vsm->vdq);
-    gmp_base_assert(vsm->idq);
+    gmp_ctl_assert(vsm);
+    gmp_ctl_assert(vsm->vdq);
+    gmp_ctl_assert(vsm->idq);
 
     vsm->pq_inst.dat[0] =
         ctl_mul(vsm->vdq->dat[phase_d], vsm->idq->dat[phase_d]) +

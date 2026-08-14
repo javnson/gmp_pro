@@ -1,5 +1,5 @@
 
-#include <gmp_core.h>
+#include <ctl/math_block/gmp_math.h>
 
 #include <ctl/component/motor_control/consultant/pu_consultant.h>
 
@@ -10,10 +10,10 @@ void ctl_consultant_pu_pmsm_init(ctl_consultant_pu_pmsm_t* pu, parameter_gt v_ba
                                  parameter_gt w_base, uint32_t pole_pairs)
 {
     // Validate fundamental bases
-    gmp_base_assert(v_base > 0.0f);
-    gmp_base_assert(i_base > 0.0f);
-    gmp_base_assert(w_base > 0.0f);
-    gmp_base_assert(pole_pairs > 0);
+    gmp_ctl_assert(v_base > 0.0f);
+    gmp_ctl_assert(i_base > 0.0f);
+    gmp_ctl_assert(w_base > 0.0f);
+    gmp_ctl_assert(pole_pairs > 0);
 
     // 1. Assign Fundamental Bases
     pu->V_base = v_base;
@@ -41,11 +41,11 @@ void ctl_consultant_pu_pmsm_init(ctl_consultant_pu_pmsm_t* pu, parameter_gt v_ba
 void ctl_consultant_pu_im_init(ctl_consultant_pu_im_t* pu, parameter_gt v_base, parameter_gt i_base,
                                parameter_gt w_base, uint32_t pole_pairs, parameter_gt turns_ratio)
 {
-    gmp_base_assert(v_base > 0.0f);
-    gmp_base_assert(i_base > 0.0f);
-    gmp_base_assert(w_base > 0.0f);
-    gmp_base_assert(pole_pairs > 0);
-    gmp_base_assert(turns_ratio > 0.0f);
+    gmp_ctl_assert(v_base > 0.0f);
+    gmp_ctl_assert(i_base > 0.0f);
+    gmp_ctl_assert(w_base > 0.0f);
+    gmp_ctl_assert(pole_pairs > 0);
+    gmp_ctl_assert(turns_ratio > 0.0f);
 
     // 1. Primary (Stator) Bases
     pu->V_s_base = v_base;
