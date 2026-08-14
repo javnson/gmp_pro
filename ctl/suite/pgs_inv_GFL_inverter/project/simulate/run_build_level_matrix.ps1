@@ -13,7 +13,9 @@ $sdpe = Join-Path $repo "tools\SDPE_v2\sdpe.py"
 $settings = Join-Path $repo "tools\SDPE_v2\sdpe_settings.json"
 $solution = Join-Path $root "GMP_Digital_Power_simulink.sln"
 $matlab = "C:\Program Files\MATLAB\R2024b\bin\matlab.exe"
-$msbuild = "C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe"
+$vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+$msbuild = (& $vswhere -latest -products * -requires Microsoft.Component.MSBuild `
+    -find "MSBuild\**\Bin\MSBuild.exe" | Select-Object -First 1)
 
 if (-not (Test-Path -LiteralPath $matlab)) { throw "MATLAB R2024b not found: $matlab" }
 if (-not (Test-Path -LiteralPath $msbuild)) { throw "MSBuild not found: $msbuild" }
@@ -57,6 +59,8 @@ finally {
     & python $sdpe --settings $settings generate-project-local `
         $requirement --project-dir (Join-Path $root "sdpe_mgr") `
         --out (Join-Path $root "sdpe_mgr")
+    & $msbuild $solution /m /t:Build `
+        "/p:Configuration=$Configuration" /p:Platform=x64 /v:minimal
 }
 
 $summary | Format-Table -AutoSize

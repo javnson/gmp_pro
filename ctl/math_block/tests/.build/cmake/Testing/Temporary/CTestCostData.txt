@@ -1,0 +1,8 @@
+gmp_numeric_float_float 1 0.484475
+gmp_numeric_float_double 1 0.328389
+gmp_numeric_double_double 1 0.344025
+gmp_numeric_iq24_float 1 0.311358
+gmp_numeric_iq24_double 1 0.315842
+gmp_lite_algebra 1 0.30648
+gmp_sinv_qr_contract 1 0.323878
+---

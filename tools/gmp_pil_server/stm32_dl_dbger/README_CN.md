@@ -44,6 +44,7 @@ gmp_src_mgr\gmp_generate_all.bat
 ```
 
 当前已经保留可直接构建的生成结果；`gmp_compiler_includes.txt` 也只包含工程相对路径。
+一体化生成命令还会刷新 Keil 的 GMP 源文件分组，避免已删除或更名的源文件残留在工程中。
 
 ## Keil MDK-ARM
 

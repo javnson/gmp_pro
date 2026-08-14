@@ -56,6 +56,8 @@ gmp_src_mgr\gmp_generate_all.bat
 
 The checked-in generated output is already ready to build. The generated
 `gmp_compiler_includes.txt` lists only project-relative include directories.
+The all-in-one generation command also refreshes the Keil generated-source
+group so removed or renamed GMP sources cannot remain in the project file.
 
 ## Keil MDK-ARM
 

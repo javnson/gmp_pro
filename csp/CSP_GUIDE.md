@@ -66,7 +66,7 @@ csp/
 ## 使用方法（按平台）
 
 ### TI C2000（C28x）
-- 选择：`c28x_syscfg/f280039c_demo` 或 `f280049c_demo` 等 demo 工程。
+- 选择：`c28x_syscfg/f280039c_demo` 或 `f280049c_launchpad` 等参考工程。
 - 在 Code Composer Studio（CCS）中导入工程并生成 SysConfig（.syscfg）。
 - 核对：
   - PWM 频率/计数最大值与 `ctrl_settings.h` 参数一致。

@@ -1,16 +1,16 @@
-import os
-import sys
+import argparse
 import json
-import subprocess
+import os
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 from framework_project_discovery import exclude_git_ignored
+from framework_registry import RegistrySelectionError, resolve_selected_modules
 
 def get_macros(dic_path):
-    """
-    只负责从 json 配置文件中读取自定义宏，不再混入系统环境变量。
-    """
+    """Load custom macros without mixing in process environment variables."""
     macros = {}
     if dic_path.exists():
         try:
@@ -28,28 +28,26 @@ def find_target_projects(
 ):
     projects_found = set()
     
-    # 预编译正则表达式，用于动态匹配 ${VAR_NAME} 格式的环境变量
+    # Match environment-variable references in the ${VAR_NAME} form.
     env_pattern = re.compile(r'\$\{([^}]+)\}')
     
     def env_replacer(match):
         var_name = match.group(1)
-        # 实时从系统中获取环境变量的值
         val = os.environ.get(var_name)
-        # 如果系统中存在该环境变量则替换；如果不存在，则保持原样（可能留给自定义宏替换）
         return val if val is not None else match.group(0)
 
     for pat in search_paths:
-        # 1. 动态获取并展开真正的环境变量 (例如 ${GMP_PRO_LOCATION} 将在这里被替换为实际值)
+        # Expand process environment variables first.
         res_pat = env_pattern.sub(env_replacer, pat)
         
-        # 2. 接着替换 json 文件中读取出的自定义宏
+        # Expand registry macros second.
         for mac, val in sorted_macros:
             res_pat = res_pat.replace(f"${{{mac}}}", val)
             
-        # 3. 统一斜杠，避免 Windows/Linux 混用导致路径解析错误
+        # Normalize separators before interpreting the search suffix.
         res_pat = res_pat.replace('\\', '/')
         
-        # 4. 智能解析通配符 (剔除 /**，转换为 Path 对象)
+        # Interpret the supported recursive and direct-child suffixes.
         is_recursive = False
         if res_pat.endswith('/**'):
             is_recursive = True
@@ -62,12 +60,12 @@ def find_target_projects(
         base_path = Path(base_dir_str).resolve()
 
         if not base_path.exists() or not base_path.is_dir():
-            print(f"[DEBUG] 路径无效或不存在，跳过: {base_path}")
+            print(f"[DEBUG] Search root does not exist; skipping: {base_path}")
             continue
 
-        print(f"[INFO] 正在扫描基准目录: {base_path} (递归模式: {is_recursive})")
+        print(f"[INFO] Scanning: {base_path} (recursive: {is_recursive})")
 
-        # 5. 使用健壮的 rglob() 递归搜索名为 gmp_src_mgr 的目标文件夹
+        # Locate project source-manager directories.
         if is_recursive:
             for match in base_path.rglob(target_dir_name):
                 if match.is_dir():
@@ -82,7 +80,56 @@ def find_target_projects(
         print(f"[IGNORE] Git-ignored source-manager copy: {path}")
     return visible
 
-def run_batch_generation():
+def generate_project(proj_dir, dry_run=False, runner=subprocess.run):
+    """Validate or generate one project in the canonical header/source order."""
+    script_inc = proj_dir / "gmp_generate_inc.bat"
+    script_src = proj_dir / "gmp_generate_src.bat"
+    project_config = proj_dir / "gmp_framework_config.json"
+    required = (project_config, script_inc, script_src)
+    missing = [path.name for path in required if not path.is_file()]
+    if missing:
+        print(f"    [ERROR] Missing required project file(s): {', '.join(missing)}")
+        return False
+
+    registry_path = Path(__file__).with_name("gmp_framework_dic.json")
+    try:
+        with registry_path.open("r", encoding="utf-8") as stream:
+            registry = json.load(stream)
+        with project_config.open("r", encoding="utf-8") as stream:
+            local_config = json.load(stream)
+        resolve_selected_modules(registry, local_config)
+    except (OSError, json.JSONDecodeError, RegistrySelectionError) as error:
+        print(f"    [ERROR] Invalid Facility selection: {error}")
+        return False
+
+    if dry_run:
+        print("    [VALID] Entry points and the complete Facility dependency graph are valid.")
+        return True
+
+    creationflags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+    subprocess_encoding = 'mbcs' if os.name == 'nt' else 'utf-8'
+    for label, script in (("header", script_inc), ("source", script_src)):
+        print(f"    -> Executing {label} generation: {script.name}")
+        result = runner(
+            [str(script)],
+            cwd=proj_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            creationflags=creationflags,
+            encoding=subprocess_encoding,
+            errors='replace',
+        )
+        if result.returncode != 0:
+            print(f"    [ERROR] {label.capitalize()} generation failed (error code {result.returncode}).")
+            if result.stdout:
+                print(result.stdout.rstrip())
+            return False
+        print(f"    [OK] {label.capitalize()} generation successful.")
+    return True
+
+
+def run_batch_generation(dry_run=False):
     print("=" * 60)
     print("[START] [GMP Fleet] Starting Batch Generation Engine (Dynamic Env Mode)...")
     print("=" * 60)
@@ -101,7 +148,7 @@ def run_batch_generation():
         print(f"[ERROR] Target config not found: {target_json.name}")
         return False
 
-    # 读取单纯的自定义宏（不再强制传入 GMP_PRO_LOCATION）
+    # Load registry macros without overriding the process environment.
     sorted_macros = get_macros(dic_path)
 
     with open(target_json, 'r', encoding='utf-8') as f:
@@ -122,59 +169,42 @@ def run_batch_generation():
         print("[WARNING] No matching 'gmp_src_mgr' folders found.")
         return True
 
-    print(f"[INFO] Found {len(projects_found_list)} target projects. Initiating batch build...")
+    action = "validation" if dry_run else "generation"
+    print(f"[INFO] Found {len(projects_found_list)} target projects. Initiating batch {action}...")
     print("-" * 60)
 
     stats = {"success": 0, "failed": 0}
 
-    # 为了防止 Windows 执行 .bat 脚本时出现中文乱码，自动切换子进程编码
-    subprocess_encoding = 'mbcs' if os.name == 'nt' else 'utf-8'
-
     for proj_dir in sorted(projects_found_list):
-        print(f"\n>>> [BUILDING] Project: {proj_dir.parent.name} ({proj_dir})")
-        
-        script_src = proj_dir / "gmp_generate_src.bat"
-        script_inc = proj_dir / "gmp_generate_inc.bat"
-        
-        has_error = False
-        creationflags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-
-        if script_src.exists():
-            print("    -> Executing source file generation (Source)...")
-            res_src = subprocess.run([str(script_src)], cwd=proj_dir, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, creationflags=creationflags, encoding=subprocess_encoding, errors='replace')
-            if res_src.returncode != 0:
-                print(f"    [ERROR] Source file generation failed (Error Code: {res_src.returncode})")
-                has_error = True
-            else:
-                print("    [OK] Source file generation successful.")
-        else:
-            print("    [SKIP] Source generation script not found.")
-
-        if script_inc.exists() and not has_error:
-            print("    -> Executing header file mirroring (Header)...")
-            res_inc = subprocess.run([str(script_inc)], cwd=proj_dir, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, creationflags=creationflags, encoding=subprocess_encoding, errors='replace')
-            if res_inc.returncode != 0:
-                print(f"    [ERROR] Header file mirroring failed (Error Code: {res_inc.returncode})")
-                has_error = True
-            else:
-                print("    [OK] Header file mirroring successful.")
-        elif not script_inc.exists():
-            print("    [SKIP] Header generation script not found.")
-
-        if has_error:
+        print(f"\n>>> [PROJECT] {proj_dir.parent.name} ({proj_dir})")
+        if not generate_project(proj_dir, dry_run=dry_run):
             stats["failed"] += 1
-            print("    [ABORT] Project build aborted due to errors.")
+            print("    [FAILED] Project generation contract is not satisfied.")
         else:
             stats["success"] += 1
-            print("    [SUCCESS] All generation tasks completed for this project.")
+            print("    [SUCCESS] Project generation contract passed.")
 
     print("\n" + "=" * 60)
     print("[FLEET SUMMARY] Fleet batch build completed!")
     print(f"    [SUCCESS] Projects successfully updated: {stats['success']}")
     print(f"    [FAILED] Projects with errors: {stats['failed']}")
     print("=" * 60)
-    return True
+    return stats["failed"] == 0
+
+
+def parse_args(argv=None):
+    """Parse the batch generator command line without side effects."""
+    parser = argparse.ArgumentParser(
+        description="Validate or regenerate every discovered GMP source-manager project."
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="discover projects and validate required entry points without generating files",
+    )
+    return parser.parse_args(argv)
 
 if __name__ == "__main__":
-    if not run_batch_generation():
+    arguments = parse_args()
+    if not run_batch_generation(dry_run=arguments.dry_run):
         sys.exit(1)

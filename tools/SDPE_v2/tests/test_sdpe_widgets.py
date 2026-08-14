@@ -31,6 +31,15 @@ class SDPEWidgetTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.app = QApplication.instance() or QApplication([])
 
+    @classmethod
+    def tearDownClass(cls) -> None:
+        """Release Qt explicitly so PySide does not tear it down during exit."""
+        cls.app.clipboard().clear()
+        for widget in cls.app.topLevelWidgets():
+            widget.deleteLater()
+        cls.app.processEvents()
+        cls.app.shutdown()
+
     def test_table_clipboard_preserves_cell_widgets(self) -> None:
         table = SDPETableWidget()
         table.configure(["Name", "Mode", "Description"])

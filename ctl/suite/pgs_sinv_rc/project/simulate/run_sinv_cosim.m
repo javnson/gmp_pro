@@ -13,9 +13,10 @@ end
 assert_level(root, build_level);
 load_system(fullfile(root, [model '.slx']));
 model_cleanup = onCleanup(@() close_system(model, 0)); %#ok<NASGU>
+set_param(model, 'SimulationCommand', 'update');
 controller = start_controller(exe, root);
 controller_cleanup = onCleanup(@() stop_controller(controller)); %#ok<NASGU>
-pause(0.25);
+pause(1.0); % Allow the controller UDP endpoint to bind before Simulink sends the first frame.
 if isnan(stop_time)
     sim_out = sim(model, 'ReturnWorkspaceOutputs', 'on');
 else

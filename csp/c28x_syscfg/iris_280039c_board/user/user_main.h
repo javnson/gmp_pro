@@ -66,6 +66,17 @@ gmp_task_status_t oled_show_task(gmp_task_t* tsk);
 void beep_on();
 void beep_off();
 
+/** @brief Replace all eight display positions and mark the buffer dirty. */
+void update_led_content_8byte(ht16k33_dev_t* dev,
+                              uint16_t ch1,
+                              uint16_t ch2,
+                              uint16_t ch3,
+                              uint16_t ch4,
+                              uint16_t ch5,
+                              uint16_t ch6,
+                              uint16_t ch7,
+                              uint16_t ch8);
+
 
 
 #ifdef __cplusplus

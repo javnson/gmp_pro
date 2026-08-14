@@ -6,6 +6,7 @@
 // user main header
 #include "ctl_main.h"
 #include "user_main.h"
+#include <xplt.peripheral.h>
 #include <stdlib.h>
 
 #include <core/dev/datalink/mem_presp.h>

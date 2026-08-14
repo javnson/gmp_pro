@@ -167,14 +167,6 @@
         },
         {
             "root": "ctl",
-            "module": "component|digital_power|rectifier|_internal"
-        },
-        {
-            "root": "ctl",
-            "module": "component|digital_power|rectifier|vienna"
-        },
-        {
-            "root": "ctl",
             "module": "component|digital_power|sinv|_internal"
         },
         {

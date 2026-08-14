@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\lib\gmp_pro\ctl\math_block\tests\numeric_type_contract_test.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\third_party\iqmath\src\_IQNasin_acos.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\third_party\iqmath\src\_IQNatan2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\third_party\iqmath\src\_IQNdiv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\third_party\iqmath\src\_IQNexp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\third_party\iqmath\src\_IQNfrac.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\third_party\iqmath\src\_IQNlog.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\third_party\iqmath\src\_IQNmpy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\third_party\iqmath\src\_IQNmpyIQX.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\third_party\iqmath\src\_IQNrepeat.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\third_party\iqmath\src\_IQNrmpy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\third_party\iqmath\src\_IQNrsmpy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\third_party\iqmath\src\_IQNsin_cos.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\third_party\iqmath\src\_IQNsqrt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\third_party\iqmath\src\_IQNtables.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\third_party\iqmath\src\_IQNtoF.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\third_party\iqmath\src\_IQNtoa.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\third_party\iqmath\src\_IQNversion.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\lib\gmp_pro\third_party\iqmath\src\_atoIQN.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\lib\gmp_pro\ctl\math_block\tests\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4C64AC7D-7CE8-3DCF-B4CD-689678E76000}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

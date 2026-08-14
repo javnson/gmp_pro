@@ -51,9 +51,10 @@ start_info.FileName = exe;
 start_info.WorkingDirectory = root;
 start_info.UseShellExecute = false;
 start_info.CreateNoWindow = true;
+set_param(model, 'SimulationCommand', 'update');
 controller = System.Diagnostics.Process.Start(start_info);
 controller_cleanup = onCleanup(@() stop_controller(controller));
-pause(0.25);
+pause(1.0); % Allow the controller UDP endpoint to bind before Simulink sends the first frame.
 
 out = sim(model, 'StopTime', num2str(stop_time, 17), ...
     'ReturnWorkspaceOutputs', 'on');

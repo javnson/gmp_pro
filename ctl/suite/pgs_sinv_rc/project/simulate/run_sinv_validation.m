@@ -48,9 +48,10 @@ info.FileName = exe;
 info.WorkingDirectory = root;
 info.UseShellExecute = false;
 info.CreateNoWindow = true;
+set_param(model, 'SimulationCommand', 'update');
 controller = System.Diagnostics.Process.Start(info);
 cleanup_controller = onCleanup(@() stop_controller(controller)); %#ok<NASGU>
-pause(0.25);
+pause(1.0); % Allow the controller UDP endpoint to bind before Simulink sends the first frame.
 out = sim(model, 'StopTime', num2str(stop_time, 17), 'ReturnWorkspaceOutputs', 'on');
 
 vac = out.get('vac'); iac = out.get('iac'); vbus = out.get('vbus');

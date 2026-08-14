@@ -66,13 +66,16 @@ def registered_files(repo: Path, modules: dict[str, dict]):
 
 def dependency_closure(module: str, modules: dict[str, dict]) -> set[str]:
     found: set[str] = set()
-    pending = list(modules[module].get("depends_on", []))
+    pending = list(modules[module].get("depends_on", [])) + list(
+        modules[module].get("optional_depends_on", [])
+    )
     while pending:
         item = pending.pop()
         if item in found:
             continue
         found.add(item)
         pending.extend(modules.get(item, {}).get("depends_on", []))
+        pending.extend(modules.get(item, {}).get("optional_depends_on", []))
     return found
 
 

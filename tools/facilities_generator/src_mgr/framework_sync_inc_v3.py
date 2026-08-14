@@ -4,6 +4,8 @@ import json
 import shutil
 from pathlib import Path
 
+from framework_registry import RegistrySelectionError, resolve_selected_modules
+
 def run_inc_sync():
     print("\n" + "=" * 60)
     print("[START] [GMP Sync] Starting forward header tree synchronization (Header Mirror Mode)...")
@@ -41,13 +43,17 @@ def run_inc_sync():
     macros["GMP_PRO_LOCATION"] = gmp_base.as_posix()
     sorted_macros = sorted(macros.items(), key=lambda item: len(item[1]), reverse=True)
 
-    # 1. Collect rules
+    # 1. Resolve the complete dependency closure and collect its rules.
     all_inc_patterns, all_inc_dirs_patterns = [], []
-    for item in local_config.get("selected_modules", []):
-        r, m = item.get("root"), item.get("module")
-        if r in global_registry["modules"] and m in global_registry["modules"][r]:
-            all_inc_patterns.extend(global_registry["modules"][r][m].get("inc_patterns", []))
-            all_inc_dirs_patterns.extend(global_registry["modules"][r][m].get("inc_dirs", []))
+    try:
+        selected_modules = resolve_selected_modules(global_registry, local_config)
+    except RegistrySelectionError as error:
+        print(f"[ERROR] Cannot resolve Facility dependencies: {error}")
+        return False
+    for root, module in selected_modules:
+        module_data = global_registry["modules"][root][module]
+        all_inc_patterns.extend(module_data.get("inc_patterns", []))
+        all_inc_dirs_patterns.extend(module_data.get("inc_dirs", []))
 
     # 2. Smart mirror tree derivation { "relative/path/to/file.h": absolute_path }
     inc_map = {}

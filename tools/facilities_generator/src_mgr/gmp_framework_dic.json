@@ -1908,11 +1908,13 @@
                 ],
                 "depends_on": [
                     "core|std",
-                    "ctl|math_block|iqmath",
                     "ctl|math_block|complex_lite",
                     "ctl|math_block|coordinate",
                     "ctl|math_block|matrix_lite",
                     "ctl|math_block|vector_lite"
+                ],
+                "optional_depends_on": [
+                    "ctl|math_block|iqmath"
                 ]
             },
             "math_block|iqmath": {

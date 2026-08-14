@@ -23,10 +23,11 @@ start_info.FileName = exe;
 start_info.WorkingDirectory = root;
 start_info.UseShellExecute = false;
 start_info.CreateNoWindow = true;
+set_param(model, 'SimulationCommand', 'update');
 controller = System.Diagnostics.Process.Start(start_info);
 cleanup = onCleanup(@() stop_controller(controller));
 
-pause(0.25); % Let the UDP endpoint bind before mdlStart sends its handshake.
+pause(1.0); % Allow the controller UDP endpoint to bind before Simulink sends the first frame.
 if nargin < 1 || isempty(stop_time)
     sim_out = sim(model, 'ReturnWorkspaceOutputs', 'on');
 else

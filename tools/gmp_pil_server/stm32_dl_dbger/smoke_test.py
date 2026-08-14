@@ -216,7 +216,7 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
         if len(scope_descriptor) < descriptor_format.size:
             raise AssertionError(f"Scope descriptor is truncated: {scope_descriptor.hex(' ')}")
         fields = descriptor_format.unpack_from(scope_descriptor)
-        if fields[:7] != (0, 0, 1, 1, 0, 7, 1):
+        if fields[:7] != (0, 0, 2, 1, 0, 7, 1):
             raise AssertionError(f"Invalid Scope discovery header: {fields}")
         channels, depth, sample_rate, scope_bytes, scope_name_length = fields[7:]
         scope_name = scope_descriptor[descriptor_format.size:descriptor_format.size + scope_name_length].decode("ascii")
@@ -226,7 +226,7 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
             raise AssertionError("Unexpected Scope resource metadata")
 
         sequence += 1
-        config = struct.pack("<BBBBHfI", 1, 0, 1, 0, 250, test_settings[2], 1000)
+        config = struct.pack("<BBBBHfIH", 1, 0, 1, 0, 250, test_settings[2], 1000, 0)
         if transact(port, sequence, 0x60, config) != bytes((1, 0, 0)):
             raise AssertionError("Scope configuration failed")
         sequence += 1

@@ -7,9 +7,10 @@ addpath(genpath(fullfile(root,'..','..','..','..','..','slib','install_path','R2
 load_system(fullfile(root,[model '.slx']));
 info=System.Diagnostics.ProcessStartInfo; info.FileName=exe; info.WorkingDirectory=root;
 info.UseShellExecute=false; info.CreateNoWindow=true;
+set_param(model,'SimulationCommand','update');
 controller=System.Diagnostics.Process.Start(info);
 cleanup=onCleanup(@()stop_controller(controller)); %#ok<NASGU>
-pause(0.3);
+pause(1.0); % Allow the controller UDP endpoint to bind before Simulink sends the first frame.
 if nargin<1 || isempty(stop_time), stop_time=str2double(get_param(model,'StopTime')); end
 sim_out=sim(model,'StopTime',num2str(stop_time,17),'ReturnWorkspaceOutputs','on');
 close_system(model,0);

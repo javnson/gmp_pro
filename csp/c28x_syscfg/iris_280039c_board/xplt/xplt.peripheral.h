@@ -50,6 +50,12 @@ extern adc_gt idc_src;
 
 void reset_controller(void);
 
+/** @brief Flush pending DataLink transmit units to the configured transport. */
+void flush_dl_tx_buffer(void);
+
+/** @brief Drain received transport units into the DataLink parser buffer. */
+void flush_dl_rx_buffer(void);
+
 uint16_t SPI_readReg(uint16_t addr);
 void SPI_writeReg(uint16_t addr, uint16_t data);
 
