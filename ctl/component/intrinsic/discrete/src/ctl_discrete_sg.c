@@ -40,7 +40,6 @@ void ctl_init_ramp_generator_via_freq(
     parameter_gt amp_pos, parameter_gt amp_neg)
 {
     gmp_ctl_assert(isr_freq > 0.0f);
-    gmp_ctl_assert(target_freq > 0.0f);
     gmp_ctl_assert(amp_neg < amp_pos);
 
     _rg->current = CTL_CTRL_CONST_ZERO;
@@ -48,12 +47,14 @@ void ctl_init_ramp_generator_via_freq(
     _rg->maximum = real2ctrl(amp_pos);
     _rg->minimum = real2ctrl(amp_neg);
 
-    if (isr_freq <= 0.0f || target_freq <= 0.0f || amp_neg >= amp_pos)
+    if (isr_freq <= 0.0f || amp_neg >= amp_pos)
     {
         _rg->slope = CTL_CTRL_CONST_ZERO;
         return;
     }
 
+    // Frequency is signed: zero keeps the ramp stationary, while a negative
+    // value decrements the accumulator and therefore represents reverse rotation.
     _rg->slope = real2ctrl((amp_pos - amp_neg) * target_freq / isr_freq);
 }
 

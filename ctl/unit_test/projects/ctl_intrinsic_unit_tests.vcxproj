@@ -5,9 +5,9 @@
     <ProjectConfiguration Include="Release|x64"><Configuration>Release</Configuration><Platform>x64</Platform></ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{AD6BF62D-B655-4427-856C-255D5E819231}</ProjectGuid>
+    <ProjectGuid>{E6F739F5-69ED-4F1B-A585-D8B48F4044DB}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>ctl_float_tests</RootNamespace>
+    <RootNamespace>ctl_intrinsic_unit_tests</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectSubType>NativeUnitTestProject</ProjectSubType>
   </PropertyGroup>
@@ -26,17 +26,25 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCInstallDir)Auxiliary\VS\UnitTest\include;$(GMP_PRO_LOCATION);$(MSBuildProjectDirectory)\..\config;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCInstallDir)Auxiliary\VS\UnitTest\include;$(MSBuildProjectDirectory)\..\config;$(MSBuildProjectDirectory)\..\..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>GMP_CTL_PORTABLE;GMP_CTL_TEST_FLOAT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard><LanguageStandard_C>stdc11</LanguageStandard_C>
       <WarningLevel>Level4</WarningLevel><TreatWarningAsError>true</TreatWarningAsError><AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link><AdditionalLibraryDirectories>$(VCInstallDir)Auxiliary\VS\UnitTest\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories><AdditionalDependencies>Microsoft.VisualStudio.TestTools.CppUnitTestFramework.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
   </ItemDefinitionGroup>
+  <ItemGroup><ProjectCapability Include="TestContainer" /></ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\tests\visual_studio_tests.cpp" />
+    <ClCompile Include="..\tests\intrinsic_tests.cpp" />
+    <ClCompile Include="..\tests\vs_test_clock.cpp" />
+    <ClCompile Include="..\..\component\intrinsic\basic\src\ctl_hysteresis_controller.c" />
+    <ClCompile Include="..\..\component\intrinsic\basic\src\ctl_saturation.c" />
+    <ClCompile Include="..\..\component\intrinsic\basic\src\ctl_slope_limiter.c" />
+    <ClCompile Include="..\..\component\intrinsic\continuous\src\ctl_continuous_pi.c" />
     <ClCompile Include="..\..\component\intrinsic\continuous\src\ctl_continuous_pid.c" />
+    <ClCompile Include="..\..\component\intrinsic\discrete\src\ctl_discrete_filter.c" />
+    <ClCompile Include="..\..\component\intrinsic\discrete\src\ctl_discrete_sg.c" />
   </ItemGroup>
-  <ItemGroup><None Include="..\vcpkg.json" /></ItemGroup>
+  <ItemGroup><ClInclude Include="..\tests\vs_test_support.h" /><None Include="..\vcpkg.json" /></ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

@@ -21,20 +21,20 @@ void ctl_init_lp_filter(ctl_low_pass_filter_t* lpf, parameter_gt fs, parameter_g
 {
     gmp_ctl_assert(fs > 0.0f);
 
-    lpf->out = 0;
+    lpf->out = CTL_CTRL_CONST_ZERO;
     lpf->a = ctl_helper_lp_filter(fs, fc);
 }
 
 void ctl_init_filter_iir1_lpf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter_gt fc)
 {
     gmp_ctl_assert(fs > 0.0f);
-    gmp_ctl_assert(fc < fs / 2.0f); // 奈奎斯特极限保护
+    gmp_ctl_assert(fc < fs / 2.0f); // Enforce the Nyquist-frequency limit.
 
     parameter_gt K = param_tan(CTL_PARAM_CONST_PI * fc / fs);
-    parameter_gt norm = 1.0f / (K + 1.0f);
-    obj->b0 = K * norm;
+    parameter_gt norm = CTL_PARAM_CONST_1 / (K + CTL_PARAM_CONST_1);
+    obj->b0 = param2ctrl(K * norm);
     obj->b1 = obj->b0;
-    obj->a1 = (K - 1.0f) * norm;
+    obj->a1 = param2ctrl((K - CTL_PARAM_CONST_1) * norm);
     ctl_clear_filter_iir1(obj);
 }
 
@@ -44,10 +44,10 @@ void ctl_init_filter_iir1_hpf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter
     gmp_ctl_assert(fc < fs / 2.0f);
 
     parameter_gt K = param_tan(CTL_PARAM_CONST_PI * fc / fs);
-    parameter_gt norm = 1.0f / (K + 1.0f);
-    obj->b0 = 1.0f * norm;
+    parameter_gt norm = CTL_PARAM_CONST_1 / (K + CTL_PARAM_CONST_1);
+    obj->b0 = param2ctrl(norm);
     obj->b1 = -obj->b0;
-    obj->a1 = (K - 1.0f) * norm;
+    obj->a1 = param2ctrl((K - CTL_PARAM_CONST_1) * norm);
     ctl_clear_filter_iir1(obj);
 }
 
@@ -57,10 +57,10 @@ void ctl_init_filter_iir1_apf(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter
     gmp_ctl_assert(fc < fs / 2.0f);
 
     parameter_gt K = param_tan(CTL_PARAM_CONST_PI * fc / fs);
-    parameter_gt norm = 1.0f / (K + 1.0f);
-    obj->b0 = (1.0f - K) * norm; // Note: b0 is negative of a1
-    obj->b1 = 1.0f;
-    obj->a1 = (K - 1.0f) * norm;
+    parameter_gt norm = CTL_PARAM_CONST_1 / (K + CTL_PARAM_CONST_1);
+    obj->b0 = param2ctrl((CTL_PARAM_CONST_1 - K) * norm); // b0 is the negative of a1.
+    obj->b1 = CTL_CTRL_CONST_1;
+    obj->a1 = param2ctrl((K - CTL_PARAM_CONST_1) * norm);
     ctl_clear_filter_iir1(obj);
 }
 

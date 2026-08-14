@@ -256,12 +256,12 @@ void ctl_init_biquad_highshelf(ctl_biquad_filter_t* obj, parameter_gt fs, parame
  * @brief Calculates the phase lag of the biquad filter at a specific frequency.
  * @details
  * 
- * This function evaluates the filter's complex frequency response H(e^(j¦ØT)) at
+ * This function evaluates the filter's complex frequency response H(e^(jwT)) at
  * the given frequency `f`.
  * Key Steps:
- * 1. Calculate the normalized angular frequency: ¦ØT = 2*pi*f / fs.
- * 2. Evaluate the complex numerator N(¦Ø) = b0 + b1*e^(-j¦ØT) + b2*e^(-j2¦ØT).
- * 3. Evaluate the complex denominator D(¦Ø) = 1 + a1*e^(-j¦ØT) + a2*e^(-j2¦ØT).
+ * 1. Calculate the normalized angular frequency: wT = 2*pi*f / fs.
+ * 2. Evaluate the complex numerator N(w) = b0 + b1*e^(-jwT) + b2*e^(-j2wT).
+ * 3. Evaluate the complex denominator D(w) = 1 + a1*e^(-jwT) + a2*e^(-j2wT).
  * 4. Calculate the phase of the numerator and denominator using atan2.
  * 5. The total phase is phase(N) - phase(D).
  * 6. The phase lag is the negative of the total phase.
@@ -275,15 +275,15 @@ parameter_gt ctl_get_biquad_phase_lag(ctl_biquad_filter_t* obj, parameter_gt fs,
 /**
  * @brief Calculates the linear gain (magnitude) of the biquad filter at a specific frequency.
  * @details
- * This function evaluates the filter's magnitude response |H(e^(j¦ØT))| at the
+ * This function evaluates the filter's magnitude response |H(e^(jwT))| at the
  * given frequency `f`. To convert the result to decibels (dB), use the formula:
  * Gain_dB = 20 * log10(linear_gain).
  * Key Steps:
- * 1. Calculate the normalized angular frequency: ¦ØT = 2*pi*f / fs.
- * 2. Evaluate the complex numerator N(¦Ø) and denominator D(¦Ø).
- * 3. Calculate the magnitude of the numerator: |N(¦Ø)| = sqrt(real(N)^2 + imag(N)^2).
- * 4. Calculate the magnitude of the denominator: |D(¦Ø)| = sqrt(real(D)^2 + imag(D)^2).
- * 5. The total gain is |N(¦Ø)| / |D(¦Ø)|.
+ * 1. Calculate the normalized angular frequency: wT = 2*pi*f / fs.
+ * 2. Evaluate the complex numerator N(w) and denominator D(w).
+ * 3. Calculate the magnitude of the numerator: |N(w)| = sqrt(real(N)^2 + imag(N)^2).
+ * 4. Calculate the magnitude of the denominator: |D(w)| = sqrt(real(D)^2 + imag(D)^2).
+ * 5. The total gain is |N(w)| / |D(w)|.
  * @param[in] obj Pointer to the biquad filter instance.
  * @param[in] fs Sampling frequency (Hz).
  * @param[in] f The frequency at which to calculate the gain (Hz).

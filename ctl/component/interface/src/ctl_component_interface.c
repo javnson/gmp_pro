@@ -58,6 +58,23 @@ void ctl_init_tri_adc_channel(tri_adc_channel_t* adc, ctrl_gt gain, ctrl_gt bias
     adc->iqn = iqn;
 }
 
+//////////////////////////////////////////////////////////////////////////
+// DAC channel
+
+#include <ctl/component/interface/dac_channel.h>
+
+void ctl_init_dac_channel(dac_channel_t* dac, ctrl_gt gain, ctrl_gt bias, fast_gt resolution, fast_gt iqn)
+{
+    gmp_ctl_assert(dac != NULL);
+
+    dac->raw = CTL_CTRL_CONST_ZERO;
+    dac->resolution = resolution;
+    dac->iqn = iqn;
+    dac->gain = gain;
+    dac->bias = bias;
+    dac->value = 0;
+}
+
 void ctl_init_adc_calibrator(adc_bias_calibrator_t* obj, parameter_gt fc, parameter_gt Q, parameter_gt fs)
 {
     uint32_t total_period = (uint32_t)(10 * fc);

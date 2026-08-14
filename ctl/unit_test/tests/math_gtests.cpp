@@ -1,6 +1,6 @@
 /**
- * @file math_and_pid_tests.cpp
- * @brief Hosted regression tests for CTL numeric domains and continuous PID.
+ * @file math_gtests.cpp
+ * @brief Hosted regression tests for CTL floating-point math domains.
  */
 
 #include <gtest/gtest.h>
@@ -9,7 +9,6 @@
 #include <type_traits>
 
 #include <ctl/portable/gmp_ctl_portable.h>
-#include <ctl/component/intrinsic/continuous/continuous_pid.h>
 #include <ctl/math_block/matrix_lite/matrix.hpp>
 #include <ctl/math_block/vector_lite/vector.hpp>
 
@@ -109,31 +108,4 @@ TEST(MatrixLite, MatrixVectorAndMatrixMatrixProductsAreCorrect)
     const auto unchanged = matrix * identity;
     EXPECT_DOUBLE_EQ(unchanged(0, 1), 2.0);
     EXPECT_DOUBLE_EQ(unchanged(1, 0), 3.0);
-}
-
-TEST(ContinuousPid, InitializationCalculatesInParameterDomainThenCachesControlValues)
-{
-    ctl_pid_t pid{};
-    ctl_init_pid(&pid, real2param(2.0), real2param(4.0), real2param(0.1), real2param(1000.0));
-
-    EXPECT_NEAR(ctrl_value(pid.kp), 2.0, ctrl_tolerance);
-    EXPECT_NEAR(ctrl_value(pid.ki), 0.004, ctrl_tolerance);
-    EXPECT_NEAR(ctrl_value(pid.kd), 100.0, ctrl_tolerance);
-    EXPECT_NEAR(ctrl_value(pid.i_term), 0.0, ctrl_tolerance);
-    EXPECT_NEAR(ctrl_value(pid.dn), 0.0, ctrl_tolerance);
-}
-
-TEST(ContinuousPid, StepAppliesOutputAndIntegratorLimits)
-{
-    ctl_pid_t pid{};
-    ctl_init_pid(&pid, CTL_PARAM_CONST_1, CTL_PARAM_CONST_1, CTL_PARAM_CONST_ZERO, real2param(100.0));
-    ctl_set_pid_limit(&pid, CTL_CTRL_CONST_1_OVER_2, -CTL_CTRL_CONST_1_OVER_2);
-
-    const ctrl_gt output = ctl_step_pid_par(&pid, CTL_CTRL_CONST_1);
-    EXPECT_NEAR(ctrl_value(output), 0.5, ctrl_tolerance);
-    EXPECT_NEAR(ctrl_value(pid.i_term), 0.01, ctrl_tolerance);
-
-    for (int iteration = 0; iteration < 200; ++iteration)
-        (void)ctl_step_pid_par(&pid, CTL_CTRL_CONST_1);
-    EXPECT_LE(ctrl_value(pid.i_term), ctrl_value(pid.integral_max) + ctrl_tolerance);
 }

@@ -124,7 +124,7 @@ void ctl_init_ramp_generator(ctl_ramp_generator_t* rg, ctrl_gt slope, parameter_
  * @details Calculates the required slope to achieve a target frequency.
  * @param[out] rg Pointer to the ramp generator instance.
  * @param[in] isr_freq The frequency at which the step function is called (Hz).
- * @param[in] target_freq The desired frequency of the ramp wave (Hz).
+ * @param[in] target_freq The signed ramp frequency (Hz). Zero is stationary and a negative value runs in reverse.
  * @param[in] amp_pos The positive peak (maximum) value.
  * @param[in] amp_neg The negative peak (minimum) value.
  */
