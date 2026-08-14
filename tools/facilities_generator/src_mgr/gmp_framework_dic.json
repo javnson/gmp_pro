@@ -50,7 +50,7 @@
             },
             "std": {
                 "type": "module",
-                "description": "GMP 标准化接口",
+                "description": "GMP standardized interfaces",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/core/std/ec/src/error_code.c"
                 ],
@@ -185,7 +185,7 @@
             },
             "pm|_internal": {
                 "type": "module",
-                "description": "GMP 进程管理模快",
+                "description": "GMP process and task management",
                 "src_patterns": [],
                 "inc_patterns": [],
                 "depends_on": [
@@ -278,7 +278,7 @@
             },
             "dev|_internal": {
                 "type": "module",
-                "description": "GMP 设备接口",
+                "description": "GMP device interfaces",
                 "src_patterns": [],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/core/dev/peripheral_types.h",
@@ -459,7 +459,7 @@
             },
             "dev|driver|dac|_internal": {
                 "type": "module",
-                "description": "自动生成的包基础配置",
+                "description": "Generated base package configuration",
                 "src_patterns": [],
                 "inc_patterns": [],
                 "inc_dirs": [],
@@ -508,7 +508,7 @@
             },
             "dev|driver|display|_internal": {
                 "type": "module",
-                "description": "自动生成的包基础配置",
+                "description": "Generated base package configuration",
                 "src_patterns": [],
                 "inc_patterns": [],
                 "inc_dirs": [],
@@ -557,7 +557,7 @@
             },
             "dev|driver|encoder|_internal": {
                 "type": "module",
-                "description": "自动生成的包基础配置",
+                "description": "Generated base package configuration",
                 "src_patterns": [],
                 "inc_patterns": [],
                 "inc_dirs": [],
@@ -606,7 +606,7 @@
             },
             "dev|driver|excitation|_internal": {
                 "type": "module",
-                "description": "自动生成的包基础配置",
+                "description": "Generated base package configuration",
                 "src_patterns": [],
                 "inc_patterns": [],
                 "inc_dirs": [],
@@ -693,7 +693,7 @@
             },
             "dev|driver|gpio|_internal": {
                 "type": "module",
-                "description": "自动生成的包基础配置",
+                "description": "Generated base package configuration",
                 "src_patterns": [],
                 "inc_patterns": [],
                 "inc_dirs": [],
@@ -742,7 +742,7 @@
             },
             "dev|driver|meter|_internal": {
                 "type": "module",
-                "description": "自动生成的包基础配置",
+                "description": "Generated base package configuration",
                 "src_patterns": [],
                 "inc_patterns": [],
                 "inc_dirs": [],
@@ -791,7 +791,7 @@
             },
             "dev|driver|potentiometer|_internal": {
                 "type": "module",
-                "description": "自动生成的包基础配置",
+                "description": "Generated base package configuration",
                 "src_patterns": [],
                 "inc_patterns": [],
                 "inc_dirs": [],
@@ -840,7 +840,7 @@
             },
             "dev|driver|rtc|_internal": {
                 "type": "module",
-                "description": "自动生成的包基础配置",
+                "description": "Generated base package configuration",
                 "src_patterns": [],
                 "inc_patterns": [],
                 "inc_dirs": [],
@@ -889,7 +889,7 @@
             },
             "dev|driver|sensor|_internal": {
                 "type": "module",
-                "description": "自动生成的包基础配置",
+                "description": "Generated base package configuration",
                 "src_patterns": [],
                 "inc_patterns": [],
                 "inc_dirs": [],
@@ -1016,7 +1016,7 @@
             },
             "dev|software|_internal": {
                 "type": "module",
-                "description": "自动生成的包基础配置",
+                "description": "Generated base package configuration",
                 "src_patterns": [],
                 "inc_patterns": [],
                 "inc_dirs": [],
@@ -1046,6 +1046,29 @@
                     "core|std",
                     "core|base|checksum|crc16",
                     "core|base|port"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-08-14",
+                        "reply": "Built in the F280049C CCS 12.8 project with TI C2000 CGT 22.6.1 LTS and in the STM32C092 CMake project with Arm GNU Toolchain."
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": true,
+                        "date": "2026-08-14",
+                        "reply": "The u16 backend passed on LAUNCHXL-F280049C and the u8 backend passed on NUCLEO-C092RC at 921600 baud, including discovery, escaping, CRC, full-MTU ECHO, and ten consecutive stress iterations per target."
+                    }
                 ]
             },
             "dev|datalink|pil": {
@@ -1064,9 +1087,9 @@
                     {
                         "id": "sys_compile",
                         "summary": "Compilation Passed",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
+                        "completed": true,
+                        "date": "2026-08-14",
+                        "reply": "Built in the Iris F280039C CCS 12.8 project with TI C2000 CGT 22.6.1 LTS."
                     },
                     {
                         "id": "sys_sim",
@@ -1104,9 +1127,9 @@
                     {
                         "id": "sys_compile",
                         "summary": "Compilation Passed",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
+                        "completed": true,
+                        "date": "2026-08-14",
+                        "reply": "Built in both the F280049C u16 Data Link project and the STM32C092 u8 Data Link project."
                     },
                     {
                         "id": "sys_sim",
@@ -1118,9 +1141,9 @@
                     {
                         "id": "sys_hw",
                         "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
+                        "completed": true,
+                        "date": "2026-08-14",
+                        "reply": "Three physical signal parameters were discovered, written, read back, and observed through Scope on LAUNCHXL-F280049C and NUCLEO-C092RC at 921600 baud; both targets passed ten consecutive iterations."
                     }
                 ]
             },
@@ -1144,9 +1167,9 @@
                     {
                         "id": "sys_compile",
                         "summary": "Compilation Passed",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
+                        "completed": true,
+                        "date": "2026-08-14",
+                        "reply": "Built in both the F280049C u16 Data Link project and the STM32C092 u8 Data Link project."
                     },
                     {
                         "id": "sys_sim",
@@ -1158,9 +1181,9 @@
                     {
                         "id": "sys_hw",
                         "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
+                        "completed": true,
+                        "date": "2026-08-14",
+                        "reply": "Sandbox discovery plus byte-addressed reads and writes passed on the C28x 16-bit address space and the STM32 byte-addressed target; both targets passed ten consecutive iterations."
                     }
                 ]
             },
@@ -1183,9 +1206,9 @@
                     {
                         "id": "sys_compile",
                         "summary": "Compilation Passed",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
+                        "completed": true,
+                        "date": "2026-08-14",
+                        "reply": "Built in both the F280049C u16 Data Link project and the STM32C092 u8 Data Link project."
                     },
                     {
                         "id": "sys_sim",
@@ -1197,9 +1220,9 @@
                     {
                         "id": "sys_hw",
                         "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
+                        "completed": true,
+                        "date": "2026-08-14",
+                        "reply": "A 400-sample, two-channel float32 capture passed waveform, RMS, quadrature, periodicity, offset, and 25-percent pre-trigger checks in ten consecutive iterations on both hardware targets."
                     }
                 ]
             }
@@ -1270,7 +1293,7 @@
             },
             "component|kinematics": {
                 "type": "module",
-                "description": "数字运动学组件",
+                "description": "Numeric kinematics components",
                 "src_patterns": [],
                 "inc_patterns": [],
                 "depends_on": [],
@@ -1333,7 +1356,7 @@
             },
             "component|interface|_internal": {
                 "type": "module",
-                "description": "数字控制器标准接口",
+                "description": "Standard control-component interfaces",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/interface/src/ctl_component_interface.c"
                 ],
@@ -1465,7 +1488,7 @@
             },
             "component|intrinsic|_internal": {
                 "type": "module",
-                "description": "基础控制器模块组件",
+                "description": "Intrinsic controller components",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/src/ctl_divider.c",
                     "${GMP_PRO_LOCATION}/ctl/component/intrinsic/basic/src/ctl_hysteresis_controller.c",
@@ -1488,7 +1511,7 @@
             },
             "component|motor_control|_internal": {
                 "type": "module",
-                "description": "电机控制器组件",
+                "description": "Motor-control components",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/src/ctl_mc_encoder.c",
                     "${GMP_PRO_LOCATION}/ctl/component/motor_control/interface/src/ctl_mc_encoder_switcher.c"
@@ -1636,7 +1659,7 @@
             },
             "component|hardware_preset|_internal": {
                 "type": "module",
-                "description": "硬件预设",
+                "description": "Hardware presets",
                 "src_patterns": [],
                 "inc_patterns": [],
                 "depends_on": [],
@@ -1891,7 +1914,7 @@
             },
             "math_block|_internal": {
                 "type": "module",
-                "description": "自动生成的包基础配置",
+                "description": "Generated base package configuration",
                 "src_patterns": [],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/math_block/ctrl_gt/*",
@@ -2048,7 +2071,7 @@
             },
             "framework|_internal": {
                 "type": "module",
-                "description": "控制器状态机框架",
+                "description": "Controller state-machine framework",
                 "src_patterns": [],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/framework/ctl_dispatch.h"
@@ -2460,16 +2483,16 @@
                     {
                         "id": "sys_compile",
                         "summary": "Compilation Passed",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
+                        "completed": true,
+                        "date": "2026-08-14",
+                        "reply": "MSVC x64 portable CTL builds passed for ctrl_gt float and double"
                     },
                     {
                         "id": "sys_sim",
                         "summary": "Simulation / Principle Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
+                        "completed": true,
+                        "date": "2026-08-14",
+                        "reply": "CTL unit tests passed PID initialization, cached coefficients, output limiting, and integrator limiting in float and double modes"
                     },
                     {
                         "id": "sys_hw",
@@ -2965,16 +2988,16 @@
                     {
                         "id": "sys_compile",
                         "summary": "Compilation Passed",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
+                        "completed": true,
+                        "date": "2026-08-14",
+                        "reply": "MSVC x64 portable CTL build passed for R, PR, QR, and QPR implementations"
                     },
                     {
                         "id": "sys_sim",
                         "summary": "Simulation / Principle Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
+                        "completed": true,
+                        "date": "2026-08-14",
+                        "reply": "Unit contract confirmed QR response matches zero-Kp QPR while using a smaller state object"
                     },
                     {
                         "id": "sys_hw",
@@ -6767,6 +6790,46 @@
                         "completed": false,
                         "date": "",
                         "reply": "Requires LaunchPad validation"
+                    }
+                ]
+            },
+            "linux_simulink": {
+                "type": "module",
+                "description": "Native Linux CSP for framed TCP/UDP MATLAB and Simulink SIL/PIL controller processes",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/csp/linux_simulink/src/*"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/csp/linux_simulink/*"
+                ],
+                "inc_dirs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/csp/linux_simulink/README.md"
+                ],
+                "depends_on": [
+                    "core|rt"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-08-14",
+                        "reply": "All Linux CSP sources compiled on aarch64 Ubuntu 18.04 with GCC 7.5, C++17, and warnings treated as errors"
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": "Pending MATLAB/Simulink SIL validation"
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": "Not applicable to a hosted Linux CSP"
                     }
                 ]
             },

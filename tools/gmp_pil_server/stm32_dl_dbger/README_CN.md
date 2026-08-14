@@ -63,3 +63,5 @@ python smoke_test.py
 烧写 CMake ELF 或 Keil HEX 并复位后运行测试。测试会自动识别 NUCLEO 的 ST-Link
 虚拟串口，并验证转义、CRC、满 MTU DMA ECHO、Tunable、Memory Perspective、DSA
 元数据、Tunable 参数对波形的实际作用、25% 预触发位置以及 400 点正弦/余弦快照。
+2026-08-14，连接的 NUCLEO-C092RC 在 921600 波特率下通过了完整测试和连续十轮压力
+测试。

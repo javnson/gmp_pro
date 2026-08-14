@@ -1,0 +1,8 @@
+# Headless packages used by GMP repository tools on Linux runtime/build nodes.
+cmake==3.31.6
+Jinja2==3.1.6
+matplotlib==3.10.3
+ninja==1.13.0
+numpy==2.2.6
+pyserial==3.5
+symengine==0.14.1

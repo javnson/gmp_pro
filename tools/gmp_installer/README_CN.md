@@ -12,6 +12,33 @@ GMP_PRO_LOCATION=<gmp_pro 根目录的绝对路径>
 
 Visual Studio 是可选能力。没有安装 Visual Studio 或 C++ 工作负载时，硬件工程、CCS 注册、Python 工具、SDPE、源码管理和文档工具仍可正常安装；安装器只跳过 Visual Studio 仿真工程的 vcpkg 依赖恢复。
 
+Linux 使用独立的仓库私有环境，不安装系统软件、不修改 shell profile，也不持久修改
+`PATH`。在仓库根目录运行：
+
+```bash
+bash install_gmp_virtual_env.sh
+source bin/linux/activate_gmp.sh
+```
+
+安装器会把现代 Python、虚拟环境、vcpkg 和本机依赖放入 `bin/linux`。即使系统只提供
+旧版 Python，GMP 工具仍使用私有 Python 3.12。服务器默认安装无 GUI 配置；Linux
+工作站需要 Qt 工具时可使用 `--with-gui`。只有 Python、vcpkg、Facility 依赖审计和
+无 GUI 的 SDPE 回归检查全部通过后，才会生成
+`bin/linux/gmp_virtual_env_installed.flag`。
+
+如果默认 Python 或 PyPI 下载端点速度较慢，可以只对本次安装设置 `uv`/pip 的标准
+环境变量；安装器不会持久保存镜像设置：
+
+```bash
+UV_PYTHON_INSTALL_MIRROR=<python-build-mirror> \
+PIP_INDEX_URL=<python-package-index> \
+bash install_gmp_virtual_env.sh
+```
+
+安装器也支持没有 `.git` 目录的源码压缩包。此时工程发现过程只会在
+`bin/linux/cache/discovery-git` 中建立私有 Git 元数据，不会把源码目录转变为 Git
+仓库。
+
 ## 1. 在线安装私有环境
 
 在仓库根目录运行：
@@ -84,6 +111,10 @@ configure_gmp_proxy.bat
 ```bat
 repair_gmp_vcpkg.bat
 ```
+
+Windows 私有环境会先把所有工程的 vcpkg 依赖合并为一个总 manifest，再对共享安装目录
+执行一次恢复。不得逐个 manifest 依次恢复到同一个目录，否则 vcpkg 会删除当前
+manifest 未声明、但其他工程仍然需要的软件包。
 
 经典环境在后续安装 Visual Studio C++ 后，重新运行 `install_gmp.bat` 即可。
 

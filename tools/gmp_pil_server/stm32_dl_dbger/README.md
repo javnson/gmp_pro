@@ -79,3 +79,5 @@ It auto-detects the NUCLEO ST-Link VCP and validates frame escaping, CRC,
 full-MTU DMA ECHO, target-reported Tunable and Memory descriptors, read/write
 access, physical Tunable-to-Scope behavior, Scope discovery and configuration,
 a 25-percent pre-trigger position, and the 400-point sine/cosine snapshot.
+The 921600-baud path passed the complete test plus ten consecutive stress
+iterations on the connected NUCLEO-C092RC on 2026-08-14.

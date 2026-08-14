@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup Condition="Exists('$(MSBuildProjectDirectory)\..\vcpkg.json')">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgManifestRoot>$(MSBuildProjectDirectory)\..</VcpkgManifestRoot>
+  </PropertyGroup>
+  <PropertyGroup Condition="Exists('$(MSBuildProjectDirectory)\..\vcpkg.json') and Exists('$(GMP_PRO_LOCATION)\bin\vcpkg\scripts\buildsystems\msbuild\vcpkg.props')">
+    <VCPkgLocalAppDataDisabled>true</VCPkgLocalAppDataDisabled>
+    <VcpkgRoot>$(GMP_PRO_LOCATION)\bin\vcpkg\</VcpkgRoot>
+    <VcpkgTriplet Condition="'$(VcpkgTriplet)' == ''">x64-windows</VcpkgTriplet>
+    <VcpkgInstalledDir>$(GMP_PRO_LOCATION)\bin\vcpkg_installed\$(VcpkgTriplet)\</VcpkgInstalledDir>
+    <VcpkgManifestRoot Condition="Exists('$(GMP_PRO_LOCATION)\bin\cache\vcpkg-manifest\vcpkg.json')">$(GMP_PRO_LOCATION)\bin\cache\vcpkg-manifest</VcpkgManifestRoot>
+  </PropertyGroup>
+  <Import Project="$(GMP_PRO_LOCATION)\bin\vcpkg\scripts\buildsystems\msbuild\vcpkg.props"
+          Condition="Exists('$(MSBuildProjectDirectory)\..\vcpkg.json') and Exists('$(GMP_PRO_LOCATION)\bin\vcpkg\scripts\buildsystems\msbuild\vcpkg.props')" />
+</Project>

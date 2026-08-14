@@ -11,11 +11,13 @@ void setup_peripheral(void)
 {
     user_led = nullptr;
     ctl_init_adc_channel(&adc_v_in,
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_FSBB_VIN_SENSITIVITY, CTRL_VOLTAGE_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_FSBB_VIN_BIAS), CTRL_ADC_RESOLUTION, 24);
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, real2param(CTRL_FSBB_VIN_SENSITIVITY), CTRL_VOLTAGE_BASE),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, real2param(CTRL_FSBB_VIN_BIAS)), CTRL_ADC_RESOLUTION,
+        24);
     ctl_init_adc_channel(&adc_v_out,
-        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_FSBB_VOUT_SENSITIVITY, CTRL_VOLTAGE_BASE),
-        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_FSBB_VOUT_BIAS), CTRL_ADC_RESOLUTION, 24);
+        ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, real2param(CTRL_FSBB_VOUT_SENSITIVITY), CTRL_VOLTAGE_BASE),
+        ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, real2param(CTRL_FSBB_VOUT_BIAS)), CTRL_ADC_RESOLUTION,
+        24);
     ctl_init_adc_channel(&adc_i_L,
         ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, CTRL_FSBB_IL_SENSITIVITY, CTRL_CURRENT_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, CTRL_FSBB_IL_BIAS), CTRL_ADC_RESOLUTION, 24);

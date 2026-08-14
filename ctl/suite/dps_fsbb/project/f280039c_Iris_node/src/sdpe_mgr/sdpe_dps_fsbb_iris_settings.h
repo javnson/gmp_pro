@@ -250,57 +250,57 @@ extern "C"
 /**
  * @brief FSBB switching frequency.
  */
-#define PWM_FREQ (20e3f)
+#define PWM_FREQ real2param(20e3)
 
 /**
  * @brief SIL controller sample frequency.
  */
-#define CONTROLLER_FREQUENCY (20e3f)
+#define CONTROLLER_FREQUENCY real2param(20e3)
 
 /**
  * @brief ADC reference voltage.
  */
-#define CTRL_ADC_VOLTAGE_REF (3.3f)
+#define CTRL_ADC_VOLTAGE_REF real2param(3.3)
 
 /**
  * @brief Voltage per-unit base.
  */
-#define CTRL_VOLTAGE_BASE (34.0f)
+#define CTRL_VOLTAGE_BASE real2param(34.0)
 
 /**
  * @brief Current per-unit base.
  */
-#define CTRL_CURRENT_BASE (14.14f)
+#define CTRL_CURRENT_BASE real2param(14.14)
 
 /**
  * @brief Minimum load resistance.
  */
-#define FSBB_PARAM_RLOAD_MIN (20.0f)
+#define FSBB_PARAM_RLOAD_MIN real2param(20.0)
 
 /**
  * @brief Input capacitance.
  */
-#define FSBB_PARAM_CIN (440e-6f)
+#define FSBB_PARAM_CIN real2param(440e-6)
 
 /**
  * @brief Output capacitance.
  */
-#define FSBB_PARAM_COUT (440e-6f)
+#define FSBB_PARAM_COUT real2param(440e-6)
 
 /**
  * @brief Output capacitor ESR.
  */
-#define FSBB_PARAM_COUT_ESR (0.1f)
+#define FSBB_PARAM_COUT_ESR real2param(0.1)
 
 /**
  * @brief Main FSBB inductance.
  */
-#define FSBB_PARAM_L (1.5e-3f)
+#define FSBB_PARAM_L real2param(1.5e-3)
 
 /**
  * @brief Main inductor ESR.
  */
-#define FSBB_PARAM_L_ESR (0.05f)
+#define FSBB_PARAM_L_ESR real2param(0.05)
 
 /**
  * @brief Input-voltage sensor sensitivity in V/V.
@@ -345,92 +345,92 @@ extern "C"
 /**
  * @brief Maximum input voltage.
  */
-#define FSBB_INPUT_VOLTAGE_MAX (60.0f)
+#define FSBB_INPUT_VOLTAGE_MAX real2param(60.0)
 
 /**
  * @brief Minimum input voltage.
  */
-#define FSBB_INPUT_VOLTAGE_MIN (12.0f)
+#define FSBB_INPUT_VOLTAGE_MIN real2param(12.0)
 
 /**
  * @brief Nominal model source voltage.
  */
-#define FSBB_INPUT_VOLTAGE_NOMINAL (24.0f)
+#define FSBB_INPUT_VOLTAGE_NOMINAL real2param(24.0)
 
 /**
  * @brief Maximum output voltage.
  */
-#define FSBB_OUTPUT_VOLTAGE_MAX (72.0f)
+#define FSBB_OUTPUT_VOLTAGE_MAX real2param(72.0)
 
 /**
  * @brief Minimum output voltage.
  */
-#define FSBB_OUTPUT_VOLTAGE_MIN (3.0f)
+#define FSBB_OUTPUT_VOLTAGE_MIN real2param(3.0)
 
 /**
  * @brief Output current limit.
  */
-#define FSBB_OUTPUT_CURRENT_LIM (10.0f)
+#define FSBB_OUTPUT_CURRENT_LIM real2param(10.0)
 
 /**
  * @brief Default voltage-loop command.
  */
-#define FSBB_DEFAULT_OUTPUT_VOLTAGE (24.0f)
+#define FSBB_DEFAULT_OUTPUT_VOLTAGE real2param(24.0)
 
 /**
  * @brief Default current limit.
  */
-#define FSBB_DEFAULT_CURRENT_LIMIT (5.0f)
+#define FSBB_DEFAULT_CURRENT_LIMIT real2param(5.0)
 
 /**
  * @brief Maximum leg duty.
  */
-#define FSBB_DUTY_MAX (0.95f)
+#define FSBB_DUTY_MAX real2param(0.95)
 
 /**
  * @brief Minimum leg duty.
  */
-#define FSBB_DUTY_MIN (0.05f)
+#define FSBB_DUTY_MIN real2param(0.05)
 
 /**
  * @brief Positive inductor-current protection threshold.
  */
-#define FSBB_PROTECT_IL_MAX (25.0f)
+#define FSBB_PROTECT_IL_MAX real2param(25.0)
 
 /**
  * @brief Negative inductor-current protection threshold.
  */
-#define FSBB_PROTECT_IL_MIN (-2.0f)
+#define FSBB_PROTECT_IL_MIN real2param(-2.0)
 
 /**
  * @brief Open-loop equivalent voltage command.
  */
-#define FSBB_OPEN_LOOP_VOLTAGE_COMMAND (12.0f)
+#define FSBB_OPEN_LOOP_VOLTAGE_COMMAND real2param(12.0)
 
 /**
  * @brief Current-loop crossover frequency.
  */
-#define FSBB_CURRENT_LOOP_BANDWIDTH (800.0f)
+#define FSBB_CURRENT_LOOP_BANDWIDTH real2param(800.0)
 
 /**
  * @brief Voltage-loop crossover frequency.
  */
-#define FSBB_VOLTAGE_LOOP_BANDWIDTH (40.0f)
+#define FSBB_VOLTAGE_LOOP_BANDWIDTH real2param(40.0)
 
 /**
  * @brief Buck-to-transition boundary.
  */
-#define FSBB_TRANSITION_RATIO_LOW (0.90f)
+#define FSBB_TRANSITION_RATIO_LOW real2param(0.90)
 
 /**
  * @brief Transition-to-boost boundary.
  */
-#define FSBB_TRANSITION_RATIO_HIGH (1.10f)
+#define FSBB_TRANSITION_RATIO_HIGH real2param(1.10)
 
 /**
  * @brief Compatibility setting used by the suite framework.
  */
-#define CTRL_SPLL_EPSILON (0.005f)
+#define CTRL_SPLL_EPSILON real2param(0.005)
 
 /**
  * @brief ADC calibration timeout.
@@ -440,12 +440,12 @@ extern "C"
 /**
  * @brief Voltage command ramp in pu/s.
  */
-#define FSBB_VOLTAGE_RAMP_PU_S (1.0f)
+#define FSBB_VOLTAGE_RAMP_PU_S real2param(1.0)
 
 /**
  * @brief Current command ramp in pu/s.
  */
-#define FSBB_CURRENT_RAMP_PU_S (1.0f)
+#define FSBB_CURRENT_RAMP_PU_S real2param(1.0)
 
 //=================================================================================================
 /**

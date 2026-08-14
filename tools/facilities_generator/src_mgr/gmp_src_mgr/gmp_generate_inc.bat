@@ -30,6 +30,6 @@ if not "%RESULT%"=="0" (
 
 echo.
 echo =======================================================
-echo 🎉 [SUCCESS] Header file tree deployed successfully!
+echo [SUCCESS] Header file tree deployed successfully!
 echo =======================================================
 exit /b 0

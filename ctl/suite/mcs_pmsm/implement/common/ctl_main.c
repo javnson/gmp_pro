@@ -73,7 +73,7 @@ void ctl_init()
     // init Auto - turn encoder
     ctl_init_autoturn_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, MTR_ENCODER_LINES);
     // Set encoder offset
-    ctl_set_autoturn_pos_encoder_offset(&pos_enc, MTR_ENCODER_OFFSET);
+    ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, real2ctrl(MTR_ENCODER_OFFSET));
 	  // attach a QEP encoder object
 		ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &pos_enc.encif);
 #endif // PMSM_CTRL_USING_QEP_ENCODER

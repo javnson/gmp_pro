@@ -17,6 +17,7 @@ The basic structure of the CTL is shown as follow.
 | CTL framework        | `framework` | This folder contains the predefined Controller Framework. User may use these framework to create his standard real-time controller prototype with high efficiency and easily.<br />Each framework has provide a set of function witch should be called on time by user, and another set of function prototype witch should be implemented by user. By doing this, user may insert the framework to his projects. |
 | CTL controller suite | `suite`     | This folder contains some predefined Controller Suite, and some examples for these suite.<br />User may create his real-time controller application quickly by controller suite. |
 | CTL portable         | `portable`  | Minimal TI DSP and STM32 integration templates for applications that define `GMP_CTL_PORTABLE` and do not use CSP or the GMP runtime framework. |
+| CTL unit tests       | `unit_test` | Visual Studio Test Explorer and CTest workspace for float, double, fixed-point, component, and framework regression tests. |
 | FPGA support         | `fpga`      | This folder provide some controller utilities which was implemented by HLS or Verilog code. User may use these code to implement a FPGA real-time controller. |
 | controlled plants    | objects     | This folder contains a list of control objects. User may implement a simulation via this submodule. |
 

@@ -348,12 +348,12 @@ extern "C"
 /**
  * @brief ADC reference voltage.
  */
-#define CTRL_ADC_VOLTAGE_REF (3.3f)
+#define CTRL_ADC_VOLTAGE_REF real2param(3.3)
 
 /**
  * @brief DC-bus per-unit voltage base.
  */
-#define CTRL_DCBUS_VOLTAGE (80.0f)
+#define CTRL_DCBUS_VOLTAGE real2param(80.0)
 
 /**
  * @brief SVPWM phase-voltage base.
@@ -363,7 +363,7 @@ extern "C"
 /**
  * @brief Phase-current per-unit base in amperes.
  */
-#define CTRL_CURRENT_BASE (10.0f)
+#define CTRL_CURRENT_BASE real2param(10.0)
 
 /**
  * @brief Harmonia grid-filter inductance.
@@ -378,12 +378,12 @@ extern "C"
 /**
  * @brief DC-link voltage sensing gain.
  */
-#define CTRL_DC_VOLTAGE_SENSITIVITY (0.02738589f)
+#define CTRL_DC_VOLTAGE_SENSITIVITY real2param(0.02738589)
 
 /**
  * @brief DC-link voltage sensing bias.
  */
-#define CTRL_DC_VOLTAGE_BIAS (0.0f)
+#define CTRL_DC_VOLTAGE_BIAS real2param(0.0)
 
 /**
  * @brief Grid-voltage sensing gain.
@@ -398,22 +398,22 @@ extern "C"
 /**
  * @brief Helios voltage sensing gain.
  */
-#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (0.02738589f)
+#define CTRL_INVERTER_VOLTAGE_SENSITIVITY real2param(0.02738589)
 
 /**
  * @brief Helios voltage sensing bias.
  */
-#define CTRL_INVERTER_VOLTAGE_BIAS (0.0f)
+#define CTRL_INVERTER_VOLTAGE_BIAS real2param(0.0)
 
 /**
  * @brief DC-link current sensitivity.
  */
-#define CTRL_DC_CURRENT_SENSITIVITY (0.02475f)
+#define CTRL_DC_CURRENT_SENSITIVITY real2param(0.02475)
 
 /**
  * @brief DC-link current bias.
  */
-#define CTRL_DC_CURRENT_BIAS (1.65f)
+#define CTRL_DC_CURRENT_BIAS real2param(1.65)
 
 /**
  * @brief Grid-current sensitivity.
@@ -428,12 +428,12 @@ extern "C"
 /**
  * @brief Validated Helios current sensitivity.
  */
-#define CTRL_INVERTER_CURRENT_SENSITIVITY (0.05f)
+#define CTRL_INVERTER_CURRENT_SENSITIVITY real2param(0.05)
 
 /**
  * @brief Helios current bias.
  */
-#define CTRL_INVERTER_CURRENT_BIAS (1.65f)
+#define CTRL_INVERTER_CURRENT_BIAS real2param(1.65)
 
 /**
  * @brief Startup delay in milliseconds.
@@ -538,12 +538,12 @@ extern "C"
 /**
  * @brief ADC offset calibrator filter cutoff frequency.
  */
-#define GFL_ADC_CALIBRATOR_FC_HZ (20.0f)
+#define GFL_ADC_CALIBRATOR_FC_HZ real2param(20.0)
 
 /**
  * @brief ADC offset calibrator second-order filter quality factor.
  */
-#define GFL_ADC_CALIBRATOR_Q (0.707f)
+#define GFL_ADC_CALIBRATOR_Q real2param(0.707)
 
 /**
  * @brief Minimum CiA402 delay before Operation Enabled.
@@ -553,12 +553,12 @@ extern "C"
 /**
  * @brief Nominal grid phase-voltage magnitude in controller per unit.
  */
-#define GFL_GRID_VOLTAGE_PU (0.33f)
+#define GFL_GRID_VOLTAGE_PU real2param(0.33)
 
 /**
  * @brief P/Q outer-loop execution frequency in hertz.
  */
-#define GFL_PQ_LOOP_FREQUENCY_HZ (1000.0f)
+#define GFL_PQ_LOOP_FREQUENCY_HZ real2param(1000.0)
 
 /**
  * @brief Current-ISR to P/Q-loop execution divider.
@@ -568,172 +568,172 @@ extern "C"
 /**
  * @brief Active-power loop proportional gain from P error PU to d-axis current PU.
  */
-#define GFL_PQ_ACTIVE_KP (0.75f)
+#define GFL_PQ_ACTIVE_KP real2param(0.75)
 
 /**
  * @brief Active-power loop integral gain in inverse seconds.
  */
-#define GFL_PQ_ACTIVE_KI (0.001f)
+#define GFL_PQ_ACTIVE_KI real2param(0.001)
 
 /**
  * @brief Reactive-power loop proportional gain from Q error PU to q-axis current PU.
  */
-#define GFL_PQ_REACTIVE_KP (0.75f)
+#define GFL_PQ_REACTIVE_KP real2param(0.75)
 
 /**
  * @brief Reactive-power loop integral gain in inverse seconds.
  */
-#define GFL_PQ_REACTIVE_KI (0.001f)
+#define GFL_PQ_REACTIVE_KI real2param(0.001)
 
 /**
  * @brief Circular magnitude limit applied to the d/q current reference produced by the P/Q loop.
  */
-#define GFL_PQ_CURRENT_LIMIT_PU (1.0f)
+#define GFL_PQ_CURRENT_LIMIT_PU real2param(1.0)
 
 /**
  * @brief PQ droop frequency and voltage measurement low-pass cutoff.
  */
-#define GFL_PQ_DROOP_LPF_HZ (10.0f)
+#define GFL_PQ_DROOP_LPF_HZ real2param(10.0)
 
 /**
  * @brief Additional active-power command per hertz of frequency deficit.
  */
-#define GFL_PQ_DROOP_P_GAIN_PU_PER_HZ (0.10f)
+#define GFL_PQ_DROOP_P_GAIN_PU_PER_HZ real2param(0.10)
 
 /**
  * @brief Additional reactive-power command per PU of voltage deficit.
  */
-#define GFL_PQ_DROOP_Q_GAIN_PU_PER_V_PU (0.50f)
+#define GFL_PQ_DROOP_Q_GAIN_PU_PER_V_PU real2param(0.50)
 
 /**
  * @brief Minimum active-power reference after PQ droop.
  */
-#define GFL_PQ_DROOP_P_MIN_PU (-0.80f)
+#define GFL_PQ_DROOP_P_MIN_PU real2param(-0.80)
 
 /**
  * @brief Maximum active-power reference after PQ droop.
  */
-#define GFL_PQ_DROOP_P_MAX_PU (0.80f)
+#define GFL_PQ_DROOP_P_MAX_PU real2param(0.80)
 
 /**
  * @brief Minimum reactive-power reference after PQ droop.
  */
-#define GFL_PQ_DROOP_Q_MIN_PU (-0.80f)
+#define GFL_PQ_DROOP_Q_MIN_PU real2param(-0.80)
 
 /**
  * @brief Maximum reactive-power reference after PQ droop.
  */
-#define GFL_PQ_DROOP_Q_MAX_PU (0.80f)
+#define GFL_PQ_DROOP_Q_MAX_PU real2param(0.80)
 
 /**
  * @brief BUILD_LEVEL 1 d-axis open-loop voltage command.
  */
-#define GFL_OPEN_LOOP_VD_PU (0.6f)
+#define GFL_OPEN_LOOP_VD_PU real2param(0.6)
 
 /**
  * @brief BUILD_LEVEL 1 q-axis open-loop voltage command.
  */
-#define GFL_OPEN_LOOP_VQ_PU (0.6f)
+#define GFL_OPEN_LOOP_VQ_PU real2param(0.6)
 
 /**
  * @brief PLL lock-error threshold in controller per unit.
  */
-#define CTRL_SPLL_EPSILON ((real2ctrl(0.005)))
+#define CTRL_SPLL_EPSILON real2ctrl(0.005)
 
 /**
  * @brief Default active-power reference. Positive power exports energy to the grid.
  */
-#define GFL_ACTIVE_POWER_REF_PU (0.1f)
+#define GFL_ACTIVE_POWER_REF_PU real2param(0.1)
 
 /**
  * @brief Default reactive-power reference using Q = vq*id - vd*iq.
  */
-#define GFL_REACTIVE_POWER_REF_PU (0.0f)
+#define GFL_REACTIVE_POWER_REF_PU real2param(0.0)
 
 /**
  * @brief BUILD_LEVEL 2 d-axis current command.
  */
-#define GFL_CURRENT_LEVEL2_ID_PU (0.1f)
+#define GFL_CURRENT_LEVEL2_ID_PU real2param(0.1)
 
 /**
  * @brief BUILD_LEVEL 2 q-axis current command.
  */
-#define GFL_CURRENT_LEVEL2_IQ_PU (0.1f)
+#define GFL_CURRENT_LEVEL2_IQ_PU real2param(0.1)
 
 /**
  * @brief BUILD_LEVEL 3 grid-connected d-axis current command.
  */
-#define GFL_CURRENT_LEVEL3_ID_PU (0.1f)
+#define GFL_CURRENT_LEVEL3_ID_PU real2param(0.1)
 
 /**
  * @brief BUILD_LEVEL 3 grid-connected q-axis current command.
  */
-#define GFL_CURRENT_LEVEL3_IQ_PU (0.0f)
+#define GFL_CURRENT_LEVEL3_IQ_PU real2param(0.0)
 
 /**
  * @brief BUILD_LEVEL 4 d-axis current command.
  */
-#define GFL_CURRENT_LEVEL4_ID_PU (0.6f)
+#define GFL_CURRENT_LEVEL4_ID_PU real2param(0.6)
 
 /**
  * @brief BUILD_LEVEL 4 q-axis current command.
  */
-#define GFL_CURRENT_LEVEL4_IQ_PU (0.6f)
+#define GFL_CURRENT_LEVEL4_IQ_PU real2param(0.6)
 
 /**
  * @brief BUILD_LEVEL 6 positive-sequence d-axis capacitor phase-voltage reference in per unit.
  */
-#define GFL_STANDALONE_VD_PU (0.50f)
+#define GFL_STANDALONE_VD_PU real2param(0.50)
 
 /**
  * @brief BUILD_LEVEL 6 positive-sequence q-axis capacitor phase-voltage reference in per unit.
  */
-#define GFL_STANDALONE_VQ_PU (0.0f)
+#define GFL_STANDALONE_VQ_PU real2param(0.0)
 
 /**
  * @brief BUILD_LEVEL 6 capacitor-voltage outer-loop bandwidth in hertz; keep it well below the inner current-loop bandwidth.
  */
-#define GFL_VOLTAGE_LOOP_BW_HZ (100.0f)
+#define GFL_VOLTAGE_LOOP_BW_HZ real2param(100.0)
 
 /**
  * @brief BUILD_LEVEL 6 ordinary PI zero frequency in hertz.
  */
-#define GFL_VOLTAGE_LOOP_ZERO_HZ (20.0f)
+#define GFL_VOLTAGE_LOOP_ZERO_HZ real2param(20.0)
 
 /**
  * @brief Circular magnitude limit for the complete BUILD_LEVEL 6 PI plus feed-forward current reference. The final limited output is returned to the ordinary PID integrators by clamping correction.
  */
-#define GFL_VOLTAGE_CIRCLE_LIMIT_PU (0.80f)
+#define GFL_VOLTAGE_CIRCLE_LIMIT_PU real2param(0.80)
 
 /**
  * @brief Independent symmetric d/q-axis limit for the complete BUILD_LEVEL 6 PI plus feed-forward current reference.
  */
-#define GFL_VOLTAGE_SQUARE_LIMIT_PU (0.80f)
+#define GFL_VOLTAGE_SQUARE_LIMIT_PU real2param(0.80)
 
 /**
  * @brief Zero-sequence current QPR proportional gain used when 3D-SVPWM is enabled.
  */
-#define GFL_ZERO_QPR_KP (0.10f)
+#define GFL_ZERO_QPR_KP real2param(0.10)
 
 /**
  * @brief Zero-sequence current QPR resonant gain used when 3D-SVPWM is enabled.
  */
-#define GFL_ZERO_QPR_KR (50.0f)
+#define GFL_ZERO_QPR_KR real2param(50.0)
 
 /**
  * @brief Zero-sequence QPR resonant bandwidth/cutoff frequency in hertz.
  */
-#define GFL_ZERO_QPR_CUTOFF_HZ (5.0f)
+#define GFL_ZERO_QPR_CUTOFF_HZ real2param(5.0)
 
 /**
  * @brief Symmetric zero-axis voltage-command limit for four-wire operation.
  */
-#define GFL_ZERO_VOLTAGE_LIMIT_PU (0.20f)
+#define GFL_ZERO_VOLTAGE_LIMIT_PU real2param(0.20)
 
 /**
  * @brief Nominal grid frequency in hertz.
  */
-#define GFL_GRID_FREQUENCY_HZ (50.0f)
+#define GFL_GRID_FREQUENCY_HZ real2param(50.0)
 
 //=================================================================================================
 /**

@@ -100,8 +100,14 @@ addpath(fullfile(getenv('GMP_PRO_LOCATION'), 'slib', ...
     'simulink_lib_src', 'src'));
 results = runtests(fullfile(getenv('GMP_PRO_LOCATION'), 'slib', ...
     'simulink_lib_src', 'tests'));
-assert(all([results.Passed]));
+names = string({results.Name});
+allowedFiltered = names == ...
+    "test_sil_multi_instance/testRapidSimulationUsesSingleControllerSession";
+assert(all([results.Passed] | ([results.Incomplete] & allowedFiltered)));
 ```
+
+上述唯一允许过滤的用例需要桌面 MATLAB、已构建的 SIL 对端和 MEX；其他任何
+Failed 或 Incomplete 结果均视为回归失败。
 
 修改 SIL 库的推荐顺序是：
 

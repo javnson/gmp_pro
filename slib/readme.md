@@ -108,8 +108,14 @@ addpath(fullfile(getenv('GMP_PRO_LOCATION'), 'slib', ...
     'simulink_lib_src', 'src'));
 results = runtests(fullfile(getenv('GMP_PRO_LOCATION'), 'slib', ...
     'simulink_lib_src', 'tests'));
-assert(all([results.Passed]));
+names = string({results.Name});
+allowedFiltered = names == ...
+    "test_sil_multi_instance/testRapidSimulationUsesSingleControllerSession";
+assert(all([results.Passed] | ([results.Incomplete] & allowedFiltered)));
 ```
+
+The allowed filtered case requires desktop MATLAB plus a built SIL peer and
+MEX. Any other failed or incomplete result is a regression.
 
 Recommended SIL library workflow:
 

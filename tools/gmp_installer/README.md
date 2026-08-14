@@ -63,6 +63,65 @@ bin/
 
 The complete `bin/` folder is ignored by Git.
 
+Linux uses a separate, repository-private layout so Windows and Linux
+installations can coexist:
+
+```text
+bin/linux/
+  uv/                       pinned static bootstrap executable
+  python/                   uv-managed private CPython
+  venv/                     relocatable GMP Python virtual environment
+  vcpkg/                    pinned private vcpkg tree
+  vcpkg_installed/          native shared dependency tree
+  cache/                    reusable downloads and binary caches
+  activate_gmp.sh           generated Bash activation script
+  gmp_environment.json      generated platform inventory
+```
+
+## Linux private environment
+
+Run the installer from the repository root. It never installs system packages,
+changes shell profiles, or writes a persistent environment variable:
+
+```bash
+bash install_gmp_virtual_env.sh
+source bin/linux/activate_gmp.sh
+```
+
+The pinned static `uv` bootstrap installs a private Python 3.12 runtime even
+when the host Python is too old for GMP. The default profile is headless and is
+appropriate for build servers and MATLAB runtime nodes. Interactive Linux
+workstations can request Qt tools with:
+
+```bash
+bash install_gmp_virtual_env.sh --with-gui
+```
+
+On a network where the default Python or PyPI endpoints are slow, use the
+standard `uv`/pip environment variables for that invocation only; the installer
+does not persist either mirror:
+
+```bash
+UV_PYTHON_INSTALL_MIRROR=<python-build-mirror> \
+PIP_INDEX_URL=<python-package-index> \
+bash install_gmp_virtual_env.sh
+```
+
+The installer restores the aggregate native vcpkg dependency set, distributes
+Linux source-manager launchers without regenerating platform-specific project
+copies, runs the Facility dependency audit, and runs the non-GUI SDPE regression
+tests. It creates `bin/linux/gmp_virtual_env_installed.flag` only after all
+mandatory checks pass. Re-run validation with:
+
+```bash
+bin/linux/venv/bin/python tools/gmp_installer/linux_environment_manager.py doctor
+```
+
+An extracted source archive is also supported. When the working tree has no
+`.git` directory, project discovery uses private metadata under
+`bin/linux/cache/discovery-git`; it does not turn the source tree into a Git
+repository.
+
 ## 1. Install the classic system environment
 
 For maximum compatibility with the historical GMP setup, run:
@@ -386,7 +445,15 @@ together, and commit both.
 outside the suite convention. Paths listed there are added to the automatically
 discovered set; normal suite projects must not be listed individually. Keep the
 vcpkg repository version and URL pinned together, restore every manifest with
-the configured triplet, and verify both installation modes.
+the configured triplet, and verify both installation modes. Because all GMP
+projects share one install root, the installer first merges their dependency
+declarations into one aggregate manifest and performs a single restore. Never
+run the manifests sequentially against that root: vcpkg manifest mode removes
+packages absent from the current manifest and can silently prune another
+project's dependency. GMP's shared `Directory.Build.props` files therefore
+redirect private-environment MSBuild restores to the generated aggregate
+manifest. CMake commands that use the same shared installed directory must set
+`VCPKG_MANIFEST_DIR=bin/cache/vcpkg-manifest` for the same reason.
 
 `ctl/suite/Directory.Build.props` and `Directory.Build.targets` provide the
 shared MSBuild rule. When a project directory contains `vcpkg.json`, they enable
@@ -619,6 +686,8 @@ Before committing an installer or dependency change:
 2. Test the classic installation path and build a fresh private environment on
    both a Visual Studio C++ host and a host (or test environment) without it.
 3. Run `bin\python\python.exe -m pip check` and the doctor command below.
+   For Linux changes, also run both installer-manager unit-test modules and the
+   Linux doctor with `bin/linux/venv/bin/python`.
 4. Open `gmp_env.bat` and check `python --version` plus every changed
    application with its `--version` or equivalent command.
 5. Run `python tools\gmp_installer\audit_env_guards.py`.

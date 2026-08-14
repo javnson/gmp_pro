@@ -177,7 +177,8 @@ GMP_STATIC_INLINE fast_gt ctl_step_dsa_scope_varargs(ctl_dsa_scope_t* scope, uns
         {
             va_list args;
             va_start(args, arg_count);
-            uint16_t write_dims = (arg_count < scope->dims) ? arg_count : scope->dims;
+            uint16_t write_dims =
+                (arg_count < (unsigned int)scope->dims) ? (uint16_t)arg_count : scope->dims;
             for (i = 0; i < write_dims; i++)
             {
                 // Warning: Explicitly assumes passing floats promoted to double.

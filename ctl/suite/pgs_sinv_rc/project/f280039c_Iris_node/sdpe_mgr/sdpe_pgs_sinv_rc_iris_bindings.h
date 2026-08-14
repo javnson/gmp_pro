@@ -232,52 +232,52 @@ extern "C"
 /**
  * @brief ADC voltage reference.
  */
-#define CTRL_ADC_VOLTAGE_REF (3.3f)
+#define CTRL_ADC_VOLTAGE_REF real2param(3.3)
 
 /**
  * @brief Rated DC bus voltage.
  */
-#define CTRL_DCBUS_VOLTAGE (60.0f)
+#define CTRL_DCBUS_VOLTAGE real2param(60.0)
 
 /**
  * @brief Rated AC grid/load RMS voltage.
  */
-#define CTRL_GRID_VOLTAGE_RMS (24.0f)
+#define CTRL_GRID_VOLTAGE_RMS real2param(24.0)
 
 /**
  * @brief Rated AC output RMS current.
  */
-#define CTRL_RATED_CURRENT_RMS (10.0f)
+#define CTRL_RATED_CURRENT_RMS real2param(10.0)
 
 /**
  * @brief Voltage per-unit base, using peak value.
  */
-#define CTRL_VOLTAGE_BASE (34.0f)
+#define CTRL_VOLTAGE_BASE real2param(34.0)
 
 /**
  * @brief Current per-unit base, using peak value.
  */
-#define CTRL_CURRENT_BASE (14.14f)
+#define CTRL_CURRENT_BASE real2param(14.14)
 
 /**
  * @brief Nominal AC grid/fundamental frequency in Hz.
  */
-#define CTRL_GRID_FREQUENCY (50.0f)
+#define CTRL_GRID_FREQUENCY real2param(50.0)
 
 /**
  * @brief Total AC-side filter/grid inductance in H.
  */
-#define CTRL_AC_INDUCTANCE (0.0015f)
+#define CTRL_AC_INDUCTANCE real2param(0.0015)
 
 /**
  * @brief Total AC-side series resistance in Ohm.
  */
-#define CTRL_AC_RESISTANCE (0.05f)
+#define CTRL_AC_RESISTANCE real2param(0.05)
 
 /**
  * @brief Minimum PLL voltage magnitude used by P/Q reference division.
  */
-#define CTRL_GRID_VMIN_PU (0.1f)
+#define CTRL_GRID_VMIN_PU real2param(0.1)
 
 /**
  * @brief Maximum hardware DC bus voltage from the LVFB inverter board.
@@ -292,7 +292,7 @@ extern "C"
 /**
  * @brief Project DC bus over-voltage protection threshold.
  */
-#define CTRL_PROT_VBUS_MAX (100.0f)
+#define CTRL_PROT_VBUS_MAX real2param(100.0)
 
 /**
  * @brief Fast AC peak-current trip threshold in A.
@@ -302,7 +302,7 @@ extern "C"
 /**
  * @brief Maximum unsaturated modulation command before controller-divergence trip.
  */
-#define CTRL_PROT_VCTRL_MAX_PU (1.5f)
+#define CTRL_PROT_VCTRL_MAX_PU real2param(1.5)
 
 /**
  * @brief Minimum physical DC-bus voltage accepted by the startup state machine.
@@ -317,47 +317,47 @@ extern "C"
 /**
  * @brief Single-phase PLL proportional gain.
  */
-#define CTRL_PLL_KP (2.0f)
+#define CTRL_PLL_KP real2param(2.0)
 
 /**
  * @brief Single-phase PLL integral time constant in seconds.
  */
-#define CTRL_PLL_TI (0.02f)
+#define CTRL_PLL_TI real2param(0.02)
 
 /**
  * @brief PLL q-axis error low-pass cutoff in Hz.
  */
-#define CTRL_PLL_LPF_FC (20.0f)
+#define CTRL_PLL_LPF_FC real2param(20.0)
 
 /**
  * @brief SPLL close-loop convergence criterion.
  */
-#define CTRL_SPLL_EPSILON ((real2ctrl(0.005)))
+#define CTRL_SPLL_EPSILON real2ctrl(0.005)
 
 /**
  * @brief DC-bus outer-loop proportional gain.
  */
-#define SINV_DC_BUS_LOOP_KP (0.8f)
+#define SINV_DC_BUS_LOOP_KP real2param(0.8)
 
 /**
  * @brief DC-bus outer-loop integral gain per second.
  */
-#define SINV_DC_BUS_LOOP_KI (12.0f)
+#define SINV_DC_BUS_LOOP_KI real2param(12.0)
 
 /**
  * @brief Symmetric outer-loop active-power command limit.
  */
-#define SINV_OUTER_LOOP_POWER_LIMIT_PU (0.65f)
+#define SINV_OUTER_LOOP_POWER_LIMIT_PU real2param(0.65)
 
 /**
  * @brief Power and DC-bus outer-loop execution frequency.
  */
-#define SINV_OUTER_LOOP_FREQUENCY_HZ (1000.0f)
+#define SINV_OUTER_LOOP_FREQUENCY_HZ real2param(1000.0)
 
 /**
  * @brief Current polarity deadband for PWM dead-time compensation.
  */
-#define CTRL_CURRENT_DB_PU (0.01f)
+#define CTRL_CURRENT_DB_PU real2param(0.01)
 
 /**
  * @brief ADC calibration timeout in ms.
@@ -367,57 +367,57 @@ extern "C"
 /**
  * @brief Active-power command slew limit in PU/s.
  */
-#define CTRL_P_SLEW_PU_S (10.0f)
+#define CTRL_P_SLEW_PU_S real2param(10.0)
 
 /**
  * @brief Reactive-power command slew limit in PU/s.
  */
-#define CTRL_Q_SLEW_PU_S (20.0f)
+#define CTRL_Q_SLEW_PU_S real2param(20.0)
 
 /**
  * @brief Active-power outer-loop proportional gain.
  */
-#define SINV_POWER_LOOP_KP (0.6f)
+#define SINV_POWER_LOOP_KP real2param(0.6)
 
 /**
  * @brief Active-power outer-loop integral gain per second.
  */
-#define SINV_POWER_LOOP_KI (8.0f)
+#define SINV_POWER_LOOP_KI real2param(8.0)
 
 /**
  * @brief Peak current-reference limit in per unit.
  */
-#define CTRL_CURRENT_LIMIT_PU (1.5f)
+#define CTRL_CURRENT_LIMIT_PU real2param(1.5)
 
 /**
  * @brief Measured active/reactive power low-pass cutoff in Hz.
  */
-#define CTRL_PQ_LPF_FC (200.0f)
+#define CTRL_PQ_LPF_FC real2param(200.0)
 
 /**
  * @brief Minimum fundamental frequency tracked by the repetitive controller in Hz.
  */
-#define CTRL_FDRC_MIN_FREQ (45.0f)
+#define CTRL_FDRC_MIN_FREQ real2param(45.0)
 
 /**
  * @brief Repetitive-control learning gain.
  */
-#define SINV_FDRC_LEARNING_GAIN (0.10f)
+#define SINV_FDRC_LEARNING_GAIN real2param(0.10)
 
 /**
  * @brief FDRC robustness-filter cutoff frequency.
  */
-#define SINV_FDRC_Q_FILTER_HZ (1000.0f)
+#define SINV_FDRC_Q_FILTER_HZ real2param(1000.0)
 
 /**
  * @brief Plant-delay compensation in controller samples.
  */
-#define SINV_FDRC_LEAD_STEPS (3.0f)
+#define SINV_FDRC_LEAD_STEPS real2param(3.0)
 
 /**
  * @brief Current-error threshold above which RC learning is frozen.
  */
-#define SINV_FDRC_FREEZE_ERROR_PU (0.05f)
+#define SINV_FDRC_FREEZE_ERROR_PU real2param(0.05)
 
 /**
  * @brief Settling time before repetitive control starts learning.
@@ -498,70 +498,70 @@ extern "C"
  * @brief DC-bus outer-loop proportional gain.
  */
 #ifndef SINV_DC_BUS_LOOP_KP
-#define SINV_DC_BUS_LOOP_KP (0.8f)
+#define SINV_DC_BUS_LOOP_KP real2param(0.8)
 #endif // SINV_DC_BUS_LOOP_KP
 
 /**
  * @brief DC-bus outer-loop integral gain per second.
  */
 #ifndef SINV_DC_BUS_LOOP_KI
-#define SINV_DC_BUS_LOOP_KI (12.0f)
+#define SINV_DC_BUS_LOOP_KI real2param(12.0)
 #endif // SINV_DC_BUS_LOOP_KI
 
 /**
  * @brief Symmetric outer-loop active-power command limit.
  */
 #ifndef SINV_OUTER_LOOP_POWER_LIMIT_PU
-#define SINV_OUTER_LOOP_POWER_LIMIT_PU (0.65f)
+#define SINV_OUTER_LOOP_POWER_LIMIT_PU real2param(0.65)
 #endif // SINV_OUTER_LOOP_POWER_LIMIT_PU
 
 /**
  * @brief Power and DC-bus outer-loop execution frequency.
  */
 #ifndef SINV_OUTER_LOOP_FREQUENCY_HZ
-#define SINV_OUTER_LOOP_FREQUENCY_HZ (1000.0f)
+#define SINV_OUTER_LOOP_FREQUENCY_HZ real2param(1000.0)
 #endif // SINV_OUTER_LOOP_FREQUENCY_HZ
 
 /**
  * @brief Active-power outer-loop proportional gain.
  */
 #ifndef SINV_POWER_LOOP_KP
-#define SINV_POWER_LOOP_KP (0.6f)
+#define SINV_POWER_LOOP_KP real2param(0.6)
 #endif // SINV_POWER_LOOP_KP
 
 /**
  * @brief Active-power outer-loop integral gain per second.
  */
 #ifndef SINV_POWER_LOOP_KI
-#define SINV_POWER_LOOP_KI (8.0f)
+#define SINV_POWER_LOOP_KI real2param(8.0)
 #endif // SINV_POWER_LOOP_KI
 
 /**
  * @brief Repetitive-control learning gain.
  */
 #ifndef SINV_FDRC_LEARNING_GAIN
-#define SINV_FDRC_LEARNING_GAIN (0.10f)
+#define SINV_FDRC_LEARNING_GAIN real2param(0.10)
 #endif // SINV_FDRC_LEARNING_GAIN
 
 /**
  * @brief FDRC robustness-filter cutoff frequency.
  */
 #ifndef SINV_FDRC_Q_FILTER_HZ
-#define SINV_FDRC_Q_FILTER_HZ (1000.0f)
+#define SINV_FDRC_Q_FILTER_HZ real2param(1000.0)
 #endif // SINV_FDRC_Q_FILTER_HZ
 
 /**
  * @brief Plant-delay compensation in controller samples.
  */
 #ifndef SINV_FDRC_LEAD_STEPS
-#define SINV_FDRC_LEAD_STEPS (3.0f)
+#define SINV_FDRC_LEAD_STEPS real2param(3.0)
 #endif // SINV_FDRC_LEAD_STEPS
 
 /**
  * @brief Current-error threshold above which RC learning is frozen.
  */
 #ifndef SINV_FDRC_FREEZE_ERROR_PU
-#define SINV_FDRC_FREEZE_ERROR_PU (0.05f)
+#define SINV_FDRC_FREEZE_ERROR_PU real2param(0.05)
 #endif // SINV_FDRC_FREEZE_ERROR_PU
 
 /**
@@ -589,90 +589,90 @@ extern "C"
  * @brief Nominal grid frequency in Hz.
  */
 #ifndef CTRL_GRID_FREQUENCY
-#define CTRL_GRID_FREQUENCY (50.0f)
+#define CTRL_GRID_FREQUENCY real2param(50.0)
 #endif // CTRL_GRID_FREQUENCY
 
 /**
  * @brief Minimum voltage magnitude used by the P/Q reference generator.
  */
 #ifndef CTRL_GRID_VMIN_PU
-#define CTRL_GRID_VMIN_PU (0.1f)
+#define CTRL_GRID_VMIN_PU real2param(0.1)
 #endif // CTRL_GRID_VMIN_PU
 
 /**
  * @brief SOGI PLL proportional gain.
  */
 #ifndef CTRL_PLL_KP
-#define CTRL_PLL_KP (10.0f)
+#define CTRL_PLL_KP real2param(10.0)
 #endif // CTRL_PLL_KP
 
 /**
  * @brief SOGI PLL integral time constant in seconds.
  */
 #ifndef CTRL_PLL_TI
-#define CTRL_PLL_TI (0.02f)
+#define CTRL_PLL_TI real2param(0.02)
 #endif // CTRL_PLL_TI
 
 /**
  * @brief PLL error-filter cutoff frequency in Hz.
  */
 #ifndef CTRL_PLL_LPF_FC
-#define CTRL_PLL_LPF_FC (20.0f)
+#define CTRL_PLL_LPF_FC real2param(20.0)
 #endif // CTRL_PLL_LPF_FC
 
 /**
  * @brief PLL frequency-error lock threshold in PU.
  */
 #ifndef CTRL_SPLL_EPSILON
-#define CTRL_SPLL_EPSILON (0.005f)
+#define CTRL_SPLL_EPSILON real2param(0.005)
 #endif // CTRL_SPLL_EPSILON
 
 /**
  * @brief Current deadband used by PWM dead-time compensation.
  */
 #ifndef CTRL_CURRENT_DB_PU
-#define CTRL_CURRENT_DB_PU (0.01f)
+#define CTRL_CURRENT_DB_PU real2param(0.01)
 #endif // CTRL_CURRENT_DB_PU
 
 /**
  * @brief Active-power command slew limit in PU/s.
  */
 #ifndef CTRL_P_SLEW_PU_S
-#define CTRL_P_SLEW_PU_S (5.0f)
+#define CTRL_P_SLEW_PU_S real2param(5.0)
 #endif // CTRL_P_SLEW_PU_S
 
 /**
  * @brief Reactive-power command slew limit in PU/s.
  */
 #ifndef CTRL_Q_SLEW_PU_S
-#define CTRL_Q_SLEW_PU_S (5.0f)
+#define CTRL_Q_SLEW_PU_S real2param(5.0)
 #endif // CTRL_Q_SLEW_PU_S
 
 /**
  * @brief Peak current command limit in PU.
  */
 #ifndef CTRL_CURRENT_LIMIT_PU
-#define CTRL_CURRENT_LIMIT_PU (0.9f)
+#define CTRL_CURRENT_LIMIT_PU real2param(0.9)
 #endif // CTRL_CURRENT_LIMIT_PU
 
 /**
  * @brief Power measurement low-pass cutoff frequency in Hz.
  */
 #ifndef CTRL_PQ_LPF_FC
-#define CTRL_PQ_LPF_FC (200.0f)
+#define CTRL_PQ_LPF_FC real2param(200.0)
 #endif // CTRL_PQ_LPF_FC
 
 /**
  * @brief Minimum fundamental tracked by FDRC in Hz.
  */
 #ifndef CTRL_FDRC_MIN_FREQ
-#define CTRL_FDRC_MIN_FREQ (45.0f)
+#define CTRL_FDRC_MIN_FREQ real2param(45.0)
 #endif // CTRL_FDRC_MIN_FREQ
 
 /**
  * @brief QPR current-loop crossover target in Hz.
  */
-#define SINV_CURRENT_LOOP_BANDWIDTH_HZ (600.0f)
+#define SINV_CURRENT_LOOP_BANDWIDTH_HZ real2param(600.0)
 
 /**
  * @brief Minimum operation-enabled transition delay.
@@ -682,32 +682,32 @@ extern "C"
 /**
  * @brief BUILD_LEVEL 1 sinusoidal H-bridge voltage amplitude.
  */
-#define SINV_LEVEL1_VOLTAGE_REF_PU (0.35f)
+#define SINV_LEVEL1_VOLTAGE_REF_PU real2param(0.35)
 
 /**
  * @brief BUILD_LEVEL 2 peak current command with a resistive load.
  */
-#define SINV_LEVEL2_CURRENT_REF_PEAK_PU (0.20f)
+#define SINV_LEVEL2_CURRENT_REF_PEAK_PU real2param(0.20)
 
 /**
  * @brief BUILD_LEVEL 3 signed grid active-power command; positive exports power.
  */
-#define SINV_LEVEL3_ACTIVE_POWER_REF_PU (0.10f)
+#define SINV_LEVEL3_ACTIVE_POWER_REF_PU real2param(0.10)
 
 /**
  * @brief BUILD_LEVEL 3 grid reactive-power command.
  */
-#define SINV_LEVEL3_REACTIVE_POWER_REF_PU (0.0f)
+#define SINV_LEVEL3_REACTIVE_POWER_REF_PU real2param(0.0)
 
 /**
  * @brief BUILD_LEVEL 4 measured active-power closed-loop target.
  */
-#define SINV_LEVEL4_ACTIVE_POWER_REF_PU (0.15f)
+#define SINV_LEVEL4_ACTIVE_POWER_REF_PU real2param(0.15)
 
 /**
  * @brief BUILD_LEVEL 5 physical DC bus voltage target.
  */
-#define SINV_DC_BUS_REF_V (60.0f)
+#define SINV_DC_BUS_REF_V real2param(60.0)
 
 //=================================================================================================
 /**

@@ -44,18 +44,19 @@ typedef struct _tag_ringbuf_t
 } ringbuf_t;
 
 /**
- * @brief 1. 初始化环形缓冲区
- * @param rb 缓冲区对象指针
- * @param pool 用户静态分配的内存首地址
- * @param size 内存总长度（注意：实际可用容量为 size - 1）
+ * @brief Initializes a ring buffer over caller-owned storage.
+ * @param[out] rb Ring-buffer object to initialize.
+ * @param[in,out] pool Statically allocated storage for buffer elements.
+ * @param[in] size Total element count; the usable capacity is `size - 1`.
  */
 void ringbuf_init(ringbuf_t* rb, data_gt* pool, size_gt size);
 
 /**
- * @brief 计算当前已使用的数据量 (Helper)
+ * @brief Returns the number of elements currently stored in the buffer.
+ * @param[in] rb Ring-buffer object.
+ * @return Number of readable elements.
  */
-GMP_STATIC_INLINE 
-size_gt ringbuf_used(const ringbuf_t* rb)
+GMP_STATIC_INLINE size_gt ringbuf_used(const ringbuf_t* rb)
 {
     size_gt w = rb->iset;
     size_gt r = rb->iget;
@@ -71,38 +72,43 @@ size_gt ringbuf_used(const ringbuf_t* rb)
 }
 
 /**
- * @brief Get current buffer valid capacity
- * @return 剩余可写入的数量
+ * @brief Returns the number of elements that can be written without overflow.
+ * @param[in] rb Ring-buffer object.
+ * @return Number of writable elements.
  */
 size_gt ringbuf_get_free(const ringbuf_t* rb);
 
 /**
- * @brief 2. 写入一个最小单位数据
- * @return 1: 写入成功, 0: 缓冲区已满
+ * @brief Writes one element to the buffer.
+ * @param[in,out] rb Ring-buffer object.
+ * @param[in] data Element to write.
+ * @return `1` on success or `0` when the buffer is full.
  */
 fast_gt ringbuf_put_one(ringbuf_t* rb, data_gt data);
 
 /**
- * @brief 3. 读取一个最小单位数据
- * @param data 读出的数据存放指针
- * @return true: 读取成功, false: 缓冲区为空
+ * @brief Reads one element from the buffer.
+ * @param[in,out] rb Ring-buffer object.
+ * @param[out] data Destination for the element.
+ * @return `1` on success or `0` when the buffer is empty.
  */
 fast_gt ringbuf_get_one(ringbuf_t* rb, data_gt* data);
 
 /**
- * @brief 4. 写入一串数据
- * @param data 源数据指针
- * @param len 写入长度
- * @return 实际写入的长度 (如果空间不足，可能小于 len，或者是0，取决于策略)
- * 这里策略为：如果空间不够，则尽可能写入填满为止
+ * @brief Writes as many elements as the available space permits.
+ * @param[in,out] rb Ring-buffer object.
+ * @param[in] data Source array.
+ * @param[in] len Requested element count.
+ * @return Number of elements written.
  */
 size_gt ringbuf_put_array(ringbuf_t* rb, const data_gt* data, size_gt len);
 
 /**
- * @brief 5. 读出一串数据
- * @param dest 目标buffer指针
- * @param len 期望读取长度
- * @return 实际读取到的长度
+ * @brief Reads up to the requested number of elements.
+ * @param[in,out] rb Ring-buffer object.
+ * @param[out] dest Destination array.
+ * @param[in] len Requested element count.
+ * @return Number of elements read.
  */
 size_gt ringbuf_get_array(ringbuf_t* rb, data_gt* dest, size_gt len);
 

@@ -152,7 +152,7 @@ void ctl_init()
     //
     // Encoder Init
     //
-    ctl_init_autoturn_pos_encoder(&pos_enc, mtr_ctrl_init.pole_pairs, CTRL_POS_ENC_FS);
+    ctl_init_autoturn_pos_encoder(&pos_enc, (uint16_t)mtr_ctrl_init.pole_pairs, CTRL_POS_ENC_FS);
     ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, real2ctrl(CTRL_POS_ENC_BIAS));
 
     ctl_init_spd_calculator(&spd_enc, &pos_enc.encif, CONTROLLER_FREQUENCY, CTRL_MECH_DIV, MOTOR_PARAM_MAX_SPEED,

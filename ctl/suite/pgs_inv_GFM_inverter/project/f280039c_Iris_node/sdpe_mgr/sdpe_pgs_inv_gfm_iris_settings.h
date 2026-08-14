@@ -363,12 +363,12 @@ extern "C"
 /**
  * @brief ADC reference voltage.
  */
-#define CTRL_ADC_VOLTAGE_REF (3.3f)
+#define CTRL_ADC_VOLTAGE_REF real2param(3.3)
 
 /**
  * @brief DC-bus per-unit voltage base.
  */
-#define CTRL_DCBUS_VOLTAGE (80.0f)
+#define CTRL_DCBUS_VOLTAGE real2param(80.0)
 
 /**
  * @brief SVPWM phase-voltage base.
@@ -378,7 +378,7 @@ extern "C"
 /**
  * @brief Phase-current per-unit base in amperes.
  */
-#define CTRL_CURRENT_BASE (10.0f)
+#define CTRL_CURRENT_BASE real2param(10.0)
 
 /**
  * @brief Grid-filter inductance from the selected Harmonia entity.
@@ -413,42 +413,42 @@ extern "C"
 /**
  * @brief Validated Helios phase-current sensitivity in volts per ampere.
  */
-#define CTRL_INVERTER_CURRENT_SENSITIVITY (0.05f)
+#define CTRL_INVERTER_CURRENT_SENSITIVITY real2param(0.05)
 
 /**
  * @brief Helios phase-current zero bias.
  */
-#define CTRL_INVERTER_CURRENT_BIAS (1.65f)
+#define CTRL_INVERTER_CURRENT_BIAS real2param(1.65)
 
 /**
  * @brief Helios phase-voltage sensing gain.
  */
-#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (0.02738589f)
+#define CTRL_INVERTER_VOLTAGE_SENSITIVITY real2param(0.02738589)
 
 /**
  * @brief Helios phase-voltage sensing bias.
  */
-#define CTRL_INVERTER_VOLTAGE_BIAS (0.0f)
+#define CTRL_INVERTER_VOLTAGE_BIAS real2param(0.0)
 
 /**
  * @brief DC-link current sensitivity in volts per ampere.
  */
-#define CTRL_DC_CURRENT_SENSITIVITY (0.02475f)
+#define CTRL_DC_CURRENT_SENSITIVITY real2param(0.02475)
 
 /**
  * @brief DC-link current zero bias.
  */
-#define CTRL_DC_CURRENT_BIAS (1.65f)
+#define CTRL_DC_CURRENT_BIAS real2param(1.65)
 
 /**
  * @brief DC-link voltage sensing gain.
  */
-#define CTRL_DC_VOLTAGE_SENSITIVITY (0.02738589f)
+#define CTRL_DC_VOLTAGE_SENSITIVITY real2param(0.02738589)
 
 /**
  * @brief DC-link voltage sensing bias.
  */
-#define CTRL_DC_VOLTAGE_BIAS (0.0f)
+#define CTRL_DC_VOLTAGE_BIAS real2param(0.0)
 
 //=================================================================================================
 /**
@@ -533,202 +533,202 @@ extern "C"
 /**
  * @brief Nominal grid phase-voltage magnitude in controller per unit.
  */
-#define GFM_GRID_VOLTAGE_PU (0.33f)
+#define GFM_GRID_VOLTAGE_PU real2param(0.33)
 
 /**
  * @brief Nominal grid-forming and synchronization frequency.
  */
-#define GFM_GRID_FREQUENCY_HZ (50.0f)
+#define GFM_GRID_FREQUENCY_HZ real2param(50.0)
 
 /**
  * @brief BUILD_LEVEL 1 d-axis open-loop voltage command.
  */
-#define GFM_OPEN_LOOP_VD_PU (0.50f)
+#define GFM_OPEN_LOOP_VD_PU real2param(0.50)
 
 /**
  * @brief BUILD_LEVEL 1 q-axis open-loop voltage command.
  */
-#define GFM_OPEN_LOOP_VQ_PU (0.0f)
+#define GFM_OPEN_LOOP_VQ_PU real2param(0.0)
 
 /**
  * @brief BUILD_LEVEL 2 d-axis current command using the internal ramp angle.
  */
-#define GFM_CURRENT_LEVEL2_ID_PU (0.10f)
+#define GFM_CURRENT_LEVEL2_ID_PU real2param(0.10)
 
 /**
  * @brief BUILD_LEVEL 2 q-axis current command using the internal ramp angle.
  */
-#define GFM_CURRENT_LEVEL2_IQ_PU (0.10f)
+#define GFM_CURRENT_LEVEL2_IQ_PU real2param(0.10)
 
 /**
  * @brief BUILD_LEVEL 4 PLL-oriented d-axis grid current command.
  */
-#define GFM_CURRENT_LEVEL4_ID_PU (0.10f)
+#define GFM_CURRENT_LEVEL4_ID_PU real2param(0.10)
 
 /**
  * @brief BUILD_LEVEL 4 PLL-oriented q-axis grid current command.
  */
-#define GFM_CURRENT_LEVEL4_IQ_PU (0.0f)
+#define GFM_CURRENT_LEVEL4_IQ_PU real2param(0.0)
 
 /**
  * @brief BUILD_LEVEL 3 fixed voltage reference and BUILD_LEVEL 5 nominal droop voltage.
  */
-#define GFM_VOLTAGE_VD_PU (0.50f)
+#define GFM_VOLTAGE_VD_PU real2param(0.50)
 
 /**
  * @brief BUILD_LEVEL 3 fixed q-axis voltage reference.
  */
-#define GFM_VOLTAGE_VQ_PU (0.0f)
+#define GFM_VOLTAGE_VQ_PU real2param(0.0)
 
 /**
  * @brief LC capacitor-voltage loop bandwidth.
  */
-#define GFM_VOLTAGE_LOOP_BW_HZ (100.0f)
+#define GFM_VOLTAGE_LOOP_BW_HZ real2param(100.0)
 
 /**
  * @brief LC capacitor-voltage ordinary PI zero frequency.
  */
-#define GFM_VOLTAGE_LOOP_ZERO_HZ (20.0f)
+#define GFM_VOLTAGE_LOOP_ZERO_HZ real2param(20.0)
 
 /**
  * @brief Circular magnitude limit of the complete voltage-loop current reference.
  */
-#define GFM_VOLTAGE_CIRCLE_LIMIT_PU (0.80f)
+#define GFM_VOLTAGE_CIRCLE_LIMIT_PU real2param(0.80)
 
 /**
  * @brief Independent symmetric d/q-axis voltage-loop current-reference limit.
  */
-#define GFM_VOLTAGE_SQUARE_LIMIT_PU (0.80f)
+#define GFM_VOLTAGE_SQUARE_LIMIT_PU real2param(0.80)
 
 /**
  * @brief Active-power to frequency droop slope in Hz per power PU.
  */
-#define GFM_DROOP_P_HZ_PER_PU (0.50f)
+#define GFM_DROOP_P_HZ_PER_PU real2param(0.50)
 
 /**
  * @brief Reactive-power to voltage droop slope in voltage PU per reactive-power PU.
  */
-#define GFM_DROOP_Q_V_PER_PU (0.05f)
+#define GFM_DROOP_Q_V_PER_PU real2param(0.05)
 
 /**
  * @brief Droop active/reactive-power measurement low-pass cutoff.
  */
-#define GFM_DROOP_POWER_LPF_HZ (10.0f)
+#define GFM_DROOP_POWER_LPF_HZ real2param(10.0)
 
 /**
  * @brief Maximum absolute droop frequency deviation from nominal.
  */
-#define GFM_DROOP_FREQUENCY_DELTA_LIMIT_HZ (2.0f)
+#define GFM_DROOP_FREQUENCY_DELTA_LIMIT_HZ real2param(2.0)
 
 /**
  * @brief Minimum voltage magnitude requested by the droop module.
  */
-#define GFM_DROOP_VOLTAGE_MIN_PU (0.40f)
+#define GFM_DROOP_VOLTAGE_MIN_PU real2param(0.40)
 
 /**
  * @brief Maximum voltage magnitude requested by the droop module.
  */
-#define GFM_DROOP_VOLTAGE_MAX_PU (0.60f)
+#define GFM_DROOP_VOLTAGE_MAX_PU real2param(0.60)
 
 /**
  * @brief Default active-power reference for the droop algorithm.
  */
-#define GFM_DROOP_ACTIVE_POWER_REF_PU (0.0f)
+#define GFM_DROOP_ACTIVE_POWER_REF_PU real2param(0.0)
 
 /**
  * @brief Default reactive-power reference for the droop algorithm.
  */
-#define GFM_DROOP_REACTIVE_POWER_REF_PU (0.0f)
+#define GFM_DROOP_REACTIVE_POWER_REF_PU real2param(0.0)
 
 /**
  * @brief VSM normalized swing-equation inertia in seconds.
  */
-#define GFM_VSM_INERTIA_S (1.0f)
+#define GFM_VSM_INERTIA_S real2param(1.0)
 
 /**
  * @brief VSM damping power coefficient in power PU per hertz.
  */
-#define GFM_VSM_DAMPING_PU_PER_HZ (2.0f)
+#define GFM_VSM_DAMPING_PU_PER_HZ real2param(2.0)
 
 /**
  * @brief VSM reactive-power voltage droop in voltage PU per reactive-power PU.
  */
-#define GFM_VSM_Q_DROOP_V_PER_PU (0.05f)
+#define GFM_VSM_Q_DROOP_V_PER_PU real2param(0.05)
 
 /**
  * @brief VSM active/reactive-power measurement low-pass cutoff.
  */
-#define GFM_VSM_POWER_LPF_HZ (10.0f)
+#define GFM_VSM_POWER_LPF_HZ real2param(10.0)
 
 /**
  * @brief Virtual resistance used to condition the voltage-loop reference.
  */
-#define GFM_VIRTUAL_IMPEDANCE_R_PU (0.03f)
+#define GFM_VIRTUAL_IMPEDANCE_R_PU real2param(0.03)
 
 /**
  * @brief Virtual reactance used to condition the voltage-loop reference.
  */
-#define GFM_VIRTUAL_IMPEDANCE_X_PU (0.03f)
+#define GFM_VIRTUAL_IMPEDANCE_X_PU real2param(0.03)
 
 /**
  * @brief Circular voltage-reference limit after virtual-impedance compensation.
  */
-#define GFM_VIRTUAL_IMPEDANCE_VOLTAGE_LIMIT_PU (0.60f)
+#define GFM_VIRTUAL_IMPEDANCE_VOLTAGE_LIMIT_PU real2param(0.60)
 
 /**
  * @brief PLL-to-grid-forming phasor and current-command blend duration.
  */
-#define GFM_TRANSITION_TIME_S (0.10f)
+#define GFM_TRANSITION_TIME_S real2param(0.10)
 
 /**
  * @brief Continuous PLL-lock duration required before requesting grid-forming takeover.
  */
-#define GFM_SYNC_HOLD_TIME_S (0.20f)
+#define GFM_SYNC_HOLD_TIME_S real2param(0.20)
 
 /**
  * @brief Maximum instantaneous PLL q-axis error during the continuous grid-forming synchronization hold.
  */
-#define GFM_SYNC_PLL_ERROR_PU (0.08f)
+#define GFM_SYNC_PLL_ERROR_PU real2param(0.08)
 
 /**
  * @brief Tracking-mode d-axis current command before grid-forming takeover.
  */
-#define GFM_SYNC_ID_PU (0.0f)
+#define GFM_SYNC_ID_PU real2param(0.0)
 
 /**
  * @brief Tracking-mode q-axis current command before grid-forming takeover.
  */
-#define GFM_SYNC_IQ_PU (0.0f)
+#define GFM_SYNC_IQ_PU real2param(0.0)
 
 /**
  * @brief Zero-sequence current QPR proportional gain for four-wire operation.
  */
-#define GFM_ZERO_QPR_KP (0.10f)
+#define GFM_ZERO_QPR_KP real2param(0.10)
 
 /**
  * @brief Zero-sequence current QPR resonant gain.
  */
-#define GFM_ZERO_QPR_KR (50.0f)
+#define GFM_ZERO_QPR_KR real2param(50.0)
 
 /**
  * @brief Zero-sequence QPR resonant bandwidth.
  */
-#define GFM_ZERO_QPR_CUTOFF_HZ (5.0f)
+#define GFM_ZERO_QPR_CUTOFF_HZ real2param(5.0)
 
 /**
  * @brief Symmetric zero-axis voltage-command limit.
  */
-#define GFM_ZERO_VOLTAGE_LIMIT_PU (0.20f)
+#define GFM_ZERO_VOLTAGE_LIMIT_PU real2param(0.20)
 
 /**
  * @brief ADC offset calibrator cutoff.
  */
-#define GFM_ADC_CALIBRATOR_FC_HZ (20.0f)
+#define GFM_ADC_CALIBRATOR_FC_HZ real2param(20.0)
 
 /**
  * @brief ADC offset calibrator quality factor.
  */
-#define GFM_ADC_CALIBRATOR_Q (0.707f)
+#define GFM_ADC_CALIBRATOR_Q real2param(0.707)
 
 /**
  * @brief Minimum CiA402 delay before Operation Enabled.
@@ -738,7 +738,7 @@ extern "C"
 /**
  * @brief PLL lock-error threshold used before grid-forming takeover.
  */
-#define CTRL_SPLL_EPSILON ((real2ctrl(0.005)))
+#define CTRL_SPLL_EPSILON real2ctrl(0.005)
 
 //=================================================================================================
 /**

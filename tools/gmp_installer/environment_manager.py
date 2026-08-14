@@ -283,6 +283,68 @@ def discover_vcpkg_projects(manifest: dict) -> list[Path]:
     return sorted(projects, key=lambda path: path.relative_to(GMP_ROOT).as_posix().lower())
 
 
+def build_aggregate_vcpkg_manifest(projects: list[Path]) -> dict:
+    """Merge repository vcpkg manifests for one shared installation root.
+
+    Running manifest-mode installs sequentially against one installation root
+    is unsafe: every invocation removes ports that are not required by the
+    current manifest.  GMP therefore publishes one aggregate manifest and
+    restores the complete dependency union in a single vcpkg invocation.
+    """
+    dependencies: dict[str, str | dict] = {}
+    overrides: dict[str, dict] = {}
+    builtin_baseline: str | None = None
+
+    for project in projects:
+        manifest_path = project / "vcpkg.json"
+        document = json.loads(manifest_path.read_text(encoding="utf-8"))
+        project_name = project.relative_to(GMP_ROOT).as_posix()
+
+        baseline = document.get("builtin-baseline")
+        if baseline:
+            if builtin_baseline is not None and baseline != builtin_baseline:
+                raise EnvironmentError(
+                    f"Conflicting vcpkg builtin-baseline values: {project_name}"
+                )
+            builtin_baseline = baseline
+
+        for dependency in document.get("dependencies", []):
+            normalized = dependency
+            if isinstance(dependency, dict) and set(dependency) == {"name"}:
+                normalized = dependency["name"]
+            name = normalized if isinstance(normalized, str) else normalized.get("name")
+            if not name:
+                raise EnvironmentError(f"Invalid vcpkg dependency in {project_name}")
+            previous = dependencies.get(name)
+            if previous is not None and previous != normalized:
+                raise EnvironmentError(
+                    f"Conflicting vcpkg dependency declarations for {name}: {project_name}"
+                )
+            dependencies[name] = normalized
+
+        for override in document.get("overrides", []):
+            name = override.get("name") if isinstance(override, dict) else None
+            if not name:
+                raise EnvironmentError(f"Invalid vcpkg override in {project_name}")
+            previous = overrides.get(name)
+            if previous is not None and previous != override:
+                raise EnvironmentError(
+                    f"Conflicting vcpkg override declarations for {name}: {project_name}"
+                )
+            overrides[name] = override
+
+    aggregate = {
+        "name": "gmp-private-environment-dependencies",
+        "version-string": "1.0.0",
+        "dependencies": [dependencies[name] for name in sorted(dependencies)],
+    }
+    if builtin_baseline:
+        aggregate["builtin-baseline"] = builtin_baseline
+    if overrides:
+        aggregate["overrides"] = [overrides[name] for name in sorted(overrides)]
+    return aggregate
+
+
 def install_vcpkg(manifest: dict) -> None:
     ensure_vcpkg_cache_directories()
     config = manifest["vcpkg"]
@@ -488,21 +550,26 @@ def install_vcpkg_projects(manifest: dict) -> None:
     projects = discover_vcpkg_projects(manifest)
     if not projects:
         raise EnvironmentError(f"No vcpkg projects were found by {SUITE_SIMULATE_GLOB}")
-    for project in projects:
-        relative = project.relative_to(GMP_ROOT).as_posix()
-        print(f"[INSTALL] Restoring vcpkg manifest: {relative}")
-        run(
-            [
-                executable,
-                "install",
-                f"--x-manifest-root={project}",
-                f"--x-install-root={install_root}",
-                f"--triplet={triplet}",
-                "--disable-metrics",
-            ],
-            cwd=project,
-            env=env,
-        )
+    aggregate_root = BIN_DIR / "cache" / "vcpkg-manifest"
+    aggregate_root.mkdir(parents=True, exist_ok=True)
+    aggregate_path = aggregate_root / "vcpkg.json"
+    aggregate_path.write_text(
+        json.dumps(build_aggregate_vcpkg_manifest(projects), indent=2) + "\n",
+        encoding="utf-8",
+    )
+    print(f"[INSTALL] Restoring aggregate vcpkg manifest for {len(projects)} projects")
+    run(
+        [
+            executable,
+            "install",
+            f"--x-manifest-root={aggregate_root}",
+            f"--x-install-root={install_root}",
+            f"--triplet={triplet}",
+            "--disable-metrics",
+        ],
+        cwd=aggregate_root,
+        env=env,
+    )
 
 
 def configure_repository() -> None:

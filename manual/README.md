@@ -7,6 +7,8 @@ This directory collects repository-wide development guides. Start with the root 
 ## General guidance
 
 - [Code standard](code-standard.md)
+- [Core, CSP, CTL dependency and validation architecture](GMP_CTL_DEPENDENCY_ARCHITECTURE.md)
+- [CTL unit-test workspace](../ctl/unit_test/README.md)
 - [Change history](ChangeHistory.md)
 - [Legacy comprehensive Chinese manual](legacy_manual_cn.md)
 

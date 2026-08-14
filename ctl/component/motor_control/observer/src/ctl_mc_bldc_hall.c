@@ -20,22 +20,22 @@
 /**
  * @brief Maps the 3-bit Hall State (index 0-7) to the Center Electrical Angle (PU) of that sector.
  * @details 
- * - State 5 (101): Center 30бу  -> 1/12 PU
- * - State 4 (100): Center 90бу  -> 3/12 PU
- * - State 6 (110): Center 150бу -> 5/12 PU
- * - State 2 (010): Center 210бу -> 7/12 PU
- * - State 3 (011): Center 270бу -> 9/12 PU
- * - State 1 (001): Center 330бу -> 11/12 PU
+ * - State 5 (101): Center 30 deg  -> 1/12 PU
+ * - State 4 (100): Center 90 deg  -> 3/12 PU
+ * - State 6 (110): Center 150 deg -> 5/12 PU
+ * - State 2 (010): Center 210 deg -> 7/12 PU
+ * - State 3 (011): Center 270 deg -> 9/12 PU
+ * - State 1 (001): Center 330 deg -> 11/12 PU
  * State 0 and 7 are invalid (faults), defaulted to 0.
  */
 static const ctrl_gt HALL_CENTER_ANGLE_PU[8] = {
     CTL_CTRL_CONST_ZERO,          // 0: Invalid
-    real2ctrl(11.0f / 12.0f), // 1: 330 deg
-    real2ctrl(7.0f / 12.0f),  // 2: 210 deg
-    real2ctrl(9.0f / 12.0f),  // 3: 270 deg
-    real2ctrl(3.0f / 12.0f),  // 4: 90 deg
-    real2ctrl(1.0f / 12.0f),  // 5: 30 deg
-    real2ctrl(5.0f / 12.0f),  // 6: 150 deg
+    real2ctrl(11.0 / 12.0), // 1: 330 deg
+    real2ctrl(7.0 / 12.0),  // 2: 210 deg
+    real2ctrl(9.0 / 12.0),  // 3: 270 deg
+    real2ctrl(3.0 / 12.0),  // 4: 90 deg
+    real2ctrl(1.0 / 12.0),  // 5: 30 deg
+    real2ctrl(5.0 / 12.0),  // 6: 150 deg
     CTL_CTRL_CONST_ZERO           // 7: Invalid
 };
 
@@ -69,9 +69,9 @@ void ctl_init_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, const ctl_pmsm_hall_obs_in
     // 1. Scale Factors Derivation
     // Speed (PU) = (1/6 revolution) / (N_ticks * Ts * f_base)
     // sf_speed_calc = (1/6) / (Ts * f_base)
-    parameter_gt sf_spd = (CTL_PARAM_CONST_1 / 6.0) / (Ts * f_base);
+    parameter_gt sf_spd = (CTL_PARAM_CONST_1 / real2param(6.0)) / (Ts * f_base);
     parameter_gt sf_w_to_angle = f_base * Ts;
-    parameter_gt hall_offset_pu = init->hall_offset_deg / 360.0;
+    parameter_gt hall_offset_pu = init->hall_offset_deg / real2param(360.0);
 
     obs->sf_speed_calc = param2ctrl(sf_spd);
 
@@ -82,7 +82,7 @@ void ctl_init_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, const ctl_pmsm_hall_obs_in
     obs->hall_offset_pu = param2ctrl(hall_offset_pu);
 
     // 3. Timeout and LPF
-    obs->timeout_ticks = (time_gt)(init->timeout_ms * fs_safe / 1000.0f);
+    obs->timeout_ticks = (time_gt)(init->timeout_ms * fs_safe / real2param(1000.0));
     ctl_init_filter_iir1_lpf(&obs->filter_spd, fs_safe, init->filter_bw_hz);
 
     ctl_clear_pmsm_hall_obs(obs);
@@ -110,7 +110,7 @@ void ctl_step_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, data_gt hall_state)
         if (dir != 0 && obs->edge_tick_cnt > 0)
         {
             // Calculate raw speed in PU
-            ctrl_gt raw_spd_pu = ctl_div(obs->sf_speed_calc, real2ctrl((float)obs->edge_tick_cnt));
+            ctrl_gt raw_spd_pu = ctl_div(obs->sf_speed_calc, real2ctrl(obs->edge_tick_cnt));
             if (dir < 0)
                 raw_spd_pu = -raw_spd_pu;
 
@@ -120,7 +120,7 @@ void ctl_step_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, data_gt hall_state)
             // Sync the interpolator exactly to the sector boundary edge
             // Boundary angle = Center of new sector - dir * (1/12 PU)
             ctrl_gt center_curr = HALL_CENTER_ANGLE_PU[hall_state];
-            ctrl_gt margin = real2ctrl(1.0f / 12.0f);
+            ctrl_gt margin = real2ctrl(1.0 / 12.0);
 
             if (dir > 0)
             {
@@ -177,7 +177,7 @@ void ctl_step_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, data_gt hall_state)
 
     // HARD CLAMP: The angle is mathematically forbidden from escaping the +/- 30 deg sector
     // This perfectly addresses the sector limitation requirement.
-    ctrl_gt margin = real2ctrl(1.0f / 12.0f); // 30 degrees = 1/12 PU
+    ctrl_gt margin = real2ctrl(1.0 / 12.0); // 30 degrees = 1/12 PU
     err_from_center = ctl_sat(err_from_center, margin, -margin);
 
     // ========================================================================

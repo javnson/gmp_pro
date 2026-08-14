@@ -231,6 +231,19 @@ DataLink Scope 的线格式触发电平固定为 F32，但目标侧字段不得�
 
 这些结果是工具链与链接验证，不代表板级时序、UART 电气连接、DMA 运行状态或电机功率级已经通过硬件验证。
 
+### 7.3 CTL 单元测试分层
+
+`ctl/unit_test/ctl_unit_test.sln` 是可直接在 Visual Studio Test Explorer 中查看和调试的主机单元测试入口。当前分别构建 `ctrl_gt=float` 与 `ctrl_gt=double` 两个原生 C++ 测试 DLL；命令行及 Linux 使用同目录的 CMake/Google Test 入口。测试只通过 `ctl/portable/gmp_ctl_portable.h` 获取 CTL 的最小统一化支持，不引入 CSP、外设管理或完整 GMP runtime。
+
+新增测试时按以下层次维护：
+
+1. 数值契约层验证 `real2param`、`real2ctrl`、`param2ctrl`、`ctrl2param`、标准常量、弧度/标幺角度函数以及 vector/matrix lite。
+2. 元件层验证初始化参数域计算、控制域缓存、单步输出、限幅、复位和异常输入；支持定点数的元件还必须增加 IQmath 配置。
+3. suite 层验证完整闭环的阶跃响应、稳态误差、饱和恢复和保护状态，但其结果不能代替目标编译或硬件验证。
+4. 每项通过的证据只更新到实际覆盖的 Facility 模块；一个通用 math smoke test 不代表全部数学模块均已完成原理验证。
+
+Windows 命令行入口为 `ctl\unit_test\run_tests.bat`。Linux 必须先执行 `source bin/linux/activate_gmp.sh`，再运行 `bash ctl/unit_test/run_tests.sh`。覆盖范围和待补项目以 [`ctl/unit_test/README.md`](../ctl/unit_test/README.md) 为准。
+
 ## 8. 评审检查清单
 
 - 可复用 CTL 文件中是否仍出现 `#include <gmp_core.h>`？

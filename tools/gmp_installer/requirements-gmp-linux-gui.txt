@@ -1,0 +1,6 @@
+# Optional GUI packages for interactive Linux workstations.
+-r requirements-gmp-linux.txt
+PyQt5==5.15.11
+PyQt6==6.9.1
+PySide6==6.9.1
+pyqtgraph==0.13.7

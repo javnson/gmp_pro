@@ -1,7 +1,7 @@
 /**
  * @file ring_buffer.c
  * @author Javnson (javnson@zju.edu.cn)
- * @brief
+ * @brief Implements a caller-owned, single-ring data buffer.
  * @version 0.1
  * @date 2024-09-30
  *
@@ -17,10 +17,10 @@
 #include <core/base/ds/ring_buf.h>
 
 /**
- * @brief 1. 初始化环形缓冲区
- * @param rb 缓冲区对象指针
- * @param pool 用户静态分配的内存首地址
- * @param size 内存总长度（注意：实际可用容量为 size - 1）
+ * @brief Initializes a ring buffer over caller-owned storage.
+ * @param[out] rb Ring-buffer object to initialize.
+ * @param[in,out] pool Statically allocated storage for buffer elements.
+ * @param[in] size Total element count; the usable capacity is `size - 1`.
  */
 void ringbuf_init(ringbuf_t* rb, data_gt* pool, size_gt size)
 {
@@ -34,31 +34,33 @@ void ringbuf_init(ringbuf_t* rb, data_gt* pool, size_gt size)
 }
 
 /**
- * @brief 6. 获取当前buffer的可用容量
- * @return 剩余可写入的数量
+ * @brief Returns the number of writable elements.
+ * @param[in] rb Ring-buffer object.
+ * @return Number of elements that can be written without overflow.
  */
 size_gt ringbuf_get_free(const ringbuf_t* rb)
 {
-    // 总容量 - 已用 - 1 (保留一个位置用于区分空满)
+    // Reserve one element to distinguish the full and empty states.
     return (rb->capacity - 1) - ringbuf_used(rb);
 }
 
 /**
- * @brief 2. 写入一个最小单位数据
- * @return 1: 写入成功, 0: 缓冲区已满
+ * @brief Writes one element to the buffer.
+ * @param[in,out] rb Ring-buffer object.
+ * @param[in] data Element to write.
+ * @return `1` on success or `0` when the buffer is full.
  */
 fast_gt ringbuf_put_one(ringbuf_t* rb, data_gt data)
 {
     size_gt next_iset = (rb->iset + 1);
 
-    // 优化模运算：如果 capacity 是2的幂次，可用 & (cap-1)
-    // 这里使用通用取模
+    // Use an explicit wrap so capacity does not need to be a power of two.
     if (next_iset >= rb->capacity)
     {
         next_iset = 0;
     }
 
-    // 检查是否满 (next write == read)
+    // The buffer is full when the next write position reaches the reader.
     if (next_iset == rb->iget)
     {
         return 0;
@@ -66,23 +68,23 @@ fast_gt ringbuf_put_one(ringbuf_t* rb, data_gt data)
 
     rb->mem_pool[rb->iset] = data;
 
-    // 内存屏障（可选）：确保数据写入先于索引更新，防止乱序
-    // __DMB(); // ARM Cortex-M 指令
+    // A platform may add a memory barrier here for cross-context sharing.
 
     rb->iset = next_iset;
     return 1;
 }
 
 /**
- * @brief 3. 读取一个最小单位数据
- * @param data 读出的数据存放指针
- * @return 1: 读取成功, 0: 缓冲区为空
+ * @brief Reads one element from the buffer.
+ * @param[in,out] rb Ring-buffer object.
+ * @param[out] data Destination for the element.
+ * @return `1` on success or `0` when the buffer is empty.
  */
 fast_gt ringbuf_get_one(ringbuf_t* rb, data_gt* data)
 {
     if (rb->iget == rb->iset)
     {
-        return 0; // 空
+        return 0;
     }
 
     *data = rb->mem_pool[rb->iget];
@@ -98,11 +100,11 @@ fast_gt ringbuf_get_one(ringbuf_t* rb, data_gt* data)
 }
 
 /**
- * @brief 4. 写入一串数据
- * @param data 源数据指针
- * @param len 写入长度
- * @return 实际写入的长度 (如果空间不足，可能小于 len，或者是0，取决于策略)
- * 这里策略为：如果空间不够，则尽可能写入填满为止
+ * @brief Writes as many elements as the available space permits.
+ * @param[in,out] rb Ring-buffer object.
+ * @param[in] data Source array.
+ * @param[in] len Requested element count.
+ * @return Number of elements written.
  */
 size_gt ringbuf_put_array(ringbuf_t* rb, const data_gt* data, size_gt len)
 {
@@ -110,7 +112,7 @@ size_gt ringbuf_put_array(ringbuf_t* rb, const data_gt* data, size_gt len)
     if (free_space == 0)
         return 0;
 
-    // 限制写入长度为实际可用空间
+    // Limit the transfer to the available space.
     if (len > free_space)
     {
         len = free_space;
@@ -121,18 +123,16 @@ size_gt ringbuf_put_array(ringbuf_t* rb, const data_gt* data, size_gt len)
 
     if (len <= items_to_end)
     {
-        // 情况A：不需要回绕，直接拷贝
+        // The requested range is contiguous.
         memcpy(&rb->mem_pool[current_iset], data, len * sizeof(data_gt));
-        rb->iset = (current_iset + len) % rb->capacity; // 只有正好填满到末尾时需要模
+        rb->iset = (current_iset + len) % rb->capacity;
         if (rb->iset == rb->capacity)
             rb->iset = 0;
     }
     else
     {
-        // 情况B：需要回绕，分两段拷贝
-        // 1. 拷贝到缓冲区末尾
+        // Split a wrapped transfer at the end of the backing array.
         memcpy(&rb->mem_pool[current_iset], data, items_to_end * sizeof(data_gt));
-        // 2. 剩余部分拷贝到缓冲区开头
         memcpy(&rb->mem_pool[0], data + items_to_end, (len - items_to_end) * sizeof(data_gt));
 
         rb->iset = len - items_to_end;
@@ -142,10 +142,11 @@ size_gt ringbuf_put_array(ringbuf_t* rb, const data_gt* data, size_gt len)
 }
 
 /**
- * @brief 5. 读出一串数据
- * @param dest 目标buffer指针
- * @param len 期望读取长度
- * @return 实际读取到的长度
+ * @brief Reads up to the requested number of elements.
+ * @param[in,out] rb Ring-buffer object.
+ * @param[out] dest Destination array.
+ * @param[in] len Requested element count.
+ * @return Number of elements read.
  */
 size_gt ringbuf_get_array(ringbuf_t* rb, data_gt* dest, size_gt len)
 {
@@ -153,7 +154,7 @@ size_gt ringbuf_get_array(ringbuf_t* rb, data_gt* dest, size_gt len)
     if (used_count == 0)
         return 0;
 
-    // 限制读取长度为实际存在的数据量
+    // Limit the transfer to the number of readable elements.
     if (len > used_count)
     {
         len = used_count;
@@ -164,7 +165,7 @@ size_gt ringbuf_get_array(ringbuf_t* rb, data_gt* dest, size_gt len)
 
     if (len <= items_to_end)
     {
-        // 情况A：数据连续，未回绕
+        // The requested range is contiguous.
         memcpy(dest, &rb->mem_pool[current_iget], len * sizeof(data_gt));
         rb->iget = (current_iget + len) % rb->capacity;
         if (rb->iget == rb->capacity)
@@ -172,10 +173,8 @@ size_gt ringbuf_get_array(ringbuf_t* rb, data_gt* dest, size_gt len)
     }
     else
     {
-        // 情况B：数据回绕
-        // 1. 读出直到末尾的部分
+        // Split a wrapped transfer at the end of the backing array.
         memcpy(dest, &rb->mem_pool[current_iget], items_to_end * sizeof(data_gt));
-        // 2. 读出开头剩余的部分
         memcpy(dest + items_to_end, &rb->mem_pool[0], (len - items_to_end) * sizeof(data_gt));
 
         rb->iget = len - items_to_end;

@@ -78,8 +78,8 @@ typedef struct _tag_mtr_protect
     ctrl_gt limit_uv_pu;     //!< UV Limit
     ctrl_gt limit_oc_sq_pu;  //!< OC Limit (Squared)
     ctrl_gt limit_dev_sq_pu; //!< Deviation Limit (Squared error vector)
-    adc_gt limit_mtr_ot;     //!< Motor OT Limit
-    adc_gt limit_inv_ot;     //!< Inverter OT Limit
+    ctrl_gt limit_mtr_ot;    //!< Motor over-temperature limit in the scaled ADC domain
+    ctrl_gt limit_inv_ot;    //!< Inverter over-temperature limit in the scaled ADC domain
 
     // --- 4. Counter Limits (Config) ---
     uint16_t limit_cnt_ov;
@@ -215,14 +215,14 @@ GMP_STATIC_INLINE fast_gt ctl_is_less(ctrl_gt val, ctrl_gt limit)
     return val < limit;
 }
 
-GMP_STATIC_INLINE fast_gt ctl_is_greater_ot(adc_gt temp, adc_gt limit_temp)
+GMP_STATIC_INLINE fast_gt ctl_is_greater_ot(ctrl_gt temp, ctrl_gt limit_temp)
 {
-    return limit_temp > temp;
+    return temp > limit_temp;
 }
 
-GMP_STATIC_INLINE fast_gt ctl_is_less_ot(adc_gt temp, adc_gt limit_temp)
+GMP_STATIC_INLINE fast_gt ctl_is_less_ot(ctrl_gt temp, ctrl_gt limit_temp)
 {
-    return limit_temp < temp;
+    return temp < limit_temp;
 }
 
 GMP_STATIC_INLINE void ctl_set_mtr_protect_mask(ctl_mtr_protect_t* prot, uint32_t mask)

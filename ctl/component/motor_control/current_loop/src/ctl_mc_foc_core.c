@@ -89,7 +89,8 @@ static void ctl_init_foc_core_common(mc_foc_core_t* mc, const mc_foc_init_t* ini
     ctl_init_lead_form3(&mc->lead_compensator[phase_d], init->current_phase_lag, init->current_loop_bw, init->fs);
     ctl_init_lead_form3(&mc->lead_compensator[phase_q], init->current_phase_lag, init->current_loop_bw, init->fs);
 
-    omega_base_elec = (init->spd_base * 1000.0) * CTL_PARAM_CONST_PI / 30.0 * init->pole_pairs;
+    omega_base_elec = (init->spd_base * real2param(1000.0)) * CTL_PARAM_CONST_PI / real2param(30.0) *
+                      init->pole_pairs;
     scale_fac = omega_base_elec * init->i_base / init->v_base;
     max_vs_mag = (init->v_phase_limit * CTL_PARAM_CONST_SQRT2) / init->v_base;
 

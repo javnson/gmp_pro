@@ -226,7 +226,7 @@ extern "C"
 /**
  * @brief F280025C ePWM and CPU Timer clock.
  */
-#define CLLLC_TIMER_CLOCK_HZ (100000000.0f)
+#define CLLLC_TIMER_CLOCK_HZ real2param(100000000.0)
 
 /**
  * @brief PWM cycles between ADC/control interrupts.
@@ -256,7 +256,7 @@ extern "C"
 /**
  * @brief F280025C ADC reference voltage.
  */
-#define CTRL_ADC_VOLTAGE_REF (3.3f)
+#define CTRL_ADC_VOLTAGE_REF real2param(3.3)
 
 /**
  * @brief ADC resolution in bits.
@@ -315,22 +315,22 @@ extern "C"
 /**
  * @brief Lowest allowed hybrid modulation frequency.
  */
-#define CLLLC_F_MIN_HZ (75000.0f)
+#define CLLLC_F_MIN_HZ real2param(75000.0)
 
 /**
  * @brief Highest allowed hybrid modulation frequency.
  */
-#define CLLLC_F_MAX_HZ (150000.0f)
+#define CLLLC_F_MAX_HZ real2param(150000.0)
 
 /**
  * @brief Absolute complementary-switch dead time.
  */
-#define CLLLC_DEADBAND_S (200e-9f)
+#define CLLLC_DEADBAND_S real2param(200e-9)
 
 /**
  * @brief Maximum signed primary-to-secondary bridge phase displacement, where 1 pu is 360 degrees.
  */
-#define CLLLC_MAX_PHASE_SHIFT_PU (0.25f)
+#define CLLLC_MAX_PHASE_SHIFT_PU real2param(0.25)
 
 /**
  * @brief Transformer magnetizing inductance.
@@ -380,12 +380,12 @@ extern "C"
 /**
  * @brief Voltage per-unit base.
  */
-#define CTRL_VOLTAGE_BASE (120.0f)
+#define CTRL_VOLTAGE_BASE real2param(120.0)
 
 /**
  * @brief Current per-unit base, kept within the TMCS1133B5A rated measurement range.
  */
-#define CTRL_CURRENT_BASE (10.0f)
+#define CTRL_CURRENT_BASE real2param(10.0)
 
 /**
  * @brief AMC1311 board-level ADC sensitivity.
@@ -420,32 +420,32 @@ extern "C"
 /**
  * @brief Default secondary voltage reference.
  */
-#define CLLLC_VOLTAGE_TARGET_PU (0.40f)
+#define CLLLC_VOLTAGE_TARGET_PU real2param(0.40)
 
 /**
  * @brief Current-loop reference and parallel current limit.
  */
-#define CLLLC_CURRENT_TARGET_PU (0.50f)
+#define CLLLC_CURRENT_TARGET_PU real2param(0.50)
 
 /**
  * @brief Requested current-loop bandwidth, constrained by CLLLC auto tuning.
  */
-#define CLLLC_CURRENT_LOOP_BW_HZ (5000.0f)
+#define CLLLC_CURRENT_LOOP_BW_HZ real2param(5000.0)
 
 /**
  * @brief Requested voltage-loop bandwidth, constrained below the current loop.
  */
-#define CLLLC_VOLTAGE_LOOP_BW_HZ (400.0f)
+#define CLLLC_VOLTAGE_LOOP_BW_HZ real2param(400.0)
 
 /**
  * @brief Voltage-reference slew rate.
  */
-#define CLLLC_VOLTAGE_SLOPE_PU_S (0.5f)
+#define CLLLC_VOLTAGE_SLOPE_PU_S real2param(0.5)
 
 /**
  * @brief Current-reference slew rate.
  */
-#define CLLLC_CURRENT_SLOPE_PU_S (1.0f)
+#define CLLLC_CURRENT_SLOPE_PU_S real2param(1.0)
 
 /**
  * @brief Maximum current-sensor offset calibration time.

@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ctl_float_tests", "projects\ctl_float_tests.vcxproj", "{AD6BF62D-B655-4427-856C-255D5E819231}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ctl_double_tests", "projects\ctl_double_tests.vcxproj", "{0D20D438-10B5-435A-B6B6-92D37E2F1A05}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AD6BF62D-B655-4427-856C-255D5E819231}.Debug|x64.ActiveCfg = Debug|x64
+		{AD6BF62D-B655-4427-856C-255D5E819231}.Debug|x64.Build.0 = Debug|x64
+		{AD6BF62D-B655-4427-856C-255D5E819231}.Release|x64.ActiveCfg = Release|x64
+		{AD6BF62D-B655-4427-856C-255D5E819231}.Release|x64.Build.0 = Release|x64
+		{0D20D438-10B5-435A-B6B6-92D37E2F1A05}.Debug|x64.ActiveCfg = Debug|x64
+		{0D20D438-10B5-435A-B6B6-92D37E2F1A05}.Debug|x64.Build.0 = Debug|x64
+		{0D20D438-10B5-435A-B6B6-92D37E2F1A05}.Release|x64.ActiveCfg = Release|x64
+		{0D20D438-10B5-435A-B6B6-92D37E2F1A05}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A991A10E-CE0D-4F76-B7CA-CFFFB20AD319}
+	EndGlobalSection
+EndGlobal

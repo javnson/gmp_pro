@@ -74,6 +74,18 @@
         "description": "GMP Chip Support Package for Windows Simulink Platform."
     },
     {
+        "name": "gmp_csp_linux",
+        "tag": "GMP CSP",
+        "source_path": [
+            "csp/linux_simulink"
+        ],
+        "include_path": [
+            ".",
+            "csp/linux_simulink"
+        ],
+        "description": "GMP Chip Support Package for native Linux Simulink SIL/PIL processes."
+    },
+    {
         "name": "gmp_csp_c28x",
         "tag": "GMP CSP",
         "source_path": [

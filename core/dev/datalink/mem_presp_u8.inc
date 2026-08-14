@@ -116,6 +116,7 @@ static void mem_u8_reply_discovery(gmp_mem_persp_t* ctx)
     uint8_t total = (uint8_t)ctx->region_count;
     const gmp_mem_region_t* region = NULL;
     const char* name = NULL;
+    size_t source_name_length = 0U;
     size_gt name_length = 0U;
     size_gt capacity;
     size_gt index;
@@ -140,11 +141,12 @@ static void mem_u8_reply_discovery(gmp_mem_persp_t* ctx)
         capacity = gmp_dev_dl_get_tx_capacity(dl);
         if (name != NULL && capacity > 1U)
         {
-            name_length = strlen(name);
-            if (name_length > capacity - 1U)
-                name_length = capacity - 1U;
-            if (name_length > 63U)
-                name_length = 63U;
+            source_name_length = strlen(name);
+            if (source_name_length > 63U)
+                source_name_length = 63U;
+            if (source_name_length > (size_t)(capacity - 1U))
+                source_name_length = (size_t)(capacity - 1U);
+            name_length = (size_gt)source_name_length;
         }
         gmp_dev_dl_tx_append_u8(dl, (uint8_t)name_length);
         for (index = 0U; index < name_length; ++index)

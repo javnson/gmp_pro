@@ -24,8 +24,8 @@ void ctl_init_mtr_protect(ctl_mtr_protect_t* prot, parameter_gt fs)
     prot->limit_uv_pu = CTL_CTRL_CONST_1_OVER_2;
     prot->limit_oc_sq_pu = real2ctrl(1.5f * 1.5f);  // 1.5x Overload
     prot->limit_dev_sq_pu = real2ctrl(0.5f * 0.5f); // 0.5pu Deviation
-    prot->limit_mtr_ot = 1000;                       // Raw ADC value
-    prot->limit_inv_ot = 1000;
+    prot->limit_mtr_ot = real2ctrl(1000.0);
+    prot->limit_inv_ot = real2ctrl(1000.0);
 
     // Default Filtering
     prot->limit_cnt_ov = (uint16_t)(fs / 2000); // Very Fast
@@ -84,7 +84,6 @@ fast_gt ctl_dispatch_mtr_protect_slow(ctl_mtr_protect_t* prot)
     // 3. Check Motor Over Temp
     if (prot->ptr_mtr_temp)
     {
-        // Assuming ptr_mtr_temp->value holds the data
         ctrl_gt temp = prot->ptr_mtr_temp->value;
         if (ctl_mtr_protect_debounce(ctl_is_greater_ot(temp, prot->limit_mtr_ot), &prot->cnt_mtr_ot,
                                      prot->limit_cnt_mtr_ot))
@@ -101,7 +100,7 @@ fast_gt ctl_dispatch_mtr_protect_slow(ctl_mtr_protect_t* prot)
     // 4. Check Inverter Over Temp
     if (prot->ptr_inv_temp)
     {
-        ctrl_gt temp = prot->ptr_inv_temp->value; // Fixed: was reading mtr_temp
+        ctrl_gt temp = prot->ptr_inv_temp->value;
         if (ctl_mtr_protect_debounce(ctl_is_greater_ot(temp, prot->limit_inv_ot), &prot->cnt_inv_ot,
                                      prot->limit_cnt_inv_ot))
         {

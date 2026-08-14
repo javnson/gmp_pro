@@ -877,14 +877,14 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
                     uq_comp = ctx->sub_rs_dt.vcomp_mean * (iq / i_mag);
                 }
 
-                // 计算真实的电枢电压
+                // Convert the measured voltage to the physical phase-voltage convention.
                 // Rs/DT records the two-phase voltage convention and divides
                 // by two when publishing phase resistance. Convert the measured
                 // voltage to the same phase convention used by physical Rs/L.
                 parameter_gt ud_real = 0.5f * (ud - ud_comp);
                 parameter_gt uq_real = 0.5f * (uq - uq_comp);
 
-                // 使用真实电压计算反电势
+                // Calculate back EMF from the compensated physical voltage.
                 parameter_gt ed = ud_real - (rs_pu * id) + (w * lq_pu * iq);
                 parameter_gt eq = uq_real - (rs_pu * iq) - (w * ld_pu * id);
 
@@ -1409,7 +1409,7 @@ void ctl_init_pmsm_offline_id_sm(ctl_pmsm_offline_id_t* ctx, const ctl_pmsm_offl
 
     // Initialize Base Values for PU conversions
     ctl_consultant_pu_pmsm_init(&ctx->identified_pu, init_cfg->v_base, init_cfg->i_base, init_cfg->w_base,
-                                init_cfg->cfg_basic.pole_pairs);
+                                (uint32_t)init_cfg->cfg_basic.pole_pairs);
 
     // =========================================================================
     // 2. Initialize Core Embedded Components Owned by ID Module
@@ -1450,7 +1450,7 @@ void ctl_init_pmsm_offline_id_sm(ctl_pmsm_offline_id_t* ctx, const ctl_pmsm_offl
     ctx->pmsm_param.Ld = 0.0f;
     ctx->pmsm_param.Lq = 0.0f;
     ctx->pmsm_param.flux_linkage = 0.0f;
-    ctx->pmsm_param.pole_pairs = init_cfg->cfg_basic.pole_pairs;
+    ctx->pmsm_param.pole_pairs = (uint32_t)init_cfg->cfg_basic.pole_pairs;
     ctx->pmsm_param.is_ipm = 0;
 
     ctx->pmsm_mech_param.J_total = 0.0f;

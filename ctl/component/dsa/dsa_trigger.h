@@ -104,8 +104,8 @@ GMP_STATIC_INLINE void ctl_init_dsa_trigger(ctl_dsa_trigger_t* obj, ctl_dsa_trig
                                             parameter_gt isr_freq)            // sample frequency
 {
     obj->option = trigger_option;
-    obj->trigger_level = real2ctrl(trigger_level);
-    obj->auto_timeout_ticks = (uint32_t)trigger_suppression * isr_freq;
+    obj->trigger_level = param2ctrl(trigger_level);
+    obj->auto_timeout_ticks = (uint32_t)(trigger_suppression * isr_freq);
 
     ctl_clear_dsa_trigger(obj);
 }

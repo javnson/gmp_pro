@@ -4,13 +4,14 @@ import json
 import shutil
 import subprocess
 import re
+import argparse
 from pathlib import Path
 
 from framework_project_discovery import exclude_git_ignored
 
 def get_macros(dic_path):
     """
-    只负责从 json 配置文件中读取自定义宏，不再混入系统环境变量。
+    Read custom macros only from the JSON registry.
     """
     macros = {}
     if dic_path.exists():
@@ -28,8 +29,7 @@ def find_target_projects(
     search_paths, sorted_macros, repository_root, target_dir_name="gmp_src_mgr"
 ):
     """
-    Super Path Resolution Engine V2: 
-    支持正则动态解析任何系统环境变量，并使用 pathlib 极速递归。
+    Resolve environment macros and recursively discover project tool folders.
     """
     projects_found = set()
     env_pattern = re.compile(r'\$\{([^}]+)\}')
@@ -40,17 +40,17 @@ def find_target_projects(
         return val if val is not None else match.group(0)
 
     for pat in search_paths:
-        # 1. 动态获取并展开真正的系统环境变量
+        # Expand operating-system environment variables.
         res_pat = env_pattern.sub(env_replacer, pat)
         
-        # 2. 替换 json 文件中读取出的自定义宏
+        # Expand custom macros from the registry.
         for mac, val in sorted_macros:
             res_pat = res_pat.replace(f"${{{mac}}}", val)
             
-        # 3. 统一斜杠，避免平台差异
+        # Normalize path separators across platforms.
         res_pat = res_pat.replace('\\', '/')
         
-        # 4. 智能解析通配符
+        # Resolve recursive and direct wildcard suffixes.
         is_recursive = False
         if res_pat.endswith('/**'):
             is_recursive = True
@@ -63,10 +63,10 @@ def find_target_projects(
         base_path = Path(base_dir_str).resolve()
 
         if not base_path.exists() or not base_path.is_dir():
-            print(f"  [SKIP] 路径无效或不存在: {base_path}")
+            print(f"  [SKIP] Path is missing or invalid: {base_path}")
             continue
 
-        # 5. 使用健壮的 rglob() 递归搜索目标文件夹
+        # Discover target directories recursively when requested.
         if is_recursive:
             for match in base_path.rglob(target_dir_name):
                 if match.is_dir():
@@ -83,11 +83,17 @@ def find_target_projects(
 
 
 def execute_generation_script(script_path):
-    """Run one distributed BAT without hiding its output or exit code."""
-    if os.name != "nt":
-        print(f"    -> [ERROR] BAT generation is only supported on Windows: {script_path.name}")
+    """Run one platform launcher without hiding output or its exit code."""
+    if script_path.suffix.lower() == ".bat":
+        if os.name != "nt":
+            print(f"    -> [ERROR] BAT generation is only supported on Windows: {script_path.name}")
+            return False
+        command = [os.environ.get("COMSPEC", "cmd.exe"), "/d", "/c", "call", str(script_path)]
+    elif script_path.suffix.lower() == ".sh":
+        command = ["bash", str(script_path)]
+    else:
+        print(f"    -> [ERROR] Unsupported generation launcher: {script_path.name}")
         return False
-    command = [os.environ.get("COMSPEC", "cmd.exe"), "/d", "/c", "call", str(script_path)]
     result = subprocess.run(command, cwd=script_path.parent)
     if result.returncode:
         print(f"    -> [ERROR] {script_path.name} failed with exit code {result.returncode}")
@@ -95,7 +101,7 @@ def execute_generation_script(script_path):
     print(f"    -> [OK] {script_path.name}")
     return True
 
-def run_distribution():
+def run_distribution(generate=True):
     print("=" * 60)
     print("[START] [GMP Fleet] Starting Distribution Engine (Dynamic Env Mode)...")
     print("=" * 60)
@@ -149,7 +155,7 @@ def run_distribution():
 
     print("[INFO] Parsing search rules and deep scanning for targets...\n")
     
-    # 获取所有目标项目路径
+    # Resolve all target project paths.
     try:
         target_dirs = find_target_projects(search_paths, sorted_macros, repository_root)
     except RuntimeError as error:
@@ -160,7 +166,7 @@ def run_distribution():
         print("\n[WARNING] Scan completed, no target projects found.")
         return True
 
-    # 打印发现的目标，保持原脚本的 Phase 1 输出风格
+    # Report all discovered targets before modifying them.
     for target in sorted(target_dirs):
         print(f"  [FOUND] Target discovered: {target.parent.name} ({target})")
 
@@ -182,8 +188,16 @@ def run_distribution():
             print(f"    -> [ERROR] Overwrite failed: {e}")
             deployment_failures += 1
 
-    # Phase 3: Generate headers and sources only after the tool scripts have
-    # been refreshed. Header generation runs first by installer contract.
+    if not generate:
+        print("\n" + "=" * 60)
+        print(f"[SUMMARY] Tool scripts deployed: {len(deployed_targets)} project(s).")
+        print(f"[SUMMARY] Deployment failures: {deployment_failures} project(s).")
+        print("[SUMMARY] Project generation was skipped by request.")
+        print("=" * 60)
+        return deployment_failures == 0
+
+    # Generate headers and sources only after the tool scripts have been
+    # refreshed. Header generation runs first by installer contract.
     print("\n" + "-" * 60)
     print("[INFO] Tool distribution completed. Generating project files...\n")
 
@@ -192,7 +206,8 @@ def run_distribution():
     for current_dir in deployed_targets:
         print(f"  [GENERATE] Project: {current_dir.parent.name} ({current_dir})")
         project_ok = True
-        for script_name in ("gmp_generate_inc.bat", "gmp_generate_src.bat"):
+        suffix = ".bat" if os.name == "nt" else ".sh"
+        for script_name in (f"gmp_generate_inc{suffix}", f"gmp_generate_src{suffix}"):
             script_path = current_dir / script_name
             if not script_path.is_file():
                 print(f"    -> [ERROR] Required generation script is missing: {script_name}")
@@ -214,5 +229,12 @@ def run_distribution():
     return deployment_failures == 0 and generation_failures == 0
 
 if __name__ == "__main__":
-    if not run_distribution():
+    parser = argparse.ArgumentParser(description="Distribute GMP source-manager launchers.")
+    parser.add_argument(
+        "--deploy-only",
+        action="store_true",
+        help="Refresh project launchers without regenerating platform-specific source copies.",
+    )
+    arguments = parser.parse_args()
+    if not run_distribution(generate=not arguments.deploy_only):
         sys.exit(1)

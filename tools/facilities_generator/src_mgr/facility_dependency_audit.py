@@ -49,6 +49,7 @@ def load_modules(registry: Path) -> dict[str, dict]:
 def registered_files(repo: Path, modules: dict[str, dict]):
     owners: dict[str, set[str]] = {}
     files: dict[str, set[str]] = {}
+    actual_paths: dict[str, str] = {}
     for key, module in modules.items():
         selected: set[str] = set()
         for field in ("src_patterns", "inc_patterns"):
@@ -57,11 +58,13 @@ def registered_files(repo: Path, modules: dict[str, dict]):
                 for filename in glob.glob(expanded):
                     path = Path(filename)
                     if path.is_file() and path.suffix.lower() in CODE_SUFFIXES:
-                        relative = path.resolve().relative_to(repo).as_posix().lower()
-                        selected.add(relative)
-                        owners.setdefault(relative, set()).add(key)
+                        actual_relative = path.resolve().relative_to(repo).as_posix()
+                        normalized_relative = actual_relative.lower()
+                        selected.add(normalized_relative)
+                        actual_paths.setdefault(normalized_relative, actual_relative)
+                        owners.setdefault(normalized_relative, set()).add(key)
         files[key] = selected
-    return owners, files
+    return owners, files, actual_paths
 
 
 def dependency_closure(module: str, modules: dict[str, dict]) -> set[str]:
@@ -108,7 +111,7 @@ def main() -> int:
     args = parse_args()
     repo = args.repo.resolve()
     modules = load_modules(args.registry.resolve())
-    owners, files = registered_files(repo, modules)
+    owners, files, actual_paths = registered_files(repo, modules)
     unresolved: set[tuple[str, str, str, str]] = set()
 
     for module, module_files in files.items():
@@ -116,7 +119,8 @@ def main() -> int:
             continue
         available = dependency_closure(module, modules) | {module}
         for relative in module_files:
-            for raw_include in INCLUDE_RE.findall((repo / relative).read_bytes()):
+            actual_relative = actual_paths[relative]
+            for raw_include in INCLUDE_RE.findall((repo / actual_relative).read_bytes()):
                 try:
                     include = raw_include.decode("ascii").replace("\\", "/").lower()
                 except UnicodeDecodeError:
@@ -128,7 +132,7 @@ def main() -> int:
                 # not an unconditional dependency of the normal math package.
                 if module == "ctl|math_block|_internal" and target == "ctl|portable|_internal":
                     continue
-                unresolved.add((module, target, relative, include))
+                unresolved.add((module, target, actual_relative, include))
 
     cycles = find_cycles(modules)
     for module, target, source, include in sorted(unresolved):

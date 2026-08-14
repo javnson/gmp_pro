@@ -19,7 +19,7 @@ GMP 的目标不是仅提供若干独立算法，而是让同一套控制逻辑�
 - 工程实际需要的 GMP 源文件；
 - Simulink 被控对象与控制器程序。
 
-> 当前仓库主要面向 Windows 开发环境。硬件工程还需要相应厂商工具链，例如 Code Composer Studio、SysConfig、STM32CubeMX/CubeIDE 或 Keil。仿真工程需要 MATLAB/Simulink 以及 Simscape Electrical Specialized Power Systems。
+> 当前仓库支持 Windows 开发环境和 Linux 原生 SIL/PIL 运行节点。硬件工程还需要相应厂商工具链，例如 Code Composer Studio、SysConfig、STM32CubeMX/CubeIDE 或 Keil。仿真工程需要 MATLAB/Simulink 以及 Simscape Electrical Specialized Power Systems。
 
 ## 1. 快速开始
 
@@ -76,6 +76,16 @@ gmp_env.bat cmake --version
 ```
 
 完整的环境安装、离线复制部署、代理配置和修复方法见 [GMP 环境安装说明](tools/gmp_installer/README_CN.md)。
+
+Linux 下只建立仓库私有环境，不改动系统 Python 和 shell 配置：
+
+```bash
+bash install_gmp_virtual_env.sh
+source bin/linux/activate_gmp.sh
+```
+
+安装器生成的激活脚本只影响当前 shell，并设置 `GMP_PRO_LOCATION`、私有
+Python 虚拟环境和当前架构对应的 vcpkg 工具链。
 
 ### 1.3 安装 Simulink 库
 

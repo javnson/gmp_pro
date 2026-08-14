@@ -115,8 +115,8 @@ void ctl_init()
     acm_ctrl_init.acc_limit_max = 150.0f;
 
     // ACM flux speed calculator
-    acm_ctrl_init.Lr = MOTOR_PARAM_LM + MOTOR_PARAM_L1R;
-    acm_ctrl_init.Rr = MOTOR_PARAM_RR;
+    acm_ctrl_init.Lr = real2param(MOTOR_PARAM_LM + MOTOR_PARAM_L1R);
+    acm_ctrl_init.Rr = real2param(MOTOR_PARAM_RR);
     acm_ctrl_init.pole_pairs = MOTOR_PARAM_POLE_PAIRS;
     acm_ctrl_init.base_freq = MOTOR_PARAM_RATED_FREQUENCY;
     acm_ctrl_init.base_spd = MOTOR_PARAM_MAX_SPEED;
@@ -197,6 +197,7 @@ void ctl_mainloop(void)
 {
     // Get current System Tick
     time_gt current_tick = gmp_base_get_ctrl_tick();
+    (void)current_tick;
 
     //
     // Judge if PWM is enabled

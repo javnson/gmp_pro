@@ -135,6 +135,8 @@ GMP_STATIC_INLINE void ctl_clear_imc(ctl_imc_controller_t* imc)
  */
 GMP_STATIC_INLINE ctrl_gt ctl_step_imc(ctl_imc_controller_t* imc, ctrl_gt r, ctrl_gt y_p)
 {
+    (void)r;
+    (void)y_p;
 //    // 1. Resolve the ring-buffer address without a modulo operation.
 //    int32_t read_idx_temp = (int32_t)imc->delay_buffer_idx - (int32_t)imc->dead_time_samples;
 //    if (read_idx_temp < 0)

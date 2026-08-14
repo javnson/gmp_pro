@@ -24,10 +24,11 @@ C2000, STM32, and other targets while keeping these concerns separate:
 - the subset of GMP sources required by an individual project;
 - Simulink plant models and the controller executable.
 
-> GMP currently targets Windows development hosts. Hardware projects also need
-> the appropriate vendor toolchain, such as Code Composer Studio, SysConfig,
-> STM32CubeMX/CubeIDE, or Keil. Simulation projects require MATLAB/Simulink and,
-> for current models, Simscape Electrical Specialized Power Systems.
+> GMP supports Windows development hosts and native Linux SIL/PIL runtime
+> nodes. Hardware projects also need the appropriate vendor toolchain, such as
+> Code Composer Studio, SysConfig, STM32CubeMX/CubeIDE, or Keil. Simulation
+> projects require MATLAB/Simulink and, for current models, Simscape Electrical
+> Specialized Power Systems.
 
 ## 1. Quick start
 
@@ -86,6 +87,18 @@ gmp_env.bat cmake --version
 See the [GMP environment installer guide](tools/gmp_installer/README.md) for
 online installation, copied-bin deployment, proxy configuration, dependency
 repair, and maintainer rules.
+
+On Linux, create a repository-private environment without changing the host
+Python or shell profiles:
+
+```bash
+bash install_gmp_virtual_env.sh
+source bin/linux/activate_gmp.sh
+```
+
+The generated activation script exports `GMP_PRO_LOCATION`, activates the
+private Python environment, and selects the native vcpkg toolchain for the
+current shell only.
 
 ### 1.3 Install the Simulink library
 

@@ -22,7 +22,7 @@ int main(void)
     const parameter_gt resonant_frequency = real2param(250.0);
     const parameter_gt cutoff_frequency = real2param(2.0);
     const parameter_gt sampling_frequency = real2param(20000.0);
-    const parameter_gt tolerance = real2param(1.0e-6);
+    const parameter_gt tolerance = CTL_PARAM_CONST_EPSILON;
     unsigned int sample;
 
     ctl_init_qr_controller(&qr, kr, resonant_frequency, cutoff_frequency, sampling_frequency);

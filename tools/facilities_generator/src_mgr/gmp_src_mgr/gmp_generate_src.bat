@@ -30,6 +30,6 @@ if not "%RESULT%"=="0" (
 
 echo.
 echo =======================================================
-echo 🎉 [SUCCESS] Source files deployed successfully!
+echo [SUCCESS] Source files deployed successfully!
 echo =======================================================
 exit /b 0
