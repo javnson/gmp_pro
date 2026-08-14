@@ -1,7 +1,0 @@
-{
-  "board": "NUCLEO-G474RE",
-  "device": "STM32G474RET6",
-  "core": "Cortex-M4",
-  "order": 0,
-  "toolchain": "GCC"
-}
