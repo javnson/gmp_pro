@@ -63,10 +63,10 @@ $(OBJ):
 $(OBJ)/user_main.o: user/user_main.c $(SYSCFG_OUT)/board.c | $(OBJ)
 	"$(COMPILER)" -c $(CFLAGS) -o "$@" "$<"
 
-$(OBJ)/gmp_std_port.o: $(GMP_PRO_LOCATION)/core/std/src/gmp_std_port.c $(SYSCFG_OUT)/board.c | $(OBJ)
+$(OBJ)/gmp_std_port.o: $(GMP_PRO_LOCATION)/core/rt/src/gmp_runtime.c $(SYSCFG_OUT)/board.c | $(OBJ)
 	"$(COMPILER)" -c $(CFLAGS) -o "$@" "$<"
 
-$(OBJ)/gmp_datalink.o: $(GMP_PRO_LOCATION)/core/dev/src/gmp_datalink.c $(SYSCFG_OUT)/board.c | $(OBJ)
+$(OBJ)/gmp_datalink.o: $(GMP_PRO_LOCATION)/core/dev/datalink/src/gmp_datalink.c $(SYSCFG_OUT)/board.c | $(OBJ)
 	"$(COMPILER)" -c $(CFLAGS) -o "$@" "$<"
 
 $(OBJ)/sysconfig_adapter.o: $(GMP_PRO_LOCATION)/csp/c29x_syscfg/src/sysconfig_adapter.c $(SYSCFG_OUT)/board.c | $(OBJ)

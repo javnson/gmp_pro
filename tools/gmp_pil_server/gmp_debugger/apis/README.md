@@ -296,4 +296,4 @@ python -m py_compile apis/__init__.py apis/client.py apis/protocol.py apis/pil.p
 The complete runnable example is
 [`examples/ai_debug_session.py`](examples/ai_debug_session.py). The target-side
 wire protocol is documented in
-[`core/dev/readme_dl_protocol.md`](../../../../core/dev/readme_dl_protocol.md).
+[`core/dev/datalink/readme_dl_protocol.md`](../../../../core/dev/datalink/readme_dl_protocol.md).

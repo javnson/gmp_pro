@@ -1,6 +1,11 @@
 {
   "sync_mode": "src_only",
   "selected_modules": [
+    {"root": "core", "module": "base|_internal"},
+    {"root": "core", "module": "base|checksum|crc16"},
+    {"root": "core", "module": "pm|_internal"},
+    {"root": "core", "module": "base|port"},
+    {"root": "core", "module": "rt"},
     {"root": "core", "module": "std"},
     {"root": "core", "module": "dev|_internal"},
     {"root": "core", "module": "dev|datalink|_internal"},

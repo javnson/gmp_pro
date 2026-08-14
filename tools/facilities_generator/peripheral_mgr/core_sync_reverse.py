@@ -8,7 +8,7 @@ from pathlib import Path
 def run_reverse_sync_gui(parent_root, global_registry, selected_modules):
     """
     反向同步核心逻辑：
-    扫描本地 gmp_peripheral_src 中的文件，与 core/dev 中的源文件比对。
+    扫描本地 gmp_peripheral_src 中的文件，与 core/dev/driver 中的源文件比对。
     如果发现本地被修改过，则弹出一个高级的 Diff 对比窗口。
     """
     gmp_location = os.environ.get('GMP_PRO_LOCATION')

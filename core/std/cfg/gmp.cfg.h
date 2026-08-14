@@ -244,7 +244,7 @@
 
 // Default handle of GMP base print function
 #ifndef GMP_BASE_PRINT_DEFAULT_HANDLE_TYPE
-#define GMP_BASE_PRINT_DEFAULT_HANDLE_TYPE uart_halt
+#define GMP_BASE_PRINT_DEFAULT_HANDLE_TYPE void*
 #endif // GMP_BASE_PRINT_DEFAULT_HANDLE_TYPE
 
 // default transmit function of GMP base print function
@@ -329,3 +329,12 @@
 #ifndef TEXT_STRING
 #define TEXT_STRING(A) (A)
 #endif // TEXT_STRING
+
+// Startup logo selection. The legacy disable switch remains supported.
+#ifndef SPECIFY_GMP_LOGO_MODE
+#ifdef SPECIFY_DISABLE_GMP_LOGO
+#define SPECIFY_GMP_LOGO_MODE GMP_LOGO_MODE_DISABLED
+#else
+#define SPECIFY_GMP_LOGO_MODE GMP_LOGO_MODE_FULL
+#endif // SPECIFY_DISABLE_GMP_LOGO
+#endif // SPECIFY_GMP_LOGO_MODE

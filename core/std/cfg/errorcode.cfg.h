@@ -104,7 +104,7 @@ ec_gt gmp_is_fine(ec_gt error_code)
 }
 
 // necessary patch here.
-// This definition should keep pace with `gmp_cport.h`.
+// This definition should keep pace with `core/base/gmp_base.h`.
 //
 void gmp_base_system_stuck(void);
 

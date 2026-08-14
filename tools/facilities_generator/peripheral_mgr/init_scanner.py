@@ -8,7 +8,7 @@ def generate_initial_dic():
         print("错误: 未找到环境变量 GMP_PRO_LOCATION。")
         return
 
-    dev_dir = Path(gmp_location) / "core" / "dev"
+    dev_dir = Path(gmp_location) / "core" / "dev" / "driver"
     output_json = Path(gmp_location) / "tools" / "facilities_generator" / "peripheral_mgr" / "gmp_peripheral_dic.json"
 
     if not dev_dir.exists():
@@ -16,7 +16,7 @@ def generate_initial_dic():
         return
 
     ignore_dirs = ['.git', 'build', 'common_includes']
-    ignore_files = ['readme.md', 'prompt.h']
+    ignore_files = ['readme.md', 'README.md', 'prompt.h', 'driver.h']
 
     registry = {"tree_nodes": {}}
     
@@ -37,7 +37,9 @@ def generate_initial_dic():
 
             for file_path in item_path.iterdir():
                 if file_path.is_file() and file_path.name not in ignore_files:
-                    stem = file_path.stem
+                    # Module IDs are case-insensitive so PCA9555.c and
+                    # pca9555.h are registered as one device.
+                    stem = file_path.stem.casefold()
                     ext = file_path.suffix.lower()
                     if ext in ['.c', '.h']:
                         if stem not in module_buffer:
@@ -58,7 +60,7 @@ def generate_initial_dic():
                     
         # --- 2. 处理直接在 dev/ 根目录下的文件 ---
         elif item_path.is_file() and item_path.name not in ignore_files:
-            stem = item_path.stem
+            stem = item_path.stem.casefold()
             ext = item_path.suffix.lower()
             if ext in ['.c', '.h']:
                 if stem not in root_module_buffer:

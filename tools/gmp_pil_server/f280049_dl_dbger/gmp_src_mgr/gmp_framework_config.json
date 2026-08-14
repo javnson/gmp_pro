@@ -8,6 +8,26 @@
   "selected_modules": [
     {
       "root": "core",
+      "module": "base|_internal"
+    },
+    {
+      "root": "core",
+      "module": "pm|_internal"
+    },
+    {
+      "root": "core",
+      "module": "base|checksum|crc16"
+    },
+    {
+      "root": "core",
+      "module": "base|port"
+    },
+    {
+      "root": "core",
+      "module": "rt"
+    },
+    {
+      "root": "core",
       "module": "std"
     },
     {

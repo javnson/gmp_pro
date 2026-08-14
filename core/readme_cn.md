@@ -1,19 +1,22 @@
-# GMP Core 核心运行时
+# GMP Core
 
 [English](readme.md) | **简体中文**
 
-`core` 提供 GMP 的平台无关运行时，包括标准类型与编译器抽象、设备接口、内存管理、进程与状态机、调度、通信和通用工具。
+`core` 按职责分层，依赖方向固定为：
 
-| 目录 | 作用 |
-| --- | --- |
-| `std` | 跨平台类型、配置、错误码和编译器宏 |
-| `dev` | 统一设备与外设抽象 |
-| `mm` | 内存管理服务 |
-| `pm` | 进程、状态机和调度服务 |
-| `ds` | 通用数据结构 |
-| `ec` | 错误管理 |
-| `util` | 通用辅助工具 |
+`std -> base -> mm / pm / dev -> rt`
 
-C 工程通常包含 `<gmp_core.h>`，C++ 工程可以包含 `<gmp_core.hpp>`。具体平台必须由 CSP 提供 `gmp_hal_*` 等底层实现。
+| 层级 | 职责 | 文档 |
+| --- | --- | --- |
+| `std` | 架构、编译器、错误码、类型和配置契约 | [std](std/README.md) |
+| `base` | 可移植基础服务与通用数据结构 | [base](base/README.md) |
+| `mm` | 内存管理 | [mm](mm/readme.md) |
+| `pm` | 任务、调度和状态管理 | [pm](pm/readme.md) |
+| `dev` | 外设契约、驱动与数据链路服务 | [dev](dev/readme.md) |
+| `rt` | 完整 GMP 启动和运行时装配 | [rt](rt/README.md) |
 
-完整中文架构说明见 [GMP Core 核心模块指南](CORE_GUIDE.md)。
+只需要配置、标准类型和宏时包含 `<gmp_type.h>`；只有需要完整 GMP 运行
+框架时才包含 `<gmp_core.h>`。项目中的源代码管理器输出是生成物，不作为
+这些模块的权威副本。
+
+模块归属、依赖和 README 维护规则见 [Core 架构与维护指南](CORE_GUIDE.md)。

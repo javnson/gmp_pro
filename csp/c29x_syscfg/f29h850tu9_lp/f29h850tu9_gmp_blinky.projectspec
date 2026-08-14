@@ -21,8 +21,8 @@
     <file action="copy" path="${COM_TI_MCU_SDK_GENERIC_LNK_CMD_RAM}" targetDirectory="" applicableConfigurations="LAUNCHXL_RAM" />
     <file action="copy" path="${COM_TI_MCU_SDK_GENERIC_LNK_CMD_FLASH}" targetDirectory="" applicableConfigurations="LAUNCHXL_FLASH" />
 
-    <file action="link" path="${GMP_PRO_ROOT}/core/std/src/gmp_std_port.c" targetDirectory="gmp" />
-    <file action="link" path="${GMP_PRO_ROOT}/core/dev/src/gmp_datalink.c" targetDirectory="gmp" />
+    <file action="link" path="${GMP_PRO_ROOT}/core/rt/src/gmp_runtime.c" targetDirectory="gmp" />
+    <file action="link" path="${GMP_PRO_ROOT}/core/dev/datalink/src/gmp_datalink.c" targetDirectory="gmp" />
     <file action="link" path="${GMP_PRO_ROOT}/csp/c29x_syscfg/src/sysconfig_adapter.c" targetDirectory="gmp" />
     <file action="link" path="${GMP_PRO_ROOT}/csp/c29x_syscfg/src/peripheral_driver.c" targetDirectory="gmp" />
 

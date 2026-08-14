@@ -8,10 +8,10 @@
 #include <math.h>
 
 #include "user_main.h"
-#include <core/dev/datalink.h>
-#include <core/dev/mem_presp.h>
-#include <core/dev/scope.h>
-#include <core/dev/tunable.h>
+#include <core/dev/datalink/datalink.h>
+#include <core/dev/datalink/mem_presp.h>
+#include <core/dev/datalink/scope.h>
+#include <core/dev/datalink/tunable.h>
 #include <ctl/component/dsa/dsa_scope.h>
 #include <ctl/component/dsa/dsa_trigger.h>
 #include <xplt.peripheral.h>

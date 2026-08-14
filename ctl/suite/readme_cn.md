@@ -325,7 +325,7 @@ GMP_STATIC_INLINE void ctl_input_callback_pil(const gmp_sim_rx_buf_t* rx);
 正式 suite 中通常在 `src/ctl_main.c` 实现 `gmp_pil_sim_step()`，由 PIL 内核调用：
 
 ```text
-core/dev/pil_core.h / core/dev/src/gmp_pil_core.c
+core/dev/datalink/pil_core.h / core/dev/datalink/src/gmp_pil_core.c
   gmp_pil_sim_rx_cb()
     └─ gmp_pil_sim_step(rx, tx)
          ├─ ctl_input_callback_pil(rx)
@@ -337,8 +337,8 @@ PIL 关键文件：
 
 | 文件 | 作用 |
 | --- | --- |
-| `core/dev/pil_core.h` | PIL 仿真模块接口，定义 `gmp_sim_rx_buf_t`、`gmp_sim_tx_buf_t`、`gmp_pil_sim_t` 等。 |
-| `core/dev/src/gmp_pil_core.c` | PIL 模块实现，接收仿真请求并调用 `gmp_pil_sim_step()`。 |
+| `core/dev/datalink/pil_core.h` | PIL 仿真模块接口，定义 `gmp_sim_rx_buf_t`、`gmp_sim_tx_buf_t`、`gmp_pil_sim_t` 等。 |
+| `core/dev/datalink/src/gmp_pil_core.c` | PIL 模块实现，接收仿真请求并调用 `gmp_pil_sim_step()`。 |
 | `project/<platform>/xplt/xplt.ctl_interface.h` | 平台 PIL 输入输出 callback。 |
 | `src/ctl_main.c` | suite 侧 `gmp_pil_sim_step()` 桥接实现。 |
 
@@ -352,10 +352,10 @@ Datalink，也常简称 DL，是 GMP Suite 当前采用的重要调试机制。�
 
 | 文件 | 作用 |
 | --- | --- |
-| `core/dev/datalink.h` | Datalink 协议核心，提供帧解析、事件循环、收发状态机和命令机制。 |
-| `core/dev/mem_presp.h` | Memory perspective 功能，用于按内存区域观察数据。 |
-| `core/dev/tunable.h` | Tunable 参数功能，用于在线读写参数字典。 |
-| `core/dev/readme_dl_protocol.md` | Datalink 协议说明文档。 |
+| `core/dev/datalink/datalink.h` | Datalink 协议核心，提供帧解析、事件循环、收发状态机和命令机制。 |
+| `core/dev/datalink/mem_presp.h` | Memory perspective 功能，用于按内存区域观察数据。 |
+| `core/dev/datalink/tunable.h` | Tunable 参数功能，用于在线读写参数字典。 |
+| `core/dev/datalink/readme_dl_protocol.md` | Datalink 协议说明文档。 |
 
 在每个正式 suite 的 `user_main.c` 中，通常可以找到一组与 DL 调试对接的对象和任务，例如：
 

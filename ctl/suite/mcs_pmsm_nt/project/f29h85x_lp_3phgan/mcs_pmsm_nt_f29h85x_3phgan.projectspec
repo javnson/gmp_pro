@@ -23,14 +23,14 @@
     <file action="link" path="${GMP_PRO_ROOT}/ctl/suite/mcs_pmsm_nt/src/user_main.h" targetDirectory="user"/>
     <file action="link" path="${GMP_C29X_CSP_ROOT}/src/sysconfig_adapter.c" targetDirectory="gmp_csp"/>
     <file action="link" path="${GMP_C29X_CSP_ROOT}/src/peripheral_driver.c" targetDirectory="gmp_csp"/>
-    <file action="link" path="${GMP_PRO_ROOT}/core/std/src/gmp_std_port.c" targetDirectory="gmp_src"/>
-    <file action="link" path="${GMP_PRO_ROOT}/core/dev/src/gmp_datalink.c" targetDirectory="gmp_src"/>
-    <file action="link" path="${GMP_PRO_ROOT}/core/dev/src/gmp_dev_util.c" targetDirectory="gmp_src"/>
-    <file action="link" path="${GMP_PRO_ROOT}/core/dev/src/gmp_mem_presp.c" targetDirectory="gmp_src"/>
-    <file action="link" path="${GMP_PRO_ROOT}/core/dev/src/gmp_pil_core.c" targetDirectory="gmp_src"/>
-    <file action="link" path="${GMP_PRO_ROOT}/core/dev/src/gmp_scope.c" targetDirectory="gmp_src"/>
-    <file action="link" path="${GMP_PRO_ROOT}/core/dev/src/gmp_tunable.c" targetDirectory="gmp_src"/>
-    <file action="link" path="${GMP_PRO_ROOT}/core/pm/src/gmp_process_mgr.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/core/rt/src/gmp_runtime.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/core/dev/datalink/src/gmp_datalink.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/core/dev/print/src/gmp_dev_print.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/core/dev/datalink/src/gmp_mem_presp.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/core/dev/datalink/src/gmp_pil_core.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/core/dev/datalink/src/gmp_scope.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/core/dev/datalink/src/gmp_tunable.c" targetDirectory="gmp_src"/>
+    <file action="link" path="${GMP_PRO_ROOT}/core/pm/function_scheduler/src/function_scheduler.c" targetDirectory="gmp_src"/>
     <file action="link" path="${GMP_PRO_ROOT}/ctl/component/dsa/src/dsa_dl_scope.c" targetDirectory="gmp_src"/>
     <file action="link" path="${GMP_PRO_ROOT}/ctl/component/dsa/src/dsa_scope.c" targetDirectory="gmp_src"/>
     <file action="link" path="${GMP_PRO_ROOT}/ctl/component/dsa/src/dsa_trigger.c" targetDirectory="gmp_src"/>

@@ -183,7 +183,7 @@ void gmp_port_system_stuck(void)
 }
 
 // Windows print function
-ec_gt windows_print_function(uint32_t *handle, half_duplex_ift *port)
+ec_gt windows_print_function(uint32_t *handle, gmp_print_buffer_t *port)
 {
     // allow handle not be referenced.
     UNUSED_PARAMETER(handle);

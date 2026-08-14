@@ -4,10 +4,10 @@
             "ad5933": {
                 "type": "module",
                 "c_files": [
-                    "core/dev/application/ad5933.c"
+                    "core/dev/driver/application/ad5933.c"
                 ],
                 "h_files": [
-                    "core/dev/application/ad5933.h"
+                    "core/dev/driver/application/ad5933.h"
                 ],
                 "tags": [
                     "application",
@@ -20,10 +20,10 @@
             "dac8563": {
                 "type": "module",
                 "c_files": [
-                    "core/dev/dac/dac8563.c"
+                    "core/dev/driver/dac/dac8563.c"
                 ],
                 "h_files": [
-                    "core/dev/dac/dac8563.h"
+                    "core/dev/driver/dac/dac8563.h"
                 ],
                 "tags": [
                     "dac",
@@ -36,10 +36,10 @@
             "ht16k33": {
                 "type": "module",
                 "c_files": [
-                    "core/dev/display/ht16k33.c"
+                    "core/dev/driver/display/ht16k33.c"
                 ],
                 "h_files": [
-                    "core/dev/display/ht16k33.h"
+                    "core/dev/driver/display/ht16k33.h"
                 ],
                 "tags": [
                     "display"
@@ -51,10 +51,10 @@
             "as5048a": {
                 "type": "module",
                 "c_files": [
-                    "core/dev/encoder/as5048a.c"
+                    "core/dev/driver/encoder/as5048a.c"
                 ],
                 "h_files": [
-                    "core/dev/encoder/as5048a.h"
+                    "core/dev/driver/encoder/as5048a.h"
                 ],
                 "tags": [
                     "encoder"
@@ -66,10 +66,10 @@
             "ad9833": {
                 "type": "module",
                 "c_files": [
-                    "core/dev/excitation/ad9833.c"
+                    "core/dev/driver/excitation/ad9833.c"
                 ],
                 "h_files": [
-                    "core/dev/excitation/ad9833.h"
+                    "core/dev/driver/excitation/ad9833.h"
                 ],
                 "tags": [
                     "excitation",
@@ -80,10 +80,10 @@
             "ad9834": {
                 "type": "module",
                 "c_files": [
-                    "core/dev/excitation/ad9834.c"
+                    "core/dev/driver/excitation/ad9834.c"
                 ],
                 "h_files": [
-                    "core/dev/excitation/ad9834.h"
+                    "core/dev/driver/excitation/ad9834.h"
                 ],
                 "tags": [
                     "excitation",
@@ -95,9 +95,11 @@
         "gpio": {
             "pca9555": {
                 "type": "module",
-                "c_files": [],
+                "c_files": [
+                    "core/dev/driver/gpio/PCA9555.c"
+                ],
                 "h_files": [
-                    "core/dev/gpio/pca9555.h"
+                    "core/dev/driver/gpio/pca9555.h"
                 ],
                 "tags": [
                     "gpio"
@@ -109,10 +111,10 @@
             "ina219": {
                 "type": "module",
                 "c_files": [
-                    "core/dev/meter/ina219.c"
+                    "core/dev/driver/meter/ina219.c"
                 ],
                 "h_files": [
-                    "core/dev/meter/ina219.h"
+                    "core/dev/driver/meter/ina219.h"
                 ],
                 "tags": [
                     "meter",
@@ -125,10 +127,10 @@
             "mcp41xx": {
                 "type": "module",
                 "c_files": [
-                    "core/dev/potentiometer/mcp41xx.c"
+                    "core/dev/driver/potentiometer/mcp41xx.c"
                 ],
                 "h_files": [
-                    "core/dev/potentiometer/mcp41xx.h"
+                    "core/dev/driver/potentiometer/mcp41xx.h"
                 ],
                 "tags": [
                     "potentiometer"
@@ -140,10 +142,10 @@
             "ds1337": {
                 "type": "module",
                 "c_files": [
-                    "core/dev/RTC/ds1337.c"
+                    "core/dev/driver/RTC/ds1337.c"
                 ],
                 "h_files": [
-                    "core/dev/RTC/ds1337.h"
+                    "core/dev/driver/RTC/ds1337.h"
                 ],
                 "tags": [
                     "RTC"
@@ -155,10 +157,10 @@
             "bh1750": {
                 "type": "module",
                 "c_files": [
-                    "core/dev/sensor/bh1750.c"
+                    "core/dev/driver/sensor/bh1750.c"
                 ],
                 "h_files": [
-                    "core/dev/sensor/bh1750.h"
+                    "core/dev/driver/sensor/bh1750.h"
                 ],
                 "tags": [
                     "sensor"
@@ -168,10 +170,10 @@
             "bmp280": {
                 "type": "module",
                 "c_files": [
-                    "core/dev/sensor/bmp280.c"
+                    "core/dev/driver/sensor/bmp280.c"
                 ],
                 "h_files": [
-                    "core/dev/sensor/bmp280.h"
+                    "core/dev/driver/sensor/bmp280.h"
                 ],
                 "tags": [
                     "sensor"
@@ -181,10 +183,10 @@
             "hdc1080": {
                 "type": "module",
                 "c_files": [
-                    "core/dev/sensor/hdc1080.c"
+                    "core/dev/driver/sensor/hdc1080.c"
                 ],
                 "h_files": [
-                    "core/dev/sensor/hdc1080.h"
+                    "core/dev/driver/sensor/hdc1080.h"
                 ],
                 "tags": [
                     "sensor",

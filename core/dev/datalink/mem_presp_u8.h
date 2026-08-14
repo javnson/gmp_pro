@@ -8,7 +8,7 @@
 #ifndef GMP_MEM_PERSP_U8_H
 #define GMP_MEM_PERSP_U8_H
 
-#include <core/dev/datalink.h>
+#include <core/dev/datalink/datalink.h>
 
 #if GMP_PORT_DATA_SIZE_PER_BYTES != 1
 #error "mem_presp_u8.h requires GMP_PORT_DATA_SIZE_PER_BYTES == 1"

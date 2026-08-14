@@ -278,9 +278,9 @@ class DevResourceMgrGUI:
 
     # ================= 孤儿文件扫描核心逻辑 =================
     def scan_orphan_files(self):
-        dev_dir = Path(self.gmp_location) / "core" / "dev"
+        dev_dir = Path(self.gmp_location) / "core" / "dev" / "driver"
         ignore_dirs = ['.git', 'build', 'common_includes']
-        ignore_files = ['readme.md', 'prompt.h']
+        ignore_files = ['readme.md', 'README.md', 'prompt.h', 'driver.h']
         
         # 1. 获取物理硬盘上的所有有效 .c 和 .h 文件
         physical_files = set()

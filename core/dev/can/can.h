@@ -6,6 +6,9 @@
 #ifndef GMP_CORE_DEV_CAN_H
 #define GMP_CORE_DEV_CAN_H
 
+#include <gmp_type.h>
+#include <core/dev/peripheral_types.h>
+
 #ifdef __cplusplus
 extern "C"
 {

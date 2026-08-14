@@ -3,6 +3,18 @@
   "selected_modules": [
     {
       "root": "core",
+      "module": "base|_internal"
+    },
+    {
+      "root": "core",
+      "module": "base|checksum|crc16"
+    },
+    {
+      "root": "core",
+      "module": "base|ds|ring_buffer"
+    },
+    {
+      "root": "core",
       "module": "dev|datalink|scope"
     },
     {
@@ -56,6 +68,14 @@
     {
       "root": "core",
       "module": "pm|function_scheduler"
+    },
+    {
+      "root": "core",
+      "module": "base|port"
+    },
+    {
+      "root": "core",
+      "module": "rt"
     },
     {
       "root": "core",

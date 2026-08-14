@@ -7,6 +7,12 @@
 core/pie_in_the_sky/**
 core/tb/**
 
+# Design placeholders: keep out of selectable facilities until implemented.
+core/dev/rtshell/**
+core/pm/state_machine/**
+core/pm/timing/**
+core/pm/workflow/**
+
 # 屏蔽带有特定前缀/后缀的文件或目录
 ctl/suite/**
 ctl/tb/**

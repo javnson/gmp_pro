@@ -29,6 +29,12 @@ extern "C"
 #endif
 #endif // USING_MANUAL_SPECIFY_FUNCTION
 
+#if (SPECIFY_GMP_LOGO_MODE != GMP_LOGO_MODE_FULL) && \
+    (SPECIFY_GMP_LOGO_MODE != GMP_LOGO_MODE_LITE) && \
+    (SPECIFY_GMP_LOGO_MODE != GMP_LOGO_MODE_DISABLED)
+#error "SPECIFY_GMP_LOGO_MODE must select FULL, LITE, or DISABLED."
+#endif
+
 	// To mark a unused param
 #ifndef UNUSED_PARAMETER
 #define UNUSED_PARAMETER(x) ((void)(x))

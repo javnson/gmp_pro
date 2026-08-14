@@ -3,7 +3,23 @@
     "selected_modules": [
         {
             "root": "core",
+            "module": "base|_internal"
+        },
+        {
+            "root": "core",
+            "module": "base|checksum|crc16"
+        },
+        {
+            "root": "core",
+            "module": "base|ds|ring_buffer"
+        },
+        {
+            "root": "core",
             "module": "dev|_internal"
+        },
+        {
+            "root": "core",
+            "module": "dev|driver|_internal"
         },
         {
             "root": "core",
@@ -23,7 +39,7 @@
         },
         {
             "root": "core",
-            "module": "dev|display|_internal"
+            "module": "dev|driver|display|_internal"
         },
         {
             "root": "core",
@@ -44,6 +60,14 @@
         {
             "root": "core",
             "module": "pm|function_scheduler"
+        },
+        {
+            "root": "core",
+            "module": "base|port"
+        },
+        {
+            "root": "core",
+            "module": "rt"
         },
         {
             "root": "core",

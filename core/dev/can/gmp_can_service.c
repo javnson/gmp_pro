@@ -3,7 +3,8 @@
  * @brief Static queue and asynchronous event implementation for GMP CAN.
  */
 
-#include <gmp_core.h>
+#include <gmp_type.h>
+#include <core/base/gmp_base.h>
 #include <core/dev/can/can.h>
 
 #ifndef GMP_CAN_MAX_NODES

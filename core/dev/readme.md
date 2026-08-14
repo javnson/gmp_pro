@@ -1,7 +1,19 @@
 # GMP 跨平台硬件抽象层 (HAL) 移植开发指南
 
-Data Link protocol documentation: [English](readme_dl_protocol.md) |
-[简体中文](readme_dl_protocol_cn.md)
+## 目录结构
+
+| 内容 | 说明 |
+| --- | --- |
+| `peripheral_types.h` | CSP 可覆盖的外设句柄类型 |
+| `peripheral_port.h` | CSP 实现的 `gmp_hal_*` 外设契约 |
+| `driver` | [具体阻塞式外设驱动](driver/README.md) |
+| `datalink` | [数据链路和调试服务](datalink/README.md) |
+| `can` | [异步 CAN 服务](can/README.md) |
+| `print` | [可选 UART 打印适配](print/README.md) |
+| `rtshell` | 实时 Shell 占位设计，尚未注册为 Facility |
+
+Data Link protocol documentation: [English](datalink/readme_dl_protocol.md) |
+[简体中文](datalink/readme_dl_protocol_cn.md)
 
 ## 1. 架构设计哲学 (Design Philosophy)
 

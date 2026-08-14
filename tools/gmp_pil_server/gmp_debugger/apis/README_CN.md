@@ -253,4 +253,4 @@ python -m py_compile apis/__init__.py apis/client.py apis/protocol.py apis/pil.p
 
 完整可运行示例位于
 [`examples/ai_debug_session.py`](examples/ai_debug_session.py)，下位机线协议参见
-[`core/dev/readme_dl_protocol.md`](../../../../core/dev/readme_dl_protocol.md)。
+[`core/dev/datalink/readme_dl_protocol.md`](../../../../core/dev/datalink/readme_dl_protocol.md)。

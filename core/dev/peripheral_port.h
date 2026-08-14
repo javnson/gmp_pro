@@ -2,6 +2,9 @@
 #ifndef _FILE_PERIPHERAL_PORT_H_
 #define _FILE_PERIPHERAL_PORT_H_
 
+#include <gmp_type.h>
+#include <core/dev/peripheral_types.h>
+
 #ifdef __cplusplus
 extern "C"
 {

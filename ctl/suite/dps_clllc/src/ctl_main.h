@@ -3,8 +3,8 @@
 #define DPS_CLLLC_CTL_MAIN_H
 
 #include "ctrl_settings.h"
-#include <core/pm/function_scheduler.h>
-#include <core/dev/pil_core.h>
+#include <core/pm/function_scheduler/function_scheduler.h>
+#include <core/dev/datalink/pil_core.h>
 #include <ctl/framework/cia402_state_machine.h>
 #include <ctl/component/interface/adc_channel.h>
 #include <ctl/component/digital_power/dcdc/clllc.h>

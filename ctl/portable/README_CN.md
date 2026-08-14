@@ -2,7 +2,7 @@
 
 `GMP_CTL_PORTABLE` 用于只采用 CTL 算法、无需 GMP 跨平台运行框架和 CSP
 外设抽象的工程。启用后，`gmp_core.h` 不再加载 `xplt.config.h`、
-`csp.config.h`、`csp.general.h`、外设管理及 `gmp_core_func.h`。
+`csp.config.h`、`csp.general.h`、外设管理及 `core/rt/gmp_runtime.h`。
 
 ## 接入步骤
 

@@ -8,9 +8,9 @@
 #include "user_main.h"
 #include <stdlib.h>
 
-#include <core/dev/mem_presp.h>
-#include <core/dev/pil_core.h>
-#include <core/dev/tunable.h>
+#include <core/dev/datalink/mem_presp.h>
+#include <core/dev/datalink/pil_core.h>
+#include <core/dev/datalink/tunable.h>
 
 ctrl_gt kp, ki, kd;
 

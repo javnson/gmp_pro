@@ -6,7 +6,7 @@
 #ifndef GMP_STM32_DL_DBGER_USER_MAIN_H
 #define GMP_STM32_DL_DBGER_USER_MAIN_H
 
-#include <core/pm/function_scheduler.h>
+#include <core/pm/function_scheduler/function_scheduler.h>
 
 /** @brief Initialize user services and register scheduled tasks. */
 void init(void);

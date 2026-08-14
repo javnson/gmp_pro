@@ -9,9 +9,9 @@
 #include <stdlib.h>
 
 // peripheral
-#include <core/dev/display/ht16k33.h>
-#include <core/dev/gpio/pca9555.h>
-#include <core/dev/sensor/hdc1080.h>
+#include <core/dev/driver/display/ht16k33.h>
+#include <core/dev/driver/gpio/pca9555.h>
+#include <core/dev/driver/sensor/hdc1080.h>
 
 //=================================================================================================
 // global variables

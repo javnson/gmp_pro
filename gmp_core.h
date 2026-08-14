@@ -16,13 +16,24 @@
 
 // GMP_CTL_PORTABLE is the lightweight, no-CSP entry for applications that only
 // consume CTL algorithms.  It deliberately skips xplt.config.h, csp.config.h,
-// gmp_core_func.h, peripheral management, and the GMP runtime entry framework.
+// runtime assembly, peripheral management, and the GMP entry framework.
 #if defined(GMP_CTL_PORTABLE)
 #include <ctl/portable/gmp_ctl_portable.h>
 #else
-// Basic GMP standard type definition
-#include <core/std/gmp.std.h>
-#include <core/std/gmp_core_func.h>
+// Standard configuration and portable types.
+#include <gmp_type.h>
+
+// Peripheral handle types are kept separate from the standard type layer.
+#include <core/dev/peripheral_types.h>
+
+#ifndef SPECIFY_DISABLE_CSP
+#include <csp.general.h>
+#include <core/rt/csp_port.h>
+#endif // SPECIFY_DISABLE_CSP
+
+// Portable base services and peripheral service contracts.
+#include <core/base/gmp_base.h>
+#include <core/dev/peripheral_port.h>
 #endif // GMP_CTL_PORTABLE
 
 // TI fixed library
@@ -47,11 +58,11 @@
 
 // public C ports function
 // memory management support
-// #include <core/std/gmp_cport.h>
+// #include <core/base/gmp_base.h>
 
 // public C CSP ports functions
 // peripheral functions
-// #include <core/std/gmp_csp_cport.h>
+// #include <core/rt/csp_port.h>
 
 //////////////////////////////////////////////////////////////////////////
 // Step IV other C core modules
@@ -65,6 +76,22 @@
 // + (WF) Workflow module
 
 // + (SCH) Scheduling module
+
+// Optional controller framework assembly.
+#if defined SPECIFY_ENABLE_GMP_CTL
+#include <ctl/ctl.config.h>
+#include <ctl/math_block/gmp_math.h>
+#include <ctl_main.h>
+#include <xplt.ctl_interface.h>
+#include <ctl/framework/ctl_dispatch.h>
+
+#if defined SPECIFY_ENABLE_CTL_FRAMEWORK_NANO
+#include <ctl/framework/ctl_nano.h>
+#endif // SPECIFY_ENABLE_CTL_FRAMEWORK_NANO
+#endif // SPECIFY_ENABLE_GMP_CTL
+
+// Full GMP runtime entry and dispatch helpers.
+#include <core/rt/gmp_runtime.h>
 
 // #ifdef __cplusplus
 // extern "C"
@@ -82,7 +109,7 @@
 // User should call this function, in your ctl_main.cpp or just ignore it.
 // When you need to simulate your controller, this function would be invoked.
 //
-// You may find definition of this function in `gmp_cport.h`.
+// You may find the base service declarations in `core/base/gmp_base.h`.
 //
 // extern void gmp_base_ctl_step(void);
 

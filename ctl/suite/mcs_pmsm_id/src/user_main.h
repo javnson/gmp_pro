@@ -8,7 +8,7 @@
 
 #include <core/dev/at_device.h>
 
-#include <core/pm/function_scheduler.h>
+#include <core/pm/function_scheduler/function_scheduler.h>
 
 #ifndef _FILE_USER_MAIN_H_
 #define _FILE_USER_MAIN_H_

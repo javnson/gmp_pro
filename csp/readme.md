@@ -33,6 +33,6 @@ Each Chip support package should contains at least 4 header files. They are
 | `csp.general.hpp` | This header file may include the chip support related files or headers for C++. |
 | `csp.typedef.h`   | This header file provide chip related typedef.               |
 
-另外，CSP中必须实现`gmp_hal_`的系列函数，用于支持core模块。这些函数的原型可以在`core/std/gmp_csp_cport`中找到。
+另外，CSP中必须实现 `gmp_hal_` 系列函数，用于支持 core 模块。外设服务原型在 `core/dev/peripheral_port.h` 中定义，运行时 CSP 钩子在 `core/rt/csp_port.h` 中定义。
 
 另外，CSP中必须要实现每一个外设的的基本类型，这些类型以`_halt`结尾，意为硬件抽象层类型。并且提供硬件抽象层类型的初始化函数，这些初始化函数将会在user的平台相关代码中被执行。

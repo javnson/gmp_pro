@@ -23,7 +23,7 @@ extern "C"
 // select ADC PTR interface
 #include <ctl/component/interface/adc_ptr_channel.h>
 
-#include <core/dev/pil_core.h>
+#include <core/dev/datalink/pil_core.h>
 
 //=================================================================================================
 // definitions of peripheral

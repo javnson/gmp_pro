@@ -4,7 +4,7 @@
 #include <oled_driver.h>
 #include <oledfont.h>
 
-#include <core/pm/function_scheduler.h>
+#include <core/pm/function_scheduler/function_scheduler.h>
 
 #define TIMEOUT_SET 40
 

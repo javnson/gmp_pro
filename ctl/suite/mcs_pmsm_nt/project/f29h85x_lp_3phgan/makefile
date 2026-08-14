@@ -35,14 +35,14 @@ SOURCES := \
 	xplt/xplt.peripheral.c \
 	$(GMP_PRO_LOCATION)/csp/c29x_syscfg/src/sysconfig_adapter.c \
 	$(GMP_PRO_LOCATION)/csp/c29x_syscfg/src/peripheral_driver.c \
-	$(GMP_PRO_LOCATION)/core/std/src/gmp_std_port.c \
-	$(GMP_PRO_LOCATION)/core/dev/src/gmp_datalink.c \
-	$(GMP_PRO_LOCATION)/core/dev/src/gmp_dev_util.c \
-	$(GMP_PRO_LOCATION)/core/dev/src/gmp_mem_presp.c \
-	$(GMP_PRO_LOCATION)/core/dev/src/gmp_pil_core.c \
-	$(GMP_PRO_LOCATION)/core/dev/src/gmp_scope.c \
-	$(GMP_PRO_LOCATION)/core/dev/src/gmp_tunable.c \
-	$(GMP_PRO_LOCATION)/core/pm/src/gmp_process_mgr.c \
+	$(GMP_PRO_LOCATION)/core/rt/src/gmp_runtime.c \
+	$(GMP_PRO_LOCATION)/core/dev/datalink/src/gmp_datalink.c \
+	$(GMP_PRO_LOCATION)/core/dev/print/src/gmp_dev_print.c \
+	$(GMP_PRO_LOCATION)/core/dev/datalink/src/gmp_mem_presp.c \
+	$(GMP_PRO_LOCATION)/core/dev/datalink/src/gmp_pil_core.c \
+	$(GMP_PRO_LOCATION)/core/dev/datalink/src/gmp_scope.c \
+	$(GMP_PRO_LOCATION)/core/dev/datalink/src/gmp_tunable.c \
+	$(GMP_PRO_LOCATION)/core/pm/function_scheduler/src/function_scheduler.c \
 	$(GMP_PRO_LOCATION)/ctl/component/dsa/src/dsa_dl_scope.c \
 	$(GMP_PRO_LOCATION)/ctl/component/dsa/src/dsa_scope.c \
 	$(GMP_PRO_LOCATION)/ctl/component/dsa/src/dsa_trigger.c \

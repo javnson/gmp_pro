@@ -24,7 +24,7 @@ extern "C"
 #include <ctl/component/interface/adc_ptr_channel.h>
 #include <ctl/component/interface/adc_channel.h>
 
-#include <core/dev/datalink.h>
+#include <core/dev/datalink/datalink.h>
 
 //=================================================================================================
 // definitions of peripheral

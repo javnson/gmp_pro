@@ -4,7 +4,7 @@
  */
 
 #include <gmp_core.h>
-#include <core/dev/datalink.h>
+#include <core/dev/datalink/datalink.h>
 
 #include "user_main.h"
 

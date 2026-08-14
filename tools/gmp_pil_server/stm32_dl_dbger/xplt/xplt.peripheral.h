@@ -6,7 +6,7 @@
 #ifndef GMP_STM32_DL_DBGER_XPLT_PERIPHERAL_H
 #define GMP_STM32_DL_DBGER_XPLT_PERIPHERAL_H
 
-#include <core/dev/datalink.h>
+#include <core/dev/datalink/datalink.h>
 
 /** @brief Bind the user-owned Data Link context to the UART DMA transport. */
 void xplt_dl_bind(gmp_datalink_t* datalink);

@@ -20,7 +20,7 @@
 
 #include <xplt.peripheral.h>
 
-#include <core/dev/pil_core.h>
+#include <core/dev/datalink/pil_core.h>
 
 //=================================================================================================
 // global controller variables

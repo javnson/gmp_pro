@@ -13,7 +13,7 @@
 #include <xplt.peripheral.h>
 
 #if defined ENABLE_GMP_DL_PIL_SIM
-#include <core/dev/pil_core.h>
+#include <core/dev/datalink/pil_core.h>
 #endif
 
 #ifndef _FILE_CTL_INTERFACE_H_

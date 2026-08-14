@@ -4,7 +4,7 @@
 #include <gmp_core.h>
 #include <sdpe_mgr/sdpe_mcs_pmsm_nt_f29h85x_settings.h>
 #include <ctl/component/interface/adc_ptr_channel.h>
-#include <core/dev/datalink.h>
+#include <core/dev/datalink/datalink.h>
 
 extern tri_ptr_adc_channel_t uuvw;
 extern adc_gt uuvw_src[3];

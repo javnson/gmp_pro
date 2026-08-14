@@ -17,7 +17,7 @@ extern "C"
 #include <gmp_core.h>
 #include <sdpe_mcs_acim_nt_f280049c_settings.h>
 #include <ctl/component/interface/adc_ptr_channel.h>
-#include <core/dev/datalink.h>
+#include <core/dev/datalink/datalink.h>
 
 /** @brief Place the application-owned Scope storage in combined GS2/GS3 RAM. */
 #define GMP_DL_SCOPE_STORAGE_RAMGS2_3

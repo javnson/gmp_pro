@@ -285,7 +285,7 @@ class DevResourceMgrGUI:
             json.dump(self.registry, f, indent=4, ensure_ascii=False)
 
     def scan_orphan_files(self):
-        messagebox.showinfo("功能预告", "这里将弹出一个新窗口，遍历 core/dev/ 找出尚未在 JSON 中注册的 .c/.h 文件，方便你一键拖拽或指派。我们下一步就开发它！")
+        messagebox.showinfo("功能预告", "这里将弹出一个新窗口，遍历 core/dev/driver/ 找出尚未在 JSON 中注册的 .c/.h 文件，方便你一键拖拽或指派。我们下一步就开发它！")
 
 if __name__ == "__main__":
     root = tk.Tk()

@@ -20,7 +20,7 @@
 
 #include <xplt.peripheral.h>
 
-#include <core/pm/function_scheduler.h>
+#include <core/pm/function_scheduler/function_scheduler.h>
 
 //=================================================================================================
 // global controller variables

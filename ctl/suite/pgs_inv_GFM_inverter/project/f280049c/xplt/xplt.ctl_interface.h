@@ -12,7 +12,7 @@
 
 #include <xplt.peripheral.h>
 
-#include <core/dev/pil_core.h>
+#include <core/dev/datalink/pil_core.h>
 
 #ifndef _FILE_CTL_INTERFACE_H_
 #define _FILE_CTL_INTERFACE_H_

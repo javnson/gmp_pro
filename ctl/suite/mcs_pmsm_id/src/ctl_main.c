@@ -20,7 +20,7 @@
 
 #include <xplt.peripheral.h>
 
-#include <core/pm/function_scheduler.h>
+#include <core/pm/function_scheduler/function_scheduler.h>
 
 #if defined SPECIFY_PC_ENVIRONMENT
 #include <stdio.h>

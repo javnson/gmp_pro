@@ -12,7 +12,8 @@
 // This file provide a memory controller for the GMP
 // The implementation of the MM is controlled by block.
 
-#include <gmp_core.h>
+#include <gmp_type.h>
+#include <core/mm/block_mem.h>
 
 #if defined SPECIFY_GMP_BLOCK_MEMORY_ENABLE
 

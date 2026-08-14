@@ -16,7 +16,7 @@
 #include <xplt.peripheral.h>
 
 
-#include <core/dev/datalink.h>
+#include <core/dev/datalink/datalink.h>
 
 //=================================================================================================
 // definitions of peripheral

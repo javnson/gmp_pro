@@ -6,7 +6,7 @@
 #ifndef GMP_F280049_DL_DBGER_XPLT_PERIPHERAL_H
 #define GMP_F280049_DL_DBGER_XPLT_PERIPHERAL_H
 
-#include <core/dev/datalink.h>
+#include <core/dev/datalink/datalink.h>
 
 /** @brief Bind the user-owned Data Link context to the SCIA transport. */
 void xplt_dl_bind(gmp_datalink_t* datalink);

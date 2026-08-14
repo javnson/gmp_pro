@@ -8,7 +8,7 @@
 #ifndef GMP_MEM_PERSP_U16_H
 #define GMP_MEM_PERSP_U16_H
 
-#include <core/dev/datalink.h>
+#include <core/dev/datalink/datalink.h>
 
 #if GMP_PORT_DATA_SIZE_PER_BYTES != 2
 #error "mem_presp_u16.h requires GMP_PORT_DATA_SIZE_PER_BYTES == 2"

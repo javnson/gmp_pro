@@ -25,6 +25,8 @@ def run_validation(model):
             def check_patterns(patterns, pattern_type, is_dir_mode=False):
                 nonlocal error_count, mod_has_error
                 for pat in patterns:
+                    if pattern_type == "帮助文档" and pat.startswith(("https://", "http://")):
+                        continue
                     # 单独解析这一条 pattern
                     resolved = model.resolve_paths([pat], is_dir_mode=is_dir_mode)
                     if not resolved:

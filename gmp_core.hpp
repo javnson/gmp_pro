@@ -37,11 +37,8 @@ extern "C"
 
 //////////////////////////////////////////////////////////////////////////
 // Step III import GMP basement
-// 
-// import GMP C++ interface
-#include <core/std/gmp_cpp_port.hpp>
-
-// + memory management of new and delete
+//
+// C++ applications use the same portable services exposed by gmp_core.h.
 
 
 // invoke chip support package

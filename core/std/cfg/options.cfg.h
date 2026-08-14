@@ -4,6 +4,11 @@
 #define GMP_CHIP_LITTLE_ENDIAN ((0x01))
 #define GMP_CHIP_BIG_ENDIAN    ((0x02))
 
+// GMP startup logo selections
+#define GMP_LOGO_MODE_FULL     ((0x00))
+#define GMP_LOGO_MODE_LITE     ((0x01))
+#define GMP_LOGO_MODE_DISABLED ((0xFF))
+
 // Selections of Memory controller functions
 #define USING_DEFAULT_SYSTEM_DEFAULT_FUNCTION ((0x01))
 #define USING_GMP_BLOCK_DEFAULT_FUNCTION      ((0x02))

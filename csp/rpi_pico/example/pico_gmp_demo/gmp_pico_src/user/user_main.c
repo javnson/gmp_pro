@@ -4,7 +4,7 @@
  */
 
 #include <gmp_core.h>
-#include <core/pm/function_scheduler.h>
+#include <core/pm/function_scheduler/function_scheduler.h>
 
 #include <user_main.h>
 #include <xplt.peripheral.h>

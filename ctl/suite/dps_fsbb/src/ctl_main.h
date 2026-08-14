@@ -10,8 +10,8 @@
 #define SDPE_FSBB_SETTINGS_HEADER <sdpe_dps_fsbb_iris_settings.h>
 #endif
 #include SDPE_FSBB_SETTINGS_HEADER
-#include <core/pm/function_scheduler.h>
-#include <core/dev/pil_core.h>
+#include <core/pm/function_scheduler/function_scheduler.h>
+#include <core/dev/datalink/pil_core.h>
 #include <ctl/framework/cia402_state_machine.h>
 #include <ctl/component/interface/adc_channel.h>
 #include <ctl/component/digital_power/dcdc/dcdc_core.h>

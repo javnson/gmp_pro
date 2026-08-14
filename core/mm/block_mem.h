@@ -13,6 +13,8 @@
 #ifndef _FILE_BLOCK_MEM_H_
 #define _FILE_BLOCK_MEM_H_
 
+#include <gmp_type.h>
+
 #ifdef __cplusplus
 extern "C"
 {

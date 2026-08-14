@@ -3,23 +3,35 @@
     "selected_modules": [
         {
             "root": "core",
+            "module": "base|_internal"
+        },
+        {
+            "root": "core",
+            "module": "base|ds|ring_buffer"
+        },
+        {
+            "root": "core",
             "module": "dev|_internal"
         },
         {
             "root": "core",
-            "module": "dev|display|_internal"
+            "module": "dev|driver|_internal"
         },
         {
             "root": "core",
-            "module": "dev|display|ht16k33"
+            "module": "dev|driver|display|_internal"
         },
         {
             "root": "core",
-            "module": "dev|gpio|_internal"
+            "module": "dev|driver|display|ht16k33"
         },
         {
             "root": "core",
-            "module": "dev|gpio|pca9555"
+            "module": "dev|driver|gpio|_internal"
+        },
+        {
+            "root": "core",
+            "module": "dev|driver|gpio|pca9555"
         },
         {
             "root": "core",
@@ -40,6 +52,14 @@
         {
             "root": "core",
             "module": "pm|function_scheduler"
+        },
+        {
+            "root": "core",
+            "module": "base|port"
+        },
+        {
+            "root": "core",
+            "module": "rt"
         },
         {
             "root": "core",

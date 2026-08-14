@@ -4,7 +4,7 @@
 #define _FILE_MCS_ACIM_NT_USER_MAIN_H_
 
 #include <core/dev/at_device.h>
-#include <core/pm/function_scheduler.h>
+#include <core/pm/function_scheduler/function_scheduler.h>
 
 #ifdef __cplusplus
 extern "C"

@@ -20,9 +20,9 @@
 
 #include <xplt.peripheral.h>
 
-#include <core/pm/function_scheduler.h>
+#include <core/pm/function_scheduler/function_scheduler.h>
 
-#include <core/dev/pil_core.h>
+#include <core/dev/datalink/pil_core.h>
 
 //=================================================================================================
 // global controller variables
