@@ -229,7 +229,7 @@ GMP_STATIC_INLINE void ctl_step_pmsm_hfi_ctrl(pmsm_hfi_controller_t* ctrl)
 {
     ctl_vector2_t phasor;
     ctrl_gt etheta;
-    ctrl_gt vq_limit = float2ctrl(1.0);
+    ctrl_gt vq_limit = CTL_CTRL_CONST_1;
 
     ctrl->isr_tick += 1;
 
@@ -306,7 +306,7 @@ GMP_STATIC_INLINE void ctl_step_pmsm_hfi_ctrl(pmsm_hfi_controller_t* ctrl)
                                          ctrl->vdq_ff.dat[phase_d];
 
             // Note: Dynamic saturation for Vq is commented out in discrete implementation.
-            //vq_limit = ctl_sqrt(float2ctrl(1.0) - ctl_mul(ctrl->vdq_set.dat[phase_d], ctrl->vdq_set.dat[phase_d]));
+            //vq_limit = ctl_sqrt(CTL_CTRL_CONST_1 - ctl_mul(ctrl->vdq_set.dat[phase_d], ctrl->vdq_set.dat[phase_d]));
             //ctl_set_discrete_pid_limit(&ctrl->current_ctrl[phase_q], vq_limit, -vq_limit);
 
             ctrl->vdq_set.dat[phase_q] = ctl_step_discrete_pid(&ctrl->current_ctrl[phase_q],
@@ -317,7 +317,7 @@ GMP_STATIC_INLINE void ctl_step_pmsm_hfi_ctrl(pmsm_hfi_controller_t* ctrl)
                 ctl_step_pid_ser(&ctrl->current_ctrl[phase_d], ctrl->idq_set.dat[phase_d] - ctrl->idq0.dat[phase_d]) +
                 ctrl->vdq_ff.dat[phase_d];
 
-            vq_limit = ctl_sqrt(float2ctrl(1.0) - ctl_mul(ctrl->vdq_set.dat[phase_d], ctrl->vdq_set.dat[phase_d]));
+            vq_limit = ctl_sqrt(CTL_CTRL_CONST_1 - ctl_mul(ctrl->vdq_set.dat[phase_d], ctrl->vdq_set.dat[phase_d]));
             ctl_set_pid_limit(&ctrl->current_ctrl[phase_q], vq_limit, -vq_limit);
 
             ctrl->vdq_set.dat[phase_q] =
@@ -348,17 +348,17 @@ GMP_STATIC_INLINE void ctl_step_pmsm_hfi_ctrl(pmsm_hfi_controller_t* ctrl)
         else
         {
             // Set PWM to 50% duty cycle for a high-impedance state.
-            ctrl->pwm_out->value.dat[phase_A] = float2ctrl(0.5);
-            ctrl->pwm_out->value.dat[phase_B] = float2ctrl(0.5);
-            ctrl->pwm_out->value.dat[phase_C] = float2ctrl(0.5);
+            ctrl->pwm_out->value.dat[phase_A] = CTL_CTRL_CONST_1_OVER_2;
+            ctrl->pwm_out->value.dat[phase_B] = CTL_CTRL_CONST_1_OVER_2;
+            ctrl->pwm_out->value.dat[phase_C] = CTL_CTRL_CONST_1_OVER_2;
         }
     }
     else // Controller is disabled
     {
         // Set PWM to 50% duty cycle for a high-impedance state.
-        ctrl->pwm_out->value.dat[phase_A] = float2ctrl(0.5);
-        ctrl->pwm_out->value.dat[phase_B] = float2ctrl(0.5);
-        ctrl->pwm_out->value.dat[phase_C] = float2ctrl(0.5);
+        ctrl->pwm_out->value.dat[phase_A] = CTL_CTRL_CONST_1_OVER_2;
+        ctrl->pwm_out->value.dat[phase_B] = CTL_CTRL_CONST_1_OVER_2;
+        ctrl->pwm_out->value.dat[phase_C] = CTL_CTRL_CONST_1_OVER_2;
 
         ctl_clear_pmsm_hfi_ctrl(ctrl);
     }

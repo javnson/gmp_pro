@@ -30,7 +30,8 @@
       "c_name": "VOLTAGE_RATING_V",
       "unit": "V",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Drain-source or collector-emitter voltage rating."
     },
     {
@@ -38,7 +39,8 @@
       "c_name": "CURRENT_RATING_A",
       "unit": "A",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Current rating."
     },
     {
@@ -46,7 +48,8 @@
       "c_name": "RDSON_OHM",
       "unit": "ohm",
       "required": false,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "On resistance.",
       "default": 0.0
     },
@@ -64,7 +67,8 @@
       "c_name": "RDSON_MAX_OHM",
       "unit": "ohm",
       "required": false,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Maximum on resistance at the documented gate voltage.",
       "default": 0.0
     },
@@ -73,7 +77,8 @@
       "c_name": "GATE_VOLTAGE_V",
       "unit": "V",
       "required": false,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Gate voltage associated with the resistance value.",
       "default": 0.0
     },
@@ -82,7 +87,8 @@
       "c_name": "GATE_CHARGE_NC",
       "unit": "nC",
       "required": false,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Typical total gate charge.",
       "default": 0.0
     },

@@ -109,9 +109,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_calc_position_error(int32_t target_revs, ctrl_gt t
     ctrl_gt ang_error = target_angle - pos_fb->position;
 
     // 4. Safely convert bounded integer to ctrl_gt and combine
-    // Convert to float first to ensure float2ctrl macro works correctly
+    // Convert to float first to ensure real2ctrl macro works correctly
     // whether the underlying type is float or fixed-point.
-    ctrl_gt total_error = float2ctrl((float)rev_error) + ang_error;
+    ctrl_gt total_error = real2ctrl((float)rev_error) + ang_error;
 
     return total_error;
 }

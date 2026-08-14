@@ -386,7 +386,7 @@ GMP_STATIC_INLINE void ctl_step_acm_sensored_ctrl(acm_sensored_bare_controller_t
         }
         else
         {
-            ctl_vector3_set(&ctrl->pwm_out->value, float2ctrl(0.5));
+            ctl_vector3_set(&ctrl->pwm_out->value, CTL_CTRL_CONST_1_OVER_2);
         }
     }
     else

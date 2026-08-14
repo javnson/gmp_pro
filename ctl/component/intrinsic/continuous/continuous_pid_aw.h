@@ -149,11 +149,11 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_pid_aw_ser(ctl_pid_aw_t* hpid, ctrl_gt input)
  */
 GMP_STATIC_INLINE void ctl_clear_pid_aw(ctl_pid_aw_t* hpid)
 {
-    hpid->dn = float2ctrl(0.0f);
-    hpid->sn = float2ctrl(0.0f);
-    hpid->d_term = float2ctrl(0.0f);
-    hpid->out = float2ctrl(0.0f);
-    hpid->out_without_sat = float2ctrl(0.0f);
+    hpid->dn = CTL_CTRL_CONST_ZERO;
+    hpid->sn = CTL_CTRL_CONST_ZERO;
+    hpid->d_term = CTL_CTRL_CONST_ZERO;
+    hpid->out = CTL_CTRL_CONST_ZERO;
+    hpid->out_without_sat = CTL_CTRL_CONST_ZERO;
 }
 
 /**

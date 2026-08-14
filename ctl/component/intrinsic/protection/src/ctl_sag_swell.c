@@ -17,8 +17,8 @@ void ctl_init_voltage_event_detector(ctl_voltage_event_detector_t* ved, paramete
     ctl_init_discrete_sogi(&ved->sogi, SOGI_DAMPING_FACTOR, nominal_freq, fs);
 
     // Set thresholds
-    ved->sag_threshold = float2ctrl(sag_threshold);
-    ved->swell_threshold = float2ctrl(swell_threshold);
+    ved->sag_threshold = real2ctrl(sag_threshold);
+    ved->swell_threshold = real2ctrl(swell_threshold);
 
     // Convert delay from milliseconds to number of samples
     ved->sag_delay_samples = (uint32_t)(sag_delay_ms * fs / 1000.0f);

@@ -214,7 +214,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_autoturn_pos_encoder(pos_autoturn_encoder_t* 
  */
 GMP_STATIC_INLINE void ctl_set_autoturn_pos_encoder_offset(pos_autoturn_encoder_t* enc, uint32_t raw)
 {
-    enc->offset = float2ctrl((ctrl_gt)raw / enc->position_base);
+    enc->offset = real2ctrl((ctrl_gt)raw / enc->position_base);
 }
 
 /**

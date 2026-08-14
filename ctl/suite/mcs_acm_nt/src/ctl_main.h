@@ -64,7 +64,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
      * frequency would over-flux the machine and can trip over-current before
      * phase order and PWM polarity have been checked. */
     ctl_set_im_ifoc_vdq_ref(&mtr_ctrl,
-                            float2ctrl(MCS_OPEN_LOOP_VD_REF_V / CTRL_VOLTAGE_BASE),
+                            real2ctrl(MCS_OPEN_LOOP_VD_REF_V / CTRL_VOLTAGE_BASE),
                             ctl_mul(acim_open_loop_vq_per_freq_pu, rg.current_freq_pu));
 #endif
 
@@ -80,10 +80,10 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
     if (acim_sensorless_handover && !acim_sensorless_fault_latched)
     {
         ctrl_gt run_speed_err = acim_fo.sync_spd_out.speed - rg.current_freq_pu;
-        if (run_speed_err < float2ctrl(0.0f)) run_speed_err = -run_speed_err;
+        if (run_speed_err < CTL_CTRL_CONST_ZERO) run_speed_err = -run_speed_err;
 
         if (!acim_fo.flag_observer_locked ||
-            (run_speed_err > float2ctrl(MCS_FO_LOSS_SPEED_ERR_PU)))
+            (run_speed_err > real2ctrl(MCS_FO_LOSS_SPEED_ERR_PU)))
         {
             if (acim_sensorless_loss_ticks <
                 (uint32_t)(MCS_FO_LOSS_DEBOUNCE_MS * CONTROLLER_FREQUENCY / 1000.0f))
@@ -114,12 +114,12 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
     if (!acim_sensorless_handover)
     {
         ctrl_gt angle_err = acim_fo.pos_out.elec_position - rg.enc.elec_position;
-        ctrl_gt acquire_freq_pu = float2ctrl(MCS_FO_ACQUIRE_FREQ_HZ / MOTOR_PARAM_RATED_FREQUENCY);
-        ctrl_gt handover_freq_pu = float2ctrl(MCS_FO_HANDOVER_FREQ_HZ / MOTOR_PARAM_RATED_FREQUENCY);
+        ctrl_gt acquire_freq_pu = real2ctrl(MCS_FO_ACQUIRE_FREQ_HZ / MOTOR_PARAM_RATED_FREQUENCY);
+        ctrl_gt handover_freq_pu = real2ctrl(MCS_FO_HANDOVER_FREQ_HZ / MOTOR_PARAM_RATED_FREQUENCY);
 
         if (angle_err > CTL_CTRL_CONST_1_OVER_2) angle_err -= CTL_CTRL_CONST_1;
         if (angle_err < -CTL_CTRL_CONST_1_OVER_2) angle_err += CTL_CTRL_CONST_1;
-        if (angle_err < float2ctrl(0.0f)) angle_err = -angle_err;
+        if (angle_err < CTL_CTRL_CONST_ZERO) angle_err = -angle_err;
 
         if (acim_sensorless_fault_latched || (rg.current_freq_pu < acquire_freq_pu))
         {
@@ -142,7 +142,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         if (!acim_sensorless_fault_latched && acim_sensorless_observer_released &&
             acim_fo.flag_observer_locked &&
             (rg.current_freq_pu >= handover_freq_pu) &&
-            (angle_err <= float2ctrl(MCS_FO_HANDOVER_ANGLE_ERR_PU)))
+            (angle_err <= real2ctrl(MCS_FO_HANDOVER_ANGLE_ERR_PU)))
         {
             /* Speed matching, hysteresis and debounce are owned by the
              * reusable handover module. The suite contributes observer lock,
@@ -171,7 +171,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 
     acim_sync_speed_pu = acim_handover.angle.out_spd.speed;
     acim_magnetizing_current_pu =
-        ctl_mul(acim_fo.psi_r_cm_mag, float2ctrl(acim_pu.L_s_base / MOTOR_PARAM_LM));
+        ctl_mul(acim_fo.psi_r_cm_mag, real2ctrl(acim_pu.L_s_base / MOTOR_PARAM_LM));
 #endif
     ctl_set_im_ifoc_magnetizing_current(&mtr_ctrl, acim_magnetizing_current_pu);
 
@@ -181,11 +181,11 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         ctl_clear_mech_ctrl(&mech_ctrl);
         ctl_set_im_ifoc_ref(&mtr_ctrl,
 #if MCS_ACIM_FEEDBACK_MODE == MCS_ACIM_FEEDBACK_SENSORLESS
-                            float2ctrl(MCS_SENSORLESS_STARTUP_ID_REF_A / CTRL_CURRENT_BASE),
+                            real2ctrl(MCS_SENSORLESS_STARTUP_ID_REF_A / CTRL_CURRENT_BASE),
 #else
-                            float2ctrl(MCS_COMMISSIONING_ID_REF_A / CTRL_CURRENT_BASE),
+                            real2ctrl(MCS_COMMISSIONING_ID_REF_A / CTRL_CURRENT_BASE),
 #endif
-                            float2ctrl(0.0f));
+                            CTL_CTRL_CONST_ZERO);
     }
     else
     {
@@ -195,7 +195,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 #if MCS_ACIM_FEEDBACK_MODE == MCS_ACIM_FEEDBACK_SENSORLESS
                             acim_handover.id_ref_out,
 #else
-                            float2ctrl(MCS_COMMISSIONING_ID_REF_A / CTRL_CURRENT_BASE),
+                            real2ctrl(MCS_COMMISSIONING_ID_REF_A / CTRL_CURRENT_BASE),
 #endif
                             ctl_get_mech_cmd(&mech_ctrl));
 #else
@@ -203,9 +203,9 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 #if MCS_ACIM_FEEDBACK_MODE == MCS_ACIM_FEEDBACK_SENSORLESS
                             acim_handover.id_ref_out,
 #else
-                            float2ctrl(MCS_COMMISSIONING_ID_REF_A / CTRL_CURRENT_BASE),
+                            real2ctrl(MCS_COMMISSIONING_ID_REF_A / CTRL_CURRENT_BASE),
 #endif
-                            float2ctrl(MCS_COMMISSIONING_IQ_REF_A / CTRL_CURRENT_BASE));
+                            real2ctrl(MCS_COMMISSIONING_IQ_REF_A / CTRL_CURRENT_BASE));
 #endif
     }
 #endif
@@ -228,7 +228,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
          * compare values for dead-time compensation. `udc` is normalized by
          * CTRL_VOLTAGE_BASE; the centered-duty bridge contributes 1/2. */
         ctrl_gt voltage_scale =
-            ctl_mul(float2ctrl(MCS_FO_COMMAND_VOLTAGE_SCALE), mtr_ctrl.udc);
+            ctl_mul(real2ctrl(MCS_FO_COMMAND_VOLTAGE_SCALE), mtr_ctrl.udc);
         observer_v_alpha = ctl_mul(voltage_scale, mtr_ctrl.vab0.dat[phase_alpha]);
         observer_v_beta = ctl_mul(voltage_scale, mtr_ctrl.vab0.dat[phase_beta]);
 #endif

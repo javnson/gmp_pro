@@ -99,13 +99,13 @@ void ctl_init_pmsm_smo_bare_controller(pmsm_smo_controller_t* ctrl, pmsm_smo_con
     smo_init.pid_Td = init->smo_Td;
     smo_init.k_slide = init->smo_k_slide;
 
-    smo_init.spd_max_limit = float2ctrl(1.0);
-    smo_init.spd_min_limit = float2ctrl(-1.0);
+    smo_init.spd_max_limit = CTL_CTRL_CONST_1;
+    smo_init.spd_min_limit = (-CTL_CTRL_CONST_1);
 
     // init SMO controller
     ctl_init_pmsm_smo(&ctrl->smo, &smo_init);
 
-    ctrl->ramp_freq_spd_set_sf = float2ctrl(init->fs / init->pole_pairs / init->speed_base_rpm * 60);
+    ctrl->ramp_freq_spd_set_sf = param2ctrl(init->fs / init->pole_pairs / init->speed_base_rpm * 60);
 
     ctrl->flag_enable_smo = 0;
     ctrl->flag_switch_cplt = 0;

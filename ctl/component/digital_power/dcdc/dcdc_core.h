@@ -139,9 +139,9 @@ GMP_STATIC_INLINE void ctl_clear_dcdc_core(ctl_dcdc_core_t* core)
     ctl_clear_pid(&core->voltage_pid);
     ctl_clear_pid(&core->current_pid);
 
-    core->v_ramp_ref = float2ctrl(0.0f);
-    core->i_ramp_ref = float2ctrl(0.0f);
-    core->v_out_formal = float2ctrl(0.0f);
+    core->v_ramp_ref = CTL_CTRL_CONST_ZERO;
+    core->i_ramp_ref = CTL_CTRL_CONST_ZERO;
+    core->v_out_formal = CTL_CTRL_CONST_ZERO;
     core->is_current_dominant = 0;
 }
 

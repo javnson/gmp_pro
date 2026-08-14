@@ -331,7 +331,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "literal": "((float2ctrl(0.005)))"
+        "ctrl": "0.005"
       },
       "description": "PLL lock-error threshold in controller per unit."
     },

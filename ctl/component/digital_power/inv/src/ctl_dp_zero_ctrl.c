@@ -38,10 +38,10 @@ void ctl_update_zero_inv_coeff(inv_zero_ctrl_t* zero, const inv_zero_ctrl_init_t
 
     ctl_init_tunable_qr_controller(&zero->qpr.resonant_part, &zero->tuner, init->kr,
                                    init->freq_resonant, init->freq_cut, init->tune_mode, init->fs);
-    zero->qpr.kp = float2ctrl(init->kp);
+    zero->qpr.kp = param2ctrl(init->kp);
     zero->kp_shadow = zero->qpr.kp;
-    zero->output_limit_max = float2ctrl(init->output_limit_max);
-    zero->output_limit_min = float2ctrl(init->output_limit_min);
+    zero->output_limit_max = param2ctrl(init->output_limit_max);
+    zero->output_limit_min = param2ctrl(init->output_limit_min);
     zero->flag_tune_pending = 0;
 }
 
@@ -51,7 +51,7 @@ void ctl_init_zero_inv(inv_zero_ctrl_t* zero, const inv_zero_ctrl_init_t* init)
 
     zero->i0 = NULL;
     zero->v0_sink = NULL;
-    zero->i0_set = float2ctrl(0.0f);
+    zero->i0_set = CTL_CTRL_CONST_ZERO;
 
     ctl_update_zero_inv_coeff(zero, init);
     ctl_clear_zero_inv(zero);
@@ -73,7 +73,7 @@ void ctl_tune_zero_inv_ctrl(inv_zero_ctrl_t* zero, parameter_gt kp, parameter_gt
     ctl_tune_qr(&zero->tuner, kr, freq_resonant, freq_cut, mode, fs);
     if (zero->tuner.flag_update_pending)
     {
-        zero->kp_shadow = float2ctrl(kp);
+        zero->kp_shadow = real2ctrl(kp);
         zero->flag_tune_pending = 1;
     }
 }

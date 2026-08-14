@@ -35,13 +35,13 @@ void ctl_init_trap_planner(ctl_trap_planner_t* planner, const ctl_trap_planner_i
     parameter_gt tol_revs_phy = max_accel_step_phy * scale_v_to_rev_phy * 1.5f;
 
     // 3. Assign to structure
-    planner->max_vel_limit = float2ctrl(max_vel_limit_phy);
-    planner->max_accel_step = float2ctrl(max_accel_step_phy);
-    planner->scale_v_to_rev = float2ctrl(scale_v_to_rev_phy);
-    planner->coef_brake_s_to_vsq = float2ctrl(c_brake_phy);
-    planner->arrival_tol_revs = float2ctrl(tol_revs_phy);
+    planner->max_vel_limit = real2ctrl(max_vel_limit_phy);
+    planner->max_accel_step = real2ctrl(max_accel_step_phy);
+    planner->scale_v_to_rev = real2ctrl(scale_v_to_rev_phy);
+    planner->coef_brake_s_to_vsq = real2ctrl(c_brake_phy);
+    planner->arrival_tol_revs = real2ctrl(tol_revs_phy);
 
-    planner->tracking_err_limit = float2ctrl(init->tracking_err_limit);
+    planner->tracking_err_limit = param2ctrl(init->tracking_err_limit);
 
     // Calculate debounce limit based on physical time
     planner->divergence_limit = (uint32_t)(init->fault_time_ms * fs_safe / 1000.0f);
@@ -50,10 +50,10 @@ void ctl_init_trap_planner(ctl_trap_planner_t* planner, const ctl_trap_planner_i
 
     // Default States
     planner->planner_revs = 0;
-    planner->planner_angle = float2ctrl(0.0f);
-    planner->planner_vel_pu = float2ctrl(0.0f);
+    planner->planner_angle = CTL_CTRL_CONST_ZERO;
+    planner->planner_vel_pu = CTL_CTRL_CONST_ZERO;
     planner->target_revs = 0;
-    planner->target_angle = float2ctrl(0.0f);
+    planner->target_angle = CTL_CTRL_CONST_ZERO;
 
     planner->pos_if = NULL;
     planner->div_shared = NULL;

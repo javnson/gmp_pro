@@ -7,17 +7,17 @@
 
 void ctl_init_backstepping(ctl_backstepping_controller_t* bc, const ctl_backstepping_init_t* init)
 {
-    // 1. 严格防呆保护，防止除以零 (移除 f 后缀)
+    // 1. Validate the denominator before calculating its reciprocal.
     gmp_ctl_assert(param_abs(init->K_p) > 1e-9f);
 
-    // 2. 在物理浮点参数域计算倒数
+    // 2. Calculate the reciprocal in the parameter domain.
     parameter_gt inv_kp_val = 1.0f / init->K_p;
 
-    // 3. 固化到定点控制域
-    bc->k1 = float2ctrl(init->k1);
-    bc->tau_p = float2ctrl(init->tau_p);
-    bc->inv_K_p = float2ctrl(inv_kp_val);
+    // 3. Quantize the final coefficients into the control domain.
+    bc->k1 = param2ctrl(init->k1);
+    bc->tau_p = param2ctrl(init->tau_p);
+    bc->inv_K_p = real2ctrl(inv_kp_val);
 
-    // 4. 安全清零
+    // 4. Clear controller state.
     ctl_clear_backstepping(bc);
 }

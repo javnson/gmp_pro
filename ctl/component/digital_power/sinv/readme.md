@@ -1,3 +1,15 @@
+# Single-phase inverter components
+
+## Inner current-loop variants
+
+`sinv_core` uses one QPR controller for fundamental current tracking and seven
+pure QR controllers for the 3rd through 15th odd harmonics. Harmonic branches
+do not store or evaluate an unused proportional gain. The legacy `qpr_wi`
+initialization field is retained for source compatibility, but its value is a
+cutoff frequency in Hz, matching the QR/QPR initialization API.
+
+## Inverter sign convention
+
 为了让用户清晰明了，工业界通用的规范是“逆变器视角 (Inverter Convention)”。我们应当在模块的 Doxygen 注释、用户手册甚至变量命名中，严格贯彻以下标定法则：
 
 #### 1. 物理传感器的极性标定（必须在底层硬件抽象层对齐）

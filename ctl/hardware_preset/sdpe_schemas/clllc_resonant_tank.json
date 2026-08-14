@@ -10,7 +10,8 @@
       "c_name": "RESONANT_FREQUENCY_HZ",
       "unit": "Hz",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Nominal tank resonant frequency."
     },
     {
@@ -18,7 +19,8 @@
       "c_name": "MAGNETIZING_INDUCTANCE_H",
       "unit": "H",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Transformer magnetizing inductance."
     },
     {
@@ -26,7 +28,8 @@
       "c_name": "PRIMARY_RESONANT_INDUCTANCE_H",
       "unit": "H",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Primary-side resonant inductance."
     },
     {
@@ -34,7 +37,8 @@
       "c_name": "SECONDARY_RESONANT_INDUCTANCE_H",
       "unit": "H",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Secondary-side resonant inductance."
     },
     {
@@ -42,7 +46,8 @@
       "c_name": "PRIMARY_RESONANT_CAPACITANCE_F",
       "unit": "F",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Primary-side resonant capacitance."
     },
     {
@@ -50,7 +55,8 @@
       "c_name": "SECONDARY_RESONANT_CAPACITANCE_F",
       "unit": "F",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Secondary-side resonant capacitance."
     },
     {
@@ -58,7 +64,8 @@
       "c_name": "TRANSFORMER_RATIO_NS_NP",
       "unit": "",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Transformer secondary-to-primary turns ratio."
     },
     {
@@ -66,7 +73,8 @@
       "c_name": "OUTPUT_CAPACITANCE_F",
       "unit": "F",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Output capacitance."
     },
     {
@@ -74,7 +82,8 @@
       "c_name": "MINIMUM_LOAD_RESISTANCE_OHM",
       "unit": "ohm",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Minimum supported load resistance."
     },
     {
@@ -82,7 +91,8 @@
       "c_name": "TANK_ESR_OHM",
       "unit": "ohm",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Aggregate resonant-tank series resistance used by the plant model."
     }
   ],

@@ -20,20 +20,20 @@ GMP_STATIC_INLINE uint16_t ctl_fsbb_active_faults(void)
     uint16_t faults = FSBB_FAULT_NONE;
 
 #if defined FSBB_ENABLE_VIN_SAMPLE
-    if (adc_v_in.control_port.value < float2ctrl(FSBB_INPUT_VOLTAGE_MIN / CTRL_VOLTAGE_BASE))
+    if (adc_v_in.control_port.value < real2ctrl(FSBB_INPUT_VOLTAGE_MIN / CTRL_VOLTAGE_BASE))
         faults |= FSBB_FAULT_VIN_UNDERVOLTAGE;
-    if (adc_v_in.control_port.value > float2ctrl(FSBB_INPUT_VOLTAGE_MAX / CTRL_VOLTAGE_BASE))
+    if (adc_v_in.control_port.value > real2ctrl(FSBB_INPUT_VOLTAGE_MAX / CTRL_VOLTAGE_BASE))
         faults |= FSBB_FAULT_VIN_OVERVOLTAGE;
 #endif
-    if (adc_v_out.control_port.value > float2ctrl(FSBB_OUTPUT_VOLTAGE_MAX / CTRL_VOLTAGE_BASE))
+    if (adc_v_out.control_port.value > real2ctrl(FSBB_OUTPUT_VOLTAGE_MAX / CTRL_VOLTAGE_BASE))
         faults |= FSBB_FAULT_VOUT_OVERVOLTAGE;
-    if (adc_i_L.control_port.value > float2ctrl(FSBB_PROTECT_IL_MAX / CTRL_CURRENT_BASE))
+    if (adc_i_L.control_port.value > real2ctrl(FSBB_PROTECT_IL_MAX / CTRL_CURRENT_BASE))
         faults |= FSBB_FAULT_IL_POSITIVE_OVERCURRENT;
-    if (adc_i_L.control_port.value < float2ctrl(FSBB_PROTECT_IL_MIN / CTRL_CURRENT_BASE))
+    if (adc_i_L.control_port.value < real2ctrl(FSBB_PROTECT_IL_MIN / CTRL_CURRENT_BASE))
         faults |= FSBB_FAULT_IL_NEGATIVE_OVERCURRENT;
 #if defined FSBB_ENABLE_IOUT_SAMPLE
-    if ((adc_i_load.control_port.value > float2ctrl(FSBB_OUTPUT_CURRENT_LIM / CTRL_CURRENT_BASE)) ||
-        (adc_i_load.control_port.value < -float2ctrl(FSBB_OUTPUT_CURRENT_LIM / CTRL_CURRENT_BASE)))
+    if ((adc_i_load.control_port.value > real2ctrl(FSBB_OUTPUT_CURRENT_LIM / CTRL_CURRENT_BASE)) ||
+        (adc_i_load.control_port.value < -real2ctrl(FSBB_OUTPUT_CURRENT_LIM / CTRL_CURRENT_BASE)))
         faults |= FSBB_FAULT_IOUT_OVERCURRENT;
 #endif
 
@@ -45,14 +45,14 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
 #if defined FSBB_ENABLE_VIN_SAMPLE
     ctl_step_adc_channel(&adc_v_in, ADC_readResult(FSBB_VIN_ADC_BASE, FSBB_VIN));
 #else
-    adc_v_in.control_port.value = float2ctrl(FSBB_INPUT_VOLTAGE_NOMINAL / CTRL_VOLTAGE_BASE);
+    adc_v_in.control_port.value = real2ctrl(FSBB_INPUT_VOLTAGE_NOMINAL / CTRL_VOLTAGE_BASE);
 #endif
     ctl_step_adc_channel(&adc_v_out, ADC_readResult(FSBB_VOUT_ADC_BASE, FSBB_VOUT));
     ctl_step_adc_channel(&adc_i_L, ADC_readResult(FSBB_IL_ADC_BASE, FSBB_IL));
 #if defined FSBB_ENABLE_IOUT_SAMPLE
     ctl_step_adc_channel(&adc_i_load, ADC_readResult(FSBB_IOUT_ADC_BASE, FSBB_IOUT));
 #else
-    adc_i_load.control_port.value = float2ctrl(0.0f);
+    adc_i_load.control_port.value = CTL_CTRL_CONST_ZERO;
 #endif
 
     if (!flag_enable_adc_calibrator)
@@ -61,8 +61,8 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
 
 GMP_STATIC_INLINE uint16_t ctl_fsbb_dac_value(ctrl_gt value)
 {
-    ctrl_gt bounded = ctl_sat(value, float2ctrl(1.0f), -float2ctrl(1.0f));
-    return (uint16_t)((bounded + float2ctrl(1.0f)) * 2047.5f);
+    ctrl_gt bounded = ctl_sat(value, CTL_CTRL_CONST_1, -CTL_CTRL_CONST_1);
+    return (uint16_t)((bounded + CTL_CTRL_CONST_1) * 2047.5f);
 }
 
 GMP_STATIC_INLINE void ctl_output_callback(void)

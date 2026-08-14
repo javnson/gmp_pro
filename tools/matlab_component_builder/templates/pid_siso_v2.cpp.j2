@@ -59,8 +59,8 @@ static bool initialize_controller(SimStruct *S, {{ component.implementation.inst
         ssSetErrorStatus(S, "Unknown PID initialization mode.");
         return false;
     }
-    ctl_set_pid_limit(controller, float2ctrl(out_max), float2ctrl(out_min));
-    ctl_set_pid_int_limit(controller, float2ctrl(integral_max), float2ctrl(integral_min));
+    ctl_set_pid_limit(controller, real2ctrl(out_max), real2ctrl(out_min));
+    ctl_set_pid_int_limit(controller, real2ctrl(integral_max), real2ctrl(integral_min));
     return true;
 }
 
@@ -156,25 +156,25 @@ static void mdlOutputs(SimStruct *S, int_T)
 
     runtime->pending = runtime->current;
     const int mode = static_cast<int>(parameter_value(S, PARAM_INIT_MODE));
-    runtime->pending.kp = float2ctrl(kp);
+    runtime->pending.kp = real2ctrl(kp);
     if (mode == 1)
     {
-        runtime->pending.ki = float2ctrl(ki_or_ti / fs);
-        runtime->pending.kd = float2ctrl(fs * kd_or_td);
+        runtime->pending.ki = real2ctrl(ki_or_ti / fs);
+        runtime->pending.kd = real2ctrl(fs * kd_or_td);
     }
     else
     {
-        runtime->pending.ki = float2ctrl(ki_or_ti <= 0.000001 ? 0.0 : 1.0 / (fs * ki_or_ti));
-        runtime->pending.kd = float2ctrl(fs * kd_or_td);
+        runtime->pending.ki = real2ctrl(ki_or_ti <= 0.000001 ? 0.0 : 1.0 / (fs * ki_or_ti));
+        runtime->pending.kd = real2ctrl(fs * kd_or_td);
     }
-    ctl_set_pid_limit(&runtime->pending, float2ctrl(out_max), float2ctrl(out_min));
-    ctl_set_pid_int_limit(&runtime->pending, float2ctrl(integral_max), float2ctrl(integral_min));
+    ctl_set_pid_limit(&runtime->pending, real2ctrl(out_max), real2ctrl(out_min));
+    ctl_set_pid_int_limit(&runtime->pending, real2ctrl(integral_max), real2ctrl(integral_min));
 
     const real_T input = static_cast<const real_T *>(ssGetInputPortSignal(S, 0))[0];
     ctrl_gt result = mode == 1
-        ? {{ component.initializers[0].step_function }}(&runtime->pending, float2ctrl(input))
-        : {{ component.initializers[1].step_function }}(&runtime->pending, float2ctrl(input));
-    ssGetOutputPortRealSignal(S, 0)[0] = static_cast<real_T>(ctrl2float(result));
+        ? {{ component.initializers[0].step_function }}(&runtime->pending, real2ctrl(input))
+        : {{ component.initializers[1].step_function }}(&runtime->pending, real2ctrl(input));
+    ssGetOutputPortRealSignal(S, 0)[0] = static_cast<real_T>(ctrl2param(result));
     runtime->pending_valid = true;
 }
 

@@ -17,17 +17,17 @@ void ctl_init_scurve_planner(ctl_scurve_planner_t* planner, const ctl_scurve_pla
     parameter_gt dt_phy = 1.0f / fs_safe;
 
     // 1. Direct PU assignments
-    planner->dt = float2ctrl(dt_phy);
-    planner->max_vel_limit = float2ctrl(init->max_vel_pu);
-    planner->max_accel_limit = float2ctrl(init->max_accel_pu);
+    planner->dt = real2ctrl(dt_phy);
+    planner->max_vel_limit = param2ctrl(init->max_vel_pu);
+    planner->max_accel_limit = param2ctrl(init->max_accel_pu);
 
     // Max Accel change per tick = J_max * dt
-    planner->max_jerk_step = float2ctrl(init->max_jerk_pu * dt_phy);
+    planner->max_jerk_step = param2ctrl(init->max_jerk_pu * dt_phy);
 
     // 2. Kinematic Conversion (Scale PU Speed to Delta Revs per Tick)
     // 1.0 PU Velocity = omega_base rad/s = (omega_base / 2*PI) revs/s
     parameter_gt scale_v_to_rev_phy = (omega_base / CTL_PARAM_CONST_2PI) * dt_phy;
-    planner->scale_v_to_rev = float2ctrl(scale_v_to_rev_phy);
+    planner->scale_v_to_rev = real2ctrl(scale_v_to_rev_phy);
 
     // 3. Perfect S-Curve Braking Constants Absorption
     // S_brake = V^2 / (2*A_max) + V * A_max / (2*J_max)  [Output in Revs]
@@ -37,28 +37,28 @@ void ctl_init_scurve_planner(ctl_scurve_planner_t* planner, const ctl_scurve_pla
     // V_flare = A^2 / (2*J_max) [Output in PU Velocity]
     parameter_gt k3 = 1.0f / (2.0f * init->max_jerk_pu);
 
-    planner->coef_k1_vsq = float2ctrl(k1);
-    planner->coef_k2_v = float2ctrl(k2);
-    planner->coef_k3_flare = float2ctrl(k3);
+    planner->coef_k1_vsq = real2ctrl(k1);
+    planner->coef_k2_v = real2ctrl(k2);
+    planner->coef_k3_flare = real2ctrl(k3);
 
     // 4. Dynamic Tolerances (Based on the computational step size)
     // Tolerate the distance of one tick of deceleration
-    planner->arrival_tol_vel = float2ctrl(init->max_accel_pu * dt_phy * 1.5f);
-    planner->arrival_tol_revs = float2ctrl(init->max_vel_pu * scale_v_to_rev_phy * 2.0f);
+    planner->arrival_tol_vel = param2ctrl(init->max_accel_pu * dt_phy * 1.5f);
+    planner->arrival_tol_revs = param2ctrl(init->max_vel_pu * scale_v_to_rev_phy * 2.0f);
 
     // 5. Protection Settings
-    planner->tracking_err_limit = float2ctrl(init->tracking_err_limit);
+    planner->tracking_err_limit = param2ctrl(init->tracking_err_limit);
     planner->divergence_limit = (uint32_t)(init->fault_time_ms * fs_safe / 1000.0f);
     if (planner->divergence_limit < 1)
         planner->divergence_limit = 1;
 
     // 6. Default States
     planner->planner_revs = 0;
-    planner->planner_angle = float2ctrl(0.0f);
-    planner->planner_vel_pu = float2ctrl(0.0f);
-    planner->planner_acc_pu = float2ctrl(0.0f);
+    planner->planner_angle = CTL_CTRL_CONST_ZERO;
+    planner->planner_vel_pu = CTL_CTRL_CONST_ZERO;
+    planner->planner_acc_pu = CTL_CTRL_CONST_ZERO;
     planner->target_revs = 0;
-    planner->target_angle = float2ctrl(0.0f);
+    planner->target_angle = CTL_CTRL_CONST_ZERO;
 
     planner->pos_if = NULL;
     planner->div_shared = NULL;

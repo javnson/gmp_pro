@@ -75,9 +75,9 @@ void ctl_tune_zero_inv_ctrl(inv_zero_ctrl_t* zero, parameter_gt kp, parameter_gt
 GMP_STATIC_INLINE void ctl_clear_zero_inv(inv_zero_ctrl_t* zero)
 {
     ctl_clear_qpr_controller(&zero->qpr);
-    zero->i0_fbk = float2ctrl(0.0f);
-    zero->v0_raw = float2ctrl(0.0f);
-    zero->v0_out = float2ctrl(0.0f);
+    zero->i0_fbk = CTL_CTRL_CONST_ZERO;
+    zero->v0_raw = CTL_CTRL_CONST_ZERO;
+    zero->v0_out = CTL_CTRL_CONST_ZERO;
 }
 
 GMP_STATIC_INLINE void ctl_deploy_zero_inv_tuning(inv_zero_ctrl_t* zero)
@@ -98,10 +98,10 @@ GMP_STATIC_INLINE void ctl_step_zero_inv_ctrl(inv_zero_ctrl_t* zero)
 
     if (!zero->flag_enable)
     {
-        zero->v0_raw = float2ctrl(0.0f);
-        zero->v0_out = float2ctrl(0.0f);
+        zero->v0_raw = CTL_CTRL_CONST_ZERO;
+        zero->v0_out = CTL_CTRL_CONST_ZERO;
         if (zero->v0_sink != NULL)
-            *zero->v0_sink = float2ctrl(0.0f);
+            *zero->v0_sink = CTL_CTRL_CONST_ZERO;
         return;
     }
 

@@ -16,11 +16,11 @@ void ctl_init_rc(ctl_rc_t* obj, ctrl_gt* buffer, uint32_t capacity, parameter_gt
     obj->buffer_capacity = capacity;
     obj->phase_lead_k = phase_lead_k;
 
-    obj->q_gain = float2ctrl(q_gain);
-    obj->k_rc = float2ctrl(k_rc);
+    obj->q_gain = real2ctrl(q_gain);
+    obj->k_rc = real2ctrl(k_rc);
 
-    obj->out_max = float2ctrl(1.0f);
-    obj->out_min = float2ctrl(-1.0f);
+    obj->out_max = CTL_CTRL_CONST_1;
+    obj->out_min = (-CTL_CTRL_CONST_1);
 
     obj->fs = fs;
     obj->f_min_rated = f_min;

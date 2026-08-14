@@ -23,9 +23,9 @@
     {"id": "time_constant", "label": "Time constants (Kp, Ti)", "function": "ctl_init_pi_Tmode", "step_function": "ctl_step_pi_ser", "arguments": ["$instance", "kp", "ki_or_ti", "fs"], "reference_model": "pi_time_constant"}
   ],
   "execution": {
-    "initialize_code": ["ctl_set_pi_limit(&runtime->current, float2ctrl(out_max), float2ctrl(out_min));", "ctl_set_pi_int_limit(&runtime->current, float2ctrl(integral_max), float2ctrl(integral_min));"],
-    "parameter_update_code": ["runtime->pending.kp = float2ctrl(kp);", "runtime->pending.ki = float2ctrl(mode == 1 ? ki_or_ti / fs : (ki_or_ti <= 0.000001 ? 0.0 : 1.0 / (fs * ki_or_ti)));", "ctl_set_pi_limit(&runtime->pending, float2ctrl(out_max), float2ctrl(out_min));", "ctl_set_pi_int_limit(&runtime->pending, float2ctrl(integral_max), float2ctrl(integral_min));"],
-    "step_code": ["output_output = ctrl2float(mode == 1 ? ctl_step_pi_par(&runtime->pending, float2ctrl(input_error)) : ctl_step_pi_ser(&runtime->pending, float2ctrl(input_error)));"],
+    "initialize_code": ["ctl_set_pi_limit(&runtime->current, real2ctrl(out_max), real2ctrl(out_min));", "ctl_set_pi_int_limit(&runtime->current, real2ctrl(integral_max), real2ctrl(integral_min));"],
+    "parameter_update_code": ["runtime->pending.kp = real2ctrl(kp);", "runtime->pending.ki = real2ctrl(mode == 1 ? ki_or_ti / fs : (ki_or_ti <= 0.000001 ? 0.0 : 1.0 / (fs * ki_or_ti)));", "ctl_set_pi_limit(&runtime->pending, real2ctrl(out_max), real2ctrl(out_min));", "ctl_set_pi_int_limit(&runtime->pending, real2ctrl(integral_max), real2ctrl(integral_min));"],
+    "step_code": ["output_output = ctrl2param(mode == 1 ? ctl_step_pi_par(&runtime->pending, real2ctrl(input_error)) : ctl_step_pi_ser(&runtime->pending, real2ctrl(input_error)));"],
     "terminate_code": []
   },
   "analysis": {"default_frequency_hz": [1.0, 2000.0], "default_points": 40, "excitation_amplitude": 0.001, "settling_periods": 8, "measurement_periods": 8}

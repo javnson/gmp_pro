@@ -109,11 +109,11 @@ void ctl_init_mrac(ctl_mrac_controller_t* mrac, const ctl_mrac_init_t* init);
  */
 GMP_STATIC_INLINE void ctl_clear_mrac(ctl_mrac_controller_t* mrac)
 {
-    // 修复 3：强制类型隔离
-    mrac->u_out = float2ctrl(0.0f);
-    mrac->k_r = float2ctrl(0.0f);
-    mrac->k_y = float2ctrl(0.0f);
-    mrac->y_m = float2ctrl(0.0f);
+    // Preserve explicit separation between parameter and control domains.
+    mrac->u_out = CTL_CTRL_CONST_ZERO;
+    mrac->k_r = CTL_CTRL_CONST_ZERO;
+    mrac->k_y = CTL_CTRL_CONST_ZERO;
+    mrac->y_m = CTL_CTRL_CONST_ZERO;
 }
 
 /**
@@ -127,7 +127,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_mrac(ctl_mrac_controller_t* mrac, ctrl_gt r, 
 {
     // 1. Update the reference model to get the desired output for this step
     // y_m(k) = a_m_d * y_m(k-1) + b_m_d * r(k-1)
-    // 修复 1：使用 ctl_mul 防止定点溢出
+    // Use control-domain multiplication for fixed-point-safe model updates.
     mrac->y_m = ctl_mul(mrac->a_m_d, mrac->y_m) + ctl_mul(mrac->b_m_d, r);
 
     // 2. Calculate the tracking error between plant and reference model
@@ -135,7 +135,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_mrac(ctl_mrac_controller_t* mrac, ctrl_gt r, 
 
     // 3. Update adaptive gains
     // k_r(k) = k_r(k-1) - gamma_r_d * e * r
-    // 修复 1：将三重乘法拆分为安全的双重 ctl_mul
+    // Nest control-domain multiplications for each three-factor adaptation term.
     ctrl_gt e_times_r = ctl_mul(e, r);
     mrac->k_r = mrac->k_r - ctl_mul(mrac->gamma_r_d, e_times_r);
 

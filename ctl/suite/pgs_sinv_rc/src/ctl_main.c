@@ -42,14 +42,14 @@ volatile fast_gt flag_enable_adc_calibrator = 1;
 volatile fast_gt flag_enable_adc_calibrator = 0;
 #endif
 volatile fast_gt flag_rectifier_takeover_initialized = 0;
-ctrl_gt g_rectifier_takeover_power = float2ctrl(0.0f);
+ctrl_gt g_rectifier_takeover_power = CTL_CTRL_CONST_ZERO;
 
 // User commands
-ctrl_gt g_p_ref_user = float2ctrl(0.0f);
-ctrl_gt g_q_ref_user = float2ctrl(0.0f);
-ctrl_gt g_vbus_ref_user = float2ctrl(0.0f);
+ctrl_gt g_p_ref_user = CTL_CTRL_CONST_ZERO;
+ctrl_gt g_q_ref_user = CTL_CTRL_CONST_ZERO;
+ctrl_gt g_vbus_ref_user = CTL_CTRL_CONST_ZERO;
 
-ctrl_gt openloop_v_ref = float2ctrl(0.0f);
+ctrl_gt openloop_v_ref = CTL_CTRL_CONST_ZERO;
 vector2_gt phasor;
 
 //=================================================================================================
@@ -107,7 +107,7 @@ void ctl_init(void)
     // init H PWM modulator
     //
     ctl_init_single_phase_H_modulation(&hpwm, CTRL_PWM_CMP_MAX + 1, CTRL_PWM_DEADBAND_CMP,
-                                       float2ctrl(CTRL_CURRENT_DB_PU));
+                                       real2ctrl(CTRL_CURRENT_DB_PU));
 #ifdef ENABLE_DEADBAND_COMP
     hpwm.flag_enable_dbcomp = 1;
 #endif // ENABLE_DEADBAND_COMP
@@ -153,15 +153,15 @@ void ctl_init(void)
     // incremental compilation configuration
     //
 
-    openloop_v_ref = float2ctrl(SINV_LEVEL1_VOLTAGE_REF_PU);
+    openloop_v_ref = real2ctrl(SINV_LEVEL1_VOLTAGE_REF_PU);
 #if BUILD_LEVEL == 3
-    g_p_ref_user = float2ctrl(SINV_LEVEL3_ACTIVE_POWER_REF_PU);
-    g_q_ref_user = float2ctrl(SINV_LEVEL3_REACTIVE_POWER_REF_PU);
+    g_p_ref_user = real2ctrl(SINV_LEVEL3_ACTIVE_POWER_REF_PU);
+    g_q_ref_user = real2ctrl(SINV_LEVEL3_REACTIVE_POWER_REF_PU);
 #elif BUILD_LEVEL == 4
-    g_p_ref_user = float2ctrl(SINV_LEVEL4_ACTIVE_POWER_REF_PU);
-    g_q_ref_user = float2ctrl(0.0f);
+    g_p_ref_user = real2ctrl(SINV_LEVEL4_ACTIVE_POWER_REF_PU);
+    g_q_ref_user = CTL_CTRL_CONST_ZERO;
 #elif BUILD_LEVEL == 5
-    g_vbus_ref_user = float2ctrl(SINV_DC_BUS_REF_V / CTRL_VOLTAGE_BASE);
+    g_vbus_ref_user = real2ctrl(SINV_DC_BUS_REF_V / CTRL_VOLTAGE_BASE);
 #endif
     ctl_disable_sinv_rc_fdrc(&rc_core);
 #if BUILD_LEVEL >= 2 && defined(SINV_ENABLE_GRID_VOLTAGE_FEEDFORWARD)
@@ -215,22 +215,22 @@ static void ctl_collect_pil_output(gmp_sim_tx_buf_t* tx)
 {
     tx->pwm_cmp[0] = ctl_get_single_phase_modulation_L_phase(&hpwm);
     tx->pwm_cmp[1] = ctl_get_single_phase_modulation_N_phase(&hpwm);
-    tx->monitor[0] = ctrl2float(adc_v_grid.control_port.value) * CTRL_VOLTAGE_BASE;
-    tx->monitor[1] = ctrl2float(adc_i_ac.control_port.value) * CTRL_CURRENT_BASE;
-    tx->monitor[2] = ctrl2float(adc_v_bus.control_port.value) * CTRL_VOLTAGE_BASE;
-    tx->monitor[3] = ctrl2float(ref_gen.i_ref_inst) * CTRL_CURRENT_BASE;
-    tx->monitor[4] = ctrl2float(rc_core.v_out_ref);
-    tx->monitor[5] = ctrl2float(pll.frequency) * CTRL_GRID_FREQUENCY;
-    tx->monitor[6] = ctrl2float(pq_meter.active_power_p);
-    tx->monitor[7] = ctrl2float(pq_meter.reactive_power_q);
-    tx->monitor[8] = ctrl2float(rc_core.current_error);
-    tx->monitor[9] = ctrl2float(rc_core.u_qpr);
-    tx->monitor[10] = ctrl2float(rc_core.u_fdrc);
+    tx->monitor[0] = ctrl2param(adc_v_grid.control_port.value) * CTRL_VOLTAGE_BASE;
+    tx->monitor[1] = ctrl2param(adc_i_ac.control_port.value) * CTRL_CURRENT_BASE;
+    tx->monitor[2] = ctrl2param(adc_v_bus.control_port.value) * CTRL_VOLTAGE_BASE;
+    tx->monitor[3] = ctrl2param(ref_gen.i_ref_inst) * CTRL_CURRENT_BASE;
+    tx->monitor[4] = ctrl2param(rc_core.v_out_ref);
+    tx->monitor[5] = ctrl2param(pll.frequency) * CTRL_GRID_FREQUENCY;
+    tx->monitor[6] = ctrl2param(pq_meter.active_power_p);
+    tx->monitor[7] = ctrl2param(pq_meter.reactive_power_q);
+    tx->monitor[8] = ctrl2param(rc_core.current_error);
+    tx->monitor[9] = ctrl2param(rc_core.u_qpr);
+    tx->monitor[10] = ctrl2param(rc_core.u_fdrc);
     tx->monitor[11] = (double)rc_core.flag_enable_fdrc;
     tx->monitor[12] = (double)cia402_sm.current_state;
     tx->monitor[13] = (double)cia402_sm.current_cmd;
     tx->monitor[14] = (double)protection.active_errors;
-    tx->monitor[15] = ctrl2float(protection.node_ctrl_diverge.fault_record_val);
+    tx->monitor[15] = ctrl2param(protection.node_ctrl_diverge.fault_record_val);
 }
 
 #endif // defined ENABLE_GMP_DL_PIL_SIM
@@ -265,14 +265,14 @@ gmp_task_status_t tsk_protect(gmp_task_t* tsk)
     GMP_UNUSED_VAR(tsk);
 
     // PLL magnitude and the SOGI current vector are peak quantities in PU.
-    const ctrl_gt inv_sqrt2 = float2ctrl(0.70710678f);
+    const ctrl_gt inv_sqrt2 = real2ctrl(0.70710678f);
     ctrl_gt v_rms_pu = ctl_mul(ctl_abs(pll.v_mag), inv_sqrt2);
     ctrl_gt i_peak_pu = ctl_sqrt(ctl_mul(pq_meter.i_ab.dat[phase_alpha], pq_meter.i_ab.dat[phase_alpha]) +
                                  ctl_mul(pq_meter.i_ab.dat[phase_beta], pq_meter.i_ab.dat[phase_beta]));
     ctrl_gt i_rms_pu = ctl_mul(i_peak_pu, inv_sqrt2);
-    ctrl_gt pll_freq_hz = ctl_mul(pll.frequency, float2ctrl(CTRL_GRID_FREQUENCY));
+    ctrl_gt pll_freq_hz = ctl_mul(pll.frequency, real2ctrl(CTRL_GRID_FREQUENCY));
 
-    ctl_task_sinv_protect_slow(&protection, v_rms_pu, pll_freq_hz, float2ctrl(0.0f), i_rms_pu);
+    ctl_task_sinv_protect_slow(&protection, v_rms_pu, pll_freq_hz, CTL_CTRL_CONST_ZERO, i_rms_pu);
 
     if (protection.active_errors != 0)
     {
@@ -302,7 +302,7 @@ fast_gt ctl_check_pll_locked(void)
     ctrl_gt v_mag_pu = ctl_abs(pll.v_mag);
     ctrl_gt f_err_abs = ctl_abs(pll.freq_error);
 
-    if ((v_mag_pu > float2ctrl(0.8f)) && (v_mag_pu < float2ctrl(1.2f)))
+    if ((v_mag_pu > real2ctrl(0.8f)) && (v_mag_pu < real2ctrl(1.2f)))
     {
         if (f_err_abs < CTRL_SPLL_EPSILON)
         {
@@ -316,8 +316,8 @@ fast_gt ctl_check_pll_locked(void)
 fast_gt ctl_exec_dc_voltage_ready(void)
 {
     ctrl_gt v_bus = adc_v_bus.control_port.value;
-    return (v_bus >= float2ctrl(CTRL_DCBUS_READY_MIN / CTRL_VOLTAGE_BASE)) &&
-           (v_bus <= float2ctrl(CTRL_DCBUS_READY_MAX / CTRL_VOLTAGE_BASE));
+    return (v_bus >= real2ctrl(CTRL_DCBUS_READY_MIN / CTRL_VOLTAGE_BASE)) &&
+           (v_bus <= real2ctrl(CTRL_DCBUS_READY_MAX / CTRL_VOLTAGE_BASE));
 }
 
 fast_gt ctl_check_compliance(void)
@@ -331,8 +331,8 @@ fast_gt ctl_check_compliance(void)
        CiA402 fault; the slow protection nodes still supervise frequency and RMS. */
     static uint16_t compliance_bad_ms = 0;
     ctrl_gt v_mag = ctl_abs(pll.v_mag);
-    fast_gt valid = (v_mag > float2ctrl(0.7f)) && (v_mag < float2ctrl(1.3f)) &&
-                    (pll.frequency > float2ctrl(0.9f)) && (pll.frequency < float2ctrl(1.1f));
+    fast_gt valid = (v_mag > real2ctrl(0.7f)) && (v_mag < real2ctrl(1.3f)) &&
+                    (pll.frequency > real2ctrl(0.9f)) && (pll.frequency < real2ctrl(1.1f));
     if (valid) {
         compliance_bad_ms = 0;
         return 1;
@@ -385,12 +385,12 @@ void clear_all_controllers(void)
     if (cia402_sm.current_state == CIA402_SM_OPERATION_ENABLED)
     {
         g_rectifier_takeover_power = ctl_sat(pq_meter.active_power_p,
-                                             float2ctrl(0.0f),
+                                             CTL_CTRL_CONST_ZERO,
                                              -outer_loop.output_limit);
     }
     else
     {
-        g_rectifier_takeover_power = float2ctrl(0.0f);
+        g_rectifier_takeover_power = CTL_CTRL_CONST_ZERO;
     }
 #endif
     ctl_clear_single_phase_pll(&pll);

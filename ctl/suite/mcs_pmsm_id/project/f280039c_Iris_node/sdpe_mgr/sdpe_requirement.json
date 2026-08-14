@@ -715,7 +715,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "literal": "((float2ctrl(0.005)))"
+        "ctrl": "0.005"
       },
       "description": "Migrated from f280039c_Iris_node/xplt/ctrl_settings.h."
     }

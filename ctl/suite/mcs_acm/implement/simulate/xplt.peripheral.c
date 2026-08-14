@@ -43,7 +43,7 @@ void setup_peripheral(void)
         // bind idc channel with idc address
         &idc, &simulink_rx_buffer.idc,
         // ADC gain, ADC bias
-        float2ctrl(MTR_CTRL_CURRENT_GAIN), float2ctrl(MTR_CTRL_CURRENT_BIAS),
+        real2ctrl(MTR_CTRL_CURRENT_GAIN), real2ctrl(MTR_CTRL_CURRENT_BIAS),
         // ADC resolution, IQN
         12, 24);
 
@@ -51,7 +51,7 @@ void setup_peripheral(void)
         // bind ibac channel with iabc address
         &iabc, simulink_rx_buffer.iabc,
         // ADC gain, ADC bias
-        float2ctrl(MTR_CTRL_CURRENT_GAIN), float2ctrl(MTR_CTRL_CURRENT_BIAS),
+        real2ctrl(MTR_CTRL_CURRENT_GAIN), real2ctrl(MTR_CTRL_CURRENT_BIAS),
         // ADC resolution, IQN
         12, 24);
 
@@ -59,7 +59,7 @@ void setup_peripheral(void)
         // bind udc channel with udc address
         &udc, &simulink_rx_buffer.udc,
         // ADC gain, ADC bias
-        float2ctrl(MTR_CTRL_VOLTAGE_GAIN), float2ctrl(MTR_CTRL_VOLTAGE_BIAS),
+        real2ctrl(MTR_CTRL_VOLTAGE_GAIN), real2ctrl(MTR_CTRL_VOLTAGE_BIAS),
         // ADC resolution, IQN
         12, 24);
 
@@ -67,7 +67,7 @@ void setup_peripheral(void)
         // bind vbac channel with vabc address
         &uabc, simulink_rx_buffer.uabc,
         // ADC gain, ADC bias
-        float2ctrl(MTR_CTRL_VOLTAGE_GAIN), float2ctrl(MTR_CTRL_VOLTAGE_BIAS),
+        real2ctrl(MTR_CTRL_VOLTAGE_GAIN), real2ctrl(MTR_CTRL_VOLTAGE_BIAS),
         // ADC resolution, IQN
         12, 24);
 

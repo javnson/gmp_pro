@@ -26,9 +26,9 @@
   "memory": [{"id": "delay", "element_type": "ctrl_gt", "length_parameter": "capacity", "state_pointer_field": "buffer"}],
   "initializers": [{"id": "constant_q", "label": "Constant Q", "function": "ctl_init_rc", "step_function": "ctl_step_rc", "arguments": ["$instance", "$memory:delay", "capacity", "fs", "f_min", "q_gain", "k_rc", "phase_lead_k"], "reference_model": "repetitive"}],
   "execution": {
-    "initialize_code": ["ctl_set_rc_saturation(&runtime->current, float2ctrl(out_min), float2ctrl(out_max));"],
-    "parameter_update_code": ["runtime->pending.q_gain = float2ctrl(q_gain);", "runtime->pending.k_rc = float2ctrl(k_rc);", "runtime->pending.phase_lead_k = static_cast<int32_t>(phase_lead_k);", "runtime->pending.flag_enable_rc_integrating = static_cast<fast_gt>(integrating_enable != 0.0);", "ctl_set_rc_saturation(&runtime->pending, float2ctrl(out_min), float2ctrl(out_max));"],
-    "step_code": ["output_output = ctrl2float(ctl_step_rc(&runtime->pending, float2ctrl(input_error), input_frequency));"],
+    "initialize_code": ["ctl_set_rc_saturation(&runtime->current, real2ctrl(out_min), real2ctrl(out_max));"],
+    "parameter_update_code": ["runtime->pending.q_gain = real2ctrl(q_gain);", "runtime->pending.k_rc = real2ctrl(k_rc);", "runtime->pending.phase_lead_k = static_cast<int32_t>(phase_lead_k);", "runtime->pending.flag_enable_rc_integrating = static_cast<fast_gt>(integrating_enable != 0.0);", "ctl_set_rc_saturation(&runtime->pending, real2ctrl(out_min), real2ctrl(out_max));"],
+    "step_code": ["output_output = ctrl2param(ctl_step_rc(&runtime->pending, real2ctrl(input_error), input_frequency));"],
     "terminate_code": []
   },
   "analysis": {"default_frequency_hz": [1.0, 500.0], "default_points": 60, "excitation_amplitude": 0.001, "settling_periods": 80, "measurement_periods": 20, "default_operating_values": [0.0, 50.0], "settling_reference_input": "frequency"}

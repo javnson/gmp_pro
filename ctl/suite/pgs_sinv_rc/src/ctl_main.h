@@ -128,7 +128,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 #if BUILD_LEVEL == 1
             ctl_clear_sinv_ref_gen(&ref_gen);
 #elif BUILD_LEVEL == 2
-            ref_gen.i_ref_inst = ctl_mul(float2ctrl(SINV_LEVEL2_CURRENT_REF_PEAK_PU),
+            ref_gen.i_ref_inst = ctl_mul(real2ctrl(SINV_LEVEL2_CURRENT_REF_PEAK_PU),
                                          phasor.dat[phasor_sin]);
 #elif BUILD_LEVEL == 3
             ctl_step_sinv_ref_gen_pq(&ref_gen, g_p_ref_user, g_q_ref_user, ctl_abs(pll.v_mag), &pll.phasor);
@@ -145,7 +145,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
                  * passive-rectifier power instead of ramping from zero.
                  */
                 ctl_preset_sinv_dc_bus_loop(&outer_loop, g_vbus_ref_user,
-                    adc_v_bus.control_port.value, float2ctrl(-1.0f),
+                    adc_v_bus.control_port.value, (-CTL_CTRL_CONST_1),
                     g_rectifier_takeover_power);
                 ctl_set_slope_limiter_current(&ref_gen.p_slope_lim,
                                               g_rectifier_takeover_power);
@@ -153,8 +153,8 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
             }
             ctl_step_sinv_ref_gen_pq(&ref_gen,
                 ctl_step_sinv_dc_bus_loop(&outer_loop, g_vbus_ref_user,
-                    adc_v_bus.control_port.value, float2ctrl(-1.0f)),
-                float2ctrl(0.0f), ctl_abs(pll.v_mag), &pll.phasor);
+                    adc_v_bus.control_port.value, (-CTL_CTRL_CONST_1)),
+                CTL_CTRL_CONST_ZERO, ctl_abs(pll.v_mag), &pll.phasor);
 #endif
         }
         else

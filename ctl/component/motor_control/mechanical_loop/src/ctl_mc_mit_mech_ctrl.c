@@ -59,16 +59,16 @@ void ctl_autotuning_mit_pos_ctrl(ctl_mit_pos_init_t* init)
 void ctl_init_mit_pos_ctrl(ctl_mit_pos_ctrl_t* ctrl, const ctl_mit_pos_init_t* init)
 {
     // Convert initialization parameters to real-time control variables
-    ctrl->k_pp = float2ctrl(init->k_pp);
-    ctrl->k_vp = float2ctrl(init->k_vp);
-    ctrl->k_ff = float2ctrl(init->k_ff);
+    ctrl->k_pp = param2ctrl(init->k_pp);
+    ctrl->k_vp = param2ctrl(init->k_vp);
+    ctrl->k_ff = param2ctrl(init->k_ff);
 
-    ctrl->cur_limit = float2ctrl(init->cur_limit);
+    ctrl->cur_limit = param2ctrl(init->cur_limit);
 
     ctl_init_divider(&ctrl->div_mech, init->mech_division);
 
     ctrl->pos_if = NULL;
     ctrl->spd_if = NULL;
     ctrl->flag_enable = 0;
-    ctrl->cur_output = float2ctrl(0.0f);
+    ctrl->cur_output = CTL_CTRL_CONST_ZERO;
 }

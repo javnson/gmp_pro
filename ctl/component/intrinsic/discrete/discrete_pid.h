@@ -110,11 +110,11 @@ void ctl_init_discrete_pid(discrete_pid_t* pid, parameter_gt kp, parameter_gt Ti
  */
 GMP_STATIC_INLINE void ctl_clear_discrete_pid(discrete_pid_t* pid)
 {
-    pid->input = float2ctrl(0.0f);
-    pid->input_1 = float2ctrl(0.0f);
-    pid->input_2 = float2ctrl(0.0f);
-    pid->output = float2ctrl(0.0f);
-    pid->output_1 = float2ctrl(0.0f);
+    pid->input = CTL_CTRL_CONST_ZERO;
+    pid->input_1 = CTL_CTRL_CONST_ZERO;
+    pid->input_2 = CTL_CTRL_CONST_ZERO;
+    pid->output = CTL_CTRL_CONST_ZERO;
+    pid->output_1 = CTL_CTRL_CONST_ZERO;
 }
 
 /**
@@ -153,7 +153,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_discrete_pid(discrete_pid_t* ctrl, ctrl_gt in
     ctrl->output += ctl_mul(ctrl->b0, ctrl->input);
     ctrl->output += ctl_mul(ctrl->b1, ctrl->input_1);
     ctrl->output += ctl_mul(ctrl->b2, ctrl->input_2);
-    ctrl->output += ctl_mul(float2ctrl(0.95), ctrl->output_1);
+    ctrl->output += ctl_mul(real2ctrl(0.95), ctrl->output_1);
 #else
     // Standard mode
     ctrl->output = ctl_mul(ctrl->b0, ctrl->input);

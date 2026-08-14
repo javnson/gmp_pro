@@ -43,7 +43,7 @@ GMP_STATIC_INLINE void ctl_init_startup_excitation(ctl_startup_excitation_t* sch
     scheduler->fade_start_speed_pu = ctl_abs(fade_start_speed_pu);
     scheduler->fade_end_speed_pu = ctl_abs(fade_end_speed_pu);
     scheduler->id_ref_out = startup_id_ref;
-    scheduler->closed_loop_weight = float2ctrl(0.0f);
+    scheduler->closed_loop_weight = CTL_CTRL_CONST_ZERO;
 }
 
 GMP_STATIC_INLINE ctrl_gt ctl_step_startup_excitation(ctl_startup_excitation_t* scheduler,
@@ -53,10 +53,10 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_startup_excitation(ctl_startup_excitation_t* 
     ctrl_gt speed_span = scheduler->fade_end_speed_pu - scheduler->fade_start_speed_pu;
 
     if (absolute_speed <= scheduler->fade_start_speed_pu)
-        scheduler->closed_loop_weight = float2ctrl(0.0f);
+        scheduler->closed_loop_weight = CTL_CTRL_CONST_ZERO;
     else if ((absolute_speed >= scheduler->fade_end_speed_pu) ||
-             (speed_span <= float2ctrl(0.0f)))
-        scheduler->closed_loop_weight = float2ctrl(1.0f);
+             (speed_span <= CTL_CTRL_CONST_ZERO))
+        scheduler->closed_loop_weight = CTL_CTRL_CONST_1;
     else
         scheduler->closed_loop_weight = ctl_div(
             absolute_speed - scheduler->fade_start_speed_pu, speed_span);

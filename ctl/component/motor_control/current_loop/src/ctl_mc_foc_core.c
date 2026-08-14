@@ -77,6 +77,7 @@ static void ctl_init_foc_core_common(mc_foc_core_t* mc, const mc_foc_init_t* ini
     int i;
     parameter_gt omega_base_elec;
     parameter_gt scale_fac;
+    parameter_gt max_vs_mag;
 
     gmp_ctl_assert(mc);
     gmp_ctl_assert(init);
@@ -88,15 +89,16 @@ static void ctl_init_foc_core_common(mc_foc_core_t* mc, const mc_foc_init_t* ini
     ctl_init_lead_form3(&mc->lead_compensator[phase_d], init->current_phase_lag, init->current_loop_bw, init->fs);
     ctl_init_lead_form3(&mc->lead_compensator[phase_q], init->current_phase_lag, init->current_loop_bw, init->fs);
 
-    omega_base_elec = (init->spd_base * 1000.0f) * CTL_PARAM_CONST_PI / 30.0f * init->pole_pairs;
+    omega_base_elec = (init->spd_base * 1000.0) * CTL_PARAM_CONST_PI / 30.0 * init->pole_pairs;
     scale_fac = omega_base_elec * init->i_base / init->v_base;
-    mc->coef_ff_decouple[phase_d] = float2ctrl(init->mtr_Lq * scale_fac);
-    mc->coef_ff_decouple[phase_q] = float2ctrl(init->mtr_Ld * scale_fac);
+    max_vs_mag = (init->v_phase_limit * CTL_PARAM_CONST_SQRT2) / init->v_base;
 
-    mc->max_vs_mag = float2ctrl((init->v_phase_limit * 1.41421356237f) / init->v_base);
-    mc->max_vs_mag_sq = ctl_mul(mc->max_vs_mag, mc->max_vs_mag);
+    mc->coef_ff_decouple[phase_d] = param2ctrl(init->mtr_Lq * scale_fac);
+    mc->coef_ff_decouple[phase_q] = param2ctrl(init->mtr_Ld * scale_fac);
+    mc->max_vs_mag = param2ctrl(max_vs_mag);
+    mc->max_vs_mag_sq = param2ctrl(max_vs_mag * max_vs_mag);
     mc->max_vs_rect = mc->max_vs_mag;
-    mc->max_dcbus_voltage = float2ctrl(init->v_bus / init->v_base);
+    mc->max_dcbus_voltage = param2ctrl(init->v_bus / init->v_base);
 
     mc->flag_enable_current_ctrl = 0;
     mc->flag_enable_theta_calc = 1;
@@ -122,7 +124,7 @@ void ctl_init_foc_core_pi(mc_foc_core_t* mc, const mc_foc_init_t* init)
     ctl_enable_dq_pi_feedforward(&mc->idq_ctrl);
     ctl_enable_dq_pi_circle_limit(&mc->idq_ctrl);
     ctl_enable_dq_pi_rect_limit(&mc->idq_ctrl);
-    ctl_set_foc_core_saturation(mc, ctrl2float(mc->max_vs_rect), ctrl2float(mc->max_vs_mag));
+    ctl_set_foc_core_saturation(mc, ctrl2param(mc->max_vs_rect), ctrl2param(mc->max_vs_mag));
     ctl_clear_foc_core(mc);
 }
 #else
@@ -142,7 +144,7 @@ void ctl_init_foc_core_ladrc1(mc_foc_core_t* mc, const mc_foc_init_t* init)
     ctl_enable_dq_ladrc1_feedforward(&mc->idq_ctrl);
     ctl_enable_dq_ladrc1_circle_limit(&mc->idq_ctrl);
     ctl_enable_dq_ladrc1_rect_limit(&mc->idq_ctrl);
-    ctl_set_foc_core_saturation(mc, ctrl2float(mc->max_vs_rect), ctrl2float(mc->max_vs_mag));
+    ctl_set_foc_core_saturation(mc, ctrl2param(mc->max_vs_rect), ctrl2param(mc->max_vs_mag));
     ctl_clear_foc_core(mc);
 }
 #endif
@@ -189,19 +191,19 @@ void ctl_set_foc_core_saturation(mc_foc_core_t* mc, parameter_gt volt_rect_satur
 
     gmp_ctl_assert(volt_rect_saturation >= 0.0f);
     gmp_ctl_assert(volt_cir_saturation >= 0.0f);
-    mc->max_vs_rect = float2ctrl(volt_rect_saturation);
-    mc->max_vs_mag = float2ctrl(volt_cir_saturation);
-    mc->max_vs_mag_sq = ctl_mul(mc->max_vs_mag, mc->max_vs_mag);
+    mc->max_vs_rect = param2ctrl(volt_rect_saturation);
+    mc->max_vs_mag = param2ctrl(volt_cir_saturation);
+    mc->max_vs_mag_sq = param2ctrl(volt_cir_saturation * volt_cir_saturation);
     limit_max.dat[0] = limit_max.dat[1] = mc->max_vs_rect;
     limit_min.dat[0] = limit_min.dat[1] = -mc->max_vs_rect;
 
 #ifndef ENABLE_FOC_LADRC_CTRL
     ctl_set_dq_pi_circle_limit_sq(&mc->idq_ctrl, mc->max_vs_mag_sq);
     ctl_set_dq_pi_rect_limit(&mc->idq_ctrl, &limit_max, &limit_min);
-    ctl_set_pid_int_limit(&mc->idq_ctrl.axis[phase_d], ctl_mul(float2ctrl(0.8f), mc->max_vs_rect),
-                          -ctl_mul(float2ctrl(0.8f), mc->max_vs_rect));
-    ctl_set_pid_int_limit(&mc->idq_ctrl.axis[phase_q], ctl_mul(float2ctrl(0.8f), mc->max_vs_rect),
-                          -ctl_mul(float2ctrl(0.8f), mc->max_vs_rect));
+    ctl_set_pid_int_limit(&mc->idq_ctrl.axis[phase_d], ctl_mul(real2ctrl(0.8f), mc->max_vs_rect),
+                          -ctl_mul(real2ctrl(0.8f), mc->max_vs_rect));
+    ctl_set_pid_int_limit(&mc->idq_ctrl.axis[phase_q], ctl_mul(real2ctrl(0.8f), mc->max_vs_rect),
+                          -ctl_mul(real2ctrl(0.8f), mc->max_vs_rect));
 #else
     ctl_set_dq_ladrc1_circle_limit_sq(&mc->idq_ctrl, mc->max_vs_mag_sq);
     ctl_set_dq_ladrc1_rect_limit(&mc->idq_ctrl, &limit_max, &limit_min);

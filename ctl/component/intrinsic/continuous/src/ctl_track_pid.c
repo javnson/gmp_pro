@@ -38,10 +38,10 @@ void ctl_set_tracking_continuous_pid_filter(ctl_tracking_continuous_pid_t* tp, p
 
     if (Tf <= 0.0f)
     {
-        tp->pid.alpha_d = float2ctrl(1.0f); // Disable filtering
+        tp->pid.alpha_d = CTL_CTRL_CONST_1; // Disable filtering
     }
     else
     {
-        tp->pid.alpha_d = float2ctrl((1.0f / effective_fs) / (Tf + (1.0f / effective_fs)));
+        tp->pid.alpha_d = real2ctrl((1.0f / effective_fs) / (Tf + (1.0f / effective_fs)));
     }
 }

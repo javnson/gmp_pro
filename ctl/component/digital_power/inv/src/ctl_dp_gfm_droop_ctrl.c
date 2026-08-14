@@ -14,13 +14,13 @@ void ctl_init_inv_gfm_droop(inv_gfm_droop_ctrl_t* droop, const inv_gfm_droop_ini
 
     droop->vdq = NULL;
     droop->idq = NULL;
-    droop->frequency_nominal_hz = float2ctrl(init->frequency_nominal_hz);
-    droop->voltage_nominal = float2ctrl(init->voltage_nominal);
-    droop->droop_p_hz_per_pu = float2ctrl(init->droop_p_hz_per_pu);
-    droop->droop_q_v_per_pu = float2ctrl(init->droop_q_v_per_pu);
-    droop->frequency_delta_limit_hz = float2ctrl(init->frequency_delta_limit_hz);
-    droop->voltage_min = float2ctrl(init->voltage_min);
-    droop->voltage_max = float2ctrl(init->voltage_max);
+    droop->frequency_nominal_hz = param2ctrl(init->frequency_nominal_hz);
+    droop->voltage_nominal = param2ctrl(init->voltage_nominal);
+    droop->droop_p_hz_per_pu = param2ctrl(init->droop_p_hz_per_pu);
+    droop->droop_q_v_per_pu = param2ctrl(init->droop_q_v_per_pu);
+    droop->frequency_delta_limit_hz = param2ctrl(init->frequency_delta_limit_hz);
+    droop->voltage_min = param2ctrl(init->voltage_min);
+    droop->voltage_max = param2ctrl(init->voltage_max);
     ctl_init_filter_iir1_lpf(&droop->power_lpf[0], init->fs, init->power_lpf_hz);
     ctl_init_filter_iir1_lpf(&droop->power_lpf[1], init->fs, init->power_lpf_hz);
     ctl_vector2_clear(&droop->pq_set);

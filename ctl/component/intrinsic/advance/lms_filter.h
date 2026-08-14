@@ -82,15 +82,15 @@ GMP_STATIC_INLINE void ctl_clear_lms_filter(ctl_lms_filter_t* lms)
     uint32_t i;
 
     lms->buffer_index = 0;
-    lms->output = float2ctrl(0.0f);
-    lms->error = float2ctrl(0.0f);
+    lms->output = CTL_CTRL_CONST_ZERO;
+    lms->error = CTL_CTRL_CONST_ZERO;
 
     if (lms->buffer != 0 && lms->weights != 0)
     {
         for (i = 0; i < lms->order; i++)
         {
-            lms->buffer[i] = float2ctrl(0.0f);
-            lms->weights[i] = float2ctrl(0.0f); // 初始化权重通常为 0
+            lms->buffer[i] = CTL_CTRL_CONST_ZERO;
+            lms->weights[i] = CTL_CTRL_CONST_ZERO; // Initialize adaptive weights to zero.
         }
     }
 }
@@ -110,11 +110,11 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_lms_filter(ctl_lms_filter_t* lms, ctrl_gt inp
     lms->buffer[lms->buffer_index] = input;
 
     // 2. Calculate filter output (FIR Convolution)
-    lms->output = float2ctrl(0.0f);
+    lms->output = CTL_CTRL_CONST_ZERO;
     uint32_t j = lms->buffer_index;
     for (i = 0; i < lms->order; i++)
     {
-        // 修复 1：严格使用 ctl_mul 防止卷积溢出
+        // Use control-domain multiplication to keep the convolution fixed-point safe.
         lms->output += ctl_mul(lms->weights[i], lms->buffer[j]);
         if (j == 0)
             j = lms->order - 1;
@@ -131,7 +131,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_lms_filter(ctl_lms_filter_t* lms, ctrl_gt inp
     j = lms->buffer_index;
     for (i = 0; i < lms->order; i++)
     {
-        // 修复 2：将三重乘法拆解为嵌套的 ctl_mul，彻底杜绝定点溢出灾难
+        // Nest control-domain multiplications for the three-factor weight update.
         ctrl_gt error_x_input = ctl_mul(lms->error, lms->buffer[j]);
         ctrl_gt delta_w = ctl_mul(lms->mu, error_x_input);
 

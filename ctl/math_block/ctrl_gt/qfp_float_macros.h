@@ -59,8 +59,8 @@ GMP_STATIC_INLINE float abs_static_inline(float A)
  * @{
  */
 
-#define float2ctrl(x) ((float)(x))       /**< @brief Converts a literal to `ctrl_gt` (float). */
-#define ctrl2float(x) ((float)(x))       /**< @brief Converts a `ctrl_gt` value to a standard float. */
+#define GMP_CTRL_FROM_REAL(x) ((float)(x)) /**< @brief Converts real_gt to the QFP backend. */
+#define GMP_CTRL_TO_REAL(x)   ((float)(x)) /**< @brief Converts the QFP backend to real_gt. */
 #define int2ctrl(x)   (qfp_int2float(x)) /**< @brief Converts an integer to `ctrl_gt`. Maps to `qfp_int2float()`. */
 #define ctrl2int(x)                                                                                                    \
     (qfp_float2int(x)) /**< @brief Converts a `ctrl_gt` value to an integer. Maps to `qfp_float2int()`. */

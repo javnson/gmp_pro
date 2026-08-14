@@ -31,15 +31,15 @@ void ctl_autotuning_ladrc_pos_ctrl(ctl_ladrc_pos_init_t* init, ctl_ladrc_pos_ctr
     ctl_init_ladrc2(&ctrl->ladrc_core, b0_pu, init->target_wc, init->target_wo, fs_mech);
 
     // Override default LADRC limits with user's specific current limits
-    ctl_set_ladrc2_limit(&ctrl->ladrc_core, float2ctrl(init->cur_limit), float2ctrl(-init->cur_limit));
+    ctl_set_ladrc2_limit(&ctrl->ladrc_core, param2ctrl(init->cur_limit), real2ctrl(-init->cur_limit));
 
     // 4. Calculate Conversion Scale (w_base to revs/s)
     // 1 PU speed = w_base (rad/s) = w_base / 2pi (revs/s)
-    ctrl->scale_w_to_revs = float2ctrl(w_base / CTL_PARAM_CONST_2PI);
+    ctrl->scale_w_to_revs = real2ctrl(w_base / CTL_PARAM_CONST_2PI);
 
     // 5. Initialize Divider and State
     ctl_init_divider(&ctrl->div_mech, init->mech_division);
-    ctrl->cur_limit = float2ctrl(init->cur_limit);
+    ctrl->cur_limit = param2ctrl(init->cur_limit);
 
     ctl_clear_ladrc_pos_ctrl(ctrl);
     ctrl->flag_enable = 0;

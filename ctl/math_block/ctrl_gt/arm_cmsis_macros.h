@@ -40,8 +40,8 @@
  * @{
  */
 
-#define float2ctrl(x) ((float32_t)(x)) /**< @brief Converts a literal to `ctrl_gt` (float32_t). */
-#define ctrl2float(x) ((float32_t)(x)) /**< @brief Converts a `ctrl_gt` value to a standard float32_t. */
+#define GMP_CTRL_FROM_REAL(x) ((float32_t)(x)) /**< @brief Converts real_gt to the CMSIS backend. */
+#define GMP_CTRL_TO_REAL(x)   ((float32_t)(x)) /**< @brief Converts the CMSIS backend to real_gt. */
 #define int2ctrl(x)   ((float32_t)(x)) /**< @brief Converts an integer to `ctrl_gt`. */
 #define ctrl2int(x)   ((int32_t)(x))   /**< @brief Converts a `ctrl_gt` value to an integer (truncates). */
 #define ctrl_fraction_to_index(x, count) ((uint32_t)((float32_t)(x) * (uint32_t)(count)))

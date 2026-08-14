@@ -139,8 +139,8 @@ void ctl_init()
     ctl_init_inv_gfm_droop(&gfm_droop_ctrl, &gfm_droop_init);
     ctl_attach_inv_gfm_droop(&gfm_droop_ctrl, &inv_ctrl.vdq, &inv_ctrl.idq);
     ctl_set_inv_gfm_droop_power_reference(
-        &gfm_droop_ctrl, float2ctrl(GFM_DROOP_ACTIVE_POWER_REF_PU),
-        float2ctrl(GFM_DROOP_REACTIVE_POWER_REF_PU));
+        &gfm_droop_ctrl, real2ctrl(GFM_DROOP_ACTIVE_POWER_REF_PU),
+        real2ctrl(GFM_DROOP_REACTIVE_POWER_REF_PU));
 
     gfm_vsm_init.fs = CONTROLLER_FREQUENCY;
     gfm_vsm_init.frequency_nominal_hz = GFM_GRID_FREQUENCY_HZ;
@@ -155,8 +155,8 @@ void ctl_init()
     ctl_init_inv_gfm_vsm(&gfm_vsm_ctrl, &gfm_vsm_init);
     ctl_attach_inv_gfm_vsm(&gfm_vsm_ctrl, &inv_ctrl.vdq, &inv_ctrl.idq);
     ctl_set_inv_gfm_vsm_power_reference(
-        &gfm_vsm_ctrl, float2ctrl(GFM_DROOP_ACTIVE_POWER_REF_PU),
-        float2ctrl(GFM_DROOP_REACTIVE_POWER_REF_PU));
+        &gfm_vsm_ctrl, real2ctrl(GFM_DROOP_ACTIVE_POWER_REF_PU),
+        real2ctrl(GFM_DROOP_REACTIVE_POWER_REF_PU));
 
     gfm_virtual_impedance_init.resistance_pu = GFM_VIRTUAL_IMPEDANCE_R_PU;
     gfm_virtual_impedance_init.reactance_pu = GFM_VIRTUAL_IMPEDANCE_X_PU;
@@ -165,11 +165,11 @@ void ctl_init()
                                        &gfm_virtual_impedance_init);
     ctl_attach_inv_gfm_virtual_impedance(&gfm_virtual_impedance, &inv_ctrl.idq);
     ctl_set_inv_gfm_virtual_impedance_base(
-        &gfm_virtual_impedance, float2ctrl(GFM_VOLTAGE_VD_PU),
-        float2ctrl(GFM_VOLTAGE_VQ_PU));
-    gfm_frequency_ref_hz = float2ctrl(GFM_GRID_FREQUENCY_HZ);
-    gfm_voltage_ref.dat[phase_d] = float2ctrl(GFM_VOLTAGE_VD_PU);
-    gfm_voltage_ref.dat[phase_q] = float2ctrl(GFM_VOLTAGE_VQ_PU);
+        &gfm_virtual_impedance, real2ctrl(GFM_VOLTAGE_VD_PU),
+        real2ctrl(GFM_VOLTAGE_VQ_PU));
+    gfm_frequency_ref_hz = real2ctrl(GFM_GRID_FREQUENCY_HZ);
+    gfm_voltage_ref.dat[phase_d] = real2ctrl(GFM_VOLTAGE_VD_PU);
+    gfm_voltage_ref.dat[phase_q] = real2ctrl(GFM_VOLTAGE_VQ_PU);
 
     gfm_transition_init.fs = CONTROLLER_FREQUENCY;
     gfm_transition_init.transfer_time_s = GFM_TRANSITION_TIME_S;
@@ -182,8 +182,8 @@ void ctl_init()
     ctl_attach_inv_gfm_transition(&gfm_transition, &inv_ctrl.pll.theta,
                                   &inv_ctrl.pll.phasor);
 #endif
-    gfm_sync_idq_ref.dat[phase_d] = float2ctrl(GFM_SYNC_ID_PU);
-    gfm_sync_idq_ref.dat[phase_q] = float2ctrl(GFM_SYNC_IQ_PU);
+    gfm_sync_idq_ref.dat[phase_d] = real2ctrl(GFM_SYNC_ID_PU);
+    gfm_sync_idq_ref.dat[phase_q] = real2ctrl(GFM_SYNC_IQ_PU);
     gfm_sync_lock_ticks = 0;
 
     ctl_auto_tuning_zero_inv(&gfl_zero_init, &gfl_init);
@@ -199,34 +199,34 @@ void ctl_init()
     // init SPWM modulator
     //
 #if defined USING_NPC_MODULATOR
-    ctl_init_npc_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &inv_ctrl.adc_iabc->value, float2ctrl(0.02),
-                           float2ctrl(0.005));
+    ctl_init_npc_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &inv_ctrl.adc_iabc->value, real2ctrl(0.02),
+                           real2ctrl(0.005));
 #else
-    ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &inv_ctrl.adc_iabc->value, float2ctrl(0.02),
-                            float2ctrl(0.005));
+    ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &inv_ctrl.adc_iabc->value, real2ctrl(0.02),
+                            real2ctrl(0.005));
 #endif // USING_NPC_MODULATOR
 
 #if BUILD_LEVEL == 1
     // Voltage open loop, inverter
     ctl_set_gfl_inv_openloop_mode(&inv_ctrl);
-    ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl(GFM_OPEN_LOOP_VD_PU), float2ctrl(GFM_OPEN_LOOP_VQ_PU));
+    ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, real2ctrl(GFM_OPEN_LOOP_VD_PU), real2ctrl(GFM_OPEN_LOOP_VQ_PU));
 
 #elif BUILD_LEVEL == 2
     // Basic current close loop, inverter
     ctl_set_gfl_inv_current_mode(&inv_ctrl);
-    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFM_CURRENT_LEVEL2_ID_PU), float2ctrl(GFM_CURRENT_LEVEL2_IQ_PU));
+    ctl_set_gfl_inv_current(&inv_ctrl, real2ctrl(GFM_CURRENT_LEVEL2_ID_PU), real2ctrl(GFM_CURRENT_LEVEL2_IQ_PU));
 
 #elif BUILD_LEVEL == 3
     // Stand-alone LC capacitor-voltage loop using the internal RG angle.
     ctl_set_gfl_inv_current_mode(&inv_ctrl);
-    ctl_set_voltage_inv_reference(&gfl_voltage_ctrl, float2ctrl(GFM_VOLTAGE_VD_PU),
-                                  float2ctrl(GFM_VOLTAGE_VQ_PU));
+    ctl_set_voltage_inv_reference(&gfl_voltage_ctrl, real2ctrl(GFM_VOLTAGE_VD_PU),
+                                  real2ctrl(GFM_VOLTAGE_VQ_PU));
     ctl_enable_voltage_inv(&gfl_voltage_ctrl);
 
 #elif BUILD_LEVEL == 4
     // PLL-oriented grid current loop.
     ctl_set_gfl_inv_current_mode(&inv_ctrl);
-    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFM_CURRENT_LEVEL4_ID_PU), float2ctrl(GFM_CURRENT_LEVEL4_IQ_PU));
+    ctl_set_gfl_inv_current(&inv_ctrl, real2ctrl(GFM_CURRENT_LEVEL4_ID_PU), real2ctrl(GFM_CURRENT_LEVEL4_IQ_PU));
 
     ctl_enable_neg_current_inv(&neg_current_ctrl);
 
@@ -423,14 +423,14 @@ void ctl_enable_pwm()
      * commands are not lost during the startup state transitions.
      */
 #if BUILD_LEVEL == 1
-    ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl(GFM_OPEN_LOOP_VD_PU),
-                                     float2ctrl(GFM_OPEN_LOOP_VQ_PU));
+    ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, real2ctrl(GFM_OPEN_LOOP_VD_PU),
+                                     real2ctrl(GFM_OPEN_LOOP_VQ_PU));
 #elif BUILD_LEVEL == 2
-    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFM_CURRENT_LEVEL2_ID_PU),
-                            float2ctrl(GFM_CURRENT_LEVEL2_IQ_PU));
+    ctl_set_gfl_inv_current(&inv_ctrl, real2ctrl(GFM_CURRENT_LEVEL2_ID_PU),
+                            real2ctrl(GFM_CURRENT_LEVEL2_IQ_PU));
 #elif BUILD_LEVEL == 4
-    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFM_CURRENT_LEVEL4_ID_PU),
-                            float2ctrl(GFM_CURRENT_LEVEL4_IQ_PU));
+    ctl_set_gfl_inv_current(&inv_ctrl, real2ctrl(GFM_CURRENT_LEVEL4_ID_PU),
+                            real2ctrl(GFM_CURRENT_LEVEL4_IQ_PU));
 #elif BUILD_LEVEL == 5
     ctl_set_gfl_inv_current(&inv_ctrl, gfm_sync_idq_ref.dat[phase_d],
                             gfm_sync_idq_ref.dat[phase_q]);
@@ -455,9 +455,9 @@ void ctl_disable_pwm()
     ctl_clear_inv_gfm_droop(&gfm_droop_ctrl);
     ctl_clear_inv_gfm_vsm(&gfm_vsm_ctrl);
     ctl_clear_inv_gfm_virtual_impedance(&gfm_virtual_impedance);
-    gfm_frequency_ref_hz = float2ctrl(GFM_GRID_FREQUENCY_HZ);
-    gfm_voltage_ref.dat[phase_d] = float2ctrl(GFM_VOLTAGE_VD_PU);
-    gfm_voltage_ref.dat[phase_q] = float2ctrl(GFM_VOLTAGE_VQ_PU);
+    gfm_frequency_ref_hz = real2ctrl(GFM_GRID_FREQUENCY_HZ);
+    gfm_voltage_ref.dat[phase_d] = real2ctrl(GFM_VOLTAGE_VD_PU);
+    gfm_voltage_ref.dat[phase_q] = real2ctrl(GFM_VOLTAGE_VQ_PU);
     ctl_track_pll_inv_gfm_transition(&gfm_transition);
     ctl_vector2_clear(&gfm_voltage_idq_ref);
     gfm_sync_lock_ticks = 0;

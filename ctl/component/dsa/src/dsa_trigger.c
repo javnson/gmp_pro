@@ -83,10 +83,10 @@ void ctl_init_sine_analyzer(
     // controller frequency
     parameter_gt f_ctrl)
 {
-    sine->threshold = float2ctrl(zcd_threshold);
+    sine->threshold = real2ctrl(zcd_threshold);
     sine->sample_min = (fast32_gt)(f_ctrl / max_freq) - 1;
     sine->sample_max = (fast32_gt)(f_ctrl / min_freq) + 1;
-    sine->freq_sf = float2ctrl(f_ctrl / rated_freq);
+    sine->freq_sf = real2ctrl(f_ctrl / rated_freq);
 
     sine->wave_norm = 0;
     sine->curr_sign = 0;

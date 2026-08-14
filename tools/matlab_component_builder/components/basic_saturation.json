@@ -15,8 +15,8 @@
   ],
   "initializers": [{"id": "standard", "label": "Standard", "function": "ctl_init_saturation", "step_function": "ctl_step_saturation", "arguments": ["$instance", "out_min", "out_max"], "reference_model": "nonlinear"}],
   "execution": {
-    "parameter_update_code": ["ctl_set_saturation_limits(&runtime->pending, float2ctrl(out_min), float2ctrl(out_max));"],
-    "step_code": ["output_output = ctrl2float(ctl_step_saturation(&runtime->pending, float2ctrl(input_input)));"],
+    "parameter_update_code": ["ctl_set_saturation_limits(&runtime->pending, real2ctrl(out_min), real2ctrl(out_max));"],
+    "step_code": ["output_output = ctrl2param(ctl_step_saturation(&runtime->pending, real2ctrl(input_input)));"],
     "initialize_code": [], "terminate_code": []
   },
   "analysis": {"default_frequency_hz": [1.0, 1000.0], "default_points": 40, "excitation_amplitude": 0.1, "settling_periods": 1, "measurement_periods": 8}

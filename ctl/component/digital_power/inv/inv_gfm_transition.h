@@ -85,10 +85,10 @@ GMP_STATIC_INLINE void ctl_blend_inv_gfm_transition(
     gmp_ctl_assert(forming_command);
     gmp_ctl_assert(output);
     output->dat[0] =
-        ctl_mul(float2ctrl(1.0f) - transition->blend, tracking_command->dat[0]) +
+        ctl_mul(CTL_CTRL_CONST_1 - transition->blend, tracking_command->dat[0]) +
         ctl_mul(transition->blend, forming_command->dat[0]);
     output->dat[1] =
-        ctl_mul(float2ctrl(1.0f) - transition->blend, tracking_command->dat[1]) +
+        ctl_mul(CTL_CTRL_CONST_1 - transition->blend, tracking_command->dat[1]) +
         ctl_mul(transition->blend, forming_command->dat[1]);
 }
 
@@ -112,25 +112,25 @@ GMP_STATIC_INLINE void ctl_step_inv_gfm_transition(inv_gfm_transition_t* transit
     }
 
     transition->angle_gfm += ctl_mul(frequency_ref_hz, transition->inv_fs);
-    if (transition->angle_gfm >= float2ctrl(1.0f))
-        transition->angle_gfm -= float2ctrl(1.0f);
+    if (transition->angle_gfm >= CTL_CTRL_CONST_1)
+        transition->angle_gfm -= CTL_CTRL_CONST_1;
     else if (transition->angle_gfm < 0)
-        transition->angle_gfm += float2ctrl(1.0f);
+        transition->angle_gfm += CTL_CTRL_CONST_1;
     ctl_set_phasor_via_angle(transition->angle_gfm, &transition->phasor_gfm);
 
     if (transition->mode == INV_GFM_TRANSITION_RAMP)
     {
         transition->blend =
-            ctl_sat(transition->blend + transition->blend_step, float2ctrl(1.0f), 0);
+            ctl_sat(transition->blend + transition->blend_step, CTL_CTRL_CONST_1, 0);
         blended.dat[0] =
-            ctl_mul(float2ctrl(1.0f) - transition->blend, transition->pll_phasor->dat[0]) +
+            ctl_mul(CTL_CTRL_CONST_1 - transition->blend, transition->pll_phasor->dat[0]) +
             ctl_mul(transition->blend, transition->phasor_gfm.dat[0]);
         blended.dat[1] =
-            ctl_mul(float2ctrl(1.0f) - transition->blend, transition->pll_phasor->dat[1]) +
+            ctl_mul(CTL_CTRL_CONST_1 - transition->blend, transition->pll_phasor->dat[1]) +
             ctl_mul(transition->blend, transition->phasor_gfm.dat[1]);
         ctl_vector2_normalize(&transition->phasor_out, &blended);
 
-        if (transition->blend >= float2ctrl(1.0f))
+        if (transition->blend >= CTL_CTRL_CONST_1)
         {
             transition->mode = INV_GFM_TRANSITION_FORMING;
             ctl_vector2_copy(&transition->phasor_out, &transition->phasor_gfm);

@@ -140,13 +140,13 @@ static void user_apply_signal_parameters(void)
         return;
 
     angle = USER_SIGNAL_TWO_PI * frequency_hz / (float)USER_DSA_SAMPLE_RATE;
-    step_sine = float2ctrl(sinf(angle));
-    step_cosine = float2ctrl(cosf(angle));
+    step_sine = real2ctrl(sinf(angle));
+    step_cosine = real2ctrl(cosf(angle));
     gmp_base_enter_critical();
     oscillator_step_sine = step_sine;
     oscillator_step_cosine = step_cosine;
-    active_signal_gain = float2ctrl(gain);
-    active_signal_dc_offset = float2ctrl(dc_offset);
+    active_signal_gain = real2ctrl(gain);
+    active_signal_dc_offset = real2ctrl(dc_offset);
     gmp_base_leave_critical();
 
     applied_frequency_hz = frequency_hz;
@@ -198,7 +198,7 @@ static void user_arm_dsa(void)
     gmp_base_enter_critical();
     ctl_clear_dsa_trigger(&dsa_trigger);
     dsa_trigger.option = dsa_trigger_mode;
-    dsa_trigger.trigger_level = float2ctrl(dsa_trigger_level);
+    dsa_trigger.trigger_level = real2ctrl(dsa_trigger_level);
     timeout_ticks = (dsa_auto_timeout_ms * USER_DSA_SAMPLE_RATE) / 1000U;
     dsa_trigger.auto_timeout_ticks = (timeout_ticks == 0U) ? 1U : timeout_ticks;
     dsa_trigger.flag_is_force_trigger = 0;
@@ -330,8 +330,8 @@ void init(void)
                        (uint32_t)(sizeof(dsa_buffer) / sizeof(dsa_buffer[0])),
                        (parameter_gt)USER_DSA_SAMPLE_RATE);
     ctl_config_dsa_scope(&dsa_scope, USER_DSA_CHANNELS, 1U);
-    oscillator_sine = float2ctrl(0.0F);
-    oscillator_cosine = float2ctrl(1.0F);
+    oscillator_sine = real2ctrl(0.0F);
+    oscillator_cosine = real2ctrl(1.0F);
     oscillator_index = 0U;
     user_apply_signal_parameters();
     dsa_generation = 0U;
@@ -406,7 +406,7 @@ void user_dsa_timer_step(void)
         oscillator_index = 0U;
         magnitude_squared = oscillator_sine * oscillator_sine +
                             oscillator_cosine * oscillator_cosine;
-        correction = float2ctrl(1.5F) - float2ctrl(0.5F) * magnitude_squared;
+        correction = real2ctrl(1.5F) - real2ctrl(0.5F) * magnitude_squared;
         oscillator_sine *= correction;
         oscillator_cosine *= correction;
     }

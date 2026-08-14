@@ -510,7 +510,7 @@ CTRL_PLL_TI = 0.02;
 CTRL_PLL_LPF_FC = 20.0;
 
 % SPLL close-loop convergence criterion.
-CTRL_SPLL_EPSILON = float2ctrl(0.005);
+CTRL_SPLL_EPSILON = real2ctrl(0.005);
 
 % DC-bus outer-loop proportional gain.
 SINV_DC_BUS_LOOP_KP = 0.8;

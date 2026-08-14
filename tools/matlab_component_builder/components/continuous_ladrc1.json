@@ -25,9 +25,9 @@
   ],
   "initializers": [{"id": "bandwidth", "label": "Bandwidth design", "function": "ctl_init_ladrc1", "step_function": "ctl_step_ladrc1", "arguments": ["$instance", "b0", "fc", "fo", "fs"], "reference_model": "ladrc1"}],
   "execution": {
-    "initialize_code": ["ctl_set_ladrc1_limit(&runtime->current, float2ctrl(out_max), float2ctrl(out_min));"],
-    "parameter_update_code": ["ctl_upgrade_ladrc1(&runtime->pending, b0, fc, fo, fs);", "ctl_set_ladrc1_limit(&runtime->pending, float2ctrl(out_max), float2ctrl(out_min));"],
-    "step_code": ["output_control = ctrl2float(ctl_step_ladrc1(&runtime->pending, float2ctrl(input_reference), float2ctrl(input_feedback)));", "output_disturbance = ctrl2float(ctl_get_ladrc1_disturbance_pu(&runtime->pending));"],
+    "initialize_code": ["ctl_set_ladrc1_limit(&runtime->current, real2ctrl(out_max), real2ctrl(out_min));"],
+    "parameter_update_code": ["ctl_upgrade_ladrc1(&runtime->pending, b0, fc, fo, fs);", "ctl_set_ladrc1_limit(&runtime->pending, real2ctrl(out_max), real2ctrl(out_min));"],
+    "step_code": ["output_control = ctrl2param(ctl_step_ladrc1(&runtime->pending, real2ctrl(input_reference), real2ctrl(input_feedback)));", "output_disturbance = ctrl2param(ctl_get_ladrc1_disturbance_pu(&runtime->pending));"],
     "terminate_code": []
   },
   "analysis": {"default_frequency_hz": [1.0, 1000.0], "default_points": 60, "excitation_amplitude": 0.001, "settling_periods": 20, "measurement_periods": 12}

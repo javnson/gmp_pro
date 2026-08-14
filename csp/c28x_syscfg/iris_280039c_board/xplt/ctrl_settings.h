@@ -122,7 +122,7 @@
 #define SPECIFY_ENABLE_ADC_CALIBRATE
 
 // SPLL Close loop criteria
-#define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
+#define CTRL_SPLL_EPSILON ((real2ctrl(0.005)))
 
 // Using negative modulator logic
 #define PWM_MODULATOR_USING_NEGATIVE_LOGIC (1)

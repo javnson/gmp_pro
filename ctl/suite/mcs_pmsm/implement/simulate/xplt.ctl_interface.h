@@ -39,12 +39,12 @@ GMP_STATIC_INLINE void ctl_input_callback(void)
     // invoke position encoder routine.
     ctl_step_autoturn_pos_encoder(&pos_enc, simulink_rx_buffer.encoder);
 
-    pmsm_ctrl.speed_set = float2ctrl(simulink_rx_buffer.panel[0]);
+    pmsm_ctrl.speed_set = real2ctrl(simulink_rx_buffer.panel[0]);
 
     // Get panel input here.
 #if (BUILD_LEVEL == 1)
 
-    ctl_set_pmsm_ctrl_vdq_ff(&pmsm_ctrl, float2ctrl(csp_sl_get_panel_input(0)), float2ctrl(csp_sl_get_panel_input(1)));
+    ctl_set_pmsm_ctrl_vdq_ff(&pmsm_ctrl, real2ctrl(csp_sl_get_panel_input(0)), real2ctrl(csp_sl_get_panel_input(1)));
 
 #endif // BUILD_LEVEL
 }

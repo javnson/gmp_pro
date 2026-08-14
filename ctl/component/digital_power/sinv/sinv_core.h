@@ -1,5 +1,5 @@
 ﻿/**
- * @file single_phase_dc_ac.h
+ * @file sinv_core.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Header-only library for a preset single-phase DC/AC inverter controller.
  * @version 1.0
@@ -9,14 +9,13 @@
  */
 
 /**
- * @defgroup CTL_TOPOLOGY_SINV_CORE_API Single-Phase Inverter Core (Multi-QPR) API
+ * @defgroup CTL_TOPOLOGY_SINV_CORE_API Single-Phase Inverter Core (QPR + QR) API
  * @{
  * @ingroup CTL_DP_LIB
- * @brief Defines a lightweight, purely QPR-based inner current loop core for single-phase inverters.
- * @details This module replaces the advanced Repetitive Control (FDRC) with a parallel 
- * bank of Quasi-Proportional-Resonant (QPR) controllers targeting specific odd harmonics 
- * (3rd, 5th, 7th, 9th, 11th, 13th, 15th). It provides identical interface bindings to 
- * `sinv_rc_core` for seamless swapping.
+ * @brief Defines a lightweight resonant inner current loop core for single-phase inverters.
+ * @details The fundamental branch uses a QPR controller. The odd-harmonic branches
+ * use QR controllers because their proportional gain is intentionally zero. This
+ * avoids storing and evaluating an unused proportional term in every harmonic branch.
  */
 
 #ifndef _FILE_CTL_SINV_CORE_H_
@@ -37,7 +36,7 @@ extern "C"
 /*---------------------------------------------------------------------------*/
 
 /**
- * @brief Auto-tuning initialization structure for the Multi-QPR SINV Core.
+ * @brief Auto-tuning initialization structure for the QPR + QR SINV core.
  */
 typedef struct _tag_sinv_core_init_t
 {
@@ -53,7 +52,7 @@ typedef struct _tag_sinv_core_init_t
 
     // --- Tuning Targets (User Provided / Auto-Generated Defaults if 0) ---
     parameter_gt current_loop_bw;  //!< Target current loop bandwidth (Hz).
-    parameter_gt qpr_wi;           //!< QPR resonant bandwidth (rad/s).
+    parameter_gt qpr_wi;           //!< Legacy field name for the QPR/QR cutoff frequency (Hz).
     parameter_gt vgrid_lead_steps; //!< Phase lead steps for grid voltage feedforward (typically 1.5).
     parameter_gt v_out_max_pu;     //!< Maximum output voltage limit in PU.
 
@@ -69,7 +68,7 @@ typedef struct _tag_sinv_core_init_t
 /*---------------------------------------------------------------------------*/
 
 /**
- * @brief Main structure for the Multi-QPR Control Core.
+ * @brief Main structure for the QPR + QR control core.
  */
 typedef struct _tag_sinv_core_t
 {
@@ -87,20 +86,20 @@ typedef struct _tag_sinv_core_t
     ctrl_gt current_error; //!< Real-time current tracking error.
 
     ctrl_gt u_qpr_base; //!< Fundamental QPR output.
-    ctrl_gt u_qpr_harm; //!< Sum of all harmonic QPR outputs.
+    ctrl_gt u_qr_harm;  //!< Sum of all harmonic QR outputs.
     ctrl_gt u_ff;       //!< Grid Feedforward output.
 
     ctrl_gt v_out_ref; //!< Final unified voltage reference (Duty cycle equivalent).
 
     // --- Controller Entities (Parallel Bank) ---
     ctl_qpr_t qpr_base; //!< Fundamental (1st) tracking.
-    ctl_qpr_t qpr_h3;   //!< 3rd Harmonic rejection.
-    ctl_qpr_t qpr_h5;   //!< 5th Harmonic rejection.
-    ctl_qpr_t qpr_h7;   //!< 7th Harmonic rejection.
-    ctl_qpr_t qpr_h9;   //!< 9th Harmonic rejection.
-    ctl_qpr_t qpr_h11;  //!< 11th Harmonic rejection.
-    ctl_qpr_t qpr_h13;  //!< 13th Harmonic rejection.
-    ctl_qpr_t qpr_h15;  //!< 15th Harmonic rejection.
+    qr_ctrl_t qr_h3;    //!< 3rd harmonic rejection.
+    qr_ctrl_t qr_h5;    //!< 5th harmonic rejection.
+    qr_ctrl_t qr_h7;    //!< 7th harmonic rejection.
+    qr_ctrl_t qr_h9;    //!< 9th harmonic rejection.
+    qr_ctrl_t qr_h11;   //!< 11th harmonic rejection.
+    qr_ctrl_t qr_h13;   //!< 13th harmonic rejection.
+    qr_ctrl_t qr_h15;   //!< 15th harmonic rejection.
 
     ctrl_lead_t vgrid_lead; //!< Lead compensator for grid feedforward.
 
@@ -109,7 +108,7 @@ typedef struct _tag_sinv_core_t
 
     // --- State Flags ---
     fast_gt flag_enable_ctrl;      //!< Master enable flag for the inner loop.
-    fast_gt flag_enable_harm_ctrl; //!< Master switch for Harmonic QPRs (Replaces flag_enable_fdrc).
+    fast_gt flag_enable_harm_ctrl; //!< Master switch for the harmonic QR bank.
     fast_gt flag_enable_lead_comp; //!< Master switch for Grid Voltage Feedforward Phase-Lead.
 
 } ctl_sinv_core_t;
@@ -149,17 +148,17 @@ GMP_STATIC_INLINE void ctl_attach_sinv_core(ctl_sinv_core_t* core, adc_ift* _u_d
 GMP_STATIC_INLINE void ctl_clear_sinv_core(ctl_sinv_core_t* core)
 {
     ctl_clear_qpr_controller(&core->qpr_base);
-    ctl_clear_qpr_controller(&core->qpr_h3);
-    ctl_clear_qpr_controller(&core->qpr_h5);
-    ctl_clear_qpr_controller(&core->qpr_h7);
-    ctl_clear_qpr_controller(&core->qpr_h9);
-    ctl_clear_qpr_controller(&core->qpr_h11);
-    ctl_clear_qpr_controller(&core->qpr_h13);
-    ctl_clear_qpr_controller(&core->qpr_h15);
+    ctl_clear_qr_controller(&core->qr_h3);
+    ctl_clear_qr_controller(&core->qr_h5);
+    ctl_clear_qr_controller(&core->qr_h7);
+    ctl_clear_qr_controller(&core->qr_h9);
+    ctl_clear_qr_controller(&core->qr_h11);
+    ctl_clear_qr_controller(&core->qr_h13);
+    ctl_clear_qr_controller(&core->qr_h15);
     ctl_clear_lead(&core->vgrid_lead);
 
-    core->current_error = float2ctrl(0.0f);
-    core->v_out_ref = float2ctrl(0.0f);
+    core->current_error = CTL_CTRL_CONST_ZERO;
+    core->v_out_ref = CTL_CTRL_CONST_ZERO;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -167,8 +166,8 @@ GMP_STATIC_INLINE void ctl_clear_sinv_core(ctl_sinv_core_t* core)
 /*---------------------------------------------------------------------------*/
 
 /**
- * @brief Executes one step of the Multi-QPR Single-Phase Core.
- * @details Replaces the FDRC algorithm with a parallel QPR bank.
+ * @brief Executes one step of the QPR + QR single-phase core.
+ * @details Uses one fundamental QPR branch and a parallel harmonic QR bank.
  * 
  * @param[in,out] core Pointer to the core instance.
  * @param[in]     i_ref Instantaneous AC current reference command (PU).
@@ -191,17 +190,17 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_core(ctl_sinv_core_t* core, ctrl_gt i_re
     // 2. Fundamental Tracking (Base QPR - Proportional + Resonant)
     core->u_qpr_base = ctl_step_qpr_controller(&core->qpr_base, core->current_error);
 
-    // 3. Harmonic Rejection (Parallel QPR Bank - Purely Resonant)
-    core->u_qpr_harm = float2ctrl(0.0f);
+    // 3. Harmonic rejection (parallel QR bank)
+    core->u_qr_harm = CTL_CTRL_CONST_ZERO;
     if (core->flag_enable_harm_ctrl)
     {
-        core->u_qpr_harm += ctl_step_qpr_controller(&core->qpr_h3, core->current_error);
-        core->u_qpr_harm += ctl_step_qpr_controller(&core->qpr_h5, core->current_error);
-        core->u_qpr_harm += ctl_step_qpr_controller(&core->qpr_h7, core->current_error);
-        core->u_qpr_harm += ctl_step_qpr_controller(&core->qpr_h9, core->current_error);
-        core->u_qpr_harm += ctl_step_qpr_controller(&core->qpr_h11, core->current_error);
-        core->u_qpr_harm += ctl_step_qpr_controller(&core->qpr_h13, core->current_error);
-        core->u_qpr_harm += ctl_step_qpr_controller(&core->qpr_h15, core->current_error);
+        core->u_qr_harm += ctl_step_qr_controller(&core->qr_h3, core->current_error);
+        core->u_qr_harm += ctl_step_qr_controller(&core->qr_h5, core->current_error);
+        core->u_qr_harm += ctl_step_qr_controller(&core->qr_h7, core->current_error);
+        core->u_qr_harm += ctl_step_qr_controller(&core->qr_h9, core->current_error);
+        core->u_qr_harm += ctl_step_qr_controller(&core->qr_h11, core->current_error);
+        core->u_qr_harm += ctl_step_qr_controller(&core->qr_h13, core->current_error);
+        core->u_qr_harm += ctl_step_qr_controller(&core->qr_h15, core->current_error);
     }
 
     // 4. Grid Voltage Feedforward
@@ -215,10 +214,11 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_core(ctl_sinv_core_t* core, ctrl_gt i_re
     }
 
     // 5. Synthesis
-    ctrl_gt v_ref_total = core->u_qpr_base + core->u_qpr_harm + core->u_ff;
+    ctrl_gt v_ref_total = core->u_qpr_base + core->u_qr_harm + core->u_ff;
 
     // 6. Universal DC Bus Voltage Compensation & Saturation
-    ctrl_gt v_bus_safe = (core->v_bus_fdbk->value > float2ctrl(0.1f)) ? core->v_bus_fdbk->value : float2ctrl(0.1f);
+    ctrl_gt v_bus_safe =
+        (core->v_bus_fdbk->value > CTL_CTRL_CONST_1_OVER_10) ? core->v_bus_fdbk->value : CTL_CTRL_CONST_1_OVER_10;
     ctrl_gt v_out_comp = ctl_div(v_ref_total, v_bus_safe);
 
     core->v_out_ref = ctl_sat(v_out_comp, core->v_out_max, -core->v_out_max);

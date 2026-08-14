@@ -126,15 +126,15 @@ void ctl_init_pmsm_hfi_consultant(ctl_pmsm_hfi_t* hfi, const ctl_consultant_pmsm
 
 GMP_STATIC_INLINE void ctl_clear_pmsm_hfi(ctl_pmsm_hfi_t* hfi)
 {
-    hfi->carrier_angle_pu = float2ctrl(0.0f);
-    hfi->v_d_inj_out = float2ctrl(0.0f);
+    hfi->carrier_angle_pu = CTL_CTRL_CONST_ZERO;
+    hfi->v_d_inj_out = CTL_CTRL_CONST_ZERO;
 
     ctl_clear_filter_iir1(&hfi->lpf_iq);
     ctl_clear_filter_iir1(&hfi->lpf_demod);
     ctl_clear_ato_pll(&hfi->ato_pll);
 
-    hfi->pos_out.elec_position = float2ctrl(0.0f);
-    hfi->spd_out.speed = float2ctrl(0.0f);
+    hfi->pos_out.elec_position = CTL_CTRL_CONST_ZERO;
+    hfi->spd_out.speed = CTL_CTRL_CONST_ZERO;
 }
 
 GMP_STATIC_INLINE void ctl_enable_pmsm_hfi(ctl_pmsm_hfi_t* hfi)
@@ -144,7 +144,7 @@ GMP_STATIC_INLINE void ctl_enable_pmsm_hfi(ctl_pmsm_hfi_t* hfi)
 GMP_STATIC_INLINE void ctl_disable_pmsm_hfi(ctl_pmsm_hfi_t* hfi)
 {
     hfi->flag_enable = 0;
-    hfi->v_d_inj_out = float2ctrl(0.0f);
+    hfi->v_d_inj_out = CTL_CTRL_CONST_ZERO;
 }
 
 /**
@@ -158,7 +158,7 @@ GMP_STATIC_INLINE void ctl_step_pmsm_hfi(ctl_pmsm_hfi_t* hfi, ctrl_gt i_alpha, c
 {
     if (!hfi->flag_enable)
     {
-        hfi->v_d_inj_out = float2ctrl(0.0f);
+        hfi->v_d_inj_out = CTL_CTRL_CONST_ZERO;
         return;
     }
 

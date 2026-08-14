@@ -81,6 +81,22 @@ Generated MATLAB initialization scripts finish with a console summary of the
 project identity, suite/version, selected hardware, bound Common files, enabled
 variable values, and disabled macro names.
 
+## Numeric-domain contract
+
+Schema parameters use `numeric_domain` to distinguish `real`, `parameter`,
+`ctrl`, and nonnumeric `raw` values. Physical and tuning values normally select
+`parameter`; SDPE then emits `real2param(value)` without an `f` suffix so a
+double `parameter_gt` retains the JSON precision. Use `ctrl` only when a macro
+is explicitly consumed as cached real-time data. Project bindings provide the
+matching `real`, `parameter`, and `ctrl` keys.
+
+MATLAB initialization scripts define `real2param`, `real2ctrl`, `param2ctrl`,
+and `ctrl2param` function handles. Their default simulation domains are double;
+projects may override the `GMP_SDPE_*_TYPE` variables and conversion handles
+before running the generated scripts. The C conversion macros do not create an
+explicit `real_gt` temporary, allowing embedded compilers to fold constants
+directly into the selected destination representation.
+
 ## Suite layout contract
 
 Suite requirements use one repository-wide top-level order: `Peripheral

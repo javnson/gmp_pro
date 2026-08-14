@@ -196,14 +196,14 @@ GMP_STATIC_INLINE void ctl_clear_fdrc(ctl_fdrc_t* obj)
     uint32_t i;
 
     obj->buffer_index = 0;
-    obj->output = float2ctrl(0.0f);
+    obj->output = CTL_CTRL_CONST_ZERO;
     ctl_clear_biquad_filter(&obj->q_filter);
 
     if (obj->buffer != NULL)
     {
         for (i = 0; i < obj->buffer_capacity; i++)
         {
-            obj->buffer[i] = float2ctrl(0.0f);
+            obj->buffer[i] = CTL_CTRL_CONST_ZERO;
         }
     }
 }

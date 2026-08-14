@@ -64,9 +64,9 @@ GMP_STATIC_INLINE void ctl_clear_sms_pq(ctl_sms_pq_t* pq)
     ctl_clear_biquad_filter(&pq->lpf_p);
     ctl_clear_biquad_filter(&pq->lpf_q);
 
-    pq->active_power_p = float2ctrl(0.0f);
-    pq->reactive_power_q = float2ctrl(0.0f);
-    pq->apparent_power_s = float2ctrl(0.0f);
+    pq->active_power_p = CTL_CTRL_CONST_ZERO;
+    pq->reactive_power_q = CTL_CTRL_CONST_ZERO;
+    pq->apparent_power_s = CTL_CTRL_CONST_ZERO;
 
     ctl_vector2_clear(&pq->i_ab);
 }
@@ -94,11 +94,11 @@ GMP_STATIC_INLINE void ctl_step_sms_pq(ctl_sms_pq_t* pq, ctrl_gt v_alpha, ctrl_g
     // 3. Instantaneous Power Theory for Single Phase (using peak values)
     // Note: The 0.5f multiplier is required because SOGI produces peak-amplitude signals.
     // P = 1/2 * (V_alpha * I_alpha + V_beta * I_beta)
-    ctrl_gt p_inst = ctl_mul(float2ctrl(0.5f),
+    ctrl_gt p_inst = ctl_mul(CTL_CTRL_CONST_1_OVER_2,
                              ctl_mul(v_alpha, pq->i_ab.dat[phase_alpha]) + ctl_mul(v_beta, pq->i_ab.dat[phase_beta]));
 
     // Q = 1/2 * (V_beta * I_alpha - V_alpha * I_beta)
-    ctrl_gt q_inst = ctl_mul(float2ctrl(0.5f),
+    ctrl_gt q_inst = ctl_mul(CTL_CTRL_CONST_1_OVER_2,
                              ctl_mul(v_beta, pq->i_ab.dat[phase_alpha]) - ctl_mul(v_alpha, pq->i_ab.dat[phase_beta]));
 
     // 4. Low-Pass Filtering (Removes switching noise, NOT double-line frequency)

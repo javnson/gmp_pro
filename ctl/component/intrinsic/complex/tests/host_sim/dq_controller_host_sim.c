@@ -8,44 +8,44 @@
 
 static int near_value(ctrl_gt actual, ctrl_gt expected, ctrl_gt tolerance)
 {
-    return fabsf(ctrl2float(actual - expected)) <= ctrl2float(tolerance);
+    return fabsf(ctrl2param(actual - expected)) <= ctrl2param(tolerance);
 }
 
 static int test_vector_limiters(void)
 {
-    ctl_vector2_t vec = {{float2ctrl(3.0f), float2ctrl(4.0f)}};
-    ctl_vector2_t approx_vec = {{float2ctrl(1.2f), float2ctrl(1.6f)}};
-    ctl_vector2_t far_vec = {{float2ctrl(2.0f), float2ctrl(0.0f)}};
-    ctl_vector2_t zero_limit_vec = {{float2ctrl(1.0f), float2ctrl(0.0f)}};
-    ctl_vector2_t max = {{float2ctrl(1.0f), float2ctrl(2.0f)}};
-    ctl_vector2_t min = {{float2ctrl(-1.0f), float2ctrl(-2.0f)}};
+    ctl_vector2_t vec = {{CTL_CTRL_CONST_3, CTL_CTRL_CONST_4}};
+    ctl_vector2_t approx_vec = {{real2ctrl(1.2f), real2ctrl(1.6f)}};
+    ctl_vector2_t far_vec = {{CTL_CTRL_CONST_2, CTL_CTRL_CONST_ZERO}};
+    ctl_vector2_t zero_limit_vec = {{CTL_CTRL_CONST_1, CTL_CTRL_CONST_ZERO}};
+    ctl_vector2_t max = {{CTL_CTRL_CONST_1, CTL_CTRL_CONST_2}};
+    ctl_vector2_t min = {{(-CTL_CTRL_CONST_1), (-CTL_CTRL_CONST_2)}};
 
-    ctl_vector2_sat_circle_sq(&vec, &vec, float2ctrl(4.0f));
-    if (!near_value(vec.dat[0], float2ctrl(1.2f), float2ctrl(1e-5f)) ||
-        !near_value(vec.dat[1], float2ctrl(1.6f), float2ctrl(1e-5f)))
+    ctl_vector2_sat_circle_sq(&vec, &vec, CTL_CTRL_CONST_4);
+    if (!near_value(vec.dat[0], real2ctrl(1.2f), real2ctrl(1e-5f)) ||
+        !near_value(vec.dat[1], real2ctrl(1.6f), real2ctrl(1e-5f)))
         return 1;
 
-    ctl_vector2_sat_circle_sq_taylor(&approx_vec, &approx_vec, float2ctrl(3.24f));
-    if (ctl_vector2_mag_sq(&approx_vec) > float2ctrl(3.24f) + float2ctrl(1e-5f) ||
-        approx_vec.dat[0] <= float2ctrl(0.0f) ||
+    ctl_vector2_sat_circle_sq_taylor(&approx_vec, &approx_vec, real2ctrl(3.24f));
+    if (ctl_vector2_mag_sq(&approx_vec) > real2ctrl(3.24f) + real2ctrl(1e-5f) ||
+        approx_vec.dat[0] <= CTL_CTRL_CONST_ZERO ||
         !near_value(ctl_div(approx_vec.dat[1], approx_vec.dat[0]),
-                    float2ctrl(4.0f / 3.0f), float2ctrl(1e-5f)))
+                    real2ctrl(4.0f / 3.0f), real2ctrl(1e-5f)))
         return 2;
 
-    ctl_vector2_sat_circle_sq_taylor(&far_vec, &far_vec, float2ctrl(1.0f));
-    ctl_vector2_sat_circle_sq(&zero_limit_vec, &zero_limit_vec, float2ctrl(0.0f));
-    if (!near_value(far_vec.dat[0], float2ctrl(0.0f), float2ctrl(1e-5f)) ||
-        !near_value(zero_limit_vec.dat[0], float2ctrl(0.0f), float2ctrl(1e-5f)))
+    ctl_vector2_sat_circle_sq_taylor(&far_vec, &far_vec, CTL_CTRL_CONST_1);
+    ctl_vector2_sat_circle_sq(&zero_limit_vec, &zero_limit_vec, CTL_CTRL_CONST_ZERO);
+    if (!near_value(far_vec.dat[0], CTL_CTRL_CONST_ZERO, real2ctrl(1e-5f)) ||
+        !near_value(zero_limit_vec.dat[0], CTL_CTRL_CONST_ZERO, real2ctrl(1e-5f)))
         return 3;
 
     ctl_vector2_sat_rect(&vec, &vec, &max, &min);
-    if (!near_value(vec.dat[0], float2ctrl(1.0f), float2ctrl(1e-5f)) ||
-        !near_value(vec.dat[1], float2ctrl(1.6f), float2ctrl(1e-5f)))
+    if (!near_value(vec.dat[0], CTL_CTRL_CONST_1, real2ctrl(1e-5f)) ||
+        !near_value(vec.dat[1], real2ctrl(1.6f), real2ctrl(1e-5f)))
         return 4;
 
-    ctl_vector2_sat_square(&vec, &vec, float2ctrl(0.5f));
-    if (!near_value(vec.dat[0], float2ctrl(0.5f), float2ctrl(1e-5f)) ||
-        !near_value(vec.dat[1], float2ctrl(0.5f), float2ctrl(1e-5f)))
+    ctl_vector2_sat_square(&vec, &vec, CTL_CTRL_CONST_1_OVER_2);
+    if (!near_value(vec.dat[0], CTL_CTRL_CONST_1_OVER_2, real2ctrl(1e-5f)) ||
+        !near_value(vec.dat[1], CTL_CTRL_CONST_1_OVER_2, real2ctrl(1e-5f)))
         return 5;
 
     return 0;
@@ -57,12 +57,12 @@ static int test_scalar_compatibility(void)
     ctl_ladrc1_t ladrc;
 
     ctl_init_pid(&pid, 2.0f, 0.0f, 0.0f, 10000.0f);
-    if (!near_value(ctl_step_pid_par(&pid, float2ctrl(1.0f)), float2ctrl(1.0f), float2ctrl(1e-5f)))
+    if (!near_value(ctl_step_pid_par(&pid, CTL_CTRL_CONST_1), CTL_CTRL_CONST_1, real2ctrl(1e-5f)))
         return 1;
 
     ctl_init_ladrc1(&ladrc, 1.0f, 100.0f, 500.0f, 10000.0f);
-    if (!near_value(ctl_step_ladrc1(&ladrc, float2ctrl(10.0f), float2ctrl(0.0f)),
-                    float2ctrl(1.0f), float2ctrl(1e-5f)))
+    if (!near_value(ctl_step_ladrc1(&ladrc, real2ctrl(10.0f), CTL_CTRL_CONST_ZERO),
+                    CTL_CTRL_CONST_1, real2ctrl(1e-5f)))
         return 2;
 
     return 0;
@@ -71,34 +71,34 @@ static int test_scalar_compatibility(void)
 static int test_dq_pi(void)
 {
     ctl_dq_pi_t dq;
-    ctl_vector2_t target = {{float2ctrl(3.0f), float2ctrl(4.0f)}};
-    ctl_vector2_t feedback = {{float2ctrl(0.0f), float2ctrl(0.0f)}};
-    ctl_vector2_t feedforward = {{float2ctrl(0.5f), float2ctrl(0.0f)}};
-    ctl_vector2_t max = {{float2ctrl(1.0f), float2ctrl(2.0f)}};
-    ctl_vector2_t min = {{float2ctrl(-1.0f), float2ctrl(-2.0f)}};
+    ctl_vector2_t target = {{CTL_CTRL_CONST_3, CTL_CTRL_CONST_4}};
+    ctl_vector2_t feedback = {{CTL_CTRL_CONST_ZERO, CTL_CTRL_CONST_ZERO}};
+    ctl_vector2_t feedforward = {{CTL_CTRL_CONST_1_OVER_2, CTL_CTRL_CONST_ZERO}};
+    ctl_vector2_t max = {{CTL_CTRL_CONST_1, CTL_CTRL_CONST_2}};
+    ctl_vector2_t min = {{(-CTL_CTRL_CONST_1), (-CTL_CTRL_CONST_2)}};
     ctl_vector2_t output;
 
     ctl_init_dq_pi(&dq, 1.0f, 0.0f, 1.0f, 0.0f, 10000.0f);
-    ctl_set_pid_int_limit(&dq.axis[0], float2ctrl(10.0f), float2ctrl(-10.0f));
-    ctl_set_pid_int_limit(&dq.axis[1], float2ctrl(10.0f), float2ctrl(-10.0f));
-    ctl_set_dq_pi_circle_limit_sq(&dq, float2ctrl(4.0f));
+    ctl_set_pid_int_limit(&dq.axis[0], real2ctrl(10.0f), real2ctrl(-10.0f));
+    ctl_set_pid_int_limit(&dq.axis[1], real2ctrl(10.0f), real2ctrl(-10.0f));
+    ctl_set_dq_pi_circle_limit_sq(&dq, CTL_CTRL_CONST_4);
     ctl_set_dq_pi_rect_limit(&dq, &max, &min);
     ctl_enable_dq_pi_feedforward(&dq);
     ctl_enable_dq_pi_circle_limit(&dq);
 
     ctl_step_dq_pi(&dq, &target, &feedback, &feedforward, &output);
 
-    if (!near_value(output.dat[0], float2ctrl(1.0f), float2ctrl(1e-5f)))
+    if (!near_value(output.dat[0], CTL_CTRL_CONST_1, real2ctrl(1e-5f)))
         return 1;
-    if (ctl_vector2_mag(&output) > float2ctrl(2.0f) + float2ctrl(1e-5f))
+    if (ctl_vector2_mag(&output) > CTL_CTRL_CONST_2 + real2ctrl(1e-5f))
         return 2;
     if (!near_value(dq.axis[0].p_term + dq.axis[0].i_term,
-                    output.dat[0] - feedforward.dat[0], float2ctrl(1e-5f)))
+                    output.dat[0] - feedforward.dat[0], real2ctrl(1e-5f)))
         return 3;
 
     ctl_disable_dq_pi_feedforward(&dq);
     ctl_step_dq_pi(&dq, &target, &feedback, NULL, NULL);
-    if (!near_value(dq.ff_out.dat[0], float2ctrl(0.0f), float2ctrl(1e-5f)))
+    if (!near_value(dq.ff_out.dat[0], CTL_CTRL_CONST_ZERO, real2ctrl(1e-5f)))
         return 4;
 
     return 0;
@@ -107,23 +107,23 @@ static int test_dq_pi(void)
 static int test_dq_ladrc(void)
 {
     ctl_dq_ladrc1_t dq;
-    ctl_vector2_t zero = {{float2ctrl(0.0f), float2ctrl(0.0f)}};
-    ctl_vector2_t feedforward = {{float2ctrl(1.0f), float2ctrl(0.0f)}};
-    ctl_vector2_t max = {{float2ctrl(0.4f), float2ctrl(1.0f)}};
-    ctl_vector2_t min = {{float2ctrl(-0.4f), float2ctrl(-1.0f)}};
+    ctl_vector2_t zero = {{CTL_CTRL_CONST_ZERO, CTL_CTRL_CONST_ZERO}};
+    ctl_vector2_t feedforward = {{CTL_CTRL_CONST_1, CTL_CTRL_CONST_ZERO}};
+    ctl_vector2_t max = {{real2ctrl(0.4f), CTL_CTRL_CONST_1}};
+    ctl_vector2_t min = {{real2ctrl(-0.4f), (-CTL_CTRL_CONST_1)}};
     ctl_vector2_t output;
 
     ctl_init_dq_ladrc1(&dq, 1.0f, 100.0f, 500.0f, 1.0f, 100.0f, 500.0f, 10000.0f);
-    ctl_set_dq_ladrc1_circle_limit(&dq, float2ctrl(0.5f));
+    ctl_set_dq_ladrc1_circle_limit(&dq, CTL_CTRL_CONST_1_OVER_2);
     ctl_set_dq_ladrc1_rect_limit(&dq, &max, &min);
     ctl_enable_dq_ladrc1_feedforward(&dq);
     ctl_enable_dq_ladrc1_circle_limit(&dq);
 
     ctl_step_dq_ladrc1(&dq, &zero, &zero, &feedforward, &output);
 
-    if (!near_value(output.dat[0], float2ctrl(0.4f), float2ctrl(1e-5f)))
+    if (!near_value(output.dat[0], real2ctrl(0.4f), real2ctrl(1e-5f)))
         return 1;
-    if (!near_value(dq.axis[0].u_prev, output.dat[0], float2ctrl(1e-5f)))
+    if (!near_value(dq.axis[0].u_prev, output.dat[0], real2ctrl(1e-5f)))
         return 2;
 
     return 0;

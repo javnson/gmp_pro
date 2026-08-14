@@ -30,9 +30,9 @@ void ctl_init_vip_protection(std_vip_protection_t* obj, parameter_gt power_f_cut
                              parameter_gt i_base, parameter_gt p_max, parameter_gt fs)
 {
     // Set protection thresholds in per-unit values
-    obj->voltage_max = float2ctrl(v_max / v_base);
-    obj->current_max = float2ctrl(i_max / i_base);
-    obj->power_max = float2ctrl(p_max / v_base / i_base);
+    obj->voltage_max = real2ctrl(v_max / v_base);
+    obj->current_max = real2ctrl(i_max / i_base);
+    obj->power_max = real2ctrl(p_max / v_base / i_base);
 
     // Initialize low-pass filters for measurements
     ctl_init_lp_filter(&obj->power_filter, fs, power_f_cut);

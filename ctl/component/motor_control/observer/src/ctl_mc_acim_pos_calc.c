@@ -18,14 +18,14 @@
 
 void ctl_init_im_pos_calc(ctl_im_pos_calc_t* calc, const ctl_im_pos_calc_init_t* init)
 {
-    calc->sf_lpf_kr = float2ctrl(init->sf_lpf_kr);
-    calc->sf_slip_const = float2ctrl(init->sf_slip_const);
-    calc->sf_mech_to_elec = float2ctrl(init->sf_mech_to_elec);
-    calc->sf_w_to_angle = float2ctrl(init->sf_w_to_angle);
+    calc->sf_lpf_kr = param2ctrl(init->sf_lpf_kr);
+    calc->sf_slip_const = param2ctrl(init->sf_slip_const);
+    calc->sf_mech_to_elec = param2ctrl(init->sf_mech_to_elec);
+    calc->sf_w_to_angle = param2ctrl(init->sf_w_to_angle);
 
     // Robust minimum threshold limit to prevent division by zero
     parameter_gt lim = (init->i_md_min_limit_pu > 1e-4f) ? init->i_md_min_limit_pu : 0.01f;
-    calc->i_md_min_limit = float2ctrl(lim);
+    calc->i_md_min_limit = real2ctrl(lim);
 
     ctl_clear_im_pos_calc(calc);
     ctl_disable_im_pos_calc(calc);

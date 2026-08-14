@@ -148,7 +148,7 @@ GMP_STATIC_INLINE void ctl_clear_mech_ctrl(ctl_mech_ctrl_t* ctrl)
     ctl_clear_pid(&ctrl->pos_ctrl);
     ctl_clear_slope_limiter(&ctrl->vel_traj);
     ctl_clear_divider(&ctrl->div_mech);
-    ctrl->torque_cmd = float2ctrl(0.0f);
+    ctrl->torque_cmd = CTL_CTRL_CONST_ZERO;
 }
 
 /**
@@ -167,7 +167,7 @@ GMP_STATIC_INLINE void ctl_set_mech_mode_rt(ctl_mech_ctrl_t* ctrl, ctl_mech_mode
         // Bumpless Transfer Logic
         ctl_set_pid_integrator(&ctrl->vel_ctrl, current_feedback);
 
-        ctrl_gt actual_spd = (ctrl->spd_if != NULL) ? ctrl->spd_if->speed : float2ctrl(0.0f);
+        ctrl_gt actual_spd = (ctrl->spd_if != NULL) ? ctrl->spd_if->speed : CTL_CTRL_CONST_ZERO;
         ctl_set_slope_limiter_current(&ctrl->vel_traj, actual_spd);
         ctrl->target_velocity = actual_spd;
 
@@ -218,7 +218,7 @@ GMP_STATIC_INLINE void ctl_step_mech_ctrl(ctl_mech_ctrl_t* ctrl)
 {
     if (ctrl->active_mode == MECH_MODE_DISABLE)
     {
-        ctrl->torque_cmd = float2ctrl(0.0f);
+        ctrl->torque_cmd = CTL_CTRL_CONST_ZERO;
         return;
     }
 
@@ -250,7 +250,7 @@ GMP_STATIC_INLINE void ctl_step_mech_ctrl_pip(ctl_mech_ctrl_t* ctrl)
 {
     if (ctrl->active_mode == MECH_MODE_DISABLE)
     {
-        ctrl->torque_cmd = float2ctrl(0.0f);
+        ctrl->torque_cmd = CTL_CTRL_CONST_ZERO;
         return;
     }
 

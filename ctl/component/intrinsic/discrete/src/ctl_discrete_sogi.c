@@ -29,14 +29,14 @@ void ctl_init_discrete_sogi(
     osgy = (parameter_gt)(wn * delta_t * wn * delta_t);
     temp = (parameter_gt)1.0 / (osgx + osgy + 4.0f);
 
-    sogi->b0 = float2ctrl(osgx * temp);
-    sogi->b2 = float2ctrl(-osgx * temp);
-    sogi->a1 = float2ctrl((2.0f * (4.0f - osgy)) * temp);
-    sogi->a2 = float2ctrl((osgx - osgy - 4.0f) * temp);
+    sogi->b0 = real2ctrl(osgx * temp);
+    sogi->b2 = real2ctrl(-osgx * temp);
+    sogi->a1 = real2ctrl((2.0f * (4.0f - osgy)) * temp);
+    sogi->a2 = real2ctrl((osgx - osgy - 4.0f) * temp);
 
     parameter_gt qb0_f = (k_damp * osgy) * temp;
-    sogi->qb0 = float2ctrl(qb0_f);
-    sogi->qb1 = float2ctrl(qb0_f * (2.0f));
+    sogi->qb0 = real2ctrl(qb0_f);
+    sogi->qb1 = real2ctrl(qb0_f * (2.0f));
     sogi->qb2 = sogi->qb0;
 }
 
@@ -59,5 +59,5 @@ void ctl_init_discrete_sogi_dc(discrete_sogi_dc_t* sogi_dc, parameter_gt k_damp,
     parameter_gt ts = 1.0f / fs;
 
     // We store this as a fixed gain to use in the step function
-    sogi_dc->dc_integ_gain = float2ctrl(ts * omega0 * k_dc);
+    sogi_dc->dc_integ_gain = real2ctrl(ts * omega0 * k_dc);
 }

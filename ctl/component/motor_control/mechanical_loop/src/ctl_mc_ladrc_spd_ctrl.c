@@ -42,19 +42,19 @@ void ctl_autotuning_ladrc_spd_ctrl(ctl_ladrc_spd_init_t* init, ctl_ladrc_spd_ctr
     ctl_init_ladrc1(&ctrl->ladrc_core, b0_pu, init->target_wc, init->target_wo, fs_mech);
 
     // Override default LADRC limits with user's specific current limits
-    ctl_set_ladrc1_limit(&ctrl->ladrc_core, float2ctrl(init->cur_limit), float2ctrl(-init->cur_limit));
+    ctl_set_ladrc1_limit(&ctrl->ladrc_core, param2ctrl(init->cur_limit), real2ctrl(-init->cur_limit));
 
     // 4. Initialize Velocity Trajectory (Convert PU/s to PU/tick)
     parameter_gt slope_per_tick = init->speed_slope_limit / fs_mech;
     ctl_init_slope_limiter(&ctrl->vel_traj, slope_per_tick, -slope_per_tick, 1.0f);
-    ctl_set_slope_limiter_slopes(&ctrl->vel_traj, float2ctrl(slope_per_tick), float2ctrl(-slope_per_tick));
+    ctl_set_slope_limiter_slopes(&ctrl->vel_traj, real2ctrl(slope_per_tick), real2ctrl(-slope_per_tick));
 
     // 5. Initialize Divider
     ctl_init_divider(&ctrl->div_mech, init->mech_division);
 
     // 6. Apply Settings & Clear States
-    ctrl->speed_limit = float2ctrl(init->speed_limit);
-    ctrl->cur_limit = float2ctrl(init->cur_limit);
+    ctrl->speed_limit = param2ctrl(init->speed_limit);
+    ctrl->cur_limit = param2ctrl(init->cur_limit);
     ctrl->active_mode = LADRC_SPD_MODE_DISABLE;
     ctrl->spd_if = NULL;
 

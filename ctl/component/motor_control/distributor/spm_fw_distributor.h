@@ -108,8 +108,8 @@ void ctl_init_spm_fw_distributor(ctl_spm_fw_distributor_t* dist, const ctl_spm_f
 GMP_STATIC_INLINE void ctl_clear_spm_fw_distributor(ctl_spm_fw_distributor_t* dist)
 {
     ctl_vector2_clear(&dist->idq_ref);
-    dist->delta_alpha_pu = float2ctrl(0.0f);
-    dist->alpha_out_pu = float2ctrl(0.0f);
+    dist->delta_alpha_pu = CTL_CTRL_CONST_ZERO;
+    dist->alpha_out_pu = CTL_CTRL_CONST_ZERO;
     ctl_clear_pid(&dist->fw_pid);
 }
 
@@ -120,7 +120,7 @@ GMP_STATIC_INLINE void ctl_clear_spm_fw_distributor(ctl_spm_fw_distributor_t* di
 GMP_STATIC_INLINE void ctl_enable_spm_fw_distributor(ctl_spm_fw_distributor_t* dist)
 {
     ctl_clear_pid(&dist->fw_pid);
-    dist->delta_alpha_pu = float2ctrl(0.0f);
+    dist->delta_alpha_pu = CTL_CTRL_CONST_ZERO;
     dist->flag_enable_fw = 1;
 }
 
@@ -132,7 +132,7 @@ GMP_STATIC_INLINE void ctl_enable_spm_fw_distributor(ctl_spm_fw_distributor_t* d
 GMP_STATIC_INLINE void ctl_disable_spm_fw_distributor(ctl_spm_fw_distributor_t* dist)
 {
     dist->flag_enable_fw = 0;
-    dist->delta_alpha_pu = float2ctrl(0.0f); // Cut off the output immediately
+    dist->delta_alpha_pu = CTL_CTRL_CONST_ZERO; // Cut off the output immediately
     // Notice: ctl_clear_pid is NOT called here to protect the scene.
 }
 
@@ -144,15 +144,15 @@ GMP_STATIC_INLINE void ctl_step_spm_fw_distributor(ctl_spm_fw_distributor_t* dis
     ctrl_gt alpha_base_pu;
 
     // 1. Determine base angle based on Torque Direction
-    ctrl_gt im_mag = (im < float2ctrl(0.0f)) ? -im : im;
+    ctrl_gt im_mag = (im < CTL_CTRL_CONST_ZERO) ? -im : im;
 
-    if (im < float2ctrl(0.0f))
+    if (im < CTL_CTRL_CONST_ZERO)
     {
-        alpha_base_pu = float2ctrl(0.75f); // Negative torque: align to -q axis (-90 deg)
+        alpha_base_pu = real2ctrl(0.75f); // Negative torque: align to -q axis (-90 deg)
     }
     else
     {
-        alpha_base_pu = float2ctrl(0.25f); // Positive torque: align to +q axis (+90 deg)
+        alpha_base_pu = real2ctrl(0.25f); // Positive torque: align to +q axis (+90 deg)
     }
 
     // 2. Field Weakening Angle Compensation
@@ -170,11 +170,11 @@ GMP_STATIC_INLINE void ctl_step_spm_fw_distributor(ctl_spm_fw_distributor_t* dis
     else
     {
         // Fail-safe: ensure delta is rigorously 0 when disabled
-        dist->delta_alpha_pu = float2ctrl(0.0f);
+        dist->delta_alpha_pu = CTL_CTRL_CONST_ZERO;
     }
 
     // 3. Final Angle Calculation (Quadrant Safe)
-    if (im < float2ctrl(0.0f))
+    if (im < CTL_CTRL_CONST_ZERO)
     {
         // Subtract delta to push -q towards -d axis
         dist->alpha_out_pu = alpha_base_pu - dist->delta_alpha_pu;
@@ -186,7 +186,7 @@ GMP_STATIC_INLINE void ctl_step_spm_fw_distributor(ctl_spm_fw_distributor_t* dis
     }
 
     // 4. Calculate id, iq components and store in the vector
-    ctrl_gt alpha_rad = ctl_mul(dist->alpha_out_pu, float2ctrl(CTL_PARAM_CONST_2PI));
+    ctrl_gt alpha_rad = ctl_mul(dist->alpha_out_pu, real2ctrl(CTL_PARAM_CONST_2PI));
     dist->idq_ref.dat[phase_d] = ctl_mul(im_mag, ctl_cos(alpha_rad));
     dist->idq_ref.dat[phase_q] = ctl_mul(im_mag, ctl_sin(alpha_rad));
 }

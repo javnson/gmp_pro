@@ -14,26 +14,20 @@ void ctl_init_pid_Tmode(
     // controller frequency
     parameter_gt fs)
 {
-    gmp_ctl_assert(fs > 0.0f);
+    parameter_gt ki;
+    parameter_gt kd;
 
-    hpid->kp = float2ctrl(kp);
+    gmp_ctl_assert(fs > CTL_PARAM_CONST_ZERO);
+    ki = (Ti <= CTL_PARAM_CONST_EPSILON) ? CTL_PARAM_CONST_ZERO : CTL_PARAM_CONST_1 / (fs * Ti);
+    kd = fs * Td;
 
-    if (Ti <= 0.000001f)
-    {
-        hpid->ki = float2ctrl(0.0f);
-    }
-    else
-    {
-        hpid->ki = float2ctrl(1.0f / (fs * Ti));
-    }
-
-    hpid->kd = float2ctrl(1.0f * fs * Td);
-
-    hpid->out_min = float2ctrl(-1.0f);
-    hpid->out_max = float2ctrl(1.0f);
-
-    hpid->integral_min = float2ctrl(-0.8f);
-    hpid->integral_max = float2ctrl(0.8f);
+    hpid->kp = param2ctrl(kp);
+    hpid->ki = param2ctrl(ki);
+    hpid->kd = param2ctrl(kd);
+    hpid->out_min = -CTL_CTRL_CONST_1;
+    hpid->out_max = CTL_CTRL_CONST_1;
+    hpid->integral_min = real2ctrl(-0.8);
+    hpid->integral_max = real2ctrl(0.8);
 
     ctl_clear_pid(hpid);
 }
@@ -46,15 +40,20 @@ void ctl_init_pid(
     // controller frequency
     parameter_gt fs)
 {
-    hpid->kp = float2ctrl(kp);
-    hpid->ki = float2ctrl(ki / fs);
-    hpid->kd = float2ctrl(1.0f * fs * kd);
+    parameter_gt ki_per_sample;
+    parameter_gt kd_per_sample;
 
-    hpid->out_min = float2ctrl(-1.0f);
-    hpid->out_max = float2ctrl(1.0f);
+    gmp_ctl_assert(fs > CTL_PARAM_CONST_ZERO);
+    ki_per_sample = ki / fs;
+    kd_per_sample = fs * kd;
 
-    hpid->integral_min = float2ctrl(-0.8f);
-    hpid->integral_max = float2ctrl(0.8f);
+    hpid->kp = param2ctrl(kp);
+    hpid->ki = param2ctrl(ki_per_sample);
+    hpid->kd = param2ctrl(kd_per_sample);
+    hpid->out_min = -CTL_CTRL_CONST_1;
+    hpid->out_max = CTL_CTRL_CONST_1;
+    hpid->integral_min = real2ctrl(-0.8);
+    hpid->integral_max = real2ctrl(0.8);
 
     ctl_clear_pid(hpid);
 }

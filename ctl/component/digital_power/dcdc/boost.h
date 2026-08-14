@@ -98,8 +98,8 @@ GMP_STATIC_INLINE void ctl_init_boost_modulator(boost_modulator_t* mod, pwm_gt f
 
 GMP_STATIC_INLINE pwm_gt ctl_step_boost_modulator(boost_modulator_t* mod, ctrl_gt v_req, ctrl_gt v_out)
 {
-    ctrl_gt v_out_safe = (v_out > float2ctrl(0.1f)) ? v_out : float2ctrl(0.1f);
-    ctrl_gt duty = float2ctrl(1.0f) - ctl_div(v_req, v_out_safe);
+    ctrl_gt v_out_safe = (v_out > CTL_CTRL_CONST_1_OVER_10) ? v_out : CTL_CTRL_CONST_1_OVER_10;
+    ctrl_gt duty = CTL_CTRL_CONST_1 - ctl_div(v_req, v_out_safe);
 
     duty = ctl_sat(duty, mod->duty_max, mod->duty_min);
     return ctl_step_pwm_channel(&mod->pwm, duty);

@@ -109,7 +109,8 @@
       "c_name": "DEADTIME_NS",
       "unit": "ns",
       "required": false,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Recommended hardware deadtime.",
       "default": 0.0
     },
@@ -198,7 +199,8 @@
       "c_name": "BUS_CAPACITANCE_F",
       "unit": "F",
       "required": false,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Optional local DC bus capacitance.",
       "default": 0.0
     }

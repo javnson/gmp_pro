@@ -44,9 +44,9 @@ typedef struct _tag_ctl_vector3_t
  */
 GMP_STATIC_INLINE void ctl_vector3_clear(ctl_vector3_t* vec)
 {
-    vec->dat[0] = float2ctrl(0.0f);
-    vec->dat[1] = float2ctrl(0.0f);
-    vec->dat[2] = float2ctrl(0.0f);
+    vec->dat[0] = real2ctrl(0.0f);
+    vec->dat[1] = real2ctrl(0.0f);
+    vec->dat[2] = real2ctrl(0.0f);
 }
 
 /**

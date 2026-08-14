@@ -91,22 +91,22 @@ void ctl_init()
 #if (BUILD_LEVEL == 1)
     // Open loop
     ctl_boost_ctrl_openloop_mode(&boost_ctrl);
-    ctl_set_boost_ctrl_voltage_openloop(&boost_ctrl, float2ctrl(0.5));
+    ctl_set_boost_ctrl_voltage_openloop(&boost_ctrl, real2ctrl(0.5));
 
 #elif (BUILD_LEVEL == 2)
     // Current Loop
     ctl_boost_ctrl_current_mode(&boost_ctrl);
-    ctl_set_boost_ctrl_current(&boost_ctrl, float2ctrl(0.3));
+    ctl_set_boost_ctrl_current(&boost_ctrl, real2ctrl(0.3));
 
 #elif (BUILD_LEVEL == 3)
     // Voltage loop
     ctl_boost_ctrl_voltage_mode(&boost_ctrl);
-    ctl_set_boost_ctrl_voltage(&boost_ctrl, float2ctrl(0.5));
+    ctl_set_boost_ctrl_voltage(&boost_ctrl, real2ctrl(0.5));
 
 #elif (BUILD_LEVEL == 4)
     // MPPT open loop
     ctl_boost_ctrl_openloop_mode(&boost_ctrl);
-    ctl_set_boost_ctrl_voltage_openloop(&boost_ctrl, float2ctrl(0.5));
+    ctl_set_boost_ctrl_voltage_openloop(&boost_ctrl, real2ctrl(0.5));
 
     ctl_disable_mppt_PnO_algo(&mppt);
 

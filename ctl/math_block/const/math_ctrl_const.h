@@ -35,6 +35,7 @@
 #define CTL_CTRL_CONST_1_OVER_2      real2ctrl(0.5)
 #define CTL_CTRL_CONST_1_OVER_3      real2ctrl(0.333333333333333333333333333333)
 #define CTL_CTRL_CONST_1_OVER_4      real2ctrl(0.25)
+#define CTL_CTRL_CONST_1_OVER_10     real2ctrl(0.1)
 #define CTL_CTRL_CONST_2_OVER_3      real2ctrl(0.666666666666666666666666666667)
 #define CTL_CTRL_CONST_3_OVER_2      real2ctrl(1.5)
 #define CTL_CTRL_CONST_PI            real2ctrl(3.141592653589793238462643383279)

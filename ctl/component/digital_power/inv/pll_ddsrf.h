@@ -1,5 +1,5 @@
 /**
- * @file pll.h
+ * @file pll_ddsrf.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Header-only library for a three-phase Synchronous Reference Frame PLL (SRF-PLL).
  * @version 1.1
@@ -107,13 +107,13 @@ void ctl_init_ddsrf_pll_auto_tune(ddsrf_pll_t* pll, parameter_gt f_base, paramet
  */
 GMP_STATIC_INLINE void ctl_clear_ddsrf_pll(ddsrf_pll_t* pll)
 {
-    pll->e_alpha = 0;
-    pll->e_beta = 0;
-    pll->e_error = 0;
+    pll->e_alpha = CTL_CTRL_CONST_ZERO;
+    pll->e_beta = CTL_CTRL_CONST_ZERO;
+    pll->e_error = CTL_CTRL_CONST_ZERO;
 
     // Reset Angle & Freq
-    pll->theta = 0;
-    pll->freq_pu = float2ctrl(1.0f); // 1.0 p.u.
+    pll->theta = CTL_CTRL_CONST_ZERO;
+    pll->freq_pu = CTL_CTRL_CONST_1; // 1.0 p.u.
     ctl_set_phasor_via_angle(pll->theta, &pll->phasor);
 
     // Reset Decoupling States
@@ -131,8 +131,8 @@ GMP_STATIC_INLINE void ctl_clear_ddsrf_pll(ddsrf_pll_t* pll)
     // Reset PID
     ctl_clear_pid(&pll->pid_pll);
 
-    pll->v_pos_mag = 0;
-    pll->v_neg_mag = 0;
+    pll->v_pos_mag = CTL_CTRL_CONST_ZERO;
+    pll->v_neg_mag = CTL_CTRL_CONST_ZERO;
 }
 
 /**
@@ -165,7 +165,8 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_ddsrf_pll(ddsrf_pll_t* pll, ctrl_gt alpha, ct
     ctrl_gt sin_sq = ctl_mul(pll->phasor.dat[phasor_sin], pll->phasor.dat[phasor_sin]);
 
     pll->phasor_2w.dat[phasor_cos] = cos_sq - sin_sq;
-    pll->phasor_2w.dat[phasor_sin] = ctl_mul2(ctl_mul(sin_theta, cos_theta));
+    pll->phasor_2w.dat[phasor_sin] =
+        ctl_mul2(ctl_mul(pll->phasor.dat[phasor_sin], pll->phasor.dat[phasor_cos]));
 
 #else
     // calculate directly.
@@ -228,7 +229,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_ddsrf_pll(ddsrf_pll_t* pll, ctrl_gt alpha, ct
     ctl_step_pid_par(&pll->pid_pll, pll->e_error);
 
     // 7. Update Frequency and Angle
-    pll->freq_pu = float2ctrl(1.0f) + pll->pid_pll.out;
+    pll->freq_pu = CTL_CTRL_CONST_1 + pll->pid_pll.out;
 
     // theta = theta + freq * Ts_gain
     pll->theta += ctl_mul(pll->freq_pu, pll->freq_sf);
@@ -255,7 +256,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_ddsrf_pll(ddsrf_pll_t* pll, ctrl_gt alpha, ct
 }
 #endif // __cplusplus
 
-#endif // _FILE_THREE_PHASE_PLL_H_
+#endif // _FILE_THREE_PHASE_PLL_DDSRF_H_
 
 /**
  * @}

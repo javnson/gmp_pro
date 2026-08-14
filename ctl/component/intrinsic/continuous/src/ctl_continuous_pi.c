@@ -14,23 +14,23 @@ void ctl_init_pi_Tmode(
 {
     gmp_ctl_assert(fs > 0.0f);
 
-    hpi->kp = float2ctrl(kp);
+    hpi->kp = real2ctrl(kp);
 
     // Safety protection: if Ti is extremely small or zero, disable integral action
     if (Ti <= 0.000001f)
     {
-        hpi->ki = float2ctrl(0.0f);
+        hpi->ki = CTL_CTRL_CONST_ZERO;
     }
     else
     {
-        hpi->ki = float2ctrl(1.0f / (fs * Ti));
+        hpi->ki = real2ctrl(1.0f / (fs * Ti));
     }
 
-    hpi->out_min = float2ctrl(-1.0f);
-    hpi->out_max = float2ctrl(1.0f);
+    hpi->out_min = (-CTL_CTRL_CONST_1);
+    hpi->out_max = CTL_CTRL_CONST_1;
 
-    hpi->integral_min = float2ctrl(-0.8f);
-    hpi->integral_max = float2ctrl(0.8f);
+    hpi->integral_min = real2ctrl(-0.8f);
+    hpi->integral_max = real2ctrl(0.8f);
 
     ctl_clear_pi(hpi);
 }
@@ -46,14 +46,14 @@ void ctl_init_pi(
 {
     gmp_ctl_assert(fs > 0.0f);
 
-    hpi->kp = float2ctrl(kp);
-    hpi->ki = float2ctrl(ki / fs);
+    hpi->kp = real2ctrl(kp);
+    hpi->ki = real2ctrl(ki / fs);
 
-    hpi->out_min = float2ctrl(-1.0f);
-    hpi->out_max = float2ctrl(1.0f);
+    hpi->out_min = (-CTL_CTRL_CONST_1);
+    hpi->out_max = CTL_CTRL_CONST_1;
 
-    hpi->integral_min = float2ctrl(-0.8f);
-    hpi->integral_max = float2ctrl(0.8f);
+    hpi->integral_min = real2ctrl(-0.8f);
+    hpi->integral_max = real2ctrl(0.8f);
 
     ctl_clear_pi(hpi);
 }

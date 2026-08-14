@@ -99,16 +99,16 @@ void ctl_init()
     acm_ctrl_init.current_Ti = (parameter_gt)(1.0/20);
 
     acm_ctrl_init.current_Td = 0;
-    acm_ctrl_init.voltage_limit_min = float2ctrl(-0.3);
-    acm_ctrl_init.voltage_limit_max = float2ctrl(0.3);
+    acm_ctrl_init.voltage_limit_min = real2ctrl(-0.3);
+    acm_ctrl_init.voltage_limit_max = real2ctrl(0.3);
 
     // speed pid controller parameters
     acm_ctrl_init.spd_ctrl_div = SPD_CONTROLLER_PWM_DIVISION;
     acm_ctrl_init.spd_pid_gain = (parameter_gt)(3.0);
     acm_ctrl_init.spd_Ti = (parameter_gt)(4.0f / MTR_CTRL_SPEED_LOOP_BW);
     acm_ctrl_init.spd_Td = 0;
-    acm_ctrl_init.current_limit_min = float2ctrl(-0.45);
-    acm_ctrl_init.current_limit_max = float2ctrl(0.45);
+    acm_ctrl_init.current_limit_min = real2ctrl(-0.45);
+    acm_ctrl_init.current_limit_max = real2ctrl(0.45);
 
     // accelerator parameters
     acm_ctrl_init.acc_limit_min = -150.0f;
@@ -139,9 +139,9 @@ void ctl_init()
 //#endif // OPENLOOP_CONST_FREQUENCY
 
     ctl_acm_sensored_ctrl_voltage_mode(&acm_ctrl);
-    ctl_set_acm_sensored_ctrl_vdq_ff(&acm_ctrl, float2ctrl(0.05), float2ctrl(0.05));
+    ctl_set_acm_sensored_ctrl_vdq_ff(&acm_ctrl, real2ctrl(0.05), real2ctrl(0.05));
 
-    ctl_set_acm_sensored_ctrl_speed(&acm_ctrl, float2ctrl(0.2));
+    ctl_set_acm_sensored_ctrl_speed(&acm_ctrl, real2ctrl(0.2));
 
 #elif (BUILD_LEVEL == 2)
 //#if defined OPENLOOP_CONST_FREQUENCY
@@ -150,16 +150,16 @@ void ctl_init()
 //    ctl_attach_mtr_position(&acm_ctrl.mtr_interface, &slope_f.enc);
 //#endif // OPENLOOP_CONST_FREQUENCY
     ctl_acm_sensored_ctrl_current_mode(&acm_ctrl);
-    ctl_set_acm_sensored_ctrl_idq_ff(&acm_ctrl, float2ctrl(0.05), float2ctrl(0.2));
+    ctl_set_acm_sensored_ctrl_idq_ff(&acm_ctrl, real2ctrl(0.05), real2ctrl(0.2));
 
-    ctl_set_acm_sensored_ctrl_speed(&acm_ctrl, float2ctrl(0.2));
+    ctl_set_acm_sensored_ctrl_speed(&acm_ctrl, real2ctrl(0.2));
 
 #elif (BUILD_LEVEL == 3)
 
     ctl_acm_sensored_ctrl_current_mode(&acm_ctrl);
-    ctl_set_acm_sensored_ctrl_idq_ff(&acm_ctrl, float2ctrl(0.2), float2ctrl(0.2));
+    ctl_set_acm_sensored_ctrl_idq_ff(&acm_ctrl, real2ctrl(0.2), real2ctrl(0.2));
 
-    ctl_set_acm_sensored_ctrl_speed(&acm_ctrl, float2ctrl(0.3));
+    ctl_set_acm_sensored_ctrl_speed(&acm_ctrl, real2ctrl(0.3));
 
 #endif // BUILD_LEVEL
 
@@ -256,7 +256,7 @@ void ctl_mainloop(void)
     // Current Loop -> Speed Loop
     //
 
-    if(acm_ctrl.speed_set - ctl_get_mtr_velocity(&acm_ctrl.mtr_interface) < ctl_mul(float2ctrl(0.1),acm_ctrl.speed_set) )
+    if(acm_ctrl.speed_set - ctl_get_mtr_velocity(&acm_ctrl.mtr_interface) < ctl_mul(real2ctrl(0.1),acm_ctrl.speed_set) )
     {
         ctl_acm_sensored_ctrl_velocity_mode(&acm_ctrl);
     }

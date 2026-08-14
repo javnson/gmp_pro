@@ -39,15 +39,15 @@ void ctl_upgrade_ladrc2(ctl_ladrc2_t* ladrc, parameter_gt b0, parameter_gt fc, p
     parameter_gt b0_inv_phy = 1.0f / b0_safe;
 
     // 4. Assign to structure (States z1, z2, z3_u are preserved for bumpless transition)
-    ladrc->h = float2ctrl(h);
-    ladrc->h_b0 = float2ctrl(h_b0_phy);
-    ladrc->h_beta1 = float2ctrl(h_beta1_phy);
-    ladrc->h_beta2 = float2ctrl(h_beta2_phy);
-    ladrc->h_beta3_b0 = float2ctrl(h_beta3_b0_phy);
+    ladrc->h = real2ctrl(h);
+    ladrc->h_b0 = real2ctrl(h_b0_phy);
+    ladrc->h_beta1 = real2ctrl(h_beta1_phy);
+    ladrc->h_beta2 = real2ctrl(h_beta2_phy);
+    ladrc->h_beta3_b0 = real2ctrl(h_beta3_b0_phy);
 
-    ladrc->kpp_b0 = float2ctrl(kpp_b0_phy);
-    ladrc->kvp_b0 = float2ctrl(kvp_b0_phy);
-    ladrc->b0_inv = float2ctrl(b0_inv_phy);
+    ladrc->kpp_b0 = real2ctrl(kpp_b0_phy);
+    ladrc->kvp_b0 = real2ctrl(kvp_b0_phy);
+    ladrc->b0_inv = real2ctrl(b0_inv_phy);
 }
 
 /**
@@ -55,9 +55,9 @@ void ctl_upgrade_ladrc2(ctl_ladrc2_t* ladrc, parameter_gt b0, parameter_gt fc, p
  */
 void ctl_init_ladrc2(ctl_ladrc2_t* ladrc, parameter_gt b0, parameter_gt fc, parameter_gt fo, parameter_gt fs)
 {
-    // Configure default output limits (¡À1 for PU systems)
-    ladrc->out_max = float2ctrl(1.0f);
-    ladrc->out_min = float2ctrl(-1.0f);
+    // Configure default output limits (+/-1 for per-unit systems).
+    ladrc->out_max = CTL_CTRL_CONST_1;
+    ladrc->out_min = (-CTL_CTRL_CONST_1);
 
     // Calculate parameters
     ctl_upgrade_ladrc2(ladrc, b0, fc, fo, fs);

@@ -99,9 +99,9 @@ void ctl_init_1p1z(ctrl_1p1z_t* c, parameter_gt gain, parameter_gt f_z, paramete
     // 修复 2：为了补偿零极点带来的固有衰减/放大，必须用乘法！
     parameter_gt final_gain = gain * dc_gain_comp;
 
-    c->coef_b[0] = float2ctrl(b0 * final_gain);
-    c->coef_b[1] = float2ctrl(b1 * final_gain);
-    c->coef_a[0] = float2ctrl(-a1);
+    c->coef_b[0] = real2ctrl(b0 * final_gain);
+    c->coef_b[1] = real2ctrl(b1 * final_gain);
+    c->coef_a[0] = real2ctrl(-a1);
 
     ctl_clear_1p1z(c);
 }
@@ -127,11 +127,11 @@ void ctl_init_2p2z_real(ctrl_2p2z_t* c, parameter_gt gain, parameter_gt f_z1, pa
         dc_gain_comp = 1.0f;
     parameter_gt final_gain = gain * dc_gain_comp;
 
-    c->coef_b[0] = float2ctrl(num_poly_z[0] * norm * final_gain);
-    c->coef_b[1] = float2ctrl(num_poly_z[1] * norm * final_gain);
-    c->coef_b[2] = float2ctrl(num_poly_z[2] * norm * final_gain);
-    c->coef_a[0] = float2ctrl(a1);
-    c->coef_a[1] = float2ctrl(a2);
+    c->coef_b[0] = real2ctrl(num_poly_z[0] * norm * final_gain);
+    c->coef_b[1] = real2ctrl(num_poly_z[1] * norm * final_gain);
+    c->coef_b[2] = real2ctrl(num_poly_z[2] * norm * final_gain);
+    c->coef_a[0] = real2ctrl(a1);
+    c->coef_a[1] = real2ctrl(a2);
 
     ctl_clear_2p2z(c);
 }
@@ -154,11 +154,11 @@ void ctl_init_2p2z_complex_zeros(ctrl_2p2z_t* c, parameter_gt gain, parameter_gt
         dc_gain_comp = 1.0f;
     parameter_gt final_gain = gain * dc_gain_comp;
 
-    c->coef_b[0] = float2ctrl(num_poly_z[0] * norm * final_gain);
-    c->coef_b[1] = float2ctrl(num_poly_z[1] * norm * final_gain);
-    c->coef_b[2] = float2ctrl(num_poly_z[2] * norm * final_gain);
-    c->coef_a[0] = float2ctrl(a1);
-    c->coef_a[1] = float2ctrl(a2);
+    c->coef_b[0] = real2ctrl(num_poly_z[0] * norm * final_gain);
+    c->coef_b[1] = real2ctrl(num_poly_z[1] * norm * final_gain);
+    c->coef_b[2] = real2ctrl(num_poly_z[2] * norm * final_gain);
+    c->coef_a[0] = real2ctrl(a1);
+    c->coef_a[1] = real2ctrl(a2);
 
     ctl_clear_2p2z(c);
 }
@@ -195,9 +195,9 @@ void ctl_init_3p3z_real(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt f_z1, pa
     parameter_gt final_gain = gain * dc_gain_comp;
 
     for (i = 0; i < 4; ++i)
-        c->coef_b[i] = float2ctrl(b3[i] * final_gain);
+        c->coef_b[i] = real2ctrl(b3[i] * final_gain);
     for (i = 0; i < 3; ++i)
-        c->coef_a[i] = float2ctrl(a3[i]);
+        c->coef_a[i] = real2ctrl(a3[i]);
     ctl_clear_3p3z(c);
 }
 
@@ -230,9 +230,9 @@ void ctl_init_3p3z_complex_zeros(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt
     parameter_gt final_gain = gain * dc_gain_comp;
 
     for (i = 0; i < 4; ++i)
-        c->coef_b[i] = float2ctrl(b3[i] * final_gain);
+        c->coef_b[i] = real2ctrl(b3[i] * final_gain);
     for (i = 0; i < 3; ++i)
-        c->coef_a[i] = float2ctrl(a3[i]);
+        c->coef_a[i] = real2ctrl(a3[i]);
     ctl_clear_3p3z(c);
 }
 
@@ -279,9 +279,9 @@ void ctl_init_3p3z_complex_poles(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt
     parameter_gt final_gain = gain * dc_gain_comp;
 
     for (i = 0; i < 4; ++i)
-        c->coef_b[i] = float2ctrl(b3[i] * final_gain);
+        c->coef_b[i] = real2ctrl(b3[i] * final_gain);
     for (i = 0; i < 3; ++i)
-        c->coef_a[i] = float2ctrl(a3[i]);
+        c->coef_a[i] = real2ctrl(a3[i]);
     ctl_clear_3p3z(c);
 }
 
@@ -329,9 +329,9 @@ void ctl_init_3p3z_complex_pair(ctrl_3p3z_t* c, parameter_gt gain, parameter_gt 
     parameter_gt final_gain = gain * (dc_gain_comp_c * dc_gain_comp_r);
 
     for (i = 0; i < 4; ++i)
-        c->coef_b[i] = float2ctrl(b3[i] * final_gain);
+        c->coef_b[i] = real2ctrl(b3[i] * final_gain);
     for (i = 0; i < 3; ++i)
-        c->coef_a[i] = float2ctrl(a3[i]);
+        c->coef_a[i] = real2ctrl(a3[i]);
     ctl_clear_3p3z(c);
 }
 

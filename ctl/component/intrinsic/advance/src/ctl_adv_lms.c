@@ -11,7 +11,7 @@ fast_gt ctl_init_lms_filter(ctl_lms_filter_t* lms, uint32_t order, parameter_gt 
                             ctrl_gt* external_weights,
                             ctrl_gt* external_buffer)
 {
-    // 防呆保护
+    // Validate buffer sizes and adaptation parameters.
     gmp_ctl_assert(order > 0);
     gmp_ctl_assert(external_weights != 0);
     gmp_ctl_assert(external_buffer != 0);
@@ -20,10 +20,10 @@ fast_gt ctl_init_lms_filter(ctl_lms_filter_t* lms, uint32_t order, parameter_gt 
     lms->weights = external_weights;
     lms->buffer = external_buffer;
 
-    // 安全转入定点域
-    lms->mu = float2ctrl(mu);
+    // Convert final initialization values into the control domain.
+    lms->mu = real2ctrl(mu);
 
     ctl_clear_lms_filter(lms);
 
-    return 1; // 成功
+    return 1; // Initialization succeeded.
 }

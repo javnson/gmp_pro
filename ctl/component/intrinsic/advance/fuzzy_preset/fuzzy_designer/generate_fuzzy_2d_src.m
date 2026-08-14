@@ -56,9 +56,9 @@ fprintf(fs, "%s %s_matrix [%d][%d] = {\r\n", ...
 for i = 1:fuzzy_mat_size(1)
     for j = 1:fuzzy_mat_size(2)
         if(j == 1)
-            fprintf(fs, "\t{float2ctrl(%.6f)",fuzzy_2d_mat(i,j));
+            fprintf(fs, "\t{real2ctrl(%.6f)",fuzzy_2d_mat(i,j));
         else
-            fprintf(fs, " ,float2ctrl(%.6f)",fuzzy_2d_mat(i,j));
+            fprintf(fs, " ,real2ctrl(%.6f)",fuzzy_2d_mat(i,j));
         end
     end
     fprintf(fs, "},\r\n");
@@ -76,9 +76,9 @@ if 0
         type_name, fuzzy_mat_name, fuzzy_mat_size(1));
     for i = 1:fuzzy_mat_size(1)
         if(i == 1)
-            fprintf(fs, "\t{float2ctrl(%.6f)", dim1_mesh(i));
+            fprintf(fs, "\t{real2ctrl(%.6f)", dim1_mesh(i));
         else
-            fprintf(fs, " ,float2ctrl(%.6f)", dim1_mesh(i));
+            fprintf(fs, " ,real2ctrl(%.6f)", dim1_mesh(i));
         end
     end
     fprintf(fs, "};\r\n\r\n");
@@ -89,9 +89,9 @@ if 0
         type_name,fuzzy_mat_name, fuzzy_mat_size(2));
     for i = 1:fuzzy_mat_size(2)
         if(i == 1)
-            fprintf(fs, "\t{float2ctrl(%.6f)", dim1_mesh(i));
+            fprintf(fs, "\t{real2ctrl(%.6f)", dim1_mesh(i));
         else
-            fprintf(fs, " ,float2ctrl(%.6f)", dim1_mesh(i));
+            fprintf(fs, " ,real2ctrl(%.6f)", dim1_mesh(i));
         end
     end
     fprintf(fs, "};\r\n\r\n");
@@ -118,16 +118,16 @@ fprintf(fs, "%s\r\n%s\r\n%s\r\n",info_src2(1),info_src2(4),info_src2(3));
 fprintf(fs, "uint32_t %s_dim2_size = %d;\r\n\r\n", fuzzy_mat_name ,fuzzy_mat_size(2));
 
 fprintf(fs, "%s\r\n%s\r\n%s\r\n",info_src2(1),info_src2(5),info_src2(3));
-fprintf(fs, "ctrl_gt %s_dim1_min = float2ctrl(%.6f);\r\n\r\n", fuzzy_mat_name ,dim1_mesh(1));
+fprintf(fs, "ctrl_gt %s_dim1_min = real2ctrl(%.6f);\r\n\r\n", fuzzy_mat_name ,dim1_mesh(1));
 
 fprintf(fs, "%s\r\n%s\r\n%s\r\n",info_src2(1),info_src2(6),info_src2(3));
-fprintf(fs, "ctrl_gt %s_dim1_max = float2ctrl(%.6f);\r\n\r\n", fuzzy_mat_name ,dim1_mesh(fuzzy_mat_size(1)));
+fprintf(fs, "ctrl_gt %s_dim1_max = real2ctrl(%.6f);\r\n\r\n", fuzzy_mat_name ,dim1_mesh(fuzzy_mat_size(1)));
 
 fprintf(fs, "%s\r\n%s\r\n%s\r\n",info_src2(1),info_src2(7),info_src2(3));
-fprintf(fs, "ctrl_gt %s_dim2_min = float2ctrl(%.6f);\r\n\r\n", fuzzy_mat_name ,dim2_mesh(1));
+fprintf(fs, "ctrl_gt %s_dim2_min = real2ctrl(%.6f);\r\n\r\n", fuzzy_mat_name ,dim2_mesh(1));
 
 fprintf(fs, "%s\r\n%s\r\n%s\r\n",info_src2(1),info_src2(8),info_src2(3));
-fprintf(fs, "ctrl_gt %s_dim2_max = float2ctrl(%.6f);\r\n", fuzzy_mat_name ,dim2_mesh(fuzzy_mat_size(2)));
+fprintf(fs, "ctrl_gt %s_dim2_max = real2ctrl(%.6f);\r\n", fuzzy_mat_name ,dim2_mesh(fuzzy_mat_size(2)));
 
 fprintf(fs, "\r\n\r\n");
 

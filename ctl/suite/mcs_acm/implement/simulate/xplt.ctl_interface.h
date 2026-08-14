@@ -50,7 +50,7 @@ void ctl_input_callback(void)
         // Controller Handle
         &acm_ctrl,
         // Vd, Vq
-        float2ctrl(csp_sl_get_panel_input(0)), float2ctrl(csp_sl_get_panel_input(1)));
+        real2ctrl(csp_sl_get_panel_input(0)), real2ctrl(csp_sl_get_panel_input(1)));
 
 #endif // BUILD_LEVEL
 }

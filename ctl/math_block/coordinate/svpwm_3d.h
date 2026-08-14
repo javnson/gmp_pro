@@ -39,8 +39,8 @@ GMP_STATIC_INLINE void ctl_ct_svpwm_3d(const ctl_vector3_t* ab0, GMP_CTL_OUTPUT_
     ctl_ct_iclarke(ab0, &vabc);
 
     /* The unshifted neutral-leg pole command is zero. */
-    vmax = float2ctrl(0.0f);
-    vmin = float2ctrl(0.0f);
+    vmax = real2ctrl(0.0f);
+    vmin = real2ctrl(0.0f);
 
     if (vabc.dat[phase_A] > vmax)
         vmax = vabc.dat[phase_A];

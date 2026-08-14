@@ -157,10 +157,10 @@ void ctl_update_gfl_inv_coeff(gfl_inv_ctrl_t* inv, gfl_inv_ctrl_init_t* init)
     {
 #if GFL_CAPACITOR_CURRENT_CALCULATE_MODE == 1 || GFL_CAPACITOR_CURRENT_CALCULATE_MODE == 2
         // active damping voltage = damping_gain * iCdq
-        inv->coef_ff_damping = float2ctrl(init->active_damping_resister * init->i_base / init->v_base);
+        inv->coef_ff_damping = param2ctrl(init->active_damping_resister * init->i_base / init->v_base);
 #elif GFL_CAPACITOR_CURRENT_CALCULATE_MODE == 3
         // active damping voltage = damping_gain * (udq - udq_last)
-        inv->coef_ff_damping = float2ctrl(init->active_damping_resister * init->grid_filter_C * init->fs);
+        inv->coef_ff_damping = param2ctrl(init->active_damping_resister * init->grid_filter_C * init->fs);
 #elif GFL_CAPACITOR_CURRENT_CALCULATE_MODE == 4
         // TODO FIX HERE
 #endif // GFL_CAPACITOR_CURRENT_CALCULATE_MODE

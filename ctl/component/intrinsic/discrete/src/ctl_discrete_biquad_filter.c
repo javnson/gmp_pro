@@ -16,12 +16,12 @@ void ctl_init_biquad_lpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt
 
     parameter_gt a0_inv = 1.0f / (1.0f + alpha);
 
-    // 修复 1：必须使用 float2ctrl 宏包裹赋值，兼容 _iq 定点
-    obj->b[0] = float2ctrl((1.0f - cos_w0) / 2.0f * a0_inv);
-    obj->b[1] = float2ctrl((1.0f - cos_w0) * a0_inv);
-    obj->b[2] = obj->b[0]; // 复用已转换的值
-    obj->a[0] = float2ctrl(-2.0f * cos_w0 * a0_inv);
-    obj->a[1] = float2ctrl((1.0f - alpha) * a0_inv);
+    // Quantize final coefficients through the standard control-domain conversion.
+    obj->b[0] = real2ctrl((1.0f - cos_w0) / 2.0f * a0_inv);
+    obj->b[1] = real2ctrl((1.0f - cos_w0) * a0_inv);
+    obj->b[2] = obj->b[0]; // Reuse the already converted symmetric coefficient.
+    obj->a[0] = real2ctrl(-2.0f * cos_w0 * a0_inv);
+    obj->a[1] = real2ctrl((1.0f - alpha) * a0_inv);
 
     ctl_clear_biquad_filter(obj);
 }
@@ -37,11 +37,11 @@ void ctl_init_biquad_hpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt
 
     parameter_gt a0_inv = 1.0f / (1.0f + alpha);
 
-    obj->b[0] = float2ctrl((1.0f + cos_w0) / 2.0f * a0_inv);
-    obj->b[1] = float2ctrl(-(1.0f + cos_w0) * a0_inv);
+    obj->b[0] = real2ctrl((1.0f + cos_w0) / 2.0f * a0_inv);
+    obj->b[1] = real2ctrl(-(1.0f + cos_w0) * a0_inv);
     obj->b[2] = obj->b[0];
-    obj->a[0] = float2ctrl(-2.0f * cos_w0 * a0_inv);
-    obj->a[1] = float2ctrl((1.0f - alpha) * a0_inv);
+    obj->a[0] = real2ctrl(-2.0f * cos_w0 * a0_inv);
+    obj->a[1] = real2ctrl((1.0f - alpha) * a0_inv);
 
     ctl_clear_biquad_filter(obj);
 }
@@ -57,11 +57,11 @@ void ctl_init_biquad_bpf(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_gt
 
     parameter_gt a0_inv = 1.0f / (1.0f + alpha);
 
-    obj->b[0] = float2ctrl(alpha * a0_inv);
-    obj->b[1] = float2ctrl(0.0f);
-    obj->b[2] = float2ctrl(-alpha * a0_inv);
-    obj->a[0] = float2ctrl(-2.0f * cos_w0 * a0_inv);
-    obj->a[1] = float2ctrl((1.0f - alpha) * a0_inv);
+    obj->b[0] = real2ctrl(alpha * a0_inv);
+    obj->b[1] = CTL_CTRL_CONST_ZERO;
+    obj->b[2] = real2ctrl(-alpha * a0_inv);
+    obj->a[0] = real2ctrl(-2.0f * cos_w0 * a0_inv);
+    obj->a[1] = real2ctrl((1.0f - alpha) * a0_inv);
 
     ctl_clear_biquad_filter(obj);
 }
@@ -77,11 +77,11 @@ void ctl_init_biquad_notch(ctl_biquad_filter_t* obj, parameter_gt fs, parameter_
 
     parameter_gt a0_inv = 1.0f / (1.0f + alpha);
 
-    obj->b[0] = float2ctrl(1.0f * a0_inv);
-    obj->b[1] = float2ctrl(-2.0f * cos_w0 * a0_inv);
-    obj->b[2] = float2ctrl(1.0f * a0_inv);
-    obj->a[0] = obj->b[1]; // Notch 的 a1 和 b1 是一样的
-    obj->a[1] = float2ctrl((1.0f - alpha) * a0_inv);
+    obj->b[0] = real2ctrl(1.0f * a0_inv);
+    obj->b[1] = real2ctrl(-2.0f * cos_w0 * a0_inv);
+    obj->b[2] = real2ctrl(1.0f * a0_inv);
+    obj->a[0] = obj->b[1]; // The notch numerator and denominator share this coefficient.
+    obj->a[1] = real2ctrl((1.0f - alpha) * a0_inv);
 
     ctl_clear_biquad_filter(obj);
 }
@@ -92,7 +92,7 @@ void ctl_init_biquad_peaking_eq(ctl_biquad_filter_t* obj, parameter_gt fs, param
     gmp_ctl_assert(fs > 0.0f);
     gmp_ctl_assert(Q > 0.0f);
 
-    // 修复 2：根据 RBJ Cookbook，A 的定义应为 10^(dB/40)
+    // The RBJ cookbook defines A as 10^(dB/40).
     parameter_gt V0 = param_pow(10.0f, gain_db / 40.0f);
     parameter_gt omega = CTL_PARAM_CONST_2PI * fc / fs;
     parameter_gt cos_w0 = param_cos(omega);
@@ -100,11 +100,11 @@ void ctl_init_biquad_peaking_eq(ctl_biquad_filter_t* obj, parameter_gt fs, param
 
     parameter_gt a0_inv = 1.0f / (1.0f + alpha / V0);
 
-    obj->b[0] = float2ctrl((1.0f + alpha * V0) * a0_inv);
-    obj->b[1] = float2ctrl(-2.0f * cos_w0 * a0_inv);
-    obj->b[2] = float2ctrl((1.0f - alpha * V0) * a0_inv);
-    obj->a[0] = float2ctrl(-2.0f * cos_w0 * a0_inv);
-    obj->a[1] = float2ctrl((1.0f - alpha / V0) * a0_inv);
+    obj->b[0] = real2ctrl((1.0f + alpha * V0) * a0_inv);
+    obj->b[1] = real2ctrl(-2.0f * cos_w0 * a0_inv);
+    obj->b[2] = real2ctrl((1.0f - alpha * V0) * a0_inv);
+    obj->a[0] = real2ctrl(-2.0f * cos_w0 * a0_inv);
+    obj->a[1] = real2ctrl((1.0f - alpha / V0) * a0_inv);
 
     ctl_clear_biquad_filter(obj);
 }
@@ -115,7 +115,7 @@ void ctl_init_biquad_lowshelf(ctl_biquad_filter_t* obj, parameter_gt fs, paramet
     gmp_ctl_assert(fs > 0.0f);
     gmp_ctl_assert(Q > 0.0f);
 
-    // 修复 2：根据 RBJ Cookbook，A 的定义应为 10^(dB/40)
+    // The RBJ cookbook defines A as 10^(dB/40).
     parameter_gt V0 = param_pow(10.0f, gain_db / 40.0f);
     parameter_gt omega = CTL_PARAM_CONST_2PI * fc / fs;
     parameter_gt cos_w0 = param_cos(omega);
@@ -124,11 +124,11 @@ void ctl_init_biquad_lowshelf(ctl_biquad_filter_t* obj, parameter_gt fs, paramet
 
     parameter_gt a0_inv = 1.0f / ((V0 + 1.0f) + (V0 - 1.0f) * cos_w0 + beta);
 
-    obj->b[0] = float2ctrl(V0 * ((V0 + 1.0f) - (V0 - 1.0f) * cos_w0 + beta) * a0_inv);
-    obj->b[1] = float2ctrl(2.0f * V0 * ((V0 - 1.0f) - (V0 + 1.0f) * cos_w0) * a0_inv);
-    obj->b[2] = float2ctrl(V0 * ((V0 + 1.0f) - (V0 - 1.0f) * cos_w0 - beta) * a0_inv);
-    obj->a[0] = float2ctrl(-2.0f * ((V0 - 1.0f) + (V0 + 1.0f) * cos_w0) * a0_inv);
-    obj->a[1] = float2ctrl(((V0 + 1.0f) + (V0 - 1.0f) * cos_w0 - beta) * a0_inv);
+    obj->b[0] = real2ctrl(V0 * ((V0 + 1.0f) - (V0 - 1.0f) * cos_w0 + beta) * a0_inv);
+    obj->b[1] = real2ctrl(2.0f * V0 * ((V0 - 1.0f) - (V0 + 1.0f) * cos_w0) * a0_inv);
+    obj->b[2] = real2ctrl(V0 * ((V0 + 1.0f) - (V0 - 1.0f) * cos_w0 - beta) * a0_inv);
+    obj->a[0] = real2ctrl(-2.0f * ((V0 - 1.0f) + (V0 + 1.0f) * cos_w0) * a0_inv);
+    obj->a[1] = real2ctrl(((V0 + 1.0f) + (V0 - 1.0f) * cos_w0 - beta) * a0_inv);
 
     ctl_clear_biquad_filter(obj);
 }
@@ -139,7 +139,7 @@ void ctl_init_biquad_highshelf(ctl_biquad_filter_t* obj, parameter_gt fs, parame
     gmp_ctl_assert(fs > 0.0f);
     gmp_ctl_assert(Q > 0.0f);
 
-    // 修复 2：根据 RBJ Cookbook，A 的定义应为 10^(dB/40)
+    // The RBJ cookbook defines A as 10^(dB/40).
     parameter_gt V0 = param_pow(10.0f, gain_db / 40.0f);
     parameter_gt omega = CTL_PARAM_CONST_2PI * fc / fs;
     parameter_gt cos_w0 = param_cos(omega);
@@ -148,11 +148,11 @@ void ctl_init_biquad_highshelf(ctl_biquad_filter_t* obj, parameter_gt fs, parame
 
     parameter_gt a0_inv = 1.0f / ((V0 + 1.0f) - (V0 - 1.0f) * cos_w0 + beta);
 
-    obj->b[0] = float2ctrl(V0 * ((V0 + 1.0f) + (V0 - 1.0f) * cos_w0 + beta) * a0_inv);
-    obj->b[1] = float2ctrl(-2.0f * V0 * ((V0 - 1.0f) + (V0 + 1.0f) * cos_w0) * a0_inv);
-    obj->b[2] = float2ctrl(V0 * ((V0 + 1.0f) + (V0 - 1.0f) * cos_w0 - beta) * a0_inv);
-    obj->a[0] = float2ctrl(2.0f * ((V0 - 1.0f) - (V0 + 1.0f) * cos_w0) * a0_inv);
-    obj->a[1] = float2ctrl(((V0 + 1.0f) - (V0 - 1.0f) * cos_w0 - beta) * a0_inv);
+    obj->b[0] = real2ctrl(V0 * ((V0 + 1.0f) + (V0 - 1.0f) * cos_w0 + beta) * a0_inv);
+    obj->b[1] = real2ctrl(-2.0f * V0 * ((V0 - 1.0f) + (V0 + 1.0f) * cos_w0) * a0_inv);
+    obj->b[2] = real2ctrl(V0 * ((V0 + 1.0f) + (V0 - 1.0f) * cos_w0 - beta) * a0_inv);
+    obj->a[0] = real2ctrl(2.0f * ((V0 - 1.0f) - (V0 + 1.0f) * cos_w0) * a0_inv);
+    obj->a[1] = real2ctrl(((V0 + 1.0f) - (V0 - 1.0f) * cos_w0 - beta) * a0_inv);
 
     ctl_clear_biquad_filter(obj);
 }
@@ -218,6 +218,6 @@ parameter_gt ctl_get_biquad_gain(ctl_biquad_filter_t* obj, parameter_gt fs, para
         return 0.0f;
     }
 
-    // 5. Total gain = |N(ω)| / |D(ω)|
+    // 5. Total gain = |N(w)| / |D(w)|.
     return mag_num / mag_den;
 }

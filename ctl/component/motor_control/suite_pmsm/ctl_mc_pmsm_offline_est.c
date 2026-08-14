@@ -120,7 +120,7 @@ static const float SIX_STEP_ANGLES_DEG[6] = {30.0f, 90.0f, 150.0f, 210.0f, 270.0
 //        }
 //
 //        // Step II during measuring period, provide a fixed angle and a fixed current
-//        est->rs_est.test_angle_pu = float2ctrl(SIX_STEP_ANGLES_DEG[est->step_index] / 360.0f);
+//        est->rs_est.test_angle_pu = real2ctrl(SIX_STEP_ANGLES_DEG[est->step_index] / 360.0f);
 //        ctl_set_current_ref(&est->current_ctrl, est->rs_est.test_current_pu, 0.0f);
 //
 //        // Step III waiting for measurement is complete
@@ -135,7 +135,7 @@ static const float SIX_STEP_ANGLES_DEG[6] = {30.0f, 90.0f, 150.0f, 210.0f, 270.0
 //            parameter_gt V_mean = est->V_sum / est->sample_count;
 //            parameter_gt I_mean = est->I_sum / est->sample_count;
 //
-//            if (fabsf(I_mean) > float2ctrl(0.001))
+//            if (fabsf(I_mean) > real2ctrl(0.001))
 //                est->rs_est.step_results[est->step_index] = V_mean / I_mean * ctl_consult_base_impedance(pu);
 //            else
 //                est->rs_est.step_results[est->step_index] = 0.0f;
@@ -321,17 +321,17 @@ static const float SIX_STEP_ANGLES_DEG[6] = {30.0f, 90.0f, 150.0f, 210.0f, 270.0
 //
 //    case OFFLINE_SUB_STATE_CALC: {
 //        // 1. 计算阻抗
-//        parameter_gt v_hfi_peak = ctl_consult_Vpeak_to_phy(est->pu_consultant, ctrl2float(est->ldq_est.hfi_v_pu));
+//        parameter_gt v_hfi_peak = ctl_consult_Vpeak_to_phy(est->pu_consultant, ctrl2param(est->ldq_est.hfi_v_pu));
 //
 //        // Z_d = V_hfi / I_hfi_min, Z_q = V_hfi / I_hfi_max
-//        parameter_gt z_d = (est->ldq_est.hfi_i_min > float2ctrl(0.001)) ? (v_hfi_peak / est->ldq_est.hfi_i_min) : 0.0f;
-//        parameter_gt z_q = (est->ldq_est.hfi_i_max > float2ctrl(0.001)) ? (v_hfi_peak / est->ldq_est.hfi_i_max) : 0.0f;
+//        parameter_gt z_d = (est->ldq_est.hfi_i_min > real2ctrl(0.001)) ? (v_hfi_peak / est->ldq_est.hfi_i_min) : 0.0f;
+//        parameter_gt z_q = (est->ldq_est.hfi_i_max > real2ctrl(0.001)) ? (v_hfi_peak / est->ldq_est.hfi_i_max) : 0.0f;
 //
 //        // 2. 计算电感 (忽略电阻)
 //        //tex:
 //        //$$ Z \approx \omega L $$
 //        parameter_gt omega_hfi = CTL_PARAM_CONST_2PI * est->ldq_est.hfi_freq_hz;
-//        if (omega_hfi > float2ctrl(0.001))
+//        if (omega_hfi > real2ctrl(0.001))
 //        {
 //            est->pmsm_params.Ld = z_d / omega_hfi;
 //            est->pmsm_params.Lq = z_q / omega_hfi;
@@ -516,7 +516,7 @@ static const float SIX_STEP_ANGLES_DEG[6] = {30.0f, 90.0f, 150.0f, 210.0f, 270.0
 //        // 使用最小二乘法计算斜率，即磁链
 //        //tex:
 //        // $$ slope = \frac{\Sigma{xy}}{\Sigma{x^2}}, x = \omega_e , y = Uq' $$
-//        if (est->I_sum > float2ctrl(0.001))
+//        if (est->I_sum > real2ctrl(0.001))
 //        { // 确保分母不为零
 //            est->pmsm_params.flux = est->V_sum / est->I_sum;
 //        }
@@ -558,7 +558,7 @@ static const float SIX_STEP_ANGLES_DEG[6] = {30.0f, 90.0f, 150.0f, 210.0f, 270.0
 //    {
 //    case OFFLINE_SUB_STATE_INIT: {
 //        // 1. FIX: 检查依赖项: 磁链和编码器
-//        if (est->pmsm_params.flux < float2ctrl(0.000001))
+//        if (est->pmsm_params.flux < real2ctrl(0.000001))
 //        {
 //            est->main_state = OFFLINE_MAIN_STATE_ERROR; // 无法计算转矩
 //            return;
@@ -651,11 +651,11 @@ static const float SIX_STEP_ANGLES_DEG[6] = {30.0f, 90.0f, 150.0f, 210.0f, 270.0
 //            parameter_gt numerator = N * est->sum_xy - est->sum_x * est->sum_y;
 //            parameter_gt denominator = N * est->sum_x2 - est->sum_x * est->sum_x;
 //
-//            if (fabsf(denominator) > float2ctrl(0.000001))
+//            if (fabsf(denominator) > real2ctrl(0.000001))
 //            {
 //                parameter_gt alpha = numerator / denominator;
 //                // 3. 计算惯量 J = Te / alpha
-//                if (fabsf(alpha) > float2ctrl(0.001))
+//                if (fabsf(alpha) > real2ctrl(0.001))
 //                {
 //                    est->pmsm_params.inertia = fabsf(est->avg_torque / alpha);
 //                }

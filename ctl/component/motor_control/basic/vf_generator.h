@@ -251,7 +251,7 @@ GMP_STATIC_INLINE void ctl_set_slope_f_pu_freq(ctl_slope_f_pu_controller* ctrl, 
 
     if (base_freq_hz > 0.1f)
     {
-        ctrl->target_freq_pu = float2ctrl(target_freq_hz / base_freq_hz);
+        ctrl->target_freq_pu = real2ctrl(target_freq_hz / base_freq_hz);
     }
 }
 

@@ -26,7 +26,7 @@ void ctl_init_gfl_pq(gfl_pq_ctrl_t* pq, parameter_gt p_kp, parameter_gt p_ki, pa
     pq->flag_enable = 0;
     ctl_init_pid(&pq->pid_p, p_kp, p_ki, 0, fs);
     ctl_init_pid(&pq->pid_q, q_kp, q_ki, 0, fs);
-    ctrl_gt current_limit = float2ctrl(i_out_max);
+    ctrl_gt current_limit = real2ctrl(i_out_max);
     pq->max_i2_mag = ctl_mul(current_limit, current_limit);
     ctl_set_pid_limit(&pq->pid_p, current_limit, -current_limit);
     ctl_set_pid_limit(&pq->pid_q, current_limit, -current_limit);

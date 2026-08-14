@@ -55,6 +55,14 @@ Checkbox 等单元格控件获得焦点时仍删除整行；文本编辑器内�
 生成的 MATLAB Init Script 会在赋值完成后打印工程信息、硬件清单、Common 来源、
 已使能变量的最终值和禁用宏清单，方便在启动 Simulink 仿真前检查配置。
 
+数值参数通过 `numeric_domain` 区分 `real`、`parameter`、`ctrl` 和非数值
+`raw`。物理量与整定参数通常选择 `parameter`，生成结果为无 `f` 后缀的
+`real2param(value)`；只有明确直接进入实时缓存的量才选择 `ctrl`。工程 binding
+提供同名的 `real`、`parameter` 和 `ctrl` 键。MATLAB 初始化脚本提供
+`real2param`、`real2ctrl`、`param2ctrl` 和 `ctrl2param` 四个函数句柄，并允许在运行前
+通过 `GMP_SDPE_*_TYPE` 与转换器句柄覆盖仿真类型。C 侧转换宏不会创建显式
+`real_gt` 临时量，以便嵌入式编译器直接把常量折叠到目标类型。
+
 ## 1. 核心概念
 
 ### 1.1 Schema

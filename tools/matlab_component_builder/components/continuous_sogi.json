@@ -22,7 +22,7 @@
   "execution": {
     "initialize_code": [],
     "parameter_update_code": ["ctl_sogi_t fresh{};", "ctl_init_sogi(&fresh, gain, freq_r, damp, fs);", "runtime->pending.k_damp = fresh.k_damp;", "runtime->pending.k_r = fresh.k_r;", "runtime->pending.gain = fresh.gain;"],
-    "step_code": ["output_direct = ctrl2float(ctl_step_sogi(&runtime->pending, float2ctrl(input_input)));", "output_quadrature = ctrl2float(ctl_get_sogi_quadrature_out(&runtime->pending));"],
+    "step_code": ["output_direct = ctrl2param(ctl_step_sogi(&runtime->pending, real2ctrl(input_input)));", "output_quadrature = ctrl2param(ctl_get_sogi_quadrature_out(&runtime->pending));"],
     "terminate_code": []
   },
   "analysis": {"default_frequency_hz": [1.0, 1000.0], "default_points": 80, "excitation_amplitude": 0.001, "settling_periods": 20, "measurement_periods": 12}

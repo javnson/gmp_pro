@@ -76,9 +76,9 @@ void ctl_init_sinv_ref_gen(ctl_sinv_ref_gen_t* gen, parameter_gt i_max, paramete
  */
 GMP_STATIC_INLINE void ctl_clear_sinv_ref_gen(ctl_sinv_ref_gen_t* gen)
 {
-    gen->i_ref_inst = float2ctrl(0.0f);
-    gen->i_p_mag = float2ctrl(0.0f);
-    gen->i_q_mag = float2ctrl(0.0f);
+    gen->i_ref_inst = CTL_CTRL_CONST_ZERO;
+    gen->i_p_mag = CTL_CTRL_CONST_ZERO;
+    gen->i_q_mag = CTL_CTRL_CONST_ZERO;
     gen->flag_over_current = 0;
 
     ctl_clear_slope_limiter(&gen->p_slope_lim);
@@ -110,7 +110,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_ref_gen_pq(ctl_sinv_ref_gen_t* gen, ctrl
     ctrl_gt q_ref = ctl_step_slope_limiter(&gen->q_slope_lim, _q_ref);
 
     // 2. Calculate ideal current amplitudes: I = 2 * Power / V_mag
-    ctrl_gt two_over_v = ctl_div(float2ctrl(2.0f), v_safe);
+    ctrl_gt two_over_v = ctl_div(CTL_CTRL_CONST_2, v_safe);
     ctrl_gt ip = ctl_mul(p_ref, two_over_v);
     ctrl_gt iq = ctl_mul(q_ref, two_over_v);
 
@@ -181,7 +181,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_ref_gen_p_phi(ctl_sinv_ref_gen_t* gen, c
     ctrl_gt cos_phi = ctl_cos(phi_pu);
 
     // Prevent division by zero if PF is exactly 0 (phi = 90 deg)
-    ctrl_gt safe_cos = (ctl_abs(cos_phi) > float2ctrl(0.001f)) ? cos_phi : float2ctrl(0.001f);
+    ctrl_gt safe_cos = (ctl_abs(cos_phi) > real2ctrl(0.001f)) ? cos_phi : real2ctrl(0.001f);
 
     ctrl_gt tan_phi = ctl_div(sin_phi, safe_cos);
     ctrl_gt q_ref = ctl_mul(p_ref, tan_phi);

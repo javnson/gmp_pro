@@ -4,8 +4,10 @@ tests = functiontests(localfunctions);
 end
 
 function testConversionSemantics(testCase)
-verifyClass(testCase, float2ctrl(pi), 'single');
-verifyClass(testCase, ctrl2float(1), 'single');
+verifyClass(testCase, real2ctrl(pi), 'single');
+verifyClass(testCase, real2param(pi), 'double');
+verifyClass(testCase, param2ctrl(pi), 'single');
+verifyClass(testCase, ctrl2param(single(1)), 'double');
 verifyEqual(testCase, int2ctrl(int32(-3)), single(-3));
 verifyEqual(testCase, ctrl2int(single([-1.9, 1.9])), int32([-1, 1]));
 verifyEqual(testCase, ctrl_mod_1(single([-1.25, 1.25])), single([-0.25, 0.25]));

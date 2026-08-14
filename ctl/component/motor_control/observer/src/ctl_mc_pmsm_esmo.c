@@ -29,21 +29,21 @@ void ctl_init_pmsm_esmo_consultant(ctl_pmsm_esmo_t* esmo, const ctl_consultant_p
     parameter_gt k2 = (motor->Rs * Ts) / motor->Ld;
     parameter_gt k3 = (motor->Ld - motor->Lq) / motor->Ld;
 
-    esmo->k1 = float2ctrl(k1);
-    esmo->k2 = float2ctrl(k2);
-    esmo->k3 = float2ctrl(k3);
+    esmo->k1 = real2ctrl(k1);
+    esmo->k2 = real2ctrl(k2);
+    esmo->k3 = real2ctrl(k3);
 
-    esmo->sf_w_to_rad_tick = float2ctrl(pu->W_base * Ts);
+    esmo->sf_w_to_rad_tick = param2ctrl(pu->W_base * Ts);
 
     // 2. Sliding Gain & Margin Calculation
     // Ensuring the sliding gain exceeds the maximum back-EMF magnitude.
     parameter_gt e_max_pu = (pu->W_base * motor->flux_linkage) / pu->V_base;
-    esmo->k_slide = float2ctrl(e_max_pu * 1.2f);
+    esmo->k_slide = real2ctrl(e_max_pu * 1.2f);
 
     // Configurable boundary layer margin (default 5%). Can be dynamically scheduled if needed.
     parameter_gt default_margin = 0.05f;
-    esmo->z_margin = float2ctrl(default_margin);
-    esmo->sf_z_margin_inv = float2ctrl(1.0f / default_margin);
+    esmo->z_margin = real2ctrl(default_margin);
+    esmo->sf_z_margin_inv = real2ctrl(1.0f / default_margin);
 
     // 3. Sub-module Initialization
     ctl_init_filter_iir1_lpf(&esmo->filter_e[0], fs_safe, fc_emf);
@@ -54,10 +54,10 @@ void ctl_init_pmsm_esmo_consultant(ctl_pmsm_esmo_t* esmo, const ctl_consultant_p
 
     // 4. Phase Compensation Constants
     parameter_gt wc = CTL_PARAM_CONST_2PI * fc_emf;
-    esmo->sf_wc_inv = float2ctrl(pu->W_base / wc);
+    esmo->sf_wc_inv = param2ctrl(pu->W_base / wc);
 
     // 5. Protection Mechanisms Setup
-    esmo->current_err_limit = float2ctrl(0.3f);
+    esmo->current_err_limit = real2ctrl(0.3f);
     esmo->diverge_limit = (uint32_t)(fault_time_ms * fs_safe / 1000.0f);
     if (esmo->diverge_limit < 1)
         esmo->diverge_limit = 1;
@@ -81,19 +81,19 @@ void ctl_init_pmsm_esmo(ctl_pmsm_esmo_t* esmo, const ctl_pmsm_esmo_init_t* init)
     parameter_gt k2 = (init->Rs * Ts) / init->Ld;
     parameter_gt k3 = (init->Ld - init->Lq) / init->Ld;
 
-    esmo->k1 = float2ctrl(k1);
-    esmo->k2 = float2ctrl(k2);
-    esmo->k3 = float2ctrl(k3);
+    esmo->k1 = real2ctrl(k1);
+    esmo->k2 = real2ctrl(k2);
+    esmo->k3 = real2ctrl(k3);
 
-    esmo->sf_w_to_rad_tick = float2ctrl(init->W_base * Ts);
+    esmo->sf_w_to_rad_tick = param2ctrl(init->W_base * Ts);
 
     // 2. Sliding Gain & Margin Calculation
     parameter_gt e_max_pu = (init->W_base * init->flux_linkage) / init->V_base;
-    esmo->k_slide = float2ctrl(e_max_pu * 1.2f);
+    esmo->k_slide = real2ctrl(e_max_pu * 1.2f);
 
     parameter_gt margin = (init->z_margin_pu > 1e-4f) ? init->z_margin_pu : 0.05f;
-    esmo->z_margin = float2ctrl(margin);
-    esmo->sf_z_margin_inv = float2ctrl(1.0f / margin);
+    esmo->z_margin = real2ctrl(margin);
+    esmo->sf_z_margin_inv = real2ctrl(1.0f / margin);
 
     // 3. Sub-module Initialization
     ctl_init_filter_iir1_lpf(&esmo->filter_e[0], fs_safe, init->fc_emf);
@@ -103,11 +103,11 @@ void ctl_init_pmsm_esmo(ctl_pmsm_esmo_t* esmo, const ctl_pmsm_esmo_init_t* init)
 
     // 4. Phase Compensation Constants
     parameter_gt wc = CTL_PARAM_CONST_2PI * init->fc_emf;
-    esmo->sf_wc_inv = float2ctrl(init->W_base / wc);
+    esmo->sf_wc_inv = param2ctrl(init->W_base / wc);
 
     // 5. Protection Mechanisms Setup
     parameter_gt err_lim = (init->current_err_limit_pu > 1e-3f) ? init->current_err_limit_pu : 0.3f;
-    esmo->current_err_limit = float2ctrl(err_lim);
+    esmo->current_err_limit = real2ctrl(err_lim);
 
     esmo->diverge_limit = (uint32_t)(init->fault_time_ms * fs_safe / 1000.0f);
     if (esmo->diverge_limit < 1)

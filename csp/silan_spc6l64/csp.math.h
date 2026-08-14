@@ -16,8 +16,8 @@
 #endif
 
 // Type conversion function
-#define float2ctrl(x) (_IQ(x))
-#define ctrl2float(x) (_IQtoF(x))
+#define GMP_CTRL_FROM_REAL(x) (_IQ(x))
+#define GMP_CTRL_TO_REAL(x)   (_IQtoF(x))
 #define int2ctrl(x)   (_IQ(x))
 #define ctrl2int(x)   (_IQint(x))
 #define ctrl_mod_1(x) (_IQfrac(x))

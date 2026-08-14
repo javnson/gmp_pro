@@ -30,23 +30,23 @@ void ctl_init_pmsm_fo(ctl_pmsm_fo_t* fo, const ctl_pmsm_fo_init_t* init)
     parameter_gt k2 = (init->Rs * Ts) / init->Ld;
     parameter_gt k3 = (init->Ld - init->Lq) / init->Ld;
 
-    fo->k1 = float2ctrl(k1);
-    fo->k2 = float2ctrl(k2);
-    fo->k3 = float2ctrl(k3);
+    fo->k1 = real2ctrl(k1);
+    fo->k2 = real2ctrl(k2);
+    fo->k3 = real2ctrl(k3);
 
-    fo->sf_w_to_rad_tick = float2ctrl(init->W_base * Ts);
+    fo->sf_w_to_rad_tick = param2ctrl(init->W_base * Ts);
 
     // 2. Sub-module Initialization (PID for BEMF & ATO for Tracking)
     parameter_gt e_limit = (init->e_max_limit_pu > 1e-4f) ? init->e_max_limit_pu : 1.5f;
 
     // Initialize the two PID controllers acting as Extended State Observers (ESO)
-    ctl_init_pid(&fo->pi_emf[0], float2ctrl(init->kp_fo_pu), float2ctrl(init->ki_fo_pu), float2ctrl(0.0f), fs_safe);
-    ctl_set_pid_limit(&fo->pi_emf[0], float2ctrl(e_limit), float2ctrl(-e_limit));
-    ctl_set_pid_int_limit(&fo->pi_emf[0], float2ctrl(e_limit), float2ctrl(-e_limit));
+    ctl_init_pid(&fo->pi_emf[0], init->kp_fo_pu, init->ki_fo_pu, CTL_PARAM_CONST_ZERO, fs_safe);
+    ctl_set_pid_limit(&fo->pi_emf[0], real2ctrl(e_limit), real2ctrl(-e_limit));
+    ctl_set_pid_int_limit(&fo->pi_emf[0], real2ctrl(e_limit), real2ctrl(-e_limit));
 
-    ctl_init_pid(&fo->pi_emf[1], float2ctrl(init->kp_fo_pu), float2ctrl(init->ki_fo_pu), float2ctrl(0.0f), fs_safe);
-    ctl_set_pid_limit(&fo->pi_emf[1], float2ctrl(e_limit), float2ctrl(-e_limit));
-    ctl_set_pid_int_limit(&fo->pi_emf[1], float2ctrl(e_limit), float2ctrl(-e_limit));
+    ctl_init_pid(&fo->pi_emf[1], init->kp_fo_pu, init->ki_fo_pu, CTL_PARAM_CONST_ZERO, fs_safe);
+    ctl_set_pid_limit(&fo->pi_emf[1], real2ctrl(e_limit), real2ctrl(-e_limit));
+    ctl_set_pid_int_limit(&fo->pi_emf[1], real2ctrl(e_limit), real2ctrl(-e_limit));
 
     // The step function normalizes the phase detector, so the requested ATO
     // bandwidth is independent of back-EMF magnitude.
@@ -54,7 +54,7 @@ void ctl_init_pmsm_fo(ctl_pmsm_fo_t* fo, const ctl_pmsm_fo_init_t* init)
 
     // 3. Protection Mechanisms Setup
     parameter_gt err_lim = (init->current_err_limit_pu > 1e-3f) ? init->current_err_limit_pu : 0.3f;
-    fo->current_err_limit = float2ctrl(err_lim);
+    fo->current_err_limit = real2ctrl(err_lim);
 
     fo->diverge_limit = (uint32_t)(init->fault_time_ms * fs_safe / 1000.0f);
     if (fo->diverge_limit < 1)

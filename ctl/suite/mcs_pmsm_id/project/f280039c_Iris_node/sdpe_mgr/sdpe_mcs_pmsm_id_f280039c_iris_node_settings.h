@@ -459,7 +459,7 @@ extern "C"
 /**
  * @brief Migrated from f280039c_Iris_node/xplt/ctrl_settings.h.
  */
-#define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
+#define CTRL_SPLL_EPSILON ((real2ctrl(0.005)))
 
 //=================================================================================================
 /**

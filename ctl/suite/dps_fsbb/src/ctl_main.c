@@ -36,9 +36,9 @@ volatile uint16_t g_fsbb_faults = FSBB_FAULT_NONE;
 volatile fast_gt g_fsbb_output_enabled = 0;
 
 // User commands
-ctrl_gt g_v_out_ref_user = float2ctrl(FSBB_DEFAULT_OUTPUT_VOLTAGE / CTRL_VOLTAGE_BASE);
-ctrl_gt g_i_limit_user = float2ctrl(FSBB_DEFAULT_CURRENT_LIMIT / CTRL_CURRENT_BASE);
-ctrl_gt v_req = float2ctrl(0.0f);
+ctrl_gt g_v_out_ref_user = real2ctrl(FSBB_DEFAULT_OUTPUT_VOLTAGE / CTRL_VOLTAGE_BASE);
+ctrl_gt g_i_limit_user = real2ctrl(FSBB_DEFAULT_CURRENT_LIMIT / CTRL_CURRENT_BASE);
+ctrl_gt v_req = CTL_CTRL_CONST_ZERO;
 
 //=================================================================================================
 // CTL initialize routine
@@ -77,10 +77,10 @@ void ctl_init(void)
     fsbb_init.slope_v_pu_s = FSBB_VOLTAGE_RAMP_PU_S;
     fsbb_init.slope_i_pu_s = FSBB_CURRENT_RAMP_PU_S;
 
-    fsbb_init.i_out_max = float2ctrl(FSBB_OUTPUT_CURRENT_LIM / CTRL_CURRENT_BASE);
-    fsbb_init.i_out_min = float2ctrl(0.0f);
-    fsbb_init.v_cmd_max = float2ctrl(FSBB_OUTPUT_VOLTAGE_MAX / CTRL_VOLTAGE_BASE);
-    fsbb_init.v_cmd_min = float2ctrl(0.0f);
+    fsbb_init.i_out_max = real2ctrl(FSBB_OUTPUT_CURRENT_LIM / CTRL_CURRENT_BASE);
+    fsbb_init.i_out_min = CTL_CTRL_CONST_ZERO;
+    fsbb_init.v_cmd_max = real2ctrl(FSBB_OUTPUT_VOLTAGE_MAX / CTRL_VOLTAGE_BASE);
+    fsbb_init.v_cmd_min = CTL_CTRL_CONST_ZERO;
 
     fsbb_init.fc_current_loop = FSBB_CURRENT_LOOP_BANDWIDTH;
     fsbb_init.fc_voltage_loop = FSBB_VOLTAGE_LOOP_BANDWIDTH;
@@ -91,20 +91,20 @@ void ctl_init(void)
     // init FSBB controller core
     ctl_init_dcdc_core(&dcdc_core, &core_init);
     ctl_set_dcdc_core_limits(&dcdc_core,
-                             float2ctrl(FSBB_OUTPUT_VOLTAGE_MAX / CTRL_VOLTAGE_BASE),
-                             float2ctrl(0.0f));
+                             real2ctrl(FSBB_OUTPUT_VOLTAGE_MAX / CTRL_VOLTAGE_BASE),
+                             CTL_CTRL_CONST_ZERO);
 
     // attach FSBB with ADC peripheral
     ctl_attach_dcdc_core(&dcdc_core, &adc_v_in.control_port, &adc_v_out.control_port, &adc_i_L.control_port,
                          &adc_i_load.control_port);
 
-    v_req = float2ctrl(FSBB_OPEN_LOOP_VOLTAGE_COMMAND / CTRL_VOLTAGE_BASE);
+    v_req = real2ctrl(FSBB_OPEN_LOOP_VOLTAGE_COMMAND / CTRL_VOLTAGE_BASE);
 
     //
     // init FSBB PWM modulator
     //
-    ctl_init_fsbb_modulator(&fsbb_mod, CTRL_PWM_CMP_MAX, float2ctrl(FSBB_DUTY_MAX), float2ctrl(FSBB_DUTY_MIN),
-                            float2ctrl(FSBB_TRANSITION_RATIO_LOW), float2ctrl(FSBB_TRANSITION_RATIO_HIGH));
+    ctl_init_fsbb_modulator(&fsbb_mod, CTRL_PWM_CMP_MAX, real2ctrl(FSBB_DUTY_MAX), real2ctrl(FSBB_DUTY_MIN),
+                            real2ctrl(FSBB_TRANSITION_RATIO_LOW), real2ctrl(FSBB_TRANSITION_RATIO_HIGH));
 
     //
     // init and config CiA402 standard state machine
@@ -161,12 +161,12 @@ static void ctl_collect_pil_output(gmp_sim_tx_buf_t* tx)
 {
     tx->pwm_cmp[0] = ctl_get_fsbb_buck_cmp(&fsbb_mod);
     tx->pwm_cmp[1] = CTRL_PWM_CMP_MAX - ctl_get_fsbb_boost_cmp(&fsbb_mod);
-    tx->monitor[0] = ctrl2float(adc_v_in.control_port.value) * CTRL_VOLTAGE_BASE;
-    tx->monitor[1] = ctrl2float(adc_v_out.control_port.value) * CTRL_VOLTAGE_BASE;
-    tx->monitor[2] = ctrl2float(adc_i_L.control_port.value) * CTRL_CURRENT_BASE;
-    tx->monitor[3] = ctrl2float(adc_i_load.control_port.value) * CTRL_CURRENT_BASE;
-    tx->monitor[4] = ctrl2float(dcdc_core.v_out_formal) * CTRL_VOLTAGE_BASE;
-    tx->monitor[5] = ctrl2float(v_req) * CTRL_VOLTAGE_BASE;
+    tx->monitor[0] = ctrl2param(adc_v_in.control_port.value) * CTRL_VOLTAGE_BASE;
+    tx->monitor[1] = ctrl2param(adc_v_out.control_port.value) * CTRL_VOLTAGE_BASE;
+    tx->monitor[2] = ctrl2param(adc_i_L.control_port.value) * CTRL_CURRENT_BASE;
+    tx->monitor[3] = ctrl2param(adc_i_load.control_port.value) * CTRL_CURRENT_BASE;
+    tx->monitor[4] = ctrl2param(dcdc_core.v_out_formal) * CTRL_VOLTAGE_BASE;
+    tx->monitor[5] = ctrl2param(v_req) * CTRL_VOLTAGE_BASE;
     tx->monitor[6] = (double)cia402_sm.current_state;
     tx->monitor[7] = (double)cia402_sm.current_cmd;
 }
@@ -274,7 +274,7 @@ void ctl_enable_pwm(void)
         /* ctl_fast_enable_output() clears all ramps and controllers. Replace
            the pre-enable compare values in the same outgoing SIL frame so
            the power stage starts from the configured zero-command duty. */
-        ctl_step_fsbb_modulator(&fsbb_mod, float2ctrl(0.0f), adc_v_in.control_port.value);
+        ctl_step_fsbb_modulator(&fsbb_mod, CTL_CTRL_CONST_ZERO, adc_v_in.control_port.value);
         g_fsbb_output_enabled = 1;
     }
 }

@@ -73,8 +73,8 @@ GMP_STATIC_INLINE float abs_static_inline(float A)
  * @{
  */
 
-#define float2ctrl(x) ((float)(x)) /**< @brief Converts a float literal to `ctrl_gt`. */
-#define ctrl2float(x) ((float)(x)) /**< @brief Converts a `ctrl_gt` value to a standard float. */
+#define GMP_CTRL_FROM_REAL(x) ((float)(x)) /**< @brief Converts real_gt to the float backend. */
+#define GMP_CTRL_TO_REAL(x)   ((float)(x)) /**< @brief Converts the float backend to real_gt. */
 #define int2ctrl(x)   ((float)(x)) /**< @brief Converts an integer to `ctrl_gt`. */
 #define ctrl2int(x)   ((int)(x))   /**< @brief Converts a `ctrl_gt` value to an integer (truncates). */
 #define ctrl_fraction_to_index(x, count) ((uint32_t)((float)(x) * (uint32_t)(count)))

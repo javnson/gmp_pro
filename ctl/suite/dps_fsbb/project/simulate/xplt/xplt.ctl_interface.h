@@ -20,17 +20,17 @@ extern fast_gt g_fsbb_sim_enable_pending;
 GMP_STATIC_INLINE uint16_t ctl_fsbb_sim_active_faults(void)
 {
     uint16_t faults = FSBB_FAULT_NONE;
-    if (adc_v_in.control_port.value < float2ctrl(FSBB_INPUT_VOLTAGE_MIN / CTRL_VOLTAGE_BASE))
+    if (adc_v_in.control_port.value < real2ctrl(FSBB_INPUT_VOLTAGE_MIN / CTRL_VOLTAGE_BASE))
         faults |= FSBB_FAULT_VIN_UNDERVOLTAGE;
-    if (adc_v_in.control_port.value > float2ctrl(FSBB_INPUT_VOLTAGE_MAX / CTRL_VOLTAGE_BASE))
+    if (adc_v_in.control_port.value > real2ctrl(FSBB_INPUT_VOLTAGE_MAX / CTRL_VOLTAGE_BASE))
         faults |= FSBB_FAULT_VIN_OVERVOLTAGE;
-    if (adc_v_out.control_port.value > float2ctrl(FSBB_OUTPUT_VOLTAGE_MAX / CTRL_VOLTAGE_BASE))
+    if (adc_v_out.control_port.value > real2ctrl(FSBB_OUTPUT_VOLTAGE_MAX / CTRL_VOLTAGE_BASE))
         faults |= FSBB_FAULT_VOUT_OVERVOLTAGE;
-    if (adc_i_L.control_port.value > float2ctrl(FSBB_PROTECT_IL_MAX / CTRL_CURRENT_BASE))
+    if (adc_i_L.control_port.value > real2ctrl(FSBB_PROTECT_IL_MAX / CTRL_CURRENT_BASE))
         faults |= FSBB_FAULT_IL_POSITIVE_OVERCURRENT;
-    if (adc_i_L.control_port.value < float2ctrl(FSBB_PROTECT_IL_MIN / CTRL_CURRENT_BASE))
+    if (adc_i_L.control_port.value < real2ctrl(FSBB_PROTECT_IL_MIN / CTRL_CURRENT_BASE))
         faults |= FSBB_FAULT_IL_NEGATIVE_OVERCURRENT;
-    if (adc_i_load.control_port.value > float2ctrl(FSBB_OUTPUT_CURRENT_LIM / CTRL_CURRENT_BASE))
+    if (adc_i_load.control_port.value > real2ctrl(FSBB_OUTPUT_CURRENT_LIM / CTRL_CURRENT_BASE))
         faults |= FSBB_FAULT_IOUT_OVERCURRENT;
     return faults;
 }
@@ -52,12 +52,12 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     /* CH2 is the Boost low-side Q4 duty, while the Simulink phase input
        directly defines the upper Q3 gate duty. Send its complement. */
     simulink_tx_buffer.pwm_cmp[1] = CTRL_PWM_CMP_MAX - ctl_get_fsbb_boost_cmp(&fsbb_mod);
-    simulink_tx_buffer.monitor[0] = ctrl2float(adc_v_in.control_port.value) * CTRL_VOLTAGE_BASE;
-    simulink_tx_buffer.monitor[1] = ctrl2float(adc_v_out.control_port.value) * CTRL_VOLTAGE_BASE;
-    simulink_tx_buffer.monitor[2] = ctrl2float(adc_i_L.control_port.value) * CTRL_CURRENT_BASE;
-    simulink_tx_buffer.monitor[3] = ctrl2float(adc_i_load.control_port.value) * CTRL_CURRENT_BASE;
-    simulink_tx_buffer.monitor[4] = ctrl2float(dcdc_core.v_out_formal) * CTRL_VOLTAGE_BASE;
-    simulink_tx_buffer.monitor[5] = ctrl2float(v_req) * CTRL_VOLTAGE_BASE;
+    simulink_tx_buffer.monitor[0] = ctrl2param(adc_v_in.control_port.value) * CTRL_VOLTAGE_BASE;
+    simulink_tx_buffer.monitor[1] = ctrl2param(adc_v_out.control_port.value) * CTRL_VOLTAGE_BASE;
+    simulink_tx_buffer.monitor[2] = ctrl2param(adc_i_L.control_port.value) * CTRL_CURRENT_BASE;
+    simulink_tx_buffer.monitor[3] = ctrl2param(adc_i_load.control_port.value) * CTRL_CURRENT_BASE;
+    simulink_tx_buffer.monitor[4] = ctrl2param(dcdc_core.v_out_formal) * CTRL_VOLTAGE_BASE;
+    simulink_tx_buffer.monitor[5] = ctrl2param(v_req) * CTRL_VOLTAGE_BASE;
     simulink_tx_buffer.monitor[6] = (double)cia402_sm.current_state;
     simulink_tx_buffer.monitor[7] = (double)cia402_sm.current_cmd;
     if (g_fsbb_sim_enable_pending)

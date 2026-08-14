@@ -7,20 +7,20 @@
 void ctl_init_smc(ctl_smc_t* smc, parameter_gt eta11, parameter_gt eta12, parameter_gt eta21, parameter_gt eta22,
                   parameter_gt rho, parameter_gt lambda, parameter_gt phi)
 {
-    // 强制转换为定点控制域
-    smc->eta11 = float2ctrl(eta11);
-    smc->eta12 = float2ctrl(eta12);
-    smc->eta21 = float2ctrl(eta21);
-    smc->eta22 = float2ctrl(eta22);
-    smc->rho = float2ctrl(rho);
-    smc->lambda = float2ctrl(lambda);
+    // Convert initialization gains into the control domain.
+    smc->eta11 = real2ctrl(eta11);
+    smc->eta12 = real2ctrl(eta12);
+    smc->eta21 = real2ctrl(eta21);
+    smc->eta22 = real2ctrl(eta22);
+    smc->rho = real2ctrl(rho);
+    smc->lambda = real2ctrl(lambda);
 
-    // 计算并存储边界层的倒数，以避免在 ISR 中执行除法
+    // Store the boundary-layer reciprocal to avoid division in the ISR.
     if (phi < 1e-6f)
     {
-        phi = 1e-6f; // 防除零与极度高频保护
+        phi = CTL_PARAM_CONST_EPSILON; // Protect the reciprocal from zero.
     }
-    smc->inv_phi = float2ctrl(1.0f / phi);
+    smc->inv_phi = real2ctrl(1.0f / phi);
 
     ctl_clear_smc(smc);
 }

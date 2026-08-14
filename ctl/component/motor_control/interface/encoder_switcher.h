@@ -61,18 +61,18 @@ typedef struct _tag_angle_switcher
 GMP_STATIC_INLINE ctrl_gt ctl_helper_wrap_angle_pu(ctrl_gt angle)
 {
     ctrl_gt result = ctl_mod_1(angle);
-    if (result < float2ctrl(0.0f))
-        result += float2ctrl(1.0f);
+    if (result < CTL_CTRL_CONST_ZERO)
+        result += CTL_CTRL_CONST_1;
     return result;
 }
 
 GMP_STATIC_INLINE ctrl_gt ctl_helper_diff_angle_pu(ctrl_gt target, ctrl_gt current)
 {
     ctrl_gt difference = ctl_mod_1(target - current);
-    if (difference >= float2ctrl(0.5f))
-        difference -= float2ctrl(1.0f);
-    else if (difference < float2ctrl(-0.5f))
-        difference += float2ctrl(1.0f);
+    if (difference >= CTL_CTRL_CONST_1_OVER_2)
+        difference -= CTL_CTRL_CONST_1;
+    else if (difference < (-CTL_CTRL_CONST_1_OVER_2))
+        difference += CTL_CTRL_CONST_1;
     return difference;
 }
 
@@ -81,7 +81,7 @@ GMP_STATIC_INLINE void ctl_set_angle_switcher_duration(ctl_angle_switcher_t* ctx
                                                         parameter_gt isr_frequency_hz)
 {
     parameter_gt ticks = transition_time_s * isr_frequency_hz;
-    ctx->weight_step = float2ctrl((ticks > 1.0f) ? (1.0f / ticks) : 1.0f);
+    ctx->weight_step = real2ctrl((ticks > 1.0f) ? (1.0f / ticks) : 1.0f);
 }
 
 void ctl_init_angle_switcher(ctl_angle_switcher_t* ctx, parameter_gt transition_time_s,
@@ -105,8 +105,8 @@ GMP_STATIC_INLINE void ctl_configure_angle_switcher_speed_qualification(
 
     if (exit_abs < enter_abs)
         exit_abs = enter_abs;
-    ctx->speed_match_enter_pu = float2ctrl(enter_abs);
-    ctx->speed_match_exit_pu = float2ctrl(exit_abs);
+    ctx->speed_match_enter_pu = real2ctrl(enter_abs);
+    ctx->speed_match_exit_pu = real2ctrl(exit_abs);
     ctx->qualify_ticks_required = (ticks > 1.0f) ? (uint32_t)ticks : 1U;
     ctx->qualify_ticks = 0U;
     ctx->flag_speed_qualification = 1;
@@ -147,9 +147,9 @@ GMP_STATIC_INLINE void ctl_select_angle_source_immediate(ctl_angle_switcher_t* c
     velocity_ift* speed = select_source_b ? ctx->spd_b : ctx->spd_a;
 
     ctx->state = select_source_b ? ANGLE_SWITCH_IDLE_B : ANGLE_SWITCH_IDLE_A;
-    ctx->weight = select_source_b ? float2ctrl(1.0f) : float2ctrl(0.0f);
-    ctx->transition_progress = float2ctrl(1.0f);
-    ctx->angle_offset_pu = float2ctrl(0.0f);
+    ctx->weight = select_source_b ? CTL_CTRL_CONST_1 : CTL_CTRL_CONST_ZERO;
+    ctx->transition_progress = CTL_CTRL_CONST_1;
+    ctx->angle_offset_pu = CTL_CTRL_CONST_ZERO;
     ctx->request_pending = 0;
     ctx->qualify_ticks = 0U;
     if (position != NULL)
@@ -179,7 +179,7 @@ GMP_STATIC_INLINE void ctl_begin_angle_transition(ctl_angle_switcher_t* ctx,
     ctx->angle_offset_pu = ctl_helper_diff_angle_pu(ctx->out_enc.elec_position,
                                                     target_position->elec_position);
     ctx->transition_speed_start = ctx->out_spd.speed;
-    ctx->transition_progress = float2ctrl(0.0f);
+    ctx->transition_progress = CTL_CTRL_CONST_ZERO;
     ctx->state = target_source_b ? ANGLE_SWITCH_TRANS_A2B : ANGLE_SWITCH_TRANS_B2A;
     ctx->request_pending = 0;
     ctx->qualify_ticks = 0U;
@@ -255,7 +255,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_angle_switcher(ctl_angle_switcher_t* ctx)
         ctx->out_enc = *target_position;
         if (target_speed != NULL)
             ctx->out_spd = *target_speed;
-        ctx->weight = target_is_b ? float2ctrl(1.0f) : float2ctrl(0.0f);
+        ctx->weight = target_is_b ? CTL_CTRL_CONST_1 : CTL_CTRL_CONST_ZERO;
         return ctx->out_enc.elec_position;
     }
 
@@ -264,11 +264,11 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_angle_switcher(ctl_angle_switcher_t* ctx)
     target_speed = target_is_b ? ctx->spd_b : ctx->spd_a;
 
     ctx->transition_progress += ctx->weight_step;
-    if (ctx->transition_progress > float2ctrl(1.0f))
-        ctx->transition_progress = float2ctrl(1.0f);
+    if (ctx->transition_progress > CTL_CTRL_CONST_1)
+        ctx->transition_progress = CTL_CTRL_CONST_1;
 
     {
-        ctrl_gt remaining = float2ctrl(1.0f) - ctx->transition_progress;
+        ctrl_gt remaining = CTL_CTRL_CONST_1 - ctx->transition_progress;
         ctx->out_enc.elec_position = ctl_helper_wrap_angle_pu(
             target_position->elec_position + ctl_mul(remaining, ctx->angle_offset_pu));
         ctx->weight = target_is_b ? ctx->transition_progress : remaining;
@@ -278,7 +278,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_angle_switcher(ctl_angle_switcher_t* ctx)
                                  ctl_mul(ctx->transition_progress, target_speed->speed);
     }
 
-    if (ctx->weight < float2ctrl(0.5f))
+    if (ctx->weight < CTL_CTRL_CONST_1_OVER_2)
     {
         ctx->out_enc.position = ctx->src_a->position;
         ctx->out_enc.revolutions = ctx->src_a->revolutions;
@@ -289,10 +289,10 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_angle_switcher(ctl_angle_switcher_t* ctx)
         ctx->out_enc.revolutions = ctx->src_b->revolutions;
     }
 
-    if (ctx->transition_progress >= float2ctrl(1.0f))
+    if (ctx->transition_progress >= CTL_CTRL_CONST_1)
     {
         ctx->state = target_is_b ? ANGLE_SWITCH_IDLE_B : ANGLE_SWITCH_IDLE_A;
-        ctx->angle_offset_pu = float2ctrl(0.0f);
+        ctx->angle_offset_pu = CTL_CTRL_CONST_ZERO;
         ctx->out_enc = *target_position;
         if (target_speed != NULL)
             ctx->out_spd = *target_speed;

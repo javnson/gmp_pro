@@ -59,8 +59,8 @@ GMP_STATIC_INLINE _iq abs_static_inline(_iq A)
  * @{
  */
 
-#define float2ctrl(x) (_IQ(x))     /**< @brief Converts a float literal to `_iq`. Maps to `_IQ()`. */
-#define ctrl2float(x) (_IQtoF(x))  /**< @brief Converts an `_iq` value to a float. Maps to `_IQtoF()`. */
+#define GMP_CTRL_FROM_REAL(x) (_IQ(x))    /**< @brief Quantizes real_gt into the configured IQ format. */
+#define GMP_CTRL_TO_REAL(x)   (_IQtoF(x)) /**< @brief Converts IQ data to the source-domain representation. */
 #define int2ctrl(x)   (_IQ(x))     /**< @brief Converts an integer to `_iq`. Maps to `_IQ()`. */
 #define ctrl2int(x)   (_IQint(x))  /**< @brief Converts an `_iq` value to its integer part. Maps to `_IQint()`. */
 #define ctrl_fraction_to_index(x, count) ((uint32_t)_IQmpyI32int((x), (int32_t)(count)))

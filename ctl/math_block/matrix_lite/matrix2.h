@@ -75,10 +75,10 @@ GMP_STATIC_INLINE void ctl_matrix2_set(ctl_matrix2_t* mat, int row, int col, ctr
  */
 GMP_STATIC_INLINE void ctl_matrix2_clear(ctl_matrix2_t* matrix)
 {
-    matrix->dat[0] = float2ctrl(0.0f);
-    matrix->dat[1] = float2ctrl(0.0f);
-    matrix->dat[2] = float2ctrl(0.0f);
-    matrix->dat[3] = float2ctrl(0.0f);
+    matrix->dat[0] = real2ctrl(0.0f);
+    matrix->dat[1] = real2ctrl(0.0f);
+    matrix->dat[2] = real2ctrl(0.0f);
+    matrix->dat[3] = real2ctrl(0.0f);
 }
 
 /**
@@ -87,10 +87,10 @@ GMP_STATIC_INLINE void ctl_matrix2_clear(ctl_matrix2_t* matrix)
  */
 GMP_STATIC_INLINE void ctl_matrix2_set_identity(ctl_matrix2_t* matrix)
 {
-    matrix->dat[0] = float2ctrl(1.0f);
-    matrix->dat[1] = float2ctrl(0.0f);
-    matrix->dat[2] = float2ctrl(0.0f);
-    matrix->dat[3] = float2ctrl(1.0f);
+    matrix->dat[0] = real2ctrl(1.0f);
+    matrix->dat[1] = real2ctrl(0.0f);
+    matrix->dat[2] = real2ctrl(0.0f);
+    matrix->dat[3] = real2ctrl(1.0f);
 }
 
 /**
@@ -203,7 +203,7 @@ GMP_STATIC_INLINE void ctl_matrix2_inv(ctl_matrix2_t* result, const ctl_matrix2_
     }
 
     /* Optimization: Calculate 1/det once, then multiply */
-    ctrl_gt inv_det = ctl_div(float2ctrl(1.0f), det);
+    ctrl_gt inv_det = ctl_div(real2ctrl(1.0f), det);
 
     result->dat[0] = ctl_mul(mat->dat[3], inv_det);
     result->dat[1] = ctl_mul(-mat->dat[1], inv_det);
@@ -263,16 +263,16 @@ GMP_STATIC_INLINE void ctl_matrix2_eigenvalues_complex(const ctl_matrix2_t* mat,
 {
     ctrl_gt trace = ctl_matrix2_trace(mat);
     ctrl_gt det = ctl_matrix2_det(mat);
-    ctrl_gt discriminant = ctl_mul(trace, trace) - ctl_mul(float2ctrl(4.0f), det);
+    ctrl_gt discriminant = ctl_mul(trace, trace) - ctl_mul(real2ctrl(4.0f), det);
 
-    if (discriminant >= float2ctrl(0.0f))
+    if (discriminant >= real2ctrl(0.0f))
     {
         // Real eigenvalues
         ctrl_gt sqrt_discriminant = ctl_sqrt(discriminant);
         eigenvalue1->real = ctl_div2(trace + sqrt_discriminant);
-        eigenvalue1->imag = float2ctrl(0.0f);
+        eigenvalue1->imag = real2ctrl(0.0f);
         eigenvalue2->real = ctl_div2(trace - sqrt_discriminant);
-        eigenvalue2->imag = float2ctrl(0.0f);
+        eigenvalue2->imag = real2ctrl(0.0f);
     }
     else
     {
@@ -314,8 +314,8 @@ GMP_STATIC_INLINE void ctl_matrix2_eigenvectors_real(const ctl_matrix2_t* mat, c
     }
     else
     { // Diagonal matrix
-        eigenvector1->dat[0] = float2ctrl(1.0f);
-        eigenvector1->dat[1] = float2ctrl(0.0f);
+        eigenvector1->dat[0] = real2ctrl(1.0f);
+        eigenvector1->dat[1] = real2ctrl(0.0f);
     }
 
     // Calculate eigenvector for the second eigenvalue
@@ -331,8 +331,8 @@ GMP_STATIC_INLINE void ctl_matrix2_eigenvectors_real(const ctl_matrix2_t* mat, c
     }
     else
     { // Diagonal matrix
-        eigenvector2->dat[0] = float2ctrl(0.0f);
-        eigenvector2->dat[1] = float2ctrl(1.0f);
+        eigenvector2->dat[0] = real2ctrl(0.0f);
+        eigenvector2->dat[1] = real2ctrl(1.0f);
     }
 
     // Normalize the eigenvectors

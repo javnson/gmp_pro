@@ -26,7 +26,7 @@ void ctl_init_ddsrf_pll(ddsrf_pll_t* pll, parameter_gt f_base, parameter_gt pid_
     ctl_clear_ddsrf_pll(pll);
 
     // Init Frequency Scaling Factor
-    pll->freq_sf = float2ctrl(f_base / f_ctrl);
+    pll->freq_sf = real2ctrl(f_base / f_ctrl);
 
     // Init PID
     ctl_init_pid(&pll->pid_pll, pid_kp, pid_ki, 0, f_ctrl);

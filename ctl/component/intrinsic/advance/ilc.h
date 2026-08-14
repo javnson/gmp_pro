@@ -97,7 +97,7 @@ void ctl_init_ilc(ctl_ilc_controller_t* ilc, const ctl_ilc_init_t* init);
  */
 GMP_STATIC_INLINE void ctl_clear_ilc(ctl_ilc_controller_t* ilc)
 {
-    ilc->u_out = float2ctrl(0.0f);
+    ilc->u_out = CTL_CTRL_CONST_ZERO;
     ilc->time_step = 0;
 }
 

@@ -80,7 +80,7 @@ GMP_STATIC_INLINE void ctl_clear_sinc_interpolator(ctl_sinc_interpolator_t* sinc
     {
         for (i = 0; i < sinc->num_taps; i++)
         {
-            sinc->buffer[i] = float2ctrl(0.0f);
+            sinc->buffer[i] = CTL_CTRL_CONST_ZERO;
         }
     }
 }

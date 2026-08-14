@@ -198,8 +198,8 @@ extern "C"
 
 		esmo->diverge_cnt = 0;
 		esmo->flag_observer_locked = 0;
-		esmo->pos_out.elec_position = float2ctrl(0.0f);
-		esmo->spd_out.speed = float2ctrl(0.0f);
+		esmo->pos_out.elec_position = CTL_CTRL_CONST_ZERO;
+		esmo->spd_out.speed = CTL_CTRL_CONST_ZERO;
 	}
 
 	/**
@@ -332,8 +332,8 @@ extern "C"
 		// ========================================================================
 		// 4. Observer Health Assessment (Loss-of-Lock Protection)
 		// ========================================================================
-		ctrl_gt abs_err_alpha = (err_alpha > float2ctrl(0.0f)) ? err_alpha : -err_alpha;
-		ctrl_gt abs_err_beta = (err_beta > float2ctrl(0.0f)) ? err_beta : -err_beta;
+		ctrl_gt abs_err_alpha = (err_alpha > CTL_CTRL_CONST_ZERO) ? err_alpha : -err_alpha;
+		ctrl_gt abs_err_beta = (err_beta > CTL_CTRL_CONST_ZERO) ? err_beta : -err_beta;
 
 		// Fast O(1) Absolute Threshold Check for divergence
 		if ((abs_err_alpha > esmo->current_err_limit) || (abs_err_beta > esmo->current_err_limit))
@@ -390,10 +390,10 @@ extern "C"
 			ctrl_gt e_mag_sq = ctl_mul(esmo->e_est.dat[0], esmo->e_est.dat[0]) +
 			                       ctl_mul(esmo->e_est.dat[1], esmo->e_est.dat[1]);
 			ctrl_gt e_mag = ctl_sqrt(e_mag_sq);
-			if (e_mag > float2ctrl(0.01f))
+			if (e_mag > real2ctrl(0.01f))
 				e_err_voltage = ctl_mul(ctl_div(e_err_voltage, e_mag), CTL_CTRL_CONST_1_OVER_2PI);
 			else
-				e_err_voltage = float2ctrl(0.0f);
+				e_err_voltage = CTL_CTRL_CONST_ZERO;
 		}
 
 
@@ -414,10 +414,10 @@ extern "C"
 			comp_angle_pu += ctl_mul(phase_lag_rad, CTL_CTRL_CONST_1_OVER_2PI);
 		}
 
-		if (esmo->ato_pll.elec_speed_pu < float2ctrl(0.0f))
+		if (esmo->ato_pll.elec_speed_pu < CTL_CTRL_CONST_ZERO)
 		{
 			// Add 180 electrical degrees (0.5 turn in angle PU).
-			comp_angle_pu += float2ctrl(0.5f);
+			comp_angle_pu += CTL_CTRL_CONST_1_OVER_2;
 
 			if (esmo->flag_enable_bias)
 			{
@@ -436,7 +436,7 @@ extern "C"
 		// ========================================================================
 		// 7. Output to Top-Level Interfaces
 		// ========================================================================
-		esmo->pos_out.elec_position = ctrl_mod_1(comp_angle_pu + float2ctrl(1.0f));
+		esmo->pos_out.elec_position = ctrl_mod_1(comp_angle_pu + CTL_CTRL_CONST_1);
 		esmo->spd_out.speed = esmo->ato_pll.elec_speed_pu;
 	}
 

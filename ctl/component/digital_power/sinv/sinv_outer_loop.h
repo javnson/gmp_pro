@@ -29,7 +29,7 @@ GMP_STATIC_INLINE void ctl_init_sinv_outer_loop(ctl_sinv_outer_loop_t* loop,
 {
     ctl_init_pi(&loop->power_pi, power_kp, power_ki, execution_frequency);
     ctl_init_pi(&loop->dc_bus_pi, bus_kp, bus_ki, execution_frequency);
-    loop->output_limit = float2ctrl(output_limit);
+    loop->output_limit = real2ctrl(output_limit);
     ctl_set_pi_limit(&loop->power_pi, loop->output_limit, -loop->output_limit);
     ctl_set_pi_int_limit(&loop->power_pi, loop->output_limit, -loop->output_limit);
     ctl_set_pi_limit(&loop->dc_bus_pi, loop->output_limit, -loop->output_limit);
@@ -38,8 +38,8 @@ GMP_STATIC_INLINE void ctl_init_sinv_outer_loop(ctl_sinv_outer_loop_t* loop,
     if (loop->execution_divider == 0U)
         loop->execution_divider = 1U;
     loop->execution_tick = 0U;
-    loop->dc_bus_ref = float2ctrl(0.0f);
-    loop->active_power_cmd = float2ctrl(0.0f);
+    loop->dc_bus_ref = CTL_CTRL_CONST_ZERO;
+    loop->active_power_cmd = CTL_CTRL_CONST_ZERO;
 }
 
 GMP_STATIC_INLINE void ctl_clear_sinv_outer_loop(ctl_sinv_outer_loop_t* loop)
@@ -47,7 +47,7 @@ GMP_STATIC_INLINE void ctl_clear_sinv_outer_loop(ctl_sinv_outer_loop_t* loop)
     ctl_clear_pi(&loop->power_pi);
     ctl_clear_pi(&loop->dc_bus_pi);
     loop->execution_tick = 0U;
-    loop->active_power_cmd = float2ctrl(0.0f);
+    loop->active_power_cmd = CTL_CTRL_CONST_ZERO;
 }
 
 /**

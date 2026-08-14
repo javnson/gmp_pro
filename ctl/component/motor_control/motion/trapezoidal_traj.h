@@ -89,10 +89,10 @@ GMP_STATIC_INLINE ctrl_gt ctl_calc_pure_pos_err(int32_t t_revs, ctrl_gt t_ang, i
 {
     int32_t d_revs = t_revs - f_revs;
     if (d_revs > 100)
-        return float2ctrl(100.0f);
+        return real2ctrl(100.0f);
     if (d_revs < -100)
-        return float2ctrl(-100.0f);
-    return float2ctrl((float)d_revs) + (t_ang - f_ang);
+        return real2ctrl(-100.0f);
+    return real2ctrl((float)d_revs) + (t_ang - f_ang);
 }
 
 /**
@@ -121,7 +121,7 @@ GMP_STATIC_INLINE void ctl_sync_trap_planner(ctl_trap_planner_t* planner)
         planner->target_revs = planner->planner_revs;
         planner->target_angle = planner->planner_angle;
     }
-    planner->planner_vel_pu = float2ctrl(0.0f);
+    planner->planner_vel_pu = CTL_CTRL_CONST_ZERO;
     planner->divergence_cnt = 0;
     planner->flag_fault_divergence = 0;
     planner->flag_target_reached = 1;
@@ -157,13 +157,13 @@ GMP_STATIC_INLINE void ctl_step_trap_planner_tdm(ctl_trap_planner_t* planner)
                                                    planner->planner_angle);
 
         // Exact Arrival Logic
-        ctrl_gt abs_dist = (dist_to_go > float2ctrl(0.0f)) ? dist_to_go : -dist_to_go;
+        ctrl_gt abs_dist = (dist_to_go > CTL_CTRL_CONST_ZERO) ? dist_to_go : -dist_to_go;
         ctrl_gt abs_vel =
-            (planner->planner_vel_pu > float2ctrl(0.0f)) ? planner->planner_vel_pu : -planner->planner_vel_pu;
+            (planner->planner_vel_pu > CTL_CTRL_CONST_ZERO) ? planner->planner_vel_pu : -planner->planner_vel_pu;
 
         if (abs_dist <= planner->arrival_tol_revs && abs_vel <= planner->max_accel_step)
         {
-            planner->planner_vel_pu = float2ctrl(0.0f);
+            planner->planner_vel_pu = CTL_CTRL_CONST_ZERO;
             planner->planner_revs = planner->target_revs;
             planner->planner_angle = planner->target_angle;
             planner->flag_target_reached = 1;
@@ -171,15 +171,15 @@ GMP_STATIC_INLINE void ctl_step_trap_planner_tdm(ctl_trap_planner_t* planner)
         }
 
         // 2. Braking Check (Pure Multiplication based on Speed PU)
-        ctrl_gt direction = (dist_to_go > float2ctrl(0.0f)) ? float2ctrl(1.0f) : float2ctrl(-1.0f);
+        ctrl_gt direction = (dist_to_go > CTL_CTRL_CONST_ZERO) ? CTL_CTRL_CONST_1 : (-CTL_CTRL_CONST_1);
 
         ctrl_gt v_sq = ctl_mul(planner->planner_vel_pu, planner->planner_vel_pu);
         ctrl_gt braking_v_sq = ctl_mul(planner->coef_brake_s_to_vsq, abs_dist);
 
         ctrl_gt dir_judge = ctl_mul(dist_to_go, planner->planner_vel_pu);
-        fast_gt moving_towards = (dir_judge >= float2ctrl(0.0f)) ? 1 : 0;
+        fast_gt moving_towards = (dir_judge >= CTL_CTRL_CONST_ZERO) ? 1 : 0;
 
-        ctrl_gt accel = float2ctrl(0.0f);
+        ctrl_gt accel = CTL_CTRL_CONST_ZERO;
         if (moving_towards && (v_sq >= braking_v_sq))
         {
             accel = ctl_mul(-direction, planner->max_accel_step); // Brake!
@@ -197,14 +197,14 @@ GMP_STATIC_INLINE void ctl_step_trap_planner_tdm(ctl_trap_planner_t* planner)
         ctrl_gt delta_angle = ctl_mul(planner->planner_vel_pu, planner->scale_v_to_rev);
         planner->planner_angle += delta_angle;
 
-        while (planner->planner_angle >= float2ctrl(1.0f))
+        while (planner->planner_angle >= CTL_CTRL_CONST_1)
         {
-            planner->planner_angle -= float2ctrl(1.0f);
+            planner->planner_angle -= CTL_CTRL_CONST_1;
             planner->planner_revs++;
         }
-        while (planner->planner_angle < float2ctrl(0.0f))
+        while (planner->planner_angle < CTL_CTRL_CONST_ZERO)
         {
-            planner->planner_angle += float2ctrl(1.0f);
+            planner->planner_angle += CTL_CTRL_CONST_1;
             planner->planner_revs--;
         }
     }
@@ -216,7 +216,7 @@ GMP_STATIC_INLINE void ctl_step_trap_planner_tdm(ctl_trap_planner_t* planner)
         ctrl_gt following_error = ctl_calc_pure_pos_err(planner->planner_revs, planner->planner_angle,
                                                         planner->pos_if->revolutions, planner->pos_if->position);
 
-        ctrl_gt abs_err = (following_error > float2ctrl(0.0f)) ? following_error : -following_error;
+        ctrl_gt abs_err = (following_error > CTL_CTRL_CONST_ZERO) ? following_error : -following_error;
 
         if (abs_err > planner->tracking_err_limit)
         {
@@ -224,7 +224,7 @@ GMP_STATIC_INLINE void ctl_step_trap_planner_tdm(ctl_trap_planner_t* planner)
             if (planner->divergence_cnt >= planner->divergence_limit)
             {
                 planner->flag_fault_divergence = 1;
-                planner->planner_vel_pu = float2ctrl(0.0f);
+                planner->planner_vel_pu = CTL_CTRL_CONST_ZERO;
             }
         }
         else

@@ -88,9 +88,9 @@ void ctl_init_sogi(ctl_sogi_t* sogi, parameter_gt gain, parameter_gt freq_r, par
  */
 GMP_STATIC_INLINE void ctl_clear_sogi(ctl_sogi_t* sogi)
 {
-    sogi->d_integrate = float2ctrl(0.0f);
-    sogi->q_integrate = float2ctrl(0.0f);
-    sogi->integrate_reference = float2ctrl(0.0f);
+    sogi->d_integrate = CTL_CTRL_CONST_ZERO;
+    sogi->q_integrate = CTL_CTRL_CONST_ZERO;
+    sogi->integrate_reference = CTL_CTRL_CONST_ZERO;
 }
 
 /**

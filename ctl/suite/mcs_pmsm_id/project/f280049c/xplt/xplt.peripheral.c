@@ -221,8 +221,8 @@ interrupt void INT_IRIS_CAN_0_ISR(void)
         //        // set target value
         //#if BUILD_LEVEL == 1
         //        // For level 1 Set target voltage
-        //        ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl((float)recv_content[0].i32 / CAN_SCALE_FACTOR),
-        //                                         float2ctrl((float)recv_content[1].i32 / CAN_SCALE_FACTOR));
+        //        ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, real2ctrl((float)recv_content[0].i32 / CAN_SCALE_FACTOR),
+        //                                         real2ctrl((float)recv_content[1].i32 / CAN_SCALE_FACTOR));
         //
         //#endif // BUILD_LEVEL
     }

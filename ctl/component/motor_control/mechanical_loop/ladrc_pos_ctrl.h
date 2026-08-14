@@ -111,10 +111,10 @@ GMP_STATIC_INLINE void ctl_clear_ladrc_pos_ctrl(ctl_ladrc_pos_ctrl_t* ctrl)
 {
     ctl_clear_ladrc2(&ctrl->ladrc_core);
     ctl_clear_divider(&ctrl->div_mech);
-    ctrl->local_fbk_pos = float2ctrl(0.0f);
-    ctrl->local_ref_pos = float2ctrl(0.0f);
-    ctrl->prev_fbk_raw = (ctrl->pos_if != NULL) ? ctrl->pos_if->position : float2ctrl(0.0f);
-    ctrl->torque_cmd = float2ctrl(0.0f);
+    ctrl->local_fbk_pos = CTL_CTRL_CONST_ZERO;
+    ctrl->local_ref_pos = CTL_CTRL_CONST_ZERO;
+    ctrl->prev_fbk_raw = (ctrl->pos_if != NULL) ? ctrl->pos_if->position : CTL_CTRL_CONST_ZERO;
+    ctrl->torque_cmd = CTL_CTRL_CONST_ZERO;
 }
 
 /**
@@ -127,13 +127,13 @@ GMP_STATIC_INLINE void ctl_enable_ladrc_pos_ctrl(ctl_ladrc_pos_ctrl_t* ctrl, ctr
         return;
 
     // Reset local tracking frame to absolute zero locally
-    ctrl->local_fbk_pos = float2ctrl(0.0f);
-    ctrl->local_ref_pos = float2ctrl(0.0f);
+    ctrl->local_fbk_pos = CTL_CTRL_CONST_ZERO;
+    ctrl->local_ref_pos = CTL_CTRL_CONST_ZERO;
     if (ctrl->pos_if != NULL)
         ctrl->prev_fbk_raw = ctrl->pos_if->position;
 
     // Pre-load LADRC states: Current local pos is 0, velocity is approx 0, output is current Iq
-    ctl_set_ladrc2_states(&ctrl->ladrc_core, float2ctrl(0.0f), float2ctrl(0.0f), current_iq_fbk);
+    ctl_set_ladrc2_states(&ctrl->ladrc_core, CTL_CTRL_CONST_ZERO, CTL_CTRL_CONST_ZERO, current_iq_fbk);
 
     ctrl->flag_enable = 1;
 }
@@ -144,7 +144,7 @@ GMP_STATIC_INLINE void ctl_enable_ladrc_pos_ctrl(ctl_ladrc_pos_ctrl_t* ctrl, ctr
 GMP_STATIC_INLINE void ctl_disable_ladrc_pos_ctrl(ctl_ladrc_pos_ctrl_t* ctrl)
 {
     ctrl->flag_enable = 0;
-    ctrl->torque_cmd = float2ctrl(0.0f);
+    ctrl->torque_cmd = CTL_CTRL_CONST_ZERO;
 }
 
 /**
@@ -160,7 +160,7 @@ GMP_STATIC_INLINE void ctl_step_ladrc_pos_ctrl(ctl_ladrc_pos_ctrl_t* ctrl, int32
 {
     if (!ctrl->flag_enable)
     {
-        ctrl->torque_cmd = float2ctrl(0.0f);
+        ctrl->torque_cmd = CTL_CTRL_CONST_ZERO;
         return;
     }
 
@@ -177,10 +177,10 @@ GMP_STATIC_INLINE void ctl_step_ladrc_pos_ctrl(ctl_ladrc_pos_ctrl_t* ctrl, int32
         ctrl_gt delta_fbk = current_raw - ctrl->prev_fbk_raw;
 
         // Handle physical wrap-around of the fractional angle
-        if (delta_fbk > float2ctrl(0.5f))
-            delta_fbk -= float2ctrl(1.0f);
-        else if (delta_fbk < float2ctrl(-0.5f))
-            delta_fbk += float2ctrl(1.0f);
+        if (delta_fbk > CTL_CTRL_CONST_1_OVER_2)
+            delta_fbk -= CTL_CTRL_CONST_1;
+        else if (delta_fbk < (-CTL_CTRL_CONST_1_OVER_2))
+            delta_fbk += CTL_CTRL_CONST_1;
 
         ctrl->local_fbk_pos += delta_fbk;
         ctrl->prev_fbk_raw = current_raw;
@@ -196,7 +196,7 @@ GMP_STATIC_INLINE void ctl_step_ladrc_pos_ctrl(ctl_ladrc_pos_ctrl_t* ctrl, int32
         // ====================================================================
         // If the motor rotates continuously, local_fbk_pos grows. We shift the
         // entire coordinate frame back to near-zero to preserve Q24 precision.
-        if (ctrl->local_fbk_pos > float2ctrl(10.0f) || ctrl->local_fbk_pos < float2ctrl(-10.0f))
+        if (ctrl->local_fbk_pos > real2ctrl(10.0f) || ctrl->local_fbk_pos < real2ctrl(-10.0f))
         {
             ctrl_gt shift = -ctrl->local_fbk_pos;
             ctrl->local_fbk_pos += shift; // Becomes exactly 0

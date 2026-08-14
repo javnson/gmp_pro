@@ -288,7 +288,7 @@ void ctl_set_phasor_via_angle(ctrl_gt angle, ctl_vector2_t* phasor);
 
 // 使用示例
 ctl_vector2_t phasor;
-ctrl_gt theta = float2ctrl(0.25);  // 90度 = π/2
+ctrl_gt theta = real2ctrl(0.25);  // 90度 = π/2
 ctl_set_phasor_via_angle(theta, &phasor);
 // phasor.dat[0] = sin(90°) = 1.0
 // phasor.dat[1] = cos(90°) = 0.0
@@ -308,9 +308,9 @@ void ctl_clarke_abc2ab0(const ctl_vector3_t* abc, ctl_vector3_t* ab0);
 
 // 使用示例（三相电流采样）
 ctl_vector3_t i_abc = {
-    .dat = {float2ctrl(10.0),   // Ia = 10A
-            float2ctrl(-5.0),    // Ib = -5A
-            float2ctrl(-5.0)}    // Ic = -5A
+    .dat = {real2ctrl(10.0),   // Ia = 10A
+            real2ctrl(-5.0),    // Ib = -5A
+            real2ctrl(-5.0)}    // Ic = -5A
 };
 ctl_vector3_t i_ab0;
 ctl_clarke_abc2ab0(&i_abc, &i_ab0);
@@ -410,7 +410,7 @@ void ctl_svpwm_calc(const ctl_vector2_t* vab,
 
 // 使用示例
 ctl_vector2_t v_ab = {.dat = {vα, vβ}};
-ctrl_gt v_dc = float2ctrl(48.0);
+ctrl_gt v_dc = real2ctrl(48.0);
 ctl_vector3_t duty_abc;
 
 ctl_svpwm_calc(&v_ab, v_dc, &duty_abc);
@@ -536,8 +536,8 @@ typedef struct {
 
 // 创建复数
 ctl_complex_t z = {
-    .real = float2ctrl(3.0),
-    .imag = float2ctrl(4.0)
+    .real = real2ctrl(3.0),
+    .imag = real2ctrl(4.0)
 };
 
 // 加法：result = a + b
@@ -693,12 +693,12 @@ void grid_pll_update() {
 
 void attitude_update(ctrl_gt gx, ctrl_gt gy, ctrl_gt gz, ctrl_gt dt) {
     static ctl_quaternion_t q = {
-        .w = float2ctrl(1.0),
+        .w = real2ctrl(1.0),
         .x = 0, .y = 0, .z = 0
     };
     
     // 从陀螺仪角速度创建旋转四元数
-    ctrl_gt half_dt = ctl_mul(dt, float2ctrl(0.5));
+    ctrl_gt half_dt = ctl_mul(dt, real2ctrl(0.5));
     
     ctl_quaternion_t dq = {
         .w = 0,
@@ -861,8 +861,8 @@ ctrl_gt radian = ctl_mul(pu_angle, CTL_CTRL_CONST_2_PI);
 
 ```c
 // 打印 ctrl_gt 值
-ctrl_gt val = float2ctrl(3.14);
-gmp_base_print("Value: %f\r\n", ctrl2float(val));
+ctrl_gt val = real2ctrl(3.14);
+gmp_base_print("Value: %f\r\n", ctrl2param(val));
 ```
 
 ### 2. 坐标变换验证
@@ -883,13 +883,13 @@ ctl_iclarke_ab2abc(&ab0, &abc_out);
 
 ```c
 // 测试定点数精度
-ctrl_gt a = float2ctrl(0.1);
+ctrl_gt a = real2ctrl(0.1);
 ctrl_gt sum = 0;
 for (int i = 0; i < 10; i++) {
     sum = sum + a;
 }
 // sum 应该接近 1.0，检查累积误差
-gmp_base_print("Sum = %f (expected 1.0)\r\n", ctrl2float(sum));
+gmp_base_print("Sum = %f (expected 1.0)\r\n", ctrl2param(sum));
 ```
 
 ---

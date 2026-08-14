@@ -111,8 +111,8 @@ void ctl_init()
                                                      MTR_CTRL_VOLTAGE_BASE / MTR_CTRL_CURRENT_BASE);
     pmsm_ctrl_init.current_Ti = (parameter_gt)(MOTOR_PARAM_LS / MOTOR_PARAM_RS);
     pmsm_ctrl_init.current_Td = 0;
-    pmsm_ctrl_init.voltage_limit_min = float2ctrl(-1.0);
-    pmsm_ctrl_init.voltage_limit_max = float2ctrl(1.0);
+    pmsm_ctrl_init.voltage_limit_min = (-CTL_CTRL_CONST_1);
+    pmsm_ctrl_init.voltage_limit_max = CTL_CTRL_CONST_1;
 
     // speed pid controller parameters
     pmsm_ctrl_init.spd_ctrl_div = SPD_CONTROLLER_PWM_DIVISION;
@@ -120,8 +120,8 @@ void ctl_init()
     pmsm_ctrl_init.spd_Ti = (parameter_gt)(4.0f / MTR_CTRL_SPEED_LOOP_BW);
 //		pmsm_ctrl_init.spd_Ti = 0.0005f;
     pmsm_ctrl_init.spd_Td = 0;
-    pmsm_ctrl_init.current_limit_min = float2ctrl(-0.45);
-    pmsm_ctrl_init.current_limit_max = float2ctrl(0.45);
+    pmsm_ctrl_init.current_limit_min = real2ctrl(-0.45);
+    pmsm_ctrl_init.current_limit_max = real2ctrl(0.45);
 
     // accelerator parameters
     pmsm_ctrl_init.acc_limit_min = -1.5f;
@@ -141,7 +141,7 @@ void ctl_init()
 #endif // OPENLOOP_CONST_FREQUENCY
 
     ctl_pmsm_ctrl_voltage_mode(&pmsm_ctrl);
-    ctl_set_pmsm_ctrl_vdq_ff(&pmsm_ctrl, float2ctrl(0.0), float2ctrl(0.12));
+    ctl_set_pmsm_ctrl_vdq_ff(&pmsm_ctrl, CTL_CTRL_CONST_ZERO, real2ctrl(0.12));
 
 #elif (BUILD_LEVEL == 2)
 #if defined OPENLOOP_CONST_FREQUENCY
@@ -150,17 +150,17 @@ void ctl_init()
     ctl_attach_mtr_position(&pmsm_ctrl.mtr_interface, &rg.enc);
 #endif // OPENLOOP_CONST_FREQUENCY
     ctl_pmsm_ctrl_current_mode(&pmsm_ctrl);
-    ctl_set_pmsm_ctrl_idq_ff(&pmsm_ctrl, float2ctrl(0.0), float2ctrl(0.12));
+    ctl_set_pmsm_ctrl_idq_ff(&pmsm_ctrl, CTL_CTRL_CONST_ZERO, real2ctrl(0.12));
 
 #elif (BUILD_LEVEL == 3)
 
     ctl_pmsm_ctrl_current_mode(&pmsm_ctrl);
-    ctl_set_pmsm_ctrl_idq_ff(&pmsm_ctrl, float2ctrl(0.1), float2ctrl(0.05));
+    ctl_set_pmsm_ctrl_idq_ff(&pmsm_ctrl, real2ctrl(0.1), real2ctrl(0.05));
 
 #elif (BUILD_LEVEL == 4)
 
     ctl_pmsm_ctrl_velocity_mode(&pmsm_ctrl);
-    ctl_set_pmsm_ctrl_speed(&pmsm_ctrl, float2ctrl(0.25));
+    ctl_set_pmsm_ctrl_speed(&pmsm_ctrl, real2ctrl(0.25));
 #endif // BUILD_LEVEL
 
 #if defined SPECIFY_ENABLE_ADC_CALIBRATE

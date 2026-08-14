@@ -45,8 +45,8 @@ void ctl_init_oid_encoder(ctl_pmsm_offline_id_t* ctx)
     sub->cycle_ready = 0;
     sub->identified_pole_pairs = 0U;
     sub->encoder_offset_pu = 0.0f;
-    sub->cycle_net_motion_pu = float2ctrl(0.0f);
-    sub->command_angle_pu = float2ctrl(0.0f);
+    sub->cycle_net_motion_pu = CTL_CTRL_CONST_ZERO;
+    sub->command_angle_pu = CTL_CTRL_CONST_ZERO;
     sub->align_current_pu_ctrl = param2ctrl(sub->cfg.align_current_pu);
     sub->max_sample_jump_pu_ctrl = param2ctrl(sub->cfg.max_sample_jump_pu);
     sub->sweep_step_pu = param2ctrl(sub->cfg.sweep_elec_hz / ctx->cfg_basic.isr_freq_hz);
@@ -129,7 +129,7 @@ void ctl_loop_oid_encoder(ctl_pmsm_offline_id_t* ctx)
     pmsm_offline_id_encoder_t* sub = &ctx->sub_encoder;
     pmsm_oid_cfg_encoder_t* cfg = &sub->cfg;
     ctl_state_seq_e phase = ctl_loop_state_seq(&ctx->seq);
-    parameter_gt current_position = (ctx->enc != NULL) ? ctrl2float(ctl_get_encoder_position(ctx->enc)) : 0.0f;
+    parameter_gt current_position = (ctx->enc != NULL) ? ctrl2param(ctl_get_encoder_position(ctx->enc)) : 0.0f;
 
     switch (sub->sm)
     {
@@ -148,10 +148,10 @@ void ctl_loop_oid_encoder(ctl_pmsm_offline_id_t* ctx)
             sub->anchor_ticks = SEC_TO_TICKS(cfg->anchor_settle_time_s, ctx->cfg_basic.isr_freq_hz);
             sub->sweep_timeout_ticks =
                 (uint32_t)(2.0f * ctx->cfg_basic.isr_freq_hz / cfg->sweep_elec_hz) + 1U;
-            sub->last_position_pu = float2ctrl(current_position);
-            sub->cycle_net_motion_pu = float2ctrl(0.0f);
-            sub->stationary_min_pu = float2ctrl(0.0f);
-            sub->stationary_max_pu = float2ctrl(0.0f);
+            sub->last_position_pu = real2ctrl(current_position);
+            sub->cycle_net_motion_pu = CTL_CTRL_CONST_ZERO;
+            sub->stationary_min_pu = CTL_CTRL_CONST_ZERO;
+            sub->stationary_max_pu = CTL_CTRL_CONST_ZERO;
             ctl_id_disable_output(ctx);
             ctl_id_set_pwm_output(ctx, 0);
             sub->sm = PMSM_ID_ENCODER_NOISE_CHECK;
@@ -162,7 +162,7 @@ void ctl_loop_oid_encoder(ctl_pmsm_offline_id_t* ctx)
     case PMSM_ID_ENCODER_NOISE_CHECK:
         if (phase == CTL_ST_LEAVE)
         {
-            parameter_gt span = ctrl2float(sub->stationary_max_pu - sub->stationary_min_pu);
+            parameter_gt span = ctrl2param(sub->stationary_max_pu - sub->stationary_min_pu);
             if (span > cfg->max_stationary_span_pu)
             {
                 ctl_oid_encoder_fault(ctx, PMSM_ID_ENCODER_FAULT_RANDOM_JUMP);
@@ -171,8 +171,8 @@ void ctl_loop_oid_encoder(ctl_pmsm_offline_id_t* ctx)
             ctl_id_set_pwm_output(ctx, 1);
             ctl_id_set_foc_state(ctx, PMSM_ID_CURRENT_CLOSELOOP);
             ctl_id_route_foc_angle(ctx, PMSM_ID_ANGLE_SRC_STATIC);
-            ctl_id_set_static_angle(ctx, float2ctrl(0.0f));
-            sub->last_position_pu = float2ctrl(current_position);
+            ctl_id_set_static_angle(ctx, CTL_CTRL_CONST_ZERO);
+            sub->last_position_pu = real2ctrl(current_position);
             sub->sm = PMSM_ID_ENCODER_ALIGN_ZERO;
             ctl_clear_state_seq(&ctx->seq, sub->align_ticks);
         }
@@ -181,11 +181,11 @@ void ctl_loop_oid_encoder(ctl_pmsm_offline_id_t* ctx)
     case PMSM_ID_ENCODER_ALIGN_ZERO:
         if (phase == CTL_ST_LEAVE)
         {
-            sub->first_anchor_pu = float2ctrl(current_position);
+            sub->first_anchor_pu = real2ctrl(current_position);
             sub->encoder_offset_pu = current_position;
-            sub->last_position_pu = float2ctrl(current_position);
-            sub->cycle_net_motion_pu = float2ctrl(0.0f);
-            sub->command_angle_pu = float2ctrl(0.0f);
+            sub->last_position_pu = real2ctrl(current_position);
+            sub->cycle_net_motion_pu = CTL_CTRL_CONST_ZERO;
+            sub->command_angle_pu = CTL_CTRL_CONST_ZERO;
             sub->sweep_tick = 0U;
             sub->cycle_ready = 0;
             sub->sm = PMSM_ID_ENCODER_SWEEP;
@@ -204,9 +204,9 @@ void ctl_loop_oid_encoder(ctl_pmsm_offline_id_t* ctx)
     case PMSM_ID_ENCODER_ANCHOR_SETTLE:
         if (phase == CTL_ST_LEAVE)
         {
-            parameter_gt motion = ctrl2float(sub->cycle_net_motion_pu);
+            parameter_gt motion = ctrl2param(sub->cycle_net_motion_pu);
             parameter_gt return_error = ctl_oid_abs(ctl_oid_wrap_delta(current_position -
-                                                        ctrl2float(sub->first_anchor_pu)));
+                                                        ctrl2param(sub->first_anchor_pu)));
             if (ctl_oid_abs(motion) < cfg->min_cycle_motion_pu)
             {
                 ctl_oid_encoder_fault(ctx, PMSM_ID_ENCODER_FAULT_NO_MOTION);
@@ -226,9 +226,9 @@ void ctl_loop_oid_encoder(ctl_pmsm_offline_id_t* ctx)
             }
             else
             {
-                sub->last_position_pu = float2ctrl(current_position);
-                sub->cycle_net_motion_pu = float2ctrl(0.0f);
-                sub->command_angle_pu = float2ctrl(0.0f);
+                sub->last_position_pu = real2ctrl(current_position);
+                sub->cycle_net_motion_pu = CTL_CTRL_CONST_ZERO;
+                sub->command_angle_pu = CTL_CTRL_CONST_ZERO;
                 sub->sweep_tick = 0U;
                 sub->cycle_ready = 0;
                 sub->sm = PMSM_ID_ENCODER_SWEEP;
@@ -257,7 +257,7 @@ void ctl_loop_oid_encoder(ctl_pmsm_offline_id_t* ctx)
             ctx->cfg_basic.pole_pairs = (parameter_gt)sub->identified_pole_pairs;
             ctx->pmsm_param.pole_pairs = sub->identified_pole_pairs;
             ctl_id_commit_encoder_calibration(ctx, sub->identified_pole_pairs,
-                                              float2ctrl(sub->encoder_offset_pu));
+                                              real2ctrl(sub->encoder_offset_pu));
             ctl_id_disable_output(ctx);
             sub->sm = PMSM_ID_ENCODER_COMPLETE;
             ctl_clear_state_seq(&ctx->seq, 0U);
@@ -287,11 +287,11 @@ static fast_gt ctl_oid_fit_alpha_vs_speed(ctl_dsa_scope_t* scope, uint32_t start
     if (n < min_samples)
         return 0;
 
-    w_initial = ctrl2float(ctl_mem_get_2d_soa(&scope->mem, 0U, start_idx, scope->depth)) * mech_speed_base;
+    w_initial = ctrl2param(ctl_mem_get_2d_soa(&scope->mem, 0U, start_idx, scope->depth)) * mech_speed_base;
     w_prev = w_initial;
     for (i = start_idx + 1U; i <= end_idx; ++i)
     {
-        parameter_gt wm = ctrl2float(ctl_mem_get_2d_soa(&scope->mem, 0U, i, scope->depth)) * mech_speed_base;
+        parameter_gt wm = ctrl2param(ctl_mem_get_2d_soa(&scope->mem, 0U, i, scope->depth)) * mech_speed_base;
         parameter_gt time = (parameter_gt)(i - start_idx) * dt;
         parameter_gt y = wm - w_initial;
         integral_w += 0.5f * (w_prev + wm) * dt;
@@ -317,7 +317,7 @@ static fast_gt ctl_oid_fit_alpha_vs_speed(ctl_dsa_scope_t* scope, uint32_t start
         w_prev = w_initial;
         for (i = start_idx + 1U; i <= end_idx; ++i)
         {
-            parameter_gt wm = ctrl2float(ctl_mem_get_2d_soa(&scope->mem, 0U, i, scope->depth)) * mech_speed_base;
+            parameter_gt wm = ctrl2param(ctl_mem_get_2d_soa(&scope->mem, 0U, i, scope->depth)) * mech_speed_base;
             parameter_gt time = (parameter_gt)(i - start_idx) * dt;
             parameter_gt y = wm - w_initial;
             parameter_gt residual;
@@ -363,7 +363,7 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
 
     if (sub->sm == PMSM_ID_MECH_ACCEL_TO_WINDOW || sub->sm == PMSM_ID_MECH_ACCEL_RECORD ||
         sub->sm == PMSM_ID_MECH_ACCEL_TO_PWM_OFF)
-        ctl_id_apply_dc_current(ctx, float2ctrl(0.0f), float2ctrl(sub->cfg.accel_iq_pu));
+        ctl_id_apply_dc_current(ctx, CTL_CTRL_CONST_ZERO, real2ctrl(sub->cfg.accel_iq_pu));
 
     if (sub->sm == PMSM_ID_MECH_ACCEL_RECORD || sub->sm == PMSM_ID_MECH_COAST_RECORD)
         ctl_step_dsa_scope_2ch(&ctx->analyzer, ctl_id_get_speed(ctx), ctl_id_get_idq(ctx, phase_q));
@@ -373,7 +373,7 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
 {
     pmsm_offline_id_mech_t* sub = &ctx->sub_mech;
     pmsm_oid_cfg_mech_t* cfg = &sub->cfg;
-    parameter_gt speed = ctrl2float(ctl_id_get_speed(ctx));
+    parameter_gt speed = ctrl2param(ctl_id_get_speed(ctx));
     parameter_gt low = cfg->target_speed_pu * cfg->fit_low_ratio;
     parameter_gt high = cfg->target_speed_pu * cfg->fit_high_ratio;
     parameter_gt pwm_off = cfg->target_speed_pu * cfg->pwm_off_ratio;
@@ -398,7 +398,7 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
         ctl_id_route_foc_angle(ctx, PMSM_ID_ANGLE_SRC_REAL_ENC);
         ctl_id_set_foc_state(ctx, PMSM_ID_CURRENT_CLOSELOOP);
         ctl_id_set_pwm_output(ctx, 1);
-        ctl_id_apply_dc_current(ctx, float2ctrl(0.0f), float2ctrl(cfg->accel_iq_pu));
+        ctl_id_apply_dc_current(ctx, CTL_CTRL_CONST_ZERO, param2ctrl(cfg->accel_iq_pu));
         sub->sm = PMSM_ID_MECH_ACCEL_TO_WINDOW;
         break;
 
@@ -450,7 +450,7 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
 
     case PMSM_ID_MECH_CALCULATE:
     {
-        parameter_gt mech_speed_base = ctrl2float(ctx->identified_pu.W_base) /
+        parameter_gt mech_speed_base = ctrl2param(ctx->identified_pu.W_base) /
                                        (parameter_gt)ctx->pmsm_param.pole_pairs;
         parameter_gt iq_sum = 0.0f;
         parameter_gt iq_count;
@@ -472,11 +472,11 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
             break;
         }
         for (i = sub->da_idx_accel_start; i <= sub->da_idx_accel_end; ++i)
-            iq_sum += ctrl2float(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 1U, i, ctx->analyzer.depth));
+            iq_sum += ctrl2param(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 1U, i, ctx->analyzer.depth));
         iq_count = (parameter_gt)(sub->da_idx_accel_end - sub->da_idx_accel_start + 1U);
         sub->average_accel_iq_pu = iq_sum / iq_count;
         torque = 1.5f * (parameter_gt)ctx->pmsm_param.pole_pairs * ctx->pmsm_param.flux_linkage *
-                 sub->average_accel_iq_pu * ctrl2float(ctx->identified_pu.I_base);
+                 sub->average_accel_iq_pu * ctrl2param(ctx->identified_pu.I_base);
         intercept_delta = sub->accel_intercept - sub->coast_intercept;
         common_slope = 0.5f * (sub->accel_slope + sub->coast_slope);
         if (torque <= 0.0f || intercept_delta <= CTL_PARAM_CONST_EPSILON || common_slope >= 0.0f)

@@ -90,7 +90,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_helper_lp_filter(parameter_gt fs, parameter_gt fc)
     {
         a_val = 0.0f;
     }
-    return float2ctrl(a_val);
+    return real2ctrl(a_val);
 }
 
 /**
@@ -124,7 +124,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_lowpass_filter(ctl_low_pass_filter_t* lpf, ct
  */
 GMP_STATIC_INLINE void ctl_clear_lowpass_filter(ctl_low_pass_filter_t* lpf)
 {
-    lpf->out = float2ctrl(0.0f);
+    lpf->out = CTL_CTRL_CONST_ZERO;
 }
 
 /**
@@ -178,9 +178,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_filter_iir1(ctl_filter_IIR1_t* obj, ctrl_gt i
  */
 GMP_STATIC_INLINE void ctl_clear_filter_iir1(ctl_filter_IIR1_t* obj)
 {
-    obj->out = float2ctrl(0.0f);
-    obj->x1 = float2ctrl(0.0f);
-    obj->y1 = float2ctrl(0.0f);
+    obj->out = CTL_CTRL_CONST_ZERO;
+    obj->x1 = CTL_CTRL_CONST_ZERO;
+    obj->y1 = CTL_CTRL_CONST_ZERO;
 }
 
 /**

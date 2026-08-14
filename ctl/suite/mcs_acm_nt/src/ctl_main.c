@@ -63,19 +63,19 @@ void ctl_init(void)
 #endif
 
     ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &mtr_ctrl.iuvw,
-                            float2ctrl(MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A / CTRL_CURRENT_BASE),
-                            float2ctrl(MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A / CTRL_CURRENT_BASE));
+                            real2ctrl(MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A / CTRL_CURRENT_BASE),
+                            real2ctrl(MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A / CTRL_CURRENT_BASE));
 #ifdef ENABLE_PWM_DEADTIME_COMPENSATION
     ctl_enable_spwm_deadtime_compensation(&spwm);
 #endif
     ctl_init_const_slope_f_pu_controller(&rg, MCS_OPEN_LOOP_FREQ_HZ, MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S,
                                          CTRL_SPEED_RPM_BASE / 1000.0f, MOTOR_PARAM_POLE_PAIRS,
                                          CONTROLLER_FREQUENCY);
-    acim_open_loop_vq_per_freq_pu = float2ctrl(
+    acim_open_loop_vq_per_freq_pu = real2ctrl(
         (MCS_OPEN_LOOP_VQ_REF_V / CTRL_VOLTAGE_BASE) /
         (MCS_OPEN_LOOP_FREQ_HZ / MOTOR_PARAM_RATED_FREQUENCY));
     ctl_init_autoturn_pos_encoder(&pos_enc, MOTOR_PARAM_POLE_PAIRS, CTRL_POS_ENC_FS);
-    ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, float2ctrl(CTRL_POS_ENC_BIAS));
+    ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, real2ctrl(CTRL_POS_ENC_BIAS));
     ctl_init_spd_calculator(&spd_enc, &pos_enc.encif, CONTROLLER_FREQUENCY, CTRL_MECH_DIV,
                             CTRL_SPEED_RPM_BASE, MCS_ENCODER_SPEED_FILTER_FC_HZ);
 
@@ -86,11 +86,11 @@ void ctl_init(void)
 
     ctl_init_sensorless_handover(
         &acim_handover, MCS_FO_HANDOVER_TRANSITION_MS / 1000.0f, CONTROLLER_FREQUENCY,
-        float2ctrl(MCS_SENSORLESS_STARTUP_ID_REF_A / CTRL_CURRENT_BASE),
-        float2ctrl(MCS_SENSORLESS_HANDOVER_ID_REF_A / CTRL_CURRENT_BASE),
-        float2ctrl(MCS_COMMISSIONING_ID_REF_A / CTRL_CURRENT_BASE),
-        float2ctrl(MCS_STARTUP_ID_FADE_START_HZ / MOTOR_PARAM_RATED_FREQUENCY),
-        float2ctrl(MCS_STARTUP_ID_FADE_END_HZ / MOTOR_PARAM_RATED_FREQUENCY));
+        real2ctrl(MCS_SENSORLESS_STARTUP_ID_REF_A / CTRL_CURRENT_BASE),
+        real2ctrl(MCS_SENSORLESS_HANDOVER_ID_REF_A / CTRL_CURRENT_BASE),
+        real2ctrl(MCS_COMMISSIONING_ID_REF_A / CTRL_CURRENT_BASE),
+        real2ctrl(MCS_STARTUP_ID_FADE_START_HZ / MOTOR_PARAM_RATED_FREQUENCY),
+        real2ctrl(MCS_STARTUP_ID_FADE_END_HZ / MOTOR_PARAM_RATED_FREQUENCY));
     ctl_attach_sensorless_handover(&acim_handover, &rg.enc, &acim_if_field_spd,
                                    &acim_fo.pos_out, &acim_fo.sync_spd_out);
     ctl_configure_sensorless_handover_speed_qualification(
@@ -129,19 +129,19 @@ void ctl_init(void)
 #if BUILD_LEVEL == 1
     ctl_disable_im_ifoc(&mtr_ctrl);
     ctl_disable_im_ifoc_vdq_ff(&mtr_ctrl);
-    ctl_set_im_ifoc_vdq_ref(&mtr_ctrl, float2ctrl(0.0f), float2ctrl(0.0f));
+    ctl_set_im_ifoc_vdq_ref(&mtr_ctrl, CTL_CTRL_CONST_ZERO, CTL_CTRL_CONST_ZERO);
 #elif BUILD_LEVEL == 2
     ctl_enable_im_ifoc(&mtr_ctrl);
     ctl_disable_im_ifoc_vdq_ff(&mtr_ctrl);
-    ctl_set_im_ifoc_ref(&mtr_ctrl, float2ctrl(MCS_COMMISSIONING_ID_REF_A / CTRL_CURRENT_BASE),
-                        float2ctrl(MCS_COMMISSIONING_IQ_REF_A / CTRL_CURRENT_BASE));
+    ctl_set_im_ifoc_ref(&mtr_ctrl, real2ctrl(MCS_COMMISSIONING_ID_REF_A / CTRL_CURRENT_BASE),
+                        real2ctrl(MCS_COMMISSIONING_IQ_REF_A / CTRL_CURRENT_BASE));
 #else
     ctl_enable_im_ifoc(&mtr_ctrl);
 #endif
 
 #if BUILD_LEVEL == 4
     ctl_set_mech_ctrl_mode(&mech_ctrl, MECH_MODE_VELOCITY);
-    ctl_set_mech_target_velocity(&mech_ctrl, float2ctrl(MCS_COMMISSIONING_SPEED_REF_RPM / CTRL_SPEED_RPM_BASE));
+    ctl_set_mech_target_velocity(&mech_ctrl, real2ctrl(MCS_COMMISSIONING_SPEED_REF_RPM / CTRL_SPEED_RPM_BASE));
 #endif
 
     init_cia402_state_machine(&cia402_sm);
@@ -155,9 +155,9 @@ void ctl_init(void)
 #endif
 
     ctl_init_mtr_protect(&protection, CONTROLLER_FREQUENCY);
-    ctl_set_mtr_protect_ov(&protection, float2ctrl(MCS_MAX_DC_BUS_VOLTAGE_V / CTRL_DCBUS_VOLTAGE));
-    ctl_set_mtr_protect_uv(&protection, float2ctrl(MCS_MIN_DC_BUS_VOLTAGE_V / CTRL_DCBUS_VOLTAGE));
-    ctl_set_mtr_protect_oc(&protection, float2ctrl(MCS_MAX_SHUTDOWN_CURRENT_A / CTRL_CURRENT_BASE));
+    ctl_set_mtr_protect_ov(&protection, real2ctrl(MCS_MAX_DC_BUS_VOLTAGE_V / CTRL_DCBUS_VOLTAGE));
+    ctl_set_mtr_protect_uv(&protection, real2ctrl(MCS_MIN_DC_BUS_VOLTAGE_V / CTRL_DCBUS_VOLTAGE));
+    ctl_set_mtr_protect_oc(&protection, real2ctrl(MCS_MAX_SHUTDOWN_CURRENT_A / CTRL_CURRENT_BASE));
     ctl_attach_mtr_protect_port(&protection, &mtr_ctrl.udc, (ctl_vector2_t*)&mtr_ctrl.idq0,
                                 &mtr_ctrl.idq_ref, NULL, NULL);
     clear_all_controllers();
@@ -176,10 +176,10 @@ void clear_all_controllers(void)
     ctl_clear_im_pos_calc(&acim_pos_calc);
     ctl_clear_im_fo(&acim_fo);
     ctl_clear_spwm_modulator(&spwm);
-    acim_sync_speed_pu = float2ctrl(0.0f);
-    acim_magnetizing_current_pu = float2ctrl(0.0f);
+    acim_sync_speed_pu = CTL_CTRL_CONST_ZERO;
+    acim_magnetizing_current_pu = CTL_CTRL_CONST_ZERO;
     acim_magnetizing_ticks = 0;
-    acim_if_field_spd.speed = float2ctrl(0.0f);
+    acim_if_field_spd.speed = CTL_CTRL_CONST_ZERO;
     ctl_clear_sensorless_handover(&acim_handover);
     acim_sensorless_handover = 0;
     acim_sensorless_observer_released = 0;

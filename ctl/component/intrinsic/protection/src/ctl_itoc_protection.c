@@ -13,9 +13,9 @@ void ctl_init_trip_protector(ctl_trip_protector_t* prot, const ctrl_gt* source, 
     prot->source = source;
 
     // Set trip levels
-    prot->level_ltd = float2ctrl(level_ltd);
-    prot->level_std = float2ctrl(level_std);
-    prot->level_inst = float2ctrl(level_inst);
+    prot->level_ltd = real2ctrl(level_ltd);
+    prot->level_std = real2ctrl(level_std);
+    prot->level_inst = real2ctrl(level_inst);
 
     // Convert delay times from milliseconds to sample counts
     prot->delay_ltd_samples = (uint32_t)(delay_ltd_ms * fs / 1000.0f);

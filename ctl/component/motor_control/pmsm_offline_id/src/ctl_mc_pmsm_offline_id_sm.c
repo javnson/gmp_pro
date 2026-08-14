@@ -18,8 +18,8 @@ void ctl_init_oid_rs_dt(ctl_pmsm_offline_id_t* ctx)
     ctx->sub_rs_dt.sm = PMSM_ID_RSDT_INIT;
     ctx->sub_rs_dt.angle_idx = 0;
     ctx->sub_rs_dt.step_idx = 0;
-    ctx->sub_rs_dt.angle_pu = float2ctrl(0.0f);
-    ctx->sub_rs_dt.current_ref_pu = float2ctrl(0.0f);
+    ctx->sub_rs_dt.angle_pu = CTL_CTRL_CONST_ZERO;
+    ctx->sub_rs_dt.current_ref_pu = CTL_CTRL_CONST_ZERO;
 
     // Arm the sequencer so the background loop catches FIRST_ENTRY for INIT
     ctl_clear_state_seq(&ctx->seq, 0);
@@ -61,7 +61,7 @@ void ctl_step_oid_rs_dt_isr(ctl_pmsm_offline_id_t* ctx)
                 sub->angle_pu = sub->angle_pu_array[sub->angle_idx];
             }
             ctl_id_set_static_angle(ctx, sub->angle_pu);
-            ctl_id_apply_dc_current(ctx, cfg->max_current_pu, float2ctrl(0.0f));
+            ctl_id_apply_dc_current(ctx, cfg->max_current_pu, CTL_CTRL_CONST_ZERO);
             break;
         case CTL_ST_KEEP:
         case CTL_ST_LEAVE:
@@ -75,7 +75,7 @@ void ctl_step_oid_rs_dt_isr(ctl_pmsm_offline_id_t* ctx)
         {
         case CTL_ST_FIRST_ENTRY:
             sub->current_ref_pu += sub->step_size_pu; // Pure math addition
-            ctl_id_apply_dc_current(ctx, sub->current_ref_pu, float2ctrl(0.0f));
+            ctl_id_apply_dc_current(ctx, sub->current_ref_pu, CTL_CTRL_CONST_ZERO);
             break;
         case CTL_ST_KEEP:
         case CTL_ST_LEAVE:
@@ -88,8 +88,8 @@ void ctl_step_oid_rs_dt_isr(ctl_pmsm_offline_id_t* ctx)
         switch (seq_phase)
         {
         case CTL_ST_FIRST_ENTRY:
-            sub->sum_u = float2ctrl(0.0f);
-            sub->sum_i = float2ctrl(0.0f);
+            sub->sum_u = CTL_CTRL_CONST_ZERO;
+            sub->sum_i = CTL_CTRL_CONST_ZERO;
             // Intentionally NO break. Accumulate the very first point!
         case CTL_ST_KEEP:
 
@@ -139,22 +139,22 @@ void ctl_loop_oid_rs_dt(ctl_pmsm_offline_id_t* ctx)
             sub->measure_delay_ticks = SEC_TO_TICKS(cfg->measure_delay_s, ctx->cfg_basic.isr_freq_hz);
 
             if (cfg->measure_points > 0)
-                sub->inv_measure_points = ctl_div(float2ctrl(1.0f), float2ctrl((float)cfg->measure_points));
+                sub->inv_measure_points = ctl_div(CTL_CTRL_CONST_1, real2ctrl((float)cfg->measure_points));
             else
-                sub->inv_measure_points = float2ctrl(1.0f);
+                sub->inv_measure_points = CTL_CTRL_CONST_1;
 
             if (cfg->steps > 1)
                 sub->step_size_pu =
-                    ctl_div((cfg->max_current_pu - cfg->min_current_pu), float2ctrl((float)(cfg->steps - 1)));
+                    ctl_div((cfg->max_current_pu - cfg->min_current_pu), real2ctrl((float)(cfg->steps - 1)));
             else
-                sub->step_size_pu = float2ctrl(0.0f);
+                sub->step_size_pu = CTL_CTRL_CONST_ZERO;
 
             for (i = 0; i < 6; i++)
             {
-                sub->angle_pu_array[i] = float2ctrl((float)i * 0.1666667f);
+                sub->angle_pu_array[i] = real2ctrl((float)i * 0.1666667f);
             }
 
-            sub->current_ref_pu = float2ctrl(cfg->min_current_pu) - sub->step_size_pu;
+            sub->current_ref_pu = param2ctrl(cfg->min_current_pu) - sub->step_size_pu;
 
             ctl_id_route_foc_angle(ctx, PMSM_ID_ANGLE_SRC_STATIC);
             ctl_id_set_foc_state(ctx, PMSM_ID_CURRENT_CLOSELOOP);
@@ -221,7 +221,7 @@ void ctl_loop_oid_rs_dt(ctl_pmsm_offline_id_t* ctx)
                 else
                 {
                     // clear add result
-                    sub->current_ref_pu = float2ctrl(cfg->min_current_pu) - sub->step_size_pu;
+                    sub->current_ref_pu = param2ctrl(cfg->min_current_pu) - sub->step_size_pu;
 
                     // TRANSITION -> ALIGN_SETTLE
                     sub->sm = PMSM_ID_RSDT_ALIGN_SETTLE;
@@ -315,7 +315,7 @@ void ctl_init_oid_ldq(ctl_pmsm_offline_id_t* ctx)
     ctx->sub_ldq.sm = PMSM_ID_LDQ_INIT;
     ctx->sub_ldq.bias_step_idx = 0;
     ctx->sub_ldq.is_measuring_q_axis = 0;
-    ctx->sub_ldq.bias_curr_ref_pu = float2ctrl(0.0f);
+    ctx->sub_ldq.bias_curr_ref_pu = CTL_CTRL_CONST_ZERO;
 
     // Arm the sequencer so the background loop catches FIRST_ENTRY for INIT
     ctl_clear_state_seq(&ctx->seq, 0);
@@ -350,11 +350,11 @@ void ctl_step_oid_ldq_isr(ctl_pmsm_offline_id_t* ctx)
         case CTL_ST_FIRST_ENTRY:
             if (sub->is_measuring_q_axis == 0)
             {
-                ctl_id_apply_dc_current(ctx, sub->bias_curr_ref_pu, float2ctrl(0.0f));
+                ctl_id_apply_dc_current(ctx, sub->bias_curr_ref_pu, CTL_CTRL_CONST_ZERO);
             }
             else
             {
-                ctl_id_apply_dc_current(ctx, float2ctrl(cfg->align_current_pu), sub->bias_curr_ref_pu);
+                ctl_id_apply_dc_current(ctx, param2ctrl(cfg->align_current_pu), sub->bias_curr_ref_pu);
             }
             break;
         case CTL_ST_KEEP:
@@ -381,13 +381,13 @@ void ctl_step_oid_ldq_isr(ctl_pmsm_offline_id_t* ctx)
             // 3. Open Loop Pulse Injection
             if (sub->is_measuring_q_axis == 0)
             {
-                ctl_id_apply_voltage_pulse(ctx, sub->frozen_vd_pu + float2ctrl(cfg->pulse_voltage_pu),
+                ctl_id_apply_voltage_pulse(ctx, sub->frozen_vd_pu + param2ctrl(cfg->pulse_voltage_pu),
                                            sub->frozen_vq_pu);
             }
             else
             {
                 ctl_id_apply_voltage_pulse(ctx, sub->frozen_vd_pu,
-                                           sub->frozen_vq_pu + float2ctrl(cfg->pulse_voltage_pu));
+                                           sub->frozen_vq_pu + param2ctrl(cfg->pulse_voltage_pu));
             }
             // Intentionally NO break to record the starting current point!
 
@@ -451,21 +451,21 @@ void ctl_loop_oid_ldq(ctl_pmsm_offline_id_t* ctx)
 
             if (cfg->bias_steps > 1)
             {
-                sub->step_size_pu = float2ctrl(cfg->max_bias_curr_pu / (float)(cfg->bias_steps - 1));
+                sub->step_size_pu = param2ctrl(cfg->max_bias_curr_pu / (float)(cfg->bias_steps - 1));
             }
             else
             {
-                sub->step_size_pu = float2ctrl(0.0f);
+                sub->step_size_pu = CTL_CTRL_CONST_ZERO;
             }
 
-            ctl_id_set_static_angle(ctx, float2ctrl(0.0f));
+            ctl_id_set_static_angle(ctx, CTL_CTRL_CONST_ZERO);
             ctl_id_set_foc_state(ctx, PMSM_ID_CURRENT_CLOSELOOP);
 
             // DA Only needs to hold ONE pulse length now!
             ctl_wipe_dsa_scope_memory(&ctx->analyzer);
             ctl_config_dsa_scope(&ctx->analyzer, 1, 1);
 
-            sub->bias_curr_ref_pu = float2ctrl(0.0f);
+            sub->bias_curr_ref_pu = CTL_CTRL_CONST_ZERO;
             sub->sm = PMSM_ID_LDQ_BIAS_SETTLE;
             ctl_clear_state_seq(&ctx->seq, sub->settle_ticks);
         }
@@ -489,7 +489,7 @@ void ctl_loop_oid_ldq(ctl_pmsm_offline_id_t* ctx)
             parameter_gt rs_pu = ctx->sub_rs_dt.rs_mean;
 
             //
-            parameter_gt actual_pulse_v = cfg->pulse_voltage_pu * ctrl2float(sub->frozen_udc_pu);
+            parameter_gt actual_pulse_v = cfg->pulse_voltage_pu * ctrl2param(sub->frozen_udc_pu);
 
             // 2. Calculate inputs for the First-Order Solver
             // The theoretical steady-state current delta = Voltage Pulse / Resistance
@@ -497,7 +497,7 @@ void ctl_loop_oid_ldq(ctl_pmsm_offline_id_t* ctx)
 
             // Initial current baseline
             parameter_gt baseline_i =
-                (sub->is_measuring_q_axis == 0) ? ctrl2float(sub->frozen_id_pu) : ctrl2float(sub->frozen_iq_pu);
+                (sub->is_measuring_q_axis == 0) ? ctrl2param(sub->frozen_id_pu) : ctrl2param(sub->frozen_iq_pu);
 
             parameter_gt tau = 0.0f;
             uint32_t end_idx = (ctx->analyzer.current_idx > 0) ? ctx->analyzer.current_idx - 1 : 0;
@@ -554,7 +554,7 @@ void ctl_loop_oid_ldq(ctl_pmsm_offline_id_t* ctx)
                 {
                     sub->is_measuring_q_axis = 1;
                     sub->bias_step_idx = 0;
-                    sub->bias_curr_ref_pu = float2ctrl(0.0f);
+                    sub->bias_curr_ref_pu = CTL_CTRL_CONST_ZERO;
                     sub->sm = PMSM_ID_LDQ_BIAS_SETTLE;
                     ctl_clear_state_seq(&ctx->seq, sub->settle_ticks);
                 }
@@ -612,7 +612,7 @@ void ctl_init_oid_flux(ctl_pmsm_offline_id_t* ctx)
 {
     ctx->sub_flux.sm = PMSM_ID_FLUX_INIT;
     ctx->sub_flux.step_idx = 0;
-    ctx->sub_flux.target_w_pu = float2ctrl(0.0f);
+    ctx->sub_flux.target_w_pu = CTL_CTRL_CONST_ZERO;
 
     // Arm the sequencer
     ctl_clear_state_seq(&ctx->seq, 0);
@@ -640,7 +640,7 @@ void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
     // Global Action: During active dynamic states, maintain V/F generator and drag current
     if (sub->sm >= PMSM_ID_FLUX_RAMP_SPEED && sub->sm <= PMSM_ID_FLUX_RAMP_STOP)
     {
-        ctl_id_apply_dc_current(ctx, float2ctrl(cfg->if_current_pu), float2ctrl(0.0f));
+        ctl_id_apply_dc_current(ctx, param2ctrl(cfg->if_current_pu), CTL_CTRL_CONST_ZERO);
     }
 
     switch (sub->sm)
@@ -659,7 +659,7 @@ void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
         {
             if (sub->step_idx == 0)
             {
-                sub->target_w_pu = float2ctrl(cfg->min_target_speed_pu);
+                sub->target_w_pu = param2ctrl(cfg->min_target_speed_pu);
             }
             else
             {
@@ -674,11 +674,11 @@ void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
         switch (seq_phase)
         {
         case CTL_ST_FIRST_ENTRY:
-            sub->sum_ud = float2ctrl(0.0f);
-            sub->sum_uq = float2ctrl(0.0f);
-            sub->sum_id = float2ctrl(0.0f);
-            sub->sum_iq = float2ctrl(0.0f);
-            sub->sum_w = float2ctrl(0.0f);
+            sub->sum_ud = CTL_CTRL_CONST_ZERO;
+            sub->sum_uq = CTL_CTRL_CONST_ZERO;
+            sub->sum_id = CTL_CTRL_CONST_ZERO;
+            sub->sum_iq = CTL_CTRL_CONST_ZERO;
+            sub->sum_w = CTL_CTRL_CONST_ZERO;
             // Intentionally NO break here! Accumulate the 0-th point.
 
         case CTL_ST_KEEP:
@@ -706,7 +706,7 @@ void ctl_step_oid_flux_isr(ctl_pmsm_offline_id_t* ctx)
     case PMSM_ID_FLUX_RAMP_STOP:
         if (seq_phase == CTL_ST_FIRST_ENTRY)
         {
-            ctl_id_set_vf_target_speed(ctx, float2ctrl(0.0f));
+            ctl_id_set_vf_target_speed(ctx, CTL_CTRL_CONST_ZERO);
         }
         break;
     }
@@ -739,21 +739,21 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
 
             if (cfg->measure_points > 0)
             {
-                sub->inv_measure_points = ctl_div(float2ctrl(1.0f), float2ctrl((float)cfg->measure_points));
+                sub->inv_measure_points = ctl_div(CTL_CTRL_CONST_1, real2ctrl((float)cfg->measure_points));
             }
             else
             {
-                sub->inv_measure_points = float2ctrl(1.0f);
+                sub->inv_measure_points = CTL_CTRL_CONST_1;
             }
 
             if (cfg->steps > 1)
             {
                 sub->step_size_pu =
-                    float2ctrl((cfg->max_target_speed_pu - cfg->min_target_speed_pu) / (float)(cfg->steps - 1));
+                    real2ctrl((cfg->max_target_speed_pu - cfg->min_target_speed_pu) / (float)(cfg->steps - 1));
             }
             else
             {
-                sub->step_size_pu = float2ctrl(0.0f);
+                sub->step_size_pu = CTL_CTRL_CONST_ZERO;
             }
 
             ctl_id_route_foc_angle(ctx, PMSM_ID_ANGLE_SRC_VF_GEN);
@@ -773,11 +773,11 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
         // Set the target idempotently in the background state. On tightly
         // coupled SIL scheduling, the loop may observe and consume the
         // sequencer FIRST_ENTRY before the next ISR can update the target.
-        sub->target_w_pu = float2ctrl(cfg->min_target_speed_pu +
+        sub->target_w_pu = param2ctrl(cfg->min_target_speed_pu +
                                           sub->step_idx * sub->step_size_pu);
         ctl_id_set_vf_target_speed(ctx, sub->target_w_pu);
         ctrl_gt err = sub->target_w_pu - ctx->vf_gen.current_freq_pu;
-        if (err < float2ctrl(0.001f) && err > float2ctrl(-0.001f))
+        if (err < real2ctrl(0.001f) && err > real2ctrl(-0.001f))
         {
             sub->sm = PMSM_ID_FLUX_SETTLE;
             ctl_clear_state_seq(&ctx->seq, sub->settle_ticks);
@@ -840,7 +840,7 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
         break;
 
     case PMSM_ID_FLUX_RAMP_STOP:
-        if (ctx->vf_gen.current_freq_pu <= float2ctrl(0.005f))
+        if (ctx->vf_gen.current_freq_pu <= real2ctrl(0.005f))
         {
             sub->sm = PMSM_ID_FLUX_CALCULATE;
             ctl_clear_state_seq(&ctx->seq, 0);
@@ -861,11 +861,11 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
 
             for (i = 0; i < cfg->steps && i < depth; i++)
             {
-                parameter_gt ud = ctrl2float(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 0, i, depth));
-                parameter_gt uq = ctrl2float(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 1, i, depth));
-                parameter_gt id = ctrl2float(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 2, i, depth));
-                parameter_gt iq = ctrl2float(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 3, i, depth));
-                parameter_gt w = ctrl2float(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 4, i, depth));
+                parameter_gt ud = ctrl2param(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 0, i, depth));
+                parameter_gt uq = ctrl2param(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 1, i, depth));
+                parameter_gt id = ctrl2param(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 2, i, depth));
+                parameter_gt iq = ctrl2param(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 3, i, depth));
+                parameter_gt w = ctrl2param(ctl_mem_get_2d_soa(&ctx->analyzer.mem, 4, i, depth));
 
                 parameter_gt i_mag = param_sqrt((id * id) + (iq * iq));
                 parameter_gt ud_comp = 0.0f;
@@ -889,7 +889,7 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
                 parameter_gt eq = uq_real - (rs_pu * iq) - (w * ld_pu * id);
 
                 parameter_gt e_mag = param_sqrt((ed * ed) + (eq * eq));
-                ctl_mem_set_2d_soa(&ctx->analyzer.mem, 5, i, depth, float2ctrl(e_mag));
+                ctl_mem_set_2d_soa(&ctx->analyzer.mem, 5, i, depth, real2ctrl(e_mag));
             }
 
             parameter_gt flux_pu = 0.0f, intercept = 0.0f;
@@ -903,7 +903,7 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
 
             parameter_gt flux_base = ctx->identified_pu.V_base / ctx->identified_pu.W_base;
             ctx->pmsm_param.flux_linkage = flux_pu * flux_base;
-            ctx->identified_pu.Flux_base = float2ctrl(flux_base);
+            ctx->identified_pu.Flux_base = real2ctrl(flux_base);
 
             if (ctx->pmsm_param.is_ipm)
             {
@@ -947,8 +947,8 @@ void ctl_loop_oid_flux(ctl_pmsm_offline_id_t* ctx)
 void ctl_init_oid_mech(ctl_pmsm_offline_id_t* ctx)
 {
     ctx->sub_mech.sm = PMSM_ID_MECH_INIT;
-    ctx->sub_mech.active_iq_ref_pu = float2ctrl(0.0f);
-    ctx->sub_mech.active_id_ref_pu = float2ctrl(0.0f);
+    ctx->sub_mech.active_iq_ref_pu = CTL_CTRL_CONST_ZERO;
+    ctx->sub_mech.active_id_ref_pu = CTL_CTRL_CONST_ZERO;
 
     ctl_clear_state_seq(&ctx->seq, 0);
 }
@@ -980,8 +980,8 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
     case PMSM_ID_MECH_IF_START:
         if (seq_phase == CTL_ST_FIRST_ENTRY)
         {
-            ctl_id_set_vf_target_speed(ctx, float2ctrl(cfg->low_speed_pu));
-            ctl_id_apply_dc_current(ctx, float2ctrl(cfg->if_current_pu), float2ctrl(0.0f));
+            ctl_id_set_vf_target_speed(ctx, param2ctrl(cfg->low_speed_pu));
+            ctl_id_apply_dc_current(ctx, param2ctrl(cfg->if_current_pu), CTL_CTRL_CONST_ZERO);
         }
         break;
 
@@ -993,8 +993,8 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
         if (seq_phase == CTL_ST_KEEP || seq_phase == CTL_ST_FIRST_ENTRY)
         {
             ctrl_gt w = ctx->angle_switcher.weight;
-            sub->active_id_ref_pu = ctl_mul(float2ctrl(cfg->if_current_pu), float2ctrl(1.0f) - w);
-            sub->active_iq_ref_pu = ctl_mul(float2ctrl(cfg->low_speed_pu), w);
+            sub->active_id_ref_pu = ctl_mul(param2ctrl(cfg->if_current_pu), CTL_CTRL_CONST_1 - w);
+            sub->active_iq_ref_pu = ctl_mul(param2ctrl(cfg->low_speed_pu), w);
             ctl_id_apply_dc_current(ctx, sub->active_id_ref_pu, sub->active_iq_ref_pu);
         }
         break;
@@ -1003,18 +1003,18 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
     case PMSM_ID_MECH_STEADY_HIGH:
         if (seq_phase == CTL_ST_FIRST_ENTRY)
         {
-            sub->sum_iq_steady = float2ctrl(0.0f);
+            sub->sum_iq_steady = CTL_CTRL_CONST_ZERO;
         }
         if (seq_phase == CTL_ST_KEEP || seq_phase == CTL_ST_FIRST_ENTRY)
         {
             // Mini I-Controller for Speed Hold
             ctrl_gt target_spd =
-                float2ctrl((sub->sm == PMSM_ID_MECH_STEADY_LOW) ? cfg->low_speed_pu : cfg->high_speed_pu);
+                real2ctrl((sub->sm == PMSM_ID_MECH_STEADY_LOW) ? cfg->low_speed_pu : cfg->high_speed_pu);
             ctrl_gt err = target_spd - current_speed_pu;
-            sub->active_iq_ref_pu += ctl_mul(err, float2ctrl(0.001f));
-            sub->active_iq_ref_pu = ctl_sat(sub->active_iq_ref_pu, float2ctrl(0.5f), float2ctrl(-0.5f));
+            sub->active_iq_ref_pu += ctl_mul(err, real2ctrl(0.001f));
+            sub->active_iq_ref_pu = ctl_sat(sub->active_iq_ref_pu, CTL_CTRL_CONST_1_OVER_2, (-CTL_CTRL_CONST_1_OVER_2));
 
-            ctl_id_apply_dc_current(ctx, float2ctrl(0.0f), sub->active_iq_ref_pu);
+            ctl_id_apply_dc_current(ctx, CTL_CTRL_CONST_ZERO, sub->active_iq_ref_pu);
             sub->sum_iq_steady += ctl_id_get_idq(ctx, phase_q);
         }
         break;
@@ -1024,8 +1024,8 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
         if (seq_phase == CTL_ST_FIRST_ENTRY)
         {
             sub->active_iq_ref_pu =
-                float2ctrl((sub->sm == PMSM_ID_MECH_ACCEL_TEST) ? cfg->accel_iq_pu : cfg->decel_iq_pu);
-            ctl_id_apply_dc_current(ctx, float2ctrl(0.0f), sub->active_iq_ref_pu);
+                real2ctrl((sub->sm == PMSM_ID_MECH_ACCEL_TEST) ? cfg->accel_iq_pu : cfg->decel_iq_pu);
+            ctl_id_apply_dc_current(ctx, CTL_CTRL_CONST_ZERO, sub->active_iq_ref_pu);
         }
         if (seq_phase == CTL_ST_KEEP || seq_phase == CTL_ST_FIRST_ENTRY)
         {
@@ -1045,7 +1045,7 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
         if (seq_phase == CTL_ST_KEEP || seq_phase == CTL_ST_FIRST_ENTRY)
         {
             ctrl_gt w = ctx->angle_switcher.weight;
-            sub->active_id_ref_pu = ctl_mul(float2ctrl(cfg->if_current_pu), float2ctrl(1.0f) - w);
+            sub->active_id_ref_pu = ctl_mul(param2ctrl(cfg->if_current_pu), CTL_CTRL_CONST_1 - w);
             sub->active_iq_ref_pu = ctl_mul(sub->active_iq_ref_pu, w);
             ctl_id_apply_dc_current(ctx, sub->active_id_ref_pu, sub->active_iq_ref_pu);
         }
@@ -1054,7 +1054,7 @@ void ctl_step_oid_mech_isr(ctl_pmsm_offline_id_t* ctx)
     case PMSM_ID_MECH_IF_STOP:
         if (seq_phase == CTL_ST_FIRST_ENTRY)
         {
-            ctl_id_set_vf_target_speed(ctx, float2ctrl(0.0f));
+            ctl_id_set_vf_target_speed(ctx, CTL_CTRL_CONST_ZERO);
         }
         break;
     }
@@ -1078,7 +1078,7 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
     }
 
     ctl_state_seq_e loop_phase = ctl_loop_state_seq(&ctx->seq);
-    parameter_gt current_speed_real = ctrl2float(ctl_id_get_speed(ctx));
+    parameter_gt current_speed_real = ctrl2param(ctl_id_get_speed(ctx));
 
     switch (sub->sm)
     {
@@ -1087,7 +1087,7 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
         {
             sub->settle_ticks = SEC_TO_TICKS(cfg->settle_time_s, ctx->cfg_basic.isr_freq_hz);
             sub->transition_ticks = SEC_TO_TICKS(cfg->transition_time_s, ctx->cfg_basic.isr_freq_hz);
-            sub->inv_settle_ticks = ctl_div(float2ctrl(1.0f), float2ctrl((float)sub->settle_ticks));
+            sub->inv_settle_ticks = ctl_div(CTL_CTRL_CONST_1, real2ctrl((float)sub->settle_ticks));
 
             // Configure interfaces
             ctl_id_set_foc_state(ctx, PMSM_ID_CURRENT_CLOSELOOP);
@@ -1125,7 +1125,7 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
     case PMSM_ID_MECH_STEADY_LOW:
         if (loop_phase == CTL_ST_LEAVE)
         {
-            sub->iq_steady_low_pu = ctrl2float(ctl_mul(sub->sum_iq_steady, sub->inv_settle_ticks));
+            sub->iq_steady_low_pu = ctrl2param(ctl_mul(sub->sum_iq_steady, sub->inv_settle_ticks));
 
             // Record DA starting index before transition
             sub->da_idx_accel_start = ctx->analyzer.current_idx;
@@ -1149,7 +1149,7 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
     case PMSM_ID_MECH_STEADY_HIGH:
         if (loop_phase == CTL_ST_LEAVE)
         {
-            sub->iq_steady_high_pu = ctrl2float(ctl_mul(sub->sum_iq_steady, sub->inv_settle_ticks));
+            sub->iq_steady_high_pu = ctrl2param(ctl_mul(sub->sum_iq_steady, sub->inv_settle_ticks));
 
             sub->da_idx_decel_start = ctx->analyzer.current_idx;
 
@@ -1160,7 +1160,7 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
 
     case PMSM_ID_MECH_DECEL_TEST:
         // OVER-VOLTAGE PROTECTION (Control Path intercepts and throws FAULT)
-        if (ctrl2float(ctl_id_get_udc(ctx)) > cfg->max_vbus_pu)
+        if (ctrl2param(ctl_id_get_udc(ctx)) > cfg->max_vbus_pu)
         {
             sub->sm = PMSM_ID_MECH_FAULT;
             return;
@@ -1209,8 +1209,8 @@ void ctl_loop_oid_mech(ctl_pmsm_offline_id_t* ctx)
             if (alpha_dec_pu_s > -0.001f)
                 alpha_dec_pu_s = -0.001f;
 
-            parameter_gt I_base = ctrl2float(ctx->identified_pu.I_base);
-            parameter_gt W_mech_base = ctrl2float(ctx->identified_pu.W_base) / (parameter_gt)ctx->cfg_basic.pole_pairs;
+            parameter_gt I_base = ctrl2param(ctx->identified_pu.I_base);
+            parameter_gt W_mech_base = ctrl2param(ctx->identified_pu.W_base) / (parameter_gt)ctx->cfg_basic.pole_pairs;
 
             parameter_gt alpha_acc_rads2 = alpha_acc_pu_s * W_mech_base;
             parameter_gt alpha_dec_rads2 = alpha_dec_pu_s * W_mech_base;

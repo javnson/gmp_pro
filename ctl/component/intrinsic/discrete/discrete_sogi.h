@@ -99,18 +99,18 @@ void ctl_init_discrete_sogi(discrete_sogi_t* sogi, parameter_gt k_damp, paramete
  */
 GMP_STATIC_INLINE void ctl_clear_discrete_sogi(discrete_sogi_t* sogi)
 {
-    // 修复：强制使用 float2ctrl 进行强类型隔离
-    sogi->u[0] = float2ctrl(0.0f);
-    sogi->u[1] = float2ctrl(0.0f);
-    sogi->u[2] = float2ctrl(0.0f);
+    // Keep the initialization boundary explicit between parameter and control domains.
+    sogi->u[0] = CTL_CTRL_CONST_ZERO;
+    sogi->u[1] = CTL_CTRL_CONST_ZERO;
+    sogi->u[2] = CTL_CTRL_CONST_ZERO;
 
-    sogi->osg_u[0] = float2ctrl(0.0f);
-    sogi->osg_u[1] = float2ctrl(0.0f);
-    sogi->osg_u[2] = float2ctrl(0.0f);
+    sogi->osg_u[0] = CTL_CTRL_CONST_ZERO;
+    sogi->osg_u[1] = CTL_CTRL_CONST_ZERO;
+    sogi->osg_u[2] = CTL_CTRL_CONST_ZERO;
 
-    sogi->osg_qu[0] = float2ctrl(0.0f);
-    sogi->osg_qu[1] = float2ctrl(0.0f);
-    sogi->osg_qu[2] = float2ctrl(0.0f);
+    sogi->osg_qu[0] = CTL_CTRL_CONST_ZERO;
+    sogi->osg_qu[1] = CTL_CTRL_CONST_ZERO;
+    sogi->osg_qu[2] = CTL_CTRL_CONST_ZERO;
 }
 
 /**
@@ -228,8 +228,8 @@ GMP_STATIC_INLINE void ctl_clear_discrete_sogi_dc(discrete_sogi_dc_t* sogi_dc)
     ctl_clear_discrete_sogi(&sogi_dc->core);
 
     // Clear DC States
-    sogi_dc->v_dc_est = float2ctrl(0.0f);
-    sogi_dc->input_prev = float2ctrl(0.0f);
+    sogi_dc->v_dc_est = CTL_CTRL_CONST_ZERO;
+    sogi_dc->input_prev = CTL_CTRL_CONST_ZERO;
 }
 
 /**

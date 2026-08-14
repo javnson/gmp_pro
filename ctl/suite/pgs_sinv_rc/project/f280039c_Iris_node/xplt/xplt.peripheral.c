@@ -174,8 +174,8 @@ interrupt void INT_IRIS_CAN_0_ISR(void)
 
         // Set target User Power References
         // Used in BUILD_LEVEL >= 2 (Grid-tied PQ control)
-        g_p_ref_user = float2ctrl((float)recv_content[0].i32 / CAN_SCALE_FACTOR);
-        g_q_ref_user = float2ctrl((float)recv_content[1].i32 / CAN_SCALE_FACTOR);
+        g_p_ref_user = real2ctrl((float)recv_content[0].i32 / CAN_SCALE_FACTOR);
+        g_q_ref_user = real2ctrl((float)recv_content[1].i32 / CAN_SCALE_FACTOR);
     }
 
     // Clear the interrupt flag

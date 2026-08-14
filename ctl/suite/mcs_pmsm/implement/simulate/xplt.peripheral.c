@@ -47,7 +47,7 @@ void setup_peripheral(void)
         ctl_gain_calc_shunt_amp(CTRL_ADC_VOLTAGE_REF, MTR_CTRL_CURRENT_BASE, BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM,
                                 BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_CSA_BIAS_V),*/
-        float2ctrl(MTR_CTRL_CURRENT_GAIN), float2ctrl(MTR_CTRL_CURRENT_BIAS),
+        real2ctrl(MTR_CTRL_CURRENT_GAIN), real2ctrl(MTR_CTRL_CURRENT_BIAS),
         // ADC resolution, IQN
         12, 24);
 
@@ -60,7 +60,7 @@ void setup_peripheral(void)
                                 BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_CSA_BIAS_V),
         */
-        float2ctrl(MTR_CTRL_CURRENT_GAIN), float2ctrl(MTR_CTRL_CURRENT_BIAS),
+        real2ctrl(MTR_CTRL_CURRENT_GAIN), real2ctrl(MTR_CTRL_CURRENT_BIAS),
         // ADC resolution, IQN
         12, 24);
 
@@ -72,7 +72,7 @@ void setup_peripheral(void)
         ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN, MTR_CTRL_VOLTAGE_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V),
         */
-        float2ctrl(MTR_CTRL_VOLTAGE_GAIN), float2ctrl(MTR_CTRL_VOLTAGE_BIAS),
+        real2ctrl(MTR_CTRL_VOLTAGE_GAIN), real2ctrl(MTR_CTRL_VOLTAGE_BIAS),
         // ADC resolution, IQN
         12, 24);
 
@@ -84,7 +84,7 @@ void setup_peripheral(void)
         ctl_gain_calc_generic(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN, MTR_CTRL_VOLTAGE_BASE),
         ctl_bias_calc_via_Vref_Vbias(CTRL_ADC_VOLTAGE_REF, BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V),
         */
-        float2ctrl(MTR_CTRL_VOLTAGE_GAIN), float2ctrl(MTR_CTRL_VOLTAGE_BIAS),
+        real2ctrl(MTR_CTRL_VOLTAGE_GAIN), real2ctrl(MTR_CTRL_VOLTAGE_BIAS),
         // ADC resolution, IQN
         12, 24);
 

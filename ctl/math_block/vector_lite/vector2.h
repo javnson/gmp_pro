@@ -44,8 +44,8 @@ typedef struct _tag_ctl_vector2_t
  */
 GMP_STATIC_INLINE void ctl_vector2_clear(ctl_vector2_t* vec)
 {
-    vec->dat[0] = float2ctrl(0.0f);
-    vec->dat[1] = float2ctrl(0.0f);
+    vec->dat[0] = real2ctrl(0.0f);
+    vec->dat[1] = real2ctrl(0.0f);
 }
 
 /**
@@ -166,7 +166,7 @@ GMP_STATIC_INLINE void ctl_vector2_sat_circle_sq(ctl_vector2_t* result, const ct
     ctrl_gt y = vec->dat[1];
     ctrl_gt mag_sq;
 
-    gmp_ctl_assert(radius_sq >= float2ctrl(0.0f));
+    gmp_ctl_assert(radius_sq >= real2ctrl(0.0f));
 
     mag_sq = ctl_mul(x, x) + ctl_mul(y, y);
 
@@ -207,7 +207,7 @@ GMP_STATIC_INLINE void ctl_vector2_sat_circle_sq_taylor(ctl_vector2_t* result, c
     ctrl_gt y = vec->dat[1];
     ctrl_gt mag_sq;
 
-    gmp_ctl_assert(radius_sq >= float2ctrl(0.0f));
+    gmp_ctl_assert(radius_sq >= real2ctrl(0.0f));
 
     mag_sq = ctl_mul(x, x) + ctl_mul(y, y);
 
@@ -223,7 +223,7 @@ GMP_STATIC_INLINE void ctl_vector2_sat_circle_sq_taylor(ctl_vector2_t* result, c
         }
 
         ratio = ctl_div(mag_sq, radius_sq);
-        if (ratio >= float2ctrl(3.0f))
+        if (ratio >= real2ctrl(3.0f))
         {
             ctl_vector2_clear(result);
             return;
@@ -250,7 +250,7 @@ GMP_STATIC_INLINE void ctl_vector2_sat_circle_sq_taylor(ctl_vector2_t* result, c
  */
 GMP_STATIC_INLINE void ctl_vector2_sat_circle(ctl_vector2_t* result, const ctl_vector2_t* vec, ctrl_gt radius)
 {
-    gmp_ctl_assert(radius >= float2ctrl(0.0f));
+    gmp_ctl_assert(radius >= real2ctrl(0.0f));
     ctl_vector2_sat_circle_sq(result, vec, ctl_mul(radius, radius));
 }
 
@@ -288,7 +288,7 @@ GMP_STATIC_INLINE void ctl_vector2_sat_square(ctl_vector2_t* result, const ctl_v
     ctrl_gt x = vec->dat[0];
     ctrl_gt y = vec->dat[1];
 
-    gmp_ctl_assert(limit >= float2ctrl(0.0f));
+    gmp_ctl_assert(limit >= real2ctrl(0.0f));
     result->dat[0] = ctl_sat(x, limit, -limit);
     result->dat[1] = ctl_sat(y, limit, -limit);
 }

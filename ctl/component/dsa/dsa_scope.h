@@ -66,7 +66,7 @@ GMP_STATIC_INLINE void ctl_wipe_dsa_scope_memory(ctl_dsa_scope_t* scope)
 
     for (i = 0; i < scope->mem.capacity; i++)
     {
-        scope->mem.buffer[i] = float2ctrl(0.0f);
+        scope->mem.buffer[i] = CTL_CTRL_CONST_ZERO;
     }
     ctl_reset_dsa_scope_tracker(scope);
 }

@@ -22,13 +22,13 @@ void ctl_init_bldc_zcd_obs(ctl_bldc_zcd_obs_t* obs, const ctl_bldc_zcd_obs_init_
 
     // 1. Scale Factors (Avoid division in ISR)
     // Speed PU = (1/6 electrical rev) / (N_ticks * Ts * f_base)
-    obs->sf_speed_calc = float2ctrl((1.0f / 6.0f) / (Ts * f_base));
+    obs->sf_speed_calc = real2ctrl((1.0f / 6.0f) / (Ts * f_base));
 
     // Angle integration coefficient: delta_theta = speed_pu * (W_base * Ts / 2PI)
-    obs->sf_w_to_angle = float2ctrl(f_base * Ts);
+    obs->sf_w_to_angle = real2ctrl(f_base * Ts);
 
     // Target phase delay from ZCD to Commutation is 30 degrees (1/12 PU)
-    obs->delay_target_pu = float2ctrl(1.0f / 12.0f);
+    obs->delay_target_pu = real2ctrl(1.0f / 12.0f);
 
     // 2. Timers & Filters
     obs->blanking_ticks = (time_gt)(init->blanking_time_ms * fs_safe / 1000.0f);
@@ -61,7 +61,7 @@ void ctl_step_bldc_zcd_obs(ctl_bldc_zcd_obs_t* obs, ctrl_gt v_u_pu, ctrl_gt v_v_
     if (obs->tick_since_last_zcd > obs->timeout_ticks)
     {
         obs->flag_observer_locked = 0;
-        obs->spd_est_pu = float2ctrl(0.0f);
+        obs->spd_est_pu = CTL_CTRL_CONST_ZERO;
         ctl_clear_filter_iir1(&obs->filter_spd);
     }
 
@@ -103,7 +103,7 @@ void ctl_step_bldc_zcd_obs(ctl_bldc_zcd_obs_t* obs, ctrl_gt v_u_pu, ctrl_gt v_v_
     // ========================================================================
     // Standard unipolar/bipolar PWM dictates Virtual Neutral Point ~ V_bus / 2
     ctrl_gt v_neutral = ctl_mul(v_bus_pu, CTL_CTRL_CONST_1_OVER_2);
-    ctrl_gt v_float = float2ctrl(0.0f);
+    ctrl_gt v_float = CTL_CTRL_CONST_ZERO;
     fast_gt is_falling_edge = 0;
 
     // 6-step commutation table analysis
@@ -159,13 +159,13 @@ void ctl_step_bldc_zcd_obs(ctl_bldc_zcd_obs_t* obs, ctrl_gt v_u_pu, ctrl_gt v_v_
             // Valid Zero-Crossing Confirmed!
             obs->flag_zcd_detected = 1;
             obs->flag_observer_locked = 1;
-            obs->theta_delay_pu = float2ctrl(0.0f); // Reset integrator for 30-deg delay
+            obs->theta_delay_pu = CTL_CTRL_CONST_ZERO; // Reset integrator for 30-deg delay
 
             // Calculate Raw Electrical Speed: (1/6 PU) / (N_ticks * Ts * f_base)
             // Prevent division by zero
-            ctrl_gt ticks = float2ctrl((float)obs->tick_since_last_zcd);
-            if (ticks < float2ctrl(1.0f))
-                ticks = float2ctrl(1.0f);
+            ctrl_gt ticks = real2ctrl((float)obs->tick_since_last_zcd);
+            if (ticks < CTL_CTRL_CONST_1)
+                ticks = CTL_CTRL_CONST_1;
 
             ctrl_gt raw_spd_pu = ctl_div(obs->sf_speed_calc, ticks);
 

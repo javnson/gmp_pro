@@ -136,8 +136,8 @@ GMP_STATIC_INLINE void ctl_clear_im_ifoc(im_ifoc_ctrl_t* mc)
     ctl_vector2_clear(&mc->vdq_out_bus_compensator);
     ctl_vector2_clear(&mc->vdq_out_sat);
     ctl_vector3_clear(&mc->vab0);
-    mc->magnetizing_current_pu = float2ctrl(0.0f);
-    mc->udc = float2ctrl(0.0f);
+    mc->magnetizing_current_pu = CTL_CTRL_CONST_ZERO;
+    mc->udc = CTL_CTRL_CONST_ZERO;
     mc->isr_tick = 0;
 }
 
@@ -172,7 +172,7 @@ GMP_STATIC_INLINE void ctl_step_im_ifoc(im_ifoc_ctrl_t* mc)
     ctl_vector2_t total_ff;
     ctl_vector2_t limit_max;
     ctl_vector2_t limit_min;
-    ctrl_gt v_scale = float2ctrl(1.0f);
+    ctrl_gt v_scale = CTL_CTRL_CONST_1;
 
     gmp_ctl_assert(mc->adc_iuvw && mc->adc_udc && mc->field_pos_if);
     ++mc->isr_tick;
@@ -187,7 +187,7 @@ GMP_STATIC_INLINE void ctl_step_im_ifoc(im_ifoc_ctrl_t* mc)
     mc->iuvw.dat[phase_U] = ctl_step_filter_iir1(&mc->filter_iuvw[phase_U], mc->adc_iuvw->value.dat[phase_A]);
     mc->iuvw.dat[phase_V] = ctl_step_filter_iir1(&mc->filter_iuvw[phase_V], mc->adc_iuvw->value.dat[phase_B]);
     ctl_ct_clarke_2ph((ctl_vector2_t*)&mc->iuvw, (ctl_vector2_t*)&mc->iab0);
-    mc->iab0.dat[phase_0] = float2ctrl(0.0f);
+    mc->iab0.dat[phase_0] = CTL_CTRL_CONST_ZERO;
 #endif
     mc->udc = ctl_step_filter_iir1(&mc->filter_udc, mc->adc_udc->value);
     ctl_ct_park(&mc->iab0, &mc->phasor, &mc->idq0);
@@ -224,7 +224,7 @@ GMP_STATIC_INLINE void ctl_step_im_ifoc(im_ifoc_ctrl_t* mc)
     ctl_vector2_copy((ctl_vector2_t*)&mc->vdq_out, &mc->vdq_ref);
     if (mc->flag_enable_bus_compensation)
     {
-        v_scale = (mc->udc > float2ctrl(0.5f)) ? ctl_div(mc->max_dcbus_voltage, mc->udc)
+        v_scale = (mc->udc > CTL_CTRL_CONST_1_OVER_2) ? ctl_div(mc->max_dcbus_voltage, mc->udc)
                                                : mc->max_dcbus_voltage;
     }
     mc->vdq_out_bus_compensator.dat[phase_d] = ctl_mul(mc->vdq_out.dat[phase_d], v_scale);
@@ -237,7 +237,7 @@ GMP_STATIC_INLINE void ctl_step_im_ifoc(im_ifoc_ctrl_t* mc)
     ctl_vector2_sat_rect(&mc->vdq_out_sat, &mc->vdq_out_sat, &limit_max, &limit_min);
     mc->vdq_out.dat[phase_d] = mc->vdq_out_sat.dat[phase_d];
     mc->vdq_out.dat[phase_q] = mc->vdq_out_sat.dat[phase_q];
-    mc->vdq_out.dat[phase_0] = float2ctrl(0.0f);
+    mc->vdq_out.dat[phase_0] = CTL_CTRL_CONST_ZERO;
     ctl_ct_ipark(&mc->vdq_out, &mc->phasor, &mc->vab0);
 }
 

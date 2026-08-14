@@ -45,6 +45,10 @@ extern "C"
 #define SPECIFY_PARAMETER_GT_TYPE USING_FLOAT_FPU
 #endif
 
+#ifndef SPECIFY_REAL_GT_TYPE
+#define SPECIFY_REAL_GT_TYPE USING_DOUBLE_FPU
+#endif
+
 #ifndef GMP_STATIC_INLINE
 #define GMP_STATIC_INLINE static inline
 #endif

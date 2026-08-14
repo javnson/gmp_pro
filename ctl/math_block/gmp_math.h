@@ -117,7 +117,7 @@
 /*---------------------------------------------------------------------------*/
 
 /** @addtogroup MC_CORE_TYPES GMP CTL Core Type definition
- * @brief This section provide ctrl_gt and paramter_gt types definition.
+ * @brief Defines real_gt, parameter_gt, and ctrl_gt numeric domains.
  * @ingroup CTL_MATH
  * @{
  */
@@ -164,18 +164,31 @@ typedef GMP_PORT_CTRL_T ctrl_gt;
  */
 typedef GMP_PORT_PARAMETER_T parameter_gt;
 
+#ifndef GMP_PORT_REAL_T
+#if (SPECIFY_REAL_GT_TYPE == USING_LONG_DOUBLE)
+#define GMP_PORT_REAL_T long double
+#else
+#define GMP_PORT_REAL_T double
+#endif
+#endif
+
 /**
- * @brief Convert a native C arithmetic value to the parameter domain.
- * @details "real" denotes a C literal or native arithmetic expression at a
- * configuration boundary; it is deliberately not another stored GMP type.
+ * @brief Source-domain type for constants and offline initialization math.
+ * @details The default is double. A user or CSP may select long double when
+ * the target compiler provides a wider and useful implementation.
+ */
+typedef GMP_PORT_REAL_T real_gt;
+
+/**
+ * @brief Convert a source-domain value to the parameter domain.
  */
 #ifndef real2param
 #define real2param(value) ((parameter_gt)(value))
 #endif
 
-/** @brief Convert a native C arithmetic value to the real-time domain. */
+/** @brief Convert a source-domain value to the real-time domain. */
 #ifndef real2ctrl
-#define real2ctrl(value) ((ctrl_gt)float2ctrl(value))
+#define real2ctrl(value) ((ctrl_gt)GMP_CTRL_FROM_REAL(value))
 #endif
 
 /**
@@ -184,12 +197,12 @@ typedef GMP_PORT_PARAMETER_T parameter_gt;
  * result as ctrl_gt instead of converting parameter_gt in every ISR step.
  */
 #ifndef param2ctrl
-#define param2ctrl(value) real2ctrl(value)
+#define param2ctrl(value) ((ctrl_gt)GMP_CTRL_FROM_REAL((parameter_gt)(value)))
 #endif
 
 /** @brief Convert a real-time value for slow diagnostics or parameter tools. */
 #ifndef ctrl2param
-#define ctrl2param(value) ((parameter_gt)ctrl2float(value))
+#define ctrl2param(value) ((parameter_gt)GMP_CTRL_TO_REAL(value))
 #endif
 
 /* Compatibility spellings retained for existing applications. */

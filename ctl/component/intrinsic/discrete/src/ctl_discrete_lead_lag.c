@@ -30,13 +30,13 @@ void ctl_init_lead(ctrl_lead_t* obj, parameter_gt K_D, parameter_gt tau_D, param
     // H(z) = (b0 + b1*z^-1) / (1 - a1*z^-1)
 
     // a1 = (2*tau_D - Ts) / (2*tau_D + Ts)
-    obj->a1 = float2ctrl((2.0f * tau_D - Ts) * inv_den);
+    obj->a1 = real2ctrl((2.0f * tau_D - Ts) * inv_den);
 
     // b0 = (2*tau_D + 2*K_D + Ts) / (2*tau_D + Ts)
-    obj->b0 = float2ctrl((2.0f * tau_D + 2.0f * K_D + Ts) * inv_den);
+    obj->b0 = real2ctrl((2.0f * tau_D + 2.0f * K_D + Ts) * inv_den);
 
     // b1 = (Ts - 2*tau_D - 2*K_D) / (2*tau_D + Ts)
-    obj->b1 = float2ctrl((Ts - 2.0f * tau_D - 2.0f * K_D) * inv_den);
+    obj->b1 = real2ctrl((Ts - 2.0f * tau_D - 2.0f * K_D) * inv_den);
 
     ctl_clear_lead(obj);
 }
@@ -66,13 +66,13 @@ void ctl_init_lead_form2(ctrl_lead_t* obj, parameter_gt alpha, parameter_gt T, p
     // H(z) = (b0 + b1*z^-1) / (1 - a1*z^-1)
 
     // a1 = (2*T - Ts) / (2*T + Ts)
-    obj->a1 = float2ctrl((2.0f * T - Ts) * inv_den);
+    obj->a1 = real2ctrl((2.0f * T - Ts) * inv_den);
 
     // b0 = (2*alpha*T + T) / (2*T + Ts)
-    obj->b0 = float2ctrl((2.0f * alpha * T + Ts) * inv_den);
+    obj->b0 = real2ctrl((2.0f * alpha * T + Ts) * inv_den);
 
     // b1 = (T - 2*alpha*T) / (2*T + Ts)
-    obj->b1 = float2ctrl((Ts - 2.0f * alpha * T) * inv_den);
+    obj->b1 = real2ctrl((Ts - 2.0f * alpha * T) * inv_den);
 
     // Clear initial states
     ctl_clear_lead(obj);
@@ -135,13 +135,13 @@ void ctl_init_lag(ctrl_lag_t* obj, parameter_gt tau_L, parameter_gt tau_P, param
     // H(z) = (b0 + b1*z^-1) / (1 - a1*z^-1)
 
     // a1 = (2*tau_P - Ts) / (2*tau_P + Ts)
-    obj->a1 = float2ctrl((2.0f * tau_P - Ts) * inv_den);
+    obj->a1 = real2ctrl((2.0f * tau_P - Ts) * inv_den);
 
     // b0 = (2*tau_L + Ts) / (2*tau_P + Ts)
-    obj->b0 = float2ctrl((2.0f * tau_L + Ts) * inv_den);
+    obj->b0 = real2ctrl((2.0f * tau_L + Ts) * inv_den);
 
     // b1 = (Ts - 2*tau_L) / (2*tau_P + Ts)
-    obj->b1 = float2ctrl((Ts - 2.0f * tau_L) * inv_den);
+    obj->b1 = real2ctrl((Ts - 2.0f * tau_L) * inv_den);
 
     // Clear initial states
     ctl_clear_lag(obj);

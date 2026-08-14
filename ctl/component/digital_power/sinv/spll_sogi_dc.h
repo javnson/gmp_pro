@@ -85,10 +85,10 @@ GMP_STATIC_INLINE void ctl_clear_single_phase_dc_pll(ctl_single_phase_dc_pll* sp
     ctl_clear_discrete_sogi_dc(&spll->sogi_dc);
     ctl_clear_pid(&spll->spll_ctrl);
 
-    spll->theta = float2ctrl(0.0f);
+    spll->theta = CTL_CTRL_CONST_ZERO;
     ctl_set_phasor_via_angle(spll->theta, &spll->phasor);
 
-    spll->frequency = float2ctrl(1.0f);
+    spll->frequency = CTL_CTRL_CONST_1;
     spll->v_mag = 0;
     spll->v_dc_est = 0;
 
@@ -139,7 +139,7 @@ GMP_STATIC_INLINE void ctl_step_single_phase_dc_pll(ctl_single_phase_dc_pll* spl
     spll->freq_error = ctl_step_pid_ser(&spll->spll_ctrl, ctl_get_lowpass_filter_result(&spll->filter_uq));
 
     // 6. VCO (Frequency & Angle Update)
-    spll->frequency = float2ctrl(1.0f) + spll->freq_error;
+    spll->frequency = CTL_CTRL_CONST_1 + spll->freq_error;
 
     // Integrate: theta += freq * (2pi * Ts_normalized)
     spll->theta += ctl_mul(spll->frequency, spll->freq_sf);

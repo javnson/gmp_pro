@@ -87,10 +87,10 @@ void ctl_init_ladrc1(ctl_ladrc1_t* ladrc, parameter_gt b0, parameter_gt fc, para
  */
 GMP_STATIC_INLINE void ctl_clear_ladrc1(ctl_ladrc1_t* ladrc)
 {
-    ladrc->z1 = float2ctrl(0.0f);
-    ladrc->z2_u = float2ctrl(0.0f);
-    ladrc->u_prev = float2ctrl(0.0f);
-    ladrc->out = float2ctrl(0.0f);
+    ladrc->z1 = CTL_CTRL_CONST_ZERO;
+    ladrc->z2_u = CTL_CTRL_CONST_ZERO;
+    ladrc->u_prev = CTL_CTRL_CONST_ZERO;
+    ladrc->out = CTL_CTRL_CONST_ZERO;
 }
 
 /**

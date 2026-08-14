@@ -4,16 +4,16 @@
 // Direct Form controller
 #include <ctl/component/intrinsic/discrete/direct_form.h>
 
-// TODO: add ctrl2float()function for all parameters
+// TODO: add ctrl2param()function for all parameters
 
 /*---------------------------------------------------------------------------*/
 /* DF11 Implementation                                                       */
 /*---------------------------------------------------------------------------*/
 void ctl_init_df11(ctl_df11_t* df, parameter_gt b0, parameter_gt b1, parameter_gt a1)
 {
-    df->b0 = float2ctrl(b0);
-    df->b1 = float2ctrl(b1);
-    df->a1 = float2ctrl(a1);
+    df->b0 = real2ctrl(b0);
+    df->b1 = real2ctrl(b1);
+    df->a1 = real2ctrl(a1);
     ctl_clear_df11(df);
 }
 
@@ -56,11 +56,11 @@ parameter_gt ctl_get_df11_phase_lag(ctl_df11_t* df, parameter_gt fs, parameter_g
 /*---------------------------------------------------------------------------*/
 void ctl_init_df22(ctl_df22_t* df, parameter_gt b0, parameter_gt b1, parameter_gt b2, parameter_gt a1, parameter_gt a2)
 {
-    df->b0 = float2ctrl(b0);
-    df->b1 = float2ctrl(b1);
-    df->b2 = float2ctrl(b2);
-    df->a1 = float2ctrl(a1);
-    df->a2 = float2ctrl(a2);
+    df->b0 = real2ctrl(b0);
+    df->b1 = real2ctrl(b1);
+    df->b2 = real2ctrl(b2);
+    df->a1 = real2ctrl(a1);
+    df->a2 = real2ctrl(a2);
     ctl_clear_df22(df);
 }
 
@@ -104,13 +104,13 @@ parameter_gt ctl_get_df22_phase_lag(ctl_df22_t* df, parameter_gt fs, parameter_g
 void ctl_init_df13(ctl_df13_t* df, parameter_gt b0, parameter_gt b1, parameter_gt b2, parameter_gt b3, parameter_gt a1,
                    parameter_gt a2, parameter_gt a3)
 {
-    df->b0 = float2ctrl(b0);
-    df->b1 = float2ctrl(b1);
-    df->b2 = float2ctrl(b2);
-    df->b3 = float2ctrl(b3);
-    df->a1 = float2ctrl(a1);
-    df->a2 = float2ctrl(a2);
-    df->a3 = float2ctrl(a3);
+    df->b0 = real2ctrl(b0);
+    df->b1 = real2ctrl(b1);
+    df->b2 = real2ctrl(b2);
+    df->b3 = real2ctrl(b3);
+    df->a1 = real2ctrl(a1);
+    df->a2 = real2ctrl(a2);
+    df->a3 = real2ctrl(a3);
     ctl_clear_df13(df);
 }
 
@@ -156,13 +156,13 @@ parameter_gt ctl_get_df13_phase_lag(ctl_df13_t* df, parameter_gt fs, parameter_g
 void ctl_init_df23(ctl_df23_t* df, parameter_gt b0, parameter_gt b1, parameter_gt b2, parameter_gt b3, parameter_gt a1,
                    parameter_gt a2, parameter_gt a3)
 {
-    df->b0 = float2ctrl(b0);
-    df->b1 = float2ctrl(b1);
-    df->b2 = float2ctrl(b2);
-    df->b3 = float2ctrl(b3);
-    df->a1 = float2ctrl(a1);
-    df->a2 = float2ctrl(a2);
-    df->a3 = float2ctrl(a3);
+    df->b0 = real2ctrl(b0);
+    df->b1 = real2ctrl(b1);
+    df->b2 = real2ctrl(b2);
+    df->b3 = real2ctrl(b3);
+    df->a1 = real2ctrl(a1);
+    df->a2 = real2ctrl(a2);
+    df->a3 = real2ctrl(a3);
     ctl_clear_df23(df);
 }
 

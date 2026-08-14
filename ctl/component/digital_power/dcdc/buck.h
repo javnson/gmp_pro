@@ -81,7 +81,7 @@ GMP_STATIC_INLINE void ctl_init_buck_modulator(buck_modulator_t* mod, pwm_gt ful
 
 GMP_STATIC_INLINE pwm_gt ctl_step_buck_modulator(buck_modulator_t* mod, ctrl_gt v_req, ctrl_gt v_in)
 {
-    ctrl_gt v_in_safe = (v_in > float2ctrl(0.1f)) ? v_in : float2ctrl(0.1f);
+    ctrl_gt v_in_safe = (v_in > real2ctrl(0.1f)) ? v_in : real2ctrl(0.1f);
     ctrl_gt duty = ctl_div(v_req, v_in_safe);
 
     // Strict limits for Bootstrap and Min-On time

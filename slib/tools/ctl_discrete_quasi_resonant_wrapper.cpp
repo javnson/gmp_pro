@@ -86,7 +86,7 @@ void ctl_discrete_quasi_resonant_Update_wrapper(const real_T *u0,
 ctrl_dut_t* ctrl = static_cast<ctrl_dut_t*>(pW[0]);
 
     // TODO: add CTL controller step function.
-    *xD = ctl_step_qr_controller(ctrl, float2ctrl(*u0));
+    *xD = ctl_step_qr_controller(ctrl, real2ctrl(*u0));
 /* %%%-SFUNWIZ_wrapper_Update_Changes_END --- EDIT HERE TO _BEGIN */
 }
 /*

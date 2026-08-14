@@ -136,9 +136,9 @@ GMP_STATIC_INLINE void ctl_step_spwm_modulator(spwm_modulator_t* mod)
     for (i = 0; i < 3; ++i)
     {
 #if PWM_MODULATOR_USING_NEGATIVE_LOGIC == 1
-        ctrl_gt pwm_pu = ctl_div2(ctl_add(float2ctrl(1.0f), -mod->vabc_out.dat[i]));
+        ctrl_gt pwm_pu = ctl_div2(ctl_add(CTL_CTRL_CONST_1, -mod->vabc_out.dat[i]));
 #else  // Positive logic
-        ctrl_gt pwm_pu = ctl_div2(ctl_add(float2ctrl(1.0f), mod->vabc_out.dat[i]));
+        ctrl_gt pwm_pu = ctl_div2(ctl_add(CTL_CTRL_CONST_1, mod->vabc_out.dat[i]));
 #endif // PWM_MODULATOR_USING_NEGATIVE_LOGIC
 
         // Convert voltage command (-1.0 to 1.0) to duty cycle (0 to 1.0), then to raw PWM value.
@@ -258,9 +258,9 @@ GMP_STATIC_INLINE void ctl_step_svpwm_modulator(spwm_modulator_t* mod)
     for (i = 0; i < 3; ++i)
     {
 #if PWM_MODULATOR_USING_NEGATIVE_LOGIC == 1
-        ctrl_gt pwm_pu = ctl_div2(ctl_add(float2ctrl(1.0f), -mod->vabc_out.dat[i]));
+        ctrl_gt pwm_pu = ctl_div2(ctl_add(CTL_CTRL_CONST_1, -mod->vabc_out.dat[i]));
 #else  // Positive logic
-        ctrl_gt pwm_pu = ctl_div2(ctl_add(float2ctrl(1.0f), mod->vabc_out.dat[i]));
+        ctrl_gt pwm_pu = ctl_div2(ctl_add(CTL_CTRL_CONST_1, mod->vabc_out.dat[i]));
 #endif // PWM_MODULATOR_USING_NEGATIVE_LOGIC
 
         // Convert voltage command (-1.0 to 1.0) to duty cycle (0 to 1.0), then to raw PWM value.

@@ -19,7 +19,7 @@
 
 void ctl_init_const_f_controller(ctl_const_f_controller* ctrl, parameter_gt frequency, parameter_gt isr_freq)
 {
-    // ctl_setup_ramp_gen(&ctrl->rg, float2ctrl(frequency / isr_freq), 1, 0);
+    // ctl_setup_ramp_gen(&ctrl->rg, real2ctrl(frequency / isr_freq), 1, 0);
 
     ctrl->enc.elec_position = 0;
     ctrl->enc.position = 0;
@@ -47,7 +47,7 @@ void ctl_init_const_slope_f_controller(
 
     ctrl->target_frequency = frequency / isr_freq;
 
-    ctl_init_slope_limiter(&ctrl->freq_slope, float2ctrl(freq_slope / isr_freq), -float2ctrl(freq_slope / isr_freq),
+    ctl_init_slope_limiter(&ctrl->freq_slope, real2ctrl(freq_slope / isr_freq), -real2ctrl(freq_slope / isr_freq),
                            isr_freq);
 }
 
@@ -60,7 +60,7 @@ void ctl_set_slope_f_freq(
     // Main ISR frequency
     parameter_gt isr_freq)
 {
-    ctrl->target_frequency = float2ctrl(target_freq / isr_freq);
+    ctrl->target_frequency = real2ctrl(target_freq / isr_freq);
 }
 
 /**
@@ -97,17 +97,17 @@ void ctl_init_const_slope_f_pu_controller(ctl_slope_f_pu_controller* ctrl, param
     // 4. Calculate Conversion Ratio
     // This ratio converts "1.0 pu frequency" into "step size per ISR tick"
     // step = (f_base / f_isr)
-    ctrl->ratio_freq_pu_to_step = float2ctrl(base_freq_hz / isr_freq);
+    ctrl->ratio_freq_pu_to_step = real2ctrl(base_freq_hz / isr_freq);
 
     // 5. Initialize Target Frequency in PU
     // target_pu = target_hz / base_hz
-    ctrl->target_freq_pu = float2ctrl(frequency / base_freq_hz);
+    ctrl->target_freq_pu = real2ctrl(frequency / base_freq_hz);
 
     // 6. Initialize Slope Limiter
     // The limiter needs to limit the change of PU per Tick.
     // Max Change (Hz/s) = freq_slope
     // Max Change (PU/s) = freq_slope / base_freq_hz
-    ctrl_gt slope_limit_per_tick = float2ctrl(freq_slope / base_freq_hz);
+    ctrl_gt slope_limit_per_tick = real2ctrl(freq_slope / base_freq_hz);
 
     ctl_init_slope_limiter(&ctrl->freq_slope, slope_limit_per_tick, -slope_limit_per_tick, isr_freq);
 
@@ -144,15 +144,15 @@ void ctl_init_const_vf_controller(
     ctrl->target_voltage = 0;
 
 #if !defined CTRL_GT_IS_FIXED
-    ctrl->v_over_f = float2ctrl(voltage_over_frequency * isr_freq);
+    ctrl->v_over_f = real2ctrl(voltage_over_frequency * isr_freq);
 #elif defined CTRL_GT_IS_FLOAT
-    ctrl->v_over_f = float2ctrl(voltage_over_frequency * isr_freq / (2 ^ GLOBAL_Q));
+    ctrl->v_over_f = real2ctrl(voltage_over_frequency * isr_freq / (2 ^ GLOBAL_Q));
 #else
 #error("The system does not specify ctrl_gt is float or fixed. You should define CTRL_GT_IS_FLOAT or CTRL_GT_IS_FIXED.")
 #endif // CTRL_GT_IS_XXX
     ctrl->v_bias = voltage_bias;
 
-    ctl_init_slope_limiter(&ctrl->freq_slope, float2ctrl(freq_slope / isr_freq), -float2ctrl(freq_slope / isr_freq),
+    ctl_init_slope_limiter(&ctrl->freq_slope, real2ctrl(freq_slope / isr_freq), -real2ctrl(freq_slope / isr_freq),
                            isr_freq);
 
     ctl_init_saturation(&ctrl->volt_sat, voltage_bound, -voltage_bound);
@@ -167,5 +167,5 @@ void ctl_set_const_vf_target_freq(
     // Main ISR frequency
     parameter_gt isr_freq)
 {
-    ctrl->target_frequency = float2ctrl(target_freq / isr_freq);
+    ctrl->target_frequency = real2ctrl(target_freq / isr_freq);
 }

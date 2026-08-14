@@ -382,10 +382,10 @@ GMP_STATIC_INLINE void ctl_step_foc_core(mc_foc_core_t* mc)
     else
         ctl_vector2_copy((ctl_vector2_t*)&mc->vdq_out, &mc->vdq_ref);
 
-    ctrl_gt v_scale = float2ctrl(1.0f);
+    ctrl_gt v_scale = CTL_CTRL_CONST_1;
     if (mc->flag_enable_bus_compensation)
     {
-        if (mc->udc > float2ctrl(0.5f))
+        if (mc->udc > CTL_CTRL_CONST_1_OVER_2)
             v_scale = mc->max_dcbus_voltage / mc->udc;
         else
             v_scale = mc->max_dcbus_voltage;
@@ -402,7 +402,7 @@ GMP_STATIC_INLINE void ctl_step_foc_core(mc_foc_core_t* mc)
 
     mc->vdq_out.dat[phase_d] = mc->vdq_out_sat.dat[phase_d];
     mc->vdq_out.dat[phase_q] = mc->vdq_out_sat.dat[phase_q];
-    mc->vdq_out.dat[phase_0] = float2ctrl(0.0f);
+    mc->vdq_out.dat[phase_0] = CTL_CTRL_CONST_ZERO;
 
     // 7. iPark: d-q -> alpha-beta, using the command actually applied.
     ctl_ct_ipark(&mc->vdq_out, &mc->phasor, &mc->vab0);

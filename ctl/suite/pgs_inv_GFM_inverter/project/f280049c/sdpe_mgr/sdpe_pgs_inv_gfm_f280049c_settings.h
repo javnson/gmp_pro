@@ -728,7 +728,7 @@ extern "C"
 /**
  * @brief PLL lock-error threshold used before grid-forming takeover.
  */
-#define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
+#define CTRL_SPLL_EPSILON ((real2ctrl(0.005)))
 
 //=================================================================================================
 /**

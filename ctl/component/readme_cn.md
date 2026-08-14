@@ -1270,22 +1270,22 @@ void ctl_set_my_custom_controller_param1(
 void test_basic_operation() {
     my_custom_controller_t ctrl;
     my_custom_controller_init_t init = {
-        .init_param1 = float2ctrl(0.5),
-        .init_param2 = float2ctrl(0.2),
+        .init_param1 = real2ctrl(0.5),
+        .init_param2 = real2ctrl(0.2),
     };
 
     // 初始化
     ctl_init_my_custom_controller(&ctrl, &init);
 
     // 执行
-    ctrl_gt output = ctl_step_my_custom_controller(&ctrl, float2ctrl(1.0));
+    ctrl_gt output = ctl_step_my_custom_controller(&ctrl, real2ctrl(1.0));
 
     // 验证
-    printf("Output: %d (expected: ~%d)\n", output, float2ctrl(0.7));
+    printf("Output: %d (expected: ~%d)\n", output, real2ctrl(0.7));
 
     // 清零测试
     ctl_clear_my_custom_controller(&ctrl);
-    output = ctl_step_my_custom_controller(&ctrl, float2ctrl(1.0));
+    output = ctl_step_my_custom_controller(&ctrl, real2ctrl(1.0));
     printf("After clear: %d\n", output);
 }
 
@@ -1350,7 +1350,7 @@ ctrl_gt ctl_step_my_controller(my_controller_t *this, ctrl_gt input) {
 
 ```c
 // 使用 ctrl_gt 进行所有控制计算（固定点数学）
-ctrl_gt x = float2ctrl(0.5);
+ctrl_gt x = real2ctrl(0.5);
 ctrl_gt y = ctl_mul(x, param);
 
 // 使用 GMP 的定义宏

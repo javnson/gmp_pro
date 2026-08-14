@@ -29,13 +29,13 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
         simulink_tx_buffer.pwm_cmp[i] = clllc_mod.leg[i].duty;
         simulink_tx_buffer.pwm_cmp[i + 4] = clllc_mod.leg[i].phase;
     }
-    simulink_tx_buffer.monitor[0] = ctrl2float(clllc_mod.leg[0].raw.period);
-    simulink_tx_buffer.monitor[1] = ctrl2float(clllc_mod.leg[0].raw.deadband);
-    simulink_tx_buffer.monitor[2] = ctrl2float(adc_v_primary.control_port.value) * CTRL_VOLTAGE_BASE;
-    simulink_tx_buffer.monitor[3] = ctrl2float(adc_i_primary.control_port.value) * CTRL_CURRENT_BASE;
-    simulink_tx_buffer.monitor[4] = ctrl2float(adc_v_secondary.control_port.value) * CTRL_VOLTAGE_BASE;
-    simulink_tx_buffer.monitor[5] = ctrl2float(adc_i_resonant.control_port.value) * CTRL_CURRENT_BASE;
-    simulink_tx_buffer.monitor[6] = ctrl2float(g_modulation_command);
+    simulink_tx_buffer.monitor[0] = ctrl2param(clllc_mod.leg[0].raw.period);
+    simulink_tx_buffer.monitor[1] = ctrl2param(clllc_mod.leg[0].raw.deadband);
+    simulink_tx_buffer.monitor[2] = ctrl2param(adc_v_primary.control_port.value) * CTRL_VOLTAGE_BASE;
+    simulink_tx_buffer.monitor[3] = ctrl2param(adc_i_primary.control_port.value) * CTRL_CURRENT_BASE;
+    simulink_tx_buffer.monitor[4] = ctrl2param(adc_v_secondary.control_port.value) * CTRL_VOLTAGE_BASE;
+    simulink_tx_buffer.monitor[5] = ctrl2param(adc_i_resonant.control_port.value) * CTRL_CURRENT_BASE;
+    simulink_tx_buffer.monitor[6] = ctrl2param(g_modulation_command);
     if (g_clllc_sim_enable_pending)
     {
         csp_sl_enable_output();

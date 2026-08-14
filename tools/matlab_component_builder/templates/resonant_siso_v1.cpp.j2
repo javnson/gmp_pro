@@ -123,8 +123,8 @@ static void mdlOutputs(SimStruct *S, int_T)
 {% elif component.variant == 'qpr' %}    runtime->pending.kp = fresh.kp; runtime->pending.resonant_part.coef = fresh.resonant_part.coef;
 {% endif %}
     const real_T input = static_cast<const real_T *>(ssGetInputPortSignal(S, 0))[0];
-    ctrl_gt result = {{ component.initializers[0].step_function }}(&runtime->pending, float2ctrl(input));
-    ssGetOutputPortRealSignal(S, 0)[0] = static_cast<real_T>(ctrl2float(result));
+    ctrl_gt result = {{ component.initializers[0].step_function }}(&runtime->pending, real2ctrl(input));
+    ssGetOutputPortRealSignal(S, 0)[0] = static_cast<real_T>(ctrl2param(result));
     runtime->pending_valid = true;
 }
 

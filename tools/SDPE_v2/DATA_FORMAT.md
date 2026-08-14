@@ -38,7 +38,8 @@ Schema 文件放在 `schemas/` 下。
   "description": "Zero-current output bias.",
   "required": false,
   "default": 1.65,
-  "value_format": "({}f)"
+  "value_format": "{}",
+  "numeric_domain": "parameter"
 }
 ```
 
@@ -52,9 +53,20 @@ Schema 文件放在 `schemas/` 下。
 | --- | --- |
 | `{}` | 原始值套入格式。 |
 | `raw` | 完全原样输出，适合 C 表达式或已写好的宏。 |
-| `({}f)` | float 字面量。 |
+| `({}f)` | 旧版 float 字面量格式；新配置不应使用。 |
 | `({}U)` | unsigned 字面量。 |
 | `"{}"` | C 字符串字面量。 |
+
+数值参数还应通过 `numeric_domain` 明确目标域：
+
+| `numeric_domain` | C 输出 | 用途 |
+| --- | --- | --- |
+| `raw` | 不包装 | 标识符、整数、外设宏或完整 C 表达式 |
+| `real` | 原生无后缀表达式 | 仅在后续表达式中继续保持源数值语义 |
+| `parameter` | `real2param(value)` | 物理量、配置值和初始化参数，推荐默认选择 |
+| `ctrl` | `real2ctrl(value)` | 明确需要直接进入实时域的常量 |
+
+不要给实数字面量添加 `f` 后缀；否则在 `parameter_gt=double` 时，精度会在进入转换宏之前丢失。工程 requirement 的 binding 也可使用 `{"real": ...}`、`{"parameter": ...}` 或 `{"ctrl": ...}`。生成的 MATLAB 初始化脚本提供同名四个转换函数句柄，并允许通过 `GMP_SDPE_*_TYPE` 和转换器句柄选择仿真数值类型。
 
 `default` 可以是普通 JSON 值，也可以是绑定对象：
 

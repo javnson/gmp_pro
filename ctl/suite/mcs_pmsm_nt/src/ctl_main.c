@@ -119,12 +119,12 @@ void ctl_init()
     //
 #if defined USING_NPC_MODULATOR
     ctl_init_npc_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &mtr_ctrl.iuvw,
-                           float2ctrl(MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A / CTRL_CURRENT_BASE),
-                           float2ctrl(MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A / CTRL_CURRENT_BASE));
+                           real2ctrl(MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A / CTRL_CURRENT_BASE),
+                           real2ctrl(MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A / CTRL_CURRENT_BASE));
 #else
     ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &mtr_ctrl.iuvw,
-                            float2ctrl(MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A / CTRL_CURRENT_BASE),
-                            float2ctrl(MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A / CTRL_CURRENT_BASE));
+                            real2ctrl(MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A / CTRL_CURRENT_BASE),
+                            real2ctrl(MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A / CTRL_CURRENT_BASE));
 #endif // USING_NPC_MODULATOR
 
     //
@@ -163,7 +163,7 @@ void ctl_init()
     // Encoder Init
     //
     ctl_init_autoturn_pos_encoder(&pos_enc, mtr_ctrl_init.pole_pairs, CTRL_POS_ENC_FS);
-    ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, float2ctrl(CTRL_POS_ENC_BIAS));
+    ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, real2ctrl(CTRL_POS_ENC_BIAS));
 
     ctl_init_spd_calculator(&spd_enc, &pos_enc.encif, CONTROLLER_FREQUENCY, CTRL_MECH_DIV, CTRL_SPEED_RPM_BASE,
                             MCS_ENCODER_SPEED_FILTER_FC_HZ);
@@ -199,21 +199,21 @@ void ctl_init()
 #elif BUILD_LEVEL == 2
     // Basic current close loop, IF
     ctl_enable_foc_core_current_ctrl(&mtr_ctrl);
-    ctl_set_foc_core_idq_ref(&mtr_ctrl, float2ctrl(MCS_COMMISSIONING_ID_REF_A / CTRL_CURRENT_BASE),
-                             float2ctrl(MCS_COMMISSIONING_IQ_REF_A / CTRL_CURRENT_BASE));
+    ctl_set_foc_core_idq_ref(&mtr_ctrl, real2ctrl(MCS_COMMISSIONING_ID_REF_A / CTRL_CURRENT_BASE),
+                             real2ctrl(MCS_COMMISSIONING_IQ_REF_A / CTRL_CURRENT_BASE));
 
 #elif BUILD_LEVEL == 3
     // Basic current close loop, inverter
     ctl_enable_foc_core_current_ctrl(&mtr_ctrl);
-    ctl_set_foc_core_idq_ref(&mtr_ctrl, float2ctrl(MCS_COMMISSIONING_ID_REF_A / CTRL_CURRENT_BASE),
-                             float2ctrl(MCS_COMMISSIONING_IQ_REF_A / CTRL_CURRENT_BASE));
+    ctl_set_foc_core_idq_ref(&mtr_ctrl, real2ctrl(MCS_COMMISSIONING_ID_REF_A / CTRL_CURRENT_BASE),
+                             real2ctrl(MCS_COMMISSIONING_IQ_REF_A / CTRL_CURRENT_BASE));
 
 #elif BUILD_LEVEL == 4
     // Basic Speed close loop
     ctl_enable_foc_core_current_ctrl(&mtr_ctrl);
     ctl_set_mech_ctrl_mode(&mech_ctrl, MECH_MODE_VELOCITY);
     ctl_set_mech_target_velocity(&mech_ctrl,
-                                 float2ctrl(MCS_COMMISSIONING_SPEED_REF_RPM / CTRL_SPEED_RPM_BASE));
+                                 real2ctrl(MCS_COMMISSIONING_SPEED_REF_RPM / CTRL_SPEED_RPM_BASE));
 
 #endif // BUILD_LEVEL
 
@@ -242,9 +242,9 @@ void ctl_init()
     //
     ctl_init_mtr_protect(&protection, CONTROLLER_FREQUENCY);
 
-    ctl_set_mtr_protect_ov(&protection, float2ctrl(MCS_MAX_DC_BUS_VOLTAGE_V/CTRL_DCBUS_VOLTAGE));
-    ctl_set_mtr_protect_uv(&protection, float2ctrl(MCS_MIN_DC_BUS_VOLTAGE_V/CTRL_DCBUS_VOLTAGE));
-    ctl_set_mtr_protect_oc(&protection, float2ctrl(MCS_MAX_SHUTDOWN_CURRENT_A/CTRL_CURRENT_BASE));
+    ctl_set_mtr_protect_ov(&protection, real2ctrl(MCS_MAX_DC_BUS_VOLTAGE_V/CTRL_DCBUS_VOLTAGE));
+    ctl_set_mtr_protect_uv(&protection, real2ctrl(MCS_MIN_DC_BUS_VOLTAGE_V/CTRL_DCBUS_VOLTAGE));
+    ctl_set_mtr_protect_oc(&protection, real2ctrl(MCS_MAX_SHUTDOWN_CURRENT_A/CTRL_CURRENT_BASE));
 
     ctl_attach_mtr_protect_port(&protection, &mtr_ctrl.udc, (ctl_vector2_t*)&mtr_ctrl.idq0, &mtr_ctrl.idq_ref, NULL,
                                 NULL);

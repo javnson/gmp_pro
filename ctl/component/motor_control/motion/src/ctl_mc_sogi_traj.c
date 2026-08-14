@@ -32,13 +32,13 @@ void ctl_init_sogi_planner(ctl_sogi_planner_t* planner, const ctl_sogi_planner_i
     ctl_init_discrete_sogi(&planner->sogi_core, 2.0f, fn, fs_safe);
 
     // 4. Base Configurations
-    planner->max_vel_limit = float2ctrl(init->max_vel_pu);
-    planner->omega_0_pu = float2ctrl(w0); // Store w0 to extract Accel = w0 * D(s)
+    planner->max_vel_limit = param2ctrl(init->max_vel_pu);
+    planner->omega_0_pu = real2ctrl(w0); // Store w0 to extract Accel = w0 * D(s)
 
     // 1.0 PU Velocity = omega_base rad/s = (omega_base / 2*PI) revs/s
     parameter_gt scale_time_to_rev = omega_base / CTL_PARAM_CONST_2PI;
     // Integrate in discrete time: Delta Revs = V_pu * scale * (1/fs)
-    planner->scale_v_to_rev = float2ctrl(scale_time_to_rev / fs_safe);
+    planner->scale_v_to_rev = real2ctrl(scale_time_to_rev / fs_safe);
 
     // 5. Perfect Exact Analytical Braking
     // The total area under the velocity decay curve for a critically damped system is:
@@ -47,15 +47,15 @@ void ctl_init_sogi_planner(ctl_sogi_planner_t* planner, const ctl_sogi_planner_i
     parameter_gt k_v = (2.0f / w0) * scale_time_to_rev;
     parameter_gt k_a = (1.0f / (w0 * w0)) * scale_time_to_rev;
 
-    planner->coef_brake_v = float2ctrl(k_v);
-    planner->coef_brake_a = float2ctrl(k_a);
+    planner->coef_brake_v = real2ctrl(k_v);
+    planner->coef_brake_a = real2ctrl(k_a);
 
     // 6. Arrival Tolerance (Cut off infinite decay tail)
-    planner->arrival_tol_vel = float2ctrl(init->max_vel_pu * 0.005f);       // 0.5% vel cutoff
-    planner->arrival_tol_revs = float2ctrl(k_v * init->max_vel_pu * 0.01f); // 1% distance cutoff
+    planner->arrival_tol_vel = param2ctrl(init->max_vel_pu * 0.005f);       // 0.5% vel cutoff
+    planner->arrival_tol_revs = real2ctrl(k_v * init->max_vel_pu * 0.01f); // 1% distance cutoff
 
     // 7. Protection Settings
-    planner->tracking_err_limit = float2ctrl(init->tracking_err_limit);
+    planner->tracking_err_limit = param2ctrl(init->tracking_err_limit);
     planner->divergence_limit = (uint32_t)(init->fault_time_ms * fs_safe / 1000.0f);
     if (planner->divergence_limit < 1)
         planner->divergence_limit = 1;

@@ -80,7 +80,7 @@ static void ctl_dsa_dl_scope_arm_internal(ctl_dsa_dl_scope_t* scope)
 
     ctl_clear_dsa_trigger(&scope->trigger);
     scope->trigger.option = scope->trigger_mode;
-    scope->trigger.trigger_level = float2ctrl(scope->trigger_level);
+    scope->trigger.trigger_level = real2ctrl(scope->trigger_level);
     effective_sample_rate_hz = scope->sample_rate_hz /
                                ((uint32_t)scope->sample_divider + 1U);
     timeout_ticks = (scope->auto_timeout_ms * effective_sample_rate_hz) / 1000U;

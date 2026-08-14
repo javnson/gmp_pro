@@ -48,44 +48,44 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     simulink_tx_buffer.pwm_cmp[1] = spwm.pwm_out[phase_V];
     simulink_tx_buffer.pwm_cmp[2] = spwm.pwm_out[phase_W];
 
-    simulink_tx_buffer.monitor[0] = ctrl2float(mtr_ctrl.idq_ref.dat[phase_d]);
-    simulink_tx_buffer.monitor[1] = ctrl2float(mtr_ctrl.idq0.dat[phase_d]);
-    simulink_tx_buffer.monitor[2] = ctrl2float(mtr_ctrl.idq_ref.dat[phase_q]);
-    simulink_tx_buffer.monitor[3] = ctrl2float(mtr_ctrl.idq0.dat[phase_q]);
+    simulink_tx_buffer.monitor[0] = ctrl2param(mtr_ctrl.idq_ref.dat[phase_d]);
+    simulink_tx_buffer.monitor[1] = ctrl2param(mtr_ctrl.idq0.dat[phase_d]);
+    simulink_tx_buffer.monitor[2] = ctrl2param(mtr_ctrl.idq_ref.dat[phase_q]);
+    simulink_tx_buffer.monitor[3] = ctrl2param(mtr_ctrl.idq0.dat[phase_q]);
     /* Field angle (1 pu = one electrical revolution), not shaft angle. */
-    simulink_tx_buffer.monitor[4] = ctrl2float(mtr_ctrl.field_pos_if->elec_position);
-    simulink_tx_buffer.monitor[5] = ctrl2float(spd_enc.encif.speed);
-    simulink_tx_buffer.monitor[6] = ctrl2float(acim_sync_speed_pu);
+    simulink_tx_buffer.monitor[4] = ctrl2param(mtr_ctrl.field_pos_if->elec_position);
+    simulink_tx_buffer.monitor[5] = ctrl2param(spd_enc.encif.speed);
+    simulink_tx_buffer.monitor[6] = ctrl2param(acim_sync_speed_pu);
 #if MCS_ACIM_FEEDBACK_MODE == MCS_ACIM_FEEDBACK_SENSORED
-    simulink_tx_buffer.monitor[7] = ctrl2float(acim_pos_calc.w_slip_pu);
+    simulink_tx_buffer.monitor[7] = ctrl2param(acim_pos_calc.w_slip_pu);
 #else
-    simulink_tx_buffer.monitor[7] = ctrl2float(acim_fo.slip_speed_pu);
+    simulink_tx_buffer.monitor[7] = ctrl2param(acim_fo.slip_speed_pu);
 #endif
 #if (BUILD_LEVEL >= 3) && (MCS_ACIM_FEEDBACK_MODE == MCS_ACIM_FEEDBACK_SENSORLESS)
-    simulink_tx_buffer.monitor[8] = ctrl2float(acim_fo.psi_s_est.dat[phase_alpha]);
-    simulink_tx_buffer.monitor[9] = ctrl2float(acim_fo.psi_s_ref.dat[phase_alpha]);
-    simulink_tx_buffer.monitor[10] = ctrl2float(acim_fo.psi_s_est.dat[phase_beta]);
-    simulink_tx_buffer.monitor[11] = ctrl2float(acim_fo.psi_s_ref.dat[phase_beta]);
+    simulink_tx_buffer.monitor[8] = ctrl2param(acim_fo.psi_s_est.dat[phase_alpha]);
+    simulink_tx_buffer.monitor[9] = ctrl2param(acim_fo.psi_s_ref.dat[phase_alpha]);
+    simulink_tx_buffer.monitor[10] = ctrl2param(acim_fo.psi_s_est.dat[phase_beta]);
+    simulink_tx_buffer.monitor[11] = ctrl2param(acim_fo.psi_s_ref.dat[phase_beta]);
 #else
-    simulink_tx_buffer.monitor[8] = ctrl2float(mtr_ctrl.vdq_out.dat[phase_d]);
-    simulink_tx_buffer.monitor[9] = ctrl2float(mtr_ctrl.vdq_out.dat[phase_q]);
-    simulink_tx_buffer.monitor[10] = ctrl2float(acim_fo.psi_r_mag);
+    simulink_tx_buffer.monitor[8] = ctrl2param(mtr_ctrl.vdq_out.dat[phase_d]);
+    simulink_tx_buffer.monitor[9] = ctrl2param(mtr_ctrl.vdq_out.dat[phase_q]);
+    simulink_tx_buffer.monitor[10] = ctrl2param(acim_fo.psi_r_mag);
     simulink_tx_buffer.monitor[11] = (double)acim_sensorless_handover;
 #endif
     /* BUILD_LEVEL 1/2 commissioning channels: stationary-frame current and
      * directly sampled phase voltage. They remain useful after loop closure. */
-    simulink_tx_buffer.monitor[12] = ctrl2float(mtr_ctrl.iab0.dat[phase_alpha]);
-    simulink_tx_buffer.monitor[13] = ctrl2float(mtr_ctrl.iab0.dat[phase_beta]);
+    simulink_tx_buffer.monitor[12] = ctrl2param(mtr_ctrl.iab0.dat[phase_alpha]);
+    simulink_tx_buffer.monitor[13] = ctrl2param(mtr_ctrl.iab0.dat[phase_beta]);
 #if (BUILD_LEVEL >= 3) && (MCS_ACIM_FEEDBACK_MODE == MCS_ACIM_FEEDBACK_SENSORLESS)
     /* Handover diagnostics: compare CH5/CH7 (angle/speed used by the current
      * core) with CH15/CH16 (raw observer angle/speed). */
-    simulink_tx_buffer.monitor[12] = ctrl2float(acim_fo.psi_r_est.dat[phase_alpha]);
-    simulink_tx_buffer.monitor[13] = ctrl2float(acim_fo.psi_r_est.dat[phase_beta]);
-    simulink_tx_buffer.monitor[14] = ctrl2float(acim_fo.pos_out.elec_position);
-    simulink_tx_buffer.monitor[15] = ctrl2float(acim_fo.sync_spd_out.speed);
+    simulink_tx_buffer.monitor[12] = ctrl2param(acim_fo.psi_r_est.dat[phase_alpha]);
+    simulink_tx_buffer.monitor[13] = ctrl2param(acim_fo.psi_r_est.dat[phase_beta]);
+    simulink_tx_buffer.monitor[14] = ctrl2param(acim_fo.pos_out.elec_position);
+    simulink_tx_buffer.monitor[15] = ctrl2param(acim_fo.sync_spd_out.speed);
 #else
-    simulink_tx_buffer.monitor[14] = ctrl2float(uab0_monitor.dat[phase_alpha]);
-    simulink_tx_buffer.monitor[15] = ctrl2float(uab0_monitor.dat[phase_beta]);
+    simulink_tx_buffer.monitor[14] = ctrl2param(uab0_monitor.dat[phase_alpha]);
+    simulink_tx_buffer.monitor[15] = ctrl2param(uab0_monitor.dat[phase_beta]);
 #endif
 }
 

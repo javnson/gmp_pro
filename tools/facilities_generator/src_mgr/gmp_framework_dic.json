@@ -2947,7 +2947,7 @@
             },
             "component|intrinsic|discrete|pr": {
                 "type": "module",
-                "description": "",
+                "description": "Discrete R, PR, QR, and QPR controller implementations.",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_pr.c"
                 ],
@@ -5382,7 +5382,7 @@
             },
             "component|digital_power|sinv|sinv_core": {
                 "type": "module",
-                "description": "",
+                "description": "Single-phase inverter current core with a fundamental QPR branch and harmonic QR bank.",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/digital_power/sinv/src/ctl_dp_sinv_core.c"
                 ],

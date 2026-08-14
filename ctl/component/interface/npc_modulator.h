@@ -224,7 +224,7 @@ GMP_STATIC_INLINE void ctl_step_npc_modulator(npc_modulator_t* mod)
 
             // Calculate S2 Duty ( 1.0 - |v_ref| )
             //ctrl_gt v_abs = ctl_abs(v_ref);
-            cmp_inner = pwm_mul(float2ctrl(1.0f) + v_ref, mod->pwm_full_scale);
+            cmp_inner = pwm_mul(CTL_CTRL_CONST_1 + v_ref, mod->pwm_full_scale);
         }
 
         // ============================================================
@@ -339,7 +339,7 @@ GMP_STATIC_INLINE void ctl_step_npc_svpwm_modulator(npc_modulator_t* mod)
 
             // Calculate S2 Duty ( 1.0 - |v_ref| )
             ctrl_gt v_abs = ctl_abs(v_ref);
-            cmp_inner = pwm_mul(ctl_sub(float2ctrl(1.0f), v_abs), mod->pwm_full_scale);
+            cmp_inner = pwm_mul(ctl_sub(CTL_CTRL_CONST_1, v_abs), mod->pwm_full_scale);
         }
 
         // ============================================================

@@ -6,11 +6,11 @@
 
 int ctl_init_imc(ctl_imc_controller_t* imc, const ctl_imc_init_t* init)
 {
-    // 1. 防呆与除零保护
+    // 1. Validate initialization data and protect every denominator.
     gmp_ctl_assert(init->f_ctrl > 0.0f);
-    gmp_ctl_assert(param_abs(init->K_p) > 1e-9f); // Kp 不能为 0，因为后续要作除数
+    gmp_ctl_assert(param_abs(init->K_p) > CTL_PARAM_CONST_EPSILON); // Kp is used as a denominator.
 
-    // 2. 纯物理参数域计算，严禁出现 ctrl_gt 强转！
+    // 2. Complete coefficient calculations in the parameter domain.
     parameter_gt Ts = 1.0f / init->f_ctrl;
 
     // --- Discretize Plant Model (ZOH) ---
@@ -37,12 +37,12 @@ int ctl_init_imc(ctl_imc_controller_t* imc, const ctl_imc_init_t* init)
     parameter_gt b0_q_d_f = (2.0f * tau_p + Ts) * inv_den / K_p;
     parameter_gt b1_q_d_f = (Ts - 2.0f * tau_p) * inv_den / K_p;
 
-    // 3. 所有高精度浮点计算完成后，安全固化到定点控制域！
-    imc->a_p_d = float2ctrl(a_p_d_f);
-    imc->b_p_d = float2ctrl(b_p_d_f);
-    imc->a_q_d = float2ctrl(a_q_d_f);
-    imc->b0_q_d = float2ctrl(b0_q_d_f);
-    imc->b1_q_d = float2ctrl(b1_q_d_f);
+    // 3. Quantize only the final coefficients into the control domain.
+    imc->a_p_d = real2ctrl(a_p_d_f);
+    imc->b_p_d = real2ctrl(b_p_d_f);
+    imc->a_q_d = real2ctrl(a_q_d_f);
+    imc->b0_q_d = real2ctrl(b0_q_d_f);
+    imc->b1_q_d = real2ctrl(b1_q_d_f);
 
     ctl_clear_imc(imc);
     return 0;

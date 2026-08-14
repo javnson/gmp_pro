@@ -95,6 +95,8 @@ CTL 公共算法头统一包含：
 
 ### 4.1 数值域与转换边界
 
+`real_gt` 描述源数据或离线计算所需的精度，默认为 `double`，用户或 CSP 可在编译器确实支持时选择 `long double`。嵌入式组件通常不应显式声明 `real_gt` 对象；`real2param/real2ctrl` 直接接收常量表达式，让编译器把结果折叠到目标类型，避免宽类型临时量、额外空间与告警。
+
 `parameter_gt` 至少为 `float`，也可为 `double`，只用于配置、调参、离线辨识和低频计算。其四则运算直接使用 C 运算符，非线性函数必须通过 `param_sin/param_cos/param_sqrt/param_exp/param_ln/param_pow/param_atan2` 等 `param_xxx` 入口，可复用组件不得直接调用 `sinf/sqrtf` 或 `sin/sqrt`。
 
 `ctrl_gt` 专用于高频控制路径，必须使用 `ctl_xxx` 后端操作。参数应在初始化或低频更新时转换并缓存，不得在每次 ISR 中重复转换。跨域转换只有四个标准入口：
@@ -107,6 +109,8 @@ CTL 公共算法头统一包含：
 | `ctrl2param(x)` | 控制值进入慢速诊断、记录或调参路径 |
 
 通用数学常数统一由 `ctl/math_block/const` 管理，并同时提供 `CTL_CTRL_CONST_*` 和 `CTL_PARAM_CONST_*` 两组类型化定义。物理参数和控制器整定值仍属于组件配置，不应伪装成全局数学常数。
+
+实时路径中的零、一、二分之一、圆周率和 epsilon 等标准值必须使用 `CTL_CTRL_CONST_*`，不得在调用点反复写 `real2ctrl(1.0)`。参数公式中的通用有效常数同样必须使用 `CTL_PARAM_CONST_*`；只属于某个组件阈值、物理定义或局部算法的额外实数字面量，应通过 `real2param(...)` 明确进入参数域，而不能附加 `f` 后缀来隐式固定为 `float`。初始化函数应先在 `parameter_gt` 中完成全部系数推导，再在写入缓存的实时字段时调用一次 `param2ctrl`。
 
 默认零比较阈值统一使用 `CTL_CTRL_CONST_EPSILON` 与 `CTL_PARAM_CONST_EPSILON`。TI IQmath 控制域采用一个 LSB，float 域采用 `1e-6`，double 域采用 `1e-12`。只有具有明确物理量纲或算法稳定性依据的阈值可以例外，并且必须在局部命名或说明依据。
 

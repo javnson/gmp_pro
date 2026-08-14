@@ -64,18 +64,18 @@ void ctl_init()
         &pmsm_servo, CTL_POSITION_IF(&const_f), CTL_SPEED_IF(&spd_enc), CONTROLLER_FREQUENCY,
         // current controller PID parameter
         // P, I, D, sat_min, sat_max
-        float2ctrl(0.8), float2ctrl(0.01), 0, float2ctrl(-0.5), float2ctrl(0.5),
+        real2ctrl(0.8), real2ctrl(0.01), 0, (-CTL_CTRL_CONST_1_OVER_2), CTL_CTRL_CONST_1_OVER_2,
         // speed controller PID parameter
         // P, I, D, sat_min, sat_max
-        float2ctrl(1.5), float2ctrl(0.001), 0, float2ctrl(-0.5), float2ctrl(0.5),
+        real2ctrl(1.5), real2ctrl(0.001), 0, (-CTL_CTRL_CONST_1_OVER_2), CTL_CTRL_CONST_1_OVER_2,
         // acceleration
         // negative acceleration, positive acceleration, speed controller division
-        float2ctrl(-0.05), float2ctrl(0.05), 5,
+        real2ctrl(-0.05), real2ctrl(0.05), 5,
         // ADC parameters
         // ADC resolution, iqn, current gain, current bias, voltage gain, voltage bias
         // NOTE iqn parameter is meaningless for float environment
         // NOTE gain is negative value means ADC result is negative
-        16, 24, float2ctrl(2.0), float2ctrl(1.65/2.5), float2ctrl(0.1), float2ctrl(0.1),
+        16, 24, CTL_CTRL_CONST_2, real2ctrl(1.65/2.5), real2ctrl(0.1), real2ctrl(0.1),
         // PWM parameters
         10000);
 
@@ -88,7 +88,7 @@ void ctl_init()
     // VF Control, voltage Open-loop
     ctl_set_pmm_servo_pos_enc(&pmsm_servo, CTL_POSITION_IF(&const_f));
 
-    ctl_vector2_t vdq_set = {float2ctrl(0.2), float2ctrl(0.2)};
+    ctl_vector2_t vdq_set = {real2ctrl(0.2), real2ctrl(0.2)};
     ctl_set_pmsm_servo_voltage_mode(&pmsm_servo);
     ctl_set_pmsm_servo_ff_voltage(&pmsm_servo, &vdq_set);
 
@@ -96,7 +96,7 @@ void ctl_init()
     // Current open-loop
     ctl_set_pmm_servo_pos_enc(&pmsm_servo, CTL_POSITION_IF(&const_f));
 
-    ctl_vector2_t idq_set = {float2ctrl(0.0), float2ctrl(0.2)};
+    ctl_vector2_t idq_set = {CTL_CTRL_CONST_ZERO, real2ctrl(0.2)};
     ctl_set_pmsm_servo_current_mode(&pmsm_servo);
     ctl_set_pmsm_servo_ff_current(&pmsm_servo, &idq_set);
 
@@ -104,7 +104,7 @@ void ctl_init()
     // IF Control, current close-loop
     ctl_set_pmm_servo_pos_enc(&pmsm_servo, CTL_POSITION_IF(&pos_enc));
 
-    ctl_vector2_t idq_set = {float2ctrl(0.0), float2ctrl(0.2)};
+    ctl_vector2_t idq_set = {CTL_CTRL_CONST_ZERO, real2ctrl(0.2)};
     ctl_set_pmsm_servo_current_mode(&pmsm_servo);
     ctl_set_pmsm_servo_ff_current(&pmsm_servo, &idq_set);
 
@@ -113,7 +113,7 @@ void ctl_init()
     ctl_set_pmm_servo_pos_enc(&pmsm_servo, CTL_POSITION_IF(&pos_enc));
 
     ctl_set_pmsm_servo_spd_mode(&pmsm_servo);
-    ctl_set_pmsm_servo_spd(&pmsm_servo, float2ctrl(0.5));
+    ctl_set_pmsm_servo_spd(&pmsm_servo, CTL_CTRL_CONST_1_OVER_2);
 
 #endif // BUILD_LEVEL
 
@@ -131,12 +131,12 @@ void ctl_mainloop(void)
     // User Controller logic here.
     if (gmp_base_get_ctrl_tick() > 2000)
     {
-        ctl_set_pmsm_servo_spd(&pmsm_servo, float2ctrl(-0.5));
+        ctl_set_pmsm_servo_spd(&pmsm_servo, (-CTL_CTRL_CONST_1_OVER_2));
     }
 
     else if (gmp_base_get_ctrl_tick() > 1000)
     {
-        ctl_set_pmsm_servo_spd(&pmsm_servo, float2ctrl(0.1));
+        ctl_set_pmsm_servo_spd(&pmsm_servo, real2ctrl(0.1));
     }
 
     return;

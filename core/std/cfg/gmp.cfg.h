@@ -333,6 +333,13 @@
 #define SPECIFY_PARAMETER_GT_TYPE USING_FLOAT_FPU
 #endif // SPECIFY_PARAMETER_GT_TYPE
 
+// Select the source-domain type used for configuration literals and offline
+// initialization arithmetic. real_gt defaults to double and may be promoted
+// to long double by a user or CSP when the compiler implements it usefully.
+#ifndef SPECIFY_REAL_GT_TYPE
+#define SPECIFY_REAL_GT_TYPE USING_DOUBLE_FPU
+#endif // SPECIFY_REAL_GT_TYPE
+
 // The default macro to define a string.
 #ifndef TEXT_STRING
 #define TEXT_STRING(A) (A)

@@ -11,17 +11,17 @@ void ctl_set_im_ifoc_saturation(im_ifoc_ctrl_t* mc, parameter_gt volt_rect_pu, p
     ctl_vector2_t max;
     ctl_vector2_t min;
     gmp_ctl_assert(mc && volt_rect_pu >= 0.0f && volt_circle_pu >= 0.0f);
-    mc->max_vs_rect = float2ctrl(volt_rect_pu);
-    mc->max_vs_mag = float2ctrl(volt_circle_pu);
+    mc->max_vs_rect = real2ctrl(volt_rect_pu);
+    mc->max_vs_mag = real2ctrl(volt_circle_pu);
     mc->max_vs_mag_sq = ctl_mul(mc->max_vs_mag, mc->max_vs_mag);
     max.dat[0] = max.dat[1] = mc->max_vs_rect;
     min.dat[0] = min.dat[1] = -mc->max_vs_rect;
     ctl_set_dq_pi_circle_limit_sq(&mc->idq_ctrl, mc->max_vs_mag_sq);
     ctl_set_dq_pi_rect_limit(&mc->idq_ctrl, &max, &min);
-    ctl_set_pid_int_limit(&mc->idq_ctrl.axis[phase_d], ctl_mul(float2ctrl(0.8f), mc->max_vs_rect),
-                          -ctl_mul(float2ctrl(0.8f), mc->max_vs_rect));
-    ctl_set_pid_int_limit(&mc->idq_ctrl.axis[phase_q], ctl_mul(float2ctrl(0.8f), mc->max_vs_rect),
-                          -ctl_mul(float2ctrl(0.8f), mc->max_vs_rect));
+    ctl_set_pid_int_limit(&mc->idq_ctrl.axis[phase_d], ctl_mul(real2ctrl(0.8f), mc->max_vs_rect),
+                          -ctl_mul(real2ctrl(0.8f), mc->max_vs_rect));
+    ctl_set_pid_int_limit(&mc->idq_ctrl.axis[phase_q], ctl_mul(real2ctrl(0.8f), mc->max_vs_rect),
+                          -ctl_mul(real2ctrl(0.8f), mc->max_vs_rect));
 }
 
 //=================================================================================================
@@ -61,11 +61,11 @@ void ctl_autotune_and_init_im_ifoc_consultant(im_ifoc_ctrl_t* mc, const ctl_cons
 
     voltage_limit_pu = v_phase_limit * 1.41421356237f / pu->V_s_base;
     ctl_set_im_ifoc_saturation(mc, voltage_limit_pu, voltage_limit_pu);
-    mc->max_dcbus_voltage = float2ctrl(v_bus / pu->V_s_base);
+    mc->max_dcbus_voltage = real2ctrl(v_bus / pu->V_s_base);
 
     ff_scale = pu->W_base * pu->I_s_base / pu->V_s_base;
-    mc->sf_dec_lsigma = float2ctrl(motor->sigma_Ls * ff_scale);
-    mc->sf_dec_backemf = float2ctrl(motor->Lm_sq_over_Lr * ff_scale);
+    mc->sf_dec_lsigma = real2ctrl(motor->sigma_Ls * ff_scale);
+    mc->sf_dec_backemf = real2ctrl(motor->Lm_sq_over_Lr * ff_scale);
 
     mc->adc_iuvw = NULL;
     mc->adc_udc = NULL;

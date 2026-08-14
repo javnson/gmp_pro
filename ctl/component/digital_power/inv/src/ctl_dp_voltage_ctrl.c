@@ -51,15 +51,15 @@ void ctl_update_voltage_inv_coeff(inv_voltage_ctrl_t* voltage, const inv_voltage
 
     ctl_init_pid(&voltage->pid_vdq[phase_d], kp, ki, 0.0f, init->fs);
     ctl_init_pid(&voltage->pid_vdq[phase_q], kp, ki, 0.0f, init->fs);
-    ctl_set_pid_int_limit(&voltage->pid_vdq[phase_d], float2ctrl(integral_limit),
-                          float2ctrl(-integral_limit));
-    ctl_set_pid_int_limit(&voltage->pid_vdq[phase_q], float2ctrl(integral_limit),
-                          float2ctrl(-integral_limit));
+    ctl_set_pid_int_limit(&voltage->pid_vdq[phase_d], real2ctrl(integral_limit),
+                          real2ctrl(-integral_limit));
+    ctl_set_pid_int_limit(&voltage->pid_vdq[phase_q], real2ctrl(integral_limit),
+                          real2ctrl(-integral_limit));
 
     voltage->coef_ff_decouple =
-        float2ctrl(CTL_PARAM_CONST_2PI * init->freq_base * init->filter_C * init->v_base / init->i_base);
-    voltage->current_circle_limit = float2ctrl(init->current_circle_limit);
-    voltage->current_square_limit = float2ctrl(init->current_square_limit);
+        real2ctrl(CTL_PARAM_CONST_2PI * init->freq_base * init->filter_C * init->v_base / init->i_base);
+    voltage->current_circle_limit = param2ctrl(init->current_circle_limit);
+    voltage->current_square_limit = param2ctrl(init->current_square_limit);
     voltage->flag_enable_circle_limit = init->flag_enable_circle_limit;
     voltage->flag_enable_square_limit = init->flag_enable_square_limit;
 }

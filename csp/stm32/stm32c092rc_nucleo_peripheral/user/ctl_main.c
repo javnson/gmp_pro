@@ -100,11 +100,11 @@ void ctl_init()
     // init SPWM modulator
     //
 #if defined USING_NPC_MODULATOR
-    ctl_init_npc_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &mtr_ctrl.iuvw, float2ctrl(0.02),
-                           float2ctrl(0.005));
+    ctl_init_npc_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &mtr_ctrl.iuvw, real2ctrl(0.02),
+                           real2ctrl(0.005));
 #else
-    ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &mtr_ctrl.iuvw, float2ctrl(0.02),
-                            float2ctrl(0.005));
+    ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &mtr_ctrl.iuvw, real2ctrl(0.02),
+                            real2ctrl(0.005));
 #endif // USING_NPC_MODULATOR
 
     //
@@ -137,7 +137,7 @@ void ctl_init()
     // Encoder Init
     //
     ctl_init_autoturn_pos_encoder(&pos_enc, mtr_ctrl_init.pole_pairs, CTRL_POS_ENC_FS);
-//    ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, float2ctrl(CTRL_POS_ENC_BIAS));
+//    ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, real2ctrl(CTRL_POS_ENC_BIAS));
 
     ctl_init_spd_calculator(&spd_enc, &pos_enc.encif, CONTROLLER_FREQUENCY, CTRL_SPD_DIV, MOTOR_PARAM_MAX_SPEED, 20.0f);
 
@@ -168,12 +168,12 @@ void ctl_init()
 #elif BUILD_LEVEL == 2
     // Basic current close loop, IF
     ctl_enable_mtr_current_ctrl(&mtr_ctrl);
-    ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, float2ctrl(0.1), float2ctrl(0.1));
+    ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, real2ctrl(0.1), real2ctrl(0.1));
 
 #elif BUILD_LEVEL == 3
     // Basic current close loop, inverter
     ctl_enable_mtr_current_ctrl(&mtr_ctrl);
-    ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, float2ctrl(0.1), float2ctrl(0.1));
+    ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, real2ctrl(0.1), real2ctrl(0.1));
 
 #elif BUILD_LEVEL == 4
     // Basic Speed close loop

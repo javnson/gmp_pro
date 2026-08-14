@@ -29,13 +29,13 @@ void ctl_init_ato_pll(ctl_ato_pll_t* pll, parameter_gt bandwidth_hz, parameter_g
     parameter_gt ki_pu_val = ki_phy * pu_scale;
 
     // 4. Initialize underlying PID object
-    ctl_init_pid(&pll->pi_ctrl, float2ctrl(kp_pu_val), float2ctrl(ki_pu_val), float2ctrl(0.0f), fs_safe);
-    ctl_set_pid_limit(&pll->pi_ctrl, float2ctrl(spd_limit_max), float2ctrl(spd_limit_min));
+    ctl_init_pid(&pll->pi_ctrl, kp_pu_val, ki_pu_val, CTL_PARAM_CONST_ZERO, fs_safe);
+    ctl_set_pid_limit(&pll->pi_ctrl, real2ctrl(spd_limit_max), real2ctrl(spd_limit_min));
     // Keep the integrator inside the same speed limits to prevent windup.
-    ctl_set_pid_int_limit(&pll->pi_ctrl, float2ctrl(spd_limit_max), float2ctrl(spd_limit_min));
+    ctl_set_pid_int_limit(&pll->pi_ctrl, real2ctrl(spd_limit_max), real2ctrl(spd_limit_min));
 
     // 5. Angle Integration Scale Factor
-    pll->sf_w_to_angle = float2ctrl(w_base * ts / CTL_PARAM_CONST_2PI);
+    pll->sf_w_to_angle = real2ctrl(w_base * ts / CTL_PARAM_CONST_2PI);
 
     // 6. Clear States
     ctl_clear_ato_pll(pll);

@@ -22,6 +22,7 @@ class ParameterSpec:
     required: bool = False
     default: Any = None
     value_format: str = "{}"
+    numeric_domain: str = "raw"
 
 
 @dataclass(frozen=True)
@@ -89,6 +90,12 @@ class HardwareSchema:
             name = item.get("name")
             if not name:
                 raise SDPEError(f"Schema {schema_id} has a parameter without name.")
+            numeric_domain = str(item.get("numeric_domain", "raw")).strip().lower()
+            if numeric_domain not in {"raw", "real", "parameter", "ctrl"}:
+                raise SDPEError(
+                    f"Schema {schema_id} parameter '{name}' has unsupported numeric_domain "
+                    f"'{numeric_domain}'."
+                )
             parameters[name] = ParameterSpec(
                 name=name,
                 c_name=item.get("c_name", name.upper()),
@@ -97,6 +104,7 @@ class HardwareSchema:
                 required=bool(item.get("required", False)),
                 default=item.get("default"),
                 value_format=item.get("value_format", "{}"),
+                numeric_domain=numeric_domain,
             )
 
         derived_macros = [

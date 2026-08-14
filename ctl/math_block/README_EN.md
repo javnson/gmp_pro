@@ -27,6 +27,12 @@ configuration, then repository defaults through `gmp_type.h`.
 
 ## Numeric domains and conversions
 
+`real_gt` describes the optional source/offline precision and defaults to
+`double`; a user or CSP may select `long double`. Embedded algorithms should
+not normally declare `real_gt` objects. Conversion macros consume constant
+expressions directly so the compiler can fold them into the destination type
+without creating a wide intermediate object.
+
 `parameter_gt` is `float` or `double`. It owns configuration, tuning, offline
 analysis and other slow calculations. Native `+`, `-`, `*` and `/` operators
 are used directly; non-linear operations must use `param_abs`, `param_sin`,
@@ -52,9 +58,9 @@ ctrl_gt cached = param2ctrl(tuning_value);   /* normally during init */
 parameter_gt diagnostic = ctrl2param(output); /* slow diagnostics */
 ```
 
-`float2ctrl`, `ctrl2float`, `parameter2ctrl` and `ctrl2parameter` remain only
-as downstream compatibility spellings. New CTL code uses the four domain
-names above. Common numeric and mathematical constants come from `const/` as
+`float2ctrl` and `ctrl2float` are deprecated. The descriptive aliases
+`parameter2ctrl` and `ctrl2parameter` remain for downstream compatibility;
+new CTL code uses the four domain names above. Common numeric and mathematical constants come from `const/` as
 the parallel `CTL_CTRL_CONST_*` and `CTL_PARAM_CONST_*` families. Physical
 tuning values remain component inputs rather than global mathematical constants.
 
@@ -64,6 +70,15 @@ Zero comparisons use `CTL_CTRL_CONST_EPSILON` or
 is `1e-6` for float and `1e-12` for double. A component may use a different
 threshold only when it represents an algorithmic or physical limit, and that
 exception must be named or documented locally.
+
+Real-time code uses `CTL_CTRL_CONST_*` for standard values such as zero, one,
+one half, pi, and epsilon. It must not repeat `real2ctrl(1.0)` or an equivalent
+conversion at call sites. Parameter-domain formulas likewise use
+`CTL_PARAM_CONST_*` for reusable constants. A component-specific threshold or
+physical literal that does not belong in the shared constant catalog enters
+the parameter domain through `real2param(...)`; it must not be frozen to
+`float` with an `f` suffix. Initialization calculations remain in
+`parameter_gt` until the final assignment to cached `ctrl_gt` fields.
 
 ## Angle-unit contract
 
@@ -99,4 +114,6 @@ The tests in `ctl/math_block/tests` exercise float/float, float/double,
 double/double, IQ24/float and IQ24/double contracts, plus the C++ templates
 with a custom arithmetic type. `numeric_type_contract_audit.py` rejects
 `parameter_gt` declarations in real-time step functions and concrete libm
-calls in authoritative CTL component/framework/suite code.
+calls, deprecated conversions, explicit `real_gt` storage, premature
+parameter-to-control conversion at selected init APIs, and repeated standard
+literal conversions in authoritative CTL component/framework/suite code.

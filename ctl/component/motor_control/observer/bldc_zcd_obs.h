@@ -110,13 +110,13 @@ GMP_STATIC_INLINE void ctl_clear_bldc_zcd_obs(ctl_bldc_zcd_obs_t* obs)
     obs->tick_since_last_zcd = 0;
     obs->tick_since_comm = 0;
     obs->debounce_cnt = 0;
-    obs->spd_est_pu = float2ctrl(0.0f);
-    obs->theta_delay_pu = float2ctrl(0.0f);
+    obs->spd_est_pu = CTL_CTRL_CONST_ZERO;
+    obs->theta_delay_pu = CTL_CTRL_CONST_ZERO;
 
     obs->flag_comm_trigger = 0;
     obs->flag_zcd_detected = 0;
     obs->flag_observer_locked = 0;
-    obs->spd_out.speed = float2ctrl(0.0f);
+    obs->spd_out.speed = CTL_CTRL_CONST_ZERO;
 
     ctl_clear_filter_iir1(&obs->filter_spd);
 }

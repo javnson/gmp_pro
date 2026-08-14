@@ -112,13 +112,13 @@ GMP_STATIC_INLINE void ctl_init_fsbb_modulator(fsbb_modulator_t* mod, pwm_gt ful
  */
 GMP_STATIC_INLINE void ctl_step_fsbb_modulator(fsbb_modulator_t* mod, ctrl_gt v_req, ctrl_gt v_in)
 {
-    ctrl_gt v_in_safe = (v_in > float2ctrl(0.1f)) ? v_in : float2ctrl(0.1f);
+    ctrl_gt v_in_safe = (v_in > real2ctrl(0.1f)) ? v_in : real2ctrl(0.1f);
 
     // M represents the demanded voltage gain (V_req / V_in)
     ctrl_gt M = ctl_div(v_req, v_in_safe);
 
-    ctrl_gt d_buck = float2ctrl(0.0f);
-    ctrl_gt d_boost = float2ctrl(0.0f);
+    ctrl_gt d_buck = CTL_CTRL_CONST_ZERO;
+    ctrl_gt d_boost = CTL_CTRL_CONST_ZERO;
 
     if (M <= mod->m_low)
     {
@@ -127,7 +127,7 @@ GMP_STATIC_INLINE void ctl_step_fsbb_modulator(fsbb_modulator_t* mod, ctrl_gt v_
         d_boost = mod->duty_min;
 
         // M = D_buck / (1 - D_boost)  =>  D_buck = M * (1 - D_boost)
-        d_buck = ctl_mul(M, float2ctrl(1.0f) - d_boost);
+        d_buck = ctl_mul(M, CTL_CTRL_CONST_1 - d_boost);
     }
     else if (M >= mod->m_high)
     {
@@ -136,7 +136,7 @@ GMP_STATIC_INLINE void ctl_step_fsbb_modulator(fsbb_modulator_t* mod, ctrl_gt v_
         d_buck = mod->duty_max;
 
         // M = D_buck / (1 - D_boost)  =>  D_boost = 1 - (D_buck / M)
-        d_boost = float2ctrl(1.0f) - ctl_div(d_buck, M);
+        d_boost = CTL_CTRL_CONST_1 - ctl_div(d_buck, M);
     }
     else
     {
@@ -146,13 +146,13 @@ GMP_STATIC_INLINE void ctl_step_fsbb_modulator(fsbb_modulator_t* mod, ctrl_gt v_
         ctrl_gt w = ctl_div(M - mod->m_low, mod->m_high - mod->m_low);
 
         // Linear interpolation for Buck Duty
-        ctrl_gt d_buck_start = ctl_mul(mod->m_low, float2ctrl(1.0f) - mod->duty_min);
+        ctrl_gt d_buck_start = ctl_mul(mod->m_low, CTL_CTRL_CONST_1 - mod->duty_min);
         ctrl_gt d_buck_end = mod->duty_max;
         d_buck = d_buck_start + ctl_mul(w, d_buck_end - d_buck_start);
 
         // Linear interpolation for Boost Duty
         ctrl_gt d_boost_start = mod->duty_min;
-        ctrl_gt d_boost_end = float2ctrl(1.0f) - ctl_div(mod->duty_max, mod->m_high);
+        ctrl_gt d_boost_end = CTL_CTRL_CONST_1 - ctl_div(mod->duty_max, mod->m_high);
         d_boost = d_boost_start + ctl_mul(w, d_boost_end - d_boost_start);
     }
 

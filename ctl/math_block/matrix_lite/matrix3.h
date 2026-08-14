@@ -79,7 +79,7 @@ GMP_STATIC_INLINE void ctl_matrix3_clear(ctl_matrix3_t* matrix)
     int i;
     for (i = 0; i < 9; ++i)
     {
-        matrix->dat[i] = float2ctrl(0.0f);
+        matrix->dat[i] = real2ctrl(0.0f);
     }
 }
 
@@ -90,9 +90,9 @@ GMP_STATIC_INLINE void ctl_matrix3_clear(ctl_matrix3_t* matrix)
 GMP_STATIC_INLINE void ctl_matrix3_set_identity(ctl_matrix3_t* matrix)
 {
     ctl_matrix3_clear(matrix);
-    matrix->dat[0] = float2ctrl(1.0f);
-    matrix->dat[4] = float2ctrl(1.0f);
-    matrix->dat[8] = float2ctrl(1.0f);
+    matrix->dat[0] = real2ctrl(1.0f);
+    matrix->dat[4] = real2ctrl(1.0f);
+    matrix->dat[8] = real2ctrl(1.0f);
 }
 
 /**
@@ -219,7 +219,7 @@ GMP_STATIC_INLINE void ctl_matrix3_inv(ctl_matrix3_t* result, const ctl_matrix3_
     }
 
     /* Optimization: Calculate 1/det once, then multiply */
-    ctrl_gt inv_det = ctl_div(float2ctrl(1.0f), det);
+    ctrl_gt inv_det = ctl_div(real2ctrl(1.0f), det);
 
     result->dat[0] = ctl_mul(ctl_mul(mat->dat[4], mat->dat[8]) - ctl_mul(mat->dat[5], mat->dat[7]), inv_det);
     result->dat[1] = ctl_mul(ctl_mul(mat->dat[2], mat->dat[7]) - ctl_mul(mat->dat[1], mat->dat[8]), inv_det);

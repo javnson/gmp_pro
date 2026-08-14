@@ -99,13 +99,13 @@ GMP_STATIC_INLINE void ctl_clear_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs)
 {
     obs->prev_hall_state = 0;
     obs->edge_tick_cnt = 0;
-    obs->spd_est_pu = float2ctrl(0.0f);
-    obs->theta_interp_pu = float2ctrl(0.0f);
+    obs->spd_est_pu = CTL_CTRL_CONST_ZERO;
+    obs->theta_interp_pu = CTL_CTRL_CONST_ZERO;
 
     ctl_clear_filter_iir1(&obs->filter_spd);
 
-    obs->pos_out.elec_position = float2ctrl(0.0f);
-    obs->spd_out.speed = float2ctrl(0.0f);
+    obs->pos_out.elec_position = CTL_CTRL_CONST_ZERO;
+    obs->spd_out.speed = CTL_CTRL_CONST_ZERO;
 }
 
 GMP_STATIC_INLINE void ctl_enable_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs)

@@ -39,6 +39,17 @@ CONCRETE_LIBM_CALL = re.compile(
     r"\b(?:fabsf?|sinf?|cosf?|tanf?|asinf?|acosf?|atanf?|atan2f?|"
     r"expf?|logf?|log10f?|powf?|sqrtf?|floorf?|ceilf?|fmodf?)\s*\("
 )
+LEGACY_CONVERSION = re.compile(r"\b(?:float2ctrl|ctrl2float)\s*\(")
+EXPLICIT_REAL_STORAGE = re.compile(r"\breal_gt\b")
+STANDARD_CTRL_LITERAL = re.compile(
+    r"\breal2ctrl\(\s*[+-]?(?:0(?:\.0+)?|0\.5(?:0+)?|1(?:\.0+)?|"
+    r"2(?:\.0+)?|3(?:\.0+)?|4(?:\.0+)?)[fFlL]?\s*\)"
+)
+PARAMETER_INIT_CONVERSION = re.compile(
+    r"\bctl_init_(?:pid|qpr_controller|qpr_controller_prewarped|lead_form3)\s*\([^;]*?"
+    r"\b(?:real2ctrl|param2ctrl)\s*\(",
+    re.DOTALL,
+)
 
 
 def strip_comments_and_literals(text: str) -> str:
@@ -115,6 +126,7 @@ def violations(path: Path) -> list[tuple[int, str]]:
 def main() -> int:
     all_violations: list[tuple[Path, int, str]] = []
     libm_violations: list[tuple[Path, int, str]] = []
+    boundary_violations: list[tuple[Path, int, str]] = []
     for path in source_files():
         for line, name in violations(path):
             all_violations.append((path, line, name))
@@ -123,6 +135,15 @@ def main() -> int:
         for match in CONCRETE_LIBM_CALL.finditer(text):
             line = original.count("\n", 0, match.start()) + 1
             libm_violations.append((path, line, match.group(0).rstrip("(")))
+        for label, pattern in (
+            ("LEGACY_CONVERSION", LEGACY_CONVERSION),
+            ("EXPLICIT_REAL_STORAGE", EXPLICIT_REAL_STORAGE),
+            ("STANDARD_LITERAL_CONVERSION", STANDARD_CTRL_LITERAL),
+            ("PREMATURE_PARAMETER_INIT_CONVERSION", PARAMETER_INIT_CONVERSION),
+        ):
+            for match in pattern.finditer(text):
+                line = original.count("\n", 0, match.start()) + 1
+                boundary_violations.append((path, line, label))
 
     for path, line, name in all_violations:
         relative = path.relative_to(REPO_ROOT).as_posix()
@@ -132,12 +153,17 @@ def main() -> int:
         relative = path.relative_to(REPO_ROOT).as_posix()
         print(f"CONCRETE_LIBM_CALL {relative}:{line}: {name}")
 
+    for path, line, label in boundary_violations:
+        relative = path.relative_to(REPO_ROOT).as_posix()
+        print(f"{label} {relative}:{line}")
+
     print(
         "Numeric type contract audit: "
         f"{len(all_violations)} parameter_gt real-time violation(s), "
-        f"{len(libm_violations)} concrete libm call(s)."
+        f"{len(libm_violations)} concrete libm call(s), "
+        f"{len(boundary_violations)} numeric-boundary violation(s)."
     )
-    return 1 if all_violations or libm_violations else 0
+    return 1 if all_violations or libm_violations or boundary_violations else 0
 
 
 if __name__ == "__main__":

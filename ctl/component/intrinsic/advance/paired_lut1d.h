@@ -68,11 +68,11 @@ void ctl_init_paired_lut1d(ctl_paired_lut1d_t* lut, const ctl_lut1d_pair_t* tabl
  */
 GMP_STATIC_INLINE int32_t ctl_search_paired_lut1d_index(const ctl_paired_lut1d_t* lut, ctrl_gt target)
 {
-    // 修复 2：使用 int32_t 防止游标下溢出 (MISRA C compliant)
+    // Use a signed cursor type to prevent binary-search index underflow.
     int32_t left = 0;
     int32_t right = (int32_t)lut->size - 1;
 
-    // 边界极速拦截，防止无意义的二分搜索
+    // Handle boundary values before entering the binary search.
     if (target < lut->table[0].x)
         return -1;
     if (target >= lut->table[right].x)
@@ -122,18 +122,18 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_interpolate_paired_lut1d(const ctl_paired_lut
     ctrl_gt dx = x1 - x0;
     ctrl_gt dy = y1 - y0;
 
-    // 修复 3：定点安全零比较
-    if (dx == float2ctrl(0.0f))
+    // Reject a zero-width segment using the control-domain zero constant.
+    if (dx == CTL_CTRL_CONST_ZERO)
     {
         return y0;
     }
 
-    // 修复 1：彻底抛弃浮点转换！在纯定点域 (ctrl_gt) 中使用底层宏完成计算
-    // 公式: y = y0 + (target - x0) * (dy / dx)
-    // 注意：为了防止除法截断丢失精度，我们先算乘法，再算除法 (或者使用 ctl_div 保证定点精度)
+    // Interpolate entirely in ctrl_gt without converting through a floating-point type.
+    // Formula: y = y0 + (target - x0) * (dy / dx).
+    // Use the control-domain arithmetic helpers to preserve fixed-point behavior.
     ctrl_gt delta_x = target - x0;
 
-    // 使用 ctl_div 计算出定点域的斜率，再乘以 delta_x
+    // Calculate the control-domain slope, then apply the input displacement.
     ctrl_gt slope = ctl_div(dy, dx);
     ctrl_gt delta_y = ctl_mul(slope, delta_x);
 

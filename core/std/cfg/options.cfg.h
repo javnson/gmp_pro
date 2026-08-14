@@ -22,5 +22,6 @@
 #define USING_FLOAT_TI_IQ_LIBRRARY      ((0x80))
 #define USING_FLOAT_FPU                 ((0x81))
 #define USING_DOUBLE_FPU                ((0x82))
+#define USING_LONG_DOUBLE               ((0x83))
 
 #define USING_FLOAT_CLA_LIBRARY         ((0xAA))

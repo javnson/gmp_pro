@@ -156,9 +156,9 @@ GMP_STATIC_INLINE void ctl_clear_esmo_fsm(ctl_pmsm_esmo_fsm_t* fsm)
 
     ctl_vector2_clear(&fsm->out_idq_ref);
 
-    fsm->delta_theta_pu = float2ctrl(0.0f);
-    fsm->delta_phasor.dat[phasor_sin] = float2ctrl(0.0f);
-    fsm->delta_phasor.dat[phasor_cos] = float2ctrl(1.0f);
+    fsm->delta_theta_pu = CTL_CTRL_CONST_ZERO;
+    fsm->delta_phasor.dat[phasor_sin] = CTL_CTRL_CONST_ZERO;
+    fsm->delta_phasor.dat[phasor_cos] = CTL_CTRL_CONST_1;
 }
 
 /**
@@ -200,7 +200,7 @@ GMP_STATIC_INLINE ctl_esmo_fsm_event_e ctl_step_esmo_fsm(ctl_pmsm_esmo_fsm_t* fs
     fast_gt is_smo_lock = fsm->esmo_ptr->flag_observer_locked;
 
     // IF startup acts purely on Iq. Polarity follows the target speed direction.
-    ctrl_gt sign_dir = (target_spd_pu >= float2ctrl(0.0f)) ? float2ctrl(1.0f) : float2ctrl(-1.0f);
+    ctrl_gt sign_dir = (target_spd_pu >= CTL_CTRL_CONST_ZERO) ? CTL_CTRL_CONST_1 : (-CTL_CTRL_CONST_1);
     ctrl_gt iq_startup_signed = ctl_mul(fsm->if_is_startup, sign_dir);
 
     switch (fsm->state)
@@ -209,12 +209,12 @@ GMP_STATIC_INLINE ctl_esmo_fsm_event_e ctl_step_esmo_fsm(ctl_pmsm_esmo_fsm_t* fs
         ctrl_gt theta_if = ctl_step_slope_f_pu(fsm->if_slope_ptr);
 
         // Directly inject Is fully into Iq, Id = 0.
-        fsm->out_idq_ref.dat[phase_d] = float2ctrl(0.0f);
+        fsm->out_idq_ref.dat[phase_d] = CTL_CTRL_CONST_ZERO;
         fsm->out_idq_ref.dat[phase_q] = iq_startup_signed;
 
         if (is_smo_lock)
         {
-            fsm->delta_theta_pu = ctrl_mod_1(theta_if - smo_theta + float2ctrl(1.0f));
+            fsm->delta_theta_pu = ctrl_mod_1(theta_if - smo_theta + CTL_CTRL_CONST_1);
             ctl_set_phasor_via_angle(fsm->delta_theta_pu, &fsm->delta_phasor);
 
             ctrl_gt abs_smo_spd = ctl_abs(smo_spd);
@@ -223,11 +223,11 @@ GMP_STATIC_INLINE ctl_esmo_fsm_event_e ctl_step_esmo_fsm(ctl_pmsm_esmo_fsm_t* fs
             if ((abs_smo_spd > fsm->speed_up_th_pu) && (abs_if_spd > fsm->speed_up_th_pu))
             {
                 fsm->state = ESMO_FSM_STATE_TRANSITION_UP;
-                ctl_set_slope_limiter_current(&fsm->alpha_ramp, float2ctrl(0.0f));
+                ctl_set_slope_limiter_current(&fsm->alpha_ramp, CTL_CTRL_CONST_ZERO);
 
                 // iPark2 physical projection of the (0, Is) vector into real rotor frame
                 ctl_vector2_t dq_if, dq_real;
-                dq_if.dat[phase_d] = float2ctrl(0.0f);
+                dq_if.dat[phase_d] = CTL_CTRL_CONST_ZERO;
                 dq_if.dat[phase_q] = iq_startup_signed;
 
                 ctl_ct_ipark2(&dq_if, &fsm->delta_phasor, &dq_real);
@@ -243,19 +243,19 @@ GMP_STATIC_INLINE ctl_esmo_fsm_event_e ctl_step_esmo_fsm(ctl_pmsm_esmo_fsm_t* fs
     }
 
     case ESMO_FSM_STATE_TRANSITION_UP: {
-        fsm->alpha = ctl_step_slope_limiter(&fsm->alpha_ramp, float2ctrl(1.0f));
-        ctrl_gt one_minus_alpha = float2ctrl(1.0f) - fsm->alpha;
+        fsm->alpha = ctl_step_slope_limiter(&fsm->alpha_ramp, CTL_CTRL_CONST_1);
+        ctrl_gt one_minus_alpha = CTL_CTRL_CONST_1 - fsm->alpha;
 
         // Id fades to MTPA, Iq tracks Speed PI + compensating boost.
         fsm->out_idq_ref.dat[phase_d] =
             ctl_mul(fsm->transition_id_start, one_minus_alpha) + ctl_mul(mtpa_id_ref, fsm->alpha);
         fsm->out_idq_ref.dat[phase_q] = speed_pi_iq_out + ctl_mul(fsm->transition_iq_boost, one_minus_alpha);
 
-        fsm->delta_theta_pu = float2ctrl(0.0f);
-        fsm->delta_phasor.dat[phasor_sin] = float2ctrl(0.0f);
-        fsm->delta_phasor.dat[phasor_cos] = float2ctrl(1.0f);
+        fsm->delta_theta_pu = CTL_CTRL_CONST_ZERO;
+        fsm->delta_phasor.dat[phasor_sin] = CTL_CTRL_CONST_ZERO;
+        fsm->delta_phasor.dat[phasor_cos] = CTL_CTRL_CONST_1;
 
-        if (fsm->alpha >= float2ctrl(1.0f))
+        if (fsm->alpha >= CTL_CTRL_CONST_1)
         {
             fsm->state = ESMO_FSM_STATE_CLOSED_LOOP;
         }
@@ -266,14 +266,14 @@ GMP_STATIC_INLINE ctl_esmo_fsm_event_e ctl_step_esmo_fsm(ctl_pmsm_esmo_fsm_t* fs
         fsm->out_idq_ref.dat[phase_d] = mtpa_id_ref;
         fsm->out_idq_ref.dat[phase_q] = speed_pi_iq_out;
 
-        fsm->delta_theta_pu = float2ctrl(0.0f);
-        fsm->delta_phasor.dat[phasor_sin] = float2ctrl(0.0f);
-        fsm->delta_phasor.dat[phasor_cos] = float2ctrl(1.0f);
+        fsm->delta_theta_pu = CTL_CTRL_CONST_ZERO;
+        fsm->delta_phasor.dat[phasor_sin] = CTL_CTRL_CONST_ZERO;
+        fsm->delta_phasor.dat[phasor_cos] = CTL_CTRL_CONST_1;
 
         if ((ctl_abs(smo_spd) < fsm->speed_down_th_pu) || (is_smo_lock == 0))
         {
             fsm->state = ESMO_FSM_STATE_TRANSITION_DOWN;
-            ctl_set_slope_limiter_current(&fsm->alpha_ramp, float2ctrl(0.0f));
+            ctl_set_slope_limiter_current(&fsm->alpha_ramp, CTL_CTRL_CONST_ZERO);
 
             // [Dynamic Braking Capture]: Snapshot live closed-loop current!
             fsm->brake_iq_held = speed_pi_iq_out;
@@ -285,8 +285,8 @@ GMP_STATIC_INLINE ctl_esmo_fsm_event_e ctl_step_esmo_fsm(ctl_pmsm_esmo_fsm_t* fs
     }
 
     case ESMO_FSM_STATE_TRANSITION_DOWN: {
-        fsm->alpha = ctl_step_slope_limiter(&fsm->alpha_ramp, float2ctrl(1.0f));
-        ctrl_gt one_minus_alpha = float2ctrl(1.0f) - fsm->alpha;
+        fsm->alpha = ctl_step_slope_limiter(&fsm->alpha_ramp, CTL_CTRL_CONST_1);
+        ctrl_gt one_minus_alpha = CTL_CTRL_CONST_1 - fsm->alpha;
 
         // Ensure the slope generator continues advancing for seamless angle output
         ctl_step_slope_f_pu(fsm->if_slope_ptr);
@@ -296,11 +296,11 @@ GMP_STATIC_INLINE ctl_esmo_fsm_event_e ctl_step_esmo_fsm(ctl_pmsm_esmo_fsm_t* fs
             ctl_mul(speed_pi_iq_out, one_minus_alpha) + ctl_mul(fsm->brake_iq_held, fsm->alpha);
         fsm->out_idq_ref.dat[phase_d] = ctl_mul(mtpa_id_ref, one_minus_alpha) + ctl_mul(fsm->brake_id_held, fsm->alpha);
 
-        fsm->delta_theta_pu = float2ctrl(0.0f);
-        fsm->delta_phasor.dat[phasor_sin] = float2ctrl(0.0f);
-        fsm->delta_phasor.dat[phasor_cos] = float2ctrl(1.0f);
+        fsm->delta_theta_pu = CTL_CTRL_CONST_ZERO;
+        fsm->delta_phasor.dat[phasor_sin] = CTL_CTRL_CONST_ZERO;
+        fsm->delta_phasor.dat[phasor_cos] = CTL_CTRL_CONST_1;
 
-        if (fsm->alpha >= float2ctrl(1.0f))
+        if (fsm->alpha >= CTL_CTRL_CONST_1)
         {
             fsm->state = ESMO_FSM_STATE_IF_STOP;
         }
@@ -315,12 +315,12 @@ GMP_STATIC_INLINE ctl_esmo_fsm_event_e ctl_step_esmo_fsm(ctl_pmsm_esmo_fsm_t* fs
         fsm->out_idq_ref.dat[phase_d] = fsm->brake_id_held;
         fsm->out_idq_ref.dat[phase_q] = fsm->brake_iq_held;
 
-        fsm->delta_theta_pu = float2ctrl(0.0f);
-        fsm->delta_phasor.dat[phasor_sin] = float2ctrl(0.0f);
-        fsm->delta_phasor.dat[phasor_cos] = float2ctrl(1.0f);
+        fsm->delta_theta_pu = CTL_CTRL_CONST_ZERO;
+        fsm->delta_phasor.dat[phasor_sin] = CTL_CTRL_CONST_ZERO;
+        fsm->delta_phasor.dat[phasor_cos] = CTL_CTRL_CONST_1;
 
         // Reset back to STARTUP if the motor essentially stops rotating
-        if (ctl_abs(fsm->if_slope_ptr->current_freq_pu) <= float2ctrl(0.001f))
+        if (ctl_abs(fsm->if_slope_ptr->current_freq_pu) <= real2ctrl(0.001f))
         {
             fsm->state = ESMO_FSM_STATE_IF_STARTUP;
         }

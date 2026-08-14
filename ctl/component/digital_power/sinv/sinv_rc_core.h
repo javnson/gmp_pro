@@ -51,7 +51,7 @@ typedef struct _tag_sinv_rc_init_t
 
     // --- Tuning Targets (User Provided / Auto-Generated Defaults if 0) ---
     parameter_gt current_loop_bw; //!< Target current loop bandwidth (Hz).
-    parameter_gt qpr_wi;          //!< QPR resonant bandwidth (rad/s).
+    parameter_gt qpr_wi;          //!< Legacy field name for the QPR cutoff frequency (Hz).
 
     parameter_gt fdrc_q_fc;        //!< Cutoff frequency for FDRC Q(z) low-pass filter (Hz).
     parameter_gt fdrc_min_freq;    //!< Minimum tracked fundamental frequency (Hz).
@@ -161,14 +161,14 @@ GMP_STATIC_INLINE void ctl_clear_sinv_rc_core(ctl_sinv_rc_core_t* core)
     ctl_clear_filter_iir1(&core->err_filter);
 
     core->isr_tick = 0;
-    core->i_ref = float2ctrl(0.0f);
-    core->current_error = float2ctrl(0.0f);
-    core->error_lpf_abs = float2ctrl(0.0f);
-    core->u_qpr = float2ctrl(0.0f);
-    core->u_fdrc = float2ctrl(0.0f);
-    core->u_ff = float2ctrl(0.0f);
-    core->v_out_unsat = float2ctrl(0.0f);
-    core->v_out_ref = float2ctrl(0.0f);
+    core->i_ref = CTL_CTRL_CONST_ZERO;
+    core->current_error = CTL_CTRL_CONST_ZERO;
+    core->error_lpf_abs = CTL_CTRL_CONST_ZERO;
+    core->u_qpr = CTL_CTRL_CONST_ZERO;
+    core->u_fdrc = CTL_CTRL_CONST_ZERO;
+    core->u_ff = CTL_CTRL_CONST_ZERO;
+    core->v_out_unsat = CTL_CTRL_CONST_ZERO;
+    core->v_out_ref = CTL_CTRL_CONST_ZERO;
 }
 
 /**
@@ -209,13 +209,13 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_rc_core(ctl_sinv_rc_core_t* core, ctrl_g
 
     if (!core->flag_enable_ctrl)
     {
-        core->i_ref = float2ctrl(0.0f);
-        core->current_error = float2ctrl(0.0f);
-        core->u_qpr = float2ctrl(0.0f);
-        core->u_fdrc = float2ctrl(0.0f);
-        core->u_ff = float2ctrl(0.0f);
-        core->v_out_unsat = float2ctrl(0.0f);
-        core->v_out_ref = float2ctrl(0.0f);
+        core->i_ref = CTL_CTRL_CONST_ZERO;
+        core->current_error = CTL_CTRL_CONST_ZERO;
+        core->u_qpr = CTL_CTRL_CONST_ZERO;
+        core->u_fdrc = CTL_CTRL_CONST_ZERO;
+        core->u_ff = CTL_CTRL_CONST_ZERO;
+        core->v_out_unsat = CTL_CTRL_CONST_ZERO;
+        core->v_out_ref = CTL_CTRL_CONST_ZERO;
         return core->v_out_ref;
     }
 
@@ -232,7 +232,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_rc_core(ctl_sinv_rc_core_t* core, ctrl_g
     core->u_qpr = ctl_step_qpr_controller(&core->qpr_ctrl, core->current_error);
 
     // 4. Harmonic Rejection (Smart FDRC)
-    core->u_fdrc = float2ctrl(0.0f);
+    core->u_fdrc = CTL_CTRL_CONST_ZERO;
 #if CTL_FDRC_SUPPORTED
     if (core->flag_enable_fdrc)
     {
@@ -266,7 +266,8 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sinv_rc_core(ctl_sinv_rc_core_t* core, ctrl_g
     ctrl_gt v_ref_total = core->u_qpr + core->u_fdrc + core->u_ff;
 
     // 7. Universal DC Bus Voltage Compensation & Saturation
-    ctrl_gt v_bus_safe = (core->v_bus_fdbk->value > float2ctrl(0.1f)) ? core->v_bus_fdbk->value : float2ctrl(0.1f);
+    ctrl_gt v_bus_safe =
+        (core->v_bus_fdbk->value > CTL_CTRL_CONST_1_OVER_10) ? core->v_bus_fdbk->value : CTL_CTRL_CONST_1_OVER_10;
     ctrl_gt v_out_comp = ctl_div(v_ref_total, v_bus_safe);
 
     core->v_out_unsat = v_out_comp;

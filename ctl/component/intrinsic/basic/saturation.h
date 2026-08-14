@@ -119,7 +119,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_bipolar_saturation(ctl_bipolar_saturation_t* 
     }
     else
     {
-        obj->out = float2ctrl(0.0f); // 输入严格为 0 时输出 0
+        obj->out = CTL_CTRL_CONST_ZERO; // Return zero when the input is exactly zero.
     }
     
     return obj->out;

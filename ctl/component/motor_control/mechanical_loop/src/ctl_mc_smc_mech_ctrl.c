@@ -70,16 +70,16 @@ void ctl_autotuning_smc_mech_ctrl(ctl_smc_mech_init_t* init)
 void ctl_init_smc_mech_ctrl(ctl_smc_mech_ctrl_t* ctrl, const ctl_smc_mech_init_t* init)
 {
     // Initialize the internal Sliding Mode Controller core directly with PU gains
-    ctl_init_smc(&ctrl->smc_core, float2ctrl(init->eta11), float2ctrl(init->eta12), float2ctrl(init->eta21),
-                 float2ctrl(init->eta22), float2ctrl(init->rho), float2ctrl(init->lambda), float2ctrl(0.001f));
+    ctl_init_smc(&ctrl->smc_core, param2ctrl(init->eta11), param2ctrl(init->eta12), param2ctrl(init->eta21),
+                 param2ctrl(init->eta22), param2ctrl(init->rho), param2ctrl(init->lambda), real2ctrl(0.001f));
 
-    ctrl->cur_limit = float2ctrl(init->cur_limit);
-    ctrl->k_ff = float2ctrl(init->k_ff);
+    ctrl->cur_limit = param2ctrl(init->cur_limit);
+    ctrl->k_ff = param2ctrl(init->k_ff);
 
     ctl_init_divider(&ctrl->div_mech, init->mech_division);
 
     ctrl->pos_if = NULL;
     ctrl->spd_if = NULL;
     ctrl->flag_enable = 0;
-    ctrl->cur_output = float2ctrl(0.0f);
+    ctrl->cur_output = CTL_CTRL_CONST_ZERO;
 }

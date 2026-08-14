@@ -171,7 +171,7 @@ GMP_STATIC_INLINE void ctl_step_dtc_svm(dtc_svm_ctrl_t* mc)
     // 3. Fast Phasor Extraction (ZERO Trigonometric Functions)
     // ========================================================================
     // We extract the cos and sin directly from the flux vector to align the x-axis with the stator flux.
-    if (mc->flux_mag_pu > float2ctrl(0.01f)) // Protect against div-by-zero
+    if (mc->flux_mag_pu > real2ctrl(0.01f)) // Protect against div-by-zero
     {
         mc->flux_phasor.dat[0] = ctl_div(mc->flux_ab_pu.dat[0], mc->flux_mag_pu); // cos(theta)
         mc->flux_phasor.dat[1] = ctl_div(mc->flux_ab_pu.dat[1], mc->flux_mag_pu); // sin(theta)

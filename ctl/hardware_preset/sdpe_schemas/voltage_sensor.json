@@ -22,7 +22,8 @@
       "c_name": "RATED_VOLTAGE_V",
       "unit": "V",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Nominal measurable voltage."
     },
     {
@@ -30,7 +31,8 @@
       "c_name": "BIAS_V",
       "unit": "V",
       "required": false,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Output bias voltage.",
       "default": 0.0
     },
@@ -39,7 +41,8 @@
       "c_name": "SENSITIVITY_V_PER_V",
       "unit": "V/V",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Voltage sensor sensitivity."
     },
     {
@@ -47,7 +50,8 @@
       "c_name": "INPUT_RESISTANCE_OHM",
       "unit": "ohm",
       "required": false,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Equivalent input resistance.",
       "default": 0.0
     },
@@ -56,7 +60,8 @@
       "c_name": "BANDWIDTH_HZ",
       "unit": "Hz",
       "required": false,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Small-signal sensing bandwidth.",
       "default": 0.0
     }

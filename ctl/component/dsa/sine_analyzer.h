@@ -124,7 +124,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_sine_analyzer(sine_analyzer_t* sine, ctrl_gt 
             sine->zero_cross = 1;
 
             // Pre-calculate inverse values for efficiency.
-            sine->inv_index = float2ctrl(1.0f / sine->sample_index);
+            sine->inv_index = real2ctrl(1.0f / sine->sample_index);
             sine->inv_index_sqrt = ctl_sqrt(sine->inv_index);
 
             // Calculate average, RMS, and frequency.

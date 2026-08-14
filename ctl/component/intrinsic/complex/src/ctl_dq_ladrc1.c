@@ -11,11 +11,11 @@ void ctl_init_dq_ladrc1(ctl_dq_ladrc1_t* dq, parameter_gt b0_d, parameter_gt fc_
     ctl_init_ladrc1(&dq->axis[0], b0_d, fc_d, fo_d, fs);
     ctl_init_ladrc1(&dq->axis[1], b0_q, fc_q, fo_q, fs);
 
-    dq->circle_limit_sq = float2ctrl(1.0f);
-    dq->rect_limit_max.dat[0] = float2ctrl(1.0f);
-    dq->rect_limit_max.dat[1] = float2ctrl(1.0f);
-    dq->rect_limit_min.dat[0] = float2ctrl(-1.0f);
-    dq->rect_limit_min.dat[1] = float2ctrl(-1.0f);
+    dq->circle_limit_sq = CTL_CTRL_CONST_1;
+    dq->rect_limit_max.dat[0] = CTL_CTRL_CONST_1;
+    dq->rect_limit_max.dat[1] = CTL_CTRL_CONST_1;
+    dq->rect_limit_min.dat[0] = (-CTL_CTRL_CONST_1);
+    dq->rect_limit_min.dat[1] = (-CTL_CTRL_CONST_1);
 
     dq->flag_enable_feedforward = 0;
     dq->flag_enable_circle_limit = 0;

@@ -118,8 +118,8 @@ GMP_STATIC_INLINE void ctl_enable_pmsm_dbptc(pmsm_dbptc_ctrl_t* mc)
 GMP_STATIC_INLINE void ctl_disable_pmsm_dbptc(pmsm_dbptc_ctrl_t* mc)
 {
     mc->flag_enable = 0;
-    mc->ud_prev = float2ctrl(0.0f);
-    mc->uq_prev = float2ctrl(0.0f);
+    mc->ud_prev = CTL_CTRL_CONST_ZERO;
+    mc->uq_prev = CTL_CTRL_CONST_ZERO;
     ctl_vector2_clear(&mc->vdq_out);
 }
 

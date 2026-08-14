@@ -30,17 +30,17 @@ extern "C"
 /*===========================================================================*/
 
 #define SINV_PROT_BIT_NONE         (0x00000000UL)
-#define SINV_PROT_BIT_HW_TZ        (0x00000001UL) //!< 硬件底层触发封波 (Trip-Zone)
-#define SINV_PROT_BIT_DC_OVP_FAST  (0x00000002UL) //!< 直流母线瞬态过压 (Fast)
-#define SINV_PROT_BIT_AC_OCP_FAST  (0x00000004UL) //!< 交流侧瞬态过流 (Fast)
-#define SINV_PROT_BIT_CTRL_DIVERGE (0x00000008UL) //!< 控制器算法发散 (Fast)
+#define SINV_PROT_BIT_HW_TZ        (0x00000001UL) //!< Hardware trip-zone shutdown.
+#define SINV_PROT_BIT_DC_OVP_FAST  (0x00000002UL) //!< Fast DC-bus overvoltage.
+#define SINV_PROT_BIT_AC_OCP_FAST  (0x00000004UL) //!< Fast AC-side overcurrent.
+#define SINV_PROT_BIT_CTRL_DIVERGE (0x00000008UL) //!< Fast controller-divergence detection.
 
-#define SINV_PROT_BIT_AC_OVP_RMS   (0x00000010UL) //!< 交流侧有效值过压 (Slow)
-#define SINV_PROT_BIT_AC_UVP_RMS   (0x00000020UL) //!< 交流侧有效值欠压 (Slow)
-#define SINV_PROT_BIT_PLL_FREQ_ERR (0x00000040UL) //!< 锁相环电网频率异常 (Slow - 防孤岛)
+#define SINV_PROT_BIT_AC_OVP_RMS   (0x00000010UL) //!< Slow AC RMS overvoltage.
+#define SINV_PROT_BIT_AC_UVP_RMS   (0x00000020UL) //!< Slow AC RMS undervoltage.
+#define SINV_PROT_BIT_PLL_FREQ_ERR (0x00000040UL) //!< Slow PLL frequency fault for anti-islanding.
 
-#define SINV_PROT_BIT_IGBT_TEMP_OVP    (0x00000080UL) //!< 功率模块过温 (Slow - PT100/1000)
-#define SINV_PROT_BIT_IGBT_THERMAL_I2T (0x00000100UL) //!< 功率模块反时限热过载 (Slow - I2t)
+#define SINV_PROT_BIT_IGBT_TEMP_OVP    (0x00000080UL) //!< Slow power-module overtemperature from PT100/PT1000.
+#define SINV_PROT_BIT_IGBT_THERMAL_I2T (0x00000100UL) //!< Slow inverse-time power-module thermal overload.
 
 /*===========================================================================*/
 /* 2. Protection Manager Structure                                           */
@@ -51,29 +51,29 @@ extern "C"
  */
 typedef struct _tag_sinv_protect_t
 {
-    // --- 策略与状态字 (Policy & Status Flags) ---
-    uint32_t current_status;  //!< 当前正处于越限状态的所有故障位图的原始聚合
-    uint32_t first_error;     //!< 首发致命故障锁存 (用于黑匣子溯源)
-    uint32_t active_errors;   //!< 经过 error_mask 过滤后的致命故障 (导致跳闸)
-    uint32_t active_warnings; //!< 经过 warning_mask 过滤后的告警 (不跳闸，仅降额或报信)
+    // --- Policy and status flags ---
+    uint32_t current_status;  //!< Raw aggregate of all active limit violations.
+    uint32_t first_error;     //!< Latched first fatal fault for postmortem diagnostics.
+    uint32_t active_errors;   //!< Fatal faults selected by error_mask; these cause a trip.
+    uint32_t active_warnings; //!< Warnings selected by warning_mask; these do not trip.
 
-    uint32_t error_mask;   //!< 设为 1 的位表示该异常被认定为致命 Error
-    uint32_t warning_mask; //!< 设为 1 的位表示该异常被认定为轻微 Warning
+    uint32_t error_mask;   //!< A set bit classifies the corresponding fault as fatal.
+    uint32_t warning_mask; //!< A set bit classifies the corresponding fault as a warning.
 
-    // --- 极速保护节点 (Fast Nodes - Executed in 20kHz ISR) ---
-    ctl_prot_single_t node_dc_ovp_fast;  //!< 母线过压 (单边高阈值)
-    ctl_prot_single_t node_ac_ocp_fast;  //!< 交流过流 (对称绝对值阈值)
-    ctl_prot_single_t node_ctrl_diverge; //!< 算法发散 (对称绝对值阈值)
+    // --- Fast protection nodes executed in the control ISR ---
+    ctl_prot_single_t node_dc_ovp_fast;  //!< DC-bus overvoltage with a high threshold.
+    ctl_prot_single_t node_ac_ocp_fast;  //!< AC overcurrent with a symmetric magnitude threshold.
+    ctl_prot_single_t node_ctrl_diverge; //!< Controller divergence with a symmetric magnitude threshold.
 
-    // --- 慢速保护节点 (Slow Nodes - Executed in 1ms/10ms Task) ---
-    // 注意：OVP 和 UVP 拆分为两个 Single 节点，因为过压和欠压的消抖时间(安规要求)往往差异极大
-    ctl_prot_single_t node_ac_ovp_rms; //!< 交流有效值过压 (单边高)
-    ctl_prot_single_t node_ac_uvp_rms; //!< 交流有效值欠压 (单边低)
+    // --- Slow protection nodes executed in a 1 ms or 10 ms task ---
+    // OVP and UVP use separate nodes because their required debounce times can differ significantly.
+    ctl_prot_single_t node_ac_ovp_rms; //!< AC RMS overvoltage with a high threshold.
+    ctl_prot_single_t node_ac_uvp_rms; //!< AC RMS undervoltage with a low threshold.
 
-    ctl_prot_window_t node_pll_freq; //!< 电网频率漂移 (双边窗口保护)
+    ctl_prot_window_t node_pll_freq; //!< Grid-frequency deviation with a two-sided window.
 
-    ctl_prot_pt_sensor_t node_igbt_temp; //!< IGBT 温度传感器 (含阻值温度转换)
-    ctl_prot_thermal_t node_igbt_i2t;    //!< IGBT I2t 积分热模型
+    ctl_prot_pt_sensor_t node_igbt_temp; //!< IGBT temperature sensor with resistance conversion.
+    ctl_prot_thermal_t node_igbt_i2t;    //!< IGBT I2t integral thermal model.
 
 } ctl_sinv_protect_t;
 
@@ -88,7 +88,7 @@ typedef struct _tag_sinv_protect_t
  */
 typedef struct _tag_sinv_prot_init_t
 {
-    // --- 策略路由掩码 ---
+    // --- Policy routing masks ---
     uint32_t error_mask;   //!< Which faults should trip the system?
     uint32_t warning_mask; //!< Which faults are just warnings?
 
@@ -127,74 +127,74 @@ typedef struct _tag_sinv_prot_init_t
 void ctl_init_sinv_protect(ctl_sinv_protect_t* prot, const ctl_sinv_prot_init_t* init);
 
 /**
- * @brief 深度复位保护管理器 (Deep Reset)
- * @details 专用于开机初始化，以及 CiA 402 收到 FAULT_RESET (0x0080) 指令时。
- * 清除所有报警标志、消抖计数器、黑匣子记录和热积分器。
+ * @brief Deep-reset the protection manager.
+ * @details Use this during startup and after a CiA 402 FAULT_RESET (0x0080) command.
+ * Clears fault flags, debounce counters, first-fault records, and the thermal integrator.
  * 
  * @param[out] prot Pointer to the protection manager.
  */
 GMP_STATIC_INLINE void ctl_reset_sinv_protect(ctl_sinv_protect_t* prot)
 {
-    // 1. 清空全局路由标志
+    // 1. Clear global routing status.
     prot->current_status = 0;
     prot->first_error = 0;
     prot->active_errors = 0;
     prot->active_warnings = 0;
 
-    // 2. 深度清空底层节点的历史包袱 (消抖计数与黑匣子)
+    // 2. Clear node debounce and first-fault history.
     prot->node_dc_ovp_fast.current_count = 0;
-    prot->node_dc_ovp_fast.fault_record_val = float2ctrl(0.0f);
+    prot->node_dc_ovp_fast.fault_record_val = CTL_CTRL_CONST_ZERO;
 
     prot->node_ac_ocp_fast.current_count = 0;
-    prot->node_ac_ocp_fast.fault_record_val = float2ctrl(0.0f);
+    prot->node_ac_ocp_fast.fault_record_val = CTL_CTRL_CONST_ZERO;
 
     prot->node_ctrl_diverge.current_count = 0;
-    prot->node_ctrl_diverge.fault_record_val = float2ctrl(0.0f);
+    prot->node_ctrl_diverge.fault_record_val = CTL_CTRL_CONST_ZERO;
 
     prot->node_ac_ovp_rms.current_count = 0;
-    prot->node_ac_ovp_rms.fault_record_val = float2ctrl(0.0f);
+    prot->node_ac_ovp_rms.fault_record_val = CTL_CTRL_CONST_ZERO;
 
     prot->node_ac_uvp_rms.current_count = 0;
-    prot->node_ac_uvp_rms.fault_record_val = float2ctrl(0.0f);
+    prot->node_ac_uvp_rms.fault_record_val = CTL_CTRL_CONST_ZERO;
 
     prot->node_pll_freq.current_count = 0;
-    prot->node_pll_freq.fault_record_val = float2ctrl(0.0f);
+    prot->node_pll_freq.fault_record_val = CTL_CTRL_CONST_ZERO;
 
     prot->node_igbt_temp.current_count = 0;
-    prot->node_igbt_temp.fault_record_val = float2ctrl(0.0f);
+    prot->node_igbt_temp.fault_record_val = CTL_CTRL_CONST_ZERO;
 
-    // 3. 特殊清理：热量积分器复位
-    // 系统复位时，默认物理设备的热量也会散去(或者至少把软件积分器清零，重新积分)
-    prot->node_igbt_i2t.thermal_acc = float2ctrl(0.0f);
-    prot->node_igbt_i2t.fault_record_val = float2ctrl(0.0f);
+    // 3. Reset the thermal integrator.
+    // A system reset starts a new software thermal-integration interval.
+    prot->node_igbt_i2t.thermal_acc = CTL_CTRL_CONST_ZERO;
+    prot->node_igbt_i2t.fault_record_val = CTL_CTRL_CONST_ZERO;
 }
 
 /**
- * @brief 高频极速保护执行管道 (Fast Pipeline)
- * @details 放置于控制 ISR 中 (如 20kHz)。仅执行纯数学、无延迟的绝对值比较。
+ * @brief Execute the fast protection pipeline.
+ * @details Call from the control ISR; the path performs only bounded arithmetic and comparisons.
  * 
  * @param prot Pointer to the manager.
- * @param v_bus_inst 瞬时直流母线电压
- * @param i_ac_inst 瞬时交流电网电流
- * @param ctrl_v_ref 控制算法输出的指令电压 (用于检测算法发散)
- * @return uint32_t 返回 active_errors。如果不为 0，ISR 应立即硬件封波！
+ * @param v_bus_inst Instantaneous DC-bus voltage.
+ * @param i_ac_inst Instantaneous AC current.
+ * @param ctrl_v_ref Controller voltage command used for divergence detection.
+ * @return uint32_t Active fatal-fault mask; a nonzero value requires immediate PWM shutdown.
  */
 GMP_STATIC_INLINE uint32_t ctl_step_sinv_protect_fast(ctl_sinv_protect_t* prot, ctrl_gt v_bus_inst, ctrl_gt i_ac_inst,
                                                       ctrl_gt ctrl_v_ref)
 {
     uint32_t inst_status = 0;
 
-    // 1. 挂载快保护算子 (并行执行)
+    // 1. Evaluate fast protection nodes.
     inst_status |= ctl_step_prot_single_high_peak(&prot->node_dc_ovp_fast, v_bus_inst);
     inst_status |= ctl_step_prot_single_sym_peak(&prot->node_ac_ocp_fast, i_ac_inst);
     inst_status |= ctl_step_prot_single_sym_peak(&prot->node_ctrl_diverge, ctrl_v_ref);
 
-    // 2. 状态聚合与策略路由
+    // 2. Aggregate status and apply policy routing.
     prot->current_status |= inst_status;
     prot->active_errors |= (inst_status & prot->error_mask);
     prot->active_warnings |= (inst_status & prot->warning_mask);
 
-    // 3. 首发故障锁存 (First-Error Capture)
+    // 3. Capture the first fatal fault.
     if (prot->active_errors != 0 && prot->first_error == 0)
     {
         prot->first_error = prot->active_errors;
@@ -204,21 +204,21 @@ GMP_STATIC_INLINE uint32_t ctl_step_sinv_protect_fast(ctl_sinv_protect_t* prot, 
 }
 
 /**
- * @brief 低频慢速保护执行管道 (Slow Pipeline)
- * @details 放置于后台任务或 RTOS 线程中 (如 1ms/10ms)。执行有效值比较、温度计算及热积分。
+ * @brief Execute the slow protection pipeline.
+ * @details Call from a background or RTOS task for RMS, temperature, and thermal calculations.
  * 
  * @param prot Pointer to the manager.
- * @param v_ac_rms 交流电压有效值
- * @param pll_freq_hz 锁相环实时输出的电网频率 (Hz)
- * @param temp_adc_pu 温度传感器 ADC 采样的标幺值或原始值
- * @param i_ac_rms 交流电流有效值 (用于 I2t 积分)
+ * @param v_ac_rms AC RMS voltage.
+ * @param pll_freq_hz Grid frequency reported by the PLL in hertz.
+ * @param temp_adc_pu Temperature-sensor ADC value in raw or per-unit form.
+ * @param i_ac_rms AC RMS current used by the I2t integrator.
  */
 GMP_STATIC_INLINE void ctl_task_sinv_protect_slow(ctl_sinv_protect_t* prot, ctrl_gt v_ac_rms, ctrl_gt pll_freq_hz,
                                                   ctrl_gt temp_adc_pu, ctrl_gt i_ac_rms)
 {
     uint32_t task_status = 0;
 
-    // 1. 挂载慢保护算子
+    // 1. Evaluate slow protection nodes.
     task_status |= ctl_step_prot_single_high_peak(&prot->node_ac_ovp_rms, v_ac_rms);
     task_status |= ctl_step_prot_single_low_snap(&prot->node_ac_uvp_rms, v_ac_rms);
 
@@ -227,12 +227,12 @@ GMP_STATIC_INLINE void ctl_task_sinv_protect_slow(ctl_sinv_protect_t* prot, ctrl
     task_status |= ctl_step_prot_pt_sensor(&prot->node_igbt_temp, temp_adc_pu);
     task_status |= ctl_step_prot_thermal_i2t(&prot->node_igbt_i2t, i_ac_rms);
 
-    // 2. 状态聚合与策略路由
+    // 2. Aggregate status and apply policy routing.
     prot->current_status |= task_status;
     prot->active_errors |= (task_status & prot->error_mask);
     prot->active_warnings |= (task_status & prot->warning_mask);
 
-    // 3. 首发故障锁存 (First-Error Capture)
+    // 3. Capture the first fatal fault.
     if (prot->active_errors != 0 && prot->first_error == 0)
     {
         prot->first_error = prot->active_errors;

@@ -424,7 +424,7 @@
       "role": "Pll Lock Epsilon",
       "macro": "CTRL_SPLL_EPSILON",
       "binding": {
-        "literal": "((float2ctrl(0.005)))"
+        "ctrl": "0.005"
       },
       "description": "PLL lock-error threshold used before grid-forming takeover."
     }

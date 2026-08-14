@@ -43,12 +43,12 @@ static int test_position_calculator(void)
     ctl_init_im_pos_calc_consultant(&calc, &motor, &pu, TEST_FS);
     ctl_enable_im_pos_calc(&calc);
     for (k = 0; k < (int)TEST_FS; ++k)
-        ctl_step_im_pos_calc(&calc, float2ctrl(id), float2ctrl(iq), float2ctrl(rotor_speed));
+        ctl_step_im_pos_calc(&calc, real2ctrl(id), real2ctrl(iq), real2ctrl(rotor_speed));
 
     expected_slip = iq / (id * motor.tau_r * pu.W_base);
-    if (fabsf(ctrl2float(calc.i_md_pu) - id) > 2e-4f) return 1;
-    if (fabsf(ctrl2float(calc.w_slip_pu) - expected_slip) > 2e-4f) return 2;
-    if (fabsf(ctrl2float(calc.w_sync_pu) - rotor_speed - expected_slip) > 2e-4f) return 3;
+    if (fabsf(ctrl2param(calc.i_md_pu) - id) > 2e-4f) return 1;
+    if (fabsf(ctrl2param(calc.w_slip_pu) - expected_slip) > 2e-4f) return 2;
+    if (fabsf(ctrl2param(calc.w_sync_pu) - rotor_speed - expected_slip) > 2e-4f) return 3;
     return 0;
 }
 
@@ -62,14 +62,14 @@ static int test_ato(void)
     ctl_init_ato_pll(&ato, 20.0f, 1.0f, TEST_W_BASE, TEST_FS, 2.0f, -2.0f);
     for (k = 0; k < (int)(0.5f * TEST_FS); ++k)
     {
-        float angle_err = wrapped_error(target_angle, ctrl2float(ato.elec_angle_pu));
-        ctl_step_ato_pll(&ato, float2ctrl(sinf(CTL_PARAM_CONST_2PI * angle_err) / CTL_PARAM_CONST_2PI));
+        float angle_err = wrapped_error(target_angle, ctrl2param(ato.elec_angle_pu));
+        ctl_step_ato_pll(&ato, real2ctrl(sinf(CTL_PARAM_CONST_2PI * angle_err) / CTL_PARAM_CONST_2PI));
         target_angle += target_speed * TEST_W_BASE / (CTL_PARAM_CONST_2PI * TEST_FS);
         target_angle -= floorf(target_angle);
     }
 
-    if (fabsf(ctrl2float(ato.elec_speed_pu) - target_speed) > 2e-3f) return 1;
-    if (fabsf(wrapped_error(ctrl2float(ato.elec_angle_pu), target_angle)) > 2e-3f) return 2;
+    if (fabsf(ctrl2param(ato.elec_speed_pu) - target_speed) > 2e-3f) return 1;
+    if (fabsf(wrapped_error(ctrl2param(ato.elec_angle_pu), target_angle)) > 2e-3f) return 2;
     return 0;
 }
 
@@ -86,20 +86,20 @@ static int test_ato_pmsm_bemf_detector(void)
     for (k = 0; k < (int)(0.6f * TEST_FS); ++k)
     {
         float theta = CTL_PARAM_CONST_2PI * target_angle;
-        float theta_hat = CTL_PARAM_CONST_2PI * ctrl2float(ato.elec_angle_pu);
+        float theta_hat = CTL_PARAM_CONST_2PI * ctrl2param(ato.elec_angle_pu);
         float emf_mag = 0.05f + 0.75f * ((float)k / (0.6f * TEST_FS));
         float e_alpha = -emf_mag * sinf(theta);
         float e_beta = emf_mag * cosf(theta);
         float phase_err_pu = (-e_alpha * cosf(theta_hat) - e_beta * sinf(theta_hat)) /
                              (emf_mag * CTL_PARAM_CONST_2PI);
 
-        ctl_step_ato_pll(&ato, float2ctrl(phase_err_pu));
+        ctl_step_ato_pll(&ato, real2ctrl(phase_err_pu));
         target_angle += target_speed * TEST_W_BASE / (CTL_PARAM_CONST_2PI * TEST_FS);
         target_angle -= floorf(target_angle);
     }
 
-    if (fabsf(ctrl2float(ato.elec_speed_pu) - target_speed) > 2e-3f) return 1;
-    if (fabsf(wrapped_error(ctrl2float(ato.elec_angle_pu), target_angle)) > 2e-3f) return 2;
+    if (fabsf(ctrl2param(ato.elec_speed_pu) - target_speed) > 2e-3f) return 1;
+    if (fabsf(wrapped_error(ctrl2param(ato.elec_angle_pu), target_angle)) > 2e-3f) return 2;
     return 0;
 }
 
@@ -141,39 +141,39 @@ static int test_flux_observer_steady_state(void)
         float va = (motor.Rs * ia * pu.I_s_base - omega_sync * psi_sb) / pu.V_s_base;
         float vb = (motor.Rs * ib * pu.I_s_base + omega_sync * psi_sa) / pu.V_s_base;
 
-        ctl_step_im_fo(&fo, float2ctrl(va), float2ctrl(vb), float2ctrl(ia), float2ctrl(ib));
+        ctl_step_im_fo(&fo, real2ctrl(va), real2ctrl(vb), real2ctrl(ia), real2ctrl(ib));
         angle += sync_speed_pu * pu.W_base / (CTL_PARAM_CONST_2PI * TEST_FS);
         angle -= floorf(angle);
     }
 
     if (!fo.flag_observer_locked) return 1;
-    if (fabsf(ctrl2float(fo.psi_r_mag) - psi_r / pu.Flux_s_base) > 0.02f) return 2;
-    if (fabsf(ctrl2float(fo.spd_out.speed) - rotor_speed_pu) > 0.03f)
+    if (fabsf(ctrl2param(fo.psi_r_mag) - psi_r / pu.Flux_s_base) > 0.02f) return 2;
+    if (fabsf(ctrl2param(fo.spd_out.speed) - rotor_speed_pu) > 0.03f)
     {
         printf("FO speed=%g expected=%g sync=%g flux=%g expected_flux=%g angle_err=%g\n",
-               ctrl2float(fo.spd_out.speed), rotor_speed_pu, ctrl2float(fo.ato_pll.elec_speed_pu),
-               ctrl2float(fo.psi_r_mag), psi_r / pu.Flux_s_base,
-               wrapped_error(ctrl2float(fo.pos_out.elec_position), angle));
+               ctrl2param(fo.spd_out.speed), rotor_speed_pu, ctrl2param(fo.ato_pll.elec_speed_pu),
+               ctrl2param(fo.psi_r_mag), psi_r / pu.Flux_s_base,
+               wrapped_error(ctrl2param(fo.pos_out.elec_position), angle));
         return 3;
     }
-    if (fabsf(wrapped_error(ctrl2float(fo.pos_out.elec_position), angle)) > 0.02f) return 4;
+    if (fabsf(wrapped_error(ctrl2param(fo.pos_out.elec_position), angle)) > 0.02f) return 4;
     return 0;
 }
 
 static int test_sensorless_handover(void)
 {
     ctl_sensorless_handover_t handover;
-    rotation_ift pos_a = {float2ctrl(0.0f), float2ctrl(0.99f), 0};
-    rotation_ift pos_b = {float2ctrl(0.0f), float2ctrl(0.01f), 0};
-    velocity_ift spd_a = {float2ctrl(0.30f)};
-    velocity_ift spd_b = {float2ctrl(0.36f)};
+    rotation_ift pos_a = {CTL_CTRL_CONST_ZERO, real2ctrl(0.99f), 0};
+    rotation_ift pos_b = {CTL_CTRL_CONST_ZERO, real2ctrl(0.01f), 0};
+    velocity_ift spd_a = {real2ctrl(0.30f)};
+    velocity_ift spd_b = {real2ctrl(0.36f)};
     float previous_angle;
     int k;
 
     ctl_init_sensorless_handover(&handover, 0.1f, 1000.0f,
-                                 float2ctrl(0.4f), float2ctrl(0.3f),
-                                 float2ctrl(0.1f), float2ctrl(0.1f),
-                                 float2ctrl(0.3f));
+                                 real2ctrl(0.4f), real2ctrl(0.3f),
+                                 real2ctrl(0.1f), real2ctrl(0.1f),
+                                 real2ctrl(0.3f));
     ctl_attach_sensorless_handover(&handover, &pos_a, &spd_a, &pos_b, &spd_b);
     ctl_configure_sensorless_handover_speed_qualification(
         &handover, 0.01f, 0.02f, 0.005f, 1000.0f);
@@ -183,26 +183,26 @@ static int test_sensorless_handover(void)
         ctl_step_sensorless_handover(&handover, spd_a.speed);
     if (handover.angle.state != ANGLE_SWITCH_IDLE_A) return 1;
 
-    spd_b.speed = float2ctrl(0.305f);
+    spd_b.speed = real2ctrl(0.305f);
     for (k = 0; k < 3; ++k)
         ctl_step_sensorless_handover(&handover, spd_a.speed);
-    spd_b.speed = float2ctrl(0.315f); /* Hysteresis band: retain count. */
+    spd_b.speed = real2ctrl(0.315f); /* Hysteresis band: retain count. */
     ctl_step_sensorless_handover(&handover, spd_a.speed);
-    spd_b.speed = float2ctrl(0.305f);
-    previous_angle = ctrl2float(handover.angle.out_enc.elec_position);
+    spd_b.speed = real2ctrl(0.305f);
+    previous_angle = ctrl2param(handover.angle.out_enc.elec_position);
     ctl_step_sensorless_handover(&handover, spd_a.speed);
     ctl_step_sensorless_handover(&handover, spd_a.speed);
     if (handover.angle.state != ANGLE_SWITCH_TRANS_A2B) return 2;
-    if (fabsf(wrapped_error(ctrl2float(handover.angle.out_enc.elec_position),
+    if (fabsf(wrapped_error(ctrl2param(handover.angle.out_enc.elec_position),
                             previous_angle)) > 0.001f) return 3;
 
     for (k = 0; k < 110; ++k)
     {
-        pos_b.elec_position = float2ctrl(fmodf(ctrl2float(pos_b.elec_position) + 0.0003f, 1.0f));
+        pos_b.elec_position = real2ctrl(fmodf(ctrl2param(pos_b.elec_position) + 0.0003f, 1.0f));
         ctl_step_sensorless_handover(&handover, spd_a.speed);
     }
     if (handover.angle.state != ANGLE_SWITCH_IDLE_B) return 4;
-    if (fabsf(ctrl2float(handover.id_ref_out) - 0.1f) > 1e-5f) return 5;
+    if (fabsf(ctrl2param(handover.id_ref_out) - 0.1f) > 1e-5f) return 5;
     return 0;
 }
 

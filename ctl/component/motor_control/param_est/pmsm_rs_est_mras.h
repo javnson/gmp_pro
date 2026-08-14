@@ -98,11 +98,11 @@ typedef struct _tag_pmsm_rs_mras_t
 GMP_STATIC_INLINE void ctl_clear_pmsm_rs_mras(ctl_pmsm_rs_mras_t* mras)
 {
 
-    obj->id_est = float2ctrl(0.0f);
-    obj->sum_ud = float2ctrl(0.0f);
-    obj->sum_id = float2ctrl(0.0f);
-    obj->sum_iq = float2ctrl(0.0f);
-    obj->sum_we = float2ctrl(0.0f);
+    obj->id_est = CTL_CTRL_CONST_ZERO;
+    obj->sum_ud = CTL_CTRL_CONST_ZERO;
+    obj->sum_id = CTL_CTRL_CONST_ZERO;
+    obj->sum_iq = CTL_CTRL_CONST_ZERO;
+    obj->sum_we = CTL_CTRL_CONST_ZERO;
 }
 
 /**
@@ -164,15 +164,15 @@ void ctl_init_pmsm_rs_mras(ctl_pmsm_rs_mras_t* obj, parameter_gt fs_fast, uint32
 {
     // 1. Divider Setup
     ctl_init_divider(&obj->divider, divider_N);
-    obj->inv_N = float2ctrl(1.0f / (float)divider_N);
+    obj->inv_N = real2ctrl(1.0f / (float)divider_N);
 
     // 2. Physical Parameters
-    obj->Ld_pu = float2ctrl(Ld_pu);
-    obj->Lq_pu = float2ctrl(Lq_pu);
-    obj->Tmras_over_Ld = float2ctrl(((float)divider_N / fs_fast) / Ld_pu);
-    obj->rs_nominal_pu = float2ctrl(Rs_nom_pu);
-    obj->min_id_exc = float2ctrl(min_id_exc);
-    obj->ki_gain = float2ctrl(ki_gain);
+    obj->Ld_pu = real2ctrl(Ld_pu);
+    obj->Lq_pu = real2ctrl(Lq_pu);
+    obj->Tmras_over_Ld = real2ctrl(((float)divider_N / fs_fast) / Ld_pu);
+    obj->rs_nominal_pu = real2ctrl(Rs_nom_pu);
+    obj->min_id_exc = real2ctrl(min_id_exc);
+    obj->ki_gain = real2ctrl(ki_gain);
 
     // 3. PI Controller for Adaptive Law (Kp is tiny, Ki is dominant)
     // The bandwidth of this PI should be extremely low (e.g., 0.1Hz ~ 1Hz)
@@ -180,8 +180,8 @@ void ctl_init_pmsm_rs_mras(ctl_pmsm_rs_mras_t* obj, parameter_gt fs_fast, uint32
     ctl_init_pi(&obj->pi_rs, 0.001f, 0.05f, fs_mras);
 
     // Safety boundaries: Clamp Rs estimation between 50% and 150% of nominal
-    ctl_set_pi_limit(&obj->pi_rs, float2ctrl(Rs_nom_pu * 2.0f), float2ctrl(Rs_nom_pu * 2.0f));
-    ctl_set_pi_int_limit(&obj->pi_rs, float2ctrl(Rs_nom_pu * 2.0f), float2ctrl(Rs_nom_pu * 2.0f));
+    ctl_set_pi_limit(&obj->pi_rs, real2ctrl(Rs_nom_pu * 2.0f), real2ctrl(Rs_nom_pu * 2.0f));
+    ctl_set_pi_int_limit(&obj->pi_rs, real2ctrl(Rs_nom_pu * 2.0f), real2ctrl(Rs_nom_pu * 2.0f));
 
     // Seed the integrator with the known nominal offline Rs
     ctl_set_pi_integrator(&obj->pi_rs, obj->rs_nominal_pu);
@@ -255,10 +255,10 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_pmsm_rs_mras(ctl_pmsm_rs_mras_t* obj, ctrl_gt
         }
 
         // Reset accumulators regardless of execution path
-        obj->sum_ud = float2ctrl(0.0f);
-        obj->sum_id = float2ctrl(0.0f);
-        obj->sum_iq = float2ctrl(0.0f);
-        obj->sum_we = float2ctrl(0.0f);
+        obj->sum_ud = CTL_CTRL_CONST_ZERO;
+        obj->sum_id = CTL_CTRL_CONST_ZERO;
+        obj->sum_iq = CTL_CTRL_CONST_ZERO;
+        obj->sum_we = CTL_CTRL_CONST_ZERO;
     }
 
     // 3. Fast Loop Slew-Rate Limiter (Executed at fs_fast)

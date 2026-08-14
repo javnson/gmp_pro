@@ -284,7 +284,7 @@ ctl_attach_mtr_current_ctrl_port(&mtr_ctrl, ..., &rg.enc, ...);
 // 开启电流控制器
 ctl_enable_mtr_current_ctrl(&mtr_ctrl);
 // 设置电流给定 (Id=0.1p.u., Iq=0.1p.u.)
-ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, float2ctrl(0.1), float2ctrl(0.1));
+ctl_set_mtr_current_ctrl_ref(&mtr_ctrl, real2ctrl(0.1), real2ctrl(0.1));
 // 仍使用IF斜坡角度
 ctl_attach_mtr_current_ctrl_port(&mtr_ctrl, ..., &rg.enc, ...);
 ```

@@ -30,10 +30,10 @@ void ctl_upgrade_ladrc1(ctl_ladrc1_t* ladrc, parameter_gt b0, parameter_gt fc, p
     // 4. Assign to structure
     // We only update the coefficients. z1, z2_u, and u_prev are untouched
     // to guarantee perfectly smooth operation during dynamic bandwidth adjustments.
-    ladrc->h_b0 = float2ctrl(h_b0_phy);
-    ladrc->h_beta1 = float2ctrl(h_beta1_phy);
-    ladrc->h_beta2_b0 = float2ctrl(h_beta2_b0_phy);
-    ladrc->kp_b0 = float2ctrl(kp_b0_phy);
+    ladrc->h_b0 = real2ctrl(h_b0_phy);
+    ladrc->h_beta1 = real2ctrl(h_beta1_phy);
+    ladrc->h_beta2_b0 = real2ctrl(h_beta2_b0_phy);
+    ladrc->kp_b0 = real2ctrl(kp_b0_phy);
 }
 
 /**
@@ -41,9 +41,9 @@ void ctl_upgrade_ladrc1(ctl_ladrc1_t* ladrc, parameter_gt b0, parameter_gt fc, p
  */
 void ctl_init_ladrc1(ctl_ladrc1_t* ladrc, parameter_gt b0, parameter_gt fc, parameter_gt fo, parameter_gt fs)
 {
-    // Configure default output limits (¡À1 for PU systems)
-    ladrc->out_max = float2ctrl(1.0f);
-    ladrc->out_min = float2ctrl(-1.0f);
+    // Configure default output limits (+/-1 for per-unit systems).
+    ladrc->out_max = CTL_CTRL_CONST_1;
+    ladrc->out_min = (-CTL_CTRL_CONST_1);
 
     // Calculate parameters
     ctl_upgrade_ladrc1(ladrc, b0, fc, fo, fs);

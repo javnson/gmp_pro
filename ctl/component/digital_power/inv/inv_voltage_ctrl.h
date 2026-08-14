@@ -219,13 +219,13 @@ GMP_STATIC_INLINE void ctl_disable_voltage_inv_decouple(inv_voltage_ctrl_t* volt
 
 GMP_STATIC_INLINE void ctl_set_voltage_inv_circle_limit(inv_voltage_ctrl_t* voltage, ctrl_gt limit)
 {
-    gmp_ctl_assert(limit >= float2ctrl(0.0f));
+    gmp_ctl_assert(limit >= CTL_CTRL_CONST_ZERO);
     voltage->current_circle_limit = limit;
 }
 
 GMP_STATIC_INLINE void ctl_set_voltage_inv_square_limit(inv_voltage_ctrl_t* voltage, ctrl_gt limit)
 {
-    gmp_ctl_assert(limit >= float2ctrl(0.0f));
+    gmp_ctl_assert(limit >= CTL_CTRL_CONST_ZERO);
     voltage->current_square_limit = limit;
 }
 

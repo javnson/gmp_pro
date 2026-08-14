@@ -130,14 +130,14 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
          * CiA402 clear/reset so the ISR cannot run with a stale zero command.
          */
 #if BUILD_LEVEL == 1
-        ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl(GFM_OPEN_LOOP_VD_PU),
-                                         float2ctrl(GFM_OPEN_LOOP_VQ_PU));
+        ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, real2ctrl(GFM_OPEN_LOOP_VD_PU),
+                                         real2ctrl(GFM_OPEN_LOOP_VQ_PU));
 #elif BUILD_LEVEL == 2
-        ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFM_CURRENT_LEVEL2_ID_PU),
-                                float2ctrl(GFM_CURRENT_LEVEL2_IQ_PU));
+        ctl_set_gfl_inv_current(&inv_ctrl, real2ctrl(GFM_CURRENT_LEVEL2_ID_PU),
+                                real2ctrl(GFM_CURRENT_LEVEL2_IQ_PU));
 #elif BUILD_LEVEL == 4
-        ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFM_CURRENT_LEVEL4_ID_PU),
-                                float2ctrl(GFM_CURRENT_LEVEL4_IQ_PU));
+        ctl_set_gfl_inv_current(&inv_ctrl, real2ctrl(GFM_CURRENT_LEVEL4_ID_PU),
+                                real2ctrl(GFM_CURRENT_LEVEL4_IQ_PU));
 #endif
 
         /*
@@ -183,7 +183,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         if (gfm_transition.mode == INV_GFM_TRANSITION_TRACK_PLL)
         {
             if (ctl_abs(ctl_get_gfl_pll_error(&inv_ctrl)) <
-                float2ctrl(GFM_SYNC_PLL_ERROR_PU))
+                real2ctrl(GFM_SYNC_PLL_ERROR_PU))
                 ++gfm_sync_lock_ticks;
             else
                 gfm_sync_lock_ticks = 0;

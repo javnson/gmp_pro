@@ -115,6 +115,6 @@ GMP_STATIC_INLINE void ctl_output_callback_pil(gmp_sim_tx_buf_t* tx)
     tx->monitor[0] = adc_v_secondary.control_port.value;
     tx->monitor[1] = adc_i_resonant.control_port.value;
     tx->monitor[2] = g_modulation_command;
-    tx->monitor[3] = ctrl2float(clllc_mod.leg[0].raw.period);
+    tx->monitor[3] = ctrl2param(clllc_mod.leg[0].raw.period);
 }
 #endif

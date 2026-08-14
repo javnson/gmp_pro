@@ -13,8 +13,8 @@ void ctl_init_slope_limiter(ctl_slope_limiter_t* obj, parameter_gt slope_max, pa
     gmp_ctl_assert(slope_min < slope_max);
     gmp_ctl_assert(fs > 0.0f);
 
-    obj->slope_min = float2ctrl(slope_min / fs);
-    obj->slope_max = float2ctrl(slope_max / fs);
+    obj->slope_min = real2ctrl(slope_min / fs);
+    obj->slope_max = real2ctrl(slope_max / fs);
 
-    obj->out = float2ctrl(0.0f);
+    obj->out = CTL_CTRL_CONST_ZERO;
 }

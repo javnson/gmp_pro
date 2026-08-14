@@ -119,11 +119,11 @@ void ctl_init_im_pos_calc_consultant(ctl_im_pos_calc_t* calc, const ctl_consulta
  */
 GMP_STATIC_INLINE void ctl_clear_im_pos_calc(ctl_im_pos_calc_t* calc)
 {
-    calc->i_md_pu = float2ctrl(0.0f);
-    calc->w_slip_pu = float2ctrl(0.0f);
-    calc->w_sync_pu = float2ctrl(0.0f);
-    calc->sync_spd_out.speed = float2ctrl(0.0f);
-    calc->enc_out.elec_position = float2ctrl(0.0f);
+    calc->i_md_pu = CTL_CTRL_CONST_ZERO;
+    calc->w_slip_pu = CTL_CTRL_CONST_ZERO;
+    calc->w_sync_pu = CTL_CTRL_CONST_ZERO;
+    calc->sync_spd_out.speed = CTL_CTRL_CONST_ZERO;
+    calc->enc_out.elec_position = CTL_CTRL_CONST_ZERO;
 }
 
 GMP_STATIC_INLINE void ctl_enable_im_pos_calc(ctl_im_pos_calc_t* calc)
@@ -160,13 +160,13 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_im_pos_calc(ctl_im_pos_calc_t* calc, ctrl_gt 
     // ========================================================================
     // 2. Slip Speed Calculation (with robust Div-0 protection)
     // ========================================================================
-    ctrl_gt abs_imd = (calc->i_md_pu > float2ctrl(0.0f)) ? calc->i_md_pu : -calc->i_md_pu;
+    ctrl_gt abs_imd = (calc->i_md_pu > CTL_CTRL_CONST_ZERO) ? calc->i_md_pu : -calc->i_md_pu;
 
     if (abs_imd < calc->i_md_min_limit)
     {
         // When unmagnetized (e.g., startup), slip calculation is singular.
         // Force slip to 0 instead of a massive transient spike.
-        calc->w_slip_pu = float2ctrl(0.0f);
+        calc->w_slip_pu = CTL_CTRL_CONST_ZERO;
     }
     else
     {

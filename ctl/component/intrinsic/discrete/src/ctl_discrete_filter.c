@@ -96,9 +96,9 @@ void ctl_init_filter_iir1_lag(ctl_filter_IIR1_t* obj, parameter_gt fs, parameter
 
     // Map coefficients to the general IIR1 structure
     // y[n] = b0*x[n] + b1*x[n-1] - a1*y[n-1] -> y[n] = a*x[n] + 0*x[n-1] - (a-1)*y[n-1]
-    obj->b0 = float2ctrl(a_val);
-    obj->b1 = float2ctrl(0.0f);         // Eliminates the x[n-1] term
-    obj->a1 = float2ctrl(a_val - 1.0f); // Sets the feedback pole
+    obj->b0 = real2ctrl(a_val);
+    obj->b1 = CTL_CTRL_CONST_ZERO;         // Eliminates the x[n-1] term
+    obj->a1 = real2ctrl(a_val - 1.0f); // Sets the feedback pole
 
     ctl_clear_filter_iir1(obj);
 }
@@ -134,7 +134,7 @@ parameter_gt ctl_get_filter_iir1_gain(ctl_filter_IIR1_t* obj, parameter_gt fs, p
     parameter_gt mag_num = param_sqrt(num_real * num_real + num_imag * num_imag);
     parameter_gt mag_den = param_sqrt(den_real * den_real + den_imag * den_imag);
 
-    if (mag_den < float2ctrl(0.000001))
+    if (mag_den < real2ctrl(0.000001))
         return 0.0f;
     return mag_num / mag_den;
 }

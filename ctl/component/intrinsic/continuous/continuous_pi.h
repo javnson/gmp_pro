@@ -155,9 +155,9 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_ip_ser(ctl_pi_t* hpi, ctrl_gt target, ctrl_gt
  */
 GMP_STATIC_INLINE void ctl_clear_pi(ctl_pi_t* hpi)
 {
-    hpi->p_term = float2ctrl(0.0f);
-    hpi->i_term = float2ctrl(0.0f);
-    hpi->out = float2ctrl(0.0f);
+    hpi->p_term = CTL_CTRL_CONST_ZERO;
+    hpi->i_term = CTL_CTRL_CONST_ZERO;
+    hpi->out = CTL_CTRL_CONST_ZERO;
 }
 
 /**

@@ -38,5 +38,5 @@ void ctl_init_single_phase_dc_pll(ctl_single_phase_dc_pll* spll, parameter_gt lo
 
     // 4. Init Scaling Factor
     // Step = Fg / Fs
-    spll->freq_sf = float2ctrl(fg / fs);
+    spll->freq_sf = real2ctrl(fg / fs);
 }

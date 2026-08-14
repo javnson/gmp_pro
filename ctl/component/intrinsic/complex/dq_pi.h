@@ -120,13 +120,13 @@ GMP_STATIC_INLINE void ctl_step_dq_pi(ctl_dq_pi_t* dq, const ctl_vector2_t* targ
 
 GMP_STATIC_INLINE void ctl_set_dq_pi_circle_limit(ctl_dq_pi_t* dq, ctrl_gt radius)
 {
-    gmp_ctl_assert(radius >= float2ctrl(0.0f));
+    gmp_ctl_assert(radius >= CTL_CTRL_CONST_ZERO);
     dq->circle_limit_sq = ctl_mul(radius, radius);
 }
 
 GMP_STATIC_INLINE void ctl_set_dq_pi_circle_limit_sq(ctl_dq_pi_t* dq, ctrl_gt radius_sq)
 {
-    gmp_ctl_assert(radius_sq >= float2ctrl(0.0f));
+    gmp_ctl_assert(radius_sq >= CTL_CTRL_CONST_ZERO);
     dq->circle_limit_sq = radius_sq;
 }
 

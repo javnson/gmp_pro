@@ -60,8 +60,8 @@ void ctl_init_ato_pll(ctl_ato_pll_t* pll, parameter_gt bandwidth_hz, parameter_g
 GMP_STATIC_INLINE void ctl_clear_ato_pll(ctl_ato_pll_t* pll)
 {
     ctl_clear_pid(&pll->pi_ctrl);
-    pll->elec_angle_pu = float2ctrl(0.0f);
-    pll->elec_speed_pu = float2ctrl(0.0f);
+    pll->elec_angle_pu = CTL_CTRL_CONST_ZERO;
+    pll->elec_speed_pu = CTL_CTRL_CONST_ZERO;
 }
 
 /**

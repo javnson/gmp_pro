@@ -27,7 +27,7 @@ void ctl_init_sfr_pll_T(srf_pll_t* pll, parameter_gt f_base, parameter_gt pid_kp
 
     // Calculate the frequency scaling factor. This converts the per-unit frequency
     // into a per-unit angle increment for the given sampling time.
-    pll->freq_sf = float2ctrl(f_base / f_ctrl);
+    pll->freq_sf = real2ctrl(f_base / f_ctrl);
 
     // Initialize the parallel-form PI controller for the loop.
     ctl_init_pid_Tmode(&pll->pid_pll, pid_kp, pid_Ti, pid_Td, f_ctrl);
@@ -52,7 +52,7 @@ void ctl_init_sfr_pll(srf_pll_t* pll, parameter_gt f_base, parameter_gt pid_kp, 
 
     // Calculate the frequency scaling factor. This converts the per-unit frequency
     // into a per-unit angle increment for the given sampling time.
-    pll->freq_sf = float2ctrl(f_base / f_ctrl);
+    pll->freq_sf = real2ctrl(f_base / f_ctrl);
 
     // Initialize the parallel-form PI controller for the loop.
     ctl_init_pid(&pll->pid_pll, pid_kp, pid_ki, pid_kd, f_ctrl);

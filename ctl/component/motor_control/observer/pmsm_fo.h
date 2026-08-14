@@ -177,8 +177,8 @@ GMP_STATIC_INLINE void ctl_clear_pmsm_fo(ctl_pmsm_fo_t* fo)
 
     fo->diverge_cnt = 0;
     fo->flag_observer_locked = 0;
-    fo->pos_out.elec_position = float2ctrl(0.0f);
-    fo->spd_out.speed = float2ctrl(0.0f);
+    fo->pos_out.elec_position = CTL_CTRL_CONST_ZERO;
+    fo->spd_out.speed = CTL_CTRL_CONST_ZERO;
 }
 
 /**
@@ -246,8 +246,8 @@ GMP_STATIC_INLINE void ctl_step_pmsm_fo(ctl_pmsm_fo_t* fo, ctrl_gt v_alpha, ctrl
     // ========================================================================
     // 3. Observer Health Assessment (Loss-of-Lock Protection)
     // ========================================================================
-    ctrl_gt abs_err_alpha = (err_alpha > float2ctrl(0.0f)) ? err_alpha : -err_alpha;
-    ctrl_gt abs_err_beta = (err_beta > float2ctrl(0.0f)) ? err_beta : -err_beta;
+    ctrl_gt abs_err_alpha = (err_alpha > CTL_CTRL_CONST_ZERO) ? err_alpha : -err_alpha;
+    ctrl_gt abs_err_beta = (err_beta > CTL_CTRL_CONST_ZERO) ? err_beta : -err_beta;
 
     // Fast O(1) Absolute Threshold Check for divergence
     if ((abs_err_alpha > fo->current_err_limit) || (abs_err_beta > fo->current_err_limit))
@@ -287,10 +287,10 @@ GMP_STATIC_INLINE void ctl_step_pmsm_fo(ctl_pmsm_fo_t* fo, ctrl_gt v_alpha, ctrl
     ctrl_gt e_mag_sq = ctl_mul(fo->e_est.dat[0], fo->e_est.dat[0]) +
                        ctl_mul(fo->e_est.dat[1], fo->e_est.dat[1]);
     ctrl_gt e_mag = ctl_sqrt(e_mag_sq);
-    if (e_mag > float2ctrl(0.01f))
+    if (e_mag > real2ctrl(0.01f))
         e_err_voltage = ctl_mul(ctl_div(e_err_voltage, e_mag), CTL_CTRL_CONST_1_OVER_2PI);
     else
-        e_err_voltage = float2ctrl(0.0f);
+        e_err_voltage = CTL_CTRL_CONST_ZERO;
 
     ctl_step_ato_pll(&fo->ato_pll, e_err_voltage);
 

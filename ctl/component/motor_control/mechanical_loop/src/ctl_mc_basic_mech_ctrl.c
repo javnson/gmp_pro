@@ -84,19 +84,19 @@ void ctl_init_mech_ctrl(ctl_mech_ctrl_t* ctrl, const ctl_mech_init_t* init)
     ctl_set_pid_limit(&ctrl->pos_ctrl, init->speed_limit, -init->speed_limit);
 
     // 3. Initialize Velocity Trajectory (Slope Limiter)
-    // 【核心修正】：将用户提供的物理加速度 (PU/s) 换算为单步增量 (PU/tick)
+    // Convert the requested acceleration from PU/s to PU per control tick.
     parameter_gt slope_per_tick = init->speed_slope_limit / fs_mech;
 
-    // 假设底层 slope_limiter 在 fs=1.0 传入时直接使用我们算好的单步增量
-    // 或者直接调用 ctl_set_slope_limiter_slopes 强行覆盖保证绝对准确
+    // Configure the limiter with the precomputed per-tick increment.
+    // The explicit slope assignment avoids an additional sampling-rate conversion.
     ctl_init_slope_limiter(&ctrl->vel_traj, slope_per_tick, -slope_per_tick, 1.0f);
-    ctl_set_slope_limiter_slopes(&ctrl->vel_traj, float2ctrl(slope_per_tick), float2ctrl(-slope_per_tick));
+    ctl_set_slope_limiter_slopes(&ctrl->vel_traj, real2ctrl(slope_per_tick), real2ctrl(-slope_per_tick));
 
     // 4. Initialize Divider
     ctl_init_divider(&ctrl->div_mech, init->mech_division);
 
     // 5. Apply Settings & Clear States
-    ctrl->speed_limit = float2ctrl(init->speed_limit);
+    ctrl->speed_limit = param2ctrl(init->speed_limit);
     ctrl->active_mode = MECH_MODE_DISABLE;
     ctrl->pos_if = NULL;
     ctrl->spd_if = NULL;

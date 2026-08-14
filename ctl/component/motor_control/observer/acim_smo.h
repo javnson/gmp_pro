@@ -152,7 +152,7 @@ void ctl_init_im_smo_consultant(ctl_im_smo_t* smo, const ctl_consultant_im_t* mo
  */
 GMP_STATIC_INLINE void ctl_clear_im_smo(ctl_im_smo_t* smo)
 {
-    smo->psi_rd_cm = float2ctrl(0.0f);
+    smo->psi_rd_cm = CTL_CTRL_CONST_ZERO;
     ctl_vector2_clear(&smo->psi_s_ref);
     ctl_vector2_clear(&smo->psi_s_est);
     ctl_vector2_clear(&smo->psi_r_est);
@@ -165,10 +165,10 @@ GMP_STATIC_INLINE void ctl_clear_im_smo(ctl_im_smo_t* smo)
 
     smo->diverge_cnt = 0;
     smo->flag_observer_locked = 0;
-    smo->pos_out.elec_position = float2ctrl(0.0f);
-    smo->spd_out.speed = float2ctrl(0.0f);
-    smo->torque_est = float2ctrl(0.0f);
-    smo->psi_r_mag = float2ctrl(0.0f);
+    smo->pos_out.elec_position = CTL_CTRL_CONST_ZERO;
+    smo->spd_out.speed = CTL_CTRL_CONST_ZERO;
+    smo->torque_est = CTL_CTRL_CONST_ZERO;
+    smo->psi_r_mag = CTL_CTRL_CONST_ZERO;
 }
 
 GMP_STATIC_INLINE void ctl_enable_im_smo(ctl_im_smo_t* smo)
@@ -253,7 +253,7 @@ GMP_STATIC_INLINE void ctl_step_im_smo(ctl_im_smo_t* smo, ctrl_gt v_alpha, ctrl_
     // ========================================================================
     // 5. Health Assessment & Protection
     // ========================================================================
-    if ((smo->psi_r_mag < smo->flux_min_limit) || (smo->psi_r_mag > float2ctrl(1.5f)))
+    if ((smo->psi_r_mag < smo->flux_min_limit) || (smo->psi_r_mag > real2ctrl(1.5f)))
     {
         if (smo->diverge_cnt < smo->diverge_limit)
             smo->diverge_cnt++;
@@ -273,13 +273,13 @@ GMP_STATIC_INLINE void ctl_step_im_smo(ctl_im_smo_t* smo, ctrl_gt v_alpha, ctrl_
     // ========================================================================
     ctrl_gt pll_err = -ctl_mul(smo->psi_r_est.dat[0], sin_t) + ctl_mul(smo->psi_r_est.dat[1], cos_t);
 
-    if (smo->psi_r_mag > float2ctrl(0.01f))
+    if (smo->psi_r_mag > real2ctrl(0.01f))
     {
         pll_err = ctl_div(pll_err, smo->psi_r_mag);
     }
     else
     {
-        pll_err = float2ctrl(0.0f);
+        pll_err = CTL_CTRL_CONST_ZERO;
     }
 
     pll_err = ctl_mul(pll_err, CTL_CTRL_CONST_1_OVER_2PI);
@@ -291,8 +291,8 @@ GMP_STATIC_INLINE void ctl_step_im_smo(ctl_im_smo_t* smo, ctrl_gt v_alpha, ctrl_
     // ========================================================================
     ctrl_gt cross_flux_i = ctl_mul(smo->psi_r_est.dat[0], i_beta) - ctl_mul(smo->psi_r_est.dat[1], i_alpha);
 
-    ctrl_gt w_slip_pu = float2ctrl(0.0f);
-    if (psi_r_sq > float2ctrl(0.001f))
+    ctrl_gt w_slip_pu = CTL_CTRL_CONST_ZERO;
+    if (psi_r_sq > real2ctrl(0.001f))
     {
         w_slip_pu = ctl_mul(smo->sf_slip_const, ctl_div(cross_flux_i, psi_r_sq));
     }

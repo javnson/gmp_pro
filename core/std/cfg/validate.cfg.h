@@ -35,6 +35,10 @@ extern "C"
 #error "SPECIFY_GMP_LOGO_MODE must select FULL, LITE, or DISABLED."
 #endif
 
+#if (SPECIFY_REAL_GT_TYPE != USING_DOUBLE_FPU) && (SPECIFY_REAL_GT_TYPE != USING_LONG_DOUBLE)
+#error "SPECIFY_REAL_GT_TYPE must select USING_DOUBLE_FPU or USING_LONG_DOUBLE."
+#endif
+
 	// To mark a unused param
 #ifndef UNUSED_PARAMETER
 #define UNUSED_PARAMETER(x) ((void)(x))

@@ -638,7 +638,7 @@ extern "C"
 /**
  * @brief PLL lock-error threshold in controller per unit.
  */
-#define CTRL_SPLL_EPSILON ((float2ctrl(0.005)))
+#define CTRL_SPLL_EPSILON ((real2ctrl(0.005)))
 
 /**
  * @brief Default active-power reference. Positive power exports energy to the grid.

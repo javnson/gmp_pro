@@ -24,10 +24,10 @@ In GMP CTL submodule, there're two types which would be use all around, that is,
 
 `ctrl_gt` means control law calculating type, for micro processor this type is generally a fixed point number. For some high performance micro processer this type is generally a float point number. For some simulation environments this type is generally a double float point number. The type which is link to `ctrl_gt` should provide enough calculating rates, and enough accuracy. Generally for DSP or other micro-controller we suggest assign int32_t@Q24 as `ctrl_gt` type.
 
-If you need to create a `ctrl_gt` type variable, you should use `float2ctrl(x)` macro to initialize the number. And x should be an float number. Here's an instance
+If you need to create a `ctrl_gt` type variable, you should use `real2ctrl(x)` macro to initialize the number. And x should be an float number. Here's an instance
 
 ``` C
-ctrl_gt a_fixed_point_number = float2ctrl(1.0f);
+ctrl_gt a_fixed_point_number = real2ctrl(1.0f);
 ```
 
 In addition, `ctrl_gt` has plus (`+`) and minus (`-`) operation with other types, but user may do not use the product (`*`) and divisions (`/`) directly. User should use `gmp_mpy` function and `gmp_div` function instead. These definitions would be found in `ctl/math_block/gmp_math.h` file.

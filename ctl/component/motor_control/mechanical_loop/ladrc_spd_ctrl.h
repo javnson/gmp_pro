@@ -122,7 +122,7 @@ GMP_STATIC_INLINE void ctl_clear_ladrc_spd_ctrl(ctl_ladrc_spd_ctrl_t* ctrl)
     ctl_clear_ladrc1(&ctrl->ladrc_core);
     ctl_clear_slope_limiter(&ctrl->vel_traj);
     ctl_clear_divider(&ctrl->div_mech);
-    ctrl->torque_cmd = float2ctrl(0.0f);
+    ctrl->torque_cmd = CTL_CTRL_CONST_ZERO;
 }
 
 /**
@@ -138,7 +138,7 @@ GMP_STATIC_INLINE void ctl_set_ladrc_spd_mode(ctl_ladrc_spd_ctrl_t* ctrl, ctl_la
     if (mode == LADRC_SPD_MODE_ENABLE)
     {
         // 1. Get current actual speed
-        ctrl_gt actual_spd = (ctrl->spd_if != NULL) ? ctrl->spd_if->speed : float2ctrl(0.0f);
+        ctrl_gt actual_spd = (ctrl->spd_if != NULL) ? ctrl->spd_if->speed : CTL_CTRL_CONST_ZERO;
 
         // 2. Bumpless Transfer: Sync trajectory generator
         ctl_set_slope_limiter_current(&ctrl->vel_traj, actual_spd);
@@ -171,7 +171,7 @@ GMP_STATIC_INLINE void ctl_step_ladrc_spd_ctrl(ctl_ladrc_spd_ctrl_t* ctrl)
 {
     if (ctrl->active_mode == LADRC_SPD_MODE_DISABLE)
     {
-        ctrl->torque_cmd = float2ctrl(0.0f);
+        ctrl->torque_cmd = CTL_CTRL_CONST_ZERO;
         return;
     }
 

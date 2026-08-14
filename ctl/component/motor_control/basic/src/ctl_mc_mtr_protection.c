@@ -20,10 +20,10 @@
 void ctl_init_mtr_protect(ctl_mtr_protect_t* prot, parameter_gt fs)
 {
     // Default safe values (User should overwrite these)
-    prot->limit_ov_pu = float2ctrl(1.2f);
-    prot->limit_uv_pu = float2ctrl(0.5f);
-    prot->limit_oc_sq_pu = float2ctrl(1.5f * 1.5f);  // 1.5x Overload
-    prot->limit_dev_sq_pu = float2ctrl(0.5f * 0.5f); // 0.5pu Deviation
+    prot->limit_ov_pu = real2ctrl(1.2f);
+    prot->limit_uv_pu = CTL_CTRL_CONST_1_OVER_2;
+    prot->limit_oc_sq_pu = real2ctrl(1.5f * 1.5f);  // 1.5x Overload
+    prot->limit_dev_sq_pu = real2ctrl(0.5f * 0.5f); // 0.5pu Deviation
     prot->limit_mtr_ot = 1000;                       // Raw ADC value
     prot->limit_inv_ot = 1000;
 

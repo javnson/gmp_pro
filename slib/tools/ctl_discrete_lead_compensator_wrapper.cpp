@@ -81,7 +81,7 @@ void ctl_discrete_lead_compensator_Update_wrapper(const real_T *u0,
 ctrl_dut_t* ctrl = static_cast<ctrl_dut_t*>(pW[0]);
 
     // TODO: add CTL controller step function.
-    *xD = ctl_step_lead(ctrl, float2ctrl(*u0));
+    *xD = ctl_step_lead(ctrl, real2ctrl(*u0));
 /* %%%-SFUNWIZ_wrapper_Update_Changes_END --- EDIT HERE TO _BEGIN */
 }
 /*

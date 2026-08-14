@@ -37,9 +37,9 @@ void ctl_init_dtc_svm(dtc_svm_ctrl_t* mc, const dtc_svm_init_t* init)
     // High-Pass Drift Compensation: 1.0 - (wc * Ts)
     parameter_gt coef_drift_phy = 1.0f - (init->flux_drift_wc * Ts);
 
-    mc->coef_ts_wbase = float2ctrl(coef_ts_wbase_phy);
-    mc->coef_rs_pu = float2ctrl(coef_rs_pu_phy);
-    mc->coef_drift_comp = float2ctrl(coef_drift_phy);
+    mc->coef_ts_wbase = real2ctrl(coef_ts_wbase_phy);
+    mc->coef_rs_pu = real2ctrl(coef_rs_pu_phy);
+    mc->coef_drift_comp = real2ctrl(coef_drift_phy);
 
     // 3. Simple PI Gain Tuning
     // Flux loop plant is a pure integrator. Kp = Bandwidth.
@@ -52,13 +52,13 @@ void ctl_init_dtc_svm(dtc_svm_ctrl_t* mc, const dtc_svm_init_t* init)
     parameter_gt ki_torque = kp_torque * 50.0f;
 
     // 4. Initialize Controllers
-    mc->v_max_pu = float2ctrl((init->v_phase_limit * 1.4142f) / init->v_base);
+    mc->v_max_pu = real2ctrl((init->v_phase_limit * 1.4142f) / init->v_base);
 
-    ctl_init_pid(&mc->flux_ctrl, float2ctrl(kp_flux), float2ctrl(ki_flux), 0.0f, fs_safe);
+    ctl_init_pid(&mc->flux_ctrl, kp_flux, ki_flux, CTL_PARAM_CONST_ZERO, fs_safe);
     ctl_set_pid_limit(&mc->flux_ctrl, mc->v_max_pu, -mc->v_max_pu);
     ctl_set_pid_int_limit(&mc->flux_ctrl, mc->v_max_pu, -mc->v_max_pu);
 
-    ctl_init_pid(&mc->torque_ctrl, float2ctrl(kp_torque), float2ctrl(ki_torque), 0.0f, fs_safe);
+    ctl_init_pid(&mc->torque_ctrl, kp_torque, ki_torque, CTL_PARAM_CONST_ZERO, fs_safe);
     ctl_set_pid_limit(&mc->torque_ctrl, mc->v_max_pu, -mc->v_max_pu);
     ctl_set_pid_int_limit(&mc->torque_ctrl, mc->v_max_pu, -mc->v_max_pu);
 
@@ -69,13 +69,13 @@ void ctl_init_dtc_svm(dtc_svm_ctrl_t* mc, const dtc_svm_init_t* init)
     if (initial_flux_pu < 0.01f)
         initial_flux_pu = 0.01f;
 
-    mc->flux_ab_pu.dat[0] = float2ctrl(initial_flux_pu); // Assume flux aligns with alpha axis at startup
-    mc->flux_ab_pu.dat[1] = float2ctrl(0.0f);
-    mc->flux_mag_pu = float2ctrl(initial_flux_pu);
+    mc->flux_ab_pu.dat[0] = real2ctrl(initial_flux_pu); // Assume flux aligns with alpha axis at startup
+    mc->flux_ab_pu.dat[1] = CTL_CTRL_CONST_ZERO;
+    mc->flux_mag_pu = real2ctrl(initial_flux_pu);
 
-    mc->torque_est_pu = float2ctrl(0.0f);
-    mc->flux_phasor.dat[0] = float2ctrl(1.0f); // cos(0)
-    mc->flux_phasor.dat[1] = float2ctrl(0.0f); // sin(0)
+    mc->torque_est_pu = CTL_CTRL_CONST_ZERO;
+    mc->flux_phasor.dat[0] = CTL_CTRL_CONST_1; // cos(0)
+    mc->flux_phasor.dat[1] = CTL_CTRL_CONST_ZERO; // sin(0)
 
     ctl_vector2_clear(&mc->vxy_ctrl);
     ctl_vector2_clear(&mc->vab_out);

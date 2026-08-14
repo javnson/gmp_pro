@@ -13,10 +13,10 @@ adc_channel_t adc_i_resonant;
 adc_bias_calibrator_t adc_calibrator;
 volatile fast_gt flag_enable_adc_calibrator = 0;
 volatile fast_gt index_adc_calibrator = 0;
-ctrl_gt g_v_out_ref_user = float2ctrl(CLLLC_VOLTAGE_TARGET_PU);
-ctrl_gt g_i_limit_user = float2ctrl(CLLLC_CURRENT_TARGET_PU);
-ctrl_gt g_modulation_target_user = float2ctrl(0.10f);
-ctrl_gt g_modulation_command = float2ctrl(0.0f);
+ctrl_gt g_v_out_ref_user = real2ctrl(CLLLC_VOLTAGE_TARGET_PU);
+ctrl_gt g_i_limit_user = real2ctrl(CLLLC_CURRENT_TARGET_PU);
+ctrl_gt g_modulation_target_user = real2ctrl(0.10f);
+ctrl_gt g_modulation_command = CTL_CTRL_CONST_ZERO;
 
 void ctl_init(void)
 {
@@ -43,10 +43,10 @@ void ctl_init(void)
     hw.slope_i_pu_s = CLLLC_CURRENT_SLOPE_PU_S;
     hw.fc_current_loop = CLLLC_CURRENT_LOOP_BW_HZ;
     hw.fc_voltage_loop = CLLLC_VOLTAGE_LOOP_BW_HZ;
-    hw.i_limit_max = float2ctrl(1.0f);
-    hw.i_limit_min = -float2ctrl(1.0f);
-    hw.modulation_max = float2ctrl(1.0f);
-    hw.modulation_min = -float2ctrl(1.0f);
+    hw.i_limit_max = CTL_CTRL_CONST_1;
+    hw.i_limit_min = -CTL_CTRL_CONST_1;
+    hw.modulation_max = CTL_CTRL_CONST_1;
+    hw.modulation_min = -CTL_CTRL_CONST_1;
 
     ctl_dcdc_blueprint_clllc_parallel(&init_cfg, &hw);
     ctl_init_dcdc_core(&dcdc_core, &init_cfg);
@@ -62,7 +62,7 @@ void ctl_init(void)
     ctl_init_clllc_modulator(&clllc_mod, CLLLC_TIMER_CLOCK_HZ,
                              CLLLC_F_RESONANT_HZ, CLLLC_F_MIN_HZ,
                              CLLLC_F_MAX_HZ, CLLLC_DEADBAND_S,
-                             float2ctrl(CLLLC_MAX_PHASE_SHIFT_PU));
+                             real2ctrl(CLLLC_MAX_PHASE_SHIFT_PU));
     init_cia402_state_machine(&cia402_sm);
     /* Keep the complete automatic commissioning sequence configurable.
        Hardware uses the conservative 100 ms default per stage; SIL reduces
@@ -138,13 +138,13 @@ static void ctl_collect_pil_output(gmp_sim_tx_buf_t* tx)
         tx->pwm_cmp[i] = clllc_mod.leg[i].duty;
         tx->pwm_cmp[i + 4] = clllc_mod.leg[i].phase;
     }
-    tx->monitor[0] = ctrl2float(clllc_mod.leg[0].raw.period);
-    tx->monitor[1] = ctrl2float(clllc_mod.leg[0].raw.deadband);
-    tx->monitor[2] = ctrl2float(adc_v_primary.control_port.value) * CTRL_VOLTAGE_BASE;
-    tx->monitor[3] = ctrl2float(adc_i_primary.control_port.value) * CTRL_CURRENT_BASE;
-    tx->monitor[4] = ctrl2float(adc_v_secondary.control_port.value) * CTRL_VOLTAGE_BASE;
-    tx->monitor[5] = ctrl2float(adc_i_resonant.control_port.value) * CTRL_CURRENT_BASE;
-    tx->monitor[6] = ctrl2float(g_modulation_command);
+    tx->monitor[0] = ctrl2param(clllc_mod.leg[0].raw.period);
+    tx->monitor[1] = ctrl2param(clllc_mod.leg[0].raw.deadband);
+    tx->monitor[2] = ctrl2param(adc_v_primary.control_port.value) * CTRL_VOLTAGE_BASE;
+    tx->monitor[3] = ctrl2param(adc_i_primary.control_port.value) * CTRL_CURRENT_BASE;
+    tx->monitor[4] = ctrl2param(adc_v_secondary.control_port.value) * CTRL_VOLTAGE_BASE;
+    tx->monitor[5] = ctrl2param(adc_i_resonant.control_port.value) * CTRL_CURRENT_BASE;
+    tx->monitor[6] = ctrl2param(g_modulation_command);
 }
 
 #endif // defined ENABLE_GMP_DL_PIL_SIM

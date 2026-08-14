@@ -138,7 +138,7 @@ GMP_STATIC_INLINE void ctl_enable_mit_pos_ctrl(ctl_mit_pos_ctrl_t* ctrl)
 GMP_STATIC_INLINE void ctl_disable_mit_pos_ctrl(ctl_mit_pos_ctrl_t* ctrl)
 {
     ctrl->flag_enable = 0;
-    ctrl->cur_output = float2ctrl(0.0f);
+    ctrl->cur_output = CTL_CTRL_CONST_ZERO;
 }
 
 /**
@@ -157,7 +157,7 @@ GMP_STATIC_INLINE void ctl_step_mit_pos_ctrl(ctl_mit_pos_ctrl_t* ctrl, int32_t t
 {
     if (!ctrl->flag_enable)
     {
-        ctrl->cur_output = float2ctrl(0.0f);
+        ctrl->cur_output = CTL_CTRL_CONST_ZERO;
         return;
     }
 

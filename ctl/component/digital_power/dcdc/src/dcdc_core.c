@@ -34,10 +34,10 @@ void ctl_init_dcdc_core(ctl_dcdc_core_t* core, const ctl_dcdc_core_init_t* init_
 
     /* 1. Global State Architecture Setup */
     core->mode = CTL_DCDC_MODE_OPENLOOP;
-    core->v_target = float2ctrl(0.0f);
-    core->i_target = float2ctrl(0.0f);
-    core->out_max = float2ctrl(1.0f);
-    core->out_min = float2ctrl(0.0f);
+    core->v_target = CTL_CTRL_CONST_ZERO;
+    core->i_target = CTL_CTRL_CONST_ZERO;
+    core->out_max = CTL_CTRL_CONST_1;
+    core->out_min = CTL_CTRL_CONST_ZERO;
 
     /* 2. Adaptive Filtering Configuration with Safety Bounds Check */
     parameter_gt safe_fc_v_in = ctl_dcdc_get_safe_fc(init_config->fs, init_config->fc_v_in);
@@ -69,8 +69,8 @@ void ctl_init_dcdc_core(ctl_dcdc_core_t* core, const ctl_dcdc_core_init_t* init_
     ctl_set_pid_int_limit(&core->current_pid, init_config->i_out_max, init_config->i_out_min);
 
     /* 5. Zero-crossing Current Direction Non-linear Bound */
-    ctl_init_hysteresis_controller(&core->i_dir_hcc, 1, float2ctrl(0.01f)); /* 1% PU band */
-    ctl_set_hysteresis_target(&core->i_dir_hcc, float2ctrl(0.0f));
+    ctl_init_hysteresis_controller(&core->i_dir_hcc, 1, real2ctrl(0.01f)); /* 1% PU band */
+    ctl_set_hysteresis_target(&core->i_dir_hcc, CTL_CTRL_CONST_ZERO);
 
     /* 6. Enforce cold state clean slate initialization */
     ctl_clear_dcdc_core(core);

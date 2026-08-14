@@ -219,7 +219,7 @@ void ctl_set_im_fo_voltage_model_leak(ctl_im_fo_t* fo, parameter_gt cutoff_hz, p
  */
 GMP_STATIC_INLINE void ctl_clear_im_fo(ctl_im_fo_t* fo)
 {
-    fo->psi_rd_cm = float2ctrl(0.0f);
+    fo->psi_rd_cm = CTL_CTRL_CONST_ZERO;
     ctl_vector2_clear(&fo->psi_s_ref);
     ctl_vector2_clear(&fo->psi_s_est);
     ctl_vector2_clear(&fo->psi_r_est);
@@ -233,14 +233,14 @@ GMP_STATIC_INLINE void ctl_clear_im_fo(ctl_im_fo_t* fo)
 
     fo->diverge_cnt = 0;
     fo->flag_observer_locked = 0;
-    fo->pos_out.elec_position = float2ctrl(0.0f);
-    fo->rotor_pos_out.elec_position = float2ctrl(0.0f);
-    fo->spd_out.speed = float2ctrl(0.0f);
-    fo->sync_spd_out.speed = float2ctrl(0.0f);
-    fo->slip_speed_pu = float2ctrl(0.0f);
-    fo->torque_est = float2ctrl(0.0f);
-    fo->psi_r_mag = float2ctrl(0.0f);
-    fo->psi_r_cm_mag = float2ctrl(0.0f);
+    fo->pos_out.elec_position = CTL_CTRL_CONST_ZERO;
+    fo->rotor_pos_out.elec_position = CTL_CTRL_CONST_ZERO;
+    fo->spd_out.speed = CTL_CTRL_CONST_ZERO;
+    fo->sync_spd_out.speed = CTL_CTRL_CONST_ZERO;
+    fo->slip_speed_pu = CTL_CTRL_CONST_ZERO;
+    fo->torque_est = CTL_CTRL_CONST_ZERO;
+    fo->psi_r_mag = CTL_CTRL_CONST_ZERO;
+    fo->psi_r_cm_mag = CTL_CTRL_CONST_ZERO;
 }
 
 /**
@@ -327,7 +327,7 @@ GMP_STATIC_INLINE void ctl_step_im_fo_with_field_angle(ctl_im_fo_t* fo, ctrl_gt 
 
     // 1st order LPF to build rotor flux: Psi_rd = sf_cm_k1 * Psi_rd + sf_cm_k2 * i_sd
     fo->psi_rd_cm = ctl_mul(fo->sf_cm_k1, fo->psi_rd_cm) + ctl_mul(fo->sf_cm_k2, i_sd);
-    fo->psi_r_cm_mag = (fo->psi_rd_cm >= float2ctrl(0.0f)) ? fo->psi_rd_cm : -fo->psi_rd_cm;
+    fo->psi_r_cm_mag = (fo->psi_rd_cm >= CTL_CTRL_CONST_ZERO) ? fo->psi_rd_cm : -fo->psi_rd_cm;
 
     // Project Current Model Rotor Flux back to alpha-beta frame
     ctrl_gt psi_r_alpha_cm = ctl_mul(fo->psi_rd_cm, cos_t);
@@ -345,8 +345,8 @@ GMP_STATIC_INLINE void ctl_step_im_fo_with_field_angle(ctl_im_fo_t* fo, ctrl_gt 
     ctrl_gt err_psi_alpha = fo->psi_s_est.dat[0] - fo->psi_s_ref.dat[0];
     ctrl_gt err_psi_beta = fo->psi_s_est.dat[1] - fo->psi_s_ref.dat[1];
 
-    ctrl_gt u_comp_alpha = float2ctrl(0.0f);
-    ctrl_gt u_comp_beta = float2ctrl(0.0f);
+    ctrl_gt u_comp_alpha = CTL_CTRL_CONST_ZERO;
+    ctrl_gt u_comp_beta = CTL_CTRL_CONST_ZERO;
     if (fo->flag_enable_compensation)
     {
         u_comp_alpha = ctl_step_pid_par(&fo->pi_comp[0], err_psi_alpha);
@@ -421,7 +421,7 @@ GMP_STATIC_INLINE void ctl_step_im_fo_with_field_angle(ctl_im_fo_t* fo, ctrl_gt 
     }
     else
     {
-        pll_err = float2ctrl(0.0f);
+        pll_err = CTL_CTRL_CONST_ZERO;
     }
     ctl_step_ato_pll(&fo->ato_pll, ctl_mul(pll_err, CTL_CTRL_CONST_1_OVER_2PI));
 
@@ -436,8 +436,8 @@ GMP_STATIC_INLINE void ctl_step_im_fo_with_field_angle(ctl_im_fo_t* fo, ctrl_gt 
     // offset without giving up the observed flux angle:
     //   i_sq(flux) = (Psi_vm x Is) / |Psi_vm|
     //   w_slip_pu  = Lm_pu/(tau_r*Wbase) * i_sq(flux)/|Psi_cm|
-    ctrl_gt w_slip_pu = float2ctrl(0.0f);
-    ctrl_gt i_sq_flux = float2ctrl(0.0f);
+    ctrl_gt w_slip_pu = CTL_CTRL_CONST_ZERO;
+    ctrl_gt i_sq_flux = CTL_CTRL_CONST_ZERO;
     if ((fo->psi_r_mag > fo->flux_min_limit) && (fo->psi_r_cm_mag > fo->flux_min_limit))
     {
         i_sq_flux = ctl_div(cross_flux_i, fo->psi_r_mag);

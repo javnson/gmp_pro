@@ -112,7 +112,7 @@ void ctl_init_backstepping(ctl_backstepping_controller_t* bc, const ctl_backstep
  */
 GMP_STATIC_INLINE void ctl_clear_backstepping(ctl_backstepping_controller_t* bc)
 {
-    bc->u_out = float2ctrl(0.0f);
+    bc->u_out = CTL_CTRL_CONST_ZERO;
 }
 
 /**

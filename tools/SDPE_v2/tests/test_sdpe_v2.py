@@ -184,10 +184,27 @@ class SDPEV2Tests(unittest.TestCase):
             self.assertIn("CTRL_INDUCTOR_CURRENT_SENSITIVITY = FSBB_5M_SHUNT_SENSITIVITY_V_PER_A;", script)
             self.assertIn("TMCS1133_B2A_RANGE_A =", script)
             self.assertIn("sdpe_select(", script)
+            self.assertIn("real2param = @(value)", script)
+            self.assertIn("real2ctrl = @(value)", script)
+            self.assertIn("param2ctrl = @(value)", script)
+            self.assertIn("ctrl2param = @(value)", script)
 
             generated = gen.generate_project_matlab_script(EXAMPLES / "projects" / "dps_fsbb_iris_node.json")
             self.assertTrue(generated.path.name.endswith("_matlab_init.m"))
             self.assertTrue(generated.path.exists())
+
+    def test_numeric_domains_wrap_c_values_and_remain_callable_in_matlab(self) -> None:
+        lib = self.load_library()
+        entity = lib.entity("tmcs1133_b2a")
+        with tempfile.TemporaryDirectory() as tmp:
+            generator = HeaderGenerator(lib, Path(tmp))
+            header = generator.render_entity_header(entity)
+            data = read_project("dps_fsbb_iris_node")
+            script = generator.render_project_matlab_script(data)
+
+            self.assertIn("#define TMCS1133_B2A_RANGE_A real2param(", header)
+            self.assertNotIn("TMCS1133_B2A_RANGE_A real2param((25.0f))", header)
+            self.assertIn("GMP_SDPE_PARAMETER_TYPE = 'double'", script)
 
     def test_matlab_components_are_emitted_before_parent_references(self) -> None:
         lib = self.load_library()
@@ -267,8 +284,8 @@ class SDPEV2Tests(unittest.TestCase):
             header = (
                 Path(tmp) / "hardware_preset" / "half_bridge" / "lvfb_half_bridge_phase_b_tuned.h"
             ).read_text(encoding="utf-8")
-            self.assertIn("#define GMP_LVFB_HB_B_TUNED_CURRENT_SENSOR_RANGE_A (25.0f)", header)
-            self.assertIn("#define GMP_LVFB_HB_B_TUNED_CURRENT_SENSOR_BIAS_V (1.64f)", header)
+            self.assertIn("#define GMP_LVFB_HB_B_TUNED_CURRENT_SENSOR_RANGE_A real2param(25.0)", header)
+            self.assertIn("#define GMP_LVFB_HB_B_TUNED_CURRENT_SENSOR_BIAS_V real2param(1.64)", header)
             self.assertIn(
                 "#define GMP_LVFB_HB_B_TUNED_CURRENT_SENSOR_SENSITIVITY_MV_PER_A "
                 "TMCS1133_B2A_SENSITIVITY_MV_PER_A",

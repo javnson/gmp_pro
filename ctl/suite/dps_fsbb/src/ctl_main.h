@@ -81,25 +81,25 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 
 #if (BUILD_LEVEL == 1)
     dcdc_core.mode = CTL_DCDC_MODE_OPENLOOP;
-    dcdc_core.v_target = float2ctrl(FSBB_OPEN_LOOP_VOLTAGE_COMMAND / CTRL_VOLTAGE_BASE);
+    dcdc_core.v_target = real2ctrl(FSBB_OPEN_LOOP_VOLTAGE_COMMAND / CTRL_VOLTAGE_BASE);
     v_req = ctl_step_dcdc_open_loop(&dcdc_core);
 #elif (BUILD_LEVEL == 2)
     dcdc_core.mode = CTL_DCDC_MODE_CURRENTLOOP;
     dcdc_core.i_target = ctl_sat(g_i_limit_user,
-                                 float2ctrl(FSBB_OUTPUT_CURRENT_LIM / CTRL_CURRENT_BASE),
-                                 float2ctrl(0.0f));
+                                 real2ctrl(FSBB_OUTPUT_CURRENT_LIM / CTRL_CURRENT_BASE),
+                                 CTL_CTRL_CONST_ZERO);
     v_req = ctl_step_dcdc_current_loop(&dcdc_core);
 #elif (BUILD_LEVEL == 3)
     {
         ctrl_gt current_limit = ctl_sat(g_i_limit_user,
-                                        float2ctrl(FSBB_OUTPUT_CURRENT_LIM / CTRL_CURRENT_BASE),
-                                        float2ctrl(0.0f));
+                                        real2ctrl(FSBB_OUTPUT_CURRENT_LIM / CTRL_CURRENT_BASE),
+                                        CTL_CTRL_CONST_ZERO);
         dcdc_core.mode = CTL_DCDC_MODE_VOLTAGELOOP;
         dcdc_core.v_target = ctl_sat(g_v_out_ref_user,
-                                     float2ctrl(FSBB_OUTPUT_VOLTAGE_MAX / CTRL_VOLTAGE_BASE),
-                                     float2ctrl(FSBB_OUTPUT_VOLTAGE_MIN / CTRL_VOLTAGE_BASE));
-        ctl_set_pid_limit(&dcdc_core.voltage_pid, current_limit, float2ctrl(0.0f));
-        ctl_set_pid_int_limit(&dcdc_core.voltage_pid, current_limit, float2ctrl(0.0f));
+                                     real2ctrl(FSBB_OUTPUT_VOLTAGE_MAX / CTRL_VOLTAGE_BASE),
+                                     real2ctrl(FSBB_OUTPUT_VOLTAGE_MIN / CTRL_VOLTAGE_BASE));
+        ctl_set_pid_limit(&dcdc_core.voltage_pid, current_limit, CTL_CTRL_CONST_ZERO);
+        ctl_set_pid_int_limit(&dcdc_core.voltage_pid, current_limit, CTL_CTRL_CONST_ZERO);
         v_req = ctl_step_dcdc_cascade(&dcdc_core);
     }
 #endif

@@ -19,7 +19,7 @@ void ctl_init_single_phase_pll(ctl_single_phase_pll* spll, parameter_gt gain, pa
     ctl_init_pid_Tmode(&spll->spll_ctrl, gain, Ti, 0, fs);
 
     // Pre-calculate the normalized grid frequency as a feed-forward term for the VCO.
-    spll->freq_sf = float2ctrl(fg / fs);
+    spll->freq_sf = real2ctrl(fg / fs);
 }
 
 void ctl_init_single_phase_pll_T(ctl_single_phase_pll* spll, parameter_gt gain, parameter_gt ki, parameter_gt fc,
@@ -38,5 +38,5 @@ void ctl_init_single_phase_pll_T(ctl_single_phase_pll* spll, parameter_gt gain, 
     ctl_init_pid(&spll->spll_ctrl, gain, ki, 0, fs);
 
     // Pre-calculate the normalized grid frequency as a feed-forward term for the VCO.
-    spll->freq_sf = float2ctrl(fg / fs);
+    spll->freq_sf = real2ctrl(fg / fs);
 }

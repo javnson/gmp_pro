@@ -121,8 +121,8 @@ void ctl_init_lut_fw_distributor(ctl_lut_fw_distributor_t* dist, const ctl_lut_f
 GMP_STATIC_INLINE void ctl_clear_lut_fw_distributor(ctl_lut_fw_distributor_t* dist)
 {
     ctl_vector2_clear(&dist->idq_ref);
-    dist->delta_alpha_pu = float2ctrl(0.0f);
-    dist->alpha_out_pu = float2ctrl(0.0f);
+    dist->delta_alpha_pu = CTL_CTRL_CONST_ZERO;
+    dist->alpha_out_pu = CTL_CTRL_CONST_ZERO;
     ctl_clear_pid(&dist->fw_pid);
 }
 
@@ -132,7 +132,7 @@ GMP_STATIC_INLINE void ctl_clear_lut_fw_distributor(ctl_lut_fw_distributor_t* di
 GMP_STATIC_INLINE void ctl_enable_lut_fw_distributor(ctl_lut_fw_distributor_t* dist)
 {
     ctl_clear_pid(&dist->fw_pid);
-    dist->delta_alpha_pu = float2ctrl(0.0f);
+    dist->delta_alpha_pu = CTL_CTRL_CONST_ZERO;
     dist->flag_enable_fw = 1;
 }
 
@@ -142,7 +142,7 @@ GMP_STATIC_INLINE void ctl_enable_lut_fw_distributor(ctl_lut_fw_distributor_t* d
 GMP_STATIC_INLINE void ctl_disable_lut_fw_distributor(ctl_lut_fw_distributor_t* dist)
 {
     dist->flag_enable_fw = 0;
-    dist->delta_alpha_pu = float2ctrl(0.0f); // Cut off the output immediately
+    dist->delta_alpha_pu = CTL_CTRL_CONST_ZERO; // Cut off the output immediately
 }
 
 /**
@@ -152,17 +152,17 @@ GMP_STATIC_INLINE void ctl_step_lut_fw_distributor(ctl_lut_fw_distributor_t* dis
 {
     ctrl_gt alpha_pos_base_pu;
     ctrl_gt alpha_base_pu;
-    ctrl_gt im_mag = (im < float2ctrl(0.0f)) ? -im : im;
+    ctrl_gt im_mag = (im < CTL_CTRL_CONST_ZERO) ? -im : im;
 
     // 1. Determine base angle via LUT Interpolation
     // Always interpolate using the absolute magnitude to get the 1st/2nd quadrant MTPA angle
     alpha_pos_base_pu = ctl_step_interpolate_paired_lut1d(&dist->im_lut, im_mag);
 
     // Map to negative torque quadrant if necessary
-    if (im < float2ctrl(0.0f))
+    if (im < CTL_CTRL_CONST_ZERO)
     {
         // Symmetrical mirroring across the d-axis for generation/braking mode
-        alpha_base_pu = float2ctrl(1.0f) - alpha_pos_base_pu;
+        alpha_base_pu = CTL_CTRL_CONST_1 - alpha_pos_base_pu;
     }
     else
     {
@@ -180,12 +180,12 @@ GMP_STATIC_INLINE void ctl_step_lut_fw_distributor(ctl_lut_fw_distributor_t* dis
     }
     else
     {
-        dist->delta_alpha_pu = float2ctrl(0.0f);
+        dist->delta_alpha_pu = CTL_CTRL_CONST_ZERO;
     }
 
     // 3. Final Angle Calculation (Quadrant Safe)
     // To weaken the field, we always want to push the angle towards the -d axis (0.5 PU)
-    if (im < float2ctrl(0.0f))
+    if (im < CTL_CTRL_CONST_ZERO)
     {
         dist->alpha_out_pu = alpha_base_pu - dist->delta_alpha_pu;
     }
@@ -195,7 +195,7 @@ GMP_STATIC_INLINE void ctl_step_lut_fw_distributor(ctl_lut_fw_distributor_t* dis
     }
 
     // 4. Calculate id, iq components and store in the vector
-    ctrl_gt alpha_rad = ctl_mul(dist->alpha_out_pu, float2ctrl(CTL_PARAM_CONST_2PI));
+    ctrl_gt alpha_rad = ctl_mul(dist->alpha_out_pu, real2ctrl(CTL_PARAM_CONST_2PI));
     dist->idq_ref.dat[phase_d] = ctl_mul(im_mag, ctl_cos(alpha_rad));
     dist->idq_ref.dat[phase_q] = ctl_mul(im_mag, ctl_sin(alpha_rad));
 }

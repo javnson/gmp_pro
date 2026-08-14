@@ -84,7 +84,7 @@
       "role": "Controller Frequency",
       "macro": "CONTROLLER_FREQUENCY",
       "binding": {
-        "number": "10e3"
+        "parameter": "10e3"
       },
       "description": "Control interrupt frequency."
     },

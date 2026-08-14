@@ -63,9 +63,9 @@ typedef struct _tag_df11_controller_t
  */
 GMP_STATIC_INLINE void ctl_clear_df11(ctl_df11_t* df)
 {
-    df->d1 = float2ctrl(0.0f);
-    df->d2 = float2ctrl(0.0f);
-    df->output = float2ctrl(0.0f);
+    df->d1 = CTL_CTRL_CONST_ZERO;
+    df->d2 = CTL_CTRL_CONST_ZERO;
+    df->output = CTL_CTRL_CONST_ZERO;
 }
 
 /**

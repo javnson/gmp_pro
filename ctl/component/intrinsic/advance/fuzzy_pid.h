@@ -126,7 +126,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_fuzzy_pid(ctl_fuzzy_pid_t* fp, ctrl_gt target
     fp->pid.kd = fp->base_kd + ctl_mul(d_kd, fp->fs_ctrl);
 
     // Ensure parameters remain physically meaningful (>= 0)
-    ctrl_gt zero_ctrl = float2ctrl(0.0f);
+    ctrl_gt zero_ctrl = CTL_CTRL_CONST_ZERO;
     if (fp->pid.kp < zero_ctrl)
         fp->pid.kp = zero_ctrl;
     if (fp->pid.ki < zero_ctrl)

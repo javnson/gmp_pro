@@ -33,7 +33,7 @@ extern "C"
  * @details This helps prevent the algorithm from reacting to negligible power fluctuations
  * caused by noise or floating-point inaccuracies.
  */
-#define CTL_MPPT_PNO_EPSILON (float2ctrl(-0.000001))
+#define CTL_MPPT_PNO_EPSILON (real2ctrl(-0.000001))
 
 /**
  * @brief Data structure for the Perturb and Observe (P&O) MPPT algorithm.

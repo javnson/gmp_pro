@@ -102,8 +102,8 @@ void ctl_init_smc(ctl_smc_t* smc, parameter_gt eta11, parameter_gt eta12, parame
  */
 GMP_STATIC_INLINE void ctl_clear_smc(ctl_smc_t* smc)
 {
-    smc->output = float2ctrl(0.0f);
-    smc->slide = float2ctrl(0.0f);
+    smc->output = CTL_CTRL_CONST_ZERO;
+    smc->slide = CTL_CTRL_CONST_ZERO;
 }
 
 /**

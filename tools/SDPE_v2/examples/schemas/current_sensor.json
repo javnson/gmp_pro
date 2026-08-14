@@ -30,7 +30,8 @@
       "c_name": "RANGE_A",
       "unit": "A",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Nominal measurable current range."
     },
     {
@@ -38,7 +39,8 @@
       "c_name": "OUTPUT_MIN_V",
       "unit": "V",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Minimum output voltage.",
       "default": 0.0
     },
@@ -47,7 +49,8 @@
       "c_name": "OUTPUT_MAX_V",
       "unit": "V",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Maximum output voltage.",
       "default": 3.3
     },
@@ -56,7 +59,8 @@
       "c_name": "BIAS_V",
       "unit": "V",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Zero-current output bias.",
       "default": 1.65
     },
@@ -65,7 +69,8 @@
       "c_name": "SENSITIVITY_MV_PER_A",
       "unit": "mV/A",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Current sensor sensitivity."
     },
     {
@@ -73,7 +78,8 @@
       "c_name": "BANDWIDTH_HZ",
       "unit": "Hz",
       "required": false,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Typical small-signal bandwidth."
     },
     {
@@ -81,7 +87,8 @@
       "c_name": "INTERNAL_RESISTANCE_OHM",
       "unit": "ohm",
       "required": false,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Sensor internal series resistance.",
       "default": 0.0
     }

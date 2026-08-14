@@ -22,12 +22,12 @@ void ctl_init_pmsm_hfi(ctl_pmsm_hfi_t* hfi, const ctl_pmsm_hfi_init_t* init)
     parameter_gt fs_safe = (init->fs > 1e-6f) ? init->fs : 10000.0f;
 
     // 1. Injection Parameters
-    hfi->v_inj_amp = float2ctrl(init->v_inj_pu);
+    hfi->v_inj_amp = param2ctrl(init->v_inj_pu);
 
     // Carrier angle steps per ISR tick (PU): (f_inj / f_ctrl)
-    hfi->sf_carrier_step = float2ctrl(init->f_inj_hz / fs_safe);
-    hfi->sf_delay_comp_pu = float2ctrl(init->delay_comp_rad / CTL_PARAM_CONST_2PI);
-    hfi->sf_err_gain = float2ctrl(init->err_gain_sf);
+    hfi->sf_carrier_step = param2ctrl(init->f_inj_hz / fs_safe);
+    hfi->sf_delay_comp_pu = param2ctrl(init->delay_comp_rad / CTL_PARAM_CONST_2PI);
+    hfi->sf_err_gain = param2ctrl(init->err_gain_sf);
 
     // 2. Sub-module Initialization
     // The IQ LPF should be low enough to filter out the injection frequency, leaving only fundamental torque current.

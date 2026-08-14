@@ -110,11 +110,11 @@ void ctl_init()
     // init SPWM modulator
     //
 #if defined USING_NPC_MODULATOR
-    ctl_init_npc_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &mtr_ctrl.iuvw, float2ctrl(0.02),
-                           float2ctrl(0.005));
+    ctl_init_npc_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &mtr_ctrl.iuvw, real2ctrl(0.02),
+                           real2ctrl(0.005));
 #else
-    ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &mtr_ctrl.iuvw, float2ctrl(0.02),
-                            float2ctrl(0.005));
+    ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &mtr_ctrl.iuvw, real2ctrl(0.02),
+                            real2ctrl(0.005));
 #endif // USING_NPC_MODULATOR
 
     //
@@ -153,7 +153,7 @@ void ctl_init()
     // Encoder Init
     //
     ctl_init_autoturn_pos_encoder(&pos_enc, mtr_ctrl_init.pole_pairs, CTRL_POS_ENC_FS);
-    ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, float2ctrl(CTRL_POS_ENC_BIAS));
+    ctl_set_autoturn_pos_encoder_mech_offset(&pos_enc, real2ctrl(CTRL_POS_ENC_BIAS));
 
     ctl_init_spd_calculator(&spd_enc, &pos_enc.encif, CONTROLLER_FREQUENCY, CTRL_MECH_DIV, MOTOR_PARAM_MAX_SPEED,
                             20.0f);
@@ -185,12 +185,12 @@ void ctl_init()
 #elif BUILD_LEVEL == 2
     // Basic current close loop, IF
     ctl_enable_foc_core_current_ctrl(&mtr_ctrl);
-    ctl_set_foc_core_idq_ref(&mtr_ctrl, float2ctrl(0.1), float2ctrl(0.1));
+    ctl_set_foc_core_idq_ref(&mtr_ctrl, real2ctrl(0.1), real2ctrl(0.1));
 
 #elif BUILD_LEVEL == 3
     // Basic current close loop, inverter
     ctl_enable_foc_core_current_ctrl(&mtr_ctrl);
-    ctl_set_foc_core_idq_ref(&mtr_ctrl, float2ctrl(0.1), float2ctrl(0.1));
+    ctl_set_foc_core_idq_ref(&mtr_ctrl, real2ctrl(0.1), real2ctrl(0.1));
 
 #elif BUILD_LEVEL == 4
     // Basic Speed close loop
@@ -219,8 +219,8 @@ void ctl_init()
     // mtr_ctrl.udc is normalized by CTRL_VOLTAGE_BASE (phase-voltage base),
     // not by CTRL_DCBUS_VOLTAGE.  Convert the physical SDPE limits to the
     // same PU system before the protection module compares them.
-    protection.limit_ov_pu = float2ctrl(MCS_MAX_DC_BUS_VOLTAGE_V / CTRL_VOLTAGE_BASE);
-    protection.limit_uv_pu = float2ctrl(MCS_MIN_DC_BUS_VOLTAGE_V / CTRL_VOLTAGE_BASE);
+    protection.limit_ov_pu = real2ctrl(MCS_MAX_DC_BUS_VOLTAGE_V / CTRL_VOLTAGE_BASE);
+    protection.limit_uv_pu = real2ctrl(MCS_MIN_DC_BUS_VOLTAGE_V / CTRL_VOLTAGE_BASE);
 #endif
     ctl_attach_mtr_protect_port(&protection, &mtr_ctrl.udc, (ctl_vector2_t*)&mtr_ctrl.idq0, &mtr_ctrl.idq_ref, NULL,
                                 NULL);

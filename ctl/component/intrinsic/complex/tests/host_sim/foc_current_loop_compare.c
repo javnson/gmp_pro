@@ -67,8 +67,8 @@ int main(void)
     ctl_init_dq_pi(&pi, pi_init.kpd, pi_init.kid, pi_init.kpq, pi_init.kiq, fs);
     ctl_init_dq_ladrc1(&ladrc, ladrc_init.ladrc_b0d, ladrc_init.ladrc_fcd, ladrc_init.ladrc_fod,
                        ladrc_init.ladrc_b0q, ladrc_init.ladrc_fcq, ladrc_init.ladrc_foq, fs);
-    ctl_set_dq_pi_circle_limit(&pi, float2ctrl(0.9f));
-    ctl_set_dq_ladrc1_circle_limit(&ladrc, float2ctrl(0.9f));
+    ctl_set_dq_pi_circle_limit(&pi, real2ctrl(0.9f));
+    ctl_set_dq_ladrc1_circle_limit(&ladrc, real2ctrl(0.9f));
     ctl_enable_dq_pi_circle_limit(&pi);
     ctl_enable_dq_ladrc1_circle_limit(&ladrc);
 
@@ -78,17 +78,17 @@ int main(void)
         float pi_iq;
         float ladrc_iq;
         if (time_s >= step_time_s)
-            target.dat[1] = float2ctrl(target_q);
+            target.dat[1] = real2ctrl(target_q);
 
         ctl_step_dq_pi(&pi, &target, &pi_feedback, &zero_ff, &pi_output);
         ctl_step_dq_ladrc1(&ladrc, &target, &ladrc_feedback, &zero_ff, &ladrc_output);
 
-        pi_iq = ctrl2float(pi_feedback.dat[1]);
-        ladrc_iq = ctrl2float(ladrc_feedback.dat[1]);
-        pi_iq += dt * (plant_b0 * ctrl2float(pi_output.dat[1]) - plant_pole * pi_iq);
-        ladrc_iq += dt * (plant_b0 * ctrl2float(ladrc_output.dat[1]) - plant_pole * ladrc_iq);
-        pi_feedback.dat[1] = float2ctrl(pi_iq);
-        ladrc_feedback.dat[1] = float2ctrl(ladrc_iq);
+        pi_iq = ctrl2param(pi_feedback.dat[1]);
+        ladrc_iq = ctrl2param(ladrc_feedback.dat[1]);
+        pi_iq += dt * (plant_b0 * ctrl2param(pi_output.dat[1]) - plant_pole * pi_iq);
+        ladrc_iq += dt * (plant_b0 * ctrl2param(ladrc_output.dat[1]) - plant_pole * ladrc_iq);
+        pi_feedback.dat[1] = real2ctrl(pi_iq);
+        ladrc_feedback.dat[1] = real2ctrl(ladrc_iq);
 
         if (time_s >= step_time_s)
         {
@@ -99,8 +99,8 @@ int main(void)
 
     pi_metric.overshoot_pct = 100.0f * (pi_metric.final_value - target_q) / target_q;
     ladrc_metric.overshoot_pct = 100.0f * (ladrc_metric.final_value - target_q) / target_q;
-    pi_metric.final_value = ctrl2float(pi_feedback.dat[1]);
-    ladrc_metric.final_value = ctrl2float(ladrc_feedback.dat[1]);
+    pi_metric.final_value = ctrl2param(pi_feedback.dat[1]);
+    ladrc_metric.final_value = ctrl2param(ladrc_feedback.dat[1]);
 
     printf("bandwidth_hz,controller,rise_10_90_ms,settling_2pct_ms,overshoot_pct,iae,final_iq_pu\n");
     printf("%.6f,PI,%.6f,%.6f,%.6f,%.9f,%.6f\n", pi_init.current_loop_bw,

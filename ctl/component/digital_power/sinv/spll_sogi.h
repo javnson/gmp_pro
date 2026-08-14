@@ -105,10 +105,10 @@ GMP_STATIC_INLINE void ctl_clear_single_phase_pll(ctl_single_phase_pll* spll)
     ctl_clear_discrete_sogi(&spll->sogi);
     ctl_clear_pid(&spll->spll_ctrl);
 
-    spll->theta = float2ctrl(0.0f);
-    spll->frequency = float2ctrl(1.0f);
-    spll->freq_error = float2ctrl(0.0f);
-    spll->v_mag = float2ctrl(0.0f);
+    spll->theta = CTL_CTRL_CONST_ZERO;
+    spll->frequency = CTL_CTRL_CONST_1;
+    spll->freq_error = CTL_CTRL_CONST_ZERO;
+    spll->v_mag = CTL_CTRL_CONST_ZERO;
     ctl_vector2_clear(&spll->uab);
     ctl_vector2_clear(&spll->udq);
     ctl_set_phasor_via_angle(spll->theta, &spll->phasor);
@@ -150,7 +150,7 @@ GMP_STATIC_INLINE void ctl_step_single_phase_pll(ctl_single_phase_pll* spll, ctr
 
     // 6. Voltage-Controlled Oscillator (VCO)
     // The nominal frequency (1.0 p.u.) is adjusted by the error from the loop filter.
-    spll->frequency = float2ctrl(1) + spll->freq_error;
+    spll->frequency = CTL_CTRL_CONST_1 + spll->freq_error;
 
     // Integrate the frequency to get the new phase angle, and warp.
     spll->theta = ctrl_mod_1(spll->theta + ctl_mul(spll->frequency, spll->freq_sf));

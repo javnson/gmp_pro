@@ -119,59 +119,59 @@ void ctl_consultant_pu_im_init(ctl_consultant_pu_im_t* pu, parameter_gt v_base, 
 
 GMP_STATIC_INLINE ctrl_gt ctl_pu_pmsm_get_Rs_pu(const ctl_consultant_pu_pmsm_t* pu, const ctl_consultant_pmsm_t* motor)
 {
-    return float2ctrl(motor->Rs / pu->Z_base);
+    return real2ctrl(motor->Rs / pu->Z_base);
 }
 
 GMP_STATIC_INLINE ctrl_gt ctl_pu_pmsm_get_Ld_pu(const ctl_consultant_pu_pmsm_t* pu, const ctl_consultant_pmsm_t* motor)
 {
-    return float2ctrl(motor->Ld / pu->L_base);
+    return real2ctrl(motor->Ld / pu->L_base);
 }
 
 GMP_STATIC_INLINE ctrl_gt ctl_pu_pmsm_get_Lq_pu(const ctl_consultant_pu_pmsm_t* pu, const ctl_consultant_pmsm_t* motor)
 {
-    return float2ctrl(motor->Lq / pu->L_base);
+    return real2ctrl(motor->Lq / pu->L_base);
 }
 
 GMP_STATIC_INLINE ctrl_gt ctl_pu_pmsm_get_Flux_pu(const ctl_consultant_pu_pmsm_t* pu,
                                                   const ctl_consultant_pmsm_t* motor)
 {
-    return float2ctrl(motor->flux_linkage / pu->Flux_base);
+    return real2ctrl(motor->flux_linkage / pu->Flux_base);
 }
 
 // ---------------- IM Normalization ----------------
 
 GMP_STATIC_INLINE ctrl_gt ctl_pu_im_get_Rs_pu(const ctl_consultant_pu_im_t* pu, const ctl_consultant_im_t* motor)
 {
-    return float2ctrl(motor->Rs / pu->Z_s_base);
+    return real2ctrl(motor->Rs / pu->Z_s_base);
 }
 
 GMP_STATIC_INLINE ctrl_gt ctl_pu_im_get_Rr_pu(const ctl_consultant_pu_im_t* pu, const ctl_consultant_im_t* motor)
 {
     // Rotor resistance is normalized against the Rotor Base Impedance!
-    return float2ctrl(motor->Rr / pu->Z_r_base);
+    return real2ctrl(motor->Rr / pu->Z_r_base);
 }
 
 GMP_STATIC_INLINE ctrl_gt ctl_pu_im_get_Ls_pu(const ctl_consultant_pu_im_t* pu, const ctl_consultant_im_t* motor)
 {
-    return float2ctrl(motor->Ls / pu->L_s_base);
+    return real2ctrl(motor->Ls / pu->L_s_base);
 }
 
 GMP_STATIC_INLINE ctrl_gt ctl_pu_im_get_Lr_pu(const ctl_consultant_pu_im_t* pu, const ctl_consultant_im_t* motor)
 {
     // Rotor inductance is normalized against the Rotor Base Inductance!
-    return float2ctrl(motor->Lr / pu->L_r_base);
+    return real2ctrl(motor->Lr / pu->L_r_base);
 }
 
 GMP_STATIC_INLINE ctrl_gt ctl_pu_im_get_Lm_pu(const ctl_consultant_pu_im_t* pu, const ctl_consultant_im_t* motor)
 {
     // Mutual inductance is technically a primary-side equivalent in most models,
     // but strictly speaking, it relates primary and secondary. Assuming referred to stator:
-    return float2ctrl(motor->Lm / pu->L_s_base);
+    return real2ctrl(motor->Lm / pu->L_s_base);
 }
 
 GMP_STATIC_INLINE ctrl_gt ctl_pu_im_get_sigma_Ls_pu(const ctl_consultant_pu_im_t* pu, const ctl_consultant_im_t* motor)
 {
-    return float2ctrl(motor->sigma_Ls / pu->L_s_base);
+    return real2ctrl(motor->sigma_Ls / pu->L_s_base);
 }
 
 /** @} */

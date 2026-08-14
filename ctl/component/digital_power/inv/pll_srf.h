@@ -1,5 +1,5 @@
 /**
- * @file pll.h
+ * @file pll_srf.h
  * @author Javnson (javnson@zju.edu.cn)
  * @brief Header-only library for a three-phase Synchronous Reference Frame PLL (SRF-PLL).
  * @version 1.1
@@ -112,11 +112,12 @@ GMP_STATIC_INLINE void ctl_clear_pll_3ph(srf_pll_t* pll)
 {
     ctl_vector2_clear(&pll->e_ab);
 
-    pll->e_error = 0;
-    pll->theta = 0;
+    pll->e_error = CTL_CTRL_CONST_ZERO;
+    pll->theta = CTL_CTRL_CONST_ZERO;
+    pll->v_mag = CTL_CTRL_CONST_ZERO;
 
     // Initialize frequency to nominal (1.0 p.u.).
-    pll->freq_pu = float2ctrl(1.0);
+    pll->freq_pu = CTL_CTRL_CONST_1;
 
     // Update the phasor based on the cleared angle.
     ctl_set_phasor_via_angle(pll->theta, &pll->phasor);
@@ -157,7 +158,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_step_pll_3ph(srf_pll_t* pll, ctrl_gt alpha, ctrl_g
     ctl_step_pid_par(&pll->pid_pll, pll->e_error);
 
     // 4. Update the estimated frequency (nominal frequency + deviation).
-    pll->freq_pu = float2ctrl(1.0) + pll->pid_pll.out;
+    pll->freq_pu = CTL_CTRL_CONST_1 + pll->pid_pll.out;
 
     // 5. Integrate the frequency to update the angle (VCO - Voltage Controlled Oscillator).
     pll->theta += ctl_mul(pll->freq_pu, pll->freq_sf);

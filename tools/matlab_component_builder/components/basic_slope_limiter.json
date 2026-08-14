@@ -17,9 +17,9 @@
   ],
   "initializers": [{"id": "standard", "label": "Standard", "function": "ctl_init_slope_limiter", "step_function": "ctl_step_slope_limiter", "arguments": ["$instance", "slope_max", "slope_min", "fs"], "reference_model": "nonlinear"}],
   "execution": {
-    "initialize_code": ["ctl_set_slope_limiter_current(&runtime->current, float2ctrl(initial_output));"],
-    "parameter_update_code": ["ctl_set_slope_limiter_slopes(&runtime->pending, float2ctrl(slope_max / fs), float2ctrl(slope_min / fs));"],
-    "step_code": ["output_output = ctrl2float(ctl_step_slope_limiter(&runtime->pending, float2ctrl(input_target)));"],
+    "initialize_code": ["ctl_set_slope_limiter_current(&runtime->current, real2ctrl(initial_output));"],
+    "parameter_update_code": ["ctl_set_slope_limiter_slopes(&runtime->pending, real2ctrl(slope_max / fs), real2ctrl(slope_min / fs));"],
+    "step_code": ["output_output = ctrl2param(ctl_step_slope_limiter(&runtime->pending, real2ctrl(input_target)));"],
     "terminate_code": []
   },
   "analysis": {"default_frequency_hz": [0.1, 100.0], "default_points": 40, "excitation_amplitude": 1.0, "settling_periods": 2, "measurement_periods": 8}

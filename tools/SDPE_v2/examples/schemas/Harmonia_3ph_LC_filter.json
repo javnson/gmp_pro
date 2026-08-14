@@ -172,7 +172,7 @@
       "c_name": "VOLTAGE_SENSOR_MODEL",
       "unit": "",
       "required": false,
-      "value_format": "{}",
+      "value_format": "\"{}\"",
       "description": "Phase voltage sensor model."
     },
     {
@@ -188,7 +188,7 @@
       "c_name": "CURRENT_SENSOR_MODEL",
       "unit": "",
       "required": false,
-      "value_format": "{}",
+      "value_format": "\"{}\"",
       "description": "Phase current sensor model."
     },
     {

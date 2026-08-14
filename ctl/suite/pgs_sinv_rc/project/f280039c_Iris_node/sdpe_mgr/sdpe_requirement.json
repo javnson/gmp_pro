@@ -586,7 +586,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "literal": "((float2ctrl(0.005)))"
+        "ctrl": "0.005"
       },
       "description": "SPLL close-loop convergence criterion."
     },

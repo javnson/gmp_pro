@@ -182,7 +182,7 @@ void ADCx_IRQHandler(void)
 ---
 
 ## 端口适配与单位制（p.u.）
-- 所有控制计算尽量使用 `ctrl_gt`（定点/浮点抽象），通过 `float2ctrl/ctrl2float` 互转。
+- 所有控制计算尽量使用 `ctrl_gt`（定点/浮点抽象），通过 `real2ctrl/ctrl2param` 互转。
 - ADC→p.u.：使用 `gain` 与 `bias` 标定（`adc_channel` 系列封装已提供）。
 - PWM：统一使用 0~1 的占空比表示，再映射到芯片计数器比较值。
 

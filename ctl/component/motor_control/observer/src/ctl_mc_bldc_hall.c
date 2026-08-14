@@ -29,14 +29,14 @@
  * State 0 and 7 are invalid (faults), defaulted to 0.
  */
 static const ctrl_gt HALL_CENTER_ANGLE_PU[8] = {
-    float2ctrl(0.0f),          // 0: Invalid
-    float2ctrl(11.0f / 12.0f), // 1: 330 deg
-    float2ctrl(7.0f / 12.0f),  // 2: 210 deg
-    float2ctrl(9.0f / 12.0f),  // 3: 270 deg
-    float2ctrl(3.0f / 12.0f),  // 4: 90 deg
-    float2ctrl(1.0f / 12.0f),  // 5: 30 deg
-    float2ctrl(5.0f / 12.0f),  // 6: 150 deg
-    float2ctrl(0.0f)           // 7: Invalid
+    CTL_CTRL_CONST_ZERO,          // 0: Invalid
+    real2ctrl(11.0f / 12.0f), // 1: 330 deg
+    real2ctrl(7.0f / 12.0f),  // 2: 210 deg
+    real2ctrl(9.0f / 12.0f),  // 3: 270 deg
+    real2ctrl(3.0f / 12.0f),  // 4: 90 deg
+    real2ctrl(1.0f / 12.0f),  // 5: 30 deg
+    real2ctrl(5.0f / 12.0f),  // 6: 150 deg
+    CTL_CTRL_CONST_ZERO           // 7: Invalid
 };
 
 /**
@@ -62,21 +62,24 @@ static const fast_gt HALL_DIR_MAP[64] = {
 
 void ctl_init_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, const ctl_pmsm_hall_obs_init_t* init)
 {
-    parameter_gt fs_safe = (init->fs > 1e-6f) ? init->fs : 10000.0f;
+    parameter_gt fs_safe = (init->fs > CTL_PARAM_CONST_EPSILON) ? init->fs : real2param(10000.0);
     parameter_gt f_base = init->w_base / CTL_PARAM_CONST_2PI;
-    parameter_gt Ts = 1.0f / fs_safe;
+    parameter_gt Ts = CTL_PARAM_CONST_1 / fs_safe;
 
     // 1. Scale Factors Derivation
     // Speed (PU) = (1/6 revolution) / (N_ticks * Ts * f_base)
     // sf_speed_calc = (1/6) / (Ts * f_base)
-    parameter_gt sf_spd = (1.0f / 6.0f) / (Ts * f_base);
-    obs->sf_speed_calc = float2ctrl(sf_spd);
+    parameter_gt sf_spd = (CTL_PARAM_CONST_1 / 6.0) / (Ts * f_base);
+    parameter_gt sf_w_to_angle = f_base * Ts;
+    parameter_gt hall_offset_pu = init->hall_offset_deg / 360.0;
+
+    obs->sf_speed_calc = param2ctrl(sf_spd);
 
     // Angle Integration = Speed_PU * (W_base * Ts / 2PI) = Speed_PU * (f_base * Ts)
-    obs->sf_w_to_angle = float2ctrl(f_base * Ts);
+    obs->sf_w_to_angle = param2ctrl(sf_w_to_angle);
 
     // 2. Hardware Alignment Offset
-    obs->hall_offset_pu = float2ctrl(init->hall_offset_deg / 360.0f);
+    obs->hall_offset_pu = param2ctrl(hall_offset_pu);
 
     // 3. Timeout and LPF
     obs->timeout_ticks = (time_gt)(init->timeout_ms * fs_safe / 1000.0f);
@@ -107,7 +110,7 @@ void ctl_step_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, data_gt hall_state)
         if (dir != 0 && obs->edge_tick_cnt > 0)
         {
             // Calculate raw speed in PU
-            ctrl_gt raw_spd_pu = ctl_div(obs->sf_speed_calc, float2ctrl((float)obs->edge_tick_cnt));
+            ctrl_gt raw_spd_pu = ctl_div(obs->sf_speed_calc, real2ctrl((float)obs->edge_tick_cnt));
             if (dir < 0)
                 raw_spd_pu = -raw_spd_pu;
 
@@ -117,7 +120,7 @@ void ctl_step_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, data_gt hall_state)
             // Sync the interpolator exactly to the sector boundary edge
             // Boundary angle = Center of new sector - dir * (1/12 PU)
             ctrl_gt center_curr = HALL_CENTER_ANGLE_PU[hall_state];
-            ctrl_gt margin = float2ctrl(1.0f / 12.0f);
+            ctrl_gt margin = real2ctrl(1.0f / 12.0f);
 
             if (dir > 0)
             {
@@ -152,7 +155,7 @@ void ctl_step_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, data_gt hall_state)
         // Zero-speed timeout protection (Rotor is stalled)
         if (obs->edge_tick_cnt > obs->timeout_ticks)
         {
-            obs->spd_est_pu = float2ctrl(0.0f);
+            obs->spd_est_pu = CTL_CTRL_CONST_ZERO;
             ctl_clear_filter_iir1(&obs->filter_spd); // Reset LPF history
         }
     }
@@ -167,14 +170,14 @@ void ctl_step_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, data_gt hall_state)
     ctrl_gt err_from_center = obs->theta_interp_pu - center_pu;
 
     // Wrap error to [-0.5, 0.5] PU pathologically to handle 0-to-1 wrap-around sectors
-    if (err_from_center > float2ctrl(0.5f))
-        err_from_center -= float2ctrl(1.0f);
-    if (err_from_center < float2ctrl(-0.5f))
-        err_from_center += float2ctrl(1.0f);
+    if (err_from_center > CTL_CTRL_CONST_1_OVER_2)
+        err_from_center -= CTL_CTRL_CONST_1;
+    if (err_from_center < (-CTL_CTRL_CONST_1_OVER_2))
+        err_from_center += CTL_CTRL_CONST_1;
 
     // HARD CLAMP: The angle is mathematically forbidden from escaping the +/- 30 deg sector
     // This perfectly addresses the sector limitation requirement.
-    ctrl_gt margin = float2ctrl(1.0f / 12.0f); // 30 degrees = 1/12 PU
+    ctrl_gt margin = real2ctrl(1.0f / 12.0f); // 30 degrees = 1/12 PU
     err_from_center = ctl_sat(err_from_center, margin, -margin);
 
     // ========================================================================

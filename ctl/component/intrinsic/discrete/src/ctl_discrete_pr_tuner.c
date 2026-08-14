@@ -32,20 +32,20 @@ void ctl_init_resonant_tuner_from_ctrl(ctl_resonant_tuner_t* tuner, const resona
     gmp_ctl_assert(active_ctrl != NULL);
     gmp_ctl_assert(fs > 0.0f);
 
-    parameter_gt float_a1 = ctrl2float(active_ctrl->coef.a1);
-    parameter_gt float_a2 = ctrl2float(active_ctrl->coef.a2);
-    parameter_gt float_b0 = ctrl2float(active_ctrl->coef.b0);
-    parameter_gt float_b2 = ctrl2float(active_ctrl->coef.b2);
+    parameter_gt float_a1 = ctrl2param(active_ctrl->coef.a1);
+    parameter_gt float_a2 = ctrl2param(active_ctrl->coef.a2);
+    parameter_gt float_b0 = ctrl2param(active_ctrl->coef.b0);
+    parameter_gt float_b2 = ctrl2param(active_ctrl->coef.b2);
 
     /* Mathematical Structural Consistency Verification */
     if ((param_abs(float_a2 - (-1.0f)) > 1e-4f) || (param_abs(float_b0 + float_b2) > 1e-4f))
     {
         tuner->target_kr = 0.0f;
         tuner->target_freq_resonant = 0.0f;
-        tuner->shadow_coef.b0 = float2ctrl(0.0f);
-        tuner->shadow_coef.b2 = float2ctrl(0.0f);
-        tuner->shadow_coef.a1 = float2ctrl(2.0f);
-        tuner->shadow_coef.a2 = float2ctrl(-1.0f);
+        tuner->shadow_coef.b0 = CTL_CTRL_CONST_ZERO;
+        tuner->shadow_coef.b2 = CTL_CTRL_CONST_ZERO;
+        tuner->shadow_coef.a1 = CTL_CTRL_CONST_2;
+        tuner->shadow_coef.a2 = (-CTL_CTRL_CONST_1);
         tuner->flag_update_pending = 0;
         return;
     }
@@ -135,10 +135,10 @@ void ctl_init_qr_tuner_from_ctrl(ctl_qr_tuner_t* tuner, const qr_ctrl_t* active_
     gmp_ctl_assert(active_ctrl != NULL);
     gmp_ctl_assert(fs > 0.0f);
 
-    parameter_gt float_b0 = ctrl2float(active_ctrl->coef.b0);
-    parameter_gt float_b2 = ctrl2float(active_ctrl->coef.b2);
-    parameter_gt float_a1 = ctrl2float(active_ctrl->coef.a1);
-    parameter_gt float_a2 = ctrl2float(active_ctrl->coef.a2);
+    parameter_gt float_b0 = ctrl2param(active_ctrl->coef.b0);
+    parameter_gt float_b2 = ctrl2param(active_ctrl->coef.b2);
+    parameter_gt float_a1 = ctrl2param(active_ctrl->coef.a1);
+    parameter_gt float_a2 = ctrl2param(active_ctrl->coef.a2);
 
     /* Mathematical Consistency Verification */
     if (param_abs(float_b0 + float_b2) > 1e-4f)
@@ -147,10 +147,10 @@ void ctl_init_qr_tuner_from_ctrl(ctl_qr_tuner_t* tuner, const qr_ctrl_t* active_
         tuner->target_freq_resonant = 0.0f;
         tuner->target_freq_cut = 0.0f;
         tuner->method_mode = mode;
-        tuner->shadow_coef.b0 = float2ctrl(0.0f);
-        tuner->shadow_coef.b2 = float2ctrl(0.0f);
-        tuner->shadow_coef.a1 = float2ctrl(2.0f);
-        tuner->shadow_coef.a2 = float2ctrl(-1.0f);
+        tuner->shadow_coef.b0 = CTL_CTRL_CONST_ZERO;
+        tuner->shadow_coef.b2 = CTL_CTRL_CONST_ZERO;
+        tuner->shadow_coef.a1 = CTL_CTRL_CONST_2;
+        tuner->shadow_coef.a2 = (-CTL_CTRL_CONST_1);
         tuner->flag_update_pending = 0;
         return;
     }

@@ -76,16 +76,16 @@
 //{
 //    if (init->v_base > 1e-6f)
 //    {
-//        dist->vs_limit_pu = float2ctrl((init->v_nom * init->v_fw_margin) / init->v_base);
+//        dist->vs_limit_pu = real2ctrl((init->v_nom * init->v_fw_margin) / init->v_base);
 //    }
 //    else
 //    {
-//        dist->vs_limit_pu = float2ctrl(0.0f);
+//        dist->vs_limit_pu = CTL_CTRL_CONST_ZERO;
 //    }
 //
-//    dist->alpha_pos_base_pu = float2ctrl(init->alpha_pos_base_pu);
-//    dist->alpha_neg_base_pu = float2ctrl(init->alpha_neg_base_pu);
-//    dist->alpha_max_fw_pu = float2ctrl(init->alpha_max_fw_pu);
+//    dist->alpha_pos_base_pu = param2ctrl(init->alpha_pos_base_pu);
+//    dist->alpha_neg_base_pu = param2ctrl(init->alpha_neg_base_pu);
+//    dist->alpha_max_fw_pu = param2ctrl(init->alpha_max_fw_pu);
 //
 //    dist->flag_enable_fw = 0;
 //

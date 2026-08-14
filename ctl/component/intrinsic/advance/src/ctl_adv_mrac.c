@@ -6,11 +6,11 @@
 
 void ctl_init_mrac(ctl_mrac_controller_t* mrac, const ctl_mrac_init_t* init)
 {
-    // 1. 基础防呆保护
+    // 1. Validate the model and adaptation parameters.
     gmp_ctl_assert(init->f_ctrl > 0.0f);
-    gmp_ctl_assert(init->a_m > 1e-9f); // 防除零保护
+    gmp_ctl_assert(init->a_m > CTL_PARAM_CONST_EPSILON); // a_m is used as a denominator.
 
-    // 2. 在纯物理浮点域 (parameter_gt) 中进行高精度计算
+    // 2. Calculate coefficients in the parameter domain.
     parameter_gt Ts = 1.0f / init->f_ctrl;
 
     // Discretize the reference model using Zero-Order Hold (ZOH)
@@ -21,11 +21,11 @@ void ctl_init_mrac(ctl_mrac_controller_t* mrac, const ctl_mrac_init_t* init)
     parameter_gt gamma_r_d_f = init->gamma_r * Ts;
     parameter_gt gamma_y_d_f = init->gamma_y * Ts;
 
-    // 3. 计算完毕后，安全固化到定点控制域
-    mrac->a_m_d = float2ctrl(a_m_d_f);
-    mrac->b_m_d = float2ctrl(b_m_d_f);
-    mrac->gamma_r_d = float2ctrl(gamma_r_d_f);
-    mrac->gamma_y_d = float2ctrl(gamma_y_d_f);
+    // 3. Quantize only the final coefficients into the control domain.
+    mrac->a_m_d = real2ctrl(a_m_d_f);
+    mrac->b_m_d = real2ctrl(b_m_d_f);
+    mrac->gamma_r_d = real2ctrl(gamma_r_d_f);
+    mrac->gamma_y_d = real2ctrl(gamma_y_d_f);
 
     // Reset states
     ctl_clear_mrac(mrac);

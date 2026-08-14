@@ -89,11 +89,11 @@ void ctl_init_resonant_controller(resonant_ctrl_t* r, parameter_gt kr, parameter
  */
 GMP_STATIC_INLINE void ctl_clear_resonant_controller(resonant_ctrl_t* r)
 {
-    r->output = float2ctrl(0.0f);
-    r->output_1 = float2ctrl(0.0f);
-    r->output_2 = float2ctrl(0.0f);
-    r->input_1 = float2ctrl(0.0f);
-    r->input_2 = float2ctrl(0.0f);
+    r->output = CTL_CTRL_CONST_ZERO;
+    r->output_1 = CTL_CTRL_CONST_ZERO;
+    r->output_2 = CTL_CTRL_CONST_ZERO;
+    r->input_1 = CTL_CTRL_CONST_ZERO;
+    r->input_2 = CTL_CTRL_CONST_ZERO;
 }
 
 /**
@@ -238,11 +238,11 @@ void ctl_init_qr_controller_prewarped(qr_ctrl_t* qr, parameter_gt kr, parameter_
  */
 GMP_STATIC_INLINE void ctl_clear_qr_controller(qr_ctrl_t* qr)
 {
-    qr->output = float2ctrl(0.0f);
-    qr->output_1 = float2ctrl(0.0f);
-    qr->output_2 = float2ctrl(0.0f);
-    qr->input_1 = float2ctrl(0.0f);
-    qr->input_2 = float2ctrl(0.0f);
+    qr->output = CTL_CTRL_CONST_ZERO;
+    qr->output_1 = CTL_CTRL_CONST_ZERO;
+    qr->output_2 = CTL_CTRL_CONST_ZERO;
+    qr->input_1 = CTL_CTRL_CONST_ZERO;
+    qr->input_2 = CTL_CTRL_CONST_ZERO;
 }
 
 /**

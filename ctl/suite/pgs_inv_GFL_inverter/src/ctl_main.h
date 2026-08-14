@@ -112,25 +112,25 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
          * CiA402 clear/reset so the ISR cannot run with a stale zero command.
          */
 #if BUILD_LEVEL == 1
-        ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl(GFL_OPEN_LOOP_VD_PU),
-                                         float2ctrl(GFL_OPEN_LOOP_VQ_PU));
+        ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, real2ctrl(GFL_OPEN_LOOP_VD_PU),
+                                         real2ctrl(GFL_OPEN_LOOP_VQ_PU));
 #elif BUILD_LEVEL == 2
-        ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFL_CURRENT_LEVEL2_ID_PU),
-                                float2ctrl(GFL_CURRENT_LEVEL2_IQ_PU));
+        ctl_set_gfl_inv_current(&inv_ctrl, real2ctrl(GFL_CURRENT_LEVEL2_ID_PU),
+                                real2ctrl(GFL_CURRENT_LEVEL2_IQ_PU));
 #elif BUILD_LEVEL == 3
-        ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFL_CURRENT_LEVEL3_ID_PU),
-                                float2ctrl(GFL_CURRENT_LEVEL3_IQ_PU));
+        ctl_set_gfl_inv_current(&inv_ctrl, real2ctrl(GFL_CURRENT_LEVEL3_ID_PU),
+                                real2ctrl(GFL_CURRENT_LEVEL3_IQ_PU));
 #elif BUILD_LEVEL == 4
-        ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFL_CURRENT_LEVEL4_ID_PU),
-                                float2ctrl(GFL_CURRENT_LEVEL4_IQ_PU));
+        ctl_set_gfl_inv_current(&inv_ctrl, real2ctrl(GFL_CURRENT_LEVEL4_ID_PU),
+                                real2ctrl(GFL_CURRENT_LEVEL4_IQ_PU));
 #elif BUILD_LEVEL == 5
         ctl_enable_gfl_pq_ctrl(&pq_ctrl);
 #if defined GFL_ENABLE_PQ_DROOP
         ctl_set_gfl_pq_ref(&pq_ctrl, pq_droop_ctrl.pq_ref.dat[0],
                            pq_droop_ctrl.pq_ref.dat[1]);
 #else
-        ctl_set_gfl_pq_ref(&pq_ctrl, float2ctrl(GFL_ACTIVE_POWER_REF_PU),
-                           float2ctrl(GFL_REACTIVE_POWER_REF_PU));
+        ctl_set_gfl_pq_ref(&pq_ctrl, real2ctrl(GFL_ACTIVE_POWER_REF_PU),
+                           real2ctrl(GFL_REACTIVE_POWER_REF_PU));
 #endif
         ctl_set_gfl_inv_current(&inv_ctrl, pq_ctrl.idq_set_out.dat[phase_d],
                                 pq_ctrl.idq_set_out.dat[phase_q]);
@@ -141,10 +141,10 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 #ifdef USING_DSOGI_PLL
         gfl_pll_frequency_hz =
             ctl_mul(inv_ctrl.pll.srf_pll.freq_pu,
-                    float2ctrl(GFL_GRID_FREQUENCY_HZ));
+                    real2ctrl(GFL_GRID_FREQUENCY_HZ));
 #else
         gfl_pll_frequency_hz =
-            ctl_mul(inv_ctrl.pll.freq_pu, float2ctrl(GFL_GRID_FREQUENCY_HZ));
+            ctl_mul(inv_ctrl.pll.freq_pu, real2ctrl(GFL_GRID_FREQUENCY_HZ));
 #endif
         ctl_step_neg_inv_ctrl(&neg_current_ctrl);
         ctl_step_voltage_inv_ctrl(&gfl_voltage_ctrl);

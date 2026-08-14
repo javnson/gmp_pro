@@ -10,7 +10,8 @@
       "c_name": "CAPACITANCE_F",
       "unit": "F",
       "required": true,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Capacitance."
     },
     {
@@ -18,7 +19,8 @@
       "c_name": "ESR_OHM",
       "unit": "ohm",
       "required": false,
-      "value_format": "({}f)",
+      "value_format": "{}",
+      "numeric_domain": "parameter",
       "description": "Equivalent series resistance.",
       "default": 0.0
     }

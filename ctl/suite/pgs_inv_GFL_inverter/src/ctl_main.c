@@ -133,11 +133,11 @@ void ctl_init()
     // init SPWM modulator
     //
 #if defined USING_NPC_MODULATOR
-    ctl_init_npc_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &inv_ctrl.adc_iabc->value, float2ctrl(0.02),
-                           float2ctrl(0.005));
+    ctl_init_npc_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &inv_ctrl.adc_iabc->value, real2ctrl(0.02),
+                           real2ctrl(0.005));
 #else
-    ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &inv_ctrl.adc_iabc->value, float2ctrl(0.02),
-                            float2ctrl(0.005));
+    ctl_init_spwm_modulator(&spwm, CTRL_PWM_CMP_MAX, CTRL_PWM_DEADBAND_CMP, &inv_ctrl.adc_iabc->value, real2ctrl(0.02),
+                            real2ctrl(0.005));
 #endif // USING_NPC_MODULATOR
 
     //
@@ -146,7 +146,7 @@ void ctl_init()
     ctl_init_gfl_pq(&pq_ctrl, GFL_PQ_ACTIVE_KP, GFL_PQ_ACTIVE_KI, GFL_PQ_REACTIVE_KP, GFL_PQ_REACTIVE_KI,
                     GFL_PQ_CURRENT_LIMIT_PU, GFL_PQ_LOOP_FREQUENCY_HZ);
     ctl_attach_gfl_pq_to_core(&pq_ctrl, &inv_ctrl);
-    ctl_set_gfl_pq_ref(&pq_ctrl, float2ctrl(GFL_ACTIVE_POWER_REF_PU), float2ctrl(GFL_REACTIVE_POWER_REF_PU));
+    ctl_set_gfl_pq_ref(&pq_ctrl, real2ctrl(GFL_ACTIVE_POWER_REF_PU), real2ctrl(GFL_REACTIVE_POWER_REF_PU));
 
     pq_droop_init.fs = GFL_PQ_LOOP_FREQUENCY_HZ;
     pq_droop_init.lpf_hz = GFL_PQ_DROOP_LPF_HZ;
@@ -159,12 +159,12 @@ void ctl_init()
     pq_droop_init.q_min = GFL_PQ_DROOP_Q_MIN_PU;
     pq_droop_init.q_max = GFL_PQ_DROOP_Q_MAX_PU;
     ctl_init_gfl_pq_droop(&pq_droop_ctrl, &pq_droop_init);
-    gfl_pll_frequency_hz = float2ctrl(GFL_GRID_FREQUENCY_HZ);
+    gfl_pll_frequency_hz = real2ctrl(GFL_GRID_FREQUENCY_HZ);
     ctl_attach_gfl_pq_droop(&pq_droop_ctrl, &gfl_pll_frequency_hz,
                             &inv_ctrl.vdq);
     ctl_set_gfl_pq_droop_base(
-        &pq_droop_ctrl, float2ctrl(GFL_ACTIVE_POWER_REF_PU),
-        float2ctrl(GFL_REACTIVE_POWER_REF_PU));
+        &pq_droop_ctrl, real2ctrl(GFL_ACTIVE_POWER_REF_PU),
+        real2ctrl(GFL_REACTIVE_POWER_REF_PU));
 #if defined GFL_ENABLE_PQ_DROOP
     ctl_enable_gfl_pq_droop(&pq_droop_ctrl);
 #endif
@@ -173,17 +173,17 @@ void ctl_init()
 #if BUILD_LEVEL == 1
     // Voltage open loop, inverter
     ctl_set_gfl_inv_openloop_mode(&inv_ctrl);
-    ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl(GFL_OPEN_LOOP_VD_PU), float2ctrl(GFL_OPEN_LOOP_VQ_PU));
+    ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, real2ctrl(GFL_OPEN_LOOP_VD_PU), real2ctrl(GFL_OPEN_LOOP_VQ_PU));
 
 #elif BUILD_LEVEL == 2
     // Basic current close loop, inverter
     ctl_set_gfl_inv_current_mode(&inv_ctrl);
-    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFL_CURRENT_LEVEL2_ID_PU), float2ctrl(GFL_CURRENT_LEVEL2_IQ_PU));
+    ctl_set_gfl_inv_current(&inv_ctrl, real2ctrl(GFL_CURRENT_LEVEL2_ID_PU), real2ctrl(GFL_CURRENT_LEVEL2_IQ_PU));
 
 #elif BUILD_LEVEL == 3
     // Basic current close loop, inverter
     ctl_set_gfl_inv_current_mode(&inv_ctrl);
-    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFL_CURRENT_LEVEL3_ID_PU), float2ctrl(GFL_CURRENT_LEVEL3_IQ_PU));
+    ctl_set_gfl_inv_current(&inv_ctrl, real2ctrl(GFL_CURRENT_LEVEL3_ID_PU), real2ctrl(GFL_CURRENT_LEVEL3_IQ_PU));
 
     ctl_enable_neg_current_inv(&neg_current_ctrl);
 
@@ -193,7 +193,7 @@ void ctl_init()
 #elif BUILD_LEVEL == 4
     // current close loop with feed forward, inverter
     ctl_set_gfl_inv_current_mode(&inv_ctrl);
-    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFL_CURRENT_LEVEL4_ID_PU), float2ctrl(GFL_CURRENT_LEVEL4_IQ_PU));
+    ctl_set_gfl_inv_current(&inv_ctrl, real2ctrl(GFL_CURRENT_LEVEL4_ID_PU), real2ctrl(GFL_CURRENT_LEVEL4_IQ_PU));
 
     ctl_enable_neg_current_inv(&neg_current_ctrl);
 
@@ -221,8 +221,8 @@ void ctl_init()
     // Stand-alone LC-filter capacitor-voltage loop -> d/q current loop.
     ctl_set_gfl_inv_current_mode(&inv_ctrl);
     ctl_set_gfl_inv_current(&inv_ctrl, 0, 0);
-    ctl_set_voltage_inv_reference(&gfl_voltage_ctrl, float2ctrl(GFL_STANDALONE_VD_PU),
-                                  float2ctrl(GFL_STANDALONE_VQ_PU));
+    ctl_set_voltage_inv_reference(&gfl_voltage_ctrl, real2ctrl(GFL_STANDALONE_VD_PU),
+                                  real2ctrl(GFL_STANDALONE_VQ_PU));
     ctl_enable_voltage_inv(&gfl_voltage_ctrl);
 #if defined GFL_ENABLE_VOLTAGE_DECOUPLE
     ctl_enable_voltage_inv_decouple(&gfl_voltage_ctrl);
@@ -390,17 +390,17 @@ void ctl_enable_pwm()
      * commands are not lost during the startup state transitions.
      */
 #if BUILD_LEVEL == 1
-    ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl(GFL_OPEN_LOOP_VD_PU),
-                                     float2ctrl(GFL_OPEN_LOOP_VQ_PU));
+    ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, real2ctrl(GFL_OPEN_LOOP_VD_PU),
+                                     real2ctrl(GFL_OPEN_LOOP_VQ_PU));
 #elif BUILD_LEVEL == 2
-    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFL_CURRENT_LEVEL2_ID_PU),
-                            float2ctrl(GFL_CURRENT_LEVEL2_IQ_PU));
+    ctl_set_gfl_inv_current(&inv_ctrl, real2ctrl(GFL_CURRENT_LEVEL2_ID_PU),
+                            real2ctrl(GFL_CURRENT_LEVEL2_IQ_PU));
 #elif BUILD_LEVEL == 3
-    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFL_CURRENT_LEVEL3_ID_PU),
-                            float2ctrl(GFL_CURRENT_LEVEL3_IQ_PU));
+    ctl_set_gfl_inv_current(&inv_ctrl, real2ctrl(GFL_CURRENT_LEVEL3_ID_PU),
+                            real2ctrl(GFL_CURRENT_LEVEL3_IQ_PU));
 #elif BUILD_LEVEL == 4
-    ctl_set_gfl_inv_current(&inv_ctrl, float2ctrl(GFL_CURRENT_LEVEL4_ID_PU),
-                            float2ctrl(GFL_CURRENT_LEVEL4_IQ_PU));
+    ctl_set_gfl_inv_current(&inv_ctrl, real2ctrl(GFL_CURRENT_LEVEL4_ID_PU),
+                            real2ctrl(GFL_CURRENT_LEVEL4_IQ_PU));
 #elif BUILD_LEVEL == 5
     ctl_set_gfl_inv_current(&inv_ctrl, 0, 0);
 #endif
@@ -423,7 +423,7 @@ void ctl_disable_pwm()
     ctl_clear_zero_inv(&gfl_zero_ctrl);
     ctl_clear_gfl_pq(&pq_ctrl);
     ctl_clear_gfl_pq_droop(&pq_droop_ctrl);
-    gfl_pll_frequency_hz = float2ctrl(GFL_GRID_FREQUENCY_HZ);
+    gfl_pll_frequency_hz = real2ctrl(GFL_GRID_FREQUENCY_HZ);
     pq_loop_tick = 0;
 }
 

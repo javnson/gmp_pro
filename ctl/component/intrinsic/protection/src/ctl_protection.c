@@ -24,11 +24,11 @@ void ctl_init_protection_monitor(ctl_protection_monitor_t* mon, const ctl_protec
 void ctl_init_prot_single(ctl_prot_single_t* node, uint32_t status_bit, parameter_gt threshold, uint16_t trip_limit)
 {
     node->is_enabled = 0;
-    node->threshold = float2ctrl(threshold);
+    node->threshold = real2ctrl(threshold);
     node->trip_limit_count = trip_limit;
     node->current_count = 0;
     node->status_bit = status_bit;
-    node->fault_record_val = float2ctrl(0.0f);
+    node->fault_record_val = CTL_CTRL_CONST_ZERO;
 }
 
 /**
@@ -38,12 +38,12 @@ void ctl_init_prot_window(ctl_prot_window_t* node, uint32_t status_bit, paramete
                           uint16_t trip_limit)
 {
     node->is_enabled = 0;
-    node->sup = float2ctrl(sup);
-    node->inf = float2ctrl(inf);
+    node->sup = real2ctrl(sup);
+    node->inf = real2ctrl(inf);
     node->trip_limit_count = trip_limit;
     node->current_count = 0;
     node->status_bit = status_bit;
-    node->fault_record_val = float2ctrl(0.0f);
+    node->fault_record_val = CTL_CTRL_CONST_ZERO;
 }
 
 /**
@@ -52,7 +52,7 @@ void ctl_init_prot_window(ctl_prot_window_t* node, uint32_t status_bit, paramete
 void ctl_init_prot_vector(ctl_prot_vector_t* node, uint32_t status_bit, parameter_gt threshold, uint16_t trip_limit)
 {
     node->is_enabled = 0;
-    node->threshold = float2ctrl(threshold);
+    node->threshold = real2ctrl(threshold);
     node->threshold_sq = ctl_mul(node->threshold, node->threshold); // Pre-calc!
     node->trip_limit_count = trip_limit;
     node->current_count = 0;
@@ -68,9 +68,9 @@ void ctl_init_prot_thermal(ctl_prot_thermal_t* node, uint32_t status_bit, parame
                            parameter_gt thermal_limit)
 {
     node->is_enabled = 0;
-    node->rated_value = float2ctrl(rated_value);
-    node->thermal_limit = float2ctrl(thermal_limit);
-    node->thermal_acc = float2ctrl(0.0f);
+    node->rated_value = real2ctrl(rated_value);
+    node->thermal_limit = real2ctrl(thermal_limit);
+    node->thermal_acc = CTL_CTRL_CONST_ZERO;
     node->status_bit = status_bit;
-    node->fault_record_val = float2ctrl(0.0f);
+    node->fault_record_val = CTL_CTRL_CONST_ZERO;
 }

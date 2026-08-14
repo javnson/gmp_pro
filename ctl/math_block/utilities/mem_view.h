@@ -62,7 +62,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_mem_get_1d(ctl_mem_view_t* obj, uint32_t idx)
     {
         return obj->buffer[idx];
     }
-    return float2ctrl(0.0f);
+    return real2ctrl(0.0f);
 }
 
 // ============================================================================
@@ -93,7 +93,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_mem_get_2d_soa(ctl_mem_view_t* obj, uint16_t dim, 
     {
         return obj->buffer[pos];
     }
-    return float2ctrl(0.0f);
+    return real2ctrl(0.0f);
 }
 
 // ============================================================================
@@ -125,7 +125,7 @@ GMP_STATIC_INLINE ctrl_gt ctl_mem_get_3d_soa(ctl_mem_view_t* obj, uint16_t dim1,
     {
         return obj->buffer[pos];
     }
-    return float2ctrl(0.0f);
+    return real2ctrl(0.0f);
 }
 
 #ifdef __cplusplus

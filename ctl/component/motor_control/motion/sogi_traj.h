@@ -100,10 +100,10 @@ GMP_STATIC_INLINE ctrl_gt ctl_calc_pos_err_4param(int32_t t_revs, ctrl_gt t_ang,
 {
     int32_t d_revs = t_revs - f_revs;
     if (d_revs > 100)
-        return float2ctrl(100.0f);
+        return real2ctrl(100.0f);
     if (d_revs < -100)
-        return float2ctrl(-100.0f);
-    return float2ctrl((float)d_revs) + (t_ang - f_ang);
+        return real2ctrl(-100.0f);
+    return real2ctrl((float)d_revs) + (t_ang - f_ang);
 }
 
 GMP_STATIC_INLINE void ctl_attach_sogi_planner(ctl_sogi_planner_t* planner, rotation_ift* pos_if,
@@ -129,8 +129,8 @@ GMP_STATIC_INLINE void ctl_sync_sogi_planner(ctl_sogi_planner_t* planner)
         planner->target_revs = planner->planner_revs;
         planner->target_angle = planner->planner_angle;
     }
-    planner->planner_vel_pu = float2ctrl(0.0f);
-    planner->planner_acc_pu = float2ctrl(0.0f);
+    planner->planner_vel_pu = CTL_CTRL_CONST_ZERO;
+    planner->planner_acc_pu = CTL_CTRL_CONST_ZERO;
 
     // Clear SOGI historical states
     ctl_clear_discrete_sogi(&planner->sogi_core);
@@ -166,14 +166,14 @@ GMP_STATIC_INLINE void ctl_step_sogi_planner_tdm(ctl_sogi_planner_t* planner)
                                                      planner->planner_angle);
 
         ctrl_gt abs_v =
-            (planner->planner_vel_pu > float2ctrl(0.0f)) ? planner->planner_vel_pu : -planner->planner_vel_pu;
-        ctrl_gt abs_dist = (dist_to_go > float2ctrl(0.0f)) ? dist_to_go : -dist_to_go;
+            (planner->planner_vel_pu > CTL_CTRL_CONST_ZERO) ? planner->planner_vel_pu : -planner->planner_vel_pu;
+        ctrl_gt abs_dist = (dist_to_go > CTL_CTRL_CONST_ZERO) ? dist_to_go : -dist_to_go;
 
         // 1. Exact Arrival Snapping
         if (abs_dist <= planner->arrival_tol_revs && abs_v <= planner->arrival_tol_vel)
         {
-            planner->planner_vel_pu = float2ctrl(0.0f);
-            planner->planner_acc_pu = float2ctrl(0.0f);
+            planner->planner_vel_pu = CTL_CTRL_CONST_ZERO;
+            planner->planner_acc_pu = CTL_CTRL_CONST_ZERO;
             planner->planner_revs = planner->target_revs;
             planner->planner_angle = planner->target_angle;
 
@@ -185,22 +185,22 @@ GMP_STATIC_INLINE void ctl_step_sogi_planner_tdm(ctl_sogi_planner_t* planner)
         // 2. Analytical Braking Check for Critically Damped System
         // Braking Dist = K_v * |V| + K_a * (A * sgn(V))
         ctrl_gt accel_sgn_v =
-            (planner->planner_vel_pu >= float2ctrl(0.0f)) ? planner->planner_acc_pu : -planner->planner_acc_pu;
+            (planner->planner_vel_pu >= CTL_CTRL_CONST_ZERO) ? planner->planner_acc_pu : -planner->planner_acc_pu;
         ctrl_gt s_brake = ctl_mul(planner->coef_brake_v, abs_v) + ctl_mul(planner->coef_brake_a, accel_sgn_v);
 
         // Safeguard against over-braking estimation during direction reversal
-        if (s_brake < float2ctrl(0.0f))
-            s_brake = float2ctrl(0.0f);
+        if (s_brake < CTL_CTRL_CONST_ZERO)
+            s_brake = CTL_CTRL_CONST_ZERO;
 
-        ctrl_gt raw_speed_ref = float2ctrl(0.0f);
-        ctrl_gt direction = (dist_to_go > float2ctrl(0.0f)) ? float2ctrl(1.0f) : float2ctrl(-1.0f);
+        ctrl_gt raw_speed_ref = CTL_CTRL_CONST_ZERO;
+        ctrl_gt direction = (dist_to_go > CTL_CTRL_CONST_ZERO) ? CTL_CTRL_CONST_1 : (-CTL_CTRL_CONST_1);
 
         ctrl_gt dir_judge = ctl_mul(dist_to_go, planner->planner_vel_pu);
-        fast_gt moving_towards = (dir_judge >= float2ctrl(0.0f)) ? 1 : 0;
+        fast_gt moving_towards = (dir_judge >= CTL_CTRL_CONST_ZERO) ? 1 : 0;
 
         if (moving_towards && (abs_dist <= s_brake))
         {
-            raw_speed_ref = float2ctrl(0.0f); // Enter braking zone -> Command Zero to Filter
+            raw_speed_ref = CTL_CTRL_CONST_ZERO; // Enter braking zone -> Command Zero to Filter
         }
         else
         {
@@ -222,14 +222,14 @@ GMP_STATIC_INLINE void ctl_step_sogi_planner_tdm(ctl_sogi_planner_t* planner)
         ctrl_gt delta_angle = ctl_mul(planner->planner_vel_pu, planner->scale_v_to_rev);
         planner->planner_angle += delta_angle;
 
-        while (planner->planner_angle >= float2ctrl(1.0f))
+        while (planner->planner_angle >= CTL_CTRL_CONST_1)
         {
-            planner->planner_angle -= float2ctrl(1.0f);
+            planner->planner_angle -= CTL_CTRL_CONST_1;
             planner->planner_revs++;
         }
-        while (planner->planner_angle < float2ctrl(0.0f))
+        while (planner->planner_angle < CTL_CTRL_CONST_ZERO)
         {
-            planner->planner_angle += float2ctrl(1.0f);
+            planner->planner_angle += CTL_CTRL_CONST_1;
             planner->planner_revs--;
         }
     }
@@ -241,7 +241,7 @@ GMP_STATIC_INLINE void ctl_step_sogi_planner_tdm(ctl_sogi_planner_t* planner)
         ctrl_gt following_error = ctl_calc_pos_err_4param(planner->planner_revs, planner->planner_angle,
                                                           planner->pos_if->revolutions, planner->pos_if->position);
 
-        ctrl_gt abs_err = (following_error > float2ctrl(0.0f)) ? following_error : -following_error;
+        ctrl_gt abs_err = (following_error > CTL_CTRL_CONST_ZERO) ? following_error : -following_error;
 
         if (abs_err > planner->tracking_err_limit)
         {
@@ -249,8 +249,8 @@ GMP_STATIC_INLINE void ctl_step_sogi_planner_tdm(ctl_sogi_planner_t* planner)
             if (planner->divergence_cnt >= planner->divergence_limit)
             {
                 planner->flag_fault_divergence = 1;
-                planner->planner_vel_pu = float2ctrl(0.0f);
-                planner->planner_acc_pu = float2ctrl(0.0f);
+                planner->planner_vel_pu = CTL_CTRL_CONST_ZERO;
+                planner->planner_acc_pu = CTL_CTRL_CONST_ZERO;
                 ctl_clear_discrete_sogi(&planner->sogi_core);
             }
         }

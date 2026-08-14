@@ -41,8 +41,8 @@ static ctl_pid_t current_pid;
 
 void controller_init(void)
 {
-    ctl_init_pid(&current_pid, float2ctrl(1.0f), float2ctrl(0.1f),
-                 float2ctrl(0.0f), float2ctrl(1.0f));
+    ctl_init_pid(&current_pid, real2ctrl(1.0f), real2ctrl(0.1f),
+                 real2ctrl(0.0f), real2ctrl(1.0f));
 }
 ```
 

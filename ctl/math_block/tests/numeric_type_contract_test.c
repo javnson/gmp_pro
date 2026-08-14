@@ -9,6 +9,11 @@
 #include <ctl/math_block/gmp_math.h>
 #include <ctl/component/intrinsic/advance/fdrc.h>
 
+_Static_assert(sizeof(real_gt) >= sizeof(double), "real_gt must preserve at least double precision");
+#if (SPECIFY_REAL_GT_TYPE == USING_LONG_DOUBLE)
+_Static_assert(sizeof(real_gt) == sizeof(long double), "long-double real_gt selection is not active");
+#endif
+
 #if (SPECIFY_CTRL_GT_TYPE == USING_FIXED_TI_IQ_LIBRARY) && CTL_FDRC_SUPPORTED
 #error FDRC_must_be_disabled_for_fixed_point_ctrl_gt
 #endif

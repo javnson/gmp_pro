@@ -239,8 +239,8 @@ ctrl_gt ctl_id_get_speed(ctl_pmsm_offline_id_t* ctx)
 void ctl_id_disable_output(ctl_pmsm_offline_id_t* ctx)
 {
     ctl_disable_foc_core_current_ctrl(&mtr_ctrl);
-    ctl_set_foc_core_idq_ref(&mtr_ctrl, float2ctrl(0.0f), float2ctrl(0.0f));
-    ctl_set_foc_core_vdq_ref(&mtr_ctrl, float2ctrl(0.0f), float2ctrl(0.0f));
+    ctl_set_foc_core_idq_ref(&mtr_ctrl, CTL_CTRL_CONST_ZERO, CTL_CTRL_CONST_ZERO);
+    ctl_set_foc_core_vdq_ref(&mtr_ctrl, CTL_CTRL_CONST_ZERO, CTL_CTRL_CONST_ZERO);
 }
 
 void ctl_id_set_pwm_output(ctl_pmsm_offline_id_t* ctx, fast_gt enable)

@@ -58,7 +58,7 @@ GMP_STATIC_INLINE void ctl_clear_sensorless_handover(ctl_sensorless_handover_t* 
 {
     ctl_select_angle_source_immediate(&handover->angle, 0);
     handover->if_excitation.id_ref_out = handover->if_excitation.startup_id_ref;
-    handover->if_excitation.closed_loop_weight = float2ctrl(0.0f);
+    handover->if_excitation.closed_loop_weight = CTL_CTRL_CONST_ZERO;
     handover->id_ref_out = handover->if_excitation.startup_id_ref;
 }
 

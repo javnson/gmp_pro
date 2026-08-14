@@ -105,7 +105,7 @@ GMP_STATIC_INLINE void ctl_init_flc(flc_controller_t* flc, ctrl_gt x_min, ctrl_g
     // saturation
     ctl_init_saturation(&flc->sat_e, x_min, x_max);
     ctl_init_saturation(&flc->sat_ce, y_min, y_max);
-    ctl_init_saturation(&flc->sat_u, float2ctrl(-1), float2ctrl(1));
+    ctl_init_saturation(&flc->sat_u, (-CTL_CTRL_CONST_1), CTL_CTRL_CONST_1);
 
     // Initialize the uniform 2D LUT using data from fuzzy_2d.c
     ctl_init_uniform_lut2d(&flc->lut,

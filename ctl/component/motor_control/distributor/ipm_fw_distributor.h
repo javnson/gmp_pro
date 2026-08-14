@@ -95,9 +95,9 @@ void ctl_init_const_distributor(ipm_fw_distributor_t* dist, const ipm_fw_distrib
  */
 GMP_STATIC_INLINE void ctl_clear_const_distributor(ipm_fw_distributor_t* dist)
 {
-    dist->id = float2ctrl(0.0f);
-    dist->iq = float2ctrl(0.0f);
-    dist->alpha_out = float2ctrl(0.0f);
+    dist->id = CTL_CTRL_CONST_ZERO;
+    dist->iq = CTL_CTRL_CONST_ZERO;
+    dist->alpha_out = CTL_CTRL_CONST_ZERO;
 
     ctl_clear_pid(&dist->fw_pid);
 }
@@ -114,7 +114,7 @@ GMP_STATIC_INLINE void ctl_step_const_distributor(ipm_fw_distributor_t* dist, ct
     ctrl_gt alpha_base;
 
     // 1. Determine base angle based on torque direction
-    if (im < float2ctrl(0.0f))
+    if (im < CTL_CTRL_CONST_ZERO)
     {
         // Negative torque mode (braking)
         alpha_base = dist->alpha_neg_torque;
@@ -126,7 +126,7 @@ GMP_STATIC_INLINE void ctl_step_const_distributor(ipm_fw_distributor_t* dist, ct
     }
 
     // 2. Field Weakening Angle Compensation
-    ctrl_gt delta_alpha = float2ctrl(0.0f);
+    ctrl_gt delta_alpha = CTL_CTRL_CONST_ZERO;
     if (dist->flag_enable_fw)
     {
         // Calculate voltage amplitude: U_amp = sqrt(ud^2 + uq^2)
@@ -140,7 +140,7 @@ GMP_STATIC_INLINE void ctl_step_const_distributor(ipm_fw_distributor_t* dist, ct
 
     // 3. Output Saturation
     // Total angle = Base angle + FW compensation
-    dist->alpha_out = ctl_sat(alpha_base + delta_alpha, dist->alpha_lim_fw, float2ctrl(0.0f));
+    dist->alpha_out = ctl_sat(alpha_base + delta_alpha, dist->alpha_lim_fw, CTL_CTRL_CONST_ZERO);
 
     // 4. Calculate id, iq components
     dist->id = ctl_mul(im, ctl_cos(dist->alpha_out));

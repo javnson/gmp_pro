@@ -40,31 +40,31 @@ void ctl_init_pmsm_dbptc(pmsm_dbptc_ctrl_t* mc, const pmsm_dbptc_init_t* init)
     parameter_gt k_emf = (Ts * omega_base_elec * init->mtr_Flux) / (init->mtr_Lq * init->i_base);
 
     // --- Transfer to Fixed-Point Struct ---
-    mc->A11 = float2ctrl(a11);
-    mc->A22 = float2ctrl(a22);
+    mc->A11 = real2ctrl(a11);
+    mc->A22 = real2ctrl(a22);
 
-    mc->Kw_d = float2ctrl(kw_d);
-    mc->Kw_q = float2ctrl(kw_q);
+    mc->Kw_d = real2ctrl(kw_d);
+    mc->Kw_q = real2ctrl(kw_q);
 
-    mc->B11 = float2ctrl(b11);
-    mc->B22 = float2ctrl(b22);
+    mc->B11 = real2ctrl(b11);
+    mc->B22 = real2ctrl(b22);
 
     // Pre-calculate inverse to completely eliminate division in ISR
-    mc->inv_B11 = float2ctrl(1.0f / b11);
-    mc->inv_B22 = float2ctrl(1.0f / b22);
+    mc->inv_B11 = real2ctrl(1.0f / b11);
+    mc->inv_B22 = real2ctrl(1.0f / b22);
 
-    mc->K_emf = float2ctrl(k_emf);
+    mc->K_emf = real2ctrl(k_emf);
 
     // --- Protection Configuration ---
     // Calculate circular max voltage limit (e.g. Vbus / sqrt(3) / Vbase)
-    mc->v_max_pu = float2ctrl((init->v_phase_limit * 1.4142f) / init->v_base);
+    mc->v_max_pu = real2ctrl((init->v_phase_limit * 1.4142f) / init->v_base);
 
     // Store I_max_sq to avoid square root during limit check when not saturated
-    mc->i_max_pu_sq = float2ctrl(init->i_max_pu * init->i_max_pu);
+    mc->i_max_pu_sq = param2ctrl(init->i_max_pu * init->i_max_pu);
 
     // Clear States
-    mc->ud_prev = float2ctrl(0.0f);
-    mc->uq_prev = float2ctrl(0.0f);
+    mc->ud_prev = CTL_CTRL_CONST_ZERO;
+    mc->uq_prev = CTL_CTRL_CONST_ZERO;
     ctl_vector2_clear(&mc->vdq_out);
     ctl_vector2_clear(&mc->idq_ref);
 

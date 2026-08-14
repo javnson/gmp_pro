@@ -87,7 +87,7 @@ GMP_STATIC_INLINE uint32_t ctl_step_prot_single_low_snap(ctl_prot_single_t* node
             node->current_count++;
         if (node->current_count >= node->trip_limit_count)
         {
-            if (node->fault_record_val == float2ctrl(0.0f))
+            if (node->fault_record_val == CTL_CTRL_CONST_ZERO)
             {
                 node->fault_record_val = value; // Snapshot on first strike
             }
@@ -168,7 +168,7 @@ GMP_STATIC_INLINE uint32_t ctl_step_prot_window_snap(ctl_prot_window_t* node, ct
             node->current_count++;
         if (node->current_count >= node->trip_limit_count)
         {
-            if (node->fault_record_val == float2ctrl(0.0f))
+            if (node->fault_record_val == CTL_CTRL_CONST_ZERO)
             {
                 node->fault_record_val = value;
             }
@@ -223,7 +223,7 @@ GMP_STATIC_INLINE uint32_t ctl_step_prot_vector_circle(ctl_prot_vector_t* node, 
         if (node->current_count >= node->trip_limit_count)
         {
             // Snapshot the offending vector
-            if (node->fault_record_val.dat[0] == float2ctrl(0.0f) && node->fault_record_val.dat[1] == float2ctrl(0.0f))
+            if (node->fault_record_val.dat[0] == CTL_CTRL_CONST_ZERO && node->fault_record_val.dat[1] == CTL_CTRL_CONST_ZERO)
             {
                 node->fault_record_val = *vector;
             }
@@ -252,7 +252,7 @@ GMP_STATIC_INLINE uint32_t ctl_step_prot_vector_box(ctl_prot_vector_t* node, con
             node->current_count++;
         if (node->current_count >= node->trip_limit_count)
         {
-            if (node->fault_record_val.dat[0] == float2ctrl(0.0f) && node->fault_record_val.dat[1] == float2ctrl(0.0f))
+            if (node->fault_record_val.dat[0] == CTL_CTRL_CONST_ZERO && node->fault_record_val.dat[1] == CTL_CTRL_CONST_ZERO)
             {
                 node->fault_record_val = *vector;
             }
@@ -309,9 +309,9 @@ GMP_STATIC_INLINE uint32_t ctl_step_prot_thermal_i2t(ctl_prot_thermal_t* node, c
     node->thermal_acc += stress;
 
     // Prevent negative accumulation (ambient temperature baseline)
-    if (node->thermal_acc < float2ctrl(0.0f))
+    if (node->thermal_acc < CTL_CTRL_CONST_ZERO)
     {
-        node->thermal_acc = float2ctrl(0.0f);
+        node->thermal_acc = CTL_CTRL_CONST_ZERO;
     }
 
     if (node->thermal_acc > node->thermal_limit)
@@ -338,9 +338,9 @@ GMP_STATIC_INLINE uint32_t ctl_step_prot_stress_it(ctl_prot_thermal_t* node, ctr
 
     node->thermal_acc += stress;
 
-    if (node->thermal_acc < float2ctrl(0.0f))
+    if (node->thermal_acc < CTL_CTRL_CONST_ZERO)
     {
-        node->thermal_acc = float2ctrl(0.0f);
+        node->thermal_acc = CTL_CTRL_CONST_ZERO;
     }
 
     if (node->thermal_acc > node->thermal_limit)

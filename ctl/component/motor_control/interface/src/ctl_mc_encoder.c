@@ -90,7 +90,7 @@ void ctl_init_spd_calculator(
     sc->old_position = 0;
     sc->encif.speed = 0;
 
-    sc->scale_factor = float2ctrl(60.0f * control_law_freq / maximum_div / rated_speed_rpm);
+    sc->scale_factor = real2ctrl(60.0f * control_law_freq / maximum_div / rated_speed_rpm);
     ctl_init_lp_filter(&sc->spd_filter, control_law_freq / maximum_div, speed_filter_fc);
     ctl_init_divider(&sc->div, maximum_div);
 
@@ -123,7 +123,7 @@ void ctl_init_spd_calculator_elecpos(
     sc->old_position = 0;
     sc->encif.speed = 0;
 
-    sc->scale_factor = float2ctrl(60.0f * control_law_freq / maximum_div / pole_pairs / rated_speed_rpm);
+    sc->scale_factor = real2ctrl(60.0f * control_law_freq / maximum_div / pole_pairs / rated_speed_rpm);
     ctl_init_lp_filter(&sc->spd_filter, control_law_freq / maximum_div, speed_filter_fc);
     ctl_init_divider(&sc->div, maximum_div);
 

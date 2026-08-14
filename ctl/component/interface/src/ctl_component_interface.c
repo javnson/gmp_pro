@@ -150,10 +150,10 @@ void ctl_init_adv_pwm_channel(adv_pwm_channel_t* pwm_obj, pwm_gt nominal_period_
     gmp_ctl_assert(nominal_period_base > 0);
 
     /* 1. Reset input per-unit interfaces workspace to absolute safe zero states */
-    pwm_obj->raw.period = float2ctrl(0.0f);
-    pwm_obj->raw.phase = float2ctrl(0.0f);
-    pwm_obj->raw.duty = float2ctrl(0.0f);
-    pwm_obj->raw.deadband = float2ctrl(0.0f);
+    pwm_obj->raw.period = CTL_CTRL_CONST_ZERO;
+    pwm_obj->raw.phase = CTL_CTRL_CONST_ZERO;
+    pwm_obj->raw.duty = CTL_CTRL_CONST_ZERO;
+    pwm_obj->raw.deadband = CTL_CTRL_CONST_ZERO;
 
     /* 2. Load global static hardware timebase baseline */
     pwm_obj->period_base = nominal_period_base;
@@ -175,14 +175,14 @@ void ctl_init_adv_pwm_dual_channel(adv_pwm_dual_channel_t* pwm_obj, pwm_gt nomin
     gmp_ctl_assert(nominal_period_base > 0);
 
     /* 1. Reset shared period timebase reference input */
-    pwm_obj->raw.period = float2ctrl(0.0f);
-    pwm_obj->raw.deadband = float2ctrl(0.0f);
+    pwm_obj->raw.period = CTL_CTRL_CONST_ZERO;
+    pwm_obj->raw.deadband = CTL_CTRL_CONST_ZERO;
 
     /* 2. Concurrent vectorized interface array space initialization */
     for (i = 0; i < 2; ++i)
     {
-        pwm_obj->raw.phase[i] = float2ctrl(0.0f);
-        pwm_obj->raw.duty[i] = float2ctrl(0.0f);
+        pwm_obj->raw.phase[i] = CTL_CTRL_CONST_ZERO;
+        pwm_obj->raw.duty[i] = CTL_CTRL_CONST_ZERO;
 
         pwm_obj->phase[i] = 0;
         pwm_obj->duty[i] = 0;

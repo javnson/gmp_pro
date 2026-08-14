@@ -46,7 +46,12 @@
 #define GMP_WEAK_FUNC_SUFFIX
 
 // + disable optimization
+// ARMClang supports optnone, while legacy ARMCC 5 reports it as unknown.
+#if defined(__clang__)
 #define GMP_NO_OPT_PREFIX __attribute__((optnone))
+#else
+#define GMP_NO_OPT_PREFIX
+#endif
 #define GMP_NO_OPT_SUFFIX
 
 // + variables aligned
