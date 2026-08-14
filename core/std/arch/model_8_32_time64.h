@@ -1,21 +1,14 @@
-#ifndef _FILE_ARM_M_GENERAL_H_
-#define _FILE_ARM_M_GENERAL_H_
+#ifndef _FILE_ARCH_MODEL_8_32_TIME64_H_
+#define _FILE_ARCH_MODEL_8_32_TIME64_H_
 
-/* Common data-model defaults for ARM Cortex-M cores.
- *
- * Every definition is an override point.  User configuration and CSP type
- * definitions are assembled before this header, so an unusual device or ABI
- * can replace one item without duplicating the complete Cortex-M model. */
-#ifndef ARCH_NAME
-#define ARCH_NAME "ARM_M"
-#endif
-
+/* Shared defaults for architectures with 8-bit addressable bytes,
+ * 32-bit efficient integers, and a 64-bit system tick container. */
 #ifndef SIZEOF_UNIT
 #define SIZEOF_UNIT (1)
 #endif
 
 #ifndef GMP_PORT_DATA_T
-#define GMP_PORT_DATA_T              uint8_t
+#define GMP_PORT_DATA_T              int8_t
 #define GMP_PORT_DATA_SIZE_PER_BITS  (8)
 #define GMP_PORT_DATA_SIZE_PER_BYTES (1)
 #endif
@@ -45,10 +38,10 @@
 #endif
 
 #ifndef GMP_PORT_TIME_T
-#define GMP_PORT_TIME_T              uint32_t
-#define GMP_PORT_TIME_SIZE_PER_BITS  (32)
-#define GMP_PORT_TIME_SIZE_PER_BYTES (4)
-#define GMP_PORT_TIME_MAXIMUM        (UINT32_MAX)
+#define GMP_PORT_TIME_T              uint64_t
+#define GMP_PORT_TIME_SIZE_PER_BITS  (64)
+#define GMP_PORT_TIME_SIZE_PER_BYTES (8)
+#define GMP_PORT_TIME_MAXIMUM        (UINT64_MAX)
 #endif
 
 #ifndef GMP_PORT_SIZE_T
@@ -105,4 +98,4 @@
 #define GMP_PORT_PWM_SIZE_PER_BYTES (4)
 #endif
 
-#endif // _FILE_ARM_M_GENERAL_H_
+#endif // _FILE_ARCH_MODEL_8_32_TIME64_H_

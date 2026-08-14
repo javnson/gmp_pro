@@ -31,12 +31,12 @@ void ctl_init_bldc_zcd_obs(ctl_bldc_zcd_obs_t* obs, const ctl_bldc_zcd_obs_init_
     obs->delay_target_pu = float2ctrl(1.0f / 12.0f);
 
     // 2. Timers & Filters
-    obs->blanking_ticks = (uint32_t)(init->blanking_time_ms * fs_safe / 1000.0f);
-    obs->debounce_limit = (uint32_t)(init->debounce_time_ms * fs_safe / 1000.0f);
+    obs->blanking_ticks = (time_gt)(init->blanking_time_ms * fs_safe / 1000.0f);
+    obs->debounce_limit = (time_gt)(init->debounce_time_ms * fs_safe / 1000.0f);
     if (obs->debounce_limit < 1)
         obs->debounce_limit = 1;
 
-    obs->timeout_ticks = (uint32_t)(init->timeout_ms * fs_safe / 1000.0f);
+    obs->timeout_ticks = (time_gt)(init->timeout_ms * fs_safe / 1000.0f);
 
     // LPF to smooth the estimated speed (10Hz bandwidth is typical for stable 6-step)
     ctl_init_filter_iir1_lpf(&obs->filter_spd, fs_safe, 10.0f);
@@ -46,7 +46,7 @@ void ctl_init_bldc_zcd_obs(ctl_bldc_zcd_obs_t* obs, const ctl_bldc_zcd_obs_init_
 }
 
 void ctl_step_bldc_zcd_obs(ctl_bldc_zcd_obs_t* obs, ctrl_gt v_u_pu, ctrl_gt v_v_pu, ctrl_gt v_w_pu, ctrl_gt v_bus_pu,
-                           uint8_t curr_state)
+                           data_gt curr_state)
 {
     if (!obs->flag_enable)
         return;

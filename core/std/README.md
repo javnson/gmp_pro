@@ -14,6 +14,13 @@
 
 Facility 模块 ID 为 `core|std`。
 
+## Architecture defaults
+
+`core/std/cfg/arch.cfg.h` 会根据编译器目标自动选择 Cortex-M、C28x、C29x、
+x86、x86-64 或 32 位 RISC-V 类型模型。装配时先保留用户和 CSP 已定义的
+`GMP_PORT_*`，再由 arch 补齐架构公共值，最后由 `types.cfg.h` 提供未知架构
+的兜底定义。具体契约见 [`arch/README.md`](arch/README.md)。
+
 ## Options 集合
 
 `options.cfg.h` 只定义稳定选项值，用户或 CSP 在自己的配置中选择。

@@ -208,6 +208,6 @@ typedef GMP_PORT_DAC_T dac_gt;
 #define GMP_PORT_PWM_SIZE_PER_BYTES (4)
 #endif // GMP_PORT_PWM_T
 
-typedef GMP_PORT_ADC_T pwm_gt;
+typedef GMP_PORT_PWM_T pwm_gt;
 
 #endif // _FILE_CHIP_DEFAULT_TYPE_H_

@@ -44,7 +44,7 @@ static const ctrl_gt HALL_CENTER_ANGLE_PU[8] = {
  * @details Array size is 64. Index is created by (prev_state << 3) | curr_state.
  * Returns +1 for forward, -1 for reverse, 0 for invalid/no-change.
  */
-static const int8_t HALL_DIR_MAP[64] = {
+static const fast_gt HALL_DIR_MAP[64] = {
     // To read: Map[prev * 8 + curr]
     0, 0,  0,  0,  0,  0,  0,  0, // Prev 0 (Invalid)
     0, 0,  0,  -1, 0,  1,  0,  0, // Prev 1 (001): 1->5(+), 1->3(-)
@@ -79,14 +79,14 @@ void ctl_init_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, const ctl_pmsm_hall_obs_in
     obs->hall_offset_pu = float2ctrl(init->hall_offset_deg / 360.0f);
 
     // 3. Timeout and LPF
-    obs->timeout_ticks = (uint32_t)(init->timeout_ms * fs_safe / 1000.0f);
+    obs->timeout_ticks = (time_gt)(init->timeout_ms * fs_safe / 1000.0f);
     ctl_init_filter_iir1_lpf(&obs->filter_spd, fs_safe, init->filter_bw_hz);
 
     ctl_clear_pmsm_hall_obs(obs);
     ctl_disable_pmsm_hall_obs(obs);
 }
 
-void ctl_step_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, uint8_t hall_state)
+void ctl_step_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, data_gt hall_state)
 {
     if (!obs->flag_enable)
         return;
@@ -101,8 +101,8 @@ void ctl_step_pmsm_hall_obs(ctl_pmsm_hall_obs_t* obs, uint8_t hall_state)
     if (hall_state != obs->prev_hall_state)
     {
         // Calculate transition index: (prev << 3) | curr
-        uint8_t trans_idx = (obs->prev_hall_state << 3) | hall_state;
-        int8_t dir = HALL_DIR_MAP[trans_idx];
+        data_gt trans_idx = (data_gt)((obs->prev_hall_state << 3) | hall_state);
+        fast_gt dir = HALL_DIR_MAP[trans_idx];
 
         if (dir != 0 && obs->edge_tick_cnt > 0)
         {

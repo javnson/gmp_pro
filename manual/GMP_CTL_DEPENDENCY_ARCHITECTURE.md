@@ -54,12 +54,22 @@ Facility 当前可执行模块树覆盖 `core`、`csp` 和 `ctl`。`cctl` 与 `v
         ↓ 覆盖
 CSP 的 csp.config.h
         ↓ 补充
-core/std/cfg/gmp.cfg.h 仓库默认值
+core/std/cfg/gmp.cfg.h 仓库功能默认值
+        ↓
+CSP 的 csp.typedef.h 真实平台例外
+        ↓ 补齐
+core/std/cfg/arch.cfg.h 架构类型默认值
+        ↓ 回退
+core/std/cfg/types.cfg.h 通用类型默认值
         ↓ 校验并形成
 gmp_type.h 基础类型与编译器契约
 ```
 
 `gmp_type.h` 是库组件获取 GMP 统一类型的最小入口。它不装配外设管理、任务框架或完整运行时。保存 tick 的 `time_gt` 由 `GMP_PORT_TIME_T` 决定，因此可由用户或 CSP 选择 32 位或 64 位实现；算法不得假设其固定宽度。
+
+`core/std/arch` 维护处理器数据模型。目前自动识别 Cortex-M、C28x、C29x、x86、x86-64 和 32-bit RISC-V。架构头只定义尚未被用户或 CSP 定义的 `GMP_PORT_*` 宏，因此 CSP 不得复制整张通用类型表，只保留外设句柄、特殊 tick 宽度等真实例外。C28x 的 C byte 为 16 bit，不存在 `int8_t/uint8_t`；可复用状态、协议字节容器和小整数应分别采用 `data_gt`、`fast_gt` 或明确的序列化逻辑。
+
+临界区进入/退出必须由 CSP 以 `GMP_STATIC_INLINE` 提供，使关中断/开中断指令在调用点展开；不得为解决链接问题改成外部函数。只使用 `gmp_type.h`/`gmp_base.h` 的平台桥接模块若需要临界区，必须显式取得 CSP 内联定义并在 Facility 中登记该装配依赖。`gmp_base_print` 的声明则由 `GMP_USER_PRINT_FUNCTION_DECLARATION` 从固定 CSP 配置送入 `gmp_base.h`，调度器等基础模块可以保留诊断输出；是否关闭输出由用户配置决定，不能通过删除调用规避依赖。
 
 配置头在基础类型尚未完成时可能包含 SDPE 生成的硬件参数头。硬件参数头必须保持“宏与常量资产”的性质，不得引入 `gmp_math.h` 或控制器实现头，否则会形成 `gmp_type.h → 配置 → 预设 → gmp_math.h` 的递归装配。
 
@@ -128,6 +138,14 @@ Facility 选择完成后，Visual Studio 公共属性表按以下优先级生成
 
 不要直接修改 `gmp_src` 或 `gmp_inc` 中的内容。Keil 等 IDE 的源代码管理器可能重新生成这些目录，手工放入权威源码会造成引用顺序和重复定义问题。
 
+Keil 工程只允许引用工程内的 `gmp_src_mgr/gmp_src` 与 `gmp_src_mgr/gmp_inc` 生成结果。每次 Facility 生成改变文件集合后，必须同步刷新 `.uvprojx` 的生成源码组：删除已退出 Facility 的旧文件，并加入新生成文件；不得用指向仓库权威目录的路径来临时补齐缺项。
+
+### 6.1 DataLink 平台映射
+
+DataLink 核心只负责协议状态机，UART 句柄、实例和接收机制由 SDPE/xplt/CSP 闭合。以 STM32G431 为例：SDPE 将 `MCS_UART_HANDLE` 映射为 `&huart2`、`MCS_UART_INSTANCE` 映射为 `USART2`；CubeMX 提供 USART2 RX 循环 DMA；xplt 的半满/全满回调计算 DMA 增量并调用 `gmp_dev_dl_push_str()`；发送路径通过 CSP 的 `gmp_hal_uart_write()` 输出 DataLink header 与 payload。修改任一端时必须同时核对四层映射，不能只验证宏存在。
+
+DataLink Scope 的线格式触发电平固定为 F32，但目标侧字段不得固定成 `float`。`gmp_scope_parameter_gt` 在启用 CTL 且未定义 `SPECIFY_DISABLE_GMP_MATH` 时绑定 `parameter_gt`，否则回退为 `float`；解码时先读取 F32，再显式转换为目标参数类型。用户还可通过 `GMP_SCOPE_PARAMETER_T` 覆盖局部类型，而不改变协议线格式。
+
 ## 7. 维护流程
 
 新增或迁移 CTL 模块时依次执行：
@@ -162,6 +180,16 @@ Facility 选择完成后，Visual Studio 公共属性表按以下优先级生成
 | `vcore` | HDL 接口、约束、测试平台与工具版本 | 仿真、综合及时序报告；按设计记录板级验证 |
 | `slib` 或 SIL 协议 | 唯一 C++ 协议源、MATLAB 模型、Mask、发布版本说明 | MEX、MATLAB 回归、定步长 SIL/Rapid Accelerator |
 | Facility/SDPE 工具 | 数据格式、生成器、分发脚本和工具 README | schema/注册表校验、代表工程重新生成与无绝对路径检查 |
+
+### 7.2 当前目标工具链验证基线
+
+| 架构/工程 | 工具链 | 验证目标 |
+| --- | --- | --- |
+| C28x / `csp/c28x_syscfg/iris_280039c_board` | TI C2000 CGT 22.6.1 LTS + CCS headless build | Facility 生成、SysConfig、全部 C/ASM 编译和链接 |
+| C29x / `ctl/suite/mcs_pmsm_nt/project/f29h85x_lp_3phgan` | TI C29 Clang 2.2.0 LTS + F29H85x SDK 1.02.01.00 | SysConfig、CTL/core/CSP 编译和链接 |
+| Cortex-M4 / `ctl/suite/mcs_pmsm_nt/project/stm32g431` | Keil ARMCC 5.06u6；另用 GNU Arm 进行架构 smoke test | 生成副本引用、DataLink UART/DMA 映射、全部编译和链接 |
+
+这些结果是工具链与链接验证，不代表板级时序、UART 电气连接、DMA 运行状态或电机功率级已经通过硬件验证。
 
 ## 8. 评审检查清单
 

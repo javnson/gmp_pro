@@ -159,7 +159,7 @@ typedef gmp_spi_dev_t* spi_device_halt;
  * @brief   Write a 8/16/24/32-bit frame to the device.
  * @note    Automatically asserts and de-asserts the CS pin. Data is MSB-first.
  */
-GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_write_8b(spi_device_halt hdev, uint8_t data, time_gt timeout)
+GMP_STATIC_INLINE ec_gt gmp_hal_spi_dev_write_8b(spi_device_halt hdev, data_gt data, time_gt timeout)
 {
     if (hdev == NULL)
         return GMP_EC_GENERAL_ERROR;
@@ -320,7 +320,7 @@ ec_gt gmp_hal_spi_dev_read_8b(spi_device_halt hdev, data_gt* data_ret, time_gt t
     /* 4. Assign data if successful */
     if (ret == GMP_EC_OK)
     {
-        *data_ret = (uint8_t)rx_buf[0];
+        *data_ret = (data_gt)(rx_buf[0] & 0xFFU);
     }
 
     return ret;
@@ -786,15 +786,15 @@ typedef struct
  * @param offset Byte offset (0 to 7).
  * @return       The 8-bit value at the specified offset.
  */
-GMP_STATIC_INLINE uint8_t gmp_can_payload_get_u8(const gmp_can_msg_t* msg, uint8_t offset)
+GMP_STATIC_INLINE data_gt gmp_can_payload_get_u8(const gmp_can_msg_t* msg, fast_gt offset)
 {
     if (offset < 4)
     {
-        return (uint8_t)((msg->data_32[0] >> (offset * 8)) & 0xFFU);
+        return (data_gt)((msg->data_32[0] >> (offset * 8)) & 0xFFU);
     }
     else if (offset < 8)
     {
-        return (uint8_t)((msg->data_32[1] >> ((offset - 4) * 8)) & 0xFFU);
+        return (data_gt)((msg->data_32[1] >> ((offset - 4) * 8)) & 0xFFU);
     }
     return 0;
 }
@@ -805,7 +805,7 @@ GMP_STATIC_INLINE uint8_t gmp_can_payload_get_u8(const gmp_can_msg_t* msg, uint8
  * @param offset Byte offset (0 to 7).
  * @param val    The 8-bit value to inject.
  */
-GMP_STATIC_INLINE void gmp_can_payload_set_u8(gmp_can_msg_t* msg, uint8_t offset, uint8_t val)
+GMP_STATIC_INLINE void gmp_can_payload_set_u8(gmp_can_msg_t* msg, fast_gt offset, data_gt val)
 {
     if (offset < 4)
     {
@@ -828,7 +828,7 @@ GMP_STATIC_INLINE void gmp_can_payload_set_u8(gmp_can_msg_t* msg, uint8_t offset
  * @brief Read a 16-bit integer (Little-Endian) starting at any offset (0-6).
  * @note  Safe against unaligned memory access and cross-word boundaries (e.g., offset 3).
  */
-GMP_STATIC_INLINE uint16_t gmp_can_payload_get_u16(const gmp_can_msg_t* msg, uint8_t offset)
+GMP_STATIC_INLINE uint16_t gmp_can_payload_get_u16(const gmp_can_msg_t* msg, fast_gt offset)
 {
     return (uint16_t)gmp_can_payload_get_u8(msg, offset) | ((uint16_t)gmp_can_payload_get_u8(msg, offset + 1) << 8);
 }
@@ -836,7 +836,7 @@ GMP_STATIC_INLINE uint16_t gmp_can_payload_get_u16(const gmp_can_msg_t* msg, uin
 /**
  * @brief Read a 32-bit integer (Little-Endian) starting at any offset (0-4).
  */
-GMP_STATIC_INLINE uint32_t gmp_can_payload_get_u32(const gmp_can_msg_t* msg, uint8_t offset)
+GMP_STATIC_INLINE uint32_t gmp_can_payload_get_u32(const gmp_can_msg_t* msg, fast_gt offset)
 {
     return (uint32_t)gmp_can_payload_get_u8(msg, offset) | ((uint32_t)gmp_can_payload_get_u8(msg, offset + 1) << 8) |
            ((uint32_t)gmp_can_payload_get_u8(msg, offset + 2) << 16) |
@@ -846,7 +846,7 @@ GMP_STATIC_INLINE uint32_t gmp_can_payload_get_u32(const gmp_can_msg_t* msg, uin
 /**
  * @brief Read a 32-bit floating point number (IEEE 754) starting at any offset (0-4).
  */
-GMP_STATIC_INLINE float gmp_can_payload_get_f32(const gmp_can_msg_t* msg, uint8_t offset)
+GMP_STATIC_INLINE float gmp_can_payload_get_f32(const gmp_can_msg_t* msg, fast_gt offset)
 {
     union {
         uint32_t u;
@@ -863,28 +863,28 @@ GMP_STATIC_INLINE float gmp_can_payload_get_f32(const gmp_can_msg_t* msg, uint8_
 /**
  * @brief Write a 16-bit integer (Little-Endian) starting at any offset (0-6).
  */
-GMP_STATIC_INLINE void gmp_can_payload_set_u16(gmp_can_msg_t* msg, uint8_t offset, uint16_t val)
+GMP_STATIC_INLINE void gmp_can_payload_set_u16(gmp_can_msg_t* msg, fast_gt offset, uint16_t val)
 {
-    gmp_can_payload_set_u8(msg, offset, (uint8_t)(val & 0xFFU));
-    gmp_can_payload_set_u8(msg, offset + 1, (uint8_t)((val >> 8) & 0xFFU));
+    gmp_can_payload_set_u8(msg, offset, (data_gt)(val & 0xFFU));
+    gmp_can_payload_set_u8(msg, offset + 1, (data_gt)((val >> 8) & 0xFFU));
 }
 
 /**
  * @brief Write a 32-bit integer (Little-Endian) starting at any offset (0-4).
  */
-GMP_STATIC_INLINE void gmp_can_payload_set_u32(gmp_can_msg_t* msg, uint8_t offset, uint32_t val)
+GMP_STATIC_INLINE void gmp_can_payload_set_u32(gmp_can_msg_t* msg, fast_gt offset, uint32_t val)
 {
-    gmp_can_payload_set_u8(msg, offset, (uint8_t)(val & 0xFFU));
-    gmp_can_payload_set_u8(msg, offset + 1, (uint8_t)((val >> 8) & 0xFFU));
-    gmp_can_payload_set_u8(msg, offset + 2, (uint8_t)((val >> 16) & 0xFFU));
-    gmp_can_payload_set_u8(msg, offset + 3, (uint8_t)((val >> 24) & 0xFFU));
+    gmp_can_payload_set_u8(msg, offset, (data_gt)(val & 0xFFU));
+    gmp_can_payload_set_u8(msg, offset + 1, (data_gt)((val >> 8) & 0xFFU));
+    gmp_can_payload_set_u8(msg, offset + 2, (data_gt)((val >> 16) & 0xFFU));
+    gmp_can_payload_set_u8(msg, offset + 3, (data_gt)((val >> 24) & 0xFFU));
 }
 
 /**
  * @brief Write a 32-bit floating point number (IEEE 754) starting at any offset (0-4).
  * @note  Strict-aliasing safe implementation using union.
  */
-GMP_STATIC_INLINE void gmp_can_payload_set_f32(gmp_can_msg_t* msg, uint8_t offset, float val)
+GMP_STATIC_INLINE void gmp_can_payload_set_f32(gmp_can_msg_t* msg, fast_gt offset, float val)
 {
     union {
         float f;

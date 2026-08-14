@@ -15,5 +15,6 @@
 #define SPECIFY_PROJECT_GENERATED_BY_CUBEMX
 
 #define USER_SPECIFIED_PRINT_FUNCTION(A, ...) gmp_base_print_default(A, ##__VA_ARGS__)
+#define GMP_USER_PRINT_FUNCTION_DECLARATION size_gt gmp_base_print_default(const char* p_fmt, ...);
 
 #define SPECIFY_DISABLE_CSP_EXIT

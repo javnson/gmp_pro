@@ -144,7 +144,7 @@ fast_gt gmp_mem_persp_rx_cb(gmp_mem_persp_t* ctx)
     uint16_t item_count = mem_unpack_u8(pld, &idx, len) | (mem_unpack_u8(pld, &idx, len) << 8);
 
     uint32_t total_bytes = (uint32_t)item_size * item_count;
-    uint8_t status = 0;
+    data_gt status = 0;
 
     size_gt c;
 
@@ -191,7 +191,7 @@ fast_gt gmp_mem_persp_rx_cb(gmp_mem_persp_t* ctx)
                 uint32_t native_addr = byte_addr;
                 if (item_size == 1)
                 {
-                    gmp_dev_dl_tx_append_u8(dl, *((uint8_t*)native_addr));
+                    gmp_dev_dl_tx_append_u8(dl, *((data_gt*)native_addr));
                 }
                 else if (item_size == 2)
                 {
@@ -234,7 +234,7 @@ fast_gt gmp_mem_persp_rx_cb(gmp_mem_persp_t* ctx)
                 uint32_t native_addr = byte_addr >> 1;
                 if (item_size == 1)
                 {
-                    uint8_t val = mem_unpack_u8(pld, &idx, len);
+                    data_gt val = (data_gt)mem_unpack_u8(pld, &idx, len);
                     uint16_t word = *((uint16_t*)native_addr);
                     /* Update one octet with a native 16-bit read-modify-write. */
                     if (byte_addr & 1)
@@ -259,7 +259,7 @@ fast_gt gmp_mem_persp_rx_cb(gmp_mem_persp_t* ctx)
                 uint32_t native_addr = byte_addr;
                 if (item_size == 1)
                 {
-                    *((uint8_t*)native_addr) = mem_unpack_u8(pld, &idx, len);
+                    *((data_gt*)native_addr) = (data_gt)mem_unpack_u8(pld, &idx, len);
                 }
                 else if (item_size == 2)
                 {

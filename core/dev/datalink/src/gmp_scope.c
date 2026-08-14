@@ -171,7 +171,7 @@ static void scope_reply_configure(gmp_scope_service_t* ctx)
         config.mode = mode;
         config.channel = channel;
         config.position_permille = position;
-        config.level = (parameter_gt)level_f32;
+        config.level = (gmp_scope_parameter_gt)level_f32;
         config.auto_timeout_ms = timeout_ms;
         config.sample_divider = sample_divider;
         if (!resource->configure(resource->user_context, &config))

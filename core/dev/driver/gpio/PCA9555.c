@@ -63,7 +63,7 @@ ec_gt pca9555_set_pin_direction(pca9555_dev_t* dev, pca9555_port_et port, fast_g
     if ((dev == NULL) || (pin_num > 7))
         return GMP_EC_GENERAL_ERROR;
 
-    uint8_t reg_addr = (port == PCA9555_PORT_0) ? PCA9555_REG_CFG_PORT0 : PCA9555_REG_CFG_PORT1;
+    data_gt reg_addr = (port == PCA9555_PORT_0) ? PCA9555_REG_CFG_PORT0 : PCA9555_REG_CFG_PORT1;
 
     /* Modify shadow register */
     if (dir == PCA9555_DIR_INPUT)
@@ -84,7 +84,7 @@ ec_gt pca9555_set_pin_polarity(pca9555_dev_t* dev, pca9555_port_et port, fast_gt
     if ((dev == NULL) || (pin_num > 7))
         return GMP_EC_GENERAL_ERROR;
 
-    uint8_t reg_addr = (port == PCA9555_PORT_0) ? PCA9555_REG_POL_PORT0 : PCA9555_REG_POL_PORT1;
+    data_gt reg_addr = (port == PCA9555_PORT_0) ? PCA9555_REG_POL_PORT0 : PCA9555_REG_POL_PORT1;
 
     /* Modify shadow register */
     if (pol == PCA9555_POL_INVERTED)
@@ -104,7 +104,7 @@ ec_gt pca9555_set_pin_output(pca9555_dev_t* dev, pca9555_port_et port, fast_gt p
     if ((dev == NULL) || (pin_num > 7))
         return GMP_EC_GENERAL_ERROR;
 
-    uint8_t reg_addr = (port == PCA9555_PORT_0) ? PCA9555_REG_OUT_PORT0 : PCA9555_REG_OUT_PORT1;
+    data_gt reg_addr = (port == PCA9555_PORT_0) ? PCA9555_REG_OUT_PORT0 : PCA9555_REG_OUT_PORT1;
 
     /* Modify shadow register without reading from I2C */
     if (state)
@@ -131,7 +131,7 @@ fast_gt pca9555_get_pin_input(pca9555_dev_t* dev, pca9555_port_et port, fast_gt 
         return 0;
     }
 
-    uint8_t reg_addr = (port == PCA9555_PORT_0) ? PCA9555_REG_IN_PORT0 : PCA9555_REG_IN_PORT1;
+    data_gt reg_addr = (port == PCA9555_PORT_0) ? PCA9555_REG_IN_PORT0 : PCA9555_REG_IN_PORT1;
 
     /* Must read actual physical state from I2C bus */
     ret = gmp_hal_iic_read_reg(dev->bus, dev->dev_addr, reg_addr, 1, &port_val, 1, PCA9555_CFG_TIMEOUT);

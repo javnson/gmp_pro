@@ -4,6 +4,12 @@
  */
 
 #include <ctl/math_block/gmp_math.h>
+#ifndef SPECIFY_DISABLE_CSP
+// The DataLink bridge is platform-bound. Include the CSP inline critical
+// section implementation without pulling the complete GMP runtime into CTL.
+#include <core/dev/peripheral_types.h>
+#include <csp.general.h>
+#endif
 #include <core/base/gmp_base.h>
 
 #include <ctl/component/dsa/dsa_dl_scope.h>

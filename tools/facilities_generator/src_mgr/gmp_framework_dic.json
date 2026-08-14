@@ -6196,6 +6196,7 @@
                 "help_docs": [],
                 "depends_on": [
                     "core|base|port",
+                    "core|dev|_internal",
                     "ctl|math_block|_internal",
                     "core|dev|datalink|scope",
                     "ctl|component|dsa|dsa_scope",

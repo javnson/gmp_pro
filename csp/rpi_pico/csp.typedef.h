@@ -17,18 +17,8 @@
 #include <hardware/uart.h>
 #include <hardware/watchdog.h>
 
-#define GMP_PORT_DATA_T              unsigned char
-#define GMP_PORT_DATA_SIZE_PER_BITS  (8)
-#define GMP_PORT_DATA_SIZE_PER_BYTES (1)
-
-#define GMP_PORT_FAST8_T              int_fast32_t
-#define GMP_PORT_FAST8_SIZE_PER_BITS  (32)
-#define GMP_PORT_FAST8_SIZE_PER_BYTES (4)
-
-#define GMP_PORT_FAST16_T              int_fast32_t
-#define GMP_PORT_FAST16_SIZE_PER_BITS  (32)
-#define GMP_PORT_FAST16_SIZE_PER_BYTES (4)
-
+/* Cortex-M data/fast types come from core/std/arch. Pico keeps a 64-bit
+ * microsecond-derived tick as a platform-specific override. */
 #define GMP_PORT_TIME_T              uint64_t
 #define GMP_PORT_TIME_SIZE_PER_BITS  (64)
 #define GMP_PORT_TIME_SIZE_PER_BYTES (8)

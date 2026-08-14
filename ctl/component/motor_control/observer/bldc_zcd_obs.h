@@ -60,13 +60,13 @@ typedef struct _tag_bldc_zcd_obs_t
 {
     // --- Standard Outputs ---
     velocity_ift spd_out;      //!< Estimated electrical speed (PU).
-    uint8_t next_comm_state;   //!< The next 6-step commutation state (1-6) to be applied.
+    data_gt next_comm_state;   //!< The next 6-step commutation state (1-6) to be applied.
     fast_gt flag_comm_trigger; //!< Goes HIGH (1) for exactly one tick when commutation should occur.
 
     // --- State Variables ---
-    uint32_t tick_since_last_zcd; //!< Timer counting ISR ticks between consecutive ZCDs (60 degrees).
-    uint32_t tick_since_comm;     //!< Timer counting ticks since the last commutation (for blanking).
-    uint32_t debounce_cnt;        //!< Noise filter counter for ZCD validation.
+    time_gt tick_since_last_zcd; //!< Timer counting ISR ticks between consecutive ZCDs (60 degrees).
+    time_gt tick_since_comm;     //!< Timer counting ticks since the last commutation (for blanking).
+    time_gt debounce_cnt;        //!< Noise filter counter for ZCD validation.
 
     ctrl_gt spd_est_pu;     //!< Estimated speed calculated at the last ZCD (PU).
     ctrl_gt theta_delay_pu; //!< Integral of speed since ZCD, used to trigger the 30-deg delay.
@@ -78,9 +78,9 @@ typedef struct _tag_bldc_zcd_obs_t
     ctrl_gt sf_w_to_angle;   //!< Scale factor: integrates PU speed to PU angle. @f$ \frac{\Omega_{base} T_s}{2\pi} @f$.
     ctrl_gt delay_target_pu; //!< Target delay angle for commutation: @f$ 1/12 @f$ PU (30 degrees).
 
-    uint32_t blanking_ticks; //!< Number of ticks to ignore BEMF after commutation.
-    uint32_t debounce_limit; //!< Number of consecutive valid samples required for ZCD.
-    uint32_t timeout_ticks;  //!< Ticks allowed before stall is declared.
+    time_gt blanking_ticks; //!< Number of ticks to ignore BEMF after commutation.
+    time_gt debounce_limit; //!< Number of consecutive valid samples required for ZCD.
+    time_gt timeout_ticks;  //!< Ticks allowed before stall is declared.
 
     // --- Sub-modules ---
     ctl_filter_IIR1_t filter_spd; //!< LPF to smooth the discontinuous speed estimation.
@@ -143,7 +143,7 @@ GMP_STATIC_INLINE void ctl_disable_bldc_zcd_obs(ctl_bldc_zcd_obs_t* obs)
  * @param[in]     curr_state Current 6-step commutation state (1-6).
  */
 void ctl_step_bldc_zcd_obs(ctl_bldc_zcd_obs_t* obs, ctrl_gt v_u_pu, ctrl_gt v_v_pu, ctrl_gt v_w_pu, ctrl_gt v_bus_pu,
-                           uint8_t curr_state);
+                           data_gt curr_state);
 
 /** @} */ // end of BLDC_ZCD_OBS group
 

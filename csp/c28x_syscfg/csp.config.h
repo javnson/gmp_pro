@@ -38,3 +38,4 @@
 
 // Specify print function
 #define USER_SPECIFIED_PRINT_FUNCTION(A, ...) gmp_base_print_c28xsyscfg(A, ##__VA_ARGS__)
+#define GMP_USER_PRINT_FUNCTION_DECLARATION size_gt gmp_base_print_c28xsyscfg(const char* p_fmt, ...);

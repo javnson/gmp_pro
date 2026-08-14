@@ -149,11 +149,13 @@ void _gmp_base_assert(int condition);
 // All the components in CTL will use this macro instead of gmp_base_assert.
 // So, in controller user may add macro DISABLE_CTL_LIB_ASSERT to 
 // disable all the ASSERT in control law.
+#ifndef gmp_ctl_assert
 #if defined DISABLE_CTL_LIB_ASSERT
 #define gmp_ctl_assert(assert_cond) ((void)(assert_cond))
 #else // DISABLE_CTL_LIB_ASSERT
 #define gmp_ctl_assert(assert_cond) gmp_base_assert(assert_cond)
 #endif // DISABLE_CTL_LIB_ASSERT
+#endif // gmp_ctl_assert
 
 // When a function is unimplemented, the function would be invoke.
 //
@@ -172,6 +174,10 @@ typedef struct
 
 size_gt gmp_base_print_internal(const char* format, ...);
 ec_gt gmp_hal_uart_send(GMP_BASE_PRINT_DEFAULT_HANDLE_TYPE handle, gmp_print_buffer_t* buffer);
+
+#if defined GMP_USER_PRINT_FUNCTION_DECLARATION
+GMP_USER_PRINT_FUNCTION_DECLARATION
+#endif
 
 #if defined USER_SPECIFIED_PRINT_FUNCTION
 

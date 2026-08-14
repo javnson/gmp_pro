@@ -1,13 +1,9 @@
-#ifndef _FILE_ARM_M_GENERAL_H_
-#define _FILE_ARM_M_GENERAL_H_
+#ifndef _FILE_ARCH_C29X_H_
+#define _FILE_ARCH_C29X_H_
 
-/* Common data-model defaults for ARM Cortex-M cores.
- *
- * Every definition is an override point.  User configuration and CSP type
- * definitions are assembled before this header, so an unusual device or ABI
- * can replace one item without duplicating the complete Cortex-M model. */
+/* TI C29 is byte-addressed and optimized for 32-bit arithmetic. */
 #ifndef ARCH_NAME
-#define ARCH_NAME "ARM_M"
+#define ARCH_NAME "C29x"
 #endif
 
 #ifndef SIZEOF_UNIT
@@ -105,4 +101,4 @@
 #define GMP_PORT_PWM_SIZE_PER_BYTES (4)
 #endif
 
-#endif // _FILE_ARM_M_GENERAL_H_
+#endif // _FILE_ARCH_C29X_H_

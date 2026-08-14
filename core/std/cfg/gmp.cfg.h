@@ -182,6 +182,8 @@
 //
 //// Enable GMP CTL module
 //// #define SPECIFY_ENABLE_GMP_CTL
+//// Keep DataLink and other optional adapters independent from CTL math
+//// #define SPECIFY_DISABLE_GMP_MATH
 // #define ENABLE_TI_IQMATH
 // #define ENABLE_IQMATH_HEADER_DIREDCT
 //

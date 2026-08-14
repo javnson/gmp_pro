@@ -15,27 +15,11 @@
         },
         {
             "root": "core",
-            "module": "dev|datalink|scope"
-        },
-        {
-            "root": "ctl",
-            "module": "component|dsa|dsa_scope"
-        },
-        {
-            "root": "ctl",
-            "module": "component|dsa|dsa_trigger"
-        },
-        {
-            "root": "ctl",
-            "module": "component|dsa|dsa_dl_scope"
+            "module": "base|port"
         },
         {
             "root": "core",
             "module": "dev|_internal"
-        },
-        {
-            "root": "core",
-            "module": "dev|driver|_internal"
         },
         {
             "root": "core",
@@ -51,7 +35,15 @@
         },
         {
             "root": "core",
+            "module": "dev|datalink|scope"
+        },
+        {
+            "root": "core",
             "module": "dev|datalink|variable_monitor"
+        },
+        {
+            "root": "core",
+            "module": "dev|driver|_internal"
         },
         {
             "root": "core",
@@ -88,10 +80,6 @@
         {
             "root": "core",
             "module": "pm|function_scheduler"
-        },
-        {
-            "root": "core",
-            "module": "base|port"
         },
         {
             "root": "core",
@@ -147,14 +135,6 @@
         },
         {
             "root": "ctl",
-            "module": "component|digital_power|inv|voltage_ctrl"
-        },
-        {
-            "root": "ctl",
-            "module": "component|digital_power|inv|zero_ctrl"
-        },
-        {
-            "root": "ctl",
             "module": "component|digital_power|inv|pll_ddsrf"
         },
         {
@@ -167,6 +147,14 @@
         },
         {
             "root": "ctl",
+            "module": "component|digital_power|inv|voltage_ctrl"
+        },
+        {
+            "root": "ctl",
+            "module": "component|digital_power|inv|zero_ctrl"
+        },
+        {
+            "root": "ctl",
             "module": "component|digital_power|mppt|_internal"
         },
         {
@@ -176,14 +164,6 @@
         {
             "root": "ctl",
             "module": "component|digital_power|mppt|po"
-        },
-        {
-            "root": "ctl",
-            "module": "component|digital_power|rectifier|_internal"
-        },
-        {
-            "root": "ctl",
-            "module": "component|digital_power|rectifier|vienna"
         },
         {
             "root": "ctl",
@@ -204,6 +184,18 @@
         {
             "root": "ctl",
             "module": "component|digital_power|sinv|spll_sogi_dc"
+        },
+        {
+            "root": "ctl",
+            "module": "component|dsa|dsa_dl_scope"
+        },
+        {
+            "root": "ctl",
+            "module": "component|dsa|dsa_scope"
+        },
+        {
+            "root": "ctl",
+            "module": "component|dsa|dsa_trigger"
         },
         {
             "root": "ctl",

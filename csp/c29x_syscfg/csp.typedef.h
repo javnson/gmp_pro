@@ -13,17 +13,7 @@
 #endif
 #define NULL 0
 
-#define GMP_PORT_DATA_T              uint8_t
-#define GMP_PORT_DATA_SIZE_PER_BITS  (8)
-#define GMP_PORT_DATA_SIZE_PER_BYTES (1)
-
-#define GMP_PORT_FAST_T              int_fast32_t
-#define GMP_PORT_FAST_SIZE_PER_BITS  (32)
-#define GMP_PORT_FAST_SIZE_PER_BYTES (4)
-
-#define GMP_PORT_FAST16_T              int_fast32_t
-#define GMP_PORT_FAST16_SIZE_PER_BITS  (32)
-#define GMP_PORT_FAST16_SIZE_PER_BYTES (4)
+/* C29x data, fast, time, and address types come from core/std/arch. */
 
 #define GMP_PORT_GPIO_T uint32_t
 #define GMP_PORT_UART_T uint32_t

@@ -21,19 +21,8 @@
 
 // This file is for Nations N32H47x/N32H48x microcontrollers.
 
-// STM32 BASIC DATA TYPE
-#define GMP_PORT_DATA_T              unsigned char
-#define GMP_PORT_DATA_SIZE_PER_BITS  (8)
-#define GMP_PORT_DATA_SIZE_PER_BYTES (1)
-
-// FAST TYPES
-#define GMP_PORT_FAST8_T              int_fast32_t
-#define GMP_PORT_FAST8_SIZE_PER_BITS  (32)
-#define GMP_PORT_FAST8_SIZE_PER_BYTES (4)
-
-#define GMP_PORT_FAST16_T              int_fast32_t
-#define GMP_PORT_FAST16_SIZE_PER_BITS  (32)
-#define GMP_PORT_FAST16_SIZE_PER_BYTES (4)
+// Cortex-M data and fast integer types come from core/std/arch. This file
+// only publishes N32-specific peripheral handle types.
 
 // Peripheral handle types. GPIO needs both the port and pin mask, while the
 // remaining peripherals can use the vendor register block pointer directly.

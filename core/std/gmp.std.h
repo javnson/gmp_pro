@@ -82,6 +82,11 @@ extern "C"
 #include <csp.typedef.h>
 #endif // SPECIFY_DISABLE_CSP
 
+// Fill missing type definitions from the processor architecture. User and
+// CSP definitions above retain priority because architecture headers only
+// provide guarded defaults.
+#include <core/std/cfg/arch.cfg.h>
+
 // Invoke default type
 //
 #include <core/std/cfg/types.cfg.h>

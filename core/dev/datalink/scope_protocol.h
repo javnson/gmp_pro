@@ -6,6 +6,20 @@
 #ifndef _FILE_GMP_SCOPE_PROTOCOL_H
 #define _FILE_GMP_SCOPE_PROTOCOL_H
 
+/* Scope configuration follows the control parameter model when CTL math is
+ * present. Standalone DataLink builds retain a small, dependency-free float
+ * fallback. A project may still override GMP_SCOPE_PARAMETER_T explicitly. */
+#ifndef GMP_SCOPE_PARAMETER_T
+#if defined(SPECIFY_ENABLE_GMP_CTL) && !defined(SPECIFY_DISABLE_GMP_MATH)
+#include <ctl/math_block/gmp_math.h>
+#define GMP_SCOPE_PARAMETER_T parameter_gt
+#else
+#define GMP_SCOPE_PARAMETER_T float
+#endif
+#endif
+
+typedef GMP_SCOPE_PARAMETER_T gmp_scope_parameter_gt;
+
 /** @brief Current wire-format version returned by Scope discovery. */
 #define GMP_SCOPE_PROTOCOL_VERSION 2U
 
@@ -55,7 +69,7 @@ typedef struct
     fast16_gt mode;                 /**< Target-defined trigger mode, conventionally 0 through 4 */
     fast16_gt channel;              /**< Zero-based trigger source channel */
     uint16_t position_permille;     /**< Samples before the trigger, in tenths of a percent */
-    parameter_gt level;             /**< Trigger comparison level */
+    gmp_scope_parameter_gt level;   /**< Trigger level converted from protocol F32 */
     uint32_t auto_timeout_ms;       /**< Auto-trigger timeout in milliseconds */
     uint16_t sample_divider;        /**< Sample every divider plus one control ticks */
 } gmp_scope_config_t;

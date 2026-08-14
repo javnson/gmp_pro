@@ -159,7 +159,7 @@ ec_gt pca9555_refresh_shadows(pca9555_dev_t* dev);
  * @param[in]     pin_num   Pin number (0-7).
  * @param[in]     state     Desired output state (non-zero for HIGH, 0 for LOW).
  */
-GMP_STATIC_INLINE void pca9555_set_pin_output_cached(pca9555_dev_t* dev, pca9555_port_et port, uint8_t pin_num,
+GMP_STATIC_INLINE void pca9555_set_pin_output_cached(pca9555_dev_t* dev, pca9555_port_et port, fast_gt pin_num,
                                                      fast_gt state)
 {
     if (dev != NULL && pin_num <= 7)
