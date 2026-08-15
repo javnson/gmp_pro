@@ -9,9 +9,9 @@
 工程已弃用各平台原有的 `xplt/ctrl_settings.h`，参数分成公共层和平台层：
 
 - `sdpe_general/sdpe_requirement.json`：网压/频率、PLL、P/Q 外环、调试给定、ADC 校准器、控制算法开关等平台无关参数。
-- `project/<platform>/sdpe_mgr/sdpe_requirement.json`：`BUILD_LEVEL`、控制频率、PWM 时基、标幺基值、传感器标定、板级资源映射以及硬件实体。
+- 各平台的 `sdpe_mgr/sdpe_requirement.json`：`BUILD_LEVEL`、控制频率、PWM 时基、标幺基值、传感器标定、板级资源映射以及硬件实体；C2000 平台位于 `project/<platform>/src/sdpe_mgr`，仿真与 STM32 保留各自现有布局。
 - `src/ctl_settings_defaults.h`：控制源码唯一的公共设置入口。
-- `src/sdpe_pgs_inv_gfl_common_settings.h` 和各平台 `sdpe_mgr/ctrl_settings.h`：SDPE 生成文件，不应手工修改。
+- `src/sdpe_pgs_inv_gfl_common_settings.h` 和各平台 `sdpe_mgr/ctrl_settings.h`：SDPE 生成文件，不应手工修改；C2000 的目标生成文件位于目标 `src/sdpe_mgr`。
 
 公共工程带有前缀 `PGS_INV_GFL_COMMON`，各平台也使用独立前缀，因此多个 SDPE 模块包含在同一编译单元时不会发生项目元数据宏冲突，也不再需要通过 `#undef SDPE_PROJECT_*` 清理公共层元数据。
 

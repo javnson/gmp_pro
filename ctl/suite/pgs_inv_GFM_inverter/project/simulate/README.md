@@ -6,7 +6,7 @@ The scripts follow the controller-process plus Simulink plant layout used by
 - `run_gfm_cosim(level, stop_time)` runs one matching controller/plant pair.
 - `run_gfm_validation(level, stop_time, label)` logs signals, evaluates the
   level-specific criteria, and writes JSON metrics plus PNG waveforms under
-  `validation/`.
+  `../../doc/simulation_result/`.
 - `run_build_level_matrix.ps1` regenerates target SDPE, builds Debug x64, and
   validates BUILD_LEVEL 1 through 5. It restores and rebuilds the checked-in
   BUILD_LEVEL 5 selection even when a case fails.

@@ -431,7 +431,7 @@ extern "C"
 
 /**
  * @brief Incremental commissioning level. 1: V/f voltage open loop; 2: current loop with synthetic electrical angle; 3: current loop with encoder angle; 4: speed loop with encoder feedback.
- *        Options: (1), (2), (3), (4), (5), (6)
+ *        Options: (1), (2), (3), (4)
  */
 #ifndef BUILD_LEVEL
 #define BUILD_LEVEL (2)

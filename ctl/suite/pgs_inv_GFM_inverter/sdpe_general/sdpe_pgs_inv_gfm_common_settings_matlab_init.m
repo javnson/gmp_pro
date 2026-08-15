@@ -27,7 +27,7 @@ PGS_INV_GFM_COMMON_SDPE_PROJECT_SUITE = 'pgs_inv_GFM_inverter';
 
 PGS_INV_GFM_COMMON_SDPE_PROJECT_VERSION = '1.0.0';
 
-PGS_INV_GFM_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-08-08';
+PGS_INV_GFM_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-08-15';
 
 %% Control Algorithm
 % Enable the established discrete controller anti-saturation path.

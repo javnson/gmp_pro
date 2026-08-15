@@ -15,8 +15,6 @@
 #include "user_main.h"
 #include <xplt.peripheral.h>
 
-#include <ctrl_rt_trace.h>
-
 // console
 #include <conio.h>
 
@@ -49,15 +47,6 @@ ptr_adc_channel_t udc;
 adc_gt udc_src;
 ptr_adc_channel_t idc;
 adc_gt idc_src;
-
-// Trace RT objects
-typedef enum _tag_trace_rt_nodes
-{
-    TRT_TEST = 0,
-    TRT_NODE_NUMBER
-} trace_rt_nodes;
-
-trace_rt_node_t* trt_node[TRT_NODE_NUMBER];
 
 //=================================================================================================
 // peripheral setup function
@@ -130,16 +119,12 @@ void setup_peripheral(void)
         // grid side iabc, vabc
         &iabc.control_port, &vabc.control_port);
 
-    //
-    // Trace RT ports
-    //
-    trt_node[TRT_TEST] = trace_rt_register_node(&trace_rt_context, "pwm_out_A", TRT_TYPE_DOUBLE);
 }
 
 //=================================================================================================
 // communication functions and interrupt functions here
 
-// ÎªÁË·ÀÖ¹¿¨×¡£¬ÔÚWindowsÆ½Ì¨ÉÏµÄbufferÁô´óÒ»Ð©
+// ä¸ºäº†é˜²æ­¢å¡ä½ï¼Œåœ¨Windowså¹³å°ä¸Šçš„bufferç•™å¤§ä¸€äº›
 #define ISR_LOCAL_BUF_SIZE 1024
 
 // Using Windows console to simulate UART
@@ -148,28 +133,28 @@ void setup_peripheral(void)
 //    uint16_t fifoLevel = 0;
 //    uint16_t rxBuf[ISR_LOCAL_BUF_SIZE];
 //
-//    // Ê¹ÓÃwhileÒ»´ÎÐÔ¶ÁÈ¡FIFOÖÐµÄËùÓÐÄÚÈÝ
+//    // ä½¿ç”¨whileä¸€æ¬¡æ€§è¯»å–FIFOä¸­çš„æ‰€æœ‰å†…å®¹
 //    while (_kbhit())
 //    {
-//        //_getch() ¶ÁÈ¡×Ö·ûµ«²»»ØÏÔ£¬Ò²²»µÈ´ý»Ø³µ
+//        //_getch() è¯»å–å­—ç¬¦ä½†ä¸å›žæ˜¾ï¼Œä¹Ÿä¸ç­‰å¾…å›žè½¦
 //        int ch = _getch();
 //
-//        // ´¦ÀíÌØÊâ¼ü (ÀýÈç·½Ïò¼ü»á²úÉúÁ½¸öÂë: 0/0xE0 ºÍ ¼üÂë)
-//        // ÕâÀïÎÒÃÇ¼òµ¥´¦Àí£¬Ö»½ÓÊÕÆÕÍ¨ ASCII
+//        // å¤„ç†ç‰¹æ®Šé”® (ä¾‹å¦‚æ–¹å‘é”®ä¼šäº§ç”Ÿä¸¤ä¸ªç : 0/0xE0 å’Œ é”®ç )
+//        // è¿™é‡Œæˆ‘ä»¬ç®€å•å¤„ç†ï¼ŒåªæŽ¥æ”¶æ™®é€š ASCII
 //        if (ch == 0 || ch == 0xE0)
 //        {
-//            _getch(); // ¶Á×ßÎÞÐ§²¿·Ö
+//            _getch(); // è¯»èµ°æ— æ•ˆéƒ¨åˆ†
 //            continue;
 //        }
 //
-//        // ¡¾ÖØÒª¡¿Windows¿ØÖÆÌ¨ÊäÈë²»×Ô¶¯»ØÏÔ£¬ÊÖ¶¯»ØÏÔÒÔ±ãÓÃ»§¿´µ½×Ô¼º´òµÄ×Ö
+//        // ã€é‡è¦ã€‘WindowsæŽ§åˆ¶å°è¾“å…¥ä¸è‡ªåŠ¨å›žæ˜¾ï¼Œæ‰‹åŠ¨å›žæ˜¾ä»¥ä¾¿ç”¨æˆ·çœ‹åˆ°è‡ªå·±æ‰“çš„å­—
 //        putchar(ch);
 //
-//        // ¶ÁÈ¡Êý¾Ý
+//        // è¯»å–æ•°æ®
 //        rxBuf[fifoLevel++] = (uint16_t)ch;
 //    }
 //
-//    // ÍÆËÍ¸øÉè±¸
+//    // æŽ¨é€ç»™è®¾å¤‡
 //    if (fifoLevel > 0)
 //    {
 //        // AT device has been canceled.
@@ -180,7 +165,6 @@ void setup_peripheral(void)
 // Execute RT monitor
 void send_monitor_data(void)
 {
-    gmp_trace_rt_log_double(trt_node[TRT_TEST], inv_ctrl.isr_tick, inv_ctrl.vab0.dat[phase_A]);
 }
 
 void flush_dl_rx_buffer()

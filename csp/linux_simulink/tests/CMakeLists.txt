@@ -12,7 +12,6 @@ add_library(
     OBJECT
     ../src/linux_can_driver.cpp
     ../src/linux_peripheral_driver.cpp
-    ../src/linux_rt_tracer.cpp
     ../src/linux_simulink_main.cpp
 )
 target_compile_features(gmp_linux_csp_compile_contract PRIVATE cxx_std_17)

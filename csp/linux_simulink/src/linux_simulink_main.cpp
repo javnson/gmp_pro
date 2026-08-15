@@ -4,7 +4,6 @@
  */
 
 #include <gmp_core.h>
-#include <ctrl_rt_trace.h>
 #include <tools/gmp_sil/sil_helper/gmp_sil_helper.hpp>
 
 #include <cstdio>
@@ -18,8 +17,6 @@ namespace
 {
 std::unique_ptr<gmp::sil::gmp_sil_helper> sil_helper;
 }
-
-trace_rt_context_t trace_rt_context;
 
 extern "C"
 {
@@ -61,7 +58,7 @@ time_gt gmp_base_get_system_tick(void)
     return static_cast<time_gt>(simulink_rx_buffer.time * SPECIFY_SYSTEM_TICK_FREQUENCY);
 }
 
-/** @brief Establish the framed SIL/PIL session and initialize runtime tracing. */
+/** @brief Establish the framed SIL/PIL session. */
 void gmp_csp_startup(void)
 {
     try
@@ -91,26 +88,19 @@ void gmp_csp_startup(void)
     gmp_base_print("[INFO] Simulink RX buffer size: %zu\r\n", sizeof(simulink_rx_buffer));
     gmp_base_print("[INFO] Simulink TX buffer size: %zu\r\n", sizeof(simulink_tx_buffer));
 
-#ifdef CTRL_FS
-    trace_rt_entity_init(&trace_rt_context, 1000.0 / CTRL_FS);
-#else
-    trace_rt_entity_init(&trace_rt_context, 1.0);
-#endif
 }
 
-/** @brief Emit trace metadata after application initialization completes. */
+/** @brief Complete hosted startup after application initialization. */
 void gmp_csp_post_process(void)
 {
-    gmp_trace_rt_generate_layout(&trace_rt_context);
 }
 
-/** @brief Close the SIL/PIL transport and release runtime trace resources. */
+/** @brief Close the SIL/PIL transport. */
 void gmp_csp_exit(void)
 {
     if (sil_helper != nullptr)
         sil_helper->close();
     sil_helper.reset();
-    gmp_trace_rt_release(&trace_rt_context);
     std::puts("[INFO] GMP Linux SIL controller exited.");
 }
 

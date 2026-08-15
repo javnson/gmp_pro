@@ -190,9 +190,9 @@ class gmp_workflow_t
         if (!flag_enable)
         {
             this->entry_node = entry;
-            return GMP_STAT_OK;
+            return GMP_EC_OK;
         }
-        return GMP_STAT_WF_CANNOT_MODIFY;
+        return GMP_EC_WF_CANNOT_MODIFY;
     }
 
     // DANGEROUS this function will register the next node without check.
@@ -209,9 +209,9 @@ class gmp_workflow_t
         if (!flag_enable)
         {
             this->prior_node = prior;
-            return GMP_STAT_OK;
+            return GMP_EC_OK;
         }
-        return GMP_STAT_WF_CANNOT_MODIFY;
+        return GMP_EC_WF_CANNOT_MODIFY;
     }
 
     // Because this two function is not inline function
@@ -325,10 +325,10 @@ class gmp_workflow_t
             switch_time = 0;
             last_switch_time = 0;
 
-            return GMP_STAT_OK;
+            return GMP_EC_OK;
         }
 
-        return GMP_STAT_WF_HAS_START;
+        return GMP_EC_WF_HAS_START;
     }
 
     // Start the workflow
@@ -336,11 +336,11 @@ class gmp_workflow_t
     ec_gt start()
     {
         if (flag_enable)
-            return GMP_STAT_WF_HAS_START;
+            return GMP_EC_WF_HAS_START;
 
         // Check reset points
         if (curr_node != entry_node)
-            return GMP_STAT_WF_NO_RESET;
+            return GMP_EC_WF_NO_RESET;
 
 #if defined SPECIFY_WORKFLOW_START_END_CALLBACK
         // The head function would be called
@@ -353,7 +353,7 @@ class gmp_workflow_t
 
         flag_enable = 1;
 
-        return GMP_STAT_OK;
+        return GMP_EC_OK;
     }
 
   protected:

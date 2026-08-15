@@ -81,4 +81,3 @@ __pycache__/
 # ACIM SIL commissioning output and runtime transport state
 commissioning/results/
 network.json
-rt_trace/

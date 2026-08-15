@@ -36,9 +36,9 @@ gate polarity.
 
 The model wiring snapshots used during validation are recorded here:
 
-![Top-level UDP SIL wiring](validation/top_level_wiring.png)
+![Top-level UDP SIL wiring](../../doc/simulation_result/top_level_wiring.png)
 
-![FSBB module internal wiring](validation/fsbb_internal_wiring.png)
+![FSBB module internal wiring](../../doc/simulation_result/fsbb_internal_wiring.png)
 
 ## ADC and UDP channel contract
 
@@ -109,7 +109,7 @@ loaded by the model callback from
 For a normal run with the currently generated BUILD_LEVEL:
 
 ```matlab
-cd('E:/lib/gmp_pro/ctl/suite/dps_fsbb/project/simulate');
+cd(fullfile(getenv("GMP_PRO_LOCATION"), "ctl", "suite", "dps_fsbb", "project", "simulate"));
 out = run_fsbb_cosim(1.5);
 ```
 
@@ -122,7 +122,7 @@ metrics = run_fsbb_validation(BUILD_LEVEL, stop_time_seconds);
 
 The runner checks that the generated header matches the requested level, starts and stops
 the controller automatically, adds logging blocks only to the in-memory model, and writes
-waveforms plus JSON metrics under `validation/`. UDP ports in `network.json` are 12500/12501
+waveforms plus JSON metrics under `../../doc/simulation_result/`. UDP ports in `network.json` are 12500/12501
 for data and 12502/12503 for commands.
 
 ## BUILD_LEVEL 1 -> 3 validation record
@@ -138,15 +138,15 @@ the executable for that exact level.
 
 ### BUILD_LEVEL=1
 
-![BUILD_LEVEL 1 open-loop waveform](validation/build_level_1_waveforms.png)
+![BUILD_LEVEL 1 open-loop waveform](../../doc/simulation_result/build_level_1_waveforms.png)
 
 ### BUILD_LEVEL=2
 
-![BUILD_LEVEL 2 current-loop waveform](validation/build_level_2_waveforms.png)
+![BUILD_LEVEL 2 current-loop waveform](../../doc/simulation_result/build_level_2_waveforms.png)
 
 ### BUILD_LEVEL=3
 
-![BUILD_LEVEL 3 cascade voltage/current-loop waveform](validation/build_level_3_waveforms.png)
+![BUILD_LEVEL 3 cascade voltage/current-loop waveform](../../doc/simulation_result/build_level_3_waveforms.png)
 
 All three runs ended in CiA402 `Operation Enabled` with Enable=1. The controller soft-start
 uses the existing `ctl/component/intrinsic/basic/slope_limiter.h` implementation through

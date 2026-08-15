@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{66E084D2-7FA5-4CA1-A2B7-15B430026961}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>gmp_core_unit_tests</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectSubType>NativeUnitTestProject</ProjectSubType>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <TestProject>true</TestProject>
+    <OutDir>$(SolutionDir)out\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)out\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(VCInstallDir)Auxiliary\VS\UnitTest\include;$(MSBuildProjectDirectory)\..\config;$(MSBuildProjectDirectory)\..\tests;$(MSBuildProjectDirectory)\..\..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalOptions>/utf-8 /Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(VCInstallDir)Auxiliary\VS\UnitTest\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Microsoft.VisualStudio.TestTools.CppUnitTestFramework.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectCapability Include="TestContainer" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\tests\test_base_checksum.cpp" />
+    <ClCompile Include="..\tests\test_base_ds.cpp" />
+    <ClCompile Include="..\tests\test_mm.cpp" />
+    <ClCompile Include="..\tests\test_pm_duff_fsm.cpp">
+      <DisableSpecificWarnings>4828;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="..\tests\test_pm_function_scheduler.cpp" />
+    <ClCompile Include="..\tests\test_pm_state_machine.cpp" />
+    <ClCompile Include="..\tests\test_pm_timing_manager.cpp" />
+    <ClCompile Include="..\tests\test_pm_workflow.cpp">
+      <DisableSpecificWarnings>4100;4245;4458;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="..\tests\vs_test_platform.cpp" />
+    <ClCompile Include="..\..\base\checksum\src\crc16.c" />
+    <ClCompile Include="..\..\base\ds\src\ring_buffer.c" />
+    <ClCompile Include="..\..\mm\src\gmp_mm_block_memory.c" />
+    <ClCompile Include="..\..\pm\function_scheduler\src\function_scheduler.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\config\xplt.config.h" />
+    <ClInclude Include="..\tests\vs_test_platform.h" />
+    <ClInclude Include="..\tests\vs_test_support.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

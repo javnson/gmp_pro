@@ -27,7 +27,71 @@ MCS_PMSM_ID_COMMON_SDPE_PROJECT_SUITE = 'mcs_pmsm_id';
 
 MCS_PMSM_ID_COMMON_SDPE_PROJECT_VERSION = '1.0.0';
 
-MCS_PMSM_ID_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-08-14';
+MCS_PMSM_ID_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-08-15';
+
+%% Hardware macros
+SM060R20B30MNAD_ID = 'sm060r20b30mnad';
+
+SM060R20B30MNAD_SCHEMA = 'PMSM';
+
+SM060R20B30MNAD_NAME = 'SM060R20B30MNAD Brushless Gimbal Motor';
+
+% Human-readable motor model name.
+SM060R20B30MNAD_MOTOR_NAME = 'SM060R20B30MNAD';
+
+% GMP motor type macro.
+SM060R20B30MNAD_MOTOR_TYPE = 'PMSM_MOTOR';
+
+% Stator resistance per phase.
+SM060R20B30MNAD_RS = 0.165;
+
+% D-axis stator inductance.
+SM060R20B30MNAD_LD = 0.45e-3;
+
+% Q-axis stator inductance.
+SM060R20B30MNAD_LQ = 0.45e-3;
+
+% Permanent magnet flux linkage.
+SM060R20B30MNAD_FLUX = 0.0066843949493427743;
+
+% Number of pole pairs in the motor.
+SM060R20B30MNAD_POLE_PAIRS = 4;
+
+% Rotor inertia. Unit follows the source document.
+SM060R20B30MNAD_INERTIA = 497.0;
+
+% Viscous friction coefficient. Unit follows the source document.
+SM060R20B30MNAD_FRICTION = 755.0;
+
+% Motor velocity constant.
+SM060R20B30MNAD_KV = 206.2;
+
+% Back-EMF constant.
+SM060R20B30MNAD_EMF = 4.85;
+
+% Rated operating voltage.
+SM060R20B30MNAD_RATED_VOLTAGE = 36.0;
+
+% Rated phase current.
+SM060R20B30MNAD_RATED_CURRENT = 7.5;
+
+% No-load phase current.
+SM060R20B30MNAD_NO_LOAD_CURRENT = 0.01;
+
+% Rated operating frequency.
+SM060R20B30MNAD_RATED_FREQUENCY = 200.0;
+
+% Maximum allowable speed.
+SM060R20B30MNAD_MAX_SPEED = 3000.0;
+
+% Maximum intermittent torque.
+SM060R20B30MNAD_MAX_TORQUE = 0.981;
+
+% Maximum allowable DC bus voltage.
+SM060R20B30MNAD_MAX_DC_VOLTAGE = 14.2;
+
+% Maximum allowable phase current.
+SM060R20B30MNAD_MAX_PH_CURRENT = 5.0;
 
 %% Control Algorithm
 % _USE_DEBUG_DISCRETE_PID is disabled in the SDPE project requirement.
@@ -60,7 +124,7 @@ MCS_PMSM_ID_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-08-14';
 
 %% Commissioning
 % Incremental commissioning level. 1: V/f voltage open loop; 2: current loop with synthetic electrical angle; 3: current loop with encoder angle; 4: speed loop with encoder feedback.
-% Options: (1), (2), (3), (4), (5), (6)
+% Options: (1), (2), (3), (4)
 BUILD_LEVEL = 2;
 
 %% Requirement bindings
@@ -73,21 +137,21 @@ MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A = real2param(0.2);
 % Phase-current hysteresis band in amperes used to prevent dead-time compensation direction chatter around zero current.
 MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A = real2param(0.05);
 
-MOTOR_PARAM_RS = 'SM060R20B30MNAD_RS';
+MOTOR_PARAM_RS = SM060R20B30MNAD_RS;
 
-MOTOR_PARAM_LS = 'SM060R20B30MNAD_LD';
+MOTOR_PARAM_LS = SM060R20B30MNAD_LD;
 
-MOTOR_PARAM_LD = 'SM060R20B30MNAD_LD';
+MOTOR_PARAM_LD = SM060R20B30MNAD_LD;
 
-MOTOR_PARAM_LQ = 'SM060R20B30MNAD_LQ';
+MOTOR_PARAM_LQ = SM060R20B30MNAD_LQ;
 
-MOTOR_PARAM_FLUX = 'SM060R20B30MNAD_FLUX';
+MOTOR_PARAM_FLUX = SM060R20B30MNAD_FLUX;
 
-MOTOR_PARAM_POLE_PAIRS = 'SM060R20B30MNAD_POLE_PAIRS';
+MOTOR_PARAM_POLE_PAIRS = SM060R20B30MNAD_POLE_PAIRS;
 
-MOTOR_PARAM_INERTIA = 'SM060R20B30MNAD_INERTIA';
+MOTOR_PARAM_INERTIA = SM060R20B30MNAD_INERTIA;
 
-MOTOR_PARAM_FRICTION = 'SM060R20B30MNAD_FRICTION';
+MOTOR_PARAM_FRICTION = SM060R20B30MNAD_FRICTION;
 
 % Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
 MCS_MECH_SPEED_LIMIT_RPM = real2param(3000.0);
@@ -288,9 +352,10 @@ fprintf('SDPE Project : %s\n', 'MCS PMSM Identification Common Control');
 fprintf('Project ID   : %s\n', 'mcs_pmsm_id_common');
 fprintf('Suite        : %s\n', 'mcs_pmsm_id');
 fprintf('Version      : %s\n', '1.0.0');
-fprintf('Hardware (0):\n');
+fprintf('Hardware (1):\n');
+fprintf('  - %s\n', 'sm060r20b30mnad');
 fprintf('Common requirements (0):\n');
-fprintf('Enabled variables (81):\n');
+fprintf('Enabled variables (103):\n');
 fprintf('  BUILD_LEVEL = '); disp(BUILD_LEVEL);
 fprintf('  CONTROLLER_FREQUENCY = '); disp(CONTROLLER_FREQUENCY);
 fprintf('  CTRL_STARTUP_DELAY = '); disp(CTRL_STARTUP_DELAY);
@@ -372,6 +437,28 @@ fprintf('  MOTOR_PARAM_LQ = '); disp(MOTOR_PARAM_LQ);
 fprintf('  MOTOR_PARAM_LS = '); disp(MOTOR_PARAM_LS);
 fprintf('  MOTOR_PARAM_POLE_PAIRS = '); disp(MOTOR_PARAM_POLE_PAIRS);
 fprintf('  MOTOR_PARAM_RS = '); disp(MOTOR_PARAM_RS);
+fprintf('  SM060R20B30MNAD_EMF = '); disp(SM060R20B30MNAD_EMF);
+fprintf('  SM060R20B30MNAD_FLUX = '); disp(SM060R20B30MNAD_FLUX);
+fprintf('  SM060R20B30MNAD_FRICTION = '); disp(SM060R20B30MNAD_FRICTION);
+fprintf('  SM060R20B30MNAD_ID = '); disp(SM060R20B30MNAD_ID);
+fprintf('  SM060R20B30MNAD_INERTIA = '); disp(SM060R20B30MNAD_INERTIA);
+fprintf('  SM060R20B30MNAD_KV = '); disp(SM060R20B30MNAD_KV);
+fprintf('  SM060R20B30MNAD_LD = '); disp(SM060R20B30MNAD_LD);
+fprintf('  SM060R20B30MNAD_LQ = '); disp(SM060R20B30MNAD_LQ);
+fprintf('  SM060R20B30MNAD_MAX_DC_VOLTAGE = '); disp(SM060R20B30MNAD_MAX_DC_VOLTAGE);
+fprintf('  SM060R20B30MNAD_MAX_PH_CURRENT = '); disp(SM060R20B30MNAD_MAX_PH_CURRENT);
+fprintf('  SM060R20B30MNAD_MAX_SPEED = '); disp(SM060R20B30MNAD_MAX_SPEED);
+fprintf('  SM060R20B30MNAD_MAX_TORQUE = '); disp(SM060R20B30MNAD_MAX_TORQUE);
+fprintf('  SM060R20B30MNAD_MOTOR_NAME = '); disp(SM060R20B30MNAD_MOTOR_NAME);
+fprintf('  SM060R20B30MNAD_MOTOR_TYPE = '); disp(SM060R20B30MNAD_MOTOR_TYPE);
+fprintf('  SM060R20B30MNAD_NAME = '); disp(SM060R20B30MNAD_NAME);
+fprintf('  SM060R20B30MNAD_NO_LOAD_CURRENT = '); disp(SM060R20B30MNAD_NO_LOAD_CURRENT);
+fprintf('  SM060R20B30MNAD_POLE_PAIRS = '); disp(SM060R20B30MNAD_POLE_PAIRS);
+fprintf('  SM060R20B30MNAD_RATED_CURRENT = '); disp(SM060R20B30MNAD_RATED_CURRENT);
+fprintf('  SM060R20B30MNAD_RATED_FREQUENCY = '); disp(SM060R20B30MNAD_RATED_FREQUENCY);
+fprintf('  SM060R20B30MNAD_RATED_VOLTAGE = '); disp(SM060R20B30MNAD_RATED_VOLTAGE);
+fprintf('  SM060R20B30MNAD_RS = '); disp(SM060R20B30MNAD_RS);
+fprintf('  SM060R20B30MNAD_SCHEMA = '); disp(SM060R20B30MNAD_SCHEMA);
 fprintf('Disabled macros (8):\n');
 fprintf('  - ENABLE_MOTOR_FAULT_PROTECTION\n');
 fprintf('  - ENABLE_SMO\n');

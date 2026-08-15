@@ -324,6 +324,42 @@
         "parameter": "0.5"
       },
       "description": "Body-diode forward voltage."
+    },
+    {
+      "role": "Filter Capacitor Leakage",
+      "macro": "SINV_FILTER_CAP_EPR_OHM",
+      "binding": { "parameter": "100e3" },
+      "description": "Filter-capacitor equivalent parallel resistance used by the plant model."
+    },
+    {
+      "role": "Dc Link Esr",
+      "macro": "SINV_DC_CAP_ESR_OHM",
+      "binding": { "parameter": "0.05" },
+      "description": "DC-link capacitor equivalent series resistance."
+    },
+    {
+      "role": "Dc Link Leakage",
+      "macro": "SINV_DC_CAP_EPR_OHM",
+      "binding": { "parameter": "10e3" },
+      "description": "DC-link capacitor equivalent parallel resistance."
+    },
+    {
+      "role": "Sensor Filter Cutoff",
+      "macro": "SINV_SENSOR_FILTER_HZ",
+      "binding": { "parameter": "1500.0" },
+      "description": "Analog sensor low-pass cutoff used by all simulated voltage and current channels."
+    },
+    {
+      "role": "Current Shunt",
+      "macro": "SINV_CURRENT_SHUNT_OHM",
+      "binding": { "parameter": "0.02" },
+      "description": "Simulated shunt resistance for DC-link, capacitor and grid-current channels."
+    },
+    {
+      "role": "Current Amplifier Gain",
+      "macro": "SINV_CURRENT_AMPLIFIER_GAIN",
+      "binding": { "parameter": "20.0" },
+      "description": "Simulated current-sense amplifier gain."
     }
   ],
   "requirement_groups": [
@@ -359,13 +395,16 @@
         "Rectifier Load R",
         "Mosfet Ron",
         "Diode Ron",
-        "Diode Vf"
+        "Diode Vf",
+        "Filter Capacitor Leakage"
       ]
     },
     {
       "name": "Main Element Parameters / DC Link",
       "requirements": [
-        "Dc Cap"
+        "Dc Cap",
+        "Dc Link Esr",
+        "Dc Link Leakage"
       ]
     },
     {
@@ -388,7 +427,10 @@
       "name": "Voltage & Current Sensor / AC Current Sensor",
       "requirements": [
         "Ac Current Gain",
-        "Ac Current Bias"
+        "Ac Current Bias",
+        "Current Shunt",
+        "Current Amplifier Gain",
+        "Sensor Filter Cutoff"
       ]
     },
     {

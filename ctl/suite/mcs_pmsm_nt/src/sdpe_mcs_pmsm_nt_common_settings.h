@@ -23,7 +23,7 @@ extern "C"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_ID "mcs_pmsm_nt_common"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION "1.1.0"
-#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-09"
+#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-15"
 
 //=================================================================================================
 /**

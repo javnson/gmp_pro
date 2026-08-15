@@ -227,9 +227,9 @@ From `tools/gmp_pil_server/gmp_debugger`, start the standard bridge with:
 
 ```powershell
 python -m apis.examples.pil_bridge `
-  --sdpe ../../../ctl/suite/mcs_pmsm_nt/project/f280049c/sdpe_mgr/sdpe_requirement.json `
+  --sdpe ../../../ctl/suite/mcs_pmsm_nt/project/f280049c/src/sdpe_mgr/sdpe_requirement.json `
   --port COM5 `
-  --trace ../../../ctl/suite/mcs_pmsm_nt/project/f280049c/pil/results/manual/bridge_trace.csv
+  --trace ../../../ctl/suite/mcs_pmsm_nt/project/f280049c/src/pil/results/manual/bridge_trace.csv
 ```
 
 The Simulink side uses the standard 264-byte input vector and 200-byte output

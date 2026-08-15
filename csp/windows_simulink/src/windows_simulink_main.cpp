@@ -16,9 +16,6 @@
 // Unified TCP/UDP SIL transport.
 #include <tools/gmp_sil/sil_helper/gmp_sil_helper.hpp>
 
-// Trace RT module
-#include <ctrl_rt_trace.h>
-
 #include <iostream>
 #include <stdlib.h>
 
@@ -28,9 +25,6 @@ gmp::sil::gmp_sil_helper* helper = nullptr;
 // ASIO helper will send or receive message via this structure.
 //half_duplex_ift simulink_rx;
 //half_duplex_ift simulink_tx;
-
-// trace rt module context
-trace_rt_context_t trace_rt_context;
 
 // buffer for rx & tx
 extern "C"
@@ -112,19 +106,11 @@ void gmp_csp_startup(void)
     // simulink_tx.length = sizeof(simulink_tx_buffer);
     // simulink_tx.capacity = sizeof(simulink_tx_buffer);
 
-    // init trace rt objects
-#ifdef CTRL_FS
-    trace_rt_entity_init(&trace_rt_context, 1000.0 / CTRL_FS);
-#else
-    trace_rt_entity_init(&trace_rt_context, 1.0);
-#endif // CTRL_FS
 }
 
 // This function may be called and used to initialize all the peripheral.
 void gmp_csp_post_process(void)
 {
-    // create & save tracert file
-    gmp_trace_rt_generate_layout(&trace_rt_context);
 }
 
 // This function is unreachable.
@@ -136,8 +122,6 @@ void gmp_csp_exit(void)
         delete helper;
         helper = nullptr;
     }
-
-    gmp_trace_rt_release(&trace_rt_context);
 
     printf("[GMP EXIT FUNCTION] GMP will leave.\r\n");
 }

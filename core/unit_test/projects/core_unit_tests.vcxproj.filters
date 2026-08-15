@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Tests"><UniqueIdentifier>{0F035198-E9EC-4812-9CD8-A9DE8786EA86}</UniqueIdentifier></Filter>
+    <Filter Include="Support"><UniqueIdentifier>{80F03C14-6D15-4486-83B6-958B6A3353FC}</UniqueIdentifier></Filter>
+    <Filter Include="Production Sources"><UniqueIdentifier>{ED910BF0-3B9A-431A-B4EA-56D920C567B8}</UniqueIdentifier></Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\tests\test_base_checksum.cpp"><Filter>Tests</Filter></ClCompile>
+    <ClCompile Include="..\tests\test_base_ds.cpp"><Filter>Tests</Filter></ClCompile>
+    <ClCompile Include="..\tests\test_mm.cpp"><Filter>Tests</Filter></ClCompile>
+    <ClCompile Include="..\tests\test_pm_duff_fsm.cpp"><Filter>Tests</Filter></ClCompile>
+    <ClCompile Include="..\tests\test_pm_function_scheduler.cpp"><Filter>Tests</Filter></ClCompile>
+    <ClCompile Include="..\tests\test_pm_state_machine.cpp"><Filter>Tests</Filter></ClCompile>
+    <ClCompile Include="..\tests\test_pm_timing_manager.cpp"><Filter>Tests</Filter></ClCompile>
+    <ClCompile Include="..\tests\test_pm_workflow.cpp"><Filter>Tests</Filter></ClCompile>
+    <ClCompile Include="..\tests\vs_test_platform.cpp"><Filter>Support</Filter></ClCompile>
+    <ClCompile Include="..\..\base\checksum\src\crc16.c"><Filter>Production Sources</Filter></ClCompile>
+    <ClCompile Include="..\..\base\ds\src\ring_buffer.c"><Filter>Production Sources</Filter></ClCompile>
+    <ClCompile Include="..\..\mm\src\gmp_mm_block_memory.c"><Filter>Production Sources</Filter></ClCompile>
+    <ClCompile Include="..\..\pm\function_scheduler\src\function_scheduler.c"><Filter>Production Sources</Filter></ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\config\xplt.config.h"><Filter>Support</Filter></ClInclude>
+    <ClInclude Include="..\tests\vs_test_platform.h"><Filter>Support</Filter></ClInclude>
+    <ClInclude Include="..\tests\vs_test_support.h"><Filter>Support</Filter></ClInclude>
+  </ItemGroup>
+</Project>
+

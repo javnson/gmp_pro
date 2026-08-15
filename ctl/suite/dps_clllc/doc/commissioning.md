@@ -62,7 +62,7 @@ end of the run the measured values were:
 | Resonant current | -3.3462 A |
 | Open-loop command | 0.1 pu |
 
-Artifacts are saved under `project/simulate/validation` as JSON, MAT and PNG.
+Artifacts are saved under `doc/simulation_result` as JSON, MAT and PNG.
 This is a software/SIL commissioning result, not yet a claim of tuned closed-loop
 hardware performance.  BUILD_LEVEL 2 is the current loop, BUILD_LEVEL 3 is the
 voltage loop, and BUILD_LEVEL 4 is parallel CC/CV competition.  Commission them

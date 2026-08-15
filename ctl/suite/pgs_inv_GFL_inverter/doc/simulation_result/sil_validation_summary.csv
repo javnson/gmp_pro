@@ -1,0 +1,7 @@
+"suite","build_level","build_pass","simulation_pass","runtime_assertion_triggered","dynamic_pass","steady_state_pass","pass","duration_s","metrics_file","log_file","error"
+"pgs_inv_GFL_inverter","1","True","True","False","False","True","False","65.902","build_level_1_metrics.json","build_level_1_matlab.log",""
+"pgs_inv_GFL_inverter","2","True","True","False","True","True","True",,"build_level_2_metrics.json","build_level_2_matlab.log",""
+"pgs_inv_GFL_inverter","3","True","True","False","True","True","True",,"build_level_3_metrics.json","build_level_3_matlab.log",""
+"pgs_inv_GFL_inverter","4","True","True","False","True","True","True",,"build_level_4_metrics.json","build_level_4_matlab.log",""
+"pgs_inv_GFL_inverter","5","True","True","False","False","True","False","70.146","build_level_5_metrics.json","build_level_5_matlab.log",""
+"pgs_inv_GFL_inverter","6","True","True","False","True","True","True",,"build_level_6_metrics.json","build_level_6_matlab.log",""

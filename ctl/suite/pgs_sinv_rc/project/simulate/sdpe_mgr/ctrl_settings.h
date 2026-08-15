@@ -234,6 +234,36 @@ extern "C"
  */
 #define SINV_MODEL_DIODE_VF real2param(0.5)
 
+/**
+ * @brief Filter-capacitor equivalent parallel resistance used by the plant model.
+ */
+#define SINV_FILTER_CAP_EPR_OHM real2param(100e3)
+
+/**
+ * @brief DC-link capacitor equivalent series resistance.
+ */
+#define SINV_DC_CAP_ESR_OHM real2param(0.05)
+
+/**
+ * @brief DC-link capacitor equivalent parallel resistance.
+ */
+#define SINV_DC_CAP_EPR_OHM real2param(10e3)
+
+/**
+ * @brief Analog sensor low-pass cutoff used by all simulated voltage and current channels.
+ */
+#define SINV_SENSOR_FILTER_HZ real2param(1500.0)
+
+/**
+ * @brief Simulated shunt resistance for DC-link, capacitor and grid-current channels.
+ */
+#define SINV_CURRENT_SHUNT_OHM real2param(0.02)
+
+/**
+ * @brief Simulated current-sense amplifier gain.
+ */
+#define SINV_CURRENT_AMPLIFIER_GAIN real2param(20.0)
+
 //=================================================================================================
 /**
  * @brief Common fallbacks: PGS Single-Phase Inverter Common Control.

@@ -5,7 +5,7 @@ plant layout as `pgs_sinv_rc/project/simulate`.
 
 - `run_gfl_cosim(level, stop_time)` runs one selected model.
 - `run_gfl_validation(level, stop_time, label)` logs controller signals,
-  writes `validation/*_metrics.json` and `*_waveforms.png`, and evaluates
+  writes `../../doc/simulation_result/*_metrics.json` and `*_waveforms.png`, and evaluates
   finite/output-enable checks. BUILD_LEVEL 6 additionally checks capacitor
   voltage tracking and the selectable 0.8-pu circular/square current limits.
 - `run_build_level_matrix.ps1` regenerates SDPE, rebuilds Debug x64, and runs

@@ -246,9 +246,6 @@
     <ClCompile Include="gmp_src_mgr\gmp_src\windows_peripheral_driver.cpp">
       <Filter>GMP Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="gmp_src_mgr\gmp_src\windows_rt_tracer.cpp">
-      <Filter>GMP Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="gmp_src_mgr\gmp_src\windows_simulink_main.cpp">
       <Filter>GMP Source Files</Filter>
     </ClCompile>

@@ -9,7 +9,7 @@
 	<codegenToolVersion value="22.6.1.LTS"/>
 	<isElfFormat value="true"/>
 	<connection value="common/targetdb/connections/TIXDS110_Connection.xml"/>
-	<linkerCommandFile value="280025_RAM_lnk.cmd"/>
+	<linkerCommandFile value="C2000Lib/device_cmd/280025_RAM_lnk.cmd"/>
 	<rts value="libc.a"/>
 	<createSlaveProjects value=""/>
 	<templateProperties value="id=com.ti.common.project.core.emptyProjectWithMainTemplate"/>

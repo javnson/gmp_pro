@@ -326,7 +326,7 @@
   ],
   "common_requirements": [
     "../../../sdpe_general/sdpe_requirement.json",
-    "../../../../sdpe_pil/sdpe_requirement.json"
+    "../../../../../../tools/SDPE_v2/common_requirements/gmp_suite_pil.json"
   ],
   "feature_macro_groups": [],
   "option_macro_groups": [

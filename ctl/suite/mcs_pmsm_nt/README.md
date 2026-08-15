@@ -45,4 +45,4 @@ the physical gate/PWM outputs forced safe. The UART/UDP endpoints, command base,
 masks, and every plant channel mapping are also managed by the target SDPE file.
 
 The reproducible staged workflow, MATLAB runner, safety contract, and recorded
-hardware results are in [`project/f280049c/pil`](project/f280049c/pil/README.md).
+hardware results are in [`project/f280049c/src/pil`](project/f280049c/src/pil/README.md).

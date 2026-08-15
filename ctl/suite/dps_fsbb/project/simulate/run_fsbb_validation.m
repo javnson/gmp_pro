@@ -98,7 +98,8 @@ else
     end
     tolerance = 0.08;
 end
-addpath(fullfile(root, '..', '..', '..', 'sil_validation'));
+addpath(fullfile(root, '..', '..', '..', '..', '..', 'tools', ...
+    'gmp_sil', 'validation'));
 enable_index = find(double(enable.Data(:)) > 0.5, 1, 'first');
 if isempty(enable_index), step_time = 0; else, step_time = double(enable.Time(enable_index)); end
 step = sil_step_metrics(response, reference, step_time, tolerance);
@@ -114,7 +115,7 @@ metrics.steady_state_pass = step.steady_state_error_percent < 12 && ...
     metrics.enable_final > 0.5;
 metrics.pass = metrics.simulation_pass && metrics.dynamic_pass && metrics.steady_state_pass;
 
-result_dir = fullfile(root, 'validation');
+result_dir = fullfile(root, '..', '..', 'doc', 'simulation_result');
 if ~isfolder(result_dir)
     mkdir(result_dir);
 end

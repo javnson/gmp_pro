@@ -17,8 +17,8 @@
 
 #if defined SPECIFY_GMP_BLOCK_MEMORY_ENABLE
 
-//global variables
-gmp_stat_t gmp_mem_block_last_errors = GMP_STAT_OK;
+// global variables
+ec_gt gmp_mm_block_last_errors = GMP_EC_OK;
 
 
 // utilities
@@ -90,27 +90,37 @@ static void* fill_block_head(gmp_mem_area_head* handle,
 }
 
 // Setup the memory heap
-gmp_mem_area_head* gmp_mem_setup(	// return the memory area handle
+gmp_mem_area_head* gmp_mm_setup_block_memory(	// return the memory area handle
 	void* memory_entry,				// entry of the memory block
 	uint32_t memory_size,		    // bytes
 	size_gt block_size_unit
 ) //GMP_NO_OPT
 {
 	uint32_t memory_size_infimum = sizeof(gmp_mem_area_head) + sizeof(gmp_mem_block_head);
+	size_gt capacity;
+	size_gt bitmap_size;
+	size_gt metadata_size;
+	size_gt used;
 
 	// not enough memory
-	if (memory_size_infimum >= memory_size)
+	if (memory_entry == NULL || block_size_unit < sizeof(gmp_mem_block_head) || memory_size_infimum >= memory_size)
 	{
-		gmp_mem_block_last_errors = GMP_STAT_MM_NOT_ENOUGH_MEM;
+		gmp_mm_block_last_errors = GMP_EC_MM_NOT_ENOUGH_MEM;
 		return NULL;
 	}
 
 	// preparing area memory head 
-	size_gt capacity = memory_size / block_size_unit;
-	size_gt used = (sizeof(gmp_mem_block_head)
-		+ sizeof(gmp_mem_area_head)
-		+ capacity / sizeof(byte_gt) / GMP_PORT_DATA_SIZE_PER_BITS)
-		/ block_size_unit + 1;
+	capacity = memory_size / block_size_unit;
+	bitmap_size = (capacity + GMP_PORT_DATA_SIZE_PER_BITS - 1) / GMP_PORT_DATA_SIZE_PER_BITS;
+	metadata_size = sizeof(gmp_mem_block_head) + offsetof(gmp_mem_area_head, assigned_flag) + bitmap_size;
+	used = (metadata_size + block_size_unit - 1) / block_size_unit;
+	if (used >= capacity)
+	{
+		gmp_mm_block_last_errors = GMP_EC_MM_NOT_ENOUGH_MEM;
+		return NULL;
+	}
+
+	memset(memory_entry, 0, memory_size);
 
 	gmp_mem_block_head* block_head = (gmp_mem_block_head*)memory_entry;
 	
@@ -123,14 +133,13 @@ gmp_mem_area_head* gmp_mem_setup(	// return the memory area handle
 	// Check if block head has written
 	if (*(uint_least16_t*)memory_entry != GMP_MEM_MAGIC_NUMBER)
 	{
-		gmp_mem_block_last_errors = GMP_STAT_MM_WRITE_REFUSE;
+		gmp_mm_block_last_errors = GMP_EC_MM_WRITE_REFUSE;
 		return NULL;
 	}
 
 
 	// construct the memory head
 	gmp_mem_area_head* area_head = (gmp_mem_area_head*)((byte_gt*)memory_entry + sizeof(gmp_mem_block_head));
-	byte_gt* assigned_flag = &area_head->assigned_flag;
 
 	area_head->entry = memory_entry;
 	area_head->block_size_unit = block_size_unit;
@@ -143,27 +152,33 @@ gmp_mem_area_head* gmp_mem_setup(	// return the memory area handle
 	// Check if block has written
 	if (area_head->memory_state != 0)
 	{
-		gmp_mem_block_last_errors = GMP_STAT_MM_WRITE_REFUSE;
+		gmp_mm_block_last_errors = GMP_EC_MM_WRITE_REFUSE;
 		return NULL;
 	}
 
 	// Set assigned_flag for area_head
 	set_assigned_flag((gmp_mem_area_head*)area_head, 0, used);
 
-	gmp_mem_block_last_errors = GMP_STAT_OK; // Clear flags
+	gmp_mm_block_last_errors = GMP_EC_OK; // Clear flags
 
 	return (gmp_mem_area_head*)area_head;
 }
 
 
-void* gmp_block_alloc(
+void* gmp_mm_block_alloc(
 	gmp_mem_area_head* handle,
 size_gt length
 ) //GMP_NO_OPT
 {
+	if (handle == NULL || length == 0)
+	{
+		gmp_mm_block_last_errors = GMP_EC_INVALID_PARAM;
+		return NULL;
+	}
+
 	// translate length -> block num
-	size_gt length_per_unit = (length + sizeof(gmp_mem_block_head))
-		/ handle->block_size_unit + 1;
+	size_gt length_per_unit = (length + sizeof(gmp_mem_block_head) + handle->block_size_unit - 1)
+		/ handle->block_size_unit;
 	size_gt current_index = 0;
 	size_gt current_subindex = 0;
 
@@ -177,7 +192,7 @@ size_gt length
 		// boundary check
 		if (length_per_unit > handle->capacity - i)
 		{
-			gmp_mem_block_last_errors = GMP_STAT_MM_NOT_ENOUGH_MEM;
+			gmp_mm_block_last_errors = GMP_EC_MM_NOT_ENOUGH_MEM;
 			return NULL;
 		}
 
@@ -187,7 +202,7 @@ size_gt length
 			current_index = (i + j) / GMP_PORT_DATA_SIZE_PER_BITS;
 			current_subindex = (i + j) % GMP_PORT_DATA_SIZE_PER_BITS;
 
-			if ((assigned_flag[current_index] & (1 << current_subindex)) != NULL)
+			if ((assigned_flag[current_index] & (1 << current_subindex)) != 0)
 			{
 				break;
 			}
@@ -197,7 +212,7 @@ size_gt length
 		if (j == length_per_unit)
 		{
 			// clear error flags
-			gmp_mem_block_last_errors = GMP_STAT_OK;
+			gmp_mm_block_last_errors = GMP_EC_OK;
 
 			handle->used += length_per_unit;
 
@@ -207,7 +222,7 @@ size_gt length
 		}
 	}
 
-	gmp_mem_block_last_errors = GMP_STAT_MM_NOT_ENOUGH_MEM;
+	gmp_mm_block_last_errors = GMP_EC_MM_NOT_ENOUGH_MEM;
 	return NULL;
 }
 
@@ -252,63 +267,53 @@ static void clear_assigned_flag(gmp_mem_area_head* handle,
 }
 
 
-void gmp_block_free(
+void gmp_mm_block_free(
 	gmp_mem_area_head* handle,
 	void* ptr
 ) //GMP_NO_OPT
 {
+	if (handle == NULL || ptr == NULL)
+	{
+		gmp_mm_block_last_errors = GMP_EC_INVALID_PARAM;
+		return;
+	}
+
 	gmp_mem_block_head* block_head = ((gmp_mem_block_head*)ptr) - 1;
 	gmp_mem_block_head* block_head_pos = handle->head;
-
-	size_gt cnt;
+	gmp_mem_block_head* previous = NULL;
 	
 	// Check block header format
 	if (block_head->magic_number != GMP_MEM_MAGIC_NUMBER)
 	{
-		gmp_mem_block_last_errors = GMP_STAT_INVALID_PARAM;
+		gmp_mm_block_last_errors = GMP_EC_INVALID_PARAM;
 		return;
 	}
 
-	// initialize a counter avoiding endless loop
-	cnt = 0;
-	// look for the previous node
-	// handle the first item
-	if (block_head_pos == block_head)
+	while (block_head_pos != NULL && block_head_pos != block_head)
 	{
-		handle->head = block_head->next;
+		previous = block_head_pos;
+		block_head_pos = block_head_pos->next;
 	}
-	else
-		while (block_head_pos != NULL)
-		{
-			if (cnt > handle->used)
-			{
-				// not in the queue
-				gmp_mem_block_last_errors = GMP_STAT_MM_NO_SPECIFIED_BLOCK;
-			}
-
-			// look for the position to be delete
-			if (block_head_pos->next == block_head)
-			{
-				// remove the node
-				block_head_pos->next = block_head->next;
-				break;
-			}
-
-			block_head_pos += 1;
-		}
 
 	// not in the queue
 	if (block_head_pos == NULL)
 	{
-		gmp_mem_block_last_errors = GMP_STAT_MM_NO_SPECIFIED_BLOCK;
+		gmp_mm_block_last_errors = GMP_EC_MM_NO_SPECIFIED_BLOCK;
 		return;
 	}
+
+	if (previous == NULL)
+		handle->head = block_head->next;
+	else
+		previous->next = block_head->next;
 
 	// Clear magic number
 	block_head->magic_number = 0;
 
 	// release the memory allocation
 	clear_assigned_flag(handle, block_head->block_index, block_head->block_size);
+	handle->used -= block_head->block_size;
+	gmp_mm_block_last_errors = GMP_EC_OK;
 
 	return;
 }

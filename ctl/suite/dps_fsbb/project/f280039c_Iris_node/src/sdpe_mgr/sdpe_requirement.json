@@ -421,7 +421,7 @@
     "after_extern_open": "/* Project-specific includes can be added here if the migrated project needs extra headers. */",
     "before_footer": "/* Backward compatibility for the historical misspelled PIL switch. */\n#if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM\n#define ENABLE_GMP_DL_PIL_SIM\n#endif\n\n/* Project-specific compile-time validation. */\n#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 3)\n#error \"BUILD_LEVEL must be 1 (open loop), 2 (current loop), or 3 (voltage/current cascade).\"\n#endif"
   },
-  "description": "Four-switch buck-boost converter SDPE project requirement prepared from ctl/suite/dps_fsbb/project/f280039c_Iris_node/xplt/ctrl_settings.h.\nThe requirement introduces the GMP LVFB 150V 2-phase board as the switching stage and sensor source, and IRIS F280039C Node as the peripheral option provider.",
+  "description": "Four-switch buck-boost converter SDPE project requirement prepared from the current project configuration.\nThe requirement introduces the GMP LVFB 150V 2-phase board as the switching stage and sensor source, and IRIS F280039C Node as the peripheral option provider.",
   "updated_at": "2026-08-15",
   "requirement_groups": [
     {
@@ -438,7 +438,7 @@
   "macro_prefix": "DPS_FSBB_IRIS",
   "common_requirements": [
     "../../../../sdpe_general/sdpe_requirement.json",
-    "../../../../../sdpe_pil/sdpe_requirement.json"
+    "../../../../../../../tools/SDPE_v2/common_requirements/gmp_suite_pil.json"
   ],
   "feature_macro_groups": [
     "Controller Settings",

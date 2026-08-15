@@ -77,7 +77,7 @@ gmp_src_mgr\gmp_generate_inc.bat
 x64\Debug\Motor_Control_Suite_SIL_Env.exe
 ```
 
-`run_sinv_cosim(level, stop_time)` 用于交互仿真；`run_sinv_validation(level, stop_time, label)` 会校验可执行文件中的 BUILD_LEVEL、自动启动控制器、记录波形、计算稳态值和电流 THD，并写入 `validation/`。例如：
+`run_sinv_cosim(level, stop_time)` 用于交互仿真；`run_sinv_validation(level, stop_time, label)` 会校验可执行文件中的 BUILD_LEVEL、自动启动控制器、记录波形、计算稳态值和电流 THD，并写入 `../../doc/simulation_result/`。例如：
 
 ```matlab
 run_sinv_validation(5, 5.0, 'build_level_5')
@@ -103,11 +103,11 @@ run_sinv_validation(5, 5.0, 'build_level_5')
 
 波形记录：
 
-- [BL1 波形](validation/build_level_1_waveforms.png)
-- [BL2 FDRC 关闭](validation/build_level_2_rc_off_final_waveforms.png)
-- [BL2 FDRC 开启](validation/build_level_2_rc_on_final_waveforms.png)
-- [BL3 波形](validation/build_level_3_waveforms.png)
-- [BL4 波形](validation/build_level_4_waveforms.png)
-- [BL5 波形](validation/build_level_5_waveforms.png)
+- [BL1 波形](../../doc/simulation_result/build_level_1_waveforms.png)
+- [BL2 FDRC 关闭](../../doc/simulation_result/build_level_2_rc_off_final_waveforms.png)
+- [BL2 FDRC 开启](../../doc/simulation_result/build_level_2_rc_on_final_waveforms.png)
+- [BL3 波形](../../doc/simulation_result/build_level_3_waveforms.png)
+- [BL4 波形](../../doc/simulation_result/build_level_4_waveforms.png)
+- [BL5 波形](../../doc/simulation_result/build_level_5_waveforms.png)
 
 每张图对应的同名 `*_metrics.json` 保存了可机器读取的完整指标。

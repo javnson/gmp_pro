@@ -1,0 +1,460 @@
+{
+  "id": "pgs_sinv_2stage_simulate",
+  "macro_prefix": "PGS_SINV_2STAGE_SIM",
+  "display_name": "PGS Two-Stage SINV MATLAB/Simulink SIL",
+  "description": "Windows SIL platform, plant and sensing settings for the two-stage SINV simulation models.",
+  "suite": "pgs_sinv_2stage",
+  "version": "1.0.0",
+  "updated_at": "2026-08-15",
+  "output_header": "ctrl_settings.h",
+  "hardware": [
+    {
+      "role": "power_stage",
+      "entity": "gmp_lvfb_150_2ph_v2"
+    },
+    {
+      "role": "grid_filter",
+      "entity": "gmp_harmonia_3ph_lc_filter"
+    }
+  ],
+  "code_sections": {
+    "after_extern_open": "#define SPECIFY_PC_ENVIRONMENT",
+    "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 5)\n#error BUILD_LEVEL_must_be_between_1_and_5\n#endif"
+  },
+  "feature_macros": [
+    {
+      "group": "SIL Runtime",
+      "macro": "SINV_SIM_AUTO_ENABLE",
+      "enabled": true,
+      "value": "",
+      "description": "Automatically request CiA402 ENABLE_OPERATION in the simulation executable."
+    },
+    {
+      "group": "SIL Runtime",
+      "macro": "SPECIFY_ENABLE_ADC_CALIBRATE",
+      "enabled": false,
+      "value": "",
+      "description": "Simulated sensor ADC offsets are deterministic and do not require startup calibration."
+    },
+    {
+      "group": "SIL Runtime",
+      "macro": "ENABLE_GMP_DL_PIL_SIM",
+      "enabled": false,
+      "value": "",
+      "description": "Use the native ASIO UDP SIL path instead of datalink PIL."
+    }
+  ],
+  "option_macros": [
+    {
+      "group": "Commissioning",
+      "macro": "BUILD_LEVEL",
+      "enabled": true,
+      "value": "(2)",
+      "options": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)",
+        "(5)"
+      ],
+      "description": "Single-phase converter commissioning level.\nBUILD_LEVEL 1: open-loop sinusoidal H-bridge voltage on an isolated resistive load; validates ADC polarity, PWM mapping and the power stage without a current loop.\nBUILD_LEVEL 2: closed AC-current loop on an isolated resistive load; validates QPR tracking, grid-voltage feedforward and optional FDRC.\nBUILD_LEVEL 3: grid-connected signed P/Q command through the current loop; positive P exports power and negative P rectifies.\nBUILD_LEVEL 4: grid-connected measured-active-power outer loop feeding the current loop.\nBUILD_LEVEL 5: active-front-end rectifier with a DC-bus voltage outer loop; takeover is initialized from the measured passive-rectifier power."
+    }
+  ],
+  "requirements": [
+    {
+      "role": "Controller Frequency",
+      "macro": "CONTROLLER_FREQUENCY",
+      "binding": {
+        "parameter": "20e3"
+      },
+      "description": "SIL controller and PWM update frequency."
+    },
+    {
+      "role": "Pwm Frequency",
+      "macro": "SINV_PWM_FREQUENCY_HZ",
+      "binding": {
+        "parameter": "20e3"
+      },
+      "description": "Plant switching frequency."
+    },
+    {
+      "role": "Pwm Compare",
+      "macro": "CTRL_PWM_CMP_MAX",
+      "binding": {
+        "number": "2999"
+      },
+      "description": "Virtual PWM compare maximum."
+    },
+    {
+      "role": "Pwm Deadband",
+      "macro": "CTRL_PWM_DEADBAND_CMP",
+      "binding": {
+        "number": "50"
+      },
+      "description": "Virtual PWM deadband counts."
+    },
+    {
+      "role": "Adc Bits",
+      "macro": "CTRL_ADC_RESOLUTION",
+      "binding": {
+        "number": "12"
+      },
+      "description": "ADC resolution used by all sensor blocks."
+    },
+    {
+      "role": "Adc Reference",
+      "macro": "CTRL_ADC_VOLTAGE_REF",
+      "binding": {
+        "parameter": "3.3"
+      },
+      "description": "ADC reference voltage."
+    },
+    {
+      "role": "Dc Bus",
+      "macro": "CTRL_DCBUS_VOLTAGE",
+      "binding": {
+        "parameter": "60.0"
+      },
+      "description": "Rated and nominal DC-bus voltage."
+    },
+    {
+      "role": "Grid Rms",
+      "macro": "CTRL_GRID_VOLTAGE_RMS",
+      "binding": {
+        "parameter": "24.0"
+      },
+      "description": "Nominal grid/load RMS voltage."
+    },
+    {
+      "role": "Current Rms",
+      "macro": "CTRL_RATED_CURRENT_RMS",
+      "binding": {
+        "parameter": "10.0"
+      },
+      "description": "Rated RMS AC current."
+    },
+    {
+      "role": "Voltage Base",
+      "macro": "CTRL_VOLTAGE_BASE",
+      "binding": {
+        "parameter": "34.0"
+      },
+      "description": "Peak voltage PU base."
+    },
+    {
+      "role": "Current Base",
+      "macro": "CTRL_CURRENT_BASE",
+      "binding": {
+        "parameter": "14.14"
+      },
+      "description": "Peak current PU base."
+    },
+    {
+      "role": "Filter L",
+      "macro": "CTRL_AC_INDUCTANCE",
+      "binding": {
+        "parameter": "480e-6"
+      },
+      "description": "AC filter series inductance."
+    },
+    {
+      "role": "Filter L Esr",
+      "macro": "CTRL_AC_RESISTANCE",
+      "binding": {
+        "parameter": "0.10"
+      },
+      "description": "AC filter series resistance."
+    },
+    {
+      "role": "Filter C",
+      "macro": "SINV_FILTER_CAPACITANCE_F",
+      "binding": {
+        "parameter": "22e-6"
+      },
+      "description": "AC filter shunt capacitance."
+    },
+    {
+      "role": "Filter C Esr",
+      "macro": "SINV_FILTER_CAP_ESR_OHM",
+      "binding": {
+        "parameter": "0.10"
+      },
+      "description": "Filter capacitor ESR."
+    },
+    {
+      "role": "Dc Cap",
+      "macro": "SINV_DC_CAPACITANCE_F",
+      "binding": {
+        "parameter": "2200e-6"
+      },
+      "description": "DC-link capacitance."
+    },
+    {
+      "role": "Load R",
+      "macro": "SINV_RLOAD_OHM",
+      "binding": {
+        "parameter": "12.0"
+      },
+      "description": "Resistive load for levels 1 and 2."
+    },
+    {
+      "role": "Rectifier Load R",
+      "macro": "SINV_RECTIFIER_RLOAD_OHM",
+      "binding": {
+        "parameter": "30.0"
+      },
+      "description": "DC-side load for level 5. At 60 V this draws 120 W, within the configured converter current rating."
+    },
+    {
+      "role": "Ac Voltage Gain",
+      "macro": "CTRL_AC_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "parameter": "0.020"
+      },
+      "description": "AC voltage sensor sensitivity in V/V."
+    },
+    {
+      "role": "Ac Voltage Bias",
+      "macro": "CTRL_AC_VOLTAGE_BIAS",
+      "binding": {
+        "parameter": "1.65"
+      },
+      "description": "AC voltage ADC bias."
+    },
+    {
+      "role": "Ac Current Gain",
+      "macro": "CTRL_AC_CURRENT_SENSITIVITY",
+      "binding": {
+        "parameter": "0.150"
+      },
+      "description": "AC current sensor sensitivity in V/A."
+    },
+    {
+      "role": "Ac Current Bias",
+      "macro": "CTRL_AC_CURRENT_BIAS",
+      "binding": {
+        "parameter": "1.65"
+      },
+      "description": "AC current ADC bias."
+    },
+    {
+      "role": "Dc Voltage Gain",
+      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
+      "binding": {
+        "parameter": "0.040"
+      },
+      "description": "DC bus voltage sensor sensitivity in V/V."
+    },
+    {
+      "role": "Dc Voltage Bias",
+      "macro": "CTRL_DC_VOLTAGE_BIAS",
+      "binding": {
+        "parameter": "0.0"
+      },
+      "description": "DC bus voltage ADC bias."
+    },
+    {
+      "role": "Prot Vbus",
+      "macro": "CTRL_PROT_VBUS_MAX",
+      "binding": {
+        "parameter": "90.0"
+      },
+      "description": "DC bus overvoltage threshold."
+    },
+    {
+      "role": "Prot Current",
+      "macro": "CTRL_PROT_IAC_PEAK_MAX",
+      "binding": {
+        "parameter": "18.0"
+      },
+      "description": "Fast AC peak-current threshold."
+    },
+    {
+      "role": "Prot Control",
+      "macro": "CTRL_PROT_VCTRL_MAX_PU",
+      "binding": {
+        "parameter": "1.5"
+      },
+      "description": "Controller divergence threshold; BUILD_LEVEL 5 masks it only during passive-rectifier takeover."
+    },
+    {
+      "role": "Bus Ready Min",
+      "macro": "CTRL_DCBUS_READY_MIN",
+      "binding": {
+        "parameter": "25.0"
+      },
+      "description": "Minimum precharged DC bus accepted by startup."
+    },
+    {
+      "role": "Bus Ready Max",
+      "macro": "CTRL_DCBUS_READY_MAX",
+      "binding": {
+        "parameter": "90.0"
+      },
+      "description": "Maximum DC bus accepted by startup."
+    },
+    {
+      "role": "Cal Timeout",
+      "macro": "TIMEOUT_ADC_CALIB_MS",
+      "binding": {
+        "number": "3000"
+      },
+      "description": "ADC calibration timeout."
+    },
+    {
+      "role": "Mosfet Ron",
+      "macro": "SINV_MODEL_MOSFET_RON",
+      "binding": {
+        "parameter": "4.6e-3"
+      },
+      "description": "Plant MOSFET on resistance."
+    },
+    {
+      "role": "Diode Ron",
+      "macro": "SINV_MODEL_DIODE_RON",
+      "binding": {
+        "parameter": "0.01"
+      },
+      "description": "Body-diode on resistance."
+    },
+    {
+      "role": "Diode Vf",
+      "macro": "SINV_MODEL_DIODE_VF",
+      "binding": {
+        "parameter": "0.5"
+      },
+      "description": "Body-diode forward voltage."
+    },
+    {
+      "role": "Filter Capacitor Leakage",
+      "macro": "SINV_FILTER_CAP_EPR_OHM",
+      "binding": { "parameter": "100e3" },
+      "description": "Filter-capacitor equivalent parallel resistance used by the plant model."
+    },
+    {
+      "role": "Dc Link Esr",
+      "macro": "SINV_DC_CAP_ESR_OHM",
+      "binding": { "parameter": "0.05" },
+      "description": "DC-link capacitor equivalent series resistance."
+    },
+    {
+      "role": "Dc Link Leakage",
+      "macro": "SINV_DC_CAP_EPR_OHM",
+      "binding": { "parameter": "10e3" },
+      "description": "DC-link capacitor equivalent parallel resistance."
+    },
+    {
+      "role": "Sensor Filter Cutoff",
+      "macro": "SINV_SENSOR_FILTER_HZ",
+      "binding": { "parameter": "1500.0" },
+      "description": "Analog sensor low-pass cutoff used by all simulated voltage and current channels."
+    },
+    {
+      "role": "Current Shunt",
+      "macro": "SINV_CURRENT_SHUNT_OHM",
+      "binding": { "parameter": "0.02" },
+      "description": "Simulated shunt resistance for DC-link, capacitor and grid-current channels."
+    },
+    {
+      "role": "Current Amplifier Gain",
+      "macro": "SINV_CURRENT_AMPLIFIER_GAIN",
+      "binding": { "parameter": "20.0" },
+      "description": "Simulated current-sense amplifier gain."
+    }
+  ],
+  "requirement_groups": [
+    {
+      "name": "Peripheral Parameters",
+      "requirements": [
+        "Controller Frequency",
+        "Pwm Frequency",
+        "Pwm Compare",
+        "Pwm Deadband",
+        "Adc Bits",
+        "Adc Reference"
+      ]
+    },
+    {
+      "name": "Per-Unit Base Parameters",
+      "requirements": [
+        "Dc Bus",
+        "Grid Rms",
+        "Current Rms",
+        "Voltage Base",
+        "Current Base"
+      ]
+    },
+    {
+      "name": "Main Element Parameters",
+      "requirements": [
+        "Filter L",
+        "Filter L Esr",
+        "Filter C",
+        "Filter C Esr",
+        "Load R",
+        "Rectifier Load R",
+        "Mosfet Ron",
+        "Diode Ron",
+        "Diode Vf",
+        "Filter Capacitor Leakage"
+      ]
+    },
+    {
+      "name": "Main Element Parameters / DC Link",
+      "requirements": [
+        "Dc Cap",
+        "Dc Link Esr",
+        "Dc Link Leakage"
+      ]
+    },
+    {
+      "name": "Protection Parameters",
+      "requirements": [
+        "Prot Vbus",
+        "Prot Current",
+        "Prot Control",
+        "Bus Ready Min",
+        "Bus Ready Max"
+      ]
+    },
+    {
+      "name": "Runtime Parameters",
+      "requirements": [
+        "Cal Timeout"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / AC Current Sensor",
+      "requirements": [
+        "Ac Current Gain",
+        "Ac Current Bias",
+        "Current Shunt",
+        "Current Amplifier Gain",
+        "Sensor Filter Cutoff"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / AC Voltage Sensor",
+      "requirements": [
+        "Ac Voltage Gain",
+        "Ac Voltage Bias"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / DC Bus Voltage Sensor",
+      "requirements": [
+        "Dc Voltage Gain",
+        "Dc Voltage Bias"
+      ]
+    }
+  ],
+  "common_requirements": [
+    "../../../sdpe_general/sdpe_requirement.json"
+  ],
+  "feature_macro_groups": [
+    "SIL Runtime"
+  ],
+  "option_macro_groups": [
+    "Commissioning"
+  ]
+}

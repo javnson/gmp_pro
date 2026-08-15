@@ -26,7 +26,7 @@ extern "C"
 #define MCS_ACIM_NT_COMMON_SDPE_PROJECT_ID "mcs_acim_nt_common"
 #define MCS_ACIM_NT_COMMON_SDPE_PROJECT_SUITE "mcs_acim_nt"
 #define MCS_ACIM_NT_COMMON_SDPE_PROJECT_VERSION "0.1.0"
-#define MCS_ACIM_NT_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-09"
+#define MCS_ACIM_NT_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-15"
 
 //=================================================================================================
 /**

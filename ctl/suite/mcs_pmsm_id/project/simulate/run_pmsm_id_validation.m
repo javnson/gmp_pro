@@ -12,7 +12,8 @@ if isempty(token) || str2double(token{1}) ~= build_level
     error('PMSMID:BuildLevelMismatch', 'Rebuild with BUILD_LEVEL=%d.', build_level);
 end
 if isempty(label), label = sprintf('build_level_%d', build_level); end
-result_dir = fullfile(root, 'validation'); if ~isfolder(result_dir), mkdir(result_dir); end
+result_dir = fullfile(root, '..', '..', 'doc', 'simulation_result');
+if ~isfolder(result_dir), mkdir(result_dir); end
 raw_file = fullfile(result_dir, [label '_raw.mat']);
 result = run_pmsm_id_sil('StopTime', stop_time, 'Build', false, ...
     'Plot', false, 'ResultFile', raw_file);

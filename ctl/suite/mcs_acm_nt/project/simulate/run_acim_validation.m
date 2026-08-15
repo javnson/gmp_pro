@@ -14,7 +14,8 @@ end
 exe = fullfile(root, 'x64', 'Debug', 'Motor_Control_Suite_SIL_Env.exe');
 if ~isfile(exe), error('ACIM:SILExecutableMissing', 'Missing %s.', exe); end
 addpath(fullfile(root, 'commissioning'));
-result_dir = fullfile(root, 'validation'); if ~isfolder(result_dir), mkdir(result_dir); end
+result_dir = fullfile(root, '..', '..', 'doc', 'simulation_result');
+if ~isfolder(result_dir), mkdir(result_dir); end
 if isempty(label), label = sprintf('build_level_%d', build_level); end
 [summary, traces] = run_build_level_sil(stop_time, ...
     fullfile(result_dir, [label '_signals.csv']), exe);
@@ -26,7 +27,8 @@ elseif ismember(build_level, [2 3])
 else
     response = traces.sil_ch06; reference = 300/1450; tolerance = 0.10;
 end
-addpath(fullfile(root, '..', '..', '..', 'sil_validation'));
+addpath(fullfile(root, '..', '..', '..', '..', '..', 'tools', ...
+    'gmp_sil', 'validation'));
 step = sil_step_metrics(response, reference, 0, tolerance);
 all_finite = true;
 fields = fieldnames(traces);

@@ -139,7 +139,8 @@ else
     reference = tail_mean(response, tail_time);
     step_time = min(0.68, 0.5*stop_time);
 end
-addpath(fullfile(root, '..', '..', '..', 'sil_validation'));
+addpath(fullfile(root, '..', '..', '..', '..', '..', 'tools', ...
+    'gmp_sil', 'validation'));
 step = sil_step_metrics(response, reference, step_time, 0.10);
 metrics.step_response = step;
 metrics.steady_state_error_abs = step.steady_state_error_abs;
@@ -151,7 +152,7 @@ metrics.dynamic_pass = step.dynamic_valid && step.settling_time_s < 0.9*stop_tim
 metrics.steady_state_pass = control_pass;
 metrics.pass = metrics.simulation_pass && metrics.dynamic_pass && metrics.steady_state_pass;
 
-result_dir = fullfile(root, 'validation');
+result_dir = fullfile(root, '..', '..', 'doc', 'simulation_result');
 if ~isfolder(result_dir), mkdir(result_dir); end
 if isempty(label), label = sprintf('build_level_%d', build_level); end
 stem = matlab.lang.makeValidName(label);

@@ -27,7 +27,7 @@ PGS_SINV_RC_COMMON_SDPE_PROJECT_SUITE = 'pgs_sinv_rc';
 
 PGS_SINV_RC_COMMON_SDPE_PROJECT_VERSION = '1.0.0';
 
-PGS_SINV_RC_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-08-08';
+PGS_SINV_RC_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-08-15';
 
 %% Control Features
 % FDRC master switch. Select this switch to enable delayed insertion of the frequency-adaptive repetitive controller; clear it to keep FDRC disabled at every BUILD_LEVEL.

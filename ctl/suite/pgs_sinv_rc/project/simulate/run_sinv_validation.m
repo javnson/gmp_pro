@@ -105,7 +105,8 @@ else
     response = vbus; reference = SINV_DC_BUS_REF_V; tolerance = 0.08;
 end
 if isempty(enable_index), step_time = 0; else, step_time = takeover_time; end
-addpath(fullfile(root, '..', '..', '..', 'sil_validation'));
+addpath(fullfile(root, '..', '..', '..', '..', '..', 'tools', ...
+    'gmp_sil', 'validation'));
 step = sil_step_metrics(response, reference, step_time, tolerance);
 metrics.step_response = step;
 metrics.steady_state_error_abs = step.steady_state_error_abs;
@@ -119,7 +120,7 @@ metrics.steady_state_pass = step.steady_state_error_percent < 15 && ...
     metrics.output_enable_final > 0.5 && metrics.diverge_fault_value == 0;
 metrics.pass = metrics.simulation_pass && metrics.dynamic_pass && metrics.steady_state_pass;
 
-result_dir = fullfile(root, 'validation');
+result_dir = fullfile(root, '..', '..', 'doc', 'simulation_result');
 if ~isfolder(result_dir), mkdir(result_dir); end
 if isempty(label), label = sprintf('build_level_%d', build_level); end
 stem = matlab.lang.makeValidName(label);

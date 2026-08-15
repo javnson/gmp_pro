@@ -1,0 +1,73 @@
+{
+  "passed": true,
+  "completed": true,
+  "final_state": 8,
+  "completed_at_s": 14.2535,
+  "simulated_until_s": 14.2535,
+  "plant": {
+    "Rs_ohm": 4.7,
+    "Ld_H": 0.0085,
+    "Lq_H": 0.0085,
+    "flux_Wb": 0.0038197,
+    "inertia_kg_m2": 0.0005,
+    "viscous_friction_Nm_s": 0.0001,
+    "load_torque_Nm": 0.0002
+  },
+  "encoder_truth": {
+    "pole_pairs": 4,
+    "offset_pu": 0.0999145508
+  },
+  "encoder_fault_injection": "none",
+  "encoder_fault_code": 0,
+  "expected_deadtime_comp_V": 1.3119999999999998,
+  "estimate": {
+    "Rs_ohm": 4.7973313331604,
+    "Ld_H": 0.008335556834936142,
+    "Lq_H": 0.00850666407495737,
+    "flux_Wb": 0.0037296817172318697,
+    "deadtime_comp_V": 1.3204010725021362,
+    "pole_pairs": 4,
+    "encoder_offset_pu": 0.09991455078125,
+    "inertia_kg_m2": 0.0004877698956988752,
+    "viscous_friction_Nm_s": 9.80484692263417e-05,
+    "load_torque_Nm": 0.00018157110025640577
+  },
+  "relative_error_pct": {
+    "Rs_ohm": 2.0708794289446852,
+    "Ld_H": -1.9346254713395132,
+    "Lq_H": 0.07840088185141349,
+    "flux_Wb": -2.356684628848611,
+    "inertia_kg_m2": -2.4460208602249645,
+    "viscous_friction_Nm_s": -1.95153077365831,
+    "load_torque_Nm": -9.214449871797118,
+    "deadtime_comp_V": 0.640325648028689
+  },
+  "acceptance_limits_pct": {
+    "Rs_ohm": 5.0,
+    "Ld_H": 5.0,
+    "Lq_H": 5.0,
+    "flux_Wb": 5.0,
+    "deadtime_comp_V": 5.0,
+    "inertia_kg_m2": 10.0,
+    "viscous_friction_Nm_s": 10.0,
+    "load_torque_Nm": 12.0
+  },
+  "parameter_checks": {
+    "Rs_ohm": true,
+    "Ld_H": true,
+    "Lq_H": true,
+    "flux_Wb": true,
+    "deadtime_comp_V": true,
+    "inertia_kg_m2": true,
+    "viscous_friction_Nm_s": true,
+    "load_torque_Nm": true
+  },
+  "encoder_offset_error_pu": -1.8750001551381956e-11,
+  "encoder_checks": {
+    "pole_pairs": true,
+    "offset": true
+  },
+  "deadtime_s": 1e-06,
+  "step_s": 5e-05,
+  "trace_csv": "pmsm_id_sil_fast_trace.csv"
+}

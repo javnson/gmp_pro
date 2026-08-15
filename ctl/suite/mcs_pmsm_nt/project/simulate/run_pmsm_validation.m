@@ -35,7 +35,8 @@ elseif ismember(build_level, [2 3])
 else
     response = traces.ch06; reference = 300/3000; tolerance = 0.10;
 end
-addpath(fullfile(root, '..', '..', '..', 'sil_validation'));
+addpath(fullfile(root, '..', '..', '..', '..', '..', 'tools', ...
+    'gmp_sil', 'validation'));
 step = sil_step_metrics(response, reference, 0, tolerance);
 all_finite = true;
 for k = 1:16
@@ -48,7 +49,8 @@ metrics = struct('build_level',build_level,'stop_time_s',stop_time, ...
     'dynamic_pass',step.dynamic_valid && step.settling_time_s < 0.95*stop_time && step.overshoot_percent < 120, ...
     'steady_state_pass',step.steady_state_error_percent < 20);
 metrics.pass = metrics.simulation_pass && metrics.dynamic_pass && metrics.steady_state_pass;
-result_dir = fullfile(root,'validation'); if ~isfolder(result_dir),mkdir(result_dir);end
+result_dir = fullfile(root, '..', '..', 'doc', 'simulation_result');
+if ~isfolder(result_dir), mkdir(result_dir); end
 if isempty(label),label=sprintf('build_level_%d',build_level);end
 fid=fopen(fullfile(result_dir,[label '_metrics.json']),'w');
 fprintf(fid,'%s\n',jsonencode(metrics,PrettyPrint=true));fclose(fid);

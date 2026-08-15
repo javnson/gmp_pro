@@ -12,6 +12,8 @@
 #ifndef _FILE_TIMING_MANAGER_H_
 #define _FILE_TIMING_MANAGER_H_
 
+#include <gmp_type.h>
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -54,12 +56,13 @@ typedef struct _tag_timer_mgr
 
 } timer_mgr_t;
 
-static inline void step_cycle_cnt(timer_mgr_t timer_mgr)
+static inline void step_cycle_cnt(timer_mgr_t *timer_mgr)
 {
-    timer_mgr->cycle_cnt += 1;
+	if (timer_mgr)
+		timer_mgr->last_update_time.cycle += 1;
 }
 
-void update_timer_mgr(timer_mgr_t *timer_mgr)
+static inline void update_timer_mgr(timer_mgr_t *timer_mgr)
 {
     time_gt current_tick = 0;
 
@@ -68,9 +71,9 @@ void update_timer_mgr(timer_mgr_t *timer_mgr)
         return;
     }
 
-    // get current tick
-    if (timer_mgr->get_tick)
-        current_tick = timer_mgr->get_tick;
+	// get current tick
+	if (timer_mgr->get_tick)
+		current_tick = timer_mgr->get_tick();
 
     // judge if timer period overflow is happened
     if (timer_mgr->is_auto_update_cycle_cnt)
@@ -84,7 +87,7 @@ void update_timer_mgr(timer_mgr_t *timer_mgr)
     timer_mgr->last_update_time.tick = current_tick;
 }
 
-void reg_timer_mgr(timer_mgr_t *timer_mgr, time_gt timer_period, timer_get_tick_fn get_tick_fn, fast_gt is_auto_update)
+static inline void reg_timer_mgr(timer_mgr_t *timer_mgr, time_gt timer_period, timer_get_tick_fn get_tick_fn, fast_gt is_auto_update)
 {
     if (!timer_mgr)
         return;
@@ -99,7 +102,7 @@ void reg_timer_mgr(timer_mgr_t *timer_mgr, time_gt timer_period, timer_get_tick_
     update_timer_mgr(timer_mgr);
 }
 
-void get_current_time_tick(timer_mgr_t *mgr, time_tick_t *tick)
+static inline void get_current_time_tick(timer_mgr_t *mgr, time_tick_t *tick)
 {
     update_timer_mgr(mgr);
 
@@ -110,18 +113,17 @@ void get_current_time_tick(timer_mgr_t *mgr, time_tick_t *tick)
     }
 }
 
-time_gt get_delta_time(timer_mgr_t *mgr, time_tick_t *moment)
+static inline time_gt get_delta_time(timer_mgr_t *mgr, time_tick_t *moment)
 {
-    time_gt delta = 0;
+	time_gt delta = 0;
+	if (!mgr || !moment)
+		return 0;
 
-    update_timer_mgr(mgr);
+	update_timer_mgr(mgr);
 
-    if (moment)
-    {
-        delta = (mgr->last_update_time.cycle - moment->cycle) * mgr->period;
-        delta += mgr->last_update_time.tick;
-        delta -= moment->tick;
-    }
+	delta = (mgr->last_update_time.cycle - moment->cycle) * mgr->period;
+	delta += mgr->last_update_time.tick;
+	delta -= moment->tick;
 
     return delta;
 }

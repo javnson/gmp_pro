@@ -83,11 +83,26 @@ ctl/suite/<suite>/
 │   │   ├── xplt/                host ADC/PWM/buffer binding
 │   │   ├── sdpe_mgr/            simulation-specific SDPE layer
 │   │   └── gmp_src_mgr/         local module selection and generated source tree
-│   └── <hardware-target>/       CCS/STM32/etc. project and platform binding
+│   ├── <c2000-target>/
+│   │   ├── C2000Lib/            TI device support, driverlib, headers and linker files
+│   │   ├── src/                 GMP/user/SDPE/xplt/source-manager/PIL material
+│   │   └── targetConfigs/       CCS connection files
+│   └── <other-target>/          native project layout (existing STM32 layout retained)
+├── doc/simulation_result/       archived simulation outputs and metric summary
 └── README.md / README_CN.md
 ```
 
 Shared `src` owns control laws, state machines, tunable dictionaries and application tasks. Target projects own startup, registers, peripheral routing, raw ADC/PWM conversion, compiler settings and platform-specific generated configuration.
+
+For C2000 targets, do not mix vendor and application material: TI-provided files
+belong in `C2000Lib`; GMP-provided, cross-platform, user, SDPE, `gmp_src_mgr`,
+and PIL files belong in the target `src`. This convention is authoritative even
+when an older suite has a different layout. Do not restructure clear existing
+STM32 projects merely to imitate the C2000 layout.
+
+The deprecated `rt_trace` module must not be restored to simulation projects.
+Stored simulation evidence belongs under the suite `doc/simulation_result`
+directory with a Markdown data summary.
 
 `BUILD_LEVEL` is suite-specific. It is a commissioning contract, not a repository-wide enumeration. Read the suite generated settings and controller branches before changing a level.
 

@@ -1,0 +1,26 @@
+Variable,Signal,Samples,Final,Minimum,Maximum
+sil_ch01,Monitor CH1,91969,2,0,2
+sil_ch02,Monitor CH2,91969,0,0,0
+sil_ch03,Monitor CH3,91969,0,0,0
+sil_ch04,Monitor CH4,91969,0,0,0
+sil_ch05,Monitor CH5,91969,0,0,0
+sil_ch06,Monitor CH6,91969,0,0,0
+sil_ch07,Monitor CH7,91969,0,0,0
+sil_ch08,Monitor CH8,91969,0,0,0
+sil_ch09,Monitor CH9,91969,0,0,0
+sil_ch10,Monitor CH10,91969,-0.00101384497247636,-0.00101384497247636,0
+sil_ch11,Monitor CH11,91969,-0.00125239638146013,-0.00153231061995029,0
+sil_ch12,Monitor CH12,91969,0.299372464418411,0,0.299372464418411
+sil_ch13,Monitor CH13,91969,0.300643742084503,0,0.300843268632889
+sil_ch14,Monitor CH14,91969,0,0,0
+sil_ch15,Monitor CH15,91969,0.660795450210571,0,0.725603818893433
+sil_ch16,Monitor CH16,91969,0,0,0
+sil_rotor_angle_rad,Mechanical.Rotor angle thetam (rad),50001,0,0,0
+sil_stator_iq_a,Stator measurements.Stator current  is_q (A),50001,0,0,0
+sil_stator_id_a,Stator measurements.Stator current is_d (A),50001,0,0,0
+sil_rotor_speed_rad_s,Mechanical.Rotor speed (wm),50001,0,0,0
+sil_torque_nm,Mechanical.Electromagnetic torque Te (N*m),50001,0,0,0
+sil_rotor_flux_q_vs,Rotor measurements.Rotor flux phir_q (V s),50001,0,0,0
+sil_rotor_flux_d_vs,Rotor measurements.Rotor flux phir_d (V s),50001,0,0,0
+sil_stator_vq_v,Stator measurements.Stator voltage vs_q (V),50001,0,0,0
+sil_stator_vd_v,Stator measurements.Stator voltage vs_d (V),50001,-0,-0,-0

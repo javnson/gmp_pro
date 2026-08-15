@@ -27,7 +27,7 @@ extern "C"
 #define DPS_CLLLC_COMMON_SDPE_PROJECT_ID "dps_clllc_common"
 #define DPS_CLLLC_COMMON_SDPE_PROJECT_SUITE "dps_clllc"
 #define DPS_CLLLC_COMMON_SDPE_PROJECT_VERSION "1.0.0"
-#define DPS_CLLLC_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-08"
+#define DPS_CLLLC_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-15"
 
 //=================================================================================================
 /**

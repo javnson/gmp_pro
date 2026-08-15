@@ -26,30 +26,31 @@ Suite 名称通常使用应用类别前缀：
 | --- | --- | --- | --- |
 | [`dps_clllc`](dps_clllc/README_CN.md) | Digital Power Suite, CLLLC / DAB | 正式工程 | 双向隔离谐振变换器控制。 |
 | [`dps_fsbb`](dps_fsbb/README_CN.md) | Digital Power Suite, four-switch full bridge | 推荐结构 | 四开关全桥电源/变流器控制。 |
-| [`mcs_acm_nt`](mcs_acm_nt/README_CN.md) | Motor Control Suite, asynchronous motor new template | 正式工程 | 包含 SIL 分级调试和 F280049C PIL 工程；不在 19 目标全套件校验范围内。 |
+| [`mcs_acm_nt`](mcs_acm_nt/README_CN.md) | Motor Control Suite, asynchronous motor new template | 正式工程 | 包含 SIL 分级调试和 F280049C PIL 工程。 |
 | [`mcs_pmsm_nt`](mcs_pmsm_nt/README_CN.md) | Motor Control Suite, PMSM new template | 正式工程 | 永磁同步电机正式工程，新 PMSM 应优先基于它开发。 |
 | [`mcs_pmsm_id`](mcs_pmsm_id/README_CN.md) | Motor Control Suite, PMSM identification | 正式工程 | PMSM 参数识别工程，用于识别电机参数。 |
 | [`pgs_inv_GFL_inverter`](pgs_inv_GFL_inverter/README_CN.md) | Power Grid Suite, grid-following inverter | 正式工程 | GFL 跟网型变流器/逆变器控制。 |
 | [`pgs_inv_GFM_inverter`](pgs_inv_GFM_inverter/README.md) | Power Grid Suite, grid-forming inverter | 正式工程 | GFM 构网型变流器/逆变器控制。 |
-| `pgs_sinv_2stage` | Power Grid Suite, two-stage single-phase models | 模型资源 | 目前只有 `project/simulation` 下的三个 SLX 模型，没有控制器源码或构建工程。 |
+| [`pgs_sinv_2stage`](pgs_sinv_2stage/README.md) | Power Grid Suite, two-stage single-phase models | 模型资源 | `project/simulate` 下有三个已绑定 SDPE 的 SLX 模型；没有原生控制器构建工程。 |
 | [`pgs_sinv_rc`](pgs_sinv_rc/readme_cn.md) | Power Grid Suite, single-phase inverter with repetitive control | 正式工程 | SINV 单相变流器/逆变器控制。 |
 
 ### PIL 部署边界
 
-现代工程统一绑定 [`sdpe_pil`](sdpe_pil/sdpe_requirement.json) 公共传输契约，
+现代硬件工程统一绑定由 SDPE 工具维护的
+[`gmp_suite_pil.json`](../../tools/SDPE_v2/common_requirements/gmp_suite_pil.json)
+公共传输契约，
 由 SDPE 生成 UART 波特率、DL 命令、UDP 端口、超时和套件通道掩码。
 `ENABLE_GMP_DL_PIL_SIM` 默认关闭；需要 PIL 时应在目标工程中创建 private
 覆盖项。PIL 开启后，硬件中断仍负责清中断和维护时基，但
 `gmp_base_ctl_step()` 不推进控制器，控制步只由 DL 事务触发，同时禁止物理功率级使能。
 
-当前全套件校验范围是 7 个 suite 的 19 个硬件工程。所有 `simulate` 工程保持原有
+所有 `simulate` 工程保持原有
 SIL 契约，不绑定硬件 PIL 公共传输配置。旧的 `mcs_acm` 与 `mcs_pmsm` 目录已经
-删除；`mcs_acm_nt/f280049c` 有独立 PIL 验证记录，但当前未列入
-`validate_pil_deployment.py` 的 19 目标清单。
+删除；`mcs_acm_nt/f280049c` 有独立 PIL 验证记录。
 
-修改目标工程后，应在仓库根目录运行
-`python ctl/suite/validate_pil_deployment.py`。该检查覆盖维护目标清单、SDPE
-组合关系、PIL 生成源码、通道掩码、ISR 隔离，以及 SIL/PIL 工程边界。
+跨 suite 的生成、校验或联合仿真辅助程序应放在 `tools` 下；`ctl/suite`
+根目录只保留 suite 目录及本索引文档。修改目标工程后，应逐项执行 SDPE inspect、
+重新生成配置并构建对应目标。
 
 术语：
 
@@ -63,7 +64,7 @@ SIL 契约，不绑定硬件 PIL 公共传输配置。旧的 `mcs_acm` 与 `mcs_
 
 ## 3. 推荐目录结构
 
-推荐的新结构如下：
+推荐的新结构如下。C2000 工程和其他硬件工程的边界不同：
 
 ```text
 ctl/suite/<suite_name>/
@@ -76,11 +77,19 @@ ctl/suite/<suite_name>/
 │   ├── simulate/
 │   │   ├── *.slx
 │   │   ├── gmp_src_mgr/
+│   │   ├── sdpe_mgr/
 │   │   └── xplt/
-│   └── <hardware_platform>/
-│       ├── gmp_src_mgr/
-│       └── xplt/
+│   ├── <c2000_platform>/
+│   │   ├── C2000Lib/        TI 提供的 device support、driverlib、头文件和链接文件
+│   │   ├── src/             GMP、跨平台、用户、SDPE、源管理器和 PIL 文件
+│   │   │   ├── gmp_src_mgr/
+│   │   │   ├── sdpe_mgr/
+│   │   │   ├── xplt/
+│   │   │   └── pil/         目标支持 PIL 时存在
+│   │   └── targetConfigs/
+│   └── <other_platform>/    保留现有原生结构；清晰的 STM32 工程暂不重排
 ├── doc/
+│   └── simulation_result/   归档的仿真结果及 Markdown 数据摘要
 └── README.md
 ```
 
@@ -90,8 +99,11 @@ ctl/suite/<suite_name>/
 - `project/simulate` 是与仿真环境联动的仿真工程。
 - `project/<hardware_platform>` 是实际硬件平台工程。
 - 每个可运行工程通常包含 `gmp_src_mgr` 和 `xplt`。
+- C2000 工程中，TI 提供的文件只能放入 `C2000Lib`；GMP、跨平台、用户、
+  SDPE、`gmp_src_mgr` 和 PIL 文件统一放入目标的 `src`。
 
-历史工程可能仍存在 `implement` 目录。新开发优先遵循 `src + project/<platform>/xplt` 结构；旧结构只作为维护对象。
+上述 C2000 约定是当前规范，即使历史参考工程存在差异也以该约定为准。
+历史工程可能仍存在 `implement` 目录；旧结构只作为维护对象。
 
 ## 4. `src` 通用控制代码
 
@@ -139,6 +151,26 @@ ctl/suite/<suite_name>/
 - `simulate` 不是硬件工程的替代品，它用于算法和流程验证。
 - 仿真工程的 `xplt` 仍然应遵循和硬件工程相同的接口边界。
 - 仿真通过后，再进入实际硬件工程做编译和实物验证。
+- 已弃用的 `rt_trace` 不应出现在仿真源码、工程文件或工程根目录中。
+- 需要保留的仿真输出统一归档到 suite 的 `doc/simulation_result`，并由
+  该目录的 `README.md` 汇总验证矩阵、关键指标、CSV 规模和支撑文件。
+
+### SDPE 与模型参数校核
+
+SDPE 生成的 `.h` 和 `.m` 是可重新生成的输出。重新生成前应清除
+`sdpe_general` 和各 `sdpe_mgr` 中的历史输出，然后先生成 suite 公共层，
+再生成各目标层；不得手工修改生成文件。
+
+Simulink 模型必须实际引用生成的 SDPE 变量。仅在模型 callback 中运行
+初始化脚本，并不能证明模型参数已经与 SDPE 同步。可在仓库根目录运行：
+
+```powershell
+python tools/SDPE_v2/audit_suite_models.py --matlab-release R2024b
+```
+
+该命令更新每个 suite 的 `doc/sdpe_model_parameter_audit.md`；只要普通模型
+仍存在疑似写死的物理参数，它就会返回非零状态。报告中的差异应结合单位
+和设备实体逐一迁移，不能仅因数值相近而直接替换。
 
 ## 6. 硬件平台工程
 
@@ -155,18 +187,21 @@ ctl/suite/<suite_name>/
 | `mcs_pmsm_nt` | `f280039c_Iris_node`, `f280049c`, `f29h85x_lp_3phgan`, `simulate`, `stm32f405`, `stm32g431`, `stm32g474_hrtim` |
 | `pgs_inv_GFL_inverter` | `f280039c_Iris_node`, `f280049c`, `simulate`, `stm32g431` |
 | `pgs_inv_GFM_inverter` | `f280039c_Iris_node`, `f280049c`, `simulate`, `stm32g431` |
-| `pgs_sinv_2stage` | `simulation`（仅 SLX 模型） |
+| `pgs_sinv_2stage` | `simulate`（三个 SLX 模型和独立 SDPE 配置） |
 | `pgs_sinv_rc` | `f280039c_Iris_node`, `simulate` |
 
 说明：
 
 - 旧的 `mcs_pmsm` 和 `mcs_acm` 工程已经从当前仓库删除。
-- `pgs_sinv_2stage/project/simulation` 不是完整 suite 工程，不能按 `project/simulate` 的构建流程使用。
+- `pgs_sinv_2stage/project/simulate` 是模型与 SDPE 工程，不包含原生控制器构建目标。
 - 某些平台目录中可能存在 IDE 生成的 `Debug` 子目录，其中的 `gmp_src_mgr` 或 `xplt` 是构建产物或工程复制结果，不应作为规范入口。
 
 ## 7. `gmp_src_mgr` 源代码配置管理
 
-每个可独立运行的工程下通常都有 `gmp_src_mgr` 文件夹。它负责把 GMP 仓库中的必要头文件和源文件整理到当前工程中，使 suite 可以脱离完整 GMP 仓库独立运行。
+每个可独立运行的工程下通常都有 `gmp_src_mgr` 文件夹。仿真和 STM32
+工程沿用各自当前布局；C2000 工程统一位于 `project/<c2000>/src/gmp_src_mgr`。
+它负责把 GMP 仓库中的必要头文件和源文件整理到当前工程中，使 suite
+可以脱离完整 GMP 仓库独立运行。
 
 典型文件：
 
@@ -226,15 +261,19 @@ src/
   user_main.*     -> 用户交互、非实时任务
   ctl_main.*      -> 控制对象、控制状态机、控制周期
 
-project/<platform>/sdpe_mgr/
+project/<platform>/sdpe_mgr/              # 仿真或现有非 C2000 布局
   ctrl_settings.h       -> SDPE 生成的硬件参数和连接关系
 
-project/<platform>/xplt/
+project/<platform>/xplt/                  # 仿真或现有非 C2000 布局
   xplt.config.h         -> GMP 工作状态和平台属性
   xplt.ctl_interface.h  -> 控制输入输出接口
   xplt.peripheral.*     -> 平台外设
 
-project/<platform>/gmp_src_mgr/
+project/<c2000>/src/{sdpe_mgr,xplt,gmp_src_mgr,pil}/
+project/<c2000>/C2000Lib/
+project/<c2000>/targetConfigs/
+
+project/<platform>/gmp_src_mgr/           # 仿真或现有非 C2000 布局
   gmp_config.bat
   gmp_generate_inc.bat
   gmp_generate_src.bat
@@ -252,6 +291,7 @@ Suite 与 GMP CTL 框架协作的核心入口是 `gmp_base_ctl_step()`。该函�
 
 ```text
 project/<platform>/xplt/xplt.peripheral.c
+# C2000 对应 project/<platform>/src/xplt/xplt.peripheral.c
   MainISR()
     ├─ 必要的硬件中断前置操作
     ├─ gmp_base_ctl_step()
@@ -266,11 +306,11 @@ project/<platform>/xplt/xplt.peripheral.c
 
 | 函数 | 典型位置 | 职责 |
 | --- | --- | --- |
-| `MainISR()` | `project/<platform>/xplt/xplt.peripheral.c` | 平台主中断。完成必要中断操作，并调用 `gmp_base_ctl_step()`。 |
+| `MainISR()` | `xplt/xplt.peripheral.c`（C2000 位于目标 `src` 下） | 平台主中断。完成必要中断操作，并调用 `gmp_base_ctl_step()`。 |
 | `gmp_base_ctl_step()` | `ctl/framework/ctl_dispatch.h` | GMP CTL 框架入口，组织输入、控制分发和输出。 |
-| `ctl_input_callback()` | `project/<platform>/xplt/xplt.ctl_interface.h` | 从 ADC、编码器、GPIO、仿真输入等数据源读取并转换到控制对象。 |
+| `ctl_input_callback()` | `xplt/xplt.ctl_interface.h`（C2000 位于目标 `src` 下） | 从 ADC、编码器、GPIO、仿真输入等数据源读取并转换到控制对象。 |
 | `ctl_dispatch()` | `src/ctl_main.h` 或 suite 控制源文件 | 执行 suite 的核心控制逻辑。 |
-| `ctl_output_callback()` | `project/<platform>/xplt/xplt.ctl_interface.h` | 将控制结果写入 PWM、DAC、GPIO、仿真输出等目标。 |
+| `ctl_output_callback()` | `xplt/xplt.ctl_interface.h`（C2000 位于目标 `src` 下） | 将控制结果写入 PWM、DAC、GPIO、仿真输出等目标。 |
 
 用户移植时应优先理解这条链路。通常只需要改 `xplt` 中的输入输出和外设代码，不需要改变 `src` 中的控制调度。只有当控制策略本身改变时，才修改 `ctl_dispatch()` 及其调用的控制逻辑。
 
@@ -321,7 +361,8 @@ PIL 是 Processor-in-the-Loop。控制程序真实运行在微控制器中，芯
 
 PIL 与普通硬件运行的区别在于：实际功率硬件的 `input/output` 不适合作为仿真接口，因此 PIL 有独立的输入输出 callback。
 
-PIL callback 原型定义在各平台的 `xplt/xplt.ctl_interface.h`：
+PIL callback 原型定义在各平台的 `xplt/xplt.ctl_interface.h`；C2000 的
+`xplt` 位于目标 `src` 下：
 
 ```c
 GMP_STATIC_INLINE void ctl_output_callback_pil(gmp_sim_tx_buf_t* tx);
@@ -345,7 +386,7 @@ PIL 关键文件：
 | --- | --- |
 | `core/dev/datalink/pil_core.h` | PIL 仿真模块接口，定义 `gmp_sim_rx_buf_t`、`gmp_sim_tx_buf_t`、`gmp_pil_sim_t` 等。 |
 | `core/dev/datalink/src/gmp_pil_core.c` | PIL 模块实现，接收仿真请求并调用 `gmp_pil_sim_step()`。 |
-| `project/<platform>/xplt/xplt.ctl_interface.h` | 平台 PIL 输入输出 callback。 |
+| 目标的 `xplt/xplt.ctl_interface.h` | 平台 PIL 输入输出 callback；C2000 位于目标 `src` 下。 |
 | `src/ctl_main.c` | suite 侧 `gmp_pil_sim_step()` 桥接实现。 |
 
 当前 PIL 主要支持串口通信，通信协议使用 Datalink。
@@ -411,7 +452,7 @@ tunable、memory perspective、曲线观察等页面或功能。
 2. 复制该 suite 到新的工程仓库。
 3. 保留 `src` 作为控制逻辑起点。
 4. 新增或复制一个 `project/<your_platform>`。
-5. 修改 `project/<your_platform>/xplt` 适配硬件。
+5. 修改目标的 `xplt` 适配硬件；C2000 使用 `project/<your_platform>/src/xplt`。
 6. 使用 `gmp_src_mgr` 选择依赖并生成头文件、源文件。
 7. 先运行 `project/simulate` 做联合仿真，再进入硬件工程验证。
 
@@ -428,7 +469,9 @@ tunable、memory perspective、曲线观察等页面或功能。
 
 ## 14. 开发约束
 
-- 新 suite 优先采用 `src + project/<platform>/xplt + gmp_src_mgr` 结构。
+- 新 C2000 工程采用 `C2000Lib + src + targetConfigs` 结构，目标 `src` 包含
+  `xplt`、`sdpe_mgr`、`gmp_src_mgr`、用户和 PIL 文件。
+- 清晰的现有 STM32 工程暂不因 C2000 规范而重排。
 - 控制逻辑应尽量平台无关。
 - 硬件适配只放在 `xplt`。
 - 仿真工程和硬件工程应共享同一套 `src` 控制逻辑。
@@ -440,4 +483,5 @@ tunable、memory perspective、曲线观察等页面或功能。
 
 | 版本 | 日期 | 说明 |
 | --- | --- | --- |
+| 3.0 | 2026-08-15 | 标准化 C2000、SDPE、仿真结果与模型参数审计约定。 |
 | 2.0 | 2026-07-08 | 重写 suite 指南，按当前 `src/project/xplt/gmp_src_mgr` 结构整理。 |

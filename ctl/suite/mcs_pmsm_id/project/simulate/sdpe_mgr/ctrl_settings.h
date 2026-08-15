@@ -8,6 +8,7 @@
 #define _PROJECT_CTRL_SETTINGS_H_
 
 #include <ctl/hardware_preset/inverter_3ph/ti_boostxl_3phganinv.h>
+#include <ctl/hardware_preset/pmsm_motor/sm060r20b30mnad.h>
 
 #ifdef __cplusplus
 extern "C"

@@ -132,7 +132,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "export": "${sm060r20b30mnad.rs}"
+        "export": "sm060r20b30mnad.rs"
       },
       "description": ""
     },
@@ -142,7 +142,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "export": "${sm060r20b30mnad.ld}"
+        "export": "sm060r20b30mnad.ld"
       },
       "description": ""
     },
@@ -152,7 +152,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "export": "${sm060r20b30mnad.ld}"
+        "export": "sm060r20b30mnad.ld"
       },
       "description": ""
     },
@@ -162,7 +162,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "export": "${sm060r20b30mnad.lq}"
+        "export": "sm060r20b30mnad.lq"
       },
       "description": ""
     },
@@ -172,7 +172,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "export": "${sm060r20b30mnad.flux}"
+        "export": "sm060r20b30mnad.flux"
       },
       "description": ""
     },
@@ -182,7 +182,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "export": "${sm060r20b30mnad.pole_pairs}"
+        "export": "sm060r20b30mnad.pole_pairs"
       },
       "description": ""
     },
@@ -192,7 +192,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "export": "${sm060r20b30mnad.Inertia}"
+        "export": "sm060r20b30mnad.inertia"
       },
       "description": ""
     },
@@ -202,7 +202,7 @@
       "enabled": true,
       "weak": true,
       "binding": {
-        "export": "${sm060r20b30mnad.Friction}"
+        "export": "sm060r20b30mnad.friction"
       },
       "description": ""
     },

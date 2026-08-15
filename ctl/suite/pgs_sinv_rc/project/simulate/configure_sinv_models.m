@@ -4,21 +4,18 @@ function configure_sinv_models()
 root = fileparts(mfilename('fullpath'));
 models = {'PGS_STD_SINV_MODEL_RLOAD', 'PGS_STD_SINV_MODEL_Grid', ...
           'PGS_STD_SINV_MODEL_Rectifier'};
-common_init = 'sdpe_pgs_sinv_rc_common_settings_matlab_init.m';
 simulate_init = 'ctrl_settings_matlab_init.m';
 callback = [ ...
     'gmp_model_file=get_param(bdroot,''FileName''); ' ...
     'if isempty(gmp_model_file), error(''GMP:SINV:ModelPath'', ' ...
     '''The SINV model must be saved before SDPE initialization.''); end; ' ...
     'gmp_model_dir=fileparts(gmp_model_file); ' ...
-    'run(fullfile(gmp_model_dir,''..'',''..'',''sdpe_general'',''' common_init ''')); ' ...
     'run(fullfile(gmp_model_dir,''sdpe_mgr'',''' simulate_init ''')); ' ...
     'gmp_matlab_release=matlabRelease; ' ...
     'addpath(fullfile(gmp_model_dir,''..'',''..'',''..'',''..'',''..'',''slib'',' ...
     '''install_path'',gmp_matlab_release.Release,''src'')); ' ...
     'clear gmp_model_file gmp_model_dir gmp_matlab_release;'];
 
-run(fullfile(root, '..', '..', 'sdpe_general', common_init));
 run(fullfile(root, 'sdpe_mgr', simulate_init));
 
 for k = 1:numel(models)
@@ -85,12 +82,12 @@ add_param(mask, 'ACF_L', 'Series inductance (H)', 'CTRL_AC_INDUCTANCE', 'AC Filt
 add_param(mask, 'ACF_L_ESR', 'Series resistance (Ohm)', 'CTRL_AC_RESISTANCE', 'AC Filter');
 add_param(mask, 'ACF_C', 'Shunt capacitance (F)', 'SINV_FILTER_CAPACITANCE_F', 'AC Filter');
 add_param(mask, 'ACF_C_ESR', 'Capacitor ESR (Ohm)', 'SINV_FILTER_CAP_ESR_OHM', 'AC Filter');
-add_param(mask, 'ACF_C_EPR', 'Capacitor leakage resistance (Ohm)', '100e3', 'AC Filter');
+add_param(mask, 'ACF_C_EPR', 'Capacitor leakage resistance (Ohm)', 'SINV_FILTER_CAP_EPR_OHM', 'AC Filter');
 
 add_group(mask, 'DC Link');
 add_param(mask, 'DC_CAP', 'DC-link capacitance (F)', 'SINV_DC_CAPACITANCE_F', 'DC Link');
-add_param(mask, 'DC_CAP_ESR', 'DC-link capacitor ESR (Ohm)', '0.05', 'DC Link');
-add_param(mask, 'DC_CAP_EPR', 'DC-link leakage resistance (Ohm)', '10e3', 'DC Link');
+add_param(mask, 'DC_CAP_ESR', 'DC-link capacitor ESR (Ohm)', 'SINV_DC_CAP_ESR_OHM', 'DC Link');
+add_param(mask, 'DC_CAP_EPR', 'DC-link leakage resistance (Ohm)', 'SINV_DC_CAP_EPR_OHM', 'DC Link');
 
 add_group(mask, 'ADC Configuration');
 add_param(mask, 'ADC_Resolution', 'ADC resolution (bits)', 'CTRL_ADC_RESOLUTION', 'ADC Configuration');
@@ -99,32 +96,32 @@ add_group(mask, 'Voltage Sensors');
 add_param(mask, 'DC_Voltage_Gain', 'DC voltage sensitivity (V/V)', 'CTRL_DC_VOLTAGE_SENSITIVITY', 'Voltage Sensors');
 add_param(mask, 'DC_VOLTAGE_ADC_REFERENCE', 'DC voltage ADC reference (V)', 'CTRL_ADC_VOLTAGE_REF', 'Voltage Sensors');
 add_param(mask, 'DC_VOLTAGE_ADC_BIAS', 'DC voltage ADC bias (V)', 'CTRL_DC_VOLTAGE_BIAS', 'Voltage Sensors');
-add_param(mask, 'DC_VOLTAGE_ADC_CUT_FREQ', 'DC voltage filter cutoff (Hz)', '1500', 'Voltage Sensors');
+add_param(mask, 'DC_VOLTAGE_ADC_CUT_FREQ', 'DC voltage filter cutoff (Hz)', 'SINV_SENSOR_FILTER_HZ', 'Voltage Sensors');
 add_param(mask, 'AC_Voltage_Gain', 'AC voltage sensitivity (V/V)', 'CTRL_AC_VOLTAGE_SENSITIVITY', 'Voltage Sensors');
 add_param(mask, 'AC_VOLTAGE_ADC_REFERENCE', 'AC voltage ADC reference (V)', 'CTRL_ADC_VOLTAGE_REF', 'Voltage Sensors');
 add_param(mask, 'AC_VOLTAGE_ADC_BIAS', 'AC voltage ADC bias (V)', 'CTRL_AC_VOLTAGE_BIAS', 'Voltage Sensors');
-add_param(mask, 'AC_VOLTAGE_ADC_CUT_FREQ', 'AC voltage filter cutoff (Hz)', '1500', 'Voltage Sensors');
+add_param(mask, 'AC_VOLTAGE_ADC_CUT_FREQ', 'AC voltage filter cutoff (Hz)', 'SINV_SENSOR_FILTER_HZ', 'Voltage Sensors');
 
 add_group(mask, 'Current Sensors');
 add_param(mask, 'AC_Current_Gain', 'AC current sensitivity (V/A)', 'CTRL_AC_CURRENT_SENSITIVITY', 'Current Sensors');
 add_param(mask, 'AC_CURRENT_ADC_REFERENCE', 'AC current ADC reference (V)', 'CTRL_ADC_VOLTAGE_REF', 'Current Sensors');
 add_param(mask, 'AC_CURRENT_ADC_BIAS', 'AC current ADC bias (V)', 'CTRL_AC_CURRENT_BIAS', 'Current Sensors');
 add_param(mask, 'AC_CURRENT_ADC_INIT', 'AC current initial value', '0', 'Current Sensors');
-add_param(mask, 'DC_BUS_CURRENT_SENSOR_R', 'DC shunt resistance (Ohm)', '0.02', 'Current Sensors');
-add_param(mask, 'DC_Current_Gain', 'DC current amplifier gain', '20', 'Current Sensors');
+add_param(mask, 'DC_BUS_CURRENT_SENSOR_R', 'DC shunt resistance (Ohm)', 'SINV_CURRENT_SHUNT_OHM', 'Current Sensors');
+add_param(mask, 'DC_Current_Gain', 'DC current amplifier gain', 'SINV_CURRENT_AMPLIFIER_GAIN', 'Current Sensors');
 add_param(mask, 'DC_CURRENT_ADC_REFERENCE', 'DC current ADC reference (V)', 'CTRL_ADC_VOLTAGE_REF', 'Current Sensors');
 add_param(mask, 'DC_CURRENT_ADC_BIAS', 'DC current ADC bias (V)', 'CTRL_AC_CURRENT_BIAS', 'Current Sensors');
-add_param(mask, 'DC_CURRENT_ADC_CUT_FREQ', 'DC current filter cutoff (Hz)', '1500', 'Current Sensors');
-add_param(mask, 'CAP_CURRENT_SENSOR_R', 'Capacitor-current shunt (Ohm)', '0.02', 'Current Sensors');
-add_param(mask, 'CAP_Current_Gain', 'Capacitor-current amplifier gain', '20', 'Current Sensors');
+add_param(mask, 'DC_CURRENT_ADC_CUT_FREQ', 'DC current filter cutoff (Hz)', 'SINV_SENSOR_FILTER_HZ', 'Current Sensors');
+add_param(mask, 'CAP_CURRENT_SENSOR_R', 'Capacitor-current shunt (Ohm)', 'SINV_CURRENT_SHUNT_OHM', 'Current Sensors');
+add_param(mask, 'CAP_Current_Gain', 'Capacitor-current amplifier gain', 'SINV_CURRENT_AMPLIFIER_GAIN', 'Current Sensors');
 add_param(mask, 'CAP_CURRENT_ADC_REFERENCE', 'Capacitor-current ADC reference (V)', 'CTRL_ADC_VOLTAGE_REF', 'Current Sensors');
 add_param(mask, 'CAP_CURRENT_ADC_BIAS', 'Capacitor-current ADC bias (V)', 'CTRL_AC_CURRENT_BIAS', 'Current Sensors');
-add_param(mask, 'CAP_CURRENT_ADC_CUT_FREQ', 'Capacitor-current filter cutoff (Hz)', '1500', 'Current Sensors');
-add_param(mask, 'GRID_CURRENT_SENSOR_R', 'Grid-current shunt (Ohm)', '0.02', 'Current Sensors');
-add_param(mask, 'Grid_Current_Gain', 'Grid-current amplifier gain', 'CTRL_AC_CURRENT_SENSITIVITY / 0.02', 'Current Sensors');
+add_param(mask, 'CAP_CURRENT_ADC_CUT_FREQ', 'Capacitor-current filter cutoff (Hz)', 'SINV_SENSOR_FILTER_HZ', 'Current Sensors');
+add_param(mask, 'GRID_CURRENT_SENSOR_R', 'Grid-current shunt (Ohm)', 'SINV_CURRENT_SHUNT_OHM', 'Current Sensors');
+add_param(mask, 'Grid_Current_Gain', 'Grid-current amplifier gain', 'CTRL_AC_CURRENT_SENSITIVITY / SINV_CURRENT_SHUNT_OHM', 'Current Sensors');
 add_param(mask, 'GRID_CURRENT_ADC_REFERENCE', 'Grid-current ADC reference (V)', 'CTRL_ADC_VOLTAGE_REF', 'Current Sensors');
 add_param(mask, 'GRID_CURRENT_ADC_BIAS', 'Grid-current ADC bias (V)', 'CTRL_AC_CURRENT_BIAS', 'Current Sensors');
-add_param(mask, 'GRID_CURRENT_ADC_CUT_FREQ', 'Grid-current filter cutoff (Hz)', '1500', 'Current Sensors');
+add_param(mask, 'GRID_CURRENT_ADC_CUT_FREQ', 'Grid-current filter cutoff (Hz)', 'SINV_SENSOR_FILTER_HZ', 'Current Sensors');
 
 mask.Display = sprintf(['disp(''GMP STD SINV/AFE\\nSDPE configured'');\n' ...
     'port_label(''input'',1,''Enable''); port_label(''input'',2,''PWM [L N]'');\n' ...

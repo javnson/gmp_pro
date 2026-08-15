@@ -1,7 +1,7 @@
 /**
  * @file ctrl_settings.h
  * @brief SDPE project bindings for DPS FSBB F280039C IRIS Node.
- * @note Four-switch buck-boost converter SDPE project requirement prepared from ctl/suite/dps_fsbb/project/f280039c_Iris_node/xplt/ctrl_settings.h.
+ * @note Four-switch buck-boost converter SDPE project requirement prepared from the current project configuration.
  *       The requirement introduces the GMP LVFB 150V 2-phase board as the switching stage and sensor source, and IRIS F280039C Node as the peripheral option provider.
  */
 

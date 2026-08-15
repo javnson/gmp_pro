@@ -334,6 +334,7 @@ class Plant:
 
 def parse_args() -> argparse.Namespace:
     here = Path(__file__).resolve().parent
+    result_dir = here.parent.parent / "doc" / "simulation_result" / "fast_sil"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--duration", type=float, default=20.0, help="maximum simulated seconds")
     parser.add_argument("--step", type=float, default=1.0 / 20e3, help="plant/controller step in seconds")
@@ -343,8 +344,8 @@ def parse_args() -> argparse.Namespace:
         help="inject an encoder fault and pass only if the expected diagnostic is raised",
     )
     parser.add_argument("--exe", type=Path, default=here / "x64" / "Debug" / "Motor_Control_Suite_SIL_Env.exe")
-    parser.add_argument("--result", type=Path, default=here / "pmsm_id_sil_fast_result.json")
-    parser.add_argument("--csv", type=Path, default=here / "pmsm_id_sil_fast_trace.csv")
+    parser.add_argument("--result", type=Path, default=result_dir / "pmsm_id_sil_fast_result.json")
+    parser.add_argument("--csv", type=Path, default=result_dir / "pmsm_id_sil_fast_trace.csv")
     return parser.parse_args()
 
 

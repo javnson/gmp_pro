@@ -5,4 +5,4 @@
 - [`results/`](results/)：与实验报告对应的原始 JSON 指标快照。
 - `SINV 调试记录-20250726.docx`：早期硬件调试历史记录，保留供追溯；当前仿真操作以本实验报告和 SDPE 配置为准。
 
-本目录保存已确认结果的归档快照。新仿真首先写入 `../project/simulate/validation/`，确认 BUILD_LEVEL、编译版本和指标有效后再同步到 `doc`。
+本目录保存已确认结果的归档快照。新仿真直接写入 `simulation_result/`，提交前应确认 BUILD_LEVEL、生成配置、编译版本和指标有效。

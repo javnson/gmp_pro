@@ -30,7 +30,8 @@ elseif build_level >= 3
 else
     response = signals.command; reference = mean(data(tail,5)); tolerance = 0.10;
 end
-addpath(fullfile(root, '..', '..', '..', 'sil_validation'));
+addpath(fullfile(root, '..', '..', '..', '..', '..', 'tools', ...
+    'gmp_sil', 'validation'));
 step = sil_step_metrics(response, reference, 0, tolerance);
 
 metrics = struct;
@@ -56,7 +57,8 @@ else
 end
 metrics.pass = metrics.simulation_pass && metrics.dynamic_pass && metrics.steady_state_pass;
 
-folder = fullfile(root, 'validation'); if ~isfolder(folder), mkdir(folder); end
+folder = fullfile(root, '..', '..', 'doc', 'simulation_result');
+if ~isfolder(folder), mkdir(folder); end
 if isempty(label), label = sprintf('build_level_%d', build_level); end
 stem = matlab.lang.makeValidName(label);
 fid = fopen(fullfile(folder, [stem '_metrics.json']), 'w');

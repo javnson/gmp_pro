@@ -1,2 +1,0 @@
-"suite","build_level","build_pass","simulation_pass","runtime_assertion_triggered","dynamic_pass","steady_state_pass","pass","metrics_file","log_file","error"
-"dps_fsbb","3","True","True","False","True","True","True","E:\lib\gmp_pro\ctl\suite\dps_fsbb\project\simulate\validation\build_level_3_metrics.json","E:\lib\gmp_pro\ctl\suite\dps_fsbb\project\simulate\validation\build_level_3_matlab.log",""

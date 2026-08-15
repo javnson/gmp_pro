@@ -47,8 +47,8 @@
 									<listOptionValue builtIn="false" value="${COM_TI_C2000WARE_INCLUDE_PATH}"/>
 									<listOptionValue builtIn="false" value="${PROJECT_ROOT}"/>
 									<listOptionValue builtIn="false" value="${PROJECT_LOC}/../../src"/>
-									<listOptionValue builtIn="false" value="${PROJECT_LOC}/xplt"/>
-									<listOptionValue builtIn="false" value="${PROJECT_LOC}/sdpe_mgr"/>
+									<listOptionValue builtIn="false" value="${PROJECT_LOC}/src/xplt"/>
+									<listOptionValue builtIn="false" value="${PROJECT_LOC}/src/sdpe_mgr"/>
 									<listOptionValue builtIn="false" value="${CG_TOOL_ROOT}/include"/>
 									<listOptionValue builtIn="false" value="${COM_TI_C2000WARE_INSTALL_DIR}/device_support\f28004x\headers\include"/>
 									<listOptionValue builtIn="false" value="${COM_TI_C2000WARE_INSTALL_DIR}/device_support\f28004x\common\include"/>
@@ -108,7 +108,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="device_support/f28004x_codestartbranch.asm" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

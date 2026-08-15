@@ -148,7 +148,7 @@ BL5 必须使用独立的 30 Ω 直流负载。60 V/30 Ω 对应 120 W 和约 5 
 ```bat
 cd /d E:\lib\gmp_pro\ctl\suite\pgs_sinv_rc\sdpe_general
 sdpe_generate.bat
-cd /d E:\lib\gmp_pro\ctl\suite\pgs_sinv_rc\project\simulate\sdpe_mgr
+cd /d "%GMP_PRO_LOCATION%\ctl\suite\pgs_sinv_rc\project\simulate\sdpe_mgr"
 sdpe_generate.bat
 ```
 
@@ -159,7 +159,7 @@ sdpe_generate.bat
 在 MATLAB 中运行：
 
 ```matlab
-cd('E:/lib/gmp_pro/ctl/suite/pgs_sinv_rc/project/simulate');
+cd(fullfile(getenv("GMP_PRO_LOCATION"), "ctl", "suite", "pgs_sinv_rc", "project", "simulate"));
 configure_sinv_models;
 ```
 
@@ -172,7 +172,7 @@ configure_sinv_models;
 使用 Visual Studio 打开 `GMP_Motor_Control_simulink.sln`，选择 `Debug|x64` 并 Rebuild；或在 Developer PowerShell 中执行：
 
 ```bat
-cd /d E:\lib\gmp_pro\ctl\suite\pgs_sinv_rc\project\simulate
+cd /d "%GMP_PRO_LOCATION%\ctl\suite\pgs_sinv_rc\project\simulate"
 msbuild GMP_Motor_Control_simulink.sln /m /t:Rebuild /p:Configuration=Debug /p:Platform=x64
 ```
 
@@ -198,7 +198,7 @@ out = run_sinv_cosim(5, 5.0);
 metrics = run_sinv_validation(5, 5.0, 'build_level_5');
 ```
 
-脚本会自动启动/停止控制器，记录 16 个监测量和 PWM/Enable，计算稳态 RMS、P/Q、PLL 频率、电流误差与 THD，并将 PNG/JSON 写入 `project/simulate/validation/`。
+脚本会自动启动/停止控制器，记录 16 个监测量和 PWM/Enable，计算稳态 RMS、P/Q、PLL 频率、电流误差与 THD，并将 PNG/JSON 写入 `doc/simulation_result/`。
 
 ## 8. BUILD_LEVEL 分级实验
 

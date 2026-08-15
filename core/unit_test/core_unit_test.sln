@@ -1,0 +1,25 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GMP Core Unit Tests", "projects\core_unit_tests.vcxproj", "{66E084D2-7FA5-4CA1-A2B7-15B430026961}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{66E084D2-7FA5-4CA1-A2B7-15B430026961}.Debug|x64.ActiveCfg = Debug|x64
+		{66E084D2-7FA5-4CA1-A2B7-15B430026961}.Debug|x64.Build.0 = Debug|x64
+		{66E084D2-7FA5-4CA1-A2B7-15B430026961}.Release|x64.ActiveCfg = Release|x64
+		{66E084D2-7FA5-4CA1-A2B7-15B430026961}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3504FBAA-C624-4D63-A472-6BEEA08B0F26}
+	EndGlobalSection
+EndGlobal
+

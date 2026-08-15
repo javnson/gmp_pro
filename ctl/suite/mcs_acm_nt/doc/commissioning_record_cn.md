@@ -68,7 +68,7 @@
 - 固件已由 CCS 12.8/CGT 22.6.1 LTS 完整编译并下载；PIL 分支强制 PWM Trip 和门极关闭。
 - 同一 `MCS_STD_ACM_MODEL.slx` 完成 0.005 s 模型运行，桥接器严格记录 100 个 20 kHz 控制步，末帧模型时间为 0.004975 s，平均串口往返约 `7.25 ms`，无物理使能输出。
 - 校正 UDP S-Function 的求解器语义：只有主步执行一次目标事务，次步复用缓存输出；复测消除了变步长求解器导致的目标多次推进。
-- 结果保存在 `project/f280049c/pil/results/timing_fix_build_level_1`；Level 2～4 尚未进行实板验收，不能沿用 PMSM 工程的历史结论。
+- 结果保存在 `project/f280049c/src/pil/results/timing_fix_build_level_1`；Level 2～4 尚未进行实板验收，不能沿用 PMSM 工程的历史结论。
 
 ## 监视通道（Level 3 无感）
 

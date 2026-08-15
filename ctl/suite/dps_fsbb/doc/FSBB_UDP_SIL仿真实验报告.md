@@ -108,7 +108,7 @@ E:\lib\gmp_pro\ctl\suite\dps_fsbb\project\simulate\sdpe_mgr\sdpe_requirement.jso
 将 `BUILD_LEVEL` 的 `value` 设置为 `(1)`、`(2)` 或 `(3)`，然后在 PowerShell/cmd 中运行：
 
 ```bat
-cd /d E:\lib\gmp_pro\ctl\suite\dps_fsbb\project\simulate\sdpe_mgr
+cd /d "%GMP_PRO_LOCATION%\ctl\suite\dps_fsbb\project\simulate\sdpe_mgr"
 sdpe_generate.bat
 ```
 
@@ -119,7 +119,7 @@ sdpe_generate.bat
 在 MATLAB 中执行：
 
 ```matlab
-cd('E:/lib/gmp_pro/ctl/suite/dps_fsbb/project/simulate');
+cd(fullfile(getenv("GMP_PRO_LOCATION"), "ctl", "suite", "dps_fsbb", "project", "simulate"));
 configure_fsbb_model;
 ```
 
@@ -130,7 +130,7 @@ configure_fsbb_model;
 用 Visual Studio 打开 `GMP_Motor_Control_simulink.sln`，选择 `Debug|x64` 并执行 Rebuild。也可在 Visual Studio Developer PowerShell 中运行：
 
 ```bat
-cd /d E:\lib\gmp_pro\ctl\suite\dps_fsbb\project\simulate
+cd /d "%GMP_PRO_LOCATION%\ctl\suite\dps_fsbb\project\simulate"
 msbuild GMP_Motor_Control_simulink.sln /m /t:Rebuild /p:Configuration=Debug /p:Platform=x64
 ```
 
@@ -147,7 +147,7 @@ x64\Debug\Digital_Power_Suite_FSBB_SIL_Env.exe
 不要先手工双击控制器 EXE。由 MATLAB 脚本统一启动和关闭控制器：
 
 ```matlab
-cd('E:/lib/gmp_pro/ctl/suite/dps_fsbb/project/simulate');
+cd(fullfile(getenv("GMP_PRO_LOCATION"), "ctl", "suite", "dps_fsbb", "project", "simulate"));
 out = run_fsbb_cosim(1.5);   % 参数为仿真时长，单位 s
 ```
 
@@ -164,7 +164,7 @@ metrics = run_fsbb_validation(3, 1.5);
 1. 检查生成头文件中的 BUILD_LEVEL；
 2. 启动/停止 SIL 控制器；
 3. 在内存模型中添加记录点，不污染已保存模型；
-4. 在 `project/simulate/validation/` 生成波形 PNG 和指标 JSON。
+4. 在 `doc/simulation_result/` 生成波形 PNG 和指标 JSON。
 
 ## 7. 分级实验步骤与通过判据
 

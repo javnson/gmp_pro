@@ -193,9 +193,9 @@ with GmpDatalinkClient("COM5", 256000) as dl:
 
 ```powershell
 python -m apis.examples.pil_bridge `
-  --sdpe ../../../ctl/suite/mcs_pmsm_nt/project/f280049c/sdpe_mgr/sdpe_requirement.json `
+  --sdpe ../../../ctl/suite/mcs_pmsm_nt/project/f280049c/src/sdpe_mgr/sdpe_requirement.json `
   --port COM5 `
-  --trace ../../../ctl/suite/mcs_pmsm_nt/project/f280049c/pil/results/manual/bridge_trace.csv
+  --trace ../../../ctl/suite/mcs_pmsm_nt/project/f280049c/src/pil/results/manual/bridge_trace.csv
 ```
 
 Simulink 侧使用标准的 264-byte 输入向量和 200-byte 输出向量。每一个被接受的 UDP

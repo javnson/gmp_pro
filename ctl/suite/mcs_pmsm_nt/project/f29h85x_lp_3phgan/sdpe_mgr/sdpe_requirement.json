@@ -439,7 +439,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "${sm060r20b30mnad.Rated Frequency}"
+        "export": "sm060r20b30mnad.rated_frequency"
       },
       "description": ""
     },
@@ -619,7 +619,7 @@
       "enabled": true,
       "weak": false,
       "binding": {
-        "export": "${sm060r20b30mnad.Max Speed}"
+        "export": "sm060r20b30mnad.max_speed"
       },
       "description": ""
     },
@@ -1141,7 +1141,7 @@
   ],
   "common_requirements": [
     "../../../sdpe_general/sdpe_requirement.json",
-    "../../../../sdpe_pil/sdpe_requirement.json"
+    "../../../../../../tools/SDPE_v2/common_requirements/gmp_suite_pil.json"
   ],
   "feature_macro_groups": [
     "PIL Runtime"

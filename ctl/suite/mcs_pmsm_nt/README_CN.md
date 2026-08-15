@@ -36,4 +36,4 @@ FOC 电流环默认使用 DQ-PI。在 `foc_core.h` 中取消注释 `#define ENAB
 
 F280049C 目标提供本地 SDPE 功能 `ENABLE_GMP_DL_PIL_SIM`，它与公共套件配置相互独立。关闭时保留普通物理 ADC/PWM 控制路径；开启时仅由通过校验的 Data Link PIL 请求触发控制器计算，并保持物理门极/PWM 输出处于安全状态。UART/UDP 端点、命令基址、掩码和对象通道映射也由目标 SDPE 管理。
 
-可重复的分阶段流程、MATLAB 运行器、安全约束和硬件记录见 [`project/f280049c/pil`](project/f280049c/pil/README_CN.md)。
+可重复的分阶段流程、MATLAB 运行器、安全约束和硬件记录见 [`project/f280049c/src/pil`](project/f280049c/src/pil/README_CN.md)。

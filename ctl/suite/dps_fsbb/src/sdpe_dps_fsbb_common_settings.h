@@ -25,7 +25,7 @@ extern "C"
 #define DPS_FSBB_COMMON_SDPE_PROJECT_ID "dps_fsbb_common"
 #define DPS_FSBB_COMMON_SDPE_PROJECT_SUITE "dps_fsbb"
 #define DPS_FSBB_COMMON_SDPE_PROJECT_VERSION "1.0.0"
-#define DPS_FSBB_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-08"
+#define DPS_FSBB_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-15"
 
 //=================================================================================================
 /**

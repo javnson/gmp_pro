@@ -27,7 +27,7 @@ MCS_ACIM_NT_COMMON_SDPE_PROJECT_SUITE = 'mcs_acim_nt';
 
 MCS_ACIM_NT_COMMON_SDPE_PROJECT_VERSION = '0.1.0';
 
-MCS_ACIM_NT_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-08-09';
+MCS_ACIM_NT_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-08-15';
 
 %% Control Algorithm
 % Apply ACIM-specific cross-coupling through the generic FOC feedforward port.

@@ -15,8 +15,6 @@
 #include "user_main.h"
 #include <xplt.peripheral.h>
 
-#include <ctrl_rt_trace.h>
-
 // console
 #include <conio.h>
 
@@ -44,15 +42,6 @@ adc_gt idc_src;
 
 // Offline-identification waveform capture buffer.
 ctrl_gt dsa_buffer[DSA_BUFFER_SIZE];
-
-// Trace RT objects
-typedef enum _tag_trace_rt_nodes
-{
-    TRT_TEST = 0,
-    TRT_NODE_NUMBER
-} trace_rt_nodes;
-
-trace_rt_node_t* trt_node[TRT_NODE_NUMBER];
 
 //=================================================================================================
 // peripheral setup function
@@ -106,10 +95,6 @@ void setup_peripheral(void)
     ctl_attach_foc_core_port(&mtr_ctrl, &iuvw.control_port, &udc.control_port, &pos_enc.encif, &spd_enc.encif);
 #endif // BUILD_LEVEL
 
-    //
-    // Trace RT ports
-    //
-    trt_node[TRT_TEST] = trace_rt_register_node(&trace_rt_context, "pwm_out_A", TRT_TYPE_DOUBLE);
 }
 
 //=================================================================================================
@@ -155,7 +140,6 @@ void at_device_flush_rx_buffer()
 // Execute RT monitor
 void send_monitor_data(void)
 {
-    //gmp_trace_rt_log_double(trt_node[TRT_TEST], inv_ctrl.isr_tick, inv_ctrl.vab0.dat[phase_A]);
 }
 
 #ifdef __cplusplus

@@ -7,6 +7,8 @@
 #ifndef _PROJECT_SDPE_MCS_PMSM_ID_COMMON_SETTINGS_H_
 #define _PROJECT_SDPE_MCS_PMSM_ID_COMMON_SETTINGS_H_
 
+#include <ctl/hardware_preset/pmsm_motor/sm060r20b30mnad.h>
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -23,7 +25,7 @@ extern "C"
 #define MCS_PMSM_ID_COMMON_SDPE_PROJECT_ID "mcs_pmsm_id_common"
 #define MCS_PMSM_ID_COMMON_SDPE_PROJECT_SUITE "mcs_pmsm_id"
 #define MCS_PMSM_ID_COMMON_SDPE_PROJECT_VERSION "1.0.0"
-#define MCS_PMSM_ID_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-14"
+#define MCS_PMSM_ID_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-15"
 
 //=================================================================================================
 /**
@@ -113,7 +115,7 @@ extern "C"
 
 /**
  * @brief Incremental commissioning level. 1: V/f voltage open loop; 2: current loop with synthetic electrical angle; 3: current loop with encoder angle; 4: speed loop with encoder feedback.
- *        Options: (1), (2), (3), (4), (5), (6)
+ *        Options: (1), (2), (3), (4)
  */
 #ifndef BUILD_LEVEL
 #define BUILD_LEVEL (2)

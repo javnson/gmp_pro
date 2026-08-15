@@ -19,5 +19,5 @@ loop, and level 3 enables the parallel voltage/current competition controller.
 Negative modulation commands select resonant-frequency DAB phase-shift mode.
 
 The validated BUILD_LEVEL 1 run releases PWM at approximately 7 ms and produces
-the commissioning plot in `validation/build_level_1_waveforms.png`.  See the
+the commissioning plot in `../../doc/simulation_result/build_level_1_waveforms.png`.  See the
 suite-level `doc/commissioning.md` for wiring, resource mapping and limitations.
