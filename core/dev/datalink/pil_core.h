@@ -99,6 +99,7 @@ typedef struct
  */
 typedef struct
 {
+    gmp_dl_facility_t facility; ///< Must remain first for DL registration
     gmp_datalink_t* dl_ctx; ///< Pointer to the bound datalink instance for auto-reply
     uint16_t base_cmd;      ///< Shared base command offset for the tunable subsystem
 

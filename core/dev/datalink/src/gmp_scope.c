@@ -6,6 +6,15 @@
 #include <gmp_type.h>
 #include <core/dev/datalink/scope.h>
 
+static fast_gt gmp_scope_facility_dispatch(gmp_dl_facility_t* facility,
+                                            gmp_datalink_t* datalink)
+{
+    GMP_UNUSED_VAR(datalink);
+    if (facility == NULL || facility->owner == NULL)
+        return 0;
+    return gmp_scope_rx_cb((gmp_scope_service_t*)facility->owner);
+}
+
 #include <stdint.h>
 #include <string.h>
 
@@ -119,7 +128,7 @@ static void scope_reply_discovery(gmp_scope_service_t* ctx)
         capacity = gmp_dev_dl_get_tx_capacity(dl);
         if (name != NULL && capacity > 1U)
         {
-            name_length = strlen(name);
+            name_length = (size_gt)strlen(name);
             if (name_length > capacity - 1U)
                 name_length = capacity - 1U;
             if (name_length > 63U)
@@ -136,7 +145,7 @@ static void scope_reply_discovery(gmp_scope_service_t* ctx)
 static void scope_reply_configure(gmp_scope_service_t* ctx)
 {
     gmp_datalink_t* dl = ctx->dl_ctx;
-    const byte_gt* payload = dl->payload_buf;
+    const byte_gt* payload = (const byte_gt*)dl->payload_buf;
     uint16_t index = 1U;
     fast16_gt resource_id = 0;
     fast16_gt mode = 0;
@@ -226,7 +235,7 @@ static void scope_reply_status(gmp_scope_service_t* ctx)
 static void scope_reply_read(gmp_scope_service_t* ctx)
 {
     gmp_datalink_t* dl = ctx->dl_ctx;
-    const byte_gt* payload = dl->payload_buf;
+    const byte_gt* payload = (const byte_gt*)dl->payload_buf;
     uint16_t index = 1U;
     fast16_gt resource_id = 255;
     uint32_t offset = 0U;
@@ -276,6 +285,8 @@ void gmp_scope_init(gmp_scope_service_t* ctx, gmp_datalink_t* dl,
 {
     if (ctx == NULL)
         return;
+    gmp_dl_facility_init(&ctx->facility, GMP_DL_FACILITY_SCOPE,
+                         base_cmd, 1U, gmp_scope_facility_dispatch, ctx);
     ctx->dl_ctx = dl;
     ctx->base_cmd = base_cmd;
     ctx->resources = resources;

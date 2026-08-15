@@ -408,8 +408,11 @@ Datalink，也常简称 DL，是 GMP Suite 当前采用的重要调试机制。�
 | 文件 | 作用 |
 | --- | --- |
 | `core/dev/datalink/datalink.h` | Datalink 协议核心，提供帧解析、事件循环、收发状态机和命令机制。 |
+| `core/dev/datalink/facility.h` | 侵入式设施公共头；链表节点和对象类型固定为前两个字段。 |
 | `core/dev/datalink/mem_presp.h` | Memory perspective 功能，用于按内存区域观察数据。 |
 | `core/dev/datalink/tunable.h` | Tunable 参数功能，用于在线读写参数字典。 |
+| `core/dev/datalink/scope.h` | 上位机 Scope 命令、资源发现和有界快照读取服务。 |
+| `ctl/component/dsa/dsa_dl_scope.h` | 使用 DSA Trigger/Scope 实现采集，并封装全部触发、历史和状态。 |
 | `core/dev/datalink/readme_dl_protocol.md` | Datalink 协议说明文档。 |
 
 在每个正式 suite 的 `user_main.c` 中，通常可以找到一组与 DL 调试对接的对象和任务，例如：
@@ -428,12 +431,17 @@ user_main.c
     ├─ flush_dl_rx_buffer()
     ├─ gmp_dev_dl_loop_cb(&dl)
     ├─ GMP_DL_EVENT_TX_RDY -> flush_dl_tx_buffer()
-    └─ GMP_DL_EVENT_RX_OK
-         ├─ gmp_pil_sim_rx_cb(&pil)
-         ├─ gmp_param_tunable_rx_cb(&tunable)
-         ├─ gmp_mem_persp_rx_cb(&mem_persp_server)
-         └─ default / echo handler
+    └─ GMP_DL_EVENT_RX_OK -> gmp_dev_dl_dispatch_rx(&dl)
 ```
+
+初始化时先初始化各子模块，再用 `gmp_dev_dl_append_facility()` 显式串入
+PIL、Tunable、Memory、Scope 等设施。核心会检查命令冲突、统一路由，并由
+`INFO (0x02)` 根据真实链表自动汇报设施类型和命令范围。旧工具使用的 `0x99`
+ECHO 也作为 `USER` 类型设施注册，不再在任务中手写分支。
+
+Scope 的触发器、预触发历史、配置、状态和代次均由 `ctl_dsa_dl_scope_t`
+管理；suite 只提供工作区、命令号、资源元数据以及控制中断中的采样值。整个
+DL 任务的执行计数位于 `dl.service_run_count`，无需用户再维护并行计数器。
 
 上位机调试器位于：
 

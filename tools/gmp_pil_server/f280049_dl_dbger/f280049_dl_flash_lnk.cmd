@@ -74,7 +74,9 @@ PAGE 1 :
 SECTIONS
 {
    codestart        : > BEGIN,     PAGE = 0, ALIGN(4)
-   .text            : >> FLASH_BANK0_SEC2 | FLASH_BANK0_SEC3 | FLASH_BANK0_SEC5,   PAGE = 0, ALIGN(4)
+   .text            : >> FLASH_BANK0_SEC2 | FLASH_BANK0_SEC3 | FLASH_BANK0_SEC5 |
+                         FLASH_BANK0_SEC6 | FLASH_BANK0_SEC7 | FLASH_BANK0_SEC8 |
+                         FLASH_BANK0_SEC9 | FLASH_BANK0_SEC10, PAGE = 0, ALIGN(4)
    .cinit           : > FLASH_BANK0_SEC1,     PAGE = 0, ALIGN(4)
    .switch          : > FLASH_BANK0_SEC1,     PAGE = 0, ALIGN(4)
    .reset           : > RESET,     PAGE = 0, TYPE = DSECT /* not used, */
@@ -98,8 +100,7 @@ SECTIONS
    .econst          : > FLASH_BANK0_SEC4,    PAGE = 0, ALIGN(4)
 #endif
 
-   ramgs0           : > RAMGS0,    PAGE = 1
-   ramgs1           : > RAMGS1,    PAGE = 1
+   mass_data        : > RAMGS0,    PAGE = 1
 
  
 #if defined(__TI_EABI__) 

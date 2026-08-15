@@ -96,6 +96,9 @@ void gmp_param_tunable_init(gmp_param_tunable_t* ctx, gmp_datalink_t* dl,
 {
     if (ctx == NULL)
         return;
+    gmp_dl_facility_init(&ctx->facility, GMP_DL_FACILITY_TUNABLE,
+                         base_cmd, 2U,
+                         gmp_param_tunable_facility_dispatch, ctx);
     ctx->dl_ctx = dl;
     ctx->base_cmd = base_cmd;
     ctx->dict = dict;

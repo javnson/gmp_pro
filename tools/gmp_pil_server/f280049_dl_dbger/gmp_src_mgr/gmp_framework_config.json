@@ -48,15 +48,15 @@
     },
     {
       "root": "core",
+      "module": "dev|datalink|pil"
+    },
+    {
+      "root": "core",
       "module": "dev|datalink|variable_monitor"
     },
     {
       "root": "core",
       "module": "dev|datalink|mem_monitor"
-    },
-    {
-      "root": "core",
-      "module": "dev|datalink|scope"
     },
     {
       "root": "ctl",
@@ -88,11 +88,7 @@
     },
     {
       "root": "ctl",
-      "module": "component|dsa|dsa_scope"
-    },
-    {
-      "root": "ctl",
-      "module": "component|dsa|dsa_trigger"
+      "module": "component|dsa|dsa_dl_scope"
     },
     {
       "root": "csp",

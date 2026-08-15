@@ -27,7 +27,7 @@ Do not interpret an item marked `pending` or `in progress` as implemented.
 
 - `startup_task_runs = 1`
 - `heartbeat_task_runs = 60`
-- `datalink_task_runs = 15000`
+- `datalink.service_run_count = 15000`
 - `control_isr_runs = 600019`
 - `DSPC2000_SystemTick = 30000`
 - `launchpad_adc_raw = 139` at the final halt, with different values observed
@@ -43,7 +43,7 @@ The formal root-project Debug image was then flashed and probed for 5 seconds:
 
 - `startup_task_runs = 1`
 - `heartbeat_task_runs = 10`
-- `datalink_task_runs = 2500`
+- `datalink.service_run_count = 2500`
 - `control_isr_runs = 100016`
 - `DSPC2000_SystemTick = 5000`
 - `launchpad_adc_raw = 140`

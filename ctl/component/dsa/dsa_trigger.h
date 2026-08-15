@@ -247,7 +247,7 @@ GMP_STATIC_INLINE void ctl_set_dsa_logger_trigger(ctl_dsa_logger_t* logger,
                                                   parameter_gt trigger_level)
 {
     logger->trigger.option = trigger_option;
-    logger->trigger.trigger_level = trigger_level;
+    logger->trigger.trigger_level = param2ctrl(trigger_level);
 }
 
 /*---------------------------------------------------------------------------*/

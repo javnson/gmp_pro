@@ -22,6 +22,7 @@ Projects that use these services always compile the same source files:
 
 ```text
 core/dev/datalink/src/gmp_datalink.c
+core/dev/datalink/src/gmp_dl_facility.c
 core/dev/datalink/src/gmp_tunable.c
 core/dev/datalink/src/gmp_mem_presp.c
 core/dev/datalink/src/gmp_scope.c
@@ -87,9 +88,32 @@ void uart_rx_callback(const byte_gt* data, size_gt count)
 }
 ```
 
-Call `gmp_dev_dl_loop_cb()` from a task or main loop. On
-`GMP_DL_EVENT_RX_OK`, offer the frame to application services and finally call
-`gmp_dev_dl_default_rx_handler()` if no service claimed it. On
+Initialize each selected service, then append its common facility descriptor.
+The descriptor is the first member of each service object; its first field is
+an intrusive list link and its second field is the stable facility type.
+
+```c
+gmp_tunable_init(&tunable, &dl, 0x30U, tunable_items, tunable_count);
+gmp_mem_presp_init(&memory, &dl, 0x50U, memory_regions, memory_count);
+
+if (!gmp_dev_dl_append_facility(&dl, &tunable.facility) ||
+    !gmp_dev_dl_append_facility(&dl, &memory.facility))
+    app_configuration_error();
+```
+
+Append rejects invalid or overlapping command ranges, the reserved INFO
+command, duplicate insertion, excessive facility count, and a corrupt list.
+Removal is explicit. No heap allocation is involved.
+
+Legacy applications that still expose command `0x99` as an ECHO alias register
+it as a normal `USER` facility with `gmp_dev_dl_init_echo_alias()`; it is no
+longer handled by an application-private receive switch.
+
+Call `gmp_dev_dl_loop_cb()` from a task or main loop. Each call increments
+`dl.service_run_count`, which is the canonical whole-Data-Link task diagnostic.
+On `GMP_DL_EVENT_RX_OK`, call `gmp_dev_dl_dispatch_rx()` once; it handles INFO,
+routes to the matching registered facility, and applies the default fallback
+for an unknown command. On
 `GMP_DL_EVENT_TX_RDY`, transmit the header and payload buffers and call
 `gmp_dev_dl_tx_state_done()` only after the hardware has finished using them.
 
@@ -106,6 +130,25 @@ context can consume that depth first and leave the control application blocked.
 On framing, parity, break, or overrun errors, reset the peripheral FIFO and call
 `gmp_dev_dl_request_rx_reset()` from the ISR. The protocol task then discards
 the incomplete software queue and resumes searching for the next start marker.
+
+### Automatic target information
+
+Command `INFO (0x02)` belongs to the Data Link core and must not be registered
+by an application facility. Protocol version 3 is generated from the actual
+facility chain:
+
+```text
+[version=3:u8]
+[physical-bytes-per-address-unit:u8]
+[sizeof-byte_gt:u8]
+[address-unit-bits:u8]
+[facility-count:u8]
+repeated [facility-type:u8][base-command:u8][command-count:u8]
+```
+
+Stable types are Tunable `1`, Memory `2`, Scope `3`, PIL `4`, and user-defined
+`0x80`. Facility order is append order. A malformed list or inconsistent
+stored count is answered with NACK rather than traversed.
 
 ## Tunable Parameters
 
@@ -158,7 +201,9 @@ permission.
 
 ## Data Link Scope
 
-Data Link Scope is independent of Memory Perspective. A target registers named
+Data Link Scope is independent of Memory Perspective, but the standard CTL
+implementation explicitly uses DSA Trigger and DSA Scope as its acquisition
+backend. A target registers named
 waveform resources, immutable sample metadata, and optional configure, arm, and
 status callbacks. The host never needs a physical buffer address.
 
@@ -190,6 +235,13 @@ an edge-triggered capture is waiting, a new configuration may be queued and
 applied after the outstanding status transaction finishes; the user must not be
 locked into an unreachable trigger condition.
 
+With `ctl/component/dsa/dsa_dl_scope`, the adapter owns every trigger,
+pre-trigger history, arm/configure/status, generation, and capture-state field.
+The application supplies the workspace and immutable resource metadata, appends
+the returned Scope facility, and feeds samples from its control interrupt. The
+initial settings are rising edge, channel 0, level 0, 50% trigger position, and
+a 1000 ms automatic timeout; normal reconfiguration is performed by the host.
+
 ## Host tools and validation target
 
 - `tools/gmp_pil_server/gmp_debugger/run_u8.bat` selects the byte-addressed
@@ -200,6 +252,12 @@ locked into an unreachable trigger condition.
   Python API for automation and AI-assisted hardware debugging.
 - `tools/gmp_pil_server/stm32_dl_dbger` is the NUCLEO-C092RC u8 validation
   firmware and hardware smoke test.
+- `tools/gmp_pil_server/f280049_dl_dbger` is the LAUNCHXL-F280049C u16
+  validation firmware and hardware smoke test.
+
+Both validation firmwares register PIL, Tunable, Memory, and Scope facilities.
+Their hardware smoke tests verify exact INFO v3 discovery, PIL mask/STEP,
+Tunable read/write, bounded Memory access, and a DSA-backed Scope capture.
 
 The two launchers share one debugger and stable wire codec. Their distinction
 documents the target memory-address model rather than defining a different

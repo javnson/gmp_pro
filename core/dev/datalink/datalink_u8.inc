@@ -61,6 +61,7 @@ void gmp_dev_dl_init(gmp_datalink_t* ctx)
     memset(ctx, 0, sizeof(*ctx));
     ctx->rx_state = GMP_DL_STATE_WAIT_SYNC;
     ctx->tx_state = GMP_DL_TX_STATE_IDLE;
+    gmp_list_init(&ctx->facility_list);
 }
 
 void gmp_dev_dl_push_byte(gmp_datalink_t* ctx, uint8_t raw_data)
@@ -114,6 +115,8 @@ gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
 {
     if (ctx == NULL)
         return GMP_DL_EVENT_IDLE;
+
+    ctx->service_run_count++;
 
     if (ctx->rx_reset_pending)
     {

@@ -28,12 +28,89 @@ TEST_CLASS(BaseDataStructureTests)
   public:
     TEST_METHOD(IntrusiveListLinksContainingObjects)
     {
-        list_item_t first{{nullptr}, 10};
-        list_item_t second{{nullptr}, 20};
+        gmp_list head{};
+        list_item_t first{{}, 10};
+        list_item_t second{{}, 20};
 
-        first.link.next = &second.link;
-        Assert::IsTrue(first.link.next == &second.link);
-        Assert::AreEqual(20, reinterpret_cast<list_item_t*>(first.link.next)->value);
+        gmp_list_init(&head);
+        gmp_list_init(&first.link);
+        gmp_list_init(&second.link);
+        Assert::AreEqual<fast_gt>(1, gmp_list_push_tail(&head, &first.link));
+        Assert::AreEqual<fast_gt>(1, gmp_list_push_tail(&head, &second.link));
+        Assert::AreEqual<size_gt>(2, gmp_list_count(&head, 2));
+        Assert::AreEqual(10, GMP_CONTAINER_OF(head.next, list_item_t, link)->value);
+        Assert::AreEqual(20, GMP_CONTAINER_OF(head.prev, list_item_t, link)->value);
+    }
+
+    TEST_METHOD(IntrusiveListSupportsHeadTailAndMiddleInsertion)
+    {
+        gmp_list head{};
+        list_item_t first{{}, 1};
+        list_item_t second{{}, 2};
+        list_item_t third{{}, 3};
+        gmp_list_init(&head);
+        gmp_list_init(&first.link);
+        gmp_list_init(&second.link);
+        gmp_list_init(&third.link);
+
+        Assert::AreEqual<fast_gt>(1, gmp_list_push_head(&head, &second.link));
+        Assert::AreEqual<fast_gt>(1, gmp_list_insert_before(&second.link, &first.link));
+        Assert::AreEqual<fast_gt>(1, gmp_list_insert_after(&second.link, &third.link));
+        Assert::AreEqual(1, GMP_CONTAINER_OF(head.next, list_item_t, link)->value);
+        Assert::AreEqual(2, GMP_CONTAINER_OF(head.next->next, list_item_t, link)->value);
+        Assert::AreEqual(3, GMP_CONTAINER_OF(head.prev, list_item_t, link)->value);
+        Assert::AreEqual<fast_gt>(1, gmp_list_validate(&head, 3));
+    }
+
+    TEST_METHOD(IntrusiveListRejectsDoubleInsertAndDoubleRemove)
+    {
+        gmp_list head{};
+        list_item_t item{{}, 7};
+        gmp_list_init(&head);
+        gmp_list_init(&item.link);
+
+        Assert::AreEqual<fast_gt>(1, gmp_list_push_tail(&head, &item.link));
+        Assert::AreEqual<fast_gt>(0, gmp_list_push_tail(&head, &item.link));
+        Assert::AreEqual<fast_gt>(1, gmp_list_remove(&item.link));
+        Assert::AreEqual<fast_gt>(0, gmp_list_remove(&item.link));
+        Assert::AreEqual<fast_gt>(1, gmp_list_is_detached(&item.link));
+        Assert::AreEqual<fast_gt>(1, gmp_list_is_empty(&head));
+    }
+
+    TEST_METHOD(IntrusiveListPopPreservesOrderAndDetachesEntries)
+    {
+        gmp_list head{};
+        list_item_t first{{}, 1};
+        list_item_t second{{}, 2};
+        gmp_list_init(&head);
+        gmp_list_init(&first.link);
+        gmp_list_init(&second.link);
+        gmp_list_push_tail(&head, &first.link);
+        gmp_list_push_tail(&head, &second.link);
+
+        Assert::IsTrue(gmp_list_pop_head(&head) == &first.link);
+        Assert::AreEqual<fast_gt>(1, gmp_list_is_detached(&first.link));
+        Assert::IsTrue(gmp_list_pop_tail(&head) == &second.link);
+        Assert::AreEqual<fast_gt>(1, gmp_list_is_detached(&second.link));
+        Assert::IsNull(gmp_list_pop_head(&head));
+    }
+
+    TEST_METHOD(IntrusiveListValidationDetectsCorruptionAndBoundsTraversal)
+    {
+        gmp_list head{};
+        list_item_t first{{}, 1};
+        list_item_t second{{}, 2};
+        gmp_list_init(&head);
+        gmp_list_init(&first.link);
+        gmp_list_init(&second.link);
+        gmp_list_push_tail(&head, &first.link);
+        gmp_list_push_tail(&head, &second.link);
+
+        Assert::AreEqual<fast_gt>(0, gmp_list_validate(&head, 1));
+        Assert::AreEqual<size_gt>(2, gmp_list_count(&head, 2));
+        second.link.prev = &head;
+        Assert::AreEqual<fast_gt>(0, gmp_list_validate(&head, 2));
+        Assert::AreEqual<size_gt>(3, gmp_list_count(&head, 2));
     }
 
     TEST_METHOD(RingBufferReservesOneSlotAndPreservesFifoOrder)
@@ -83,4 +160,3 @@ TEST_CLASS(BaseDataStructureTests)
     }
 };
 } // namespace gmp_core_unit_test
-

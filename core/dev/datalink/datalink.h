@@ -8,12 +8,21 @@
 
 #include <gmp_type.h>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #if GMP_PORT_DATA_SIZE_PER_BYTES == 1
 #include <core/dev/datalink/datalink_u8.h>
 #elif GMP_PORT_DATA_SIZE_PER_BYTES == 2
 #include <core/dev/datalink/datalink_u16.h>
 #else
 #error "GMP Data Link supports only 1-byte and 2-byte addressable data units"
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif // _FILE_GMP_DATALINK_SELECTOR_H

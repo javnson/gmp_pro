@@ -20,9 +20,12 @@ static inline void datalink_reset_rx(gmp_datalink_t* ctx)
 
 void gmp_dev_dl_init(gmp_datalink_t* ctx)
 {
+    if (ctx == NULL)
+        return;
     memset(ctx, 0, sizeof(gmp_datalink_t));
     ctx->rx_state = GMP_DL_STATE_WAIT_SYNC;
     ctx->tx_state = GMP_DL_TX_STATE_IDLE;
+    gmp_list_init(&ctx->facility_list);
 }
 
 void gmp_dev_dl_push_byte(gmp_datalink_t* ctx, byte_gt raw_data)
@@ -87,6 +90,10 @@ void gmp_dev_dl_request_rx_reset(gmp_datalink_t* ctx)
 
 gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx)
 {
+    if (ctx == NULL)
+        return GMP_DL_EVENT_IDLE;
+
+    ctx->service_run_count++;
     if (ctx->rx_reset_pending)
     {
         ctx->rx_reset_pending = 0;

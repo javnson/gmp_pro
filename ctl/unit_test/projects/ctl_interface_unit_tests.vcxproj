@@ -35,11 +35,22 @@
   </ItemDefinitionGroup>
   <ItemGroup><ProjectCapability Include="TestContainer" /></ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\tests\dsa_dl_scope_tests.cpp">
+      <PreprocessorDefinitions>GMP_CTL_TEST_FLOAT</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="..\tests\interface_tests.cpp" />
     <ClCompile Include="..\tests\vs_test_clock.cpp" />
     <ClCompile Include="..\..\component\interface\src\ctl_component_interface.c" />
     <ClCompile Include="..\..\component\interface\src\ctl_if_pwm_spwm.c" />
     <ClCompile Include="..\..\component\intrinsic\discrete\src\ctl_discrete_biquad_filter.c" />
+    <ClCompile Include="..\..\component\intrinsic\basic\src\ctl_divider.c"><PreprocessorDefinitions>GMP_CTL_TEST_FLOAT</PreprocessorDefinitions></ClCompile>
+    <ClCompile Include="..\..\component\dsa\src\dsa_dl_scope.c"><PreprocessorDefinitions>GMP_CTL_TEST_FLOAT</PreprocessorDefinitions></ClCompile>
+    <ClCompile Include="..\..\component\dsa\src\dsa_scope.c"><PreprocessorDefinitions>GMP_CTL_TEST_FLOAT</PreprocessorDefinitions></ClCompile>
+    <ClCompile Include="..\..\component\dsa\src\dsa_trigger.c"><PreprocessorDefinitions>GMP_CTL_TEST_FLOAT</PreprocessorDefinitions></ClCompile>
+    <ClCompile Include="..\..\..\core\base\checksum\src\crc16.c"><PreprocessorDefinitions>GMP_CTL_TEST_FLOAT</PreprocessorDefinitions></ClCompile>
+    <ClCompile Include="..\..\..\core\dev\datalink\src\gmp_datalink.c"><PreprocessorDefinitions>GMP_CTL_TEST_FLOAT</PreprocessorDefinitions></ClCompile>
+    <ClCompile Include="..\..\..\core\dev\datalink\src\gmp_dl_facility.c"><PreprocessorDefinitions>GMP_CTL_TEST_FLOAT</PreprocessorDefinitions></ClCompile>
+    <ClCompile Include="..\..\..\core\dev\datalink\src\gmp_scope.c"><PreprocessorDefinitions>GMP_CTL_TEST_FLOAT</PreprocessorDefinitions></ClCompile>
   </ItemGroup>
   <ItemGroup><ClInclude Include="..\tests\vs_test_support.h" /><None Include="..\vcpkg.json" /></ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

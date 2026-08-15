@@ -11,7 +11,8 @@ implementation files directly from their authoritative locations under
 | Test source | Responsibility |
 | --- | --- |
 | `test_mm.cpp` | Block-memory setup, allocation, release, reuse, and capacity errors |
-| `test_base_ds.cpp` | Intrusive list layout and ring-buffer boundary/wrap behavior |
+| `test_base_ds.cpp` | Intrusive list corruption/double-operation safety and ring-buffer boundary/wrap behavior |
+| `test_datalink_facility.cpp` | Facility layout, registration, overlap rejection, routing, INFO v3, removal, counter, and corruption NACK |
 | `test_base_checksum.cpp` | CRC16-CCITT standard and binary vectors |
 | `test_pm_function_scheduler.cpp` | Periodic, disabled, busy, and capacity scheduling |
 | `test_pm_duff_fsm.cpp` | Delay, transition, reset, completion, and invalid-state handling |
@@ -34,3 +35,5 @@ vstest.console.exe out\x64\Debug\core_unit_tests\core_unit_tests.dll
 as legacy and has no implementation source, so its test intentionally covers
 only node behavior implemented in the public header.
 
+The current `Debug|x64` container contains 32 tests. Production and test sources
+compile at `/W4 /WX`.

@@ -57,6 +57,7 @@ typedef struct
  */
 typedef struct
 {
+    gmp_dl_facility_t facility;    /**< Must remain first for DL registration. */
     gmp_datalink_t* dl_ctx;       /**< Bound datalink communication object */
     uint16_t base_cmd;            /**< Base command ID; base + 1 multiplexes writes and one-unit discovery queries */
     const gmp_param_item_t* dict; /**< Pointer to the bound data dictionary array */

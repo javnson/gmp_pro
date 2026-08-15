@@ -103,6 +103,7 @@ typedef struct
 /** @brief Data Link binding and resource table for one Scope service. */
 typedef struct
 {
+    gmp_dl_facility_t facility;          /**< Must remain first for DL registration. */
     gmp_datalink_t* dl_ctx;                 /**< Bound Data Link instance */
     uint16_t base_cmd;                      /**< Single command owned by the service */
     const gmp_scope_resource_t* resources;  /**< Registered scope resource array */

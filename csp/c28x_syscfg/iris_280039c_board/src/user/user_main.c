@@ -23,6 +23,8 @@ ctrl_gt ram_range[512];
 // Datalink protocol online Debug module
 
 gmp_datalink_t dl;
+gmp_dl_facility_t legacy_echo_facility;
+volatile uint32_t dl_facility_init_errors;
 
 //
 // PIL (processor in loop module)
@@ -78,42 +80,7 @@ gmp_task_status_t tsk_dl_debug_device(gmp_task_t* tsk)
         break;
 
     case GMP_DL_EVENT_RX_OK:
-
-        //
-        // Ack PIL simulation message
-        //
-        if (gmp_pil_sim_rx_cb(&pil))
-            break;
-
-        //
-        // Ack parameter tunable message
-        //
-        if (gmp_param_tunable_rx_cb(&tunable))
-            break;
-
-        //
-        // Ack memory perspective message
-        //
-        if (gmp_mem_persp_rx_cb(&mem_persp_server))
-            break;
-
-        //
-        // Echo Command
-        //
-        if (dl.rx_head.cmd == 0x99)
-        {
-            // echo payload_buf
-            gmp_dev_dl_tx_request(&dl, dl.rx_head.seq_id, GMP_DL_CMD_ECHO, dl.expected_payload_len, dl.payload_buf);
-
-            // ack this message
-            gmp_dev_dl_msg_handled(&dl);
-
-            break;
-        }
-
-        // default handler
-        gmp_dev_dl_default_rx_handler(&dl);
-
+        (void)gmp_dev_dl_dispatch_rx(&dl);
         break;
     }
 
@@ -183,13 +150,23 @@ void init(void) GMP_NO_OPT_SUFFIX
 
     // init datalink protocol
     gmp_dev_dl_init(&dl);
+    dl_facility_init_errors = 0U;
+    gmp_dev_dl_init_echo_alias(&legacy_echo_facility, 0x99U);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, &legacy_echo_facility) ? 0U : 1U;
 
     // enable PIL simulation environment
     gmp_pil_sim_init(&pil, &dl, 0x10);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, &pil.facility) ? 0U : 1U;
 
     // Band DL module with tunable and persp module.
     gmp_param_tunable_init(&tunable, &dl, 0x30, dict_m1, var_tunable_count);
     gmp_mem_persp_init(&mem_persp_server, &dl, 0x50, mem_regions, mem_regions_count);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, &tunable.facility) ? 0U : 1U;
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, &mem_persp_server.facility) ? 0U : 1U;
 }
 
 // Initialization tasks after all peripherals have been initialized

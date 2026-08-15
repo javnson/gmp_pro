@@ -68,6 +68,8 @@
 #error "datalink_u16.h requires GMP_PORT_DATA_SIZE_PER_BYTES == 2"
 #endif
 
+#include <core/dev/datalink/facility.h>
+
 #define GMP_DL_BACKEND_U16 1
 // =========================================================
 // 1. Configurable Macros
@@ -97,7 +99,13 @@
 // Reserved System Commands
 #define GMP_DL_CMD_ECHO  0x00 ///< Built-in ECHO request/response for connection testing
 #define GMP_DL_CMD_NACK  0x01 ///< Negative Acknowledgment (Error Response)
+#define GMP_DL_CMD_INFO  0x02 ///< Automatic registered-facility discovery
 #define GMP_DL_CMD_STRAY 0xFF ///< Stray/Foreign characters routing (e.g., CLI bypass)
+
+/** @brief Current automatic facility-discovery payload version. */
+#define GMP_DL_INFO_PROTOCOL_VERSION 3U
+/** @brief Hard traversal bound for the intrusive service registry. */
+#define GMP_DL_MAX_FACILITIES 32U
 
 // =========================================================
 // 3. FSM & Event Enumerations
@@ -153,7 +161,7 @@ typedef struct
 /**
  * @brief The core Datalink Context maintaining all FSMs, buffers, and diagnostic data.
  */
-typedef struct
+struct _tag_gmp_datalink
 {
     // --- ISR Decoupling FIFO ---
     byte_gt rx_fifo[GMP_DL_RX_FIFO_SIZE]; ///< Ring buffer storing raw bytes from the hardware RX interrupt
@@ -194,7 +202,11 @@ typedef struct
     uint32_t err_hdr_crc_cnt;  ///< Counter for frames dropped due to Header CRC failures
     uint32_t err_pld_crc_cnt;  ///< Counter for frames dropped due to Payload CRC failures
     uint32_t err_timeout_cnt;  ///< Counter for RX FSM aborts triggered by the watchdog timeout
-} gmp_datalink_t;
+
+    gmp_list facility_list;              ///< Registered DL submodules
+    uint16_t facility_count;             ///< Number of registered submodules
+    volatile uint32_t service_run_count; ///< Calls to the DL service loop
+};
 
 // =========================================================
 // 5. API Declarations
@@ -251,6 +263,17 @@ gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx);
  * @param   ctx Pointer to the datalink context instance.
  */
 void gmp_dev_dl_default_rx_handler(gmp_datalink_t* ctx);
+
+/** @brief Append one initialized service to this Data Link instance. */
+fast_gt gmp_dev_dl_append_facility(gmp_datalink_t* ctx,
+                                   gmp_dl_facility_t* facility);
+/** @brief Detach one service from this Data Link instance. */
+fast_gt gmp_dev_dl_remove_facility(gmp_datalink_t* ctx,
+                                   gmp_dl_facility_t* facility);
+/** @brief Initialize a user facility that preserves a legacy ECHO command alias. */
+void gmp_dev_dl_init_echo_alias(gmp_dl_facility_t* facility, uint16_t command);
+/** @brief Dispatch the current RX frame through INFO and the facility chain. */
+fast_gt gmp_dev_dl_dispatch_rx(gmp_datalink_t* ctx);
 
 // ---------------------------------------------------------
 // Active TX APIs (Master Mode - Builder Pattern)

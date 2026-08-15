@@ -2,6 +2,15 @@
 
 #include <core/dev/datalink/pil_core.h>
 
+static fast_gt gmp_pil_facility_dispatch(gmp_dl_facility_t* facility,
+                                          gmp_datalink_t* datalink)
+{
+    GMP_UNUSED_VAR(datalink);
+    if (facility == NULL || facility->owner == NULL)
+        return 0;
+    return gmp_pil_sim_rx_cb((gmp_pil_sim_t*)facility->owner);
+}
+
 #include <string.h>
 
 /** @brief PIL request payload has an invalid length. */
@@ -163,7 +172,11 @@ static void sim_serialize_outputs(gmp_pil_sim_t* ctx)
 
 void gmp_pil_sim_init(gmp_pil_sim_t* ctx, gmp_datalink_t* dl_ctx, uint16_t base_cmd)
 {
+    if (ctx == NULL)
+        return;
     memset(ctx, 0, sizeof(gmp_pil_sim_t));
+    gmp_dl_facility_init(&ctx->facility, GMP_DL_FACILITY_PIL,
+                         base_cmd, 5U, gmp_pil_facility_dispatch, ctx);
     ctx->dl_ctx = dl_ctx;
     ctx->base_cmd = base_cmd;
 

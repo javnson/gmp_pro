@@ -8,7 +8,7 @@ unit-test projects:
 | --- | --- |
 | `CTL Math Unit Tests` | Float, double, emulated TI IQ24, explicit conversions, constants, angle domains, nonlinear functions, and lite vector/matrix algebra |
 | `CTL Intrinsic Unit Tests` | Basic blocks, continuous PI/PID controllers, and discrete filters |
-| `CTL Interface Unit Tests` | Gain/bias models, ADC/DAC conversion, PWM channels, and SPWM modulation |
+| `CTL Interface Unit Tests` | Gain/bias models, ADC/DAC conversion, PWM/SPWM, and the DSA-backed Data Link Scope adapter |
 
 Each project has `NativeUnitTestProject`, `IsTestProject`, `TestProject`, and
 `TestContainer` metadata. Microsoft native C++ tests are packaged as DLL test
@@ -17,13 +17,15 @@ unit-test projects, and Test Explorer is the supported run/debug entry point.
 
 All tested GMP implementation files are referenced from their authoritative
 locations through paths relative to `ctl/unit_test/projects`. Tests do not keep
-private copies of CTL source files. The projects use `GMP_CTL_PORTABLE`, so they
-do not require a CSP, peripheral service, or the full GMP runtime.
+private copies of CTL source files. Portable CTL sources use
+`GMP_CTL_PORTABLE`. The DSA/Data Link integration test instead compiles the
+authoritative Data Link and DSA sources against a small test CSP contract, so
+it exercises the real facility boundary without target hardware.
 
 ## Visual Studio validation
 
 Build `ctl_unit_test.sln` with the `Debug|x64` configuration. Test Explorer
-discovers 27 tests across the three test containers. The math project compiles
+discovers 30 tests across the three test containers. The math project compiles
 the emulated IQmath implementation from `third_party/iqmath/src` with
 `GLOBAL_IQ=24`. The imported compatibility sources use a project-local
 third-party warning boundary; GMP test and production sources remain at
@@ -62,10 +64,10 @@ algebra, and the SInv QR-controller contract.
 | Intrinsic: discrete | Low-pass behavior and stationary/reverse ramp-generator frequencies | Active |
 | Interface models | Sensor gain and bias equations | Active |
 | Interface channels | ADC and DAC scaling, PWM saturation/inversion, and SPWM zero-vector mapping | Active |
+| Framework and DSA | DL-SCOPE metadata/capacity/defaults, independent two-channel capture, and invalid-workspace rejection | Active |
 | Intrinsic advanced/protection | Per-component initialization, step response, limits, and reset behavior | Planned |
 | Motor control | Transforms, observers, current/mechanical loops, and motor modulators | Planned |
 | Digital power | PLL, resonant controllers, protection, and power stages | Planned |
-| Framework and DSA | State transitions, scheduling, triggers, and trace behavior | Planned |
 
 Every CTL bug fix should retain a regression test. Tests must use public CTL
 APIs and tolerances appropriate to the numeric backend. Code that supports

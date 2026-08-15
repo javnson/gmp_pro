@@ -58,6 +58,7 @@
   <ItemGroup>
     <ClCompile Include="..\tests\test_base_checksum.cpp" />
     <ClCompile Include="..\tests\test_base_ds.cpp" />
+    <ClCompile Include="..\tests\test_datalink_facility.cpp" />
     <ClCompile Include="..\tests\test_mm.cpp" />
     <ClCompile Include="..\tests\test_pm_duff_fsm.cpp">
       <DisableSpecificWarnings>4828;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -71,6 +72,8 @@
     <ClCompile Include="..\tests\vs_test_platform.cpp" />
     <ClCompile Include="..\..\base\checksum\src\crc16.c" />
     <ClCompile Include="..\..\base\ds\src\ring_buffer.c" />
+    <ClCompile Include="..\..\dev\datalink\src\gmp_datalink.c" />
+    <ClCompile Include="..\..\dev\datalink\src\gmp_dl_facility.c" />
     <ClCompile Include="..\..\mm\src\gmp_mm_block_memory.c" />
     <ClCompile Include="..\..\pm\function_scheduler\src\function_scheduler.c" />
   </ItemGroup>

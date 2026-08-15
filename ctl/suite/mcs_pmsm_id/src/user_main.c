@@ -29,6 +29,7 @@ void at_device_flush_rx_buffer(void);
 
 #if defined ENABLE_GMP_DL_PIL_SIM
 gmp_datalink_t dl;
+volatile uint32_t dl_facility_init_errors;
 
 /** @brief Move bytes collected by the legacy UART ISR into the Data Link parser. */
 void flush_dl_rx_buffer(void)
@@ -205,12 +206,7 @@ gmp_task_status_t tsk_dl_debug_device(gmp_task_t* tsk)
         gmp_dev_dl_tx_state_done(&dl);
         break;
     case GMP_DL_EVENT_RX_OK:
-        if (gmp_pil_sim_rx_cb(&pil) ||
-            gmp_param_tunable_rx_cb(&tunable) ||
-            gmp_mem_persp_rx_cb(&mem_persp_server) ||
-            user_dispatch_dl_scope())
-            break;
-        gmp_dev_dl_default_rx_handler(&dl);
+        (void)gmp_dev_dl_dispatch_rx(&dl);
         break;
     default:
         break;
@@ -253,12 +249,21 @@ void init(void) GMP_NO_OPT_SUFFIX
 
 #if defined ENABLE_GMP_DL_PIL_SIM
     gmp_dev_dl_init(&dl);
+    dl_facility_init_errors = 0U;
     gmp_pil_sim_init(&pil, &dl, GMP_PIL_DL_BASE_COMMAND);
     gmp_pil_sim_set_masks(&pil, GMP_PIL_TX_MASK, GMP_PIL_RX_MASK);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, &pil.facility) ? 0U : 1U;
     gmp_param_tunable_init(&tunable, &dl, 0x30, dict_m1, var_tunable_count);
     gmp_mem_persp_init(&mem_persp_server, &dl, 0x50, mem_regions, mem_regions_count);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, &tunable.facility) ? 0U : 1U;
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, &mem_persp_server.facility) ? 0U : 1U;
 #if !defined SPECIFY_PC_ENVIRONMENT
     user_init_dl_scope(&dl);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, user_dl_scope_facility()) ? 0U : 1U;
 #endif
 #endif
 

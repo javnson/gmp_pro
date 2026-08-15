@@ -161,6 +161,9 @@ void gmp_mem_persp_init(gmp_mem_persp_t* ctx, gmp_datalink_t* dl, uint16_t base_
 {
     if (ctx == NULL)
         return;
+    gmp_dl_facility_init(&ctx->facility, GMP_DL_FACILITY_MEMORY,
+                         base_cmd, 2U,
+                         gmp_mem_persp_facility_dispatch, ctx);
     ctx->dl_ctx = dl;
     ctx->base_cmd = base_cmd;
     ctx->regions = regions;

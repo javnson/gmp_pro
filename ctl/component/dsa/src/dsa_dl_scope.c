@@ -1,6 +1,6 @@
 /**
  * @file dsa_dl_scope.c
- * @brief Four-channel DSA capture backend for the GMP Data Link Scope service.
+ * @brief One-to-four-channel DSA backend for the GMP Data Link Scope service.
  */
 
 #include <ctl/math_block/gmp_math.h>
@@ -40,7 +40,7 @@ static void ctl_dsa_dl_scope_store_history(ctl_dsa_dl_scope_t* scope,
                                            const ctrl_gt channels[CTL_DSA_DL_SCOPE_CHANNELS])
 {
     uint16_t channel;
-    for (channel = 0U; channel < CTL_DSA_DL_SCOPE_CHANNELS; ++channel)
+    for (channel = 0U; channel < scope->resource.channels; ++channel)
         scope->history[channel * scope->depth + scope->history_write] = channels[channel];
 
     scope->history_write++;
@@ -58,7 +58,7 @@ static void ctl_dsa_dl_scope_copy_history(ctl_dsa_dl_scope_t* scope,
     uint32_t index;
     uint32_t source = (scope->history_write + scope->depth - sample_count) % scope->depth;
 
-    for (channel = 0U; channel < CTL_DSA_DL_SCOPE_CHANNELS; ++channel)
+    for (channel = 0U; channel < scope->resource.channels; ++channel)
     {
         uint32_t read_index = source;
         for (index = 0U; index < sample_count; ++index)
@@ -100,7 +100,7 @@ static fast_gt ctl_dsa_dl_scope_configure(void* user_context,
     ctl_dsa_dl_scope_t* scope = (ctl_dsa_dl_scope_t*)user_context;
     if (scope == NULL || config == NULL ||
         config->mode > DSA_TRIGGER_OPTION_FALLING_EDGE_AUTO ||
-        config->channel >= CTL_DSA_DL_SCOPE_CHANNELS ||
+        config->channel >= scope->resource.channels ||
         config->position_permille > 1000U)
         return 0;
 
@@ -157,7 +157,7 @@ void ctl_init_dsa_dl_scope(ctl_dsa_dl_scope_t* scope, gmp_datalink_t* dl,
     scope->generation = 0U;
     scope->position_permille = 500U;
     scope->trigger_channel = 0;
-    scope->trigger_mode = DSA_TRIGGER_OPTION_RISING_EDGE_AUTO;
+    scope->trigger_mode = DSA_TRIGGER_OPTION_RISING_EDGE;
     scope->auto_timeout_ms = 1000U;
     scope->sample_divider = 0U;
     scope->sample_divider_counter = 0U;
@@ -178,13 +178,65 @@ void ctl_init_dsa_dl_scope(ctl_dsa_dl_scope_t* scope, gmp_datalink_t* dl,
     scope->resource.user_context = scope;
 
     gmp_scope_init(&scope->service, dl, command, &scope->resource, 1);
-    ctl_init_dsa_trigger(&scope->trigger, DSA_TRIGGER_OPTION_RISING_EDGE_AUTO,
+    ctl_init_dsa_trigger(&scope->trigger, DSA_TRIGGER_OPTION_RISING_EDGE,
                          0.0F, 1.0F, (parameter_gt)sample_rate_hz);
     ctl_init_dsa_scope(&scope->recorder, buffer,
                        depth * CTL_DSA_DL_SCOPE_CHANNELS,
                        (parameter_gt)sample_rate_hz);
     ctl_config_dsa_scope(&scope->recorder, CTL_DSA_DL_SCOPE_CHANNELS, 1U);
     ctl_dsa_dl_scope_arm_internal(scope);
+}
+
+fast_gt ctl_init_dsa_dl_scope_workspace(
+    ctl_dsa_dl_scope_t* scope, gmp_datalink_t* dl, uint16_t command,
+    const char* name, ctrl_gt* workspace, uint32_t workspace_elements,
+    uint16_t channels, uint32_t sample_rate_hz)
+{
+    uint32_t half_elements;
+    uint32_t depth;
+    if (scope == NULL || dl == NULL || workspace == NULL ||
+        channels == 0U || channels > CTL_DSA_DL_SCOPE_CHANNELS ||
+        sample_rate_hz == 0U ||
+        workspace_elements < CTL_DSA_DL_SCOPE_STORAGE_ELEMENTS(channels, 1U) ||
+        (workspace_elements % (2UL * channels)) != 0U)
+        return 0;
+
+    half_elements = workspace_elements / 2U;
+    depth = half_elements / channels;
+    ctl_init_dsa_dl_scope(scope, dl, command, name, workspace,
+                          workspace + half_elements, depth, sample_rate_hz);
+    scope->resource.channels = channels;
+    scope->resource.byte_length = depth * channels * sizeof(ctrl_gt) *
+                                  GMP_PORT_DATA_SIZE_PER_BYTES;
+    scope->recorder.mem.capacity = half_elements;
+    ctl_config_dsa_scope(&scope->recorder, channels, 1U);
+    return 1;
+}
+
+void ctl_step_dsa_dl_scope(ctl_dsa_dl_scope_t* scope,
+                           const ctrl_gt* channels, uint16_t channel_count)
+{
+    ctrl_gt values[CTL_DSA_DL_SCOPE_CHANNELS] = {
+        CTL_CTRL_CONST_ZERO, CTL_CTRL_CONST_ZERO,
+        CTL_CTRL_CONST_ZERO, CTL_CTRL_CONST_ZERO};
+    uint16_t index;
+    if (scope == NULL || channels == NULL || channel_count == 0U)
+        return;
+    if (channel_count > scope->resource.channels)
+        channel_count = scope->resource.channels;
+    for (index = 0U; index < channel_count; ++index)
+        values[index] = channels[index];
+    ctl_step_dsa_dl_scope_4ch(scope, values[0], values[1],
+                              values[2], values[3]);
+}
+
+void ctl_step_dsa_dl_scope_2ch(ctl_dsa_dl_scope_t* scope,
+                               ctrl_gt channel_0, ctrl_gt channel_1)
+{
+    ctrl_gt channels[2];
+    channels[0] = channel_0;
+    channels[1] = channel_1;
+    ctl_step_dsa_dl_scope(scope, channels, 2U);
 }
 
 void ctl_step_dsa_dl_scope_4ch(ctl_dsa_dl_scope_t* scope,
@@ -219,7 +271,7 @@ void ctl_step_dsa_dl_scope_4ch(ctl_dsa_dl_scope_t* scope,
         if (triggered && scope->history_count >= pretrigger_samples)
         {
             ctl_dsa_dl_scope_copy_history(scope, pretrigger_samples);
-            for (channel = 0U; channel < CTL_DSA_DL_SCOPE_CHANNELS; ++channel)
+            for (channel = 0U; channel < scope->resource.channels; ++channel)
                 scope->buffer[channel * scope->depth + pretrigger_samples] = channels[channel];
             scope->recorder.current_idx = pretrigger_samples + 1U;
             ctl_clear_divider(&scope->recorder.divider);

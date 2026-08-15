@@ -21,14 +21,18 @@ Keil 与 CMake 仅引用该工程目录内的文件。完成一次 `gmp_src_mgr`
 
 ## Data Link 与 DSA 服务
 
-固件提供目标信息（`0x02`）、ECHO（`0x00`）、三个可读写 Tunable 信号参数
-（`0x30`/`0x31`）和 Memory Perspective（`0x50`/`0x51`）。
+固件提供自动目标信息（`0x02`）、ECHO（`0x00`）、PIL 回环设施（`0x10` 至
+`0x14`）、三个可读写 Tunable 信号参数
+（`0x30`/`0x31`）、Memory Perspective（`0x50`/`0x51`）和 Scope（`0x60`）。
+PIL、Tunable、Memory、Scope 都作为设施显式追加到 DL；核心按设施链自动路由请求并生成
+INFO v3。整个 DL 任务的计数为 `datalink.service_run_count`。
 
 Tunable 工作台会上报 `Signal Frequency (Hz)`、`Signal Gain (x)` 和
 `Signal DC Offset (V)`。修改后可直接从 Scope 中观察频率、幅值和中心线变化。
 
-TIM3 以 1 kHz 采样并默认产生 50 Hz 正弦/余弦信号。GMP DSA Trigger 负责触发一次一致性
-采集，DSA Scope 每通道记录 400 点，即连续 20 个信号周期。两通道采用 SoA 布局，
+TIM3 以 1 kHz 采样并默认产生 50 Hz 正弦/余弦信号。单个 `ctl_dsa_dl_scope_t`
+封装 DSA Trigger、DSA Scope、配置、状态及预触发历史，应用只提供一个工作区并追加
+Scope 设施。DSA Scope 每通道记录 400 点，即连续 20 个信号周期。两通道采用 SoA 布局，
 共 800 个 float、3200 字节，并且只通过独立的 Data Link Scope 服务读取，不暴露物理
 地址。上位机的 `Data Link Scope` 页面可以设置触发模式、通道、Level 和触发位置。
 Continuous Display 打开后立即采集并自动重新布防；关闭时停止后续重触发并保留当前帧。
@@ -63,5 +67,7 @@ python smoke_test.py
 烧写 CMake ELF 或 Keil HEX 并复位后运行测试。测试会自动识别 NUCLEO 的 ST-Link
 虚拟串口，并验证转义、CRC、满 MTU DMA ECHO、Tunable、Memory Perspective、DSA
 元数据、Tunable 参数对波形的实际作用、25% 预触发位置以及 400 点正弦/余弦快照。
-2026-08-14，连接的 NUCLEO-C092RC 在 921600 波特率下通过了完整测试和连续十轮压力
-测试。
+2026-08-16，生成后的固件完成构建和烧录，并在连接的 NUCLEO-C092RC 上通过了
+921600 波特率完整测试。INFO v3 上报 PIL、Tunable、Memory、Scope 四个设施，PIL
+mask 同步与 STEP 回环通过；上位机配置后 400 x 2 波形实测为 25 Hz、增益 0.5、
+偏置 0.25 V。

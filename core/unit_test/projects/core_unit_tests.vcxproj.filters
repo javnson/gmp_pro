@@ -8,6 +8,7 @@
   <ItemGroup>
     <ClCompile Include="..\tests\test_base_checksum.cpp"><Filter>Tests</Filter></ClCompile>
     <ClCompile Include="..\tests\test_base_ds.cpp"><Filter>Tests</Filter></ClCompile>
+    <ClCompile Include="..\tests\test_datalink_facility.cpp"><Filter>Tests</Filter></ClCompile>
     <ClCompile Include="..\tests\test_mm.cpp"><Filter>Tests</Filter></ClCompile>
     <ClCompile Include="..\tests\test_pm_duff_fsm.cpp"><Filter>Tests</Filter></ClCompile>
     <ClCompile Include="..\tests\test_pm_function_scheduler.cpp"><Filter>Tests</Filter></ClCompile>
@@ -17,6 +18,8 @@
     <ClCompile Include="..\tests\vs_test_platform.cpp"><Filter>Support</Filter></ClCompile>
     <ClCompile Include="..\..\base\checksum\src\crc16.c"><Filter>Production Sources</Filter></ClCompile>
     <ClCompile Include="..\..\base\ds\src\ring_buffer.c"><Filter>Production Sources</Filter></ClCompile>
+    <ClCompile Include="..\..\dev\datalink\src\gmp_datalink.c"><Filter>Production Sources</Filter></ClCompile>
+    <ClCompile Include="..\..\dev\datalink\src\gmp_dl_facility.c"><Filter>Production Sources</Filter></ClCompile>
     <ClCompile Include="..\..\mm\src\gmp_mm_block_memory.c"><Filter>Production Sources</Filter></ClCompile>
     <ClCompile Include="..\..\pm\function_scheduler\src\function_scheduler.c"><Filter>Production Sources</Filter></ClCompile>
   </ItemGroup>
@@ -26,4 +29,3 @@
     <ClInclude Include="..\tests\vs_test_support.h"><Filter>Support</Filter></ClInclude>
   </ItemGroup>
 </Project>
-

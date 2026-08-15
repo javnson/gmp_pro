@@ -65,6 +65,11 @@ static inline uint32_t param_unpack_u32(const byte_gt* buf, uint16_t* idx, uint1
 void gmp_param_tunable_init(gmp_param_tunable_t* ctx, gmp_datalink_t* dl, uint16_t base_cmd,
                             const gmp_param_item_t* dict, fast16_gt dict_size)
 {
+    if (ctx == NULL)
+        return;
+    gmp_dl_facility_init(&ctx->facility, GMP_DL_FACILITY_TUNABLE,
+                         base_cmd, 2U,
+                         gmp_param_tunable_facility_dispatch, ctx);
     ctx->dl_ctx = dl;
     ctx->base_cmd = base_cmd;
     ctx->dict = dict;

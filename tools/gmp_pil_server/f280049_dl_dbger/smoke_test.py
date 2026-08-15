@@ -134,12 +134,32 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
         sequence = 1
 
         info = transact(port, sequence, 0x02)
-        if len(info) != 13 or info[:7] != bytes((2, 2, 1, 16, 0x30, 0x50, 0x60)):
+        expected_info = bytes(
+            (3, 2, 1, 16, 4, 4, 0x10, 5, 1, 0x30, 2,
+             2, 0x50, 2, 3, 0x60, 1)
+        )
+        if info != expected_info:
             raise AssertionError(f"Unexpected target info: {info.hex(' ')}")
-        memory_address, memory_length = struct.unpack_from("<IH", info, 7)
 
         sequence += 1
-        echo_payload = b"GMP-u8-{%}-\x00"
+        pil_tx_mask = 0x00010001
+        pil_rx_mask = 0x01000001
+        pil_masks = transact(port, sequence, 0x11, struct.pack("<II", pil_tx_mask, pil_rx_mask))
+        if pil_masks != struct.pack("<II", pil_tx_mask, pil_rx_mask):
+            raise AssertionError(f"PIL mask synchronization failed: {pil_masks.hex(' ')}")
+        sequence += 1
+        pil_step = transact(
+            port, sequence, 0x12,
+            struct.pack("<IIHf", 1234, 0xA55A5AA5, 3210, 1.25),
+        )
+        if len(pil_step) != 10:
+            raise AssertionError(f"Unexpected PIL STEP length: {len(pil_step)}")
+        pil_digital, pil_pwm, pil_monitor = struct.unpack("<IHf", pil_step)
+        if (pil_digital, pil_pwm) != (0xA55A5AA5, 3210) or abs(pil_monitor - 1.25) > 1.0e-6:
+            raise AssertionError("PIL STEP did not preserve the selected inputs")
+
+        sequence += 1
+        echo_payload = b"GMP-u16-{%}-\x00"
         if transact(port, sequence, 0x00, echo_payload) != echo_payload:
             raise AssertionError("ECHO payload mismatch")
         sequence += 1
@@ -196,10 +216,9 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
         name_length = memory_fields[-1]
         name_start = memory_header.size
         memory_name = memory_descriptor[name_start:name_start + name_length].decode("ascii")
-        if (discovered_address, discovered_length, memory_name) != (
-            memory_address, memory_length, "Scratch Memory"
-        ):
-            raise AssertionError("Memory discovery does not match target info")
+        if discovered_length != 128 or memory_name != "Scratch Memory":
+            raise AssertionError("Unexpected Memory resource metadata")
+        memory_address, memory_length = discovered_address, discovered_length
 
         sequence += 1
         memory = transact(port, sequence, 0x50, struct.pack("<IBH", memory_address, 1, 16))
@@ -289,12 +308,19 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
         if not (0.34 < sine_rms < 0.36 and 0.34 < cosine_rms < 0.36):
             raise AssertionError("Scope waveform RMS is outside the expected range")
         if quadrature_error > 0.005 or periodic_error > 0.001 or mean_error > 0.001:
-            raise AssertionError("Scope sine/cosine waveform validation failed")
+            same_channel_error = max(abs(a - b) for a, b in zip(sine, cosine))
+            raise AssertionError(
+                "Scope waveform validation failed: "
+                f"quadrature={quadrature_error:.6g}, periodic={periodic_error:.6g}, "
+                f"mean={mean_error:.6g}, same_channel={same_channel_error:.6g}, "
+                f"first_sine={sine[:4]}, first_cosine={cosine[:4]}"
+            )
         if not (sine[99] < dc_offset <= sine[100]):
             raise AssertionError("Scope pre-trigger position does not match the configured 25 percent")
 
     print(f"PASS: u16 Data Link validated on {port_name} at {baudrate} baud")
     print(f"      Memory discovery: {memory_name}, 0x{memory_address:08X}, {memory_length} bytes")
+    print(f"      PIL: mask synchronization and STEP loopback validated")
     print(f"      Tunable discovery: {len(tunable_names)} physical signal parameters")
     print(
         f"      Scope: {scope_name}, generation {generation}, {depth} x {channels} float32, "

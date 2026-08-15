@@ -14,6 +14,8 @@
 #error "datalink_u8.h requires GMP_PORT_DATA_SIZE_PER_BYTES == 1"
 #endif
 
+#include <core/dev/datalink/facility.h>
+
 #define GMP_DL_BACKEND_U8 1
 #ifndef GMP_DL_MTU
 #define GMP_DL_MTU 256
@@ -35,7 +37,13 @@
 
 #define GMP_DL_CMD_ECHO  0x00
 #define GMP_DL_CMD_NACK  0x01
+#define GMP_DL_CMD_INFO  0x02
 #define GMP_DL_CMD_STRAY 0xFF
+
+/** @brief Current automatic facility-discovery payload version. */
+#define GMP_DL_INFO_PROTOCOL_VERSION 3U
+/** @brief Hard traversal bound for the intrusive service registry. */
+#define GMP_DL_MAX_FACILITIES 32U
 
 /** @brief Receive parser states. */
 typedef enum
@@ -73,7 +81,7 @@ typedef struct
 } gmp_dl_head;
 
 /** @brief Complete state and storage for one byte-addressed Data Link. */
-typedef struct
+struct _tag_gmp_datalink
 {
     uint8_t rx_fifo[GMP_DL_RX_FIFO_SIZE];
     volatile uint16_t rx_fifo_head;
@@ -103,7 +111,11 @@ typedef struct
     uint32_t err_hdr_crc_cnt;
     uint32_t err_pld_crc_cnt;
     uint32_t err_timeout_cnt;
-} gmp_datalink_t;
+
+    gmp_list facility_list;              /**< Registered DL submodules. */
+    uint16_t facility_count;             /**< Number of registered submodules. */
+    volatile uint32_t service_run_count; /**< Calls to the DL service loop. */
+};
 
 /** @brief Initialize one Data Link instance. */
 void gmp_dev_dl_init(gmp_datalink_t* ctx);
@@ -122,6 +134,20 @@ void gmp_dev_dl_request_rx_reset(gmp_datalink_t* ctx);
 gmp_dl_event_t gmp_dev_dl_loop_cb(gmp_datalink_t* ctx);
 /** @brief Apply the default ECHO, NACK, stray, and unsupported-command policy. */
 void gmp_dev_dl_default_rx_handler(gmp_datalink_t* ctx);
+
+/** @brief Append one initialized service to this Data Link instance. */
+fast_gt gmp_dev_dl_append_facility(gmp_datalink_t* ctx,
+                                   gmp_dl_facility_t* facility);
+/** @brief Detach one service from this Data Link instance. */
+fast_gt gmp_dev_dl_remove_facility(gmp_datalink_t* ctx,
+                                   gmp_dl_facility_t* facility);
+/** @brief Initialize a user facility that preserves a legacy ECHO command alias. */
+void gmp_dev_dl_init_echo_alias(gmp_dl_facility_t* facility, uint16_t command);
+/**
+ * @brief Dispatch the current RX frame through INFO and the facility chain.
+ * @details Unknown commands are passed to the standard fallback handler.
+ */
+fast_gt gmp_dev_dl_dispatch_rx(gmp_datalink_t* ctx);
 
 /** @brief Start building a response with the specified sequence and command. */
 void gmp_dev_dl_tx_request_cmd(gmp_datalink_t* ctx, uint16_t seq, uint16_t cmd);

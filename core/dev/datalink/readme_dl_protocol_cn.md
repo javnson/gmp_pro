@@ -20,6 +20,7 @@ GMP Data Link（DL）是 PIL、Tunable Parameters 和 Memory Perspective 共用�
 
 ```text
 core/dev/datalink/src/gmp_datalink.c
+core/dev/datalink/src/gmp_dl_facility.c
 core/dev/datalink/src/gmp_tunable.c
 core/dev/datalink/src/gmp_mem_presp.c
 core/dev/datalink/src/gmp_scope.c
@@ -55,16 +56,38 @@ CRC 使用初值 `0xFFFF` 和多项式 `0x1021`。
 
 ## 运行时接入
 
-初始化 `gmp_datalink_t` 后，在 UART ISR 或 DMA 回调中调用 `gmp_dev_dl_push_byte()` 或
+初始化 `gmp_datalink_t` 及所需子模块后，使用 `gmp_dev_dl_append_facility()` 将 Tunable、
+Memory、Scope、PIL 等设施显式串入 DL。每个子模块的第一个成员都是公共设施头；设施头的
+第一个字段是侵入式链表节点，第二个字段是稳定对象类型。追加操作会拒绝命令重叠、保留的
+INFO 命令、重复注册、数量越界和损坏的链表，不使用动态内存。
+
+仍需兼容命令 `0x99` ECHO 别名的旧应用，应调用
+`gmp_dev_dl_init_echo_alias()` 将它注册为普通的 `USER` 设施；应用不再维护私有的接收分支。
+
+在 UART ISR 或 DMA 回调中调用 `gmp_dev_dl_push_byte()` 或
 `gmp_dev_dl_push_str()`。主循环持续调用 `gmp_dev_dl_loop_cb()`：
 
-- 收到 `GMP_DL_EVENT_RX_OK` 时，按业务优先级交给 PIL、Tunable、Memory Perspective 或
-  用户命令；无人处理时调用 `gmp_dev_dl_default_rx_handler()`。
+- 每次调用都会递增 `gmp_datalink_t.service_run_count`，它是整个 DL 服务任务的标准诊断量。
+- 收到 `GMP_DL_EVENT_RX_OK` 时，只调用一次 `gmp_dev_dl_dispatch_rx()`；核心自动处理 INFO、
+  根据设施链路由子模块，并对未知命令执行默认响应。
 - 收到 `GMP_DL_EVENT_TX_RDY` 时，发送帧头和载荷；硬件不再使用缓冲区之后调用
   `gmp_dev_dl_tx_state_done()`。
 
 DMA 可以将帧头与载荷串联为两次发送。循环 RX DMA 应在半传输、全传输和/或 UART Idle
 事件中提交新增的数据区间，从而使连续数据流不依赖空闲间隔。
+
+### 自动目标信息
+
+`INFO (0x02)` 由 DL 核心独占，应用设施不得注册这个命令。版本 3 载荷由真实设施链生成：
+
+```text
+[version=3:u8][每个地址单元的物理字节数:u8][sizeof(byte_gt):u8]
+[地址单元位数:u8][设施数量:u8]
+重复 [设施类型:u8][起始命令:u8][命令数量:u8]
+```
+
+稳定类型为 Tunable `1`、Memory `2`、Scope `3`、PIL `4`、用户自定义 `0x80`，顺序就是
+追加顺序。链表损坏或计数不一致时，核心返回 NACK，避免继续遍历危险链表。
 
 ## Tunable 与 Memory Perspective
 
@@ -92,9 +115,15 @@ Memory Perspective 同样在 `base_cmd + 1` 上使用一个基本单元的载荷
 
 ## Data Link Scope
 
-Data Link Scope 与 Memory Perspective 相互独立。目标注册具名波形资源及配置、启动、状态
+Data Link Scope 与 Memory Perspective 相互独立；但 CTL 提供的标准实现明确依赖 DSA
+Trigger 与 DSA Scope 作为采集后端。目标注册具名波形资源及配置、启动、状态
 回调，上位机无需获知物理地址。一个 Scope 命令通过载荷首字节区分 Discover、Configure、
 Arm、Status 和 Read 操作，从而以一个命令号完成一整页示波器工具的功能。
+
+使用 `ctl/component/dsa/dsa_dl_scope` 时，触发器、记录器、预触发历史、配置、布防、状态、
+代次和采集状态全部由适配器封装。应用只提供工作区、命令号和固定资源元数据，将设施追加到
+DL，并在控制中断中喂入采样。初值统一为通道 0、上升沿、参考电平 0、50% 触发位置和
+1000 ms 自动超时，正常配置由上位机完成。
 
 ## 配套工具
 
@@ -103,5 +132,9 @@ Arm、Status 和 Read 操作，从而以一个命令号完成一整页示波器�
 - `tools/gmp_pil_server/gmp_debugger/apis`：用于自动化与 AI 辅助硬件调试的无界面
   Python API 及中英文手册。
 - `tools/gmp_pil_server/stm32_dl_dbger`：NUCLEO-C092RC u8 固件与硬件冒烟测试。
+- `tools/gmp_pil_server/f280049_dl_dbger`：LAUNCHXL-F280049C u16 固件与硬件冒烟测试。
+
+两套固件都注册 PIL、Tunable、Memory、Scope 四个设施；实物冒烟测试覆盖 INFO v3、
+PIL mask/STEP、Tunable 读写、受限 Memory 访问和基于 DSA 的 Scope 采集。
 
 两个入口共享同一个调试器和线协议编解码器，其区别仅用于标识目标内存地址模型。

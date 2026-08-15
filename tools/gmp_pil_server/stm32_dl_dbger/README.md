@@ -23,18 +23,25 @@ repository and built without `GMP_PRO_LOCATION` or any absolute GMP path.
 
 ## Data Link and DSA services
 
-The firmware exposes target information (`0x02`), ECHO (`0x00`), three named
+The firmware exposes automatic target information (`0x02`), ECHO (`0x00`), a
+PIL loopback facility (`0x10` through `0x14`), three named
 read/write Tunable signal parameters (`0x30`/`0x31`), one named Memory Perspective region
 (`0x50`/`0x51`), and an independent Data Link Scope service (`0x60`). Memory
 and Tunable descriptor queries reuse `base + 1` with a one-byte indexed payload.
+PIL, Tunable, Memory, and Scope are initialized as facilities and explicitly appended
+to the Data Link. The core routes every request and generates INFO version 3
+from that actual facility chain; `datalink.service_run_count` is the whole DL
+task counter.
 
 The Tunable workbench reports `Signal Frequency (Hz)`, `Signal Gain (x)`, and
 `Signal DC Offset (V)`. Changes feed the waveform generator
 directly, so their frequency, peak amplitude, and center line are immediately
 visible in Data Link Scope. Values are bounded to safe demonstration ranges.
 
-TIM3 samples at 1 kHz and generates a 50 Hz sine/cosine pair by default. The GMP DSA
-Trigger arms a coherent acquisition and DSA Scope stores 400 samples per
+TIM3 samples at 1 kHz and generates a 50 Hz sine/cosine pair by default. One
+`ctl_dsa_dl_scope_t` owns the DSA Trigger, DSA Scope, configuration, state, and
+pre-trigger history. The application supplies one workspace and appends the
+Scope facility. DSA Scope stores 400 samples per
 channel, covering 20 signal periods. The 800-float, 3200-byte structure-of-arrays
 buffer is registered only with Data Link Scope. Use the debugger's `Data Link
 Scope` tab to discover it, select trigger mode/channel/level/position, arm it,
@@ -79,5 +86,8 @@ It auto-detects the NUCLEO ST-Link VCP and validates frame escaping, CRC,
 full-MTU DMA ECHO, target-reported Tunable and Memory descriptors, read/write
 access, physical Tunable-to-Scope behavior, Scope discovery and configuration,
 a 25-percent pre-trigger position, and the 400-point sine/cosine snapshot.
-The 921600-baud path passed the complete test plus ten consecutive stress
-iterations on the connected NUCLEO-C092RC on 2026-08-14.
+The generated firmware was built, flashed, and passed the complete 921600-baud
+test on the connected NUCLEO-C092RC on 2026-08-16. The reported facility chain
+contained PIL, Tunable, Memory, and Scope. PIL mask synchronization and STEP
+loopback passed; the captured 400 x 2 waveform measured 25 Hz, gain 0.5, and
+offset 0.25 V after host configuration.

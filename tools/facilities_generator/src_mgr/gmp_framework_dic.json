@@ -140,7 +140,7 @@
             },
             "base|ds|list": {
                 "type": "module",
-                "description": "Intrusive singly linked list base type",
+                "description": "Validated intrusive doubly linked circular list",
                 "src_patterns": [],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/core/base/ds/list.h"
@@ -1028,12 +1028,14 @@
             },
             "dev|datalink|_internal": {
                 "type": "module",
-                "description": "GMP Data Link with compile-time u8/u16 backend selection",
+                "description": "GMP Data Link with u8/u16 backend selection and an intrusive facility dispatcher",
                 "src_patterns": [
-                    "${GMP_PRO_LOCATION}/core/dev/datalink/src/gmp_datalink.c"
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/src/gmp_datalink.c",
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/src/gmp_dl_facility.c"
                 ],
                 "inc_patterns": [
                     "${GMP_PRO_LOCATION}/core/dev/datalink/datalink.h",
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/facility.h",
                     "${GMP_PRO_LOCATION}/core/dev/datalink/datalink_*.h",
                     "${GMP_PRO_LOCATION}/core/dev/datalink/datalink_*.inc"
                 ],
@@ -1044,6 +1046,7 @@
                 ],
                 "depends_on": [
                     "core|std",
+                    "core|base|ds|list",
                     "core|base|checksum|crc16",
                     "core|base|port"
                 ],
@@ -1052,8 +1055,8 @@
                         "id": "sys_compile",
                         "summary": "Compilation Passed",
                         "completed": true,
-                        "date": "2026-08-14",
-                        "reply": "Built in the F280049C CCS 12.8 project with TI C2000 CGT 22.6.1 LTS and in the STM32C092 CMake project with Arm GNU Toolchain."
+                        "date": "2026-08-16",
+                        "reply": "Built warning-free in the standalone F280049C CCS 12.8 project with TI C2000 CGT 22.6.1 LTS and in the STM32C092 CMake project with Arm GNU Toolchain; the native core suite also passed 31 tests at /W4 /WX."
                     },
                     {
                         "id": "sys_sim",
@@ -1066,14 +1069,14 @@
                         "id": "sys_hw",
                         "summary": "Physical Hardware Verified",
                         "completed": true,
-                        "date": "2026-08-14",
-                        "reply": "The u16 backend passed on LAUNCHXL-F280049C and the u8 backend passed on NUCLEO-C092RC at 921600 baud, including discovery, escaping, CRC, full-MTU ECHO, and ten consecutive stress iterations per target."
+                        "date": "2026-08-16",
+                        "reply": "INFO v3 and the intrusive dispatcher passed on LAUNCHXL-F280049C/u16 and NUCLEO-C092RC/u8 at 921600 baud with PIL, Tunable, Memory, and Scope facilities."
                     }
                 ]
             },
             "dev|datalink|pil": {
                 "type": "module",
-                "description": "",
+                "description": "PIL command facility for the GMP Data Link dispatcher",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/core/dev/datalink/src/gmp_pil_core.c"
                 ],
@@ -1081,29 +1084,34 @@
                     "${GMP_PRO_LOCATION}/core/dev/datalink/pil_core.h"
                 ],
                 "inc_dirs": [],
-                "help_docs": [],
-                "depends_on": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/README.md",
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/readme_dl_protocol.md"
+                ],
+                "depends_on": [
+                    "core|dev|datalink|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
                         "summary": "Compilation Passed",
                         "completed": true,
-                        "date": "2026-08-14",
-                        "reply": "Built in the Iris F280039C CCS 12.8 project with TI C2000 CGT 22.6.1 LTS."
+                        "date": "2026-08-16",
+                        "reply": "Built warning-free in both the F280049C CCS 12.8 and STM32C092 CMake validation projects."
                     },
                     {
                         "id": "sys_sim",
                         "summary": "Simulation / Principle Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
+                        "completed": true,
+                        "date": "2026-08-16",
+                        "reply": "The host PIL API passed 10 tests; the facility mask and STEP wire layouts were also exercised by both hardware smoke tests."
                     },
                     {
                         "id": "sys_hw",
                         "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
+                        "completed": true,
+                        "date": "2026-08-16",
+                        "reply": "Mask synchronization and STEP loopback passed on LAUNCHXL-F280049C/u16 and NUCLEO-C092RC/u8 at 921600 baud."
                     }
                 ]
             },
@@ -1887,7 +1895,9 @@
                 ],
                 "inc_dirs": [],
                 "help_docs": [],
-                "depends_on": [],
+                "depends_on": [
+                    "core|dev|datalink|_internal"
+                ],
                 "tasks": [
                     {
                         "id": "sys_compile",
@@ -6230,7 +6240,7 @@
             },
             "component|dsa|dsa_dl_scope": {
                 "type": "module",
-                "description": "Four-channel DSA capture adapter for the GMP Data Link Scope service",
+                "description": "Data Link Scope facility backed explicitly by CTL DSA trigger and recorder modules",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/ctl/component/dsa/src/dsa_dl_scope.c"
                 ],
@@ -6238,7 +6248,10 @@
                     "${GMP_PRO_LOCATION}/ctl/component/dsa/dsa_dl_scope.h"
                 ],
                 "inc_dirs": [],
-                "help_docs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/ctl/component/dsa/readme.md",
+                    "${GMP_PRO_LOCATION}/core/dev/datalink/readme_dl_protocol.md"
+                ],
                 "depends_on": [
                     "core|base|port",
                     "core|dev|_internal",
@@ -6251,23 +6264,23 @@
                     {
                         "id": "sys_compile",
                         "summary": "Compilation Passed",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
+                        "completed": true,
+                        "date": "2026-08-16",
+                        "reply": "Built warning-free in native /W4 /WX tests, STM32C092 CMake, and the standalone F280049C CCS project; the LaunchPad F280049C Debug and Release configurations also linked."
                     },
                     {
                         "id": "sys_sim",
                         "summary": "Simulation / Principle Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
+                        "completed": true,
+                        "date": "2026-08-16",
+                        "reply": "Three native adapter tests verify workspace metadata/capacity/defaults, independent two-channel capture, and invalid-workspace rejection."
                     },
                     {
                         "id": "sys_hw",
                         "summary": "Physical Hardware Verified",
-                        "completed": false,
-                        "date": "",
-                        "reply": ""
+                        "completed": true,
+                        "date": "2026-08-16",
+                        "reply": "DSA-backed 400 x 2 float32 captures passed at 25 Hz / 0.50x / 0.25 V on LAUNCHXL-F280049C/u16 and NUCLEO-C092RC/u8."
                     }
                 ]
             },

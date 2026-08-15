@@ -29,6 +29,11 @@ static inline uint32_t mem_unpack_u32(const byte_gt* buf, uint16_t* idx, uint16_
 void gmp_mem_persp_init(gmp_mem_persp_t* ctx, gmp_datalink_t* dl, uint16_t base_cmd, const gmp_mem_region_t* regions,
                         fast16_gt region_count)
 {
+    if (ctx == NULL)
+        return;
+    gmp_dl_facility_init(&ctx->facility, GMP_DL_FACILITY_MEMORY,
+                         base_cmd, 2U,
+                         gmp_mem_persp_facility_dispatch, ctx);
     ctx->dl_ctx = dl;
     ctx->base_cmd = base_cmd;
     ctx->regions = regions;

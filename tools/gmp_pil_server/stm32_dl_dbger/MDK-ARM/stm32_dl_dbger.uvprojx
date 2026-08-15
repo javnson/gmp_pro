@@ -585,6 +585,11 @@
               <FilePath>../gmp_src_mgr/gmp_src/ctl_slope_limiter.c</FilePath>
             </File>
             <File>
+              <FileName>dsa_dl_scope.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../gmp_src_mgr/gmp_src/dsa_dl_scope.c</FilePath>
+            </File>
+            <File>
               <FileName>dsa_scope.c</FileName>
               <FileType>1</FileType>
               <FilePath>../gmp_src_mgr/gmp_src/dsa_scope.c</FilePath>
@@ -615,6 +620,11 @@
               <FilePath>../gmp_src_mgr/gmp_src/gmp_dev_print.c</FilePath>
             </File>
             <File>
+              <FileName>gmp_dl_facility.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../gmp_src_mgr/gmp_src/gmp_dl_facility.c</FilePath>
+            </File>
+            <File>
               <FileName>gmp_mem_presp.c</FileName>
               <FileType>1</FileType>
               <FilePath>../gmp_src_mgr/gmp_src/gmp_mem_presp.c</FilePath>
@@ -623,6 +633,11 @@
               <FileName>gmp_mm_block_memory.c</FileName>
               <FileType>1</FileType>
               <FilePath>../gmp_src_mgr/gmp_src/gmp_mm_block_memory.c</FilePath>
+            </File>
+            <File>
+              <FileName>gmp_pil_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../gmp_src_mgr/gmp_src/gmp_pil_core.c</FilePath>
             </File>
             <File>
               <FileName>gmp_runtime.c</FileName>

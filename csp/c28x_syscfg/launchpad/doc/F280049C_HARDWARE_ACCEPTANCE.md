@@ -16,7 +16,7 @@ A 30-second debugger observation produced:
 |---|---:|---|
 | `startup_task_runs` | 1 | one-shot task runs once and disables itself |
 | `heartbeat_task_runs` | 60 | 500 ms task period |
-| `datalink_task_runs` | 15000 | 2 ms task period |
+| `datalink.service_run_count` | 15000 | 2 ms Data Link service period |
 | `control_isr_runs` | 600019 | approximately 20 kHz ADC/control interrupt |
 | `DSPC2000_SystemTick` | 30000 | one GMP tick per millisecond |
 | `launchpad_adc_raw` | 139 at final halt | live, non-zero ADC conversion |
