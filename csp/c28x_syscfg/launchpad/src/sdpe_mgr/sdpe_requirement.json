@@ -2,9 +2,9 @@
   "id": "gmp_c2000_launchpad_reference",
   "macro_prefix": "GMP_C2000_LAUNCHPAD",
   "display_name": "GMP C2000 LaunchPad Reference Application",
-  "description": "Portable one-ADC/one-PWM LaunchPad example with Data Link, CAN and optional ADC-to-DAC mirroring.",
+  "description": "Portable control-ready LaunchPad example with complete BOOSTXL ADC/DAC/PWM routing, Data Link and CAN.",
   "suite": "c28x_syscfg_launchpad",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "updated_at": "2026-08-15",
   "output_header": "ctrl_settings.h",
   "hardware": [],
@@ -20,6 +20,12 @@
     }
   ],
   "requirements": [
+    {
+      "role": "PWM Switching Frequency",
+      "macro": "GMP_LAUNCHPAD_PWM_FREQUENCY_HZ",
+      "binding": { "number": "20000" },
+      "description": "Center-aligned switching and ADC control-interrupt frequency applied to all six BOOSTXL ePWM pairs during peripheral initialization."
+    },
     {
       "role": "UART Baud Rate",
       "macro": "GMP_DL_UART_BAUDRATE",
@@ -70,6 +76,10 @@
     }
   ],
   "requirement_groups": [
+    {
+      "name": "Control Timing",
+      "requirements": ["PWM Switching Frequency"]
+    },
     {
       "name": "Communication",
       "requirements": [

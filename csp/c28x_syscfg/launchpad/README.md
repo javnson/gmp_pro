@@ -43,6 +43,26 @@ generated headers or retain stale `.h`/`.m` files.  GMP source-manager output
 under `src/gmp_src_mgr/gmp_inc` and `gmp_src` is likewise regenerated from
 `gmp_framework_config.json`.
 
+Each CCS configuration exposes two independent build variables under
+**Project Properties > Build > Variables**:
+
+- `GMP_PREBUILD_SDPE=1` regenerates the shared control settings and the active
+  board's `launchpad_board.h` before compilation.
+- `GMP_PREBUILD_SRC_MGR=1` regenerates `gmp_inc` and `gmp_src` before
+  compilation.
+
+Both switches default to `0`; `1`, `true`, `yes` or `on` enables one.  The
+hook locates GMP through the registered `GMP-Core-C28x` Product and validates
+the expected outputs instead of trusting the generator exit code alone.  If a
+source-manager edit adds or removes `.c` files while building in the CCS GUI,
+use **Rebuild Project** so managed-build refreshes its source list.  The
+headless helper runs generation before project import and therefore handles a
+source-set change in one invocation:
+
+```powershell
+.\tools\build.ps1 -Board F280049C -Mode All -GenerateSdpe -GenerateGmpSources
+```
+
 Every CCS configuration declares `C2000WARE:5.4.0.00` and
 `GMP-Core-C28x:2.10.00.00` as products.  GMP includes and symbols enter through
 `${COM_TI_COM_GMP_CORE_C28X_SDK_*}`; C2000 device and DriverLib headers enter
@@ -53,6 +73,14 @@ After moving the repository, rerun the
 GMP CCS product installer so the product metadata is registered at the new
 location; the project itself contains no `${PROJECT_LOC}/../..`,
 `GMP_PRO_ROOT` or `GMP_C28X_CSP_ROOT` checkout guesses.
+
+Portable application buffers use the logical linker section `mass_data`, not
+a device-specific `ramgs*` name.  Each board linker file owns the physical
+mapping: F2800137C uses `RAMLS1`, F280025C uses the combined `RAMLS4567`
+region, and the other six targets use `RAMGS0`.  F28379D also maps the
+DriverLib IPC sections to the corresponding CPU1/CPU2 message RAM.  Application
+code can therefore keep one section name without assuming that a device has a
+particular GS bank.
 
 ## Board matrix
 
@@ -73,16 +101,28 @@ would make the project description disagree with the board.
 
 ## Peripheral coverage
 
-All eight configurations implement the executable portability baseline: an
-ePWM-triggered ADC control interrupt, one BOOSTXL PWM output, a user LED,
-115200 bit/s Data Link UART, board-appropriate CAN/MCAN configuration, and a
-DAC output where the device and board expose one.  The ADC sample is forwarded
-to PWM and, when present, DAC by the shared application.
+All eight configurations now implement the extended control-oriented mapping.
+Every usable BOOSTXL analog input has an ADC SOC, every device DAC is enabled,
+and six physical BOOSTXL PWM pairs are present.  When a DAC and ADC share a
+pin, the DAC owns it.  The shared application forwards its selected ADC sample
+to PWM and, when available, DAC.
 
-F280025C, F280039C and F280049C additionally carry the extended LaunchPad
-mapping described below.  The other five boards intentionally remain at the
-portable baseline; six-PWM, all-BOOSTXL-ADC, eQEP and optional SPI expansion on
-those boards is follow-up work and is not claimed by the current SysConfig.
+| Board | ADC SOCs | Device DACs | BOOSTXL PWM pairs | ADC control interrupt |
+|---|---:|---:|---:|---|
+| F2800137C | 16 | 0 | 6 | ADCA INT1 |
+| F280025C | 16 | 0 | 6 | ADCA INT1 |
+| F280039C | 18 | 2 | 6 | ADCA INT1 |
+| F280049C | 19 | 2 | 6 | ADCA INT1 |
+| F28377S | 11 | 3 | 6 | ADCA INT1 |
+| F28379D | 14 | 3 | 6 | ADCA INT1 |
+| F28P55X | 19 | 1 | 6 | ADCA INT1 |
+| F28P65X | 18 | 2 | 6 | ADCA INT1 |
+
+The ADC counts are the BOOSTXL inputs left after DAC priority; they are spread
+as evenly as the device pin map permits across the available ADC modules.
+F28379D's DACC is configured even though it is not routed to a BOOSTXL analog
+position, because the board contract exposes every DAC implemented by the
+device.
 
 - User LEDs are GPIO outputs and the XDS virtual COM port is 115200 bit/s.
 - Classic CAN targets are configured for 1 Mbit/s. F28P55X instantiates the
@@ -92,10 +132,22 @@ those boards is follow-up work and is not claimed by the current SysConfig.
 - Site 1 exposes the DRV8301-compatible four-wire SPI mapping: BoosterPack
   pins 7 (clock), 19 (chip select), 15 (controller output) and 14 (controller
   input).
-- The six PWM pairs are the three standard pairs on each BoosterPack site.
-- Every analog pin in the two BoosterPack analog banks is assigned an ADC SOC.
-  SOCs are spread across ADC modules, triggered by ePWM1 SOCA.  ADC interrupt 1
-  calls `MainISR` and is the GMP control tick.
+- The six PWM pairs are the three standard pairs on each BoosterPack site and
+  retain stable physical aliases: `BOOSTXL_EPWM4039`, `BOOSTXL_EPWM3837`,
+  `BOOSTXL_EPWM3635`, `BOOSTXL_EPWM8079`, `BOOSTXL_EPWM7877` and
+  `BOOSTXL_EPWM7675`.
+- ADC SOCs are triggered by the board's synchronized master ePWM SOCA.  This is
+  ePWM1 on seven targets.  F28377S uses ePWM7 because the six PWM peripherals
+  actually routed to its BOOSTXL connectors do not include ePWM1.  ADCA
+  interrupt 1 calls `MainISR` on every target and is the GMP control tick.
+- `GMP_LAUNCHPAD_PWM_FREQUENCY_HZ` in the shared SDPE requirement controls all
+  six center-aligned PWM pairs.  `setup_peripheral()` stops TBCLKSYNC, applies
+  one period and phase zero to every pair, resets all counters, and releases
+  them together.  Frequencies below 1 kHz are rejected at compile time.
+- Site-1 BOOSTXL pin 13 is `ENABLE_PORT` (output), pin 34 is
+  `OVER_TEMPERATURE` (input), and pin 33 is `RELAY_PORT` (output) wherever the
+  MCU and LaunchPad routing permit it.  Gate enable and relay are driven low
+  during initialization before application tasks run.
 - The system clock uses the board crystal and the maximum supported CPU rate.
 - `device_support.useStandardCodeStartBranch` is false.  The selected
   `C2000Lib_*` supplies exactly one local code-start source, preventing the
@@ -119,6 +171,25 @@ single conflict-free baseline keeps both encoder headers, CAN, six PWM pairs
 and the DRV8301 SPI, and does not falsely claim a simultaneously connected
 hardware I2C port.  An I2C-oriented configuration must explicitly trade one of
 those resources and state the required switch positions.
+
+Control peripherals take priority over optional SPI/I2C routing.  A requested
+control GPIO is omitted only where the physical board cannot provide it:
+
+| Board | ENABLE pin 13 | Relay pin 33 | Over-temperature pin 34 | Exception |
+|---|---|---|---|---|
+| F2800137C | GPIO37 | omitted | GPIO33 | BOOSTXL pin 33 is not connected to a usable GPIO |
+| F280025C | GPIO23 | omitted | GPIO42 | pin 33 is GPIO19/X1 and is reserved by the external crystal |
+| F280039C | GPIO37 | GPIO48 | GPIO33 | none |
+| F280049C | GPIO39 | GPIO30 | GPIO58 | none |
+| F28377S | GPIO72 | GPIO21 | GPIO20 | none |
+| F28379D | GPIO124 | omitted | GPIO24 | pin 33 is dedicated GPO16/OUTPUTXBAR, not a GPIO |
+| F28P55X | GPIO21 | GPIO23 | GPIO22 | none |
+| F28P65X | GPIO12 | GPIO15 | GPIO14 | none |
+
+F280039C uses the green LED instead of the red LED because the red-LED GPIO is
+also a required BOOSTXL ADC input.  F28P65X likewise uses its green LED because
+BOOSTXL pin 13 takes priority as gate enable.  These choices keep the 500 ms
+heartbeat without consuming a control pin.
 
 ## Verification gates
 

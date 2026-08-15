@@ -14,7 +14,7 @@
     "syscfg_file": "LAUNCHXL_F280039C.syscfg",
     "system_clock_hz": "120000000",
     "control_isr_hz": "20000",
-    "user_led_gpio": "LED_R",
+    "user_led_gpio": "LED_G",
     "has_external_dac": "1",
     "control_dac_base": "BOOSTXL_DACA_BASE",
     "can_classic": "1",

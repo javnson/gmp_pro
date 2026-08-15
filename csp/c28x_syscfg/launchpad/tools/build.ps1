@@ -12,14 +12,29 @@ param(
     [string]$Board = "F280049C",
     [string]$CcsRoot = "C:\ti\ccs1281\ccs",
     [ValidateSet("Debug", "Release", "All")]
-    [string]$Mode = "All"
+    [string]$Mode = "All",
+    [switch]$GenerateSdpe,
+    [switch]$GenerateGmpSources
 )
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
+$productRoot = Split-Path -Parent $projectRoot
 $eclipse = Join-Path $CcsRoot "eclipse\eclipsec.exe"
 if (-not (Test-Path -LiteralPath $eclipse -PathType Leaf)) {
     throw "CCS headless executable not found: $eclipse"
+}
+
+# Generate before project import so managed-build sees source-manager changes
+# to the set of .c files in this same headless build invocation.
+if ($GenerateSdpe -or $GenerateGmpSources) {
+    $prebuild = Join-Path $PSScriptRoot 'ccs_prebuild.bat'
+    $sdpeSwitch = if ($GenerateSdpe) { '1' } else { '0' }
+    $sourceSwitch = if ($GenerateGmpSources) { '1' } else { '0' }
+    & $prebuild "${Board}_Debug" $productRoot $sdpeSwitch $sourceSwitch
+    if ($LASTEXITCODE -ne 0) {
+        throw "GMP pre-build generation failed with exit code $LASTEXITCODE"
+    }
 }
 
 $workspace = Join-Path $env:TEMP ("gmp_launchpad_ccs_" + [guid]::NewGuid().ToString("N"))

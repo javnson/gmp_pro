@@ -7,7 +7,7 @@ $matrix = @(
     @{ Board='F280039C';  Device='TMS320F280039C';  Package='100PZ';  Family='f28003x';  Symbol='_LAUNCHXL_F280039C' },
     @{ Board='F280049C';  Device='TMS320F280049C';  Package='100PZ';  Family='f28004x';  Symbol='_LAUNCHXL_F280049C' },
     @{ Board='F28377S';   Device='TMS320F28377S';   Package='176PTP'; Family='f2837xs';  Symbol='_LAUNCHXL_F28377S'; ExtraDefines=@('SYSCTL_EMIF1CLK_DIV_SYSCTL_EMIF1CLK_DIV_1=SYSCTL_EMIF1CLK_DIV_1') },
-    @{ Board='F28379D';   Device='TMS320F28379D';   Package='176PTP'; Family='f2837xd';  Symbol='_LAUNCHXL_F28379D'; ExtraDefines=@('SYSCTL_EMIF1CLK_DIV_SYSCTL_EMIF1CLK_DIV_1=SYSCTL_EMIF1CLK_DIV_1') },
+    @{ Board='F28379D';   Device='TMS320F28379D';   Package='337ZWT'; Family='f2837xd';  Symbol='_LAUNCHXL_F28379D'; ExtraDefines=@('SYSCTL_EMIF1CLK_DIV_SYSCTL_EMIF1CLK_DIV_1=SYSCTL_EMIF1CLK_DIV_1') },
     @{ Board='F28P55X';   Device='TMS320F28P550SJ'; CcsDevice='TMS320F28P550SJ9'; Package='100PZ';  Family='f28p55x';  Symbol='_LAUNCHXL_F28P55X' },
     @{ Board='F28P65X';   Device='TMS320F28P650DK'; CcsDevice='TMS320F28P650DK9'; Package='169NMR'; Family='f28p65x';  Symbol='_LAUNCHXL_F28P65X' }
 )

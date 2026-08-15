@@ -65,9 +65,7 @@ SECTIONS
    .esysmem         : > RAMLS5
 #endif
 
-   ramgs0 : > RAMGS0
-   ramgs1 : > RAMGS1
-   ramgs2 : > RAMGS2
+   mass_data : > RAMGS0
 
    #if defined(__TI_EABI__)
        .TI.ramfunc : {} LOAD = FLASH_BANK0,

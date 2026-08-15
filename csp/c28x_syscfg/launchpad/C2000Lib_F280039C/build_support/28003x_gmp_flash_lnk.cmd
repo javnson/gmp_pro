@@ -128,8 +128,7 @@ SECTIONS
    .econst          : > FLASH_BANK0_SEC4,  ALIGN(8)
 #endif
 
-    ramgs0 : > RAMGS0
-    ramgs1 : > RAMGS0
+    mass_data : > RAMGS0
 
     /*  Allocate IQ math areas: */
    IQmath           : > FLASH_BANK0_SEC1, ALIGN(8)

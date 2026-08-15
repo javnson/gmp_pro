@@ -14,7 +14,8 @@ $families = @{
 
 $xml = [xml](Get-Content -Raw -LiteralPath $ProjectFile)
 $xml.PreserveWhitespace = $true
-$productImports = 'PRODUCT_MACRO_IMPORTS={"C2000WARE":["${COM_TI_C2000WARE_INCLUDE_PATH}","${COM_TI_C2000WARE_LIBRARY_PATH}","${COM_TI_C2000WARE_LIBRARIES}","${COM_TI_C2000WARE_SYMBOLS}","${COM_TI_C2000WARE_SYSCONFIG_MANIFEST}"],"GMP-Core-C28x":["${COM_TI_COM_GMP_CORE_C28X_SDK_INCLUDE_PATH}","${COM_TI_COM_GMP_CORE_C28X_SDK_LIBRARY_PATH}","${COM_TI_COM_GMP_CORE_C28X_SDK_LIBRARIES}","${COM_TI_COM_GMP_CORE_C28X_SDK_SYMBOLS}","${COM_TI_COM_GMP_CORE_C28X_SDK_SYSCONFIG_MANIFEST}"]}'
+$productImports = 'PRODUCT_MACRO_IMPORTS={"C2000WARE":["${COM_TI_C2000WARE_INCLUDE_PATH}","${COM_TI_C2000WARE_LIBRARY_PATH}","${COM_TI_C2000WARE_LIBRARIES}","${COM_TI_C2000WARE_SYMBOLS}","${COM_TI_C2000WARE_SYSCONFIG_MANIFEST}"],"GMP-Core-C28x":["${COM_TI_COM_GMP_CORE_C28X_SDK_INSTALL_DIR}","${COM_TI_COM_GMP_CORE_C28X_SDK_INCLUDE_PATH}","${COM_TI_COM_GMP_CORE_C28X_SDK_LIBRARY_PATH}","${COM_TI_COM_GMP_CORE_C28X_SDK_LIBRARIES}","${COM_TI_COM_GMP_CORE_C28X_SDK_SYMBOLS}","${COM_TI_COM_GMP_CORE_C28X_SDK_SYSCONFIG_MANIFEST}"]}'
+$prebuildCommand = '"${PROJECT_LOC}/tools/ccs_prebuild.bat" "${ConfigName}" "${COM_TI_COM_GMP_CORE_C28X_SDK_INSTALL_DIR}" "${GMP_PREBUILD_SDPE}" "${GMP_PREBUILD_SRC_MGR}"'
 
 # CCS stores tool options in both the core-settings configurations and a
 # mirrored build-system tree.  Remove the override from both representations
@@ -33,6 +34,26 @@ foreach ($configuration in $xml.SelectNodes('/cproject/storageModule[@moduleId="
     $family = $families[$board]
 
     $buildNode = $configuration.SelectSingleNode("storageModule[@moduleId='cdtBuildSystem']/configuration")
+    $buildNode.SetAttribute('prebuildStep', $prebuildCommand)
+
+    # These CCS build variables are independent and configuration-local.
+    # Preserve an existing value so normalization does not reset a user's
+    # Debug/Release selection.
+    $macros = $settingsNode.SelectSingleNode('macros')
+    if (-not $macros) {
+        $macros = $xml.CreateElement('macros')
+        [void]$settingsNode.PrependChild($macros)
+    }
+    foreach ($macroName in @('GMP_PREBUILD_SDPE', 'GMP_PREBUILD_SRC_MGR')) {
+        $macro = $macros.SelectSingleNode("stringMacro[@name='$macroName']")
+        if (-not $macro) {
+            $macro = $xml.CreateElement('stringMacro')
+            $macro.SetAttribute('name', $macroName)
+            $macro.SetAttribute('type', 'VALUE_TEXT')
+            $macro.SetAttribute('value', '0')
+            [void]$macros.AppendChild($macro)
+        }
+    }
     # Let the C runtime keep its default ELF entry point (_c_int00).  The
     # Flash boot vector still enters the codestart section and code_start
     # branches to _c_int00, so forcing code_start here is both unnecessary

@@ -125,8 +125,7 @@ SECTIONS
 
    SHARERAMGS0		: > RAMGS0,		PAGE = 1
    SHARERAMGS1		: > RAMGS1,		PAGE = 1
-   ramgs0           : > RAMGS0,     PAGE = 1
-   ramgs1           : > RAMGS1,     PAGE = 1
+   mass_data        : > RAMGS0,     PAGE = 1
 
 #ifdef __TI_COMPILER_VERSION__
     #if __TI_COMPILER_VERSION__ >= 15009000
@@ -178,6 +177,9 @@ SECTIONS
         GETWRITEIDX :  TYPE = DSECT
         PUTREADIDX :   TYPE = DSECT
     }
+
+    MSGRAM_CPU1_TO_CPU2 : > CPU1TOCPU2RAM, PAGE = 1, TYPE = NOINIT
+    MSGRAM_CPU2_TO_CPU1 : > CPU2TOCPU1RAM, PAGE = 1, TYPE = NOINIT
 
    /* The following section definition are for SDFM examples */
    Filter1_RegsFile : > RAMGS1,	PAGE = 1, fill=0x1111

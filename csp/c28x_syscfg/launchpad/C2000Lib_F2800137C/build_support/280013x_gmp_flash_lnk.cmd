@@ -137,6 +137,7 @@ SECTIONS
    .data            : > RAMLS0
    .sysmem          : > RAMLS0
   .bss:cio          : > RAMLS0
+   mass_data        : > RAMLS1
 #else
    .pinit           : >> FLASH_BANK0_SEC_28 | FLASH_BANK0_SEC_29 | FLASH_BANK0_SEC_30 | FLASH_BANK0_SEC_31, ALIGN(8)
    .ebss            : > RAMLS0

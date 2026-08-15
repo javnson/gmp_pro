@@ -5,56 +5,102 @@
  */
 const adc = scripting.addModule("/driverlib/adc.js", {}, false);
 const adc1 = adc.addInstance();
+const adc2 = adc.addInstance();
+const adc3 = adc.addInstance();
+const adc4 = adc.addInstance();
 const can = scripting.addModule("/driverlib/can.js", {}, false);
 const can1 = can.addInstance();
 const dac = scripting.addModule("/driverlib/dac.js", {}, false);
 const dac1 = dac.addInstance();
+const dac2 = dac.addInstance();
+const dac3 = dac.addInstance();
 const device_support = scripting.addModule("/driverlib/device_support.js");
 device_support.useStandardCodeStartBranch = false;
 const epwm = scripting.addModule("/driverlib/epwm.js", {}, false);
 const epwm1 = epwm.addInstance();
+const epwm2 = epwm.addInstance();
+const epwm3 = epwm.addInstance();
+const epwm4 = epwm.addInstance();
+const epwm5 = epwm.addInstance();
+const epwm6 = epwm.addInstance();
 const gpio = scripting.addModule("/driverlib/gpio.js", {}, false);
 const gpio1 = gpio.addInstance();
+const gpio2 = gpio.addInstance();
+const gpio3 = gpio.addInstance();
+const gpio4 = gpio.addInstance();
 const sci = scripting.addModule("/driverlib/sci.js", {}, false);
 const sci1 = sci.addInstance();
 
 adc1.$name = "BOOSTXL_ADCA";
 adc1.adcClockPrescaler = "ADC_CLK_DIV_4_0";
 adc1.interruptPulseMode = "ADC_PULSE_END_OF_CONV";
-adc1.enabledSOCs = ["ADC_SOC_NUMBER0"];
+adc1.enabledSOCs = ["ADC_SOC_NUMBER0","ADC_SOC_NUMBER1","ADC_SOC_NUMBER2","ADC_SOC_NUMBER3"];
 adc1.enabledInts = ["ADC_INT_NUMBER1"];
 adc1.enableInterrupt1 = true;
+adc1.enableInterrupt1ContinuousMode = true;
+adc1.interrupt1SOCSource = "ADC_SOC_NUMBER3";
 adc1.registerInterrupts = ["1"];
 adc1.adcInt1.enableInterrupt = true;
 adc1.adcInt1.interruptHandler = "MainISR";
-adc1.soc0Name = "BOOSTXL_ADC23";
-adc1.soc0IndependentNameMode = true;
-adc1.soc0Channel = "ADC_CH_ADCIN14";
-adc1.soc0SampleWindow = 20;
-adc1.soc0Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+adc1.soc0Name = "BOOSTXL_ADC64"; adc1.soc0IndependentNameMode = true; adc1.soc0Channel = "ADC_CH_ADCIN2"; adc1.soc0SampleWindow = 20; adc1.soc0Trigger = "ADC_TRIGGER_EPWM7_SOCA";
+adc1.soc1Name = "BOOSTXL_ADC65"; adc1.soc1IndependentNameMode = true; adc1.soc1Channel = "ADC_CH_ADCIN5"; adc1.soc1SampleWindow = 20; adc1.soc1Trigger = "ADC_TRIGGER_EPWM7_SOCA";
+adc1.soc2Name = "BOOSTXL_ADC67"; adc1.soc2IndependentNameMode = true; adc1.soc2Channel = "ADC_CH_ADCIN3"; adc1.soc2SampleWindow = 20; adc1.soc2Trigger = "ADC_TRIGGER_EPWM7_SOCA";
+adc1.soc3Name = "BOOSTXL_ADC69"; adc1.soc3IndependentNameMode = true; adc1.soc3Channel = "ADC_CH_ADCIN4"; adc1.soc3SampleWindow = 20; adc1.soc3Trigger = "ADC_TRIGGER_EPWM7_SOCA";
+
+adc2.$name = "BOOSTXL_ADCB"; adc2.adcBase = "ADCB_BASE"; adc2.adcClockPrescaler = "ADC_CLK_DIV_4_0"; adc2.interruptPulseMode = "ADC_PULSE_END_OF_CONV";
+adc2.enabledSOCs = ["ADC_SOC_NUMBER0","ADC_SOC_NUMBER1","ADC_SOC_NUMBER2","ADC_SOC_NUMBER3","ADC_SOC_NUMBER4"];
+adc2.soc0Name = "BOOSTXL_ADC25"; adc2.soc0IndependentNameMode = true; adc2.soc0Channel = "ADC_CH_ADCIN4"; adc2.soc0SampleWindow = 20; adc2.soc0Trigger = "ADC_TRIGGER_EPWM7_SOCA";
+adc2.soc1Name = "BOOSTXL_ADC26"; adc2.soc1IndependentNameMode = true; adc2.soc1Channel = "ADC_CH_ADCIN2"; adc2.soc1SampleWindow = 20; adc2.soc1Trigger = "ADC_TRIGGER_EPWM7_SOCA";
+adc2.soc2Name = "BOOSTXL_ADC28"; adc2.soc2IndependentNameMode = true; adc2.soc2Channel = "ADC_CH_ADCIN0"; adc2.soc2SampleWindow = 20; adc2.soc2Trigger = "ADC_TRIGGER_EPWM7_SOCA";
+adc2.soc3Name = "BOOSTXL_ADC66"; adc2.soc3IndependentNameMode = true; adc2.soc3Channel = "ADC_CH_ADCIN5"; adc2.soc3SampleWindow = 20; adc2.soc3Trigger = "ADC_TRIGGER_EPWM7_SOCA";
+adc2.soc4Name = "BOOSTXL_ADC68"; adc2.soc4IndependentNameMode = true; adc2.soc4Channel = "ADC_CH_ADCIN3"; adc2.soc4SampleWindow = 20; adc2.soc4Trigger = "ADC_TRIGGER_EPWM7_SOCA";
+
+adc3.$name = "BOOSTXL_ADCC"; adc3.adcBase = "ADCC_BASE"; adc3.adcClockPrescaler = "ADC_CLK_DIV_4_0"; adc3.interruptPulseMode = "ADC_PULSE_END_OF_CONV";
+adc3.enabledSOCs = ["ADC_SOC_NUMBER0"];
+adc3.soc0Name = "BOOSTXL_ADC23"; adc3.soc0IndependentNameMode = true; adc3.soc0Channel = "ADC_CH_ADCIN14"; adc3.soc0SampleWindow = 20; adc3.soc0Trigger = "ADC_TRIGGER_EPWM7_SOCA";
+
+adc4.$name = "BOOSTXL_ADCD"; adc4.adcBase = "ADCD_BASE"; adc4.adcClockPrescaler = "ADC_CLK_DIV_4_0"; adc4.interruptPulseMode = "ADC_PULSE_END_OF_CONV";
+adc4.enabledSOCs = ["ADC_SOC_NUMBER0"];
+adc4.soc0Name = "BOOSTXL_ADC63"; adc4.soc0IndependentNameMode = true; adc4.soc0Channel = "ADC_CH_ADCIN15"; adc4.soc0SampleWindow = 20; adc4.soc0Trigger = "ADC_TRIGGER_EPWM7_SOCA";
 
 dac1.$name = "BOOSTXL_DACA";
 dac1.dacBase = "DACA_BASE";
 dac1.referenceVoltage = "DAC_REF_ADC_VREFHI";
 dac1.enableOutput = true;
+dac2.$name = "BOOSTXL_DACB"; dac2.dacBase = "DACB_BASE"; dac2.referenceVoltage = "DAC_REF_ADC_VREFHI"; dac2.enableOutput = true;
+dac3.$name = "BOOSTXL_DACC"; dac3.dacBase = "DACC_BASE"; dac3.referenceVoltage = "DAC_REF_ADC_VREFHI"; dac3.enableOutput = true;
 
-epwm1.$name = "BOOSTXL_EPWM4039";
-epwm1.epwmTimebase_hsClockDiv = "EPWM_HSCLOCK_DIVIDER_1";
-epwm1.epwmTimebase_counterMode = "EPWM_COUNTER_MODE_UP_DOWN";
-epwm1.epwmTimebase_period = 5000;
-epwm1.epwmCounterCompare_cmpA = 2500;
-epwm1.epwmActionQualifier_EPWM_AQ_OUTPUT_A_ON_TIMEBASE_UP_CMPA = "EPWM_AQ_OUTPUT_HIGH";
-epwm1.epwmActionQualifier_EPWM_AQ_OUTPUT_A_ON_TIMEBASE_DOWN_CMPA = "EPWM_AQ_OUTPUT_LOW";
+function configurePwm(instance, name, peripheral, pinA, pinB) {
+    instance.$name = name;
+    instance.epwmTimebase_hsClockDiv = "EPWM_HSCLOCK_DIVIDER_1";
+    instance.epwmTimebase_counterMode = "EPWM_COUNTER_MODE_UP_DOWN";
+    instance.epwmTimebase_counterModeAfterSync = "EPWM_COUNT_MODE_UP_AFTER_SYNC";
+    instance.epwmTimebase_phaseEnable = true;
+    instance.epwmTimebase_period = 5000;
+    instance.epwmCounterCompare_cmpA = 2500;
+    instance.epwmCounterCompare_cmpB = 1250;
+    instance.epwmActionQualifier_EPWM_AQ_OUTPUT_A_ON_TIMEBASE_UP_CMPA = "EPWM_AQ_OUTPUT_HIGH";
+    instance.epwmActionQualifier_EPWM_AQ_OUTPUT_A_ON_TIMEBASE_DOWN_CMPA = "EPWM_AQ_OUTPUT_LOW";
+    instance.epwm.$assign = peripheral;
+    instance.epwm.epwmaPin.$assign = pinA;
+    instance.epwm.epwmbPin.$assign = pinB;
+}
+configurePwm(epwm1, "BOOSTXL_EPWM4039", "EPWM7", "GPIO12", "GPIO13");
 epwm1.epwmEventTrigger_EPWM_SOC_A_triggerEnable = true;
 epwm1.epwmEventTrigger_EPWM_SOC_A_triggerSource = "EPWM_SOC_TBCTR_PERIOD";
 epwm1.epwmEventTrigger_EPWM_SOC_A_triggerEventPrescalar = "1";
-epwm1.epwm.$assign = "EPWM1";
-epwm1.epwm.epwmaPin.$assign = "GPIO0";
-epwm1.epwm.epwmbPin.$assign = "GPIO1";
+configurePwm(epwm2, "BOOSTXL_EPWM3837", "EPWM8", "GPIO14", "GPIO15");
+configurePwm(epwm3, "BOOSTXL_EPWM3635", "EPWM9", "GPIO16", "GPIO17");
+configurePwm(epwm4, "BOOSTXL_EPWM8079", "EPWM2", "GPIO2", "GPIO3");
+configurePwm(epwm5, "BOOSTXL_EPWM7877", "EPWM6", "GPIO10", "GPIO11");
+configurePwm(epwm6, "BOOSTXL_EPWM7675", "EPWM10", "GPIO18", "GPIO19");
 
 gpio1.$name = "LED_R";
 gpio1.direction = "GPIO_DIR_MODE_OUT";
 gpio1.gpioPin.$assign = "GPIO31";
+gpio2.$name = "ENABLE_PORT"; gpio2.direction = "GPIO_DIR_MODE_OUT"; gpio2.initialValue = 0; gpio2.gpioPin.$assign = "GPIO72";
+gpio3.$name = "RELAY_PORT"; gpio3.direction = "GPIO_DIR_MODE_OUT"; gpio3.initialValue = 0; gpio3.gpioPin.$assign = "GPIO21";
+gpio4.$name = "OVER_TEMPERATURE"; gpio4.direction = "GPIO_DIR_MODE_IN"; gpio4.gpioPin.$assign = "GPIO20";
 
 sci1.$name = "LAUNCHXL_UART_USB";
 sci1.selectRegisteredInterrupts = ["registerRxInt"];

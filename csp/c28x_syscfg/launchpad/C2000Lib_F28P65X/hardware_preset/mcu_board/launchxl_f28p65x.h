@@ -64,7 +64,7 @@ extern "C"
 /**
  * @brief Heartbeat LED GPIO alias.
  */
-#define LAUNCHXL_F28P65X_USER_LED_GPIO LED_R
+#define LAUNCHXL_F28P65X_USER_LED_GPIO LED_G
 
 /**
  * @brief One when a hardware DAC output is configured.

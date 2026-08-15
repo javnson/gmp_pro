@@ -8,7 +8,7 @@ MEMORY
 
 /* RAMLS4           : origin = 0x0000A000, length = 0x00000800
    RAMLS5           : origin = 0x0000A800, length = 0x00000800
-   RAMLS6           : origin = 0x0000B000, length = 0x00000800
+   RAMLS6            : origin = 0x0000B000, length = 0x00000800
    RAMLS7           : origin = 0x0000B800, length = 0x00000800*/
 
    /* Combining all the LS RAMs */
@@ -70,7 +70,7 @@ SECTIONS
    .data            : > RAMLS4567
    .sysmem          : > RAMLS4567
 
-    ramgs0 : > RAMGS0
+    mass_data : > RAMLS4567
 
     /*  Allocate IQ math areas: */
    IQmath           : > RAMLS4567

@@ -77,11 +77,11 @@ static float applied_signal_gain = -1.0F;
 static float applied_signal_dc_offset = -100.0F;
 static byte_gt memory_window[64];
 #if defined(__TI_COMPILER_VERSION__)
-#pragma DATA_SECTION(dsa_buffer, "ramgs0")
+#pragma DATA_SECTION(dsa_buffer, "mass_data")
 #endif
 static ctrl_gt dsa_buffer[USER_DSA_DEPTH * USER_DSA_CHANNELS];
 #if defined(__TI_COMPILER_VERSION__)
-#pragma DATA_SECTION(dsa_history, "ramgs1")
+#pragma DATA_SECTION(dsa_history, "mass_data")
 #endif
 static ctrl_gt dsa_history[USER_DSA_DEPTH * USER_DSA_CHANNELS];
 static volatile ctrl_gt oscillator_sine;

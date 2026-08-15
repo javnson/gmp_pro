@@ -1,7 +1,7 @@
 /**
  * @file ctrl_settings.h
  * @brief SDPE project bindings for GMP C2000 LaunchPad Reference Application.
- * @note Portable one-ADC/one-PWM LaunchPad example with Data Link, CAN and optional ADC-to-DAC mirroring.
+ * @note Portable control-ready LaunchPad example with complete BOOSTXL ADC/DAC/PWM routing, Data Link and CAN.
  */
 
 #ifndef _PROJECT_CTRL_SETTINGS_H_
@@ -22,7 +22,7 @@ extern "C"
 
 #define GMP_C2000_LAUNCHPAD_SDPE_PROJECT_ID "gmp_c2000_launchpad_reference"
 #define GMP_C2000_LAUNCHPAD_SDPE_PROJECT_SUITE "c28x_syscfg_launchpad"
-#define GMP_C2000_LAUNCHPAD_SDPE_PROJECT_VERSION "0.1.0"
+#define GMP_C2000_LAUNCHPAD_SDPE_PROJECT_VERSION "0.2.0"
 #define GMP_C2000_LAUNCHPAD_SDPE_PROJECT_UPDATED_AT "2026-08-15"
 
 //=================================================================================================
@@ -39,6 +39,11 @@ extern "C"
 /**
  * @brief Requirement bindings.
  */
+
+/**
+ * @brief Center-aligned switching and ADC control-interrupt frequency applied to all six BOOSTXL ePWM pairs during peripheral initialization.
+ */
+#define GMP_LAUNCHPAD_PWM_FREQUENCY_HZ (20000)
 
 /**
  * @brief XDS virtual COM Data Link baud rate.

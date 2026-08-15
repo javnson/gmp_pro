@@ -107,8 +107,7 @@ SECTIONS
    .econst          : > FLASH_BANK0_SEC4,    PAGE = 0, ALIGN(4)
 #endif
 
-   ramgs0           : > RAMGS0,    PAGE = 1
-   ramgs1           : > RAMGS1,    PAGE = 1
+   mass_data        : > RAMGS0,    PAGE = 1
 
  
 #if defined(__TI_EABI__) 
