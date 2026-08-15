@@ -84,6 +84,7 @@ ctl/suite/<suite>/
 │   │   ├── sdpe_mgr/            simulation-specific SDPE layer
 │   │   └── gmp_src_mgr/         local module selection and generated source tree
 │   ├── <c2000-target>/
+│   │   ├── *.syscfg              editable SysConfig sources at the project root
 │   │   ├── C2000Lib/            TI device support, driverlib, headers and linker files
 │   │   ├── src/                 GMP/user/SDPE/xplt/source-manager/PIL material
 │   │   └── targetConfigs/       CCS connection files
@@ -96,7 +97,9 @@ Shared `src` owns control laws, state machines, tunable dictionaries and applica
 
 For C2000 targets, do not mix vendor and application material: TI-provided files
 belong in `C2000Lib`; GMP-provided, cross-platform, user, SDPE, `gmp_src_mgr`,
-and PIL files belong in the target `src`. This convention is authoritative even
+and PIL files belong in the target `src`. Editable `.syscfg` sources are project
+configuration and belong directly in the C2000 target root, not under `src/user`.
+This convention is authoritative even
 when an older suite has a different layout. Do not restructure clear existing
 STM32 projects merely to imitate the C2000 layout.
 

@@ -80,6 +80,7 @@ ctl/suite/<suite_name>/
 │   │   ├── sdpe_mgr/
 │   │   └── xplt/
 │   ├── <c2000_platform>/
+│   │   ├── *.syscfg          SysConfig 源文件，直接放在工程根目录
 │   │   ├── C2000Lib/        TI 提供的 device support、driverlib、头文件和链接文件
 │   │   ├── src/             GMP、跨平台、用户、SDPE、源管理器和 PIL 文件
 │   │   │   ├── gmp_src_mgr/
@@ -101,6 +102,8 @@ ctl/suite/<suite_name>/
 - 每个可运行工程通常包含 `gmp_src_mgr` 和 `xplt`。
 - C2000 工程中，TI 提供的文件只能放入 `C2000Lib`；GMP、跨平台、用户、
   SDPE、`gmp_src_mgr` 和 PIL 文件统一放入目标的 `src`。
+- C2000 工程的可编辑 `.syscfg` 源文件属于工程级配置，直接放在工程根目录，
+  不放在 `src/user` 或其他源码子目录中。
 - C2000 启动汇编文件（例如 `f28003x_codestartbranch.asm`）只保留在
   `C2000Lib/device_support`。使用 SysConfig `device_support` 模块时必须设置
   `device_support.useStandardCodeStartBranch = false;`，避免 SysConfig 再从
@@ -474,7 +477,7 @@ tunable、memory perspective、曲线观察等页面或功能。
 
 ## 14. 开发约束
 
-- 新 C2000 工程采用 `C2000Lib + src + targetConfigs` 结构，目标 `src` 包含
+- 新 C2000 工程采用根目录 `.syscfg` 加 `C2000Lib + src + targetConfigs` 结构，目标 `src` 包含
   `xplt`、`sdpe_mgr`、`gmp_src_mgr`、用户和 PIL 文件。
 - 清晰的现有 STM32 工程暂不因 C2000 规范而重排。
 - 控制逻辑应尽量平台无关。

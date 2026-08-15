@@ -30,6 +30,7 @@ cross-suite generators and validation tools belong under `tools`.
 ├── project/
 │   ├── simulate/                host/SIL project, model and target SDPE layer
 │   ├── <c2000-target>/
+│   │   ├── *.syscfg             editable SysConfig sources at the project root
 │   │   ├── C2000Lib/            TI device support, driverlib, headers and linker files
 │   │   ├── src/                 GMP, user, SDPE, xplt and PIL files
 │   │   │   ├── gmp_src_mgr/
@@ -44,8 +45,10 @@ cross-suite generators and validation tools belong under `tools`.
 
 The C2000 boundary is strict: TI-provided material belongs in `C2000Lib`, while
 all GMP-provided, cross-platform, user, SDPE, source-manager, and PIL material
-belongs in `src`. Simulation and hardware targets share the suite-level control
-code. The deprecated `rt_trace` module is not part of a suite project.
+belongs in `src`. Editable `.syscfg` files are the exception: keep them directly
+in the C2000 project root so CCS treats them as project-level configuration.
+Simulation and hardware targets share the suite-level control code. The deprecated
+`rt_trace` module is not part of a suite project.
 
 Keep each C2000 startup assembly file, such as
 `f28003x_codestartbranch.asm`, only in `C2000Lib/device_support`. When a SysConfig
