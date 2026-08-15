@@ -17,6 +17,11 @@ void mainloop(void);
 /** @brief Initialize platform-owned peripherals used by the user layer. */
 void setup_peripheral(void);
 
+/** Hardware acceptance counters exposed to the CCS Expressions view. */
+extern volatile uint32_t startup_task_runs;
+extern volatile uint32_t heartbeat_task_runs;
+extern volatile uint32_t datalink_task_runs;
+
 /** @brief Generate one sample and advance the DSA trigger/scope state. */
 void user_dsa_timer_step(void);
 

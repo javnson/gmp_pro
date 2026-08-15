@@ -1,0 +1,133 @@
+{
+  "id": "gmp_c2000_launchpad_reference",
+  "macro_prefix": "GMP_C2000_LAUNCHPAD",
+  "display_name": "GMP C2000 LaunchPad Reference Application",
+  "description": "Portable one-ADC/one-PWM LaunchPad example with Data Link, CAN and optional ADC-to-DAC mirroring.",
+  "suite": "c28x_syscfg_launchpad",
+  "version": "0.1.0",
+  "updated_at": "2026-08-15",
+  "output_header": "ctrl_settings.h",
+  "hardware": [
+    {
+      "entity": "c2000_launchpad_boostxl"
+    }
+  ],
+  "option_macros": [
+    {
+      "group": "BOOSTXL Routing",
+      "macro": "LAUNCHPAD_AC_ADC_SOC",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_ADC23",
+      "options": [
+        "BOOSTXL_ADC23", "BOOSTXL_ADC24", "BOOSTXL_ADC25", "BOOSTXL_ADC26",
+        "BOOSTXL_ADC27", "BOOSTXL_ADC28", "BOOSTXL_ADC29", "BOOSTXL_ADC63",
+        "BOOSTXL_ADC64", "BOOSTXL_ADC65", "BOOSTXL_ADC66", "BOOSTXL_ADC67",
+        "BOOSTXL_ADC68", "BOOSTXL_ADC69"
+      ],
+      "description": "ADC SOC selected by the physical BOOSTXL pin number. DAC-shared pins 30 and 70 are intentionally excluded."
+    },
+    {
+      "group": "BOOSTXL Routing",
+      "macro": "LAUNCHPAD_AC_ADC_RESULT_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_ADC23_RESULT_BASE",
+      "options": [
+        "BOOSTXL_ADC23_RESULT_BASE", "BOOSTXL_ADC24_RESULT_BASE", "BOOSTXL_ADC25_RESULT_BASE",
+        "BOOSTXL_ADC26_RESULT_BASE", "BOOSTXL_ADC27_RESULT_BASE", "BOOSTXL_ADC28_RESULT_BASE",
+        "BOOSTXL_ADC29_RESULT_BASE", "BOOSTXL_ADC63_RESULT_BASE", "BOOSTXL_ADC64_RESULT_BASE",
+        "BOOSTXL_ADC65_RESULT_BASE", "BOOSTXL_ADC66_RESULT_BASE", "BOOSTXL_ADC67_RESULT_BASE",
+        "BOOSTXL_ADC68_RESULT_BASE", "BOOSTXL_ADC69_RESULT_BASE"
+      ],
+      "description": "ADC result register paired with LAUNCHPAD_AC_ADC_SOC."
+    },
+    {
+      "group": "BOOSTXL Routing",
+      "macro": "LAUNCHPAD_PWM_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_EPWM8079_BASE",
+      "options": [
+        "BOOSTXL_EPWM3635_BASE", "BOOSTXL_EPWM3837_BASE", "BOOSTXL_EPWM4039_BASE",
+        "BOOSTXL_EPWM7675_BASE", "BOOSTXL_EPWM7877_BASE", "BOOSTXL_EPWM8079_BASE"
+      ],
+      "description": "One PWM pair selected by the physical BOOSTXL pin pair."
+    }
+  ],
+  "feature_macros": [
+    {
+      "group": "Reference Features",
+      "macro": "LAUNCHPAD_ENABLE_ADC_TO_DAC",
+      "enabled": true,
+      "weak": false,
+      "value": "",
+      "description": "Mirror the normalized control ADC sample to an external DAC when the selected device provides one."
+    }
+  ],
+  "requirements": [
+    {
+      "role": "UART Baud Rate",
+      "macro": "GMP_DL_UART_BAUDRATE",
+      "binding": { "number": "115200" },
+      "description": "XDS virtual COM Data Link baud rate."
+    },
+    {
+      "role": "CAN Nominal Baud Rate",
+      "macro": "GMP_CAN_NOMINAL_BAUDRATE",
+      "binding": { "number": "1000000" },
+      "description": "Classic CAN or MCAN nominal bit rate."
+    },
+    {
+      "role": "CAN Receive Identifier",
+      "macro": "GMP_CAN_RX_ID",
+      "binding": { "number": "0x101" },
+      "description": "Standard identifier accepted by the reference command object."
+    },
+    {
+      "role": "CAN Telemetry Identifier",
+      "macro": "GMP_CAN_TX_ID",
+      "binding": { "number": "0x201" },
+      "description": "Standard identifier used for ADC/PWM telemetry."
+    },
+    {
+      "role": "CAN Telemetry Period",
+      "macro": "GMP_CAN_TX_PERIOD_MS",
+      "binding": { "number": "100" },
+      "description": "Non-blocking CAN telemetry period."
+    },
+    {
+      "role": "Data Link Task Period",
+      "macro": "GMP_DATALINK_TASK_PERIOD_MS",
+      "binding": { "number": "2" },
+      "description": "Scheduler period for Data Link and CAN service."
+    },
+    {
+      "role": "Heartbeat Task Period",
+      "macro": "GMP_HEARTBEAT_TASK_PERIOD_MS",
+      "binding": { "number": "500" },
+      "description": "Scheduler period for the user LED task."
+    },
+    {
+      "role": "PIL Data Link Base Command",
+      "macro": "GMP_PIL_DL_BASE_COMMAND",
+      "binding": { "number": "16" },
+      "description": "Base command reserved for optional GMP PIL service."
+    }
+  ],
+  "requirement_groups": [
+    {
+      "name": "Communication",
+      "requirements": [
+        "UART Baud Rate", "CAN Nominal Baud Rate", "CAN Receive Identifier",
+        "CAN Telemetry Identifier", "CAN Telemetry Period", "PIL Data Link Base Command"
+      ]
+    },
+    {
+      "name": "Scheduler",
+      "requirements": ["Data Link Task Period", "Heartbeat Task Period"]
+    }
+  ],
+  "feature_macro_groups": ["Reference Features"],
+  "option_macro_groups": ["BOOSTXL Routing"]
+}

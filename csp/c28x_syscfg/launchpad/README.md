@@ -17,25 +17,36 @@ launchpad/
     targetConfigs/                 debugger and device selection
     hw/                            official schematic and TI board metadata
     LAUNCHXL_<BOARD>.syscfg        board-bound SysConfig source of truth
+    build_support/                 selected code-start, linker and DriverLib
   src/
     gmp_src_mgr/                   GMP source-manager input and scripts
     sdpe_mgr/                      SDPE requirement source of truth
     user/                          portable application tasks
     xplt/                          C2000 platform binding
     pil/                           optional PIL binding
+  <BOARD>_Debug/                   ignored CCS/SysConfig build output
+  <BOARD>_Release/                 ignored CCS/SysConfig build output
+  tools/                           reproducible build/flash/probe steps
 ```
 
-Generated SysConfig, SDPE and GMP source-manager output is build output.  Do
-not commit a second hand-maintained `.h` or `.m` beside its generator input.
+The SDPE directory contains exactly one generated pair,
+`ctrl_settings.h` and `ctrl_settings_matlab_init.m`, produced from
+`sdpe_requirement.json`.  Regenerate the pair together with
+`sdpe_generate.bat`; do not retain historical `.h` or `.m` files beside it.
+The requirement binds the reusable `c2000_launchpad_boostxl` interface
+contract rather than a device-specific LaunchPad entity; board-specific
+`BOOSTXL_*` aliases come from the selected SysConfig output at CCS build time.
+GMP source-manager output under `src/gmp_src_mgr/gmp_inc` and `gmp_src` is
+likewise regenerated from `gmp_framework_config.json`.
 
 ## Board matrix
 
 | Configuration prefix | Device family | CPU target | Board debugger | Board support state |
 |---|---|---:|---|---|
 | `F2800137C` | F280013x | 120 MHz | XDS110 | TI package and schematic installed |
-| `F280025C` | F28002x | 100 MHz | XDS110 | TI package and schematic installed |
-| `F280039C` | F28003x | 120 MHz | XDS110 | TI package and schematic installed |
-| `F280049C` | F28004x | 100 MHz | XDS110 | SysConfig baseline validates |
+| `F280025C` | F28002x | 100 MHz | XDS110 | SysConfig validated; CCS configurations pending |
+| `F280039C` | F28003x | 120 MHz | XDS110 | SysConfig and Debug/Release builds validated |
+| `F280049C` | F28004x | 100 MHz | XDS110 | SysConfig, builds and hardware baseline validated |
 | `F28377S` | F2837xS | 200 MHz | XDS100v2 | TI package and schematic installed |
 | `F28379D` | F2837xD CPU1 | 200 MHz | XDS100v2 | TI package and schematic installed |
 | `F28P55X` | F28P55x CPU1 | 150 MHz | XDS110 | TI package and schematic installed |
@@ -97,6 +108,46 @@ Each `<board>_Debug` and `<board>_Release` configuration is complete only when:
    LED task toggles every 500 ms, the Data Link task runs every 2 ms, and the
    tunable, memory, scope and optional PIL commands respond.
 
+## Verified F280049C baseline
+
+The F280049C baseline has been built, flashed through the on-board XDS110 and
+run on a physical LAUNCHXL-F280049C.  A 30-second debugger observation produced
+one startup execution, 60 heartbeat executions, 15000 Data Link task
+executions, 600019 ADC/control ISR executions and a 30000 ms GMP system tick.
+The live ADC result was non-zero and changed between observations.
+
+The serial smoke test passed at 115200 bit/s on the XDS110 application UART,
+including payload echo and 256-byte stress transfer, three tunable parameters,
+the 128-byte scratch memory service and the 400-sample two-channel scope.  The
+SCI adapter uses its FIFO interrupt plus a foreground FIFO pump; protocol
+dispatch remains in the required 2 ms scheduler task.  This prevents a long
+continuous frame from overflowing the 16-word hardware FIFO.
+
+Classic CAN is configured for 1 Mbit/s.  Receive object 1 (0x101) is polled by
+the 2 ms service; after the first valid input frame, transmit object 4 publishes
+ADC/PWM telemetry on 0x201 every 100 ms.  Retry is disabled so a standalone
+board without a CAN peer continues running its control and Data Link paths.
+Physical two-node CAN traffic remains a separate acceptance test.
+
+The repository-root CCS project contains formal Debug and Release
+configurations for F280049C and F280039C.  They perform clean headless builds
+from exactly one selected `C2000Lib_*` directory and the shared `src` tree.
+CCS invokes SysConfig directly on the board-bound `.syscfg` and writes all
+generated sources below the ignored configuration output directory.  No
+generated SysConfig source is checked into the repository.  `build_support`
+contains the one selected code-start source, enlarged Flash linker file and
+EABI DriverLib archive used by each configuration.
+
+From this directory, the repeatable build workflow is:
+
+```powershell
+.\tools\build.ps1 -Board F280049C -Mode All
+.\tools\build.ps1 -Board F280039C -Mode All
+.\tools\flash_f280049c.ps1 -Mode Debug
+.\tools\smoke_f280049c.ps1 -Port COM5
+C:\ti\ccs1281\ccs\ccs_base\scripting\bin\dss.bat .\tools\hardware_probe_f280049c.js
+```
+
 ## Hardware references
 
 The PDFs under each `hw/` directory are the configuration authority:
@@ -109,4 +160,3 @@ The PDFs under each `hw/` directory are the configuration authority:
 - [LAUNCHXL-F28379D user guide and schematic](https://www.ti.com/lit/pdf/sprui77)
 - [LAUNCHXL-F28P55X schematic](https://www.ti.com/lit/df/sprr499a/sprr499a.pdf)
 - [LAUNCHXL-F28P65X schematic](https://www.ti.com/lit/df/sprr480/sprr480.pdf)
-

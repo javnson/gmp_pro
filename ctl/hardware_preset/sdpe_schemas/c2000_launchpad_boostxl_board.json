@@ -1,0 +1,75 @@
+{
+  "id": "c2000_launchpad_boostxl_board",
+  "display_name": "C2000 LaunchPad BOOSTXL Contract",
+  "description": "Portable dual-site BOOSTXL resource contract used by the GMP C2000 LaunchPad reference application.",
+  "category": "C2000 LaunchPad Board",
+  "output_subdir": "mcu_board",
+  "parameters": [
+    {
+      "name": "connector_standard",
+      "c_name": "CONNECTOR_STANDARD",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "Physical connector naming convention used by portable aliases."
+    },
+    {
+      "name": "analog_input_count",
+      "c_name": "ANALOG_INPUT_COUNT",
+      "unit": "",
+      "required": true,
+      "value_format": "({}U)",
+      "description": "Nominal analog positions across the two BOOSTXL sites before board conflicts."
+    },
+    {
+      "name": "pwm_pair_count",
+      "c_name": "PWM_PAIR_COUNT",
+      "unit": "",
+      "required": true,
+      "value_format": "({}U)",
+      "description": "Portable BOOSTXL PWM pair contract."
+    },
+    {
+      "name": "eqep_header_count",
+      "c_name": "EQEP_HEADER_COUNT",
+      "unit": "",
+      "required": true,
+      "value_format": "({}U)",
+      "description": "Nominal J12/J13 encoder-header contract."
+    },
+    {
+      "name": "adc_trigger",
+      "c_name": "ADC_TRIGGER",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "Common ADC trigger contract implemented by each board SysConfig."
+    },
+    {
+      "name": "control_isr",
+      "c_name": "CONTROL_ISR",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "Common control interrupt symbol implemented by the shared application."
+    }
+  ],
+  "exports": {},
+  "option_sets": {},
+  "parameter_groups": [
+    {
+      "name": "Portable Contract",
+      "parameters": [
+        "connector_standard",
+        "analog_input_count",
+        "pwm_pair_count",
+        "eqep_header_count",
+        "adc_trigger",
+        "control_isr"
+      ]
+    }
+  ],
+  "tags": ["c2000", "launchpad", "boostxl", "portable"],
+  "header_prefix": "",
+  "components": {}
+}

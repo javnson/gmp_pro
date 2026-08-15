@@ -1,0 +1,140 @@
+/**
+ * @cliArgs --board "/boards/LAUNCHXL_F280025C" --context "system" --product "C2000WARE@5.04.00.00"
+ * @versions {"tool":"1.21.0+3721"}
+ *
+ * GMP LaunchPad reference pin contract for LAUNCHXL-F280025C.
+ * CAN, both encoder headers and the six control PWM pairs take priority over
+ * optional SPI/I2C functions when a board switch or GPIO is shared.
+ */
+
+const adc = scripting.addModule("/driverlib/adc.js", {}, false);
+const adc1 = adc.addInstance();
+const adc2 = adc.addInstance();
+const asysctl = scripting.addModule("/driverlib/asysctl.js");
+const can = scripting.addModule("/driverlib/can.js", {}, false);
+const can1 = can.addInstance();
+const device_support = scripting.addModule("/driverlib/device_support.js");
+device_support.useStandardCodeStartBranch = false;
+const epwm = scripting.addModule("/driverlib/epwm.js", {}, false);
+const epwm1 = epwm.addInstance();
+const epwm2 = epwm.addInstance();
+const epwm3 = epwm.addInstance();
+const epwm4 = epwm.addInstance();
+const epwm5 = epwm.addInstance();
+const epwm6 = epwm.addInstance();
+const eqep = scripting.addModule("/driverlib/eqep.js", {}, false);
+const eqep1 = eqep.addInstance();
+const eqep2 = eqep.addInstance();
+const gpio = scripting.addModule("/driverlib/gpio.js", {}, false);
+const gpio1 = gpio.addInstance();
+const gpio2 = gpio.addInstance();
+const sci = scripting.addModule("/driverlib/sci.js", {}, false);
+const sci1 = sci.addInstance();
+
+// All fourteen BOOSTXL analog inputs are divided evenly between ADCA/ADCC.
+adc1.$name = "BOOSTXL_ADCA";
+adc1.adcBase = "ADCA_BASE";
+adc1.adcClockPrescaler = "ADC_CLK_DIV_2_0";
+adc1.interruptPulseMode = "ADC_PULSE_END_OF_CONV";
+adc1.enabledSOCs = ["ADC_SOC_NUMBER0","ADC_SOC_NUMBER1","ADC_SOC_NUMBER2","ADC_SOC_NUMBER3","ADC_SOC_NUMBER4","ADC_SOC_NUMBER5","ADC_SOC_NUMBER6"];
+adc1.enabledInts = ["ADC_INT_NUMBER1"];
+adc1.enableInterrupt1 = true;
+adc1.enableInterrupt1ContinuousMode = true;
+adc1.interrupt1SOCSource = "ADC_SOC_NUMBER6";
+adc1.registerInterrupts = ["1"];
+adc1.adcInt1.enableInterrupt = true;
+adc1.adcInt1.interruptHandler = "MainISR";
+adc1.soc0Name = "BOOSTXL_ADC23"; adc1.soc0IndependentNameMode = true; adc1.soc0Channel = "ADC_CH_ADCIN6";  adc1.soc0SampleWindow = 9; adc1.soc0Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+adc1.soc1Name = "BOOSTXL_ADC24"; adc1.soc1IndependentNameMode = true; adc1.soc1Channel = "ADC_CH_ADCIN3";  adc1.soc1SampleWindow = 9; adc1.soc1Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+adc1.soc2Name = "BOOSTXL_ADC26"; adc1.soc2IndependentNameMode = true; adc1.soc2Channel = "ADC_CH_ADCIN15"; adc1.soc2SampleWindow = 9; adc1.soc2Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+adc1.soc3Name = "BOOSTXL_ADC28"; adc1.soc3IndependentNameMode = true; adc1.soc3Channel = "ADC_CH_ADCIN11"; adc1.soc3SampleWindow = 9; adc1.soc3Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+adc1.soc4Name = "BOOSTXL_ADC63"; adc1.soc4IndependentNameMode = true; adc1.soc4Channel = "ADC_CH_ADCIN5";  adc1.soc4SampleWindow = 9; adc1.soc4Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+adc1.soc5Name = "BOOSTXL_ADC65"; adc1.soc5IndependentNameMode = true; adc1.soc5Channel = "ADC_CH_ADCIN8";  adc1.soc5SampleWindow = 9; adc1.soc5Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+adc1.soc6Name = "BOOSTXL_ADC69"; adc1.soc6IndependentNameMode = true; adc1.soc6Channel = "ADC_CH_ADCIN0";  adc1.soc6SampleWindow = 9; adc1.soc6Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+
+adc2.$name = "BOOSTXL_ADCC";
+adc2.adcBase = "ADCC_BASE";
+adc2.adcClockPrescaler = "ADC_CLK_DIV_2_0";
+adc2.interruptPulseMode = "ADC_PULSE_END_OF_CONV";
+adc2.enabledSOCs = ["ADC_SOC_NUMBER0","ADC_SOC_NUMBER1","ADC_SOC_NUMBER2","ADC_SOC_NUMBER3","ADC_SOC_NUMBER4","ADC_SOC_NUMBER5","ADC_SOC_NUMBER6"];
+adc2.soc0Name = "BOOSTXL_ADC25"; adc2.soc0IndependentNameMode = true; adc2.soc0Channel = "ADC_CH_ADCIN9";  adc2.soc0SampleWindow = 9; adc2.soc0Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+adc2.soc1Name = "BOOSTXL_ADC27"; adc2.soc1IndependentNameMode = true; adc2.soc1Channel = "ADC_CH_ADCIN4";  adc2.soc1SampleWindow = 9; adc2.soc1Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+adc2.soc2Name = "BOOSTXL_ADC29"; adc2.soc2IndependentNameMode = true; adc2.soc2Channel = "ADC_CH_ADCIN1";  adc2.soc2SampleWindow = 9; adc2.soc2Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+adc2.soc3Name = "BOOSTXL_ADC64"; adc2.soc3IndependentNameMode = true; adc2.soc3Channel = "ADC_CH_ADCIN3";  adc2.soc3SampleWindow = 9; adc2.soc3Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+adc2.soc4Name = "BOOSTXL_ADC66"; adc2.soc4IndependentNameMode = true; adc2.soc4Channel = "ADC_CH_ADCIN14"; adc2.soc4SampleWindow = 9; adc2.soc4Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+adc2.soc5Name = "BOOSTXL_ADC67"; adc2.soc5IndependentNameMode = true; adc2.soc5Channel = "ADC_CH_ADCIN8";  adc2.soc5SampleWindow = 9; adc2.soc5Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+adc2.soc6Name = "BOOSTXL_ADC68"; adc2.soc6IndependentNameMode = true; adc2.soc6Channel = "ADC_CH_ADCIN10"; adc2.soc6SampleWindow = 9; adc2.soc6Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+asysctl.analogReference = "INTERNAL";
+asysctl.analogReferenceVoltage = "1P65";
+
+// S4 must be in XCVR position: GPIO32 TX, GPIO33 RX, SN65HVD234.
+can1.$name = "LAUNCHXL_CAN";
+can1.bitRate = "1000000";
+can1.enableInterrupt = true;
+can1.registerInterrupts = true;
+can1.interruptFlags = ["CAN_INT_IE0"];
+can1.interruptLine = ["CAN_GLOBAL_INT_CANINT0"];
+can1.msgObjsUsed = [1,2,3,4];
+can1.can.$assign = "CANA";
+can1.can.can_rxPin.$assign = "GPIO33";
+can1.can.can_txPin.$assign = "GPIO32";
+can1.msgObj1.$name = "msgObj0"; can1.msgObj1.msgID = 257;
+can1.msgObj2.$name = "msgObj1"; can1.msgObj2.msgID = 258;
+can1.msgObj3.$name = "msgObj2"; can1.msgObj3.msgID = 259;
+can1.msgObj4.$name = "msgObj3"; can1.msgObj4.msgID = 513; can1.msgObj4.msgType = "CAN_MSG_OBJ_TYPE_TX";
+
+const pllImult = system.clockTree["PLL_IMULT"];
+pllImult.multiplyValue = 30;
+const pllRefdiv = system.clockTree["PLL_REFDIV"];
+pllRefdiv.divideValue = 2;
+const pllOdiv = system.clockTree["PLL_ODIV"];
+pllOdiv.divideValue = 3;
+const oscSource = system.clockTree["OSCCLKSRCSEL"];
+oscSource.inputSelect = "X1_XTAL";
+const xtal = system.clockTree["XTAL"];
+xtal.XTAL_Freq = 20;
+
+function configurePwm(instance, name, peripheral, pinA, pinB) {
+    instance.$name = name;
+    instance.epwmTimebase_hsClockDiv = "EPWM_HSCLOCK_DIVIDER_1";
+    instance.epwmTimebase_counterMode = "EPWM_COUNTER_MODE_UP_DOWN";
+    instance.epwmTimebase_counterModeAfterSync = "EPWM_COUNT_MODE_UP_AFTER_SYNC";
+    instance.epwmTimebase_phaseEnable = true;
+    instance.epwmCounterCompare_cmpA = 1250;
+    instance.epwmCounterCompare_cmpB = 625;
+    instance.epwmTimebase_period = 2500;
+    instance.epwmActionQualifier_EPWM_AQ_OUTPUT_A_ON_TIMEBASE_UP_CMPA = "EPWM_AQ_OUTPUT_HIGH";
+    instance.epwmActionQualifier_EPWM_AQ_OUTPUT_A_ON_TIMEBASE_DOWN_CMPA = "EPWM_AQ_OUTPUT_LOW";
+    instance.epwm.$assign = peripheral;
+    instance.epwm.epwm_aPin.$assign = pinA;
+    instance.epwm.epwm_bPin.$assign = pinB;
+}
+configurePwm(epwm1, "BOOSTXL_EPWM4039", "EPWM1", "GPIO0", "GPIO1");
+epwm1.epwmEventTrigger_EPWM_SOC_A_triggerEnable = true;
+epwm1.epwmEventTrigger_EPWM_SOC_A_triggerSource = "EPWM_SOC_TBCTR_PERIOD";
+epwm1.epwmEventTrigger_EPWM_SOC_A_triggerEventPrescalar = "1";
+configurePwm(epwm2, "BOOSTXL_EPWM3837", "EPWM2", "GPIO2", "GPIO3");
+configurePwm(epwm3, "BOOSTXL_EPWM3635", "EPWM3", "GPIO4", "GPIO15");
+configurePwm(epwm4, "BOOSTXL_EPWM8079", "EPWM7", "GPIO12", "GPIO13");
+configurePwm(epwm5, "BOOSTXL_EPWM7877", "EPWM4", "GPIO6", "GPIO7");
+configurePwm(epwm6, "BOOSTXL_EPWM7675", "EPWM5", "GPIO16", "GPIO17");
+
+eqep1.$name = "EQEP1_J12"; eqep1.useCase = "NO STROBE"; eqep1.enableModule = true; eqep1.positionCounterMax = 10000;
+eqep1.eqep.$assign = "EQEP1"; eqep1.eqep.eqep_aPin.$assign = "GPIO44"; eqep1.eqep.eqep_bPin.$assign = "GPIO37/TDO"; eqep1.eqep.eqep_indexPin.$assign = "GPIO43";
+eqep2.$name = "EQEP2_J13"; eqep2.useCase = "NO STROBE"; eqep2.enableModule = true; eqep2.positionCounterMax = 10000;
+eqep2.eqep.$assign = "EQEP2"; eqep2.eqep.eqep_aPin.$assign = "GPIO14"; eqep2.eqep.eqep_bPin.$assign = "GPIO25"; eqep2.eqep.eqep_indexPin.$assign = "GPIO26";
+
+gpio1.$name = "LED_R"; gpio1.direction = "GPIO_DIR_MODE_OUT"; gpio1.gpioPin.$assign = "GPIO31";
+gpio2.$name = "LED_G"; gpio2.direction = "GPIO_DIR_MODE_OUT"; gpio2.gpioPin.$assign = "GPIO34";
+
+// S2 default routes SCIA GPIO28/29 to the XDS110 virtual COM port.
+sci1.$name = "LAUNCHXL_UART_USB";
+sci1.selectRegisteredInterrupts = ["registerRxInt"];
+sci1.enabledFIFOInterrupts = ["SCI_INT_RXFF"];
+sci1.enabledErrorInterrupts = ["SCI_INT_FE","SCI_INT_OE"];
+sci1.rxFifo = "SCI_FIFO_RX8";
+sci1.baudRates = 115200;
+sci1.sci.$assign = "SCIA";
+sci1.sci.sci_rxPin.$assign = "GPIO28";
+sci1.sci.sci_txPin.$assign = "GPIO29";
+sci1.sciRXInt.enableInterrupt = true;

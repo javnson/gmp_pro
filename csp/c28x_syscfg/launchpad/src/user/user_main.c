@@ -18,6 +18,7 @@
 #include <ctl/component/dsa/dsa_scope.h>
 #include <ctl/component/dsa/dsa_trigger.h>
 #include <xplt.peripheral.h>
+#include <ctrl_settings.h>
 
 #if GMP_PORT_DATA_SIZE_PER_BYTES != 2
 #error "The LAUNCHXL-F280049C validation firmware requires the u16 Data Link backend"
@@ -46,14 +47,16 @@ typedef enum
 } user_dsa_state_t;
 
 static gmp_scheduler_t scheduler;
-static gmp_datalink_t datalink;
+gmp_datalink_t datalink;
 static gmp_param_tunable_t tunable;
 static gmp_mem_persp_t memory_perspective;
 static gmp_scope_service_t scope_service;
 #if defined(ENABLE_GMP_DL_PIL_SIM)
 static gmp_pil_sim_t pil;
 #endif
-static volatile uint16_t startup_task_runs;
+volatile uint32_t startup_task_runs;
+volatile uint32_t heartbeat_task_runs;
+volatile uint32_t datalink_task_runs;
 static ctl_dsa_trigger_t dsa_trigger;
 static ctl_dsa_scope_t dsa_scope;
 static volatile user_dsa_state_t dsa_state;
@@ -286,6 +289,7 @@ static gmp_task_status_t user_task_datalink(gmp_task_t* task)
 {
     gmp_dl_event_t event;
     GMP_UNUSED_VAR(task);
+    datalink_task_runs++;
 
     xplt_dl_poll_rx();
     xplt_can_service();
@@ -315,6 +319,7 @@ static gmp_task_status_t user_task_datalink(gmp_task_t* task)
 static gmp_task_status_t user_task_heartbeat(gmp_task_t* task)
 {
     GMP_UNUSED_VAR(task);
+    heartbeat_task_runs++;
     xplt_toggle_user_led();
     return GMP_TASK_DONE;
 }
@@ -334,8 +339,8 @@ static gmp_task_status_t user_task_startup_once(gmp_task_t* task)
  */
 static gmp_task_t tasks[] = {
     {"startup_once", user_task_startup_once, 1U, 0U, 1, NULL},
-    {"heartbeat", user_task_heartbeat, 500U, 0U, 1, NULL},
-    {"datalink", user_task_datalink, 2U, 0U, 1, NULL},
+    {"heartbeat", user_task_heartbeat, GMP_HEARTBEAT_TASK_PERIOD_MS, 0U, 1, NULL},
+    {"datalink", user_task_datalink, GMP_DATALINK_TASK_PERIOD_MS, 0U, 1, NULL},
 };
 
 void init(void)
@@ -356,7 +361,7 @@ void init(void)
 
     gmp_dev_dl_init(&datalink);
 #if defined(ENABLE_GMP_DL_PIL_SIM)
-    gmp_pil_sim_init(&pil, &datalink, 0x10U);
+    gmp_pil_sim_init(&pil, &datalink, GMP_PIL_DL_BASE_COMMAND);
 #endif
     gmp_param_tunable_init(&tunable, &datalink, USER_DL_TUNABLE_CMD,
                            tunable_dictionary,
@@ -389,6 +394,8 @@ void init(void)
 
 void mainloop(void)
 {
+    /* Keep the hardware FIFO shallow between 2 ms protocol-service ticks. */
+    xplt_dl_poll_rx();
     gmp_scheduler_dispatch(&scheduler);
 }
 

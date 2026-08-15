@@ -8,6 +8,7 @@
 
 /** Last raw ADC conversion and normalized control values. */
 extern volatile uint16_t launchpad_adc_raw;
+extern volatile uint16_t launchpad_pwm_compare;
 extern volatile ctrl_gt launchpad_adc_pu;
 extern volatile ctrl_gt launchpad_output_pu;
 

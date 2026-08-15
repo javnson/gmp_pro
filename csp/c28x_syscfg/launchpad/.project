@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>CTL_MC_PMSM_NT_280049C_Sensored</name>
+	<name>GMP_C2000_LAUNCHPAD_REFERENCE</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -24,26 +24,4 @@
 		<nature>org.eclipse.cdt.core.ccnature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>src/user/ctl_main.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/src/ctl_main.c</locationURI>
-		</link>
-		<link>
-			<name>src/user/ctl_main.h</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/src/ctl_main.h</locationURI>
-		</link>
-		<link>
-			<name>src/user/user_main.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/src/user_main.c</locationURI>
-		</link>
-		<link>
-			<name>src/user/user_main.h</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/src/user_main.h</locationURI>
-		</link>
-	</linkedResources>
 </projectDescription>

@@ -1,0 +1,14 @@
+{
+  "id": "c2000_launchpad_boostxl",
+  "schema": "c2000_launchpad_boostxl_board",
+  "display_name": "Portable C2000 LaunchPad BOOSTXL Contract",
+  "macro_prefix": "C2000_LAUNCHPAD_BOOSTXL",
+  "parameters": {
+    "connector_standard": "BOOSTXL physical pin aliases",
+    "analog_input_count": "16",
+    "pwm_pair_count": "6",
+    "eqep_header_count": "2",
+    "adc_trigger": "EPWM1_SOCA",
+    "control_isr": "MainISR"
+  }
+}
