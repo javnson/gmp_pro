@@ -59,6 +59,11 @@ configure_adc_initial_conditions(model_name, truth);
 set_param([model_name '/powergui'], 'SampleTime', ...
     num2str(options.PlantSampleTime, 17));
 
+% Compile the Simulink graph before starting the native controller.  The
+% controller's startup handshake is finite; model compilation after process
+% launch can otherwise consume the whole connection window.
+set_param(model_name, 'SimulationCommand', 'update');
+
 sil_process = start_sil_process(exe_path, project_dir);
 process_cleanup = onCleanup(@() stop_sil_process(sil_process));
 pause(0.5);

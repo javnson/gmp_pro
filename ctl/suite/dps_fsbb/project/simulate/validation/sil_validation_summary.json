@@ -1,0 +1,22 @@
+{
+  "suite": "dps_fsbb",
+  "generated_at": "2026-08-15T01:19:24.7234403+08:00",
+  "matlab": "C:\\Program Files\\MATLAB\\R2024b\\bin\\matlab.exe",
+  "stop_time_s": 1.5,
+  "all_pass": true,
+  "cases": [
+    {
+      "suite": "dps_fsbb",
+      "build_level": 3,
+      "build_pass": true,
+      "simulation_pass": true,
+      "runtime_assertion_triggered": false,
+      "dynamic_pass": true,
+      "steady_state_pass": true,
+      "pass": true,
+      "metrics_file": "E:\\lib\\gmp_pro\\ctl\\suite\\dps_fsbb\\project\\simulate\\validation\\build_level_3_metrics.json",
+      "log_file": "E:\\lib\\gmp_pro\\ctl\\suite\\dps_fsbb\\project\\simulate\\validation\\build_level_3_matlab.log",
+      "error": ""
+    }
+  ]
+}

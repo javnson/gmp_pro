@@ -1,5 +1,7 @@
 # GMP Keil Pack 生成器
 
+[English](README.md) | **简体中文**
+
 该工具读取 source manager 的权威模块字典
 `tools/facilities_generator/src_mgr/gmp_framework_dic.json`，将其中已注册且
 具有实际文件的 CTL 模块转换成 CMSIS-Pack 组件，并生成 `.pdsc` 与 `.pack`。

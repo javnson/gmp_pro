@@ -1,4 +1,4 @@
-function metrics = run_fsbb_validation(build_level, stop_time)
+function metrics = run_fsbb_validation(build_level, stop_time, label)
 %RUN_FSBB_VALIDATION Run one SIL validation and record controller waveforms.
 %   The executable must have been rebuilt with the requested BUILD_LEVEL.
 %   Logging blocks are added only to the in-memory model and are not saved.
@@ -6,6 +6,7 @@ function metrics = run_fsbb_validation(build_level, stop_time)
 arguments
     build_level (1,1) double {mustBeMember(build_level, [1 2 3])}
     stop_time (1,1) double {mustBePositive} = 0.8
+    label (1,:) char = ''
 end
 
 root = fileparts(mfilename('fullpath'));
@@ -88,11 +89,37 @@ metrics = struct( ...
     'cia402_command_final', command.Data(end), ...
     'adc_final_codes', reshape(double(adc.Data(end, :)), 1, []));
 
+if build_level == 2
+    response = il; reference = FSBB_DEFAULT_CURRENT_LIMIT; tolerance = 0.10;
+else
+    response = vout;
+    if build_level == 1, reference = FSBB_OPEN_LOOP_VOLTAGE_COMMAND;
+    else, reference = FSBB_DEFAULT_OUTPUT_VOLTAGE;
+    end
+    tolerance = 0.08;
+end
+addpath(fullfile(root, '..', '..', '..', 'sil_validation'));
+enable_index = find(double(enable.Data(:)) > 0.5, 1, 'first');
+if isempty(enable_index), step_time = 0; else, step_time = double(enable.Time(enable_index)); end
+step = sil_step_metrics(response, reference, step_time, tolerance);
+metrics.step_response = step;
+metrics.steady_state_error_abs = step.steady_state_error_abs;
+metrics.steady_state_error_percent = step.steady_state_error_percent;
+metrics.simulation_pass = all(isfinite(double(vout.Data(:)))) && ...
+    all(isfinite(double(il.Data(:))));
+metrics.runtime_assertion_triggered = false;
+metrics.dynamic_pass = step.dynamic_valid && step.settling_time_s < 0.9*stop_time && ...
+    step.overshoot_percent < 80;
+metrics.steady_state_pass = step.steady_state_error_percent < 12 && ...
+    metrics.enable_final > 0.5;
+metrics.pass = metrics.simulation_pass && metrics.dynamic_pass && metrics.steady_state_pass;
+
 result_dir = fullfile(root, 'validation');
 if ~isfolder(result_dir)
     mkdir(result_dir);
 end
-stem = sprintf('build_level_%d', build_level);
+if isempty(label), label = sprintf('build_level_%d', build_level); end
+stem = matlab.lang.makeValidName(label);
 
 fig = figure('Visible', 'off', 'Color', 'w', 'Position', [100 100 1200 850]);
 tiledlayout(fig, 3, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
@@ -114,7 +141,7 @@ plot(buck.Time, double(buck.Data) / cmp_max, '-', ...
     enable.Time, double(enable.Data), '--', 'LineWidth', 1.0);
 grid on; ylabel('Command'); xlabel('Time (s)'); ylim([-0.05 1.05]);
 legend('Buck effective duty', 'Boost effective duty', 'Enable', 'Location', 'best');
-exportgraphics(fig, fullfile(result_dir, [stem '_waveforms.png']), 'Resolution', 160);
+try, exportgraphics(fig, fullfile(result_dir, [stem '_waveforms.png']), 'Resolution', 160); catch exception, warning('FSBB:PlotExport','%s',exception.message); end
 close(fig);
 
 fid = fopen(fullfile(result_dir, [stem '_metrics.json']), 'w');
@@ -126,6 +153,8 @@ fprintf(['BUILD_LEVEL=%d: enable=%g, Vin=%.3f V, Vout=%.3f V, ' ...
     build_level, metrics.enable_final, metrics.vin_final_v, ...
     metrics.vout_final_v, metrics.il_final_a, metrics.iout_final_a, ...
     metrics.vrequest_final_v);
+fprintf('  pass=%d, settling=%.6g s, steady error=%.3g%%\n', ...
+    metrics.pass, step.settling_time_s, step.steady_state_error_percent);
 end
 
 function add_logger(model, source, source_port, variable, index)

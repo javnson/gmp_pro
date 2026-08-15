@@ -1,8 +1,28 @@
 {
-  "stop_time_s": 0.02,
+  "build_level": 1,
+  "stop_time_s": 0.2,
   "final_primary_voltage_v": 47.982429504394531,
-  "final_primary_current_a": -3.3461909294128418,
-  "final_secondary_voltage_v": 7.7736897468566895,
-  "final_resonant_current_a": -3.3461909294128418,
-  "final_modulation_command": 0.10000000149011612
+  "final_primary_current_a": -3.8776138970899581,
+  "final_secondary_voltage_v": 31.094758987426758,
+  "final_resonant_current_a": -3.8776138970899581,
+  "final_modulation_command": 0.40000000596046448,
+  "step_response": {
+    "step_time_s": 0,
+    "initial_value": 0.39900000594556334,
+    "reference_final": 0.40000000596046448,
+    "response_final": 0.40000000596046448,
+    "rise_time_10_90_s": 0,
+    "settling_time_s": 1E-5,
+    "overshoot_percent": 0,
+    "steady_state_error_abs": 0,
+    "steady_state_error_percent": 0,
+    "dynamic_valid": true
+  },
+  "steady_state_error_abs": 0,
+  "steady_state_error_percent": 0,
+  "simulation_pass": true,
+  "runtime_assertion_triggered": false,
+  "dynamic_pass": true,
+  "steady_state_pass": true,
+  "pass": true
 }

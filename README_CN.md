@@ -106,12 +106,16 @@ run(fullfile(getenv('GMP_PRO_LOCATION'), ...
 | --- | --- | --- |
 | 四开关全桥 DC-DC | [`dps_fsbb`](ctl/suite/dps_fsbb/README_CN.md) | 包含 C2000 工程、SDPE 配置和 UDP/SIL 仿真实验报告。 |
 | 双向隔离 CLLLC / DAB | [`dps_clllc`](ctl/suite/dps_clllc/README_CN.md) | 面向 F280025C，支持变频、移相与高级 PWM 接口。 |
+| 异步电机矢量控制 | [`mcs_acm_nt`](ctl/suite/mcs_acm_nt/README_CN.md) | 当前 ACIM 模板，包含 SIL 分级调试和 F280049C PIL 目标。 |
 | PMSM 矢量控制 | [`mcs_pmsm_nt`](ctl/suite/mcs_pmsm_nt/README_CN.md) | 当前 PMSM 新模板，支持 C2000、STM32 和仿真平台。 |
 | PMSM 参数识别 | [`mcs_pmsm_id`](ctl/suite/mcs_pmsm_id/README_CN.md) | 用于电机参数识别。 |
 | 三相跟网型变流器 | [`pgs_inv_GFL_inverter`](ctl/suite/pgs_inv_GFL_inverter/README_CN.md) | GFL 并网变流器控制工程。 |
+| 三相构网型变流器 | [`pgs_inv_GFM_inverter`](ctl/suite/pgs_inv_GFM_inverter/README.md) | GFM 构网型变流器控制工程。 |
 | 单相整流/逆变器 | [`pgs_sinv_rc`](ctl/suite/pgs_sinv_rc/readme_cn.md) | 包含 BUILD_LEVEL 1–5、重复控制及完整 SIL 实验报告。 |
 
-`mcs_pmsm` 和部分 `mcs_acm` 内容属于较早的工程结构，适合兼容维护，不建议作为新项目的首选模板。完整套件说明见 [CTL Suite 指南](ctl/suite/readme_cn.md)。
+旧的 `mcs_pmsm` 和 `mcs_acm` 目录已于 2026 年 8 月移除。新项目应使用
+`mcs_pmsm_nt`、`mcs_pmsm_id` 或 `mcs_acm_nt`；旧版手册中的历史路径不能再作为
+仓库内构建入口。完整套件说明见 [CTL Suite 指南](ctl/suite/readme_cn.md)。
 
 ### 1.5 在现有工程中轻量使用 CTL
 
@@ -145,7 +149,6 @@ CTL 使用的类型、数学运算、断言及可选 tick 接口。普通纯算�
 | [`vcore`](vcore/readme_cn.md) | HDL/Verilog 与相关实验性平台支持。 |
 | [`slib`](slib/readme_cn.md) | GMP MATLAB/Simulink 库的源文件、安装脚本和版本化安装目录。 |
 | [`tools`](tools) | SDPE、源代码管理、SIL/PIL、调试器、安装器等开发工具。 |
-| [`quick_start`](quick_start/readme_cn.md) | 轻量级工程和源文件生成示例。 |
 | [`manual`](manual/README_CN.md) | 使用指南、编码规范及平台操作文档。 |
 | [`third_party`](third_party) | 仓库直接维护的第三方依赖。 |
 

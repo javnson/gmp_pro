@@ -12,6 +12,8 @@ types for matrix and numerical calculations.
 | --- | --- |
 | [`numerical_solver`](numerical_solver/readme.md) | Numerical equation and solver experiments |
 | [`power_electronics_objects`](power_electronics_objects/readme.md) | C++ models of converters and controlled plants |
+| `circuit_solver` | Historical Python modified-nodal-analysis experiments |
+| `component` | Early C++ interface experiments; not exported by `cctl.hpp` |
 
 CCTL is not the default runtime used by current hardware suites. For production
 embedded control, start with `ctl/component` and `ctl/suite`; use CCTL where C++

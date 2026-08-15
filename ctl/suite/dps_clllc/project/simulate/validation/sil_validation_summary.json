@@ -1,0 +1,61 @@
+{
+  "suite": "dps_clllc",
+  "generated_at": "2026-08-15T01:27:09.1248739+08:00",
+  "matlab": "C:\\Program Files\\MATLAB\\R2024b\\bin\\matlab.exe",
+  "stop_time_s": 0.2,
+  "all_pass": false,
+  "cases": [
+    {
+      "suite": "dps_clllc",
+      "build_level": 1,
+      "build_pass": true,
+      "simulation_pass": true,
+      "runtime_assertion_triggered": false,
+      "dynamic_pass": true,
+      "steady_state_pass": true,
+      "pass": false,
+      "metrics_file": "E:\\lib\\gmp_pro\\ctl\\suite\\dps_clllc\\project\\simulate\\validation\\build_level_1_metrics.json",
+      "log_file": "E:\\lib\\gmp_pro\\ctl\\suite\\dps_clllc\\project\\simulate\\validation\\build_level_1_matlab.log",
+      "error": "MATLAB exited with code 1."
+    },
+    {
+      "suite": "dps_clllc",
+      "build_level": 2,
+      "build_pass": true,
+      "simulation_pass": true,
+      "runtime_assertion_triggered": false,
+      "dynamic_pass": false,
+      "steady_state_pass": false,
+      "pass": false,
+      "metrics_file": "E:\\lib\\gmp_pro\\ctl\\suite\\dps_clllc\\project\\simulate\\validation\\build_level_2_metrics.json",
+      "log_file": "E:\\lib\\gmp_pro\\ctl\\suite\\dps_clllc\\project\\simulate\\validation\\build_level_2_matlab.log",
+      "error": "MATLAB exited with code 1."
+    },
+    {
+      "suite": "dps_clllc",
+      "build_level": 3,
+      "build_pass": true,
+      "simulation_pass": true,
+      "runtime_assertion_triggered": false,
+      "dynamic_pass": false,
+      "steady_state_pass": false,
+      "pass": false,
+      "metrics_file": "E:\\lib\\gmp_pro\\ctl\\suite\\dps_clllc\\project\\simulate\\validation\\build_level_3_metrics.json",
+      "log_file": "E:\\lib\\gmp_pro\\ctl\\suite\\dps_clllc\\project\\simulate\\validation\\build_level_3_matlab.log",
+      "error": "MATLAB exited with code 1."
+    },
+    {
+      "suite": "dps_clllc",
+      "build_level": 4,
+      "build_pass": true,
+      "simulation_pass": true,
+      "runtime_assertion_triggered": false,
+      "dynamic_pass": false,
+      "steady_state_pass": false,
+      "pass": false,
+      "metrics_file": "E:\\lib\\gmp_pro\\ctl\\suite\\dps_clllc\\project\\simulate\\validation\\build_level_4_metrics.json",
+      "log_file": "E:\\lib\\gmp_pro\\ctl\\suite\\dps_clllc\\project\\simulate\\validation\\build_level_4_matlab.log",
+      "error": "MATLAB exited with code 1."
+    }
+  ]
+}

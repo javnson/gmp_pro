@@ -81,8 +81,8 @@ extern "C"
  */
 
 /**
- * @brief 1=open-loop hardware validation; 2=current loop; 3=measured-angle current loop; 4=speed loop; 5=position loop; 6=communication mode.
- *        Options: (1), (2), (3), (4), (5), (6)
+ * @brief Incremental commissioning gate compiled beneath the offline-identification state machine: 1=V/f voltage path; 2=synthetic-angle current path; 3=encoder-angle current path; 4=speed path. The SIL validator runs the same complete offline-identification sequence at every supported level.
+ *        Options: (1), (2), (3), (4)
  */
 #define BUILD_LEVEL (2)
 
@@ -380,7 +380,7 @@ extern "C"
 
 /**
  * @brief Incremental commissioning level. 1: V/f voltage open loop; 2: current loop with synthetic electrical angle; 3: current loop with encoder angle; 4: speed loop with encoder feedback.
- *        Options: (1), (2), (3), (4), (5), (6)
+ *        Options: (1), (2), (3), (4)
  */
 #ifndef BUILD_LEVEL
 #define BUILD_LEVEL (2)

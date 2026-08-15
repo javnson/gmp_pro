@@ -1,5 +1,7 @@
 # F280049C ACIM 处理器在环仿真
 
+[English](README.md) | **简体中文**
+
 本目录提供 `MCS_STD_ACM_MODEL.slx` 的可复现 PIL 流程。目标工程的 SDPE requirement 是唯一配置源，统一管理 PIL 开关、BUILD_LEVEL、Data Link 命令号、串口波特率、UDP 端点、掩码和通道映射。
 
 ## 安全边界

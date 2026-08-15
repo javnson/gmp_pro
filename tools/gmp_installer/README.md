@@ -214,7 +214,7 @@ A single command can also be run without opening an interactive prompt:
 ```bat
 gmp_env.bat python --version
 gmp_env.bat cmake --version
-gmp_env.bat msbuild ctl\suite\mcs_pmsm\project\simulate\motor_control_simulink.vcxproj /p:Platform=x64
+gmp_env.bat msbuild ctl\suite\mcs_pmsm_nt\project\simulate\GMP_Motor_Control_simulink.sln /p:Configuration=Release /p:Platform=x64
 ```
 
 Visual Studio must inherit the GMP environment if its MSBuild-driven vcpkg

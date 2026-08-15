@@ -9,7 +9,7 @@ functions intentionally have empty bodies.
 ## Generated GMP sources
 
 The `gmp_pico_src/gmp_src_mgr` directory selects `core/std`, the GMP function
-scheduler, the base device interface, and `csp/rp_pico`. Run `gmp_config.bat`,
+scheduler, the base device interface, and `csp/rpi_pico`. Run `gmp_config.bat`,
 generate the source and header mirrors, and click **Generate CMake** if the
 module selection changes. The manager writes
 `gmp_pico_src/gmp_src_mgr/gmp_config.cmake`. The stable

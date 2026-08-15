@@ -17,5 +17,23 @@
   "command_d_mean_pu": 0,
   "command_q_mean_pu": 0,
   "finite": true,
-  "pass": true
+  "pass": false,
+  "step_response": {
+    "step_time_s": 0.30007500000000353,
+    "initial_value": 0.42374895521764283,
+    "reference_final": 0.4530831816830414,
+    "response_final": 0.45311743831955692,
+    "rise_time_10_90_s": 0,
+    "settling_time_s": null,
+    "overshoot_percent": 404.21296789746469,
+    "steady_state_error_abs": 3.4256636515517247E-5,
+    "steady_state_error_percent": 0.0075607830748133575,
+    "dynamic_valid": false
+  },
+  "steady_state_error_abs": 3.4256636515517247E-5,
+  "steady_state_error_percent": 0.0075607830748133575,
+  "simulation_pass": true,
+  "runtime_assertion_triggered": false,
+  "dynamic_pass": false,
+  "steady_state_pass": true
 }

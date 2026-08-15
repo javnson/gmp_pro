@@ -1,5 +1,7 @@
 # CTL Portable (No CSP)
 
+**English** | [简体中文](README_CN.md)
+
 Define `GMP_CTL_PORTABLE` when an application only needs CTL algorithms and
 does not need the GMP runtime or CSP peripheral abstraction. Include
 `ctl/math_block/gmp_math.h` as the numeric entry; it loads the portable type

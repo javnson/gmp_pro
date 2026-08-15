@@ -1,3 +1,9 @@
+# 控制器模块划分设计笔记
+
+> 本文是架构讨论和建议稿，不是当前 GMP API、模块清单或已验证能力的规范说明。
+> 实际接口以 `ctl/component`、`ctl/framework` 源码、Facility 注册表和对应 suite
+> README 为准。
+
 ### 一、 模块深度分析与优化建议
 
 #### 1. 调制环节 (Modulator)

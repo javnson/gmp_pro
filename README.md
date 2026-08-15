@@ -123,13 +123,16 @@ assembling an empty project manually:
 | --- | --- | --- |
 | Four-switch buck-boost DC-DC | [`dps_fsbb`](ctl/suite/dps_fsbb) | C2000 hardware, SDPE configuration, and UDP/SIL validation assets. |
 | Bidirectional isolated CLLLC / DAB | [`dps_clllc`](ctl/suite/dps_clllc) | F280025C target with variable-frequency and phase-shift PWM support. |
+| AC induction-motor vector control | [`mcs_acm_nt`](ctl/suite/mcs_acm_nt) | Current ACIM template with SIL commissioning and an F280049C PIL target. |
 | PMSM vector control | [`mcs_pmsm_nt`](ctl/suite/mcs_pmsm_nt) | Current PMSM template for C2000, STM32, and simulation. |
 | PMSM parameter identification | [`mcs_pmsm_id`](ctl/suite/mcs_pmsm_id) | Motor parameter-identification workflow. |
 | Three-phase grid-following converter | [`pgs_inv_GFL_inverter`](ctl/suite/pgs_inv_GFL_inverter) | Grid-following inverter control project. |
+| Three-phase grid-forming converter | [`pgs_inv_GFM_inverter`](ctl/suite/pgs_inv_GFM_inverter) | Grid-forming inverter control project. |
 | Single-phase rectifier/inverter | [`pgs_sinv_rc`](ctl/suite/pgs_sinv_rc) | BUILD_LEVEL 1-5 workflow and repetitive control. |
 
-`mcs_pmsm` and parts of `mcs_acm` use an older project layout. Keep them for
-compatibility work, but prefer the newer templates for new applications.
+The former `mcs_pmsm` and `mcs_acm` directories were removed in August 2026.
+Use `mcs_pmsm_nt`, `mcs_pmsm_id`, or `mcs_acm_nt` instead; historical paths in
+the legacy manual are not buildable repository entry points.
 
 ### 1.5 Add CTL to an existing project
 
@@ -168,7 +171,6 @@ a system tick implementation.
 | [`vcore`](vcore) | HDL/Verilog support and experimental platforms. |
 | [`slib`](slib) | MATLAB/Simulink library sources, installer, and release-specific output. |
 | [`tools`](tools) | SDPE, source management, SIL/PIL, debugger, and installer tools. |
-| [`quick_start`](quick_start) | Small examples and source-generation demonstrations. |
 | [`manual`](manual) | User guides, coding conventions, and platform workflows. |
 | [`third_party`](third_party) | Third-party sources maintained directly in this repository. |
 

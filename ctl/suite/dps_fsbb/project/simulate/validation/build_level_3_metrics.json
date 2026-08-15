@@ -17,5 +17,24 @@
     2297,
     2271,
     2048
-  ]
+  ],
+  "step_response": {
+    "step_time_s": 0.775277,
+    "initial_value": 16.27593039240837,
+    "reference_final": 24,
+    "response_final": 24.000146768712998,
+    "rise_time_10_90_s": 0.18015000000000003,
+    "settling_time_s": 0.21884800000000704,
+    "overshoot_percent": 0.47414126178559757,
+    "steady_state_error_abs": 0.00014676871299812433,
+    "steady_state_error_percent": 0.00061153630415885141,
+    "dynamic_valid": true
+  },
+  "steady_state_error_abs": 0.00014676871299812433,
+  "steady_state_error_percent": 0.00061153630415885141,
+  "simulation_pass": true,
+  "runtime_assertion_triggered": false,
+  "dynamic_pass": true,
+  "steady_state_pass": true,
+  "pass": true
 }

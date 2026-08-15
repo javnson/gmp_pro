@@ -49,7 +49,7 @@
       "group": "Commissioning",
       "macro": "BUILD_LEVEL",
       "enabled": true,
-      "value": "(5)",
+      "value": "(2)",
       "options": [
         "(1)",
         "(2)",

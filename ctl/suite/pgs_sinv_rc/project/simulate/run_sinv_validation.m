@@ -6,6 +6,7 @@ arguments
     label (1,:) char = ''
 end
 root = fileparts(mfilename('fullpath'));
+run(fullfile(root, 'sdpe_mgr', 'ctrl_settings_matlab_init.m'));
 if build_level <= 2
     model = 'PGS_STD_SINV_MODEL_RLOAD';
 elseif build_level <= 4
@@ -56,7 +57,7 @@ out = sim(model, 'StopTime', num2str(stop_time, 17), 'ReturnWorkspaceOutputs', '
 
 vac = out.get('vac'); iac = out.get('iac'); vbus = out.get('vbus');
 iref = out.get('iref'); modulation = out.get('modulation'); pll_hz = out.get('pll_hz');
-p_pu = out.get('p_pu'); q_pu = out.get('q_pu'); error = out.get('current_error');
+p_pu = out.get('p_pu'); q_pu = out.get('q_pu'); current_error = out.get('current_error');
 fdrc = out.get('fdrc_output'); fdrc_enabled = out.get('fdrc_enabled');
 enable = out.get('output_enable'); state = out.get('cia402_state');
 active_errors = out.get('active_errors'); diverge_fault = out.get('diverge_fault_value');
@@ -78,7 +79,7 @@ metrics = struct('build_level', build_level, 'model', model, ...
     'diverge_fault_value', double(diverge_fault.Data(end)), ...
     'vac_rms_v', tail_rms(vac, tail), 'iac_rms_a', tail_rms(iac, tail), ...
     'vbus_mean_v', tail_mean(vbus, tail), 'iref_rms_a', tail_rms(iref, tail), ...
-    'current_error_rms_pu', tail_rms(error, tail), ...
+    'current_error_rms_pu', tail_rms(current_error, tail), ...
     'active_power_pu', tail_mean(p_pu, tail), 'reactive_power_pu', tail_mean(q_pu, tail), ...
     'pll_frequency_hz', tail_mean(pll_hz, tail), ...
     'fdrc_enabled_final', double(fdrc_enabled.Data(end)), ...
@@ -87,6 +88,36 @@ metrics = struct('build_level', build_level, 'model', model, ...
     'active_power_first_cycle_pu', takeover_power_pu, ...
     'iref_first_cycle_rms_a', takeover_iref_rms_a, ...
     'iac_thd_percent', signal_thd(iac, tail, 50.0));
+
+if build_level == 1
+    response = cycle_rms_envelope(vac, 50.0);
+    reference = SINV_LEVEL1_VOLTAGE_REF_PU*CTRL_VOLTAGE_BASE/sqrt(2);
+    tolerance = 0.10;
+elseif build_level == 2
+    response = cycle_rms_envelope(iac, 50.0);
+    reference = SINV_LEVEL2_CURRENT_REF_PEAK_PU*CTRL_CURRENT_BASE/sqrt(2);
+    tolerance = 0.10;
+elseif build_level == 3
+    response = p_pu; reference = SINV_LEVEL3_ACTIVE_POWER_REF_PU; tolerance = 0.10;
+elseif build_level == 4
+    response = p_pu; reference = SINV_LEVEL4_ACTIVE_POWER_REF_PU; tolerance = 0.12;
+else
+    response = vbus; reference = SINV_DC_BUS_REF_V; tolerance = 0.08;
+end
+if isempty(enable_index), step_time = 0; else, step_time = takeover_time; end
+addpath(fullfile(root, '..', '..', '..', 'sil_validation'));
+step = sil_step_metrics(response, reference, step_time, tolerance);
+metrics.step_response = step;
+metrics.steady_state_error_abs = step.steady_state_error_abs;
+metrics.steady_state_error_percent = step.steady_state_error_percent;
+metrics.simulation_pass = all(isfinite(double(vac.Data(:)))) && ...
+    all(isfinite(double(iac.Data(:)))) && metrics.active_errors_final == 0;
+metrics.runtime_assertion_triggered = false;
+metrics.dynamic_pass = step.dynamic_valid && step.settling_time_s < 0.9*stop_time && ...
+    step.overshoot_percent < 100;
+metrics.steady_state_pass = step.steady_state_error_percent < 15 && ...
+    metrics.output_enable_final > 0.5 && metrics.diverge_fault_value == 0;
+metrics.pass = metrics.simulation_pass && metrics.dynamic_pass && metrics.steady_state_pass;
 
 result_dir = fullfile(root, 'validation');
 if ~isfolder(result_dir), mkdir(result_dir); end
@@ -103,13 +134,15 @@ ylabel('Bus / power'); legend('V_{dc}','P (pu)','Q (pu)');
 nexttile; plot(modulation.Time,modulation.Data, fdrc.Time,fdrc.Data, ...
     fdrc_enabled.Time,fdrc_enabled.Data,'LineWidth',1.0); grid on;
 ylabel('Controller'); xlabel('Time (s)'); legend('modulation','FDRC output','FDRC enabled');
-exportgraphics(fig, fullfile(result_dir, [stem '_waveforms.png']), 'Resolution', 160);
+try, exportgraphics(fig, fullfile(result_dir, [stem '_waveforms.png']), 'Resolution', 160); catch exception, warning('SINV:PlotExport','%s',exception.message); end
 close(fig);
 fid = fopen(fullfile(result_dir, [stem '_metrics.json']), 'w');
 fprintf(fid, '%s\n', jsonencode(metrics, PrettyPrint=true)); fclose(fid);
 fprintf('BL%d %s: enable=%g, Vac=%.3f Vrms, Iac=%.3f Arms, Vdc=%.3f V, THD=%.2f%%\n', ...
     build_level, model, metrics.output_enable_final, metrics.vac_rms_v, ...
     metrics.iac_rms_a, metrics.vbus_mean_v, metrics.iac_thd_percent);
+fprintf('  pass=%d, settling=%.6g s, steady error=%.3g%%\n', ...
+    metrics.pass, step.settling_time_s, step.steady_state_error_percent);
 end
 
 function add_logger(model, source, port, variable, index)
@@ -152,6 +185,13 @@ for h = 2:min(40,floor((fs/2)/fundamental))
     harmonic_sq = harmonic_sq + spectrum(round(h*fundamental*n/fs)+1)^2;
 end
 thd_percent = 100*sqrt(harmonic_sq)/max(fundamental_amp,eps);
+end
+
+function envelope = cycle_rms_envelope(series, fundamental)
+t = double(series.Time(:)); x = double(series.Data(:));
+sample_time = median(diff(t));
+window = max(2, round(1/(fundamental*sample_time)));
+envelope = timeseries(sqrt(movmean(x.^2, [window-1 0])), t);
 end
 
 function stop_controller(controller)

@@ -14,7 +14,7 @@
 
 ### 步骤 1: 实现硬件抽象层 (HAL)
 
-库文件声明了一系列 `ctl_` (Control) 前缀的函数，但未给出具体实现。您需要在您的项目 `.c` 文件中实现这些函数，以便状态机能控制您的具体硬件。
+库文件声明了一系列 `ctl_` (Control) 前缀的函数。`src/ctl_cia402_callback_fn.c` 提供弱默认占位；正式目标仍须覆盖实际使用的功率、校准、保护和机械回调，不能把默认占位当作硬件实现。
 
 **必须实现的接口清单：**
 
@@ -70,7 +70,7 @@ void main_loop(void) {
         // 例如：g_drive_sm.control_word.all = RxPDO_ControlWord;
         
         // 2. 调度状态机核心逻辑
-        dispatch_cia402_state_machine(&g_drive_sm);
+        cia402_dispatch(&g_drive_sm);
         
         // 3. 将状态字发送回上位机
         // TxPDO_StatusWord = g_drive_sm.state_word.all;
@@ -83,6 +83,12 @@ void main_loop(void) {
 ## 3. 控制与状态流转
 
 ### 标准启动序列 (Happy Path)
+
+当前头文件默认定义了 `CIA402_CONFIG_DISABLE_CONTROL_WORD_DEFAULT`，因此
+`init_cia402_state_machine()` 后 `flag_enable_control_word` 初始为 0。要使用下面
+的 0x6040 控制字序列，应用必须先设置
+`g_drive_sm.flag_enable_control_word = 1`；否则应使用 `cia402_send_cmd()` 和
+`cia402_fault_reset()` 直接请求命令。
 
 要使驱动器进入运行状态 (`Operation Enabled`)，上位机或主控逻辑需按以下顺序发送控制字（Control Word `0x6040`）：
 
@@ -115,13 +121,13 @@ void main_loop(void) {
 
 如果您在调试初期不想按严格的 `0x06 -> 0x07 -> 0x0F` 顺序发送命令：
 
-- **启用宏**: `#define CIA402_CONFIG_ENABLE_SEQUENCE_SWITCH`
+- **当前默认**: `cia402_state_machine.h` 已定义 `CIA402_CONFIG_ENABLE_SEQUENCE_SWITCH`。
 - **效果**: 您可以直接发送 `0x0F`，状态机将自动处理中间跳转，快速进入运行状态。
 
 ### 禁用控制字解析
 
-- **启用宏**: `#define CIA402_CONFIG_DISABLE_CONTROL_WORD_DEFAULT`
-- **效果**: 初始化后，状态机不会解析 `sm->control_word`。您可以通过直接调用 API 函数 `cia402_transit()` 强制切换状态，这在某些不由总线控制的单机应用中很有用。
+- **当前默认**: `cia402_state_machine.h` 已定义 `CIA402_CONFIG_DISABLE_CONTROL_WORD_DEFAULT`。
+- **效果**: 初始化后，状态机不解析 `sm->control_word`。应用可调用 `cia402_send_cmd()` 请求状态机命令，并用 `cia402_fault_reset()` 请求故障复位；`cia402_transit()` 是更底层的状态迁移入口，不应代替正常命令流程。
 
 ### 调整延时
 
@@ -136,7 +142,7 @@ void main_loop(void) {
 | **函数名**                      | **描述**                                                     |
 | ------------------------------- | ------------------------------------------------------------ |
 | `init_cia402_state_machine`     | 初始化对象，设置默认回调，重置状态。                         |
-| `dispatch_cia402_state_machine` | **核心函数**。解析控制字，检查跳转条件，执行回调，更新状态字。 |
+| `cia402_dispatch`               | **核心函数**。解析控制字或直接命令，检查跳转条件，执行回调，更新状态字。 |
 | `cia402_update_status_word`     | 根据当前内部状态刷新 `state_word` 的位（如 Ready, Switched On, Fault 等）。 |
 | `cia402_fault_request`          | 触发故障。将状态强行切换到 `FAULT_REACTION`，随后进入 `FAULT`。 |
 | `get_cia402_state`              | 辅助工具：将状态字数值转换为枚举状态。                       |

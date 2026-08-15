@@ -1,5 +1,7 @@
 # F280049C PMSM Processor-in-the-Loop
 
+**English** | [简体中文](README_CN.md)
+
 This folder contains the reproducible PIL workflow for `MCS_STD_PMSM_MODEL.slx`. The target SDPE requirement is the single source for the PIL enable switch, BUILD_LEVEL, Data Link command allocation, UART rate, UDP endpoints, masks, and channel mappings.
 
 ## Safety boundary

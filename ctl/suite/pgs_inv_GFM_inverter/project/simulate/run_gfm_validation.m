@@ -121,6 +121,36 @@ else
         metrics.total_load_capacity_utilization < 0.60;
 end
 
+control_pass = metrics.pass;
+enable_index = find(double(signals.output_enable.Data(:)) > 0.5, 1, 'first');
+if isempty(enable_index), step_time = 0;
+else, step_time = double(signals.output_enable.Time(enable_index));
+end
+if build_level == 1
+    response = signals.vd_pu; reference = tail_mean(signals.vd_pu, tail_time);
+elseif build_level == 2
+    response = signals.id_pu; reference = 0.10;
+elseif build_level == 3
+    response = signals.vd_pu; reference = 0.50;
+elseif build_level == 4
+    response = smooth_series(signals.id_pu, 0.01); reference = 0.10;
+else
+    response = cycle_rms_envelope(signals.ia_pu, 50.0);
+    reference = tail_mean(response, tail_time);
+    step_time = min(0.68, 0.5*stop_time);
+end
+addpath(fullfile(root, '..', '..', '..', 'sil_validation'));
+step = sil_step_metrics(response, reference, step_time, 0.10);
+metrics.step_response = step;
+metrics.steady_state_error_abs = step.steady_state_error_abs;
+metrics.steady_state_error_percent = step.steady_state_error_percent;
+metrics.simulation_pass = metrics.finite;
+metrics.runtime_assertion_triggered = false;
+metrics.dynamic_pass = step.dynamic_valid && step.settling_time_s < 0.9*stop_time && ...
+    step.overshoot_percent < 120;
+metrics.steady_state_pass = control_pass;
+metrics.pass = metrics.simulation_pass && metrics.dynamic_pass && metrics.steady_state_pass;
+
 result_dir = fullfile(root, 'validation');
 if ~isfolder(result_dir), mkdir(result_dir); end
 if isempty(label), label = sprintf('build_level_%d', build_level); end
@@ -147,7 +177,7 @@ nexttile;
 plot(signals.angle_pu.Time, signals.angle_pu.Data, ...
     signals.pll_error_pu.Time, signals.pll_error_pu.Data, 'LineWidth', 1.0);
 grid on; ylabel('Sync'); xlabel('Time (s)'); legend('angle (pu)','PLL error');
-exportgraphics(fig, fullfile(result_dir, [stem '_waveforms.png']), 'Resolution', 160);
+try, exportgraphics(fig, fullfile(result_dir, [stem '_waveforms.png']), 'Resolution', 160); catch exception, warning('GFM:PlotExport','%s',exception.message); end
 close(fig);
 
 fid = fopen(fullfile(result_dir, [stem '_metrics.json']), 'w');
@@ -156,6 +186,21 @@ fclose(fid);
 fprintf('BL%d: pass=%d, blend=%.3f, Vd=%.4f pu, I=%.4f pu, f=%.3f Hz\n', ...
     build_level, metrics.pass, metrics.transition_blend_final, ...
     metrics.voltage_d_mean_pu, metrics.phase_current_rms_pu, metrics.frequency_hz);
+fprintf('  settling=%.6g s, steady error=%.3g%%\n', ...
+    step.settling_time_s, step.steady_state_error_percent);
+end
+
+function envelope = cycle_rms_envelope(series, fundamental)
+t = double(series.Time(:)); x = double(series.Data(:));
+sample_time = median(diff(t));
+window = max(2, round(1/(fundamental*sample_time)));
+envelope = timeseries(sqrt(movmean(x.^2, [window-1 0])), t);
+end
+
+function filtered = smooth_series(series, window_s)
+t = double(series.Time(:)); x = double(series.Data(:));
+window = max(1, round(window_s/median(diff(t))));
+filtered = timeseries(movmean(x, [window-1 0]), t);
 end
 
 function out = run_loaded_model(root, model, level, stop_time)

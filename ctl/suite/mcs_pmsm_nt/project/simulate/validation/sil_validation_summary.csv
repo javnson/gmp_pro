@@ -1,0 +1,2 @@
+"suite","build_level","build_pass","simulation_pass","runtime_assertion_triggered","dynamic_pass","steady_state_pass","pass","metrics_file","log_file","error"
+"mcs_pmsm_nt","2","True","True","False","False","False","False","E:\lib\gmp_pro\ctl\suite\mcs_pmsm_nt\project\simulate\validation\build_level_2_metrics.json","E:\lib\gmp_pro\ctl\suite\mcs_pmsm_nt\project\simulate\validation\build_level_2_matlab.log","MATLAB exited with code 1."

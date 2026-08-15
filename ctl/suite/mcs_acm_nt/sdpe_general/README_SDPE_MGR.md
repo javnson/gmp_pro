@@ -6,7 +6,7 @@ implementation under `project/`.
 - `sdpe_requirement.json`: common control parameters, feature switches and
   `BUILD_LEVEL` semantics. It intentionally contains no board entity.
 - `sdpe_settings.bat`: project-local paths and output settings.
-- `sdpe_edit.bat`: open the common requirement and all six platform requirements in one SDPE Project Requirement GUI.
+- `sdpe_edit.bat`: open the common requirement and both platform requirements in one SDPE Project Requirement GUI.
 - `sdpe_generate.bat`: generate SDPE headers for this project.
 - `sdpe_validate.bat`: validate the central SDPE library and read this requirement file.
 
@@ -19,12 +19,12 @@ src\
   sdpe_mcs_acim_nt_common_settings.h
 ```
 
-Each project SDPE header includes this common header and defines only hardware
-timing, sensor scaling and peripheral mappings. `ctl_settings_defaults.h` is a
-compatibility include for the same generated common header; it no longer owns a
-second set of defaults.
+Each project generation combines the common requirement with target timing,
+sensor scaling and peripheral mappings in its generated
+`sdpe_mgr/ctrl_settings.h`. Shared controller sources consume the separately
+generated common header through `ctl_settings_defaults.h`; that compatibility
+include no longer owns a second set of defaults.
 
 Project id: `mcs_acim_nt_common`
-Macro prefix: `MCS_PMSM_NT_COMMON`
+Macro prefix: `MCS_ACIM_NT_COMMON`
 Suite: `mcs_acim_nt`
-

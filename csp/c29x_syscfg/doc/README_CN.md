@@ -1,7 +1,9 @@
 # GMP C29x SysConfig 外设使用指南
 
+[English](readme.md) | **简体中文**
+
 本文面向 F29H85x/C29x 的 GMP 工程。以下接口以 TI F29H85x SDK
-`C:\ti\f29h85x-sdk_1_02_01_00` 和 DriverLib 为基准。引脚、外设实例、SOC 编号和中断号应在
+1.02.01.00 和 DriverLib 为基准。引脚、外设实例、SOC 编号和中断号应在
 `.syscfg` 中配置，并在 C 代码中使用生成的 `board.h` 名称；不要把开发板引脚号散落在控制算法中。
 
 ## 1. GMP 工程启动顺序

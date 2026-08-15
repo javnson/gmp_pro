@@ -15,7 +15,9 @@
 | Area | Responsibility | Representative entry points |
 | --- | --- | --- |
 | Root | Public aggregate headers and user entry BAT files | `gmp_core.h`, `gmp_core.hpp`, `install_gmp*.bat`, `gmp_env.bat` |
-| `core/std` | Types, compiler/config composition, lifecycle, weak ports | `gmp.std.h`, `gmp_core_func.h`, `gmp_cport.h`, `src/gmp_std_port.c` |
+| `core/std` | Types and compiler/configuration composition | `gmp.std.h`, `cfg/*.h`, `arch/*.h`, `cc/*.inl` |
+| `core/base` | Portable base services | `gmp_base.h`, tick, printing, memory and port helpers |
+| `core/rt` | Lifecycle assembly, weak application defaults and CSP runtime hooks | `gmp_runtime.h`, `csp_port.h`, `src/gmp_runtime.c` |
 | `core/dev` | Datalink, tunable variables, PIL, devices and peripheral interfaces | `gmp_datalink`, `gmp_tunable`, `gmp_pil_core` sources |
 | `core/pm` | Cooperative tasks, schedulers, workflow/state machines | `function_scheduler.h`, `state_machine.h` |
 | `core/mm` | Optional memory management | `block_mem.h` |
@@ -31,7 +33,7 @@
 
 ## 2. Runtime and control flow
 
-`gmp_core.h` includes `core/std/gmp.std.h` before `gmp_core_func.h`. Configuration therefore exists before inline lifecycle functions are compiled.
+`gmp_core.h` includes `gmp_type.h` (and therefore `core/std/gmp.std.h`) before peripheral types, CSP declarations, base services and `core/rt/gmp_runtime.h`. Configuration therefore exists before lifecycle and peripheral interfaces are compiled. `GMP_CTL_PORTABLE` selects the lightweight CTL-only entry and skips this runtime assembly.
 
 Initialization in `gmp_base_init()` is ordered:
 
@@ -49,7 +51,7 @@ The fast control path is separate. A hardware ISR or the Windows SIL packet loop
 - standard framework: `ctl_input_callback()`, `ctl_dispatch()`, `ctl_output_callback()`;
 - nano framework: `ctl_fm_periodic_dispatch()` unless manually dispatched, followed by user `ctl_dispatch()`.
 
-User lifecycle functions have weak/default implementations for supported compilers, but target applications normally provide `setup_peripheral`, `ctl_init`, `init`, `mainloop`, `ctl_mainloop`, and the inline/callback control stages.
+User lifecycle functions are declared in `core/rt/gmp_runtime.h` and their default/weak implementations live in `core/rt/src/gmp_runtime.c`. MSVC uses alternate names, GCC-like compilers use weak attributes, and the TI-specific branch currently supplies no defaults. Target applications normally provide `setup_peripheral`, `ctl_init`, `init`, `mainloop`, `ctl_mainloop`, and the inline/callback control stages.
 
 ## 3. Configuration composition
 
@@ -60,8 +62,9 @@ User lifecycle functions have weak/default implementations for supported compile
 3. CSP `csp.config.h` unless CSP is disabled.
 4. GMP defaults from `core/std/cfg/gmp.cfg.h`.
 5. validation from `core/std/cfg/validate.cfg.h`.
-6. compiler, error-code, CSP type, GMP type, endian and peripheral definitions.
-7. CTL config, math, application `ctl_main.h`, `xplt.ctl_interface.h`, and dispatch when CTL is enabled.
+6. compiler and error-code definitions, optional CSP types, architecture defaults, GMP types and endian definitions.
+
+`gmp_core.h` then adds peripheral handle types, CSP/base services, peripheral contracts, and—when CTL is enabled—CTL config, math, application `ctl_main.h`, `xplt.ctl_interface.h`, and dispatch.
 
 This order is why project configuration and include paths are part of the ABI. Review macro definitions across the complete chain before moving or renaming them.
 

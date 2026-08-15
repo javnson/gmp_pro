@@ -1,121 +1,74 @@
-# Start a GMP project using TI Sysconfig
-
-
-
-## Preparation
-
-For start a GMP project using TI Sysconfig for C28x devices, the following software should be installed first
-
-+ Python3
-
-Website: https://www.python.org/downloads/windows/
-
-In order to run the GMP code generator scripts. In this document, we use Python 3.13 as example.
-
-+ C2000Ware
-
-Website:https://www.ti.com/tool/C2000WARE
-
-In order to provide the library support for the devices. In this document, we use C2000ware 5.03 as example.
-
-+ CCS
-
-Website: https://www.ti.com/tool/CCSTUDIO
-
-In order to create and build the TI C28x devices projects. In this document, we use CCS 12.8.1 as example.
-
-+ Sysconfig
-
-Website: https://www.ti.com/tool/SYSCONFIG
-
-In order to generate TI initialize code. In this document, we use Sysconfig 1.21.2 as example.
-
-## User files
-
-In GMP library, a general User file example is provided in `<GMP>/core/usr`. You may copy this folder to your workspace. Here is a brief introduction.
-
-There are three files for controller implement.
-
-`xplt_ctl_interface.h` provide the interface of the controller. User should implement the specific function to get input.
-If you disabled the Controller Nano, the following function would be called.
-
-> `ctl_input_callback()` this function will be called every MainISR, firstly.
->
-> `ctl_output_callback()` this function will be called after controller callback.
->
-> `ctl_enable_output()` this function should enable controller output.
->
-> `ctl_disable_output()` this function should disable controller output.
-
-If you enabled the controller Nano, the following function would be called.
-
->`ctl_fmif_input_stage_routine()` this function will be called every Main ISR, firstly.
->
->`ctl_fmif_output_stage_routine()` this function will be called after controller callback.
->
->`ctl_fmif_request_stage_routine()` this function will be called every Main ISR, after all the control law callback and output callback.
->
->`ctl_fmif_output_enable()` this function will be called to enable output.
->
->`ctl_fmif_output_disable()` this function will be called to disable output.
-
-`ctl_main.c` will implement the initialization function.
-
-`ctl_main.h` will implement the main control law function.
-
-
-
-+ User main and peripheral manager
-
-`cplt.config.h` project config headers.
-
-`user_main.c` implement main init and loop function.
-
-`user_main.h` header of `user_main.c`.
-
-`xplt.peripheral.c` implement the peripheral init function.
-
-`xplt.peripheral.h` define all peripheral declarations.
-
-
-
-## GMP Code generator tools preparation
-
-In order to address GMP code, and add them to your workspace, we provide a easy tools for user.
-
-You should copy the folder `<GMP ROOTS>/tools/facilities_generator/gmp_file_generator` to your own project workspace.
-
-
-
-## Config Compile environment
-
-Add necessary header paths：
-
-+ Necessary Library Path
-
-
-
-+ User files path
-
-
-
-+ GMP generated path
-
-
-
-Add GMP related files to compiling list.
-
-
-
-Add User files to compiling list.
-
-
-
-## Enjoy and Start your own controller
-
-
-
-
-
-
-
+# Start a C2000 SysConfig project with GMP
+
+This guide describes the repository's current C28x project workflow. Use an
+existing target as the template; do not copy the removed `core/usr` layout or
+the obsolete `tools/facilities_generator/gmp_file_generator` directory.
+
+## Prerequisites
+
+Install GMP first with `install_gmp_virtual_env.bat` or `install_gmp.bat`. A
+hardware build also requires a compatible Code Composer Studio, C2000Ware, and
+SysConfig installation. The GMP installer registers `GMP_PRO_LOCATION` and
+distributes the current source-manager and SDPE launchers.
+
+## Choose a template
+
+For a CSP-only example, start from
+`csp/c28x_syscfg/f280049c_launchpad`. For a complete controller, copy the
+closest target below `ctl/suite/<suite>/project`. Keep the target's IDE files,
+`gmp_src_mgr`, `sdpe_mgr`, `xplt`, and the suite's shared `src` directory.
+
+The current file boundary is:
+
+| Location | Responsibility |
+| --- | --- |
+| `xplt/xplt.config.h` | GMP/CSP feature selection and generated settings include |
+| `xplt/xplt.ctl_interface.h` | ADC/encoder input conversion, PWM output conversion, and fast enable/disable behavior |
+| `xplt/xplt.peripheral.c/.h` | SysConfig board startup, ISR, UART, ADC, PWM, GPIO, and other target peripherals |
+| `sdpe_mgr/sdpe_requirement.json` | Target-specific clocks, channels, gains, polarity, and build selections |
+| `sdpe_mgr/ctrl_settings.h` | Generated project configuration header; do not edit by hand |
+| `src/ctl_main.h/.c` | Shared controller objects, initialization, and dispatch |
+| `src/user_main.h/.c` | Shared application and background tasks |
+
+In the standard CTL framework, the periodic ISR calls `gmp_base_ctl_step()`,
+which runs `ctl_input_callback()`, `ctl_dispatch()`, and
+`ctl_output_callback()` in that order. A project using the Nano framework has
+the separate `ctl_fmif_*` interface defined by `ctl/framework/ctl_nano.h`.
+
+## Generate configuration and sources
+
+If the suite has common SDPE data, generate it before the target data:
+
+```bat
+cd ctl\suite\<suite>\sdpe_general
+sdpe_generate.bat
+cd ..\project\<target>\sdpe_mgr
+sdpe_generate.bat
+```
+
+Then run the target's source manager:
+
+```bat
+cd ..\gmp_src_mgr
+gmp_generate_inc.bat
+gmp_generate_src.bat
+```
+
+`gmp_inc` mirrors repository-relative header paths. `gmp_src` contains the
+selected C/C++ sources in one flat directory, and
+`gmp_compiler_includes.txt` records the generated include paths. Change module
+selection with `gmp_config.bat`; do not patch generated files as the upstream
+fix.
+
+## Import and verify
+
+Import the copied target into CCS, regenerate SysConfig output if the `.syscfg`
+file changed, and build the exact configuration used by the target. Before
+energizing hardware, verify the selected `BUILD_LEVEL`, ADC scaling and bias,
+phase direction, PWM polarity, dead time, trip behavior, and output-enable
+ordering. A successful PC build does not validate C28x compiler or hardware
+behavior.
+
+For existing C28x platform details, see
+[`csp/c28x_syscfg/readme.md`](../csp/c28x_syscfg/readme.md) and the target's own
+README.

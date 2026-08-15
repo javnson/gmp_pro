@@ -108,7 +108,7 @@ ctl/component/<domain>/<category>/
 
 - 头文件放在模块目录下，非内联或较大函数放在 `src` 下的 `.c` 文件。
 - 目录、头文件、源文件、注册名应一一对应；注册名使用 `component|...|module`，路径使用根目录相对路径。
-- 聚合头文件位于上级目录，例如 `ctl/component/intrinsic.h`、`ctl/component/motor_control.h`、`ctl/component/digital_power.h`。
+- 上级目录虽存在 `ctl/component/intrinsic.h`、`motor_control.h`、`digital_power.h`，但当前分别含有 2、42、11 个失效 include，不能作为新模块的可靠入口；应优先包含具体模块头。`dsa.h` 当前没有缺失 include。
 - suite 级完整控制器不应新增到 `ctl/component`；如果是完整工程，应放到 `ctl/suite`。
 
 ### 4.2 Include 规则
@@ -170,7 +170,7 @@ ctl_<action>_<module>[_via_<method>]()
 
 要求：
 
-- 快速周期函数尽量为 `GMP_STATIC_INLINE`，复杂初始化或较大函数放入 `.c` 并用 `GMP_NOINLINE` 或普通外部函数。
+- 快速周期函数可在确有收益时使用 `GMP_STATIC_INLINE`；复杂初始化或较大函数放入 `.c` 并声明为普通外部函数。当前仓库没有 `GMP_NOINLINE` 宏。
 - `step` 函数不得做动态分配、阻塞等待、打印或硬件寄存器访问。
 - `init` 函数必须使对象进入确定状态，不能依赖未初始化字段。
 
@@ -195,7 +195,7 @@ ctl_<action>_<module>[_via_<method>]()
 
 ### 4.6 错误处理与实时性
 
-- 对外 API 应检查关键指针，使用项目已有断言宏，例如 `GMP_ASSERT_PTR`。
+- 对外 API 应检查关键指针，可使用当前数值契约提供的 `gmp_ctl_assert(ptr != NULL)`；仓库没有 `GMP_ASSERT_PTR` 宏。
 - `step` 路径应保持确定执行时间，并只使用 `ctrl_gt` 支持的实时计算 API。
 - 组件不负责调度、通信、日志和命令行交互，这些属于 suite 或 core。
 - 保护类模块只输出状态、标志或限幅结果，不直接关闭硬件。
@@ -297,8 +297,8 @@ typedef struct _example_t
 
 | 组件方向 | 主要验证工程 |
 | --- | --- |
-| PMSM/FOC/observer/motion | `ctl/suite/mcs_pmsm`、`mcs_pmsm_nt`、`mcs_pmsm_id` |
-| ACM 控制 | `ctl/suite/mcs_acm` |
+| PMSM/FOC/observer/motion | `ctl/suite/mcs_pmsm_nt`、`mcs_pmsm_id` |
+| ACM 控制 | `ctl/suite/mcs_acm_nt` |
 | FSBB/DCDC | `ctl/suite/dps_fsbb` |
 | GFL inverter | `ctl/suite/pgs_inv_GFL_inverter` |
 | 单相逆变 RC | `ctl/suite/pgs_sinv_rc` |
@@ -309,10 +309,10 @@ typedef struct _example_t
 
 | 注册项/目录 | 问题 |
 | --- | --- |
-| `component|kinematics` / `ctl/component/kinematics` | 顶层已注册且目录存在，但当前没有可见头文件、源文件和任务状态，属于未实现模块。 |
-| `component|motor_control|acm_ctrl` | 注册为空，无 `src_patterns`、`inc_patterns` 和任务状态；若是分类节点，应改为 `_internal`，若是模块则需补实现。 |
-| `component|motor_control|param_est` | 注册为空；目录中仅见 `param_est/pmsm_rs_est_mras.h` 等文件，注册关系未闭合。 |
-| `component|motor_control|pmsm_ctrl` | 注册为空；实际 PMSM suite 控制器位于 `motor_control/suite_pmsm`，需要明确它是 suite 级组件还是废弃聚合名。 |
+| `component|kinematics` / `ctl/component/kinematics` | 注册和目录存在但没有头/源模式；`sys_compile=true` 只验证了空选择，不能证明有可用实现。 |
+| `component|motor_control|param_est` | 注册仍无 `src_patterns`、`inc_patterns` 和依赖；目录中的 `param_est/pmsm_rs_est_mras.h` 尚未由该项交付。 |
+| `component|motor_control|acm_ctrl` | 已注册 `suite_acim/acm_sensored_ctrl.h` 及对应源，记录编译通过，仿真/硬件未通过。 |
+| `component|motor_control|pmsm_ctrl` | 已注册 `suite_pmsm/pmsm_ctrl.h` 及对应源，记录编译和仿真通过，硬件未通过。 |
 | `component|motor_control|motor_id|_internal` | 注册使用 `motor_id`，实际目录为 `pmsm_offline_id`；命名层级不一致。 |
 
 ### 7.2 命名拼写或路径不一致
@@ -328,8 +328,9 @@ typedef struct _example_t
 
 ### 7.3 聚合头和注册覆盖需复核
 
-- `ctl/component` 顶层存在 `digital_power.h`、`dsa.h`、`intrinsic.h`、`motor_control.h`，但没有同级 `interface.h` 和 `hardware_preset.h`。
+- `ctl/component` 顶层存在 `digital_power.h`、`dsa.h`、`intrinsic.h`、`motor_control.h`，但前三个控制聚合头中的 `digital_power.h`、`intrinsic.h`、`motor_control.h` 含失效 include；不能据此判断模块已覆盖。顶层没有 `interface.h` 和 `hardware_preset.h`。
 - `ctl/component/interface` 已作为注册模块族存在，应考虑增加聚合头，或明确只能按子模块头文件包含。
+- 当前 `facility_dependency_audit.py` 报告 `component|interface|_internal` 包含 `dac_channel.h`，但未声明对 `component|interface|dac` 的依赖；在注册表修复前，不能把全量 Facility 依赖审计描述为通过。
 - `hardware_preset` 以预设集合为主，很多条目是纯头文件；需要统一说明其不需要 `.c` 和 `sys_compile` 任务的判定方式。
 - `dsa/sine_analyzer.h` 在目录中存在，但注册表当前主要显示 `dsa_scope`、`dsa_trigger`，需要确认是否漏注册。
 
@@ -377,7 +378,7 @@ typedef struct _example_t
 GMP_STATIC_INLINE
 void ctl_init_example(example_t* obj, ctrl_gt gain)
 {
-    GMP_ASSERT_PTR(obj);
+    gmp_ctl_assert(obj != NULL);
     obj->gain = gain;
     obj->output = 0;
 }
@@ -391,7 +392,7 @@ void ctl_init_example(example_t* obj, ctrl_gt gain)
 GMP_STATIC_INLINE
 ctrl_gt ctl_step_example(example_t* obj, ctrl_gt input)
 {
-    GMP_ASSERT_PTR(obj);
+    gmp_ctl_assert(obj != NULL);
     obj->output = ctl_mul(obj->gain, input);
     return obj->output;
 }
@@ -404,7 +405,7 @@ ctrl_gt ctl_step_example(example_t* obj, ctrl_gt input)
 GMP_STATIC_INLINE
 void ctl_clear_example(example_t* obj)
 {
-    GMP_ASSERT_PTR(obj);
+    gmp_ctl_assert(obj != NULL);
     obj->output = 0;
 }
 
@@ -415,6 +416,6 @@ void ctl_clear_example(example_t* obj)
 
 - 对注册表执行一次自动审计，输出“注册项、源文件、头文件、聚合头、任务状态”的 CSV。
 - 将拼写错误注册项迁移到规范名称，必要时保留兼容别名。
-- 把 `kinematics`、`acm_ctrl`、`param_est`、`pmsm_ctrl` 这类空壳项标记为 `_internal`、补实现或删除。
+- 处理 `kinematics` 和 `param_est` 的空模式注册；不要再把已经绑定真实文件的 `acm_ctrl`、`pmsm_ctrl` 误报为空壳。
 - 为 `interface` 和 `hardware_preset` 补聚合头或在文档中明确不提供聚合入口。
 - 将每个 suite 与其覆盖的 component 模块反向登记，避免“有工程但注册任务仍为 false”。

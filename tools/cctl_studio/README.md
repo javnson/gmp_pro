@@ -1,5 +1,7 @@
 # CCTL Studio prototype
 
+**English** | [简体中文](README_CN.md)
+
 This directory contains a small, offline-first validation of a data-driven circuit
 authoring flow for CCTL and Xyce. It follows the useful separation seen in TI
 SysConfig-based tools: component metadata and project wiring are data, while one

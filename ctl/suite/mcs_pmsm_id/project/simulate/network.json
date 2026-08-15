@@ -3,7 +3,7 @@
   "protocol_version": 1,
   "transport": "udp",
   "role": "server",
-  "connection_id": "18c61e28ca3397de081f5f8b16132f7e",
+  "connection_id": "0af7028b9656a22f090083230d950728",
   "target_address": "127.0.0.1",
   "bind_address": "0.0.0.0",
   "transmit_port": 12501,

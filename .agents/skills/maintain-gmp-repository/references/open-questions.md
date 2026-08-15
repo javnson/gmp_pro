@@ -26,7 +26,7 @@ Use confirmed decisions as repository contracts. Do not reopen deferred code cha
 4. **CTL assert macro:** under `DISABLE_CTL_LIB_ASSERT`, `gmp_ctl_assert(assert_cond)` references `assert_condition`. Should the macro be a pure `(void)(assert_cond)` no-op?
 5. **Fatal-stop contract:** the default `gmp_base_system_stuck()` implementation is empty, while some platforms implement `gmp_port_system_stuck()`. What symbol must a CSP override, and must the default always trap?
 6. **Tick wrap handling:** `gmp_base_time_sub` has explicit wrap logic, but `gmp_base_get_diff_system_tick` and `gmp_base_get_diff_ctrl_tick` use raw subtraction. Is wrap-safe behavior required for all three APIs?
-7. **Weak functions on TI:** the `__TI_COMPILER_VERSION__` branch in `gmp_std_port.c` contains no weak defaults. Is every TI project required to implement the full port set, or is compiler-specific weak support missing?
+7. **Weak functions on TI:** the `__TI_COMPILER_VERSION__` branch in `core/rt/src/gmp_runtime.c` contains no weak defaults. Is every TI project required to implement the full lifecycle set, or is compiler-specific weak support missing?
 
 ## Remaining generator questions
 

@@ -10,6 +10,8 @@
 | --- | --- |
 | [`numerical_solver`](numerical_solver/readme_cn.md) | 数值方程与求解器实验 |
 | [`power_electronics_objects`](power_electronics_objects/readme_cn.md) | 变换器和被控对象的 C++ 模型 |
+| `circuit_solver` | 历史 Python 改进节点分析实验 |
+| `component` | 尚未由 `cctl.hpp` 导出的早期 C++ 接口实验 |
 
 当前硬件 suite 默认仍采用 `ctl`。正式嵌入式控制工程应优先从 `ctl/component` 和 `ctl/suite` 开始；只有在确实需要 C++ 类型或上位机数值模型时再使用 CCTL。
 

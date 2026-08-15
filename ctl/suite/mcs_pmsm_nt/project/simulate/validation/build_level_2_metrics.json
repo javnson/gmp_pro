@@ -1,0 +1,23 @@
+{
+  "build_level": 2,
+  "stop_time_s": 1.5,
+  "step_response": {
+    "step_time_s": 0,
+    "initial_value": 0,
+    "reference_final": 0.10000000149011612,
+    "response_final": -0.023175191006995739,
+    "rise_time_10_90_s": null,
+    "settling_time_s": null,
+    "overshoot_percent": 0,
+    "steady_state_error_abs": 0.12317519249711185,
+    "steady_state_error_percent": 123.17519066165849,
+    "dynamic_valid": false
+  },
+  "steady_state_error_abs": 0.12317519249711185,
+  "steady_state_error_percent": 123.17519066165849,
+  "simulation_pass": true,
+  "runtime_assertion_triggered": false,
+  "dynamic_pass": false,
+  "steady_state_pass": false,
+  "pass": false
+}

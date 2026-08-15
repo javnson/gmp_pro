@@ -1,5 +1,7 @@
 # CTL Portable（No CSP）
 
+[English](README.md) | **简体中文**
+
 `GMP_CTL_PORTABLE` 用于只采用 CTL 算法、无需 GMP 跨平台运行框架和 CSP
 外设抽象的工程。工程统一包含 `ctl/math_block/gmp_math.h`；该入口会装配
 portable 类型契约，不加载 CSP、外设管理及 `core/rt/gmp_runtime.h`。

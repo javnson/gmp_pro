@@ -1,139 +1,77 @@
-# Start a GMP project using TI Sysconfig
-
-
-
-## Preparation
-
-For start a GMP project using TI Sysconfig for C28x devices, the following software should be installed first
-
-+ Python3
-
-Website: 
-
-In order to run the GMP code generator scripts. In this document, we use Python 3.13 as example.
-
-+ C2000Ware
-
-Website:
-
-In order to provide the library support for the devices. In this document, we use C2000ware 5.03 as example.
-
-+ CCS
-
-Website: https://www.ti.com/tool/CCSTUDIO
-
-In order to create and build the TI C28x devices projects. In this document, we use CCS 12.8.1 as example.
-
-+ Sysconfig
-
-Website: https://www.ti.com/tool/SYSCONFIG
-
-In order to generate TI initialize code. In this document, we use Sysconfig 1.21.2 as example.
-
-+ MATLAB
-
-website: https://www.mathworks.com/products/matlab.html
-
-In order to run Simulation in Simulink you should install MATLAB, at least 2022b version.
-
-## User files
-
-In GMP library, a general User file example is provided in `<GMP>/core/usr/ctl_simulation_mtr_model`. You may copy this folder to your workspace. Here is a brief introduction.
-
-+ Controller related files
-
-There are three files for controller implement.
-
-`xplt_ctl_interface.h` provide the interface of the controller. User should implement the specific function to get input.
-If you disabled the Controller Nano, the following function would be called.
-
-> `ctl_input_callback()` this function will be called every MainISR, firstly.
->
-> `ctl_output_callback()` this function will be called after controller callback.
->
-> `ctl_enable_output()` this function should enable controller output.
->
-> `ctl_disable_output()` this function should disable controller output.
-
-If you enabled the controller Nano, the following function would be called.
-
->`ctl_fmif_input_stage_routine()` this function will be called every Main ISR, firstly.
->
->`ctl_fmif_output_stage_routine()` this function will be called after controller callback.
->
->`ctl_fmif_request_stage_routine()` this function will be called every Main ISR, after all the control law callback and output callback.
->
->`ctl_fmif_output_enable()` this function will be called to enable output.
->
->`ctl_fmif_output_disable()` this function will be called to disable output.
-
-`ctl_main.c` will implement the initialization function.
-
-`ctl_main.h` will implement the main control law function.
-
-
-
-+ User main and peripheral manager
-
-`cplt.config.h` project config headers.
-
-`user_main.c` implement main init and loop function.
-
-`user_main.h` header of `user_main.c`.
-
-`xplt.peripheral.c` implement the peripheral init function.
-
-`xplt.peripheral.h` define all peripheral declarations.
-
- 
-
-## GMP Code generator tools preparation
-
-In order to address GMP code, and add them to your workspace, we provide a easy tools for user.
-
-You should copy the folder `<GMP ROOTS>/tools/facilities_generator/sil_cfg_example` to your own project workspace.
-
-
-
-## Config Compile environment
-
-### Add necessary header paths：
-
-+ Necessary Library Path (GMP generated path)
-
-import `GMPCorePropertySheet.props` and `GMPSrcGenPropertySheet.props` in `<GMP ROOTS>/tools/facilities_generator/sil_cfg_example`.
-
-+ User files path
-
-The project directory.
-
-### Add GMP related files to compiling list.
-
-
-
-### Add User files to compiling list.
-
-
-
-### Add a pre-compile event
-
-you should run script `gmp_fac_generate_src.bat`.
-
-### Start a Simulink Model 
-
-You may install GMP Simulink Model in by running the install script `<GMP ROOTS>/slib/install_gmp_simulink_lib.m`.
-
-Then start your Simulink, you may find the GMP Utilities Library.
-
-## Start Simulation
-
-You may run your Simulink model first. If you add a GMP SIL Core in your project, a `network.json` script will generated. This module will exit because of connection overtime.
-
-Then you may start your Controller program. Then rerun the Simulink model.
-
-Enjoy!
-
-
-
-
-
+# Start a Simulink SIL project with GMP
+
+This guide describes the current Windows UDP SIL workflow. Start from a
+maintained `ctl/suite/<suite>/project/simulate` project; the former
+`core/usr/ctl_simulation_mtr_model` and
+`tools/facilities_generator/sil_cfg_example` paths no longer exist.
+
+## Prerequisites
+
+1. Install GMP with `install_gmp_virtual_env.bat` or `install_gmp.bat`.
+2. Install Visual Studio with the x64 C++ workload for the native controller.
+3. Install a supported MATLAB/Simulink release. Models that use Specialized
+   Power Systems require MATLAB R2025b or earlier.
+4. In MATLAB, run `slib/install_gmp_simulink_lib.m` from
+   `GMP_PRO_LOCATION`.
+
+## Project contract
+
+A maintained simulation target normally contains:
+
+| Location | Responsibility |
+| --- | --- |
+| `*.slx` | Plant model and packed UDP interface |
+| `GMP_Motor_Control_simulink.sln` | Native Windows controller solution |
+| `network.json` | Host and UDP endpoint configuration |
+| `gmp_src_mgr/gmp_framework_config.json` | Selected GMP modules |
+| `sdpe_mgr/sdpe_requirement.json` | Simulation-specific parameters |
+| `sdpe_mgr/ctrl_settings.h` | Generated C settings |
+| `sdpe_mgr/ctrl_settings_matlab_init.m` | Generated MATLAB settings |
+| `xplt/xplt.config.h` | Host/CSP feature and buffer-type selection |
+| `xplt/xplt.ctl_interface.h` | Packed-buffer-to-controller input/output mapping |
+| `xplt/xplt.peripheral.cpp/.h` | Simulation platform storage and peripheral hooks |
+
+The Windows SIL CSP receives one packed UDP request, updates the suite input
+buffer, calls `gmp_base_ctl_step()`, and returns the packed output buffer. The
+model packing, `gmp_pc_simulink_rx_buffer_t` /
+`gmp_pc_simulink_tx_buffer_t` types, and `xplt` mapping form one ABI and must be
+changed together.
+
+## Generate and build
+
+Generate suite-common SDPE first, then simulation-target SDPE:
+
+```bat
+cd ctl\suite\<suite>\sdpe_general
+sdpe_generate.bat
+cd ..\project\simulate\sdpe_mgr
+sdpe_generate.bat
+cd ..\gmp_src_mgr
+gmp_generate_inc.bat
+gmp_generate_src.bat
+```
+
+Build from the GMP environment so MSBuild and vcpkg inherit the configured
+toolchain and proxy:
+
+```bat
+gmp_env.bat msbuild ctl\suite\<suite>\project\simulate\GMP_Motor_Control_simulink.sln /p:Configuration=Release /p:Platform=x64
+```
+
+Use the exact solution name supplied by the chosen suite if it differs.
+
+## Run and verify
+
+Use the suite simulation README or its `run_*_cosim.m` /
+`run_*_validation.m` script. These scripts configure model callbacks, load the
+common MATLAB initialization script before the target script, start the native
+controller, and collect suite-specific evidence. Do not infer a signal layout
+from another suite.
+
+If starting manually, launch the native controller and model in the order
+specified by that suite. A timeout means the expected UDP peer did not answer;
+it is not proof that configuration or controller initialization succeeded.
+
+For the library contract, supported releases, tests, and Linux status, see
+[`slib/readme.md`](../slib/readme.md). For transport details, see
+[`tools/gmp_sil/sil_helper/README.md`](../tools/gmp_sil/sil_helper/README.md).

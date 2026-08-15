@@ -20,16 +20,16 @@
 | digital_power | `ctl/component/digital_power` | `component|digital_power` | partial | 数字电源和逆变器相关组件。 |
 | hardware_preset | `ctl/component/hardware_preset` | `component|hardware_preset` | preset | 纯参数预设集合，注册和目录命名需统一。 |
 | dsa | `ctl/component/dsa` | `component|dsa` | partial | DSA scope/trigger 等，`sine_analyzer.h` 是否注册需复核。 |
-| kinematics | `ctl/component/kinematics` | `component|kinematics` | stub | 目录和注册存在，但当前基本为空。 |
+| kinematics | `ctl/component/kinematics` | `component|kinematics` | stub | 目录和注册存在，但没有公开头文件或源文件；注册表虽把 `sys_compile` 标为 true，空模式并不能证明存在可编译模块。 |
 
 ## 2. interface
 
 | 子模块 | 目录/文件 | 注册项 | 状态 | 说明 |
 | --- | --- | --- | --- | --- |
-| internal | `interface/src/ctl_component_interface.c` 等 | `component|interface|_internal` | partial | 标准接口基础实现。 |
-| adc | `adc_channel.h`, `adc_ptr_channel.h` | `component|interface|adc` | partial | ADC 通道抽象。 |
-| dac | `dac_channel.h` | `component|interface|dac` | partial | DAC 通道抽象。 |
-| pwm | `pwm_channel.h` | `component|interface|pwm` | partial | PWM 通道抽象。 |
+| internal | `interface/src/ctl_component_interface.c` 等 | `component|interface|_internal` | review | 标准接口基础实现；依赖审计当前报告它包含 `dac_channel.h`，但未声明到 `component|interface|dac` 的依赖边。 |
+| adc | `adc_channel.h`, `adc_ptr_channel.h` | `component|interface|adc` | done | 注册表记录编译、仿真、硬件三项通过。 |
+| dac | `dac_channel.h` | `component|interface|dac` | done | 注册表记录编译、仿真、硬件三项通过。 |
+| pwm | `pwm_channel.h` | `component|interface|pwm` | done | 注册表记录编译、仿真、硬件三项通过。 |
 | H bridge | `hpwm_modulator.h`, `src/ctl_if_pwm_h.c` | `component|interface|modulator|H_bridge` | partial | 半桥/H bridge 调制。 |
 | npc | `npc_modulator.h`, `src/ctl_if_pwm_npc.c` | `component|interface|modulator|npc` | partial | NPC 调制。 |
 | spwm | `spwm_modulator.h`, `spwm3d_modulator.h`, `src/ctl_if_pwm_spwm.c` | `component|interface|modulator|spwm` | partial | SPWM/三维 SPWM 调制。 |
@@ -116,7 +116,7 @@
 | observer | `observer/*.h` | `component|motor_control|observer|...` | partial | PMSM/ACIM/BLDC 观测器和 ATO PLL。 |
 | pmsm offline id | `pmsm_offline_id/pmsm_offline_id_sm.h` | `component|motor_control|motor_id|pmsm` | partial | 注册名与目录不一致。 |
 | param_est | `param_est/pmsm_rs_est_mras.h` | `component|motor_control|param_est` | stub | 注册为空，需补模块定义。 |
-| suite_pmsm/acim | `suite_pmsm/*`, `suite_acim/*` | `component|motor_control|pmsm_ctrl`, `acm_ctrl` | review | 更像 suite 级控制器，需明确归属。 |
+| suite_pmsm/acim | `suite_pmsm/*`, `suite_acim/*` | `component|motor_control|pmsm_ctrl`, `acm_ctrl` | review | 两项已有真实注册路径；`pmsm_ctrl` 记录编译和仿真通过，`acm_ctrl` 只记录编译通过。归属仍需明确。 |
 
 ## 5. digital_power
 
@@ -146,7 +146,7 @@
 | --- | --- | --- | --- | --- |
 | dsa scope | `dsa/dsa_scope.h`, `dsa/src/dsa_scope.c` | `component|dsa|dsa_scope` | partial | 示波/数据采集。 |
 | dsa trigger | `dsa/dsa_trigger.h`, `dsa/src/dsa_trigger.c` | `component|dsa|dsa_trigger` | partial | 触发采集。 |
-| sine analyzer | `dsa/sine_analyzer.h` | 未清晰匹配 | review | 需确认是否漏注册。 |
+| sine analyzer | `dsa/sine_analyzer.h` | 未注册为独立模块 | review | `dsa|_internal` 为空，当前独立注册项只有 scope、DL scope 和 trigger。 |
 | TI DLOG | `dsa/ti_dlog/*` | 未清晰匹配 | review | 第三方/辅助文件，需明确注册策略。 |
 
 ## 8. 后续维护约定
@@ -158,3 +158,5 @@
 - 依赖模块和验证 suite。
 - `sys_compile`、`sys_sim`、`sys_hw` 状态。
 - 命名、目录、聚合头、文档待办项。
+
+当前 `digital_power.h`、`motor_control.h` 和 `intrinsic.h` 分别含 11、42、2 个不存在的 include 路径，不能把“存在聚合头”视为模块可编译证据；具体模块仍以注册表和真实头文件为准。

@@ -26,13 +26,12 @@ Suite 名称通常使用应用类别前缀：
 | --- | --- | --- | --- |
 | [`dps_clllc`](dps_clllc/README_CN.md) | Digital Power Suite, CLLLC / DAB | 正式工程 | 双向隔离谐振变换器控制。 |
 | [`dps_fsbb`](dps_fsbb/README_CN.md) | Digital Power Suite, four-switch full bridge | 推荐结构 | 四开关全桥电源/变流器控制。 |
-| `mcs_acm` | Motor Control Suite, asynchronous motor | 历史结构 | 使用 `implement` 旧结构，已明确跳过全套件 PIL 部署。 |
-| `mcs_acm_nt` | Motor Control Suite, asynchronous motor new template | 仅仿真 | 当前没有硬件目标，不参与硬件 PIL 部署。 |
-| `mcs_pmsm` | Motor Control Suite, PMSM | 已弃用 | 永磁同步电机旧工程，已明确跳过全套件 PIL 部署。 |
+| [`mcs_acm_nt`](mcs_acm_nt/README_CN.md) | Motor Control Suite, asynchronous motor new template | 正式工程 | 包含 SIL 分级调试和 F280049C PIL 工程；不在 19 目标全套件校验范围内。 |
 | [`mcs_pmsm_nt`](mcs_pmsm_nt/README_CN.md) | Motor Control Suite, PMSM new template | 正式工程 | 永磁同步电机正式工程，新 PMSM 应优先基于它开发。 |
 | [`mcs_pmsm_id`](mcs_pmsm_id/README_CN.md) | Motor Control Suite, PMSM identification | 正式工程 | PMSM 参数识别工程，用于识别电机参数。 |
 | [`pgs_inv_GFL_inverter`](pgs_inv_GFL_inverter/README_CN.md) | Power Grid Suite, grid-following inverter | 正式工程 | GFL 跟网型变流器/逆变器控制。 |
 | [`pgs_inv_GFM_inverter`](pgs_inv_GFM_inverter/README.md) | Power Grid Suite, grid-forming inverter | 正式工程 | GFM 构网型变流器/逆变器控制。 |
+| `pgs_sinv_2stage` | Power Grid Suite, two-stage single-phase models | 模型资源 | 目前只有 `project/simulation` 下的三个 SLX 模型，没有控制器源码或构建工程。 |
 | [`pgs_sinv_rc`](pgs_sinv_rc/readme_cn.md) | Power Grid Suite, single-phase inverter with repetitive control | 正式工程 | SINV 单相变流器/逆变器控制。 |
 
 ### PIL 部署边界
@@ -43,9 +42,10 @@ Suite 名称通常使用应用类别前缀：
 覆盖项。PIL 开启后，硬件中断仍负责清中断和维护时基，但
 `gmp_base_ctl_step()` 不推进控制器，控制步只由 DL 事务触发，同时禁止物理功率级使能。
 
-当前部署范围是 7 个现代 suite 的 19 个硬件工程。所有 `simulate` 工程保持原有
-SIL 契约，不绑定硬件 PIL 公共传输配置。`mcs_acm` 与 `mcs_pmsm` 属于旧一代
-`implement` 布局，已标注并直接跳过，后续可整体弃用或删除。
+当前全套件校验范围是 7 个 suite 的 19 个硬件工程。所有 `simulate` 工程保持原有
+SIL 契约，不绑定硬件 PIL 公共传输配置。旧的 `mcs_acm` 与 `mcs_pmsm` 目录已经
+删除；`mcs_acm_nt/f280049c` 有独立 PIL 验证记录，但当前未列入
+`validate_pil_deployment.py` 的 19 目标清单。
 
 修改目标工程后，应在仓库根目录运行
 `python ctl/suite/validate_pil_deployment.py`。该检查覆盖维护目标清单、SDPE
@@ -113,7 +113,7 @@ ctl/suite/<suite_name>/
 
 - `src` 不应直接包含芯片寄存器、板级外设驱动或具体硬件连接。
 - 所有平台相关输入输出都应通过 `xplt.ctl_interface.h` 隔离。
-- 所有硬件参数和连接关系应从对应平台的 `xplt/ctrl_settings.h` 获取。
+- 所有生成参数和连接关系应从对应平台的 `sdpe_mgr/ctrl_settings.h` 获取；该目录必须加入 include path。
 - 控制周期中的算法计算应遵守 component 规范：使用 `ctrl_gt` 和标幺值系统。
 
 ## 5. `project/simulate` 仿真工程
@@ -148,18 +148,20 @@ ctl/suite/<suite_name>/
 
 | Suite | project 平台 |
 | --- | --- |
+| `dps_clllc` | `f280025c_dioscuri`, `simulate` |
 | `dps_fsbb` | `f280039c_Iris_node`, `simulate` |
-| `mcs_acm` | `f280049c`, `motor_control_simulink`, `stm32g431`, `stm32g474` |
-| `mcs_pmsm` | `f280039c_Iris_node`, `f280049c`, `f280049c_new`, `f28p65`, `motor_control_simulink`, `stm32f405`, `stm32f405_new`, `stm32g431`, `stm32g474`, `stm32g474_tim` |
+| `mcs_acm_nt` | `f280049c`, `simulate` |
 | `mcs_pmsm_id` | `f280039c_Iris_node`, `f280049c`, `simulate`, `stm32f405`, `stm32g431`, `stm32g474_hrtim` |
-| `mcs_pmsm_nt` | `f280039c_Iris_node`, `f280049c`, `simulate`, `stm32f405`, `stm32g431`, `stm32g474_hrtim` |
+| `mcs_pmsm_nt` | `f280039c_Iris_node`, `f280049c`, `f29h85x_lp_3phgan`, `simulate`, `stm32f405`, `stm32g431`, `stm32g474_hrtim` |
 | `pgs_inv_GFL_inverter` | `f280039c_Iris_node`, `f280049c`, `simulate`, `stm32g431` |
+| `pgs_inv_GFM_inverter` | `f280039c_Iris_node`, `f280049c`, `simulate`, `stm32g431` |
+| `pgs_sinv_2stage` | `simulation`（仅 SLX 模型） |
 | `pgs_sinv_rc` | `f280039c_Iris_node`, `simulate` |
 
 说明：
 
-- `mcs_pmsm` 是弃用旧工程，平台较多但不代表推荐新开发入口。
-- `motor_control_simulink` 是历史仿真工程命名；新结构推荐使用 `project/simulate`。
+- 旧的 `mcs_pmsm` 和 `mcs_acm` 工程已经从当前仓库删除。
+- `pgs_sinv_2stage/project/simulation` 不是完整 suite 工程，不能按 `project/simulate` 的构建流程使用。
 - 某些平台目录中可能存在 IDE 生成的 `Debug` 子目录，其中的 `gmp_src_mgr` 或 `xplt` 是构建产物或工程复制结果，不应作为规范入口。
 
 ## 7. `gmp_src_mgr` 源代码配置管理
@@ -200,7 +202,7 @@ ctl/suite/<suite_name>/
 
 | 文件 | 职责 |
 | --- | --- |
-| `ctrl_settings.h` | 定义硬件属性、硬件参数、连接关系、控制频率、传感器量程等。所有数据源应从这里获取。 |
+| `sdpe_mgr/ctrl_settings.h` | SDPE 生成的唯一工程配置头，定义硬件属性、参数、连接关系、控制频率和传感器量程等。 |
 | `xplt.config.h` | 定义当前 `gmp_pro` 工作状态的属性配置，例如平台、芯片、编译特性、GMP 功能开关。 |
 | `xplt.ctl_interface.h` | 实现控制输入和输出接口。由于很多接口函数需要内联，该文件以头文件形式提供实现。 |
 | `xplt.peripheral.c` | 定义当前硬件特有的输入输出外设初始化与驱动逻辑。 |
@@ -211,7 +213,7 @@ ctl/suite/<suite_name>/
 - 优先修改 `xplt`，不要改 `src` 中的通用控制逻辑。
 - 新硬件的 ADC、PWM、GPIO、编码器、通信等外设初始化放入 `xplt.peripheral.c/h`。
 - 控制逻辑需要的输入输出函数放入 `xplt.ctl_interface.h`。
-- 新增硬件参数、采样比例、极性、连接关系放入 `ctrl_settings.h`。
+- 新增硬件参数、采样比例、极性、连接关系应写入 `sdpe_mgr/sdpe_requirement.json` 或其公共 requirement，再生成 `sdpe_mgr/ctrl_settings.h`；不要手改生成头。
 - 平台特定宏、GMP 工作模式和编译属性放入 `xplt.config.h`。
 - 用户需要增加自己特有的硬件功能时，也应优先增加在 `xplt` 文件夹中。
 
@@ -224,8 +226,10 @@ src/
   user_main.*     -> 用户交互、非实时任务
   ctl_main.*      -> 控制对象、控制状态机、控制周期
 
+project/<platform>/sdpe_mgr/
+  ctrl_settings.h       -> SDPE 生成的硬件参数和连接关系
+
 project/<platform>/xplt/
-  ctrl_settings.h       -> 硬件参数和连接关系
   xplt.config.h         -> GMP 工作状态和平台属性
   xplt.ctl_interface.h  -> 控制输入输出接口
   xplt.peripheral.*     -> 平台外设
@@ -236,7 +240,9 @@ project/<platform>/gmp_src_mgr/
   gmp_generate_src.bat
 ```
 
-`src` 通过 `xplt.ctl_interface.h` 访问输入输出，不直接理解硬件。`xplt` 通过 `ctrl_settings.h` 描述硬件，不把控制算法写死到外设驱动中。`gmp_src_mgr` 负责把被选中的 GMP 模块生成到当前工程。
+`src` 通过 `xplt.ctl_interface.h` 访问输入输出，不直接理解硬件。`xplt` 使用
+`sdpe_mgr/ctrl_settings.h` 中的生成参数完成平台映射，不把控制算法写死到外设驱动中。
+`gmp_src_mgr` 负责把被选中的 GMP 模块生成到当前工程。
 
 ## 10. 主中断与控制调用链
 
@@ -415,7 +421,7 @@ tunable、memory perspective、曲线观察等页面或功能。
 | --- | --- |
 | PMSM 正式控制工程 | `mcs_pmsm_nt` |
 | PMSM 参数识别 | `mcs_pmsm_id` |
-| 异步电动机控制 | `mcs_acm`，但需注意其旧结构 |
+| 异步电动机控制 | `mcs_acm_nt` |
 | 四开关全桥 | `dps_fsbb` |
 | 跟网型三相变流器 | `pgs_inv_GFL_inverter` |
 | 单相变流器 | `pgs_sinv_rc` |

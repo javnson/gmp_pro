@@ -1,0 +1,225 @@
+{
+  "build_level": 2,
+  "stop_time_s": 0.6,
+  "step_response": {
+    "step_time_s": 0,
+    "initial_value": 0.097893291923603076,
+    "reference_final": 0.10000000149011612,
+    "response_final": 0.099975726188571493,
+    "rise_time_10_90_s": 0,
+    "settling_time_s": null,
+    "overshoot_percent": 465.52531259393646,
+    "steady_state_error_abs": 2.4275301544626759E-5,
+    "steady_state_error_percent": 0.024275301182896582,
+    "dynamic_valid": false
+  },
+  "steady_state_error_abs": 2.4275301544626759E-5,
+  "steady_state_error_percent": 0.024275301182896582,
+  "simulation_pass": true,
+  "runtime_assertion_triggered": false,
+  "dynamic_pass": false,
+  "steady_state_pass": true,
+  "pass": false,
+  "signal_summary": [
+    {
+      "Variable": "sil_ch01",
+      "Signal": "Monitor CH1",
+      "Samples": 1.151607E+6,
+      "Final": 0.30000001192092896,
+      "Minimum": 0,
+      "Maximum": 0.30000001192092896
+    },
+    {
+      "Variable": "sil_ch02",
+      "Signal": "Monitor CH2",
+      "Samples": 1.151607E+6,
+      "Final": 0.29755276441574097,
+      "Minimum": 0,
+      "Maximum": 0.31394213438034058
+    },
+    {
+      "Variable": "sil_ch03",
+      "Signal": "Monitor CH3",
+      "Samples": 1.151607E+6,
+      "Final": 0.10000000149011612,
+      "Minimum": 0,
+      "Maximum": 0.10000000149011612
+    },
+    {
+      "Variable": "sil_ch04",
+      "Signal": "Monitor CH4",
+      "Samples": 1.151607E+6,
+      "Final": 0.10733482986688614,
+      "Minimum": 0,
+      "Maximum": 0.10980726778507233
+    },
+    {
+      "Variable": "sil_ch05",
+      "Signal": "Monitor CH5",
+      "Samples": 1.151607E+6,
+      "Final": 0.59912317991256714,
+      "Minimum": 0,
+      "Maximum": 0.99995899200439453
+    },
+    {
+      "Variable": "sil_ch06",
+      "Signal": "Monitor CH6",
+      "Samples": 1.151607E+6,
+      "Final": 0.012626035138964653,
+      "Minimum": -0.00030679616611450911,
+      "Maximum": 0.012667014263570309
+    },
+    {
+      "Variable": "sil_ch07",
+      "Signal": "Monitor CH7",
+      "Samples": 1.151607E+6,
+      "Final": 0,
+      "Minimum": 0,
+      "Maximum": 0
+    },
+    {
+      "Variable": "sil_ch08",
+      "Signal": "Monitor CH8",
+      "Samples": 1.151607E+6,
+      "Final": 0,
+      "Minimum": 0,
+      "Maximum": 0
+    },
+    {
+      "Variable": "sil_ch09",
+      "Signal": "Monitor CH9",
+      "Samples": 1.151607E+6,
+      "Final": 0.09344656765460968,
+      "Minimum": 0,
+      "Maximum": 0.32733497023582458
+    },
+    {
+      "Variable": "sil_ch10",
+      "Signal": "Monitor CH10",
+      "Samples": 1.151607E+6,
+      "Final": 0.042558826506137848,
+      "Minimum": 0,
+      "Maximum": 0.10911165922880173
+    },
+    {
+      "Variable": "sil_ch11",
+      "Signal": "Monitor CH11",
+      "Samples": 1.151607E+6,
+      "Final": 0,
+      "Minimum": 0,
+      "Maximum": 0
+    },
+    {
+      "Variable": "sil_ch12",
+      "Signal": "Monitor CH12",
+      "Samples": 1.151607E+6,
+      "Final": 0,
+      "Minimum": 0,
+      "Maximum": 0
+    },
+    {
+      "Variable": "sil_ch13",
+      "Signal": "Monitor CH13",
+      "Samples": 1.151607E+6,
+      "Final": -0.17907461524009705,
+      "Minimum": -0.32341873645782471,
+      "Maximum": 0.32619166374206543
+    },
+    {
+      "Variable": "sil_ch14",
+      "Signal": "Monitor CH14",
+      "Samples": 1.151607E+6,
+      "Final": -0.26075026392936707,
+      "Minimum": -0.31991130113601685,
+      "Maximum": 0.320103257894516
+    },
+    {
+      "Variable": "sil_ch15",
+      "Signal": "Monitor CH15",
+      "Samples": 1.151607E+6,
+      "Final": -0.0092842578887939453,
+      "Minimum": -0.028765996918082237,
+      "Maximum": 0.094668969511985779
+    },
+    {
+      "Variable": "sil_ch16",
+      "Signal": "Monitor CH16",
+      "Samples": 1.151607E+6,
+      "Final": -0.025571087375283241,
+      "Minimum": -0.027416437864303589,
+      "Maximum": 0.033743325620889664
+    },
+    {
+      "Variable": "sil_rotor_angle_rad",
+      "Signal": "Mechanical.Rotor angle thetam (rad)",
+      "Samples": 600001,
+      "Final": 0.41164362207498395,
+      "Minimum": -1.0371000182315045E-6,
+      "Maximum": 0.41164362207498395
+    },
+    {
+      "Variable": "sil_stator_iq_a",
+      "Signal": "Stator measurements.Stator current  is_q (A)",
+      "Samples": 600001,
+      "Final": -1.7843665689983492,
+      "Minimum": -3.2645559746064681,
+      "Maximum": 3.2834070376515325
+    },
+    {
+      "Variable": "sil_stator_id_a",
+      "Signal": "Stator measurements.Stator current is_d (A)",
+      "Samples": 600001,
+      "Final": 2.6102028824115462,
+      "Minimum": -3.2274091360683257,
+      "Maximum": 3.2277608227322592
+    },
+    {
+      "Variable": "sil_rotor_speed_rad_s",
+      "Signal": "Mechanical.Rotor speed (wm)",
+      "Samples": 600001,
+      "Final": 2.0231179260882266,
+      "Minimum": -0.00018869094224067672,
+      "Maximum": 2.0231179260882266
+    },
+    {
+      "Variable": "sil_torque_nm",
+      "Signal": "Mechanical.Electromagnetic torque Te (N*m)",
+      "Samples": 600001,
+      "Final": 0.0070320901297846747,
+      "Minimum": -0.00033237209594763492,
+      "Maximum": 0.0072725111439265978
+    },
+    {
+      "Variable": "sil_rotor_flux_q_vs",
+      "Signal": "Rotor measurements.Rotor flux phir_q (V s)",
+      "Samples": 600001,
+      "Final": -0.0028280894568016249,
+      "Minimum": -0.0037738983211367625,
+      "Maximum": 0.0037623808859115794
+    },
+    {
+      "Variable": "sil_rotor_flux_d_vs",
+      "Signal": "Rotor measurements.Rotor flux phir_d (V s)",
+      "Samples": 600001,
+      "Final": 0.0022759774221656516,
+      "Minimum": -0.0037782352688502524,
+      "Maximum": 0.00376143673448496
+    },
+    {
+      "Variable": "sil_stator_vq_v",
+      "Signal": "Stator measurements.Stator voltage vs_q (V)",
+      "Samples": 600001,
+      "Final": 0.17843554297750816,
+      "Minimum": -31.963008044729118,
+      "Maximum": 32.21960226167559
+    },
+    {
+      "Variable": "sil_stator_vd_v",
+      "Signal": "Stator measurements.Stator voltage vs_d (V)",
+      "Samples": 600001,
+      "Final": -0.26101970194442309,
+      "Minimum": -28.075001178558679,
+      "Maximum": 28.082698541390865
+    }
+  ]
+}

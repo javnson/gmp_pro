@@ -17,6 +17,7 @@ applications in `ctl/suite`.
 | `interface` | ADC, PWM, DAC, encoder, and controller-facing interfaces | [English](interface/readme.md) / [中文](interface/readme_cn.md) |
 | `dsa` | Dynamic signal-analysis and instrumentation helpers | [English](dsa/readme.md) / [中文](dsa/readme_cn.md) |
 | `hardware_preset` | Reusable hardware parameter definitions | Header documentation |
+| `kinematics` | Reserved registry/directory placeholder; no public implementation files | None |
 
 ## Integration rules
 
@@ -32,6 +33,10 @@ applications in `ctl/suite`.
 - Register new headers and sources in
   `tools/facilities_generator/src_mgr/gmp_framework_dic.json` so project source
   managers can select them.
+- Include concrete module headers. The current `digital_power.h`,
+  `motor_control.h`, and `intrinsic.h` umbrella headers still contain legacy
+  include paths and are not reliable public entry points; `dsa.h` has no such
+  missing include at the time of this audit.
 
 ## Starting points
 
@@ -40,5 +45,5 @@ For a complete module inventory and development status, see:
 - [Component development specification](COMPONENT_DEVELOPMENT_SPEC.md)
 - [Component module catalog](COMPONENT_MODULE_CATALOG.md)
 
-The detailed Chinese component guide contains module-by-module API and usage
-notes: [GMP CTL 组件库完整指南](readme_cn.md).
+The Chinese overview mirrors these source and validation boundaries:
+[GMP CTL component guide](readme_cn.md).

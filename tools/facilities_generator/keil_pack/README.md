@@ -1,5 +1,7 @@
 # GMP Keil Pack generator
 
+**English** | [简体中文](README_CN.md)
+
 This tool converts every registered CTL module with physical files in
 `tools/facilities_generator/src_mgr/gmp_framework_dic.json` into CMSIS-Pack
 components. Package metadata comes from `GMP.GeneralMotorPlatform.xml`.

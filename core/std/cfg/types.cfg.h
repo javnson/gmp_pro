@@ -41,6 +41,11 @@
 
 typedef GMP_PORT_DATA_T byte_gt;
 
+/* Compatibility name retained for the core data-link, checksum and buffer
+ * APIs.  Those public APIs still use data_gt; removing the alias makes every
+ * generated SIL source set fail before the controller is compiled. */
+typedef GMP_PORT_DATA_T data_gt;
+
 // ....................................................................//
 // basic element data type which is fast one
 // This type is determined by the width of the chip data bus.

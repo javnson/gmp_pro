@@ -1,38 +1,18 @@
-# Chip Support Package
+# GMP Chip Support Package (CSP)
 
 **English** | [简体中文](readme_cn.md)
 
-describe chip features
+CSP connects the platform-independent `core` and `ctl` layers to a chip, host OS, or simulation environment. A platform normally provides:
 
-Unified device function name
+| File | Responsibility |
+| --- | --- |
+| `csp.config.h` | Platform defaults and feature selection |
+| `csp.general.h` | C platform declarations and vendor headers |
+| `csp.general.hpp` | Optional C++ platform entry |
+| `csp.typedef.h` | Overrides for portable GMP and peripheral handle types |
 
-All the C source file should contain the `<core/gmp_core.h>` folder.
-This file contains all the C interface of GMP library.
-That will not destroy your C
+Runtime hooks are declared in `core/rt/csp_port.h`; peripheral contracts are declared in `core/dev/peripheral_port.h`. Platform implementations must keep chip registers, vendor SDK calls, and interrupt plumbing in the CSP or project-local `xplt` layer.
 
-``` C++
-#include <core/gmp_core.h>
-```
+Applications include the repository-root `<gmp_core.h>` for the full runtime or `<gmp_core.hpp>` for the C++ wrapper. Code that only consumes portable CTL algorithms may define `GMP_CTL_PORTABLE` before including `<gmp_core.h>`.
 
-If your project is a C++ project, and has main.cpp, you may directly include the `<gmp_core.h>`
-
-``` C++
-#include <core/gmp_core.hpp>
-```
-
-
-
-You may support your own Chip Support Package, via example.
-
-Each Chip support package should contains at least 4 header files. They are
-
-| file              | summary                                                      |
-| ----------------- | ------------------------------------------------------------ |
-| `csp.config.h`    | This header file may config the GMP library to enable or disable some parts. And validate user configurations. |
-| `csp.general.h`   | This header file may include the chip support related files or headers. |
-| `csp.general.hpp` | This header file may include the chip support related files or headers for C++. |
-| `csp.typedef.h`   | This header file provide chip related typedef.               |
-
-另外，CSP中必须实现 `gmp_hal_` 系列函数，用于支持 core 模块。外设服务原型在 `core/dev/peripheral_port.h` 中定义，运行时 CSP 钩子在 `core/rt/csp_port.h` 中定义。
-
-另外，CSP中必须要实现每一个外设的的基本类型，这些类型以`_halt`结尾，意为硬件抽象层类型。并且提供硬件抽象层类型的初始化函数，这些初始化函数将会在user的平台相关代码中被执行。
+See the [CSP guide](CSP_GUIDE.md) for the current platform inventory and porting checklist.

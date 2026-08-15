@@ -29,7 +29,7 @@ gmp_hal_gpio_write(status_led, GMP_HAL_GPIO_HIGH);
 
 ## CMake integration
 
-Select the `core/std` and `csp/rp_pico` modules in the GMP source manager,
+Select the `core/std` and `csp/rpi_pico` modules in the GMP source manager,
 generate the sources and headers, and then click **Generate CMake**. The source
 manager writes `gmp_config.cmake` inside `gmp_src_mgr`.
 

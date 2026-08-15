@@ -11,7 +11,7 @@ SDPE 使用公共层与项目层两级结构：
 - 仿真平台参数：`sdpe_mgr/sdpe_requirement.json`
 - 仿真生成文件：`sdpe_mgr/ctrl_settings.h` 和对应 MATLAB 初始化脚本
 
-公共层定义基值、QPR/FDRC、PLL、功率环和直流母线环等跨平台参数；项目层定义 BUILD_LEVEL、UDP/SIL ADC、PWM、传感器和三个仿真功率级的参数。平台生成头文件直接包含公共头文件，不再依赖 `ctrl_settings.h`。
+公共层定义基值、QPR/FDRC、PLL、功率环和直流母线环等跨平台参数；项目层定义 BUILD_LEVEL、UDP/SIL ADC、PWM、传感器和三个仿真功率级的参数。SDPE 将两层需求合并到项目生成的 `sdpe_mgr/ctrl_settings.h` 中，`xplt` 不再维护另一份同名配置头。
 
 修改参数后依次执行：
 

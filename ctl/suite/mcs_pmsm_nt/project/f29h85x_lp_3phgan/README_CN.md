@@ -1,5 +1,7 @@
 # MCS PMSM NT：F29H85x LaunchPad + BOOSTXL-3PHGANINV
 
+[English](readme.md) | **简体中文**
+
 本目标使用 `GMP-Core-C29x` Product、F29H85x SDK 1.02.01.00、SysConfig 1.25 和 C29
 Clang 2.2.0.LTS。必须使用 CCS 21 或更新版本。
 

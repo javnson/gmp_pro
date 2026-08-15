@@ -44,8 +44,9 @@ The suite follows the same common/target split as `dps_fsbb`:
   `BUILD_LEVEL`, six-pair PWM routing, synchronization, ADC trigger, CPU Timer,
   UART and GPIO bindings.
 
-Generate the common layer first, then the target layer.  `ctrl_settings.h` is a
-thin compatibility include and no longer owns physical constants.
+Generate the common layer first, then the target layer. The target
+`sdpe_mgr/ctrl_settings.h` is generated from both layers and must not be edited
+by hand; the project no longer keeps a second settings header under `xplt`.
 
 ## Dioscuri F280025C resources
 

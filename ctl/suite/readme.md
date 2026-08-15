@@ -14,13 +14,12 @@ build dependencies together.
 | --- | --- | --- |
 | [`dps_clllc`](dps_clllc) | Bidirectional isolated CLLLC / DAB control | Active |
 | [`dps_fsbb`](dps_fsbb) | Four-switch buck-boost converter | Active |
-| `mcs_acm` | Asynchronous motor control | Legacy; skipped by fleet PIL deployment |
-| `mcs_acm_nt` | Asynchronous motor simulation prototype | Simulation only; no hardware deployment |
-| `mcs_pmsm` | Original PMSM control project | Deprecated; skipped by fleet PIL deployment |
+| [`mcs_acm_nt`](mcs_acm_nt) | Asynchronous motor vector control | Active; SIL plus F280049C PIL project |
 | [`mcs_pmsm_nt`](mcs_pmsm_nt) | Current PMSM control template | Recommended |
 | [`mcs_pmsm_id`](mcs_pmsm_id) | PMSM parameter identification | Active |
 | [`pgs_inv_GFL_inverter`](pgs_inv_GFL_inverter) | Three-phase grid-following inverter | Active |
 | [`pgs_inv_GFM_inverter`](pgs_inv_GFM_inverter) | Three-phase grid-forming inverter | Active |
+| `pgs_sinv_2stage` | Two-stage single-phase plant models | Model-only assets under `project/simulation`; no controller project |
 | [`pgs_sinv_rc`](pgs_sinv_rc) | Single-phase converter with repetitive control | Active |
 
 ## Processor-in-the-loop deployment
@@ -44,9 +43,10 @@ The deployed modern fleet contains 19 hardware projects in `dps_clllc`,
 `pgs_inv_GFM_inverter`, and `pgs_sinv_rc`. Their existing `simulate` projects
 remain SIL-only and do not bind the hardware PIL transport contract.
 
-`mcs_acm` and `mcs_pmsm` retain their historical `implement` layouts and are
-explicitly excluded from this deployment. Do not use them as PIL templates;
-they are candidates for later removal.
+The removed legacy suite names `mcs_acm` and `mcs_pmsm` are **skipped by fleet PIL deployment**. They no longer have repository directories; old paths that
+appear in historical manuals are not valid templates. `mcs_acm_nt/f280049c`
+has its own isolated PIL evidence, but is not part of the 19-target fleet
+validated by `validate_pil_deployment.py`.
 
 After changing a suite target, run `python ctl/suite/validate_pil_deployment.py`
 from the repository root. The check covers the maintained-target inventory,

@@ -18,5 +18,23 @@
   "command_q_mean_pu": 0,
   "finite": true,
   "current_tracking_error_pu": 5.3892260305680621E-5,
-  "pass": true
+  "pass": true,
+  "step_response": {
+    "step_time_s": 0.30007500000000353,
+    "initial_value": 0.019383806252285141,
+    "reference_final": 0.0999999999999985,
+    "response_final": 0.099999141537222072,
+    "rise_time_10_90_s": 0.12090000000000001,
+    "settling_time_s": 0.68170000000000353,
+    "overshoot_percent": 6.2062532877002816,
+    "steady_state_error_abs": 8.5846277643464308E-7,
+    "steady_state_error_percent": 0.00085846277643465588,
+    "dynamic_valid": true
+  },
+  "steady_state_error_abs": 8.5846277643464308E-7,
+  "steady_state_error_percent": 0.00085846277643465588,
+  "simulation_pass": true,
+  "runtime_assertion_triggered": false,
+  "dynamic_pass": true,
+  "steady_state_pass": true
 }

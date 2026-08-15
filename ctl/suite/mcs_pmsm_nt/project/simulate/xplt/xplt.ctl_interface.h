@@ -89,9 +89,24 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
     // monitor
     //
 
-    // Scope 1
-    simulink_tx_buffer.monitor[0] = mtr_ctrl.iuvw.dat[phase_A];
-    simulink_tx_buffer.monitor[1] = mtr_ctrl.iuvw.dat[phase_B];
+    /* Stable sixteen-channel commissioning contract used by the automatic
+     * SIL validator.  Controller quantities are exported in per unit. */
+    simulink_tx_buffer.monitor[0] = ctrl2param(mtr_ctrl.idq_ref.dat[phase_d]);
+    simulink_tx_buffer.monitor[1] = ctrl2param(mtr_ctrl.idq0.dat[phase_d]);
+    simulink_tx_buffer.monitor[2] = ctrl2param(mtr_ctrl.idq_ref.dat[phase_q]);
+    simulink_tx_buffer.monitor[3] = ctrl2param(mtr_ctrl.idq0.dat[phase_q]);
+    simulink_tx_buffer.monitor[4] = ctrl2param(mtr_ctrl.pos_if->elec_position);
+    simulink_tx_buffer.monitor[5] = ctrl2param(spd_enc.encif.speed);
+    simulink_tx_buffer.monitor[6] = ctrl2param(rg.enc.elec_position);
+    simulink_tx_buffer.monitor[7] = ctrl2param(mech_ctrl.target_velocity);
+    simulink_tx_buffer.monitor[8] = ctrl2param(mtr_ctrl.vdq_out.dat[phase_d]);
+    simulink_tx_buffer.monitor[9] = ctrl2param(mtr_ctrl.vdq_out.dat[phase_q]);
+    simulink_tx_buffer.monitor[10] = ctrl2param(mtr_ctrl.iab0.dat[phase_alpha]);
+    simulink_tx_buffer.monitor[11] = ctrl2param(mtr_ctrl.iab0.dat[phase_beta]);
+    simulink_tx_buffer.monitor[12] = ctrl2param(mtr_ctrl.iuvw.dat[phase_A]);
+    simulink_tx_buffer.monitor[13] = ctrl2param(mtr_ctrl.iuvw.dat[phase_B]);
+    simulink_tx_buffer.monitor[14] = ctrl2param(mtr_ctrl.udc);
+    simulink_tx_buffer.monitor[15] = ctrl2param(ctl_get_mech_cmd(&mech_ctrl));
 }
 
 // Enable Motor Controller

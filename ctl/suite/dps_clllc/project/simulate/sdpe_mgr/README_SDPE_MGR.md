@@ -10,15 +10,18 @@ This folder is the project-local SDPE manager.
 
 The scripts call `%GMP_PRO_LOCATION%\tools\SDPE_v2` and read `%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe_settings.json`, so set `GMP_PRO_LOCATION` to the GMP repository root before using them.
 
-Default generated output:
+Generated platform output:
 
 ```text
 sdpe_mgr\
-  <project_settings_header>.h
-  hardware_preset\
+  ctrl_settings.h
+  ctrl_settings_matlab_init.m
 ```
 
-Project-local generated headers use relative include paths, so the generated project header can include the generated hardware headers without depending on the global `ctl\hardware_preset` output.
+The generated project header includes selected hardware entities from the
+repository-wide `ctl\hardware_preset` tree. Generated files may be ignored
+inside GMP, but must be committed after a project is copied into a standalone
+repository.
 
 Project id: `dps_clllc_simulate`
 Suite: `dps_clllc`

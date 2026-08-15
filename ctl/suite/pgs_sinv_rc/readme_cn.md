@@ -1,104 +1,33 @@
-# GMP Single-Phase Inverter/Rectifier (SINV) Framework
+# 带重复控制的单相逆变/整流套件
 
 [English](readme.md) | **简体中文**
 
-基于 GMP (Grid-tied Power) 核心控制库构建的工业级单相双向逆变器（Inverter）与有源前端（AFE Rectifier）标准工程模板。
+本套件是双向单相逆变器和有源前端整流器的 GMP 参考工程。F280039C Iris 硬件目标与 PC 仿真目标共用 `src/` 控制器代码，并通过接口对象绑定采样和调制信号。
 
-本工程采用了先进的 **Flat Architecture（扁平化架构）** 与 **Zero-Copy（零拷贝数据绑定）** 技术，在极致压榨 DSP 算力的同时，提供了无与伦比的代码可读性与硬件跨平台移植能力。
+## 主要能力
 
-## 🌟 核心特性 (Key Features)
+- 准比例谐振（QPR）电流控制与频域重复控制（FDRC）；
+- 基于 SOGI 的单相 PLL；
+- 带软启动的有功/无功指令；
+- 单极性 SPWM、死区处理和分阶段保护；
+- CiA 402 状态管理与 GMP Data Link。
 
-- **纯软硬件解耦**：硬件特性（死区、ADC增益、最大耐压）全部由底层宏函数在编译期自动推导，控制层代码做到 100% 平台无关。
-- **高阶控制算法矩阵**：
-  - **QPR (准比例谐振)**：实现对电网基波电流的无静差极速跟踪。
-  - **FDRC (频域重复控制)**：智能分离瞬态与稳态，精准扫平电网背景谐波与死区畸变。
-  - **SPLL-SOGI (二阶广义积分锁相环)**：在电网电压畸变、跌落工况下依然保持精准锁相。
-  - **内聚式安规发生器**：自带 P/Q 功率指令软启动斜率限制器，完美满足并网安规要求。
-  - **带电流方向滞环的单极性 SPWM**：原生支持基于电流过零方向的死区脉宽补偿。
-- **CiA 402 工业状态机**：规范化的设备启停、故障闭锁与恢复流转机制。
-- **上位机实时透视**：原生集成 Tunable 在线调参字典与 Memory Perspective (内存透视) 协议。
+公共控制参数位于 `sdpe_general/sdpe_requirement.json`；目标的 `BUILD_LEVEL`、采样、PWM、传感器和通信绑定位于 `project/<target>/sdpe_mgr/sdpe_requirement.json`。修改需求后先生成公共层，再生成目标层。`sdpe_mgr/ctrl_settings.h` 是生成文件，不应手工修改；`xplt` 不再保存第二份设置头。
 
-------
+## BUILD_LEVEL
 
-## 🚀 快速上手指南 (Getting Started)
+| 等级 | 验证内容 |
+| --- | --- |
+| 1 | 隔离电阻负载上的正弦电压开环，检查采样极性、PWM 映射和功率级 |
+| 2 | 隔离电阻负载上的交流电流闭环，检查 QPR、电网电压前馈和可选 FDRC |
+| 3 | 并网有符号 P/Q 指令；正 P 向电网送电，负 P 整流吸收 |
+| 4 | 实测有功功率外环生成电流指令 |
+| 5 | 有源整流直流母线电压外环，从不控整流的实测功率工作点接管 |
 
-### 第一步：配置您的硬件 (Hardware Presets)
+公共 SDPE 的 `SINV_ENABLE_REPETITIVE_CONTROL` 是 FDRC 总开关。关闭时所有等级都保持 FDRC 禁用；开启时，控制器在进入运行态并延时后投入重复控制，避免学习启动暂态。
 
-如果您的功率板或传感器发生了变更，**永远不要在算法代码中修改魔法数字**。 打开 `ctrl_settings.h`：
+必须依次验证各级。并网或提高母线电压前，应在隔离低压条件下确认测量标度、极性、PWM、死区、保护和安全停机。CiA 402 状态机只有在校准和相应准入条件满足后才允许使能输出。
 
-1. 包含对应的功率板与传感器板预设文件。
-2. 填入物理板上的分压电阻与传感器型号：
+## 仿真与验证
 
-C
-
-```
-// 例如：更换为 180kΩ 分压电阻测市电，换用 75mV/A 灵敏度的电流传感器
-#define CTRL_AC_VOLTAGE_SENSITIVITY  QUAD_SENSOR_CALC_V_GAIN(180.0f)
-#define CTRL_AC_CURRENT_SENSITIVITY  QUAD_SENSOR_CALC_I_GAIN(TMCS1133_B3A_MV_A)
-```
-
-系统会在编译期自动重计算所有的 ADC 转换系数、基准值标幺化以及系统安全保护阈值（`CTRL_PROT_VBUS_MAX`、`CTRL_MAX_HW_CURRENT`）。
-
-### 第二步：物理外设零拷贝绑定 (Peripheral Binding)
-
-在 `xplt.peripheral.c` 的 `setup_peripheral()` 函数中，我们将底层 ADC 结构体的地址直接注入到核心算法引擎中：
-
-C
-
-```
-ctl_attach_sinv_rc(&rc_core,
-                   &adc_v_bus.control_port,
-                   &adc_v_grid.control_port,
-                   &adc_i_ac.control_port);
-```
-
-自此之后，20kHz 高频中断 `ctl_dispatch()` 将直接通过指针解引用读取 ADC 最新值，免去了繁琐的压栈传参，大幅降低 CPU 开销。
-
-### 第三步：分级安全测试 (Phased Testing via BUILD_LEVEL)
-
-在目标项目的 `sdpe_mgr/sdpe_requirement.json` 中选择 `BUILD_LEVEL`，依次生成
-`sdpe_general` 与项目层配置、重新编译后，再逐级验证变流器：
-
-- **`BUILD_LEVEL 1` (离网校验)**：
-  - 强制关闭 FDRC 与电网前馈。
-  - 目标：在隔离电阻负载下输出开环正弦电压，验证 ADC 方向、PWM 映射和功率级。
-- **`BUILD_LEVEL 2` (电流闭环离网校验)**：
-  - 在隔离电阻负载下运行交流电流闭环，验证 QPR、电网电压前馈和可选 FDRC。
-- **`BUILD_LEVEL 3` (并网 P/Q 指令)**：
-  - 通过电流内环执行有符号 P/Q 指令；正 P 向电网送电，负 P 从电网整流吸收。
-- **`BUILD_LEVEL 4` (并网功率闭环)**：
-  - 由实测有功功率外环产生电流内环指令，验证功率闭环稳态精度。
-- **`BUILD_LEVEL 5` (直流母线整流闭环)**：
-  - 直流母线电压外环产生负有功指令。进入运行态时以不控整流阶段的实测有功功率预置 PI
-    与功率斜率器，再由该工作点平滑升压，避免从零功率重新施加斜率。
-
-公共层 `sdpe_general/sdpe_requirement.json` 中的
-`SINV_ENABLE_REPETITIVE_CONTROL` 是 FDRC 总开关：选中时在进入运行态并延时后投入；
-取消选中时所有 BUILD_LEVEL 都保持 FDRC 关闭。
-
-------
-
-## 🕹️ 运行与操作 (Operation via CiA 402)
-
-本工程受 CiA 402 状态机严格管控，直接发波是不允许的。标准启动流程如下：
-
-1. **上电自检与校准**：系统启动后将自动阻塞，等待 `ctl_exec_adc_calibration` 完成交流电压/电流传感器的零点漂移校准。
-2. **锁相环准入**：`ctl_check_pll_locked()` 将持续监测电网电压幅值与频率。只有当 PLL 频率误差趋近于 0（`< 0.005 PU`）且电压在合法区间时，才允许并网。
-3. **下发控制字**：
-   - 发送命令字 `0x06` (Shutdown) -> `0x07` (Switch On) -> `0x0F` (Enable Operation) 启动设备。
-   - 写入 `g_p_ref_user` (有功标幺值) 和 `g_q_ref_user` (无功标幺值)。
-   - *(注：指令生成器 `ref_gen` 内部已集成 `slope_limiter`，即便突加满载指令，设备也会按照安规规定的斜率平滑加载，绝不会过流炸管)*。
-
-------
-
-## 🛡️ 安全与保护 (Safety & Protection)
-
-安全防护分为三层，层层递进：
-
-1. **硬件级限幅 (Hardware PWM Clamp)**：`hpwm_modulator` 底层强制使用 `int32_t` 防下溢计算，绝对防止算术溢出导致的满占空比炸管。
-2. **极速 ISR 保护 (Fast Protection)**：每次 20kHz 中断计算完控制指令后，立即调用 `ctl_step_sinv_protect_fast`。一旦发现母线快超压或交流快过流，直接通过软硬件 TZ 瞬间封锁发波。
-3. **慢速保护任务 (Slow Task Protection)**：在 `user_main.c` 的 10ms 周期任务 `tsk_protect` 中，持续监测交流电压有效值 (RMS OVP/UVP)、电网频率超限以及设备过温，触发状态机的 Fault 状态。
-
-------
-
-*Happy Power Coding! —— Designed with GMP Library.*
+`project/simulate` 包含三个功率级模型和 BUILD_LEVEL 1–5 自动回归。详细生成、构建、端口、信号映射、验收指标及当前结果见[仿真工程说明](project/simulate/README.md)和 [UDP/SIL 实验报告](doc/README.md)。归档记录表明五个等级均完成 SIL 回归；这不等价于所有等级已经完成硬件验证。

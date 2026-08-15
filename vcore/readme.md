@@ -7,7 +7,11 @@ implementations.
 
 | Directory | Purpose |
 | --- | --- |
+| `bus_driver` | Experimental CAN, I2C, SPI, and UART RTL plus selected testbenches |
+| `components` | CORDIC, DDS, ePWM, FIR, and PID RTL experiments |
+| `math_blocks` | Saturating arithmetic and vendor-generated DSP macro wrappers |
 | `riscv` | RISC-V-related experiments and integration notes |
+| `utilities` | Small reusable RTL helpers |
 | `vctl` | Verilog control-runtime experiments |
 
 This area is exploratory. Interfaces may change more quickly than `core` and

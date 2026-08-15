@@ -62,7 +62,7 @@ extern "C"
  *        BUILD_LEVEL 5: active-front-end rectifier with a DC-bus voltage outer loop; takeover is initialized from the measured passive-rectifier power.
  *        Options: (1), (2), (3), (4), (5)
  */
-#define BUILD_LEVEL (5)
+#define BUILD_LEVEL (2)
 
 //=================================================================================================
 /**
