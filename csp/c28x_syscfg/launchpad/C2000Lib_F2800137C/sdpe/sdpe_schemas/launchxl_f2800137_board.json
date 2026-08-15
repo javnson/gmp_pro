@@ -1,0 +1,165 @@
+{
+  "id": "launchxl_f2800137_board",
+  "display_name": "LAUNCHXL-F2800137 Board",
+  "description": "Board-specific SDPE template for LAUNCHXL-F2800137.",
+  "category": "C2000 LaunchPad Board",
+  "output_subdir": "mcu_board",
+  "component_slots": {
+    "boostxl": {
+      "accepted_schemas": [
+        "boostxl_interface"
+      ],
+      "required": true,
+      "description": "Shared dual-site BOOSTXL connector contract."
+    }
+  },
+  "parameters": [
+    {
+      "name": "board_name",
+      "c_name": "BOARD_NAME",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "LaunchPad board name."
+    },
+    {
+      "name": "chip",
+      "c_name": "CHIP",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "C2000 device."
+    },
+    {
+      "name": "syscfg_file",
+      "c_name": "SYSCFG_FILE",
+      "unit": "",
+      "required": true,
+      "value_format": "\"{}\"",
+      "description": "Board SysConfig source filename."
+    },
+    {
+      "name": "system_clock_hz",
+      "c_name": "SYSTEM_CLOCK_HZ",
+      "unit": "Hz",
+      "required": true,
+      "value_format": "({}UL)",
+      "description": "Maximum configured CPU clock."
+    },
+    {
+      "name": "control_isr_hz",
+      "c_name": "CONTROL_ISR_HZ",
+      "unit": "Hz",
+      "required": true,
+      "value_format": "({}UL)",
+      "description": "ePWM-triggered ADC control interrupt rate."
+    },
+    {
+      "name": "user_led_gpio",
+      "c_name": "USER_LED_GPIO",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "Heartbeat LED GPIO alias."
+    },
+    {
+      "name": "has_external_dac",
+      "c_name": "HAS_EXTERNAL_DAC",
+      "unit": "",
+      "required": true,
+      "value_format": "({}U)",
+      "description": "One when a hardware DAC output is configured."
+    },
+    {
+      "name": "control_dac_base",
+      "c_name": "CONTROL_DAC_BASE",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "Selected DAC base or zero."
+    },
+    {
+      "name": "can_classic",
+      "c_name": "CAN_CLASSIC",
+      "unit": "",
+      "required": true,
+      "value_format": "({}U)",
+      "description": "Classic CAN service selection."
+    },
+    {
+      "name": "can_mcan",
+      "c_name": "CAN_MCAN",
+      "unit": "",
+      "required": true,
+      "value_format": "({}U)",
+      "description": "MCAN service selection."
+    },
+    {
+      "name": "can_base",
+      "c_name": "CAN_BASE",
+      "unit": "",
+      "required": true,
+      "value_format": "{}",
+      "description": "Selected CAN/MCAN base alias."
+    }
+  ],
+  "exports": {
+    "board_name": {
+      "macro": "{PREFIX}_BOARD_NAME",
+      "description": "Board name."
+    },
+    "control_isr_hz": {
+      "macro": "{PREFIX}_CONTROL_ISR_HZ",
+      "description": "Control ISR rate."
+    },
+    "user_led_gpio": {
+      "macro": "{PREFIX}_USER_LED_GPIO",
+      "description": "Heartbeat LED."
+    },
+    "has_external_dac": {
+      "macro": "{PREFIX}_HAS_EXTERNAL_DAC",
+      "description": "External DAC availability."
+    },
+    "control_dac_base": {
+      "macro": "{PREFIX}_CONTROL_DAC_BASE",
+      "description": "Control DAC base."
+    },
+    "can_classic": {
+      "macro": "{PREFIX}_CAN_CLASSIC",
+      "description": "Classic CAN selection."
+    },
+    "can_mcan": {
+      "macro": "{PREFIX}_CAN_MCAN",
+      "description": "MCAN selection."
+    },
+    "can_base": {
+      "macro": "{PREFIX}_CAN_BASE",
+      "description": "CAN peripheral base."
+    }
+  },
+  "parameter_groups": [
+    {
+      "name": "Board Contract",
+      "parameters": [
+        "board_name",
+        "chip",
+        "syscfg_file",
+        "system_clock_hz",
+        "control_isr_hz",
+        "user_led_gpio",
+        "has_external_dac",
+        "control_dac_base",
+        "can_classic",
+        "can_mcan",
+        "can_base"
+      ]
+    }
+  ],
+  "tags": [
+    "c2000",
+    "launchpad",
+    "f2800137c"
+  ],
+  "header_prefix": "",
+  "components": {}
+}

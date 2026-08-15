@@ -1,0 +1,24 @@
+{
+  "id": "launchxl_f2800137",
+  "schema": "launchxl_f2800137_board",
+  "display_name": "LAUNCHXL-F2800137",
+  "macro_prefix": "LAUNCHXL_F2800137",
+  "components": {
+    "boostxl": {
+      "entity": "boostxl_dual_site"
+    }
+  },
+  "parameters": {
+    "board_name": "LAUNCHXL-F2800137",
+    "chip": "TMS320F2800137",
+    "syscfg_file": "LAUNCHXL_F2800137.syscfg",
+    "system_clock_hz": "120000000",
+    "control_isr_hz": "20000",
+    "user_led_gpio": "LED_R",
+    "has_external_dac": "0",
+    "control_dac_base": "0U",
+    "can_classic": "1",
+    "can_mcan": "0",
+    "can_base": "LAUNCHXL_CAN_BASE"
+  }
+}

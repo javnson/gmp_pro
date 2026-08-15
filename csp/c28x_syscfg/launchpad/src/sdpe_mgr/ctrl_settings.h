@@ -7,8 +7,6 @@
 #ifndef _PROJECT_CTRL_SETTINGS_H_
 #define _PROJECT_CTRL_SETTINGS_H_
 
-#include <ctl/hardware_preset/mcu_board/c2000_launchpad_boostxl.h>
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -36,29 +34,6 @@ extern "C"
  * @brief Mirror the normalized control ADC sample to an external DAC when the selected device provides one.
  */
 #define LAUNCHPAD_ENABLE_ADC_TO_DAC
-
-//=================================================================================================
-/**
- * @brief BOOSTXL Routing.
- */
-
-/**
- * @brief ADC SOC selected by the physical BOOSTXL pin number. DAC-shared pins 30 and 70 are intentionally excluded.
- *        Options: BOOSTXL_ADC23, BOOSTXL_ADC24, BOOSTXL_ADC25, BOOSTXL_ADC26, BOOSTXL_ADC27, BOOSTXL_ADC28, BOOSTXL_ADC29, BOOSTXL_ADC63, BOOSTXL_ADC64, BOOSTXL_ADC65, BOOSTXL_ADC66, BOOSTXL_ADC67, BOOSTXL_ADC68, BOOSTXL_ADC69
- */
-#define LAUNCHPAD_AC_ADC_SOC BOOSTXL_ADC23
-
-/**
- * @brief ADC result register paired with LAUNCHPAD_AC_ADC_SOC.
- *        Options: BOOSTXL_ADC23_RESULT_BASE, BOOSTXL_ADC24_RESULT_BASE, BOOSTXL_ADC25_RESULT_BASE, BOOSTXL_ADC26_RESULT_BASE, BOOSTXL_ADC27_RESULT_BASE, BOOSTXL_ADC28_RESULT_BASE, BOOSTXL_ADC29_RESULT_BASE, BOOSTXL_ADC63_RESULT_BASE, BOOSTXL_ADC64_RESULT_BASE, BOOSTXL_ADC65_RESULT_BASE, BOOSTXL_ADC66_RESULT_BASE, BOOSTXL_ADC67_RESULT_BASE, BOOSTXL_ADC68_RESULT_BASE, BOOSTXL_ADC69_RESULT_BASE
- */
-#define LAUNCHPAD_AC_ADC_RESULT_BASE BOOSTXL_ADC23_RESULT_BASE
-
-/**
- * @brief One PWM pair selected by the physical BOOSTXL pin pair.
- *        Options: BOOSTXL_EPWM3635_BASE, BOOSTXL_EPWM3837_BASE, BOOSTXL_EPWM4039_BASE, BOOSTXL_EPWM7675_BASE, BOOSTXL_EPWM7877_BASE, BOOSTXL_EPWM8079_BASE
- */
-#define LAUNCHPAD_PWM_BASE BOOSTXL_EPWM8079_BASE
 
 //=================================================================================================
 /**

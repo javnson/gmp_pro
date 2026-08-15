@@ -1,5 +1,14 @@
 param(
-    [ValidateSet("F280039C", "F280049C")]
+    [ValidateSet(
+        "F2800137C",
+        "F280025C",
+        "F280039C",
+        "F280049C",
+        "F28377S",
+        "F28379D",
+        "F28P55X",
+        "F28P65X"
+    )]
     [string]$Board = "F280049C",
     [string]$CcsRoot = "C:\ti\ccs1281\ccs",
     [ValidateSet("Debug", "Release", "All")]
@@ -13,7 +22,7 @@ if (-not (Test-Path -LiteralPath $eclipse -PathType Leaf)) {
     throw "CCS headless executable not found: $eclipse"
 }
 
-$workspace = Join-Path $env:TEMP ("gmp_launchpad_ccs_" + $PID)
+$workspace = Join-Path $env:TEMP ("gmp_launchpad_ccs_" + [guid]::NewGuid().ToString("N"))
 New-Item -ItemType Directory -Force -Path $workspace | Out-Null
 $workspaceArg = $workspace.Replace("\", "/")
 $projectArg = $projectRoot.Replace("\", "/")

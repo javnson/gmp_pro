@@ -1,0 +1,14 @@
+{
+  "id": "boostxl_dual_site",
+  "schema": "boostxl_interface",
+  "display_name": "TI BOOSTXL Dual-Site Connector",
+  "macro_prefix": "BOOSTXL_DUAL_SITE",
+  "parameters": {
+    "site_count": "2",
+    "analog_input_count": "16",
+    "pwm_pair_count": "6",
+    "control_adc_soc": "BOOSTXL_ADC23",
+    "control_adc_result": "BOOSTXL_ADC23_RESULT_BASE",
+    "control_pwm_base": "BOOSTXL_EPWM4039_BASE"
+  }
+}

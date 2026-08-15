@@ -26,6 +26,7 @@
         "F2838x",
         "F28002x",
         "F28003x",
+        "F280013x",
         "F28P65x",
         "F28P55x",
         "GMP_NULL_DEVICE"
@@ -38,7 +39,7 @@
       "dependencies": [
         {
           "packageId": "C2000WARE",
-          "version": "5.03.00.00",
+          "version": "5.04.00.00",
           "require": "mandatory"
         },
         {

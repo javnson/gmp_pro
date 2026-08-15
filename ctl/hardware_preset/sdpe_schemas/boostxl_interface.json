@@ -1,0 +1,24 @@
+{
+  "id": "boostxl_interface",
+  "display_name": "TI BOOSTXL Dual-Site Interface",
+  "description": "Portable physical connector contract shared by C2000 LaunchPads with two 40-pin BOOSTXL sites.",
+  "category": "Expansion Interface",
+  "output_subdir": "interface",
+  "parameters": [
+    {"name":"site_count","c_name":"SITE_COUNT","unit":"","required":true,"value_format":"({}U)","description":"Number of BOOSTXL sites."},
+    {"name":"analog_input_count","c_name":"ANALOG_INPUT_COUNT","unit":"","required":true,"value_format":"({}U)","description":"Nominal analog connector positions before device conflicts."},
+    {"name":"pwm_pair_count","c_name":"PWM_PAIR_COUNT","unit":"","required":true,"value_format":"({}U)","description":"Nominal PWM pairs across both sites."},
+    {"name":"control_adc_soc","c_name":"CONTROL_ADC_SOC","unit":"","required":true,"value_format":"{}","description":"Default physical-position ADC SOC alias."},
+    {"name":"control_adc_result","c_name":"CONTROL_ADC_RESULT","unit":"","required":true,"value_format":"{}","description":"Result base paired with the default ADC SOC."},
+    {"name":"control_pwm_base","c_name":"CONTROL_PWM_BASE","unit":"","required":true,"value_format":"{}","description":"Default physical-position PWM base alias."}
+  ],
+  "exports": {
+    "control_adc_soc":{"macro":"{PREFIX}_CONTROL_ADC_SOC","description":"Default control ADC SOC alias."},
+    "control_adc_result":{"macro":"{PREFIX}_CONTROL_ADC_RESULT","description":"Default control ADC result base."},
+    "control_pwm_base":{"macro":"{PREFIX}_CONTROL_PWM_BASE","description":"Default control PWM base."}
+  },
+  "parameter_groups": [{"name":"BOOSTXL Contract","parameters":["site_count","analog_input_count","pwm_pair_count","control_adc_soc","control_adc_result","control_pwm_base"]}],
+  "tags":["ti","boostxl","launchpad","interface"],
+  "header_prefix":"",
+  "components": {}
+}

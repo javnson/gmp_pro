@@ -1,0 +1,24 @@
+{
+  "id": "launchxl_f28377s",
+  "schema": "launchxl_f28377s_board",
+  "display_name": "LAUNCHXL-F28377S",
+  "macro_prefix": "LAUNCHXL_F28377S",
+  "components": {
+    "boostxl": {
+      "entity": "boostxl_dual_site"
+    }
+  },
+  "parameters": {
+    "board_name": "LAUNCHXL-F28377S",
+    "chip": "TMS320F28377S",
+    "syscfg_file": "LAUNCHXL_F28377S.syscfg",
+    "system_clock_hz": "200000000",
+    "control_isr_hz": "20000",
+    "user_led_gpio": "LED_R",
+    "has_external_dac": "1",
+    "control_dac_base": "BOOSTXL_DACA_BASE",
+    "can_classic": "1",
+    "can_mcan": "0",
+    "can_base": "LAUNCHXL_CAN_BASE"
+  }
+}
