@@ -100,6 +100,12 @@ and PIL files belong in the target `src`. This convention is authoritative even
 when an older suite has a different layout. Do not restructure clear existing
 STM32 projects merely to imitate the C2000 layout.
 
+C2000 codestart assembly is vendor material and has one project-local copy under
+`C2000Lib/device_support`. A SysConfig file that loads `device_support` must set
+`device_support.useStandardCodeStartBranch = false;`; otherwise SysConfig adds an
+external C2000Ware codestart source and CCS links a duplicate or stale
+`src/user/*codestartbranch.obj`. Clean and fully rebuild after moving this file.
+
 The deprecated `rt_trace` module must not be restored to simulation projects.
 Stored simulation evidence belongs under the suite `doc/simulation_result`
 directory with a Markdown data summary.

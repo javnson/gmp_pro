@@ -101,6 +101,11 @@ ctl/suite/<suite_name>/
 - 每个可运行工程通常包含 `gmp_src_mgr` 和 `xplt`。
 - C2000 工程中，TI 提供的文件只能放入 `C2000Lib`；GMP、跨平台、用户、
   SDPE、`gmp_src_mgr` 和 PIL 文件统一放入目标的 `src`。
+- C2000 启动汇编文件（例如 `f28003x_codestartbranch.asm`）只保留在
+  `C2000Lib/device_support`。使用 SysConfig `device_support` 模块时必须设置
+  `device_support.useStandardCodeStartBranch = false;`，避免 SysConfig 再从
+  C2000Ware 引入第二份启动文件。目录迁移后应执行一次 clean/full build，
+  使 CCS 重建生成目录和链接清单。
 
 上述 C2000 约定是当前规范，即使历史参考工程存在差异也以该约定为准。
 历史工程可能仍存在 `implement` 目录；旧结构只作为维护对象。

@@ -42,4 +42,4 @@
 
 
 // Invoke Controller Settings
-#include <sdpe_mgr/ctrl_settings.h>
+#include <ctrl_settings.h>

@@ -314,42 +314,42 @@ extern "C"
 /**
  * @brief DC-bus voltage sensing gain in ADC volts per measured volt.
  */
-#define CTRL_DC_VOLTAGE_SENSITIVITY (MY_BOARD_DCBUS_VOLTAGE_SENSE_GAIN)
+#define CTRL_DC_VOLTAGE_SENSITIVITY (GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_GAIN)
 
 /**
  * @brief DC-bus voltage sensor bias in volts.
  */
-#define CTRL_DC_VOLTAGE_BIAS (MY_BOARD_DCBUS_VOLTAGE_SENSE_BIAS_V)
+#define CTRL_DC_VOLTAGE_BIAS (GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_BIAS_V)
 
 /**
  * @brief Phase-voltage sensing gain in ADC volts per measured volt.
  */
-#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (MY_BOARD_PH_VOLTAGE_SENSE_GAIN)
+#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_GAIN)
 
 /**
  * @brief Phase-voltage sensor bias in volts.
  */
-#define CTRL_INVERTER_VOLTAGE_BIAS (MY_BOARD_PH_VOLTAGE_SENSE_BIAS_V)
+#define CTRL_INVERTER_VOLTAGE_BIAS (GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_BIAS_V)
 
 /**
  * @brief DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path.
  */
-#define CTRL_DC_CURRENT_SENSITIVITY (MY_BOARD_DCBUS_CURRENT_SENSE_GAIN)
+#define CTRL_DC_CURRENT_SENSITIVITY (GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_GAIN)
 
 /**
  * @brief DC-bus current sensor bias.
  */
-#define CTRL_DC_CURRENT_BIAS (MY_BOARD_DCBUS_CURRENT_SENSE_BIAS_V)
+#define CTRL_DC_CURRENT_BIAS (GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_BIAS_V)
 
 /**
  * @brief Phase-current sensor sensitivity in volts per ampere.
  */
-#define CTRL_INVERTER_CURRENT_SENSITIVITY (MY_BOARD_PH_SHUNT_RESISTANCE_OHM * MY_BOARD_PH_CSA_GAIN_V_V)
+#define CTRL_INVERTER_CURRENT_SENSITIVITY (GMP_3PH_2136SINV_DUAL_PH_SHUNT_RESISTANCE_OHM * GMP_3PH_2136SINV_DUAL_PH_CSA_GAIN_V_V)
 
 /**
  * @brief Phase-current sensor zero-current bias in volts.
  */
-#define CTRL_INVERTER_CURRENT_BIAS (MY_BOARD_PH_CSA_BIAS_V)
+#define CTRL_INVERTER_CURRENT_BIAS (GMP_3PH_2136SINV_DUAL_PH_CSA_BIAS_V)
 
 /**
  * @brief Alias the selected sm060r20b30mnad hardware parameter into the MCS control contract.

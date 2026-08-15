@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>CTL_MC_PMSM_NT_Iris_node_Sensored</name>
+	<name>CTL_MC_PMSM_ID_Iris_node_Sensored</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -49,6 +49,16 @@
 			<name>src/user/user_main.h</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/src/user_main.h</locationURI>
+		</link>
+		<link>
+			<name>src/user/pmsm_offline_id_if.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/src/pmsm_offline_id_if.c</locationURI>
+		</link>
+		<link>
+			<name>src/user/pmsm_offline_id_if.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/src/pmsm_offline_id_if.h</locationURI>
 		</link>
 	</linkedResources>
 	<variableList>

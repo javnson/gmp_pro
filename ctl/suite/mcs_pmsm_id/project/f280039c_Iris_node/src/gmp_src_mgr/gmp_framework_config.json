@@ -119,6 +119,8 @@
         {"root": "ctl", "module": "component|motor_control|motion|s_curve"},
         {"root": "ctl", "module": "component|motor_control|motion|sogi_curve"},
         {"root": "ctl", "module": "component|motor_control|motion|trapezoidal"},
+        {"root": "ctl", "module": "component|motor_control|motor_id|_internal"},
+        {"root": "ctl", "module": "component|motor_control|motor_id|pmsm"},
         {"root": "ctl", "module": "component|motor_control|observer|_internal"},
         {"root": "ctl", "module": "component|motor_control|observer|acim_fo"},
         {"root": "ctl", "module": "component|motor_control|observer|acim_pos_calc"},

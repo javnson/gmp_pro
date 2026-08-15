@@ -121,7 +121,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="C2000Lib/device_cmd/F280039_flash_lnk.cmd|C2000Lib/device_cmd/F280039_ram_lnk.cmd|src/user/F280039_LaunchPad.syscfg|driverlib.lib" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="C2000Lib/device_cmd/F280039_flash_lnk.cmd|C2000Lib/device_cmd/F280039_ram_lnk.cmd|src/user/F280039_LaunchPad.syscfg|src/user/f28003x_codestartbranch.asm|driverlib.lib" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -207,7 +207,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="C2000Lib/device_cmd/F280039_flash_lnk.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="C2000Lib/device_cmd/F280039_flash_lnk.cmd|src/user/f28003x_codestartbranch.asm" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

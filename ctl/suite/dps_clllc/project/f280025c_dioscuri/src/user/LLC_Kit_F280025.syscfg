@@ -19,6 +19,7 @@ const can1           = can.addInstance();
 const cputimer       = scripting.addModule("/driverlib/cputimer.js", {}, false);
 const cputimer1      = cputimer.addInstance();
 const device_support = scripting.addModule("/driverlib/device_support.js");
+device_support.useStandardCodeStartBranch = false;
 const epwm           = scripting.addModule("/driverlib/epwm.js", {}, false);
 const epwm1          = epwm.addInstance();
 const epwm2          = epwm.addInstance();

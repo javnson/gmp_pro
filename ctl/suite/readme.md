@@ -47,6 +47,13 @@ all GMP-provided, cross-platform, user, SDPE, source-manager, and PIL material
 belongs in `src`. Simulation and hardware targets share the suite-level control
 code. The deprecated `rt_trace` module is not part of a suite project.
 
+Keep each C2000 startup assembly file, such as
+`f28003x_codestartbranch.asm`, only in `C2000Lib/device_support`. When a SysConfig
+file loads the `device_support` module, set
+`device_support.useStandardCodeStartBranch = false;` so SysConfig does not add a
+second C2000Ware copy. After a layout migration, run a clean/full build so CCS
+regenerates its build directory and linker input list.
+
 Generated SDPE outputs are disposable build inputs. Remove stale `.h` and `.m`
 outputs before regeneration, then generate `sdpe_general` first and every target
 `sdpe_mgr` second. Do not hand-edit generated files.

@@ -20,6 +20,7 @@ const dac            = scripting.addModule("/driverlib/dac.js", {}, false);
 const dac1           = dac.addInstance();
 const dac2           = dac.addInstance();
 const device_support = scripting.addModule("/driverlib/device_support.js");
+device_support.useStandardCodeStartBranch = false;
 const epwm           = scripting.addModule("/driverlib/epwm.js", {}, false);
 const epwm1          = epwm.addInstance();
 const epwm2          = epwm.addInstance();
