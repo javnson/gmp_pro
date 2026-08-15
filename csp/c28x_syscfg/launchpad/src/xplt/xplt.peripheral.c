@@ -5,10 +5,9 @@
 
 #include <gmp_core.h>
 
-#include "user_main.h"
+#include "user_dl.h"
 #include <xplt.peripheral.h>
 #include <launchpad_board.h>
-#include <ctrl_settings.h>
 
 #ifndef XPLT_DL_BAUD_RATE
 #define XPLT_DL_BAUD_RATE 115200UL
@@ -27,9 +26,9 @@ static gmp_datalink_t* bound_datalink;
 volatile uint32_t control_isr_runs;
 static uint16_t dsa_sample_divider;
 #if LAUNCHPAD_CAN_CLASSIC
-static volatile uint16_t can_last_rx[8];
-static volatile uint32_t can_rx_count;
-static volatile uint16_t can_bus_active;
+volatile uint16_t can_last_rx[8];
+volatile uint32_t can_rx_count;
+volatile uint16_t can_bus_active;
 #endif
 
 /** @brief SysConfig-owned SCIA receive FIFO interrupt handler. */
@@ -328,7 +327,7 @@ __interrupt void MainISR(void)
     if (dsa_sample_divider >= (GMP_LAUNCHPAD_PWM_FREQUENCY_HZ / 1000UL))
     {
         dsa_sample_divider = 0U;
-        user_dsa_timer_step();
+        user_dl_dsa_timer_step();
     }
     gmp_step_system_tick();
     ADC_clearInterruptStatus(BOOSTXL_ADCA_BASE, ADC_INT_NUMBER1);

@@ -59,16 +59,8 @@ if "%GMP_ENABLE_SRC_MGR%"=="1" (
 )
 
 if "%GMP_ENABLE_SDPE%"=="1" (
-    echo [GMP pre-build] Regenerating shared SDPE settings...
-    call "%GMP_PROJECT_ROOT%\src\sdpe_mgr\sdpe_generate.bat"
-    if errorlevel 1 goto :shared_sdpe_failed
-    if not exist "%GMP_PROJECT_ROOT%\src\sdpe_mgr\ctrl_settings.h" (
-        echo [ERROR] SDPE did not produce src\sdpe_mgr\ctrl_settings.h.
-        goto :shared_sdpe_failed
-    )
-
-    echo [GMP pre-build] Regenerating %GMP_BOARD% board bindings...
-    call "%GMP_PROJECT_ROOT%\C2000Lib_%GMP_BOARD%\sdpe\sdpe_generate.bat"
+    echo [GMP pre-build] Regenerating merged common and %GMP_BOARD% SDPE bindings...
+    call "%GMP_PROJECT_ROOT%\tools\generate_board_sdpe.bat" "%GMP_BOARD%" "%GMP_PRO_LOCATION%"
     if errorlevel 1 goto :board_sdpe_failed
     if not exist "%GMP_PROJECT_ROOT%\C2000Lib_%GMP_BOARD%\launchpad_board.h" (
         echo [ERROR] SDPE did not produce C2000Lib_%GMP_BOARD%\launchpad_board.h.
@@ -81,7 +73,7 @@ exit /b 0
 
 :preflight_failed
 if "%GMP_ENABLE_SRC_MGR%"=="1" del /q "%GMP_PROJECT_ROOT%\src\gmp_src_mgr\gmp_inc\gmp_core.h" >nul 2>&1
-if "%GMP_ENABLE_SDPE%"=="1" del /q "%GMP_PROJECT_ROOT%\src\sdpe_mgr\ctrl_settings.h" >nul 2>&1
+if "%GMP_ENABLE_SDPE%"=="1" del /q "%GMP_PROJECT_ROOT%\C2000Lib_%GMP_BOARD%\launchpad_board.h" >nul 2>&1
 echo [ERROR] GMP pre-build prerequisites failed; stale entry headers removed.
 exit /b 1
 
@@ -90,11 +82,6 @@ rem CCS managed-build marks custom pre-build recipes as error-tolerant.  Remove
 rem one generated entry header so compilation cannot silently use stale output.
 del /q "%GMP_PROJECT_ROOT%\src\gmp_src_mgr\gmp_inc\gmp_core.h" >nul 2>&1
 echo [ERROR] GMP source-manager generation failed; stale entry header removed.
-exit /b 1
-
-:shared_sdpe_failed
-del /q "%GMP_PROJECT_ROOT%\src\sdpe_mgr\ctrl_settings.h" >nul 2>&1
-echo [ERROR] Shared SDPE generation failed; stale settings header removed.
 exit /b 1
 
 :board_sdpe_failed

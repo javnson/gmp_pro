@@ -7,27 +7,23 @@ This file records verified state, not intended state.
 | Eight `C2000Lib_*` packages | complete | copied from local C2000Ware 5.04.00.00 |
 | Official schematics in `hw/` | complete | one official PDF per board |
 | Debug target files | complete | official C2000Ware CCXML per board |
-| F280049C, F280039C and F280025C SysConfig | validated | SysConfig 1.21, zero errors/warnings |
-| Remaining five SysConfig files | in progress | require per-board pin and switch audit |
-| F280049C and F280039C enlarged flash linkers | compiled | large GMP image linked from local code-start sources |
-| F280025C build support | prepared | local code-start source, enlarged Flash command file and EABI DriverLib archive |
-| Remaining six flash linker layouts | in progress | must be checked against each device memory map |
-| Shared SDPE requirement | generated | current `.h`/`.m` pair generated and validated from one JSON source |
-| Shared task/Data Link application | implemented | one-shot, 500 ms heartbeat, 2 ms Data Link, tunable, memory, scope and optional PIL |
-| ADC-to-PWM/DAC control example | implemented | SDPE-selected ADC mirrored to PWM; DAC used when available and enabled |
-| Classic CAN reference service | implemented | 1 Mbit/s, RX 0x101, TX 0x201; disconnected-bus-safe polling |
+| Eight SysConfig files | validated | all provide ADCA INT1, every usable BOOSTXL ADC, every device DAC and six BOOSTXL ePWM pairs |
+| Eight enlarged flash linker layouts | compiled | portable `mass_data`, local code-start source and device-appropriate RAM mapping |
+| CSP SDPE component library | validated | eight schemas/entities registered by the repository-wide SDPE settings |
+| Shared and board SDPE requirements | generated | one common requirement plus eight `src/sdpe_mgr/requirements/<BOARD>` channel selections |
+| Shared task/Data Link application | implemented | `user_main` owns scheduling; `user_dl` owns serial Data Link, tunable, memory, scope and optional PIL |
+| ADC-to-PWM/DAC control example | implemented | coupled SDPE ADC SOC/result selection mirrored to selected PWM and capability-guarded DAC |
+| Classic CAN reference service | implemented | independent 2 ms task, 1 Mbit/s, RX 0x101, TX 0x201; disconnected-bus-safe polling |
 | MCAN reference service | pending | required for F28P55X |
-| F280049C/F280039C Debug/Release configurations | complete | CCS invokes each root `.syscfg` and builds from the formal root project |
-| Remaining twelve CCS configurations | pending | created after every target file validates |
-| All-configuration compile | pending | CCS headless build |
-| F280049C/F280039C Debug/Release compile | passed | CCS 12.8 headless, C2000 compiler 22.6.1.LTS, zero errors |
-| F280049C flash/runtime test | passed | XDS110 physical board, 30-second counter observation |
-| F280049C Data Link test | passed | COM5, 115200 bit/s; echo/stress/tunable/memory/scope |
+| Sixteen CCS configurations | complete | every board has Debug and Release in the formal root project |
+| All-configuration compile | passed | all eight Debug and eight Release configurations rebuilt after the 2026-08-16 SDPE/task refactor |
+| F280049C flash/runtime test | historical pass | XDS110 physical board evidence predates the 2026-08-16 task/SDPE refactor |
+| F280049C Data Link test | historical pass | COM5, 115200 bit/s; echo/stress/tunable/memory/scope before the refactor |
 | F280049C physical CAN test | pending | requires a second active 1 Mbit/s CAN node |
 
 Do not interpret an item marked `pending` or `in progress` as implemented.
 
-## F280049C physical evidence (2026-08-15)
+## F280049C physical evidence (2026-08-15, pre-refactor)
 
 - `startup_task_runs = 1`
 - `heartbeat_task_runs = 60`

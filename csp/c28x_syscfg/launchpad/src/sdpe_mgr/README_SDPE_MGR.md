@@ -1,49 +1,53 @@
-# SDPE Built-in Manager Demo
+# LaunchPad SDPE manager
 
-This folder is the project-local SDPE manager for the portable C2000
-LaunchPad reference application.
+This directory follows the same composed-requirement model used by existing
+`ctl/suite` projects, adapted to one CCS project with eight build
+configurations.
 
-It demonstrates the intended deployment model:
+## Sources of truth
 
-- the SDPE program stays in `%GMP_PRO_LOCATION%\tools\SDPE_v2`;
-- the project-local manager stores its own requirement file and batch tools;
-- generation and editing are launched through `GMP_PRO_LOCATION`;
-- library paths and generation modes are read from `%GMP_PRO_LOCATION%\tools\SDPE_v2\sdpe_settings.json`.
+- `sdpe_requirement.json` is the Common requirement. It owns portable timing,
+  Data Link, CAN and feature settings.
+- `requirements/<BOARD>/sdpe_requirement.json` is the Private requirement for
+  one build configuration. It includes the target board as hardware, selects
+  ADC/PWM/DAC application channels, and binds the Common file through
+  `common_requirements`.
+- `../../../../sdpe_component` owns reusable C2000 board schemas and entities.
+  The repository-wide `tools/SDPE_v2/sdpe_settings.json` registers that
+  library for the CLI, GUI and generator.
 
-Files:
+This separation is intentional: reusable physical facts belong to CSP,
+portable application policy belongs to the Common requirement, and a board's
+application choices belong to its Private requirement.
 
-- `sdpe_requirement.json`: source of truth for portable application timing,
-  Data Link and feature switches. Physical board routing does not live here.
-- `sdpe_settings.bat`: local settings for this manager.
-- `sdpe_edit.bat`: open the Project Requirement GUI.
-- `sdpe_generate.bat`: regenerate the C and MATLAB bindings in this directory.
-- `sdpe_validate.bat`: validate the library and inspect the requirement file.
+## Generation
 
-Usage:
+Generate one active board with:
 
 ```bat
-set GMP_PRO_LOCATION=E:\lib\gmp_pro
-sdpe_validate.bat
-sdpe_generate.bat
-sdpe_edit.bat
+tools\generate_board_sdpe.bat F280049C %GMP_PRO_LOCATION%
 ```
 
-Generated output:
+The Private requirement is the generation entry point. SDPE composes it with
+the Common requirement and writes:
 
 ```text
-sdpe_mgr\
-  ctrl_settings.h
+C2000Lib_F280049C\launchpad_board.h
+src\sdpe_mgr\requirements\F280049C\
   ctrl_settings_matlab_init.m
+  launchpad_board_matlab_init.m
 ```
 
-Physical bindings are generated separately inside every
-`C2000Lib_<BOARD>/sdpe` project. Each board has a dedicated schema and entity,
-and each entity contains the shared repository-level `boostxl_dual_site`
-component. That project generates `C2000Lib_<BOARD>/launchpad_board.h`, which
-is the only board-binding header consumed by the portable `src` tree.
+There is deliberately no separately consumed `src/sdpe_mgr/ctrl_settings.h`.
+All C macros required by the selected configuration are merged into its single
+`launchpad_board.h`. MATLAB keeps the standard Common-then-Private two-script
+chain, but both generated scripts are co-located below the board requirement,
+so one board cannot accidentally load another board's stale output.
 
-For real suite projects, deploy a local manager with:
+CCS runs the same command for the active configuration when
+`GMP_PREBUILD_SDPE=1`. Generated `.h` and `.m` files must not be edited by hand.
+After editing a schema, entity, Common requirement or Private requirement,
+regenerate the affected board and rebuild its Debug and Release configurations.
 
-```bat
-%GMP_PRO_LOCATION%\tools\SDPE_v2\gmp_sdpe_deploy_project_mgr.bat <project_dir>
-```
+See `doc/SDPE_ARCHITECTURE.md` for the design decision, channel-selection
+contract and stale-output safeguards.

@@ -1,0 +1,119 @@
+{
+  "id": "gmp_launchpad_f28p65x_bindings",
+  "macro_prefix": "LAUNCHXL_F28P65X",
+  "display_name": "LAUNCHXL-F28P65X GMP application bindings",
+  "description": "Board-specific channel choices for the portable GMP LaunchPad reference application.",
+  "suite": "c28x_syscfg_launchpad",
+  "version": "0.2.0",
+  "updated_at": "2026-08-16",
+  "output_header": "launchpad_board.h",
+  "common_requirements": [
+    "../../sdpe_requirement.json"
+  ],
+  "hardware": [
+    {
+      "entity": "launchxl_f28p65x"
+    }
+  ],
+  "code_sections": {
+    "before_footer": "#define GMP_LAUNCHPAD_CAT_RAW(a, b) a##b\n#define GMP_LAUNCHPAD_CAT(a, b) GMP_LAUNCHPAD_CAT_RAW(a, b)\n#define GMP_LAUNCHPAD_ADC_SOC_BOOSTXL_ADC23_SELECT BOOSTXL_ADC23\n#define GMP_LAUNCHPAD_ADC_RESULT_BOOSTXL_ADC23_SELECT BOOSTXL_ADC23_RESULT_BASE\n#define GMP_LAUNCHPAD_ADC_SOC_BOOSTXL_ADC24_SELECT BOOSTXL_ADC24\n#define GMP_LAUNCHPAD_ADC_RESULT_BOOSTXL_ADC24_SELECT BOOSTXL_ADC24_RESULT_BASE\n#define GMP_LAUNCHPAD_ADC_SOC_BOOSTXL_ADC27_SELECT BOOSTXL_ADC27\n#define GMP_LAUNCHPAD_ADC_RESULT_BOOSTXL_ADC27_SELECT BOOSTXL_ADC27_RESULT_BASE\n#define GMP_LAUNCHPAD_ADC_SOC_BOOSTXL_ADC42_SELECT BOOSTXL_ADC42\n#define GMP_LAUNCHPAD_ADC_RESULT_BOOSTXL_ADC42_SELECT BOOSTXL_ADC42_RESULT_BASE\n#define GMP_LAUNCHPAD_ADC_SOC_BOOSTXL_ADC64_SELECT BOOSTXL_ADC64\n#define GMP_LAUNCHPAD_ADC_RESULT_BOOSTXL_ADC64_SELECT BOOSTXL_ADC64_RESULT_BASE\n#define GMP_LAUNCHPAD_ADC_SOC_BOOSTXL_ADC67_SELECT BOOSTXL_ADC67\n#define GMP_LAUNCHPAD_ADC_RESULT_BOOSTXL_ADC67_SELECT BOOSTXL_ADC67_RESULT_BASE\n#define GMP_LAUNCHPAD_ADC_SOC_BOOSTXL_ADC2_SELECT BOOSTXL_ADC2\n#define GMP_LAUNCHPAD_ADC_RESULT_BOOSTXL_ADC2_SELECT BOOSTXL_ADC2_RESULT_BASE\n#define GMP_LAUNCHPAD_ADC_SOC_BOOSTXL_ADC25_SELECT BOOSTXL_ADC25\n#define GMP_LAUNCHPAD_ADC_RESULT_BOOSTXL_ADC25_SELECT BOOSTXL_ADC25_RESULT_BASE\n#define GMP_LAUNCHPAD_ADC_SOC_BOOSTXL_ADC28_SELECT BOOSTXL_ADC28\n#define GMP_LAUNCHPAD_ADC_RESULT_BOOSTXL_ADC28_SELECT BOOSTXL_ADC28_RESULT_BASE\n#define GMP_LAUNCHPAD_ADC_SOC_BOOSTXL_ADC63_SELECT BOOSTXL_ADC63\n#define GMP_LAUNCHPAD_ADC_RESULT_BOOSTXL_ADC63_SELECT BOOSTXL_ADC63_RESULT_BASE\n#define GMP_LAUNCHPAD_ADC_SOC_BOOSTXL_ADC65_SELECT BOOSTXL_ADC65\n#define GMP_LAUNCHPAD_ADC_RESULT_BOOSTXL_ADC65_SELECT BOOSTXL_ADC65_RESULT_BASE\n#define GMP_LAUNCHPAD_ADC_SOC_BOOSTXL_ADC68_SELECT BOOSTXL_ADC68\n#define GMP_LAUNCHPAD_ADC_RESULT_BOOSTXL_ADC68_SELECT BOOSTXL_ADC68_RESULT_BASE\n#define GMP_LAUNCHPAD_ADC_SOC_BOOSTXL_ADC6_SELECT BOOSTXL_ADC6\n#define GMP_LAUNCHPAD_ADC_RESULT_BOOSTXL_ADC6_SELECT BOOSTXL_ADC6_RESULT_BASE\n#define GMP_LAUNCHPAD_ADC_SOC_BOOSTXL_ADC26_SELECT BOOSTXL_ADC26\n#define GMP_LAUNCHPAD_ADC_RESULT_BOOSTXL_ADC26_SELECT BOOSTXL_ADC26_RESULT_BASE\n#define GMP_LAUNCHPAD_ADC_SOC_BOOSTXL_ADC29_SELECT BOOSTXL_ADC29\n#define GMP_LAUNCHPAD_ADC_RESULT_BOOSTXL_ADC29_SELECT BOOSTXL_ADC29_RESULT_BASE\n#define GMP_LAUNCHPAD_ADC_SOC_BOOSTXL_ADC46_SELECT BOOSTXL_ADC46\n#define GMP_LAUNCHPAD_ADC_RESULT_BOOSTXL_ADC46_SELECT BOOSTXL_ADC46_RESULT_BASE\n#define GMP_LAUNCHPAD_ADC_SOC_BOOSTXL_ADC66_SELECT BOOSTXL_ADC66\n#define GMP_LAUNCHPAD_ADC_RESULT_BOOSTXL_ADC66_SELECT BOOSTXL_ADC66_RESULT_BASE\n#define GMP_LAUNCHPAD_ADC_SOC_BOOSTXL_ADC69_SELECT BOOSTXL_ADC69\n#define GMP_LAUNCHPAD_ADC_RESULT_BOOSTXL_ADC69_SELECT BOOSTXL_ADC69_RESULT_BASE\n#define GMP_LAUNCHPAD_ADC_SOC(selection) GMP_LAUNCHPAD_CAT(GMP_LAUNCHPAD_ADC_SOC_, selection)\n#define GMP_LAUNCHPAD_ADC_RESULT(selection) GMP_LAUNCHPAD_CAT(GMP_LAUNCHPAD_ADC_RESULT_, selection)\n#define LAUNCHPAD_CONTROL_ADC_SOC GMP_LAUNCHPAD_ADC_SOC(LAUNCHPAD_CONTROL_ADC_SELECT)\n#define LAUNCHPAD_CONTROL_ADC_RESULT GMP_LAUNCHPAD_ADC_RESULT(LAUNCHPAD_CONTROL_ADC_SELECT)"
+  },
+  "requirements": [
+    {
+      "role": "Board Name",
+      "macro": "LAUNCHPAD_BOARD_NAME",
+      "binding": {
+        "export": "launchxl_f28p65x.board_name"
+      },
+      "description": "Selected LaunchPad name."
+    },
+    {
+      "role": "Heartbeat LED",
+      "macro": "LAUNCHPAD_USER_LED_GPIO",
+      "binding": {
+        "export": "launchxl_f28p65x.user_led_gpio"
+      },
+      "description": "Board LED used by the scheduler heartbeat."
+    },
+    {
+      "role": "DAC Capability",
+      "macro": "LAUNCHPAD_HAS_EXTERNAL_DAC",
+      "binding": {
+        "export": "launchxl_f28p65x.has_external_dac"
+      },
+      "description": "Compile-time device DAC capability."
+    },
+    {
+      "role": "Classic CAN Capability",
+      "macro": "LAUNCHPAD_CAN_CLASSIC",
+      "binding": {
+        "export": "launchxl_f28p65x.can_classic"
+      },
+      "description": "Classic CAN service selection."
+    },
+    {
+      "role": "MCAN Capability",
+      "macro": "LAUNCHPAD_CAN_MCAN",
+      "binding": {
+        "export": "launchxl_f28p65x.can_mcan"
+      },
+      "description": "MCAN service selection."
+    },
+    {
+      "role": "CAN Peripheral",
+      "macro": "LAUNCHPAD_CAN_BASE",
+      "binding": {
+        "export": "launchxl_f28p65x.can_base"
+      },
+      "description": "Selected CAN or MCAN base."
+    }
+  ],
+  "option_macros": [
+    {
+      "group": "Control Channel Selection",
+      "macro": "LAUNCHPAD_CONTROL_ADC_SELECT",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_ADC23_SELECT",
+      "options_preset": "launchxl_f28p65x.BOOSTXL_ADC_INPUT",
+      "options": [],
+      "description": "BOOSTXL ADC input mirrored by the reference controller."
+    },
+    {
+      "group": "Control Channel Selection",
+      "macro": "LAUNCHPAD_CONTROL_PWM_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_EPWM4039_BASE",
+      "options_preset": "launchxl_f28p65x.BOOSTXL_PWM_OUTPUT",
+      "options": [],
+      "description": "BOOSTXL ePWM pair receiving the normalized ADC duty."
+    },
+    {
+      "group": "Control Channel Selection",
+      "macro": "LAUNCHPAD_CONTROL_DAC_BASE",
+      "enabled": true,
+      "weak": false,
+      "value": "BOOSTXL_DACA_BASE",
+      "options_preset": "launchxl_f28p65x.BOOSTXL_DAC_OUTPUT",
+      "options": [],
+      "description": "DAC receiving the raw ADC code; 0U on devices without a DAC."
+    }
+  ],
+  "requirement_groups": [
+    {
+      "name": "Board Contract",
+      "requirements": [
+        "Board Name",
+        "Heartbeat LED",
+        "DAC Capability",
+        "Classic CAN Capability",
+        "MCAN Capability",
+        "CAN Peripheral"
+      ]
+    }
+  ],
+  "option_macro_groups": [
+    "Control Channel Selection"
+  ]
+}

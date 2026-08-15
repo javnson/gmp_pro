@@ -1,10 +1,12 @@
 {
   "library_root": "%GMP_PRO_LOCATION%/ctl/hardware_preset",
   "schema_dirs": [
-    "%GMP_PRO_LOCATION%/ctl/hardware_preset/sdpe_schemas"
+    "%GMP_PRO_LOCATION%/ctl/hardware_preset/sdpe_schemas",
+    "%GMP_PRO_LOCATION%/csp/c28x_syscfg/sdpe_component/sdpe_schemas"
   ],
   "entity_dirs": [
-    "%GMP_PRO_LOCATION%/ctl/hardware_preset/sdpe_src"
+    "%GMP_PRO_LOCATION%/ctl/hardware_preset/sdpe_src",
+    "%GMP_PRO_LOCATION%/csp/c28x_syscfg/sdpe_component/sdpe_src"
   ],
   "system_hardware": {
     "entity_dirs": [

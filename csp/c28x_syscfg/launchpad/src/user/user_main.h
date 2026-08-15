@@ -1,10 +1,10 @@
 /**
  * @file user_main.h
- * @brief User-layer declarations for the F280049C Data Link and DSA demo.
+ * @brief Application scheduler declarations for the portable LaunchPad demo.
  */
 
-#ifndef GMP_F280049_DL_DBGER_USER_MAIN_H
-#define GMP_F280049_DL_DBGER_USER_MAIN_H
+#ifndef GMP_LAUNCHPAD_USER_MAIN_H
+#define GMP_LAUNCHPAD_USER_MAIN_H
 
 #include <core/pm/function_scheduler/function_scheduler.h>
 
@@ -20,9 +20,13 @@ void setup_peripheral(void);
 /** Hardware acceptance counters exposed to the CCS Expressions view. */
 extern volatile uint32_t startup_task_runs;
 extern volatile uint32_t heartbeat_task_runs;
-extern volatile uint32_t datalink_task_runs;
+extern volatile uint32_t can_task_runs;
 
-/** @brief Generate one sample and advance the DSA trigger/scope state. */
-void user_dsa_timer_step(void);
+/** Debug-visible scheduler and task callbacks. */
+extern gmp_scheduler_t scheduler;
+extern gmp_task_t tasks[];
+gmp_task_status_t user_task_startup_once(gmp_task_t* task);
+gmp_task_status_t user_task_heartbeat(gmp_task_t* task);
+gmp_task_status_t user_task_can(gmp_task_t* task);
 
-#endif // GMP_F280049_DL_DBGER_USER_MAIN_H
+#endif // GMP_LAUNCHPAD_USER_MAIN_H

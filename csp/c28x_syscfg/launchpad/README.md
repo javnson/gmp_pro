@@ -1,53 +1,64 @@
 # GMP C2000 LaunchPad evaluation framework
 
-This directory is the switchable C2000 LaunchPad target for GMP.  Application
-and GMP-owned files live under `src/`; every `C2000Lib_*` directory contains
-only the TI device package, the board-specific SysConfig input, the debugger
-target and hardware references required by that LaunchPad.
+This directory is the switchable C2000 LaunchPad target for GMP. Application
+and GMP-owned source files live under `src/`; every `C2000Lib_*` directory owns
+the TI device package, board-specific SysConfig input, debugger target and
+hardware references, plus SDPE-generated board binding headers.
 
 ## Target layout
 
 ```text
-launchpad/
-  .project / .cproject             CCS project and all build configurations
-  C2000Lib_<BOARD>/
-    device_support/                selected C2000Ware device sources/assembly
-    driverlib/                     C2000Ware DriverLib C sources (compiled here)
-    device_cmd/                    local linker command files
-    targetConfigs/                 debugger and device selection
-    hw/                            official schematic and TI board metadata
-    LAUNCHXL_<BOARD>.syscfg        board-bound SysConfig source of truth
-    build_support/                 selected code-start and enlarged Flash linker file
-    sdpe/                          board schema, entity and requirement source
-    hardware_preset/mcu_board/     generated board entity header
-    launchpad_board.h              generated project binding used by src/
-  src/
-    gmp_src_mgr/                   GMP source-manager input and scripts
-    sdpe_mgr/                      SDPE requirement source of truth
-    user/                          portable application tasks
-    xplt/                          C2000 platform binding
-    pil/                           optional PIL binding
-  <BOARD>_Debug/                   ignored CCS/SysConfig build output
-  <BOARD>_Release/                 ignored CCS/SysConfig build output
-  tools/                           reproducible build/flash/probe steps
+csp/c28x_syscfg/
+  sdpe_component/                  reusable C2000 board schemas and entities
+  launchpad/
+    .project / .cproject           CCS project and all build configurations
+    C2000Lib_<BOARD>/
+      device_support/              selected C2000Ware device sources/assembly
+      driverlib/                   C2000Ware DriverLib C sources (compiled here)
+      device_cmd/                  local linker command files
+      targetConfigs/               debugger and device selection
+      hw/                          official schematic and TI board metadata
+      LAUNCHXL_<BOARD>.syscfg      board-bound SysConfig source of truth
+      build_support/               selected code-start and enlarged Flash linker file
+      hardware_preset/mcu_board/   generated board entity header
+      launchpad_board.h            generated project binding used by src/
+    src/
+      gmp_src_mgr/                 GMP source-manager input and scripts
+      sdpe_mgr/                    common settings plus one requirement per board
+        requirements/<BOARD>/     ADC, PWM and DAC channel selections
+      user/                        scheduler, control and Data Link application code
+      xplt/                        C2000 platform binding
+      pil/                         optional PIL binding
+    <BOARD>_Debug/                 ignored CCS/SysConfig build output
+    <BOARD>_Release/               ignored CCS/SysConfig build output
+    tools/                         reproducible build/flash/probe steps
 ```
 
-The shared `src/sdpe_mgr` project owns application timing and protocol
-settings only.  Each `C2000Lib_*` owns a dedicated board schema, board entity
-and project requirement under `sdpe/`; that requirement generates both the
-board preset and `launchpad_board.h`.  Every board entity contains the common
-repository-level `boostxl_dual_site` component, so portable application code
-uses the same physical-position aliases while board differences remain local.
-Regenerate a board with its `sdpe/sdpe_generate.bat`; do not hand-edit its
-generated headers or retain stale `.h`/`.m` files.  GMP source-manager output
+The shared `src/sdpe_mgr/sdpe_requirement.json` is a Common requirement that
+owns application timing and protocol settings. Each
+`requirements/<BOARD>/sdpe_requirement.json` is a Private requirement that
+binds that Common file through `common_requirements` and owns the application
+channel choices for one board. Reusable board schemas and
+entities live once under `../sdpe_component` and are registered in the global
+`tools/SDPE_v2/sdpe_settings.json`; they are not copied into `C2000Lib_*`.
+Each board requirement includes its board entity and exposes three selections:
+`LAUNCHPAD_CONTROL_ADC_SELECT`, `LAUNCHPAD_CONTROL_PWM_BASE` and
+`LAUNCHPAD_CONTROL_DAC_BASE`. The ADC selection generates a coupled SOC/result
+mapping, while a no-DAC device selects `0U` and compiles out the DAC write.
+`tools/generate_board_sdpe.bat` generates the selected board preset, one merged
+`launchpad_board.h`, and a co-located Common-then-Private MATLAB script pair.
+Source files consume only `launchpad_board.h`; there is no parallel generated
+`ctrl_settings.h` in the compile path. Do not hand-edit those generated files
+or retain stale `.h`/`.m` files. The complete rationale and data flow are in
+`doc/SDPE_ARCHITECTURE.md`. GMP source-manager output
 under `src/gmp_src_mgr/gmp_inc` and `gmp_src` is likewise regenerated from
 `gmp_framework_config.json`.
 
 Each CCS configuration exposes two independent build variables under
 **Project Properties > Build > Variables**:
 
-- `GMP_PREBUILD_SDPE=1` regenerates the shared control settings and the active
-  board's `launchpad_board.h` before compilation.
+- `GMP_PREBUILD_SDPE=1` composes the shared settings into the active board's
+  `launchpad_board.h` and regenerates its MATLAB scripts before compilation.
 - `GMP_PREBUILD_SRC_MGR=1` regenerates `gmp_inc` and `gmp_src` before
   compilation.
 
@@ -158,6 +169,13 @@ Peripheral names encode physical connector positions, for example
 `BOOSTXL_EPWM3940` and `BOOSTXL_ADC23`.  Portable code must consume the aliases
 generated by SDPE instead of device GPIO numbers.
 
+`src/user/user_main.c` now contains only scheduler composition and the
+startup, heartbeat and independent CAN tasks. `src/user/user_dl.c` owns the
+serial Data Link protocol, tunable parameters, memory service, scope/trigger
+state and optional PIL service. The scheduler, task table, task counters,
+Data Link context, scope state and CAN counters are non-static so they can be
+added directly to the CCS Expressions view.
+
 ## Hardware multiplexing exceptions
 
 SysConfig pin-mux validation and LaunchPad switch routing are both part of the
@@ -202,12 +220,12 @@ Each `<board>_Debug` and `<board>_Release` configuration is complete only when:
    source objects.
 4. Debug and Release both link without unresolved local object paths.
 5. The F280049C hardware test confirms the one-shot task disables itself, the
-   LED task toggles every 500 ms, the Data Link task runs every 2 ms, and the
-   tunable, memory, scope and optional PIL commands respond.
+   LED task toggles every 500 ms, the Data Link and CAN tasks run independently,
+   and the tunable, memory, scope and optional PIL commands respond.
 
-## Verified F280049C baseline
+## Previously verified F280049C baseline
 
-The F280049C baseline has been built, flashed through the on-board XDS110 and
+The pre-refactor F280049C baseline was built, flashed through the on-board XDS110 and
 run on a physical LAUNCHXL-F280049C.  A 30-second debugger observation produced
 one startup execution, 60 heartbeat executions, 15000 Data Link task
 executions, 600019 ADC/control ISR executions and a 30000 ms GMP system tick.
@@ -220,11 +238,13 @@ SCI adapter uses its FIFO interrupt plus a foreground FIFO pump; protocol
 dispatch remains in the required 2 ms scheduler task.  This prevents a long
 continuous frame from overflowing the 16-word hardware FIFO.
 
-Classic CAN is configured for 1 Mbit/s.  Receive object 1 (0x101) is polled by
-the 2 ms service; after the first valid input frame, transmit object 4 publishes
+Classic CAN is configured for 1 Mbit/s. In the current source, receive object
+1 (0x101) is polled by its own 2 ms task rather than the Data Link task; after
+the first valid input frame, transmit object 4 publishes
 ADC/PWM telemetry on 0x201 every 100 ms.  Retry is disabled so a standalone
 board without a CAN peer continues running its control and Data Link paths.
-Physical two-node CAN traffic remains a separate acceptance test.
+Physical two-node CAN traffic and a repeat of the full acceptance test after
+the SDPE/task refactor remain separate acceptance tests.
 
 The repository-root CCS project contains formal Debug and Release
 configurations for all eight boards. They perform clean headless builds from

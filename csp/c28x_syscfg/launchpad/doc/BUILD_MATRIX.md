@@ -1,14 +1,14 @@
 # LaunchPad build matrix
 
 Validated with CCS 12.8.1, C2000 compiler 22.6.1.LTS, SysConfig 1.21.0,
-C2000Ware 5.04.00.00 and GMP-Core-C28x 2.10.00.00 on 2026-08-15.
+C2000Ware 5.04.00.00 and GMP-Core-C28x 2.10.00.00 on 2026-08-16.
 
 | Board | Debug | Release | ADC SOCs | DACs | PWM pairs | Hardware run |
 |---|---:|---:|---:|---:|---:|---:|
 | F2800137C | pass | pass | 16 | 0 | 6 | not run |
 | F280025C | pass | pass | 16 | 0 | 6 | not run |
 | F280039C | pass | pass | 18 | 2 | 6 | not run in this matrix |
-| F280049C | pass | pass | 19 | 2 | 6 | pass |
+| F280049C | pass | pass | 19 | 2 | 6 | previous baseline; refactor not rerun |
 | F28377S | pass | pass | 11 | 3 | 6 | not run |
 | F28379D CPU1 | pass | pass | 14 | 3 | 6 | not run |
 | F28P55X | pass | pass | 19 | 1 | 6 | not run |
@@ -26,6 +26,14 @@ maps to an available RAM region. F28379D also maps both DriverLib IPC message
 sections explicitly. Warning #10247 is absent from all 16 builds; remaining
 warnings are confined to TI DriverLib unused-local diagnostics.
 
+Parallel compilation is already enabled on every builder with CCS
+`parallelizationNumber="optimal"`. On the 28-logical-processor validation
+machine, every clean and build invocation used `gmake -j 28`. The fleet matrix
+still runs configurations sequentially because each full build has its own
+clean, SysConfig, link and CCS headless phases; low average CPU utilization
+during those serial phases does not mean that per-translation-unit parallelism
+is disabled.
+
 The generated `board.h` files were also audited for all 16 configurations.
 Every target contains six standardized BOOSTXL ePWM instances, the listed ADC
 SOC and DAC counts, and an ADCA INT1 definition.  F28379D uses TI's
@@ -42,10 +50,19 @@ being hidden behind conflicting SysConfig assignments.
 
 The CCS configurations also contain two default-off, independent pre-build
 variables: `GMP_PREBUILD_SDPE` and `GMP_PREBUILD_SRC_MGR`.  Enabling the first
-regenerates shared and active-board SDPE outputs; enabling the second refreshes
+regenerates the active board's composed Common/Private SDPE outputs; enabling the second refreshes
 project-local GMP headers and sources.  Both resolve the repository through
 the registered GMP C28x Product rather than a machine-specific checkout path.
 
+Board schemas and entities are registered once from
+`csp/c28x_syscfg/sdpe_component`. Eight board-specific requirements under
+`launchpad/src/sdpe_mgr/requirements` select one ADC input, one synchronized
+PWM output and one available DAC output. F2800137C and F280025C expose `0U`
+for the DAC selection and compile the DAC write out. Serial Data Link and CAN
+are separate scheduled tasks; their counters and service state remain global
+for CCS Expressions inspection.
+
 The build matrix proves compilation and linking, not electrical pin routing on
-unconnected hardware. Only F280049C currently has debugger, scheduler, live
-ADC and Data Link evidence; see `F280049C_HARDWARE_ACCEPTANCE.md`.
+unconnected hardware. F280049C has debugger, scheduler, live ADC and Data Link
+evidence for the previous task/SDPE layout; the current refactor has not yet
+been reflashed. See `F280049C_HARDWARE_ACCEPTANCE.md` for that historical run.

@@ -32,6 +32,7 @@ sdpe_settings.bat   inspect or change project settings
 ctl/hardware_preset/sdpe_schemas/       templates
 ctl/hardware_preset/sdpe_src/           reusable entities
 ctl/hardware_preset/                    generated global headers
+csp/c28x_syscfg/sdpe_component/         C2000 board schemas and entities
 ctl/suite/<suite>/sdpe_general/         suite-wide parameters
 ctl/suite/<suite>/project/<target>/
   sdpe_mgr/                             target requirements and output
@@ -39,6 +40,9 @@ ctl/suite/<suite>/project/<target>/
 
 All repository paths are resolved from `GMP_PRO_LOCATION`. Generated files and
 project data must not contain developer-machine absolute paths.
+The library search paths are declared once in `sdpe_settings.json`; both the
+CTL hardware library and the CSP C2000 board-component library are therefore
+available to the CLI, GUI, validation and project generators.
 
 Generated project headers and `*_matlab_init.m` files duplicate information in
 the SDPE requirements and library, so they may be ignored in the main GMP
@@ -80,6 +84,34 @@ complete subtree, while deleting only a Private cover preserves its Common child
 Generated MATLAB initialization scripts finish with a console summary of the
 project identity, suite/version, selected hardware, bound Common files, enabled
 variable values, and disabled macro names.
+
+### Canonical `ctl/suite` deployment pattern
+
+Do not copy reusable schemas and entities into every target project. Register
+their library directories once in `sdpe_settings.json`, then keep only
+application requirements under the project. A target requirement should be the
+generation entry point and normally contains:
+
+- `hardware` for target-specific entities;
+- `option_macros` and `options_preset` for selectable target resources;
+- `common_requirements` for suite-wide algorithms, timing and protocols;
+- `output_header` for the single C header consumed by that target.
+
+This is the pattern used by existing suite targets such as
+`ctl/suite/mcs_pmsm_nt/project/f280049c/src/sdpe_mgr/sdpe_requirement.json`.
+The LaunchPad reference applies the same pattern to a multi-configuration CCS
+project: reusable C2000 board components live in
+`csp/c28x_syscfg/sdpe_component`, shared application policy lives in one Common
+requirement, and eight Private requirements select one board and its ADC/PWM/DAC
+channels.
+
+Generate from the Private requirement, not separately from the Common file.
+The C result is one merged target header, which prevents a fresh target binding
+from being compiled with stale Common macros. MATLAB intentionally remains a
+Common-then-Private script chain; generate both scripts into the same target
+output directory so the chain cannot cross board configurations. A concrete
+description and command are in
+`csp/c28x_syscfg/launchpad/doc/SDPE_ARCHITECTURE.md`.
 
 ## Numeric-domain contract
 

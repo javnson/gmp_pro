@@ -1,13 +1,12 @@
 /**
  * @file xplt.config.h
- * @brief GMP configuration for the LAUNCHXL-F280049C Data Link target.
+ * @brief GMP configuration for the portable C2000 LaunchPad target.
  */
 
 #ifndef GMP_LAUNCHPAD_XPLT_CONFIG_H
 #define GMP_LAUNCHPAD_XPLT_CONFIG_H
 
 #include <launchpad_board.h>
-#include <ctrl_settings.h>
 
 #define SPECIFY_ENABLE_GMP_CTL
 #define SPECIFY_CTRL_GT_TYPE USING_FLOAT_FPU
@@ -15,7 +14,7 @@
 #define SPECIFY_BASE_PRINT_NOT_IMPL
 
 /** @brief Divide the board control ISR into the one-millisecond GMP tick. */
-#define DSP_C2000_DSP_TIME_DIV (LAUNCHPAD_CONTROL_ISR_HZ / 1000UL)
+#define DSP_C2000_DSP_TIME_DIV (GMP_LAUNCHPAD_PWM_FREQUENCY_HZ / 1000UL)
 
 /**
  * @brief Select the XDS110 application UART speed.

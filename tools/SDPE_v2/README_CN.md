@@ -12,10 +12,13 @@ v2 当前采用“核心 CLI + PyQt 图形化管理器”的结构。CLI 负责�
 
 - Template 原始文件：`%GMP_PRO_LOCATION%/ctl/hardware_preset/sdpe_schemas`
 - Entity 原始文件：`%GMP_PRO_LOCATION%/ctl/hardware_preset/sdpe_src/<category>`
+- C2000 板级 Template/Entity：`%GMP_PRO_LOCATION%/csp/c28x_syscfg/sdpe_component`
 - 全局硬件头文件输出：`%GMP_PRO_LOCATION%/ctl/hardware_preset/<category>`
 - 工程局部输出：工程的 `sdpe_mgr` 目录；工程设置头文件放在 `sdpe_mgr` 根目录，硬件头文件放在 `sdpe_mgr/hardware_preset`
 - Suite 公共配置：`<suite>/sdpe_general`；公共 C 头文件输出到 `<suite>/src`，公共 MATLAB 初始化脚本保留在 `sdpe_general`
 - 默认设置文件：`%GMP_PRO_LOCATION%/tools/SDPE_v2/sdpe_settings.json`
+
+`sdpe_settings.json` 统一注册 CTL 硬件库和 CSP C2000 板级组件库，因此 CLI、GUI、校验器与工程生成器看到的是同一套模块集合，工程脚本不再复制或私自声明板级元件。
 
 全局硬件头文件生成入口：
 
@@ -54,6 +57,30 @@ Checkbox 等单元格控件获得焦点时仍删除整行；文本编辑器内�
 
 生成的 MATLAB Init Script 会在赋值完成后打印工程信息、硬件清单、Common 来源、
 已使能变量的最终值和禁用宏清单，方便在启动 Simulink 仿真前检查配置。
+
+### `ctl/suite` 的标准部署方式
+
+可复用的 Schema 和 Entity 不应复制到每一个目标工程。应当先在
+`sdpe_settings.json` 中统一注册组件库路径，工程内部只保留应用 Requirement。目标
+Private Requirement 是生成入口，通常包含：
+
+- `hardware`：目标专用硬件元件；
+- `option_macros` 与 `options_preset`：目标资源选择项；
+- `common_requirements`：Suite 公共算法、时序和协议参数；
+- `output_header`：该目标实际包含的唯一 C 配置头文件。
+
+现有工程
+`ctl/suite/mcs_pmsm_nt/project/f280049c/src/sdpe_mgr/sdpe_requirement.json`
+就是这种模式。LaunchPad 示例把它推广到一个包含多个 Build Configuration 的 CCS
+工程：可复用 C2000 板级组件集中在 `csp/c28x_syscfg/sdpe_component`，公共应用策略
+位于一个 Common Requirement，八个 Private Requirement 分别选择目标板及其
+ADC/PWM/DAC 通道。
+
+生成时必须从 Private Requirement 进入，而不是先单独生成 Common 文件。C 侧只生成
+一个合并后的目标头文件，避免“板级文件已更新，但公共宏仍是旧版本”的组合。MATLAB
+侧按工具既有约定保留 Common 后 Private 的两级脚本，但两个脚本必须同时生成到同一个
+目标目录，避免跨板加载陈旧文件。具体问题、解决结构、通道选择约束和生成命令见
+`csp/c28x_syscfg/launchpad/doc/SDPE_ARCHITECTURE.md`。
 
 数值参数通过 `numeric_domain` 区分 `real`、`parameter`、`ctrl` 和非数值
 `raw`。物理量与整定参数通常选择 `parameter`，生成结果为无 `f` 后缀的

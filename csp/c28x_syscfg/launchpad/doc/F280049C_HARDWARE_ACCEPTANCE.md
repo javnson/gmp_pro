@@ -1,5 +1,9 @@
 # LAUNCHXL-F280049C hardware acceptance
 
+> This record predates the 2026-08-16 SDPE centralization and the split of CAN
+> from the Data Link task. It remains valid evidence for the earlier firmware,
+> but the refactored task layout has not yet been reflashed and remeasured.
+
 Verified on 2026-08-15 with the on-board XDS110 and its application UART on
 COM5.  The firmware was built with C2000 compiler 22.6.1.LTS, programmed to
 flash through CCS 12.8 DSLite, and executed from flash.

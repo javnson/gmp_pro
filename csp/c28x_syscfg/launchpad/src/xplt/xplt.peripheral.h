@@ -35,4 +35,11 @@ uint16_t xplt_get_over_temperature(void);
 /** @brief Service the board CAN example without blocking the 2 ms task. */
 void xplt_can_service(void);
 
+#if LAUNCHPAD_CAN_CLASSIC
+/** Classic-CAN state exported for the CCS Expressions view. */
+extern volatile uint16_t can_last_rx[8];
+extern volatile uint32_t can_rx_count;
+extern volatile uint16_t can_bus_active;
+#endif
+
 #endif // GMP_F280049_DL_DBGER_XPLT_PERIPHERAL_H

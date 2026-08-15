@@ -26,6 +26,7 @@ function report(name) {
 report("startup_task_runs");
 report("heartbeat_task_runs");
 report("datalink_task_runs");
+report("can_task_runs");
 report("control_isr_runs");
 report("DSPC2000_SystemTick");
 report("launchpad_adc_raw");

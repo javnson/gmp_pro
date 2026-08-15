@@ -4,8 +4,8 @@
   "display_name": "GMP C2000 LaunchPad Reference Application",
   "description": "Portable control-ready LaunchPad example with complete BOOSTXL ADC/DAC/PWM routing, Data Link and CAN.",
   "suite": "c28x_syscfg_launchpad",
-  "version": "0.2.0",
-  "updated_at": "2026-08-15",
+  "version": "0.3.0",
+  "updated_at": "2026-08-16",
   "output_header": "ctrl_settings.h",
   "hardware": [],
   "option_macros": [],
@@ -60,7 +60,13 @@
       "role": "Data Link Task Period",
       "macro": "GMP_DATALINK_TASK_PERIOD_MS",
       "binding": { "number": "2" },
-      "description": "Scheduler period for Data Link and CAN service."
+      "description": "Scheduler period for the serial Data Link service."
+    },
+    {
+      "role": "CAN Task Period",
+      "macro": "GMP_CAN_TASK_PERIOD_MS",
+      "binding": { "number": "2" },
+      "description": "Independent scheduler period for CAN or MCAN service."
     },
     {
       "role": "Heartbeat Task Period",
@@ -89,7 +95,7 @@
     },
     {
       "name": "Scheduler",
-      "requirements": ["Data Link Task Period", "Heartbeat Task Period"]
+      "requirements": ["Data Link Task Period", "CAN Task Period", "Heartbeat Task Period"]
     }
   ],
   "feature_macro_groups": ["Reference Features"],

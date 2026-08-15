@@ -56,12 +56,6 @@ extern "C"
 #define LAUNCHXL_F280039C_SYSTEM_CLOCK_HZ (120000000UL)
 
 /**
- * @brief ePWM-triggered ADC control interrupt rate.
- * @unit Hz
- */
-#define LAUNCHXL_F280039C_CONTROL_ISR_HZ (20000UL)
-
-/**
  * @brief Heartbeat LED GPIO alias.
  */
 #define LAUNCHXL_F280039C_USER_LED_GPIO LED_G
@@ -70,11 +64,6 @@ extern "C"
  * @brief One when a hardware DAC output is configured.
  */
 #define LAUNCHXL_F280039C_HAS_EXTERNAL_DAC (1U)
-
-/**
- * @brief Selected DAC base or zero.
- */
-#define LAUNCHXL_F280039C_CONTROL_DAC_BASE BOOSTXL_DACA_BASE
 
 /**
  * @brief Classic CAN service selection.
@@ -93,10 +82,8 @@ extern "C"
 
 // Logical exports
 // board_name: LAUNCHXL_F280039C_BOARD_NAME
-// control_isr_hz: LAUNCHXL_F280039C_CONTROL_ISR_HZ
 // user_led_gpio: LAUNCHXL_F280039C_USER_LED_GPIO
 // has_external_dac: LAUNCHXL_F280039C_HAS_EXTERNAL_DAC
-// control_dac_base: LAUNCHXL_F280039C_CONTROL_DAC_BASE
 // can_classic: LAUNCHXL_F280039C_CAN_CLASSIC
 // can_mcan: LAUNCHXL_F280039C_CAN_MCAN
 // can_base: LAUNCHXL_F280039C_CAN_BASE

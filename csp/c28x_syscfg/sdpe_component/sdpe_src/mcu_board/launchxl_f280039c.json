@@ -1,0 +1,65 @@
+{
+  "id": "launchxl_f280039c",
+  "schema": "launchxl_f280039c_board",
+  "display_name": "LAUNCHXL-F280039C",
+  "macro_prefix": "LAUNCHXL_F280039C",
+  "components": {
+    "boostxl": {
+      "entity": "boostxl_dual_site"
+    }
+  },
+  "parameters": {
+    "board_name": "LAUNCHXL-F280039C",
+    "chip": "TMS320F280039C",
+    "syscfg_file": "LAUNCHXL_F280039C.syscfg",
+    "system_clock_hz": "120000000",
+    "user_led_gpio": "LED_G",
+    "has_external_dac": "1",
+    "can_classic": "1",
+    "can_mcan": "0",
+    "can_base": "LAUNCHXL_CAN_BASE"
+  },
+  "option_sets": {
+    "BOOSTXL_ADC_INPUT": {
+      "options": [
+        "BOOSTXL_ADC23_SELECT",
+        "BOOSTXL_ADC24_SELECT",
+        "BOOSTXL_ADC29_SELECT",
+        "BOOSTXL_ADC46_SELECT",
+        "BOOSTXL_ADC65_SELECT",
+        "BOOSTXL_ADC69_SELECT",
+        "BOOSTXL_ADC2_SELECT",
+        "BOOSTXL_ADC6_SELECT",
+        "BOOSTXL_ADC26_SELECT",
+        "BOOSTXL_ADC63_SELECT",
+        "BOOSTXL_ADC66_SELECT",
+        "BOOSTXL_ADC68_SELECT",
+        "BOOSTXL_ADC25_SELECT",
+        "BOOSTXL_ADC27_SELECT",
+        "BOOSTXL_ADC28_SELECT",
+        "BOOSTXL_ADC42_SELECT",
+        "BOOSTXL_ADC64_SELECT",
+        "BOOSTXL_ADC67_SELECT"
+      ],
+      "description": "ADC SOC aliases available after board-level DAC and pin-conflict priority."
+    },
+    "BOOSTXL_PWM_OUTPUT": {
+      "options": [
+        "BOOSTXL_EPWM4039_BASE",
+        "BOOSTXL_EPWM3837_BASE",
+        "BOOSTXL_EPWM3635_BASE",
+        "BOOSTXL_EPWM8079_BASE",
+        "BOOSTXL_EPWM7877_BASE",
+        "BOOSTXL_EPWM7675_BASE"
+      ],
+      "description": "Six synchronized BOOSTXL ePWM output pairs."
+    },
+    "BOOSTXL_DAC_OUTPUT": {
+      "options": [
+        "BOOSTXL_DACA_BASE",
+        "BOOSTXL_DACB_BASE"
+      ],
+      "description": "Available device DAC outputs, or 0U when this device has no DAC."
+    }
+  }
+}

@@ -7,7 +7,6 @@
 #define GMP_LAUNCHPAD_CTL_INTERFACE_H
 
 #include <launchpad_board.h>
-#include <ctrl_settings.h>
 
 /** @brief Acquire platform inputs before a control step. */
 GMP_STATIC_INLINE void ctl_input_callback(void)
