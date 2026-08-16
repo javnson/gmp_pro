@@ -77,7 +77,7 @@ extern "C"
  * platform configuration before this header defines its default. byte_gt is
  * the smallest addressable unit of the target CPU. */
 #ifndef GMP_PORT_DATA_T
-#define GMP_PORT_DATA_T int8_t
+#define GMP_PORT_DATA_T uint8_t
 #endif
 typedef GMP_PORT_DATA_T byte_gt;
 

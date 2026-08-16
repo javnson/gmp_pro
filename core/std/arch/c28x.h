@@ -13,7 +13,7 @@
 #endif
 
 #ifndef GMP_PORT_DATA_T
-#define GMP_PORT_DATA_T              int16_t
+#define GMP_PORT_DATA_T              uint16_t
 #define GMP_PORT_DATA_SIZE_PER_BITS  (16)
 #define GMP_PORT_DATA_SIZE_PER_BYTES (2)
 #endif

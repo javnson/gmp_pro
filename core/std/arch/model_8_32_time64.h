@@ -8,7 +8,7 @@
 #endif
 
 #ifndef GMP_PORT_DATA_T
-#define GMP_PORT_DATA_T              int8_t
+#define GMP_PORT_DATA_T              uint8_t
 #define GMP_PORT_DATA_SIZE_PER_BITS  (8)
 #define GMP_PORT_DATA_SIZE_PER_BYTES (1)
 #endif

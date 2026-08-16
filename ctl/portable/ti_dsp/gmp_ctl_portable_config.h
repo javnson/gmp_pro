@@ -22,8 +22,8 @@
 /* Override these only when the target ABI or peripheral interfaces require a
  * different raw representation. */
 #ifndef GMP_PORT_DATA_T
-/* C28x uses a 16-bit byte and therefore does not provide int8_t. */
-#define GMP_PORT_DATA_T char
+/* C28x uses a 16-bit byte and therefore does not provide uint8_t. */
+#define GMP_PORT_DATA_T unsigned char
 #endif
 
 #ifndef GMP_PORT_ADC_T

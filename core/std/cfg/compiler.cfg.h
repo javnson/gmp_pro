@@ -75,6 +75,20 @@
 #define GMP_INLINE
 #endif // GMP_INLINE
 
+/* Portable compile-time assertion, including C99-only embedded compilers. */
+#ifndef GMP_STATIC_ASSERT
+#if defined(__cplusplus) && (__cplusplus >= 201103L)
+#define GMP_STATIC_ASSERT(condition, message) static_assert((condition), message)
+#elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
+#define GMP_STATIC_ASSERT(condition, message) _Static_assert((condition), message)
+#else
+#define GMP_STATIC_ASSERT_JOIN_INNER(lhs, rhs) lhs##rhs
+#define GMP_STATIC_ASSERT_JOIN(lhs, rhs) GMP_STATIC_ASSERT_JOIN_INNER(lhs, rhs)
+#define GMP_STATIC_ASSERT(condition, message) \
+    typedef char GMP_STATIC_ASSERT_JOIN(gmp_static_assert_at_line_, __LINE__)[(condition) ? 1 : -1]
+#endif
+#endif
+
 // Mark a function that should invoke as quick as possible
 #ifndef FAST_FUNCTION
 #define FAST_FUNCTION GMP_STATIC_INLINE

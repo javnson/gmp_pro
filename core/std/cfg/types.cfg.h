@@ -34,17 +34,13 @@
 // A byte_gt is normally 8 bits, but it is 16 bits on C28x.
 //
 #ifndef GMP_PORT_DATA_T
-#define GMP_PORT_DATA_T              char
+#define GMP_PORT_DATA_T              unsigned char
 #define GMP_PORT_DATA_SIZE_PER_BITS  (8)
 #define GMP_PORT_DATA_SIZE_PER_BYTES (1)
 #endif // GMP_PORT_DATA_T
 
 typedef GMP_PORT_DATA_T byte_gt;
-
-/* Compatibility name retained for the core data-link, checksum and buffer
- * APIs.  Those public APIs still use data_gt; removing the alias makes every
- * generated SIL source set fail before the controller is compiled. */
-typedef GMP_PORT_DATA_T data_gt;
+GMP_STATIC_ASSERT(((byte_gt)-1) > 0, "byte_gt must be unsigned");
 
 // ....................................................................//
 // basic element data type which is fast one
