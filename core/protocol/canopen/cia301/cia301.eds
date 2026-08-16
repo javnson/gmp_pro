@@ -1,0 +1,182 @@
+[FileInfo]
+FileName=cia301.eds
+FileVersion=1
+FileRevision=0
+EDSVersion=4.0
+Description=GMP CiA 301 v4.2.0 profile seed; not a device-vendor EDS
+CreationDate=08-16-2026
+CreatedBy=GMP Project
+
+[DeviceInfo]
+VendorName=GMP Project
+VendorNumber=0
+ProductName=GMP CiA 301 profile seed
+ProductNumber=0
+RevisionNumber=1
+BaudRate_1000=1
+SimpleBootUpMaster=0
+SimpleBootUpSlave=1
+Granularity=8
+DynamicChannelsSupported=0
+CompactPDO=0
+NrOfRXPDO=1
+NrOfTXPDO=1
+LSS_Supported=0
+
+[Comments]
+Lines=3
+Line1=Profile seed derived from the public CiA 301 object model description.
+Line2=CiA specifications and conformance object databases remain licensed CiA material.
+Line3=Replace identity and device-specific objects when producing a shipping-device EDS.
+
+[1000]
+ParameterName=Device type
+ObjectType=0x7
+DataType=0x0007
+AccessType=const
+DefaultValue=0
+PDOMapping=0
+
+[1001]
+ParameterName=Error register
+ObjectType=0x7
+DataType=0x0005
+AccessType=ro
+DefaultValue=0
+PDOMapping=1
+
+[1017]
+ParameterName=Producer heartbeat time
+ObjectType=0x7
+DataType=0x0006
+AccessType=rw
+DefaultValue=1000
+PDOMapping=0
+
+[1018sub0]
+ParameterName=Identity highest sub-index
+ObjectType=0x7
+DataType=0x0005
+AccessType=const
+DefaultValue=4
+PDOMapping=0
+
+[1018sub1]
+ParameterName=Vendor ID
+ObjectType=0x7
+DataType=0x0007
+AccessType=const
+DefaultValue=0
+PDOMapping=0
+
+[1018sub2]
+ParameterName=Product code
+ObjectType=0x7
+DataType=0x0007
+AccessType=const
+DefaultValue=0
+PDOMapping=0
+
+[1018sub3]
+ParameterName=Revision number
+ObjectType=0x7
+DataType=0x0007
+AccessType=const
+DefaultValue=1
+PDOMapping=0
+
+[1018sub4]
+ParameterName=Serial number
+ObjectType=0x7
+DataType=0x0007
+AccessType=ro
+DefaultValue=0
+PDOMapping=0
+
+[1200sub0]
+ParameterName=SDO server highest sub-index
+ObjectType=0x7
+DataType=0x0005
+AccessType=const
+DefaultValue=2
+PDOMapping=0
+
+[1200sub1]
+ParameterName=SDO client-to-server COB-ID
+ObjectType=0x7
+DataType=0x0007
+AccessType=ro
+DefaultValue=$NODEID+0x600
+PDOMapping=0
+
+[1200sub2]
+ParameterName=SDO server-to-client COB-ID
+ObjectType=0x7
+DataType=0x0007
+AccessType=ro
+DefaultValue=$NODEID+0x580
+PDOMapping=0
+
+[1400sub0]
+ParameterName=RPDO1 communication highest sub-index
+ObjectType=0x7
+DataType=0x0005
+AccessType=const
+DefaultValue=2
+PDOMapping=0
+
+[1400sub1]
+ParameterName=RPDO1 COB-ID
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=$NODEID+0x200
+PDOMapping=0
+
+[1400sub2]
+ParameterName=RPDO1 transmission type
+ObjectType=0x7
+DataType=0x0005
+AccessType=rw
+DefaultValue=255
+PDOMapping=0
+
+[1600sub0]
+ParameterName=RPDO1 mapped object count
+ObjectType=0x7
+DataType=0x0005
+AccessType=rw
+DefaultValue=0
+PDOMapping=0
+
+[1800sub0]
+ParameterName=TPDO1 communication highest sub-index
+ObjectType=0x7
+DataType=0x0005
+AccessType=const
+DefaultValue=2
+PDOMapping=0
+
+[1800sub1]
+ParameterName=TPDO1 COB-ID
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=$NODEID+0x180
+PDOMapping=0
+
+[1800sub2]
+ParameterName=TPDO1 transmission type
+ObjectType=0x7
+DataType=0x0005
+AccessType=rw
+DefaultValue=255
+PDOMapping=0
+
+[1A00sub0]
+ParameterName=TPDO1 mapped object count
+ObjectType=0x7
+DataType=0x0005
+AccessType=rw
+DefaultValue=0
+PDOMapping=0

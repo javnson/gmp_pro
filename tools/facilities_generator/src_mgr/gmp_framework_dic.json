@@ -153,6 +153,21 @@
                     "${GMP_PRO_LOCATION}/core/base/ds/README.md"
                 ]
             },
+            "base|ds|rbtree": {
+                "type": "module",
+                "description": "Validated intrusive red-black tree with explicit metadata",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/core/base/ds/rbtree.h"
+                ],
+                "depends_on": [
+                    "core|base|_internal"
+                ],
+                "inc_dirs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/core/base/ds/README.md"
+                ]
+            },
             "base|ds|ring_buffer": {
                 "type": "module",
                 "description": "Static ring buffer",
@@ -168,6 +183,142 @@
                 "inc_dirs": [],
                 "help_docs": [
                     "${GMP_PRO_LOCATION}/core/base/ds/README.md"
+                ]
+            },
+            "protocol|canopen|base": {
+                "type": "module",
+                "description": "CANopen classic-CAN frame and request contracts",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/can_if.h"
+                ],
+                "depends_on": [
+                    "core|std"
+                ],
+                "inc_dirs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/README.md"
+                ]
+            },
+            "protocol|canopen|nmt": {
+                "type": "module",
+                "description": "CANopen NMT state machine and heartbeat producer/consumer",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/src/nmt_sm.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/nmt_sm.h"
+                ],
+                "depends_on": [
+                    "core|protocol|canopen|base"
+                ],
+                "inc_dirs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/README.md"
+                ]
+            },
+            "protocol|canopen|od": {
+                "type": "module",
+                "description": "RB-tree CANopen object dictionary with pointer and inline storage",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/src/od.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/od.h"
+                ],
+                "depends_on": [
+                    "core|protocol|canopen|base",
+                    "core|base|ds|rbtree"
+                ],
+                "inc_dirs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/README.md"
+                ]
+            },
+            "protocol|canopen|sdo": {
+                "type": "module",
+                "description": "CANopen expedited and segmented SDO server",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/src/sdo_engine.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/sdo_engine.h"
+                ],
+                "depends_on": [
+                    "core|protocol|canopen|od"
+                ],
+                "inc_dirs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/README.md"
+                ]
+            },
+            "protocol|canopen|pdo": {
+                "type": "module",
+                "description": "Byte-aligned CANopen PDO mapping and online transfer engine",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/src/pdo_engine.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/pdo_engine.h"
+                ],
+                "depends_on": [
+                    "core|protocol|canopen|od",
+                    "core|protocol|canopen|nmt"
+                ],
+                "inc_dirs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/README.md"
+                ]
+            },
+            "protocol|canopen|cia301": {
+                "type": "module",
+                "description": "Generated GMP CiA 301 profile-seed object dictionary",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/cia301/gmp_cia301_od.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/cia301/gmp_cia301_od.h"
+                ],
+                "depends_on": [
+                    "core|protocol|canopen|od"
+                ],
+                "inc_dirs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/README.md"
+                ]
+            },
+            "protocol|canopen|cia401": {
+                "type": "module",
+                "description": "Generated GMP CiA 401 profile-seed object dictionary",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/cia401/gmp_cia401_od.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/cia401/gmp_cia401_od.h"
+                ],
+                "depends_on": [
+                    "core|protocol|canopen|od"
+                ],
+                "inc_dirs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/README.md"
+                ]
+            },
+            "protocol|canopen|cia402": {
+                "type": "module",
+                "description": "Generated GMP CiA 402 profile-seed object dictionary",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/cia402/gmp_cia402_od.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/cia402/gmp_cia402_od.h"
+                ],
+                "depends_on": [
+                    "core|protocol|canopen|od"
+                ],
+                "inc_dirs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/README.md"
                 ]
             },
             "base|locale|utf8_unicode_encoder": {

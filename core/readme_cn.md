@@ -4,7 +4,7 @@
 
 `core` 按职责分层，依赖方向固定为：
 
-`std -> base -> mm / pm / dev -> rt`
+`std -> base -> mm / pm / dev / protocol -> rt`
 
 | 层级 | 职责 | 文档 |
 | --- | --- | --- |
@@ -13,6 +13,7 @@
 | `mm` | 内存管理 | [mm](mm/readme.md) |
 | `pm` | 任务、调度和状态管理 | [pm](pm/readme.md) |
 | `dev` | 外设契约、驱动与数据链路服务 | [dev](dev/readme.md) |
+| `protocol` | 与硬件传输层解耦的协议引擎和数据模型 | [CANopen](protocol/canopen/README_CN.md) |
 | `rt` | 完整 GMP 启动和运行时装配 | [rt](rt/README.md) |
 
 只需要配置、标准类型和宏时包含 `<gmp_type.h>`；只有需要完整 GMP 运行

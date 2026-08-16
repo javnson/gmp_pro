@@ -25,9 +25,11 @@ typedef struct _tag_gmp_list
     struct _tag_gmp_list* prev;
 } gmp_list;
 
-/** @brief Recover an owner object from one of its intrusive list members. */
+/** @brief Recover an owner object from one of its intrusive members. */
+#ifndef GMP_CONTAINER_OF
 #define GMP_CONTAINER_OF(entry, type, member) \
     ((type*)((byte_gt*)(entry) - offsetof(type, member)))
+#endif
 
 /** @brief Initialize a list head or reset a detached entry. */
 GMP_STATIC_INLINE void gmp_list_init(gmp_list* entry)

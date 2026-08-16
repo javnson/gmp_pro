@@ -9,6 +9,9 @@
     <ClCompile Include="..\tests\test_base_checksum.cpp"><Filter>Tests</Filter></ClCompile>
     <ClCompile Include="..\tests\test_base_ds.cpp"><Filter>Tests</Filter></ClCompile>
     <ClCompile Include="..\tests\test_datalink_facility.cpp"><Filter>Tests</Filter></ClCompile>
+    <ClCompile Include="..\tests\test_rbtree.cpp"><Filter>Tests</Filter></ClCompile>
+    <ClCompile Include="..\tests\test_canopen.cpp"><Filter>Tests</Filter></ClCompile>
+    <ClCompile Include="..\tests\test_canopen_generated_od.cpp"><Filter>Tests</Filter></ClCompile>
     <ClCompile Include="..\tests\test_mm.cpp"><Filter>Tests</Filter></ClCompile>
     <ClCompile Include="..\tests\test_pm_duff_fsm.cpp"><Filter>Tests</Filter></ClCompile>
     <ClCompile Include="..\tests\test_pm_function_scheduler.cpp"><Filter>Tests</Filter></ClCompile>
@@ -20,6 +23,13 @@
     <ClCompile Include="..\..\base\ds\src\ring_buffer.c"><Filter>Production Sources</Filter></ClCompile>
     <ClCompile Include="..\..\dev\datalink\src\gmp_datalink.c"><Filter>Production Sources</Filter></ClCompile>
     <ClCompile Include="..\..\dev\datalink\src\gmp_dl_facility.c"><Filter>Production Sources</Filter></ClCompile>
+    <ClCompile Include="..\..\protocol\canopen\src\nmt_sm.c"><Filter>Production Sources</Filter></ClCompile>
+    <ClCompile Include="..\..\protocol\canopen\src\od.c"><Filter>Production Sources</Filter></ClCompile>
+    <ClCompile Include="..\..\protocol\canopen\src\pdo_engine.c"><Filter>Production Sources</Filter></ClCompile>
+    <ClCompile Include="..\..\protocol\canopen\src\sdo_engine.c"><Filter>Production Sources</Filter></ClCompile>
+    <ClCompile Include="..\..\protocol\canopen\cia301\gmp_cia301_od.c"><Filter>Production Sources</Filter></ClCompile>
+    <ClCompile Include="..\..\protocol\canopen\cia401\gmp_cia401_od.c"><Filter>Production Sources</Filter></ClCompile>
+    <ClCompile Include="..\..\protocol\canopen\cia402\gmp_cia402_od.c"><Filter>Production Sources</Filter></ClCompile>
     <ClCompile Include="..\..\mm\src\gmp_mm_block_memory.c"><Filter>Production Sources</Filter></ClCompile>
     <ClCompile Include="..\..\pm\function_scheduler\src\function_scheduler.c"><Filter>Production Sources</Filter></ClCompile>
   </ItemGroup>

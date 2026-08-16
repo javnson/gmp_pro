@@ -4,7 +4,7 @@
 
 `core` is organized by responsibility. The dependency direction is:
 
-`std -> base -> mm / pm / dev -> rt`
+`std -> base -> mm / pm / dev / protocol -> rt`
 
 | Layer | Responsibility | Documentation |
 | --- | --- | --- |
@@ -13,6 +13,7 @@
 | `mm` | Memory management | [mm](mm/readme.md) |
 | `pm` | Task, scheduler, and state-management services | [pm](pm/readme.md) |
 | `dev` | Peripheral contracts, drivers, and data-link services | [dev](dev/readme.md) |
+| `protocol` | Transport-neutral protocol engines and data models | [CANopen](protocol/canopen/README.md) |
 | `rt` | Full GMP startup and runtime assembly | [rt](rt/README.md) |
 
 Use `<gmp_type.h>` for configuration and portable types without the full GMP
