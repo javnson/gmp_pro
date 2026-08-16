@@ -254,7 +254,7 @@
             },
             "protocol|canopen|pdo": {
                 "type": "module",
-                "description": "Byte-aligned CANopen PDO mapping and online transfer engine",
+                "description": "Precompiled byte-aligned RX/TX PDO fast paths and sorted groups",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/core/protocol/canopen/src/pdo_engine.c"
                 ],
@@ -264,6 +264,24 @@
                 "depends_on": [
                     "core|protocol|canopen|od",
                     "core|protocol|canopen|nmt"
+                ],
+                "inc_dirs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/README.md"
+                ]
+            },
+            "protocol|canopen|coe": {
+                "type": "module",
+                "description": "Normalized CAN application protocol over EtherCAT adapter",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/src/ethercat_if.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/ethercat_if.h"
+                ],
+                "depends_on": [
+                    "core|protocol|canopen|sdo",
+                    "core|protocol|canopen|pdo"
                 ],
                 "inc_dirs": [],
                 "help_docs": [

@@ -24,9 +24,9 @@ TYPE_INFO = {
     0x0006: ("GMP_CANOPEN_OD_UNSIGNED16", "u16", "uint16_t", 2),
     0x0007: ("GMP_CANOPEN_OD_UNSIGNED32", "u32", "uint32_t", 4),
     0x0008: ("GMP_CANOPEN_OD_REAL32", "real32", "float", 4),
-    0x0009: ("GMP_CANOPEN_OD_VISIBLE_STRING", "octets", "gmp_canopen_octet_t", 0),
-    0x000A: ("GMP_CANOPEN_OD_OCTET_STRING", "octets", "gmp_canopen_octet_t", 0),
-    0x000F: ("GMP_CANOPEN_OD_DOMAIN", "octets", "gmp_canopen_octet_t", 0),
+    0x0009: ("GMP_CANOPEN_OD_VISIBLE_STRING", "octets", "uint16_t", 0),
+    0x000A: ("GMP_CANOPEN_OD_OCTET_STRING", "octets", "uint16_t", 0),
+    0x000F: ("GMP_CANOPEN_OD_DOMAIN", "octets", "uint16_t", 0),
     0x0011: ("GMP_CANOPEN_OD_REAL64", "real64", "double", 8),
     0x0015: ("GMP_CANOPEN_OD_INTEGER64", "i64", "int64_t", 8),
     0x001B: ("GMP_CANOPEN_OD_UNSIGNED64", "u64", "uint64_t", 8),
@@ -177,6 +177,11 @@ def c_string(text: str) -> str:
     return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
+def doxygen_text(text: str) -> str:
+    """Return one safe single-line Doxygen description."""
+    return text.replace("*/", "* /").replace("\r", " ").replace("\n", " ").strip()
+
+
 def numeric_literal(entry: EdsEntry, node_id: int) -> str:
     _, _, c_type, _ = TYPE_INFO[entry.data_type]
     if entry.data_type in {0x0008, 0x0011}:
@@ -227,10 +232,13 @@ def generate_header(entries: list[EdsEntry], api_name: str, header_name: str) ->
             continue
         _, _, c_type, fixed_size = TYPE_INFO[entry.data_type]
         symbol = f"{api_name}_storage_{entry.symbol_suffix}"
+        comment = (f"/** @brief Storage for 0x{entry.index:04X}:{entry.subindex:02X} "
+                   f"({doxygen_text(entry.parameter_name)}). */")
         if fixed_size:
-            storage_declarations.append(f"extern {c_type} {symbol};")
+            storage_declarations.append(f"{comment}\nextern {c_type} {symbol};")
         else:
-            storage_declarations.append(f"extern gmp_canopen_octet_t {symbol}[{entry.size}U];")
+            storage_declarations.append(
+                f"{comment}\nextern uint16_t {symbol}[{entry.size}U];")
     storage_text = "\n".join(storage_declarations)
     return f'''/** @file {header_name} @brief Generated from an EDS file; do not edit. */
 #ifndef {guard}
@@ -243,10 +251,17 @@ extern "C"
 {{
 #endif
 
+/** @brief Generated OD entry count. */
 #define {api_name.upper()}_ENTRY_COUNT {len(entries)}U
 
+/** @brief Generated intrusive entry storage. */
 extern gmp_canopen_od_entry_t {api_name}_entries[{api_name.upper()}_ENTRY_COUNT];
 {storage_text}
+/**
+ * @brief Initialize the generated object dictionary exactly once.
+ * @param dictionary Empty dictionary that receives all generated entries.
+ * @return Non-zero when every entry is inserted and the RB tree validates.
+ */
 fast_gt {api_name}_init(gmp_canopen_od_t* dictionary);
 
 #ifdef __cplusplus
@@ -276,7 +291,7 @@ def generate_source(entries: list[EdsEntry], api_name: str,
         else:
             payload = raw_bytes(entry)
             values = ", ".join(f"0x{value:02X}U" for value in payload)
-            lines.append(f"gmp_canopen_octet_t {symbol}[{entry.size}U] = {{{values}}};")
+            lines.append(f"uint16_t {symbol}[{entry.size}U] = {{{values}}};")
     lines.extend(["", f"fast_gt {api_name}_init(gmp_canopen_od_t* dictionary)", "{",
                   "    size_gt entry_index;",
                   "    if (dictionary == NULL)", "        return 0;",

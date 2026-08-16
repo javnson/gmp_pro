@@ -78,6 +78,7 @@
     <ClCompile Include="..\..\dev\datalink\src\gmp_datalink.c" />
     <ClCompile Include="..\..\dev\datalink\src\gmp_dl_facility.c" />
     <ClCompile Include="..\..\protocol\canopen\src\nmt_sm.c" />
+    <ClCompile Include="..\..\protocol\canopen\src\ethercat_if.c" />
     <ClCompile Include="..\..\protocol\canopen\src\od.c" />
     <ClCompile Include="..\..\protocol\canopen\src\pdo_engine.c" />
     <ClCompile Include="..\..\protocol\canopen\src\sdo_engine.c" />

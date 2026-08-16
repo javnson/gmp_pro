@@ -1,8 +1,8 @@
 # GMP CANopen 核心模块
 
 本目录提供不使用动态内存、可跨嵌入式平台的 CANopen 核心：经典 CAN 报文模型、
-NMT/心跳、基于红黑树的对象字典、SDO 服务端和 PDO 映射执行。CAN 控制器收发、
-滤波、队列与调度仍由 CSP 或用户适配层负责。
+NMT/心跳、基于红黑树的对象字典、SDO 服务端、预编译 PDO 和归一化 CoE 接口。
+CAN/EtherCAT 的实际收发、滤波、队列与调度仍由 CSP 或用户适配层负责。
 
 ## 模块与边界
 
@@ -14,15 +14,45 @@ NMT/心跳、基于红黑树的对象字典、SDO 服务端和 PDO 映射执行�
   或更大的缓冲区。
 - `sdo_engine` 实现服务端 expedited/segmented upload 和 download，默认最大分段
   事务为 128 字节，并产生标准 abort 报文。
-- `pdo_engine` 先校核并编译映射，再在 NMT Operational 状态下构造 TPDO 或应用
-  RPDO。目前只接受完整字节、宽度与 OD 元素完全一致且总长不超过 8 字节的映射。
+- `pdo_engine` 分别编译 TXPDO 与 RXPDO，并用独立的有序组管理多个 PDO。在线
+  `_fast` 接口直接访问编译时解析好的存储地址，不再查红黑树或重复编译。
+- `ethercat_if` 在同一 OD、SDO abort 模型和 PDO 计划之上提供归一化 CoE 接口。
 
-所有 CAN 报文字节使用 `gmp_canopen_octet_t`（`uint_least8_t`），以兼容 C28x 上
-C 语言字节宽度可能大于线上的 8 bit；所有多字节值都显式按小端序列化。
+## C28x 的 8 位线数据策略
+
+本模块明确不定义 `gmp_canopen_octet_t`。C28x 的 `CHAR_BIT` 为 16，C 对象的
+“byte”不能等同于协议的 8-bit octet，因此采用一套统一实现：
+
+| 数据类别 | 表示 | 约束 |
+| --- | --- | --- |
+| CAN 帧、SDO/PDO 序列化缓冲区、字符串和 Domain | `uint16_t` 单元 | 每个单元仅以低 8 位承载一个线 octet，超过 `0xFF` 的输入被拒绝 |
+| CiA `INTEGER8` / `UNSIGNED8` 标量 | `int_least8_t` / `uint_least8_t` | C28x 上允许占 16 C 位，但序列化和 EDS 仍执行 8 位范围约束 |
+| 主机/驱动的紧凑字节缓冲区 | 条件化的 `uint8_t` 适配函数 | 仅在存在 `UINT8_MAX` 且 `CHAR_BIT == 8` 时提供；C28x 直接使用逻辑单元接口 |
+
+因此 OD、NMT、SDO、PDO 不需要各维护一套 u8/u16 实现；表示转换只发生在硬件或
+EtherCAT 协议栈适配层。所有多字节值均显式按小端序列化。
+
+## PDO 分层与实时路径
+
+编译阶段逐项检查映射、解析 OD 元素和实际存储地址、选择编解码器并计算偏移；
+实时阶段只执行直接搬运。计划生存期内，OD 元素及其目标存储地址必须保持有效且
+不变；若重新绑定指针，必须停止在线访问并重新编译该 PDO。
+
+经典 CAN 的编译接口限制 8 octet 和 11-bit COB-ID；面向 CoE 的 buffer 编译接口
+接受调用者指定的更大 process image。TX 组支持按排序槽快速构帧，RX 组使用二分
+查找按 COB-ID 分发，收发状态不会混在一个对象中。
 
 当前范围不包括 CAN FD、位级 PDO 映射、SYNC 调度、inhibit/event timer、EMCY、
-TIME、LSS、SDO client 和 CiA 402 驱动状态机。应用应把硬件收到的标准帧交给
-NMT/SDO/PDO，并发送这些引擎返回的帧。
+TIME、LSS、SDO client 和 CiA 402 驱动状态机。`ethercat_if` 也不是原始 EtherCAT
+mailbox 编解码器：mailbox header/counter、分片和 AL 状态门控由选用的 EtherCAT
+协议栈适配；Complete Access 与 SDO Information 尚未实现。
+
+ETG 公开资料说明 CoE 复用 CANopen 的 OD/SDO/PDO 模型，并允许 EtherCAT process
+data 不受传统 8-octet PDO 长度约束：
+
+- <https://www.ethercat.org/en/technology.html?trk=public_post_comment-text>
+- <https://www.ethercat.org/download/documents/ETG1500_V1i0i2_D_R_MasterClasses.pdf>
+- <https://www.ethercat.org/download/documents/ETG2200_V3i2i2_G_R_EtherCATImplementationGuide.pdf>
 
 ## EDS 来源说明
 
@@ -52,6 +82,9 @@ python tools/protocol_mgr/canopen_eds_cc/canopen_eds_cc.py core/protocol/canopen
 python tools/protocol_mgr/canopen_eds_cc/canopen_eds_cc.py core/protocol/canopen/cia401/cia401.eds --output-dir core/protocol/canopen/cia401 --name gmp_cia401_od --storage pointer --node-id 1
 python tools/protocol_mgr/canopen_eds_cc/canopen_eds_cc.py core/protocol/canopen/cia402/cia402.eds --output-dir core/protocol/canopen/cia402 --name gmp_cia402_od --storage pointer --node-id 1
 python -m unittest discover -s tools/protocol_mgr/canopen_eds_cc/tests -v
+Push-Location core/protocol/canopen
+& 'C:\Program Files\doxygen\bin\doxygen.exe' Doxyfile
+Pop-Location
 & 'C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\amd64\MSBuild.exe' core/unit_test/projects/core_unit_tests.vcxproj /m /p:Configuration=Debug /p:Platform=x64
 & 'C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe' core/unit_test/projects/out/x64/Debug/core_unit_tests/core_unit_tests.dll
 ```
@@ -65,10 +98,12 @@ python -m unittest discover -s tools/protocol_mgr/canopen_eds_cc/tests -v
 | 心跳消费 | `0x707 [05]` 后累计 250 ms | 记录 Operational，在超时时间到达时置位 `timed_out` |
 | expedited SDO | 向节点 3 发送 `0x603 [23 00 20 00 EF BE AD DE]` | OD `0x2000:00` 写入 `0xDEADBEEF`，回复 `0x583 [60 00 20 00 ...]` |
 | segmented SDO | 对 10 字节 Domain 执行 initiate 和两个 segment | toggle、末段长度和顺序正确；错误 toggle/out-of-sequence 产生 abort |
-| PDO | 编译 16-bit + 32-bit 映射 | Pre-operational 拒绝上线；Operational 下 TPDO/RPDO 完成 6 字节双向搬运 |
+| PDO | 编译独立 TX/RX 计划并加入有序组 | Pre-operational 拒绝经典 CAN 上线；Operational 下 fast path 双向搬运且无需再次查 OD |
+| CoE | 对同一 OD 执行 SDO，并编译 12-octet PDO | SDO upload/download 正确；CoE process buffer 成功，经典 CAN 编译拒绝超长映射 |
+| 线 octet | 输入 `0x100` 并测试主机 u8 bridge | 非法逻辑单元被拒绝；8-bit 主机可无损导入/导出紧凑缓冲区 |
 | 生成 OD | 分别初始化 301/401/402 生成文件 | 三棵树校核通过并能查到 profile 关键对象；静态 entry 被第二棵树复用时被拒绝 |
 
-原生测试必须显示 47/47 通过且 `/W4 /WX` 下为 0 warning。EDS 工具测试必须显示
+原生测试必须显示 50/50 通过且 `/W4 /WX` 下为 0 warning。EDS 工具测试必须显示
 6/6 通过，其中包含三套已提交生成文件的确定性再生成比较。C28x 可移植性检查使用
-TI C2000 CGT 22.6.1.LTS 与 25.11.1.LTS 对 7 个 CANopen C 源文件执行 C99 编译；
-当前两套编译器均已通过。
+TI C2000 CGT 22.6.1.LTS 与 25.11.1.LTS 对 8 个 CANopen C 源文件执行 C99 编译。
+Doxygen 配置为遇到警告即失败。

@@ -7,6 +7,9 @@
 命令行的 `--storage pointer|value` 选择默认存储模型，单个对象可用
 `GMPStorage` 覆盖；`--node-id` 负责展开 `$NODEID+常量`。指针模型生成的变量具有
 外部链接，适合连接应用数据并在 CCS 中观察。实际值模型最多保存 8 个 CAN 字节。
+生成的字符串/Domain 原始存储使用 `uint16_t` 逻辑单元，每个单元只承载一个线上的
+8-bit octet，因此也能在 C28x 上编译。公开声明会依据 EDS 的 `ParameterName` 生成
+Doxygen 注释。
 
 工具会拒绝重复索引、不支持的数据类型或访问属性、非法表达式和越界默认值。
 它有意不实现完整的 CiA 306 表达式语言、compact sub-object 和厂商私有类型。

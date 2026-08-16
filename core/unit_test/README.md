@@ -14,7 +14,7 @@ implementation files directly from their authoritative locations under
 | `test_base_ds.cpp` | Intrusive list corruption/double-operation safety and ring-buffer boundary/wrap behavior |
 | `test_datalink_facility.cpp` | Facility layout, registration, overlap rejection, routing, INFO v3, removal, counter, and corruption NACK |
 | `test_rbtree.cpp` | Intrusive RB-tree ordering, structural deletion cases, duplicate operations, and invariant corruption detection |
-| `test_canopen.cpp` | OD storage, NMT/heartbeat, frame-level expedited/segmented SDO, and PDO mapping/data transfer |
+| `test_canopen.cpp` | OD storage, logical-octet portability, NMT/heartbeat, expedited/segmented SDO, compiled TX/RX PDO fast paths and groups, and CoE reuse |
 | `test_canopen_generated_od.cpp` | Generated CiA 301/401/402 profile-seed dictionary construction and lookup |
 | `test_base_checksum.cpp` | CRC16-CCITT standard and binary vectors |
 | `test_pm_function_scheduler.cpp` | Periodic, disabled, busy, and capacity scheduling |
@@ -38,5 +38,5 @@ vstest.console.exe out\x64\Debug\core_unit_tests\core_unit_tests.dll
 as legacy and has no implementation source, so its test intentionally covers
 only node behavior implemented in the public header.
 
-The current `Debug|x64` container contains 47 tests. Production and test sources
+The current `Debug|x64` container contains 50 tests. Production and test sources
 compile at `/W4 /WX`.

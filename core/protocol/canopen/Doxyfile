@@ -1,0 +1,17 @@
+PROJECT_NAME           = "GMP CANopen Core"
+OUTPUT_DIRECTORY       = ../../unit_test/projects/out/doxygen_canopen
+INPUT                  = .
+FILE_PATTERNS           = *.h
+RECURSIVE               = YES
+EXTRACT_ALL             = NO
+EXTRACT_STATIC          = NO
+GENERATE_HTML           = NO
+GENERATE_LATEX          = NO
+GENERATE_XML            = YES
+XML_OUTPUT              = xml
+QUIET                   = YES
+WARNINGS                = YES
+WARN_IF_UNDOCUMENTED    = YES
+WARN_IF_DOC_ERROR       = YES
+WARN_NO_PARAMDOC        = NO
+WARN_AS_ERROR           = FAIL_ON_WARNINGS

@@ -56,7 +56,7 @@ gmp_canopen_nmt_event_t gmp_canopen_nmt_receive(
     gmp_canopen_nmt_t* nmt, const gmp_canopen_frame_t* frame)
 {
     uint16_t target;
-    if (nmt == NULL || frame == NULL || frame->is_extended ||
+    if (nmt == NULL || !gmp_canopen_frame_validate(frame) || frame->is_extended ||
         frame->is_remote || frame->id != GMP_CANOPEN_COB_NMT ||
         frame->dlc != 2U)
         return GMP_CANOPEN_NMT_EVENT_NONE;
@@ -77,7 +77,7 @@ fast_gt gmp_canopen_nmt_build_heartbeat(const gmp_canopen_nmt_t* nmt,
     gmp_canopen_frame_clear(heartbeat);
     heartbeat->id = GMP_CANOPEN_COB_HEARTBEAT + nmt->node_id;
     heartbeat->dlc = 1U;
-    heartbeat->data[0] = (gmp_canopen_octet_t)nmt->state;
+    heartbeat->data[0] = (uint16_t)nmt->state;
     return 1;
 }
 
@@ -127,7 +127,7 @@ fast_gt gmp_canopen_heartbeat_consumer_receive(
     const gmp_canopen_frame_t* heartbeat)
 {
     uint16_t state;
-    if (consumer == NULL || heartbeat == NULL || heartbeat->is_extended ||
+    if (consumer == NULL || !gmp_canopen_frame_validate(heartbeat) || heartbeat->is_extended ||
         heartbeat->is_remote || heartbeat->dlc != 1U ||
         heartbeat->id != GMP_CANOPEN_COB_HEARTBEAT + consumer->node_id)
         return 0;
