@@ -1,8 +1,7 @@
 /**
  * @file sdo_engine.h
  * @brief Classic-CAN expedited and segmented SDO server.
- * @details Transfer storage uses unpacked `uint16_t` logical wire octets so
- * the same implementation compiles on native 8-bit-byte targets and C28x.
+ * @details Transfer storage uses one unsigned `byte_gt` per wire octet.
  */
 
 #ifndef _FILE_GMP_CANOPEN_SDO_ENGINE_H_
@@ -55,7 +54,7 @@ typedef struct
     uint32_t offset; /**< Completed logical octets. */
     uint32_t total_size; /**< Expected transaction size. */
     uint16_t toggle; /**< Expected segment toggle bit. */
-    uint16_t transfer[GMP_CANOPEN_SDO_MAX_TRANSFER]; /**< Staging cells. */
+    byte_gt transfer[GMP_CANOPEN_SDO_MAX_TRANSFER]; /**< Staging octets. */
 } gmp_canopen_sdo_server_t;
 
 /**

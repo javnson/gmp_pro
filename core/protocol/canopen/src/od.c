@@ -223,7 +223,7 @@ static fast_gt gmp_canopen_od_narrow_scalar_valid(
     }
     if (entry->data_type == GMP_CANOPEN_OD_UNSIGNED8)
     {
-        uint_least8_t value = entry->storage_mode == GMP_CANOPEN_OD_STORAGE_VALUE ?
+        byte_gt value = entry->storage_mode == GMP_CANOPEN_OD_STORAGE_VALUE ?
             entry->storage.value.u8 : *entry->storage.pointer.u8;
         return value <= 0xFFU;
     }
@@ -246,7 +246,7 @@ static void gmp_canopen_od_set_unsigned(gmp_canopen_od_entry_t* entry,
         {
         case GMP_CANOPEN_OD_BOOLEAN: entry->storage.value.boolean = value != 0U; break;
         case GMP_CANOPEN_OD_INTEGER8: entry->storage.value.i8 = gmp_canopen_od_decode_integer8(value); break;
-        case GMP_CANOPEN_OD_UNSIGNED8: entry->storage.value.u8 = (uint_least8_t)value; break;
+        case GMP_CANOPEN_OD_UNSIGNED8: entry->storage.value.u8 = (byte_gt)value; break;
         case GMP_CANOPEN_OD_INTEGER16: entry->storage.value.i16 = (int16_t)value; break;
         case GMP_CANOPEN_OD_UNSIGNED16: entry->storage.value.u16 = (uint16_t)value; break;
         case GMP_CANOPEN_OD_INTEGER32: entry->storage.value.i32 = (int32_t)value; break;
@@ -261,7 +261,7 @@ static void gmp_canopen_od_set_unsigned(gmp_canopen_od_entry_t* entry,
     {
     case GMP_CANOPEN_OD_BOOLEAN: *entry->storage.pointer.boolean = value != 0U; break;
     case GMP_CANOPEN_OD_INTEGER8: *entry->storage.pointer.i8 = gmp_canopen_od_decode_integer8(value); break;
-    case GMP_CANOPEN_OD_UNSIGNED8: *entry->storage.pointer.u8 = (uint_least8_t)value; break;
+    case GMP_CANOPEN_OD_UNSIGNED8: *entry->storage.pointer.u8 = (byte_gt)value; break;
     case GMP_CANOPEN_OD_INTEGER16: *entry->storage.pointer.i16 = (int16_t)value; break;
     case GMP_CANOPEN_OD_UNSIGNED16: *entry->storage.pointer.u16 = (uint16_t)value; break;
     case GMP_CANOPEN_OD_INTEGER32: *entry->storage.pointer.i32 = (int32_t)value; break;
@@ -273,12 +273,12 @@ static void gmp_canopen_od_set_unsigned(gmp_canopen_od_entry_t* entry,
 }
 
 gmp_canopen_od_result_t gmp_canopen_od_read(
-    const gmp_canopen_od_entry_t* entry, uint16_t* output,
+    const gmp_canopen_od_entry_t* entry, byte_gt* output,
     uint32_t capacity, uint32_t* actual_size)
 {
     uint32_t index;
     uint64_t value;
-    const uint16_t* raw;
+    const byte_gt* raw;
     if (entry == NULL || output == NULL || actual_size == NULL)
         return GMP_CANOPEN_OD_INVALID;
     if (!(entry->access & GMP_CANOPEN_OD_ACCESS_READ))
@@ -316,17 +316,17 @@ gmp_canopen_od_result_t gmp_canopen_od_read(
         return GMP_CANOPEN_OD_OK;
     }
     for (index = 0U; index < entry->size; ++index)
-        output[index] = (uint16_t)((value >> (8U * index)) & 0xFFU);
+        output[index] = (byte_gt)((value >> (8U * index)) & 0xFFU);
     return GMP_CANOPEN_OD_OK;
 }
 
 gmp_canopen_od_result_t gmp_canopen_od_write(
-    gmp_canopen_od_entry_t* entry, const uint16_t* input,
+    gmp_canopen_od_entry_t* entry, const byte_gt* input,
     uint32_t size)
 {
     uint32_t index;
     uint64_t value = 0U;
-    uint16_t* raw;
+    byte_gt* raw;
     if (entry == NULL || input == NULL)
         return GMP_CANOPEN_OD_INVALID;
     if (!(entry->access & GMP_CANOPEN_OD_ACCESS_WRITE) ||

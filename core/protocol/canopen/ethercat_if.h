@@ -6,7 +6,7 @@
  * plans without pretending that an EtherCAT mailbox is a CAN frame. An
  * EtherCAT MainDevice/SubDevice stack owns raw mailbox headers, counters,
  * fragmentation and AL-state gating, then supplies the normalized requests
- * defined here. Payloads use one logical eight-bit octet per `uint16_t` cell.
+ * defined here. Payloads use one unsigned `byte_gt` per wire octet.
  */
 
 #ifndef _FILE_GMP_CANOPEN_ETHERCAT_IF_H_
@@ -38,7 +38,7 @@ typedef struct
 {
     gmp_coe_service_t service; /**< Decoded CoE service. */
     uint16_t number; /**< Adapter-preserved CoE service number/counter. */
-    const uint16_t* payload; /**< Logical wire-octet payload. */
+    const byte_gt* payload; /**< Wire-octet payload. */
     uint32_t payload_size; /**< Payload length in logical octets. */
 } gmp_coe_mailbox_t;
 
@@ -67,7 +67,7 @@ typedef struct
     uint16_t index; /**< OD index. */
     uint16_t subindex; /**< OD sub-index. */
     fast_gt complete_access; /**< Non-zero requests Complete Access. */
-    const uint16_t* data; /**< Download logical octets; `NULL` for upload. */
+    const byte_gt* data; /**< Download wire octets; `NULL` for upload. */
     uint32_t data_size; /**< Download length in logical octets. */
 } gmp_coe_sdo_request_t;
 
@@ -77,7 +77,7 @@ typedef struct
     uint16_t number; /**< Request number. */
     gmp_coe_result_t result; /**< Service result. */
     uint32_t abort_code; /**< CANopen SDO abort code for `GMP_COE_OD_ABORT`. */
-    uint16_t* data; /**< Caller-owned upload response buffer. */
+    byte_gt* data; /**< Caller-owned upload response buffer. */
     uint32_t capacity; /**< Response-buffer capacity in logical octets. */
     uint32_t data_size; /**< Produced upload length. */
 } gmp_coe_sdo_response_t;
@@ -149,7 +149,7 @@ gmp_canopen_pdo_result_t gmp_coe_rxpdo_compile(
  * @return PDO result; no OD lookup occurs.
  */
 gmp_canopen_pdo_result_t gmp_coe_txpdo_pack_fast(
-    const gmp_canopen_txpdo_t* pdo, uint16_t* output,
+    const gmp_canopen_txpdo_t* pdo, byte_gt* output,
     uint16_t capacity, uint16_t* actual_size);
 
 /**
@@ -160,7 +160,7 @@ gmp_canopen_pdo_result_t gmp_coe_txpdo_pack_fast(
  * @return PDO result; no OD lookup occurs.
  */
 gmp_canopen_pdo_result_t gmp_coe_rxpdo_unpack_fast(
-    const gmp_canopen_rxpdo_t* pdo, const uint16_t* input, uint16_t size);
+    const gmp_canopen_rxpdo_t* pdo, const byte_gt* input, uint16_t size);
 
 #ifdef __cplusplus
 }

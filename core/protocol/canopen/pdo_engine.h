@@ -175,7 +175,7 @@ gmp_canopen_pdo_result_t gmp_canopen_rxpdo_compile_buffer(
  */
 gmp_canopen_pdo_result_t gmp_canopen_txpdo_pack_fast(
     const gmp_canopen_txpdo_t* pdo, gmp_canopen_nmt_state_t nmt_state,
-    uint16_t* output, uint16_t capacity, uint16_t* actual_size);
+    byte_gt* output, uint16_t capacity, uint16_t* actual_size);
 
 /**
  * @brief Execute a precompiled RX plan from logical wire-octet cells.
@@ -187,7 +187,7 @@ gmp_canopen_pdo_result_t gmp_canopen_txpdo_pack_fast(
  */
 gmp_canopen_pdo_result_t gmp_canopen_rxpdo_unpack_fast(
     const gmp_canopen_rxpdo_t* pdo, gmp_canopen_nmt_state_t nmt_state,
-    const uint16_t* input, uint16_t size);
+    const byte_gt* input, uint16_t size);
 
 /**
  * @brief Build one classic-CAN frame from a precompiled TX PDO.

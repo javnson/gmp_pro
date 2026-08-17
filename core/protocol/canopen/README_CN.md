@@ -2,7 +2,8 @@
 
 本目录提供不使用动态内存、可跨嵌入式平台的 CANopen 核心：经典 CAN 报文模型、
 NMT/心跳、基于红黑树的对象字典、SDO 服务端、预编译 PDO 和归一化 CoE 接口。
-CAN/EtherCAT 的实际收发、滤波、队列与调度仍由 CSP 或用户适配层负责。
+完整节点负责协议设施和中断/后台队列；CAN/EtherCAT 的实际搬运、滤波、mailbox
+编码以及唤醒调度仍由 CSP 或用户适配层负责。
 
 ## 模块与边界
 
@@ -17,6 +18,69 @@ CAN/EtherCAT 的实际收发、滤波、队列与调度仍由 CSP 或用户适�
 - `pdo_engine` 分别编译 TXPDO 与 RXPDO，并用独立的有序组管理多个 PDO。在线
   `_fast` 接口直接访问编译时解析好的存储地址，不再查红黑树或重复编译。
 - `ethercat_if` 在同一 OD、SDO abort 模型和 PDO 计划之上提供归一化 CoE 接口。
+- `canopen.h`/`src/canopen.c` 将以上模块组成一个完整节点，定义 CAN/CoE 公共报文、
+  CiA 301 基础对象、有界输入/输出队列以及传输层和主循环使用的三个回调。
+
+## 完整节点与公共接口
+
+用户通常只需声明一个 `gmp_canopen_t`。`gmp_canopen_init()` 使 NMT、SDO、PDO 和
+CoE 共用一棵 OD，并注册采用指针存储的 CiA 301 基础对象：`0x1000`、`0x1001`、
+`0x1017`、`0x1018:00..04`，以及可选字符串 `0x1008..0x100A`。之后可继续向节点
+的 OD 加入应用/profile 对象，并把编译完成的 RX/TX PDO 计划加入相应组。
+
+`gmp_canopen_packet_t` 是 CAN 与 CoE 共用的传输边界：CAN 使用
+`GMP_CANOPEN_PACKET_CAN_FRAME`，`key` 表示 CAN ID；CoE 使用归一化 SDO/PDO 类型，
+通过 `index/subindex`、请求 `number`、PDO `key` 和节点自有的 `byte_gt` 缓冲区传递
+语义。EtherCAT 原始 mailbox header 不属于该公共接口。
+
+运行顺序固定如下：
+
+1. CAN 接收中断或 EtherCAT 回调调用 `gmp_canopen_input_callback()`；该函数只校验
+   并复制报文，不在中断内解析协议或访问 OD。
+2. 主循环调用 `gmp_canopen_background_callback(elapsed_ms)`；它推进心跳、解析排队的
+   CAN/CoE 请求、更新 NMT/RPDO，并把 SDO 回复、心跳或 TPDO 放入输出队列。
+3. CAN 空闲中断、DMA feeder 或 EtherCAT 适配层反复调用
+   `gmp_canopen_output_callback()`，直到返回 `GMP_CANOPEN_NODE_EMPTY`。
+
+最小的经典 CAN 适配形式如下；外设驱动只负责把 `frame` 搬入或搬出：
+
+```c
+static gmp_canopen_t canopen_node;
+
+void app_canopen_init(void)
+{
+    (void)gmp_canopen_init_default(&canopen_node, 5U);
+}
+
+void app_can_rx_isr(const gmp_canopen_frame_t* frame)
+{
+    gmp_canopen_packet_t packet;
+    if (gmp_canopen_packet_from_can(frame, &packet))
+        (void)gmp_canopen_input_callback(&canopen_node, &packet);
+}
+
+void app_canopen_background(uint32_t elapsed_ms)
+{
+    gmp_canopen_packet_t packet;
+    gmp_canopen_frame_t frame;
+    (void)gmp_canopen_background_callback(&canopen_node, elapsed_ms);
+    while (gmp_canopen_output_callback(&canopen_node, &packet) ==
+           GMP_CANOPEN_NODE_OK)
+        if (gmp_canopen_packet_to_can(&packet, &frame))
+            app_can_start_transmit(&frame);
+}
+```
+
+实际工程应由 CAN 空闲中断或 DMA 消费输出队列；上例把这一动作写在后台函数中，只为
+展示公共接口的闭环，`app_can_start_transmit()` 由目标 CSP 提供。
+
+每个队列保留一个物理槽用于区分满/空，因此可用容量为
+`GMP_CANOPEN_QUEUE_SLOTS - 1`。这是严格的 SPSC 契约：输入回调是 RX 唯一生产者，
+后台回调是 RX 消费者和 TX 唯一生产者，输出回调是 TX 唯一消费者。
+`gmp_canopen_publish_tpdo()` 也必须从后台/TX 生产者上下文调用，不能从另一个中断
+并发生产。队列深度、公共报文容量和单次后台处理预算均可在编译期调整。可移植实现
+面向单核 ISR/主循环；`volatile` 索引不是多核内存屏障，多核适配层必须额外串行化或
+提供目标平台的内存栅栏。
 
 ## C28x 的 8 位线数据策略
 
@@ -25,8 +89,8 @@ CAN/EtherCAT 的实际收发、滤波、队列与调度仍由 CSP 或用户适�
 
 | 数据类别 | 表示 | 约束 |
 | --- | --- | --- |
-| CAN 帧、SDO/PDO 序列化缓冲区、字符串和 Domain | `uint16_t` 单元 | 每个单元仅以低 8 位承载一个线 octet，超过 `0xFF` 的输入被拒绝 |
-| CiA `INTEGER8` / `UNSIGNED8` 标量 | `int_least8_t` / `uint_least8_t` | C28x 上允许占 16 C 位，但序列化和 EDS 仍执行 8 位范围约束 |
+| CAN 帧、SDO/PDO 序列化缓冲区、字符串和 Domain | `byte_gt` 元素 | 每个元素承载一个线 octet；编译期保证 `byte_gt` 无符号，原生宽度可表示 `0xFF` 以上数值时仍拒绝越界值 |
+| CiA `INTEGER8` / `UNSIGNED8` 标量 | `int_least8_t` / `byte_gt` | C28x 上允许占 16 C 位，但序列化和 EDS 仍执行 8 位范围约束 |
 | 主机/驱动的紧凑字节缓冲区 | 条件化的 `uint8_t` 适配函数 | 仅在存在 `UINT8_MAX` 且 `CHAR_BIT == 8` 时提供；C28x 直接使用逻辑单元接口 |
 
 因此 OD、NMT、SDO、PDO 不需要各维护一套 u8/u16 实现；表示转换只发生在硬件或
@@ -101,9 +165,10 @@ Pop-Location
 | PDO | 编译独立 TX/RX 计划并加入有序组 | Pre-operational 拒绝经典 CAN 上线；Operational 下 fast path 双向搬运且无需再次查 OD |
 | CoE | 对同一 OD 执行 SDO，并编译 12-octet PDO | SDO upload/download 正确；CoE process buffer 成功，经典 CAN 编译拒绝超长映射 |
 | 线 octet | 输入 `0x100` 并测试主机 u8 bridge | 非法逻辑单元被拒绝；8-bit 主机可无损导入/导出紧凑缓冲区 |
+| 完整节点 | CAN SDO 写入后以 CoE SDO 读取同一对象，并经队列执行 NMT/RPDO/TPDO | 两种传输共用 OD；输入回调不直接解析；后台产生回复；输出回调按顺序取走结果 |
 | 生成 OD | 分别初始化 301/401/402 生成文件 | 三棵树校核通过并能查到 profile 关键对象；静态 entry 被第二棵树复用时被拒绝 |
 
-原生测试必须显示 50/50 通过且 `/W4 /WX` 下为 0 warning。EDS 工具测试必须显示
+原生测试必须显示 53/53 通过且 `/W4 /WX` 下为 0 warning。EDS 工具测试必须显示
 6/6 通过，其中包含三套已提交生成文件的确定性再生成比较。C28x 可移植性检查使用
-TI C2000 CGT 22.6.1.LTS 与 25.11.1.LTS 对 8 个 CANopen C 源文件执行 C99 编译。
+TI C2000 CGT 22.6.1.LTS 与 25.11.1.LTS 对 9 个 CANopen C 源文件执行 C99 编译。
 Doxygen 配置为遇到警告即失败。

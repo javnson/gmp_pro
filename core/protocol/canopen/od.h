@@ -3,7 +3,7 @@
  * @brief CANopen object dictionary backed by an intrusive red-black tree.
  * @details Dictionary values use either inline typed storage or a pointer to
  * application-owned storage. Serialized buffers contain one eight-bit wire
- * octet per `uint16_t` cell; only the low eight bits are significant.
+ * octet per unsigned `byte_gt` element.
  */
 
 #ifndef _FILE_GMP_CANOPEN_OD_H_
@@ -71,7 +71,7 @@ typedef union
 {
     fast_gt boolean; /**< Boolean storage. */
     int_least8_t i8; /**< INTEGER8 storage; may occupy 16 bits on C28x. */
-    uint_least8_t u8; /**< UNSIGNED8 storage; may occupy 16 bits on C28x. */
+    byte_gt u8; /**< UNSIGNED8 storage; `byte_gt` is unsigned on every target. */
     int16_t i16; /**< INTEGER16 storage. */
     uint16_t u16; /**< UNSIGNED16 storage. */
     int32_t i32; /**< INTEGER32 storage. */
@@ -80,7 +80,7 @@ typedef union
     uint64_t u64; /**< UNSIGNED64 storage. */
     float real32; /**< REAL32 storage. */
     double real64; /**< REAL64 storage. */
-    uint16_t octets[8]; /**< Up to eight logical wire octets. */
+    byte_gt octets[8]; /**< Up to eight wire octets. */
 } gmp_canopen_od_value_t;
 
 /** @brief Typed pointers to application-owned OD storage. */
@@ -89,7 +89,7 @@ typedef union
     void* raw; /**< Untyped pointer used during initialization/compilation. */
     fast_gt* boolean; /**< Boolean pointer. */
     int_least8_t* i8; /**< INTEGER8 pointer. */
-    uint_least8_t* u8; /**< UNSIGNED8 pointer. */
+    byte_gt* u8; /**< UNSIGNED8 pointer. */
     int16_t* i16; /**< INTEGER16 pointer. */
     uint16_t* u16; /**< UNSIGNED16 pointer. */
     int32_t* i32; /**< INTEGER32 pointer. */
@@ -98,7 +98,7 @@ typedef union
     uint64_t* u64; /**< UNSIGNED64 pointer. */
     float* real32; /**< REAL32 pointer. */
     double* real64; /**< REAL64 pointer. */
-    uint16_t* octets; /**< Logical wire-octet string/domain storage. */
+    byte_gt* octets; /**< Wire-octet string/domain storage. */
 } gmp_canopen_od_pointer_t;
 
 /** @brief Union of inline-value and pointer-backed storage models. */
@@ -155,7 +155,7 @@ void gmp_canopen_od_entry_init_value(gmp_canopen_od_entry_t* entry,
  * @param subindex Object sub-index.
  * @param data_type CiA data type.
  * @param access Access flags.
- * @param value Typed scalar pointer or `uint16_t` logical-octet buffer.
+ * @param value Typed scalar pointer or `byte_gt` wire-octet buffer.
  * @param size Serialized size, or zero to infer a scalar size.
  * @param name Optional static diagnostic name.
  */
@@ -205,13 +205,13 @@ gmp_canopen_od_entry_t* gmp_canopen_od_next(const gmp_canopen_od_entry_t* entry)
 /**
  * @brief Serialize an entry into logical wire-octet cells.
  * @param entry Readable entry.
- * @param output Output `uint16_t` cells.
+ * @param output Output `byte_gt` elements.
  * @param capacity Output capacity in logical octets.
  * @param actual_size Receives serialized logical-octet count.
  * @return OD access/length result.
  */
 gmp_canopen_od_result_t gmp_canopen_od_read(
-    const gmp_canopen_od_entry_t* entry, uint16_t* output,
+    const gmp_canopen_od_entry_t* entry, byte_gt* output,
     uint32_t capacity, uint32_t* actual_size);
 /**
  * @brief Deserialize logical wire-octet cells into a writable entry.
@@ -221,7 +221,7 @@ gmp_canopen_od_result_t gmp_canopen_od_read(
  * @return OD access/length/value result.
  */
 gmp_canopen_od_result_t gmp_canopen_od_write(
-    gmp_canopen_od_entry_t* entry, const uint16_t* input,
+    gmp_canopen_od_entry_t* entry, const byte_gt* input,
     uint32_t size);
 /**
  * @brief Validate RB-tree ownership, ordering and invariants.

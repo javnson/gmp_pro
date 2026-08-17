@@ -24,6 +24,7 @@
     <ClCompile Include="..\..\dev\datalink\src\gmp_datalink.c"><Filter>Production Sources</Filter></ClCompile>
     <ClCompile Include="..\..\dev\datalink\src\gmp_dl_facility.c"><Filter>Production Sources</Filter></ClCompile>
     <ClCompile Include="..\..\protocol\canopen\src\nmt_sm.c"><Filter>Production Sources</Filter></ClCompile>
+    <ClCompile Include="..\..\protocol\canopen\src\canopen.c"><Filter>Production Sources</Filter></ClCompile>
     <ClCompile Include="..\..\protocol\canopen\src\ethercat_if.c"><Filter>Production Sources</Filter></ClCompile>
     <ClCompile Include="..\..\protocol\canopen\src\od.c"><Filter>Production Sources</Filter></ClCompile>
     <ClCompile Include="..\..\protocol\canopen\src\pdo_engine.c"><Filter>Production Sources</Filter></ClCompile>

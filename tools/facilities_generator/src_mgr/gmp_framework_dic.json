@@ -288,6 +288,26 @@
                     "${GMP_PRO_LOCATION}/core/protocol/canopen/README.md"
                 ]
             },
+            "protocol|canopen|node": {
+                "type": "module",
+                "description": "Complete queued CANopen node facade for CAN and CoE transports",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/src/canopen.c"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/canopen.h"
+                ],
+                "depends_on": [
+                    "core|protocol|canopen|nmt",
+                    "core|protocol|canopen|sdo",
+                    "core|protocol|canopen|pdo",
+                    "core|protocol|canopen|coe"
+                ],
+                "inc_dirs": [],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/core/protocol/canopen/README.md"
+                ]
+            },
             "protocol|canopen|cia301": {
                 "type": "module",
                 "description": "Generated GMP CiA 301 profile-seed object dictionary",

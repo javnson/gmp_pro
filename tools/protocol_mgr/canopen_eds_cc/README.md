@@ -23,8 +23,9 @@ python -m unittest discover -s tests -v
 ```
 
 Generated pointer-storage variables are externally visible for application binding and
-debugging. Generated raw/string/domain storage uses one `uint16_t` logical cell per
-CANopen wire octet so it also compiles on C28x; only bits 7:0 are significant. Generated
-public declarations include Doxygen descriptions derived from the EDS parameter names.
+debugging. Generated raw/string/domain storage uses one unsigned `byte_gt` element per
+CANopen wire octet, so the same declaration compiles compactly on 8-bit-byte targets and
+portably on C28x. Generated public declarations include Doxygen descriptions derived
+from the EDS parameter names.
 Call the generated `<name>_init()` exactly once for its static entry array, then use the
 regular OD/SDO/PDO APIs.

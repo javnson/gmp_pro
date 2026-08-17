@@ -77,7 +77,7 @@ fast_gt gmp_canopen_nmt_build_heartbeat(const gmp_canopen_nmt_t* nmt,
     gmp_canopen_frame_clear(heartbeat);
     heartbeat->id = GMP_CANOPEN_COB_HEARTBEAT + nmt->node_id;
     heartbeat->dlc = 1U;
-    heartbeat->data[0] = (uint16_t)nmt->state;
+    heartbeat->data[0] = (byte_gt)nmt->state;
     return 1;
 }
 

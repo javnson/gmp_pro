@@ -15,7 +15,7 @@ static void gmp_canopen_sdo_abort(gmp_canopen_sdo_server_t* server, gmp_canopen_
     gmp_canopen_sdo_response_begin(server, response);
     response->data[0] = 0x80U;
     gmp_canopen_store_le16(&response->data[1], index);
-    response->data[3] = subindex;
+    response->data[3] = (byte_gt)subindex;
     gmp_canopen_store_le32(&response->data[4], abort_code);
     gmp_canopen_sdo_server_reset(server);
 }
@@ -90,7 +90,7 @@ static fast_gt gmp_canopen_sdo_initiate_download(gmp_canopen_sdo_server_t* serve
         gmp_canopen_sdo_response_begin(server, response);
         response->data[0] = 0x60U;
         gmp_canopen_store_le16(&response->data[1], index);
-        response->data[3] = subindex;
+        response->data[3] = (byte_gt)subindex;
         gmp_canopen_sdo_server_reset(server);
         return 1;
     }
@@ -117,7 +117,7 @@ static fast_gt gmp_canopen_sdo_initiate_download(gmp_canopen_sdo_server_t* serve
     gmp_canopen_sdo_response_begin(server, response);
     response->data[0] = 0x60U;
     gmp_canopen_store_le16(&response->data[1], index);
-    response->data[3] = subindex;
+    response->data[3] = (byte_gt)subindex;
     return 1;
 }
 
@@ -154,7 +154,7 @@ static fast_gt gmp_canopen_sdo_download_segment(gmp_canopen_sdo_server_t* server
         server->transfer[server->offset + index] = request->data[index + 1U];
     server->offset += count;
     gmp_canopen_sdo_response_begin(server, response);
-    response->data[0] = 0x20U | (toggle << 4U);
+    response->data[0] = (byte_gt)(0x20U | (toggle << 4U));
     if (last)
     {
         if (server->offset != server->total_size)
@@ -203,11 +203,11 @@ static fast_gt gmp_canopen_sdo_initiate_upload(gmp_canopen_sdo_server_t* server,
     }
     gmp_canopen_sdo_response_begin(server, response);
     gmp_canopen_store_le16(&response->data[1], index);
-    response->data[3] = subindex;
+    response->data[3] = (byte_gt)subindex;
     if (size <= 4U)
     {
         uint32_t byte_index;
-        response->data[0] = (uint16_t)(0x43U | ((4U - size) << 2U));
+        response->data[0] = (byte_gt)(0x43U | ((4U - size) << 2U));
         for (byte_index = 0U; byte_index < size; ++byte_index)
             response->data[4U + byte_index] = server->transfer[byte_index];
         gmp_canopen_sdo_server_reset(server);
@@ -250,7 +250,8 @@ static fast_gt gmp_canopen_sdo_upload_segment(gmp_canopen_sdo_server_t* server, 
     unused = 7U - count;
     last = count == remaining;
     gmp_canopen_sdo_response_begin(server, response);
-    response->data[0] = (uint16_t)((server->toggle << 4U) | (unused << 1U) | (last ? 1U : 0U));
+    response->data[0] = (byte_gt)((server->toggle << 4U) |
+        (unused << 1U) | (last ? 1U : 0U));
     for (index = 0U; index < count; ++index)
         response->data[index + 1U] = server->transfer[server->offset + index];
     server->offset += count;

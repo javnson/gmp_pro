@@ -14,7 +14,7 @@ implementation files directly from their authoritative locations under
 | `test_base_ds.cpp` | Intrusive list corruption/double-operation safety and ring-buffer boundary/wrap behavior |
 | `test_datalink_facility.cpp` | Facility layout, registration, overlap rejection, routing, INFO v3, removal, counter, and corruption NACK |
 | `test_rbtree.cpp` | Intrusive RB-tree ordering, structural deletion cases, duplicate operations, and invariant corruption detection |
-| `test_canopen.cpp` | OD storage, logical-octet portability, NMT/heartbeat, expedited/segmented SDO, compiled TX/RX PDO fast paths and groups, and CoE reuse |
+| `test_canopen.cpp` | OD storage, `byte_gt` wire portability, NMT/heartbeat, expedited/segmented SDO, compiled TX/RX PDO fast paths and groups, CoE reuse, and complete-node queue/dispatch behavior |
 | `test_canopen_generated_od.cpp` | Generated CiA 301/401/402 profile-seed dictionary construction and lookup |
 | `test_base_checksum.cpp` | CRC16-CCITT standard and binary vectors |
 | `test_pm_function_scheduler.cpp` | Periodic, disabled, busy, and capacity scheduling |

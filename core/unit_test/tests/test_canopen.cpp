@@ -5,7 +5,7 @@
 #include <core/protocol/canopen/nmt_sm.h>
 #include <core/protocol/canopen/pdo_engine.h>
 #include <core/protocol/canopen/sdo_engine.h>
-#include <core/protocol/canopen/ethercat_if.h>
+#include <core/protocol/canopen/canopen.h>
 
 #include <cstring>
 
@@ -16,7 +16,7 @@ namespace gmp_core_unit_test
 namespace
 {
 void make_sdo_request(gmp_canopen_frame_t& frame, uint16_t node_id,
-                      uint16_t command, uint16_t index, uint16_t subindex)
+                      byte_gt command, uint16_t index, byte_gt subindex)
 {
     gmp_canopen_frame_clear(&frame);
     frame.id = GMP_CANOPEN_COB_RSDO + node_id;
@@ -55,7 +55,7 @@ TEST_CLASS(CanopenCoreTests)
         gmp_canopen_od_entry_t invalid_subindex{};
         uint16_t pointer_value = 0x1234;
         int_least8_t integer8_value = 0;
-        uint16_t bytes[4]{};
+        byte_gt bytes[4]{};
         uint32_t size = 0;
         gmp_canopen_od_init(&od);
         gmp_canopen_od_entry_init_value(&value_entry, 0x2000, 0,
@@ -190,8 +190,8 @@ TEST_CLASS(CanopenCoreTests)
         gmp_canopen_sdo_server_t server{};
         gmp_canopen_frame_t request{};
         gmp_canopen_frame_t response{};
-        uint16_t storage[10]{};
-        const uint16_t expected[10] = {0,1,2,3,4,5,6,7,8,9};
+        byte_gt storage[10]{};
+        const byte_gt expected[10] = {0,1,2,3,4,5,6,7,8,9};
         gmp_canopen_od_init(&od);
         gmp_canopen_od_entry_init_pointer(&domain, 0x2100, 0, GMP_CANOPEN_OD_DOMAIN,
             GMP_CANOPEN_OD_ACCESS_READ | GMP_CANOPEN_OD_ACCESS_WRITE,
@@ -232,7 +232,7 @@ TEST_CLASS(CanopenCoreTests)
         gmp_canopen_sdo_server_t server{};
         gmp_canopen_frame_t request{};
         gmp_canopen_frame_t response{};
-        uint16_t storage[10]{};
+        byte_gt storage[10]{};
         gmp_canopen_od_init(&od);
         gmp_canopen_od_entry_init_pointer(&domain, 0x2100, 2,
             GMP_CANOPEN_OD_DOMAIN,
@@ -405,10 +405,10 @@ TEST_CLASS(CanopenCoreTests)
         gmp_coe_sdo_response_t response{};
         gmp_canopen_txpdo_t tx{};
         gmp_canopen_rxpdo_t rx{};
-        uint16_t storage[12]{};
-        uint16_t payload[12]{};
+        byte_gt storage[12]{};
+        byte_gt payload[12]{};
         uint16_t size = 0;
-        const uint16_t download[12] = {0,1,2,3,4,5,6,7,8,9,10,11};
+        const byte_gt download[12] = {0,1,2,3,4,5,6,7,8,9,10,11};
         const uint32_t map[] = {GMP_CANOPEN_PDO_MAP(0x4000, 0, 96)};
         gmp_canopen_od_init(&od);
         gmp_canopen_od_entry_init_pointer(&domain, 0x4000, 0,
@@ -448,7 +448,7 @@ TEST_CLASS(CanopenCoreTests)
         Assert::AreEqual((int)GMP_CANOPEN_PDO_OK,
             (int)gmp_coe_rxpdo_compile(&rx, &od, 4, map, 1, 12));
         for (uint16_t index = 0; index < 12; ++index)
-            payload[index] = (uint16_t)(20U + index);
+            payload[index] = (byte_gt)(20U + index);
         Assert::AreEqual((int)GMP_CANOPEN_PDO_OK,
             (int)gmp_coe_rxpdo_unpack_fast(&rx, payload, 12));
         Assert::AreEqual<int>(20, storage[0]);
@@ -459,14 +459,16 @@ TEST_CLASS(CanopenCoreTests)
     {
         gmp_canopen_frame_t frame{};
         frame.dlc = 1;
-        frame.data[0] = 0x100;
+#if GMP_PORT_DATA_SIZE_PER_BITS > 8
+        frame.data[0] = (byte_gt)0x100;
         Assert::AreEqual<fast_gt>(0, gmp_canopen_frame_validate(&frame));
+#endif
         frame.data[0] = 0xFF;
         Assert::AreEqual<fast_gt>(1, gmp_canopen_frame_validate(&frame));
 #if defined(UINT8_MAX) && (CHAR_BIT == 8)
         const uint8_t packed[3] = {0x12, 0x80, 0xFF};
         uint8_t roundtrip[3]{};
-        uint16_t logical[3]{};
+        byte_gt logical[3]{};
         Assert::AreEqual<fast_gt>(1,
             gmp_canopen_import_u8(logical, packed, 3));
         Assert::AreEqual<int>(0xFF, logical[2]);
@@ -474,6 +476,179 @@ TEST_CLASS(CanopenCoreTests)
             gmp_canopen_export_u8(roundtrip, logical, 3));
         Assert::IsTrue(std::memcmp(packed, roundtrip, sizeof(packed)) == 0);
 #endif
+    }
+
+    TEST_METHOD(CompleteNodeQueuesCanAndCoeRequestsAroundOneDictionary)
+    {
+        gmp_canopen_t node{};
+        gmp_canopen_config_t config{};
+        gmp_canopen_frame_t frame{};
+        gmp_canopen_packet_t packet{};
+        gmp_canopen_packet_t output{};
+        const byte_gt device_name[] = {'G', 'M', 'P'};
+        Assert::AreEqual<fast_gt>(1, gmp_canopen_config_init(&config, 5));
+        config.cia301.device_type = 0x12345678UL;
+        config.cia301.producer_heartbeat_time_ms = 100;
+        config.cia301.identity.vendor_id = 0xA5A5UL;
+        config.cia301.device_name = device_name;
+        config.cia301.device_name_size = 3;
+        Assert::AreEqual((int)GMP_CANOPEN_NODE_OK,
+            (int)gmp_canopen_init(&node, &config));
+        Assert::IsNotNull(gmp_canopen_od_find(&node.dictionary, 0x1000, 0));
+        Assert::IsNotNull(gmp_canopen_od_find(&node.dictionary, 0x1008, 0));
+        Assert::IsNotNull(gmp_canopen_od_find(&node.dictionary, 0x1018, 4));
+
+        Assert::AreEqual<int>(0, gmp_canopen_background_callback(&node, 0));
+        Assert::AreEqual((int)GMP_CANOPEN_NODE_OK,
+            (int)gmp_canopen_output_callback(&node, &output));
+        Assert::AreEqual((int)GMP_CANOPEN_PACKET_CAN_FRAME, (int)output.kind);
+        Assert::AreEqual<uint32_t>(0x705, output.key);
+        Assert::AreEqual<int>(0, output.data[0]);
+
+        make_sdo_request(frame, 5, 0x2B, 0x1017, 0);
+        frame.data[4] = 0xF4;
+        frame.data[5] = 0x01;
+        Assert::AreEqual<fast_gt>(1, gmp_canopen_packet_from_can(&frame, &packet));
+        Assert::AreEqual((int)GMP_CANOPEN_NODE_OK,
+            (int)gmp_canopen_input_callback(&node, &packet));
+        Assert::AreEqual<int>(1, gmp_canopen_background_callback(&node, 0));
+        Assert::AreEqual<uint16_t>(500, node.cia301.producer_heartbeat_time_ms);
+        Assert::AreEqual((int)GMP_CANOPEN_NODE_OK,
+            (int)gmp_canopen_output_callback(&node, &output));
+        Assert::AreEqual<uint32_t>(0x585, output.key);
+        Assert::AreEqual<int>(0x60, output.data[0]);
+
+        gmp_canopen_packet_clear(&packet);
+        packet.transport = GMP_CANOPEN_TRANSPORT_COE;
+        packet.kind = GMP_CANOPEN_PACKET_COE_SDO_UPLOAD;
+        packet.number = 9;
+        packet.index = 0x1000;
+        packet.subindex = 0;
+        Assert::AreEqual((int)GMP_CANOPEN_NODE_OK,
+            (int)gmp_canopen_input_callback(&node, &packet));
+        Assert::AreEqual<int>(1, gmp_canopen_background_callback(&node, 0));
+        Assert::AreEqual((int)GMP_CANOPEN_NODE_OK,
+            (int)gmp_canopen_output_callback(&node, &output));
+        Assert::AreEqual((int)GMP_CANOPEN_PACKET_COE_SDO_RESPONSE,
+            (int)output.kind);
+        Assert::AreEqual((int)GMP_COE_OK, (int)output.coe_result);
+        Assert::AreEqual<uint32_t>(4, output.data_size);
+        Assert::AreEqual<uint32_t>(0x12345678,
+            gmp_canopen_load_le32(output.data));
+    }
+
+    TEST_METHOD(CompleteNodeDispatchesAndPublishesCompiledPdos)
+    {
+        gmp_canopen_t node{};
+        gmp_canopen_od_entry_t value_entry{};
+        gmp_canopen_txpdo_t tx{};
+        gmp_canopen_rxpdo_t rx{};
+        gmp_canopen_frame_t frame{};
+        gmp_canopen_packet_t packet{};
+        gmp_canopen_packet_t output{};
+        uint16_t process_value = 0x1234;
+        const uint32_t map[] = {GMP_CANOPEN_PDO_MAP(0x3000, 0, 16)};
+        Assert::AreEqual((int)GMP_CANOPEN_NODE_OK,
+            (int)gmp_canopen_init_default(&node, 5));
+        (void)gmp_canopen_background_callback(&node, 0);
+        Assert::AreEqual((int)GMP_CANOPEN_NODE_OK,
+            (int)gmp_canopen_output_callback(&node, &output));
+        gmp_canopen_od_entry_init_pointer(&value_entry, 0x3000, 0,
+            GMP_CANOPEN_OD_UNSIGNED16,
+            GMP_CANOPEN_OD_ACCESS_READ | GMP_CANOPEN_OD_ACCESS_WRITE |
+            GMP_CANOPEN_OD_ACCESS_PDO, &process_value, 0, "Process value");
+        Assert::AreEqual((int)GMP_CANOPEN_OD_OK,
+            (int)gmp_canopen_od_insert(&node.dictionary, &value_entry));
+        Assert::AreEqual((int)GMP_CANOPEN_PDO_OK,
+            (int)gmp_canopen_txpdo_compile(&tx, &node.dictionary,
+                0x185, 255, map, 1));
+        Assert::AreEqual((int)GMP_CANOPEN_PDO_OK,
+            (int)gmp_canopen_rxpdo_compile(&rx, &node.dictionary,
+                0x205, 255, map, 1));
+        Assert::AreEqual((int)GMP_CANOPEN_PDO_OK,
+            (int)gmp_canopen_add_txpdo(&node, &tx));
+        Assert::AreEqual((int)GMP_CANOPEN_PDO_OK,
+            (int)gmp_canopen_add_rxpdo(&node, &rx));
+
+        gmp_canopen_frame_clear(&frame);
+        frame.id = GMP_CANOPEN_COB_NMT;
+        frame.dlc = 2;
+        frame.data[0] = GMP_CANOPEN_NMT_CMD_START;
+        frame.data[1] = 5;
+        Assert::AreEqual<fast_gt>(1, gmp_canopen_packet_from_can(&frame, &packet));
+        Assert::AreEqual((int)GMP_CANOPEN_NODE_OK,
+            (int)gmp_canopen_input_callback(&node, &packet));
+        Assert::AreEqual<int>(1, gmp_canopen_background_callback(&node, 0));
+        Assert::AreEqual((int)GMP_CANOPEN_NMT_OPERATIONAL, (int)node.nmt.state);
+
+        gmp_canopen_frame_clear(&frame);
+        frame.id = 0x205;
+        frame.dlc = 2;
+        gmp_canopen_store_le16(frame.data, 0xBEEF);
+        Assert::AreEqual<fast_gt>(1, gmp_canopen_packet_from_can(&frame, &packet));
+        Assert::AreEqual((int)GMP_CANOPEN_NODE_OK,
+            (int)gmp_canopen_input_callback(&node, &packet));
+        Assert::AreEqual<int>(1, gmp_canopen_background_callback(&node, 0));
+        Assert::AreEqual<uint16_t>(0xBEEF, process_value);
+
+        Assert::AreEqual((int)GMP_CANOPEN_NODE_OK,
+            (int)gmp_canopen_publish_tpdo(
+                &node, GMP_CANOPEN_TRANSPORT_CAN, 0x185));
+        Assert::AreEqual((int)GMP_CANOPEN_NODE_OK,
+            (int)gmp_canopen_output_callback(&node, &output));
+        Assert::AreEqual<uint32_t>(0x185, output.key);
+        Assert::AreEqual<uint16_t>(0xBEEF,
+            gmp_canopen_load_le16(output.data));
+    }
+
+    TEST_METHOD(CompleteNodeQueuesAreBoundedAndPreserveFifoOrder)
+    {
+        gmp_canopen_t node{};
+        gmp_canopen_packet_t packet{};
+        gmp_canopen_packet_t output{};
+        const uint16_t capacity = GMP_CANOPEN_QUEUE_SLOTS - 1U;
+        Assert::AreEqual((int)GMP_CANOPEN_NODE_OK,
+            (int)gmp_canopen_init_default(&node, 5));
+        (void)gmp_canopen_background_callback(&node, 0);
+        Assert::AreEqual((int)GMP_CANOPEN_NODE_OK,
+            (int)gmp_canopen_output_callback(&node, &output));
+
+        gmp_canopen_packet_clear(&packet);
+        packet.transport = GMP_CANOPEN_TRANSPORT_COE;
+        packet.kind = GMP_CANOPEN_PACKET_COE_SDO_RESPONSE;
+        Assert::AreEqual((int)GMP_CANOPEN_NODE_INVALID,
+            (int)gmp_canopen_input_callback(&node, &packet));
+        packet.transport = GMP_CANOPEN_TRANSPORT_COE;
+        packet.kind = GMP_CANOPEN_PACKET_COE_SDO_UPLOAD;
+        packet.index = 0x1000;
+        for (uint16_t slot = 0; slot < capacity; ++slot)
+        {
+            packet.number = (uint16_t)(slot + 1U);
+            Assert::AreEqual((int)GMP_CANOPEN_NODE_OK,
+                (int)gmp_canopen_input_callback(&node, &packet));
+        }
+        packet.number = 99;
+        Assert::AreEqual((int)GMP_CANOPEN_NODE_RX_FULL,
+            (int)gmp_canopen_input_callback(&node, &packet));
+        Assert::AreEqual((int)GMP_CANOPEN_NODE_EMPTY,
+            (int)gmp_canopen_output_callback(&node, &output));
+
+        Assert::AreEqual<uint16_t>(capacity,
+            gmp_canopen_background_callback(&node, 0));
+        for (uint16_t slot = 0; slot < capacity; ++slot)
+        {
+            Assert::AreEqual((int)GMP_CANOPEN_NODE_OK,
+                (int)gmp_canopen_output_callback(&node, &output));
+            Assert::AreEqual<uint16_t>((uint16_t)(slot + 1U), output.number);
+        }
+        Assert::AreEqual((int)GMP_CANOPEN_NODE_EMPTY,
+            (int)gmp_canopen_output_callback(&node, &output));
+        Assert::AreEqual<uint32_t>(capacity,
+            (uint32_t)node.statistics.input_packets);
+        Assert::AreEqual<uint32_t>(2,
+            (uint32_t)node.statistics.input_dropped);
+        Assert::AreEqual<uint32_t>(capacity,
+            (uint32_t)node.statistics.processed_packets);
     }
 };
 } // namespace gmp_core_unit_test

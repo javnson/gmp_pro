@@ -113,7 +113,7 @@ gmp_canopen_pdo_result_t gmp_coe_rxpdo_compile(
 }
 
 gmp_canopen_pdo_result_t gmp_coe_txpdo_pack_fast(
-    const gmp_canopen_txpdo_t* pdo, uint16_t* output,
+    const gmp_canopen_txpdo_t* pdo, byte_gt* output,
     uint16_t capacity, uint16_t* actual_size)
 {
     return gmp_canopen_txpdo_pack_fast(pdo,
@@ -121,7 +121,7 @@ gmp_canopen_pdo_result_t gmp_coe_txpdo_pack_fast(
 }
 
 gmp_canopen_pdo_result_t gmp_coe_rxpdo_unpack_fast(
-    const gmp_canopen_rxpdo_t* pdo, const uint16_t* input, uint16_t size)
+    const gmp_canopen_rxpdo_t* pdo, const byte_gt* input, uint16_t size)
 {
     return gmp_canopen_rxpdo_unpack_fast(pdo,
         GMP_CANOPEN_NMT_OPERATIONAL, input, size);

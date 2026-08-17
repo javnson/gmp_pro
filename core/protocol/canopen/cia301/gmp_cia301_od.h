@@ -17,11 +17,11 @@ extern gmp_canopen_od_entry_t gmp_cia301_od_entries[GMP_CIA301_OD_ENTRY_COUNT];
 /** @brief Storage for 0x1000:00 (Device type). */
 extern uint32_t gmp_cia301_od_storage_1000_00;
 /** @brief Storage for 0x1001:00 (Error register). */
-extern uint_least8_t gmp_cia301_od_storage_1001_00;
+extern byte_gt gmp_cia301_od_storage_1001_00;
 /** @brief Storage for 0x1017:00 (Producer heartbeat time). */
 extern uint16_t gmp_cia301_od_storage_1017_00;
 /** @brief Storage for 0x1018:00 (Identity highest sub-index). */
-extern uint_least8_t gmp_cia301_od_storage_1018_00;
+extern byte_gt gmp_cia301_od_storage_1018_00;
 /** @brief Storage for 0x1018:01 (Vendor ID). */
 extern uint32_t gmp_cia301_od_storage_1018_01;
 /** @brief Storage for 0x1018:02 (Product code). */
@@ -31,27 +31,27 @@ extern uint32_t gmp_cia301_od_storage_1018_03;
 /** @brief Storage for 0x1018:04 (Serial number). */
 extern uint32_t gmp_cia301_od_storage_1018_04;
 /** @brief Storage for 0x1200:00 (SDO server highest sub-index). */
-extern uint_least8_t gmp_cia301_od_storage_1200_00;
+extern byte_gt gmp_cia301_od_storage_1200_00;
 /** @brief Storage for 0x1200:01 (SDO client-to-server COB-ID). */
 extern uint32_t gmp_cia301_od_storage_1200_01;
 /** @brief Storage for 0x1200:02 (SDO server-to-client COB-ID). */
 extern uint32_t gmp_cia301_od_storage_1200_02;
 /** @brief Storage for 0x1400:00 (RPDO1 communication highest sub-index). */
-extern uint_least8_t gmp_cia301_od_storage_1400_00;
+extern byte_gt gmp_cia301_od_storage_1400_00;
 /** @brief Storage for 0x1400:01 (RPDO1 COB-ID). */
 extern uint32_t gmp_cia301_od_storage_1400_01;
 /** @brief Storage for 0x1400:02 (RPDO1 transmission type). */
-extern uint_least8_t gmp_cia301_od_storage_1400_02;
+extern byte_gt gmp_cia301_od_storage_1400_02;
 /** @brief Storage for 0x1600:00 (RPDO1 mapped object count). */
-extern uint_least8_t gmp_cia301_od_storage_1600_00;
+extern byte_gt gmp_cia301_od_storage_1600_00;
 /** @brief Storage for 0x1800:00 (TPDO1 communication highest sub-index). */
-extern uint_least8_t gmp_cia301_od_storage_1800_00;
+extern byte_gt gmp_cia301_od_storage_1800_00;
 /** @brief Storage for 0x1800:01 (TPDO1 COB-ID). */
 extern uint32_t gmp_cia301_od_storage_1800_01;
 /** @brief Storage for 0x1800:02 (TPDO1 transmission type). */
-extern uint_least8_t gmp_cia301_od_storage_1800_02;
+extern byte_gt gmp_cia301_od_storage_1800_02;
 /** @brief Storage for 0x1A00:00 (TPDO1 mapped object count). */
-extern uint_least8_t gmp_cia301_od_storage_1a00_00;
+extern byte_gt gmp_cia301_od_storage_1a00_00;
 /**
  * @brief Initialize the generated object dictionary exactly once.
  * @param dictionary Empty dictionary that receives all generated entries.

@@ -34,16 +34,16 @@ static void* gmp_canopen_pdo_resolve_storage(gmp_canopen_od_entry_t* entry)
     }
 }
 
-static void gmp_canopen_pdo_store_unsigned(uint16_t* output,
+static void gmp_canopen_pdo_store_unsigned(byte_gt* output,
                                            uint16_t length,
                                            uint64_t value)
 {
     uint16_t index;
     for (index = 0U; index < length; ++index)
-        output[index] = (uint16_t)((value >> (8U * index)) & 0xFFU);
+        output[index] = (byte_gt)((value >> (8U * index)) & 0xFFU);
 }
 
-static uint64_t gmp_canopen_pdo_load_unsigned(const uint16_t* input,
+static uint64_t gmp_canopen_pdo_load_unsigned(const byte_gt* input,
                                                uint16_t length)
 {
     uint16_t index;
@@ -61,7 +61,7 @@ static int_least8_t gmp_canopen_pdo_decode_integer8(uint64_t value)
 }
 
 static fast_gt gmp_canopen_pdo_encode_mapping(
-    const gmp_canopen_pdo_mapping_t* mapping, uint16_t* output)
+    const gmp_canopen_pdo_mapping_t* mapping, byte_gt* output)
 {
     uint64_t value;
     uint16_t index;
@@ -80,7 +80,7 @@ static fast_gt gmp_canopen_pdo_encode_mapping(
         break;
     }
     case GMP_CANOPEN_OD_UNSIGNED8:
-        value = *(const uint_least8_t*)mapping->storage;
+        value = *(const byte_gt*)mapping->storage;
         if (value > 0xFFU)
             return 0;
         break;
@@ -117,10 +117,10 @@ static fast_gt gmp_canopen_pdo_encode_mapping(
     case GMP_CANOPEN_OD_DOMAIN:
         for (index = 0U; index < mapping->byte_length; ++index)
         {
-            value = ((const uint16_t*)mapping->storage)[index];
+            value = ((const byte_gt*)mapping->storage)[index];
             if (value > 0xFFU)
                 return 0;
-            output[index] = (uint16_t)value;
+            output[index] = (byte_gt)value;
         }
         return 1;
     default:
@@ -131,7 +131,7 @@ static fast_gt gmp_canopen_pdo_encode_mapping(
 }
 
 static fast_gt gmp_canopen_pdo_decode_mapping(
-    const gmp_canopen_pdo_mapping_t* mapping, const uint16_t* input)
+    const gmp_canopen_pdo_mapping_t* mapping, const byte_gt* input)
 {
     uint64_t value;
     uint16_t index;
@@ -149,7 +149,7 @@ static fast_gt gmp_canopen_pdo_decode_mapping(
             gmp_canopen_pdo_decode_integer8(value);
         break;
     case GMP_CANOPEN_OD_UNSIGNED8:
-        *(uint_least8_t*)mapping->storage = (uint_least8_t)value;
+        *(byte_gt*)mapping->storage = (byte_gt)value;
         break;
     case GMP_CANOPEN_OD_INTEGER16:
         *(int16_t*)mapping->storage = (int16_t)value;
@@ -182,7 +182,7 @@ static fast_gt gmp_canopen_pdo_decode_mapping(
     case GMP_CANOPEN_OD_OCTET_STRING:
     case GMP_CANOPEN_OD_DOMAIN:
         for (index = 0U; index < mapping->byte_length; ++index)
-            ((uint16_t*)mapping->storage)[index] = input[index];
+            ((byte_gt*)mapping->storage)[index] = input[index];
         break;
     default:
         return 0;
@@ -296,7 +296,7 @@ gmp_canopen_pdo_result_t gmp_canopen_rxpdo_compile(
 
 gmp_canopen_pdo_result_t gmp_canopen_txpdo_pack_fast(
     const gmp_canopen_txpdo_t* pdo, gmp_canopen_nmt_state_t nmt_state,
-    uint16_t* output, uint16_t capacity, uint16_t* actual_size)
+    byte_gt* output, uint16_t capacity, uint16_t* actual_size)
 {
     uint16_t mapping_index;
     if (pdo == NULL || output == NULL || actual_size == NULL ||
@@ -321,7 +321,7 @@ gmp_canopen_pdo_result_t gmp_canopen_txpdo_pack_fast(
 
 gmp_canopen_pdo_result_t gmp_canopen_rxpdo_unpack_fast(
     const gmp_canopen_rxpdo_t* pdo, gmp_canopen_nmt_state_t nmt_state,
-    const uint16_t* input, uint16_t size)
+    const byte_gt* input, uint16_t size)
 {
     uint16_t mapping_index;
     if (pdo == NULL || input == NULL || !pdo->plan.enabled ||

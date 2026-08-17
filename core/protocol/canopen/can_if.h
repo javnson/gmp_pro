@@ -4,9 +4,8 @@
  *
  * @details CAN and CANopen define an octet as exactly eight bits. Some GMP
  * targets, notably TI C28x, have a 16-bit addressable C byte and do not define
- * `uint8_t`. The portable core therefore stores every wire octet in a
- * `uint16_t` cell and requires bits 15:8 to be zero. Optional packed-`uint8_t`
- * bridge helpers are declared only on targets where an eight-bit C byte exists.
+ * `uint8_t`. GMP therefore stores one wire octet in one unsigned `byte_gt`.
+ * It is eight bits on ordinary MCUs and one 16-bit addressable unit on C28x.
  */
 
 #ifndef _FILE_GMP_CANOPEN_CAN_IF_H_
@@ -50,7 +49,7 @@ extern "C"
 typedef struct
 {
     uint32_t id; /**< 11-bit standard or 29-bit extended identifier. */
-    uint16_t data[GMP_CANOPEN_CLASSIC_MAX_DATA]; /**< Logical wire octets. */
+    byte_gt data[GMP_CANOPEN_CLASSIC_MAX_DATA]; /**< Wire octets. */
     uint16_t dlc; /**< Number of valid logical octets, in the range 0..8. */
     fast_gt is_extended; /**< Non-zero for a 29-bit identifier. */
     fast_gt is_remote; /**< Non-zero for a remote-transmission request. */
@@ -110,20 +109,20 @@ GMP_STATIC_INLINE void gmp_canopen_frame_clear(gmp_canopen_frame_t* frame)
 
 /**
  * @brief Load a little-endian 16-bit value from two logical wire octets.
- * @param data At least two `uint16_t` cells containing values in 0..255.
+ * @param data At least two `byte_gt` elements containing values in 0..255.
  * @return Reconstructed host value.
  */
-GMP_STATIC_INLINE uint16_t gmp_canopen_load_le16(const uint16_t* data)
+GMP_STATIC_INLINE uint16_t gmp_canopen_load_le16(const byte_gt* data)
 {
     return (uint16_t)((data[0] & 0xFFU) | ((data[1] & 0xFFU) << 8U));
 }
 
 /**
  * @brief Load a little-endian 32-bit value from four logical wire octets.
- * @param data At least four `uint16_t` cells containing values in 0..255.
+ * @param data At least four `byte_gt` elements containing values in 0..255.
  * @return Reconstructed host value.
  */
-GMP_STATIC_INLINE uint32_t gmp_canopen_load_le32(const uint16_t* data)
+GMP_STATIC_INLINE uint32_t gmp_canopen_load_le32(const byte_gt* data)
 {
     return (uint32_t)(data[0] & 0xFFU) |
            ((uint32_t)(data[1] & 0xFFU) << 8U) |
@@ -133,10 +132,10 @@ GMP_STATIC_INLINE uint32_t gmp_canopen_load_le32(const uint16_t* data)
 
 /**
  * @brief Store a 16-bit value as two little-endian logical wire octets.
- * @param data Destination with room for two `uint16_t` cells.
+ * @param data Destination with room for two `byte_gt` elements.
  * @param value Host value to serialize.
  */
-GMP_STATIC_INLINE void gmp_canopen_store_le16(uint16_t* data, uint16_t value)
+GMP_STATIC_INLINE void gmp_canopen_store_le16(byte_gt* data, uint16_t value)
 {
     data[0] = value & 0xFFU;
     data[1] = (value >> 8U) & 0xFFU;
@@ -144,15 +143,15 @@ GMP_STATIC_INLINE void gmp_canopen_store_le16(uint16_t* data, uint16_t value)
 
 /**
  * @brief Store a 32-bit value as four little-endian logical wire octets.
- * @param data Destination with room for four `uint16_t` cells.
+ * @param data Destination with room for four `byte_gt` elements.
  * @param value Host value to serialize.
  */
-GMP_STATIC_INLINE void gmp_canopen_store_le32(uint16_t* data, uint32_t value)
+GMP_STATIC_INLINE void gmp_canopen_store_le32(byte_gt* data, uint32_t value)
 {
-    data[0] = (uint16_t)(value & 0xFFU);
-    data[1] = (uint16_t)((value >> 8U) & 0xFFU);
-    data[2] = (uint16_t)((value >> 16U) & 0xFFU);
-    data[3] = (uint16_t)((value >> 24U) & 0xFFU);
+    data[0] = (byte_gt)(value & 0xFFU);
+    data[1] = (byte_gt)((value >> 8U) & 0xFFU);
+    data[2] = (byte_gt)((value >> 16U) & 0xFFU);
+    data[3] = (byte_gt)((value >> 24U) & 0xFFU);
 }
 
 /**
@@ -175,14 +174,14 @@ GMP_STATIC_INLINE fast_gt gmp_canopen_frame_validate(
 
 #if defined(UINT8_MAX) && (CHAR_BIT == 8)
 /**
- * @brief Import a packed native 8-bit payload into logical `uint16_t` cells.
+ * @brief Import a packed native 8-bit payload into logical `byte_gt` elements.
  * @param destination Destination logical cells.
  * @param source Packed native bytes.
  * @param count Number of wire octets to copy.
  * @return Non-zero on success; zero for a null pointer.
  * @note This API does not exist on C28x because that ABI has no `uint8_t`.
  */
-GMP_STATIC_INLINE fast_gt gmp_canopen_import_u8(uint16_t* destination,
+GMP_STATIC_INLINE fast_gt gmp_canopen_import_u8(byte_gt* destination,
                                                 const uint8_t* source,
                                                 uint16_t count)
 {
@@ -195,7 +194,7 @@ GMP_STATIC_INLINE fast_gt gmp_canopen_import_u8(uint16_t* destination,
 }
 
 /**
- * @brief Export logical wire octets to a packed native 8-bit payload.
+ * @brief Export `byte_gt` wire octets to a packed native 8-bit payload.
  * @param destination Packed native-byte destination.
  * @param source Logical cells; each value must be at most `0xFF`.
  * @param count Number of wire octets to copy.
@@ -203,7 +202,7 @@ GMP_STATIC_INLINE fast_gt gmp_canopen_import_u8(uint16_t* destination,
  * @note This API does not exist on C28x because that ABI has no `uint8_t`.
  */
 GMP_STATIC_INLINE fast_gt gmp_canopen_export_u8(uint8_t* destination,
-                                                const uint16_t* source,
+                                                const byte_gt* source,
                                                 uint16_t count)
 {
     uint16_t index;
