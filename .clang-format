@@ -20,6 +20,15 @@ CommentPragmas: '^/\*\*|^\*|^\*/|^//tex:'
 # Keep general block comments (like the file header) from being reflowed.
 ReflowComments: false
 
+# --- Function declaration formatting ---
+# Keep one parameter per line as much as possible when line wrapping is needed.
+AlignAfterOpenBracket: DontAlign
+BinPackParameters: false
+BinPackArguments: false
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortFunctionsOnASingleLine: None
+
 # --- Indentation ---
 # Do not indent 'extern "C"' blocks.
 IndentExternBlock: NoIndent

@@ -67,44 +67,41 @@ typedef enum
 } gmp_canopen_od_result_t;
 
 /** @brief Inline typed value storage owned by an OD entry. */
-typedef union
-{
-    fast_gt boolean; /**< Boolean storage. */
-    int_least8_t i8; /**< INTEGER8 storage; may occupy 16 bits on C28x. */
-    byte_gt u8; /**< UNSIGNED8 storage; `byte_gt` is unsigned on every target. */
-    int16_t i16; /**< INTEGER16 storage. */
-    uint16_t u16; /**< UNSIGNED16 storage. */
-    int32_t i32; /**< INTEGER32 storage. */
-    uint32_t u32; /**< UNSIGNED32 storage. */
-    int64_t i64; /**< INTEGER64 storage. */
-    uint64_t u64; /**< UNSIGNED64 storage. */
-    float real32; /**< REAL32 storage. */
-    double real64; /**< REAL64 storage. */
+typedef union {
+    fast_gt boolean;   /**< Boolean storage. */
+    int_least8_t i8;   /**< INTEGER8 storage; may occupy 16 bits on C28x. */
+    byte_gt u8;        /**< UNSIGNED8 storage; `byte_gt` is unsigned on every target. */
+    int16_t i16;       /**< INTEGER16 storage. */
+    uint16_t u16;      /**< UNSIGNED16 storage. */
+    int32_t i32;       /**< INTEGER32 storage. */
+    uint32_t u32;      /**< UNSIGNED32 storage. */
+    int64_t i64;       /**< INTEGER64 storage. */
+    uint64_t u64;      /**< UNSIGNED64 storage. */
+    float real32;      /**< REAL32 storage. */
+    double real64;     /**< REAL64 storage. */
     byte_gt octets[8]; /**< Up to eight wire octets. */
 } gmp_canopen_od_value_t;
 
 /** @brief Typed pointers to application-owned OD storage. */
-typedef union
-{
-    void* raw; /**< Untyped pointer used during initialization/compilation. */
+typedef union {
+    void* raw;        /**< Untyped pointer used during initialization/compilation. */
     fast_gt* boolean; /**< Boolean pointer. */
     int_least8_t* i8; /**< INTEGER8 pointer. */
-    byte_gt* u8; /**< UNSIGNED8 pointer. */
-    int16_t* i16; /**< INTEGER16 pointer. */
-    uint16_t* u16; /**< UNSIGNED16 pointer. */
-    int32_t* i32; /**< INTEGER32 pointer. */
-    uint32_t* u32; /**< UNSIGNED32 pointer. */
-    int64_t* i64; /**< INTEGER64 pointer. */
-    uint64_t* u64; /**< UNSIGNED64 pointer. */
-    float* real32; /**< REAL32 pointer. */
-    double* real64; /**< REAL64 pointer. */
-    byte_gt* octets; /**< Wire-octet string/domain storage. */
+    byte_gt* u8;      /**< UNSIGNED8 pointer. */
+    int16_t* i16;     /**< INTEGER16 pointer. */
+    uint16_t* u16;    /**< UNSIGNED16 pointer. */
+    int32_t* i32;     /**< INTEGER32 pointer. */
+    uint32_t* u32;    /**< UNSIGNED32 pointer. */
+    int64_t* i64;     /**< INTEGER64 pointer. */
+    uint64_t* u64;    /**< UNSIGNED64 pointer. */
+    float* real32;    /**< REAL32 pointer. */
+    double* real64;   /**< REAL64 pointer. */
+    byte_gt* octets;  /**< Wire-octet string/domain storage. */
 } gmp_canopen_od_pointer_t;
 
 /** @brief Union of inline-value and pointer-backed storage models. */
-typedef union
-{
-    gmp_canopen_od_value_t value; /**< Inline owned value. */
+typedef union {
+    gmp_canopen_od_value_t value;     /**< Inline owned value. */
     gmp_canopen_od_pointer_t pointer; /**< Application-owned pointer. */
 } gmp_canopen_od_storage_value_t;
 
@@ -112,13 +109,17 @@ typedef union
 typedef struct
 {
     gmp_rb_node rb_node; /**< First member: intrusive dictionary node. */
-    uint16_t index; /**< CiA object index. */
+
+    uint16_t index;    /**< CiA object index. */
     uint16_t subindex; /**< CiA sub-index; valid range is 0..255. */
-    gmp_canopen_od_data_type_t data_type; /**< CiA data type. */
-    uint16_t access; /**< Bitwise `gmp_canopen_od_access_t`. */
+
+    gmp_canopen_od_data_type_t data_type;  /**< CiA data type. */
+    uint16_t access;                       /**< Bitwise `gmp_canopen_od_access_t`. */
     gmp_canopen_od_storage_t storage_mode; /**< Active storage union member. */
-    uint32_t size; /**< Serialized size in logical wire octets. */
+
+    uint32_t size;    /**< Serialized size in logical wire octets. */
     const char* name; /**< Optional diagnostic name; not owned. */
+
     gmp_canopen_od_storage_value_t storage; /**< Value or pointer storage. */
 } gmp_canopen_od_entry_t;
 
@@ -144,10 +145,12 @@ void gmp_canopen_od_init(gmp_canopen_od_t* dictionary);
  * @param name Optional static diagnostic name.
  */
 void gmp_canopen_od_entry_init_value(gmp_canopen_od_entry_t* entry,
-                                     uint16_t index, uint16_t subindex,
-                                     gmp_canopen_od_data_type_t data_type,
-                                     uint16_t access, uint32_t size,
-                                     const char* name);
+    uint16_t index,
+    uint16_t subindex,
+    gmp_canopen_od_data_type_t data_type,
+    uint16_t access,
+    uint32_t size,
+    const char* name);
 /**
  * @brief Initialize an entry backed by application-owned storage.
  * @param entry Entry to initialize.
@@ -159,27 +162,29 @@ void gmp_canopen_od_entry_init_value(gmp_canopen_od_entry_t* entry,
  * @param size Serialized size, or zero to infer a scalar size.
  * @param name Optional static diagnostic name.
  */
-void gmp_canopen_od_entry_init_pointer(gmp_canopen_od_entry_t* entry,
-                                       uint16_t index, uint16_t subindex,
-                                       gmp_canopen_od_data_type_t data_type,
-                                       uint16_t access, void* value,
-                                       uint32_t size, const char* name);
+void gmp_canopen_od_entry_init_pointer( // link using a variables
+    gmp_canopen_od_entry_t* entry,      // OD object
+    uint16_t index,
+    uint16_t subindex, // index
+    gmp_canopen_od_data_type_t data_type,
+    uint16_t access, // properties
+    void* value,
+    uint32_t size,
+    const char* name); // value
 /**
  * @brief Insert a detached entry.
  * @param dictionary Destination dictionary.
  * @param entry Initialized detached entry.
  * @return `GMP_CANOPEN_OD_OK` on success.
  */
-gmp_canopen_od_result_t gmp_canopen_od_insert(
-    gmp_canopen_od_t* dictionary, gmp_canopen_od_entry_t* entry);
+gmp_canopen_od_result_t gmp_canopen_od_insert(gmp_canopen_od_t* dictionary, gmp_canopen_od_entry_t* entry);
 /**
  * @brief Remove an entry owned by this dictionary.
  * @param dictionary Owning dictionary.
  * @param entry Linked entry to detach.
  * @return `GMP_CANOPEN_OD_OK` or `GMP_CANOPEN_OD_NOT_FOUND`.
  */
-gmp_canopen_od_result_t gmp_canopen_od_remove(
-    gmp_canopen_od_t* dictionary, gmp_canopen_od_entry_t* entry);
+gmp_canopen_od_result_t gmp_canopen_od_remove(gmp_canopen_od_t* dictionary, gmp_canopen_od_entry_t* entry);
 /**
  * @brief Find one entry in logarithmic time.
  * @param dictionary Dictionary to search.
@@ -187,9 +192,7 @@ gmp_canopen_od_result_t gmp_canopen_od_remove(
  * @param subindex OD sub-index.
  * @return Matching entry or `NULL`.
  */
-gmp_canopen_od_entry_t* gmp_canopen_od_find(const gmp_canopen_od_t* dictionary,
-                                            uint16_t index,
-                                            uint16_t subindex);
+gmp_canopen_od_entry_t* gmp_canopen_od_find(const gmp_canopen_od_t* dictionary, uint16_t index, uint16_t subindex);
 /**
  * @brief Return the lowest ordered entry.
  * @param dictionary Dictionary to inspect.
@@ -210,9 +213,10 @@ gmp_canopen_od_entry_t* gmp_canopen_od_next(const gmp_canopen_od_entry_t* entry)
  * @param actual_size Receives serialized logical-octet count.
  * @return OD access/length result.
  */
-gmp_canopen_od_result_t gmp_canopen_od_read(
-    const gmp_canopen_od_entry_t* entry, byte_gt* output,
-    uint32_t capacity, uint32_t* actual_size);
+gmp_canopen_od_result_t gmp_canopen_od_read(const gmp_canopen_od_entry_t* entry,
+    byte_gt* output,
+    uint32_t capacity,
+    uint32_t* actual_size);
 /**
  * @brief Deserialize logical wire-octet cells into a writable entry.
  * @param entry Writable entry.
@@ -220,17 +224,14 @@ gmp_canopen_od_result_t gmp_canopen_od_read(
  * @param size Input length in logical octets.
  * @return OD access/length/value result.
  */
-gmp_canopen_od_result_t gmp_canopen_od_write(
-    gmp_canopen_od_entry_t* entry, const byte_gt* input,
-    uint32_t size);
+gmp_canopen_od_result_t gmp_canopen_od_write(gmp_canopen_od_entry_t* entry, const byte_gt* input, uint32_t size);
 /**
  * @brief Validate RB-tree ownership, ordering and invariants.
  * @param dictionary Dictionary to audit.
  * @param max_entries Trusted traversal bound.
  * @return Non-zero only when the dictionary is valid.
  */
-fast_gt gmp_canopen_od_validate(const gmp_canopen_od_t* dictionary,
-                                size_gt max_entries);
+fast_gt gmp_canopen_od_validate(const gmp_canopen_od_t* dictionary, size_gt max_entries);
 /**
  * @brief Return the CiA scalar width in wire octets.
  * @param data_type CiA data type.

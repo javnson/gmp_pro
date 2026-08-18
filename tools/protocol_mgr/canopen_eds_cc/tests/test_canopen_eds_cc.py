@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import pathlib
 import subprocess
 import sys
@@ -108,6 +109,68 @@ class EdsCompilerTests(unittest.TestCase):
                     (source_dir / f"{api_name}.c").read_text(encoding="utf-8"),
                     implementation.read_text(encoding="utf-8"),
                 )
+
+    def test_canopen_json_import_mode(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            cia301 = REPO_ROOT / "core" / "protocol" / "canopen" / "cia301" / "cia301.eds"
+            cia402 = REPO_ROOT / "core" / "protocol" / "canopen" / "cia402" / "cia402.eds"
+            json_path = root / "combo.json"
+            result = subprocess.run(
+                [
+                    sys.executable, str(MODULE_PATH),
+                    "--to-json", str(json_path),
+                    "--import-eds", str(cia301), str(cia402),
+                    "--name", "gmp_combo_od",
+                    "--node-id", "7",
+                ],
+                check=False, capture_output=True, text=True,
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            payload = json_path.read_text(encoding="utf-8")
+            self.assertIn("gmp_combo_od", payload)
+            project = json.loads(payload)
+            self.assertGreater(len(project["entries"]), 0)
+
+            project_path = root / "combo_project.json"
+            project_path.write_text(payload, encoding="utf-8")
+            header, source = MODULE.compile_project(
+                project_path,
+                root / "out",
+                None,
+                "last",
+                emit_eds=root / "out" / "combo.eds",
+            )
+            self.assertTrue(header.exists())
+            self.assertTrue(source.exists())
+
+    def test_variable_entry_in_json(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            project = {
+                "name": "var_od",
+                "node_id": 7,
+                "default_storage": "pointer",
+                "entries": [
+                    {
+                        "index": "0x2000",
+                        "subindex": "0x00",
+                        "parameter_name": "Runtime variable",
+                        "data_type": "UNSIGNED32",
+                        "access": "rw",
+                        "pdo_mapping": 0,
+                        "default_value": "0",
+                        "size": 4,
+                        "storage": "variable",
+                        "variable_name": "user_runtime_value",
+                    }
+                ],
+            }
+            project_path = root / "project.json"
+            project_path.write_text(json.dumps(project), encoding="utf-8")
+            header, source = MODULE.compile_project(project_path, root / "out", 7, "last")
+            self.assertIn("entry_init_pointer", source.read_text(encoding="utf-8"))
+            self.assertIn("user_runtime_value", source.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
