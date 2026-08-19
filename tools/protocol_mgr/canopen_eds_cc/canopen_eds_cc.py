@@ -809,17 +809,25 @@ def compile_project(
     if conflict_policy:
         project = dataclasses.replace(project, conflict_policy=conflict_policy)
     target_node_id = node_id if node_id is not None else project.node_id
+    project_root = project_path.parent
     target_dir = output_dir
     if target_dir is None:
         if project.output_dir is None:
             raise ValueError("project output-dir must be supplied by --output-dir or project.output_dir")
         target_dir = pathlib.Path(project.output_dir)
+    if not target_dir.is_absolute():
+        target_dir = project_root / target_dir
+    source_eds = project_path
+    if project.imports:
+        source_eds = pathlib.Path(project.imports[0].path)
+        if not source_eds.is_absolute():
+            source_eds = project_root / source_eds
     outputs = compile_entries(
         entries=project.entries,
         output_dir=target_dir,
         name=project.name,
         node_id=target_node_id,
-        source_eds=project_path,
+        source_eds=source_eds,
         header_prefix=project.code_template.header_prefix,
         header_suffix=project.code_template.header_suffix,
         source_prefix=project.code_template.source_prefix,

@@ -18,19 +18,32 @@ gmp_canopen_eds_cc_gui.bat [path\to\project.json]
 - The launcher ensures `GMP_PRO_LOCATION` and imports GMP Python runtime with:
   `tools\gmp_installer\ensure_gmp_environment.bat`.
 
-The GUI supports:
+The GUI (PySide6-based) now keeps a single unified entries view that combines the parameter tree and table, with **Entities** on top and **Imports** below:
 
-- editing OD entries in tabular form;
+- single unified entry view (tree-table) for Object/Group hierarchy;
+- index entries sharing the same index are automatically grouped into one expandable tree node;
+- index node title is shown in a friendly form, e.g. `0x2000 [0x00..0x02] (3 entries: ActualPos (+2))`;
 - importing one or more `.eds` files and merging into the current project;
 - preserving imported origin as `imports` records;
 - generating `.h`/`.c` in one click; optional merged EDS export.
 - full SDPE_v2-style interaction:
-  - dual entry views:
-    - **Entries Table** (flat list)
-    - **Parameter Tree** (group path tree view)
+  - parameter tree as the main entry editor surface;
+  - preset management (save/load/delete) for project skeletons under
+    `tools/protocol_mgr/canopen_eds_cc/presets`;
+  - complete shortcut mapping for editor actions;
+  - variable-storage naming helpers;
+  - data-type friendly labels (`UNSIGNED16` etc.) with fixed-size auto-sync;
+  - double-click inline cell editing (no mandatory editor popup);
+  - PDO field is a checkbox for fast mapping enable/disable;
+  - Access field uses a combo + `Const` checkbox editor for typo-safe editing;
+  - Access column displays concise labels `R`, `W`, `R/W`, `C` (const), rendered in fixed-width/center-aligned style for cleaner engineering readability while internal values remain canonical `ro/wo/rw/const`;
   - import manager (add/edit/remove/move/import replacement)
-  - preset templates: save/load/delete project templates under
-    `tools/protocol_mgr/canopen_eds_cc/presets`
+- left-side quick-open dock:
+  - `tools/protocol_mgr/canopen_eds_cc/canopen_eds_cc_gui_config.json` defines default files under `quick_open_projects`;
+  - default points to the three GMP CiA profile projects (`cia301/cia401/cia402`);
+  - list entries can be shown/hidden via **View → ...** and are loaded from the config (relative paths are resolved from the GMP root);
+  - dock can be shown/hidden, and stores a compact list for one-click open.
+  - access flags split into dedicated controls (`Read` / `Write` / `Const`) in entry editor.
 - keyboard shortcuts:
   - `Ctrl+N` new project
   - `Ctrl+O` open project
@@ -81,6 +94,28 @@ Project mode builds from one JSON manifest and supports:
 
 ```powershell
 python canopen_eds_cc.py --project dictionary.json --output-dir generated --node-id 7 --emit-eds generated/combo.eds
+```
+
+### 2.1) GMP profile project presets
+
+Profile-specific project files are stored with their corresponding EDS files:
+
+- `core/protocol/canopen/cia301/cia301_project.json`
+- `core/protocol/canopen/cia401/cia401_project.json`
+- `core/protocol/canopen/cia402/cia402_project.json`
+
+These projects keep imports and output directory relative to their own folder, so regeneration can be done directly in place:
+
+```powershell
+python tools/protocol_mgr/canopen_eds_cc/canopen_eds_cc.py --project core/protocol/canopen/cia301/cia301_project.json --node-id 1
+python tools/protocol_mgr/canopen_eds_cc/canopen_eds_cc.py --project core/protocol/canopen/cia401/cia401_project.json --node-id 1
+python tools/protocol_mgr/canopen_eds_cc/canopen_eds_cc.py --project core/protocol/canopen/cia402/cia402_project.json --node-id 1
+```
+
+GUI usage:
+
+```powershell
+gmp_canopen_eds_cc_gui.bat core/protocol/canopen/cia301/cia301_project.json
 ```
 
 ### 3) Import mode

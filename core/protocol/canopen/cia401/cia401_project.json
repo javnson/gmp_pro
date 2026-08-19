@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "name": "gmp_cia401_od",
+  "node_id": 1,
+  "default_storage": "pointer",
+  "conflict_policy": "last",
+  "output_dir": ".",
+  "imports": [
+    {
+      "path": "cia401.eds",
+      "alias": "CiA401",
+      "storage": "pointer",
+      "node_id": 1
+    }
+  ],
+  "code": {
+    "header_prefix": "",
+    "header_suffix": "",
+    "source_prefix": "",
+    "source_suffix": ""
+  },
+  "entries": []
+}

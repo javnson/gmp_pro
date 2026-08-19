@@ -1,0 +1,12 @@
+{
+  "quick_open_projects": [
+    "core/protocol/canopen/cia301/cia301_project.json",
+    "core/protocol/canopen/cia401/cia401_project.json",
+    "core/protocol/canopen/cia402/cia402_project.json"
+  ],
+  "quick_open": {
+    "title": "当前打开文件",
+    "visible": true,
+    "width": 280
+  }
+}

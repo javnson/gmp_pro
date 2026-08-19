@@ -5,6 +5,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import shutil
 
 
 TOOL_DIR = pathlib.Path(__file__).resolve().parents[1]
@@ -143,6 +144,27 @@ class EdsCompilerTests(unittest.TestCase):
             )
             self.assertTrue(header.exists())
             self.assertTrue(source.exists())
+
+    def test_profile_project_files_regenerate_in_place(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            temp_root = pathlib.Path(temporary)
+            profiles = ("cia301", "cia401", "cia402")
+            for profile in profiles:
+                source_dir = REPO_ROOT / "core" / "protocol" / "canopen" / profile
+                temp_dir = temp_root / profile
+                temp_dir.mkdir(parents=True)
+                shutil.copy2(source_dir / f"{profile}.eds", temp_dir / f"{profile}.eds")
+                shutil.copy2(source_dir / f"{profile}_project.json", temp_dir / f"{profile}_project.json")
+                header, source = MODULE.compile_project(
+                    temp_dir / f"{profile}_project.json",
+                    None,
+                    None,
+                    "last",
+                )
+                expected_header = source_dir / f"gmp_{profile}_od.h"
+                expected_source = source_dir / f"gmp_{profile}_od.c"
+                self.assertEqual(expected_header.read_text(encoding="utf-8"), header.read_text(encoding="utf-8"))
+                self.assertEqual(expected_source.read_text(encoding="utf-8"), source.read_text(encoding="utf-8"))
 
     def test_variable_entry_in_json(self):
         with tempfile.TemporaryDirectory() as temporary:

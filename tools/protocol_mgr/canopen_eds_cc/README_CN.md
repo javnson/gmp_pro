@@ -17,14 +17,22 @@ gmp_canopen_eds_cc_gui.bat [path\to\project.json]
 - 带参数启动：直接加载指定项目 JSON；
 - 启动器会先检查 `GMP_PRO_LOCATION`，并调用 `tools\gmp_installer\ensure_gmp_environment.bat`。
 
-GUI 支持：
+GUI 支持（PySide6）：
 
-- 表格式编辑对象字典条目；
+- 统一的对象条目树表页（列表+树状结构合并），上部是 **Entities**，下部是 **Imports**；
+- 相同 Index 的条目会自动聚合到同一展开/折叠的索引节点；
+- 索引节点标题会显示友好信息，例如 `0x2000 [0x00..0x02] (3 entries: ActualPos (+2))`；
 - 导入并合并一个或多个 `.eds` 文件；
 - 记录 `imports` 引用信息；
 - 一键生成 `.h`/`.c`，并可按需导出合并 EDS。
 - 交互风格参考 SDPE_v2：
-  - 双视图编辑参数：**列表** 与 **参数树**；
+  - 参数树作为主编辑面板，支持右键菜单与快捷键；
+  - 数据类型以具体枚举名展示（如 `UNSIGNED16`）并自动联动 Size；
+  - 双击单元格直接编辑字段（默认不再弹出编辑窗口）；
+  - `PDO` 列使用勾选框，直接开关映射属性；
+  - `Access` 列改为下拉 + `Const` 复选的编辑器，减少手工输错，显示短标签（`R` / `W` / `R/W` / `C`），并保持固定宽度、居中对齐；
+  - Access 属性拆成 `Read` / `Write` / `Const` 复选项；
+  - Storage 为 variable 时自动生成 `gmp_canopen_od_XXXX_YY` 风格变量名（可手动覆盖）；
   - 导入管理（新增/编辑/删除/上下移动/替换重载）；
   - 预设模板：`tools/protocol_mgr/canopen_eds_cc/presets` 支持保存/加载/删除。
 - 快捷键：
@@ -39,6 +47,14 @@ GUI 支持：
   - `Ctrl+G` 生成
   - `F5` 刷新预览
   - `Ctrl+Q` 退出
+
+- 左侧还提供「当前打开文件」停靠窗，可在 **View** 菜单里显示/隐藏，默认加载：
+  - `core/protocol/canopen/cia301/cia301_project.json`
+  - `core/protocol/canopen/cia401/cia401_project.json`
+  - `core/protocol/canopen/cia402/cia402_project.json`
+
+这份列表来自 `canopen_eds_cc_gui_config.json`，位于
+`tools/protocol_mgr/canopen_eds_cc/`；你可以修改 `quick_open_projects` 指定更多/其他工程路径（支持相对 GMP 根路径或绝对路径），也可以调整标题、默认可见性、宽度等展示参数。
 
 ### 1）兼容模式
 
@@ -73,6 +89,28 @@ python canopen_eds_cc.py device.eds --output-dir generated --name device_od --st
 
 ```powershell
 python canopen_eds_cc.py --project dictionary.json --output-dir generated --node-id 7 --emit-eds generated/combo.eds
+```
+
+### 2.1）GMP 现有方案配置文件
+
+每个 CiA 档位的定制配置均放在对应目录内，和 `.eds` 同级：
+
+- `core/protocol/canopen/cia301/cia301_project.json`
+- `core/protocol/canopen/cia401/cia401_project.json`
+- `core/protocol/canopen/cia402/cia402_project.json`
+
+这些项目文件使用相对路径记录 `imports` 与 `output_dir`，可直接原位重新生成：
+
+```powershell
+python tools/protocol_mgr/canopen_eds_cc/canopen_eds_cc.py --project core/protocol/canopen/cia301/cia301_project.json --node-id 1
+python tools/protocol_mgr/canopen_eds_cc/canopen_eds_cc.py --project core/protocol/canopen/cia401/cia401_project.json --node-id 1
+python tools/protocol_mgr/canopen_eds_cc/canopen_eds_cc.py --project core/protocol/canopen/cia402/cia402_project.json --node-id 1
+```
+
+GUI 启动方式（推荐）：
+
+```powershell
+gmp_canopen_eds_cc_gui.bat core/protocol/canopen/cia301/cia301_project.json
 ```
 
 ### 3）EDS 转 JSON
