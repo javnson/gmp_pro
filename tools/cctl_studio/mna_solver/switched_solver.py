@@ -223,6 +223,7 @@ class SwitchingSimulationResult:
 
 
 InputValue = float | Callable[[float], float]
+ProgressCallback = Callable[[int, int], None]
 
 
 def _key(name: str) -> str:
@@ -706,6 +707,7 @@ def _expanded_multi_mosfet_circuit(
 def build_multi_mosfet_model(
     circuit: Circuit,
     device_overrides: Mapping[str, float] | None = None,
+    progress: ProgressCallback | None = None,
 ) -> MultiMosfetLinearModel:
     """Build all 3**N channel/off/body-diode topologies for an NMOS network."""
 
@@ -723,7 +725,10 @@ def build_multi_mosfet_model(
     ]
     topologies: dict[MultiMosfetTopologyKey, LinearTopology] = {}
     choices = (MosfetPath.OFF, MosfetPath.CHANNEL, MosfetPath.BODY_DIODE)
-    for paths in itertools.product(choices, repeat=len(mosfets)):
+    topology_count = 3 ** len(mosfets)
+    for topology_index, paths in enumerate(
+        itertools.product(choices, repeat=len(mosfets)), start=1
+    ):
         key = MultiMosfetTopologyKey(paths)
         expanded = _expanded_multi_mosfet_circuit(
             circuit, mosfets, gate_sources, parameters, key
@@ -735,6 +740,8 @@ def build_multi_mosfet_model(
         except NetlistError as error:
             raise NetlistError(f"{key.name}: {error}") from error
         topologies[key] = LinearTopology(key, expanded, descriptor, state)
+        if progress is not None:
+            progress(topology_index, topology_count)
 
     reference = next(iter(topologies.values())).state
     for topology in topologies.values():
@@ -824,6 +831,7 @@ def _expanded_multi_mosfet_diode_circuit(
 def build_multi_mosfet_diode_model(
     circuit: Circuit,
     device_overrides: Mapping[str, float] | None = None,
+    progress: ProgressCallback | None = None,
 ) -> MultiMosfetDiodeLinearModel:
     """Build all 3**M MOS paths and 2**D independent-diode states."""
 
@@ -845,8 +853,11 @@ def build_multi_mosfet_diode_model(
     ]
     topologies: dict[MultiMosfetDiodeTopologyKey, LinearTopology] = {}
     choices = (MosfetPath.OFF, MosfetPath.CHANNEL, MosfetPath.BODY_DIODE)
+    topology_count = 3 ** len(mosfets) * 2 ** len(diodes)
+    topology_index = 0
     for paths in itertools.product(choices, repeat=len(mosfets)):
         for diode_states in itertools.product((False, True), repeat=len(diodes)):
+            topology_index += 1
             key = MultiMosfetDiodeTopologyKey(
                 paths,
                 diode_states,
@@ -869,6 +880,8 @@ def build_multi_mosfet_diode_model(
             except NetlistError as error:
                 raise NetlistError(f"{key.name}: {error}") from error
             topologies[key] = LinearTopology(key, expanded, descriptor, state)
+            if progress is not None:
+                progress(topology_index, topology_count)
 
     reference = next(iter(topologies.values())).state
     for topology in topologies.values():
@@ -970,6 +983,7 @@ def _expanded_multi_diode_switch_circuit(
 def build_multi_diode_switch_model(
     circuit: Circuit,
     device_overrides: Mapping[str, float] | None = None,
+    progress: ProgressCallback | None = None,
 ) -> MultiDiodeSwitchLinearModel:
     """Build every on/off combination for independent diodes and VSWITCH devices."""
 
@@ -992,7 +1006,10 @@ def build_multi_diode_switch_model(
     ]
     topologies: dict[MultiDiodeSwitchTopologyKey, LinearTopology] = {}
     device_count = len(diodes) + len(switches)
-    for states in itertools.product((False, True), repeat=device_count):
+    topology_count = 2**device_count
+    for topology_index, states in enumerate(
+        itertools.product((False, True), repeat=device_count), start=1
+    ):
         key = MultiDiodeSwitchTopologyKey(
             tuple(states[: len(diodes)]),
             tuple(states[len(diodes) :]),
@@ -1012,6 +1029,8 @@ def build_multi_diode_switch_model(
         outputs = assemble_outputs(expanded, descriptor)
         state = reduce_to_state_space(descriptor, outputs)
         topologies[key] = LinearTopology(key, expanded, descriptor, state)
+        if progress is not None:
+            progress(topology_index, topology_count)
 
     reference = next(iter(topologies.values())).state
     for topology in topologies.values():
@@ -1034,9 +1053,27 @@ def build_multi_diode_switch_model(
     )
 
 
+def piecewise_topology_count(circuit: Circuit) -> int:
+    """Return the number of logical PWL states before constructing matrices."""
+
+    diode_count = sum(element.kind == "D" for element in circuit.elements)
+    mosfet_count = sum(element.kind == "M" for element in circuit.elements)
+    switch_count = sum(element.kind == "S" for element in circuit.elements)
+    if switch_count and mosfet_count:
+        raise NetlistError("mixed MOSFET and VSWITCH expansion is not supported yet")
+    if not mosfet_count and (diode_count or switch_count):
+        return 2 ** (diode_count + switch_count)
+    if not diode_count and mosfet_count:
+        return 3**mosfet_count
+    if mosfet_count and diode_count and (mosfet_count != 1 or diode_count != 1):
+        return 3**mosfet_count * 2**diode_count
+    return 6
+
+
 def build_piecewise_model(
     circuit: Circuit,
     device_overrides: Mapping[str, float] | None = None,
+    progress: ProgressCallback | None = None,
 ) -> PiecewiseLinearModel | MultiMosfetLinearModel | MultiMosfetDiodeLinearModel | MultiDiodeSwitchLinearModel:
     """Build the supported diode, MOSFET, and VSWITCH PWL topology family."""
 
@@ -1046,23 +1083,27 @@ def build_piecewise_model(
     if switches and mosfets:
         raise NetlistError("mixed MOSFET and VSWITCH expansion is not supported yet")
     if not mosfets and (diodes or switches):
-        return build_multi_diode_switch_model(circuit, device_overrides)
+        return build_multi_diode_switch_model(circuit, device_overrides, progress)
     if not diodes and mosfets:
-        return build_multi_mosfet_model(circuit, device_overrides)
+        return build_multi_mosfet_model(circuit, device_overrides, progress)
     if mosfets and diodes and (len(mosfets) != 1 or len(diodes) != 1):
-        return build_multi_mosfet_diode_model(circuit, device_overrides)
+        return build_multi_mosfet_diode_model(circuit, device_overrides, progress)
 
     diode, mosfet, parameters = derive_switch_parameters(circuit, device_overrides)
     gate_source = _gate_source(circuit, mosfet)
     topologies: dict[TopologyKey, LinearTopology] = {}
+    topology_index = 0
     for diode_on in (False, True):
         for path in (MosfetPath.OFF, MosfetPath.CHANNEL, MosfetPath.BODY_DIODE):
+            topology_index += 1
             key = TopologyKey(diode_on, path)
             expanded = _expanded_circuit(circuit, diode, mosfet, gate_source, parameters, key)
             descriptor = assemble_mna(expanded)
             outputs = assemble_outputs(expanded, descriptor)
             state = reduce_to_state_space(descriptor, outputs)
             topologies[key] = LinearTopology(key, expanded, descriptor, state)
+            if progress is not None:
+                progress(topology_index, 6)
 
     reference = next(iter(topologies.values())).state
     for topology in topologies.values():

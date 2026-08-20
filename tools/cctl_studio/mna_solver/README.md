@@ -241,6 +241,33 @@ contains `3^4 * 2^2 = 324` compatible state/output models. Diode A/K and MOSFET
 D/S terminal voltages remain internal signals used for previous-sample mode
 selection.
 
+Code generation separates logical topologies from calculation states. Every
+logical topology remains addressable, preserving switching selection and
+`last_topology_index()`, while numerically equivalent topologies may map to one
+calculation state. Calculation states contain only indices into shared static
+`StateMatrix`, `InputMatrix`, `StateVector`, `SignalMatrix`,
+`SignalInputMatrix`, and `SignalVector` pools, so identical A/B/C/D and affine
+terms have one C++ copy.
+
+Equivalence means that every element differs by no more than the absolute
+`matrix_tolerance`; relative tolerance is zero. The default is `1e-12`. Square
+matrices first enter determinant hash buckets, while non-square objects use
+their element sum. Adjacent buckets are included to cover quantization
+boundaries, and every candidate still receives a full elementwise check, so a
+determinant collision cannot merge unequal states. A complete state merges only
+when normal/short A, B, bias and C, D, output bias all match, including internal
+D/S and A/K mode-selection signals.
+
+Both `circuit_data.py export` and `cpp_codegen.py` accept
+`--matrix-tolerance`; the code-generator option overrides the value stored in
+JSON. Their console output reports logical state count, discretization method,
+normal/startup step sizes, tolerance, timed progress with ETA, unique and
+deduplicated calculation-state counts, and per-pool sharing. Redirected output
+uses sparse progress records instead of carriage-return animation. At the
+current default tolerance the INV case keeps all 729 complete calculation
+states because their internal selection/state matrices differ, but matrix
+pooling reduces stored coefficients from 332424 to 187438, a 43.61% reduction.
+
 ### Test-case organization
 
 All supplied circuits live below `tb`. Non-switching examples are grouped in
@@ -280,6 +307,9 @@ Generate a case without compiling it:
 ```bat
 tools\cctl_studio\mna_solver\tb\buck\generate_code.bat
 ```
+
+Each `generate_code.bat` declares `NETLIST_FILE` and `MATRIX_TOLERANCE` near the
+top; the shipped tolerance is `1E-12` and can be edited per case.
 
 Only the Eigen calculation header is generated. Testbench source, CMake files,
 waveform scheduling, CSV policy, and acceptance limits are deliberately

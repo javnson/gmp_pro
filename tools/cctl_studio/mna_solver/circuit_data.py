@@ -18,6 +18,7 @@ from typing import Callable, Mapping, Sequence
 
 import numpy as np
 
+from console_progress import TimedProgressBar
 from mna_solver import NetlistError, StateSpaceModel, discretize, parse_netlist, parse_spice_value
 from switched_solver import (
     MultiDiodeSwitchLinearModel,
@@ -28,11 +29,13 @@ from switched_solver import (
     TopologyKey,
     build_piecewise_model,
     ideal_source_nodes_requiring_capacitance_suppression,
+    piecewise_topology_count,
 )
 
 
 SCHEMA_NAME = "gmp.mna_solver.circuit_data"
 SCHEMA_VERSION = 1
+DEFAULT_MATRIX_TOLERANCE = 1e-12
 
 
 def _key(value: str) -> str:
@@ -127,6 +130,8 @@ def _build_multi_mosfet_circuit_data(
     short_step_s: float,
     method: str,
     voltage_hysteresis: float,
+    matrix_tolerance: float,
+    progress: Callable[[int, int], None] | None,
 ) -> dict:
     reference = next(iter(model.topologies.values())).state
     gate_names = {_key(source.name) for source in model.gate_sources}
@@ -264,7 +269,8 @@ def _build_multi_mosfet_circuit_data(
 
     topology_documents = []
     topology_order = []
-    for key, topology in model.topologies.items():
+    topology_count = len(model.topologies)
+    for topology_index, (key, topology) in enumerate(model.topologies.items(), start=1):
         topology_order.append(key.name)
         continuous = _affine_model(topology.state, external_inputs)
         continuous["reconstruction_x"] = _matrix(topology.state.reconstruction_x)
@@ -289,6 +295,8 @@ def _build_multi_mosfet_circuit_data(
         if mixed_model:
             topology_document["diode_states"] = list(key.diode_states)
         topology_documents.append(topology_document)
+        if progress is not None:
+            progress(topology_index, topology_count)
 
     source = {"file": None, "sha256": None}
     if source_path is not None:
@@ -314,6 +322,7 @@ def _build_multi_mosfet_circuit_data(
             "method": method,
             "normal_step_s": normal_step_s,
             "short_step_s": short_step_s,
+            "matrix_tolerance": matrix_tolerance,
         },
         "topologies": topology_documents,
     }
@@ -327,6 +336,8 @@ def _build_multi_diode_switch_circuit_data(
     short_step_s: float,
     method: str,
     voltage_hysteresis: float,
+    matrix_tolerance: float,
+    progress: Callable[[int, int], None] | None,
 ) -> dict:
     reference = next(iter(model.topologies.values())).state
     control_names = {_key(source.name) for source in model.control_sources}
@@ -452,7 +463,8 @@ def _build_multi_diode_switch_circuit_data(
 
     topology_documents = []
     topology_order = []
-    for key, topology in model.topologies.items():
+    topology_count = len(model.topologies)
+    for topology_index, (key, topology) in enumerate(model.topologies.items(), start=1):
         topology_order.append(key.name)
         continuous = _affine_model(topology.state, external_inputs)
         continuous["reconstruction_x"] = _matrix(topology.state.reconstruction_x)
@@ -483,6 +495,8 @@ def _build_multi_diode_switch_circuit_data(
                 },
             }
         )
+        if progress is not None:
+            progress(topology_index, topology_count)
 
     source = {"file": None, "sha256": None}
     if source_path is not None:
@@ -512,6 +526,7 @@ def _build_multi_diode_switch_circuit_data(
             "method": method,
             "normal_step_s": normal_step_s,
             "short_step_s": short_step_s,
+            "matrix_tolerance": matrix_tolerance,
         },
         "topologies": topology_documents,
     }
@@ -525,11 +540,16 @@ def build_circuit_data(
     short_step_s: float = 0.5e-9,
     method: str = "backward_euler",
     voltage_hysteresis: float = 1e-6,
+    matrix_tolerance: float = DEFAULT_MATRIX_TOLERANCE,
+    progress: Callable[[int, int], None] | None = None,
 ) -> dict:
     """Convert PWL topologies to a self-contained JSON-compatible dict."""
 
-    if normal_step_s <= 0.0 or short_step_s <= 0.0:
-        raise ValueError("normal and short simulation steps must be positive")
+    values = (normal_step_s, short_step_s, matrix_tolerance)
+    if any(value <= 0.0 or not math.isfinite(value) for value in values):
+        raise ValueError(
+            "normal/short simulation steps and matrix tolerance must be finite positive numbers"
+        )
     if isinstance(model, MultiDiodeSwitchLinearModel):
         return _build_multi_diode_switch_circuit_data(
             model,
@@ -538,6 +558,8 @@ def build_circuit_data(
             short_step_s=short_step_s,
             method=method,
             voltage_hysteresis=voltage_hysteresis,
+            matrix_tolerance=matrix_tolerance,
+            progress=progress,
         )
     if isinstance(model, (MultiMosfetLinearModel, MultiMosfetDiodeLinearModel)):
         return _build_multi_mosfet_circuit_data(
@@ -547,6 +569,8 @@ def build_circuit_data(
             short_step_s=short_step_s,
             method=method,
             voltage_hysteresis=voltage_hysteresis,
+            matrix_tolerance=matrix_tolerance,
+            progress=progress,
         )
     reference = next(iter(model.topologies.values())).state
     source_names = [
@@ -640,7 +664,8 @@ def build_circuit_data(
 
     topology_documents = []
     topology_order = []
-    for key, topology in model.topologies.items():
+    topology_count = len(model.topologies)
+    for topology_index, (key, topology) in enumerate(model.topologies.items(), start=1):
         if topology.state.state_names != reference.state_names or topology.state.output_names != reference.output_names:
             raise NetlistError("topologies do not share state/output coordinates")
         topology_order.append(key.name)
@@ -663,6 +688,8 @@ def build_circuit_data(
                 },
             }
         )
+        if progress is not None:
+            progress(topology_index, topology_count)
 
     source = {"file": None, "sha256": None}
     if source_path is not None:
@@ -693,6 +720,7 @@ def build_circuit_data(
             "method": method,
             "normal_step_s": normal_step_s,
             "short_step_s": short_step_s,
+            "matrix_tolerance": matrix_tolerance,
         },
         "topologies": topology_documents,
     }
@@ -702,6 +730,11 @@ def validate_circuit_data(document: Mapping) -> None:
     schema = document.get("schema", {})
     if schema.get("name") != SCHEMA_NAME or schema.get("version") != SCHEMA_VERSION:
         raise ValueError(f"unsupported circuit-data schema: {schema!r}")
+    matrix_tolerance = float(
+        document.get("solver", {}).get("matrix_tolerance", DEFAULT_MATRIX_TOLERANCE)
+    )
+    if matrix_tolerance <= 0.0 or not math.isfinite(matrix_tolerance):
+        raise ValueError("matrix tolerance must be a finite positive number")
     topologies = document.get("topologies", [])
     expected_topologies = int(document.get("switching", {}).get("topology_count", 6))
     if len(topologies) != expected_topologies:
@@ -1023,6 +1056,10 @@ def _parser() -> argparse.ArgumentParser:
     export.add_argument("--normal-dt", type=_number, default=100e-9)
     export.add_argument("--short-dt", type=_number, default=0.5e-9)
     export.add_argument("--method", default="backward_euler")
+    export.add_argument(
+        "--matrix-tolerance", type=_number, default=DEFAULT_MATRIX_TOLERANCE
+    )
+    export.add_argument("--no-progress", action="store_true")
     export.add_argument("--device-param", action="append", default=[], metavar="NAME=VALUE")
     simulate = commands.add_parser("simulate")
     simulate.add_argument("data")
@@ -1037,15 +1074,35 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         if args.command == "export":
             circuit = parse_netlist(args.netlist)
+            topology_count = piecewise_topology_count(circuit)
+            print(f"circuit:             {circuit.title}")
+            print(f"logical states:      {topology_count}")
+            print(f"discretization:      {args.method}")
+            print(f"normal step:         {args.normal_dt:.12g} s")
+            print(f"short step:          {args.short_dt:.12g} s")
+            print(f"matrix tolerance:    {args.matrix_tolerance:.12g}")
+            build_bar = None if args.no_progress else TimedProgressBar("Building MNA states", topology_count)
+            model = build_piecewise_model(
+                circuit,
+                _assignments(args.device_param),
+                None if build_bar is None else build_bar.update,
+            )
+            if build_bar is not None:
+                build_bar.finish()
+            export_bar = None if args.no_progress else TimedProgressBar("Discretizing states", topology_count)
             document = build_circuit_data(
-                build_piecewise_model(circuit, _assignments(args.device_param)),
+                model,
                 source_path=args.netlist,
                 normal_step_s=args.normal_dt,
                 short_step_s=args.short_dt,
                 method=args.method,
+                matrix_tolerance=args.matrix_tolerance,
+                progress=None if export_bar is None else export_bar.update,
             )
+            if export_bar is not None:
+                export_bar.finish()
             write_circuit_data(args.output, document)
-            print(f"wrote {len(document['topologies'])} topologies to {args.output}")
+            print(f"wrote {len(document['topologies'])} logical states to {args.output}")
         else:
             document = load_circuit_data(args.data)
             result = simulate_circuit_data(document, args.duration, args.pwm_frequency, args.duty)

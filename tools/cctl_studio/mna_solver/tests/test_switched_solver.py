@@ -245,7 +245,11 @@ class SinglePhaseInverterTests(unittest.TestCase):
 class ThreePhaseInverterTests(unittest.TestCase):
     def setUp(self) -> None:
         self.circuit = mna.parse_netlist(INV_DIR / "INV.CIR")
-        self.model = switched.build_piecewise_model(self.circuit)
+        self.progress: list[tuple[int, int]] = []
+        self.model = switched.build_piecewise_model(
+            self.circuit,
+            progress=lambda completed, total: self.progress.append((completed, total)),
+        )
 
     def test_six_mosfets_expand_to_729_compatible_topologies(self) -> None:
         self.assertIsInstance(self.model, switched.MultiMosfetLinearModel)
@@ -258,6 +262,10 @@ class ThreePhaseInverterTests(unittest.TestCase):
             ["VPWM3", "VPWM4", "VPWM1", "VPWM2", "VPWM5", "VPWM6"],
         )
         self.assertEqual(len(self.model.topologies), 3**6)
+        self.assertEqual(switched.piecewise_topology_count(self.circuit), 3**6)
+        self.assertEqual(self.progress[0], (1, 3**6))
+        self.assertEqual(self.progress[-1], (3**6, 3**6))
+        self.assertEqual(len(self.progress), 3**6)
         for topology in self.model.topologies.values():
             self.assertEqual(topology.state.A.shape, (10, 10))
         self.assertEqual(self.circuit.element("R11").nodes, ("2", "0"))
@@ -293,6 +301,7 @@ class NpcBuckTests(unittest.TestCase):
         )
         self.assertEqual([item.name for item in self.model.diodes], ["D2", "D1"])
         self.assertEqual(len(self.model.topologies), 3**4 * 2**2)
+        self.assertEqual(switched.piecewise_topology_count(self.circuit), 3**4 * 2**2)
         reference = next(iter(self.model.topologies.values())).state
         self.assertEqual(reference.A.shape, (7, 7))
         self.assertEqual(reference.output_names[:3], ["V(4)", "I(VAM1)", "V(VF1)"])

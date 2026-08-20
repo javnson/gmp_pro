@@ -177,6 +177,28 @@ python tools\cctl_studio\mna_solver\switched_solver.py simulate ^
 可以由 `CircuitDataSimulator` 直接仿真，也是 C++
 代码生成器唯一的输入。
 
+代码生成阶段会把“逻辑拓扑”和“计算状态”分开保存。逻辑拓扑仍完整保留，
+所以器件选模和 `last_topology_index()` 的含义不变；多个数值等价的逻辑拓扑
+可以映射到同一个计算状态。每个计算状态本身也不再内嵌矩阵，而只保存
+`StateMatrix`、`InputMatrix`、`StateVector`、`SignalMatrix`、
+`SignalInputMatrix` 和 `SignalVector` 静态池中的索引，因此相同的 A/B/C/D 与
+偏置向量只有一份 C++ 存储。
+
+矩阵等价判据是逐元素绝对误差不超过 `matrix_tolerance`，相对误差固定为零；
+默认值是 `1e-12`。方阵先按行列式进入候选散列篮子，非方阵使用元素和，
+并检查相邻篮子以避免量化边界漏判；只有候选篮子内的矩阵才进行最终逐元素
+确认，所以行列式碰撞不会错误合并状态。一个完整计算状态只有在正常/短步长
+的 A、B、bias 以及 C、D、输出 bias 全部等价时才会合并，内部 D/S、A/K
+选模信号也因此不会被丢失。
+
+`circuit_data.py export` 和 `cpp_codegen.py` 都支持
+`--matrix-tolerance`；后者的参数可覆盖 JSON 中保存的值。命令行会显示逻辑
+状态数、离散方法、正常/启动步长、误差阈值、带耗时和 ETA 的构造/离散/去重
+进度条，以及最终计算状态数、去重数和各矩阵池的共享统计。重定向输出时，
+进度会自动变成稀疏的分段日志。INV 的当前默认阈值下，729 个完整状态由于
+内部选模和状态矩阵仍各不相同而没有被误合并，但矩阵池把存储系数从 332424
+个降为 187438 个，减少 43.61%。
+
 独立二极管和 TINA `VSWITCH` 均按通断两条路径展开，因此整流器包含
 `2^(4+1)=32` 个拓扑。`VSWITCH` 的控制电压源会从 MNA 中移除，并转换为
 外部 `uint32_t` 控制端口。
@@ -242,8 +264,9 @@ tb\buck\
 tools\cctl_studio\mna_solver\tb\buck\generate_code.bat
 ```
 
-`generate_code.bat` 开头定义 `NETLIST_FILE`，所以不带参数运行时会使用案例
-默认 CIR；也可以把其他 CIR 作为第一个参数传入。生成器只写计算类，不会
+`generate_code.bat` 开头定义 `NETLIST_FILE` 和 `MATRIX_TOLERANCE`，所以不带
+参数运行时会使用案例默认 CIR 和 `1E-12` 精度；也可以把其他 CIR 作为第一
+个参数传入，或直接修改脚本中的精度。生成器只写计算类，不会
 覆盖手写 testbench。生成的 `BuckCircuit` 使用 Eigen 固定维矩阵，提供
 `step_short(PWM, VS1)`、`step_normal(PWM, VS1)`、`run` 和 `operator()`；
 探针既可通过 `circuit.output.VF1`，也可通过 `circuit["V(VF1)"]` 读取。

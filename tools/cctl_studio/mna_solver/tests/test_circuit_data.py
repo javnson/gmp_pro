@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import sys
 import tempfile
@@ -42,6 +43,9 @@ class CircuitDataTests(unittest.TestCase):
     def test_document_contains_ports_models_and_six_dual_step_topologies(self) -> None:
         data.validate_circuit_data(self.document)
         self.assertEqual(self.document["schema"]["name"], data.SCHEMA_NAME)
+        self.assertEqual(
+            self.document["solver"]["matrix_tolerance"], data.DEFAULT_MATRIX_TOLERANCE
+        )
         self.assertEqual([port["name"] for port in self.document["ports"]["inputs"]], ["PWM", "VS1"])
         self.assertEqual(
             [port["name"] for port in self.document["ports"]["outputs"]],
@@ -85,6 +89,32 @@ class CircuitDataTests(unittest.TestCase):
         self.assertIn("operator[](std::string_view", header)
         self.assertIn("std::uint32_t PWM", header)
         self.assertIn("double VS1", header)
+        self.assertIn("calculation_state_count", header)
+        self.assertIn("topology_to_calculation_state", header)
+        self.assertIn("state_matrices()", header)
+        self.assertIn("matrix_tolerance", header)
+
+    def test_cpp_matrix_plan_deduplicates_states_and_interns_storage(self) -> None:
+        synthetic = copy.deepcopy(self.document)
+        synthetic["topologies"][1]["discrete"] = copy.deepcopy(
+            synthetic["topologies"][0]["discrete"]
+        )
+        synthetic["topologies"][1]["discrete"]["normal"]["A"][0][0] += 0.5e-12
+        plan = codegen.build_matrix_dedup_plan(synthetic, tolerance=1e-12)
+        self.assertEqual(
+            plan.topology_to_calculation_state[0],
+            plan.topology_to_calculation_state[1],
+        )
+        self.assertGreaterEqual(plan.deduplicated_state_count, 1)
+        self.assertGreater(plan.shared_matrix_copy_count, 0)
+        self.assertLess(plan.coefficients_after, plan.coefficients_before)
+
+        synthetic["topologies"][1]["discrete"]["normal"]["A"][0][0] += 1e-6
+        distinct = codegen.build_matrix_dedup_plan(synthetic, tolerance=1e-12)
+        self.assertNotEqual(
+            distinct.topology_to_calculation_state[0],
+            distinct.topology_to_calculation_state[1],
+        )
 
     def test_default_cpp_class_uses_netlist_file_stem(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
