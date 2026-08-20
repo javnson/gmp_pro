@@ -6,6 +6,7 @@ find_package(Eigen3 CONFIG REQUIRED)
 # This testbench is maintained by hand. Only fsbbcircuit.hpp is generated.
 add_executable(fsbbcircuit_testbench fsbbcircuit_testbench.cpp)
 target_compile_features(fsbbcircuit_testbench PRIVATE cxx_std_17)
+target_include_directories(fsbbcircuit_testbench PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../../generated")
 target_link_libraries(fsbbcircuit_testbench PRIVATE Eigen3::Eigen)
 
 enable_testing()

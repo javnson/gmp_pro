@@ -1,6 +1,6 @@
 #include "boostcircuit.hpp"
 
-// Handwritten circuit-specific testbench; cpp_codegen.py only regenerates the header.
+// Handwritten case-specific testbench; cpp_codegen.py only regenerates the header.
 
 #include <algorithm>
 #include <cmath>

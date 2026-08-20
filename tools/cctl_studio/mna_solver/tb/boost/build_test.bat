@@ -1,8 +1,8 @@
 @echo off
 setlocal EnableExtensions
 
-rem Change only this variable when copying the BAT beside another netlist.
-set "NETLIST_FILE=FSBB.CIR"
+rem Default netlist for this case. Keep it synchronized with generate_code.bat.
+set "NETLIST_FILE=BOOST.CIR"
 
 set "NO_PAUSE=0"
 if /I "%~1"=="--no-pause" set "NO_PAUSE=1"
@@ -11,9 +11,8 @@ if not defined GMP_PRO_LOCATION (
     set "RESULT=1"
     goto :failed_with_result
 )
-
 set "MNA_TOOL_DIR=%GMP_PRO_LOCATION%\tools\cctl_studio\mna_solver"
-if not exist "%MNA_TOOL_DIR%\circuit_data.py" (
+if not exist "%MNA_TOOL_DIR%\cpp_codegen.py" (
     echo [ERROR] MNA solver was not found under GMP_PRO_LOCATION:
     echo         %MNA_TOOL_DIR%
     set "RESULT=1"
@@ -25,31 +24,17 @@ set "VSLANG=1033"
 
 set "CASE_DIR=%~dp0"
 for %%I in ("%NETLIST_FILE%") do set "NETLIST_STEM=%%~nI"
-set "NETLIST_PATH=%CASE_DIR%%NETLIST_FILE%"
-set "JSON_PATH=%CASE_DIR%%NETLIST_STEM%.json"
-set "CPP_DIR=%CASE_DIR%generated\cpp"
+set "TEST_DIR=%CASE_DIR%test\cpp"
 set "BUILD_DIR=%TEMP%\gmp_mna_%NETLIST_STEM%_cpp_build"
-
-if not exist "%NETLIST_PATH%" (
-    echo [ERROR] Netlist does not exist: %NETLIST_PATH%
-    set "RESULT=1"
-    goto :failed_with_result
-)
-if not exist "%CPP_DIR%\fsbbcircuit_testbench.cpp" (
-    echo [ERROR] Handwritten FSBB testbench was not found:
-    echo         %CPP_DIR%\fsbbcircuit_testbench.cpp
+if not exist "%TEST_DIR%\CMakeLists.txt" (
+    echo [ERROR] Handwritten C++ test was not found: %TEST_DIR%
     set "RESULT=1"
     goto :failed_with_result
 )
 
-echo [1/5] Exporting portable circuit data...
-python "%MNA_TOOL_DIR%\circuit_data.py" export "%NETLIST_PATH%" "%JSON_PATH%" --normal-dt 100N --short-dt 1N --method backward_euler
+echo [1/4] Generating circuit calculation code...
+call "%CASE_DIR%generate_code.bat" "%NETLIST_FILE%" --no-pause
 if errorlevel 1 goto :failed
-
-echo [2/5] Generating the Eigen C++ calculation class...
-python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%CPP_DIR%"
-if errorlevel 1 goto :failed
-
 if /I not "%GMP_ENV_MODE%"=="virtual" goto :system_environment
 if not exist "%VCPKG_INSTALLED_DIR%\x64-windows\include\eigen3\Eigen\Dense" (
     echo [ERROR] Eigen3 is not installed in the GMP vcpkg shared tree.
@@ -57,8 +42,8 @@ if not exist "%VCPKG_INSTALLED_DIR%\x64-windows\include\eigen3\Eigen\Dense" (
     set "RESULT=1"
     goto :failed_with_result
 )
-echo [3/5] Configuring the handwritten testbench with GMP's private vcpkg...
-cmake --fresh -S "%CPP_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%CMAKE_TOOLCHAIN_FILE%" -DVCPKG_INSTALLED_DIR="%VCPKG_INSTALLED_DIR%" -DVCPKG_MANIFEST_MODE=OFF
+echo [2/4] Configuring the handwritten C++ test with GMP's private vcpkg...
+cmake --fresh -S "%TEST_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%CMAKE_TOOLCHAIN_FILE%" -DVCPKG_INSTALLED_DIR="%VCPKG_INSTALLED_DIR%" -DVCPKG_MANIFEST_MODE=OFF
 if errorlevel 1 goto :failed
 goto :build
 
@@ -71,23 +56,22 @@ if errorlevel 1 (
 )
 for /f "delims=" %%I in ('where vcpkg.exe') do if not defined SYSTEM_VCPKG_EXE set "SYSTEM_VCPKG_EXE=%%I"
 for %%I in ("%SYSTEM_VCPKG_EXE%") do set "SYSTEM_VCPKG_ROOT=%%~dpI"
-echo [3/5] Configuring the handwritten testbench with system vcpkg...
-cmake --fresh -S "%CPP_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%SYSTEM_VCPKG_ROOT%scripts\buildsystems\vcpkg.cmake"
+echo [2/4] Configuring the handwritten C++ test with system vcpkg...
+cmake --fresh -S "%TEST_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%SYSTEM_VCPKG_ROOT%scripts\buildsystems\vcpkg.cmake"
 if errorlevel 1 goto :failed
 
 :build
-echo [4/5] Compiling the handwritten FSBB testbench...
+echo [3/4] Compiling the handwritten C++ test...
 cmake --build "%BUILD_DIR%" --config Release
 if errorlevel 1 goto :failed
-
-echo [5/5] Running 10 kHz, 50%% complementary PWM with 1 us deadtime...
+echo [4/4] Running the Boost test...
 ctest --test-dir "%BUILD_DIR%" -C Release --output-on-failure
 if errorlevel 1 goto :failed
 
 echo.
-echo Circuit data: %JSON_PATH%
-echo C++ project:  %CPP_DIR%
-echo Build tree:   %BUILD_DIR%
+echo Generated code: %CASE_DIR%generated
+echo Test source:    %TEST_DIR%
+echo Build tree:     %BUILD_DIR%
 if "%NO_PAUSE%"=="0" pause
 exit /b 0
 
@@ -96,6 +80,6 @@ set "RESULT=%ERRORLEVEL%"
 if "%RESULT%"=="0" set "RESULT=1"
 :failed_with_result
 echo.
-echo Handwritten FSBB testbench failed with exit code %RESULT%.
+echo Boost test failed with exit code %RESULT%.
 if "%NO_PAUSE%"=="0" pause
 exit /b %RESULT%

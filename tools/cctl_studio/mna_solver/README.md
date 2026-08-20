@@ -78,14 +78,14 @@ Print exact symbolic MNA matrices and the numeric state/output matrices:
 
 ```bat
 python tools\cctl_studio\mna_solver\mna_solver.py analyze ^
-  tools/cctl_studio/mna_solver/tb/0_divider.CIR
+  tools/cctl_studio/mna_solver/tb/basic/0_divider.CIR
 ```
 
 For symbolic passive or controlled-source values, repeat `--param`:
 
 ```bat
 python tools\cctl_studio\mna_solver\mna_solver.py analyze ^
-  tools\cctl_studio\mna_solver\tb\example5.cir ^
+  tools\cctl_studio\mna_solver\tb\basic\example5.cir ^
   --param R1=1K --param R2=10K
 ```
 
@@ -93,7 +93,7 @@ List the forward-Euler matrices and scalar `x[k+1]`/`y[k]` expressions:
 
 ```bat
 python tools\cctl_studio\mna_solver\mna_solver.py discretize ^
-  tools\cctl_studio\mna_solver\tb\example6.cir --dt 1N
+  tools\cctl_studio\mna_solver\tb\basic\example6.cir --dt 1N
 ```
 
 Forward-Euler simulation writes a CSV file. Independent source values in the
@@ -102,18 +102,18 @@ whose value is symbolic.
 
 ```bat
 python tools\cctl_studio\mna_solver\mna_solver.py simulate ^
-  tools\cctl_studio\mna_solver\tb\example6.cir ^
+  tools\cctl_studio\mna_solver\tb\basic\example6.cir ^
   --dt 1N --duration 10U --input Vin=1 ^
-  --output tools\cctl_studio\mna_solver\tb\example6_result.csv
+  --output tools\cctl_studio\mna_solver\tb\basic\example6_result.csv
 ```
 
 Generate magnitude, dB magnitude, and phase for every input/output pair:
 
 ```bat
 python tools\cctl_studio\mna_solver\mna_solver.py frequency ^
-  tools\cctl_studio\mna_solver\tb\example6.cir ^
+  tools\cctl_studio\mna_solver\tb\basic\example6.cir ^
   --start 10 --stop 1MEG --points 200 ^
-  --output tools\cctl_studio\mna_solver\tb\example6_frequency.csv
+  --output tools\cctl_studio\mna_solver\tb\basic\example6_frequency.csv
 ```
 
 ## Python API
@@ -173,14 +173,14 @@ List all topology matrices and scalar equations:
 
 ```bat
 python tools\cctl_studio\mna_solver\switched_solver.py analyze ^
-  tools\cctl_studio\mna_solver\tb_buck\buck.CIR --dt 1N
+  tools\cctl_studio\mna_solver\tb\buck\buck.CIR --dt 1N
 ```
 
 Run the supplied circuit with an external 10 kHz, 50% PWM command:
 
 ```bat
 python tools\cctl_studio\mna_solver\switched_solver.py simulate ^
-  tools\cctl_studio\mna_solver\tb_buck\buck.CIR ^
+  tools\cctl_studio\mna_solver\tb\buck\buck.CIR ^
   --dt 50N --transition-substep 500P --duration 50M ^
   --pwm-frequency 10K --duty 0.5 --output-stride 100 ^
   --output buck_10khz.csv
@@ -214,19 +214,45 @@ One diode plus one MOS produces six topologies. A MOS-only switching circuit
 uses three paths per device (`OFF`, channel, body diode), so the four-switch
 FSBB exports `3^4 = 81` topologies.
 
-Each case keeps its portable JSON beside the CIR file and writes C++ artifacts
-under `generated\cpp`:
+### Test-case organization
+
+All supplied circuits live below `tb`. Non-switching examples are grouped in
+`tb\basic`; run their symbolic, numeric, transient, and known-result checks with:
+
+```bat
+tools\cctl_studio\mna_solver\tb\basic\run_tests.bat
+```
+
+Validated switching cases use the same layout:
 
 ```text
-tb_buck\buck.CIR
-tb_buck\buck.json
-tb_buck\generated\cpp\...
+tb\buck\
+├── buck.CIR
+├── generate_code.bat
+├── build_test.bat
+├── generated\              generated calculation headers
+└── test\cpp\               handwritten testbench, CMakeLists and vcpkg.json
 ```
+
+`boost` and `fsbb` follow the same contract. `rectifier` and `sinv` currently
+contain source cases only and will gain language-specific tests when their
+solver behavior is implemented and validated.
+
+Every BAT entry point resolves the solver and installer through
+`GMP_PRO_LOCATION`; it does not depend on the checkout drive or current working
+directory. User-facing scripts pause on success and failure, while automation
+can pass `--no-pause`.
+
+Each switching case writes its portable JSON beside the CIR file and generated
+C++ calculation headers under `generated`. JSON and local CSV/build/IDE outputs
+are ignored by `tb\.gitignore` because they are reproducible and can be large.
+
+### Generation and build
 
 Generate a case without compiling it:
 
 ```bat
-tools\cctl_studio\mna_solver\tb_buck\generate_code.bat buck.CIR
+tools\cctl_studio\mna_solver\tb\buck\generate_code.bat
 ```
 
 Only the Eigen calculation header is generated. Testbench source, CMake files,
@@ -242,16 +268,17 @@ The generated `BuckCircuit` exposes `step_short(PWM, VS1)`,
 
 ```bat
 repair_gmp_vcpkg.bat
-tools\cctl_studio\mna_solver\tb_buck\build_testbench.bat
-tools\cctl_studio\mna_solver\tb_boost\build_testbench.bat
-tools\cctl_studio\mna_solver\tb_fsbb\build_testbench.bat
+tools\cctl_studio\mna_solver\tb\buck\build_test.bat
+tools\cctl_studio\mna_solver\tb\boost\build_test.bat
+tools\cctl_studio\mna_solver\tb\fsbb\build_test.bat
 ```
 
-`build_testbench.bat` locates the MNA tools through `GMP_PRO_LOCATION`; when the
-BAT is copied beside another circuit, only its `NETLIST_FILE` variable needs to
-change. The wrapper uses GMP's installed Eigen/vcpkg tree and disables manifest
-restoration in private-environment mode. The generated C++ directory retains a
-standalone handwritten `CMakeLists.txt` and `vcpkg.json` for copied projects.
+`generate_code.bat` defines `NETLIST_FILE` near its beginning, so direct
+invocation uses the case's default CIR; an explicit CIR may also be passed as
+the first argument. `build_test.bat` generates the calculation header first,
+then configures the handwritten `test\cpp` project with GMP's installed
+Eigen/vcpkg tree. Private-environment builds disable manifest restoration so a
+case cannot unexpectedly mutate the shared package installation.
 
 ## `1_OPAMP.CIR` validation
 
@@ -276,8 +303,9 @@ verify both the DC transfer and `A=-1000` state matrix.
 Run validation with:
 
 ```bat
-tools\cctl_studio\mna_solver\run_tests.bat
+tools\cctl_studio\mna_solver\tests\run_tests.bat
 ```
 
 The BAT file uses only `cmd.exe` syntax, pauses on success and failure, and runs
-all unit plus CLI smoke tests. Automation can use `run_tests.bat --no-pause`.
+all Basic, unit, CLI, and C++ case tests. Automation can use
+`tests\run_tests.bat --no-pause`.

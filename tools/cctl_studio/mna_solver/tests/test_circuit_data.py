@@ -18,9 +18,10 @@ import mna_solver as mna  # noqa: E402
 import switched_solver as switched  # noqa: E402
 
 
-BUCK_DIR = SOLVER_DIR / "tb_buck"
-BOOST_DIR = SOLVER_DIR / "tb_boost"
-FSBB_DIR = SOLVER_DIR / "tb_fsbb"
+TB_DIR = SOLVER_DIR / "tb"
+BUCK_DIR = TB_DIR / "buck"
+BOOST_DIR = TB_DIR / "boost"
+FSBB_DIR = TB_DIR / "fsbb"
 
 
 class CircuitDataTests(unittest.TestCase):

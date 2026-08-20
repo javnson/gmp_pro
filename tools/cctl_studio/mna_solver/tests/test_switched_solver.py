@@ -15,9 +15,10 @@ import switched_solver as switched  # noqa: E402
 
 
 TB_DIR = SOLVER_DIR / "tb"
-BUCK_DIR = SOLVER_DIR / "tb_buck"
-BOOST_DIR = SOLVER_DIR / "tb_boost"
-FSBB_DIR = SOLVER_DIR / "tb_fsbb"
+BASIC_DIR = TB_DIR / "basic"
+BUCK_DIR = TB_DIR / "buck"
+BOOST_DIR = TB_DIR / "boost"
+FSBB_DIR = TB_DIR / "fsbb"
 
 
 class TinaExtendedParserTests(unittest.TestCase):
@@ -33,7 +34,7 @@ class TinaExtendedParserTests(unittest.TestCase):
         self.assertAlmostEqual(circuit.models["ME_2N6755_N_1"].numeric("RDS"), 600e3)
 
     def test_tina_idopamp_is_recognized_with_three_pins(self) -> None:
-        circuit = mna.parse_netlist(TB_DIR / "1_OPAMP.CIR")
+        circuit = mna.parse_netlist(BASIC_DIR / "1_OPAMP.CIR")
         opamp = circuit.element("XIOP1")
         self.assertEqual(opamp.kind, "O")
         self.assertEqual(opamp.nodes, ("4", "1", "VF1"))

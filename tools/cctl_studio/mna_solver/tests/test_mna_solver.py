@@ -15,6 +15,7 @@ import mna_solver as mna  # noqa: E402
 
 
 TB_DIR = SOLVER_DIR / "tb"
+BASIC_DIR = TB_DIR / "basic"
 
 
 class ValueParserTests(unittest.TestCase):
@@ -28,10 +29,15 @@ class ValueParserTests(unittest.TestCase):
 
 class NetlistTests(unittest.TestCase):
     def test_all_supplied_netlists_parse_and_build_symbolic_mna(self) -> None:
-        paths = sorted(TB_DIR.glob("*.cir")) + sorted(TB_DIR.glob("*.CIR"))
-        for case_dir in (SOLVER_DIR / "tb_buck", SOLVER_DIR / "tb_boost", SOLVER_DIR / "tb_fsbb"):
-            paths.extend(sorted(case_dir.glob("*.cir")))
-            paths.extend(sorted(case_dir.glob("*.CIR")))
+        paths = sorted(
+            {path.resolve() for pattern in ("*.cir", "*.CIR") for path in BASIC_DIR.glob(pattern)}
+        )
+        for case_dir in (TB_DIR / "buck", TB_DIR / "boost", TB_DIR / "fsbb"):
+            paths.extend(
+                sorted(
+                    {path.resolve() for pattern in ("*.cir", "*.CIR") for path in case_dir.glob(pattern)}
+                )
+            )
         self.assertGreaterEqual(len(paths), 10)
         for path in paths:
             with self.subTest(path=path.name):
@@ -45,7 +51,7 @@ class NetlistTests(unittest.TestCase):
                     self.assertEqual(symbolic.A.nrows(), symbolic.A.ncols())
 
     def test_tina_directives_current_arrow_and_probe(self) -> None:
-        circuit = mna.parse_netlist(TB_DIR / "0_divider.CIR")
+        circuit = mna.parse_netlist(BASIC_DIR / "0_divider.CIR")
         self.assertEqual([item.name for item in circuit.observations], ["V(VF1)", "I(VAM1)"])
         self.assertEqual(circuit.element("VAM1").kind, "AMMETER")
         self.assertTrue(any(item.upper().startswith(".LIB") for item in circuit.ignored_directives))
@@ -53,7 +59,7 @@ class NetlistTests(unittest.TestCase):
         self.assertEqual(descriptor.input_names, ["VS1"])
 
     def test_symbolic_element_names_are_exact_matrix_symbols(self) -> None:
-        circuit = mna.parse_netlist(TB_DIR / "example6.cir")
+        circuit = mna.parse_netlist(BASIC_DIR / "example6.cir")
         symbolic = mna.assemble_symbolic_mna(circuit)
         matrix_text = f"{symbolic.E}\n{symbolic.A}"
         self.assertIn("C1", matrix_text)
@@ -70,7 +76,7 @@ class SolverTests(unittest.TestCase):
         return path
 
     def test_tina_divider_output_equation(self) -> None:
-        circuit = mna.parse_netlist(TB_DIR / "0_divider.CIR")
+        circuit = mna.parse_netlist(BASIC_DIR / "0_divider.CIR")
         descriptor = mna.assemble_mna(circuit)
         state = mna.reduce_to_state_space(descriptor, mna.assemble_outputs(circuit, descriptor))
         self.assertEqual(state.A.shape, (0, 0))
@@ -111,13 +117,13 @@ class SolverTests(unittest.TestCase):
             ("exampleH.cir", {"Ha": 1000}),
         ):
             with self.subTest(filename=filename):
-                circuit = mna.parse_netlist(TB_DIR / filename)
+                circuit = mna.parse_netlist(BASIC_DIR / filename)
                 descriptor = mna.assemble_mna(circuit, parameter)
                 state = mna.reduce_to_state_space(descriptor, mna.assemble_outputs(circuit, descriptor, parameter))
                 self.assertEqual(state.A.shape, (0, 0))
 
     def test_unresolved_passive_parameter_is_reported(self) -> None:
-        circuit = mna.parse_netlist(TB_DIR / "example5.cir")
+        circuit = mna.parse_netlist(BASIC_DIR / "example5.cir")
         with self.assertRaises(mna.UnresolvedParameterError) as caught:
             mna.assemble_mna(circuit)
         self.assertEqual(caught.exception.names, ["R1", "R2"])

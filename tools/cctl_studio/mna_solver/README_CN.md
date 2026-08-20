@@ -71,14 +71,14 @@ Python 包由 `tools/gmp_installer/requirements-gmp.txt` 统一固定。Eigen3
 
 ```bat
 python tools\cctl_studio\mna_solver\mna_solver.py analyze ^
-  tools/cctl_studio/mna_solver/tb/0_divider.CIR
+  tools/cctl_studio/mna_solver/tb/basic/0_divider.CIR
 ```
 
 为符号元件参数赋值：
 
 ```bat
 python tools\cctl_studio\mna_solver\mna_solver.py analyze ^
-  tools\cctl_studio\mna_solver\tb\example5.cir ^
+  tools\cctl_studio\mna_solver\tb\basic\example5.cir ^
   --param R1=1K --param R2=10K
 ```
 
@@ -86,7 +86,7 @@ python tools\cctl_studio\mna_solver\mna_solver.py analyze ^
 
 ```bat
 python tools\cctl_studio\mna_solver\mna_solver.py discretize ^
-  tools\cctl_studio\mna_solver\tb\example6.cir --dt 1N
+  tools\cctl_studio\mna_solver\tb\basic\example6.cir --dt 1N
 ```
 
 使用前向欧拉法仿真并输出 CSV。独立源的网表数值是默认输入；源为符号值时
@@ -94,18 +94,18 @@ python tools\cctl_studio\mna_solver\mna_solver.py discretize ^
 
 ```bat
 python tools\cctl_studio\mna_solver\mna_solver.py simulate ^
-  tools\cctl_studio\mna_solver\tb\example6.cir ^
+  tools\cctl_studio\mna_solver\tb\basic\example6.cir ^
   --dt 1N --duration 10U --input Vin=1 ^
-  --output tools\cctl_studio\mna_solver\tb\example6_result.csv
+  --output tools\cctl_studio\mna_solver\tb\basic\example6_result.csv
 ```
 
 计算每一组输入/输出之间的幅值、dB 幅值和相位：
 
 ```bat
 python tools\cctl_studio\mna_solver\mna_solver.py frequency ^
-  tools\cctl_studio\mna_solver\tb\example6.cir ^
+  tools\cctl_studio\mna_solver\tb\basic\example6.cir ^
   --start 10 --stop 1MEG --points 200 ^
-  --output tools\cctl_studio\mna_solver\tb\example6_frequency.csv
+  --output tools\cctl_studio\mna_solver\tb\basic\example6_frequency.csv
 ```
 
 Python API 的完整示例见 [README.md](README.md)。离散化接口已经保留
@@ -116,7 +116,7 @@ Python API 的完整示例见 [README.md](README.md)。离散化接口已经保�
 ## 二极管/MOSFET 分段线性仿真
 
 `switched_solver.py` 可以读取 TINA 续行和 `.MODEL` 参数。对于当前
-`2_buck.CIR`。D1 的 `Vf/Ron` 来自 `VJ/RS`，固定结电容使用
+`tb\buck\buck.CIR`。D1 的 `Vf/Ron` 来自 `VJ/RS`，固定结电容使用
 `CJO/VJ/M/FC` 的 SPICE 耗尽层电容公式在指定偏压处线性化（默认偏压为 0，
 因此等于 CJO）。T1 的 `Ron` 使用
 `RD+RS+1/(KP*(W/L)*(Vdrive-VTO))`，`Roff=RDS`，`Coss=CBD+CGDO`，
@@ -139,14 +139,14 @@ D1 开 + MOS 沟道关       D1 开 + MOS 沟道开
 
 ```bat
 python tools\cctl_studio\mna_solver\switched_solver.py analyze ^
-  tools\cctl_studio\mna_solver\tb\2_buck.CIR --dt 1N
+  tools\cctl_studio\mna_solver\tb\buck\buck.CIR --dt 1N
 ```
 
 使用外部 10 kHz、50% 占空比方波仿真：
 
 ```bat
 python tools\cctl_studio\mna_solver\switched_solver.py simulate ^
-  tools\cctl_studio\mna_solver\tb\2_buck.CIR ^
+  tools\cctl_studio\mna_solver\tb\buck\buck.CIR ^
   --dt 50N --transition-substep 500P --duration 50M ^
   --pwm-frequency 10K --duty 0.5 --output-stride 100 ^
   --output buck_10khz.csv
@@ -172,30 +172,70 @@ python tools\cctl_studio\mna_solver\switched_solver.py simulate ^
 ## 电路数据文件与 Eigen C++ 代码生成
 
 `circuit_data.py` 把 CIR/MNA 结果固化成带版本的 JSON。文件包含外部端口、
-探针、原始模型参数和提取依据、状态/信号名称、6 个拓扑的连续矩阵、正常与
-短步长离散矩阵，以及上一采样端电压选模所需索引。它可以脱离 CIR 文件由
-`CircuitDataSimulator` 直接仿真，也是代码生成器唯一的输入。
+探针、原始模型参数和提取依据、状态/信号名称、连续矩阵、正常与短步长离散
+矩阵，以及上一采样端电压选模所需索引。单二极管加单 MOS 电路包含 6 个
+拓扑；FSBB 的四个 MOS 每个具有关断、沟道和体二极管三条路径，因此包含
+`3^4=81` 个拓扑。JSON 可以由 `CircuitDataSimulator` 直接仿真，也是 C++
+代码生成器唯一的输入。
 
-生成 Buck 参考数据和 C++ 工程：
+### 测试用例目录约定
+
+全部测试电路位于 `tb` 下。不含开关的基础用例集中在 `tb\basic`，以下脚本
+会编译 Python 求解器，依次构造全部基础网表的符号/数值模型并执行暂态仿真，
+同时检查分压器和运放低通的已知结果：
 
 ```bat
-tools\cctl_studio\mna_solver\generate_buck.bat
+tools\cctl_studio\mna_solver\tb\basic\run_tests.bat
 ```
 
-输出位于 `generated/buck`。生成的 `BuckCircuit` 使用 Eigen 固定维矩阵，
-提供 `step_short(PWM, VS1)`、`step_normal(PWM, VS1)`、`run` 和
-`operator()`；探针既可通过 `circuit.output.VF1`，也可通过
-`circuit["V(VF1)"]` 读取。`PWM` 是 `uint32_t`，电源输入是 `double`。
+已经验证的开关案例统一采用以下结构：
 
-安装/修复 vcpkg 依赖后编译并运行 10 kHz、50%、50 ms test bench：
+```text
+tb\buck\
+├── buck.CIR
+├── generate_code.bat
+├── build_test.bat
+├── generated\              自动生成的计算类头文件
+└── test\cpp\               手写 testbench、CMakeLists.txt 和 vcpkg.json
+```
+
+`boost` 和 `fsbb` 遵守同一约定。`rectifier` 和 `sinv` 当前只保留源用例，
+等相应求解行为实现并验收后再增加语言相关测试。
+
+所有 BAT 入口都通过 `GMP_PRO_LOCATION` 找到求解器和安装环境，不依赖当前
+工作目录或仓库所在盘符。用户直接运行时成功和失败都会暂停；自动化调用可
+传入 `--no-pause`。
+
+每个开关案例把 JSON 写在 CIR 同目录，把计算类写入 `generated`。JSON、
+CSV、本地构建目录和 IDE 缓存由 `tb\.gitignore` 忽略，因为它们可重复生成，
+且 JSON 可能很大。
+
+### 生成和构建
+
+只生成 Buck 数据和计算类：
+
+```bat
+tools\cctl_studio\mna_solver\tb\buck\generate_code.bat
+```
+
+`generate_code.bat` 开头定义 `NETLIST_FILE`，所以不带参数运行时会使用案例
+默认 CIR；也可以把其他 CIR 作为第一个参数传入。生成器只写计算类，不会
+覆盖手写 testbench。生成的 `BuckCircuit` 使用 Eigen 固定维矩阵，提供
+`step_short(PWM, VS1)`、`step_normal(PWM, VS1)`、`run` 和 `operator()`；
+探针既可通过 `circuit.output.VF1`，也可通过 `circuit["V(VF1)"]` 读取。
+
+生成、编译并运行三个已验证案例的手写 C++ 测试：
 
 ```bat
 repair_gmp_vcpkg.bat
-tools\cctl_studio\mna_solver\build_buck_testbench.bat
+tools\cctl_studio\mna_solver\tb\buck\build_test.bat
+tools\cctl_studio\mna_solver\tb\boost\build_test.bat
+tools\cctl_studio\mna_solver\tb\fsbb\build_test.bat
 ```
 
-构建脚本按 GMP 聚合 vcpkg 约定关闭单项目 manifest 自动恢复，避免修改共享
-安装树中的其他包。生成目录本身仍带 `vcpkg.json`，复制为独立工程时可以使用。
+`build_test.bat` 首先刷新计算头文件，再从 `test\cpp` 配置 CMake。构建脚本
+使用 GMP 安装的 Eigen/vcpkg；私有环境下关闭单项目 manifest 自动恢复，
+避免测试案例意外修改共享安装树。
 
 ## `1_OPAMP.CIR` 验证结果
 
@@ -210,14 +250,16 @@ DC 传递函数和状态矩阵 `A=-1000`。
   描述符拓扑会报告奇异错误；
 - 初值目前使用降阶后的状态坐标；把物理电容电压、励磁电流映射为初值属于
   后续工作；
-- 当前 C++ 生成器面向“一个二极管 + 一个 NMOS”的 6 拓扑电路；将同一数据
-  文件后端扩展为 Verilog/定点矩阵实现属于下一阶段。
+- 已支持不含独立二极管的多 MOS 电路，拓扑数量按 `3^N` 增长；多个独立
+  二极管和多个 MOS 混合的通用组合展开仍待实现；
+- 将同一数据文件后端扩展为 Verilog/定点矩阵实现属于下一阶段。
 
 验证命令：
 
 ```bat
-tools\cctl_studio\mna_solver\run_tests.bat
+tools\cctl_studio\mna_solver\tests\run_tests.bat
 ```
 
 该脚本只使用 `cmd.exe` 语法，成功和失败都会暂停，并执行全部单元测试及
-命令行冒烟测试；自动化环境可使用 `run_tests.bat --no-pause`。
+Basic 验收、命令行冒烟测试及 Buck/Boost/FSBB C++ 测试；自动化环境可使用
+`tests\run_tests.bat --no-pause`。
