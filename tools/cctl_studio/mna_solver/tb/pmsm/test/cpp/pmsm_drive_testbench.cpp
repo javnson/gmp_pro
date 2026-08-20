@@ -254,7 +254,7 @@ int main()
               << "PMSM current-source drive: Vdc=48 V, carrier=10 kHz, rotating voltage=20 Hz, "
                  "deadtime=1 us\n"
               << "matrix backend=" << PmsmCircuit::matrix_backend
-              << ", fixed kernel=" << kFixedKernel << '\n'
+              << ", CCTL fixed-vector kernel=" << kFixedKernel << '\n'
               << "mean final electrical frequency=" << mean_electrical_frequency
               << " Hz, mean speed=" << mean_speed_rpm << " rpm\n"
               << "final id/iq=" << motor.output.d_axis_current_a << "/"

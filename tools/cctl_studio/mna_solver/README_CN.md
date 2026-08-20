@@ -33,7 +33,7 @@ $$
 
 - NumPy：数值降阶、离散迭代和频率响应；
 - SymEngine：精确符号 MNA 矩阵；
-- Eigen3：生成 C++ 类可选的固定维矩阵后端；
+- Eigen3：生成 C++ 类默认使用的固定维矩阵后端；
 - CCTL `fixed_vector`/`fixed_matrix`：不依赖第三方库的内嵌存储后端。
 
 Python 包由 `tools/gmp_installer/requirements-gmp.txt` 统一固定。Eigen3
@@ -302,9 +302,10 @@ python tools\cctl_studio\mna_solver\cpp_codegen.py circuit.json generated ^
   --backend fixed
 ```
 
-CLI 默认仍为 `eigen` 以保持兼容；PMSM 案例使用 `fixed`，其他现有案例保留
-`eigen`，因此回归测试持续覆盖两种后端。脚本不带参数时使用默认 CIR 和
-`1E-12` 精度，也可以把其他 CIR 作为第一个参数传入。生成器只写计算类，
+CLI 和仓库内全部案例均默认使用 `eigen`。需要固定矩阵实现时，可显式传入
+`--backend fixed`，或把对应案例脚本顶部的 `MATRIX_BACKEND` 改为 `fixed`；
+fixed 后端仍完整保留，但不进入默认生成和构建路径。脚本不带参数时使用默认
+CIR 和 `1E-12` 精度，也可以把其他 CIR 作为第一个参数传入。生成器只写计算类，
 不会覆盖手写 testbench。生成的 `BuckCircuit` 提供
 `step_short(PWM, VS1)`、`step_normal(PWM, VS1)`、`run` 和 `operator()`；
 探针既可通过 `circuit.output.VF1`，也可通过 `circuit["V(VF1)"]` 读取。
@@ -316,6 +317,14 @@ CLI 默认仍为 `eigen` 以保持兼容；PMSM 案例使用 `fixed`，其他现
 增加 `-mavx2`，即可把 float/double 点积和矩阵行累加切换为 256 位 SIMD；
 不定义宏时使用相同接口的可移植标量循环。选择发生在编译期，没有运行时动态
 分派；AVX2 程序只能运行在兼容 CPU 上，SIMD 求和也可能带来正常的末位差异。
+生成的 fixed 系数池使用 C++17 `static constexpr std::array`，使大规模矩阵
+直接进入静态只读存储，避免首次访问时构造多 MB 临时对象造成线程栈溢出。
+MSVC 编译超大池时需要相应提高 `/constexpr:steps` 上限。
+
+以 `VADC_` 开头的电压探针会原样保留为输出端口，同时在 JSON 中标注
+`role: adc_sample_voltage` 和去掉前缀后的 `adc_channel`。这些元数据只声明
+“该节点可接 ADC”；参考电压、分辨率、通道排列和触发时刻仍由手写 testbench
+或目标外设层负责。
 
 生成、编译并运行已验证案例的手写 C++ 测试：
 
@@ -364,9 +373,9 @@ Coss 系统刚性较强，案例使用 1 ns 正常步长和 100 ps 启动步长�
 中点并非由理想源对地刚性钳位，因此两个钳位二极管提取出的 460 pF 结电容
 均保留在七状态模型中。
 
-`build_test.bat` 首先刷新计算头文件，再从 `test\cpp` 配置 CMake。构建脚本
-Eigen 案例使用 GMP 安装的 Eigen/vcpkg；fixed PMSM 案例不依赖 vcpkg，
-并在 CMake 中显式启用 AVX2 内核。
+`build_test.bat` 首先刷新计算头文件，再从 `test\cpp` 配置 CMake。全部默认
+案例都从 GMP 安装程序维护的 Eigen/vcpkg 环境获取 Eigen。若显式切换到
+fixed，可继续使用 `CCTL_FIXED_MATH_USE_AVX` 和目标编译器的 AVX2 选项。
 
 ## `1_OPAMP.CIR` 验证结果
 

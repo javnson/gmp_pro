@@ -338,6 +338,7 @@ def render_header(
         for type_name in _POOL_NAMES
     )
     pool_functions = []
+    pool_storage_qualifier = "constexpr" if selected_backend == "fixed" else "const"
     for type_name, function_name in _POOL_NAMES.items():
         values = ",\n            ".join(
             _matrix_expression(type_name, matrix.tolist(), selected_backend)
@@ -346,7 +347,7 @@ def render_header(
         count_name = _POOL_COUNT_NAMES[type_name]
         pool_functions.append(
             f'''    static const std::array<{type_name}, {count_name}>& {function_name}() {{
-        static const std::array<{type_name}, {count_name}> pool{{{{
+        static {pool_storage_qualifier} std::array<{type_name}, {count_name}> pool{{{{
             {values}
         }}}};
         return pool;

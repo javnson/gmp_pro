@@ -13,8 +13,8 @@ add_executable(cctl_pmsm_average_model_benchmark
     pmsm_average_model_benchmark.cpp
 )
 
-target_compile_features(cctl_pmsm_average_model_test PRIVATE cxx_std_11)
-target_compile_features(cctl_pmsm_average_model_benchmark PRIVATE cxx_std_11)
+target_compile_features(cctl_pmsm_average_model_test PRIVATE cxx_std_17)
+target_compile_features(cctl_pmsm_average_model_benchmark PRIVATE cxx_std_17)
 target_include_directories(cctl_pmsm_average_model_test PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/../../.."
 )

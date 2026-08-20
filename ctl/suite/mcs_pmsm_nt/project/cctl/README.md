@@ -2,7 +2,8 @@
 
 This target links the existing `mcs_pmsm_nt` controller, generated switched MNA
 inverter, and `cctl::pmsm_cs` current-source PMSM in one process. It removes the
-Windows/Simulink network transport while preserving the normal GMP callback order.
+Windows/Simulink network transport. Each control transaction follows
+`ePWM SOC -> ADC latch/interrupt -> controller callbacks -> ePWM update`.
 
 Run `build_test.bat`. The seven-stage flow generates the target SDPE bindings,
 deploys the selected sources, generates `gmp_config.cmake`, regenerates the
@@ -16,17 +17,32 @@ controller dependencies plus `cctl|dsa` and `csp|cctl`; CMake consumes only the
 generated source-manager `.cmake` file. The CMake generator resolves `inc_dirs`
 from the selected modules and their dependency closure, including in `src_only`
 mode where the header-mirror summary may be absent or stale. `hw/PMSM.CIR` is
-converted once into `hw/generated/PMSM.json`, then into matching fixed and Eigen
-solvers under `hw/generated/fixed` and `hw/generated/eigen`. Eigen is resolved
-from the GMP installer/vcpkg environment, never from the deprecated third-party
-copy.
+converted once into `hw/generated/PMSM.json`; the default calculation class is
+`hw/generated/eigen/pmsmcircuit.hpp`. Setting `MATRIX_BACKEND` explicitly to
+`fixed` or `all` also generates `hw/generated/fixed/pmsmcircuit.hpp`. Eigen is
+resolved from the GMP installer/vcpkg environment, never from the deprecated
+third-party copy.
 
-The plant advances at 100 ns while the 20 kHz controller advances every 500 plant
-steps. TI-style ADC, center-aligned complementary ePWM with dead band, and eQEP
-models are provided by `cctl/peripheral_if`. The motor accepts load torque through
+The plant advances at 100 ns. The master ePWM emits one ADC SOC per 50 us,
+center-aligned carrier on the configured CMPB up-count event (250 TBCLK here).
+The testbench requires that event to occur while all three low-side gates conduct.
+The ADC only stages analog values between SOC events; a trigger atomically latches
+all channels, sets interrupt pending, and immediately dispatches the control ISR.
+TI-style ADC, center-aligned complementary ePWM with dead band and compare-event
+trigger output, and eQEP models are provided by `cctl/peripheral_if`. The motor accepts load torque through
 `pmsm_cs_input::load_torque_nm`. The 4 s regression applies 0.02 N*m after
 0.5 s and leaves enough time to check the existing speed PI against its 300 rpm
 command.
+
+The netlist exposes seven final conditioning nodes named `VADC_VDC`,
+`VADC_VA/VB/VC`, and `VADC_IA/IB/IC`; circuit JSON marks them with
+`role=adc_sample_voltage` and an `adc_channel`. Conversion is
+`floor(clamp(VADC,0,Vref)/Vref*2^N)`, saturated to `2^N-1` (3.3 V, 12 bit in
+this project). Controller scaling matches the netlist's actual analog front end:
+1/48 voltage dividers, 0.055 V/A current sensitivity, and 1.65 V current bias.
+The handwritten binding also follows the netlist's physical A/B/C shunt routing,
+which is labeled `VADC_IC/IB/IA` respectively. CSV records include all seven raw
+ADC result codes.
 
 The reusable `cctl/dsa` SPSC record ring is allocation-free and lock-free after
 initialization. The `csp/cctl` host runtime exposes `initialize`, `step`,
@@ -52,20 +68,18 @@ falls back to normal priority without failing the run. The original process clas
 is restored after simulation. CTest explicitly selects normal priority so an
 automated run cannot starve unrelated work on the host.
 
-## Fixed versus Eigen benchmark
+## Matrix backend selection
 
-`build_test.bat` builds and regresses separate fixed and Eigen executables from
-the same handwritten testbench and circuit data. A third CTest compares all
-80,000 CSV rows element-by-element with a `1e-8` tolerance; the current maximum
-difference is `4.20e-10`. Run
-`benchmark_backends.bat [runs] [realtime|normal]` afterwards for an
-alternating-order whole-system benchmark. It defaults to three runs with realtime
-priority, retains CSV formatting but sends records to `NUL`, checks the same
-physical result signature, and reports mean/median/minimum wall time. A three-run
-measurement on the current development machine was 9.067892 s for fixed and
-8.059164 s for Eigen, a 1.1252x Eigen advantage. Eigen is therefore recommended
-for this desktop simulation; fixed remains the static-storage, dependency-free
-baseline for embedded/FPGA-oriented work. Re-run the benchmark on each target.
+The unsuffixed `mcs_pmsm_nt_cctl` target and `build_test.bat` now use Eigen by
+default. On the current 23-state, 729-topology model, an earlier three-run normal
+priority measurement was 16.141034 s for Eigen and 22.135849 s for fixed, so the
+daily generation, build, and regression path no longer pays for both backends.
+
+Fixed support remains opt-in. `build_test.bat --with-fixed` additionally
+generates the fixed header, configures `CCTL_BUILD_FIXED_BACKEND=ON`, builds
+`mcs_pmsm_nt_cctl_fixed`, and runs its independent closed-loop test. Fixed pools
+retain C++17 constant initialization and optional AVX2 for explicit static-storage,
+Eigen-free embedded/FPGA-oriented work.
 
 The controller, circuit, and motor cannot execute as three concurrent exact
 stages. Circuit step `n` consumes motor current from step `n-1`, motor step `n`

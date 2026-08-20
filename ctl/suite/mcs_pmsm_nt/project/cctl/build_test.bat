@@ -3,6 +3,16 @@ setlocal EnableExtensions
 
 set "NO_PAUSE=0"
 if /I "%~1"=="--no-pause" set "NO_PAUSE=1"
+if /I "%~2"=="--no-pause" set "NO_PAUSE=1"
+set "BUILD_FIXED=0"
+if /I "%~1"=="--with-fixed" set "BUILD_FIXED=1"
+if /I "%~2"=="--with-fixed" set "BUILD_FIXED=1"
+set "MATRIX_BACKEND=eigen"
+set "CMAKE_FIXED_OPTION=OFF"
+if "%BUILD_FIXED%"=="1" (
+    set "MATRIX_BACKEND=all"
+    set "CMAKE_FIXED_OPTION=ON"
+)
 if not defined GMP_PRO_LOCATION (
     echo [ERROR] GMP_PRO_LOCATION is not defined. Run a GMP installer first.
     set "RESULT=1"
@@ -30,7 +40,7 @@ echo [3/7] Generating the project source-manager CMake integration...
 python "%GMP_PRO_LOCATION%\tools\facilities_generator\src_mgr\framework_generate_cmake.py" --workspace "%PROJECT_DIR%"
 if errorlevel 1 goto :failed
 
-echo [4/7] Regenerating fixed and Eigen main-circuit solvers...
+echo [4/7] Regenerating the %MATRIX_BACKEND% main-circuit solver selection...
 call "%HW_DIR%\generate_code.bat" --no-pause
 if errorlevel 1 goto :failed
 
@@ -42,7 +52,7 @@ if not exist "%VCPKG_INSTALLED_DIR%\x64-windows\include\eigen3\Eigen\Dense" (
     goto :failed_with_result
 )
 echo [5/7] Configuring with GMP's private vcpkg Eigen...
-cmake --fresh -S "%PROJECT_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%CMAKE_TOOLCHAIN_FILE%" -DVCPKG_INSTALLED_DIR="%VCPKG_INSTALLED_DIR%" -DVCPKG_MANIFEST_MODE=OFF
+cmake --fresh -S "%PROJECT_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%CMAKE_TOOLCHAIN_FILE%" -DVCPKG_INSTALLED_DIR="%VCPKG_INSTALLED_DIR%" -DVCPKG_MANIFEST_MODE=OFF -DCCTL_BUILD_FIXED_BACKEND=%CMAKE_FIXED_OPTION%
 if errorlevel 1 goto :failed
 goto :build
 
@@ -56,7 +66,7 @@ if errorlevel 1 (
 for /f "delims=" %%I in ('where vcpkg.exe') do if not defined SYSTEM_VCPKG_EXE set "SYSTEM_VCPKG_EXE=%%I"
 for %%I in ("%SYSTEM_VCPKG_EXE%") do set "SYSTEM_VCPKG_ROOT=%%~dpI"
 echo [5/7] Configuring with system vcpkg Eigen...
-cmake --fresh -S "%PROJECT_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%SYSTEM_VCPKG_ROOT%scripts\buildsystems\vcpkg.cmake"
+cmake --fresh -S "%PROJECT_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%SYSTEM_VCPKG_ROOT%scripts\buildsystems\vcpkg.cmake" -DCCTL_BUILD_FIXED_BACKEND=%CMAKE_FIXED_OPTION%
 if errorlevel 1 goto :failed
 
 :build
@@ -64,15 +74,15 @@ echo [6/7] Compiling controller, peripherals, main circuit, motor, and CCTL CSP.
 cmake --build "%BUILD_DIR%" --config Release
 if errorlevel 1 goto :failed
 
-echo [7/7] Running fixed/Eigen 500:1 multirate closed-loop regressions...
+echo [7/7] Running the selected closed-loop regression set...
 ctest --test-dir "%BUILD_DIR%" -C Release --output-on-failure
 if errorlevel 1 goto :failed
 
 echo.
 echo Direct CCTL PMSM test passed.
 echo Build tree: %BUILD_DIR%
-echo Fixed CSV: %BUILD_DIR%\mcs_pmsm_nt_cctl_fixed.csv
-echo Eigen CSV: %BUILD_DIR%\mcs_pmsm_nt_cctl_eigen.csv
+echo Eigen CSV: %BUILD_DIR%\mcs_pmsm_nt_cctl.csv
+if "%BUILD_FIXED%"=="1" echo Fixed CSV: %BUILD_DIR%\mcs_pmsm_nt_cctl_fixed.csv
 if "%NO_PAUSE%"=="0" pause
 exit /b 0
 

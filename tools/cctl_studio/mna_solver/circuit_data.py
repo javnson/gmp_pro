@@ -83,6 +83,24 @@ def _unique_output_fields(names: Sequence[str]) -> list[str]:
     return result
 
 
+def _output_port_document(name: str, field: str, signal_index: int) -> dict:
+    """Describe one generated output and preserve VADC_* sampling intent."""
+    port = {
+        "name": name,
+        "field": field,
+        "data_type": "double",
+        "signal_index": signal_index,
+    }
+    if field.upper().startswith("VADC_"):
+        port.update(
+            {
+                "role": "adc_sample_voltage",
+                "adc_channel": field[5:].upper(),
+            }
+        )
+    return port
+
+
 def _affine_model(
     model: StateSpaceModel,
     external_inputs: Sequence[str],
@@ -219,12 +237,7 @@ def _build_multi_mosfet_circuit_data(
     fields = _unique_output_fields(public_names)
     signal_indices = {_key(name): index for index, name in enumerate(reference.output_names)}
     output_ports = [
-        {
-            "name": name,
-            "field": field,
-            "data_type": "double",
-            "signal_index": signal_indices[_key(name)],
-        }
+        _output_port_document(name, field, signal_indices[_key(name)])
         for name, field in zip(public_names, fields)
     ]
     pmsm_documents = _decorate_pmsm_ports(model.source_circuit, input_ports, output_ports)
@@ -436,12 +449,7 @@ def _build_multi_diode_switch_circuit_data(
     fields = _unique_output_fields(public_names)
     signal_indices = {_key(name): index for index, name in enumerate(reference.output_names)}
     output_ports = [
-        {
-            "name": name,
-            "field": field,
-            "data_type": "double",
-            "signal_index": signal_indices[_key(name)],
-        }
+        _output_port_document(name, field, signal_indices[_key(name)])
         for name, field in zip(public_names, fields)
     ]
     pmsm_documents = _decorate_pmsm_ports(model.source_circuit, input_ports, output_ports)
@@ -665,7 +673,7 @@ def build_circuit_data(
         if _key(name) not in signal_indices:
             raise NetlistError(f"probe {name!r} is absent from the topology output equations")
         output_ports.append(
-            {"name": name, "field": field, "data_type": "double", "signal_index": signal_indices[_key(name)]}
+            _output_port_document(name, field, signal_indices[_key(name)])
         )
     pmsm_documents = _decorate_pmsm_ports(model.source_circuit, input_ports, output_ports)
 

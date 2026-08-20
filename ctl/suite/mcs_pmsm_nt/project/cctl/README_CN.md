@@ -3,7 +3,8 @@
 本工程把现有 `mcs_pmsm_nt` 控制器、MNA 生成的三相主电路和
 `cctl::pmsm_cs` 电流源型永磁同步电机直接链接到同一个进程中。它不经过
 Windows/Simulink 网络通信层，因此每一个控制周期都严格执行
-`ADC/eQEP -> ctl_input_callback -> ctl_dispatch -> ctl_output_callback -> ePWM`。
+`ePWM SOC -> ADC 锁存/中断 -> ctl_input_callback -> ctl_dispatch ->
+ctl_output_callback -> ePWM 更新`。
 
 运行 `build_test.bat` 即可完成 SDPE、GMP 源文件、CMake 接口、主电路代码、
 编译和闭环回归这七个阶段。脚本只从环境变量 `GMP_PRO_LOCATION` 定位 GMP；
@@ -13,29 +14,42 @@ Windows/Simulink 网络通信层，因此每一个控制周期都严格执行
 
 - `sdpe_mgr/sdpe_requirement.json` 是硬件与仿真参数的唯一配置源，生成
   `sdpe_mgr/ctrl_settings.h`。ADC 分辨率/参考电压、eQEP 线数、ePWM 时钟/周期/
-  死区、仿真时长、负载、输出缓冲区和暂停策略均由这里管理；不要手工修改生成头。
+  死区、ADC 触发比较值、仿真时长、负载、输出缓冲区和暂停策略均由这里管理；
+  不要手工修改生成头。
 - `gmp_src_mgr/gmp_framework_config.json` 选择控制器依赖、`cctl|dsa` 和
   `csp|cctl`。源管理器生成本地扁平源以及 `gmp_config.cmake`，项目 CMake 只
   `include` 该文件，不再手工枚举 GMP 库源文件，也不再借用 `simulate` 工程。
   CMake 生成器直接从已选模块及其依赖闭包汇总 `inc_dirs`，`src_only` 模式不
   依赖可能过期的 `gmp_compiler_includes.txt`。
 - `hw/PMSM.CIR` 是项目主电路。`hw/generate_code.bat` 只解析一次网表，将 JSON
-  写入 `hw/generated`，再从同一数据分别生成
-  `hw/generated/fixed/pmsmcircuit.hpp` 和
-  `hw/generated/eigen/pmsmcircuit.hpp`。Eigen 由 GMP 安装程序维护的 vcpkg
+  写入 `hw/generated`，默认生成 `hw/generated/eigen/pmsmcircuit.hpp`。
+  将环境变量 `MATRIX_BACKEND` 显式设为 `fixed` 或 `all` 时，仍可生成
+  `hw/generated/fixed/pmsmcircuit.hpp`。Eigen 由 GMP 安装程序维护的 vcpkg
   环境提供，不引用已弃用的 `third_party` 副本。
 
-仿真使用 100 ns 电路/电机步长和 50 us（20 kHz）控制器步长，
-`cctl::fixed_rate_divider` 保证控制器每 500 个快步长运行一次。TI 风格外设模型
-位于 `cctl/peripheral_if`：12/16 位右对齐 ADC、中心对齐互补 ePWM（含
-DBRED/DBFED 死区）以及带圈数信息的 eQEP。负载转矩通过
+仿真使用 100 ns 电路/电机步长。主 ePWM 在每个 50 us（20 kHz）中心对齐载波
+的 CMPB 上数事件产生一次 ADC SOC；当前 SDPE 值为 250 TBCLK，testbench 会
+断言该事件落在三个下桥同时导通的 low-side 采样窗口。ADC 在 SOC 到来前只
+更新模拟输入，触发时同时锁存七路结果、置中断 pending，并立即执行控制主中断。
+TI 风格外设模型位于 `cctl/peripheral_if`：带 SOC/中断握手的 12/16 位右对齐
+ADC、带比较事件触发输出的中心对齐互补 ePWM（含 DBRED/DBFED 死区），以及
+带圈数信息的 eQEP。负载转矩通过
 `pmsm_cs_input::load_torque_nm` 输入。4 s 回归测试在 0.5 s 后施加 0.02 N·m，
 留出足够时间检查现有速度 PI 对 300 rpm 指令的稳态响应。
 
-两种后端的结果 CSV 分别为 `mcs_pmsm_nt_cctl_fixed.csv` 和
-`mcs_pmsm_nt_cctl_eigen.csv`，包含 PWM 比较值、三相电压电流、dq 电流、
-转矩、负载和编码器计数。测试同时检查 ADC/ePWM/eQEP、500:1 分频、桥臂
-无直通、数值有限性、限流和 300 rpm 速度闭环。
+主电路网表公开 `VADC_VDC/VADC_VA/VADC_VB/VADC_VC/VADC_IA/VADC_IB/VADC_IC`
+七个最终调理电压。MNA JSON 为这些探针增加 `role=adc_sample_voltage` 和
+`adc_channel` 元数据。ADC 量化为
+`floor(clamp(VADC, 0, Vref) / Vref * 2^N)`，并在满量程饱和到 `2^N-1`；
+本工程使用 `Vref=3.3 V`、`N=12`。SDPE 的控制器标定与网表实际模拟前端一致：
+电压分压为 `1/48`，电流灵敏度为 `5 mOhm * 11 = 0.055 V/A`，零电流偏置为
+1.65 V。该网表的物理 A/B/C 下桥采样网络分别标为 `VADC_IC/IB/IA`，因此手写
+testbench 按实际接线重新排列后再写入控制器 IA/IB/IC 通道。
+
+默认 Eigen 结果写入 `mcs_pmsm_nt_cctl.csv`，包含 PWM 比较值、三相电压电流、dq 电流、
+转矩、负载、编码器计数和七路原始 ADC code。测试同时检查 ADC/ePWM/eQEP、
+每载波一次 SOC、ADC 中断确认、三下桥采样窗口、桥臂无直通、数值有限性、
+限流和 300 rpm 速度闭环。
 
 ## 运行时分层
 
@@ -59,25 +73,20 @@ Windows 下由 SDPE 的 `CCTL_SIM_REALTIME_PRIORITY` 决定是否在仿真期间
 稳态结果。直接运行可执行文件时按 SDPE 默认执行 `system("@pause")`；自动化
 测试使用 `--no-pause`。也可用 `--output <文件>` 覆盖 CSV 路径。
 
-## fixed 与 Eigen 性能对比
+## 矩阵后端选择
 
-`build_test.bat` 会构建并回归两个独立可执行文件，避免同一进程中的 GMP C
-全局状态相互影响。两个目标共享手写 testbench、SDPE 参数、网表 JSON、输入、
-4000 万个求解步和物理结果检查，仅矩阵后端不同。CTest 结果分别写入
-`mcs_pmsm_nt_cctl_fixed.csv` 和 `mcs_pmsm_nt_cctl_eigen.csv`，第三项测试再以
-`1e-8` 容差逐元素比较全部 80,000 行。当前最大差为 `4.20e-10`。
+无后缀目标 `mcs_pmsm_nt_cctl` 和 `build_test.bat` 均默认使用 Eigen。此前对新
+23 状态、729 拓扑网表的三轮普通优先级测量为 Eigen 16.141034 s、fixed
+22.135849 s，因此不再让日常生成、编译和回归承担 fixed 的额外成本。
 
-构建后运行 `benchmark_backends.bat [重复次数] [realtime|normal]` 可进行交替
-顺序的全系统基准；默认重复 3 次并使用实时优先级，同时保留 CSV 格式化开销
-但将数据发送到 `NUL`，最后报告均值、
-中位数、最小值、fixed/Eigen 比值以及最终物理量漂移。当前开发机三轮结果为
-fixed 9.067892 s、Eigen 8.059164 s，Eigen 快 1.1252 倍。因此桌面联合仿真
-推荐 Eigen；fixed 仍保留为静态存储、无 Eigen 运行依赖以及后续嵌入式/FPGA
-代码演进的基线。具体数值需在目标计算机重新运行基准确认。
+fixed 能力没有删除：运行 `build_test.bat --with-fixed` 会额外生成 fixed 头、
+以 `CCTL_BUILD_FIXED_BACKEND=ON` 构建 `mcs_pmsm_nt_cctl_fixed`，并执行独立
+闭环测试。fixed 系数池继续使用 C++17 `constexpr` 常量初始化和可选 AVX2，
+适合作为静态存储、无 Eigen 运行依赖以及后续嵌入式/FPGA 演进的显式后端。
 
 主电路和电机并不是可并行的独立任务：第 `n` 步主电路使用第 `n-1` 步电机
 电流得到电压，第 `n` 步电机随即使用该电压得到下一步所需电流。控制器还要
-在每 500 步的边界先读取反馈再更新门极。保持当前离散语义时，依赖链为
+在 ePWM SOC/ADC 中断边界先读取反馈再更新门极。保持当前离散语义时，依赖链为
 `controller -> circuit[n] -> motor[n] -> circuit[n+1]`；拆成三个计算线程只会
 把同样的串行链改成每 100 ns 跨线程握手。若允许一拍延迟可采用并行 Jacobi
 协同仿真，但那是另一种数值模型，不能作为当前回归的透明加速。现阶段保留

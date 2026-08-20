@@ -13,6 +13,13 @@
 namespace cctl
 {
 
+#if (defined(_MSVC_LANG) && _MSVC_LANG >= 201402L) || \
+    (!defined(_MSVC_LANG) && __cplusplus >= 201402L)
+#define CCTL_FIXED_VECTOR_CONSTEXPR14 constexpr
+#else
+#define CCTL_FIXED_VECTOR_CONSTEXPR14
+#endif
+
 namespace detail
 {
 
@@ -87,14 +94,12 @@ template <typename T, std::size_t N> class fixed_vector
     typedef T value_type;
     static const std::size_t dimension = N;
 
-    fixed_vector()
+    CCTL_FIXED_VECTOR_CONSTEXPR14 fixed_vector() : data_{}
     {
-        data_.fill(T(0));
     }
 
-    fixed_vector(std::initializer_list<T> values)
+    CCTL_FIXED_VECTOR_CONSTEXPR14 fixed_vector(std::initializer_list<T> values) : data_{}
     {
-        data_.fill(T(0));
         if (values.size() > N)
             throw std::length_error("too many values for cctl::fixed_vector");
 
@@ -103,12 +108,12 @@ template <typename T, std::size_t N> class fixed_vector
             data_[index++] = *it;
     }
 
-    T &operator[](std::size_t index)
+    CCTL_FIXED_VECTOR_CONSTEXPR14 T &operator[](std::size_t index)
     {
         return data_[index];
     }
 
-    const T &operator[](std::size_t index) const
+    CCTL_FIXED_VECTOR_CONSTEXPR14 const T &operator[](std::size_t index) const
     {
         return data_[index];
     }
@@ -218,5 +223,7 @@ template <typename T, std::size_t N> inline T squared_norm(const fixed_vector<T,
 }
 
 } // namespace cctl
+
+#undef CCTL_FIXED_VECTOR_CONSTEXPR14
 
 #endif // CCTL_NUMERICAL_SOLVER_FIXED_VECTOR_HPP

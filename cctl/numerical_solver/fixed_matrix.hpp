@@ -11,6 +11,13 @@
 namespace cctl
 {
 
+#if (defined(_MSVC_LANG) && _MSVC_LANG >= 201402L) || \
+    (!defined(_MSVC_LANG) && __cplusplus >= 201402L)
+#define CCTL_FIXED_MATRIX_CONSTEXPR14 constexpr
+#else
+#define CCTL_FIXED_MATRIX_CONSTEXPR14
+#endif
+
 namespace detail
 {
 
@@ -81,12 +88,12 @@ template <typename T, std::size_t Rows, std::size_t Columns> class fixed_matrix
     static const std::size_t column_count = Columns;
     static const std::size_t element_count = Rows * Columns;
 
-    fixed_matrix() : rows_()
+    CCTL_FIXED_MATRIX_CONSTEXPR14 fixed_matrix() : rows_{}
     {
     }
 
     /** Construct from row-major values. Missing values remain zero. */
-    fixed_matrix(std::initializer_list<T> values) : rows_()
+    CCTL_FIXED_MATRIX_CONSTEXPR14 fixed_matrix(std::initializer_list<T> values) : rows_{}
     {
         if (values.size() > element_count)
             throw std::length_error("too many values for cctl::fixed_matrix");
@@ -263,5 +270,7 @@ operator*(const fixed_matrix<T, Rows, Inner> &lhs,
 }
 
 } // namespace cctl
+
+#undef CCTL_FIXED_MATRIX_CONSTEXPR14
 
 #endif // CCTL_NUMERICAL_SOLVER_FIXED_MATRIX_HPP

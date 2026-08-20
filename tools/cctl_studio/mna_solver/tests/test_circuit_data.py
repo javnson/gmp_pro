@@ -64,6 +64,23 @@ class CircuitDataTests(unittest.TestCase):
             self.assertEqual(normal.shape, (3, 3))
             self.assertFalse(np.array_equal(normal, short))
 
+    def test_vadc_outputs_are_marked_as_adc_sample_voltages(self) -> None:
+        names = ["V(VADC_VDC)", "V(VADC_VA)", "V(VADC_IA)", "V(OUT)"]
+        fields = data._unique_output_fields(names)
+        ports = [
+            data._output_port_document(name, field, index)
+            for index, (name, field) in enumerate(zip(names, fields))
+        ]
+        self.assertEqual(
+            [(port["field"], port.get("role"), port.get("adc_channel")) for port in ports],
+            [
+                ("VADC_VDC", "adc_sample_voltage", "VDC"),
+                ("VADC_VA", "adc_sample_voltage", "VA"),
+                ("VADC_IA", "adc_sample_voltage", "IA"),
+                ("OUT", None, None),
+            ],
+        )
+
     def test_json_round_trip_and_data_only_simulation(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "buck.json"
@@ -116,6 +133,7 @@ class CircuitDataTests(unittest.TestCase):
         self.assertIn("using StateVector = cctl::fixed_vector", header)
         self.assertIn("const InputVector input_vector{", header)
         self.assertIn("cctl::affine_transform", header)
+        self.assertIn("static constexpr std::array<StateMatrix", header)
         self.assertNotIn("value <<", header)
 
         with self.assertRaisesRegex(ValueError, "unsupported matrix backend"):

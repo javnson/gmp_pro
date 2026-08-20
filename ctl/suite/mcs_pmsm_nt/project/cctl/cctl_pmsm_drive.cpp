@@ -36,6 +36,8 @@ static_assert(CTRL_PWM_CMP_MAX == CCTL_SIM_EPWM_PERIOD_COUNT,
               "controller and ePWM compare ranges must match");
 static_assert(CTRL_POS_ENC_FS == CCTL_SIM_EQEP_COUNTS_PER_REV,
               "controller and eQEP resolutions must match");
+static_assert(CCTL_ADC_COUNT == 7,
+              "the generated VADC contract requires seven ADC channels");
 
 struct simulation_record
 {
@@ -52,6 +54,7 @@ struct simulation_record
     double load_torque_nm{};
     double mechanical_speed_rpm{};
     std::uint32_t encoder_count{};
+    std::uint32_t adc_code[7]{};
 };
 
 static_assert(std::is_trivially_copyable<simulation_record>::value,
@@ -80,7 +83,7 @@ cctl::ti_adc_config<double> adc_config()
     return config;
 }
 
-cctl::ti_epwm_config<double> epwm_config()
+cctl::ti_epwm_config<double> epwm_config(bool adc_trigger = false)
 {
     cctl::ti_epwm_config<double> config;
     config.time_base_clock_hz = CCTL_SIM_EPWM_TBCLK_HZ;
@@ -88,14 +91,25 @@ cctl::ti_epwm_config<double> epwm_config()
     config.rising_edge_delay_count = CCTL_SIM_EPWM_DBRED_COUNT;
     config.falling_edge_delay_count = CCTL_SIM_EPWM_DBFED_COUNT;
     config.upper_active_above_compare = true;
+    config.adc_trigger_event =
+        adc_trigger ? cctl::ti_epwm_trigger_event::compare_b_up
+                    : cctl::ti_epwm_trigger_event::disabled;
+    config.adc_trigger_compare_count = CCTL_SIM_ADC_TRIGGER_COMPARE_COUNT;
     return config;
 }
 
 bool verify_peripheral_models()
 {
     cctl::ti_adc<double, 1U> adc(adc_config());
-    if (adc.sample_adc_voltage(0U, CCTL_SIM_ADC_REFERENCE_V * 0.5) !=
-        (adc.maximum_code() + 1U) / 2U)
+    bool adc_interrupt_called = false;
+    adc.set_input_voltage(0U, CCTL_SIM_ADC_REFERENCE_V * 0.5);
+    adc.trigger([&adc_interrupt_called] { adc_interrupt_called = true; });
+    if (!adc_interrupt_called || !adc.interrupt_pending() ||
+        adc.trigger_count() != 1U ||
+        adc.result(0U) != (adc.maximum_code() + 1U) / 2U)
+        return false;
+    adc.acknowledge_interrupt();
+    if (adc.interrupt_pending())
         return false;
 
     cctl::ti_eqep<double> eqep(CCTL_SIM_EQEP_COUNTS_PER_REV);
@@ -103,72 +117,71 @@ bool verify_peripheral_models()
         CCTL_SIM_EQEP_COUNTS_PER_REV / 4U)
         return false;
 
-    cctl::fixed_rate_divider<double> divider(kPlantStepS, kControlStepS);
-    if (divider.division() != 500U)
-        return false;
-    std::size_t dispatches = 0U;
-    for (std::size_t index = 0U; index < 1500U; ++index)
-        dispatches += divider.step() ? 1U : 0U;
-    if (dispatches != 3U)
-        return false;
-
-    cctl::ti_epwm<double> epwm(epwm_config());
+    cctl::ti_epwm<double> epwm(epwm_config(true));
     epwm.set_enabled(true);
     epwm.set_compare_a(CCTL_SIM_EPWM_PERIOD_COUNT / 2U);
-    for (std::size_t index = 0U; index < 1000U; ++index)
+    std::size_t adc_triggers = 0U;
+    for (std::size_t index = 0U;
+         index < 2U * (CCTL_SIM_EPWM_PERIOD_COUNT + 1U); ++index)
     {
-        const auto gate = epwm.sample(epwm.switching_period_s() *
-                                      static_cast<double>(index) / 1000.0);
+        const auto gate = epwm.sample(
+            static_cast<double>(index) / CCTL_SIM_EPWM_TBCLK_HZ);
         if (gate.upper != 0U && gate.lower != 0U)
             return false;
+        if (gate.adc_trigger)
+        {
+            ++adc_triggers;
+            if (gate.upper != 0U || gate.lower == 0U)
+                return false;
+        }
     }
-    return std::abs(epwm.switching_frequency_hz() -
+    return adc_triggers == 1U &&
+           std::abs(epwm.switching_frequency_hz() -
                     CCTL_SIM_CONTROL_FREQUENCY_HZ) < 1.0e-9;
 }
 
-void sample_controller_inputs(cctl::ti_adc<double, 8U> &adc,
-                              cctl::ti_eqep<double> &eqep,
-                              const PmsmCircuit::Outputs &inverter_output,
-                              const cctl::pmsm_cs_output<double> &motor_output)
+void stage_adc_inputs(cctl::ti_adc<double, 8U> &adc,
+                      const PmsmCircuit::Outputs &inverter_output)
 {
-    cctl_adc_result[CCTL_ADC_UDC] = static_cast<adc_gt>(adc.sample_physical(
-        CCTL_ADC_UDC, CCTL_SIM_DC_BUS_V, CTRL_DC_VOLTAGE_SENSITIVITY,
-        CTRL_DC_VOLTAGE_BIAS));
-
-    const std::array<double, 3U> phase_voltage = {
-        inverter_output.VPMSM1_A, inverter_output.VPMSM1_B,
-        inverter_output.VPMSM1_C};
-    for (std::size_t phase = 0U; phase < 3U; ++phase)
-    {
-        cctl_adc_result[CCTL_ADC_UA + phase] = static_cast<adc_gt>(
-            adc.sample_physical(CCTL_ADC_UA + phase, phase_voltage[phase],
-                                CTRL_INVERTER_VOLTAGE_SENSITIVITY,
-                                CTRL_INVERTER_VOLTAGE_BIAS));
-        cctl_adc_result[CCTL_ADC_IA + phase] = static_cast<adc_gt>(
-            adc.sample_physical(CCTL_ADC_IA + phase,
-                                motor_output.phase_current_a[phase],
-                                CTRL_INVERTER_CURRENT_SENSITIVITY,
-                                CTRL_INVERTER_CURRENT_BIAS));
-    }
-    cctl_encoder_position =
-        eqep.sample_mechanical_angle(motor_output.mechanical_angle_rad);
+    adc.set_input_voltage(CCTL_ADC_UDC, inverter_output.VADC_VDC);
+    adc.set_input_voltage(CCTL_ADC_UA, inverter_output.VADC_VA);
+    adc.set_input_voltage(CCTL_ADC_UB, inverter_output.VADC_VB);
+    adc.set_input_voltage(CCTL_ADC_UC, inverter_output.VADC_VC);
+    /*
+     * PMSM.CIR routes the physical A/B/C low-side shunts to the nets named
+     * IC/IB/IA respectively.  Keep the controller channels in physical phase
+     * order; the VADC names describe PCB ADC pins, not motor phase order.
+     */
+    adc.set_input_voltage(CCTL_ADC_IA, inverter_output.VADC_IC);
+    adc.set_input_voltage(CCTL_ADC_IB, inverter_output.VADC_IB);
+    adc.set_input_voltage(CCTL_ADC_IC, inverter_output.VADC_IA);
 }
 
-void set_gate_inputs(PmsmCircuit::Inputs &input,
-                     const std::array<cctl::ti_epwm<double>, 3U> &epwm,
-                     double time_s)
-{
-    const auto phase_a = epwm[0].sample(time_s);
-    const auto phase_b = epwm[1].sample(time_s);
-    const auto phase_c = epwm[2].sample(time_s);
+using epwm_outputs = std::array<cctl::ti_epwm_gate_pair, 3U>;
 
+epwm_outputs sample_epwm(std::array<cctl::ti_epwm<double>, 3U> &epwm,
+                         double time_s)
+{
+    return {epwm[0].sample(time_s), epwm[1].sample(time_s),
+            epwm[2].sample(time_s)};
+}
+
+void set_gate_inputs(PmsmCircuit::Inputs &input, const epwm_outputs &output)
+{
     /* Project-local PMSM.CIR maps A->PWM5/6, B->PWM3/4, C->PWM1/2. */
-    input.PWM5 = phase_a.upper;
-    input.PWM6 = phase_a.lower;
-    input.PWM3 = phase_b.upper;
-    input.PWM4 = phase_b.lower;
-    input.PWM1 = phase_c.upper;
-    input.PWM2 = phase_c.lower;
+    input.PWM5 = output[0].upper;
+    input.PWM6 = output[0].lower;
+    input.PWM3 = output[1].upper;
+    input.PWM4 = output[1].lower;
+    input.PWM1 = output[2].upper;
+    input.PWM2 = output[2].lower;
+}
+
+bool all_low_sides_conducting(const epwm_outputs &output) noexcept
+{
+    return std::all_of(output.begin(), output.end(), [](const auto &phase) {
+        return phase.upper == 0U && phase.lower != 0U;
+    });
 }
 
 class pmsm_drive_topology
@@ -177,8 +190,7 @@ class pmsm_drive_topology
     pmsm_drive_topology()
         : motor_(motor_parameters()), adc_(adc_config()),
           eqep_(CCTL_SIM_EQEP_COUNTS_PER_REV),
-          controller_divider_(kPlantStepS, kControlStepS),
-          epwm_{cctl::ti_epwm<double>(epwm_config()),
+          epwm_{cctl::ti_epwm<double>(epwm_config(true)),
                 cctl::ti_epwm<double>(epwm_config()),
                 cctl::ti_epwm<double>(epwm_config())}
     {
@@ -206,26 +218,9 @@ class pmsm_drive_topology
     void step(std::size_t, double time_s,
               gmp::csp::cctl::simulation_runtime &runtime)
     {
-        if (controller_divider_.step())
-        {
-            sample_controller_inputs(adc_, eqep_, inverter_output_, motor_.output);
-            ctl_mainloop();
-            gmp_base_ctl_step();
-            cctl_advance_controller_tick();
-            ++controller_steps_;
-
-            for (std::size_t phase = 0U; phase < 3U; ++phase)
-            {
-                epwm_[phase].set_compare_a(cctl_pwm_compare[phase]);
-                epwm_[phase].set_enabled(cctl_pwm_output_enabled != 0);
-            }
-            ever_enabled_ = ever_enabled_ || cctl_pwm_output_enabled != 0;
-            const simulation_record record = make_record(time_s);
-            runtime.interface_transfer(&record, sizeof(record));
-        }
-
+        const epwm_outputs pwm_output = sample_epwm(epwm_, time_s);
         PmsmCircuit::Inputs inverter_input;
-        set_gate_inputs(inverter_input, epwm_, time_s);
+        set_gate_inputs(inverter_input, pwm_output);
         if ((inverter_input.PWM1 && inverter_input.PWM2) ||
             (inverter_input.PWM3 && inverter_input.PWM4) ||
             (inverter_input.PWM5 && inverter_input.PWM6))
@@ -255,6 +250,21 @@ class pmsm_drive_topology
             final_window_speed_sum_ += motor_output.mechanical_speed_rpm;
             ++final_window_count_;
         }
+
+        if (pwm_output[0].adc_trigger)
+        {
+            if (pwm_output[1].adc_trigger || pwm_output[2].adc_trigger)
+                throw std::runtime_error("more than one ePWM module drives ADC SOC");
+            if (cctl_pwm_output_enabled != 0 &&
+                !all_low_sides_conducting(pwm_output))
+                throw std::runtime_error(
+                    "ADC SOC occurred outside the three-low-side sampling window");
+
+            stage_adc_inputs(adc_, inverter_output_);
+            adc_.trigger([this, time_s, &runtime] {
+                adc_interrupt(time_s, runtime);
+            });
+        }
     }
 
     void finalize()
@@ -266,7 +276,8 @@ class pmsm_drive_topology
 
         const std::size_t expected_controller_steps = static_cast<std::size_t>(
             kSimulationDurationS / kControlStepS + 0.5);
-        if (!ever_enabled_ || controller_steps_ != expected_controller_steps)
+        if (!ever_enabled_ || controller_steps_ != expected_controller_steps ||
+            adc_.trigger_count() != expected_controller_steps)
             throw std::runtime_error("controller scheduling or CiA402 enable failed");
         if (maximum_current_a_ > 20.0)
             throw std::runtime_error("phase current exceeded the expected range");
@@ -282,8 +293,10 @@ class pmsm_drive_topology
                << "  main circuit backend=" << PmsmCircuit::matrix_backend
                << ", DC bus=" << CCTL_SIM_DC_BUS_V << " V\n"
                << "  plant/control step: " << kPlantStepS << " s / "
-               << kControlStepS << " s, divider=" << controller_divider_.division()
+               << kControlStepS << " s, ADC SOC CMPB="
+               << CCTL_SIM_ADC_TRIGGER_COMPARE_COUNT
                << "\n  controller steps=" << controller_steps_
+               << ", ADC triggers=" << adc_.trigger_count()
                << ", PWM enabled=" << ever_enabled_
                << "\n  mean/final speed=" << mean_final_speed_rpm_ << " / "
                << motor_.output.mechanical_speed_rpm
@@ -293,6 +306,34 @@ class pmsm_drive_topology
     }
 
   private:
+    void adc_interrupt(double time_s,
+                       gmp::csp::cctl::simulation_runtime &runtime)
+    {
+        if (!adc_.interrupt_pending())
+            throw std::runtime_error("ADC interrupt dispatched without completion");
+        for (std::size_t channel = 0U; channel < CCTL_ADC_COUNT; ++channel)
+            cctl_adc_result[channel] =
+                static_cast<adc_gt>(adc_.result(channel));
+        cctl_encoder_position = eqep_.sample_mechanical_angle(
+            motor_.output.mechanical_angle_rad);
+
+        ctl_mainloop();
+        gmp_base_ctl_step();
+        cctl_advance_controller_tick();
+        ++controller_steps_;
+
+        for (std::size_t phase = 0U; phase < 3U; ++phase)
+        {
+            epwm_[phase].set_compare_a(cctl_pwm_compare[phase]);
+            epwm_[phase].set_enabled(cctl_pwm_output_enabled != 0);
+        }
+        ever_enabled_ = ever_enabled_ || cctl_pwm_output_enabled != 0;
+        adc_.acknowledge_interrupt();
+
+        const simulation_record record = make_record(time_s);
+        runtime.interface_transfer(&record, sizeof(record));
+    }
+
     simulation_record make_record(double time_s) const
     {
         simulation_record record;
@@ -314,6 +355,9 @@ class pmsm_drive_topology
                                     : 0.0;
         record.mechanical_speed_rpm = motor_.output.mechanical_speed_rpm;
         record.encoder_count = cctl_encoder_position;
+        for (std::size_t channel = 0U; channel < CCTL_ADC_COUNT; ++channel)
+            record.adc_code[channel] =
+                static_cast<std::uint32_t>(cctl_adc_result[channel]);
         return record;
     }
 
@@ -321,7 +365,6 @@ class pmsm_drive_topology
     cctl::pmsm_cs<double> motor_;
     cctl::ti_adc<double, 8U> adc_;
     cctl::ti_eqep<double> eqep_;
-    cctl::fixed_rate_divider<double> controller_divider_;
     std::array<cctl::ti_epwm<double>, 3U> epwm_;
     PmsmCircuit::Outputs inverter_output_{};
     double maximum_current_a_{};
@@ -344,12 +387,16 @@ void write_record(const void *data, std::ostream &stream)
     stream << ',' << record.d_axis_current_a << ',' << record.q_axis_current_a
            << ',' << record.electromagnetic_torque_nm << ','
            << record.load_torque_nm << ',' << record.mechanical_speed_rpm << ','
-           << record.encoder_count << '\n';
+           << record.encoder_count;
+    for (std::uint32_t code : record.adc_code)
+        stream << ',' << code;
+    stream << '\n';
 }
 
 constexpr const char *kCsvHeader =
     "time_s,enabled,cmp_a,cmp_b,cmp_c,va_v,vb_v,vc_v,ia_a,ib_a,ic_a,"
-    "id_a,iq_a,torque_nm,load_torque_nm,speed_rpm,encoder_count";
+    "id_a,iq_a,torque_nm,load_torque_nm,speed_rpm,encoder_count,"
+    "adc_vdc,adc_va,adc_vb,adc_vc,adc_ia,adc_ib,adc_ic";
 
 } // namespace
 

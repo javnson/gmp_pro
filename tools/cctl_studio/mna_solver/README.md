@@ -39,7 +39,7 @@ makes that exceptional case explicit instead of silently returning an incorrect
 
 - NumPy: numeric reduction, iteration, and frequency response.
 - SymEngine: exact symbolic MNA matrices.
-- Eigen3: optional fixed-size matrix backend for generated C++ classes.
+- Eigen3: default fixed-size matrix backend for generated C++ classes.
 - CCTL `fixed_vector`/`fixed_matrix`: dependency-free inline-storage backend.
 
 Python packages are pinned in `tools/gmp_installer/requirements-gmp.txt`.
@@ -354,9 +354,10 @@ python tools\cctl_studio\mna_solver\cpp_codegen.py circuit.json generated ^
   --backend fixed
 ```
 
-The CLI default remains `eigen` for compatibility. The PMSM case selects
-`fixed`; the other existing cases retain `eigen`, so both backends stay in the
-regression suite.
+The CLI and every supplied case default to `eigen`. Select `--backend fixed`, or
+change a case's `MATRIX_BACKEND`, only when the allocation-free fixed backend is
+specifically required. Fixed generation remains supported but is not part of the
+default generation or build path.
 
 Only the calculation header is generated. Testbench source, CMake files,
 waveform scheduling, CSV policy, and acceptance limits are deliberately
@@ -372,6 +373,16 @@ for GCC/Clang) to select 256-bit float/double dot-product and row-accumulation
 kernels. Without the macro, the same API uses portable scalar loops. Selection
 is at compile time with no runtime CPU dispatch: an AVX2 binary requires a
 compatible CPU, and SIMD summation can differ by normal last-bit roundoff.
+Generated fixed coefficient pools are C++17 `static constexpr std::array`
+objects, so large matrices reside directly in static read-only storage instead
+of creating multi-megabyte temporary objects on first access. Large MSVC targets
+must raise the `/constexpr:steps` limit accordingly.
+
+Voltage probes whose field starts with `VADC_` remain normal generated outputs
+and also receive `role: adc_sample_voltage` plus the suffix as `adc_channel` in
+portable JSON. The metadata identifies ADC-ready nodes; reference voltage,
+resolution, physical channel routing, and SOC timing remain responsibilities of
+the handwritten testbench or target peripheral layer.
 
 The generated `BuckCircuit` exposes `step_short(PWM, VS1)`,
 `step_normal(PWM, VS1)`, `run`, and `operator()`. Probe results are available as
@@ -436,9 +447,10 @@ state matrices. A future descriptor/input-derivative backend can restore them.
 `generate_code.bat` defines `NETLIST_FILE` near its beginning, so direct
 invocation uses the case's default CIR; an explicit CIR may also be passed as
 the first argument. `build_test.bat` generates the calculation header first,
-then configures the handwritten `test\cpp` project. Eigen cases use GMP's
-installed Eigen/vcpkg tree. The fixed PMSM case has no vcpkg dependency and
-enables its AVX2 kernel explicitly in CMake.
+then configures the handwritten `test\cpp` project. Every default case uses the
+Eigen package maintained by the GMP installer/vcpkg environment. An explicitly
+selected fixed build can still enable `CCTL_FIXED_MATH_USE_AVX` and the target
+compiler's AVX2 option.
 
 ## `1_OPAMP.CIR` validation
 

@@ -3,7 +3,8 @@ setlocal EnableExtensions
 
 set "NETLIST_FILE=PMSM.CIR"
 set "MATRIX_TOLERANCE=1E-12"
-rem Default netlist and matrix precision for this case.
+if not defined MATRIX_BACKEND set "MATRIX_BACKEND=eigen"
+rem MATRIX_BACKEND accepts eigen (default), fixed, or all.
 
 set "NO_PAUSE=0"
 if /I "%~1"=="--no-pause" set "NO_PAUSE=1"
@@ -21,6 +22,13 @@ if not exist "%MNA_TOOL_DIR%\circuit_data.py" (
     set "RESULT=1"
     goto :failed_with_result
 )
+if /I not "%MATRIX_BACKEND%"=="eigen" if /I not "%MATRIX_BACKEND%"=="fixed" if /I not "%MATRIX_BACKEND%"=="all" (
+    echo [ERROR] MATRIX_BACKEND must be eigen, fixed, or all: %MATRIX_BACKEND%
+    set "RESULT=1"
+    goto :failed_with_result
+)
+set "TOTAL_STAGES=2"
+if /I "%MATRIX_BACKEND%"=="all" set "TOTAL_STAGES=3"
 call "%GMP_PRO_LOCATION%\tools\gmp_installer\ensure_gmp_environment.bat" >nul
 if errorlevel 1 goto :failed
 
@@ -37,23 +45,43 @@ if not exist "%NETLIST_PATH%" (
     goto :failed_with_result
 )
 if not exist "%GENERATED_DIR%" mkdir "%GENERATED_DIR%"
-if not exist "%FIXED_DIR%" mkdir "%FIXED_DIR%"
-if not exist "%EIGEN_DIR%" mkdir "%EIGEN_DIR%"
 
-echo [1/3] Exporting portable PMSM-inverter circuit data...
+echo [1/%TOTAL_STAGES%] Exporting portable PMSM-inverter circuit data...
 python "%MNA_TOOL_DIR%\circuit_data.py" export "%NETLIST_PATH%" "%JSON_PATH%" --normal-dt 100N --short-dt 1N --method backward_euler --matrix-tolerance "%MATRIX_TOLERANCE%"
 if errorlevel 1 goto :failed
-echo [2/3] Generating the fixed-matrix C++ calculation class...
-python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%FIXED_DIR%" --backend fixed
-if errorlevel 1 goto :failed
-echo [3/3] Generating the Eigen C++ calculation class...
+
+if /I "%MATRIX_BACKEND%"=="all" goto :generate_all
+if /I "%MATRIX_BACKEND%"=="fixed" (
+    if not exist "%FIXED_DIR%" mkdir "%FIXED_DIR%"
+    echo [2/2] Generating the optional fixed-matrix C++ calculation class...
+    python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%FIXED_DIR%" --backend fixed
+    if errorlevel 1 goto :failed
+    set "GENERATED_SOLVER=%FIXED_DIR%"
+) else (
+    if not exist "%EIGEN_DIR%" mkdir "%EIGEN_DIR%"
+    echo [2/2] Generating the Eigen C++ calculation class...
+    python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%EIGEN_DIR%" --backend eigen
+    if errorlevel 1 goto :failed
+    set "GENERATED_SOLVER=%EIGEN_DIR%"
+)
+goto :generated
+
+:generate_all
+if not exist "%EIGEN_DIR%" mkdir "%EIGEN_DIR%"
+if not exist "%FIXED_DIR%" mkdir "%FIXED_DIR%"
+echo [2/3] Generating the Eigen C++ calculation class...
 python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%EIGEN_DIR%" --backend eigen
 if errorlevel 1 goto :failed
+echo [3/3] Generating the optional fixed-matrix C++ calculation class...
+python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%FIXED_DIR%" --backend fixed
+if errorlevel 1 goto :failed
+set "GENERATED_SOLVER=%EIGEN_DIR% and %FIXED_DIR%"
 
+:generated
 echo.
 echo Circuit data:       %JSON_PATH%
-echo Fixed solver:       %FIXED_DIR%
-echo Eigen solver:       %EIGEN_DIR%
+echo Matrix backend:     %MATRIX_BACKEND%
+echo Generated solver:   %GENERATED_SOLVER%
 echo Handwritten tests:  %CASE_DIR%test
 if "%NO_PAUSE%"=="0" pause
 exit /b 0

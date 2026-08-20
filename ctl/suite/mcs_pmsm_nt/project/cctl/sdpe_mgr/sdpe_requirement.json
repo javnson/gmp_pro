@@ -26,7 +26,7 @@
       "requirements": [
         "Simulation ADC Resolution", "Simulation ADC Reference", "Simulation eQEP Counts",
         "Simulation ePWM Clock", "Simulation ePWM Period", "Simulation ePWM Rising Deadband",
-        "Simulation ePWM Falling Deadband"
+        "Simulation ePWM Falling Deadband", "Simulation ADC Trigger Compare"
       ]
     },
     {
@@ -62,13 +62,13 @@
     { "role": "Encoder Bias", "macro": "CTRL_POS_ENC_BIAS", "binding": { "parameter": "0.0" } },
     { "role": "Mechanical Division", "macro": "CTRL_MECH_DIV", "binding": { "number": "5" } },
 
-    { "role": "Phase Current Sensitivity", "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM * TI_BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V)" } },
+    { "role": "Phase Current Sensitivity", "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY", "binding": { "literal": "(0.005f * 11.0f)" } },
     { "role": "Phase Current Bias", "macro": "CTRL_INVERTER_CURRENT_BIAS", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_PH_CSA_BIAS_V)" } },
-    { "role": "Phase Voltage Sensitivity", "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN)" } },
+    { "role": "Phase Voltage Sensitivity", "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY", "binding": { "literal": "(1.0f / 48.0f)" } },
     { "role": "Phase Voltage Bias", "macro": "CTRL_INVERTER_VOLTAGE_BIAS", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V)" } },
     { "role": "DC Current Sensitivity", "macro": "CTRL_DC_CURRENT_SENSITIVITY", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_GAIN)" } },
     { "role": "DC Current Bias", "macro": "CTRL_DC_CURRENT_BIAS", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_BIAS_V)" } },
-    { "role": "DC Voltage Sensitivity", "macro": "CTRL_DC_VOLTAGE_SENSITIVITY", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_GAIN)" } },
+    { "role": "DC Voltage Sensitivity", "macro": "CTRL_DC_VOLTAGE_SENSITIVITY", "binding": { "literal": "(1.0f / 48.0f)" } },
     { "role": "DC Voltage Bias", "macro": "CTRL_DC_VOLTAGE_BIAS", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_BIAS_V)" } },
 
     { "role": "Simulation ADC Resolution", "macro": "CCTL_SIM_ADC_RESOLUTION_BITS", "binding": { "number": "12" } },
@@ -78,6 +78,7 @@
     { "role": "Simulation ePWM Period", "macro": "CCTL_SIM_EPWM_PERIOD_COUNT", "binding": { "number": "2499" } },
     { "role": "Simulation ePWM Rising Deadband", "macro": "CCTL_SIM_EPWM_DBRED_COUNT", "binding": { "number": "100" } },
     { "role": "Simulation ePWM Falling Deadband", "macro": "CCTL_SIM_EPWM_DBFED_COUNT", "binding": { "number": "100" } },
+    { "role": "Simulation ADC Trigger Compare", "macro": "CCTL_SIM_ADC_TRIGGER_COMPARE_COUNT", "binding": { "number": "250" } },
 
     { "role": "Plant Step", "macro": "CCTL_SIM_PLANT_STEP_S", "binding": { "literal": "1.0e-7" } },
     { "role": "Control Frequency", "macro": "CCTL_SIM_CONTROL_FREQUENCY_HZ", "binding": { "literal": "20.0e3" } },

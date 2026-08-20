@@ -111,7 +111,7 @@ extern "C"
 /**
  * @brief Phase Current Sensitivity
  */
-#define CTRL_INVERTER_CURRENT_SENSITIVITY (TI_BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM * TI_BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V)
+#define CTRL_INVERTER_CURRENT_SENSITIVITY (0.005f * 11.0f)
 
 /**
  * @brief Phase Current Bias
@@ -121,7 +121,7 @@ extern "C"
 /**
  * @brief Phase Voltage Sensitivity
  */
-#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN)
+#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (1.0f / 48.0f)
 
 /**
  * @brief Phase Voltage Bias
@@ -141,7 +141,7 @@ extern "C"
 /**
  * @brief DC Voltage Sensitivity
  */
-#define CTRL_DC_VOLTAGE_SENSITIVITY (TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_GAIN)
+#define CTRL_DC_VOLTAGE_SENSITIVITY (1.0f / 48.0f)
 
 /**
  * @brief DC Voltage Bias
@@ -182,6 +182,11 @@ extern "C"
  * @brief Simulation ePWM Falling Deadband
  */
 #define CCTL_SIM_EPWM_DBFED_COUNT (100)
+
+/**
+ * @brief Simulation ADC Trigger Compare
+ */
+#define CCTL_SIM_ADC_TRIGGER_COMPARE_COUNT (250)
 
 /**
  * @brief Plant Step

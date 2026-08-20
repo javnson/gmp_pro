@@ -94,6 +94,23 @@ class NetlistTests(unittest.TestCase):
             [("4", "2"), ("3", "2"), ("1", "2")],
         )
 
+    def test_bracketed_vadc_voltage_probes_preserve_channel_names(self) -> None:
+        # Use a temporary file because TINA wraps node names in square brackets.
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "vadc.cir"
+            path.write_text(
+                "ADC probe names\n"
+                "V1 VADC_VDC 0 1\n"
+                ".PROBE V([VADC_VDC]) V([VADC_VA]) V([VADC_IA])\n"
+                ".END\n",
+                encoding="utf-8",
+            )
+            circuit = mna.parse_netlist(path)
+        self.assertEqual(
+            [item.name for item in circuit.observations],
+            ["V(VADC_VDC)", "V(VADC_VA)", "V(VADC_IA)"],
+        )
+
 
 class SolverTests(unittest.TestCase):
     def _temporary_netlist(self, contents: str) -> Path:

@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
+#include <utility>
 
 namespace cctl
 {
@@ -25,9 +26,10 @@ template <typename T> struct ti_adc_config
 /**
  * @brief Host model of the result registers of a TI C2000 ADC module.
  *
- * Conversions are immediate because acquisition/conversion latency is much
- * shorter than the controller period represented by this host model. Results
- * are right justified and saturated to the selected 12- or 16-bit range.
+ * Analog inputs are staged independently from conversion. trigger() latches
+ * every staged input into its result register and raises the interrupt flag;
+ * the callback overload models immediate ADC-interrupt dispatch. Results are
+ * right justified and saturated to the selected 12- or 16-bit range.
  */
 template <typename T = double, std::size_t Channels = 16U> class ti_adc
 {
@@ -53,8 +55,12 @@ template <typename T = double, std::size_t Channels = 16U> class ti_adc
             !std::isfinite(config.reference_voltage_v))
             throw std::invalid_argument("invalid TI ADC configuration");
         config_ = config;
-        maximum_code_ = (result_type(1U) << config_.resolution_bits) - result_type(1U);
+        quantization_levels_ = result_type(1U) << config_.resolution_bits;
+        maximum_code_ = quantization_levels_ - result_type(1U);
+        input_voltage_.fill(T(0));
         result_.fill(result_type(0U));
+        interrupt_pending_ = false;
+        trigger_count_ = 0U;
     }
 
     result_type sample_adc_voltage(std::size_t channel, T adc_voltage_v)
@@ -63,9 +69,57 @@ template <typename T = double, std::size_t Channels = 16U> class ti_adc
         if (!std::isfinite(adc_voltage_v))
             throw std::invalid_argument("non-finite TI ADC input");
         const T clipped = std::max(T(0), std::min(adc_voltage_v, config_.reference_voltage_v));
-        result_[channel] = static_cast<result_type>(
-            std::llround(clipped * T(maximum_code_) / config_.reference_voltage_v));
+        const result_type code = static_cast<result_type>(
+            clipped * T(quantization_levels_) / config_.reference_voltage_v);
+        result_[channel] = std::min(code, maximum_code_);
         return result_[channel];
+    }
+
+    /** Update one sample-and-hold input without starting a conversion. */
+    void set_input_voltage(std::size_t channel, T adc_voltage_v)
+    {
+        validate_channel(channel);
+        if (!std::isfinite(adc_voltage_v))
+            throw std::invalid_argument("non-finite TI ADC input");
+        input_voltage_[channel] = adc_voltage_v;
+    }
+
+    T input_voltage(std::size_t channel) const
+    {
+        validate_channel(channel);
+        return input_voltage_[channel];
+    }
+
+    /** Latch all staged analog inputs and raise the ADC interrupt flag. */
+    bool trigger()
+    {
+        for (std::size_t channel = 0U; channel < Channels; ++channel)
+            sample_adc_voltage(channel, input_voltage_[channel]);
+        interrupt_pending_ = true;
+        ++trigger_count_;
+        return true;
+    }
+
+    /** Latch inputs and immediately dispatch an ADC-complete interrupt. */
+    template <typename InterruptHandler> void trigger(InterruptHandler &&handler)
+    {
+        trigger();
+        std::forward<InterruptHandler>(handler)();
+    }
+
+    bool interrupt_pending() const noexcept
+    {
+        return interrupt_pending_;
+    }
+
+    void acknowledge_interrupt() noexcept
+    {
+        interrupt_pending_ = false;
+    }
+
+    std::uint64_t trigger_count() const noexcept
+    {
+        return trigger_count_;
     }
 
     /** Sample a physical signal after a linear sensor front end. */
@@ -108,8 +162,12 @@ template <typename T = double, std::size_t Channels = 16U> class ti_adc
     }
 
     config_type config_;
+    std::array<T, Channels> input_voltage_{};
     std::array<result_type, Channels> result_{};
+    result_type quantization_levels_{};
     result_type maximum_code_{};
+    std::uint64_t trigger_count_{};
+    bool interrupt_pending_{};
 };
 
 } // namespace cctl

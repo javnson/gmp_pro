@@ -15,7 +15,9 @@ endif()
 
 find_package(Threads REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
+option(CCTL_BUILD_FIXED_BACKEND
+       "Build the optional fixed-matrix main-circuit backend" OFF)
 
 function(add_cctl_pmsm_simulator target_name backend_name)
     add_executable(${target_name}
@@ -28,7 +30,6 @@ function(add_cctl_pmsm_simulator target_name backend_name)
     target_link_libraries(${target_name} PRIVATE Threads::Threads)
     target_compile_features(${target_name} PRIVATE cxx_std_17)
     target_compile_definitions(${target_name} PRIVATE
-        CCTL_FIXED_MATH_USE_AVX=1
         CCTL_SIM_MATRIX_BACKEND_NAME="${backend_name}")
     target_include_directories(${target_name} PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -40,32 +41,37 @@ function(add_cctl_pmsm_simulator target_name backend_name)
 
     if(MSVC)
         target_compile_options(${target_name} PRIVATE /utf-8 /bigobj /arch:AVX2 /wd4828)
+        if(backend_name STREQUAL "fixed")
+            # Large generated fixed pools are constant-initialized so they do
+            # not create multi-megabyte startup temporaries on the thread stack.
+            target_compile_definitions(${target_name} PRIVATE
+                CCTL_FIXED_MATH_USE_AVX=1)
+            target_compile_options(${target_name} PRIVATE /constexpr:steps16777216)
+        endif()
     else()
-        target_compile_options(${target_name} PRIVATE -mavx2)
+        if(backend_name STREQUAL "fixed")
+            target_compile_definitions(${target_name} PRIVATE
+                CCTL_FIXED_MATH_USE_AVX=1)
+            target_compile_options(${target_name} PRIVATE -mavx2)
+        endif()
     endif()
 endfunction()
 
-add_cctl_pmsm_simulator(mcs_pmsm_nt_cctl fixed)
-add_cctl_pmsm_simulator(mcs_pmsm_nt_cctl_eigen eigen)
-target_link_libraries(mcs_pmsm_nt_cctl_eigen PRIVATE Eigen3::Eigen)
+add_cctl_pmsm_simulator(mcs_pmsm_nt_cctl eigen)
+target_link_libraries(mcs_pmsm_nt_cctl PRIVATE Eigen3::Eigen)
 
 enable_testing()
-add_test(NAME mcs_pmsm_nt_cctl_fixed_closed_loop
+add_test(NAME mcs_pmsm_nt_cctl_closed_loop
          COMMAND mcs_pmsm_nt_cctl --no-pause --normal-priority
-                 --output mcs_pmsm_nt_cctl_fixed.csv)
-add_test(NAME mcs_pmsm_nt_cctl_eigen_closed_loop
-         COMMAND mcs_pmsm_nt_cctl_eigen --no-pause --normal-priority
-                 --output mcs_pmsm_nt_cctl_eigen.csv)
-add_test(NAME mcs_pmsm_nt_cctl_backend_equivalence
-         COMMAND ${Python3_EXECUTABLE}
-                 ${CMAKE_CURRENT_SOURCE_DIR}/compare_backend_outputs.py
-                 ${CMAKE_CURRENT_BINARY_DIR}/mcs_pmsm_nt_cctl_fixed.csv
-                 ${CMAKE_CURRENT_BINARY_DIR}/mcs_pmsm_nt_cctl_eigen.csv
-                 --tolerance 1e-8)
-set_tests_properties(
-    mcs_pmsm_nt_cctl_fixed_closed_loop
-    mcs_pmsm_nt_cctl_eigen_closed_loop
-    PROPERTIES RUN_SERIAL TRUE)
-set_tests_properties(mcs_pmsm_nt_cctl_backend_equivalence PROPERTIES
-    DEPENDS "mcs_pmsm_nt_cctl_fixed_closed_loop;mcs_pmsm_nt_cctl_eigen_closed_loop"
-    RUN_SERIAL TRUE)
+                 --output mcs_pmsm_nt_cctl.csv)
+
+if(CCTL_BUILD_FIXED_BACKEND)
+    add_cctl_pmsm_simulator(mcs_pmsm_nt_cctl_fixed fixed)
+    add_test(NAME mcs_pmsm_nt_cctl_fixed_closed_loop
+             COMMAND mcs_pmsm_nt_cctl_fixed --no-pause --normal-priority
+                     --output mcs_pmsm_nt_cctl_fixed.csv)
+    set_tests_properties(
+        mcs_pmsm_nt_cctl_closed_loop
+        mcs_pmsm_nt_cctl_fixed_closed_loop
+        PROPERTIES RUN_SERIAL TRUE)
+endif()

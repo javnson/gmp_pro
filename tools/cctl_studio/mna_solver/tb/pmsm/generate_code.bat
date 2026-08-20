@@ -3,7 +3,7 @@ setlocal EnableExtensions
 
 set "NETLIST_FILE=PMSM.CIR"
 set "MATRIX_TOLERANCE=1E-12"
-set "MATRIX_BACKEND=fixed"
+set "MATRIX_BACKEND=eigen"
 rem Default netlist and matrix precision for this case.
 
 set "NO_PAUSE=0"
