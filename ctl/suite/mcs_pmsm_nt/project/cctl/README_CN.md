@@ -43,9 +43,17 @@ DBRED/DBFED 死区）以及带圈数信息的 eQEP。负载转矩通过
 `csp/cctl` 在其上实现 `initialize`、`step`、`interface_transfer`、`run` 和
 `finalize`，并启动仿真、文件输出、控制台进度三个线程。仿真线程只进行一次
 非阻塞记录拷贝；32 MB 环满时丢弃新记录而不阻塞求解器。文件线程按 1 MB
-批量格式化和写入，控制台线程每 1 s 更新进度、ETA、队列占用和丢弃数。
-控制台先显示 `GMP CCTL Motor Simulation Kit`，随后显示总仿真时间、步长、
-总步数和矩阵后端，再使用 64 字符的 `=`/`>` 进度条显示运行状态。
+批量格式化和写入，控制台线程每 1 s 更新进度、ETA、已完成仿真时间、瞬时
+求解吞吐率（Mstep/s）、队列占用和丢弃数。交互终端中的状态行和进度条会在
+固定光标锚点原位刷新，不会不断追加新行；进度条会读取当前控制台可视宽度，
+在扣除百分比后尽量撑满整行，并在窗口缩放后自动调整。输出重定向到文件或
+CTest 时只打印最终状态，避免日志中出现控制序列和逐秒输出。
+
+Windows 下由 SDPE 的 `CCTL_SIM_REALTIME_PRIORITY` 决定是否在仿真期间申请
+`REALTIME_PRIORITY_CLASS`，当前默认开启。命令行 `--realtime-priority` 可强制
+开启，`--normal-priority` 或 `--no-realtime-priority` 可关闭。申请结果会显示
+在启动信息和最终摘要中；权限不足时自动使用普通优先级，仿真结束后恢复原
+优先级。CTest 显式使用普通优先级，避免自动化任务影响同机其他进程。
 
 仿真结束会打印模拟时间/墙钟时间、实时倍率、步数、写入量、丢弃量以及电机
 稳态结果。直接运行可执行文件时按 SDPE 默认执行 `system("@pause")`；自动化
@@ -59,8 +67,9 @@ DBRED/DBFED 死区）以及带圈数信息的 eQEP。负载转矩通过
 `mcs_pmsm_nt_cctl_fixed.csv` 和 `mcs_pmsm_nt_cctl_eigen.csv`，第三项测试再以
 `1e-8` 容差逐元素比较全部 80,000 行。当前最大差为 `4.20e-10`。
 
-构建后运行 `benchmark_backends.bat [重复次数]` 可进行交替顺序的全系统基准；
-默认重复 3 次，并保留 CSV 格式化开销但将数据发送到 `NUL`，最后报告均值、
+构建后运行 `benchmark_backends.bat [重复次数] [realtime|normal]` 可进行交替
+顺序的全系统基准；默认重复 3 次并使用实时优先级，同时保留 CSV 格式化开销
+但将数据发送到 `NUL`，最后报告均值、
 中位数、最小值、fixed/Eigen 比值以及最终物理量漂移。当前开发机三轮结果为
 fixed 9.067892 s、Eigen 8.059164 s，Eigen 快 1.1252 倍。因此桌面联合仿真
 推荐 Eigen；fixed 仍保留为静态存储、无 Eigen 运行依赖以及后续嵌入式/FPGA

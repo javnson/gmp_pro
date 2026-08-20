@@ -36,9 +36,21 @@ ring and 1 MB output batches. A full ring drops observations instead of blocking
 the numerical solver, and the final summary reports queued, written, and dropped
 records, wall time, and realtime factor.
 
-The console begins with `GMP CCTL Motor Simulation Kit`, prints total simulated
-time, plant step, step count, and backend, then displays elapsed time, ETA, queue
-occupancy, drops, and a 64-character `=`/`>` progress bar.
+The console begins with `GMP CCTL Motor Simulation Kit`, then prints simulation
+configuration and the applied process-priority policy. In an interactive terminal,
+elapsed time, ETA, simulated time, instantaneous Mstep/s, queue occupancy, drops,
+and the progress bar are redrawn at one saved cursor anchor instead of appending
+lines. The bar reads the current visible console width on every refresh and fills
+the available row after reserving its percentage suffix, so resizing is handled
+automatically. Redirected/CTest output emits only the final progress snapshot.
+
+On Windows, SDPE macro `CCTL_SIM_REALTIME_PRIORITY` controls whether the runtime
+requests `REALTIME_PRIORITY_CLASS` for the simulation; the project default is on.
+`--realtime-priority` forces it on, while `--normal-priority` and
+`--no-realtime-priority` turn it off. Failure to acquire the class is reported and
+falls back to normal priority without failing the run. The original process class
+is restored after simulation. CTest explicitly selects normal priority so an
+automated run cannot starve unrelated work on the host.
 
 ## Fixed versus Eigen benchmark
 
@@ -46,8 +58,9 @@ occupancy, drops, and a 64-character `=`/`>` progress bar.
 the same handwritten testbench and circuit data. A third CTest compares all
 80,000 CSV rows element-by-element with a `1e-8` tolerance; the current maximum
 difference is `4.20e-10`. Run
-`benchmark_backends.bat [runs]` afterwards for an alternating-order whole-system
-benchmark. It retains CSV formatting but sends records to `NUL`, checks the same
+`benchmark_backends.bat [runs] [realtime|normal]` afterwards for an
+alternating-order whole-system benchmark. It defaults to three runs with realtime
+priority, retains CSV formatting but sends records to `NUL`, checks the same
 physical result signature, and reports mean/median/minimum wall time. A three-run
 measurement on the current development machine was 9.067892 s for fixed and
 8.059164 s for Eigen, a 1.1252x Eigen advantage. Eigen is therefore recommended

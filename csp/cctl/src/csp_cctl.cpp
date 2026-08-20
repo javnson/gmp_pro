@@ -20,8 +20,12 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <windows.h>
 #else
+#include <sys/ioctl.h>
 #include <unistd.h>
 #endif
 
@@ -42,6 +46,23 @@ bool enable_in_place_console_refresh() noexcept
     return SetConsoleMode(output, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0;
 #else
     return ::isatty(STDOUT_FILENO) != 0;
+#endif
+}
+
+std::size_t console_column_count() noexcept
+{
+#if defined(_WIN32)
+    CONSOLE_SCREEN_BUFFER_INFO info{};
+    const HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (output == nullptr || output == INVALID_HANDLE_VALUE ||
+        !GetConsoleScreenBufferInfo(output, &info))
+        return 0U;
+    return static_cast<std::size_t>(info.srWindow.Right - info.srWindow.Left + 1);
+#else
+    winsize size{};
+    if (::ioctl(STDOUT_FILENO, TIOCGWINSZ, &size) != 0)
+        return 0U;
+    return static_cast<std::size_t>(size.ws_col);
 #endif
 }
 } // namespace
@@ -76,6 +97,12 @@ class simulation_runtime::implementation
         stop_requested_.store(false, std::memory_order_relaxed);
         simulation_done_.store(false, std::memory_order_relaxed);
         failed_.store(false, std::memory_order_relaxed);
+        original_priority_class_ = 0U;
+        last_progress_time_ = {};
+        last_progress_steps_ = 0U;
+        interactive_console_ = false;
+        progress_anchor_saved_ = false;
+        progress_rate_initialized_ = false;
         initialized_ = true;
     }
 
@@ -292,23 +319,50 @@ class simulation_runtime::implementation
             std::cout << '\n';
     }
 
-    void print_progress(std::size_t completed, bool done) const
+    void print_progress(std::size_t completed, bool done)
     {
-        const std::size_t width =
-            std::max<std::size_t>(config_.console_bar_width, 20U);
         const double ratio = std::min(1.0, static_cast<double>(completed) /
                                               static_cast<double>(config_.total_steps));
+        const clock_type::time_point now = clock_type::now();
+        const double elapsed =
+            std::chrono::duration<double>(now - start_time_).count();
+        double step_rate = 0.0;
+        if (progress_rate_initialized_)
+        {
+            const double interval_s =
+                std::chrono::duration<double>(now - last_progress_time_).count();
+            if (interval_s > 0.0 && completed >= last_progress_steps_)
+                step_rate = static_cast<double>(completed - last_progress_steps_) /
+                            interval_s;
+        }
+        if (done && elapsed > 0.0)
+            step_rate = static_cast<double>(completed) / elapsed;
+        last_progress_time_ = now;
+        last_progress_steps_ = completed;
+        progress_rate_initialized_ = true;
+
+        std::ostringstream progress_suffix;
+        progress_suffix << "] " << std::fixed << std::setprecision(1)
+                        << ratio * 100.0 << '%';
+        std::size_t width = std::max<std::size_t>(config_.console_bar_width, 20U);
+        const std::size_t columns = interactive_console_ ? console_column_count() : 0U;
+        const std::size_t fixed_characters = progress_suffix.str().size() + 2U;
+        if (columns > fixed_characters + 20U)
+            width = std::min<std::size_t>(columns - fixed_characters, 512U);
         const std::size_t fill = static_cast<std::size_t>(ratio * width);
-        const double elapsed = std::chrono::duration<double>(clock_type::now() - start_time_).count();
         const double eta = completed > 0U
                                ? elapsed * static_cast<double>(config_.total_steps - completed) /
                                      static_cast<double>(completed)
                                : 0.0;
         std::ostringstream status;
         status << "elapsed=" << std::fixed << std::setprecision(1) << elapsed
-               << "s  ETA=" << (done ? 0.0 : eta)
-               << "s  queue=" << ring_.size() << '/' << ring_.capacity()
-               << "  dropped=" << dropped_records_.load(std::memory_order_relaxed);
+               << "s ETA=" << (done ? 0.0 : eta)
+               << "s sim=" << std::setprecision(3)
+               << static_cast<double>(completed) * config_.plant_step_s
+               << "s rate=" << std::setprecision(2) << step_rate / 1.0e6
+               << "Mstep/s"
+               << " queue=" << ring_.size() << '/' << ring_.capacity()
+               << " drop=" << dropped_records_.load(std::memory_order_relaxed);
         std::ostringstream progress;
         progress << '[';
         for (std::size_t index = 0U; index < width; ++index)
@@ -320,19 +374,23 @@ class simulation_runtime::implementation
             else
                 progress << ' ';
         }
-        progress << "] " << std::fixed << std::setprecision(1) << ratio * 100.0
-                 << "%  sim=" << std::setprecision(3)
-                 << static_cast<double>(completed) * config_.plant_step_s << "s";
+        progress << progress_suffix.str();
         if (!interactive_console_ && !done)
             return;
-        if (interactive_console_ && progress_drawn_)
-            std::cout << "\x1b[2F";
         if (interactive_console_)
-            std::cout << "\r\x1b[2K" << status.str() << '\n'
-                      << "\r\x1b[2K" << progress.str() << '\n' << std::flush;
+        {
+            if (!progress_anchor_saved_)
+            {
+                std::cout << "\x1b[s";
+                progress_anchor_saved_ = true;
+            }
+            else
+                std::cout << "\x1b[u";
+            std::cout << "\x1b[J" << status.str() << '\n'
+                      << progress.str() << '\n' << std::flush;
+        }
         else
             std::cout << status.str() << '\n' << progress.str() << '\n' << std::flush;
-        progress_drawn_ = true;
     }
 
     void configure_process_priority() noexcept
@@ -410,8 +468,11 @@ class simulation_runtime::implementation
     std::atomic<bool> failed_{false};
     std::mutex error_mutex_;
     std::uint32_t original_priority_class_{};
+    clock_type::time_point last_progress_time_{};
+    std::size_t last_progress_steps_{};
     bool interactive_console_{};
-    bool progress_drawn_{};
+    bool progress_anchor_saved_{};
+    bool progress_rate_initialized_{};
     bool initialized_{};
     bool running_{};
 };

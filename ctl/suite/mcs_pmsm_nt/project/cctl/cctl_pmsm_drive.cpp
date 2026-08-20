@@ -356,6 +356,7 @@ constexpr const char *kCsvHeader =
 int main(int argc, char **argv)
 {
     bool suppress_pause = false;
+    bool request_realtime_priority = CCTL_SIM_REALTIME_PRIORITY != 0;
     std::string output_path = CCTL_SIM_OUTPUT_FILENAME;
     gmp::csp::cctl::simulation_runtime runtime;
     bool runtime_initialized = false;
@@ -367,6 +368,11 @@ int main(int argc, char **argv)
             const std::string argument = argv[index];
             if (argument == "--no-pause")
                 suppress_pause = true;
+            else if (argument == "--realtime-priority")
+                request_realtime_priority = true;
+            else if (argument == "--normal-priority" ||
+                     argument == "--no-realtime-priority")
+                request_realtime_priority = false;
             else if (argument == "--output" && index + 1 < argc)
                 output_path = argv[++index];
             else
@@ -388,6 +394,7 @@ int main(int argc, char **argv)
         config.console_title = "GMP CCTL Motor Simulation Kit";
         config.execution_label = CCTL_SIM_MATRIX_BACKEND_NAME;
         config.console_bar_width = 64U;
+        config.request_realtime_priority = request_realtime_priority;
         config.pause_on_exit = CCTL_SIM_PAUSE_ON_EXIT != 0;
 
         gmp::csp::cctl::simulation_callbacks callbacks;

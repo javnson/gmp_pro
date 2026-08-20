@@ -51,9 +51,11 @@ target_link_libraries(mcs_pmsm_nt_cctl_eigen PRIVATE Eigen3::Eigen)
 
 enable_testing()
 add_test(NAME mcs_pmsm_nt_cctl_fixed_closed_loop
-         COMMAND mcs_pmsm_nt_cctl --no-pause --output mcs_pmsm_nt_cctl_fixed.csv)
+         COMMAND mcs_pmsm_nt_cctl --no-pause --normal-priority
+                 --output mcs_pmsm_nt_cctl_fixed.csv)
 add_test(NAME mcs_pmsm_nt_cctl_eigen_closed_loop
-         COMMAND mcs_pmsm_nt_cctl_eigen --no-pause --output mcs_pmsm_nt_cctl_eigen.csv)
+         COMMAND mcs_pmsm_nt_cctl_eigen --no-pause --normal-priority
+                 --output mcs_pmsm_nt_cctl_eigen.csv)
 add_test(NAME mcs_pmsm_nt_cctl_backend_equivalence
          COMMAND ${Python3_EXECUTABLE}
                  ${CMAKE_CURRENT_SOURCE_DIR}/compare_backend_outputs.py

@@ -239,6 +239,11 @@ extern "C"
 #define CCTL_SIM_STEP_CHUNK_STEPS (4096)
 
 /**
+ * @brief Realtime Priority
+ */
+#define CCTL_SIM_REALTIME_PRIORITY (1)
+
+/**
  * @brief Pause On Exit
  */
 #define CCTL_SIM_PAUSE_ON_EXIT (1)
