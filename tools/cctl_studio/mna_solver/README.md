@@ -206,6 +206,20 @@ At 10 kHz and 50% duty, the 50 ms generated-C++ references produce:
   a 50 Hz reference at modulation index 0.8, and 1 us deadtime: the differential
   load voltage `V(2,1)` has a 22.031 V fundamental peak and 15.610 V RMS. Its
   50 Hz current fundamental peak is 2.203 A.
+- Controlled-precharge bridge rectifier with a 32 Vrms, 50 Hz source: before
+  bypassing the 10 ohm charging resistor, `V(VF1)` averages about 14.490 V;
+  closing `SW2` at 60 ms raises the settled full-wave average to about 31.088 V
+  with a 44.133 V peak.
+- Three-phase inverter with a 5 V DC bus, 10 kHz centre-aligned SPWM, 50 Hz
+  three-phase references at modulation index 0.8, and 1 us deadtime: the three
+  phase-voltage fundamental peaks are 1.8566--1.8571 V and the current
+  fundamental peaks are 0.18568--0.18573 A. The voltage phasor pairwise cosines
+  are within 0.00025 of -0.5, confirming 120-degree separation.
+- NPC(I) Buck with two 30 V sources, a 10 kHz carrier, and 1 us deadtime: the
+  0.2 pu reference switches only between N/O and settles to about 11.050 V;
+  the 0.8 pu reference switches only between O/P and settles to about 45.453 V.
+  These loaded open-loop values include the extracted semiconductor, 50 mohm
+  source-series, and deadtime losses, so they are below the ideal 12/48 V.
 
 ## Circuit data and Eigen C++ generation
 
@@ -216,7 +230,16 @@ the terminal indices used for previous-sample mode selection. The JSON can be
 simulated without rebuilding MNA and is the only input to `cpp_codegen.py`.
 One diode plus one MOS produces six topologies. A MOS-only switching circuit
 uses three paths per device (`OFF`, channel, body diode), so the four-switch
-FSBB exports `3^4 = 81` topologies.
+FSBB exports `3^4 = 81` topologies and the six-switch three-phase inverter
+exports `3^6 = 729`. Independent diodes and TINA `VSWITCH`
+devices use two paths each; the rectifier therefore exports `2^(4+1) = 32`
+topologies. Each `VSWITCH` control source is removed from MNA and exposed as a
+`uint32_t` command port.
+Mixed circuits take the Cartesian product of both device families. The NPC Buck
+has four three-path MOSFETs and two two-path clamp diodes, so its portable data
+contains `3^4 * 2^2 = 324` compatible state/output models. Diode A/K and MOSFET
+D/S terminal voltages remain internal signals used for previous-sample mode
+selection.
 
 ### Test-case organization
 
@@ -234,22 +257,21 @@ tb\buck\
 ├── buck.CIR
 ├── generate_code.bat
 ├── build_test.bat
-├── generated\              generated calculation headers
+├── generated\              generated circuit-data JSON and calculation headers
 └── test\cpp\               handwritten testbench, CMakeLists and vcpkg.json
 ```
 
-`boost`, `fsbb`, and `sinv` follow the same contract. `rectifier` currently
-contains a source case only and will gain language-specific tests when its
-solver behavior is implemented and validated.
+`boost`, `fsbb`, `sinv`, `rectifier`, `inv`, and `buck_npc` follow the same
+contract.
 
 Every BAT entry point resolves the solver and installer through
 `GMP_PRO_LOCATION`; it does not depend on the checkout drive or current working
 directory. User-facing scripts pause on success and failure, while automation
 can pass `--no-pause`.
 
-Each switching case writes its portable JSON beside the CIR file and generated
-C++ calculation headers under `generated`. JSON and local CSV/build/IDE outputs
-are ignored by `tb\.gitignore` because they are reproducible and can be large.
+Each switching case writes both its portable JSON and generated C++ calculation
+header under `generated`. JSON and local CSV/build/IDE outputs are ignored by
+`tb\.gitignore` because they are reproducible and can be large.
 
 ### Generation and build
 
@@ -276,6 +298,9 @@ tools\cctl_studio\mna_solver\tb\buck\build_test.bat
 tools\cctl_studio\mna_solver\tb\boost\build_test.bat
 tools\cctl_studio\mna_solver\tb\fsbb\build_test.bat
 tools\cctl_studio\mna_solver\tb\sinv\build_test.bat
+tools\cctl_studio\mna_solver\tb\rectifier\build_test.bat
+tools\cctl_studio\mna_solver\tb\inv\build_test.bat
+tools\cctl_studio\mna_solver\tb\buck_npc\build_test.bat
 ```
 
 The SINV testbench drives `PWM1=PWM3` and `PWM2=PWM4` as the two bipolar-SPWM
@@ -286,6 +311,39 @@ binary TSC file and is not emitted into the portable CIR netlist. Parallel DC
 link capacitors are stamped additively; regression tests prove that the two
 100 uF branches produce exactly the same 81 descriptor matrices as one 200 uF
 branch.
+
+The INV testbench drives three complementary bridge legs from sinusoidal
+references separated by 120 degrees. It checks gate interlock and 1 us
+deadtime, balanced voltage/current fundamentals, phase separation, and
+`V(3,1)+V(4,1)+V(5,1)` cancellation. In addition to the three 1 MOhm capacitor
+leakage branches R8--R10, the netlist explicitly references load neutral node 1
+and capacitor neutral node 2 to ground through 1 MOhm R12 and R11. The all-off
+topology's algebraic block is therefore full rank, and all 729 topologies reduce
+without an implicit solver-added reference.
+
+The rectifier maps TINA's `VSWGPIO1` control source to the public
+`uint32_t SWGPIO1` port. `SWGPIO1=0` retains the 10 ohm charging resistor and
+`SWGPIO1=1` closes `SW2` through its reduced 1 mOhm path. The generated model
+uses the previous A--K voltage of D1--D4 to select the two conducting bridge
+pairs. Its handwritten testbench applies a 32 Vrms, 50 Hz sinusoid and removes
+the charging resistor after 60 ms.
+
+The NPC Buck testbench treats `VS1=VS2=30 V`, so 1 pu is the complete 60 V DC
+bus. At 0.2 pu it holds PWM3 on and commutates PWM2/PWM4 to select N/O; at 0.8
+pu it holds PWM2 on and commutates PWM1/PWM3 to select O/P. Both complementary
+pairs include a measured 1 us deadtime. This stiff Coss circuit uses a 1 ns
+normal step and 100 ps startup step, and writes separate 0.2/0.8 pu CSV traces.
+The explicit 50 mohm `R3` and `R4` in the updated netlist make every ideal-source
+cutset reducible without adding hidden solver regularization. Because this
+series-fed midpoint is not fixed to ground by an ideal source, both extracted
+460 pF clamp-diode junction capacitances remain in the seven-state model.
+
+The four extracted 460 pF diode junction capacitances touch terminals of the
+ideal time-varying `VS1`. Such capacitances introduce an input-derivative
+(`u_dot`) term and an index-2 descriptor that cannot be represented by the
+current ordinary `x_dot=Ax+Bu` boundary. Their extracted values and suppression
+reason are retained in JSON, but they are omitted from this case's implemented
+state matrices. A future descriptor/input-derivative backend can restore them.
 
 `generate_code.bat` defines `NETLIST_FILE` near its beginning, so direct
 invocation uses the case's default CIR; an explicit CIR may also be passed as
@@ -310,9 +368,10 @@ verify both the DC transfer and `A=-1000` state matrix.
 - Initial conditions are state-coordinate values. Mapping physical capacitor
   voltages/inductor currents to initial state coordinates is future work.
 - MOS-only multi-switch circuits are supported and grow as `3^N` topologies.
-  Mixed circuits with multiple independent diodes and multiple MOSFETs still
-  need the general combinational device expansion. A Verilog/fixed-point
-  backend over the same data file remains future work.
+  Diode/VSWITCH-only networks grow as `2^N`. Mixed circuits containing both
+  MOSFETs and multiple independent diodes or VSWITCH devices still need the
+  general combinational device expansion. A Verilog/fixed-point backend over
+  the same data file remains future work.
 
 Run validation with:
 

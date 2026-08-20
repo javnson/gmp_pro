@@ -23,6 +23,9 @@ BUCK_DIR = TB_DIR / "buck"
 BOOST_DIR = TB_DIR / "boost"
 FSBB_DIR = TB_DIR / "fsbb"
 SINV_DIR = TB_DIR / "sinv"
+RECTIFIER_DIR = TB_DIR / "rectifier"
+INV_DIR = TB_DIR / "inv"
+BUCK_NPC_DIR = TB_DIR / "buck_npc"
 
 
 class CircuitDataTests(unittest.TestCase):
@@ -154,6 +157,150 @@ class CircuitDataTests(unittest.TestCase):
             header = files["header"].read_text(encoding="utf-8")
         self.assertIn("class SinvCircuit", header)
         self.assertIn('name == "V(2,1)"', header)
+
+    def test_three_phase_inverter_exports_six_pwm_ports_and_phase_probes(self) -> None:
+        source = INV_DIR / "INV.CIR"
+        document = data.build_circuit_data(
+            switched.build_piecewise_model(mna.parse_netlist(source)),
+            source_path=source,
+            normal_step_s=100e-9,
+            short_step_s=1e-9,
+        )
+        data.validate_circuit_data(document)
+        self.assertEqual(
+            [port["name"] for port in document["ports"]["inputs"]],
+            ["PWM1", "PWM2", "PWM3", "PWM4", "PWM5", "PWM6", "VS1"],
+        )
+        self.assertEqual(
+            [port["name"] for port in document["ports"]["outputs"]],
+            ["I(VAM3)", "I(VAM2)", "I(VAM1)", "V(5,1)", "V(4,1)", "V(3,1)"],
+        )
+        self.assertEqual(document["switching"]["topology_count"], 729)
+        self.assertEqual(
+            [(item["instance"], item["pwm_port"]) for item in document["switching"]["switches"]],
+            [
+                ("MT6", "PWM3"),
+                ("MT5", "PWM4"),
+                ("MT4", "PWM1"),
+                ("MT3", "PWM2"),
+                ("MT2", "PWM5"),
+                ("MT1", "PWM6"),
+            ],
+        )
+
+    def test_npc_buck_exports_mosfet_and_independent_diode_topology_axes(self) -> None:
+        source = BUCK_NPC_DIR / "BUCK_NPC.CIR"
+        document = data.build_circuit_data(
+            switched.build_piecewise_model(mna.parse_netlist(source)),
+            source_path=source,
+            normal_step_s=100e-9,
+            short_step_s=1e-9,
+        )
+        data.validate_circuit_data(document)
+        self.assertEqual(
+            [port["name"] for port in document["ports"]["inputs"]],
+            ["PWM1", "PWM2", "PWM3", "PWM4", "VS2", "VS1"],
+        )
+        self.assertEqual(
+            [port["name"] for port in document["ports"]["outputs"]],
+            ["V(4)", "I(VAM1)", "V(VF1)"],
+        )
+        self.assertEqual(document["switching"]["kind"], "multi_mosfet_diode")
+        self.assertEqual(document["switching"]["topology_count"], 324)
+        self.assertEqual(
+            [(item["instance"], item["pwm_port"]) for item in document["switching"]["switches"]],
+            [("MT5", "PWM3"), ("MT2", "PWM4"), ("MT4", "PWM1"), ("MT3", "PWM2")],
+        )
+        self.assertEqual(
+            [item["instance"] for item in document["switching"]["diodes"]], ["D2", "D1"]
+        )
+        for diode in document["devices"]["diodes"]:
+            self.assertAlmostEqual(diode["reduced"]["extracted_junction_capacitance_F"], 460e-12)
+            self.assertAlmostEqual(
+                diode["reduced"]["implemented_junction_capacitance_F"], 460e-12
+            )
+
+        simulator = data.CircuitDataSimulator(document)
+        for _ in range(20):
+            outputs = simulator.step(
+                {"PWM1": 0, "PWM2": 0, "PWM3": 1, "PWM4": 1},
+                {"VS1": 30.0, "VS2": 30.0},
+            )
+        self.assertTrue(all(np.isfinite(value) for value in outputs.values()))
+
+        with tempfile.TemporaryDirectory() as directory:
+            data_path = Path(directory) / "BUCK_NPC.json"
+            data.write_circuit_data(data_path, document)
+            files = codegen.generate_cpp_project(data_path, Path(directory) / "cpp")
+            header = files["header"].read_text(encoding="utf-8")
+        self.assertIn("class BuckNpcCircuit", header)
+        self.assertIn("static constexpr std::size_t topology_count = 324", header)
+        self.assertIn("std::array<bool, 4> body_on_", header)
+        self.assertIn("std::array<bool, 2> diode_on_", header)
+
+    def test_rectifier_exports_boolean_switch_and_four_diode_selection(self) -> None:
+        source = RECTIFIER_DIR / "RECTIFIER.CIR"
+        document = data.build_circuit_data(
+            switched.build_piecewise_model(mna.parse_netlist(source)),
+            source_path=source,
+            normal_step_s=1e-6,
+            short_step_s=10e-9,
+        )
+        data.validate_circuit_data(document)
+        self.assertEqual(
+            [(port["name"], port["data_type"]) for port in document["ports"]["inputs"]],
+            [("SWGPIO1", "uint32_t"), ("VS1", "double")],
+        )
+        self.assertEqual(
+            [port["name"] for port in document["ports"]["outputs"]],
+            ["V(1,2)", "V(VF1)"],
+        )
+        self.assertEqual(document["switching"]["kind"], "multi_diode_switch")
+        self.assertEqual(document["switching"]["topology_count"], 32)
+        self.assertEqual(
+            [item["instance"] for item in document["switching"]["diodes"]],
+            ["D4", "D3", "D2", "D1"],
+        )
+        self.assertEqual(document["switching"]["switches"][0]["command_port"], "SWGPIO1")
+        for diode in document["devices"]["diodes"]:
+            self.assertAlmostEqual(diode["reduced"]["extracted_junction_capacitance_F"], 460e-12)
+            self.assertEqual(diode["reduced"]["implemented_junction_capacitance_F"], 0.0)
+            self.assertTrue(
+                diode["extraction"]["junction_capacitance_suppressed_for_ideal_source"]
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            data_path = Path(directory) / "RECTIFIER.json"
+            data.write_circuit_data(data_path, document)
+            files = codegen.generate_cpp_project(data_path, Path(directory) / "cpp")
+            header = files["header"].read_text(encoding="utf-8")
+        self.assertIn("class RectifierCircuit", header)
+        self.assertIn("std::uint32_t SWGPIO1", header)
+        self.assertIn("std::array<bool, 4> diode_on_", header)
+
+    def test_rectifier_data_simulates_precharge_then_bypass(self) -> None:
+        source = RECTIFIER_DIR / "RECTIFIER.CIR"
+        document = data.build_circuit_data(
+            switched.build_piecewise_model(mna.parse_netlist(source)),
+            source_path=source,
+            normal_step_s=1e-6,
+            short_step_s=10e-9,
+        )
+        peak = 32.0 * np.sqrt(2.0)
+        result = data.simulate_circuit_data(
+            document,
+            100e-3,
+            inputs={"VS1": lambda time: peak * np.sin(2.0 * np.pi * 50.0 * time)},
+            pwm_inputs={"SWGPIO1": lambda time: int(time >= 60e-3)},
+        )
+        voltage = result.outputs[:, result.output_names.index("V(VF1)")]
+        precharge = voltage[40_000:60_000]
+        bypassed = voltage[80_000:100_000]
+        self.assertTrue(np.all(np.isfinite(voltage)))
+        self.assertGreater(float(np.mean(precharge)), 12.0)
+        self.assertLess(float(np.mean(precharge)), 17.0)
+        self.assertGreater(float(np.mean(bypassed)), 29.0)
+        self.assertLess(float(np.mean(bypassed)), 33.0)
 
     def test_boost_data_reaches_periodic_boost_waveform(self) -> None:
         source = BOOST_DIR / "BOOST.CIR"

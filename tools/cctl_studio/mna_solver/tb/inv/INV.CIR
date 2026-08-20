@@ -1,0 +1,68 @@
+INV (TINA Netlist Editor format)
+**************************************
+**  This file was created by TINA   **
+**         www.tina.com             ** 
+**      (c) DesignSoft, Inc.        **          
+**     www.designsoftware.com       **
+**************************************
+.LIB "<TINADIR>\EXAMPLES\SPICE\TSPICE.LIB"
+.LIB "<TINADIR>\SPICELIB\Operational Amplifiers.LIB"
+.TEMP 27
+.AC DEC 20 10 1MEG
+.TRAN 2N 1U
+.DC LIN VPWM3 0 1 10M
+
+.PROBE I(VAM3) I(VAM2) I(VAM1) V(5,1) V(4,1)
+.PROBE V(3,1)
+
+VAM3        6 7 ; Current Arrow
+VAM2        8 9 ; Current Arrow
+VAM1        10 11 ; Current Arrow
+VPWM3       15 8 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM4       17 0 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM1       18 10 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM2       19 0 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM5       20 6 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM6       22 0 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VS1         21 0 5
+R12         1 0 1MEG 
+R11         2 0 1MEG 
+R10         3 2 1MEG 
+R9          4 2 1MEG 
+R8          5 2 1MEG 
+R7          5 1 10 
+R6          4 1 10 
+R5          3 1 10 
+C5          5 2 5U 
+C4          4 2 5U 
+C3          3 2 5U 
+L3          12 5 1M IC=0 
+R4          7 12 50M 
+L2          13 4 1M IC=0 
+R2          9 13 50M 
+L1          14 3 1M IC=0 
+R1          11 14 50M 
+MT6         16 15 8 8  ME_2N6755_N_1 NRD=0 NRS=0 
+MT5         8 17 0 0  ME_2N6755_N_1 NRD=0 NRS=0 
+MT4         16 18 10 10  ME_2N6755_N_1 NRD=0 NRS=0 
+MT3         10 19 0 0  ME_2N6755_N_1 NRD=0 NRS=0 
+MT2         16 20 6 6  ME_2N6755_N_1 NRD=0 NRS=0 
+R3          21 16 50M 
+C2          16 0 100U 
+MT1         6 22 0 0  ME_2N6755_N_1 NRD=0 NRS=0 
+C1          16 0 100U 
+
+.MODEL ME_2N6755_N_1 NMOS( LEVEL=3 VTO=3.128 KP=21.14U PHI=600M GAMMA=0 TOX=100N 
++      UO=600 VMAX=0 DELTA=0 THETA=0 ETA=0 
++      L=2U W=1.1 RD=64.68M RS=120.7M RG=5.839 
++      RB=0 RDS=600K IS=44.14F N=1 PB=800M 
++      CBD=1.261N CBS=0 MJ=500M TT=370N CGSO=725.6P 
++      CGDO=310.6P CGBO=0 KF=0 AF=1 )
+
+.END

@@ -1,8 +1,8 @@
 """Piecewise-linear diode/MOSFET simulation built on the MNA solver.
 
-The switch network is expanded into linear topologies.  Terminal voltages from
-the previous sample select the next diode/body-diode state, while the MOSFET
-channel is controlled by an external Boolean PWM signal.
+The switch network is expanded into linear topologies. Terminal voltages from
+the previous sample select diode/body-diode states, while MOSFET channels and
+TINA VSWITCH devices are controlled by external Boolean signals.
 """
 
 from __future__ import annotations
@@ -72,6 +72,22 @@ class MosfetSwitchParameters:
 
 
 @dataclass(frozen=True)
+class DiodeSwitchParameters:
+    instance_name: str
+    forward_voltage: float
+    on_resistance: float
+    off_resistance: float
+    junction_capacitance: float
+
+
+@dataclass(frozen=True)
+class ControlledSwitchParameters:
+    instance_name: str
+    on_resistance: float
+    off_resistance: float
+
+
+@dataclass(frozen=True)
 class TopologyKey:
     diode_on: bool
     mosfet_path: MosfetPath
@@ -93,9 +109,49 @@ class MultiMosfetTopologyKey:
         )
 
 
+@dataclass(frozen=True)
+class MultiMosfetDiodeTopologyKey:
+    paths: tuple[MosfetPath, ...]
+    diode_states: tuple[bool, ...]
+    mosfet_names: tuple[str, ...] = ()
+    diode_names: tuple[str, ...] = ()
+
+    @property
+    def name(self) -> str:
+        mosfet_parts = [
+            f"{(self.mosfet_names[index] if self.mosfet_names else f'MOS{index + 1}')}_{path.value.upper()}"
+            for index, path in enumerate(self.paths)
+        ]
+        diode_parts = [
+            f"{(self.diode_names[index] if self.diode_names else f'DIODE{index + 1}')}_{'ON' if state else 'OFF'}"
+            for index, state in enumerate(self.diode_states)
+        ]
+        return "__".join([*mosfet_parts, *diode_parts])
+
+
+@dataclass(frozen=True)
+class MultiDiodeSwitchTopologyKey:
+    diode_states: tuple[bool, ...]
+    switch_states: tuple[bool, ...]
+    diode_names: tuple[str, ...] = ()
+    switch_names: tuple[str, ...] = ()
+
+    @property
+    def name(self) -> str:
+        diode_parts = [
+            f"{(self.diode_names[index] if self.diode_names else f'DIODE{index + 1}')}_{'ON' if state else 'OFF'}"
+            for index, state in enumerate(self.diode_states)
+        ]
+        switch_parts = [
+            f"{(self.switch_names[index] if self.switch_names else f'SWITCH{index + 1}')}_{'ON' if state else 'OFF'}"
+            for index, state in enumerate(self.switch_states)
+        ]
+        return "__".join([*diode_parts, *switch_parts])
+
+
 @dataclass
 class LinearTopology:
-    key: TopologyKey | MultiMosfetTopologyKey
+    key: TopologyKey | MultiMosfetTopologyKey | MultiMosfetDiodeTopologyKey | MultiDiodeSwitchTopologyKey
     circuit: Circuit
     descriptor: DescriptorModel
     state: StateSpaceModel
@@ -132,6 +188,28 @@ class MultiMosfetLinearModel:
 
 
 @dataclass
+class MultiMosfetDiodeLinearModel:
+    source_circuit: Circuit
+    mosfets: list[Element]
+    gate_sources: list[Element]
+    parameters: list[MosfetSwitchParameters]
+    diodes: list[Element]
+    diode_parameters: list[DiodeSwitchParameters]
+    topologies: dict[MultiMosfetDiodeTopologyKey, LinearTopology]
+
+
+@dataclass
+class MultiDiodeSwitchLinearModel:
+    source_circuit: Circuit
+    diodes: list[Element]
+    switches: list[Element]
+    control_sources: list[Element]
+    diode_parameters: list[DiodeSwitchParameters]
+    switch_parameters: list[ControlledSwitchParameters]
+    topologies: dict[MultiDiodeSwitchTopologyKey, LinearTopology]
+
+
+@dataclass
 class SwitchingSimulationResult:
     time: np.ndarray
     gate: np.ndarray
@@ -149,6 +227,45 @@ InputValue = float | Callable[[float], float]
 
 def _key(name: str) -> str:
     return name.upper()
+
+
+def ideal_source_nodes_requiring_capacitance_suppression(
+    elements: Sequence[Element], excluded_sources: Sequence[Element] = ()
+) -> set[str]:
+    """Find ideal-source terminals that cannot accept parasitic C in xdot=Ax+Bu."""
+
+    excluded = set(excluded_sources)
+    adjacency: dict[str, set[str]] = {}
+    for element in elements:
+        if element.kind != "V" or element in excluded:
+            continue
+        positive, negative = (_key(node) for node in element.nodes[:2])
+        adjacency.setdefault(positive, set()).add(negative)
+        adjacency.setdefault(negative, set()).add(positive)
+    result: set[str] = set()
+    visited: set[str] = set()
+    for start in adjacency:
+        if start in visited:
+            continue
+        component = {start}
+        pending = [start]
+        visited.add(start)
+        while pending:
+            node = pending.pop()
+            for neighbor in adjacency.get(node, ()):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    component.add(neighbor)
+                    pending.append(neighbor)
+        grounded = bool(component & {"0", "GND"})
+        resistively_anchored = any(
+            element.kind == "R"
+            and ((_key(element.nodes[0]) in component) != (_key(element.nodes[1]) in component))
+            for element in elements
+        )
+        if grounded or not resistively_anchored:
+            result.update(component - {"0", "GND"})
+    return result
 
 
 def _model_for(circuit: Circuit, element: Element) -> DeviceModel:
@@ -291,6 +408,60 @@ def derive_mosfet_parameters(
     )
 
 
+def derive_diode_parameters(
+    circuit: Circuit,
+    diode: Element,
+    overrides: Mapping[str, float] | None = None,
+) -> DiodeSwitchParameters:
+    """Derive the two-path PWL model for one independent diode."""
+
+    selected = overrides or {}
+    model = _model_for(circuit, diode)
+    vj = max(model.numeric("VJ", 0.7) or 0.7, 0.0)
+    cjo = max(model.numeric("CJO", 0.0) or 0.0, 0.0)
+    grading = model.numeric("M", 0.5) or 0.5
+    forward_coefficient = model.numeric("FC", 0.5) or 0.5
+    bias = _override(selected, f"{diode.name}.CjBias", 0.0)
+    junction_capacitance = linearized_junction_capacitance(
+        cjo, vj, grading, forward_coefficient, bias
+    )
+    return DiodeSwitchParameters(
+        instance_name=diode.name,
+        forward_voltage=_override(selected, f"{diode.name}.Vf", vj),
+        on_resistance=_override(
+            selected, f"{diode.name}.Ron", max(model.numeric("RS", 1e-3) or 1e-3, 1e-6)
+        ),
+        off_resistance=_override(selected, f"{diode.name}.Roff", 1e9),
+        junction_capacitance=_override(selected, f"{diode.name}.Cj", junction_capacitance),
+    )
+
+
+def derive_controlled_switch_parameters(
+    circuit: Circuit,
+    switch: Element,
+    overrides: Mapping[str, float] | None = None,
+) -> ControlledSwitchParameters:
+    """Derive Boolean-commanded RON/ROFF values from a VSWITCH model."""
+
+    selected = overrides or {}
+    model = _model_for(circuit, switch)
+    if _key(model.kind) != "VSWITCH":
+        raise NetlistError(
+            f"{switch.name}: expected a VSWITCH model, got {model.kind!r}"
+        )
+    raw_ron = model.numeric("RON", 0.0)
+    raw_roff = model.numeric("ROFF", 1e9)
+    return ControlledSwitchParameters(
+        instance_name=switch.name,
+        on_resistance=_override(
+            selected, f"{switch.name}.Ron", max(0.0 if raw_ron is None else raw_ron, 1e-3)
+        ),
+        off_resistance=_override(
+            selected, f"{switch.name}.Roff", max(1e9 if raw_roff is None else raw_roff, 1.0)
+        ),
+    )
+
+
 def _nodes(elements: Sequence[Element]) -> list[str]:
     result: dict[str, str] = {}
     for element in elements:
@@ -312,6 +483,21 @@ def _gate_source(circuit: Circuit, mosfet: Element) -> Element:
         raise NetlistError(
             f"{mosfet.name}: expected one voltage source whose positive terminal is gate {gate_node}, "
             f"got {len(candidates)}"
+        )
+    return candidates[0]
+
+
+def _controlled_switch_source(circuit: Circuit, switch: Element) -> Element:
+    control_node = switch.nodes[2]
+    candidates = [
+        element
+        for element in circuit.elements
+        if element.kind == "V" and _key(element.nodes[0]) == _key(control_node)
+    ]
+    if len(candidates) != 1:
+        raise NetlistError(
+            f"{switch.name}: expected one voltage source whose positive terminal is control node "
+            f"{control_node}, got {len(candidates)}"
         )
     return candidates[0]
 
@@ -544,7 +730,10 @@ def build_multi_mosfet_model(
         )
         descriptor = assemble_mna(expanded)
         outputs = assemble_outputs(expanded, descriptor)
-        state = reduce_to_state_space(descriptor, outputs)
+        try:
+            state = reduce_to_state_space(descriptor, outputs)
+        except NetlistError as error:
+            raise NetlistError(f"{key.name}: {error}") from error
         topologies[key] = LinearTopology(key, expanded, descriptor, state)
 
     reference = next(iter(topologies.values())).state
@@ -560,16 +749,308 @@ def build_multi_mosfet_model(
     )
 
 
+def _expanded_multi_mosfet_diode_circuit(
+    circuit: Circuit,
+    mosfets: Sequence[Element],
+    gate_sources: Sequence[Element],
+    mosfet_parameters: Sequence[MosfetSwitchParameters],
+    diodes: Sequence[Element],
+    diode_parameters: Sequence[DiodeSwitchParameters],
+    key: MultiMosfetDiodeTopologyKey,
+) -> Circuit:
+    """Replace independent diodes, then expand every MOSFET selected path."""
+
+    elements = [element for element in circuit.elements if element not in set(diodes)]
+    ideal_source_nodes = ideal_source_nodes_requiring_capacitance_suppression(
+        elements, gate_sources
+    )
+    for diode, item, diode_on in zip(diodes, diode_parameters, key.diode_states):
+        internal = f"__{diode.name}_series"
+        modeled_capacitance = (
+            0.0
+            if any(_key(node) in ideal_source_nodes for node in diode.nodes[:2])
+            else item.junction_capacitance
+        )
+        elements.extend(
+            [
+                Element(
+                    f"C__{diode.name}_junction",
+                    "C",
+                    diode.nodes[:2],
+                    f"{modeled_capacitance:.17g}",
+                ),
+                Element(
+                    f"V__{diode.name}_drop",
+                    "V",
+                    (diode.nodes[0], internal),
+                    f"{item.forward_voltage if diode_on else 0.0:.17g}",
+                ),
+                Element(
+                    f"R__{diode.name}_path",
+                    "R",
+                    (internal, diode.nodes[1]),
+                    f"{item.on_resistance if diode_on else item.off_resistance:.17g}",
+                ),
+            ]
+        )
+
+    observations = list(circuit.observations)
+    existing = {_key(item.name) for item in observations}
+    for diode in diodes:
+        for observation in (
+            Observation("V", diode.nodes[0], label=f"V({diode.name}.A)"),
+            Observation("V", diode.nodes[1], label=f"V({diode.name}.K)"),
+        ):
+            if _key(observation.name) not in existing:
+                observations.append(observation)
+                existing.add(_key(observation.name))
+    diode_expanded = Circuit(
+        title=circuit.title,
+        elements=elements,
+        observations=observations,
+        nodes=_nodes(elements),
+        models=circuit.models,
+        ignored_directives=circuit.ignored_directives,
+    )
+    return _expanded_multi_mosfet_circuit(
+        diode_expanded,
+        mosfets,
+        gate_sources,
+        mosfet_parameters,
+        key,
+    )
+
+
+def build_multi_mosfet_diode_model(
+    circuit: Circuit,
+    device_overrides: Mapping[str, float] | None = None,
+) -> MultiMosfetDiodeLinearModel:
+    """Build all 3**M MOS paths and 2**D independent-diode states."""
+
+    mosfets = [element for element in circuit.elements if element.kind == "M"]
+    diodes = [element for element in circuit.elements if element.kind == "D"]
+    switches = [element for element in circuit.elements if element.kind == "S"]
+    if not mosfets or not diodes or switches:
+        raise NetlistError(
+            "mixed MOS/diode mode requires MOSFETs and independent diodes, but no VSWITCH devices"
+        )
+    gate_sources = [_gate_source(circuit, mosfet) for mosfet in mosfets]
+    if len({_key(source.name) for source in gate_sources}) != len(gate_sources):
+        raise NetlistError("each MOSFET must have a distinct gate voltage source")
+    mosfet_parameters = [
+        derive_mosfet_parameters(circuit, mosfet, device_overrides) for mosfet in mosfets
+    ]
+    diode_parameters = [
+        derive_diode_parameters(circuit, diode, device_overrides) for diode in diodes
+    ]
+    topologies: dict[MultiMosfetDiodeTopologyKey, LinearTopology] = {}
+    choices = (MosfetPath.OFF, MosfetPath.CHANNEL, MosfetPath.BODY_DIODE)
+    for paths in itertools.product(choices, repeat=len(mosfets)):
+        for diode_states in itertools.product((False, True), repeat=len(diodes)):
+            key = MultiMosfetDiodeTopologyKey(
+                paths,
+                diode_states,
+                tuple(mosfet.name for mosfet in mosfets),
+                tuple(diode.name for diode in diodes),
+            )
+            expanded = _expanded_multi_mosfet_diode_circuit(
+                circuit,
+                mosfets,
+                gate_sources,
+                mosfet_parameters,
+                diodes,
+                diode_parameters,
+                key,
+            )
+            descriptor = assemble_mna(expanded)
+            outputs = assemble_outputs(expanded, descriptor)
+            try:
+                state = reduce_to_state_space(descriptor, outputs)
+            except NetlistError as error:
+                raise NetlistError(f"{key.name}: {error}") from error
+            topologies[key] = LinearTopology(key, expanded, descriptor, state)
+
+    reference = next(iter(topologies.values())).state
+    for topology in topologies.values():
+        if (
+            topology.state.state_names != reference.state_names
+            or topology.state.input_names != reference.input_names
+            or topology.state.output_names != reference.output_names
+        ):
+            raise NetlistError("mixed MOS/diode expansion produced incompatible topology coordinates")
+    return MultiMosfetDiodeLinearModel(
+        circuit,
+        mosfets,
+        gate_sources,
+        mosfet_parameters,
+        diodes,
+        diode_parameters,
+        topologies,
+    )
+
+
+def _expanded_multi_diode_switch_circuit(
+    circuit: Circuit,
+    diodes: Sequence[Element],
+    switches: Sequence[Element],
+    control_sources: Sequence[Element],
+    diode_parameters: Sequence[DiodeSwitchParameters],
+    switch_parameters: Sequence[ControlledSwitchParameters],
+    key: MultiDiodeSwitchTopologyKey,
+) -> Circuit:
+    """Replace independent diodes and VSWITCH devices by selected linear paths."""
+
+    removed = set(diodes) | set(switches) | set(control_sources)
+    elements = [element for element in circuit.elements if element not in removed]
+    ideal_source_nodes = ideal_source_nodes_requiring_capacitance_suppression(elements)
+    for diode, item, diode_on in zip(diodes, diode_parameters, key.diode_states):
+        internal = f"__{diode.name}_series"
+        # A depletion capacitor connected directly to an ideal, time-varying
+        # voltage-source terminal introduces u_dot and an index-2 descriptor.
+        # The current state-space boundary has no input-derivative port, so omit
+        # that parasitic in this exceptional case. The extracted CJO value is
+        # still retained in circuit data for a future descriptor backend.
+        modeled_capacitance = (
+            0.0
+            if any(_key(node) in ideal_source_nodes for node in diode.nodes[:2])
+            else item.junction_capacitance
+        )
+        elements.extend(
+            [
+                Element(
+                    f"C__{diode.name}_junction",
+                    "C",
+                    diode.nodes[:2],
+                    f"{modeled_capacitance:.17g}",
+                ),
+                Element(
+                    f"V__{diode.name}_drop",
+                    "V",
+                    (diode.nodes[0], internal),
+                    f"{item.forward_voltage if diode_on else 0.0:.17g}",
+                ),
+                Element(
+                    f"R__{diode.name}_path",
+                    "R",
+                    (internal, diode.nodes[1]),
+                    f"{item.on_resistance if diode_on else item.off_resistance:.17g}",
+                ),
+            ]
+        )
+    for switch, item, switch_on in zip(switches, switch_parameters, key.switch_states):
+        elements.append(
+            Element(
+                f"R__{switch.name}_path",
+                "R",
+                switch.nodes[:2],
+                f"{item.on_resistance if switch_on else item.off_resistance:.17g}",
+            )
+        )
+
+    observations = list(circuit.observations)
+    existing = {_key(item.name) for item in observations}
+    for diode in diodes:
+        for observation in (
+            Observation("V", diode.nodes[0], label=f"V({diode.name}.A)"),
+            Observation("V", diode.nodes[1], label=f"V({diode.name}.K)"),
+        ):
+            if _key(observation.name) not in existing:
+                observations.append(observation)
+                existing.add(_key(observation.name))
+    return Circuit(
+        title=f"{circuit.title} [{key.name}]",
+        elements=elements,
+        observations=observations,
+        nodes=_nodes(elements),
+        models=circuit.models,
+        ignored_directives=circuit.ignored_directives,
+    )
+
+
+def build_multi_diode_switch_model(
+    circuit: Circuit,
+    device_overrides: Mapping[str, float] | None = None,
+) -> MultiDiodeSwitchLinearModel:
+    """Build every on/off combination for independent diodes and VSWITCH devices."""
+
+    diodes = [element for element in circuit.elements if element.kind == "D"]
+    switches = [element for element in circuit.elements if element.kind == "S"]
+    mosfets = [element for element in circuit.elements if element.kind == "M"]
+    if mosfets or not (diodes or switches):
+        raise NetlistError(
+            "multi-diode/switch mode requires at least one diode or VSWITCH and no MOSFETs"
+        )
+    control_sources = [_controlled_switch_source(circuit, switch) for switch in switches]
+    if len({_key(source.name) for source in control_sources}) != len(control_sources):
+        raise NetlistError("each controlled switch must have a distinct control voltage source")
+    diode_parameters = [
+        derive_diode_parameters(circuit, diode, device_overrides) for diode in diodes
+    ]
+    switch_parameters = [
+        derive_controlled_switch_parameters(circuit, switch, device_overrides)
+        for switch in switches
+    ]
+    topologies: dict[MultiDiodeSwitchTopologyKey, LinearTopology] = {}
+    device_count = len(diodes) + len(switches)
+    for states in itertools.product((False, True), repeat=device_count):
+        key = MultiDiodeSwitchTopologyKey(
+            tuple(states[: len(diodes)]),
+            tuple(states[len(diodes) :]),
+            tuple(diode.name for diode in diodes),
+            tuple(switch.name for switch in switches),
+        )
+        expanded = _expanded_multi_diode_switch_circuit(
+            circuit,
+            diodes,
+            switches,
+            control_sources,
+            diode_parameters,
+            switch_parameters,
+            key,
+        )
+        descriptor = assemble_mna(expanded)
+        outputs = assemble_outputs(expanded, descriptor)
+        state = reduce_to_state_space(descriptor, outputs)
+        topologies[key] = LinearTopology(key, expanded, descriptor, state)
+
+    reference = next(iter(topologies.values())).state
+    for topology in topologies.values():
+        if (
+            topology.state.state_names != reference.state_names
+            or topology.state.input_names != reference.input_names
+            or topology.state.output_names != reference.output_names
+        ):
+            raise NetlistError(
+                "multi-diode/switch expansion produced incompatible topology coordinates"
+            )
+    return MultiDiodeSwitchLinearModel(
+        circuit,
+        diodes,
+        switches,
+        control_sources,
+        diode_parameters,
+        switch_parameters,
+        topologies,
+    )
+
+
 def build_piecewise_model(
     circuit: Circuit,
     device_overrides: Mapping[str, float] | None = None,
-) -> PiecewiseLinearModel | MultiMosfetLinearModel:
-    """Build four primary and two body-diode PWL state-space topologies."""
+) -> PiecewiseLinearModel | MultiMosfetLinearModel | MultiMosfetDiodeLinearModel | MultiDiodeSwitchLinearModel:
+    """Build the supported diode, MOSFET, and VSWITCH PWL topology family."""
 
     diodes = [element for element in circuit.elements if element.kind == "D"]
     mosfets = [element for element in circuit.elements if element.kind == "M"]
+    switches = [element for element in circuit.elements if element.kind == "S"]
+    if switches and mosfets:
+        raise NetlistError("mixed MOSFET and VSWITCH expansion is not supported yet")
+    if not mosfets and (diodes or switches):
+        return build_multi_diode_switch_model(circuit, device_overrides)
     if not diodes and mosfets:
         return build_multi_mosfet_model(circuit, device_overrides)
+    if mosfets and diodes and (len(mosfets) != 1 or len(diodes) != 1):
+        return build_multi_mosfet_diode_model(circuit, device_overrides)
 
     diode, mosfet, parameters = derive_switch_parameters(circuit, device_overrides)
     gate_source = _gate_source(circuit, mosfet)
@@ -851,13 +1332,21 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         circuit = parse_netlist(args.netlist)
         model = build_piecewise_model(circuit, _assignment(args.device_param))
-        p = model.parameters
         if args.command == "analyze":
             print("Derived switch parameters:")
-            for name, value in vars(p).items():
-                print(f"  {name} = {value}")
-            print(f"\nPrimary topology count: {len(model.primary_topologies)}")
-            print(f"Physical topology count including body conduction: {len(model.topologies)}")
+            if isinstance(model, MultiDiodeSwitchLinearModel):
+                for item in model.diode_parameters:
+                    print(f"  {item.instance_name}: {item}")
+                for item in model.switch_parameters:
+                    print(f"  {item.instance_name}: {item}")
+            elif isinstance(model, MultiMosfetLinearModel):
+                for item in model.parameters:
+                    print(f"  {item.instance_name}: {item}")
+            else:
+                for name, value in vars(model.parameters).items():
+                    print(f"  {name} = {value}")
+                print(f"\nPrimary topology count: {len(model.primary_topologies)}")
+            print(f"Physical topology count: {len(model.topologies)}")
             if args.dt is not None:
                 prepare_discrete_topologies(model, args.dt, args.method)
             for key, topology in model.topologies.items():
@@ -867,6 +1356,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if topology.discrete is not None:
                     print("\n".join(discrete_equations(topology.discrete)))
         else:
+            if not isinstance(model, PiecewiseLinearModel):
+                raise NetlistError(
+                    "direct switched_solver simulation currently supports the one-diode/one-MOSF "
+                    "case; export circuit data for multi-device simulation"
+                )
             result = simulate_piecewise(
                 model,
                 args.duration,

@@ -1,4 +1,5 @@
 /*/*.json
+/*/generated/*.json
 **/.vs/
 **/out/
 **/build/

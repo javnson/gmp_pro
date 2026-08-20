@@ -20,11 +20,14 @@ import numpy as np
 
 from mna_solver import NetlistError, StateSpaceModel, discretize, parse_netlist, parse_spice_value
 from switched_solver import (
+    MultiDiodeSwitchLinearModel,
+    MultiMosfetDiodeLinearModel,
     MultiMosfetLinearModel,
     MosfetPath,
     PiecewiseLinearModel,
     TopologyKey,
     build_piecewise_model,
+    ideal_source_nodes_requiring_capacitance_suppression,
 )
 
 
@@ -117,7 +120,7 @@ def _pwm_port_name(source_name: str) -> str:
 
 
 def _build_multi_mosfet_circuit_data(
-    model: MultiMosfetLinearModel,
+    model: MultiMosfetLinearModel | MultiMosfetDiodeLinearModel,
     *,
     source_path: str | Path | None,
     normal_step_s: float,
@@ -169,6 +172,51 @@ def _build_multi_mosfet_circuit_data(
         }
         for name, field in zip(public_names, fields)
     ]
+
+    mixed_model = isinstance(model, MultiMosfetDiodeLinearModel)
+    diode_documents = []
+    diode_selection = []
+    if mixed_model:
+        ideal_source_nodes = ideal_source_nodes_requiring_capacitance_suppression(
+            model.source_circuit.elements, model.gate_sources
+        )
+        for index, (diode, item) in enumerate(
+            zip(model.diodes, model.diode_parameters)
+        ):
+            device_model = model.source_circuit.models[_key(diode.model_name or "")]
+            capacitance_suppressed = any(
+                _key(node) in ideal_source_nodes for node in diode.nodes[:2]
+            )
+            diode_documents.append(
+                {
+                    "instance": diode.name,
+                    "model": _model_document(device_model),
+                    "reduced": {
+                        "forward_voltage_V": item.forward_voltage,
+                        "on_resistance_ohm": item.on_resistance,
+                        "off_resistance_ohm": item.off_resistance,
+                        "extracted_junction_capacitance_F": item.junction_capacitance,
+                        "implemented_junction_capacitance_F": (
+                            0.0 if capacitance_suppressed else item.junction_capacitance
+                        ),
+                    },
+                    "extraction": {
+                        "forward_voltage": "VJ",
+                        "on_resistance": "RS",
+                        "junction_capacitance": "SPICE depletion C(Vbias) from CJO,VJ,M,FC; Vbias=0 by default",
+                        "junction_capacitance_suppressed_for_ideal_source": capacitance_suppressed,
+                    },
+                }
+            )
+            diode_selection.append(
+                {
+                    "index": index,
+                    "instance": diode.name,
+                    "anode_signal_index": signal_indices[_key(f"V({diode.name}.A)")],
+                    "cathode_signal_index": signal_indices[_key(f"V({diode.name}.K)")],
+                    "forward_threshold_V": item.forward_voltage,
+                }
+            )
 
     mosfet_documents = []
     switch_documents = []
@@ -224,18 +272,213 @@ def _build_multi_mosfet_circuit_data(
         continuous["unknown_names"] = list(topology.state.unknown_names)
         continuous["raw_input_names"] = list(topology.state.input_names)
         continuous["raw_input_defaults"] = _vector(topology.state.input_defaults)
+        topology_document = {
+            "index": len(topology_documents),
+            "name": key.name,
+            "mosfet_paths": [path.value for path in key.paths],
+            "continuous": continuous,
+            "discrete": {
+                "normal": _affine_model(
+                    topology.state, external_inputs, discrete_dt=normal_step_s, method=method
+                ),
+                "short": _affine_model(
+                    topology.state, external_inputs, discrete_dt=short_step_s, method=method
+                ),
+            },
+        }
+        if mixed_model:
+            topology_document["diode_states"] = list(key.diode_states)
+        topology_documents.append(topology_document)
+
+    source = {"file": None, "sha256": None}
+    if source_path is not None:
+        path = Path(source_path)
+        source = {"file": path.name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+    return {
+        "schema": {"name": SCHEMA_NAME, "version": SCHEMA_VERSION},
+        "circuit": {"name": model.source_circuit.title, "source": source},
+        "ports": {"inputs": input_ports, "outputs": output_ports},
+        "state": {"names": list(reference.state_names), "initial": [0.0] * len(reference.state_names)},
+        "signals": {"names": list(reference.output_names)},
+        "devices": {"diodes": diode_documents, "mosfets": mosfet_documents},
+        "switching": {
+            "kind": "multi_mosfet_diode" if mixed_model else "multi_mosfet",
+            "switches": switch_documents,
+            "diodes": diode_selection,
+            "voltage_hysteresis_V": voltage_hysteresis,
+            "selection_uses_previous_terminal_voltage": True,
+            "topology_order": topology_order,
+            "topology_count": len(topology_documents),
+        },
+        "solver": {
+            "method": method,
+            "normal_step_s": normal_step_s,
+            "short_step_s": short_step_s,
+        },
+        "topologies": topology_documents,
+    }
+
+
+def _build_multi_diode_switch_circuit_data(
+    model: MultiDiodeSwitchLinearModel,
+    *,
+    source_path: str | Path | None,
+    normal_step_s: float,
+    short_step_s: float,
+    method: str,
+    voltage_hysteresis: float,
+) -> dict:
+    reference = next(iter(model.topologies.values())).state
+    control_names = {_key(source.name) for source in model.control_sources}
+    source_names = [
+        element.name
+        for element in model.source_circuit.elements
+        if element.kind in {"V", "I"} and _key(element.name) not in control_names
+    ]
+    external_inputs = [
+        name for name in reference.input_names if _key(name) in {_key(item) for item in source_names}
+    ]
+    source_elements = {_key(element.name): element for element in model.source_circuit.elements}
+    input_ports = sorted(
+        [
+            {
+                "name": _pwm_port_name(source.name),
+                "source_element": source.name,
+                "data_type": "uint32_t",
+                "role": "controlled_switch_command",
+                "switch_index": index,
+                "switch_instance": switch.name,
+                "default": 0,
+            }
+            for index, (switch, source) in enumerate(
+                zip(model.switches, model.control_sources)
+            )
+        ],
+        key=lambda port: _key(port["name"]),
+    )
+    input_ports.extend(
+        {
+            "name": name,
+            "source_element": name,
+            "data_type": "double",
+            "default": float(source_elements[_key(name)].numeric_value({})),
+        }
+        for name in external_inputs
+    )
+
+    public_names = [observation.name for observation in model.source_circuit.observations]
+    fields = _unique_output_fields(public_names)
+    signal_indices = {_key(name): index for index, name in enumerate(reference.output_names)}
+    output_ports = [
+        {
+            "name": name,
+            "field": field,
+            "data_type": "double",
+            "signal_index": signal_indices[_key(name)],
+        }
+        for name, field in zip(public_names, fields)
+    ]
+
+    ideal_source_nodes = ideal_source_nodes_requiring_capacitance_suppression(
+        model.source_circuit.elements, model.control_sources
+    )
+    diode_documents = []
+    diode_selection = []
+    for index, (diode, item) in enumerate(zip(model.diodes, model.diode_parameters)):
+        device_model = model.source_circuit.models[_key(diode.model_name or "")]
+        capacitance_suppressed = any(
+            _key(node) in ideal_source_nodes for node in diode.nodes[:2]
+        )
+        diode_documents.append(
+            {
+                "instance": diode.name,
+                "model": _model_document(device_model),
+                "reduced": {
+                    "forward_voltage_V": item.forward_voltage,
+                    "on_resistance_ohm": item.on_resistance,
+                    "off_resistance_ohm": item.off_resistance,
+                    "extracted_junction_capacitance_F": item.junction_capacitance,
+                    "implemented_junction_capacitance_F": (
+                        0.0 if capacitance_suppressed else item.junction_capacitance
+                    ),
+                },
+                "extraction": {
+                    "forward_voltage": "VJ",
+                    "on_resistance": "RS",
+                    "junction_capacitance": "SPICE depletion C(Vbias) from CJO,VJ,M,FC; Vbias=0 by default",
+                    "junction_capacitance_suppressed_for_ideal_source": capacitance_suppressed,
+                },
+            }
+        )
+        diode_selection.append(
+            {
+                "index": index,
+                "instance": diode.name,
+                "anode_signal_index": signal_indices[_key(f"V({diode.name}.A)")],
+                "cathode_signal_index": signal_indices[_key(f"V({diode.name}.K)")],
+                "forward_threshold_V": item.forward_voltage,
+            }
+        )
+
+    switch_documents = []
+    switch_selection = []
+    for index, (switch, source, item) in enumerate(
+        zip(model.switches, model.control_sources, model.switch_parameters)
+    ):
+        device_model = model.source_circuit.models[_key(switch.model_name or "")]
+        command_port = _pwm_port_name(source.name)
+        switch_documents.append(
+            {
+                "instance": switch.name,
+                "model": _model_document(device_model),
+                "reduced": {
+                    "on_resistance_ohm": item.on_resistance,
+                    "off_resistance_ohm": item.off_resistance,
+                },
+                "extraction": {
+                    "on_resistance": "RON, clamped to 1 mOhm for numeric conditioning",
+                    "off_resistance": "ROFF",
+                },
+            }
+        )
+        switch_selection.append(
+            {
+                "index": index,
+                "instance": switch.name,
+                "command_port": command_port,
+                "control_source_ignored": source.name,
+            }
+        )
+
+    topology_documents = []
+    topology_order = []
+    for key, topology in model.topologies.items():
+        topology_order.append(key.name)
+        continuous = _affine_model(topology.state, external_inputs)
+        continuous["reconstruction_x"] = _matrix(topology.state.reconstruction_x)
+        continuous["reconstruction_u"] = _matrix(topology.state.reconstruction_u)
+        continuous["unknown_names"] = list(topology.state.unknown_names)
+        continuous["raw_input_names"] = list(topology.state.input_names)
+        continuous["raw_input_defaults"] = _vector(topology.state.input_defaults)
         topology_documents.append(
             {
                 "index": len(topology_documents),
                 "name": key.name,
-                "mosfet_paths": [path.value for path in key.paths],
+                "diode_states": list(key.diode_states),
+                "switch_states": list(key.switch_states),
                 "continuous": continuous,
                 "discrete": {
                     "normal": _affine_model(
-                        topology.state, external_inputs, discrete_dt=normal_step_s, method=method
+                        topology.state,
+                        external_inputs,
+                        discrete_dt=normal_step_s,
+                        method=method,
                     ),
                     "short": _affine_model(
-                        topology.state, external_inputs, discrete_dt=short_step_s, method=method
+                        topology.state,
+                        external_inputs,
+                        discrete_dt=short_step_s,
+                        method=method,
                     ),
                 },
             }
@@ -251,10 +494,15 @@ def _build_multi_mosfet_circuit_data(
         "ports": {"inputs": input_ports, "outputs": output_ports},
         "state": {"names": list(reference.state_names), "initial": [0.0] * len(reference.state_names)},
         "signals": {"names": list(reference.output_names)},
-        "devices": {"diodes": [], "mosfets": mosfet_documents},
+        "devices": {
+            "diodes": diode_documents,
+            "mosfets": [],
+            "controlled_switches": switch_documents,
+        },
         "switching": {
-            "kind": "multi_mosfet",
-            "switches": switch_documents,
+            "kind": "multi_diode_switch",
+            "diodes": diode_selection,
+            "switches": switch_selection,
             "voltage_hysteresis_V": voltage_hysteresis,
             "selection_uses_previous_terminal_voltage": True,
             "topology_order": topology_order,
@@ -270,7 +518,7 @@ def _build_multi_mosfet_circuit_data(
 
 
 def build_circuit_data(
-    model: PiecewiseLinearModel | MultiMosfetLinearModel,
+    model: PiecewiseLinearModel | MultiMosfetLinearModel | MultiMosfetDiodeLinearModel | MultiDiodeSwitchLinearModel,
     *,
     source_path: str | Path | None = None,
     normal_step_s: float = 100e-9,
@@ -282,7 +530,16 @@ def build_circuit_data(
 
     if normal_step_s <= 0.0 or short_step_s <= 0.0:
         raise ValueError("normal and short simulation steps must be positive")
-    if isinstance(model, MultiMosfetLinearModel):
+    if isinstance(model, MultiDiodeSwitchLinearModel):
+        return _build_multi_diode_switch_circuit_data(
+            model,
+            source_path=source_path,
+            normal_step_s=normal_step_s,
+            short_step_s=short_step_s,
+            method=method,
+            voltage_hysteresis=voltage_hysteresis,
+        )
+    if isinstance(model, (MultiMosfetLinearModel, MultiMosfetDiodeLinearModel)):
         return _build_multi_mosfet_circuit_data(
             model,
             source_path=source_path,
@@ -451,9 +708,22 @@ def validate_circuit_data(document: Mapping) -> None:
         raise ValueError(
             f"switched circuit data must contain {expected_topologies} topologies, got {len(topologies)}"
         )
-    switches = document.get("switching", {}).get("switches", [])
-    if switches and expected_topologies != 3 ** len(switches):
+    switching = document.get("switching", {})
+    switches = switching.get("switches", [])
+    if switching.get("kind") == "multi_mosfet" and expected_topologies != 3 ** len(switches):
         raise ValueError("multi-MOS topology count must be 3**number_of_switches")
+    if switching.get("kind") == "multi_mosfet_diode":
+        diode_count = len(switching.get("diodes", []))
+        if expected_topologies != 3 ** len(switches) * 2**diode_count:
+            raise ValueError(
+                "mixed MOS/diode topology count must be 3**number_of_MOSFETs * 2**number_of_diodes"
+            )
+    if switching.get("kind") == "multi_diode_switch":
+        device_count = len(switching.get("diodes", [])) + len(switches)
+        if expected_topologies != 2**device_count:
+            raise ValueError(
+                "multi-diode/switch topology count must be 2**number_of_devices"
+            )
     state_count = len(document["state"]["names"])
     signal_count = len(document["signals"]["names"])
     input_count = sum(port["data_type"] == "double" for port in document["ports"]["inputs"])
@@ -495,10 +765,23 @@ class CircuitDataSimulator:
     def __init__(self, document: Mapping):
         validate_circuit_data(document)
         self.document = document
-        self.multi_mosfet = document["switching"].get("kind") == "multi_mosfet"
-        if self.multi_mosfet:
+        self.switching_kind = document["switching"].get("kind", "single_diode_mosfet")
+        self.multi_mosfet_diode = self.switching_kind == "multi_mosfet_diode"
+        self.multi_mosfet = self.switching_kind in {"multi_mosfet", "multi_mosfet_diode"}
+        self.multi_diode_switch = self.switching_kind == "multi_diode_switch"
+        if self.multi_mosfet_diode:
+            self.topologies = {
+                (tuple(item["mosfet_paths"]), tuple(item["diode_states"])): item
+                for item in document["topologies"]
+            }
+        elif self.multi_mosfet:
             self.topologies = {
                 tuple(item["mosfet_paths"]): item for item in document["topologies"]
+            }
+        elif self.multi_diode_switch:
+            self.topologies = {
+                (tuple(item["diode_states"]), tuple(item["switch_states"])): item
+                for item in document["topologies"]
             }
         else:
             self.topologies = {
@@ -509,7 +792,11 @@ class CircuitDataSimulator:
         self.pwm_ports = [port for port in document["ports"]["inputs"] if port["data_type"] == "uint32_t"]
         self.x = np.asarray(document["state"]["initial"], dtype=float)
         self.signals = np.zeros(len(document["signals"]["names"]), dtype=float)
-        self.diode_on = False
+        self.diode_on = (
+            [False] * len(document["switching"].get("diodes", []))
+            if self.multi_diode_switch or self.multi_mosfet_diode
+            else False
+        )
         self.body_on = [False] * len(document["switching"].get("switches", [])) if self.multi_mosfet else False
         self.last_topology = document["topologies"][0]["name"]
 
@@ -518,11 +805,40 @@ class CircuitDataSimulator:
         if self.x.shape != (len(self.document["state"]["names"]),):
             raise ValueError("initial state has the wrong dimension")
         self.signals.fill(0.0)
-        self.diode_on = False
+        self.diode_on = (
+            [False] * len(self.document["switching"].get("diodes", []))
+            if self.multi_diode_switch or self.multi_mosfet_diode
+            else False
+        )
         self.body_on = [False] * len(self.document["switching"].get("switches", [])) if self.multi_mosfet else False
         self.last_topology = self.document["topologies"][0]["name"]
 
     def _select(self, pwm: int | Mapping[str, int]) -> tuple:
+        if self.multi_diode_switch:
+            supplied = (
+                {_key(name): int(value) for name, value in pwm.items()}
+                if isinstance(pwm, Mapping)
+                else {_key(port["name"]): int(pwm) for port in self.pwm_ports}
+            )
+            unknown = set(supplied) - {_key(port["name"]) for port in self.pwm_ports}
+            if unknown:
+                raise ValueError("unknown digital input(s): " + ", ".join(sorted(unknown)))
+            hysteresis = self.document["switching"]["voltage_hysteresis_V"]
+            assert isinstance(self.diode_on, list)
+            for index, diode in enumerate(self.document["switching"]["diodes"]):
+                vak = (
+                    self.signals[diode["anode_signal_index"]]
+                    - self.signals[diode["cathode_signal_index"]]
+                )
+                threshold = diode["forward_threshold_V"]
+                self.diode_on[index] = vak >= threshold + (
+                    -hysteresis if self.diode_on[index] else hysteresis
+                )
+            switch_states = tuple(
+                supplied.get(_key(switch["command_port"]), 0) != 0
+                for switch in self.document["switching"]["switches"]
+            )
+            return tuple(self.diode_on), switch_states
         if self.multi_mosfet:
             supplied = (
                 {_key(name): int(value) for name, value in pwm.items()}
@@ -551,7 +867,19 @@ class CircuitDataSimulator:
                 paths.append(
                     MosfetPath.BODY_DIODE.value if self.body_on[index] else MosfetPath.OFF.value
                 )
-            return tuple(paths)
+            if not self.multi_mosfet_diode:
+                return tuple(paths)
+            assert isinstance(self.diode_on, list)
+            for index, diode in enumerate(self.document["switching"]["diodes"]):
+                vak = (
+                    self.signals[diode["anode_signal_index"]]
+                    - self.signals[diode["cathode_signal_index"]]
+                )
+                threshold = diode["forward_threshold_V"]
+                self.diode_on[index] = vak >= threshold + (
+                    -hysteresis if self.diode_on[index] else hysteresis
+                )
+            return tuple(paths), tuple(self.diode_on)
         indices = self.document["signals"]["switch_terminal_indices"]
         vak = self.signals[indices["diode_anode"]] - self.signals[indices["diode_cathode"]]
         vsd = self.signals[indices["mosfet_source"]] - self.signals[indices["mosfet_drain"]]

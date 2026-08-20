@@ -26,13 +26,14 @@ if errorlevel 1 goto :failed
 set "CASE_DIR=%~dp0"
 for %%I in ("%NETLIST_FILE%") do set "NETLIST_STEM=%%~nI"
 set "NETLIST_PATH=%CASE_DIR%%NETLIST_FILE%"
-set "JSON_PATH=%CASE_DIR%%NETLIST_STEM%.json"
 set "GENERATED_DIR=%CASE_DIR%generated"
+set "JSON_PATH=%GENERATED_DIR%\%NETLIST_STEM%.json"
 if not exist "%NETLIST_PATH%" (
     echo [ERROR] Netlist does not exist: %NETLIST_PATH%
     set "RESULT=1"
     goto :failed_with_result
 )
+if not exist "%GENERATED_DIR%" mkdir "%GENERATED_DIR%"
 
 echo [1/2] Exporting portable circuit data...
 python "%MNA_TOOL_DIR%\circuit_data.py" export "%NETLIST_PATH%" "%JSON_PATH%" --normal-dt 100N --short-dt 1N --method backward_euler

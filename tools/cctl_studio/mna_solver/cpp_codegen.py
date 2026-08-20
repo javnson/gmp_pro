@@ -95,7 +95,36 @@ def render_header(document: Mapping, class_name: str) -> str:
         for field, port in zip(input_fields, input_ports)
     )
     pwm_members = "\n".join(f"        std::uint32_t {field}{{0U}};" for field in pwm_fields)
-    if switching.get("kind") == "multi_mosfet":
+    if switching.get("kind") == "multi_diode_switch":
+        pwm_field_by_name = {
+            str(port["name"]).upper(): field for port, field in zip(pwm_ports, pwm_fields)
+        }
+        selection_lines: list[str] = []
+        for index, diode in enumerate(switching["diodes"]):
+            selection_lines.append(
+                f'''        const double diode_voltage_{index} = signals_({diode['anode_signal_index']}) - signals_({diode['cathode_signal_index']});
+        constexpr double diode_threshold_{index} = {_number(diode['forward_threshold_V'])};
+        diode_on_[{index}] = diode_voltage_{index} >= diode_threshold_{index} + (diode_on_[{index}] ? -hysteresis : hysteresis);
+        topology_index = topology_index * 2U + (diode_on_[{index}] ? 1U : 0U);'''
+            )
+        for switch in switching["switches"]:
+            field = pwm_field_by_name[str(switch["command_port"]).upper()]
+            selection_lines.append(
+                f"        topology_index = topology_index * 2U + (inputs.{field} != 0U ? 1U : 0U);"
+            )
+        reset_switch_state = "        diode_on_.fill(false);"
+        selection_body = "\n".join(
+            [
+                f"        constexpr double hysteresis = {_number(switching['voltage_hysteresis_V'])};",
+                "        std::size_t topology_index = 0U;",
+                *selection_lines,
+                "        return topology_index;",
+            ]
+        )
+        switch_state_members = (
+            f"    std::array<bool, {len(switching['diodes'])}> diode_on_{{}};"
+        )
+    elif switching.get("kind") in {"multi_mosfet", "multi_mosfet_diode"}:
         switch_lines: list[str] = []
         pwm_field_by_name = {
             str(port["name"]).upper(): field for port, field in zip(pwm_ports, pwm_fields)
@@ -114,7 +143,18 @@ def render_header(document: Mapping, class_name: str) -> str:
             topology_index += body_on_[{index}] ? 2U : 0U;
         }}'''
             )
+        mixed_mosfet_diode = switching.get("kind") == "multi_mosfet_diode"
+        if mixed_mosfet_diode:
+            for index, diode in enumerate(switching["diodes"]):
+                switch_lines.append(
+                    f'''        const double diode_voltage_{index} = signals_({diode['anode_signal_index']}) - signals_({diode['cathode_signal_index']});
+        constexpr double diode_threshold_{index} = {_number(diode['forward_threshold_V'])};
+        diode_on_[{index}] = diode_voltage_{index} >= diode_threshold_{index} + (diode_on_[{index}] ? -hysteresis : hysteresis);
+        topology_index = topology_index * 2U + (diode_on_[{index}] ? 1U : 0U);'''
+                )
         reset_switch_state = "        body_on_.fill(false);"
+        if mixed_mosfet_diode:
+            reset_switch_state += "\n        diode_on_.fill(false);"
         selection_body = "\n".join(
             [
                 f"        constexpr double hysteresis = {_number(switching['voltage_hysteresis_V'])};",
@@ -124,6 +164,10 @@ def render_header(document: Mapping, class_name: str) -> str:
             ]
         )
         switch_state_members = f"    std::array<bool, {len(switching['switches'])}> body_on_{{}};"
+        if mixed_mosfet_diode:
+            switch_state_members += (
+                f"\n    std::array<bool, {len(switching['diodes'])}> diode_on_{{}};"
+            )
     else:
         terminal = document["signals"]["switch_terminal_indices"]
         pwm_field = pwm_fields[0]

@@ -173,13 +173,36 @@ python tools\cctl_studio\mna_solver\switched_solver.py simulate ^
 探针、原始模型参数和提取依据、状态/信号名称、连续矩阵、正常与短步长离散
 矩阵，以及上一采样端电压选模所需索引。单二极管加单 MOS 电路包含 6 个
 拓扑；FSBB 的四个 MOS 每个具有关断、沟道和体二极管三条路径，因此包含
-`3^4=81` 个拓扑。JSON 可以由 `CircuitDataSimulator` 直接仿真，也是 C++
+`3^4=81` 个拓扑；三相逆变器的六个 MOS 则包含 `3^6=729` 个拓扑。JSON
+可以由 `CircuitDataSimulator` 直接仿真，也是 C++
 代码生成器唯一的输入。
+
+独立二极管和 TINA `VSWITCH` 均按通断两条路径展开，因此整流器包含
+`2^(4+1)=32` 个拓扑。`VSWITCH` 的控制电压源会从 MNA 中移除，并转换为
+外部 `uint32_t` 控制端口。
 
 单相逆变器案例使用 30 V 直流母线、10 kHz 中心对齐双极性 SPWM、50 Hz
 正弦参考、0.8 调制度和 1 us 死区。100 ms C++ 参考仿真中，差分负载电压
 `V(2,1)` 的基波峰值约 22.031 V、有效值约 15.610 V，50 Hz 电流基波峰值
 约 2.203 A。
+
+可切除预充电电阻的桥式整流案例使用 32 Vrms、50 Hz 输入。保留 10 Ω 充电
+电阻时，`V(VF1)` 平均约 14.490 V；60 ms 时闭合 `SW2` 后，稳态全波输出
+平均约 31.088 V，峰值约 44.133 V。
+
+三相逆变器案例使用 5 V 直流母线、10 kHz 中心对齐 SPWM、相差 120° 的
+50 Hz 三相正弦参考、0.8 调制度和 1 us 死区。三相电压基波峰值为
+1.8566--1.8571 V，三相电流基波峰值为 0.18568--0.18573 A；三组相电压
+相量两两夹角余弦与 `-0.5` 的偏差小于 0.00025，符合 120° 相位关系。
+
+NPC(I) Buck 案例使用两个 30 V 电源、10 kHz 载波和 1 us 死区。0.2 pu
+参考只在 N/O 两个电平间切换，稳态输出约 11.050 V；0.8 pu 参考只在 O/P
+两个电平间切换，稳态输出约 45.453 V。它们是带载开环结果，包含模型提取的
+半导体导通损耗、50 mΩ 电源串联电阻和死区损耗，因此低于理想 12/48 V。
+
+混合器件电路按各器件路径的笛卡尔积展开。NPC Buck 含四个三路径 MOSFET
+和两个两路径钳位二极管，因此导出 `3^4*2^2=324` 组兼容状态/输出矩阵；
+二极管 A/K 与 MOSFET D/S 电压保留为内部选模信号。
 
 ### 测试用例目录约定
 
@@ -198,20 +221,18 @@ tb\buck\
 ├── buck.CIR
 ├── generate_code.bat
 ├── build_test.bat
-├── generated\              自动生成的计算类头文件
+├── generated\              自动生成的电路 JSON 和计算类头文件
 └── test\cpp\               手写 testbench、CMakeLists.txt 和 vcpkg.json
 ```
 
-`boost`、`fsbb` 和 `sinv` 遵守同一约定。`rectifier` 当前只保留源用例，
-等相应求解行为实现并验收后再增加语言相关测试。
+`boost`、`fsbb`、`sinv`、`rectifier`、`inv` 和 `buck_npc` 遵守同一约定。
 
 所有 BAT 入口都通过 `GMP_PRO_LOCATION` 找到求解器和安装环境，不依赖当前
 工作目录或仓库所在盘符。用户直接运行时成功和失败都会暂停；自动化调用可
 传入 `--no-pause`。
 
-每个开关案例把 JSON 写在 CIR 同目录，把计算类写入 `generated`。JSON、
-CSV、本地构建目录和 IDE 缓存由 `tb\.gitignore` 忽略，因为它们可重复生成，
-且 JSON 可能很大。
+每个开关案例把 JSON 和计算类都写入 `generated`。JSON、CSV、本地构建目录
+和 IDE 缓存由 `tb\.gitignore` 忽略，因为它们可重复生成，且 JSON 可能很大。
 
 ### 生成和构建
 
@@ -235,6 +256,9 @@ tools\cctl_studio\mna_solver\tb\buck\build_test.bat
 tools\cctl_studio\mna_solver\tb\boost\build_test.bat
 tools\cctl_studio\mna_solver\tb\fsbb\build_test.bat
 tools\cctl_studio\mna_solver\tb\sinv\build_test.bat
+tools\cctl_studio\mna_solver\tb\rectifier\build_test.bat
+tools\cctl_studio\mna_solver\tb\inv\build_test.bat
+tools\cctl_studio\mna_solver\tb\buck_npc\build_test.bat
 ```
 
 SINV testbench 令 `PWM1=PWM3`、`PWM2=PWM4`，作为两组双极性 SPWM 对角
@@ -243,6 +267,32 @@ TINA 的图形化电压表只保存在二进制 TSC 中，CIR 并未导出，因
 显式注册 `V(2,1)` 作为负载两端电势差。直流母线的两个 100 uF 电容会在
 MNA 中自然相加；回归测试进一步逐项验证了全部 81 个拓扑的描述矩阵与单个
 200 uF 电容完全相同。
+
+INV testbench 使用相差 120° 的三路正弦参考驱动三个互补桥臂，并检查上下管
+互锁、1 us 死区、三相电压与电流基波平衡、相位关系以及
+`V(3,1)+V(4,1)+V(5,1)` 是否抵消。除并联在三个 Y 接滤波电容上的 1 MΩ
+泄放电阻 R8--R10 外，新网表还通过 1 MΩ 的 R12 和 R11 分别把负载星点 1、
+电容星点 2 显式参考到地。六管全关断拓扑的代数块因此满秩，全部 729 个
+MNA 拓扑都能直接降阶，不需要求解器隐式添加参考支路。
+
+整流器把 TINA 控制源 `VSWGPIO1` 映射为公开的 `uint32_t SWGPIO1` 端口。
+`SWGPIO1=0` 时保留 10 Ω 充电电阻，`SWGPIO1=1` 时通过等效 1 mΩ 路径闭合
+`SW2`。生成类根据 D1--D4 上一采样的 A--K 电压选择两组桥臂导通组合；手写
+testbench 输入 32 Vrms、50 Hz 正弦波，并在 60 ms 后切除充电电阻。
+
+四个二极管提取出的 460 pF 结电容都接到了理想时变电压源 `VS1` 的端子。
+保留它们会引入输入导数 `u_dot` 和 index-2 描述系统，无法纳入当前普通
+`x_dot=Ax+Bu` 数据边界。JSON 会保留提取值和抑制原因，但本案例的状态矩阵
+暂不加入这些结电容；以后增加描述系统/输入导数后端后可以恢复。
+
+NPC Buck testbench 令 `VS1=VS2=30 V`，因此完整 60 V 母线定义为 1 pu。
+0.2 pu 时保持 PWM3 导通，由 PWM2/PWM4 换流选择 N/O；0.8 pu 时保持 PWM2
+导通，由 PWM1/PWM3 换流选择 O/P；两组互补信号均检查 1 us 死区。该电路的
+Coss 系统刚性较强，案例使用 1 ns 正常步长和 100 ps 启动步长，并分别输出
+0.2/0.8 pu CSV。新版网表中的 50 mΩ `R3`、`R4` 显式解除理想电源割集，
+全部 324 个拓扑均可直接降阶，不需要求解器暗中添加正则化支路。该串联供电
+中点并非由理想源对地刚性钳位，因此两个钳位二极管提取出的 460 pF 结电容
+均保留在七状态模型中。
 
 `build_test.bat` 首先刷新计算头文件，再从 `test\cpp` 配置 CMake。构建脚本
 使用 GMP 安装的 Eigen/vcpkg；私有环境下关闭单项目 manifest 自动恢复，
@@ -261,8 +311,9 @@ DC 传递函数和状态矩阵 `A=-1000`。
   描述符拓扑会报告奇异错误；
 - 初值目前使用降阶后的状态坐标；把物理电容电压、励磁电流映射为初值属于
   后续工作；
-- 已支持不含独立二极管的多 MOS 电路，拓扑数量按 `3^N` 增长；多个独立
-  二极管和多个 MOS 混合的通用组合展开仍待实现；
+- 已支持不含独立二极管的多 MOS 电路，拓扑数量按 `3^N` 增长；纯二极管/
+  VSWITCH 网络按 `2^N` 增长；同时含 MOSFET 与多个独立二极管或 VSWITCH
+  的通用组合展开仍待实现；
 - 将同一数据文件后端扩展为 Verilog/定点矩阵实现属于下一阶段。
 
 验证命令：
@@ -272,5 +323,5 @@ tools\cctl_studio\mna_solver\tests\run_tests.bat
 ```
 
 该脚本只使用 `cmd.exe` 语法，成功和失败都会暂停，并执行全部单元测试及
-Basic 验收、命令行冒烟测试及 Buck/Boost/FSBB/SINV C++ 测试；自动化环境可使用
+Basic 验收、命令行冒烟测试及 Buck/Boost/FSBB/SINV/Rectifier C++ 测试；自动化环境可使用
 `tests\run_tests.bat --no-pause`。

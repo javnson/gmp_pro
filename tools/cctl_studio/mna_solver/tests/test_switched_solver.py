@@ -21,6 +21,9 @@ BUCK_DIR = TB_DIR / "buck"
 BOOST_DIR = TB_DIR / "boost"
 FSBB_DIR = TB_DIR / "fsbb"
 SINV_DIR = TB_DIR / "sinv"
+RECTIFIER_DIR = TB_DIR / "rectifier"
+INV_DIR = TB_DIR / "inv"
+BUCK_NPC_DIR = TB_DIR / "buck_npc"
 
 
 class TinaExtendedParserTests(unittest.TestCase):
@@ -237,6 +240,99 @@ class SinglePhaseInverterTests(unittest.TestCase):
         expected[topology.descriptor.node_indices["1"]] = -1.0
         np.testing.assert_array_equal(outputs.L[row], expected)
         self.assertEqual(topology.state.output_names[:2], ["I(VAM1)", "V(2,1)"])
+
+
+class ThreePhaseInverterTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.circuit = mna.parse_netlist(INV_DIR / "INV.CIR")
+        self.model = switched.build_piecewise_model(self.circuit)
+
+    def test_six_mosfets_expand_to_729_compatible_topologies(self) -> None:
+        self.assertIsInstance(self.model, switched.MultiMosfetLinearModel)
+        self.assertEqual(
+            [item.name for item in self.model.mosfets],
+            ["MT6", "MT5", "MT4", "MT3", "MT2", "MT1"],
+        )
+        self.assertEqual(
+            [item.name for item in self.model.gate_sources],
+            ["VPWM3", "VPWM4", "VPWM1", "VPWM2", "VPWM5", "VPWM6"],
+        )
+        self.assertEqual(len(self.model.topologies), 3**6)
+        for topology in self.model.topologies.values():
+            self.assertEqual(topology.state.A.shape, (10, 10))
+        self.assertEqual(self.circuit.element("R11").nodes, ("2", "0"))
+        self.assertEqual(self.circuit.element("R12").nodes, ("1", "0"))
+        self.assertEqual(self.circuit.element("R11").value_text, "1MEG")
+        self.assertEqual(self.circuit.element("R12").value_text, "1MEG")
+
+    def test_three_differential_phase_voltage_probes_are_preserved(self) -> None:
+        self.assertEqual(
+            [observation.name for observation in self.circuit.observations],
+            ["I(VAM3)", "I(VAM2)", "I(VAM1)", "V(5,1)", "V(4,1)", "V(3,1)"],
+        )
+        reference = next(iter(self.model.topologies.values())).state
+        self.assertEqual(
+            reference.output_names[:6],
+            ["I(VAM3)", "I(VAM2)", "I(VAM1)", "V(5,1)", "V(4,1)", "V(3,1)"],
+        )
+
+
+class NpcBuckTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.circuit = mna.parse_netlist(BUCK_NPC_DIR / "BUCK_NPC.CIR")
+        self.model = switched.build_piecewise_model(self.circuit)
+
+    def test_four_mosfets_and_two_clamp_diodes_expand_to_324_topologies(self) -> None:
+        self.assertIsInstance(self.model, switched.MultiMosfetDiodeLinearModel)
+        self.assertEqual(
+            [item.name for item in self.model.mosfets], ["MT5", "MT2", "MT4", "MT3"]
+        )
+        self.assertEqual(
+            [item.name for item in self.model.gate_sources],
+            ["VPWM3", "VPWM4", "VPWM1", "VPWM2"],
+        )
+        self.assertEqual([item.name for item in self.model.diodes], ["D2", "D1"])
+        self.assertEqual(len(self.model.topologies), 3**4 * 2**2)
+        reference = next(iter(self.model.topologies.values())).state
+        self.assertEqual(reference.A.shape, (7, 7))
+        self.assertEqual(reference.output_names[:3], ["V(4)", "I(VAM1)", "V(VF1)"])
+        for gate in self.model.gate_sources:
+            self.assertNotIn(gate.name, reference.input_names)
+
+    def test_updated_bus_has_explicit_source_series_resistors(self) -> None:
+        self.assertEqual(self.circuit.element("R3").nodes, ("2", "3"))
+        self.assertEqual(self.circuit.element("R4").nodes, ("1", "0"))
+        self.assertAlmostEqual(self.circuit.element("R3").numeric_value({}), 50e-3)
+        self.assertAlmostEqual(self.circuit.element("R4").numeric_value({}), 50e-3)
+
+
+class ControlledPrechargeRectifierTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.circuit = mna.parse_netlist(RECTIFIER_DIR / "RECTIFIER.CIR")
+        self.model = switched.build_piecewise_model(self.circuit)
+
+    def test_vswitch_is_parsed_and_exposed_as_32_linear_topologies(self) -> None:
+        switch = self.circuit.element("SW2")
+        self.assertEqual(switch.kind, "S")
+        self.assertEqual(switch.nodes, ("VF1", "5", "3", "0"))
+        self.assertEqual(switch.model_name, "S_VSWITCH_1")
+        self.assertIsInstance(self.model, switched.MultiDiodeSwitchLinearModel)
+        self.assertEqual([item.name for item in self.model.diodes], ["D4", "D3", "D2", "D1"])
+        self.assertEqual([item.name for item in self.model.switches], ["SW2"])
+        self.assertEqual([item.name for item in self.model.control_sources], ["VSWGPIO1"])
+        self.assertEqual(len(self.model.topologies), 2**5)
+        self.assertAlmostEqual(self.model.switch_parameters[0].on_resistance, 1e-3)
+        self.assertAlmostEqual(self.model.switch_parameters[0].off_resistance, 1e9)
+        for topology in self.model.topologies.values():
+            self.assertEqual(topology.state.A.shape, (1, 1))
+            self.assertEqual(topology.state.input_names[0], "VS1")
+
+    def test_diode_model_values_are_extracted_for_each_bridge_device(self) -> None:
+        for item in self.model.diode_parameters:
+            self.assertAlmostEqual(item.forward_voltage, 0.55)
+            self.assertAlmostEqual(item.on_resistance, 2e-3)
+            self.assertAlmostEqual(item.off_resistance, 1e9)
+            self.assertAlmostEqual(item.junction_capacitance, 460e-12)
 
 
 if __name__ == "__main__":

@@ -222,14 +222,14 @@ def parse_netlist(path: str | Path) -> Circuit:
         if not seen_element and "TINA NETLIST EDITOR FORMAT" in stripped.upper():
             title = stripped
             continue
-        if kind not in {"R", "L", "C", "V", "I", "O", "E", "G", "F", "H", "D", "M", "X"}:
+        if kind not in {"R", "L", "C", "V", "I", "O", "E", "G", "F", "H", "D", "M", "S", "X"}:
             if not seen_element:
                 title = stripped
                 continue
             ignored.append(stripped)
             continue
 
-        minimum_tokens = 6 if kind in {"E", "G", "M"} else 5 if kind in {"F", "H", "X"} else 4
+        minimum_tokens = 6 if kind in {"E", "G", "M", "S"} else 5 if kind in {"F", "H", "X"} else 4
         possible_current_arrow = kind == "V" and len(tokens) == 3 and (
             _key(name).startswith("VAM") or "CURRENT ARROW" in comment.upper()
         )
@@ -273,6 +273,15 @@ def parse_netlist(path: str | Path) -> Circuit:
             )
         elif kind == "M":
             require(6, "M<name> drain gate source bulk model")
+            element = Element(
+                name,
+                kind,
+                tuple(_clean_node(token) for token in tokens[1:5]),
+                model_name=tokens[5],
+                line_number=line_number,
+            )
+        elif kind == "S":
+            require(6, "S<name> n+ n- control+ control- model")
             element = Element(
                 name,
                 kind,
@@ -356,7 +365,7 @@ def assemble_symbolic_mna(circuit: Circuit) -> SymbolicDescriptorModel:
     as fixed source values in the matrices.
     """
 
-    nonlinear = [element.name for element in circuit.elements if element.kind in {"D", "M"}]
+    nonlinear = [element.name for element in circuit.elements if element.kind in {"D", "M", "S"}]
     if nonlinear:
         raise NetlistError(
             "nonlinear switch element(s) require switched_solver.py: " + ", ".join(nonlinear)
@@ -460,7 +469,7 @@ def assemble_symbolic_mna(circuit: Circuit) -> SymbolicDescriptorModel:
 def assemble_mna(circuit: Circuit, parameters: Mapping[str, float] | None = None) -> DescriptorModel:
     """Build the numeric descriptor equation ``E z_dot = A z + B u``."""
 
-    nonlinear = [element.name for element in circuit.elements if element.kind in {"D", "M"}]
+    nonlinear = [element.name for element in circuit.elements if element.kind in {"D", "M", "S"}]
     if nonlinear:
         raise NetlistError(
             "nonlinear switch element(s) require switched_solver.py: " + ", ".join(nonlinear)

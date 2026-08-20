@@ -37,6 +37,9 @@ class NetlistTests(unittest.TestCase):
             TB_DIR / "boost",
             TB_DIR / "fsbb",
             TB_DIR / "sinv",
+            TB_DIR / "rectifier",
+            TB_DIR / "inv",
+            TB_DIR / "buck_npc",
         ):
             paths.extend(
                 sorted(
