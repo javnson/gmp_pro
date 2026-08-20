@@ -40,6 +40,7 @@ class NetlistTests(unittest.TestCase):
             TB_DIR / "rectifier",
             TB_DIR / "inv",
             TB_DIR / "buck_npc",
+            TB_DIR / "pmsm",
         ):
             paths.extend(
                 sorted(
@@ -73,6 +74,25 @@ class NetlistTests(unittest.TestCase):
         self.assertIn("C1", matrix_text)
         self.assertIn("L1", matrix_text)
         self.assertIn("R1", matrix_text)
+
+    def test_complete_pmsm_current_source_triplet_exports_phase_voltages(self) -> None:
+        circuit = mna.parse_netlist(TB_DIR / "pmsm" / "PMSM.CIR")
+        motors = mna.discover_pmsm_current_source_ports(circuit)
+        self.assertEqual(len(motors), 1)
+        self.assertEqual(motors[0].name, "PMSM1")
+        self.assertEqual(motors[0].neutral_node, "2")
+        self.assertEqual(
+            [motors[0].source(phase).name for phase in "ABC"],
+            ["IPMSM1_A", "IPMSM1_B", "IPMSM1_C"],
+        )
+        self.assertEqual(
+            [item.name for item in circuit.observations[-3:]],
+            ["VPMSM1_A", "VPMSM1_B", "VPMSM1_C"],
+        )
+        self.assertEqual(
+            [(item.target, item.negative) for item in circuit.observations[-3:]],
+            [("4", "2"), ("3", "2"), ("1", "2")],
+        )
 
 
 class SolverTests(unittest.TestCase):
@@ -135,6 +155,17 @@ class SolverTests(unittest.TestCase):
         with self.assertRaises(mna.UnresolvedParameterError) as caught:
             mna.assemble_mna(circuit)
         self.assertEqual(caught.exception.names, ["R1", "R2"])
+
+    def test_pmsm_phase_sources_must_share_one_neutral(self) -> None:
+        path = self._temporary_netlist(
+            "invalid PMSM port\n"
+            "IPMSM1_A a n 0\n"
+            "IPMSM1_B b n 0\n"
+            "IPMSM1_C c other 0\n"
+            ".END\n"
+        )
+        with self.assertRaisesRegex(mna.NetlistError, "share one neutral"):
+            mna.parse_netlist(path)
 
 
 if __name__ == "__main__":

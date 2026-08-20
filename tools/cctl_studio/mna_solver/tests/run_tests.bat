@@ -28,20 +28,21 @@ set "SINV_JSON=%TEMP%\gmp_mna_sinv_%VALIDATION_TAG%.json"
 set "RECTIFIER_JSON=%TEMP%\gmp_mna_rectifier_%VALIDATION_TAG%.json"
 set "INV_JSON=%TEMP%\gmp_mna_inv_%VALIDATION_TAG%.json"
 set "BUCK_NPC_JSON=%TEMP%\gmp_mna_buck_npc_%VALIDATION_TAG%.json"
+set "PMSM_JSON=%TEMP%\gmp_mna_pmsm_%VALIDATION_TAG%.json"
 
-echo [1/12] Compiling Python sources...
+echo [1/13] Compiling Python sources...
 python -m py_compile "%SOLVER_DIR%\mna_solver.py" "%SOLVER_DIR%\switched_solver.py" "%SOLVER_DIR%\circuit_data.py" "%SOLVER_DIR%\cpp_codegen.py"
 if errorlevel 1 goto :failed
 
-echo [2/12] Running Python unit tests...
+echo [2/13] Running Python unit tests...
 python -m unittest discover -s "%SOLVER_DIR%\tests" -v
 if errorlevel 1 goto :failed
 
-echo [3/12] Running the basic-netlist acceptance suite...
+echo [3/13] Running the basic-netlist acceptance suite...
 call "%SOLVER_DIR%\tb\basic\run_tests.bat" --no-pause
 if errorlevel 1 goto :failed
 
-echo [4/12] Checking Buck and Boost switched simulation CLIs...
+echo [4/13] Checking Buck and Boost switched simulation CLIs...
 python "%SOLVER_DIR%\switched_solver.py" analyze "%SOLVER_DIR%\tb\buck\buck.CIR" --dt 1N >nul
 if errorlevel 1 goto :failed
 python "%SOLVER_DIR%\switched_solver.py" analyze "%SOLVER_DIR%\tb\boost\BOOST.CIR" --dt 1N >nul
@@ -53,7 +54,7 @@ python "%SOLVER_DIR%\switched_solver.py" simulate "%SOLVER_DIR%\tb\boost\BOOST.C
 if errorlevel 1 goto :failed
 if not exist "%BOOST_CSV%" goto :missing_output
 
-echo [5/12] Checking portable Buck, Boost, FSBB, SINV, rectifier, INV, and NPC Buck data export...
+echo [5/13] Checking portable Buck, Boost, FSBB, SINV, rectifier, INV, NPC Buck, and PMSM data export...
 python "%SOLVER_DIR%\circuit_data.py" export "%SOLVER_DIR%\tb\buck\buck.CIR" "%BUCK_JSON%" --normal-dt 100N --short-dt 1N >nul
 if errorlevel 1 goto :failed
 if not exist "%BUCK_JSON%" goto :missing_output
@@ -79,33 +80,40 @@ if not exist "%INV_JSON%" goto :missing_output
 python "%SOLVER_DIR%\circuit_data.py" export "%SOLVER_DIR%\tb\buck_npc\BUCK_NPC.CIR" "%BUCK_NPC_JSON%" --normal-dt 1N --short-dt 100P >nul
 if errorlevel 1 goto :failed
 if not exist "%BUCK_NPC_JSON%" goto :missing_output
+python "%SOLVER_DIR%\circuit_data.py" export "%SOLVER_DIR%\tb\pmsm\PMSM.CIR" "%PMSM_JSON%" --normal-dt 100N --short-dt 1N >nul
+if errorlevel 1 goto :failed
+if not exist "%PMSM_JSON%" goto :missing_output
 
-echo [6/12] Generating, compiling, and running the Buck C++ test...
+echo [6/13] Generating, compiling, and running the Buck C++ test...
 call "%SOLVER_DIR%\tb\buck\build_test.bat" --no-pause
 if errorlevel 1 goto :failed
 
-echo [7/12] Generating, compiling, and running the Boost C++ test...
+echo [7/13] Generating, compiling, and running the Boost C++ test...
 call "%SOLVER_DIR%\tb\boost\build_test.bat" --no-pause
 if errorlevel 1 goto :failed
 
-echo [8/12] Generating, compiling, and running the FSBB C++ test...
+echo [8/13] Generating, compiling, and running the FSBB C++ test...
 call "%SOLVER_DIR%\tb\fsbb\build_test.bat" --no-pause
 if errorlevel 1 goto :failed
 
-echo [9/12] Generating, compiling, and running the single-phase inverter C++ test...
+echo [9/13] Generating, compiling, and running the single-phase inverter C++ test...
 call "%SOLVER_DIR%\tb\sinv\build_test.bat" --no-pause
 if errorlevel 1 goto :failed
 
-echo [10/12] Generating, compiling, and running the controlled-precharge rectifier C++ test...
+echo [10/13] Generating, compiling, and running the controlled-precharge rectifier C++ test...
 call "%SOLVER_DIR%\tb\rectifier\build_test.bat" --no-pause
 if errorlevel 1 goto :failed
 
-echo [11/12] Generating, compiling, and running the three-phase inverter C++ test...
+echo [11/13] Generating, compiling, and running the three-phase inverter C++ test...
 call "%SOLVER_DIR%\tb\inv\build_test.bat" --no-pause
 if errorlevel 1 goto :failed
 
-echo [12/12] Generating, compiling, and running the NPC three-level Buck C++ test...
+echo [12/13] Generating, compiling, and running the NPC three-level Buck C++ test...
 call "%SOLVER_DIR%\tb\buck_npc\build_test.bat" --no-pause
+if errorlevel 1 goto :failed
+
+echo [13/13] Generating, compiling, and running the PMSM drive C++ test...
+call "%SOLVER_DIR%\tb\pmsm\build_test.bat" --no-pause
 if errorlevel 1 goto :failed
 
 call :cleanup
@@ -138,4 +146,5 @@ if exist "%SINV_JSON%" del /q "%SINV_JSON%" >nul 2>nul
 if exist "%RECTIFIER_JSON%" del /q "%RECTIFIER_JSON%" >nul 2>nul
 if exist "%INV_JSON%" del /q "%INV_JSON%" >nul 2>nul
 if exist "%BUCK_NPC_JSON%" del /q "%BUCK_NPC_JSON%" >nul 2>nul
+if exist "%PMSM_JSON%" del /q "%PMSM_JSON%" >nul 2>nul
 exit /b 0

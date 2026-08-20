@@ -221,6 +221,40 @@ At 10 kHz and 50% duty, the 50 ms generated-C++ references produce:
   These loaded open-loop values include the extracted semiconductor, 50 mohm
   source-series, and deadtime losses, so they are below the ideal 12/48 V.
 
+## PMSM current-source coupling
+
+A complete, common-neutral current-source triplet named `IPMSMx_A`,
+`IPMSMx_B`, and `IPMSMx_C` is recognized as one PMSM interface. The numeric
+value carried by a TINA source, such as `10M`, is only a netlist placeholder:
+its generated input default is forced to zero. The parser adds
+terminal-to-neutral voltage outputs `VPMSMx_A/B/C`; portable JSON annotates the
+three inputs with `pmsm_phase_current`, the three outputs with
+`pmsm_phase_voltage`, and records their phase, terminal, and neutral mapping.
+An incomplete triplet remains ordinary current sources, while a complete
+triplet with different neutral nodes is rejected.
+
+`cctl/circuit_model/pmsm_cs.hpp` supplies the motor side. Its initialization
+function validates SI parameters, clears the state, and precomputes inverse
+inductances/inertia, resistance and flux ratios, torque coefficients, and RK4
+step factors. Runtime calls accept phase-to-neutral voltages and return
+three-wire phase currents, d/q quantities, torque, rotor angle, mechanical
+speed, and electrical frequency. Positive phase current flows from the
+inverter terminal into the motor neutral, matching the SPICE current-source
+direction. The model includes d/q cross coupling, permanent-magnet back EMF,
+saliency torque, inertia, viscous friction, and external load torque.
+
+The handwritten `tb\pmsm` testbench instantiates the generated 729-topology
+inverter and motor separately, then explicitly connects currents and voltages.
+It uses the `SM060R20B30MNAD` preset (converting g*cm^2 inertia and
+micro-N*m*s/rad friction to SI), a 48 V bus, 10 kHz SPWM, 1 us deadtime, and a
+0.5 s V/f ramp to 20 Hz. The 0.8 s run settles at 20.0001 Hz electrical /
+300.002 rpm, with 3.311 A maximum phase current and
+`|ia+ib+ic| <= 4.44e-16 A`. A locked-rotor analytical RL check runs first.
+
+The requested 48 V bus intentionally exceeds
+`SM060R20B30MNAD_MAX_DC_VOLTAGE` (14.2 V), so this is a numerical integration
+test only and is not a hardware-safe operating point.
+
 ## Circuit data and Eigen C++ generation
 
 `circuit_data.py` exports a versioned JSON boundary containing external ports,
@@ -288,7 +322,7 @@ tb\buck\
 └── test\cpp\               handwritten testbench, CMakeLists and vcpkg.json
 ```
 
-`boost`, `fsbb`, `sinv`, `rectifier`, `inv`, and `buck_npc` follow the same
+`boost`, `fsbb`, `sinv`, `rectifier`, `inv`, `buck_npc`, and `pmsm` follow the same
 contract.
 
 Every BAT entry point resolves the solver and installer through
@@ -331,6 +365,7 @@ tools\cctl_studio\mna_solver\tb\sinv\build_test.bat
 tools\cctl_studio\mna_solver\tb\rectifier\build_test.bat
 tools\cctl_studio\mna_solver\tb\inv\build_test.bat
 tools\cctl_studio\mna_solver\tb\buck_npc\build_test.bat
+tools\cctl_studio\mna_solver\tb\pmsm\build_test.bat
 ```
 
 The SINV testbench drives `PWM1=PWM3` and `PWM2=PWM4` as the two bipolar-SPWM

@@ -27,6 +27,7 @@ SINV_DIR = TB_DIR / "sinv"
 RECTIFIER_DIR = TB_DIR / "rectifier"
 INV_DIR = TB_DIR / "inv"
 BUCK_NPC_DIR = TB_DIR / "buck_npc"
+PMSM_DIR = TB_DIR / "pmsm"
 
 
 class CircuitDataTests(unittest.TestCase):
@@ -217,6 +218,50 @@ class CircuitDataTests(unittest.TestCase):
                 ("MT1", "PWM6"),
             ],
         )
+
+    def test_pmsm_inverter_exports_bidirectional_coupling_contract(self) -> None:
+        source = PMSM_DIR / "PMSM.CIR"
+        document = data.build_circuit_data(
+            switched.build_piecewise_model(mna.parse_netlist(source)),
+            source_path=source,
+            normal_step_s=100e-9,
+            short_step_s=1e-9,
+        )
+        data.validate_circuit_data(document)
+
+        inputs = {port["name"]: port for port in document["ports"]["inputs"]}
+        outputs = {port["name"]: port for port in document["ports"]["outputs"]}
+        self.assertEqual(document["switching"]["topology_count"], 729)
+        for phase in "ABC":
+            current = inputs[f"IPMSM1_{phase}"]
+            voltage = outputs[f"VPMSM1_{phase}"]
+            self.assertEqual(current["role"], "pmsm_phase_current")
+            self.assertEqual(current["motor"], "PMSM1")
+            self.assertEqual(current["phase"], phase)
+            self.assertEqual(current["default"], 0.0)
+            self.assertEqual(voltage["role"], "pmsm_phase_voltage")
+            self.assertEqual(voltage["motor"], "PMSM1")
+            self.assertEqual(voltage["phase"], phase)
+
+        motors = document["devices"]["pmsm_current_sources"]
+        self.assertEqual(len(motors), 1)
+        self.assertEqual(motors[0]["name"], "PMSM1")
+        self.assertEqual(
+            [(item["phase"], item["terminal_node"], item["neutral_node"])
+             for item in motors[0]["phases"]],
+            [("A", "4", "2"), ("B", "3", "2"), ("C", "1", "2")],
+        )
+
+        with tempfile.TemporaryDirectory() as directory:
+            data_path = Path(directory) / "PMSM.json"
+            data.write_circuit_data(data_path, document)
+            header_path = codegen.generate_cpp_project(
+                data_path, Path(directory) / "cpp", "PmsmCircuit"
+            )["header"]
+            header = header_path.read_text(encoding="utf-8")
+        for phase in "ABC":
+            self.assertIn(f"double IPMSM1_{phase}", header)
+            self.assertIn(f"double VPMSM1_{phase}", header)
 
     def test_npc_buck_exports_mosfet_and_independent_diode_topology_axes(self) -> None:
         source = BUCK_NPC_DIR / "BUCK_NPC.CIR"

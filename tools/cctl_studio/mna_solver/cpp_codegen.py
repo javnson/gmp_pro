@@ -327,10 +327,10 @@ def render_header(
         count_name = _POOL_COUNT_NAMES[type_name]
         pool_functions.append(
             f'''    static const std::array<{type_name}, {count_name}>& {function_name}() {{
-        static const std::array<{type_name}, {count_name}> value{{{{
+        static const std::array<{type_name}, {count_name}> pool{{{{
             {values}
         }}}};
-        return value;
+        return pool;
     }}'''
         )
     pool_function_text = "\n\n".join(pool_functions)

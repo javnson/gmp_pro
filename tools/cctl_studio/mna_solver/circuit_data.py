@@ -19,7 +19,14 @@ from typing import Callable, Mapping, Sequence
 import numpy as np
 
 from console_progress import TimedProgressBar
-from mna_solver import NetlistError, StateSpaceModel, discretize, parse_netlist, parse_spice_value
+from mna_solver import (
+    NetlistError,
+    StateSpaceModel,
+    discover_pmsm_current_source_ports,
+    discretize,
+    parse_netlist,
+    parse_spice_value,
+)
 from switched_solver import (
     MultiDiodeSwitchLinearModel,
     MultiMosfetDiodeLinearModel,
@@ -122,6 +129,49 @@ def _pwm_port_name(source_name: str) -> str:
     return source_name[1:] if _key(source_name).startswith("V") else source_name
 
 
+def _decorate_pmsm_ports(circuit, input_ports: list[dict], output_ports: list[dict]) -> list[dict]:
+    """Annotate complete current-source PMSM interfaces and return JSON metadata."""
+
+    input_lookup = {_key(port["name"]): port for port in input_ports}
+    output_lookup = {_key(port["name"]): port for port in output_ports}
+    documents = []
+    for motor in discover_pmsm_current_source_ports(circuit):
+        phases = []
+        for phase in "ABC":
+            source = motor.source(phase)
+            voltage_name = motor.voltage_name(phase)
+            if _key(source.name) not in input_lookup or _key(voltage_name) not in output_lookup:
+                raise NetlistError(f"{motor.name}: incomplete generated PMSM coupling ports")
+            input_port = input_lookup[_key(source.name)]
+            input_port.update(
+                {
+                    "role": "pmsm_phase_current",
+                    "motor": motor.name,
+                    "phase": phase,
+                    "default": 0.0,
+                }
+            )
+            output_port = output_lookup[_key(voltage_name)]
+            output_port.update(
+                {
+                    "role": "pmsm_phase_voltage",
+                    "motor": motor.name,
+                    "phase": phase,
+                }
+            )
+            phases.append(
+                {
+                    "phase": phase,
+                    "current_input": source.name,
+                    "voltage_output": voltage_name,
+                    "terminal_node": source.nodes[0],
+                    "neutral_node": source.nodes[1],
+                }
+            )
+        documents.append({"name": motor.name, "kind": "pmsm_current_source", "phases": phases})
+    return documents
+
+
 def _build_multi_mosfet_circuit_data(
     model: MultiMosfetLinearModel | MultiMosfetDiodeLinearModel,
     *,
@@ -177,6 +227,7 @@ def _build_multi_mosfet_circuit_data(
         }
         for name, field in zip(public_names, fields)
     ]
+    pmsm_documents = _decorate_pmsm_ports(model.source_circuit, input_ports, output_ports)
 
     mixed_model = isinstance(model, MultiMosfetDiodeLinearModel)
     diode_documents = []
@@ -308,7 +359,11 @@ def _build_multi_mosfet_circuit_data(
         "ports": {"inputs": input_ports, "outputs": output_ports},
         "state": {"names": list(reference.state_names), "initial": [0.0] * len(reference.state_names)},
         "signals": {"names": list(reference.output_names)},
-        "devices": {"diodes": diode_documents, "mosfets": mosfet_documents},
+        "devices": {
+            "diodes": diode_documents,
+            "mosfets": mosfet_documents,
+            "pmsm_current_sources": pmsm_documents,
+        },
         "switching": {
             "kind": "multi_mosfet_diode" if mixed_model else "multi_mosfet",
             "switches": switch_documents,
@@ -389,6 +444,7 @@ def _build_multi_diode_switch_circuit_data(
         }
         for name, field in zip(public_names, fields)
     ]
+    pmsm_documents = _decorate_pmsm_ports(model.source_circuit, input_ports, output_ports)
 
     ideal_source_nodes = ideal_source_nodes_requiring_capacitance_suppression(
         model.source_circuit.elements, model.control_sources
@@ -512,6 +568,7 @@ def _build_multi_diode_switch_circuit_data(
             "diodes": diode_documents,
             "mosfets": [],
             "controlled_switches": switch_documents,
+            "pmsm_current_sources": pmsm_documents,
         },
         "switching": {
             "kind": "multi_diode_switch",
@@ -610,6 +667,7 @@ def build_circuit_data(
         output_ports.append(
             {"name": name, "field": field, "data_type": "double", "signal_index": signal_indices[_key(name)]}
         )
+    pmsm_documents = _decorate_pmsm_ports(model.source_circuit, input_ports, output_ports)
 
     diode_model = model.source_circuit.models[_key(model.diode.model_name or "")]
     mosfet_model = model.source_circuit.models[_key(model.mosfet.model_name or "")]
@@ -660,6 +718,7 @@ def build_circuit_data(
                 "series_resistance_ohm": mosfet_rd + mosfet_rs,
             },
         },
+        "pmsm_current_sources": pmsm_documents,
     }
 
     topology_documents = []

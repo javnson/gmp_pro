@@ -146,6 +146,58 @@ class Circuit:
         raise NetlistError(f"observation refers to unknown element {name!r}")
 
 
+@dataclass(frozen=True)
+class PmsmCurrentSourcePort:
+    """A complete IPMSMx_A/B/C current-source motor coupling interface."""
+
+    name: str
+    phase_sources: tuple[Element, Element, Element]
+    neutral_node: str
+
+    def source(self, phase: str) -> Element:
+        return self.phase_sources["ABC".index(phase.upper())]
+
+    def voltage_name(self, phase: str) -> str:
+        return f"V{self.name}_{phase.upper()}"
+
+
+_PMSM_CURRENT_SOURCE_RE = re.compile(r"^I(PMSM[A-Za-z0-9]*)_([ABC])$", re.IGNORECASE)
+
+
+def discover_pmsm_current_source_ports(circuit: Circuit) -> list[PmsmCurrentSourcePort]:
+    """Find complete, common-neutral IPMSMx_A/B/C interfaces in a circuit."""
+
+    groups: dict[str, tuple[str, dict[str, Element]]] = {}
+    for element in circuit.elements:
+        if element.kind != "I":
+            continue
+        match = _PMSM_CURRENT_SOURCE_RE.fullmatch(element.name)
+        if match is None:
+            continue
+        motor_name, phase = match.group(1), match.group(2).upper()
+        key = _key(motor_name)
+        display_name, phases = groups.setdefault(key, (motor_name, {}))
+        if phase in phases:
+            raise NetlistError(f"{display_name}: duplicate PMSM phase {phase} current source")
+        phases[phase] = element
+
+    result: list[PmsmCurrentSourcePort] = []
+    for _, (motor_name, phases) in sorted(groups.items()):
+        if set(phases) != set("ABC"):
+            continue
+        neutral_nodes = {_key(phases[phase].nodes[1]) for phase in "ABC"}
+        if len(neutral_nodes) != 1:
+            raise NetlistError(f"{motor_name}: IPMSM phase current sources must share one neutral node")
+        result.append(
+            PmsmCurrentSourcePort(
+                motor_name,
+                tuple(phases[phase] for phase in "ABC"),  # type: ignore[arg-type]
+                phases["A"].nodes[1],
+            )
+        )
+    return result
+
+
 def _parse_observations(line: str, line_number: int) -> list[Observation]:
     result: list[Observation] = []
     for match in re.finditer(r"\b([VI])\s*\(([^)]*)\)", line, re.IGNORECASE):
@@ -326,7 +378,18 @@ def parse_netlist(path: str | Path) -> Circuit:
     duplicate_names = [name for name in {_key(e.name) for e in elements} if sum(_key(e.name) == name for e in elements) > 1]
     if duplicate_names:
         raise NetlistError("duplicate element name(s): " + ", ".join(sorted(duplicate_names)))
-    return Circuit(title, elements, observations, list(node_names.values()), models, ignored)
+    circuit = Circuit(title, elements, observations, list(node_names.values()), models, ignored)
+    observation_names = {_key(item.name) for item in circuit.observations}
+    for motor in discover_pmsm_current_source_ports(circuit):
+        for phase in "ABC":
+            source = motor.source(phase)
+            voltage_name = motor.voltage_name(phase)
+            if _key(voltage_name) not in observation_names:
+                circuit.observations.append(
+                    Observation("V", source.nodes[0], source.nodes[1], voltage_name)
+                )
+                observation_names.add(_key(voltage_name))
+    return circuit
 
 
 @dataclass

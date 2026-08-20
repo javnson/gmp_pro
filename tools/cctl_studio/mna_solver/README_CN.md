@@ -226,6 +226,33 @@ NPC(I) Buck 案例使用两个 30 V 电源、10 kHz 载波和 1 us 死区。0.2 
 和两个两路径钳位二极管，因此导出 `3^4*2^2=324` 组兼容状态/输出矩阵；
 二极管 A/K 与 MOSFET D/S 电压保留为内部选模信号。
 
+## PMSM 电流源耦合
+
+程序把共用同一中性点、名称完整匹配 `IPMSMx_A`、`IPMSMx_B`、
+`IPMSMx_C` 的三个电流源识别为一个 PMSM 接口。TINA 网表中的 `10M` 等数值
+只视为占位值，生成输入端口的默认值强制为零。解析器自动增加三个相端对
+中性点电压输出 `VPMSMx_A/B/C`；JSON 分别用 `pmsm_phase_current` 和
+`pmsm_phase_voltage` 标注电流输入与电压输出，并记录电机名、相名、相端节点
+和中性点。缺相组合仍作为普通电流源处理；完整三相却不共中性点时会明确
+报错。
+
+`cctl/circuit_model/pmsm_cs.hpp` 实现接口的电机侧。初始化函数校验 SI 制参数，
+清零状态，并预计算电感/转动惯量倒数、电阻和磁链比例、转矩系数及 RK4 步长
+系数。每次运行输入三相对中性点电压，输出三线制相电流、d/q 电压电流、
+电磁转矩、机械转速/转角和电气频率；相电流正方向为从逆变器相端流入电机
+中性点，与 SPICE 电流源方向一致。模型包含 d/q 交叉耦合、永磁体反电势、
+凸极转矩、转动惯量、粘性摩擦和外部负载转矩。
+
+手写 `tb\pmsm` testbench 分别实例化生成的 729 拓扑逆变器和电机，再显式
+连接电流与电压接口。参数取自 `SM060R20B30MNAD` 预设，其中 g·cm² 转动
+惯量与 µN·m·s/rad 摩擦系数会转换到 SI；测试使用 48 V 母线、10 kHz SPWM、
+1 us 死区，并用 0.5 s V/f 斜坡升至 20 Hz。0.8 s 仿真最终达到
+20.0001 Hz 电气频率、300.002 rpm，最大相电流 3.311 A，
+`|ia+ib+ic| <= 4.44e-16 A`。耦合仿真前还会以解析 RL 响应检查电机电气模型。
+
+用户指定的 48 V 高于该预设的 `SM060R20B30MNAD_MAX_DC_VOLTAGE=14.2 V`，
+因此这个案例只用于数值联调，不能作为硬件安全工作点。
+
 ### 测试用例目录约定
 
 全部测试电路位于 `tb` 下。不含开关的基础用例集中在 `tb\basic`，以下脚本
@@ -247,7 +274,7 @@ tb\buck\
 └── test\cpp\               手写 testbench、CMakeLists.txt 和 vcpkg.json
 ```
 
-`boost`、`fsbb`、`sinv`、`rectifier`、`inv` 和 `buck_npc` 遵守同一约定。
+`boost`、`fsbb`、`sinv`、`rectifier`、`inv`、`buck_npc` 和 `pmsm` 遵守同一约定。
 
 所有 BAT 入口都通过 `GMP_PRO_LOCATION` 找到求解器和安装环境，不依赖当前
 工作目录或仓库所在盘符。用户直接运行时成功和失败都会暂停；自动化调用可
@@ -282,6 +309,7 @@ tools\cctl_studio\mna_solver\tb\sinv\build_test.bat
 tools\cctl_studio\mna_solver\tb\rectifier\build_test.bat
 tools\cctl_studio\mna_solver\tb\inv\build_test.bat
 tools\cctl_studio\mna_solver\tb\buck_npc\build_test.bat
+tools\cctl_studio\mna_solver\tb\pmsm\build_test.bat
 ```
 
 SINV testbench 令 `PWM1=PWM3`、`PWM2=PWM4`，作为两组双极性 SPWM 对角
@@ -346,5 +374,6 @@ tools\cctl_studio\mna_solver\tests\run_tests.bat
 ```
 
 该脚本只使用 `cmd.exe` 语法，成功和失败都会暂停，并执行全部单元测试及
-Basic 验收、命令行冒烟测试及 Buck/Boost/FSBB/SINV/Rectifier C++ 测试；自动化环境可使用
-`tests\run_tests.bat --no-pause`。
+Basic 验收、命令行冒烟测试及全部手写 C++ testbench；自动化环境可使用
+`tests\run_tests.bat --no-pause`。其中还包括 PMSM 端口识别、生成代码接口、
+电机解析 RL 响应，以及 48 V/20 Hz 逆变器—电机耦合验收。

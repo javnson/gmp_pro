@@ -109,7 +109,7 @@ private:
     };
 
     static const std::array<StateMatrix, state_matrix_count>& state_matrices() {
-        static const std::array<StateMatrix, state_matrix_count> value{{
+        static const std::array<StateMatrix, state_matrix_count> pool{{
             ([] { StateMatrix value; value << 0.99509722767091457, -2.7055231973013561e-09, 9.75585517324426e-05, -9.9501555025879811e-05, 2.7055107519005255e-08, 0.99990001045792076, 2.6524615214711032e-12, 4.5620859697882542e-10, -0.00097558551732442598, 2.6524737228444695e-12, 0.9803920612171062, 9.7550544143020969e-08, 48.976992844472321, 2.2455757566417056e-05, 0.0048016659651443448, 0.99502062289766458; return value; }()),
             ([] { StateMatrix value; value << 0.99999945776730903, -4.8259949876354918e-12, 9.9979949786773562e-07, -9.9999863689226883e-07, 4.8259727881174033e-11, 0.99999900000558994, 4.825007786560092e-17, 4.5899178953083058e-12, -9.9979949786773545e-06, 4.8250299816391641e-17, 0.99980003998200562, 9.9979867715683763e-12, 0.49222272024606911, 2.259275344422875e-07, 4.9212429538699184e-07, 0.99999868691277882; return value; }()),
             ([] { StateMatrix value; value << 0.99997519226756559, -1.0887841671551391e-11, 9.8036783555643689e-05, -4.0042427974824365e-07, 1.0887791591804101e-10, 0.99990001045790589, 1.0674305482160884e-14, -9.1233224317751006e-11, -0.00098036783555643697, 1.0674354582697789e-14, 0.98039206074825136, 3.925728232804484e-10, 0.19709819689657804, -4.490733363690392e-06, 1.9323352636919415e-05, 0.0040042632113170828; return value; }()),
@@ -123,11 +123,11 @@ private:
             ([] { StateMatrix value; value << 0.99999460679260932, 9.8391695313266599e-05, 9.8038686940451881e-05, -5.997198174751571e-09, -0.00098391242768814226, 0.99457285929981609, -9.6462002714523816e-08, -1.9989338914000486e-05, -0.00098038686940451862, -9.6462446366882696e-08, 0.9803920607463853, 5.8796060562539996e-12, 0.0029519612261568982, -0.98392654487081022, 2.8940796334871554e-07, 5.9972379498675819e-05; return value; }()),
             ([] { StateMatrix value; value << 0.99999994800954717, 9.8529675033054082e-07, 9.9979998801194497e-07, -4.0234934447338622e-09, -9.8529221796547804e-06, 0.99992583249205547, -9.8509519892565448e-12, -2.0017270299956651e-05, -9.9979998801194488e-06, -9.8509973038446393e-12, 0.99980003998200562, 4.0226889069524717e-14, 0.0019804575878361892, -0.98530139934677274, 1.9800615755210849e-09, 0.0040234937380722209; return value; }())
         }};
-        return value;
+        return pool;
     }
 
     static const std::array<InputMatrix, input_matrix_count>& input_matrices() {
-        static const std::array<InputMatrix, input_matrix_count> value{{
+        static const std::array<InputMatrix, input_matrix_count> pool{{
             ([] { InputMatrix value; value << 1.9511710346488524e-06, 5.3049230429422068e-14, 0.019607841224342122, 9.6033319302886899e-05; return value; }()),
             ([] { InputMatrix value; value << 1.9995989957354711e-10, 9.6500155731201836e-21, 0.00019996000799640112, 9.8424859077398361e-11; return value; }()),
             ([] { InputMatrix value; value << 1.9607356711128735e-06, 2.1348610964321767e-16, 0.019607841214965029, 3.8646705273838831e-07; return value; }()),
@@ -139,11 +139,11 @@ private:
             ([] { InputMatrix value; value << 1.9607737382255422e-06, -1.9311849054662463e-09, 0.019607841214927708, 5.7939942631588937e-09; return value; }()),
             ([] { InputMatrix value; value << 1.9607737388090378e-06, -1.9292400542904753e-09, 0.019607841214927708, 5.7881592669743109e-09; return value; }())
         }};
-        return value;
+        return pool;
     }
 
     static const std::array<StateVector, state_vector_count>& state_vectors() {
-        static const std::array<StateVector, state_vector_count> value{{
+        static const std::array<StateVector, state_vector_count> pool{{
             ([] { StateVector value; value << 0.0, 0.0, 0.0, 0.0; return value; }()),
             ([] { StateVector value; value << 7.9697958160024622e-05, -4.4025729112109398e-10, -7.8135253097426334e-08, -0.79698364465261218; return value; }()),
             ([] { StateVector value; value << 5.8113440000158595e-07, -5.6977031444814363e-11, -5.8101819636231353e-12, -0.58113442907026447; return value; }()),
@@ -154,28 +154,28 @@ private:
             ([] { StateVector value; value << -5.2846938868860533e-05, 0.0071762823353191969, 5.1810724396107888e-08, 0.52847205030449163; return value; }()),
             ([] { StateVector value; value << -5.3336717969190977e-07, 8.2762014568898257e-05, 5.3326052758639247e-12, 0.53336720599053322; return value; }())
         }};
-        return value;
+        return pool;
     }
 
     static const std::array<SignalMatrix, signal_matrix_count>& signal_matrices() {
-        static const std::array<SignalMatrix, signal_matrix_count> value{{
+        static const std::array<SignalMatrix, signal_matrix_count> pool{{
             ([] { SignalMatrix value; value << 1.0, 0.0, 0.0, 0.0, 0.0, -0.9999999999894198, 0.0, 4.6000722945901752e-06, -1.1102230246251566e-17, 4.6000722945901735e-06, 0.0, 0.99999999998941946, 0.0, 0.0, 0.0, 0.0, -1.1102230246251566e-17, 4.6000722945901735e-06, 0.0, 0.99999999998941946, 0.0, -0.9999999999894198, 0.0, 4.6000722945901752e-06; return value; }())
         }};
-        return value;
+        return pool;
     }
 
     static const std::array<SignalInputMatrix, signal_input_matrix_count>& signal_input_matrices() {
-        static const std::array<SignalInputMatrix, signal_input_matrix_count> value{{
+        static const std::array<SignalInputMatrix, signal_input_matrix_count> pool{{
             ([] { SignalInputMatrix value; value << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0; return value; }())
         }};
-        return value;
+        return pool;
     }
 
     static const std::array<SignalVector, signal_vector_count>& signal_vectors() {
-        static const std::array<SignalVector, signal_vector_count> value{{
+        static const std::array<SignalVector, signal_vector_count> pool{{
             ([] { SignalVector value; value << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0; return value; }())
         }};
-        return value;
+        return pool;
     }
 
     static const std::array<CalculationState, calculation_state_count>& calculation_states() {
