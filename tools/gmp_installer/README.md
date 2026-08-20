@@ -444,6 +444,8 @@ together, and commit both.
 `vcpkg.projects` in `environment_manifest.json` is only for exceptional projects
 outside the suite convention. Paths listed there are added to the automatically
 discovered set; normal suite projects must not be listed individually. Keep the
+MNA solver in that explicit list because its generated C++ backend owns the
+`eigen3` dependency and is not a suite simulation project. Keep the
 vcpkg repository version and URL pinned together, restore every manifest with
 the configured triplet, and verify both installation modes. Because all GMP
 projects share one install root, the installer first merges their dependency

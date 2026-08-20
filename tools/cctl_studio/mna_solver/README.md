@@ -39,10 +39,12 @@ makes that exceptional case explicit instead of silently returning an incorrect
 
 - NumPy: numeric reduction, iteration, and frequency response.
 - SymEngine: exact symbolic MNA matrices.
+- Eigen3: fixed-size matrix operations in generated C++ classes.
 
-Both packages are already part of GMP's Python environment and are pinned in
-`tools/gmp_installer/requirements-gmp.txt`. The solver adds no separate runtime
-stack.
+Python packages are pinned in `tools/gmp_installer/requirements-gmp.txt`.
+Eigen3 is declared by this directory's `vcpkg.json` and restored into GMP's
+shared vcpkg tree by the installer. The deprecated `third_party/eigen` path is
+not used.
 
 ## Supported netlist subset
 
@@ -146,10 +148,11 @@ state-space clients.
 ## Diode/MOSFET piecewise-linear simulation
 
 `switched_solver.py` reads TINA continuation lines and `.MODEL` parameters. For
-the supplied `2_buck.CIR`, it derives `D1` series resistance and junction
-capacitance from `RS/CJO`, and approximates T1 with `Ron/Roff/Coss`. The MOS gate
-voltage source is removed from the electrical MNA model and becomes a Boolean
-external PWM command.
+the supplied `2_buck.CIR`, D1 uses `Vf=VJ`, `Ron=RS`, and a fixed junction
+capacitance linearized from the SPICE `CJO/VJ/M/FC` depletion formula. T1 uses
+`Ron=RD+RS+1/(KP*(W/L)*(Vdrive-VTO))`, `Roff=RDS`, `Coss=CBD+CGDO`, and a body
+diode with `Vf=PB`, `Ron=RD+RS`. The MOS gate voltage source is removed from the
+electrical MNA model and becomes an external `uint32_t PWM` command.
 
 The four primary equations are:
 
@@ -188,26 +191,51 @@ milliohm conduction paths and picofarad junction capacitances are stiff.
 The transition substep is used only while both possible diode paths are open;
 it prevents a macro-step voltage overshoot while keeping a 50 ms run practical.
 
-The 50 ms reference run covers five `L/(R1+R2)` time constants and 500 PWM
-periods. Its final `V(VF1)` is about 2.25 V (tail mean about 2.25 V), close to
-the ideal 2.5 V half-supply value; the remaining difference is the explicit
-body-diode forward drop and finite path resistances.
+The 50 ms parameter-model reference covers five `L/(R1+R2)` time constants and
+500 PWM periods. Because `R1+R2` is only 0.1 ohm while the extracted T1 channel
+resistance is about 0.1979 ohm, its tail mean is about 0.78865 V. This is the
+expected heavy-load conduction loss, not numeric divergence. An explicit ideal
+switch override (`T1.Ron=1M`, `T1.BodyRon=2M`) remains covered by a regression
+test and settles near 2.25 V, close to the ideal half-supply result.
 
 The supplied MOS is connected with `D=4` and `S=3`, where node 3 is the +5 V
 supply. Consequently its intrinsic S-to-D body diode catches the switch node
 when the gate turns off; D1 remains off in the reference run. This orientation
 should be checked if ground-diode Buck freewheeling was intended.
 
-## `1_OPAMP.CIR` diagnostic
+## Circuit data and Eigen C++ generation
 
-The parser recognizes `XIOP1 3 1 VF1 IdOpamp` as a TINA three-pin ideal op amp
-with conventional `(+,-,output)` order. The resulting descriptor pencil is
-singular for every frequency: node 3 is pulled to ground through R2, the ideal
-op-amp constraint equates nodes 3 and 1, and VG1 independently fixes node 1.
-Therefore this particular exported netlist does not currently describe a
-solvable low-pass circuit. The solver reports the singular topology instead of
-inventing a pin order or silently regularizing it. The schematic/netlist
-connection must be corrected before a meaningful transfer function exists.
+`circuit_data.py` exports a versioned JSON boundary containing external ports,
+probes, raw model values and extraction provenance, state/signal names, all six
+continuous topologies, normal/short-step discrete matrices, affine terms, and
+the terminal indices used for previous-sample mode selection. The JSON can be
+simulated without rebuilding MNA and is the only input to `cpp_codegen.py`.
+
+Generate the reference Buck data and C++ project:
+
+```bat
+tools\cctl_studio\mna_solver\generate_buck.bat
+```
+
+The generated `BuckCircuit` exposes `step_short(PWM, VS1)`,
+`step_normal(PWM, VS1)`, `run`, and `operator()`. Probe results are available as
+`circuit.output.VF1` or `circuit["V(VF1)"]`. Build and run the 10 kHz, 50%,
+50 ms test bench with:
+
+```bat
+repair_gmp_vcpkg.bat
+tools\cctl_studio\mna_solver\build_buck_testbench.bat
+```
+
+The build wrapper disables per-project manifest restoration when using GMP's
+shared installed tree, preserving the aggregate dependency set. The generated
+directory still contains a standalone `vcpkg.json` for copied projects.
+
+## `1_OPAMP.CIR` validation
+
+The corrected `XIOP1 4 1 VF1 IdOpamp` reduces to a first-order inverting low
+pass. Its DC gain is -1 and its pole is 1000 rad/s (about 159.155 Hz). Tests
+verify both the DC transfer and `A=-1000` state matrix.
 
 ## Current boundaries
 
@@ -218,8 +246,9 @@ connection must be corrected before a meaningful transfer function exists.
   singular.
 - Initial conditions are state-coordinate values. Mapping physical capacitor
   voltages/inductor currents to initial state coordinates is future work.
-- C/C++ iterative-expression and Verilog generation are the next layer; they are
-  not emitted by this initial solver.
+- The C++ generator currently targets the six topologies of one diode plus one
+  NMOS. A Verilog/fixed-point backend over the same data file remains future
+  work.
 
 Run validation with:
 

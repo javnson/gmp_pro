@@ -69,7 +69,7 @@ gmp_virtual_env_installed.flag
 install_gmp.bat
 ```
 
-该模式通过 Scoop 安装或验证 Git、Python、CMake、Ninja、Doxygen、Graphviz 和 vcpkg，并安装 GMP 所需的 Python 包。检测到 Visual Studio C++ 时，还会运行 vcpkg 集成并恢复所有 `ctl/suite/*/project/simulate/vcpkg.json` 依赖。
+该模式通过 Scoop 安装或验证 Git、Python、CMake、Ninja、Doxygen、Graphviz 和 vcpkg，并安装 GMP 所需的 Python 包。检测到 Visual Studio C++ 时，还会运行 vcpkg 集成并恢复所有 `ctl/suite/*/project/simulate/vcpkg.json` 依赖，以及 `environment_manifest.json` 显式登记的特殊项目；其中 MNA 求解器通过自己的 `vcpkg.json` 提供 Eigen3 代码生成依赖。
 
 ## 3. 部署其他电脑复制来的 `bin`
 

@@ -17,7 +17,7 @@
 VPWM1       1 0 DC 0 AC 1 0
 + PULSE ( 0 1 0  0  0  1e19 1e20 )
 VS1         3 0 5
-R2          VF1 0 50M 
+R2          VF1 0 10 
 D1          0 4  D_1N1183_1 
 MT1         4 1 3 3  ME_2N6755_N_1 NRD=0 NRS=0 
 C1          VF1 0 1U 

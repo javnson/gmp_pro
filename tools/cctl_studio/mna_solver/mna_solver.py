@@ -1,8 +1,9 @@
 """Linear circuit analysis using descriptor Modified Nodal Analysis (MNA).
 
-The module intentionally depends only on NumPy.  It parses the small SPICE/TINA
-subset used by CCTL Studio, builds ``E z_dot = A z + B u``, eliminates algebraic
-unknowns, and exposes simulation and frequency-response helpers.
+The module uses SymEngine for exact MNA construction and NumPy for numeric
+reduction/simulation.  It parses the SPICE/TINA subset used by CCTL Studio,
+builds ``E z_dot = A z + B u``, eliminates algebraic unknowns, and exposes
+simulation and frequency-response helpers.
 """
 
 from __future__ import annotations

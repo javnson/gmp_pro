@@ -1,0 +1,7 @@
+{
+  "name": "gmp-mna-solver-codegen",
+  "version-string": "1.0.0",
+  "dependencies": [
+    "eigen3"
+  ]
+}

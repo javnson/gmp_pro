@@ -130,6 +130,31 @@ def _thermal_forward_voltage(model: DeviceModel, reference_current: float = 1.0)
     return max(0.0, emission * 0.025851999786 * math.log(reference_current / saturation_current + 1.0))
 
 
+def linearized_junction_capacitance(
+    cjo: float,
+    junction_potential: float,
+    grading_coefficient: float,
+    forward_coefficient: float,
+    bias_voltage: float = 0.0,
+) -> float:
+    """Return the SPICE depletion-capacitance tangent at a fixed bias.
+
+    The generated PWL model intentionally keeps this value constant.  At the
+    default zero-bias operating point this reduces to CJO, while retaining the
+    VJ/M/FC continuation formula for an explicitly selected linearization bias.
+    """
+
+    if cjo <= 0.0:
+        return 0.0
+    vj = max(junction_potential, np.finfo(float).tiny)
+    m = max(grading_coefficient, 0.0)
+    fc = min(max(forward_coefficient, 0.0), 0.95)
+    if bias_voltage <= fc * vj:
+        return cjo * (1.0 - bias_voltage / vj) ** (-m)
+    continuation = 1.0 - fc * (1.0 + m) + m * bias_voltage / vj
+    return cjo * continuation / (1.0 - fc) ** (1.0 + m)
+
+
 def _override(overrides: Mapping[str, float], name: str, default: float) -> float:
     lookup = {_key(item): float(value) for item, value in overrides.items()}
     return lookup.get(_key(name), default)
@@ -157,23 +182,35 @@ def derive_switch_parameters(
     rs = mosfet_model.numeric("RS", 0.0) or 0.0
     series_resistance = max(rd + rs, 1e-6)
     gate_drive = _override(overrides, f"{mosfet_label}.Vdrive", 10.0)
+    diode_vj = max(diode_model.numeric("VJ", 0.7) or 0.7, 0.0)
+    diode_cjo = max(diode_model.numeric("CJO", 0.0) or 0.0, 0.0)
+    diode_m = diode_model.numeric("M", 0.5) or 0.5
+    diode_fc = diode_model.numeric("FC", 0.5) or 0.5
+    diode_cj_bias = _override(overrides, f"{diode.name}.CjBias", 0.0)
+    diode_cj = linearized_junction_capacitance(
+        diode_cjo, diode_vj, diode_m, diode_fc, diode_cj_bias
+    )
+    vto = mosfet_model.numeric("VTO", 0.0) or 0.0
+    kp = mosfet_model.numeric("KP", 0.0) or 0.0
+    width = mosfet_model.numeric("W", 1.0) or 1.0
+    length = max(mosfet_model.numeric("L", 1.0) or 1.0, np.finfo(float).tiny)
+    overdrive = max(gate_drive - vto, np.finfo(float).eps)
+    channel_conductance = kp * width / length * overdrive
+    extracted_ron = series_resistance + (1.0 / channel_conductance if channel_conductance > 0.0 else 0.0)
     estimated_coss = (mosfet_model.numeric("CBD", 0.0) or 0.0) + (mosfet_model.numeric("CGDO", 0.0) or 0.0)
 
     parameters = SwitchParameters(
         diode.name,
-        _override(overrides, f"{diode.name}.Vf", _thermal_forward_voltage(diode_model)),
+        _override(overrides, f"{diode.name}.Vf", diode_vj),
         _override(overrides, f"{diode.name}.Ron", max(diode_model.numeric("RS", 1e-3) or 1e-3, 1e-6)),
         _override(overrides, f"{diode.name}.Roff", 1e9),
-        _override(overrides, f"{diode.name}.Cj", max(diode_model.numeric("CJO", 0.0) or 0.0, 0.0)),
+        _override(overrides, f"{diode.name}.Cj", diode_cj),
         mosfet_label,
-        # The requested switch abstraction is ideal; keep a finite milliohm
-        # resistance for a well-conditioned MNA stamp.  A measured or
-        # datasheet-derived value can be supplied through an override.
-        _override(overrides, f"{mosfet_label}.Ron", 1e-3),
+        _override(overrides, f"{mosfet_label}.Ron", max(extracted_ron, 1e-6)),
         _override(overrides, f"{mosfet_label}.Roff", max(mosfet_model.numeric("RDS", 1e9) or 1e9, 1.0)),
         _override(overrides, f"{mosfet_label}.Coss", max(estimated_coss, 0.0)),
-        _override(overrides, f"{mosfet_label}.BodyVf", _thermal_forward_voltage(mosfet_model)),
-        _override(overrides, f"{mosfet_label}.BodyRon", 2e-3),
+        _override(overrides, f"{mosfet_label}.BodyVf", max(mosfet_model.numeric("PB", 0.7) or 0.7, 0.0)),
+        _override(overrides, f"{mosfet_label}.BodyRon", series_resistance),
         gate_drive,
     )
     return diode, mosfet, parameters

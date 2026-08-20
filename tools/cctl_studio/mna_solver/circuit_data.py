@@ -1,0 +1,494 @@
+"""Portable circuit-data export and data-driven piecewise simulation.
+
+The JSON document produced here is the stable boundary between netlist/MNA
+analysis and downstream simulation or code generation.  It contains no Python
+objects or symbolic expressions required at run time.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import math
+import re
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Callable, Mapping, Sequence
+
+import numpy as np
+
+from mna_solver import NetlistError, StateSpaceModel, discretize, parse_netlist, parse_spice_value
+from switched_solver import (
+    MosfetPath,
+    PiecewiseLinearModel,
+    TopologyKey,
+    build_piecewise_model,
+)
+
+
+SCHEMA_NAME = "gmp.mna_solver.circuit_data"
+SCHEMA_VERSION = 1
+
+
+def _key(value: str) -> str:
+    return value.upper()
+
+
+def _matrix(value: np.ndarray) -> list[list[float]]:
+    return np.asarray(value, dtype=float).tolist()
+
+
+def _vector(value: np.ndarray) -> list[float]:
+    return np.asarray(value, dtype=float).reshape(-1).tolist()
+
+
+def _field_name(observation: str) -> str:
+    match = re.fullmatch(r"[VI]\(([^,)]+)(?:,[^)]+)?\)", observation, re.IGNORECASE)
+    raw = match.group(1) if match else observation
+    field = re.sub(r"[^A-Za-z0-9_]", "_", raw).strip("_")
+    if not field:
+        field = "value"
+    if field[0].isdigit():
+        field = "n_" + field
+    return field
+
+
+def _unique_output_fields(names: Sequence[str]) -> list[str]:
+    result: list[str] = []
+    used: set[str] = set()
+    for name in names:
+        base = _field_name(name)
+        candidate = base
+        suffix = 2
+        while candidate.lower() in used:
+            candidate = f"{base}_{suffix}"
+            suffix += 1
+        used.add(candidate.lower())
+        result.append(candidate)
+    return result
+
+
+def _affine_model(
+    model: StateSpaceModel,
+    external_inputs: Sequence[str],
+    *,
+    discrete_dt: float | None = None,
+    method: str = "backward_euler",
+) -> dict:
+    selected = discretize(model, discrete_dt, method) if discrete_dt is not None else model
+    input_indices = {_key(name): index for index, name in enumerate(selected.input_names)}
+    external_indices = [input_indices[_key(name)] for name in external_inputs]
+    constant_indices = [
+        index for index, name in enumerate(selected.input_names) if _key(name) not in {_key(item) for item in external_inputs}
+    ]
+    defaults = np.asarray(selected.input_defaults, dtype=float)
+    B = np.asarray(selected.B, dtype=float)
+    D = np.asarray(selected.D, dtype=float)
+    bias_x = B[:, constant_indices] @ defaults[constant_indices] if constant_indices else np.zeros(B.shape[0])
+    bias_y = D[:, constant_indices] @ defaults[constant_indices] if constant_indices else np.zeros(D.shape[0])
+    document = {
+        "A": _matrix(selected.A),
+        "B": _matrix(B[:, external_indices]),
+        "bias": _vector(bias_x),
+        "C": _matrix(selected.C),
+        "D": _matrix(D[:, external_indices]),
+        "output_bias": _vector(bias_y),
+    }
+    if discrete_dt is not None:
+        document.update({"dt_s": float(discrete_dt), "method": selected.method})
+    return document
+
+
+def _model_document(model) -> dict:
+    return {
+        "name": model.name,
+        "kind": model.kind,
+        "parameters": {
+            name: {"spice": text, "value": model.numeric(name)}
+            for name, text in sorted(model.parameters.items())
+        },
+    }
+
+
+def build_circuit_data(
+    model: PiecewiseLinearModel,
+    *,
+    source_path: str | Path | None = None,
+    normal_step_s: float = 100e-9,
+    short_step_s: float = 0.5e-9,
+    method: str = "backward_euler",
+    voltage_hysteresis: float = 1e-6,
+) -> dict:
+    """Convert all six PWL topologies to a self-contained JSON-compatible dict."""
+
+    if normal_step_s <= 0.0 or short_step_s <= 0.0:
+        raise ValueError("normal and short simulation steps must be positive")
+    reference = next(iter(model.topologies.values())).state
+    source_names = [
+        element.name
+        for element in model.source_circuit.elements
+        if element.kind in {"V", "I"} and _key(element.name) != _key(model.gate_source_name)
+    ]
+    external_inputs = [name for name in reference.input_names if _key(name) in {_key(item) for item in source_names}]
+    source_elements = {_key(element.name): element for element in model.source_circuit.elements}
+    input_ports = [
+        {
+            "name": name,
+            "source_element": name,
+            "data_type": "double",
+            "default": float(source_elements[_key(name)].numeric_value({})),
+        }
+        for name in external_inputs
+    ]
+    input_ports.insert(
+        0,
+        {
+            "name": "PWM",
+            "source_element": model.gate_source_name,
+            "data_type": "uint32_t",
+            "role": "mosfet_gate_command",
+            "default": 0,
+        },
+    )
+
+    public_names = [observation.name for observation in model.source_circuit.observations]
+    fields = _unique_output_fields(public_names)
+    signal_indices = {_key(name): index for index, name in enumerate(reference.output_names)}
+    output_ports = []
+    for name, field in zip(public_names, fields):
+        if _key(name) not in signal_indices:
+            raise NetlistError(f"probe {name!r} is absent from the topology output equations")
+        output_ports.append(
+            {"name": name, "field": field, "data_type": "double", "signal_index": signal_indices[_key(name)]}
+        )
+
+    diode_model = model.source_circuit.models[_key(model.diode.model_name or "")]
+    mosfet_model = model.source_circuit.models[_key(model.mosfet.model_name or "")]
+    p = model.parameters
+    diode_vj = diode_model.numeric("VJ", 0.7) or 0.7
+    diode_m = diode_model.numeric("M", 0.5) or 0.5
+    diode_fc = diode_model.numeric("FC", 0.5) or 0.5
+    mosfet_rd = mosfet_model.numeric("RD", 0.0) or 0.0
+    mosfet_rs = mosfet_model.numeric("RS", 0.0) or 0.0
+    devices = {
+        "diode": {
+            "instance": model.diode.name,
+            "model": _model_document(diode_model),
+            "reduced": {
+                "forward_voltage_V": p.diode_forward_voltage,
+                "on_resistance_ohm": p.diode_on_resistance,
+                "off_resistance_ohm": p.diode_off_resistance,
+                "junction_capacitance_F": p.diode_junction_capacitance,
+            },
+            "extraction": {
+                "forward_voltage": "VJ",
+                "on_resistance": "RS",
+                "junction_capacitance": "SPICE depletion C(Vbias) from CJO,VJ,M,FC; Vbias=0 by default",
+                "junction_linearization_bias_V": 0.0,
+                "junction_potential_V": diode_vj,
+                "grading_coefficient": diode_m,
+                "forward_coefficient": diode_fc,
+            },
+        },
+        "mosfet": {
+            "instance": model.mosfet.name,
+            "public_name": p.mosfet_name,
+            "model": _model_document(mosfet_model),
+            "reduced": {
+                "channel_on_resistance_ohm": p.mosfet_on_resistance,
+                "off_resistance_ohm": p.mosfet_off_resistance,
+                "output_capacitance_F": p.mosfet_output_capacitance,
+                "body_forward_voltage_V": p.body_forward_voltage,
+                "body_on_resistance_ohm": p.body_on_resistance,
+                "gate_drive_voltage_V": p.gate_drive_voltage,
+            },
+            "extraction": {
+                "channel_on_resistance": "RD+RS+1/(KP*(W/L)*(Vdrive-VTO))",
+                "off_resistance": "RDS",
+                "output_capacitance": "CBD+CGDO",
+                "body_forward_voltage": "PB",
+                "body_on_resistance": "RD+RS",
+                "series_resistance_ohm": mosfet_rd + mosfet_rs,
+            },
+        },
+    }
+
+    topology_documents = []
+    topology_order = []
+    for key, topology in model.topologies.items():
+        if topology.state.state_names != reference.state_names or topology.state.output_names != reference.output_names:
+            raise NetlistError("topologies do not share state/output coordinates")
+        topology_order.append(key.name)
+        continuous = _affine_model(topology.state, external_inputs)
+        continuous["reconstruction_x"] = _matrix(topology.state.reconstruction_x)
+        continuous["reconstruction_u"] = _matrix(topology.state.reconstruction_u)
+        continuous["unknown_names"] = list(topology.state.unknown_names)
+        continuous["raw_input_names"] = list(topology.state.input_names)
+        continuous["raw_input_defaults"] = _vector(topology.state.input_defaults)
+        topology_documents.append(
+            {
+                "index": len(topology_documents),
+                "name": key.name,
+                "diode_on": key.diode_on,
+                "mosfet_path": key.mosfet_path.value,
+                "continuous": continuous,
+                "discrete": {
+                    "normal": _affine_model(topology.state, external_inputs, discrete_dt=normal_step_s, method=method),
+                    "short": _affine_model(topology.state, external_inputs, discrete_dt=short_step_s, method=method),
+                },
+            }
+        )
+
+    source = {"file": None, "sha256": None}
+    if source_path is not None:
+        path = Path(source_path)
+        source = {"file": path.name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+    required_signals = {
+        "mosfet_drain": signal_indices[_key(f"V({p.mosfet_name}.D)")],
+        "mosfet_source": signal_indices[_key(f"V({p.mosfet_name}.S)")],
+        "diode_anode": signal_indices[_key(f"V({model.diode.name}.A)")],
+        "diode_cathode": signal_indices[_key(f"V({model.diode.name}.K)")],
+    }
+    return {
+        "schema": {"name": SCHEMA_NAME, "version": SCHEMA_VERSION},
+        "circuit": {"name": model.source_circuit.title, "source": source},
+        "ports": {"inputs": input_ports, "outputs": output_ports},
+        "state": {"names": list(reference.state_names), "initial": [0.0] * len(reference.state_names)},
+        "signals": {"names": list(reference.output_names), "switch_terminal_indices": required_signals},
+        "devices": devices,
+        "switching": {
+            "gate_source_ignored": model.gate_source_name,
+            "diode_forward_threshold_V": p.diode_forward_voltage,
+            "body_forward_threshold_V": p.body_forward_voltage,
+            "voltage_hysteresis_V": voltage_hysteresis,
+            "selection_uses_previous_terminal_voltage": True,
+            "topology_order": topology_order,
+        },
+        "solver": {
+            "method": method,
+            "normal_step_s": normal_step_s,
+            "short_step_s": short_step_s,
+        },
+        "topologies": topology_documents,
+    }
+
+
+def validate_circuit_data(document: Mapping) -> None:
+    schema = document.get("schema", {})
+    if schema.get("name") != SCHEMA_NAME or schema.get("version") != SCHEMA_VERSION:
+        raise ValueError(f"unsupported circuit-data schema: {schema!r}")
+    topologies = document.get("topologies", [])
+    if len(topologies) != 6:
+        raise ValueError(f"switched circuit data must contain six topologies, got {len(topologies)}")
+    state_count = len(document["state"]["names"])
+    signal_count = len(document["signals"]["names"])
+    input_count = sum(port["data_type"] == "double" for port in document["ports"]["inputs"])
+    for topology in topologies:
+        for profile in ("normal", "short"):
+            item = topology["discrete"][profile]
+            if np.asarray(item["A"]).shape != (state_count, state_count):
+                raise ValueError(f"{topology['name']} {profile}: invalid A dimensions")
+            if np.asarray(item["B"]).shape != (state_count, input_count):
+                raise ValueError(f"{topology['name']} {profile}: invalid B dimensions")
+            if np.asarray(item["C"]).shape != (signal_count, state_count):
+                raise ValueError(f"{topology['name']} {profile}: invalid C dimensions")
+
+
+def write_circuit_data(path: str | Path, document: Mapping) -> None:
+    validate_circuit_data(document)
+    Path(path).write_text(json.dumps(document, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def load_circuit_data(path: str | Path) -> dict:
+    document = json.loads(Path(path).read_text(encoding="utf-8"))
+    validate_circuit_data(document)
+    return document
+
+
+@dataclass
+class DataSimulationResult:
+    time: np.ndarray
+    pwm: np.ndarray
+    topology: list[str]
+    states: np.ndarray
+    outputs: np.ndarray
+    output_names: list[str]
+
+
+class CircuitDataSimulator:
+    """Run only from exported JSON data; no netlist or MNA rebuild is used."""
+
+    def __init__(self, document: Mapping):
+        validate_circuit_data(document)
+        self.document = document
+        self.topologies = {(item["diode_on"], item["mosfet_path"]): item for item in document["topologies"]}
+        self.external_inputs = [port for port in document["ports"]["inputs"] if port["data_type"] == "double"]
+        self.x = np.asarray(document["state"]["initial"], dtype=float)
+        self.signals = np.zeros(len(document["signals"]["names"]), dtype=float)
+        self.diode_on = False
+        self.body_on = False
+        self.last_topology = "D_OFF__MOS_OFF"
+
+    def reset(self, state: Sequence[float] | None = None) -> None:
+        self.x = np.asarray(self.document["state"]["initial"] if state is None else state, dtype=float).copy()
+        if self.x.shape != (len(self.document["state"]["names"]),):
+            raise ValueError("initial state has the wrong dimension")
+        self.signals.fill(0.0)
+        self.diode_on = False
+        self.body_on = False
+        self.last_topology = "D_OFF__MOS_OFF"
+
+    def _select(self, pwm: int) -> tuple[bool, str]:
+        indices = self.document["signals"]["switch_terminal_indices"]
+        vak = self.signals[indices["diode_anode"]] - self.signals[indices["diode_cathode"]]
+        vsd = self.signals[indices["mosfet_source"]] - self.signals[indices["mosfet_drain"]]
+        switching = self.document["switching"]
+        hysteresis = switching["voltage_hysteresis_V"]
+        diode_threshold = switching["diode_forward_threshold_V"]
+        body_threshold = switching["body_forward_threshold_V"]
+        self.diode_on = vak >= diode_threshold + (-hysteresis if self.diode_on else hysteresis)
+        if int(pwm) != 0:
+            self.body_on = False
+            return self.diode_on, MosfetPath.CHANNEL.value
+        self.body_on = vsd >= body_threshold + (-hysteresis if self.body_on else hysteresis)
+        return self.diode_on, MosfetPath.BODY_DIODE.value if self.body_on else MosfetPath.OFF.value
+
+    def step(self, pwm: int, inputs: Mapping[str, float] | None = None, profile: str = "normal") -> dict[str, float]:
+        if profile not in {"normal", "short"}:
+            raise ValueError("profile must be 'normal' or 'short'")
+        supplied = {_key(name): float(value) for name, value in (inputs or {}).items()}
+        known = {_key(port["name"]) for port in self.external_inputs}
+        unknown = set(supplied) - known
+        if unknown:
+            raise ValueError("unknown input(s): " + ", ".join(sorted(unknown)))
+        u = np.asarray([supplied.get(_key(port["name"]), port["default"]) for port in self.external_inputs])
+        key = self._select(pwm)
+        topology = self.topologies[key]
+        item = topology["discrete"][profile]
+        self.x = np.asarray(item["A"]) @ self.x + np.asarray(item["B"]) @ u + np.asarray(item["bias"])
+        self.signals = np.asarray(item["C"]) @ self.x + np.asarray(item["D"]) @ u + np.asarray(item["output_bias"])
+        self.last_topology = topology["name"]
+        return {
+            port["name"]: float(self.signals[port["signal_index"]])
+            for port in self.document["ports"]["outputs"]
+        }
+
+    def step_short(self, pwm: int, inputs: Mapping[str, float] | None = None) -> dict[str, float]:
+        return self.step(pwm, inputs, "short")
+
+    def step_normal(self, pwm: int, inputs: Mapping[str, float] | None = None) -> dict[str, float]:
+        return self.step(pwm, inputs, "normal")
+
+
+def simulate_circuit_data(
+    document: Mapping,
+    duration_s: float,
+    pwm_frequency_hz: float = 10_000.0,
+    pwm_duty: float = 0.5,
+    inputs: Mapping[str, float | Callable[[float], float]] | None = None,
+    startup_short_steps: int = 0,
+) -> DataSimulationResult:
+    if duration_s < 0 or pwm_frequency_hz <= 0 or not 0.0 <= pwm_duty <= 1.0 or startup_short_steps < 0:
+        raise ValueError("invalid simulation duration, PWM, duty, or startup step count")
+    simulator = CircuitDataSimulator(document)
+    normal_dt = float(document["solver"]["normal_step_s"])
+    short_dt = float(document["solver"]["short_step_s"])
+    steps = int(math.ceil(duration_s / normal_dt))
+    times = np.arange(steps + 1, dtype=float) * normal_dt
+    states = np.zeros((steps + 1, len(simulator.x)))
+    output_ports = document["ports"]["outputs"]
+    output_names = [port["name"] for port in output_ports]
+    outputs = np.zeros((steps + 1, len(output_ports)))
+    pwm_values = np.zeros(steps + 1, dtype=np.uint32)
+    topology = [simulator.last_topology]
+    supplied = inputs or {}
+
+    def gate(time_value: float) -> int:
+        if pwm_duty in {0.0, 1.0}:
+            return int(pwm_duty)
+        return int((time_value % (1.0 / pwm_frequency_hz)) < pwm_duty / pwm_frequency_hz)
+
+    def sampled_inputs(time_value: float) -> dict[str, float]:
+        return {name: float(value(time_value) if callable(value) else value) for name, value in supplied.items()}
+
+    elapsed = 0.0
+    for _ in range(startup_short_steps):
+        simulator.step_short(gate(elapsed), sampled_inputs(elapsed))
+        elapsed += short_dt
+    for index in range(steps):
+        current_pwm = gate(float(times[index]))
+        values = simulator.step_normal(current_pwm, sampled_inputs(float(times[index])))
+        states[index + 1] = simulator.x
+        outputs[index + 1] = [values[name] for name in output_names]
+        pwm_values[index + 1] = current_pwm
+        topology.append(simulator.last_topology)
+    return DataSimulationResult(times, pwm_values, topology, states, outputs, output_names)
+
+
+def _number(text: str) -> float:
+    result = parse_spice_value(text)
+    if result is None:
+        raise argparse.ArgumentTypeError(f"expected a numeric/SPICE value, got {text!r}")
+    return result
+
+
+def _assignments(items: Sequence[str]) -> dict[str, float]:
+    result: dict[str, float] = {}
+    for item in items:
+        if "=" not in item:
+            raise ValueError(f"expected NAME=VALUE, got {item!r}")
+        name, raw = item.split("=", 1)
+        value = parse_spice_value(raw)
+        if not name or value is None:
+            raise ValueError(f"expected numeric NAME=VALUE, got {item!r}")
+        result[name] = value
+    return result
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Export and simulate portable GMP circuit data")
+    commands = parser.add_subparsers(dest="command", required=True)
+    export = commands.add_parser("export")
+    export.add_argument("netlist")
+    export.add_argument("output")
+    export.add_argument("--normal-dt", type=_number, default=100e-9)
+    export.add_argument("--short-dt", type=_number, default=0.5e-9)
+    export.add_argument("--method", default="backward_euler")
+    export.add_argument("--device-param", action="append", default=[], metavar="NAME=VALUE")
+    simulate = commands.add_parser("simulate")
+    simulate.add_argument("data")
+    simulate.add_argument("--duration", type=_number, required=True)
+    simulate.add_argument("--pwm-frequency", type=_number, default=10_000.0)
+    simulate.add_argument("--duty", type=float, default=0.5)
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = _parser().parse_args(argv)
+    try:
+        if args.command == "export":
+            circuit = parse_netlist(args.netlist)
+            document = build_circuit_data(
+                build_piecewise_model(circuit, _assignments(args.device_param)),
+                source_path=args.netlist,
+                normal_step_s=args.normal_dt,
+                short_step_s=args.short_dt,
+                method=args.method,
+            )
+            write_circuit_data(args.output, document)
+            print(f"wrote {len(document['topologies'])} topologies to {args.output}")
+        else:
+            document = load_circuit_data(args.data)
+            result = simulate_circuit_data(document, args.duration, args.pwm_frequency, args.duty)
+            print(f"simulated {len(result.time) - 1} normal steps")
+            for index, name in enumerate(result.output_names):
+                print(f"{name}: final={result.outputs[-1, index]:.12g}")
+    except (NetlistError, ValueError, OSError, np.linalg.LinAlgError) as error:
+        print(f"error: {error}")
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

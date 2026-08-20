@@ -64,7 +64,8 @@
     "triplet": "x64-windows",
     "projects": [
       "ctl/unit_test",
-      "slib/simulink_lib_src"
+      "slib/simulink_lib_src",
+      "tools/cctl_studio/mna_solver"
     ]
   }
 }

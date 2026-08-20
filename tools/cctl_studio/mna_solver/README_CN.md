@@ -34,10 +34,12 @@ y     = C x + D u + F u_dot
 ## 依赖
 
 - NumPy：数值降阶、离散迭代和频率响应；
-- SymEngine：精确符号 MNA 矩阵。
+- SymEngine：精确符号 MNA 矩阵；
+- Eigen3：生成的固定维 C++ 矩阵计算。
 
-两者都已经包含在 GMP Python 环境中，版本由
-`tools/gmp_installer/requirements-gmp.txt` 统一固定，无需另建运行环境。
+Python 包由 `tools/gmp_installer/requirements-gmp.txt` 统一固定。Eigen3
+由本目录的 `vcpkg.json` 声明，并由 GMP 安装器恢复到共享 vcpkg 安装树；
+不再使用已经弃用的 `third_party/eigen`。
 
 ## 支持的网表范围
 
@@ -114,9 +116,12 @@ Python API 的完整示例见 [README.md](README.md)。离散化接口已经保�
 ## 二极管/MOSFET 分段线性仿真
 
 `switched_solver.py` 可以读取 TINA 续行和 `.MODEL` 参数。对于当前
-`2_buck.CIR`，D1 的串联电阻、结电容来自 `RS/CJO`，T1 则近似为
-`Ron/Roff/Coss`；MOS 门极上的电压源从电气 MNA 中移除，转换成外部布尔
-PWM 命令。
+`2_buck.CIR`。D1 的 `Vf/Ron` 来自 `VJ/RS`，固定结电容使用
+`CJO/VJ/M/FC` 的 SPICE 耗尽层电容公式在指定偏压处线性化（默认偏压为 0，
+因此等于 CJO）。T1 的 `Ron` 使用
+`RD+RS+1/(KP*(W/L)*(Vdrive-VTO))`，`Roff=RDS`，`Coss=CBD+CGDO`，
+体二极管采用 `Vf=PB`、`Ron=RD+RS`。MOS 门极电压源从电气 MNA 中移除，
+转换成外部 `uint32_t PWM` 命令。
 
 用户要求的 4 个主方程是：
 
@@ -153,22 +158,50 @@ python tools\cctl_studio\mna_solver\switched_solver.py simulate ^
 过渡子步只在两个二极管路径都未导通时使用，用于抑制宏步长造成的开关节点
 过冲，因此 50 ms 长时间仿真仍然可以保持实用速度。
 
-50 ms 参考仿真覆盖 5 个 `L/(R1+R2)` 时间常数和 500 个 PWM 周期；
-`V(VF1)` 最终值及末段平均值均约为 2.25 V，已经进入理想半电源 2.5 V
-附近。两者的差异来自模型中明确保留的体二极管压降和有限导通电阻。
+50 ms 参数模型参考仿真覆盖 5 个 `L/(R1+R2)` 时间常数和 500 个 PWM
+周期。`R1+R2` 只有 0.1 Ω，而从模型提取的 T1 导通电阻约 0.1979 Ω，
+因此 `V(VF1)` 末段平均值约 0.78865 V。这是重载下的模型导通损耗，不是
+数值发散。使用 `T1.Ron=1M T1.BodyRon=2M` 的理想开关覆盖值时，参考测试
+仍会稳定在约 2.25 V，即接近 50% 占空比的理想半电源值。
 
 当前网表中 T1 的 `D=4`、`S=3`，节点 3 是 +5 V 电源。因此门极关断后，
 固有体二极管会从 S 向 D 向开关节点供电，参考仿真中 D1 始终未接管续流。
 如果原意是由接地 D1 完成标准 Buck 续流，应再检查 MOS 漏源方向；求解器
 不会为了得到预期波形而擅自反转器件。
 
-## `1_OPAMP.CIR` 诊断结果
+## 电路数据文件与 Eigen C++ 代码生成
 
-解析器已经把 `XIOP1 3 1 VF1 IdOpamp` 识别为常规 `(+、-、输出)` 顺序的
-TINA 三引脚理想运放。但该网表的描述符矩阵束在所有频率下均为奇异：节点 3
-通过 R2 接地，理想运放又强制节点 3 与节点 1 等电位，而 VG1 独立固定节点 1。
-因此当前导出的网表本身没有可求解的低通传递函数。程序会明确报告奇异拓扑，
-不会猜测引脚顺序或静默加入寄生参数；需要先修正原理图/网表连接。
+`circuit_data.py` 把 CIR/MNA 结果固化成带版本的 JSON。文件包含外部端口、
+探针、原始模型参数和提取依据、状态/信号名称、6 个拓扑的连续矩阵、正常与
+短步长离散矩阵，以及上一采样端电压选模所需索引。它可以脱离 CIR 文件由
+`CircuitDataSimulator` 直接仿真，也是代码生成器唯一的输入。
+
+生成 Buck 参考数据和 C++ 工程：
+
+```bat
+tools\cctl_studio\mna_solver\generate_buck.bat
+```
+
+输出位于 `generated/buck`。生成的 `BuckCircuit` 使用 Eigen 固定维矩阵，
+提供 `step_short(PWM, VS1)`、`step_normal(PWM, VS1)`、`run` 和
+`operator()`；探针既可通过 `circuit.output.VF1`，也可通过
+`circuit["V(VF1)"]` 读取。`PWM` 是 `uint32_t`，电源输入是 `double`。
+
+安装/修复 vcpkg 依赖后编译并运行 10 kHz、50%、50 ms test bench：
+
+```bat
+repair_gmp_vcpkg.bat
+tools\cctl_studio\mna_solver\build_buck_testbench.bat
+```
+
+构建脚本按 GMP 聚合 vcpkg 约定关闭单项目 manifest 自动恢复，避免修改共享
+安装树中的其他包。生成目录本身仍带 `vcpkg.json`，复制为独立工程时可以使用。
+
+## `1_OPAMP.CIR` 验证结果
+
+修正后的 `XIOP1 4 1 VF1 IdOpamp` 可正常降为一阶反相低通：直流增益
+`-1`，极点为 `1000 rad/s`（截止频率约 159.155 Hz）。自动测试同时验证了
+DC 传递函数和状态矩阵 `A=-1000`。
 
 ## 当前边界
 
@@ -177,7 +210,8 @@ TINA 三引脚理想运放。但该网表的描述符矩阵束在所有频率下
   描述符拓扑会报告奇异错误；
 - 初值目前使用降阶后的状态坐标；把物理电容电压、励磁电流映射为初值属于
   后续工作；
-- C/C++ 迭代表达式与 Verilog 生成是下一层功能，本初版尚不输出代码。
+- 当前 C++ 生成器面向“一个二极管 + 一个 NMOS”的 6 拓扑电路；将同一数据
+  文件后端扩展为 Verilog/定点矩阵实现属于下一阶段。
 
 验证命令：
 
