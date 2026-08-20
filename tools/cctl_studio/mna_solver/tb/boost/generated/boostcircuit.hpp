@@ -12,9 +12,15 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <limits>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 
 class BoostCircuit {
 public:
@@ -25,6 +31,8 @@ public:
     static constexpr std::size_t topology_count = 6;
     static constexpr std::size_t calculation_state_count = 6;
     static constexpr const char* matrix_backend = "eigen";
+    static constexpr const char* matrix_storage = "archive";
+    static constexpr const char* archive_filename = "boostcircuit.archive";
     static constexpr std::size_t state_matrix_count = 12;
     static constexpr std::size_t input_matrix_count = 10;
     static constexpr std::size_t state_vector_count = 9;
@@ -53,7 +61,9 @@ public:
 
     Outputs output{};
 
-    BoostCircuit() { reset(); }
+    explicit BoostCircuit(
+        const std::filesystem::path& archive_path = std::filesystem::path(archive_filename))
+        : archive_(load_archive(archive_path)) { reset(); }
 
     void reset() {
         state_.setZero();
@@ -110,93 +120,220 @@ private:
         std::size_t output_bias;
     };
 
-    static const std::array<StateMatrix, state_matrix_count>& state_matrices() {
-        static const std::array<StateMatrix, state_matrix_count> pool{{
-            ([] { StateMatrix value; value << 0.99509722767091457, -2.7055231973013561e-09, 9.75585517324426e-05, -9.9501555025879811e-05, 2.7055107519005255e-08, 0.99990001045792076, 2.6524615214711032e-12, 4.5620859697882542e-10, -0.00097558551732442598, 2.6524737228444695e-12, 0.9803920612171062, 9.7550544143020969e-08, 48.976992844472321, 2.2455757566417056e-05, 0.0048016659651443448, 0.99502062289766458; return value; }()),
-            ([] { StateMatrix value; value << 0.99999945776730903, -4.8259949876354918e-12, 9.9979949786773562e-07, -9.9999863689226883e-07, 4.8259727881174033e-11, 0.99999900000558994, 4.825007786560092e-17, 4.5899178953083058e-12, -9.9979949786773545e-06, 4.8250299816391641e-17, 0.99980003998200562, 9.9979867715683763e-12, 0.49222272024606911, 2.259275344422875e-07, 4.9212429538699184e-07, 0.99999868691277882; return value; }()),
-            ([] { StateMatrix value; value << 0.99997519226756559, -1.0887841671551391e-11, 9.8036783555643689e-05, -4.0042427974824365e-07, 1.0887791591804101e-10, 0.99990001045790589, 1.0674305482160884e-14, -9.1233224317751006e-11, -0.00098036783555643697, 1.0674354582697789e-14, 0.98039206074825136, 3.925728232804484e-10, 0.19709819689657804, -4.490733363690392e-06, 1.9323352636919415e-05, 0.0040042632113170828; return value; }()),
-            ([] { StateMatrix value; value << 0.99999980884217976, -1.3838831523384377e-12, 9.9979984887240542e-07, -2.8675563681732121e-07, 1.383876786492815e-11, 0.9999990000055895, 1.3836000664795203e-17, -6.5339635135717197e-11, -9.9979984887240525e-06, 1.3836064310522271e-17, 0.99980003998200562, 2.866982971578897e-12, 0.14114783199981681, -3.2161844730311891e-06, 1.4111960807820117e-07, 0.28675565116100432; return value; }()),
-            ([] { StateMatrix value; value << 0.99997643407156955, -1.0201856995716504e-11, 9.8036905301134277e-05, -3.7519568726808719e-07, 1.0201810069275682e-10, 0.99990001045790611, 1.0001774577721258e-14, -9.1372588889195828e-11, -0.00098036905301134296, 1.0001820588789795e-14, 0.98039206074813201, 3.6783890908468748e-10, 0.18468009355076725, -4.4975932454427948e-06, 1.8105891524585025e-05, 0.0037519760003485803; return value; }()),
-            ([] { StateMatrix value; value << 0.99999981532664262, -1.3203062685194865e-12, 9.9979985535557146e-07, -2.7358181518681832e-07, 1.3203001951267505e-11, 0.99999900000558972, 1.3200361878891731e-17, -6.663125588521598e-11, -9.9979985535557137e-06, 1.3200422600674726e-17, 0.99980003998200562, 2.7352710976486532e-12, 0.13466336884179225, -3.2797613600302936e-06, 1.3463644155348158e-07, 0.2735818288715392; return value; }()),
-            ([] { StateMatrix value; value << 0.99999460201590595, 9.9983826826022763e-05, 9.8038686472147626e-05, -6.0942422243439851e-09, -0.00099983366964975632, 0.99987959694657313, -9.8022908789191847e-08, -2.0312796673725438e-05, -0.00098038686472147626, -9.8023359653079908e-08, 0.98039206074638574, 5.9747472801624288e-12, 0.0029997285757912356, -0.99984796564950962, 2.9409103684227803e-07, 6.0942826398356918e-05; return value; }()),
-            ([] { StateMatrix value; value << 0.99999994798816105, 9.9593656896840552e-07, 9.997999879905631e-07, -4.0669415130729126e-09, -9.9593198766018476e-06, 0.99997876637629068, -9.9573284109196721e-12, -2.0233427651692227e-05, -9.9979998799056289e-06, -9.9573742148410872e-12, 0.99980003998200562, 4.0661282874154291e-14, 0.0020018437433751077, -0.99594121876034691, 2.0014434546841711e-09, 0.0040669418095789084; return value; }()),
-            ([] { StateMatrix value; value << 0.99999460649502647, 9.8490883099908792e-05, 9.8038686911277085e-05, -6.0032439010511911e-09, -0.00098490430178778507, 0.9949034626307689, -9.6559245273312346e-08, -2.000948994084709e-05, -0.00098038686911277088, -9.655968939145655e-08, 0.9803920607463853, 5.8855332403303492e-12, 0.0029549370742110352, -0.98491843011054148, 2.8969971315794467e-07, 6.003283716568407e-05; return value; }()),
-            ([] { StateMatrix value; value << 0.99999994800820813, 9.8596290711198345e-07, 9.9979998801060623e-07, -4.026213719049595e-09, -9.8595837168261885e-06, 0.99992914667128652, -9.8576121943868979e-12, -2.0030803865764095e-05, -9.9979998801060623e-06, -9.8576575396119125e-12, 0.99980003998200562, 4.0254086373221298e-14, 0.0019817965704848725, -0.98596755617678244, 1.9814002904267872e-09, 0.0040262140125862786; return value; }()),
-            ([] { StateMatrix value; value << 0.99999460679260932, 9.8391695313266599e-05, 9.8038686940451881e-05, -5.997198174751571e-09, -0.00098391242768814226, 0.99457285929981609, -9.6462002714523816e-08, -1.9989338914000486e-05, -0.00098038686940451862, -9.6462446366882696e-08, 0.9803920607463853, 5.8796060562539996e-12, 0.0029519612261568982, -0.98392654487081022, 2.8940796334871554e-07, 5.9972379498675819e-05; return value; }()),
-            ([] { StateMatrix value; value << 0.99999994800954717, 9.8529675033054082e-07, 9.9979998801194497e-07, -4.0234934447338622e-09, -9.8529221796547804e-06, 0.99992583249205547, -9.8509519892565448e-12, -2.0017270299956651e-05, -9.9979998801194488e-06, -9.8509973038446393e-12, 0.99980003998200562, 4.0226889069524717e-14, 0.0019804575878361892, -0.98530139934677274, 1.9800615755210849e-09, 0.0040234937380722209; return value; }())
-        }};
-        return pool;
-    }
+    template <typename Matrix>
+    using MatrixPool = std::vector<Matrix, Eigen::aligned_allocator<Matrix>>;
 
-    static const std::array<InputMatrix, input_matrix_count>& input_matrices() {
-        static const std::array<InputMatrix, input_matrix_count> pool{{
-            ([] { InputMatrix value; value << 1.9511710346488524e-06, 5.3049230429422068e-14, 0.019607841224342122, 9.6033319302886899e-05; return value; }()),
-            ([] { InputMatrix value; value << 1.9995989957354711e-10, 9.6500155731201836e-21, 0.00019996000799640112, 9.8424859077398361e-11; return value; }()),
-            ([] { InputMatrix value; value << 1.9607356711128735e-06, 2.1348610964321767e-16, 0.019607841214965029, 3.8646705273838831e-07; return value; }()),
-            ([] { InputMatrix value; value << 1.9995996977448107e-10, 2.7672001329590389e-21, 0.00019996000799640112, 2.8223921615640237e-11; return value; }()),
-            ([] { InputMatrix value; value << 1.9607381060226853e-06, 2.0003549155442514e-16, 0.019607841214962639, 3.6211783049170049e-07; return value; }()),
-            ([] { InputMatrix value; value << 1.9995997107111431e-10, 2.640072375778344e-21, 0.00019996000799640112, 2.692728831069632e-11; return value; }()),
-            ([] { InputMatrix value; value << 1.9607737294429532e-06, -1.9604581757838371e-09, 0.019607841214927719, 5.8818207368455611e-09; return value; }()),
-            ([] { InputMatrix value; value << 1.9995999759811261e-10, -1.991465682184002e-15, 0.00019996000799640112, 4.0028869093683427e-13; return value; }()),
-            ([] { InputMatrix value; value << 1.9607737382255422e-06, -1.9311849054662463e-09, 0.019607841214927708, 5.7939942631588937e-09; return value; }()),
-            ([] { InputMatrix value; value << 1.9607737388090378e-06, -1.9292400542904753e-09, 0.019607841214927708, 5.7881592669743109e-09; return value; }())
-        }};
-        return pool;
-    }
+    struct ArchiveData {
+        MatrixPool<StateMatrix> state_matrices;
+        MatrixPool<InputMatrix> input_matrices;
+        MatrixPool<StateVector> state_vectors;
+        MatrixPool<SignalMatrix> signal_matrices;
+        MatrixPool<SignalInputMatrix> signal_input_matrices;
+        MatrixPool<SignalVector> signal_vectors;
+        std::vector<CalculationState> calculation_states;
+        std::vector<std::size_t> topology_to_calculation_state;
+    };
 
-    static const std::array<StateVector, state_vector_count>& state_vectors() {
-        static const std::array<StateVector, state_vector_count> pool{{
-            ([] { StateVector value; value << 0.0, 0.0, 0.0, 0.0; return value; }()),
-            ([] { StateVector value; value << 7.9697958160024622e-05, -4.4025729112109398e-10, -7.8135253097426334e-08, -0.79698364465261218; return value; }()),
-            ([] { StateVector value; value << 5.8113440000158595e-07, -5.6977031444814363e-11, -5.8101819636231353e-12, -0.58113442907026447; return value; }()),
-            ([] { StateVector value; value << -5.4996603944752017e-05, 1.1228250165737311e-05, 5.3918239197817484e-08, 0.54996884335993435; return value; }()),
-            ([] { StateVector value; value << -5.4776567148541908e-07, 1.1128453537106512e-05, 5.4765614025736762e-12, 0.5477656988337829; return value; }()),
-            ([] { StateVector value; value << -5.4175402800710181e-05, 0.0027483758145020309, 5.3113140021181434e-08, 0.54175677767927655; return value; }()),
-            ([] { StateVector value; value << -5.422801518708409e-07, 3.841931911794031e-05, 5.4217171752733549e-12, 0.54228017881927604; return value; }()),
-            ([] { StateVector value; value << -5.2846938868860533e-05, 0.0071762823353191969, 5.1810724396107888e-08, 0.52847205030449163; return value; }()),
-            ([] { StateVector value; value << -5.3336717969190977e-07, 8.2762014568898257e-05, 5.3326052758639247e-12, 0.53336720599053322; return value; }())
-        }};
-        return pool;
-    }
-
-    static const std::array<SignalMatrix, signal_matrix_count>& signal_matrices() {
-        static const std::array<SignalMatrix, signal_matrix_count> pool{{
-            ([] { SignalMatrix value; value << 1.0, 0.0, 0.0, 0.0, 0.0, -0.9999999999894198, 0.0, 4.6000722945901752e-06, -1.1102230246251566e-17, 4.6000722945901735e-06, 0.0, 0.99999999998941946, 0.0, 0.0, 0.0, 0.0, -1.1102230246251566e-17, 4.6000722945901735e-06, 0.0, 0.99999999998941946, 0.0, -0.9999999999894198, 0.0, 4.6000722945901752e-06; return value; }())
-        }};
-        return pool;
-    }
-
-    static const std::array<SignalInputMatrix, signal_input_matrix_count>& signal_input_matrices() {
-        static const std::array<SignalInputMatrix, signal_input_matrix_count> pool{{
-            ([] { SignalInputMatrix value; value << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0; return value; }())
-        }};
-        return pool;
-    }
-
-    static const std::array<SignalVector, signal_vector_count>& signal_vectors() {
-        static const std::array<SignalVector, signal_vector_count> pool{{
-            ([] { SignalVector value; value << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0; return value; }())
-        }};
-        return pool;
-    }
-
-    static const std::array<CalculationState, calculation_state_count>& calculation_states() {
-        static const std::array<CalculationState, calculation_state_count> value{{
-            CalculationState{0U, 0U, 0U, 1U, 1U, 0U, 0U, 0U, 0U},
-            CalculationState{2U, 2U, 0U, 3U, 3U, 0U, 0U, 0U, 0U},
-            CalculationState{4U, 4U, 1U, 5U, 5U, 2U, 0U, 0U, 0U},
-            CalculationState{6U, 6U, 3U, 7U, 7U, 4U, 0U, 0U, 0U},
-            CalculationState{8U, 8U, 5U, 9U, 7U, 6U, 0U, 0U, 0U},
-            CalculationState{10U, 9U, 7U, 11U, 7U, 8U, 0U, 0U, 0U}
-        }};
+    static std::uint32_t read_u32(const std::vector<std::uint8_t>& bytes,
+                                  std::size_t& cursor) {
+        require_bytes(bytes, cursor, sizeof(std::uint32_t));
+        std::uint32_t value = 0U;
+        std::memcpy(&value, bytes.data() + cursor, sizeof(value));
+        cursor += sizeof(value);
         return value;
     }
 
-    static const std::array<std::size_t, topology_count>& topology_to_calculation_state() {
-        static const std::array<std::size_t, topology_count> value{{
-            0U, 1U, 2U, 3U, 4U, 5U
-        }};
+    static std::uint64_t read_u64(const std::vector<std::uint8_t>& bytes,
+                                  std::size_t& cursor) {
+        require_bytes(bytes, cursor, sizeof(std::uint64_t));
+        std::uint64_t value = 0U;
+        std::memcpy(&value, bytes.data() + cursor, sizeof(value));
+        cursor += sizeof(value);
         return value;
+    }
+
+    static double read_f64(const std::vector<std::uint8_t>& bytes,
+                           std::size_t& cursor) {
+        require_bytes(bytes, cursor, sizeof(double));
+        double value = 0.0;
+        std::memcpy(&value, bytes.data() + cursor, sizeof(value));
+        cursor += sizeof(value);
+        return value;
+    }
+
+    static void require_bytes(const std::vector<std::uint8_t>& bytes,
+                              std::size_t cursor, std::size_t count) {
+        if (cursor > bytes.size() || count > bytes.size() - cursor)
+            throw std::runtime_error("truncated matrix archive");
+    }
+
+    static std::uint64_t fnv1a64(const std::uint8_t* data, std::size_t size) noexcept {
+        std::uint64_t value = UINT64_C(14695981039346656037);
+        for (std::size_t index = 0U; index < size; ++index) {
+            value ^= data[index];
+            value *= UINT64_C(1099511628211);
+        }
+        return value;
+    }
+
+    template <typename Matrix>
+    static void read_matrix_pool(MatrixPool<Matrix>& pool, std::size_t count,
+                                 const std::vector<std::uint8_t>& bytes,
+                                 std::size_t& cursor) {
+        constexpr std::size_t coefficient_count =
+            static_cast<std::size_t>(Matrix::SizeAtCompileTime);
+        constexpr std::size_t matrix_bytes = coefficient_count * sizeof(double);
+        pool.resize(count);
+        if constexpr (matrix_bytes == 0U)
+            return;
+        if (count > (std::numeric_limits<std::size_t>::max)() / matrix_bytes)
+            throw std::runtime_error("matrix archive pool size overflow");
+        require_bytes(bytes, cursor, count * matrix_bytes);
+        for (auto& matrix : pool) {
+            std::memcpy(matrix.data(), bytes.data() + cursor, matrix_bytes);
+            cursor += matrix_bytes;
+        }
+    }
+
+    static std::shared_ptr<const ArchiveData> load_archive(
+        const std::filesystem::path& path) {
+        const std::uint16_t endian_probe = 1U;
+        if (*reinterpret_cast<const std::uint8_t*>(&endian_probe) != 1U)
+            throw std::runtime_error("matrix archives currently require a little-endian host");
+
+        std::ifstream input(path, std::ios::binary | std::ios::ate);
+        if (!input)
+            throw std::runtime_error("cannot open matrix archive: " + path.string());
+        const std::streamoff end = input.tellg();
+        if (end < 0 || static_cast<std::uintmax_t>(end) >
+                           (std::numeric_limits<std::size_t>::max)())
+            throw std::runtime_error("invalid matrix archive size: " + path.string());
+        std::vector<std::uint8_t> bytes(static_cast<std::size_t>(end));
+        input.seekg(0, std::ios::beg);
+        if (!bytes.empty() &&
+            !input.read(reinterpret_cast<char*>(bytes.data()),
+                        static_cast<std::streamsize>(bytes.size())))
+            throw std::runtime_error("cannot read matrix archive: " + path.string());
+
+        constexpr std::array<std::uint8_t, 8U> expected_magic{{
+            0x47U, 0x4dU, 0x50U, 0x4dU, 0x4eU, 0x41U, 0x31U, 0x00U
+        }};
+        constexpr std::array<std::uint8_t, 32U> expected_source_hash{{
+            0x14U, 0xf2U, 0xe5U, 0xfeU, 0xc0U, 0x00U, 0x52U, 0xd3U, 0x16U, 0x8dU, 0x33U, 0x70U, 0x5dU, 0x8cU, 0x0bU, 0xe0U, 0x84U, 0x31U, 0x9aU, 0x93U, 0x97U, 0x8eU, 0x6aU, 0xbcU, 0x74U, 0x23U, 0x14U, 0x2cU, 0x1cU, 0xf8U, 0x2fU, 0xc9U
+        }};
+        require_bytes(bytes, 0U, expected_magic.size());
+        if (std::memcmp(bytes.data(), expected_magic.data(), expected_magic.size()) != 0)
+            throw std::runtime_error("invalid matrix archive magic: " + path.string());
+
+        std::size_t cursor = expected_magic.size();
+        const auto expect_u32 = [&](std::uint32_t expected, const char* field) {
+            if (read_u32(bytes, cursor) != expected)
+                throw std::runtime_error(std::string("matrix archive mismatch: ") + field);
+        };
+        expect_u32(1U, "version");
+        expect_u32(140U, "header size");
+        expect_u32(0x01020304U, "endianness");
+        expect_u32(8U, "scalar size");
+        expect_u32(static_cast<std::uint32_t>(state_count), "state count");
+        expect_u32(static_cast<std::uint32_t>(analog_input_count), "input count");
+        expect_u32(static_cast<std::uint32_t>(signal_count), "signal count");
+        expect_u32(static_cast<std::uint32_t>(topology_count), "topology count");
+        expect_u32(static_cast<std::uint32_t>(calculation_state_count),
+                   "calculation-state count");
+        expect_u32(static_cast<std::uint32_t>(state_matrix_count),
+                   "state-matrix count");
+        expect_u32(static_cast<std::uint32_t>(input_matrix_count),
+                   "input-matrix count");
+        expect_u32(static_cast<std::uint32_t>(state_vector_count),
+                   "state-vector count");
+        expect_u32(static_cast<std::uint32_t>(signal_matrix_count),
+                   "signal-matrix count");
+        expect_u32(static_cast<std::uint32_t>(signal_input_matrix_count),
+                   "signal-input-matrix count");
+        expect_u32(static_cast<std::uint32_t>(signal_vector_count),
+                   "signal-vector count");
+        if (read_f64(bytes, cursor) != normal_step_s ||
+            read_f64(bytes, cursor) != short_step_s ||
+            read_f64(bytes, cursor) != matrix_tolerance)
+            throw std::runtime_error("matrix archive solver metadata mismatch");
+        require_bytes(bytes, cursor, expected_source_hash.size());
+        if (std::memcmp(bytes.data() + cursor, expected_source_hash.data(),
+                        expected_source_hash.size()) != 0)
+            throw std::runtime_error("matrix archive source hash mismatch");
+        cursor += expected_source_hash.size();
+        const std::uint64_t payload_size = read_u64(bytes, cursor);
+        const std::uint64_t payload_hash = read_u64(bytes, cursor);
+        if (cursor != 140U ||
+            payload_size != static_cast<std::uint64_t>(bytes.size() - cursor))
+            throw std::runtime_error("matrix archive payload size mismatch");
+        if (fnv1a64(bytes.data() + cursor, static_cast<std::size_t>(payload_size)) !=
+            payload_hash)
+            throw std::runtime_error("matrix archive payload checksum mismatch");
+
+        auto result = std::make_shared<ArchiveData>();
+        result->topology_to_calculation_state.resize(topology_count);
+        for (auto& value : result->topology_to_calculation_state) {
+            value = read_u32(bytes, cursor);
+            if (value >= calculation_state_count)
+                throw std::runtime_error("matrix archive topology index is out of range");
+        }
+        result->calculation_states.resize(calculation_state_count);
+        for (auto& state : result->calculation_states) {
+            state.normal_A = read_u32(bytes, cursor);
+            state.normal_B = read_u32(bytes, cursor);
+            state.normal_bias = read_u32(bytes, cursor);
+            state.short_A = read_u32(bytes, cursor);
+            state.short_B = read_u32(bytes, cursor);
+            state.short_bias = read_u32(bytes, cursor);
+            state.C = read_u32(bytes, cursor);
+            state.D = read_u32(bytes, cursor);
+            state.output_bias = read_u32(bytes, cursor);
+            if (state.normal_A >= state_matrix_count ||
+                state.short_A >= state_matrix_count ||
+                state.normal_B >= input_matrix_count ||
+                state.short_B >= input_matrix_count ||
+                state.normal_bias >= state_vector_count ||
+                state.short_bias >= state_vector_count ||
+                state.C >= signal_matrix_count ||
+                state.D >= signal_input_matrix_count ||
+                state.output_bias >= signal_vector_count)
+                throw std::runtime_error("matrix archive calculation-state index is out of range");
+        }
+        read_matrix_pool(result->state_matrices, state_matrix_count, bytes, cursor);
+        read_matrix_pool(result->input_matrices, input_matrix_count, bytes, cursor);
+        read_matrix_pool(result->state_vectors, state_vector_count, bytes, cursor);
+        read_matrix_pool(result->signal_matrices, signal_matrix_count, bytes, cursor);
+        read_matrix_pool(result->signal_input_matrices, signal_input_matrix_count,
+                         bytes, cursor);
+        read_matrix_pool(result->signal_vectors, signal_vector_count, bytes, cursor);
+        if (cursor != bytes.size())
+            throw std::runtime_error("matrix archive contains trailing data");
+        return result;
+    }
+
+    const MatrixPool<StateMatrix>& state_matrices() const noexcept {
+        return archive_->state_matrices;
+    }
+    const MatrixPool<InputMatrix>& input_matrices() const noexcept {
+        return archive_->input_matrices;
+    }
+    const MatrixPool<StateVector>& state_vectors() const noexcept {
+        return archive_->state_vectors;
+    }
+    const MatrixPool<SignalMatrix>& signal_matrices() const noexcept {
+        return archive_->signal_matrices;
+    }
+    const MatrixPool<SignalInputMatrix>& signal_input_matrices() const noexcept {
+        return archive_->signal_input_matrices;
+    }
+    const MatrixPool<SignalVector>& signal_vectors() const noexcept {
+        return archive_->signal_vectors;
+    }
+    const std::vector<CalculationState>& calculation_states() const noexcept {
+        return archive_->calculation_states;
+    }
+    const std::vector<std::size_t>& topology_to_calculation_state() const noexcept {
+        return archive_->topology_to_calculation_state;
     }
 
     std::size_t select_topology(const Inputs& inputs) {
@@ -240,6 +377,7 @@ private:
         return output;
     }
 
+    std::shared_ptr<const ArchiveData> archive_;
     StateVector state_{StateVector::Zero()};
     SignalVector signals_{SignalVector::Zero()};
     bool diode_on_{false};

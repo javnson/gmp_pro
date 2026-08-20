@@ -12,9 +12,15 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <limits>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 
 class RectifierCircuit {
 public:
@@ -25,6 +31,8 @@ public:
     static constexpr std::size_t topology_count = 32;
     static constexpr std::size_t calculation_state_count = 32;
     static constexpr const char* matrix_backend = "eigen";
+    static constexpr const char* matrix_storage = "archive";
+    static constexpr const char* archive_filename = "rectifiercircuit.archive";
     static constexpr std::size_t state_matrix_count = 15;
     static constexpr std::size_t input_matrix_count = 19;
     static constexpr std::size_t state_vector_count = 14;
@@ -53,7 +61,9 @@ public:
 
     Outputs output{};
 
-    RectifierCircuit() { reset(); }
+    explicit RectifierCircuit(
+        const std::filesystem::path& archive_path = std::filesystem::path(archive_filename))
+        : archive_(load_archive(archive_path)) { reset(); }
 
     void reset() {
         state_.setZero();
@@ -109,191 +119,220 @@ private:
         std::size_t output_bias;
     };
 
-    static const std::array<StateMatrix, state_matrix_count>& state_matrices() {
-        static const std::array<StateMatrix, state_matrix_count> pool{{
-            ([] { StateMatrix value; value << 0.99978727930014932; return value; }()),
-            ([] { StateMatrix value; value << 0.99999787234493109; return value; }()),
-            ([] { StateMatrix value; value << 0.99978727929802258; return value; }()),
-            ([] { StateMatrix value; value << 0.99957473408337671; return value; }()),
-            ([] { StateMatrix value; value << 0.99999574554965376; return value; }()),
-            ([] { StateMatrix value; value << 0.70138366615361247; return value; }()),
-            ([] { StateMatrix value; value << 0.99576051782255182; return value; }()),
-            ([] { StateMatrix value; value << 0.99957471283974675; return value; }()),
-            ([] { StateMatrix value; value << 0.9999957453370385; return value; }()),
-            ([] { StateMatrix value; value << 0.65268146236164237; return value; }()),
-            ([] { StateMatrix value; value << 0.99470675794440122; return value; }()),
-            ([] { StateMatrix value; value << 0.99957469159186974; return value; }()),
-            ([] { StateMatrix value; value << 0.99999574512438072; return value; }()),
-            ([] { StateMatrix value; value << 0.58498133092236415; return value; }()),
-            ([] { StateMatrix value; value << 0.99295541561315415; return value; }())
-        }};
-        return pool;
-    }
+    template <typename Matrix>
+    using MatrixPool = std::vector<Matrix, Eigen::aligned_allocator<Matrix>>;
 
-    static const std::array<InputMatrix, input_matrix_count>& input_matrices() {
-        static const std::array<InputMatrix, input_matrix_count> pool{{
-            ([] { InputMatrix value; value << 0.0; return value; }()),
-            ([] { InputMatrix value; value << -2.1272069346686795e-12; return value; }()),
-            ([] { InputMatrix value; value << 2.1272069346695112e-12; return value; }()),
-            ([] { InputMatrix value; value << 0.00021259044128542841; return value; }()),
-            ([] { InputMatrix value; value << 2.1267998237760512e-06; return value; }()),
-            ([] { InputMatrix value; value << 0.2984671032779268; return value; }()),
-            ([] { InputMatrix value; value << 0.0042373635380316124; return value; }()),
-            ([] { InputMatrix value; value << 0.00010630584471770154; return value; }()),
-            ([] { InputMatrix value; value << 1.0635062197617283e-06; return value; }()),
-            ([] { InputMatrix value; value << 0.17358983462036093; return value; }()),
-            ([] { InputMatrix value; value << 0.0026455628291101865; return value; }()),
-            ([] { InputMatrix value; value << -0.00021259044128542841; return value; }()),
-            ([] { InputMatrix value; value << -2.1267998237760512e-06; return value; }()),
-            ([] { InputMatrix value; value << -0.29846710327792697; return value; }()),
-            ([] { InputMatrix value; value << -0.0042373635380316141; return value; }()),
-            ([] { InputMatrix value; value << -0.00010630584471770151; return value; }()),
-            ([] { InputMatrix value; value << -1.0635062197617281e-06; return value; }()),
-            ([] { InputMatrix value; value << -0.17358983462036107; return value; }()),
-            ([] { InputMatrix value; value << -0.0026455628291101882; return value; }())
-        }};
-        return pool;
-    }
+    struct ArchiveData {
+        MatrixPool<StateMatrix> state_matrices;
+        MatrixPool<InputMatrix> input_matrices;
+        MatrixPool<StateVector> state_vectors;
+        MatrixPool<SignalMatrix> signal_matrices;
+        MatrixPool<SignalInputMatrix> signal_input_matrices;
+        MatrixPool<SignalVector> signal_vectors;
+        std::vector<CalculationState> calculation_states;
+        std::vector<std::size_t> topology_to_calculation_state;
+    };
 
-    static const std::array<StateVector, state_vector_count>& state_vectors() {
-        static const std::array<StateVector, state_vector_count> pool{{
-            ([] { StateVector value; value << 0.0; return value; }()),
-            ([] { StateVector value; value << -2.3399276281402272e-12; return value; }()),
-            ([] { StateVector value; value << -0.00023384948541443893; return value; }()),
-            ([] { StateVector value; value << -2.339479806158335e-06; return value; }()),
-            ([] { StateVector value; value << -0.32831381360637613; return value; }()),
-            ([] { StateVector value; value << -0.0046610998918440961; return value; }()),
-            ([] { StateVector value; value << -0.00023387285837964502; return value; }()),
-            ([] { StateVector value; value << -2.3397136834828219e-06; return value; }()),
-            ([] { StateVector value; value << -0.38189763616593997; return value; }()),
-            ([] { StateVector value; value << -0.0058202382240598732; return value; }()),
-            ([] { StateVector value; value << -0.00023389623601751563; return value; }()),
-            ([] { StateVector value; value << -2.3399476075733209e-06; return value; }()),
-            ([] { StateVector value; value << -0.45638362546114092; return value; }()),
-            ([] { StateVector value; value << -0.0077467188873237324; return value; }())
-        }};
-        return pool;
-    }
-
-    static const std::array<SignalMatrix, signal_matrix_count>& signal_matrices() {
-        static const std::array<SignalMatrix, signal_matrix_count> pool{{
-            ([] { SignalMatrix value; value << 0.0, 1.0, 0.49999999500000014, 0.99999999000000028, 0.0, 0.49999999500000014, 0.49999999500000014, 0.99999999000000028, 0.0, 0.49999999500000014; return value; }()),
-            ([] { SignalMatrix value; value << 0.0, 1.0, 0.49999999999950007, 0.99999999999900013, 0.0, 0.49999999999950007, 0.49999999999950007, 0.99999999999900013, 0.0, 0.49999999999950007; return value; }()),
-            ([] { SignalMatrix value; value << 0.0, 1.0, 3.9999999199760037e-12, 0.99999998000000057, 0.0, 3.9999999199760037e-12, 3.9999999199760037e-12, 0.99999998000000057, 0.0, 3.9999999199760037e-12; return value; }()),
-            ([] { SignalMatrix value; value << 0.0, 1.0, 3.9999999999680016e-12, 0.99999999999800027, 0.0, 3.9999999999680016e-12, 3.9999999999680016e-12, 0.99999999999800027, 0.0, 3.9999999999680016e-12; return value; }()),
-            ([] { SignalMatrix value; value << 0.0, 1.0, 0.99999997999639145, 0.99999998000039136, 0.0, 0.99999997999639145, 0.99999997999639145, 0.99999998000039136, 0.0, 0.99999997999639145; return value; }()),
-            ([] { SignalMatrix value; value << 0.0, 1.0, 0.99999999999400035, 0.99999999999800049, 0.0, 0.99999999999400035, 0.99999999999400035, 0.99999999999800049, 0.0, 0.99999999999400035; return value; }()),
-            ([] { SignalMatrix value; value << 0.0, 1.0, 0.00019992003398520641, 0.00039984006797041282, 0.0, 0.00019992003398520641, 0.00019992003398520641, 0.00039984006797041282, 0.0, 0.00019992003398520641; return value; }()),
-            ([] { SignalMatrix value; value << 0.0, 1.0, 0.40000799935989129, 0.80001599871978246, 0.0, 0.40000799935989129, 0.40000799935989129, 0.80001599871978246, 0.0, 0.40000799935989129; return value; }()),
-            ([] { SignalMatrix value; value << 0.0, 1.0, 1.9999999599960018e-12, 0.99999998000000057, 0.0, 1.9999999599960018e-12, 1.9999999599960018e-12, 0.99999998000000057, 0.0, 1.9999999599960018e-12; return value; }()),
-            ([] { SignalMatrix value; value << 0.0, 1.0, 1.9999999999920008e-12, 0.99999999999800027, 0.0, 1.9999999999920008e-12, 1.9999999999920008e-12, 0.99999999999800027, 0.0, 1.9999999999920008e-12; return value; }()),
-            ([] { SignalMatrix value; value << 1.3552527156068805e-20, 1.0, 9.9970009996701119e-05, 0.0002999100299897035, 0.0, 9.9970009996701119e-05, 9.9970009996701133e-05, 0.0002999100299897035, 0.0, 9.9970009996701133e-05; return value; }()),
-            ([] { SignalMatrix value; value << 0.0, 1.0, 0.25000624953153516, 0.75001874859360562, 0.0, 0.25000624953153516, 0.25000624953153516, 0.75001874859360562, 0.0, 0.25000624953153516; return value; }()),
-            ([] { SignalMatrix value; value << 0.0, 1.0, 0.99999997999716816, 0.99999997999916823, 0.0, 0.99999997999716816, 0.99999997999716816, 0.99999997999916823, 0.0, 0.99999997999716816; return value; }()),
-            ([] { SignalMatrix value; value << 0.0, 1.0, 0.99999999999600009, 0.99999999999800027, 0.0, 0.99999999999600009, 0.99999999999600009, 0.99999999999800027, 0.0, 0.99999999999600009; return value; }()),
-            ([] { SignalMatrix value; value << 0.0, 1.0, 0.00019994001999300233, 0.00029991002998970345, 0.0, 0.00019994001999300233, 0.00019994001999300233, 0.00029991002998970345, 0.0, 0.00019994001999300233; return value; }()),
-            ([] { SignalMatrix value; value << 0.0, 1.0, 0.50001249906207024, 0.75001874859360551, 0.0, 0.50001249906207024, 0.50001249906207024, 0.75001874859360551, 0.0, 0.50001249906207024; return value; }()),
-            ([] { SignalMatrix value; value << 0.0, 1.0, 9.9980004998800285e-05, 0.0001999600099976006, 0.0, 9.9980004998800285e-05, 9.9980004998800285e-05, 0.0001999600099976006, 0.0, 9.9980004998800285e-05; return value; }()),
-            ([] { SignalMatrix value; value << 0.0, 1.0, 0.33334444370375316, 0.6666888874075062, 0.0, 0.33334444370375316, 0.33334444370375316, 0.6666888874075062, 0.0, 0.33334444370375316; return value; }())
-        }};
-        return pool;
-    }
-
-    static const std::array<SignalInputMatrix, signal_input_matrix_count>& signal_input_matrices() {
-        static const std::array<SignalInputMatrix, signal_input_matrix_count> pool{{
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -0.5, 0.0, 0.0, -0.5, 0.5, 0.0, 0.0, 0.5; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -0.99999999999599998, -9.9999996999200084e-09, 0.0, -0.99999999999599998, 3.9999999599760024e-12, -9.9999996999200084e-09, 0.0, 3.9999999599760024e-12; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -0.99999999999599998, -9.9990000998900138e-13, 0.0, -0.99999999999599998, 3.999999999972001e-12, -9.9990000998900138e-13, 0.0, 3.999999999972001e-12; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -0.99999998999600026, 9.999999699923916e-09, 0.0, -0.99999998999600026, 1.0003999699883892e-08, 9.999999699923916e-09, 0.0, 1.0003999699883892e-08; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -0.99999999999500011, 9.9990000998900118e-13, 0.0, -0.99999999999500011, 4.9999000099610003e-12, 9.9990000998900118e-13, 0.0, 4.9999000099610003e-12; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -0.99999999999800004, -8.2701520950781811e-28, 0.0, -0.99999999999800004, 1.9999999999959994e-12, -8.2701520950781811e-28, 0.0, 1.9999999999959994e-12; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -3.9999999599760033e-12, 9.9999996999200101e-09, 0.0, -3.9999999599760033e-12, 0.99999999999600009, 9.9999996999200101e-09, 0.0, 0.99999999999600009; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -3.9999999999720026e-12, 9.9990000998900158e-13, 0.0, -3.9999999999720026e-12, 0.99999999999600009, 9.9990000998900158e-13, 0.0, 0.99999999999600009; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -0.00019992003598432863, 0.99960015992803131, 0.0, -0.00019992003598432863, 0.99980007996401576, 0.99960015992803131, 0.0, 0.99980007996401576; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -0.40000799936029119, 0.19998400127941762, 0.0, -0.40000799936029119, 0.59999200063970881, 0.19998400127941762, 0.0, 0.59999200063970881; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -0.5000499850049982, 0.49985004498300584, 0.0, -0.5000499850049982, 0.49995001499500186, 0.49985004498300584, 0.0, 0.49995001499500186; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -0.62500312476526765, 0.12499062570269727, 0.0, -0.62500312476526765, 0.37499687523473235, 0.12499062570269727, 0.0, 0.37499687523473235; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -1.0003999739716107e-08, -9.999999739748166e-09, 0.0, -1.0003999739716107e-08, 0.99999998999600026, -9.999999739748166e-09, 0.0, 0.99999998999600026; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -5.000000413701855e-12, -9.9990000998900098e-13, 0.0, -5.000000413701855e-12, 0.999999999995, -9.9990000998900098e-13, 0.0, 0.999999999995; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -0.99980007996401565, -0.99960015992803131, 0.0, -0.99980007996401565, 0.00019992003598432861, -0.99960015992803131, 0.0, 0.00019992003598432861; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -0.59999200063970892, -0.19998400127941771, 0.0, -0.59999200063970892, 0.40000799936029108, -0.19998400127941771, 0.0, 0.40000799936029108; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -0.99990002998800376, -0.49985004498300567, 0.0, -0.99990002998800376, 9.9970011996246221e-05, -0.49985004498300567, 0.0, 9.9970011996246221e-05; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -0.74999375046796501, -0.12499062570269732, 0.0, -0.74999375046796501, 0.25000624953203504, -0.12499062570269732, 0.0, 0.25000624953203504; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -2.0000000277515759e-12, -2.7750025610395836e-20, 0.0, -2.0000000277515759e-12, 0.99999999999800004, -2.7750025610395836e-20, 0.0, 0.99999999999800004; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -0.49995001499500202, -0.49985004498300595, 0.0, -0.49995001499500202, 0.50004998500499809, -0.49985004498300595, 0.0, 0.50004998500499809; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -0.37499687523473241, -0.12499062570269732, 0.0, -0.37499687523473241, 0.62500312476526754, -0.12499062570269732, 0.0, 0.62500312476526754; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -9.9970011996106223e-05, 0.49985004498300584, 0.0, -9.9970011996106223e-05, 0.99990002998800387, 0.49985004498300584, 0.0, 0.99990002998800387; return value; }()),
-            ([] { SignalInputMatrix value; value << 1.0, 0.0, -0.2500062495320351, 0.12499062570269726, 0.0, -0.2500062495320351, 0.7499937504679649, 0.12499062570269726, 0.0, 0.7499937504679649; return value; }())
-        }};
-        return pool;
-    }
-
-    static const std::array<SignalVector, signal_vector_count>& signal_vectors() {
-        static const std::array<SignalVector, signal_vector_count> pool{{
-            ([] { SignalVector value; value << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0; return value; }()),
-            ([] { SignalVector value; value << 0.0, 0.0, -0.54999999999670013, -1.0999999669934012e-08, 0.0, -0.54999999999670013, -0.54999999999670013, -1.0999999669934012e-08, 0.0, -0.54999999999670013; return value; }()),
-            ([] { SignalVector value; value << 0.0, 0.0, -0.54999999999670013, -1.0998900109901014e-12, 0.0, -0.54999999999670013, -0.54999999999670013, -1.0998900109901014e-12, 0.0, -0.54999999999670013; return value; }()),
-            ([] { SignalVector value; value << 0.0, 0.0, 0.54999998899670033, -1.099999973805201e-08, 0.0, 0.54999998899670033, 0.54999998899670033, -1.099999973805201e-08, 0.0, 0.54999998899670033; return value; }()),
-            ([] { SignalVector value; value << 0.0, 0.0, 0.54999999999560012, -1.0998900109901014e-12, 0.0, 0.54999999999560012, 0.54999999999560012, -1.0998900109901014e-12, 0.0, 0.54999999999560012; return value; }()),
-            ([] { SignalVector value; value << 0.0, 0.0, -0.54978008796151678, -1.0995601759230336, 0.0, -0.54978008796151678, -0.54978008796151678, -1.0995601759230336, 0.0, -0.54978008796151678; return value; }()),
-            ([] { SignalVector value; value << 0.0, 0.0, -0.10999120070389967, -0.21998240140779934, 0.0, -0.10999120070389967, -0.10999120070389967, -0.21998240140779934, 0.0, -0.10999120070389967; return value; }()),
-            ([] { SignalVector value; value << 0.0, 0.0, -0.54999999999890004, -1.0999999669978013e-08, 0.0, -0.54999999999890004, -0.54999999999890004, -1.0999999669978013e-08, 0.0, -0.54999999999890004; return value; }()),
-            ([] { SignalVector value; value << 0.0, 0.0, -0.54999999999890004, -1.0998900109945011e-12, 0.0, -0.54999999999890004, -0.54999999999890004, -1.0998900109945011e-12, 0.0, -0.54999999999890004; return value; }()),
-            ([] { SignalVector value; value << -3.0531133177191807e-17, 0.0, -0.54989003298900374, -1.0996700989659116, 0.0, -0.54989003298900374, -0.54989003298900385, -1.0996700989659116, 0.0, -0.54989003298900385; return value; }()),
-            ([] { SignalVector value; value << 6.1062266354383615e-17, 0.0, -0.27499312551558636, -0.27497937654675902, 0.0, -0.27499312551558636, -0.2749931255155863, -0.27497937654675902, 0.0, -0.2749931255155863; return value; }()),
-            ([] { SignalVector value; value << 0.0, 0.0, 0.54999998899890035, -1.0999999679240881e-08, 0.0, 0.54999998899890035, 0.54999998899890035, -1.0999999679240881e-08, 0.0, 0.54999998899890035; return value; }()),
-            ([] { SignalVector value; value << 0.0, 0.0, 0.54999999999780014, -1.0998942924941766e-12, 0.0, 0.54999999999780014, 0.54999999999780014, -1.0998942924941766e-12, 0.0, 0.54999999999780014; return value; }()),
-            ([] { SignalVector value; value << 0.0, 0.0, -0.54978006597690787, -1.0996700989659116, 0.0, -0.54978006597690787, -0.54978006597690787, -1.0996700989659116, 0.0, -0.54978006597690787; return value; }()),
-            ([] { SignalVector value; value << 0.0, 0.0, 1.3748968827276276e-05, -0.27497937654675897, 0.0, 1.3748968827276276e-05, 1.3748968827276276e-05, -0.27497937654675897, 0.0, 1.3748968827276276e-05; return value; }()),
-            ([] { SignalVector value; value << -2.8328508701151723e-17, 0.0, -0.54989002199450132, -1.0997800439890026, 0.0, -0.54989002199450132, -0.54989002199450132, -1.0997800439890026, 0.0, -0.54989002199450132; return value; }()),
-            ([] { SignalVector value; value << -1.5265566588595904e-17, 0.0, -0.18332111192587158, -0.36664222385174322, 0.0, -0.18332111192587158, -0.18332111192587158, -0.36664222385174322, 0.0, -0.18332111192587158; return value; }())
-        }};
-        return pool;
-    }
-
-    static const std::array<CalculationState, calculation_state_count>& calculation_states() {
-        static const std::array<CalculationState, calculation_state_count> value{{
-            CalculationState{0U, 0U, 0U, 1U, 0U, 0U, 0U, 0U, 0U},
-            CalculationState{0U, 0U, 0U, 1U, 0U, 0U, 1U, 0U, 0U},
-            CalculationState{2U, 1U, 1U, 1U, 0U, 0U, 2U, 1U, 1U},
-            CalculationState{2U, 1U, 1U, 1U, 0U, 0U, 3U, 2U, 2U},
-            CalculationState{2U, 2U, 1U, 1U, 0U, 0U, 4U, 3U, 3U},
-            CalculationState{2U, 2U, 1U, 1U, 0U, 0U, 5U, 4U, 4U},
-            CalculationState{3U, 0U, 2U, 4U, 0U, 3U, 6U, 5U, 5U},
-            CalculationState{5U, 0U, 4U, 6U, 0U, 5U, 7U, 5U, 6U},
-            CalculationState{2U, 2U, 1U, 1U, 0U, 0U, 2U, 6U, 1U},
-            CalculationState{2U, 2U, 1U, 1U, 0U, 0U, 3U, 7U, 2U},
-            CalculationState{2U, 0U, 1U, 1U, 0U, 0U, 8U, 0U, 7U},
-            CalculationState{2U, 0U, 1U, 1U, 0U, 0U, 9U, 0U, 8U},
-            CalculationState{3U, 3U, 2U, 4U, 4U, 3U, 6U, 8U, 5U},
-            CalculationState{5U, 5U, 4U, 6U, 6U, 5U, 7U, 9U, 6U},
-            CalculationState{7U, 7U, 6U, 8U, 8U, 7U, 10U, 10U, 9U},
-            CalculationState{9U, 9U, 8U, 10U, 10U, 9U, 11U, 11U, 10U},
-            CalculationState{2U, 1U, 1U, 1U, 0U, 0U, 4U, 12U, 3U},
-            CalculationState{2U, 1U, 1U, 1U, 0U, 0U, 5U, 13U, 4U},
-            CalculationState{3U, 11U, 2U, 4U, 12U, 3U, 6U, 14U, 5U},
-            CalculationState{5U, 13U, 4U, 6U, 14U, 5U, 7U, 15U, 6U},
-            CalculationState{2U, 0U, 1U, 1U, 0U, 0U, 12U, 0U, 11U},
-            CalculationState{2U, 0U, 1U, 1U, 0U, 0U, 13U, 0U, 12U},
-            CalculationState{7U, 15U, 6U, 8U, 16U, 7U, 14U, 16U, 13U},
-            CalculationState{9U, 17U, 8U, 10U, 18U, 9U, 15U, 17U, 14U},
-            CalculationState{3U, 0U, 2U, 4U, 0U, 3U, 6U, 18U, 5U},
-            CalculationState{5U, 0U, 4U, 6U, 0U, 5U, 7U, 18U, 6U},
-            CalculationState{7U, 15U, 6U, 8U, 16U, 7U, 10U, 19U, 9U},
-            CalculationState{9U, 17U, 8U, 10U, 18U, 9U, 11U, 20U, 10U},
-            CalculationState{7U, 7U, 6U, 8U, 8U, 7U, 14U, 21U, 13U},
-            CalculationState{9U, 9U, 8U, 10U, 10U, 9U, 15U, 22U, 14U},
-            CalculationState{11U, 0U, 10U, 12U, 0U, 11U, 16U, 0U, 15U},
-            CalculationState{13U, 0U, 12U, 14U, 0U, 13U, 17U, 0U, 16U}
-        }};
+    static std::uint32_t read_u32(const std::vector<std::uint8_t>& bytes,
+                                  std::size_t& cursor) {
+        require_bytes(bytes, cursor, sizeof(std::uint32_t));
+        std::uint32_t value = 0U;
+        std::memcpy(&value, bytes.data() + cursor, sizeof(value));
+        cursor += sizeof(value);
         return value;
     }
 
-    static const std::array<std::size_t, topology_count>& topology_to_calculation_state() {
-        static const std::array<std::size_t, topology_count> value{{
-            0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U, 9U, 10U, 11U, 12U, 13U, 14U, 15U, 16U, 17U, 18U, 19U, 20U, 21U, 22U, 23U, 24U, 25U, 26U, 27U, 28U, 29U, 30U, 31U
-        }};
+    static std::uint64_t read_u64(const std::vector<std::uint8_t>& bytes,
+                                  std::size_t& cursor) {
+        require_bytes(bytes, cursor, sizeof(std::uint64_t));
+        std::uint64_t value = 0U;
+        std::memcpy(&value, bytes.data() + cursor, sizeof(value));
+        cursor += sizeof(value);
         return value;
+    }
+
+    static double read_f64(const std::vector<std::uint8_t>& bytes,
+                           std::size_t& cursor) {
+        require_bytes(bytes, cursor, sizeof(double));
+        double value = 0.0;
+        std::memcpy(&value, bytes.data() + cursor, sizeof(value));
+        cursor += sizeof(value);
+        return value;
+    }
+
+    static void require_bytes(const std::vector<std::uint8_t>& bytes,
+                              std::size_t cursor, std::size_t count) {
+        if (cursor > bytes.size() || count > bytes.size() - cursor)
+            throw std::runtime_error("truncated matrix archive");
+    }
+
+    static std::uint64_t fnv1a64(const std::uint8_t* data, std::size_t size) noexcept {
+        std::uint64_t value = UINT64_C(14695981039346656037);
+        for (std::size_t index = 0U; index < size; ++index) {
+            value ^= data[index];
+            value *= UINT64_C(1099511628211);
+        }
+        return value;
+    }
+
+    template <typename Matrix>
+    static void read_matrix_pool(MatrixPool<Matrix>& pool, std::size_t count,
+                                 const std::vector<std::uint8_t>& bytes,
+                                 std::size_t& cursor) {
+        constexpr std::size_t coefficient_count =
+            static_cast<std::size_t>(Matrix::SizeAtCompileTime);
+        constexpr std::size_t matrix_bytes = coefficient_count * sizeof(double);
+        pool.resize(count);
+        if constexpr (matrix_bytes == 0U)
+            return;
+        if (count > (std::numeric_limits<std::size_t>::max)() / matrix_bytes)
+            throw std::runtime_error("matrix archive pool size overflow");
+        require_bytes(bytes, cursor, count * matrix_bytes);
+        for (auto& matrix : pool) {
+            std::memcpy(matrix.data(), bytes.data() + cursor, matrix_bytes);
+            cursor += matrix_bytes;
+        }
+    }
+
+    static std::shared_ptr<const ArchiveData> load_archive(
+        const std::filesystem::path& path) {
+        const std::uint16_t endian_probe = 1U;
+        if (*reinterpret_cast<const std::uint8_t*>(&endian_probe) != 1U)
+            throw std::runtime_error("matrix archives currently require a little-endian host");
+
+        std::ifstream input(path, std::ios::binary | std::ios::ate);
+        if (!input)
+            throw std::runtime_error("cannot open matrix archive: " + path.string());
+        const std::streamoff end = input.tellg();
+        if (end < 0 || static_cast<std::uintmax_t>(end) >
+                           (std::numeric_limits<std::size_t>::max)())
+            throw std::runtime_error("invalid matrix archive size: " + path.string());
+        std::vector<std::uint8_t> bytes(static_cast<std::size_t>(end));
+        input.seekg(0, std::ios::beg);
+        if (!bytes.empty() &&
+            !input.read(reinterpret_cast<char*>(bytes.data()),
+                        static_cast<std::streamsize>(bytes.size())))
+            throw std::runtime_error("cannot read matrix archive: " + path.string());
+
+        constexpr std::array<std::uint8_t, 8U> expected_magic{{
+            0x47U, 0x4dU, 0x50U, 0x4dU, 0x4eU, 0x41U, 0x31U, 0x00U
+        }};
+        constexpr std::array<std::uint8_t, 32U> expected_source_hash{{
+            0x50U, 0xb7U, 0xceU, 0x58U, 0x10U, 0x92U, 0x1bU, 0x26U, 0x65U, 0x99U, 0x9bU, 0x44U, 0xf4U, 0x53U, 0x60U, 0x03U, 0x93U, 0xe8U, 0xafU, 0x07U, 0xfcU, 0x8fU, 0xb8U, 0x2cU, 0xa7U, 0x77U, 0xa4U, 0xfcU, 0xb2U, 0x60U, 0x5eU, 0xdfU
+        }};
+        require_bytes(bytes, 0U, expected_magic.size());
+        if (std::memcmp(bytes.data(), expected_magic.data(), expected_magic.size()) != 0)
+            throw std::runtime_error("invalid matrix archive magic: " + path.string());
+
+        std::size_t cursor = expected_magic.size();
+        const auto expect_u32 = [&](std::uint32_t expected, const char* field) {
+            if (read_u32(bytes, cursor) != expected)
+                throw std::runtime_error(std::string("matrix archive mismatch: ") + field);
+        };
+        expect_u32(1U, "version");
+        expect_u32(140U, "header size");
+        expect_u32(0x01020304U, "endianness");
+        expect_u32(8U, "scalar size");
+        expect_u32(static_cast<std::uint32_t>(state_count), "state count");
+        expect_u32(static_cast<std::uint32_t>(analog_input_count), "input count");
+        expect_u32(static_cast<std::uint32_t>(signal_count), "signal count");
+        expect_u32(static_cast<std::uint32_t>(topology_count), "topology count");
+        expect_u32(static_cast<std::uint32_t>(calculation_state_count),
+                   "calculation-state count");
+        expect_u32(static_cast<std::uint32_t>(state_matrix_count),
+                   "state-matrix count");
+        expect_u32(static_cast<std::uint32_t>(input_matrix_count),
+                   "input-matrix count");
+        expect_u32(static_cast<std::uint32_t>(state_vector_count),
+                   "state-vector count");
+        expect_u32(static_cast<std::uint32_t>(signal_matrix_count),
+                   "signal-matrix count");
+        expect_u32(static_cast<std::uint32_t>(signal_input_matrix_count),
+                   "signal-input-matrix count");
+        expect_u32(static_cast<std::uint32_t>(signal_vector_count),
+                   "signal-vector count");
+        if (read_f64(bytes, cursor) != normal_step_s ||
+            read_f64(bytes, cursor) != short_step_s ||
+            read_f64(bytes, cursor) != matrix_tolerance)
+            throw std::runtime_error("matrix archive solver metadata mismatch");
+        require_bytes(bytes, cursor, expected_source_hash.size());
+        if (std::memcmp(bytes.data() + cursor, expected_source_hash.data(),
+                        expected_source_hash.size()) != 0)
+            throw std::runtime_error("matrix archive source hash mismatch");
+        cursor += expected_source_hash.size();
+        const std::uint64_t payload_size = read_u64(bytes, cursor);
+        const std::uint64_t payload_hash = read_u64(bytes, cursor);
+        if (cursor != 140U ||
+            payload_size != static_cast<std::uint64_t>(bytes.size() - cursor))
+            throw std::runtime_error("matrix archive payload size mismatch");
+        if (fnv1a64(bytes.data() + cursor, static_cast<std::size_t>(payload_size)) !=
+            payload_hash)
+            throw std::runtime_error("matrix archive payload checksum mismatch");
+
+        auto result = std::make_shared<ArchiveData>();
+        result->topology_to_calculation_state.resize(topology_count);
+        for (auto& value : result->topology_to_calculation_state) {
+            value = read_u32(bytes, cursor);
+            if (value >= calculation_state_count)
+                throw std::runtime_error("matrix archive topology index is out of range");
+        }
+        result->calculation_states.resize(calculation_state_count);
+        for (auto& state : result->calculation_states) {
+            state.normal_A = read_u32(bytes, cursor);
+            state.normal_B = read_u32(bytes, cursor);
+            state.normal_bias = read_u32(bytes, cursor);
+            state.short_A = read_u32(bytes, cursor);
+            state.short_B = read_u32(bytes, cursor);
+            state.short_bias = read_u32(bytes, cursor);
+            state.C = read_u32(bytes, cursor);
+            state.D = read_u32(bytes, cursor);
+            state.output_bias = read_u32(bytes, cursor);
+            if (state.normal_A >= state_matrix_count ||
+                state.short_A >= state_matrix_count ||
+                state.normal_B >= input_matrix_count ||
+                state.short_B >= input_matrix_count ||
+                state.normal_bias >= state_vector_count ||
+                state.short_bias >= state_vector_count ||
+                state.C >= signal_matrix_count ||
+                state.D >= signal_input_matrix_count ||
+                state.output_bias >= signal_vector_count)
+                throw std::runtime_error("matrix archive calculation-state index is out of range");
+        }
+        read_matrix_pool(result->state_matrices, state_matrix_count, bytes, cursor);
+        read_matrix_pool(result->input_matrices, input_matrix_count, bytes, cursor);
+        read_matrix_pool(result->state_vectors, state_vector_count, bytes, cursor);
+        read_matrix_pool(result->signal_matrices, signal_matrix_count, bytes, cursor);
+        read_matrix_pool(result->signal_input_matrices, signal_input_matrix_count,
+                         bytes, cursor);
+        read_matrix_pool(result->signal_vectors, signal_vector_count, bytes, cursor);
+        if (cursor != bytes.size())
+            throw std::runtime_error("matrix archive contains trailing data");
+        return result;
+    }
+
+    const MatrixPool<StateMatrix>& state_matrices() const noexcept {
+        return archive_->state_matrices;
+    }
+    const MatrixPool<InputMatrix>& input_matrices() const noexcept {
+        return archive_->input_matrices;
+    }
+    const MatrixPool<StateVector>& state_vectors() const noexcept {
+        return archive_->state_vectors;
+    }
+    const MatrixPool<SignalMatrix>& signal_matrices() const noexcept {
+        return archive_->signal_matrices;
+    }
+    const MatrixPool<SignalInputMatrix>& signal_input_matrices() const noexcept {
+        return archive_->signal_input_matrices;
+    }
+    const MatrixPool<SignalVector>& signal_vectors() const noexcept {
+        return archive_->signal_vectors;
+    }
+    const std::vector<CalculationState>& calculation_states() const noexcept {
+        return archive_->calculation_states;
+    }
+    const std::vector<std::size_t>& topology_to_calculation_state() const noexcept {
+        return archive_->topology_to_calculation_state;
     }
 
     std::size_t select_topology(const Inputs& inputs) {
@@ -342,6 +381,7 @@ private:
         return output;
     }
 
+    std::shared_ptr<const ArchiveData> archive_;
     StateVector state_{StateVector::Zero()};
     SignalVector signals_{SignalVector::Zero()};
     std::array<bool, 4> diode_on_{};

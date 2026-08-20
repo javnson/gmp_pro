@@ -291,6 +291,7 @@ class pmsm_drive_topology
         stream << std::setprecision(10)
                << "PMSM drive topology:\n"
                << "  main circuit backend=" << PmsmCircuit::matrix_backend
+               << '/' << PmsmCircuit::matrix_storage
                << ", DC bus=" << CCTL_SIM_DC_BUS_V << " V\n"
                << "  plant/control step: " << kPlantStepS << " s / "
                << kControlStepS << " s, ADC SOC CMPB="

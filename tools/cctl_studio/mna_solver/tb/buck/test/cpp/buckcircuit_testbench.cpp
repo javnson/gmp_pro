@@ -1,6 +1,6 @@
 #include "buckcircuit.hpp"
 
-// Handwritten circuit-specific testbench; cpp_codegen.py only regenerates the header.
+// Handwritten circuit-specific testbench; cpp_codegen.py regenerates the header and archive.
 
 #include <algorithm>
 #include <cmath>

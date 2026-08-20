@@ -18,7 +18,9 @@ generated source-manager `.cmake` file. The CMake generator resolves `inc_dirs`
 from the selected modules and their dependency closure, including in `src_only`
 mode where the header-mirror summary may be absent or stale. `hw/PMSM.CIR` is
 converted once into `hw/generated/PMSM.json`; the default calculation class is
-`hw/generated/eigen/pmsmcircuit.hpp`. Setting `MATRIX_BACKEND` explicitly to
+`hw/generated/eigen/pmsmcircuit.hpp` plus `pmsmcircuit.archive`. The header owns
+the fixed-size structure and loader, while the archive owns the deduplicated
+Eigen matrix pools; CMake copies the archive beside the executable. Setting `MATRIX_BACKEND` explicitly to
 `fixed` or `all` also generates `hw/generated/fixed/pmsmcircuit.hpp`. Eigen is
 resolved from the GMP installer/vcpkg environment, never from the deprecated
 third-party copy.
@@ -80,6 +82,14 @@ generates the fixed header, configures `CCTL_BUILD_FIXED_BACKEND=ON`, builds
 `mcs_pmsm_nt_cctl_fixed`, and runs its independent closed-loop test. Fixed pools
 retain C++17 constant initialization and optional AVX2 for explicit static-storage,
 Eigen-free embedded/FPGA-oriented work.
+
+The Eigen archive is read and validated only while constructing `PmsmCircuit`;
+simulation steps perform no file I/O. For the current 23-state, 729-topology
+model, the JSON is 181,466,029 bytes. The formerly embedded Eigen header was
+about 24.66 MB; the split output is about 23 KB of header plus an 8.33 MB archive.
+Both JSON and archive are reproducible and excluded from Git. A deployment must
+place `pmsmcircuit.archive` in the process working directory or pass an explicit
+path to the `PmsmCircuit` constructor.
 
 The controller, circuit, and motor cannot execute as three concurrent exact
 stages. Circuit step `n` consumes motor current from step `n-1`, motor step `n`

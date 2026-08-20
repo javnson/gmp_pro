@@ -59,6 +59,10 @@ endfunction()
 
 add_cctl_pmsm_simulator(mcs_pmsm_nt_cctl eigen)
 target_link_libraries(mcs_pmsm_nt_cctl PRIVATE Eigen3::Eigen)
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/hw/generated/eigen/pmsmcircuit.archive"
+    "${CMAKE_CURRENT_BINARY_DIR}/pmsmcircuit.archive"
+    COPYONLY)
 
 enable_testing()
 add_test(NAME mcs_pmsm_nt_cctl_closed_loop

@@ -10,6 +10,9 @@ if("$ENV{GMP_PRO_LOCATION}" STREQUAL "")
 endif()
 file(TO_CMAKE_PATH "$ENV{GMP_PRO_LOCATION}" GMP_PRO_ROOT)
 
+configure_file("${CMAKE_CURRENT_LIST_DIR}/../../generated/pmsmcircuit.archive"
+               "${CMAKE_CURRENT_BINARY_DIR}/pmsmcircuit.archive" COPYONLY)
+
 add_executable(pmsm_drive_testbench pmsm_drive_testbench.cpp)
 target_compile_features(pmsm_drive_testbench PRIVATE cxx_std_17)
 target_include_directories(pmsm_drive_testbench PRIVATE

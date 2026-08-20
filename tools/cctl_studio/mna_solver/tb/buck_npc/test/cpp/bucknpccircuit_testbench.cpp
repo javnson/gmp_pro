@@ -1,6 +1,6 @@
 #include "bucknpccircuit.hpp"
 
-// Handwritten case-specific testbench; cpp_codegen.py only regenerates the header.
+// Handwritten case-specific testbench; cpp_codegen.py regenerates the header and archive.
 
 #include <algorithm>
 #include <cmath>

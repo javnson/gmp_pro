@@ -7,6 +7,7 @@ import itertools
 import json
 import math
 import re
+import struct
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Mapping, Sequence
@@ -42,6 +43,13 @@ _POOL_COUNT_NAMES = {
     for type_name, function_name in _POOL_NAMES.items()
 }
 _MATRIX_BACKENDS = ("eigen", "fixed")
+_ARCHIVE_MAGIC = b"GMPMNA1\0"
+_ARCHIVE_VERSION = 1
+_ARCHIVE_ENDIAN_MARKER = 0x01020304
+_ARCHIVE_SCALAR_BYTES = 8
+_ARCHIVE_HEADER_SIZE = 140
+_FNV1A64_OFFSET = 14695981039346656037
+_FNV1A64_PRIME = 1099511628211
 
 
 def _identifier(value: str, default: str = "Circuit") -> str:
@@ -66,6 +74,114 @@ def _number(value: float) -> str:
 
 def _cpp_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=True)
+
+
+def _fnv1a64(data: bytes | bytearray) -> int:
+    value = _FNV1A64_OFFSET
+    for byte in data:
+        value ^= byte
+        value = (value * _FNV1A64_PRIME) & 0xFFFFFFFFFFFFFFFF
+    return value
+
+
+def _source_hash_bytes(document: Mapping) -> bytes:
+    value = document.get("circuit", {}).get("source", {}).get("sha256")
+    if not value:
+        return bytes(32)
+    try:
+        result = bytes.fromhex(str(value))
+    except ValueError as error:
+        raise ValueError(f"invalid source SHA-256 in circuit data: {value!r}") from error
+    if len(result) != 32:
+        raise ValueError(f"invalid source SHA-256 in circuit data: {value!r}")
+    return result
+
+
+def write_matrix_archive(
+    path: str | Path,
+    document: Mapping,
+    plan: "MatrixDedupPlan",
+) -> Path:
+    """Write deduplicated Eigen runtime matrices in a compact little-endian archive."""
+
+    state_count = len(document["state"]["names"])
+    signal_count = len(document["signals"]["names"])
+    input_count = sum(
+        port["data_type"] == "double" for port in document["ports"]["inputs"]
+    )
+    counts = [len(plan.pools[type_name]) for type_name in _POOL_NAMES]
+    u32_limit = 0xFFFFFFFF
+    integer_values = [
+        state_count,
+        input_count,
+        signal_count,
+        plan.logical_state_count,
+        plan.unique_state_count,
+        *counts,
+        *plan.topology_to_calculation_state,
+        *(index for state in plan.calculation_states for index in state),
+    ]
+    if any(value < 0 or value > u32_limit for value in integer_values):
+        raise ValueError("matrix archive index or dimension exceeds uint32 range")
+
+    payload = bytearray()
+    payload.extend(
+        struct.pack(
+            f"<{len(plan.topology_to_calculation_state)}I",
+            *plan.topology_to_calculation_state,
+        )
+    )
+    flat_calculation_states = [
+        index for state in plan.calculation_states for index in state
+    ]
+    payload.extend(
+        struct.pack(
+            f"<{len(flat_calculation_states)}I",
+            *flat_calculation_states,
+        )
+    )
+    for type_name in _POOL_NAMES:
+        for matrix in plan.pools[type_name]:
+            payload.extend(
+                np.asarray(matrix, dtype="<f8").tobytes(order="F")
+            )
+
+    header = bytearray()
+    header.extend(_ARCHIVE_MAGIC)
+    header.extend(
+        struct.pack(
+            "<9I",
+            _ARCHIVE_VERSION,
+            _ARCHIVE_HEADER_SIZE,
+            _ARCHIVE_ENDIAN_MARKER,
+            _ARCHIVE_SCALAR_BYTES,
+            state_count,
+            input_count,
+            signal_count,
+            plan.logical_state_count,
+            plan.unique_state_count,
+        )
+    )
+    header.extend(struct.pack("<6I", *counts))
+    header.extend(
+        struct.pack(
+            "<3d",
+            float(document["solver"]["normal_step_s"]),
+            float(document["solver"]["short_step_s"]),
+            float(plan.tolerance),
+        )
+    )
+    header.extend(_source_hash_bytes(document))
+    header.extend(struct.pack("<2Q", len(payload), _fnv1a64(payload)))
+    if len(header) != _ARCHIVE_HEADER_SIZE:
+        raise AssertionError(
+            f"internal archive header size mismatch: {len(header)}"
+        )
+
+    output = Path(path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_bytes(header + payload)
+    return output
 
 
 def _matrix_expression(
@@ -170,6 +286,230 @@ class MatrixDedupPlan:
     @property
     def shared_matrix_copy_count(self) -> int:
         return sum(self.pool_references.values()) - sum(len(pool) for pool in self.pools.values())
+
+
+def _render_eigen_archive_support(
+    document: Mapping,
+    storage: MatrixDedupPlan,
+) -> str:
+    expected_hash = ", ".join(
+        f"0x{value:02x}U" for value in _source_hash_bytes(document)
+    )
+    return f'''    template <typename Matrix>
+    using MatrixPool = std::vector<Matrix, Eigen::aligned_allocator<Matrix>>;
+
+    struct ArchiveData {{
+        MatrixPool<StateMatrix> state_matrices;
+        MatrixPool<InputMatrix> input_matrices;
+        MatrixPool<StateVector> state_vectors;
+        MatrixPool<SignalMatrix> signal_matrices;
+        MatrixPool<SignalInputMatrix> signal_input_matrices;
+        MatrixPool<SignalVector> signal_vectors;
+        std::vector<CalculationState> calculation_states;
+        std::vector<std::size_t> topology_to_calculation_state;
+    }};
+
+    static std::uint32_t read_u32(const std::vector<std::uint8_t>& bytes,
+                                  std::size_t& cursor) {{
+        require_bytes(bytes, cursor, sizeof(std::uint32_t));
+        std::uint32_t value = 0U;
+        std::memcpy(&value, bytes.data() + cursor, sizeof(value));
+        cursor += sizeof(value);
+        return value;
+    }}
+
+    static std::uint64_t read_u64(const std::vector<std::uint8_t>& bytes,
+                                  std::size_t& cursor) {{
+        require_bytes(bytes, cursor, sizeof(std::uint64_t));
+        std::uint64_t value = 0U;
+        std::memcpy(&value, bytes.data() + cursor, sizeof(value));
+        cursor += sizeof(value);
+        return value;
+    }}
+
+    static double read_f64(const std::vector<std::uint8_t>& bytes,
+                           std::size_t& cursor) {{
+        require_bytes(bytes, cursor, sizeof(double));
+        double value = 0.0;
+        std::memcpy(&value, bytes.data() + cursor, sizeof(value));
+        cursor += sizeof(value);
+        return value;
+    }}
+
+    static void require_bytes(const std::vector<std::uint8_t>& bytes,
+                              std::size_t cursor, std::size_t count) {{
+        if (cursor > bytes.size() || count > bytes.size() - cursor)
+            throw std::runtime_error("truncated matrix archive");
+    }}
+
+    static std::uint64_t fnv1a64(const std::uint8_t* data, std::size_t size) noexcept {{
+        std::uint64_t value = UINT64_C(14695981039346656037);
+        for (std::size_t index = 0U; index < size; ++index) {{
+            value ^= data[index];
+            value *= UINT64_C(1099511628211);
+        }}
+        return value;
+    }}
+
+    template <typename Matrix>
+    static void read_matrix_pool(MatrixPool<Matrix>& pool, std::size_t count,
+                                 const std::vector<std::uint8_t>& bytes,
+                                 std::size_t& cursor) {{
+        constexpr std::size_t coefficient_count =
+            static_cast<std::size_t>(Matrix::SizeAtCompileTime);
+        constexpr std::size_t matrix_bytes = coefficient_count * sizeof(double);
+        pool.resize(count);
+        if constexpr (matrix_bytes == 0U)
+            return;
+        if (count > (std::numeric_limits<std::size_t>::max)() / matrix_bytes)
+            throw std::runtime_error("matrix archive pool size overflow");
+        require_bytes(bytes, cursor, count * matrix_bytes);
+        for (auto& matrix : pool) {{
+            std::memcpy(matrix.data(), bytes.data() + cursor, matrix_bytes);
+            cursor += matrix_bytes;
+        }}
+    }}
+
+    static std::shared_ptr<const ArchiveData> load_archive(
+        const std::filesystem::path& path) {{
+        const std::uint16_t endian_probe = 1U;
+        if (*reinterpret_cast<const std::uint8_t*>(&endian_probe) != 1U)
+            throw std::runtime_error("matrix archives currently require a little-endian host");
+
+        std::ifstream input(path, std::ios::binary | std::ios::ate);
+        if (!input)
+            throw std::runtime_error("cannot open matrix archive: " + path.string());
+        const std::streamoff end = input.tellg();
+        if (end < 0 || static_cast<std::uintmax_t>(end) >
+                           (std::numeric_limits<std::size_t>::max)())
+            throw std::runtime_error("invalid matrix archive size: " + path.string());
+        std::vector<std::uint8_t> bytes(static_cast<std::size_t>(end));
+        input.seekg(0, std::ios::beg);
+        if (!bytes.empty() &&
+            !input.read(reinterpret_cast<char*>(bytes.data()),
+                        static_cast<std::streamsize>(bytes.size())))
+            throw std::runtime_error("cannot read matrix archive: " + path.string());
+
+        constexpr std::array<std::uint8_t, 8U> expected_magic{{{{
+            0x47U, 0x4dU, 0x50U, 0x4dU, 0x4eU, 0x41U, 0x31U, 0x00U
+        }}}};
+        constexpr std::array<std::uint8_t, 32U> expected_source_hash{{{{
+            {expected_hash}
+        }}}};
+        require_bytes(bytes, 0U, expected_magic.size());
+        if (std::memcmp(bytes.data(), expected_magic.data(), expected_magic.size()) != 0)
+            throw std::runtime_error("invalid matrix archive magic: " + path.string());
+
+        std::size_t cursor = expected_magic.size();
+        const auto expect_u32 = [&](std::uint32_t expected, const char* field) {{
+            if (read_u32(bytes, cursor) != expected)
+                throw std::runtime_error(std::string("matrix archive mismatch: ") + field);
+        }};
+        expect_u32({_ARCHIVE_VERSION}U, "version");
+        expect_u32({_ARCHIVE_HEADER_SIZE}U, "header size");
+        expect_u32(0x01020304U, "endianness");
+        expect_u32(8U, "scalar size");
+        expect_u32(static_cast<std::uint32_t>(state_count), "state count");
+        expect_u32(static_cast<std::uint32_t>(analog_input_count), "input count");
+        expect_u32(static_cast<std::uint32_t>(signal_count), "signal count");
+        expect_u32(static_cast<std::uint32_t>(topology_count), "topology count");
+        expect_u32(static_cast<std::uint32_t>(calculation_state_count),
+                   "calculation-state count");
+        expect_u32(static_cast<std::uint32_t>(state_matrix_count),
+                   "state-matrix count");
+        expect_u32(static_cast<std::uint32_t>(input_matrix_count),
+                   "input-matrix count");
+        expect_u32(static_cast<std::uint32_t>(state_vector_count),
+                   "state-vector count");
+        expect_u32(static_cast<std::uint32_t>(signal_matrix_count),
+                   "signal-matrix count");
+        expect_u32(static_cast<std::uint32_t>(signal_input_matrix_count),
+                   "signal-input-matrix count");
+        expect_u32(static_cast<std::uint32_t>(signal_vector_count),
+                   "signal-vector count");
+        if (read_f64(bytes, cursor) != normal_step_s ||
+            read_f64(bytes, cursor) != short_step_s ||
+            read_f64(bytes, cursor) != matrix_tolerance)
+            throw std::runtime_error("matrix archive solver metadata mismatch");
+        require_bytes(bytes, cursor, expected_source_hash.size());
+        if (std::memcmp(bytes.data() + cursor, expected_source_hash.data(),
+                        expected_source_hash.size()) != 0)
+            throw std::runtime_error("matrix archive source hash mismatch");
+        cursor += expected_source_hash.size();
+        const std::uint64_t payload_size = read_u64(bytes, cursor);
+        const std::uint64_t payload_hash = read_u64(bytes, cursor);
+        if (cursor != {_ARCHIVE_HEADER_SIZE}U ||
+            payload_size != static_cast<std::uint64_t>(bytes.size() - cursor))
+            throw std::runtime_error("matrix archive payload size mismatch");
+        if (fnv1a64(bytes.data() + cursor, static_cast<std::size_t>(payload_size)) !=
+            payload_hash)
+            throw std::runtime_error("matrix archive payload checksum mismatch");
+
+        auto result = std::make_shared<ArchiveData>();
+        result->topology_to_calculation_state.resize(topology_count);
+        for (auto& value : result->topology_to_calculation_state) {{
+            value = read_u32(bytes, cursor);
+            if (value >= calculation_state_count)
+                throw std::runtime_error("matrix archive topology index is out of range");
+        }}
+        result->calculation_states.resize(calculation_state_count);
+        for (auto& state : result->calculation_states) {{
+            state.normal_A = read_u32(bytes, cursor);
+            state.normal_B = read_u32(bytes, cursor);
+            state.normal_bias = read_u32(bytes, cursor);
+            state.short_A = read_u32(bytes, cursor);
+            state.short_B = read_u32(bytes, cursor);
+            state.short_bias = read_u32(bytes, cursor);
+            state.C = read_u32(bytes, cursor);
+            state.D = read_u32(bytes, cursor);
+            state.output_bias = read_u32(bytes, cursor);
+            if (state.normal_A >= state_matrix_count ||
+                state.short_A >= state_matrix_count ||
+                state.normal_B >= input_matrix_count ||
+                state.short_B >= input_matrix_count ||
+                state.normal_bias >= state_vector_count ||
+                state.short_bias >= state_vector_count ||
+                state.C >= signal_matrix_count ||
+                state.D >= signal_input_matrix_count ||
+                state.output_bias >= signal_vector_count)
+                throw std::runtime_error("matrix archive calculation-state index is out of range");
+        }}
+        read_matrix_pool(result->state_matrices, state_matrix_count, bytes, cursor);
+        read_matrix_pool(result->input_matrices, input_matrix_count, bytes, cursor);
+        read_matrix_pool(result->state_vectors, state_vector_count, bytes, cursor);
+        read_matrix_pool(result->signal_matrices, signal_matrix_count, bytes, cursor);
+        read_matrix_pool(result->signal_input_matrices, signal_input_matrix_count,
+                         bytes, cursor);
+        read_matrix_pool(result->signal_vectors, signal_vector_count, bytes, cursor);
+        if (cursor != bytes.size())
+            throw std::runtime_error("matrix archive contains trailing data");
+        return result;
+    }}
+
+    const MatrixPool<StateMatrix>& state_matrices() const noexcept {{
+        return archive_->state_matrices;
+    }}
+    const MatrixPool<InputMatrix>& input_matrices() const noexcept {{
+        return archive_->input_matrices;
+    }}
+    const MatrixPool<StateVector>& state_vectors() const noexcept {{
+        return archive_->state_vectors;
+    }}
+    const MatrixPool<SignalMatrix>& signal_matrices() const noexcept {{
+        return archive_->signal_matrices;
+    }}
+    const MatrixPool<SignalInputMatrix>& signal_input_matrices() const noexcept {{
+        return archive_->signal_input_matrices;
+    }}
+    const MatrixPool<SignalVector>& signal_vectors() const noexcept {{
+        return archive_->signal_vectors;
+    }}
+    const std::vector<CalculationState>& calculation_states() const noexcept {{
+        return archive_->calculation_states;
+    }}
+    const std::vector<std::size_t>& topology_to_calculation_state() const noexcept {{
+        return archive_->topology_to_calculation_state;
+    }}'''
 
 
 def build_matrix_dedup_plan(
@@ -304,6 +644,7 @@ def render_header(
     backend: str = "eigen",
     progress: Callable[[int, int], None] | None = None,
     plan: MatrixDedupPlan | None = None,
+    archive_filename: str | None = None,
 ) -> str:
     selected_backend = backend.lower()
     if selected_backend not in _MATRIX_BACKENDS:
@@ -328,6 +669,7 @@ def render_header(
     pwm_fields = [_identifier(port["name"], "PWM") for port in pwm_ports]
     input_fields = [_identifier(port["name"], "input") for port in input_ports]
     output_fields = [_identifier(port["field"], "output") for port in outputs]
+    selected_archive_filename = archive_filename or f"{_identifier(class_name.lower())}.archive"
     signal_at = (
         (lambda index: f"signals_({index})")
         if selected_backend == "eigen"
@@ -338,21 +680,21 @@ def render_header(
         for type_name in _POOL_NAMES
     )
     pool_functions = []
-    pool_storage_qualifier = "constexpr" if selected_backend == "fixed" else "const"
-    for type_name, function_name in _POOL_NAMES.items():
-        values = ",\n            ".join(
-            _matrix_expression(type_name, matrix.tolist(), selected_backend)
-            for matrix in storage.pools[type_name]
-        )
-        count_name = _POOL_COUNT_NAMES[type_name]
-        pool_functions.append(
-            f'''    static const std::array<{type_name}, {count_name}>& {function_name}() {{
-        static {pool_storage_qualifier} std::array<{type_name}, {count_name}> pool{{{{
+    if selected_backend == "fixed":
+        for type_name, function_name in _POOL_NAMES.items():
+            values = ",\n            ".join(
+                _matrix_expression(type_name, matrix.tolist(), selected_backend)
+                for matrix in storage.pools[type_name]
+            )
+            count_name = _POOL_COUNT_NAMES[type_name]
+            pool_functions.append(
+                f'''    static const std::array<{type_name}, {count_name}>& {function_name}() {{
+        static constexpr std::array<{type_name}, {count_name}> pool{{{{
             {values}
         }}}};
         return pool;
     }}'''
-        )
+            )
     pool_function_text = "\n\n".join(pool_functions)
     calculation_state_fields = "\n".join(
         f"        std::size_t {field};" for field, _, _, _ in _MATRIX_SPECS
@@ -503,6 +845,19 @@ def render_header(
         signals_ = signal_matrices()[calculation_state.C] * state_
             + signal_input_matrices()[calculation_state.D] * input_vector
             + signal_vectors()[calculation_state.output_bias];'''
+        constructor_text = f'''    explicit {class_name}(
+        const std::filesystem::path& archive_path = std::filesystem::path(archive_filename))
+        : archive_(load_archive(archive_path)) {{ reset(); }}'''
+        matrix_storage = "archive"
+        archive_name_literal = _cpp_string(selected_archive_filename)
+        storage_text = _render_eigen_archive_support(document, storage)
+        archive_member = "    std::shared_ptr<const ArchiveData> archive_;"
+        archive_includes = """#include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <limits>
+#include <memory>
+#include <vector>"""
     else:
         matrix_include = """#include <cctl/numerical_solver/fixed_matrix.hpp>
 #include <cctl/numerical_solver/fixed_vector.hpp>"""
@@ -532,6 +887,26 @@ def render_header(
             signal_matrices()[calculation_state.C], state_,
             signal_input_matrices()[calculation_state.D], input_vector,
             signal_vectors()[calculation_state.output_bias]);'''
+        constructor_text = f"    {class_name}() {{ reset(); }}"
+        matrix_storage = "embedded"
+        archive_name_literal = '""'
+        storage_text = f'''{pool_function_text}
+
+    static const std::array<CalculationState, calculation_state_count>& calculation_states() {{
+        static const std::array<CalculationState, calculation_state_count> value{{{{
+            {calculation_state_values}
+        }}}};
+        return value;
+    }}
+
+    static const std::array<std::size_t, topology_count>& topology_to_calculation_state() {{
+        static const std::array<std::size_t, topology_count> value{{{{
+            {topology_mapping_values}
+        }}}};
+        return value;
+    }}'''
+        archive_member = ""
+        archive_includes = ""
     return f'''#pragma once
 
 // Generated by GMP mna_solver/cpp_codegen.py from {source_name}.
@@ -549,6 +924,7 @@ def render_header(
 #include <stdexcept>
 #include <string>
 #include <string_view>
+{archive_includes}
 
 class {class_name} {{
 public:
@@ -559,6 +935,8 @@ public:
     static constexpr std::size_t topology_count = {topology_count};
     static constexpr std::size_t calculation_state_count = {storage.unique_state_count};
     static constexpr const char* matrix_backend = "{selected_backend}";
+    static constexpr const char* matrix_storage = "{matrix_storage}";
+    static constexpr const char* archive_filename = {archive_name_literal};
 {pool_count_constants}
     static constexpr double normal_step_s = {_number(document['solver']['normal_step_s'])};
     static constexpr double short_step_s = {_number(document['solver']['short_step_s'])};
@@ -580,7 +958,7 @@ public:
 
     Outputs output{{}};
 
-    {class_name}() {{ reset(); }}
+{constructor_text}
 
     void reset() {{
 {reset_vectors}
@@ -621,21 +999,7 @@ private:
 {calculation_state_fields}
     }};
 
-{pool_function_text}
-
-    static const std::array<CalculationState, calculation_state_count>& calculation_states() {{
-        static const std::array<CalculationState, calculation_state_count> value{{{{
-            {calculation_state_values}
-        }}}};
-        return value;
-    }}
-
-    static const std::array<std::size_t, topology_count>& topology_to_calculation_state() {{
-        static const std::array<std::size_t, topology_count> value{{{{
-            {topology_mapping_values}
-        }}}};
-        return value;
-    }}
+{storage_text}
 
     std::size_t select_topology(const Inputs& inputs) {{
 {selection_body}
@@ -651,6 +1015,7 @@ private:
         return output;
     }}
 
+{archive_member}
     StateVector state_{{{state_member_initializer}}};
     SignalVector signals_{{{signal_member_initializer}}};
 {switch_state_members}
@@ -716,6 +1081,11 @@ def generate_cpp_project(
     output = Path(output_directory)
     output.mkdir(parents=True, exist_ok=True)
     header = output / f"{stem}.hpp"
+    archive = output / f"{stem}.archive"
+    generated: dict[str, Path] = {"header": header}
+    if selected_backend == "eigen":
+        write_matrix_archive(archive, document, plan)
+        generated["archive"] = archive
     header.write_text(
         render_header(
             document,
@@ -723,14 +1093,17 @@ def generate_cpp_project(
             selected_tolerance,
             selected_backend,
             plan=plan,
+            archive_filename=archive.name,
         ),
         encoding="utf-8",
     )
-    return {"header": header}
+    return generated
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Generate a fixed-size C++ circuit calculation class")
+    parser = argparse.ArgumentParser(
+        description="Generate a fixed-size C++ circuit class and Eigen matrix archive"
+    )
     parser.add_argument("data")
     parser.add_argument("output_directory")
     parser.add_argument("--class-name")

@@ -319,7 +319,7 @@ tb\buck\
 ├── buck.CIR
 ├── generate_code.bat
 ├── build_test.bat
-├── generated\              generated circuit-data JSON and calculation headers
+├── generated\              generated JSON, calculation headers, and matrix archives
 └── test\cpp\               handwritten testbench, CMakeLists and vcpkg.json
 ```
 
@@ -333,9 +333,11 @@ The scripts do not depend on the checkout drive or current working directory.
 User-facing scripts pause on success and failure, while automation can pass
 `--no-pause`.
 
-Each switching case writes both its portable JSON and generated C++ calculation
-header under `generated`. JSON and local CSV/build/IDE outputs are ignored by
-`tb\.gitignore` because they are reproducible and can be large.
+Each switching case writes its portable JSON and generated C++ calculation class
+under `generated`. An Eigen class consists of a small `*.hpp` plus a same-stem
+`*.archive`; fixed continues to embed coefficients in one header. JSON, archives,
+and local CSV/build/IDE outputs are ignored because they are reproducible and can
+be large.
 
 ### Generation and build
 
@@ -359,10 +361,26 @@ change a case's `MATRIX_BACKEND`, only when the allocation-free fixed backend is
 specifically required. Fixed generation remains supported but is not part of the
 default generation or build path.
 
-Only the calculation header is generated. Testbench source, CMake files,
-waveform scheduling, CSV policy, and acceptance limits are deliberately
+Only the calculation class artifacts are generated. Testbench source, CMake
+files, waveform scheduling, CSV policy, and acceptance limits are deliberately
 handwritten per circuit because those are application- and topology-specific.
 Regenerating a calculation class therefore never overwrites its testbench.
+
+The default Eigen backend writes the six deduplicated matrix pools, the
+topology-to-calculation-state mapping, and nine pool indices per calculation
+state into a version-1 binary archive. The format is little-endian `float64` in
+Eigen column-major order and records dimensions, state counts, both step sizes,
+matrix tolerance, source-netlist SHA-256, payload size, and an FNV-1a 64 checksum.
+The generated header retains fixed-size Eigen types, typed ports and outputs,
+topology selection, and the archive loader. Construction validates and loads the
+pools once; `step` performs no file I/O or archive-related allocation.
+
+The default constructor resolves the generated archive filename from the process
+working directory. Supplied CMake tests copy it beside the executable. Other
+deployments must do the same or pass an explicit path, for example
+`BuckCircuit circuit("data/buckcircuit.archive");`. Missing files and archive
+version, dimension, source, or checksum mismatches fail at construction with a
+descriptive exception.
 
 The fixed backend uses `cctl::fixed_matrix<T, Rows, Columns>`, implemented as an
 inline array of fixed row vectors. It performs no heap allocation and supports
@@ -446,7 +464,7 @@ state matrices. A future descriptor/input-derivative backend can restore them.
 
 `generate_code.bat` defines `NETLIST_FILE` near its beginning, so direct
 invocation uses the case's default CIR; an explicit CIR may also be passed as
-the first argument. `build_test.bat` generates the calculation header first,
+the first argument. `build_test.bat` generates the calculation header and archive first,
 then configures the handwritten `test\cpp` project. Every default case uses the
 Eigen package maintained by the GMP installer/vcpkg environment. An explicitly
 selected fixed build can still enable `CCTL_FIXED_MATH_USE_AVX` and the target

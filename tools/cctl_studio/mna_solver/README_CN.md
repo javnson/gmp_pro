@@ -272,7 +272,7 @@ tb\buck\
 ├── buck.CIR
 ├── generate_code.bat
 ├── build_test.bat
-├── generated\              自动生成的电路 JSON 和计算类头文件
+├── generated\              自动生成的电路 JSON、计算类头文件和矩阵归档
 └── test\cpp\               手写 testbench、CMakeLists.txt 和 vcpkg.json
 ```
 
@@ -283,8 +283,10 @@ tb\buck\
 变量替代环境配置。脚本不依赖当前工作目录或仓库所在盘符。用户直接运行时
 成功和失败都会暂停；自动化调用可传入 `--no-pause`。
 
-每个开关案例把 JSON 和计算类都写入 `generated`。JSON、CSV、本地构建目录
-和 IDE 缓存由 `tb\.gitignore` 忽略，因为它们可重复生成，且 JSON 可能很大。
+每个开关案例把 JSON 和计算类都写入 `generated`。Eigen 后端的计算类由一份
+轻量 `*.hpp` 和同名 `*.archive` 组成；fixed 后端仍把系数内嵌在单个头文件中。
+JSON、archive、CSV、本地构建目录和 IDE 缓存均被忽略，因为它们可重复生成，
+且 JSON 与二进制矩阵池可能很大。
 
 ### 生成和构建
 
@@ -309,6 +311,18 @@ CIR 和 `1E-12` 精度，也可以把其他 CIR 作为第一个参数传入。�
 不会覆盖手写 testbench。生成的 `BuckCircuit` 提供
 `step_short(PWM, VS1)`、`step_normal(PWM, VS1)`、`run` 和 `operator()`；
 探针既可通过 `circuit.output.VF1`，也可通过 `circuit["V(VF1)"]` 读取。
+
+默认 Eigen 后端将去重后的六类矩阵池、拓扑到计算状态映射及每个计算状态的
+九个池索引写入版本 1 二进制 archive。归档固定使用 little-endian `float64`、
+Eigen column-major 元素顺序，并记录维度、状态数、两个步长、矩阵容差、源网表
+的 SHA-256、载荷长度和 FNV-1a 64 校验值。生成的头文件保留固定维 Eigen 类型、
+端口/输出结构、拓扑选择逻辑和归档加载器；构造对象时一次性校验并载入矩阵池，
+`step` 路径不访问文件，也不再动态分配。
+
+默认构造函数从进程当前工作目录读取生成时记录的 archive 文件名。仓库内 CMake
+测试会把归档复制到测试可执行文件所在目录；部署其他程序时也必须复制该文件，
+或者显式传入路径，例如 `BuckCircuit circuit("data/buckcircuit.archive");`。
+缺失文件、版本/维度不符、源数据不匹配或校验失败都会在构造时抛出明确异常。
 
 `fixed` 后端使用 `cctl::fixed_matrix<T, Rows, Columns>`，内部为固定行向量数组，
 不进行堆分配。它支持矩阵—向量、矩阵—矩阵、矩阵加减、数乘，并用融合的
@@ -373,7 +387,7 @@ Coss 系统刚性较强，案例使用 1 ns 正常步长和 100 ps 启动步长�
 中点并非由理想源对地刚性钳位，因此两个钳位二极管提取出的 460 pF 结电容
 均保留在七状态模型中。
 
-`build_test.bat` 首先刷新计算头文件，再从 `test\cpp` 配置 CMake。全部默认
+`build_test.bat` 首先刷新计算头文件和 archive，再从 `test\cpp` 配置 CMake。全部默认
 案例都从 GMP 安装程序维护的 Eigen/vcpkg 环境获取 Eigen。若显式切换到
 fixed，可继续使用 `CCTL_FIXED_MATH_USE_AVX` 和目标编译器的 AVX2 选项。
 

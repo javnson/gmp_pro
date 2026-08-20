@@ -22,7 +22,9 @@ ctl_output_callback -> ePWM 更新`。
   CMake 生成器直接从已选模块及其依赖闭包汇总 `inc_dirs`，`src_only` 模式不
   依赖可能过期的 `gmp_compiler_includes.txt`。
 - `hw/PMSM.CIR` 是项目主电路。`hw/generate_code.bat` 只解析一次网表，将 JSON
-  写入 `hw/generated`，默认生成 `hw/generated/eigen/pmsmcircuit.hpp`。
+  写入 `hw/generated`，默认生成 `hw/generated/eigen/pmsmcircuit.hpp` 和
+  `pmsmcircuit.archive`。头文件保存固定维结构与加载逻辑，归档保存去重后的
+  Eigen 矩阵池；CMake 会把归档复制到可执行文件目录。
   将环境变量 `MATRIX_BACKEND` 显式设为 `fixed` 或 `all` 时，仍可生成
   `hw/generated/fixed/pmsmcircuit.hpp`。Eigen 由 GMP 安装程序维护的 vcpkg
   环境提供，不引用已弃用的 `third_party` 副本。
@@ -83,6 +85,12 @@ fixed 能力没有删除：运行 `build_test.bat --with-fixed` 会额外生成 
 以 `CCTL_BUILD_FIXED_BACKEND=ON` 构建 `mcs_pmsm_nt_cctl_fixed`，并执行独立
 闭环测试。fixed 系数池继续使用 C++17 `constexpr` 常量初始化和可选 AVX2，
 适合作为静态存储、无 Eigen 运行依赖以及后续嵌入式/FPGA 演进的显式后端。
+
+Eigen 归档只在 `PmsmCircuit` 构造时读取和校验，仿真步进期间没有文件 I/O。
+当前 23 状态、729 拓扑模型的 JSON 为 181,466,029 字节；原内嵌 Eigen 头约
+24.66 MB，拆分后头文件约 23 KB、归档约 8.33 MB。归档与 JSON 都是可再生文件，
+不纳入 Git；发布可执行程序时必须把 `pmsmcircuit.archive` 放在工作目录，或向
+`PmsmCircuit` 构造函数传入明确路径。
 
 主电路和电机并不是可并行的独立任务：第 `n` 步主电路使用第 `n-1` 步电机
 电流得到电压，第 `n` 步电机随即使用该电压得到下一步所需电流。控制器还要

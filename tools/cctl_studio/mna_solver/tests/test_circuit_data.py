@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import json
+import struct
 import sys
 import tempfile
 import unittest
@@ -98,7 +99,14 @@ class CircuitDataTests(unittest.TestCase):
             data.write_circuit_data(data_path, self.document)
             files = codegen.generate_cpp_project(data_path, Path(directory) / "cpp", "BuckCircuit")
             header = files["header"].read_text(encoding="utf-8")
-        self.assertEqual(set(files), {"header"})
+            archive = files["archive"].read_bytes()
+        self.assertEqual(set(files), {"header", "archive"})
+        self.assertEqual(archive[:8], b"GMPMNA1\0")
+        self.assertEqual(struct.unpack_from("<I", archive, 8)[0], 1)
+        self.assertEqual(struct.unpack_from("<I", archive, 12)[0], 140)
+        payload_size, payload_hash = struct.unpack_from("<QQ", archive, 124)
+        self.assertEqual(payload_size, len(archive) - 140)
+        self.assertEqual(payload_hash, codegen._fnv1a64(archive[140:]))
         self.assertIn("class BuckCircuit", header)
         self.assertIn("step_short", header)
         self.assertIn("step_normal", header)
@@ -110,6 +118,10 @@ class CircuitDataTests(unittest.TestCase):
         self.assertIn("calculation_state_count", header)
         self.assertIn("topology_to_calculation_state", header)
         self.assertIn("state_matrices()", header)
+        self.assertIn("load_archive", header)
+        self.assertIn('matrix_storage = "archive"', header)
+        self.assertIn('archive_filename = "buckcircuit.archive"', header)
+        self.assertNotIn("value <<", header)
         self.assertIn("matrix_tolerance", header)
         self.assertIn('matrix_backend = "eigen"', header)
 
@@ -125,6 +137,7 @@ class CircuitDataTests(unittest.TestCase):
             )
             header = files["header"].read_text(encoding="utf-8")
 
+        self.assertEqual(set(files), {"header"})
         self.assertIn("#include <cctl/numerical_solver/fixed_matrix.hpp>", header)
         self.assertIn("#include <cctl/numerical_solver/fixed_vector.hpp>", header)
         self.assertNotIn("#include <Eigen/Dense>", header)
@@ -168,7 +181,7 @@ class CircuitDataTests(unittest.TestCase):
             files = codegen.generate_cpp_project(data_path, Path(directory) / "cpp")
             header = files["header"].read_text(encoding="utf-8")
         self.assertIn("class BuckCircuit", header)
-        self.assertEqual(set(files), {"header"})
+        self.assertEqual(set(files), {"header", "archive"})
 
     def test_fsbb_exports_four_pwm_ports_and_81_mosfet_topologies(self) -> None:
         source = FSBB_DIR / "FSBB.CIR"
