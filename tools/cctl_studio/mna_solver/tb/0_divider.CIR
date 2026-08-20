@@ -1,0 +1,22 @@
+NONAME (TINA Netlist Editor format)
+**************************************
+**  This file was created by TINA   **
+**         www.tina.com             ** 
+**      (c) DesignSoft, Inc.        **          
+**     www.designsoftware.com       **
+**************************************
+.LIB "<TINADIR>\EXAMPLES\SPICE\TSPICE.LIB"
+.LIB "<TINADIR>\SPICELIB\Operational Amplifiers.LIB"
+.TEMP 27
+.AC DEC 20 10 1MEG
+.TRAN 2N 1U
+
+.PROBE V([VF1]) I(VAM1)
+
+VAM1        2 VF1 ; Current Arrow
+VS1         3 0 5
+R2          VF1 0 1K 
+R1          3 2 1K 
+
+
+.END

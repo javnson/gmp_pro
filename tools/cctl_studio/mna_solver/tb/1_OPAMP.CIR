@@ -1,0 +1,26 @@
+1_OPAMP (TINA Netlist Editor format)
+**************************************
+**  This file was created by TINA   **
+**         www.tina.com             ** 
+**      (c) DesignSoft, Inc.        **          
+**     www.designsoftware.com       **
+**************************************
+.LIB "<TINADIR>\EXAMPLES\SPICE\TSPICE.LIB"
+.LIB "<TINADIR>\SPICELIB\Operational Amplifiers.LIB"
+.TEMP 27
+.AC DEC 20 10 1MEG
+.TRAN 2N 1U
+.DC LIN VG1 0 1 10M
+
+.PROBE V([VF1])
+
+VG1         1 0 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+R3          VF1 0 1K 
+R2          3 0 1K 
+C1          1 VF1 1U 
+R1          1 VF1 1K 
+XIOP1        3 1 VF1 IdOpamp
+
+
+.END
