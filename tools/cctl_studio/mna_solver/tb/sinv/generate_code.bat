@@ -3,6 +3,7 @@ setlocal EnableExtensions
 
 set "NETLIST_FILE=SINV.CIR"
 set "MATRIX_TOLERANCE=1E-12"
+set "MATRIX_BACKEND=eigen"
 rem Default netlist for this case. Change the line above when copying the case.
 
 set "NO_PAUSE=0"
@@ -39,8 +40,8 @@ if not exist "%GENERATED_DIR%" mkdir "%GENERATED_DIR%"
 echo [1/2] Exporting portable circuit data...
 python "%MNA_TOOL_DIR%\circuit_data.py" export "%NETLIST_PATH%" "%JSON_PATH%" --normal-dt 100N --short-dt 1N --method backward_euler --matrix-tolerance "%MATRIX_TOLERANCE%"
 if errorlevel 1 goto :failed
-echo [2/2] Generating the Eigen C++ calculation class...
-python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%GENERATED_DIR%"
+echo [2/2] Generating the %MATRIX_BACKEND% matrix-backend C++ calculation class...
+python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%GENERATED_DIR%" --backend "%MATRIX_BACKEND%"
 if errorlevel 1 goto :failed
 
 echo.

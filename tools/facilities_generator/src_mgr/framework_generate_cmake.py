@@ -8,6 +8,8 @@ import os
 import sys
 from pathlib import Path
 
+from framework_registry import RegistrySelectionError, resolve_selected_modules
+
 
 SOURCE_SUFFIXES = {".c", ".cc", ".cpp", ".cxx", ".s", ".S"}
 LOCAL_SOURCE_DIRS = ("user", "xplt")
@@ -52,7 +54,7 @@ def _collect_sources(manager_dir: Path, project_root: Path) -> list[Path]:
 def _parse_include_summary(summary_path: Path) -> list[str]:
     """Extract path entries from gmp_compiler_includes.txt."""
     if not summary_path.is_file():
-        raise FileNotFoundError(f"Compiler include summary not found: {summary_path}")
+        return []
 
     paths: list[str] = []
     for raw_line in summary_path.read_text(encoding="utf-8-sig").splitlines():
@@ -65,6 +67,60 @@ def _parse_include_summary(summary_path: Path) -> list[str]:
             continue
         paths.append(line)
     return paths
+
+
+def _collect_registered_include_dirs(
+    manager_dir: Path,
+    gmp_root: Path,
+    dictionary_path: Path | None = None,
+) -> list[str]:
+    """Resolve every inc_dirs entry in the selected dependency closure.
+
+    Source-only workspaces do not run the header mirror generator, so their
+    gmp_compiler_includes.txt can be absent or stale. CMake generation must use
+    the canonical registry and local selection directly instead of relying on
+    that derived summary file.
+    """
+    config_path = manager_dir / "gmp_framework_config.json"
+    registry_path = dictionary_path or Path(__file__).resolve().with_name(
+        "gmp_framework_dic.json"
+    )
+    if not config_path.is_file():
+        raise FileNotFoundError(f"Source-manager configuration not found: {config_path}")
+    if not registry_path.is_file():
+        raise FileNotFoundError(f"GMP facility registry not found: {registry_path}")
+
+    config = json.loads(config_path.read_text(encoding="utf-8-sig"))
+    registry = json.loads(registry_path.read_text(encoding="utf-8-sig"))
+    try:
+        selected_modules = resolve_selected_modules(registry, config)
+    except RegistrySelectionError as error:
+        raise ValueError(f"Cannot resolve Facility dependencies: {error}") from error
+
+    macros = dict(registry.get("macros", {}))
+    macros["GMP_PRO_LOCATION"] = gmp_root.as_posix()
+    macro_items = sorted(macros.items(), key=lambda item: len(item[0]), reverse=True)
+
+    include_dirs: set[str] = set()
+    for root_name, module_name in selected_modules:
+        module = registry["modules"][root_name][module_name]
+        for raw_path in module.get("inc_dirs", []):
+            expanded = str(raw_path)
+            for macro_name, macro_value in macro_items:
+                expanded = expanded.replace(f"${{{macro_name}}}", str(macro_value))
+            candidate = Path(expanded)
+            if not candidate.is_absolute():
+                candidate = gmp_root / candidate
+            if candidate.is_dir():
+                include_dirs.add(candidate.resolve().as_posix())
+
+    sync_mode = config.get("sync_mode", "all")
+    if sync_mode in {"all", "inc_only"}:
+        for raw_path in config.get("local_include_dirs", ["gmp_inc"]):
+            candidate = manager_dir / str(raw_path)
+            if candidate.is_dir():
+                include_dirs.add(candidate.resolve().as_posix())
+    return sorted(include_dirs)
 
 
 def _render_include_path(
@@ -108,12 +164,13 @@ def _collect_cmake_libraries(manager_dir: Path) -> list[str]:
 
     config = json.loads(config_path.read_text(encoding="utf-8-sig"))
     dictionary = json.loads(dictionary_path.read_text(encoding="utf-8-sig"))
-    modules = dictionary.get("modules", {})
     libraries: set[str] = set()
-    for selection in config.get("selected_modules", []):
-        root_name = selection.get("root")
-        module_name = selection.get("module")
-        module = modules.get(root_name, {}).get(module_name, {})
+    try:
+        selected_modules = resolve_selected_modules(dictionary, config)
+    except RegistrySelectionError as error:
+        raise ValueError(f"Cannot resolve Facility dependencies: {error}") from error
+    for root_name, module_name in selected_modules:
+        module = dictionary["modules"][root_name][module_name]
         libraries.update(module.get("cmake_libraries", []))
     return sorted(libraries)
 
@@ -136,7 +193,12 @@ def generate_cmake(workspace: Path, output: Path | None = None) -> Path:
     output_path = (output or (manager_dir / "gmp_config.cmake")).resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    raw_include_paths = _parse_include_summary(manager_dir / "gmp_compiler_includes.txt")
+    raw_include_paths = _collect_registered_include_dirs(manager_dir, gmp_root)
+    # Preserve explicitly emitted legacy paths for old manager configurations,
+    # while the registry-derived set above remains authoritative for src_only.
+    raw_include_paths.extend(
+        _parse_include_summary(manager_dir / "gmp_compiler_includes.txt")
+    )
     include_paths = {
         _render_include_path(path, manager_dir, project_root, output_path.parent, gmp_root)
         for path in raw_include_paths

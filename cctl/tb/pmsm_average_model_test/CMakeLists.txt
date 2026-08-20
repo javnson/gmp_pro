@@ -3,6 +3,8 @@ project(cctl_pmsm_average_model_test LANGUAGES CXX)
 
 enable_testing()
 
+option(CCTL_FIXED_MATH_USE_AVX "Use AVX2 kernels in fixed_vector/fixed_matrix tests" OFF)
+
 add_executable(cctl_pmsm_average_model_test
     pmsm_average_model_test.cpp
 )
@@ -19,6 +21,18 @@ target_include_directories(cctl_pmsm_average_model_test PRIVATE
 target_include_directories(cctl_pmsm_average_model_benchmark PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/../../.."
 )
+
+if(CCTL_FIXED_MATH_USE_AVX)
+    target_compile_definitions(cctl_pmsm_average_model_test PRIVATE CCTL_FIXED_MATH_USE_AVX=1)
+    target_compile_definitions(cctl_pmsm_average_model_benchmark PRIVATE CCTL_FIXED_MATH_USE_AVX=1)
+    if(MSVC)
+        target_compile_options(cctl_pmsm_average_model_test PRIVATE /arch:AVX2)
+        target_compile_options(cctl_pmsm_average_model_benchmark PRIVATE /arch:AVX2)
+    else()
+        target_compile_options(cctl_pmsm_average_model_test PRIVATE -mavx2)
+        target_compile_options(cctl_pmsm_average_model_benchmark PRIVATE -mavx2)
+    endif()
+endif()
 
 if(MSVC)
     target_compile_options(cctl_pmsm_average_model_test PRIVATE /W4 /permissive- /utf-8)

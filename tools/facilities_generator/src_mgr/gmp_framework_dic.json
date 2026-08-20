@@ -1561,6 +1561,7 @@
                 "depends_on": [
                     "ctl|component|interface|base",
                     "ctl|component|interface|adc",
+                    "ctl|component|interface|dac",
                     "ctl|component|interface|pwm",
                     "ctl|component|interface|adv_pwm"
                 ],
@@ -6877,7 +6878,69 @@
                 ]
             }
         },
+        "cctl": {
+            "dsa": {
+                "type": "module",
+                "description": "Reusable CCTL lock-free data-stream structures",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/cctl/dsa/*.hpp"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/"
+                ],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/cctl/dsa/README.md",
+                    "${GMP_PRO_LOCATION}/cctl/dsa/README_CN.md"
+                ],
+                "depends_on": []
+            }
+        },
         "csp": {
+            "cctl": {
+                "type": "module",
+                "description": "Direct hosted CCTL simulation runtime with lock-free output and progress workers",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/csp/cctl/src/*.cpp"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/csp/cctl/*.hpp"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/csp/cctl"
+                ],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/csp/cctl/README.md",
+                    "${GMP_PRO_LOCATION}/csp/cctl/README_CN.md"
+                ],
+                "depends_on": [
+                    "core|rt",
+                    "cctl|dsa"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": true,
+                        "date": "2026-08-20",
+                        "reply": "MSVC C++17 source-manager build passed with generated short include paths"
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": true,
+                        "date": "2026-08-20",
+                        "reply": "40,000,000-step three-thread PMSM drive regression wrote 80,000 records with zero drops"
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": "Not applicable to a hosted CSP"
+                    }
+                ]
+            },
             "stm32": {
                 "type": "module",
                 "description": "",

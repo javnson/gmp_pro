@@ -34,32 +34,10 @@ if not exist "%TEST_DIR%\CMakeLists.txt" (
 echo [1/4] Generating PMSM-inverter calculation code...
 call "%CASE_DIR%generate_code.bat" "%NETLIST_FILE%" --no-pause
 if errorlevel 1 goto :failed
-if /I not "%GMP_ENV_MODE%"=="virtual" goto :system_environment
-if not exist "%VCPKG_INSTALLED_DIR%\x64-windows\include\eigen3\Eigen\Dense" (
-    echo [ERROR] Eigen3 is not installed in the GMP vcpkg shared tree.
-    echo         Run repair_gmp_vcpkg.bat, then retry.
-    set "RESULT=1"
-    goto :failed_with_result
-)
-echo [2/4] Configuring the handwritten C++ test with GMP's private vcpkg...
-cmake --fresh -S "%TEST_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%CMAKE_TOOLCHAIN_FILE%" -DVCPKG_INSTALLED_DIR="%VCPKG_INSTALLED_DIR%" -DVCPKG_MANIFEST_MODE=OFF -DGMP_PRO_LOCATION="%GMP_PRO_LOCATION%"
-if errorlevel 1 goto :failed
-goto :build
-
-:system_environment
-where vcpkg.exe >nul 2>nul
-if errorlevel 1 (
-    echo [ERROR] System vcpkg is unavailable. Run install_gmp.bat, then retry.
-    set "RESULT=1"
-    goto :failed_with_result
-)
-for /f "delims=" %%I in ('where vcpkg.exe') do if not defined SYSTEM_VCPKG_EXE set "SYSTEM_VCPKG_EXE=%%I"
-for %%I in ("%SYSTEM_VCPKG_EXE%") do set "SYSTEM_VCPKG_ROOT=%%~dpI"
-echo [2/4] Configuring the handwritten C++ test with system vcpkg...
-cmake --fresh -S "%TEST_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%SYSTEM_VCPKG_ROOT%scripts\buildsystems\vcpkg.cmake" -DGMP_PRO_LOCATION="%GMP_PRO_LOCATION%"
+echo [2/4] Configuring the handwritten fixed-matrix C++ test with AVX2...
+cmake --fresh -S "%TEST_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DGMP_MNA_FIXED_USE_AVX=ON
 if errorlevel 1 goto :failed
 
-:build
 echo [3/4] Compiling the handwritten PMSM drive test...
 cmake --build "%BUILD_DIR%" --config Release
 if errorlevel 1 goto :failed

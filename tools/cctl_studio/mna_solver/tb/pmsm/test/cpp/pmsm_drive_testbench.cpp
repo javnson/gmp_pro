@@ -25,6 +25,11 @@ constexpr double kTargetModulation = 0.10;
 constexpr double kFrequencyRampS = 500.0e-3;
 constexpr double kDeadTimeS = 1.0e-6;
 constexpr double kDurationS = 800.0e-3;
+#if defined(CCTL_FIXED_MATH_USE_AVX) && CCTL_FIXED_MATH_USE_AVX
+constexpr const char *kFixedKernel = "AVX2";
+#else
+constexpr const char *kFixedKernel = "scalar";
+#endif
 
 struct LegSignals
 {
@@ -248,6 +253,8 @@ int main()
     std::cout << std::setprecision(12)
               << "PMSM current-source drive: Vdc=48 V, carrier=10 kHz, rotating voltage=20 Hz, "
                  "deadtime=1 us\n"
+              << "matrix backend=" << PmsmCircuit::matrix_backend
+              << ", fixed kernel=" << kFixedKernel << '\n'
               << "mean final electrical frequency=" << mean_electrical_frequency
               << " Hz, mean speed=" << mean_speed_rpm << " rpm\n"
               << "final id/iq=" << motor.output.d_axis_current_a << "/"

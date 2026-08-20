@@ -94,6 +94,32 @@ class CircuitDataTests(unittest.TestCase):
         self.assertIn("topology_to_calculation_state", header)
         self.assertIn("state_matrices()", header)
         self.assertIn("matrix_tolerance", header)
+        self.assertIn('matrix_backend = "eigen"', header)
+
+    def test_cpp_generator_supports_all_static_fixed_matrix_backend(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            data_path = Path(directory) / "buck.json"
+            data.write_circuit_data(data_path, self.document)
+            files = codegen.generate_cpp_project(
+                data_path,
+                Path(directory) / "cpp",
+                "FixedBuckCircuit",
+                backend="fixed",
+            )
+            header = files["header"].read_text(encoding="utf-8")
+
+        self.assertIn("#include <cctl/numerical_solver/fixed_matrix.hpp>", header)
+        self.assertIn("#include <cctl/numerical_solver/fixed_vector.hpp>", header)
+        self.assertNotIn("#include <Eigen/Dense>", header)
+        self.assertIn('matrix_backend = "fixed"', header)
+        self.assertIn("using StateMatrix = cctl::fixed_matrix", header)
+        self.assertIn("using StateVector = cctl::fixed_vector", header)
+        self.assertIn("const InputVector input_vector{", header)
+        self.assertIn("cctl::affine_transform", header)
+        self.assertNotIn("value <<", header)
+
+        with self.assertRaisesRegex(ValueError, "unsupported matrix backend"):
+            codegen.render_header(self.document, "InvalidCircuit", backend="dynamic")
 
     def test_cpp_matrix_plan_deduplicates_states_and_interns_storage(self) -> None:
         synthetic = copy.deepcopy(self.document)

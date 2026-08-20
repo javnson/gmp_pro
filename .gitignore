@@ -479,6 +479,8 @@ ctl/suite/**/*.prefs
 
 cctl/**/gmp_src/**
 cctl/**/include_paths.txt
+# Portable circuit data is regenerated from the colocated netlist.
+**/hw/generated/*.json
 
 ###################################################################################
 # TOOLs Section

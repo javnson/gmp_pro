@@ -39,12 +39,13 @@ makes that exceptional case explicit instead of silently returning an incorrect
 
 - NumPy: numeric reduction, iteration, and frequency response.
 - SymEngine: exact symbolic MNA matrices.
-- Eigen3: fixed-size matrix operations in generated C++ classes.
+- Eigen3: optional fixed-size matrix backend for generated C++ classes.
+- CCTL `fixed_vector`/`fixed_matrix`: dependency-free inline-storage backend.
 
 Python packages are pinned in `tools/gmp_installer/requirements-gmp.txt`.
 Eigen3 is declared by this directory's `vcpkg.json` and restored into GMP's
 shared vcpkg tree by the installer. The deprecated `third_party/eigen` path is
-not used.
+not used. Code generated with `--backend fixed` does not include or link Eigen.
 
 ## Supported netlist subset
 
@@ -255,7 +256,7 @@ The requested 48 V bus intentionally exceeds
 `SM060R20B30MNAD_MAX_DC_VOLTAGE` (14.2 V), so this is a numerical integration
 test only and is not a hardware-safe operating point.
 
-## Circuit data and Eigen C++ generation
+## Circuit data and fixed-size C++ generation
 
 `circuit_data.py` exports a versioned JSON boundary containing external ports,
 probes, raw model values and extraction provenance, state/signal names, all
@@ -325,10 +326,12 @@ tb\buck\
 `boost`, `fsbb`, `sinv`, `rectifier`, `inv`, `buck_npc`, and `pmsm` follow the same
 contract.
 
-Every BAT entry point resolves the solver and installer through
-`GMP_PRO_LOCATION`; it does not depend on the checkout drive or current working
-directory. User-facing scripts pause on success and failure, while automation
-can pass `--no-pause`.
+Every BAT entry point and CMake test project resolves the solver and installer
+directly through the `GMP_PRO_LOCATION` environment variable. The CMake files do
+not prompt for or accept a cache-variable replacement for the repository path.
+The scripts do not depend on the checkout drive or current working directory.
+User-facing scripts pause on success and failure, while automation can pass
+`--no-pause`.
 
 Each switching case writes both its portable JSON and generated C++ calculation
 header under `generated`. JSON and local CSV/build/IDE outputs are ignored by
@@ -342,13 +345,33 @@ Generate a case without compiling it:
 tools\cctl_studio\mna_solver\tb\buck\generate_code.bat
 ```
 
-Each `generate_code.bat` declares `NETLIST_FILE` and `MATRIX_TOLERANCE` near the
-top; the shipped tolerance is `1E-12` and can be edited per case.
+Each `generate_code.bat` declares `NETLIST_FILE`, `MATRIX_TOLERANCE`, and
+`MATRIX_BACKEND` near the top. The backend accepts `eigen` or `fixed`; the
+command-line equivalent is:
 
-Only the Eigen calculation header is generated. Testbench source, CMake files,
+```bat
+python tools\cctl_studio\mna_solver\cpp_codegen.py circuit.json generated ^
+  --backend fixed
+```
+
+The CLI default remains `eigen` for compatibility. The PMSM case selects
+`fixed`; the other existing cases retain `eigen`, so both backends stay in the
+regression suite.
+
+Only the calculation header is generated. Testbench source, CMake files,
 waveform scheduling, CSV policy, and acceptance limits are deliberately
 handwritten per circuit because those are application- and topology-specific.
 Regenerating a calculation class therefore never overwrites its testbench.
+
+The fixed backend uses `cctl::fixed_matrix<T, Rows, Columns>`, implemented as an
+inline array of fixed row vectors. It performs no heap allocation and supports
+matrix-vector, matrix-matrix, matrix add/subtract, scalar operations, and a
+fused `A*x + B*u + bias` transform used by generated steps. Define
+`CCTL_FIXED_MATH_USE_AVX` and enable AVX2 (`/arch:AVX2` for MSVC or `-mavx2`
+for GCC/Clang) to select 256-bit float/double dot-product and row-accumulation
+kernels. Without the macro, the same API uses portable scalar loops. Selection
+is at compile time with no runtime CPU dispatch: an AVX2 binary requires a
+compatible CPU, and SIMD summation can differ by normal last-bit roundoff.
 
 The generated `BuckCircuit` exposes `step_short(PWM, VS1)`,
 `step_normal(PWM, VS1)`, `run`, and `operator()`. Probe results are available as
@@ -413,9 +436,9 @@ state matrices. A future descriptor/input-derivative backend can restore them.
 `generate_code.bat` defines `NETLIST_FILE` near its beginning, so direct
 invocation uses the case's default CIR; an explicit CIR may also be passed as
 the first argument. `build_test.bat` generates the calculation header first,
-then configures the handwritten `test\cpp` project with GMP's installed
-Eigen/vcpkg tree. Private-environment builds disable manifest restoration so a
-case cannot unexpectedly mutate the shared package installation.
+then configures the handwritten `test\cpp` project. Eigen cases use GMP's
+installed Eigen/vcpkg tree. The fixed PMSM case has no vcpkg dependency and
+enables its AVX2 kernel explicitly in CMake.
 
 ## `1_OPAMP.CIR` validation
 

@@ -1,7 +1,0 @@
-{
-  "name": "gmp-pmsm-drive-testbench",
-  "version-string": "1.0.0",
-  "dependencies": [
-    "eigen3"
-  ]
-}

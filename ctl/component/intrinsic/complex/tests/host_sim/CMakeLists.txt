@@ -1,35 +1,36 @@
 cmake_minimum_required(VERSION 3.20)
 project(gmp_dq_controller_host_sim C CXX)
 
-if(NOT DEFINED GMP_PRO_LOCATION)
-    message(FATAL_ERROR "Set GMP_PRO_LOCATION to the GMP repository root.")
+if("$ENV{GMP_PRO_LOCATION}" STREQUAL "")
+    message(FATAL_ERROR "GMP_PRO_LOCATION is not defined in the environment. Install or activate GMP first.")
 endif()
+file(TO_CMAKE_PATH "$ENV{GMP_PRO_LOCATION}" GMP_PRO_ROOT)
 
 add_executable(gmp_dq_controller_host_sim
     dq_controller_host_sim.c
-    ${GMP_PRO_LOCATION}/ctl/component/intrinsic/complex/src/ctl_dq_pi.c
-    ${GMP_PRO_LOCATION}/ctl/component/intrinsic/complex/src/ctl_dq_ladrc1.c
-    ${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/src/ctl_continuous_pid.c
-    ${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/src/ctl_internal_ladrc1.c
+    ${GMP_PRO_ROOT}/ctl/component/intrinsic/complex/src/ctl_dq_pi.c
+    ${GMP_PRO_ROOT}/ctl/component/intrinsic/complex/src/ctl_dq_ladrc1.c
+    ${GMP_PRO_ROOT}/ctl/component/intrinsic/continuous/src/ctl_continuous_pid.c
+    ${GMP_PRO_ROOT}/ctl/component/intrinsic/continuous/src/ctl_internal_ladrc1.c
 )
 
 add_executable(gmp_dq_controller_header_cpp_smoke header_cpp_smoke.cpp)
 
 add_executable(gmp_foc_current_loop_compare
     foc_current_loop_compare.c
-    ${GMP_PRO_LOCATION}/ctl/component/motor_control/current_loop/src/ctl_mc_foc_core.c
-    ${GMP_PRO_LOCATION}/ctl/component/intrinsic/complex/src/ctl_dq_pi.c
-    ${GMP_PRO_LOCATION}/ctl/component/intrinsic/complex/src/ctl_dq_ladrc1.c
-    ${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/src/ctl_continuous_pid.c
-    ${GMP_PRO_LOCATION}/ctl/component/intrinsic/continuous/src/ctl_internal_ladrc1.c
-    ${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_filter.c
-    ${GMP_PRO_LOCATION}/ctl/component/intrinsic/discrete/src/ctl_discrete_lead_lag.c
+    ${GMP_PRO_ROOT}/ctl/component/motor_control/current_loop/src/ctl_mc_foc_core.c
+    ${GMP_PRO_ROOT}/ctl/component/intrinsic/complex/src/ctl_dq_pi.c
+    ${GMP_PRO_ROOT}/ctl/component/intrinsic/complex/src/ctl_dq_ladrc1.c
+    ${GMP_PRO_ROOT}/ctl/component/intrinsic/continuous/src/ctl_continuous_pid.c
+    ${GMP_PRO_ROOT}/ctl/component/intrinsic/continuous/src/ctl_internal_ladrc1.c
+    ${GMP_PRO_ROOT}/ctl/component/intrinsic/discrete/src/ctl_discrete_filter.c
+    ${GMP_PRO_ROOT}/ctl/component/intrinsic/discrete/src/ctl_discrete_lead_lag.c
 )
 
 foreach(target gmp_dq_controller_host_sim gmp_dq_controller_header_cpp_smoke gmp_foc_current_loop_compare)
     target_include_directories(${target} PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/config
-        ${GMP_PRO_LOCATION}
+        ${GMP_PRO_ROOT}
     )
 endforeach()
 

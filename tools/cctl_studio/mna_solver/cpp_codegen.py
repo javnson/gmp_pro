@@ -1,4 +1,4 @@
-"""Generate a fixed-size Eigen C++ circuit class from circuit-data JSON."""
+"""Generate a fixed-size C++ circuit class from circuit-data JSON."""
 
 from __future__ import annotations
 
@@ -41,6 +41,7 @@ _POOL_COUNT_NAMES = {
     type_name: function_name.replace("matrices", "matrix_count").replace("vectors", "vector_count")
     for type_name, function_name in _POOL_NAMES.items()
 }
+_MATRIX_BACKENDS = ("eigen", "fixed")
 
 
 def _identifier(value: str, default: str = "Circuit") -> str:
@@ -67,7 +68,11 @@ def _cpp_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=True)
 
 
-def _matrix_expression(type_name: str, values: Sequence[Sequence[float]] | Sequence[float]) -> str:
+def _matrix_expression(
+    type_name: str,
+    values: Sequence[Sequence[float]] | Sequence[float],
+    backend: str = "eigen",
+) -> str:
     flattened: list[float] = []
     for item in values:
         if isinstance(item, (list, tuple)):
@@ -75,6 +80,8 @@ def _matrix_expression(type_name: str, values: Sequence[Sequence[float]] | Seque
         else:
             flattened.append(float(item))
     assignments = ", ".join(_number(value) for value in flattened)
+    if backend == "fixed":
+        return f"{type_name}{{{assignments}}}"
     return f"([] {{ {type_name} value; value << {assignments}; return value; }}())"
 
 
@@ -294,9 +301,16 @@ def render_header(
     document: Mapping,
     class_name: str,
     matrix_tolerance: float | None = None,
+    backend: str = "eigen",
     progress: Callable[[int, int], None] | None = None,
     plan: MatrixDedupPlan | None = None,
 ) -> str:
+    selected_backend = backend.lower()
+    if selected_backend not in _MATRIX_BACKENDS:
+        raise ValueError(
+            f"unsupported matrix backend {backend!r}; expected one of "
+            + ", ".join(_MATRIX_BACKENDS)
+        )
     selected_tolerance = (
         float(document.get("solver", {}).get("matrix_tolerance", DEFAULT_MATRIX_TOLERANCE))
         if matrix_tolerance is None
@@ -314,6 +328,11 @@ def render_header(
     pwm_fields = [_identifier(port["name"], "PWM") for port in pwm_ports]
     input_fields = [_identifier(port["name"], "input") for port in input_ports]
     output_fields = [_identifier(port["field"], "output") for port in outputs]
+    signal_at = (
+        (lambda index: f"signals_({index})")
+        if selected_backend == "eigen"
+        else (lambda index: f"signals_[{index}]")
+    )
     pool_count_constants = "\n".join(
         f"    static constexpr std::size_t {_POOL_COUNT_NAMES[type_name]} = {len(storage.pools[type_name])};"
         for type_name in _POOL_NAMES
@@ -321,7 +340,7 @@ def render_header(
     pool_functions = []
     for type_name, function_name in _POOL_NAMES.items():
         values = ",\n            ".join(
-            _matrix_expression(type_name, matrix.tolist())
+            _matrix_expression(type_name, matrix.tolist(), selected_backend)
             for matrix in storage.pools[type_name]
         )
         count_name = _POOL_COUNT_NAMES[type_name]
@@ -350,7 +369,7 @@ def render_header(
     )
     function_arguments = ", ".join([*pwm_fields, *input_fields])
     output_updates = "\n".join(
-        f"        output.{field} = signals_({port['signal_index']});"
+        f"        output.{field} = {signal_at(port['signal_index'])};"
         for field, port in zip(output_fields, outputs)
     )
     output_members = "\n".join(f"        double {field}{{0.0}};" for field in output_fields)
@@ -370,7 +389,7 @@ def render_header(
         selection_lines: list[str] = []
         for index, diode in enumerate(switching["diodes"]):
             selection_lines.append(
-                f'''        const double diode_voltage_{index} = signals_({diode['anode_signal_index']}) - signals_({diode['cathode_signal_index']});
+                f'''        const double diode_voltage_{index} = {signal_at(diode['anode_signal_index'])} - {signal_at(diode['cathode_signal_index'])};
         constexpr double diode_threshold_{index} = {_number(diode['forward_threshold_V'])};
         diode_on_[{index}] = diode_voltage_{index} >= diode_threshold_{index} + (diode_on_[{index}] ? -hysteresis : hysteresis);
         topology_index = topology_index * 2U + (diode_on_[{index}] ? 1U : 0U);'''
@@ -405,7 +424,7 @@ def render_header(
             body_on_[{index}] = false;
             topology_index += 1U;
         }} else {{
-            const double reverse_voltage_{index} = signals_({switch['source_signal_index']}) - signals_({switch['drain_signal_index']});
+            const double reverse_voltage_{index} = {signal_at(switch['source_signal_index'])} - {signal_at(switch['drain_signal_index'])};
             constexpr double body_threshold_{index} = {_number(switch['body_forward_threshold_V'])};
             body_on_[{index}] = reverse_voltage_{index} >= body_threshold_{index} + (body_on_[{index}] ? -hysteresis : hysteresis);
             topology_index += body_on_[{index}] ? 2U : 0U;
@@ -415,7 +434,7 @@ def render_header(
         if mixed_mosfet_diode:
             for index, diode in enumerate(switching["diodes"]):
                 switch_lines.append(
-                    f'''        const double diode_voltage_{index} = signals_({diode['anode_signal_index']}) - signals_({diode['cathode_signal_index']});
+                    f'''        const double diode_voltage_{index} = {signal_at(diode['anode_signal_index'])} - {signal_at(diode['cathode_signal_index'])};
         constexpr double diode_threshold_{index} = {_number(diode['forward_threshold_V'])};
         diode_on_[{index}] = diode_voltage_{index} >= diode_threshold_{index} + (diode_on_[{index}] ? -hysteresis : hysteresis);
         topology_index = topology_index * 2U + (diode_on_[{index}] ? 1U : 0U);'''
@@ -440,8 +459,8 @@ def render_header(
         terminal = document["signals"]["switch_terminal_indices"]
         pwm_field = pwm_fields[0]
         reset_switch_state = "        diode_on_ = false;\n        body_on_ = false;"
-        selection_body = f'''        const double diode_voltage = signals_({terminal['diode_anode']}) - signals_({terminal['diode_cathode']});
-        const double reverse_mosfet_voltage = signals_({terminal['mosfet_source']}) - signals_({terminal['mosfet_drain']});
+        selection_body = f'''        const double diode_voltage = {signal_at(terminal['diode_anode'])} - {signal_at(terminal['diode_cathode'])};
+        const double reverse_mosfet_voltage = {signal_at(terminal['mosfet_source'])} - {signal_at(terminal['mosfet_drain'])};
         constexpr double hysteresis = {_number(switching['voltage_hysteresis_V'])};
         constexpr double diode_threshold = {_number(switching['diode_forward_threshold_V'])};
         constexpr double body_threshold = {_number(switching['body_forward_threshold_V'])};
@@ -458,15 +477,70 @@ def render_header(
         switch_state_members = "    bool diode_on_{false};\n    bool body_on_{false};"
     source_name = document["circuit"]["source"].get("file") or "<unknown>"
     source_hash = document["circuit"]["source"].get("sha256") or "<unknown>"
+    if selected_backend == "eigen":
+        matrix_include = "#include <Eigen/Dense>"
+        matrix_aliases = f'''    using StateMatrix = Eigen::Matrix<double, {state_count}, {state_count}>;
+    using InputMatrix = Eigen::Matrix<double, {state_count}, {input_count}>;
+    using StateVector = Eigen::Matrix<double, {state_count}, 1>;
+    using SignalMatrix = Eigen::Matrix<double, {signal_count}, {state_count}>;
+    using SignalInputMatrix = Eigen::Matrix<double, {signal_count}, {input_count}>;
+    using SignalVector = Eigen::Matrix<double, {signal_count}, 1>;
+    using InputVector = Eigen::Matrix<double, {input_count}, 1>;'''
+        reset_vectors = "        state_.setZero();\n        signals_.setZero();"
+        input_vector_definition = f"        InputVector input_vector;\n        input_vector << {input_vector};"
+        state_member_initializer = "StateVector::Zero()"
+        signal_member_initializer = "SignalVector::Zero()"
+        state_step_body = '''        if (use_short_step) {{
+            state_ = state_matrices()[calculation_state.short_A] * state_
+                + input_matrices()[calculation_state.short_B] * input_vector
+                + state_vectors()[calculation_state.short_bias];
+        }} else {{
+            state_ = state_matrices()[calculation_state.normal_A] * state_
+                + input_matrices()[calculation_state.normal_B] * input_vector
+                + state_vectors()[calculation_state.normal_bias];
+        }}
+        signals_ = signal_matrices()[calculation_state.C] * state_
+            + signal_input_matrices()[calculation_state.D] * input_vector
+            + signal_vectors()[calculation_state.output_bias];'''
+    else:
+        matrix_include = """#include <cctl/numerical_solver/fixed_matrix.hpp>
+#include <cctl/numerical_solver/fixed_vector.hpp>"""
+        matrix_aliases = f'''    using StateMatrix = cctl::fixed_matrix<double, {state_count}, {state_count}>;
+    using InputMatrix = cctl::fixed_matrix<double, {state_count}, {input_count}>;
+    using StateVector = cctl::fixed_vector<double, {state_count}>;
+    using SignalMatrix = cctl::fixed_matrix<double, {signal_count}, {state_count}>;
+    using SignalInputMatrix = cctl::fixed_matrix<double, {signal_count}, {input_count}>;
+    using SignalVector = cctl::fixed_vector<double, {signal_count}>;
+    using InputVector = cctl::fixed_vector<double, {input_count}>;'''
+        reset_vectors = "        state_ = StateVector{};\n        signals_ = SignalVector{};"
+        input_vector_definition = f"        const InputVector input_vector{{{input_vector}}};"
+        state_member_initializer = ""
+        signal_member_initializer = ""
+        state_step_body = '''        if (use_short_step) {{
+            state_ = cctl::affine_transform(
+                state_matrices()[calculation_state.short_A], state_,
+                input_matrices()[calculation_state.short_B], input_vector,
+                state_vectors()[calculation_state.short_bias]);
+        }} else {{
+            state_ = cctl::affine_transform(
+                state_matrices()[calculation_state.normal_A], state_,
+                input_matrices()[calculation_state.normal_B], input_vector,
+                state_vectors()[calculation_state.normal_bias]);
+        }}
+        signals_ = cctl::affine_transform(
+            signal_matrices()[calculation_state.C], state_,
+            signal_input_matrices()[calculation_state.D], input_vector,
+            signal_vectors()[calculation_state.output_bias]);'''
     return f'''#pragma once
 
 // Generated by GMP mna_solver/cpp_codegen.py from {source_name}.
 // Source SHA-256: {source_hash}
 // Matrix equivalence tolerance: {_number(storage.tolerance)}
+// Matrix backend: {selected_backend}
 // Logical states: {storage.logical_state_count}; unique calculation states: {storage.unique_state_count}.
 // Do not hand-edit; regenerate from the circuit-data JSON file.
 
-#include <Eigen/Dense>
+{matrix_include}
 
 #include <array>
 #include <cstddef>
@@ -483,6 +557,7 @@ public:
     static constexpr std::size_t pwm_input_count = {len(pwm_ports)};
     static constexpr std::size_t topology_count = {topology_count};
     static constexpr std::size_t calculation_state_count = {storage.unique_state_count};
+    static constexpr const char* matrix_backend = "{selected_backend}";
 {pool_count_constants}
     static constexpr double normal_step_s = {_number(document['solver']['normal_step_s'])};
     static constexpr double short_step_s = {_number(document['solver']['short_step_s'])};
@@ -507,8 +582,7 @@ public:
     {class_name}() {{ reset(); }}
 
     void reset() {{
-        state_.setZero();
-        signals_.setZero();
+{reset_vectors}
 {reset_switch_state}
         last_topology_index_ = 0;
         last_calculation_state_index_ = topology_to_calculation_state()[0];
@@ -540,13 +614,7 @@ public:
     std::size_t last_calculation_state_index() const noexcept {{ return last_calculation_state_index_; }}
 
 private:
-    using StateMatrix = Eigen::Matrix<double, {state_count}, {state_count}>;
-    using InputMatrix = Eigen::Matrix<double, {state_count}, {input_count}>;
-    using StateVector = Eigen::Matrix<double, {state_count}, 1>;
-    using SignalMatrix = Eigen::Matrix<double, {signal_count}, {state_count}>;
-    using SignalInputMatrix = Eigen::Matrix<double, {signal_count}, {input_count}>;
-    using SignalVector = Eigen::Matrix<double, {signal_count}, 1>;
-    using InputVector = Eigen::Matrix<double, {input_count}, 1>;
+{matrix_aliases}
 
     struct CalculationState {{
 {calculation_state_fields}
@@ -576,26 +644,14 @@ private:
         last_topology_index_ = select_topology(inputs);
         last_calculation_state_index_ = topology_to_calculation_state()[last_topology_index_];
         const auto& calculation_state = calculation_states()[last_calculation_state_index_];
-        InputVector input_vector;
-        input_vector << {input_vector};
-        if (use_short_step) {{
-            state_ = state_matrices()[calculation_state.short_A] * state_
-                + input_matrices()[calculation_state.short_B] * input_vector
-                + state_vectors()[calculation_state.short_bias];
-        }} else {{
-            state_ = state_matrices()[calculation_state.normal_A] * state_
-                + input_matrices()[calculation_state.normal_B] * input_vector
-                + state_vectors()[calculation_state.normal_bias];
-        }}
-        signals_ = signal_matrices()[calculation_state.C] * state_
-            + signal_input_matrices()[calculation_state.D] * input_vector
-            + signal_vectors()[calculation_state.output_bias];
+{input_vector_definition}
+{state_step_body}
 {output_updates}
         return output;
     }}
 
-    StateVector state_{{StateVector::Zero()}};
-    SignalVector signals_{{SignalVector::Zero()}};
+    StateVector state_{{{state_member_initializer}}};
+    SignalVector signals_{{{signal_member_initializer}}};
 {switch_state_members}
     std::size_t last_topology_index_{{0}};
     std::size_t last_calculation_state_index_{{0}};
@@ -608,6 +664,7 @@ def generate_cpp_project(
     output_directory: str | Path,
     class_name: str | None = None,
     matrix_tolerance: float | None = None,
+    backend: str = "eigen",
     show_progress: bool = False,
 ) -> dict[str, Path]:
     document = load_circuit_data(data_path)
@@ -617,6 +674,12 @@ def generate_cpp_project(
         else float(matrix_tolerance)
     )
     logical_count = len(document["topologies"])
+    selected_backend = backend.lower()
+    if selected_backend not in _MATRIX_BACKENDS:
+        raise ValueError(
+            f"unsupported matrix backend {backend!r}; expected one of "
+            + ", ".join(_MATRIX_BACKENDS)
+        )
     if show_progress:
         print(f"circuit:             {document['circuit']['name']}")
         print(f"logical states:      {logical_count}")
@@ -624,6 +687,7 @@ def generate_cpp_project(
         print(f"normal step:         {float(document['solver']['normal_step_s']):.12g} s")
         print(f"short step:          {float(document['solver']['short_step_s']):.12g} s")
         print(f"matrix tolerance:    {selected_tolerance:.12g}")
+        print(f"matrix backend:      {selected_backend}")
     bar = TimedProgressBar("Deduplicating states", logical_count) if show_progress else None
     plan = build_matrix_dedup_plan(
         document,
@@ -652,18 +716,25 @@ def generate_cpp_project(
     output.mkdir(parents=True, exist_ok=True)
     header = output / f"{stem}.hpp"
     header.write_text(
-        render_header(document, selected_class, selected_tolerance, plan=plan),
+        render_header(
+            document,
+            selected_class,
+            selected_tolerance,
+            selected_backend,
+            plan=plan,
+        ),
         encoding="utf-8",
     )
     return {"header": header}
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Generate an Eigen C++ circuit calculation class")
+    parser = argparse.ArgumentParser(description="Generate a fixed-size C++ circuit calculation class")
     parser.add_argument("data")
     parser.add_argument("output_directory")
     parser.add_argument("--class-name")
     parser.add_argument("--matrix-tolerance", type=float)
+    parser.add_argument("--backend", choices=_MATRIX_BACKENDS, default="eigen")
     parser.add_argument("--no-progress", action="store_true")
     return parser
 
@@ -676,6 +747,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.output_directory,
             args.class_name,
             args.matrix_tolerance,
+            args.backend,
             not args.no_progress,
         )
         for kind, path in generated.items():

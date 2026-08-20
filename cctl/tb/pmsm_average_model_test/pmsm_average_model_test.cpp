@@ -98,6 +98,37 @@ void test_fixed_vector()
     require_near("fixed vector dot product", cctl::dot(lhs, rhs), 20.0, 0.0);
 }
 
+void test_fixed_matrix()
+{
+    const cctl::fixed_matrix<double, 2U, 3U> lhs{1.0, 2.0, 3.0,
+                                                 4.0, 5.0, 6.0};
+    const cctl::fixed_vector<double, 3U> vector{2.0, -1.0, 0.5};
+    const cctl::fixed_vector<double, 2U> product = lhs * vector;
+    require_near("fixed matrix-vector row 0", product[0], 1.5, 0.0);
+    require_near("fixed matrix-vector row 1", product[1], 6.0, 0.0);
+
+    const cctl::fixed_matrix<double, 3U, 2U> rhs{7.0, 8.0,
+                                                 9.0, 10.0,
+                                                 11.0, 12.0};
+    const cctl::fixed_matrix<double, 2U, 2U> matrix_product = lhs * rhs;
+    require_near("fixed matrix-matrix (0,0)", matrix_product(0U, 0U), 58.0, 0.0);
+    require_near("fixed matrix-matrix (0,1)", matrix_product(0U, 1U), 64.0, 0.0);
+    require_near("fixed matrix-matrix (1,0)", matrix_product(1U, 0U), 139.0, 0.0);
+    require_near("fixed matrix-matrix (1,1)", matrix_product(1U, 1U), 154.0, 0.0);
+
+    const cctl::fixed_matrix<double, 2U, 3U> affine = lhs * 2.0 - lhs;
+    require_near("fixed matrix scalar arithmetic", affine(1U, 2U), 6.0, 0.0);
+
+    const cctl::fixed_matrix<double, 2U, 2U> input_matrix{1.0, -1.0,
+                                                          0.5, 2.0};
+    const cctl::fixed_vector<double, 2U> input{3.0, 4.0};
+    const cctl::fixed_vector<double, 2U> bias{0.25, -0.5};
+    const cctl::fixed_vector<double, 2U> transformed =
+        cctl::affine_transform(lhs, vector, input_matrix, input, bias);
+    require_near("fixed fused affine row 0", transformed[0], 0.75, 0.0);
+    require_near("fixed fused affine row 1", transformed[1], 15.0, 0.0);
+}
+
 void test_solver_order()
 {
     const double exact = std::exp(-1.0);
@@ -248,6 +279,7 @@ int main()
     try
     {
         test_fixed_vector();
+        test_fixed_matrix();
         test_solver_order();
         test_average_inverter();
         test_locked_rotor_rl_response();

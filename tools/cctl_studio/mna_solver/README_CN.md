@@ -33,11 +33,13 @@ $$
 
 - NumPy：数值降阶、离散迭代和频率响应；
 - SymEngine：精确符号 MNA 矩阵；
-- Eigen3：生成的固定维 C++ 矩阵计算。
+- Eigen3：生成 C++ 类可选的固定维矩阵后端；
+- CCTL `fixed_vector`/`fixed_matrix`：不依赖第三方库的内嵌存储后端。
 
 Python 包由 `tools/gmp_installer/requirements-gmp.txt` 统一固定。Eigen3
 由本目录的 `vcpkg.json` 声明，并由 GMP 安装器恢复到共享 vcpkg 安装树；
-不再使用已经弃用的 `third_party/eigen`。
+不再使用已经弃用的 `third_party/eigen`。使用 `--backend fixed` 生成的代码
+不会包含或链接 Eigen。
 
 ## 支持的网表范围
 
@@ -167,7 +169,7 @@ python tools\cctl_studio\mna_solver\switched_solver.py simulate ^
 如果原意是由接地 D1 完成标准 Buck 续流，应再检查 MOS 漏源方向；求解器
 不会为了得到预期波形而擅自反转器件。
 
-## 电路数据文件与 Eigen C++ 代码生成
+## 电路数据文件与固定维 C++ 代码生成
 
 `circuit_data.py` 把 CIR/MNA 结果固化成带版本的 JSON。文件包含外部端口、
 探针、原始模型参数和提取依据、状态/信号名称、连续矩阵、正常与短步长离散
@@ -276,9 +278,10 @@ tb\buck\
 
 `boost`、`fsbb`、`sinv`、`rectifier`、`inv`、`buck_npc` 和 `pmsm` 遵守同一约定。
 
-所有 BAT 入口都通过 `GMP_PRO_LOCATION` 找到求解器和安装环境，不依赖当前
-工作目录或仓库所在盘符。用户直接运行时成功和失败都会暂停；自动化调用可
-传入 `--no-pause`。
+所有 BAT 入口和 CMake 测试工程都直接读取环境变量 `GMP_PRO_LOCATION` 来
+找到求解器和安装环境；CMake 不会要求用户填写同名缓存变量，也不会用缓存
+变量替代环境配置。脚本不依赖当前工作目录或仓库所在盘符。用户直接运行时
+成功和失败都会暂停；自动化调用可传入 `--no-pause`。
 
 每个开关案例把 JSON 和计算类都写入 `generated`。JSON、CSV、本地构建目录
 和 IDE 缓存由 `tb\.gitignore` 忽略，因为它们可重复生成，且 JSON 可能很大。
@@ -291,12 +294,28 @@ tb\buck\
 tools\cctl_studio\mna_solver\tb\buck\generate_code.bat
 ```
 
-`generate_code.bat` 开头定义 `NETLIST_FILE` 和 `MATRIX_TOLERANCE`，所以不带
-参数运行时会使用案例默认 CIR 和 `1E-12` 精度；也可以把其他 CIR 作为第一
-个参数传入，或直接修改脚本中的精度。生成器只写计算类，不会
-覆盖手写 testbench。生成的 `BuckCircuit` 使用 Eigen 固定维矩阵，提供
+`generate_code.bat` 开头定义 `NETLIST_FILE`、`MATRIX_TOLERANCE` 和
+`MATRIX_BACKEND`。后端可以选择 `eigen` 或 `fixed`，命令行用法为：
+
+```bat
+python tools\cctl_studio\mna_solver\cpp_codegen.py circuit.json generated ^
+  --backend fixed
+```
+
+CLI 默认仍为 `eigen` 以保持兼容；PMSM 案例使用 `fixed`，其他现有案例保留
+`eigen`，因此回归测试持续覆盖两种后端。脚本不带参数时使用默认 CIR 和
+`1E-12` 精度，也可以把其他 CIR 作为第一个参数传入。生成器只写计算类，
+不会覆盖手写 testbench。生成的 `BuckCircuit` 提供
 `step_short(PWM, VS1)`、`step_normal(PWM, VS1)`、`run` 和 `operator()`；
 探针既可通过 `circuit.output.VF1`，也可通过 `circuit["V(VF1)"]` 读取。
+
+`fixed` 后端使用 `cctl::fixed_matrix<T, Rows, Columns>`，内部为固定行向量数组，
+不进行堆分配。它支持矩阵—向量、矩阵—矩阵、矩阵加减、数乘，并用融合的
+`A*x+B*u+bias` 运算减少生成类的中间向量。定义
+`CCTL_FIXED_MATH_USE_AVX`，同时给 MSVC 增加 `/arch:AVX2` 或给 GCC/Clang
+增加 `-mavx2`，即可把 float/double 点积和矩阵行累加切换为 256 位 SIMD；
+不定义宏时使用相同接口的可移植标量循环。选择发生在编译期，没有运行时动态
+分派；AVX2 程序只能运行在兼容 CPU 上，SIMD 求和也可能带来正常的末位差异。
 
 生成、编译并运行已验证案例的手写 C++ 测试：
 
@@ -346,8 +365,8 @@ Coss 系统刚性较强，案例使用 1 ns 正常步长和 100 ps 启动步长�
 均保留在七状态模型中。
 
 `build_test.bat` 首先刷新计算头文件，再从 `test\cpp` 配置 CMake。构建脚本
-使用 GMP 安装的 Eigen/vcpkg；私有环境下关闭单项目 manifest 自动恢复，
-避免测试案例意外修改共享安装树。
+Eigen 案例使用 GMP 安装的 Eigen/vcpkg；fixed PMSM 案例不依赖 vcpkg，
+并在 CMake 中显式启用 AVX2 内核。
 
 ## `1_OPAMP.CIR` 验证结果
 

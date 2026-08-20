@@ -1,0 +1,130 @@
+{
+  "id": "mcs_pmsm_nt_cctl",
+  "macro_prefix": "MCS_PMSM_NT_CCTL",
+  "display_name": "MCS PMSM NT Direct CCTL Simulation",
+  "description": "Direct host bindings for the controller, TI-style peripherals, generated MNA inverter, PMSM plant, and the CCTL host CSP.",
+  "suite": "mcs_pmsm_nt",
+  "version": "1.0.0",
+  "updated_at": "2026-08-20",
+  "output_header": "ctrl_settings.h",
+  "common_requirements": ["../../../sdpe_general/sdpe_requirement.json"],
+  "hardware": [
+    { "entity": "sm060r20b30mnad" },
+    { "entity": "ti_boostxl_3phganinv" }
+  ],
+  "requirement_groups": [
+    {
+      "name": "Controller Hardware",
+      "requirements": [
+        "PWM Compare Max", "PWM Deadband", "System Frequency", "ADC Voltage Reference",
+        "DC Bus Voltage Base", "Phase Voltage Base", "Current Base", "Encoder Full Scale",
+        "Encoder Bias", "Mechanical Division"
+      ]
+    },
+    {
+      "name": "Simulation Peripherals",
+      "requirements": [
+        "Simulation ADC Resolution", "Simulation ADC Reference", "Simulation eQEP Counts",
+        "Simulation ePWM Clock", "Simulation ePWM Period", "Simulation ePWM Rising Deadband",
+        "Simulation ePWM Falling Deadband"
+      ]
+    },
+    {
+      "name": "Simulation Runtime",
+      "requirements": [
+        "Plant Step", "Control Frequency", "Simulation Duration", "Simulation DC Bus",
+        "Load Torque Start", "Load Torque", "Startup Short Steps", "Output Ring Bytes",
+        "Output Batch Bytes", "Progress Interval", "Pause On Exit", "Output Filename"
+      ]
+    },
+    {
+      "name": "Motor Model",
+      "requirements": [
+        "Motor Type", "Motor Stator Resistance", "Motor Stator Inductance",
+        "Motor D-axis Inductance", "Motor Q-axis Inductance", "Motor Flux Linkage",
+        "Motor Pole Pairs", "Motor Inertia", "Motor Friction", "Motor Velocity Constant",
+        "Motor Back EMF", "Motor Rated Voltage", "Motor Rated Current", "Motor No-load Current",
+        "Motor Rated Frequency", "Motor Maximum Speed", "Motor Maximum Torque",
+        "Motor Maximum DC Voltage", "Motor Maximum Phase Current"
+      ]
+    }
+  ],
+  "requirements": [
+    { "role": "PWM Compare Max", "macro": "CTRL_PWM_CMP_MAX", "binding": { "number": "2499" } },
+    { "role": "PWM Deadband", "macro": "CTRL_PWM_DEADBAND_CMP", "binding": { "number": "100" } },
+    { "role": "System Frequency", "macro": "CTRL_SYS_FREQUENCY", "binding": { "parameter": "100e6" } },
+    { "role": "ADC Voltage Reference", "macro": "CTRL_ADC_VOLTAGE_REF", "binding": { "parameter": "3.3" } },
+    { "role": "DC Bus Voltage Base", "macro": "CTRL_DCBUS_VOLTAGE", "binding": { "parameter": "48.0" } },
+    { "role": "Phase Voltage Base", "macro": "CTRL_VOLTAGE_BASE", "binding": { "literal": "(CTRL_DCBUS_VOLTAGE / 1.73205081f)" } },
+    { "role": "Current Base", "macro": "CTRL_CURRENT_BASE", "binding": { "parameter": "10.0" } },
+    { "role": "Encoder Full Scale", "macro": "CTRL_POS_ENC_FS", "binding": { "number": "16384" } },
+    { "role": "Encoder Bias", "macro": "CTRL_POS_ENC_BIAS", "binding": { "parameter": "0.0" } },
+    { "role": "Mechanical Division", "macro": "CTRL_MECH_DIV", "binding": { "number": "5" } },
+
+    { "role": "Phase Current Sensitivity", "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM * TI_BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V)" } },
+    { "role": "Phase Current Bias", "macro": "CTRL_INVERTER_CURRENT_BIAS", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_PH_CSA_BIAS_V)" } },
+    { "role": "Phase Voltage Sensitivity", "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN)" } },
+    { "role": "Phase Voltage Bias", "macro": "CTRL_INVERTER_VOLTAGE_BIAS", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V)" } },
+    { "role": "DC Current Sensitivity", "macro": "CTRL_DC_CURRENT_SENSITIVITY", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_GAIN)" } },
+    { "role": "DC Current Bias", "macro": "CTRL_DC_CURRENT_BIAS", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_BIAS_V)" } },
+    { "role": "DC Voltage Sensitivity", "macro": "CTRL_DC_VOLTAGE_SENSITIVITY", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_GAIN)" } },
+    { "role": "DC Voltage Bias", "macro": "CTRL_DC_VOLTAGE_BIAS", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_BIAS_V)" } },
+
+    { "role": "Simulation ADC Resolution", "macro": "CCTL_SIM_ADC_RESOLUTION_BITS", "binding": { "number": "12" } },
+    { "role": "Simulation ADC Reference", "macro": "CCTL_SIM_ADC_REFERENCE_V", "binding": { "literal": "3.3" } },
+    { "role": "Simulation eQEP Counts", "macro": "CCTL_SIM_EQEP_COUNTS_PER_REV", "binding": { "number": "16384" } },
+    { "role": "Simulation ePWM Clock", "macro": "CCTL_SIM_EPWM_TBCLK_HZ", "binding": { "literal": "100.0e6" } },
+    { "role": "Simulation ePWM Period", "macro": "CCTL_SIM_EPWM_PERIOD_COUNT", "binding": { "number": "2499" } },
+    { "role": "Simulation ePWM Rising Deadband", "macro": "CCTL_SIM_EPWM_DBRED_COUNT", "binding": { "number": "100" } },
+    { "role": "Simulation ePWM Falling Deadband", "macro": "CCTL_SIM_EPWM_DBFED_COUNT", "binding": { "number": "100" } },
+
+    { "role": "Plant Step", "macro": "CCTL_SIM_PLANT_STEP_S", "binding": { "literal": "1.0e-7" } },
+    { "role": "Control Frequency", "macro": "CCTL_SIM_CONTROL_FREQUENCY_HZ", "binding": { "literal": "20.0e3" } },
+    { "role": "Simulation Duration", "macro": "CCTL_SIM_DURATION_S", "binding": { "literal": "4.0" } },
+    { "role": "Simulation DC Bus", "macro": "CCTL_SIM_DC_BUS_V", "binding": { "literal": "48.0" } },
+    { "role": "Load Torque Start", "macro": "CCTL_SIM_LOAD_TORQUE_START_S", "binding": { "literal": "0.5" } },
+    { "role": "Load Torque", "macro": "CCTL_SIM_LOAD_TORQUE_NM", "binding": { "literal": "0.02" } },
+    { "role": "Startup Short Steps", "macro": "CCTL_SIM_STARTUP_SHORT_STEPS", "binding": { "number": "200" } },
+    { "role": "Output Ring Bytes", "macro": "CCTL_SIM_OUTPUT_RING_BYTES", "binding": { "number": "33554432" } },
+    { "role": "Output Batch Bytes", "macro": "CCTL_SIM_OUTPUT_BATCH_BYTES", "binding": { "number": "1048576" } },
+    { "role": "Progress Interval", "macro": "CCTL_SIM_PROGRESS_INTERVAL_MS", "binding": { "number": "1000" } },
+    { "role": "Pause On Exit", "macro": "CCTL_SIM_PAUSE_ON_EXIT", "binding": { "number": "1" } },
+    { "role": "Output Filename", "macro": "CCTL_SIM_OUTPUT_FILENAME", "binding": { "string": "mcs_pmsm_nt_cctl.csv" } },
+
+    { "role": "Motor Type", "macro": "MOTOR_TYPE", "binding": { "export": "sm060r20b30mnad.motor_type" } },
+    { "role": "Motor Stator Resistance", "macro": "MOTOR_PARAM_RS", "binding": { "export": "sm060r20b30mnad.rs" } },
+    { "role": "Motor Stator Inductance", "macro": "MOTOR_PARAM_LS", "binding": { "export": "sm060r20b30mnad.ld" } },
+    { "role": "Motor D-axis Inductance", "macro": "MOTOR_PARAM_LD", "binding": { "export": "sm060r20b30mnad.ld" } },
+    { "role": "Motor Q-axis Inductance", "macro": "MOTOR_PARAM_LQ", "binding": { "export": "sm060r20b30mnad.lq" } },
+    { "role": "Motor Flux Linkage", "macro": "MOTOR_PARAM_FLUX", "binding": { "export": "sm060r20b30mnad.flux" } },
+    { "role": "Motor Pole Pairs", "macro": "MOTOR_PARAM_POLE_PAIRS", "binding": { "export": "sm060r20b30mnad.pole_pairs" } },
+    { "role": "Motor Inertia", "macro": "MOTOR_PARAM_INERTIA", "binding": { "export": "sm060r20b30mnad.inertia" } },
+    { "role": "Motor Friction", "macro": "MOTOR_PARAM_FRICTION", "binding": { "export": "sm060r20b30mnad.friction" } },
+    { "role": "Motor Velocity Constant", "macro": "MOTOR_PARAM_KV", "binding": { "export": "sm060r20b30mnad.kv" } },
+    { "role": "Motor Back EMF", "macro": "MOTOR_PARAM_EMF", "binding": { "export": "sm060r20b30mnad.emf" } },
+    { "role": "Motor Rated Voltage", "macro": "MOTOR_PARAM_RATED_VOLTAGE", "binding": { "export": "sm060r20b30mnad.rated_voltage" } },
+    { "role": "Motor Rated Current", "macro": "MOTOR_PARAM_RATED_CURRENT", "binding": { "export": "sm060r20b30mnad.rated_current" } },
+    { "role": "Motor No-load Current", "macro": "MOTOR_PARAM_NO_LOAD_CURRENT", "binding": { "export": "sm060r20b30mnad.no_load_current" } },
+    { "role": "Motor Rated Frequency", "macro": "MOTOR_PARAM_RATED_FREQUENCY", "binding": { "export": "sm060r20b30mnad.rated_frequency" } },
+    { "role": "Motor Maximum Speed", "macro": "MOTOR_PARAM_MAX_SPEED", "binding": { "export": "sm060r20b30mnad.max_speed" } },
+    { "role": "Motor Maximum Torque", "macro": "MOTOR_PARAM_MAX_TORQUE", "binding": { "export": "sm060r20b30mnad.max_torque" } },
+    { "role": "Motor Maximum DC Voltage", "macro": "MOTOR_PARAM_MAX_DC_VOLTAGE", "binding": { "export": "sm060r20b30mnad.max_dc_voltage" } },
+    { "role": "Motor Maximum Phase Current", "macro": "MOTOR_PARAM_MAX_PH_CURRENT", "binding": { "export": "sm060r20b30mnad.max_ph_current" } }
+  ],
+  "feature_macros": [],
+  "option_macros": [
+    {
+      "group": "ADC", "macro": "MC_CURRENT_SAMPLE_PHASE_MODE", "enabled": true,
+      "value": "(3)", "options": ["(2)", "(3)"]
+    },
+    {
+      "group": "Commissioning", "macro": "BUILD_LEVEL", "enabled": true,
+      "weak": false, "value": "(4)", "options": ["(1)", "(2)", "(3)", "(4)"]
+    }
+  ],
+  "code_sections": {
+    "after_extern_open": "/* Peripheral and simulation constants are generated from this target requirement. */",
+    "before_footer": "/* The direct plant already supplies physical sensor biases. */\n#undef SPECIFY_ENABLE_ADC_CALIBRATE"
+  },
+  "option_macro_groups": ["ADC", "Commissioning"]
+}
