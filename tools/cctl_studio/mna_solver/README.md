@@ -10,6 +10,10 @@ pipeline:
 netlist -> exact symbolic MNA -> numeric descriptor MNA
         -> algebraic elimination -> state/output model
         -> discretization -> time simulation or frequency response
+
+TINA D/M netlist -> four commanded switch topologies
+                 + two MOS body-diode topologies
+                 -> previous-sample voltage selection -> switching simulation
 ```
 
 The descriptor equation is
@@ -50,6 +54,9 @@ stack.
 | `E`, `G` | `E1 n+ n- nc+ nc- gain` | VCVS / VCCS |
 | `F`, `H` | `F1 n+ n- Vctrl gain` | CCCS / CCVS |
 | TINA current arrow | `VAM1 n+ n- ; Current Arrow` | Zero-voltage current probe |
+| `D` | `D1 anode cathode model` | PWL diode in the switched solver |
+| `M` | `M1 drain gate source bulk model` | PWL NMOS in the switched solver |
+| TINA ideal op amp | `X1 n+ n- nout IdOpamp` | Three-pin ideal op amp |
 
 Node names may be numeric or textual. `0` and `GND` are ground. SPICE suffixes
 such as `K`, `MEG`, `M`, `U`, and `N` are accepted. `Symbolic` and other
@@ -132,8 +139,75 @@ response = frequency_response(state, [10.0, 100.0, 1000.0])
 ```
 
 The discretization entry point deliberately takes a method name. Only
-`forward_euler` is implemented in this milestone; RK methods can be added behind
-the same interface without changing parser or state-space clients.
+`forward_euler` and the stiff-circuit-friendly `backward_euler` are implemented;
+RK methods can be added behind the same interface without changing parser or
+state-space clients.
+
+## Diode/MOSFET piecewise-linear simulation
+
+`switched_solver.py` reads TINA continuation lines and `.MODEL` parameters. For
+the supplied `2_buck.CIR`, it derives `D1` series resistance and junction
+capacitance from `RS/CJO`, and approximates T1 with `Ron/Roff/Coss`. The MOS gate
+voltage source is removed from the electrical MNA model and becomes a Boolean
+external PWM command.
+
+The four primary equations are:
+
+```text
+D1 off + MOS channel off     D1 off + MOS channel on
+D1 on  + MOS channel off     D1 on  + MOS channel on
+```
+
+A physically complete MOS model needs a third path while the gate is off:
+source-to-drain body-diode conduction. The solver therefore caches two extra
+body-diode equations, one for each D1 state. At every sample it uses the previous
+`V(D1.A)-V(D1.K)` and `V(T1.S)-V(T1.D)` to select the next mode. Default outputs
+include `V(T1.D)`, `V(T1.S)`, `V(D1.A)`, and `V(D1.K)`.
+
+List all topology matrices and scalar equations:
+
+```bat
+python tools\cctl_studio\mna_solver\switched_solver.py analyze ^
+  tools\cctl_studio\mna_solver\tb\2_buck.CIR --dt 1N
+```
+
+Run the supplied circuit with an external 10 kHz, 50% PWM command:
+
+```bat
+python tools\cctl_studio\mna_solver\switched_solver.py simulate ^
+  tools\cctl_studio\mna_solver\tb\2_buck.CIR ^
+  --dt 50N --transition-substep 500P --duration 50M ^
+  --pwm-frequency 10K --duty 0.5 --output-stride 100 ^
+  --output buck_10khz.csv
+```
+
+Device approximations can be overridden with repeated options such as
+`--device-param D1.Vf=0.7`, `--device-param T1.Ron=50M`, and
+`--device-param T1.Coss=1N`. Backward Euler is the switching default because the
+milliohm conduction paths and picofarad junction capacitances are stiff.
+The transition substep is used only while both possible diode paths are open;
+it prevents a macro-step voltage overshoot while keeping a 50 ms run practical.
+
+The 50 ms reference run covers five `L/(R1+R2)` time constants and 500 PWM
+periods. Its final `V(VF1)` is about 2.25 V (tail mean about 2.25 V), close to
+the ideal 2.5 V half-supply value; the remaining difference is the explicit
+body-diode forward drop and finite path resistances.
+
+The supplied MOS is connected with `D=4` and `S=3`, where node 3 is the +5 V
+supply. Consequently its intrinsic S-to-D body diode catches the switch node
+when the gate turns off; D1 remains off in the reference run. This orientation
+should be checked if ground-diode Buck freewheeling was intended.
+
+## `1_OPAMP.CIR` diagnostic
+
+The parser recognizes `XIOP1 3 1 VF1 IdOpamp` as a TINA three-pin ideal op amp
+with conventional `(+,-,output)` order. The resulting descriptor pencil is
+singular for every frequency: node 3 is pulled to ground through R2, the ideal
+op-amp constraint equates nodes 3 and 1, and VG1 independently fixes node 1.
+Therefore this particular exported netlist does not currently describe a
+solvable low-pass circuit. The solver reports the singular topology instead of
+inventing a pin order or silently regularizing it. The schematic/netlist
+connection must be corrected before a meaningful transfer function exists.
 
 ## Current boundaries
 

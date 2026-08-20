@@ -8,6 +8,9 @@
 网表 -> 精确符号 MNA -> 数值描述符 MNA
      -> 代数量消元 -> 状态/输出方程
      -> 离散化 -> 时域仿真或频率响应
+
+TINA D/M 网表 -> 4 个主开关拓扑 + 2 个体二极管拓扑
+              -> 根据上一采样端电压选模 -> 开关仿真
 ```
 
 MNA 首先写成描述符系统：
@@ -46,6 +49,9 @@ y     = C x + D u + F u_dot
 | `E`、`G` | `E1 n+ n- nc+ nc- gain` | VCVS / VCCS |
 | `F`、`H` | `F1 n+ n- Vctrl gain` | CCCS / CCVS |
 | TINA 电流箭头 | `VAM1 n+ n- ; Current Arrow` | 零压降电流探针 |
+| `D` | `D1 anode cathode model` | 开关求解器中的分段线性二极管 |
+| `M` | `M1 drain gate source bulk model` | 开关求解器中的分段线性 NMOS |
+| TINA 理想运放 | `X1 n+ n- nout IdOpamp` | 三引脚理想运放 |
 
 节点可以是数字或文本；`0` 和 `GND` 表示地。支持 `K`、`MEG`、`M`、
 `U`、`N` 等 SPICE 数值后缀。`Symbolic` 或其他非数值参数在 SymEngine
@@ -101,8 +107,68 @@ python tools\cctl_studio\mna_solver\mna_solver.py frequency ^
 ```
 
 Python API 的完整示例见 [README.md](README.md)。离散化接口已经保留
-`method` 参数；当前实现 `forward_euler`，后续可以在不改变解析器、状态空间
-调用方的前提下加入龙格-库塔等方法。
+`method` 参数；当前实现 `forward_euler` 和适合刚性开关电路的
+`backward_euler`，后续可以在不改变解析器、状态空间调用方的前提下加入
+龙格-库塔等方法。
+
+## 二极管/MOSFET 分段线性仿真
+
+`switched_solver.py` 可以读取 TINA 续行和 `.MODEL` 参数。对于当前
+`2_buck.CIR`，D1 的串联电阻、结电容来自 `RS/CJO`，T1 则近似为
+`Ron/Roff/Coss`；MOS 门极上的电压源从电气 MNA 中移除，转换成外部布尔
+PWM 命令。
+
+用户要求的 4 个主方程是：
+
+```text
+D1 关 + MOS 沟道关       D1 关 + MOS 沟道开
+D1 开 + MOS 沟道关       D1 开 + MOS 沟道开
+```
+
+严格保留体二极管时，门极关断的 MOS 还存在源极到漏极的体二极管路径，
+因此程序额外缓存 D1 开/关对应的 2 个体二极管方程。每个采样点根据上一状态的
+`V(D1.A)-V(D1.K)` 和 `V(T1.S)-V(T1.D)` 选择下一拓扑。默认输出包含
+`V(T1.D)`、`V(T1.S)`、`V(D1.A)` 和 `V(D1.K)`。
+
+列出全部拓扑矩阵和逐项离散方程：
+
+```bat
+python tools\cctl_studio\mna_solver\switched_solver.py analyze ^
+  tools\cctl_studio\mna_solver\tb\2_buck.CIR --dt 1N
+```
+
+使用外部 10 kHz、50% 占空比方波仿真：
+
+```bat
+python tools\cctl_studio\mna_solver\switched_solver.py simulate ^
+  tools\cctl_studio\mna_solver\tb\2_buck.CIR ^
+  --dt 50N --transition-substep 500P --duration 50M ^
+  --pwm-frequency 10K --duty 0.5 --output-stride 100 ^
+  --output buck_10khz.csv
+```
+
+可以用重复的 `--device-param` 覆盖近似值，例如 `D1.Vf=0.7`、
+`T1.Ron=50M`、`T1.Coss=1N`。开关仿真默认使用后向欧拉法，因为毫欧级
+导通电阻和皮法级结电容构成刚性系统。
+过渡子步只在两个二极管路径都未导通时使用，用于抑制宏步长造成的开关节点
+过冲，因此 50 ms 长时间仿真仍然可以保持实用速度。
+
+50 ms 参考仿真覆盖 5 个 `L/(R1+R2)` 时间常数和 500 个 PWM 周期；
+`V(VF1)` 最终值及末段平均值均约为 2.25 V，已经进入理想半电源 2.5 V
+附近。两者的差异来自模型中明确保留的体二极管压降和有限导通电阻。
+
+当前网表中 T1 的 `D=4`、`S=3`，节点 3 是 +5 V 电源。因此门极关断后，
+固有体二极管会从 S 向 D 向开关节点供电，参考仿真中 D1 始终未接管续流。
+如果原意是由接地 D1 完成标准 Buck 续流，应再检查 MOS 漏源方向；求解器
+不会为了得到预期波形而擅自反转器件。
+
+## `1_OPAMP.CIR` 诊断结果
+
+解析器已经把 `XIOP1 3 1 VF1 IdOpamp` 识别为常规 `(+、-、输出)` 顺序的
+TINA 三引脚理想运放。但该网表的描述符矩阵束在所有频率下均为奇异：节点 3
+通过 R2 接地，理想运放又强制节点 3 与节点 1 等电位，而 VG1 独立固定节点 1。
+因此当前导出的网表本身没有可求解的低通传递函数。程序会明确报告奇异拓扑，
+不会猜测引脚顺序或静默加入寄生参数；需要先修正原理图/网表连接。
 
 ## 当前边界
 

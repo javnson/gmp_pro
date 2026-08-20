@@ -33,9 +33,13 @@ class NetlistTests(unittest.TestCase):
         for path in paths:
             with self.subTest(path=path.name):
                 circuit = mna.parse_netlist(path)
-                symbolic = mna.assemble_symbolic_mna(circuit)
-                self.assertEqual(symbolic.E.nrows(), symbolic.A.nrows())
-                self.assertEqual(symbolic.A.nrows(), symbolic.A.ncols())
+                if any(element.kind in {"D", "M"} for element in circuit.elements):
+                    with self.assertRaises(mna.NetlistError):
+                        mna.assemble_symbolic_mna(circuit)
+                else:
+                    symbolic = mna.assemble_symbolic_mna(circuit)
+                    self.assertEqual(symbolic.E.nrows(), symbolic.A.nrows())
+                    self.assertEqual(symbolic.A.nrows(), symbolic.A.ncols())
 
     def test_tina_directives_current_arrow_and_probe(self) -> None:
         circuit = mna.parse_netlist(TB_DIR / "0_divider.CIR")

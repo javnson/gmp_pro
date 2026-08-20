@@ -81,6 +81,7 @@ class Element:
     nodes: tuple[str, ...]
     value_text: str | None = None
     control: str | None = None
+    model_name: str | None = None
     line_number: int = 0
 
     @property
@@ -103,12 +104,29 @@ class Observation:
     kind: str
     target: str
     negative: str = "0"
+    label: str | None = None
 
     @property
     def name(self) -> str:
+        if self.label is not None:
+            return self.label
         if self.kind == "V" and not _is_ground(self.negative):
             return f"V({self.target},{self.negative})"
         return f"{self.kind}({self.target})"
+
+
+@dataclass(frozen=True)
+class DeviceModel:
+    name: str
+    kind: str
+    parameters: dict[str, str]
+
+    def numeric(self, name: str, default: float | None = None) -> float | None:
+        raw = self.parameters.get(_key(name))
+        if raw is None:
+            return default
+        value = parse_spice_value(raw)
+        return default if value is None else value
 
 
 @dataclass
@@ -117,6 +135,7 @@ class Circuit:
     elements: list[Element]
     observations: list[Observation]
     nodes: list[str]
+    models: dict[str, DeviceModel] = field(default_factory=dict)
     ignored_directives: list[str] = field(default_factory=list)
 
     def element(self, name: str) -> Element:
@@ -155,10 +174,19 @@ def parse_netlist(path: str | Path) -> Circuit:
     elements: list[Element] = []
     observations: list[Observation] = []
     ignored: list[str] = []
+    models: dict[str, DeviceModel] = {}
     node_names: dict[str, str] = {}
     seen_element = False
 
-    for line_number, raw_line in enumerate(text.splitlines(), 1):
+    logical_lines: list[tuple[int, str]] = []
+    for physical_line_number, physical_line in enumerate(text.splitlines(), 1):
+        if physical_line.lstrip().startswith("+") and logical_lines:
+            first_line_number, previous = logical_lines[-1]
+            logical_lines[-1] = (first_line_number, previous + " " + physical_line.lstrip()[1:].strip())
+        else:
+            logical_lines.append((physical_line_number, physical_line))
+
+    for line_number, raw_line in logical_lines:
         stripped = raw_line.strip()
         if not stripped or stripped.startswith("*"):
             continue
@@ -166,6 +194,16 @@ def parse_netlist(path: str | Path) -> Circuit:
             directive = stripped.split(None, 1)[0].upper()
             if directive in {".PROBE", ".PRINT", ".SAVE"}:
                 observations.extend(_parse_observations(stripped, line_number))
+            elif directive == ".MODEL":
+                match = re.match(r"\.MODEL\s+(\S+)\s+(\w+)\s*\((.*)\)\s*$", stripped, re.IGNORECASE)
+                if not match:
+                    raise NetlistError(f"line {line_number}: malformed .MODEL directive")
+                parameters = {
+                    _key(item.group(1)): item.group(2)
+                    for item in re.finditer(r"([A-Za-z][A-Za-z0-9_]*)\s*=\s*([^\s()]+)", match.group(3))
+                }
+                model = DeviceModel(match.group(1), match.group(2).upper(), parameters)
+                models[_key(model.name)] = model
             elif directive == ".END":
                 break
             else:
@@ -180,14 +218,14 @@ def parse_netlist(path: str | Path) -> Circuit:
             continue
         name = tokens[0]
         kind = name[0].upper()
-        if kind not in {"R", "L", "C", "V", "I", "O", "E", "G", "F", "H"}:
+        if kind not in {"R", "L", "C", "V", "I", "O", "E", "G", "F", "H", "D", "M", "X"}:
             if not seen_element:
                 title = stripped
                 continue
             ignored.append(stripped)
             continue
 
-        minimum_tokens = 6 if kind in {"E", "G"} else 5 if kind in {"F", "H"} else 4
+        minimum_tokens = 6 if kind in {"E", "G", "M"} else 5 if kind in {"F", "H", "X"} else 4
         possible_current_arrow = kind == "V" and len(tokens) == 3 and (
             _key(name).startswith("VAM") or "CURRENT ARROW" in comment.upper()
         )
@@ -220,6 +258,37 @@ def parse_netlist(path: str | Path) -> Circuit:
         elif kind == "O":
             require(4, "O<name> n+ n- nout")
             element = Element(name, kind, tuple(_clean_node(token) for token in tokens[1:4]), line_number=line_number)
+        elif kind == "D":
+            require(4, "D<name> anode cathode model")
+            element = Element(
+                name,
+                kind,
+                (_clean_node(tokens[1]), _clean_node(tokens[2])),
+                model_name=tokens[3],
+                line_number=line_number,
+            )
+        elif kind == "M":
+            require(6, "M<name> drain gate source bulk model")
+            element = Element(
+                name,
+                kind,
+                tuple(_clean_node(token) for token in tokens[1:5]),
+                model_name=tokens[5],
+                line_number=line_number,
+            )
+        elif kind == "X":
+            require(5, "X<name> n+ n- nout subcircuit")
+            if _key(tokens[-1]) != "IDOPAMP" or len(tokens) != 5:
+                raise NetlistError(
+                    f"line {line_number}: unsupported subcircuit {tokens[-1]!r}; only three-pin IdOpamp is supported"
+                )
+            element = Element(
+                name,
+                "O",
+                tuple(_clean_node(token) for token in tokens[1:4]),
+                model_name=tokens[4],
+                line_number=line_number,
+            )
         elif kind in {"E", "G"}:
             require(6, f"{kind}<name> n+ n- nc+ nc- gain")
             element = Element(name, kind, tuple(_clean_node(token) for token in tokens[1:5]), tokens[5], line_number=line_number)
@@ -244,7 +313,7 @@ def parse_netlist(path: str | Path) -> Circuit:
     duplicate_names = [name for name in {_key(e.name) for e in elements} if sum(_key(e.name) == name for e in elements) > 1]
     if duplicate_names:
         raise NetlistError("duplicate element name(s): " + ", ".join(sorted(duplicate_names)))
-    return Circuit(title, elements, observations, list(node_names.values()), ignored)
+    return Circuit(title, elements, observations, list(node_names.values()), models, ignored)
 
 
 @dataclass
@@ -283,6 +352,11 @@ def assemble_symbolic_mna(circuit: Circuit) -> SymbolicDescriptorModel:
     as fixed source values in the matrices.
     """
 
+    nonlinear = [element.name for element in circuit.elements if element.kind in {"D", "M"}]
+    if nonlinear:
+        raise NetlistError(
+            "nonlinear switch element(s) require switched_solver.py: " + ", ".join(nonlinear)
+        )
     node_indices = {_key(node): index for index, node in enumerate(circuit.nodes)}
     branch_elements = [e for e in circuit.elements if e.kind in {"V", "AMMETER", "L", "O", "E", "H"}]
     branch_indices = {_key(e.name): len(node_indices) + index for index, e in enumerate(branch_elements)}
@@ -382,6 +456,11 @@ def assemble_symbolic_mna(circuit: Circuit) -> SymbolicDescriptorModel:
 def assemble_mna(circuit: Circuit, parameters: Mapping[str, float] | None = None) -> DescriptorModel:
     """Build the numeric descriptor equation ``E z_dot = A z + B u``."""
 
+    nonlinear = [element.name for element in circuit.elements if element.kind in {"D", "M"}]
+    if nonlinear:
+        raise NetlistError(
+            "nonlinear switch element(s) require switched_solver.py: " + ", ".join(nonlinear)
+        )
     parameters = parameters or {}
     node_indices = {_key(node): index for index, node in enumerate(circuit.nodes)}
     branch_elements = [e for e in circuit.elements if e.kind in {"V", "AMMETER", "L", "O", "E", "H"}]
@@ -690,12 +769,21 @@ def discretize(model: StateSpaceModel, dt: float, method: str = "forward_euler")
     if dt <= 0:
         raise ValueError("dt must be positive")
     normalized = method.lower().replace("-", "_")
-    if normalized not in {"forward_euler", "euler"}:
-        raise ValueError(f"unknown discretization method {method!r}; available: forward_euler")
-    Ad = np.eye(model.A.shape[0]) + dt * model.A
-    Bd = dt * model.B
+    if normalized in {"forward_euler", "euler"}:
+        Ad = np.eye(model.A.shape[0]) + dt * model.A
+        Bd = dt * model.B
+        normalized = "forward_euler"
+    elif normalized in {"backward_euler", "implicit_euler"}:
+        lhs = np.eye(model.A.shape[0]) - dt * model.A
+        Ad = np.linalg.solve(lhs, np.eye(model.A.shape[0]))
+        Bd = np.linalg.solve(lhs, dt * model.B)
+        normalized = "backward_euler"
+    else:
+        raise ValueError(
+            f"unknown discretization method {method!r}; available: forward_euler, backward_euler"
+        )
     return DiscreteModel(
-        Ad, Bd, model.C.copy(), model.D.copy(), model.F.copy(), dt, "forward_euler",
+        Ad, Bd, model.C.copy(), model.D.copy(), model.F.copy(), dt, normalized,
         model.state_names, model.input_names, model.output_names, model.input_defaults,
     )
 

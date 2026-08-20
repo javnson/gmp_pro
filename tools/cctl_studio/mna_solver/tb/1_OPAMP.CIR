@@ -14,13 +14,14 @@
 
 .PROBE V([VF1])
 
-VG1         1 0 DC 0 AC 1 0
+VG1         2 0 DC 0 AC 1 0
 + PULSE ( 0 1 0  0  0  1e19 1e20 )
+R4          1 2 1K 
 R3          VF1 0 1K 
-R2          3 0 1K 
+R2          4 0 1K 
 C1          1 VF1 1U 
 R1          1 VF1 1K 
-XIOP1        3 1 VF1 IdOpamp
+XIOP1        4 1 VF1 IdOpamp
 
 
 .END

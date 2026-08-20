@@ -1,0 +1,629 @@
+"""Piecewise-linear diode/MOSFET simulation built on the MNA solver.
+
+The switch network is expanded into linear topologies.  Terminal voltages from
+the previous sample select the next diode/body-diode state, while the MOSFET
+channel is controlled by an external Boolean PWM signal.
+"""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import math
+from dataclasses import dataclass
+from enum import Enum
+from pathlib import Path
+from typing import Callable, Mapping, Sequence
+
+import numpy as np
+
+from mna_solver import (
+    Circuit,
+    DescriptorModel,
+    DeviceModel,
+    DiscreteModel,
+    Element,
+    NetlistError,
+    Observation,
+    StateSpaceModel,
+    assemble_mna,
+    assemble_outputs,
+    discretize,
+    discrete_equations,
+    parse_netlist,
+    parse_spice_value,
+    reduce_to_state_space,
+)
+
+
+class MosfetPath(str, Enum):
+    OFF = "off"
+    CHANNEL = "channel"
+    BODY_DIODE = "body_diode"
+
+
+@dataclass(frozen=True)
+class SwitchParameters:
+    diode_name: str
+    diode_forward_voltage: float
+    diode_on_resistance: float
+    diode_off_resistance: float
+    diode_junction_capacitance: float
+    mosfet_name: str
+    mosfet_on_resistance: float
+    mosfet_off_resistance: float
+    mosfet_output_capacitance: float
+    body_forward_voltage: float
+    body_on_resistance: float
+    gate_drive_voltage: float
+
+
+@dataclass(frozen=True)
+class TopologyKey:
+    diode_on: bool
+    mosfet_path: MosfetPath
+
+    @property
+    def name(self) -> str:
+        diode = "D_ON" if self.diode_on else "D_OFF"
+        return f"{diode}__MOS_{self.mosfet_path.value.upper()}"
+
+
+@dataclass
+class LinearTopology:
+    key: TopologyKey
+    circuit: Circuit
+    descriptor: DescriptorModel
+    state: StateSpaceModel
+    discrete: DiscreteModel | None = None
+
+
+@dataclass
+class PiecewiseLinearModel:
+    source_circuit: Circuit
+    diode: Element
+    mosfet: Element
+    gate_source_name: str
+    parameters: SwitchParameters
+    topologies: dict[TopologyKey, LinearTopology]
+
+    @property
+    def primary_topologies(self) -> dict[TopologyKey, LinearTopology]:
+        """The requested D on/off x commanded MOS channel on/off four modes."""
+
+        return {
+            key: value
+            for key, value in self.topologies.items()
+            if key.mosfet_path in {MosfetPath.OFF, MosfetPath.CHANNEL}
+        }
+
+
+@dataclass
+class SwitchingSimulationResult:
+    time: np.ndarray
+    gate: np.ndarray
+    diode_on: np.ndarray
+    body_diode_on: np.ndarray
+    topology: list[str]
+    states: np.ndarray
+    outputs: np.ndarray
+    state_names: list[str]
+    output_names: list[str]
+
+
+InputValue = float | Callable[[float], float]
+
+
+def _key(name: str) -> str:
+    return name.upper()
+
+
+def _model_for(circuit: Circuit, element: Element) -> DeviceModel:
+    if element.model_name is None or _key(element.model_name) not in circuit.models:
+        raise NetlistError(f"{element.name}: model {element.model_name!r} was not defined in the netlist")
+    return circuit.models[_key(element.model_name)]
+
+
+def _thermal_forward_voltage(model: DeviceModel, reference_current: float = 1.0) -> float:
+    saturation_current = max(model.numeric("IS", 1e-14) or 1e-14, 1e-30)
+    emission = model.numeric("N", 1.0) or 1.0
+    return max(0.0, emission * 0.025851999786 * math.log(reference_current / saturation_current + 1.0))
+
+
+def _override(overrides: Mapping[str, float], name: str, default: float) -> float:
+    lookup = {_key(item): float(value) for item, value in overrides.items()}
+    return lookup.get(_key(name), default)
+
+
+def derive_switch_parameters(
+    circuit: Circuit,
+    overrides: Mapping[str, float] | None = None,
+) -> tuple[Element, Element, SwitchParameters]:
+    """Derive a practical PWL approximation from TINA diode/NMOS models."""
+
+    overrides = overrides or {}
+    diodes = [element for element in circuit.elements if element.kind == "D"]
+    mosfets = [element for element in circuit.elements if element.kind == "M"]
+    if len(diodes) != 1 or len(mosfets) != 1:
+        raise NetlistError(
+            f"piecewise solver currently requires exactly one diode and one MOSFET; got {len(diodes)} and {len(mosfets)}"
+        )
+    diode, mosfet = diodes[0], mosfets[0]
+    diode_model = _model_for(circuit, diode)
+    mosfet_model = _model_for(circuit, mosfet)
+    mosfet_label = mosfet.name[1:] if _key(mosfet.name).startswith("MT") else mosfet.name
+
+    rd = mosfet_model.numeric("RD", 0.0) or 0.0
+    rs = mosfet_model.numeric("RS", 0.0) or 0.0
+    series_resistance = max(rd + rs, 1e-6)
+    gate_drive = _override(overrides, f"{mosfet_label}.Vdrive", 10.0)
+    estimated_coss = (mosfet_model.numeric("CBD", 0.0) or 0.0) + (mosfet_model.numeric("CGDO", 0.0) or 0.0)
+
+    parameters = SwitchParameters(
+        diode.name,
+        _override(overrides, f"{diode.name}.Vf", _thermal_forward_voltage(diode_model)),
+        _override(overrides, f"{diode.name}.Ron", max(diode_model.numeric("RS", 1e-3) or 1e-3, 1e-6)),
+        _override(overrides, f"{diode.name}.Roff", 1e9),
+        _override(overrides, f"{diode.name}.Cj", max(diode_model.numeric("CJO", 0.0) or 0.0, 0.0)),
+        mosfet_label,
+        # The requested switch abstraction is ideal; keep a finite milliohm
+        # resistance for a well-conditioned MNA stamp.  A measured or
+        # datasheet-derived value can be supplied through an override.
+        _override(overrides, f"{mosfet_label}.Ron", 1e-3),
+        _override(overrides, f"{mosfet_label}.Roff", max(mosfet_model.numeric("RDS", 1e9) or 1e9, 1.0)),
+        _override(overrides, f"{mosfet_label}.Coss", max(estimated_coss, 0.0)),
+        _override(overrides, f"{mosfet_label}.BodyVf", _thermal_forward_voltage(mosfet_model)),
+        _override(overrides, f"{mosfet_label}.BodyRon", 2e-3),
+        gate_drive,
+    )
+    return diode, mosfet, parameters
+
+
+def _nodes(elements: Sequence[Element]) -> list[str]:
+    result: dict[str, str] = {}
+    for element in elements:
+        for node in element.nodes:
+            if _key(node) not in {"0", "GND"}:
+                result.setdefault(_key(node), node)
+    return list(result.values())
+
+
+def _gate_source(circuit: Circuit, mosfet: Element) -> Element:
+    gate_node = mosfet.nodes[1]
+    candidates = [
+        element
+        for element in circuit.elements
+        if element.kind == "V"
+        and _key(element.nodes[0]) == _key(gate_node)
+        and _key(element.nodes[1]) in {"0", "GND"}
+    ]
+    if len(candidates) != 1:
+        raise NetlistError(
+            f"{mosfet.name}: expected one voltage source from gate {gate_node} to ground, got {len(candidates)}"
+        )
+    return candidates[0]
+
+
+def _expanded_circuit(
+    circuit: Circuit,
+    diode: Element,
+    mosfet: Element,
+    gate_source: Element,
+    parameters: SwitchParameters,
+    key: TopologyKey,
+) -> Circuit:
+    elements = [
+        element
+        for element in circuit.elements
+        if element not in {diode, mosfet, gate_source}
+    ]
+
+    diode_internal = f"__{diode.name}_series"
+    elements.extend(
+        [
+            Element(f"C__{diode.name}_junction", "C", diode.nodes[:2], f"{parameters.diode_junction_capacitance:.17g}"),
+            Element(
+                f"V__{diode.name}_drop",
+                "V",
+                (diode.nodes[0], diode_internal),
+                f"{parameters.diode_forward_voltage if key.diode_on else 0.0:.17g}",
+            ),
+            Element(
+                f"R__{diode.name}_path",
+                "R",
+                (diode_internal, diode.nodes[1]),
+                f"{parameters.diode_on_resistance if key.diode_on else parameters.diode_off_resistance:.17g}",
+            ),
+        ]
+    )
+
+    drain, _, source, _ = mosfet.nodes
+    mosfet_internal = f"__{parameters.mosfet_name}_series"
+    source_is_dc_constrained = any(
+        element.kind == "V"
+        and _key(element.nodes[0]) == _key(source)
+        and _key(element.nodes[1]) in {"0", "GND"}
+        for element in elements
+    )
+    # A capacitor tied to an ideal voltage-source node introduces u_dot into
+    # the raw descriptor model.  Switching simulation treats the supply as DC,
+    # so its small-signal derivative is zero and Coss can use ground as the
+    # dynamic reference without changing the drain-voltage trajectory.
+    coss_nodes = (drain, "0") if source_is_dc_constrained else (drain, source)
+    if key.mosfet_path == MosfetPath.CHANNEL:
+        mosfet_resistance = parameters.mosfet_on_resistance
+        body_drop = 0.0
+    elif key.mosfet_path == MosfetPath.BODY_DIODE:
+        mosfet_resistance = parameters.body_on_resistance
+        body_drop = parameters.body_forward_voltage
+    else:
+        mosfet_resistance = parameters.mosfet_off_resistance
+        body_drop = 0.0
+    elements.extend(
+        [
+            Element(
+                f"C__{parameters.mosfet_name}_oss",
+                "C",
+                coss_nodes,
+                f"{parameters.mosfet_output_capacitance:.17g}",
+            ),
+            # The body diode points from source (anode) to drain (cathode).
+            # A zero drop makes the same branch a symmetric channel/Roff path.
+            Element(
+                f"V__{parameters.mosfet_name}_drop",
+                "V",
+                (source, mosfet_internal),
+                f"{body_drop:.17g}",
+            ),
+            Element(
+                f"R__{parameters.mosfet_name}_path",
+                "R",
+                (mosfet_internal, drain),
+                f"{mosfet_resistance:.17g}",
+            ),
+        ]
+    )
+
+    observations = list(circuit.observations)
+    terminal_observations = [
+        Observation("V", drain, label=f"V({parameters.mosfet_name}.D)"),
+        Observation("V", source, label=f"V({parameters.mosfet_name}.S)"),
+        Observation("V", diode.nodes[0], label=f"V({diode.name}.A)"),
+        Observation("V", diode.nodes[1], label=f"V({diode.name}.K)"),
+    ]
+    existing = {_key(item.name) for item in observations}
+    observations.extend(item for item in terminal_observations if _key(item.name) not in existing)
+    return Circuit(
+        title=f"{circuit.title} [{key.name}]",
+        elements=elements,
+        observations=observations,
+        nodes=_nodes(elements),
+        models=circuit.models,
+        ignored_directives=circuit.ignored_directives,
+    )
+
+
+def build_piecewise_model(
+    circuit: Circuit,
+    device_overrides: Mapping[str, float] | None = None,
+) -> PiecewiseLinearModel:
+    """Build four primary and two body-diode PWL state-space topologies."""
+
+    diode, mosfet, parameters = derive_switch_parameters(circuit, device_overrides)
+    gate_source = _gate_source(circuit, mosfet)
+    topologies: dict[TopologyKey, LinearTopology] = {}
+    for diode_on in (False, True):
+        for path in (MosfetPath.OFF, MosfetPath.CHANNEL, MosfetPath.BODY_DIODE):
+            key = TopologyKey(diode_on, path)
+            expanded = _expanded_circuit(circuit, diode, mosfet, gate_source, parameters, key)
+            descriptor = assemble_mna(expanded)
+            outputs = assemble_outputs(expanded, descriptor)
+            state = reduce_to_state_space(descriptor, outputs)
+            topologies[key] = LinearTopology(key, expanded, descriptor, state)
+
+    reference = next(iter(topologies.values())).state
+    for topology in topologies.values():
+        if topology.state.state_names != reference.state_names or topology.state.input_names != reference.input_names:
+            raise NetlistError("switch topology expansion produced incompatible state or input coordinates")
+    return PiecewiseLinearModel(circuit, diode, mosfet, gate_source.name, parameters, topologies)
+
+
+def prepare_discrete_topologies(
+    model: PiecewiseLinearModel,
+    dt: float,
+    method: str = "backward_euler",
+) -> None:
+    for topology in model.topologies.values():
+        topology.discrete = discretize(topology.state, dt, method)
+
+
+def _sample(value: InputValue, time: float) -> float:
+    return float(value(time)) if callable(value) else float(value)
+
+
+def _input_vector(
+    topology: LinearTopology,
+    time: float,
+    inputs: Mapping[str, InputValue],
+    discrete: DiscreteModel | None = None,
+) -> np.ndarray:
+    selected = discrete or topology.discrete
+    assert selected is not None
+    lookup = {_key(name): value for name, value in inputs.items()}
+    unknown = set(lookup) - {_key(name) for name in selected.input_names}
+    if unknown:
+        raise ValueError("unknown electrical input(s): " + ", ".join(sorted(unknown)))
+    result = np.empty(len(selected.input_names))
+    for index, name in enumerate(selected.input_names):
+        if _key(name) in lookup:
+            result[index] = _sample(lookup[_key(name)], time)
+        else:
+            default = selected.input_defaults[index]
+            if default is None:
+                raise ValueError(f"no numeric/default value for input {name}")
+            result[index] = float(default)
+    return result
+
+
+def simulate_piecewise(
+    model: PiecewiseLinearModel,
+    duration: float,
+    dt: float,
+    pwm_frequency: float = 10_000.0,
+    pwm_duty: float = 0.5,
+    inputs: Mapping[str, InputValue] | None = None,
+    initial_state: Sequence[float] | None = None,
+    voltage_hysteresis: float = 1e-6,
+    method: str = "backward_euler",
+    transition_substep: float = 0.5e-9,
+) -> SwitchingSimulationResult:
+    """Simulate using previous-sample VAK/VSD to select the next topology."""
+
+    if duration < 0 or dt <= 0 or transition_substep <= 0 or pwm_frequency <= 0 or not 0.0 <= pwm_duty <= 1.0:
+        raise ValueError(
+            "require duration >= 0, dt > 0, transition_substep > 0, pwm_frequency > 0, and 0 <= duty <= 1"
+        )
+    prepare_discrete_topologies(model, dt, method)
+    fine_dt = min(dt, transition_substep)
+    fine_discrete = {
+        key: discretize(topology.state, fine_dt, method)
+        for key, topology in model.topologies.items()
+    }
+    reference = next(iter(model.topologies.values())).state
+    steps = int(math.ceil(duration / dt))
+    times = np.arange(steps + 1, dtype=float) * dt
+    X = np.zeros((steps + 1, len(reference.state_names)))
+    if initial_state is not None:
+        value = np.asarray(initial_state, dtype=float)
+        if value.shape != X[0].shape:
+            raise ValueError(f"initial state must have shape {X[0].shape}")
+        X[0] = value
+    Y = np.zeros((steps + 1, len(reference.output_names)))
+    gate_values = np.zeros(steps + 1, dtype=bool)
+    diode_values = np.zeros(steps + 1, dtype=bool)
+    body_values = np.zeros(steps + 1, dtype=bool)
+    topology_names: list[str] = []
+    output_index = {_key(name): index for index, name in enumerate(reference.output_names)}
+    p = model.parameters
+    required = [f"V({p.mosfet_name}.D)", f"V({p.mosfet_name}.S)", f"V({model.diode.name}.A)", f"V({model.diode.name}.K)"]
+    if any(_key(name) not in output_index for name in required):
+        raise NetlistError("switch terminal observations are missing from topology output equations")
+
+    previous_vak = 0.0
+    previous_vsd = 0.0
+    diode_on = False
+    body_on = False
+    supplied_inputs = inputs or {}
+    period = 1.0 / pwm_frequency
+
+    def gate_at(time_value: float) -> bool:
+        if pwm_duty in {0.0, 1.0}:
+            return pwm_duty == 1.0
+        return (time_value % period) < pwm_duty * period
+
+    def select_mode(
+        gate_on: bool,
+        vak: float,
+        vsd: float,
+        old_diode: bool,
+        old_body: bool,
+    ) -> tuple[bool, bool, MosfetPath]:
+        new_diode = (
+            vak >= p.diode_forward_voltage - voltage_hysteresis
+            if old_diode
+            else vak >= p.diode_forward_voltage + voltage_hysteresis
+        )
+        if gate_on:
+            return new_diode, False, MosfetPath.CHANNEL
+        new_body = (
+            vsd >= p.body_forward_voltage - voltage_hysteresis
+            if old_body
+            else vsd >= p.body_forward_voltage + voltage_hysteresis
+        )
+        return new_diode, new_body, MosfetPath.BODY_DIODE if new_body else MosfetPath.OFF
+
+    def terminal_differences(values: np.ndarray) -> tuple[float, float]:
+        drain = values[output_index[_key(f"V({p.mosfet_name}.D)")]]
+        source = values[output_index[_key(f"V({p.mosfet_name}.S)")]]
+        anode = values[output_index[_key(f"V({model.diode.name}.A)")]]
+        cathode = values[output_index[_key(f"V({model.diode.name}.K)")]]
+        return anode - cathode, source - drain
+
+    for step, time in enumerate(times):
+        gate_on = gate_at(float(time))
+        diode_on, body_on, path = select_mode(
+            gate_on, previous_vak, previous_vsd, diode_on, body_on
+        )
+        key = TopologyKey(diode_on, path)
+        topology = model.topologies[key]
+        assert topology.discrete is not None
+        u = _input_vector(topology, float(time), supplied_inputs)
+        Y[step] = topology.discrete.C @ X[step] + topology.discrete.D @ u
+        gate_values[step] = gate_on
+        diode_values[step] = diode_on
+        body_values[step] = body_on
+        topology_names.append(key.name)
+        if step < steps:
+            if path == MosfetPath.OFF and fine_dt < dt:
+                local_x = X[step].copy()
+                local_vak, local_vsd = terminal_differences(Y[step])
+                local_diode, local_body = diode_on, body_on
+                substeps = int(math.ceil(dt / fine_dt))
+                for substep in range(substeps):
+                    elapsed = substep * fine_dt
+                    remaining = dt - elapsed
+                    if remaining <= max(dt * 1e-12, 1e-18):
+                        break
+                    sub_dt = min(fine_dt, remaining)
+                    local_time = float(time) + elapsed
+                    local_gate = gate_at(local_time)
+                    local_diode, local_body, local_path = select_mode(
+                        local_gate, local_vak, local_vsd, local_diode, local_body
+                    )
+                    local_key = TopologyKey(local_diode, local_path)
+                    local_topology = model.topologies[local_key]
+                    local_discrete = (
+                        fine_discrete[local_key]
+                        if math.isclose(sub_dt, fine_dt, rel_tol=1e-12, abs_tol=0.0)
+                        else discretize(local_topology.state, sub_dt, method)
+                    )
+                    local_u = _input_vector(local_topology, local_time, supplied_inputs, local_discrete)
+                    local_x = local_discrete.A @ local_x + local_discrete.B @ local_u
+                    local_y = local_discrete.C @ local_x + local_discrete.D @ local_u
+                    local_vak, local_vsd = terminal_differences(local_y)
+                X[step + 1] = local_x
+                previous_vak, previous_vsd = local_vak, local_vsd
+                diode_on, body_on = local_diode, local_body
+            else:
+                X[step + 1] = topology.discrete.A @ X[step] + topology.discrete.B @ u
+                previous_vak, previous_vsd = terminal_differences(Y[step])
+
+    return SwitchingSimulationResult(
+        times,
+        gate_values,
+        diode_values,
+        body_values,
+        topology_names,
+        X,
+        Y,
+        reference.state_names,
+        reference.output_names,
+    )
+
+
+def write_switching_csv(
+    path: str | Path,
+    result: SwitchingSimulationResult,
+    stride: int = 1,
+) -> None:
+    if stride < 1:
+        raise ValueError("output stride must be at least 1")
+    with Path(path).open("w", newline="", encoding="utf-8") as stream:
+        writer = csv.writer(stream)
+        writer.writerow(
+            ["time_s", "gate", "diode_on", "body_diode_on", "topology", *result.state_names, *result.output_names]
+        )
+        indices = list(range(0, len(result.time), stride))
+        if indices[-1] != len(result.time) - 1:
+            indices.append(len(result.time) - 1)
+        for index in indices:
+            time = result.time[index]
+            writer.writerow(
+                [
+                    time,
+                    int(result.gate[index]),
+                    int(result.diode_on[index]),
+                    int(result.body_diode_on[index]),
+                    result.topology[index],
+                    *result.states[index],
+                    *result.outputs[index],
+                ]
+            )
+
+
+def _assignment(items: Sequence[str]) -> dict[str, float]:
+    result: dict[str, float] = {}
+    for item in items:
+        if "=" not in item:
+            raise ValueError(f"expected NAME=VALUE, got {item!r}")
+        name, raw = item.split("=", 1)
+        value = parse_spice_value(raw)
+        if not name or value is None:
+            raise ValueError(f"expected numeric NAME=VALUE, got {item!r}")
+        result[name] = value
+    return result
+
+
+def _number(text: str) -> float:
+    value = parse_spice_value(text)
+    if value is None:
+        raise argparse.ArgumentTypeError(f"expected numeric/SPICE value, got {text!r}")
+    return value
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Piecewise-linear diode/MOSFET MNA solver")
+    commands = parser.add_subparsers(dest="command", required=True)
+    analyze = commands.add_parser("analyze")
+    analyze.add_argument("netlist")
+    analyze.add_argument("--device-param", action="append", default=[], metavar="NAME=VALUE")
+    analyze.add_argument("--dt", type=_number)
+    analyze.add_argument("--method", default="backward_euler")
+    simulate = commands.add_parser("simulate")
+    simulate.add_argument("netlist")
+    simulate.add_argument("--device-param", action="append", default=[], metavar="NAME=VALUE")
+    simulate.add_argument("--input", action="append", default=[], metavar="NAME=VALUE")
+    simulate.add_argument("--dt", type=_number, required=True)
+    simulate.add_argument("--duration", type=_number, required=True)
+    simulate.add_argument("--pwm-frequency", type=_number, default=10_000.0)
+    simulate.add_argument("--duty", type=float, default=0.5)
+    simulate.add_argument("--transition-substep", type=_number, default=0.5e-9)
+    simulate.add_argument("--method", default="backward_euler")
+    simulate.add_argument("--output-stride", type=int, default=1)
+    simulate.add_argument("--output", required=True)
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = _parser().parse_args(argv)
+    try:
+        circuit = parse_netlist(args.netlist)
+        model = build_piecewise_model(circuit, _assignment(args.device_param))
+        p = model.parameters
+        if args.command == "analyze":
+            print("Derived switch parameters:")
+            for name, value in vars(p).items():
+                print(f"  {name} = {value}")
+            print(f"\nPrimary topology count: {len(model.primary_topologies)}")
+            print(f"Physical topology count including body conduction: {len(model.topologies)}")
+            if args.dt is not None:
+                prepare_discrete_topologies(model, args.dt, args.method)
+            for key, topology in model.topologies.items():
+                print(f"\n[{key.name}]")
+                print("A =\n", topology.state.A, sep="")
+                print("B =\n", topology.state.B, sep="")
+                if topology.discrete is not None:
+                    print("\n".join(discrete_equations(topology.discrete)))
+        else:
+            result = simulate_piecewise(
+                model,
+                args.duration,
+                args.dt,
+                pwm_frequency=args.pwm_frequency,
+                pwm_duty=args.duty,
+                inputs=_assignment(args.input),
+                method=args.method,
+                transition_substep=args.transition_substep,
+            )
+            write_switching_csv(args.output, result, args.output_stride)
+            print(f"wrote {len(result.time)} samples to {args.output}")
+            for output_index, name in enumerate(result.output_names):
+                print(f"{name}: min={np.min(result.outputs[:, output_index]):.9g}, max={np.max(result.outputs[:, output_index]):.9g}")
+    except (NetlistError, ValueError, np.linalg.LinAlgError) as exc:
+        print(f"error: {exc}")
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
